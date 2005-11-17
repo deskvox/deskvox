@@ -1,5 +1,9 @@
-Virvo Compilation Notes
-=======================
+Deskvox developers notes
+========================
+
+- Sourceforge: cvs update:
+  cvs -d:ext:jpschulze@cvs.sourceforge.net:/cvsroot/deskvox up
+  or set CVSROOT to :ext:jpschulze@cvs.sourceforge.net:/cvsroot/deskvox
 
 - Compiler flags:
   > #define HAVE_CG to compile with support for pixel shaders
