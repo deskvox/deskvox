@@ -1,0 +1,118 @@
+// DeskVOX - Volume Exploration Utility for the Desktop
+// Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
+// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+//
+// This file is part of DeskVOX.
+//
+// DeskVOX is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library (see license.txt); if not, write to the
+// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+#ifndef _VV_PREFWINDOW_H_
+#define _VV_PREFWINDOW_H_
+
+#include <fx.h>
+
+#include <iostream>
+#include <string.h>
+
+// Local:
+#include "vvcanvas.h"
+
+class VVShell;
+
+class VVPreferenceWindow : public FXDialogBox
+{
+  FXDECLARE(VVPreferenceWindow)
+
+    protected:
+    VVPreferenceWindow(){}
+
+  public:
+    enum
+    {
+      ID_EYE_DIST=FXDialogBox::ID_LAST,
+      ID_QUALITY,
+      ID_STEREO,
+      ID_ARTOOLKIT,
+      ID_VOXELTYPE,
+      ID_GEOMTYPE,
+      ID_PIXEL_SHADER,
+      ID_BRICK_SIZE,
+      ID_OPTIONS,
+      ID_LINTERP,
+      ID_SHOWBRICKS,
+      ID_COMPUTE_BRICKSIZE,
+      ID_TEX_MEMORY,
+      ID_MIP,
+      ID_PREINT,
+      ID_OP_CORR,
+      ID_DEF_VOL,
+      ID_SUPPRESS,
+      ID_SWAP_EYES,
+      ID_LAST
+    };
+
+    vox::vvCanvas* _canvas;
+    VVShell*  _shell;
+    FXSlider* _eyeSlider;
+    FXDial* _qualityDial;
+    FXTextField* _eyeTField;
+    FXTextField* _qualityTField;
+    FXComboBox* _vtCombo;                         ///< voxel type
+    FXComboBox* _gtCombo;                         ///< geometry type
+    FXComboBox* _psCombo;                         ///< pixel shader
+    FXComboBox* _bsCombo;                         ///< brick size
+    FXComboBox* _defCombo;                        ///< default data set
+    FXComboBox* _stereoCombo;
+    FXCheckButton* _linterpButton;
+    FXCheckButton* _showBricksButton;
+    FXCheckButton* _computeBrickSizeButton;
+    FXCheckButton* _mipButton;
+    FXCheckButton* _suppressButton;
+    FXCheckButton* _artoolkitButton;
+    FXCheckButton* _swapEyesButton;
+    FXTextField* _texMemoryField;
+
+    VVPreferenceWindow(FXWindow*, vox::vvCanvas*);
+    VVPreferenceWindow(const VVPreferenceWindow&){};
+    virtual ~VVPreferenceWindow();
+    void updateValues();
+    void toggleMIP();
+    void toggleBounds();
+    void toggleInterpol();
+    void scaleQuality(float);
+    float getQualityDialValue();
+    void setQualityDialValue(float);
+
+    long onEyeChange(FXObject*,FXSelector,void*);
+    long onQualityChange(FXObject*,FXSelector,void*);
+    long onQualityChanging(FXObject*,FXSelector,void*);
+    long onStereoChange(FXObject*,FXSelector,void*);
+    long onARToolkitChange(FXObject*,FXSelector,void*);
+    long onGTChange(FXObject*,FXSelector,void*);
+    long onVTChange(FXObject*,FXSelector,void*);
+    long onPSChange(FXObject*,FXSelector,void*);
+    long onBSChange(FXObject*, FXSelector, void*);
+    long onDispBoundsChange(FXObject*,FXSelector,void*);
+    long onMIPSelect(FXObject*,FXSelector,void*);
+    long onInterpolationSelect(FXObject*,FXSelector,void*);
+    long onShowBricksSelect(FXObject*, FXSelector, void*);
+    long onComputeBricksizeSelect(FXObject*, FXSelector, void*);
+    long onTexMemoryChange(FXObject*, FXSelector, void*);
+    void setBSCombo(int);
+    long onDefaultVolume(FXObject*,FXSelector,void*);
+    long onSuppressRendering(FXObject*,FXSelector,void*);
+    long onSwapEyes(FXObject*,FXSelector,void*);
+};
+#endif

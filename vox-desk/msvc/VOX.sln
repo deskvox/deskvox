@@ -1,0 +1,47 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FOXGUI", "DeskVOX.vcproj", "{B892537C-C0AC-4518-B0DF-9C2EDAE240F7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C485ED30-5120-4F91-8DC8-0A1AF29E378A} = {C485ED30-5120-4F91-8DC8-0A1AF29E378A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VConv", "VConv.vcproj", "{193A6088-BCB6-4082-A3A6-A63862219095}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C485ED30-5120-4F91-8DC8-0A1AF29E378A} = {C485ED30-5120-4F91-8DC8-0A1AF29E378A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Vecmath", "Vecmath.vcproj", "{6C53D949-78DB-4B43-8BE1-9125CA802D75}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvirvo", "..\..\virvo\msvc\libvirvo.vcproj", "{C485ED30-5120-4F91-8DC8-0A1AF29E378A}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{B892537C-C0AC-4518-B0DF-9C2EDAE240F7}.Debug.ActiveCfg = Debug|Win32
+		{B892537C-C0AC-4518-B0DF-9C2EDAE240F7}.Debug.Build.0 = Debug|Win32
+		{B892537C-C0AC-4518-B0DF-9C2EDAE240F7}.Release.ActiveCfg = Release|Win32
+		{B892537C-C0AC-4518-B0DF-9C2EDAE240F7}.Release.Build.0 = Release|Win32
+		{193A6088-BCB6-4082-A3A6-A63862219095}.Debug.ActiveCfg = Debug|Win32
+		{193A6088-BCB6-4082-A3A6-A63862219095}.Debug.Build.0 = Debug|Win32
+		{193A6088-BCB6-4082-A3A6-A63862219095}.Release.ActiveCfg = Debug|Win32
+		{193A6088-BCB6-4082-A3A6-A63862219095}.Release.Build.0 = Debug|Win32
+		{6C53D949-78DB-4B43-8BE1-9125CA802D75}.Debug.ActiveCfg = Debug|Win32
+		{6C53D949-78DB-4B43-8BE1-9125CA802D75}.Debug.Build.0 = Debug|Win32
+		{6C53D949-78DB-4B43-8BE1-9125CA802D75}.Release.ActiveCfg = Release|Win32
+		{6C53D949-78DB-4B43-8BE1-9125CA802D75}.Release.Build.0 = Release|Win32
+		{C485ED30-5120-4F91-8DC8-0A1AF29E378A}.Debug.ActiveCfg = Debug|Win32
+		{C485ED30-5120-4F91-8DC8-0A1AF29E378A}.Debug.Build.0 = Debug|Win32
+		{C485ED30-5120-4F91-8DC8-0A1AF29E378A}.Release.ActiveCfg = Release|Win32
+		{C485ED30-5120-4F91-8DC8-0A1AF29E378A}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

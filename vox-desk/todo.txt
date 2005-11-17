@@ -1,0 +1,4 @@
+Features to add:
+
+- viewing mode which consists of 3 orthogonal projections (top, front, right)
+- markers and marker interaction
