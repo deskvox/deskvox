@@ -1,0 +1,87 @@
+SHELL=/bin/sh
+
+PROJECT_NAME = virvo
+OBJDIR = obj
+CGC = /share/gfx/cg/usr/bin/cgc
+CG_INCLUDE = ./include
+STINGRAY_INCLUDE = ../stingray/ ../stingray/StingRayCave ../stingray/DataObjects
+
+# specify project files
+SRC =   vvdebugmsg.cpp \
+        vvdicom.cpp \
+        vvdynlib.cpp \
+        vvfileio.cpp \
+        vvgltools.cpp \
+        vvimage.cpp \
+        vvprintgl.cpp \
+        vvrenderer.cpp \
+        vvsocket.cpp \
+        vvsocketio.cpp \
+        vvsphere.cpp \
+        vvstingray.cpp \
+        vvstopwatch.cpp \
+        vvtexrend.cpp \
+	vvtfwidget.cpp \
+        vvtokenizer.cpp \
+        vvtoolshed.cpp \
+        vvtransfunc.cpp \
+        vvvecmath.cpp \
+        vvvoldesc.cpp
+
+H   =   vvarray.h \
+	vvdebugmsg.h \
+        vvdicom.h \
+        vvdynlib.h \
+	vvexport.h \
+        vvfileio.h \
+        vvgltools.h \
+        vvimage.h \
+        vvprintgl.h \
+        vvrenderer.h \
+	vvsllist.h \
+        vvsocket.h \
+        vvsocketio.h \
+        vvsphere.h \
+        vvstingray.h \
+        vvstopwatch.h \
+        vvtexrend.h \
+	vvtfwidget.h \
+        vvtokenizer.h \
+        vvtoolshed.h \
+        vvtransfunc.h \
+        vvvecmath.h \
+        vvvoldesc.h
+
+DOC = $(PROJECT_NAME).txt
+
+DEFINES := HAVE_CG
+ifeq ($(G_COMPILER_VER),gcc3)
+  ifeq ($(USE_STINGRAY),1)
+    DEFINES := $(DEFINES) USE_STINGRAY
+  endif
+endif
+
+G_INCLUDE_DIRS =	. 
+INCLUDE_DIRS =		. $(CG_INCLUDE) $(STINGRAY_INCLUDE)
+
+all: debug	
+debug:	libg
+#	obj/virvo_shader.RGBA.arbfp1.pp \
+#	obj/virvo_shader.Scalar.arbfp1.pp \
+#	obj/virvo_shader.RGBA-4Chan.arbfp1.pp
+
+obj/virvo_shader.RGBA.arbfp1.pp: virvo_shader.RGBA.arbfp1.cg
+	$(CGC) -profile arbfp1 -o obj/virvo_shader.RGBA.arbfp1.pp virvo_shader.RGBA.arbfp1.cg 
+
+obj/virvo_shader.Scalar.arbfp1.pp: virvo_shader.Scalar.arbfp1.cg
+	$(CGC) -profile arbfp1 -o obj/virvo_shader.Scalar.arbfp1.pp virvo_shader.Scalar.arbfp1.cg
+
+obj/virvo_shader.RGBA-4Chan.arbfp1.pp: virvo_shader.RGBA-4Chan.arbfp1.cg
+	$(CGC) -profile arbfp1 -o obj/virvo_shader.RGBA-4Chan.arbfp1.pp virvo_shader.RGBA-4Chan.arbfp1.cg
+
+include $(G)/lib/Make.gfxtools.rules
+
+install: inst-libs inst-h inst-config
+	gfxinstall3 include/Cg include/virvo/
+
+-include Makefile.depend
