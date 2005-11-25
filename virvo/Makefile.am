@@ -1,3 +1,14 @@
+SHADERS = \
+	vv_shader01.cg \
+	vv_shader02.cg \
+	vv_shader03.cg \
+	vv_shader04.cg \
+	vv_shader05.cg \
+	vv_shader06.cg \
+	vv_shader07.cg \
+	vv_shader08.cg \
+	vv_shader09.cg
+
 EXTRA_DIST =
 
 DISTCLEANFILES =
@@ -88,10 +99,13 @@ libvirvo_la_headers = \
 	vvvirvo.h \
 	vvvoldesc.h
 
+shaderdatadir = $(datadir)/virvo
+dist_shaderdata_DATA = $(SHADERS)
+
 libvirvo_la_LDFLAGS = -release $(LIBVIRVO_VERSION) -no-undefined
 
 libvirvoincludedir = $(includedir)/virvo
 libvirvoinclude_HEADERS = $(libvirvo_la_headers) vvconfig.h
 
-INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(STINGRAY_INCLUDES)
+INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(STINGRAY_INCLUDES) -DSHADERDIR=\"$(shaderdatadir)\"
 LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(STINGRAY_LIBS)
