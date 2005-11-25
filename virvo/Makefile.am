@@ -90,8 +90,8 @@ libvirvo_la_headers = \
 
 libvirvo_la_LDFLAGS = -release $(LIBVIRVO_VERSION) -no-undefined
 
-libvirvoincludedir = $(includedir)
-libvirvoinclude_HEADERS = $(libvirvo_la_headers)
+libvirvoincludedir = $(includedir)/virvo
+libvirvoinclude_HEADERS = $(libvirvo_la_headers) vvconfig.h
 
 INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(STINGRAY_INCLUDES)
 LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(STINGRAY_LIBS)

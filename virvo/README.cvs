@@ -1,0 +1,7 @@
+Building virvo from CVS
+=======================
+
+Use ./autogen.sh to generate configure, pass any options you
+would pass to configure to autogen.sh.
+
+Then proceed with the usual ./configure && make && sudo make install
