@@ -93,5 +93,5 @@ libvirvo_la_LDFLAGS = -release $(LIBVIRVO_VERSION) -no-undefined
 libvirvoincludedir = $(includedir)
 libvirvoinclude_HEADERS = $(libvirvo_la_headers)
 
-INCLUDES=$(LIBVIRVO_CFLAGS)
-LIBS=$(LIBVIRVO_LIBS)
+INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(STINGRAY_INCLUDES)
+LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(STINGRAY_LIBS)

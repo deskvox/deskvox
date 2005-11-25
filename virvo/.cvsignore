@@ -1,0 +1,15 @@
+.deps
+.libs
+Makefile.in
+Makefile
+aclocal.m4
+autom4te.cache
+config.log
+config.status
+configure
+libtool
+libvirvo.la
+stamp-h1
+vvconfig.h
+vvconfig.h.in
+*.lo
