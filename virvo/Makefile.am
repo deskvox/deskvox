@@ -7,7 +7,8 @@ SHADERS = \
 	vv_shader06.cg \
 	vv_shader07.cg \
 	vv_shader08.cg \
-	vv_shader09.cg
+	vv_shader09.cg \
+	vv_shader10.cg
 
 EXTRA_DIST =
 
