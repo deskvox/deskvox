@@ -22,7 +22,7 @@
 #define _VVSTINGRAY_H_
 
 #ifndef _WIN32
-#include "vvconfig.h"
+#include "config.h"
 #endif
 
 #ifdef WIN32
