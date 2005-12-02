@@ -1,0 +1,65 @@
+// Virvo - Virtual Reality Volume Rendering
+// Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
+// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+//
+// This file is part of Virvo.
+//
+// Virvo is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library (see license.txt); if not, write to the
+// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+#ifndef _VVDEBUGMSG_H_
+#define _VVDEBUGMSG_H_
+
+#include "vvexport.h"
+
+/** Manager for run-time debug messages.
+    Allows the programmer to output debug messages only when required.
+    @author Jurgen P. Schulze (schulze@cs.brown.edu)
+*/
+class VIRVOEXPORT vvDebugMsg
+{
+  public:
+    enum LevelType                                /// Valid level types
+    {
+      NO_MESSAGES   =  0,                         ///< no messages are printed
+      FEW_MESSAGES  =  1,                         ///< only the most important messages are printed
+      MOST_MESSAGES =  2,                         ///< all other messages which don't appear frequently are also printed
+      ALL_MESSAGES  =  3                          ///< also messages which appear frequently are printed
+    };
+
+  private:
+    static const char* DEBUG_TEXT;                ///< string to be printed at debug message
+    static LevelType debugLevel;                  ///< current debug level
+
+  public:
+    static void setDebugLevel(LevelType);
+    static void setDebugLevel(int);
+    static LevelType getDebugLevel();
+    static void msg(int, const char*);
+    static void msg(int, const char*, int);
+    static void msg(int, const char*, int, int);
+    static void msg(int, const char*, int, int, int);
+    static void msg(int, const char*, int, int, int, int);
+    static void msg(int, const char*, float);
+    static void msg(int, const char*, float, float);
+    static void msg(int, const char*, float, float, float);
+    static void msg(int, const char*, float, float, float, float);
+    static void msg(int, const char*, const char*);
+    static bool isActive(int);
+};
+#endif
+
+//****************************************************************************
+// End of File
+//****************************************************************************
