@@ -71,7 +71,7 @@ class VIRVOEXPORT vvTransFunc
     void makeFloatLUT(int, float*);
     void makePreintLUTOptimized(int width, uchar *preintLUT, float thickness=1.0);
     void makePreintLUTCorrect(int width, uchar *preintLUT, float thickness=1.0);
-    void copy(vvSLList<vvTFWidget*>*, vvSLList<vvTFWidget*>*);
+    static void copy(vvSLList<vvTFWidget*>*, vvSLList<vvTFWidget*>*);
     void putUndoBuffer();
     void getUndoBuffer();
     void clearUndoBuffer();
