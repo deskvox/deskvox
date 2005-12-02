@@ -120,6 +120,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #ifdef HAVE_CG
   _currentShader = vd->chan - 1;
 #endif
+  _useOnlyOneBrick = false;
   _areBricksCreated = false;
   lutDistance = 1.0;
 
@@ -1161,7 +1162,14 @@ void vvTexRend::computeBrickSize()
   int neededMemory;
   vvVector3 probeSize;
 
-  if (_renderState._texMemorySize == 0)
+  int texMemorySize = _renderState._texMemorySize;
+  if (texMemorySize == 0)
+  {
+     vvDebugMsg::msg(1, "vvTexRend::computeBrickSize(): unknown texture memory size, assuming 32 M");
+     texMemorySize = 32;
+  }
+
+  if (texMemorySize == 0)
   {
     _renderState._brickSize = 0;
     return;
@@ -1173,7 +1181,7 @@ void vvTexRend::computeBrickSize()
 
   neededMemory = (powerOf2[0] * powerOf2[1] * powerOf2[2] * texelsize) / (1024*1024);
 
-  if (neededMemory < _renderState._texMemorySize)
+  if (neededMemory < texMemorySize)
   {
     // use only one brick
     _useOnlyOneBrick = true;
@@ -1192,7 +1200,7 @@ void vvTexRend::computeBrickSize()
       newBrickSize = vvToolshed::getTextureSize(tmp);
       // compute needed memory for 27 bricks
       neededMemory = 27 * newBrickSize * newBrickSize * newBrickSize * texelsize / (1024 * 1024);
-      if (neededMemory < _renderState._texMemorySize)
+      if (neededMemory < texMemorySize)
         break;
       else
         tmp = newBrickSize / 2;
@@ -1203,7 +1211,7 @@ void vvTexRend::computeBrickSize()
     probeSize[2] = 2 * (newBrickSize-1) / (float) vd->vox[2];
 
     setProbeSize(&probeSize);
-    setROIEnable(true);
+    //setROIEnable(true);
   }
   cerr << "test1=" << _areBricksCreated << endl;
   if (((newBrickSize - 1) != _renderState._brickSize) || !_areBricksCreated)
