@@ -1,5 +1,5 @@
 AC_PREREQ(2.13)
-AC_INIT(src/vvtexrend.h)
+AC_INIT(src/vvvirvo.h)
 AC_CONFIG_SRCDIR(configure.ac)
 
 AC_CONFIG_HEADER(vvconfig.h)
