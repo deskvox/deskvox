@@ -3,4 +3,8 @@ aclocal
 autoheader
 automake --add-missing --copy --foreign
 autoconf
-./configure $*
+if [ -f config.status ]; then
+   ./config.status --recheck && ./config.status
+else
+   ./configure $*
+fi
