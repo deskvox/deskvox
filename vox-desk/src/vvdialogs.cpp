@@ -1618,7 +1618,7 @@ long VVMovieDialog::onCmdHelp(FXObject*,FXSelector,void*)
 
 long VVMovieDialog::onSliderChng(FXObject*, FXSelector, void* value)
 {
-  setMovieStep(int(value) - 1);
+  setMovieStep((*(int*)value) - 1);
   return 1;
 }
 

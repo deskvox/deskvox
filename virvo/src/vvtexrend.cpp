@@ -4334,7 +4334,6 @@ void vvTexRend::updateLUT(float dist)
   {
 #ifdef HAVE_CG
     const char* primaryWin32ShaderDir = "..\\..\\..\\virvo";
-    const char* dollarGShaderPath  = "/src/virvo";
     const char* deskVoxShaderPath = "../";
     const char* shaderFileName = "vv_shader";
     const char* shaderEnv = "VV_SHADER_PATH";
@@ -4342,7 +4341,6 @@ void vvTexRend::updateLUT(float dist)
     const char* unixShaderDir = NULL;
     char* shaderFile = NULL;
     char* shaderPath = NULL;
-    char* dollarGShaderDir = NULL;                // $G dependent shader directory in Brown University file system
     char shaderDir[256];
     int i;
 
@@ -4384,18 +4382,7 @@ void vvTexRend::updateLUT(float dist)
     cerr << "Using shader path: " << shaderDir << endl;
 #else
     cerr << "Searching for shader files..." << endl;
-#ifndef SHADERDIR
-    if (getenv("G"))
-    {
-      cerr << "$G=" << getenv("G") << endl;
-      dollarGShaderDir = new char[strlen(getenv("G")) + strlen(dollarGShaderPath) + 1];
-      strcpy(dollarGShaderDir, getenv("G"));
-      strcat(dollarGShaderDir, dollarGShaderPath);
-      unixShaderDir = dollarGShaderDir;
-    }
-    else
-#endif
- if (getenv(shaderEnv))
+    if (getenv(shaderEnv))
     {
       cerr << "Environment variable VV_SHADER_PATH found" << endl;
       unixShaderDir = getenv(shaderEnv);
@@ -4447,8 +4434,6 @@ void vvTexRend::updateLUT(float dist)
       }
       else cerr << "Fragment program " << i+1 << " compiled" << endl;
     }
-
-    delete[] dollarGShaderDir;
 
     cerr << "Fragment programs ready." << endl;
 #endif
