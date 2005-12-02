@@ -1,17 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
 
-SHADERS = \
-	vv_shader01.cg \
-	vv_shader02.cg \
-	vv_shader03.cg \
-	vv_shader04.cg \
-	vv_shader05.cg \
-	vv_shader06.cg \
-	vv_shader07.cg \
-	vv_shader08.cg \
-	vv_shader09.cg \
-	vv_shader10.cg
-
 EXTRA_DIST =
 
 DISTCLEANFILES =
@@ -107,10 +95,7 @@ libvirvo_a_headers = \
 #libvirvo_a_DEPENDENCIES =
 #libvirvo_a_LDFLAGS = 
 
-shaderdatadir = $(datadir)/virvo/shader
-dist_shaderdata_DATA = $(SHADERS)
+#libvirvoinclude_HEADERS = $(libvirvo_a_headers) vvconfig.h
 
-libvirvoinclude_HEADERS = $(libvirvo_a_headers) vvconfig.h
-
-INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(STINGRAY_INCLUDES) -DSHADERDIR=\"$(shaderdatadir)\" -DHAVE_CG -I../include
+INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(STINGRAY_INCLUDES) -DHAVE_CG -I../include
 LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(STINGRAY_LIBS)
