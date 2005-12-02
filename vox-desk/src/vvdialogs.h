@@ -813,6 +813,7 @@ class VVEditVoxelsDialog : public FXDialogBox
       ID_FLIP_Y,
       ID_FLIP_Z,
       ID_CROP,
+      ID_ORDER,
       ID_RESIZE
     };
     VVShell* _shell;
@@ -838,6 +839,7 @@ class VVEditVoxelsDialog : public FXDialogBox
     long onFlipX(FXObject*, FXSelector, void*);
     long onFlipY(FXObject*, FXSelector, void*);
     long onFlipZ(FXObject*, FXSelector, void*);
+    long onInvertOrder(FXObject*, FXSelector, void*);
     void updateValues();
     void updateDialogs();
 };

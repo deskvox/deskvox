@@ -131,6 +131,7 @@ class vvConv
     char* addFile;      ///< file for addchannel
     bool  addChannel;   ///< true = add a channel from file
     bool  autoRealRange;
+    bool  invertVoxelOrder; ///< true = invert innermost and outermost voxel loops
     int lineAverage;
     int sections;
     int pinhole;

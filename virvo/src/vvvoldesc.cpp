@@ -2218,8 +2218,41 @@ void vvVolDesc::shift(int sx, int sy, int sz)
 }
 
 //----------------------------------------------------------------------------
+/** Inverts innermost and outermost voxel loops.
+*/
+void vvVolDesc::convertVoxelOrder()
+{
+  uchar* raw;
+  uchar* tmpData;
+  uchar* ptr;
+  int    z, y, x, f;
+  int    frameSize;
+  int    dstIndex;                                // index into COVISE volume array
+  
+  vvDebugMsg::msg(2, "vvVolDesc::convertVoxelOrder()");
+
+  frameSize = getFrameBytes();
+  tmpData = new uchar[frameSize];
+  for (f=0; f<frames; ++f)
+  {
+    raw = getRaw(f);
+    ptr = raw;
+    for (z=0; z<vox[2]; ++z)
+      for (y=0; y<vox[1]; ++y)
+        for (x=0; x<vox[0]; ++x)
+        {
+          dstIndex = getBPV() * (x * vox[2] * vox[1] + y * vox[2] + z);  // use new width, height, depth for calculation of new voxel position
+          memcpy(tmpData + dstIndex, ptr, getBPV());
+          ptr += getBPV();                        // skip to next voxel
+        }
+    memcpy(raw, tmpData, frameSize);
+  }
+  delete[] tmpData;
+}
+
+//----------------------------------------------------------------------------
 /** Convert COVISE volume data to Virvo format.
- The difference is that in COVISE the innermost and the outermost
+ The major difference is that in COVISE the innermost and the outermost
  voxel loops are inverted.
 */
 void vvVolDesc::convertCoviseToVirvo()
@@ -2258,7 +2291,7 @@ void vvVolDesc::convertCoviseToVirvo()
 
 //----------------------------------------------------------------------------
 /** Convert Virvo volume data to COVISE format.
- The difference is that the innermost and the outermost
+ The major difference is that the innermost and the outermost
  voxel loops are inverted.
 */
 void vvVolDesc::convertVirvoToCovise()

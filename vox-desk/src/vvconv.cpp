@@ -120,6 +120,7 @@ vvConv::vvConv()
   addChannel    = false;
   addFile       = NULL;
   autoRealRange = false;
+  invertVoxelOrder = false;
   lineAverage = 0;
   sections = 0;
   pinhole = 0;
@@ -735,6 +736,11 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
 {
   int i;
 
+  if (invertVoxelOrder)
+  {
+    cerr << "Inverting voxel order" << endl;
+    v->convertVoxelOrder();
+  }
   if (swapChannels)
   {
     cerr << "Swapping channels." << endl;
@@ -1222,6 +1228,10 @@ bool vvConv::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-autodetectrealrange")==0)
     {
       autoRealRange = true;
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-invertorder")==0)
+    {
+      invertVoxelOrder = true;
     }
 
     else if (vvToolshed::strCompare(argv[arg], "-bpc")==0)
@@ -2151,6 +2161,9 @@ void vvConv::displayHelpInfo()
   cerr << " The available types are: n=nearest neighbor (default), t=trilinear." << endl;
   cerr << " This parameter affects the resize, scale, and sphere operations." << endl;
   cerr << endl;
+  cerr << "-invertorder" << endl;
+  cerr << " Invert voxel order: order of voxels and slices will be inverted.";
+  cerr << endl;
   cerr << "-loadraw <width> <height> <slices> <bpc> <ch> <skip>" << endl;
   cerr << " Load a non-virvo raw volume data file. The parameters are:" << endl;
   cerr << " <width> <height> <slices> = volume size [voxels]" << endl;
@@ -2329,6 +2342,7 @@ int vvConv::run(int argc, char** argv)
     cerr << "-increment <num>                   increment for -files" << endl;
     cerr << "-info                              display information about volume" << endl;
     cerr << "-interpolation <n|t>               set interpolation type" << endl;
+    cerr << "-invertorder                       invert voxel order" << endl;
     cerr << "-loadraw <w> <h> <s> <bc> <c> <sk> load raw volume data from file" << endl;
     cerr << "-loadcpt <size> <param> <minmax>   load checkpoint particles file" << endl;
     cerr << "-loadxb7 <size> <param> <minmax>   load XB7 particles file" << endl;

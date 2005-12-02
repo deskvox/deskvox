@@ -178,6 +178,7 @@ class VIRVOEXPORT vvVolDesc
     void   cropTimesteps(int, int);
     void   resize(int, int, int, InterpolationType, bool=false);
     void   shift(int, int, int);
+    void   convertVoxelOrder();
     void   convertCoviseToVirvo();
     void   convertVirvoToCovise();
     void   convertVirvoToOpenGL();

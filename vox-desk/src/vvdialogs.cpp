@@ -2777,6 +2777,7 @@ FXDEFMAP(VVEditVoxelsDialog) VVEditVoxelsDialogMap[]=
   FXMAPFUNC(SEL_COMMAND, VVEditVoxelsDialog::ID_FLIP_X, VVEditVoxelsDialog::onFlipX),
   FXMAPFUNC(SEL_COMMAND, VVEditVoxelsDialog::ID_FLIP_Y, VVEditVoxelsDialog::onFlipY),
   FXMAPFUNC(SEL_COMMAND, VVEditVoxelsDialog::ID_FLIP_Z, VVEditVoxelsDialog::onFlipZ),
+  FXMAPFUNC(SEL_COMMAND, VVEditVoxelsDialog::ID_ORDER, VVEditVoxelsDialog::onInvertOrder),
   FXMAPFUNC(SEL_COMMAND, VVEditVoxelsDialog::ID_CROP, VVEditVoxelsDialog::onCrop),
 };
 
@@ -2840,6 +2841,9 @@ VVEditVoxelsDialog::VVEditVoxelsDialog(FXWindow* owner, vvCanvas* c) :
   new FXButton(flipFrame, "Y Axis", NULL, this, ID_FLIP_Y, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
   new FXButton(flipFrame, "Z Axis", NULL, this, ID_FLIP_Z, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
+  FXGroupBox* orderGroup = new FXGroupBox(master,"Voxel Order", FRAME_GROOVE | LAYOUT_FILL_X);
+  new FXButton(orderGroup, "Invert voxel order: swap x and z loops", NULL, this, ID_ORDER, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+
   FXHorizontalFrame* buttonFrame = new FXHorizontalFrame(master, LAYOUT_CENTER_X | LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
   new FXButton(buttonFrame, "Close", NULL, this, ID_ACCEPT, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X | LAYOUT_CENTER_Y,0,0,0,0,20,20);
 }
@@ -2878,6 +2882,14 @@ long VVEditVoxelsDialog::onFlipX(FXObject*, FXSelector, void*)
 long VVEditVoxelsDialog::onFlipY(FXObject*, FXSelector, void*)
 {
   _canvas->_vd->flip(vvVolDesc::Y_AXIS);
+  _shell->updateRendererVolume();
+  _shell->drawScene();
+  return 1;
+}
+
+long VVEditVoxelsDialog::onInvertOrder(FXObject*, FXSelector, void*)
+{
+  _canvas->_vd->convertVoxelOrder();
   _shell->updateRendererVolume();
   _shell->drawScene();
   return 1;

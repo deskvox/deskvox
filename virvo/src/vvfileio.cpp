@@ -3928,6 +3928,7 @@ vvFileIO::ErrorType vvFileIO::loadMeshViewerFile(vvVolDesc* vd)
   vd->setFilename(filenameBak);
   delete[] filenameBak;
   if (err != OK) return err;
+  vd->convertVoxelOrder();
   if (bigEnd) vd->toggleEndianness();
 
   return OK;
