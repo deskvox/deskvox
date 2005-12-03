@@ -186,8 +186,9 @@ void vvMatrix::scale(float a)
 //----------------------------------------------------------------------------
 /** Rotation about vector x/y/z by angle a (radian).
  (Source: Foley et.al. page 227)
+ @return rotation matrix
 */
-void vvMatrix::rotate(float a, float x, float y, float z)
+vvMatrix vvMatrix::rotate(float a, float x, float y, float z) 
 {
   vvMatrix rot;                                   // rotation matrix
   float cosfa, sinfa;                             // shortcuts
@@ -195,7 +196,11 @@ void vvMatrix::rotate(float a, float x, float y, float z)
 
   // normalize vector:
   d = (float)(sqrt(x * x + y * y + z * z));
-  if (d == 0.0) return;                           // division by zero error
+  if (d == 0.0) 
+  {
+    cerr << "vvMatrix::rotate: invalid rotation vector" << endl;
+    return rot;                       // division by zero error
+  }
   x /= d;
   y /= d;
   z /= d;
@@ -227,14 +232,16 @@ void vvMatrix::rotate(float a, float x, float y, float z)
 
   // Perform rotation:
   multiplyPre(&rot);
+  return rot;
 }
 
 //----------------------------------------------------------------------------
 /** Rotation about vector v by angle a (radian).
+  @return rotation matrix
  */
-void vvMatrix::rotate(float a, const vvVector3* v)
+vvMatrix vvMatrix::rotate(float a, const vvVector3* v)
 {
-  vvMatrix::rotate(a, v->e[0], v->e[1], v->e[2]);
+  return vvMatrix::rotate(a, v->e[0], v->e[1], v->e[2]);
 }
 
 //----------------------------------------------------------------------------
@@ -1010,7 +1017,7 @@ float vvMatrix::getNearPlaneZ()
   @param fromX, fromY   mouse starting position in pixels
   @param toX, toY       mouse end position in pixels
 */
-void vvMatrix::trackballRotation(int width, int height, int fromX, int fromY, int toX, int toY)
+vvMatrix vvMatrix::trackballRotation(int width, int height, int fromX, int fromY, int toX, int toY)
 {
   const float TRACKBALL_SIZE = 1.3f;              // virtual trackball size (empirical value)
   vvMatrix mInv;                                  // inverse of ObjectView matrix
@@ -1050,7 +1057,7 @@ void vvMatrix::trackballRotation(int width, int height, int fromX, int fromY, in
   v2.normalize();                                 // normalize v2 before rotation
 
   // Perform acutal model view matrix modification:
-  rotate(-angle, v2.e[0], v2.e[1], v2.e[2]);      // rotate model view matrix
+  return rotate(-angle, v2.e[0], v2.e[1], v2.e[2]);      // rotate model view matrix
 }
 
 /** Compute Euler angles for a matrix. The angles are returned in Radians.

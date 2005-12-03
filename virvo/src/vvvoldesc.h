@@ -228,6 +228,7 @@ class VIRVOEXPORT vvVolDesc
     int    findNumValue(int, float);
     int    findNumUsed(int);
     int    findNumTransparent(int);
+    float  findClampValue(int, int, float);
     void   computeVolume(int, int, int, int);
     void   resizeEdgeMax(float);
     float  getChannelValue(int, int, int, int, int);

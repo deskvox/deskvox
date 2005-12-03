@@ -3518,6 +3518,56 @@ void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax)
 }
 
 //----------------------------------------------------------------------------
+/** Find the value which splits the number of values smaller or greater than
+  it into the ratio given by threshold. Example: if threshold is 0.05, then 
+  the returned value X says that 5% of the data values are smaller than X, 
+  and 95% are greater than X.
+  @param frame animation frame to work on, first frame is 0. -1 for all frames
+  @param channel data channel to work on
+  @param threshold  threshold value for data range clamping [0..1]
+*/
+float vvVolDesc::findClampValue(int frame, int channel, float threshold)
+{
+  int* hist;
+  int buckets[1] = {1000};
+  float fMin, fMax;
+  float clampVal = 0.0f;
+  int frameVoxels;
+  int voxelCount=0;
+  int thresholdVoxelCount;
+  int i;
+
+  vvDebugMsg::msg(2, "vvVolDesc::findClampValue()");
+
+  if (threshold<0.0f || threshold>1.0f) cerr << "Warning: threshold clamped to 0..1" << endl;
+  threshold = ts_clamp(threshold, 0.0f, 1.0f);
+
+  findMinMax(channel, fMin, fMax);
+  real[0] = fMin;
+  real[1] = fMax;
+  frameVoxels = getFrameVoxels();
+  thresholdVoxelCount = int(float(frameVoxels) * threshold);
+  hist = new int[buckets[0]];
+  makeHistogram(frame, channel, 1, buckets, hist);
+  for (i=0; i<buckets[0]; ++i)
+  {
+    if (voxelCount >= thresholdVoxelCount) 
+    {
+      clampVal = (float(i) / (buckets[0] - 1)) * (fMax - fMin) + fMin; 
+      break;
+    }
+    voxelCount += hist[i];
+  }
+  if (i==buckets[0] && clampVal==0.0f)  // for loop didn't break
+  {
+    clampVal = fMax;
+  }
+  delete[] hist;
+  
+  return clampVal;
+}
+
+//----------------------------------------------------------------------------
 /** Find the number of voxels with a specific value.<br>
   For multi-modal volumes, all channels must be equal to that value to count.
   @param frame frame index to look at (first frame = 0)

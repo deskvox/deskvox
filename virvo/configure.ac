@@ -68,12 +68,6 @@ if test "$enable_cg" != "no"; then
     fi
 fi
 
-AC_DEFINE(HAVE_CG, 1, [Cg shaders enabled])
-CG_INCLUDES="-I$cg_incdir"
-CG_LIBS="-L$cg_libdir -lCgGL -lCg"
-AC_SUBST(CG_INCLUDES)
-AC_SUBST(CG_LIBS)
-
 AC_ARG_ENABLE(stingray,
       AC_HELP_STRING([--enable-stingray],[build with Stingray raycaster]),
       [enable_stingray=$enableval],

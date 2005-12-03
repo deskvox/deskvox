@@ -74,8 +74,8 @@ class VIRVOEXPORT vvMatrix
     void translate(const vvVector3*);
     void scale(float, float, float);
     void scale(float);
-    void rotate(float, float, float, float);
-    void rotate(float, const vvVector3*);
+    vvMatrix rotate(float, float, float, float);
+    vvMatrix rotate(float, const vvVector3*);
     void multiplyPre(const vvMatrix*);
     void multiplyPost(const vvMatrix*);
     void transpose();
@@ -118,7 +118,7 @@ class VIRVOEXPORT vvMatrix
     bool isProjOrtho();
     void makeLookAt(float, float, float, float, float, float, float, float, float);
     float getNearPlaneZ();
-    void trackballRotation(int, int, int, int, int, int);
+    vvMatrix trackballRotation(int, int, int, int, int, int);
     void computeEulerAngles(float*, float*, float*);
 };
 
