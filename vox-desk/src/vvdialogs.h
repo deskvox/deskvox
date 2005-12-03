@@ -725,10 +725,14 @@ class VVFloatRangeDialog : public FXDialogBox
       ID_APPLY,
       ID_MIN_DATA,
       ID_MAX_DATA,
+      ID_BOT_PERCENT,
+      ID_TOP_PERCENT,
       ID_CANCEL
     };
     FXTextField* _minTF;
     FXTextField* _maxTF;
+    FXTextField* _botClamp;
+    FXTextField* _topClamp;
     VVShell* _shell;
     vox::vvCanvas* _canvas;
     float _minBak, _maxBak;
@@ -739,6 +743,8 @@ class VVFloatRangeDialog : public FXDialogBox
     long onApply(FXObject*, FXSelector, void*);
     long onMinData(FXObject*, FXSelector, void*);
     long onMaxData(FXObject*, FXSelector, void*);
+    long onBottomPercent(FXObject*, FXSelector, void*);
+    long onTopPercent(FXObject*, FXSelector, void*);
     void updateValues();
     void updateDependents();
     virtual void show();

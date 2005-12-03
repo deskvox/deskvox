@@ -79,7 +79,6 @@ class vvObjView
     void  setProjection(ProjectionType, float, float, float);
     void  setAspectRatio(float);
     void  setDepthRange(float, float);
-    void  trackballRotation(int, int, int, int, int, int);
     void  setIOD(float);
     float getIOD();
     void  setProjectionMatrix();

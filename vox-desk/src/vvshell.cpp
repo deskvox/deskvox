@@ -106,10 +106,12 @@ FXDEFMAP(VVShell) VVShellMap[]=
   FXMAPFUNC(SEL_COMMAND,             VVShell::ID_PALETTE,       VVShell::onDispPaletteChange),
   FXMAPFUNC(SEL_COMMAND,             VVShell::ID_QUALITY,       VVShell::onDispQualityChange),
   FXMAPFUNC(SEL_COMMAND,             VVShell::ID_FPS,           VVShell::onDispFPSChange),
+  FXMAPFUNC(SEL_COMMAND,             VVShell::ID_SPIN,          VVShell::onDispSpinChange),
   FXMAPFUNC(SEL_CHANGED,             VVShell::ID_COLOR_PICKER,  VVShell::pickerColorChanged),
   FXMAPFUNC(SEL_COMMAND,             VVShell::ID_COLOR_PICKER,  VVShell::pickerColorChanged),
   FXMAPFUNC(SEL_TIMEOUT,             VVShell::ID_ART_TIMER,     VVShell::onARToolkitTimerEvent),
   FXMAPFUNC(SEL_TIMEOUT,             VVShell::ID_ANIM_TIMER,    VVShell::onAnimTimerEvent),
+  FXMAPFUNC(SEL_TIMEOUT,             VVShell::ID_SPIN_TIMER,    VVShell::onSpinTimerEvent),
   FXMAPFUNCS(SEL_UPDATE,             MINKEY,MAXKEY,             VVShell::onAllUpdate),
 };
 
@@ -298,6 +300,8 @@ bool VVShell::initViewMenu(FXMenuPane* viewmenu)
   _qualityItem->setCheck(dummyState._qualityDisplay);
   _fpsItem = new FXMenuCheck(viewmenu, "Show Frame Rate", this, ID_FPS);
   _fpsItem->setCheck(false);
+  _spinItem = new FXMenuCheck(viewmenu, "Auto rotation", this, ID_SPIN);
+  _spinItem->setCheck(false);
 
   new FXMenuCommand(viewmenu, "Camera...",NULL,this,ID_CAMERA);
   new FXMenuCommand(viewmenu, "Volume Information...",NULL, this, ID_VIS_INFO);
@@ -393,7 +397,7 @@ long VVShell::onExpose(FXObject*,FXSelector,void*)
   return 1;
 }
 
-/*************** mouse interaction *****************/
+/*************** Mouse interaction *****************/
 
 //----------------------------------------------------------------------------
 long VVShell::onLeftMouseDown(FXObject*,FXSelector,void* ptr)
@@ -401,18 +405,19 @@ long VVShell::onLeftMouseDown(FXObject*,FXSelector,void* ptr)
   vvDebugMsg::msg(1, "VVShell::onLeftMouseDown()");
 
   FXEvent *ev=(FXEvent*)ptr;
-  if(_canvas != NULL)
-    _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::LEFT_BUTTON);
+  if (_canvas) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::LEFT_BUTTON);
+  if (_spinItem->getCheck()) stopSpinTimer();
   return 1;
 }
 
+//----------------------------------------------------------------------------
 long VVShell::onLeftMouseUp(FXObject*,FXSelector,void* ptr)
 {
   vvDebugMsg::msg(1, "VVShell::onLeftMouseUp()");
 
   FXEvent *ev=(FXEvent*)ptr;
-  if(_canvas != NULL)
-    _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
+  if(_canvas) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
+  if (_spinItem->getCheck()) startSpinTimer();
   return 1;
 }
 
@@ -422,8 +427,7 @@ long VVShell::onMidMouseDown(FXObject*,FXSelector,void* ptr)
   vvDebugMsg::msg(1, "VVShell::onMidMouseDown()");
 
   FXEvent *ev=(FXEvent*)ptr;
-  if(_canvas != NULL)
-    _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::MIDDLE_BUTTON);
+  if(_canvas != NULL) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::MIDDLE_BUTTON);
   return 1;
 }
 
@@ -433,8 +437,7 @@ long VVShell::onMidMouseUp(FXObject*,FXSelector,void* ptr)
   vvDebugMsg::msg(1, "VVShell::onMidMouseUp()");
 
   FXEvent *ev=(FXEvent*)ptr;
-  if(_canvas != NULL)
-    _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
+  if(_canvas != NULL) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
   return 1;
 }
 
@@ -523,7 +526,7 @@ long VVShell::onKeyPress(FXObject*, FXSelector, void* ptr)
     case 'K': break;
     case 'l': break;
     case 'L': break;
-    case 'm': break;
+    case 'm': toggleSpin(); break;
     case 'n': tsDialog->stepForward(); break;
     case 'N': tsDialog->stepBack(); break;
     case 'o': toggleOrientation(); break;
@@ -1408,6 +1411,34 @@ long VVShell::onAnimTimerEvent(FXObject*,FXSelector,void*)
 }
 
 //----------------------------------------------------------------------------
+void VVShell::startSpinTimer()
+{
+  const float SPIN_DELAY = 0.05f;  // delay between spin events [seconds]
+
+  vvDebugMsg::msg(1, "VVShell::startSpinTimer()");
+
+  float delay = fabs(SPIN_DELAY * 1000.0f);
+  getApp()->addTimeout(this, ID_SPIN_TIMER, int(delay), NULL);
+}
+
+//----------------------------------------------------------------------------
+void VVShell::stopSpinTimer()
+{
+  vvDebugMsg::msg(1, "VVShell::stopSpinTimer()");
+
+  getApp()->removeTimeout(this, ID_SPIN_TIMER);
+}
+
+//----------------------------------------------------------------------------
+long VVShell::onSpinTimerEvent(FXObject*,FXSelector,void*)
+{
+  vvDebugMsg::msg(1, "VVShell::onSpinTimerEvent()");
+  if (_canvas) _canvas->repeatMouseDrag();
+  startSpinTimer();  // trigger next event for continuous events
+  return 1;
+}
+
+//----------------------------------------------------------------------------
 long VVShell::onDispOrientChange(FXObject*,FXSelector,void* ptr)
 {
   _canvas->_renderer->_renderState._orientation = (ptr != NULL);
@@ -1488,6 +1519,21 @@ void VVShell::toggleFPS()
 }
 
 //----------------------------------------------------------------------------
+long VVShell::onDispSpinChange(FXObject*,FXSelector,void* ptr)
+{
+  if (ptr == NULL) stopSpinTimer();
+  return 1;
+}
+
+//----------------------------------------------------------------------------
+void VVShell::toggleSpin()
+{
+  bool newState = !_spinItem->getCheck();
+  _spinItem->setCheck(newState);
+  onDispSpinChange(this, ID_SPIN, (void*)newState);
+}
+
+//----------------------------------------------------------------------------
 void VVShell::benchmarkTest()
 {
   vvDebugMsg::msg(1, "vvView::benchmarkTest()");
@@ -1562,7 +1608,7 @@ int checkSystemAssumptions()
 //----------------------------------------------------------------------------
 int main(int argc,char *argv[])
 {
-  vvDebugMsg::setDebugLevel(2);
+  vvDebugMsg::setDebugLevel(1); // set global debug level here
   vvDebugMsg::msg(1, "main()");
 
   if (checkSystemAssumptions()) return 1;

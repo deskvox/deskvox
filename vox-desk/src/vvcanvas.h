@@ -67,6 +67,7 @@ class vvCanvas
     bool _artoolkit;                              ///< true=artoolkit tracking on
     int  _width, _height;                         ///< window viewport dimensions
     float _bgColor[3];                            ///< background color as R,G,B components [0..1]
+    vvMatrix _lastRotation;                       ///< last trackball rotation, used for spin animation
 #ifdef VV_USE_ARTOOLKIT
     vvARTracking* _arTracking;                    ///< ARToolkit tracking
 #endif
@@ -93,6 +94,7 @@ class vvCanvas
     void mouseDragged(int, int);
     void mousePressed(int, int, int);
     void mouseReleased(int, int, int);
+    void repeatMouseDrag();
     void resize(int, int);
     void transformObject(vvMatrix*);
     void setDoubleBuffering(bool);

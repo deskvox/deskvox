@@ -1766,7 +1766,7 @@ void VVTimeStepDialog::scaleSpeed(float factor)
   fps = FXFloatVal(_speedTField->getText().text());
   fps *= factor;
   _canvas->_vd->dt = 1.0f / fps;
-  _speedTField->setText(FXStringFormat("%.2f", fps));
+  _speedTField->setText(FXStringFormat("%.1f", fps));
 }
 
 void VVTimeStepDialog::playback()
@@ -2485,11 +2485,13 @@ void VVOpacityDialog::show()
 
 FXDEFMAP(VVFloatRangeDialog) VVFloatRangeDialogMap[]=
 {
-  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_MIN_DATA, VVFloatRangeDialog::onMinData),
-  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_MAX_DATA, VVFloatRangeDialog::onMaxData),
-  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_OK,       VVFloatRangeDialog::onOK),
-  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_APPLY,    VVFloatRangeDialog::onApply),
-  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_CANCEL,   VVFloatRangeDialog::onCancel),
+  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_MIN_DATA,    VVFloatRangeDialog::onMinData),
+  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_MAX_DATA,    VVFloatRangeDialog::onMaxData),
+  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_BOT_PERCENT, VVFloatRangeDialog::onBottomPercent),
+  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_TOP_PERCENT, VVFloatRangeDialog::onTopPercent),
+  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_OK,          VVFloatRangeDialog::onOK),
+  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_APPLY,       VVFloatRangeDialog::onApply),
+  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_CANCEL,      VVFloatRangeDialog::onCancel),
 };
 
 FXIMPLEMENT(VVFloatRangeDialog,FXDialogBox,VVFloatRangeDialogMap,ARRAYNUMBER(VVFloatRangeDialogMap))
@@ -2503,13 +2505,26 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
 
   // Min and max text fields:
   FXVerticalFrame* verticalFrame = new FXVerticalFrame(horizontalFrame, LAYOUT_FILL_X | LAYOUT_FILL_Y);
-  FXMatrix* minMaxMatrix = new FXMatrix(verticalFrame, 3, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
-  new FXLabel(minMaxMatrix, "Range start:");
-  _minTF = new FXTextField(minMaxMatrix, 20, NULL,0,TEXTFIELD_REAL | TEXTFIELD_NORMAL );
-  new FXButton(minMaxMatrix, "From data set", NULL, this, ID_MIN_DATA, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
-  new FXLabel(minMaxMatrix, "Range end:");
-  _maxTF = new FXTextField(minMaxMatrix, 20, NULL,0,TEXTFIELD_REAL | TEXTFIELD_NORMAL );
-  new FXButton(minMaxMatrix, "From data set", NULL, this, ID_MAX_DATA, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  FXMatrix* paramMatrix = new FXMatrix(verticalFrame, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
+
+  new FXLabel(paramMatrix, "Range start:");
+  new FXLabel(paramMatrix, "Range end:");
+
+  _minTF = new FXTextField(paramMatrix, 20, NULL,0,TEXTFIELD_REAL | TEXTFIELD_NORMAL | LAYOUT_FILL_X);
+  _maxTF = new FXTextField(paramMatrix, 20, NULL,0,TEXTFIELD_REAL | TEXTFIELD_NORMAL | LAYOUT_FILL_X);
+
+  new FXButton(paramMatrix, "Min data value", NULL, this, ID_MIN_DATA, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  new FXButton(paramMatrix, "Max data value", NULL, this, ID_MAX_DATA, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+
+  FXHorizontalFrame* botClampFrame = new FXHorizontalFrame(paramMatrix, LAYOUT_FILL_X | LAYOUT_FILL_Y);
+  _botClamp = new FXTextField(botClampFrame, 10, NULL,0,TEXTFIELD_REAL | TEXTFIELD_NORMAL | LAYOUT_FILL_X);
+  _botClamp->setText(FXStringFormat("%.9g", 5.0f));
+  new FXButton(botClampFrame, "% above min", NULL, this, ID_BOT_PERCENT, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+
+  FXHorizontalFrame* topClampFrame = new FXHorizontalFrame(paramMatrix, LAYOUT_FILL_X | LAYOUT_FILL_Y);
+  _topClamp = new FXTextField(topClampFrame, 10, NULL,0,TEXTFIELD_REAL | TEXTFIELD_NORMAL | LAYOUT_FILL_X);
+  _topClamp->setText(FXStringFormat("%.9g", 5.0f));
+  new FXButton(topClampFrame, "% below max", NULL, this, ID_TOP_PERCENT, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
   // Buttons:
   FXVerticalFrame* buttonFrame = new FXVerticalFrame(horizontalFrame, LAYOUT_FILL_X | LAYOUT_FIX_WIDTH,0,0,80);
@@ -2577,6 +2592,22 @@ long VVFloatRangeDialog::onMaxData(FXObject*,FXSelector,void*)
   float fMin, fMax;
   _canvas->_vd->findMinMax(0, fMin, fMax);
   _maxTF->setText(FXStringFormat("%.9g", fMax));
+  return 1;
+}
+
+long VVFloatRangeDialog::onBottomPercent(FXObject*,FXSelector,void*)
+{
+  float threshold = FXFloatVal(_botClamp->getText());
+  float clampVal = _canvas->_vd->findClampValue(0, 0, threshold / 100.0f);
+  _minTF->setText(FXStringFormat("%.9g", clampVal));
+  return 1;
+}
+
+long VVFloatRangeDialog::onTopPercent(FXObject*,FXSelector,void*)
+{
+  float threshold = FXFloatVal(_topClamp->getText());
+  float clampVal = _canvas->_vd->findClampValue(0, 0, 1.0f - threshold / 100.0f);
+  _maxTF->setText(FXStringFormat("%.9g", clampVal));
   return 1;
 }
 

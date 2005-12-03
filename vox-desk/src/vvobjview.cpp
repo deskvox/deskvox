@@ -432,17 +432,6 @@ void vvObjView::setModelviewMatrix(EyeType eye)
   glMatrixMode(glsMatrixMode);
 }
 
-//-----------------------------------------------------------------------------
-/** Rotates the view matrix according to a fictitious trackball.
-  @param width, height  window sizes in pixels
-  @param fromX, fromY   mouse move starting position in pixels
-  @param toX, toY       mouse move end position in pixels
-*/
-void vvObjView::trackballRotation(int width, int height, int fromX, int fromY, int toX, int toY)
-{
-  _camera.trackballRotation(width, height, fromX, fromY, toX, toY);
-}
-
 //----------------------------------------------------------------------------
 /** Set inter-ocular distance for stereo viewing.
   @param iod inter-ocular distance [millimeters]

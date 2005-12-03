@@ -130,6 +130,7 @@ class VVShell : public FXMainWindow
     FXMenuCheck* _paletteItem;
     FXMenuCheck* _qualityItem;
     FXMenuCheck* _fpsItem;
+    FXMenuCheck* _spinItem;
     vox::vvCanvas* _canvas;
     vox::vvMovie* _movie;
     FXGLCanvas* _glcanvas;                         ///< GL Canvas to draw into
@@ -167,6 +168,7 @@ class VVShell : public FXMainWindow
       ID_DIAGRAMS,
       ID_ART_TIMER,
       ID_ANIM_TIMER,
+      ID_SPIN_TIMER,
       ID_DATA_TYPE,
       ID_EDIT_VOXELS,
       ID_KEYS,
@@ -175,6 +177,7 @@ class VVShell : public FXMainWindow
       ID_QUALITY,
       ID_PALETTE,
       ID_FPS,
+      ID_SPIN,
       ID_HEIGHT_FIELD,
       ID_GL_SETTINGS,
       ID_SERVER,
@@ -233,6 +236,7 @@ class VVShell : public FXMainWindow
     long onDispPaletteChange(FXObject*,FXSelector,void*);
     long onDispQualityChange(FXObject*,FXSelector,void*);
     long onDispFPSChange(FXObject*,FXSelector,void*);
+    long onDispSpinChange(FXObject*,FXSelector,void*);
 
     void setCanvasRenderer(vvVolDesc* = NULL, int = 0, vvTexRend::GeometryType = vvTexRend::VV_AUTO, vvTexRend::VoxelType = vvTexRend::VV_BEST);
     void updateRendererVolume();
@@ -249,6 +253,7 @@ class VVShell : public FXMainWindow
     void toggleBounds();
     void toggleOrientation();
     void toggleFPS();
+    void toggleSpin();
     void togglePalette();
     void toggleQualityDisplay();
     void benchmarkTest();
@@ -262,6 +267,10 @@ class VVShell : public FXMainWindow
     void startAnimTimer();
     void stopAnimTimer();
     long onAnimTimerEvent(FXObject*,FXSelector,void*);
+
+    void startSpinTimer();
+    void stopSpinTimer();
+    long onSpinTimerEvent(FXObject*,FXSelector,void*);
 
     // VVShell constructor
     VVShell(FXApp*);

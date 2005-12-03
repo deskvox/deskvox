@@ -361,6 +361,7 @@ void vvCanvas::mousePressed(int x, int y, int bs)
   _buttonState = bs;
   _lastX = _curX = x;
   _lastY = _curY = y;
+  _lastRotation.identity();
 }
 
 //----------------------------------------------------------------------------
@@ -376,6 +377,15 @@ void vvCanvas::mouseReleased(int x, int y, int bs)
   _curX  = x;
   _curY  = y;
   _buttonState = bs;
+}
+
+//----------------------------------------------------------------------------
+/* Repeats the last trackball rotation, used to keep object spinning.
+*/
+void vvCanvas::repeatMouseDrag()
+{
+  vvDebugMsg::msg(3, "vvCanvas::repeatMouseDrag()");
+  _ov._camera.multiplyPre(&_lastRotation);
 }
 
 //----------------------------------------------------------------------------
@@ -400,7 +410,7 @@ void vvCanvas::mouseDragged(int x, int y)
   switch (_buttonState)
   {
     case LEFT_BUTTON:                             // left button rotates
-      _ov.trackballRotation(_width, _height, _lastX, _lastY, _curX, _curY);
+      _lastRotation = _ov._camera.trackballRotation(_width, _height, _lastX, _lastY, _curX, _curY);
       break;
 
     case MIDDLE_BUTTON:                           // middle button pans

@@ -7,12 +7,13 @@ Author
 ------
 
 Jurgen P. Schulze
-Brown University
-Department of Computer Science
-Providence, RI 02912
+University of California, San Diego
+Calit2
+9500 Gilman Dr.
+La Jolla, CA 92093-0436
 USA
 
-URL: http://www.cs.brown.edu/people/schulze/projects/vox/
+URL: http://www.calit2.net/~jschulze/
 
 
 Short Description
@@ -324,12 +325,16 @@ repeat 5        # repeat the following 5 times
 endrep          # terminate repeat loop
 
 
+Known bugs
+----------
+
+- ARToolkit mode: when icon is unchecked, system crashes
+
+
 Troubleshooting
 ---------------
 
-- ARToolkit mode: when icon is unchecked, system crashes
-  Known bug, working on it.
-  
+ 
 
 Versions History
 ----------------
@@ -462,6 +467,7 @@ Nr.   Date      Details
                   more flexible adding of parameters.
                 - Transfer functions completely revised: multi-dimentional TF widgets available
                 - VConv: new -mergetype parameter
+                - Deskvox: added auto rotation mode to View menu: object keeps spinning when mouse button is released in motion
                   
                 
 Distribution
