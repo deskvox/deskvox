@@ -37,13 +37,25 @@ AC_ARG_ENABLE(cg,
 )
 
 AC_ARG_WITH(cg,
-	AC_HELP_STRING([--with-cg],[location of Cg library and headers]),
+	AC_HELP_STRING([--with-cg],[location of Cg libraries and headers]),
 	[cg_dir=$withval],
 	[cg_dir=/usr]
 )
 
 cg_libdir=$cg_dir/lib
 cg_incdir=$cg_dir/include
+
+AC_ARG_WITH(cg-libs,
+	AC_HELP_STRING([--with-cg-libs],[location of Cg libraries]),
+	[cg_libdir=$withval],
+	[cg_libdir=$cg_dir/lib]
+)
+
+AC_ARG_WITH(cg-include,
+	AC_HELP_STRING([--with-cg-include],[location of Cg headers]),
+	[cg_incdir=$withval],
+	[cg_incdir=$cg_dir/include]
+)
 
 if test "$enable_cg" != "no"; then
     ac_cppflags_save=$CPPFLAGS
