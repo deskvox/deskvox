@@ -91,10 +91,10 @@ class VIRVOEXPORT vvFileIO
     void      setCompression(bool);
 
   protected:
-    char xvfID[10];                               ///< XVF file ID
-    char nrrdID[9];                               ///< nrrd file ID
-    int  sections;                                ///< bit coded list of file sections to load
-    bool compression;                             ///< true = compression on (default)
+    char _xvfID[10];                               ///< XVF file ID
+    char _nrrdID[9];                               ///< nrrd file ID
+    int  _sections;                                ///< bit coded list of file sections to load
+    bool _compression;                             ///< true = compression on (default)
 
     void setDefaultValues(vvVolDesc*);
     int  readASCIIint(FILE*);
@@ -126,7 +126,8 @@ class VIRVOEXPORT vvFileIO
     ErrorType saveNrrdFile(vvVolDesc*);
     ErrorType loadXIMGFile(vvVolDesc*);
     ErrorType loadVis04File(vvVolDesc*);
-    ErrorType loadMeshViewerFile(vvVolDesc*);
+    ErrorType loadHDRFile(vvVolDesc*);
+    ErrorType loadVOLBFile(vvVolDesc*);
     ErrorType loadDDSFile(vvVolDesc*);
     ErrorType loadGKentFile(vvVolDesc*);
     ErrorType savePXMSlices(vvVolDesc*, bool);

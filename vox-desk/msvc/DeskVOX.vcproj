@@ -21,7 +21,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm800 "
 				Optimization="0"
-				AdditionalIncludeDirectories="..\src,..\..\virvo,..\..\virvo\include,..\include\fox-1_4,..\include,..\include\dshow,..\lib\win"
+				AdditionalIncludeDirectories="..\src,..\..\virvo\src,..\..\virvo\include,..\include\fox-1_4,..\include,..\include\dshow,..\lib\win"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CONSOLE;HAVE_CG;VV_USE_ARTOOLKIT"
 				RuntimeLibrary="1"
 				RuntimeTypeInfo="TRUE"

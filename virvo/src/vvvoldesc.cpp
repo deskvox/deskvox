@@ -2224,26 +2224,25 @@ void vvVolDesc::convertVoxelOrder()
 {
   uchar* raw;
   uchar* tmpData;
-  uchar* ptr;
+  uchar* src;
+  uchar* dst;
   int    z, y, x, f;
   int    frameSize;
-  int    dstIndex;                                // index into COVISE volume array
   
   vvDebugMsg::msg(2, "vvVolDesc::convertVoxelOrder()");
 
   frameSize = getFrameBytes();
-  tmpData = new uchar[frameSize];
+  tmpData = dst = new uchar[frameSize];
   for (f=0; f<frames; ++f)
   {
-    raw = getRaw(f);
-    ptr = raw;
-    for (z=0; z<vox[2]; ++z)
+    raw = src = getRaw(f);
+    for (x=0; x<vox[0]; ++x)
       for (y=0; y<vox[1]; ++y)
-        for (x=0; x<vox[0]; ++x)
+        for (z=0; z<vox[2]; ++z)
         {
-          dstIndex = getBPV() * (x * vox[2] * vox[1] + y * vox[2] + z);  // use new width, height, depth for calculation of new voxel position
-          memcpy(tmpData + dstIndex, ptr, getBPV());
-          ptr += getBPV();                        // skip to next voxel
+          dst = tmpData + getBPV() * (x + y * vox[0] + z * vox[0] * vox[1]);
+          memcpy(dst, src, getBPV());
+          src += getBPV();                        // skip to next voxel
         }
     memcpy(raw, tmpData, frameSize);
   }

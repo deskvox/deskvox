@@ -50,10 +50,10 @@ vvFileIO::vvFileIO()
 {
   vvDebugMsg::msg(1, "vvFileIO::vvFileIO()");
   assert(sizeof(float) == 4);
-  strcpy(xvfID, "VIRVO-XVF");
-  strcpy(nrrdID, "NRRD0001");
-  sections = ALL_DATA;
-  compression = true;
+  strcpy(_xvfID, "VIRVO-XVF");
+  strcpy(_nrrdID, "NRRD0001");
+  _sections = ALL_DATA;
+  _compression = true;
 }
 
 //----------------------------------------------------------------------------
@@ -349,7 +349,7 @@ vvFileIO::ErrorType vvFileIO::loadRVFFile(vvVolDesc* vd)
   vd->chan    = 1;
 
   // Create new data space for volume data:
-  if ((sections & RAW_DATA) != 0)
+  if ((_sections & RAW_DATA) != 0)
   {
     frameSize = vd->getFrameBytes();
     raw = new uchar[frameSize];
@@ -466,21 +466,21 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   vd->removeSequence();                           // delete previous volume sequence
 
   // Read header:
-  for (i=0; i<(int)strlen(xvfID); ++i)
+  for (i=0; i<(int)strlen(_xvfID); ++i)
   {
-    if (fgetc(fp) != xvfID[i])
+    if (fgetc(fp) != _xvfID[i])
     {
-      vvDebugMsg::msg(1, "Error: Invalid file ID string. Expected: ", xvfID);
+      vvDebugMsg::msg(1, "Error: Invalid file ID string. Expected: ", _xvfID);
       fclose(fp);
       return DATA_ERROR;
     }
   }
   headerSize = vvToolshed::read16(fp);            // total header size in bytes
   if (headerSize<=28)                             // early files didn't have transfer function info
-    serializedSize = headerSize - strlen(xvfID);
+    serializedSize = headerSize - strlen(_xvfID);
   else if (headerSize<=70)                        // after this version icon size was introduced
-    serializedSize = headerSize - strlen(xvfID) - 7;
-  else serializedSize = headerSize - strlen(xvfID) - 9;
+    serializedSize = headerSize - strlen(_xvfID) - 7;
+  else serializedSize = headerSize - strlen(_xvfID) - 9;
 
   retval=fread(serialized, serializedSize, 1, fp);
   if (retval!=1)
@@ -537,7 +537,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   }
 
   // Load volume data:
-  if ((sections & RAW_DATA) != 0)
+  if ((_sections & RAW_DATA) != 0)
   {
     fseek(fp, headerSize, SEEK_SET);
     if (ctype==1) encoded = new uchar[frameSize];
@@ -820,7 +820,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
 
   // Write volume data frame by frame:
   fprintf(fp, "VOXELDATA\n");
-  if (compression==1) encoded = new uchar[frameSize];
+  if (_compression==1) encoded = new uchar[frameSize];
   for (f=0; f<frames; ++f)
   {
     raw = vd->getRaw(f);
@@ -831,7 +831,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
       delete[] encoded;
       return VD_ERROR;
     }
-    if (compression)
+    if (_compression)
     {
       encodedSize = vvToolshed::encodeRLE(encoded, raw, frameSize, vd->bpc * vd->chan, frameSize);
       if (encodedSize>=0)                         // compression possible?
@@ -1116,7 +1116,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
   frameSize = vd->getFrameBytes();
 
   // Load volume data:
-  if ((sections & RAW_DATA) != 0)
+  if ((_sections & RAW_DATA) != 0)
   {
     fseek(fp, tok->getFilePos(), SEEK_SET);
     encoded = new uchar[frameSize];
@@ -1199,7 +1199,7 @@ vvFileIO::ErrorType vvFileIO::saveNrrdFile(vvVolDesc* vd)
   }
 
   // Write magic string:
-  fputs(nrrdID, fp);
+  fputs(_nrrdID, fp);
   fputc('\n', fp);
 
   // Write content:
@@ -1535,7 +1535,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
 
   // Load voxel data:
   frameSize = vd->getFrameBytes();
-  if ((sections & RAW_DATA) != 0)
+  if ((_sections & RAW_DATA) != 0)
   {
     for (f=0; f<vd->frames; ++f)
     {
@@ -3295,7 +3295,7 @@ vvFileIO::ErrorType vvFileIO::loadVMRFile(vvVolDesc* vd)
   vd->chan    = 1;
 
   // Create new data space for volume data:
-  if ((sections & RAW_DATA) != 0)
+  if ((_sections & RAW_DATA) != 0)
   {
     frameSize = vd->getFrameBytes();
     raw = new uchar[frameSize];
@@ -3394,7 +3394,7 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
     vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
   }
 
-  if ((sections & RAW_DATA) != 0)
+  if ((_sections & RAW_DATA) != 0)
   {
     frameSize = vd->getFrameBytes();
 
@@ -3475,9 +3475,9 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
   }
   vd->removeSequence();                           // delete previous volume sequence
 
-  for (i=0; i<(int)strlen(nrrdID); ++i)
+  for (i=0; i<(int)strlen(_nrrdID); ++i)
   {
-    if (fgetc(fp) != nrrdID[i])
+    if (fgetc(fp) != _nrrdID[i])
     {
       cerr << "Error: Invalid file ID string." << endl;
       fclose(fp);
@@ -3615,7 +3615,7 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
   frameSize = vd->getFrameBytes();
 
   // Load volume data:
-  if ((sections & RAW_DATA) != 0)
+  if ((_sections & RAW_DATA) != 0)
   {
     for (f=0; f<vd->frames; ++f)
     {
@@ -3779,7 +3779,7 @@ vvFileIO::ErrorType vvFileIO::loadVis04File(vvVolDesc* vd)
 /** Loads a MeshViewer file.
   See: http://vistools.npaci.edu/meshviewer/MeshViewer.htm
 */
-vvFileIO::ErrorType vvFileIO::loadMeshViewerFile(vvVolDesc* vd)
+vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
 {
   vvTokenizer* tokenizer;
   FILE* fp;
@@ -3792,7 +3792,7 @@ vvFileIO::ErrorType vvFileIO::loadMeshViewerFile(vvVolDesc* vd)
   bool error = false;
   char* filenameBak = NULL;
 
-  vvDebugMsg::msg(1, "vvFileIO::loadMeshViewerFile()");
+  vvDebugMsg::msg(1, "vvFileIO::loadHDRFile()");
 
   if (vd->getFilename()==NULL) return FILE_ERROR;
 
@@ -3930,6 +3930,123 @@ vvFileIO::ErrorType vvFileIO::loadMeshViewerFile(vvVolDesc* vd)
   if (err != OK) return err;
   vd->convertVoxelOrder();
   if (bigEnd) vd->toggleEndianness();
+
+  return OK;
+}
+
+//----------------------------------------------------------------------------
+/** Loads a MeshViewer VOLB file. Both V1 and V2 are recognized. Chunks are not supported at this point.
+  For details see: http://visservices.sdsc.edu/vistools/Documentation/JavaDoc/Formats/VOLFormat.html
+  <pre>
+  VOLB V1
+	  [file]   := "VOLB\n" [header] [data]
+	  [header] := [width] [height] [depth]
+  </pre>
+  [width], [height], and [depth] are 32-bit MBF integers. 
+  [data] is a stream of width*height*depth*4 8-bit tuples, where each tuple has 8-bits each of red, 
+  green, blue, and alpha, in that order. 
+  <pre>
+  VOLB V2
+	[file]   := "Volb2\n" [header] [chunks] [axes] [data]
+	[header] := [width] [height] [depth]
+	[chunks] := [chunk_width] [chunk_height] [chunk_depth]
+	[axes]   := [width_name] [height_name] [depth_name]
+	[width_name]  := [len] [string]
+	[height_name] := [len] [string]
+	[depth_name]  := [len] [string]
+  </pre>
+  [width], [height], and [depth] are 32-bit MBF integers. 
+  [chunk_width], [chunk_height], and [chunk_depth] are 32-bit MBF integers. 
+  If all three are less than or equal to 1, then the format is not chunked. 
+
+  Axis names are given with a 32-bit MBF integer string length (not including a null terminator) 
+  followed by that number of ASCII characters (not including a null terminator). 
+
+  [data] is a stream of width*height*depth*4 8-bit values, where each tuple has 8-bits each of red, 
+  green, blue, and alpha, in that order. 
+*/
+vvFileIO::ErrorType vvFileIO::loadVOLBFile(vvVolDesc* vd)
+{
+  const char* VOLB_V1_STRING = "VOLB\n";
+  const char* VOLB_V2_STRING = "Volb2";
+  FILE* fp;
+  int i;
+  int blocksRead;
+  char buf[128];
+  int chunkSize;
+  int axisNameLength;
+  uchar* rawData;
+  int version;    // VolB version: 1 or 2
+
+  vvDebugMsg::msg(1, "vvFileIO::loadVOLBFile()");
+
+  if (vd->getFilename()==NULL) return FILE_ERROR;
+
+  if ( (fp = fopen(vd->getFilename(), "rb")) == NULL)
+  {
+    vvDebugMsg::msg(1, "Error: Cannot open file.");
+    return FILE_ERROR;
+  }
+
+  vd->removeSequence();
+  setDefaultValues(vd);
+  vd->bpc = 1;
+  vd->chan = 4;   // files are RGBA
+
+  // Read header:
+  blocksRead = fread(buf, strlen(VOLB_V1_STRING), 1, fp);
+  if (vvToolshed::strCompare(buf, VOLB_V1_STRING, strlen(VOLB_V1_STRING))==0) version = 1;
+  else if (vvToolshed::strCompare(buf, VOLB_V2_STRING, strlen(VOLB_V2_STRING))==0)
+  {
+    version = 2;
+    fgetc(fp);  // skip \n character
+  }
+  else
+  {
+    cerr << "Error: unknown file type" << endl;
+    fclose(fp);
+    return DATA_ERROR;
+  }
+  cerr << "Volb file is version " << version << endl;
+  for (i=0; i<3; ++i)
+  {
+    vd->vox[i] = vvToolshed::read32(fp, vvToolshed::VV_BIG_END);
+  }
+  if (version==2)
+  {
+    for (i=0; i<3; ++i)
+    {
+      chunkSize = vvToolshed::read32(fp, vvToolshed::VV_BIG_END);
+      if (chunkSize>1) 
+      {
+        cerr << "Error: chunks not supported" << endl;
+        fclose(fp);
+        return DATA_ERROR;
+      }    
+    }
+    for (i=0; i<3; ++i)
+    {
+      axisNameLength = vvToolshed::read32(fp, vvToolshed::VV_BIG_END);
+      fseek(fp, axisNameLength, SEEK_CUR);  // skip axis name
+    }
+  }
+
+  if ((_sections & RAW_DATA) != 0)    // read volume data
+  {  
+    rawData = new uchar[vd->getFrameBytes()];
+    blocksRead = fread(rawData, vd->getFrameBytes(), 1, fp);
+    if (blocksRead != 1)
+    {
+      cerr << "Error: file corrupt" << endl;
+      fclose(fp);
+      delete[] rawData;
+      return DATA_ERROR;
+    }
+    fclose(fp);
+    vd->addFrame(rawData, vvVolDesc::ARRAY_DELETE);
+    ++vd->frames;
+    vd->convertVoxelOrder();
+  }
 
   return OK;
 }
@@ -4227,7 +4344,7 @@ vvFileIO::ErrorType vvFileIO::saveVolumeData(vvVolDesc* vd, bool overwrite, Load
     return FILE_EXISTS;
   }
 
-  sections = sec;
+  _sections = sec;
 
   if (vvToolshed::isSuffix(vd->getFilename(), ".rvf"))
     return saveRVFFile(vd);
@@ -4282,7 +4399,7 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
     return FILE_NOT_FOUND;
   }
 
-  sections = sec;
+  _sections = sec;
 
   suffix = new char[strlen(vd->getFilename())+1];
   vvToolshed::extractExtension(suffix, vd->getFilename());
@@ -4370,8 +4487,10 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
 
                                                   // Meshviewer header file
   else if (vvToolshed::strCompare(suffix, "hdr") == 0)
-    err = loadMeshViewerFile(vd);
+    err = loadHDRFile(vd);
 
+  else if (vvToolshed::strCompare(suffix, "volb") == 0)
+    err = loadVOLBFile(vd);
                                                   // Microsoft DirectDraw Surface file
   else if (vvToolshed::strCompare(suffix, "dds") == 0)
     err = loadDDSFile(vd);
@@ -4398,7 +4517,7 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
 */
 void vvFileIO::setCompression(bool newCompression)
 {
-  compression = newCompression;
+  _compression = newCompression;
 }
 
 //----------------------------------------------------------------------------

@@ -602,7 +602,7 @@ long VVShell::onCmdLoadVolume(FXObject*, FXSelector, void*)
   std::cerr << "onCmdLoadVolume" << endl;
 
   if(_canvas == NULL) return 1;
-  const FXchar patterns[]="All Volume Files (*.rvf,*.xvf,*.avf,*.tif,*.tiff,*.hdr)\n3D TIF Files (*.tif,*.tiff)\nASCII Volume Files (*.avf)\nExtended Volume Files (*.xvf)\nRaw Volume Files (*.rvf)\nAll Files (*.*)";
+  const FXchar patterns[]="All Volume Files (*.rvf,*.xvf,*.avf,*.tif,*.tiff,*.hdr,*.volb)\n3D TIF Files (*.tif,*.tiff)\nASCII Volume Files (*.avf)\nExtended Volume Files (*.xvf)\nRaw Volume Files (*.rvf)\nAll Files (*.*)";
   FXString filename = getOpenFilename("Load Volume File", patterns);
   if(filename.length() == 0) return 1;
   loadVolumeFile(filename);
