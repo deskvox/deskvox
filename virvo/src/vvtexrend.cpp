@@ -113,6 +113,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   rgbaLUT = new uchar[256 * 256 * 4];
   preintTable = new uchar[getPreintTableSize()*getPreintTableSize()*4];
   preIntegration = true;
+  _hdrCompression = false;
   usePreIntegration = false;
   textures = 0;
   opacityCorrection = true;
@@ -234,8 +235,10 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   }
   cerr << endl;
 
+#ifdef HAVE_CG
   if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
       _currentShader = 9;
+#endif
 
   if(voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG)
   {
@@ -1260,6 +1263,7 @@ void vvTexRend::updateVolumeData()
   else makeTextures();
 }
 
+//----------------------------------------------------------------------------
 void vvTexRend::updateVolumeData(int offsetX, int offsetY, int offsetZ,
 int sizeX, int sizeY, int sizeZ)
 {
@@ -1284,6 +1288,7 @@ int sizeX, int sizeY, int sizeZ)
   }
 }
 
+//----------------------------------------------------------------------------
 /**
    method to create a new 3D texture or update parts of an existing 3D texture
    @param offsetX, offsetY, offsetZ: lower left corner of texture
@@ -4006,6 +4011,9 @@ void vvTexRend::updateLUT(float dist)
         preIntegration = (newValue == 0.0f) ? false : true;
         updateTransferFunction();
         break;
+      case vvRenderer::VV_HDR_COMPRESSION:
+        _hdrCompression = (newValue == 0.0f) ? false : true;
+        break;
       default:
         vvRenderer::setParameter(param, newValue);
         break;
@@ -4030,6 +4038,8 @@ void vvTexRend::updateLUT(float dist)
         return float(sliceOrientation);
       case vvRenderer::VV_PREINT:
         return float(preIntegration);
+      case vvRenderer::VV_HDR_COMPRESSION:
+        return (_hdrCompression ? 1.0f : 0.0f);
       default: return vvRenderer::getParameter(param);
     }
   }

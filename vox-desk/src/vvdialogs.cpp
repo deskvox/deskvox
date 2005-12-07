@@ -2526,6 +2526,8 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   _topClamp->setText(FXStringFormat("%.9g", 5.0f));
   new FXButton(topClampFrame, "% below max", NULL, this, ID_TOP_PERCENT, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
+  _hdrCheck = new FXCheckButton(verticalFrame, "High dynamic range compression", this, ID_HDR, ICON_BEFORE_TEXT);
+
   // Buttons:
   FXVerticalFrame* buttonFrame = new FXVerticalFrame(horizontalFrame, LAYOUT_FILL_X | LAYOUT_FIX_WIDTH,0,0,80);
   new FXButton(buttonFrame, "OK", NULL, this, ID_OK, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
@@ -2565,6 +2567,7 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
     {
       _canvas->_vd->real[0] = FXFloatVal(_minTF->getText());
       _canvas->_vd->real[1] = FXFloatVal(_maxTF->getText());
+      _canvas->_renderer->setParameter(vvRenderer::VV_HDR_COMPRESSION, (_hdrCheck->getCheck()) ? 1.0f : 0.0f);
       _canvas->_renderer->updateVolumeData();
       _shell->_glcanvas->makeNonCurrent();
     }

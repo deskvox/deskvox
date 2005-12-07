@@ -161,6 +161,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool _useOnlyOneBrick;                        // true if whole data fits in texture memory
     vvVector4 frustum[6];                         // current planes of view frustum
     SliceOrientation sliceOrientation;            ///< slice orientation for planar 3d textures
+    bool _hdrCompression;                         ///< true=use high dynamic range compression
 
 #ifdef HAVE_CG
     CGcontext _cgContext;                         ///< context for running fragment program
