@@ -4531,33 +4531,26 @@ void vvFileIO::setCompression(bool newCompression)
   @return true if file name was parsed ok, false if file name was not
      recognized as a Leica file.
 */
-bool vvFileIO::parseLeicaFilename(const char* fileName, int& slice, int& channel, char* baseName)
+bool vvFileIO::parseLeicaFilename(const string fileName, int& slice, int& channel, string& baseName)
 {
-  char* slicePtr;
-  char* channelPtr;
-  char sliceText[3+1];
-  char channelText[2+1];
-
+  int slicePos, channelPos;
+  string sliceText, channelText;
+  
   // Find out if and where file name contains slice and channel IDs:
-  slicePtr = strstr(fileName, "_z");
-  channelPtr = strstr(fileName, "_ch");
-  if (!slicePtr || !channelPtr) return false;
-
+  slicePos   = fileName.rfind("_z");
+  channelPos = fileName.rfind("_ch");
+  if (slicePos==string::npos || channelPos==string::npos) return false;
+  
   // Extract slice and channel IDs:
-  memcpy(sliceText, slicePtr+2, 3);
-  sliceText[3] = '\0';
-  memcpy(channelText, channelPtr+2, 2);
-  channelText[2] = '\0';
+  sliceText   = fileName.substr(slicePos+2, 3);
+  channelText = fileName.substr(channelPos+3, 2);
 
-  slice = atoi(sliceText);
-  channel = atoi(channelText);
-  if (baseName)
-  {
-    memcpy(baseName, fileName, slicePtr - fileName);
-    baseName[slicePtr - fileName] = '\0';
-  }
+  slice = atoi(sliceText.c_str());
+  channel = atoi(channelText.c_str());
+  baseName = fileName.substr(0, slicePos);
+  
   return true;
-}
+}  
 
 //----------------------------------------------------------------------------
 /** Create a Leica confocal microscope type file name.
@@ -4579,30 +4572,30 @@ void vvFileIO::makeLeicaFilename(const char* baseName, int slice, int channel, c
   @param channel new channel number (>=0); -1 for no change
   @return true if successful, false if error
 */
-bool vvFileIO::changeLeicaFilename(char* fileName, int slice, int channel)
+bool vvFileIO::changeLeicaFilename(string& fileName, int slice, int channel)
 {
-  char* slicePtr;
-  char* channelPtr;
+  int slicePos;
+  int channelPos;
   char sliceText[32];
   char channelText[32];
 
   // Find out if and where file name contains slice and channel IDs:
-  slicePtr = strstr(fileName, "_z");
-  channelPtr = strstr(fileName, "_ch");
-  if (!slicePtr || !channelPtr) return false;
-  slicePtr += 2;
-  channelPtr += 3;
+  slicePos   = fileName.rfind("_z");
+  channelPos = fileName.rfind("_ch");
+  if (slicePos==string::npos || channelPos==string::npos) return false;
+  slicePos += 2;
+  channelPos += 3;
 
   // Make slice and channel IDs:
   if (slice > -1)
   {
     sprintf(sliceText, "%03d", slice);
-    memcpy(slicePtr, sliceText, 3);
+    fileName.replace(slicePos, 3, sliceText);
   }
   if (channel > -1)
   {
     sprintf(channelText, "%02d", channel);
-    memcpy(channelPtr, channelText, 2);
+    fileName.replace(channelPos, 2, channelText);
   }
   return true;
 }
@@ -4611,51 +4604,66 @@ bool vvFileIO::changeLeicaFilename(char* fileName, int slice, int channel)
 /** Merge image or volume files.
   @param vd volume to load slices into
   @param numFiles number of files to load
-  @param increment file index increment. default = 1; must be >0
+  @param increment file index increment. default = 1; 
+          if 0 then read files alphabetically, ignoring any numbers in the file names
   @param mergeType way to merge files
 */
 vvFileIO::ErrorType vvFileIO::mergeFiles(vvVolDesc* vd, int numFiles, int increment, vvVolDesc::MergeType mergeType)
 {
-
-  vvFileIO* fio;
-  vvVolDesc* newSlice = NULL;                     // newly loaded slice, might be just one channel
-  vvVolDesc* currentSlice = NULL;                 // currently being composited slice, might be multiple channels
-  char* filename;                                 // currently processed file name
-  char* basename;
-  ErrorType ret=OK;
+  vvFileIO*  fio;
+  vvVolDesc* newVD = NULL;                     // newly loaded file, might be just one channel
+  vvVolDesc* currentVD = NULL;                 // currently being composited file, might be multiple channels
+  string filename;                             // currently processed file name
+  string extension;
+  string plainFilename;
+  string basename;
+  string filePath;
+  ErrorType ret = OK;                             // this function's return value
   int file  = 0;                                  // index of current file
   bool done = false;
   bool isLeicaFormat;
   int numLeicaChannels = 1;
   int leicaSlice, leicaChannel;
   int i, j;
+  list<string> fileNames;
+  list<string> dirNames;
+  string dir;
 
-  assert(increment > 0);
-  filename = new char[strlen(vd->getFilename()) + 1];
-  strcpy(filename, vd->getFilename());
-  isLeicaFormat = parseLeicaFilename(filename, leicaSlice, leicaChannel);
+  assert(increment >= 0);
+
+  filename = vd->getFilename();
+  
+  // Extract extension:
+  extension = vvToolshed::extractExtension(filename);
+    
+  isLeicaFormat = parseLeicaFilename(filename, leicaSlice, leicaChannel, basename);
   if (isLeicaFormat)
   {
     // Find out how many channels are available:
-    for (i=0; vvToolshed::isFile(filename); ++i)
+    for (i=0; vvToolshed::isFile(filename.c_str()); ++i)
     {
       numLeicaChannels = i;
       changeLeicaFilename(filename, -1, i);
+      filename = vd->getFilename();        // reset file name to what it was
     }
     cerr << numLeicaChannels << " Leica channels found." << endl;
     leicaChannel = 0;
     numFiles *= numLeicaChannels;                 // need multiple files per slice
   }
+  if (increment==0)   // read files alphabetically?
+  {
+    string currentDir = vvToolshed::extractDirname(filename);
+    vvToolshed::makeFileList(currentDir, fileNames, dirNames);
+  }
 
-  strcpy(filename, vd->getFilename());            // reset file name to what it was
   fio = new vvFileIO();
   while (!done)
   {
     // Load current file:
-    cerr << "Loading slice file " << (file+1) << ": " << filename << endl;
-    newSlice = new vvVolDesc(filename);
+    cerr << "Loading file " << (file+1) << ": " << filename << endl;
+    newVD = new vvVolDesc(filename.c_str());
 
-    if (fio->loadVolumeData(newSlice) != vvFileIO::OK)
+    if (fio->loadVolumeData(newVD) != vvFileIO::OK)
     {
       cerr << "Cannot load file: " << filename << endl;
       ret = FILE_ERROR;
@@ -4663,33 +4671,29 @@ vvFileIO::ErrorType vvFileIO::mergeFiles(vvVolDesc* vd, int numFiles, int increm
     }
     else
     {
-      newSlice->printInfoLine("Loaded: ");
+      newVD->printInfoLine("Loaded: ");
 
       // Merge new data to previous data:
       if (isLeicaFormat)
       {
-        if (leicaChannel==0)
-        {
-          currentSlice = new vvVolDesc();
-        }
-        if(currentSlice->merge(newSlice, vvVolDesc::VV_MERGE_CHAN2VOL) == vvVolDesc::OK)
-          cerr << "OK" << endl;
+        if (leicaChannel==0) currentVD = new vvVolDesc();
+
+        if(currentVD->merge(newVD, vvVolDesc::VV_MERGE_CHAN2VOL) == vvVolDesc::OK)  cerr << "OK" << endl;
 
         if (leicaChannel == numLeicaChannels-1)
         {
-          vd->merge(currentSlice, mergeType);
-          delete currentSlice;
-          currentSlice = NULL;
+          vd->merge(currentVD, mergeType);
+          delete currentVD;
+          currentVD = NULL;
           leicaChannel = 0;
           leicaSlice += increment;
         }
         else ++leicaChannel;
       }
-      else vd->merge(newSlice, mergeType);
+      else vd->merge(newVD, mergeType);
 
-      cerr << "Deleting slice and moving on" << endl;
-      delete newSlice;                            // now the new VD can be released
-      newSlice = NULL;
+      delete newVD;                            // now the new VD can be released
+      newVD = NULL;
 
       // Find the next file:
       ++file;
@@ -4703,6 +4707,25 @@ vvFileIO::ErrorType vvFileIO::mergeFiles(vvVolDesc* vd, int numFiles, int increm
             ret = FILE_ERROR;
             done = true;
           }
+        }
+        else if (increment==0)    // move to next file in ordered list?
+        {
+          string nextName="";
+          filePath = vvToolshed::extractDirname(filename);
+          plainFilename = vvToolshed::extractFilename(filename);
+          while (!done && nextName=="")
+          {
+            if (vvToolshed::nextListString(fileNames, plainFilename, nextName)) 
+            {
+              if (vvToolshed::extractExtension(nextName) != extension) 
+              {
+                plainFilename = nextName;
+                nextName="";
+              }
+            }
+            else done = true;
+          }
+          filename = filePath + nextName;
         }
         else
         {
@@ -4719,7 +4742,7 @@ vvFileIO::ErrorType vvFileIO::mergeFiles(vvVolDesc* vd, int numFiles, int increm
 
         if (!done)
         {
-          if (!vvToolshed::isFile(filename))
+          if (!vvToolshed::isFile(filename.c_str()))
           {
             if (file < numFiles)
             {
@@ -4733,25 +4756,23 @@ vvFileIO::ErrorType vvFileIO::mergeFiles(vvVolDesc* vd, int numFiles, int increm
       else done = true;
     }
   }
-  delete[] filename;
   delete fio;
-  delete newSlice;
-  delete currentSlice;
+  delete newVD;
+  delete currentVD;
 
   // Set file name to base name of Leica files:
   if (isLeicaFormat)
   {
-    basename = new char[strlen(vd->getFilename()) + 4 + 1];
-    if (parseLeicaFilename(vd->getFilename(), leicaSlice, leicaChannel, basename))
+    filename = vd->getFilename();
+    if (parseLeicaFilename(filename, leicaSlice, leicaChannel, basename))
     {
       // add leica specific file convention code here
-      strcat(basename, ".xvf");
-      vd->setFilename(basename);
+      basename += ".xvf";
+      vd->setFilename(basename.c_str());
     }
-    delete[] basename;
   }
 
-  return FILE_NOT_FOUND;
+  return ret;
 }
 
 //============================================================================

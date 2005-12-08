@@ -329,14 +329,18 @@ class VVMergeDialog : public FXDialogBox
       ID_SLICES2VOL,
       ID_VOL2ANIM,
       ID_CHAN2VOL,
+      ID_LIMIT,
+      ID_NUMBERED,
       ID_LAST
     };
     FXRadioButton* _slices2volButton;
     FXRadioButton* _vol2animButton;
     FXRadioButton* _chan2volButton;
-    FXTextField* _fileTField;
-    FXTextField* _numberTField;
-    FXTextField* _incrementTField;
+    FXTextField*   _fileTField;
+    FXTextField*   _numberTField;
+    FXTextField*   _incrementTField;
+    FXCheckButton* _numFilesCB;
+    FXCheckButton* _limitFilesCB;
 
     VVMergeDialog(FXWindow*, vox::vvCanvas*);
     virtual ~VVMergeDialog();
@@ -346,6 +350,8 @@ class VVMergeDialog : public FXDialogBox
     long onCmdSlices2Vol(FXObject*,FXSelector,void*);
     long onCmdVol2Anim(FXObject*,FXSelector,void*);
     long onCmdChan2Vol(FXObject*,FXSelector,void*);
+    long onCBNumbered(FXObject*,FXSelector,void*);
+    long onCBLimit(FXObject*,FXSelector,void*);
 };
 
 /*********************************************************/

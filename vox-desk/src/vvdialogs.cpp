@@ -1012,6 +1012,8 @@ FXDEFMAP(VVMergeDialog) VVMergeDialogMap[]=
   FXMAPFUNC(SEL_COMMAND, VVMergeDialog::ID_SLICES2VOL, VVMergeDialog::onCmdSlices2Vol),
   FXMAPFUNC(SEL_COMMAND, VVMergeDialog::ID_VOL2ANIM,   VVMergeDialog::onCmdVol2Anim),
   FXMAPFUNC(SEL_COMMAND, VVMergeDialog::ID_CHAN2VOL,   VVMergeDialog::onCmdChan2Vol),
+  FXMAPFUNC(SEL_COMMAND, VVMergeDialog::ID_LIMIT,      VVMergeDialog::onCBLimit),
+  FXMAPFUNC(SEL_COMMAND, VVMergeDialog::ID_NUMBERED,   VVMergeDialog::onCBNumbered),
 };
 
 FXIMPLEMENT(VVMergeDialog,FXDialogBox,VVMergeDialogMap,ARRAYNUMBER(VVMergeDialogMap))
@@ -1030,21 +1032,27 @@ VVMergeDialog::VVMergeDialog(FXWindow* owner, vvCanvas* c):FXDialogBox(owner,"Me
   _chan2volButton   = new FXRadioButton(buttonGroup, "Channels to volume",   this, ID_CHAN2VOL);
   _slices2volButton->setCheck(true);
 
-  FXMatrix* fieldMat = new FXMatrix(master,3,MATRIX_BY_COLUMNS);
+  FXMatrix* matrix1 = new FXMatrix(master,3,MATRIX_BY_COLUMNS);
 
-  new FXLabel(fieldMat, "First file:");
-  _fileTField = new FXTextField(fieldMat, 40, NULL,0,TEXTFIELD_NORMAL);
-  new FXButton(fieldMat, "Browse...", NULL,this,ID_BROWSE, FRAME_RAISED | FRAME_THICK);
+  new FXLabel(matrix1, "Name of first file:");
+  _fileTField = new FXTextField(matrix1, 40, NULL,0,TEXTFIELD_NORMAL);
+  new FXButton(matrix1, "Browse...", NULL,this,ID_BROWSE, FRAME_RAISED | FRAME_THICK);
 
-  new FXLabel(fieldMat, "Number of files (0=all):");
-  _numberTField = new FXTextField(fieldMat, 10, NULL,0,TEXTFIELD_INTEGER|FRAME_SUNKEN|FRAME_THICK);
-  _numberTField->setText("0");
-  new FXLabel(fieldMat, "");
+  FXMatrix* matrix2 = new FXMatrix(master,3,MATRIX_BY_COLUMNS);
 
-  new FXLabel(fieldMat, "File name increment:");
-  _incrementTField = new FXTextField(fieldMat, 10, NULL,0,TEXTFIELD_INTEGER|FRAME_SUNKEN|FRAME_THICK);
+  _limitFilesCB = new FXCheckButton(matrix2,"Limit number of files.",this,ID_LIMIT,ICON_BEFORE_TEXT|LAYOUT_LEFT);
+  _limitFilesCB->setCheck(false);
+  new FXLabel(matrix2, "Number of files:");
+  _numberTField = new FXTextField(matrix2, 10, NULL,0,TEXTFIELD_INTEGER|FRAME_SUNKEN|FRAME_THICK);
+  _numberTField->setText("1");
+  _numberTField->disable();
+
+  _numFilesCB = new FXCheckButton(matrix2,"Files are numbered.",this,ID_NUMBERED,ICON_BEFORE_TEXT|LAYOUT_LEFT);
+  _numFilesCB->setCheck(true);
+  new FXLabel(matrix2, "File name increment:");
+  _incrementTField = new FXTextField(matrix2, 10, NULL,0,TEXTFIELD_INTEGER|FRAME_SUNKEN|FRAME_THICK);
   _incrementTField->setText("1");
-  new FXLabel(fieldMat, "");
+  _incrementTField->enable();
 
   FXHorizontalFrame* buttonFrame = new FXHorizontalFrame(master, LAYOUT_FILL_X | LAYOUT_CENTER_X | PACK_UNIFORM_WIDTH);
   new FXButton(buttonFrame,"Help...",NULL, this, ID_HELP,  FRAME_RAISED | FRAME_THICK | LAYOUT_LEFT);
@@ -1070,9 +1078,9 @@ long VVMergeDialog::onCmdBrowse(FXObject*, FXSelector, void*)
 
 long VVMergeDialog::onCmdHelp(FXObject*, FXSelector, void*)
 {
-  char* info = "Files must be numbered consecutively, for instance:\n" \
+  char* info = "If numbered, files must be numbered consecutively, for instance:\n" \
     "image000.tif, image001.tif, image002.tif, ...\n" \
-    "Altenatively, they can be numbered with a constant increment.\n\n" \
+    "Altenatively, they can be numbered with a constant increment greater than 1.\n\n" \
     "The naming scheme '*_zXXX_chXX.*' is recognized for image\n" \
     "files at a given depth (_z) and for a given channel (_ch).\n" \
     "Example: 'image_z010_ch02.tif'";
@@ -1101,10 +1109,27 @@ long VVMergeDialog::onCmdChan2Vol(FXObject*,FXSelector,void*)
   return 1;
 }
 
+long VVMergeDialog::onCBNumbered(FXObject*,FXSelector,void*)
+{
+  if (_numFilesCB->getCheck()) _incrementTField->enable();
+  else _incrementTField->disable();
+  return 1;
+}
+
+long VVMergeDialog::onCBLimit(FXObject*,FXSelector,void*)
+{
+  if (_limitFilesCB->getCheck()) _numberTField->enable();
+  else _numberTField->disable();
+  return 1;
+}
+
 void VVMergeDialog::updateValues()
 {
-  FXString path = getApp()->reg().readStringEntry("Settings", "CurrentDirectory", FXFile::getCurrentDirectory().text());
-  _fileTField->setText(path);
+  if (_fileTField->getText()=="") 
+  {
+    FXString path = getApp()->reg().readStringEntry("Settings", "CurrentDirectory", FXFile::getCurrentDirectory().text());
+    _fileTField->setText(path);
+  }
 }
 
 /*******************************************************************************/

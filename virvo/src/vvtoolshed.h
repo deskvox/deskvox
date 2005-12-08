@@ -21,6 +21,9 @@
 #ifndef _VVTOOLSHED_H_
 #define _VVTOOLSHED_H_
 
+#include <list>
+#include <string>
+
 #include <stdio.h>
 #ifndef __sgi
 #ifndef WIN32
@@ -169,15 +172,21 @@ class VIRVOEXPORT vvToolshed
     static void    RGBtoHSB(float*, float*, float*);
     static void    RGBtoHSB(float, float, float, float*, float*, float*);
     static void    strcpyTail(char*, const char*, char);
+    static string  strcpyTail(const string, char);
     static void    strcpyHead(char*, const char*, char);
     static void    strTrim(char*);
     static void    extractFilename(char*, const char*);
+    static string  extractFilename(const string);
     static void    extractDirname(char*, const char*);
+    static string  extractDirname(const string);
     static void    extractExtension(char*, const char*);
+    static string  extractExtension(const string);
     static void    extractBasename(char*, const char*);
+    static string  extractBasename(const string);
     static void    extractBasePath(char*, const char*);
     static void    replaceExtension(char*, const char*, const char*);
     static bool    increaseFilename(char*);
+    static bool    increaseFilename(string&);
     static void    draw3DLine(int, int, int, int, int, int, uchar*, uchar*, int, int, int, int);
     static void    draw2DLine(int, int, int, int, uint, uchar*, int, int, int);
     static int     getTextureSize(int);
@@ -234,6 +243,8 @@ class VIRVOEXPORT vvToolshed
     static bool    decodeBase64(const char*, int, uchar*);
     static float   interpolateLinear(float, float, float, float);
     static float   interpolateLinear(float, float, float, float, float);
+    static bool    makeFileList(std::string&, std::list<std::string>&, std::list<std::string>&);
+    static bool    nextListString(std::list<std::string>&, std::string&, std::string&);
 };
 #endif
 

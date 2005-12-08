@@ -98,8 +98,8 @@ class VIRVOEXPORT vvFileIO
 
     void setDefaultValues(vvVolDesc*);
     int  readASCIIint(FILE*);
-    bool parseLeicaFilename(const char*, int&, int&, char* = NULL);
-    bool changeLeicaFilename(char*, int, int);
+    bool parseLeicaFilename(const string, int&, int&, string&);
+    bool changeLeicaFilename(string&, int, int);
     void makeLeicaFilename(const char*, int, int, char*);
     ErrorType loadWLFile(vvVolDesc*);
     ErrorType loadASCFile(vvVolDesc*);

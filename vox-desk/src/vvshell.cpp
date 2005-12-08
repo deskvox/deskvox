@@ -737,6 +737,9 @@ long VVShell::onCmdServerRequest(FXObject*,FXSelector,void*)
 //----------------------------------------------------------------------------
 long VVShell::onCmdMerge(FXObject*,FXSelector,void*)
 {
+  int increment;
+  int numFiles;
+  
   vvVolDesc::MergeType mergeType = vvVolDesc::VV_MERGE_SLABS2VOL;
 
   vvDebugMsg::msg(1, "VVShell::onCmdMerge()");
@@ -745,12 +748,18 @@ long VVShell::onCmdMerge(FXObject*,FXSelector,void*)
   if (_mergeDialog->execute())
   {
     FXString filename = _mergeDialog->_fileTField->getText();
-    int numFiles = FXIntVal(_mergeDialog->_numberTField->getText());
-    int increment = FXIntVal(_mergeDialog->_incrementTField->getText());
+    
+    if (_mergeDialog->_limitFilesCB->getCheck()) numFiles = FXIntVal(_mergeDialog->_numberTField->getText());
+    else numFiles = 0;
+    
+    if (_mergeDialog->_numFilesCB->getCheck()) increment = FXIntVal(_mergeDialog->_incrementTField->getText());
+    else increment = 0;
+    
     if (_mergeDialog->_slices2volButton->getCheck())    mergeType = vvVolDesc::VV_MERGE_SLABS2VOL;
     else if (_mergeDialog->_vol2animButton->getCheck()) mergeType = vvVolDesc::VV_MERGE_VOL2ANIM;
     else if (_mergeDialog->_chan2volButton->getCheck()) mergeType = vvVolDesc::VV_MERGE_CHAN2VOL;
     else assert(0);
+    
     mergeFiles(filename.text(), numFiles, increment, mergeType);
   }
   return 1;
@@ -760,7 +769,8 @@ long VVShell::onCmdMerge(FXObject*,FXSelector,void*)
 /** Load a volume from slices.
   @param firstFile name of first slice file
   @param num number of slices, 0 for all that can be found
-  @param increment number increment from slice to slice, default: 1
+  @param increment number increment from slice to slice, default: 1; 
+         if 0 then read files in alphabetical order, ignoring any numbers in the file name
   @param mergeType way to merge files
 */
 void VVShell::mergeFiles(const char* firstFile, int num, int increment, vvVolDesc::MergeType mergeType)

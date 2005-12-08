@@ -36,6 +36,7 @@
 #include <float.h>
 #include <math.h>
 #include <assert.h>
+#include <dirent.h>
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -261,6 +262,18 @@ void vvToolshed::strcpyTail(char* suffix, const char* str, char c)
 }
 
 //----------------------------------------------------------------------------
+/** Copies the tail string after the last occurrence of a given character.
+    Example: str="c:\local\testfile.dat", c='\' => suffix="testfile.dat"
+    @param str    source string
+    @param c      character after which to copy characters
+    @return string after c ("testfile.dat")
+*/
+string vvToolshed::strcpyTail(const string str, char c)
+{
+  return str.substr(str.rfind(c) + 1);
+}
+
+//----------------------------------------------------------------------------
 /** Copies the head string before the first occurrence of a given character.
     Example: str="c:\ local\ testfile.dat", c='.' => head="c:\ local\ testfile"
     @param head  <I>allocated</I> space for the found string
@@ -323,12 +336,31 @@ void vvToolshed::strTrim(char* str)
 void vvToolshed::extractFilename(char* filename, const char* pathname)
 {
 #ifdef _WIN32
-  if (strchr(pathname, '\\')) strcpyTail(filename, pathname, '\\');
-  else strcpy(filename, pathname);
+  char delim = '\\';
 #else
-  if (strchr(pathname, '/')) strcpyTail(filename, pathname, '/');
-  else strcpy(filename, pathname);
+  char delim = '/';
 #endif
+
+  if (strchr(pathname, delim)) strcpyTail(filename, pathname, delim);
+  else strcpy(filename, pathname);
+}
+
+//----------------------------------------------------------------------------
+/** Extracts a filename from a given path.
+    Directory elements have to be separated by '/' or '\' depending on OS.
+    @param pathname file including entire path (e.g. "/usr/local/testfile.dat")
+    @return filename (e.g. "testfile.dat")
+*/
+string vvToolshed::extractFilename(const string pathname)
+{
+#ifdef _WIN32
+  char delim = '\\';
+#else
+  char delim = '/';
+#endif
+
+  if (pathname.find(delim, 0) != string::npos) return strcpyTail(pathname, delim);
+  else return pathname;
 }
 
 //----------------------------------------------------------------------------
@@ -341,12 +373,11 @@ void vvToolshed::extractFilename(char* filename, const char* pathname)
 void vvToolshed::extractDirname(char* dirname, const char* pathname)
 {
   int i, j;
-  char delim;                                     // path delimiter
 
 #ifdef _WIN32
-  delim = '\\';
+  char delim = '\\';
 #else
-  delim = '/';
+  char delim = '/';
 #endif
 
   // Search for '\' or '/' in pathname:
@@ -366,6 +397,29 @@ void vvToolshed::extractDirname(char* dirname, const char* pathname)
 }
 
 //----------------------------------------------------------------------------
+/** Extracts a directory name from a given path.
+    Directory elements have to be separated by '/' or '\' depending on OS.
+    @param pathname file including entire path (e.g. "/usr/local/testfile.dat" or "c:\user\testfile.dat")
+    @return directory namename (e.g. "/usr/local/" or "c:\user\")
+*/
+string vvToolshed::extractDirname(const string pathname)
+{
+  string dirname;
+  int delimPos;
+
+#ifdef _WIN32
+  char delim = '\\';
+#else
+  char delim = '/';
+#endif
+
+  delimPos = pathname.rfind(delim);
+  if (delimPos == string::npos) dirname = pathname;
+  else dirname.insert(0, pathname, 0, delimPos+1);
+  return dirname;
+}
+
+//----------------------------------------------------------------------------
 /** Extracts an extension from a given path or filename.
     @param extension <I>allocated</I> space for extension (e.g. "dat")
     @param pathname  file including entire path (e.g. "/usr/local/testfile.dat")
@@ -378,6 +432,16 @@ void vvToolshed::extractExtension(char* extension, const char* pathname)
 
   strcpyTail(extension, filename, '.');
   delete[] filename;
+}
+
+//----------------------------------------------------------------------------
+/** Extracts an extension from a given path or filename.
+    @param pathname  file including entire path (e.g. "/usr/local/testfile.dat")
+    @return extension, e.g., "dat"
+*/
+string vvToolshed::extractExtension(const string pathname)
+{
+  return strcpyTail(pathname, '.');
 }
 
 //----------------------------------------------------------------------------
@@ -400,6 +464,22 @@ void vvToolshed::extractBasename(char* basename, const char* pathname)
     --i;
 
   if (i>0) basename[i] = '\0';                    // convert '.' to '\0' to terminate string
+}
+
+//----------------------------------------------------------------------------
+/** Extracts the base file name from a given path or filename, excluding
+    the '.' delimiter.
+    @param pathname  file including entire path (e.g. "/usr/local/testfile.dat")
+    @return basename (e.g. "testfile").
+*/
+string vvToolshed::extractBasename(const string pathname)
+{
+  string basename;
+  int i;
+
+  basename = extractFilename(pathname);
+  basename.erase(basename.rfind('.'));
+  return basename;
 }
 
 //----------------------------------------------------------------------------
@@ -478,6 +558,39 @@ bool vvToolshed::increaseFilename(char* filename)
   extractExtension(ext, filename);
   if (strlen(ext)==0) i=strlen(filename) - 1;
   else i = strlen(filename) - strlen(ext) - 2;
+  while (!done)
+  {
+    if (i<0 || filename[i]<'0' || filename[i]>'9')
+      return false;
+
+    if (filename[i] == '9')                       // overflow?
+    {
+      filename[i] = '0';
+      --i;
+    }
+    else
+    {
+      ++filename[i];
+      done = 1;
+    }
+  }
+  return true;
+}
+
+//----------------------------------------------------------------------------
+/** Increases the filename (filename must include an extension!).
+  @return true if successful, false if filename couldn't be increased.
+          Does not check if the file with the increased name exists.
+*/
+bool vvToolshed::increaseFilename(string& filename)
+{
+  bool done = false;
+  int i;
+  string ext;
+
+  ext = extractExtension(filename);
+  if (ext.size()==0) i = filename.size() - 1;
+  else i = filename.size() - ext.size() - 2;
   while (!done)
   {
     if (i<0 || filename[i]<'0' || filename[i]>'9')
@@ -2174,6 +2287,77 @@ float vvToolshed::interpolateLinear(float x1, float y1, float x2, float y2, floa
     ts_swap(y1, y2);
   }
   return (y2 - y1) * (x - x1) / (x2 - x1) + y1;
+}
+
+//----------------------------------------------------------------------------
+/** Make a list of files and folders in a path.
+  @param path location to search in
+  @return fileNames and folderNames, alphabetically sorted
+*/
+bool vvToolshed::makeFileList(std::string& path, std::list<std::string>& fileNames, std::list<std::string>& folderNames)
+{
+  DIR* dirHandle;
+  struct dirent* entry;
+  struct stat statbuf;
+
+  dirHandle = opendir(path.c_str());
+  if (dirHandle==NULL)
+  {
+    cerr << "Cannot read directory: " << path << endl;
+    return false;
+  }
+  if (chdir(path.c_str()) != 0)
+  {
+    const int PATH_SIZE = 256;
+    char cwd[PATH_SIZE];
+    cerr << "Cannot chdir to " << path <<
+      ". Searching for files in " << getcwd(cwd, PATH_SIZE) << endl;
+  }
+  while ((entry=readdir(dirHandle)) != NULL)
+  {
+    stat(entry->d_name, &statbuf);
+    if (S_ISDIR(statbuf.st_mode))      // found a folder?
+    {
+      folderNames.push_back(entry->d_name);
+    }
+    else      // found a file
+    {
+      fileNames.push_back(entry->d_name);
+    }
+  }
+
+  fileNames.sort();
+  folderNames.sort();
+
+  closedir(dirHandle);
+  return true;
+}
+
+//----------------------------------------------------------------------------
+/** Return the next string in the list after a given one
+  @param listStrings list of strings to search
+  @param knownEntry we're looking for the entry after this one
+  @param nextEntry returned string, or "" if nothing found
+  @return true if next string found, or false if not
+*/
+bool vvToolshed::nextListString(list<string>& listStrings, string& knownEntry, string& nextEntry)
+{
+  list<string>::const_iterator iter;
+  for (iter=listStrings.begin(); iter != listStrings.end(); ++iter)
+  {
+    if ((*iter)==knownEntry) 
+    {
+      ++iter;
+      if (iter == listStrings.end()) return false;  // end of list reached
+      else 
+      {  
+        nextEntry = *iter;
+        return true;
+      }
+    }
+  }
+  nextEntry = "";
+  return false;   // knownEntry has not been found
 }
 
 //----------------------------------------------------------------------------
