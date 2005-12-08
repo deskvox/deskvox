@@ -24,6 +24,8 @@
 // Local:
 #include "vvclient.h"
 
+#pragma warning(disable: 4100)    // disable warning about unreferenced formal parameter
+
 using namespace vox;
 using namespace std;
 #ifdef WIN32
@@ -301,10 +303,10 @@ unsigned char* vvClient::getRegionLowLevel(int lod, int x0, int y0, int x1, int 
   int slice0, int slice1, int dataset_id, const char* server, const char* ns)
 {
   unsigned char* ptr = NULL;
-  char buf[32];   // for itoa
 
 #ifdef WIN32
 #ifdef HAVE_SOAP
+  char buf[32];   // for itoa
   HRESULT hr = S_OK;
 
   hr = CoInitialize(NULL);
