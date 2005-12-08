@@ -27,8 +27,10 @@
 using namespace vox;
 using namespace std;
 #ifdef WIN32
-  using namespace MSSOAPLib30;
-  using namespace MSXML2;
+  #ifdef HAVE_SOAP
+    using namespace MSSOAPLib30;
+    using namespace MSXML2;
+  #endif
 #endif
 
 /** 
@@ -73,6 +75,7 @@ unsigned char* vvClient::getRegion(int lod, int x0, int y0, int x1, int y1,
 */
 void vvClient::test()
 {
+#ifdef HAVE_SOAP
   const char* DOMAIN_NAME = "google.net";
   const char* g_lpszWSDL_URL = 
       "http://services.xmethods.net/soap/urn:xmethods-DomainChecker.wsdl";
@@ -146,6 +149,7 @@ void vvClient::test()
 
   CoUninitialize();
 #endif
+#endif
 }
 
 /** This function has been modeled after http://perfectxml.com/CPPSOAP.asp, Section 3
@@ -153,6 +157,8 @@ void vvClient::test()
 unsigned char* vvClient::getRegionHighLevel(int lod, int x0, int y0, int x1, int y1, 
   int startSlice, int endSlice, int id, const char*, const char*)
 {
+  unsigned char* ptr = NULL;
+#ifdef HAVE_SOAP
   const char* WSDL_URL = 
       "http://129.114.6.157/region?wsdl";
 //      "Z:\\projects\\tacc\\domain-checker.wsdl";
@@ -160,7 +166,6 @@ unsigned char* vvClient::getRegionHighLevel(int lod, int x0, int y0, int x1, int
 //      "http://services.xmethods.net/soap/urn:xmethods-DomainChecker.wsdl";
 //    "D:\\brown\\tacc\\region.wsdl";
 //    "D:\\brown\\tacc\\xmethods-DomainChecker.wsdl";
-  unsigned char* ptr = NULL;
 
 #ifdef WIN32
   HRESULT hr;
@@ -281,6 +286,7 @@ unsigned char* vvClient::getRegionHighLevel(int lod, int x0, int y0, int x1, int
 
   CoUninitialize();
 #endif
+#endif
   
   return ptr;
 }
@@ -298,6 +304,7 @@ unsigned char* vvClient::getRegionLowLevel(int lod, int x0, int y0, int x1, int 
   char buf[32];   // for itoa
 
 #ifdef WIN32
+#ifdef HAVE_SOAP
   HRESULT hr = S_OK;
 
   hr = CoInitialize(NULL);
@@ -449,7 +456,7 @@ unsigned char* vvClient::getRegionLowLevel(int lod, int x0, int y0, int x1, int 
   cerr << "Response: " << (const char*)(W2A(spResponseXMLDOM->xml)) << endl;
 
   CoUninitialize();
-
+#endif
 #endif
 
   return ptr;

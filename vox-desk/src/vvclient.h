@@ -23,10 +23,12 @@
 
 #ifdef WIN32
   #include <atlbase.h>
-  #import <msxml4.dll>
-  #import <mssoap30.dll> named_guids \
-    exclude("IStream", "IErrorInfo", "ISequentialStream", "_LARGE_INTEGER", \
-    "_ULARGE_INTEGER", "tagSTATSTG", "_FILETIME")
+  #ifdef HAVE_SOAP  
+    #import <msxml4.dll>
+    #import <mssoap30.dll> named_guids \
+      exclude("IStream", "IErrorInfo", "ISequentialStream", "_LARGE_INTEGER", \
+      "_ULARGE_INTEGER", "tagSTATSTG", "_FILETIME")
+  #endif
 #endif
 
 namespace vox 

@@ -231,8 +231,9 @@ bool VVShell::initFileMenu(FXMenuPane* filemenu)
   new FXMenuCommand(filemenu,"Reload Volume", NULL,this,ID_RELOAD_VOLUME);
   new FXMenuCommand(filemenu,"Save Volume As...",NULL,this,ID_SAVE_VOLUME);
   new FXMenuCommand(filemenu,"Merge Files...",NULL,this,ID_MERGE);
+#ifdef HAVE_SOAP  
   new FXMenuCommand(filemenu,"Server Request...",NULL,this,ID_SERVER);
-
+#endif
   new FXHorizontalSeparator(filemenu,LAYOUT_SIDE_TOP|LAYOUT_FILL_X|SEPARATOR_GROOVE);
 
   new FXMenuCommand(filemenu,"Load Camera...",NULL,this,ID_LOAD_CAMERA);

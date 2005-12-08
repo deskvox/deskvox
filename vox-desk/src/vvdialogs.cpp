@@ -1061,7 +1061,7 @@ VVMergeDialog::~VVMergeDialog()
 
 long VVMergeDialog::onCmdBrowse(FXObject*, FXSelector, void*)
 {
-  const FXchar patterns[] = "All VOX Files (*.xvf,*.avf,*.rvf,*.tif,*.rgb,*.ppm,*.pgm,*.dcm,*.ximg,*.hdr)\nVolume Files (*.rvf,*.xvf,*.avf,*.tif,*.tiff,*.hdr)\nImage Files (*.tif,*.rgb,*.ppm,*.pgm,*.dcm,*.ximg)\nAll Files (*.*)";
+  const FXchar patterns[] = "All VOX Files (*.xvf,*.avf,*.rvf,*.tif,*.rgb,*.ppm,*.pgm,*.dcm,*.ximg,*.hdr,*.volb)\nVolume Files (*.rvf,*.xvf,*.avf,*.tif,*.tiff,*.hdr,*.volb)\nImage Files (*.tif,*.rgb,*.ppm,*.pgm,*.dcm,*.ximg)\nAll Files (*.*)";
   FXString filename = _shell->getOpenFilename("Merge Files", patterns);
   if(filename.length() == 0) return 1;
   _fileTField->setText(filename);
