@@ -1973,9 +1973,9 @@ void vvConv::displayHelpInfo()
 {
   cerr << "VConv is a command line utility to convert volume files between" << endl;
   cerr << "different file and/or data formats. It is part of the Virvo volume" << endl;
-  cerr << "rendering system, which has been developed at the University of Stuttgart" << endl;
-  cerr << "and Brown University." << endl;
-  cerr << "For more information see http://www.cs.brown.edu/people/schulze/virvo." << endl;
+  cerr << "rendering system, which has been developed at the University of Stuttgart," << endl;
+  cerr << "Brown University, and UCSD." << endl;
+  cerr << "For more information see http://www.calit2.net/~jschulze/" << endl;
   cerr << endl;
   cerr << "Syntax:" << endl;
   cerr << endl;
@@ -2303,7 +2303,7 @@ int vvConv::run(int argc, char** argv)
 
   cerr << "VConv Version " << VV_VERSION << "." << VV_RELEASE << endl;
   cerr << "(C) " << VV_YEAR << " Brown University" << endl;
-  cerr << "Author: Jurgen P. Schulze (schulze@cs.brown.edu)" << endl;
+  cerr << "Author: Jurgen P. Schulze (jschulze@ucsd.edu)" << endl;
   cerr << "VConv comes with ABSOLUTELY NO WARRANTY." << endl;
   cerr << "It is free software, and you are welcome to redistribute it under" << endl;
   cerr << "the LGPL license. See the file 'license.txt' in the program directory." << endl;

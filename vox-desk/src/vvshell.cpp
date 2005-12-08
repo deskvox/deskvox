@@ -951,12 +951,13 @@ long VVShell::onCmdAbout(FXObject*,FXSelector,void*)
   FXString version = FXString("Version ") + FXString(VV_VERSION) + FXString(".") + FXString(VV_RELEASE) + FXString("\n\n");
   FXString info = name + version +
     "(c) 2004-2005 Brown University, Providence, RI\n" \
-    "Jürgen P. Schulze (schulze@cs.brown.edu)\n" \
+    "(c) 2005 University of California, San Diego\n" \
+    "Jürgen P. Schulze (jschulze@ucsd.edu)\n" \
     "Alexander C. Rice (acrice@cs.brown.edu)\n\n" \
     "DeskVOX comes with ABSOLUTELY NO WARRANTY.\n" \
     "It is free software, and you are welcome to redistribute it under\n" \
     "the LGPL license. See the file 'license.txt' in the program directory.\n\n" \
-    "http://www.cs.brown.edu/people/schulze/projects/vox/";
+    "http://www.calit2.net/~jschulze/projects/vox/";
 
   FXMessageBox::information((FXWindow*)this, MBOX_OK, "About DeskVOX", info.text());
 
@@ -1617,7 +1618,7 @@ int main(int argc,char *argv[])
   // Make application
   FXString name;
   name = "DeskVOX " + FXString(VV_VERSION) + FXString(".") + FXString(VV_RELEASE);
-  FXApp application(name, "BrownUniversity");    // these values are used in the registry system
+  FXApp application(name, "UCSD");    // these values are used in the registry system
 
   // Open the display
   application.init(argc,argv);

@@ -31,7 +31,7 @@
     <DT>VV_DICOM_SUPPORT</DT>
     <DD>If defined, the Papyrus library is used and DICOM files can be read.</DD>
   </DL>
-  @author Juergen Schulze-Doebold (schulze@hlrs.de)
+  @author Juergen P. Schulze (jschulze@ucsd.de)
 */
 class vvConv
 {
@@ -122,8 +122,8 @@ class vvConv
     int   makeIconSize; ///< new icon size [pixels]
     bool  getIcon;      ///< true = extract icon to file
     char* getIconFile;  ///< file to write icon to
-		bool  swapChannels; ///< true = swap channels
-		int   swapChan[2];  ///< channel IDs to swap (0=first channel)
+    bool  swapChannels; ///< true = swap channels
+    int   swapChan[2];  ///< channel IDs to swap (0=first channel)
     bool  extractChannel; ///< true = extract 4th channel from RGB
     float extract[3];   ///< channel extraction parameters
     int   makeVolume;   ///< create volume algorithmically; default: -1

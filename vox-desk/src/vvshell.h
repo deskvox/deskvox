@@ -73,8 +73,8 @@ class VVGLSettingsDialog;
                                     support is desired. Make sure that Virvo is compiled with HAVE_CG 
                                     defined as well.
     <DT><B>Main Author</B>          <DD> J&uuml;rgen P. Schulze
-    <DT><B>Email</B>                <DD>schulze@cs.brown.edu
-    <DT><B>Institution</B>          <DD>Brown University
+    <DT><B>Email</B>                <DD>jschulze@ucsd.edu
+    <DT><B>Institution</B>          <DD>University of California, San Diego
   </DL>
 */
 
