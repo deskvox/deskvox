@@ -27,16 +27,16 @@
 #elif _LINUX64BIT
 #include <dlfcn.h>
 #else
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <unistd.h>
+  #include <dirent.h>
 #endif
 #include <stdio.h>
 #include <string.h>
 #include <float.h>
 #include <math.h>
 #include <assert.h>
-#include <dirent.h>
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -475,7 +475,6 @@ void vvToolshed::extractBasename(char* basename, const char* pathname)
 string vvToolshed::extractBasename(const string pathname)
 {
   string basename;
-  int i;
 
   basename = extractFilename(pathname);
   basename.erase(basename.rfind('.'));
@@ -2296,6 +2295,33 @@ float vvToolshed::interpolateLinear(float x1, float y1, float x2, float y2, floa
 */
 bool vvToolshed::makeFileList(std::string& path, std::list<std::string>& fileNames, std::list<std::string>& folderNames)
 {
+#ifdef _WIN32
+  WIN32_FIND_DATA fileInfo;
+  HANDLE fileHandle;
+  string searchPath;
+  
+  searchPath = path + "\\*";
+  fileHandle = FindFirstFile(searchPath.c_str(), &fileInfo);
+  if (fileHandle == INVALID_HANDLE_VALUE) 
+  {
+    cerr << "FindFirstFile failed: " << GetLastError() << endl;
+    return false;
+  }
+  do  // add all files and directory in specified path to lists
+  {
+    cerr << "file=" << fileInfo.cFileName << endl;
+    if(fileInfo.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
+    {
+      folderNames.push_back(fileInfo.cFileName);
+    }
+    else
+    {
+      fileNames.push_back(fileInfo.cFileName);
+    }
+  }
+  while (FindNextFile(fileHandle, &fileInfo));   // was another file found?
+  FindClose(fileHandle);
+#else
   DIR* dirHandle;
   struct dirent* entry;
   struct stat statbuf;
@@ -2330,6 +2356,7 @@ bool vvToolshed::makeFileList(std::string& path, std::list<std::string>& fileNam
   folderNames.sort();
 
   closedir(dirHandle);
+#endif  
   return true;
 }
 

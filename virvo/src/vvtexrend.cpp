@@ -1216,12 +1216,10 @@ void vvTexRend::computeBrickSize()
     setProbeSize(&probeSize);
     //setROIEnable(true);
   }
-  cerr << "test1=" << _areBricksCreated << endl;
   if (((newBrickSize - 1) != _renderState._brickSize) || !_areBricksCreated)
   {
     _renderState._brickSize = newBrickSize-1;
     makeTextures();
-    cerr << "test2" << endl;
   }
 }
 
