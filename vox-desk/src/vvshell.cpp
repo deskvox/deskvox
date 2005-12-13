@@ -759,7 +759,7 @@ long VVShell::onCmdMerge(FXObject*,FXSelector,void*)
     else if (_mergeDialog->_vol2animButton->getCheck()) mergeType = vvVolDesc::VV_MERGE_VOL2ANIM;
     else if (_mergeDialog->_chan2volButton->getCheck()) mergeType = vvVolDesc::VV_MERGE_CHAN2VOL;
     else assert(0);
-    
+
     mergeFiles(filename.text(), numFiles, increment, mergeType);
   }
   return 1;

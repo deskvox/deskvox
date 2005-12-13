@@ -44,6 +44,7 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
 {
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_PYRAMID,       VVTransferWindow::onCmdPyramid),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_BELL,          VVTransferWindow::onCmdBell),
+  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_SKIP,          VVTransferWindow::onCmdSkip),
   FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_P_TOP_X,       VVTransferWindow::onChngPyramid),
   FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_P_BOTTOM_X,    VVTransferWindow::onChngPyramid),
   FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_P_TOP_Y,       VVTransferWindow::onChngPyramid),
@@ -52,6 +53,8 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_B_WIDTH,       VVTransferWindow::onChngBell),
   FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_B_HEIGHT,      VVTransferWindow::onChngBell),
   FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_B_MAX,         VVTransferWindow::onChngBell),
+  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_S_WIDTH,       VVTransferWindow::onChngSkip),
+  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_S_HEIGHT,      VVTransferWindow::onChngSkip),
   FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_DIS_COLOR,     VVTransferWindow::onChngDisColors),
   FXMAPFUNC(SEL_PAINT,            VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onTFCanvasPaint),
   FXMAPFUNC(SEL_PAINT,            VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onTFCanvasPaint),
@@ -110,11 +113,12 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
 
   // Common elements:
   FXHorizontalFrame* buttonFrame = new FXHorizontalFrame(master, LAYOUT_FILL_Y | LAYOUT_CENTER_X | PACK_UNIFORM_WIDTH);
-  new FXButton(buttonFrame,"New Color",   NULL,this,ID_COLOR,  FRAME_RAISED|FRAME_THICK,0,0,0,0,20,20);   // sets width for all buttons
-  new FXButton(buttonFrame,"New Pyramid", NULL,this,ID_PYRAMID,FRAME_RAISED|FRAME_THICK);
-  new FXButton(buttonFrame,"New Gaussian",NULL,this,ID_BELL,   FRAME_RAISED|FRAME_THICK);
-  new FXButton(buttonFrame,"Delete",      NULL,this,ID_DELETE, FRAME_RAISED|FRAME_THICK);
-  new FXButton(buttonFrame,"Undo",        NULL,this,ID_UNDO,   FRAME_RAISED|FRAME_THICK);
+  new FXButton(buttonFrame,"Color",      NULL,this,ID_COLOR,  FRAME_RAISED|FRAME_THICK,0,0,0,0,20,20);   // sets width for all buttons
+  new FXButton(buttonFrame,"Pyramid",    NULL,this,ID_PYRAMID,FRAME_RAISED|FRAME_THICK);
+  new FXButton(buttonFrame,"Gaussian",   NULL,this,ID_BELL,   FRAME_RAISED|FRAME_THICK);
+  new FXButton(buttonFrame,"Skip Range", NULL,this,ID_SKIP,   FRAME_RAISED|FRAME_THICK);
+  new FXButton(buttonFrame,"Delete",     NULL,this,ID_DELETE, FRAME_RAISED|FRAME_THICK);
+  new FXButton(buttonFrame,"Undo",       NULL,this,ID_UNDO,   FRAME_RAISED|FRAME_THICK);
 
   FXHorizontalFrame* controlFrame=new FXHorizontalFrame(master,LAYOUT_FILL_X);
   FXVerticalFrame* comboFrame=new FXVerticalFrame(controlFrame,LAYOUT_FILL_Y);
@@ -229,6 +233,27 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _bColorButton = new FXCheckButton(bColorFrame,"Has own color",this,ID_OWN_COLOR,ICON_BEFORE_TEXT|LAYOUT_LEFT);
   new FXButton(bColorFrame,"Pick color",NULL,this,ID_PICK_COLOR, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
 
+  // Switcher state #4:
+  FXGroupBox* pinGroup4 = new FXGroupBox(_pinSwitcher,"Skip Range Settings",FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
+  FXVerticalFrame* sliderFrame3 = new FXVerticalFrame(pinGroup4, LAYOUT_FILL_X);
+
+  FXMatrix* _sWidthMat = new FXMatrix(sliderFrame3, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
+  new FXLabel(_sWidthMat, "Width: ",NULL,LABEL_NORMAL);
+  _sWidthLabel = new FXLabel(_sWidthMat, "0",NULL,LABEL_NORMAL);
+  _sWidthSlider=new FXRealSlider(sliderFrame3,this,ID_S_WIDTH,SLIDER_HORIZONTAL|SLIDER_ARROW_DOWN|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+  _sWidthSlider->setRange(0.0f, 1.0f);
+  _sWidthSlider->setValue(0.0f);
+  _sWidthSlider->setTickDelta(.01);
+
+  FXMatrix* _sHeightMat = new FXMatrix(sliderFrame3, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
+  new FXLabel(_sHeightMat, "Height: ",NULL,LABEL_NORMAL);
+  _sHeightLabel = new FXLabel(_sHeightMat, "0",NULL,LABEL_NORMAL);
+  _sHeightSlider=new FXRealSlider(sliderFrame3,this,ID_S_HEIGHT,SLIDER_HORIZONTAL|SLIDER_ARROW_DOWN|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+  _sHeightSlider->setRange(0.0f, 1.0f);
+  _sHeightSlider->setValue(0.0f);
+  _sHeightSlider->setTickDelta(.01);
+
+  // Continue with pin independent widgets:
   _cbNorm = new FXCheckButton(master, "Logarithmic histogram normalization", this, ID_NORMALIZATION, ICON_BEFORE_TEXT|LAYOUT_LEFT);
   _cbNorm->setCheck(true);
 
@@ -314,21 +339,41 @@ long VVTransferWindow::onCmdBell(FXObject*,FXSelector,void*)
   return 1;
 }
 
+long VVTransferWindow::onCmdSkip(FXObject*,FXSelector,void*)
+{
+  newWidget(SKIP);
+  return 1;
+}
+
 long VVTransferWindow::onCmdPickColor(FXObject*,FXSelector,void*)
 {
-  float r,g,b;
+  float r=0.0f, g=0.0f, b=0.0f;
+  vvTFColor* cw=NULL;
+  vvTFPyramid* pw=NULL;
+  vvTFBell* bw=NULL;
 
   if(!_currentWidget) return 1;
-  if ((dynamic_cast<vvTFColor*>(_currentWidget))!=NULL ||
-      (dynamic_cast<vvTFPyramid*>(_currentWidget))!=NULL ||
-      (dynamic_cast<vvTFBell*>(_currentWidget))!=NULL)
+  
+  // Find out widget type:
+  if ((cw = dynamic_cast<vvTFColor*>(_currentWidget))   != NULL ||
+      (pw = dynamic_cast<vvTFPyramid*>(_currentWidget)) != NULL ||
+      (bw = dynamic_cast<vvTFBell*>(_currentWidget))    != NULL)
   {
-    _currentWidget->_col.getRGB(r,g,b);
+    // Get widget color:
+    if (cw) cw->_col.getRGB(r,g,b);
+    else if (pw) pw->_col.getRGB(r,g,b);
+    else if (bw) bw->_col.getRGB(r,g,b);
+    else assert(0);
+
+    // Set color picker color:   
     _colorPicker->setRGBA(FXRGBA(r*255,g*255,b*255,255));
     if (_colorPicker->execute() == 0)   // has picker exited with 'cancel'?
     {
-      _currentWidget->_col.setRGB(r,g,b);  // then undo changes to color
-      drawTF();
+      // Undo changes to color:
+      if (cw) cw->_col.setRGB(r,g,b);
+      else if (pw) pw->_col.setRGB(r,g,b);
+      else if (bw) bw->_col.setRGB(r,g,b);
+       drawTF();
       if(_instantButton->getCheck()) updateTransFunc();
     }
   }
@@ -337,19 +382,28 @@ long VVTransferWindow::onCmdPickColor(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onChngPickerColor(FXObject*,FXSelector,void*)
 {
+  vvTFColor* cw=NULL;
+  vvTFPyramid* pw=NULL;
+  vvTFBell* bw=NULL;
+
   if(!_currentWidget) return 1;
-  if ((dynamic_cast<vvTFColor*>(_currentWidget))!=NULL ||
-      (dynamic_cast<vvTFPyramid*>(_currentWidget))!=NULL ||
-      (dynamic_cast<vvTFBell*>(_currentWidget))!=NULL)
+  
+  // Find out widget type:
+  if ((cw = dynamic_cast<vvTFColor*>(_currentWidget))   != NULL ||
+      (pw = dynamic_cast<vvTFPyramid*>(_currentWidget)) != NULL ||
+      (bw = dynamic_cast<vvTFBell*>(_currentWidget))    != NULL)
   {
     FXColor col = _colorPicker->getRGBA();
     float r = float(FXREDVAL(col))   / 255.0f;
     float g = float(FXGREENVAL(col)) / 255.0f;
     float b = float(FXBLUEVAL(col))  / 255.0f;
-    _currentWidget->_col.setRGB(r,g,b);
+    if (cw) cw->_col.setRGB(r,g,b);
+    else if (pw) pw->_col.setRGB(r,g,b);
+    else if (bw) bw->_col.setRGB(r,g,b);
     drawTF();
     if(_instantButton->getCheck()) updateTransFunc();
-  }
+  }  
+ 
   return 1;
 }
 
@@ -386,6 +440,21 @@ long VVTransferWindow::onChngBell(FXObject*,FXSelector,void*)
   bw->_size[0] = _bWidthSlider->getValue();
   bw->_size[1] = _bHeightSlider->getValue();
   bw->_opacity = _bMaxSlider->getValue();
+  drawTF();
+  if(_instantButton->getCheck()) updateTransFunc();
+  return 1;
+}
+
+long VVTransferWindow::onChngSkip(FXObject*,FXSelector,void*)
+{
+  vvTFSkip* sw;
+
+  _sWidthLabel->setText(FXStringFormat("%.2f", _sWidthSlider->getValue()));
+  _sHeightLabel->setText(FXStringFormat("%.2f", _sHeightSlider->getValue()));
+  if(!_currentWidget) return 1;
+  assert((sw=dynamic_cast<vvTFSkip*>(_currentWidget))!=NULL);
+  sw->_size[0] = _sWidthSlider->getValue();
+  sw->_size[1] = _sHeightSlider->getValue();
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
   return 1;
@@ -579,6 +648,9 @@ void VVTransferWindow::newWidget(WidgetType wt)
       break;
     case BELL:
       widget = new vvTFBell(col, false, 1.0f, 0.5f, 0.2f);
+      break;
+    case SKIP:
+      widget = new vvTFSkip(0.5f, 0.2f);
       break;
     default: return;
   }
@@ -789,7 +861,8 @@ void VVTransferWindow::drawPinLine(vvTFWidget* w)
     height = float(COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());
   }
   else if ((dynamic_cast<vvTFPyramid*>(w) != NULL) ||
-           (dynamic_cast<vvTFBell*>(w) != NULL))
+           (dynamic_cast<vvTFBell*>(w) != NULL) ||
+           (dynamic_cast<vvTFSkip*>(w) != NULL))
   {
     yTop = 1.0f - float(COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());
     height = float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());
@@ -868,6 +941,7 @@ void VVTransferWindow::updateLabels()
   vvTFColor* cw;
   vvTFPyramid* pw;
   vvTFBell* bw;
+  vvTFSkip* sw;
 
   if ((cw=dynamic_cast<vvTFColor*>(_currentWidget))!=NULL)
   {
@@ -898,6 +972,14 @@ void VVTransferWindow::updateLabels()
     _bMaxSlider->setValue(bw->_opacity);
     _bMaxLabel->setText(FXStringFormat("%.2f", _bMaxSlider->getValue()));
     _bColorButton->setCheck(bw->hasOwnColor());
+  }
+  else if ((sw=dynamic_cast<vvTFSkip*>(_currentWidget))!=NULL)
+  {
+    _pinSwitcher->setCurrent(4);
+    _sWidthSlider->setValue(sw->_size[0]);
+    _sWidthLabel->setText(FXStringFormat("%.2f", _sWidthSlider->getValue()));
+    _sHeightSlider->setValue(sw->_size[1]);
+    _sHeightLabel->setText(FXStringFormat("%.2f", _sWidthSlider->getValue()));
   }
   else    // no current widget
   {

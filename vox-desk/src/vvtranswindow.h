@@ -47,6 +47,7 @@ class VVTransferWindow : public FXDialogBox
       ID_PYRAMID=FXDialogBox::ID_LAST,
       ID_BELL,
       ID_COLOR,
+      ID_SKIP,
       ID_P_TOP_X,
       ID_P_BOTTOM_X,
       ID_P_TOP_Y,
@@ -56,6 +57,8 @@ class VVTransferWindow : public FXDialogBox
       ID_B_WIDTH,
       ID_B_HEIGHT,
       ID_B_MAX,
+      ID_S_WIDTH,
+      ID_S_HEIGHT,
       ID_TF_CANVAS_1D,
       ID_TF_CANVAS_2D,
       ID_DELETE,
@@ -73,13 +76,14 @@ class VVTransferWindow : public FXDialogBox
       ID_TF_BOOK,
       ID_PIN_BOOK,
       ID_NORMALIZATION,
-      ID_LAST,
+      ID_LAST
     };
     enum WidgetType
     {
       COLOR,
       PYRAMID,
-      BELL
+      BELL,
+      SKIP
     };
 
     VVTransferWindow(FXWindow*, vox::vvCanvas*);
@@ -88,6 +92,7 @@ class VVTransferWindow : public FXDialogBox
     long onCmdColor(FXObject*,FXSelector,void*);
     long onCmdPyramid(FXObject*,FXSelector,void*);
     long onCmdBell(FXObject*,FXSelector,void*);
+    long onCmdSkip(FXObject*,FXSelector,void*);
     long onCmdDelete(FXObject*,FXSelector,void*);
     long onCmdUndo(FXObject*,FXSelector,void*);
     long onCmdApply(FXObject*,FXSelector,void*);
@@ -98,6 +103,7 @@ class VVTransferWindow : public FXDialogBox
     long onCmdHist(FXObject*,FXSelector,void*);
     long onChngPyramid(FXObject*,FXSelector,void*);
     long onChngBell(FXObject*,FXSelector,void*);
+    long onChngSkip(FXObject*,FXSelector,void*);
     long onChngPos(FXObject*,FXSelector,void*);
     long onMouseDown1D(FXObject*,FXSelector,void*);
     long onMouseUp1D(FXObject*,FXSelector,void*);
@@ -137,6 +143,8 @@ class VVTransferWindow : public FXDialogBox
     FXRealSlider* _bWidthSlider;
     FXRealSlider* _bHeightSlider;
     FXRealSlider* _bMaxSlider;
+    FXRealSlider* _sWidthSlider;
+    FXRealSlider* _sHeightSlider;
     FXLabel* _pTopXLabel;
     FXLabel* _pBottomXLabel;
     FXLabel* _pTopYLabel;
@@ -145,6 +153,8 @@ class VVTransferWindow : public FXDialogBox
     FXLabel* _bWidthLabel;
     FXLabel* _bHeightLabel;
     FXLabel* _bMaxLabel;
+    FXLabel* _sWidthLabel;
+    FXLabel* _sHeightLabel;
     FXLabel* _realMinLabel;
     FXLabel* _realPosLabel;
     FXLabel* _realMaxLabel;

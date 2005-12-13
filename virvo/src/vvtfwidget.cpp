@@ -103,6 +103,8 @@ void vvColor::getHSB(float& h, float& s, float& b)
 
 const char* vvTFWidget::NO_NAME = "UNNAMED";
 
+/** Default constructor.
+*/
 vvTFWidget::vvTFWidget()
 {
   int i;
@@ -110,11 +112,12 @@ vvTFWidget::vvTFWidget()
   _name = NULL;
   for (i=0; i<3; ++i)
   {
-    _col[i] = 1.0f;                               // default is white
     _pos[i] = 0.5f;                               // default is center of TF space
   }
 }
 
+/** Copy constructor.
+*/
 vvTFWidget::vvTFWidget(vvTFWidget* src)
 {
   int i;
@@ -123,15 +126,15 @@ vvTFWidget::vvTFWidget(vvTFWidget* src)
   setName(src->_name);
   for (i=0; i<3; ++i)
   {
-    _col[i] = src->_col[i];
     _pos[i] = src->_pos[i];
   }
 }
 
-vvTFWidget::vvTFWidget(vvColor col, float x, float y, float z)
+/** Constructor with parameter initalization.
+*/
+vvTFWidget::vvTFWidget(float x, float y, float z)
 {
   _name = NULL;
-  _col = col;
   _pos[0] = x;
   _pos[1] = y;
   _pos[2] = z;
@@ -185,6 +188,7 @@ vvTFBell::vvTFBell() : vvTFWidget()
   _ownColor = true;
   for (i=0; i<3; ++i)
   {
+    _col[i] = 1.0f;                               // default is white
     _size[i] = 0.2f;                              // default with: smaller rather than bigger
   }
 }
@@ -197,13 +201,15 @@ vvTFBell::vvTFBell(vvTFBell* src) : vvTFWidget(src)
   _ownColor = src->_ownColor;
   for (i=0; i<3; ++i)
   {
+    _col[i] = src->_col[i];
     _size[i] = src->_size[i];
   }
 }
 
 vvTFBell::vvTFBell(vvColor col, bool ownColor, float opacity,
-float x, float w, float y, float h, float z, float d) : vvTFWidget(col, x, y, z)
+float x, float w, float y, float h, float z, float d) : vvTFWidget(x, y, z)
 {
+  _col = col;
   _ownColor = ownColor;
   _opacity = opacity;
   _size[0] = w;
@@ -335,6 +341,7 @@ vvTFPyramid::vvTFPyramid() : vvTFWidget()
   _ownColor = true;
   for (i=0; i<3; ++i)
   {
+    _col[i] = 1.0f;                               // default is white
     _top[i] = 0.2f;                               // default with: smaller rather than bigger
     _bottom[i] = 0.4f;
   }
@@ -348,14 +355,16 @@ vvTFPyramid::vvTFPyramid(vvTFPyramid* src) : vvTFWidget(src)
   _ownColor = src->_ownColor;
   for (i=0; i<3; ++i)
   {
+    _col[i] = src->_col[i];
     _top[i] = src->_top[i];
     _bottom[i] = src->_bottom[i];
   }
 }
 
 vvTFPyramid::vvTFPyramid(vvColor col, bool ownColor, float opacity, float x, float wb, float wt,
-float y, float hb, float ht, float z, float db, float dt) : vvTFWidget(col, x, y, z)
+float y, float hb, float ht, float z, float db, float dt) : vvTFWidget(x, y, z)
 {
+  _col = col;
   _ownColor = ownColor;
   _opacity = opacity;
   _top[0]    = wt;
@@ -493,14 +502,27 @@ void vvTFPyramid::setOwnColor(bool own)
 
 vvTFColor::vvTFColor() : vvTFWidget()
 {
+  int i;
+  
+  for(i=0; i<3; ++i)
+  {
+    _col[i] = 1.0f;                               // default is white
+  }
 }
 
 vvTFColor::vvTFColor(vvTFColor* src) : vvTFWidget(src)
 {
+  int i;
+  
+  for(i=0; i<3; ++i)
+  {
+    _col[i] = src->_col[i];
+  }
 }
 
-vvTFColor::vvTFColor(vvColor col, float x, float y, float z) : vvTFWidget(col, x, y, z)
+vvTFColor::vvTFColor(vvColor col, float x, float y, float z) : vvTFWidget(x, y, z)
 {
+  _col = col;
 }
 
 vvTFColor::vvTFColor(FILE* fp) : vvTFWidget()
@@ -515,6 +537,84 @@ void vvTFColor::write(FILE* fp)
 
   fprintf(fp, "TF_COLOR %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
     _pos[0], _pos[1], _pos[2], _col[0], _col[1], _col[2]);
+}
+
+//============================================================================
+
+/** Default constructor.
+  The skip widget defines a value range in which the voxels should always be transparent.
+*/
+vvTFSkip::vvTFSkip() : vvTFWidget()
+{
+  int i;
+  
+  for (i=0; i<3; ++i)
+  {
+    _size[i] = 0.0f;
+  }
+}
+
+/** Copy constructor
+*/
+vvTFSkip::vvTFSkip(vvTFSkip* src) : vvTFWidget(src)
+{
+  int i;
+  
+  for (i=0; i<3; ++i)
+  {
+    _size[i] = src->_size[i];
+  }
+}
+
+/** Constructor with parameter initialization.
+  @param xpos,ypos,zpos position of center of skipped area
+  @param xsize,ysize,zsize width, height, depth of skipped area
+*/
+vvTFSkip::vvTFSkip(float xpos, float xsize, float ypos, float ysize, float zpos, float zsize) : vvTFWidget(xpos, ypos, zpos)
+{
+  _size[0] = xsize;
+  _size[1] = ysize;
+  _size[2] = zsize;
+}
+
+vvTFSkip::vvTFSkip(FILE* fp) : vvTFWidget()
+{
+  readName(fp);
+  fscanf(fp, " %g %g %g %g %g %g\n", &_pos[0], &_pos[1], &_pos[2], &_size[0], &_size[1], &_size[2]);
+}
+
+void vvTFSkip::write(FILE* fp)
+{
+  bool running=true;
+
+  fprintf(fp, "TF_SKIP %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
+    _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2]);
+}
+
+/** @return 0 if x/y/z point is within skipped area, otherwise -1
+*/
+float vvTFSkip::getOpacity(float x, float y, float z)
+{
+  float _min[3];
+  float _max[3];
+  int i, dim;
+  
+  for (i=0; i<3; ++i)
+  {
+    _min[i] = _pos[i] - _size[i] / 2.0f;
+    _max[i] = _pos[i] + _size[i] / 2.0f;
+  }
+  
+  // Determine dimensionality of transfer function:
+  dim = 1;
+  if (z>-1.0f) dim = 3;
+  else if (y>-1.0f) dim = 2;
+
+  // Now find out if point lies within skip area:
+  if (x>=_min[0] && x<=_max[0] &&
+      (dim<2 || (y>=_min[1] && y<=_max[1])) &&
+      (dim<3 || (z>=_min[2] && z<=_max[2]))) return 0.0f;
+  else return -1.0f;
 }
 
 //============================================================================

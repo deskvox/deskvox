@@ -47,7 +47,6 @@ vvTransFunc::vvTransFunc()
 // Copy Constructor
 vvTransFunc::vvTransFunc(vvTransFunc* tf)
 {
-
   tf->_widgets.first();
   for (int i = 0; i < tf->_widgets.count(); i++)
   {
@@ -56,12 +55,16 @@ vvTransFunc::vvTransFunc(vvTransFunc* tf)
     vvTFColor* c;
     vvTFPyramid* p;
     vvTFBell* b;
+    vvTFSkip* s;
     if ((c = dynamic_cast<vvTFColor*>(oldW)) != NULL)
       _widgets.append(new vvTFColor(c), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
     else if ((p = dynamic_cast<vvTFPyramid*>(oldW)) != NULL)
       _widgets.append(new vvTFPyramid(p), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
     else if ((b = dynamic_cast<vvTFBell*>(oldW)) != NULL)
       _widgets.append(new vvTFBell(b), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    else if ((s = dynamic_cast<vvTFSkip*>(oldW)) != NULL)
+      _widgets.append(new vvTFSkip(s), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    else assert(0);
     tf->_widgets.next();
   }
 
@@ -91,9 +94,10 @@ void vvTransFunc::deleteWidgets(WidgetType wt)
   while (!done && !_widgets.isEmpty())
   {
     w = _widgets.getData();
-    if ((wt==TF_COLOR  && dynamic_cast<vvTFColor*>(w)) ||
+    if ((wt==TF_COLOR && dynamic_cast<vvTFColor*>(w)) ||
       (wt==TF_PYRAMID && dynamic_cast<vvTFPyramid*>(w)) ||
-      (wt==TF_BELL    && dynamic_cast<vvTFBell*>(w)))
+      (wt==TF_BELL    && dynamic_cast<vvTFBell*>(w)) ||
+      (wt==TF_SKIP    && dynamic_cast<vvTFSkip*>(w)))
     {
       _widgets.remove();
       _widgets.first();
@@ -216,8 +220,9 @@ vvColor vvTransFunc::computeBGColor(float x, float, float)
 {
   vvColor col;
   vvTFWidget* w;
-  vvTFWidget* wBefore = NULL;
-  vvTFWidget* wAfter = NULL;
+  vvTFColor* wBefore = NULL;
+  vvTFColor* wAfter = NULL;
+  vvTFColor* cw;
   int c, i;
   int numNodes;
 
@@ -226,15 +231,15 @@ vvColor vvTransFunc::computeBGColor(float x, float, float)
   for (i=0; i<numNodes; ++i)
   {
     w = _widgets.getData();
-    if (dynamic_cast<vvTFColor*>(w))
+    if ((cw = dynamic_cast<vvTFColor*>(w)) != NULL)
     {
-      if (w->_pos[0] <= x)
+      if (cw->_pos[0] <= x)
       {
-        if (wBefore==NULL || wBefore->_pos[0] < w->_pos[0]) wBefore = w;
+        if (wBefore==NULL || wBefore->_pos[0] < cw->_pos[0]) wBefore = cw;
       }
-      if (w->_pos[0] > x)
+      if (cw->_pos[0] > x)
       {
-        if (wAfter==NULL || wAfter->_pos[0] > w->_pos[0]) wAfter = w;
+        if (wAfter==NULL || wAfter->_pos[0] > cw->_pos[0]) wAfter = cw;
       }
     }
     _widgets.next();
@@ -324,7 +329,8 @@ float vvTransFunc::computeOpacity(float x, float y, float z)
   for (i=0; i<numNodes; ++i)
   {
     w = _widgets.getData();
-    opacity = ts_max(opacity, w->getOpacity(x, y, z));
+    if (dynamic_cast<vvTFSkip*>(w) && w->getOpacity(x, y, z)==0.0f) return 0.0f;  // skip widget is dominant
+    else opacity = ts_max(opacity, w->getOpacity(x, y, z));
     _widgets.next();
   }
   return opacity;
@@ -498,6 +504,7 @@ void vvTransFunc::copy(vvSLList<vvTFWidget*>* dst, vvSLList<vvTFWidget*>* src)
   vvTFPyramid* pw;
   vvTFBell* bw;
   vvTFColor* cw;
+  vvTFSkip* sw;
   int numNodes, i;
 
   dst->removeAll();
@@ -517,6 +524,10 @@ void vvTransFunc::copy(vvSLList<vvTFWidget*>* dst, vvSLList<vvTFWidget*>* src)
     else if (cw = dynamic_cast<vvTFColor*>(w))
     {
       dst->append(new vvTFColor(cw), src->getDeleteType());
+    }
+    else if (sw = dynamic_cast<vvTFSkip*>(w))
+    {
+      dst->append(new vvTFSkip(sw), src->getDeleteType());
     }
     else assert(0);
     src->next();

@@ -46,7 +46,8 @@ class VIRVOEXPORT vvTransFunc
     {
       TF_COLOR,
       TF_PYRAMID,
-      TF_BELL
+      TF_BELL,
+      TF_SKIP
     };
     vvSLList<vvTFWidget*> _widgets;               ///< TF widget list
 

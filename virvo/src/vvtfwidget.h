@@ -54,11 +54,10 @@ class VIRVOEXPORT vvTFWidget
     char* _name;                                  ///< widget name (bone, soft tissue, etc)
 
   public:
-    vvColor _col;                                 ///< RGB color
     float _pos[3];                                ///< position of widget's center in transfer function space [0..1 is inside TF space, other values are valid but outside]
 
     vvTFWidget();
-    vvTFWidget(vvColor, float, float, float);
+    vvTFWidget(float, float, float);
     vvTFWidget(vvTFWidget*);
     virtual ~vvTFWidget();
     virtual void setName(const char*);
@@ -77,6 +76,7 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
     bool _ownColor;                               ///< true = use widget's own color for TF; false=use background color for TF
 
   public:
+    vvColor _col;                                 ///< RGB color
     float _size[3];                               ///< width, height, depth of bell's bounding box [TF space is 0..1]
     float _opacity;                               ///< maximum opacity [0..1]
 
@@ -100,6 +100,7 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     bool _ownColor;                               ///< true = use widget's own color for TF; false=use background color for TF
 
   public:
+    vvColor _col;                                 ///< RGB color
     float _top[3];                                ///< width at top [0..1]
     float _bottom[3];                             ///< width at bottom of pyramid [0..1]
     float _opacity;                               ///< maximum opacity [0..1]
@@ -120,12 +121,30 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
 class VIRVOEXPORT vvTFColor : public vvTFWidget
 {
   public:
+    vvColor _col;                                 ///< RGB color
+
     vvTFColor();
     vvTFColor(vvTFColor*);
     vvTFColor(vvColor, float, float=0.0f, float=0.0f);
     vvTFColor(FILE*);
     virtual void write(FILE*);
 };
+
+/** Transfer function widget to skip an area of the transfer function when rendering.
+ */
+class VIRVOEXPORT vvTFSkip : public vvTFWidget
+{
+  public:
+    float _size[3];          ///< width, height, depth of skipped area [TF space is 0..1]
+
+    vvTFSkip();
+    vvTFSkip(vvTFSkip*);
+    vvTFSkip(float, float, float=0.5f, float=0.0f, float=0.5f, float=0.0f);
+    vvTFSkip(FILE*);
+    virtual void write(FILE*);
+    virtual float getOpacity(float, float=-1.0f, float=-1.0f);
+};
+
 #endif
 
 //============================================================================
