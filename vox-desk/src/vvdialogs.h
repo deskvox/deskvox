@@ -733,14 +733,16 @@ class VVFloatRangeDialog : public FXDialogBox
       ID_MAX_DATA,
       ID_BOT_PERCENT,
       ID_TOP_PERCENT,
-      ID_HDR,
+      ID_ISO,
+      ID_WEIGHT,
       ID_CANCEL
     };
     FXTextField* _minTF;
     FXTextField* _maxTF;
     FXTextField* _botClamp;
     FXTextField* _topClamp;
-    FXCheckButton* _hdrCheck;
+    FXCheckButton* _isoCheck;
+    FXCheckButton* _weightCheck;
     VVShell* _shell;
     vox::vvCanvas* _canvas;
     float _minBak, _maxBak;

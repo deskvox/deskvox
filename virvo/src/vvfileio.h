@@ -89,6 +89,7 @@ class VIRVOEXPORT vvFileIO
     ErrorType loadCPTFile(vvVolDesc*,int=128,int=8,bool=true);
     ErrorType mergeFiles(vvVolDesc*, int, int, vvVolDesc::MergeType);
     void      setCompression(bool);
+    ErrorType importTF(vvVolDesc*, const char*);
 
   protected:
     char _xvfID[10];                               ///< XVF file ID

@@ -2551,7 +2551,9 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   _topClamp->setText(FXStringFormat("%.9g", 5.0f));
   new FXButton(topClampFrame, "% below max", NULL, this, ID_TOP_PERCENT, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
-  _hdrCheck = new FXCheckButton(verticalFrame, "High dynamic range compression", this, ID_HDR, ICON_BEFORE_TEXT);
+  FXGroupBox* hdrGroup = new FXGroupBox(verticalFrame,"High dynamic range mapping",FRAME_GROOVE | LAYOUT_FILL_X);
+  _isoCheck = new FXCheckButton(hdrGroup, "Iso-data binning (default: iso-range)", this, ID_ISO, ICON_BEFORE_TEXT);
+  _weightCheck = new FXCheckButton(hdrGroup, "Opacity-weighted binning", this, ID_WEIGHT, ICON_BEFORE_TEXT);
 
   // Buttons:
   FXVerticalFrame* buttonFrame = new FXVerticalFrame(horizontalFrame, LAYOUT_FILL_X | LAYOUT_FIX_WIDTH,0,0,80);
@@ -2592,7 +2594,8 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
     {
       _canvas->_vd->real[0] = FXFloatVal(_minTF->getText());
       _canvas->_vd->real[1] = FXFloatVal(_maxTF->getText());
-      _canvas->_renderer->setParameter(vvRenderer::VV_HDR_COMPRESSION, (_hdrCheck->getCheck()) ? 1.0f : 0.0f);
+      _canvas->_renderer->setParameter(vvRenderer::VV_BIN_ISO, (_isoCheck->getCheck()) ? 1.0f : 0.0f);
+      _canvas->_renderer->setParameter(vvRenderer::VV_BIN_WEIGHT, (_weightCheck->getCheck()) ? 1.0f : 0.0f);
       _canvas->_renderer->updateVolumeData();
       _shell->_glcanvas->makeNonCurrent();
     }

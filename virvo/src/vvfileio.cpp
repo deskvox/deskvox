@@ -4775,6 +4775,32 @@ vvFileIO::ErrorType vvFileIO::mergeFiles(vvVolDesc* vd, int numFiles, int increm
   return ret;
 }
 
+//----------------------------------------------------------------------------
+/** Import transfer function (TF) from another volume file.
+  @param vd volume to load transfer function into
+  @param filename volume file name of which to copy transfer function
+*/
+vvFileIO::ErrorType vvFileIO::importTF(vvVolDesc* vd, const char* filename)
+{
+  ErrorType ret = OK;                             // this function's return value
+  
+  vvVolDesc* vd2 = new vvVolDesc(filename);
+  vvFileIO* fio = new vvFileIO();
+  switch (fio->loadVolumeData(vd2, vvFileIO::TRANSFER))
+  {
+    case vvFileIO::OK: 
+      vd->tf.copy(&vd->tf._widgets, &vd2->tf._widgets);
+      break;
+    default: 
+      ret = FILE_ERROR;
+      break;
+  }
+  delete fio;
+  delete vd2;
+  
+  return ret;
+}
+
 //============================================================================
 // End of File
 //============================================================================

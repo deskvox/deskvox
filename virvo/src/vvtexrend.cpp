@@ -113,7 +113,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   rgbaLUT = new uchar[256 * 256 * 4];
   preintTable = new uchar[getPreintTableSize()*getPreintTableSize()*4];
   preIntegration = true;
-  _hdrCompression = false;
+  _binOpacityWeighted = false;
+  _binIsoData = false;
   usePreIntegration = false;
   textures = 0;
   opacityCorrection = true;
@@ -345,8 +346,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
       _areBricksCreated = false;
       computeBrickSize();
     }
-    else
-      makeTextures();                             // we only have to do this once for non-RGBA textures
+    else makeTextures();                             // we only have to do this once for non-RGBA textures
   }
 }
 
@@ -387,13 +387,13 @@ vvTexRend::~vvTexRend()
 #endif
   delete[] preintTable;
 
-  brickList.first();
-  for (int f = 0; f < brickList.count(); f++)
+  _brickList.first();
+  for (int f = 0; f < _brickList.count(); f++)
   {
-    brickList.getData()->removeAll();
-    brickList.next();
+    _brickList.getData()->removeAll();
+    _brickList.next();
   }
-  brickList.removeAll();
+  _brickList.removeAll();
 }
 
 //----------------------------------------------------------------------------
@@ -473,7 +473,7 @@ void vvTexRend::removeTextures()
 }
 
 //----------------------------------------------------------------------------
-/// Generate textures.
+/// Generate textures for all rendering modes.
 vvTexRend::ErrorType vvTexRend::makeTextures()
 {
   static bool first = true;
@@ -784,18 +784,18 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
 
   frames = vd->frames;
 
-  brickList.first();
-  for (i = 0; i < brickList.count(); i++)
+  _brickList.first();
+  for (i = 0; i < _brickList.count(); i++)
   {
-    brickList.getData()->removeAll();
-    brickList.next();
+    _brickList.getData()->removeAll();
+    _brickList.next();
   }
-  brickList.removeAll();
+  _brickList.removeAll();
 
   for (f = 0; f < frames; f++)
   {
     tmp = new vvSLList<Brick*>;
-    brickList.append(tmp, vvSLNode<vvSLList<Brick*> *>::NORMAL_DELETE);
+    _brickList.append(tmp, vvSLNode<vvSLList<Brick*> *>::NORMAL_DELETE);
   }
 
   // compute number of texels / per brick (should be of power 2)
@@ -851,7 +851,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
   halfVolume.sub(1.0);
   halfVolume.scale(0.5);
 
-  brickList.first();
+  _brickList.first();
 
   for (f = 0; f < frames; f++)
   {
@@ -901,8 +901,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
               if (x < 0) continue;
 
               srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
-              if (vd->bpc == 1)
-                rawVal[0] = (int) raw[srcIndex];
+              if (vd->bpc == 1) rawVal[0] = (int) raw[srcIndex];
               else if (vd->bpc == 2)
               {
                 rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
@@ -1023,7 +1022,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
       currBrick->startOffset[1] = startOffset[1];
       currBrick->startOffset[2] = startOffset[2];
 
-      brickList.getData()->append(currBrick, vvSLNode<Brick*>::NORMAL_DELETE);
+      _brickList.getData()->append(currBrick, vvSLNode<Brick*>::NORMAL_DELETE);
 
       glBindTexture(GL_TEXTURE_3D_EXT, texNames[texIndex]);
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -1044,10 +1043,10 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
       else
         accommodated = false;
     }
-    brickList.next();
+    _brickList.next();
   }
 
-  brickList.first();
+  _brickList.first();
 
   if (!accommodated)
   {
@@ -1068,11 +1067,11 @@ void vvTexRend::updateBrickGeom()
   vvVector3 halfBrick;
   vvVector3 halfVolume;
 
-  brickList.first();
+  _brickList.first();
 
-  for (f = 0; f < brickList.count(); f++)
+  for (f = 0; f < _brickList.count(); f++)
   {
-    brickList.getData()->first();
+    _brickList.getData()->first();
 
     // help variables
     voxSize = vd->getSize();
@@ -1087,9 +1086,9 @@ void vvTexRend::updateBrickGeom()
     halfVolume.sub(1.0);
     halfVolume.scale(0.5);
 
-    for (c = 0; c < brickList.getData()->count(); c++)
+    for (c = 0; c < _brickList.getData()->count(); c++)
     {
-      tmp = brickList.getData()->getData();
+      tmp = _brickList.getData()->getData();
       tmp->pos.set(vd->pos[0] + voxSize[0] * (tmp->startOffset[0] + halfBrick[0] - halfVolume[0]),
         vd->pos[1] + voxSize[1] * (tmp->startOffset[1] + halfBrick[1] - halfVolume[1]),
         vd->pos[2] + voxSize[2] * (tmp->startOffset[2] + halfBrick[2] - halfVolume[2]));
@@ -1099,9 +1098,9 @@ void vvTexRend::updateBrickGeom()
       tmp->max.set(vd->pos[0] + voxSize[0] * (tmp->startOffset[0] + (tmp->texels[0] - 1) - halfVolume[0]),
         vd->pos[1] + voxSize[1] * (tmp->startOffset[1] + (tmp->texels[1] - 1) - halfVolume[1]),
         vd->pos[2] + voxSize[2] * (tmp->startOffset[2] + (tmp->texels[2] - 1) - halfVolume[2]));
-      brickList.getData()->next();
+      _brickList.getData()->next();
     }
-    brickList.next();
+    _brickList.next();
   }
 }
 
@@ -1769,16 +1768,11 @@ int sizeX, int sizeY, int sizeZ)
   if (!extTex3d) return NO3DTEX;
 
   realRange = vd->real[1] - vd->real[0];
-
   frames = vd->frames;
-
   texSize = texels[0] * texels[1] * texels[2] * texelsize;
-
   texData = new uchar[texSize];
-
   sliceSize = vd->getSliceBytes();
-
-  brickList.first();
+  _brickList.first();
 
   for (f = 0; f < frames; f++)
   {
@@ -1786,9 +1780,9 @@ int sizeX, int sizeY, int sizeZ)
 
     while (true)
     {
-      startOffset[0] = brickList.getData()->getData()->startOffset[0];
-      startOffset[1] = brickList.getData()->getData()->startOffset[1];
-      startOffset[2] = brickList.getData()->getData()->startOffset[2];
+      startOffset[0] = _brickList.getData()->getData()->startOffset[0];
+      startOffset[1] = _brickList.getData()->getData()->startOffset[1];
+      startOffset[2] = _brickList.getData()->getData()->startOffset[2];
 
       endOffset[0] = startOffset[0] + _renderState._brickSize;
       endOffset[1] = startOffset[1] + _renderState._brickSize;
@@ -1798,13 +1792,10 @@ int sizeX, int sizeY, int sizeZ)
       endOffset[1] = ts_clamp(endOffset[1], 0, vd->vox[1] - 1);
       endOffset[2] = ts_clamp(endOffset[2], 0, vd->vox[2] - 1);
 
-      if ((offsetX > endOffset[0]) ||
-        ((offsetX + sizeX - 1) < startOffset[0]))
+      if ((offsetX > endOffset[0]) || ((offsetX + sizeX - 1) < startOffset[0]))
       {
-        if (brickList.getData()->next())
-          continue;
-        else
-          break;
+        if (_brickList.getData()->next()) continue;
+        else break;
       }
       else if (offsetX >= startOffset[0])
       {
@@ -1825,21 +1816,16 @@ int sizeX, int sizeY, int sizeZ)
       {
         start[0] = startOffset[0];
 
-        if ((offsetX + sizeX - 1) <= endOffset[0])
-          end[0] = offsetX + sizeX - 1;
-        else
-          end[0] = endOffset[0];
+        if ((offsetX + sizeX - 1) <= endOffset[0]) end[0] = offsetX + sizeX - 1;
+        else end[0] = endOffset[0];
 
         size[0] = end[0] - start[0] + 1;
       }
 
-      if ((offsetY > endOffset[1]) ||
-        ((offsetY + sizeY - 1) < startOffset[1]))
+      if ((offsetY > endOffset[1]) || ((offsetY + sizeY - 1) < startOffset[1]))
       {
-        if (brickList.getData()->next())
-          continue;
-        else
-          break;
+        if (_brickList.getData()->next()) continue;
+        else break;
       }
       else if (offsetY >= startOffset[1])
       {
@@ -1871,10 +1857,8 @@ int sizeX, int sizeY, int sizeZ)
       if ((offsetZ > endOffset[2]) ||
         ((offsetZ + sizeZ - 1) < startOffset[2]))
       {
-        if (brickList.getData()->next())
-          continue;
-        else
-          break;
+        if (_brickList.getData()->next()) continue;
+        else break;
       }
       else if (offsetZ >= startOffset[2])
       {
@@ -2032,18 +2016,17 @@ int sizeX, int sizeY, int sizeZ)
 
       //memset(texData, 255, texSize);
 
-      glBindTexture(GL_TEXTURE_3D_EXT, texNames[brickList.getData()->getData()->index]);
+      glBindTexture(GL_TEXTURE_3D_EXT, texNames[_brickList.getData()->getData()->index]);
 
       glTexSubImage3DEXT(GL_TEXTURE_3D_EXT, 0, start[0] - startOffset[0], start[1] - startOffset[1], start[2] - startOffset[2],
         size[0], size[1], size[2], texFormat, GL_UNSIGNED_BYTE, texData);
 
-      if (!brickList.getData()->next()) break;
+      if (!_brickList.getData()->next()) break;
     }
-
-    brickList.next();
+    _brickList.next();
   }
 
-  brickList.first();
+  _brickList.first();
 
   delete[] texData;
   return OK;
@@ -2586,7 +2569,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   // needs 3D texturing extension
   if (!extTex3d) return;
 
-  if (brickList.isEmpty()) return;
+  if (_brickList.isEmpty()) return;
 
   // Determine texture object dimensions and half object size as a shortcut:
   size.copy(vd->getSize());
@@ -2757,12 +2740,12 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   glPushMatrix();
   glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
-  sortedList.first();
+  _sortedList.first();
 
   // Volume render a 3D texture:
   enableTexture(GL_TEXTURE_3D_EXT);
 
-  while ((tmp = sortedList.getData()) != 0)
+  while ((tmp = _sortedList.getData()) != 0)
   {
     drawn = 0;
 
@@ -2836,7 +2819,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
     vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
 
-    if (!sortedList.next()) break;
+    if (!_sortedList.next()) break;
   }
 
   disableTexture(GL_TEXTURE_3D_EXT);
@@ -2926,9 +2909,9 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   Brick* tmp;
   vvVector3 min, max;
 
-  insideList.first();
+  _insideList.first();
 
-  while ((tmp = insideList.getData()) != 0)
+  while ((tmp = _insideList.getData()) != 0)
   {
     for (i = 0; i < 3; i++)
     {
@@ -2982,7 +2965,7 @@ void vvTexRend::renderBricks(vvMatrix* mv)
     glVertex3f(min.e[0], max.e[1], max.e[2]);
     glEnd();
 
-    if (!insideList.next()) break;
+    if (!_insideList.next()) break;
   }
 
   glMatrixMode(GL_MODELVIEW);
@@ -3011,22 +2994,22 @@ void vvTexRend::updateFrustum()
   // extract the planes of the viewing frustum
 
   // left plane
-  frustum[0].set(clip.e[3][0]+clip.e[0][0], clip.e[3][1]+clip.e[0][1],
+  _frustum[0].set(clip.e[3][0]+clip.e[0][0], clip.e[3][1]+clip.e[0][1],
     clip.e[3][2]+clip.e[0][2], clip.e[3][3]+clip.e[0][3]);
   // right plane
-  frustum[1].set(clip.e[3][0]-clip.e[0][0], clip.e[3][1]-clip.e[0][1],
+  _frustum[1].set(clip.e[3][0]-clip.e[0][0], clip.e[3][1]-clip.e[0][1],
     clip.e[3][2]-clip.e[0][2], clip.e[3][3]-clip.e[0][3]);
   // top plane
-  frustum[2].set(clip.e[3][0]-clip.e[1][0], clip.e[3][1]-clip.e[1][1],
+  _frustum[2].set(clip.e[3][0]-clip.e[1][0], clip.e[3][1]-clip.e[1][1],
     clip.e[3][2]-clip.e[1][2], clip.e[3][3]-clip.e[1][3]);
   // bottom plane
-  frustum[3].set(clip.e[3][0]+clip.e[1][0], clip.e[3][1]+clip.e[1][1],
+  _frustum[3].set(clip.e[3][0]+clip.e[1][0], clip.e[3][1]+clip.e[1][1],
     clip.e[3][2]+clip.e[1][2], clip.e[3][3]+clip.e[1][3]);
   // near plane
-  frustum[4].set(clip.e[3][0]+clip.e[2][0], clip.e[3][1]+clip.e[2][1],
+  _frustum[4].set(clip.e[3][0]+clip.e[2][0], clip.e[3][1]+clip.e[2][1],
     clip.e[3][2]+clip.e[2][2], clip.e[3][3]+clip.e[2][3]);
   // far plane
-  frustum[5].set(clip.e[3][0]-clip.e[2][0], clip.e[3][1]-clip.e[2][1],
+  _frustum[5].set(clip.e[3][0]-clip.e[2][0], clip.e[3][1]-clip.e[2][1],
     clip.e[3][2]-clip.e[2][2], clip.e[3][3]-clip.e[2][3]);
 }
 
@@ -3038,22 +3021,22 @@ bool vvTexRend::testBrickVisibility(Brick* brick)
   // get p-vertex (that's the farthest vertex in the direction of the normal plane
   for (i = 0; i < 6; i++)
   {
-    if (frustum[i][0] > 0.0)
+    if (_frustum[i][0] > 0.0)
       pv[0] = brick->max[0];
     else
       pv[0] = brick->min[0];
-    if (frustum[i][1] > 0.0)
+    if (_frustum[i][1] > 0.0)
       pv[1] = brick->max[1];
     else
       pv[1] = brick->min[1];
-    if (frustum[i][2] > 0.0)
+    if (_frustum[i][2] > 0.0)
       pv[2] = brick->max[2];
     else
       pv[2] = brick->min[2];
 
-    normal.set(frustum[i][0], frustum[i][1], frustum[i][2]);
+    normal.set(_frustum[i][0], _frustum[i][1], _frustum[i][2]);
 
-    if ((pv.dot(&normal) + frustum[i][3]) < 0)
+    if ((pv.dot(&normal) + _frustum[i][3]) < 0)
       return false;
   }
 
@@ -3098,12 +3081,12 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
   Brick* tmp;
   vvVector3 min, max, tmpVec;
 
-  brickList.first();
+  _brickList.first();
   for (int f = 1; f < vd->getCurrentFrame(); f++)
-    brickList.next();
+    _brickList.next();
 
-  brickList.getData()->first();
-  insideList.removeAll();
+  _brickList.getData()->first();
+  _insideList.removeAll();
 
   tmpVec = size;
   tmpVec.scale(0.5);
@@ -3123,7 +3106,7 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
   int countVisible, countInvisible;
   countVisible = countInvisible = 0;
 
-  while ((tmp = brickList.getData()->getData()) != 0)
+  while ((tmp = _brickList.getData()->getData()) != 0)
   {
     if ((tmp->min.e[0] <= max.e[0]) && (tmp->max.e[0] >= min.e[0]) &&
       (tmp->min.e[1] <= max.e[1]) && (tmp->max.e[1] >= min.e[1]) &&
@@ -3133,12 +3116,12 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
       if (testBrickVisibility(tmp))
     {
       countVisible++;
-      insideList.append(tmp, vvSLNode<Brick*>::NO_DELETE);
+      _insideList.append(tmp, vvSLNode<Brick*>::NO_DELETE);
     }
     else
       countInvisible++;
 
-    if (!brickList.getData()->next())
+    if (!_brickList.getData()->next())
     {
       //        cerr << "Bricks visible: " << countVisible << " Bricks invisible: " << countInvisible << endl;
       return;
@@ -3148,36 +3131,37 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
 
 void vvTexRend::sortBrickList(vvVector3 pos, vvVector3 normal)
 {
-  Brick *tmp, *farthest;
+  Brick* tmp;
+  Brick* farthest;
   float max;
 
-  insideList.first();
-  sortedList.removeAll();
+  _insideList.first();
+  _sortedList.removeAll();
 
-  while ((tmp = insideList.getData()) != 0)
+  while ((tmp = _insideList.getData()) != 0)
   {
     tmp->dist = (tmp->pos - pos).length();
-    if (!insideList.next()) break;
+    if (!_insideList.next()) break;
   }
 
-  while (insideList.count() != sortedList.count())
+  while (_insideList.count() != _sortedList.count())
   {
-    insideList.first();
+    _insideList.first();
     max = -FLT_MAX;
-    farthest = 0;
+    farthest = NULL;
     while (true)
     {
-      tmp = insideList.getData();
+      tmp = _insideList.getData();
       if (tmp->dist > max)
       {
         farthest = tmp;
         max = farthest->dist;
       }
 
-      if (!insideList.next()) break;
+      if (!_insideList.next()) break;
     }
 
-    sortedList.append(farthest, vvSLNode<Brick*>::NO_DELETE);
+    _sortedList.append(farthest, vvSLNode<Brick*>::NO_DELETE);
     farthest->dist = -FLT_MAX;
   }
 }
@@ -4009,8 +3993,11 @@ void vvTexRend::updateLUT(float dist)
         preIntegration = (newValue == 0.0f) ? false : true;
         updateTransferFunction();
         break;
-      case vvRenderer::VV_HDR_COMPRESSION:
-        _hdrCompression = (newValue == 0.0f) ? false : true;
+      case vvRenderer::VV_BIN_ISO:
+        _binIsoData = (newValue == 0.0f) ? false : true;
+        break;      
+      case vvRenderer::VV_BIN_WEIGHT:
+        _binOpacityWeighted = (newValue == 0.0f) ? false : true;
         break;
       default:
         vvRenderer::setParameter(param, newValue);
@@ -4019,7 +4006,7 @@ void vvTexRend::updateLUT(float dist)
   }
 
   //----------------------------------------------------------------------------
-  // see parent
+  // see parent for comments
   float vvTexRend::getParameter(ParameterType param, char*)
   {
     vvDebugMsg::msg(3, "vvTexRend::getParameter()");
@@ -4036,8 +4023,10 @@ void vvTexRend::updateLUT(float dist)
         return float(sliceOrientation);
       case vvRenderer::VV_PREINT:
         return float(preIntegration);
-      case vvRenderer::VV_HDR_COMPRESSION:
-        return (_hdrCompression ? 1.0f : 0.0f);
+      case vvRenderer::VV_BIN_ISO:
+        return (_binIsoData ? 1.0f : 0.0f);
+      case vvRenderer::VV_BIN_WEIGHT:
+        return (_binOpacityWeighted ? 1.0f : 0.0f);
       default: return vvRenderer::getParameter(param);
     }
   }
@@ -4349,7 +4338,7 @@ void vvTexRend::updateLUT(float dist)
   bool vvTexRend::initPixelShaders()
   {
 #ifdef HAVE_CG
-    const char* primaryWin32ShaderDir = "..\\..\\..\\virvo";
+    const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
     const char* deskVoxShaderPath = "../";
     const char* shaderFileName = "vv_shader";
     const char* shaderEnv = "VV_SHADER_PATH";

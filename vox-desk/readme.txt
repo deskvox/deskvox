@@ -467,7 +467,10 @@ Nr.   Date      Details
                   more flexible adding of parameters.
                 - Transfer functions completely revised: multi-dimentional TF widgets available
                 - VConv: new -mergetype parameter
-                - Deskvox: added auto rotation mode to View menu: object keeps spinning when mouse button is released in motion
+                - Deskvox: added auto rotation mode to View menu: object keeps spinning when mouse 
+                  button is released in motion
+                - Deskvox: added Skip Range widget in transfer function editor: forces a range to be transparent
+                - Deskvox: new Import TF button in TFE to load TF from other file
                   
                 
 Distribution

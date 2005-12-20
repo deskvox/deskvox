@@ -24,6 +24,7 @@
 
 // Virvo:
 #include <vvdebugmsg.h>
+#include <vvfileio.h>
 
 // Local:
 #include "vvtranswindow.h"
@@ -71,6 +72,7 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_INSTANT,       VVTransferWindow::onCmdInstant),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_OWN_COLOR,     VVTransferWindow::onCmdOwnColor),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_APPLY,         VVTransferWindow::onCmdApply),
+  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_IMPORT,        VVTransferWindow::onCmdImport),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_COLOR,         VVTransferWindow::onCmdColor),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_HIST_ALL,      VVTransferWindow::onCmdHistAll),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_HIST_FIRST,    VVTransferWindow::onCmdHistFirst),
@@ -274,6 +276,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
 
   FXHorizontalFrame* endFrame=new FXHorizontalFrame(master, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
   _instantButton = new FXCheckButton(endFrame,"Instant Classification",this,ID_INSTANT,ICON_BEFORE_TEXT|LAYOUT_LEFT);
+  new FXButton(endFrame,"Import TF",NULL,this,ID_IMPORT, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
   new FXButton(endFrame,"Apply",NULL,this,ID_APPLY, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
   new FXButton(endFrame,"Close",NULL,this,ID_ACCEPT, FRAME_RAISED | FRAME_THICK | LAYOUT_RIGHT);
 
@@ -621,6 +624,25 @@ long VVTransferWindow::onCmdOwnColor(FXObject*,FXSelector,void* ptr)
 long VVTransferWindow::onCmdApply(FXObject*,FXSelector,void*)
 {
   updateTransFunc();
+  return 1;
+}
+
+long VVTransferWindow::onCmdImport(FXObject*,FXSelector,void*)
+{
+  const FXchar patterns[]="XVF files (*.xvf)\nAll Files (*.*)";
+  FXString filename = _shell->getOpenFilename("Import Transfer Function", patterns);
+  if(filename.length() > 0)
+  {
+    vvFileIO* fio = new vvFileIO();
+    if (fio->importTF(_canvas->_vd, filename.text())==vvFileIO::OK)
+    {
+      _currentWidget = NULL;
+      updateTransFunc();
+      drawTF();
+      updateLabels();
+    }
+    delete fio;
+  }
   return 1;
 }
 

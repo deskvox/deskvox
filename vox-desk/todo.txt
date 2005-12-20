@@ -7,3 +7,8 @@ Features to add:
 - markers and marker interaction
 - clipping plane: draw whole volume with OpenGL clipping plane and whatever rendering algorithm is used. if in 3D texturing mode: draw additional plane at clipping plane location. (get rid of current approach which draws all slices parallel to clip plane)
 - orientation axes: draw opaque solid ball in center at correct z position so that it is easier to see if the lines point into or out of the screen
+
+
+Known bugs:
+
+- bricking mode crashes in parallel projection mode
