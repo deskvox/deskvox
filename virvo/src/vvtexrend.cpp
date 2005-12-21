@@ -490,6 +490,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures()
     case VV_SLICES:  err=makeTextures2D(1); updateTextures2D(1, 0, 10, 20, 15, 10, 5); break;
     case VV_CUBIC2D: err=makeTextures2D(3); updateTextures2D(3, 0, 10, 20, 15, 10, 5); break;
     case VV_BRICKS:  err=makeTextureBricks(); break;
+    case VV_VIEWPORT: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
     default: updateTextures3D(0, 0, 0, vd->vox[0], vd->vox[1], vd->vox[2], true);  break;
   }
 

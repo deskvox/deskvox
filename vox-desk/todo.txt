@@ -39,11 +39,6 @@ Bugs to fix:
 
 - Sample distance doesn't always work in bricking mode
 
-- Fix Accept button when inputting RGB colors for background
-  in RGB mode type in number, doesn't update right away, even accept doesn't use the selected color
-
-- Fix problem loading Amit's data set in viewport aligned slices mode: segfaults
-
 - bricking mode crashes in parallel projection mode
 
 - loading movie scripts generates segfault
@@ -56,5 +51,11 @@ Done:
 - checkbox: merge files by filename, not number
 - Skip Range widget
 - add button to import TF in TFE dialog window
+
+2005-12-21
 - fixed: Browse for movie directory: OK never accepts, should pass string back
+- fixed: Accept button when inputting RGB colors for background
+  in RGB mode type in number, doesn't update right away, even accept doesn't use the selected color
+- fixed: problem loading Amit's data set in viewport aligned slices mode: segfaults
+
 

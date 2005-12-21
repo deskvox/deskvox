@@ -80,6 +80,7 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_PICK_COLOR,    VVTransferWindow::onCmdPickColor),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_NORMALIZATION, VVTransferWindow::onCmdNormalization),
   FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_COLOR_PICKER,  VVTransferWindow::onChngPickerColor),
+  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_COLOR_PICKER,  VVTransferWindow::onChngPickerColor),
 };
 
 FXIMPLEMENT(VVTransferWindow,FXDialogBox,VVTransferWindowMap,ARRAYNUMBER(VVTransferWindowMap))
