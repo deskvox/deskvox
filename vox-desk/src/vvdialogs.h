@@ -412,6 +412,7 @@ class VVScreenshotDialog : public FXDialogBox
     FXTextField* _widthTField;
     FXTextField* _heightTField;
     FXTextField* _fileTField;
+    FXTextField* _dirTField;
     FXCheckButton* _useScreenDim;
     vox::vvCanvas* _canvas;
     VVShell* _shell;
@@ -438,6 +439,7 @@ class VVMovieDialog : public FXDialogBox
     FXTextField* _widthTField;
     FXTextField* _heightTField;
     FXTextField* _fileTField;
+    FXTextField* _dirTField;
     FXCheckButton* _useScreenDim;
     vox::vvCanvas* _canvas;
     vox::vvMovie*  _movie;

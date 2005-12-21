@@ -1229,7 +1229,10 @@ void vvTexRend::updateTransferFunction()
   int size[3];
 
   vvDebugMsg::msg(1, "vvTexRend::updateTransferFunction()");
-  if(preIntegration && voxelType==VV_FRG_PRG && geomType==VV_VIEWPORT && arbMltTex && !_renderState._clipSingleSlice)
+  if (preIntegration && voxelType==VV_FRG_PRG && 
+      geomType==VV_VIEWPORT && 
+      arbMltTex && 
+      !_renderState._clipSingleSlice)
   {
     usePreIntegration = true;
   }

@@ -133,6 +133,7 @@ VVShell::VVShell(FXApp* a) : FXMainWindow(a,"DeskVOX",NULL,NULL,DECOR_ALL,0,0,60
 
   lmdFlag = mmdFlag = rmdFlag = 0;
 
+  new FXToolTip(getApp());    // enable tool tips
   setTitle(FXString("DeskVOX v") + FXString(VV_VERSION) + FXString(".") + FXString(VV_RELEASE));
 
   // Menubar
@@ -201,7 +202,7 @@ VVShell::~VVShell()
   delete _mergeDialog;
   delete _serverDialog;
   delete screenshotDialog;
-  delete movieDialog;
+  delete _movieDialog;
   delete tsDialog;
   delete _diagramDialog;
   delete _dataTypeDialog;
@@ -348,7 +349,7 @@ void VVShell::initDialogs()
   _mergeDialog = new VVMergeDialog((FXWindow*)this, _canvas);
   _serverDialog = new VVServerDialog((FXWindow*)this, _canvas);
   screenshotDialog = new VVScreenshotDialog((FXWindow*)this, _canvas);
-  movieDialog  = new VVMovieDialog((FXWindow*)this, _canvas);
+  _movieDialog = new VVMovieDialog((FXWindow*)this, _canvas);
   tsDialog     = new VVTimeStepDialog((FXWindow*)this, _canvas);
   _diagramDialog = new VVDiagramDialog((FXWindow*)this, _canvas);
   _dataTypeDialog = new VVDataTypeDialog((FXWindow*)this, _canvas);
@@ -383,7 +384,7 @@ long VVShell::onConfigure(FXObject*,FXSelector,void*)
 
   FXString canvasSize = FXStringFormat("%d x %d", _glcanvas->getWidth(), _glcanvas->getHeight());
   screenshotDialog->_sizeLabel->setText(canvasSize);
-  movieDialog->_sizeLabel->setText(canvasSize);
+  _movieDialog->_sizeLabel->setText(canvasSize);
 
   return 1;
 }
@@ -1200,8 +1201,8 @@ long VVShell::onCmdMovie(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVShell::onCmdMovie()");
 
-  movieDialog->updateValues();
-  movieDialog->show();
+  _movieDialog->updateValues();
+  _movieDialog->show();
   return 1;
 }
 

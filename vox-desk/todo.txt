@@ -1,14 +1,60 @@
 Features to add:
 
-- two additional opacity widgets:
+- Save background color to registry and reuse next time program starts
+
+- Alex will add flag to hdr format to specify voxel order (xyz or zyx)
+
+- Instead of suppress rendering, render small version of data set (eg, 64^3)
+
+- checkbox: use symmetric binning (around 0)
+  Will be used implicitly when skip range widget is present
+
+- checkbox: enable dynamic bins:
+  iso-range bins = each bin covers same value range
+  iso-data bins = each bin contains same amount/percentage of data values
+  opacity-weighted bins
+  opacity-weighted/iso-data bins
+
+- add two additional opacity widgets:
   > freehand for Graham
   > control points for Amit
-- viewing mode which consists of 3 orthogonal projections (top, front, right)
-- markers and marker interaction
+
+- allow to specify separate TF for each channel; do by adding tabs to TF window, one tab per channel
+
+- allow to add 2D textures to volumes and display separate from volume for reference; i.e., topology info
+
+- add viewing mode which consists of 3 orthogonal projections (top, front, right)
+
+- add markers and marker interaction
+
 - clipping plane: draw whole volume with OpenGL clipping plane and whatever rendering algorithm is used. if in 3D texturing mode: draw additional plane at clipping plane location. (get rid of current approach which draws all slices parallel to clip plane)
+
 - orientation axes: draw opaque solid ball in center at correct z position so that it is easier to see if the lines point into or out of the screen
 
+- save TF to file in Amit's format
 
-Known bugs:
+
+
+Bugs to fix:
+
+- Sample distance doesn't always work in bricking mode
+
+- Fix Accept button when inputting RGB colors for background
+  in RGB mode type in number, doesn't update right away, even accept doesn't use the selected color
+
+- Fix problem loading Amit's data set in viewport aligned slices mode: segfaults
 
 - bricking mode crashes in parallel projection mode
+
+- loading movie scripts generates segfault
+
+- in bricking mode: sample distances don't work
+
+
+Done:
+
+- checkbox: merge files by filename, not number
+- Skip Range widget
+- add button to import TF in TFE dialog window
+- fixed: Browse for movie directory: OK never accepts, should pass string back
+

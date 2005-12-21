@@ -97,7 +97,7 @@ vvMovie::ErrorType vvMovie::load(const char* filename)
   switch (result)
   {
     case VV_INVALID_PARAM:
-      cerr << "Invalid command in line " << tokenizer->getLineNumber() << endl;
+      cerr << "Movie script: invalid command in line " << tokenizer->getLineNumber() << endl;
       break;
     default: break;
   }

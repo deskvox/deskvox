@@ -1291,10 +1291,15 @@ VVScreenshotDialog::VVScreenshotDialog(FXWindow* owner, vvCanvas* c):FXDialogBox
   _heightTField = new FXTextField(sizeGroup, 25, NULL,0,TEXTFIELD_INTEGER | TEXTFIELD_NORMAL);
   _heightTField->setText(FXStringFormat("%d",400));
 
-  FXHorizontalFrame* horizFrame = new FXHorizontalFrame(master);
-  new FXLabel(horizFrame, "Screen shot directory:");
-  _fileTField = new FXTextField(horizFrame, 25, NULL,0,TEXTFIELD_NORMAL);
-  new FXButton(horizFrame,"Browse...",NULL,this,ID_BROWSE,FRAME_RAISED | FRAME_THICK);
+  FXHorizontalFrame* dirFrame = new FXHorizontalFrame(master);
+  new FXLabel(dirFrame, "Directory:");
+  _dirTField = new FXTextField(dirFrame, 25, NULL,0,TEXTFIELD_NORMAL);
+  new FXButton(dirFrame,"Browse...",NULL,this,ID_BROWSE,FRAME_RAISED | FRAME_THICK);
+    
+  FXHorizontalFrame* fileFrame = new FXHorizontalFrame(master, LAYOUT_FILL_X);
+  new FXLabel(fileFrame, "Base file name:");
+  _fileTField = new FXTextField(fileFrame, 25, NULL,0,TEXTFIELD_NORMAL | LAYOUT_FILL_X);
+  _fileTField->setText("image");
   
   FXHorizontalFrame* buttonFrame = new FXHorizontalFrame(master, LAYOUT_CENTER_X | LAYOUT_FILL_X | LAYOUT_FILL_Y | PACK_UNIFORM_WIDTH);
   new FXButton(buttonFrame,"Take Picture",NULL,this,ID_PICTURE, FRAME_RAISED | FRAME_THICK | LAYOUT_LEFT);
@@ -1314,14 +1319,14 @@ VVScreenshotDialog::~VVScreenshotDialog()
 
 long VVScreenshotDialog::onCmdPicture(FXObject*,FXSelector,void*)
 {
-  FXString filename = _fileTField->getText();
+  FXString filename = _dirTField->getText();
   if(filename.length() < 1) return 1;
 #ifdef WIN32  
   filename.append("\\");
 #else
   filename.append("/");
 #endif
-  filename.append("screenshot");
+  filename.append(_fileTField->getText());
   int width = 0;
   int height = 0;
   if(!_useScreenDim->getCheck())
@@ -1357,7 +1362,7 @@ long VVScreenshotDialog::onBrowseSelect(FXObject*,FXSelector,void*)
 {
   FXString filename = _shell->getOpenDirectory("Screenshot Directory");
   if(filename.length() == 0) return 1;
-  _fileTField->setText(filename);
+  _dirTField->setText(filename);
   return 1;
 }
 
@@ -1366,7 +1371,7 @@ void VVScreenshotDialog::updateValues()
   _widthTField->setText(FXStringFormat("%d",400));
   _heightTField->setText(FXStringFormat("%d",300));
   FXString path = getApp()->reg().readStringEntry("Settings", "CurrentDirectory", FXFile::getCurrentDirectory().text());
-  _fileTField->setText(path);
+  _dirTField->setText(path);
 }
 
 /*******************************************************************************/
@@ -1444,9 +1449,9 @@ VVMovieDialog::VVMovieDialog(FXWindow* owner, vvCanvas* c):FXDialogBox(owner,"Mo
   _heightTField = new FXTextField(sizeGroup, 25, NULL,0,TEXTFIELD_INTEGER | TEXTFIELD_NORMAL);
   _heightTField->setText(FXStringFormat("%d", 240));
 
-  FXHorizontalFrame* nameFrame = new FXHorizontalFrame(master, LAYOUT_FILL_X);
-  new FXLabel(nameFrame, "Base file name for image files:");
-  _fileTField = new FXTextField(nameFrame, 25, NULL,0,TEXTFIELD_NORMAL | LAYOUT_FILL_X);
+  FXHorizontalFrame* dirFrame = new FXHorizontalFrame(master, LAYOUT_FILL_X);
+  new FXLabel(dirFrame, "Directory:");
+  
 #ifdef WIN32
   FXString prefix("\\img");
 #else
@@ -1454,8 +1459,14 @@ VVMovieDialog::VVMovieDialog(FXWindow* owner, vvCanvas* c):FXDialogBox(owner,"Mo
 #endif
   FXString defaultPath = FXFile::getCurrentDirectory() + prefix;
   FXString path = getApp()->reg().readStringEntry("Settings", "CurrentDirectory", defaultPath.text());
-  _fileTField->setText(path + "img");
-  new FXButton(nameFrame,"Browse...",NULL,this,ID_BROWSE, FRAME_RAISED | FRAME_THICK);
+  _dirTField = new FXTextField(dirFrame, 25, NULL,0,TEXTFIELD_NORMAL | LAYOUT_FILL_X);
+  _dirTField->setText(path);
+  new FXButton(dirFrame,"Browse...",NULL,this,ID_BROWSE, FRAME_RAISED | FRAME_THICK);
+
+  FXHorizontalFrame* fileFrame = new FXHorizontalFrame(master, LAYOUT_FILL_X);
+  new FXLabel(fileFrame, "Base file name:");
+  _fileTField = new FXTextField(fileFrame, 25, NULL,0,TEXTFIELD_NORMAL | LAYOUT_FILL_X);
+  _fileTField->setText("image");
 
   FXHorizontalFrame* buttonFrame = new FXHorizontalFrame(master, LAYOUT_CENTER_X | LAYOUT_FILL_X | LAYOUT_FILL_Y | PACK_UNIFORM_WIDTH);
   new FXButton(buttonFrame,"Write Movie to Disk",NULL,this,ID_WRITE, FRAME_RAISED | FRAME_THICK | LAYOUT_LEFT);
@@ -1471,6 +1482,7 @@ VVMovieDialog::~VVMovieDialog()
   delete _stepLabel2;
   delete _frameSlider;
   delete _fileTField;
+  delete _dirTField;
   delete _widthTField;
   delete _heightTField;
   delete _movie;
@@ -1593,7 +1605,7 @@ long VVMovieDialog::onBrowseSelect(FXObject*,FXSelector,void*)
 {
   FXString filename = _shell->getOpenDirectory("Movie Directory");
   if(filename.length() == 0) return 1;
-  _fileTField->setText(filename);
+  _dirTField->setText(filename);
   return 1;
 }
 
@@ -2552,8 +2564,10 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   new FXButton(topClampFrame, "% below max", NULL, this, ID_TOP_PERCENT, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
   FXGroupBox* hdrGroup = new FXGroupBox(verticalFrame,"High dynamic range mapping",FRAME_GROOVE | LAYOUT_FILL_X);
-  _isoCheck = new FXCheckButton(hdrGroup, "Iso-data binning (default: iso-range)", this, ID_ISO, ICON_BEFORE_TEXT);
+  _isoCheck = new FXCheckButton(hdrGroup, "Iso-data binning", this, ID_ISO, ICON_BEFORE_TEXT);
+  _isoCheck->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
   _weightCheck = new FXCheckButton(hdrGroup, "Opacity-weighted binning", this, ID_WEIGHT, ICON_BEFORE_TEXT);
+  _weightCheck->setTipText("When checked algorithm creates smaller bins where opacity is higher.\nOtherwise binning is independent from opacity.");
 
   // Buttons:
   FXVerticalFrame* buttonFrame = new FXVerticalFrame(horizontalFrame, LAYOUT_FILL_X | LAYOUT_FIX_WIDTH,0,0,80);

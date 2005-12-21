@@ -471,6 +471,7 @@ Nr.   Date      Details
                   button is released in motion
                 - Deskvox: added Skip Range widget in transfer function editor: forces a range to be transparent
                 - Deskvox: new Import TF button in TFE to load TF from other file
+                - Deskvox: made output image file specification easier in Screenshot and Moviescript dialogs
                   
                 
 Distribution

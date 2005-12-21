@@ -118,7 +118,7 @@ class VVShell : public FXMainWindow
     VVMergeDialog*        _mergeDialog;
     VVServerDialog*       _serverDialog;
     VVScreenshotDialog    *screenshotDialog;
-    VVMovieDialog         *movieDialog;
+    VVMovieDialog*        _movieDialog;
     VVTimeStepDialog      *tsDialog;
     VVDiagramDialog*      _diagramDialog;
     VVDataTypeDialog*     _dataTypeDialog;
