@@ -22,28 +22,18 @@
 #define _VVSTINGRAY_H_
 
 #ifndef _WIN32
-#include "config.h"
-#endif
-
-#ifdef WIN32
-#include <windows.h>
-#include <GL/gl.h>
-#include "vvglext.h"
-#elif defined(__linux) || defined(LINUX)
-#include <GL/gl.h>
-#else
-#include <GL/gl.h>
+  #include "config.h"
 #endif
 
 // Cg:
 #if defined(WIN32) || defined(__linux) || defined(LINUX)
-#include <Cg/cg.h>
-#include <Cg/cgGL.h>
+  #include <Cg/cg.h>
+  #include <Cg/cgGL.h>
 #endif
 
 // Stingray:
 #ifdef USE_STINGRAY
-#include <StingRayCaveRenderer.hpp>
+  #include <StingRayCaveRenderer.hpp>
 #endif
 
 // Virvo:

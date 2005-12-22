@@ -22,14 +22,26 @@
   #include <windows.h>
 #endif
 
+// OS:
 #include <iostream>
 #include <math.h>
 #include <string.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
+
+// OpenGL:
+#ifdef __APPLE__
+  #include <OpenGL/gl.h>
+  #include <OpenGL/glu.h>
+#else
+  #include <GL/gl.h>
+  #include <GL/glu.h>
+#endif
+
+// Virvo:
 #include <vvdebugmsg.h>
 #include <vvtokenizer.h>
 #include <vvtoolshed.h>
+
+// Local:
 #include "vvobjview.h"
 
 using namespace vox;

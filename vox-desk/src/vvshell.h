@@ -21,11 +21,11 @@
 #ifndef _VV_SHELL_H_
 #define _VV_SHELL_H_
 
+// FX Toolkit:
 #include <fx.h>
 #include <fx3d.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
 
+// OS:
 #include <iostream>
 #include <string.h>
 

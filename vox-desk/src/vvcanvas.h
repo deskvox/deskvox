@@ -25,7 +25,6 @@
 #ifdef WIN32
   #include <windows.h>
 #else
-  #include <GL/glx.h>
   #include <unistd.h>
 #endif
 

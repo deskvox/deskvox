@@ -19,15 +19,19 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #ifdef WIN32
-#include <winsock2.h>
-#include <windows.h>
+  #include <winsock2.h>
+  #include <windows.h>
+#elif __APPLE__
+  #include <unistd.h>
+  #include <OpenGL/gl.h>
+  #include <OpenGL/glu.h>
 #else
-#include <GL/glx.h>
-#include <unistd.h>
+  #include <GL/gl.h>
+  #include <GL/glu.h>
+  #include <GL/glx.h>
+  #include <unistd.h>
 #endif
 #include <assert.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
 
 // Virvo:
 #include <vvdebugmsg.h>
