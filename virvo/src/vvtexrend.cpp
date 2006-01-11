@@ -648,8 +648,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
               else                                // float voxels
               {
                 fval = *((float*)(rawVoxel));
-                fval = ts_clamp(fval, vd->real[0], vd->real[1]);
-                rawVal[0] = int((fval - vd->real[0]) / (vd->real[1] - vd->real[0]) * 255.0f);
+                rawVal[0] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
               }
               switch(voxelType)
               {
@@ -760,7 +759,6 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
   vvVector3 halfBrick;                            // middle of the current brick in texels
   vvVector3 halfVolume;                           // middle of the volume in voxel
   float fval;                                     // floating point voxel value
-  float realRange;                                // range of values in volume
   int rawVal[4];                                  // raw values for R,G,B,A
   int frames;                                     // number of time steps in sequence
   int numBricks[3];                               // number of bricks used for each dimension of the volume
@@ -838,8 +836,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
   vvDebugMsg::msg(2, "Transferring textures to TRAM. Total size [KB]: ",
     textures * texSize / 1024);
 
-  // help variables
-  realRange = vd->real[1] - vd->real[0];
+  // helper variables
   voxSize = vd->getSize();
   voxSize[0] /= (vd->vox[0]-1);
   voxSize[1] /= (vd->vox[1]-1);
@@ -884,23 +881,17 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
       for (s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
       {
         if (s < 0) continue;
-
         rawSliceOffset = (vd->vox[2] - s - 1) * sliceSize;
-
         for (y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
         {
           if (y < 0) continue;
-
           heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
-
           texLineOffset = (y - startOffset[1]) * tmpTexels[0] + (s - startOffset[2]) * tmpTexels[0] * tmpTexels[1];
-
           if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
           {
             for (x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
             {
               if (x < 0) continue;
-
               srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
               if (vd->bpc == 1) rawVal[0] = (int) raw[srcIndex];
               else if (vd->bpc == 2)
@@ -908,15 +899,12 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
                 rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
                 rawVal[0] >>= 4;
               }
-              else
+              else  // vd->bpc == 4
               {
-                fval = *((float*) (raw + srcIndex));
-                fval = ts_clamp(fval, vd->real[0], vd->real[1]);
-                rawVal[0] = int((fval - vd->real[0]) / realRange * 255.0f);
+                fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+                rawVal[0] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
               }
-
               texOffset = (x - startOffset[0]) + texLineOffset;
-
               switch (voxelType)
               {
                 case VV_SGI_LUT:
@@ -964,11 +952,10 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
                     rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
                     rawVal[c] >>= 4;
                   }
-                  else
+                  else  // vd->bpc==4
                   {
                     fval = *((float*) (raw + srcIndex));
-                    fval = ts_clamp(fval, vd->real[0], vd->real[1]);
-                    rawVal[c] = int((fval - vd->real[0]) / realRange * 255.0f);
+                    rawVal[c] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
                   }
                 }
 
@@ -1291,7 +1278,7 @@ int sizeX, int sizeY, int sizeZ)
 
 //----------------------------------------------------------------------------
 /**
-   method to create a new 3D texture or update parts of an existing 3D texture
+   Method to create a new 3D texture or update parts of an existing 3D texture.
    @param offsetX, offsetY, offsetZ: lower left corner of texture
    @param sizeX, sizeY, sizeZ: size of texture
    @param newTex: true: create a new texture
@@ -1354,39 +1341,30 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
   for (f = 0; f < frames; f++)
   {
     raw = vd->getRaw(f);
-
     for (s = offsetZ; s < (offsetZ + sizeZ); s++)
     {
-
       rawSliceOffset = (vd->vox[2] - s - 1) * sliceSize;
-
       for (y = offsetY; y < (offsetY + sizeY); y++)
       {
         heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
-
         texLineOffset = (y - offsetY) * sizeX + (s - offsetZ) * sizeX * sizeY;
-
         if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
         {
           for (x = offsetX; x < (offsetX + sizeX); x++)
           {
             srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
-            if (vd->bpc == 1)
-              rawVal[0] = (int) raw[srcIndex];
+            if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
             else if (vd->bpc == 2)
             {
               rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
               rawVal[0] >>= 4;
             }
-            else
+            else // vd->bpc==4: convert floating point to 8bit value
             {
-              fval = *((float*)(raw + srcIndex));
-              fval = ts_clamp(fval, vd->real[0], vd->real[1]);
-              rawVal[0] = int((fval - vd->real[0]) / (vd->real[1] - vd->real[0]) * 255.0f);
+              fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+              rawVal[0] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
             }
-
             texOffset = (x - offsetX) + texLineOffset;
-
             switch(voxelType)
             {
               case VV_SGI_LUT:
@@ -1398,14 +1376,18 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
                 break;
               case VV_TEX_SHD:
                 for (c = 0; c < 4; c++)
+                {
                   texData[4 * texOffset + c] = (uchar) rawVal[0];
+                }
                 break;
               case VV_PIX_SHD:
                 texData[4 * texOffset] = (uchar) rawVal[0];
                 break;
               case VV_RGBA:
                 for (c = 0; c < 4; c++)
+                {
                   texData[4 * texOffset + c] = rgbaLUT[rawVal[0] * 4 + c];
+                }
                 break;
               default:
                 assert(0);
@@ -1420,7 +1402,6 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
             for (x = offsetX; x < (offsetX + sizeX); x++)
             {
               texOffset = (x - offsetX) + texLineOffset;
-
               for (c = 0; c < ts_min(vd->chan,4); c++)
               {
                 srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
@@ -1431,17 +1412,18 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
                   rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
                   rawVal[c] >>= 4;
                 }
-                else
+                else  // vd->bpc == 4
                 {
-                  fval = *((float*)(raw + srcIndex));
-                  fval = ts_clamp(fval, vd->real[0], vd->real[1]);
-                  rawVal[c] = int((fval - vd->real[0]) / (vd->real[1] - vd->real[0]) * 255.0f);
+                  fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+                  rawVal[c] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
                 }
               }
 
               // Copy color components:
               for (c = 0; c < ts_min(vd->chan, 3); c++)
+              {
                 texData[4 * texOffset + c] = (uchar) rawVal[c];
+              }
             }
 
             // Alpha channel:
@@ -1694,8 +1676,7 @@ int sizeX, int sizeY, int sizeZ)
               else
               {
                 fval = *((float*)(rawVoxel));
-                fval = ts_clamp(fval, vd->real[0], vd->real[1]);
-                rawVal[0] = int((fval - vd->real[0]) / (vd->real[1] - vd->real[0]) * 255.0f);
+                rawVal[0] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
               }
 
               for (c = 0; c < texelsize; c++)
@@ -1765,13 +1746,11 @@ int sizeX, int sizeY, int sizeZ)
   int start[3], end[3], size[3];
   int c, f, s, x, y;
   float fval;
-  float realRange;
   unsigned char* raw;
   unsigned char* texData = 0;
 
   if (!extTex3d) return NO3DTEX;
 
-  realRange = vd->real[1] - vd->real[0];
   frames = vd->frames;
   texSize = texels[0] * texels[1] * texels[2] * texelsize;
   texData = new uchar[texSize];
@@ -1927,8 +1906,7 @@ int sizeX, int sizeY, int sizeZ)
               else
               {
                 fval = *((float*) (raw + srcIndex));
-                fval = ts_clamp(fval, vd->real[0], vd->real[1]);
-                rawVal[0] = int((fval - vd->real[0]) / realRange * 255.0f);
+                rawVal[0] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
               }
 
               texOffset = (x - start[0]) + texLineOffset;
@@ -1983,8 +1961,7 @@ int sizeX, int sizeY, int sizeZ)
                   else
                   {
                     fval = *((float*) (raw + srcIndex));
-                    fval = ts_clamp(fval, vd->real[0], vd->real[1]);
-                    rawVal[c] = int((fval - vd->real[0]) / realRange * 255.0f);
+                    rawVal[c] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
                   }
                 }
 

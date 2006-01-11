@@ -111,6 +111,9 @@ class VIRVOEXPORT vvVolDesc
       CHANNEL_B = 4,
       CHANNEL_A = 8
     };
+    
+    enum
+    { NUM_HDR_BINS = 256};                        ///< constant value for HDR transfer functions
 
     static const int DEFAULT_ICON_SIZE;           ///< system default for icon size if not otherwise specified (only stored in XVF files)
     int vox[3];                                   ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
@@ -132,6 +135,7 @@ class VIRVOEXPORT vvVolDesc
     ///< then going right, then down
     int _radius;                                  ///< Radius of the previous sphere
     int* _mask;                                   ///< Mask of the previous sphere
+    float* _hdrBinLimits;                         ///< array of bin limits for HDR transfer functions
 
     // Constructors and destructors:
     vvVolDesc();
@@ -239,6 +243,9 @@ class VIRVOEXPORT vvVolDesc
     void   setChannelName(int, const char*);
     const char* getChannelName(int);
     void updateFrame(int, uchar*, DeleteType);
+    void updateHDRBins();
+    int  findHDRBin(float);
+    int  mapFloat2Int(float, bool, bool);
 
     /*
       This method creates a texture for the given voxeldata.

@@ -255,13 +255,6 @@ void vvCanvas::draw()
       else        _ov.setModelviewMatrix(vvObjView::RIGHT_EYE);
 
       // Specify where to draw it:
- 
- /* Converting an image to grayscale is done by taking a weighted average of the red, 
- green and blue color components. The weights we will use are (0.30, 0.59, 0.11). 
- Hence, the gray component (luminance) that we need to compute is 0.30*R + 0.59*G + 0.11*B. 
- If we think of RGB as a vector, we can see that this is calculation is actually a dot product.
-*/
-
       if ((!_swapEyes && eye==0) || (_swapEyes && eye==1))
       {
         if (_stereoMode==RED_BLUE)
@@ -425,11 +418,9 @@ void vvCanvas::mouseDragged(int x, int y)
       _ov._camera.translate(panValue[0], -panValue[1], 0.0f);
       break;
 
-    case RIGHT_BUTTON:                            // right button scales
-      factor = 1.0f + ((float)dy) / 100.0f;
-      if (factor > 2.0f) factor = 2.0f;
-      if (factor < 0.5f) factor = 0.5f;
-      _ov._camera.scale(factor, factor, factor);
+    case RIGHT_BUTTON:                            // right button moves camera along z axis
+      factor = float(dy);
+      _ov._camera.translate(0.0f, 0.0f, factor);
       break;
 
     default: break;

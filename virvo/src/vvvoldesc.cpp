@@ -306,6 +306,7 @@ vvVolDesc::~vvVolDesc()
   removeSequence();
   delete[] filename;
   delete[] iconData;
+  delete[] _hdrBinLimits;
 }
 
 //----------------------------------------------------------------------------
@@ -327,6 +328,7 @@ void vvVolDesc::initialize()
   tf._widgets.removeAll();
   iconSize = 0;
   _scale = 1.0f;
+  _hdrBinLimits = new float[NUM_HDR_BINS];
   if (iconData!=NULL)
   {
     delete[] iconData;
@@ -1973,10 +1975,10 @@ void vvVolDesc::crop(int x, int y, int z, int w, int h, int s)
   vvDebugMsg::msg(2, "vvVolDesc::crop()");
 
   // Find minimum and maximum values for crop:
-  xmin = ts_max(0, ts_min(x, x + w - 1));
-  ymin = ts_max(0, ts_min(y, y + h - 1));
-  zmin = ts_max(0, ts_min(z, z + s - 1));
-  xmax = ts_min(vox[0] -1, ts_max(x, x + w - 1));
+  xmin = ts_max(0, ts_min(x, vox[0]-1, x + w - 1));
+  ymin = ts_max(0, ts_min(y, vox[1]-1, y + h - 1));
+  zmin = ts_max(0, ts_min(z, vox[2]-1, z + s - 1));
+  xmax = ts_min(vox[0]-1, ts_max(x, x + w - 1));
   ymax = ts_min(vox[1]-1, ts_max(y, y + h - 1));
   zmax = ts_min(vox[2]-1, ts_max(z, z + s - 1));
 
@@ -4627,9 +4629,7 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
           else
           {
             for (i=0; i<3; ++i)
-
             {
-
               switch(bpc)
               {
                 case 1:
@@ -4655,6 +4655,117 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
       src += 2 * lineBytes;
     }
   }
+}
+
+//----------------------------------------------------------------------------
+/** Update bin limits array for HDR transfer functions.
+*/
+void vvVolDesc::updateHDRBins()
+{
+  const int MAX_NUM_VALUES = 10000;
+  uchar* srcData;
+  float* sortedData;
+  float tmp;
+  int numVoxels;
+  int i,j;
+  int index;
+  int valuesPerBin;
+
+  if (bpc!=4 || chan!=1) 
+  {
+    cerr << "updateHDRBins() works only on single channel float data" << endl;
+    return;
+  }
+  assert(_hdrBinLimits);
+  srcData = getRaw();
+  numVoxels = ts_min(getFrameVoxels(), MAX_NUM_VALUES);  
+  sortedData = new float[numVoxels * sizeof(float)];
+  if (numVoxels == getFrameVoxels())  // can the entire data array be sorted?
+  {
+    memcpy(sortedData, srcData, getFrameBytes());
+  }
+  else  // create monte carlo volume
+  {
+    for (i=0; i<numVoxels; ++i)
+    {
+      index = int(numVoxels * float(rand()) / float(RAND_MAX));
+      sortedData[i] = *((float*)(srcData + (sizeof(float) * index)));
+    }
+  }
+  
+  // Sort data (bubblesort):
+  for (i=0; i<numVoxels-1; ++i)
+  {
+    for (j=i+1; j<numVoxels; ++j)
+    {
+      if (sortedData[i] > sortedData[j])
+      {
+        tmp = sortedData[i];
+        sortedData[i] = sortedData[j];
+        sortedData[j] = tmp;
+      }
+    }
+  }
+  
+  // Remove areas covered by TFSkip widgets:
+  // todo
+  
+  // Determine bin limits:
+  valuesPerBin = numVoxels / NUM_HDR_BINS;
+  for (i=0; i<NUM_HDR_BINS; ++i)
+  {
+    _hdrBinLimits[i] = sortedData[i * valuesPerBin];
+  }
+  
+  real[0] = sortedData[0];
+  real[1] = sortedData[numVoxels-1];
+    
+  delete[] sortedData;
+}
+
+//----------------------------------------------------------------------------
+/** Map floating point data value to integer. Uses high dynamic range (HDR)
+  techniques if _binOpacityWeighted or _binIsoData are true, otherwise
+  it clamps the value between real[0] and real[1] and linearly maps the value
+  to an 8bit integer.
+  @param fval floating point data value
+  @param binIsoData if true: create bins so that each bin contains equal numbers of data values
+  @param binOpacityWeighted if true: weigh bins according to opacity set in transfer function
+  @return 8bit integer value [0..255]
+*/
+int vvVolDesc::mapFloat2Int(float fval, bool binIsoData, bool binOpacityWeighted)
+{
+  int ival;
+  
+  if (!binIsoData && !binOpacityWeighted) // no advanced HDR algorithms?
+  {
+    fval = ts_clamp(fval, real[0], real[1]);
+    return int((fval - real[0]) / (real[1] - real[0]) * 255.0f);
+  }
+
+  if (binIsoData)
+  {
+    ival = findHDRBin(fval);
+  }
+  
+  if (binOpacityWeighted)
+  {
+  }
+  
+  return ival;
+}
+
+/** Returns the number of the bin the floating point value is in.
+*/
+int vvVolDesc::findHDRBin(float fval)
+{
+  int i;
+  
+  for (i=0; i<NUM_HDR_BINS; ++i)
+  {
+    if (_hdrBinLimits[i] > fval) return (ts_max(i-1, 0));
+  }
+  return NUM_HDR_BINS-1;
 }
 
 ///// EOF /////

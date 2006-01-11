@@ -1,5 +1,7 @@
 Features to add:
 
+- add support for RIGHT_HANDED or LEFT_HANDED keywords in HDR format
+
 - Save background color to registry and reuse next time program starts
 
 - Alex will add flag to hdr format to specify voxel order (xyz or zyx)

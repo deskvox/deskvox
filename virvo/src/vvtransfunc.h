@@ -77,7 +77,6 @@ class VIRVOEXPORT vvTransFunc
     void getUndoBuffer();
     void clearUndoBuffer();
     void setDiscreteColors(int);
-    //void setLUT(int numEntries, const char *lut);
     int  getDiscreteColors();
 };
 #endif

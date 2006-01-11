@@ -2610,11 +2610,13 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
       _canvas->_vd->real[1] = FXFloatVal(_maxTF->getText());
       _canvas->_renderer->setParameter(vvRenderer::VV_BIN_ISO, (_isoCheck->getCheck()) ? 1.0f : 0.0f);
       _canvas->_renderer->setParameter(vvRenderer::VV_BIN_WEIGHT, (_weightCheck->getCheck()) ? 1.0f : 0.0f);
+      _canvas->_vd->updateHDRBins();
       _canvas->_renderer->updateVolumeData();
       _shell->_glcanvas->makeNonCurrent();
     }
   }
   updateDependents();
+  updateValues();
   return 1;
 }
 
@@ -3001,6 +3003,9 @@ void VVEditVoxelsDialog::updateValues()
   _resizeXField->setText(FXStringFormat("%d", _canvas->_vd->vox[0]));
   _resizeYField->setText(FXStringFormat("%d", _canvas->_vd->vox[1]));
   _resizeZField->setText(FXStringFormat("%d", _canvas->_vd->vox[2]));
+  _cropXField->setText("0");
+  _cropYField->setText("0");
+  _cropZField->setText("0");
   _cropWField->setText(FXStringFormat("%d", _canvas->_vd->vox[0]));
   _cropHField->setText(FXStringFormat("%d", _canvas->_vd->vox[1]));
   _cropSField->setText(FXStringFormat("%d", _canvas->_vd->vox[2]));
