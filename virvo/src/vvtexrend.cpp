@@ -4357,16 +4357,6 @@ void vvTexRend::updateLUT(float dist)
     }
 
     // Specify shader path:
-#ifdef _WIN32
-    vvToolshed::getProgramDirectory(shaderDir, 256);
-    strcat(shaderDir, primaryWin32ShaderDir);
-    cerr << "Trying shader path: " << shaderDir << endl;
-    if (!vvToolshed::isDirectory(shaderDir))
-    {
-      vvToolshed::getProgramDirectory(shaderDir, 256);
-    }
-    cerr << "Using shader path: " << shaderDir << endl;
-#else
     cerr << "Searching for shader files..." << endl;
     if (getenv(shaderEnv))
     {
@@ -4376,6 +4366,17 @@ void vvTexRend::updateLUT(float dist)
     else
     {
       cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
+#ifdef _WIN32
+      vvToolshed::getProgramDirectory(shaderDir, 256);
+      strcat(shaderDir, primaryWin32ShaderDir);
+      cerr << "Trying shader path: " << shaderDir << endl;
+      if (!vvToolshed::isDirectory(shaderDir))
+      {
+	 vvToolshed::getProgramDirectory(shaderDir, 256);
+      }
+      cerr << "Using shader path: " << shaderDir << endl;
+      unixShaderDir = shaderDir;
+#else
 #ifdef SHADERDIR
       unixShaderDir = SHADERDIR;
 #else
@@ -4383,9 +4384,9 @@ void vvTexRend::updateLUT(float dist)
       strcat(shaderDir, deskVoxShaderPath);
       unixShaderDir = shaderDir;
 #endif
+#endif
     }
     cerr << "Using shader path: " << unixShaderDir << endl;
-#endif
 
     // Load shader files:
     for (i=0; i<NUM_PIXEL_SHADERS; ++i)
@@ -4398,11 +4399,10 @@ void vvTexRend::updateLUT(float dist)
 
       // Load Vertex Shader From File:
       // FIXME: why don't relative paths work under Linux?
-#ifdef _WIN32
-      shaderPath = new char[strlen(shaderDir) + 1 + strlen(shaderFile) + 1];
-      sprintf(shaderPath, "%s\\%s", shaderDir, shaderFile);
-#else
       shaderPath = new char[strlen(unixShaderDir) + 1 + strlen(shaderFile) + 1];
+#ifdef _WIN32
+      sprintf(shaderPath, "%s\\%s", unixShaderDir, shaderFile);
+#else
       sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
 #endif
 
