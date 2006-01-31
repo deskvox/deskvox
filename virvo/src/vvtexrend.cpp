@@ -490,8 +490,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures()
     case VV_SLICES:  err=makeTextures2D(1); updateTextures2D(1, 0, 10, 20, 15, 10, 5); break;
     case VV_CUBIC2D: err=makeTextures2D(3); updateTextures2D(3, 0, 10, 20, 15, 10, 5); break;
     case VV_BRICKS:  err=makeTextureBricks(); break;
-    case VV_VIEWPORT: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
-    default: updateTextures3D(0, 0, 0, vd->vox[0], vd->vox[1], vd->vox[2], true);  break;
+    default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
   }
 
   if (voxelType==VV_PIX_SHD)
@@ -1343,16 +1342,16 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
     raw = vd->getRaw(f);
     for (s = offsetZ; s < (offsetZ + sizeZ); s++)
     {
-      rawSliceOffset = (vd->vox[2] - s - 1) * sliceSize;
+      rawSliceOffset = (vd->vox[2] - min(s,vd->vox[2]-1) - 1) * sliceSize;
       for (y = offsetY; y < (offsetY + sizeY); y++)
       {
-        heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
+        heightOffset = (vd->vox[1] - min(y,vd->vox[1]-1) - 1) * vd->vox[0] * vd->bpc * vd->chan;
         texLineOffset = (y - offsetY) * sizeX + (s - offsetZ) * sizeX * sizeY;
         if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
         {
           for (x = offsetX; x < (offsetX + sizeX); x++)
           {
-            srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
+            srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
             if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
             else if (vd->bpc == 2)
             {
