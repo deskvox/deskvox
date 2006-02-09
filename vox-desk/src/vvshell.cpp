@@ -42,6 +42,14 @@
 using namespace vox;
 using namespace std;
 
+#if defined(SAGE_APP)
+        // headers for SAGE
+#include "sail.h"
+#include "misc.h"
+GLubyte *rgbBuffer = 0;
+sail sageInf; // sail object
+#endif
+
 //----------------------------------------------------------------------------
 /** Message Map
   Unhandled events:
@@ -213,13 +221,21 @@ VVShell::~VVShell()
 }
 
 //----------------------------------------------------------------------------
-void VVShell::parseCommandline()
+void VVShell::parseCommandline(string& filename, int& width, int& height)
 {
-  if (getApp()->getArgc()==2)
+  int i = 1;
+  
+  while (i < getApp()->getArgc())
   {
-    FXString filename = getApp()->getArgv()[1];
-    cerr << "Loading volume file: " << filename.text() << endl;
-    loadVolumeFile(filename);
+    if (strcmp(getApp()->getArgv()[i], "-size")==0)
+    {
+      sscanf(getApp()->getArgv()[i+1], "%dx%d", &width, &height);
+      ++i;
+    }
+    else if (getApp()->getArgv()[i][0] == '-') 
+      cerr << "Invalid command line parameter " << getApp()->getArgv()[i] << endl;
+    else filename = getApp()->getArgv()[i];
+    ++i;
   }
 }
 
@@ -607,22 +623,22 @@ long VVShell::onCmdLoadVolume(FXObject*, FXSelector, void*)
   const FXchar patterns[]="All Volume Files (*.rvf,*.xvf,*.avf,*.tif,*.tiff,*.hdr,*.volb)\n3D TIF Files (*.tif,*.tiff)\nASCII Volume Files (*.avf)\nExtended Volume Files (*.xvf)\nRaw Volume Files (*.rvf)\nAll Files (*.*)";
   FXString filename = getOpenFilename("Load Volume File", patterns);
   if(filename.length() == 0) return 1;
-  loadVolumeFile(filename);
+  loadVolumeFile(filename.text());
   return 1;
 }
 
 //----------------------------------------------------------------------------
-void VVShell::loadVolumeFile(FXString& filename)
+void VVShell::loadVolumeFile(const char* filename)
 {
   FXString message;
 
   // Load file:
-  vvVolDesc* vd = new vvVolDesc(filename.text());
+  vvVolDesc* vd = new vvVolDesc(filename);
   vvFileIO* fio = new vvFileIO();
   switch (fio->loadVolumeData(vd, vvFileIO::ALL_DATA))
   {
     case vvFileIO::OK:
-      vvDebugMsg::msg(2, "Loaded file: ", filename.text());
+      vvDebugMsg::msg(2, "Loaded file: ", filename);
       // Use default TF if none stored:
       if (vd->tf.isEmpty())
       {
@@ -634,14 +650,14 @@ void VVShell::loadVolumeFile(FXString& filename)
       vd->printInfoLine();
       break;
     case vvFileIO::FILE_NOT_FOUND:
-      vvDebugMsg::msg(2, "File not found: ", filename.text());
-      message = "File Not Found: " + filename;
+      vvDebugMsg::msg(2, "File not found: ", filename);
+      message = "File Not Found: " + FXString(filename);
       FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", message.text());
       delete vd;
       break;
     default:
-      vvDebugMsg::msg(2, "Cannot load file: ", filename.text());
-      message = "Cannot load: " + filename;
+      vvDebugMsg::msg(2, "Cannot load file: ", filename);
+      message = "Cannot load: " + FXString(filename);
       FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", message.text());
       delete vd;
       break;
@@ -1222,6 +1238,7 @@ void VVShell::drawScene()
 {
   vvDebugMsg::msg(3, "VVShell::drawScene()");
 
+  string filename;
   static bool firstTime = true;
   if (_glcanvas->makeCurrent())
   {
@@ -1235,14 +1252,66 @@ void VVShell::drawScene()
 
     if (firstTime)
     {
+      int w=0,h=0;
+
       firstTime = false;
-      parseCommandline();
+      parseCommandline(filename, w, h);
+      if (filename.length()>0)
+      {
+        cerr << "Loading volume file: " << filename << endl;
+        loadVolumeFile(filename.c_str());
+      }
+#if defined(SAGE_APP)
+      int winWidth = _glcanvas->getWidth();
+      int winHeight = _glcanvas->getHeight();
+
+      sageRect voxImageMap;
+      voxImageMap.left = 0.0;
+      voxImageMap.right = 1.0;
+      voxImageMap.bottom = 0.0;
+      voxImageMap.top = 1.0;
+      
+      rgbBuffer = new GLubyte[winWidth*winHeight*3];
+
+      sailConfig scfg;
+      scfg.cfgFile = strdup("sage.conf");
+      scfg.appName = strdup("vox");
+      scfg.rank = 0;
+      scfg.ip = NULL;
+      
+      scfg.resX = winWidth;
+      scfg.resY = winHeight;
+      scfg.imageMap = voxImageMap;
+      scfg.colorDepth = 24;
+      scfg.pixFmt = TVPIXFMT_888;
+      scfg.rowOrd = BOTTOM_TO_TOP;
+      scfg.nwID = 1;
+      
+      sageInf.init(scfg);
+#endif       
     }
 
     // Swap if it is double-buffered
     if (_glvisual->isDoubleBuffer())
     {
       _glcanvas->swapBuffers();
+#if defined(SAGE_APP)
+      int winWidth = _glcanvas->getWidth();
+      int winHeight = _glcanvas->getHeight();
+      glReadPixels(0, 0, winWidth, winHeight, GL_RGB, GL_UNSIGNED_BYTE, rgbBuffer);
+      sageInf.swapBuffer((void *)rgbBuffer);
+
+
+      sageMessage msg;
+      if (sageInf.checkMsg(msg, false) > 0) {
+          switch (msg.getCode()) {
+              case APP_QUIT : {
+                  exit(1); // to be fixed
+                  break;
+              }
+          }
+      }
+#endif
     }
 
     // Make context non-current
