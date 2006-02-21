@@ -1,4 +1,4 @@
-// Virvo - Virtual Reality Volume Rendering
+/* Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
 // Contact: Jurgen P. Schulze, schulze@cs.brown.edu
 // 
@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+*/
 
 #ifndef VV_GLEXT_H
 #define VV_GLEXT_H
