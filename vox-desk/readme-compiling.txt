@@ -9,6 +9,7 @@ Deskvox developers notes
   > #define HAVE_CG to compile with support for pixel shaders
   > #define USE_STINGRAY to compile with support for Peter Stephenson's Stingray renderer
   > #define HAVE_SOAP to compile with SOAP support in Windows; adds menu item to download data sets from server
+  > #define SAGE_APP to integrate with EVL's SAGE API for tiled display support; it won't run standalone anymore then
 
 - Problem: runtime error in dynamic_cast:
   Turn on Run-Time Type Information (RTTI) in Project Settings -> C/C++ -> C++ Language

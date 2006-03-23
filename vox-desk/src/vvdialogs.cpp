@@ -2610,13 +2610,17 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
       _canvas->_vd->real[1] = FXFloatVal(_maxTF->getText());
       _canvas->_renderer->setParameter(vvRenderer::VV_BIN_ISO, (_isoCheck->getCheck()) ? 1.0f : 0.0f);
       _canvas->_renderer->setParameter(vvRenderer::VV_BIN_WEIGHT, (_weightCheck->getCheck()) ? 1.0f : 0.0f);
-      _canvas->_vd->updateHDRBins();
+      if (_canvas->_renderer->getParameter(vvRenderer::VV_BIN_ISO) == 1.0f ||
+          _canvas->_renderer->getParameter(vvRenderer::VV_BIN_WEIGHT) == 1.0f)
+      {
+        _canvas->_vd->updateHDRBins();
+      }
       _canvas->_renderer->updateVolumeData();
       _shell->_glcanvas->makeNonCurrent();
+      updateDependents();
+      updateValues();
     }
   }
-  updateDependents();
-  updateValues();
   return 1;
 }
 

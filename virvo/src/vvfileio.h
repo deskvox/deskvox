@@ -131,6 +131,7 @@ class VIRVOEXPORT vvFileIO
     ErrorType loadVOLBFile(vvVolDesc*);
     ErrorType loadDDSFile(vvVolDesc*);
     ErrorType loadGKentFile(vvVolDesc*);
+    ErrorType loadSynthFile(vvVolDesc*);
     ErrorType savePXMSlices(vvVolDesc*, bool);
 };
 #endif

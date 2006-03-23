@@ -960,25 +960,26 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
 
                 // copy color components:
                 for (c = 0; c < ts_min(vd->chan, 3); c++)
+                {
                   texData[4 * texOffset + c] = (uchar) rawVal[c];
-
+                }
+                
                 // alpha channel
-                if (vd->chan >= 4)
-                  // RGBA
+                if (vd->chan >= 4)  // RGBA
                 {
                   if (voxelType == VV_RGBA)
                     texData[4 * texOffset + 3] = rgbaLUT[rawVal[3] * 4 + 3];
                   else
                     texData[4 * texOffset + 3] = (uchar) rawVal[3];
                 }
-                else
-                  // compute alpha from color components
+                else  // compute alpha from color components
                 {
                   alpha = 0;
                   for (c = 0; c < vd->chan; c++)
+                  {
                     // alpha: mean of sum of RGB conversion table results:
                     alpha += (int) rgbaLUT[rawVal[c] * 4 + c];
-
+                  }
                   texData[4 * texOffset + 3] = (uchar) (alpha / vd->chan);
                 }
               }
@@ -1025,10 +1026,11 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
 
       glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
       if (glWidth != 0)
+      {
         glTexImage3DEXT(GL_TEXTURE_3D_EXT, 0, internalTexFormat, tmpTexels[0], tmpTexels[1], tmpTexels[2], 0,
           texFormat, GL_UNSIGNED_BYTE, texData);
-      else
-        accommodated = false;
+      }
+      else accommodated = false;
     }
     _brickList.next();
   }

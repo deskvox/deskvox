@@ -48,15 +48,15 @@ Section "DeskVOX (required)"
   File ..\bin\win\glut32.dll
   File ..\readme.txt
   File ..\license.txt
-  File ..\..\virvo\vv_shader01.cg
-  File ..\..\virvo\vv_shader02.cg
-  File ..\..\virvo\vv_shader03.cg
-  File ..\..\virvo\vv_shader04.cg
-  File ..\..\virvo\vv_shader05.cg
-  File ..\..\virvo\vv_shader06.cg
-  File ..\..\virvo\vv_shader07.cg
-  File ..\..\virvo\vv_shader08.cg
-  File ..\..\virvo\vv_shader09.cg
+  File ..\..\virvo\shader\vv_shader01.cg
+  File ..\..\virvo\shader\vv_shader02.cg
+  File ..\..\virvo\shader\vv_shader03.cg
+  File ..\..\virvo\shader\vv_shader04.cg
+  File ..\..\virvo\shader\vv_shader05.cg
+  File ..\..\virvo\shader\vv_shader06.cg
+  File ..\..\virvo\shader\vv_shader07.cg
+  File ..\..\virvo\shader\vv_shader08.cg
+  File ..\..\virvo\shader\vv_shader09.cg
 
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR\examples

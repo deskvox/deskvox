@@ -206,15 +206,15 @@ void vvCanvas::draw()
   else if (_stereoMode==ACTIVE) // active stereo?
   {
     // Draw left image:
-    if (_doubleBuffering) glDrawBuffer(GL_BACK_LEFT);
-    else glDrawBuffer(GL_FRONT_LEFT);
-    _ov.setModelviewMatrix(vvObjView::LEFT_EYE);
+    if (_doubleBuffering) glDrawBuffer((_swapEyes) ? GL_BACK_LEFT : GL_BACK_RIGHT);
+    else glDrawBuffer((_swapEyes) ? GL_FRONT_LEFT : GL_FRONT_RIGHT);
+    _ov.setModelviewMatrix((_swapEyes) ? vvObjView::LEFT_EYE : vvObjView::RIGHT_EYE);
     _renderer->renderVolumeGL();
 
     // Draw right image:
-    if (_doubleBuffering) glDrawBuffer(GL_BACK_RIGHT);
-    else glDrawBuffer(GL_FRONT_RIGHT);
-    _ov.setModelviewMatrix(vvObjView::RIGHT_EYE);
+    if (_doubleBuffering) glDrawBuffer((_swapEyes) ? GL_BACK_RIGHT : GL_BACK_LEFT);
+    else glDrawBuffer((_swapEyes) ? GL_FRONT_RIGHT : GL_FRONT_LEFT);
+    _ov.setModelviewMatrix((_swapEyes) ? vvObjView::RIGHT_EYE : vvObjView::LEFT_EYE);
     _renderer->renderVolumeGL();
   }
   else if (_stereoMode==SIDE_BY_SIDE)   // passive stereo?

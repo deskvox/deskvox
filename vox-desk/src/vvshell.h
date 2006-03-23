@@ -243,8 +243,8 @@ class VVShell : public FXMainWindow
 
     void loadDefaultVolume(int, int, int, int);
     void mergeFiles(const char*, int, int, vvVolDesc::MergeType);
-    void loadVolumeFile(FXString&);
-    void parseCommandline();
+    void loadVolumeFile(const char*);
+    void parseCommandline(string&, int&, int&);
     FXString getOpenFilename(const FXString&, const FXString&);
     FXString getSaveFilename(const FXString&, const FXString&, const FXString&);
     FXString getOpenDirectory(const FXString&);

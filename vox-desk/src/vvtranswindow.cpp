@@ -73,6 +73,8 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_OWN_COLOR,     VVTransferWindow::onCmdOwnColor),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_APPLY,         VVTransferWindow::onCmdApply),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_IMPORT,        VVTransferWindow::onCmdImport),
+  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_SAVE_MV,       VVTransferWindow::onCmdSaveMV),
+  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_LOAD_MV,       VVTransferWindow::onCmdLoadMV),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_COLOR,         VVTransferWindow::onCmdColor),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_HIST_ALL,      VVTransferWindow::onCmdHistAll),
   FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_HIST_FIRST,    VVTransferWindow::onCmdHistFirst),
@@ -257,7 +259,9 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _sHeightSlider->setTickDelta(.01);
 
   // Continue with pin independent widgets:
-  _cbNorm = new FXCheckButton(master, "Logarithmic histogram normalization", this, ID_NORMALIZATION, ICON_BEFORE_TEXT|LAYOUT_LEFT);
+  FXHorizontalFrame* checkboxFrame=new FXHorizontalFrame(master, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
+  _instantButton = new FXCheckButton(checkboxFrame,"Instant Classification",this,ID_INSTANT,ICON_BEFORE_TEXT|LAYOUT_LEFT);
+  _cbNorm = new FXCheckButton(checkboxFrame, "Logarithmic histogram normalization", this, ID_NORMALIZATION, ICON_BEFORE_TEXT|LAYOUT_LEFT);
   _cbNorm->setCheck(true);
 
   FXGroupBox* histoGroup = new FXGroupBox(master,"Display",FRAME_GROOVE | LAYOUT_FILL_X);
@@ -276,7 +280,8 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _disColorLabel = new FXLabel(disColorFrame, "",NULL,LABEL_NORMAL);
 
   FXHorizontalFrame* endFrame=new FXHorizontalFrame(master, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
-  _instantButton = new FXCheckButton(endFrame,"Instant Classification",this,ID_INSTANT,ICON_BEFORE_TEXT|LAYOUT_LEFT);
+  new FXButton(endFrame,"Save Meshviewer TF",NULL,this,ID_SAVE_MV, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
+  new FXButton(endFrame,"Load Meshviewer TF",NULL,this,ID_LOAD_MV, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
   new FXButton(endFrame,"Import TF",NULL,this,ID_IMPORT, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
   new FXButton(endFrame,"Apply",NULL,this,ID_APPLY, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
   new FXButton(endFrame,"Close",NULL,this,ID_ACCEPT, FRAME_RAISED | FRAME_THICK | LAYOUT_RIGHT);
@@ -644,6 +649,35 @@ long VVTransferWindow::onCmdImport(FXObject*,FXSelector,void*)
     }
     delete fio;
   }
+  return 1;
+}
+
+long VVTransferWindow::onCmdSaveMV(FXObject*,FXSelector,void*)
+{
+  const FXchar patterns[]="Transfer function files (*.vtf)\nAll Files (*.*)";
+  FXString filename = _shell->getSaveFilename("Save Transfer Function", "transfunc.vtf", patterns);
+  if(filename.length() == 0) return 1;
+  if(vvToolshed::isFile(filename.text()))
+  {
+    int over = FXMessageBox::question((FXWindow*)this, MBOX_OK_CANCEL, "Warning", "Overwrite existing file?");
+    if(over == FX::MBOX_CLICKED_CANCEL) return 1;
+  }
+  _canvas->_vd->tf.saveMeshviewer(filename.text());
+  return 1;
+}
+
+long VVTransferWindow::onCmdLoadMV(FXObject*,FXSelector,void*)
+{
+  const FXchar patterns[]="Transfer function files (*.vtf)\nAll Files (*.*)";
+  FXString filename = _shell->getOpenFilename("Load Transfer Function", patterns);
+  if(filename.length() == 0) return 1;
+  if(!vvToolshed::isFile(filename.text()))
+  {
+    int over = FXMessageBox::question((FXWindow*)this, MBOX_OK, "Error", "File does not exist");
+    return 1;
+  }
+  _canvas->_vd->tf.loadMeshviewer(filename.text());
+  drawTF();
   return 1;
 }
 

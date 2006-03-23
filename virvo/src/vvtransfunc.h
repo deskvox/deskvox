@@ -60,6 +60,7 @@ class VIRVOEXPORT vvTransFunc
     int  getNumDefaultColors();
     void setDefaultAlpha(int=0);
     int  getNumDefaultAlpha();
+    int  getNumWidgets(WidgetType);
     void deleteWidgets(WidgetType);
     void computeTFTexture(int, int, int, float*);
     vvColor computeBGColor(float, float, float);
@@ -78,6 +79,8 @@ class VIRVOEXPORT vvTransFunc
     void clearUndoBuffer();
     void setDiscreteColors(int);
     int  getDiscreteColors();
+    int  saveMeshviewer(const char*);
+    int  loadMeshviewer(const char*);
 };
 #endif
 

@@ -4204,6 +4204,86 @@ vvFileIO::ErrorType vvFileIO::loadGKentFile(vvVolDesc* vd)
   return OK;
 }
 
+
+//----------------------------------------------------------------------------
+/// Loads an image file from David Dowell/UCAR
+vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
+{
+  const int NUM_CHANNELS = 4;
+  FILE* fp;
+  vvTokenizer* tok;
+  uchar* rawData;
+  int i, x, y, z, voxPerChan, index;
+  bool done = false;
+
+  vvDebugMsg::msg(1, "vvFileIO::loadSynthFile()");
+  if ( (fp=fopen(vd->getFilename(), "rb")) == NULL)
+  {
+    vvDebugMsg::msg(1, "Error: Cannot open .synth file.");
+    return FILE_ERROR;
+  }
+
+  // Initialize tokenizer:
+  tok = new vvTokenizer(fp);
+  tok->setEOLisSignificant(false);
+  tok->setParseNumbers(true);
+  tok->setWhitespaceCharacter(' ');
+
+  vd->chan = NUM_CHANNELS;   // channels are u, v, w, r
+  vd->bpc = 4;
+
+  // Read header:
+  for (i=0; i<3; ++i)   // read number of gridpoints
+  {  
+    if (tok->nextToken() != vvTokenizer::VV_NUMBER) assert(0);
+    vd->vox[i] = int(tok->nval);
+  }
+  for (i=0; i<3; ++i)   // read distance between gridpoints
+  {  
+    if (tok->nextToken() != vvTokenizer::VV_NUMBER) assert(0);
+    vd->dist[i] = tok->nval;
+  }
+  for (i=0; i<3; ++i)   // read lower grid corner 
+  {  
+    if (tok->nextToken() != vvTokenizer::VV_NUMBER) assert(0);
+  }
+  if (tok->nextToken() != vvTokenizer::VV_NUMBER) assert(0);
+
+  // Allocate volume memory:
+  rawData = new uchar[vd->getFrameBytes()];
+
+  // Read volume data:
+  voxPerChan = vd->vox[0] * vd->vox[1] * vd->vox[2];
+  index = 0;
+  for (i=0; i<NUM_CHANNELS; ++i)
+  {
+    for (z=0; z<vd->vox[2]; ++z)
+    {
+      for (y=0; y<vd->vox[1]; ++y)
+      {
+        for (x=0; x<vd->vox[0]; ++x)
+        {
+          if (tok->nextToken() == vvTokenizer::VV_NUMBER)          
+          {
+            *(((float*)rawData)+index) = tok->nval;
+          }
+          else
+          {
+            cerr << "Error in line " << tok->getLineNumber() << " of .synth file" << endl;
+            assert(0);
+          }
+          ++index;
+        }
+      }
+    }
+  }
+
+  fclose(fp);
+  vd->addFrame(rawData, vvVolDesc::ARRAY_DELETE);
+  ++vd->frames;
+  return OK;
+}
+
 //----------------------------------------------------------------------------
 /** Saves all slices of the current volume as PPM or PGM images.
  A numbered suffix of four digits will be added to the file names.
@@ -4498,6 +4578,9 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
                                                   // Graham Kent's seismic data (Scripps Institution)
   else if (vvToolshed::strCompare(suffix, "gkent") == 0)
     err = loadGKentFile(vd);
+
+  else if (vvToolshed::strCompare(suffix, "synth") == 0)
+    err = loadSynthFile(vd);
 
   // Unknown extension error:
   else

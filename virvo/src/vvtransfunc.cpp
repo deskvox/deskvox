@@ -859,6 +859,158 @@ void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float th
 }
 
 //----------------------------------------------------------------------------
+/** Save transfer function to a disk file in Meshviewer format:
+  Example:
+  <pre>
+  ColorMapKnots: 3
+  Knot:  0.0  1.0  0.0  0.0
+  Knot: 50.0  0.0  1.0  0.0
+  Knot: 99.0  0.0  0.0  1.0
+  OpacityMapPoints: 3
+  Point:  0.0   0.00
+  Point: 50.0   0.05
+  Point: 99.0   0.00
+
+  Syntax:
+  Knot: <float_data_value> <red 0..1> <green> <blue>
+  Point: <float_data_value> <opacity 0..1>
+
+  - numbers are floating point with any number of mantissa digits
+  - '#' allowed for comments
+  </pre>
+  @return 1 if successful, 0 if not
+*/
+int vvTransFunc::saveMeshviewer(const char* filename)
+{
+  vvTFWidget* w;
+  vvTFColor* cw;
+  vvTFBell* bw;
+  vvTFPyramid* pw;
+  FILE* fp;
+  int i;
+
+  if ( (fp = fopen(filename, "wb")) == NULL)
+  {
+    cerr << "Error: Cannot create file." << endl;
+    return 0;
+  }
+  
+  // Write color pins to file:
+  fprintf(fp, "ColorMapKnots: %d\n", getNumWidgets(TF_COLOR));
+  _widgets.first();
+  for (i=0; i<_widgets.count(); ++i)
+  { 
+    w = _widgets.getData();
+    if ((cw=dynamic_cast<vvTFColor*>(w)))
+    {
+      fprintf(fp, "Knot: %f %f %f %f\n", cw->_pos[0], cw->_col[0], cw->_col[1], cw->_col[2]);
+    }
+    _widgets.next();
+  }
+  
+  // Write opacity pins to file:
+  fprintf(fp, "OpacityMapPoints: %d\n", getNumWidgets(TF_BELL) + getNumWidgets(TF_PYRAMID));
+  _widgets.first();
+  for (i=0; i<_widgets.count(); ++i)
+  { 
+    w = _widgets.getData();
+    if ((bw=dynamic_cast<vvTFBell*>(w)))
+    {
+      fprintf(fp, "Point: %f %f\n", bw->_pos[0], bw->_opacity);
+    }
+    else if ((pw=dynamic_cast<vvTFPyramid*>(w)))
+    {
+      fprintf(fp, "Point: %f %f\n", pw->_pos[0], pw->_opacity);
+    }
+    _widgets.next();
+  }
+
+  // Wrap up:
+  fclose(fp);
+  cerr << "Wrote transfer function file: " << filename << endl;
+  return 1;
+}
+
+//----------------------------------------------------------------------------
+/** Load transfer function from a disk file in Meshviewer format.
+  @see vvTransFunc::saveMeshViewer
+  @return 1 if successful, 0 if not
+*/
+int vvTransFunc::loadMeshviewer(const char* filename)
+{
+  vvTFColor* cw;
+  vvTFPyramid* pw;
+  FILE* fp;
+  int i;
+  int numColorWidgets, numOpacityPoints;
+  float pos, col[3], opacity;
+
+  if ( (fp = fopen(filename, "rb")) == NULL)
+  {
+    cerr << "Error: Cannot open file." << endl;
+    return 0;
+  }
+  
+  // Remove all existing widgets:
+  _widgets.removeAll();
+  
+  // Read color pins from file:
+  fscanf(fp, "ColorMapKnots: %d\n", &numColorWidgets);
+  for (i=0; i<numColorWidgets; ++i)
+  { 
+    fscanf(fp, "Knot: %f %f %f %f\n", &pos, &col[0], &col[1], &col[2]);
+    cw = new vvTFColor();
+    cw->_pos[0] = pos;
+    cw->_col[0] = col[0];
+    cw->_col[1] = col[1];
+    cw->_col[2] = col[2];
+    _widgets.append(cw, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+  }
+  
+  // Read opacity pins from file:
+  fscanf(fp, "OpacityMapPoints: %d\n", &numOpacityPoints);
+  for (i=0; i<numOpacityPoints; ++i)
+  { 
+    fscanf(fp, "Point: %f %f\n", &pos, &opacity);
+    pw = new vvTFPyramid();
+    pw->_pos[0] = pos;
+    pw->_opacity = opacity;
+    pw->setOwnColor(false);
+    _widgets.append(pw, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+  }
+
+  // Wrap up:
+  fclose(fp);
+  cerr << "Loaded transfer function from file: " << filename << endl;
+  return 1;
+}
+
+//----------------------------------------------------------------------------
+/** @return the number of widgets of a given type
+*/
+int vvTransFunc::getNumWidgets(WidgetType wt)
+{
+  vvTFWidget* w;
+  int num = 0;
+  int i;
+  
+  _widgets.first();
+  for (i=0; i<_widgets.count(); ++i)
+  {
+    w = _widgets.getData();
+    switch(wt)
+    {
+      case TF_COLOR:   if (dynamic_cast<vvTFColor*>(w))   ++num; break;
+      case TF_PYRAMID: if (dynamic_cast<vvTFPyramid*>(w)) ++num; break;
+      case TF_BELL:    if (dynamic_cast<vvTFBell*>(w))    ++num; break;
+      case TF_SKIP:    if (dynamic_cast<vvTFSkip*>(w))    ++num; break;
+    }
+    _widgets.next();
+  }
+  return num;
+}
+
+//----------------------------------------------------------------------------
 /** @set the transfer function type to LUT_1D and set LUT
  */
 /*

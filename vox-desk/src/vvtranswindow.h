@@ -73,6 +73,8 @@ class VVTransferWindow : public FXDialogBox
       ID_HIST_NONE,
       ID_APPLY,
       ID_IMPORT,
+      ID_SAVE_MV,
+      ID_LOAD_MV,
       ID_DIS_COLOR,
       ID_TF_BOOK,
       ID_PIN_BOOK,
@@ -98,6 +100,8 @@ class VVTransferWindow : public FXDialogBox
     long onCmdUndo(FXObject*,FXSelector,void*);
     long onCmdApply(FXObject*,FXSelector,void*);
     long onCmdImport(FXObject*,FXSelector,void*);
+    long onCmdSaveMV(FXObject*,FXSelector,void*);
+    long onCmdLoadMV(FXObject*,FXSelector,void*);
     long onCmdColorCombo(FXObject*,FXSelector,void*);
     long onCmdAlphaCombo(FXObject*,FXSelector,void*);
     long onCmdInstant(FXObject*,FXSelector,void*);

@@ -2658,7 +2658,10 @@ void vvVolDesc::printStatistics()
   cerr << "Scalar value range:                " << scalarMin << " to " << scalarMax << endl;
   for (m=0; m<chan; ++m)
   {
-    cerr << "Number of different data values in channel " << m << ": " << findNumUsed(m) << endl;
+    if (bpc<3)  // doesn't work with floats
+    {
+      cerr << "Number of different data values in channel " << m << ": " << findNumUsed(m) << endl;
+    }
   }
   cerr << "Zero voxels in first frame:        " << setprecision(4) <<
     (100.0f * findNumValue(0,0) / getFrameVoxels()) << " %" << endl;
@@ -3615,7 +3618,8 @@ int vvVolDesc::findNumValue(int frame, float val)
 
 //----------------------------------------------------------------------------
 /** Find the number of different data values used in a dataset.
- */
+  @return -1 if data type is float
+*/
 int vvVolDesc::findNumUsed(int channel)
 {
   int f, i;
@@ -3628,7 +3632,7 @@ int vvVolDesc::findNumUsed(int channel)
 
   vvDebugMsg::msg(2, "vvVolDesc::findNumUsed()");
 
-  assert(bpc<3);                                  // doesn't work with floats
+  if (bpc>=3) return -1;     // doesn't work with floats
 
   frameVoxels = getFrameVoxels();
   numValues = (bpc==2) ? 65536 : 256;
@@ -4707,8 +4711,7 @@ void vvVolDesc::updateHDRBins()
     }
   }
   
-  // Remove areas covered by TFSkip widgets:
-  // todo
+  // TODO: Remove areas covered by TFSkip widgets
   
   // Determine bin limits:
   valuesPerBin = numVoxels / NUM_HDR_BINS;
@@ -4717,8 +4720,15 @@ void vvVolDesc::updateHDRBins()
     _hdrBinLimits[i] = sortedData[i * valuesPerBin];
   }
   
-  real[0] = sortedData[0];
-  real[1] = sortedData[numVoxels-1];
+  if (sortedData[0] == sortedData[numVoxels-1])
+  {
+    cerr << "volume too sparse for HDR monte carlo sampling" << endl;
+  }
+  else
+  {
+    real[0] = sortedData[0];
+    real[1] = sortedData[numVoxels-1];
+  }
     
   delete[] sortedData;
 }

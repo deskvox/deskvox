@@ -145,6 +145,23 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
 };
 
+/** Transfer function widget to specify a function freehandedly. The widget defines a rectangular area
+  in which the user can specify an opacity value for each element, defined by resolution.
+ */
+class VIRVOEXPORT vvTFFreehand : public vvTFWidget
+{
+  public:
+    int _resolution[3];     ///< granularity of freehand grid for each dimension [# array elements, e.g., 256]
+    float _size[3];         ///< width, height, depth of freehand area [TF space is 0..1]
+
+    vvTFFreehand();
+    vvTFFreehand(vvTFFreehand*);
+    vvTFFreehand(float, float, int, float=0.5f, float=0.0f, int=0, float=0.5f, float=0.0f, int=0);
+    vvTFFreehand(FILE*);
+    virtual void write(FILE*);
+    virtual float getOpacity(float, float=-1.0f, float=-1.0f);
+};
+
 #endif
 
 //============================================================================
