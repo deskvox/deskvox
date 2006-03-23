@@ -4205,8 +4205,57 @@ vvFileIO::ErrorType vvFileIO::loadGKentFile(vvVolDesc* vd)
 }
 
 
-//----------------------------------------------------------------------------
-/// Loads an image file from David Dowell/UCAR
+/**----------------------------------------------------------------------------
+  Loads an image file from David Dowell/UCAR, Larry Frank/UCSD
+
+  Header format:
+
+  nx ny nz 
+  dx dy dz 
+  xmin ymin zmin 
+  rho 
+  u(1,1,1) 
+  u(2,1,1) 
+  ... 
+  u(nx,ny,nz) 
+  v(1,1,1) 
+  v(2,1,1) 
+  ... 
+  v(nx,ny,nz) 
+  w(1,1,1) 
+  w(2,1,1) 
+  ... 
+  w(nx,ny,nz) 
+  r(1,1,1) 
+  r(2,1,1) 
+  ... 
+  r(nx,ny,nz) 
+
+  Definitions of the variables: 
+  nx = number of gridpoints in the x (east) direction 
+  ny = " " y (north) direction 
+  nz = " " z (up) direction 
+  dx = distance (m) between gridpoints in x direction 
+  dy = " " y direction 
+  dz = " " z direction 
+  xmin = x coordinate (m) of lower southwest corner of grid 
+  ymin = y " " 
+  zmin = z " " 
+  rho = air density at the surface (kg / m^3) 
+  u = component of velocity (m/s)in the x direction 
+  v = " " y direction 
+  w = " " z direction 
+  r = reflectivity (dBZ) 
+
+  Example:
+  <pre>  
+    51              51             35
+    1000.000        1000.000       500.0000    
+    30000.00        10000.00       0.0000000E+00
+    1.000000    
+    [here comes the data]
+  </pre>
+*/
 vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
 {
   const int NUM_CHANNELS = 4;
@@ -4254,7 +4303,6 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
 
   // Read volume data:
   voxPerChan = vd->vox[0] * vd->vox[1] * vd->vox[2];
-  index = 0;
   for (i=0; i<NUM_CHANNELS; ++i)
   {
     for (z=0; z<vd->vox[2]; ++z)
@@ -4265,6 +4313,7 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
         {
           if (tok->nextToken() == vvTokenizer::VV_NUMBER)          
           {
+            index = NUM_CHANNELS * (x + y * vd->vox[0] + z * vd->vox[0] * vd->vox[1]) + i;
             *(((float*)rawData)+index) = tok->nval;
           }
           else
@@ -4272,7 +4321,6 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
             cerr << "Error in line " << tok->getLineNumber() << " of .synth file" << endl;
             assert(0);
           }
-          ++index;
         }
       }
     }
