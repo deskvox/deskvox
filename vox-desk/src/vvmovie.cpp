@@ -128,9 +128,9 @@ vvMovie::ErrorType vvMovie::parseCommand(vvTokenizer* tokenizer, vvSLList<vvMovi
   vvMovieStep* step;
   ErrorType result;
   TransformType trans = NONE;
-  float par[2] = {0.0f, 0.0f};
+  float par[vvMovieStep::MAX_NUM_PARAM];
   int repetitions;
-  int i;
+  int i,j;
   vvSLList<vvMovieStep*>* rep = NULL;
 
   if (tokenizer->nextToken() == vvTokenizer::VV_EOF) return VV_EOF;
@@ -186,10 +186,38 @@ vvMovie::ErrorType vvMovie::parseCommand(vvTokenizer* tokenizer, vvSLList<vvMovi
   else if (strcmp(tokenizer->sval, "setpeak") == 0)
   {
     trans = SETPEAK;
-    if (tokenizer->nextToken() != vvTokenizer::VV_NUMBER) return VV_INVALID_PARAM;
-    par[0] = tokenizer->nval;
-    if (tokenizer->nextToken() != vvTokenizer::VV_NUMBER) return VV_INVALID_PARAM;
-    par[1] = tokenizer->nval;
+    for (i=0; i<2; ++i)
+    {
+      if (tokenizer->nextToken() != vvTokenizer::VV_NUMBER) return VV_INVALID_PARAM;
+      par[i] = tokenizer->nval;
+    }
+  }
+  else if (strcmp(tokenizer->sval, "setclip") == 0)
+  {
+    trans = SETCLIP;
+    for (i=0; i<4; ++i)
+    {
+      if (tokenizer->nextToken() != vvTokenizer::VV_NUMBER) return VV_INVALID_PARAM;
+      par[i] = tokenizer->nval;
+    }
+  }
+  else if (strcmp(tokenizer->sval, "moveclip") == 0)
+  {
+    trans = MOVECLIP;
+    for (i=0; i<4; ++i)
+    {
+      if (tokenizer->nextToken() != vvTokenizer::VV_NUMBER) return VV_INVALID_PARAM;
+      par[i] = tokenizer->nval;
+    }
+  }
+  else if (strcmp(tokenizer->sval, "setclipparam") == 0)
+  {
+    trans = SETCLIPPARAM;
+    for (i=0; i<3; ++i)
+    {
+      if (tokenizer->nextToken() != vvTokenizer::VV_NUMBER) return VV_INVALID_PARAM;
+      par[i] = tokenizer->nval;
+    }
   }
   else if (strcmp(tokenizer->sval, "setquality") == 0)
   {
@@ -230,8 +258,10 @@ vvMovie::ErrorType vvMovie::parseCommand(vvTokenizer* tokenizer, vvSLList<vvMovi
       do
       {
         step = new vvMovieStep();
-        step->param[0]  = rep->getData()->param[0];
-        step->param[1]  = rep->getData()->param[1];
+        for (j=0; j<vvMovieStep::MAX_NUM_PARAM; ++j)
+        {
+          step->param[j]  = rep->getData()->param[j];
+        }
         step->transform = rep->getData()->transform;
         list->append(step, vvSLNode<vvMovieStep*>::NORMAL_DELETE);
       } while (rep->next());
@@ -247,8 +277,10 @@ vvMovie::ErrorType vvMovie::parseCommand(vvTokenizer* tokenizer, vvSLList<vvMovi
 
   // Create new movie step list entry:
   step = new vvMovieStep();
-  step->param[0] = par[0];
-  step->param[1] = par[1];
+  for (j=0; j<vvMovieStep::MAX_NUM_PARAM; ++j)
+  {
+    step->param[j] = par[j];
+  }
   step->transform = trans;
   list->append(step, vvSLNode<vvMovieStep*>::NORMAL_DELETE);
   return VV_OK;
@@ -358,6 +390,41 @@ bool vvMovie::setStep(int step)
           _canvas->_vd->tf._widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, peak[0], peak[1], 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
           tfChanged = true;
           break;
+        case SETCLIP:
+          if (steps->getData()->param[0]==0.0f && steps->getData()->param[1]==0.0f &&
+              steps->getData()->param[2]==0.0f && steps->getData()->param[3]==0.0f)
+          {
+            _canvas->_renderer->_renderState._clipMode = false;
+          }
+          else
+          {
+            _canvas->_renderer->_renderState._clipMode = true;
+            vvVector3 normal(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
+            normal.normalize();
+            vvVector3 point(&normal);
+            point.scale(steps->getData()->param[3]);
+            _canvas->_renderer->_renderState.setClippingPlane(&point, &normal);
+          }
+          break;
+        case MOVECLIP:
+        {
+          vvVector3 point, normal;
+          _canvas->_renderer->_renderState.getClippingPlane(&point, &normal);
+          normal.add(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
+          normal.normalize();
+          vvVector3 diff(&normal);
+          diff.scale(steps->getData()->param[3]);
+          point.add(&diff);
+          _canvas->_renderer->_renderState.setClippingPlane(&point, &normal);
+          break;
+        }
+        case SETCLIPPARAM:
+        {
+          _canvas->_renderer->_renderState._clipSingleSlice = (steps->getData()->param[0] == 0.0f) ? false : true;
+          _canvas->_renderer->_renderState._clipOpaque      = (steps->getData()->param[1] == 0.0f) ? false : true;
+          _canvas->_renderer->_renderState._clipPerimeter   = (steps->getData()->param[2] == 0.0f) ? false : true;
+        }
+        break;
         case SETQUALITY:
           _canvas->_renderer->_renderState._quality = steps->getData()->param[0];
           break;

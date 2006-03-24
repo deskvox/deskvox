@@ -49,44 +49,56 @@ trans AXIS DIST
   AXIS can be x, y, or z.
 
 rot AXIS ANGLE
-Rotates the data set by ANGLE degrees about the AXIS axis.
-AXIS can be x, y, or z.
+  Rotates the data set by ANGLE degrees about the AXIS axis.
+  AXIS can be x, y, or z.
 
 scale FACTOR
-Scales the data set by a factor of FACTOR. A value of 1.0 means no scaling.
-Values greater than 1.0 enlarge the data set, values smaller than 1.0
-make it smaller.
+  Scales the data set by a factor of FACTOR. A value of 1.0 means no scaling.
+  Values greater than 1.0 enlarge the data set, values smaller than 1.0
+  make it smaller.
 
 timestep INDEX
-Display time step number INDEX in a volume animation.
-The first time step has index 0.
+  Display time step number INDEX in a volume animation.
+  The first time step has index 0.
 
 nextstep
-Advance to the next time step.
-Will jump to the first step when the end is reached.
+  Advance to the next time step.
+  Will jump to the first step when the end is reached.
 
 prevstep
-Go back to the previous time step.
-Will jump to the last step when the beginning is reached.
+  Go back to the previous time step.
+  Will jump to the last step when the beginning is reached.
 
 setpeak POS WIDTH
-Set a peak pin with WIDTH width [0..1] to POS [0..1].
-This will overwrite all previously defined alpha pins.
+  Set a peak pin with WIDTH width [0..1] to POS [0..1].
+  This will overwrite all previously defined alpha pins.
 
 movepeak DISTANCE
-Move alpha peak by DISTANCE. The total alpha range has extension 1.0,
-so a DISTANCE value of 0.1 would move the peak by 1/10th of the
-value range to the right.
+  Move alpha peak by DISTANCE. The total alpha range has extension 1.0,
+  so a DISTANCE value of 0.1 would move the peak by 1/10th of the
+  value range to the right.
 
 setquality QUALITY
-Set rendering quality. 0 is worst, 1 is default, higher is better
+  Set rendering quality. 0 is worst, 1 is default, higher is better
 
 changequality RELATIVE_QUALITY
-Changes the quality setting by a relative value. Quality value cannot
-get smaller than zero.
+  Changes the quality setting by a relative value. Quality value cannot
+  get smaller than zero.
+
+setclip X Y Z POS
+  Define and enable a clipping plane. Use X,Y,Z,POS=0 to disable.
+
+moveclip DX DY DZ DPOS
+  Move clipping plane relative to current position.
+
+setclipparam SINGLE OPAQUE PERIMETER
+  Set clipping plane parameters: 
+    SINGLE: 1=single slice, 0=cutting plane
+    OPAQUE: 1=if single slice then make opaque, 0=use transfer function settings for slice
+    PERIMETER: 1=show clipping plane perimeter, 0=don't show perimeter
 
 show
-Displays the data set using the current settings.
+  Displays the data set using the current settings.
 
 Here is an example movie script file:
 
@@ -98,20 +110,20 @@ show            # display dataset
 timestep 1      # switch to second time step
 show            # display dataset
 repeat 10       # repeat the following 10 times
-rot z 2       # rotate 2 degrees about z axis
-rot x 1       # rotate 1 degree about x axis
-show          # display dataset
+rot z 2         # rotate 2 degrees about z axis
+rot x 1         # rotate 1 degree about x axis
+show            # display dataset
 endrep          # terminate repeat loop
 rot z 10        # rotate 10 degrees about z axis
 show            # display dataset
 setpeak 0.0 0.1 # define peak at the lowest scalar value with width 0.1
 show            # display dataset
 repeat 5        # repeat the following 5 times
-movepeak 0.1  # move peak to the right by 1/10th of the scalar value range
-show          # display dataset
+movepeak 0.1    # move peak to the right by 1/10th of the scalar value range
+show            # display dataset
 endrep          # terminate repeat loop
 
-@author Juergen Schulze-Doebold (schulze@hlrs.de)
+@author Jurgen P. Schulze (jschulze@ucsd.edu)
 */
 class vvMovie
 {
@@ -124,7 +136,8 @@ class vvMovie
   public:
     enum TransformType                            /// object modification types
     {
-      NONE = 0, TRANS, ROT, SCALE, TIMESTEP, NEXTSTEP, PREVSTEP, MOVEPEAK, SETPEAK, SHOW, SETQUALITY, CHANGEQUALITY
+      NONE = 0, TRANS, ROT, SCALE, TIMESTEP, NEXTSTEP, PREVSTEP, MOVEPEAK, SETPEAK, 
+      SETCLIP, MOVECLIP, SETCLIPPARAM, SHOW, SETQUALITY, CHANGEQUALITY
     };
     enum ErrorType                                /// Error Codes
     {
@@ -153,8 +166,9 @@ class vvMovie
 class vvMovieStep
 {
   public:
+    enum {MAX_NUM_PARAM = 4};                     /// maximum number of parameters
     vvMovie::TransformType  transform;            ///< transformation type
-    float                   param[2];             ///< transformation parameters
+    float                   param[MAX_NUM_PARAM]; ///< transformation parameters
 
     vvMovieStep()
     {

@@ -297,6 +297,18 @@ changequality RELATIVE_QUALITY
   Changes the quality setting by a relative value. Quality value cannot
   get smaller than zero.
   
+setclip X Y Z POS
+  Define and enable a clipping plane. Use X,Y,Z,POS=0 to disable.
+
+moveclip DX DY DZ DPOS
+  Move clipping plane relative to current position.
+
+setclipparam SINGLE OPAQUE PERIMETER
+  Set clipping plane parameters: 
+    SINGLE: 1=single slice, 0=cutting plane
+    OPAQUE: 1=if single slice then make opaque, 0=use transfer function settings for slice
+    PERIMETER: 1=show clipping plane perimeter, 0=don't show perimeter
+
 show
   Displays the data set using the current settings.
   
@@ -469,9 +481,12 @@ Nr.   Date      Details
                 - VConv: new -mergetype parameter
                 - Deskvox: added auto rotation mode to View menu: object keeps spinning when mouse 
                   button is released in motion
-                - Deskvox: added Skip Range widget in transfer function editor: forces a range to be transparent
+                - Deskvox: added Skip Range widget in transfer function editor: 
+                  forces a range to be transparent
                 - Deskvox: new Import TF button in TFE to load TF from other file
                 - Deskvox: made output image file specification easier in Screenshot and Moviescript dialogs
+                - Deskvox: added new movie script commands for clipping plane control: 
+                  setclip, moveclip, setclipparam
                   
                 
 Distribution

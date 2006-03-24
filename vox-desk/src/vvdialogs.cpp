@@ -587,7 +587,7 @@ void VVClippingDialog::updateClipParameters()
   normal.set(x, y, z);
   normal.normalize();
   point.copy(&normal);
-  point.scale(d * 0.7f);
+  point.scale(d);
   _canvas->_renderer->_renderState.setClippingPlane(&point, &normal);
 }
 
