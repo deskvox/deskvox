@@ -2526,6 +2526,7 @@ FXDEFMAP(VVFloatRangeDialog) VVFloatRangeDialogMap[]=
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_MAX_DATA,    VVFloatRangeDialog::onMaxData),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_BOT_PERCENT, VVFloatRangeDialog::onBottomPercent),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_TOP_PERCENT, VVFloatRangeDialog::onTopPercent),
+  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_FAST,        VVFloatRangeDialog::onFast),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_OK,          VVFloatRangeDialog::onOK),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_APPLY,       VVFloatRangeDialog::onApply),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_CANCEL,      VVFloatRangeDialog::onCancel),
@@ -2564,10 +2565,26 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   new FXButton(topClampFrame, "% below max", NULL, this, ID_TOP_PERCENT, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
   FXGroupBox* hdrGroup = new FXGroupBox(verticalFrame,"High dynamic range mapping",FRAME_GROOVE | LAYOUT_FILL_X);
-  _isoCheck = new FXCheckButton(hdrGroup, "Iso-data binning", this, ID_ISO, ICON_BEFORE_TEXT);
+  FXMatrix* hdrMatrix = new FXMatrix(hdrGroup, 3, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
+  _isoCheck = new FXCheckButton(hdrMatrix, "Iso-data binning", this, ID_ISO, ICON_BEFORE_TEXT);
   _isoCheck->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
-  _weightCheck = new FXCheckButton(hdrGroup, "Opacity-weighted binning", this, ID_WEIGHT, ICON_BEFORE_TEXT);
+  _isoCheck->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
+  new FXLabel(hdrMatrix, "");
+  new FXLabel(hdrMatrix, "");
+  _fastCheck = new FXCheckButton(hdrMatrix, "Fast sampling", this, ID_FAST, ICON_BEFORE_TEXT);
+  _fastCheck->setCheck(true);
+  new FXLabel(hdrMatrix, "Number of values:");
+  _fastNumber = new FXTextField(hdrMatrix, 20, NULL, 0, TEXTFIELD_NORMAL | LAYOUT_FILL_X);
+  _fastNumber->setText("10000");
+  _fastNumber->setTipText("Uses a reduced number of data values for HDR transfer function specification. Default: 10,000");
+  _skipCheck = new FXCheckButton(hdrMatrix, "Skip Skip widgets", this, ID_SKIP, ICON_BEFORE_TEXT);
+  _skipCheck->setCheck(true);
+  new FXLabel(hdrMatrix, "");
+  new FXLabel(hdrMatrix, "");
+  _weightCheck = new FXCheckButton(hdrMatrix, "Opacity-weighted binning", this, ID_WEIGHT, ICON_BEFORE_TEXT);
   _weightCheck->setTipText("When checked algorithm creates smaller bins where opacity is higher.\nOtherwise binning is independent from opacity.");
+  new FXLabel(hdrMatrix, "");
+  new FXLabel(hdrMatrix, "");
 
   // Buttons:
   FXVerticalFrame* buttonFrame = new FXVerticalFrame(horizontalFrame, LAYOUT_FILL_X | LAYOUT_FIX_WIDTH,0,0,80);
@@ -2610,10 +2627,10 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
       _canvas->_vd->real[1] = FXFloatVal(_maxTF->getText());
       _canvas->_renderer->setParameter(vvRenderer::VV_BIN_ISO, (_isoCheck->getCheck()) ? 1.0f : 0.0f);
       _canvas->_renderer->setParameter(vvRenderer::VV_BIN_WEIGHT, (_weightCheck->getCheck()) ? 1.0f : 0.0f);
-      if (_canvas->_renderer->getParameter(vvRenderer::VV_BIN_ISO) == 1.0f ||
-          _canvas->_renderer->getParameter(vvRenderer::VV_BIN_WEIGHT) == 1.0f)
+      if (_isoCheck->getCheck() == 1.0f || _weightCheck->getCheck() == 1.0f)
       {
-        _canvas->_vd->updateHDRBins();
+        _canvas->_vd->updateHDRBins((_fastCheck->getCheck()) ? FXIntVal(_fastNumber->getText()) : -1,
+          _skipCheck->getCheck());
       }
       _canvas->_renderer->updateVolumeData();
       _shell->_glcanvas->makeNonCurrent();
@@ -2659,6 +2676,13 @@ long VVFloatRangeDialog::onTopPercent(FXObject*,FXSelector,void*)
   float threshold = FXFloatVal(_topClamp->getText());
   float clampVal = _canvas->_vd->findClampValue(0, 0, 1.0f - threshold / 100.0f);
   _maxTF->setText(FXStringFormat("%.9g", clampVal));
+  return 1;
+}
+
+long VVFloatRangeDialog::onFast(FXObject*,FXSelector,void*)
+{
+  if (_fastCheck->getCheck()) _fastNumber->enable();
+  else _fastNumber->disable();
   return 1;
 }
 

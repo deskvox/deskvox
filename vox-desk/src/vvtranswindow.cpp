@@ -35,7 +35,7 @@ using namespace vox;
 
 const FXColor VVTransferWindow::BLACK = FXRGB(0,0,0);
 const FXColor VVTransferWindow::WHITE = FXRGB(255,255,255);
-const float VVTransferWindow::CLICK_TOLERANCE = 0.05f; // [TF space]
+const float VVTransferWindow::CLICK_TOLERANCE = 0.03f; // [TF space]
 const int VVTransferWindow::TF_WIDTH  = 512;
 const int VVTransferWindow::TF_HEIGHT = 256;
 const int VVTransferWindow::COLORBAR_HEIGHT = 20;
@@ -43,46 +43,52 @@ const int VVTransferWindow::COLORBAR_HEIGHT = 20;
 /*******************************************************************************/
 FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
 {
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_PYRAMID,       VVTransferWindow::onCmdPyramid),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_BELL,          VVTransferWindow::onCmdBell),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_SKIP,          VVTransferWindow::onCmdSkip),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_P_TOP_X,       VVTransferWindow::onChngPyramid),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_P_BOTTOM_X,    VVTransferWindow::onChngPyramid),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_P_TOP_Y,       VVTransferWindow::onChngPyramid),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_P_BOTTOM_Y,    VVTransferWindow::onChngPyramid),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_P_MAX,         VVTransferWindow::onChngPyramid),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_B_WIDTH,       VVTransferWindow::onChngBell),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_B_HEIGHT,      VVTransferWindow::onChngBell),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_B_MAX,         VVTransferWindow::onChngBell),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_S_WIDTH,       VVTransferWindow::onChngSkip),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_S_HEIGHT,      VVTransferWindow::onChngSkip),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_DIS_COLOR,     VVTransferWindow::onChngDisColors),
-  FXMAPFUNC(SEL_PAINT,            VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onTFCanvasPaint),
-  FXMAPFUNC(SEL_PAINT,            VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onTFCanvasPaint),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_DELETE,        VVTransferWindow::onCmdDelete),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_UNDO,          VVTransferWindow::onCmdUndo),
-  FXMAPFUNC(SEL_LEFTBUTTONPRESS,  VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseDown1D),
-  FXMAPFUNC(SEL_LEFTBUTTONRELEASE,VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseUp1D),
-  FXMAPFUNC(SEL_MOTION,           VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseMove1D),
-  FXMAPFUNC(SEL_LEFTBUTTONPRESS,  VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onMouseDown2D),
-  FXMAPFUNC(SEL_LEFTBUTTONRELEASE,VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onMouseUp2D),
-  FXMAPFUNC(SEL_MOTION,           VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onMouseMove2D),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_COLOR_COMBO,   VVTransferWindow::onCmdColorCombo),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_ALPHA_COMBO,   VVTransferWindow::onCmdAlphaCombo),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_INSTANT,       VVTransferWindow::onCmdInstant),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_OWN_COLOR,     VVTransferWindow::onCmdOwnColor),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_APPLY,         VVTransferWindow::onCmdApply),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_IMPORT,        VVTransferWindow::onCmdImport),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_SAVE_MV,       VVTransferWindow::onCmdSaveMV),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_LOAD_MV,       VVTransferWindow::onCmdLoadMV),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_COLOR,         VVTransferWindow::onCmdColor),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_HIST_ALL,      VVTransferWindow::onCmdHistAll),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_HIST_FIRST,    VVTransferWindow::onCmdHistFirst),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_HIST_NONE,     VVTransferWindow::onCmdHistNone),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_PICK_COLOR,    VVTransferWindow::onCmdPickColor),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_NORMALIZATION, VVTransferWindow::onCmdNormalization),
-  FXMAPFUNC(SEL_CHANGED,          VVTransferWindow::ID_COLOR_PICKER,  VVTransferWindow::onChngPickerColor),
-  FXMAPFUNC(SEL_COMMAND,          VVTransferWindow::ID_COLOR_PICKER,  VVTransferWindow::onChngPickerColor),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_PYRAMID,       VVTransferWindow::onCmdPyramid),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_BELL,          VVTransferWindow::onCmdBell),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_CUSTOM,        VVTransferWindow::onCmdCustom),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_SKIP,          VVTransferWindow::onCmdSkip),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_P_TOP_X,       VVTransferWindow::onChngPyramid),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_P_BOTTOM_X,    VVTransferWindow::onChngPyramid),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_P_TOP_Y,       VVTransferWindow::onChngPyramid),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_P_BOTTOM_Y,    VVTransferWindow::onChngPyramid),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_P_MAX,         VVTransferWindow::onChngPyramid),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_B_WIDTH,       VVTransferWindow::onChngBell),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_B_HEIGHT,      VVTransferWindow::onChngBell),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_B_MAX,         VVTransferWindow::onChngBell),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_S_WIDTH,       VVTransferWindow::onChngSkip),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_S_HEIGHT,      VVTransferWindow::onChngSkip),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_C_WIDTH,       VVTransferWindow::onChngCustomWidth),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_DIS_COLOR,     VVTransferWindow::onChngDisColors),
+  FXMAPFUNC(SEL_PAINT,             VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onTFCanvasPaint),
+  FXMAPFUNC(SEL_PAINT,             VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onTFCanvasPaint),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_DELETE,        VVTransferWindow::onCmdDelete),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_UNDO,          VVTransferWindow::onCmdUndo),
+  FXMAPFUNC(SEL_LEFTBUTTONPRESS,   VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseLDown1D),
+  FXMAPFUNC(SEL_LEFTBUTTONRELEASE, VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseLUp1D),
+  FXMAPFUNC(SEL_RIGHTBUTTONPRESS,  VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseRDown1D),
+  FXMAPFUNC(SEL_RIGHTBUTTONRELEASE,VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseRUp1D),
+  FXMAPFUNC(SEL_MOTION,            VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseMove1D),
+  FXMAPFUNC(SEL_LEFTBUTTONPRESS,   VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onMouseLDown2D),
+  FXMAPFUNC(SEL_LEFTBUTTONRELEASE, VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onMouseLUp2D),
+  FXMAPFUNC(SEL_MOTION,            VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onMouseMove2D),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_COLOR_COMBO,   VVTransferWindow::onCmdColorCombo),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_ALPHA_COMBO,   VVTransferWindow::onCmdAlphaCombo),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_INSTANT,       VVTransferWindow::onCmdInstant),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_OWN_COLOR,     VVTransferWindow::onCmdOwnColor),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_APPLY,         VVTransferWindow::onCmdApply),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_IMPORT,        VVTransferWindow::onCmdImport),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_SAVE_MV,       VVTransferWindow::onCmdSaveMV),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_LOAD_MV,       VVTransferWindow::onCmdLoadMV),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_COLOR,         VVTransferWindow::onCmdColor),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_ALL,      VVTransferWindow::onCmdHistAll),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_FIRST,    VVTransferWindow::onCmdHistFirst),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_NONE,     VVTransferWindow::onCmdHistNone),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_PICK_COLOR,    VVTransferWindow::onCmdPickColor),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_NORMALIZATION, VVTransferWindow::onCmdNormalization),
+  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_COLOR_PICKER,  VVTransferWindow::onChngPickerColor),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_COLOR_PICKER,  VVTransferWindow::onChngPickerColor),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_NEW_POINT,     VVTransferWindow::onCmdNewPoint),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_DELETE_POINT,  VVTransferWindow::onCmdDeletePoint),
 };
 
 FXIMPLEMENT(VVTransferWindow,FXDialogBox,VVTransferWindowMap,ARRAYNUMBER(VVTransferWindowMap))
@@ -93,6 +99,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
 {
   _canvas = c;
   _shell = (VVShell*)owner;
+  _mouseButton = 0;
 
   FXVerticalFrame* master = new FXVerticalFrame(this,LAYOUT_FILL_X|LAYOUT_FILL_Y);
   _tfBook = new FXTabBook(master,this,ID_TF_BOOK,PACK_UNIFORM_WIDTH|PACK_UNIFORM_HEIGHT|LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_RIGHT);
@@ -121,6 +128,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   new FXButton(buttonFrame,"Color",      NULL,this,ID_COLOR,  FRAME_RAISED|FRAME_THICK,0,0,0,0,20,20);   // sets width for all buttons
   new FXButton(buttonFrame,"Pyramid",    NULL,this,ID_PYRAMID,FRAME_RAISED|FRAME_THICK);
   new FXButton(buttonFrame,"Gaussian",   NULL,this,ID_BELL,   FRAME_RAISED|FRAME_THICK);
+  new FXButton(buttonFrame,"Custom",     NULL,this,ID_CUSTOM, FRAME_RAISED|FRAME_THICK);
   new FXButton(buttonFrame,"Skip Range", NULL,this,ID_SKIP,   FRAME_RAISED|FRAME_THICK);
   new FXButton(buttonFrame,"Delete",     NULL,this,ID_DELETE, FRAME_RAISED|FRAME_THICK);
   new FXButton(buttonFrame,"Undo",       NULL,this,ID_UNDO,   FRAME_RAISED|FRAME_THICK);
@@ -238,7 +246,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _bColorButton = new FXCheckButton(bColorFrame,"Has own color",this,ID_OWN_COLOR,ICON_BEFORE_TEXT|LAYOUT_LEFT);
   new FXButton(bColorFrame,"Pick color",NULL,this,ID_PICK_COLOR, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
 
-  // Switcher state #4:
+  // Switcher state #4: skip range widget activated
   FXGroupBox* pinGroup4 = new FXGroupBox(_pinSwitcher,"Skip Range Settings",FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
   FXVerticalFrame* sliderFrame3 = new FXVerticalFrame(pinGroup4, LAYOUT_FILL_X);
 
@@ -257,6 +265,21 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _sHeightSlider->setRange(0.0f, 1.0f);
   _sHeightSlider->setValue(0.0f);
   _sHeightSlider->setTickDelta(.01);
+
+  // Switcher state #5: custom widget activated
+  FXGroupBox* pinGroup5 = new FXGroupBox(_pinSwitcher,"Custom Widget Settings",FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
+  FXVerticalFrame* sliderFrame5 = new FXVerticalFrame(pinGroup5, LAYOUT_FILL_X);
+
+  FXMatrix* _cWidthMat = new FXMatrix(sliderFrame5, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
+  new FXLabel(_cWidthMat, "Width: ",NULL,LABEL_NORMAL);
+  _cWidthLabel = new FXLabel(_cWidthMat, "0",NULL,LABEL_NORMAL);
+  _cWidthSlider=new FXRealSlider(sliderFrame5,this,ID_C_WIDTH,SLIDER_HORIZONTAL|SLIDER_ARROW_DOWN|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+  _cWidthSlider->setRange(0.0f, 1.0f);
+  _cWidthSlider->setValue(0.0f);
+  _cWidthSlider->setTickDelta(.01);
+
+  new FXButton(sliderFrame5,"New control point",NULL,this,ID_NEW_POINT, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
+  new FXButton(sliderFrame5,"Delete control point",NULL,this,ID_DELETE_POINT, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
 
   // Continue with pin independent widgets:
   FXHorizontalFrame* checkboxFrame=new FXHorizontalFrame(master, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
@@ -351,6 +374,38 @@ long VVTransferWindow::onCmdBell(FXObject*,FXSelector,void*)
 long VVTransferWindow::onCmdSkip(FXObject*,FXSelector,void*)
 {
   newWidget(SKIP);
+  return 1;
+}
+
+long VVTransferWindow::onCmdCustom(FXObject*,FXSelector,void*)
+{
+  newWidget(CUSTOM);
+  return 1;
+}
+
+long VVTransferWindow::onCmdNewPoint(FXObject*,FXSelector,void*)
+{
+  vvTFCustom* cuw;
+  if ((cuw = dynamic_cast<vvTFCustom*>(_currentWidget)) != NULL)
+  {
+    cuw->_currentPoint = cuw->addPoint(cuw->_pos[0]);  // add point in middle of widget 
+    if(_instantButton->getCheck()) updateTransFunc();
+    drawTF();    
+  }
+  return 1;
+}
+
+long VVTransferWindow::onCmdDeletePoint(FXObject*,FXSelector,void*)
+{
+  list<vvTFPoint*>::iterator iter;
+  vvTFCustom* cuw;
+  
+  if ((cuw = dynamic_cast<vvTFCustom*>(_currentWidget)) != NULL)
+  {
+    cuw->removeCurrentPoint();
+    if(_instantButton->getCheck()) updateTransFunc();
+    drawTF();    
+  }
   return 1;
 }
 
@@ -469,13 +524,27 @@ long VVTransferWindow::onChngSkip(FXObject*,FXSelector,void*)
   return 1;
 }
 
+long VVTransferWindow::onChngCustomWidth(FXObject*,FXSelector,void*)
+{
+  vvTFCustom* cuw;
+
+  _cWidthLabel->setText(FXStringFormat("%.2f", _cWidthSlider->getValue()));
+  if(!_currentWidget) return 1;
+  assert((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL);
+  cuw->setSize(_cWidthSlider->getValue());
+  drawTF();
+  if(_instantButton->getCheck()) updateTransFunc();
+  return 1;
+}
+
 float VVTransferWindow::getRealPinPos(float sliderVal)
 {
   return _canvas->_vd->real[0] + sliderVal * (_canvas->_vd->real[1] - _canvas->_vd->real[0]);
 }
 
-long VVTransferWindow::onMouseDown1D(FXObject*,FXSelector,void* ptr)
+long VVTransferWindow::onMouseLDown1D(FXObject*,FXSelector,void* ptr)
 {
+  _mouseButton = 1;
   if(!_canvas || _canvas->_vd->tf._widgets.count() == 0)
   {
     _currentWidget = NULL;
@@ -492,27 +561,70 @@ long VVTransferWindow::onMouseDown1D(FXObject*,FXSelector,void* ptr)
   return 1;
 }
 
-long VVTransferWindow::onMouseUp1D(FXObject*,FXSelector,void*)
+long VVTransferWindow::onMouseLUp1D(FXObject*,FXSelector,void*)
 {
+  _mouseButton = 0;
+  _glCanvas1D->ungrab();
+  return 1;
+}
+
+long VVTransferWindow::onMouseRDown1D(FXObject*,FXSelector,void* ptr)
+{
+  vvTFCustom* cuw;
+  
+  _mouseButton = 3;
+  _canvas->_vd->tf.putUndoBuffer();
+  _glCanvas1D->grab();
+  FXEvent* ev = (FXEvent*)ptr;
+  if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)  // is current widget of custom type?
+  {
+    if (cuw->selectPoint(1.0f - (float(ev->win_y - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT)), CLICK_TOLERANCE, 
+                         float(ev->win_x) / float(_glCanvas1D->getWidth()), CLICK_TOLERANCE) == NULL)
+    {
+      cuw->_currentPoint = NULL;
+    }
+  } 
+  drawTF();
+  return 1;
+}
+
+long VVTransferWindow::onMouseRUp1D(FXObject*,FXSelector,void*)
+{
+  _mouseButton = 0;
   _glCanvas1D->ungrab();
   return 1;
 }
 
 long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
 {
+  vvTFCustom* cuw;
+  float dx, dy;   // mouse 
+  
   if (!_glCanvas1D->grabbed()) return 1;
-  if(!_currentWidget || !_canvas) return 1;
-  if(_canvas->_vd->tf._widgets.count() == 0) return 1;
   FXEvent* ev = (FXEvent*)ptr;
-  float pos = ts_clamp(float(ev->win_x) / float(_glCanvas1D->getWidth()), 0.0f, 1.0f);
-  _realPosLabel->setText(FXStringFormat("Pin = %.5g", getRealPinPos(pos)));
-  _currentWidget->_pos[0] = pos;
+  if (_mouseButton==1)
+  {
+    if(!_currentWidget || !_canvas) return 1;
+    if(_canvas->_vd->tf._widgets.count() == 0) return 1;
+    float pos = ts_clamp(float(ev->win_x) / float(_glCanvas1D->getWidth()), 0.0f, 1.0f);
+    _realPosLabel->setText(FXStringFormat("Pin = %.5g", getRealPinPos(pos)));
+    _currentWidget->_pos[0] = pos;
+  }
+  else if (_mouseButton==3)
+  {
+    if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)  // is current widget of custom type?
+    {
+      dx =   float(ev->win_x - ev->last_x) / float(_glCanvas1D->getWidth());
+      dy = - float(ev->win_y - ev->last_y) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT);
+      cuw->moveCurrentPoint(dy, dx);
+    }
+  }
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
   return 1;
 }
 
-long VVTransferWindow::onMouseDown2D(FXObject*,FXSelector,void* ptr)
+long VVTransferWindow::onMouseLDown2D(FXObject*,FXSelector,void* ptr)
 {
   if(!_canvas || _canvas->_vd->tf._widgets.count() == 0)
   {
@@ -530,7 +642,7 @@ long VVTransferWindow::onMouseDown2D(FXObject*,FXSelector,void* ptr)
   return 1;
 }
 
-long VVTransferWindow::onMouseUp2D(FXObject*,FXSelector,void*)
+long VVTransferWindow::onMouseLUp2D(FXObject*,FXSelector,void*)
 {
   _glCanvas2D->ungrab();
   return 1;
@@ -673,7 +785,7 @@ long VVTransferWindow::onCmdLoadMV(FXObject*,FXSelector,void*)
   if(filename.length() == 0) return 1;
   if(!vvToolshed::isFile(filename.text()))
   {
-    int over = FXMessageBox::question((FXWindow*)this, MBOX_OK, "Error", "File does not exist");
+    FXMessageBox::question((FXWindow*)this, MBOX_OK, "Error", "File does not exist");
     return 1;
   }
   _canvas->_vd->tf.loadMeshviewer(filename.text());
@@ -705,6 +817,9 @@ void VVTransferWindow::newWidget(WidgetType wt)
       break;
     case BELL:
       widget = new vvTFBell(col, false, 1.0f, 0.5f, 0.2f);
+      break;
+    case CUSTOM:
+      widget = new vvTFCustom(0.5f, 0.5f);
       break;
     case SKIP:
       widget = new vvTFSkip(0.5f, 0.2f);
@@ -800,6 +915,7 @@ void VVTransferWindow::draw1DTF()
   drawColorTexture();
   drawPinBackground();
   drawPinLines();
+  drawCustomWidgets();
   if (_glCanvas1D->makeCurrent())
   {
     if(_glVisual1D->isDoubleBuffer())
@@ -895,6 +1011,64 @@ void VVTransferWindow::drawPinBackground()
   }
 }
 
+void VVTransferWindow::drawCustomWidgets()
+{
+  vvTFWidget* w;
+  vvTFCustom* cuw;
+  if(!_canvas) return;
+
+  _canvas->_vd->tf._widgets.first();
+  for(int j=0; j<_canvas->_vd->tf._widgets.count(); ++j)
+  {
+    w = _canvas->_vd->tf._widgets.getData();
+    if (w==_currentWidget)    // don't render control points when widget not current
+    {
+      if ((cuw=dynamic_cast<vvTFCustom*>(w))!=NULL) // is widget of control point type?
+      {
+        drawControlPoints(cuw);
+      }
+    }
+    _canvas->_vd->tf._widgets.next();
+  }
+}
+
+void VVTransferWindow::drawControlPoints(vvTFCustom* cuw)
+{
+  float x,y;
+
+  list<vvTFPoint*>::iterator iter;
+  for(iter=cuw->_points.begin(); iter!=cuw->_points.end(); iter++) 
+  {
+    x = cuw->_pos[0] + (*iter)->_pos[0];
+    y = (*iter)->_opacity;
+    if (_glCanvas1D->makeCurrent())
+    {
+      drawCircle(x, y, 0.02f, (*iter)==cuw->_currentPoint);
+      _glCanvas1D->makeNonCurrent();
+    }
+  }
+}
+
+/** General routine to draw a circle on the current OpenGL canvas.
+*/
+void VVTransferWindow::drawCircle(float x, float y, float radius, bool isHighlighted)
+{
+  int i;
+  float radians;
+  
+  y *= float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());  
+  if (isHighlighted) glColor3f(1.0f, 0.0f, 0.0f);
+  else glColor3f(0.0f, 0.0f, 0.0f);
+  glLineWidth(2.0f);
+  glBegin(GL_LINE_LOOP);
+    for (i=0; i<360; ++i)
+    {
+      radians = i * TS_PI / 180.0f;
+      glVertex2f(x + cos(radians) * radius, y + sin(radians) * radius);
+    }
+  glEnd();
+}
+
 void VVTransferWindow::drawPinLines()
 {
   if(!_canvas) return;
@@ -919,7 +1093,8 @@ void VVTransferWindow::drawPinLine(vvTFWidget* w)
   }
   else if ((dynamic_cast<vvTFPyramid*>(w) != NULL) ||
            (dynamic_cast<vvTFBell*>(w) != NULL) ||
-           (dynamic_cast<vvTFSkip*>(w) != NULL))
+           (dynamic_cast<vvTFSkip*>(w) != NULL) ||
+           (dynamic_cast<vvTFCustom*>(w) != NULL))
   {
     yTop = 1.0f - float(COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());
     height = float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());
@@ -999,6 +1174,7 @@ void VVTransferWindow::updateLabels()
   vvTFPyramid* pw;
   vvTFBell* bw;
   vvTFSkip* sw;
+  vvTFCustom* cuw;
 
   if ((cw=dynamic_cast<vvTFColor*>(_currentWidget))!=NULL)
   {
@@ -1037,6 +1213,12 @@ void VVTransferWindow::updateLabels()
     _sWidthLabel->setText(FXStringFormat("%.2f", _sWidthSlider->getValue()));
     _sHeightSlider->setValue(sw->_size[1]);
     _sHeightLabel->setText(FXStringFormat("%.2f", _sWidthSlider->getValue()));
+  }
+  else if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)
+  {
+    _pinSwitcher->setCurrent(5);
+    _cWidthSlider->setValue(cuw->_size[0]);
+    _cWidthLabel->setText(FXStringFormat("%.2f", _cWidthSlider->getValue()));
   }
   else    // no current widget
   {

@@ -505,6 +505,7 @@ void vvTransFunc::copy(vvSLList<vvTFWidget*>* dst, vvSLList<vvTFWidget*>* src)
   vvTFBell* bw;
   vvTFColor* cw;
   vvTFSkip* sw;
+  vvTFCustom* cuw;
   int numNodes, i;
 
   dst->removeAll();
@@ -524,6 +525,10 @@ void vvTransFunc::copy(vvSLList<vvTFWidget*>* dst, vvSLList<vvTFWidget*>* src)
     else if (cw = dynamic_cast<vvTFColor*>(w))
     {
       dst->append(new vvTFColor(cw), src->getDeleteType());
+    }
+    else if (cuw = dynamic_cast<vvTFCustom*>(w))
+    {
+      dst->append(new vvTFCustom(cuw), src->getDeleteType());
     }
     else if (sw = dynamic_cast<vvTFSkip*>(w))
     {
@@ -1004,6 +1009,7 @@ int vvTransFunc::getNumWidgets(WidgetType wt)
       case TF_PYRAMID: if (dynamic_cast<vvTFPyramid*>(w)) ++num; break;
       case TF_BELL:    if (dynamic_cast<vvTFBell*>(w))    ++num; break;
       case TF_SKIP:    if (dynamic_cast<vvTFSkip*>(w))    ++num; break;
+      case TF_CUSTOM:  if (dynamic_cast<vvTFCustom*>(w))  ++num; break;
     }
     _widgets.next();
   }

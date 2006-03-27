@@ -4663,17 +4663,21 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
 
 //----------------------------------------------------------------------------
 /** Update bin limits array for HDR transfer functions.
+  @param numValues if >0 then use subset of volume for sampling
+  @param skipWidgets if true, algorithm ignores data values under Skip widgets
 */
-void vvVolDesc::updateHDRBins()
+void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets)
 {
-  const int MAX_NUM_VALUES = 10000;
+  vvTFSkip* sw;
   uchar* srcData;
   float* sortedData;
   float tmp;
+  float min,max;
   int numVoxels;
   int i,j;
   int index;
   int valuesPerBin;
+  int numTF;
 
   if (bpc!=4 || chan!=1) 
   {
@@ -4682,7 +4686,8 @@ void vvVolDesc::updateHDRBins()
   }
   assert(_hdrBinLimits);
   srcData = getRaw();
-  numVoxels = ts_min(getFrameVoxels(), MAX_NUM_VALUES);  
+  numVoxels = getFrameVoxels();
+  if (numValues>0) numVoxels = ts_min(numVoxels, numValues);  
   sortedData = new float[numVoxels * sizeof(float)];
   if (numVoxels == getFrameVoxels())  // can the entire data array be sorted?
   {
@@ -4697,7 +4702,35 @@ void vvVolDesc::updateHDRBins()
     }
   }
   
-  // Sort data (bubblesort):
+  // Remove areas covered by TFSkip widgets:
+  if (skipWidgets)
+  {
+    cerr << "Removing skipped regions from data array" << endl;
+    numTF = tf._widgets.count();
+    tf._widgets.first();
+    for (j=0; j<numTF; ++j)
+    {
+      if ((sw=dynamic_cast<vvTFSkip*>(tf._widgets.getData()))!=NULL)
+      {
+        min = sw->_pos[0] - sw->_size[0]/2.0f;
+        max = sw->_pos[0] + sw->_size[0]/2.0f;
+        cerr << "Ignoring values in Skip widget from " << min << " to " << max << endl;
+        for (i=0; i<numVoxels; ++i)
+        {
+          if (sortedData[i] >= min && sortedData[i] <= max) // is data value between skip widget boundaries?
+          {
+            --numVoxels;
+            memcpy(&sortedData[i], &sortedData[i+1], sizeof(float) * (numVoxels-i));
+          }
+        }        
+      }
+      tf._widgets.next();
+    }
+  }
+  
+  // Sort data (bubblesort)
+  // TODO: use faster sort algorithm (eg, quicksort)
+  cerr << "Sorting data array...";
   for (i=0; i<numVoxels-1; ++i)
   {
     for (j=i+1; j<numVoxels; ++j)
@@ -4710,8 +4743,7 @@ void vvVolDesc::updateHDRBins()
       }
     }
   }
-  
-  // TODO: Remove areas covered by TFSkip widgets
+  cerr << "done." << endl;
   
   // Determine bin limits:
   valuesPerBin = numVoxels / NUM_HDR_BINS;

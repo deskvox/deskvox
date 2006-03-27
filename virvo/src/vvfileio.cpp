@@ -1045,6 +1045,12 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         vd->tf._widgets.append(new vvTFColor(fp), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
         tok->setFilePos(fp);
       }
+      else if (strcmp(tok->sval, "TF_CUSTOM")==0)
+      {
+        fseek(fp, tok->getFilePos(), SEEK_SET);
+        vd->tf._widgets.append(new vvTFCustom(fp), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+        tok->setFilePos(fp);
+      }
       else if (strcmp(tok->sval, "ICON")==0)
       {
         ttype = tok->nextToken();

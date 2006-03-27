@@ -26,7 +26,7 @@
 #include "vvtfwidget.h"
 
 /** Description of a transfer function.
-  @author Jurgen P. Schulze (schulze@cs.brown.edu)
+  @author Jurgen P. Schulze (jschulze@ucsd.edu)
   @see vvTFWidget
 */
 class VIRVOEXPORT vvTransFunc
@@ -47,9 +47,10 @@ class VIRVOEXPORT vvTransFunc
       TF_COLOR,
       TF_PYRAMID,
       TF_BELL,
-      TF_SKIP
+      TF_SKIP,
+      TF_CUSTOM
     };
-    vvSLList<vvTFWidget*> _widgets;               ///< TF widget list
+    vvSLList<vvTFWidget*> _widgets;  ///< TF widget list
 
     vvTransFunc();
     vvTransFunc(vvTransFunc*);

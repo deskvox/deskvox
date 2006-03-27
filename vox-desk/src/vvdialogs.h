@@ -737,6 +737,8 @@ class VVFloatRangeDialog : public FXDialogBox
       ID_TOP_PERCENT,
       ID_ISO,
       ID_WEIGHT,
+      ID_FAST,
+      ID_SKIP,
       ID_CANCEL
     };
     FXTextField* _minTF;
@@ -745,6 +747,9 @@ class VVFloatRangeDialog : public FXDialogBox
     FXTextField* _topClamp;
     FXCheckButton* _isoCheck;
     FXCheckButton* _weightCheck;
+    FXCheckButton* _fastCheck;
+    FXCheckButton* _skipCheck;
+    FXTextField* _fastNumber;
     VVShell* _shell;
     vox::vvCanvas* _canvas;
     float _minBak, _maxBak;
@@ -757,6 +762,7 @@ class VVFloatRangeDialog : public FXDialogBox
     long onMaxData(FXObject*, FXSelector, void*);
     long onBottomPercent(FXObject*, FXSelector, void*);
     long onTopPercent(FXObject*, FXSelector, void*);
+    long onFast(FXObject*, FXSelector, void*);
     void updateValues();
     void updateDependents();
     virtual void show();

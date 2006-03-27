@@ -22,6 +22,7 @@
 #define _VVTFWIDGET_H_
 
 #include <stdio.h>
+#include <list>
 #include "vvexport.h"
 #include "vvsllist.h"
 
@@ -43,8 +44,21 @@ class VIRVOEXPORT vvColor
     void getHSB(float&, float&, float&);
 };
 
+/** Specifies a 3D point with an opacity. 
+  @see vvTFCustom
+*/
+class VIRVOEXPORT vvTFPoint
+{
+  public:
+    float _pos[3];
+    float _opacity;   ///< opacity at this point in the TF [0..1]
+    
+    vvTFPoint();
+    vvTFPoint(float, float, float, float);
+};
+
 /** Base class of transfer function widgets.
-  @author Jurgen P. Schulze (schulze@cs.brown.de)
+  @author Jurgen P. Schulze (jschulze@ucsd.edu)
   @see vvTransFunc
 */
 class VIRVOEXPORT vvTFWidget
@@ -145,21 +159,31 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
 };
 
-/** Transfer function widget to specify a function freehandedly. The widget defines a rectangular area
-  in which the user can specify an opacity value for each element, defined by resolution.
+/** Transfer function widget to specify a custom transfer function widget with control points. 
+  The widget defines a rectangular area in which the user can specify control points between 
+  which the opacity function will be computed linearly.
  */
-class VIRVOEXPORT vvTFFreehand : public vvTFWidget
+class VIRVOEXPORT vvTFCustom : public vvTFWidget
 {
   public:
-    int _resolution[3];     ///< granularity of freehand grid for each dimension [# array elements, e.g., 256]
-    float _size[3];         ///< width, height, depth of freehand area [TF space is 0..1]
+    float _size[3];                ///< width, height, depth of TF area [TF space is 0..1]
+    std::list<vvTFPoint*> _points; ///< list of control points; coordinates are relative to widget center
+    vvTFPoint* _currentPoint;      ///< currently selected point
 
-    vvTFFreehand();
-    vvTFFreehand(vvTFFreehand*);
-    vvTFFreehand(float, float, int, float=0.5f, float=0.0f, int=0, float=0.5f, float=0.0f, int=0);
-    vvTFFreehand(FILE*);
+    vvTFCustom();
+    vvTFCustom(vvTFCustom*);
+    vvTFCustom(float, float, float=0.5f, float=0.0f, float=0.5f, float=0.0f);
+    vvTFCustom(FILE*);
+    virtual ~vvTFCustom();
     virtual void write(FILE*);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
+    vvTFPoint* addPoint(float, float=-1.0f, float=-1.0f);
+    void removeCurrentPoint();
+    vvTFPoint* selectPoint(float, float, float, float, float=-1.0f, float=0.0f, float=-1.0f, float=0.0f);
+    void setCurrentPoint(float, float, float=-1.0f, float=-1.0f);
+    void moveCurrentPoint(float, float, float=0.0f, float=0.0f);
+    void sortPoints();
+    void setSize(float, float=-1.0f, float=-1.0f);
 };
 
 #endif

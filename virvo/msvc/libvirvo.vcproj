@@ -138,6 +138,9 @@
 				RelativePath="..\src\vvideo.cpp">
 			</File>
 			<File
+				RelativePath="..\src\vvideo.h">
+			</File>
+			<File
 				RelativePath="..\src\vvimage.cpp">
 			</File>
 			<File
@@ -215,9 +218,6 @@
 			</File>
 			<File
 				RelativePath="..\src\vvgltools.h">
-			</File>
-			<File
-				RelativePath="..\src\vvideo.h">
 			</File>
 			<File
 				RelativePath="..\src\vvimage.h">

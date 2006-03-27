@@ -487,6 +487,8 @@ Nr.   Date      Details
                 - Deskvox: made output image file specification easier in Screenshot and Moviescript dialogs
                 - Deskvox: added new movie script commands for clipping plane control: 
                   setclip, moveclip, setclipparam
+                - New Custom widget allows entering transfer functions with control points.
+                - In Floating Point Range dialog box: new buttons for high-dynamic range transfer functions.
                   
                 
 Distribution

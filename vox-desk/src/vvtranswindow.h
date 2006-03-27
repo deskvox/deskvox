@@ -48,6 +48,7 @@ class VVTransferWindow : public FXDialogBox
       ID_BELL,
       ID_COLOR,
       ID_SKIP,
+      ID_CUSTOM,
       ID_P_TOP_X,
       ID_P_BOTTOM_X,
       ID_P_TOP_Y,
@@ -79,6 +80,9 @@ class VVTransferWindow : public FXDialogBox
       ID_TF_BOOK,
       ID_PIN_BOOK,
       ID_NORMALIZATION,
+      ID_C_WIDTH,
+      ID_NEW_POINT,
+      ID_DELETE_POINT,
       ID_LAST
     };
     enum WidgetType
@@ -86,6 +90,7 @@ class VVTransferWindow : public FXDialogBox
       COLOR,
       PYRAMID,
       BELL,
+      CUSTOM,
       SKIP
     };
 
@@ -95,6 +100,7 @@ class VVTransferWindow : public FXDialogBox
     long onCmdColor(FXObject*,FXSelector,void*);
     long onCmdPyramid(FXObject*,FXSelector,void*);
     long onCmdBell(FXObject*,FXSelector,void*);
+    long onCmdCustom(FXObject*,FXSelector,void*);
     long onCmdSkip(FXObject*,FXSelector,void*);
     long onCmdDelete(FXObject*,FXSelector,void*);
     long onCmdUndo(FXObject*,FXSelector,void*);
@@ -110,12 +116,15 @@ class VVTransferWindow : public FXDialogBox
     long onChngPyramid(FXObject*,FXSelector,void*);
     long onChngBell(FXObject*,FXSelector,void*);
     long onChngSkip(FXObject*,FXSelector,void*);
+    long onChngCustomWidth(FXObject*,FXSelector,void*);
     long onChngPos(FXObject*,FXSelector,void*);
-    long onMouseDown1D(FXObject*,FXSelector,void*);
-    long onMouseUp1D(FXObject*,FXSelector,void*);
+    long onMouseLDown1D(FXObject*,FXSelector,void*);
+    long onMouseLUp1D(FXObject*,FXSelector,void*);
+    long onMouseRDown1D(FXObject*,FXSelector,void*);
+    long onMouseRUp1D(FXObject*,FXSelector,void*);
     long onMouseMove1D(FXObject*,FXSelector,void*);
-    long onMouseDown2D(FXObject*,FXSelector,void*);
-    long onMouseUp2D(FXObject*,FXSelector,void*);
+    long onMouseLDown2D(FXObject*,FXSelector,void*);
+    long onMouseLUp2D(FXObject*,FXSelector,void*);
     long onMouseMove2D(FXObject*,FXSelector,void*);
     long onChngDisColors(FXObject*,FXSelector,void*);
     long onTFCanvasPaint(FXObject*,FXSelector,void*);
@@ -125,6 +134,8 @@ class VVTransferWindow : public FXDialogBox
     long onCmdPickColor(FXObject*,FXSelector,void*);
     long onCmdNormalization(FXObject*,FXSelector,void*);
     long onChngPickerColor(FXObject*,FXSelector,void*);
+    long onCmdNewPoint(FXObject*,FXSelector,void*);
+    long onCmdDeletePoint(FXObject*,FXSelector,void*);
     void updateValues();
 
   protected:
@@ -151,6 +162,7 @@ class VVTransferWindow : public FXDialogBox
     FXRealSlider* _bMaxSlider;
     FXRealSlider* _sWidthSlider;
     FXRealSlider* _sHeightSlider;
+    FXRealSlider* _cWidthSlider;
     FXLabel* _pTopXLabel;
     FXLabel* _pBottomXLabel;
     FXLabel* _pTopYLabel;
@@ -161,6 +173,7 @@ class VVTransferWindow : public FXDialogBox
     FXLabel* _bMaxLabel;
     FXLabel* _sWidthLabel;
     FXLabel* _sHeightLabel;
+    FXLabel* _cWidthLabel;
     FXLabel* _realMinLabel;
     FXLabel* _realPosLabel;
     FXLabel* _realMaxLabel;
@@ -181,6 +194,7 @@ class VVTransferWindow : public FXDialogBox
     vvTFWidget* _currentWidget;
     uchar* _histoTexture1D;
     uchar* _histoTexture2D;
+    int _mouseButton;        ///< pressed mouse button: 0=none, 1=button 1, etc.
 
     VVTransferWindow(){}
     VVTransferWindow(const VVTransferWindow&){};
@@ -198,10 +212,13 @@ class VVTransferWindow : public FXDialogBox
     void draw2DTFTexture();
     void draw2DTFWidgets();
     void draw2DWidget(vvTFWidget*);
+    void drawCustomWidgets();
+    void drawControlPoints(vvTFCustom*);
     void drawPinLines();
     void drawPinBackground();
     void drawPinLine(vvTFWidget*);
     vvTFWidget* closestWidget(float, float, float);
     float getRealPinPos(float);
+    void drawCircle(float, float, float, bool);
 };
 #endif
