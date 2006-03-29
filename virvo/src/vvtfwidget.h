@@ -21,28 +21,14 @@
 #ifndef _VVTFWIDGET_H_
 #define _VVTFWIDGET_H_
 
+// C++:
 #include <stdio.h>
 #include <list>
+
+// Virvo:
+#include "vvcolor.h"
 #include "vvexport.h"
 #include "vvsllist.h"
-
-/** Creates a general color class for RGB colors.
- */
-class VIRVOEXPORT vvColor
-{
-  public:
-    float _col[3];                                ///< RGB color [0..1]
-
-    vvColor();
-    vvColor(float, float, float);
-    const float operator[](const int) const;
-    float& operator[](const int);
-    vvColor operator+(const vvColor) const;
-    void setRGB(float, float, float);
-    void setHSB(float, float, float);
-    void getRGB(float&, float&, float&);
-    void getHSB(float&, float&, float&);
-};
 
 /** Specifies a 3D point with an opacity. 
   @see vvTFCustom

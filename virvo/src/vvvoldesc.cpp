@@ -850,8 +850,10 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
  @param size            array of edge lengths for texture [texels]
  @param data            pointer to _pre-allocated_ memory space providing
                         twidth * theight * 4 bytes
+ @param color           color for histogram foreground (background is transparent)
 */
-void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* size, uchar* data, NormalizationType ntype)
+void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* size, uchar* data, 
+  NormalizationType ntype, vvColor* color)
 {
   const int BPT = 4;                              // bytes per texel
   const int GRAY_LEVEL = 160;                     // color of histogram bars
@@ -885,7 +887,7 @@ void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* siz
   if (numChan==1)                                 // 1 channel: draw bar chart
   {
     // Fill histogram texture with background values:
-    memset(data, 255, size[0] * size[1] * BPT);
+    memset(data, 0, size[0] * size[1] * BPT);
     for (x=0; x<size[0]; ++x)
     {
       index[0] = int(float(x) / float(size[0]) * float(buckets[0]));

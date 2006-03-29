@@ -204,7 +204,7 @@ class VIRVOEXPORT vvVolDesc
     void   removeSequence();
     void   makeHistogram(int, int, int, int*, int*);
     void   normalizeHistogram(int, int*, float*, NormalizationType);
-    void   makeHistogramTexture(int, int, int, int*, uchar*, NormalizationType);
+    void   makeHistogramTexture(int, int, int, int*, uchar*, NormalizationType, vvColor*);
     void   createHistogramFiles(bool = false);
     bool   isChannelUsed(int);
     void   makeIcon(int, const uchar*);
