@@ -57,6 +57,7 @@ Section "DeskVOX (required)"
   File ..\..\virvo\shader\vv_shader07.cg
   File ..\..\virvo\shader\vv_shader08.cg
   File ..\..\virvo\shader\vv_shader09.cg
+  File ..\..\virvo\shader\vv_shader10.cg
 
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR\examples
@@ -155,6 +156,7 @@ Section "Uninstall"
   Delete $INSTDIR\vv_shader07.cg
   Delete $INSTDIR\vv_shader08.cg
   Delete $INSTDIR\vv_shader09.cg
+  Delete $INSTDIR\vv_shader10.cg
   Delete $INSTDIR\examples\checkercube.rvf
   Delete $INSTDIR\examples\softpyramid.xvf
   Delete $INSTDIR\examples\moviescript.vms

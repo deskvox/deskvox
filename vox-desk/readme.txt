@@ -489,6 +489,7 @@ Nr.   Date      Details
                   setclip, moveclip, setclipparam
                 - New Custom widget allows entering transfer functions with control points.
                 - In Floating Point Range dialog box: new buttons for high-dynamic range transfer functions.
+                - Deskvox: saved Meshviewer style transfer functions use new Custom widget for opacity
                   
                 
 Distribution

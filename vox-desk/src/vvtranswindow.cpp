@@ -36,7 +36,7 @@ using namespace vox;
 const FXColor VVTransferWindow::BLACK = FXRGB(0,0,0);
 const FXColor VVTransferWindow::WHITE = FXRGB(255,255,255);
 const float VVTransferWindow::CLICK_TOLERANCE = 0.03f; // [TF space]
-const int VVTransferWindow::TF_WIDTH  = 512;
+const int VVTransferWindow::TF_WIDTH  = 768;
 const int VVTransferWindow::TF_HEIGHT = 256;
 const int VVTransferWindow::COLORBAR_HEIGHT = 20;
 
@@ -108,15 +108,16 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   FXTabItem* tab1=new FXTabItem(_tfBook,"&1D Transfer Function",NULL);
   FXVerticalFrame* page1 = new FXVerticalFrame(_tfBook,FRAME_THICK|FRAME_RAISED|LAYOUT_FILL_X|LAYOUT_FILL_Y);
 
-  FXVerticalFrame* glpanel = new FXVerticalFrame(page1, FRAME_SUNKEN|LAYOUT_SIDE_LEFT|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT, 0,0,TF_WIDTH,160);
+  FXVerticalFrame* glpanel = new FXVerticalFrame(page1, FRAME_SUNKEN|LAYOUT_SIDE_LEFT|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT, 0,0,TF_WIDTH,TF_HEIGHT);
   _glVisual1D = new FXGLVisual(getApp(), VISUAL_DOUBLEBUFFER);
   _glCanvas1D = new FXGLCanvas(glpanel, _glVisual1D, this, ID_TF_CANVAS_1D, LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT);
 
   FXHorizontalFrame* legendFrame = new FXHorizontalFrame(page1, LAYOUT_FILL_X);
   _realMinLabel = new FXLabel(legendFrame, "Min = 0", NULL, LABEL_NORMAL | LAYOUT_LEFT);
   _realPosLabel = new FXLabel(legendFrame, "", NULL, LABEL_NORMAL | LAYOUT_CENTER_X);
+  _mousePosLabel = new FXLabel(legendFrame, "", NULL, LABEL_NORMAL | LAYOUT_CENTER_X);
   _realMaxLabel = new FXLabel(legendFrame, "Max = 1", NULL, LABEL_NORMAL | LAYOUT_RIGHT);
-
+  
   // Tab page 2:
   FXTabItem* tab2=new FXTabItem(_tfBook,"&2D Transfer Function",NULL);
   FXVerticalFrame* page2 = new FXVerticalFrame(_tfBook,FRAME_THICK|FRAME_RAISED|LAYOUT_FILL_X|LAYOUT_FILL_Y);
@@ -598,29 +599,33 @@ long VVTransferWindow::onMouseRUp1D(FXObject*,FXSelector,void*)
 long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
 {
   vvTFCustom* cuw;
-  float dx, dy;   // mouse 
+  float dx, dy;   // distance mouse moved in TF space since previous callback [0..1]
   
-  if (!_glCanvas1D->grabbed()) return 1;
   FXEvent* ev = (FXEvent*)ptr;
-  if (_mouseButton==1)
+  float pos = ts_clamp(float(ev->win_x) / float(_glCanvas1D->getWidth()), 0.0f, 1.0f);
+  _mousePosLabel->setText(FXStringFormat("Mouse = %.5g", getRealPinPos(pos)));
+
+  if (_glCanvas1D->grabbed())
   {
-    if(!_currentWidget || !_canvas) return 1;
-    if(_canvas->_vd->tf._widgets.count() == 0) return 1;
-    float pos = ts_clamp(float(ev->win_x) / float(_glCanvas1D->getWidth()), 0.0f, 1.0f);
-    _realPosLabel->setText(FXStringFormat("Pin = %.5g", getRealPinPos(pos)));
-    _currentWidget->_pos[0] = pos;
-  }
-  else if (_mouseButton==3)
-  {
-    if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)  // is current widget of custom type?
+    if (_mouseButton==1)
     {
-      dx =   float(ev->win_x - ev->last_x) / float(_glCanvas1D->getWidth());
-      dy = - float(ev->win_y - ev->last_y) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT);
-      cuw->moveCurrentPoint(dy, dx);
+      if(!_currentWidget || !_canvas) return 1;
+      if(_canvas->_vd->tf._widgets.count() == 0) return 1;
+      _realPosLabel->setText(FXStringFormat("Pin = %.5g", getRealPinPos(pos)));
+      _currentWidget->_pos[0] = pos;
     }
+    else if (_mouseButton==3)
+    {
+      if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)  // is current widget of custom type?
+      {
+        dx =   float(ev->win_x - ev->last_x) / float(_glCanvas1D->getWidth());
+        dy = - float(ev->win_y - ev->last_y) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT);
+        cuw->moveCurrentPoint(dy, dx);
+      }
+    }
+    drawTF();
+    if(_instantButton->getCheck()) updateTransFunc();
   }
-  drawTF();
-  if(_instantButton->getCheck()) updateTransFunc();
   return 1;
 }
 

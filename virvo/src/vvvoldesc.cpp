@@ -4665,8 +4665,9 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
 /** Update bin limits array for HDR transfer functions.
   @param numValues if >0 then use subset of volume for sampling
   @param skipWidgets if true, algorithm ignores data values under Skip widgets
+  @param lockRange if true, realMin/realMax won't be modified
 */
-void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets)
+void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange)
 {
   vvTFSkip* sw;
   uchar* srcData;
@@ -4743,7 +4744,22 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets)
       }
     }
   }
-  cerr << "done." << endl;
+  cerr << " done" << endl;
+  
+  // Trim beginning and end of sorted data array to remove values below/above realMin/realMax:
+  if (lockRange)
+  {
+    cerr << "Trimming values to maintain range begin/end" << endl;
+    
+    // Trim values below realMin:
+    for(i=0; i<numVoxels && sortedData[i] < real[0]; ++i);  // find index of realMin 
+    memcpy(&sortedData[0], &sortedData[i], sizeof(float) * i);
+    numVoxels -= i;
+    
+    // Trim values above realMax:
+    for(i=numVoxels-1; i>0 && sortedData[i] > real[1]; --i);  // find index of realMax
+    numVoxels -= (numVoxels-1-i);
+  }
   
   // Determine bin limits:
   valuesPerBin = numVoxels / NUM_HDR_BINS;
@@ -4752,14 +4768,17 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets)
     _hdrBinLimits[i] = sortedData[i * valuesPerBin];
   }
   
-  if (sortedData[0] == sortedData[numVoxels-1])
+  if (sortedData[0] == sortedData[numVoxels-1])   // do first and last data entries differ?
   {
     cerr << "volume too sparse for HDR monte carlo sampling" << endl;
   }
   else
   {
-    real[0] = sortedData[0];
-    real[1] = sortedData[numVoxels-1];
+    if (!lockRange)
+    {
+      real[0] = sortedData[0];
+      real[1] = sortedData[numVoxels-1];
+    }
   }
     
   delete[] sortedData;
@@ -4792,6 +4811,7 @@ int vvVolDesc::mapFloat2Int(float fval, bool binIsoData, bool binOpacityWeighted
   
   if (binOpacityWeighted)
   {
+    // TODO: implement!
   }
   
   return ival;

@@ -735,20 +735,23 @@ class VVFloatRangeDialog : public FXDialogBox
       ID_MAX_DATA,
       ID_BOT_PERCENT,
       ID_TOP_PERCENT,
-      ID_ISO,
-      ID_WEIGHT,
       ID_FAST,
       ID_SKIP,
+      ID_LOCK,
       ID_CANCEL
     };
+    FXint _algoType;
+    FXDataTarget _algoDataTarget;
     FXTextField* _minTF;
     FXTextField* _maxTF;
     FXTextField* _botClamp;
     FXTextField* _topClamp;
-    FXCheckButton* _isoCheck;
-    FXCheckButton* _weightCheck;
+    FXRadioButton* _isoRadio;
+    FXRadioButton* _weightRadio;
+    FXRadioButton* _regularRadio;
     FXCheckButton* _fastCheck;
     FXCheckButton* _skipCheck;
+    FXCheckButton* _lockCheck;
     FXTextField* _fastNumber;
     VVShell* _shell;
     vox::vvCanvas* _canvas;

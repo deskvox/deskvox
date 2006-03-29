@@ -2535,7 +2535,8 @@ FXDEFMAP(VVFloatRangeDialog) VVFloatRangeDialogMap[]=
 FXIMPLEMENT(VVFloatRangeDialog,FXDialogBox,VVFloatRangeDialogMap,ARRAYNUMBER(VVFloatRangeDialogMap))
 
 VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) : 
-  FXDialogBox(owner, "Floating Point Range Selection", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 100, 100)
+  FXDialogBox(owner, "Floating Point Range Selection", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 100, 100), 
+  _algoDataTarget(_algoType)
 {
   _shell = (VVShell*)owner;
   _canvas = c;
@@ -2566,23 +2567,32 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
 
   FXGroupBox* hdrGroup = new FXGroupBox(verticalFrame,"High dynamic range mapping",FRAME_GROOVE | LAYOUT_FILL_X);
   FXMatrix* hdrMatrix = new FXMatrix(hdrGroup, 3, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
-  _isoCheck = new FXCheckButton(hdrMatrix, "Iso-data binning", this, ID_ISO, ICON_BEFORE_TEXT);
-  _isoCheck->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
-  _isoCheck->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
-  new FXLabel(hdrMatrix, "");
-  new FXLabel(hdrMatrix, "");
+
+  _regularRadio = new FXRadioButton(hdrMatrix, "Iso-value binning", &_algoDataTarget, FXDataTarget::ID_OPTION+1);
+  _regularRadio->setCheck(true);
+  _isoRadio = new FXRadioButton(hdrMatrix, "Iso-data binning", &_algoDataTarget, FXDataTarget::ID_OPTION+2, ICON_BEFORE_TEXT);
+  _isoRadio->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
+  _isoRadio->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
+  _weightRadio = new FXRadioButton(hdrMatrix, "Opacity-weighted binning", &_algoDataTarget, FXDataTarget::ID_OPTION+3, ICON_BEFORE_TEXT);
+  _weightRadio->setTipText("When checked algorithm creates smaller bins where opacity is higher.\nOtherwise binning is independent from opacity.");
+  _algoType = 1; // set first radio button to true, others to false
+
   _fastCheck = new FXCheckButton(hdrMatrix, "Fast sampling", this, ID_FAST, ICON_BEFORE_TEXT);
   _fastCheck->setCheck(true);
   new FXLabel(hdrMatrix, "Number of values:");
   _fastNumber = new FXTextField(hdrMatrix, 20, NULL, 0, TEXTFIELD_NORMAL | LAYOUT_FILL_X);
   _fastNumber->setText("10000");
   _fastNumber->setTipText("Uses a reduced number of data values for HDR transfer function specification. Default: 10,000");
-  _skipCheck = new FXCheckButton(hdrMatrix, "Skip Skip widgets", this, ID_SKIP, ICON_BEFORE_TEXT);
+
+  _skipCheck = new FXCheckButton(hdrMatrix, "Ignore Skip ranges", this, ID_SKIP, ICON_BEFORE_TEXT);
   _skipCheck->setCheck(true);
+  _skipCheck->setTipText("Remove data values in areas covered by Skip widgets from iso-binning process.");
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
-  _weightCheck = new FXCheckButton(hdrMatrix, "Opacity-weighted binning", this, ID_WEIGHT, ICON_BEFORE_TEXT);
-  _weightCheck->setTipText("When checked algorithm creates smaller bins where opacity is higher.\nOtherwise binning is independent from opacity.");
+
+  _lockCheck = new FXCheckButton(hdrMatrix, "Lock range settings", this, ID_LOCK, ICON_BEFORE_TEXT);
+  _lockCheck->setCheck(true);
+  _lockCheck->setTipText("Don't adjust min and max range settings when running HDR routines.");
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
 
@@ -2625,12 +2635,12 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
     {
       _canvas->_vd->real[0] = FXFloatVal(_minTF->getText());
       _canvas->_vd->real[1] = FXFloatVal(_maxTF->getText());
-      _canvas->_renderer->setParameter(vvRenderer::VV_BIN_ISO, (_isoCheck->getCheck()) ? 1.0f : 0.0f);
-      _canvas->_renderer->setParameter(vvRenderer::VV_BIN_WEIGHT, (_weightCheck->getCheck()) ? 1.0f : 0.0f);
-      if (_isoCheck->getCheck() == 1.0f || _weightCheck->getCheck() == 1.0f)
+      _canvas->_renderer->setParameter(vvRenderer::VV_BIN_ISO, (_isoRadio->getCheck()) ? 1.0f : 0.0f);
+      _canvas->_renderer->setParameter(vvRenderer::VV_BIN_WEIGHT, (_weightRadio->getCheck()) ? 1.0f : 0.0f);
+      if (_isoRadio->getCheck() == 1.0f || _weightRadio->getCheck() == 1.0f)
       {
-        _canvas->_vd->updateHDRBins((_fastCheck->getCheck()) ? FXIntVal(_fastNumber->getText()) : -1,
-          _skipCheck->getCheck());
+        _canvas->_vd->updateHDRBins((_fastCheck->getCheck()) ? FXIntVal(_fastNumber->getText()) : -1, 
+          (_skipCheck->getCheck()) ? true : false, (_lockCheck->getCheck()) ? true : false);
       }
       _canvas->_renderer->updateVolumeData();
       _shell->_glcanvas->makeNonCurrent();

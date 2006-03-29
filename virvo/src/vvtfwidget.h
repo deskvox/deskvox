@@ -54,7 +54,7 @@ class VIRVOEXPORT vvTFPoint
     float _opacity;   ///< opacity at this point in the TF [0..1]
     
     vvTFPoint();
-    vvTFPoint(float, float, float, float);
+    vvTFPoint(float, float, float=-1.0f, float=-1.0f);
 };
 
 /** Base class of transfer function widgets.

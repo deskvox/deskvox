@@ -880,6 +880,7 @@ void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float th
   Knot: <float_data_value> <red 0..1> <green> <blue>
   Point: <float_data_value> <opacity 0..1>
 
+  - only Color and Custom transfer function widgets are supported, not Bell or Pyramid!
   - numbers are floating point with any number of mantissa digits
   - '#' allowed for comments
   </pre>
@@ -889,8 +890,7 @@ int vvTransFunc::saveMeshviewer(const char* filename)
 {
   vvTFWidget* w;
   vvTFColor* cw;
-  vvTFBell* bw;
-  vvTFPyramid* pw;
+  vvTFCustom* cuw;
   FILE* fp;
   int i;
 
@@ -914,18 +914,20 @@ int vvTransFunc::saveMeshviewer(const char* filename)
   }
   
   // Write opacity pins to file:
-  fprintf(fp, "OpacityMapPoints: %d\n", getNumWidgets(TF_BELL) + getNumWidgets(TF_PYRAMID));
   _widgets.first();
   for (i=0; i<_widgets.count(); ++i)
   { 
     w = _widgets.getData();
-    if ((bw=dynamic_cast<vvTFBell*>(w)))
+    if ((cuw=dynamic_cast<vvTFCustom*>(w)))
     {
-      fprintf(fp, "Point: %f %f\n", bw->_pos[0], bw->_opacity);
-    }
-    else if ((pw=dynamic_cast<vvTFPyramid*>(w)))
-    {
-      fprintf(fp, "Point: %f %f\n", pw->_pos[0], pw->_opacity);
+      fprintf(fp, "OpacityMapPoints: %d\n", cuw->_points.size() + 2);   // add two points for edges of TF space
+      fprintf(fp, "Point: %f %f\n", cuw->_pos[0] - cuw->_size[0]/2.0f, 0.0f);
+      list<vvTFPoint*>::iterator iter;
+      for(iter=cuw->_points.begin(); iter!=cuw->_points.end(); iter++) 
+      {
+        fprintf(fp, "Point: %f %f\n", (*iter)->_pos[0] + cuw->_pos[0], (*iter)->_opacity);
+      }
+      fprintf(fp, "Point: %f %f\n", cuw->_pos[0] + cuw->_size[0]/2.0f, 0.0f);
     }
     _widgets.next();
   }
@@ -944,7 +946,7 @@ int vvTransFunc::saveMeshviewer(const char* filename)
 int vvTransFunc::loadMeshviewer(const char* filename)
 {
   vvTFColor* cw;
-  vvTFPyramid* pw;
+  vvTFCustom* cuw;
   FILE* fp;
   int i;
   int numColorWidgets, numOpacityPoints;
@@ -974,16 +976,37 @@ int vvTransFunc::loadMeshviewer(const char* filename)
   
   // Read opacity pins from file:
   fscanf(fp, "OpacityMapPoints: %d\n", &numOpacityPoints);
-  for (i=0; i<numOpacityPoints; ++i)
-  { 
-    fscanf(fp, "Point: %f %f\n", &pos, &opacity);
-    pw = new vvTFPyramid();
-    pw->_pos[0] = pos;
-    pw->_opacity = opacity;
-    pw->setOwnColor(false);
-    _widgets.append(pw, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-  }
+  if (numOpacityPoints>0) 
+  {
+    float begin, end;
+    cuw = new vvTFCustom(0.5f, 1.0f);
+    _widgets.append(cuw, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    for (i=0; i<numOpacityPoints; ++i)
+    { 
+      fscanf(fp, "Point: %f %f\n", &pos, &opacity);
+      if (i>0 && i<numOpacityPoints-1)  // skip start and end point (will be determined by widget position and width)
+      {
+        cuw->_points.push_back(new vvTFPoint(opacity, pos));
+      }
+      else 
+      {
+        if (i==0) begin = pos;
+        else if (i==numOpacityPoints-1) end = pos;
+      }
+    }
+    
+    // Adjust widget size:
+    cuw->_size[0] = end - begin;
+    cuw->_pos[0] = (begin + end) / 2.0f;
 
+    // Adjust point positions:    
+    list<vvTFPoint*>::iterator iter;
+    for(iter=cuw->_points.begin(); iter!=cuw->_points.end(); iter++) 
+    {
+      (*iter)->_pos[0] -= cuw->_pos[0];
+    }
+  }
+  
   // Wrap up:
   fclose(fp);
   cerr << "Loaded transfer function from file: " << filename << endl;

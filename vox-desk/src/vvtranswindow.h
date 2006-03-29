@@ -177,6 +177,7 @@ class VVTransferWindow : public FXDialogBox
     FXLabel* _realMinLabel;
     FXLabel* _realPosLabel;
     FXLabel* _realMaxLabel;
+    FXLabel* _mousePosLabel;
     FXLabel* _disColorLabel;
     FXRadioButton* _histAll;
     FXRadioButton* _histFirst;
