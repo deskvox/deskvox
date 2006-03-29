@@ -72,7 +72,7 @@ vvCanvas::vvCanvas()
   _stereoMode = MONO;
   _swapEyes = false;
   _perspectiveMode = true;
-  _bgColor[0] = _bgColor[1] = _bgColor[2] = 0.0f;
+  _bgColor[0] = _bgColor[1] = _bgColor[2] = 0.0f;   // set background to black by default
   _artoolkit = false;
   _width = _height = 0;
   _vd = NULL;

@@ -93,8 +93,7 @@ class VIRVOEXPORT vvRenderer
       VV_PREINT,                                  ///< pre-integration on/off
       VV_MIN_SLICE,                               ///< minimum slice index to render
       VV_MAX_SLICE,                               ///< maximum slice index to render
-      VV_BIN_ISO,                                 ///< switches between iso-value and iso-range binning
-      VV_BIN_WEIGHT,                              ///< switches between opacity-weighted and normal binning
+      VV_BINNING,                                 ///< binning type (linear, iso-value, opacity)
       VV_SLICEORIENT                              ///< slice orientation for planer 3d textures
     };
     enum BasicColorType                           /// basic colors

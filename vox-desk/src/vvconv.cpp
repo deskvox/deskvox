@@ -2443,7 +2443,8 @@ int vvConv::run(int argc, char** argv)
         imgVD->chan = 3;
         uchar* imgData = new uchar[imgVD->vox[0] * imgVD->vox[1] * 3];
         int size[2] = {imgVD->vox[0], imgVD->vox[1]};
-        tmpVD->makeHistogramTexture(-1, m, 1, size, imgData, vvVolDesc::VV_LOGARITHMIC);
+        vvColor col(1.0f, 1.0f, 1.0f);
+        tmpVD->makeHistogramTexture(-1, m, 1, size, imgData, vvVolDesc::VV_LOGARITHMIC, &col);
         imgVD->addFrame(imgData, vvVolDesc::ARRAY_DELETE);
         imgVD->frames = 1;
         imgVD->flip(vvVolDesc::Y_AXIS);

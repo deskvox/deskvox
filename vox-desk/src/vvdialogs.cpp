@@ -2591,7 +2591,7 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   new FXLabel(hdrMatrix, "");
 
   _lockCheck = new FXCheckButton(hdrMatrix, "Lock range settings", this, ID_LOCK, ICON_BEFORE_TEXT);
-  _lockCheck->setCheck(true);
+  _lockCheck->setCheck(false);
   _lockCheck->setTipText("Don't adjust min and max range settings when running HDR routines.");
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
@@ -2635,9 +2635,8 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
     {
       _canvas->_vd->real[0] = FXFloatVal(_minTF->getText());
       _canvas->_vd->real[1] = FXFloatVal(_maxTF->getText());
-      _canvas->_renderer->setParameter(vvRenderer::VV_BIN_ISO, (_isoRadio->getCheck()) ? 1.0f : 0.0f);
-      _canvas->_renderer->setParameter(vvRenderer::VV_BIN_WEIGHT, (_weightRadio->getCheck()) ? 1.0f : 0.0f);
-      if (_isoRadio->getCheck() == 1.0f || _weightRadio->getCheck() == 1.0f)
+      _canvas->_renderer->setParameter(vvRenderer::VV_BINNING, _algoType-1);
+      if (_algoType==2 || _algoType==3)
       {
         _canvas->_vd->updateHDRBins((_fastCheck->getCheck()) ? FXIntVal(_fastNumber->getText()) : -1, 
           (_skipCheck->getCheck()) ? true : false, (_lockCheck->getCheck()) ? true : false);
@@ -2653,7 +2652,7 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
 
 void VVFloatRangeDialog::updateDependents()
 {
-  _shell->transWindow->updateValues();
+  _shell->_transWindow->updateValues();
   _shell->volumeDialog->updateValues();
 }
 

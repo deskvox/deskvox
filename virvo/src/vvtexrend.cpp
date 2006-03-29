@@ -105,7 +105,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   rendererType = TEXREND;
   texNames = NULL;
-  sliceOrientation = VV_VARIABLE;
+  _sliceOrientation = VV_VARIABLE;
   viewDir.zero();
   objDir.zero();
   minSlice = maxSlice = -1;
@@ -113,8 +113,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   rgbaLUT = new uchar[256 * 256 * 4];
   preintTable = new uchar[getPreintTableSize()*getPreintTableSize()*4];
   preIntegration = true;
-  _binOpacityWeighted = false;
-  _binIsoData = false;
+  _binning = vvVolDesc::LINEAR;
   usePreIntegration = false;
   textures = 0;
   opacityCorrection = true;
@@ -647,7 +646,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
               else                                // float voxels
               {
                 fval = *((float*)(rawVoxel));
-                rawVal[0] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
+                rawVal[0] = vd->mapFloat2Int(fval, _binning);
               }
               switch(voxelType)
               {
@@ -901,7 +900,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
               else  // vd->bpc == 4
               {
                 fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                rawVal[0] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
+                rawVal[0] = vd->mapFloat2Int(fval, _binning);
               }
               texOffset = (x - startOffset[0]) + texLineOffset;
               switch (voxelType)
@@ -954,7 +953,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
                   else  // vd->bpc==4
                   {
                     fval = *((float*) (raw + srcIndex));
-                    rawVal[c] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
+                    rawVal[c] = vd->mapFloat2Int(fval, _binning);
                   }
                 }
 
@@ -1363,7 +1362,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
             else // vd->bpc==4: convert floating point to 8bit value
             {
               fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-              rawVal[0] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
+              rawVal[0] = vd->mapFloat2Int(fval, _binning);
             }
             texOffset = (x - offsetX) + texLineOffset;
             switch(voxelType)
@@ -1416,7 +1415,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
                 else  // vd->bpc == 4
                 {
                   fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                  rawVal[c] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
+                  rawVal[c] = vd->mapFloat2Int(fval, _binning);
                 }
               }
 
@@ -1677,7 +1676,7 @@ int sizeX, int sizeY, int sizeZ)
               else
               {
                 fval = *((float*)(rawVoxel));
-                rawVal[0] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
+                rawVal[0] = vd->mapFloat2Int(fval, _binning);
               }
 
               for (c = 0; c < texelsize; c++)
@@ -1907,7 +1906,7 @@ int sizeX, int sizeY, int sizeZ)
               else
               {
                 fval = *((float*) (raw + srcIndex));
-                rawVal[0] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
+                rawVal[0] = vd->mapFloat2Int(fval, _binning);
               }
 
               texOffset = (x - start[0]) + texLineOffset;
@@ -1962,7 +1961,7 @@ int sizeX, int sizeY, int sizeZ)
                   else
                   {
                     fval = *((float*) (raw + srcIndex));
-                    rawVal[c] = vd->mapFloat2Int(fval, _binIsoData, _binOpacityWeighted);
+                    rawVal[c] = vd->mapFloat2Int(fval, _binning);
                   }
                 }
 
@@ -2273,12 +2272,12 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   // Otherwise use objDir as the normal.
   // Exception: if user's eye is inside object and probe mode is off,
   // then use viewDir as the normal.
-  if (sliceOrientation==VV_CLIPPLANE
-    || (sliceOrientation==VV_VARIABLE && _renderState._clipMode))
+  if (_sliceOrientation==VV_CLIPPLANE ||
+     (_sliceOrientation==VV_VARIABLE && _renderState._clipMode))
   {
     normal.copy(&_renderState._clipNormal);
   }
-  else if(sliceOrientation==VV_VIEWPLANE)
+  else if(_sliceOrientation==VV_VIEWPLANE)
   {
     normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
     vvMatrix invPM;
@@ -2288,9 +2287,9 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     normal.multiply(&invMV);
     normal.negate();
   }
-  else if (sliceOrientation==VV_ORTHO
-    || (sliceOrientation==VV_VARIABLE
-    && (isOrtho || (viewDir.e[0]==0.0f && viewDir.e[1]==0.0f && viewDir.e[2]==0.0f))))
+  else if (_sliceOrientation==VV_ORTHO ||
+          (_sliceOrientation==VV_VARIABLE &&
+          (isOrtho || (viewDir.e[0]==0.0f && viewDir.e[1]==0.0f && viewDir.e[2]==0.0f))))
   {
     // Draw slices parallel to projection plane:
     normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
@@ -2299,8 +2298,8 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     origin.multiply(&invMV);
     normal.sub(&origin);
   }
-  else if (sliceOrientation==VV_VIEWDIR
-    || (sliceOrientation==VV_VARIABLE && (!_renderState._isROIUsed && isInVolume(&eye))))
+  else if (_sliceOrientation==VV_VIEWDIR || 
+          (_sliceOrientation==VV_VARIABLE && (!_renderState._isROIUsed && isInVolume(&eye))))
   {
     // Draw slices perpendicular to viewing direction:
     normal.copy(&viewDir);
@@ -3969,18 +3968,17 @@ void vvTexRend::updateLUT(float dist)
         opacityCorrection = (newValue==0.0f) ? false : true;
         break;
       case vvRenderer::VV_SLICEORIENT:
-        sliceOrientation = SliceOrientation(int(newValue));
+        _sliceOrientation = SliceOrientation(int(newValue));
         break;
       case vvRenderer::VV_PREINT:
         preIntegration = (newValue == 0.0f) ? false : true;
         updateTransferFunction();
         break;
-      case vvRenderer::VV_BIN_ISO:
-        _binIsoData = (newValue == 0.0f) ? false : true;
+      case vvRenderer::VV_BINNING:
+        if (newValue==0.0f) _binning = vvVolDesc::LINEAR;
+        else if (newValue==1.0f) _binning = vvVolDesc::ISO_DATA;
+        else _binning = vvVolDesc::OPACITY;
         break;      
-      case vvRenderer::VV_BIN_WEIGHT:
-        _binOpacityWeighted = (newValue == 0.0f) ? false : true;
-        break;
       default:
         vvRenderer::setParameter(param, newValue);
         break;
@@ -4002,13 +4000,11 @@ void vvTexRend::updateLUT(float dist)
       case vvRenderer::VV_MAX_SLICE:
         return float(maxSlice);
       case vvRenderer::VV_SLICEORIENT:
-        return float(sliceOrientation);
+        return float(_sliceOrientation);
       case vvRenderer::VV_PREINT:
         return float(preIntegration);
-      case vvRenderer::VV_BIN_ISO:
-        return (_binIsoData ? 1.0f : 0.0f);
-      case vvRenderer::VV_BIN_WEIGHT:
-        return (_binOpacityWeighted ? 1.0f : 0.0f);
+      case vvRenderer::VV_BINNING:
+        return float(_binning);
       default: return vvRenderer::getParameter(param);
     }
   }

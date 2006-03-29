@@ -103,7 +103,7 @@ class VVShell : public FXMainWindow
     FXGLVisual*           _glvisual;        // OpenGL visual
     VVVolumeDialog        *volumeDialog;
     VVPreferenceWindow    *prefWindow;
-    VVTransferWindow      *transWindow;
+    VVTransferWindow*     _transWindow;
     VVSliceViewer*        _sliceViewer;
     VVCameraSetDialog*    _cameraDialog;
     VVGammaDialog         *gammaDialog;

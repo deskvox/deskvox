@@ -160,10 +160,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     vvSLList<Brick*> _sortedList;                 ///< contains all bricks inside the probe in a sorted order (back to front)
     bool _useOnlyOneBrick;                        ///< true if whole data fits in texture memory
     vvVector4 _frustum[6];                        ///< current planes of view frustum
-    SliceOrientation sliceOrientation;            ///< slice orientation for planar 3d textures
-    bool _binOpacityWeighted;                     ///< Floating point TF: true=opacity weighted binning, false=opacity independent binning
-    bool _binIsoData;                             ///< Floating point TF: true=iso-data binning, false=iso-range binning
-
+    SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
+    vvVolDesc::BinningType _binning;              ///< Floating point TF: linear, iso-data, or opacity weighted binning
+    
 #ifdef HAVE_CG
     CGcontext _cgContext;                         ///< context for running fragment program
     CGprogram* _cgProgram;                        ///< handles for fragment program

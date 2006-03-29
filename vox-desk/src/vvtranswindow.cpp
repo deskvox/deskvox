@@ -82,7 +82,8 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_COLOR,         VVTransferWindow::onCmdColor),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_ALL,      VVTransferWindow::onCmdHistAll),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_FIRST,    VVTransferWindow::onCmdHistFirst),
-  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_NONE,     VVTransferWindow::onCmdHistNone),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HISTOGRAM,     VVTransferWindow::onCmdHistogram),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_OPACITY,       VVTransferWindow::onCmdOpacity),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_PICK_COLOR,    VVTransferWindow::onCmdPickColor),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_NORMALIZATION, VVTransferWindow::onCmdNormalization),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_COLOR_PICKER,  VVTransferWindow::onChngPickerColor),
@@ -289,11 +290,14 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _cbNorm->setCheck(true);
 
   FXGroupBox* histoGroup = new FXGroupBox(master,"Display",FRAME_GROOVE | LAYOUT_FILL_X);
-  FXHorizontalFrame* histoFrame = new FXHorizontalFrame(histoGroup, LAYOUT_CENTER_X | PACK_UNIFORM_WIDTH);
-  _histNone  = new FXRadioButton(histoFrame,"Opacity",this,ID_HIST_NONE, ICON_BEFORE_TEXT, 0, 0, 0, 0, 20, 20);
+  FXHorizontalFrame* opaFrame = new FXHorizontalFrame(histoGroup);
+  _opaCheck = new FXCheckButton(opaFrame,"Opacity",this,ID_OPACITY, ICON_BEFORE_TEXT);
+  _opaCheck->setCheck(true);
+  FXHorizontalFrame* histoFrame = new FXHorizontalFrame(histoGroup);
+  _histoCheck = new FXCheckButton(histoFrame,"Histogram",this,ID_HISTOGRAM, ICON_BEFORE_TEXT);
   _histFirst = new FXRadioButton(histoFrame,"Histogram for first time step",this,ID_HIST_FIRST, ICON_BEFORE_TEXT);
-  _histAll   = new FXRadioButton(histoFrame,"Histogram for all time steps",this,ID_HIST_ALL, ICON_BEFORE_TEXT);
-  _histNone->setCheck(true);
+  _histFirst->setCheck(true);
+  _histAll = new FXRadioButton(histoFrame,"Histogram for all time steps",this,ID_HIST_ALL, ICON_BEFORE_TEXT);
 
   FXHorizontalFrame* disColorFrame = new FXHorizontalFrame(master,LAYOUT_FILL_X);
   new FXLabel(disColorFrame, "Discrete Colors:",NULL,LABEL_NORMAL);
@@ -847,6 +851,8 @@ void VVTransferWindow::drawHistogram()
       {
         glRasterPos2f(0.0f, 0.0f); 
         glPixelZoom(1.0f, 1.0f);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDrawPixels(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT, 
           GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)_histoTexture1D);
         _glCanvas1D->makeNonCurrent();
@@ -873,21 +879,27 @@ void VVTransferWindow::computeHistogram()
   switch (_tfBook->getCurrent())
   {
     case 0:
+    {
+      vvColor col(0.4f, 0.4f, 0.4f);
       delete[] _histoTexture1D;
       size[0] = _glCanvas1D->getWidth();
       size[1] = _glCanvas1D->getHeight() - COLORBAR_HEIGHT;
       _histoTexture1D = new uchar[size[0] * size[1] * 4];
       _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 1, size, _histoTexture1D, 
-        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR);
+        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col);
       break;
+    }
     case 1:
+    {
+      vvColor col(1.0f, 1.0f, 1.0f);
       delete[] _histoTexture2D;
       size[0] = _glCanvas2D->getWidth();
       size[1] = _glCanvas2D->getHeight();
       _histoTexture2D = new uchar[size[0] * size[1] * 4];
       _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 2, size, _histoTexture2D,
-        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR);
+        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col);
       break;
+    }
     default: break;
   }
 }
@@ -908,12 +920,9 @@ void VVTransferWindow::drawTF()
 
 void VVTransferWindow::draw1DTF()
 {
-  float r,g,b;
-
   if (_glCanvas1D->makeCurrent())
   {
-    _canvas->getBackgroundColor(r, g, b);
-    glClearColor(r, g, b, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);   // white background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     _glCanvas1D->makeNonCurrent();
   }
@@ -942,7 +951,7 @@ void VVTransferWindow::draw2DTF()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     _glCanvas2D->makeNonCurrent();
   }
-  if (_histAll->getCheck() || _histFirst->getCheck())
+  if (_histoCheck->getCheck())
   {
     drawHistogram();
   }
@@ -1006,11 +1015,11 @@ void VVTransferWindow::draw2DWidget(vvTFWidget* w)
 
 void VVTransferWindow::drawPinBackground()
 {
-  if (_histAll->getCheck() || _histFirst->getCheck())
+  if (_histoCheck->getCheck())
   {
     drawHistogram();
   }
-  else
+  if (_opaCheck->getCheck())
   {
     drawAlphaTexture();
   }
@@ -1045,13 +1054,29 @@ void VVTransferWindow::drawControlPoints(vvTFCustom* cuw)
   for(iter=cuw->_points.begin(); iter!=cuw->_points.end(); iter++) 
   {
     x = cuw->_pos[0] + (*iter)->_pos[0];
-    y = (*iter)->_opacity;
+    y = (*iter)->_opacity * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());  
     if (_glCanvas1D->makeCurrent())
     {
-      drawCircle(x, y, 0.02f, (*iter)==cuw->_currentPoint);
+      drawSphere(x, y, 0.02f, (*iter)==cuw->_currentPoint);
       _glCanvas1D->makeNonCurrent();
     }
   }
+}
+
+void VVTransferWindow::drawSphere(float x, float y, float radius, bool isHighlighted)
+{
+  GLUquadricObj* sphereObj;
+
+  glEnable(GL_LIGHT0);
+  glEnable(GL_LIGHTING);
+  float redMaterial[] = { 1, 0, 0, 1 };
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, redMaterial);
+  glPushMatrix();
+  glTranslatef(x, y, 0.0f);
+  sphereObj = gluNewQuadric();
+  gluSphere(sphereObj, radius, 8, 8);
+  glPopMatrix();
+  glDisable(GL_LIGHTING);
 }
 
 /** General routine to draw a circle on the current OpenGL canvas.
@@ -1061,7 +1086,6 @@ void VVTransferWindow::drawCircle(float x, float y, float radius, bool isHighlig
   int i;
   float radians;
   
-  y *= float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());  
   if (isHighlighted) glColor3f(1.0f, 0.0f, 0.0f);
   else glColor3f(0.0f, 0.0f, 0.0f);
   glLineWidth(2.0f);
@@ -1237,15 +1261,30 @@ void VVTransferWindow::drawColorTexture()
 {
   const int WIDTH = 256;
   static uchar* colorBar = new uchar[WIDTH * 4 * 2];
+  uchar background[4];
+  float r,g,b;
   
   _canvas->_vd->tf.makeColorBar(WIDTH, colorBar);
   if (_glCanvas1D->makeCurrent())
   {
+    // Draw background:
+    _canvas->getBackgroundColor(r, g, b);   // use background color from volume rendering canvas
+    background[0] = uchar(r * 255.0f);
+    background[1] = uchar(g * 255.0f);
+    background[2] = uchar(b * 255.0f);
+    background[3] = 255;
+    glDisable(GL_BLEND);
+    glRasterPos2f(0.0f, 1.0f);  // pixmap origin is bottom left corner of output window
+    glPixelZoom(float(_glCanvas1D->getWidth()), -20.0f); // full canvas width, 20 pixels high
+    glDrawPixels(1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)background);
+
+    // Draw color bars:
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glRasterPos2f(0.0f, 1.0f);  // pixmap origin is bottom left corner of output window
-    glPixelZoom(float(_glCanvas1D->getWidth()) / float(WIDTH), -10.0f);
+    glPixelZoom(float(_glCanvas1D->getWidth()) / float(WIDTH), -10.0f); // full canvas width, 10*2 pixels high, upside-down
     glDrawPixels(WIDTH, 2, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)colorBar);
+    
     _glCanvas1D->makeNonCurrent();
   }
 }
@@ -1257,6 +1296,8 @@ void VVTransferWindow::drawAlphaTexture()
   if (_glCanvas1D->makeCurrent())
   {
     _canvas->_vd->tf.makeAlphaTexture(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT, tfTexture);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glRasterPos2f(0.0f, 1.0f - float(COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight())); 
     glPixelZoom(1.0f, -1.0f);
     glDrawPixels(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT, 
@@ -1294,7 +1335,6 @@ long VVTransferWindow::onChngDisColors(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onCmdHistAll(FXObject*,FXSelector,void*)
 {
-  _histNone->setCheck(false);
   _histFirst->setCheck(false);
   computeHistogram();
   drawTF();
@@ -1303,17 +1343,21 @@ long VVTransferWindow::onCmdHistAll(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onCmdHistFirst(FXObject*,FXSelector,void*)
 {
-  _histNone->setCheck(false);
   _histAll->setCheck(false);
   computeHistogram();
   drawTF();
   return 1;
 }
 
-long VVTransferWindow::onCmdHistNone(FXObject*,FXSelector,void*)
+long VVTransferWindow::onCmdHistogram(FXObject*,FXSelector,void*)
 {
-  _histAll->setCheck(false);
-  _histFirst->setCheck(false);
+  computeHistogram();
+  drawTF();
+  return 1;
+}
+
+long VVTransferWindow::onCmdOpacity(FXObject*,FXSelector,void*)
+{
   computeHistogram();
   drawTF();
   return 1;

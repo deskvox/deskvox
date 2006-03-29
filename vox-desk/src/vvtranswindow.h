@@ -71,7 +71,8 @@ class VVTransferWindow : public FXDialogBox
       ID_INSTANT,
       ID_HIST_ALL,
       ID_HIST_FIRST,
-      ID_HIST_NONE,
+      ID_HISTOGRAM,
+      ID_OPACITY,
       ID_APPLY,
       ID_IMPORT,
       ID_SAVE_MV,
@@ -130,7 +131,8 @@ class VVTransferWindow : public FXDialogBox
     long onTFCanvasPaint(FXObject*,FXSelector,void*);
     long onCmdHistAll(FXObject*,FXSelector,void*);
     long onCmdHistFirst(FXObject*,FXSelector,void*);
-    long onCmdHistNone(FXObject*,FXSelector,void*);
+    long onCmdHistogram(FXObject*,FXSelector,void*);
+    long onCmdOpacity(FXObject*,FXSelector,void*);
     long onCmdPickColor(FXObject*,FXSelector,void*);
     long onCmdNormalization(FXObject*,FXSelector,void*);
     long onChngPickerColor(FXObject*,FXSelector,void*);
@@ -181,7 +183,8 @@ class VVTransferWindow : public FXDialogBox
     FXLabel* _disColorLabel;
     FXRadioButton* _histAll;
     FXRadioButton* _histFirst;
-    FXRadioButton* _histNone;
+    FXCheckButton* _histoCheck;
+    FXCheckButton* _opaCheck;
     FXCheckButton* _instantButton;
     FXCheckButton* _pColorButton;
     FXCheckButton* _bColorButton;
@@ -221,5 +224,6 @@ class VVTransferWindow : public FXDialogBox
     vvTFWidget* closestWidget(float, float, float);
     float getRealPinPos(float);
     void drawCircle(float, float, float, bool);
+    void drawSphere(float, float, float, bool);
 };
 #endif

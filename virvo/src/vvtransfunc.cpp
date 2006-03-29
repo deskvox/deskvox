@@ -415,11 +415,12 @@ void vvTransFunc::makeColorBar(int width, uchar* colors)
 void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture)
 {
   const int GRAY_LEVEL = 160;
+  const int ALPHA_LEVEL = 230;
   int x, y, index1D, index2D, barHeight;
 
   float* rgba = new float[width * 4];
   computeTFTexture(width, 1, 1, rgba);
-  memset(texture, 255, width * height * 4);
+  memset(texture, 0, width * height * 4); // make black and transparent
 
   for (x=0; x<width; ++x)
   {
@@ -431,7 +432,7 @@ void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture)
       texture[index2D]     = GRAY_LEVEL;
       texture[index2D + 1] = GRAY_LEVEL;
       texture[index2D + 2] = GRAY_LEVEL;
-      texture[index2D + 3] = 255;                 // alpha = opaque
+      texture[index2D + 3] = ALPHA_LEVEL;
     }
   }
   delete[] rgba;

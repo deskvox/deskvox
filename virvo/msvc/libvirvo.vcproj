@@ -120,6 +120,12 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
+				RelativePath=".\libvirvo.rc">
+			</File>
+			<File
+				RelativePath="..\src\vvcolor.cpp">
+			</File>
+			<File
 				RelativePath="..\src\vvdebugmsg.cpp">
 			</File>
 			<File
@@ -196,7 +202,13 @@
 				RelativePath="..\src\glext-orig.h">
 			</File>
 			<File
+				RelativePath=".\resource.h">
+			</File>
+			<File
 				RelativePath="..\src\vvarray.h">
+			</File>
+			<File
+				RelativePath="..\src\vvcolor.h">
 			</File>
 			<File
 				RelativePath="..\src\vvdebugmsg.h">

@@ -856,7 +856,6 @@ void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* siz
   NormalizationType ntype, vvColor* color)
 {
   const int BPT = 4;                              // bytes per texel
-  const int GRAY_LEVEL = 160;                     // color of histogram bars
   float* hist;                                    // histogram values (float)
   int*   count;                                   // histogram values (integer)
   int    x,y;                                     // texel index
@@ -898,7 +897,7 @@ void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* siz
         texIndex = BPT * (x + y * size[0]);
         for (c=0; c<3; ++c)
         {
-          data[texIndex + c] = GRAY_LEVEL;        // set foreground color
+          data[texIndex + c] = uchar(color->_col[c] * 255.0f);        // set foreground color
         }
         data[texIndex + 3] = 255;                 // set alpha
       }
@@ -4792,31 +4791,25 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange)
   it clamps the value between real[0] and real[1] and linearly maps the value
   to an 8bit integer.
   @param fval floating point data value
-  @param binIsoData if true: create bins so that each bin contains equal numbers of data values
-  @param binOpacityWeighted if true: weigh bins according to opacity set in transfer function
+  @param binning linear (standard), 
+                 iso-data: create bins so that each bin contains equal numbers of data values,
+                 opacity weighted: weigh bins according to opacity set in transfer function
   @return 8bit integer value [0..255]
 */
-int vvVolDesc::mapFloat2Int(float fval, bool binIsoData, bool binOpacityWeighted)
+int vvVolDesc::mapFloat2Int(float fval, BinningType binning)
 {
   int ival;
   
-  if (!binIsoData && !binOpacityWeighted) // no advanced HDR algorithms?
+  switch(binning)
   {
-    fval = ts_clamp(fval, real[0], real[1]);
-    return int((fval - real[0]) / (real[1] - real[0]) * 255.0f);
+    case LINEAR: 
+      fval = ts_clamp(fval, real[0], real[1]);
+      return int((fval - real[0]) / (real[1] - real[0]) * 255.0f);
+    case ISO_DATA:
+    case OPACITY:
+      ival = findHDRBin(fval);
+      return ival;
   }
-
-  if (binIsoData)
-  {
-    ival = findHDRBin(fval);
-  }
-  
-  if (binOpacityWeighted)
-  {
-    // TODO: implement!
-  }
-  
-  return ival;
 }
 
 /** Returns the number of the bin the floating point value is in.

@@ -195,7 +195,7 @@ VVShell::~VVShell()
   delete _glvisual;
   delete volumeDialog;
   delete prefWindow;
-  delete transWindow;
+  delete _transWindow;
   delete _sliceViewer;
   delete _cameraDialog;
   delete gammaDialog;
@@ -347,7 +347,7 @@ void VVShell::initDialogs()
 
   volumeDialog = new VVVolumeDialog((FXWindow*)this, _canvas);
   prefWindow   = new VVPreferenceWindow((FXWindow*)this, _canvas);
-  transWindow  = new VVTransferWindow((FXWindow*)this, _canvas);
+  _transWindow  = new VVTransferWindow((FXWindow*)this, _canvas);
   _sliceViewer = new VVSliceViewer((FXWindow*)this, _canvas);
   _cameraDialog = new VVCameraSetDialog((FXWindow*)this, _canvas);
   gammaDialog  = new VVGammaDialog((FXWindow*)this, _canvas);
@@ -940,8 +940,8 @@ long VVShell::onCmdTrans(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVShell::onCmdTrans()");
 
-  transWindow->updateValues();
-  transWindow->show();
+  _transWindow->updateValues();
+  _transWindow->show();
   return 1;
 }
 
@@ -1099,6 +1099,11 @@ long VVShell::onCmdBGColor(FXObject*,FXSelector,void*)
   if (_colorPicker->execute() == 0)   // has picker exited with 'cancel'?
   {
     _canvas->setBackgroundColor(r, g, b);  // then undo changes to BG color
+  }
+  else
+  {
+    // Update color bar background in TF:
+    _transWindow->updateValues();
   }
   return 1;
 }
@@ -1362,7 +1367,7 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, int algorithm, vvTexRend::Geometr
     vd->makeInfoString(string);
     _statusBar->setText(string);
     volumeDialog->updateValues();
-    transWindow->updateValues();
+    _transWindow->updateValues();
     prefWindow->updateValues();
     _dataTypeDialog->updateValues();
     _editVoxelsDialog->updateValues();

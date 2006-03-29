@@ -112,6 +112,13 @@ class VIRVOEXPORT vvVolDesc
       CHANNEL_A = 8
     };
     
+    enum BinningType
+    {
+      LINEAR,
+      ISO_DATA,
+      OPACITY
+    };
+    
     enum
     { NUM_HDR_BINS = 256};                        ///< constant value for HDR transfer functions
 
@@ -245,7 +252,7 @@ class VIRVOEXPORT vvVolDesc
     void updateFrame(int, uchar*, DeleteType);
     void updateHDRBins(int, bool, bool);
     int  findHDRBin(float);
-    int  mapFloat2Int(float, bool, bool);
+    int  mapFloat2Int(float, BinningType);
 
     /*
       This method creates a texture for the given voxeldata.
