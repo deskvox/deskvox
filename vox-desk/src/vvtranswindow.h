@@ -56,10 +56,8 @@ class VVTransferWindow : public FXDialogBox
       ID_P_MAX,
       ID_OWN_COLOR,
       ID_B_WIDTH,
-      ID_B_HEIGHT,
       ID_B_MAX,
       ID_S_WIDTH,
-      ID_S_HEIGHT,
       ID_TF_CANVAS_1D,
       ID_TF_CANVAS_2D,
       ID_DELETE,
@@ -73,6 +71,7 @@ class VVTransferWindow : public FXDialogBox
       ID_HIST_FIRST,
       ID_HISTOGRAM,
       ID_OPACITY,
+      ID_BINS,
       ID_APPLY,
       ID_IMPORT,
       ID_SAVE_MV,
@@ -133,6 +132,7 @@ class VVTransferWindow : public FXDialogBox
     long onCmdHistFirst(FXObject*,FXSelector,void*);
     long onCmdHistogram(FXObject*,FXSelector,void*);
     long onCmdOpacity(FXObject*,FXSelector,void*);
+    long onCmdBins(FXObject*,FXSelector,void*);
     long onCmdPickColor(FXObject*,FXSelector,void*);
     long onCmdNormalization(FXObject*,FXSelector,void*);
     long onChngPickerColor(FXObject*,FXSelector,void*);
@@ -156,25 +156,17 @@ class VVTransferWindow : public FXDialogBox
     FXSlider* _disColorSlider;
     FXRealSlider* _pTopXSlider;
     FXRealSlider* _pBottomXSlider;
-    FXRealSlider* _pTopYSlider;
-    FXRealSlider* _pBottomYSlider;
     FXRealSlider* _pMaxSlider;
     FXRealSlider* _bWidthSlider;
-    FXRealSlider* _bHeightSlider;
     FXRealSlider* _bMaxSlider;
     FXRealSlider* _sWidthSlider;
-    FXRealSlider* _sHeightSlider;
     FXRealSlider* _cWidthSlider;
     FXLabel* _pTopXLabel;
     FXLabel* _pBottomXLabel;
-    FXLabel* _pTopYLabel;
-    FXLabel* _pBottomYLabel;
     FXLabel* _pMaxLabel;
     FXLabel* _bWidthLabel;
-    FXLabel* _bHeightLabel;
     FXLabel* _bMaxLabel;
     FXLabel* _sWidthLabel;
-    FXLabel* _sHeightLabel;
     FXLabel* _cWidthLabel;
     FXLabel* _realMinLabel;
     FXLabel* _realPosLabel;
@@ -185,6 +177,7 @@ class VVTransferWindow : public FXDialogBox
     FXRadioButton* _histFirst;
     FXCheckButton* _histoCheck;
     FXCheckButton* _opaCheck;
+    FXCheckButton* _binsCheck;
     FXCheckButton* _instantButton;
     FXCheckButton* _pColorButton;
     FXCheckButton* _bColorButton;
@@ -217,6 +210,7 @@ class VVTransferWindow : public FXDialogBox
     void draw2DTFWidgets();
     void draw2DWidget(vvTFWidget*);
     void drawCustomWidgets();
+    void drawBinLimits();
     void drawControlPoints(vvTFCustom*);
     void drawPinLines();
     void drawPinBackground();

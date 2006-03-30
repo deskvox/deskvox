@@ -2638,8 +2638,16 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
       _canvas->_renderer->setParameter(vvRenderer::VV_BINNING, _algoType-1);
       if (_algoType==2 || _algoType==3)
       {
+        vvVolDesc::BinningType bt=vvVolDesc::LINEAR;
+        switch (_algoType)
+        {
+          case 1: bt = vvVolDesc::LINEAR; break;
+          case 2: bt = vvVolDesc::ISO_DATA; break;
+          case 3: bt = vvVolDesc::OPACITY; break;
+          default: assert(0); break;
+        }
         _canvas->_vd->updateHDRBins((_fastCheck->getCheck()) ? FXIntVal(_fastNumber->getText()) : -1, 
-          (_skipCheck->getCheck()) ? true : false, (_lockCheck->getCheck()) ? true : false);
+          (_skipCheck->getCheck()) ? true : false, (_lockCheck->getCheck()) ? true : false, bt);
       }
       _canvas->_renderer->updateVolumeData();
       _shell->_glcanvas->makeNonCurrent();

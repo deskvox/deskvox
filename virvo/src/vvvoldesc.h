@@ -119,10 +119,8 @@ class VIRVOEXPORT vvVolDesc
       OPACITY
     };
     
-    enum
-    { NUM_HDR_BINS = 256};                        ///< constant value for HDR transfer functions
-
     static const int DEFAULT_ICON_SIZE;           ///< system default for icon size if not otherwise specified (only stored in XVF files)
+    static const int NUM_HDR_BINS;                ///< constant value for HDR transfer functions
     int vox[3];                                   ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
     int frames;                                   ///< number of animation frames in movie (0 if no volume data stored)
     int bpc;                                      ///< bytes per channel (default = 1); each channel is scalar:<UL>
@@ -250,9 +248,10 @@ class VIRVOEXPORT vvVolDesc
     void   setChannelName(int, const char*);
     const char* getChannelName(int);
     void updateFrame(int, uchar*, DeleteType);
-    void updateHDRBins(int, bool, bool);
+    void updateHDRBins(int, bool, bool, BinningType);
     int  findHDRBin(float);
     int  mapFloat2Int(float, BinningType);
+    void makeBinTexture(uchar*, int);
 
     /*
       This method creates a texture for the given voxeldata.

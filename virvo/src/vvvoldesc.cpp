@@ -49,6 +49,7 @@
 using namespace std;
 
 const int vvVolDesc::DEFAULT_ICON_SIZE = 64;
+const int vvVolDesc::NUM_HDR_BINS = 256;
 
 //============================================================================
 // Class vvVolDesc
@@ -4667,12 +4668,17 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
   @param numValues if >0 then use subset of volume for sampling
   @param skipWidgets if true, algorithm ignores data values under Skip widgets
   @param lockRange if true, realMin/realMax won't be modified
+  @param binning binning type
 */
-void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange)
+void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, BinningType binning)
 {
   vvTFSkip* sw;
   uchar* srcData;
   float* sortedData;
+  float* opacities=NULL;
+  double sumOpacities;    // sum of all opacities
+  double opacityPerBin;
+  double localSum;
   float tmp;
   float min,max;
   int numVoxels;
@@ -4681,16 +4687,19 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange)
   int valuesPerBin;
   int numTF;
 
+  assert(binning!=LINEAR);    // this routine supports only iso-data and opacity-weighted binning
   if (bpc!=4 || chan!=1) 
   {
     cerr << "updateHDRBins() works only on single channel float data" << endl;
     return;
   }
+  
+  cerr << "Creating HDR data array" << endl;
   assert(_hdrBinLimits);
   srcData = getRaw();
   numVoxels = getFrameVoxels();
   if (numValues>0) numVoxels = ts_min(numVoxels, numValues);  
-  sortedData = new float[numVoxels * sizeof(float)];
+  sortedData = new float[(numVoxels+2) * sizeof(float)];    // +2 for min/max of data range
   if (numVoxels == getFrameVoxels())  // can the entire data array be sorted?
   {
     memcpy(sortedData, srcData, getFrameBytes());
@@ -4730,6 +4739,14 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange)
     }
   }
   
+  // Make sure min and max of data range are included in data:
+  if (lockRange)
+  {
+    sortedData[numVoxels]   = real[0];
+    sortedData[numVoxels+1] = real[1];
+    numVoxels += 2;
+  }
+  
   // Sort data (bubblesort)
   // TODO: use faster sort algorithm (eg, quicksort)
   cerr << "Sorting data array...";
@@ -4748,7 +4765,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange)
   cerr << " done" << endl;
   
   // Trim beginning and end of sorted data array to remove values below/above realMin/realMax:
-  if (lockRange)
+  if (lockRange || binning==OPACITY)
   {
     cerr << "Trimming values to maintain range begin/end" << endl;
     
@@ -4762,18 +4779,57 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange)
     numVoxels -= (numVoxels-1-i);
   }
   
-  // Determine bin limits:
-  valuesPerBin = numVoxels / NUM_HDR_BINS;
-  for (i=0; i<NUM_HDR_BINS; ++i)
+  // Create array with opacity values for the data values:
+  if (binning==OPACITY)
   {
-    _hdrBinLimits[i] = sortedData[i * valuesPerBin];
+    sumOpacities = 0.0;
+    opacities = new float[numVoxels * sizeof(float)];
+    for (i=0; i<numVoxels; ++i)
+    {
+      opacities[i] = tf.computeOpacity((sortedData[i] - real[0]) / (real[1] - real[0]));
+      sumOpacities += opacities[i];
+    }
   }
   
-  if (sortedData[0] == sortedData[numVoxels-1])   // do first and last data entries differ?
+  // Determine bin limits:
+  valuesPerBin = numVoxels / NUM_HDR_BINS;
+  switch (binning)
+  {
+    case ISO_DATA:
+      for (i=0; i<NUM_HDR_BINS; ++i)
+      {
+        index = ts_clamp(i * valuesPerBin, 0, numVoxels-1);
+        _hdrBinLimits[i] = sortedData[index];
+      }
+      break;
+    case OPACITY:
+      opacityPerBin = sumOpacities / NUM_HDR_BINS;
+      localSum = 0.0;
+      j = 0;    // index to current voxel
+      for (i=0; i<NUM_HDR_BINS; ++i)
+      {
+        while (localSum<opacityPerBin)
+        {
+          if (j>=numVoxels) j = numVoxels-1;
+          localSum += opacities[j];
+          ++j;
+          if (localSum>opacityPerBin)
+          {
+            _hdrBinLimits[i] = sortedData[j-1];
+            localSum = 0.0;
+            break;
+          }
+        }
+      }
+      break;
+  }
+  
+  // Do first and last data entries differ?
+  if (sortedData[0] == sortedData[numVoxels-1])   
   {
     cerr << "volume too sparse for HDR monte carlo sampling" << endl;
   }
-  else
+  else    // adjust real min/max to min/max found in volume, unless not desired by the user
   {
     if (!lockRange)
     {
@@ -4781,7 +4837,8 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange)
       real[1] = sortedData[numVoxels-1];
     }
   }
-    
+  
+  delete[] opacities;
   delete[] sortedData;
 }
 
@@ -4809,9 +4866,12 @@ int vvVolDesc::mapFloat2Int(float fval, BinningType binning)
     case OPACITY:
       ival = findHDRBin(fval);
       return ival;
+    default: assert(0);
+      return -1;
   }
 }
 
+//----------------------------------------------------------------------------
 /** Returns the number of the bin the floating point value is in.
 */
 int vvVolDesc::findHDRBin(float fval)
@@ -4823,6 +4883,29 @@ int vvVolDesc::findHDRBin(float fval)
     if (_hdrBinLimits[i] > fval) return (ts_max(i-1, 0));
   }
   return NUM_HDR_BINS-1;
+}
+
+//----------------------------------------------------------------------------
+/** Create 1D texture with bin limits.
+  @param texture pointer to _allocated_ space for width * 4 bytes
+  @param width texture width [pixels]
+*/
+void vvVolDesc::makeBinTexture(uchar* texture, int width)
+{
+  float range;
+  int i, index;
+  
+  memset(texture, 0, width * 4);    // initialize with transparent texels
+  range = real[1] - real[0];
+  for (i=0; i<NUM_HDR_BINS; ++i)
+  {
+    index = int((_hdrBinLimits[i] - real[0]) / range * float(NUM_HDR_BINS-1));
+    index = ts_clamp(index, 0, NUM_HDR_BINS);
+    texture[4*index]   = 0;
+    texture[4*index+1] = 0;
+    texture[4*index+2] = 0;
+    texture[4*index+3] = 255;   // make tick marks opaque
+  }
 }
 
 ///// EOF /////

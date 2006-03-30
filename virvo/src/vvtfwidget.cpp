@@ -394,6 +394,7 @@ float vvTFPyramid::getOpacity(float x, float y, float z)
       if (p[1] > inMax[1]) return vvToolshed::interpolateLinear(inMax[1], _opacity, outMax[1], 0.0f, p[1]);
       break;
     case 3:
+      // TODO: implement for 3D pyramids
       break;
     default: assert(0); break;
   }

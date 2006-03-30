@@ -27,6 +27,7 @@
 #include <vvfileio.h>
 
 // Local:
+#include "vvdialogs.h"
 #include "vvtranswindow.h"
 #include "vvcanvas.h"
 #include "vvshell.h"
@@ -49,14 +50,10 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_SKIP,          VVTransferWindow::onCmdSkip),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_P_TOP_X,       VVTransferWindow::onChngPyramid),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_P_BOTTOM_X,    VVTransferWindow::onChngPyramid),
-  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_P_TOP_Y,       VVTransferWindow::onChngPyramid),
-  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_P_BOTTOM_Y,    VVTransferWindow::onChngPyramid),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_P_MAX,         VVTransferWindow::onChngPyramid),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_B_WIDTH,       VVTransferWindow::onChngBell),
-  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_B_HEIGHT,      VVTransferWindow::onChngBell),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_B_MAX,         VVTransferWindow::onChngBell),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_S_WIDTH,       VVTransferWindow::onChngSkip),
-  FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_S_HEIGHT,      VVTransferWindow::onChngSkip),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_C_WIDTH,       VVTransferWindow::onChngCustomWidth),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_DIS_COLOR,     VVTransferWindow::onChngDisColors),
   FXMAPFUNC(SEL_PAINT,             VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onTFCanvasPaint),
@@ -84,6 +81,7 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_FIRST,    VVTransferWindow::onCmdHistFirst),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HISTOGRAM,     VVTransferWindow::onCmdHistogram),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_OPACITY,       VVTransferWindow::onCmdOpacity),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_BINS,          VVTransferWindow::onCmdBins),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_PICK_COLOR,    VVTransferWindow::onCmdPickColor),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_NORMALIZATION, VVTransferWindow::onCmdNormalization),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_COLOR_PICKER,  VVTransferWindow::onChngPickerColor),
@@ -188,22 +186,6 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _pBottomXSlider->setValue(0.0f);
   _pBottomXSlider->setTickDelta(.01);
 
-  FXMatrix* pTopYMat = new FXMatrix(sliderFrame1, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
-  new FXLabel(pTopYMat, "Top width Y: ",NULL,LABEL_NORMAL);
-  _pTopYLabel = new FXLabel(pTopYMat, "0",NULL,LABEL_NORMAL);
-  _pTopYSlider=new FXRealSlider(sliderFrame1,this,ID_P_TOP_Y,SLIDER_HORIZONTAL|SLIDER_ARROW_DOWN|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-  _pTopYSlider->setRange(0.0f, 2.0f);
-  _pTopYSlider->setValue(0.0f);
-  _pTopYSlider->setTickDelta(.01);
-
-  FXMatrix* pBottomYMat = new FXMatrix(sliderFrame1, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
-  new FXLabel(pBottomYMat, "Bottom width Y: ",NULL,LABEL_NORMAL);
-  _pBottomYLabel = new FXLabel(pBottomYMat, "0",NULL,LABEL_NORMAL);
-  _pBottomYSlider=new FXRealSlider(sliderFrame1,this,ID_P_BOTTOM_Y, SLIDER_HORIZONTAL|SLIDER_ARROW_DOWN|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-  _pBottomYSlider->setRange(0.0f, 2.0f);
-  _pBottomYSlider->setValue(0.0f);
-  _pBottomYSlider->setTickDelta(.01);
-
   FXMatrix* pMaxMat = new FXMatrix(sliderFrame1, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
   new FXLabel(pMaxMat, "Maximum opacity: ",NULL,LABEL_NORMAL);
   _pMaxLabel = new FXLabel(pMaxMat, "0",NULL,LABEL_NORMAL);
@@ -227,14 +209,6 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _bWidthSlider->setRange(0.0f, 1.0f);
   _bWidthSlider->setValue(0.0f);
   _bWidthSlider->setTickDelta(.01);
-
-  FXMatrix* _bHeightMat = new FXMatrix(sliderFrame2, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
-  new FXLabel(_bHeightMat, "Height: ",NULL,LABEL_NORMAL);
-  _bHeightLabel = new FXLabel(_bHeightMat, "0",NULL,LABEL_NORMAL);
-  _bHeightSlider=new FXRealSlider(sliderFrame2,this,ID_B_HEIGHT,SLIDER_HORIZONTAL|SLIDER_ARROW_DOWN|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-  _bHeightSlider->setRange(0.0f, 1.0f);
-  _bHeightSlider->setValue(0.0f);
-  _bHeightSlider->setTickDelta(.01);
 
   FXMatrix* _bMaxMat = new FXMatrix(sliderFrame2, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
   new FXLabel(_bMaxMat, "Maximum value: ",NULL,LABEL_NORMAL);
@@ -260,14 +234,6 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _sWidthSlider->setValue(0.0f);
   _sWidthSlider->setTickDelta(.01);
 
-  FXMatrix* _sHeightMat = new FXMatrix(sliderFrame3, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
-  new FXLabel(_sHeightMat, "Height: ",NULL,LABEL_NORMAL);
-  _sHeightLabel = new FXLabel(_sHeightMat, "0",NULL,LABEL_NORMAL);
-  _sHeightSlider=new FXRealSlider(sliderFrame3,this,ID_S_HEIGHT,SLIDER_HORIZONTAL|SLIDER_ARROW_DOWN|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-  _sHeightSlider->setRange(0.0f, 1.0f);
-  _sHeightSlider->setValue(0.0f);
-  _sHeightSlider->setTickDelta(.01);
-
   // Switcher state #5: custom widget activated
   FXGroupBox* pinGroup5 = new FXGroupBox(_pinSwitcher,"Custom Widget Settings",FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
   FXVerticalFrame* sliderFrame5 = new FXVerticalFrame(pinGroup5, LAYOUT_FILL_X);
@@ -290,11 +256,14 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _cbNorm->setCheck(true);
 
   FXGroupBox* histoGroup = new FXGroupBox(master,"Display",FRAME_GROOVE | LAYOUT_FILL_X);
-  FXHorizontalFrame* opaFrame = new FXHorizontalFrame(histoGroup);
-  _opaCheck = new FXCheckButton(opaFrame,"Opacity",this,ID_OPACITY, ICON_BEFORE_TEXT);
+  FXHorizontalFrame* miscFrame = new FXHorizontalFrame(histoGroup);
+  _opaCheck = new FXCheckButton(miscFrame,"Opacity",this,ID_OPACITY, ICON_BEFORE_TEXT);
   _opaCheck->setCheck(true);
+  _binsCheck = new FXCheckButton(miscFrame, "Bin limits", this, ID_BINS, ICON_BEFORE_TEXT);
+  _binsCheck->setCheck(false);
   FXHorizontalFrame* histoFrame = new FXHorizontalFrame(histoGroup);
   _histoCheck = new FXCheckButton(histoFrame,"Histogram",this,ID_HISTOGRAM, ICON_BEFORE_TEXT);
+  _histoCheck->setCheck(true);
   _histFirst = new FXRadioButton(histoFrame,"Histogram for first time step",this,ID_HIST_FIRST, ICON_BEFORE_TEXT);
   _histFirst->setCheck(true);
   _histAll = new FXRadioButton(histoFrame,"Histogram for all time steps",this,ID_HIST_ALL, ICON_BEFORE_TEXT);
@@ -307,12 +276,15 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _disColorSlider->setTickDelta(1);
   _disColorLabel = new FXLabel(disColorFrame, "",NULL,LABEL_NORMAL);
 
+  FXGroupBox* tfGroup = new FXGroupBox(master,"Transfer Function I/O",FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
+  FXHorizontalFrame* tfFrame=new FXHorizontalFrame(tfGroup, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
+  new FXButton(tfFrame,"Save Meshviewer TF",NULL,this,ID_SAVE_MV, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
+  new FXButton(tfFrame,"Load Meshviewer TF",NULL,this,ID_LOAD_MV, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
+  new FXButton(tfFrame,"Import TF",NULL,this,ID_IMPORT, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
+  
   FXHorizontalFrame* endFrame=new FXHorizontalFrame(master, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
-  new FXButton(endFrame,"Save Meshviewer TF",NULL,this,ID_SAVE_MV, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
-  new FXButton(endFrame,"Load Meshviewer TF",NULL,this,ID_LOAD_MV, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
-  new FXButton(endFrame,"Import TF",NULL,this,ID_IMPORT, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
   new FXButton(endFrame,"Apply",NULL,this,ID_APPLY, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
-  new FXButton(endFrame,"Close",NULL,this,ID_ACCEPT, FRAME_RAISED | FRAME_THICK | LAYOUT_RIGHT);
+  new FXButton(endFrame,"Close",NULL,this,ID_ACCEPT, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
 
   // Initialize color picker:
   _colorPicker  = new FXColorDialog((FXWindow*)this, "Pin Color",DECOR_TITLE|DECOR_BORDER, 50,50);
@@ -481,16 +453,12 @@ long VVTransferWindow::onChngPyramid(FXObject*,FXSelector,void*)
   vvTFPyramid* pw;
 
   _pTopXLabel->setText(FXStringFormat("%.2f", _pTopXSlider->getValue()));
-  _pTopYLabel->setText(FXStringFormat("%.2f", _pTopYSlider->getValue()));
   _pBottomXLabel->setText(FXStringFormat("%.2f", _pBottomXSlider->getValue()));
-  _pBottomYLabel->setText(FXStringFormat("%.2f", _pBottomYSlider->getValue()));
   _pMaxLabel->setText(FXStringFormat("%.2f",_pMaxSlider->getValue()));
   if(!_currentWidget) return 1;
   assert((pw=dynamic_cast<vvTFPyramid*>(_currentWidget))!=NULL);
   pw->_top[0] = _pTopXSlider->getValue();
-  pw->_top[1] = _pTopYSlider->getValue();
   pw->_bottom[0] = _pBottomXSlider->getValue();
-  pw->_bottom[1] = _pBottomYSlider->getValue();
   pw->_opacity = _pMaxSlider->getValue();
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
@@ -502,12 +470,10 @@ long VVTransferWindow::onChngBell(FXObject*,FXSelector,void*)
   vvTFBell* bw;
 
   _bWidthLabel->setText(FXStringFormat("%.2f", _bWidthSlider->getValue()));
-  _bHeightLabel->setText(FXStringFormat("%.2f", _bHeightSlider->getValue()));
   _bMaxLabel->setText(FXStringFormat("%.2f", _bMaxSlider->getValue()));
   if(!_currentWidget) return 1;
   assert((bw=dynamic_cast<vvTFBell*>(_currentWidget))!=NULL);
   bw->_size[0] = _bWidthSlider->getValue();
-  bw->_size[1] = _bHeightSlider->getValue();
   bw->_opacity = _bMaxSlider->getValue();
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
@@ -519,11 +485,9 @@ long VVTransferWindow::onChngSkip(FXObject*,FXSelector,void*)
   vvTFSkip* sw;
 
   _sWidthLabel->setText(FXStringFormat("%.2f", _sWidthSlider->getValue()));
-  _sHeightLabel->setText(FXStringFormat("%.2f", _sHeightSlider->getValue()));
   if(!_currentWidget) return 1;
   assert((sw=dynamic_cast<vvTFSkip*>(_currentWidget))!=NULL);
   sw->_size[0] = _sWidthSlider->getValue();
-  sw->_size[1] = _sHeightSlider->getValue();
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
   return 1;
@@ -542,9 +506,19 @@ long VVTransferWindow::onChngCustomWidth(FXObject*,FXSelector,void*)
   return 1;
 }
 
-float VVTransferWindow::getRealPinPos(float sliderVal)
+float VVTransferWindow::getRealPinPos(float xPos)
 {
-  return _canvas->_vd->real[0] + sliderVal * (_canvas->_vd->real[1] - _canvas->_vd->real[0]);
+  int bin; 
+  
+  if (_shell->_floatRangeDialog->_algoType==1)  // normal mode (iso-range) is linear mapping between min and max
+  {
+    return _canvas->_vd->real[0] + xPos * (_canvas->_vd->real[1] - _canvas->_vd->real[0]);
+  }
+  else  // iso-data or opacity weighted
+  {
+    bin = int(xPos * float(vvVolDesc::NUM_HDR_BINS));
+    return _canvas->_vd->_hdrBinLimits[bin];
+  }
 }
 
 long VVTransferWindow::onMouseLDown1D(FXObject*,FXSelector,void* ptr)
@@ -855,6 +829,7 @@ void VVTransferWindow::drawHistogram()
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDrawPixels(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT, 
           GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)_histoTexture1D);
+        glDisable(GL_BLEND);
         _glCanvas1D->makeNonCurrent();
       }
       break;
@@ -930,6 +905,7 @@ void VVTransferWindow::draw1DTF()
   drawPinBackground();
   drawPinLines();
   drawCustomWidgets();
+  if (_binsCheck->getCheck()) drawBinLimits();
   if (_glCanvas1D->makeCurrent())
   {
     if(_glVisual1D->isDoubleBuffer())
@@ -1043,6 +1019,23 @@ void VVTransferWindow::drawCustomWidgets()
       }
     }
     _canvas->_vd->tf._widgets.next();
+  }
+}
+
+void VVTransferWindow::drawBinLimits()
+{
+  if (_glCanvas1D->makeCurrent())
+  {
+    uchar* limitsTicks = new uchar[_glCanvas1D->getWidth() * 4];
+    _canvas->_vd->makeBinTexture(limitsTicks, _glCanvas1D->getWidth());
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glRasterPos2f(0.0f, 0.0f);
+    glPixelZoom(1.0f, 10.0f);
+    glDrawPixels(_glCanvas1D->getWidth(), 1, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)limitsTicks);
+    glDisable(GL_BLEND);
+    delete[] limitsTicks;
+    _glCanvas1D->makeNonCurrent();
   }
 }
 
@@ -1213,13 +1206,9 @@ void VVTransferWindow::updateLabels()
   {
     _pinSwitcher->setCurrent(2);
     _pTopXSlider->setValue(pw->_top[0]);
-    _pTopYSlider->setValue(pw->_top[1]);
     _pTopXLabel->setText(FXStringFormat("%.2f", _pTopXSlider->getValue()));
-    _pTopYLabel->setText(FXStringFormat("%.2f", _pTopYSlider->getValue()));
     _pBottomXSlider->setValue(pw->_bottom[0]);
-    _pBottomYSlider->setValue(pw->_bottom[1]);
     _pBottomXLabel->setText(FXStringFormat("%.2f", _pBottomXSlider->getValue()));
-    _pBottomYLabel->setText(FXStringFormat("%.2f", _pBottomYSlider->getValue()));
     _pMaxSlider->setValue(pw->_opacity);
     _pMaxLabel->setText(FXStringFormat("%.2f", _pMaxSlider->getValue()));
     _pColorButton->setCheck(pw->hasOwnColor());
@@ -1229,8 +1218,6 @@ void VVTransferWindow::updateLabels()
     _pinSwitcher->setCurrent(3);
     _bWidthSlider->setValue(bw->_size[0]);
     _bWidthLabel->setText(FXStringFormat("%.2f", _bWidthSlider->getValue()));
-    _bHeightSlider->setValue(bw->_size[1]);
-    _bHeightLabel->setText(FXStringFormat("%.2f", _bHeightSlider->getValue()));
     _bMaxSlider->setValue(bw->_opacity);
     _bMaxLabel->setText(FXStringFormat("%.2f", _bMaxSlider->getValue()));
     _bColorButton->setCheck(bw->hasOwnColor());
@@ -1240,8 +1227,6 @@ void VVTransferWindow::updateLabels()
     _pinSwitcher->setCurrent(4);
     _sWidthSlider->setValue(sw->_size[0]);
     _sWidthLabel->setText(FXStringFormat("%.2f", _sWidthSlider->getValue()));
-    _sHeightSlider->setValue(sw->_size[1]);
-    _sHeightLabel->setText(FXStringFormat("%.2f", _sWidthSlider->getValue()));
   }
   else if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)
   {
@@ -1273,7 +1258,6 @@ void VVTransferWindow::drawColorTexture()
     background[1] = uchar(g * 255.0f);
     background[2] = uchar(b * 255.0f);
     background[3] = 255;
-    glDisable(GL_BLEND);
     glRasterPos2f(0.0f, 1.0f);  // pixmap origin is bottom left corner of output window
     glPixelZoom(float(_glCanvas1D->getWidth()), -20.0f); // full canvas width, 20 pixels high
     glDrawPixels(1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)background);
@@ -1284,6 +1268,7 @@ void VVTransferWindow::drawColorTexture()
     glRasterPos2f(0.0f, 1.0f);  // pixmap origin is bottom left corner of output window
     glPixelZoom(float(_glCanvas1D->getWidth()) / float(WIDTH), -10.0f); // full canvas width, 10*2 pixels high, upside-down
     glDrawPixels(WIDTH, 2, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)colorBar);
+    glDisable(GL_BLEND);
     
     _glCanvas1D->makeNonCurrent();
   }
@@ -1302,6 +1287,7 @@ void VVTransferWindow::drawAlphaTexture()
     glPixelZoom(1.0f, -1.0f);
     glDrawPixels(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT, 
       GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)tfTexture);
+    glDisable(GL_BLEND);
     _glCanvas1D->makeNonCurrent();
   }
 }
@@ -1320,6 +1306,7 @@ void VVTransferWindow::draw2DTFTexture()
     glRasterPos2f(0.0f, 0.0f); 
     glPixelZoom(float(_glCanvas2D->getWidth()) / float(WIDTH), float(_glCanvas2D->getHeight()) / float(HEIGHT));
     glDrawPixels(WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)tfTexture);
+    glDisable(GL_BLEND);
     _glCanvas2D->makeNonCurrent();
   }
 }
@@ -1359,6 +1346,12 @@ long VVTransferWindow::onCmdHistogram(FXObject*,FXSelector,void*)
 long VVTransferWindow::onCmdOpacity(FXObject*,FXSelector,void*)
 {
   computeHistogram();
+  drawTF();
+  return 1;
+}
+
+long VVTransferWindow::onCmdBins(FXObject*,FXSelector,void*)
+{
   drawTF();
   return 1;
 }
