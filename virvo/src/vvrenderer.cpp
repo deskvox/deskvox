@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -553,7 +553,7 @@ void vvRenderer::renderPalette()
   w = WIDTH;
   h = (int)viewport[3];
   colors = new float[h * 4];
-  vd->tf.computeTFTexture(h, 1, 1, colors);
+  vd->tf.computeTFTexture(h, 1, 1, colors, vd->real[0], vd->real[1]);
   image = new uchar[w * h * 3];
   for (x=0; x<w; ++x)
     for (y=0; y<h; ++y)

@@ -1,6 +1,6 @@
 // DeskVOX - Volume Exploration Utility for the Desktop
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of DeskVOX.
 //
@@ -312,7 +312,7 @@ long VVPreferenceWindow::onShowBricksSelect(FXObject*, FXSelector, void* ptr)
   if (texrend)
   {
     _shell->_glcanvas->makeCurrent();
-    texrend->setShowBricks(_showBricksButton->getCheck());
+    texrend->setShowBricks((_showBricksButton->getCheck()) ? true : false);
     _shell->_glcanvas->makeNonCurrent();
   }
   return 1;
@@ -325,7 +325,7 @@ long VVPreferenceWindow::onComputeBricksizeSelect(FXObject*, FXSelector, void* p
   if (texrend)
   {
     _shell->_glcanvas->makeCurrent();
-    texrend->setComputeBrickSize(_computeBrickSizeButton->getCheck());
+    texrend->setComputeBrickSize((_computeBrickSizeButton->getCheck()) ? true : false);
     _shell->_glcanvas->makeNonCurrent();
 
     if (texrend->getGeomType() == vvTexRend::VV_BRICKS)
@@ -452,7 +452,10 @@ void VVPreferenceWindow::updateValues()
       if (texrend->isSupported(vvTexRend::VV_SPHERICAL)) _gtCombo->appendItem("3D textures (spherical)");
     }
     _gtCombo->setNumVisible(_gtCombo->getNumItems());
-    if (texrend) _gtCombo->setCurrentItem(int(texrend->getGeomType()));
+    if (texrend)
+    {
+      _gtCombo->setCurrentItem(int(texrend->getGeomType()));
+    }
 
     // Voxel type:
     _vtCombo->clearItems();

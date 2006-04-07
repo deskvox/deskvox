@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -120,6 +120,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   interpolation = true;
 #ifdef HAVE_CG
   _currentShader = vd->chan - 1;
+#else
+  _currentShader = 0;  
 #endif
   _useOnlyOneBrick = false;
   _areBricksCreated = false;
@@ -127,10 +129,10 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   // Find out which OpenGL extensions are supported:
 #if defined(GL_VERSION_1_2) && defined(__APPLE__)
-  extTex3d = true;
-  arbMltTex   = true;
+  extTex3d  = true;
+  arbMltTex = true;
 #else
-  extTex3d = vvGLTools::isGLextensionSupported("GL_EXT_texture3D");
+  extTex3d  = vvGLTools::isGLextensionSupported("GL_EXT_texture3D");
   arbMltTex = vvGLTools::isGLextensionSupported("GL_ARB_multitexture");
 #endif
 
@@ -237,7 +239,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
 #ifdef HAVE_CG
   if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
-      _currentShader = 9;
+  {
+    _currentShader = 8;
+  }
 #endif
 
   if(voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG)
@@ -558,8 +562,9 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
   removeTextures();                               // first remove previously generated textures from TRAM
 
   frames = vd->frames;
-  // total number of textures
-  if(axes==1)
+  
+  // Determine total number of textures:
+  if (axes==1)
   {
     textures = vd->vox[2] * frames;
   }
@@ -664,7 +669,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
                   }
                   break;
                 case VV_PIX_SHD:
-                  rgbaSlice[i][ texSliceIndex] = (uchar)rawVal[0];
+                  rgbaSlice[i][texSliceIndex] = (uchar)rawVal[0];
                   break;
                 case VV_RGBA:
                   for (c=0; c<4; ++c)
@@ -728,7 +733,6 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
         }
         else
         {
-
           accommodated = false;
         }
         ++texIndex;
@@ -1231,7 +1235,7 @@ void vvTexRend::updateTransferFunction()
 
   // Generate arrays from pins:
   getLUTSize(size);
-  vd->tf.computeTFTexture(size[0], size[1], size[2], rgbaTF);
+  vd->tf.computeTFTexture(size[0], size[1], size[2], rgbaTF, vd->real[0], vd->real[1]);
 
   updateLUT(1.0f);                                // generate color lookup table
 
@@ -1253,25 +1257,21 @@ void vvTexRend::updateVolumeData()
 
 //----------------------------------------------------------------------------
 void vvTexRend::updateVolumeData(int offsetX, int offsetY, int offsetZ,
-int sizeX, int sizeY, int sizeZ)
+  int sizeX, int sizeY, int sizeZ)
 {
   switch (geomType)
   {
     case VV_VIEWPORT:
-      updateTextures3D(offsetX, offsetY, offsetZ,
-        sizeX, sizeY, sizeZ, false);
+      updateTextures3D(offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ, false);
       break;
     case VV_BRICKS:
-      updateTextureBricks(offsetX, offsetY, offsetZ,
-        sizeX, sizeY, sizeZ);
+      updateTextureBricks(offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ);
       break;
     case VV_SLICES:
-      updateTextures2D(1, offsetX, offsetY, offsetZ,
-        sizeX, sizeY, sizeZ);
+      updateTextures2D(1, offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ);
       break;
     case VV_CUBIC2D:
-      updateTextures2D(3, offsetX, offsetY, offsetZ,
-        sizeX, sizeY, sizeZ);
+      updateTextures2D(3, offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ);
       break;
   }
 }
@@ -1514,7 +1514,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
 }
 
 vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes, int offsetX, int offsetY, int offsetZ,
-int sizeX, int sizeY, int sizeZ)
+  int sizeX, int sizeY, int sizeZ)
 {
   int rawVal[4];
   int rawSliceSize;
@@ -1541,56 +1541,38 @@ int sizeX, int sizeY, int sizeZ)
 
   frames = vd->frames;
 
-  //ss[0] = offsetX;
   ss[0] = vd->vox[0] - offsetX - sizeX;
   sw[0] = offsetY;
-  //sw[0] = vd->vox[1] - offsetY - sizeY;
   sh[0] = offsetZ;
-  //sh[0] = vd->vox[2] - offsetZ - sizeZ;
 
   texW[0] = offsetY;
   texH[0] = offsetZ;
 
-  //ss[1] = offsetY;
   ss[1] = vd->vox[1] - offsetY - sizeY;
   sh[1] = offsetZ;
-  //sw[1] = vd->vox[2] - offsetZ - sizeZ;
   sw[1] = offsetX;
-  //sh[1] = vd->vox[0] - offsetX - sizeX;
 
   texW[1] = offsetZ;
   texH[1] = offsetX;
 
-  //ss[2] = offsetZ;
   ss[2] = vd->vox[2] - offsetZ - sizeZ;
   sw[2] = offsetX;
-  //sw[2] = vd->vox[0] - offsetX - sizeX;
   sh[2] = offsetY;
-  //sh[2] = vd->vox[1] - offsetY - sizeY;
 
   texW[2] = offsetX;
   texH[2] = offsetY;
 
-  //  rs[0] = ts_clamp(offsetX + sizeX, 0, vd->vox[0]);
   rs[0] = ts_clamp(vd->vox[0] - offsetX, 0, vd->vox[0]);
   rw[0] = ts_clamp(offsetY + sizeY, 0, vd->vox[1]);
-  //rw[0] = ts_clamp(vd->vox[1] - offsetY, 0, vd->vox[1]);
   rh[0] = ts_clamp(offsetZ + sizeZ, 0, vd->vox[2]);
-  //rh[0] = ts_clamp(vd->vox[2] - offsetZ, 0, vd->vox[2]);
 
-  //rs[1] = ts_clamp(offsetY + sizeY, 0, vd->vox[1]);
   rs[1] = ts_clamp(vd->vox[1] - offsetY, 0, vd->vox[1]);
   rh[1] = ts_clamp(offsetZ + sizeZ, 0, vd->vox[2]);
-  //rw[1] = ts_clamp(vd->vox[2] - offsetZ, 0, vd->vox[2]);
   rw[1] = ts_clamp(offsetX + sizeX, 0, vd->vox[0]);
-  //rh[1] = ts_clamp(vd->vox[0] - offsetX, 0, vd->vox[0]);
 
-  //rs[2] = ts_clamp(offsetZ + sizeZ, 0, vd->vox[2]);
   rs[2] = ts_clamp(vd->vox[2] - offsetZ, 0, vd->vox[2]);
   rw[2] = ts_clamp(offsetX + sizeX, 0, vd->vox[0]);
-  //rw[2] = ts_clamp(vd->vox[0] - offsetX, 0, vd->vox[0]);
   rh[2] = ts_clamp(offsetY + sizeY, 0, vd->vox[1]);
-  //rh[2] = ts_clamp(vd->vox[1] - offsetY, 0, vd->vox[1]);
 
   rawLineSize  = vd->vox[0] * vd->getBPV();
   rawSliceSize = vd->getSliceBytes();
@@ -1615,11 +1597,15 @@ int sizeX, int sizeY, int sizeZ)
   tw[1] = th[0] = sizeZ;
 
   for (i = 3-axes; i < 3; i++)
+  {
     texSize[i] = tw[i] * th[i] * texelsize;
+  }
 
   // generate texture data arrays
   for (i=3-axes; i<3; ++i)
+  {
     rgbaSlice[i] = new uchar[texSize[i]];
+  }
 
   // generate texture data
   for (f = 0; f < frames; f++)
@@ -1630,11 +1616,10 @@ int sizeX, int sizeY, int sizeZ)
     {
       memset(rgbaSlice[i], 0, texSize[i]);
 
-      std::cerr << "ss[i]: " << ss[i] << " sw[i]: " << sw[i] << " sh[i]: " << sh[i] << endl;
-      std::cerr << "rs[i]: " << rs[i] << " rw[i]: " << rw[i] << " rh[i]: " << rh[i] << endl;
-
       if (axes == 1)
+      {
         texIndex = f * vd->vox[i] + ss[i];
+      }
       else
       {
         texIndex = f * (vd->vox[0] + vd->vox[1] + vd->vox[2]);
@@ -1710,8 +1695,6 @@ int sizeX, int sizeY, int sizeZ)
           }
         }
 
-        //memset(rgbaSlice[i], 255, texSize[i]);
-
         glBindTexture(GL_TEXTURE_2D, texNames[texIndex]);
         glTexSubImage2D(GL_TEXTURE_2D, 0, texW[i], texH[i], tw[i], th[i],
           texFormat, GL_UNSIGNED_BYTE, rgbaSlice[i]);
@@ -1721,10 +1704,10 @@ int sizeX, int sizeY, int sizeZ)
     }
   }
 
-  std::cerr << "end" << endl;
-
   for (i = 3-axes; i < 3; i++)
+  {
     delete[] rgbaSlice[i];
+  }
 
   return OK;
 }
@@ -3329,8 +3312,9 @@ void vvTexRend::renderTex2DSlices(float zz)
     zPos = 0.0f;
   }
 
-                                                  // offset for current time step
+  // Offset for current time step:
   texIndex = float(vd->getCurrentFrame()) * float(vd->vox[2]);
+  
   if (zz>0.0f)                                    // draw textures back to front?
   {
     texIndex += float(vd->vox[2] - 1);
@@ -3367,12 +3351,12 @@ void vvTexRend::renderTex2DSlices(float zz)
     }
 
     glBegin(GL_QUADS);
-    glColor4f(1.0, 1.0, 1.0, 1.0);
-    glNormal3f(normal.e[0], normal.e[1], normal.e[2]);
-    glTexCoord2f(texMin[0], texMax[1]); glVertex3f(-size2.e[0],  size2.e[1], zPos);
-    glTexCoord2f(texMin[0], texMin[1]); glVertex3f(-size2.e[0], -size2.e[1], zPos);
-    glTexCoord2f(texMax[0], texMin[1]); glVertex3f( size2.e[0], -size2.e[1], zPos);
-    glTexCoord2f(texMax[0], texMax[1]); glVertex3f( size2.e[0],  size2.e[1], zPos);
+      glColor4f(1.0, 1.0, 1.0, 1.0);
+      glNormal3f(normal.e[0], normal.e[1], normal.e[2]);
+      glTexCoord2f(texMin[0], texMax[1]); glVertex3f(-size2.e[0],  size2.e[1], zPos);
+      glTexCoord2f(texMin[0], texMin[1]); glVertex3f(-size2.e[0], -size2.e[1], zPos);
+      glTexCoord2f(texMax[0], texMin[1]); glVertex3f( size2.e[0], -size2.e[1], zPos);
+      glTexCoord2f(texMax[0], texMax[1]); glVertex3f( size2.e[0],  size2.e[1], zPos);
     glEnd();
 
     zPos += texSpacing;

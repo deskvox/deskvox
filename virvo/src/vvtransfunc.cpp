@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -117,8 +117,10 @@ bool vvTransFunc::isEmpty()
 //----------------------------------------------------------------------------
 /** Set default color values in the global color transfer function.
  All previous color widgets are deleted, other widgets are not affected.
+ @param index color scheme
+ @param min,max data range for color scheme
 */
-void vvTransFunc::setDefaultColors(int index)
+void vvTransFunc::setDefaultColors(int index, float min, float max)
 {
   deleteWidgets(TF_COLOR);
   switch (index)
@@ -126,47 +128,47 @@ void vvTransFunc::setDefaultColors(int index)
     case 0:                                       // bright colors
     default:
       // Set RGBA table to bright colors (range: blue->green->red):
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), 0.0f),  vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), 0.33f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), 0.67f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), 1.0f),  vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), min),  vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), (max-min) * 0.33f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), (max-min) * 0.67f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), max),  vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
 
     case 1:                                       // hue gradient
       // Set RGBA table to maximum intensity and value HSB colors:
-      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), 0.2f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), 0.4f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), 0.6f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), 0.8f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 1.0f), 1.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), (max-min) * 0.2f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), (max-min) * 0.4f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), (max-min) * 0.6f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), (max-min) * 0.8f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 1.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
 
     case 2:                                       // grayscale ramp
       // Set RGBA table to grayscale ramp (range: black->white).
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), 1.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
 
     case 3:                                       // white
       // Set RGBA table to all white values:
-      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), 1.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
 
     case 4:                                       // red ramp
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), 1.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
 
     case 5:                                       // green ramp
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), 1.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
 
     case 6:                                       // blue ramp
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), 1.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
   }
 }
@@ -181,8 +183,9 @@ int vvTransFunc::getNumDefaultColors()
 //----------------------------------------------------------------------------
 /** Set default alpha values in the transfer function.
  The previous alpha pins are deleted, color pins are not affected.
+ @param min,max data range for alpha scheme
 */
-void vvTransFunc::setDefaultAlpha(int index)
+void vvTransFunc::setDefaultAlpha(int index, float min, float max)
 {
   vvDebugMsg::msg(2, "vvTransFunc::setDefaultAlpha()");
 
@@ -192,13 +195,13 @@ void vvTransFunc::setDefaultAlpha(int index)
   {
     case 0:                                       // ascending (0->1)
     default:
-      _widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, 1.0f, 2.0f, 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, max, 2.0f * (max-min), 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
     case 1:                                       // descending (1->0)
-      _widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, 0.0f, 2.0f, 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, min, 2.0f * (max-min), 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
     case 2:                                       // opaque (all 1)
-      _widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, 0.5f, 1.0f, 1.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, (max-min)/2.0f+min, max-min, max-min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
   }
 }
@@ -342,23 +345,25 @@ float vvTransFunc::computeOpacity(float x, float y, float z)
  @param w,h,d  number of array entries in each dimension
  @param array  _allocated_ float array in which to store computed values [0..1]
                Space for w*h*d float values must be provided.
+ @param min,max min/max values to create texture for               
 */
-void vvTransFunc::computeTFTexture(int w, int h, int d, float* array)
+void vvTransFunc::computeTFTexture(int w, int h, int d, float* array, 
+  float minX, float maxX, float minY, float maxY, float minZ, float maxZ)
 {
   vvColor col;
   int x, y, z, index;
-  float norm[3];                                  // normalized 3D position
+  float norm[3];    // normalized 3D position
 
   index = 0;
   for (z=0; z<d; ++z)
   {
-    norm[2] = (d==1) ? -1.0f : (float(z) / float(d-1));
+    norm[2] = (d==1) ? -1.0f : ((float(z) / float(d-1)) * (maxZ - minZ) + minZ);
     for (y=0; y<h; ++y)
     {
-      norm[1] = (h==1) ? -1.0f : (float(y) / float(h-1));
+      norm[1] = (h==1) ? -1.0f : ((float(y) / float(h-1)) * (maxY - minY) + minY);
       for (x=0; x<w; ++x)
       {
-        norm[0] = float(x) / float(w-1);
+        norm[0] = (float(x) / float(w-1)) * (maxX - minX) + minX;
         col = computeColor(norm[0], norm[1], norm[2]);
         array[index]   = col[0];
         array[index+1] = col[1];
@@ -373,14 +378,15 @@ void vvTransFunc::computeTFTexture(int w, int h, int d, float* array)
 //----------------------------------------------------------------------------
 /** Returns RGBA texture values for a color preview bar: without opacity at the top,
   with opacity at the bottom.
-@param width  width of color bar [pixels]
-@param colors pointer to _allocated_ memory providing space for num x 2 x 4 bytes.
-              Byte quadruple 0 will be considered to correspond with scalar
-              value 0.0, quadruple num-1 will be considered to correspond with
-              scalar value 1.0. The resulting RGBA values are stored in the
-              following order: RGBARGBARGBA...
+  @param width  width of color bar [pixels]
+  @param colors pointer to _allocated_ memory providing space for num x 2 x 4 bytes.
+               Byte quadruple 0 will be considered to correspond with scalar
+                value 0.0, quadruple num-1 will be considered to correspond with
+                scalar value 1.0. The resulting RGBA values are stored in the
+               following order: RGBARGBARGBA...
+  @param min,max data range for which color bar is to be created. Use 0..1 for integer data types.
 */
-void vvTransFunc::makeColorBar(int width, uchar* colors)
+void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max)
 {
   float* rgba;                                    // component values
   int c, x, index;
@@ -389,7 +395,7 @@ void vvTransFunc::makeColorBar(int width, uchar* colors)
 
   // Compute color components:
   rgba = new float[width * 4];                    // four values per pixel
-  computeTFTexture(width, 1, 1, rgba);
+  computeTFTexture(width, 1, 1, rgba, min, max);
 
   // Convert to uchar:
   for (x=0; x<width; ++x)
@@ -411,15 +417,16 @@ void vvTransFunc::makeColorBar(int width, uchar* colors)
  @param width,height size of texture [pixels]
  @param texture  _allocated_ array in which to store texture values.
                  Space for width*height*4 bytes must be provided.
+ @param min,max data range for which alpha texture is to be created. Use 0..1 for integer data types.
 */
-void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture)
+void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float min, float max)
 {
   const int GRAY_LEVEL = 160;
   const int ALPHA_LEVEL = 230;
   int x, y, index1D, index2D, barHeight;
 
   float* rgba = new float[width * 4];
-  computeTFTexture(width, 1, 1, rgba);
+  computeTFTexture(width, 1, 1, rgba, min, max);
   memset(texture, 0, width * height * 4); // make black and transparent
 
   for (x=0; x<width; ++x)
@@ -445,12 +452,12 @@ void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture)
  @param texture  _allocated_ array in which to store texture values.
                  Space for width*height*4 bytes must be provided.
 */
-void vvTransFunc::make2DTFTexture(int width, int height, uchar* texture)
+void vvTransFunc::make2DTFTexture(int width, int height, uchar* texture, float minX, float maxX, float minY, float maxY)
 {
   int x, y, index;
 
   float* rgba = new float[width * height * 4];
-  computeTFTexture(width, height, 1, rgba);
+  computeTFTexture(width, height, 1, rgba, minX, maxX, minY, maxY);
 
   for (y=0; y<height; ++y)
   {
@@ -472,7 +479,7 @@ void vvTransFunc::make2DTFTexture(int width, int height, uchar* texture)
   @param width number of LUT entries (typically 256 or 4096, depending on bpv)
   @param lut     _allocated_ space with space for entries*4 bytes
 */
-void vvTransFunc::make8bitLUT(int width, uchar* lut)
+void vvTransFunc::make8bitLUT(int width, uchar* lut, float min, float max)
 {
   float* rgba;                                    // temporary LUT in floating point format
   int i, c;
@@ -480,7 +487,7 @@ void vvTransFunc::make8bitLUT(int width, uchar* lut)
   rgba = new float[4 * width];
 
   // Generate arrays from pins:
-  computeTFTexture(width, 1, 1, rgba);
+  computeTFTexture(width, 1, 1, rgba, min, max);
 
   // Copy RGBA values to internal array:
   for (i=0; i<width; ++i)
@@ -638,7 +645,7 @@ void vvTransFunc::makePreintLUTCorrect(int width, uchar *preIntTable, float thic
 
   // Generate arrays from pins:
   float *rgba = new float[width * 4];
-  computeTFTexture(width, 1, 1, rgba);
+  computeTFTexture(width, 1, 1, rgba, 0.0f, 1.0f);
 
   // cerr << "Calculating dependent texture - Please wait ...";
   vvToolshed::initProgress(width);
@@ -732,7 +739,7 @@ void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float th
 
   // Generate arrays from pins:
   float *rgba = new float[width * 4];
-  computeTFTexture(width, 1, 1, rgba);
+  computeTFTexture(width, 1, 1, rgba, 0.0f, 1.0f);
 
   // cerr << "Calculating optimized dependent texture" << endl;
   int rcol=0, gcol=0, bcol=0, acol=0;

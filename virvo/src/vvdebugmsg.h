@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -25,7 +25,7 @@
 
 /** Manager for run-time debug messages.
     Allows the programmer to output debug messages only when required.
-    @author Jurgen P. Schulze (schulze@cs.brown.edu)
+    @author Jurgen P. Schulze (jschulze@ucsd.edu)
 */
 class VIRVOEXPORT vvDebugMsg
 {

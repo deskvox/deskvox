@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -54,7 +54,7 @@ class VIRVOEXPORT vvTFWidget
     char* _name;                                  ///< widget name (bone, soft tissue, etc)
 
   public:
-    float _pos[3];                                ///< position of widget's center in transfer function space [0..1 is inside TF space, other values are valid but outside]
+    float _pos[3];                                ///< position of widget's center [volume data space]
 
     vvTFWidget();
     vvTFWidget(float, float, float);
@@ -77,7 +77,7 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
 
   public:
     vvColor _col;                                 ///< RGB color
-    float _size[3];                               ///< width, height, depth of bell's bounding box [TF space is 0..1]
+    float _size[3];                               ///< width, height, depth of bell's bounding box [volume data space]
     float _opacity;                               ///< maximum opacity [0..1]
 
     vvTFBell();
@@ -101,8 +101,8 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
 
   public:
     vvColor _col;                                 ///< RGB color
-    float _top[3];                                ///< width at top [0..1]
-    float _bottom[3];                             ///< width at bottom of pyramid [0..1]
+    float _top[3];                                ///< width at top [volume data space]
+    float _bottom[3];                             ///< width at bottom of pyramid [volume data space]
     float _opacity;                               ///< maximum opacity [0..1]
 
     vvTFPyramid();
@@ -135,7 +135,7 @@ class VIRVOEXPORT vvTFColor : public vvTFWidget
 class VIRVOEXPORT vvTFSkip : public vvTFWidget
 {
   public:
-    float _size[3];          ///< width, height, depth of skipped area [TF space is 0..1]
+    float _size[3];          ///< width, height, depth of skipped area [volume data space]
 
     vvTFSkip();
     vvTFSkip(vvTFSkip*);
@@ -152,7 +152,7 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
 class VIRVOEXPORT vvTFCustom : public vvTFWidget
 {
   public:
-    float _size[3];                ///< width, height, depth of TF area [TF space is 0..1]
+    float _size[3];                ///< width, height, depth of TF area [volume data space]
     std::list<vvTFPoint*> _points; ///< list of control points; coordinates are relative to widget center
     vvTFPoint* _currentPoint;      ///< currently selected point
 

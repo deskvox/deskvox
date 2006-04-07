@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -57,20 +57,20 @@ class VIRVOEXPORT vvTransFunc
     virtual ~vvTransFunc();
     bool isEmpty();
     void deleteColorWidgets();
-    void setDefaultColors(int=0);
+    void setDefaultColors(int, float, float);
     int  getNumDefaultColors();
-    void setDefaultAlpha(int=0);
+    void setDefaultAlpha(int, float, float);
     int  getNumDefaultAlpha();
     int  getNumWidgets(WidgetType);
     void deleteWidgets(WidgetType);
-    void computeTFTexture(int, int, int, float*);
+    void computeTFTexture(int, int, int, float*, float, float, float=0.0f, float=0.0f, float=0.0f, float=0.0f);
     vvColor computeBGColor(float, float, float);
     vvColor computeColor(float, float=-1.0f, float=-1.0f);
     float computeOpacity(float, float=-1.0f, float=-1.0f);
-    void makeColorBar(int, uchar*);
-    void makeAlphaTexture(int, int, uchar*);
-    void make2DTFTexture(int, int, uchar*);
-    void make8bitLUT(int, uchar*);
+    void makeColorBar(int, uchar*, float, float);
+    void makeAlphaTexture(int, int, uchar*, float, float);
+    void make2DTFTexture(int, int, uchar*, float, float, float, float);
+    void make8bitLUT(int, uchar*, float, float);
     void makeFloatLUT(int, float*);
     void makePreintLUTOptimized(int width, uchar *preintLUT, float thickness=1.0);
     void makePreintLUTCorrect(int width, uchar *preintLUT, float thickness=1.0);

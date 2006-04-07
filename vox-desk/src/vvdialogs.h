@@ -1,6 +1,6 @@
 // DeskVOX - Volume Exploration Utility for the Desktop
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 // 
 // This file is part of DeskVOX.
 //
@@ -735,6 +735,7 @@ class VVFloatRangeDialog : public FXDialogBox
       ID_MAX_DATA,
       ID_BOT_PERCENT,
       ID_TOP_PERCENT,
+      ID_HDR,
       ID_FAST,
       ID_SKIP,
       ID_LOCK,
@@ -748,7 +749,7 @@ class VVFloatRangeDialog : public FXDialogBox
     FXTextField* _topClamp;
     FXRadioButton* _isoRadio;
     FXRadioButton* _weightRadio;
-    FXRadioButton* _regularRadio;
+    FXCheckButton* _hdrCheck;
     FXCheckButton* _fastCheck;
     FXCheckButton* _skipCheck;
     FXCheckButton* _lockCheck;
@@ -766,6 +767,7 @@ class VVFloatRangeDialog : public FXDialogBox
     long onBottomPercent(FXObject*, FXSelector, void*);
     long onTopPercent(FXObject*, FXSelector, void*);
     long onFast(FXObject*, FXSelector, void*);
+    long onHDRMapping(FXObject*, FXSelector, void*);
     void updateValues();
     void updateDependents();
     virtual void show();

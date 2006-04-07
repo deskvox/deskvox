@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -39,7 +39,7 @@ is supposed to be system independent). vvDicom is a pretty good DICOM
 image file reader which can be extended to any unknown formats. vvVector3/4
 and vvMatrix are components of vvVecmath, a useful library for linear algebra.
 <DT><B>Copyright</B>             <DD>(c) 1999-2005 J&uuml;rgen P. Schulze. All rights reserved.
-<DT><B>Email</B>                 <DD>schulze@cs.brown.edu
+<DT><B>Email</B>                 <DD>jschulze@ucsd.edu
 <DT><B>Institution</B>           <DD>Brown University
 </DL>
 */

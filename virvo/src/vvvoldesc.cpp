@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -763,10 +763,11 @@ void vvVolDesc::normalizeHistogram(int buckets, int* count, float* normalized, N
   @param chan1   first channel to create histogram for (0 is first channel of data set)
   @param numChan number of channels to create histogram for (determines dimensionality)
   @param buckets number of counters to use for histogram computation in each dimension (expects array int[numChan])
-@param count   _allocated_ array with 'buckets[0] * buckets[1] * ...' entries of type int.
-@return histogram values in 'count'
+  @param count   _allocated_ array with 'buckets[0] * buckets[1] * ...' entries of type int.
+  @param min,max data range for which histogram is to be created. Use 0..1 for integer data types.
+  @return histogram values in 'count'
 */
-void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, int* count)
+void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, int* count, float min, float max)
 {
   uchar* raw;                                     // raw voxel data
   float* voxVal;                                  // voxel values
@@ -795,7 +796,8 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
   numVoxels = getFrameVoxels();
   for (c=0; c<numChan; ++c)
   {
-    valPerBucket[c] = getValueRange() / float(buckets[c]);
+    if (bpc==4) valPerBucket[c] = (max-min) / float(buckets[c]);
+    else valPerBucket[c] = getValueRange() / float(buckets[c]);
   }
   for (f=0; f<frames; ++f)
   {
@@ -822,7 +824,7 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
           default: assert(0); break;
         }
 
-        bucket[c] = int(float(voxVal[c] - ((bpc==4) ? real[0] : 0)) / valPerBucket[c]);
+        bucket[c] = int(float(voxVal[c] - ((bpc==4) ? min : 0)) / valPerBucket[c]);
         bucket[c] = ts_clamp(bucket[c], 0, buckets[c]-1);
         factor = 1;
         for (m=0; m<c; ++m)
@@ -845,16 +847,17 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
  Texture values are returned as 3 bytes per texel, bottom to top,
  ordered RGBRGBRGB...
  The y axis is logarithmic.
- @param frame           animation frame to make histogram texture for (-1 for all frames)
- @param chan1           first channel to make texture for (0 for first channel in data set)
- @param numChan         number of consecutive channels to calculate histogram for
- @param size            array of edge lengths for texture [texels]
- @param data            pointer to _pre-allocated_ memory space providing
-                        twidth * theight * 4 bytes
- @param color           color for histogram foreground (background is transparent)
+  @param frame           animation frame to make histogram texture for (-1 for all frames)
+  @param chan1           first channel to make texture for (0 for first channel in data set)
+  @param numChan         number of consecutive channels to calculate histogram for
+  @param size            array of edge lengths for texture [texels]
+  @param data            pointer to _pre-allocated_ memory space providing
+                         twidth * theight * 4 bytes
+  @param color           color for histogram foreground (background is transparent)
+  @param min,max         data range for which histogram is to be created. Use 0..1 for integer data types.
 */
 void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* size, uchar* data, 
-  NormalizationType ntype, vvColor* color)
+  NormalizationType ntype, vvColor* color, float min, float max)
 {
   const int BPT = 4;                              // bytes per texel
   float* hist;                                    // histogram values (float)
@@ -875,12 +878,12 @@ void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* siz
   numValues = 1;
   for (c=0; c<numChan; ++c)
   {
-    buckets[c] = ts_min(256, size[c]);
+    buckets[c] = size[c];
     numValues *= buckets[c];
   }
   count = new int[numValues];
   hist = new float[numValues];
-  makeHistogram(frame, chan1, numChan, buckets, count);
+  makeHistogram(frame, chan1, numChan, buckets, count, min, max);
   normalizeHistogram(numValues, count, hist, ntype);
 
   // Draw histogram:
@@ -1101,7 +1104,7 @@ void vvVolDesc::createHistogramFiles(bool overwrite)
     }
 
     // Compute histogram:
-    makeHistogram(-1, m, 1, buckets, hist);
+    makeHistogram(-1, m, 1, buckets, hist, real[0], real[1]);
 
     // Check if file exists:
     if (!overwrite && vvToolshed::isFile(fileName))
@@ -2684,7 +2687,7 @@ void vvVolDesc::printHistogram(int frame, int channel)
   int buckets[1] = {32};
 
   hist = new int[buckets[0]];
-  makeHistogram(frame, channel, 1, buckets, hist);
+  makeHistogram(frame, channel, 1, buckets, hist, real[0], real[1]);
   for (i=0; i<buckets[0]; ++i)
 
   {
@@ -3554,7 +3557,7 @@ float vvVolDesc::findClampValue(int frame, int channel, float threshold)
   frameVoxels = getFrameVoxels();
   thresholdVoxelCount = int(float(frameVoxels) * threshold);
   hist = new int[buckets[0]];
-  makeHistogram(frame, channel, 1, buckets, hist);
+  makeHistogram(frame, channel, 1, buckets, hist, real[0], real[1]);
   for (i=0; i<buckets[0]; ++i)
   {
     if (voxelCount >= thresholdVoxelCount) 
@@ -3711,7 +3714,7 @@ int vvVolDesc::findNumTransparent(int frame)
     rgba = new float[4 * lutEntries];
 
     // Generate arrays from pins:
-    tf.computeTFTexture(lutEntries, 1, 1, rgba);
+    tf.computeTFTexture(lutEntries, 1, 1, rgba, real[0], real[1]);
   }
 
   // Search volume:
@@ -4681,11 +4684,12 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
   double localSum;
   float tmp;
   float min,max;
+  float valuesPerBin;
   int numVoxels;
   int i,j;
   int index;
-  int valuesPerBin;
   int numTF;
+  int before;
 
   assert(binning!=LINEAR);    // this routine supports only iso-data and opacity-weighted binning
   if (bpc!=4 || chan!=1) 
@@ -4716,7 +4720,8 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
   // Remove areas covered by TFSkip widgets:
   if (skipWidgets)
   {
-    cerr << "Removing skipped regions from data array" << endl;
+    cerr << "Removing skipped regions from data array" << endl;;
+    before = numVoxels;
     numTF = tf._widgets.count();
     tf._widgets.first();
     for (j=0; j<numTF; ++j)
@@ -4726,17 +4731,23 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
         min = sw->_pos[0] - sw->_size[0]/2.0f;
         max = sw->_pos[0] + sw->_size[0]/2.0f;
         cerr << "Ignoring values in Skip widget from " << min << " to " << max << endl;
-        for (i=0; i<numVoxels; ++i)
+        i=0;
+        while (i<numVoxels)
         {
           if (sortedData[i] >= min && sortedData[i] <= max) // is data value between skip widget boundaries?
           {
+            if (i<numVoxels-1)
+            {
+              memcpy(&sortedData[i], &sortedData[i+1], sizeof(float) * (numVoxels-i-1));
+            }
             --numVoxels;
-            memcpy(&sortedData[i], &sortedData[i+1], sizeof(float) * (numVoxels-i));
           }
+          else ++i;
         }        
       }
       tf._widgets.next();
     }
+    cerr << (before - numVoxels) << " voxels removed" << endl;
   }
   
   // Make sure min and max of data range are included in data:
@@ -4765,7 +4776,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
   cerr << " done" << endl;
   
   // Trim beginning and end of sorted data array to remove values below/above realMin/realMax:
-  if (lockRange || binning==OPACITY)
+  if (lockRange)
   {
     cerr << "Trimming values to maintain range begin/end" << endl;
     
@@ -4786,19 +4797,20 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
     opacities = new float[numVoxels * sizeof(float)];
     for (i=0; i<numVoxels; ++i)
     {
-      opacities[i] = tf.computeOpacity((sortedData[i] - real[0]) / (real[1] - real[0]));
+      opacities[i] = tf.computeOpacity(sortedData[i]);
       sumOpacities += opacities[i];
     }
   }
   
   // Determine bin limits:
-  valuesPerBin = numVoxels / NUM_HDR_BINS;
   switch (binning)
   {
     case ISO_DATA:
+      valuesPerBin = float(numVoxels) / float(NUM_HDR_BINS);
       for (i=0; i<NUM_HDR_BINS; ++i)
       {
-        index = ts_clamp(i * valuesPerBin, 0, numVoxels-1);
+        index = int(float(i) * valuesPerBin);
+        index = ts_clamp(index, 0, numVoxels-1);
         _hdrBinLimits[i] = sortedData[index];
       }
       break;
@@ -4810,12 +4822,20 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
       {
         while (localSum<opacityPerBin)
         {
-          if (j>=numVoxels) j = numVoxels-1;
-          localSum += opacities[j];
-          ++j;
-          if (localSum>opacityPerBin)
+          if (j<numVoxels)
           {
-            _hdrBinLimits[i] = sortedData[j-1];
+            localSum += opacities[j];
+            ++j;
+            if (localSum>=opacityPerBin)
+            {
+              _hdrBinLimits[i] = sortedData[j-1];
+              localSum = 0.0;
+              break;
+            }
+          }
+          else 
+          {
+            _hdrBinLimits[i] = sortedData[numVoxels-1];
             localSum = 0.0;
             break;
           }
@@ -4880,7 +4900,10 @@ int vvVolDesc::findHDRBin(float fval)
   
   for (i=0; i<NUM_HDR_BINS; ++i)
   {
-    if (_hdrBinLimits[i] > fval) return (ts_max(i-1, 0));
+    if (_hdrBinLimits[i] > fval) 
+    {
+      return ts_max(i-1, 0);
+    }
   }
   return NUM_HDR_BINS-1;
 }
@@ -4896,15 +4919,18 @@ void vvVolDesc::makeBinTexture(uchar* texture, int width)
   int i, index;
   
   memset(texture, 0, width * 4);    // initialize with transparent texels
-  range = real[1] - real[0];
-  for (i=0; i<NUM_HDR_BINS; ++i)
+  if (bpc==4)
   {
-    index = int((_hdrBinLimits[i] - real[0]) / range * float(NUM_HDR_BINS-1));
-    index = ts_clamp(index, 0, NUM_HDR_BINS);
-    texture[4*index]   = 0;
-    texture[4*index+1] = 0;
-    texture[4*index+2] = 0;
-    texture[4*index+3] = 255;   // make tick marks opaque
+    range = real[1] - real[0];
+    for (i=0; i<NUM_HDR_BINS; ++i)
+    {
+      index = int((_hdrBinLimits[i] - real[0]) / range * float(width-1));
+      index = ts_clamp(index, 0, width-1);
+      texture[4*index]   = 0;
+      texture[4*index+1] = 0;
+      texture[4*index+2] = 0;
+      texture[4*index+3] = 255;   // make tick marks opaque
+    }
   }
 }
 

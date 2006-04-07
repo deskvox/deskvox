@@ -1,6 +1,6 @@
 // DeskVOX - Volume Exploration Utility for the Desktop
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 // 
 // This file is part of DeskVOX.
 //
@@ -88,6 +88,10 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_COLOR_PICKER,  VVTransferWindow::onChngPickerColor),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_NEW_POINT,     VVTransferWindow::onCmdNewPoint),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_DELETE_POINT,  VVTransferWindow::onCmdDeletePoint),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_MIN,           VVTransferWindow::onCmdSetMin),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_MAX,           VVTransferWindow::onCmdSetMax),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_ZOOM_LUT,      VVTransferWindow::onCmdZoomLUT),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_CENTER,        VVTransferWindow::onCmdCenter),
 };
 
 FXIMPLEMENT(VVTransferWindow,FXDialogBox,VVTransferWindowMap,ARRAYNUMBER(VVTransferWindowMap))
@@ -111,11 +115,14 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _glVisual1D = new FXGLVisual(getApp(), VISUAL_DOUBLEBUFFER);
   _glCanvas1D = new FXGLCanvas(glpanel, _glVisual1D, this, ID_TF_CANVAS_1D, LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT);
 
-  FXHorizontalFrame* legendFrame = new FXHorizontalFrame(page1, LAYOUT_FILL_X);
-  _realMinLabel = new FXLabel(legendFrame, "Min = 0", NULL, LABEL_NORMAL | LAYOUT_LEFT);
-  _realPosLabel = new FXLabel(legendFrame, "", NULL, LABEL_NORMAL | LAYOUT_CENTER_X);
-  _mousePosLabel = new FXLabel(legendFrame, "", NULL, LABEL_NORMAL | LAYOUT_CENTER_X);
-  _realMaxLabel = new FXLabel(legendFrame, "Max = 1", NULL, LABEL_NORMAL | LAYOUT_RIGHT);
+  FXHorizontalFrame* zoomFrame = new FXHorizontalFrame(page1, LAYOUT_FILL_X);
+  _zoomMinButton = new FXButton(zoomFrame, "", NULL, this, ID_MIN, FRAME_RAISED | FRAME_THICK| LAYOUT_LEFT,0,0,0,0,20,20);
+  FXHorizontalFrame* realFrame = new FXHorizontalFrame(zoomFrame, LAYOUT_CENTER_X);
+  _realMinLabel = new FXLabel(realFrame, "", NULL, LABEL_NORMAL);
+  new FXButton(realFrame, "Zoom to LUT width", NULL, this, ID_ZOOM_LUT, FRAME_RAISED | FRAME_THICK);
+  _realMaxLabel = new FXLabel(realFrame, "", NULL, LABEL_NORMAL);
+  _centerButton = new FXButton(zoomFrame, "Center origin", NULL, this, ID_CENTER, FRAME_RAISED | FRAME_THICK| LAYOUT_CENTER_X,0,0,0,0,20,20);
+  _zoomMaxButton = new FXButton(zoomFrame, "", NULL, this, ID_MAX, FRAME_RAISED | FRAME_THICK | LAYOUT_RIGHT,0,0,0,0,20,20);
   
   // Tab page 2:
   FXTabItem* tab2=new FXTabItem(_tfBook,"&2D Transfer Function",NULL);
@@ -155,6 +162,9 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _alphaCombo->appendItem("Opaque");
   _alphaCombo->setNumVisible(_alphaCombo->getNumItems());
   _alphaCombo->setCurrentItem(0);
+
+  _mousePosLabel = new FXLabel(comboFrame, "", NULL, LABEL_NORMAL | LAYOUT_LEFT);
+  _pinPosLabel = new FXLabel(comboFrame, "", NULL, LABEL_NORMAL | LAYOUT_LEFT);
 
   _pinSwitcher = new FXSwitcher(controlFrame, LAYOUT_FILL_X | LAYOUT_FILL_Y);
 
@@ -295,6 +305,8 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _currentWidget = NULL;
   _histoTexture1D = NULL;
   _histoTexture2D = NULL;
+  _dataZoom[0] = 0.0f;
+  _dataZoom[1] = 1.0f;
 }
 
 // Must delete the menus
@@ -457,8 +469,8 @@ long VVTransferWindow::onChngPyramid(FXObject*,FXSelector,void*)
   _pMaxLabel->setText(FXStringFormat("%.2f",_pMaxSlider->getValue()));
   if(!_currentWidget) return 1;
   assert((pw=dynamic_cast<vvTFPyramid*>(_currentWidget))!=NULL);
-  pw->_top[0] = _pTopXSlider->getValue();
-  pw->_bottom[0] = _pBottomXSlider->getValue();
+  pw->_top[0] = convertCanvasdist2Datadist(_pTopXSlider->getValue());
+  pw->_bottom[0] = convertCanvasdist2Datadist(_pBottomXSlider->getValue());
   pw->_opacity = _pMaxSlider->getValue();
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
@@ -506,21 +518,6 @@ long VVTransferWindow::onChngCustomWidth(FXObject*,FXSelector,void*)
   return 1;
 }
 
-float VVTransferWindow::getRealPinPos(float xPos)
-{
-  int bin; 
-  
-  if (_shell->_floatRangeDialog->_algoType==1)  // normal mode (iso-range) is linear mapping between min and max
-  {
-    return _canvas->_vd->real[0] + xPos * (_canvas->_vd->real[1] - _canvas->_vd->real[0]);
-  }
-  else  // iso-data or opacity weighted
-  {
-    bin = int(xPos * float(vvVolDesc::NUM_HDR_BINS));
-    return _canvas->_vd->_hdrBinLimits[bin];
-  }
-}
-
 long VVTransferWindow::onMouseLDown1D(FXObject*,FXSelector,void* ptr)
 {
   _mouseButton = 1;
@@ -532,7 +529,7 @@ long VVTransferWindow::onMouseLDown1D(FXObject*,FXSelector,void* ptr)
   _canvas->_vd->tf.putUndoBuffer();
   _glCanvas1D->grab();
   FXEvent* ev = (FXEvent*)ptr;
-  _currentWidget = closestWidget(float(ev->win_x) / float(_glCanvas1D->getWidth()), 
+  _currentWidget = closestWidget(convertCanvas2Data(float(ev->win_x) / float(_glCanvas1D->getWidth())), 
                                  1.0f - float(ev->win_y) / float(_glCanvas1D->getHeight()), 
                                  -1.0f);
   updateLabels();
@@ -557,8 +554,8 @@ long VVTransferWindow::onMouseRDown1D(FXObject*,FXSelector,void* ptr)
   FXEvent* ev = (FXEvent*)ptr;
   if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)  // is current widget of custom type?
   {
-    if (cuw->selectPoint(1.0f - (float(ev->win_y - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT)), CLICK_TOLERANCE, 
-                         float(ev->win_x) / float(_glCanvas1D->getWidth()), CLICK_TOLERANCE) == NULL)
+    if (cuw->selectPoint(1.0f - (float(ev->win_y - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT)), convertCanvasdist2Datadist(CLICK_TOLERANCE), 
+                         convertCanvas2Data(float(ev->win_x) / float(_glCanvas1D->getWidth())), convertCanvasdist2Datadist(CLICK_TOLERANCE)) == NULL)
     {
       cuw->_currentPoint = NULL;
     }
@@ -581,7 +578,7 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
   
   FXEvent* ev = (FXEvent*)ptr;
   float pos = ts_clamp(float(ev->win_x) / float(_glCanvas1D->getWidth()), 0.0f, 1.0f);
-  _mousePosLabel->setText(FXStringFormat("Mouse = %.5g", getRealPinPos(pos)));
+  _mousePosLabel->setText(FXStringFormat("Mouse: %.5g", convertCanvas2Data(pos)));
 
   if (_glCanvas1D->grabbed())
   {
@@ -589,14 +586,14 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
     {
       if(!_currentWidget || !_canvas) return 1;
       if(_canvas->_vd->tf._widgets.count() == 0) return 1;
-      _realPosLabel->setText(FXStringFormat("Pin = %.5g", getRealPinPos(pos)));
-      _currentWidget->_pos[0] = pos;
+      _pinPosLabel->setText(FXStringFormat("Pin: %.5g", convertCanvas2Data(pos)));
+      _currentWidget->_pos[0] = convertCanvas2Data(pos);
     }
     else if (_mouseButton==3)
     {
       if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)  // is current widget of custom type?
       {
-        dx =   float(ev->win_x - ev->last_x) / float(_glCanvas1D->getWidth());
+        dx =  (float(ev->win_x - ev->last_x) / float(_glCanvas1D->getWidth())) * (_dataZoom[1] - _dataZoom[0]);
         dy = - float(ev->win_y - ev->last_y) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT);
         cuw->moveCurrentPoint(dy, dx);
       }
@@ -678,7 +675,7 @@ long VVTransferWindow::onCmdUndo(FXObject*,FXSelector,void*)
 long VVTransferWindow::onCmdColorCombo(FXObject*,FXSelector,void*)
 {
   _canvas->_vd->tf.putUndoBuffer();
-  _canvas->_vd->tf.setDefaultColors(_colorCombo->getCurrentItem());
+  _canvas->_vd->tf.setDefaultColors(_colorCombo->getCurrentItem(), _dataZoom[0], _dataZoom[1]);
   _currentWidget = NULL;
   drawTF();
   updateLabels();
@@ -689,7 +686,7 @@ long VVTransferWindow::onCmdColorCombo(FXObject*,FXSelector,void*)
 long VVTransferWindow::onCmdAlphaCombo(FXObject*,FXSelector,void*)
 {
   _canvas->_vd->tf.putUndoBuffer();
-  _canvas->_vd->tf.setDefaultAlpha(_alphaCombo->getCurrentItem());
+  _canvas->_vd->tf.setDefaultAlpha(_alphaCombo->getCurrentItem(), _dataZoom[0], _dataZoom[1]);
   _currentWidget = NULL;
   drawTF();
   updateLabels();
@@ -861,7 +858,7 @@ void VVTransferWindow::computeHistogram()
       size[1] = _glCanvas1D->getHeight() - COLORBAR_HEIGHT;
       _histoTexture1D = new uchar[size[0] * size[1] * 4];
       _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 1, size, _histoTexture1D, 
-        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col);
+        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
       break;
     }
     case 1:
@@ -872,7 +869,7 @@ void VVTransferWindow::computeHistogram()
       size[1] = _glCanvas2D->getHeight();
       _histoTexture2D = new uchar[size[0] * size[1] * 4];
       _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 2, size, _histoTexture2D,
-        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col);
+        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
       break;
     }
     default: break;
@@ -1024,17 +1021,61 @@ void VVTransferWindow::drawCustomWidgets()
 
 void VVTransferWindow::drawBinLimits()
 {
+  const float YMIN = 0.95f;
+  const float YMAX = 1.0f;
+  float xmin, xmax, ymin, ymax;
+  int i;
+   
   if (_glCanvas1D->makeCurrent())
   {
-    uchar* limitsTicks = new uchar[_glCanvas1D->getWidth() * 4];
-    _canvas->_vd->makeBinTexture(limitsTicks, _glCanvas1D->getWidth());
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glRasterPos2f(0.0f, 0.0f);
-    glPixelZoom(1.0f, 10.0f);
-    glDrawPixels(_glCanvas1D->getWidth(), 1, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)limitsTicks);
-    glDisable(GL_BLEND);
-    delete[] limitsTicks;
+    glLineWidth(1.0f);
+    
+    // Calculate y coordinates:
+    ymin = YMIN * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / _glCanvas1D->getHeight();
+    ymax = YMAX * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / _glCanvas1D->getHeight();
+
+    // Draw white background for tick marks:
+    glBegin(GL_QUADS);
+      glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+      glVertex3f(0.0f, ymin, 0.0f);
+      glVertex3f(1.0f, ymin, 0.0f);
+      glVertex3f(1.0f, ymax, 0.0f);
+      glVertex3f(0.0f, ymax, 0.0f);
+    glEnd();
+
+    if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
+    {
+      for (i=0; i<vvVolDesc::NUM_HDR_BINS; ++i)
+      {
+        xmin = convertData2Canvas(_canvas->_vd->_hdrBinLimits[i]);
+        if (i==vvVolDesc::NUM_HDR_BINS-1) xmax = convertData2Canvas(_canvas->_vd->real[1]);
+        else xmax = convertData2Canvas(_canvas->_vd->_hdrBinLimits[i+1]);
+      
+        glBegin(GL_LINES);
+          glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+          glVertex3f(xmin, ymin, 0.0f);
+          glVertex3f(xmin, ymax, 0.0f);
+          if (i==vvVolDesc::NUM_HDR_BINS-1)   // draw last bin end line?
+          {            
+            glVertex3f(xmax, ymin, 0.0f);
+            glVertex3f(xmax, ymax, 0.0f);
+          }
+        glEnd();
+      }
+    }
+    else
+    {
+      for (i=0; i<=256; ++i)
+      {
+        glBegin(GL_LINES);
+          glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+          xmin = convertData2Canvas((float(i) / 256.0f) * 
+            (_canvas->_vd->real[1] - _canvas->_vd->real[0]) + _canvas->_vd->real[0]);
+          glVertex3f(xmin, ymin, 0.0f);
+          glVertex3f(xmin, ymax, 0.0f);
+        glEnd();
+      }
+    }
     _glCanvas1D->makeNonCurrent();
   }
 }
@@ -1050,7 +1091,7 @@ void VVTransferWindow::drawControlPoints(vvTFCustom* cuw)
     y = (*iter)->_opacity * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());  
     if (_glCanvas1D->makeCurrent())
     {
-      drawSphere(x, y, 0.02f, (*iter)==cuw->_currentPoint);
+      drawSphere(convertData2Canvas(x), y, 0.02f, (*iter)==cuw->_currentPoint);
       _glCanvas1D->makeNonCurrent();
     }
   }
@@ -1103,6 +1144,37 @@ void VVTransferWindow::drawPinLines()
   }
 }
 
+/** Convert canvas x coordinates to data values.
+  @param canvas canvas x coordinate [0..1]
+*/
+float VVTransferWindow::convertCanvas2Data(float canvas)
+{
+  return canvas * (_dataZoom[1] - _dataZoom[0]) + _dataZoom[0];
+}
+
+/** Convert data value to x coordinate in TF canvas.
+  @param data data value
+  @return canvas x coordinate [0..1]
+*/
+float VVTransferWindow::convertData2Canvas(float data)
+{
+  return (data - _dataZoom[0]) / (_dataZoom[1] - _dataZoom[0]);
+}
+
+/** Convert horizontal distances on the canvas to data distances.
+*/
+float VVTransferWindow::convertCanvasdist2Datadist(float canvas)
+{
+  return canvas * (_dataZoom[1] - _dataZoom[0]);
+}
+
+/** Convert horizontal distances in data to the canvas.
+*/
+float VVTransferWindow::convertDatadist2Canvasdist(float data)
+{
+  return data / (_dataZoom[1] - _dataZoom[0]);
+}
+
 void VVTransferWindow::drawPinLine(vvTFWidget* w)
 {
   float xPos, yTop, height;
@@ -1124,7 +1196,7 @@ void VVTransferWindow::drawPinLine(vvTFWidget* w)
   else return;
 
   selected = (w == _currentWidget);
-  xPos = w->_pos[0];
+  xPos = convertData2Canvas(w->_pos[0]);
   if (_glCanvas1D->makeCurrent())
   {
     glColor3f(0.0f, 0.0f, 0.0f);
@@ -1163,7 +1235,7 @@ vvTFWidget* VVTransferWindow::closestWidget(float x, float y, float z)
         if ((isColor && dynamic_cast<vvTFColor*>(temp)) || (!isColor && dynamic_cast<vvTFColor*>(temp)==NULL)) 
         {
           dist = fabs(x - temp->_pos[0]);
-          if(dist < minDist && dist <= CLICK_TOLERANCE)
+          if(dist < minDist && dist <= convertCanvasdist2Datadist(CLICK_TOLERANCE))
           {
             minDist = dist;
             w = temp;
@@ -1176,7 +1248,7 @@ vvTFWidget* VVTransferWindow::closestWidget(float x, float y, float z)
           xDist = x - temp->_pos[0];
           yDist = y - temp->_pos[1];
           dist = float(sqrt(xDist * xDist + yDist * yDist));
-          if (dist < minDist && dist <= CLICK_TOLERANCE)
+          if (dist < minDist && dist <= convertCanvasdist2Datadist(CLICK_TOLERANCE))
           {
             minDist = dist;
             w = temp;
@@ -1205,9 +1277,9 @@ void VVTransferWindow::updateLabels()
   else if ((pw=dynamic_cast<vvTFPyramid*>(_currentWidget))!=NULL)
   {
     _pinSwitcher->setCurrent(2);
-    _pTopXSlider->setValue(pw->_top[0]);
+    _pTopXSlider->setValue(convertDatadist2Canvasdist(pw->_top[0]));
     _pTopXLabel->setText(FXStringFormat("%.2f", _pTopXSlider->getValue()));
-    _pBottomXSlider->setValue(pw->_bottom[0]);
+    _pBottomXSlider->setValue(convertDatadist2Canvasdist(pw->_bottom[0]));
     _pBottomXLabel->setText(FXStringFormat("%.2f", _pBottomXSlider->getValue()));
     _pMaxSlider->setValue(pw->_opacity);
     _pMaxLabel->setText(FXStringFormat("%.2f", _pMaxSlider->getValue()));
@@ -1238,18 +1310,49 @@ void VVTransferWindow::updateLabels()
   {
     _pinSwitcher->setCurrent(0);
   }
-  if (_currentWidget) _realPosLabel->setText(FXStringFormat("Pin = %.5g", getRealPinPos(_currentWidget->_pos[0])));
-  else _realPosLabel->setText("");
+  if (_currentWidget) _pinPosLabel->setText(FXStringFormat("Pin = %.5g", _currentWidget->_pos[0]));
+  else _pinPosLabel->setText("");
+}
+
+/** Create color bar for regular or HDR mode.
+*/
+void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
+{ 
+  uchar* tmpBar;
+  float fval;
+  int i,bin;
+
+  if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
+  {
+    // Shift colors according to HDR bins:
+    tmpBar = new uchar[vvVolDesc::NUM_HDR_BINS * 4 * 2];
+    _canvas->_vd->tf.makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->real[0], _canvas->_vd->real[1]);
+    for (i=0; i<width; ++i)
+    {
+      fval = (float(i) / float(width)) * (_dataZoom[1] - _dataZoom[0]) + _dataZoom[0];
+      bin = _canvas->_vd->findHDRBin(fval);
+      bin = ts_clamp(bin, 0, vvVolDesc::NUM_HDR_BINS-1);
+      memcpy(colorBar + i*4, tmpBar + bin*4, 4);
+      memcpy(colorBar + 4*(i+width), tmpBar + 4*(bin + vvVolDesc::NUM_HDR_BINS), 4);
+    }
+    delete[] tmpBar;
+  }
+  else  // standard iso-range TF mode
+  {
+    _canvas->_vd->tf.makeColorBar(width, colorBar, _dataZoom[0], _dataZoom[1]);
+  }
 }
 
 void VVTransferWindow::drawColorTexture()
 {
-  const int WIDTH = 256;
-  static uchar* colorBar = new uchar[WIDTH * 4 * 2];
+  uchar* colorBar;
   uchar background[4];
   float r,g,b;
+  int width;
   
-  _canvas->_vd->tf.makeColorBar(WIDTH, colorBar);
+  width = _glCanvas1D->getWidth();
+  colorBar = new uchar[width * 4 * 2];
+  makeColorBar(width, colorBar);
   if (_glCanvas1D->makeCurrent())
   {
     // Draw background:
@@ -1266,12 +1369,13 @@ void VVTransferWindow::drawColorTexture()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glRasterPos2f(0.0f, 1.0f);  // pixmap origin is bottom left corner of output window
-    glPixelZoom(float(_glCanvas1D->getWidth()) / float(WIDTH), -10.0f); // full canvas width, 10*2 pixels high, upside-down
-    glDrawPixels(WIDTH, 2, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)colorBar);
+    glPixelZoom(1.0f, -10.0f); // full canvas width, 10*2 pixels high, upside-down
+    glDrawPixels(width, 2, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)colorBar);
     glDisable(GL_BLEND);
     
     _glCanvas1D->makeNonCurrent();
   }
+  delete[] colorBar;
 }
 
 void VVTransferWindow::drawAlphaTexture()
@@ -1280,7 +1384,7 @@ void VVTransferWindow::drawAlphaTexture()
   
   if (_glCanvas1D->makeCurrent())
   {
-    _canvas->_vd->tf.makeAlphaTexture(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT, tfTexture);
+    _canvas->_vd->tf.makeAlphaTexture(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT, tfTexture, _dataZoom[0], _dataZoom[1]);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glRasterPos2f(0.0f, 1.0f - float(COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight())); 
@@ -1302,7 +1406,7 @@ void VVTransferWindow::draw2DTFTexture()
   {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    _canvas->_vd->tf.make2DTFTexture(WIDTH, HEIGHT, tfTexture);
+    _canvas->_vd->tf.make2DTFTexture(WIDTH, HEIGHT, tfTexture, 0.0f, 1.0f, 0.0f, 1.0f);
     glRasterPos2f(0.0f, 0.0f); 
     glPixelZoom(float(_glCanvas2D->getWidth()) / float(WIDTH), float(_glCanvas2D->getHeight()) / float(HEIGHT));
     glDrawPixels(WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)tfTexture);
@@ -1356,11 +1460,59 @@ long VVTransferWindow::onCmdBins(FXObject*,FXSelector,void*)
   return 1;
 }
 
+long VVTransferWindow::onCmdSetMin(FXObject*,FXSelector,void*)
+{
+  FXInputDialog* dialog;
+  dialog = new FXInputDialog((FXWindow*)this, "Set minimum", "");
+  dialog->setText(FXStringFormat("%.5g", _dataZoom[0]));
+  dialog->execute();
+  _dataZoom[0] = FXFloatVal(dialog->getText());
+  _zoomMinButton->setText(FXStringFormat("%.5g", _dataZoom[0]));
+  delete dialog;
+  return 1;
+}
+
+long VVTransferWindow::onCmdSetMax(FXObject*,FXSelector,void*)
+{
+  FXInputDialog* dialog;
+  dialog = new FXInputDialog((FXWindow*)this, "Set maximum", "");
+  dialog->setText(FXStringFormat("%.5g", _dataZoom[1]));
+  dialog->execute();
+  _dataZoom[1] = FXFloatVal(dialog->getText());
+  _zoomMaxButton->setText(FXStringFormat("%.5g", _dataZoom[1]));
+  delete dialog;
+  return 1;
+}
+
+long VVTransferWindow::onCmdZoomLUT(FXObject*,FXSelector,void*)
+{
+  zoomLUT();
+  return 1;
+}
+
+void VVTransferWindow::zoomLUT()
+{
+  _dataZoom[0] = _canvas->_vd->real[0];
+  _dataZoom[1] = _canvas->_vd->real[1];
+  updateValues();
+}
+
+long VVTransferWindow::onCmdCenter(FXObject*,FXSelector,void*)
+{
+  float range = _dataZoom[1] - _dataZoom[0];
+  _dataZoom[0] = -range/2.0f;
+  _dataZoom[1] = range/2.0f;
+  updateValues();
+  return 1;
+}
+
 void VVTransferWindow::updateValues()
 {
   _currentWidget = NULL;
-  _realMinLabel->setText(FXStringFormat("min = %.5g", _canvas->_vd->real[0]));
-  _realMaxLabel->setText(FXStringFormat("max = %.5g", _canvas->_vd->real[1]));
+  _zoomMinButton->setText(FXStringFormat("%.5g", _dataZoom[0]));
+  _zoomMaxButton->setText(FXStringFormat("%.5g", _dataZoom[1]));
+  _realMinLabel->setText(FXStringFormat("%.5g", _canvas->_vd->real[0]));
+  _realMaxLabel->setText(FXStringFormat("%.5g", _canvas->_vd->real[1]));
   updateLabels();
   _disColorSlider->setValue(_canvas->_vd->tf.getDiscreteColors());
   _disColorLabel->setText(FXStringFormat("%d", _disColorSlider->getValue()));

@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -53,7 +53,7 @@ class VIRVOEXPORT vvVecmath
 
 /** 4x4 matrix type.
  Matrix elements are: e[row][column]
- @author Jurgen P. Schulze (schulze@cs.brown.edu)
+ @author Jurgen P. Schulze (jschulze@ucsd.edu)
 */
 class VIRVOEXPORT vvMatrix
 {
@@ -141,7 +141,7 @@ class VIRVOEXPORT vvVector4
 };
 
 /** 3D vector primitive, also used for points
- @author Jurgen P. Schulze (schulze@cs.brown.edu)
+ @author Jurgen P. Schulze (jschulze@ucsd.edu)
 */
 class VIRVOEXPORT vvVector3
 {
@@ -215,7 +215,7 @@ class VIRVOEXPORT vvVector3
 };
 
 /** 3D plane primitive.
- @author Jurgen Schulze (schulze@cs.brown.edu)
+ @author Jurgen Schulze (jschulze@ucsd.edu)
 */
 class vvPlane
 {

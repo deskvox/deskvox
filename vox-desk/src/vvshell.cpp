@@ -1,6 +1,6 @@
 // DeskVOX - Volume Exploration Utility for the Desktop
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 // 
 // This file is part of DeskVOX.
 //
@@ -602,8 +602,8 @@ void VVShell::loadDefaultVolume(int algorithm, int w, int h, int s)
   delete fio;
   if (vd->tf.isEmpty())
   {
-    vd->tf.setDefaultAlpha(0);
-    vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2);
+    vd->tf.setDefaultAlpha(0, vd->real[0], vd->real[1]);
+    vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0], vd->real[1]);
   }
   if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
   setCanvasRenderer(vd, 0, _canvas->_currentGeom);
@@ -642,8 +642,8 @@ void VVShell::loadVolumeFile(const char* filename)
       // Use default TF if none stored:
       if (vd->tf.isEmpty())
       {
-        vd->tf.setDefaultAlpha(0);
-        vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2);
+        vd->tf.setDefaultAlpha(0, vd->real[0], vd->real[1]);
+        vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0], vd->real[1]);
       }
       if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
       setCanvasRenderer(vd, 0, _canvas->_currentGeom);
@@ -807,8 +807,8 @@ void VVShell::mergeFiles(const char* firstFile, int num, int increment, vvVolDes
       // Use previous pin list if loaded dataset has no pins:
       if (vd->tf.isEmpty())
       {
-        vd->tf.setDefaultAlpha(0);
-        vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2);
+        vd->tf.setDefaultAlpha(0, vd->real[0], vd->real[1]);
+        vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0], vd->real[1]);
       }
       if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
       setCanvasRenderer(vd, 0, _canvas->_currentGeom, _canvas->_currentVoxels);
@@ -978,7 +978,7 @@ long VVShell::onCmdAbout(FXObject*,FXSelector,void*)
   FXString version = FXString("Version ") + FXString(VV_VERSION) + FXString(".") + FXString(VV_RELEASE) + FXString("\n\n");
   FXString info = name + version +
     "(c) 2004-2005 Brown University, Providence, RI\n" \
-    "(c) 2005 University of California, San Diego\n" \
+    "(c) 2005-2006 University of California, San Diego\n" \
     "Jürgen P. Schulze (jschulze@ucsd.edu)\n" \
     "Alexander C. Rice (acrice@cs.brown.edu)\n\n" \
     "DeskVOX comes with ABSOLUTELY NO WARRANTY.\n" \
@@ -1367,6 +1367,7 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, int algorithm, vvTexRend::Geometr
     vd->makeInfoString(string);
     _statusBar->setText(string);
     volumeDialog->updateValues();
+    _transWindow->zoomLUT();
     _transWindow->updateValues();
     prefWindow->updateValues();
     _dataTypeDialog->updateValues();

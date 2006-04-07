@@ -1,6 +1,6 @@
 // DeskVOX - Volume Exploration Utility for the Desktop
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 // 
 // This file is part of DeskVOX.
 //

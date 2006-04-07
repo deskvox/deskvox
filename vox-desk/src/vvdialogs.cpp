@@ -1,6 +1,6 @@
 // DeskVOX - Volume Exploration Utility for the Desktop
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 // 
 // This file is part of DeskVOX.
 //
@@ -2527,6 +2527,7 @@ FXDEFMAP(VVFloatRangeDialog) VVFloatRangeDialogMap[]=
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_BOT_PERCENT, VVFloatRangeDialog::onBottomPercent),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_TOP_PERCENT, VVFloatRangeDialog::onTopPercent),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_FAST,        VVFloatRangeDialog::onFast),
+  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_HDR,         VVFloatRangeDialog::onHDRMapping),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_OK,          VVFloatRangeDialog::onOK),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_APPLY,       VVFloatRangeDialog::onApply),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_CANCEL,      VVFloatRangeDialog::onCancel),
@@ -2565,16 +2566,16 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   _topClamp->setText(FXStringFormat("%.9g", 5.0f));
   new FXButton(topClampFrame, "% below max", NULL, this, ID_TOP_PERCENT, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
+  _hdrCheck = new FXCheckButton(verticalFrame, "Use high dynamic range mapping", this, ID_HDR, ICON_BEFORE_TEXT); 
+
   FXGroupBox* hdrGroup = new FXGroupBox(verticalFrame,"High dynamic range mapping",FRAME_GROOVE | LAYOUT_FILL_X);
   FXMatrix* hdrMatrix = new FXMatrix(hdrGroup, 3, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
 
-  _regularRadio = new FXRadioButton(hdrMatrix, "Iso-value binning", &_algoDataTarget, FXDataTarget::ID_OPTION+1);
-  _regularRadio->setCheck(true);
-  _isoRadio = new FXRadioButton(hdrMatrix, "Iso-data binning", &_algoDataTarget, FXDataTarget::ID_OPTION+2, ICON_BEFORE_TEXT);
+  _isoRadio = new FXRadioButton(hdrMatrix, "Iso-data binning", &_algoDataTarget, FXDataTarget::ID_OPTION+1, ICON_BEFORE_TEXT);
   _isoRadio->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
-  _isoRadio->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
-  _weightRadio = new FXRadioButton(hdrMatrix, "Opacity-weighted binning", &_algoDataTarget, FXDataTarget::ID_OPTION+3, ICON_BEFORE_TEXT);
+  _weightRadio = new FXRadioButton(hdrMatrix, "Opacity-weighted binning", &_algoDataTarget, FXDataTarget::ID_OPTION+2, ICON_BEFORE_TEXT);
   _weightRadio->setTipText("When checked algorithm creates smaller bins where opacity is higher.\nOtherwise binning is independent from opacity.");
+  new FXLabel(hdrMatrix, "");
   _algoType = 1; // set first radio button to true, others to false
 
   _fastCheck = new FXCheckButton(hdrMatrix, "Fast sampling", this, ID_FAST, ICON_BEFORE_TEXT);
@@ -2591,7 +2592,7 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   new FXLabel(hdrMatrix, "");
 
   _lockCheck = new FXCheckButton(hdrMatrix, "Lock range settings", this, ID_LOCK, ICON_BEFORE_TEXT);
-  _lockCheck->setCheck(false);
+  _lockCheck->setCheck(true);
   _lockCheck->setTipText("Don't adjust min and max range settings when running HDR routines.");
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
@@ -2601,6 +2602,8 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   new FXButton(buttonFrame, "OK", NULL, this, ID_OK, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
   new FXButton(buttonFrame, "Apply", NULL, this, ID_APPLY, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
   new FXButton(buttonFrame, "Cancel", NULL, this, ID_CANCEL, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  
+  handle(this, FXSEL(SEL_COMMAND, ID_HDR), NULL);
 }
 
 long VVFloatRangeDialog::onOK(FXObject*,FXSelector,void*)
@@ -2635,21 +2638,21 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
     {
       _canvas->_vd->real[0] = FXFloatVal(_minTF->getText());
       _canvas->_vd->real[1] = FXFloatVal(_maxTF->getText());
-      _canvas->_renderer->setParameter(vvRenderer::VV_BINNING, _algoType-1);
-      if (_algoType==2 || _algoType==3)
+      _canvas->_renderer->setParameter(vvRenderer::VV_BINNING, (_hdrCheck->getCheck()) ? _algoType : 0);
+      if (_hdrCheck->getCheck())
       {
         vvVolDesc::BinningType bt=vvVolDesc::LINEAR;
         switch (_algoType)
         {
-          case 1: bt = vvVolDesc::LINEAR; break;
-          case 2: bt = vvVolDesc::ISO_DATA; break;
-          case 3: bt = vvVolDesc::OPACITY; break;
+          case 1: bt = vvVolDesc::ISO_DATA; break;
+          case 2: bt = vvVolDesc::OPACITY; break;
           default: assert(0); break;
         }
         _canvas->_vd->updateHDRBins((_fastCheck->getCheck()) ? FXIntVal(_fastNumber->getText()) : -1, 
           (_skipCheck->getCheck()) ? true : false, (_lockCheck->getCheck()) ? true : false, bt);
       }
       _canvas->_renderer->updateVolumeData();
+      _canvas->_renderer->updateTransferFunction();
       _shell->_glcanvas->makeNonCurrent();
       updateDependents();
       updateValues();
@@ -2700,6 +2703,29 @@ long VVFloatRangeDialog::onFast(FXObject*,FXSelector,void*)
 {
   if (_fastCheck->getCheck()) _fastNumber->enable();
   else _fastNumber->disable();
+  return 1;
+}
+
+long VVFloatRangeDialog::onHDRMapping(FXObject*,FXSelector,void*)
+{
+  if (_hdrCheck->getCheck())
+  {
+    _isoRadio->enable();
+    _weightRadio->enable();
+    _fastCheck->enable();
+    if (_fastCheck->getCheck()) _fastNumber->enable();
+    _skipCheck->enable();
+    _lockCheck->enable();
+  }
+  else
+  {
+    _isoRadio->disable();
+    _weightRadio->disable();
+    _fastCheck->disable();
+    _fastNumber->disable();
+    _skipCheck->disable();
+    _lockCheck->disable();
+  }
   return 1;
 }
 

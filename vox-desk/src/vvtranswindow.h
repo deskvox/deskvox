@@ -1,6 +1,6 @@
 // DeskVOX - Volume Exploration Utility for the Desktop
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 // 
 // This file is part of DeskVOX.
 //
@@ -83,6 +83,10 @@ class VVTransferWindow : public FXDialogBox
       ID_C_WIDTH,
       ID_NEW_POINT,
       ID_DELETE_POINT,
+      ID_MIN,
+      ID_MAX,
+      ID_ZOOM_LUT,
+      ID_CENTER,
       ID_LAST
     };
     enum WidgetType
@@ -138,7 +142,12 @@ class VVTransferWindow : public FXDialogBox
     long onChngPickerColor(FXObject*,FXSelector,void*);
     long onCmdNewPoint(FXObject*,FXSelector,void*);
     long onCmdDeletePoint(FXObject*,FXSelector,void*);
+    long onCmdSetMin(FXObject*,FXSelector,void*);
+    long onCmdSetMax(FXObject*,FXSelector,void*);
+    long onCmdZoomLUT(FXObject*,FXSelector,void*);
+    long onCmdCenter(FXObject*,FXSelector,void*);
     void updateValues();
+    void zoomLUT();
 
   protected:
     static const FXColor BLACK;
@@ -169,7 +178,7 @@ class VVTransferWindow : public FXDialogBox
     FXLabel* _sWidthLabel;
     FXLabel* _cWidthLabel;
     FXLabel* _realMinLabel;
-    FXLabel* _realPosLabel;
+    FXLabel* _pinPosLabel;
     FXLabel* _realMaxLabel;
     FXLabel* _mousePosLabel;
     FXLabel* _disColorLabel;
@@ -185,13 +194,17 @@ class VVTransferWindow : public FXDialogBox
     FXSwitcher* _pinSwitcher;
     FXColorDialog* _colorPicker;
     FXTabBook* _tfBook;
+    FXButton* _zoomMinButton;
+    FXButton* _zoomMaxButton;
+    FXButton* _centerButton;
 
     VVShell* _shell;
     vox::vvCanvas* _canvas;
     vvTFWidget* _currentWidget;
     uchar* _histoTexture1D;
     uchar* _histoTexture2D;
-    int _mouseButton;        ///< pressed mouse button: 0=none, 1=button 1, etc.
+    int _mouseButton;       ///< pressed mouse button: 0=none, 1=button 1, etc.
+    float _dataZoom[2];     ///< min/max for zoom area on data range
 
     VVTransferWindow(){}
     VVTransferWindow(const VVTransferWindow&){};
@@ -216,8 +229,13 @@ class VVTransferWindow : public FXDialogBox
     void drawPinBackground();
     void drawPinLine(vvTFWidget*);
     vvTFWidget* closestWidget(float, float, float);
-    float getRealPinPos(float);
     void drawCircle(float, float, float, bool);
     void drawSphere(float, float, float, bool);
+    float convertCanvas2Data(float);
+    float convertData2Canvas(float);
+    float convertCanvasdist2Datadist(float);
+    float convertDatadist2Canvasdist(float);
+    void makeColorBar(int, uchar*);
 };
+    
 #endif

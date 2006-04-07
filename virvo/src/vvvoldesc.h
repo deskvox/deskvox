@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -124,20 +124,20 @@ class VIRVOEXPORT vvVolDesc
     int vox[3];                                   ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
     int frames;                                   ///< number of animation frames in movie (0 if no volume data stored)
     int bpc;                                      ///< bytes per channel (default = 1); each channel is scalar:<UL>
-    ///< <LI>1 = 1 unsigned char</LI>
-    ///< <LI>2 = 16 bit unsigned short (12 bit values must be located in 12 most significant bits, padded with 0's)</LI>
-    ///< <LI>4 = float</LI>
+                                                  ///< <LI>1 = 1 unsigned char</LI>
+                                                  ///< <LI>2 = 16 bit unsigned short (12 bit values must be located in 12 most significant bits, padded with 0's)</LI>
+                                                  ///< <LI>4 = float</LI>
     int chan;                                     ///< number of channels (default = 1), each channel contains bpc bytes
     float dist[3];                                ///< Distance between sampling points in x/y/z direction [mm]
     float dt;                                     ///< Length of an animation time step [seconds]. Negative values play the animation backwards.
     float real[2];                                ///< 1/2 bpc: physical equivalent of min/max scalar value
-    ///< 4 bpc:   min and max values for mapping to transfer function space
+                                                  ///< 4 bpc:   min and max values for mapping to transfer function space
     float _scale;                                 ///< determines volume size in conjunction with dist [world space]
     vvVector3 pos;                                ///< location of volume center [mm]
     vvTransFunc tf;                               ///< transfer functions
     int iconSize;                                 ///< width and height of icon [pixels] (0 if no icon stored, e.g., 64 for 64x64 pixels icon)
     uchar* iconData;                              ///< icon image data as RGBA (RGBA, RGBA, ...), starting top left,
-    ///< then going right, then down
+                                                  ///< then going right, then down
     int _radius;                                  ///< Radius of the previous sphere
     int* _mask;                                   ///< Mask of the previous sphere
     float* _hdrBinLimits;                         ///< array of bin limits for HDR transfer functions
@@ -207,9 +207,9 @@ class VIRVOEXPORT vvVolDesc
     void   addFrame(uchar*, DeleteType);
     void   copyFrame(uchar*);
     void   removeSequence();
-    void   makeHistogram(int, int, int, int*, int*);
+    void   makeHistogram(int, int, int, int*, int*, float, float);
     void   normalizeHistogram(int, int*, float*, NormalizationType);
-    void   makeHistogramTexture(int, int, int, int*, uchar*, NormalizationType, vvColor*);
+    void   makeHistogramTexture(int, int, int, int*, uchar*, NormalizationType, vvColor*, float, float);
     void   createHistogramFiles(bool = false);
     bool   isChannelUsed(int);
     void   makeIcon(int, const uchar*);

@@ -1,6 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
-// Contact: Jurgen P. Schulze, schulze@cs.brown.edu
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -50,7 +50,7 @@ cout << "The total time measured is: " << time3 << " seconds." << endl;
 delete sw;                          // remove stop watch from memory
 </PRE>
 
-@author Jurgen Schulze (schulze@cs.brown.edu)
+@author Jurgen Schulze (jschulze@ucsd.edu)
 */
 class VIRVOEXPORT vvStopwatch
 {
