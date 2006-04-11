@@ -221,7 +221,7 @@ VVShell::~VVShell()
 }
 
 //----------------------------------------------------------------------------
-void VVShell::parseCommandline(string& filename, int& width, int& height)
+void VVShell::parseCommandline(std::string& filename, int& width, int& height)
 {
   int i = 1;
   
@@ -1104,6 +1104,11 @@ long VVShell::onCmdBGColor(FXObject*,FXSelector,void*)
   {
     // Update color bar background in TF:
     _transWindow->updateValues();
+    _canvas->getBackgroundColor(r, g, b); // update rgb to current values
+    char bgcolor[128];
+    sprintf(bgcolor, "%f %f %f", r, g, b);
+    getApp()->reg().writeStringEntry("Settings", "BackgroundColor", bgcolor);
+    getApp()->reg().write();  // update registry
   }
   return 1;
 }
@@ -1252,6 +1257,10 @@ void VVShell::drawScene()
       _canvas->initCanvas();
       _canvas->resize(_glcanvas->getWidth(), _glcanvas->getHeight());
       prefWindow->updateValues();
+      float r,g,b;
+      FXString color = getApp()->reg().readStringEntry("Settings", "BackgroundColor", "");
+      sscanf(color.text(), "%f %f %f", &r, &g, &b);
+      _canvas->setBackgroundColor(r, g, b);
     }
     _canvas->draw();
 

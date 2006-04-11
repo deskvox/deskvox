@@ -35,12 +35,14 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+// Virvo:
 #include "vvvirvo.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
 #include "vvvecmath.h"
-#include "vvvoldesc.h"
 #include "vvsllist.h"
+#include "vvstopwatch.h"
+#include "vvvoldesc.h"
 
 #ifdef __sun
 #define logf log
@@ -4685,6 +4687,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
   float tmp;
   float min,max;
   float valuesPerBin;
+  float time;
   int numVoxels;
   int i,j;
   int index;
@@ -4698,7 +4701,10 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
     return;
   }
   
-  cerr << "Creating HDR data array" << endl;
+  vvStopwatch stop;
+  stop.start();
+  cerr << endl << "Starting HDR timer" << endl;
+  cerr << "Creating HDR data array...";
   assert(_hdrBinLimits);
   srcData = getRaw();
   numVoxels = getFrameVoxels();
@@ -4716,11 +4722,12 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
       sortedData[i] = *((float*)(srcData + (sizeof(float) * index)));
     }
   }
+  cerr << stop.getDiff() << " sec" << endl;
   
   // Remove areas covered by TFSkip widgets:
   if (skipWidgets)
   {
-    cerr << "Removing skipped regions from data array" << endl;;
+    cerr << "Removing skipped regions from data array...";
     before = numVoxels;
     numTF = tf._widgets.count();
     tf._widgets.first();
@@ -4730,7 +4737,6 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
       {
         min = sw->_pos[0] - sw->_size[0]/2.0f;
         max = sw->_pos[0] + sw->_size[0]/2.0f;
-        cerr << "Ignoring values in Skip widget from " << min << " to " << max << endl;
         i=0;
         while (i<numVoxels)
         {
@@ -4747,6 +4753,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
       }
       tf._widgets.next();
     }
+    cerr << stop.getDiff() << " sec" << endl;
     cerr << (before - numVoxels) << " voxels removed" << endl;
   }
   
@@ -4773,12 +4780,12 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
       }
     }
   }
-  cerr << " done" << endl;
+  cerr << stop.getDiff() << " sec" << endl;
   
   // Trim beginning and end of sorted data array to remove values below/above realMin/realMax:
   if (lockRange)
   {
-    cerr << "Trimming values to maintain range begin/end" << endl;
+    cerr << "Trimming values to maintain range...";
     
     // Trim values below realMin:
     for(i=0; i<numVoxels && sortedData[i] < real[0]; ++i);  // find index of realMin 
@@ -4788,11 +4795,13 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
     // Trim values above realMax:
     for(i=numVoxels-1; i>0 && sortedData[i] > real[1]; --i);  // find index of realMax
     numVoxels -= (numVoxels-1-i);
+    cerr << stop.getDiff() << " sec" << endl;
   }
   
   // Create array with opacity values for the data values:
   if (binning==OPACITY)
   {
+    cerr << "Creating opacity array...";
     sumOpacities = 0.0;
     opacities = new float[numVoxels * sizeof(float)];
     for (i=0; i<numVoxels; ++i)
@@ -4800,9 +4809,11 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
       opacities[i] = tf.computeOpacity(sortedData[i]);
       sumOpacities += opacities[i];
     }
+    cerr << stop.getDiff() << " sec" << endl;
   }
   
   // Determine bin limits:
+  cerr << "Determining bin limits...";
   switch (binning)
   {
     case ISO_DATA:
@@ -4843,6 +4854,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
       }
       break;
   }
+  cerr << stop.getDiff() << " sec" << endl;
   
   // Do first and last data entries differ?
   if (sortedData[0] == sortedData[numVoxels-1])   
@@ -4860,6 +4872,8 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
   
   delete[] opacities;
   delete[] sortedData;
+  
+  cerr << "Total HDR execution time: " << stop.getTime() << " sec" << endl << endl;
 }
 
 //----------------------------------------------------------------------------

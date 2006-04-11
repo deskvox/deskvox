@@ -464,14 +464,20 @@ long VVTransferWindow::onChngPyramid(FXObject*,FXSelector,void*)
 {
   vvTFPyramid* pw;
 
-  _pTopXLabel->setText(FXStringFormat("%.2f", _pTopXSlider->getValue()));
-  _pBottomXLabel->setText(FXStringFormat("%.2f", _pBottomXSlider->getValue()));
-  _pMaxLabel->setText(FXStringFormat("%.2f",_pMaxSlider->getValue()));
-  if(!_currentWidget) return 1;
+  if(!_currentWidget)
+  {
+    _pTopXLabel->setText(FXStringFormat("%.5g", _pTopXSlider->getValue()));
+    _pBottomXLabel->setText(FXStringFormat("%.5g", _pBottomXSlider->getValue()));
+    _pMaxLabel->setText(FXStringFormat("%.5g",_pMaxSlider->getValue()));
+    return 1;
+  }
   assert((pw=dynamic_cast<vvTFPyramid*>(_currentWidget))!=NULL);
-  pw->_top[0] = convertCanvasdist2Datadist(_pTopXSlider->getValue());
-  pw->_bottom[0] = convertCanvasdist2Datadist(_pBottomXSlider->getValue());
+  pw->_top[0] = normd2datad(_pTopXSlider->getValue());
+  pw->_bottom[0] = normd2datad(_pBottomXSlider->getValue());
   pw->_opacity = _pMaxSlider->getValue();
+  _pTopXLabel->setText(FXStringFormat("%.5g", pw->_top[0]));
+  _pBottomXLabel->setText(FXStringFormat("%.5g", pw->_bottom[0]));
+  _pMaxLabel->setText(FXStringFormat("%.5g", pw->_opacity));
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
   return 1;
@@ -481,12 +487,17 @@ long VVTransferWindow::onChngBell(FXObject*,FXSelector,void*)
 {
   vvTFBell* bw;
 
-  _bWidthLabel->setText(FXStringFormat("%.2f", _bWidthSlider->getValue()));
-  _bMaxLabel->setText(FXStringFormat("%.2f", _bMaxSlider->getValue()));
-  if(!_currentWidget) return 1;
+  if(!_currentWidget)
+  {
+    _bWidthLabel->setText(FXStringFormat("%.5g", _bWidthSlider->getValue()));
+    _bMaxLabel->setText(FXStringFormat("%.5g", _bMaxSlider->getValue()));
+    return 1;
+  }
   assert((bw=dynamic_cast<vvTFBell*>(_currentWidget))!=NULL);
   bw->_size[0] = _bWidthSlider->getValue();
   bw->_opacity = _bMaxSlider->getValue();
+  _bWidthLabel->setText(FXStringFormat("%.5g", bw->_size[0]));
+  _bMaxLabel->setText(FXStringFormat("%.5g", bw->_opacity));
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
   return 1;
@@ -496,10 +507,14 @@ long VVTransferWindow::onChngSkip(FXObject*,FXSelector,void*)
 {
   vvTFSkip* sw;
 
-  _sWidthLabel->setText(FXStringFormat("%.2f", _sWidthSlider->getValue()));
-  if(!_currentWidget) return 1;
+  if(!_currentWidget) 
+  {
+    _sWidthLabel->setText(FXStringFormat("%.2g", _sWidthSlider->getValue()));
+    return 1;
+  }
   assert((sw=dynamic_cast<vvTFSkip*>(_currentWidget))!=NULL);
-  sw->_size[0] = _sWidthSlider->getValue();
+  sw->_size[0] = normd2datad(_sWidthSlider->getValue());
+  _sWidthLabel->setText(FXStringFormat("%.5g", sw->_size[0]));
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
   return 1;
@@ -509,10 +524,14 @@ long VVTransferWindow::onChngCustomWidth(FXObject*,FXSelector,void*)
 {
   vvTFCustom* cuw;
 
-  _cWidthLabel->setText(FXStringFormat("%.2f", _cWidthSlider->getValue()));
-  if(!_currentWidget) return 1;
+  if(!_currentWidget) 
+  {
+    _cWidthLabel->setText(FXStringFormat("%.2g", _cWidthSlider->getValue()));
+    return 1;
+  }
   assert((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL);
-  cuw->setSize(_cWidthSlider->getValue());
+  cuw->setSize(normd2datad(_cWidthSlider->getValue()));
+  _cWidthLabel->setText(FXStringFormat("%.2g", cuw->_size[0]));
   drawTF();
   if(_instantButton->getCheck()) updateTransFunc();
   return 1;
@@ -529,7 +548,7 @@ long VVTransferWindow::onMouseLDown1D(FXObject*,FXSelector,void* ptr)
   _canvas->_vd->tf.putUndoBuffer();
   _glCanvas1D->grab();
   FXEvent* ev = (FXEvent*)ptr;
-  _currentWidget = closestWidget(convertCanvas2Data(float(ev->win_x) / float(_glCanvas1D->getWidth())), 
+  _currentWidget = closestWidget(norm2data(float(ev->win_x) / float(_glCanvas1D->getWidth())), 
                                  1.0f - float(ev->win_y) / float(_glCanvas1D->getHeight()), 
                                  -1.0f);
   updateLabels();
@@ -554,8 +573,8 @@ long VVTransferWindow::onMouseRDown1D(FXObject*,FXSelector,void* ptr)
   FXEvent* ev = (FXEvent*)ptr;
   if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)  // is current widget of custom type?
   {
-    if (cuw->selectPoint(1.0f - (float(ev->win_y - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT)), convertCanvasdist2Datadist(CLICK_TOLERANCE), 
-                         convertCanvas2Data(float(ev->win_x) / float(_glCanvas1D->getWidth())), convertCanvasdist2Datadist(CLICK_TOLERANCE)) == NULL)
+    if (cuw->selectPoint(1.0f - (float(ev->win_y - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT)), normd2datad(CLICK_TOLERANCE), 
+                         norm2data(float(ev->win_x) / float(_glCanvas1D->getWidth())), normd2datad(CLICK_TOLERANCE)) == NULL)
     {
       cuw->_currentPoint = NULL;
     }
@@ -578,7 +597,7 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
   
   FXEvent* ev = (FXEvent*)ptr;
   float pos = ts_clamp(float(ev->win_x) / float(_glCanvas1D->getWidth()), 0.0f, 1.0f);
-  _mousePosLabel->setText(FXStringFormat("Mouse: %.5g", convertCanvas2Data(pos)));
+  _mousePosLabel->setText(FXStringFormat("Mouse: %.5g", norm2data(pos)));
 
   if (_glCanvas1D->grabbed())
   {
@@ -586,8 +605,8 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
     {
       if(!_currentWidget || !_canvas) return 1;
       if(_canvas->_vd->tf._widgets.count() == 0) return 1;
-      _pinPosLabel->setText(FXStringFormat("Pin: %.5g", convertCanvas2Data(pos)));
-      _currentWidget->_pos[0] = convertCanvas2Data(pos);
+      _pinPosLabel->setText(FXStringFormat("Pin: %.5g", norm2data(pos)));
+      _currentWidget->_pos[0] = norm2data(pos);
     }
     else if (_mouseButton==3)
     {
@@ -793,16 +812,16 @@ void VVTransferWindow::newWidget(WidgetType wt)
       widget = new vvTFColor(col, 0.5f);
       break;
     case PYRAMID:
-      widget = new vvTFPyramid(col, false, 1.0f, 0.5f, 0.4f, 0.2f);
+      widget = new vvTFPyramid(col, false, 1.0f, norm2data(0.5f), normd2datad(0.4f), normd2datad(0.2f));
       break;
     case BELL:
-      widget = new vvTFBell(col, false, 1.0f, 0.5f, 0.2f);
+      widget = new vvTFBell(col, false, 1.0f, norm2data(0.5f), normd2datad(0.2f));
       break;
     case CUSTOM:
-      widget = new vvTFCustom(0.5f, 0.5f);
+      widget = new vvTFCustom(norm2data(0.5f), norm2data(0.5f));
       break;
     case SKIP:
-      widget = new vvTFSkip(0.5f, 0.2f);
+      widget = new vvTFSkip(norm2data(0.5f), normd2datad(0.2f));
       break;
     default: return;
   }
@@ -1047,9 +1066,9 @@ void VVTransferWindow::drawBinLimits()
     {
       for (i=0; i<vvVolDesc::NUM_HDR_BINS; ++i)
       {
-        xmin = convertData2Canvas(_canvas->_vd->_hdrBinLimits[i]);
-        if (i==vvVolDesc::NUM_HDR_BINS-1) xmax = convertData2Canvas(_canvas->_vd->real[1]);
-        else xmax = convertData2Canvas(_canvas->_vd->_hdrBinLimits[i+1]);
+        xmin = data2norm(_canvas->_vd->_hdrBinLimits[i]);
+        if (i==vvVolDesc::NUM_HDR_BINS-1) xmax = data2norm(_canvas->_vd->real[1]);
+        else xmax = data2norm(_canvas->_vd->_hdrBinLimits[i+1]);
       
         glBegin(GL_LINES);
           glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
@@ -1069,7 +1088,7 @@ void VVTransferWindow::drawBinLimits()
       {
         glBegin(GL_LINES);
           glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
-          xmin = convertData2Canvas((float(i) / 256.0f) * 
+          xmin = data2norm((float(i) / 256.0f) * 
             (_canvas->_vd->real[1] - _canvas->_vd->real[0]) + _canvas->_vd->real[0]);
           glVertex3f(xmin, ymin, 0.0f);
           glVertex3f(xmin, ymax, 0.0f);
@@ -1091,7 +1110,7 @@ void VVTransferWindow::drawControlPoints(vvTFCustom* cuw)
     y = (*iter)->_opacity * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());  
     if (_glCanvas1D->makeCurrent())
     {
-      drawSphere(convertData2Canvas(x), y, 0.02f, (*iter)==cuw->_currentPoint);
+      drawSphere(data2norm(x), y, 0.02f, (*iter)==cuw->_currentPoint);
       _glCanvas1D->makeNonCurrent();
     }
   }
@@ -1146,8 +1165,9 @@ void VVTransferWindow::drawPinLines()
 
 /** Convert canvas x coordinates to data values.
   @param canvas canvas x coordinate [0..1]
+  @return data value
 */
-float VVTransferWindow::convertCanvas2Data(float canvas)
+float VVTransferWindow::norm2data(float canvas)
 {
   return canvas * (_dataZoom[1] - _dataZoom[0]) + _dataZoom[0];
 }
@@ -1156,21 +1176,21 @@ float VVTransferWindow::convertCanvas2Data(float canvas)
   @param data data value
   @return canvas x coordinate [0..1]
 */
-float VVTransferWindow::convertData2Canvas(float data)
+float VVTransferWindow::data2norm(float data)
 {
   return (data - _dataZoom[0]) / (_dataZoom[1] - _dataZoom[0]);
 }
 
-/** Convert horizontal distances on the canvas to data distances.
+/** Convert horizontal differences on the canvas to data differences.
 */
-float VVTransferWindow::convertCanvasdist2Datadist(float canvas)
+float VVTransferWindow::normd2datad(float canvas)
 {
   return canvas * (_dataZoom[1] - _dataZoom[0]);
 }
 
-/** Convert horizontal distances in data to the canvas.
+/** Convert differences in data to the canvas.
 */
-float VVTransferWindow::convertDatadist2Canvasdist(float data)
+float VVTransferWindow::datad2normd(float data)
 {
   return data / (_dataZoom[1] - _dataZoom[0]);
 }
@@ -1196,7 +1216,7 @@ void VVTransferWindow::drawPinLine(vvTFWidget* w)
   else return;
 
   selected = (w == _currentWidget);
-  xPos = convertData2Canvas(w->_pos[0]);
+  xPos = data2norm(w->_pos[0]);
   if (_glCanvas1D->makeCurrent())
   {
     glColor3f(0.0f, 0.0f, 0.0f);
@@ -1235,7 +1255,7 @@ vvTFWidget* VVTransferWindow::closestWidget(float x, float y, float z)
         if ((isColor && dynamic_cast<vvTFColor*>(temp)) || (!isColor && dynamic_cast<vvTFColor*>(temp)==NULL)) 
         {
           dist = fabs(x - temp->_pos[0]);
-          if(dist < minDist && dist <= convertCanvasdist2Datadist(CLICK_TOLERANCE))
+          if(dist < minDist && dist <= normd2datad(CLICK_TOLERANCE))
           {
             minDist = dist;
             w = temp;
@@ -1248,7 +1268,7 @@ vvTFWidget* VVTransferWindow::closestWidget(float x, float y, float z)
           xDist = x - temp->_pos[0];
           yDist = y - temp->_pos[1];
           dist = float(sqrt(xDist * xDist + yDist * yDist));
-          if (dist < minDist && dist <= convertCanvasdist2Datadist(CLICK_TOLERANCE))
+          if (dist < minDist && dist <= normd2datad(CLICK_TOLERANCE))
           {
             minDist = dist;
             w = temp;
@@ -1277,34 +1297,34 @@ void VVTransferWindow::updateLabels()
   else if ((pw=dynamic_cast<vvTFPyramid*>(_currentWidget))!=NULL)
   {
     _pinSwitcher->setCurrent(2);
-    _pTopXSlider->setValue(convertDatadist2Canvasdist(pw->_top[0]));
-    _pTopXLabel->setText(FXStringFormat("%.2f", _pTopXSlider->getValue()));
-    _pBottomXSlider->setValue(convertDatadist2Canvasdist(pw->_bottom[0]));
-    _pBottomXLabel->setText(FXStringFormat("%.2f", _pBottomXSlider->getValue()));
+    _pTopXSlider->setValue(datad2normd(pw->_top[0]));
+    _pTopXLabel->setText(FXStringFormat("%.5g", pw->_top[0]));
+    _pBottomXSlider->setValue(datad2normd(pw->_bottom[0]));
+    _pBottomXLabel->setText(FXStringFormat("%.5g", pw->_bottom[0]));
     _pMaxSlider->setValue(pw->_opacity);
-    _pMaxLabel->setText(FXStringFormat("%.2f", _pMaxSlider->getValue()));
+    _pMaxLabel->setText(FXStringFormat("%.5g", pw->_opacity));
     _pColorButton->setCheck(pw->hasOwnColor());
   }
   else if ((bw=dynamic_cast<vvTFBell*>(_currentWidget))!=NULL)
   {
     _pinSwitcher->setCurrent(3);
-    _bWidthSlider->setValue(bw->_size[0]);
-    _bWidthLabel->setText(FXStringFormat("%.2f", _bWidthSlider->getValue()));
+    _bWidthSlider->setValue(datad2normd(bw->_size[0]));
+    _bWidthLabel->setText(FXStringFormat("%.5g", bw->_size[0]));
     _bMaxSlider->setValue(bw->_opacity);
-    _bMaxLabel->setText(FXStringFormat("%.2f", _bMaxSlider->getValue()));
+    _bMaxLabel->setText(FXStringFormat("%.5g", bw->_opacity));
     _bColorButton->setCheck(bw->hasOwnColor());
   }
   else if ((sw=dynamic_cast<vvTFSkip*>(_currentWidget))!=NULL)
   {
     _pinSwitcher->setCurrent(4);
-    _sWidthSlider->setValue(sw->_size[0]);
-    _sWidthLabel->setText(FXStringFormat("%.2f", _sWidthSlider->getValue()));
+    _sWidthSlider->setValue(datad2normd(sw->_size[0]));
+    _sWidthLabel->setText(FXStringFormat("%.5g", sw->_size[0]));
   }
   else if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)
   {
     _pinSwitcher->setCurrent(5);
-    _cWidthSlider->setValue(cuw->_size[0]);
-    _cWidthLabel->setText(FXStringFormat("%.2f", _cWidthSlider->getValue()));
+    _cWidthSlider->setValue(datad2normd(cuw->_size[0]));
+    _cWidthLabel->setText(FXStringFormat("%.5g", cuw->_size[0]));
   }
   else    // no current widget
   {

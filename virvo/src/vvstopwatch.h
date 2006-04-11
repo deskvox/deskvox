@@ -64,11 +64,13 @@ class VIRVOEXPORT vvStopwatch
 #else
     timeval baseTime;                             ///< system time when stop watch was triggered last
 #endif
+    float lastTime;
 
   public:
     vvStopwatch();
     void  start();
     float getTime();
+    float getDiff();
 };
 #endif
 

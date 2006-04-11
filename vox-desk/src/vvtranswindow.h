@@ -231,10 +231,10 @@ class VVTransferWindow : public FXDialogBox
     vvTFWidget* closestWidget(float, float, float);
     void drawCircle(float, float, float, bool);
     void drawSphere(float, float, float, bool);
-    float convertCanvas2Data(float);
-    float convertData2Canvas(float);
-    float convertCanvasdist2Datadist(float);
-    float convertDatadist2Canvasdist(float);
+    float norm2data(float);
+    float data2norm(float);
+    float normd2datad(float);
+    float datad2normd(float);
     void makeColorBar(int, uchar*);
 };
     

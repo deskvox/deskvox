@@ -43,6 +43,7 @@ vvStopwatch::vvStopwatch()
   baseTime.tv_sec  = 0;
   baseTime.tv_usec = 0;
 #endif
+  lastTime = 0.0f;
 }
 
 //----------------------------------------------------------------------------
@@ -64,6 +65,8 @@ void vvStopwatch::start()
   void* v = NULL;
   gettimeofday(&baseTime, v);
 #endif
+
+  lastTime = 0.0f;
 }
 
 //----------------------------------------------------------------------------
@@ -101,7 +104,16 @@ float vvStopwatch::getTime()
   dt   = (float)sec + (float)usec / 1000000.0f;
 #endif
 
+  lastTime = dt;
   return dt;
+}
+
+//----------------------------------------------------------------------------
+/// Return the time passed since the last getTime or getDiff command [seconds].
+float vvStopwatch::getDiff()
+{
+  float last = lastTime;
+  return getTime() - last;
 }
 
 //============================================================================
