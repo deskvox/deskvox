@@ -376,10 +376,12 @@ void vvTransFunc::computeTFTexture(int w, int h, int d, float* array,
 }
 
 //----------------------------------------------------------------------------
-/** Returns RGBA texture values for a color preview bar: without opacity at the top,
-  with opacity at the bottom.
+/** Returns RGBA texture values for a color preview bar consisting of 3 rows:
+  top: just the color, ignores opacity
+  middle: color and opacity
+  bottom: opacity only as grayscale
   @param width  width of color bar [pixels]
-  @param colors pointer to _allocated_ memory providing space for num x 2 x 4 bytes.
+  @param colors pointer to _allocated_ memory providing space for num x 3 x 4 bytes.
                Byte quadruple 0 will be considered to correspond with scalar
                 value 0.0, quadruple num-1 will be considered to correspond with
                 scalar value 1.0. The resulting RGBA values are stored in the
@@ -406,6 +408,7 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max)
       if (c<3) colors[index] = uchar(rgba[index] * 255.0f);
       else colors[index] = (uchar)255;
       colors[index + width * 4] = uchar(rgba[index] * 255.0f);
+      colors[index + 2 * width * 4] = (c<3) ? (uchar(rgba[x * 4 + 3] * 255.0f)) : 255;
     }
   }
   delete[] rgba;

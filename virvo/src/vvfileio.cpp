@@ -3795,6 +3795,7 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
   int i;
   bool done = false;
   bool bigEnd = true;
+  bool rightHanded = true;
   bool error = false;
   char* filenameBak = NULL;
 
@@ -3914,6 +3915,16 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
       if (ttype == vvTokenizer::VV_NUMBER) skipBytes = int(tokenizer->nval);
       cerr << "hdr file: SkipBytes=" << skipBytes << endl;
     }
+    else if (vvToolshed::strCompare(tokenizer->sval, "COORDSYSTEM:")==0)
+    {
+      ttype = tokenizer->nextToken();
+      if (ttype == vvTokenizer::VV_WORD)
+      {
+        if (vvToolshed::strCompare(tokenizer->sval, "LEFT_HANDED")==0) rightHanded = false;
+        cerr << "hdr file: CoordSystem=" << ((rightHanded) ? "right handed" : "left handed") << endl;
+      }
+      else cerr << "hdr file: Invalid value for CoordSystem" << endl;
+    }
     else
     {
       done = error = true;
@@ -3934,7 +3945,7 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
   vd->setFilename(filenameBak);
   delete[] filenameBak;
   if (err != OK) return err;
-  vd->convertVoxelOrder();
+  if (!rightHanded) vd->convertVoxelOrder();
   if (bigEnd) vd->toggleEndianness();
 
   return OK;

@@ -43,6 +43,7 @@ class VVPreferenceWindow : public FXDialogBox
     {
       ID_EYE_DIST=FXDialogBox::ID_LAST,
       ID_QUALITY,
+      ID_QUALITY_TEXT,
       ID_STEREO,
       ID_ARTOOLKIT,
       ID_VOXELTYPE,
@@ -97,6 +98,7 @@ class VVPreferenceWindow : public FXDialogBox
 
     long onEyeChange(FXObject*,FXSelector,void*);
     long onQualityChange(FXObject*,FXSelector,void*);
+    long onQualityTextChange(FXObject*,FXSelector,void*);
     long onQualityChanging(FXObject*,FXSelector,void*);
     long onStereoChange(FXObject*,FXSelector,void*);
     long onARToolkitChange(FXObject*,FXSelector,void*);

@@ -51,6 +51,7 @@ FXDEFMAP(VVPreferenceWindow) VVPreferenceWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_DEF_VOL,        VVPreferenceWindow::onDefaultVolume),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_SUPPRESS,       VVPreferenceWindow::onSuppressRendering),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_SWAP_EYES,      VVPreferenceWindow::onSwapEyes),
+  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY_TEXT,   VVPreferenceWindow::onQualityTextChange),
 };
 
 FXIMPLEMENT(VVPreferenceWindow,FXDialogBox,VVPreferenceWindowMap,ARRAYNUMBER(VVPreferenceWindowMap))
@@ -104,8 +105,7 @@ FXDialogBox(owner,"Preferences", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 50, 5
   _qualityDial->setNotchSpacing(100);
   _qualityDial->setTipText("0.0 for single slice, 1.0 for one slice per voxel, >1.0 for better reconstruction");
 
-  _qualityTField = new FXTextField(qualityFrame, 5, NULL, 0, TEXTFIELD_REAL | JUSTIFY_RIGHT);
-  _qualityTField->setEditable(false);
+  _qualityTField = new FXTextField(qualityFrame, 5, this, ID_QUALITY_TEXT, TEXTFIELD_REAL | JUSTIFY_RIGHT | TEXTFIELD_NORMAL);
   _qualityTField->setText(FXStringFormat("%.2f", 1.0f));
 
   FXGroupBox* stereoGroup = new FXGroupBox(master,"Stereo", FRAME_GROOVE | LAYOUT_FILL_X);
@@ -289,6 +289,13 @@ long VVPreferenceWindow::onQualityChange(FXObject*,FXSelector,void*)
   return 1;
 }
 
+long VVPreferenceWindow::onQualityTextChange(FXObject*,FXSelector,void*)
+{
+  setQualityDialValue(FXFloatVal(_qualityTField->getText()));
+  handle(this, FXSEL(SEL_COMMAND, ID_QUALITY), NULL);
+  return 1;
+}
+
 long VVPreferenceWindow::onMIPSelect(FXObject*,FXSelector,void* ptr)
 {
   _shell->_glcanvas->makeCurrent();
@@ -343,7 +350,7 @@ long VVPreferenceWindow::onComputeBricksizeSelect(FXObject*, FXSelector, void* p
   return 1;
 }
 
-long VVPreferenceWindow::onTexMemoryChange(FXObject*, FXSelector, void* ptr)
+long VVPreferenceWindow::onTexMemoryChange(FXObject*, FXSelector, void*)
 {
   vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
 

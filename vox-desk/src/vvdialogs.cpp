@@ -2528,9 +2528,8 @@ FXDEFMAP(VVFloatRangeDialog) VVFloatRangeDialogMap[]=
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_TOP_PERCENT, VVFloatRangeDialog::onTopPercent),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_FAST,        VVFloatRangeDialog::onFast),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_HDR,         VVFloatRangeDialog::onHDRMapping),
-  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_OK,          VVFloatRangeDialog::onOK),
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_APPLY,       VVFloatRangeDialog::onApply),
-  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_CANCEL,      VVFloatRangeDialog::onCancel),
+  FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_CLOSE,       VVFloatRangeDialog::onClose),
 };
 
 FXIMPLEMENT(VVFloatRangeDialog,FXDialogBox,VVFloatRangeDialogMap,ARRAYNUMBER(VVFloatRangeDialogMap))
@@ -2585,9 +2584,21 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   _fastNumber->setText("10000");
   _fastNumber->setTipText("Uses a reduced number of data values for HDR transfer function specification. Default: 10,000");
 
-  _skipCheck = new FXCheckButton(hdrMatrix, "Ignore Skip ranges", this, ID_SKIP, ICON_BEFORE_TEXT);
+  _skipCheck = new FXCheckButton(hdrMatrix, "Cull Skip ranges", this, ID_SKIP, ICON_BEFORE_TEXT);
   _skipCheck->setCheck(true);
   _skipCheck->setTipText("Remove data values in areas covered by Skip widgets from iso-binning process.");
+  new FXLabel(hdrMatrix, "");
+  new FXLabel(hdrMatrix, "");
+
+  _dupCheck = new FXCheckButton(hdrMatrix, "Cull duplicate values", this, ID_DUP, ICON_BEFORE_TEXT);
+  _dupCheck->setCheck(true);
+  _dupCheck->setTipText("Remove duplicate data values to make better use of the bins.");
+  new FXLabel(hdrMatrix, "");
+  new FXLabel(hdrMatrix, "");
+
+  _zeroCheck = new FXCheckButton(hdrMatrix, "Ignore zero", this, ID_ZERO, ICON_BEFORE_TEXT);
+  _zeroCheck->setCheck(false);
+  _zeroCheck->setTipText("Ignore zero values in data set for HDR algorithm.");
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
 
@@ -2599,34 +2610,15 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
 
   // Buttons:
   FXVerticalFrame* buttonFrame = new FXVerticalFrame(horizontalFrame, LAYOUT_FILL_X | LAYOUT_FIX_WIDTH,0,0,80);
-  new FXButton(buttonFrame, "OK", NULL, this, ID_OK, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
   new FXButton(buttonFrame, "Apply", NULL, this, ID_APPLY, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
-  new FXButton(buttonFrame, "Cancel", NULL, this, ID_CANCEL, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  new FXButton(buttonFrame, "Close", NULL, this, ID_CLOSE, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
   
   handle(this, FXSEL(SEL_COMMAND, ID_HDR), NULL);
 }
 
-long VVFloatRangeDialog::onOK(FXObject*,FXSelector,void*)
-{
-  handle(this, FXSEL(SEL_COMMAND, ID_APPLY), NULL);
-  handle(this, FXSEL(SEL_COMMAND, ID_HIDE), NULL);
-  return 1;
-}
-
-long VVFloatRangeDialog::onCancel(FXObject*,FXSelector,void*)
+long VVFloatRangeDialog::onClose(FXObject*,FXSelector,void*)
 {
   handle(this, FXSEL(SEL_COMMAND, ID_HIDE), NULL);
-  if (_canvas->_renderer)
-  {
-    if(_shell->_glcanvas->makeCurrent())
-    {
-      _canvas->_vd->real[0] = _minBak;
-      _canvas->_vd->real[1] = _maxBak;
-      _canvas->_renderer->updateVolumeData();
-      _shell->_glcanvas->makeNonCurrent();
-      updateDependents();
-    }
-  }
   return 1;
 }
 
@@ -2649,7 +2641,8 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
           default: assert(0); break;
         }
         _canvas->_vd->updateHDRBins((_fastCheck->getCheck()) ? FXIntVal(_fastNumber->getText()) : -1, 
-          (_skipCheck->getCheck()) ? true : false, (_lockCheck->getCheck()) ? true : false, bt);
+          (_skipCheck->getCheck()) ? true : false, (_dupCheck->getCheck()) ? true : false, 
+          (_lockCheck->getCheck()) ? true : false, (_zeroCheck->getCheck()) ? true : false, bt);
       }
       _canvas->_renderer->updateVolumeData();
       _canvas->_renderer->updateTransferFunction();
@@ -2715,6 +2708,8 @@ long VVFloatRangeDialog::onHDRMapping(FXObject*,FXSelector,void*)
     _fastCheck->enable();
     if (_fastCheck->getCheck()) _fastNumber->enable();
     _skipCheck->enable();
+    _dupCheck->enable();
+    _zeroCheck->enable();
     _lockCheck->enable();
   }
   else
@@ -2724,6 +2719,8 @@ long VVFloatRangeDialog::onHDRMapping(FXObject*,FXSelector,void*)
     _fastCheck->disable();
     _fastNumber->disable();
     _skipCheck->disable();
+    _dupCheck->disable();
+    _zeroCheck->disable();
     _lockCheck->disable();
   }
   return 1;
@@ -2740,11 +2737,6 @@ void VVFloatRangeDialog::updateValues()
 
 void VVFloatRangeDialog::show()
 {
-  if (_canvas->_renderer)
-  {
-    _minBak = _canvas->_vd->real[0];
-    _maxBak = _canvas->_vd->real[1];
-  }
   updateValues();
   FXDialogBox::show();
 }

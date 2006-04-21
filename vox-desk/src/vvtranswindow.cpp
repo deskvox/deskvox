@@ -39,7 +39,8 @@ const FXColor VVTransferWindow::WHITE = FXRGB(255,255,255);
 const float VVTransferWindow::CLICK_TOLERANCE = 0.03f; // [TF space]
 const int VVTransferWindow::TF_WIDTH  = 768;
 const int VVTransferWindow::TF_HEIGHT = 256;
-const int VVTransferWindow::COLORBAR_HEIGHT = 20;
+const int VVTransferWindow::COLORBAR_HEIGHT = 30;
+const int VVTransferWindow::BINLIMITS_HEIGHT = 10;
 
 /*******************************************************************************/
 FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
@@ -82,6 +83,7 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HISTOGRAM,     VVTransferWindow::onCmdHistogram),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_OPACITY,       VVTransferWindow::onCmdOpacity),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_BINS,          VVTransferWindow::onCmdBins),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_PINS,          VVTransferWindow::onCmdPins),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_PICK_COLOR,    VVTransferWindow::onCmdPickColor),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_NORMALIZATION, VVTransferWindow::onCmdNormalization),
   FXMAPFUNC(SEL_CHANGED,           VVTransferWindow::ID_COLOR_PICKER,  VVTransferWindow::onChngPickerColor),
@@ -269,8 +271,10 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   FXHorizontalFrame* miscFrame = new FXHorizontalFrame(histoGroup);
   _opaCheck = new FXCheckButton(miscFrame,"Opacity",this,ID_OPACITY, ICON_BEFORE_TEXT);
   _opaCheck->setCheck(true);
-  _binsCheck = new FXCheckButton(miscFrame, "Bin limits", this, ID_BINS, ICON_BEFORE_TEXT);
+  _binsCheck = new FXCheckButton(miscFrame, "Show bin limits", this, ID_BINS, ICON_BEFORE_TEXT);
   _binsCheck->setCheck(false);
+  _pinsCheck = new FXCheckButton(miscFrame, "Show pin lines", this, ID_PINS, ICON_BEFORE_TEXT);
+  _pinsCheck->setCheck(true);
   FXHorizontalFrame* histoFrame = new FXHorizontalFrame(histoGroup);
   _histoCheck = new FXCheckButton(histoFrame,"Histogram",this,ID_HISTOGRAM, ICON_BEFORE_TEXT);
   _histoCheck->setCheck(true);
@@ -573,7 +577,8 @@ long VVTransferWindow::onMouseRDown1D(FXObject*,FXSelector,void* ptr)
   FXEvent* ev = (FXEvent*)ptr;
   if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)  // is current widget of custom type?
   {
-    if (cuw->selectPoint(1.0f - (float(ev->win_y - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT)), normd2datad(CLICK_TOLERANCE), 
+    if (cuw->selectPoint(1.0f - (float(ev->win_y - COLORBAR_HEIGHT - BINLIMITS_HEIGHT) / 
+                                 float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT)), normd2datad(CLICK_TOLERANCE), 
                          norm2data(float(ev->win_x) / float(_glCanvas1D->getWidth())), normd2datad(CLICK_TOLERANCE)) == NULL)
     {
       cuw->_currentPoint = NULL;
@@ -613,7 +618,7 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
       if ((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL)  // is current widget of custom type?
       {
         dx =  (float(ev->win_x - ev->last_x) / float(_glCanvas1D->getWidth())) * (_dataZoom[1] - _dataZoom[0]);
-        dy = - float(ev->win_y - ev->last_y) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT);
+        dy = - float(ev->win_y - ev->last_y) / float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT);
         cuw->moveCurrentPoint(dy, dx);
       }
     }
@@ -809,7 +814,7 @@ void VVTransferWindow::newWidget(WidgetType wt)
   switch(wt)
   {
     case COLOR:
-      widget = new vvTFColor(col, 0.5f);
+      widget = new vvTFColor(col, norm2data(0.5f));
       break;
     case PYRAMID:
       widget = new vvTFPyramid(col, false, 1.0f, norm2data(0.5f), normd2datad(0.4f), normd2datad(0.2f));
@@ -843,7 +848,7 @@ void VVTransferWindow::drawHistogram()
         glPixelZoom(1.0f, 1.0f);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDrawPixels(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT, 
+        glDrawPixels(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT, 
           GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)_histoTexture1D);
         glDisable(GL_BLEND);
         _glCanvas1D->makeNonCurrent();
@@ -874,7 +879,7 @@ void VVTransferWindow::computeHistogram()
       vvColor col(0.4f, 0.4f, 0.4f);
       delete[] _histoTexture1D;
       size[0] = _glCanvas1D->getWidth();
-      size[1] = _glCanvas1D->getHeight() - COLORBAR_HEIGHT;
+      size[1] = _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT;
       _histoTexture1D = new uchar[size[0] * size[1] * 4];
       _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 1, size, _histoTexture1D, 
         (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
@@ -919,7 +924,7 @@ void VVTransferWindow::draw1DTF()
   }
   drawColorTexture();
   drawPinBackground();
-  drawPinLines();
+  if (_pinsCheck->getCheck()) drawPinLines();
   drawCustomWidgets();
   if (_binsCheck->getCheck()) drawBinLimits();
   if (_glCanvas1D->makeCurrent())
@@ -1040,8 +1045,6 @@ void VVTransferWindow::drawCustomWidgets()
 
 void VVTransferWindow::drawBinLimits()
 {
-  const float YMIN = 0.95f;
-  const float YMAX = 1.0f;
   float xmin, xmax, ymin, ymax;
   int i;
    
@@ -1050,8 +1053,8 @@ void VVTransferWindow::drawBinLimits()
     glLineWidth(1.0f);
     
     // Calculate y coordinates:
-    ymin = YMIN * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / _glCanvas1D->getHeight();
-    ymax = YMAX * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / _glCanvas1D->getHeight();
+    ymin = (float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT)) / _glCanvas1D->getHeight();
+    ymax = (float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT)) / _glCanvas1D->getHeight();
 
     // Draw white background for tick marks:
     glBegin(GL_QUADS);
@@ -1107,7 +1110,7 @@ void VVTransferWindow::drawControlPoints(vvTFCustom* cuw)
   for(iter=cuw->_points.begin(); iter!=cuw->_points.end(); iter++) 
   {
     x = cuw->_pos[0] + (*iter)->_pos[0];
-    y = (*iter)->_opacity * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());  
+    y = (*iter)->_opacity * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT) / float(_glCanvas1D->getHeight());  
     if (_glCanvas1D->makeCurrent())
     {
       drawSphere(data2norm(x), y, 0.02f, (*iter)==cuw->_currentPoint);
@@ -1210,8 +1213,8 @@ void VVTransferWindow::drawPinLine(vvTFWidget* w)
            (dynamic_cast<vvTFSkip*>(w) != NULL) ||
            (dynamic_cast<vvTFCustom*>(w) != NULL))
   {
-    yTop = 1.0f - float(COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());
-    height = float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight());
+    yTop = 1.0f - float(COLORBAR_HEIGHT + BINLIMITS_HEIGHT) / float(_glCanvas1D->getHeight());
+    height = float(_glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT) / float(_glCanvas1D->getHeight());
   }
   else return;
 
@@ -1251,7 +1254,7 @@ vvTFWidget* VVTransferWindow::closestWidget(float x, float y, float z)
     switch (_tfBook->getCurrent())
     {
       case 0: 
-        isColor = (y > 1.0f - float(COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight())) ? true : false;
+        isColor = (y > 1.0f - float(COLORBAR_HEIGHT + BINLIMITS_HEIGHT) / float(_glCanvas1D->getHeight())) ? true : false;
         if ((isColor && dynamic_cast<vvTFColor*>(temp)) || (!isColor && dynamic_cast<vvTFColor*>(temp)==NULL)) 
         {
           dist = fabs(x - temp->_pos[0]);
@@ -1345,7 +1348,7 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
   if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
   {
     // Shift colors according to HDR bins:
-    tmpBar = new uchar[vvVolDesc::NUM_HDR_BINS * 4 * 2];
+    tmpBar = new uchar[vvVolDesc::NUM_HDR_BINS * 4 * 3];
     _canvas->_vd->tf.makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->real[0], _canvas->_vd->real[1]);
     for (i=0; i<width; ++i)
     {
@@ -1353,7 +1356,8 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
       bin = _canvas->_vd->findHDRBin(fval);
       bin = ts_clamp(bin, 0, vvVolDesc::NUM_HDR_BINS-1);
       memcpy(colorBar + i*4, tmpBar + bin*4, 4);
-      memcpy(colorBar + 4*(i+width), tmpBar + 4*(bin + vvVolDesc::NUM_HDR_BINS), 4);
+      memcpy(colorBar + 4*(i+width), tmpBar + 4 * (bin + vvVolDesc::NUM_HDR_BINS), 4);
+      memcpy(colorBar + 4*(i+2*width), tmpBar + 4 * (bin + 2*vvVolDesc::NUM_HDR_BINS), 4);
     }
     delete[] tmpBar;
   }
@@ -1371,7 +1375,7 @@ void VVTransferWindow::drawColorTexture()
   int width;
   
   width = _glCanvas1D->getWidth();
-  colorBar = new uchar[width * 4 * 2];
+  colorBar = new uchar[width * 4 * 3];
   makeColorBar(width, colorBar);
   if (_glCanvas1D->makeCurrent())
   {
@@ -1382,15 +1386,15 @@ void VVTransferWindow::drawColorTexture()
     background[2] = uchar(b * 255.0f);
     background[3] = 255;
     glRasterPos2f(0.0f, 1.0f);  // pixmap origin is bottom left corner of output window
-    glPixelZoom(float(_glCanvas1D->getWidth()), -20.0f); // full canvas width, 20 pixels high
+    glPixelZoom(float(_glCanvas1D->getWidth()), -30.0f); // full canvas width, 20 pixels high
     glDrawPixels(1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)background);
 
     // Draw color bars:
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glRasterPos2f(0.0f, 1.0f);  // pixmap origin is bottom left corner of output window
-    glPixelZoom(1.0f, -10.0f); // full canvas width, 10*2 pixels high, upside-down
-    glDrawPixels(width, 2, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)colorBar);
+    glPixelZoom(1.0f, -10.0f); // full canvas width, 10*3 pixels high, upside-down
+    glDrawPixels(width, 3, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)colorBar);
     glDisable(GL_BLEND);
     
     _glCanvas1D->makeNonCurrent();
@@ -1400,16 +1404,16 @@ void VVTransferWindow::drawColorTexture()
 
 void VVTransferWindow::drawAlphaTexture()
 {
-  static uchar* tfTexture = new uchar[_glCanvas1D->getWidth() * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT) * 4];
+  static uchar* tfTexture = new uchar[_glCanvas1D->getWidth() * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT) * 4];
   
   if (_glCanvas1D->makeCurrent())
   {
-    _canvas->_vd->tf.makeAlphaTexture(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT, tfTexture, _dataZoom[0], _dataZoom[1]);
+    _canvas->_vd->tf.makeAlphaTexture(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT, tfTexture, _dataZoom[0], _dataZoom[1]);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glRasterPos2f(0.0f, 1.0f - float(COLORBAR_HEIGHT) / float(_glCanvas1D->getHeight())); 
+    glRasterPos2f(0.0f, 1.0f - float(COLORBAR_HEIGHT + BINLIMITS_HEIGHT) / float(_glCanvas1D->getHeight())); 
     glPixelZoom(1.0f, -1.0f);
-    glDrawPixels(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT, 
+    glDrawPixels(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT, 
       GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)tfTexture);
     glDisable(GL_BLEND);
     _glCanvas1D->makeNonCurrent();
@@ -1475,6 +1479,12 @@ long VVTransferWindow::onCmdOpacity(FXObject*,FXSelector,void*)
 }
 
 long VVTransferWindow::onCmdBins(FXObject*,FXSelector,void*)
+{
+  drawTF();
+  return 1;
+}
+
+long VVTransferWindow::onCmdPins(FXObject*,FXSelector,void*)
 {
   drawTF();
   return 1;

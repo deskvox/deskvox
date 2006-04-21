@@ -72,6 +72,7 @@ class VVTransferWindow : public FXDialogBox
       ID_HISTOGRAM,
       ID_OPACITY,
       ID_BINS,
+      ID_PINS,
       ID_APPLY,
       ID_IMPORT,
       ID_SAVE_MV,
@@ -137,6 +138,7 @@ class VVTransferWindow : public FXDialogBox
     long onCmdHistogram(FXObject*,FXSelector,void*);
     long onCmdOpacity(FXObject*,FXSelector,void*);
     long onCmdBins(FXObject*,FXSelector,void*);
+    long onCmdPins(FXObject*,FXSelector,void*);
     long onCmdPickColor(FXObject*,FXSelector,void*);
     long onCmdNormalization(FXObject*,FXSelector,void*);
     long onChngPickerColor(FXObject*,FXSelector,void*);
@@ -154,6 +156,7 @@ class VVTransferWindow : public FXDialogBox
     static const FXColor WHITE;
     static const float CLICK_TOLERANCE;
     static const int COLORBAR_HEIGHT;
+    static const int BINLIMITS_HEIGHT;
     const static int TF_WIDTH;
     const static int TF_HEIGHT;
     FXGLVisual* _glVisual1D;
@@ -186,6 +189,7 @@ class VVTransferWindow : public FXDialogBox
     FXRadioButton* _histFirst;
     FXCheckButton* _histoCheck;
     FXCheckButton* _opaCheck;
+    FXCheckButton* _pinsCheck;
     FXCheckButton* _binsCheck;
     FXCheckButton* _instantButton;
     FXCheckButton* _pColorButton;

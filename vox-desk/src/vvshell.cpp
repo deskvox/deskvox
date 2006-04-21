@@ -1383,6 +1383,7 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, int algorithm, vvTexRend::Geometr
     _editVoxelsDialog->updateValues();
     _dimDialog->updateValues();
     _dimDialog->initDefaultDistances();
+    _floatRangeDialog->updateValues();
   }
   else cerr << "VVShell: Cannot set OpenGL context." << endl;
 }

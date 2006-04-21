@@ -729,8 +729,7 @@ class VVFloatRangeDialog : public FXDialogBox
   public:
     enum
     {
-      ID_OK = FXDialogBox::ID_LAST,
-      ID_APPLY,
+      ID_APPLY = FXDialogBox::ID_LAST,
       ID_MIN_DATA,
       ID_MAX_DATA,
       ID_BOT_PERCENT,
@@ -738,8 +737,10 @@ class VVFloatRangeDialog : public FXDialogBox
       ID_HDR,
       ID_FAST,
       ID_SKIP,
+      ID_DUP,
+      ID_ZERO,
       ID_LOCK,
-      ID_CANCEL
+      ID_CLOSE
     };
     FXint _algoType;
     FXDataTarget _algoDataTarget;
@@ -752,15 +753,15 @@ class VVFloatRangeDialog : public FXDialogBox
     FXCheckButton* _hdrCheck;
     FXCheckButton* _fastCheck;
     FXCheckButton* _skipCheck;
+    FXCheckButton* _dupCheck;
     FXCheckButton* _lockCheck;
+    FXCheckButton* _zeroCheck;
     FXTextField* _fastNumber;
     VVShell* _shell;
     vox::vvCanvas* _canvas;
-    float _minBak, _maxBak;
 
     VVFloatRangeDialog(FXWindow*, vox::vvCanvas*);
-    long onOK(FXObject*, FXSelector, void*);
-    long onCancel(FXObject*, FXSelector, void*);
+    long onClose(FXObject*, FXSelector, void*);
     long onApply(FXObject*, FXSelector, void*);
     long onMinData(FXObject*, FXSelector, void*);
     long onMaxData(FXObject*, FXSelector, void*);

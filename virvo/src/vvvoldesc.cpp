@@ -1001,10 +1001,8 @@ vvArray<float*> voxData, unsigned char* texData)
 
       for (x = 1; x < twidth; ++x)
       {
-        if (type == HISTOGRAM)
-          currY = (int)(normalized[x] * (theight-1));
-        else
-          currY = ts_clamp(data[x], 0, theight-1);
+        if (type == HISTOGRAM) currY = (int)(normalized[x] * (theight-1));
+        else currY = ts_clamp(data[x], 0, theight-1);
 
         vvToolshed::draw2DLine(x-1, prevY, x, currY, color, texData, bpt, twidth, theight);
         prevY = currY;
@@ -2249,7 +2247,7 @@ void vvVolDesc::convertVoxelOrder()
       for (y=0; y<vox[1]; ++y)
         for (z=0; z<vox[2]; ++z)
         {
-          dst = tmpData + getBPV() * (x + y * vox[0] + z * vox[0] * vox[1]);
+          dst = tmpData + getBPV() * (x + (vox[1] - y - 1) * vox[0] + z * vox[0] * vox[1]);
           memcpy(dst, src, getBPV());
           src += getBPV();                        // skip to next voxel
         }
@@ -4672,11 +4670,14 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
 /** Update bin limits array for HDR transfer functions.
   @param numValues if >0 then use subset of volume for sampling
   @param skipWidgets if true, algorithm ignores data values under Skip widgets
+  @param cullDup remove duplicate values from value array to avoid cluttering bins with same value
   @param lockRange if true, realMin/realMax won't be modified
+  @param ignoreZero ignores zero values in entire HDR algorithm
   @param binning binning type
 */
-void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, BinningType binning)
+void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, bool lockRange, bool ignoreZero, BinningType binning)
 {
+  const int MAX_ATTEMPTS = 10000;
   vvTFSkip* sw;
   uchar* srcData;
   float* sortedData;
@@ -4687,12 +4688,12 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
   float tmp;
   float min,max;
   float valuesPerBin;
-  float time;
   int numVoxels;
   int i,j;
   int index;
   int numTF;
   int before;
+  int attempts;
 
   assert(binning!=LINEAR);    // this routine supports only iso-data and opacity-weighted binning
   if (bpc!=4 || chan!=1) 
@@ -4718,8 +4719,14 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
   {
     for (i=0; i<numVoxels; ++i)
     {
-      index = int(numVoxels * float(rand()) / float(RAND_MAX));
-      sortedData[i] = *((float*)(srcData + (sizeof(float) * index)));
+      attempts = 0;
+      do
+      {
+        ++attempts;
+        index = int(numVoxels * float(rand()) / float(RAND_MAX));
+        sortedData[i] = *((float*)(srcData + (sizeof(float) * index)));
+      } while (((ignoreZero) ? (sortedData[i]==0.0f) : false) && attempts < MAX_ATTEMPTS);
+      if (attempts==MAX_ATTEMPTS) cerr << "Using zero despite set to ignore." << endl;
     }
   }
   cerr << stop.getDiff() << " sec" << endl;
@@ -4796,6 +4803,25 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool lockRange, B
     for(i=numVoxels-1; i>0 && sortedData[i] > real[1]; --i);  // find index of realMax
     numVoxels -= (numVoxels-1-i);
     cerr << stop.getDiff() << " sec" << endl;
+  }
+  
+  // Remove duplicate values from array:
+  if (cullDup)
+  {
+    before = numVoxels;
+    cerr << "Removing duplicate values...";
+    i=0;
+    while (i<numVoxels-1 && numVoxels>1)
+    {
+      if (sortedData[i] == sortedData[i+1])
+      {
+        memcpy(&sortedData[i], &sortedData[i+1], sizeof(float) * (numVoxels-i-1));
+        --numVoxels;
+      }
+      else ++i;
+    }        
+    cerr << stop.getDiff() << " sec" << endl;
+    cerr << (before - numVoxels) << " voxels removed" << endl;
   }
   
   // Create array with opacity values for the data values:
