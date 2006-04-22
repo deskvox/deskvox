@@ -248,7 +248,7 @@ class VIRVOEXPORT vvVolDesc
     void   setChannelName(int, const char*);
     const char* getChannelName(int);
     void updateFrame(int, uchar*, DeleteType);
-    void updateHDRBins(int, bool, bool, bool, bool, BinningType);
+    void updateHDRBins(int, bool, bool, bool, BinningType);
     int  findHDRBin(float);
     int  mapFloat2Int(float, BinningType);
     void makeBinTexture(uchar*, int);

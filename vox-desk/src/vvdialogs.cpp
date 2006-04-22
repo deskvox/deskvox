@@ -2578,7 +2578,7 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   _algoType = 1; // set first radio button to true, others to false
 
   _fastCheck = new FXCheckButton(hdrMatrix, "Fast sampling", this, ID_FAST, ICON_BEFORE_TEXT);
-  _fastCheck->setCheck(true);
+  _fastCheck->setCheck(false);
   new FXLabel(hdrMatrix, "Number of values:");
   _fastNumber = new FXTextField(hdrMatrix, 20, NULL, 0, TEXTFIELD_NORMAL | LAYOUT_FILL_X);
   _fastNumber->setText("10000");
@@ -2593,12 +2593,6 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   _dupCheck = new FXCheckButton(hdrMatrix, "Cull duplicate values", this, ID_DUP, ICON_BEFORE_TEXT);
   _dupCheck->setCheck(true);
   _dupCheck->setTipText("Remove duplicate data values to make better use of the bins.");
-  new FXLabel(hdrMatrix, "");
-  new FXLabel(hdrMatrix, "");
-
-  _zeroCheck = new FXCheckButton(hdrMatrix, "Ignore zero", this, ID_ZERO, ICON_BEFORE_TEXT);
-  _zeroCheck->setCheck(false);
-  _zeroCheck->setTipText("Ignore zero values in data set for HDR algorithm.");
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
 
@@ -2642,7 +2636,7 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
         }
         _canvas->_vd->updateHDRBins((_fastCheck->getCheck()) ? FXIntVal(_fastNumber->getText()) : -1, 
           (_skipCheck->getCheck()) ? true : false, (_dupCheck->getCheck()) ? true : false, 
-          (_lockCheck->getCheck()) ? true : false, (_zeroCheck->getCheck()) ? true : false, bt);
+          (_lockCheck->getCheck()) ? true : false, bt);
       }
       _canvas->_renderer->updateVolumeData();
       _canvas->_renderer->updateTransferFunction();
@@ -2709,7 +2703,6 @@ long VVFloatRangeDialog::onHDRMapping(FXObject*,FXSelector,void*)
     if (_fastCheck->getCheck()) _fastNumber->enable();
     _skipCheck->enable();
     _dupCheck->enable();
-    _zeroCheck->enable();
     _lockCheck->enable();
   }
   else
@@ -2720,7 +2713,6 @@ long VVFloatRangeDialog::onHDRMapping(FXObject*,FXSelector,void*)
     _fastNumber->disable();
     _skipCheck->disable();
     _dupCheck->disable();
-    _zeroCheck->disable();
     _lockCheck->disable();
   }
   return 1;

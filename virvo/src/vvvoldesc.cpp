@@ -4673,10 +4673,9 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
   @param skipWidgets if true, algorithm ignores data values under Skip widgets
   @param cullDup remove duplicate values from value array to avoid cluttering bins with same value
   @param lockRange if true, realMin/realMax won't be modified
-  @param ignoreZero ignores zero values in entire HDR algorithm
   @param binning binning type
 */
-void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, bool lockRange, bool ignoreZero, BinningType binning)
+void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, bool lockRange, BinningType binning)
 {
   const int MAX_ATTEMPTS = 10000;
   vvTFSkip* sw;
@@ -4694,7 +4693,6 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   int index;
   int numTF;
   int before;
-  int attempts;
 
   assert(binning!=LINEAR);    // this routine supports only iso-data and opacity-weighted binning
   if (bpc!=4 || chan!=1) 
@@ -4720,14 +4718,8 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   {
     for (i=0; i<numVoxels; ++i)
     {
-      attempts = 0;
-      do
-      {
-        ++attempts;
-        index = int(numVoxels * float(rand()) / float(RAND_MAX));
-        sortedData[i] = *((float*)(srcData + (sizeof(float) * index)));
-      } while (((ignoreZero) ? (sortedData[i]==0.0f) : false) && attempts < MAX_ATTEMPTS);
-      if (attempts==MAX_ATTEMPTS) cerr << "Using zero despite set to ignore." << endl;
+      index = int(numVoxels * float(rand()) / float(RAND_MAX));
+      sortedData[i] = *((float*)(srcData + (sizeof(float) * index)));
     }
   }
   cerr << stop.getDiff() << " sec" << endl;
@@ -4816,7 +4808,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     cerr << stop.getDiff() << " sec" << endl;
     cerr << (before - numVoxels) << " voxels removed" << endl;
   }
-  
+   
   // Create array with opacity values for the data values:
   if (binning==OPACITY)
   {

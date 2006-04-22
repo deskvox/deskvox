@@ -738,7 +738,6 @@ class VVFloatRangeDialog : public FXDialogBox
       ID_FAST,
       ID_SKIP,
       ID_DUP,
-      ID_ZERO,
       ID_LOCK,
       ID_CLOSE
     };
@@ -755,7 +754,6 @@ class VVFloatRangeDialog : public FXDialogBox
     FXCheckButton* _skipCheck;
     FXCheckButton* _dupCheck;
     FXCheckButton* _lockCheck;
-    FXCheckButton* _zeroCheck;
     FXTextField* _fastNumber;
     VVShell* _shell;
     vox::vvCanvas* _canvas;
