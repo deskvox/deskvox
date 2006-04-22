@@ -92,22 +92,22 @@ FXDialogBox(owner,"Preferences", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 50, 5
   _texMemoryField = new FXTextField(texMemoryFrame, 5, this, ID_TEX_MEMORY);
 
   vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
-  if (texrend)
-    texrend->setTexMemorySize(FXIntVal(_texMemoryField->getText()));
+  if (texrend) texrend->setTexMemorySize(FXIntVal(_texMemoryField->getText()));
 
   FXGroupBox* qualityGroup = new FXGroupBox(master, "Rendering quality", FRAME_GROOVE | LAYOUT_FILL_X);
   FXHorizontalFrame* qualityFrame = new FXHorizontalFrame(qualityGroup, LAYOUT_FILL_X);
 
   _qualityDial = new FXDial(qualityFrame, this, ID_QUALITY, DIAL_HORIZONTAL | LAYOUT_FIX_WIDTH,0,0,200);
   _qualityDial->setRange(0, 10000);
-  _qualityDial->setValue(100);
+  float qual = getApp()->reg().readRealEntry("Settings", "RenderingQuality", 1.0);
+  _qualityDial->setValue(int(qual * 100.0));
   _qualityDial->setRevolutionIncrement(200);
   _qualityDial->setNotchSpacing(100);
   _qualityDial->setTipText("0.0 for single slice, 1.0 for one slice per voxel, >1.0 for better reconstruction");
 
   _qualityTField = new FXTextField(qualityFrame, 5, this, ID_QUALITY_TEXT, TEXTFIELD_REAL | JUSTIFY_RIGHT | TEXTFIELD_NORMAL);
-  _qualityTField->setText(FXStringFormat("%.2f", 1.0f));
-
+  _qualityTField->setText(FXStringFormat("%.2f", qual));
+  
   FXGroupBox* stereoGroup = new FXGroupBox(master,"Stereo", FRAME_GROOVE | LAYOUT_FILL_X);
 
   FXHorizontalFrame* stereoFrame = new FXHorizontalFrame(stereoGroup, LAYOUT_FILL_X);
@@ -286,6 +286,8 @@ long VVPreferenceWindow::onQualityChange(FXObject*,FXSelector,void*)
 {
   _canvas->_renderer->_renderState._quality = getQualityDialValue();
   _shell->drawScene();
+  getApp()->reg().writeRealEntry("Settings", "RenderingQuality", getQualityDialValue());
+  getApp()->reg().write();  // update registry
   return 1;
 }
 
@@ -352,15 +354,20 @@ long VVPreferenceWindow::onComputeBricksizeSelect(FXObject*, FXSelector, void* p
 
 long VVPreferenceWindow::onTexMemoryChange(FXObject*, FXSelector, void*)
 {
+  int texram;
+  
   vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
-
   if (texrend)
   {
     _shell->_glcanvas->makeCurrent();
-    texrend->setTexMemorySize(FXIntVal(_texMemoryField->getText()));
+    texram = FXIntVal(_texMemoryField->getText());
+    texrend->setTexMemorySize(texram);
     if (texrend->getGeomType() == vvTexRend::VV_BRICKS)
+    {
       setBSCombo(texrend->getBrickSize());
-    _shell->getApp()->reg().writeStringEntry("Settings", "Texture memory size", _texMemoryField->getText().text());
+    }
+    _shell->getApp()->reg().writeIntEntry("Settings", "TextureRAM", texram);
+    getApp()->reg().write();
     _shell->_glcanvas->makeCurrent();
   }
   return 1;
@@ -431,9 +438,6 @@ void VVPreferenceWindow::updateValues()
 
   _eyeSlider->setValue(int(_canvas->_ov.getIOD()));
   _eyeTField->setText(FXStringFormat("%d",(FXint)_canvas->_ov.getIOD()));
-
-  setQualityDialValue(_canvas->_renderer->_renderState._quality);
-  _qualityTField->setText(FXStringFormat("%.2f",_canvas->_renderer->_renderState._quality));
 
   _linterpButton->setCheck(_canvas->_renderer->getParameter(vvRenderer::VV_SLICEINT)==1.0f);
   _mipButton->setCheck(_canvas->_renderer->_renderState._mipMode==1.0f);
@@ -515,10 +519,9 @@ void VVPreferenceWindow::updateValues()
       _computeBrickSizeButton->disable();
     }
 
-    _texMemoryField->setText(getApp()->reg().readStringEntry("Settings", "Texture memory size", ""));
-
-    if (texrend)
-      texrend->setTexMemorySize(FXIntVal(_texMemoryField->getText()));
+    int texram = getApp()->reg().readIntEntry("Settings", "TextureRAM", 16);
+    _texMemoryField->setText(FXStringFormat("%d", texram));
+    if (texrend) texrend->setTexMemorySize(texram);
 
     if ((texrend) && (texrend->getGeomType() == vvTexRend::VV_BRICKS))
     {
@@ -542,14 +545,11 @@ void VVPreferenceWindow::updateValues()
     // MIP button:
     if (texrend && texrend->isSupported(vvTexRend::VV_MIP)) _mipButton->enable();
     else _mipButton->disable();
-
-    const FXchar* size = getApp()->reg().readStringEntry("Settings", "Texture memory size", NULL);
-    if (size != NULL)
-      _texMemoryField->setText(size);
-    else if (texrend)
-      _texMemoryField->setText("512");
-
-    if (texrend) texrend->setTexMemorySize(FXIntVal(_texMemoryField->getText()));
+    
+    if (texrend) 
+    {
+      _canvas->_renderer->_renderState._quality = FXFloatVal(_qualityTField->getText());
+    }
 
     // Stereo combo box:
     _stereoCombo->clearItems();

@@ -2565,7 +2565,7 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   _topClamp->setText(FXStringFormat("%.9g", 5.0f));
   new FXButton(topClampFrame, "% below max", NULL, this, ID_TOP_PERCENT, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
-  _hdrCheck = new FXCheckButton(verticalFrame, "Use high dynamic range mapping", this, ID_HDR, ICON_BEFORE_TEXT); 
+  _hdrCheck = new FXCheckButton(verticalFrame, "Data range mapping", this, ID_HDR, ICON_BEFORE_TEXT); 
 
   FXGroupBox* hdrGroup = new FXGroupBox(verticalFrame,"High dynamic range mapping",FRAME_GROOVE | LAYOUT_FILL_X);
   FXMatrix* hdrMatrix = new FXMatrix(hdrGroup, 3, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);

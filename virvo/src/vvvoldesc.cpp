@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <algorithm>    // required for std::sort function
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
@@ -4681,11 +4682,11 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   vvTFSkip* sw;
   uchar* srcData;
   float* sortedData;
+  float* sortedTmp;
   float* opacities=NULL;
   double sumOpacities;    // sum of all opacities
   double opacityPerBin;
   double localSum;
-  float tmp;
   float min,max;
   float valuesPerBin;
   int numVoxels;
@@ -4710,7 +4711,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   srcData = getRaw();
   numVoxels = getFrameVoxels();
   if (numValues>0) numVoxels = ts_min(numVoxels, numValues);  
-  sortedData = new float[(numVoxels+2) * sizeof(float)];    // +2 for min/max of data range
+  sortedData = new float[numVoxels+2];    // +2 for min/max of data range
   if (numVoxels == getFrameVoxels())  // can the entire data array be sorted?
   {
     memcpy(sortedData, srcData, getFrameBytes());
@@ -4772,21 +4773,9 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     numVoxels += 2;
   }
   
-  // Sort data (bubblesort)
-  // TODO: use faster sort algorithm (eg, quicksort)
+  // Sort data:
   cerr << "Sorting data array...";
-  for (i=0; i<numVoxels-1; ++i)
-  {
-    for (j=i+1; j<numVoxels; ++j)
-    {
-      if (sortedData[i] > sortedData[j])
-      {
-        tmp = sortedData[i];
-        sortedData[i] = sortedData[j];
-        sortedData[j] = tmp;
-      }
-    }
-  }
+  sort(sortedData, sortedData+numVoxels);   // requires #include <algorithm>
   cerr << stop.getDiff() << " sec" << endl;
   
   // Trim beginning and end of sorted data array to remove values below/above realMin/realMax:
@@ -4810,16 +4799,20 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   {
     before = numVoxels;
     cerr << "Removing duplicate values...";
-    i=0;
-    while (i<numVoxels-1 && numVoxels>1)
+    sortedTmp = new float[numVoxels];    
+    sortedTmp[0] = sortedData[0];
+    j=0;
+    for (i=1; i<numVoxels; ++i)
     {
-      if (sortedData[i] == sortedData[i+1])
+      if (sortedData[i] != sortedTmp[j])
       {
-        memcpy(&sortedData[i], &sortedData[i+1], sizeof(float) * (numVoxels-i-1));
-        --numVoxels;
+        ++j;
+        sortedTmp[j] = sortedData[i];
       }
-      else ++i;
-    }        
+     }
+    numVoxels = j+1;
+    memcpy(sortedData, sortedTmp, numVoxels * sizeof(float));
+    delete[] sortedTmp;
     cerr << stop.getDiff() << " sec" << endl;
     cerr << (before - numVoxels) << " voxels removed" << endl;
   }

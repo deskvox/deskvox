@@ -245,6 +245,8 @@ class VIRVOEXPORT vvToolshed
     static float   interpolateLinear(float, float, float, float, float);
     static bool    makeFileList(std::string&, std::list<std::string>&, std::list<std::string>&);
     static bool    nextListString(std::list<std::string>&, std::string&, std::string&);
+    static void    quickSort(int*, int);
+    static void    qSort(int*, int, int); 
 };
 #endif
 

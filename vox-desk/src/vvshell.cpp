@@ -1105,9 +1105,7 @@ long VVShell::onCmdBGColor(FXObject*,FXSelector,void*)
     // Update color bar background in TF:
     _transWindow->updateValues();
     _canvas->getBackgroundColor(r, g, b); // update rgb to current values
-    char bgcolor[128];
-    sprintf(bgcolor, "%f %f %f", r, g, b);
-    getApp()->reg().writeStringEntry("Settings", "BackgroundColor", bgcolor);
+    getApp()->reg().writeColorEntry("Settings", "BackgroundColor", FXRGB(r*255.0f, g*255.0f, b*255.0f));
     getApp()->reg().write();  // update registry
   }
   return 1;
@@ -1258,8 +1256,10 @@ void VVShell::drawScene()
       _canvas->resize(_glcanvas->getWidth(), _glcanvas->getHeight());
       prefWindow->updateValues();
       float r,g,b;
-      FXString color = getApp()->reg().readStringEntry("Settings", "BackgroundColor", "");
-      sscanf(color.text(), "%f %f %f", &r, &g, &b);
+      FXColor background = getApp()->reg().readColorEntry("Settings"," BackgroundColor", FXRGB(255,255,255));
+      r = float(FXREDVAL(background))   / 255.0f;
+      g = float(FXGREENVAL(background)) / 255.0f;
+      b = float(FXBLUEVAL(background))  / 255.0f;
       _canvas->setBackgroundColor(r, g, b);
     }
     _canvas->draw();
@@ -1314,16 +1314,15 @@ void VVShell::drawScene()
       int winHeight = _glcanvas->getHeight();
       glReadPixels(0, 0, winWidth, winHeight, GL_RGB, GL_UNSIGNED_BYTE, rgbBuffer);
       sageInf.swapBuffer((void *)rgbBuffer);
-
-
       sageMessage msg;
-      if (sageInf.checkMsg(msg, false) > 0) {
-          switch (msg.getCode()) {
-              case APP_QUIT : {
-                  exit(1); // to be fixed
-                  break;
-              }
-          }
+      if (sageInf.checkMsg(msg, false) > 0) 
+      {
+        switch (msg.getCode()) 
+        {
+          case APP_QUIT : 
+              FXApp::exit(); // to be fixed
+              break;
+        }
       }
 #endif
     }
