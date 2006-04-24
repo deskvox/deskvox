@@ -74,9 +74,10 @@ class VVTransferWindow : public FXDialogBox
       ID_BINS,
       ID_PINS,
       ID_APPLY,
-      ID_IMPORT,
-      ID_SAVE_MV,
-      ID_LOAD_MV,
+      ID_IMPORT_TF,
+      ID_INVERT,
+      ID_SAVE_TF,
+      ID_LOAD_TF,
       ID_DIS_COLOR,
       ID_TF_BOOK,
       ID_PIN_BOOK,
@@ -110,9 +111,9 @@ class VVTransferWindow : public FXDialogBox
     long onCmdDelete(FXObject*,FXSelector,void*);
     long onCmdUndo(FXObject*,FXSelector,void*);
     long onCmdApply(FXObject*,FXSelector,void*);
-    long onCmdImport(FXObject*,FXSelector,void*);
-    long onCmdSaveMV(FXObject*,FXSelector,void*);
-    long onCmdLoadMV(FXObject*,FXSelector,void*);
+    long onCmdImportTF(FXObject*,FXSelector,void*);
+    long onCmdSaveTF(FXObject*,FXSelector,void*);
+    long onCmdLoadTF(FXObject*,FXSelector,void*);
     long onCmdColorCombo(FXObject*,FXSelector,void*);
     long onCmdAlphaCombo(FXObject*,FXSelector,void*);
     long onCmdInstant(FXObject*,FXSelector,void*);
@@ -125,12 +126,15 @@ class VVTransferWindow : public FXDialogBox
     long onChngPos(FXObject*,FXSelector,void*);
     long onMouseLDown1D(FXObject*,FXSelector,void*);
     long onMouseLUp1D(FXObject*,FXSelector,void*);
+    long onMouseMDown1D(FXObject*,FXSelector,void*);
+    long onMouseMUp1D(FXObject*,FXSelector,void*);
     long onMouseRDown1D(FXObject*,FXSelector,void*);
     long onMouseRUp1D(FXObject*,FXSelector,void*);
     long onMouseMove1D(FXObject*,FXSelector,void*);
     long onMouseLDown2D(FXObject*,FXSelector,void*);
     long onMouseLUp2D(FXObject*,FXSelector,void*);
     long onMouseMove2D(FXObject*,FXSelector,void*);
+    long onMouseWheel1D(FXObject*,FXSelector,void*);
     long onChngDisColors(FXObject*,FXSelector,void*);
     long onTFCanvasPaint(FXObject*,FXSelector,void*);
     long onCmdHistAll(FXObject*,FXSelector,void*);
@@ -148,8 +152,10 @@ class VVTransferWindow : public FXDialogBox
     long onCmdSetMax(FXObject*,FXSelector,void*);
     long onCmdZoomLUT(FXObject*,FXSelector,void*);
     long onCmdCenter(FXObject*,FXSelector,void*);
+    long onCmdInvertAlpha(FXObject*,FXSelector,void*);
     void updateValues();
     void zoomLUT();
+    void setDirtyHistogram();
 
   protected:
     static const FXColor BLACK;
@@ -195,6 +201,7 @@ class VVTransferWindow : public FXDialogBox
     FXCheckButton* _pColorButton;
     FXCheckButton* _bColorButton;
     FXCheckButton* _cbNorm;
+    FXCheckButton* _invertCheck;
     FXSwitcher* _pinSwitcher;
     FXColorDialog* _colorPicker;
     FXTabBook* _tfBook;
@@ -209,6 +216,7 @@ class VVTransferWindow : public FXDialogBox
     uchar* _histoTexture2D;
     int _mouseButton;       ///< pressed mouse button: 0=none, 1=button 1, etc.
     float _dataZoom[2];     ///< min/max for zoom area on data range
+    bool _isHistogramDirty; ///< true if histogram needs to be recomputed
 
     VVTransferWindow(){}
     VVTransferWindow(const VVTransferWindow&){};
@@ -239,7 +247,12 @@ class VVTransferWindow : public FXDialogBox
     float data2norm(float);
     float normd2datad(float);
     float datad2normd(float);
+    float hdr2data(float);
+    float data2hdr(float);
+    float hdr2realbin(float);
+    float realbin2hdr(float);
     void makeColorBar(int, uchar*);
+    void makeAlphaTexture(int, int, uchar*);
 };
     
 #endif

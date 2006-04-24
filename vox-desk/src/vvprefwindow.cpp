@@ -37,12 +37,14 @@ FXDEFMAP(VVPreferenceWindow) VVPreferenceWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_STEREO,         VVPreferenceWindow::onStereoChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_ARTOOLKIT,      VVPreferenceWindow::onARToolkitChange),
   FXMAPFUNC(SEL_CHANGED,     VVPreferenceWindow::ID_EYE_DIST,       VVPreferenceWindow::onEyeChange),
-  FXMAPFUNC(SEL_CHANGED,     VVPreferenceWindow::ID_QUALITY,        VVPreferenceWindow::onQualityChanging),
+  FXMAPFUNC(SEL_CHANGED,     VVPreferenceWindow::ID_QUALITY_MOVING, VVPreferenceWindow::onQualityMChanging),
+  FXMAPFUNC(SEL_CHANGED,     VVPreferenceWindow::ID_QUALITY_STILL,  VVPreferenceWindow::onQualitySChanging),
+  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY_MOVING, VVPreferenceWindow::onQualityMChange),
+  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY_STILL,  VVPreferenceWindow::onQualitySChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_VOXELTYPE,      VVPreferenceWindow::onVTChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_GEOMTYPE,       VVPreferenceWindow::onGTChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_PIXEL_SHADER,   VVPreferenceWindow::onPSChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_BRICK_SIZE,     VVPreferenceWindow::onBSChange),
-  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY,        VVPreferenceWindow::onQualityChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_MIP,            VVPreferenceWindow::onMIPSelect),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_LINTERP,        VVPreferenceWindow::onInterpolationSelect),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_SHOWBRICKS,     VVPreferenceWindow::onShowBricksSelect),
@@ -51,7 +53,8 @@ FXDEFMAP(VVPreferenceWindow) VVPreferenceWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_DEF_VOL,        VVPreferenceWindow::onDefaultVolume),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_SUPPRESS,       VVPreferenceWindow::onSuppressRendering),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_SWAP_EYES,      VVPreferenceWindow::onSwapEyes),
-  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY_TEXT,   VVPreferenceWindow::onQualityTextChange),
+  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY_M_TEXT, VVPreferenceWindow::onQualityMTextChange),
+  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY_S_TEXT, VVPreferenceWindow::onQualitySTextChange),
 };
 
 FXIMPLEMENT(VVPreferenceWindow,FXDialogBox,VVPreferenceWindowMap,ARRAYNUMBER(VVPreferenceWindowMap))
@@ -95,18 +98,29 @@ FXDialogBox(owner,"Preferences", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 50, 5
   if (texrend) texrend->setTexMemorySize(FXIntVal(_texMemoryField->getText()));
 
   FXGroupBox* qualityGroup = new FXGroupBox(master, "Rendering quality", FRAME_GROOVE | LAYOUT_FILL_X);
-  FXHorizontalFrame* qualityFrame = new FXHorizontalFrame(qualityGroup, LAYOUT_FILL_X);
+  FXMatrix* qualityMatrix = new FXMatrix(qualityGroup, 3, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
 
-  _qualityDial = new FXDial(qualityFrame, this, ID_QUALITY, DIAL_HORIZONTAL | LAYOUT_FIX_WIDTH,0,0,200);
-  _qualityDial->setRange(0, 10000);
-  float qual = getApp()->reg().readRealEntry("Settings", "RenderingQuality", 1.0);
-  _qualityDial->setValue(int(qual * 100.0));
-  _qualityDial->setRevolutionIncrement(200);
-  _qualityDial->setNotchSpacing(100);
-  _qualityDial->setTipText("0.0 for single slice, 1.0 for one slice per voxel, >1.0 for better reconstruction");
-
-  _qualityTField = new FXTextField(qualityFrame, 5, this, ID_QUALITY_TEXT, TEXTFIELD_REAL | JUSTIFY_RIGHT | TEXTFIELD_NORMAL);
-  _qualityTField->setText(FXStringFormat("%.2f", qual));
+  new FXLabel(qualityMatrix, "Moving: ");
+  _qualityMDial = new FXDial(qualityMatrix, this, ID_QUALITY_MOVING, DIAL_HORIZONTAL | LAYOUT_FIX_WIDTH,0,0,200);
+  _qualityMDial->setRange(0, 10000);
+  float qualityM = getApp()->reg().readRealEntry("Settings", "RenderingQualityMoving", 1.0);
+  _qualityMDial->setValue(int(qualityM * 100.0));
+  _qualityMDial->setRevolutionIncrement(200);
+  _qualityMDial->setNotchSpacing(100);
+  _qualityMDial->setTipText("0.0 for single slice, 1.0 for one slice per voxel, >1.0 for better reconstruction");
+  _qualityMTField = new FXTextField(qualityMatrix, 5, this, ID_QUALITY_M_TEXT, TEXTFIELD_REAL | JUSTIFY_RIGHT | TEXTFIELD_NORMAL);
+  _qualityMTField->setText(FXStringFormat("%.2f", qualityM));
+  
+  new FXLabel(qualityMatrix, "Still: ");
+  _qualitySDial = new FXDial(qualityMatrix, this, ID_QUALITY_STILL, DIAL_HORIZONTAL | LAYOUT_FIX_WIDTH,0,0,200);
+  _qualitySDial->setRange(0, 10000);
+  float qualityS = getApp()->reg().readRealEntry("Settings", "RenderingQualityStill", 1.0);
+  _qualitySDial->setValue(int(qualityS * 100.0));
+  _qualitySDial->setRevolutionIncrement(200);
+  _qualitySDial->setNotchSpacing(100);
+  _qualitySDial->setTipText("0.0 for single slice, 1.0 for one slice per voxel, >1.0 for better reconstruction");
+  _qualitySTField = new FXTextField(qualityMatrix, 5, this, ID_QUALITY_S_TEXT, TEXTFIELD_REAL | JUSTIFY_RIGHT | TEXTFIELD_NORMAL);
+  _qualitySTField->setText(FXStringFormat("%.2f", qualityS));
   
   FXGroupBox* stereoGroup = new FXGroupBox(master,"Stereo", FRAME_GROOVE | LAYOUT_FILL_X);
 
@@ -266,35 +280,66 @@ long VVPreferenceWindow::onBSChange(FXObject*, FXSelector, void*)
     return 1;
 }
 
-long VVPreferenceWindow::onQualityChanging(FXObject*,FXSelector,void*)
+long VVPreferenceWindow::onQualityMChanging(FXObject*,FXSelector,void*)
 {
-  _qualityTField->setText(FXStringFormat("%.2f", getQualityDialValue()));
+  _qualityMTField->setText(FXStringFormat("%.2f", getQualityMDialValue()));
   return 1;
 }
 
-float VVPreferenceWindow::getQualityDialValue()
+long VVPreferenceWindow::onQualitySChanging(FXObject*,FXSelector,void*)
 {
-  return float(_qualityDial->getValue()) / 100.0f;
+  _qualitySTField->setText(FXStringFormat("%.2f", getQualitySDialValue()));
+  return 1;
 }
 
-void VVPreferenceWindow::setQualityDialValue(float val)
+float VVPreferenceWindow::getQualitySDialValue()
 {
-  _qualityDial->setValue(int(val * 100.0f));
+  return float(_qualitySDial->getValue()) / 100.0f;
 }
 
-long VVPreferenceWindow::onQualityChange(FXObject*,FXSelector,void*)
+float VVPreferenceWindow::getQualityMDialValue()
 {
-  _canvas->_renderer->_renderState._quality = getQualityDialValue();
+  return float(_qualityMDial->getValue()) / 100.0f;
+}
+
+void VVPreferenceWindow::setQualityMDialValue(float val)
+{
+  _qualityMDial->setValue(int(val * 100.0f));
+}
+
+void VVPreferenceWindow::setQualitySDialValue(float val)
+{
+  _qualitySDial->setValue(int(val * 100.0f));
+}
+
+long VVPreferenceWindow::onQualityMChange(FXObject*,FXSelector,void*)
+{
   _shell->drawScene();
-  getApp()->reg().writeRealEntry("Settings", "RenderingQuality", getQualityDialValue());
+  getApp()->reg().writeRealEntry("Settings", "RenderingQualityMoving", getQualityMDialValue());
   getApp()->reg().write();  // update registry
   return 1;
 }
 
-long VVPreferenceWindow::onQualityTextChange(FXObject*,FXSelector,void*)
+long VVPreferenceWindow::onQualitySChange(FXObject*,FXSelector,void*)
 {
-  setQualityDialValue(FXFloatVal(_qualityTField->getText()));
-  handle(this, FXSEL(SEL_COMMAND, ID_QUALITY), NULL);
+  _canvas->_renderer->_renderState._quality = getQualitySDialValue();
+  _shell->drawScene();
+  getApp()->reg().writeRealEntry("Settings", "RenderingQualityStill", getQualitySDialValue());
+  getApp()->reg().write();  // update registry
+  return 1;
+}
+
+long VVPreferenceWindow::onQualityMTextChange(FXObject*,FXSelector,void*)
+{
+  setQualityMDialValue(FXFloatVal(_qualityMTField->getText()));
+  handle(this, FXSEL(SEL_COMMAND, ID_QUALITY_MOVING), NULL);
+  return 1;
+}
+
+long VVPreferenceWindow::onQualitySTextChange(FXObject*,FXSelector,void*)
+{
+  setQualitySDialValue(FXFloatVal(_qualitySTField->getText()));
+  handle(this, FXSEL(SEL_COMMAND, ID_QUALITY_STILL), NULL);
   return 1;
 }
 
@@ -424,10 +469,10 @@ void VVPreferenceWindow::toggleMIP()
 void VVPreferenceWindow::scaleQuality(float factor)
 {
   assert(factor>=0.0f);
-  float quality = getQualityDialValue();
+  float quality = getQualitySDialValue();
   quality *= factor;
-  setQualityDialValue(quality);
-  _qualityTField->setText(FXStringFormat("%.2f", quality));
+  setQualitySDialValue(quality);
+  _qualitySTField->setText(FXStringFormat("%.2f", quality));
   _canvas->_renderer->_renderState._quality = quality;
   _shell->drawScene();
 }
@@ -546,11 +591,6 @@ void VVPreferenceWindow::updateValues()
     if (texrend && texrend->isSupported(vvTexRend::VV_MIP)) _mipButton->enable();
     else _mipButton->disable();
     
-    if (texrend) 
-    {
-      _canvas->_renderer->_renderState._quality = FXFloatVal(_qualityTField->getText());
-    }
-
     // Stereo combo box:
     _stereoCombo->clearItems();
     _stereoCombo->appendItem("Off (Mono)");

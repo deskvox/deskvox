@@ -73,7 +73,9 @@ vvRenderState::vvRenderState()
 
   for (i=0; i<3; ++i)
   {
-    _clipColor[i] = 1.0f;
+    _clipColor[i]  = 1.0f;
+    _probeColor[i] = 1.0f;
+    _boundColor[i] = 1.0f;
   }
 }
 
@@ -140,6 +142,60 @@ void vvRenderState::getClipColor(float* red, float* green, float* blue)
 }
 
 //----------------------------------------------------------------------------
+/** Set boundaries color.
+  @param red,green,blue   RGB values [0..1] of boundaries color values
+*/
+void vvRenderState::setBoundariesColor(float red, float green, float blue)
+{
+  vvDebugMsg::msg(3, "vvRenderer::setBoundariesColor()");
+  red   = ts_clamp(red,   0.0f, 1.0f);
+  green = ts_clamp(green, 0.0f, 1.0f);
+  blue  = ts_clamp(blue,  0.0f, 1.0f);
+  _boundColor[0] = red;
+  _boundColor[1] = green;
+  _boundColor[2] = blue;
+}
+
+//----------------------------------------------------------------------------
+/** Get boundaries color.
+  @param red,green,blue   RGB values [0..1] of boundaries color values
+*/
+void vvRenderState::getBoundariesColor(float* red, float* green, float* blue)
+{
+  vvDebugMsg::msg(1, "vvRenderer::getBoundariesColor()");
+  *red   = _boundColor[0];
+  *green = _boundColor[1];
+  *blue  = _boundColor[2];
+}
+
+//----------------------------------------------------------------------------
+/** Set probe boundaries color.
+  @param red,green,blue   RGB values [0..1] of probe boundaries color values
+*/
+void vvRenderState::setProbeColor(float red, float green, float blue)
+{
+  vvDebugMsg::msg(3, "vvRenderer::setProbeColor()");
+  red   = ts_clamp(red,   0.0f, 1.0f);
+  green = ts_clamp(green, 0.0f, 1.0f);
+  blue  = ts_clamp(blue,  0.0f, 1.0f);
+  _probeColor[0] = red;
+  _probeColor[1] = green;
+  _probeColor[2] = blue;
+}
+
+//----------------------------------------------------------------------------
+/** Get probe boundaries color.
+  @param red,green,blue   RGB values [0..1] of probe boundaries color values
+*/
+void vvRenderState::getProbeColor(float* red, float* green, float* blue)
+{
+  vvDebugMsg::msg(1, "vvRenderer::getProbeColor()");
+  *red   = _probeColor[0];
+  *green = _probeColor[1];
+  *blue  = _probeColor[2];
+}
+
+//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 /** Constructor, called when program starts and when the rendering method changes
@@ -168,8 +224,6 @@ void vvRenderer::init()
   for(i=0; i<3; ++i)
   {
     _channel4Color[i] = 1.0f;
-    probeColor[i] = 1.0f;
-    boundColor[i] = 1.0f;
   }
   for(i=0; i<4; ++i)
   {
@@ -371,60 +425,6 @@ float vvRenderer::getLastRenderTime()
 {
   vvDebugMsg::msg(3, "vvRenderer::getLastRenderTime()");
   return _lastRenderTime;
-}
-
-//----------------------------------------------------------------------------
-/** Set boundaries color.
-  @param red,green,blue   RGB values [0..1] of boundaries color values
-*/
-void vvRenderer::setBoundariesColor(float red, float green, float blue)
-{
-  vvDebugMsg::msg(3, "vvRenderer::setBoundariesColor()");
-  red   = ts_clamp(red,   0.0f, 1.0f);
-  green = ts_clamp(green, 0.0f, 1.0f);
-  blue  = ts_clamp(blue,  0.0f, 1.0f);
-  boundColor[0] = red;
-  boundColor[1] = green;
-  boundColor[2] = blue;
-}
-
-//----------------------------------------------------------------------------
-/** Get boundaries color.
-  @param red,green,blue   RGB values [0..1] of boundaries color values
-*/
-void vvRenderer::getBoundariesColor(float* red, float* green, float* blue)
-{
-  vvDebugMsg::msg(1, "vvRenderer::getBoundariesColor()");
-  *red   = boundColor[0];
-  *green = boundColor[1];
-  *blue  = boundColor[2];
-}
-
-//----------------------------------------------------------------------------
-/** Set probe boundaries color.
-  @param red,green,blue   RGB values [0..1] of probe boundaries color values
-*/
-void vvRenderer::setProbeColor(float red, float green, float blue)
-{
-  vvDebugMsg::msg(3, "vvRenderer::setProbeColor()");
-  red   = ts_clamp(red,   0.0f, 1.0f);
-  green = ts_clamp(green, 0.0f, 1.0f);
-  blue  = ts_clamp(blue,  0.0f, 1.0f);
-  probeColor[0] = red;
-  probeColor[1] = green;
-  probeColor[2] = blue;
-}
-
-//----------------------------------------------------------------------------
-/** Get probe boundaries color.
-  @param red,green,blue   RGB values [0..1] of probe boundaries color values
-*/
-void vvRenderer::getProbeColor(float* red, float* green, float* blue)
-{
-  vvDebugMsg::msg(1, "vvRenderer::getProbeColor()");
-  *red   = probeColor[0];
-  *green = probeColor[1];
-  *blue  = probeColor[2];
 }
 
 //----------------------------------------------------------------------------

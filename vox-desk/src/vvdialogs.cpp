@@ -2535,58 +2535,56 @@ FXDEFMAP(VVFloatRangeDialog) VVFloatRangeDialogMap[]=
 FXIMPLEMENT(VVFloatRangeDialog,FXDialogBox,VVFloatRangeDialogMap,ARRAYNUMBER(VVFloatRangeDialogMap))
 
 VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) : 
-  FXDialogBox(owner, "Floating Point Range Selection", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 100, 100), 
+  FXDialogBox(owner, "Data Range Mapper", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 100, 100), 
   _algoDataTarget(_algoType)
 {
   _shell = (VVShell*)owner;
   _canvas = c;
   FXHorizontalFrame* horizontalFrame = new FXHorizontalFrame(this, LAYOUT_FILL_X | LAYOUT_FILL_Y);
+  FXVerticalFrame* verticalFrame = new FXVerticalFrame(horizontalFrame, LAYOUT_FILL_X | LAYOUT_FILL_Y);
 
   // Min and max text fields:
-  FXVerticalFrame* verticalFrame = new FXVerticalFrame(horizontalFrame, LAYOUT_FILL_X | LAYOUT_FILL_Y);
-  FXMatrix* paramMatrix = new FXMatrix(verticalFrame, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
+  FXGroupBox* rangeGroup = new FXGroupBox(verticalFrame,"Range settings", FRAME_GROOVE | LAYOUT_FILL_X);
+  FXMatrix* paramMatrix = new FXMatrix(rangeGroup, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
 
-  new FXLabel(paramMatrix, "Range start:");
-  new FXLabel(paramMatrix, "Range end:");
+  new FXLabel(paramMatrix, "Start value:");
+  new FXLabel(paramMatrix, "End value:");
 
   _minTF = new FXTextField(paramMatrix, 20, NULL,0,TEXTFIELD_REAL | TEXTFIELD_NORMAL | LAYOUT_FILL_X);
   _maxTF = new FXTextField(paramMatrix, 20, NULL,0,TEXTFIELD_REAL | TEXTFIELD_NORMAL | LAYOUT_FILL_X);
 
-  new FXButton(paramMatrix, "Min data value", NULL, this, ID_MIN_DATA, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
-  new FXButton(paramMatrix, "Max data value", NULL, this, ID_MAX_DATA, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  FXGroupBox* queryGroup = new FXGroupBox(verticalFrame,"Data query", FRAME_GROOVE | LAYOUT_FILL_X);
+  FXMatrix* queryMatrix = new FXMatrix(queryGroup, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
 
-  FXHorizontalFrame* botClampFrame = new FXHorizontalFrame(paramMatrix, LAYOUT_FILL_X | LAYOUT_FILL_Y);
+  new FXButton(queryMatrix, "Find min data value", NULL, this, ID_MIN_DATA, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  new FXButton(queryMatrix, "Find max data value", NULL, this, ID_MAX_DATA, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+
+  FXHorizontalFrame* botClampFrame = new FXHorizontalFrame(queryMatrix, LAYOUT_FILL_X | LAYOUT_FILL_Y);
   _botClamp = new FXTextField(botClampFrame, 10, NULL,0,TEXTFIELD_REAL | TEXTFIELD_NORMAL | LAYOUT_FILL_X);
   _botClamp->setText(FXStringFormat("%.9g", 5.0f));
   new FXButton(botClampFrame, "% above min", NULL, this, ID_BOT_PERCENT, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
-  FXHorizontalFrame* topClampFrame = new FXHorizontalFrame(paramMatrix, LAYOUT_FILL_X | LAYOUT_FILL_Y);
+  FXHorizontalFrame* topClampFrame = new FXHorizontalFrame(queryMatrix, LAYOUT_FILL_X | LAYOUT_FILL_Y);
   _topClamp = new FXTextField(topClampFrame, 10, NULL,0,TEXTFIELD_REAL | TEXTFIELD_NORMAL | LAYOUT_FILL_X);
   _topClamp->setText(FXStringFormat("%.9g", 5.0f));
   new FXButton(topClampFrame, "% below max", NULL, this, ID_TOP_PERCENT, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
-  _hdrCheck = new FXCheckButton(verticalFrame, "Data range mapping", this, ID_HDR, ICON_BEFORE_TEXT); 
+  // HDR mapping:
+  _hdrCheck = new FXCheckButton(verticalFrame, "Distribution based data range mapping", this, ID_HDR, ICON_BEFORE_TEXT); 
 
-  FXGroupBox* hdrGroup = new FXGroupBox(verticalFrame,"High dynamic range mapping",FRAME_GROOVE | LAYOUT_FILL_X);
+  FXGroupBox* hdrGroup = new FXGroupBox(verticalFrame,"",FRAME_GROOVE | LAYOUT_FILL_X);
   FXMatrix* hdrMatrix = new FXMatrix(hdrGroup, 3, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
 
-  _isoRadio = new FXRadioButton(hdrMatrix, "Iso-data binning", &_algoDataTarget, FXDataTarget::ID_OPTION+1, ICON_BEFORE_TEXT);
+  _isoRadio = new FXRadioButton(hdrMatrix, "Iso-Dist binning", &_algoDataTarget, FXDataTarget::ID_OPTION+1, ICON_BEFORE_TEXT);
   _isoRadio->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
-  _weightRadio = new FXRadioButton(hdrMatrix, "Opacity-weighted binning", &_algoDataTarget, FXDataTarget::ID_OPTION+2, ICON_BEFORE_TEXT);
+  _weightRadio = new FXRadioButton(hdrMatrix, "Opacity-Weighted binning", &_algoDataTarget, FXDataTarget::ID_OPTION+2, ICON_BEFORE_TEXT);
   _weightRadio->setTipText("When checked algorithm creates smaller bins where opacity is higher.\nOtherwise binning is independent from opacity.");
   new FXLabel(hdrMatrix, "");
   _algoType = 1; // set first radio button to true, others to false
 
-  _fastCheck = new FXCheckButton(hdrMatrix, "Fast sampling", this, ID_FAST, ICON_BEFORE_TEXT);
-  _fastCheck->setCheck(false);
-  new FXLabel(hdrMatrix, "Number of values:");
-  _fastNumber = new FXTextField(hdrMatrix, 20, NULL, 0, TEXTFIELD_NORMAL | LAYOUT_FILL_X);
-  _fastNumber->setText("10000");
-  _fastNumber->setTipText("Uses a reduced number of data values for HDR transfer function specification. Default: 10,000");
-
-  _skipCheck = new FXCheckButton(hdrMatrix, "Cull Skip ranges", this, ID_SKIP, ICON_BEFORE_TEXT);
+  _skipCheck = new FXCheckButton(hdrMatrix, "Cull skipped regions", this, ID_SKIP, ICON_BEFORE_TEXT);
   _skipCheck->setCheck(true);
-  _skipCheck->setTipText("Remove data values in areas covered by Skip widgets from iso-binning process.");
+  _skipCheck->setTipText("Remove data values in areas covered by Skip widgets.");
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
 
@@ -2596,16 +2594,33 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
 
-  _lockCheck = new FXCheckButton(hdrMatrix, "Lock range settings", this, ID_LOCK, ICON_BEFORE_TEXT);
+  _lockCheck = new FXCheckButton(hdrMatrix, "Trim to range", this, ID_LOCK, ICON_BEFORE_TEXT);
   _lockCheck->setCheck(true);
   _lockCheck->setTipText("Don't adjust min and max range settings when running HDR routines.");
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
 
+  _colorCheck = new FXCheckButton(hdrMatrix, "Lock color pins", this, ID_COLOR, ICON_BEFORE_TEXT);
+  _colorCheck->setCheck(false);
+  _colorCheck->setTipText("Don't move color pins, only move gradient values in-between.");
+  _colorCheck->hide();  // TODO: implement, then show
+  new FXLabel(hdrMatrix, "");
+  new FXLabel(hdrMatrix, "");
+
+  _fastCheck = new FXCheckButton(hdrMatrix, "Fast sampling", this, ID_FAST, ICON_BEFORE_TEXT);
+  _fastCheck->setCheck(false);
+  new FXLabel(hdrMatrix, "Number of samples:");
+  _fastNumber = new FXTextField(hdrMatrix, 20, NULL, 0, TEXTFIELD_NORMAL | LAYOUT_FILL_X);
+  _fastNumber->setText("10000");
+  _fastNumber->setTipText("Uses a reduced number of data values for HDR transfer function specification. Default: 10,000");
+
   // Buttons:
   FXVerticalFrame* buttonFrame = new FXVerticalFrame(horizontalFrame, LAYOUT_FILL_X | LAYOUT_FIX_WIDTH,0,0,80);
   new FXButton(buttonFrame, "Apply", NULL, this, ID_APPLY, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
   new FXButton(buttonFrame, "Close", NULL, this, ID_CLOSE, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  
+  _prevRange[0] = FXFloatVal(_minTF->getText());
+  _prevRange[1] = FXFloatVal(_maxTF->getText());
   
   handle(this, FXSEL(SEL_COMMAND, ID_HDR), NULL);
 }
@@ -2624,6 +2639,14 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
     {
       _canvas->_vd->real[0] = FXFloatVal(_minTF->getText());
       _canvas->_vd->real[1] = FXFloatVal(_maxTF->getText());
+      if (_prevRange[0] != _canvas->_vd->real[0] ||
+          _prevRange[1] != _canvas->_vd->real[1])
+      {
+        _shell->_transWindow->setDirtyHistogram();
+        _prevRange[0] = _canvas->_vd->real[0];
+        _prevRange[1] = _canvas->_vd->real[1];
+      }
+      
       _canvas->_renderer->setParameter(vvRenderer::VV_BINNING, (_hdrCheck->getCheck()) ? _algoType : 0);
       if (_hdrCheck->getCheck())
       {
@@ -2704,6 +2727,7 @@ long VVFloatRangeDialog::onHDRMapping(FXObject*,FXSelector,void*)
     _skipCheck->enable();
     _dupCheck->enable();
     _lockCheck->enable();
+    _colorCheck->enable();
   }
   else
   {
@@ -2714,6 +2738,7 @@ long VVFloatRangeDialog::onHDRMapping(FXObject*,FXSelector,void*)
     _skipCheck->disable();
     _dupCheck->disable();
     _lockCheck->disable();
+    _colorCheck->disable();
   }
   return 1;
 }
@@ -2791,6 +2816,7 @@ long VVDataTypeDialog::onSwapEndian(FXObject*, FXSelector, void*)
   _canvas->_vd->toggleEndianness();
   _shell->updateRendererVolume();
   _shell->drawScene();
+  _shell->_transWindow->setDirtyHistogram();
   return 1;
 }
 
@@ -2802,6 +2828,7 @@ long VVDataTypeDialog::onSwapChannels(FXObject*, FXSelector, void*)
   chan2 = _channel2Combo->getCurrentItem();
   if (chan1==chan2) return 1;   // this was easy!
   _canvas->_vd->swapChannels(chan1, chan2);
+  _shell->_transWindow->setDirtyHistogram();
   _shell->updateRendererVolume();
   _shell->drawScene();
   return 1;
@@ -2810,6 +2837,7 @@ long VVDataTypeDialog::onSwapChannels(FXObject*, FXSelector, void*)
 long VVDataTypeDialog::onDeleteChannel(FXObject*, FXSelector, void*)
 {
   _canvas->_vd->deleteChannel(_channelCombo->getCurrentItem());
+  _shell->_transWindow->setDirtyHistogram();
   _shell->updateRendererVolume();
   _shell->setCanvasRenderer();
   _shell->drawScene();
@@ -2821,6 +2849,7 @@ long VVDataTypeDialog::onDeleteChannel(FXObject*, FXSelector, void*)
 long VVDataTypeDialog::onAddChannel(FXObject*, FXSelector, void*)
 {
   _canvas->_vd->convertChannels(_canvas->_vd->chan + 1);
+  _shell->_transWindow->setDirtyHistogram();
   _shell->updateRendererVolume();
   _shell->setCanvasRenderer();
   _shell->drawScene();
@@ -2832,6 +2861,7 @@ long VVDataTypeDialog::onAddChannel(FXObject*, FXSelector, void*)
 long VVDataTypeDialog::onAddGradMag(FXObject*, FXSelector, void*)
 {
   _canvas->_vd->addGradient(_channelCombo->getCurrentItem(), vvVolDesc::GRADIENT_MAGNITUDE);
+  _shell->_transWindow->setDirtyHistogram();
   _shell->updateRendererVolume();
   _shell->setCanvasRenderer();
   _shell->drawScene();
@@ -2843,6 +2873,7 @@ long VVDataTypeDialog::onAddGradMag(FXObject*, FXSelector, void*)
 long VVDataTypeDialog::onAddGradVec(FXObject*, FXSelector, void*)
 {
   _canvas->_vd->addGradient(_channelCombo->getCurrentItem(), vvVolDesc::GRADIENT_VECTOR);
+  _shell->_transWindow->setDirtyHistogram();
   _shell->updateRendererVolume();
   _shell->setCanvasRenderer();
   _shell->drawScene();
@@ -2860,6 +2891,7 @@ long VVDataTypeDialog::onBytesPerChannel(FXObject* obj, FXSelector, void*)
   else bpc = 4;
 
   _canvas->_vd->convertBPC(bpc);
+  _shell->_transWindow->setDirtyHistogram();
   _shell->updateRendererVolume();
   _shell->setCanvasRenderer();
   _shell->drawScene();
@@ -3000,6 +3032,7 @@ long VVEditVoxelsDialog::onResize(FXObject*, FXSelector, void*)
                        FXIntVal(_resizeZField->getText()), itype);
   _shell->updateRendererVolume();
   _shell->drawScene();
+  _shell->_transWindow->setDirtyHistogram();
   updateDialogs();
   return 1;
 }
@@ -3046,6 +3079,7 @@ long VVEditVoxelsDialog::onCrop(FXObject*, FXSelector, void*)
                      FXIntVal(_cropSField->getText()));
   _shell->updateRendererVolume();
   _shell->drawScene();
+  _shell->_transWindow->setDirtyHistogram();
   updateDialogs();
   updateValues();
   return 1;
@@ -3074,6 +3108,7 @@ void VVEditVoxelsDialog::updateDialogs()
   _canvas->_vd->makeInfoString(string);
   _shell->_statusBar->setText(string);
   _shell->volumeDialog->updateValues();
+  _shell->_transWindow->setDirtyHistogram();
 }
 
 

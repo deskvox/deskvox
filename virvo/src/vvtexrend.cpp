@@ -526,7 +526,6 @@ void vvTexRend::makeLUTTexture()
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size[0], size[1], 0,
     GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
   vvGLTools::printGLError("leave makeLUTTexture");
-  cerr << "lut tex: " << size[0] << " * " << size[1] << endl;
 }
 
 //----------------------------------------------------------------------------
@@ -1237,7 +1236,7 @@ void vvTexRend::updateTransferFunction()
   getLUTSize(size);
   vd->tf.computeTFTexture(size[0], size[1], size[2], rgbaTF, vd->real[0], vd->real[1]);
 
-  updateLUT(1.0f);                                // generate color lookup table
+  updateLUT(1.0f);                                // generate color/alpha lookup table
 
   //printLUT();
 }
@@ -3583,12 +3582,12 @@ void vvTexRend::renderVolumeGL()
   // Draw boundary lines (must be done before setGLenvironment()):
   if (_renderState._boundaries)
   {
-    drawBoundingBox(&size, &vd->pos, boundColor);
+    drawBoundingBox(&size, &vd->pos, _renderState._boundColor);
   }
   if (_renderState._isROIUsed)
   {
     probeSizeObj.set(size[0] * _renderState._roiSize[0], size[1] * _renderState._roiSize[1], size[2] * _renderState._roiSize[2]);
-    drawBoundingBox(&probeSizeObj, &_renderState._roiPos, probeColor);
+    drawBoundingBox(&probeSizeObj, &_renderState._roiPos, _renderState._probeColor);
   }
   if (_renderState._clipMode && _renderState._clipPerimeter)
   {

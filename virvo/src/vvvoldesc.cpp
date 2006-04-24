@@ -4690,7 +4690,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   float valuesPerBin;
   int numVoxels;
   int i,j;
-  int index;
+  int index, minIndex, maxIndex, numSkip;
   int numTF;
   int before;
 
@@ -4724,39 +4724,6 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   }
   cerr << stop.getDiff() << " sec" << endl;
   
-  // Remove areas covered by TFSkip widgets:
-  if (skipWidgets)
-  {
-    cerr << "Removing skipped regions from data array...";
-    before = numVoxels;
-    numTF = tf._widgets.count();
-    tf._widgets.first();
-    for (j=0; j<numTF; ++j)
-    {
-      if ((sw=dynamic_cast<vvTFSkip*>(tf._widgets.getData()))!=NULL)
-      {
-        min = sw->_pos[0] - sw->_size[0]/2.0f;
-        max = sw->_pos[0] + sw->_size[0]/2.0f;
-        i=0;
-        while (i<numVoxels)
-        {
-          if (sortedData[i] >= min && sortedData[i] <= max) // is data value between skip widget boundaries?
-          {
-            if (i<numVoxels-1)
-            {
-              memcpy(&sortedData[i], &sortedData[i+1], sizeof(float) * (numVoxels-i-1));
-            }
-            --numVoxels;
-          }
-          else ++i;
-        }        
-      }
-      tf._widgets.next();
-    }
-    cerr << stop.getDiff() << " sec" << endl;
-    cerr << (before - numVoxels) << " voxels removed" << endl;
-  }
-  
   // Make sure min and max of data range are included in data:
   if (lockRange)
   {
@@ -4776,14 +4743,64 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     cerr << "Trimming values to maintain range...";
     
     // Trim values below realMin:
-    for(i=0; i<numVoxels && sortedData[i] < real[0]; ++i);  // find index of realMin 
-    memcpy(&sortedData[0], &sortedData[i], sizeof(float) * i);
-    numVoxels -= i;
+    for(i=0; i<numVoxels && sortedData[i] < real[0]; ++i)
+    {
+      minIndex = i;  // find index of realMin 
+    }
+    minIndex = ts_clamp(i, 0, numVoxels-1);
+    if (minIndex > 0)
+    {
+      memcpy(&sortedData[0], &sortedData[minIndex], sizeof(float) * (numVoxels - minIndex));
+      numVoxels -= minIndex;
+    }
     
     // Trim values above realMax:
     for(i=numVoxels-1; i>0 && sortedData[i] > real[1]; --i);  // find index of realMax
-    numVoxels -= (numVoxels-1-i);
+    maxIndex = ts_clamp(i, 0, numVoxels-1);
+    numVoxels -= (numVoxels-1-maxIndex);
     cerr << stop.getDiff() << " sec" << endl;
+  }
+  
+  // Remove areas covered by TFSkip widgets:
+  if (skipWidgets)
+  {
+    cerr << "Removing skipped regions from data array...";
+    before = numVoxels;
+    numTF = tf._widgets.count();
+    tf._widgets.first();
+    for (j=0; j<numTF; ++j)
+    {
+      if ((sw=dynamic_cast<vvTFSkip*>(tf._widgets.getData()))!=NULL)
+      {
+        min = sw->_pos[0] - sw->_size[0] / 2.0f;
+        max = sw->_pos[0] + sw->_size[0] / 2.0f;
+        
+        // Find index of beginning of skip area:
+        for(i=0; i<numVoxels && sortedData[i] < min; ++i);  
+        if (i<numVoxels)   // is skip region outside of data array?
+        {
+          minIndex = i;
+          
+          // Find index of end of skip area:
+          for(i=minIndex; i<numVoxels && sortedData[i] < max; ++i);
+          maxIndex = ts_clamp(i, 0, numVoxels-1);
+          
+          // Cut values:
+          numSkip = maxIndex - minIndex + 1;
+          if (maxIndex==numValues-1)
+          {
+            numVoxels -= numSkip;
+          }
+          else
+          {
+            memcpy(&sortedData[minIndex], &sortedData[maxIndex+1], sizeof(float) * (numVoxels - maxIndex - 1));
+          }
+        }
+      }
+      tf._widgets.next();
+    }
+    cerr << stop.getDiff() << " sec" << endl;
+    cerr << (before - numVoxels) << " voxels removed" << endl;
   }
   
   // Remove duplicate values from array:
@@ -4801,7 +4818,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
         ++j;
         sortedTmp[j] = sortedData[i];
       }
-     }
+    }
     numVoxels = j+1;
     memcpy(sortedData, sortedTmp, numVoxels * sizeof(float));
     delete[] sortedTmp;

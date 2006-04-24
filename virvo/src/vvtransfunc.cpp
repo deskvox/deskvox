@@ -191,6 +191,8 @@ void vvTransFunc::setDefaultAlpha(int index, float min, float max)
 
   deleteWidgets(TF_PYRAMID);
   deleteWidgets(TF_BELL);
+  deleteWidgets(TF_CUSTOM);
+  deleteWidgets(TF_SKIP);
   switch (index)
   {
     case 0:                                       // ascending (0->1)
@@ -387,11 +389,13 @@ void vvTransFunc::computeTFTexture(int w, int h, int d, float* array,
                 scalar value 1.0. The resulting RGBA values are stored in the
                following order: RGBARGBARGBA...
   @param min,max data range for which color bar is to be created. Use 0..1 for integer data types.
+  @param invertAlpha Setting for opacity only color bar: false=high opacity is white; true=high opacity is black
 */
-void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max)
+void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, bool invertAlpha)
 {
   float* rgba;                                    // component values
   int c, x, index;
+  float alpha;
 
   assert(colors);
 
@@ -408,7 +412,9 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max)
       if (c<3) colors[index] = uchar(rgba[index] * 255.0f);
       else colors[index] = (uchar)255;
       colors[index + width * 4] = uchar(rgba[index] * 255.0f);
-      colors[index + 2 * width * 4] = (c<3) ? (uchar(rgba[x * 4 + 3] * 255.0f)) : 255;
+      alpha = rgba[x * 4 + 3];
+      if (invertAlpha) alpha = 1.0f - alpha;
+      colors[index + 2 * width * 4] = (c<3) ? (uchar(alpha * 255.0f)) : 255;
     }
   }
   delete[] rgba;

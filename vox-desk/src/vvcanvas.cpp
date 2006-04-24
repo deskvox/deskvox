@@ -180,9 +180,6 @@ void vvCanvas::draw()
   vvDebugMsg::msg(3, "vvCanvas::draw()");
   if (_renderer==NULL) return;
 
-  // Set boundary color to inverse of background:
-  _renderer->setBoundariesColor(1.0f - _bgColor[0], 1.0f - _bgColor[1], 1.0f - _bgColor[2]);
-
   // Clear background:
   if (_doubleBuffering==true) glDrawBuffer(GL_BACK);
   else glDrawBuffer(GL_FRONT);
@@ -501,6 +498,13 @@ void vvCanvas::setBackgroundColor(float r, float g, float b)
   _bgColor[0] = r;
   _bgColor[1] = g;
   _bgColor[2] = b;
+  
+  // Set boundary color to inverse of background:
+  float bColor;
+  if (_bgColor[0] + _bgColor[1] + _bgColor[2] > 1.5f) bColor = 0.0f;
+  else bColor = 1.0f;
+  _renderer->_renderState.setBoundariesColor(bColor, bColor, bColor);
+  _renderer->_renderState.setClipColor(bColor, bColor, bColor);
 }
 
 //----------------------------------------------------------------------------

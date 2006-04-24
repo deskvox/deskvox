@@ -181,6 +181,7 @@ class VVShell : public FXMainWindow
       ID_HEIGHT_FIELD,
       ID_GL_SETTINGS,
       ID_SERVER,
+      ID_IDLE,
       ID_LAST
     };
 
@@ -237,6 +238,7 @@ class VVShell : public FXMainWindow
     long onDispQualityChange(FXObject*,FXSelector,void*);
     long onDispFPSChange(FXObject*,FXSelector,void*);
     long onDispSpinChange(FXObject*,FXSelector,void*);
+    long onIdle(FXObject*, FXSelector, void*);
 
     void setCanvasRenderer(vvVolDesc* = NULL, int = 0, vvTexRend::GeometryType = vvTexRend::VV_AUTO, vvTexRend::VoxelType = vvTexRend::VV_BEST);
     void updateRendererVolume();

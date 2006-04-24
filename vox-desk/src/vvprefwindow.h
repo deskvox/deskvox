@@ -42,8 +42,10 @@ class VVPreferenceWindow : public FXDialogBox
     enum
     {
       ID_EYE_DIST=FXDialogBox::ID_LAST,
-      ID_QUALITY,
-      ID_QUALITY_TEXT,
+      ID_QUALITY_MOVING,
+      ID_QUALITY_STILL,
+      ID_QUALITY_M_TEXT,
+      ID_QUALITY_S_TEXT,
       ID_STEREO,
       ID_ARTOOLKIT,
       ID_VOXELTYPE,
@@ -67,9 +69,11 @@ class VVPreferenceWindow : public FXDialogBox
     vox::vvCanvas* _canvas;
     VVShell*  _shell;
     FXSlider* _eyeSlider;
-    FXDial* _qualityDial;
+    FXDial* _qualityMDial;
+    FXDial* _qualitySDial;
     FXTextField* _eyeTField;
-    FXTextField* _qualityTField;
+    FXTextField* _qualityMTField;
+    FXTextField* _qualitySTField;
     FXComboBox* _vtCombo;                         ///< voxel type
     FXComboBox* _gtCombo;                         ///< geometry type
     FXComboBox* _psCombo;                         ///< pixel shader
@@ -93,13 +97,18 @@ class VVPreferenceWindow : public FXDialogBox
     void toggleBounds();
     void toggleInterpol();
     void scaleQuality(float);
-    float getQualityDialValue();
-    void setQualityDialValue(float);
+    float getQualitySDialValue();
+    void  setQualitySDialValue(float);
+    float getQualityMDialValue();
+    void  setQualityMDialValue(float);
 
     long onEyeChange(FXObject*,FXSelector,void*);
-    long onQualityChange(FXObject*,FXSelector,void*);
-    long onQualityTextChange(FXObject*,FXSelector,void*);
-    long onQualityChanging(FXObject*,FXSelector,void*);
+    long onQualityMChange(FXObject*,FXSelector,void*);
+    long onQualityMTextChange(FXObject*,FXSelector,void*);
+    long onQualityMChanging(FXObject*,FXSelector,void*);
+    long onQualitySChange(FXObject*,FXSelector,void*);
+    long onQualitySTextChange(FXObject*,FXSelector,void*);
+    long onQualitySChanging(FXObject*,FXSelector,void*);
     long onStereoChange(FXObject*,FXSelector,void*);
     long onARToolkitChange(FXObject*,FXSelector,void*);
     long onGTChange(FXObject*,FXSelector,void*);

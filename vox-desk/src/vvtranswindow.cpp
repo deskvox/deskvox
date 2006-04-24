@@ -63,9 +63,12 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_UNDO,          VVTransferWindow::onCmdUndo),
   FXMAPFUNC(SEL_LEFTBUTTONPRESS,   VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseLDown1D),
   FXMAPFUNC(SEL_LEFTBUTTONRELEASE, VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseLUp1D),
+  FXMAPFUNC(SEL_MIDDLEBUTTONPRESS,  VVTransferWindow::ID_TF_CANVAS_1D, VVTransferWindow::onMouseMDown1D),
+  FXMAPFUNC(SEL_MIDDLEBUTTONRELEASE,VVTransferWindow::ID_TF_CANVAS_1D, VVTransferWindow::onMouseMUp1D),
   FXMAPFUNC(SEL_RIGHTBUTTONPRESS,  VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseRDown1D),
   FXMAPFUNC(SEL_RIGHTBUTTONRELEASE,VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseRUp1D),
   FXMAPFUNC(SEL_MOTION,            VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseMove1D),
+  FXMAPFUNC(SEL_MOUSEWHEEL,        VVTransferWindow::ID_TF_CANVAS_1D,  VVTransferWindow::onMouseWheel1D),
   FXMAPFUNC(SEL_LEFTBUTTONPRESS,   VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onMouseLDown2D),
   FXMAPFUNC(SEL_LEFTBUTTONRELEASE, VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onMouseLUp2D),
   FXMAPFUNC(SEL_MOTION,            VVTransferWindow::ID_TF_CANVAS_2D,  VVTransferWindow::onMouseMove2D),
@@ -74,9 +77,9 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_INSTANT,       VVTransferWindow::onCmdInstant),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_OWN_COLOR,     VVTransferWindow::onCmdOwnColor),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_APPLY,         VVTransferWindow::onCmdApply),
-  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_IMPORT,        VVTransferWindow::onCmdImport),
-  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_SAVE_MV,       VVTransferWindow::onCmdSaveMV),
-  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_LOAD_MV,       VVTransferWindow::onCmdLoadMV),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_IMPORT_TF,     VVTransferWindow::onCmdImportTF),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_SAVE_TF,       VVTransferWindow::onCmdSaveTF),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_LOAD_TF,       VVTransferWindow::onCmdLoadTF),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_COLOR,         VVTransferWindow::onCmdColor),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_ALL,      VVTransferWindow::onCmdHistAll),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_FIRST,    VVTransferWindow::onCmdHistFirst),
@@ -94,6 +97,7 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_MAX,           VVTransferWindow::onCmdSetMax),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_ZOOM_LUT,      VVTransferWindow::onCmdZoomLUT),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_CENTER,        VVTransferWindow::onCmdCenter),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_INVERT,        VVTransferWindow::onCmdInvertAlpha),
 };
 
 FXIMPLEMENT(VVTransferWindow,FXDialogBox,VVTransferWindowMap,ARRAYNUMBER(VVTransferWindowMap))
@@ -121,7 +125,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _zoomMinButton = new FXButton(zoomFrame, "", NULL, this, ID_MIN, FRAME_RAISED | FRAME_THICK| LAYOUT_LEFT,0,0,0,0,20,20);
   FXHorizontalFrame* realFrame = new FXHorizontalFrame(zoomFrame, LAYOUT_CENTER_X);
   _realMinLabel = new FXLabel(realFrame, "", NULL, LABEL_NORMAL);
-  new FXButton(realFrame, "Zoom to LUT width", NULL, this, ID_ZOOM_LUT, FRAME_RAISED | FRAME_THICK);
+  new FXButton(realFrame, "Set to LUT width", NULL, this, ID_ZOOM_LUT, FRAME_RAISED | FRAME_THICK);
   _realMaxLabel = new FXLabel(realFrame, "", NULL, LABEL_NORMAL);
   _centerButton = new FXButton(zoomFrame, "Center origin", NULL, this, ID_CENTER, FRAME_RAISED | FRAME_THICK| LAYOUT_CENTER_X,0,0,0,0,20,20);
   _zoomMaxButton = new FXButton(zoomFrame, "", NULL, this, ID_MAX, FRAME_RAISED | FRAME_THICK | LAYOUT_RIGHT,0,0,0,0,20,20);
@@ -267,7 +271,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _cbNorm = new FXCheckButton(checkboxFrame, "Logarithmic histogram normalization", this, ID_NORMALIZATION, ICON_BEFORE_TEXT|LAYOUT_LEFT);
   _cbNorm->setCheck(true);
 
-  FXGroupBox* histoGroup = new FXGroupBox(master,"Display",FRAME_GROOVE | LAYOUT_FILL_X);
+  FXGroupBox* histoGroup = new FXGroupBox(master,"Display options", FRAME_GROOVE | LAYOUT_FILL_X);
   FXHorizontalFrame* miscFrame = new FXHorizontalFrame(histoGroup);
   _opaCheck = new FXCheckButton(miscFrame,"Opacity",this,ID_OPACITY, ICON_BEFORE_TEXT);
   _opaCheck->setCheck(true);
@@ -275,6 +279,9 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _binsCheck->setCheck(false);
   _pinsCheck = new FXCheckButton(miscFrame, "Show pin lines", this, ID_PINS, ICON_BEFORE_TEXT);
   _pinsCheck->setCheck(true);
+  _invertCheck = new FXCheckButton(miscFrame, "Invert opacity bar", this, ID_INVERT, ICON_BEFORE_TEXT);
+  int alpha = getApp()->reg().readIntEntry("Settings", "InvertAlpha", 0);
+  _invertCheck->setCheck((alpha==0) ? false : true);
   FXHorizontalFrame* histoFrame = new FXHorizontalFrame(histoGroup);
   _histoCheck = new FXCheckButton(histoFrame,"Histogram",this,ID_HISTOGRAM, ICON_BEFORE_TEXT);
   _histoCheck->setCheck(true);
@@ -292,9 +299,9 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
 
   FXGroupBox* tfGroup = new FXGroupBox(master,"Transfer Function I/O",FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
   FXHorizontalFrame* tfFrame=new FXHorizontalFrame(tfGroup, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
-  new FXButton(tfFrame,"Save Meshviewer TF",NULL,this,ID_SAVE_MV, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
-  new FXButton(tfFrame,"Load Meshviewer TF",NULL,this,ID_LOAD_MV, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
-  new FXButton(tfFrame,"Import TF",NULL,this,ID_IMPORT, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
+  new FXButton(tfFrame,"Save TF",NULL,this,ID_SAVE_TF, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
+  new FXButton(tfFrame,"Load TF",NULL,this,ID_LOAD_TF, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
+  new FXButton(tfFrame,"Import TF",NULL,this,ID_IMPORT_TF, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
   
   FXHorizontalFrame* endFrame=new FXHorizontalFrame(master, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
   new FXButton(endFrame,"Apply",NULL,this,ID_APPLY, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
@@ -311,6 +318,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _histoTexture2D = NULL;
   _dataZoom[0] = 0.0f;
   _dataZoom[1] = 1.0f;
+  _isHistogramDirty = true;
 }
 
 // Must delete the menus
@@ -341,7 +349,6 @@ long VVTransferWindow::onTFCanvasPaint(FXObject*,FXSelector,void*)
     initGL();
     _glCanvas2D->makeNonCurrent();
   }
-  computeHistogram();
   drawTF();
   return 1;
 }
@@ -552,15 +559,28 @@ long VVTransferWindow::onMouseLDown1D(FXObject*,FXSelector,void* ptr)
   _canvas->_vd->tf.putUndoBuffer();
   _glCanvas1D->grab();
   FXEvent* ev = (FXEvent*)ptr;
-  _currentWidget = closestWidget(norm2data(float(ev->win_x) / float(_glCanvas1D->getWidth())), 
-                                 1.0f - float(ev->win_y) / float(_glCanvas1D->getHeight()), 
-                                 -1.0f);
+  float normX = float(ev->win_x) / float(_glCanvas1D->getWidth());
+  _currentWidget = closestWidget(norm2data(normX), 1.0f - float(ev->win_y) / float(_glCanvas1D->getHeight()), -1.0f);
   updateLabels();
   drawTF();
   return 1;
 }
 
 long VVTransferWindow::onMouseLUp1D(FXObject*,FXSelector,void*)
+{
+  _mouseButton = 0;
+  _glCanvas1D->ungrab();
+  return 1;
+}
+
+long VVTransferWindow::onMouseMDown1D(FXObject*,FXSelector,void*)
+{
+  _mouseButton = 2;
+  _glCanvas1D->grab();
+  return 1;
+}
+
+long VVTransferWindow::onMouseMUp1D(FXObject*,FXSelector,void*)
 {
   _mouseButton = 0;
   _glCanvas1D->ungrab();
@@ -599,10 +619,19 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
 {
   vvTFCustom* cuw;
   float dx, dy;   // distance mouse moved in TF space since previous callback [0..1]
+  float mousePosVal;
   
   FXEvent* ev = (FXEvent*)ptr;
   float pos = ts_clamp(float(ev->win_x) / float(_glCanvas1D->getWidth()), 0.0f, 1.0f);
-  _mousePosLabel->setText(FXStringFormat("Mouse: %.5g", norm2data(pos)));
+  if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
+  {
+    mousePosVal = data2hdr(norm2data(pos));
+  }
+  else
+  {
+    mousePosVal = norm2data(pos);
+  }
+  _mousePosLabel->setText(FXStringFormat("Mouse: %.5g", mousePosVal));
 
   if (_glCanvas1D->grabbed())
   {
@@ -610,8 +639,23 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
     {
       if(!_currentWidget || !_canvas) return 1;
       if(_canvas->_vd->tf._widgets.count() == 0) return 1;
-      _pinPosLabel->setText(FXStringFormat("Pin: %.5g", norm2data(pos)));
-      _currentWidget->_pos[0] = norm2data(pos);
+      _pinPosLabel->setText(FXStringFormat("Pin: %.5g", mousePosVal));
+      if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
+      {
+        _currentWidget->_pos[0] = hdr2realbin(mousePosVal);
+      }
+      else
+      {
+        _currentWidget->_pos[0] = mousePosVal;
+      }
+    }
+    else if (_mouseButton==2)   // pan TF area left/right
+    {
+      dx = normd2datad((float(ev->win_x - ev->last_x) / float(_glCanvas1D->getWidth())));
+      _dataZoom[0] -= dx;
+      _dataZoom[1] -= dx;
+      setDirtyHistogram();
+      updateValues();
     }
     else if (_mouseButton==3)
     {
@@ -664,6 +708,39 @@ long VVTransferWindow::onMouseMove2D(FXObject*, FXSelector, void* ptr)
   _currentWidget->_pos[1] = yPos;
   draw2DTF();
   if(_instantButton->getCheck()) updateTransFunc();
+  return 1;
+}
+
+/** One mouse wheel click has a value of +120 when rotating up, -120 when rotating down.
+*/
+long VVTransferWindow::onMouseWheel1D(FXObject*, FXSelector sel, void* ptr)
+{
+  const float ZOOM_PER_CLICK = 0.1f;
+  float diff;
+  float mousePos;
+  float factor;
+  
+  FXEvent* ev = (FXEvent*)ptr;
+  float xPos = ts_clamp(float(ev->win_x) / float(_glCanvas2D->getWidth()),  0.0f, 1.0f);
+  int rot = ev->code / 120;  // normalize to 1 unit per click
+  
+  // Calculate new data zoom values while keeping mouse pointer position fixed.
+  factor = 1.0f - rot * ZOOM_PER_CLICK;
+  mousePos = norm2data(xPos);
+
+  // dataZoomMin:
+  diff = mousePos - _dataZoom[0];
+  diff *= factor;   // calculate new distance between min and mousePos
+  _dataZoom[0] = mousePos - diff;
+  
+  // dataZoomMax:
+  diff = _dataZoom[1] - mousePos;
+  diff *= factor;   // calculate new distance between max and mousePos
+  _dataZoom[1] = mousePos + diff;
+
+  setDirtyHistogram();
+  updateValues();
+  
   return 1;
 }
 
@@ -749,7 +826,7 @@ long VVTransferWindow::onCmdApply(FXObject*,FXSelector,void*)
   return 1;
 }
 
-long VVTransferWindow::onCmdImport(FXObject*,FXSelector,void*)
+long VVTransferWindow::onCmdImportTF(FXObject*,FXSelector,void*)
 {
   const FXchar patterns[]="XVF files (*.xvf)\nAll Files (*.*)";
   FXString filename = _shell->getOpenFilename("Import Transfer Function", patterns);
@@ -768,7 +845,7 @@ long VVTransferWindow::onCmdImport(FXObject*,FXSelector,void*)
   return 1;
 }
 
-long VVTransferWindow::onCmdSaveMV(FXObject*,FXSelector,void*)
+long VVTransferWindow::onCmdSaveTF(FXObject*,FXSelector,void*)
 {
   const FXchar patterns[]="Transfer function files (*.vtf)\nAll Files (*.*)";
   FXString filename = _shell->getSaveFilename("Save Transfer Function", "transfunc.vtf", patterns);
@@ -782,7 +859,7 @@ long VVTransferWindow::onCmdSaveMV(FXObject*,FXSelector,void*)
   return 1;
 }
 
-long VVTransferWindow::onCmdLoadMV(FXObject*,FXSelector,void*)
+long VVTransferWindow::onCmdLoadTF(FXObject*,FXSelector,void*)
 {
   const FXchar patterns[]="Transfer function files (*.vtf)\nAll Files (*.*)";
   FXString filename = _shell->getOpenFilename("Load Transfer Function", patterns);
@@ -799,7 +876,7 @@ long VVTransferWindow::onCmdLoadMV(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onCmdNormalization(FXObject*,FXSelector,void*)
 {
-  computeHistogram();
+  setDirtyHistogram();
   drawTF();
   return 1;
 }
@@ -839,6 +916,7 @@ void VVTransferWindow::newWidget(WidgetType wt)
 
 void VVTransferWindow::drawHistogram()
 {
+  computeHistogram();
   switch (_tfBook->getCurrent())
   {
     case 0:
@@ -868,35 +946,46 @@ void VVTransferWindow::drawHistogram()
   }
 }
 
+void VVTransferWindow::setDirtyHistogram()
+{
+  _isHistogramDirty = true;
+}
+
 void VVTransferWindow::computeHistogram()
 {
   int size[2];
 
-  switch (_tfBook->getCurrent())
+  if (_isHistogramDirty)
   {
-    case 0:
+    cerr << "Calculating histogram...";
+    switch (_tfBook->getCurrent())
     {
-      vvColor col(0.4f, 0.4f, 0.4f);
-      delete[] _histoTexture1D;
-      size[0] = _glCanvas1D->getWidth();
-      size[1] = _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT;
-      _histoTexture1D = new uchar[size[0] * size[1] * 4];
-      _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 1, size, _histoTexture1D, 
-        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
-      break;
+      case 0:
+      {
+        vvColor col(0.4f, 0.4f, 0.4f);
+        delete[] _histoTexture1D;
+        size[0] = _glCanvas1D->getWidth();
+        size[1] = _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT;
+        _histoTexture1D = new uchar[size[0] * size[1] * 4];
+        _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 1, size, _histoTexture1D, 
+          (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
+        break;
+      }
+      case 1:
+      {
+        vvColor col(1.0f, 1.0f, 1.0f);
+        delete[] _histoTexture2D;
+        size[0] = _glCanvas2D->getWidth();
+        size[1] = _glCanvas2D->getHeight();
+        _histoTexture2D = new uchar[size[0] * size[1] * 4];
+        _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 2, size, _histoTexture2D,
+          (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
+        break;
+      }
+      default: break;
     }
-    case 1:
-    {
-      vvColor col(1.0f, 1.0f, 1.0f);
-      delete[] _histoTexture2D;
-      size[0] = _glCanvas2D->getWidth();
-      size[1] = _glCanvas2D->getHeight();
-      _histoTexture2D = new uchar[size[0] * size[1] * 4];
-      _canvas->_vd->makeHistogramTexture((_histAll->getCheck()) ? -1 : 0, 0, 2, size, _histoTexture2D,
-        (_cbNorm->getCheck()) ? vvVolDesc::VV_LOGARITHMIC : vvVolDesc::VV_LINEAR, &col, _dataZoom[0], _dataZoom[1]);
-      break;
-    }
-    default: break;
+    cerr << "done" << endl;
+    _isHistogramDirty = false;
   }
 }
 
@@ -1198,6 +1287,49 @@ float VVTransferWindow::datad2normd(float data)
   return data / (_dataZoom[1] - _dataZoom[0]);
 }
 
+/** Converts HDR space values to linear data values.
+*/
+float VVTransferWindow::hdr2data(float hdr)
+{
+  int bin = _canvas->_vd->findHDRBin(hdr);
+  float binStart = _canvas->_vd->_hdrBinLimits[bin];
+  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[1];
+  float binPos = (binEnd - binStart) / 2.0f + binStart;
+  return binPos;
+}
+
+/** Converts linear data values to HDR space values.
+*/
+float VVTransferWindow::data2hdr(float data)
+{
+  int bin = _canvas->_vd->findHDRBin(data);
+  float binStart = _canvas->_vd->_hdrBinLimits[bin];
+  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[1];
+  float binPos = (binEnd - binStart) / 2.0f + binStart;
+  return binPos;
+}
+
+/** Converts HDR space value to bin position in linear space.
+*/
+float VVTransferWindow::hdr2realbin(float hdr)
+{    
+  int bin = _canvas->_vd->findHDRBin(hdr);
+  float realbin = float(bin) * (_canvas->_vd->real[1] - _canvas->_vd->real[0]) / float(vvVolDesc::NUM_HDR_BINS-1) + _canvas->_vd->real[0];
+  return realbin;
+}
+
+/** Converts bin position in linear space to HDR space value.
+*/
+float VVTransferWindow::realbin2hdr(float realbin)
+{    
+  int bin = (realbin - _canvas->_vd->real[0]) / (_canvas->_vd->real[1] - _canvas->_vd->real[0]) * float(vvVolDesc::NUM_HDR_BINS-1);
+  bin = ts_clamp(bin, 0, vvVolDesc::NUM_HDR_BINS-1);
+  float binStart = _canvas->_vd->_hdrBinLimits[bin];
+  float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[1];
+  float binPos = (binEnd - binStart) / 2.0f + binStart;
+  return binPos;
+}
+
 void VVTransferWindow::drawPinLine(vvTFWidget* w)
 {
   float xPos, yTop, height;
@@ -1219,7 +1351,14 @@ void VVTransferWindow::drawPinLine(vvTFWidget* w)
   else return;
 
   selected = (w == _currentWidget);
-  xPos = data2norm(w->_pos[0]);
+  if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
+  {
+    xPos = data2norm(realbin2hdr(w->_pos[0]));
+  }
+  else
+  {
+    xPos = data2norm(w->_pos[0]);
+  }
   if (_glCanvas1D->makeCurrent())
   {
     glColor3f(0.0f, 0.0f, 0.0f);
@@ -1257,7 +1396,14 @@ vvTFWidget* VVTransferWindow::closestWidget(float x, float y, float z)
         isColor = (y > 1.0f - float(COLORBAR_HEIGHT + BINLIMITS_HEIGHT) / float(_glCanvas1D->getHeight())) ? true : false;
         if ((isColor && dynamic_cast<vvTFColor*>(temp)) || (!isColor && dynamic_cast<vvTFColor*>(temp)==NULL)) 
         {
-          dist = fabs(x - temp->_pos[0]);
+          if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
+          {
+            dist = fabs(x - realbin2hdr(temp->_pos[0]));
+          }
+          else
+          {
+            dist = fabs(x - temp->_pos[0]);
+          }
           if(dist < minDist && dist <= normd2datad(CLICK_TOLERANCE))
           {
             minDist = dist;
@@ -1349,10 +1495,10 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
   {
     // Shift colors according to HDR bins:
     tmpBar = new uchar[vvVolDesc::NUM_HDR_BINS * 4 * 3];
-    _canvas->_vd->tf.makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->real[0], _canvas->_vd->real[1]);
+    _canvas->_vd->tf.makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->real[0], _canvas->_vd->real[1], _invertCheck->getCheck());
     for (i=0; i<width; ++i)
     {
-      fval = (float(i) / float(width)) * (_dataZoom[1] - _dataZoom[0]) + _dataZoom[0];
+      fval = norm2data(float(i) / float(width));  // calculates pixel position in linear data space
       bin = _canvas->_vd->findHDRBin(fval);
       bin = ts_clamp(bin, 0, vvVolDesc::NUM_HDR_BINS-1);
       memcpy(colorBar + i*4, tmpBar + bin*4, 4);
@@ -1363,7 +1509,39 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
   }
   else  // standard iso-range TF mode
   {
-    _canvas->_vd->tf.makeColorBar(width, colorBar, _dataZoom[0], _dataZoom[1]);
+    _canvas->_vd->tf.makeColorBar(width, colorBar, _dataZoom[0], _dataZoom[1], _invertCheck->getCheck());
+  }
+}
+
+/** Create alpha texture for regular or HDR mode.
+  @param alphaTex needs to be pre-allocated for width*height*4 bytes
+*/
+void VVTransferWindow::makeAlphaTexture(int width, int height, uchar* alphaTex)
+{
+  const int RGBA = 4;   // bytes per pixel in RGBA mode
+  uchar* tmpTex;
+  float fval;
+  int i,y,bin;
+
+  if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
+  {
+    tmpTex = new uchar[vvVolDesc::NUM_HDR_BINS * height * RGBA];
+    _canvas->_vd->tf.makeAlphaTexture(vvVolDesc::NUM_HDR_BINS, height, tmpTex, _dataZoom[0], _dataZoom[1]);
+    for (i=0; i<width; ++i)
+    {
+      fval = norm2data(float(i) / float(width));
+      bin = _canvas->_vd->findHDRBin(fval);
+      bin = ts_clamp(bin, 0, vvVolDesc::NUM_HDR_BINS-1);
+      for (y=0; y<height; ++y)
+      {
+        memcpy(alphaTex + RGBA * (y * width + i), tmpTex + y * RGBA * vvVolDesc::NUM_HDR_BINS + bin*RGBA, RGBA);
+      }
+    }
+    delete[] tmpTex;
+  }
+  else  // standard iso-range TF mode
+  {
+    _canvas->_vd->tf.makeAlphaTexture(width, height, alphaTex, _dataZoom[0], _dataZoom[1]);
   }
 }
 
@@ -1404,20 +1582,21 @@ void VVTransferWindow::drawColorTexture()
 
 void VVTransferWindow::drawAlphaTexture()
 {
-  static uchar* tfTexture = new uchar[_glCanvas1D->getWidth() * (_glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT) * 4];
-  
+  int width = _glCanvas1D->getWidth();
+  int height = _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT;
+  uchar* alphaTexture = new uchar[width * height * 4];
+  makeAlphaTexture(width, height, alphaTexture);
   if (_glCanvas1D->makeCurrent())
   {
-    _canvas->_vd->tf.makeAlphaTexture(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT, tfTexture, _dataZoom[0], _dataZoom[1]);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glRasterPos2f(0.0f, 1.0f - float(COLORBAR_HEIGHT + BINLIMITS_HEIGHT) / float(_glCanvas1D->getHeight())); 
     glPixelZoom(1.0f, -1.0f);
-    glDrawPixels(_glCanvas1D->getWidth(), _glCanvas1D->getHeight() - COLORBAR_HEIGHT - BINLIMITS_HEIGHT, 
-      GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)tfTexture);
+    glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)alphaTexture);
     glDisable(GL_BLEND);
     _glCanvas1D->makeNonCurrent();
   }
+  delete[] alphaTexture;
 }
 
 void VVTransferWindow::draw2DTFTexture()
@@ -1451,7 +1630,7 @@ long VVTransferWindow::onChngDisColors(FXObject*,FXSelector,void*)
 long VVTransferWindow::onCmdHistAll(FXObject*,FXSelector,void*)
 {
   _histFirst->setCheck(false);
-  computeHistogram();
+  setDirtyHistogram();
   drawTF();
   return 1;
 }
@@ -1459,21 +1638,30 @@ long VVTransferWindow::onCmdHistAll(FXObject*,FXSelector,void*)
 long VVTransferWindow::onCmdHistFirst(FXObject*,FXSelector,void*)
 {
   _histAll->setCheck(false);
-  computeHistogram();
+  setDirtyHistogram();
   drawTF();
   return 1;
 }
 
 long VVTransferWindow::onCmdHistogram(FXObject*,FXSelector,void*)
 {
-  computeHistogram();
+  if (_histoCheck->getCheck()) 
+  {
+    setDirtyHistogram();
+    _histFirst->enable();
+    _histAll->enable();
+  }
+  else
+  {
+    _histFirst->disable();
+    _histAll->disable();
+  }
   drawTF();
   return 1;
 }
 
 long VVTransferWindow::onCmdOpacity(FXObject*,FXSelector,void*)
 {
-  computeHistogram();
   drawTF();
   return 1;
 }
@@ -1499,6 +1687,7 @@ long VVTransferWindow::onCmdSetMin(FXObject*,FXSelector,void*)
   _dataZoom[0] = FXFloatVal(dialog->getText());
   _zoomMinButton->setText(FXStringFormat("%.5g", _dataZoom[0]));
   delete dialog;
+  setDirtyHistogram();
   return 1;
 }
 
@@ -1511,6 +1700,7 @@ long VVTransferWindow::onCmdSetMax(FXObject*,FXSelector,void*)
   _dataZoom[1] = FXFloatVal(dialog->getText());
   _zoomMaxButton->setText(FXStringFormat("%.5g", _dataZoom[1]));
   delete dialog;
+  setDirtyHistogram();
   return 1;
 }
 
@@ -1524,6 +1714,7 @@ void VVTransferWindow::zoomLUT()
 {
   _dataZoom[0] = _canvas->_vd->real[0];
   _dataZoom[1] = _canvas->_vd->real[1];
+  setDirtyHistogram();
   updateValues();
 }
 
@@ -1532,7 +1723,17 @@ long VVTransferWindow::onCmdCenter(FXObject*,FXSelector,void*)
   float range = _dataZoom[1] - _dataZoom[0];
   _dataZoom[0] = -range/2.0f;
   _dataZoom[1] = range/2.0f;
+  setDirtyHistogram();
   updateValues();
+  return 1;
+}
+
+long VVTransferWindow::onCmdInvertAlpha(FXObject*,FXSelector,void*)
+{
+  int status = (_invertCheck->getCheck()) ? 1 : 0;
+  getApp()->reg().writeIntEntry("Settings", "InvertAlpha", status);
+  getApp()->reg().write();
+  drawTF();
   return 1;
 }
 
@@ -1546,7 +1747,6 @@ void VVTransferWindow::updateValues()
   updateLabels();
   _disColorSlider->setValue(_canvas->_vd->tf.getDiscreteColors());
   _disColorLabel->setText(FXStringFormat("%d", _disColorSlider->getValue()));
-  computeHistogram();
   drawTF();
 }
 

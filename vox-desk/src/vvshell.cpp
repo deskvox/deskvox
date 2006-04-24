@@ -120,6 +120,7 @@ FXDEFMAP(VVShell) VVShellMap[]=
   FXMAPFUNC(SEL_TIMEOUT,             VVShell::ID_ART_TIMER,     VVShell::onARToolkitTimerEvent),
   FXMAPFUNC(SEL_TIMEOUT,             VVShell::ID_ANIM_TIMER,    VVShell::onAnimTimerEvent),
   FXMAPFUNC(SEL_TIMEOUT,             VVShell::ID_SPIN_TIMER,    VVShell::onSpinTimerEvent),
+  FXMAPFUNC(SEL_CHORE,               VVShell::ID_IDLE,          VVShell::onIdle),
   FXMAPFUNCS(SEL_UPDATE,             MINKEY,MAXKEY,             VVShell::onAllUpdate),
 };
 
@@ -425,6 +426,7 @@ long VVShell::onLeftMouseDown(FXObject*,FXSelector,void* ptr)
   FXEvent *ev=(FXEvent*)ptr;
   if (_canvas) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::LEFT_BUTTON);
   if (_spinItem->getCheck()) stopSpinTimer();
+  _canvas->_renderer->_renderState._quality = prefWindow->getQualityMDialValue();
   return 1;
 }
 
@@ -436,6 +438,7 @@ long VVShell::onLeftMouseUp(FXObject*,FXSelector,void* ptr)
   FXEvent *ev=(FXEvent*)ptr;
   if(_canvas) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
   if (_spinItem->getCheck()) startSpinTimer();
+  _canvas->_renderer->_renderState._quality = prefWindow->getQualitySDialValue();
   return 1;
 }
 
@@ -446,6 +449,7 @@ long VVShell::onMidMouseDown(FXObject*,FXSelector,void* ptr)
 
   FXEvent *ev=(FXEvent*)ptr;
   if(_canvas != NULL) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::MIDDLE_BUTTON);
+  _canvas->_renderer->_renderState._quality = prefWindow->getQualityMDialValue();
   return 1;
 }
 
@@ -456,6 +460,7 @@ long VVShell::onMidMouseUp(FXObject*,FXSelector,void* ptr)
 
   FXEvent *ev=(FXEvent*)ptr;
   if(_canvas != NULL) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
+  _canvas->_renderer->_renderState._quality = prefWindow->getQualitySDialValue();
   return 1;
 }
 
@@ -465,8 +470,8 @@ long VVShell::onRightMouseDown(FXObject*,FXSelector,void* ptr)
   vvDebugMsg::msg(1, "VVShell::onRightMouseDown()");
 
   FXEvent *ev=(FXEvent*)ptr;
-  if(_canvas != NULL)
-    _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::RIGHT_BUTTON);
+  if (_canvas) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::RIGHT_BUTTON);
+  _canvas->_renderer->_renderState._quality = prefWindow->getQualityMDialValue();
   return 1;
 }
 
@@ -476,8 +481,8 @@ long VVShell::onRightMouseUp(FXObject*,FXSelector,void* ptr)
   vvDebugMsg::msg(1, "VVShell::onRightMouseUp()");
 
   FXEvent *ev=(FXEvent*)ptr;
-  if(_canvas != NULL)
-    _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
+  if (_canvas) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
+  _canvas->_renderer->_renderState._quality = prefWindow->getQualitySDialValue();
   return 1;
 }
 
@@ -503,7 +508,6 @@ long VVShell::onMouseMove(FXObject*,FXSelector,void* ptr)
 long VVShell::onMouseWheel(FXObject*, FXSelector, void*)
 {
   vvDebugMsg::msg(1, "VVShell::onMouseWheel()");
-
   return 1;
 }
 
@@ -607,6 +611,8 @@ void VVShell::loadDefaultVolume(int algorithm, int w, int h, int s)
   }
   if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
   setCanvasRenderer(vd, 0, _canvas->_currentGeom);
+  _transWindow->setDirtyHistogram();
+  _transWindow->zoomLUT();
   cerr << "default" << vd->frames << endl;
 }
 
@@ -647,6 +653,8 @@ void VVShell::loadVolumeFile(const char* filename)
       }
       if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
       setCanvasRenderer(vd, 0, _canvas->_currentGeom);
+      _transWindow->setDirtyHistogram();
+      _transWindow->zoomLUT();
       vd->printInfoLine();
       break;
     case vvFileIO::FILE_NOT_FOUND:
@@ -721,6 +729,8 @@ long VVShell::onCmdReloadVolume(FXObject*,FXSelector,void*)
       // Use previous pin list if loaded dataset has no pins:
       if (vd->tf.isEmpty()) vd->tf.copy(&vd->tf._widgets, &_canvas->_vd->tf._widgets);
       setCanvasRenderer(vd, 0, _canvas->_currentGeom, _canvas->_currentVoxels);
+      _transWindow->setDirtyHistogram();
+      _transWindow->zoomLUT();
       break;
     case vvFileIO::FILE_NOT_FOUND:
       vvDebugMsg::msg(2, "File not found: ", vd->getFilename());
@@ -812,6 +822,8 @@ void VVShell::mergeFiles(const char* firstFile, int num, int increment, vvVolDes
       }
       if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
       setCanvasRenderer(vd, 0, _canvas->_currentGeom, _canvas->_currentVoxels);
+      _transWindow->setDirtyHistogram();
+      _transWindow->zoomLUT();
       break;
     case vvFileIO::FILE_NOT_FOUND:
       vvDebugMsg::msg(2, "File not found: ", vd->getFilename());
@@ -1375,7 +1387,6 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, int algorithm, vvTexRend::Geometr
     vd->makeInfoString(string);
     _statusBar->setText(string);
     volumeDialog->updateValues();
-    _transWindow->zoomLUT();
     _transWindow->updateValues();
     prefWindow->updateValues();
     _dataTypeDialog->updateValues();
@@ -1394,8 +1405,10 @@ void VVShell::updateRendererVolume()
 
   if (_glcanvas->makeCurrent())
   {
+    cerr << "Updating volume data...";
     _canvas->_renderer->updateVolumeData();
     _glcanvas->makeNonCurrent();
+    cerr << "done";
   }
 }
 
@@ -1673,11 +1686,7 @@ void VVShell::benchmarkTest()
   for (angle=0; angle<360; angle+=2)
   {
     _canvas->_ov._camera.rotate(step, 0.0f, 1.0f, 0.0f);   // rotate model view matrix
-    if(_glcanvas->makeCurrent())
-    {
-      drawScene();
-      _glcanvas->makeNonCurrent();
-    }
+    drawScene();
     ++framesRendered;
   }
 
@@ -1687,6 +1696,16 @@ void VVShell::benchmarkTest()
   cerr << "*******************************************************************************" << endl;
 
   delete totalTime;  
+}
+
+//----------------------------------------------------------------------------
+/** Called when system is idle.
+  Schedule a call to this function: getApp()->addChore(this, ID_IDLE);
+  Remove any remaining calls to this function from queue: getApp()->removeChore(this, ID_IDLE);
+*/
+long VVShell::onIdle(FXObject*, FXSelector, void*)
+{
+  return 1;
 }
 
 /**************************************************************/

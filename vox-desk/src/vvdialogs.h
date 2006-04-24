@@ -739,6 +739,7 @@ class VVFloatRangeDialog : public FXDialogBox
       ID_SKIP,
       ID_DUP,
       ID_LOCK,
+      ID_COLOR,
       ID_CLOSE
     };
     FXint _algoType;
@@ -754,9 +755,11 @@ class VVFloatRangeDialog : public FXDialogBox
     FXCheckButton* _skipCheck;
     FXCheckButton* _dupCheck;
     FXCheckButton* _lockCheck;
+    FXCheckButton* _colorCheck;
     FXTextField* _fastNumber;
     VVShell* _shell;
     vox::vvCanvas* _canvas;
+    float _prevRange[2];
 
     VVFloatRangeDialog(FXWindow*, vox::vvCanvas*);
     long onClose(FXObject*, FXSelector, void*);
