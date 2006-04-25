@@ -2658,9 +2658,12 @@ void vvVolDesc::printVolumeInfo()
 void vvVolDesc::printStatistics()
 {
   float scalarMin, scalarMax;
+  float mean, variance, stdev;
+  float zeroVoxels, numTransparent;
   int m;
 
   findMinMax(0, scalarMin, scalarMax);
+  calculateDistribution(0, mean, variance, stdev);
   cerr << "Scalar value range:                " << scalarMin << " to " << scalarMax << endl;
   for (m=0; m<chan; ++m)
   {
@@ -2669,10 +2672,13 @@ void vvVolDesc::printStatistics()
       cerr << "Number of different data values in channel " << m << ": " << findNumUsed(m) << endl;
     }
   }
-  cerr << "Zero voxels in first frame:        " << setprecision(4) <<
-    (100.0f * findNumValue(0,0) / getFrameVoxels()) << " %" << endl;
-  cerr << "Transparent voxels in first frame: " << setprecision(4) <<
-    (100.0f * findNumTransparent(0) / getFrameVoxels()) << " %" << endl;
+  zeroVoxels = 100.0f * findNumValue(0,0) / getFrameVoxels();
+  numTransparent = 100.0f * findNumTransparent(0) / getFrameVoxels();
+  cerr << "Zero voxels in first frame:        " << setprecision(4) << zeroVoxels << " %" << endl;
+  cerr << "Transparent voxels in first frame: " << setprecision(4) << numTransparent << " %" << endl;
+  cerr << "Mean in first frame:               " << setprecision(4) << mean << endl;
+  cerr << "Variance in first frame:           " << setprecision(4) << variance << endl;
+  cerr << "Standard deviation in first frame: " << setprecision(4) << stdev << endl;
 }
 
 //----------------------------------------------------------------------------
@@ -3744,6 +3750,92 @@ int vvVolDesc::findNumTransparent(int frame)
   if (!noTF) delete[] rgba;
 
   return numTransparent;
+}
+
+//----------------------------------------------------------------------------
+/** Calculate the mean of the values in a dataset.
+  @param frame frame index to look at (first frame = 0)
+*/
+float vvVolDesc::calculateMean(int frame)
+{
+  uchar* raw;
+  float scalar;
+  float mean;
+  double sum = 0.0;
+  int i;
+  int frameSize;
+  int bpv;
+
+  vvDebugMsg::msg(2, "vvVolDesc::calculateMean()");
+
+  frameSize = getFrameBytes();
+  bpv = getBPV();
+
+  // Search volume:
+  raw = getRaw(frame);
+  for (i=0; i<frameSize; i += bpv)
+  {
+    switch (bpc)
+    {
+      case 1:
+        scalar = float(raw[i]);
+        break;
+      case 2:
+        scalar = float((int(raw[i]) << 8) | int(raw[i+1]));
+        break;
+      case 4:
+        scalar = *((float*)(raw+i));
+        break;
+      default: assert(0); break;
+    }
+    sum += scalar;
+  }
+  mean = float(sum / double(getFrameVoxels()));
+  return mean;
+}
+
+//----------------------------------------------------------------------------
+/** Calculate mean, variance, and standard deviation of the values in a dataset.
+  @param frame frame index to look at (first frame = 0)
+*/
+void vvVolDesc::calculateDistribution(int frame, float& mean, float& variance, float& stdev)
+{
+  uchar* raw;
+  double sumSquares = 0.0;
+  float scalar;
+  float diff;
+  int i;
+  int frameSize;
+  int bpv;
+
+  vvDebugMsg::msg(2, "vvVolDesc::calculateDistribution()");
+
+  frameSize = getFrameBytes();
+  bpv = getBPV();
+  mean = calculateMean(frame);
+
+  // Search volume:
+  raw = getRaw(frame);
+  for (i=0; i<frameSize; i += bpv)
+  {
+    switch (bpc)
+    {
+      case 1:
+        scalar = float(raw[i]);
+        break;
+      case 2:
+        scalar = float((int(raw[i]) << 8) | int(raw[i+1]));
+        break;
+      case 4:
+        scalar = *((float*)(raw+i));
+        break;
+      default: assert(0); break;
+    }
+    diff = scalar - mean;
+    sumSquares += diff * diff;
+  }
+  variance = float(sumSquares / double(getFrameVoxels()));
+  stdev = sqrtf(variance);
 }
 
 //----------------------------------------------------------------------------

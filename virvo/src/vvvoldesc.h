@@ -237,6 +237,8 @@ class VIRVOEXPORT vvVolDesc
     int    findNumValue(int, float);
     int    findNumUsed(int);
     int    findNumTransparent(int);
+    void   calculateDistribution(int, float&, float&, float&);
+    float  calculateMean(int);
     float  findClampValue(int, int, float);
     void   computeVolume(int, int, int, int);
     void   resizeEdgeMax(float);
