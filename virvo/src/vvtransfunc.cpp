@@ -421,7 +421,7 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, b
 }
 
 //----------------------------------------------------------------------------
-/** Returns RGBA texture values for the alpha functino of the 1D transfer function.
+/** Returns RGBA texture values for the alpha function of the 1D transfer function.
  Order of components: RGBARGBARGBA...
  @param width,height size of texture [pixels]
  @param texture  _allocated_ array in which to store texture values.
@@ -430,21 +430,22 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, b
 */
 void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float min, float max)
 {
+  const int RGBA = 4;
   const int GRAY_LEVEL = 160;
   const int ALPHA_LEVEL = 230;
   int x, y, index1D, index2D, barHeight;
 
-  float* rgba = new float[width * 4];
+  float* rgba = new float[width * RGBA];
   computeTFTexture(width, 1, 1, rgba, min, max);
-  memset(texture, 0, width * height * 4); // make black and transparent
+  memset(texture, 0, width * height * RGBA); // make black and transparent
 
   for (x=0; x<width; ++x)
   {
-    index1D = 4 * x + 3;                          // alpha component of TF
+    index1D = RGBA * x + 3;                          // alpha component of TF
     barHeight = int(rgba[index1D] * float(height));
     for (y=0; y<barHeight; ++y)
     {
-      index2D = 4 * (x + (height - y - 1) * width);
+      index2D = RGBA * (x + (height - y - 1) * width);
       texture[index2D]     = GRAY_LEVEL;
       texture[index2D + 1] = GRAY_LEVEL;
       texture[index2D + 2] = GRAY_LEVEL;

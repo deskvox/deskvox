@@ -613,7 +613,7 @@ class VVGammaDialog : public FXDialogBox
       ID_GBLUE,
       ID_GFOUR,
       ID_DEFAULTS,
-      ID_OK
+      ID_CLOSE
     };
     FXCheckButton* _gammaCheck;
     FXDial* _gRedDial;
@@ -628,7 +628,7 @@ class VVGammaDialog : public FXDialogBox
     VVShell* _parent;
 
     VVGammaDialog(FXWindow*, vox::vvCanvas*);
-    long onOK(FXObject*, FXSelector, void*);
+    long onClose(FXObject*, FXSelector, void*);
     long onSetDefaults(FXObject*, FXSelector, void*);
     long onGammaChange(FXObject*, FXSelector, void*);
     long onGRedChange(FXObject*, FXSelector, void*);

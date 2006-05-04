@@ -1487,6 +1487,7 @@ void VVTransferWindow::updateLabels()
 */
 void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
 { 
+  const int RGBA = 4;   // bytes per pixel in RGBA mode
   uchar* tmpBar;
   float fval;
   int i,bin;
@@ -1494,16 +1495,16 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
   if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
   {
     // Shift colors according to HDR bins:
-    tmpBar = new uchar[vvVolDesc::NUM_HDR_BINS * 4 * 3];
+    tmpBar = new uchar[vvVolDesc::NUM_HDR_BINS * RGBA * 3];
     _canvas->_vd->tf.makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->real[0], _canvas->_vd->real[1], _invertCheck->getCheck());
     for (i=0; i<width; ++i)
     {
       fval = norm2data(float(i) / float(width));  // calculates pixel position in linear data space
       bin = _canvas->_vd->findHDRBin(fval);
       bin = ts_clamp(bin, 0, vvVolDesc::NUM_HDR_BINS-1);
-      memcpy(colorBar + i*4, tmpBar + bin*4, 4);
-      memcpy(colorBar + 4*(i+width), tmpBar + 4 * (bin + vvVolDesc::NUM_HDR_BINS), 4);
-      memcpy(colorBar + 4*(i+2*width), tmpBar + 4 * (bin + 2*vvVolDesc::NUM_HDR_BINS), 4);
+      memcpy(colorBar + i*RGBA, tmpBar + bin*RGBA, RGBA);
+      memcpy(colorBar + RGBA*(i+width), tmpBar + RGBA * (bin + vvVolDesc::NUM_HDR_BINS), RGBA);
+      memcpy(colorBar + RGBA*(i+2*width), tmpBar + RGBA * (bin + 2*vvVolDesc::NUM_HDR_BINS), RGBA);
     }
     delete[] tmpBar;
   }
@@ -1526,7 +1527,7 @@ void VVTransferWindow::makeAlphaTexture(int width, int height, uchar* alphaTex)
   if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
   {
     tmpTex = new uchar[vvVolDesc::NUM_HDR_BINS * height * RGBA];
-    _canvas->_vd->tf.makeAlphaTexture(vvVolDesc::NUM_HDR_BINS, height, tmpTex, _dataZoom[0], _dataZoom[1]);
+    _canvas->_vd->tf.makeAlphaTexture(vvVolDesc::NUM_HDR_BINS, height, tmpTex, _canvas->_vd->real[0], _canvas->_vd->real[1]);
     for (i=0; i<width; ++i)
     {
       fval = norm2data(float(i) / float(width));
@@ -1534,7 +1535,7 @@ void VVTransferWindow::makeAlphaTexture(int width, int height, uchar* alphaTex)
       bin = ts_clamp(bin, 0, vvVolDesc::NUM_HDR_BINS-1);
       for (y=0; y<height; ++y)
       {
-        memcpy(alphaTex + RGBA * (y * width + i), tmpTex + y * RGBA * vvVolDesc::NUM_HDR_BINS + bin*RGBA, RGBA);
+        memcpy(alphaTex + RGBA * (y * width + i), tmpTex + RGBA * (y * vvVolDesc::NUM_HDR_BINS + bin), RGBA);
       }
     }
     delete[] tmpTex;

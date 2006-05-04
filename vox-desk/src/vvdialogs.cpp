@@ -2033,7 +2033,7 @@ long VVHistWindow::onClearSelect(FXObject*,FXSelector,void*)
 
 FXDEFMAP(VVGammaDialog) VVGammaDialogMap[]=
 {
-  FXMAPFUNC(SEL_COMMAND, VVGammaDialog::ID_OK,       VVGammaDialog::onOK),
+  FXMAPFUNC(SEL_COMMAND, VVGammaDialog::ID_CLOSE,    VVGammaDialog::onClose),
   FXMAPFUNC(SEL_COMMAND, VVGammaDialog::ID_DEFAULTS, VVGammaDialog::onSetDefaults),
   FXMAPFUNC(SEL_COMMAND, VVGammaDialog::ID_GAMMA,    VVGammaDialog::onGammaChange),
   FXMAPFUNC(SEL_CHANGED, VVGammaDialog::ID_GRED,     VVGammaDialog::onGRedChange),
@@ -2101,13 +2101,13 @@ VVGammaDialog::VVGammaDialog(FXWindow* owner, vvCanvas* c) :
   // Buttons:
   FXHorizontalFrame* buttonFrame = new FXHorizontalFrame(verticalFrame, LAYOUT_CENTER_X | LAYOUT_FILL_Y | PACK_UNIFORM_WIDTH);
   new FXButton(buttonFrame, "Default", NULL, this, ID_DEFAULTS, LAYOUT_FILL_X | FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X | LAYOUT_CENTER_Y);
-  new FXButton(buttonFrame, "OK", NULL, this, ID_OK, LAYOUT_FILL_X | FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X | LAYOUT_CENTER_Y);
+  new FXButton(buttonFrame, "Close", NULL, this, ID_CLOSE, LAYOUT_FILL_X | FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X | LAYOUT_CENTER_Y);
 
   updateValues();
   move(100, 100);
 }
 
-long VVGammaDialog::onOK(FXObject*, FXSelector, void*)
+long VVGammaDialog::onClose(FXObject*, FXSelector, void*)
 {
   handle(this, FXSEL(SEL_COMMAND, ID_HIDE), NULL);
   return 1;
@@ -2146,7 +2146,7 @@ long VVGammaDialog::onGammaChange(FXObject*, FXSelector, void* ptr)
 
 long VVGammaDialog::onGRedChange(FXObject*,FXSelector,void*)
 {
-  float f = (float)getDialValue(_gRedDial);
+  float f = getDialValue(_gRedDial);
   _gRedLabel->setText(FXStringFormat("%.2f", f));
   _canvas->_renderer->setGamma(vvRenderer::VV_RED, f);
   return 1;
@@ -2154,7 +2154,7 @@ long VVGammaDialog::onGRedChange(FXObject*,FXSelector,void*)
 
 long VVGammaDialog::onGGreenChange(FXObject*,FXSelector,void*)
 {
-  float f = (float)getDialValue(_gGreenDial);
+  float f = getDialValue(_gGreenDial);
   _gGreenLabel->setText(FXStringFormat("%.2f", f));
   _canvas->_renderer->setGamma(vvRenderer::VV_GREEN, f);
   return 1;
@@ -2162,7 +2162,7 @@ long VVGammaDialog::onGGreenChange(FXObject*,FXSelector,void*)
 
 long VVGammaDialog::onGBlueChange(FXObject*,FXSelector,void*)
 {
-  float f = (float)getDialValue(_gBlueDial);
+  float f = getDialValue(_gBlueDial);
   _gBlueLabel->setText(FXStringFormat("%.2f", f));
   _canvas->_renderer->setGamma(vvRenderer::VV_BLUE, f);
   return 1;
@@ -2170,7 +2170,7 @@ long VVGammaDialog::onGBlueChange(FXObject*,FXSelector,void*)
 
 long VVGammaDialog::onGFourChange(FXObject*,FXSelector,void*)
 {
-  float f = (float)getDialValue(_gFourDial);
+  float f = getDialValue(_gFourDial);
   _gFourLabel->setText(FXStringFormat("%.2f", f));
   _canvas->_renderer->setGamma(vvRenderer::VV_ALPHA, f);
   return 1;
