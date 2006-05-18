@@ -9,6 +9,7 @@ lib_LIBRARIES = libvirvo.a
 libvirvo_a_headers = \
 	glext-orig.h \
 	vvarray.h \
+        vvcolor.h \
 	vvdebugmsg.h \
 	vvdicom.h \
 	vvdynlib.h \
@@ -39,6 +40,7 @@ libvirvo_a_headers = \
 
 libvirvo_a_SOURCES = \
 	$(libvirvo_a_headers) \
+        vvcolor.cpp \
 	vvdebugmsg.cpp \
 	vvdicom.cpp \
 	vvdynlib.cpp \
