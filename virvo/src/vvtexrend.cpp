@@ -342,14 +342,14 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   }
 
   updateTransferFunction();
+  if ((geomType == VV_BRICKS) && _renderState._computeBrickSize)
+  {
+    _areBricksCreated = false;
+    computeBrickSize();
+  }
   if (voxelType != VV_RGBA)
   {
-    if ((geomType == VV_BRICKS) && _renderState._computeBrickSize)
-    {
-      _areBricksCreated = false;
-      computeBrickSize();
-    }
-    else makeTextures();                             // we only have to do this once for non-RGBA textures
+    makeTextures();                             // we only have to do this once for non-RGBA textures
   }
 }
 
@@ -450,8 +450,8 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(vvTexRend::VoxelType vox)
   {
     switch(vox)
     {
-      case VV_FRG_PRG: if (arbFrgPrg && vd->chan==1) return VV_FRG_PRG;
       case VV_PIX_SHD: if (extPixShd) return VV_PIX_SHD;
+      case VV_FRG_PRG: if (arbFrgPrg && vd->chan==1) return VV_FRG_PRG;
       case VV_TEX_SHD: if (extTexShd && vd->chan==1) return VV_TEX_SHD;
       case VV_PAL_TEX: if (extPalTex && vd->chan==1) return VV_PAL_TEX;
       case VV_SGI_LUT: if (extColLUT && vd->chan==1) return VV_SGI_LUT;
