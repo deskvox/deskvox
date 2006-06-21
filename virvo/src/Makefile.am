@@ -17,7 +17,6 @@ libvirvo_a_headers = \
 	vvfileio.h \
 	vvglext.h \
 	vvgltools.h \
-	vvideo.h \
 	vvimage.h \
 	vvopengl.h \
 	vvprintgl.h \
@@ -46,7 +45,6 @@ libvirvo_a_SOURCES = \
 	vvdynlib.cpp \
 	vvfileio.cpp \
 	vvgltools.cpp \
-	vvideo.cpp \
 	vvimage.cpp \
 	vvprintgl.cpp \
 	vvrenderer.cpp \
