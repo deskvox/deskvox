@@ -1428,10 +1428,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
             // Alpha channel:
             if (vd->chan >= 4)
             {
-              if(voxelType==VV_RGBA )
-                texData[4 * texOffset + 3] = rgbaLUT[rawVal[3] * 4 + 3];
-              else
-                texData[4 * texOffset + 3] = (uchar)rawVal[3];
+              texData[4 * texOffset + 3] = (uchar)rawVal[3];
             }
             else
             {
