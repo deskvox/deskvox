@@ -26,9 +26,11 @@
 #endif
 
 // Cg:
-#if defined(WIN32) || defined(__linux) || defined(LINUX)
-  #include <Cg/cg.h>
-  #include <Cg/cgGL.h>
+#ifdef HAVE_CG
+  #if defined(WIN32) || defined(__linux) || defined(LINUX)
+    #include <Cg/cg.h>
+    #include <Cg/cgGL.h>
+  #endif
 #endif
 
 // Stingray:

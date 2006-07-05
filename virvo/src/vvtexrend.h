@@ -170,8 +170,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     CGparameter _cgPixLUT;                        ///< fragment program input: RGBA look-up table
     CGparameter _cgChannel4Color;                 ///< fragment program input: color of 4th channel
     CGparameter _cgOpacityWeights;                ///< fragment program input: opacity of color channels
-    int _currentShader;                           ///< ID of currently used fragment shader
 #endif
+    int _currentShader;                           ///< ID of currently used fragment shader
     GLuint pixLUTName;
 
 #if defined(_WIN32)

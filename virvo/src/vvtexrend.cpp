@@ -121,7 +121,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #ifdef HAVE_CG
   _currentShader = vd->chan - 1;
 #else
-  _currentShader = 0;  
+  _currentShader = 0;
 #endif
   _useOnlyOneBrick = false;
   _areBricksCreated = false;
@@ -4094,7 +4094,6 @@ void vvTexRend::updateLUT(float dist)
     return voxelType;
   }
 
-#ifdef HAVE_CG
   //----------------------------------------------------------------------------
   /** Return the currently used pixel shader [0..numShaders-1].
    */
@@ -4113,7 +4112,6 @@ void vvTexRend::updateLUT(float dist)
     _currentShader = shader;
     makeTextures();
   }
-#endif
 
   //----------------------------------------------------------------------------
   /// inherited from vvRenderer, only valid for planar textures
