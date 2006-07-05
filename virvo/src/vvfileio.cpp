@@ -2108,9 +2108,9 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   int numEntries;                                 // number of entries in IFD
   int i;                                          // counter
   ushort tag;                                     // IFD-tag
-  ushort dataType;                                // IFD data type
-  int    numData;                                 // IFD: number of data values
-  int    value;                                   // IFD data value
+  ushort dataType;                                // IFD data type: 1=8bit uint, 2=8bit ASCII, 3=16bit uint, 4=32bit uint, 5=64bit fixed point
+  int    numValues;                               // IFD: number of data values
+  int    value;                                   // IFD data value or offset
   int    nextIFD;                                 // pointer to next IFD
   ushort tileWidth=0;                             // tile width in voxels
   ushort tileHeight=0;                            // tile height in voxels
@@ -2180,10 +2180,10 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   vvDebugMsg::msg(2, "TIFF IFD Tags: ", numEntries);
   for (ifd=0; ifd<numEntries; ++ifd)              // process all IFD entries
   {
-    tag      = vvToolshed::read16(fp, endian);
-    dataType = vvToolshed::read16(fp, endian);
-    numData  = vvToolshed::read32(fp, endian);
-    value    = vvToolshed::read32(fp, endian);
+    tag       = vvToolshed::read16(fp, endian);
+    dataType  = vvToolshed::read16(fp, endian);
+    numValues = vvToolshed::read32(fp, endian);
+    value     = vvToolshed::read32(fp, endian);
 
                                                   // 16 bit values are left aligned
     if (endian==vvToolshed::VV_BIG_END && dataType==3) value = value >> 16;
@@ -2191,7 +2191,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     if (vvDebugMsg::isActive(2))
     {
       cerr << "Tag: " << hex << setw(4) << tag << ", Data Type: " << dataType <<
-        ", Data Entries: " << setw(3) << numData << ", Value: " << setw(8)
+        ", Data Entries: " << setw(3) << numValues << ", Value: " << setw(8)
         << value << dec << endl;
     }
 
@@ -2201,13 +2201,13 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       case 0x100: vd->vox[0] = value; break;      // ImageWidth
       case 0x101: vd->vox[1] = value; break;      // ImageLength
                                                   // BitsPerSample (=bits per channel)
-      case 0x102: if (numData==1) vd->bpc = value / 8;
+      case 0x102: if (numValues==1) vd->bpc = value / 8;
       else
       {
         where = ftell(fp);
         fseek(fp, value, SEEK_SET);
         int bitsPerSample;
-        for (i=0; i<numData; ++i)
+        for (i=0; i<numValues; ++i)
         {
           if (dataType==4) bitsPerSample = vvToolshed::read32(fp, endian);
           else if (dataType==3) bitsPerSample = vvToolshed::read16(fp, endian);
@@ -2233,13 +2233,13 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       break;                                      // Compression; must be uncompressed
       case 0x106: break;                          // PhotometricInterpretation; ignore
       case 0x111: delete[] stripOffsets;          // StripOffsets
-      stripOffsets = new int[numData];
-      if (numData==1) stripOffsets[0] = value;
+      stripOffsets = new int[numValues];
+      if (numValues==1) stripOffsets[0] = value;
       else
       {
         where = ftell(fp);
         fseek(fp, value, SEEK_SET);
-        for (i=0; i<numData; ++i)
+        for (i=0; i<numValues; ++i)
         {
           if (dataType==4) stripOffsets[i] = vvToolshed::read32(fp, endian);
           else if (dataType==3) stripOffsets[i] = vvToolshed::read16(fp, endian);
@@ -2252,13 +2252,13 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       break;
       case 0x116: rowsPerStrip = value; break;    // RowsPerStrip
       case 0x117: delete[] stripByteCounts;       // StripByteCounts
-      stripByteCounts = new int[numData];
-      if (numData==1) stripByteCounts[0] = value;
+      stripByteCounts = new int[numValues];
+      if (numValues==1) stripByteCounts[0] = value;
       else
       {
         where = ftell(fp);
         fseek(fp, value, SEEK_SET);
-        for (i=0; i<numData; ++i)
+        for (i=0; i<numValues; ++i)
         {
           if (dataType==4) stripByteCounts[i] = vvToolshed::read32(fp, endian);
           else if (dataType==3) stripByteCounts[i] = vvToolshed::read16(fp, endian);
@@ -2271,7 +2271,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       case 0x11c: planarConfiguration = value; break;
       case 0x142: tileWidth  = (ushort)value; break;
       case 0x143: tileHeight = (ushort)value; break;
-      case 0x144: numTiles = numData; tileOffset = value; break;
+      case 0x144: numTiles = numValues; tileOffset = value; break;
       case 0x80e5: vd->vox[2] = value; break;
       default: break;
     }

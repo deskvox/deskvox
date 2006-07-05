@@ -60,4 +60,25 @@ Done:
   in RGB mode type in number, doesn't update right away, even accept doesn't use the selected color
 - fixed: problem loading Amit's data set in viewport aligned slices mode: segfaults
 
+- Think about using assembly language in slow loops. Example for fast byte swap routine from NeHe:
 
+  void flipIt(void* buffer)						// Flips The Red And Blue Bytes (256x256)
+  {
+  	void* b = buffer;						// Pointer To The Buffer
+  	__asm								// Assembler Code To Follow
+  	{
+  		mov ecx, 256*256					// Set Up A Counter (Dimensions Of Memory Block)
+  		mov ebx, b						// Points ebx To Our Data (b)
+  		label:							// Label Used For Looping
+  			mov al,[ebx+0]					// Loads Value At ebx Into al
+  			mov ah,[ebx+2]					// Loads Value At ebx+2 Into ah
+  			mov [ebx+2],al					// Stores Value In al At ebx+2
+  			mov [ebx+0],ah					// Stores Value In ah At ebx
+  			
+  			add ebx,3					// Moves Through The Data By 3 Bytes
+  			dec ecx						// Decreases Our Loop Counter
+  			jnz label					// If Not Zero Jump Back To Label
+  	}
+  }
+  
+  
