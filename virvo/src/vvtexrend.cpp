@@ -2610,6 +2610,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
   // Get projection matrix:
   getProjectionMatrix(&pm);
+  bool isOrtho = pm.isProjOrtho();
 
   // Compute normal vector of textures using the follwing strategy:
   // For orthographic projections or if viewDir is (0|0|0) use
@@ -2621,7 +2622,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   {
     normal.copy(&_renderState._clipNormal);
   }
-  else if (pm.isProjOrtho() || (viewDir.e[0] == 0.0f && viewDir.e[1] == 0.0f && viewDir.e[2] == 0.0f))
+  else if (isOrtho || (viewDir.e[0] == 0.0f && viewDir.e[1] == 0.0f && viewDir.e[2] == 0.0f))
   {
     // Draw slices parallel to projection plane:
     normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
@@ -2693,7 +2694,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
   getBricksInProbe(probePosObj, probeSizeObj);
 
-  sortBrickList(eye, normal);
+  sortBrickList(eye, normal, isOrtho);
 
   // Translate object by its position:
   glMatrixMode(GL_MODELVIEW);
@@ -3089,10 +3090,10 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
   }
 }
 
-void vvTexRend::sortBrickList(vvVector3 pos, vvVector3 normal)
+void vvTexRend::sortBrickList(vvVector3 pos, vvVector3 normal, bool isOrtho)
 {
   Brick* tmp;
-  Brick* farthest;
+  Brick* farthest = NULL;
   float max;
 
   _insideList.first();
@@ -3100,7 +3101,11 @@ void vvTexRend::sortBrickList(vvVector3 pos, vvVector3 normal)
 
   while ((tmp = _insideList.getData()) != 0)
   {
-    tmp->dist = (tmp->pos - pos).length();
+    if (isOrtho)
+      tmp->dist = -tmp->pos.dot(&normal);
+    else
+      tmp->dist = (tmp->pos - pos).length();
+
     if (!_insideList.next()) break;
   }
 
@@ -3120,6 +3125,9 @@ void vvTexRend::sortBrickList(vvVector3 pos, vvVector3 normal)
 
       if (!_insideList.next()) break;
     }
+
+    if(!farthest)
+      break;
 
     _sortedList.append(farthest, vvSLNode<Brick*>::NO_DELETE);
     farthest->dist = -FLT_MAX;

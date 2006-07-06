@@ -264,7 +264,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool testBrickVisibility(Brick*);
     void updateFrustum();
     void getBricksInProbe(vvVector3, vvVector3);
-    void sortBrickList(vvVector3, vvVector3);
+    void sortBrickList(vvVector3, vvVector3, bool);
     void computeBrickSize();
 
   public:
