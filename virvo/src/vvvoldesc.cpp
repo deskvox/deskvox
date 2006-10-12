@@ -2660,25 +2660,26 @@ void vvVolDesc::printStatistics()
   float scalarMin, scalarMax;
   float mean, variance, stdev;
   float zeroVoxels, numTransparent;
-  int m;
+  int c;
 
-  findMinMax(0, scalarMin, scalarMax);
-  calculateDistribution(0, mean, variance, stdev);
-  cerr << "Scalar value range:                " << scalarMin << " to " << scalarMax << endl;
-  for (m=0; m<chan; ++m)
+  for (c=0; c<chan; ++c)
   {
+    if (chan>1) cerr << "Channel " << c+1 << endl;
+    findMinMax(0, scalarMin, scalarMax);
+    calculateDistribution(0, c, mean, variance, stdev);
+    cerr << "Scalar value range:                " << scalarMin << " to " << scalarMax << endl;
     if (bpc<3)  // doesn't work with floats
     {
-      cerr << "Number of different data values in channel " << m << ": " << findNumUsed(m) << endl;
+      cerr << "  Number of different data values in channel " << c+1 << ": " << findNumUsed(c) << endl;
     }
+    zeroVoxels = 100.0f * findNumValue(0,0) / getFrameVoxels();
+    numTransparent = 100.0f * findNumTransparent(0) / getFrameVoxels();
+    cerr << "  Zero voxels in first frame:        " << setprecision(4) << zeroVoxels << " %" << endl;
+    cerr << "  Transparent voxels in first frame: " << setprecision(4) << numTransparent << " %" << endl;
+    cerr << "  Mean in first frame:               " << setprecision(4) << mean << endl;
+    cerr << "  Variance in first frame:           " << setprecision(4) << variance << endl;
+    cerr << "  Standard deviation in first frame: " << setprecision(4) << stdev << endl;
   }
-  zeroVoxels = 100.0f * findNumValue(0,0) / getFrameVoxels();
-  numTransparent = 100.0f * findNumTransparent(0) / getFrameVoxels();
-  cerr << "Zero voxels in first frame:        " << setprecision(4) << zeroVoxels << " %" << endl;
-  cerr << "Transparent voxels in first frame: " << setprecision(4) << numTransparent << " %" << endl;
-  cerr << "Mean in first frame:               " << setprecision(4) << mean << endl;
-  cerr << "Variance in first frame:           " << setprecision(4) << variance << endl;
-  cerr << "Standard deviation in first frame: " << setprecision(4) << stdev << endl;
 }
 
 //----------------------------------------------------------------------------
@@ -3518,14 +3519,16 @@ void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax)
     switch(bpc)
     {
       case 1: vvToolshed::getMinMax(getRaw(f), getFrameBytes(), &mi, &ma);
-      fMin = float(mi);
-      fMax = float(ma);
-      break;
+        fMin = float(mi);
+        fMax = float(ma);
+        break;
       case 2: vvToolshed::getMinMax16bitBE(getRaw(f), getFrameVoxels(), &mi, &ma);
-      fMin = float(mi);
-      fMax = float(ma);
-      break;
-      case 4: vvToolshed::getMinMax((float*)getRaw(f), getFrameVoxels(), &fMin, &fMax); break;
+        fMin = float(mi);
+        fMax = float(ma);
+        break;
+      case 4: 
+        vvToolshed::getMinMax((float*)getRaw(f), getFrameVoxels(), &fMin, &fMax); 
+        break;
       default: assert(0); break;
     }
     if (fMin < scalarMin) scalarMin = fMin;
@@ -3797,8 +3800,10 @@ float vvVolDesc::calculateMean(int frame)
 //----------------------------------------------------------------------------
 /** Calculate mean, variance, and standard deviation of the values in a dataset.
   @param frame frame index to look at (first frame = 0)
+  @param chan channel to look at
+  @return mean, variance, stdev
 */
-void vvVolDesc::calculateDistribution(int frame, float& mean, float& variance, float& stdev)
+void vvVolDesc::calculateDistribution(int frame, int chan, float& mean, float& variance, float& stdev)
 {
   uchar* raw;
   double sumSquares = 0.0;
@@ -3816,7 +3821,7 @@ void vvVolDesc::calculateDistribution(int frame, float& mean, float& variance, f
 
   // Search volume:
   raw = getRaw(frame);
-  for (i=0; i<frameSize; i += bpv)
+  for (i=chan*bpc; i<frameSize; i += bpv)
   {
     switch (bpc)
     {
@@ -4755,6 +4760,130 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
         src += 2 * bpv;
       }
       src += 2 * lineBytes;
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Calculate mean and variance for the 3x3x3 neighborhood of a voxel.
+*/
+void vvVolDesc::voxelStatistics(int frame, int c, int x, int y, int z, float& mean, float& variance)
+{
+  uchar* raw;
+  double sumSquares = 0.0f;
+  double sum = 0.0f;
+  float diff;
+  float scalar;
+  int offset;
+  int dx,dy,dz;     // offsets to neighboring voxels
+  int bpv;
+  int mode;   // 0=mean, 1=variance
+  int i;
+  int numSummed;
+
+  raw = getRaw(frame);
+  bpv = bpc * chan;
+  offset = bpv * (x + y * vox[0] + z * vox[0] * vox[1]) + bpc * c;
+  for (mode=0; mode<2; ++mode)
+  {
+    numSummed = 0;
+    for (dx=-1; dx<=1; ++dx)
+    {
+      if (x+dx < 0 || x+dx > vox[0]-1) continue;
+      for (dy=-1; dy<=1; ++dy)
+      {
+        if (y+dy < 0 || y+dy > vox[1]-1) continue;
+        for (dz=-1; dz<=1; ++dz)
+        {
+          if (z+dz < 0 || z+dz > vox[2]-1) continue;
+          i = offset + bpv * (dx + dy * vox[1] + dz * vox[0] * vox[1]);
+          switch (bpc)
+          {
+            case 1:
+              scalar = float(raw[i]);
+              break;
+            case 2:
+              scalar = float((int(raw[i]) << 8) | int(raw[i+1]));
+              break;
+            case 4:
+              scalar = *((float*)(raw+i));
+              break;
+            default: assert(0); break;
+          }
+          if (mode==0)
+          {
+            sum += scalar;
+            ++numSummed;
+          }
+          else
+          {
+            diff = scalar - mean;
+            sumSquares += diff * diff;
+            ++numSummed;
+          }
+        }
+      }
+    }
+    if (mode==0) mean = float(sum / double(numSummed));
+    else variance = float(sumSquares / double(numSummed));
+  }
+}
+
+//----------------------------------------------------------------------------
+/** This function adds a data channels to the volume containing
+  the variance in the 3x3x3 voxel neighborhood for one of the other channels.
+  @param srcChan channel to calculate variance for [0..numChan-1]
+*/
+void vvVolDesc::addVariance(int srcChan)
+{
+  const char* VARIANCE_CHANNEL_NAME = "VARIANCE";
+  uchar* src;                                     // pointer to current source channel
+  uchar* dst;                                     // pointer to current destination channel (first of three if gradient vectors)
+  float mean;                                     // mean data value in a frame
+  float variance;
+  int iVar;                                       // variance as integer
+  int sliceBytes;                                 // number of bytes per slice
+  int lineBytes;                                  // number of bytes per volume line
+  int bpv;                                        // bytes per voxel
+  int voxelOffset;                                // offset from source channel to destination channel [bytes]
+  int f, x, y, z;
+
+  // Add new channel and name it:
+  convertChannels(chan + 1);
+  setChannelName(chan-1, VARIANCE_CHANNEL_NAME);
+
+  bpv = bpc * chan;
+  lineBytes = bpv * vox[0];
+  sliceBytes = lineBytes * vox[1];
+  voxelOffset = bpc * (chan - srcChan - 1);
+
+  // Add variance to every frame:
+  for (f=0; f<frames; ++f)
+  {
+    // Calculate variance for all voxels, including edge voxels:
+    src = getRaw(f) + bpc * srcChan;
+    for(z=0; z<vox[2]; ++z)
+    {
+      for(y=0; y<vox[1]; ++y)
+      {
+        for(x=0; x<vox[0]; ++x)
+        {
+          voxelStatistics(f, srcChan, x, y, z, mean, variance);
+          dst = src + voxelOffset;
+          switch(bpc)
+          {
+            case 1: *dst = int(variance * 255.0f); 
+                    break;
+            case 2: iVar = int(variance * 65535.0f);
+                    *dst = iVar >> 8; *(dst+1) = iVar & 0xff; 
+                    break;
+            case 4: *((float*)dst) = variance; 
+                    break;
+            default: assert(0); break;
+          }
+          src += bpv;
+        }
+      }
     }
   }
 }

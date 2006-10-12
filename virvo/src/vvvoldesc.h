@@ -237,7 +237,8 @@ class VIRVOEXPORT vvVolDesc
     int    findNumValue(int, float);
     int    findNumUsed(int);
     int    findNumTransparent(int);
-    void   calculateDistribution(int, float&, float&, float&);
+    void   calculateDistribution(int, int, float&, float&, float&);
+    void   voxelStatistics(int, int, int, int, int, float&, float&);
     float  calculateMean(int);
     float  findClampValue(int, int, float);
     void   computeVolume(int, int, int, int);
@@ -246,6 +247,7 @@ class VIRVOEXPORT vvVolDesc
     void   getLineHistData(int, int, int, int, int, int, vvArray<float*>&);
     void   setDefaultRealMinMax();
     void   addGradient(int, GradientType);
+    void   addVariance(int);
     void   deleteChannelNames();
     void   setChannelName(int, const char*);
     const char* getChannelName(int);

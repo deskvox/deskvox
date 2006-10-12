@@ -70,6 +70,7 @@ class VVTransferWindow : public FXDialogBox
       ID_HIST_ALL,
       ID_HIST_FIRST,
       ID_HISTOGRAM,
+      ID_HISTOPACITY,
       ID_OPACITY,
       ID_BINS,
       ID_PINS,
@@ -141,6 +142,7 @@ class VVTransferWindow : public FXDialogBox
     long onCmdHistFirst(FXObject*,FXSelector,void*);
     long onCmdHistogram(FXObject*,FXSelector,void*);
     long onCmdOpacity(FXObject*,FXSelector,void*);
+    long onCmdHistopacity(FXObject*,FXSelector,void*);
     long onCmdBins(FXObject*,FXSelector,void*);
     long onCmdPins(FXObject*,FXSelector,void*);
     long onCmdPickColor(FXObject*,FXSelector,void*);
@@ -208,6 +210,7 @@ class VVTransferWindow : public FXDialogBox
     FXButton* _zoomMinButton;
     FXButton* _zoomMaxButton;
     FXButton* _centerButton;
+    FXButton* _histopacityButton;
 
     VVShell* _shell;
     vox::vvCanvas* _canvas;

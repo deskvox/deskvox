@@ -81,6 +81,7 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_SAVE_TF,       VVTransferWindow::onCmdSaveTF),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_LOAD_TF,       VVTransferWindow::onCmdLoadTF),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_COLOR,         VVTransferWindow::onCmdColor),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HISTOPACITY,   VVTransferWindow::onCmdHistopacity),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_ALL,      VVTransferWindow::onCmdHistAll),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_FIRST,    VVTransferWindow::onCmdHistFirst),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HISTOGRAM,     VVTransferWindow::onCmdHistogram),
@@ -139,6 +140,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   // Common elements:
   FXHorizontalFrame* buttonFrame = new FXHorizontalFrame(master, LAYOUT_FILL_Y | LAYOUT_CENTER_X | PACK_UNIFORM_WIDTH);
   new FXButton(buttonFrame,"Color",      NULL,this,ID_COLOR,  FRAME_RAISED|FRAME_THICK,0,0,0,0,20,20);   // sets width for all buttons
+  new FXButton(buttonFrame,"Histopacity",NULL,this,ID_HISTOPACITY, FRAME_RAISED | FRAME_THICK);
   new FXButton(buttonFrame,"Pyramid",    NULL,this,ID_PYRAMID,FRAME_RAISED|FRAME_THICK);
   new FXButton(buttonFrame,"Gaussian",   NULL,this,ID_BELL,   FRAME_RAISED|FRAME_THICK);
   new FXButton(buttonFrame,"Custom",     NULL,this,ID_CUSTOM, FRAME_RAISED|FRAME_THICK);
@@ -1658,6 +1660,11 @@ long VVTransferWindow::onCmdHistogram(FXObject*,FXSelector,void*)
     _histAll->disable();
   }
   drawTF();
+  return 1;
+}
+
+long VVTransferWindow::onCmdHistopacity(FXObject*,FXSelector,void*)
+{
   return 1;
 }
 

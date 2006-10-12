@@ -2768,6 +2768,7 @@ FXDEFMAP(VVDataTypeDialog) VVDataTypeDialogMap[]=
   FXMAPFUNC(SEL_COMMAND, VVDataTypeDialog::ID_ADD_CHANNEL, VVDataTypeDialog::onAddChannel),
   FXMAPFUNC(SEL_COMMAND, VVDataTypeDialog::ID_ADD_GRADIENT_MAGNITUDE, VVDataTypeDialog::onAddGradMag),
   FXMAPFUNC(SEL_COMMAND, VVDataTypeDialog::ID_ADD_GRADIENT_VECTOR, VVDataTypeDialog::onAddGradVec),
+  FXMAPFUNC(SEL_COMMAND, VVDataTypeDialog::ID_ADD_VARIANCE, VVDataTypeDialog::onAddVariance),
   FXMAPFUNC(SEL_COMMAND, VVDataTypeDialog::ID_CNV_8, VVDataTypeDialog::onBytesPerChannel),
   FXMAPFUNC(SEL_COMMAND, VVDataTypeDialog::ID_CNV_16, VVDataTypeDialog::onBytesPerChannel),
   FXMAPFUNC(SEL_COMMAND, VVDataTypeDialog::ID_CNV_FLOAT, VVDataTypeDialog::onBytesPerChannel),
@@ -2794,10 +2795,11 @@ VVDataTypeDialog::VVDataTypeDialog(FXWindow* owner, vvCanvas* c) :
   new FXLabel(channelFrame, "Selected channel:");
   _channelCombo = new FXComboBox(channelFrame,3,this,ID_CHANNEL, COMBOBOX_INSERT_LAST | COMBOBOX_STATIC | FRAME_SUNKEN | FRAME_THICK);
   FXHorizontalFrame* addButtonsFrame = new FXHorizontalFrame(addDeleteGroup, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
-  _addGradMagButton = new FXButton(addButtonsFrame, "Add Gradient Magnitude", NULL, this, ID_ADD_GRADIENT_MAGNITUDE, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
-  _addGradVecButton = new FXButton(addButtonsFrame, "Add Gradient Vector", NULL, this, ID_ADD_GRADIENT_VECTOR, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
-  _delChannelButton = new FXButton(addButtonsFrame, "Delete Channel", NULL, this, ID_DEL_CHANNEL, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
-  _addChannelButton = new FXButton(addDeleteGroup, "Add Empty Channel", NULL, this, ID_ADD_CHANNEL, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  _addGradMagButton  = new FXButton(addButtonsFrame, "Add Gradient Magnitude", NULL, this, ID_ADD_GRADIENT_MAGNITUDE, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  _addGradVecButton  = new FXButton(addButtonsFrame, "Add Gradient Vector", NULL, this, ID_ADD_GRADIENT_VECTOR, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  _addVarianceButton = new FXButton(addButtonsFrame, "Add Variance", NULL, this, ID_ADD_VARIANCE, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  _addChannelButton  = new FXButton(addButtonsFrame, "Add Empty Channel", NULL, this, ID_ADD_CHANNEL, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
+  _delChannelButton  = new FXButton(addDeleteGroup,  "Delete Channel", NULL, this, ID_DEL_CHANNEL, FRAME_RAISED | FRAME_THICK | LAYOUT_FILL_X);
 
   FXGroupBox* bpcGroup = new FXGroupBox(master,"Convert Bytes Per Channel", FRAME_GROOVE | LAYOUT_FILL_X);
   FXHorizontalFrame* bpcFrame = new FXHorizontalFrame(bpcGroup, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
@@ -2873,6 +2875,18 @@ long VVDataTypeDialog::onAddGradMag(FXObject*, FXSelector, void*)
 long VVDataTypeDialog::onAddGradVec(FXObject*, FXSelector, void*)
 {
   _canvas->_vd->addGradient(_channelCombo->getCurrentItem(), vvVolDesc::GRADIENT_VECTOR);
+  _shell->_transWindow->setDirtyHistogram();
+  _shell->updateRendererVolume();
+  _shell->setCanvasRenderer();
+  _shell->drawScene();
+  updateValues();
+  updateDialogs();
+  return 1;
+}
+
+long VVDataTypeDialog::onAddVariance(FXObject*, FXSelector, void*)
+{
+  _canvas->_vd->addVariance(_channelCombo->getCurrentItem());
   _shell->_transWindow->setDirtyHistogram();
   _shell->updateRendererVolume();
   _shell->setCanvasRenderer();

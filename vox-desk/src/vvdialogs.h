@@ -799,7 +799,8 @@ class VVDataTypeDialog : public FXDialogBox
       ID_DEL_CHANNEL,
       ID_ADD_CHANNEL,
       ID_ADD_GRADIENT_MAGNITUDE,
-      ID_ADD_GRADIENT_VECTOR
+      ID_ADD_GRADIENT_VECTOR,
+      ID_ADD_VARIANCE
     };
     VVShell* _shell;
     vox::vvCanvas* _canvas;
@@ -812,6 +813,7 @@ class VVDataTypeDialog : public FXDialogBox
     FXButton* _addChannelButton;
     FXButton* _addGradMagButton;
     FXButton* _addGradVecButton;
+    FXButton* _addVarianceButton;
     FXComboBox* _channel1Combo;
     FXComboBox* _channel2Combo;
     FXComboBox* _channelCombo;
@@ -823,6 +825,7 @@ class VVDataTypeDialog : public FXDialogBox
     long onAddChannel(FXObject*, FXSelector, void*);
     long onAddGradMag(FXObject*, FXSelector, void*);
     long onAddGradVec(FXObject*, FXSelector, void*);
+    long onAddVariance(FXObject*, FXSelector, void*);
     long onBytesPerChannel(FXObject*, FXSelector, void*);
     void updateValues();
     void updateDialogs();
