@@ -141,6 +141,8 @@ class VIRVOEXPORT vvVolDesc
     int _radius;                                  ///< Radius of the previous sphere
     int* _mask;                                   ///< Mask of the previous sphere
     float* _hdrBinLimits;                         ///< array of bin limits for HDR transfer functions
+    BinningType _binning;                         ///< Floating point TF: linear, iso-data, or opacity weighted binning
+    bool _transOp;                                ///< true=transfer opacities to bin space
 
     // Constructors and destructors:
     vvVolDesc();
@@ -252,23 +254,12 @@ class VIRVOEXPORT vvVolDesc
     void   setChannelName(int, const char*);
     const char* getChannelName(int);
     void updateFrame(int, uchar*, DeleteType);
-    void updateHDRBins(int, bool, bool, bool, BinningType);
+    void updateHDRBins(int, bool, bool, bool, BinningType, bool);
     int  findHDRBin(float);
-    int  mapFloat2Int(float, BinningType);
+    int  mapFloat2Int(float);
     void makeBinTexture(uchar*, int);
-
-    /*
-      This method creates a texture for the given voxeldata.
-      @param type: should it be a histogram or intensity diagram
-      @param selChannel: only the selected channels should be displayed
-      @param twidth: texture width
-      @param theight: texture height
-      @param alpha: should texture contain an alpha channel
-      @param voxData: voxeldata
-      @param texData: the created texture data
-    */
-    void makeLineTexture(DiagType type, unsigned char selChannel, int twidth, int theight, bool alpha,
-      vvArray<float*> voxData, unsigned char* texData);
+    void computeTFTexture(int, int, int, float*);
+    void makeLineTexture(DiagType, uchar, int, int, bool, vvArray<float*>, uchar*);
     void makeLineHistogram(int, int, vvArray<float*>, int*);
 
   private:

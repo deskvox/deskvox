@@ -719,6 +719,35 @@ class VVOpacityDialog : public FXDialogBox
 
 /*********************************************************/
 
+class VVChannelDialog : public FXDialogBox
+{
+  FXDECLARE(VVChannelDialog)
+
+  private:
+    VVChannelDialog(){}
+
+  public:
+    enum
+    {
+      ID_RED=FXDialogBox::ID_LAST,
+      ID_OK,
+      ID_CANCEL,
+      ID_SLIDERS_BASE   // this has to be the last ID in the list
+    };
+    vox::vvCanvas* _canvas;
+    VVShell* _parent;
+    FXVerticalFrame* _slidersFrame;
+    FXRealSlider** _sliders;
+    int _numSliders;
+
+    VVChannelDialog(FXWindow*, vox::vvCanvas*);
+    long onOK(FXObject*, FXSelector, void*);
+    long onCancel(FXObject*, FXSelector, void*);
+    void updateValues();
+};
+
+/*********************************************************/
+
 class VVFloatRangeDialog : public FXDialogBox
 {
   FXDECLARE(VVFloatRangeDialog)
@@ -739,7 +768,7 @@ class VVFloatRangeDialog : public FXDialogBox
       ID_SKIP,
       ID_DUP,
       ID_LOCK,
-      ID_COLOR,
+      ID_OPACITY,
       ID_CLOSE
     };
     FXint _algoType;
@@ -755,7 +784,7 @@ class VVFloatRangeDialog : public FXDialogBox
     FXCheckButton* _skipCheck;
     FXCheckButton* _dupCheck;
     FXCheckButton* _lockCheck;
-    FXCheckButton* _colorCheck;
+    FXCheckButton* _opacityCheck;
     FXTextField* _fastNumber;
     VVShell* _shell;
     vox::vvCanvas* _canvas;

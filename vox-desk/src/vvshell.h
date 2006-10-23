@@ -44,6 +44,7 @@ class VVCameraSetDialog;
 class VVGammaDialog;
 class VVChannel4Dialog;
 class VVOpacityDialog;
+class VVChannelDialog;
 class VVFloatRangeDialog;
 class VVClippingDialog;
 class VVROIDialog;
@@ -101,14 +102,15 @@ class VVShell : public FXMainWindow
 
   public:
     FXGLVisual*           _glvisual;        // OpenGL visual
-    VVVolumeDialog        *volumeDialog;
-    VVPreferenceWindow    *prefWindow;
+    VVVolumeDialog*       _volumeDialog;
+    VVPreferenceWindow*   _prefWindow;
     VVTransferWindow*     _transWindow;
     VVSliceViewer*        _sliceViewer;
     VVCameraSetDialog*    _cameraDialog;
-    VVGammaDialog         *gammaDialog;
+    VVGammaDialog*        _gammaDialog;
     VVChannel4Dialog*     _channel4Dialog;
     VVOpacityDialog*      _opacityDialog;
+    VVChannelDialog*      _channelDialog;
     VVFloatRangeDialog*   _floatRangeDialog;
     VVClippingDialog*     _clipDialog;
     VVROIDialog*          _roiDialog;
@@ -117,9 +119,9 @@ class VVShell : public FXMainWindow
     VVDrawDialog*         _drawDialog;
     VVMergeDialog*        _mergeDialog;
     VVServerDialog*       _serverDialog;
-    VVScreenshotDialog    *screenshotDialog;
+    VVScreenshotDialog*   _screenshotDialog;
     VVMovieDialog*        _movieDialog;
-    VVTimeStepDialog      *tsDialog;
+    VVTimeStepDialog*     _tsDialog;
     VVDiagramDialog*      _diagramDialog;
     VVDataTypeDialog*     _dataTypeDialog;
     VVEditVoxelsDialog*   _editVoxelsDialog;
@@ -154,6 +156,7 @@ class VVShell : public FXMainWindow
       ID_GAMMA,
       ID_CHANNEL4,
       ID_OPACITY,
+      ID_CHANNELS,
       ID_FLOAT_RANGE,
       ID_CLIP_PLANE,
       ID_ROI,
@@ -209,6 +212,7 @@ class VVShell : public FXMainWindow
     long onCmdGammaSettings(FXObject*,FXSelector,void*);
     long onCmdChannel4Settings(FXObject*,FXSelector,void*);
     long onCmdOpacitySettings(FXObject*,FXSelector,void*);
+    long onCmdChannelSettings(FXObject*,FXSelector,void*);
     long onCmdFloatRange(FXObject*,FXSelector,void*);
     long onCmdClipping(FXObject*,FXSelector,void*);
     long onCmdROI(FXObject*,FXSelector,void*);

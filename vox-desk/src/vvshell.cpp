@@ -87,6 +87,7 @@ FXDEFMAP(VVShell) VVShellMap[]=
   FXMAPFUNC(SEL_COMMAND,             VVShell::ID_GAMMA,         VVShell::onCmdGammaSettings),
   FXMAPFUNC(SEL_COMMAND,             VVShell::ID_CHANNEL4,      VVShell::onCmdChannel4Settings),
   FXMAPFUNC(SEL_COMMAND,             VVShell::ID_OPACITY,       VVShell::onCmdOpacitySettings),
+  FXMAPFUNC(SEL_COMMAND,             VVShell::ID_CHANNELS,      VVShell::onCmdChannelSettings),
   FXMAPFUNC(SEL_COMMAND,             VVShell::ID_FLOAT_RANGE,   VVShell::onCmdFloatRange),
   FXMAPFUNC(SEL_COMMAND,             VVShell::ID_CLIP_PLANE,    VVShell::onCmdClipping),
   FXMAPFUNC(SEL_COMMAND,             VVShell::ID_ROI,           VVShell::onCmdROI),
@@ -150,23 +151,23 @@ VVShell::VVShell(FXApp* a) : FXMainWindow(a,"DeskVOX",NULL,NULL,DECOR_ALL,0,0,60
 
   filemenu=new FXMenuPane(this);
   initFileMenu(filemenu);
-  new FXMenuTitle(menubar,"File",NULL,filemenu);
+  new FXMenuTitle(menubar,"&File",NULL,filemenu);
 
   setmenu=new FXMenuPane(this);
   initSettingsMenu(setmenu);
-  new FXMenuTitle(menubar,"Settings",NULL,setmenu);
+  new FXMenuTitle(menubar,"&Settings",NULL,setmenu);
 
   editmenu=new FXMenuPane(this);
   initEditMenu(editmenu);
-  new FXMenuTitle(menubar,"Edit",NULL,editmenu);
+  new FXMenuTitle(menubar,"&Edit",NULL,editmenu);
 
   viewmenu=new FXMenuPane(this);
   initViewMenu(viewmenu);
-  new FXMenuTitle(menubar,"View",NULL,viewmenu);
+  new FXMenuTitle(menubar,"&View",NULL,viewmenu);
 
   helpmenu=new FXMenuPane(this);
   initHelpMenu(helpmenu);
-  new FXMenuTitle(menubar,"Help",NULL,helpmenu);
+  new FXMenuTitle(menubar,"&Help",NULL,helpmenu);
 
   // LEFT pane to contain the _glcanvas
   glcanvasFrame = new FXVerticalFrame(this, LAYOUT_FILL_X | LAYOUT_FILL_Y);
@@ -194,14 +195,15 @@ VVShell::~VVShell()
   stopAnimTimer();
   stopARToolkitTimer();
   delete _glvisual;
-  delete volumeDialog;
-  delete prefWindow;
+  delete _volumeDialog;
+  delete _prefWindow;
   delete _transWindow;
   delete _sliceViewer;
   delete _cameraDialog;
-  delete gammaDialog;
+  delete _gammaDialog;
   delete _channel4Dialog;
   delete _opacityDialog;
+  delete _channelDialog;
   delete _floatRangeDialog;
   delete _clipDialog;
   delete _roiDialog;
@@ -210,9 +212,9 @@ VVShell::~VVShell()
   delete _drawDialog;
   delete _mergeDialog;
   delete _serverDialog;
-  delete screenshotDialog;
+  delete _screenshotDialog;
   delete _movieDialog;
-  delete tsDialog;
+  delete _tsDialog;
   delete _diagramDialog;
   delete _dataTypeDialog;
   delete _editVoxelsDialog;
@@ -282,6 +284,7 @@ bool VVShell::initSettingsMenu(FXMenuPane* setmenu)
   new FXMenuCommand(setmenu,"Gamma Correction...",     NULL, this, ID_GAMMA);
   new FXMenuCommand(setmenu,"Channel 4...",            NULL, this, ID_CHANNEL4);
   new FXMenuCommand(setmenu,"Opacity Weights...",      NULL, this, ID_OPACITY);
+  new FXMenuCommand(setmenu,"Channel Settings...",     NULL, this, ID_CHANNELS);
   new FXMenuCommand(setmenu,"Floating Point Range...", NULL, this, ID_FLOAT_RANGE);
   new FXMenuCommand(setmenu,"Clipping Plane...",       NULL, this, ID_CLIP_PLANE);
   new FXMenuCommand(setmenu,"Region of Interest...",   NULL, this, ID_ROI);
@@ -346,14 +349,15 @@ void VVShell::initDialogs()
 {
   vvDebugMsg::msg(1, "VVShell::initDialogs()");
 
-  volumeDialog = new VVVolumeDialog((FXWindow*)this, _canvas);
-  prefWindow   = new VVPreferenceWindow((FXWindow*)this, _canvas);
+  _volumeDialog = new VVVolumeDialog((FXWindow*)this, _canvas);
+  _prefWindow   = new VVPreferenceWindow((FXWindow*)this, _canvas);
   _transWindow  = new VVTransferWindow((FXWindow*)this, _canvas);
   _sliceViewer = new VVSliceViewer((FXWindow*)this, _canvas);
   _cameraDialog = new VVCameraSetDialog((FXWindow*)this, _canvas);
-  gammaDialog  = new VVGammaDialog((FXWindow*)this, _canvas);
+  _gammaDialog  = new VVGammaDialog((FXWindow*)this, _canvas);
   _channel4Dialog = new VVChannel4Dialog((FXWindow*)this, _canvas);
   _opacityDialog = new VVOpacityDialog((FXWindow*)this, _canvas);
+  _channelDialog = new VVChannelDialog((FXWindow*)this, _canvas);
   _floatRangeDialog = new VVFloatRangeDialog((FXWindow*)this, _canvas);
   _clipDialog   = new VVClippingDialog((FXWindow*)this, _canvas);
   _roiDialog    = new VVROIDialog((FXWindow*)this, _canvas);
@@ -365,9 +369,9 @@ void VVShell::initDialogs()
   _drawDialog   = new VVDrawDialog((FXWindow*)this, _canvas);
   _mergeDialog = new VVMergeDialog((FXWindow*)this, _canvas);
   _serverDialog = new VVServerDialog((FXWindow*)this, _canvas);
-  screenshotDialog = new VVScreenshotDialog((FXWindow*)this, _canvas);
+  _screenshotDialog = new VVScreenshotDialog((FXWindow*)this, _canvas);
   _movieDialog = new VVMovieDialog((FXWindow*)this, _canvas);
-  tsDialog     = new VVTimeStepDialog((FXWindow*)this, _canvas);
+  _tsDialog     = new VVTimeStepDialog((FXWindow*)this, _canvas);
   _diagramDialog = new VVDiagramDialog((FXWindow*)this, _canvas);
   _dataTypeDialog = new VVDataTypeDialog((FXWindow*)this, _canvas);
   _editVoxelsDialog = new VVEditVoxelsDialog((FXWindow*)this, _canvas);
@@ -400,7 +404,7 @@ long VVShell::onConfigure(FXObject*,FXSelector,void*)
   }
 
   FXString canvasSize = FXStringFormat("%d x %d", _glcanvas->getWidth(), _glcanvas->getHeight());
-  screenshotDialog->_sizeLabel->setText(canvasSize);
+  _screenshotDialog->_sizeLabel->setText(canvasSize);
   _movieDialog->_sizeLabel->setText(canvasSize);
 
   return 1;
@@ -426,7 +430,7 @@ long VVShell::onLeftMouseDown(FXObject*,FXSelector,void* ptr)
   FXEvent *ev=(FXEvent*)ptr;
   if (_canvas) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::LEFT_BUTTON);
   if (_spinItem->getCheck()) stopSpinTimer();
-  _canvas->_renderer->_renderState._quality = prefWindow->getQualityMDialValue();
+  _canvas->_renderer->_renderState._quality = _prefWindow->getQualityMDialValue();
   return 1;
 }
 
@@ -438,7 +442,7 @@ long VVShell::onLeftMouseUp(FXObject*,FXSelector,void* ptr)
   FXEvent *ev=(FXEvent*)ptr;
   if(_canvas) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
   if (_spinItem->getCheck()) startSpinTimer();
-  _canvas->_renderer->_renderState._quality = prefWindow->getQualitySDialValue();
+  _canvas->_renderer->_renderState._quality = _prefWindow->getQualitySDialValue();
   return 1;
 }
 
@@ -449,7 +453,7 @@ long VVShell::onMidMouseDown(FXObject*,FXSelector,void* ptr)
 
   FXEvent *ev=(FXEvent*)ptr;
   if(_canvas != NULL) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::MIDDLE_BUTTON);
-  _canvas->_renderer->_renderState._quality = prefWindow->getQualityMDialValue();
+  _canvas->_renderer->_renderState._quality = _prefWindow->getQualityMDialValue();
   return 1;
 }
 
@@ -460,7 +464,7 @@ long VVShell::onMidMouseUp(FXObject*,FXSelector,void* ptr)
 
   FXEvent *ev=(FXEvent*)ptr;
   if(_canvas != NULL) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
-  _canvas->_renderer->_renderState._quality = prefWindow->getQualitySDialValue();
+  _canvas->_renderer->_renderState._quality = _prefWindow->getQualitySDialValue();
   return 1;
 }
 
@@ -471,7 +475,7 @@ long VVShell::onRightMouseDown(FXObject*,FXSelector,void* ptr)
 
   FXEvent *ev=(FXEvent*)ptr;
   if (_canvas) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::RIGHT_BUTTON);
-  _canvas->_renderer->_renderState._quality = prefWindow->getQualityMDialValue();
+  _canvas->_renderer->_renderState._quality = _prefWindow->getQualityMDialValue();
   return 1;
 }
 
@@ -482,7 +486,7 @@ long VVShell::onRightMouseUp(FXObject*,FXSelector,void* ptr)
 
   FXEvent *ev=(FXEvent*)ptr;
   if (_canvas) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
-  _canvas->_renderer->_renderState._quality = prefWindow->getQualitySDialValue();
+  _canvas->_renderer->_renderState._quality = _prefWindow->getQualitySDialValue();
   return 1;
 }
 
@@ -530,10 +534,10 @@ long VVShell::onKeyPress(FXObject*, FXSelector, void* ptr)
     case '7':
     case '8':
     case '9': break;
-    case '-': prefWindow->scaleQuality(0.95f); break;
+    case '-': _prefWindow->scaleQuality(0.95f); break;
     case '+':
-    case '=': prefWindow->scaleQuality(1.05f); break;
-    case 'a': tsDialog->playback(); break;
+    case '=': _prefWindow->scaleQuality(1.05f); break;
+    case 'a': _tsDialog->playback(); break;
     case 'b': toggleBounds(); break;
     case 'c': togglePalette(); break;
     case 'd': break;
@@ -541,7 +545,7 @@ long VVShell::onKeyPress(FXObject*, FXSelector, void* ptr)
     case 'f': toggleFPS(); break;
     case 'H': _dimDialog->scaleZ(1.1f); break;
     case 'h': _dimDialog->scaleZ(0.9f); break;
-    case 'i': prefWindow->toggleInterpol(); break;
+    case 'i': _prefWindow->toggleInterpol(); break;
     case 'j': break;
     case 'J': break;
     case 'k': break;
@@ -549,20 +553,20 @@ long VVShell::onKeyPress(FXObject*, FXSelector, void* ptr)
     case 'l': break;
     case 'L': break;
     case 'm': toggleSpin(); break;
-    case 'n': tsDialog->stepForward(); break;
-    case 'N': tsDialog->stepBack(); break;
+    case 'n': _tsDialog->stepForward(); break;
+    case 'N': _tsDialog->stepBack(); break;
     case 'o': toggleOrientation(); break;
     case 'p': _canvas->setPerspectiveMode(!_canvas->getPerspectiveMode()); break;
     case 27:  // Escape
     case 'q': getApp()->exit(); break;
     case 'r': _cameraDialog->reset(); break;
-    case 's': tsDialog->scaleSpeed(0.9f); break;
-    case 'S': tsDialog->scaleSpeed(1.1f); break;
+    case 's': _tsDialog->scaleSpeed(0.9f); break;
+    case 'S': _tsDialog->scaleSpeed(1.1f); break;
     case 't': toggleQualityDisplay(); break;
     case 'u': break;
     case 'v': break;
     case 'w': break;
-    case 'x': prefWindow->toggleMIP(); break;
+    case 'x': _prefWindow->toggleMIP(); break;
     case 'z': if (isMaximized()) restore();
               else maximize(); break;
     case '<': break;
@@ -941,8 +945,8 @@ long VVShell::onCmdPrefs(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVShell::onCmdPrefs()");
 
-  prefWindow->updateValues();
-  prefWindow->show();
+  _prefWindow->updateValues();
+  _prefWindow->show();
   return 1;
 }
 
@@ -975,8 +979,8 @@ long VVShell::onCmdVisInfo(FXObject*,FXSelector,void*)
   vvDebugMsg::msg(1, "VVShell::onCmdVisInfo()");
 
   if(_canvas == NULL)return 1;
-  volumeDialog->updateValues();
-  volumeDialog->show();
+  _volumeDialog->updateValues();
+  _volumeDialog->show();
   return 1;
 }
 
@@ -1048,8 +1052,8 @@ long VVShell::onCmdGammaSettings(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVShell::onCmdGammaSettings()");
 
-  gammaDialog->updateValues();
-  gammaDialog->show();
+  _gammaDialog->updateValues();
+  _gammaDialog->show();
   return 1;
 }
 
@@ -1068,6 +1072,16 @@ long VVShell::onCmdOpacitySettings(FXObject*,FXSelector,void*)
   vvDebugMsg::msg(1, "VVShell::onCmdOpacitySettings()");
 
   _opacityDialog->show();
+  return 1;
+}
+
+//----------------------------------------------------------------------------
+long VVShell::onCmdChannelSettings(FXObject*,FXSelector,void*)
+{
+  vvDebugMsg::msg(1, "VVShell::onCmdChannelSettings()");
+
+  _channelDialog->updateValues();
+  _channelDialog->show();
   return 1;
 }
 
@@ -1226,8 +1240,8 @@ long VVShell::onCmdGLSettings(FXObject*,FXSelector,void*)
 long VVShell::onCmdScreenShot(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVShell::onCmdScreenShot()");
-  screenshotDialog->updateValues();
-  screenshotDialog->show();
+  _screenshotDialog->updateValues();
+  _screenshotDialog->show();
   return 1;
 }
 
@@ -1248,8 +1262,8 @@ long VVShell::onCmdTimeSteps(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVShell::onCmdTimeSteps()");
 
-  tsDialog->updateValues();
-  tsDialog->show();
+  _tsDialog->updateValues();
+  _tsDialog->show();
   return 1;
 }
 
@@ -1266,7 +1280,7 @@ void VVShell::drawScene()
     {
       _canvas->initCanvas();
       _canvas->resize(_glcanvas->getWidth(), _glcanvas->getHeight());
-      prefWindow->updateValues();
+      _prefWindow->updateValues();
       float r,g,b;
       FXColor background = getApp()->reg().readColorEntry("Settings"," BackgroundColor", FXRGB(255,255,255));
       r = float(FXREDVAL(background))   / 255.0f;
@@ -1382,13 +1396,13 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, int algorithm, vvTexRend::Geometr
 
     _canvas->setRenderer(algorithm, gt, vt);
 
-    if (vd->chan>1 && _canvas->_renderer->_renderState._mipMode==0) prefWindow->toggleMIP();
-    else if (vd->chan==1 && _canvas->_renderer->_renderState._mipMode > 0) prefWindow->toggleMIP();
+    if (vd->chan>1 && _canvas->_renderer->_renderState._mipMode==0) _prefWindow->toggleMIP();
+    else if (vd->chan==1 && _canvas->_renderer->_renderState._mipMode > 0) _prefWindow->toggleMIP();
     vd->makeInfoString(string);
     _statusBar->setText(string);
-    volumeDialog->updateValues();
+    _volumeDialog->updateValues();
     _transWindow->updateValues();
-    prefWindow->updateValues();
+    _prefWindow->updateValues();
     _dataTypeDialog->updateValues();
     _editVoxelsDialog->updateValues();
     _dimDialog->updateValues();
@@ -1514,8 +1528,8 @@ long VVShell::onAnimTimerEvent(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVShell::onAnimTimerEvent()");
 
-  if (_canvas->_vd->dt > 0.0f) tsDialog->stepForward();
-  else tsDialog->stepBack();
+  if (_canvas->_vd->dt > 0.0f) _tsDialog->stepForward();
+  else _tsDialog->stepBack();
   startAnimTimer();  // trigger next event for continuous events
   return 1;
 }

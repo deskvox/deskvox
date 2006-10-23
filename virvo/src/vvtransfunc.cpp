@@ -346,7 +346,7 @@ float vvTransFunc::computeOpacity(float x, float y, float z)
  Order of components: RGBARGBARGBA...
  @param w,h,d  number of array entries in each dimension
  @param array  _allocated_ float array in which to store computed values [0..1]
-               Space for w*h*d float values must be provided.
+               Space for w*h*d*4 float values must be provided.
  @param min,max min/max values to create texture for               
 */
 void vvTransFunc::computeTFTexture(int w, int h, int d, float* array, 

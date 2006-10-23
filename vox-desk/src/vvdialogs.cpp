@@ -873,7 +873,7 @@ long VVDimensionDialog::onApplySelect(FXObject*,FXSelector,void*)
   if (_canvas->_currentGeom == vvTexRend::VV_BRICKS)
     dynamic_cast<vvTexRend*>(_canvas->_renderer)->updateBrickGeom();
 
-  _shell->volumeDialog->updateValues();
+  _shell->_volumeDialog->updateValues();
   _shell->drawScene();
   return 1;
 }
@@ -884,7 +884,7 @@ long VVDimensionDialog::onResetSelect(FXObject*,FXSelector,void*)
   dist.set(defaultDist[0], defaultDist[1], defaultDist[2]);
   _canvas->_vd->setDist(dist);
   updateValues();
-  _shell->volumeDialog->updateValues();
+  _shell->_volumeDialog->updateValues();
   _shell->drawScene();
   return 1;
 }
@@ -894,7 +894,7 @@ void VVDimensionDialog::scaleZ(float scale)
   vvVector3 size;
   _canvas->_vd->dist[2] *= scale;
   updateValues();
-  _shell->volumeDialog->updateValues();
+  _shell->_volumeDialog->updateValues();
   _shell->drawScene();
 }
 
@@ -2520,6 +2520,81 @@ void VVOpacityDialog::show()
 
 /*******************************************************************************/
 
+FXDEFMAP(VVChannelDialog) VVChannelDialogMap[]=
+{
+  FXMAPFUNC(SEL_COMMAND, VVChannelDialog::ID_OK,     VVChannelDialog::onOK),
+  FXMAPFUNC(SEL_COMMAND, VVChannelDialog::ID_CANCEL, VVChannelDialog::onCancel),
+//  FXMAPFUNC(SEL_CHANGED, VVChannelDialog::ID_ALPHA,  VVChannelDialog::onAlphaChange),
+};
+
+FXIMPLEMENT(VVChannelDialog, FXDialogBox, VVChannelDialogMap, ARRAYNUMBER(VVChannelDialogMap))
+
+// Construct a dialog box
+VVChannelDialog::VVChannelDialog(FXWindow* owner, vvCanvas* c) : 
+  FXDialogBox(owner, "Channel Settings", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE)
+{
+  _parent = (VVShell*)owner;
+  _canvas = c;
+  _sliders = NULL;
+  FXVerticalFrame* verticalFrame = new FXVerticalFrame(this, LAYOUT_FILL_X);
+  _slidersFrame = new FXVerticalFrame(verticalFrame, LAYOUT_FILL_X);
+  
+  FXHorizontalFrame* buttonFrame = new FXHorizontalFrame(verticalFrame, LAYOUT_CENTER_X | LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
+  new FXButton(buttonFrame, "Cancel", NULL, this, ID_CANCEL, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X | LAYOUT_CENTER_Y);
+  new FXButton(buttonFrame, "OK", NULL, this, ID_OK, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X | LAYOUT_CENTER_Y);
+
+  move(100, 100);
+}
+
+long VVChannelDialog::onCancel(FXObject*, FXSelector, void*)
+{
+  if (_canvas->_renderer) 
+  {
+  }
+  handle(this, FXSEL(SEL_COMMAND, ID_HIDE), NULL);
+  return 1;
+}
+
+long VVChannelDialog::onOK(FXObject*, FXSelector, void*)
+{
+  handle(this, FXSEL(SEL_COMMAND, ID_HIDE), NULL);
+  return 1;
+}
+
+void VVChannelDialog::updateValues()
+{
+  int i;
+  if (_sliders)
+  {
+    for (i=0; i<_numSliders; ++i)
+    {
+      delete _sliders[i];
+    }
+    delete _sliders;
+  }
+  _numSliders = 0;
+  if (_canvas->_vd)
+  {
+    _numSliders = _canvas->_vd->chan;
+    if (_numSliders>0)
+    {
+      _sliders = new FXRealSlider*[_numSliders];
+      for (i=0; i<_numSliders; ++i)
+      {
+        _sliders[i] = new FXRealSlider(_slidersFrame, this, ID_SLIDERS_BASE + i, LAYOUT_FILL_X | SLIDER_HORIZONTAL);
+        _sliders[i]->setRange(0,1);
+        _sliders[i]->setValue(1);  
+      }
+    }
+    else cerr << "Warning: VVChannelDialog::updateValues: number of channels is zero?" << endl;
+  }
+  layout();
+  restore();
+  create();
+}
+
+/*******************************************************************************/
+
 FXDEFMAP(VVFloatRangeDialog) VVFloatRangeDialogMap[]=
 {
   FXMAPFUNC(SEL_COMMAND, VVFloatRangeDialog::ID_MIN_DATA,    VVFloatRangeDialog::onMinData),
@@ -2575,8 +2650,8 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   FXGroupBox* hdrGroup = new FXGroupBox(verticalFrame,"",FRAME_GROOVE | LAYOUT_FILL_X);
   FXMatrix* hdrMatrix = new FXMatrix(hdrGroup, 3, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
 
-  _isoRadio = new FXRadioButton(hdrMatrix, "Iso-Dist binning", &_algoDataTarget, FXDataTarget::ID_OPTION+1, ICON_BEFORE_TEXT);
-  _isoRadio->setTipText("Maps values by first binning them such that bins contain equal amounts of data values.\nIf not checked, bins cover equal data ranges (iso-range).");
+  _isoRadio = new FXRadioButton(hdrMatrix, "Histogram Equalization", &_algoDataTarget, FXDataTarget::ID_OPTION+1, ICON_BEFORE_TEXT);
+  _isoRadio->setTipText("Maps data values by binning them such that bins contain equal amounts of data values.");
   _weightRadio = new FXRadioButton(hdrMatrix, "Opacity-Weighted binning", &_algoDataTarget, FXDataTarget::ID_OPTION+2, ICON_BEFORE_TEXT);
   _weightRadio->setTipText("When checked algorithm creates smaller bins where opacity is higher.\nOtherwise binning is independent from opacity.");
   new FXLabel(hdrMatrix, "");
@@ -2600,10 +2675,9 @@ VVFloatRangeDialog::VVFloatRangeDialog(FXWindow* owner, vvCanvas* c) :
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
 
-  _colorCheck = new FXCheckButton(hdrMatrix, "Lock color pins", this, ID_COLOR, ICON_BEFORE_TEXT);
-  _colorCheck->setCheck(false);
-  _colorCheck->setTipText("Don't move color pins, only move gradient values in-between.");
-  _colorCheck->hide();  // TODO: implement, then show
+  _opacityCheck = new FXCheckButton(hdrMatrix, "Transform opacity widgets", this, ID_OPACITY, ICON_BEFORE_TEXT);
+  _opacityCheck->setCheck(false);
+  _opacityCheck->setTipText("Transform opacity widgets to bin space along with colors.");
   new FXLabel(hdrMatrix, "");
   new FXLabel(hdrMatrix, "");
 
@@ -2659,7 +2733,7 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
         }
         _canvas->_vd->updateHDRBins((_fastCheck->getCheck()) ? FXIntVal(_fastNumber->getText()) : -1, 
           (_skipCheck->getCheck()) ? true : false, (_dupCheck->getCheck()) ? true : false, 
-          (_lockCheck->getCheck()) ? true : false, bt);
+          (_lockCheck->getCheck()) ? true : false, bt, (_opacityCheck->getCheck()) ? true : false);
       }
       _canvas->_renderer->updateVolumeData();
       _canvas->_renderer->updateTransferFunction();
@@ -2674,7 +2748,7 @@ long VVFloatRangeDialog::onApply(FXObject*,FXSelector,void*)
 void VVFloatRangeDialog::updateDependents()
 {
   _shell->_transWindow->updateValues();
-  _shell->volumeDialog->updateValues();
+  _shell->_volumeDialog->updateValues();
 }
 
 long VVFloatRangeDialog::onMinData(FXObject*,FXSelector,void*)
@@ -2727,7 +2801,7 @@ long VVFloatRangeDialog::onHDRMapping(FXObject*,FXSelector,void*)
     _skipCheck->enable();
     _dupCheck->enable();
     _lockCheck->enable();
-    _colorCheck->enable();
+    _opacityCheck->enable();
   }
   else
   {
@@ -2738,7 +2812,7 @@ long VVFloatRangeDialog::onHDRMapping(FXObject*,FXSelector,void*)
     _skipCheck->disable();
     _dupCheck->disable();
     _lockCheck->disable();
-    _colorCheck->disable();
+    _opacityCheck->disable();
   }
   return 1;
 }
@@ -2943,7 +3017,7 @@ void VVDataTypeDialog::updateValues()
 */
 void VVDataTypeDialog::updateDialogs()
 {
-  _shell->volumeDialog->updateValues();
+  _shell->_volumeDialog->updateValues();
 }
 
 
@@ -3121,7 +3195,7 @@ void VVEditVoxelsDialog::updateDialogs()
   char string[256];
   _canvas->_vd->makeInfoString(string);
   _shell->_statusBar->setText(string);
-  _shell->volumeDialog->updateValues();
+  _shell->_volumeDialog->updateValues();
   _shell->_transWindow->setDirtyHistogram();
 }
 
@@ -3182,7 +3256,7 @@ long VVHeightFieldDialog::onOK(FXObject*, FXSelector, void*)
 */
 void VVHeightFieldDialog::updateDialogs()
 {
-  _shell->volumeDialog->updateValues();
+  _shell->_volumeDialog->updateValues();
   _shell->_editVoxelsDialog->updateValues();
 }
 

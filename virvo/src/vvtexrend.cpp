@@ -113,7 +113,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   rgbaLUT = new uchar[256 * 256 * 4];
   preintTable = new uchar[getPreintTableSize()*getPreintTableSize()*4];
   preIntegration = true;
-  _binning = vvVolDesc::LINEAR;
   usePreIntegration = false;
   textures = 0;
   opacityCorrection = true;
@@ -650,7 +649,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
               else                                // float voxels
               {
                 fval = *((float*)(rawVoxel));
-                rawVal[0] = vd->mapFloat2Int(fval, _binning);
+                rawVal[0] = vd->mapFloat2Int(fval);
               }
               switch(voxelType)
               {
@@ -903,7 +902,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
               else  // vd->bpc == 4
               {
                 fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                rawVal[0] = vd->mapFloat2Int(fval, _binning);
+                rawVal[0] = vd->mapFloat2Int(fval);
               }
               texOffset = (x - startOffset[0]) + texLineOffset;
               switch (voxelType)
@@ -956,7 +955,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
                   else  // vd->bpc==4
                   {
                     fval = *((float*) (raw + srcIndex));
-                    rawVal[c] = vd->mapFloat2Int(fval, _binning);
+                    rawVal[c] = vd->mapFloat2Int(fval);
                   }
                 }
 
@@ -1234,7 +1233,7 @@ void vvTexRend::updateTransferFunction()
 
   // Generate arrays from pins:
   getLUTSize(size);
-  vd->tf.computeTFTexture(size[0], size[1], size[2], rgbaTF, vd->real[0], vd->real[1]);
+  vd->computeTFTexture(size[0], size[1], size[2], rgbaTF);
 
   updateLUT(1.0f);                                // generate color/alpha lookup table
 
@@ -1361,7 +1360,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
             else // vd->bpc==4: convert floating point to 8bit value
             {
               fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-              rawVal[0] = vd->mapFloat2Int(fval, _binning);
+              rawVal[0] = vd->mapFloat2Int(fval);
             }
             texOffset = (x - offsetX) + texLineOffset;
             switch(voxelType)
@@ -1414,7 +1413,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
                 else  // vd->bpc == 4
                 {
                   fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                  rawVal[c] = vd->mapFloat2Int(fval, _binning);
+                  rawVal[c] = vd->mapFloat2Int(fval);
                 }
               }
 
@@ -1657,7 +1656,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes, int offsetX, int offs
               else
               {
                 fval = *((float*)(rawVoxel));
-                rawVal[0] = vd->mapFloat2Int(fval, _binning);
+                rawVal[0] = vd->mapFloat2Int(fval);
               }
 
               for (c = 0; c < texelsize; c++)
@@ -1885,7 +1884,7 @@ int sizeX, int sizeY, int sizeZ)
               else
               {
                 fval = *((float*) (raw + srcIndex));
-                rawVal[0] = vd->mapFloat2Int(fval, _binning);
+                rawVal[0] = vd->mapFloat2Int(fval);
               }
 
               texOffset = (x - start[0]) + texLineOffset;
@@ -1940,7 +1939,7 @@ int sizeX, int sizeY, int sizeZ)
                   else
                   {
                     fval = *((float*) (raw + srcIndex));
-                    rawVal[c] = vd->mapFloat2Int(fval, _binning);
+                    rawVal[c] = vd->mapFloat2Int(fval);
                   }
                 }
 
@@ -3963,9 +3962,9 @@ void vvTexRend::updateLUT(float dist)
         updateTransferFunction();
         break;
       case vvRenderer::VV_BINNING:
-        if (newValue==0.0f) _binning = vvVolDesc::LINEAR;
-        else if (newValue==1.0f) _binning = vvVolDesc::ISO_DATA;
-        else _binning = vvVolDesc::OPACITY;
+        if (newValue==0.0f) vd->_binning = vvVolDesc::LINEAR;
+        else if (newValue==1.0f) vd->_binning = vvVolDesc::ISO_DATA;
+        else vd->_binning = vvVolDesc::OPACITY;
         break;      
       default:
         vvRenderer::setParameter(param, newValue);
@@ -3992,7 +3991,7 @@ void vvTexRend::updateLUT(float dist)
       case vvRenderer::VV_PREINT:
         return float(preIntegration);
       case vvRenderer::VV_BINNING:
-        return float(_binning);
+        return float(vd->_binning);
       default: return vvRenderer::getParameter(param);
     }
   }

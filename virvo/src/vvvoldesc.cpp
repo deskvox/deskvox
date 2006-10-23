@@ -333,6 +333,8 @@ void vvVolDesc::initialize()
   iconSize = 0;
   _scale = 1.0f;
   _hdrBinLimits = new float[NUM_HDR_BINS];
+  _binning = LINEAR;
+  _transOp = false;
   if (iconData!=NULL)
   {
     delete[] iconData;
@@ -935,9 +937,43 @@ void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* siz
   delete[] buckets;
 }
 
-void vvVolDesc::makeLineTexture(DiagType type, unsigned char selChannel,
-int twidth, int theight, bool alpha,
-vvArray<float*> voxData, unsigned char* texData)
+/** Wrapper around tf.computeTFTexture.
+*/
+void vvVolDesc::computeTFTexture(int w, int h, int d, float* dest)
+{
+  const int RGBA = 4;
+  float dataVal;
+  int i, linearBin;  
+  
+  tf.computeTFTexture(w, h, d, dest, real[0], real[1]);
+  // convert opacity TF if hdr mode:
+  if (_binning!=LINEAR && !_transOp)
+  {
+    float* tmpOp = new float[w*h*d*RGBA];
+    memcpy(tmpOp, dest, w * h * d * RGBA * sizeof(float));
+    for (i=0; i<w; ++i) // go through all bins and non-linearize them
+    {
+      dataVal = _hdrBinLimits[i];
+      linearBin = int((dataVal - real[0]) / (real[1] - real[0]) * float(w));
+      linearBin = ts_clamp(linearBin, 0, w-1);
+      dest[i*RGBA+3] = tmpOp[linearBin*RGBA+3];
+    }
+    delete[] tmpOp;
+  } 
+}
+
+/**
+  This method creates a texture for the given voxeldata.
+  @param type: should it be a histogram or intensity diagram
+  @param selChannel: only the selected channels should be displayed
+  @param twidth: texture width
+  @param theight: texture height
+  @param alpha: should texture contain an alpha channel
+  @param voxData: voxeldata
+  @param texData: the created texture data
+*/
+void vvVolDesc::makeLineTexture(DiagType type, unsigned char selChannel, int twidth, int theight, bool alpha,
+  vvArray<float*> voxData, unsigned char* texData)
 {
   int i, x, y, c;
   int bpt;
@@ -4796,7 +4832,7 @@ void vvVolDesc::voxelStatistics(int frame, int c, int x, int y, int z, float& me
         for (dz=-1; dz<=1; ++dz)
         {
           if (z+dz < 0 || z+dz > vox[2]-1) continue;
-          i = offset + bpv * (dx + dy * vox[1] + dz * vox[0] * vox[1]);
+          i = offset + bpv * (dx + dy * vox[0] + dz * vox[0] * vox[1]);
           switch (bpc)
           {
             case 1:
@@ -4895,8 +4931,9 @@ void vvVolDesc::addVariance(int srcChan)
   @param cullDup remove duplicate values from value array to avoid cluttering bins with same value
   @param lockRange if true, realMin/realMax won't be modified
   @param binning binning type
+  @param transOp true=transfer opacities to bin space
 */
-void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, bool lockRange, BinningType binning)
+void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, bool lockRange, BinningType binning, bool transOp)
 {
   const int MAX_ATTEMPTS = 10000;
   vvTFSkip* sw;
@@ -4921,6 +4958,8 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     cerr << "updateHDRBins() works only on single channel float data" << endl;
     return;
   }
+  
+  _transOp = transOp;
   
   vvStopwatch stop;
   stop.start();
@@ -4987,6 +5026,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   {
     cerr << "Removing skipped regions from data array...";
     before = numVoxels;
+    numSkip = 0;
     numTF = tf._widgets.count();
     tf._widgets.first();
     for (j=0; j<numTF; ++j)
@@ -5008,20 +5048,17 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
           
           // Cut values:
           numSkip = maxIndex - minIndex + 1;
-          if (maxIndex==numValues-1)
-          {
-            numVoxels -= numSkip;
-          }
-          else
+          if (maxIndex<numVoxels-1)
           {
             memcpy(&sortedData[minIndex], &sortedData[maxIndex+1], sizeof(float) * (numVoxels - maxIndex - 1));
           }
+          numVoxels -= numSkip;
         }
       }
       tf._widgets.next();
     }
     cerr << stop.getDiff() << " sec" << endl;
-    cerr << (before - numVoxels) << " voxels removed" << endl;
+    cerr << (before - numVoxels) << " voxels removed (" << (100.0f * float(numSkip) / float(getFrameVoxels())) << "%)" << endl;
   }
   
   // Remove duplicate values from array:
@@ -5131,16 +5168,13 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   it clamps the value between real[0] and real[1] and linearly maps the value
   to an 8bit integer.
   @param fval floating point data value
-  @param binning linear (standard), 
-                 iso-data: create bins so that each bin contains equal numbers of data values,
-                 opacity weighted: weigh bins according to opacity set in transfer function
   @return 8bit integer value [0..255]
 */
-int vvVolDesc::mapFloat2Int(float fval, BinningType binning)
+int vvVolDesc::mapFloat2Int(float fval)
 {
   int ival;
   
-  switch(binning)
+  switch(_binning)
   {
     case LINEAR: 
       fval = ts_clamp(fval, real[0], real[1]);
