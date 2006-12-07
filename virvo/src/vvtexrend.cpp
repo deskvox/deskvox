@@ -2375,7 +2375,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   // Translate object by its position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
-  glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
+  //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
   vvVector3 texPoint;                             // arbitrary point on current texture
   int isectCnt;                                   // intersection counter
@@ -2581,9 +2581,9 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   else                                            // probe mode off
   {
     probeSizeObj.copy(&size);
-    probeMin.set(-size2[0], -size2[1], -size2[2]);
-    probeMax.copy(&size2);
-    probePosObj.zero();
+    probePosObj.copy(&vd->pos);
+    probeMin = probePosObj-size2;
+    probeMax = probePosObj+size2;
   }
 
   // Compute length of probe diagonal [object space]:
@@ -2698,7 +2698,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   // Translate object by its position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
-  glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
+  //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
   _sortedList.first();
 
@@ -2854,9 +2854,9 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   else                                            // probe mode off
   {
     probeSizeObj.copy(&size);
-    probeMin.set(-size2[0], -size2[1], -size2[2]);
-    probeMax.copy(&size2);
-    probePosObj.zero();
+    probePosObj.copy(&vd->pos);
+    probeMin = probePosObj-size2;
+    probeMax = probePosObj+size2;
   }
 
   getBricksInProbe(probePosObj, probeSizeObj);
@@ -2864,7 +2864,7 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   // Translate object by its position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
-  glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
+  //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
   Brick* tmp;
   vvVector3 min, max;
@@ -3287,7 +3287,7 @@ void vvTexRend::renderTex2DSlices(float zz)
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   pos.copy(&vd->pos);
-  glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
+  //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
   // Enable clipping plane if appropriate:
   if (_renderState._clipMode) activateClippingPlane();
@@ -3400,7 +3400,7 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   pos.copy(&vd->pos);
-  glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
+  //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
   // Enable clipping plane if appropriate:
   if (_renderState._clipMode) activateClippingPlane();
