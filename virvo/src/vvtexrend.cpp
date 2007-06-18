@@ -2975,11 +2975,10 @@ void vvTexRend::updateFrustum()
 
 bool vvTexRend::testBrickVisibility(Brick* brick)
 {
-  int i;
   vvVector3 pv, normal;
 
   // get p-vertex (that's the farthest vertex in the direction of the normal plane
-  for (i = 0; i < 6; i++)
+  for (int i = 0; i < 6; i++)
   {
     if (_frustum[i][0] > 0.0)
       pv[0] = brick->max[0];
@@ -3010,16 +3009,15 @@ bool vvTexRend::testBrickVisibility(Brick* brick, const vvMatrix& mvpMat)
   float xStep = (brick->max[0] - brick->min[0]) / (numSteps - 1.0f);
   float yStep = (brick->max[1] - brick->min[1]) / (numSteps - 1.0f);
   float zStep = (brick->max[2] - brick->min[2]) / (numSteps - 1.0f);
-  float x, y, z;
   for(int i = 0; i < numSteps; i++)
   {
-    x = brick->min.e[0] + xStep * i;
+    float x = brick->min.e[0] + xStep * i;
     for(int j = 0; j < numSteps; j++)
     {
-      y = brick->min.e[1] + yStep * j;
+      float y = brick->min.e[1] + yStep * j;
       for(int k = 0; k < numSteps; k++)
       {
-        z = brick->min.e[2] + zStep * k;
+        float z = brick->min.e[2] + zStep * k;
         vvVector3 clipPnt(x, y, z);
         clipPnt.multiply(&mvpMat);
 
@@ -3038,9 +3036,6 @@ bool vvTexRend::testBrickVisibility(Brick* brick, const vvMatrix& mvpMat)
 
 void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
 {
-  Brick* tmp;
-  vvVector3 min, max, tmpVec;
-
   _brickList.first();
   for (int f = 1; f < vd->getCurrentFrame(); f++)
     _brickList.next();
@@ -3048,11 +3043,11 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
   _brickList.getData()->first();
   _insideList.removeAll();
 
-  tmpVec = size;
+  vvVector3 tmpVec = size;
   tmpVec.scale(0.5);
 
-  min = pos - tmpVec;
-  max = pos + tmpVec;
+  vvVector3 min = pos - tmpVec;
+  vvVector3 max = pos + tmpVec;
 
   //   vvMatrix mvMat;
   //   vvMatrix pMat;
@@ -3063,10 +3058,9 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
 
   updateFrustum();
 
-  int countVisible, countInvisible;
-  countVisible = countInvisible = 0;
+  int countVisible = 0, countInvisible = 0;
 
-  while ((tmp = _brickList.getData()->getData()) != 0)
+  while (Brick *tmp = _brickList.getData()->getData())
   {
     if ((tmp->min.e[0] <= max.e[0]) && (tmp->max.e[0] >= min.e[0]) &&
       (tmp->min.e[1] <= max.e[1]) && (tmp->max.e[1] >= min.e[1]) &&
@@ -3774,7 +3768,7 @@ int vvTexRend::getLUTSize(int* size)
     y = z = 1;
   }
 #ifdef HAVE_CG
-  else if (_currentShader==8)
+  else if (_currentShader==8 && voxelType==VV_PIX_SHD)
   {
     x = y = 256;
     z = 1;
@@ -3870,7 +3864,7 @@ void vvTexRend::updateLUT(float dist)
         // Load color LUT for pre-classification:
         assert(total==256);
         glColorTableEXT(GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGBA8,
-          total, GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
+          lutSize[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
         break;
       case VV_TEX_SHD:
       case VV_FRG_PRG:
