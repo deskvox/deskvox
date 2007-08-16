@@ -10,12 +10,12 @@ struct PixelIn
 };
 
 float4 main(
-  const sampler3D  in uniform pix3dtex : TEXTURE0,
-  const sampler2D  in uniform pixLUT,
-  const PixelIn    in         IN) : COLOR0
+  sampler3D  in uniform pix3dtex : TEXTURE0,
+  sampler2D  in uniform pixLUT,
+  PixelIn    in         IN) : COLOR0
 {
-	uniform float4 origColor = tex3D(pix3dtex, IN.coord3d);
-	uniform float4 OUT;
+	float4 origColor = tex3D(pix3dtex, IN.coord3d);
+	float4 OUT;
 	
 	OUT.r = tex2D(pixLUT, float2(origColor.r, 0)).r;
 	OUT.g = tex2D(pixLUT, float2(origColor.g, 0)).g;

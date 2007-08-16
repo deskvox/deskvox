@@ -14,11 +14,11 @@ float4 main(
 	const sampler2D  in uniform pixLUT,           // used specifically for gamma correction
  	const float3     in uniform chan4color,       // channel four color
  	const float4     in uniform opWeights,        // opacity of four channels
-	const PixelIn    in IN) : COLOR0
+	      PixelIn    in IN) : COLOR0
 {
-	uniform float4 origColor = tex3D(pix3dtex, IN.coord3d);  // color as stored in 3D texture
-	uniform float4 intColor;      // intermediate color: after texture lookup (esp. gamma correction)
-	uniform float4 OUT;           // result after color conversion
+	float4 origColor = tex3D(pix3dtex, IN.coord3d);  // color as stored in 3D texture
+	float4 intColor;      // intermediate color: after texture lookup (esp. gamma correction)
+	float4 OUT;           // result after color conversion
 	
         intColor.r = tex2D(pixLUT, float2(origColor.r, 0)).r;
 	intColor.g = tex2D(pixLUT, float2(origColor.g, 0)).g;
