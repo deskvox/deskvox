@@ -258,7 +258,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool initPixelShaders();
     void enableTexture(GLenum target);
     void disableTexture(GLenum target);
-    static void checkCgError();
+    static void checkCgError(CGcontext ctx, CGerror err, void *appdata);
     bool testBrickVisibility(Brick* brick, const vvMatrix& mvpMat);
     bool testBrickVisibility(Brick*);
     void updateFrustum();

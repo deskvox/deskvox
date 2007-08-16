@@ -4230,14 +4230,19 @@ void vvTexRend::updateLUT(float dist)
 
   //----------------------------------------------------------------------------
   /// Automatically called when a Cg error occurs.
-  void vvTexRend::checkCgError()
+  void vvTexRend::checkCgError(CGcontext ctx, CGerror err, void *)
   {
 #ifdef HAVE_CG
-    CGerror err = cgGetError();
-
-    if (err != CG_NO_ERROR)
+    if(err != CG_NO_ERROR) 
+      cerr << cgGetErrorString(err) << "(" << static_cast<int>(err) << ")" << endl;
+    for(GLint err = glGetError(); err != GL_NO_ERROR; err = glGetError())
     {
-      cerr << cgGetErrorString(err) << endl;
+      cerr << "GL error: " << gluErrorString(err) << endl;
+    }
+    if(const char *listing = cgGetLastListing(ctx))
+    {
+      cerr << "last listing:" << endl;
+      cerr << listing << endl;
     }
 #endif
   }
@@ -4310,7 +4315,7 @@ void vvTexRend::updateLUT(float dist)
 
     _cgContext = cgCreateContext();               // Create context for fragment programs
     if (!_cgContext) cerr << "Could not create Cg context." << endl;
-    cgSetErrorCallback(vvTexRend::checkCgError);
+    cgSetErrorHandler(vvTexRend::checkCgError, NULL);
 
     // Check if correct version of pixel shaders is available:
     if(cgGLIsProfileSupported(CG_PROFILE_ARBFP1)) // test for GL_ARB_fragment_program
