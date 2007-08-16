@@ -59,27 +59,53 @@ AC_ARG_WITH(cg-include,
 	[cg_incdir=$cg_dir/include]
 )
 
+AC_ARG_WITH(cg-framework,
+	AC_HELP_STRING([--with-cg-framework],[location of Cg framework (Mac OS X)]),
+	[cg_framework=$withval],
+	[cg_framework=no]
+)
+
 if test "$enable_cg" != "no"; then
     ac_cppflags_save=$CPPFLAGS
-    CPPFLAGS="$CPPFLAGS -I$cg_incdir"
-    LDFLAGS="$LDFLAGS -L$cg_libdir"
-    AC_CHECK_HEADERS([Cg/cg.h], [have_cg_h=yes])
-    AC_CHECK_LIB(m, log, LDFLAGS="$LDFLAGS -lm")
-    AC_CHECK_LIB(pthread, pthread_once, LDFLAGS="$LDFLAGS -lpthread")
-    AC_CHECK_LIB(GL, glGetIntegerv, LDFLAGS="$LDFLAGS -lGL")
-    AC_CHECK_LIB(GLU, gluSphere, LDFLAGS="$LDFLAGS -lGLU")
-    AC_CHECK_LIB(Cg, cgSetParameter1d, LDFLAGS="$LDFLAGS -lCg")
-    AC_CHECK_LIB(CgGL, cgGLSetParameter1d, have_libcggl=yes)
+    ac_ldflags_save=$LDFLAGS
+    if test "$cg_framework" != "no"; then
+        if test "$cg_framework" != "" -a "$cg_framework" != "yes"; then
+            cg_framework_path="-F$cg_framework"
+        fi
+        CPPFLAGS="$CPPFLAGS $cg_framework_path -framework Cg"
+        LDFLAGS="$LDFLAGS $cg_framework_path -framework Cg"
+        AC_CHECK_HEADERS([Cg/cg.h], [have_cg_h=yes])
+
+        if test "$have_cg_h" = "yes"; then
+            AC_DEFINE(HAVE_CG, 1, [Cg shaders enabled])
+            CG_INCLUDES="$cg_framework_path -framework Cg"
+            # only for shared libs
+            #CG_LIBS="$cg_framework_path -framework Cg"
+            AC_SUBST(CG_INCLUDES)
+            AC_SUBST(CG_LIBS)
+        fi
+    else
+        CPPFLAGS="$CPPFLAGS -I$cg_incdir"
+        LDFLAGS="$LDFLAGS -L$cg_libdir"
+        AC_CHECK_HEADERS([Cg/cg.h], [have_cg_h=yes])
+        AC_CHECK_LIB(m, log, LDFLAGS="$LDFLAGS -lm")
+        AC_CHECK_LIB(pthread, pthread_once, LDFLAGS="$LDFLAGS -lpthread")
+        AC_CHECK_LIB(GL, glGetIntegerv, LDFLAGS="$LDFLAGS -lGL")
+        AC_CHECK_LIB(GLU, gluSphere, LDFLAGS="$LDFLAGS -lGLU")
+        AC_CHECK_LIB(Cg, cgSetParameter1d, LDFLAGS="$LDFLAGS -lCg")
+        AC_CHECK_LIB(CgGL, cgGLSetParameter1d, have_libcggl=yes)
+
+        if test "$have_cg_h" = "yes" -a "$have_libcggl" = "yes" ; then
+            AC_DEFINE(HAVE_CG, 1, [Cg shaders enabled])
+            CG_INCLUDES="-I$cg_incdir"
+            CG_LIBS="-L$cg_libdir -lCgGL -lCg"
+            AC_SUBST(CG_INCLUDES)
+            AC_SUBST(CG_LIBS)
+        fi
+    fi
+
     CPPFLAGS=$ac_cppflags_save
     LDFLAGS=$ac_ldflags_save
-
-    if test "$have_cg_h" = "yes" -a "$have_libcggl" = "yes" ; then
-        AC_DEFINE(HAVE_CG, 1, [Cg shaders enabled])
-        CG_INCLUDES="-I$cg_incdir"
-        CG_LIBS="-L$cg_libdir -lCgGL -lCg"
-        AC_SUBST(CG_INCLUDES)
-        AC_SUBST(CG_LIBS)
-    fi
 fi
 
 AC_ARG_ENABLE(stingray,
@@ -109,7 +135,7 @@ AC_ARG_ENABLE(pic,
 )
 
 if test "$enable_pic" = "yes"; then
-      if test -z `which libtool`; then
+      if test -z "`which libtool`" -o "`uname`"="Darwin"; then
           PIC_FLAGS="-fPIC -DPIC"
       else
           PIC_FLAGS=`libtool --config | grep pic_flag|cut -d\" -f2`
