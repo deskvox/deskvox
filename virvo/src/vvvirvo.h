@@ -44,7 +44,9 @@ and vvMatrix are components of vvVecmath, a useful library for linear algebra.
 </DL>
 */
 
+#ifdef _WIN32 // actually should check for visual c++
 #pragma warning(disable: 4514)                    // disable warning about unreferenced inline function
+#endif
 
 // Current version (to be updated on every release):
 #define VV_VERSION "2"                            // major version change
