@@ -56,7 +56,7 @@
 using namespace std;
 
 //----------------------------------------------------------------------------
-const int vvTexRend::NUM_PIXEL_SHADERS = 10;
+const int vvTexRend::NUM_PIXEL_SHADERS = 11;
 
 //----------------------------------------------------------------------------
 /** Constructor.
