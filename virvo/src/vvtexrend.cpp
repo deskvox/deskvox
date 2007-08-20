@@ -494,6 +494,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures()
     case VV_BRICKS:  err=makeTextureBricks(); break;
     default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
   }
+  vvGLTools::printGLError("vvTexRend::makeTextures");
 
   if (voxelType==VV_PIX_SHD)
   {
@@ -503,7 +504,6 @@ vvTexRend::ErrorType vvTexRend::makeTextures()
       first = false;
     }
   }
-  vvGLTools::printGLError("vvTexRend::makeTextures");
   return err;
 }
 
@@ -777,7 +777,10 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
   if (!extTex3d) return NO3DTEX;
 
   if (_renderState._brickSize == 0)
+  {
+    vvDebugMsg::msg(1, "3D Texture brick size unknown");
     return err;
+  }
 
   removeTextures();
 
@@ -4110,6 +4113,8 @@ void vvTexRend::updateLUT(float dist)
   void vvTexRend::setCurrentShader(int shader)
   {
     vvDebugMsg::msg(3, "vvTexRend::setCurrentShader()");
+    if(shader >= NUM_PIXEL_SHADERS || shader < 0)
+       shader = 0;
     _currentShader = shader;
     makeTextures();
   }
@@ -4230,19 +4235,22 @@ void vvTexRend::updateLUT(float dist)
 
   //----------------------------------------------------------------------------
   /// Automatically called when a Cg error occurs.
-  void vvTexRend::checkCgError(CGcontext ctx, CGerror err, void *)
+  void vvTexRend::checkCgError(CGcontext ctx, CGerror cgerr, void *)
   {
 #ifdef HAVE_CG
-    if(err != CG_NO_ERROR) 
-      cerr << cgGetErrorString(err) << "(" << static_cast<int>(err) << ")" << endl;
-    for(GLint err = glGetError(); err != GL_NO_ERROR; err = glGetError())
+    if(cgerr != CG_NO_ERROR) 
+      cerr << cgGetErrorString(cgerr) << "(" << static_cast<int>(cgerr) << ")" << endl;
+    for(GLint glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
     {
-      cerr << "GL error: " << gluErrorString(err) << endl;
+      cerr << "GL error: " << gluErrorString(glerr) << endl;
     }
-    if(const char *listing = cgGetLastListing(ctx))
+    if(ctx && cgerr==CG_COMPILER_ERROR)
     {
-      cerr << "last listing:" << endl;
-      cerr << listing << endl;
+       if(const char *listing = cgGetLastListing(ctx))
+       {
+          cerr << "last listing:" << endl;
+          cerr << listing << endl;
+       }
     }
 #endif
   }
