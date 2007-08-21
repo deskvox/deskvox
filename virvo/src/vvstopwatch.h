@@ -31,9 +31,9 @@
 #include "vvexport.h"
 
 /** System independent implementation of a stop watch.
-  The stop watch can be started, stopped, resetted, and its time
+  The stop watch can be started, stopped, reset, and its time
   can be read. Stopping does not reset the watch. Initially, the
-  stop watch is resetted. Resetting stops the watch. Reading the time
+  stop watch is reset. Resetting stops the watch. Reading the time
   does not stop the watch. <P>
 
   Example usage:<PRE>

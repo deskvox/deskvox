@@ -102,7 +102,7 @@ class VIRVOEXPORT vvvffile
     // setting values for length, width, height and bytes/voxel
     int     setArrayDimensions(int x, int y, int z, int b);
 
-    // returning lenght, width, height and bytes/voxel
+    // returning length, width, height and bytes/voxel
     int     getArrayDimensions(int* x, int* y, int* z, int* b);
 
     // setting hotspot-coordinates

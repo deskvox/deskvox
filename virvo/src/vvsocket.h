@@ -221,7 +221,7 @@ class VIRVOEXPORT vvSocket
 - Linger time can be set<BR>
 
 Default values:
-- debuglevel=1 (0 lowest level and no messages, 1 only error mesages, 2 some more messages, 3 highest level)
+- debuglevel=1 (0 lowest level and no messages, 1 only error messages, 2 some more messages, 3 highest level)
 - socket buffer size= system default
 - no timeouts<BR>
 

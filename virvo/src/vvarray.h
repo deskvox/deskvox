@@ -222,7 +222,7 @@ template<class T> inline void vvArray<T>::removeLast()
 }
 
 //----------------------------------------------------------------------------
-/** Finds first occurence of element 'in_data' and delete it.
+/** Finds first occurrence of element 'in_data' and delete it.
   @return true if successful, otherwise false
 */
 template<class T> inline bool vvArray<T>::removeElement(const T& in_data)

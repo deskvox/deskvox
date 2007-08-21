@@ -74,7 +74,7 @@ vvTFWidget::vvTFWidget(vvTFWidget* src)
   }
 }
 
-/** Constructor with parameter initalization.
+/** Constructor with parameter initialization.
 */
 vvTFWidget::vvTFWidget(float x, float y, float z)
 {

@@ -1484,7 +1484,7 @@ void vvVector3::swap(vvVector3* v)
 
 //----------------------------------------------------------------------------
 /** Intersect a plane and a straight line.
-  @param  n       normal of plane (doesn't neet to be normalized)
+  @param  n       normal of plane (doesn't need to be normalized)
   @param  p       an arbitrary point on the plane
   @param  v1,v2   arbitrary points on the line
   @return true if an intersection occurred, result in this pointer.

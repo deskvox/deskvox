@@ -2719,7 +2719,7 @@ void vvVolDesc::printStatistics()
 }
 
 //----------------------------------------------------------------------------
-/** Display histogram as text. Omit non-occuring values.
+/** Display histogram as text. Omit non-occurring values.
   @param frame   frame to compute histogram for (-1 for all frames)
   @param channel channel to compute histogram for (0=first)
 */
@@ -3689,13 +3689,13 @@ int vvVolDesc::findNumUsed(int channel)
   numValues = (bpc==2) ? 65536 : 256;
   used = new bool[numValues];
 
-  // Initialize occurrance array:
+  // Initialize occurrence array:
   for (i=0; i<numValues; ++i)
   {
     used[i] = false;
   }
 
-  // Fill occurrance array:
+  // Fill occurrence array:
   for (f=0; f<frames; ++f)
   {
     raw = getRaw(f);
@@ -3714,7 +3714,7 @@ int vvVolDesc::findNumUsed(int channel)
     }
   }
 
-  // Count number of 'true' entries in occurrance array:
+  // Count number of 'true' entries in occurrence array:
   for (i=0; i<numValues; ++i)
   {
     if (used[i]==true) ++numUsed;

@@ -27,7 +27,7 @@
                                      It is a library for real-time volume rendering with hardware accelerated texture mapping.
     <DT><B>Developer Information</B> <DD>The library does not depend on other libraries except OpenGL.
                                      If you want to use Nvidia Cg pixel shaders,
-                                     you need to defile HAVE_CG at compile time.
+                                     you need to define HAVE_CG at compile time.
                                      The main rendering classes are vvRenderer and vvTexRend. You can
                                      create new rendering classes by deriving them from vvRenderer.
                                      Transfer functions for volume rendering are managed by vvTransFunc.

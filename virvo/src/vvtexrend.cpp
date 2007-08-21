@@ -2247,7 +2247,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   getProjectionMatrix(&pm);
   bool isOrtho = pm.isProjOrtho();
 
-  // Compute normal vector of textures using the follwing strategy:
+  // Compute normal vector of textures using the following strategy:
   // For orthographic projections or if viewDir is (0|0|0) use
   // (0|0|1) as the normal vector.
   // Otherwise use objDir as the normal.
@@ -2614,7 +2614,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   getProjectionMatrix(&pm);
   bool isOrtho = pm.isProjOrtho();
 
-  // Compute normal vector of textures using the follwing strategy:
+  // Compute normal vector of textures using the following strategy:
   // For orthographic projections or if viewDir is (0|0|0) use
   // (0|0|1) as the normal vector.
   // Otherwise use objDir as the normal.

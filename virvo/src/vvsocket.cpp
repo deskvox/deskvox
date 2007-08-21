@@ -227,7 +227,7 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
 }
 
 //----------------------------------------------------------------------------
-/**Calls accept() with a timeout. Lenghth of timeout is connect_timer.
+/**Calls accept() with a timeout. Length of timeout is connect_timer.
  */
 vvSocket::ErrorType vvSocket::accept_timeo()
 {
@@ -305,7 +305,7 @@ vvSocket::ErrorType vvSocket::accept_nontimeo()
 }
 
 //----------------------------------------------------------------------------
-/**Calls connect() with a timeout. Lenghth of timeout is connect_timer.
+/**Calls connect() with a timeout. Length of timeout is connect_timer.
  */
 vvSocket::ErrorType vvSocket::connect_timeo()
 {
@@ -1677,7 +1677,7 @@ void vvSocket::set_sock_buffsize(int sbs)
 }
 
 //----------------------------------------------------------------------------
-/** Sets the timers for the connection establishment and for the data tranfer.
+/** Sets the timers for the connection establishment and for the data transfer.
  No timers for a value equals to zero (default).
  @param ct  timer for connection estabilishment in sec.
  @param tt  timer for data transfer in sec.
@@ -1727,7 +1727,7 @@ int vvSocket::get_send_buffsize()
 //---------------------------------------------------------------------------
 /** Reads a string (i.e. one line) from the socket.
  @param s  pointer to where the string is written.
- @param maxLen maximum lenght of string to read.
+ @param maxLen maximum length of string to read.
  Reads at most maxLen-1 characters from the socket,
  the last character is used for '\0' termination.
  Returns OK if maxLen characters were sufficient, otherwise RETRY.

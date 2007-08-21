@@ -131,7 +131,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int   textures;                               ///< number of textures stored in TRAM
     int   texelsize;                              ///< number of bytes/voxel transferred to OpenGL (depending on rendering mode)
     GLint internalTexFormat;                      ///< internal texture format (parameter for glTexImage...)
-    GLenum texFormat;                             ///< texture format (paramter for glTexImage...)
+    GLenum texFormat;                             ///< texture format (parameter for glTexImage...)
     GLuint* texNames;                             ///< names of texture slices stored in TRAM
     GLuint tfTexName;                             ///< name for transfer function texture
     GLuint fragProgName[VV_FRAG_PROG_MAX];        ///< names for fragment programs (for applying transfer function)

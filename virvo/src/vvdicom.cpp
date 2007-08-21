@@ -109,7 +109,7 @@ inline int vvDicom::read32(FILE* fp)
 }
 
 //----------------------------------------------------------------------------
-/** This functions sifts throught the input dicom data.  It's the heart of
+/** This functions sifts through the input dicom data.  It's the heart of
   the program and needs to be modified when new fields need to be supported.
 */
 void vvDicom::readDicomData(FILE* fp)

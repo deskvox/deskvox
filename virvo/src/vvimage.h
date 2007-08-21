@@ -35,8 +35,8 @@
 
 Supported code types:
 - no encoding (code type 0)
-- Run Lenght Encoding over the whole image (code type 1)
-- Run Lenght Encoding over a quadratic part of the image (code type 2).
+- Run Length Encoding over the whole image (code type 1)
+- Run Length Encoding over a quadratic part of the image (code type 2).
   Therefore start and end pixels for width an height must be specified.
   The rest of the image is interpreted as background and the pixels get the
   value 0,0,0,0. (picture width from 0 - width-1, picture height from 0 - height-1)
