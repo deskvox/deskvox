@@ -1,7 +1,7 @@
 #! /bin/sh
 autoheader
 touch stamp-h.in
-aclocal
-automake --add-missing
+aclocal -I ../virvo/m4 -I m4
+automake --add-missing 
 autoconf
 ./configure $*

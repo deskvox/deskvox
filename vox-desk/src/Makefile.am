@@ -28,5 +28,5 @@ vconv_SOURCES = \
 	vvconv.cpp \
 	vvconv.h
 
-INCLUDES = -DHAVE_CG -I../../virvo/src -I../../virvo/src -I ../../virvo/include -I../include/fox-1_4
-LIBS = -L../lib/amd64 -L/usr/X11R6/lib64 -L../../virvo/src -L../../virvo/lib/amd64 -lvirvo -lX11 -lXrandr -lXcursor -lFOX-1.4 -lGLU -lGL -lCgGL -lCg -lpng -lpthread
+INCLUDES = $(FOX_INCLUDES) -I../../virvo/src  $(CG_INCLUDES) $(STINGRAY_INCLUDES) 
+LIBS = $(FOX_LIBS) -L../../virvo/src -lvirvo  $(CG_LIBS) $(STINGRAY_LIBS)
