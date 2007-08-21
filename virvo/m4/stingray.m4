@@ -14,6 +14,7 @@ AC_ARG_WITH(stingray,
 
 if test "$enable_stingray" = "yes"; then
         AC_DEFINE(HAVE_STINGRAY, 1, [Stingray raycaster enabled])
+        AC_DEFINE(USE_STINGRAY, 1, [Stingray raycaster enabled])
         STINGRAY_INCLUDES="-I$stingray_dir/include -I$stingray_dir/include/StingRayCave -I$stingray_dir/include/DataObject"
         STINGRAY_LIBS="-L$stingray_libdir -lstingray"
         AC_SUBST(STINGRAY_INCLUDES)
