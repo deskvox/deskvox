@@ -18,9 +18,11 @@
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef _WIN32
 #pragma warning(disable: 4244)    // disable warning about conversion from int to short
 #pragma warning(disable: 4511)    // disable warning: copy constructor could not be generated
 #pragma warning(disable: 4512)    // disable warning: assignment operator could not be generated
+#endif
 
 // Virvo:
 #include <vvvirvo.h>
@@ -35,6 +37,12 @@
 
 using namespace vox;
 using namespace std;
+
+#if FOX_MAJOR >= 1 || FOX_MINOR >= 6
+using FXSystem::getCurrentDirectory;
+#else
+using FXFile::getCurrentDirectory;
+#endif
 
 FXDEFMAP(VVVolumeDialog) VVVolumeDialogMap[]=
 {
@@ -1127,7 +1135,7 @@ void VVMergeDialog::updateValues()
 {
   if (_fileTField->getText()=="") 
   {
-    FXString path = getApp()->reg().readStringEntry("Settings", "CurrentDirectory", FXFile::getCurrentDirectory().text());
+    FXString path = getApp()->reg().readStringEntry("Settings", "CurrentDirectory", getCurrentDirectory().text());
     _fileTField->setText(path);
   }
 }
@@ -1370,7 +1378,7 @@ void VVScreenshotDialog::updateValues()
 {
   _widthTField->setText(FXStringFormat("%d",400));
   _heightTField->setText(FXStringFormat("%d",300));
-  FXString path = getApp()->reg().readStringEntry("Settings", "CurrentDirectory", FXFile::getCurrentDirectory().text());
+  FXString path = getApp()->reg().readStringEntry("Settings", "CurrentDirectory", getCurrentDirectory().text());
   _dirTField->setText(path);
 }
 
@@ -1457,7 +1465,7 @@ VVMovieDialog::VVMovieDialog(FXWindow* owner, vvCanvas* c):FXDialogBox(owner,"Mo
 #else
   FXString prefix("/img");
 #endif
-  FXString defaultPath = FXFile::getCurrentDirectory() + prefix;
+  FXString defaultPath = getCurrentDirectory() + prefix;
   FXString path = getApp()->reg().readStringEntry("Settings", "CurrentDirectory", defaultPath.text());
   _dirTField = new FXTextField(dirFrame, 25, NULL,0,TEXTFIELD_NORMAL | LAYOUT_FILL_X);
   _dirTField->setText(path);
