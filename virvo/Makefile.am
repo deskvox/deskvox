@@ -1,5 +1,6 @@
 SUBDIRS = src
 AUTOMAKE_OPTIONS = foreign
+ACLOCAL_AMFLAGS = -I m4
 
 SHADERS = \
 	shader/vv_shader01.cg \
