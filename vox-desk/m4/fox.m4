@@ -29,8 +29,6 @@ LDFLAGS="$LDFLAGS $FOX_LIBS"
 
 AC_SUBST(FOX_INCLUDES)
 AC_SUBST(FOX_LIBS)
-echo $CPPFLAGS
-echo $LDFLAGS
 
 CPPFLAGS=$ac_cppflags_save
 LDFLAGS=$ac_ldflags_save
