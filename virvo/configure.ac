@@ -25,6 +25,7 @@ AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS")
 AM_MAINTAINER_MODE
 
 AC_PROG_CC
+AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_LD
 AC_PROG_INSTALL
@@ -88,11 +89,11 @@ if test "$enable_cg" != "no"; then
         CPPFLAGS="$CPPFLAGS -I$cg_incdir"
         LDFLAGS="$LDFLAGS -L$cg_libdir"
         AC_CHECK_HEADERS([Cg/cg.h], [have_cg_h=yes])
-        AC_CHECK_LIB(m, log, LDFLAGS="$LDFLAGS -lm")
-        AC_CHECK_LIB(pthread, pthread_once, LDFLAGS="$LDFLAGS -lpthread")
-        AC_CHECK_LIB(GL, glGetIntegerv, LDFLAGS="$LDFLAGS -lGL")
-        AC_CHECK_LIB(GLU, gluSphere, LDFLAGS="$LDFLAGS -lGLU")
-        AC_CHECK_LIB(Cg, cgSetParameter1d, LDFLAGS="$LDFLAGS -lCg")
+        AC_CHECK_LIB(m, log, [LDFLAGS="$LDFLAGS -lm"])
+        AC_CHECK_LIB(pthread, pthread_once, [LDFLAGS="$LDFLAGS -lpthread"])
+        AC_CHECK_LIB(GL, glGetIntegerv, [LDFLAGS="$LDFLAGS -lGL"])
+        AC_CHECK_LIB(GLU, gluSphere, [LDFLAGS="$LDFLAGS -lGLU"])
+        AC_CHECK_LIB(Cg, cgSetParameter1d, [LDFLAGS="$LDFLAGS -lCg"])
         AC_CHECK_LIB(CgGL, cgGLSetParameter1d, have_libcggl=yes)
 
         if test "$have_cg_h" = "yes" -a "$have_libcggl" = "yes" ; then
