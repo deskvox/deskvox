@@ -1,4 +1,4 @@
-Building virvo from CVS
+Building virvo from SVN
 =======================
 
 Use ./autogen.sh to generate configure, pass any options you
