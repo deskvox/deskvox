@@ -65,5 +65,5 @@ libvirvo_a_SOURCES = \
 libvirvoincludedir = $(includedir)/virvo
 libvirvoinclude_HEADERS = $(libvirvo_a_headers) config.h
 
-INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(STINGRAY_INCLUDES) $(PIC_FLAGS) -DHAVE_CG -I../include
-LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(STINGRAY_LIBS) -L../lib/amd64
+INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(STINGRAY_INCLUDES) $(PIC_FLAGS)
+LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(STINGRAY_LIBS)

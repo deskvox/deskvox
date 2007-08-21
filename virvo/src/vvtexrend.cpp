@@ -53,6 +53,10 @@
 #include "vvstopwatch.h"
 #include "vvprintgl.h"
 
+#ifdef HAVE_CG
+static void checkCgError(CGcontext ctx, CGerror err, void *appdata);
+#endif
+
 using namespace std;
 
 //----------------------------------------------------------------------------
@@ -4233,11 +4237,11 @@ void vvTexRend::updateLUT(float dist)
     glDisable(GL_FRAGMENT_PROGRAM_ARB);
   }
 
+#ifdef HAVE_CG
   //----------------------------------------------------------------------------
   /// Automatically called when a Cg error occurs.
-  void vvTexRend::checkCgError(CGcontext ctx, CGerror cgerr, void *)
+  void checkCgError(CGcontext ctx, CGerror cgerr, void *)
   {
-#ifdef HAVE_CG
     if(cgerr != CG_NO_ERROR) 
       cerr << cgGetErrorString(cgerr) << "(" << static_cast<int>(cgerr) << ")" << endl;
     for(GLint glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
@@ -4252,8 +4256,8 @@ void vvTexRend::updateLUT(float dist)
           cerr << listing << endl;
        }
     }
-#endif
   }
+#endif
 
   //----------------------------------------------------------------------------
   void vvTexRend::enablePixelShaders()
@@ -4323,7 +4327,7 @@ void vvTexRend::updateLUT(float dist)
 
     _cgContext = cgCreateContext();               // Create context for fragment programs
     if (!_cgContext) cerr << "Could not create Cg context." << endl;
-    cgSetErrorHandler(vvTexRend::checkCgError, NULL);
+    cgSetErrorHandler(checkCgError, NULL);
 
     // Check if correct version of pixel shaders is available:
     if(cgGLIsProfileSupported(CG_PROFILE_ARBFP1)) // test for GL_ARB_fragment_program
