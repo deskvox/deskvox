@@ -1,9 +1,18 @@
 Deskvox developers notes
 ========================
 
-- Sourceforge: cvs update:
-  cvs -d:ext:jpschulze@cvs.sourceforge.net:/cvsroot/deskvox up
-  or set CVSROOT to :ext:jpschulze@cvs.sourceforge.net:/cvsroot/deskvox
+- virvo has to be compiled first.
+
+- You have to install the FOX toolkit, at least version 1.4 is required.
+
+- Sourceforge: svn checkout:
+  svn co https://deskvox.svn.sourceforge.net/svnroot/deskvox/trunk deskvox
+
+- Unix: create configure, run it and build with make:
+  ./autogen.sh --help
+  ./configure --with-cg=/directory/where/cg/includes/and/libs/reside
+  make
+  (possibly make install)
 
 - Compiler flags:
   > #define HAVE_CG to compile with support for pixel shaders
