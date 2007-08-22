@@ -879,7 +879,7 @@ bool vvToolshed::isDirectory(const char* path)
 #ifdef _WIN32
   WIN32_FIND_DATA fileInfo;
   HANDLE found;
-  found = FindFirstFile(path, &fileInfo);
+  found = FindFirstFile((LPCWSTR)path, &fileInfo);
   bool ret;
 
   if (found == INVALID_HANDLE_VALUE) return false;
@@ -2157,7 +2157,7 @@ void vvToolshed::getCurrentDirectory(char* path, int maxChars)
 {
   char* buf = new char[maxChars + 64];
 #ifdef _WIN32
-  GetCurrentDirectory(maxChars, buf);
+  GetCurrentDirectory(maxChars, (LPWSTR)buf);
 #else
   getcwd(buf, maxChars);
 #endif
@@ -2170,7 +2170,7 @@ void vvToolshed::getCurrentDirectory(char* path, int maxChars)
 void vvToolshed::setCurrentDirectory(const char* path)
 {
 #ifdef _WIN32
-  SetCurrentDirectory(path);
+  SetCurrentDirectory((LPCWSTR)path);
 #else
   chdir(path);
 #endif
@@ -2185,7 +2185,7 @@ void vvToolshed::getProgramDirectory(char* path, int maxChars)
 {
   char* buf = new char[maxChars + 64];
 #ifdef _WIN32
-  GetModuleFileName(NULL, buf, maxChars);
+  GetModuleFileName(NULL, (LPWCH)buf, maxChars);
   extractDirname(path, buf);
 #elif _LINUX64BIT                               // This code unfortunately doesn't work under 32 bit
   struct load_module_desc desc;
@@ -2301,7 +2301,7 @@ bool vvToolshed::makeFileList(std::string& path, std::list<std::string>& fileNam
   string searchPath;
   
   searchPath = path + "\\*";
-  fileHandle = FindFirstFile(searchPath.c_str(), &fileInfo);
+  fileHandle = FindFirstFile((LPCWSTR)searchPath.c_str(), &fileInfo);
   if (fileHandle == INVALID_HANDLE_VALUE) 
   {
     cerr << "FindFirstFile failed: " << GetLastError() << endl;
@@ -2312,14 +2312,14 @@ bool vvToolshed::makeFileList(std::string& path, std::list<std::string>& fileNam
     cerr << "file=" << fileInfo.cFileName << endl;
     if(fileInfo.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
     {
-      folderNames.push_back(fileInfo.cFileName);
+      folderNames.push_back((const std::string &)fileInfo.cFileName);
     }
     else
     {
-      fileNames.push_back(fileInfo.cFileName);
+      fileNames.push_back((const std::string &)fileInfo.cFileName);
     }
   }
-  while (FindNextFile(fileHandle, &fileInfo));   // was another file found?
+  while (FindNextFile((HANDLE)fileHandle, &fileInfo));   // was another file found?
   FindClose(fileHandle);
 #else
   DIR* dirHandle;
