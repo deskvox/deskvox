@@ -14,15 +14,27 @@ AC_ARG_WITH(fox-config,
 	[fox_config=$withval]
 )
 
-if test -z "$fox_config"; then
-   fox_config=fox-config
+fox_config=${fox_config:-fox-config}
+
+if test -e "${fox_config}"; then
+   AC_MSG_RESULT(using ${fox_config})
+else
+   AC_PATH_PROG(fox_config, ${fox_config})
+   if test ! -e "${fox_config}"; then
+       AC_MSG_ERROR(fox-config not found)
+   fi
 fi
 
 ac_cppflags_save="$CPPFLAGS"
 ac_ldflags_save="$LDFLAGS"
 
+AC_MSG_CHECKING(for FOX CFLAGS)
 FOX_INCLUDES="`${fox_config} --cflags`"
+AC_MSG_RESULT($FOX_INCLUDES)
+
+AC_MSG_CHECKING(for FOX LDFLAGS)
 FOX_LIBS="`${fox_config} --libs`"
+AC_MSG_RESULT($FOX_LIBS)
 
 CPPFLAGS="${CPPFLAGS} $FOX_INCLUDES"
 LDFLAGS="$LDFLAGS $FOX_LIBS"
