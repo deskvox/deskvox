@@ -3,7 +3,7 @@ aclocal -I virvo/m4 -I vox-desk/m4
 autoheader
 automake --add-missing --copy --foreign
 autoconf
-if [ -f config.status ]; then
+if [ -z "$*" -a -f config.status ]; then
    ./config.status --recheck && ./config.status
 else
    MACHINE=`uname -m`
