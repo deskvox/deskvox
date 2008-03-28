@@ -4353,7 +4353,7 @@ void vvTexRend::updateLUT(float dist)
     cerr << "Searching for shader files..." << endl;
     if (getenv(shaderEnv))
     {
-      cerr << "Environment variable VV_SHADER_PATH found" << endl;
+      cerr << "Environment variable " << shaderEnv << " found: " << getenv(shaderEnv) << endl;
       unixShaderDir = getenv(shaderEnv);
     }
     else
