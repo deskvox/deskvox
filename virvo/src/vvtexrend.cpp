@@ -54,7 +54,7 @@
 #include "vvprintgl.h"
 
 #ifdef HAVE_CG
-static void checkCgError(CGcontext ctx, CGerror err, void *appdata);
+  static void checkCgError(CGcontext ctx, CGerror err, void *appdata);
 #endif
 
 using namespace std;

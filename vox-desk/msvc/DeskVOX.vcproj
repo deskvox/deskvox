@@ -16,12 +16,13 @@
 			IntermediateDirectory=".\Debug"
 			ConfigurationType="1"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="1">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm800 "
 				Optimization="0"
-				AdditionalIncludeDirectories="..\src,..\..\virvo\src,..\..\virvo\include,..\include\fox-1_4,..\include,..\include\dshow,..\lib\win"
+				AdditionalIncludeDirectories=",..\..\..\extern_libs\include\fox-1_6,..\..\virvo\src,..\..\..\extern_libs\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CONSOLE;HAVE_CG;VV_USE_ARTOOLKIT"
 				RuntimeLibrary="1"
 				RuntimeTypeInfo="TRUE"
@@ -38,10 +39,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/verbose:lib"
-				AdditionalDependencies="comctl32.lib mpr.lib odbc32.lib odbccp32.lib ws2_32.lib opengl32.lib glu32.lib cg.lib cggl.lib libvirvo.lib foxd-1.4.lib ARFrameGrabber.lib AR32.lib ARgsub32.lib strmiids.lib glut32.lib"
+				AdditionalDependencies="comctl32.lib mpr.lib odbc32.lib odbccp32.lib ws2_32.lib opengl32.lib glu32.lib cg.lib cggl.lib libvirvo.lib foxd-1.6.lib ARFrameGrabber.lib AR32.lib ARgsub32.lib strmiids.lib glut32.lib"
 				OutputFile="..\bin\win\DeskVOX.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\lib\win,..\..\virvo\obj,..\..\virvo\lib\win"
+				AdditionalLibraryDirectories="..\lib\win,..\..\virvo\obj,..\..\virvo\lib\win,..\..\..\extern_libs\lib\win"
 				IgnoreDefaultLibraryNames="libcd.lib"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"
