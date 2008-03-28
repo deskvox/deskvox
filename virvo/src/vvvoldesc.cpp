@@ -1489,7 +1489,7 @@ void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
   int offset;
 
   vvDebugMsg::msg(2, "vvVolDesc::bitShiftData()");
-  assert(bpc*chan<=sizeof(long));                 // shift only works up to sizeof(long) byte per pixel
+  assert(bpc*chan<=int(sizeof(long)));                 // shift only works up to sizeof(long) byte per pixel
   if (bits==0) return;                            // done!
 
   sliceSize = getSliceBytes();
@@ -4935,7 +4935,6 @@ void vvVolDesc::addVariance(int srcChan)
 */
 void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, bool lockRange, BinningType binning, bool transOp)
 {
-  const int MAX_ATTEMPTS = 10000;
   vvTFSkip* sw;
   uchar* srcData;
   float* sortedData;
@@ -5138,6 +5137,9 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
           }
         }
       }
+      break;
+    case LINEAR:
+      // cannot happen
       break;
   }
   cerr << stop.getDiff() << " sec" << endl;

@@ -164,9 +164,11 @@ float x, float w, float y, float h, float z, float d) : vvTFWidget(x, y, z)
 vvTFBell::vvTFBell(FILE* fp) : vvTFWidget()
 {
   readName(fp);
+  int ownColorInt;
   fscanf(fp, " %g %g %g %g %g %g %g %g %g %d %g\n",
     &_pos[0], &_pos[1], &_pos[2], &_size[0], &_size[1], &_size[2],
-    &_col[0], &_col[1], &_col[2], &_ownColor, &_opacity);
+    &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity);
+  _ownColor = ownColorInt;
 }
 
 void vvTFBell::write(FILE* fp)
@@ -321,10 +323,12 @@ float y, float hb, float ht, float z, float db, float dt) : vvTFWidget(x, y, z)
 
 vvTFPyramid::vvTFPyramid(FILE* fp) : vvTFWidget()
 {
+  int ownColorInt;
   readName(fp);
   fscanf(fp, " %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n",
     &_pos[0], &_pos[1], &_pos[2], &_bottom[0], &_bottom[1], &_bottom[2],
-    &_top[0], &_top[1], &_top[2], &_col[0], &_col[1], &_col[2], &_ownColor, &_opacity);
+    &_top[0], &_top[1], &_top[2], &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity);
+  _ownColor = ownColorInt;
 }
 
 void vvTFPyramid::write(FILE* fp)
@@ -478,8 +482,6 @@ vvTFColor::vvTFColor(FILE* fp) : vvTFWidget()
 
 void vvTFColor::write(FILE* fp)
 {
-  bool running=true;
-
   fprintf(fp, "TF_COLOR %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
     _pos[0], _pos[1], _pos[2], _col[0], _col[1], _col[2]);
 }
@@ -530,8 +532,6 @@ vvTFSkip::vvTFSkip(FILE* fp) : vvTFWidget()
 
 void vvTFSkip::write(FILE* fp)
 {
-  bool running=true;
-
   fprintf(fp, "TF_SKIP %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
     _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2]);
 }
@@ -615,7 +615,7 @@ vvTFCustom::vvTFCustom(FILE* fp) : vvTFWidget()
   int i;
   
   readName(fp);
-  fscanf(fp, " %g %g %g %d\n", &numPoints, &_size[0], &_size[1], &_size[2]);
+  fscanf(fp, " %d %g %g %g\n", &numPoints, &_size[0], &_size[1], &_size[2]);
 
   for(i=0; i<numPoints; ++i) 
   {
@@ -713,7 +713,6 @@ float vvTFCustom::getOpacity(float x, float y, float z)
 vvTFPoint* vvTFCustom::addPoint(float x, float y, float z)
 {
   list<vvTFPoint*>::iterator iter;
-  vvTFPoint* prev=NULL;
   vvTFPoint* newPoint;
   
   newPoint = new vvTFPoint(getOpacity(x, y, z), x - _pos[0], y - _pos[1], z - _pos[2]);

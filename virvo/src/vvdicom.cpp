@@ -118,7 +118,7 @@ void vvDicom::readDicomData(FILE* fp)
   bool done = false;
   int group, element, e_len;
   int tmp;
-  char* infoText;
+  const char* infoText;
   long where;                                     // remember offset to group
   long pos;                                       // temporary position in file
 

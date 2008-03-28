@@ -1315,8 +1315,13 @@ vvFileIO::ErrorType vvFileIO::saveAVFFile(vvVolDesc* vd)
                 fprintf(fp, "%d", int(*(raw++)));
                 break;
               case 2:
-                fprintf(fp, "%d", (int(*(raw++)) << 8) + int(*(raw++)));
+              {
+                int d = *raw++;
+                d <<= 8;
+                d += *raw++;
+                fprintf(fp, "%d", d);
                 break;
+              }
               case 4:
                 fprintf(fp, "%g", *((float*)raw++));
                 break;
@@ -4185,7 +4190,6 @@ vvFileIO::ErrorType vvFileIO::loadGKentFile(vvVolDesc* vd)
 {
   const int WIDTH = 1001;
   const int HEIGHT = 801;
-  const int BUFSIZE = 128;
   FILE* fp;
   uint read;
   uchar* rawData;
@@ -4280,7 +4284,6 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
   vvTokenizer* tok;
   uchar* rawData;
   int i, x, y, z, voxPerChan, index;
-  bool done = false;
 
   vvDebugMsg::msg(1, "vvFileIO::loadSynthFile()");
   if ( (fp=fopen(vd->getFilename(), "rb")) == NULL)
@@ -4681,7 +4684,7 @@ void vvFileIO::setCompression(bool newCompression)
 */
 bool vvFileIO::parseLeicaFilename(const string fileName, int& slice, int& channel, string& baseName)
 {
-  int slicePos, channelPos;
+  size_t slicePos, channelPos;
   string sliceText, channelText;
   
   // Find out if and where file name contains slice and channel IDs:
@@ -4722,8 +4725,8 @@ void vvFileIO::makeLeicaFilename(const char* baseName, int slice, int channel, c
 */
 bool vvFileIO::changeLeicaFilename(string& fileName, int slice, int channel)
 {
-  int slicePos;
-  int channelPos;
+  size_t slicePos;
+  size_t channelPos;
   char sliceText[32];
   char channelText[32];
 

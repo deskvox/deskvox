@@ -119,7 +119,7 @@ void vvGLTools::displayOpenGLextensions(DisplayStyle style)
 */
 void vvGLTools::checkOpenGLextensions()
 {
-  char* status[3] = {"supported", "not found"};
+  const char* status[3] = {"supported", "not found"};
 
   cerr << "GL_EXT_texture3D...............";
   cerr << ((vvGLTools::isGLextensionSupported("GL_EXT_texture3D")) ? status[0] : status[1]) << endl;

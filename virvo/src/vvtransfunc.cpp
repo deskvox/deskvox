@@ -274,8 +274,6 @@ vvColor vvTransFunc::computeColor(float x, float y, float z)
   vvColor col;
   vvColor resultCol(0,0,0);
   vvTFWidget* w;
-  vvTFPyramid* pw;
-  vvTFBell* bw;
   int numNodes, i;
   int currentRange;
   float rangeWidth;
@@ -297,7 +295,7 @@ vvColor vvTransFunc::computeColor(float x, float y, float z)
   for (i=0; i<numNodes; ++i)
   {
     w = _widgets.getData();
-    if (pw = dynamic_cast<vvTFPyramid*>(w))
+    if (vvTFPyramid *pw = dynamic_cast<vvTFPyramid*>(w))
     {
       if (pw->hasOwnColor() && pw->getColor(col, x, y, z))
       {
@@ -305,7 +303,7 @@ vvColor vvTransFunc::computeColor(float x, float y, float z)
         resultCol = resultCol + col;
       }
     }
-    else if (bw = dynamic_cast<vvTFBell*>(w))
+    else if (vvTFBell *bw = dynamic_cast<vvTFBell*>(w))
     {
       if (bw->hasOwnColor() && bw->getColor(col, x, y, z))
       {
@@ -519,11 +517,6 @@ void vvTransFunc::make8bitLUT(int width, uchar* lut, float min, float max)
 void vvTransFunc::copy(vvSLList<vvTFWidget*>* dst, vvSLList<vvTFWidget*>* src)
 {
   vvTFWidget* w;
-  vvTFPyramid* pw;
-  vvTFBell* bw;
-  vvTFColor* cw;
-  vvTFSkip* sw;
-  vvTFCustom* cuw;
   int numNodes, i;
 
   dst->removeAll();
@@ -532,23 +525,23 @@ void vvTransFunc::copy(vvSLList<vvTFWidget*>* dst, vvSLList<vvTFWidget*>* src)
   for (i=0; i<numNodes; ++i)
   {
     w = src->getData();
-    if (pw = dynamic_cast<vvTFPyramid*>(w))
+    if (vvTFPyramid *pw = dynamic_cast<vvTFPyramid*>(w))
     {
       dst->append(new vvTFPyramid(pw), src->getDeleteType());
     }
-    else if (bw = dynamic_cast<vvTFBell*>(w))
+    else if (vvTFBell *bw = dynamic_cast<vvTFBell*>(w))
     {
       dst->append(new vvTFBell(bw), src->getDeleteType());
     }
-    else if (cw = dynamic_cast<vvTFColor*>(w))
+    else if (vvTFColor *cw = dynamic_cast<vvTFColor*>(w))
     {
       dst->append(new vvTFColor(cw), src->getDeleteType());
     }
-    else if (cuw = dynamic_cast<vvTFCustom*>(w))
+    else if (vvTFCustom *cuw = dynamic_cast<vvTFCustom*>(w))
     {
       dst->append(new vvTFCustom(cuw), src->getDeleteType());
     }
-    else if (sw = dynamic_cast<vvTFSkip*>(w))
+    else if (vvTFSkip *sw = dynamic_cast<vvTFSkip*>(w))
     {
       dst->append(new vvTFSkip(sw), src->getDeleteType());
     }

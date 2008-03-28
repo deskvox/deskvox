@@ -1278,6 +1278,9 @@ void vvTexRend::updateVolumeData(int offsetX, int offsetY, int offsetZ,
     case VV_CUBIC2D:
       updateTextures2D(3, offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ);
       break;
+    default:
+      // nothing to do
+      break;
   }
 }
 
@@ -2117,6 +2120,9 @@ void vvTexRend::enableLUTMode()
     case VV_PAL_TEX:
       glEnable(GL_SHARED_TEXTURE_PALETTE_EXT);
       break;
+    default:
+      // nothing to do
+      break;
   }
 }
 
@@ -2141,6 +2147,9 @@ void vvTexRend::disableLUTMode()
     case VV_PAL_TEX:
       if (glsSharedTexPal==(uchar)true) glEnable(GL_SHARED_TEXTURE_PALETTE_EXT);
       else glDisable(GL_SHARED_TEXTURE_PALETTE_EXT);
+      break;
+    default:
+      // nothing to do
       break;
   }
 }
@@ -3072,15 +3081,16 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
     if ((tmp->min.e[0] <= max.e[0]) && (tmp->max.e[0] >= min.e[0]) &&
       (tmp->min.e[1] <= max.e[1]) && (tmp->max.e[1] >= min.e[1]) &&
       (tmp->min.e[2] <= max.e[2]) && (tmp->max.e[2] >= min.e[2]))
-
+    {
       //check if the brick is visible
       if (testBrickVisibility(tmp))
-    {
-      countVisible++;
-      _insideList.append(tmp, vvSLNode<Brick*>::NO_DELETE);
+      {
+        countVisible++;
+        _insideList.append(tmp, vvSLNode<Brick*>::NO_DELETE);
+      }
+      else
+        countInvisible++;
     }
-    else
-      countInvisible++;
 
     if (!_brickList.getData()->next())
     {
@@ -4312,7 +4322,9 @@ void vvTexRend::updateLUT(float dist)
   bool vvTexRend::initPixelShaders()
   {
 #ifdef HAVE_CG
+#ifdef _WIN32
     const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
+#endif
     const char* deskVoxShaderPath = "../";
     const char* shaderFileName = "vv_shader";
     const char* shaderEnv = "VV_SHADER_PATH";

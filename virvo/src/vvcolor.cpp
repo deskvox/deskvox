@@ -36,7 +36,7 @@ vvColor::vvColor(float r, float g, float b)
 }
 
 /// Overload RHS subscription operator.
-const float vvColor::operator[](const int index) const
+float vvColor::operator[](const int index) const
 {
   return _col[index];
 }

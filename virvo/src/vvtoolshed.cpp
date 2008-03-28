@@ -405,7 +405,7 @@ void vvToolshed::extractDirname(char* dirname, const char* pathname)
 string vvToolshed::extractDirname(const string pathname)
 {
   string dirname;
-  int delimPos;
+  size_t delimPos;
 
 #ifdef _WIN32
   char delim = '\\';
@@ -1431,8 +1431,8 @@ int vvToolshed::encodeRLEFast(uchar* dst, uchar* src, int len, int max)
       // is no gain in this, and there is a risk of loss if the run after
       // the two identical pixels is another literal run. So search for
       // 3 identical pixels.
-      while (index<len && index-offset<128 && (src[index]!=src[index-1] ||
-        index>1 && src[index]!=src[index-2]))
+      while (index<len && index-offset<128 &&
+          (src[index]!=src[index-1] || (index>1 && src[index]!=src[index-2])))
         index++;
       // Check why this run stopped. If it found two identical pixels, reset
       // the index so we can add a run. Do this twice: the previous run
@@ -2183,8 +2183,8 @@ void vvToolshed::setCurrentDirectory(const char* path)
 */
 void vvToolshed::getProgramDirectory(char* path, int maxChars)
 {
-  char* buf = new char[maxChars + 64];
 #ifdef _WIN32
+  char* buf = new char[maxChars + 64];
   GetModuleFileName(NULL, (LPWCH)buf, maxChars);
   extractDirname(path, buf);
 #elif _LINUX64BIT                               // This code unfortunately doesn't work under 32 bit

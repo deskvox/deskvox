@@ -793,7 +793,7 @@ int vvvffile::writeFile(void)
     if (vvDebugMsg::isActive(3))
       cerr << "writeFile: copy data array " << i << " of " << temp_array_number << " (" << int(k) << " bytes)";
     j = 0;
-    size_t retval;
+    int retval;
     while ((k - j) > 4096)
     {
       retval=fread(iopuffer, 1, 4096, dt);
@@ -948,7 +948,7 @@ int vvvffile::writeFile(void)
   {
     if (vvDebugMsg::isActive(3))
       cerr << "writeFile: saving pin lists, " << int(pin_data_length) << " bytes 					[ OK ]" << endl;
-    size_t retval;
+    int retval;
     retval=fwrite(pin_data, 1, pin_data_length, dz);
     if (retval!=pin_data_length)
     {
@@ -1190,7 +1190,7 @@ int vvvffile::getIcon(unsigned char* icondata)
   }
   else
   {
-    size_t retval;
+    int retval;
     retval=fread(icondata, 1, iconsize, dz);
     if (retval!=iconsize)
     {
@@ -1310,7 +1310,7 @@ int vvvffile::addToDataFile(int data_array_length, unsigned char coding, unsigne
   // write data_array
   if (vvDebugMsg::isActive(3))
     cerr << "addToDataFile: writing data: " << int(data_array_length) << " bytes";
-  size_t retval;
+  int retval;
   retval=fwrite(data, 1, data_array_length, dt);
   if (retval!=data_array_length)
   {
@@ -2646,7 +2646,7 @@ int vvvffile::readDataArray(unsigned char ** daten, int array_number)
     kodierung = int(fgetc(dz));
     blubbs = new unsigned char[laengens];
 
-    size_t retval;
+    int retval;
     retval=fread(blubbs, 1, laengens, dz);
     if (retval!=laengens)
     {
@@ -3389,7 +3389,7 @@ int vvvffile::readDATAunsupp(unsigned char* data)
     }
     }
     */
-    size_t retval;
+    int retval;
     retval=fread(data, 1, data_array_length, dz);
     if (retval!=data_array_length)
     {
