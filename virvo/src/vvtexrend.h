@@ -40,8 +40,6 @@
 #include "vvtransfunc.h"
 #include "vvsllist.h"
 
-static void checkCgError(CGcontext, CGerror, void*);
-
 //============================================================================
 // Class Definitions
 //============================================================================
