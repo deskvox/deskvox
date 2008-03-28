@@ -31,7 +31,7 @@
 				ProgramDataBaseFileName=".\Vecmath_Debug/"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"/>
+				DebugInformationFormat="4"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool

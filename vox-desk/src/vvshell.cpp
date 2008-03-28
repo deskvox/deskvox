@@ -38,6 +38,9 @@
 #include "vvmovie.h"
 #include "vvfileio.h"
 #include "vvstopwatch.h"
+#ifdef HAVE_SPACE_TRAVELER
+  #include "vvtraveler.h"
+#endif
 
 using namespace vox;
 using namespace std;
@@ -186,6 +189,9 @@ VVShell::VVShell(FXApp* a) : FXMainWindow(a,"DeskVOX",NULL,NULL,DECOR_ALL,0,0,60
   _canvas = new vvCanvas();
   _movie = new vvMovie(_canvas);
   initDialogs();
+#ifdef HAVE_SPACE_TRAVELER  
+  _traveler =  new vvSpaceTraveler((HWND)id());
+#endif
 }
 
 //----------------------------------------------------------------------------
@@ -993,10 +999,10 @@ long VVShell::onCmdAbout(FXObject*,FXSelector,void*)
   FXString name = "DeskVOX - Desktop VOlume eXplorer\n";
   FXString version = FXString("Version ") + FXString(VV_VERSION) + FXString(".") + FXString(VV_RELEASE) + FXString("\n\n");
   FXString info = name + version +
-    "(c) 2004-2005 Brown University, Providence, RI\n" \
-    "(c) 2005-2006 University of California, San Diego\n" \
-    "Jürgen P. Schulze (jschulze@ucsd.edu)\n" \
-    "Alexander C. Rice (acrice@cs.brown.edu)\n\n" \
+    "(c) Jürgen P. Schulze (jschulze@ucsd.edu)\n\n" \
+    "Team: Alexander C. Rice, Chih Liang, Han Kim, Nancy Hsu\n\n" \
+    "Written at Brown University (2004-2005) and\n" \
+    "the University of California San Diego (2005-2008)\n\n" \
     "DeskVOX comes with ABSOLUTELY NO WARRANTY.\n" \
     "It is free software, and you are welcome to redistribute it under\n" \
     "the LGPL license. See the file 'license.txt' in the program directory.\n\n" \

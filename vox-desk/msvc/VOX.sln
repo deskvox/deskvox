@@ -1,15 +1,14 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FOXGUI", "DeskVOX.vcproj", "{B892537C-C0AC-4518-B0DF-9C2EDAE240F7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FOXGUI", "DeskVOX.vcproj", "{17D81B30-F871-48D6-A11D-F8634C04F859}"
 	ProjectSection(ProjectDependencies) = postProject
-		{C485ED30-5120-4F91-8DC8-0A1AF29E378A} = {C485ED30-5120-4F91-8DC8-0A1AF29E378A}
+		{35D1B742-B624-4E49-8B19-B6E8C35935EC} = {35D1B742-B624-4E49-8B19-B6E8C35935EC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VConv", "VConv.vcproj", "{193A6088-BCB6-4082-A3A6-A63862219095}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VConv", "VConv.vcproj", "{EFAC7416-40A6-413C-922B-A271E438E3B0}"
 	ProjectSection(ProjectDependencies) = postProject
-		{C485ED30-5120-4F91-8DC8-0A1AF29E378A} = {C485ED30-5120-4F91-8DC8-0A1AF29E378A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvirvo", "..\..\virvo\msvc\libvirvo.vcproj", "{C485ED30-5120-4F91-8DC8-0A1AF29E378A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvirvo", "..\..\virvo\msvc\libvirvo.vcproj", "{35D1B742-B624-4E49-8B19-B6E8C35935EC}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
@@ -19,18 +18,18 @@ Global
 		Release = Release
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
-		{B892537C-C0AC-4518-B0DF-9C2EDAE240F7}.Debug.ActiveCfg = Debug|Win32
-		{B892537C-C0AC-4518-B0DF-9C2EDAE240F7}.Debug.Build.0 = Debug|Win32
-		{B892537C-C0AC-4518-B0DF-9C2EDAE240F7}.Release.ActiveCfg = Release|Win32
-		{B892537C-C0AC-4518-B0DF-9C2EDAE240F7}.Release.Build.0 = Release|Win32
-		{193A6088-BCB6-4082-A3A6-A63862219095}.Debug.ActiveCfg = Debug|Win32
-		{193A6088-BCB6-4082-A3A6-A63862219095}.Debug.Build.0 = Debug|Win32
-		{193A6088-BCB6-4082-A3A6-A63862219095}.Release.ActiveCfg = Debug|Win32
-		{193A6088-BCB6-4082-A3A6-A63862219095}.Release.Build.0 = Debug|Win32
-		{C485ED30-5120-4F91-8DC8-0A1AF29E378A}.Debug.ActiveCfg = Debug|Win32
-		{C485ED30-5120-4F91-8DC8-0A1AF29E378A}.Debug.Build.0 = Debug|Win32
-		{C485ED30-5120-4F91-8DC8-0A1AF29E378A}.Release.ActiveCfg = Release|Win32
-		{C485ED30-5120-4F91-8DC8-0A1AF29E378A}.Release.Build.0 = Release|Win32
+		{17D81B30-F871-48D6-A11D-F8634C04F859}.Debug.ActiveCfg = Debug|Win32
+		{17D81B30-F871-48D6-A11D-F8634C04F859}.Debug.Build.0 = Debug|Win32
+		{17D81B30-F871-48D6-A11D-F8634C04F859}.Release.ActiveCfg = Release|Win32
+		{17D81B30-F871-48D6-A11D-F8634C04F859}.Release.Build.0 = Release|Win32
+		{EFAC7416-40A6-413C-922B-A271E438E3B0}.Debug.ActiveCfg = Debug|Win32
+		{EFAC7416-40A6-413C-922B-A271E438E3B0}.Debug.Build.0 = Debug|Win32
+		{EFAC7416-40A6-413C-922B-A271E438E3B0}.Release.ActiveCfg = Debug|Win32
+		{EFAC7416-40A6-413C-922B-A271E438E3B0}.Release.Build.0 = Debug|Win32
+		{35D1B742-B624-4E49-8B19-B6E8C35935EC}.Debug.ActiveCfg = Debug|Win32
+		{35D1B742-B624-4E49-8B19-B6E8C35935EC}.Debug.Build.0 = Debug|Win32
+		{35D1B742-B624-4E49-8B19-B6E8C35935EC}.Release.ActiveCfg = Release|Win32
+		{35D1B742-B624-4E49-8B19-B6E8C35935EC}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

@@ -60,6 +60,7 @@ class VVDataTypeDialog;
 class VVEditVoxelsDialog;
 class VVHeightFieldDialog;
 class VVGLSettingsDialog;
+class vvSpaceTraveler;
 
 /** \mainpage DeskVOX
   <DL>
@@ -137,6 +138,7 @@ class VVShell : public FXMainWindow
     vox::vvMovie* _movie;
     FXGLCanvas* _glcanvas;                         ///< GL Canvas to draw into
     FXLabel* _statusBar;
+    vvSpaceTraveler* _traveler;
 
     enum        /// We define additional ID's, starting from the last one used by the base class+1.
     {           /// This way, we know the ID's are all unique for this particular target.

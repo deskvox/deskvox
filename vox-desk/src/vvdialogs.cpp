@@ -2546,6 +2546,29 @@ VVChannelDialog::VVChannelDialog(FXWindow* owner, vvCanvas* c) :
   _sliders = NULL;
   FXVerticalFrame* verticalFrame = new FXVerticalFrame(this, LAYOUT_FILL_X);
   _slidersFrame = new FXVerticalFrame(verticalFrame, LAYOUT_FILL_X);
+
+/*
+sliders for:
+
+data value
+
+gradient magnitude
+
+variance
+
+gravity: similar to gradient; but multiply all 6 neighbors with data value, then add all 6 values up: 
+  center * (left + right + above + below + infront + behind)
+  
+radiation: (center^4 - left^4) + (center^4 - right^4) + (center^4 - above)... = 6 * center^4 - left^4 - right^4 - ...
+
+
+sliders set contribution of each derived value on scale of 0-100
+display contributions as numbers adding up to 1 or 100% somewhere else in window
+
+
+add fast rendering mode (shader) for 5 channel data sets
+*/
+
   
   FXHorizontalFrame* buttonFrame = new FXHorizontalFrame(verticalFrame, LAYOUT_CENTER_X | LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
   new FXButton(buttonFrame, "Cancel", NULL, this, ID_CANCEL, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X | LAYOUT_CENTER_Y);

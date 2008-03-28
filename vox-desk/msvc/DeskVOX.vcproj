@@ -153,14 +153,14 @@
 					<Tool
 						Name="VCResourceCompilerTool"
 						PreprocessorDefinitions=""
-						AdditionalIncludeDirectories="\projects\dollarg\src\vox-desk\icon"/>
+						AdditionalIncludeDirectories="\projects\deskvox\vox-desk\icon"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
 						Name="VCResourceCompilerTool"
 						PreprocessorDefinitions=""
-						AdditionalIncludeDirectories="\projects\dollarg\src\vox-desk\icon"/>
+						AdditionalIncludeDirectories="\projects\deskvox\vox-desk\icon"/>
 				</FileConfiguration>
 			</File>
 			<File
