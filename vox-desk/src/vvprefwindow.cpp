@@ -25,6 +25,8 @@
 #include <typeinfo.h>
 #endif
 
+#include <sstream>
+
 #include "vvprefwindow.h"
 #include "vvcanvas.h"
 #include "vvshell.h"
@@ -539,6 +541,14 @@ void VVPreferenceWindow::updateValues()
     _psCombo->appendItem("3 chan+ow");
     _psCombo->appendItem("4 chan+ow");
     _psCombo->appendItem("2D TF");
+    _psCombo->appendItem("2D textures");
+    _psCombo->appendItem("3 chan+alpha blending");
+    for(int i=_psCombo->getNumItems(); i<vvTexRend::NUM_PIXEL_SHADERS; ++i)
+    {
+       std::stringstream s;
+       s << "Shader no. " << i;
+       _psCombo->appendItem(s.str().c_str());
+    }
     _psCombo->setNumVisible(_psCombo->getNumItems());
     if (texrend) _psCombo->setCurrentItem(texrend->getCurrentShader());
 
