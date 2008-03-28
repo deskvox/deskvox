@@ -2318,7 +2318,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   float voxelDistance = probeSizeObj[minDistanceInd]/probeTexels[minDistanceInd];
 
   float sliceDistance = voxelDistance / _renderState._quality;
-  if(_renderState._roiSize[0] && _renderState._quality < 2.0)
+  if(_renderState._isROIUsed && _renderState._quality < 2.0)
   {
     // draw at least twice as many slices as there are samples in the probe depth.
     sliceDistance = voxelDistance / 2.0f;
