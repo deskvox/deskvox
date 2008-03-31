@@ -28,5 +28,7 @@ vconv_SOURCES = \
 	vvconv.cpp \
 	vvconv.h
 
+vconv deskvox: ../../virvo/src/libvirvo.a
+
 INCLUDES = $(FOX_INCLUDES) -I../../virvo/src  $(CG_INCLUDES) $(STINGRAY_INCLUDES) 
 LIBS = $(FOX_LIBS) -L../../virvo/src -lvirvo  $(CG_LIBS) $(STINGRAY_LIBS)
