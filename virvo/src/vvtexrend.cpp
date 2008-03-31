@@ -116,7 +116,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   rgbaTF  = new float[256 * 256 * 4];
   rgbaLUT = new uchar[256 * 256 * 4];
   preintTable = new uchar[getPreintTableSize()*getPreintTableSize()*4];
-  preIntegration = true;
+  preIntegration = false;
   usePreIntegration = false;
   textures = 0;
   opacityCorrection = true;
@@ -3865,54 +3865,54 @@ void vvTexRend::updateLUT(float dist)
         rgbaLUT[i * 4 + c] = uchar(corr[c] * 255.0f);
       }
     }
-
-    // Copy LUT to graphics card:
-    vvGLTools::printGLError("enter updateLUT()");
-    switch (voxelType)
-    {
-      case VV_RGBA:
-        makeTextures();                           // this mode doesn't use a hardware LUT, so every voxel has to be updated
-        break;
-      case VV_SGI_LUT:
-        glColorTableSGI(GL_TEXTURE_COLOR_TABLE_SGI, GL_RGBA,
-          lutSize[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
-        break;
-      case VV_PAL_TEX:
-        // Load color LUT for pre-classification:
-        assert(total==256);
-        glColorTableEXT(GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGBA8,
-          lutSize[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
-        break;
-      case VV_TEX_SHD:
-      case VV_FRG_PRG:
-        glActiveTextureARB(GL_TEXTURE1_ARB);
-        glBindTexture(GL_TEXTURE_2D, tfTexName);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-        if(usePreIntegration)
-        {
-          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, getPreintTableSize(), getPreintTableSize(), 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, preintTable);
-        }
-        else
-        {
-          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
-        }
-        glActiveTextureARB(GL_TEXTURE0_ARB);
-        break;
-      case VV_PIX_SHD:
-        glBindTexture(GL_TEXTURE_2D, pixLUTName);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
-        break;
-      default: assert(0); break;
-    }
-    vvGLTools::printGLError("leave updateLUT()");
   }
+
+  // Copy LUT to graphics card:
+  vvGLTools::printGLError("enter updateLUT()");
+  switch (voxelType)
+  {
+    case VV_RGBA:
+      makeTextures();                           // this mode doesn't use a hardware LUT, so every voxel has to be updated
+      break;
+    case VV_SGI_LUT:
+      glColorTableSGI(GL_TEXTURE_COLOR_TABLE_SGI, GL_RGBA,
+          lutSize[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
+      break;
+    case VV_PAL_TEX:
+      // Load color LUT for pre-classification:
+      assert(total==256);
+      glColorTableEXT(GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGBA8,
+          lutSize[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
+      break;
+    case VV_TEX_SHD:
+    case VV_FRG_PRG:
+      glActiveTextureARB(GL_TEXTURE1_ARB);
+      glBindTexture(GL_TEXTURE_2D, tfTexName);
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+      if(usePreIntegration)
+      {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, getPreintTableSize(), getPreintTableSize(), 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, preintTable);
+      }
+      else
+      {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
+      }
+      glActiveTextureARB(GL_TEXTURE0_ARB);
+      break;
+    case VV_PIX_SHD:
+      glBindTexture(GL_TEXTURE_2D, pixLUTName);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
+      break;
+    default: assert(0); break;
+  }
+  vvGLTools::printGLError("leave updateLUT()");
 }
 
   //----------------------------------------------------------------------------
