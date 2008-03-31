@@ -980,7 +980,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
                   else
                     texData[4 * texOffset + 3] = (uchar) rawVal[3];
                 }
-                else  // compute alpha from color components
+                else if(vd->chan > 0) // compute alpha from color components
                 {
                   alpha = 0;
                   for (c = 0; c < vd->chan; c++)
@@ -989,6 +989,10 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
                     alpha += (int) rgbaLUT[rawVal[c] * 4 + c];
                   }
                   texData[4 * texOffset + 3] = (uchar) (alpha / vd->chan);
+                }
+                else
+                {
+                  texData[4 * texOffset + 3] = 0;
                 }
               }
             }
