@@ -3,7 +3,7 @@ TEMPLATE    = lib
                     
 PROJECT     = General
 
-CONFIG	   *= dll colib cg
+CONFIG	   *= dll dl cg
 
 win32:DEFINES += VIRVO_EXPORTS
 DEFINES *= NO_CONFIG_H
