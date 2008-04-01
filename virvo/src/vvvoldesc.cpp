@@ -5015,7 +5015,9 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     }
     
     // Trim values above realMax:
-    for(i=numVoxels-1; i>0 && sortedData[i] > real[1]; --i);  // find index of realMax
+    // find index of realMax
+    for(i=numVoxels-1; i>0 && sortedData[i] > real[1]; --i)
+       ;
     maxIndex = ts_clamp(i, 0, numVoxels-1);
     numVoxels -= (numVoxels-1-maxIndex);
     cerr << stop.getDiff() << " sec" << endl;
@@ -5037,13 +5039,15 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
         max = sw->_pos[0] + sw->_size[0] / 2.0f;
         
         // Find index of beginning of skip area:
-        for(i=0; i<numVoxels && sortedData[i] < min; ++i);  
+        for(i=0; i<numVoxels && sortedData[i] < min; ++i)
+           ; 
         if (i<numVoxels)   // is skip region outside of data array?
         {
           minIndex = i;
           
           // Find index of end of skip area:
-          for(i=minIndex; i<numVoxels && sortedData[i] < max; ++i);
+          for(i=minIndex; i<numVoxels && sortedData[i] < max; ++i)
+             ;
           maxIndex = ts_clamp(i, 0, numVoxels-1);
           
           // Cut values:

@@ -3385,8 +3385,12 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
   vd->chan = 1;
                                                   // read version number
   version = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-  while (fgetc(fp)!=0);                           // ignore FMR file name string
-  while (fgetc(fp)!=0);                           // ignore PRT file name string
+  // ignore FMR file name string
+  while (fgetc(fp)!=0)
+     ;
+  // ignore PRT file name string
+  while (fgetc(fp)!=0)
+     ;
   vd->frames = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
   vd->dist[0] = vd->dist[1] = vd->dist[2] = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
   for (i=0; i<3; ++i)

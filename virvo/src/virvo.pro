@@ -5,7 +5,7 @@ PROJECT     = General
 
 CONFIG	   *= dll dl cg
 
-win32:DEFINES += VIRVO_EXPORTS
+win32:DEFINES += VIRVO_EXPORT
 DEFINES *= NO_CONFIG_H
 
 SOURCES	   = \
