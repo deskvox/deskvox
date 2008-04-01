@@ -23,18 +23,23 @@
 
 // ---------------------------------------------------------------------- //
 
-// defines for windows dll export
+// defines symbol visibility/exports
 #ifndef VIRVOEXPORT
-#if defined (_WIN32) && !defined(NODLL)
-#if defined (VIRVO_EXPORT)
-#define VIRVOEXPORT __declspec(dllexport)
-#elif defined (VIRVO_IMPORT)
-#define VIRVOEXPORT __declspec(dllimport)
-#else
-#define VIRVOEXPORT
+# ifndef NODLL
+#  if defined (_WIN32)
+#   if defined (VIRVO_EXPORT)
+#    define VIRVOEXPORT __declspec(dllexport)
+#   else
+#    define VIRVOEXPORT __declspec(dllimport)
+#   endif
+#  elif defined(__GNUC__) && __GNUC__ >= 4
+#   define VIRVOEXPORT __attribute__ ((visibility("default")))
+#  else
+#   define VIRVOEXPORT
+#  endif
+# else
+#  define VIRVOEXPORT
+# endif
 #endif
-#else
-#define VIRVOEXPORT
-#endif
-#endif
+
 #endif                                            /* VV_EXPORT_H */
