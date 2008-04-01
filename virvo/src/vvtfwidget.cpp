@@ -646,7 +646,7 @@ void vvTFCustom::write(FILE* fp)
   list<vvTFPoint*>::iterator iter;
 
   fprintf(fp, "TF_CUSTOM %s %g %g %g %d\n", (_name) ? _name : NO_NAME,
-    _size[0], _size[1], _size[2], _points.size());
+    _size[0], _size[1], _size[2], (int)_points.size());
 
   for(iter=_points.begin(); iter!=_points.end(); iter++) 
   {
@@ -741,6 +741,11 @@ void vvTFCustom::removeCurrentPoint()
 */
 vvTFPoint* vvTFCustom::selectPoint(float o, float ot, float x, float xt, float y, float yt, float z, float zt)
 {
+  (void)y;
+  (void)yt;
+  (void)z;
+  (void)zt;
+
   float global[3];  // global x/y/z coordinates of control point
   list<vvTFPoint*>::iterator iter;
   int i;
@@ -767,6 +772,8 @@ vvTFPoint* vvTFCustom::selectPoint(float o, float ot, float x, float xt, float y
 */
 void vvTFCustom::setCurrentPoint(float opacity, float x, float y, float z)
 {
+  (void)opacity;
+
   if (_currentPoint)
   {
     if (x!=-1.0f) _currentPoint->_pos[0] = x - _pos[0];

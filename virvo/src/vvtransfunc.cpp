@@ -931,7 +931,7 @@ int vvTransFunc::saveMeshviewer(const char* filename)
     w = _widgets.getData();
     if ((cuw=dynamic_cast<vvTFCustom*>(w)))
     {
-      fprintf(fp, "OpacityMapPoints: %d\n", cuw->_points.size() + 2);   // add two points for edges of TF space
+      fprintf(fp, "OpacityMapPoints: %d\n", (int)cuw->_points.size() + 2);   // add two points for edges of TF space
       fprintf(fp, "Point: %f %f\n", cuw->_pos[0] - cuw->_size[0]/2.0f, 0.0f);
       list<vvTFPoint*>::iterator iter;
       for(iter=cuw->_points.begin(); iter!=cuw->_points.end(); iter++) 

@@ -409,6 +409,7 @@ vvTexRend::~vvTexRend()
 */
 vvTexRend::GeometryType vvTexRend::findBestGeometry(vvTexRend::GeometryType geom, vvTexRend::VoxelType vox)
 {
+  (void)vox;
   vvDebugMsg::msg(1, "vvTexRend::findBestGeometry()");
 
   if (geom==VV_AUTO)

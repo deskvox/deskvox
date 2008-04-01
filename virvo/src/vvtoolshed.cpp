@@ -2219,9 +2219,9 @@ bool vvToolshed::decodeBase64(const char* src, int numChars, uchar* dst)
   for(i='j'; i<='r'; ++i) dtable[i]= 35+(i-'j');
   for(i='s'; i<='z'; ++i) dtable[i]= 44+(i-'s');
   for(i='0'; i<='9'; ++i) dtable[i]= 52+(i-'0');
-  dtable['+']= 62;
-  dtable['/']= 63;
-  dtable['=']= 0;
+  dtable[int('+')]= 62;
+  dtable[int('/')]= 63;
+  dtable[int('=')]= 0;
 
   for(;;)
   {

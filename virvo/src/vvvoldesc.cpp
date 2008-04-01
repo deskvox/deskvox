@@ -3526,6 +3526,7 @@ void vvVolDesc::deinterlace()
 */
 void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax)
 {
+  (void)channel;
   int f;
   int mi, ma;
   float fMin, fMax;
