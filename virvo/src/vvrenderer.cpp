@@ -57,7 +57,7 @@ vvRenderState::vvRenderState()
   _roiPos.zero();
   _roiSize.set(0.5f, 0.5f, 0.5f);
   _isROIUsed = false;
-  _brickSize = 0;
+  _brickSize[0] = _brickSize[1] = _brickSize[2] = 0;
   _showBricks = false;
   _computeBrickSize = true;
   _texMemorySize = 0;

@@ -49,7 +49,7 @@ class VIRVOEXPORT vvRenderState
     vvVector3 _roiSize;                           ///< size of roi in each dimension [0..1]
     bool  _isROIUsed;                             ///< true = use roi
     vvVector3 _roiPos;                            ///< object space coordinates of ROI midpoint [mm]
-    int   _brickSize;                             ///< last bricksize
+    int   _brickSize[3];                          ///< last bricksize in x/y/z
     bool  _showBricks;                            ///< true = show brick boundarys
     bool  _computeBrickSize;                      ///< true = calculate brick size
     int   _texMemorySize;                         ///< size of texture memory

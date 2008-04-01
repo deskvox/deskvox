@@ -344,12 +344,12 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
       break;
   }
 
-  updateTransferFunction();
   if ((geomType == VV_BRICKS) && _renderState._computeBrickSize)
   {
     _areBricksCreated = false;
     computeBrickSize();
   }
+  updateTransferFunction();
   if (voxelType != VV_RGBA)
   {
     makeTextures();                             // we only have to do this once for non-RGBA textures
@@ -806,9 +806,9 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
   }
 
   // compute number of texels / per brick (should be of power 2)
-  texels[0] = vvToolshed::getTextureSize(_renderState._brickSize);
-  texels[1] = vvToolshed::getTextureSize(_renderState._brickSize);
-  texels[2] = vvToolshed::getTextureSize(_renderState._brickSize);
+  texels[0] = vvToolshed::getTextureSize(_renderState._brickSize[0]);
+  texels[1] = vvToolshed::getTextureSize(_renderState._brickSize[1]);
+  texels[2] = vvToolshed::getTextureSize(_renderState._brickSize[2]);
 
   // compute number of bricks
   if ((_useOnlyOneBrick) ||
@@ -816,9 +816,9 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
     numBricks[0] = numBricks[1] = numBricks[2] = 1;
   else
   {
-    numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_renderState._brickSize));
-    numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_renderState._brickSize));
-    numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_renderState._brickSize));
+    numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_renderState._brickSize[0]));
+    numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_renderState._brickSize[1]));
+    numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_renderState._brickSize[2]));
   }
 
   // number of textures needed
@@ -867,22 +867,22 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
       for (by = 0; by < numBricks[1]; by++)
         for (bz = 0; bz < numBricks[2]; bz++)
         {
-          startOffset[0] = bx * _renderState._brickSize;
-          startOffset[1] = by * _renderState._brickSize;
-          startOffset[2] = bz * _renderState._brickSize;
+          startOffset[0] = bx * _renderState._brickSize[0];
+          startOffset[1] = by * _renderState._brickSize[1];
+          startOffset[2] = bz * _renderState._brickSize[2];
 
-          if ((startOffset[0] + _renderState._brickSize) >= vd->vox[0])
+          if ((startOffset[0] + _renderState._brickSize[0]) >= vd->vox[0])
             tmpTexels[0] = vvToolshed::getTextureSize(vd->vox[0] - startOffset[0]);
           else
             tmpTexels[0] = texels[0];
-          if ((startOffset[1] + _renderState._brickSize) >= vd->vox[1])
-        tmpTexels[1] = vvToolshed::getTextureSize(vd->vox[1] - startOffset[1]);
-      else
-        tmpTexels[1] = texels[1];
-      if ((startOffset[2] + _renderState._brickSize) >= vd->vox[2])
-        tmpTexels[2] = vvToolshed::getTextureSize(vd->vox[2] - startOffset[2]);
-      else
-        tmpTexels[2] = texels[2];
+          if ((startOffset[1] + _renderState._brickSize[1]) >= vd->vox[1])
+            tmpTexels[1] = vvToolshed::getTextureSize(vd->vox[1] - startOffset[1]);
+          else
+            tmpTexels[1] = texels[1];
+          if ((startOffset[2] + _renderState._brickSize[2]) >= vd->vox[2])
+            tmpTexels[2] = vvToolshed::getTextureSize(vd->vox[2] - startOffset[2]);
+          else
+            tmpTexels[2] = texels[2];
 
       memset(texData, 0, texSize);
 
@@ -1120,7 +1120,11 @@ void vvTexRend::setComputeBrickSize(bool flag)
 {
   _renderState._computeBrickSize = flag;
   if (_renderState._computeBrickSize)
+  {
     computeBrickSize();
+    if(!_areBricksCreated)
+       makeTextures();
+  }
 }
 
 bool vvTexRend::getComputeBrickSize()
@@ -1131,7 +1135,7 @@ bool vvTexRend::getComputeBrickSize()
 void vvTexRend::setBrickSize(int newSize)
 {
   vvDebugMsg::msg(3, "vvRenderer::setBricksize()");
-  _renderState._brickSize = newSize-1;
+  _renderState._brickSize[0] = _renderState._brickSize[1] = _renderState._brickSize[2] = newSize-1;
   _useOnlyOneBrick = false;
   makeTextures();
 }
@@ -1139,7 +1143,7 @@ void vvTexRend::setBrickSize(int newSize)
 int vvTexRend::getBrickSize()
 {
   vvDebugMsg::msg(3, "vvRenderer::getBricksize()");
-  return _renderState._brickSize+1;
+  return _renderState._brickSize[0]+1;
 }
 
 void vvTexRend::setTexMemorySize(int newSize)
@@ -1149,7 +1153,11 @@ void vvTexRend::setTexMemorySize(int newSize)
 
   _renderState._texMemorySize = newSize;
   if (_renderState._computeBrickSize)
+  {
     computeBrickSize();
+    if(!_areBricksCreated)
+       makeTextures();
+  }
 }
 
 int vvTexRend::getTexMemorySize()
@@ -1161,10 +1169,9 @@ void vvTexRend::computeBrickSize()
 {
   int powerOf2[3];
   int max;
-  int newBrickSize;
-  int tmp;
   int neededMemory;
   vvVector3 probeSize;
+  int newBrickSize[3];
 
   int texMemorySize = _renderState._texMemorySize;
   if (texMemorySize == 0)
@@ -1175,7 +1182,7 @@ void vvTexRend::computeBrickSize()
 
   if (texMemorySize == 0)
   {
-    _renderState._brickSize = 0;
+    _renderState._brickSize[0] = _renderState._brickSize[1] = _renderState._brickSize[2] = 0;
     return;
   }
 
@@ -1183,13 +1190,15 @@ void vvTexRend::computeBrickSize()
   powerOf2[1] = vvToolshed::getTextureSize(vd->vox[1]);
   powerOf2[2] = vvToolshed::getTextureSize(vd->vox[2]);
 
-  neededMemory = (powerOf2[0] * powerOf2[1] * powerOf2[2] * texelsize) / (1024*1024);
+  neededMemory = (powerOf2[0] * powerOf2[1] * powerOf2[2]) / (1024*1024) * texelsize;
 
   if (neededMemory < texMemorySize)
   {
     // use only one brick
     _useOnlyOneBrick = true;
-    newBrickSize = ts_max(powerOf2[0], powerOf2[1], powerOf2[2]);
+    newBrickSize[0] = powerOf2[0];
+    newBrickSize[1] = powerOf2[1];
+    newBrickSize[2] = powerOf2[2];
     setROIEnable(false);
   }
   else
@@ -1198,29 +1207,43 @@ void vvTexRend::computeBrickSize()
 
     max = ts_max(vd->vox[0], vd->vox[1], vd->vox[2]);
 
-    tmp = (int) floor(max / 4.0);
-    while (true)
+    int tmp[3] = { vd->vox[0]/4, vd->vox[1]/4, vd->vox[2]/4 };
+    bool done = false;
+    while (!done)
     {
-      newBrickSize = vvToolshed::getTextureSize(tmp);
-      // compute needed memory for 27 bricks
-      neededMemory = 27 * newBrickSize * newBrickSize * newBrickSize * texelsize / (1024 * 1024);
-      if (neededMemory < texMemorySize)
-        break;
-      else
-        tmp = newBrickSize / 2;
+      for(int i=0; i<3; ++i)
+      {
+        for(int j=0; j<3; ++j)
+          newBrickSize[j] = vvToolshed::getTextureSize(tmp[j]);
+
+        // compute needed memory for 27 bricks
+        neededMemory = 27 * newBrickSize[0] * newBrickSize[1] * newBrickSize[2] / (1024 * 1024) * texelsize;
+        if (neededMemory < texMemorySize)
+        {
+          done = true;
+          break;
+        }
+        else
+          tmp[i] = newBrickSize[i] / 2;
+      }
     }
 
-    probeSize[0] = 2 * (newBrickSize-1) / (float) vd->vox[0];
-    probeSize[1] = 2 * (newBrickSize-1) / (float) vd->vox[1];
-    probeSize[2] = 2 * (newBrickSize-1) / (float) vd->vox[2];
+    probeSize[0] = 2 * (newBrickSize[0]-1) / (float) vd->vox[0];
+    probeSize[1] = 2 * (newBrickSize[1]-1) / (float) vd->vox[1];
+    probeSize[2] = 2 * (newBrickSize[2]-1) / (float) vd->vox[2];
 
     setProbeSize(&probeSize);
     //setROIEnable(true);
   }
-  if (((newBrickSize - 1) != _renderState._brickSize) || !_areBricksCreated)
+  if (newBrickSize[0]-1 != _renderState._brickSize[0]
+      || newBrickSize[1]-1 != _renderState._brickSize[1]
+      || newBrickSize[2]-1 != _renderState._brickSize[2]
+      || !_areBricksCreated)
   {
-    _renderState._brickSize = newBrickSize-1;
-    makeTextures();
+    _renderState._brickSize[0] = newBrickSize[0]-1;
+    _renderState._brickSize[1] = newBrickSize[1]-1;
+    _renderState._brickSize[2] = newBrickSize[2]-1;
+    _areBricksCreated = false;
   }
 }
 
@@ -1262,7 +1285,7 @@ void vvTexRend::updateVolumeData()
     _areBricksCreated = false;
     computeBrickSize();
   }
-  else makeTextures();
+  makeTextures();
 }
 
 //----------------------------------------------------------------------------
@@ -1760,9 +1783,9 @@ int sizeX, int sizeY, int sizeZ)
       startOffset[1] = _brickList.getData()->getData()->startOffset[1];
       startOffset[2] = _brickList.getData()->getData()->startOffset[2];
 
-      endOffset[0] = startOffset[0] + _renderState._brickSize;
-      endOffset[1] = startOffset[1] + _renderState._brickSize;
-      endOffset[2] = startOffset[2] + _renderState._brickSize;
+      endOffset[0] = startOffset[0] + _renderState._brickSize[0];
+      endOffset[1] = startOffset[1] + _renderState._brickSize[1];
+      endOffset[2] = startOffset[2] + _renderState._brickSize[2];
 
       endOffset[0] = ts_clamp(endOffset[0], 0, vd->vox[0] - 1);
       endOffset[1] = ts_clamp(endOffset[1], 0, vd->vox[1] - 1);
