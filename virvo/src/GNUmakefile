@@ -1,2 +1,4 @@
+-include Makefile
+
 # this is for compiling with COVISE
-include $(COVISEDIR)/src/Makefile.qmake
+-include $(COVISEDIR)/src/Makefile.qmake
