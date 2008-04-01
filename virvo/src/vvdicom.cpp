@@ -160,6 +160,8 @@ void vvDicom::readDicomData(FILE* fp)
         //be "DICM"
         uchar t[4];
         int n = fread(t, sizeof t, 1, fp);
+	    if(n != 1)
+		  cerr << "Returned value from fread is " << n << " exspected 1" << endl;
         assert(n == 1);
         if (t[0] != 'D' || t[1] != 'I' || t[2] != 'C' || t[3] != 'M')
         {
@@ -480,6 +482,8 @@ void vvDicom::readDicomData(FILE* fp)
             char* buff = new char[e_len+1];
             pos = ftell(fp);
             int n = fread(buff, e_len, 1, fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n==1);
             fseek(fp, pos, SEEK_SET);
             buff[e_len] = '\0';
@@ -546,6 +550,8 @@ void vvDicom::readDicomData(FILE* fp)
             char* buff = new char[e_len+1];
             pos = ftell(fp);
             int n = fread(buff, e_len, 1, fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n==1);
             fseek(fp, pos, SEEK_SET);
             buff[e_len] = '\0';
@@ -566,6 +572,8 @@ void vvDicom::readDicomData(FILE* fp)
             char* buff = new char[e_len+1];
             pos = ftell(fp);
             int n = fread(buff, e_len, 1, fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n==1);
             fseek(fp, pos, SEEK_SET);
             buff[e_len] = '\0';
@@ -595,6 +603,8 @@ void vvDicom::readDicomData(FILE* fp)
             char* buff = new char[e_len+1];
             pos = ftell(fp);
             int n = fread(buff, e_len, 1, fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n==1);
             fseek(fp, pos, SEEK_SET);
             buff[e_len] = '\0';
@@ -628,6 +638,8 @@ void vvDicom::readDicomData(FILE* fp)
             char* buff = (char*)new uchar[e_len+1];
             pos = ftell(fp);
             int n = fread(buff, e_len, 1, fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n == 1);
             fseek(fp, pos, SEEK_SET);
             buff[e_len] = 0;
@@ -659,6 +671,8 @@ void vvDicom::readDicomData(FILE* fp)
             char* buff = new char[e_len+1];
             pos = ftell(fp);
             int n = fread(buff, e_len, 1, fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n==1);
             fseek(fp, pos, SEEK_SET);
             buff[e_len] = '\0';
@@ -724,6 +738,8 @@ void vvDicom::readDicomData(FILE* fp)
             char* buff = (char*)new uchar[e_len+1];
             pos = ftell(fp);
             int n = fread(buff, e_len, 1, fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n == 1);
             fseek(fp, pos, SEEK_SET);
             buff[e_len] = 0;
@@ -741,6 +757,8 @@ void vvDicom::readDicomData(FILE* fp)
             char* buff = (char*)new uchar[e_len+1];
             pos = ftell(fp);
             int n = fread(buff, e_len, 1, fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n == 1);
             fseek(fp, pos, SEEK_SET);
             buff[e_len] = 0;
@@ -759,6 +777,8 @@ void vvDicom::readDicomData(FILE* fp)
             char* buff = (char*)new uchar[e_len+1];
             pos = ftell(fp);
             int n = fread(buff, e_len, 1, fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             fseek(fp, pos, SEEK_SET);
             assert(n == 1);
             buff[e_len] = 0;
@@ -776,6 +796,8 @@ void vvDicom::readDicomData(FILE* fp)
             char* buff = (char*)new uchar[e_len+1];
             pos = ftell(fp);
             int n = fread(buff, e_len, 1, fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n == 1);
             fseek(fp, pos, SEEK_SET);
             buff[e_len] = 0;
@@ -794,6 +816,8 @@ void vvDicom::readDicomData(FILE* fp)
           {
             pos = ftell(fp);
             int n = fread(red_table, e_len*sizeof(*red_table),1,fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n == 1);
             fseek(fp, pos, SEEK_SET);
           }
@@ -805,6 +829,8 @@ void vvDicom::readDicomData(FILE* fp)
           {
             pos = ftell(fp);
             int n = fread(green_table, e_len*sizeof(*green_table),1,fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n == 1);
             fseek(fp, pos, SEEK_SET);
           }
@@ -815,6 +841,8 @@ void vvDicom::readDicomData(FILE* fp)
           {
             pos = ftell(fp);
             int n = fread(blue_table, e_len*sizeof(*blue_table),1,fp);
+			if(n != 1)
+		      cerr << "Returned value from fread is " << n << " exspected 1" << endl;
             assert(n == 1);
             fseek(fp, pos, SEEK_SET);
           }
@@ -936,6 +964,8 @@ void vvDicom::readDicomData(FILE* fp)
   // Read the actual pixel data:
   info->raw = new uchar[info->height * info->width * info->bpp];
   int n = fread(info->raw, info->height * info->width * info->bpp, 1, fp);
+  if(n != 1)
+    cerr << "vvDicom::readDicomData: Error reading actual pixel data" << endl;
   assert(n == 1);
 }
 

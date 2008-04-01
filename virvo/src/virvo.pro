@@ -6,7 +6,7 @@ PROJECT     = General
 CONFIG	   *= dll dl cg
 
 win32:DEFINES += VIRVO_EXPORT
-DEFINES *= NO_CONFIG_H
+DEFINES *= NO_CONFIG_H UNICODE
 
 SOURCES	   = \
 vvcolor.cpp vvdebugmsg.cpp vvdicom.cpp vvdynlib.cpp vvfileio.cpp vvgltools.cpp vvideo.cpp \

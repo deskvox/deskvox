@@ -4353,7 +4353,6 @@ void vvTexRend::updateLUT(float dist)
 #ifdef _WIN32
     const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
 #endif
-    const char* deskVoxShaderPath = "../";
     const char* shaderFileName = "vv_shader";
     const char* shaderEnv = "VV_SHADER_PATH";
     const char* shaderExt = ".cg";
@@ -4410,6 +4409,7 @@ void vvTexRend::updateLUT(float dist)
       cerr << "Using shader path: " << shaderDir << endl;
       unixShaderDir = shaderDir;
 #else
+      const char* deskVoxShaderPath = "../";
 #ifdef SHADERDIR
       unixShaderDir = SHADERDIR;
 #else
