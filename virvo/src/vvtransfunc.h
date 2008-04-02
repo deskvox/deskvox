@@ -72,8 +72,8 @@ class VIRVOEXPORT vvTransFunc
     void make2DTFTexture(int, int, uchar*, float, float, float, float);
     void make8bitLUT(int, uchar*, float, float);
     void makeFloatLUT(int, float*);
-    void makePreintLUTOptimized(int width, uchar *preintLUT, float thickness=1.0);
-    void makePreintLUTCorrect(int width, uchar *preintLUT, float thickness=1.0);
+    void makePreintLUTOptimized(int width, uchar *preintLUT, float thickness=1.0, float min=0.0, float max=1.0);
+    void makePreintLUTCorrect(int width, uchar *preintLUT, float thickness=1.0, float min=0.0, float max=1.0);
     static void copy(vvSLList<vvTFWidget*>*, vvSLList<vvTFWidget*>*);
     void putUndoBuffer();
     void getUndoBuffer();

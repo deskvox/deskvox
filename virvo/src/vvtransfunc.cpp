@@ -636,7 +636,7 @@ of the pre-integration method to Virvo.
 @param thickness  distance of two volume slices in the direction
 of the principal viewing axis (defaults to 1.0)
 */
-void vvTransFunc::makePreintLUTCorrect(int width, uchar *preIntTable, float thickness)
+void vvTransFunc::makePreintLUTCorrect(int width, uchar *preIntTable, float thickness, float min, float max)
 {
   const int minLookupSteps = 2;
   const int addLookupSteps = 1;
@@ -648,7 +648,7 @@ void vvTransFunc::makePreintLUTCorrect(int width, uchar *preIntTable, float thic
 
   // Generate arrays from pins:
   float *rgba = new float[width * 4];
-  computeTFTexture(width, 1, 1, rgba, 0.0f, 1.0f);
+  computeTFTexture(width, 1, 1, rgba, min, max);
 
   // cerr << "Calculating dependent texture - Please wait ...";
   vvToolshed::initProgress(width);
@@ -731,7 +731,7 @@ of the pre-integration method to Virvo.
 @param thickness  distance of two volume slices in the direction
 of the principal viewing axis (defaults to 1.0)
 */
-void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float thickness)
+void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float thickness, float min, float max)
 {
   float *rInt = new float[width];
   float *gInt = new float[width];
@@ -742,7 +742,7 @@ void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float th
 
   // Generate arrays from pins:
   float *rgba = new float[width * 4];
-  computeTFTexture(width, 1, 1, rgba, 0.0f, 1.0f);
+  computeTFTexture(width, 1, 1, rgba, min, max);
 
   // cerr << "Calculating optimized dependent texture" << endl;
   int rcol=0, gcol=0, bcol=0, acol=0;
