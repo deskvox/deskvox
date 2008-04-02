@@ -116,7 +116,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   rgbaTF  = new float[256 * 256 * 4];
   rgbaLUT = new uchar[256 * 256 * 4];
   preintTable = new uchar[getPreintTableSize()*getPreintTableSize()*4];
-  preIntegration = false;
+  preIntegration = true;
   usePreIntegration = false;
   textures = 0;
   opacityCorrection = true;
@@ -128,7 +128,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #endif
   _useOnlyOneBrick = false;
   _areBricksCreated = false;
-  lutDistance = 1.0;
+  lutDistance = -1.0;
 
   // Find out which OpenGL extensions are supported:
 #if defined(GL_VERSION_1_2) && defined(__APPLE__)
@@ -419,7 +419,7 @@ vvTexRend::GeometryType vvTexRend::findBestGeometry(vvTexRend::GeometryType geom
   }
   else
   {
-    if (!extTex3d && (geom==VV_VIEWPORT || geom==VV_SPHERICAL))
+    if (!extTex3d && (geom==VV_VIEWPORT || geom==VV_SPHERICAL || geom==VV_BRICKS))
     {
       return VV_SLICES;
     }
@@ -1254,10 +1254,11 @@ void vvTexRend::updateTransferFunction()
   int size[3];
 
   vvDebugMsg::msg(1, "vvTexRend::updateTransferFunction()");
-  if (preIntegration && voxelType==VV_FRG_PRG && 
+  if (preIntegration &&
+      voxelType==VV_FRG_PRG && 
       geomType==VV_VIEWPORT && 
       arbMltTex && 
-      !_renderState._clipSingleSlice)
+      !(_renderState._clipMode && (_renderState._clipSingleSlice || _renderState._clipOpaque)))
   {
     usePreIntegration = true;
   }
