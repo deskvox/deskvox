@@ -663,18 +663,18 @@ void vvTransFunc::makePreintLUTCorrect(int width, uchar *preIntTable, float thic
       {
         double s = sf+(sb-sf)*(double)i/n;
         int is = (int)s;
-        tauc = thickness*stepWidth*(rgba[is+3*width]*(s-floor(s))+rgba[(is+1)+3*width]*(1.0-s+floor(s)));
+        tauc = thickness*stepWidth*(rgba[is*4+3]*(s-floor(s))+rgba[(is+1)*4+3]*(1.0-s+floor(s)));
 #ifdef STANDARD
         /* standard optical model: r,g,b densities are multiplied with opacity density */
-        rc = exp(-tau)*tauc*(rgba[is+0*width]*(s-floor(s))+rgba[(is+1)+0*width]*(1.0-s+floor(s)));
-        gc = exp(-tau)*tauc*(rgba[is+1*width]*(s-floor(s))+rgba[(is+1)+1*width]*(1.0-s+floor(s)));
-        bc = exp(-tau)*tauc*(rgba[is+2*width]*(s-floor(s))+rgba[(is+1)+2*width]*(1.0-s+floor(s)));
+        rc = exp(-tau)*tauc*(rgba[is*4+0]*(s-floor(s))+rgba[(is+1)*4+0]*(1.0-s+floor(s)));
+        gc = exp(-tau)*tauc*(rgba[is*4+1]*(s-floor(s))+rgba[(is+1)*4+1]*(1.0-s+floor(s)));
+        bc = exp(-tau)*tauc*(rgba[is*4+2]*(s-floor(s))+rgba[(is+1)*4+2]*(1.0-s+floor(s)));
 
 #else
         /* Willhelms, Van Gelder optical model: r,g,b densities are not multiplied */
-        rc = exp(-tau)*stepWidth*(rgba[is+0*width]*(s-floor(s))+rgba[(is+1)+0*width]*(1.0-s+floor(s)));
-        gc = exp(-tau)*stepWidth*(rgba[is+1*width]*(s-floor(s))+rgba[(is+1)+1*width]*(1.0-s+floor(s)));
-        bc = exp(-tau)*stepWidth*(rgba[is+2*width]*(s-floor(s))+rgba[(is+1)+2*width]*(1.0-s+floor(s)));
+        rc = exp(-tau)*stepWidth*(rgba[is*4+0]*(s-floor(s))+rgba[(is+1)*4+0]*(1.0-s+floor(s)));
+        gc = exp(-tau)*stepWidth*(rgba[is*4+1]*(s-floor(s))+rgba[(is+1)*4+1]*(1.0-s+floor(s)));
+        bc = exp(-tau)*stepWidth*(rgba[is*4+2]*(s-floor(s))+rgba[(is+1)*4+2]*(1.0-s+floor(s)));
 #endif
 
         r = r+rc;
@@ -755,30 +755,30 @@ void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float th
 #ifdef STANDARD
     /* standard optical model: r,g,b densities are multiplied with opacity density */
     // accumulated values
-    float tauc = (int(rgba[(i-1)+3*width]) + int(rgba[i+3*width])) * .5f;
-    rInt[i] = rInt[i-1] + (int(255.99f*rgba[(i-1)+0*width]) + int(255.99f*rgba[i+0*width])) * .5f * tauc;
-    gInt[i] = gInt[i-1] + (int(255.99f*rgba[(i-1)+1*width]) + int(255.99f*rgba[i+1*width])) * .5f * tauc;
-    bInt[i] = bInt[i-1] + (int(255.99f*rgba[(i-1)+2*width]) + int(255.99f*rgba[i+2*width])) * .5f * tauc;
+    float tauc = (int(rgba[(i-1)*4+3]) + int(rgba[i*4+3])) * .5f;
+    rInt[i] = rInt[i-1] + (int(255.99f*rgba[(i-1)*4+0]) + int(255.99f*rgba[i*4+0])) * .5f * tauc;
+    gInt[i] = gInt[i-1] + (int(255.99f*rgba[(i-1)*4+1]) + int(255.99f*rgba[i*4+1])) * .5f * tauc;
+    bInt[i] = bInt[i-1] + (int(255.99f*rgba[(i-1)*4+2]) + int(255.99f*rgba[i*4+2])) * .5f * tauc;
     aInt[i] = aInt[i-1] + tauc;
 
     // diagonal for lookup texture
-    rcol = int(rgba[i+0*width] * rgba[i+3*width] * thickness * 255.99f);
-    gcol = int(rgba[i+1*width] * rgba[i+3*width] * thickness * 255.99f);
-    bcol = int(rgba[i+2*width] * rgba[i+3*width] * thickness * 255.99f);
-    acol = int((1.f - expf(- rgba[i+3*width] * thickness)) * 255.99f);
+    rcol = int(rgba[i*4+0] * rgba[i*4+3] * thickness * 255.99f);
+    gcol = int(rgba[i*4+1] * rgba[i*4+3] * thickness * 255.99f);
+    bcol = int(rgba[i*4+2] * rgba[i*4+3] * thickness * 255.99f);
+    acol = int((1.f - expf(- rgba[i*4+3] * thickness)) * 255.99f);
 #else
     /* Willhelms, Van Gelder optical model: r,g,b densities are not multiplied */
     // accumulated values
-    rInt[i] = rInt[i-1] + (rgba[(i-1)+0*width] + rgba[i+0*width]) * .5f * 255.99f;
-    gInt[i] = gInt[i-1] + (rgba[(i-1)+1*width] + rgba[i+1*width]) * .5f * 255.99f;
-    bInt[i] = bInt[i-1] + (rgba[(i-1)+2*width] + rgba[i+2*width]) * .5f * 255.99f;
-    aInt[i] = aInt[i-1] + (rgba[(i-1)+3*width] + rgba[i+3*width]) * .5f;
+    rInt[i] = rInt[i-1] + (rgba[(i-1)*4+0] + rgba[i*4+0]) * .5f * 255.99f;
+    gInt[i] = gInt[i-1] + (rgba[(i-1)*4+1] + rgba[i*4+1]) * .5f * 255.99f;
+    bInt[i] = bInt[i-1] + (rgba[(i-1)*4+2] + rgba[i*4+2]) * .5f * 255.99f;
+    aInt[i] = aInt[i-1] + (rgba[(i-1)*4+3] + rgba[i*4+3]) * .5f;
 
     // diagonal for lookup texture
-    rcol = int(255.99f*rgba[i+0*width]);
-    gcol = int(255.99f*rgba[i+1*width]);
-    bcol = int(255.99f*rgba[i+2*width]);
-    acol = int((1.f - expf(-rgba[i+3*width] * thickness)) * 255.99f);
+    rcol = int(255.99f*rgba[i*4+0]);
+    gcol = int(255.99f*rgba[i*4+1]);
+    bcol = int(255.99f*rgba[i*4+2]);
+    acol = int((1.f - expf(-rgba[i*4+3] * thickness)) * 255.99f);
 #endif
 
     preIntTable[i*width*4+i*4+0] = uchar(rcol);
@@ -794,11 +794,11 @@ void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float th
       bool opaque = false;
       for (int s = sf; s <= sb; s++)
       {
-        if (rgba[s+3*width] == 1.f)
+        if (rgba[s*4+3] == 1.f)
         {
-          rcol = int(rgba[s+0*width]*255.99f);
-          gcol = int(rgba[s+1*width]*255.99f);
-          bcol = int(rgba[s+2*width]*255.99f);
+          rcol = int(rgba[s*4+0]*255.99f);
+          gcol = int(rgba[s*4+1]*255.99f);
+          bcol = int(rgba[s*4+2]*255.99f);
           acol = int(255);
           opaque = true;
           break;
@@ -814,11 +814,11 @@ void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float th
 
         for (int s = sb; s >= sf; s--)
         {
-          if (rgba[s+3*width] == 1.f)
+          if (rgba[s*4+3] == 1.f)
           {
-            rcol = int(rgba[s+0*width]*255.99f);
-            gcol = int(rgba[s+1*width]*255.99f);
-            bcol = int(rgba[s+2*width]*255.99f);
+            rcol = int(rgba[s*4+0]*255.99f);
+            gcol = int(rgba[s*4+1]*255.99f);
+            bcol = int(rgba[s*4+2]*255.99f);
             acol = int(255);
             break;
           }
