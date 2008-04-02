@@ -41,7 +41,7 @@
 
 using namespace std;
 
-template<class T> class VIRVOEXPORT vvArray
+template<class T> class vvArray
 {
   public:
     vvArray();
