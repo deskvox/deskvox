@@ -4263,6 +4263,7 @@ void vvTexRend::updateLUT(float dist)
         break;
       case VV_VIEWPORT:
       case VV_SPHERICAL:
+      case VV_BRICKS:
         if(usePreIntegration)
         {
           glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_PREINT]);
