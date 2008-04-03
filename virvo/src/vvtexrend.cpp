@@ -1207,25 +1207,33 @@ void vvTexRend::computeBrickSize()
 
     max = ts_max(vd->vox[0], vd->vox[1], vd->vox[2]);
 
-    int tmp[3] = { vd->vox[0]/4, vd->vox[1]/4, vd->vox[2]/4 };
+    int tmp[3] = { vd->vox[0], vd->vox[1], vd->vox[2] };
     bool done = false;
     while (!done)
     {
-      for(int i=0; i<3; ++i)
+      int i = 0;
+      int maxSize = -1;
+      for(int j=0; j<3; ++j)
       {
-        for(int j=0; j<3; ++j)
-          newBrickSize[j] = vvToolshed::getTextureSize(tmp[j]);
-
-        // compute needed memory for 27 bricks
-        neededMemory = 27 * newBrickSize[0] * newBrickSize[1] * newBrickSize[2] / (1024 * 1024) * texelsize;
-        if (neededMemory < texMemorySize)
+        newBrickSize[j] = vvToolshed::getTextureSize(tmp[j]);
+        if(maxSize < newBrickSize[j])
         {
-          done = true;
-          break;
+          i = j;
+          maxSize = newBrickSize[j];
         }
-        else
-          tmp[i] = newBrickSize[i] / 2;
       }
+
+      // compute needed memory for 27 bricks
+      neededMemory = newBrickSize[0] * newBrickSize[1] * newBrickSize[2] / (1024 * 1024) * texelsize * 27;
+      if (neededMemory < texMemorySize)
+      {
+        done = true;
+        break;
+      }
+
+      tmp[i] = newBrickSize[i] / 2;
+      if(tmp[i] < 1)
+         tmp[i] = 1;
     }
 
     probeSize[0] = 2 * (newBrickSize[0]-1) / (float) vd->vox[0];
