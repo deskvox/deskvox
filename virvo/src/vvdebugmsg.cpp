@@ -30,10 +30,19 @@
 
 using namespace std;
 
+static vvDebugMsg::LevelType envDebugLevel()
+{
+   char *val = getenv("VV_DEBUG");
+   if(val)
+      return vvDebugMsg::LevelType(atoi(val));
+   else
+      return vvDebugMsg::NO_MESSAGES;
+}
+
                                                   ///< String printed before each debug message
 const char* vvDebugMsg::DEBUG_TEXT = "###Debug message: ";
                                                   ///< Default debugging mode
-vvDebugMsg::LevelType vvDebugMsg::debugLevel = NO_MESSAGES;
+vvDebugMsg::LevelType vvDebugMsg::debugLevel = envDebugLevel();
 
 /// Setter method for debugLevel
 void vvDebugMsg::setDebugLevel(LevelType newLevel)

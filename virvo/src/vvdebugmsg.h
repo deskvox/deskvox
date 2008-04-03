@@ -25,6 +25,9 @@
 
 /** Manager for run-time debug messages.
     Allows the programmer to output debug messages only when required.
+
+    Initially, no messages are printed (level 0).
+    Can be overridden by setting the environment variable VV_DEBUG to an integer value.
     @author Jurgen P. Schulze (jschulze@ucsd.edu)
 */
 class VIRVOEXPORT vvDebugMsg
