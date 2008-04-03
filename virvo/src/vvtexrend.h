@@ -135,7 +135,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLint internalTexFormat;                      ///< internal texture format (parameter for glTexImage...)
     GLenum texFormat;                             ///< texture format (parameter for glTexImage...)
     GLuint* texNames;                             ///< names of texture slices stored in TRAM
-    GLuint tfTexName;                             ///< name for transfer function texture
+    GLuint pixLUTName;                            ///< name for transfer function texture
     GLuint fragProgName[VV_FRAG_PROG_MAX];        ///< names for fragment programs (for applying transfer function)
     GeometryType geomType;                        ///< rendering geometry actually used
     VoxelType voxelType;                          ///< voxel type actually used
@@ -173,7 +173,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     CGparameter _cgOpacityWeights;                ///< fragment program input: opacity of color channels
 #endif
     int _currentShader;                           ///< ID of currently used fragment shader
-    GLuint pixLUTName;
 
 #if defined(_WIN32)
     PFNGLTEXIMAGE3DEXTPROC glTexImage3DEXT;

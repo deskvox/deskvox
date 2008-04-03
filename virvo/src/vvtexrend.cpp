@@ -60,7 +60,7 @@
 using namespace std;
 
 //----------------------------------------------------------------------------
-const int vvTexRend::NUM_PIXEL_SHADERS = 11;
+const int vvTexRend::NUM_PIXEL_SHADERS = 12;
 
 //----------------------------------------------------------------------------
 /** Constructor.
@@ -116,7 +116,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   rgbaTF  = new float[256 * 256 * 4];
   rgbaLUT = new uchar[256 * 256 * 4];
   preintTable = new uchar[getPreintTableSize()*getPreintTableSize()*4];
-  preIntegration = true;
+  preIntegration = false;
   usePreIntegration = false;
   textures = 0;
   opacityCorrection = true;
@@ -170,7 +170,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   if (extBlendEquation) glBlendEquationVV = (PFNGLBLENDEQUATIONEXTPROC)vvDynLib::glSym("glBlendEquationEXT");
   else glBlendEquationVV = (PFNGLBLENDEQUATIONPROC)vvDynLib::glSym("glBlendEquation");
   glActiveTextureARB = (PFNGLACTIVETEXTUREARBPROC)vvDynLib::glSym("glActiveTextureARB");
-  if (glActiveTextureARB==NULL) extTexShd = false;
+  if (glActiveTextureARB==NULL)
+  {
+     extTexShd = false;
+     arbMltTex = false;
+  }
   glMultiTexCoord3fARB = (PFNGLMULTITEXCOORD3FARBPROC)vvDynLib::glSym("glMultiTexCoord3fARB");
   if (glMultiTexCoord3fARB==NULL) arbMltTex = false;
   glGenProgramsARB = (PFNGLGENPROGRAMSARBPROC)vvDynLib::glSym("glGenProgramsARB");
@@ -202,7 +206,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   glMultiTexCoord3fARB = (glMultiTexCoord3fARB_type*)vvDynLib::glSym("glMultiTexCoord3fARB");
   if (glMultiTexCoord3fARB==NULL) arbMltTex = false;
   glActiveTextureARB = (glActiveTextureARB_type*)vvDynLib::glSym("glActiveTextureARB");
-  if (glActiveTextureARB==NULL) extTexShd = false;
+  if (glActiveTextureARB==NULL)
+  {
+     extTexShd = false;
+     arbMltTex = false;
+  }
   glGenProgramsARB = (glGenProgramsARB_type*)vvDynLib::glSym("glGenProgramsARB");
   if(glGenProgramsARB==NULL) arbFrgPrg = false;
   glDeleteProgramsARB = (glDeleteProgramsARB_type*)vvDynLib::glSym("glDeleteProgramsARB");
@@ -248,10 +256,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #endif
 
   if(voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG)
-  {
-    glGenTextures(1, &tfTexName);
-  }
-  if(VV_PIX_SHD == voxelType)
   {
     glGenTextures(1, &pixLUTName);
   }
@@ -375,14 +379,9 @@ vvTexRend::~vvTexRend()
   }
   if (voxelType==VV_FRG_PRG || voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD)
   {
-    glDeleteTextures(1, &tfTexName);
-  }
-  removeTextures();
-
-  if (voxelType==VV_PIX_SHD)
-  {
     glDeleteTextures(1, &pixLUTName);
   }
+  removeTextures();
 
   delete[] rgbaTF;
   delete[] rgbaLUT;
@@ -414,7 +413,7 @@ vvTexRend::GeometryType vvTexRend::findBestGeometry(vvTexRend::GeometryType geom
 
   if (geom==VV_AUTO)
   {
-    if (extTex3d) return VV_BRICKS;
+    if (extTex3d) return VV_VIEWPORT;
     else return VV_SLICES;
   }
   else
@@ -501,7 +500,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures()
   }
   vvGLTools::printGLError("vvTexRend::makeTextures");
 
-  if (voxelType==VV_PIX_SHD)
+  if (voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG || voxelType==VV_TEX_SHD)
   {
     //if (first)
     {
@@ -519,6 +518,8 @@ void vvTexRend::makeLUTTexture()
   int size[3];
 
   vvGLTools::printGLError("enter makeLUTTexture");
+  if(voxelType!=VV_PIX_SHD)
+     glActiveTextureARB(GL_TEXTURE1_ARB);
   getLUTSize(size);
   glBindTexture(GL_TEXTURE_2D, pixLUTName);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -529,6 +530,8 @@ void vvTexRend::makeLUTTexture()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size[0], size[1], 0,
     GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
+  if(voxelType!=VV_PIX_SHD)
+     glActiveTextureARB(GL_TEXTURE0_ARB);
   vvGLTools::printGLError("leave makeLUTTexture");
 }
 
@@ -1263,16 +1266,20 @@ void vvTexRend::updateTransferFunction()
 
   vvDebugMsg::msg(1, "vvTexRend::updateTransferFunction()");
   if (preIntegration &&
-      voxelType==VV_FRG_PRG && 
-      geomType==VV_VIEWPORT && 
       arbMltTex && 
-      !(_renderState._clipMode && (_renderState._clipSingleSlice || _renderState._clipOpaque)))
+      geomType==VV_VIEWPORT && 
+      !(_renderState._clipMode && (_renderState._clipSingleSlice || _renderState._clipOpaque)) &&
+      (voxelType==VV_FRG_PRG || (voxelType==VV_PIX_SHD && (_currentShader==0 || _currentShader==11))))
   {
     usePreIntegration = true;
+    if(_currentShader==0)
+      _currentShader = 11;
   }
   else
   {
     usePreIntegration = false;
+    if(_currentShader==11)
+      _currentShader = 0;
   }
 
   // Generate arrays from pins:
@@ -3921,16 +3928,12 @@ void vvTexRend::updateLUT(float dist)
       glColorTableEXT(GL_SHARED_TEXTURE_PALETTE_EXT, GL_RGBA8,
           lutSize[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
       break;
+    case VV_PIX_SHD:
     case VV_TEX_SHD:
     case VV_FRG_PRG:
-      glActiveTextureARB(GL_TEXTURE1_ARB);
-      glBindTexture(GL_TEXTURE_2D, tfTexName);
-      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+      if(voxelType!=VV_PIX_SHD)
+        glActiveTextureARB(GL_TEXTURE1_ARB);
+      glBindTexture(GL_TEXTURE_2D, pixLUTName);
       if(usePreIntegration)
       {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, getPreintTableSize(), getPreintTableSize(), 0,
@@ -3938,14 +3941,11 @@ void vvTexRend::updateLUT(float dist)
       }
       else
       {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0,
+               GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
       }
-      glActiveTextureARB(GL_TEXTURE0_ARB);
-      break;
-    case VV_PIX_SHD:
-      glBindTexture(GL_TEXTURE_2D, pixLUTName);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
+      if(voxelType!=VV_PIX_SHD)
+        glActiveTextureARB(GL_TEXTURE0_ARB);
       break;
     default: assert(0); break;
   }
@@ -4216,7 +4216,7 @@ void vvTexRend::updateLUT(float dist)
     vvGLTools::printGLError("Texture unit 0");
 
     glActiveTextureARB(GL_TEXTURE1_ARB);
-    glBindTexture(GL_TEXTURE_2D, tfTexName);
+    glBindTexture(GL_TEXTURE_2D, pixLUTName);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_DEPENDENT_AR_TEXTURE_2D_NV);
     glTexEnvi(GL_TEXTURE_SHADER_NV, GL_PREVIOUS_TEXTURE_INPUT_NV, GL_TEXTURE0_ARB);
@@ -4251,7 +4251,7 @@ void vvTexRend::updateLUT(float dist)
   void vvTexRend::enableFragProg()
   {
     glActiveTextureARB(GL_TEXTURE1_ARB);
-    glBindTexture(GL_TEXTURE_2D, tfTexName);
+    glBindTexture(GL_TEXTURE_2D, pixLUTName);
     glActiveTextureARB(GL_TEXTURE0_ARB);
 
     glEnable(GL_FRAGMENT_PROGRAM_ARB);
