@@ -1347,7 +1347,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
   int heightOffset;
   int texLineOffset;
   int srcIndex;
-  int texOffset;
+  int texOffset=0;
   int rawVal[4];
   int alpha;
   int c, f, s, x, y;
@@ -3870,7 +3870,7 @@ void vvTexRend::updateLUT(float dist)
   float corr[4];                                  // gamma/alpha corrected RGBA values [0..1]
   int lutSize[3];                                 // number of entries in the RGBA lookup table
   int i,c;
-  int total;
+  int total=0;
   lutDistance = dist;
 
   if(usePreIntegration)
@@ -4492,7 +4492,7 @@ void vvTexRend::updateLUT(float dist)
   unsigned char* vvTexRend::getHeightFieldData(float points[4][3], int& width, int& height)
   {
     GLint viewport[4];
-    unsigned char *pixels, *data, *result;
+    unsigned char *pixels, *data, *result=NULL;
     int numPixels;
     int i, j, k;
     int x, y, c;

@@ -978,7 +978,7 @@ void vvVolDesc::makeLineTexture(DiagType type, unsigned char selChannel, int twi
   int i, x, y, c;
   int bpt;
   int* data;
-  float *normalized;
+  float *normalized=NULL;
   unsigned char bg[4]    = {255,255,255,255};
   unsigned char fg[4][4] =
   {
@@ -4941,7 +4941,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   float* sortedData;
   float* sortedTmp;
   float* opacities=NULL;
-  double sumOpacities;    // sum of all opacities
+  double sumOpacities=0.;    // sum of all opacities
   double opacityPerBin;
   double localSum;
   float min,max;

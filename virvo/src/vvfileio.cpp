@@ -1421,7 +1421,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
   vvTokenizer::TokenType ttype;                   // currently processed token type
   FILE* fp;                                       // volume file pointer
   uchar* raw;                                     // raw volume data
-  int ival;                                       // integer data value
+  int ival=0;                                     // integer data value
   int f;                                          // counter for frames
   int i, x, y, z, c;                              // counters
   int frameSize;                                  // size of a frame in bytes

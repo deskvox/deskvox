@@ -990,7 +990,7 @@ int vvTransFunc::loadMeshviewer(const char* filename)
   fscanf(fp, "OpacityMapPoints: %d\n", &numOpacityPoints);
   if (numOpacityPoints>0) 
   {
-    float begin, end;
+    float begin=0., end=0.;
     cuw = new vvTFCustom(0.5f, 1.0f);
     _widgets.append(cuw, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
     for (i=0; i<numOpacityPoints; ++i)
