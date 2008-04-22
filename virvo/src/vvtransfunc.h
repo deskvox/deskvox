@@ -65,6 +65,9 @@ class VIRVOEXPORT vvTransFunc
     void deleteWidgets(WidgetType);
     void computeTFTexture(int, int, int, float*, float, float, float=0.0f, float=0.0f, float=0.0f, float=0.0f);
     vvColor computeBGColor(float, float, float);
+    void computeTFTextureGamma(int, float*, float, float, int, float[], float[]);
+	void computeTFTextureHighPass(int, float*, float, float, int, float[], float[], float[]);
+	void computeTFTextureHistCDF(int, float*, float, float, int, int, uint*, float[], float[]);
     vvColor computeColor(float, float=-1.0f, float=-1.0f);
     float computeOpacity(float, float=-1.0f, float=-1.0f);
     void makeColorBar(int, uchar*, float, float, bool);

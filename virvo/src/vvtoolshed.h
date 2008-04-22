@@ -247,6 +247,7 @@ class VIRVOEXPORT vvToolshed
     static bool    nextListString(std::list<std::string>&, std::string&, std::string&);
     static void    quickSort(int*, int);
     static void    qSort(int*, int, int); 
+	static char*   file2string(char* filename);
 };
 #endif
 

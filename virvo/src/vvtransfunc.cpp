@@ -374,6 +374,65 @@ void vvTransFunc::computeTFTexture(int w, int h, int d, float* array,
     }
   }
 }
+// 1st channel in contiguous block; last for opacity channel
+void vvTransFunc::computeTFTextureGamma(int w, float* dest, float minX, float maxX, 
+										int numchan, float gamma[], float offset[])
+{
+  int index = 0;
+  for (int c = 0; c < numchan+1; c++)
+  {
+	  for (int i=0; i<w; ++i)
+	  {
+		  float x = (float(i) / float(w-1)) * (maxX - minX) + minX;	  
+		  dest[index++] = ts_clamp((1-offset[c])*powf(x, gamma[c])+offset[c], 0.0f, 1.0f);
+	  }
+  }
+}
+
+void vvTransFunc::computeTFTextureHighPass(int w, float* dest, float minX, float maxX, 
+										int numchan, float cutoff[], float order[], float offset[])
+{
+  int index = 0;
+  for (int c = 0; c < numchan+1; c++)
+  {
+	  for (int i=0; i<w; ++i)
+	  {
+		  float x = (float(i) / float(w-1)) * (maxX - minX) + minX;
+		  float filter = 0.0f;
+		  if (x != 0.0f) filter = 1.0f / (1 + powf(cutoff[c]/x, 2*order[c]));
+		  dest[index++] = ts_clamp((1-offset[c])*filter+offset[c], 0.0f, 1.0f);
+	  }
+  }
+}
+
+void vvTransFunc::computeTFTextureHistCDF(int w, float* dest, float minX, float maxX, 
+										int numchan, int frame, uint* histCDF, float gamma[], float offset[])
+{
+  int index = 0;
+  
+  //int alphaCDF[256];
+  //memset(alphaCDF, 0, 256*sizeof(int));
+  for (int c = 0; c < numchan; c++)
+  {	
+	  uint* hist = histCDF + (numchan*frame + c)*256;
+
+	  float min = float(hist[0]), max = float(hist[w-1]);
+	  for (int i=0; i<w; ++i)
+	  {
+		  //alphaCDF[i] += hist[i];
+		  float x = (float(hist[i])-min)/(max-min);
+		  dest[index++] = ts_clamp((1-offset[c])*x+offset[c], 0.0f, 1.0f); 
+	  }
+  }	
+
+  for (int i=0; i<w; ++i)
+  {
+	  float x = (float(i) / float(w-1)) * (maxX - minX) + minX;
+	  //x = ts_clamp((1-offset[numchan])*float(alphaCDF[i])/float(alphaCDF[w-1])+offset[numchan], 0.0f, 1.0f); 
+	  dest[index++] = ts_clamp((1-offset[numchan])*powf(x, gamma[numchan])+offset[numchan], 0.0f, 1.0f);
+	  //ts_clamp((1-offset[numchan]+1)* x + (offset[numchan]-1), 0.0f, 1.0f);
+  }
+}
 
 //----------------------------------------------------------------------------
 /** Returns RGBA texture values for a color preview bar consisting of 3 rows:

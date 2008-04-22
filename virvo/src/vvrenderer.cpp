@@ -44,6 +44,7 @@ vvRenderState::vvRenderState()
   int i;
 
   _mipMode = 0;
+  _alphaMode = 0;
   _clipPerimeter = true;
   _boundaries = false;
   _orientation = false;
@@ -77,6 +78,8 @@ vvRenderState::vvRenderState()
     _probeColor[i] = 1.0f;
     _boundColor[i] = 1.0f;
   }
+
+  _showTexture = false;	// added by Han, Feb 2008
 }
 
 //----------------------------------------------------------------------------
@@ -212,6 +215,21 @@ vvRenderer::vvRenderer(vvVolDesc* voldesc, vvRenderState renderState)
 }
 
 //----------------------------------------------------------------------------
+// Added by Han, March 2008
+void vvRenderer::setVolDesc(vvVolDesc* voldesc)
+{
+  vvDebugMsg::msg(2, "vvRenderer::setVolDesc()");
+  assert(voldesc != NULL);
+  vd = voldesc;
+}
+
+vvVolDesc* vvRenderer::getVolDesc()
+{
+  return vd;
+}
+
+
+//----------------------------------------------------------------------------
 /// Initialization routine for class variables.
 void vvRenderer::init()
 {
@@ -221,6 +239,8 @@ void vvRenderer::init()
 
   rendererType = UNKNOWN;
   _lastRenderTime = 0.0f;
+  _lastComputeTime = 0.0f;
+  _lastPlaneSortingTime = 0.0f;
   for(i=0; i<3; ++i)
   {
     _channel4Color[i] = 1.0f;
@@ -283,6 +303,11 @@ vvRenderer::RendererType vvRenderer::getRendererType()
   method renders the coordinate axes and the palette, if the respective
   modes are set.
 */
+void vvRenderer::renderMultipleVolume()
+{
+  vvDebugMsg::msg(3, "vvRenderer::renderMultipleVolume()");
+}
+
 void vvRenderer::renderVolumeGL()
 {
   vvDebugMsg::msg(3, "vvRenderer::renderVolumeGL()");
@@ -627,9 +652,7 @@ void vvRenderer::drawBoundingBox(vvVector3* oSize, vvVector3* oPos, float* color
   GLfloat   glsLineWidth;                         // stores GL_LINE_WIDTH
   float vertices[8][3] =                          // volume vertices
   {
-    {
-      -0.5, 0.5, 0.5
-    },
+    {-0.5, 0.5, 0.5},
     {-0.5,-0.5, 0.5},
     { 0.5,-0.5, 0.5},
     { 0.5, 0.5, 0.5},
@@ -640,9 +663,7 @@ void vvRenderer::drawBoundingBox(vvVector3* oSize, vvVector3* oPos, float* color
   };
   int faces[6][4] =                               // volume faces. first 3 values are used for normal compuation
   {
-    {
-      7, 3, 2, 6
-    },
+    {7, 3, 2, 6},
     {0, 3, 7, 4},
     {2, 3, 0, 1},
     {4, 5, 1, 0},

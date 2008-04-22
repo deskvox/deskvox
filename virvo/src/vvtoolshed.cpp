@@ -2428,6 +2428,30 @@ void vvToolshed::qSort(int* numbers, int left, int right)
   if (right > pivot) qSort(numbers, pivot+1, right);
 }
 
+char* vvToolshed::file2string(char *filename)
+{
+	FILE *fp = fopen(filename,"rt");
+
+	if (fp == NULL)
+	{
+		cerr << "File NOT found: " << filename << endl;
+		return NULL;
+	}
+
+	fseek(fp, 0, SEEK_END);
+	int count = ftell(fp);
+	rewind(fp);
+
+	char* content = new char[count+1];
+
+	count = fread(content,sizeof(char),count,fp);
+	content[count] = '\0';
+	
+	fclose(fp);
+
+	return content;
+}
+
 
 
 //----------------------------------------------------------------------------

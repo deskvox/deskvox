@@ -35,7 +35,10 @@ libvirvo_a_headers = \
 	vvvecmath.h \
 	vvvffile.h \
 	vvvirvo.h \
-	vvvoldesc.h
+	vvvoldesc.h \
+	vvglsl.h \
+	vvmultirend/vvtexmultirend.h \
+	vvmultirend/vvtexmultirendmngr.h
 
 libvirvo_a_SOURCES = \
 	$(libvirvo_a_headers) \
@@ -60,7 +63,10 @@ libvirvo_a_SOURCES = \
 	vvtransfunc.cpp \
 	vvvecmath.cpp \
 	vvvffile.cpp \
-	vvvoldesc.cpp
+	vvvoldesc.cpp \
+	vvglsl.cpp \
+	vvmultirend/vvtexmultirend.cpp \
+	vvmultirend/vvtexmultirendmngr.cpp
 
 libvirvoincludedir = $(includedir)/virvo
 libvirvoinclude_HEADERS = $(libvirvo_a_headers) config.h

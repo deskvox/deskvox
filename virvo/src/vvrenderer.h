@@ -38,6 +38,7 @@ class VIRVOEXPORT vvRenderState
     float _clipColor[3];                          ///< clipping plane boundary color (R,G,B in [0..1])
     float _quality;                               ///< rendering image quality (0=minimum, 1=sampling rate, >1=oversampling)
     int   _mipMode;                               ///< min/maximum intensity projection (0=off, 1=max, 2=min)
+	int	  _alphaMode;							  ///< calculation for alpha value (0=max of channel weights*values, 1=weighted avg)
     bool  _clipPerimeter;                         ///< true = render line around clipping plane
     bool  _boundaries;                            ///< true = display volume boundaries
     bool  _orientation;                           ///< true = display object orientation
@@ -59,6 +60,7 @@ class VIRVOEXPORT vvRenderState
     bool  _opacityWeights;                        ///< true = for multi-channel data sets only: allow weighted opacities in channels
     float _boundColor[3];                         ///< boundary color (R,G,B in [0..1])
     float _probeColor[3];                         ///< probe boundary color (R,G,B in [0..1])
+	bool _showTexture;							  ///< true = show texture mapping, if applicable, added by Han, Feb 2008
 
     vvRenderState();
     void setClippingPlane(const vvVector3*, const vvVector3*);
@@ -90,7 +92,8 @@ class VIRVOEXPORT vvRenderer
       SIMIAN,                                     ///< Joe Kniss's Simian renderer
       IMGREND,                                    ///< 2D image renderer
       UNKNOWN,                                    ///< unknown renderer
-      STINGRAY                                    ///< Imedia's Stingray renderer
+      STINGRAY,                                    ///< Imedia's Stingray renderer
+	  VIRTEXREND								  ///< virtualized texture memory using bricking + out-of-core
     };
     enum ParameterType                            ///  Names for rendering parameters
     {
@@ -116,14 +119,17 @@ class VIRVOEXPORT vvRenderer
     vvVolDesc* vd;                                ///< volume description
     float      _channel4Color[3];                 ///< weights for visualization of 4th channel in RGB mode
     float      _opacityWeights[4];                ///< opacity weights for alpha blending with 4 channels
-    float      _lastRenderTime;                   ///< time it took to render the previous frame (seconds)
 
-    void        init();                           ///< initialization routine
+    virtual void init();                   		  ///< initialization routine
 
     // Class Methods:
   public:                                         // public methods will be inherited as public
     vvRenderer(vvVolDesc*, vvRenderState);
     virtual ~vvRenderer();
+    float		_lastRenderTime;                   ///< time it took to render the previous frame (seconds)
+	float		_lastComputeTime;
+	float		_lastPlaneSortingTime;
+	float		_lastGLdrawTime;
 
     // Static methods:
     static float adaptQuality(float, float, float, float);
@@ -132,6 +138,7 @@ class VIRVOEXPORT vvRenderer
     virtual RendererType getRendererType();
     virtual void  renderVolumeGL();
     virtual void  renderVolumeRGB(int, int, uchar*);
+	virtual void  renderMultipleVolume();
     virtual void  updateTransferFunction();
     virtual void  updateVolumeData();
     virtual int   getNumFrames();
@@ -173,6 +180,10 @@ class VIRVOEXPORT vvRenderer
     virtual float getChannel4Color(BasicColorType);
     virtual void  setOpacityWeight(BasicColorType, float);
     virtual float getOpacityWeight(BasicColorType);
+
+	// added by Han Kim Feb. 2008
+	virtual void setVolDesc(vvVolDesc*);
+	virtual vvVolDesc* getVolDesc();
 };
 #endif
 

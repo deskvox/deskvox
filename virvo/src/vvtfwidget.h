@@ -55,6 +55,7 @@ class VIRVOEXPORT vvTFWidget
 
   public:
     float _pos[3];                                ///< position of widget's center [volume data space]
+	float _opacity;                               ///< maximum opacity [0..1]
 
     vvTFWidget();
     vvTFWidget(float, float, float);
@@ -78,7 +79,6 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
   public:
     vvColor _col;                                 ///< RGB color
     float _size[3];                               ///< width, height, depth of bell's bounding box [volume data space]
-    float _opacity;                               ///< maximum opacity [0..1]
 
     vvTFBell();
     vvTFBell(vvTFBell*);
@@ -103,7 +103,6 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     vvColor _col;                                 ///< RGB color
     float _top[3];                                ///< width at top [volume data space]
     float _bottom[3];                             ///< width at bottom of pyramid [volume data space]
-    float _opacity;                               ///< maximum opacity [0..1]
 
     vvTFPyramid();
     vvTFPyramid(vvTFPyramid*);
