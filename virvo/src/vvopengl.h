@@ -29,4 +29,30 @@
 #endif
 
 #include "vvglext.h"
+
+#if defined(__APPLE__)
+/* copied from glext-orig.h */
+
+/* GL_VERSION_2_0 */
+typedef GLuint (APIENTRYP PFNGLCREATESHADERPROC) (GLenum type);
+typedef void (APIENTRYP PFNGLSHADERSOURCEPROC) (GLuint shader, GLsizei count, const GLchar* *string, const GLint *length);
+typedef void (APIENTRYP PFNGLCOMPILESHADERPROC) (GLuint shader);
+typedef void (APIENTRYP PFNGLATTACHSHADERPROC) (GLuint program, GLuint shader);
+typedef GLuint (APIENTRYP PFNGLCREATEPROGRAMPROC) (void);
+typedef void (APIENTRYP PFNGLLINKPROGRAMPROC) (GLuint program);
+typedef void (APIENTRYP PFNGLUSEPROGRAMPROC) (GLuint program);
+typedef GLint (APIENTRYP PFNGLGETUNIFORMLOCATIONPROC) (GLuint program, const GLchar *name);
+typedef void (APIENTRYP PFNGLUNIFORM1IPROC) (GLint location, GLint v0);
+typedef void (APIENTRYP PFNGLUNIFORM1IVPROC) (GLint location, GLsizei count, const GLint *value);
+typedef void (APIENTRYP PFNGLUNIFORM1FPROC) (GLint location, GLfloat v0);
+typedef void (APIENTRYP PFNGLUNIFORM1FVPROC) (GLint location, GLsizei count, const GLfloat *value);
+typedef void (APIENTRYP PFNGLUNIFORM3FVPROC) (GLint location, GLsizei count, const GLfloat *value);
+typedef void (APIENTRYP PFNGLDETACHSHADERPROC) (GLuint program, GLuint shader);
+typedef void (APIENTRYP PFNGLDELETEPROGRAMPROC) (GLuint program);
+typedef void (APIENTRYP PFNGLDELETESHADERPROC) (GLuint shader);
+
+/* GL_VERSION_1_3 */
+typedef void (APIENTRYP PFNGLACTIVETEXTUREPROC) (GLenum texture);
+#endif
+
 #endif

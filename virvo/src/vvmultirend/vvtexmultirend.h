@@ -27,12 +27,6 @@
 
 #include "vvopengl.h"
 
-// Cg:
-#ifdef HAVE_CG
-#include <Cg/cg.h>
-#include <Cg/cgGL.h>
-#endif
-
 // Virvo:
 #include "vvexport.h"
 #include "vvvoldesc.h"
@@ -68,7 +62,6 @@ class TexRendInfo
   The data points are located at the grid as follows:<BR>
   The outermost data points reside at the very edge of the drawn object,
   the other values are evenly distributed inbetween.
-  Make sure you define HAVE_CG in your compiler if you want to use Nvidia Cg.
   @author Juergen Schulze (schulze@cs.brown.de)
   @author Martin Aumueller
   @see vvRenderer
@@ -229,7 +222,6 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     void renderTex3DPlanar(vvMatrix*);
     int  getLUTSize(int*);
     int  getPreintTableSize();
-    static void checkCgError();
 
   public:
     vvTexMultiRend(vvVolDesc*, vvRenderState, GeometryType=VV_VIEWPORT, VoxelType=VV_GLSL);
