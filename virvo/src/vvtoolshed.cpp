@@ -2428,7 +2428,7 @@ void vvToolshed::qSort(int* numbers, int left, int right)
   if (right > pivot) qSort(numbers, pivot+1, right);
 }
 
-char* vvToolshed::file2string(char *filename)
+char* vvToolshed::file2string(const char *filename)
 {
 	FILE *fp = fopen(filename,"rt");
 

@@ -25,9 +25,15 @@ funcname = (type) wglGetProcAddress(#funcname); \
 	if ( ! funcname ) std::cerr << "#funcname() not initialized\n";
 #else
 #include <GL/glx.h>
+#ifdef GLX_VERSION_1_4
 #define DYNAMIC_BIND_NAME( funcname , type ) \
-funcname = (type) glXGetProcAddressARB((GLubyte*) #funcname); \
+funcname = (type) glXGetProcAddress((const GLubyte*) #funcname); \
 	if ( ! funcname ) std::cerr << "#funcname() not initialized\n";
+#else
+#define DYNAMIC_BIND_NAME( funcname , type ) \
+funcname = (type) glXGetProcAddressARB((const GLubyte*) #funcname); \
+	if ( ! funcname ) std::cerr << "#funcname() not initialized\n";
+#endif
 #endif
 
 /** OpenGL Shading Language
@@ -87,7 +93,7 @@ vvGLSL::~vvGLSL()
 
 void vvGLSL::loadShader()
 {
-	char *filename[] = {"glsl_1chan.frag", "glsl_2chan.frag", "glsl_3chan.frag", "glsl_multichan.frag"};
+	const char *filename[] = {"glsl_1chan.frag", "glsl_2chan.frag", "glsl_3chan.frag", "glsl_multichan.frag"};
 
 	for (unsigned int n = 0; n < sizeof(filename)/sizeof(char*); n++)
 	{

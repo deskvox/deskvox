@@ -53,10 +53,6 @@
 #include "vvprintgl.h"
 #include "vvmultirend/vvtexmultirend.h"
 
-#ifdef HAVE_CG
-  static void checkCgError(CGcontext ctx, CGerror err, void *appdata);
-#endif
-
 using namespace std;
 
 //----------------------------------------------------------------------------
@@ -157,10 +153,6 @@ vvTexMultiRend::~vvTexMultiRend()
   delete[] rgbaLUT;
   delete[] preintTable;
 
-#ifdef HAVE_CG
-  delete[] _cgProgram;
-  delete[] _cgFragProfile;
-#endif
   delete[] chanWeight;
   delete[] color;
   delete[] tfGamma;
