@@ -17,24 +17,12 @@
 #include "vvtoolshed.h"
 #include "vvglsl.h"
 #include "vvgltools.h"
+#include "vvdynlib.h"
 #include <assert.h>
 
-#ifdef WIN32
 #define DYNAMIC_BIND_NAME( funcname , type ) \
-funcname = (type) wglGetProcAddress(#funcname); \
+funcname = (type) vvDynLib::glSym(#funcname); \
 	if ( ! funcname ) std::cerr << "#funcname() not initialized\n";
-#else
-#include <GL/glx.h>
-#ifdef GLX_VERSION_1_4
-#define DYNAMIC_BIND_NAME( funcname , type ) \
-funcname = (type) glXGetProcAddress((const GLubyte*) #funcname); \
-	if ( ! funcname ) std::cerr << "#funcname() not initialized\n";
-#else
-#define DYNAMIC_BIND_NAME( funcname , type ) \
-funcname = (type) glXGetProcAddressARB((const GLubyte*) #funcname); \
-	if ( ! funcname ) std::cerr << "#funcname() not initialized\n";
-#endif
-#endif
 
 /** OpenGL Shading Language
  */
