@@ -2191,7 +2191,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     value     = vvToolshed::read32(fp, endian);
 
                                                   // 16 bit values are left aligned
-    if (endian==vvToolshed::VV_BIG_END && dataType==3) value = value >> 16;
+	if (endian==vvToolshed::VV_BIG_END && dataType==3 && tag!=0x102) value = value >> 16;
 
     if (vvDebugMsg::isActive(2))
     {
