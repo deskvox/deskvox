@@ -8,13 +8,6 @@ CONFIG	   *= dll dl cg
 win32:DEFINES += VIRVO_EXPORT UNICODE
 DEFINES *= NO_CONFIG_H
 
-# work around bug in intel compiler
-caymanopt {
-   QMAKE_CXXFLAGS -= -O2
-   QMAKE_CXXFLAGS += -O1
-   QMAKE_CXXFLAGS_RELEASE -= -O2
-}
-
 SOURCES	   = \
 vvcolor.cpp vvdebugmsg.cpp vvdicom.cpp vvdynlib.cpp vvfileio.cpp vvgltools.cpp vvideo.cpp \
 vvimage.cpp vvprintgl.cpp vvrenderer.cpp vvsocket.cpp vvsocketio.cpp vvsphere.cpp vvstingray.cpp \
@@ -35,4 +28,11 @@ DEVFILES   = $$HEADERS
 
 !include ($$BASEDIR/mkspecs/config.pro) {
     message (include of config.pro failed)
+}
+
+# work around bug in intel compiler
+caymanopt {
+   QMAKE_CXXFLAGS -= -O2
+   QMAKE_CXXFLAGS += -O1
+   QMAKE_CXXFLAGS_RELEASE -= -O2
 }
