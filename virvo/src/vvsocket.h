@@ -57,6 +57,7 @@
 // Type Declarations
 //============================================================================
 
+#ifdef _WIN32
 /* code copied from Python's pyconfig.h,
  * to avoid different definition of  ssize_t */
 #ifdef _WIN64
@@ -65,6 +66,7 @@ typedef __int64 ssize_t;
 typedef _W64 int ssize_t;
 #endif
 /* end copy */
+#endif
 
 typedef void Sigfunc(int);
 typedef unsigned char   uchar;                    ///< abbreviation for unsigned char
