@@ -60,19 +60,34 @@ vvTFWidget::vvTFWidget()
   }
 }
 
-/** Copy constructor.
+/** Copy constructor
 */
-vvTFWidget::vvTFWidget(vvTFWidget* src)
+vvTFCustom::vvTFCustom(vvTFCustom* src) : vvTFWidget(src)
 {
   int i;
 
-  _name = NULL;
-  setName(src->_name);
   for (i=0; i<3; ++i)
   {
-    _pos[i] = src->_pos[i];
+     _size[i] = src->_size[i];
+  }
+
+  // deep copy the list too!
+  _currentPoint = NULL;
+
+  list<vvTFPoint*>::iterator iter;
+  for(iter = src->_points.begin(); iter != src->_points.end(); iter++)
+  {
+     vvTFPoint* newPoint = new vvTFPoint((*iter)->_opacity,
+        (*iter)->_pos[0], (*iter)->_pos[1], (*iter)->_pos[2]);
+
+     // check for the current point
+     if ((*iter) == src->_currentPoint)
+        _currentPoint = newPoint;
+
+     this->_points.push_back(newPoint);
   }
 }
+
 
 /** Constructor with parameter initialization.
 */
