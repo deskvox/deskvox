@@ -183,55 +183,55 @@ void vvTFBell::write(FILE* fp)
 */
 float vvTFBell::getOpacity(float x, float y, float z)
 {
-  const float WIDTH_ADJUST = 5.0f;
-  const float HEIGHT_ADJUST = 0.1f;
-  float stdev[3];                                 // standard deviation in x,y,z
-  float exponent = 0.0f;
-  float factor = 1.0f;
-  float opacity;
-  float bMin[3], bMax[3];                         // widget boundary
-  float p[3];                                     // sample point position
-  float sqrt2pi;                                  // square root of 2 PI
-  int dim;
-  int i;
+ const float WIDTH_ADJUST = 5.0f;
+ const float HEIGHT_ADJUST = 0.1f;
+ float stdev[3];                                 // standard deviation in x,y,z
+ float exponent = 0.0f;
+ float factor = 1.0f;
+ float opacity;
+ float bMin[3], bMax[3];                         // widget boundary
+ float p[3];                                     // sample point position
+ float sqrt2pi;                                  // square root of 2 PI
+ int dim;
+ int i;
 
-  p[0] = x;
-  p[1] = y;
-  p[2] = z;
+ p[0] = x;
+ p[1] = y;
+ p[2] = z;
 
-  // Determine dimensionality of transfer function:
-  dim = 1;
-  if (z>-1.0f) dim = 3;
-  else if (y>-1.0f) dim = 2;
+ // Determine dimensionality of transfer function:
+ dim = 1;
+ if (z>-1.0f) dim = 3;
+ else if (y>-1.0f) dim = 2;
 
-  // Determine widget boundaries:
-  for (i=0; i<dim; ++i)
-  {
-    bMin[i] = _pos[i] - _size[i] / 2.0f;
-    bMax[i] = _pos[i] + _size[i] / 2.0f;
-  }
+ // Determine widget boundaries:
+ for (i=0; i<dim; ++i)
+ {
+   bMin[i] = _pos[i] - _size[i] / 2.0f;
+   bMax[i] = _pos[i] + _size[i] / 2.0f;
+ }
 
-  // First find out if point lies within bell:
-  if (x < bMin[0] || x > bMax[0] ||
-    (dim>1 && (y < bMin[1] || y > bMax[1])) ||
-    (dim>2 && (z < bMin[2] || z > bMax[2])))
-  {
-    return 0.0f;
-  }
+ // First find out if point lies within bell:
+ if (x < bMin[0] || x > bMax[0] ||
+   (dim>1 && (y < bMin[1] || y > bMax[1])) ||
+   (dim>2 && (z < bMin[2] || z > bMax[2])))
+ {
+   return 0.0f;
+ }
 
-  for (i=0; i<dim; ++i)
-  {
-    stdev[i] = _size[i] / WIDTH_ADJUST;
-  }
+ for (i=0; i<dim; ++i)
+ {
+   stdev[i] = _size[i] / WIDTH_ADJUST;
+ }
 
-  sqrt2pi = sqrtf(2.0f * TS_PI);
-  for (i=0; i<dim; ++i)
-  {
-    exponent += (p[i] - _pos[0]) * (p[i] - _pos[i]) / (2.0f * stdev[i] * stdev[i]);
-    factor *= sqrt2pi * stdev[i];
-  }
-  opacity = ts_min(HEIGHT_ADJUST * _opacity * expf(-exponent) / factor, 1.0f);
-  return opacity;
+ sqrt2pi = sqrtf(2.0f * TS_PI);
+ for (i=0; i<dim; ++i)
+ {
+   exponent += (p[i] - _pos[i]) * (p[i] - _pos[i]) / (2.0f * stdev[i] * stdev[i]);
+   factor *= sqrt2pi * stdev[i];
+ }
+ opacity = ts_min(HEIGHT_ADJUST * _opacity * expf(-exponent) / factor, 1.0f);
+ return opacity;
 }
 
 /** @return true if coordinate is within bell
@@ -338,72 +338,136 @@ void vvTFPyramid::write(FILE* fp)
     _top[0], _top[1], _top[2], _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
 }
 
+
 float vvTFPyramid::getOpacity(float x, float y, float z)
 {
-  float p[3];                                     // sample point position
-  float outMin[3], outMax[3];                     // outer boundaries of pyramid
-  float inMin[3], inMax[3];                       // inner boundaries of pyramid
-  int dim, i;
+ float p[3];                                     // sample point position
+ float outMin[3], outMax[3];                     // outer boundaries of pyramid
+ float inMin[3], inMax[3];                       // inner boundaries of pyramid
+ int dim, i;
 
-  p[0] = x;
-  p[1] = y;
-  p[2] = z;
+ p[0] = x;
+ p[1] = y;
+ p[2] = z;
 
-  // Determine dimensionality of transfer function:
-  dim = 1;
-  if (z>-1.0f) dim = 3;
-  else if (y>-1.0f) dim = 2;
+ // Determine dimensionality of transfer function:
+ dim = 1;
+ if (z>-1.0f) dim = 3;
+ else if (y>-1.0f) dim = 2;
 
-  // Calculate inner and outer boundaries of pyramid:
-  for (i=0; i<dim; ++i)
-  {
-    outMin[i] = _pos[i] - _bottom[i] / 2.0f;
-    outMax[i] = _pos[i] + _bottom[i] / 2.0f;
-    inMin[i]  = _pos[i] - _top[i] / 2.0f;
-    inMax[i]  = _pos[i] + _top[i] / 2.0f;
-  }
+ // Calculate inner and outer boundaries of pyramid:
+ for (i=0; i<dim; ++i)
+ {
+   outMin[i] = _pos[i] - _bottom[i] / 2.0f;
+   outMax[i] = _pos[i] + _bottom[i] / 2.0f;
+   inMin[i]  = _pos[i] - _top[i] / 2.0f;
+   inMax[i]  = _pos[i] + _top[i] / 2.0f;
+ }
 
-  // First find out if point lies within pyramid:
-  if (x < outMin[0] || x > outMax[0] ||
-    (dim>1 && (y < outMin[1] || y > outMax[1])) ||
-    (dim>2 && (z < outMin[2] || z > outMax[2])))
-  {
-    return 0.0f;
-  }
+ // First find out if point lies within pyramid:
+ if (x < outMin[0] || x > outMax[0] ||
+   (dim>1 && (y < outMin[1] || y > outMax[1])) ||
+   (dim>2 && (z < outMin[2] || z > outMax[2])))
+ {
+   return 0.0f;
+ }
 
-  // Now check if point is within the pyramid's plateau:
-  if (x >= inMin[0] && x <= inMax[0])
-  {
-    if (dim<2) return _opacity;
-    if (y >= inMin[1] && y <= inMax[1])
-    {
-      if (dim<3) return _opacity;
-      if (z >= inMin[2] && z <= inMax[2]) return _opacity;
-    }
-    else return _opacity;
-  }
+ // Now check if point is within the pyramid's plateau:
+ if (x >= inMin[0] && x <= inMax[0])
+ {
+   if (dim<2) return _opacity;
+   if (y >= inMin[1] && y <= inMax[1])
+   {
+     if (dim<3) return _opacity;
+     if (z >= inMin[2] && z <= inMax[2]) return _opacity;
+   }
+   //else return _opacity;
+ }
 
-  // Now it's clear that the point is on one of the pyramid's flanks, so
-  // we interpolate the value along the flank:
-  switch (dim)
-  {
-    case 1:
-      if (p[0] < inMin[0]) return vvToolshed::interpolateLinear(outMin[0], 0.0f, inMin[0], _opacity, p[0]);
-      if (p[0] > inMax[0]) return vvToolshed::interpolateLinear(inMax[0], _opacity, outMax[0], 0.0f, p[0]);
-      break;
-    case 2:                                       // TODO: use diagonal lines
-      if (p[0] < inMin[0]) return vvToolshed::interpolateLinear(outMin[0], 0.0f, inMin[0], _opacity, p[0]);
-      if (p[0] > inMax[0]) return vvToolshed::interpolateLinear(inMax[0], _opacity, outMax[0], 0.0f, p[0]);
-      if (p[1] < inMin[1]) return vvToolshed::interpolateLinear(outMin[1], 0.0f, inMin[1], _opacity, p[1]);
-      if (p[1] > inMax[1]) return vvToolshed::interpolateLinear(inMax[1], _opacity, outMax[1], 0.0f, p[1]);
-      break;
-    case 3:
-      // TODO: implement for 3D pyramids
-      break;
-    default: assert(0); break;
-  }
-  return 0.0f;
+ // Now it's clear that the point is on one of the pyramid's flanks, so
+ // we interpolate the value along the flank:
+ switch (dim)
+ {
+   case 1:
+     if (p[0] < inMin[0]) return vvToolshed::interpolateLinear(outMin[0], 0.0f, inMin[0], _opacity, p[0]);
+     if (p[0] > inMax[0]) return vvToolshed::interpolateLinear(inMax[0], _opacity, outMax[0], 0.0f, p[0]);
+     break;
+   case 2:        {
+         // new: uses bilinear interpolation
+         float x1, y1, x2, y2;
+         float r2, val;
+
+         //outMin[i] = _pos[i] - _bottom[i] / 2.0f;
+         //outMax[i] = _pos[i] + _bottom[i] / 2.0f;
+         //inMin[i]  = _pos[i] - _top[i] / 2.0f;
+         //inMax[i]  = _pos[i] + _top[i] / 2.0f;
+
+         // decide for x
+         if (p[0] > _pos[0])
+         {
+            if (p[0] > inMax[0])
+            {
+               x1 = inMax[0];
+               x2 = outMax[0];
+               r2 = (x2 - p[0]) / (x2 - x1);
+            }
+            else
+            {
+               r2 = 1.0f;
+            }
+         }
+         else
+         {
+            if (p[0] < inMin[0])
+            {
+               x1 = inMin[0];
+               x2 = outMin[0];                r2 = (x2 - p[0]) / (x2 - x1);
+            }
+            else
+            {
+               r2 = 1.0f;
+            }
+         }
+
+         //y
+         if (p[1] > _pos[1])
+         {
+            if (p[1] > inMax[1])
+            {
+              y1 = outMax[1];
+              y2 = inMax[1];
+
+              val = ((p[1] - y1)/(y2 - y1)) * r2;
+            }
+            else
+            {
+               val = r2;
+            }
+         }
+         else
+         {
+            if (p[1] < inMin[1])
+            {
+              y1 = outMin[1];
+              y2 = inMin[1];
+
+              val = ((p[1] - y1)/(y2 - y1)) * r2;
+            }
+            else
+            {
+               val = r2;
+            }
+         }
+         return val;               }
+     break;
+   case 3:
+     // TODO: implement for 3D pyramids
+     break;
+   default: assert(0); break;
+ }
+ return 0.0f;
 }
+
 
 /** @return true if coordinate is within pyramid
   @param color returned color value
@@ -452,7 +516,7 @@ void vvTFPyramid::setOwnColor(bool own)
 vvTFColor::vvTFColor() : vvTFWidget()
 {
   int i;
-  
+
   for(i=0; i<3; ++i)
   {
     _col[i] = 1.0f;                               // default is white
@@ -462,7 +526,7 @@ vvTFColor::vvTFColor() : vvTFWidget()
 vvTFColor::vvTFColor(vvTFColor* src) : vvTFWidget(src)
 {
   int i;
-  
+
   for(i=0; i<3; ++i)
   {
     _col[i] = src->_col[i];
@@ -494,7 +558,7 @@ void vvTFColor::write(FILE* fp)
 vvTFSkip::vvTFSkip() : vvTFWidget()
 {
   int i;
-  
+
   for (i=0; i<3; ++i)
   {
     _size[i] = 0.0f;
@@ -506,7 +570,7 @@ vvTFSkip::vvTFSkip() : vvTFWidget()
 vvTFSkip::vvTFSkip(vvTFSkip* src) : vvTFWidget(src)
 {
   int i;
-  
+
   for (i=0; i<3; ++i)
   {
     _size[i] = src->_size[i];
@@ -543,13 +607,13 @@ float vvTFSkip::getOpacity(float x, float y, float z)
   float _min[3];
   float _max[3];
   int i, dim;
-  
+
   for (i=0; i<3; ++i)
   {
     _min[i] = _pos[i] - _size[i] / 2.0f;
     _max[i] = _pos[i] + _size[i] / 2.0f;
   }
-  
+
   // Determine dimensionality of transfer function:
   dim = 1;
   if (z>-1.0f) dim = 3;
@@ -565,13 +629,13 @@ float vvTFSkip::getOpacity(float x, float y, float z)
 //============================================================================
 
 /** Default constructor.
-  The custom widget defines an area where users can define a TF with 
+  The custom widget defines an area where users can define a TF with
   a series of control points.
 */
 vvTFCustom::vvTFCustom() : vvTFWidget()
 {
   int i;
-  
+
   for (i=0; i<3; ++i)
   {
     _size[i] = 0.0f;
@@ -629,16 +693,16 @@ vvTFCustom::vvTFCustom(FILE* fp) : vvTFWidget()
   float op, x, y, z;
   int numPoints;
   int i;
-  
+
   readName(fp);
   fscanf(fp, " %d %g %g %g\n", &numPoints, &_size[0], &_size[1], &_size[2]);
 
-  for(i=0; i<numPoints; ++i) 
+  for(i=0; i<numPoints; ++i)
   {
     fscanf(fp, "%g %g %g %g\n", &op, &x, &y, &z);
     point = new vvTFPoint(op, x, y, z);
     _points.push_back(point);
-  }  
+  }
   _currentPoint = NULL;
 }
 
@@ -648,7 +712,7 @@ vvTFCustom::~vvTFCustom()
   list<vvTFPoint*>::iterator iter;
 
   // Remove point instances from list:
-  for(iter=_points.begin(); iter!=_points.end(); iter++) 
+  for(iter=_points.begin(); iter!=_points.end(); iter++)
   {
     delete *iter;
   }
@@ -664,10 +728,10 @@ void vvTFCustom::write(FILE* fp)
   fprintf(fp, "TF_CUSTOM %s %g %g %g %d\n", (_name) ? _name : NO_NAME,
     _size[0], _size[1], _size[2], (int)_points.size());
 
-  for(iter=_points.begin(); iter!=_points.end(); iter++) 
+  for(iter=_points.begin(); iter!=_points.end(); iter++)
   {
     fprintf(fp, "%g %g %g %g\n", (*iter)->_opacity, (*iter)->_pos[0], (*iter)->_pos[1], (*iter)->_pos[2]);
-  }  
+  }
 }
 
 /** @return opacity of a value in the TF, as defined by this widget
@@ -681,13 +745,13 @@ float vvTFCustom::getOpacity(float x, float y, float z)
   float _max[3];
   int i, dim;
   float xTF;    // x position in widget space
-  
+
   for (i=0; i<3; ++i)
   {
     _min[i] = _pos[i] - _size[i] / 2.0f;
     _max[i] = _pos[i] + _size[i] / 2.0f;
   }
-  
+
   // Determine dimensionality of transfer function:
   dim = 1;
   if (z>-1.0f) dim = 3;
@@ -701,7 +765,7 @@ float vvTFCustom::getOpacity(float x, float y, float z)
     xTF = x - _pos[0]; // transform x to widget space
     prev = NULL;
     if (_points.size()==0) return 0.0f; // no control points specified
-    for(iter=_points.begin(); iter!=_points.end(); iter++) 
+    for(iter=_points.begin(); iter!=_points.end(); iter++)
     {
       if (xTF < (*iter)->_pos[0])
       {
@@ -730,11 +794,11 @@ vvTFPoint* vvTFCustom::addPoint(float x, float y, float z)
 {
   list<vvTFPoint*>::iterator iter;
   vvTFPoint* newPoint;
-  
+
   newPoint = new vvTFPoint(getOpacity(x, y, z), x - _pos[0], y - _pos[1], z - _pos[2]);
   _points.push_back(newPoint);
   sortPoints();
-  return newPoint;  
+  return newPoint;
 }
 
 /** Remove current control point from list.
@@ -765,15 +829,15 @@ vvTFPoint* vvTFCustom::selectPoint(float o, float ot, float x, float xt, float y
   float global[3];  // global x/y/z coordinates of control point
   list<vvTFPoint*>::iterator iter;
   int i;
-  
-  for(iter=_points.begin(); iter!=_points.end(); iter++) 
+
+  for(iter=_points.begin(); iter!=_points.end(); iter++)
   {
     for (i=0; i<3; ++i)
     {
       global[i] = _pos[i] + (*iter)->_pos[i];
     }
-    if (fabs(global[0] - x) <= xt && 
-        fabs((*iter)->_opacity - o) <= ot) 
+    if (fabs(global[0] - x) <= xt &&
+        fabs((*iter)->_opacity - o) <= ot)
     {
       _currentPoint = *iter;
       return *iter;
@@ -806,14 +870,14 @@ void vvTFCustom::setCurrentPoint(float opacity, float x, float y, float z)
 void vvTFCustom::moveCurrentPoint(float dop, float dx, float dy, float dz)
 {
   int i;
-  
+
   if (_currentPoint)
   {
     _currentPoint->_pos[0]  += dx;
     _currentPoint->_pos[1]  += dy;
     _currentPoint->_pos[2]  += dz;
     _currentPoint->_opacity += dop;
-    
+
     // Constrain point position to limits:
     _currentPoint->_opacity = ts_clamp(_currentPoint->_opacity, 0.0f, 1.0f);
     for (i=0; i<3; ++i)
@@ -835,19 +899,19 @@ void vvTFCustom::sortPoints()
   vvTFPoint* prev;
   vvTFPoint* point;
   bool done=false;
-  
-  if (_points.size()<=1) return; // no sorting necessary  
+
+  if (_points.size()<=1) return; // no sorting necessary
   while (!done)
   {
     prev = NULL;
-    for(iter=_points.begin(); iter!=_points.end(); iter++) 
+    for(iter=_points.begin(); iter!=_points.end(); iter++)
     {
-      if (prev==NULL) 
+      if (prev==NULL)
       {
         prev = *iter;
         continue;
       }
-      if ((*iter)->_pos[0] < prev->_pos[0]) 
+      if ((*iter)->_pos[0] < prev->_pos[0])
       {
         point = prev;
         _points.remove(prev);
@@ -870,8 +934,8 @@ void vvTFCustom::setSize(float x, float y, float z)
   if (x!=-1.0f) _size[0] = x;
   if (y!=-1.0f) _size[1] = y;
   if (z!=-1.0f) _size[2] = z;
-  
-  for(iter=_points.begin(); iter!=_points.end(); iter++) 
+
+  for(iter=_points.begin(); iter!=_points.end(); iter++)
   {
     for (i=0; i<3; ++i)
     {
