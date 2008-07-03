@@ -48,7 +48,10 @@ class VIRVOEXPORT vvTransFunc
       TF_PYRAMID,
       TF_BELL,
       TF_SKIP,
-      TF_CUSTOM
+      TF_CUSTOM,
+
+      TF_CUSTOM_2D,
+      TF_MAP
     };
     vvSLList<vvTFWidget*> _widgets;  ///< TF widget list
 
@@ -73,6 +76,7 @@ class VIRVOEXPORT vvTransFunc
     void makeColorBar(int, uchar*, float, float, bool);
     void makeAlphaTexture(int, int, uchar*, float, float);
     void make2DTFTexture(int, int, uchar*, float, float, float, float);
+    void make2DTFTexture2(int, int, uchar*, float, float, float, float);
     void make8bitLUT(int, uchar*, float, float);
     void makeFloatLUT(int, float*);
     void makePreintLUTOptimized(int width, uchar *preintLUT, float thickness=1.0, float min=0.0, float max=1.0);

@@ -3838,7 +3838,13 @@ int vvTexRend::getLUTSize(int* size)
   else
   {
     x = 256;
-    y = z = 1;
+    if (vd->chan == 2)
+    {
+       y = x;
+       z = 1;
+    }
+    else
+       y = z = 1;
   }
   if (size)
   {

@@ -941,25 +941,29 @@ void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* siz
 */
 void vvVolDesc::computeTFTexture(int w, int h, int d, float* dest)
 {
-  const int RGBA = 4;
-  float dataVal;
-  int i, linearBin;  
-  
-  tf.computeTFTexture(w, h, d, dest, real[0], real[1]);
-  // convert opacity TF if hdr mode:
-  if (_binning!=LINEAR && !_transOp)
-  {
-    float* tmpOp = new float[w*h*d*RGBA];
-    memcpy(tmpOp, dest, w * h * d * RGBA * sizeof(float));
-    for (i=0; i<w; ++i) // go through all bins and non-linearize them
-    {
-      dataVal = _hdrBinLimits[i];
-      linearBin = int((dataVal - real[0]) / (real[1] - real[0]) * float(w));
-      linearBin = ts_clamp(linearBin, 0, w-1);
-      dest[i*RGBA+3] = tmpOp[linearBin*RGBA+3];
-    }
-    delete[] tmpOp;
-  } 
+   const int RGBA = 4;
+   float dataVal;
+   int i, linearBin;  
+
+   if (this->chan == 1)
+      tf.computeTFTexture(w, h, d, dest, real[0], real[1]);
+   else if (this->chan == 2)
+      tf.computeTFTexture(w, h, d, dest, real[0], real[1], 0.0f, 1.0f); //TODO substitute fixed values!
+
+   // convert opacity TF if hdr mode:
+   if (_binning!=LINEAR && !_transOp)
+   {
+      float* tmpOp = new float[w*h*d*RGBA];
+      memcpy(tmpOp, dest, w * h * d * RGBA * sizeof(float));
+      for (i=0; i<w; ++i) // go through all bins and non-linearize them
+      {
+         dataVal = _hdrBinLimits[i];
+         linearBin = int((dataVal - real[0]) / (real[1] - real[0]) * float(w));
+         linearBin = ts_clamp(linearBin, 0, w-1);
+         dest[i*RGBA+3] = tmpOp[linearBin*RGBA+3];
+      }
+      delete[] tmpOp;
+   }
 }
 
 /**

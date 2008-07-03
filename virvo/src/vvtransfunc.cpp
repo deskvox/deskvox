@@ -56,6 +56,10 @@ vvTransFunc::vvTransFunc(vvTransFunc* tf)
     vvTFPyramid* p;
     vvTFBell* b;
     vvTFSkip* s;
+    vvTFCustom* cu;
+    vvTFCustom2D* c2;
+    vvTFCustomMap* cm;
+
     if ((c = dynamic_cast<vvTFColor*>(oldW)) != NULL)
       _widgets.append(new vvTFColor(c), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
     else if ((p = dynamic_cast<vvTFPyramid*>(oldW)) != NULL)
@@ -64,6 +68,13 @@ vvTransFunc::vvTransFunc(vvTransFunc* tf)
       _widgets.append(new vvTFBell(b), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
     else if ((s = dynamic_cast<vvTFSkip*>(oldW)) != NULL)
       _widgets.append(new vvTFSkip(s), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    else if ((cu = dynamic_cast<vvTFCustom*>(oldW)) != NULL)
+      _widgets.append(new vvTFCustom(cu), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    else if ((c2 = dynamic_cast<vvTFCustom2D*>(oldW)) != NULL)
+      _widgets.append(new vvTFCustom2D(c2), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    else if ((cm = dynamic_cast<vvTFCustomMap*>(oldW)) != NULL)
+      _widgets.append(new vvTFCustomMap(cm), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+
     else assert(0);
     tf->_widgets.next();
   }
@@ -94,10 +105,13 @@ void vvTransFunc::deleteWidgets(WidgetType wt)
   while (!done && !_widgets.isEmpty())
   {
     w = _widgets.getData();
-    if ((wt==TF_COLOR && dynamic_cast<vvTFColor*>(w)) ||
-      (wt==TF_PYRAMID && dynamic_cast<vvTFPyramid*>(w)) ||
-      (wt==TF_BELL    && dynamic_cast<vvTFBell*>(w)) ||
-      (wt==TF_SKIP    && dynamic_cast<vvTFSkip*>(w)))
+    if ((wt==TF_COLOR   && dynamic_cast<vvTFColor*>(w)) ||
+      (wt==TF_PYRAMID   && dynamic_cast<vvTFPyramid*>(w)) ||
+      (wt==TF_BELL      && dynamic_cast<vvTFBell*>(w)) ||
+      (wt==TF_SKIP      && dynamic_cast<vvTFSkip*>(w)) ||
+      (wt==TF_CUSTOM    && dynamic_cast<vvTFCustom*>(w)) ||
+      (wt==TF_CUSTOM_2D && dynamic_cast<vvTFCustom2D*>(w)) ||
+      (wt==TF_MAP       && dynamic_cast<vvTFCustomMap*>(w)))
     {
       _widgets.remove();
       _widgets.first();
@@ -192,6 +206,8 @@ void vvTransFunc::setDefaultAlpha(int index, float min, float max)
   deleteWidgets(TF_PYRAMID);
   deleteWidgets(TF_BELL);
   deleteWidgets(TF_CUSTOM);
+  deleteWidgets(TF_CUSTOM_2D);
+  deleteWidgets(TF_MAP);
   deleteWidgets(TF_SKIP);
   switch (index)
   {
@@ -306,6 +322,22 @@ vvColor vvTransFunc::computeColor(float x, float y, float z)
     else if (vvTFBell *bw = dynamic_cast<vvTFBell*>(w))
     {
       if (bw->hasOwnColor() && bw->getColor(col, x, y, z))
+      {
+        hasOwn = true;
+        resultCol = resultCol + col;
+      }
+    }
+    else if (vvTFCustom2D *cw = dynamic_cast<vvTFCustom2D*>(w))
+    {
+      if (cw->hasOwnColor() && cw->getColor(col, x, y, z))
+      {
+        hasOwn = true;
+        resultCol = resultCol + col;
+      }
+    }
+    else if (vvTFCustomMap *cmw = dynamic_cast<vvTFCustomMap*>(w))
+    {
+      if (cmw->hasOwnColor() && cmw->getColor(col, x, y, z))
       {
         hasOwn = true;
         resultCol = resultCol + col;
@@ -541,6 +573,36 @@ void vvTransFunc::make2DTFTexture(int width, int height, uchar* texture, float m
 }
 
 //----------------------------------------------------------------------------
+/** Returns BGRA texture values for the 2D transfer function.
+ Order of components: BGRABGRABGRA...
+ Texture is flipped along Y axis, to be displayed on windows managers (Qt)
+ @param width,height size of texture [pixels]
+ @param texture  _allocated_ array in which to store texture values.
+                 Space for width*height*4 bytes must be provided.
+*/
+void vvTransFunc::make2DTFTexture2(int width, int height, uchar* texture, float minX, float maxX, float minY, float maxY)
+{
+  int x, y, index1, index2;
+
+  float* rgba = new float[width * height * 4];
+  computeTFTexture(width, height, 1, rgba, minX, maxX, minY, maxY);
+
+  for (y=0; y<height; ++y)
+  {
+    for (x=0; x<width; ++x)
+    {
+      index1 = 4 * (x + y * width);
+      index2 = 4 * (x + (height - 1 - y) * width);
+      texture[index1]     = uchar(rgba[index2 + 2] * 255.0f);
+      texture[index1 + 1] = uchar(rgba[index2 + 1] * 255.0f);
+      texture[index1 + 2] = uchar(rgba[index2]     * 255.0f);
+      texture[index1 + 3] = uchar(rgba[index2 + 3] * 255.0f);
+    }
+  }
+  delete[] rgba;
+}
+
+//----------------------------------------------------------------------------
 /** Create a look-up table of 8-bit integer values from current transfer
   function.
   @param width number of LUT entries (typically 256 or 4096, depending on bpv)
@@ -603,6 +665,14 @@ void vvTransFunc::copy(vvSLList<vvTFWidget*>* dst, vvSLList<vvTFWidget*>* src)
     else if (vvTFSkip *sw = dynamic_cast<vvTFSkip*>(w))
     {
       dst->append(new vvTFSkip(sw), src->getDeleteType());
+    }
+    else if (vvTFCustomMap *cmw = dynamic_cast<vvTFCustomMap*>(w))
+    {
+      dst->append(new vvTFCustomMap(cmw), src->getDeleteType());
+    }
+    else if (vvTFCustom2D *c2w = dynamic_cast<vvTFCustom2D*>(w))
+    {
+      dst->append(new vvTFCustom2D(c2w), src->getDeleteType());
     }
     else assert(0);
     src->next();
@@ -1104,6 +1174,9 @@ int vvTransFunc::getNumWidgets(WidgetType wt)
       case TF_BELL:    if (dynamic_cast<vvTFBell*>(w))    ++num; break;
       case TF_SKIP:    if (dynamic_cast<vvTFSkip*>(w))    ++num; break;
       case TF_CUSTOM:  if (dynamic_cast<vvTFCustom*>(w))  ++num; break;
+
+      case TF_CUSTOM_2D: if (dynamic_cast<vvTFCustom2D*>(w))  ++num; break;
+      case TF_MAP:       if (dynamic_cast<vvTFCustomMap*>(w)) ++num; break;
     }
     _widgets.next();
   }

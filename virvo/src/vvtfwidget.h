@@ -171,6 +171,88 @@ class VIRVOEXPORT vvTFCustom : public vvTFWidget
     void setSize(float, float=-1.0f, float=-1.0f);
 };
 
+
+/** 06/2008 L. Dematte'
+  Transfer function widget to specify a custom 2D transfer function widget with control points. 
+  Points will be used to create a custom "tent" or an "extruded" shape (basically a polyline
+  with alpha value as height).
+ */
+class VIRVOEXPORT vvTFCustom2D : public vvTFWidget
+{
+protected:
+    bool _ownColor;    
+
+public:
+    //float _size[3];                ///< width, height, depth of TF area [volume data space]
+    std::list<vvTFPoint*> _points; ///< list of control points; coordinates are relative to widget center
+    bool _mapDirty;
+
+    vvColor _col;
+
+    float _opacity;
+    bool _extrude;
+    vvTFPoint* _centralPoint;      ///< central point
+
+    vvTFCustom2D(bool extrude, float opacity, float xCenter, float yCenter);
+    vvTFCustom2D(vvTFCustom2D*);
+    vvTFCustom2D(FILE*);
+    virtual ~vvTFCustom2D();
+    virtual void write(FILE*);
+    virtual float getOpacity(float, float=-1.0f, float=-1.0f);
+    vvTFPoint* addPoint(float opacity, float x, float y);
+    void addPoint(vvTFPoint* newPoint);
+
+
+    virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
+    virtual bool hasOwnColor();
+    virtual void setOwnColor(bool);
+
+private:
+   float _size[3];                // width, height, depth of TF area [volume data space]
+   float* _map;
+   int _dim;                      // dimension of the map
+
+   void addMapPoint(int x, int y, float value);
+   void drawFreeContour();
+   void uniformFillFreeArea();
+
+   void internalFloodFill(float* map, int x, int y, int xDim, int yDim, float oldV, float newV);
+   void midPointLine(float* map, int x0, int y0, int x1, int y1, float alpha0, float alpha1);
+};
+
+/** 06/2008 L. Dematte'
+  Transfer function widget to specify a custom transfer function.
+  Values for each point in space are given.
+ */
+class VIRVOEXPORT vvTFCustomMap : public vvTFWidget
+{
+  protected:
+    bool _ownColor;                // true = use widget's own color for TF; false=use background color for TF
+
+  public:
+    vvColor _col;                  // RGB color
+    float _size[3];                // width, height, depth of TF area [volume data space]
+    float* _map;
+    int _dim[3];                   // dimensions of the map [widget data space]
+
+    vvTFCustomMap();
+    vvTFCustomMap(float x, float w, float y=0.5f, float h=0.0f, float z=0.5f, float d=0.0f);
+    vvTFCustomMap(vvColor, bool, float x, float w, float y=0.5f, float h=0.0f, float z=0.5f, float d=0.0f);
+    vvTFCustomMap(vvTFCustomMap*);
+    vvTFCustomMap(FILE*);
+    virtual ~vvTFCustomMap();
+    virtual void write(FILE*);
+    virtual float getOpacity(float, float=-1.0f, float=-1.0f);
+    void setOpacity(float val, float x, float y=-1.0f, float z=-1.0f);
+
+    virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
+    virtual bool hasOwnColor();
+    virtual void setOwnColor(bool);
+
+private:
+    int computeIdx(float x, float y, float z);
+};
+
 #endif
 
 //============================================================================
