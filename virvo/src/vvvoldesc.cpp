@@ -861,7 +861,7 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
   @param color           color for histogram foreground (background is transparent)
   @param min,max         data range for which histogram is to be created. Use 0..1 for integer data types.
 */
-void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* size, uchar* data, 
+void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* size, uchar* data,
   NormalizationType ntype, vvColor* color, float min, float max)
 {
   const int BPT = 4;                              // bytes per texel
@@ -941,29 +941,30 @@ void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* siz
 */
 void vvVolDesc::computeTFTexture(int w, int h, int d, float* dest)
 {
-   const int RGBA = 4;
-   float dataVal;
-   int i, linearBin;  
+  const int RGBA = 4;
+  float dataVal;
+  int i, linearBin;
 
-   if (this->chan == 1)
-      tf.computeTFTexture(w, h, d, dest, real[0], real[1]);
-   else if (this->chan == 2)
-      tf.computeTFTexture(w, h, d, dest, real[0], real[1], 0.0f, 1.0f); //TODO substitute fixed values!
+  if (this->chan == 2)
+     tf.computeTFTexture(w, h, d, dest, real[0], real[1], 0.0f, 1.0f); //TODO substitute fixed values!
+  else
+     //default: act as 1D
+     tf.computeTFTexture(w, h, d, dest, real[0], real[1]);
 
-   // convert opacity TF if hdr mode:
-   if (_binning!=LINEAR && !_transOp)
-   {
-      float* tmpOp = new float[w*h*d*RGBA];
-      memcpy(tmpOp, dest, w * h * d * RGBA * sizeof(float));
-      for (i=0; i<w; ++i) // go through all bins and non-linearize them
-      {
-         dataVal = _hdrBinLimits[i];
-         linearBin = int((dataVal - real[0]) / (real[1] - real[0]) * float(w));
-         linearBin = ts_clamp(linearBin, 0, w-1);
-         dest[i*RGBA+3] = tmpOp[linearBin*RGBA+3];
-      }
-      delete[] tmpOp;
-   }
+  // convert opacity TF if hdr mode:
+  if (_binning!=LINEAR && !_transOp)
+  {
+     float* tmpOp = new float[w*h*d*RGBA];
+     memcpy(tmpOp, dest, w * h * d * RGBA * sizeof(float));
+     for (i=0; i<w; ++i) // go through all bins and non-linearize them
+     {
+        dataVal = _hdrBinLimits[i];
+        linearBin = int((dataVal - real[0]) / (real[1] - real[0]) * float(w));
+        linearBin = ts_clamp(linearBin, 0, w-1);
+        dest[i*RGBA+3] = tmpOp[linearBin*RGBA+3];
+     }
+     delete[] tmpOp;
+  }
 }
 
 /**
@@ -2276,7 +2277,7 @@ void vvVolDesc::convertVoxelOrder()
   uchar* dst;
   int    z, y, x, f;
   int    frameSize;
-  
+
   vvDebugMsg::msg(2, "vvVolDesc::convertVoxelOrder()");
 
   frameSize = getFrameBytes();
@@ -3567,8 +3568,8 @@ void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax)
         fMin = float(mi);
         fMax = float(ma);
         break;
-      case 4: 
-        vvToolshed::getMinMax((float*)getRaw(f), getFrameVoxels(), &fMin, &fMax); 
+      case 4:
+        vvToolshed::getMinMax((float*)getRaw(f), getFrameVoxels(), &fMin, &fMax);
         break;
       default: assert(0); break;
     }
@@ -3579,8 +3580,8 @@ void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax)
 
 //----------------------------------------------------------------------------
 /** Find the value which splits the number of values smaller or greater than
-  it into the ratio given by threshold. Example: if threshold is 0.05, then 
-  the returned value X says that 5% of the data values are smaller than X, 
+  it into the ratio given by threshold. Example: if threshold is 0.05, then
+  the returned value X says that 5% of the data values are smaller than X,
   and 95% are greater than X.
   @param frame animation frame to work on, first frame is 0. -1 for all frames
   @param channel data channel to work on
@@ -3611,9 +3612,9 @@ float vvVolDesc::findClampValue(int frame, int channel, float threshold)
   makeHistogram(frame, channel, 1, buckets, hist, real[0], real[1]);
   for (i=0; i<buckets[0]; ++i)
   {
-    if (voxelCount >= thresholdVoxelCount) 
+    if (voxelCount >= thresholdVoxelCount)
     {
-      clampVal = (float(i) / (buckets[0] - 1)) * (fMax - fMin) + fMin; 
+      clampVal = (float(i) / (buckets[0] - 1)) * (fMax - fMin) + fMin;
       break;
     }
     voxelCount += hist[i];
@@ -3623,7 +3624,7 @@ float vvVolDesc::findClampValue(int frame, int channel, float threshold)
     clampVal = fMax;
   }
   delete[] hist;
-  
+
   return clampVal;
 }
 
@@ -4913,12 +4914,12 @@ void vvVolDesc::addVariance(int srcChan)
           dst = src + voxelOffset;
           switch(bpc)
           {
-            case 1: *dst = int(variance * 255.0f); 
+            case 1: *dst = int(variance * 255.0f);
                     break;
             case 2: iVar = int(variance * 65535.0f);
-                    *dst = iVar >> 8; *(dst+1) = iVar & 0xff; 
+                    *dst = iVar >> 8; *(dst+1) = iVar & 0xff;
                     break;
-            case 4: *((float*)dst) = variance; 
+            case 4: *((float*)dst) = variance;
                     break;
             default: assert(0); break;
           }
@@ -4957,14 +4958,14 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   int before;
 
   assert(binning!=LINEAR);    // this routine supports only iso-data and opacity-weighted binning
-  if (bpc!=4 || chan!=1) 
+  if (bpc!=4 || chan!=1)
   {
     cerr << "updateHDRBins() works only on single channel float data" << endl;
     return;
   }
-  
+
   _transOp = transOp;
-  
+
   vvStopwatch stop;
   stop.start();
   cerr << endl << "Starting HDR timer" << endl;
@@ -4972,7 +4973,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   assert(_hdrBinLimits);
   srcData = getRaw();
   numVoxels = getFrameVoxels();
-  if (numValues>0) numVoxels = ts_min(numVoxels, numValues);  
+  if (numValues>0) numVoxels = ts_min(numVoxels, numValues);
   sortedData = new float[numVoxels+2];    // +2 for min/max of data range
   if (numVoxels == getFrameVoxels())  // can the entire data array be sorted?
   {
@@ -4987,7 +4988,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     }
   }
   cerr << stop.getDiff() << " sec" << endl;
-  
+
   // Make sure min and max of data range are included in data:
   if (lockRange)
   {
@@ -4995,21 +4996,21 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     sortedData[numVoxels+1] = real[1];
     numVoxels += 2;
   }
-  
+
   // Sort data:
   cerr << "Sorting data array...";
   sort(sortedData, sortedData+numVoxels);   // requires #include <algorithm>
   cerr << stop.getDiff() << " sec" << endl;
-  
+
   // Trim beginning and end of sorted data array to remove values below/above realMin/realMax:
   if (lockRange)
   {
     cerr << "Trimming values to maintain range...";
-    
+
     // Trim values below realMin:
     for(i=0; i<numVoxels && sortedData[i] < real[0]; ++i)
     {
-      minIndex = i;  // find index of realMin 
+      minIndex = i;  // find index of realMin
     }
     minIndex = ts_clamp(i, 0, numVoxels-1);
     if (minIndex > 0)
@@ -5017,7 +5018,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
       memcpy(&sortedData[0], &sortedData[minIndex], sizeof(float) * (numVoxels - minIndex));
       numVoxels -= minIndex;
     }
-    
+
     // Trim values above realMax:
     // find index of realMax
     for(i=numVoxels-1; i>0 && sortedData[i] > real[1]; --i)
@@ -5026,7 +5027,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     numVoxels -= (numVoxels-1-maxIndex);
     cerr << stop.getDiff() << " sec" << endl;
   }
-  
+
   // Remove areas covered by TFSkip widgets:
   if (skipWidgets)
   {
@@ -5041,19 +5042,19 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
       {
         min = sw->_pos[0] - sw->_size[0] / 2.0f;
         max = sw->_pos[0] + sw->_size[0] / 2.0f;
-        
+
         // Find index of beginning of skip area:
         for(i=0; i<numVoxels && sortedData[i] < min; ++i)
-           ; 
+           ;
         if (i<numVoxels)   // is skip region outside of data array?
         {
           minIndex = i;
-          
+
           // Find index of end of skip area:
           for(i=minIndex; i<numVoxels && sortedData[i] < max; ++i)
              ;
           maxIndex = ts_clamp(i, 0, numVoxels-1);
-          
+
           // Cut values:
           numSkip = maxIndex - minIndex + 1;
           if (maxIndex<numVoxels-1)
@@ -5068,13 +5069,13 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     cerr << stop.getDiff() << " sec" << endl;
     cerr << (before - numVoxels) << " voxels removed (" << (100.0f * float(numSkip) / float(getFrameVoxels())) << "%)" << endl;
   }
-  
+
   // Remove duplicate values from array:
   if (cullDup)
   {
     before = numVoxels;
     cerr << "Removing duplicate values...";
-    sortedTmp = new float[numVoxels];    
+    sortedTmp = new float[numVoxels];
     sortedTmp[0] = sortedData[0];
     j=0;
     for (i=1; i<numVoxels; ++i)
@@ -5091,7 +5092,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     cerr << stop.getDiff() << " sec" << endl;
     cerr << (before - numVoxels) << " voxels removed" << endl;
   }
-   
+
   // Create array with opacity values for the data values:
   if (binning==OPACITY)
   {
@@ -5105,7 +5106,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     }
     cerr << stop.getDiff() << " sec" << endl;
   }
-  
+
   // Determine bin limits:
   cerr << "Determining bin limits...";
   switch (binning)
@@ -5138,7 +5139,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
               break;
             }
           }
-          else 
+          else
           {
             _hdrBinLimits[i] = sortedData[numVoxels-1];
             localSum = 0.0;
@@ -5152,9 +5153,9 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
       break;
   }
   cerr << stop.getDiff() << " sec" << endl;
-  
+
   // Do first and last data entries differ?
-  if (sortedData[0] == sortedData[numVoxels-1])   
+  if (sortedData[0] == sortedData[numVoxels-1])
   {
     cerr << "volume too sparse for HDR monte carlo sampling" << endl;
   }
@@ -5166,10 +5167,10 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
       real[1] = sortedData[numVoxels-1];
     }
   }
-  
+
   delete[] opacities;
   delete[] sortedData;
-  
+
   cerr << "Total HDR execution time: " << stop.getTime() << " sec" << endl << endl;
 }
 
@@ -5184,10 +5185,10 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
 int vvVolDesc::mapFloat2Int(float fval)
 {
   int ival;
-  
+
   switch(_binning)
   {
-    case LINEAR: 
+    case LINEAR:
       fval = ts_clamp(fval, real[0], real[1]);
       return int((fval - real[0]) / (real[1] - real[0]) * 255.0f);
     case ISO_DATA:
@@ -5205,10 +5206,10 @@ int vvVolDesc::mapFloat2Int(float fval)
 int vvVolDesc::findHDRBin(float fval)
 {
   int i;
-  
+
   for (i=0; i<NUM_HDR_BINS; ++i)
   {
-    if (_hdrBinLimits[i] > fval) 
+    if (_hdrBinLimits[i] > fval)
     {
       return ts_max(i-1, 0);
     }
@@ -5225,7 +5226,7 @@ void vvVolDesc::makeBinTexture(uchar* texture, int width)
 {
   float range;
   int i, index;
-  
+
   memset(texture, 0, width * 4);    // initialize with transparent texels
   if (bpc==4)
   {
