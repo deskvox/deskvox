@@ -1095,7 +1095,7 @@ void vvTFCustom2D::addMapPoint(int x, int y, float value)
    _map[idx] = value; 
 }
 
-void vvTFCustom2D::midPointLine(float* map, int x0, int y0, int x1, int y1, float alpha0, float alpha1)
+void vvTFCustom2D::midPointLine(float* /*map*/, int x0, int y0, int x1, int y1, float alpha0, float alpha1)
 {  
    int dx=x1-x0;
    int dy=y1-y0;
