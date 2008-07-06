@@ -5,6 +5,8 @@ PROJECT     = General
 
 CONFIG	   *= dll dl cg
 
+SRCDIR = $${BASEDIR}/src/kernel/virvo
+
 win32:DEFINES += VIRVO_EXPORT UNICODE
 DEFINES *= NO_CONFIG_H
 
