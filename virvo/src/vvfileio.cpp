@@ -1913,7 +1913,7 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   float maxBoxSize;                               // maximum box size
   float globalMin,globalMax;                      // density min and max values over all time steps
   float minVal,maxVal;                            // density min and max values of current time step
-  float val;                                      // particle value
+  float val = 0.f;                                // particle value
   int numParticles=0;                             // number of particles in current time step
   int numTimesteps;                               // number of time steps in file
   int frameSize;                                  // number of bytes per frame
@@ -1973,6 +1973,7 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
     zpos.clear();
     minVal =  VV_FLT_MAX;
     maxVal = -VV_FLT_MAX;
+    val = 0.f;
 
     // Load particles, but don't create the volume yet:
     for (;;)                                      // loop thru particles in one time step
