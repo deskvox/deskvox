@@ -110,7 +110,15 @@ vvTexMultiRendMngr::vvTexMultiRendMngr()
   if (extBlendEquation) glBlendEquationVV = (glBlendEquationEXT_type*)vvDynLib::glSym("glBlendEquationEXT");
   else glBlendEquationVV = (glBlendEquationEXT_type*)vvDynLib::glSym("glBlendEquation");
 
-  glslShader.loadShader();
+  glslShader = new vvGLSL();
+
+  // TODO: needs to be parameterized
+  shaderProgram = new GLuint[4];
+  shaderProgram[0] = glslShader->loadShader("glsl_1chan.frag");
+  shaderProgram[1] = glslShader->loadShader("glsl_2chan.frag");
+  shaderProgram[2] = glslShader->loadShader("glsl_3chan.frag");
+  shaderProgram[3] = glslShader->loadShader("glsl_multichan.frag");
+  //glslShader.loadShader();
 }
 
 void vvTexMultiRendMngr::init()
@@ -327,13 +335,8 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 
 	if(oldVol != vol)
 	{
-	  glslShader.enableLUTMode(aRenderer->getPixLUTName(), 
-		  						aRenderer->getTexNames() + vd->getCurrentFrame() * vd->chan, 
-								aRenderer->getVolWeight(), 
-								vd->chan, 
-								aRenderer->getChanWeight(), 
-								aRenderer->getColor(), 
-								aRenderer->_renderState._alphaMode);
+	  int n = (vd->chan < glslShader->getProgramCount()) ? vd->chan - 1 : glslShader->getProgramCount() - 1;
+	  aRenderer->enableLUTMode(glslShader, shaderProgram[n]);
 	  oldVol = vol;
 	}
 
@@ -353,7 +356,7 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 	//_lastGLdrawTime += swGL.getTime();
   }
 
-  glslShader.disable();
+  glslShader->disable();
 
   //_rendererList[0]->unsetGLenvironment();
   unsetGLenvironment();

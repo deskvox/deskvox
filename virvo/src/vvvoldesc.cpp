@@ -62,7 +62,7 @@ const int vvVolDesc::NUM_HDR_BINS = 256;
 /// Constructor.
 vvVolDesc::vvVolDesc()
 {
-  vvDebugMsg::msg(1, "vvVolDesc::vvVolDesc(1)");
+  vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(1)");
   initialize();
 }
 
@@ -72,7 +72,7 @@ vvVolDesc::vvVolDesc()
 */
 vvVolDesc::vvVolDesc(const char* fn)
 {
-  vvDebugMsg::msg(1, "vvVolDesc::vvVolDesc(2)");
+  vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(2)");
   initialize();
   setFilename(fn);
 }
@@ -96,7 +96,7 @@ uchar** d, vvVolDesc::DeleteType deleteType)
   uchar* data;
   int i;
 
-  vvDebugMsg::msg(1, "vvVolDesc::vvVolDesc(3)");
+  vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(3)");
   initialize();
   setFilename(fn);
   vox[0] = w;
@@ -146,7 +146,7 @@ vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, int f, float** d)
   int i;
   float frameMin, frameMax;                       // minimum and maximum value in one frame
 
-  vvDebugMsg::msg(1, "vvVolDesc::vvVolDesc(4)");
+  vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(4)");
   initialize();
   setFilename(fn);
   vox[0] = w;
@@ -195,7 +195,7 @@ float** g, float** b)
   int frameSize;                                  // number of bytes per volume animation frame
   int compSize;                                   // size of one color component
 
-  vvDebugMsg::msg(1, "vvVolDesc::vvVolDesc(5)");
+  vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(5)");
   initialize();
   vox[0] = w;
   vox[1] = h;
@@ -234,7 +234,7 @@ vvVolDesc::vvVolDesc(const char* fn, int w, int h, uchar* d)
 {
   uchar* data;
 
-  vvDebugMsg::msg(1, "vvVolDesc::vvVolDesc(6)");
+  vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(6)");
   initialize();
   setFilename(fn);
   vox[0] = w;
@@ -258,7 +258,7 @@ vvVolDesc::vvVolDesc(vvVolDesc* v, int f)
 {
   int i;
 
-  vvDebugMsg::msg(3, "vvVolDesc::vvVolDesc(7)");
+  vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(7)");
   initialize();
   setFilename(v->filename);
   for (i=0; i<3; ++i)
@@ -306,7 +306,7 @@ vvVolDesc::vvVolDesc(vvVolDesc* v, int f)
 /// Destructor
 vvVolDesc::~vvVolDesc()
 {
-  vvDebugMsg::msg(1, "vvVolDesc::~vvVolDesc()");
+  vvDebugMsg::msg(2, "vvVolDesc::~vvVolDesc()");
   removeSequence();
   delete[] filename;
   delete[] iconData;

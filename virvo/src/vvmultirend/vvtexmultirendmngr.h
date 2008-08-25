@@ -67,7 +67,8 @@ class VIRVOEXPORT vvTexMultiRendMngr
 	int _numVolume;
 	int _currentVolume;
 
-    vvGLSL glslShader;
+    vvGLSL* glslShader;
+	GLuint* shaderProgram;
 
     float _lastRenderTime;                   ///< time it took to render the previous frame (seconds)
 	float _lastComputeTime;

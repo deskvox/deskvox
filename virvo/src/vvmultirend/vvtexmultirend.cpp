@@ -992,6 +992,72 @@ void vvTexMultiRend::updateLUT(float dist)
   }
 }
 
+void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
+{
+  glslShader->useProgram(program);
+
+  glslShader->resetTextureCount();
+
+  // initialize transfer function
+  if(vd->chan == 1)
+	glslShader->initializeMultiTexture2D(program, "tfTex0", pixLUTName[0]);
+  else
+  {
+	glslShader->initializeMultiTexture1D(program, "tfTex[0]", pixLUTName[vd->chan]);
+
+	for(int c = 0; c < vd->chan; c++)
+	{
+	  char varName[20];
+	  snprintf(varName, sizeof(varName), "tfTex[%i]", c+1);
+	  glslShader->initializeMultiTexture1D(program, varName, pixLUTName[c]);
+	}
+  }
+
+  // initialize 3D channel texture
+  for(int c = 0; c < vd->chan; c++)
+  {
+	char varName[20];
+	snprintf(varName, sizeof(varName), "gl3dTex%i", c);
+	glslShader->initializeMultiTexture3D(program, varName, texNames[c]);
+  }
+
+  // hardware problem with uninitialized TU
+  if (vd->chan >= glslShader->getProgramCount())
+	for (int c = vd->chan; c < 7; c++)
+	{
+	  char varName[20];
+	  sprintf(varName, "gl3dTex%i", c);
+	  glslShader->initializeMultiTexture3D(program, varName, 0);
+	}
+
+  // copy parameters
+  float weight[10];
+  assert ( vd->chan  <= 10 );
+
+  float maxWeight = 0.0f, sumWeight = 0.0f;
+  // channel weights
+  for (int c = 0; c < vd->chan; c++)
+  {
+	weight[c] =  chanWeight[c] * volWeight;
+	maxWeight = max(weight[c], maxWeight);
+	sumWeight += weight[c];
+  }
+
+  glslShader->setValue(program, "weight", 1, vd->chan, weight);
+
+  for(int c = 0; c < vd->chan; c++)
+  {
+	char varName[20];
+	snprintf(varName, sizeof(varName), "color[%d]", c);
+	glslShader->setValue(program, varName, 3, 1, color[c].e);
+  }
+
+  //glslShader->setValue(program, "numChan", 1, &(vd->chan));
+  glslShader->setValue(program, "normAlpha", 1, _renderState._alphaMode == 0 ? &maxWeight : &sumWeight);
+  glslShader->setValue(program, "alphaMode", 1, &_renderState._alphaMode);
+}
+
+
 //----------------------------------------------------------------------------
 /** Set user's viewing direction.
   This information is needed to correctly orientate the texture slices

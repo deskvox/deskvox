@@ -41,13 +41,13 @@
 class TexRendInfo
 {
   public:
-	vvMatrix  mv;                                    // current modelview matrix
-	float     glMV[16];								// GL modelview matrix
-	vvVector3 farthest, farWS;                      // volume vertex farthest from the viewer
-	vvVector3 delta;                                // distance vector between textures [object space]
-	vvVector3 normal;								// normal vector of textures (in local & world space)
-	vvVector3 probeMin, probeMax;                   // probe min and max coordinates [object space]
-	vvVector3 size2;								// half object sizes
+	vvMatrix  mv;                   ///< current modelview matrix
+	float     glMV[16];				///< GL modelview matrix
+	vvVector3 farthest, farWS;      ///< volume vertex farthest from the viewer
+	vvVector3 delta;                ///< distance vector between textures [object space]
+	vvVector3 normal;				///< normal vector of textures (in local & world space)
+	vvVector3 probeMin, probeMax;   ///< probe min and max coordinates [object space]
+	vvVector3 size2;				///< half object sizes
 };
 
 
@@ -70,19 +70,6 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
 {
   public:
 
-	/*
-    struct Brick
-    {
-      vvVector3 pos;                              ///< center position of brick
-      vvVector3 min;                              ///< minimum position of brick
-      vvVector3 max;                              ///< maximum position of brick
-      int index;                                  ///< index for texture object
-      int startOffset[3];                         ///< startvoxel of brick
-      int texels[3];                              ///< number of texels in each dimension
-      float dist;                                 ///< distance from plane given by eye and normal
-    };
-	*/
-
     enum ErrorType                                /// Error Codes
     {
       OK,                                         ///< no error
@@ -91,24 +78,10 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     };
     enum GeometryType                             /// Geometry textures are projected on
     {
-      //VV_AUTO = 0,                                ///< automatically choose best
-      //VV_SLICES = 0,                                  ///< render slices parallel to xy axis plane using 2D textures
-      //VV_CUBIC2D,                                 ///< render slices parallel to all axis planes using 2D textures
       VV_VIEWPORT = 0                                ///< render planar slices using a 3D texture
-      //VV_BRICKS,                                  ///< render volume using bricking
-      //VV_SPHERICAL                                ///< render spheres originating at viewer using a 3D texture
     };
     enum VoxelType                                /// Internal data type used in textures
     {
-#if 0
-      VV_BEST = 0,                                ///< choose best
-      VV_RGBA,                                    ///< transfer function look-up done in software
-      VV_SGI_LUT,                                 ///< SGI color look-up table
-      VV_PAL_TEX,                                 ///< OpenGL paletted textures
-      VV_TEX_SHD,                                 ///< Nvidia texture shader
-      VV_PIX_SHD,                                 ///< Nvidia pixel shader
-      VV_FRG_PRG,                                 ///< ARB fragment program
-#endif
 	  VV_GLSL = 0                                   ///< OpenGL Shading Language
     };
 
@@ -145,58 +118,58 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
 
 	//========================================================================
 	// copied from Chih's vvVolDesc
-	float* rgbaTF;                                ///< density to RGBA conversion table, as created by TF [0..1]
-    uchar* rgbaLUT;                               ///< final RGBA conversion table, as transferred to graphics hardware (includes opacity and gamma correction)
+	float* rgbaTF;							///< density to RGBA conversion table, as created by TF [0..1]
+    uchar* rgbaLUT;							///< final RGBA conversion table, as transferred to graphics hardware (includes opacity and gamma correction)
 
-	uchar* preintTable;                           ///< lookup table for pre-integrated rendering, as transferred to graphics hardware
-    float  lutDistance;                           ///< slice distance for which LUT was computed
-	GLuint tfTexName;                             ///< name for transfer function texture
+	uchar* preintTable;						///< lookup table for pre-integrated rendering, as transferred to graphics hardware
+    float  lutDistance;						///< slice distance for which LUT was computed
+	GLuint tfTexName;						///< name for transfer function texture
     GLuint* pixLUTName;
 
 	GLuint* texNames;
-	int   texels[3];                              ///< width, height and depth of volume, including empty space [texels]
-    float texMin[3];                              ///< minimum texture value of object [0..1] (to prevent border interpolation)
-    float texMax[3];                              ///< maximum texture value of object [0..1] (to prevent border interpolation)
-    int   _ntextures;                               ///< number of textures stored in TRAM
+	int   texels[3];						///< width, height and depth of volume, including empty space [texels]
+    float texMin[3];						///< minimum texture value of object [0..1] (to prevent border interpolation)
+    float texMax[3];						///< maximum texture value of object [0..1] (to prevent border interpolation)
+    int   _ntextures;						///< number of textures stored in TRAM
 	int   numSlices;
 	float quality;
-	float* chanWeight;		// Weighted blending for data channels
-	vvVector3* color;		// Specified color for each channel
-	float volWeight;		// RGBA Weight for current volume
+	float* chanWeight;						///< Weighted blending for data channels
+	vvVector3* color;						///< Specified color for each channel
+	float volWeight;						///< RGBA Weight for current volume
 
-	enum TFMode				// used for 2 and more channels
+	enum TFMode								///< used for 2 and more channels
     {
       GAMMATF,
 	  HIGHPASSTF,
 	  HISTCDFTF
     };
 	
-	int tfmode;					// Either gamma or high pass filter
-	float* tfGamma;				// Gamma adjustments for TF
+	int tfmode;								///< Either gamma or high pass filter
+	float* tfGamma;							///< Gamma adjustments for TF
 	float* tfHPOrder;
-	float* tfHPCutoff;			// High Pass filter (order & cutoff)
-	float* tfOffset;			// Y-Offset from origin for TF
+	float* tfHPCutoff;						///< High Pass filter (order & cutoff)
+	float* tfOffset;						///< Y-Offset from origin for TF
 	uint* histCDF;
 
 	//========================================================================
 
 
-    int   texelsize;                              ///< number of bytes/voxel transferred to OpenGL (depending on rendering mode)
-    GLint internalTexFormat;                      ///< internal texture format (parameter for glTexImage...)
-    GLenum texFormat;                             ///< texture format (parameter for glTexImage...)
+    int   texelsize;                        ///< number of bytes/voxel transferred to OpenGL (depending on rendering mode)
+    GLint internalTexFormat;                ///< internal texture format (parameter for glTexImage...)
+    GLenum texFormat;                       ///< texture format (parameter for glTexImage...)
 
-    GeometryType geomType;                        ///< rendering geometry actually used
-    VoxelType voxelType;                          ///< voxel type actually used
-    bool extTex3d;                                ///< true = 3D texturing supported
-    bool extMinMax;                               ///< true = maximum/minimum intensity projections supported
-    bool extBlendEquation;                        ///< true = support for blend equation extension
-    vvVector3 viewDir;                            ///< user's current viewing direction [object coordinates]
-    vvVector3 objDir;                             ///< direction from viewer to object [object coordinates]
-    bool interpolation;                           ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
-    bool opacityCorrection;                       ///< true = opacity correction on
-    int  minSlice, maxSlice;                      ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
+    GeometryType geomType;                  ///< rendering geometry actually used
+    VoxelType voxelType;                    ///< voxel type actually used
+    bool extTex3d;                          ///< true = 3D texturing supported
+    bool extMinMax;                         ///< true = maximum/minimum intensity projections supported
+    bool extBlendEquation;                  ///< true = support for blend equation extension
+    vvVector3 viewDir;                      ///< user's current viewing direction [object coordinates]
+    vvVector3 objDir;                       ///< direction from viewer to object [object coordinates]
+    bool interpolation;                     ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
+    bool opacityCorrection;                 ///< true = opacity correction on
+    int  minSlice, maxSlice;                ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
 
-    SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
+    SliceOrientation _sliceOrientation;     ///< slice orientation for planar 3d textures
 
   protected:
 
@@ -246,6 +219,7 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     void printLUT();
 	void updateChannelHistCDF(int, int, uchar*);	// from Chih's vvVolDesc
     void updateLUT(float);
+	void enableLUTMode(vvGLSL* _glslShader, GLuint program);
 
 	float getLUTDistance() { return lutDistance; }
 	GLuint* getPixLUTName() { return pixLUTName; }
