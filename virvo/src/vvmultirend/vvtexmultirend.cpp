@@ -1008,7 +1008,11 @@ void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
 	for(int c = 0; c < vd->chan; c++)
 	{
 	  char varName[20];
+#ifdef WIN32
+	  _snprintf(varName, sizeof(varName), "tfTex[%i]", c+1);
+#else
 	  snprintf(varName, sizeof(varName), "tfTex[%i]", c+1);
+#endif
 	  glslShader->initializeMultiTexture1D(program, varName, pixLUTName[c]);
 	}
   }
@@ -1017,7 +1021,11 @@ void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
   for(int c = 0; c < vd->chan; c++)
   {
 	char varName[20];
+#ifdef WIN32
+	_snprintf(varName, sizeof(varName), "gl3dTex%i", c);
+#else
 	snprintf(varName, sizeof(varName), "gl3dTex%i", c);
+#endif
 	glslShader->initializeMultiTexture3D(program, varName, texNames[c]);
   }
 
@@ -1048,7 +1056,11 @@ void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
   for(int c = 0; c < vd->chan; c++)
   {
 	char varName[20];
+#ifdef WIN32
+   _snprintf(varName, sizeof(varName), "color[%d]", c);
+#else
 	snprintf(varName, sizeof(varName), "color[%d]", c);
+#endif
 	glslShader->setValue(program, varName, 3, 1, color[c].e);
   }
 
