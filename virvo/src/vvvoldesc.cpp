@@ -3440,7 +3440,7 @@ void vvVolDesc::makeSliceImage(int frame, AxisType axis, int slice, uchar* dst)
 {
   uchar* sliceData;
   vvColor col;
-  float voxelVal;
+  float voxelVal = 0.f;
   int sliceBytes;
   int width, height, slices;
   int pixel;
@@ -3804,7 +3804,7 @@ int vvVolDesc::findNumTransparent(int frame)
 float vvVolDesc::calculateMean(int frame)
 {
   uchar* raw;
-  float scalar;
+  float scalar = 0.f;
   float mean;
   double sum = 0.0;
   int i;
@@ -3849,7 +3849,7 @@ void vvVolDesc::calculateDistribution(int frame, int chan, float& mean, float& v
 {
   uchar* raw;
   double sumSquares = 0.0;
-  float scalar;
+  float scalar = 0.f;
   float diff;
   int i;
   int frameSize;
@@ -4598,7 +4598,7 @@ void vvVolDesc::setDefaultRealMinMax()
 */
 bool vvVolDesc::makeHeightField(int slices, int mode, bool verbose)
 {
-  float height;                                   // current height on scale 0..1
+  float height = 0.f;                             // current height on scale 0..1
 
   uchar* rd;                                      // raw data of current source frame
   vvVector3 v;                                    // currently processed voxel coordinates [voxel space]
@@ -4812,10 +4812,10 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
 void vvVolDesc::voxelStatistics(int frame, int c, int x, int y, int z, float& mean, float& variance)
 {
   uchar* raw;
-  double sumSquares = 0.0f;
-  double sum = 0.0f;
+  double sumSquares = 0.0;
+  double sum = 0.0;
   float diff;
-  float scalar;
+  float scalar = 0.f;
   int offset;
   int dx,dy,dz;     // offsets to neighboring voxels
   int bpv;

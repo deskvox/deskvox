@@ -129,8 +129,13 @@ vvTexMultiRend::vvTexMultiRend(vvVolDesc* vd, vvRenderState renderState, Geometr
 #endif  // end of #if defined(_WIN32)
 
   // Determine best rendering algorithm for current hardware:
+#ifdef NDEBUG
+  (void)vox;
+  (void)geom;
+#else
   assert(vox == VV_GLSL);
   assert(geom == VV_VIEWPORT);
+#endif
 
   voxelType = VV_GLSL;
   geomType = VV_VIEWPORT;
