@@ -32,7 +32,6 @@
    http://www.opengl.org/registry/api/glext.h */
 #include "glext-orig.h"
 
-
 #ifdef __APPLE__
 
 /* OpenGL framework does not include the PFN types */
@@ -138,6 +137,8 @@ typedef void (APIENTRYP PFNGLVERTEXATTRIB4UIVPROC) (GLuint index, const GLuint *
 typedef void (APIENTRYP PFNGLVERTEXATTRIB4USVPROC) (GLuint index, const GLushort *v);
 typedef void (APIENTRYP PFNGLVERTEXATTRIBPOINTERPROC) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
 #endif
+
+typedef void (APIENTRYP PFNGLACTIVETEXTUREPROC) (GLenum texture);
 
 #endif
 

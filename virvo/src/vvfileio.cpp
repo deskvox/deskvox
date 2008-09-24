@@ -2212,7 +2212,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       {
         where = ftell(fp);
         fseek(fp, value, SEEK_SET);
-        int bitsPerSample;
+        int bitsPerSample = 0;
         for (i=0; i<numValues; ++i)
         {
           if (dataType==4) bitsPerSample = vvToolshed::read32(fp, endian);
