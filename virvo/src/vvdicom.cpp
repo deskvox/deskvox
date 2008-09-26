@@ -134,6 +134,26 @@ void vvDicom::readDicomData(FILE* fp)
 
     // check and see if assumed byte order is correct & fix if necessary
 
+	// check for Sequence and DataItem delimiters
+	if(group == 0xfffe) // delimiters
+	{
+		if(element == 0xe0dd) // Sequence Delimition Tag 
+		{
+			continue;
+		}
+		if(element == 0xe00d) // Item  Delimition Tag
+		{
+			continue;
+		}
+		if(element == 0xe000) // Item 
+		{
+			continue;
+		}
+		if(element == 0xfffa) // Digital Signatures Sequence 
+		{
+			continue;
+		}
+	}
     if (first_one)
     {
       if (group != 0 && element == 0 && e_len == 4)
@@ -194,6 +214,10 @@ void vvDicom::readDicomData(FILE* fp)
           group   = read16(fp);
           element = read16(fp);
           e_len   = read32(fp);
+
+		  if(group == 0xfffc && element == 0xfffc) // Padding
+		  {
+		  }
 
           // Check the value representation:
           char* pvr = (char*)&e_len;
@@ -367,7 +391,8 @@ void vvDicom::readDicomData(FILE* fp)
         }
         else if ( (pvr[0]=='U' && pvr[1]=='N') )
         {
-          e_len = 4;
+          // this is unknown, the length is in the next four bytes;
+          e_len = read32(fp);
         }
       }
     }
@@ -398,6 +423,9 @@ void vvDicom::readDicomData(FILE* fp)
           case 0x05 :  infoText = "specific character set"; t=VV_STRING; break;
           case 0x08 :  infoText = "image type";       t=VV_STRING; break;
           case 0x10 :  infoText = "recognition code";              break;
+          case 0x12 :  infoText = "Instance Creation Date"; t=VV_STRING;   break;
+          case 0x13 :  infoText = "Instance Creation Time"; t=VV_STRING;   break;
+          case 0x14 :  infoText = "Instance Creator UID";              break;
           case 0x16 :  infoText = "SOP Class UID";    t=VV_STRING; break;
           case 0x18 :  infoText = "SOP Instance UID";              break;
           case 0x20 :  infoText = "study date";       t=VV_STRING; break;
