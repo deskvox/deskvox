@@ -3422,7 +3422,7 @@ void vvVolDesc::getVolumeSize(AxisType axis, int& width, int& height, int& slice
     case X_AXIS: width = vox[2]; height = vox[1]; slices = vox[0]; return;
     case Y_AXIS: width = vox[0]; height = vox[2]; slices = vox[1]; return;
     case Z_AXIS: width = vox[0]; height = vox[1]; slices = vox[2]; return;
-    default: assert(0); return;
+    default: assert(0); width = 0; height = 0; slices = 0; return;
   }
 }
 
