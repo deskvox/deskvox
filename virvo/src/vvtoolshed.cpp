@@ -22,6 +22,7 @@
 #include <iomanip>
 
 #include <float.h>
+#include <errno.h>
 #ifdef _WIN32
 #include <windows.h>
 #elif _LINUX64BIT
@@ -2159,7 +2160,8 @@ void vvToolshed::getCurrentDirectory(char* path, int maxChars)
 #ifdef _WIN32
   GetCurrentDirectory(maxChars, (LPWSTR)buf);
 #else
-  getcwd(buf, maxChars);
+  if(!getcwd(buf, maxChars))
+     std::cerr << "vvToolshed::getCurrentDirectory failed: " << strerror(errno) << std::endl;
 #endif
   extractDirname(path, buf);
 }
@@ -2172,7 +2174,8 @@ void vvToolshed::setCurrentDirectory(const char* path)
 #ifdef _WIN32
   SetCurrentDirectory((LPCWSTR)path);
 #else
-  chdir(path);
+  if(chdir(path) == -1)
+     std::cerr << "vvToolshed::setCurrentDirectory failed: " << strerror(errno) << std::endl;
 #endif
 }
 
@@ -2192,7 +2195,11 @@ void vvToolshed::getProgramDirectory(char* path, int maxChars)
   dlget(-2, &desc, sizeof(desc));
   strcpy(path, dlgetname(&desc, sizeof(desc), NULL, NULL, NULL));
 #else
-  getcwd(path, maxChars);                         // TODO: this is not the correct path if the file was started from somewhere else
+  // TODO: this is not the correct path if the file was started from somewhere else
+  if(!getcwd(path, maxChars))
+  {
+     std::cerr << "vvToolshed::getProgramDirectory failed: " << strerror(errno) << std::endl;
+  }
 #endif
 }
 

@@ -1103,10 +1103,13 @@ int vvTransFunc::loadMeshviewer(const char* filename)
   _widgets.removeAll();
   
   // Read color pins from file:
-  fscanf(fp, "ColorMapKnots: %d\n", &numColorWidgets);
+  if(fscanf(fp, "ColorMapKnots: %d\n", &numColorWidgets) != 1)
+     std::cerr << "vvTransFunc::loadMeshviewer: fscanf 1 failed" << std::endl;
+
   for (i=0; i<numColorWidgets; ++i)
   { 
-    fscanf(fp, "Knot: %f %f %f %f\n", &pos, &col[0], &col[1], &col[2]);
+    if(fscanf(fp, "Knot: %f %f %f %f\n", &pos, &col[0], &col[1], &col[2]) != 4)
+       std::cerr << "vvTransFunc::loadMeshviewer: fscanf 2 failed" << std::endl;
     cw = new vvTFColor();
     cw->_pos[0] = pos;
     cw->_col[0] = col[0];
@@ -1116,7 +1119,8 @@ int vvTransFunc::loadMeshviewer(const char* filename)
   }
   
   // Read opacity pins from file:
-  fscanf(fp, "OpacityMapPoints: %d\n", &numOpacityPoints);
+  if(fscanf(fp, "OpacityMapPoints: %d\n", &numOpacityPoints) != 1)
+     std::cerr << "vvTransFunc::loadMeshviewer: fscanf 3 failed" << std::endl;
   if (numOpacityPoints>0) 
   {
     float begin=0., end=0.;
@@ -1124,7 +1128,8 @@ int vvTransFunc::loadMeshviewer(const char* filename)
     _widgets.append(cuw, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
     for (i=0; i<numOpacityPoints; ++i)
     { 
-      fscanf(fp, "Point: %f %f\n", &pos, &opacity);
+      if(fscanf(fp, "Point: %f %f\n", &pos, &opacity) != 2)
+         std::cerr << "vvTransFunc::loadMeshviewer: fscanf 4 failed" << std::endl;
       if (i>0 && i<numOpacityPoints-1)  // skip start and end point (will be determined by widget position and width)
       {
         cuw->_points.push_back(new vvTFPoint(opacity, pos));

@@ -108,7 +108,7 @@ const char* vvTFWidget::getName()
 void vvTFWidget::readName(FILE* fp)
 {
   char tmpName[128];
-  fscanf(fp, " %s", tmpName);
+  if(fscanf(fp, " %s", tmpName) != 1)
   setName(tmpName);
 }
 
@@ -165,9 +165,10 @@ vvTFBell::vvTFBell(FILE* fp) : vvTFWidget()
 {
   readName(fp);
   int ownColorInt;
-  fscanf(fp, " %g %g %g %g %g %g %g %g %g %d %g\n",
+  if(fscanf(fp, " %g %g %g %g %g %g %g %g %g %d %g\n",
     &_pos[0], &_pos[1], &_pos[2], &_size[0], &_size[1], &_size[2],
-    &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity);
+    &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity) != 11)
+     std::cerr << "vvTFBell: fscanf failed" << std::endl;
   _ownColor = ownColorInt;
 }
 
@@ -325,9 +326,10 @@ vvTFPyramid::vvTFPyramid(FILE* fp) : vvTFWidget()
 {
   int ownColorInt;
   readName(fp);
-  fscanf(fp, " %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n",
+  if(fscanf(fp, " %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n",
     &_pos[0], &_pos[1], &_pos[2], &_bottom[0], &_bottom[1], &_bottom[2],
-    &_top[0], &_top[1], &_top[2], &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity);
+    &_top[0], &_top[1], &_top[2], &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity) != 14)
+     std::cerr << "vvTFPyramid: fscanf failed" << std::endl;
   _ownColor = ownColorInt;
 }
 
@@ -542,7 +544,8 @@ vvTFColor::vvTFColor(vvColor col, float x, float y, float z) : vvTFWidget(x, y, 
 vvTFColor::vvTFColor(FILE* fp) : vvTFWidget()
 {
   readName(fp);
-  fscanf(fp, " %g %g %g %g %g %g\n", &_pos[0], &_pos[1], &_pos[2], &_col[0], &_col[1], &_col[2]);
+  if(fscanf(fp, " %g %g %g %g %g %g\n", &_pos[0], &_pos[1], &_pos[2], &_col[0], &_col[1], &_col[2]) != 6)
+     std::cerr << "vvTFColor: fscanf failed" << std::endl;
 }
 
 void vvTFColor::write(FILE* fp)
@@ -592,7 +595,8 @@ vvTFSkip::vvTFSkip(float xpos, float xsize, float ypos, float ysize, float zpos,
 vvTFSkip::vvTFSkip(FILE* fp) : vvTFWidget()
 {
   readName(fp);
-  fscanf(fp, " %g %g %g %g %g %g\n", &_pos[0], &_pos[1], &_pos[2], &_size[0], &_size[1], &_size[2]);
+  if(fscanf(fp, " %g %g %g %g %g %g\n", &_pos[0], &_pos[1], &_pos[2], &_size[0], &_size[1], &_size[2]) != 6)
+     std::cerr << "vvTFSkip: fscanf failed" << std::endl;
 }
 
 void vvTFSkip::write(FILE* fp)
@@ -695,11 +699,13 @@ vvTFCustom::vvTFCustom(FILE* fp) : vvTFWidget()
   int i;
   
   readName(fp);
-  fscanf(fp, " %d %g %g %g\n", &numPoints, &_size[0], &_size[1], &_size[2]);
+  if(fscanf(fp, " %d %g %g %g\n", &numPoints, &_size[0], &_size[1], &_size[2]) != 4)
+     std::cerr << "vvTFCustom: fscanf 1 failed" << std::cerr;
 
   for(i=0; i<numPoints; ++i) 
   {
-    fscanf(fp, "%g %g %g %g\n", &op, &x, &y, &z);
+    if(fscanf(fp, "%g %g %g %g\n", &op, &x, &y, &z) != 4)
+       std::cerr << "vvTFCustom: fscanf 2 failed" << std::cerr;
     point = new vvTFPoint(op, x, y, z);
     _points.push_back(point);
   }  
