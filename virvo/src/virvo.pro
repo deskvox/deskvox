@@ -1,3 +1,5 @@
+!include($$(COVISEDIR)/mkspecs/config-first.pri):error(include of config-first.pri failed)
+### don't modify anything before this line ###
 
 TEMPLATE    = lib
                     
@@ -28,9 +30,8 @@ TARGET		 = coVirvo
 
 DEVFILES   = $$HEADERS
 
-!include ($$BASEDIR/mkspecs/config.pro) {
-    message (include of config.pro failed)
-}
+### don't modify anything below this line ###
+!include ($$(COVISEDIR)/mkspecs/config-last.pri):error(include of config-last.pri failed)
 
 # work around bug in intel compiler
 caymanopt {
