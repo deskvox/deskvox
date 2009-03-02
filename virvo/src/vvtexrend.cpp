@@ -38,6 +38,10 @@
 #include <dlfcn.h>
 #include <GL/glx.h>
 #endif
+#ifdef HAVE_CG
+  #include <Cg/cg.h>
+  #include <Cg/cgGL.h>
+#endif
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>

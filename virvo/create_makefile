@@ -1,0 +1,1 @@
+/state/partition1/home/covise/covise/extern_libs/rhel5/qt4/bin/qmake -makefile -o Makefile virvo.pro
