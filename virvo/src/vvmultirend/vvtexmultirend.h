@@ -25,15 +25,15 @@
 //#include "config.h"
 #endif
 
-#include "vvopengl.h"
+#include "../vvopengl.h"
 
 // Virvo:
-#include "vvexport.h"
-#include "vvvoldesc.h"
-#include "vvrenderer.h"
-#include "vvtransfunc.h"
-#include "vvsllist.h"
-#include "vvglsl.h"
+#include "../vvexport.h"
+#include "../vvvoldesc.h"
+#include "../vvrenderer.h"
+#include "../vvtransfunc.h"
+#include "../vvsllist.h"
+#include "../vvglsl.h"
 
 
 

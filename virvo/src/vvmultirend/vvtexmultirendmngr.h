@@ -23,12 +23,12 @@
 
 #include <vector>
 
-#include "vvexport.h"
-#include "vvdebugmsg.h"
-#include "vvvoldesc.h"
-#include "vvrenderer.h"
-#include "vvglsl.h"
-#include "vvmultirend/vvtexmultirend.h"
+#include "../vvexport.h"
+#include "../vvdebugmsg.h"
+#include "../vvvoldesc.h"
+#include "../vvrenderer.h"
+#include "../vvglsl.h"
+#include "vvtexmultirend.h"
 
 //============================================================================
 // Class Definitions

@@ -30,10 +30,10 @@
 #include <string.h>
 #endif
 
-#include "vvopengl.h"
-#include "vvglext.h"
+#include "../vvopengl.h"
+#include "../vvglext.h"
 
-#include "vvdynlib.h"
+#include "../vvdynlib.h"
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <dlfcn.h>
 #include <GL/glx.h>
@@ -44,14 +44,14 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
-#include "vvvecmath.h"
-#include "vvdebugmsg.h"
-#include "vvtoolshed.h"
-#include "vvgltools.h"
-#include "vvsphere.h"
-#include "vvstopwatch.h"
-#include "vvprintgl.h"
-#include "vvmultirend/vvtexmultirend.h"
+#include "../vvvecmath.h"
+#include "../vvdebugmsg.h"
+#include "../vvtoolshed.h"
+#include "../vvgltools.h"
+#include "../vvsphere.h"
+#include "../vvstopwatch.h"
+#include "../vvprintgl.h"
+#include "vvtexmultirend.h"
 
 using namespace std;
 
