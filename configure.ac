@@ -3,6 +3,9 @@ AC_INIT(virvo/src/vvvirvo.h)
 AM_INIT_AUTOMAKE(deskvox,2.0)
 AC_CONFIG_SRCDIR(configure.ac)
 AM_CONFIG_HEADER(virvo/src/config.h)
+AC_CONFIG_MACRO_DIR([m4])
+
+LT_INIT
 
 LIBVIRVO_MAJOR_VERSION=2
 LIBVIRVO_MINOR_VERSION=0
