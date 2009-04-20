@@ -395,7 +395,7 @@ void vvVolDesc::setChannelName(int channel, const char* name)
   // Create channel names as required:
   if (channel >= channelNames.count())
   {
-    for (int i=0; i<chan-channelNames.count(); ++i) channelNames.append(NULL);
+    for (int i=0; i<channel-channelNames.count()+1; ++i) channelNames.append(NULL);
   }
 
   // Set new name:
@@ -533,7 +533,7 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
         if (f==0) raw.insertBefore(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
         else raw.insertAfter(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
       }
-      for (i=0; i<src->chan; ++i) setChannelName(i, src->channelNames[i]);
+      for (i=0; i<src->chan; ++i) setChannelName((chan+i), src->channelNames[i]);
       chan += src->chan;                          // update target channel number
       src->removeSequence();                      // delete copied frames from source
       return OK;

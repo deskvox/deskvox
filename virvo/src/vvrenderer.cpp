@@ -79,7 +79,7 @@ vvRenderState::vvRenderState()
     _boundColor[i] = 1.0f;
   }
 
-  _showTexture = false;	// added by Han, Feb 2008
+  _showTexture = true;	// added by Han, Feb 2008
 }
 
 //----------------------------------------------------------------------------

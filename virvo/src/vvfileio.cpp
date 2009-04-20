@@ -859,6 +859,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
     }
     else                                          // no compression
     {
+	  vvToolshed::write32(fp, 0);               // write zero to mark as unencoded
       if ((int)fwrite(raw, 1, frameSize, fp) != frameSize)
       {
         cerr << "Error: Cannot write voxel data to file." << endl;
