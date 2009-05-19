@@ -77,6 +77,7 @@ class VVTransferWindow : public FXDialogBox
       ID_IMPORT_TF,
       ID_INVERT,
       ID_SAVE_TF,
+	  ID_SAVE_TF_BIN,
       ID_LOAD_TF,
       ID_DIS_COLOR,
       ID_TF_BOOK,
@@ -114,6 +115,7 @@ class VVTransferWindow : public FXDialogBox
     long onCmdApply(FXObject*,FXSelector,void*);
     long onCmdImportTF(FXObject*,FXSelector,void*);
     long onCmdSaveTF(FXObject*,FXSelector,void*);
+    long onCmdSaveTFBin(FXObject*,FXSelector,void*);
     long onCmdLoadTF(FXObject*,FXSelector,void*);
     long onCmdColorCombo(FXObject*,FXSelector,void*);
     long onCmdAlphaCombo(FXObject*,FXSelector,void*);

@@ -79,6 +79,7 @@ FXDEFMAP(VVTransferWindow) VVTransferWindowMap[]=
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_APPLY,         VVTransferWindow::onCmdApply),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_IMPORT_TF,     VVTransferWindow::onCmdImportTF),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_SAVE_TF,       VVTransferWindow::onCmdSaveTF),
+  FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_SAVE_TF_BIN,   VVTransferWindow::onCmdSaveTFBin),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_LOAD_TF,       VVTransferWindow::onCmdLoadTF),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_COLOR,         VVTransferWindow::onCmdColor),
   FXMAPFUNC(SEL_COMMAND,           VVTransferWindow::ID_HIST_ALL,      VVTransferWindow::onCmdHistAll),
@@ -302,6 +303,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   FXGroupBox* tfGroup = new FXGroupBox(master,"Transfer Function I/O",FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
   FXHorizontalFrame* tfFrame=new FXHorizontalFrame(tfGroup, LAYOUT_FILL_X | PACK_UNIFORM_WIDTH);
   new FXButton(tfFrame,"Save TF",NULL,this,ID_SAVE_TF, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
+  new FXButton(tfFrame,"Save TF Bins",NULL,this,ID_SAVE_TF_BIN, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
   new FXButton(tfFrame,"Load TF",NULL,this,ID_LOAD_TF, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
   new FXButton(tfFrame,"Import TF",NULL,this,ID_IMPORT_TF, FRAME_RAISED | FRAME_THICK | LAYOUT_CENTER_X, 0, 0, 0, 0, 20, 20);
   
@@ -844,6 +846,20 @@ long VVTransferWindow::onCmdSaveTF(FXObject*,FXSelector,void*)
     if(over == FX::MBOX_CLICKED_CANCEL) return 1;
   }
   _canvas->_vd->tf.saveMeshviewer(filename.text());
+  return 1;
+}
+
+long VVTransferWindow::onCmdSaveTFBin(FXObject*, FXSelector, void*)
+{
+  const FXchar patterns[]="Transfer function files (*.vtf)\nAll Files (*.*)";
+  FXString filename = _shell->getSaveFilename("Save Transfer Function", "transfunc.vtf", patterns);
+  if(filename.length() == 0) return 1;
+  if(vvToolshed::isFile(filename.text()))
+  {
+    int over = FXMessageBox::question((FXWindow*)this, MBOX_OK_CANCEL, "Warning", "Overwrite existing file?");
+    if(over == FX::MBOX_CLICKED_CANCEL) return 1;
+  }
+  _canvas->_vd->tf.saveBinMeshviewer(filename.text());
   return 1;
 }
 

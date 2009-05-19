@@ -34,6 +34,7 @@
 #include "vvdebugmsg.h"
 #include "vvvecmath.h"
 #include "vvtransfunc.h"
+#include "vvvoldesc.h"
 
 //----------------------------------------------------------------------------
 /// Constructor
@@ -1073,6 +1074,54 @@ int vvTransFunc::saveMeshviewer(const char* filename)
     _widgets.next();
   }
 
+  // Wrap up:
+  fclose(fp);
+  cerr << "Wrote transfer function file: " << filename << endl;
+  return 1;
+}
+
+int vvTransFunc::saveBinMeshviewer(const char* filename)
+{
+  vvColor col;
+  unsigned int x;
+  float normX;    
+  unsigned int index;
+  unsigned int dim, nKnots;
+  const unsigned int nBins = vvVolDesc::NUM_HDR_BINS;
+  unsigned int d, h, w;
+  FILE* fp;
+
+  // open file
+  if ( (fp = fopen(filename, "wb")) == NULL)
+  {
+	cerr << "Error: Cannot create file." << endl;
+	return 0;
+  }
+
+  float* rgba = new float[nBins * 4];
+  computeTFTexture(nBins, 1, 1, rgba, 0.0, 1.0);
+
+  // save color
+  fprintf(fp, "BinKnots: %d\n", nBins);
+  for(x = 0; x < nBins; x++)
+  {
+	normX = float(x) / float(nBins-1);
+	index = x * 4;
+	fprintf(fp, "Knot: %f %f %f %f\n", normX, rgba[index], rgba[index+1], rgba[index+2]);
+  }
+
+  // save opacity
+  fprintf(fp, "OpacityMapPoints: %d\n", nBins);   // add two points for edges of TF space
+
+  for (x=0; x< nBins; ++x)
+  {
+	normX = (float(x) / float(nBins-1));
+	index = x * 4 + 3;
+	fprintf(fp, "Point: %f %f\n", normX, rgba[index]);
+  }
+
+  delete[] rgba;
+        
   // Wrap up:
   fclose(fp);
   cerr << "Wrote transfer function file: " << filename << endl;

@@ -821,6 +821,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   // Write volume data frame by frame:
   fprintf(fp, "VOXELDATA\n");
   if (_compression==1) encoded = new uchar[frameSize];
+
   for (f=0; f<frames; ++f)
   {
     raw = vd->getRaw(f);

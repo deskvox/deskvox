@@ -88,6 +88,7 @@ class VIRVOEXPORT vvTransFunc
     void setDiscreteColors(int);
     int  getDiscreteColors();
     int  saveMeshviewer(const char*);
+    int  saveBinMeshviewer(const char*);
     int  loadMeshviewer(const char*);
 };
 #endif
