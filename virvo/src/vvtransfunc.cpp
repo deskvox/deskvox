@@ -1086,9 +1086,7 @@ int vvTransFunc::saveBinMeshviewer(const char* filename)
   unsigned int x;
   float normX;    
   unsigned int index;
-  unsigned int dim, nKnots;
   const unsigned int nBins = vvVolDesc::NUM_HDR_BINS;
-  unsigned int d, h, w;
   FILE* fp;
 
   // open file
