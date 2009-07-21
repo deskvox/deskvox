@@ -1698,6 +1698,11 @@ int vvSocket::get_sockfd()
   return sockfd;
 }
 
+void vvSocket::set_sockfd(int fd)
+{
+  sockfd = fd;
+}
+
 //----------------------------------------------------------------------------
 /** Returns the actual socket receive buffer size.
  */

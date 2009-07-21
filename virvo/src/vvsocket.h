@@ -137,6 +137,7 @@ class VIRVOEXPORT vvSocket
     ErrorType read_string(char* , int);
     ErrorType write_string(const char*);
     int get_sockfd();
+    void set_sockfd(int fd);
     int get_recv_buffsize();
     int get_send_buffsize();
     uchar     read8();
