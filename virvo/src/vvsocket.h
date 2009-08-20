@@ -63,7 +63,9 @@
 #ifdef _WIN64
 typedef __int64 ssize_t;
 #else
+#if !defined(_WIN32_WCE) && !defined(__MINGW32__) 
 typedef _W64 int ssize_t;
+#endif
 #endif
 /* end copy */
 #endif

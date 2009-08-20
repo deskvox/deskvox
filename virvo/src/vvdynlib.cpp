@@ -173,7 +173,7 @@ VV_SHLIB_HANDLE vvDynLib::open(const char* filename, int mode)
 void* vvDynLib::sym(VV_SHLIB_HANDLE handle, const char* symbolname)
 {
 #ifdef _WIN32
-  return GetProcAddress(handle, symbolname);
+  return (void *)GetProcAddress(handle, symbolname);
 #elif defined(__APPLE__)
   (void)handle;
   (void)symbolname;

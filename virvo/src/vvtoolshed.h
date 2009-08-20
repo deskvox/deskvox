@@ -26,7 +26,7 @@
 
 #include <stdio.h>
 #ifndef __sgi
-#ifndef WIN32
+#ifndef _MSC_VER
 #include <stdint.h>
 #else
 typedef char int8_t;
