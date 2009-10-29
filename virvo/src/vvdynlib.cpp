@@ -24,15 +24,18 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#if defined(__linux__) || defined(LINUX)
 #include <string.h>
+
+#undef USE_NEXTSTEP
+
+#ifdef USE_NEXTSTEP
+#  include <mach-o/dyld.h>
+#elif defined(__linux__) || defined(LINUX) || defined(__hpux) || defined(__APPLE__)
 #include <dlfcn.h>
 #endif
 
 #ifdef __APPLE__
 #  include <OpenGL/gl.h>
-#  include <mach-o/dyld.h>
 #else
 #  ifdef _WIN32
 #    include <windows.h>
@@ -40,10 +43,6 @@
 #    include <GL/glx.h>
 #  endif
 #  include <GL/gl.h>
-#endif
-
-#if defined(__linux__) || defined(LINUX)
-#include <dlfcn.h>
 #endif
 
 #include "vvdynlib.h"
@@ -54,10 +53,6 @@ int vvDynLib::close(VV_SHLIB_HANDLE handle)
 {
 #ifdef _WIN32
   FreeLibrary (handle);
-  return 1;
-
-#elif defined(__APPLE__)
-  (void)handle;
   return 1;
 
 #elif __hpux
@@ -112,10 +107,8 @@ char* vvDynLib::error()
     sizeof buf,
     NULL);
   return buf;
-#elif defined(__APPLE__)
-  return NULL;
 #else
-  return (char*)dlerror();
+  return dlerror();
 #endif
 }
 
@@ -125,10 +118,6 @@ VV_SHLIB_HANDLE vvDynLib::open(const char* filename, int mode)
 
 #ifdef _WIN32
   handle = LoadLibraryA (filename);
-#elif defined(__APPLE__)
-  (void)filename;
-  (void)mode;
-  handle = NULL;
 #elif __hpux
 #if defined(__GNUC__) || __cplusplus >= 199707L
   handle = shl_load(filename, mode, 0L);
@@ -174,10 +163,6 @@ void* vvDynLib::sym(VV_SHLIB_HANDLE handle, const char* symbolname)
 {
 #ifdef _WIN32
   return (void *)GetProcAddress(handle, symbolname);
-#elif defined(__APPLE__)
-  (void)handle;
-  (void)symbolname;
-  return NULL;
 #elif __hpux
   void *value;
   int status;
@@ -189,9 +174,6 @@ void* vvDynLib::sym(VV_SHLIB_HANDLE handle, const char* symbolname)
 #endif
 }
 
-#ifdef __hpux
-#include <dlfcn.h>
-#endif
 // #define USE_DYNLIB_FOR_GL // this has problems
 void (*vvDynLib::glSym(const char *symbolname))(void)
 {
@@ -203,6 +185,12 @@ void (*vvDynLib::glSym(const char *symbolname))(void)
   close(dynLib);
   return func;
 #elif defined(__APPLE__)
+#ifndef USE_NEXTSTEP
+  VV_SHLIB_HANDLE dynLib = open(NULL, RTLD_NOW);
+  void (*func)() = (void (*)()) sym(dynLib, symbolname);
+  close(dynLib);
+  return func;
+#else
   NSSymbol symbol;
   // Prepend a '_' for the Unix C symbol mangling convention
   char *mangledSymbolName = new char[strlen(symbolname) + 2];
@@ -213,6 +201,7 @@ void (*vvDynLib::glSym(const char *symbolname))(void)
     symbol = NSLookupAndBindSymbol (mangledSymbolName);
   free (mangledSymbolName);
   return symbol ? (void (*)(void))NSAddressOfSymbol (symbol) : NULL;
+#endif
 #elif defined(GLX_ARB_get_proc_address)
   return (void (*)())  glXGetProcAddressARB((const GLubyte *)symbolname);
 #else
