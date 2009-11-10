@@ -58,6 +58,12 @@ class VIRVOEXPORT vvGLSL
 	*/
 	GLuint loadShader(const char* shaderFileName);
 
+	/** initializes, compiles and links a shader program
+	  @param shaderString a character array containing the program string
+	  @return non-zero program ID if OK, 0 otherwise
+	*/
+	GLuint loadShaderByString(const char* shaderString);
+
 	/** Calls glUseProgram
 
 	  @param program The handle of the program object whose executables are to be used as part of current rendering state.

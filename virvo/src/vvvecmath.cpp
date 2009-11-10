@@ -246,7 +246,7 @@ vvMatrix vvMatrix::rotate(float a, const vvVector3* v)
 
 //----------------------------------------------------------------------------
 /** Multiplies two matrices. If matrices are resolved from left to right,
-  this operation would be: this = m * this
+  this operation would be: this = this * m
 */
 void vvMatrix::multiplyPre(const vvMatrix* m)
 {
@@ -261,7 +261,7 @@ void vvMatrix::multiplyPre(const vvMatrix* m)
 
 //----------------------------------------------------------------------------
 /** Multiplies two matrices. If matrices are resolved from left to right,
-  this operation would be: this = this * m
+  this operation would be: this = m * this
 */
 void vvMatrix::multiplyPost(const vvMatrix* m)
 {

@@ -93,16 +93,7 @@ vvGLSL::~vvGLSL()
 
 GLuint vvGLSL::loadShader(const char* shaderFileName)
 {
-  GLuint fragShader;
-  GLuint fragProgram;
-
   assert(shaderFileName != NULL);
-
-  fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-  fragProgram = glCreateProgram();
-
-  fragShaderArray.append( fragShader );
-  programArray.append( fragProgram );
 
   const char* fileString = vvToolshed::file2string(shaderFileName);
 
@@ -112,8 +103,33 @@ GLuint vvGLSL::loadShader(const char* shaderFileName)
 	return 0;
   }
 
-  glShaderSource(fragShader, 1, &fileString, NULL);
+  GLuint fragProgram = loadShaderByString(fileString);
+
+  delete[] fileString;
+
+  return fragProgram;
+}
+
+GLuint vvGLSL::loadShaderByString(const char* shaderString)
+{
+  GLuint fragShader;
+  GLuint fragProgram;
+
+  if(shaderString == NULL)
+  {
+	cerr << "Shader string is NULL" << endl;
+	return 0;
+  }
+
+  fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+  fragProgram = glCreateProgram();
+
+  fragShaderArray.append( fragShader );
+  programArray.append( fragProgram );
+
+  glShaderSource(fragShader, 1, &shaderString, NULL);
   glCompileShader(fragShader);
+
   GLint compiled;
   glGetShaderiv(fragShader, GL_COMPILE_STATUS, &compiled);
 
@@ -131,10 +147,10 @@ GLuint vvGLSL::loadShader(const char* shaderFileName)
   glAttachShader(fragProgram, fragShader);
   glLinkProgram(fragProgram);
 
-  delete[] fileString;
-
   return fragProgram;
 }
+
+
 
 void vvGLSL::useProgram(GLuint program)
 {
