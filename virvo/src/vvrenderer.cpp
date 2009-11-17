@@ -583,7 +583,7 @@ void vvRenderer::renderPalette()
   for (x=0; x<w; ++x)
     for (y=0; y<h; ++y)
       for (c=0; c<3; ++c)
-        image[c + 3 * (x + w * y)] = (uchar)(colors[h * y + c] * 255.0f);
+        image[c + 3 * (x + w * y)] = (uchar)(colors[4 * y + c] * 255.99f);
 
   // Draw palette:
   glRasterPos2f(-1.0f,-1.0f);                     // pixmap origin is bottom left corner of output window
