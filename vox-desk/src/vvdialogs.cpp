@@ -1086,7 +1086,7 @@ long VVMergeDialog::onCmdBrowse(FXObject*, FXSelector, void*)
 
 long VVMergeDialog::onCmdHelp(FXObject*, FXSelector, void*)
 {
-  char* info = "If numbered, files must be numbered consecutively, for instance:\n" \
+  const char* info = "If numbered, files must be numbered consecutively, for instance:\n" \
     "image000.tif, image001.tif, image002.tif, ...\n" \
     "Altenatively, they can be numbered with a constant increment greater than 1.\n\n" \
     "The naming scheme '*_zXXX_chXX.*' is recognized for image\n" \
@@ -1643,7 +1643,7 @@ long VVMovieDialog::onCmdWrite(FXObject*,FXSelector,void*)
 
 long VVMovieDialog::onCmdHelp(FXObject*,FXSelector,void*)
 {
-  char* info = "Movie script commands:\n\n" \
+  const char* info = "Movie script commands:\n\n" \
     "changequality RELATIVE_QUALITY\n" \
     "movepeak DISTANCE\n" \
     "nextstep\n" \
