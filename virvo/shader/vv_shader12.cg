@@ -1,3 +1,5 @@
+// Shader for pre-integrated rendering of scalar data
+//
 // Authors: 
 //  Martin Aumueller <aumueller@uni-koeln.de>
 
@@ -12,8 +14,8 @@ float4 main(
 	const sampler2D  in uniform pixLUT,
 	      PixelIn    in         IN) : COLOR0
 {
-	float r = tex3D(pix3dtex, IN.tc0).r;
-	float g = tex3D(pix3dtex, IN.tc1).g;
-	float4 OUT = tex2D(pixLUT, float2(g, r));
+	float x = tex3D(pix3dtex, IN.tc0).r;
+	float y = tex3D(pix3dtex, IN.tc1).r;
+	float4 OUT = tex2D(pixLUT, float2(x, y));
         return OUT;
 }
