@@ -255,7 +255,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #ifdef HAVE_CG
   if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
   {
-    _currentShader = 8;
+    _currentShader = 9;
   }
 #endif
 
