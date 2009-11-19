@@ -2656,18 +2656,17 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     probeSizeObj[1] * probeSizeObj[1] +
     probeSizeObj[2] * probeSizeObj[2]);
 
-  numSlices = int(_renderState._quality * 100.0f);
+  float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
+    vd->vox[1] * vd->vox[1] +
+    vd->vox[2] * vd->vox[2]));
+  numSlices = int(_renderState._quality * diagonalVoxels);
   if (numSlices < 1) numSlices = 1;               // make sure that at least one slice is drawn
 
-  vvDebugMsg::msg(3, "Number of textures rendered per brick: ", numSlices);
+  vvDebugMsg::msg(3, "Number of texture slices rendered: ", numSlices);
 
   // Use alpha correction in indexed mode: adapt alpha values to number of textures:
   if (instantClassification())
   {
-    float diagonalVoxels;
-    diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
-      vd->vox[1] * vd->vox[1] +
-      vd->vox[2] * vd->vox[2]));
     updateLUT(diagonalVoxels / float(numSlices));
   }
 
