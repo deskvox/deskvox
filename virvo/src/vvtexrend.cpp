@@ -21,6 +21,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include <limits.h>
+
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
@@ -32,6 +34,9 @@
 
 #include "vvopengl.h"
 #include "vvglext.h"
+
+// Used for debugging only.
+#define HAVE_CG_TMP
 
 #include "vvdynlib.h"
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -61,10 +66,297 @@
   static void checkCgError(CGcontext ctx, CGerror err, void *appdata);
 #endif
 
+// The following values will have to be approved empirically yet... .
+
+// Redistribute bricks if rendering time deviation > MAX_DEVIATION %
+#define MAX_DEVIATION 10.0f
+// Don't redistribute bricks for peaks, but rather for constant deviation.
+#define LIMIT 10
+// Maximum individual deviation (otherwise the share will be adjusted).
+#define MAX_IND_DEVIATION 0.001
+#define INC 0.05
+
 using namespace std;
 
 //----------------------------------------------------------------------------
-const int vvTexRend::NUM_PIXEL_SHADERS = 12;
+const int vvTexRend::NUM_PIXEL_SHADERS = 13;
+
+void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
+                   const vvVector3& farthest, const vvVector3& delta,
+                   const vvVector3& probeMin, const vvVector3& probeMax,
+                   GLuint*& texNames, GLuint**& vertIndices, GLsizei*& elemCounts,
+                   CGparameter* cgVertices, CGparameter cgBrickMin,
+                   CGparameter cgBrickDimInv, CGparameter cgFrontIndex,
+                   CGparameter cgPlaneStart)
+{
+  vvVector3 dist = max;
+  dist.sub(&min);
+
+  glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
+
+  vvVector3 texPoint;
+  texPoint.copy(&farthest);
+#ifdef HAVE_CG_TMP
+  (void)renderer;
+  (void)numSlices;
+  // Clip probe object to brick extends.
+  vvVector3 minObjClipped;
+  vvVector3 maxObjClipped;
+
+  for (int i = 0; i < 3; ++i)
+  {
+    if (minObj[i] < probeMin[i])
+    {
+      minObjClipped[i] = probeMin[i];
+    }
+    else
+    {
+      minObjClipped[i] = minObj[i];
+    }
+
+    if (maxObj[i] > probeMax[i])
+    {
+      maxObjClipped[i] = probeMax[i];
+    }
+    else
+    {
+      maxObjClipped[i] = maxObj[i];
+    }
+  }
+
+  vvAABB box(minObjClipped, maxObjClipped);
+  vvVector3* verts = box.calcVertices();
+
+  float minDot;
+  float maxDot;
+  ushort idx = getFrontIndex(verts, texPoint, normal, minDot, maxDot);
+  for (int i = 0; i < 8; ++i)
+  {
+    cgGLSetParameter3f(cgVertices[i], verts[i].e[0], verts[i].e[1], verts[i].e[2]);
+  }
+  delete[] verts;
+
+  cgGLSetParameter3f(cgBrickMin, min[0], min[1], min[2]);
+  cgGLSetParameter3f(cgBrickDimInv, 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
+
+  float deltaInv = 1.0f / delta.length();
+
+  int startSlices = ceilf(minDot * deltaInv);
+  int endSlices = floorf(maxDot * deltaInv);
+
+  cgGLSetParameter1f(cgFrontIndex, idx);
+  cgGLSetParameter1f(cgPlaneStart, -texPoint.length());
+
+  int primCount = (endSlices - startSlices) + 1;
+
+  GLint* vertArray = new GLint[primCount * 12];
+
+  int idxIterator = 0;
+  int vertIterator = 0;
+  int primIterator = 0;
+  for (int i = startSlices; i <= endSlices; ++i)
+  {
+    elemCounts[primIterator] = 6;
+    for (int j = 0; j < 6; ++j)
+    {
+      vertIndices[primIterator][j] = idxIterator;
+      ++idxIterator;
+
+      vertArray[vertIterator] = j;
+      ++vertIterator;
+      vertArray[vertIterator] = i;
+      ++vertIterator;
+    }
+    ++primIterator;
+  }
+
+  glVertexPointer(2, GL_INT, 0, vertArray);
+  glMultiDrawElements(GL_POLYGON, elemCounts, GL_UNSIGNED_INT, (const GLvoid**)vertIndices, primCount);
+
+  delete[] vertArray;
+
+#else
+
+  vvVector3 maxClipped;
+  vvVector3 minClipped;
+  for (int i = 0; i < 3; i++)
+  {
+    if (min.e[i] < probeMin.e[i])
+      minClipped.e[i] = probeMin.e[i];
+    else
+      minClipped.e[i] = min.e[i];
+
+    if (max.e[i] > probeMax.e[i])
+      maxClipped.e[i] = probeMax.e[i];
+    else
+      maxClipped.e[i] = max.e[i];
+  }
+
+  vvVector3 texRange;
+  vvVector3 texMin;
+
+  for (int i = 0; i < 3; i++)
+  {
+    texRange[i] = 1.0f - 1.0f / (float)texels[i];
+    texMin[i] = 1.0f / (2.0f * (float)texels[i]);
+  }
+  for (int i = 0; i < numSlices; ++i)               // loop thru all drawn textures
+  {
+    // Search for intersections between texture plane (defined by texPoint and
+    // normal) and texture object (0..1):
+    vvVector3 isect[6];
+    int isectCnt = isect->isectPlaneCuboid(&normal, &texPoint, &minClipped, &maxClipped);
+
+    texPoint.add(&delta);
+
+    if (isectCnt < 3) continue;                 // at least 3 intersections needed for drawing
+
+    // Check volume section mode:
+    if (renderer->minSlice != -1 && i < renderer->minSlice) continue;
+    if (renderer->maxSlice != -1 && i > renderer->maxSlice) continue;
+
+    // Put the intersecting 3 to 6 vertices in cyclic order to draw adjacent
+    // and non-overlapping triangles:
+    isect->cyclicSort(isectCnt, &normal);
+
+    // Generate vertices in texture coordinates:
+    vvVector3 texcoord[6];
+    for (int j = 0; j < isectCnt; ++j)
+    {
+      for (int k = 0; k < 3; ++k)
+      {
+        texcoord[j][k] = (isect[j][k] - min.e[k]) / dist[k];
+        texcoord[j][k] = texcoord[j][k] * texRange[k] + texMin[k];
+      }
+    }
+
+    glBegin(GL_TRIANGLE_FAN);
+    glColor4f(1.0, 1.0, 1.0, 1.0);
+
+    glNormal3f(normal[0], normal[1], normal[2]);
+
+    for (int j = 0; j < isectCnt; ++j)
+    {
+      // The following lines are the bottleneck of this method:
+      glTexCoord3f(texcoord[j][0], texcoord[j][1], texcoord[j][2]);
+      glVertex3f(isect[j][0], isect[j][1], isect[j][2]);
+    }
+    glEnd();
+  }
+#endif
+}
+
+/** Get front index of the brick based upon the current modelview matrix.
+  @param vertices  NOTE THE FOLLOWING: albeit vertices are constituents of
+                   bricks, these are passed along with the function call in
+                   order not to recalculate them. This is due to the fact that
+                   AABBs actually don't store pointers to their eight verts,
+                   but only to two corners.
+  @param point     The point to calc the distance from. The distance of interest
+                   is the one from point to the first and last vertex along
+                   normal
+  @param normal    The normal to calc the distance along.
+  @param minDot    The minimum dot product of vector point-vertex and normal,
+                   passed along for later calculations.
+  @param maxDot    The maximum dot product of vector point-vertex and normal,
+                   passed along for later calculations.
+*/
+ushort Brick::getFrontIndex(vvVector3* vertices,
+                            vvVector3& point,
+                            vvVector3& normal,
+                            float& minDot,
+                            float& maxDot)
+{
+
+  // Get vertices with max and min distance to point along normal.
+  maxDot = -FLT_MAX;
+  minDot = FLT_MAX;
+  ushort frontIndex;
+
+  for (int i=0; i<8; i++)
+  {
+    vvVector3 v = vertices[i];
+    v.sub(&point);
+    float dot = v.dot(&normal);
+    if (dot > maxDot)
+    {
+      maxDot = dot;
+      frontIndex = i;
+    }
+
+    if (dot < minDot)
+    {
+      minDot = dot;
+    }
+  }
+  return frontIndex;
+}
+
+vvThreadVisitor::~vvThreadVisitor()
+{
+  delete[] _pixels;
+  delete[] _frameBufferObjects;
+  delete[] _imageSpaceTextures;
+}
+
+//----------------------------------------------------------------------------
+/** Thread visitor visit method. Supplies logic to render results of worker
+    thread.
+  @param obj  node to render
+*/
+void vvThreadVisitor::visit(vvVisitable* obj)
+{
+  // This is rather specific: the visitor knows the thread id
+  // of the bsp tree node, looks up the appropriate thread
+  // and renders its data.
+
+  vvHalfSpace* hs = dynamic_cast<vvHalfSpace*>(obj);
+
+  glActiveTexture(GL_TEXTURE0);
+  glEnable(GL_TEXTURE_2D);
+  glBindTexture(GL_TEXTURE_2D, _imageSpaceTextures[hs->getId()]);
+  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, _pixels[hs->getId()]);
+
+  glBegin(GL_QUADS);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    glNormal3f(0.0f, 0.0f, 1.0f);
+
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(-1.0f, -1.0f, 0.0f);
+
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f(1.0f, -1.0f, 0.0f);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex3f(1.0f, 1.0f, 0.0f);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(-1.0f, 1.0f, 0.0f);
+  glEnd();
+}
+
+void vvThreadVisitor::setFrameBufferObjects(GLuint*& frameBufferObjects)
+{
+  _frameBufferObjects = frameBufferObjects;
+}
+
+void vvThreadVisitor::setDepthBuffers(GLuint*& depthBuffers)
+{
+  _depthBuffers = depthBuffers;
+}
+
+void vvThreadVisitor::setImageSpaceTextures(GLuint*& imageSpaceTextures)
+{
+  _imageSpaceTextures = imageSpaceTextures;
+}
+
+void vvThreadVisitor::setPixels(GLfloat**& pixels)
+{
+  _pixels = pixels;
+}
 
 //----------------------------------------------------------------------------
 /** Constructor.
@@ -74,6 +366,9 @@ const int vvTexRend::NUM_PIXEL_SHADERS = 12;
 vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox) : vvRenderer(vd, renderState)
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
+
+  setDisplayNames(renderState._displayNames, renderState._numDisplays);
+  dispatchThreadedGLXContexts();
 
   if (vvDebugMsg::isActive(1))
   {
@@ -309,59 +604,99 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _cgFragProfile = new CGprofile[NUM_PIXEL_SHADERS];
 #endif
 
-  if (voxelType==VV_PIX_SHD)
+  if (_numThreads == 0)
   {
-    if (!initPixelShaders())
+    if (voxelType==VV_PIX_SHD)
     {
-      voxelType = VV_RGBA;
+      if (!initPixelShaders(_cgContext, _cgProgram))
+      {
+        voxelType = VV_RGBA;
+      }
+    }
+
+    textures = 0;
+
+    switch(voxelType)
+    {
+      case VV_FRG_PRG:
+        texelsize=1;
+        internalTexFormat = GL_LUMINANCE;
+        texFormat = GL_LUMINANCE;
+        break;
+      case VV_PAL_TEX:
+        texelsize=1;
+        internalTexFormat = GL_COLOR_INDEX8_EXT;
+        texFormat = GL_COLOR_INDEX;
+        break;
+      case VV_TEX_SHD:
+      case VV_PIX_SHD:
+        texelsize=4;
+        internalTexFormat = GL_RGBA;
+        texFormat = GL_RGBA;
+        break;
+      case VV_SGI_LUT:
+        texelsize=2;
+        internalTexFormat = GL_LUMINANCE_ALPHA;
+        texFormat = GL_LUMINANCE_ALPHA;
+        break;
+      case VV_RGBA:
+        internalTexFormat = GL_RGBA;
+        texFormat = GL_RGBA;
+        texelsize=4;
+        break;
+      default:
+        assert(0);
+        break;
+    }
+
+    if ((geomType == VV_BRICKS) && _renderState._computeBrickSize)
+    {
+      _areBricksCreated = false;
+      computeBrickSize();
+    }
+    updateTransferFunction();
+
+    if (voxelType != VV_RGBA)
+    {
+      makeTextures(texNames, &textures);                             // we only have to do this once for non-RGBA textures
     }
   }
-
-  textures = 0;
-
-  switch(voxelType)
+  else
   {
-    case VV_FRG_PRG:
-      texelsize=1;
-      internalTexFormat = GL_LUMINANCE;
-      texFormat = GL_LUMINANCE;
-      break;
-    case VV_PAL_TEX:
-      texelsize=1;
-      internalTexFormat = GL_COLOR_INDEX8_EXT;
-      texFormat = GL_COLOR_INDEX;
-      break;
-    case VV_TEX_SHD:
-    case VV_PIX_SHD:
-      texelsize=4;
-      internalTexFormat = GL_RGBA;
-      texFormat = GL_RGBA;
-      break;
-    case VV_SGI_LUT:
-      texelsize=2;
-      internalTexFormat = GL_LUMINANCE_ALPHA;
-      texFormat = GL_LUMINANCE_ALPHA;
-      break;
-    case VV_RGBA:
-      internalTexFormat = GL_RGBA;
-      texFormat = GL_RGBA;
-      texelsize=4;
-      break;
-    default:
-      assert(0);
-      break;
+    // Here initialization is done. I.e. the worker threads may start rendering as soon as the
+    // brick list is built up properly. Waiting for a properly sorted brick list is assured
+    // by another barrier.
+    pthread_barrier_wait(&_initBarrier);
+
+    // Each thread will make its own share of textures and texture ids. Don't distribute
+    // the bricks before this is completed.
+    pthread_barrier_wait(&_distributeBricksBarrier);
+
+    vvVector3 probePosObj;
+    vvVector3 probeSizeObj;
+    vvVector3 probeMin, probeMax;
+
+    calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
+    getBricksInProbe(probePosObj, probeSizeObj);
+    distributeBricks();
+    _somethingChanged = true;
+    pthread_barrier_wait(&_distributedBricksBarrier);
   }
 
-  if ((geomType == VV_BRICKS) && _renderState._computeBrickSize)
-  {
-    _areBricksCreated = false;
-    computeBrickSize();
-  }
-  updateTransferFunction();
-  if (voxelType != VV_RGBA)
-  {
-    makeTextures();                             // we only have to do this once for non-RGBA textures
-  }
+#ifdef HAVE_CG_TMP
+  _cgVertices = new CGparameter[8];
+  initIntersectionShader(_cgIsectContext, _cgIsectProfile, _cgIsectProgram,
+                         _cgBrickMin, _cgBrickDimInv, _cgModelViewProj,
+                         _cgPlaneStart, _cgDelta, _cgPlaneNormal,
+                         _cgFrontIndex, _cgVertexList, _cgVertices);
+  setupIntersectionCGParameters(_cgIsectProgram,
+                                _cgBrickMin, _cgBrickDimInv, _cgModelViewProj,
+                                _cgPlaneStart, _cgDelta, _cgPlaneNormal,
+                                _cgFrontIndex, _cgVertexList, _cgVertices);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glGenBuffers(1, &_vbos[0]);
+  glGenBuffers(1, &_vbos[1]);
+#endif
 }
 
 //----------------------------------------------------------------------------
@@ -385,7 +720,11 @@ vvTexRend::~vvTexRend()
   {
     glDeleteTextures(1, &pixLUTName);
   }
-  removeTextures();
+
+  if (_numThreads == 0)
+  {
+    removeTextures();
+  }
 
   delete[] rgbaTF;
   delete[] rgbaLUT;
@@ -393,6 +732,15 @@ vvTexRend::~vvTexRend()
 #ifdef HAVE_CG
   delete[] _cgProgram;
   delete[] _cgFragProfile;
+#endif
+
+#ifdef HAVE_CG_TMP
+  cgGLDisableProfile(_cgIsectProfile);
+  cgDestroyContext(_cgIsectContext);
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glDeleteBuffers(1, &_vbos[0]);
+  glDeleteBuffers(1, &_vbos[1]);
+  delete[] _cgVertices;
 #endif
   delete[] preintTable;
 
@@ -403,6 +751,39 @@ vvTexRend::~vvTexRend()
     _brickList.next();
   }
   _brickList.removeAll();
+
+  if (_numThreads > 0)
+  {
+    // Finally join the threads.
+    for (int i = 0; i < _numThreads; ++i)
+    {
+      void* exitStatus;
+      pthread_join(_threads[i], &exitStatus);
+    }
+
+    for (int i = 0; i < _numThreads; ++i)
+    {
+      delete[] _threadData[i].pixels;
+    }
+
+    // Cleanup locking specific stuff.
+    pthread_barrier_destroy(&_initBarrier);
+    pthread_barrier_destroy(&_distributeBricksBarrier);
+    pthread_barrier_destroy(&_distributedBricksBarrier);
+    pthread_barrier_destroy(&_renderStartBarrier);
+    pthread_mutex_destroy(&_makeTextureMutex);
+
+    // Clean up arrays.
+    delete[] _threads;
+    delete[] _threadData;
+    delete[] _frameBufferObjects;
+    delete[] _depthBuffers;
+    delete[] _imageSpaceTextures;
+    delete[] _displayNames;
+    delete[] _screens;
+
+    delete _bspTree;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -484,10 +865,11 @@ void vvTexRend::removeTextures()
 
 //----------------------------------------------------------------------------
 /// Generate textures for all rendering modes.
-vvTexRend::ErrorType vvTexRend::makeTextures()
+vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numTextures)
 {
   static bool first = true;
   ErrorType err = OK;
+
   vvDebugMsg::msg(2, "vvTexRend::makeTextures()");
 
   // Compute texture dimensions (must be power of 2):
@@ -499,7 +881,8 @@ vvTexRend::ErrorType vvTexRend::makeTextures()
   {
     case VV_SLICES:  err=makeTextures2D(1); updateTextures2D(1, 0, 10, 20, 15, 10, 5); break;
     case VV_CUBIC2D: err=makeTextures2D(3); updateTextures2D(3, 0, 10, 20, 15, 10, 5); break;
-    case VV_BRICKS:  err=makeTextureBricks(); break;
+    // Threads will make their own copies of the textures as well as their own gl ids.
+    case VV_BRICKS:  err=makeTextureBricks(privateTexNames, numTextures); break;
     default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
   }
   vvGLTools::printGLError("vvTexRend::makeTextures");
@@ -760,7 +1143,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
   return err;
 }
 
-vvTexRend::ErrorType vvTexRend::makeTextureBricks()
+vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures)
 {
   ErrorType err = OK;
   GLint glWidth;                                  // return value from OpenGL call
@@ -772,8 +1155,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
   vvVector3 halfVolume;                           // middle of the volume in voxel
   float fval;                                     // floating point voxel value
   int rawVal[4];                                  // raw values for R,G,B,A
-  int frames;                                     // number of time steps in sequence
-  int numBricks[3];                               // number of bricks used for each dimension of the volume
+  int frames;
   int tmpTexels[3];                               // number of texels in each dimension for current brick
   int texSize;                                    // texture size in bytes
   int sliceSize;                                  // number of voxels in a raw slice
@@ -794,7 +1176,11 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
     return err;
   }
 
-  removeTextures();
+  if (_numThreads == 0)
+  {
+    // TODO: make removeTextures() compatible with "privateTexNames"
+    removeTextures();
+  }
 
   frames = vd->frames;
 
@@ -820,16 +1206,17 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
   // compute number of bricks
   if ((_useOnlyOneBrick) ||
     ((texels[0] == vd->vox[0]) && (texels[1] == vd->vox[1]) && (texels[2] == vd->vox[2])))
-    numBricks[0] = numBricks[1] = numBricks[2] = 1;
+    _numBricks[0] = _numBricks[1] = _numBricks[2] = 1;
+
   else
   {
-    numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_renderState._brickSize[0]));
-    numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_renderState._brickSize[1]));
-    numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_renderState._brickSize[2]));
+    _numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_renderState._brickSize[0]));
+    _numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_renderState._brickSize[1]));
+    _numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_renderState._brickSize[2]));
   }
 
   // number of textures needed
-  textures = frames * numBricks[0] * numBricks[1] * numBricks[2];
+  *numTextures = frames * _numBricks[0] * _numBricks[1] * _numBricks[2];
 
   texSize = texels[0] * texels[1] * texels[2] * texelsize;
 
@@ -842,14 +1229,13 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
 
   sliceSize = vd->getSliceBytes();
 
-  vvDebugMsg::msg(2, "Creating texture names. # of names: ", textures);
-
-  texNames = new GLuint[textures];
-  glGenTextures(textures, texNames);
+  vvDebugMsg::msg(2, "Creating texture names. # of names: ", *numTextures);
+  privateTexNames = new GLuint[*numTextures];
+  glGenTextures(*numTextures, privateTexNames);
 
   // generate textures contents:
   vvDebugMsg::msg(2, "Transferring textures to TRAM. Total size [KB]: ",
-    textures * texSize / 1024);
+    *numTextures * texSize / 1024);
 
   // helper variables
   voxSize = vd->getSize();
@@ -870,14 +1256,21 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
   {
     raw = vd->getRaw(f);
 
-    for (bx = 0; bx < numBricks[0]; bx++)
-      for (by = 0; by < numBricks[1]; by++)
-        for (bz = 0; bz < numBricks[2]; bz++)
+
+    for (bx = 0; bx < _numBricks[0]; bx++)
+      for (by = 0; by < _numBricks[1]; by++)
+        for (bz = 0; bz < _numBricks[2]; bz++)
         {
+          // Memorize the max and min scalar values in the volume. These are stored
+          // to perform empty space leaping later on.
+          int minValue = INT_MAX;
+          int maxValue = 0;
+
           startOffset[0] = bx * _renderState._brickSize[0];
           startOffset[1] = by * _renderState._brickSize[1];
           startOffset[2] = bz * _renderState._brickSize[2];
 
+          // Guarantee that startOffset[i] + brickSize[i] won't exceed actual size of the volume.
           if ((startOffset[0] + _renderState._brickSize[0]) >= vd->vox[0])
             tmpTexels[0] = vvToolshed::getTextureSize(vd->vox[0] - startOffset[0]);
           else
@@ -891,169 +1284,226 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
           else
             tmpTexels[2] = texels[2];
 
-      memset(texData, 0, texSize);
+          memset(texData, 0, texSize);
 
-      for (s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
-      {
-        if (s < 0) continue;
-        rawSliceOffset = (vd->vox[2] - s - 1) * sliceSize;
-        for (y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
-        {
-          if (y < 0) continue;
-          heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
-          texLineOffset = (y - startOffset[1]) * tmpTexels[0] + (s - startOffset[2]) * tmpTexels[0] * tmpTexels[1];
-          if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
+          // Essentially: for s :=  startOffset[2] to (startOffset[2] + texels[2]) do
+          for (s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
           {
-            for (x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
+            if (s < 0) continue;
+            rawSliceOffset = (vd->vox[2] - s - 1) * sliceSize;
+            // Essentially: for y :=  startOffset[1] to (startOffset[1] + texels[1]) do
+            for (y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
             {
-              if (x < 0) continue;
-              srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
-              if (vd->bpc == 1) rawVal[0] = (int) raw[srcIndex];
-              else if (vd->bpc == 2)
+              if (y < 0) continue;
+              heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
+              texLineOffset = (y - startOffset[1]) * tmpTexels[0] + (s - startOffset[2]) * tmpTexels[0] * tmpTexels[1];
+              if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
               {
-                rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                rawVal[0] >>= 4;
-              }
-              else  // vd->bpc == 4
-              {
-                fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                rawVal[0] = vd->mapFloat2Int(fval);
-              }
-              texOffset = (x - startOffset[0]) + texLineOffset;
-              switch (voxelType)
-              {
-                case VV_SGI_LUT:
-                  texData[2*texOffset] = texData[2*texOffset + 1] = (uchar) rawVal[0];
-                  break;
-                case VV_PAL_TEX:
-                case VV_FRG_PRG:
-                  texData[texOffset] = (uchar) rawVal[0];
-                  break;
-                case VV_TEX_SHD:
-                  for (c = 0; c < 4; c++)
-                    texData[4 * texOffset + c] = (uchar) rawVal[0];
-                  break;
-                case VV_PIX_SHD:
-                  texData[4 * texOffset] = (uchar) rawVal[0];
-                  break;
-                case VV_RGBA:
-                  for (c = 0; c < 4; c++)
-                    texData[4 * texOffset + c] = rgbaLUT[rawVal[0] * 4 + c];
-                  break;
-                default:
-                  assert(0);
-                  break;
-              }
-            }
-          }
-          else if (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4)
-          {
-            if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
-            {
-              for (x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
-              {
-                if (x < 0) continue;
-
-                texOffset = (x - startOffset[0]) + texLineOffset;
-
-                // fetch component values from memory:
-                for (c = 0; c < ts_min(vd->chan, 4); c++)
+                // Essentially: for x :=  startOffset[0] to (startOffset[0] + texels[0]) do
+                for (x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
                 {
-                  srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
-                  if (vd->bpc == 1)
-                    rawVal[c] = (int) raw[srcIndex];
+                  if (x < 0) continue;
+                  srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
+                  if (vd->bpc == 1) rawVal[0] = (int) raw[srcIndex];
                   else if (vd->bpc == 2)
                   {
-                    rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                    rawVal[c] >>= 4;
+                    rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
+                    rawVal[0] >>= 4;
                   }
-                  else  // vd->bpc==4
+                  else  // vd->bpc == 4
                   {
-                    fval = *((float*) (raw + srcIndex));
-                    rawVal[c] = vd->mapFloat2Int(fval);
+                    fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+                    rawVal[0] = vd->mapFloat2Int(fval);
                   }
-                }
 
-                // copy color components:
-                for (c = 0; c < ts_min(vd->chan, 3); c++)
-                {
-                  texData[4 * texOffset + c] = (uchar) rawVal[c];
-                }
-                
-                // alpha channel
-                if (vd->chan >= 4)  // RGBA
-                {
-                  if (voxelType == VV_RGBA)
-                    texData[4 * texOffset + 3] = rgbaLUT[rawVal[3] * 4 + 3];
-                  else
-                    texData[4 * texOffset + 3] = (uchar) rawVal[3];
-                }
-                else if(vd->chan > 0) // compute alpha from color components
-                {
-                  alpha = 0;
-                  for (c = 0; c < vd->chan; c++)
+                  // Store min and max for empty space leaping.
+                  if (rawVal[0] > maxValue)
                   {
-                    // alpha: mean of sum of RGB conversion table results:
-                    alpha += (int) rgbaLUT[rawVal[c] * 4 + c];
+                    maxValue = rawVal[0];
                   }
-                  texData[4 * texOffset + 3] = (uchar) (alpha / vd->chan);
-                }
-                else
-                {
-                  texData[4 * texOffset + 3] = 0;
+                  else
+                  {
+                    if (rawVal[0] < minValue)
+                    {
+                      minValue = rawVal[0];
+                    }
+                  }
+
+                  texOffset = (x - startOffset[0]) + texLineOffset;
+                  switch (voxelType)
+                  {
+                    case VV_SGI_LUT:
+                      texData[2*texOffset] = texData[2*texOffset + 1] = (uchar) rawVal[0];
+                      break;
+                    case VV_PAL_TEX:
+                    case VV_FRG_PRG:
+                      texData[texOffset] = (uchar) rawVal[0];
+                      break;
+                    case VV_TEX_SHD:
+                      for (c = 0; c < 4; c++)
+                        texData[4 * texOffset + c] = (uchar) rawVal[0];
+                      break;
+                    case VV_PIX_SHD:
+                      texData[4 * texOffset] = (uchar) rawVal[0];
+                      break;
+                    case VV_RGBA:
+                      for (c = 0; c < 4; c++)
+                        texData[4 * texOffset + c] = rgbaLUT[rawVal[0] * 4 + c];
+                      break;
+                    default:
+                      assert(0);
+                      break;
+                  }
                 }
               }
-            }
+              else if (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4)
+              {
+                if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
+                {
+                  for (x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
+                  {
+                    if (x < 0) continue;
+
+                    texOffset = (x - startOffset[0]) + texLineOffset;
+
+                    // fetch component values from memory:
+                    for (c = 0; c < ts_min(vd->chan, 4); c++)
+                    {
+                      srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
+                      if (vd->bpc == 1)
+                        rawVal[c] = (int) raw[srcIndex];
+                      else if (vd->bpc == 2)
+                      {
+                        rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
+                        rawVal[c] >>= 4;
+                      }
+                     else  // vd->bpc==4
+                      {
+                        fval = *((float*) (raw + srcIndex));
+                        rawVal[c] = vd->mapFloat2Int(fval);
+                      }
+                    }
+
+                    // TODO: init empty-space leaping minValue and maxValue for multiple channels as well.
+
+
+                    // copy color components:
+                    for (c = 0; c < ts_min(vd->chan, 3); c++)
+                    {
+                      texData[4 * texOffset + c] = (uchar) rawVal[c];
+                    }
+                
+                    // alpha channel
+                    if (vd->chan >= 4)  // RGBA
+                    {
+                      if (voxelType == VV_RGBA)
+                        texData[4 * texOffset + 3] = rgbaLUT[rawVal[3] * 4 + 3];
+                      else
+                        texData[4 * texOffset + 3] = (uchar) rawVal[3];
+                    }
+                    else if(vd->chan > 0) // compute alpha from color components
+                    {
+                      alpha = 0;
+                      for (c = 0; c < vd->chan; c++)
+                      {
+                        // alpha: mean of sum of RGB conversion table results:
+                        alpha += (int) rgbaLUT[rawVal[c] * 4 + c];
+                      }
+                      texData[4 * texOffset + 3] = (uchar) (alpha / vd->chan);
+                    }
+                    else
+                    {
+                      texData[4 * texOffset + 3] = 0;
+                    }
+                  }
+                }
+              }
+              else cerr << "Cannot create texture: unsupported voxel format (3)." << endl;
+            } // startoffset[1] to startoffset[1]+tmpTexels[1]
+          } // startoffset[2] to startoffset[2]+tmpTexels[2]
+
+          texIndex = (f * _numBricks[0] * _numBricks[1] * _numBricks[2]) + (bx * _numBricks[2] * _numBricks[1])
+            + (by * _numBricks[2]) + bz;
+
+          currBrick = new Brick();
+
+
+          currBrick->minValue = minValue;
+          currBrick->maxValue = maxValue;
+          currBrick->visible = true;
+
+          // Calc obj space coords for this brick, i.e. coordinates related to the extend of the overall volume.
+          vvVector3 minObj;
+          vvVector3 maxObj;
+          int bs[3];
+          bs[0] = _renderState._brickSize[0];
+          bs[1] = _renderState._brickSize[1];
+          bs[2] = _renderState._brickSize[2];
+          if (_useOnlyOneBrick)
+          {
+            bs[0] += 1;
+            bs[1] += 1;
+            bs[2] += 1;
           }
-          else cerr << "Cannot create texture: unsupported voxel format (3)." << endl;
-        }
-      }
 
-      texIndex = (f * numBricks[0] * numBricks[1] * numBricks[2]) + (bx * numBricks[2] * numBricks[1])
-        + (by * numBricks[2]) + bz;
+          for (int d = 0; d < 3; ++d)
+          {
+            minObj[d] = (float)startOffset[d] / (float)vd->vox[d];
+            minObj[d] *= vd->getSize()[d];
+            if (minObj[d] > vd->getSize()[d]) minObj[d] = vd->getSize()[d];
+            minObj[d] -= vd->getSize()[d] * 0.5f;
 
-      currBrick = new Brick();
-      currBrick->index = texIndex;
-      currBrick->pos.set(vd->pos[0] + voxSize[0] * (startOffset[0] + halfBrick[0] - halfVolume[0]),
-        vd->pos[1] + voxSize[1] * (startOffset[1] + halfBrick[1] - halfVolume[1]),
-        vd->pos[2] + voxSize[2] * (startOffset[2] + halfBrick[2] - halfVolume[2]));
-      currBrick->min.set(vd->pos[0] + voxSize[0] * (startOffset[0] - halfVolume[0]),
-        vd->pos[1] + voxSize[1] * (startOffset[1] - halfVolume[1]),
-        vd->pos[2] + voxSize[2] * (startOffset[2] - halfVolume[2]));
-      currBrick->max.set(vd->pos[0] + voxSize[0] * (startOffset[0] + (tmpTexels[0] - 1) - halfVolume[0]),
-        vd->pos[1] + voxSize[1] * (startOffset[1] + (tmpTexels[1] - 1) - halfVolume[1]),
-        vd->pos[2] + voxSize[2] * (startOffset[2] + (tmpTexels[2] - 1) - halfVolume[2]));
-      currBrick->texels[0] = tmpTexels[0];
-      currBrick->texels[1] = tmpTexels[1];
-      currBrick->texels[2] = tmpTexels[2];
-      currBrick->startOffset[0] = startOffset[0];
-      currBrick->startOffset[1] = startOffset[1];
-      currBrick->startOffset[2] = startOffset[2];
+            maxObj[d] = (float)(startOffset[d] + bs[d]) / (float)vd->vox[d];
+            maxObj[d] *= vd->getSize()[d];
+            if (maxObj[d] > vd->getSize()[d]) maxObj[d] = vd->getSize()[d];
+            maxObj[d] -= vd->getSize()[d] * 0.5f;
+          }
 
-      _brickList.getData()->append(currBrick, vvSLNode<Brick*>::NORMAL_DELETE);
+          currBrick->minObj = minObj;
+          currBrick->maxObj = maxObj;
 
-      glBindTexture(GL_TEXTURE_3D_EXT, texNames[texIndex]);
-      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
+          currBrick->index = texIndex;
+          currBrick->pos.set(vd->pos[0] + voxSize[0] * (startOffset[0] + halfBrick[0] - halfVolume[0]),
+            vd->pos[1] + voxSize[1] * (startOffset[1] + halfBrick[1] - halfVolume[1]),
+            vd->pos[2] + voxSize[2] * (startOffset[2] + halfBrick[2] - halfVolume[2]));
+          currBrick->min.set(vd->pos[0] + voxSize[0] * (startOffset[0] - halfVolume[0]),
+            vd->pos[1] + voxSize[1] * (startOffset[1] - halfVolume[1]),
+            vd->pos[2] + voxSize[2] * (startOffset[2] - halfVolume[2]));
+          currBrick->max.set(vd->pos[0] + voxSize[0] * (startOffset[0] + (tmpTexels[0] - 1) - halfVolume[0]),
+            vd->pos[1] + voxSize[1] * (startOffset[1] + (tmpTexels[1] - 1) - halfVolume[1]),
+            vd->pos[2] + voxSize[2] * (startOffset[2] + (tmpTexels[2] - 1) - halfVolume[2]));
+          currBrick->texels[0] = tmpTexels[0];
+          currBrick->texels[1] = tmpTexels[1];
+          currBrick->texels[2] = tmpTexels[2];
+          currBrick->startOffset[0] = startOffset[0];
+          currBrick->startOffset[1] = startOffset[1];
+          currBrick->startOffset[2] = startOffset[2];
 
-      glTexImage3DEXT(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
-        tmpTexels[0], tmpTexels[1], tmpTexels[2], 0, texFormat, GL_UNSIGNED_BYTE, NULL);
+          _brickList.getData()->append(currBrick, vvSLNode<Brick*>::NORMAL_DELETE);
 
-      glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
-      if (glWidth != 0)
-      {
-        glTexImage3DEXT(GL_TEXTURE_3D_EXT, 0, internalTexFormat, tmpTexels[0], tmpTexels[1], tmpTexels[2], 0,
-          texFormat, GL_UNSIGNED_BYTE, texData);
-      }
-      else accommodated = false;
-    }
-    _brickList.next();
-  }
+          glBindTexture(GL_TEXTURE_3D_EXT, privateTexNames[texIndex]);
+
+          glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+          glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
+          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
+          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+          glTexImage3DEXT(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
+            tmpTexels[0], tmpTexels[1], tmpTexels[2], 0, texFormat, GL_UNSIGNED_BYTE, NULL);
+
+          glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
+          if (glWidth != 0)
+          {
+            glTexImage3DEXT(GL_TEXTURE_3D_EXT, 0, internalTexFormat, tmpTexels[0], tmpTexels[1], tmpTexels[2], 0,
+              texFormat, GL_UNSIGNED_BYTE, texData);
+          }
+          else accommodated = false;
+        } // # foreach (numBricks[i])
+        _brickList.next();
+  } // # frames
 
   _brickList.first();
 
@@ -1065,6 +1515,198 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks()
 
   delete[] texData;
   _areBricksCreated = true;
+
+  return err;
+}
+
+vvTexRend::ErrorType vvTexRend::setDisplayNames(const char** displayNames, const unsigned int numNames)
+{
+  ErrorType err = OK;
+
+  // Displays specified via _renderState?
+  if ((numNames <= 0) || (displayNames == NULL))
+  {
+    _numThreads = 0;
+    return NO_DISPLAYS_SPECIFIED;
+  }
+
+  bool hostSeen;
+  int i;
+  size_t j;
+
+  _numThreads = numNames;
+
+  _threads = new pthread_t[_numThreads];
+  _threadData = new ThreadArgs[_numThreads];
+  _displayNames = new const char*[_numThreads];
+  _screens = new unsigned int[_numThreads];
+
+  for (i = 0; i < _numThreads; ++i)
+  {
+    _displayNames[i] = displayNames[i];
+    hostSeen = false;
+
+    // Parse the display name string for host, display and screen.
+    for (j = 0; j < strlen(_displayNames[i]); ++j)
+    {
+      if (_displayNames[i][j] == ':')
+      {
+        hostSeen = true;
+      }
+
+      // . could also be part of the host name ==> ensure that host was parsed.
+      if (hostSeen && (_displayNames[i][j] == '.'))
+      {
+        ++j;
+        _screens[i] = vvToolshed::parseNextUint32(_displayNames[i], j);
+      }
+    }
+  }
+
+  return err;
+}
+
+vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
+{
+  ErrorType err = OK;
+  int i;
+  int attrList[] = { GLX_RGBA , GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8};
+
+  for (i = 0; i < _numThreads; ++i)
+  {
+    _threadData[i].display = XOpenDisplay(_displayNames[i]);
+    Drawable parent = RootWindow(_threadData[i].display, _screens[i]);
+
+    XVisualInfo* vi = glXChooseVisual(_threadData[i].display,
+                                      DefaultScreen(_threadData[i].display),
+                                      attrList);
+
+    XSetWindowAttributes wa = { 0 };
+    wa.colormap = XCreateColormap(_threadData[i].display, parent, vi->visual, AllocNone );
+    wa.background_pixmap = None;
+    wa.border_pixel = 0;
+
+    wa.event_mask =  (StructureNotifyMask | ExposureMask | KeyPressMask | KeyReleaseMask
+                      | EnterWindowMask | LeaveWindowMask | FocusChangeMask | ButtonMotionMask
+                      | PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
+    _threadData[i].glxContext = glXCreateContext(_threadData[i].display, vi, NULL, GL_TRUE);
+    _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, 1, 1, 0,
+                                            vi->depth, InputOutput, vi->visual,
+                                            CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap, &wa );
+  }
+
+  // If smth changed, the bricks will be distributed among the threads before rendering.
+  // Obviously, initially something changed.
+  _somethingChanged = true;
+
+  // When this barrier is unblocked (by the main thread), initialization is done. NUM_THREADS + 1,
+  // since every worker thread, as well as the main thread during sequential execution will
+  // call pthread_barrier_wait on _initBarrier exactly once.
+  pthread_barrier_init(&_initBarrier, NULL, _numThreads + 1);
+
+  // First a barrier is passed that ensures that each thread built its textures (_distributeBricksBarrier).
+  // The following barrier (_distributedBricksBarrier) is passed right after each thread
+  // was assigned the bricks it is responsible for.
+  pthread_barrier_init(&_distributeBricksBarrier, NULL, _numThreads + 1);
+  pthread_barrier_init(&_distributedBricksBarrier, NULL, _numThreads + 1);
+
+  // This barrier will be waited for by every worker thread and additionally once by the main
+  // thread for every frame.
+  pthread_barrier_init(&_renderStartBarrier, NULL, _numThreads + 1);
+
+  // This mutex is used to ensure that each thread will built up its 3D texture one after another.
+  pthread_mutex_init(&_makeTextureMutex, NULL);
+
+  // Frame buffer object for render to texture functionality.
+  _frameBufferObjects = new GLuint[_numThreads];
+
+  // Depth buffers for the frame buffer objects.
+  _depthBuffers = new GLuint[_numThreads];
+
+  // One texture per context, blended during compositing.
+  _imageSpaceTextures = new GLuint[_numThreads];
+
+  for (i = 0; i < _numThreads; ++i)
+  {
+    _threadData[i].threadId = i;
+    _threadData[i].renderer = this;
+    _threadData[i].initBarrier = &_initBarrier;
+    _threadData[i].distributeBricksBarrier = &_distributeBricksBarrier;
+    _threadData[i].distributedBricksBarrier = &_distributedBricksBarrier;
+    _threadData[i].renderStartBarrier = &_renderStartBarrier;
+    _threadData[i].makeTextureMutex = &_makeTextureMutex;
+    // Start solution for load balancing: every thread renders 1/n of the volume.
+    // During load balancing, the share will (probably) be adjusted.
+    _threadData[i].share = 1.0f / static_cast<float>(_numThreads);
+    _threadData[i].pixels = new GLfloat[WIDTH * HEIGHT * 4];
+    glGenTextures(1, &_imageSpaceTextures[i]);
+    XMapWindow(_threadData[i].display, _threadData[i].drawable);
+    XFlush(_threadData[i].display);
+  }
+
+  // Dispatch the threads. This has to be done in a separate loop since the first operation
+  // the callback function will perform is making its gl context current. This would most
+  // probably interfer with the context creation performed in the loop above.
+  for (i = 0; i < _numThreads; ++i)
+  {
+    pthread_create(&_threads[i], NULL, threadFuncTexBricks, (void*)&_threadData[i]);
+  }
+  return err;
+}
+
+/*!
+ *
+ */
+vvTexRend::ErrorType vvTexRend::distributeBricks()
+{
+  ErrorType err = OK;
+
+  vvHalfSpace* tmp;
+  int i;
+
+  // A new game... .
+  _deviationExceedCnt = 0;
+
+  float* part = new float[_numThreads];
+  for (i = 0; i < _numThreads; ++i)
+  {
+    part[i] = _threadData[i].share;
+  }
+
+  delete _bspTree;
+  _bspTree = new vvBspTree(part, _numThreads, &_insideList);
+  // The visitor (supplies rendering logic) must have knowledge
+  // about the texture ids of the compositing polygons.
+  // Thus provide a pointer to these.
+  vvThreadVisitor* visitor = new vvThreadVisitor;
+  visitor->setFrameBufferObjects(_frameBufferObjects);
+  visitor->setImageSpaceTextures(_imageSpaceTextures);
+
+  // Provide the visitor with the pixel data of each thread either.
+  GLfloat** pixels = new GLfloat*[_numThreads];
+  for (i = 0; i < _numThreads; ++i)
+  {
+    pixels[i] = _threadData[i].pixels;
+  }
+  visitor->setPixels(pixels);
+
+  _bspTree->setVisitor(visitor);
+
+  delete[] part;
+
+  i = 0;
+  _bspTree->getLeafs()->first();
+  while ((tmp = _bspTree->getLeafs()->getData()) != NULL)
+  {
+    _threadData[i].halfSpace = tmp;
+    _threadData[i].halfSpace->setId(_threadData[i].threadId);
+    ++i;
+    if (i >= _numThreads) break;
+    if (!_bspTree->getLeafs()->next()) break;
+  }
+
+  _somethingChanged = false;
+
   return err;
 }
 
@@ -1130,7 +1772,19 @@ void vvTexRend::setComputeBrickSize(bool flag)
   {
     computeBrickSize();
     if(!_areBricksCreated)
-       makeTextures();
+    {
+      if (_numThreads > 0)
+      {
+        for (int i = 0; i < _numThreads; ++i)
+        {
+          makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
+        }
+      }
+      else
+      {
+        makeTextures(texNames, &textures);
+      }
+    }
   }
 }
 
@@ -1144,7 +1798,18 @@ void vvTexRend::setBrickSize(int newSize)
   vvDebugMsg::msg(3, "vvRenderer::setBricksize()");
   _renderState._brickSize[0] = _renderState._brickSize[1] = _renderState._brickSize[2] = newSize-1;
   _useOnlyOneBrick = false;
-  makeTextures();
+
+  if (_numThreads > 0)
+  {
+    for (int i = 0; i < _numThreads; ++i)
+    {
+      makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
+    }
+  }
+  else
+  {
+    makeTextures(texNames, &textures);
+  }
 }
 
 int vvTexRend::getBrickSize()
@@ -1162,8 +1827,21 @@ void vvTexRend::setTexMemorySize(int newSize)
   if (_renderState._computeBrickSize)
   {
     computeBrickSize();
+
     if(!_areBricksCreated)
-       makeTextures();
+    {
+      if (_numThreads > 0)
+      {
+        for (int i = 0; i < _numThreads; ++i)
+        {
+          makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
+        }
+      }
+      else
+      {
+        makeTextures(texNames, &textures);
+      }
+    }
   }
 }
 
@@ -1184,7 +1862,7 @@ void vvTexRend::computeBrickSize()
   if (texMemorySize == 0)
   {
      vvDebugMsg::msg(1, "vvTexRend::computeBrickSize(): unknown texture memory size, assuming 32 M");
-     texMemorySize = 32;
+     texMemorySize = 1;
   }
 
   if (texMemorySize == 0)
@@ -1305,7 +1983,18 @@ void vvTexRend::updateVolumeData()
     _areBricksCreated = false;
     computeBrickSize();
   }
-  makeTextures();
+
+  if (_numThreads > 0)
+  {
+    for (int i = 0; i < _numThreads; ++i)
+    {
+      makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
+    }
+  }
+  else
+  {
+    makeTextures(texNames, &textures);
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -2087,7 +2776,15 @@ void vvTexRend::setGLenvironment()
   glDepthFunc(GL_LESS);                           // default depth function
   glEnable(GL_COLOR_MATERIAL);
   glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  if (_numThreads > 0)
+  {
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+  }
+  else
+  {
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  }
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity();
   glMatrixMode(GL_MODELVIEW);
@@ -2115,7 +2812,6 @@ void vvTexRend::setGLenvironment()
       default: break;
     }
   }
-
   vvDebugMsg::msg(3, "vvTexRend::setGLenvironment() done");
 }
 
@@ -2125,19 +2821,19 @@ void vvTexRend::unsetGLenvironment()
 {
   vvDebugMsg::msg(3, "vvTexRend::unsetGLenvironment()");
 
-  if (glsCulling==(GLboolean)true) glEnable(GL_CULL_FACE);
+  if (glsCulling==GL_TRUE) glEnable(GL_CULL_FACE);
   else glDisable(GL_CULL_FACE);
 
-  if (glsBlend==(GLboolean)true) glEnable(GL_BLEND);
+  if (glsBlend==GL_TRUE) glEnable(GL_BLEND);
   else glDisable(GL_BLEND);
 
-  if (glsColorMaterial==(GLboolean)true) glEnable(GL_COLOR_MATERIAL);
+  if (glsColorMaterial==GL_TRUE) glEnable(GL_COLOR_MATERIAL);
   else glDisable(GL_COLOR_MATERIAL);
 
-  if (glsDepthTest==(GLboolean)true) glEnable(GL_DEPTH_TEST);
+  if (glsDepthTest==GL_TRUE) glEnable(GL_DEPTH_TEST);
   else glDisable(GL_DEPTH_TEST);
 
-  if (glsLighting==(GLboolean)true) glEnable(GL_LIGHTING);
+  if (glsLighting==GL_TRUE) glEnable(GL_LIGHTING);
   else glDisable(GL_LIGHTING);
 
   glDepthMask(glsDepthMask);
@@ -2149,7 +2845,7 @@ void vvTexRend::unsetGLenvironment()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableLUTMode()
+void vvTexRend::enableLUTMode(CGprogram*& cgProgram, CGparameter& cgPixLUT)
 {
   switch(voxelType)
   {
@@ -2160,7 +2856,7 @@ void vvTexRend::enableLUTMode()
       enableNVShaders();
       break;
     case VV_PIX_SHD:
-      enablePixelShaders();
+      enablePixelShaders(cgProgram, cgPixLUT);
       break;
     case VV_SGI_LUT:
       glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -2175,7 +2871,7 @@ void vvTexRend::enableLUTMode()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableLUTMode()
+void vvTexRend::disableLUTMode(CGparameter& cgPixLUT)
 {
   switch(voxelType)
   {
@@ -2186,7 +2882,7 @@ void vvTexRend::disableLUTMode()
       disableNVShaders();
       break;
     case VV_PIX_SHD:
-      disablePixelShaders();
+      disablePixelShaders(cgPixLUT);
       break;
     case VV_SGI_LUT:
       if (glsTexColTable==(uchar)true) glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -2261,8 +2957,8 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     // Compute probe min/max coordinates in object space:
     for (i=0; i<3; ++i)
     {
-      probeMin[i] = probePosObj[i] - (_renderState._roiSize[i] * size[i]) / 2.0f;
-      probeMax[i] = probePosObj[i] + (_renderState._roiSize[i] * size[i]) / 2.0f;
+      probeMin[i] = probePosObj[i] - (_renderState._roiSize[i] * size[i]) * 0.5f;
+      probeMax[i] = probePosObj[i] + (_renderState._roiSize[i] * size[i]) * 0.5f;
     }
 
     // Constrain probe boundaries to volume data area:
@@ -2275,7 +2971,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
       }
       if (probeMin[i] < -size2[i]) probeMin[i] = -size2[i];
       if (probeMax[i] >  size2[i]) probeMax[i] =  size2[i];
-      probePosObj[i] = (probeMax[i] + probeMin[i]) / 2.0f;
+      probePosObj[i] = (probeMax[i] + probeMin[i]) *0.5;
     }
 
     // Compute probe edge lengths:
@@ -2547,6 +3243,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
       {
         glTexCoord3f(texcoord[j][0], texcoord[j][1], texcoord[j][2]);
       }
+
       glVertex3f(isect[j][0], isect[j][1], isect[j][2]);
     }
     glEnd();
@@ -2562,7 +3259,6 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 {
   vvMatrix invMV;                                 // inverse of model-view matrix
   vvMatrix pm;                                    // OpenGL projection matrix
-  vvVector3 size, size2;                          // full and half object sizes
   vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
   vvVector3 texcoord[6];                          // intersection points in texture coordinate space [0..1]
   vvVector3 farthest;                             // volume vertex farthest from the viewer
@@ -2571,21 +3267,21 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   vvVector3 normal;                               // normal vector of textures
   vvVector3 origin;                               // origin (0|0|0) transformed to object space
   vvVector3 eye;                                  // user's eye position [object space]
+  vvVector3 pos;                                  // volume location
   vvVector3 probePosObj;                          // probe midpoint [object space]
   vvVector3 probeSizeObj;                         // probe size [object space]
   vvVector3 probeMin, probeMax;                   // probe min and max coordinates [object space]
-  vvVector3 pos;                                  // volume location
   vvVector3 min, max;                             // min and max pos of current brick (cut with probe)
   vvVector3 texRange;                             // range of texture coordinates
   vvVector3 texMin;                               // minimum texture coordinate
   vvVector3 dist;                                 // dimensions of current brick
   Brick* tmp;                                     // current brick
   float     diagonal;                             // probe diagonal [object space]
-  vvVector3 maxSize;                              // probe edge length [object space]
   int       isectCnt;                             // intersection counter
   int       numSlices;                            // number of texture slices along diagonal
   int       drawn;                                // counter for drawn textures
   int       i, j, k;                              // general counters
+  int       discarded;                            // count discarded bricks due to empty-space leaping
 
   vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
 
@@ -2593,11 +3289,6 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   if (!extTex3d) return;
 
   if (_brickList.isEmpty()) return;
-
-  // Determine texture object dimensions and half object size as a shortcut:
-  size.copy(vd->getSize());
-  size2 = size;
-  size2.scale(0.5);
 
   pos.copy(&vd->pos);
 
@@ -2609,46 +3300,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   getEyePosition(&eye);
   eye.multiply(&invMV);
 
-  if (_renderState._isROIUsed)
-  {
-    // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj.copy(&_renderState._roiPos);
-    probePosObj.sub(&pos);                        // eliminate object position from probe position
-
-    // Compute probe min/max coordinates in object space:
-    maxSize[0] = _renderState._roiSize[0] * size2[0];
-    maxSize[1] = _renderState._roiSize[1] * size2[1];
-    maxSize[2] = _renderState._roiSize[2] * size2[2];
-
-    probeMin = probePosObj;
-    probeMin.sub(&maxSize);
-    probeMax = probePosObj;
-    probeMax.add(&maxSize);
-
-    // Constrain probe boundaries to volume data area:
-    for (i = 0; i < 3; ++i)
-    {
-      if (probeMin[i] > size2[i] || probeMax[i] < -size2[i])
-      {
-        vvDebugMsg::msg(3, "probe outside of volume");
-        return;
-      }
-      if (probeMin[i] < -size2[i]) probeMin[i] = -size2[i];
-      if (probeMax[i] >  size2[i]) probeMax[i] =  size2[i];
-      probePosObj[i] = (probeMax[i] + probeMin[i]) / 2.0f;
-    }
-
-    // Compute probe edge lengths:
-    probeSizeObj = probeMax;
-    probeSizeObj.sub(&probeMin);
-  }
-  else                                            // probe mode off
-  {
-    probeSizeObj.copy(&size);
-    probePosObj.copy(&vd->pos);
-    probeMin = probePosObj-size2;
-    probeMax = probePosObj+size2;
-  }
+  calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
   // Compute length of probe diagonal [object space]:
   diagonal = (float)sqrt(
@@ -2664,10 +3316,817 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
   vvDebugMsg::msg(3, "Number of texture slices rendered: ", numSlices);
 
-  // Use alpha correction in indexed mode: adapt alpha values to number of textures:
-  if (instantClassification())
+  if (_numThreads == 0)
   {
-    updateLUT(diagonalVoxels / float(numSlices));
+    // Use alpha correction in indexed mode: adapt alpha values to number of textures:
+    if (instantClassification())
+    {
+      updateLUT(diagonalVoxels / float(numSlices));
+    }
+  }
+
+  // Get projection matrix:
+  getProjectionMatrix(&pm);
+  bool isOrtho = pm.isProjOrtho();
+
+  // Compute normal vector of textures using the following strategy:
+  // For orthographic projections or if viewDir is (0|0|0) use
+  // (0|0|1) as the normal vector.
+  // Otherwise use objDir as the normal.
+  // Exception: if user's eye is inside object and probe mode is off,
+  // then use viewDir as the normal.
+  if (_renderState._clipMode)
+  {
+    normal.copy(&_renderState._clipNormal);
+  }
+  else if (isOrtho || (viewDir.e[0] == 0.0f && viewDir.e[1] == 0.0f && viewDir.e[2] == 0.0f))
+  {
+    // Draw slices parallel to projection plane:
+    normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
+    normal.multiply(&invMV);
+    origin.zero();
+    origin.multiply(&invMV);
+    normal.sub(&origin);
+  }
+  else if (!_renderState._isROIUsed && isInVolume(&eye))
+  {
+    // Draw slices perpendicular to viewing direction:
+    normal.copy(&viewDir);
+    normal.negate();                              // viewDir points away from user, the normal should point towards them
+  }
+  else
+  {
+    // Draw slices perpendicular to line eye->object:
+    normal.copy(&objDir);
+    normal.negate();
+  }
+
+  normal.normalize();
+
+#ifdef HAVE_CG
+  // Local illumination based on blinn-phong shading.
+  if (_currentShader == 12)
+  {
+    // Currently the light is exactly at the current viewing position.
+    // TODO: arbitrary (not necessarily frame dependend) lighting position.
+    vvVector3 L;
+    L.copy(&normal);
+    L.negate();
+
+    // Viewing vector.
+    vvVector3 V;
+    V.copy(&normal);
+    V.negate();
+
+    // Half way vector.
+    vvVector3 H;
+    H.copy(L);
+    H.add(&V);
+    H.normalize();
+    CGparameter cgL;
+    CGparameter cgH;
+    cgL = cgGetNamedParameter(_cgProgram[_currentShader], "L");
+    cgH = cgGetNamedParameter(_cgProgram[_currentShader], "H");
+    cgGLSetParameter3f(cgL, L[0], L[1], L[2]);
+    cgGLSetParameter3f(cgH, H[0], H[1], H[2]);
+  }
+#endif
+
+  delta.copy(&normal);
+  delta.scale(diagonal / ((float)numSlices));
+
+  // Compute farthest point to draw texture at:
+  farthest.copy(&delta);
+  farthest.scale((float)(numSlices - 1) / -2.0f);
+#ifndef HAVE_CG_TMP
+  farthest.add(&probePosObj);
+#endif
+
+  vvVector3 temp, clipPosObj, normClipPoint;
+  float maxDist;
+
+  if (_renderState._clipMode)                     // clipping plane present?
+  {
+    // Adjust numSlices and set farthest point so that textures are only
+    // drawn up to the clipPoint. (Delta may not be changed
+    // due to the automatic opacity correction.)
+    // First find point on clipping plane which is on a line perpendicular
+    // to clipping plane and which traverses the origin:
+    temp.copy(&delta);
+    temp.scale(-0.5f);
+    farthest.add(&temp);                          // add a half delta to farthest
+    clipPosObj.copy(&_renderState._clipPoint);
+    clipPosObj.sub(&pos);
+    temp.copy(&probePosObj);
+    temp.add(&normal);
+    normClipPoint.isectPlaneLine(&normal, &clipPosObj, &probePosObj, &temp);
+    maxDist = farthest.distance(&normClipPoint);
+    numSlices = (int)(maxDist / delta.length()) + 1;
+    temp.copy(&delta);
+    temp.scale((float)(1 - numSlices));
+    farthest.copy(&normClipPoint);
+    farthest.add(&temp);
+    if (_renderState._clipSingleSlice)
+    {
+      // Compute slice position:
+      delta.scale((float)(numSlices-1));
+      farthest.add(&delta);
+      numSlices = 1;
+
+      // Make slice opaque if possible:
+      if (instantClassification())
+      {
+        updateLUT(1.0f);
+      }
+    }
+  }
+
+  getBricksInProbe(probePosObj, probeSizeObj);
+
+  if (_numThreads > 0)
+  {
+    for (i = 0; i < _numThreads; ++i)
+    {
+      sortBrickList(i, eye, normal, isOrtho);
+    }
+
+    if (_somethingChanged)
+    {
+      distributeBricks();
+    }
+  }
+  else
+  {
+    sortBrickList(-1, eye, normal, isOrtho);
+    _sortedList.first();
+  }
+
+  // Translate object by its position:
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
+
+  if (_numThreads > 0)
+  {
+    GLfloat* modelview = new GLfloat[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX , modelview);
+
+    GLfloat* projection = new GLfloat[16];
+    glGetFloatv(GL_PROJECTION_MATRIX, projection);
+
+    // Make sure that the _threadData array is only changed again (due to the
+    // fact that the main thread already wants to sort the brick list again for
+    // the next frame) until all workers have finished rendering the current
+    // frame. Of course, this barrier has to be reinitialized frame per frame.
+    pthread_barrier_init(&_renderReadyBarrier, NULL, _numThreads + 1);
+
+    pthread_barrier_init(&_compositingBarrier, NULL, _numThreads + 1);
+
+    for (i = 0; i < _numThreads; ++i)
+    {
+      _threadData[i].probeMin = vvVector3(&probeMin);
+      _threadData[i].probeMax = vvVector3(&probeMax);
+      _threadData[i].min = vvVector3(&min);
+      _threadData[i].max = vvVector3(&max);
+      _threadData[i].delta = vvVector3(&delta);
+      _threadData[i].farthest = vvVector3(&farthest);
+      _threadData[i].normal = vvVector3(&normal);
+      _threadData[i].numSlices = numSlices;
+      _threadData[i].texMin[0] = texMin[0];
+      _threadData[i].texMin[1] = texMin[1];
+      _threadData[i].texMin[2] = texMin[2];
+      _threadData[i].minSlice = minSlice;
+      _threadData[i].maxSlice = maxSlice;
+
+      _threadData[i].modelview = modelview;
+      _threadData[i].projection = projection;
+
+      _threadData[i].renderReadyBarrier = &_renderReadyBarrier;
+      _threadData[i].compositingBarrier = &_compositingBarrier;
+    }
+
+    // The sorted brick lists are distributed among the threads. All other data specific
+    // to the workers is assigned either. Now broadcast a signal telling the worker threads'
+    // rendering loops to resume.
+    pthread_barrier_wait(&_renderStartBarrier);
+
+    // Resume sequential operations only after all worker threads have finished rendering.
+    pthread_barrier_wait(&_renderReadyBarrier);
+
+    // Do compositing.
+    pthread_barrier_wait(&_compositingBarrier);
+
+    delete[] projection;
+    delete[] modelview;
+
+    // Destroy this barrier to resume execution. The barrier will be reinitialized with
+    // the next frame.
+    pthread_barrier_destroy(&_renderReadyBarrier);
+
+    // Blend the images from the worker threads onto a 2D-texture.
+
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Orthographic projection.
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+
+    // Fix the proxy quad for the frame buffer texture.
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    // Setup compositing.
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_COLOR_MATERIAL);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Traverse the bsp tree. As a side effect,
+    // the textured proxy geometry will be
+    // rendered by the bsp tree's visitor.
+    _bspTree->traverse(eye);
+
+    performLoadBalancing();
+
+    vvGLTools::printGLError("orthotexture");
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+
+    pthread_barrier_destroy(&_compositingBarrier);
+  }
+  else
+  {
+    // Volume render a 3D texture:
+    enableTexture(GL_TEXTURE_3D_EXT);
+#ifdef HAVE_CG_TMP
+
+    // Per frame parameters.
+    cgGLSetStateMatrixParameter(_cgModelViewProj, CG_GL_MODELVIEW_PROJECTION_MATRIX, CG_GL_MATRIX_IDENTITY);
+
+    cgGLSetParameter1f(_cgDelta, delta.length());
+    cgGLSetParameter3f(_cgPlaneNormal, normal[0], normal[1], normal[2]);
+#endif
+
+    // Count empty-space leaped bricks.
+    discarded = 0;
+
+    GLuint** vertIndices;
+    GLsizei* elemCounts;
+#ifdef HAVE_CG_TMP
+    // Allocate memory for 6 vertices per slice. These will
+    // be sent to the gpu later on. Memory is allocated here
+    // to avoid doing this in the inner loop
+    GLuint* vertIndicesTmp = new GLuint[numSlices * 6];
+    vertIndices = new GLuint*[numSlices];
+    elemCounts = new GLsizei[numSlices];
+    for (i = 0; i < numSlices; ++i)
+    {
+      vertIndices[i] = &vertIndicesTmp[i*6];
+      elemCounts[i] = 0;
+    }
+#endif
+
+    while ((tmp = _sortedList.getData()) != 0)
+    {
+      if (!tmp->visible)
+      {
+        ++discarded;
+        if (!_sortedList.next()) break;
+        continue;
+      }
+
+      tmp->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
+                  texNames, vertIndices, elemCounts,
+                  _cgVertices, _cgBrickMin, _cgBrickDimInv, _cgFrontIndex, _cgPlaneStart);
+      if (!_sortedList.next()) break;
+    }
+
+#ifdef HAVE_CG_TMP
+    delete[] vertIndices;
+    delete[] vertIndicesTmp;
+    delete[] elemCounts;
+#endif
+
+    vvDebugMsg::msg(3, "Bricks discarded: ", discarded);
+  }
+
+  disableTexture(GL_TEXTURE_3D_EXT);
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
+}
+
+/** Partially renders the volume data set. Only that part is rendered that is
+ *  represented by the provided bricks. Method is intended to be used as
+ *  callback function for posix thread's create method.
+ */
+void* vvTexRend::threadFuncTexBricks(void* threadargs)
+{
+  ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
+
+  if (!glXMakeCurrent(data->display, data->drawable, data->glxContext))
+  {
+    vvDebugMsg::msg(3, "Couldn't make glx context current");
+  }
+  else
+  {
+    CGcontext cgContext;                            // one cg context for each thread
+    CGprogram* cgProgram;                           // a list of cg programs for each thread
+    CGparameter cgPixLUT;
+    CGcontext cgIsectContext;
+    CGprogram cgIsectProgram;
+    CGprofile cgIsectProfile;
+
+    CGparameter* cgVertices = new CGparameter[8];
+    CGparameter cgBrickMin;
+    CGparameter cgBrickDimInv;
+    CGparameter cgModelViewProj;
+    CGparameter cgDelta;
+    CGparameter cgPlaneNormal;
+    CGparameter cgVertexList;
+    CGparameter cgFrontIndex;
+    CGparameter cgPlaneStart;
+
+    vvStopwatch* stopwatch;
+
+    /////////////////////////////////////////////////////////
+    // Wait until sequential initialization is done.
+    /////////////////////////////////////////////////////////
+
+    // Not until all worker threads as well as the primarcgIsectProgram, cgIsectProfiley thread have called
+    // pthread_barrier_wait exactly once, parallel operations resume. Note:
+    // The main thread (as not occupying its role as a worker thread) will
+    // call pthread_barrier_wait on initBarrier right at the time when initialization
+    // is performed, i.e. on the sequential path of the program rather than in
+    // a parallel callback.
+    pthread_barrier_wait(data->initBarrier);
+
+    /////////////////////////////////////////////////////////
+    // Make textures.
+    /////////////////////////////////////////////////////////
+    pthread_mutex_lock(data->makeTextureMutex);
+    cgProgram = new CGprogram[NUM_PIXEL_SHADERS];
+    data->renderer->initPixelShaders(cgContext, cgProgram);
+    data->renderer->texelsize=4;
+    data->renderer->internalTexFormat = GL_RGBA;
+    data->renderer->texFormat = GL_RGBA;
+    data->renderer->_areBricksCreated = false;
+    data->renderer->computeBrickSize();
+    data->renderer->updateTransferFunction();
+    // Generate a set of gl tex names private to this thread.
+    // This solution differs from the one chosen for sequential
+    // execution where the texNames array is a member.
+    data->renderer->makeTextures(data->privateTexNames, &data->numTextures);
+    pthread_mutex_unlock(data->makeTextureMutex);
+
+    // Now that the textures are built, the bricks may be distributed
+    // by the main thread.
+    pthread_barrier_wait(data->distributeBricksBarrier);
+    // For the main thread, this will take some time... .
+    pthread_barrier_wait(data->distributedBricksBarrier);
+
+    /////////////////////////////////////////////////////////
+    // Setup an appropriate GL state.
+    /////////////////////////////////////////////////////////
+    data->renderer->setGLenvironment();
+#ifdef HAVE_CG_TMP
+    data->renderer->initIntersectionShader(cgIsectContext, cgIsectProfile, cgIsectProgram,
+                                           cgBrickMin, cgBrickDimInv, cgModelViewProj,
+                                           cgPlaneStart, cgDelta, cgPlaneNormal,
+                                           cgFrontIndex, cgVertexList, cgVertices);
+    data->renderer->setupIntersectionCGParameters(cgIsectProgram,
+                                  cgBrickMin, cgBrickDimInv, cgModelViewProj,
+                                  cgPlaneStart, cgDelta, cgPlaneNormal,
+                                  cgFrontIndex, cgVertexList, cgVertices);
+    data->renderer->enableIntersectionShader(cgIsectProgram, cgIsectProfile);
+#endif
+    GLuint tex;
+
+    // Init framebuffer objects.
+    glGenFramebuffersEXT(1, &data->renderer->_frameBufferObjects[data->threadId]);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, data->renderer->_frameBufferObjects[data->threadId]);
+    glGenRenderbuffersEXT(1, &data->renderer->_depthBuffers[data->threadId]);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, data->renderer->_depthBuffers[data->threadId]);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, WIDTH, HEIGHT);
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
+                                 GL_RENDERBUFFER_EXT, data->renderer->_depthBuffers[data->threadId]);
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
+                              tex, 0);
+    GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+    switch (status)
+    {
+    case GL_FRAMEBUFFER_COMPLETE_EXT:
+      std::cerr << "Framebuffer complete" << std::endl;
+      break;
+    case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
+      std::cerr << "Framebuffer unsupported" << std::endl;
+      break;
+    default:
+      std::cerr << "Unknown error while initializing framebuffer objects" << std::endl;
+      break;
+    }
+
+    // Init stop watch.
+    stopwatch = new vvStopwatch();
+
+    // TODO: identify if method is called from an ordinary worker thread or
+    // the main thread. If the latter is the case, ensure that the environment
+    // is reset properly after rendering.
+
+    // Main render loop that is suspended while the sequential program flow is executing
+    // and resumes when the texture bricks are sorted in back to front order and the
+    // thread specific data is supplied.
+    while (1)
+    {
+      // Don't start rendering until the bricks are sorted in back to front order
+      // and appropriatly distributed among the respective worker threads. The main
+      // thread will issue an alert if this is the case.
+      pthread_barrier_wait(data->renderStartBarrier);
+      data->renderer->enableLUTMode(cgProgram, cgPixLUT);
+
+      // Use alpha correction in indexed mode: adapt alpha values to number of textures:
+      if (data->renderer->instantClassification())
+      {
+        float diagonalVoxels;
+        diagonalVoxels = sqrtf(float(data->renderer->vd->vox[0] * data->renderer->vd->vox[0] +
+          data->renderer->vd->vox[1] * data->renderer->vd->vox[1] +
+          data->renderer->vd->vox[2] * data->renderer->vd->vox[2]));
+        data->renderer->updateLUT(diagonalVoxels / float(data->numSlices));
+      }
+      /////////////////////////////////////////////////////////
+      // Start rendering.
+      /////////////////////////////////////////////////////////
+      glEnable(GL_TEXTURE_3D_EXT);
+
+      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, data->renderer->_frameBufferObjects[data->threadId]);
+      glClearColor(0.0, 0.0, 0.0, 0.0);
+      glClear(GL_COLOR_BUFFER_BIT);
+
+      glPushAttrib(GL_VIEWPORT_BIT);
+      glViewport(0, 0, WIDTH, HEIGHT);
+
+      glMatrixMode(GL_PROJECTION);
+      glLoadIdentity();
+      glMultMatrixf(data->projection);
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity();
+      glMultMatrixf(data->modelview);
+
+      stopwatch->start();
+      data->sortedList.first();
+
+      Brick* tmp;
+
+      GLuint** vertIndices;
+      GLsizei* elemCounts;
+#ifdef HAVE_CG_TMP
+      // Allocate memory for 6 vertices per slice. These will
+      // be sent to the gpu later on. Memory is allocated here
+      // to avoid doing this in the inner loop
+      GLuint* vertIndicesTmp = new GLuint[data->numSlices * 6];
+      vertIndices = new GLuint*[data->numSlices];
+      elemCounts = new GLsizei[data->numSlices];
+      for (int i = 0; i < data->numSlices; ++i)
+      {
+        vertIndices[i] = &vertIndicesTmp[i*6];
+        elemCounts[i] = 0;
+      }
+#endif
+
+      while ((tmp = data->sortedList.getData()) != 0)
+      {
+        tmp->render(data->renderer, data->numSlices, data->normal,
+                    data->farthest, data->delta,
+                    data->probeMin, data->probeMax,
+                    data->privateTexNames,
+                    vertIndices, elemCounts,
+                    cgVertices, cgBrickMin, cgBrickDimInv,
+                    cgFrontIndex, cgPlaneStart);
+
+        if (!data->sortedList.next())
+        {
+          break;
+        }
+      }glFlush();
+      glDisable(GL_TEXTURE_3D_EXT);
+      data->renderer->disableLUTMode(cgPixLUT);
+#ifdef HAVE_CG_TMP
+      delete[] vertIndices;
+      delete[] vertIndicesTmp;
+      delete[] elemCounts;
+#endif
+      // When all worker threads and the main thread have waited once (per frame) on
+      // this barrier, all workers have finished rendering this frame and the main
+      // thread may resume.
+      pthread_barrier_wait(data->renderReadyBarrier);
+
+      // Blend the images to one single image.
+
+      // This call switches the currently readable buffer to the fbo offscreen buffer.
+      glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+      glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGBA, GL_FLOAT, data->pixels);
+      glPopAttrib();
+      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
+      // Store the time to render. Based upon this, dynamic load balancing will be performed.
+      data->lastRenderTime = stopwatch->getTime();
+
+      pthread_barrier_wait(data->compositingBarrier);
+    }
+
+    // Exited render loop - perform cleanup.
+    //data->texRend->removeTextures(privateTexNames);
+    delete[] cgProgram;
+    delete[] cgVertices;
+    delete stopwatch;
+  }
+  pthread_exit(NULL);
+}
+
+/** Partially renders the volume data set. Only renders the outlines!
+ *  Method is intended to be used as callback function for posix thread's
+ *  create method.
+ */
+void* vvTexRend::threadFuncBricks(void* threadargs)
+{
+  ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
+
+  if (!glXMakeCurrent(data->display, data->drawable, data->glxContext))
+  {
+    vvDebugMsg::msg(3, "Couldn't make glx context current");
+  }
+  else
+  {
+    CGcontext cgContext;                            // one cg context for each thread
+    CGprogram* cgProgram;                           // a list of cg programs for each thread
+    CGparameter cgPixLUT;
+    vvStopwatch* stopwatch;
+
+    /////////////////////////////////////////////////////////
+    // Wait until sequential initialization is done.
+    /////////////////////////////////////////////////////////
+
+    // Not until all worker threads as well as the primary thread have called
+    // pthread_barrier_wait exactly once, parallel operations resume. Note:
+    // The main thread (as not occupying its role as a worker thread) will
+    // call pthread_barrier_wait on initBarrier right at the time when initialization
+    // is performed, i.e. on the sequential path of the program rather than in
+    // a parallel callback.
+    pthread_barrier_wait(data->initBarrier);
+
+    /////////////////////////////////////////////////////////
+    // Make textures.
+    /////////////////////////////////////////////////////////
+    pthread_mutex_lock(data->makeTextureMutex);
+    cgProgram = new CGprogram[NUM_PIXEL_SHADERS];
+    data->renderer->initPixelShaders(cgContext, cgProgram);
+    data->renderer->texelsize=4;
+    data->renderer->internalTexFormat = GL_RGBA;
+    data->renderer->texFormat = GL_RGBA;
+    data->renderer->_areBricksCreated = false;
+    data->renderer->computeBrickSize();
+    data->renderer->updateTransferFunction();
+    // Generate a set of gl tex names private to this thread.
+    // This solution differs from the one chosen for sequential
+    // execution where the texNames array is a member.
+    data->renderer->makeTextures(data->privateTexNames, &data->numTextures);
+    pthread_mutex_unlock(data->makeTextureMutex);
+
+    // Now that the textures are built, the bricks may be distributed
+    // by the main thread.
+    pthread_barrier_wait(data->distributeBricksBarrier);
+    // For the main thread, this will take some time... .
+    pthread_barrier_wait(data->distributedBricksBarrier);
+
+    /////////////////////////////////////////////////////////
+    // Setup an appropriate GL state.
+    /////////////////////////////////////////////////////////
+    data->renderer->setGLenvironment();
+
+    // Init stop watch.
+    stopwatch = new vvStopwatch();
+
+    // TODO: identify if method is called from an ordinary worker thread or
+    // the main thread. If the latter is the case, ensure that the environment
+    // is reset properly after rendering.
+
+    // Main render loop that is suspended while the sequential program flow is executing
+    // and resumes when the texture bricks are sorted in back to front order and the
+    // thread specific data is supplied.
+    while (1)
+    {
+      // Don't start rendering until the bricks are sorted in back to front order
+      // and appropriatly distributed among the respective worker threads. The main
+      // thread will issue an alert if this is the case.
+      pthread_barrier_wait(data->renderStartBarrier);
+      data->renderer->enableLUTMode(cgProgram, cgPixLUT);
+
+      // Use alpha correction in indexed mode: adapt alpha values to number of textures:
+      if (data->renderer->instantClassification())
+      {
+        float diagonalVoxels;
+        diagonalVoxels = sqrtf(float(data->renderer->vd->vox[0] * data->renderer->vd->vox[0] +
+          data->renderer->vd->vox[1] * data->renderer->vd->vox[1] +
+          data->renderer->vd->vox[2] * data->renderer->vd->vox[2]));
+        data->renderer->updateLUT(diagonalVoxels / float(data->numSlices));
+      }
+
+      /////////////////////////////////////////////////////////
+      // Start rendering.
+      /////////////////////////////////////////////////////////
+      glEnable(GL_TEXTURE_3D_EXT);
+      int drawn;
+      Brick* tmp;
+      vvVector3 dist;
+      vvVector3 texRange;
+      vvVector3 texPoint;
+      vvVector3 texcoord[6];                          // intersection points in texture coordinate space [0..1]
+      vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
+      int i, j, k;
+      int isectCnt;
+
+      int barResult;                                  // return value for pthread_barrier_wait
+
+      glClearColor(0.0, 0.0, 0.0, 0.0);
+      glClear(GL_COLOR_BUFFER_BIT);
+      glMatrixMode(GL_PROJECTION);
+      glLoadIdentity();
+      glMultMatrixf(data->projection);
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity();
+      glMultMatrixf(data->modelview);
+
+      stopwatch->start();
+      data->sortedList.first();
+      while ((tmp = dynamic_cast<Brick*>(data->halfSpace->getObjects()->getData())) != 0)
+      {
+        drawn = 0;
+
+        for (i = 0; i < 3; i++)
+        {
+          if (tmp->min.e[i] < data->probeMin.e[i])
+            data->min.e[i] = data->probeMin.e[i];
+          else
+            data->min.e[i] = tmp->min.e[i];
+
+          if (tmp->max.e[i] > data->probeMax.e[i])
+            data->max.e[i] = data->probeMax.e[i];
+          else
+            data->max.e[i] = tmp->max.e[i];
+        }
+
+        glBegin(GL_LINES);
+        glColor4f(1.0, 1.0, 1.0, 1.0);
+        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
+        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
+
+        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
+        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
+
+        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
+        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
+
+        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
+        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+
+        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
+        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+
+        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
+        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+
+        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
+        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+
+        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
+        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+
+        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
+        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+
+        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
+        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+
+        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
+        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+
+        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
+        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+        glEnd();
+        glFlush();
+        vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
+
+        if (!data->halfSpace->getObjects()->next()) break;
+      }
+      glDisable(GL_TEXTURE_3D_EXT);
+      data->renderer->disableLUTMode(cgPixLUT);
+
+      // When all worker threads and the main thread have waited once (per frame) on
+      // this barrier, all workers have finished rendering this frame and the main
+      // thread may resume.
+      pthread_barrier_wait(data->renderReadyBarrier);
+
+      // Blend the images to one single image.
+      glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, data->pixels);
+
+      // Store the time to render. Based upon this, dynamic load balancing will be performed.
+      data->lastRenderTime = stopwatch->getTime();
+
+      pthread_barrier_wait(data->compositingBarrier);
+    }
+
+    // Exited render loop - perform cleanup.
+    //data->texRend->removeTextures(privateTexNames);
+    delete[] cgProgram;
+    delete stopwatch;
+  }
+  pthread_exit(NULL);
+}
+
+/** Renders the outline of the bricks, but not the volume data set.
+ */
+void vvTexRend::renderBricks(vvMatrix* mv)
+{
+  vvMatrix invMV;                                 // inverse of model-view matrix
+  vvMatrix pm;                                    // OpenGL projection matrix
+  vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
+  vvVector3 texcoord[6];                          // intersection points in texture coordinate space [0..1]
+  vvVector3 farthest;                             // volume vertex farthest from the viewer
+  vvVector3 texPoint;                             // arbitrary point on current texture
+  vvVector3 delta;                                // distance vector between textures [object space]
+  vvVector3 normal;                               // normal vector of textures
+  vvVector3 origin;                               // origin (0|0|0) transformed to object space
+  vvVector3 eye;                                  // user's eye position [object space]
+  vvVector3 pos;                                  // volume location
+  vvVector3 probePosObj;                          // probe midpoint [object space]
+  vvVector3 probeSizeObj;                         // probe size [object space]
+  vvVector3 probeMin, probeMax;                   // probe min and max coordinates [object space]
+  vvVector3 min, max;                             // min and max pos of current brick (cut with probe)
+  vvVector3 texRange;                             // range of texture coordinates
+  vvVector3 texMin;                               // minimum texture coordinate
+  vvVector3 dist;                                 // dimensions of current brick
+  Brick* tmp;                                     // current brick
+  float     diagonal;                             // probe diagonal [object space]
+  int       isectCnt;                             // intersection counter
+  int       numSlices;                            // number of texture slices along diagonal
+  int       drawn;                                // counter for drawn textures
+  int       i, j, k;                              // general counters
+
+  vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
+
+  // needs 3D texturing extension
+  if (!extTex3d) return;
+
+  if (_brickList.isEmpty()) return;
+
+  pos.copy(&vd->pos);
+
+  // Calculate inverted modelview matrix:
+  invMV.copy(mv);
+  invMV.invert();
+
+  // Find eye position:
+  getEyePosition(&eye);
+  eye.multiply(&invMV);
+
+  calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
+
+  // Compute length of probe diagonal [object space]:
+  diagonal = (float)sqrt(
+    probeSizeObj[0] * probeSizeObj[0] +
+    probeSizeObj[1] * probeSizeObj[1] +
+    probeSizeObj[2] * probeSizeObj[2]);
+
+  numSlices = int(_renderState._quality * 100.0f);
+  if (numSlices < 1) numSlices = 1;               // make sure that at least one slice is drawn
+
+  vvDebugMsg::msg(3, "Number of textures rendered per brick: ", numSlices);
+
+
+  if (_numThreads == 0)
+  {
+    // Use alpha correction in indexed mode: adapt alpha values to number of textures:
+    if (instantClassification())
+    {
+      float diagonalVoxels;
+      diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
+        vd->vox[1] * vd->vox[1] +
+        vd->vox[2] * vd->vox[2]));
+      updateLUT(diagonalVoxels / float(numSlices));
+    }
   }
 
   // Get projection matrix:
@@ -2756,245 +4215,193 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
   getBricksInProbe(probePosObj, probeSizeObj);
 
-  sortBrickList(eye, normal, isOrtho);
+  if (_numThreads > 0)
+  {
+    for (i = 0; i < _numThreads; ++i)
+    {
+      sortBrickList(i, eye, normal, isOrtho);
+    }
+
+    if (_somethingChanged)
+    {
+      distributeBricks();
+    }
+  }
+  else
+  {
+    sortBrickList(-1, eye, normal, isOrtho);
+    _sortedList.first();
+  }
 
   // Translate object by its position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
-  _sortedList.first();
-
-  // Volume render a 3D texture:
-  enableTexture(GL_TEXTURE_3D_EXT);
-
-  while ((tmp = _sortedList.getData()) != 0)
+  if (_numThreads > 0)
   {
-    drawn = 0;
+    GLfloat* modelview = new GLfloat[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX , modelview);
 
-    for (i = 0; i < 3; i++)
+    GLfloat* projection = new GLfloat[16];
+    glGetFloatv(GL_PROJECTION_MATRIX, projection);
+
+    // Make sure that the _threadData array is only changed again (due to the
+    // fact that the main thread already wants to sort the brick list again for
+    // the next frame) until all workers have finished rendering the current
+    // frame. Of course, this barrier has to be reinitialized frame per frame.
+    pthread_barrier_init(&_renderReadyBarrier, NULL, _numThreads + 1);
+
+    pthread_barrier_init(&_compositingBarrier, NULL, _numThreads + 1);
+
+    for (i = 0; i < _numThreads; ++i)
     {
-      if (tmp->min.e[i] < probeMin.e[i])
-        min.e[i] = probeMin.e[i];
-      else
-        min.e[i] = tmp->min.e[i];
+      _threadData[i].probeMin = vvVector3(&probeMin);
+      _threadData[i].probeMax = vvVector3(&probeMax);
+      _threadData[i].min = vvVector3(&min);
+      _threadData[i].max = vvVector3(&max);
+      _threadData[i].delta = vvVector3(&delta);
+      _threadData[i].farthest = vvVector3(&farthest);
+      _threadData[i].normal = vvVector3(&normal);
+      _threadData[i].numSlices = numSlices;
+      _threadData[i].texMin[0] = texMin[0];
+      _threadData[i].texMin[1] = texMin[1];
+      _threadData[i].texMin[2] = texMin[2];
+      _threadData[i].minSlice = minSlice;
+      _threadData[i].maxSlice = maxSlice;
 
-      if (tmp->max.e[i] > probeMax.e[i])
-        max.e[i] = probeMax.e[i];
-      else
-        max.e[i] = tmp->max.e[i];
+      _threadData[i].modelview = modelview;
+      _threadData[i].projection = projection;
+
+      _threadData[i].renderReadyBarrier = &_renderReadyBarrier;
+      _threadData[i].compositingBarrier = &_compositingBarrier;
     }
 
-    dist = tmp->max;
-    dist.sub(&tmp->min);
+    // The sorted brick lists are distributed among the threads. All other data specific
+    // to the workers is assigned either. Now broadcast a signal telling the worker threads'
+    // rendering loops to resume.
+    pthread_barrier_wait(&_renderStartBarrier);
 
-    for (i = 0; i < 3; i++)
-    {
-      texRange[i] = 1.0f - 1.0f / (float) tmp->texels[i];
-      texMin[i] = 1.0f / (2.0f * (float) tmp->texels[i]);
-    }
+    // Resume sequential operations only after all worker threads have finished rendering.
+    pthread_barrier_wait(&_renderReadyBarrier);
 
-    glBindTexture(GL_TEXTURE_3D_EXT, texNames[tmp->index]);
+    // Do compositing.
+    pthread_barrier_wait(&_compositingBarrier);
 
-    texPoint.copy(&farthest);
+    delete[] projection;
+    delete[] modelview;
 
-    for (i = 0; i < numSlices; ++i)               // loop thru all drawn textures
-    {
-      // Search for intersections between texture plane (defined by texPoint and
-      // normal) and texture object (0..1):
-      isectCnt = isect->isectPlaneCuboid(&normal, &texPoint, &min, &max);
+    // Destroy this barrier to resume execution. The barrier will be reinitialized with
+    // the next frame.
+    pthread_barrier_destroy(&_renderReadyBarrier);
 
-      texPoint.add(&delta);
+    // Blend the images from the worker threads onto a 2D-texture.
 
-      if (isectCnt < 3) continue;                 // at least 3 intersections needed for drawing
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-      // Check volume section mode:
-      if (minSlice != -1 && i < minSlice) continue;
-      if (maxSlice != -1 && i > maxSlice) continue;
+    // Orthographic projection.
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
 
-      // Put the intersecting 3 to 6 vertices in cyclic order to draw adjacent
-      // and non-overlapping triangles:
-      isect->cyclicSort(isectCnt, &normal);
+    // Fix the proxy quad for the frame buffer texture.
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
 
-      // Generate vertices in texture coordinates:
-      for (j = 0; j < isectCnt; ++j)
-      {
-        for (k = 0; k < 3; ++k)
-        {
-          texcoord[j][k] = (isect[j][k] - tmp->min.e[k]) / dist[k];
-          texcoord[j][k] = texcoord[j][k] * texRange[k] + texMin[k];
-        }
-      }
+    // Setup compositing.
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_COLOR_MATERIAL);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-      glBegin(GL_TRIANGLE_FAN);
-      glColor4f(1.0, 1.0, 1.0, 1.0);
-      glNormal3f(normal[0], normal[1], normal[2]);
-      ++drawn;
+    // Traverse the bsp tree. As a side effect,
+    // the textured proxy geometry will be
+    // rendered by the bsp tree's visitor.
+    _bspTree->traverse(eye);
 
-      for (j = 0; j < isectCnt; ++j)
-      {
-        // The following lines are the bottleneck of this method:
-        glTexCoord3f(texcoord[j][0], texcoord[j][1], texcoord[j][2]);
-        glVertex3f(isect[j][0], isect[j][1], isect[j][2]);
-      }
-      glEnd();
-    }
+    performLoadBalancing();
 
-    vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
+    vvGLTools::printGLError("orthotexture");
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
 
-    if (!_sortedList.next()) break;
+    pthread_barrier_destroy(&_compositingBarrier);
   }
+  else
+  {
+    // Volume render a 3D texture:
+    cgGLDisableProfile(_cgFragProfile[_currentShader]);
+    while ((tmp = _sortedList.getData()) != 0)
+    {
+      drawn = 0;
 
+      for (i = 0; i < 3; i++)
+      {
+        if (tmp->min.e[i] < probeMin.e[i])
+          min.e[i] = probeMin.e[i];
+        else
+          min.e[i] = tmp->min.e[i];
+
+        if (tmp->max.e[i] > probeMax.e[i])
+          max.e[i] = probeMax.e[i];
+        else
+          max.e[i] = tmp->max.e[i];
+      }
+
+      glBegin(GL_LINES);
+      glColor4f(1.0, 1.0, 1.0, 1.0);
+      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
+      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
+
+      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
+      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
+
+      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
+      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
+
+      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
+      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+
+      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
+      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+
+      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
+      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+
+      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
+      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+
+      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
+      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+
+      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
+      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+
+      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
+      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+
+      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
+      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+
+      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
+      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+      glEnd();
+
+      glFlush();
+
+      vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
+
+      if (!_sortedList.next()) break;
+    }
+  }
   disableTexture(GL_TEXTURE_3D_EXT);
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
-}
-
-/** Renders the outline of the bricks, but not the volume data set.
- */
-void vvTexRend::renderBricks(vvMatrix* mv)
-{
-  vvMatrix invMV;                                 // inverse of model-view matrix
-  vvVector3 size, size2;                          // full and half object sizes
-  vvVector3 eye;                                  // user's eye position [object space]
-  vvVector3 probePosObj;                          // probe midpoint [object space]
-  vvVector3 probeSizeObj;                         // probe size [object space]
-  vvVector3 probeMin, probeMax;                   // probe min and max coordinates [object space]
-  vvVector3 pos;                                  // volume location
-  vvVector3 maxSize;                              // probe edge length [object space]
-  int       i;                                    // general counters
-
-  disableLUTMode();
-
-  // Determine texture object dimensions and half object size as a shortcut:
-  size.copy(vd->getSize());
-  size2 = size;
-  size2.scale(0.5);
-
-  pos.copy(&vd->pos);
-
-  // Calculate inverted modelview matrix:
-  invMV.copy(mv);
-  invMV.invert();
-
-  // Find eye position:
-  getEyePosition(&eye);
-  eye.multiply(&invMV);
-
-  if (_renderState._isROIUsed)
-  {
-    // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj.copy(&_renderState._roiPos);
-    probePosObj.sub(&pos);                        // eliminate object position from probe position
-
-    // Compute probe min/max coordinates in object space:
-    maxSize[0] = _renderState._roiSize[0] * size2[0];
-    maxSize[1] = _renderState._roiSize[1] * size2[1];
-    maxSize[2] = _renderState._roiSize[2] * size2[2];
-
-    probeMin = probePosObj;
-    probeMin.sub(&maxSize);
-    probeMax = probePosObj;
-    probeMax.add(&maxSize);
-
-    // Constrain probe boundaries to volume data area:
-    for (i = 0; i < 3; ++i)
-    {
-      if (probeMin[i] > size2[i] || probeMax[i] < -size2[i])
-      {
-        vvDebugMsg::msg(3, "probe outside of volume");
-        return;
-      }
-      if (probeMin[i] < -size2[i]) probeMin[i] = -size2[i];
-      if (probeMax[i] >  size2[i]) probeMax[i] =  size2[i];
-      probePosObj[i] = (probeMax[i] + probeMin[i]) / 2.0f;
-    }
-
-    // Compute probe edge lengths:
-    probeSizeObj = probeMax;
-    probeSizeObj.sub(&probeMin);
-  }
-  else                                            // probe mode off
-  {
-    probeSizeObj.copy(&size);
-    probePosObj.copy(&vd->pos);
-    probeMin = probePosObj-size2;
-    probeMax = probePosObj+size2;
-  }
-
-  getBricksInProbe(probePosObj, probeSizeObj);
-
-  // Translate object by its position:
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
-
-  Brick* tmp;
-  vvVector3 min, max;
-
-  _insideList.first();
-
-  while ((tmp = _insideList.getData()) != 0)
-  {
-    for (i = 0; i < 3; i++)
-    {
-      if (tmp->min.e[i] < probeMin.e[i])
-        min.e[i] = probeMin.e[i];
-      else
-        min.e[i] = tmp->min.e[i];
-
-      if (tmp->max.e[i] > probeMax.e[i])
-        max.e[i] = probeMax.e[i];
-      else
-        max.e[i] = tmp->max.e[i];
-    }
-
-    glBegin(GL_LINES);
-    glColor4f(1.0, 1.0, 1.0, 1.0);
-    glVertex3f(min.e[0], min.e[1], min.e[2]);
-    glVertex3f(max.e[0], min.e[1], min.e[2]);
-
-    glVertex3f(min.e[0], min.e[1], min.e[2]);
-    glVertex3f(min.e[0], max.e[1], min.e[2]);
-
-    glVertex3f(min.e[0], min.e[1], min.e[2]);
-    glVertex3f(min.e[0], min.e[1], max.e[2]);
-
-    glVertex3f(max.e[0], max.e[1], max.e[2]);
-    glVertex3f(min.e[0], max.e[1], max.e[2]);
-
-    glVertex3f(max.e[0], max.e[1], max.e[2]);
-    glVertex3f(max.e[0], min.e[1], max.e[2]);
-
-    glVertex3f(max.e[0], max.e[1], max.e[2]);
-    glVertex3f(max.e[0], max.e[1], min.e[2]);
-
-    glVertex3f(max.e[0], min.e[1], min.e[2]);
-    glVertex3f(max.e[0], max.e[1], min.e[2]);
-
-    glVertex3f(max.e[0], min.e[1], min.e[2]);
-    glVertex3f(max.e[0], min.e[1], max.e[2]);
-
-    glVertex3f(min.e[0], max.e[1], min.e[2]);
-    glVertex3f(max.e[0], max.e[1], min.e[2]);
-
-    glVertex3f(min.e[0], max.e[1], min.e[2]);
-    glVertex3f(min.e[0], max.e[1], max.e[2]);
-
-    glVertex3f(min.e[0], min.e[1], max.e[2]);
-    glVertex3f(max.e[0], min.e[1], max.e[2]);
-
-    glVertex3f(min.e[0], min.e[1], max.e[2]);
-    glVertex3f(min.e[0], max.e[1], max.e[2]);
-    glEnd();
-
-    if (!_insideList.next()) break;
-  }
-
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
-
-  enableLUTMode();
 }
 
 void vvTexRend::updateFrustum()
@@ -3097,6 +4504,62 @@ bool vvTexRend::testBrickVisibility(Brick* brick, const vvMatrix& mvpMat)
   return false;
 }
 
+void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, vvVector3& probeMin, vvVector3& probeMax)
+{
+  vvVector3 size, size2;                          // full and half object sizes
+  vvVector3 pos;                                  // volume location
+  vvVector3 maxSize;                              // probe edge length [object space]
+  int i;
+
+  pos.copy(&vd->pos);
+
+  // Determine texture object dimensions and half object size as a shortcut:
+  size.copy(vd->getSize());
+  size2 = size;
+  size2.scale(0.5);
+
+  if (_renderState._isROIUsed)
+  {
+    // Convert probe midpoint coordinates to object space w/o position:
+    probePosObj.copy(&_renderState._roiPos);
+    probePosObj.sub(&pos);                        // eliminate object position from probe position
+
+    // Compute probe min/max coordinates in object space:
+    maxSize[0] = _renderState._roiSize[0] * size2[0];
+    maxSize[1] = _renderState._roiSize[1] * size2[1];
+    maxSize[2] = _renderState._roiSize[2] * size2[2];
+
+    probeMin = probePosObj;
+    probeMin.sub(&maxSize);
+    probeMax = probePosObj;
+    probeMax.add(&maxSize);
+
+    // Constrain probe boundaries to volume data area:
+    for (i = 0; i < 3; ++i)
+    {
+      if (probeMin[i] > size2[i] || probeMax[i] < -size2[i])
+      {
+        vvDebugMsg::msg(3, "probe outside of volume");
+        return;
+      }
+      if (probeMin[i] < -size2[i]) probeMin[i] = -size2[i];
+      if (probeMax[i] >  size2[i]) probeMax[i] =  size2[i];
+      probePosObj[i] = (probeMax[i] + probeMin[i]) / 2.0f;
+    }
+
+    // Compute probe edge lengths:
+    probeSizeObj = probeMax;
+    probeSizeObj.sub(&probeMin);
+  }
+  else                                            // probe mode off
+  {
+    probeSizeObj.copy(&size);
+    probePosObj.copy(&vd->pos);
+    probeMin = probePosObj-size2;
+    probeMax = probePosObj+size2;
+  }
+}
+
 void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
 {
   _brickList.first();
@@ -3133,7 +4596,7 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
       if (testBrickVisibility(tmp))
       {
         countVisible++;
-        _insideList.append(tmp, vvSLNode<Brick*>::NO_DELETE);
+        _insideList.append(tmp, vvSLNode<vvConvexObj*>::NO_DELETE);
       }
       else
         countInvisible++;
@@ -3147,48 +4610,181 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
   }
 }
 
-void vvTexRend::sortBrickList(vvVector3 pos, vvVector3 normal, bool isOrtho)
+void vvTexRend::sortBrickList(const int threadId, vvVector3 pos, vvVector3 normal, bool isOrtho)
 {
-  Brick* tmp;
-  Brick* farthest = NULL;
-  float max;
-
-  _insideList.first();
-  _sortedList.removeAll();
-
-  while ((tmp = _insideList.getData()) != 0)
+  if (_numThreads > 0)
   {
-    if (isOrtho)
-      tmp->dist = -tmp->pos.dot(&normal);
-    else
-      tmp->dist = (tmp->pos - pos).length();
+    Brick* tmp;
+    Brick* farthest = NULL;
+    float max;
 
-    if (!_insideList.next()) break;
-  }
+    _threadData[threadId].halfSpace->getObjects()->first();
+    _threadData[threadId].sortedList.removeAll();
+    _threadData[threadId].sortedList.first();
 
-  while (_insideList.count() != _sortedList.count())
-  {
-    _insideList.first();
-    max = -FLT_MAX;
-    farthest = NULL;
-    while (true)
+    while ((tmp = dynamic_cast<Brick*>(_threadData[threadId].halfSpace->getObjects()->getData())) != 0)
     {
-      tmp = _insideList.getData();
-      if (tmp->dist > max)
+      if (isOrtho)
+        tmp->dist = -tmp->pos.dot(&normal);
+      else
+        tmp->dist = (tmp->pos - pos).length();
+
+      if (!_threadData[threadId].halfSpace->getObjects()->next()) break;
+    }
+
+    while (_threadData[threadId].halfSpace->getObjects()->count() != _threadData[threadId].sortedList.count())
+    {
+      _threadData[threadId].halfSpace->getObjects()->first();
+      max = -FLT_MAX;
+      farthest = NULL;
+      while (true)
       {
-        farthest = tmp;
-        max = farthest->dist;
+        tmp = dynamic_cast<Brick*>(_threadData[threadId].halfSpace->getObjects()->getData());
+        if (tmp->dist > max)
+        {
+          farthest = tmp;
+          max = farthest->dist;
+        }
+
+        if (!_threadData[threadId].halfSpace->getObjects()->next()) break;
       }
+
+      if(!farthest)
+        break;
+
+      _threadData[threadId].sortedList.append(farthest, vvSLNode<Brick*>::NO_DELETE);
+      farthest->dist = -FLT_MAX;
+    }
+  }
+  else
+  {
+    Brick* tmp;
+    Brick* farthest = NULL;
+    float max;
+
+    _insideList.first();
+    _sortedList.removeAll();
+
+    while ((tmp = dynamic_cast<Brick*>(_insideList.getData())) != 0)
+    {
+      if (isOrtho)
+        tmp->dist = -tmp->pos.dot(&normal);
+      else
+        tmp->dist = (tmp->pos - pos).length();
 
       if (!_insideList.next()) break;
     }
+    while (_insideList.count() != _sortedList.count())
+    {
+      _insideList.first();
+      max = -FLT_MAX;
+      farthest = NULL;
+      while (true)
+      {
+        tmp = dynamic_cast<Brick*>(_insideList.getData());
+        if (tmp->dist > max)
+        {
+          farthest = tmp;
+          max = farthest->dist;
+        }
 
-    if(!farthest)
-      break;
+        if (!_insideList.next()) break;
+      }
 
-    _sortedList.append(farthest, vvSLNode<Brick*>::NO_DELETE);
-    farthest->dist = -FLT_MAX;
+      if(!farthest)
+        break;
+
+      _sortedList.append(farthest, vvSLNode<Brick*>::NO_DELETE);
+      farthest->dist = -FLT_MAX;
+    }
   }
+}
+
+void vvTexRend::performLoadBalancing()
+{
+  int i;
+  float* idealDistribution;
+  float* actualDistribution;
+  float deviation;
+  float tmp;
+
+  // Only redistribute if the deviation of the rendering times
+  // exceeds a certain limit.
+  float expectedValue = 0;
+  for (i = 0; i < _numThreads; ++i)
+  {
+    expectedValue += _threadData[i].lastRenderTime;
+  }
+  expectedValue /= static_cast<float>(_numThreads);
+
+  // An ideal distribution is one where each rendering time for each thread
+  // equals the expected value exactly.
+  idealDistribution = new float[_numThreads];
+
+  // This is (not necessarily) true in reality... .
+  actualDistribution = new float[_numThreads];
+
+  // Build both arrays.
+  for (i = 0; i < _numThreads; ++i)
+  {
+    idealDistribution[i] = expectedValue;
+    actualDistribution[i] = _threadData[i].lastRenderTime;
+  }
+
+  deviation = vvToolshed::meanAbsError(idealDistribution, actualDistribution, _numThreads);
+
+  // Normalize the deviation (to percent).
+  deviation *= 100.0f;
+  deviation /= expectedValue;
+
+  // Only reorder if
+  // a) a given deviation was exceeded
+  // b) this happened at least x times
+  if (deviation > MAX_DEVIATION)
+  {
+    if (_deviationExceedCnt > LIMIT)
+    {
+      tmp = 0.0f;
+
+      // Rearrange the share for each thread.
+      for (i = 0; i < _numThreads; ++i)
+      {
+        float cmp = _threadData[i].lastRenderTime - expectedValue;
+        if (cmp < MAX_IND_DEVIATION)
+        {
+          if ((_threadData[i].share + INC) <= 1.0f)
+          {
+            _threadData[i].share += INC;
+          }
+        }
+
+        if (cmp > MAX_IND_DEVIATION)
+        {
+          if ((_threadData[i].share + INC) >= 0.0f)
+          {
+            _threadData[i].share -= INC;
+          }
+        }
+        tmp += _threadData[i].share;
+      }
+
+      // Normalize partitioning.
+      for (i = 0; i < _numThreads; ++i)
+      {
+        _threadData[i].share /= tmp;
+      }
+
+      // Something changed ==> before rendering the next time,
+      // the bricks will be redistributed.
+      _somethingChanged = true;
+    }
+    else
+    {
+      ++_deviationExceedCnt;
+    }
+  }
+  delete[] idealDistribution;
+  delete[] actualDistribution;
 }
 
 //----------------------------------------------------------------------------
@@ -3658,6 +5254,14 @@ void vvTexRend::renderVolumeGL()
 
   setGLenvironment();
 
+  if (_numThreads == 0)
+  {
+    if (geomType == VV_BRICKS && !_renderState._showBricks)
+    {
+      enableIntersectionShader(_cgIsectProgram, _cgIsectProfile);
+    }
+  }
+
   // Determine texture object extensions:
   for (i=0; i<3; ++i)
   {
@@ -3701,7 +5305,11 @@ void vvTexRend::renderVolumeGL()
     else principal = Z_AXIS;
   }
 
-  enableLUTMode();
+  if (_numThreads == 0)
+  {
+    enableLUTMode(_cgProgram, _cgPixLUT);
+  }
+
   switch (geomType)
   {
     default:
@@ -3716,11 +5324,14 @@ void vvTexRend::renderVolumeGL()
         renderTexBricks(&mv);
       break;
   }
-  disableLUTMode();
 
+  if (_numThreads == 0)
+  {
+    disableLUTMode(_cgPixLUT);
+    unsetGLenvironment();
+    disableIntersectionShader();
+  }
   vvRenderer::renderVolumeGL();
-
-  unsetGLenvironment();
 
   glFinish();                                     // make sure rendering is done to measure correct time
   _lastRenderTime = sw.getTime();
@@ -3920,12 +5531,53 @@ void vvTexRend::updateLUT(float dist)
     }
   }
 
+  // Each bricks visible flag was initially set to true.
+  // If empty-space leaping isn't active, all bricks are
+  // visible by default.
+  if (_renderState._emptySpaceLeaping)
+  {
+    // Empty-space leaping only for 'ordinary' transfer function lookup.
+    if ((voxelType != VV_PIX_SHD) || (_currentShader == 0))
+    {
+      // Determine visibility of each single brick
+      _sortedList.first();
+      Brick* tmp;
+      while ((tmp = _sortedList.getData()) != 0)
+      {
+        tmp->visible = false;
+
+        // If max intensity projection, make all bricks visible.
+        if (_renderState._mipMode > 0)
+        {
+          tmp->visible = true;
+        }
+        else
+        {
+          for (i = tmp->minValue; i <= tmp->maxValue; ++i)
+          {
+            int val = (int)rgbaLUT[i * 4 + 3];
+
+            if (val > 0)
+            {
+              tmp->visible = true;
+              break;
+            }
+          }
+        }
+        if (!_sortedList.next()) break;
+      }
+    }
+  }
+
   // Copy LUT to graphics card:
   vvGLTools::printGLError("enter updateLUT()");
   switch (voxelType)
   {
     case VV_RGBA:
-      makeTextures();                           // this mode doesn't use a hardware LUT, so every voxel has to be updated
+      if (_numThreads == 0)
+      {
+        makeTextures(texNames, &textures); // this mode doesn't use a hardware LUT, so every voxel has to be updated
+      }
       break;
     case VV_SGI_LUT:
       glColorTableSGI(GL_TEXTURE_COLOR_TABLE_SGI, GL_RGBA,
@@ -3999,7 +5651,17 @@ void vvTexRend::updateLUT(float dist)
         if (interpolation!=newInterpol)
         {
           interpolation = newInterpol;
-          makeTextures();
+          if (_numThreads > 0)
+          {
+            for (int i = 0; i < _numThreads; ++i)
+            {
+              makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
+            }
+          }
+          else
+          {
+            makeTextures(texNames, &textures);
+          }
         }
         break;
       case vvRenderer::VV_MIN_SLICE:
@@ -4176,7 +5838,11 @@ void vvTexRend::updateLUT(float dist)
     if(shader >= NUM_PIXEL_SHADERS || shader < 0)
        shader = 0;
     _currentShader = shader;
-    makeTextures();
+
+    if (_numThreads == 0)
+    {
+      makeTextures(texNames, &textures);
+    }
   }
 
   //----------------------------------------------------------------------------
@@ -4317,23 +5983,24 @@ void vvTexRend::updateLUT(float dist)
 #endif
 
   //----------------------------------------------------------------------------
-  void vvTexRend::enablePixelShaders()
+  void vvTexRend::enablePixelShaders(CGprogram*& cgProgram, CGparameter& cgPixLUT)
   {
 #ifdef HAVE_CG
     if(VV_PIX_SHD == voxelType)
     {
       // Load, enable, and bind fragment shader:
-      cgGLLoadProgram(_cgProgram[_currentShader]);
+
+      cgGLLoadProgram(cgProgram[_currentShader]);
       cgGLEnableProfile(_cgFragProfile[_currentShader]);
-      cgGLBindProgram(_cgProgram[_currentShader]);
+      cgGLBindProgram(cgProgram[_currentShader]);
 
       // Set fragment program parameters:
       if (_currentShader != 4)                    // pixLUT, doesn't work with grayscale shader
       {
         glBindTexture(GL_TEXTURE_2D, pixLUTName);
-        _cgPixLUT = cgGetNamedParameter(_cgProgram[_currentShader], "pixLUT");
-        cgGLSetTextureParameter(_cgPixLUT, pixLUTName);
-        cgGLEnableTextureParameter(_cgPixLUT);
+        cgPixLUT = cgGetNamedParameter(cgProgram[_currentShader], "pixLUT");
+        cgGLSetTextureParameter(cgPixLUT, pixLUTName);
+        cgGLEnableTextureParameter(cgPixLUT);
       }
                                                   // chan4color
       if (_currentShader == 3 || _currentShader == 7)
@@ -4352,21 +6019,40 @@ void vvTexRend::updateLUT(float dist)
   }
 
   //----------------------------------------------------------------------------
-  void vvTexRend::disablePixelShaders()
+  void vvTexRend::disablePixelShaders(CGparameter& cgPixLUT)
   {
 #ifdef HAVE_CG
     if(VV_PIX_SHD == voxelType)
     {
-      cgGLDisableTextureParameter(_cgPixLUT);
+      cgGLDisableTextureParameter(cgPixLUT);
       cgGLDisableProfile(_cgFragProfile[_currentShader]);
     }
 #endif
   }
 
   //----------------------------------------------------------------------------
+  void vvTexRend::enableIntersectionShader(CGprogram& cgIsectProgram, CGprofile& cgIsectProfile)
+  {
+#ifdef HAVE_CG_TMP
+    cgGLLoadProgram(cgIsectProgram);
+    cgGLEnableProfile(cgIsectProfile);
+    cgGLBindProgram(cgIsectProgram);
+    
+#endif
+  }
+
+  //----------------------------------------------------------------------------
+  void vvTexRend::disableIntersectionShader()
+  {
+#ifdef HAVE_CG_TMP
+    cgGLDisableProfile(_cgIsectProfile);
+#endif
+  }
+
+  //----------------------------------------------------------------------------
   /** @return true if initialization successful
    */
-  bool vvTexRend::initPixelShaders()
+  bool vvTexRend::initPixelShaders(CGcontext& cgContext, CGprogram*& cgProgram)
   {
 #ifdef HAVE_CG
 #ifdef _WIN32
@@ -4383,8 +6069,9 @@ void vvTexRend::updateLUT(float dist)
 
     cerr << "enable PIX called"<< endl;
 
-    _cgContext = cgCreateContext();               // Create context for fragment programs
-    if (!_cgContext) cerr << "Could not create Cg context." << endl;
+    cgContext = cgCreateContext();
+    if (!cgContext) cerr << "Could not create Cg context." << endl;
+
     cgSetErrorHandler(checkCgError, NULL);
 
     // Check if correct version of pixel shaders is available:
@@ -4459,13 +6146,14 @@ void vvTexRend::updateLUT(float dist)
 #endif
 
       cerr << "Loading shader file: " << shaderPath << endl;
-      _cgProgram[i] = cgCreateProgramFromFile(_cgContext, CG_SOURCE, shaderPath, _cgFragProfile[i], "main", 0);
+
+      cgProgram[i] = cgCreateProgramFromFile(cgContext, CG_SOURCE, shaderPath, _cgFragProfile[i], "main", 0);
 
       delete[] shaderFile;
       delete[] shaderPath;
 
       // Validate success:
-      if (_cgProgram[i] == NULL)
+      if (cgProgram[i] == NULL)
       {
         cerr << "Error: failed to compile fragment program " << i+1 << endl;
         return false;
@@ -4476,6 +6164,251 @@ void vvTexRend::updateLUT(float dist)
     cerr << "Fragment programs ready." << endl;
 #endif
     return true;
+  }
+
+  //----------------------------------------------------------------------------
+  /** @return true if initialization successful
+   */
+  bool vvTexRend::initIntersectionShader(CGcontext& cgIsectContext,
+                                         CGprofile& cgIsectProfile,
+                                         CGprogram& cgIsectProgram,
+                                         CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
+                                         CGparameter& cgModelViewProj, CGparameter& cgPlaneStart,
+                                         CGparameter& cgDelta, CGparameter& cgPlaneNormal,
+                                         CGparameter& cgFrontIndex, CGparameter& cgVertexList,
+                                         CGparameter*& cgVertices)
+  {
+#ifdef HAVE_CG_TMP
+#ifdef _WIN32
+    const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
+#endif
+    const char* shaderFileName = "vv_intersection.cg";
+    const char* shaderEnv = "VV_SHADER_PATH";
+    const char* unixShaderDir = NULL;
+    char* shaderFile = NULL;
+    char* shaderPath = NULL;
+    char shaderDir[256];
+    int i;
+
+    cgIsectContext = cgCreateContext();
+    cgIsectProfile = cgGLGetLatestProfile(CG_GL_VERTEX);
+    cgGLSetOptimalOptions(cgIsectProfile);
+
+    if (getenv(shaderEnv))
+    {
+      unixShaderDir = getenv(shaderEnv);
+    }
+    else
+    {
+      cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
+#ifdef _WIN32
+      vvToolshed::getProgramDirectory(shaderDir, 256);
+      strcat(shaderDir, primaryWin32ShaderDir);
+      cerr << "Trying shader path: " << shaderDir << endl;
+      if (!vvToolshed::isDirectory(shaderDir))
+      {
+   vvToolshed::getProgramDirectory(shaderDir, 256);
+      }
+      cerr << "Using shader path: " << shaderDir << endl;
+      unixShaderDir = shaderDir;
+#else
+      const char* deskVoxShaderPath = "../";
+#ifdef SHADERDIR
+      unixShaderDir = SHADERDIR;
+#else
+      vvToolshed::getProgramDirectory(shaderDir, 256);
+      strcat(shaderDir, deskVoxShaderPath);
+      unixShaderDir = shaderDir;
+#endif
+#endif
+    }
+
+    shaderFile = new char[strlen(shaderFileName) + 1];
+    sprintf(shaderFile, "%s", shaderFileName);
+
+    shaderPath = new char[strlen(unixShaderDir) + 1 + strlen(shaderFile) + 1];
+#ifdef _WIN32
+    sprintf(shaderPath, "%s\\%s", unixShaderDir, shaderFile);
+#else
+    sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
+#endif
+
+    cgIsectProgram = cgCreateProgramFromFile(cgIsectContext,
+                                             CG_SOURCE,
+                                             shaderPath,
+                                             cgIsectProfile,
+                                             "main",
+                                             0);
+
+    delete[] shaderFile;
+    delete[] shaderPath;
+
+    // Validate success:
+    if (cgIsectProgram == NULL)
+    {
+      cerr << "Error: failed to compile vertex program for intersection test" << endl;
+      return false;
+    }
+    setupIntersectionCGParameters(cgIsectProgram,
+                                  cgBrickMin, cgBrickDimInv, cgModelViewProj,
+                                  cgPlaneStart, cgDelta, cgPlaneNormal,
+                                  cgFrontIndex, cgVertexList, cgVertices);
+#endif
+    return true;
+  }
+
+  void vvTexRend::setupIntersectionCGParameters(CGprogram& cgIsectProgram,
+                                                CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
+                                                CGparameter& cgModelViewProj, CGparameter& cgPlaneStart,
+                                                CGparameter& cgDelta, CGparameter& cgPlaneNormal,
+                                                CGparameter& cgFrontIndex, CGparameter& cgVertexList,
+                                                CGparameter*& cgVertices)
+  {
+    int i;
+
+    // Global scope, values will never be changed.
+    CGparameter nSequence = cgGetNamedParameter(cgIsectProgram, "sequence");
+    CGparameter seq[64];
+    for (i = 0; i < 64; ++i)
+    {
+      seq[i] = cgGetArrayParameter(nSequence, i);
+    }
+    cgGLSetParameter1f(seq[0], 0);
+    cgGLSetParameter1f(seq[1], 1);
+    cgGLSetParameter1f(seq[2], 2);
+    cgGLSetParameter1f(seq[3], 3);
+    cgGLSetParameter1f(seq[4], 4);
+    cgGLSetParameter1f(seq[5], 5);
+    cgGLSetParameter1f(seq[6], 6);
+    cgGLSetParameter1f(seq[7], 7);
+
+    cgGLSetParameter1f(seq[8], 1);
+    cgGLSetParameter1f(seq[9], 2);
+    cgGLSetParameter1f(seq[10], 3);
+    cgGLSetParameter1f(seq[11], 0);
+    cgGLSetParameter1f(seq[12], 7);
+    cgGLSetParameter1f(seq[13], 4);
+    cgGLSetParameter1f(seq[14], 5);
+    cgGLSetParameter1f(seq[15], 6);
+
+    cgGLSetParameter1f(seq[16], 2);
+    cgGLSetParameter1f(seq[17], 7);
+    cgGLSetParameter1f(seq[18], 6);
+    cgGLSetParameter1f(seq[19], 3);
+    cgGLSetParameter1f(seq[20], 4);
+    cgGLSetParameter1f(seq[21], 1);
+    cgGLSetParameter1f(seq[22], 0);
+    cgGLSetParameter1f(seq[23], 5);
+
+    cgGLSetParameter1f(seq[24], 3);
+    cgGLSetParameter1f(seq[25], 6);
+    cgGLSetParameter1f(seq[26], 5);
+    cgGLSetParameter1f(seq[27], 0);
+    cgGLSetParameter1f(seq[28], 7);
+    cgGLSetParameter1f(seq[29], 2);
+    cgGLSetParameter1f(seq[30], 1);
+    cgGLSetParameter1f(seq[31], 4);
+
+    cgGLSetParameter1f(seq[32], 4);
+    cgGLSetParameter1f(seq[33], 5);
+    cgGLSetParameter1f(seq[34], 6);
+    cgGLSetParameter1f(seq[35], 7);
+    cgGLSetParameter1f(seq[36], 0);
+    cgGLSetParameter1f(seq[37], 1);
+    cgGLSetParameter1f(seq[38], 2);
+    cgGLSetParameter1f(seq[39], 3);
+
+    cgGLSetParameter1f(seq[40], 5);
+    cgGLSetParameter1f(seq[41], 0);
+    cgGLSetParameter1f(seq[42], 3);
+    cgGLSetParameter1f(seq[43], 6);
+    cgGLSetParameter1f(seq[44], 1);
+    cgGLSetParameter1f(seq[45], 4);
+    cgGLSetParameter1f(seq[46], 7);
+    cgGLSetParameter1f(seq[47], 2);
+
+    cgGLSetParameter1f(seq[48], 6);
+    cgGLSetParameter1f(seq[49], 7);
+    cgGLSetParameter1f(seq[50], 4);
+    cgGLSetParameter1f(seq[51], 5);
+    cgGLSetParameter1f(seq[52], 2);
+    cgGLSetParameter1f(seq[53], 3);
+    cgGLSetParameter1f(seq[54], 0);
+    cgGLSetParameter1f(seq[55], 1);
+
+    cgGLSetParameter1f(seq[56], 7);
+    cgGLSetParameter1f(seq[57], 6);
+    cgGLSetParameter1f(seq[58], 3);
+    cgGLSetParameter1f(seq[59], 2);
+    cgGLSetParameter1f(seq[60], 5);
+    cgGLSetParameter1f(seq[61], 4);
+    cgGLSetParameter1f(seq[62], 1);
+    cgGLSetParameter1f(seq[63], 0);
+
+    CGparameter vStart = cgGetNamedParameter(cgIsectProgram, "v1");
+    CGparameter vEnd = cgGetNamedParameter(cgIsectProgram, "v2");
+    CGparameter v1[24];
+    CGparameter v2[24];
+    for (i = 0; i < 24; ++i)
+    {
+      v1[i] = cgGetArrayParameter(vStart, i);
+      v2[i] = cgGetArrayParameter(vEnd, i);
+    }
+
+    // P0.
+    cgGLSetParameter1f(v1[0], 0); cgGLSetParameter1f(v2[0], 1);
+    cgGLSetParameter1f(v1[1], 1); cgGLSetParameter1f(v2[1], 2);
+    cgGLSetParameter1f(v1[2], 2); cgGLSetParameter1f(v2[2], 7);
+
+    // P2.
+    cgGLSetParameter1f(v1[8], 0); cgGLSetParameter1f(v2[8], 5);
+    cgGLSetParameter1f(v1[9], 5); cgGLSetParameter1f(v2[9], 4);
+    cgGLSetParameter1f(v1[10], 4); cgGLSetParameter1f(v2[10], 7);
+
+    // P4.
+    cgGLSetParameter1f(v1[16], 0); cgGLSetParameter1f(v2[16], 3);
+    cgGLSetParameter1f(v1[17], 3); cgGLSetParameter1f(v2[17], 6);
+    cgGLSetParameter1f(v1[18], 6); cgGLSetParameter1f(v2[18], 7);
+
+    // P1.
+    // First intersect the dotted edge.
+    cgGLSetParameter1f(v1[4], 1); cgGLSetParameter1f(v2[4], 4);
+    // Than intersect the path.
+    cgGLSetParameter1f(v1[5], 0); cgGLSetParameter1f(v2[5], 1);
+    cgGLSetParameter1f(v1[6], 1); cgGLSetParameter1f(v2[6], 2);
+    cgGLSetParameter1f(v1[7], 2); cgGLSetParameter1f(v2[7], 7);
+
+    // P3.
+    // First intersect the dotted edge.
+    cgGLSetParameter1f(v1[12], 5); cgGLSetParameter1f(v2[12], 6);
+    // Than intersect the path.
+    cgGLSetParameter1f(v1[13], 0); cgGLSetParameter1f(v2[13], 5);
+    cgGLSetParameter1f(v1[14], 5); cgGLSetParameter1f(v2[14], 4);
+    cgGLSetParameter1f(v1[15], 4); cgGLSetParameter1f(v2[15], 7);
+
+    // P5.
+    // First intersect the dotted edge.
+    cgGLSetParameter1f(v1[20], 3); cgGLSetParameter1f(v2[20], 2);
+    // Than intersect the path.
+    cgGLSetParameter1f(v1[21], 0); cgGLSetParameter1f(v2[21], 3);
+    cgGLSetParameter1f(v1[22], 3); cgGLSetParameter1f(v2[22], 6);
+    cgGLSetParameter1f(v1[23], 6); cgGLSetParameter1f(v2[23], 7);
+
+    // Values of the following params are changed for each frame.
+    cgBrickMin = cgGetNamedParameter(cgIsectProgram, "brickMin");
+    cgBrickDimInv = cgGetNamedParameter(cgIsectProgram, "brickDimInv");
+
+    cgModelViewProj = cgGetNamedParameter(cgIsectProgram, "modelViewProj");
+    cgPlaneStart = cgGetNamedParameter(cgIsectProgram, "planeStart");
+    cgDelta = cgGetNamedParameter(cgIsectProgram, "delta");
+    cgPlaneNormal = cgGetNamedParameter(cgIsectProgram, "planeNormal");
+    cgFrontIndex = cgGetNamedParameter(cgIsectProgram, "frontIndex");
+
+    cgVertexList = cgGetNamedParameter(cgIsectProgram, "vertices");
+    for (i = 0; i < 8; ++i)
+    {
+       cgVertices[i] = cgGetArrayParameter(cgVertexList, i);
+    }
   }
 
   //----------------------------------------------------------------------------

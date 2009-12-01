@@ -70,6 +70,27 @@ int vvToolshed::progressSteps = 0;
 //============================================================================
 
 //----------------------------------------------------------------------------
+/** Tells if a given char is a whitespace, i.e. a tab, space or new line
+    @param c char to test
+    @return true, if whitespace, false otherwise
+ */
+bool vvToolshed::isWhitespace(const char c)
+{
+  bool result;
+
+  if ((c == ' ') || (c == '\t') || (c == '\n'))
+  {
+    result = true;
+  }
+  else
+  {
+    result = false;
+  }
+
+  return result;
+}
+
+//----------------------------------------------------------------------------
 /** Case insensitive string comparison
     @param str1,str2 pointers to strings that are being compared
     @return
@@ -325,6 +346,40 @@ void vvToolshed::strTrim(char* str)
   }
   if (i==0) return;                               // done
   strcpy(str, str+i);
+}
+
+//----------------------------------------------------------------------------
+/** Parses the next integer from the given position and updates the counter.
+    Example: if str="hallihallo3" and iterator=9 ==> return int(3) and
+    iterator is incremented (via ref) to 10
+    @param str    source string
+    @return next int at given position
+ */
+unsigned int vvToolshed::parseNextUint32(const char* str, size_t& iterator)
+{
+  int current;
+  int result;
+
+  result = 0;
+
+  // Skip leading white spaces.
+  while (isWhitespace(str[iterator]))
+  {
+    ++iterator;
+  }
+
+  // Parse integer value.
+  char c = str[iterator];
+  while ((c >= '0') && (c <= '9'))
+  {
+      result *= 10;
+      result += static_cast<int>(c-48);
+
+      iterator++;
+      c = str[iterator];
+  }
+
+  return result;
 }
 
 //----------------------------------------------------------------------------
@@ -2433,6 +2488,40 @@ void vvToolshed::qSort(int* numbers, int left, int right)
   right = r_hold;
   if (left < pivot)  qSort(numbers, left, pivot-1);
   if (right > pivot) qSort(numbers, pivot+1, right);
+}
+
+float vvToolshed::meanAbsError(float* val1, float* val2, const int numValues)
+{
+  float result = 0.0f;
+  int i;
+
+  for (i = 0; i < numValues; ++i)
+  {
+    result += fabs(val1[i] - val2[i]);
+  }
+
+  result /= numValues;
+}
+
+float vvToolshed::meanError(float* val1, float* val2, const int numValues)
+{
+  float result = 0.0f;
+  int i;
+
+  for (i = 0; i < numValues; ++i)
+  {
+    result += (val1[i] - val2[i]);
+  }
+
+  result /= numValues;
+
+  return result;
+}
+
+float vvToolshed::meanSqrError(float* val1, float* val2, const int numValues)
+{
+  float err = meanError(val1, val2, numValues);
+  return err * err;
 }
 
 char* vvToolshed::file2string(const char *filename)

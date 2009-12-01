@@ -41,10 +41,157 @@
 #include "vvrenderer.h"
 #include "vvtransfunc.h"
 #include "vvsllist.h"
+#include "vvbsptree.h"
+
+// Posix threads:
+#include <pthread.h>
+// xlib:
+#include <GL/glx.h>
+#include <X11/Xlib.h>
+
+// TODO: reasonable determination of these values.
+#define WIDTH 512
+#define HEIGHT 512
+
+class vvTexRend;
 
 //============================================================================
 // Class Definitions
 //============================================================================
+
+class Brick : public vvConvexObj
+{
+public:
+  Brick()                                     ///< dflt. constructor (needed for C++ templates)
+  {
+
+  }
+
+  Brick(Brick* rhs)                           ///< copy constructor (from ptr)
+  {
+    pos = vvVector3(&rhs->pos);
+    min = vvVector3(&rhs->min);
+    max = vvVector3(&rhs->max);
+    minObj = vvVector3(&rhs->minObj);
+    maxObj = vvVector3(&rhs->maxObj);
+    minValue = rhs->minValue;
+    maxValue = rhs->maxValue;
+    visible = rhs->visible;
+    index = rhs->index;
+    startOffset[0] = rhs->startOffset[0];
+    startOffset[1] = rhs->startOffset[1];
+    startOffset[2] = rhs->startOffset[2];
+    texels[0] = rhs->texels[0];
+    texels[1] = rhs->texels[1];
+    texels[2] = rhs->texels[2];
+    dist = rhs->dist;
+  }
+
+  void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
+              const vvVector3& farthest, const vvVector3& delta,
+              const vvVector3& probeMin, const vvVector3& probeMax,
+              GLuint*& texNames, GLuint**& vertIndices, GLsizei*& elemCounts,
+              CGparameter* cgVertices, CGparameter cgBrickMin,
+              CGparameter cgBrickDimInv, CGparameter cgFrontIndex,
+              CGparameter cgPlaneStart);
+
+  virtual vvAABB getAABB()
+  {
+    return vvAABB(minObj, maxObj);
+  }
+
+  ushort getFrontIndex(vvVector3* vertices,         ///< front index of the brick dependent upon the current model view
+                       vvVector3& point,
+                       vvVector3& normal,
+                       float& minDot,
+                       float& maxDot);
+                                                    ///< and assuming that vertices are ordered back to front
+  vvVector3 pos;                                    ///< center position of brick
+  vvVector3 min;                                    ///< minimum position of brick
+  vvVector3 max;                                    ///< maximum position of brick
+  vvVector3 minObj;                                 ///< minimum position of brick in obj coords of the volume
+  vvVector3 maxObj;                                 ///< maximum position of brick in obj coords of the volume
+  int minValue;                                     ///< min scalar value after lut, needed for empty space leaping
+  int maxValue;                                     ///< max scalar value after lut, needed for empty space leaping
+  bool visible;                                     ///< if brick isn't visible, it won't be rendered at all
+  int index;                                        ///< index for texture object
+  int startOffset[3];                               ///< startvoxel of brick
+  int texels[3];                                    ///< number of texels in each dimension
+  float dist;                                       ///< distance from plane given by eye and normal
+};
+
+struct ThreadArgs
+{
+  int threadId;                               ///< integer id of the thread
+
+  // Algorithm specific.
+  vvHalfSpace* halfSpace;
+  vvSLList<Brick*> sortedList;                ///< sorted list built up from the brick sets
+  int numBricks;                              ///< number of bricks in the bricks array
+  vvVector3 min;
+  vvVector3 max;
+  vvVector3 probeMin;
+  vvVector3 probeMax;
+  vvVector3 delta;
+  vvVector3 farthest;
+  vvVector3 normal;
+  int numSlices;
+  float texMin[3];
+  int minSlice;
+  int maxSlice;
+  GLfloat* modelview;                         ///< the current GL_MODELVIEW matrix
+  GLfloat* projection;                        ///< the current GL_PROJECTION matrix
+  vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
+  GLfloat* pixels;                            ///< after rendering each thread will read back its data to this array
+  float lastRenderTime;                       ///< measured for dynamic load balancing
+  float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
+
+  // Glx rendering specific.
+  GLXContext glxContext;                      ///< the initial glx context
+  Display* display;						      ///< a pointer to the current glx display
+  Drawable drawable;
+
+  // Gl state specific.
+  GLuint* privateTexNames;
+  int numTextures;
+
+  // Pthread specific.
+  pthread_barrier_t* initBarrier;             ///< when this barrier is passed, the main rendering loop may be initially entered
+  pthread_barrier_t* distributeBricksBarrier;
+  pthread_barrier_t* distributedBricksBarrier;
+  pthread_barrier_t* renderStartBarrier;      ///< when this barrier is passed, the main loop may resume rendering
+  pthread_barrier_t* compositingBarrier;      ///< when this barrier is passed, compositing is done
+  pthread_barrier_t* renderReadyBarrier;      ///< when this barrier is passed, all threads have completed rendering the current frame
+  pthread_mutex_t* makeTextureMutex;          ///< mutex ensuring that textures for each thread are built up synchronized
+};
+
+/** The content of each thread is rendered via the visitor pattern.
+  The rendered results of each thread are managed using a bsp tree
+  structure. Using the visitor pattern was a design decision so
+  that the bsp tree doesn't need knowledge about the (rather specific)
+  rendering code its half spaces utilize to display their results.
+  This logic is supplied by the visitor which needs to be initialized
+  once and passed to the bsp tree after initialization. Thus the bsp
+  tree may be utilized in context not that specific as this one.
+  @author stefan Zellmann
+  @see vvVisitor
+ */
+class vvThreadVisitor : public vvVisitor
+{
+public:
+  virtual ~vvThreadVisitor();
+  virtual void visit(vvVisitable* obj);
+
+  void setFrameBufferObjects(GLuint*& frameBufferObjects);
+  void setDepthBuffers(GLuint*& depthBuffers);
+  void setImageSpaceTextures(GLuint*& imageSpaceTextures);
+  void setPixels(GLfloat**& pixels);
+private:
+  GLuint* _frameBufferObjects;
+  GLuint* _depthBuffers;
+  GLuint* _imageSpaceTextures;
+  GLfloat** _pixels;
+};
 
 /** Volume rendering engine using a texture-based algorithm.
   Textures can be drawn as planes or spheres. In planes mode a rendering
@@ -56,28 +203,62 @@
   Make sure you define HAVE_CG in your compiler if you want to use Nvidia Cg.
   @author Juergen Schulze (schulze@cs.brown.de)
   @author Martin Aumueller
+  @author Stefan Zellmann
   @see vvRenderer
 */
 class VIRVOEXPORT vvTexRend : public vvRenderer
 {
+  friend class Brick;
   public:
-
-    struct Brick
+    struct BrickSet
     {
-      vvVector3 pos;                              ///< center position of brick
-      vvVector3 min;                              ///< minimum position of brick
-      vvVector3 max;                              ///< maximum position of brick
-      int index;                                  ///< index for texture object
-      int startOffset[3];                         ///< startvoxel of brick
-      int texels[3];                              ///< number of texels in each dimension
-      float dist;                                 ///< distance from plane given by eye and normal
-    };
+      vvSLList<Brick*> bricks;
+      int parentThreadId;
 
+      vvVector3 center;
+      float dist;
+
+      inline bool operator<(const BrickSet& rhs) const      ///< compare bricks based upon dist to eye position
+      {
+        if (dist < rhs.dist)
+        {
+          return true;
+        }
+        else
+        {
+          return false;
+        }
+      }
+    };
+    unsigned int _numThreads;                     ///< thread count
+
+    const char** _displayNames;                   ///< xorg display names, e.g. const char("host:0.0")
+    unsigned int* _screens;                       ///< display name = :0.x ==> corresponding screen: x
+    
+    pthread_t* _threads;                          ///< worker threads
+    ThreadArgs* _threadData;                      ///< args for each thread
+    pthread_barrier_t _initBarrier;               ///< barrier assures that the render loop isn't entered before (pre)initialization
+    pthread_barrier_t _distributeBricksBarrier;   ///< barrier assures that bricks are distributed before rendering and after (pre)initialization
+    pthread_barrier_t _distributedBricksBarrier;  ///< barrier is passed when bricks are distributed eventually
+    pthread_barrier_t _renderStartBarrier;        ///< barrier assures that the render loop doesn't resume until proper data is supplied
+    pthread_barrier_t _compositingBarrier;        ///< barrier assures synchronization for compositing
+    pthread_barrier_t _renderReadyBarrier;        ///< barrier assures that bricks aren't sorted until the previous frame was rendered
+    pthread_mutex_t _makeTextureMutex;            ///< mutex ensuring that textures for each thread are build up synchronized
+
+    GLuint* _frameBufferObjects;
+    GLuint* _depthBuffers;
+    GLuint* _imageSpaceTextures;                  ///< each thread will overlay the current output with a 2D texture of its px buffer
+    bool _somethingChanged;                       ///< when smth changed (e.g. the transfer function, bricks will possibly be rearranged)
+    vvBspTree* _bspTree;
+    int _deviationExceedCnt;
+
+    int _numBricks[3];                            ///< number of bricks for each dimension
     enum ErrorType                                /// Error Codes
     {
-      OK,                                         ///< no error
+      OK = 0,                                     ///< no error
       TRAM_ERROR,                                 ///< not enough texture memory
-      NO3DTEX                                     ///< 3D textures not supported on this hardware
+      NO3DTEX,                                    ///< 3D textures not supported on this hardware
+      NO_DISPLAYS_SPECIFIED                       ///< no x-displays in _renderState, thus no multi-threading
     };
     enum GeometryType                             /// Geometry textures are projected on
     {
@@ -158,7 +339,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int  minSlice, maxSlice;                      ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
     bool _areBricksCreated;                       ///< true after the first creation of the bricks
     vvSLList<vvSLList<Brick*>*> _brickList;       ///< contains all created bricks
-    vvSLList<Brick*> _insideList;                 ///< contains all bricks inside the probe
+    vvSLList<vvConvexObj*> _insideList;                 ///< contains all bricks inside the probe
     vvSLList<Brick*> _sortedList;                 ///< contains all bricks inside the probe in a sorted order (back to front)
     bool _useOnlyOneBrick;                        ///< true if whole data fits in texture memory
     vvVector4 _frustum[6];                        ///< current planes of view frustum
@@ -171,6 +352,24 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     CGparameter _cgPixLUT;                        ///< fragment program input: RGBA look-up table
     CGparameter _cgChannel4Color;                 ///< fragment program input: color of 4th channel
     CGparameter _cgOpacityWeights;                ///< fragment program input: opacity of color channels
+
+    CGcontext _cgIsectContext;                    ///< context for gpu intersection program
+    CGprofile _cgIsectProfile;                    ///< cg profile for gpu intersection program
+    CGprogram _cgIsectProgram;                    ///< cg shader program for gpu intersection
+
+    CGparameter _cgBrickMin;
+    CGparameter _cgBrickDimInv;
+
+    CGparameter _cgModelViewProj;
+    CGparameter _cgPlaneStart;
+    CGparameter _cgDelta;
+    CGparameter _cgPlaneNormal;
+    CGparameter _cgFrontIndex;
+
+    CGparameter _cgVertexList;
+    CGparameter* _cgVertices;
+
+    GLuint _vbos[2];                              ///< vertex buffer objects for efficient slice transfer to gpu
 #endif
     int _currentShader;                           ///< ID of currently used fragment shader
 
@@ -226,17 +425,45 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLboolean glsTexColTable;                     ///< stores GL_TEXTURE_COLOR_TABLE_SGI
     GLboolean glsSharedTexPal;                    ///< stores GL_SHARED_TEXTURE_PALETTE_EXT
 
-    void removeTextures();
-    ErrorType makeTextures();
     void makeLUTTexture();
     ErrorType makeTextures2D(int axes);
-    ErrorType makeTextureBricks();
+
+    ErrorType setDisplayNames(const char** displayNames, const unsigned int numNames);
+    ErrorType dispatchThreadedGLXContexts();
+    ErrorType distributeBricks();
+    static void* threadFuncTexBricks(void* threadargs);
+    static void* threadFuncBricks(void* threadargs);
+    void sortBrickList(const int, vvVector3, vvVector3, bool);
+    void performLoadBalancing();
+
+    ErrorType makeTextures(GLuint*& privateTexNames, int* numTextures);
+    ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures);
+    bool initPixelShaders(CGcontext& cgContext, CGprogram*& cgProgram);
+    void enableLUTMode(CGprogram*& cgProgram, CGparameter& cgPixLUT);
+    void disableLUTMode(CGparameter& cgPixLUT);
+    void enableIntersectionShader(CGprogram& cgIsectProgram, CGprofile& cgIsectProfile);
+    void disableIntersectionShader();
+    void enablePixelShaders(CGprogram*& cgProgram, CGparameter& cgPixLUT);
+    void disablePixelShaders(CGparameter& cgPixLUT);
+    bool initIntersectionShader(CGcontext& cgIsectContext,
+                                CGprofile& cgIsectProfile,
+                                CGprogram& cgIsectProgram,
+                                CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
+                                CGparameter& cgModelViewProj, CGparameter& cgPlaneStart,
+                                CGparameter& cgDelta, CGparameter& cgPlaneNormal,
+                                CGparameter& cgFrontIndex, CGparameter& cgVertexList,
+                                CGparameter*& cgVertices);
+    void setupIntersectionCGParameters(CGprogram& cgIsectProgram,
+                                       CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
+                                       CGparameter& cgModelViewProj, CGparameter& cgPlaneStart,
+                                       CGparameter& cgDelta, CGparameter& cgPlaneNormal,
+                                       CGparameter& cgFrontIndex, CGparameter& cgVertexList,
+                                       CGparameter*& cgVertices);
     ErrorType makeTextures3D();
+    void removeTextures();
     ErrorType updateTextures3D(int, int, int, int, int, int, bool);
     ErrorType updateTextures2D(int, int, int, int, int, int, int);
     ErrorType updateTextureBricks(int, int, int, int, int, int);
-    void enableLUTMode();
-    void disableLUTMode();
     void setGLenvironment();
     void unsetGLenvironment();
     void renderTex3DSpherical(vvMatrix*);
@@ -252,20 +479,16 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int  getPreintTableSize();
     void enableNVShaders();
     void disableNVShaders();
-    void enablePixelShaders();
-    void disablePixelShaders();
     void enableFragProg();
     void disableFragProg();
-    bool initPixelShaders();
     void enableTexture(GLenum target);
     void disableTexture(GLenum target);
     bool testBrickVisibility(Brick* brick, const vvMatrix& mvpMat);
     bool testBrickVisibility(Brick*);
     void updateFrustum();
+    void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&);
     void getBricksInProbe(vvVector3, vvVector3);
-    void sortBrickList(vvVector3, vvVector3, bool);
     void computeBrickSize();
-
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST);
     virtual ~vvTexRend();

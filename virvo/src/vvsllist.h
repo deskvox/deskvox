@@ -119,6 +119,7 @@ template<class T> class vvSLList
     void append(const T&, typename vvSLNode<T>::DeleteType);
     void insertAfter(const T&, typename vvSLNode<T>::DeleteType);
     void insertBefore(const T&, typename vvSLNode<T>::DeleteType);
+    void insertSorted(const T&, typename vvSLNode<T>::DeleteType);
     void merge(vvSLList<T>*);
     void print();
 };
@@ -533,6 +534,40 @@ template<class T> void vvSLList<T>::insertBefore(const T& x, typename vvSLNode<T
     }
   }
   cur = newNode;
+}
+
+//----------------------------------------------------------------------------
+/** Insert the new element sorted. Sorting is performed using '<' relation.
+  Note that the < operator has to be overloaded for the type to insert.
+  The used algorithm is 'insertion sort'.
+  @param x element to add
+  @param dd true = delete data when list element is removed (defaults to true)
+*/
+template<class T> void vvSLList<T>::insertSorted(const T& x, typename vvSLNode<T>::DeleteType dt)
+{
+  T tmp;
+
+  if (count() != 0)
+  {
+    first();
+    while ((tmp = getData()) != 0)
+    {
+      if (*tmp < *x)
+      {
+        insertBefore(x, dt);
+        break;
+      }
+      if (!next())
+      {
+        append(x, dt);
+        break;
+      }
+    }
+  }
+  else
+  {
+    append(x, dt);
+  }
 }
 
 //----------------------------------------------------------------------------

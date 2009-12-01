@@ -22,6 +22,7 @@
 #define _VVGLTOOLS_H_
 
 #include "vvexport.h"
+#include "vvvecmath.h"
 
 //============================================================================
 // Class Definitions
@@ -43,6 +44,7 @@ class VIRVOEXPORT vvGLTools
     static bool isGLextensionSupported(const char*);
     static void displayOpenGLextensions(DisplayStyle);
     static void checkOpenGLextensions();
+    static void draw(vvVector3* vec);
 };
 #endif
 

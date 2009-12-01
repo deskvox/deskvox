@@ -45,6 +45,7 @@ vvRenderState::vvRenderState()
 
   _mipMode = 0;
   _alphaMode = 0;
+  _emptySpaceLeaping = true;
   _clipPerimeter = true;
   _boundaries = false;
   _orientation = false;
@@ -80,6 +81,8 @@ vvRenderState::vvRenderState()
   }
 
   _showTexture = true;	// added by Han, Feb 2008
+  _displayNames = NULL;
+  _numDisplays = 0;
 }
 
 //----------------------------------------------------------------------------

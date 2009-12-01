@@ -81,6 +81,13 @@ template <class C> inline C ts_max(const C a, const C b, const C c)
   return ts_max(a, ts_max(b, c));
 }
 
+/// @return the maximum of six values
+template <class C> inline C ts_max(const C a, const C b, const C c,
+                                   const C d, const C e, const C f)
+{
+  return ts_max(ts_max(a, b, c), ts_max(d, e, f));
+}
+
 /// @return the minimum of two values
 template <class C> inline C ts_min(const C a, const C b)
 {
@@ -91,6 +98,13 @@ template <class C> inline C ts_min(const C a, const C b)
 template <class C> inline C ts_min(const C a, const C b, const C c)
 {
   return ts_min(a, ts_min(b, c));
+}
+
+/// @return the minimum of six values
+template <class C> inline C ts_min(const C a, const C b, const C c,
+                                   const C d, const C e, const C f)
+{
+  return ts_min(ts_max(a, b, c), ts_min(d, e, f));
 }
 
 /// @return the absolute value of a value
@@ -164,6 +178,7 @@ class VIRVOEXPORT vvToolshed
       VV_BIG_END                                  ///< big endian: hight-order byte is stored first
     };
 
+    static bool    isWhitespace(const char);
     static int     strCompare(const char*, const char*);
     static int     strCompare(const char*, const char*, int n);
     static bool    isSuffix(const char*, const char*);
@@ -175,6 +190,7 @@ class VIRVOEXPORT vvToolshed
     static string  strcpyTail(const string, char);
     static void    strcpyHead(char*, const char*, char);
     static void    strTrim(char*);
+    static unsigned int parseNextUint32(const char*, size_t&);
     static void    extractFilename(char*, const char*);
     static string  extractFilename(const string);
     static void    extractDirname(char*, const char*);
@@ -246,7 +262,10 @@ class VIRVOEXPORT vvToolshed
     static bool    makeFileList(std::string&, std::list<std::string>&, std::list<std::string>&);
     static bool    nextListString(std::list<std::string>&, std::string&, std::string&);
     static void    quickSort(int*, int);
-    static void    qSort(int*, int, int); 
+    static void    qSort(int*, int, int);
+    static float   meanAbsError(float*, float*, const int);
+    static float   meanError(float*, float*, const int);
+    static float   meanSqrError(float*, float*, const int);
     static char*   file2string(const char* filename);
 };
 #endif

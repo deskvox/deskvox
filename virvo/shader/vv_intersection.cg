@@ -1,0 +1,56 @@
+void main(
+  int2                vin           : POSITION,
+  uniform float       planeStart,
+
+  // Updated per frame.
+  uniform float4x4    modelViewProj,            // Current model view matrix.
+  uniform float3      planeNormal,              // Normal vector of the slicing plane. 
+  uniform int         frontIndex,               // Index of the front vector.
+
+  // Const parameters.
+  uniform float       delta,                    // Distance between to adjacent planes.
+  uniform int         sequence[64],             // Vertex index permutations.
+  uniform float3      vertices[8],              // Cube vertices.
+  uniform float3      brickMin,
+  uniform float3      brickDimInv,
+  uniform int         v1[24],                   // Start vertex idx's of the edges to intersect with.
+  uniform int         v2[24],                   // End vertex idx's of the edges to intersect with.
+
+  // Output variables.
+  out float4          vertexOut     : POSITION,
+  out half3           texCoordOut   : TEXCOORD0
+)
+{
+  float planeDist = planeStart + vin.y * delta;
+  float3 pos;
+
+  for (int i=0; i<4; ++i)
+  {
+    int vIdx1 = sequence[int(frontIndex * 8 + v1[vin.x*4+i])];
+    int vIdx2 = sequence[int(frontIndex * 8 + v2[vin.x*4+i])];
+
+    float3 vecV1 = vertices[vIdx1];
+    float3 vecV2 = vertices[vIdx2];
+
+    float3 vecStart = vecV1;
+    float3 vecDir = vecV2-vecV1;
+
+    float denominator = dot(vecDir, planeNormal);
+    float lambda = (denominator != 0.0f) ?
+                      (planeDist-dot(vecStart, planeNormal)) / denominator
+                   :
+                     -1.0;
+
+    if ((lambda >= 0.0) && (lambda <= 1.0))
+    {
+      pos = vecStart + lambda * vecDir;
+      break;
+    }
+  }
+
+  // Output.
+  vertexOut = mul(modelViewProj, float4(pos, 1.0f));
+  // Use precalculated BrickDimInv since (x / BrickDim) would be a more costly operation).
+  texCoordOut = (pos - brickMin) * brickDimInv;
+}
+

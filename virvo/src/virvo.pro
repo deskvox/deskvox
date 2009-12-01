@@ -5,7 +5,7 @@ TEMPLATE    = lib
                     
 PROJECT     = General
 
-CONFIG	   *= dll dl cg
+CONFIG	   *= dll dl cg pthread x11 wnoerror
 
 SRCDIR = $${BASEDIR}/src/kernel/virvo
 
@@ -16,8 +16,8 @@ SOURCES	   = \
 vvcolor.cpp vvdebugmsg.cpp vvdicom.cpp vvdynlib.cpp vvfileio.cpp vvgltools.cpp \
 vvideo.cpp vvimage.cpp vvprintgl.cpp vvrenderer.cpp vvsocket.cpp vvsocketio.cpp \
 vvsphere.cpp vvstingray.cpp vvstopwatch.cpp vvtexrend.cpp vvtfwidget.cpp \
-vvtokenizer.cpp vvtoolshed.cpp vvtransfunc.cpp vvvecmath.cpp vvvffile.cpp \
-vvvoldesc.cpp vvglsl.cpp \
+vvtokenizer.cpp vvtoolshed.cpp vvtransfunc.cpp vvvecmath.cpp vvvisitor.cpp \
+vvvffile.cpp vvvoldesc.cpp vvglsl.cpp vvbsptree.cpp \
 vvmultirend/vvtexmultirend.cpp vvmultirend/vvtexmultirendmngr.cpp
 
 HEADERS	   = \
@@ -25,8 +25,8 @@ glext-orig.h \
 vvarray.h vvcolor.h vvdebugmsg.h vvdicom.h vvdynlib.h vvexport.h vvfileio.h vvglext.h \
 vvgltools.h vvideo.h vvimage.h vvopengl.h vvprintgl.h vvrenderer.h vvsllist.h vvsocket.h \
 vvsocketio.h vvsphere.h vvstingray.h vvstopwatch.h vvtexrend.h vvtfwidget.h vvtokenizer.h \
-vvtoolshed.h vvtransfunc.h vvvecmath.h vvvffile.h vvvirvo.h vvvoldesc.h vvglsl.h \
-vvmultirend/vvtexmultirend.h vvmultirend/vvtexmultirendmngr.h
+vvtoolshed.h vvtransfunc.h vvvecmath.h vvvffile.h vvvirvo.h vvvisitor.h vvvoldesc.h vvglsl.h \
+vvbsptree.h vvmultirend/vvtexmultirend.h vvmultirend/vvtexmultirendmngr.h
 
 TARGET		 = coVirvo
 

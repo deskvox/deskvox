@@ -173,6 +173,30 @@ void vvGLTools::checkOpenGLextensions()
   cerr << ((vvGLTools::isGLextensionSupported("GL_ARB_imaging")) ? status[0] : status[1]) << endl;
 }
 
+void vvGLTools::draw(vvVector3* vec)
+{
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_LIGHTING);
+  glColor3f(1.0f, 1.0f, 1.0f);
+
+  glRasterPos3f(vec->e[0], vec->e[1], vec->e[2]);
+  GLubyte v[2][2][3];
+
+  for (int i=0; i<2; i++)
+  {
+      for (int j=0; j<2; j++)
+      {
+          for (int k=0; k<3; k++)
+          {
+              v[i][j][k] = 0;
+          }
+      }
+  }
+  glDrawPixels(2, 2, GL_RGB, GL_UNSIGNED_BYTE, v);
+  glEnable(GL_LIGHTING);
+  glEnable(GL_DEPTH_TEST);
+}
+
 //============================================================================
 // End of File
 //============================================================================

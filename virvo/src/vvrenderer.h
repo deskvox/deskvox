@@ -38,7 +38,8 @@ class VIRVOEXPORT vvRenderState
     float _clipColor[3];                          ///< clipping plane boundary color (R,G,B in [0..1])
     float _quality;                               ///< rendering image quality (0=minimum, 1=sampling rate, >1=oversampling)
     int   _mipMode;                               ///< min/maximum intensity projection (0=off, 1=max, 2=min)
-	int	  _alphaMode;							  ///< calculation for alpha value (0=max of channel weights*values, 1=weighted avg)
+    int	  _alphaMode;                             ///< calculation for alpha value (0=max of channel weights*values, 1=weighted avg)
+    bool  _emptySpaceLeaping;                     ///< true = don't render bricks without contribution. Relevanct for VV_BRICKS only
     bool  _clipPerimeter;                         ///< true = render line around clipping plane
     bool  _boundaries;                            ///< true = display volume boundaries
     bool  _orientation;                           ///< true = display object orientation
@@ -61,6 +62,8 @@ class VIRVOEXPORT vvRenderState
     float _boundColor[3];                         ///< boundary color (R,G,B in [0..1])
     float _probeColor[3];                         ///< probe boundary color (R,G,B in [0..1])
 	bool _showTexture;							  ///< true = show texture mapping, if applicable, added by Han, Feb 2008
+    const char** _displayNames;                   ///< list with displays of the form host:x.y
+    int _numDisplays;
 
     vvRenderState();
     void setClippingPlane(const vvVector3*, const vvVector3*);
@@ -127,9 +130,9 @@ class VIRVOEXPORT vvRenderer
     vvRenderer(vvVolDesc*, vvRenderState);
     virtual ~vvRenderer();
     float		_lastRenderTime;                   ///< time it took to render the previous frame (seconds)
-	float		_lastComputeTime;
-	float		_lastPlaneSortingTime;
-	float		_lastGLdrawTime;
+    float		_lastComputeTime;
+    float		_lastPlaneSortingTime;
+    float		_lastGLdrawTime;
 
     // Static methods:
     static float adaptQuality(float, float, float, float);
@@ -138,7 +141,7 @@ class VIRVOEXPORT vvRenderer
     virtual RendererType getRendererType();
     virtual void  renderVolumeGL();
     virtual void  renderVolumeRGB(int, int, uchar*);
-	virtual void  renderMultipleVolume();
+    virtual void  renderMultipleVolume();
     virtual void  updateTransferFunction();
     virtual void  updateVolumeData();
     virtual int   getNumFrames();
