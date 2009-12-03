@@ -1,11 +1,13 @@
 !include($$(COVISEDIR)/mkspecs/config-first.pri):error(include of config-first.pri failed)
 ### don't modify anything before this line ###
 
-TEMPLATE    = lib
+TEMPLATE           = lib
                     
-PROJECT     = General
+PROJECT            = General
 
-CONFIG	   *= dll dl cg pthread x11 glew wnoerror 
+CONFIG	          *= dll dl cg pthread wnoerror
+unix:!macx:CONFIG *= x11
+osx11:CONFIG      *= x11
 
 SRCDIR = $${BASEDIR}/src/kernel/virvo
 
