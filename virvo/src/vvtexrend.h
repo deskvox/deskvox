@@ -21,14 +21,6 @@
 #ifndef _VVTEXREND_H_
 #define _VVTEXREND_H_
 
-// Glew:
-
-// No circular dependencies between gl.h and glew.h
-#ifndef GLEW_INCLUDED
-#include <GL/glew.h>
-#define GLEW_INCLUDED
-#endif
-
 #ifndef NO_CONFIG_H
 #ifndef _WIN32
 #include "config.h"
