@@ -2501,6 +2501,8 @@ float vvToolshed::meanAbsError(float* val1, float* val2, const int numValues)
   }
 
   result /= numValues;
+
+  return result;
 }
 
 float vvToolshed::meanError(float* val1, float* val2, const int numValues)

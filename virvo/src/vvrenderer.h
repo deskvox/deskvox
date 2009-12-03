@@ -21,6 +21,12 @@
 #ifndef _VVRENDERER_H_
 #define _VVRENDERER_H_
 
+// No circular dependencies between gl.h and glew.h
+#ifndef GLEW_INCLUDED
+#include <GL/glew.h>
+#define GLEW_INCLUDED
+#endif
+
 #include "vvexport.h"
 #include "vvvecmath.h"
 #include "vvvoldesc.h"

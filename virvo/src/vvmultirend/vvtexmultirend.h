@@ -21,11 +21,17 @@
 #ifndef _VVTEXMULTIREND_H_
 #define _VVTEXMULTIREND_H_
 
+// Glew:
+
+// No circular dependencies between gl.h and glew.h
+#ifndef GLEW_INCLUDED
+#include <GL/glew.h>
+#define GLEW_INCLUDED
+#endif
+
 #ifndef _WIN32
 //#include "config.h"
 #endif
-
-#include "../vvopengl.h"
 
 // Virvo:
 #include "../vvexport.h"
@@ -170,21 +176,6 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     int  minSlice, maxSlice;                ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
 
     SliceOrientation _sliceOrientation;     ///< slice orientation for planar 3d textures
-
-  protected:
-
-#if defined(_WIN32)
-    PFNGLTEXIMAGE3DEXTPROC glTexImage3DEXT;
-    PFNGLTEXSUBIMAGE3DEXTPROC glTexSubImage3DEXT;
-    PFNGLBLENDEQUATIONEXTPROC glBlendEquationVV;
-#else
-    typedef void (glBlendEquationEXT_type)(GLenum);
-    typedef void (glTexImage3DEXT_type)(GLenum, GLint, GLenum, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid*);
-    typedef void (glTexSubImage3DEXT_type)(GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, const GLvoid*);
-    glBlendEquationEXT_type* glBlendEquationVV;
-    glTexImage3DEXT_type* glTexImage3DEXT;
-    glTexSubImage3DEXT_type* glTexSubImage3DEXT;
-#endif
 
   protected:
     ErrorType makeTextures();

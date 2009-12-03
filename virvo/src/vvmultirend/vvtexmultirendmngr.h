@@ -21,6 +21,12 @@
 #ifndef _VVTEXMULTIRENDMNGR_H_
 #define _VVTEXMULTIRENDMNGR_H_
 
+// No circular dependencies between gl.h and glew.h
+#ifndef GLEW_INCLUDED
+#include <GL/glew.h>
+#define GLEW_INCLUDED
+#endif
+
 #include <vector>
 
 #include "../vvexport.h"

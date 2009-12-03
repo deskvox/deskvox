@@ -21,13 +21,19 @@
 #ifndef _VVTEXREND_H_
 #define _VVTEXREND_H_
 
+// Glew:
+
+// No circular dependencies between gl.h and glew.h
+#ifndef GLEW_INCLUDED
+#include <GL/glew.h>
+#define GLEW_INCLUDED
+#endif
+
 #ifndef NO_CONFIG_H
 #ifndef _WIN32
 #include "config.h"
 #endif
 #endif
-
-#include "vvopengl.h"
 
 // Cg:
 #ifdef HAVE_CG
@@ -45,13 +51,12 @@
 
 // Posix threads:
 #include <pthread.h>
-// xlib:
-#include <GL/glx.h>
-#include <X11/Xlib.h>
 
 // TODO: reasonable determination of these values.
 #define WIDTH 512
 #define HEIGHT 512
+
+struct ThreadArgs;
 
 class vvTexRend;
 
@@ -118,51 +123,6 @@ public:
   int startOffset[3];                               ///< startvoxel of brick
   int texels[3];                                    ///< number of texels in each dimension
   float dist;                                       ///< distance from plane given by eye and normal
-};
-
-struct ThreadArgs
-{
-  int threadId;                               ///< integer id of the thread
-
-  // Algorithm specific.
-  vvHalfSpace* halfSpace;
-  vvSLList<Brick*> sortedList;                ///< sorted list built up from the brick sets
-  int numBricks;                              ///< number of bricks in the bricks array
-  vvVector3 min;
-  vvVector3 max;
-  vvVector3 probeMin;
-  vvVector3 probeMax;
-  vvVector3 delta;
-  vvVector3 farthest;
-  vvVector3 normal;
-  int numSlices;
-  float texMin[3];
-  int minSlice;
-  int maxSlice;
-  GLfloat* modelview;                         ///< the current GL_MODELVIEW matrix
-  GLfloat* projection;                        ///< the current GL_PROJECTION matrix
-  vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
-  GLfloat* pixels;                            ///< after rendering each thread will read back its data to this array
-  float lastRenderTime;                       ///< measured for dynamic load balancing
-  float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
-
-  // Glx rendering specific.
-  GLXContext glxContext;                      ///< the initial glx context
-  Display* display;						      ///< a pointer to the current glx display
-  Drawable drawable;
-
-  // Gl state specific.
-  GLuint* privateTexNames;
-  int numTextures;
-
-  // Pthread specific.
-  pthread_barrier_t* initBarrier;             ///< when this barrier is passed, the main rendering loop may be initially entered
-  pthread_barrier_t* distributeBricksBarrier;
-  pthread_barrier_t* distributedBricksBarrier;
-  pthread_barrier_t* renderStartBarrier;      ///< when this barrier is passed, the main loop may resume rendering
-  pthread_barrier_t* compositingBarrier;      ///< when this barrier is passed, compositing is done
-  pthread_barrier_t* renderReadyBarrier;      ///< when this barrier is passed, all threads have completed rendering the current frame
-  pthread_mutex_t* makeTextureMutex;          ///< mutex ensuring that textures for each thread are built up synchronized
 };
 
 /** The content of each thread is rendered via the visitor pattern.
@@ -258,7 +218,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       OK = 0,                                     ///< no error
       TRAM_ERROR,                                 ///< not enough texture memory
       NO3DTEX,                                    ///< 3D textures not supported on this hardware
-      NO_DISPLAYS_SPECIFIED                       ///< no x-displays in _renderState, thus no multi-threading
+      NO_DISPLAYS_SPECIFIED,                      ///< no x-displays in _renderState, thus no multi-threading
+      UNSUPPORTED                                 ///< general error code
     };
     enum GeometryType                             /// Geometry textures are projected on
     {
@@ -372,43 +333,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLuint _vbos[2];                              ///< vertex buffer objects for efficient slice transfer to gpu
 #endif
     int _currentShader;                           ///< ID of currently used fragment shader
-
-#if defined(_WIN32)
-    PFNGLTEXIMAGE3DEXTPROC glTexImage3DEXT;
-    PFNGLTEXSUBIMAGE3DEXTPROC glTexSubImage3DEXT;
-    PFNGLCOLORTABLESGIPROC glColorTableSGI;
-    PFNGLCOLORTABLEEXTPROC glColorTableEXT;
-    PFNGLBLENDEQUATIONEXTPROC glBlendEquationVV;
-    PFNGLACTIVETEXTUREARBPROC glActiveTextureARB;
-    PFNGLMULTITEXCOORD3FARBPROC glMultiTexCoord3fARB;
-    PFNGLBINDPROGRAMARBPROC glBindProgramARB;
-    PFNGLGENPROGRAMSARBPROC glGenProgramsARB;
-    PFNGLDELETEPROGRAMSARBPROC glDeleteProgramsARB;
-    PFNGLPROGRAMSTRINGARBPROC glProgramStringARB;
-#else
-    typedef void (glBlendEquationEXT_type)(GLenum);
-    typedef void (glTexImage3DEXT_type)(GLenum, GLint, GLenum, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid*);
-    typedef void (glTexSubImage3DEXT_type)(GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei, GLenum, GLenum, const GLvoid*);
-    typedef void (glColorTableSGI_type)(GLenum, GLenum, GLsizei, GLenum, GLenum, const GLvoid*);
-    typedef void (glColorTableEXT_type)(GLenum, GLenum, GLsizei, GLenum, GLenum, const GLvoid*);
-    typedef void (glActiveTextureARB_type)(GLenum);
-    typedef void (glMultiTexCoord3fARB_type)(GLenum, GLfloat, GLfloat, GLfloat);
-    typedef void (glGenProgramsARB_type)(GLsizei, GLuint*);
-    typedef void (glDeleteProgramsARB_type)(GLsizei, GLuint*);
-    typedef void (glBindProgramARB_type)(GLenum, GLuint);
-    typedef void (glProgramStringARB_type)(GLenum, GLenum, GLsizei, const GLvoid *);
-    glBlendEquationEXT_type* glBlendEquationVV;
-    glTexImage3DEXT_type* glTexImage3DEXT;
-    glTexSubImage3DEXT_type* glTexSubImage3DEXT;
-    glColorTableSGI_type* glColorTableSGI;
-    glColorTableEXT_type* glColorTableEXT;
-    glActiveTextureARB_type* glActiveTextureARB;
-    glMultiTexCoord3fARB_type* glMultiTexCoord3fARB;
-    glGenProgramsARB_type* glGenProgramsARB;
-    glDeleteProgramsARB_type* glDeleteProgramsARB;
-    glBindProgramARB_type* glBindProgramARB;
-    glProgramStringARB_type* glProgramStringARB;
-#endif
 
     // GL state variables:
     GLboolean glsCulling;                         ///< stores GL_CULL_FACE

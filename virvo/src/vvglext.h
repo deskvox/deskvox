@@ -22,6 +22,8 @@
 #ifndef VV_GLEXT_H
 #define VV_GLEXT_H
 
+#ifndef GLEW_INCLUDED
+
 #include "vvexport.h"
 
 #ifdef GL_MESA_trace
@@ -140,5 +142,7 @@ typedef void (APIENTRYP PFNGLVERTEXATTRIBPOINTERPROC) (GLuint index, GLint size,
 
 typedef void (APIENTRYP PFNGLACTIVETEXTUREPROC) (GLenum texture);
 
-#endif
+#endif // #ifndef GLEW_INCLUDED
+
+#endif // VV_GLEXT_H
 

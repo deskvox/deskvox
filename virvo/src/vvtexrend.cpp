@@ -18,6 +18,14 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+// Glew:
+
+// No circular dependencies between gl.h and glew.h
+#ifndef GLEW_INCLUDED
+#include <GL/glew.h>
+#define GLEW_INCLUDED
+#endif
+
 #include <iostream>
 #include <iomanip>
 
@@ -32,8 +40,13 @@
 #include <string.h>
 #endif
 
+#if defined(__linux) || defined(LINUX)
+// xlib:
+#include <GL/glx.h>
+#include <X11/Xlib.h>
+#endif
+
 #include "vvopengl.h"
-#include "vvglext.h"
 
 // Used for debugging only.
 #define HAVE_CG_TMP
@@ -80,6 +93,53 @@ using namespace std;
 
 //----------------------------------------------------------------------------
 const int vvTexRend::NUM_PIXEL_SHADERS = 13;
+
+struct ThreadArgs
+{
+  int threadId;                               ///< integer id of the thread
+
+  // Algorithm specific.
+  vvHalfSpace* halfSpace;
+  vvSLList<Brick*> sortedList;                ///< sorted list built up from the brick sets
+  int numBricks;                              ///< number of bricks in the bricks array
+  vvVector3 min;
+  vvVector3 max;
+  vvVector3 probeMin;
+  vvVector3 probeMax;
+  vvVector3 delta;
+  vvVector3 farthest;
+  vvVector3 normal;
+  int numSlices;
+  float texMin[3];
+  int minSlice;
+  int maxSlice;
+  GLfloat* modelview;                         ///< the current GL_MODELVIEW matrix
+  GLfloat* projection;                        ///< the current GL_PROJECTION matrix
+  vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
+  GLfloat* pixels;                            ///< after rendering each thread will read back its data to this array
+  float lastRenderTime;                       ///< measured for dynamic load balancing
+  float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
+
+#ifndef _WIN32
+  // Glx rendering specific.
+  GLXContext glxContext;                      ///< the initial glx context
+  Display* display;						      ///< a pointer to the current glx display
+  Drawable drawable;
+#endif
+
+  // Gl state specific.
+  GLuint* privateTexNames;
+  int numTextures;
+
+  // Pthread specific.
+  pthread_barrier_t* initBarrier;             ///< when this barrier is passed, the main rendering loop may be initially entered
+  pthread_barrier_t* distributeBricksBarrier;
+  pthread_barrier_t* distributedBricksBarrier;
+  pthread_barrier_t* renderStartBarrier;      ///< when this barrier is passed, the main loop may resume rendering
+  pthread_barrier_t* compositingBarrier;      ///< when this barrier is passed, compositing is done
+  pthread_barrier_t* renderReadyBarrier;      ///< when this barrier is passed, all threads have completed rendering the current frame
+  pthread_mutex_t* makeTextureMutex;          ///< mutex ensuring that textures for each thread are built up synchronized
+};
 
 void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
@@ -312,7 +372,7 @@ void vvThreadVisitor::visit(vvVisitable* obj)
 
   vvHalfSpace* hs = dynamic_cast<vvHalfSpace*>(obj);
 
-  glActiveTexture(GL_TEXTURE0);
+  glActiveTextureARB(GL_TEXTURE0_ARB);
   glEnable(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, _imageSpaceTextures[hs->getId()]);
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -452,73 +512,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two");
 
-#if defined(_WIN32)
-#ifdef GL_VERSION_1_2
-  glTexImage3DEXT = (PFNGLTEXIMAGE3DEXTPROC)vvDynLib::glSym("glTexImage3D");
-  if (glTexImage3DEXT==NULL) extTex3d = false;
-#else
-  glTexImage3DEXT = (PFNGLTEXIMAGE3DEXTPROC)vvDynLib::glSym("glTexImage3DEXT");
-  if (glTexImage3DEXT==NULL) extTex3d = false;
-#endif
-  glTexSubImage3DEXT = (PFNGLTEXSUBIMAGE3DEXTPROC)vvDynLib::glSym("glTexSubImage3D");
-  if (glTexSubImage3DEXT==NULL) extTex3d = false;
-  glColorTableSGI = (PFNGLCOLORTABLESGIPROC)vvDynLib::glSym("glColorTableSGI");
-  if (glColorTableSGI==NULL) extColLUT = false;
-  glColorTableEXT = (PFNGLCOLORTABLEEXTPROC)vvDynLib::glSym("glColorTableEXT");
-  if (glColorTableEXT==NULL) extPalTex = false;
-  if (extBlendEquation) glBlendEquationVV = (PFNGLBLENDEQUATIONEXTPROC)vvDynLib::glSym("glBlendEquationEXT");
-  else glBlendEquationVV = (PFNGLBLENDEQUATIONPROC)vvDynLib::glSym("glBlendEquation");
-  glActiveTextureARB = (PFNGLACTIVETEXTUREARBPROC)vvDynLib::glSym("glActiveTextureARB");
-  if (glActiveTextureARB==NULL)
+  if (_numThreads == 0)
   {
-     extTexShd = false;
-     arbMltTex = false;
+    // Init glew.
+    glewInit();
   }
-  glMultiTexCoord3fARB = (PFNGLMULTITEXCOORD3FARBPROC)vvDynLib::glSym("glMultiTexCoord3fARB");
-  if (glMultiTexCoord3fARB==NULL) arbMltTex = false;
-  glGenProgramsARB = (PFNGLGENPROGRAMSARBPROC)vvDynLib::glSym("glGenProgramsARB");
-  if(glGenProgramsARB==NULL) arbFrgPrg = false;
-  glBindProgramARB = (PFNGLBINDPROGRAMARBPROC)vvDynLib::glSym("glBindProgramARB");
-  if(glBindProgramARB==NULL) arbFrgPrg = false;
-  glDeleteProgramsARB = (PFNGLDELETEPROGRAMSARBPROC)vvDynLib::glSym("glDeleteProgramsARB");
-  if(glDeleteProgramsARB==NULL) arbFrgPrg = false;
-  glProgramStringARB = (PFNGLPROGRAMSTRINGARBPROC)vvDynLib::glSym("glProgramStringARB");
-  if(glProgramStringARB==NULL) arbFrgPrg = false;
-#else                                           // not WIN32
-  if (extBlendEquation) glBlendEquationVV = (glBlendEquationEXT_type*)vvDynLib::glSym("glBlendEquationEXT");
-  else glBlendEquationVV = (glBlendEquationEXT_type*)vvDynLib::glSym("glBlendEquation");
-#ifdef GL_VERSION_1_2
-  glTexImage3DEXT = (glTexImage3DEXT_type*)vvDynLib::glSym("glTexImage3D");
-  if (glTexImage3DEXT==NULL) extTex3d = false;
-  glTexSubImage3DEXT = (glTexSubImage3DEXT_type*)vvDynLib::glSym("glTexSubImage3D");
-  if (glTexSubImage3DEXT==NULL) extTex3d = false;
-#else
-  glTexImage3DEXT = (glTexImage3DEXT_type*)vvDynLib::glSym("glTexImage3DEXT");
-  if (glTexImage3DEXT==NULL) extTex3d = false;
-  glTexSubImage3DEXT = (glTexSubImage3DEXT_type*)vvDynLib::glSym("glTexSubImage3DEXT");
-  if (glTexSubImage3DEXT==NULL) extSubTex3d = false;
-#endif
-  glColorTableSGI = (glColorTableSGI_type*)vvDynLib::glSym("glColorTableSGI");
-  if (glColorTableSGI==NULL) extColLUT = false;
-  glColorTableEXT = (glColorTableEXT_type*)vvDynLib::glSym("glColorTableEXT");
-  if (glColorTableEXT==NULL) extPalTex = false;
-  glMultiTexCoord3fARB = (glMultiTexCoord3fARB_type*)vvDynLib::glSym("glMultiTexCoord3fARB");
-  if (glMultiTexCoord3fARB==NULL) arbMltTex = false;
-  glActiveTextureARB = (glActiveTextureARB_type*)vvDynLib::glSym("glActiveTextureARB");
-  if (glActiveTextureARB==NULL)
-  {
-     extTexShd = false;
-     arbMltTex = false;
-  }
-  glGenProgramsARB = (glGenProgramsARB_type*)vvDynLib::glSym("glGenProgramsARB");
-  if(glGenProgramsARB==NULL) arbFrgPrg = false;
-  glDeleteProgramsARB = (glDeleteProgramsARB_type*)vvDynLib::glSym("glDeleteProgramsARB");
-  if(glDeleteProgramsARB==NULL) arbFrgPrg = false;
-  glBindProgramARB = (glBindProgramARB_type*)vvDynLib::glSym("glBindProgramARB");
-  if(glBindProgramARB==NULL) arbFrgPrg = false;
-  glProgramStringARB = (glProgramStringARB_type*)vvDynLib::glSym("glProgramStringARB");
-  if(glProgramStringARB==NULL) arbFrgPrg = false;
-#endif
 
   // Determine best rendering algorithm for current hardware:
   voxelType = findBestVoxelType(vox);
@@ -1568,6 +1566,9 @@ vvTexRend::ErrorType vvTexRend::setDisplayNames(const char** displayNames, const
 
 vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
 {
+#ifdef _WIN32
+  return UNSUPPORTED;
+#else
   ErrorType err = OK;
   int i;
   int attrList[] = { GLX_RGBA , GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8};
@@ -1652,6 +1653,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     pthread_create(&_threads[i], NULL, threadFuncTexBricks, (void*)&_threadData[i]);
   }
   return err;
+#endif
 }
 
 /*!
@@ -2800,18 +2802,14 @@ void vvTexRend::setGLenvironment()
       break;
     default: break;
   }
-
-  if (glBlendEquationVV)
+  switch (_renderState._mipMode)
   {
-    switch (_renderState._mipMode)
-    {
-                                                  // alpha compositing
-      case 0: glBlendEquationVV(GL_FUNC_ADD); break;
-      case 1: glBlendEquationVV(GL_MAX); break;   // maximum intensity projection
-      case 2: glBlendEquationVV(GL_MIN); break;   // minimum intensity projection
-      default: break;
-    }
-  }
+    // alpha compositing
+    case 0: glBlendEquation(GL_FUNC_ADD); break;
+    case 1: glBlendEquation(GL_MAX); break;   // maximum intensity projection
+    case 2: glBlendEquation(GL_MIN); break;   // minimum intensity projection
+    default: break;
+}
   vvDebugMsg::msg(3, "vvTexRend::setGLenvironment() done");
 }
 
@@ -2839,7 +2837,7 @@ void vvTexRend::unsetGLenvironment()
   glDepthMask(glsDepthMask);
   glDepthFunc(glsDepthFunc);
   glBlendFunc(glsBlendSrc, glsBlendDst);
-  if (glBlendEquationVV) glBlendEquationVV(glsBlendEquation);
+  glBlendEquation(glsBlendEquation);
   glMatrixMode(glsMatrixMode);
   vvDebugMsg::msg(3, "vvTexRend::unsetGLenvironment() done");
 }
@@ -3627,6 +3625,9 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
  */
 void* vvTexRend::threadFuncTexBricks(void* threadargs)
 {
+#ifdef _WIN32
+  return NULL;
+#else
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
 
   if (!glXMakeCurrent(data->display, data->drawable, data->glxContext))
@@ -3665,6 +3666,9 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // is performed, i.e. on the sequential path of the program rather than in
     // a parallel callback.
     pthread_barrier_wait(data->initBarrier);
+
+	// Init glew.
+    glewInit();	
 
     /////////////////////////////////////////////////////////
     // Make textures.
@@ -3854,6 +3858,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     delete stopwatch;
   }
   pthread_exit(NULL);
+#endif
 }
 
 /** Partially renders the volume data set. Only renders the outlines!
@@ -3862,6 +3867,9 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
  */
 void* vvTexRend::threadFuncBricks(void* threadargs)
 {
+#ifdef _WIN32
+  return NULL;
+#else
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
 
   if (!glXMakeCurrent(data->display, data->drawable, data->glxContext))
@@ -4054,6 +4062,7 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
     delete stopwatch;
   }
   pthread_exit(NULL);
+#endif
 }
 
 /** Renders the outline of the bricks, but not the volume data set.
@@ -5794,7 +5803,7 @@ void vvTexRend::updateLUT(float dist)
     vvDebugMsg::msg(3, "vvTexRend::isSupported()");
     switch(feature)
     {
-      case VV_MIP: if (glBlendEquationVV) return true; else return false;
+      case VV_MIP: return true;
       default: assert(0); break;
     }
     return false;

@@ -5,7 +5,7 @@ TEMPLATE    = lib
                     
 PROJECT     = General
 
-CONFIG	   *= dll dl cg pthread x11 wnoerror
+CONFIG	   *= dll dl cg pthread x11 glew wnoerror 
 
 SRCDIR = $${BASEDIR}/src/kernel/virvo
 

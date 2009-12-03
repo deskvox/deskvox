@@ -18,6 +18,14 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+// Glew:
+
+// No circular dependencies between gl.h and glew.h
+#ifndef GLEW_INCLUDED
+#include <GL/glew.h>
+#define GLEW_INCLUDED
+#endif
+
 #include <iostream>
 #include <iomanip>
 
@@ -31,7 +39,6 @@
 #endif
 
 #include "../vvopengl.h"
-#include "../vvglext.h"
 
 #include "../vvdynlib.h"
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -94,39 +101,8 @@ vvTexMultiRend::vvTexMultiRend(vvVolDesc* vd, vvRenderState renderState, Geometr
   extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax");
   extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation");
 
-
-#if defined(_WIN32)
-
-  if (extBlendEquation) glBlendEquationVV = (PFNGLBLENDEQUATIONEXTPROC)vvDynLib::glSym("glBlendEquationEXT");
-  else glBlendEquationVV = (PFNGLBLENDEQUATIONPROC)vvDynLib::glSym("glBlendEquation");
-#ifdef GL_VERSION_1_2
-  glTexImage3DEXT = (PFNGLTEXIMAGE3DEXTPROC)vvDynLib::glSym("glTexImage3D");
-  if (glTexImage3DEXT==NULL) extTex3d = false;
-#else 
-  glTexImage3DEXT = (PFNGLTEXIMAGE3DEXTPROC)vvDynLib::glSym("glTexImage3DEXT");
-  if (glTexImage3DEXT==NULL) extTex3d = false;
-#endif
-  glTexSubImage3DEXT = (PFNGLTEXSUBIMAGE3DEXTPROC)vvDynLib::glSym("glTexSubImage3D");
-  if (glTexSubImage3DEXT==NULL) extTex3d = false;
-
-#else                                           // not WIN32
-
-  if (extBlendEquation) glBlendEquationVV = (glBlendEquationEXT_type*)vvDynLib::glSym("glBlendEquationEXT");
-  else glBlendEquationVV = (glBlendEquationEXT_type*)vvDynLib::glSym("glBlendEquation");
-
-#ifdef GL_VERSION_1_2
-  glTexImage3DEXT = (glTexImage3DEXT_type*)vvDynLib::glSym("glTexImage3D");
-  if (glTexImage3DEXT==NULL) extTex3d = false;
-  glTexSubImage3DEXT = (glTexSubImage3DEXT_type*)vvDynLib::glSym("glTexSubImage3D");
-  if (glTexSubImage3DEXT==NULL) extTex3d = false;
-#else   // ifdef GL_VERSION_1_2
-  glTexImage3DEXT = (glTexImage3DEXT_type*)vvDynLib::glSym("glTexImage3DEXT");
-  if (glTexImage3DEXT==NULL) extTex3d = false;
-  glTexSubImage3DEXT = (glTexSubImage3DEXT_type*)vvDynLib::glSym("glTexSubImage3DEXT");
-  if (glTexSubImage3DEXT==NULL) extSubTex3d = false;
-#endif  // end of GL_VERSION_1_2
-
-#endif  // end of #if defined(_WIN32)
+  // Init glew.
+  glewInit();
 
   // Determine best rendering algorithm for current hardware:
 #ifdef NDEBUG
