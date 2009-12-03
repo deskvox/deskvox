@@ -5,7 +5,7 @@ TEMPLATE           = lib
                     
 PROJECT            = General
 
-CONFIG	          *= dll dl cg pthread wnoerror
+CONFIG	          *= dll dl cg glew pthread wnoerror
 unix:!macx:CONFIG *= x11
 osx11:CONFIG      *= x11
 
