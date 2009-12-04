@@ -5629,7 +5629,7 @@ void vvTexRend::updateLUT(float dist)
   if (_renderState._emptySpaceLeaping)
   {
     // Empty-space leaping only for 'ordinary' transfer function lookup.
-    if ((voxelType != VV_PIX_SHD) || (_currentShader == 0))
+    if ((voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12))
     {
       // Determine visibility of each single brick
       _sortedList.first();
