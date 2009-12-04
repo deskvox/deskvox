@@ -83,7 +83,7 @@ public:
     texels[2] = rhs->texels[2];
     dist = rhs->dist;
   }
-
+#ifdef HAVE_CG
   void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
@@ -91,6 +91,12 @@ public:
               CGparameter* cgVertices, CGparameter cgBrickMin,
               CGparameter cgBrickDimInv, CGparameter cgFrontIndex,
               CGparameter cgPlaneStart);
+#else
+  void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
+              const vvVector3& farthest, const vvVector3& delta,
+              const vvVector3& probeMin, const vvVector3& probeMax,
+              GLuint*& texNames, GLuint**& vertIndices, GLsizei*& elemCounts);
+#endif
 
   virtual vvAABB getAABB()
   {
@@ -354,11 +360,11 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     ErrorType makeTextures(GLuint*& privateTexNames, int* numTextures);
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures);
+#ifdef HAVE_CG
     bool initPixelShaders(CGcontext& cgContext, CGprogram*& cgProgram);
     void enableLUTMode(CGprogram*& cgProgram, CGparameter& cgPixLUT);
     void disableLUTMode(CGparameter& cgPixLUT);
     void enableIntersectionShader(CGprogram& cgIsectProgram, CGprofile& cgIsectProfile);
-    void disableIntersectionShader();
     void enablePixelShaders(CGprogram*& cgProgram, CGparameter& cgPixLUT);
     void disablePixelShaders(CGparameter& cgPixLUT);
     bool initIntersectionShader(CGcontext& cgIsectContext,
@@ -375,6 +381,18 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
                                        CGparameter& cgDelta, CGparameter& cgPlaneNormal,
                                        CGparameter& cgFrontIndex, CGparameter& cgVertexList,
                                        CGparameter*& cgVertices);
+#else
+    bool initPixelShaders();
+    void enableLUTMode();
+    void disableLUTMode();
+    void enableIntersectionShader();
+    void enablePixelShaders();
+    void disablePixelShaders();
+    void disableIntersectionShaders();
+    bool initIntersectionShader();
+#endif
+    void disableIntersectionShader();
+
     ErrorType makeTextures3D();
     void removeTextures();
     ErrorType updateTextures3D(int, int, int, int, int, int, bool);

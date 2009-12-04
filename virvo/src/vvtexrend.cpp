@@ -49,7 +49,9 @@
 #include "vvopengl.h"
 
 // Used for debugging only.
+#ifdef HAVE_CG
 #define HAVE_CG_TMP
+#endif
 
 #include "vvdynlib.h"
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -141,6 +143,7 @@ struct ThreadArgs
   pthread_mutex_t* makeTextureMutex;          ///< mutex ensuring that textures for each thread are built up synchronized
 };
 
+#ifdef HAVE_CG
 void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
                    const vvVector3& probeMin, const vvVector3& probeMax,
@@ -148,6 +151,12 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    CGparameter* cgVertices, CGparameter cgBrickMin,
                    CGparameter cgBrickDimInv, CGparameter cgFrontIndex,
                    CGparameter cgPlaneStart)
+#else
+void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
+                   const vvVector3& farthest, const vvVector3& delta,
+                   const vvVector3& probeMin, const vvVector3& probeMax,
+                   GLuint*& texNames, GLuint**& vertIndices, GLsizei*& elemCounts)
+#endif
 {
   vvVector3 dist = max;
   dist.sub(&min);
@@ -606,7 +615,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   {
     if (voxelType==VV_PIX_SHD)
     {
+#ifdef HAVE_CG
       if (!initPixelShaders(_cgContext, _cgProgram))
+#else
+      if (!initPixelShaders())
+#endif
       {
         voxelType = VV_RGBA;
       }
@@ -2843,7 +2856,11 @@ void vvTexRend::unsetGLenvironment()
 }
 
 //----------------------------------------------------------------------------
+#ifdef HAVE_CG
 void vvTexRend::enableLUTMode(CGprogram*& cgProgram, CGparameter& cgPixLUT)
+#else
+void vvTexRend::enableLUTMode()
+#endif
 {
   switch(voxelType)
   {
@@ -2854,7 +2871,9 @@ void vvTexRend::enableLUTMode(CGprogram*& cgProgram, CGparameter& cgPixLUT)
       enableNVShaders();
       break;
     case VV_PIX_SHD:
+#ifdef HAVE_CG
       enablePixelShaders(cgProgram, cgPixLUT);
+#endif
       break;
     case VV_SGI_LUT:
       glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -2869,7 +2888,11 @@ void vvTexRend::enableLUTMode(CGprogram*& cgProgram, CGparameter& cgPixLUT)
 }
 
 //----------------------------------------------------------------------------
+#ifdef HAVE_CG
 void vvTexRend::disableLUTMode(CGparameter& cgPixLUT)
+#else
+void vvTexRend::disableLUTMode()
+#endif
 {
   switch(voxelType)
   {
@@ -2880,7 +2903,9 @@ void vvTexRend::disableLUTMode(CGparameter& cgPixLUT)
       disableNVShaders();
       break;
     case VV_PIX_SHD:
+#ifdef HAVE_CG
       disablePixelShaders(cgPixLUT);
+#endif
       break;
     case VV_SGI_LUT:
       if (glsTexColTable==(uchar)true) glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -3599,9 +3624,14 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
         continue;
       }
 
+#ifdef HAVE_CG
       tmp->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
                   texNames, vertIndices, elemCounts,
                   _cgVertices, _cgBrickMin, _cgBrickDimInv, _cgFrontIndex, _cgPlaneStart);
+#else
+      tmp->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
+                  texNames, vertIndices, elemCounts);
+#endif
       if (!_sortedList.next()) break;
     }
 
@@ -3636,6 +3666,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
   }
   else
   {
+#ifdef HAVE_CG
     CGcontext cgContext;                            // one cg context for each thread
     CGprogram* cgProgram;                           // a list of cg programs for each thread
     CGparameter cgPixLUT;
@@ -3652,6 +3683,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     CGparameter cgVertexList;
     CGparameter cgFrontIndex;
     CGparameter cgPlaneStart;
+#endif
 
     vvStopwatch* stopwatch;
 
@@ -3674,8 +3706,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // Make textures.
     /////////////////////////////////////////////////////////
     pthread_mutex_lock(data->makeTextureMutex);
+#ifdef HAVE_CG
     cgProgram = new CGprogram[NUM_PIXEL_SHADERS];
     data->renderer->initPixelShaders(cgContext, cgProgram);
+#endif
     data->renderer->texelsize=4;
     data->renderer->internalTexFormat = GL_RGBA;
     data->renderer->texFormat = GL_RGBA;
@@ -3759,7 +3793,11 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
       pthread_barrier_wait(data->renderStartBarrier);
+#ifdef HAVE_CG
       data->renderer->enableLUTMode(cgProgram, cgPixLUT);
+#else
+      data->renderer->enableLUTMode();
+#endif
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
@@ -3812,6 +3850,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       while ((tmp = data->sortedList.getData()) != 0)
       {
+#ifdef HAVE_CG
         tmp->render(data->renderer, data->numSlices, data->normal,
                     data->farthest, data->delta,
                     data->probeMin, data->probeMax,
@@ -3819,6 +3858,13 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                     vertIndices, elemCounts,
                     cgVertices, cgBrickMin, cgBrickDimInv,
                     cgFrontIndex, cgPlaneStart);
+#else
+        tmp->render(data->renderer, data->numSlices, data->normal,
+                    data->farthest, data->delta,
+                    data->probeMin, data->probeMax,
+                    data->privateTexNames,
+                    vertIndices, elemCounts);
+#endif
 
         if (!data->sortedList.next())
         {
@@ -3826,7 +3872,12 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         }
       }glFlush();
       glDisable(GL_TEXTURE_3D_EXT);
+#ifdef HAVE_CG
       data->renderer->disableLUTMode(cgPixLUT);
+#else
+      data->renderer->disableLUTMode();
+#endif
+
 #ifdef HAVE_CG_TMP
       delete[] vertIndices;
       delete[] vertIndicesTmp;
@@ -3853,8 +3904,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     // Exited render loop - perform cleanup.
     //data->texRend->removeTextures(privateTexNames);
+#ifdef HAVE_CG
     delete[] cgProgram;
     delete[] cgVertices;
+#endif
     delete stopwatch;
   }
   pthread_exit(NULL);
@@ -3878,9 +3931,11 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
   }
   else
   {
+#ifdef HAVE_CG
     CGcontext cgContext;                            // one cg context for each thread
     CGprogram* cgProgram;                           // a list of cg programs for each thread
     CGparameter cgPixLUT;
+#endif
     vvStopwatch* stopwatch;
 
     /////////////////////////////////////////////////////////
@@ -3899,8 +3954,12 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
     // Make textures.
     /////////////////////////////////////////////////////////
     pthread_mutex_lock(data->makeTextureMutex);
+#ifdef HAVE_CG
     cgProgram = new CGprogram[NUM_PIXEL_SHADERS];
     data->renderer->initPixelShaders(cgContext, cgProgram);
+#else
+    data->renderer->initPixelShaders();
+#endif
     data->renderer->texelsize=4;
     data->renderer->internalTexFormat = GL_RGBA;
     data->renderer->texFormat = GL_RGBA;
@@ -3940,7 +3999,11 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
       pthread_barrier_wait(data->renderStartBarrier);
+#ifdef HAVE_CG
       data->renderer->enableLUTMode(cgProgram, cgPixLUT);
+#else
+      data->renderer->enableLUTMode();
+#endif
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
@@ -4040,7 +4103,11 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
         if (!data->halfSpace->getObjects()->next()) break;
       }
       glDisable(GL_TEXTURE_3D_EXT);
+#ifdef HAVE_CG
       data->renderer->disableLUTMode(cgPixLUT);
+#else
+      data->renderer->disableLUTMode();
+#endif
 
       // When all worker threads and the main thread have waited once (per frame) on
       // this barrier, all workers have finished rendering this frame and the main
@@ -4058,7 +4125,9 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
 
     // Exited render loop - perform cleanup.
     //data->texRend->removeTextures(privateTexNames);
+#ifdef HAVE_CG
     delete[] cgProgram;
+#endif
     delete stopwatch;
   }
   pthread_exit(NULL);
@@ -4344,7 +4413,9 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   else
   {
     // Volume render a 3D texture:
+#ifdef HAVE_CG
     cgGLDisableProfile(_cgFragProfile[_currentShader]);
+#endif
     while ((tmp = _sortedList.getData()) != 0)
     {
       drawn = 0;
@@ -5267,7 +5338,11 @@ void vvTexRend::renderVolumeGL()
   {
     if (geomType == VV_BRICKS && !_renderState._showBricks)
     {
+#ifdef HAVE_CG
       enableIntersectionShader(_cgIsectProgram, _cgIsectProfile);
+#else
+      enableIntersectionShader();
+#endif
     }
   }
 
@@ -5316,7 +5391,11 @@ void vvTexRend::renderVolumeGL()
 
   if (_numThreads == 0)
   {
+#ifdef HAVE_CG
     enableLUTMode(_cgProgram, _cgPixLUT);
+#else
+    enableLUTMode();
+#endif
   }
 
   switch (geomType)
@@ -5336,7 +5415,11 @@ void vvTexRend::renderVolumeGL()
 
   if (_numThreads == 0)
   {
+#ifdef HAVE_CG
     disableLUTMode(_cgPixLUT);
+#else
+    disableLUTMode();
+#endif
     unsetGLenvironment();
     disableIntersectionShader();
   }
@@ -5992,8 +6075,12 @@ void vvTexRend::updateLUT(float dist)
 #endif
 
   //----------------------------------------------------------------------------
+#ifdef HAVE_CG
   void vvTexRend::enablePixelShaders(CGprogram*& cgProgram, CGparameter& cgPixLUT)
-  {
+#else
+  void vvTexRend::enablePixelShaders()
+#endif
+  {_currentShader = 12;
 #ifdef HAVE_CG
     if(VV_PIX_SHD == voxelType)
     {
@@ -6028,7 +6115,11 @@ void vvTexRend::updateLUT(float dist)
   }
 
   //----------------------------------------------------------------------------
+#ifdef HAVE_CG
   void vvTexRend::disablePixelShaders(CGparameter& cgPixLUT)
+#else
+  void vvTexRend::disablePixelShaders()
+#endif
   {
 #ifdef HAVE_CG
     if(VV_PIX_SHD == voxelType)
@@ -6040,7 +6131,11 @@ void vvTexRend::updateLUT(float dist)
   }
 
   //----------------------------------------------------------------------------
+#ifdef HAVE_CG
   void vvTexRend::enableIntersectionShader(CGprogram& cgIsectProgram, CGprofile& cgIsectProfile)
+#else
+  void vvTexRend::enableIntersectionShader()
+#endif
   {
 #ifdef HAVE_CG_TMP
     cgGLLoadProgram(cgIsectProgram);
@@ -6061,7 +6156,11 @@ void vvTexRend::updateLUT(float dist)
   //----------------------------------------------------------------------------
   /** @return true if initialization successful
    */
+#ifdef HAVE_CG
   bool vvTexRend::initPixelShaders(CGcontext& cgContext, CGprogram*& cgProgram)
+#else
+  bool vvTexRend::initPixelShaders()
+#endif
   {
 #ifdef HAVE_CG
 #ifdef _WIN32
@@ -6178,6 +6277,7 @@ void vvTexRend::updateLUT(float dist)
   //----------------------------------------------------------------------------
   /** @return true if initialization successful
    */
+#ifdef HAVE_CG
   bool vvTexRend::initIntersectionShader(CGcontext& cgIsectContext,
                                          CGprofile& cgIsectProfile,
                                          CGprogram& cgIsectProgram,
@@ -6186,6 +6286,9 @@ void vvTexRend::updateLUT(float dist)
                                          CGparameter& cgDelta, CGparameter& cgPlaneNormal,
                                          CGparameter& cgFrontIndex, CGparameter& cgVertexList,
                                          CGparameter*& cgVertices)
+#else
+  bool vvTexRend::initIntersectionShader()
+#endif
   {
 #ifdef HAVE_CG_TMP
 #ifdef _WIN32
@@ -6266,6 +6369,7 @@ void vvTexRend::updateLUT(float dist)
     return true;
   }
 
+#ifdef HAVE_CG
   void vvTexRend::setupIntersectionCGParameters(CGprogram& cgIsectProgram,
                                                 CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
                                                 CGparameter& cgModelViewProj, CGparameter& cgPlaneStart,
@@ -6419,6 +6523,7 @@ void vvTexRend::updateLUT(float dist)
        cgVertices[i] = cgGetArrayParameter(cgVertexList, i);
     }
   }
+#endif
 
   //----------------------------------------------------------------------------
   void vvTexRend::printLUT()
