@@ -30,5 +30,5 @@ vconv_SOURCES = \
 
 vconv deskvox: ../../virvo/src/libvirvo.a
 
-INCLUDES = $(FOX_INCLUDES) -I../../virvo/src  $(CG_INCLUDES) $(STINGRAY_INCLUDES) 
-LIBS = $(FOX_LIBS) -L../../virvo/src -lvirvo  $(CG_LIBS) $(STINGRAY_LIBS)
+INCLUDES = $(FOX_INCLUDES) -I../../virvo/src  $(CG_INCLUDES) $(GLEW_INCLUDES) $(STINGRAY_INCLUDES) 
+LIBS = $(FOX_LIBS) -L../../virvo/src -lvirvo  $(CG_LIBS) $(GLEW_LIBS) $(STINGRAY_LIBS)
