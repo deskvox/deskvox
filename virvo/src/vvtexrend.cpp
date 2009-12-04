@@ -6080,7 +6080,7 @@ void vvTexRend::updateLUT(float dist)
 #else
   void vvTexRend::enablePixelShaders()
 #endif
-  {_currentShader = 12;
+  {
 #ifdef HAVE_CG
     if(VV_PIX_SHD == voxelType)
     {
