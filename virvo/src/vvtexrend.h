@@ -44,10 +44,6 @@
 // Posix threads:
 #include <pthread.h>
 
-// TODO: reasonable determination of these values.
-#define WIDTH 512
-#define HEIGHT 512
-
 struct ThreadArgs;
 
 class vvTexRend;

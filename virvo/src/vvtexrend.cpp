@@ -83,6 +83,10 @@
 
 // The following values will have to be approved empirically yet... .
 
+// TODO: reasonable determination of these values.
+#define WIDTH 512
+#define HEIGHT 512
+
 // Redistribute bricks if rendering time deviation > MAX_DEVIATION %
 #define MAX_DEVIATION 10.0f
 // Don't redistribute bricks for peaks, but rather for constant deviation.
