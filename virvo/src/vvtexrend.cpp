@@ -3764,7 +3764,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
                               tex, 0);
     GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
