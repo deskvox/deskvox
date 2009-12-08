@@ -43,6 +43,7 @@ class vvVisitor;
 class vvVisitable
 {
 public:
+  virtual ~vvVisitable() {}
   virtual void accept(vvVisitor* visitor) = 0;
 private:
 };
@@ -62,6 +63,7 @@ private:
 class vvVisitor
 {
 public:
+  virtual ~vvVisitor() {}
   virtual void visit(vvVisitable* obj) = 0;
 private:
 };

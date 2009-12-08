@@ -126,6 +126,8 @@ private:
 class vvConvexObj
 {
 public:
+   virtual ~vvConvexObj() {}
+
   /*!
    * \brief         Get the axis aligned bounding box of this object.
    *
