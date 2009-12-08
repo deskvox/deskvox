@@ -54,10 +54,19 @@
 #endif
 
 #include "vvdynlib.h"
+
 #if !defined(_WIN32) && !defined(__APPLE__)
+#define HAVE_X11
+#endif
+
+#if !defined(_WIN32)
 #include <dlfcn.h>
+#endif
+
+#ifdef HAVE_X11
 #include <GL/glx.h>
 #endif
+
 #ifdef HAVE_CG
   #include <Cg/cg.h>
   #include <Cg/cgGL.h>
@@ -126,7 +135,7 @@ struct ThreadArgs
   float lastRenderTime;                       ///< measured for dynamic load balancing
   float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
 
-#ifndef _WIN32
+#ifdef HAVE_X11
   // Glx rendering specific.
   GLXContext glxContext;                      ///< the initial glx context
   Display* display;						      ///< a pointer to the current glx display
@@ -1583,7 +1592,7 @@ vvTexRend::ErrorType vvTexRend::setDisplayNames(const char** displayNames, const
 
 vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
 {
-#ifdef _WIN32
+#ifndef HAVE_X11
   return UNSUPPORTED;
 #else
   ErrorType err = OK;
@@ -3659,7 +3668,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
  */
 void* vvTexRend::threadFuncTexBricks(void* threadargs)
 {
-#ifdef _WIN32
+#ifndef HAVE_X11
   return NULL;
 #else
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
@@ -3924,7 +3933,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
  */
 void* vvTexRend::threadFuncBricks(void* threadargs)
 {
-#ifdef _WIN32
+#ifndef HAVE_X11
   return NULL;
 #else
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
