@@ -43,6 +43,11 @@
 
 // Posix threads:
 #include <pthread.h>
+// xlib:
+#ifndef WIN32
+#include <GL/glx.h>
+#include <X11/Xlib.h>
+#endif
 
 #ifdef __APPLE__
 /* these are not available on OS X:
