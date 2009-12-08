@@ -48,11 +48,6 @@
 /* these are not available on OS X:
  * they are only used together with X11, so this should not matter too much */
 typedef struct pthread_barrier_t_ { int dummy; } pthread_barrier_t;
-typedef struct pthead_barrierattr_t_ { int dummy; } pthread_barrierattr_t;
-static int pthread_barrier_wait(pthread_barrier_t *barrier) { return 1; }
-static int pthread_barrier_init(pthread_barrier_t *barrier,
-                    const pthread_barrierattr_t *attr, unsigned count) { return 1; }
-static int pthread_barrier_destroy(pthread_barrier_t *barrier) { return 1; }
 #endif
 
 struct ThreadArgs;
