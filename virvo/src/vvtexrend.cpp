@@ -5648,32 +5648,35 @@ void vvTexRend::updateLUT(float dist)
     // Empty-space leaping only for 'ordinary' transfer function lookup.
     if ((voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12))
     {
-      // Determine visibility of each single brick
-      _sortedList.first();
-      Brick* tmp;
-      while ((tmp = _sortedList.getData()) != 0)
+      // Determine visibility of each single brick in all frames
+      _brickList.first();
+      while(vvSLList<Brick *> *frame = _brickList.getData())
       {
-        tmp->visible = false;
+         while (Brick *tmp = frame->getData())
+         {
+            tmp->visible = false;
 
-        // If max intensity projection, make all bricks visible.
-        if (_renderState._mipMode > 0)
-        {
-          tmp->visible = true;
-        }
-        else
-        {
-          for (i = tmp->minValue; i <= tmp->maxValue; ++i)
-          {
-            int val = (int)rgbaLUT[i * 4 + 3];
-
-            if (val > 0)
+            // If max intensity projection, make all bricks visible.
+            if (_renderState._mipMode > 0)
             {
-              tmp->visible = true;
-              break;
+               tmp->visible = true;
             }
-          }
-        }
-        if (!_sortedList.next()) break;
+            else
+            {
+               for (i = tmp->minValue; i <= tmp->maxValue; ++i)
+               {
+                  int val = (int)rgbaLUT[i * 4 + 3];
+
+                  if (val > 0)
+                  {
+                     tmp->visible = true;
+                     break;
+                  }
+               }
+            }
+            if (!frame->next()) break;
+         }
+         if (!_brickList.next()) break;
       }
     }
   }
