@@ -4431,7 +4431,8 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   {
     // Volume render a 3D texture:
 #ifdef HAVE_CG
-    cgGLDisableProfile(_cgFragProfile[_currentShader]);
+    if(voxelType == VV_PIX_SHD)
+      cgGLDisableProfile(_cgFragProfile[_currentShader]);
 #endif
     while ((tmp = _sortedList.getData()) != 0)
     {
