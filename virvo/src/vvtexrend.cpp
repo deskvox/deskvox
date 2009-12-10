@@ -40,12 +40,6 @@
 #include <string.h>
 #endif
 
-#if defined(__linux) || defined(LINUX)
-// xlib:
-#include <GL/glx.h>
-#include <X11/Xlib.h>
-#endif
-
 #include "vvopengl.h"
 
 // Used for debugging only.
@@ -63,8 +57,10 @@
 #include <dlfcn.h>
 #endif
 
+// xlib:
 #ifdef HAVE_X11
 #include <GL/glx.h>
+#include <X11/Xlib.h>
 #endif
 
 #ifdef HAVE_CG
