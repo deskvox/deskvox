@@ -21,7 +21,7 @@
 #ifndef VVBSPTREE_H
 #define VVBSPTREE_H
 
-#include "vvsllist.h"
+#include <vector>
 #include "vvvecmath.h"
 #include "vvvisitor.h"
 
@@ -248,7 +248,7 @@ public:
    *                Set the list of objects this partial space contains.
    * \param         objects An array with pointers to convex objects.
    */
-  void setObjects(vvSLList<vvConvexObj*>* objects);
+  void setObjects(std::vector<vvConvexObj*> *objects);
   /*!
    * \brief         Set percent of parent space this one occupies.
    *
@@ -294,7 +294,7 @@ public:
    *                Get the list of objects this partial space contains.
    * \return        An array with pointers to convex objects.
    */
-  vvSLList<vvConvexObj*>* getObjects() const;
+  std::vector<vvConvexObj*> *getObjects() const;
   /*!
    * \brief         Get percent of parent space this one occupies.
    *
@@ -330,7 +330,7 @@ private:
   vvHalfSpace* _nextBrother;
 
   vvPlane* _splitPlane;
-  vvSLList<vvConvexObj*>* _objects;
+  std::vector<vvConvexObj*> *_objects;
   float _percent;
   float _actualPercent;
 };
@@ -366,7 +366,7 @@ public:
    * \param         percent1 The share for half space 1.
    * \param         percent2 The share for half space 2.
    */
-  static vvHalfSpace* getAABBHalfSpaces(vvSLList<vvConvexObj*>* objects,
+  static vvHalfSpace* getAABBHalfSpaces(std::vector<vvConvexObj*> *objects,
                                         const float percent1, const float percent2);
 private:
 };
@@ -382,7 +382,7 @@ private:
 class vvBspTree
 {
 public:
-  vvBspTree(float* partitioning, const int length, vvSLList<vvConvexObj*>* objects);
+  vvBspTree(float* partitioning, const int length, std::vector<vvConvexObj*>* objects);
   virtual ~vvBspTree();
 
   void traverse(const vvVector3& pos);
@@ -393,7 +393,7 @@ public:
    *                Get a list with pointers to the leafs.
    * \return        A list with pointers to the leafs.
    */
-  vvSLList<vvHalfSpace*>* getLeafs() const;
+  std::vector<vvHalfSpace*> *getLeafs() const;
   /*!
    * \brief         Visualize tree using text console.
    *
@@ -414,7 +414,7 @@ public:
   void setVisitor(vvVisitor* visitor);
 private:
   vvHalfSpace* _root;
-  vvSLList<vvHalfSpace*>* _leafs;
+  std::vector<vvHalfSpace*> *_leafs;
   vvVisitor* _visitor;
 
   /*!
@@ -431,7 +431,7 @@ private:
    */
   void buildHierarchy(vvHalfSpace* node, float* partitioning, const int length,
                       const int startIdx, const int endIdx);
-  void distributeObjects(vvHalfSpace* node, vvSLList<vvConvexObj*>* objects);
+  void distributeObjects(vvHalfSpace* node, std::vector<vvConvexObj*> *objects);
   void print(vvHalfSpace* node, const int indent);
   void traverse(const vvVector3& pos, vvHalfSpace* node);
 };

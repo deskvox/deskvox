@@ -27,6 +27,8 @@
 #endif
 #endif
 
+#include <vector>
+
 // Cg:
 #ifdef HAVE_CG
 #include <Cg/cg.h>
@@ -38,7 +40,6 @@
 #include "vvvoldesc.h"
 #include "vvrenderer.h"
 #include "vvtransfunc.h"
-#include "vvsllist.h"
 #include "vvbsptree.h"
 
 // Posix threads:
@@ -311,9 +312,10 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool opacityCorrection;                       ///< true = opacity correction on
     int  minSlice, maxSlice;                      ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
     bool _areBricksCreated;                       ///< true after the first creation of the bricks
-    vvSLList<vvSLList<Brick*>*> _brickList;       ///< contains all created bricks
-    vvSLList<vvConvexObj*> _insideList;                 ///< contains all bricks inside the probe
-    vvSLList<Brick*> _sortedList;                 ///< contains all bricks inside the probe in a sorted order (back to front)
+    typedef std::vector<Brick *> BrickList;
+    std::vector<BrickList> _brickList;            ///< contains all created bricks for all frames
+    std::vector<vvConvexObj *> _insideList;       ///< contains all bricks inside the probe
+    BrickList _sortedList;                        ///< contains all bricks inside the probe in a sorted order (back to front)
     bool _useOnlyOneBrick;                        ///< true if whole data fits in texture memory
     vvVector4 _frustum[6];                        ///< current planes of view frustum
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures

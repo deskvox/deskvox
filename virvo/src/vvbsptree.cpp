@@ -18,6 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include <set>
+
 #include "vvbsptree.h"
 #include "vvopengl.h"
 #include "vvtoolshed.h"
@@ -260,7 +262,7 @@ void vvHalfSpace::setSplitPlane(vvPlane* splitPlane)
   _splitPlane = splitPlane;
 }
 
-void vvHalfSpace::setObjects(vvSLList<vvConvexObj*>* objects)
+void vvHalfSpace::setObjects(std::vector<vvConvexObj*>* objects)
 {
   _objects = objects;
 }
@@ -290,7 +292,7 @@ vvPlane* vvHalfSpace::getSplitPlane() const
   return _splitPlane;
 }
 
-vvSLList<vvConvexObj*>* vvHalfSpace::getObjects() const
+std::vector<vvConvexObj*>* vvHalfSpace::getObjects() const
 {
   return _objects;
 }
@@ -307,17 +309,15 @@ float vvHalfSpace::getActualPercent() const
 
 float vvHalfSpace::calcContainedVolume() const
 {
-  vvConvexObj* tmp;
   float w, h, d;
 
   w = h = d = 0.0f;
-  _objects->first();
-  while ((tmp = _objects->getData()) != NULL)
+  for(std::vector<vvConvexObj *>::iterator it = _objects->begin(); it != _objects->end(); ++it)
   {
+    vvConvexObj *tmp = *it;
     w += tmp->getAABB().calcWidth();
     h += tmp->getAABB().calcHeight();
     d += tmp->getAABB().calcDepth();
-    if (!_objects->next()) break;
   }
   return w * h * d;
 }
@@ -325,7 +325,7 @@ float vvHalfSpace::calcContainedVolume() const
 //============================================================================
 // vvSpacePartitioner Method Definitions
 //============================================================================
-vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(vvSLList<vvConvexObj*>* objects,
+vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *objects,
                                                    const float percent1, const float percent2)
 {
   vvHalfSpace* result = new vvHalfSpace[2];
@@ -369,12 +369,14 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(vvSLList<vvConvexObj*>* objec
   max[2] = -FLT_MAX;
   min[2] = FLT_MAX;
 
-  tmpArray = new vvConvexObj*[objects->count()];
+  tmpArray = new vvConvexObj*[objects->size()];
   i = 0;
 
-  objects->first();
-  while ((tmp = objects->getData()) != NULL)
+  for(std::vector<vvConvexObj *>::iterator it = objects->begin();
+      it != objects->end();
+      ++it)
   {
+    tmp = *it;
     tmpf = tmp->getAABB().calcMaxExtend(vvVector3(1, 0, 0));
     if (tmpf > max[0])
     {
@@ -413,9 +415,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(vvSLList<vvConvexObj*>* objec
 
     tmpArray[i] = tmp;
     ++i;
-
-    if (!objects->next()) break;
-  }
+}
 
   // Get w, h and d.
   for (i = 0; i < 3; ++i)
@@ -424,49 +424,23 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(vvSLList<vvConvexObj*>* objec
   }
 
   // Calc the obj count along each axis.
-  cnt[0] = cnt[1] = cnt[2] = 0;
-  vvSLList<vvConvexObj*> copy;
   for (i = 0; i < 3; ++i)
   {
-    objects->first();
-    while ((tmp = objects->getData()) != NULL)
+    std::set<float> vals;
+    for(std::vector<vvConvexObj *>::iterator it = objects->begin();
+      it != objects->end();
+      ++it)
     {
-      copy.append(tmp, vvSLNode<vvConvexObj*>::NO_DELETE);
-      if (!objects->next()) break;
+      vals.insert((*it)->getAABB().calcCenter().e[i]);
     }
-
-    copy.first();
-    while (!copy.isEmpty())
-    {
-      tmp = copy.getData();
-
-      // Find the next value.
-      float val = tmp->getAABB().calcCenter().e[i];
-      ++cnt[i];
-      copy.first();
-
-      // Remove all items of this value from the tmp list.
-      // Thus they aren't counted again.
-      while ((tmp = copy.getData()) != NULL)
-      {
-        if (tmp->getAABB().calcCenter().e[i] == val)
-        {
-          // Remove will implicitly iterate on ==> no next().
-          copy.remove();
-        }
-        else
-        {
-          if (!copy.next()) break;
-        }
-      }
-    }
+    cnt[i] = vals.size();
   }
 
   // Reconstruct the 3D grid. This is done since generally the assumption isn't
   // valid that each obj occupies the same volume (determined through its aabb).
 
   // Sort overall array by x-axis.
-  vvConvexObj::sortByCenter(tmpArray, objects->count(), vvVector3(1, 0, 0));
+  vvConvexObj::sortByCenter(tmpArray, objects->size(), vvVector3(1, 0, 0));
 
   vvConvexObj*** dimX = new vvConvexObj**[cnt[0]];
 
@@ -643,20 +617,21 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(vvSLList<vvConvexObj*>* objec
   result[1].setSplitPlane(new vvPlane(pnt, n2));
 
   // Finally distribute pointers to the objects.
-  result[0].setObjects(new vvSLList<vvConvexObj*>());
-  result[1].setObjects(new vvSLList<vvConvexObj*>());
-  objects->first();
-  while ((tmp = objects->getData()) != NULL)
+  result[0].setObjects(new std::vector<vvConvexObj*>());
+  result[1].setObjects(new std::vector<vvConvexObj*>());
+  for(std::vector<vvConvexObj *>::iterator it = objects->begin();
+    it != objects->end();
+    ++it)
   {
+    vvConvexObj *tmp = *it;
     if (tmp->getAABB().calcCenter().e[splitAxis] < pnt.e[splitAxis])
     {
-      result[0].getObjects()->append(tmp, vvSLNode<vvConvexObj*>::NO_DELETE);
+      result[0].getObjects()->push_back(tmp);
     }
     else
     {
-      result[1].getObjects()->append(tmp, vvSLNode<vvConvexObj*>::NO_DELETE);
+      result[1].getObjects()->push_back(tmp);
     }
-    if (!objects->next()) break;
   }
 
   // Clean up.
@@ -678,12 +653,12 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(vvSLList<vvConvexObj*>* objec
 // vvBspTree Method Definitions
 //============================================================================
 
-vvBspTree::vvBspTree(float* partitioning, const int length, vvSLList<vvConvexObj*>* objects)
+vvBspTree::vvBspTree(float* partitioning, const int length, std::vector<vvConvexObj*>* objects)
 {
   _root = new vvHalfSpace;
   _root->setPercent(100.0f);
   buildHierarchy(_root, partitioning, length, 0, length - 1);
-  _leafs = new vvSLList<vvHalfSpace*>();
+  _leafs = new std::vector<vvHalfSpace*>();
   distributeObjects(_root, objects);
   _root->_actualPercent = 100.0f;
 }
@@ -700,7 +675,7 @@ void vvBspTree::traverse(const vvVector3& pos)
   traverse(pos, _root);
 }
 
-vvSLList<vvHalfSpace*>* vvBspTree::getLeafs() const
+std::vector<vvHalfSpace*>* vvBspTree::getLeafs() const
 {
   return _leafs;
 }
@@ -773,7 +748,7 @@ void vvBspTree::buildHierarchy(vvHalfSpace* node, float* partitioning, const int
   }
 }
 
-void vvBspTree::distributeObjects(vvHalfSpace* node, vvSLList<vvConvexObj*>* objects)
+void vvBspTree::distributeObjects(vvHalfSpace* node, std::vector<vvConvexObj*>* objects)
 {
   // No leaf?
   if (node->getFirstSon() != NULL)
@@ -799,7 +774,7 @@ void vvBspTree::distributeObjects(vvHalfSpace* node, vvSLList<vvConvexObj*>* obj
   {
     // Leafs store objects.
     node->setObjects(objects);
-    _leafs->append(node, vvSLNode<vvHalfSpace*>::NO_DELETE);
+    _leafs->push_back(node);
   }
 }
 
@@ -824,7 +799,7 @@ void vvBspTree::print(vvHalfSpace* node, const int indent)
     {
       std::cerr << " ";
     }
-    std::cerr << "# objects: " << node->getObjects()->count() << std::endl;
+    std::cerr << "# objects: " << node->getObjects()->size() << std::endl;
     for (i = 0; i < indent; ++i)
     {
       std::cerr << " ";
