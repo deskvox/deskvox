@@ -5533,45 +5533,6 @@ void vvTexRend::updateLUT(float dist)
     }
   }
 
-  // Each bricks visible flag was initially set to true.
-  // If empty-space leaping isn't active, all bricks are
-  // visible by default.
-  if (_renderState._emptySpaceLeaping)
-  {
-    // Empty-space leaping only for 'ordinary' transfer function lookup.
-    if ((voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12))
-    {
-      // Determine visibility of each single brick in all frames
-      for(int frame = 0; frame < _brickList.size(); ++frame)
-      {
-         for(BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
-         {
-            Brick *tmp = *it;
-            tmp->visible = false;
-
-            // If max intensity projection, make all bricks visible.
-            if (_renderState._mipMode > 0)
-            {
-               tmp->visible = true;
-            }
-            else
-            {
-               for (i = tmp->minValue; i <= tmp->maxValue; ++i)
-               {
-                  int val = (int)rgbaLUT[i * 4 + 3];
-
-                  if (val > 0)
-                  {
-                     tmp->visible = true;
-                     break;
-                  }
-               }
-            }
-         }
-      }
-    }
-  }
-
   // Copy LUT to graphics card:
   vvGLTools::printGLError("enter updateLUT()");
   switch (voxelType)
@@ -5614,6 +5575,45 @@ void vvTexRend::updateLUT(float dist)
     default: assert(0); break;
   }
   vvGLTools::printGLError("leave updateLUT()");
+
+  // Each bricks visible flag was initially set to true.
+  // If empty-space leaping isn't active, all bricks are
+  // visible by default.
+  if (_renderState._emptySpaceLeaping)
+  {
+    // Empty-space leaping only for 'ordinary' transfer function lookup.
+    if ((voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12))
+    {
+      // Determine visibility of each single brick in all frames
+      for(int frame = 0; frame < _brickList.size(); ++frame)
+      {
+         for(BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
+         {
+            Brick *tmp = *it;
+            tmp->visible = false;
+
+            // If max intensity projection, make all bricks visible.
+            if (_renderState._mipMode > 0)
+            {
+               tmp->visible = true;
+            }
+            else
+            {
+               for (i = tmp->minValue; i <= tmp->maxValue; ++i)
+               {
+                  int val = (int)rgbaLUT[i * 4 + 3];
+
+                  if (val > 0)
+                  {
+                     tmp->visible = true;
+                     break;
+                  }
+               }
+            }
+         }
+      }
+    }
+  }
 }
 
   //----------------------------------------------------------------------------
