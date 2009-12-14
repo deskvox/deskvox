@@ -3463,7 +3463,7 @@ void vvVolDesc::makeSliceImage(int frame, AxisType axis, int slice, uchar* dst)
       switch(bpc)
       {
         case 1: voxelVal = float(sliceData[srcOffset]) / 255.0f; break;
-        case 2: voxelVal = float(int(sliceData[srcOffset]) * 255 + int(sliceData[srcOffset + 1])) / 65535.0f; break;
+        case 2: voxelVal = float(int(sliceData[srcOffset]) * 256 + int(sliceData[srcOffset + 1])) / 65535.0f; break;
         case 4: voxelVal = ((*((float*)(sliceData+srcOffset))) - real[0]) / (real[1] - real[0]); break;
         default: assert(0); break;
       }
