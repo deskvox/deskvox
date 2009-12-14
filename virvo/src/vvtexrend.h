@@ -77,6 +77,8 @@ public:
     minValue = rhs->minValue;
     maxValue = rhs->maxValue;
     visible = rhs->visible;
+    atBorder = rhs->atBorder;
+    insideProbe = rhs->insideProbe;
     index = rhs->index;
     startOffset[0] = rhs->startOffset[0];
     startOffset[1] = rhs->startOffset[1];
@@ -104,7 +106,8 @@ public:
               const vvVector3& probeMin, const vvVector3& probeMax,
               GLuint*& texNames,
               CGparameter* cgVertices, CGparameter cgBrickMin,
-              CGparameter cgBrickDimInv, CGparameter cgFrontIndex);
+              CGparameter cgBrickDimInv, CGparameter cgFrontIndex,
+              bool setupEdges);
 #else
   void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
@@ -131,6 +134,8 @@ public:
   int minValue;                                     ///< min scalar value after lut, needed for empty space leaping
   int maxValue;                                     ///< max scalar value after lut, needed for empty space leaping
   bool visible;                                     ///< if brick isn't visible, it won't be rendered at all
+  bool insideProbe;                                 ///< true iff brick is completely included inside probe
+  bool atBorder;                                    ///< true iff brick at border is not fully used
   int index;                                        ///< index for texture object
   int startOffset[3];                               ///< startvoxel of brick
   int texels[3];                                    ///< number of texels in each dimension

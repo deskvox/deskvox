@@ -161,7 +161,7 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& probeMin, const vvVector3& probeMax,
                    GLuint*& texNames,
                    CGparameter* cgVertices, CGparameter cgBrickMin,
-                   CGparameter cgBrickDimInv, CGparameter cgFrontIndex)
+                   CGparameter cgBrickDimInv, CGparameter cgFrontIndex, bool setupEdges)
 #else
 void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
@@ -213,9 +213,13 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   float minDot;
   float maxDot;
   ushort idx = getFrontIndex(verts, texPoint, normal, minDot, maxDot);
-  for (int i = 0; i < 8; ++i)
+  cgGLSetParameter3f(cgVertices[0], verts[0].e[0], verts[0].e[1], verts[0].e[2]);
+  if(setupEdges)
   {
-    cgGLSetParameter3f(cgVertices[i], verts[i].e[0], verts[i].e[1], verts[i].e[2]);
+  for (int i = 1; i < 8; ++i)
+  {
+    cgGLSetParameter3f(cgVertices[i], verts[i].e[0]-verts[0].e[0], verts[i].e[1]-verts[0].e[1], verts[i].e[2]-verts[0].e[2]);
+  }
   }
 
   cgGLSetParameter4f(cgBrickMin, min[0], min[1], min[2], -texPoint.length());
@@ -1440,21 +1444,23 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
             bs[2] += 1;
           }
 
+          bool atBorder = false;
           for (int d = 0; d < 3; ++d)
           {
             minObj[d] = (float)startOffset[d] / (float)vd->vox[d];
             minObj[d] *= vd->getSize()[d];
-            if (minObj[d] > vd->getSize()[d]) minObj[d] = vd->getSize()[d];
+            if (minObj[d] > vd->getSize()[d]) { atBorder = true;  minObj[d] = vd->getSize()[d]; }
             minObj[d] -= vd->getSize()[d] * 0.5f;
 
             maxObj[d] = (float)(startOffset[d] + bs[d]) / (float)vd->vox[d];
             maxObj[d] *= vd->getSize()[d];
-            if (maxObj[d] > vd->getSize()[d]) maxObj[d] = vd->getSize()[d];
+            if (maxObj[d] > vd->getSize()[d]) { atBorder=true; maxObj[d] = vd->getSize()[d]; }
             maxObj[d] -= vd->getSize()[d] * 0.5f;
           }
 
           currBrick->minObj = minObj;
           currBrick->maxObj = maxObj;
+          currBrick->atBorder= atBorder;
 
           currBrick->index = texIndex;
           currBrick->pos.set(vd->pos[0] + voxSize[0] * (startOffset[0] + halfBrick[0] - halfVolume[0]),
@@ -3597,6 +3603,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     // Count empty-space leaped bricks.
     discarded = 0;
 
+    bool lastInsideProbe = false; // don't update brick edge vectors if they didn't change
     for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
     {
       if (!(*it)->visible)
@@ -3608,11 +3615,12 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 #ifdef HAVE_CG
       (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
                   texNames,
-                  _cgVertices, _cgBrickMin, _cgBrickDimInv, _cgFrontIndex);
+                  _cgVertices, _cgBrickMin, _cgBrickDimInv, _cgFrontIndex, !((*it)->insideProbe && lastInsideProbe));
 #else
       (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
                   texNames);
 #endif
+         lastInsideProbe = (*it)->insideProbe;
       }
     }
 
@@ -3833,7 +3841,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                     data->probeMin, data->probeMax,
                     data->privateTexNames,
                     cgVertices, cgBrickMin, cgBrickDimInv,
-                    cgFrontIndex);
+                    cgFrontIndex, true);
 #else
         tmp->render(data->renderer, data->numSlices, data->normal,
                     data->farthest, data->delta,
@@ -3841,7 +3849,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                     data->privateTexNames);
 #endif
       }
-      glFlush();
       glDisable(GL_TEXTURE_3D_EXT);
 #ifdef HAVE_CG
       data->renderer->disableLUTMode(cgPixLUT);
@@ -4393,6 +4400,8 @@ void vvTexRend::renderBricks(vvMatrix* mv)
     if(voxelType == VV_PIX_SHD)
       cgGLDisableProfile(_cgFragProfile[_currentShader]);
 #endif
+      glBegin(GL_LINES);
+      glColor4f(1.0, 1.0, 1.0, 1.0);
     for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
     {
       Brick *tmp = *it;
@@ -4411,8 +4420,6 @@ void vvTexRend::renderBricks(vvMatrix* mv)
           max.e[i] = tmp->max.e[i];
       }
 
-      glBegin(GL_LINES);
-      glColor4f(1.0, 1.0, 1.0, 1.0);
       glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
       glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
 
@@ -4448,12 +4455,10 @@ void vvTexRend::renderBricks(vvMatrix* mv)
 
       glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
       glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
-      glEnd();
-
-      glFlush();
 
       vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
     }
+      glEnd();
 
   }
   disableTexture(GL_TEXTURE_3D_EXT);
@@ -4700,6 +4705,12 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
       (tmp->min.e[2] <= max.e[2]) && (tmp->max.e[2] >= min.e[2]))
     {
       _insideList.push_back(tmp);
+      if ((tmp->min.e[0] >= min.e[0]) && (tmp->max.e[0] <= max.e[0]) &&
+        (tmp->min.e[1] >= min.e[1]) && (tmp->max.e[1] <= max.e[1]) &&
+        (tmp->min.e[2] >= min.e[2]) && (tmp->max.e[2] <= max.e[2]))
+        tmp->insideProbe = !tmp->atBorder;
+      else
+        tmp->insideProbe = false;
       ++countVisible;
     }
     else

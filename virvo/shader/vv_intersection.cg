@@ -29,7 +29,11 @@ void main(
     int vIdx2 = sequence[int(frontIndex * 8 + v2[vin.x*4+i])];
 
     float3 vecV1 = vertices[vIdx1];
+    if(vIdx1 != 0)
+       vecV1 += vertices[0];
     float3 vecV2 = vertices[vIdx2];
+    if(vIdx2 != 0)
+       vecV2 += vertices[0];
 
     float3 vecStart = vecV1;
     float3 vecDir = vecV2-vecV1;
