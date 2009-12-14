@@ -1888,7 +1888,7 @@ void vvTexRend::computeBrickSize()
   if (texMemorySize == 0)
   {
      vvDebugMsg::msg(1, "vvTexRend::computeBrickSize(): unknown texture memory size, assuming 32 M");
-     texMemorySize = 1;
+     texMemorySize = 32;
   }
 
   if (texMemorySize == 0)
@@ -1901,7 +1901,7 @@ void vvTexRend::computeBrickSize()
   powerOf2[1] = vvToolshed::getTextureSize(vd->vox[1]);
   powerOf2[2] = vvToolshed::getTextureSize(vd->vox[2]);
 
-  neededMemory = (powerOf2[0] * powerOf2[1] * powerOf2[2]) / (1024*1024) * texelsize;
+  neededMemory = (powerOf2[0] * powerOf2[1] * powerOf2[2]) / 1024 * texelsize / 1024;
 
   if (neededMemory < texMemorySize)
   {
@@ -1934,8 +1934,8 @@ void vvTexRend::computeBrickSize()
         }
       }
 
-      // compute needed memory for 27 bricks
-      neededMemory = newBrickSize[0] * newBrickSize[1] * newBrickSize[2] / (1024 * 1024) * texelsize * 27;
+      // compute needed memory for 27 bricks - even if we only have to fit one brick at a time
+      neededMemory = newBrickSize[0] * newBrickSize[1] * newBrickSize[2] / 1024 * texelsize * 27 / 1024;
       if (neededMemory < texMemorySize)
       {
         done = true;
