@@ -159,7 +159,7 @@ struct ThreadArgs
 void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
                    const vvVector3& probeMin, const vvVector3& probeMax,
-                   GLuint*& texNames, GLuint**& vertIndices, GLsizei*& elemCounts,
+                   GLuint*& texNames,
                    CGparameter* cgVertices, CGparameter cgBrickMin,
                    CGparameter cgBrickDimInv, CGparameter cgFrontIndex,
                    CGparameter cgPlaneStart)
@@ -167,7 +167,7 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
 void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
                    const vvVector3& probeMin, const vvVector3& probeMax,
-                   GLuint*& texNames, GLuint**& vertIndices, GLsizei*& elemCounts)
+                   GLuint*& texNames)
 #endif
 {
   vvVector3 dist = max;
@@ -233,31 +233,9 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
 
   int primCount = (endSlices - startSlices) + 1;
 
-  GLint* vertArray = new GLint[primCount * 12];
+  glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
+  glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
 
-  int idxIterator = 0;
-  int vertIterator = 0;
-  int primIterator = 0;
-  for (int i = startSlices; i <= endSlices; ++i)
-  {
-    elemCounts[primIterator] = 6;
-    for (int j = 0; j < 6; ++j)
-    {
-      vertIndices[primIterator][j] = idxIterator;
-      ++idxIterator;
-
-      vertArray[vertIterator] = j;
-      ++vertIterator;
-      vertArray[vertIterator] = i;
-      ++vertIterator;
-    }
-    ++primIterator;
-  }
-
-  glVertexPointer(2, GL_INT, 0, vertArray);
-  glMultiDrawElements(GL_POLYGON, elemCounts, GL_UNSIGNED_INT, (const GLvoid**)vertIndices, primCount);
-
-  delete[] vertArray;
   glDisableClientState(GL_VERTEX_ARRAY);
   }
   else
@@ -3482,6 +3460,8 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     }
   }
 
+  initVertArray(numSlices);
+
   getBricksInProbe(probePosObj, probeSizeObj);
 
   markBricksInFrustum();
@@ -3620,22 +3600,6 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     // Count empty-space leaped bricks.
     discarded = 0;
 
-    GLuint** vertIndices;
-    GLsizei* elemCounts;
-#ifdef HAVE_CG
-    // Allocate memory for 6 vertices per slice. These will
-    // be sent to the gpu later on. Memory is allocated here
-    // to avoid doing this in the inner loop
-    GLuint* vertIndicesTmp = new GLuint[numSlices * 6];
-    vertIndices = new GLuint*[numSlices];
-    elemCounts = new GLsizei[numSlices];
-    for (i = 0; i < numSlices; ++i)
-    {
-      vertIndices[i] = &vertIndicesTmp[i*6];
-      elemCounts[i] = 0;
-    }
-#endif
-
     for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
     {
       if (!(*it)->visible)
@@ -3646,20 +3610,14 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
       {
 #ifdef HAVE_CG
       (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
-                  texNames, vertIndices, elemCounts,
+                  texNames,
                   _cgVertices, _cgBrickMin, _cgBrickDimInv, _cgFrontIndex, _cgPlaneStart);
 #else
       (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
-                  texNames, vertIndices, elemCounts);
+                  texNames);
 #endif
       }
     }
-
-#ifdef HAVE_CG
-    delete[] vertIndices;
-    delete[] vertIndicesTmp;
-    delete[] elemCounts;
-#endif
 
     vvDebugMsg::msg(3, "Bricks discarded: ", discarded);
   }
@@ -3878,15 +3836,13 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                     data->farthest, data->delta,
                     data->probeMin, data->probeMax,
                     data->privateTexNames,
-                    vertIndices, elemCounts,
                     cgVertices, cgBrickMin, cgBrickDimInv,
                     cgFrontIndex, cgPlaneStart);
 #else
         tmp->render(data->renderer, data->numSlices, data->normal,
                     data->farthest, data->delta,
                     data->probeMin, data->probeMax,
-                    data->privateTexNames,
-                    vertIndices, elemCounts);
+                    data->privateTexNames);
 #endif
       }
       glFlush();
@@ -6705,6 +6661,35 @@ void vvTexRend::updateLUT(float dist)
 
     return dist;
   }
+
+void vvTexRend::initVertArray(int numSlices)
+{
+  if(_elemCounts.size() >= numSlices)
+    return;
+
+  _elemCounts.resize(numSlices);
+  _vertIndices.resize(numSlices);
+  _vertIndicesAll.resize(numSlices*6);
+  _vertArray.resize(numSlices*12);
+
+  int idxIterator = 0;
+  int vertIterator = 0;
+  for (int i = 0; i < numSlices; ++i)
+  {
+    _elemCounts[i] = 6;
+    _vertIndices[i] = &_vertIndicesAll[i*6];
+    for (int j = 0; j < 6; ++j)
+    {
+      _vertIndices[i][j] = idxIterator;
+      ++idxIterator;
+
+      _vertArray[vertIterator] = j;
+      ++vertIterator;
+      _vertArray[vertIterator] = i;
+      ++vertIterator;
+    }
+  }
+}
 
   //============================================================================
   // End of File

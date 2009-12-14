@@ -102,7 +102,7 @@ public:
   void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, GLuint**& vertIndices, GLsizei*& elemCounts,
+              GLuint*& texNames,
               CGparameter* cgVertices, CGparameter cgBrickMin,
               CGparameter cgBrickDimInv, CGparameter cgFrontIndex,
               CGparameter cgPlaneStart);
@@ -110,7 +110,7 @@ public:
   void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, GLuint**& vertIndices, GLsizei*& elemCounts);
+              GLuint*& texNames);
 #endif
 
   virtual vvAABB getAABB()
@@ -218,6 +218,10 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     pthread_barrier_t _renderReadyBarrier;        ///< barrier assures that bricks aren't sorted until the previous frame was rendered
     pthread_mutex_t _makeTextureMutex;            ///< mutex ensuring that textures for each thread are build up synchronized
 
+    std::vector<GLint> _vertArray;
+    std::vector<GLsizei> _elemCounts;
+    std::vector<GLuint> _vertIndicesAll;
+    std::vector<GLuint *> _vertIndices;
     GLuint* _frameBufferObjects;
     GLuint* _depthBuffers;
     GLuint* _imageSpaceTextures;                  ///< each thread will overlay the current output with a 2D texture of its px buffer
@@ -445,6 +449,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&);
     void getBricksInProbe(vvVector3, vvVector3);
     void computeBrickSize();
+    void initVertArray(int numSlices);
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST);
     virtual ~vvTexRend();
