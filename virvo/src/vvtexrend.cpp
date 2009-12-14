@@ -538,11 +538,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two");
 
-  if (_numThreads == 0)
-  {
-    // Init glew.
-    glewInit();
-  }
+  // Init glew.
+  glewInit();
 
   // Determine best rendering algorithm for current hardware:
   voxelType = findBestVoxelType(vox);
