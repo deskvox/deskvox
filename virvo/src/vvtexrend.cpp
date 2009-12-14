@@ -5626,6 +5626,7 @@ void vvTexRend::updateLUT(float dist)
       _brickList.first();
       while(vvSLList<Brick *> *frame = _brickList.getData())
       {
+         frame->first();
          while (Brick *tmp = frame->getData())
          {
             tmp->visible = false;
