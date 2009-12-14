@@ -1878,9 +1878,6 @@ int vvTexRend::getTexMemorySize()
 
 void vvTexRend::computeBrickSize()
 {
-  int powerOf2[3];
-  int max;
-  int neededMemory;
   vvVector3 probeSize;
   int newBrickSize[3];
 
@@ -1897,56 +1894,29 @@ void vvTexRend::computeBrickSize()
     return;
   }
 
-  powerOf2[0] = vvToolshed::getTextureSize(vd->vox[0]);
-  powerOf2[1] = vvToolshed::getTextureSize(vd->vox[1]);
-  powerOf2[2] = vvToolshed::getTextureSize(vd->vox[2]);
-
-  neededMemory = (powerOf2[0] * powerOf2[1] * powerOf2[2]) / 1024 * texelsize / 1024;
-
-  if (neededMemory < texMemorySize)
+  // this has been tested to be optimal on a Quadro FX570m
+  _useOnlyOneBrick = true;
+  for(int i=0; i<3; ++i)
   {
-    // use only one brick
-    _useOnlyOneBrick = true;
-    newBrickSize[0] = powerOf2[0];
-    newBrickSize[1] = powerOf2[1];
-    newBrickSize[2] = powerOf2[2];
+    newBrickSize[i] = vvToolshed::getTextureSize(vd->vox[i]);
+    if(newBrickSize[i] > 64)
+    {
+      newBrickSize[i] = 64;
+      _useOnlyOneBrick = false;
+    }
+  }
+  if(newBrickSize[1] > 16)
+  {
+    newBrickSize[1] = 16;
+    _useOnlyOneBrick = false;
+  }
+
+  if(_useOnlyOneBrick)
+  {
     setROIEnable(false);
   }
   else
   {
-    _useOnlyOneBrick = false;
-
-    max = ts_max(vd->vox[0], vd->vox[1], vd->vox[2]);
-
-    int tmp[3] = { vd->vox[0], vd->vox[1], vd->vox[2] };
-    bool done = false;
-    while (!done)
-    {
-      int i = 0;
-      int maxSize = -1;
-      for(int j=0; j<3; ++j)
-      {
-        newBrickSize[j] = vvToolshed::getTextureSize(tmp[j]);
-        if(maxSize < newBrickSize[j])
-        {
-          i = j;
-          maxSize = newBrickSize[j];
-        }
-      }
-
-      // compute needed memory for 27 bricks - even if we only have to fit one brick at a time
-      neededMemory = newBrickSize[0] * newBrickSize[1] * newBrickSize[2] / 1024 * texelsize * 27 / 1024;
-      if (neededMemory < texMemorySize)
-      {
-        done = true;
-        break;
-      }
-
-      tmp[i] = newBrickSize[i] / 2;
-      if(tmp[i] < 1)
-         tmp[i] = 1;
-    }
-
     probeSize[0] = 2 * (newBrickSize[0]-1) / (float) vd->vox[0];
     probeSize[1] = 2 * (newBrickSize[1]-1) / (float) vd->vox[1];
     probeSize[2] = 2 * (newBrickSize[2]-1) / (float) vd->vox[2];
