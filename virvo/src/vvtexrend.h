@@ -438,6 +438,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void disableTexture(GLenum target);
     bool testBrickVisibility(Brick* brick, const vvMatrix& mvpMat);
     bool testBrickVisibility(Brick*);
+    bool intersectsFrustum(const vvVector3 &min, const vvVector3 &max);
+    bool insideFrustum(const vvVector3 &min, const vvVector3 &max);
     void markBricksInFrustum();
     void updateFrustum();
     void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&);

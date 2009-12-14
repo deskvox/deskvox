@@ -4548,7 +4548,31 @@ void vvTexRend::updateFrustum()
     clip.e[3][2]-clip.e[2][2], clip.e[3][3]-clip.e[2][3]);
 }
 
-bool vvTexRend::testBrickVisibility(Brick* brick)
+bool vvTexRend::insideFrustum(const vvVector3 &min, const vvVector3 &max)
+{
+  vvVector3 pv, normal;
+
+  // get p-vertex (that's the farthest vertex in the direction of the normal plane
+  for (int i = 0; i < 6; i++)
+  {
+    normal.set(_frustum[i][0], _frustum[i][1], _frustum[i][2]);
+
+    for(int j = 0; j < 8; ++j)
+    {
+      for(int c = 0; c < 3; ++c)
+        pv[c] = (j & (1<<c)) ? min[c] : max[c];
+
+      if ((pv.dot(&normal) + _frustum[i][3]) < 0)
+      {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+bool vvTexRend::intersectsFrustum(const vvVector3 &min, const vvVector3 &max)
 {
   vvVector3 pv, normal;
 
@@ -4556,17 +4580,17 @@ bool vvTexRend::testBrickVisibility(Brick* brick)
   for (int i = 0; i < 6; i++)
   {
     if (_frustum[i][0] > 0.0)
-      pv[0] = brick->max[0];
+      pv[0] = max[0];
     else
-      pv[0] = brick->min[0];
+      pv[0] = min[0];
     if (_frustum[i][1] > 0.0)
-      pv[1] = brick->max[1];
+      pv[1] = max[1];
     else
-      pv[1] = brick->min[1];
+      pv[1] = min[1];
     if (_frustum[i][2] > 0.0)
-      pv[2] = brick->max[2];
+      pv[2] = max[2];
     else
-      pv[2] = brick->min[2];
+      pv[2] = min[2];
 
     normal.set(_frustum[i][0], _frustum[i][1], _frustum[i][2]);
 
@@ -4577,6 +4601,11 @@ bool vvTexRend::testBrickVisibility(Brick* brick)
   }
 
   return true;
+}
+
+bool vvTexRend::testBrickVisibility(Brick* brick)
+{
+  return intersectsFrustum(brick->min, brick->max);
 }
 
 bool vvTexRend::testBrickVisibility(Brick* brick, const vvMatrix& mvpMat)
@@ -4669,10 +4698,19 @@ void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, v
 
 void vvTexRend::markBricksInFrustum()
 {
+  vvVector3 probePosObj, probeSizeObj, probeMin, probeMax;
+  calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
+
   updateFrustum();
 
+  bool inside = insideFrustum(probeMin, probeMax);
+  bool outside = !intersectsFrustum(probeMin, probeMax);
+  
   for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
-    (*it)->visible = testBrickVisibility( *it );
+    if(inside || outside)
+      (*it)->visible = inside;
+    else
+      (*it)->visible = testBrickVisibility( *it );
 }
 
 void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
