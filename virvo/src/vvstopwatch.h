@@ -72,6 +72,19 @@ class VIRVOEXPORT vvStopwatch
     float getTime();
     float getDiff();
 };
+
+class VIRVOEXPORT vvTimer
+{
+  public:
+    vvTimer(const char *label);
+    ~vvTimer();
+  private:
+    const char *label;
+    vvStopwatch watch;
+};
+
+#define TIME_BLOCK vvTimer automatic_timer(__PRETTY_FUNCTION__)
+
 #endif
 
 //============================================================================

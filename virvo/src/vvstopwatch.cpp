@@ -22,6 +22,8 @@
 #include <windows.h>                              // required for QueryPerformance API
 #endif
 
+#include <iostream>
+
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -114,6 +116,17 @@ float vvStopwatch::getDiff()
 {
   float last = lastTime;
   return getTime() - last;
+}
+
+vvTimer::vvTimer(const char *label)
+: label(label)
+{
+  watch.start();
+}
+
+vvTimer::~vvTimer()
+{
+  std::cerr << label << ": " << watch.getTime()*1000. << " ms" << std::endl;
 }
 
 //============================================================================
