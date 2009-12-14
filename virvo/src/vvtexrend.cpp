@@ -513,7 +513,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #endif
   _useOnlyOneBrick = false;
   _areBricksCreated = false;
+  _lastFrame = -1;
   lutDistance = -1.0;
+  _renderState._isROIChanged = true;
 
   // Find out which OpenGL extensions are supported:
 #if defined(GL_VERSION_1_2) && defined(__APPLE__)
@@ -680,12 +682,12 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
       _areBricksCreated = false;
       computeBrickSize();
     }
-    updateTransferFunction();
 
     if (voxelType != VV_RGBA)
     {
       makeTextures(texNames, &textures);                             // we only have to do this once for non-RGBA textures
     }
+    updateTransferFunction();
   }
   else
   {
@@ -1950,7 +1952,62 @@ void vvTexRend::updateTransferFunction()
   getLUTSize(size);
   vd->computeTFTexture(size[0], size[1], size[2], rgbaTF);
 
-  updateLUT(1.0f);                                // generate color/alpha lookup table
+  if(!instantClassification())
+    updateLUT(1.0f);                                // generate color/alpha lookup table
+  else
+    lutDistance = -1.;                              // invalidate LUT
+
+  // Each bricks visible flag was initially set to true.
+  // If empty-space leaping isn't active, all bricks are
+  // visible by default.
+  if (_renderState._emptySpaceLeaping)
+  {
+     int nbricks = 0, nvis=0;
+    // Empty-space leaping only for 'ordinary' transfer function lookup.
+    if ((voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12))
+    {
+      _nonemptyList.clear();
+      _nonemptyList.resize(_brickList.size());
+      // Determine visibility of each single brick in all frames
+      for(int frame = 0; frame < _brickList.size(); ++frame)
+      {
+         for(BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
+         {
+            Brick *tmp = *it;
+            nbricks++;
+
+            // If max intensity projection, make all bricks visible.
+            if (_renderState._mipMode > 0)
+            {
+               _nonemptyList[frame].push_back(tmp);
+               nvis++;
+            }
+            else
+            {
+               for (int i = tmp->minValue; i <= tmp->maxValue; ++i)
+               {
+                  if(rgbaTF[i * 4 + 3] > 0.)
+                  {
+                     _nonemptyList[frame].push_back(tmp);
+                     nvis++;
+                     break;
+                  }
+               }
+            }
+         }
+      }
+    }
+    else
+    {
+      _nonemptyList = _brickList;
+    }
+  }
+  else
+  {
+    _nonemptyList = _brickList;
+  }
+
+  _renderState._isROIChanged = true; // have to update list of visible bricks
 
   //printLUT();
 }
@@ -3302,7 +3359,11 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     // Use alpha correction in indexed mode: adapt alpha values to number of textures:
     if (instantClassification())
     {
-      updateLUT(diagonalVoxels / float(numSlices));
+      float thickness = diagonalVoxels / float(numSlices);
+      if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
+      {
+        updateLUT(thickness);
+      }
     }
   }
 
@@ -3422,6 +3483,8 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   }
 
   getBricksInProbe(probePosObj, probeSizeObj);
+
+  markBricksInFrustum();
 
   if (_numThreads > 0)
   {
@@ -4253,6 +4316,8 @@ void vvTexRend::renderBricks(vvMatrix* mv)
 
   getBricksInProbe(probePosObj, probeSizeObj);
 
+  markBricksInFrustum();
+
   if (_numThreads > 0)
   {
     for (i = 0; i < _numThreads; ++i)
@@ -4506,7 +4571,9 @@ bool vvTexRend::testBrickVisibility(Brick* brick)
     normal.set(_frustum[i][0], _frustum[i][1], _frustum[i][2]);
 
     if ((pv.dot(&normal) + _frustum[i][3]) < 0)
+    {
       return false;
+    }
   }
 
   return true;
@@ -4600,8 +4667,22 @@ void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, v
   }
 }
 
+void vvTexRend::markBricksInFrustum()
+{
+  updateFrustum();
+
+  for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
+    (*it)->visible = testBrickVisibility( *it );
+}
+
 void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
 {
+  if(!_renderState._isROIChanged && vd->getCurrentFrame() == _lastFrame)
+    return;
+
+  _lastFrame = vd->getCurrentFrame();
+  _renderState._isROIChanged = false;
+
   _insideList.clear();
 
   vvVector3 tmpVec = size;
@@ -4617,26 +4698,23 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
   //   getProjectionMatrix(&pMat);
   //   mvpMat = mvMat * pMat;
 
-  updateFrustum();
 
   int countVisible = 0, countInvisible = 0;
 
   int frame = vd->getCurrentFrame();
-  for(BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
+  for(BrickList::iterator it = _nonemptyList[frame].begin(); it != _nonemptyList[frame].end(); ++it)
   {
     Brick *tmp = *it;
     if ((tmp->min.e[0] <= max.e[0]) && (tmp->max.e[0] >= min.e[0]) &&
       (tmp->min.e[1] <= max.e[1]) && (tmp->max.e[1] >= min.e[1]) &&
       (tmp->min.e[2] <= max.e[2]) && (tmp->max.e[2] >= min.e[2]))
     {
-      //check if the brick is visible
-      if (testBrickVisibility(tmp))
-      {
-        countVisible++;
-        _insideList.push_back(tmp);
-      }
-      else
-        countInvisible++;
+      _insideList.push_back(tmp);
+      ++countVisible;
+    }
+    else
+    {
+      ++countInvisible;
     }
   }
   //        cerr << "Bricks visible: " << countVisible << " Bricks invisible: " << countInvisible << endl;
@@ -5575,45 +5653,6 @@ void vvTexRend::updateLUT(float dist)
     default: assert(0); break;
   }
   vvGLTools::printGLError("leave updateLUT()");
-
-  // Each bricks visible flag was initially set to true.
-  // If empty-space leaping isn't active, all bricks are
-  // visible by default.
-  if (_renderState._emptySpaceLeaping)
-  {
-    // Empty-space leaping only for 'ordinary' transfer function lookup.
-    if ((voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12))
-    {
-      // Determine visibility of each single brick in all frames
-      for(int frame = 0; frame < _brickList.size(); ++frame)
-      {
-         for(BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
-         {
-            Brick *tmp = *it;
-            tmp->visible = false;
-
-            // If max intensity projection, make all bricks visible.
-            if (_renderState._mipMode > 0)
-            {
-               tmp->visible = true;
-            }
-            else
-            {
-               for (i = tmp->minValue; i <= tmp->maxValue; ++i)
-               {
-                  int val = (int)rgbaLUT[i * 4 + 3];
-
-                  if (val > 0)
-                  {
-                     tmp->visible = true;
-                     break;
-                  }
-               }
-            }
-         }
-      }
-    }
-  }
 }
 
   //----------------------------------------------------------------------------

@@ -857,6 +857,7 @@ void vvRenderer::setObjectDirection(const vvVector3*)
 void vvRenderer::setROIEnable(bool flag)
 {
   vvDebugMsg::msg(1, "vvRenderer::setROIEnable()");
+  _renderState._isROIChanged = true;
   _renderState._isROIUsed = flag;
 }
 
@@ -872,6 +873,7 @@ bool vvRenderer::isROIEnabled()
 void vvRenderer::setProbePosition(const vvVector3* pos)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProbePosition()");
+  _renderState._isROIChanged = true;
   _renderState._roiPos.copy(pos);
 }
 
@@ -892,6 +894,7 @@ void vvRenderer::getProbePosition(vvVector3* pos)
 void vvRenderer::setProbeSize(vvVector3* newSize)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProbeSize()");
+  _renderState._isROIChanged = true;
   _renderState._roiSize.copy(newSize);
 }
 

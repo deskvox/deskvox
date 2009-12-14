@@ -314,12 +314,14 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool _areBricksCreated;                       ///< true after the first creation of the bricks
     typedef std::vector<Brick *> BrickList;
     std::vector<BrickList> _brickList;            ///< contains all created bricks for all frames
-    std::vector<vvConvexObj *> _insideList;       ///< contains all bricks inside the probe
+    std::vector<BrickList> _nonemptyList;         ///< contains all non-transparent bricks for all frames
+    std::vector<vvConvexObj *> _insideList;       ///< contains all non-empty bricks inside the probe
     BrickList _sortedList;                        ///< contains all bricks inside the probe in a sorted order (back to front)
     bool _useOnlyOneBrick;                        ///< true if whole data fits in texture memory
     vvVector4 _frustum[6];                        ///< current planes of view frustum
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     bool _proxyGeometryOnGpu;                     ///< indicate wether proxy geometry is to be computed on gpu
+    int _lastFrame;                               ///< last frame rendered
     
 #ifdef HAVE_CG
     CGcontext _cgContext;                         ///< context for running fragment program
@@ -436,6 +438,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void disableTexture(GLenum target);
     bool testBrickVisibility(Brick* brick, const vvMatrix& mvpMat);
     bool testBrickVisibility(Brick*);
+    void markBricksInFrustum();
     void updateFrustum();
     void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&);
     void getBricksInProbe(vvVector3, vvVector3);

@@ -48,6 +48,7 @@ class VIRVOEXPORT vvRenderState
     bool  _clipMode;                              ///< true = clipping plane enabled, false=disabled
     bool  _clipSingleSlice;                       ///< true = use single slice in clipping mode
     bool  _clipOpaque;                            ///< true = make single slice opaque
+    bool _isROIChanged;                           ///< true = roi related values have been changed
     vvVector3 _roiSize;                           ///< size of roi in each dimension [0..1]
     bool  _isROIUsed;                             ///< true = use roi
     vvVector3 _roiPos;                            ///< object space coordinates of ROI midpoint [mm]
