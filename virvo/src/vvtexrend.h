@@ -305,6 +305,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool _useOnlyOneBrick;                        ///< true if whole data fits in texture memory
     vvVector4 _frustum[6];                        ///< current planes of view frustum
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
+    bool _proxyGeometryOnGpu;                     ///< indicate wether proxy geometry is to be computed on gpu
     
 #ifdef HAVE_CG
     CGcontext _cgContext;                         ///< context for running fragment program

@@ -106,7 +106,8 @@ class VIRVOEXPORT vvRenderer
       VV_MIN_SLICE,                               ///< minimum slice index to render
       VV_MAX_SLICE,                               ///< maximum slice index to render
       VV_BINNING,                                 ///< binning type (linear, iso-value, opacity)
-      VV_SLICEORIENT                              ///< slice orientation for planer 3d textures
+      VV_SLICEORIENT,                             ///< slice orientation for planer 3d textures
+      VV_GPUPROXYGEO,                             ///< compute proxy geometry on GPU
     };
     enum BasicColorType                           /// basic colors
     {

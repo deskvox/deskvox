@@ -41,12 +41,6 @@
 #endif
 
 #include "vvopengl.h"
-
-// Used for debugging only.
-#ifdef HAVE_CG
-#define HAVE_CG_TMP
-#endif
-
 #include "vvdynlib.h"
 
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -182,8 +176,11 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
 
   vvVector3 texPoint;
   texPoint.copy(&farthest);
-#ifdef HAVE_CG_TMP
-  (void)renderer;
+#ifdef HAVE_CG
+  if(renderer->_proxyGeometryOnGpu)
+  {
+  // XXX
+  glEnableClientState(GL_VERTEX_ARRAY);
   (void)numSlices;
   // Clip probe object to brick extends.
   vvVector3 minObjClipped;
@@ -260,9 +257,11 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   glMultiDrawElements(GL_POLYGON, elemCounts, GL_UNSIGNED_INT, (const GLvoid**)vertIndices, primCount);
 
   delete[] vertArray;
-
-#else
-
+  glDisableClientState(GL_VERTEX_ARRAY);
+  }
+  else
+#endif
+  {
   vvVector3 maxClipped;
   vvVector3 minClipped;
   for (int i = 0; i < 3; i++)
@@ -329,7 +328,7 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
     }
     glEnd();
   }
-#endif
+  }
 }
 
 /** Get front index of the brick based upon the current modelview matrix.
@@ -535,6 +534,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   extPixShd = false;
 #endif
   arbFrgPrg = isSupported(VV_FRG_PRG);
+  _proxyGeometryOnGpu = extPixShd && arbFrgPrg;
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two");
 
@@ -708,7 +708,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     pthread_barrier_wait(&_distributedBricksBarrier);
   }
 
-#ifdef HAVE_CG_TMP
+#ifdef HAVE_CG
   _cgVertices = new CGparameter[8];
   initIntersectionShader(_cgIsectContext, _cgIsectProfile, _cgIsectProgram,
                          _cgBrickMin, _cgBrickDimInv, _cgModelViewProj,
@@ -718,7 +718,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
                                 _cgBrickMin, _cgBrickDimInv, _cgModelViewProj,
                                 _cgPlaneStart, _cgDelta, _cgPlaneNormal,
                                 _cgFrontIndex, _cgVertexList, _cgVertices);
-  glEnableClientState(GL_VERTEX_ARRAY);
   glGenBuffers(1, &_vbos[0]);
   glGenBuffers(1, &_vbos[1]);
 #endif
@@ -759,7 +758,7 @@ vvTexRend::~vvTexRend()
   delete[] _cgFragProfile;
 #endif
 
-#ifdef HAVE_CG_TMP
+#ifdef HAVE_CG
   cgGLDisableProfile(_cgIsectProfile);
   cgDestroyContext(_cgIsectContext);
   glDisableClientState(GL_VERTEX_ARRAY);
@@ -3402,9 +3401,8 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   // Compute farthest point to draw texture at:
   farthest.copy(&delta);
   farthest.scale((float)(numSlices - 1) / -2.0f);
-#ifndef HAVE_CG_TMP
-  farthest.add(&probePosObj);
-#endif
+  if(!_proxyGeometryOnGpu)
+    farthest.add(&probePosObj);
 
   vvVector3 temp, clipPosObj, normClipPoint;
   float maxDist;
@@ -3568,13 +3566,15 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   {
     // Volume render a 3D texture:
     enableTexture(GL_TEXTURE_3D_EXT);
-#ifdef HAVE_CG_TMP
-
+#ifdef HAVE_CG
+    if(_proxyGeometryOnGpu)
+    {
     // Per frame parameters.
     cgGLSetStateMatrixParameter(_cgModelViewProj, CG_GL_MODELVIEW_PROJECTION_MATRIX, CG_GL_MATRIX_IDENTITY);
 
     cgGLSetParameter1f(_cgDelta, delta.length());
     cgGLSetParameter3f(_cgPlaneNormal, normal[0], normal[1], normal[2]);
+    }
 #endif
 
     // Count empty-space leaped bricks.
@@ -3582,7 +3582,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
     GLuint** vertIndices;
     GLsizei* elemCounts;
-#ifdef HAVE_CG_TMP
+#ifdef HAVE_CG
     // Allocate memory for 6 vertices per slice. These will
     // be sent to the gpu later on. Memory is allocated here
     // to avoid doing this in the inner loop
@@ -3616,7 +3616,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
       if (!_sortedList.next()) break;
     }
 
-#ifdef HAVE_CG_TMP
+#ifdef HAVE_CG
     delete[] vertIndices;
     delete[] vertIndicesTmp;
     delete[] elemCounts;
@@ -3713,7 +3713,9 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // Setup an appropriate GL state.
     /////////////////////////////////////////////////////////
     data->renderer->setGLenvironment();
-#ifdef HAVE_CG_TMP
+#ifdef HAVE_CG
+    if(data->renderer->_proxyGeometryOnGpu)
+    {
     data->renderer->initIntersectionShader(cgIsectContext, cgIsectProfile, cgIsectProgram,
                                            cgBrickMin, cgBrickDimInv, cgModelViewProj,
                                            cgPlaneStart, cgDelta, cgPlaneNormal,
@@ -3723,6 +3725,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                                   cgPlaneStart, cgDelta, cgPlaneNormal,
                                   cgFrontIndex, cgVertexList, cgVertices);
     data->renderer->enableIntersectionShader(cgIsectProgram, cgIsectProfile);
+    }
 #endif
     GLuint tex;
 
@@ -3815,7 +3818,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       GLuint** vertIndices;
       GLsizei* elemCounts;
-#ifdef HAVE_CG_TMP
+#ifdef HAVE_CG
       // Allocate memory for 6 vertices per slice. These will
       // be sent to the gpu later on. Memory is allocated here
       // to avoid doing this in the inner loop
@@ -3859,10 +3862,13 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       data->renderer->disableLUTMode();
 #endif
 
-#ifdef HAVE_CG_TMP
+#ifdef HAVE_CG
+      if(data->renderer->_proxyGeometryOnGpu)
+      {
       delete[] vertIndices;
       delete[] vertIndicesTmp;
       delete[] elemCounts;
+      }
 #endif
       // When all worker threads and the main thread have waited once (per frame) on
       // this barrier, all workers have finished rendering this frame and the main
@@ -5765,6 +5771,9 @@ void vvTexRend::updateLUT(float dist)
         else if (newValue==1.0f) vd->_binning = vvVolDesc::ISO_DATA;
         else vd->_binning = vvVolDesc::OPACITY;
         break;      
+      case vvRenderer::VV_GPUPROXYGEO:
+        _proxyGeometryOnGpu = (newValue == 0.0f) ? false : true;
+        break;
       default:
         vvRenderer::setParameter(param, newValue);
         break;
@@ -6120,19 +6129,24 @@ void vvTexRend::updateLUT(float dist)
   void vvTexRend::enableIntersectionShader()
 #endif
   {
-#ifdef HAVE_CG_TMP
+#ifdef HAVE_CG
+    if(_proxyGeometryOnGpu)
+    {
     cgGLLoadProgram(cgIsectProgram);
     cgGLEnableProfile(cgIsectProfile);
     cgGLBindProgram(cgIsectProgram);
-    
+    }
 #endif
   }
 
   //----------------------------------------------------------------------------
   void vvTexRend::disableIntersectionShader()
   {
-#ifdef HAVE_CG_TMP
+#ifdef HAVE_CG
+    if(_proxyGeometryOnGpu)
+    {
     cgGLDisableProfile(_cgIsectProfile);
+    }
 #endif
   }
 
@@ -6273,7 +6287,7 @@ void vvTexRend::updateLUT(float dist)
   bool vvTexRend::initIntersectionShader()
 #endif
   {
-#ifdef HAVE_CG_TMP
+#ifdef HAVE_CG
 #ifdef _WIN32
     const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
 #endif
