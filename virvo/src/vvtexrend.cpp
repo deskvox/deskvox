@@ -5774,6 +5774,10 @@ void vvTexRend::updateLUT(float dist)
       case vvRenderer::VV_GPUPROXYGEO:
         _proxyGeometryOnGpu = (newValue == 0.0f) ? false : true;
         break;
+      case vvRenderer::VV_LEAPEMPTY:
+        _renderState._emptySpaceLeaping = (newValue == 0.0f) ? false : true;
+        updateTransferFunction();
+        break;
       default:
         vvRenderer::setParameter(param, newValue);
         break;

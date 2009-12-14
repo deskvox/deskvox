@@ -108,6 +108,7 @@ class VIRVOEXPORT vvRenderer
       VV_BINNING,                                 ///< binning type (linear, iso-value, opacity)
       VV_SLICEORIENT,                             ///< slice orientation for planer 3d textures
       VV_GPUPROXYGEO,                             ///< compute proxy geometry on GPU
+      VV_LEAPEMPTY,                               ///< empty space leaping
     };
     enum BasicColorType                           /// basic colors
     {
