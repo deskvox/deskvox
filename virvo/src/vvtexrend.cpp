@@ -4742,29 +4742,12 @@ void vvTexRend::sortBrickList(const int threadId, vvVector3 pos, vvVector3 norma
 
       if (!_insideList.next()) break;
     }
-    while (_insideList.count() != _sortedList.count())
+    _insideList.first();
+    do
     {
-      _insideList.first();
-      max = -FLT_MAX;
-      farthest = NULL;
-      while (true)
-      {
-        tmp = dynamic_cast<Brick*>(_insideList.getData());
-        if (tmp->dist > max)
-        {
-          farthest = tmp;
-          max = farthest->dist;
-        }
-
-        if (!_insideList.next()) break;
-      }
-
-      if(!farthest)
-        break;
-
-      _sortedList.append(farthest, vvSLNode<Brick*>::NO_DELETE);
-      farthest->dist = -FLT_MAX;
+      _sortedList.insertSorted(static_cast<Brick *>(_insideList.getData()), vvSLNode<Brick *>::NO_DELETE);
     }
+    while (_insideList.next());
   }
 }
 

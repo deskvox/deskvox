@@ -85,6 +85,18 @@ public:
     texels[2] = rhs->texels[2];
     dist = rhs->dist;
   }
+
+  inline bool operator<(const Brick& rhs) const      ///< compare bricks based upon dist to eye position
+  {
+    if (dist < rhs.dist)
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
 #ifdef HAVE_CG
   void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
