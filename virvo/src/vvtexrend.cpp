@@ -5403,11 +5403,14 @@ void vvTexRend::renderVolumeGL()
 
   if (_numThreads == 0)
   {
+    if (geomType != VV_BRICKS || !_renderState._showBricks)
+    {
 #ifdef HAVE_CG
-    enableLUTMode(_cgProgram, _cgPixLUT);
+      enableLUTMode(_cgProgram, _cgPixLUT);
 #else
-    enableLUTMode();
+      enableLUTMode();
 #endif
+    }
   }
 
   switch (geomType)
@@ -5549,7 +5552,7 @@ int vvTexRend::getLUTSize(int* size)
 #ifdef HAVE_CG
   else if (_currentShader==8 && voxelType==VV_PIX_SHD)
   {
-    x = y = 256;
+    x = y = getPreintTableSize();
     z = 1;
   }
 #endif
