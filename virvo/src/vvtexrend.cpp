@@ -1292,7 +1292,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
           // Memorize the max and min scalar values in the volume. These are stored
           // to perform empty space leaping later on.
           int minValue = INT_MAX;
-          int maxValue = 0;
+          int maxValue = INT_MIN;
 
           startOffset[0] = bx * _renderState._brickSize[0];
           startOffset[1] = by * _renderState._brickSize[1];
@@ -1349,12 +1349,9 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                   {
                     maxValue = rawVal[0];
                   }
-                  else
+                  if (rawVal[0] < minValue)
                   {
-                    if (rawVal[0] < minValue)
-                    {
-                      minValue = rawVal[0];
-                    }
+                    minValue = rawVal[0];
                   }
 
                   texOffset = (x - startOffset[0]) + texLineOffset;
