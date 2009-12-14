@@ -104,8 +104,7 @@ public:
               const vvVector3& probeMin, const vvVector3& probeMax,
               GLuint*& texNames,
               CGparameter* cgVertices, CGparameter cgBrickMin,
-              CGparameter cgBrickDimInv, CGparameter cgFrontIndex,
-              CGparameter cgPlaneStart);
+              CGparameter cgBrickDimInv, CGparameter cgFrontIndex);
 #else
   void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
@@ -343,7 +342,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     CGparameter _cgBrickDimInv;
 
     CGparameter _cgModelViewProj;
-    CGparameter _cgPlaneStart;
     CGparameter _cgDelta;
     CGparameter _cgPlaneNormal;
     CGparameter _cgFrontIndex;
@@ -394,13 +392,13 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
                                 CGprofile& cgIsectProfile,
                                 CGprogram& cgIsectProgram,
                                 CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
-                                CGparameter& cgModelViewProj, CGparameter& cgPlaneStart,
+                                CGparameter& cgModelViewProj,
                                 CGparameter& cgDelta, CGparameter& cgPlaneNormal,
                                 CGparameter& cgFrontIndex, CGparameter& cgVertexList,
                                 CGparameter*& cgVertices);
     void setupIntersectionCGParameters(CGprogram& cgIsectProgram,
                                        CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
-                                       CGparameter& cgModelViewProj, CGparameter& cgPlaneStart,
+                                       CGparameter& cgModelViewProj,
                                        CGparameter& cgDelta, CGparameter& cgPlaneNormal,
                                        CGparameter& cgFrontIndex, CGparameter& cgVertexList,
                                        CGparameter*& cgVertices);

@@ -161,8 +161,7 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& probeMin, const vvVector3& probeMax,
                    GLuint*& texNames,
                    CGparameter* cgVertices, CGparameter cgBrickMin,
-                   CGparameter cgBrickDimInv, CGparameter cgFrontIndex,
-                   CGparameter cgPlaneStart)
+                   CGparameter cgBrickDimInv, CGparameter cgFrontIndex)
 #else
 void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
@@ -219,7 +218,7 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
     cgGLSetParameter3f(cgVertices[i], verts[i].e[0], verts[i].e[1], verts[i].e[2]);
   }
 
-  cgGLSetParameter3f(cgBrickMin, min[0], min[1], min[2]);
+  cgGLSetParameter4f(cgBrickMin, min[0], min[1], min[2], -texPoint.length());
   cgGLSetParameter3f(cgBrickDimInv, 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
 
   float deltaInv = 1.0f / delta.length();
@@ -228,7 +227,6 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   int endSlices = floorf(maxDot * deltaInv);
 
   cgGLSetParameter1f(cgFrontIndex, idx);
-  cgGLSetParameter1f(cgPlaneStart, -texPoint.length());
 
   int primCount = (endSlices - startSlices) + 1;
 
@@ -692,11 +690,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _cgVertices = new CGparameter[8];
   initIntersectionShader(_cgIsectContext, _cgIsectProfile, _cgIsectProgram,
                          _cgBrickMin, _cgBrickDimInv, _cgModelViewProj,
-                         _cgPlaneStart, _cgDelta, _cgPlaneNormal,
+                         _cgDelta, _cgPlaneNormal,
                          _cgFrontIndex, _cgVertexList, _cgVertices);
   setupIntersectionCGParameters(_cgIsectProgram,
                                 _cgBrickMin, _cgBrickDimInv, _cgModelViewProj,
-                                _cgPlaneStart, _cgDelta, _cgPlaneNormal,
+                                _cgDelta, _cgPlaneNormal,
                                 _cgFrontIndex, _cgVertexList, _cgVertices);
   glGenBuffers(1, &_vbos[0]);
   glGenBuffers(1, &_vbos[1]);
@@ -3610,7 +3608,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 #ifdef HAVE_CG
       (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
                   texNames,
-                  _cgVertices, _cgBrickMin, _cgBrickDimInv, _cgFrontIndex, _cgPlaneStart);
+                  _cgVertices, _cgBrickMin, _cgBrickDimInv, _cgFrontIndex);
 #else
       (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
                   texNames);
@@ -3659,7 +3657,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     CGparameter cgPlaneNormal;
     CGparameter cgVertexList;
     CGparameter cgFrontIndex;
-    CGparameter cgPlaneStart;
 #endif
 
     vvStopwatch* stopwatch;
@@ -3714,11 +3711,11 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     {
     data->renderer->initIntersectionShader(cgIsectContext, cgIsectProfile, cgIsectProgram,
                                            cgBrickMin, cgBrickDimInv, cgModelViewProj,
-                                           cgPlaneStart, cgDelta, cgPlaneNormal,
+                                           cgDelta, cgPlaneNormal,
                                            cgFrontIndex, cgVertexList, cgVertices);
     data->renderer->setupIntersectionCGParameters(cgIsectProgram,
                                   cgBrickMin, cgBrickDimInv, cgModelViewProj,
-                                  cgPlaneStart, cgDelta, cgPlaneNormal,
+                                  cgDelta, cgPlaneNormal,
                                   cgFrontIndex, cgVertexList, cgVertices);
     data->renderer->enableIntersectionShader(cgIsectProgram, cgIsectProfile);
     }
@@ -3836,7 +3833,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                     data->probeMin, data->probeMax,
                     data->privateTexNames,
                     cgVertices, cgBrickMin, cgBrickDimInv,
-                    cgFrontIndex, cgPlaneStart);
+                    cgFrontIndex);
 #else
         tmp->render(data->renderer, data->numSlices, data->normal,
                     data->farthest, data->delta,
@@ -6232,7 +6229,7 @@ void vvTexRend::updateLUT(float dist)
                                          CGprofile& cgIsectProfile,
                                          CGprogram& cgIsectProgram,
                                          CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
-                                         CGparameter& cgModelViewProj, CGparameter& cgPlaneStart,
+                                         CGparameter& cgModelViewProj,
                                          CGparameter& cgDelta, CGparameter& cgPlaneNormal,
                                          CGparameter& cgFrontIndex, CGparameter& cgVertexList,
                                          CGparameter*& cgVertices)
@@ -6313,7 +6310,7 @@ void vvTexRend::updateLUT(float dist)
     }
     setupIntersectionCGParameters(cgIsectProgram,
                                   cgBrickMin, cgBrickDimInv, cgModelViewProj,
-                                  cgPlaneStart, cgDelta, cgPlaneNormal,
+                                  cgDelta, cgPlaneNormal,
                                   cgFrontIndex, cgVertexList, cgVertices);
 #endif
     return true;
@@ -6322,7 +6319,7 @@ void vvTexRend::updateLUT(float dist)
 #ifdef HAVE_CG
   void vvTexRend::setupIntersectionCGParameters(CGprogram& cgIsectProgram,
                                                 CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
-                                                CGparameter& cgModelViewProj, CGparameter& cgPlaneStart,
+                                                CGparameter& cgModelViewProj,
                                                 CGparameter& cgDelta, CGparameter& cgPlaneNormal,
                                                 CGparameter& cgFrontIndex, CGparameter& cgVertexList,
                                                 CGparameter*& cgVertices)
@@ -6462,7 +6459,6 @@ void vvTexRend::updateLUT(float dist)
     cgBrickDimInv = cgGetNamedParameter(cgIsectProgram, "brickDimInv");
 
     cgModelViewProj = cgGetNamedParameter(cgIsectProgram, "modelViewProj");
-    cgPlaneStart = cgGetNamedParameter(cgIsectProgram, "planeStart");
     cgDelta = cgGetNamedParameter(cgIsectProgram, "delta");
     cgPlaneNormal = cgGetNamedParameter(cgIsectProgram, "planeNormal");
     cgFrontIndex = cgGetNamedParameter(cgIsectProgram, "frontIndex");

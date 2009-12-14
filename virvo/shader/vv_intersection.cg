@@ -1,6 +1,5 @@
 void main(
   int2                vin           : POSITION,
-  uniform float       planeStart,
 
   // Updated per frame.
   uniform float4x4    modelViewProj,            // Current model view matrix.
@@ -11,7 +10,7 @@ void main(
   uniform float       delta,                    // Distance between to adjacent planes.
   uniform int         sequence[64],             // Vertex index permutations.
   uniform float3      vertices[8],              // Cube vertices.
-  uniform float3      brickMin,
+  uniform float4      brickMin,                 // includes planeStart in .w - saves a cgGLSetParameter call
   uniform float3      brickDimInv,
   uniform int         v1[24],                   // Start vertex idx's of the edges to intersect with.
   uniform int         v2[24],                   // End vertex idx's of the edges to intersect with.
@@ -21,7 +20,7 @@ void main(
   out half3           texCoordOut   : TEXCOORD0
 )
 {
-  float planeDist = planeStart + vin.y * delta;
+  float planeDist = brickMin.w + vin.y * delta;
   float3 pos;
 
   for (int i=0; i<4; ++i)
