@@ -5948,11 +5948,6 @@ void vvTexRend::updateLUT(float dist)
     if(shader >= NUM_PIXEL_SHADERS || shader < 0)
        shader = 0;
     _currentShader = shader;
-
-    if (_numThreads == 0)
-    {
-      makeTextures(texNames, &textures);
-    }
   }
 
   //----------------------------------------------------------------------------
