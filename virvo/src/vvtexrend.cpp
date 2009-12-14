@@ -847,8 +847,8 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(vvTexRend::VoxelType vox)
   {
     if (vd->chan==1)
     {
-      if (extPixShd) return VV_PIX_SHD;
-      else if (arbFrgPrg) return VV_FRG_PRG;
+      if (arbFrgPrg) return VV_FRG_PRG;
+      else if (extPixShd) return VV_PIX_SHD;
       else if (extTexShd) return VV_TEX_SHD;
       else if (extPalTex) return VV_PAL_TEX;
       else if (extColLUT) return VV_SGI_LUT;
