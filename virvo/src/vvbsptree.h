@@ -25,6 +25,8 @@
 #include "vvvecmath.h"
 #include "vvvisitor.h"
 
+typedef vvVector3 vvBoxCorners[8];
+
 /*!
  * \brief           Axis aligned bounding box (AABB).
  *
@@ -74,7 +76,7 @@ public:
    *                are stored, the remaining ones need to be calculated.
    * \return        The calculated depth.
    */
-  vvVector3* calcVertices();
+  const vvBoxCorners& calcVertices();
 
   /*!
    * \brief         Calc the minimum extend along the specified axis.
@@ -114,6 +116,7 @@ public:
 private:
   vvVector3 _bottomLeftBackCorner;
   vvVector3 _topRightFrontCorner;
+  vvVector3 _vertices[8];
 };
 
 /*!

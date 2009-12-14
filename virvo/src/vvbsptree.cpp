@@ -50,24 +50,22 @@ float vvAABB::calcDepth() const
   return calcMaxExtend(vvVector3(0, 0, 1)) - calcMinExtend(vvVector3(0, 0, 1));
 }
 
-vvVector3* vvAABB::calcVertices()
+const vvBoxCorners &vvAABB::calcVertices()
 {
-  vvVector3* result = new vvVector3[8];
-  float width = calcWidth();
-  float height = calcHeight();
-  float depth = calcDepth();
-  vvVector3 center = calcCenter();
+    for(int i=0; i<8; ++i)
+    {
+       // return the edges in the necessary order
+       int d=i;
+       if(i>=2 && i<=5)
+          d ^= 1;
 
-  result[0] = vvVector3(-width * 0.5f + center.e[0], -height * 0.5f + center.e[1], depth * 0.5f + center.e[2]);
-  result[1] = vvVector3(width * 0.5f + center.e[0], -height * 0.5f + center.e[1], depth * 0.5f + center.e[2]);
-  result[2] = vvVector3(width * 0.5f + center.e[0], height * 0.5f + center.e[1], depth * 0.5f + center.e[2]);
-  result[3] = vvVector3(-width * 0.5f + center.e[0], height * 0.5f + center.e[1], depth * 0.5f + center.e[2]);
-  result[4] = vvVector3(width * 0.5f + center.e[0], -height * 0.5f + center.e[1], -depth * 0.5f + center.e[2]);
-  result[5] = vvVector3(-width * 0.5f + center.e[0], -height * 0.5f + center.e[1], -depth * 0.5f + center.e[2]);
-  result[6] = vvVector3(-width * 0.5f + center.e[0], height * 0.5f + center.e[1], -depth * 0.5f + center.e[2]);
-  result[7] = vvVector3(width * 0.5f + center.e[0], height * 0.5f + center.e[1], -depth * 0.5f + center.e[2]);
+       for(int c=0; c<3; ++c)
+       {
+          _vertices[i].e[c] = (1<<c)&d ? _bottomLeftBackCorner.e[c] : _topRightFrontCorner.e[c];
+       }
+    }
 
-  return result;
+  return _vertices;
 }
 
 float vvAABB::calcMinExtend(const vvVector3& axis) const
@@ -93,7 +91,7 @@ vvVector3 vvAABB::calcCenter() const
 
 void vvAABB::render()
 {
-  vvVector3* vertices = calcVertices();
+  const vvVector3 (&vertices)[8] = calcVertices();
   glDisable(GL_LIGHTING);
   glBegin(GL_LINES);
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -124,7 +122,6 @@ void vvAABB::render()
     glVertex3f(vertices[4].e[0], vertices[4].e[1], vertices[4].e[2]);
   glEnd();
   glEnable(GL_LIGHTING);
-  delete[] vertices;
 }
 
 //============================================================================

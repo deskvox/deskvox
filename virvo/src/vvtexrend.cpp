@@ -209,7 +209,7 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   }
 
   vvAABB box(minObjClipped, maxObjClipped);
-  vvVector3* verts = box.calcVertices();
+  const vvVector3 (&verts)[8] = box.calcVertices();
 
   float minDot;
   float maxDot;
@@ -218,7 +218,6 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   {
     cgGLSetParameter3f(cgVertices[i], verts[i].e[0], verts[i].e[1], verts[i].e[2]);
   }
-  delete[] verts;
 
   cgGLSetParameter3f(cgBrickMin, min[0], min[1], min[2]);
   cgGLSetParameter3f(cgBrickDimInv, 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
@@ -325,9 +324,9 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   @param maxDot    The maximum dot product of vector point-vertex and normal,
                    passed along for later calculations.
 */
-ushort Brick::getFrontIndex(vvVector3* vertices,
-                            vvVector3& point,
-                            vvVector3& normal,
+ushort Brick::getFrontIndex(const vvVector3* vertices,
+                            const vvVector3& point,
+                            const vvVector3& normal,
                             float& minDot,
                             float& maxDot)
 {

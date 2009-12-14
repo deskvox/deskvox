@@ -118,9 +118,9 @@ public:
     return vvAABB(minObj, maxObj);
   }
 
-  ushort getFrontIndex(vvVector3* vertices,         ///< front index of the brick dependent upon the current model view
-                       vvVector3& point,
-                       vvVector3& normal,
+  ushort getFrontIndex(const vvVector3* vertices,         ///< front index of the brick dependent upon the current model view
+                       const vvVector3& point,
+                       const vvVector3& normal,
                        float& minDot,
                        float& maxDot);
                                                     ///< and assuming that vertices are ordered back to front
