@@ -27,7 +27,7 @@ funcname = (type) vvDynLib::glSym(#funcname); \
 /** OpenGL Shading Language
  */
 
-vvGLSL::vvGLSL() : nTexture(0)
+vvGLSL::vvGLSL() : vvShaderManager(), nTexture(0)
 {
   if (!vvGLTools::isGLextensionSupported("GL_ARB_fragment_shader"))
   {
@@ -91,26 +91,27 @@ vvGLSL::~vvGLSL()
   }
 }
 
-GLuint vvGLSL::loadShader(const char* shaderFileName)
+void vvGLSL::loadShader(const char* shaderFileName, const ShaderType& shaderType)
 {
   assert(shaderFileName != NULL);
+
+  _shaderFileNames.push_back(shaderFileName);
+  _shaderTypes.push_back(shaderType);
 
   const char* fileString = vvToolshed::file2string(shaderFileName);
 
   if(fileString == NULL)
   {
-	cerr << "vvToolshed::file2string error for: " << shaderFileName << endl;
-	return 0;
+  cerr << "vvToolshed::file2string error for: " << shaderFileName << endl;
+  return;
   }
 
-  GLuint fragProgram = loadShaderByString(fileString);
+  loadShaderByString(fileString, shaderType);
 
   delete[] fileString;
-
-  return fragProgram;
 }
 
-GLuint vvGLSL::loadShaderByString(const char* shaderString)
+void vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shaderType)
 {
   GLuint fragShader;
   GLuint fragProgram;
@@ -118,10 +119,10 @@ GLuint vvGLSL::loadShaderByString(const char* shaderString)
   if(shaderString == NULL)
   {
 	cerr << "Shader string is NULL" << endl;
-	return 0;
+  return;
   }
 
-  fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+  fragShader = glCreateShader(toGLenum(shaderType));
   fragProgram = glCreateProgram();
 
   fragShaderArray.append( fragShader );
@@ -141,16 +142,32 @@ GLuint vvGLSL::loadShaderByString(const char* shaderString)
 	compileLog = new GLchar[length];
 	glGetShaderInfoLog(fragShader, length, &length, compileLog);
 	cerr << "glCompileShader failed: " << compileLog << endl;
-	return 0;
+  return;
   }
 
   glAttachShader(fragProgram, fragShader);
   glLinkProgram(fragProgram);
-
-  return fragProgram;
 }
 
+void vvGLSL::enableShader(const int)
+{
+  throw "Not implemented yet";
+}
 
+void vvGLSL::disableShader(const int)
+{
+  throw "Not implemented yet";
+}
+
+void vvGLSL::initParameters(const int)
+{
+  throw "Not implemented yet";
+}
+
+GLuint vvGLSL::getFragProgramHandle(const int i)
+{
+  return *programArray.get(i);
+}
 
 void vvGLSL::useProgram(GLuint program)
 {
@@ -353,6 +370,28 @@ void vvGLSL::disableMultiTexture3D()
   nTexture = 0;
 }
 
+GLenum vvGLSL::toGLenum(const ShaderType& shaderType)
+{
+  GLenum result;
+  switch (shaderType)
+  {
+  case VV_FRAG_SHD:
+    result = GL_FRAGMENT_SHADER;
+    break;
+#if 0 // TODO - find out if geometry shaders are supported.
+  case VV_GEOM_SHD:
+    result = GL_GEOMETRY_SHADER_EXT;
+    break;
+#endif
+  case VV_VERT_SHD:
+    result = GL_FRAGMENT_SHADER;
+    break;
+  default:
+    result = GL_FRAGMENT_SHADER;
+    break;
+  }
+  return result;
+}
 
 //==================================================================
 // old code

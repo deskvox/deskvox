@@ -58,11 +58,6 @@
 #include <X11/Xlib.h>
 #endif
 
-#ifdef HAVE_CG
-  #include <Cg/cg.h>
-  #include <Cg/cgGL.h>
-#endif
-
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -159,9 +154,7 @@ struct ThreadArgs
 void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
                    const vvVector3& probeMin, const vvVector3& probeMax,
-                   GLuint*& texNames,
-                   CGparameter* cgVertices, CGparameter cgBrickMin,
-                   CGparameter cgBrickDimInv, CGparameter cgFrontIndex, bool setupEdges)
+                   GLuint*& texNames, vvCg*& cgIsect, bool setupEdges)
 #else
 void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
@@ -213,24 +206,26 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   float minDot;
   float maxDot;
   ushort idx = getFrontIndex(verts, texPoint, normal, minDot, maxDot);
-  cgGLSetParameter3f(cgVertices[0], verts[0].e[0], verts[0].e[1], verts[0].e[2]);
+  cgIsect->setArrayParameter3f(0, "vertices", 0, verts[0].e[0], verts[0].e[1], verts[0].e[2]);
   if(setupEdges)
   {
   for (int i = 1; i < 8; ++i)
   {
-    cgGLSetParameter3f(cgVertices[i], verts[i].e[0]-verts[0].e[0], verts[i].e[1]-verts[0].e[1], verts[i].e[2]-verts[0].e[2]);
+    cgIsect->setArrayParameter3f(0, "vertices", i, verts[i].e[0]-verts[0].e[0],
+                                                   verts[i].e[1]-verts[0].e[1],
+                                                   verts[i].e[2]-verts[0].e[2]);
   }
   }
 
-  cgGLSetParameter4f(cgBrickMin, min[0], min[1], min[2], -texPoint.length());
-  cgGLSetParameter3f(cgBrickDimInv, 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
+  cgIsect->setParameter4f(0, "brickMin", min[0], min[1], min[2], -texPoint.length());
+  cgIsect->setParameter3f(0, "brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
 
   float deltaInv = 1.0f / delta.length();
 
   int startSlices = ceilf(minDot * deltaInv);
   int endSlices = floorf(maxDot * deltaInv);
 
-  cgGLSetParameter1f(cgFrontIndex, idx);
+  cgIsect->setParameter1i(0, "frontIndex", idx);
 
   int primCount = (endSlices - startSlices) + 1;
 
@@ -3593,10 +3588,10 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     if(_proxyGeometryOnGpu)
     {
     // Per frame parameters.
-    cgGLSetStateMatrixParameter(_cgModelViewProj, CG_GL_MODELVIEW_PROJECTION_MATRIX, CG_GL_MATRIX_IDENTITY);
+    _cgIsect->setModelViewProj(0, "modelViewProj");
 
-    cgGLSetParameter1f(_cgDelta, delta.length());
-    cgGLSetParameter3f(_cgPlaneNormal, normal[0], normal[1], normal[2]);
+    _cgIsect->setParameter1f(0, "delta", delta.length());
+    _cgIsect->setParameter3f(0, "planeNormal", normal[0], normal[1], normal[2]);
     }
 #endif
 
@@ -3615,7 +3610,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 #ifdef HAVE_CG
       (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
                   texNames,
-                  _cgVertices, _cgBrickMin, _cgBrickDimInv, _cgFrontIndex, !((*it)->insideProbe && lastInsideProbe));
+                  _cgIsect, !((*it)->insideProbe && lastInsideProbe));
 #else
       (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
                   texNames);
@@ -3840,8 +3835,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                     data->farthest, data->delta,
                     data->probeMin, data->probeMax,
                     data->privateTexNames,
-                    cgVertices, cgBrickMin, cgBrickDimInv,
-                    cgFrontIndex, true);
+                    data->renderer->_cgIsect, true);
 #else
         tmp->render(data->renderer, data->numSlices, data->normal,
                     data->farthest, data->delta,
@@ -6033,7 +6027,7 @@ void vvTexRend::updateLUT(float dist)
 #else
   void vvTexRend::enablePixelShaders()
 #endif
-  {
+  {_currentShader = 12;
 #ifdef HAVE_CG
     if(VV_PIX_SHD == voxelType)
     {
@@ -6093,9 +6087,7 @@ void vvTexRend::updateLUT(float dist)
 #ifdef HAVE_CG
     if(_proxyGeometryOnGpu)
     {
-    cgGLLoadProgram(cgIsectProgram);
-    cgGLEnableProfile(cgIsectProfile);
-    cgGLBindProgram(cgIsectProgram);
+    _cgIsect->enableShader(0);
     }
 #endif
   }
@@ -6106,7 +6098,7 @@ void vvTexRend::updateLUT(float dist)
 #ifdef HAVE_CG
     if(_proxyGeometryOnGpu)
     {
-    cgGLDisableProfile(_cgIsectProfile);
+    _cgIsect->disableShader(0);
     }
 #endif
   }
@@ -6260,10 +6252,6 @@ void vvTexRend::updateLUT(float dist)
     char shaderDir[256];
     int i;
 
-    cgIsectContext = cgCreateContext();
-    cgIsectProfile = cgGLGetLatestProfile(CG_GL_VERTEX);
-    cgGLSetOptimalOptions(cgIsectProfile);
-
     if (getenv(shaderEnv))
     {
       unixShaderDir = getenv(shaderEnv);
@@ -6303,22 +6291,12 @@ void vvTexRend::updateLUT(float dist)
     sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
 #endif
 
-    cgIsectProgram = cgCreateProgramFromFile(cgIsectContext,
-                                             CG_SOURCE,
-                                             shaderPath,
-                                             cgIsectProfile,
-                                             "main",
-                                             0);
+    _cgIsect = new vvCg();
+    _cgIsect->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
 
     delete[] shaderFile;
     delete[] shaderPath;
 
-    // Validate success:
-    if (cgIsectProgram == NULL)
-    {
-      cerr << "Error: failed to compile vertex program for intersection test" << endl;
-      return false;
-    }
     setupIntersectionCGParameters(cgIsectProgram,
                                   cgBrickMin, cgBrickDimInv, cgModelViewProj,
                                   cgDelta, cgPlaneNormal,
@@ -6335,150 +6313,135 @@ void vvTexRend::updateLUT(float dist)
                                                 CGparameter& cgFrontIndex, CGparameter& cgVertexList,
                                                 CGparameter*& cgVertices)
   {
-    int i;
+    int parameterCount = 10;
+    const char** parameterNames = new const char*[parameterCount];
+    vvCgParameterType* parameterTypes = new vvCgParameterType[parameterCount];
+    parameterNames[0] = "sequence";       parameterTypes[0] = VV_CG_ARRAY;
+    parameterNames[1] = "v1";             parameterTypes[1] = VV_CG_ARRAY;
+    parameterNames[2] = "v2";             parameterTypes[2] = VV_CG_ARRAY;
+
+    parameterNames[3] = "brickMin";       parameterTypes[3] = VV_CG_SCALAR;
+    parameterNames[4] = "brickDimInv";    parameterTypes[4] = VV_CG_SCALAR;
+    parameterNames[5] = "modelViewProj";  parameterTypes[5] = VV_CG_ARRAY;
+    parameterNames[6] = "delta";          parameterTypes[6] = VV_CG_SCALAR;
+    parameterNames[7] = "planeNormal";    parameterTypes[7] = VV_CG_VEC3;
+    parameterNames[8] = "frontIndex";     parameterTypes[8] = VV_CG_SCALAR;
+    parameterNames[9] = "vertices";       parameterTypes[9] = VV_CG_ARRAY;
+
+    _cgIsect->initParameters(0, parameterNames, parameterTypes, parameterCount);
 
     // Global scope, values will never be changed.
-    CGparameter nSequence = cgGetNamedParameter(cgIsectProgram, "sequence");
-    CGparameter seq[64];
-    for (i = 0; i < 64; ++i)
-    {
-      seq[i] = cgGetArrayParameter(nSequence, i);
-    }
-    cgGLSetParameter1f(seq[0], 0);
-    cgGLSetParameter1f(seq[1], 1);
-    cgGLSetParameter1f(seq[2], 2);
-    cgGLSetParameter1f(seq[3], 3);
-    cgGLSetParameter1f(seq[4], 4);
-    cgGLSetParameter1f(seq[5], 5);
-    cgGLSetParameter1f(seq[6], 6);
-    cgGLSetParameter1f(seq[7], 7);
+    
+    _cgIsect->setArrayParameter1i(0, "sequence", 0, 0);
+    _cgIsect->setArrayParameter1i(0, "sequence", 1, 1);
+    _cgIsect->setArrayParameter1i(0, "sequence", 2, 2);
+    _cgIsect->setArrayParameter1i(0, "sequence", 3, 3);
+    _cgIsect->setArrayParameter1i(0, "sequence", 4, 4);
+    _cgIsect->setArrayParameter1i(0, "sequence", 5, 5);
+    _cgIsect->setArrayParameter1i(0, "sequence", 6, 6);
+    _cgIsect->setArrayParameter1i(0, "sequence", 7, 7);
 
-    cgGLSetParameter1f(seq[8], 1);
-    cgGLSetParameter1f(seq[9], 2);
-    cgGLSetParameter1f(seq[10], 3);
-    cgGLSetParameter1f(seq[11], 0);
-    cgGLSetParameter1f(seq[12], 7);
-    cgGLSetParameter1f(seq[13], 4);
-    cgGLSetParameter1f(seq[14], 5);
-    cgGLSetParameter1f(seq[15], 6);
+    _cgIsect->setArrayParameter1i(0, "sequence", 8, 1);
+    _cgIsect->setArrayParameter1i(0, "sequence", 9, 2);
+    _cgIsect->setArrayParameter1i(0, "sequence", 10, 3);
+    _cgIsect->setArrayParameter1i(0, "sequence", 11, 0);
+    _cgIsect->setArrayParameter1i(0, "sequence", 12, 7);
+    _cgIsect->setArrayParameter1i(0, "sequence", 13, 4);
+    _cgIsect->setArrayParameter1i(0, "sequence", 14, 5);
+    _cgIsect->setArrayParameter1i(0, "sequence", 15, 6);
 
-    cgGLSetParameter1f(seq[16], 2);
-    cgGLSetParameter1f(seq[17], 7);
-    cgGLSetParameter1f(seq[18], 6);
-    cgGLSetParameter1f(seq[19], 3);
-    cgGLSetParameter1f(seq[20], 4);
-    cgGLSetParameter1f(seq[21], 1);
-    cgGLSetParameter1f(seq[22], 0);
-    cgGLSetParameter1f(seq[23], 5);
+    _cgIsect->setArrayParameter1i(0, "sequence", 16, 2);
+    _cgIsect->setArrayParameter1i(0, "sequence", 17, 7);
+    _cgIsect->setArrayParameter1i(0, "sequence", 18, 6);
+    _cgIsect->setArrayParameter1i(0, "sequence", 19, 3);
+    _cgIsect->setArrayParameter1i(0, "sequence", 20, 4);
+    _cgIsect->setArrayParameter1i(0, "sequence", 21, 1);
+    _cgIsect->setArrayParameter1i(0, "sequence", 22, 0);
+    _cgIsect->setArrayParameter1i(0, "sequence", 23, 5);
 
-    cgGLSetParameter1f(seq[24], 3);
-    cgGLSetParameter1f(seq[25], 6);
-    cgGLSetParameter1f(seq[26], 5);
-    cgGLSetParameter1f(seq[27], 0);
-    cgGLSetParameter1f(seq[28], 7);
-    cgGLSetParameter1f(seq[29], 2);
-    cgGLSetParameter1f(seq[30], 1);
-    cgGLSetParameter1f(seq[31], 4);
+    _cgIsect->setArrayParameter1i(0, "sequence", 24, 3);
+    _cgIsect->setArrayParameter1i(0, "sequence", 25, 6);
+    _cgIsect->setArrayParameter1i(0, "sequence", 26, 5);
+    _cgIsect->setArrayParameter1i(0, "sequence", 27, 0);
+    _cgIsect->setArrayParameter1i(0, "sequence", 28, 7);
+    _cgIsect->setArrayParameter1i(0, "sequence", 29, 2);
+    _cgIsect->setArrayParameter1i(0, "sequence", 30, 1);
+     _cgIsect->setArrayParameter1i(0, "sequence", 31, 4);
 
-    cgGLSetParameter1f(seq[32], 4);
-    cgGLSetParameter1f(seq[33], 5);
-    cgGLSetParameter1f(seq[34], 6);
-    cgGLSetParameter1f(seq[35], 7);
-    cgGLSetParameter1f(seq[36], 0);
-    cgGLSetParameter1f(seq[37], 1);
-    cgGLSetParameter1f(seq[38], 2);
-    cgGLSetParameter1f(seq[39], 3);
+    _cgIsect->setArrayParameter1i(0, "sequence", 32, 4);
+    _cgIsect->setArrayParameter1i(0, "sequence", 33, 5);
+    _cgIsect->setArrayParameter1i(0, "sequence", 34, 6);
+    _cgIsect->setArrayParameter1i(0, "sequence", 35, 7);
+    _cgIsect->setArrayParameter1i(0, "sequence", 36, 0);
+    _cgIsect->setArrayParameter1i(0, "sequence", 37, 1);
+    _cgIsect->setArrayParameter1i(0, "sequence", 38, 2);
+    _cgIsect->setArrayParameter1i(0, "sequence", 39, 3);
 
-    cgGLSetParameter1f(seq[40], 5);
-    cgGLSetParameter1f(seq[41], 0);
-    cgGLSetParameter1f(seq[42], 3);
-    cgGLSetParameter1f(seq[43], 6);
-    cgGLSetParameter1f(seq[44], 1);
-    cgGLSetParameter1f(seq[45], 4);
-    cgGLSetParameter1f(seq[46], 7);
-    cgGLSetParameter1f(seq[47], 2);
+    _cgIsect->setArrayParameter1i(0, "sequence", 40, 5);
+    _cgIsect->setArrayParameter1i(0, "sequence", 41, 0);
+    _cgIsect->setArrayParameter1i(0, "sequence", 42, 3);
+    _cgIsect->setArrayParameter1i(0, "sequence", 43, 6);
+    _cgIsect->setArrayParameter1i(0, "sequence", 44, 1);
+    _cgIsect->setArrayParameter1i(0, "sequence", 45, 4);
+    _cgIsect->setArrayParameter1i(0, "sequence", 46, 7);
+    _cgIsect->setArrayParameter1i(0, "sequence", 47, 2);
 
-    cgGLSetParameter1f(seq[48], 6);
-    cgGLSetParameter1f(seq[49], 7);
-    cgGLSetParameter1f(seq[50], 4);
-    cgGLSetParameter1f(seq[51], 5);
-    cgGLSetParameter1f(seq[52], 2);
-    cgGLSetParameter1f(seq[53], 3);
-    cgGLSetParameter1f(seq[54], 0);
-    cgGLSetParameter1f(seq[55], 1);
+    _cgIsect->setArrayParameter1i(0, "sequence", 48, 6);
+    _cgIsect->setArrayParameter1i(0, "sequence", 49, 7);
+    _cgIsect->setArrayParameter1i(0, "sequence", 50, 4);
+    _cgIsect->setArrayParameter1i(0, "sequence", 51, 5);
+    _cgIsect->setArrayParameter1i(0, "sequence", 52, 2);
+    _cgIsect->setArrayParameter1i(0, "sequence", 53, 3);
+    _cgIsect->setArrayParameter1i(0, "sequence", 54, 0);
+    _cgIsect->setArrayParameter1i(0, "sequence", 55, 1);
 
-    cgGLSetParameter1f(seq[56], 7);
-    cgGLSetParameter1f(seq[57], 6);
-    cgGLSetParameter1f(seq[58], 3);
-    cgGLSetParameter1f(seq[59], 2);
-    cgGLSetParameter1f(seq[60], 5);
-    cgGLSetParameter1f(seq[61], 4);
-    cgGLSetParameter1f(seq[62], 1);
-    cgGLSetParameter1f(seq[63], 0);
-
-    CGparameter vStart = cgGetNamedParameter(cgIsectProgram, "v1");
-    CGparameter vEnd = cgGetNamedParameter(cgIsectProgram, "v2");
-    CGparameter v1[24];
-    CGparameter v2[24];
-    for (i = 0; i < 24; ++i)
-    {
-      v1[i] = cgGetArrayParameter(vStart, i);
-      v2[i] = cgGetArrayParameter(vEnd, i);
-    }
+    _cgIsect->setArrayParameter1i(0, "sequence", 56, 7);
+    _cgIsect->setArrayParameter1i(0, "sequence", 57, 6);
+    _cgIsect->setArrayParameter1i(0, "sequence", 58, 3);
+    _cgIsect->setArrayParameter1i(0, "sequence", 59, 2);
+    _cgIsect->setArrayParameter1i(0, "sequence", 60, 5);
+    _cgIsect->setArrayParameter1i(0, "sequence", 61, 4);
+    _cgIsect->setArrayParameter1i(0, "sequence", 62, 1);
+    _cgIsect->setArrayParameter1i(0, "sequence", 63, 0);
 
     // P0.
-    cgGLSetParameter1f(v1[0], 0); cgGLSetParameter1f(v2[0], 1);
-    cgGLSetParameter1f(v1[1], 1); cgGLSetParameter1f(v2[1], 2);
-    cgGLSetParameter1f(v1[2], 2); cgGLSetParameter1f(v2[2], 7);
+    _cgIsect->setArrayParameter1i(0, "v1", 0, 0); _cgIsect->setArrayParameter1i(0, "v2", 0, 1);
+    _cgIsect->setArrayParameter1i(0, "v1", 1, 1); _cgIsect->setArrayParameter1i(0, "v2", 1, 2);
+    _cgIsect->setArrayParameter1i(0, "v1", 2, 2); _cgIsect->setArrayParameter1i(0, "v2", 2, 7);
 
     // P2.
-    cgGLSetParameter1f(v1[8], 0); cgGLSetParameter1f(v2[8], 5);
-    cgGLSetParameter1f(v1[9], 5); cgGLSetParameter1f(v2[9], 4);
-    cgGLSetParameter1f(v1[10], 4); cgGLSetParameter1f(v2[10], 7);
+    _cgIsect->setArrayParameter1i(0, "v1", 8, 0); _cgIsect->setArrayParameter1i(0, "v2", 8, 5);
+    _cgIsect->setArrayParameter1i(0, "v1", 9, 5); _cgIsect->setArrayParameter1i(0, "v2", 9, 4);
+    _cgIsect->setArrayParameter1i(0, "v1", 10, 4); _cgIsect->setArrayParameter1i(0, "v2", 10, 7);
 
     // P4.
-    cgGLSetParameter1f(v1[16], 0); cgGLSetParameter1f(v2[16], 3);
-    cgGLSetParameter1f(v1[17], 3); cgGLSetParameter1f(v2[17], 6);
-    cgGLSetParameter1f(v1[18], 6); cgGLSetParameter1f(v2[18], 7);
+    _cgIsect->setArrayParameter1i(0, "v1", 16, 0); _cgIsect->setArrayParameter1i(0, "v2", 16, 3);
+    _cgIsect->setArrayParameter1i(0, "v1", 17, 3); _cgIsect->setArrayParameter1i(0, "v2", 17, 6);
+    _cgIsect->setArrayParameter1i(0, "v1", 18, 6); _cgIsect->setArrayParameter1i(0, "v2", 18, 7);
 
     // P1.
     // First intersect the dotted edge.
-    cgGLSetParameter1f(v1[4], 1); cgGLSetParameter1f(v2[4], 4);
-    // Than intersect the path.
-    cgGLSetParameter1f(v1[5], 0); cgGLSetParameter1f(v2[5], 1);
-    cgGLSetParameter1f(v1[6], 1); cgGLSetParameter1f(v2[6], 2);
-    cgGLSetParameter1f(v1[7], 2); cgGLSetParameter1f(v2[7], 7);
+    _cgIsect->setArrayParameter1i(0, "v1", 4, 1); _cgIsect->setArrayParameter1i(0, "v2", 4, 4);
+    // Then intersect the path.
+    _cgIsect->setArrayParameter1i(0, "v1", 5, 0); _cgIsect->setArrayParameter1i(0, "v2", 5, 1);
+    _cgIsect->setArrayParameter1i(0, "v1", 6, 1); _cgIsect->setArrayParameter1i(0, "v2", 6, 2);
+    _cgIsect->setArrayParameter1i(0, "v1", 7, 2); _cgIsect->setArrayParameter1i(0, "v2", 7, 7);
 
     // P3.
     // First intersect the dotted edge.
-    cgGLSetParameter1f(v1[12], 5); cgGLSetParameter1f(v2[12], 6);
-    // Than intersect the path.
-    cgGLSetParameter1f(v1[13], 0); cgGLSetParameter1f(v2[13], 5);
-    cgGLSetParameter1f(v1[14], 5); cgGLSetParameter1f(v2[14], 4);
-    cgGLSetParameter1f(v1[15], 4); cgGLSetParameter1f(v2[15], 7);
+    _cgIsect->setArrayParameter1i(0, "v1", 12, 5); _cgIsect->setArrayParameter1i(0, "v2", 12, 6);
+    // Then intersect the path.
+    _cgIsect->setArrayParameter1i(0, "v1", 13, 0); _cgIsect->setArrayParameter1i(0, "v2", 13, 5);
+    _cgIsect->setArrayParameter1i(0, "v1", 14, 5); _cgIsect->setArrayParameter1i(0, "v2", 14, 4);
+    _cgIsect->setArrayParameter1i(0, "v1", 15, 4); _cgIsect->setArrayParameter1i(0, "v2", 15, 7);
 
     // P5.
     // First intersect the dotted edge.
-    cgGLSetParameter1f(v1[20], 3); cgGLSetParameter1f(v2[20], 2);
-    // Than intersect the path.
-    cgGLSetParameter1f(v1[21], 0); cgGLSetParameter1f(v2[21], 3);
-    cgGLSetParameter1f(v1[22], 3); cgGLSetParameter1f(v2[22], 6);
-    cgGLSetParameter1f(v1[23], 6); cgGLSetParameter1f(v2[23], 7);
-
-    // Values of the following params are changed for each frame.
-    cgBrickMin = cgGetNamedParameter(cgIsectProgram, "brickMin");
-    cgBrickDimInv = cgGetNamedParameter(cgIsectProgram, "brickDimInv");
-
-    cgModelViewProj = cgGetNamedParameter(cgIsectProgram, "modelViewProj");
-    cgDelta = cgGetNamedParameter(cgIsectProgram, "delta");
-    cgPlaneNormal = cgGetNamedParameter(cgIsectProgram, "planeNormal");
-    cgFrontIndex = cgGetNamedParameter(cgIsectProgram, "frontIndex");
-
-    cgVertexList = cgGetNamedParameter(cgIsectProgram, "vertices");
-    for (i = 0; i < 8; ++i)
-    {
-       cgVertices[i] = cgGetArrayParameter(cgVertexList, i);
-    }
+    _cgIsect->setArrayParameter1i(0, "v1", 20, 3); _cgIsect->setArrayParameter1i(0, "v2", 20, 2);
+    // Then intersect the path.
+    _cgIsect->setArrayParameter1i(0, "v1", 21, 0); _cgIsect->setArrayParameter1i(0, "v2", 21, 3);
+    _cgIsect->setArrayParameter1i(0, "v1", 22, 3); _cgIsect->setArrayParameter1i(0, "v2", 22, 6);
+    _cgIsect->setArrayParameter1i(0, "v1", 23, 6); _cgIsect->setArrayParameter1i(0, "v2", 23, 7);
   }
 #endif
 

@@ -1,0 +1,115 @@
+// Virvo - Virtual Reality Volume Rendering
+// Contact: Stefan Zellmann, zellmans@uni-koeln.de
+//
+// This file is part of Virvo.
+//
+// Virvo is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+
+#ifndef _VV_CC_H_
+#define _VV_CG_H_
+
+#ifdef HAVE_CG
+
+#include "vvshadermanager.h"
+
+#include <map>
+#include <vector>
+#include <Cg/cg.h>
+#include <Cg/cgGL.h>
+
+enum vvCgParameterType
+{
+  VV_CG_SCALAR = 0,
+  VV_CG_VEC3,
+  VV_CG_VEC4,
+  VV_CG_ARRAY
+};
+
+class vvCgParameter
+{
+public:
+  inline void setParameter(const CGparameter parameter) { _parameter = parameter; }
+  inline void setType(const vvCgParameterType type) { _type = type; }
+  inline void setIdentifier(const char* identifier) { _identifier = identifier; }
+
+  inline CGparameter getParameter() const { return _parameter; }
+  inline vvCgParameterType getType() const { return _type; }
+  inline const char* getIdentifier() const { return _identifier; }
+private:
+  CGparameter _parameter;
+  vvCgParameterType _type;
+  const char* _identifier;
+};
+
+class VIRVOEXPORT vvCg : public vvShaderManager
+{
+public:
+
+  vvCg();
+  virtual ~vvCg();
+
+  virtual void loadShader(const char* shaderFileName, const ShaderType& shaderType);
+  virtual void loadShaderByString(const char* shaderString, const ShaderType& shaderType);
+  virtual void enableShader(const int programIndex);
+  virtual void disableShader(const int programIndex);
+  virtual void initParameters(const int programIndex,
+                              const char** parameterNames,
+                              const vvCgParameterType* parameterTypes,
+                              const int parameterCount);
+
+  /*!
+   * \brief         Set a scalar cg float parameter.
+   *
+   *                Make sure to have called \ref initParameters() for this
+   *                program before setting parameters.
+   * \param         programIndex Index of the program on the program stack.
+   * \param         parameterIndex Index of the param on the param stack for the program.
+   */
+  virtual void setParameter1f(const int programIndex, const char* parameterName,
+                              const float& f1);
+
+  virtual void setParameter1i(const int programIndex, const char* parameterName,
+                              const int& i1);
+
+  virtual void setParameter3f(const int programIndex, const char* parameterName,
+                              const float& f1, const float& f2, const float& f3);
+
+  virtual void setParameter4f(const int programIndex, const char* parameterName,
+                              const float& f1, const float& f2, const float& f3, const float& f4);
+
+  virtual void setArrayParameter3f(const int programIndex, const char* parameterName, const int arrayIndex,
+                                   const float& f1, const float& f2, const float& f3);
+
+  virtual void setArrayParameter1i(const int programIndex, const char* parameterName, const int arrayIndex,
+                                   const int& i1);
+
+  void setModelViewProj(const int programIndex, const char* parameterName);
+private:
+  // Cg specific stuff.
+  std::vector<CGprofile> _cgProfiles;
+  std::vector<CGprogram> _cgPrograms;
+  typedef std::vector<vvCgParameter> ParameterVector;
+  typedef std::map<const char*, vvCgParameter> ParameterNameMap;
+  std::vector<ParameterVector> _cgParameters;
+  std::vector<ParameterNameMap> _cgParameterNameMaps;
+
+  void init();
+  CGGLenum toCgEnum(const ShaderType& shaderType);
+};
+
+#endif // HAVE_CG
+
+#endif // _VV_CG_H_
+
+//============================================================================
+// End of File
+//============================================================================
+

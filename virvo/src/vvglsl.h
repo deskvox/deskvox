@@ -20,6 +20,7 @@
 #include "vvglext.h"
 #include "vvvecmath.h"
 #include "vvarray.h"
+#include "vvshadermanager.h"
 
 //============================================================================
 // Class Definition
@@ -39,7 +40,7 @@
   @author Chih Liang (cliang@cs.ucsd.edu)
   @author Jurgen P. Schulze (jschulze@ucsd.edu)
  */
-class VIRVOEXPORT vvGLSL
+class VIRVOEXPORT vvGLSL : public vvShaderManager
 {
   public:
 
@@ -49,26 +50,44 @@ class VIRVOEXPORT vvGLSL
 
 	/** Deactivates and deletes shader programs that were generated and stored in this class
 	*/
-	~vvGLSL();
+  virtual ~vvGLSL();
 
 	/** Initializes, compiles, and links a shader program
 
-	  @param shaderFileName The name of a fragment program source file
-	  @return non-zero program ID if OK, 0 otherwise
+    @param shaderFileName The name of a fragment program source file
 	*/
-	GLuint loadShader(const char* shaderFileName);
+  void loadShader(const char* shaderFileName, const ShaderType& shaderType);
 
 	/** initializes, compiles and links a shader program
-	  @param shaderString a character array containing the program string
-	  @return non-zero program ID if OK, 0 otherwise
+    @param shaderString a character array containing the program string
 	*/
-	GLuint loadShaderByString(const char* shaderString);
+  void loadShaderByString(const char* shaderString, const ShaderType& shaderType);
+
+  /** TODO: implement this method
+    @param Intention: index into a vector of shader programs and use the one found there.
+  */
+  void enableShader(const int index);
+
+  /** TODO: implement this method
+    @param Intention: index into a vector of shader programs and disable the one found there.
+  */
+  void disableShader(const int index);
+
+  /** TODO: implement this method
+    @param Intention: initialize a stack with parameter handles to refer to.
+  */
+  void initParameters(const int programIndex);
+
+  /** returns a handle to a shader program
+    @param index of the fragment program in the program array
+  */
+  GLuint getFragProgramHandle(const int i);
 
 	/** Calls glUseProgram
 
 	  @param program The handle of the program object whose executables are to be used as part of current rendering state.
 	*/
-	void useProgram(GLuint program);
+  void useProgram(GLuint program);
 
 	/** Calls glUseProgram(0);
 	*/
@@ -78,7 +97,7 @@ class VIRVOEXPORT vvGLSL
 
 	  @param program the fragment shader program ID to be deleted.
 	*/
-	void deleteProgram(GLuint program);
+  void deleteProgram(GLuint program);
 
 
 	/** Copies one value to the fragment shader program specified by program.
@@ -88,8 +107,8 @@ class VIRVOEXPORT vvGLSL
 	  @param length Type of data structure, between 1 (scalar) and 4 (4D vector)
 	  @param value Pointer to an array of floats/integers
 	*/
-	void setValue(GLuint program, const char* name, int length, float* value);
-	void setValue(GLuint program, const char* name, int length, int* value);
+  void setValue(GLuint program, const char* name, int length, float* value);
+  void setValue(GLuint program, const char* name, int length, int* value);
 
 	/** Copies an array of values to the fragment shader program specified by program.
 
@@ -99,8 +118,8 @@ class VIRVOEXPORT vvGLSL
 	  @param count The number of elements to be copied
 	  @param value Pointer to an array of floats/integers
 	*/
-	void setValue(GLuint program, const char* name, int length, GLsizei count, float* value);
-	void setValue(GLuint program, const char* name, int length, GLsizei count, int* value);
+  void setValue(GLuint program, const char* name, int length, GLsizei count, float* value);
+  void setValue(GLuint program, const char* name, int length, GLsizei count, int* value);
 
 	/** Reset the number of activated textures
 	*/
@@ -115,9 +134,9 @@ class VIRVOEXPORT vvGLSL
 	  @param name Uniform variable defined in this fragment shader program
 	  @param texId Texture name
 	*/
-	void initializeMultiTexture1D(GLuint program, const char* name, GLuint texId);
-	void initializeMultiTexture2D(GLuint program, const char* name, GLuint texId);
-	void initializeMultiTexture3D(GLuint program, const char* name, GLuint texId);
+  void initializeMultiTexture1D(GLuint program, const char* name, GLuint texId);
+  void initializeMultiTexture2D(GLuint program, const char* name, GLuint texId);
+  void initializeMultiTexture3D(GLuint program, const char* name, GLuint texId);
 
 	/** Disables multi-textures initialized by initializeMultiTextureXD()
 	  This method needs to be called whenever the multiple textures are no longer used.
@@ -134,8 +153,8 @@ class VIRVOEXPORT vvGLSL
 	*/
 
   private:
-	vvArray<GLuint> fragShaderArray;			///< array of fragment shader IDs
-	vvArray<GLuint> programArray;				///< array of fragment program IDs
+  vvArray<GLuint> fragShaderArray;			///< array of shader IDs
+  vvArray<GLuint> programArray;				///< array of program IDs
 	int nTexture;								///< the number of texture activated
 
 	// function pointers
@@ -169,6 +188,8 @@ class VIRVOEXPORT vvGLSL
 	PFNGLDETACHSHADERPROC glDetachShader;
 	PFNGLDELETESHADERPROC glDeleteShader;
 	PFNGLDELETEPROGRAMPROC glDeleteProgram;
+
+  GLenum toGLenum(const ShaderType& shaderType);
 };
 #endif
 

@@ -118,10 +118,15 @@ vvTexMultiRendMngr::vvTexMultiRendMngr()
 
   // TODO: needs to be parameterized
   shaderProgram = new GLuint[4];
-  shaderProgram[0] = glslShader->loadShader("glsl_1chan.frag");
-  shaderProgram[1] = glslShader->loadShader("glsl_2chan.frag");
-  shaderProgram[2] = glslShader->loadShader("glsl_3chan.frag");
-  shaderProgram[3] = glslShader->loadShader("glsl_multichan.frag");
+  glslShader->loadShader("glsl_1chan.frag", vvShaderManager::VV_FRAG_SHD);
+  glslShader->loadShader("glsl_2chan.frag", vvShaderManager::VV_FRAG_SHD);
+  glslShader->loadShader("glsl_3chan.frag", vvShaderManager::VV_FRAG_SHD);
+  glslShader->loadShader("glsl_multichan.frag", vvShaderManager::VV_FRAG_SHD);
+
+  for (int i = 0; i < 4; ++i)
+  {
+    shaderProgram[i] = glslShader->getFragProgramHandle(i);
+  }
   //glslShader.loadShader();
 }
 
