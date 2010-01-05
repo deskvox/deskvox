@@ -102,6 +102,8 @@ private:
 
   void init();
   CGGLenum toCgEnum(const ShaderType& shaderType);
+
+  static void cgErrorHandler(CGcontext context, CGerror error, void* appData);
 };
 
 #endif // HAVE_CG

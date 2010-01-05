@@ -29,11 +29,6 @@
 
 #include <vector>
 
-// Cg:
-#ifdef HAVE_CG
-#include "vvcg.h"
-#endif
-
 // Virvo:
 #include "vvexport.h"
 #include "vvvoldesc.h"

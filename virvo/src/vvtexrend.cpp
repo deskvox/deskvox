@@ -81,10 +81,6 @@ static int pthread_barrier_init(pthread_barrier_t * /*barrier*/,
 static int pthread_barrier_destroy(pthread_barrier_t * /*barrier*/) { return 1; }
 #endif
 
-#ifdef HAVE_CG
-  static void checkCgError(CGcontext ctx, CGerror err, void *appdata);
-#endif
-
 // The following values will have to be approved empirically yet... .
 
 // TODO: reasonable determination of these values.
@@ -3594,6 +3590,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
   }
   else
   {
+    vvShaderManager* pixelShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
 
     vvStopwatch* stopwatch;
 
@@ -3616,7 +3613,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // Make textures.
     /////////////////////////////////////////////////////////
     pthread_mutex_lock(data->makeTextureMutex);
-    data->renderer->initPixelShaders(data->renderer->_pixelShader);
+    data->renderer->initPixelShaders(pixelShader);
     data->renderer->texelsize=4;
     data->renderer->internalTexFormat = GL_RGBA;
     data->renderer->texFormat = GL_RGBA;
@@ -3697,7 +3694,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
       pthread_barrier_wait(data->renderStartBarrier);
-      data->renderer->enableLUTMode(data->renderer->_pixelShader);
+      data->renderer->enableLUTMode(pixelShader);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
@@ -3758,7 +3755,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                     data->renderer->_isectShader, true);
       }
       glDisable(GL_TEXTURE_3D_EXT);
-      data->renderer->disableLUTMode(data->renderer->_pixelShader);
+      data->renderer->disableLUTMode(pixelShader);
 
       if(data->renderer->_proxyGeometryOnGpu)
       {
@@ -3788,6 +3785,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     // Exited render loop - perform cleanup.
     //data->texRend->removeTextures(privateTexNames);
+    delete pixelShader;
     delete stopwatch;
   }
   pthread_exit(NULL);
@@ -3811,11 +3809,6 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
   }
   else
   {
-#ifdef HAVE_CG
-    CGcontext cgContext;                            // one cg context for each thread
-    CGprogram* cgProgram;                           // a list of cg programs for each thread
-    CGparameter cgPixLUT;
-#endif
     vvStopwatch* stopwatch;
 
     /////////////////////////////////////////////////////////
@@ -3835,7 +3828,6 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
     /////////////////////////////////////////////////////////
     pthread_mutex_lock(data->makeTextureMutex);
 
-    data->renderer->initPixelShaders(data->renderer->_pixelShader);
     data->renderer->texelsize=4;
     data->renderer->internalTexFormat = GL_RGBA;
     data->renderer->texFormat = GL_RGBA;
@@ -3875,7 +3867,6 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
       pthread_barrier_wait(data->renderStartBarrier);
-      data->renderer->enableLUTMode(data->renderer->_pixelShader);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
@@ -3975,8 +3966,6 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
         glFlush();
         vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
       }
-      glDisable(GL_TEXTURE_3D_EXT);
-      data->renderer->disableLUTMode(data->renderer->_pixelShader);
 
       // When all worker threads and the main thread have waited once (per frame) on
       // this barrier, all workers have finished rendering this frame and the main
@@ -3994,9 +3983,7 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
 
     // Exited render loop - perform cleanup.
     //data->texRend->removeTextures(privateTexNames);
-#ifdef HAVE_CG
-    delete[] cgProgram;
-#endif
+
     delete stopwatch;
   }
   pthread_exit(NULL);
@@ -4282,7 +4269,7 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   }
   else
   {
-    // Volume render a 3D texture:
+    // Disable pixlut shader, brick are uniformly colored.
     _pixelShader->disableShader(_currentShader);
     glBegin(GL_LINES);
     glColor4f(1.0, 1.0, 1.0, 1.0);
@@ -5876,28 +5863,6 @@ void vvTexRend::disableFragProg()
   glDisable(GL_FRAGMENT_PROGRAM_ARB);
 }
 
-#ifdef HAVE_CG
-//----------------------------------------------------------------------------
-/// Automatically called when a Cg error occurs.
-void checkCgError(CGcontext ctx, CGerror cgerr, void *)
-{
-  if(cgerr != CG_NO_ERROR)
-    cerr << cgGetErrorString(cgerr) << "(" << static_cast<int>(cgerr) << ")" << endl;
-  for(GLint glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
-  {
-    cerr << "GL error: " << gluErrorString(glerr) << endl;
-  }
-  if(ctx && cgerr==CG_COMPILER_ERROR)
-  {
-     if(const char *listing = cgGetLastListing(ctx))
-     {
-        cerr << "last listing:" << endl;
-        cerr << listing << endl;
-     }
-  }
-}
-#endif
-
 //----------------------------------------------------------------------------
 void vvTexRend::enablePixelShaders(vvShaderManager*& pixelShader)
 {_currentShader = 12;
@@ -6049,8 +6014,6 @@ bool vvTexRend::initPixelShaders(vvShaderManager*& pixelShader)
   int i;
 
   cerr << "enable PIX called"<< endl;
-
-  cgSetErrorHandler(checkCgError, NULL);
 
   pixelShader->printCompatibilityInfo();
 

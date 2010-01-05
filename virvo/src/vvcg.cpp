@@ -14,6 +14,7 @@
 // Lesser General Public License for more details.
 
 #include "vvcg.h"
+#include "vvopengl.h"
 
 #include <assert.h>
 #include <utility>
@@ -208,6 +209,7 @@ void vvCg::setModelViewProj(const int programIndex, const char* parameterName)
 
 void vvCg::init()
 {
+  cgSetErrorHandler(cgErrorHandler, NULL);
   _cgContext = cgCreateContext();
 
   if (_cgContext == NULL)
@@ -239,4 +241,22 @@ CGGLenum vvCg::toCgEnum(const ShaderType& shaderType)
   return result;
 }
 
-#endif
+void vvCg::cgErrorHandler(CGcontext context, CGerror error, void*)
+{
+  if(error != CG_NO_ERROR)
+    cerr << cgGetErrorString(error) << "(" << static_cast<int>(error) << ")" << endl;
+  for(GLint glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
+  {
+    cerr << "GL error: " << gluErrorString(glerr) << endl;
+  }
+  if(context && error==CG_COMPILER_ERROR)
+  {
+     if(const char *listing = cgGetLastListing(context))
+     {
+        cerr << "last listing:" << endl;
+        cerr << listing << endl;
+     }
+  }
+}
+
+#endif // ifdef HAVE_CG
