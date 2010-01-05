@@ -25,9 +25,12 @@ vvShaderManager* vvShaderFactory::provideShaderManager(const vvShaderManagerType
 
   switch (shaderManagerType)
   {
+#ifdef HAVE_CG
   case VV_CG_MANAGER:
     result = new vvCg();
     break;
+#endif
+
   case VV_GLSL_MANAGER:
     result = new vvGLSL();
     break;
