@@ -476,11 +476,15 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   textures = 0;
   opacityCorrection = true;
   interpolation = true;
-#ifdef HAVE_CG
-  _currentShader = vd->chan - 1;
-#else
-  _currentShader = 0;
-#endif
+
+  if (vvShaderFactory::isSupported(VV_CG_MANAGER))
+  {
+    _currentShader = vd->chan - 1;
+  }
+  else
+  {
+    _currentShader = 0;
+  }
   _useOnlyOneBrick = false;
   _areBricksCreated = false;
   _lastFrame = -1;
@@ -505,11 +509,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   extColLUT = isSupported(VV_SGI_LUT);
   extPalTex = isSupported(VV_PAL_TEX);
   extTexShd = isSupported(VV_TEX_SHD);
-#ifdef HAVE_CG
   extPixShd = isSupported(VV_PIX_SHD);
-#else
-  extPixShd = false;
-#endif
   arbFrgPrg = isSupported(VV_FRG_PRG);
   _proxyGeometryOnGpu = extPixShd && arbFrgPrg && _isectShader;
 
@@ -545,12 +545,13 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   }
   cerr << endl;
 
-#ifdef HAVE_CG
-  if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
+  if (vvShaderFactory::isSupported(VV_CG_MANAGER))
   {
-    _currentShader = 9;
+    if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
+    {
+      _currentShader = 9;
+    }
   }
-#endif
 
   if(voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG)
   {
@@ -5385,13 +5386,12 @@ int vvTexRend::getLUTSize(int* size)
     x = 4096;
     y = z = 1;
   }
-#ifdef HAVE_CG
-  else if (_currentShader==8 && voxelType==VV_PIX_SHD)
+  else if (vvShaderFactory::isSupported(VV_CG_MANAGER)
+    && _currentShader==8 && voxelType==VV_PIX_SHD)
   {
     x = y = getPreintTableSize();
     z = 1;
   }
-#endif
   else
   {
     x = 256;
@@ -5701,11 +5701,14 @@ bool vvTexRend::isSupported(VoxelType voxel)
         vvGLTools::isGLextensionSupported("GL_NV_register_combiners") &&
         vvGLTools::isGLextensionSupported("GL_NV_register_combiners2");
     case VV_PIX_SHD:
-#ifdef HAVE_CG
-      return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
-#else
-      return false;
-#endif
+      if (vvShaderFactory::isSupported(VV_CG_MANAGER))
+      {
+        return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
+      }
+      else
+      {
+        return false;
+      }
     case VV_FRG_PRG:
       return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
     default: return false;
