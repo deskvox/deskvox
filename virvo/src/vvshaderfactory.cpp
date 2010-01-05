@@ -21,6 +21,8 @@
 
 #include <algorithm>
 
+std::vector<vvShaderManagerType> vvShaderFactory::c_supportedTypes = std::vector<vvShaderManagerType>();
+
 vvShaderManager* vvShaderFactory::provideShaderManager(const vvShaderManagerType& shaderManagerType)
 {
   vvShaderManager* result = NULL;
@@ -45,9 +47,14 @@ vvShaderManager* vvShaderFactory::provideShaderManager(const vvShaderManagerType
 
 std::vector<vvShaderManagerType> vvShaderFactory::getSupportedShaderManagers()
 {
+  if (!vvShaderFactory::c_supportedTypes.empty())
+  {
+    // Don't rebuild if not necessary.
+    return vvShaderFactory::c_supportedTypes;
+  }
   std::vector<vvShaderManagerType> result;
 #ifdef HAVE_CG
-  result.push_back(VV_CG_MANAGER);
+  vvShaderFactory::c_supportedTypes.push_back(VV_CG_MANAGER);
 #endif
 
 #if defined GL_VERSION_1_1 || defined GL_VERSION_1_2 \
@@ -56,15 +63,22 @@ std::vector<vvShaderManagerType> vvShaderFactory::getSupportedShaderManagers()
   || defined GL_VERSION_3_0
   // Assume that even compilers that support higher gl versions
   // will know at least one of those listed here.
-  result.push_back(VV_GLSL_MANAGER);
+  vvShaderFactory::c_supportedTypes.push_back(VV_GLSL_MANAGER);
 #endif
-  return result;
+  return vvShaderFactory::c_supportedTypes;
 }
 
 bool vvShaderFactory::isSupported(const vvShaderManagerType& shaderManagerType)
 {
-  std::vector<vvShaderManagerType> types = vvShaderFactory::getSupportedShaderManagers();
-  std::vector<vvShaderManagerType>::iterator result = std::find(types.begin(), types.end(), shaderManagerType);
+  // If vector of supported types is empty, suspect that it wasn't built at all.
+  if (vvShaderFactory::c_supportedTypes.empty())
+  {
+    getSupportedShaderManagers();
+  }
+  std::vector<vvShaderManagerType>::iterator result =
+      std::find(vvShaderFactory::c_supportedTypes.begin(),
+                vvShaderFactory::c_supportedTypes.end(),
+                shaderManagerType);
 
   if (*result == shaderManagerType)
   {

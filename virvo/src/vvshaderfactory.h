@@ -78,6 +78,8 @@ public:
    * \return        True or false, depending on if the technology is supported or not.
    */
   static bool isSupported(const vvShaderManagerType& shaderManagerType);
+private:
+  static std::vector<vvShaderManagerType> c_supportedTypes;
 };
 
 #endif // _VV_SHADERFACTORY_H_
