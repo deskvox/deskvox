@@ -57,6 +57,27 @@ public:
    * \return        A shader manager instance or NULL.
    */
   static vvShaderManager* provideShaderManager(const vvShaderManagerType& shaderManagerType);
+
+  /*!
+   * \brief         Extend this method with checks to see if your platform is supported.
+   *
+   *                Extend the method with appropriate checks. If the desired technology
+   *                is supported on this platform, add your \ref vvShaderManagerType to
+   *                the managers array.
+   * \return        managers Manipulatable array of available manager types.
+   */
+  static std::vector<vvShaderManagerType> getSupportedShaderManagers();
+
+  /*!
+   * \brief         Use this method to check if a particular shader manager is supported.
+   *
+   *                The function is given a literal of \ref vvShaderManagerType. Check at
+   *                compile time if the technology is supported to return the result at
+   *                run time. Needs not to be extended for new shader type.
+   * \param         shaderManagerType The desired shader manager type.
+   * \return        True or false, depending on if the technology is supported or not.
+   */
+  static bool isSupported(const vvShaderManagerType& shaderManagerType);
 };
 
 #endif // _VV_SHADERFACTORY_H_

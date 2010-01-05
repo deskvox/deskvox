@@ -511,7 +511,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   extPixShd = false;
 #endif
   arbFrgPrg = isSupported(VV_FRG_PRG);
-  _proxyGeometryOnGpu = extPixShd && arbFrgPrg;
+  _proxyGeometryOnGpu = extPixShd && arbFrgPrg && _isectShader;
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two");
 
@@ -676,8 +676,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     pthread_barrier_wait(&_distributedBricksBarrier);
   }
 
-  initIntersectionShader(_isectShader);
-  setupIntersectionParameters(_isectShader);
+  if (_proxyGeometryOnGpu)
+  {
+    initIntersectionShader(_isectShader);
+    setupIntersectionParameters(_isectShader);
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -3337,9 +3340,8 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
   normal.normalize();
 
-#ifdef HAVE_CG
   // Local illumination based on blinn-phong shading.
-  if (_currentShader == 12)
+  if (voxelType == VV_PIX_SHD && _currentShader == 12)
   {
     // Currently the light is exactly at the current viewing position.
     // TODO: arbitrary (not necessarily frame dependend) lighting position.
@@ -3360,7 +3362,6 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     _pixelShader->setParameter3f(_currentShader, "L", L[0], L[1], L[2]);
     _pixelShader->setParameter3f(_currentShader, "H", H[0], H[1], H[2]);
   }
-#endif
 
   delta.copy(&normal);
   delta.scale(diagonal / ((float)numSlices));
@@ -4270,7 +4271,10 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   else
   {
     // Disable pixlut shader, brick are uniformly colored.
-    _pixelShader->disableShader(_currentShader);
+    if (voxelType == VV_PIX_SHD)
+    {
+      _pixelShader->disableShader(_currentShader);
+    }
     glBegin(GL_LINES);
     glColor4f(1.0, 1.0, 1.0, 1.0);
     for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
@@ -5192,7 +5196,7 @@ void vvTexRend::renderVolumeGL()
 
   if (_numThreads == 0)
   {
-    if (geomType == VV_BRICKS && !_renderState._showBricks)
+    if ((geomType == VV_BRICKS) && (!_renderState._showBricks) && _proxyGeometryOnGpu)
     {
       enableIntersectionShader(_isectShader);
     }
@@ -5587,7 +5591,21 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
       else vd->_binning = vvVolDesc::OPACITY;
       break;
     case vvRenderer::VV_GPUPROXYGEO:
-      _proxyGeometryOnGpu = (newValue == 0.0f) ? false : true;
+      if (newValue == 0.0f)
+      {
+        _proxyGeometryOnGpu = false;
+      }
+      else
+      {
+        if (vvShaderFactory::isSupported(VV_CG_MANAGER))
+        {
+          _proxyGeometryOnGpu = true;
+        }
+        else
+        {
+          _proxyGeometryOnGpu = false;
+        }
+      }
       break;
     case vvRenderer::VV_LEAPEMPTY:
       _renderState._emptySpaceLeaping = (newValue == 0.0f) ? false : true;

@@ -19,6 +19,8 @@
 #include "vvcg.h"
 #include "vvglsl.h"
 
+#include <algorithm>
+
 vvShaderManager* vvShaderFactory::provideShaderManager(const vvShaderManagerType& shaderManagerType)
 {
   vvShaderManager* result = NULL;
@@ -39,4 +41,37 @@ vvShaderManager* vvShaderFactory::provideShaderManager(const vvShaderManagerType
   }
 
   return result;
+}
+
+std::vector<vvShaderManagerType> vvShaderFactory::getSupportedShaderManagers()
+{
+  std::vector<vvShaderManagerType> result;
+#ifdef HAVE_CG
+  result.push_back(VV_CG_MANAGER);
+#endif
+
+#if defined GL_VERSION_1_1 || defined GL_VERSION_1_2 \
+  || defined GL_VERSION_1_3 || defined GL_VERSION_1_4 \
+  || defined GL_VERSION_1_5 || defined GL_VERSION_2_0 \
+  || defined GL_VERSION_3_0
+  // Assume that even compilers that support higher gl versions
+  // will know at least one of those listed here.
+  result.push_back(VV_GLSL_MANAGER);
+#endif
+  return result;
+}
+
+bool vvShaderFactory::isSupported(const vvShaderManagerType& shaderManagerType)
+{
+  std::vector<vvShaderManagerType> types = vvShaderFactory::getSupportedShaderManagers();
+  std::vector<vvShaderManagerType>::iterator result = std::find(types.begin(), types.end(), shaderManagerType);
+
+  if (*result == shaderManagerType)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
