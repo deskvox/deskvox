@@ -25,27 +25,19 @@
 #include <Cg/cg.h>
 #include <Cg/cgGL.h>
 
-enum vvCgParameterType
-{
-  VV_CG_SCALAR = 0,
-  VV_CG_VEC3,
-  VV_CG_VEC4,
-  VV_CG_ARRAY
-};
-
 class vvCgParameter
 {
 public:
   inline void setParameter(const CGparameter parameter) { _parameter = parameter; }
-  inline void setType(const vvCgParameterType type) { _type = type; }
+  inline void setType(const vvShaderParameterType type) { _type = type; }
   inline void setIdentifier(const char* identifier) { _identifier = identifier; }
 
   inline CGparameter getParameter() const { return _parameter; }
-  inline vvCgParameterType getType() const { return _type; }
+  inline vvShaderParameterType getType() const { return _type; }
   inline const char* getIdentifier() const { return _identifier; }
 private:
   CGparameter _parameter;
-  vvCgParameterType _type;
+  vvShaderParameterType _type;
   const char* _identifier;
 };
 
@@ -60,9 +52,9 @@ public:
   virtual void loadShaderByString(const char* shaderString, const ShaderType& shaderType);
   virtual void enableShader(const int programIndex);
   virtual void disableShader(const int programIndex);
-  virtual void initParameters(const int programIndex,
+  virtual void initParameters(const int index,
                               const char** parameterNames,
-                              const vvCgParameterType* parameterTypes,
+                              const vvShaderParameterType* parameterTypes,
                               const int parameterCount);
 
   /*!
@@ -91,7 +83,7 @@ public:
   virtual void setArrayParameter1i(const int programIndex, const char* parameterName, const int arrayIndex,
                                    const int& i1);
 
-  void setModelViewProj(const int programIndex, const char* parameterName);
+  virtual void setModelViewProj(const int programIndex, const char* parameterName);
 private:
   // Cg specific stuff.
   std::vector<CGprofile> _cgProfiles;

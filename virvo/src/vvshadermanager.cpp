@@ -173,3 +173,8 @@ void vvShaderManager::setArrayParameter4i(const int, const char*, const int,
 {
   throw "Function setArrayParameter4i not implemented by inherited class";
 }
+
+void vvShaderManager::setModelViewProj(int, const char*)
+{
+  throw "Function setModelViewProj not implemented by inherited class";
+}

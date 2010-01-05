@@ -74,6 +74,14 @@ class VIRVOEXPORT vvGLSL : public vvShaderManager
   void disableShader(const int index);
 
   /** TODO: implement this method
+    @param Intention: build up a mapping from names to uniform parameters.
+  */
+  void initParameters(const int index,
+                      const char** parameterNames,
+                      const vvShaderParameterType* parameterTypes,
+                      const int parameterCount);
+
+  /** TODO: implement this method
     @param Intention: initialize a stack with parameter handles to refer to.
   */
   void initParameters(const int programIndex);

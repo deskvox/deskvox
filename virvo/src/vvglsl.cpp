@@ -159,7 +159,9 @@ void vvGLSL::disableShader(const int)
   throw "Not implemented yet";
 }
 
-void vvGLSL::initParameters(const int)
+void vvGLSL::initParameters(const int,
+                            const char**,
+                            const vvShaderParameterType*,  const int)
 {
   throw "Not implemented yet";
 }

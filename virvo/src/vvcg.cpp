@@ -81,9 +81,9 @@ void vvCg::disableShader(const int index)
   cgGLDisableProfile(_cgProfiles.at(index));
 }
 
-void vvCg::initParameters(const int programIndex,
+void vvCg::initParameters(const int index,
                           const char** parameterNames,
-                          const vvCgParameterType* parameterTypes,
+                          const vvShaderParameterType* parameterTypes,
                           const int parameterCount)
 {
   assert((parameterNames != NULL) && (parameterTypes != NULL));
@@ -94,16 +94,16 @@ void vvCg::initParameters(const int programIndex,
   for (int i = 0; i < parameterCount; ++i)
   {
     params[i] = vvCgParameter();
-    params[i].setParameter(cgGetNamedParameter(_cgPrograms[programIndex], parameterNames[i]));
+    params[i].setParameter(cgGetNamedParameter(_cgPrograms[index], parameterNames[i]));
     params[i].setType(parameterTypes[i]);
     params[i].setIdentifier(parameterNames[i]);
 
     // Insert the param to the name map in order to perform search for parameter by name.
-    _cgParameterNameMaps[programIndex][params[i].getIdentifier()] = params[i];
+    _cgParameterNameMaps[index][params[i].getIdentifier()] = params[i];
   }
 
   _cgParameters.push_back(params);
-  _parametersInitialized[programIndex] = true;
+  _parametersInitialized[index] = true;
 }
 
 void vvCg::setParameter1f(const int programIndex, const char* parameterName,

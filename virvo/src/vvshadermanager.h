@@ -25,6 +25,14 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
+enum vvShaderParameterType
+{
+  VV_SHD_SCALAR = 0,
+  VV_SHD_VEC3,
+  VV_SHD_VEC4,
+  VV_SHD_ARRAY
+};
+
 class VIRVOEXPORT vvShaderManager
 {
 public:
@@ -90,6 +98,21 @@ public:
    * \param         index An index into the program stack.
    */
   virtual void disableShader(const int index) = 0;
+  /*!
+   * \brief         Initialize (uniform) parameters.
+   *
+   *                Implement this method in order to build a mapping
+   *                from uniform parameters to their program id and
+   *                to the string by which to access it.
+   * \param         index An index into the program stack.
+   * \param         parameterNames Array with names of all parameters.
+   * \param         parameterTypes For each name, specify the param type.
+   * \param         parameterCount Count names and types.
+   */
+  virtual void initParameters(const int index,
+                              const char** parameterNames,
+                              const vvShaderParameterType* parameterTypes,
+                              const int parameterCount) = 0;
 
   // If you desire any of the following functions, implement them in your specific implementation.
   // Note that using the methods of this (abstract) base class will result in thrown exceptions.
@@ -148,6 +171,19 @@ public:
                                    const int& i1, const int& i2, const int& i3);
   virtual void setArrayParameter4i(const int programIndex, const char* parameterName, const int arrayIndex,
                                    const int& i1, const int& i2, const int& i3, const int& i4);
+
+  /*!
+   * \brief         Init parameter with model view projection matrix.
+   *
+   *                Implement this method if you like to. Some shader
+   *                languages such as Glsl may even provide build-in
+   *                variables already accessible from within the
+   *                shader, making this function obsolete. The default
+   *                implementation will throw an exception on usage.
+   * \param         programIndex An index into the program stack.
+   * \param         parameterName Name of the parameter to modify.
+   */
+  virtual void setModelViewProj(const int programIndex, const char* parameterName);
 protected:
   // Non-public data.
 

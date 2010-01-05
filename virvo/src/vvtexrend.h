@@ -103,7 +103,7 @@ public:
   void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, vvCg*& cgIsect, bool setupEdges);
+              GLuint*& texNames, vvShaderManager*& isectShader, bool setupEdges);
 #else
   void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
@@ -335,7 +335,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     CGparameter _cgChannel4Color;                 ///< fragment program input: color of 4th channel
     CGparameter _cgOpacityWeights;                ///< fragment program input: opacity of color channels
 
-    vvCg* _cgIsect;
+    vvShaderManager* _isectShader;                ///< shader performing intersection test on gpu
     CGcontext _cgIsectContext;                    ///< context for gpu intersection program
     CGprofile _cgIsectProfile;                    ///< cg profile for gpu intersection program
     CGprogram _cgIsectProgram;                    ///< cg shader program for gpu intersection
