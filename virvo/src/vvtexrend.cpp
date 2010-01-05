@@ -4017,41 +4017,41 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
 
         glBegin(GL_LINES);
         glColor4f(1.0, 1.0, 1.0, 1.0);
-        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
-        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
+        glVertex3f(data->min[0], data->min[1], data->min[2]);
+          glVertex3f(data->max[0], data->min[1], data->min[2]);
 
-        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
-        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
+          glVertex3f(data->min[0], data->min[1], data->min[2]);
+          glVertex3f(data->min[0], data->max[1], data->min[2]);
 
-        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
-        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
+          glVertex3f(data->min[0], data->min[1], data->min[2]);
+          glVertex3f(data->min[0], data->min[1], data->max[2]);
 
-        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
-        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+          glVertex3f(data->max[0], data->max[1], data->max[2]);
+          glVertex3f(data->min[0], data->max[1], data->max[2]);
 
-        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
-        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+          glVertex3f(data->max[0], data->max[1], data->max[2]);
+          glVertex3f(data->max[0], data->min[1], data->max[2]);
 
-        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
-        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+          glVertex3f(data->max[0], data->max[1], data->max[2]);
+          glVertex3f(data->max[0], data->max[1], data->min[2]);
 
-        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
-        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+          glVertex3f(data->max[0], data->min[1], data->min[2]);
+          glVertex3f(data->max[0], data->max[1], data->min[2]);
 
-        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
-        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+          glVertex3f(data->max[0], data->min[1], data->min[2]);
+          glVertex3f(data->max[0], data->min[1], data->max[2]);
 
-        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
-        glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+          glVertex3f(data->min[0], data->max[1], data->min[2]);
+          glVertex3f(data->max[0], data->max[1], data->min[2]);
 
-        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
-        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+          glVertex3f(data->min[0], data->max[1], data->min[2]);
+          glVertex3f(data->min[0], data->max[1], data->max[2]);
 
-        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
-        glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+          glVertex3f(data->min[0], data->min[1], data->max[2]);
+          glVertex3f(data->max[0], data->min[1], data->max[2]);
 
-        glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
-        glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+          glVertex3f(data->min[0], data->min[1], data->max[2]);
+          glVertex3f(data->min[0], data->max[1], data->max[2]);
         glEnd();
         glFlush();
         vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
@@ -4392,41 +4392,41 @@ void vvTexRend::renderBricks(vvMatrix* mv)
           max.e[i] = tmp->max.e[i];
       }
 
-      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
-      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
+      glVertex3f(min[0], min[1], min[2]);
+      glVertex3f(max[0], min[1], min[2]);
 
-      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
-      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
+      glVertex3f(min[0], min[1], min[2]);
+      glVertex3f(min[0], max[1], min[2]);
 
-      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->min.e[2]);
-      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
+      glVertex3f(min[0], min[1], min[2]);
+      glVertex3f(min[0], min[1], max[2]);
 
-      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
-      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+      glVertex3f(max[0], max[1], max[2]);
+      glVertex3f(min[0], max[1], max[2]);
 
-      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
-      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+      glVertex3f(max[0], max[1], max[2]);
+      glVertex3f(max[0], min[1], max[2]);
 
-      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->max.e[2]);
-      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+      glVertex3f(max[0], max[1], max[2]);
+      glVertex3f(max[0], max[1], min[2]);
 
-      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
-      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+      glVertex3f(max[0], min[1], min[2]);
+      glVertex3f(max[0], max[1], min[2]);
 
-      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->min.e[2]);
-      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+      glVertex3f(max[0], min[1], min[2]);
+      glVertex3f(max[0], min[1], max[2]);
 
-      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
-      glVertex3f(tmp->max.e[0], tmp->max.e[1], tmp->min.e[2]);
+      glVertex3f(min[0], max[1], min[2]);
+      glVertex3f(max[0], max[1], min[2]);
 
-      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->min.e[2]);
-      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+      glVertex3f(min[0], max[1], min[2]);
+      glVertex3f(min[0], max[1], max[2]);
 
-      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
-      glVertex3f(tmp->max.e[0], tmp->min.e[1], tmp->max.e[2]);
+      glVertex3f(min[0], min[1], max[2]);
+      glVertex3f(max[0], min[1], max[2]);
 
-      glVertex3f(tmp->min.e[0], tmp->min.e[1], tmp->max.e[2]);
-      glVertex3f(tmp->min.e[0], tmp->max.e[1], tmp->max.e[2]);
+      glVertex3f(min[0], min[1], max[2]);
+      glVertex3f(min[0], max[1], max[2]);
 
       vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
     }
