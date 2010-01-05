@@ -12,12 +12,14 @@ void main(
   uniform float3      vertices[8],              // Cube vertices.
   uniform float4      brickMin,                 // includes planeStart in .w - saves a cgGLSetParameter call
   uniform float3      brickDimInv,
+  uniform float3      texMin,
+  uniform float3      texRange,
   uniform int         v1[24],                   // Start vertex idx's of the edges to intersect with.
   uniform int         v2[24],                   // End vertex idx's of the edges to intersect with.
 
   // Output variables.
   out float4          vertexOut     : POSITION,
-  out half3           texCoordOut   : TEXCOORD0
+  out float3          texCoordOut   : TEXCOORD0
 )
 {
   float planeDist = brickMin.w + vin.y * delta;
@@ -55,5 +57,6 @@ void main(
   vertexOut = mul(modelViewProj, float4(pos, 1.0f));
   // Use precalculated BrickDimInv since (x / BrickDim) would be a more costly operation).
   texCoordOut = (pos - brickMin) * brickDimInv;
+  texCoordOut = texCoordOut * texRange + texMin;
 }
 

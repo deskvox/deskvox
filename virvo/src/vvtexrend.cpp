@@ -165,6 +165,12 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   vvVector3 dist = max;
   dist.sub(&min);
 
+  vvVector3 distObj = maxObj;
+  distObj.sub(&minObj);
+
+  vvVector3 texRange;
+  vvVector3 texMin;
+
   glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
 
   vvVector3 texPoint;
@@ -198,6 +204,9 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
     {
       maxObjClipped[i] = maxObj[i];
     }
+
+    texRange[i] = (1.0f - 1.0f / (float)texels[i] / dist[i] * distObj[i]);
+    texMin[i] = (1.0f / (2.0f * (float)texels[i]));
   }
 
   vvAABB box(minObjClipped, maxObjClipped);
@@ -217,8 +226,12 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   }
   }
 
-  cgIsect->setParameter4f(0, "brickMin", min[0], min[1], min[2], -texPoint.length());
+  cgIsect->setParameter4f(0, "brickMin", minObj[0], minObj[1], minObj[2], -texPoint.length());
   cgIsect->setParameter3f(0, "brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
+  // Mind that textures overlap a little bit for correct interpolation at the borders.
+  // Thus add that little difference.
+  cgIsect->setParameter3f(0, "texRange", texRange[0], texRange[1], texRange[2]);
+  cgIsect->setParameter3f(0, "texMin", texMin[0], texMin[1], texMin[2]);
 
   float deltaInv = 1.0f / delta.length();
 
@@ -250,13 +263,7 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
       maxClipped.e[i] = probeMax.e[i];
     else
       maxClipped.e[i] = max.e[i];
-  }
 
-  vvVector3 texRange;
-  vvVector3 texMin;
-
-  for (int i = 0; i < 3; i++)
-  {
     texRange[i] = 1.0f - 1.0f / (float)texels[i];
     texMin[i] = 1.0f / (2.0f * (float)texels[i]);
   }
@@ -6313,20 +6320,22 @@ void vvTexRend::updateLUT(float dist)
                                                 CGparameter& cgFrontIndex, CGparameter& cgVertexList,
                                                 CGparameter*& cgVertices)
   {
-    int parameterCount = 10;
+    int parameterCount = 12;
     const char** parameterNames = new const char*[parameterCount];
     vvCgParameterType* parameterTypes = new vvCgParameterType[parameterCount];
     parameterNames[0] = "sequence";       parameterTypes[0] = VV_CG_ARRAY;
     parameterNames[1] = "v1";             parameterTypes[1] = VV_CG_ARRAY;
     parameterNames[2] = "v2";             parameterTypes[2] = VV_CG_ARRAY;
 
-    parameterNames[3] = "brickMin";       parameterTypes[3] = VV_CG_SCALAR;
-    parameterNames[4] = "brickDimInv";    parameterTypes[4] = VV_CG_SCALAR;
-    parameterNames[5] = "modelViewProj";  parameterTypes[5] = VV_CG_ARRAY;
-    parameterNames[6] = "delta";          parameterTypes[6] = VV_CG_SCALAR;
-    parameterNames[7] = "planeNormal";    parameterTypes[7] = VV_CG_VEC3;
-    parameterNames[8] = "frontIndex";     parameterTypes[8] = VV_CG_SCALAR;
-    parameterNames[9] = "vertices";       parameterTypes[9] = VV_CG_ARRAY;
+    parameterNames[3] = "brickMin";       parameterTypes[3] = VV_CG_VEC3;
+    parameterNames[4] = "brickDimInv";    parameterTypes[4] = VV_CG_VEC3;
+    parameterNames[5] = "texRange";       parameterTypes[5] = VV_CG_VEC3;
+    parameterNames[6] = "texMin";         parameterTypes[6] = VV_CG_VEC3;
+    parameterNames[7] = "modelViewProj";  parameterTypes[7] = VV_CG_ARRAY;
+    parameterNames[8] = "delta";          parameterTypes[8] = VV_CG_SCALAR;
+    parameterNames[9] = "planeNormal";    parameterTypes[9] = VV_CG_VEC3;
+    parameterNames[10] = "frontIndex";     parameterTypes[10] = VV_CG_SCALAR;
+    parameterNames[11] = "vertices";       parameterTypes[11] = VV_CG_ARRAY;
 
     _cgIsect->initParameters(0, parameterNames, parameterTypes, parameterCount);
 
