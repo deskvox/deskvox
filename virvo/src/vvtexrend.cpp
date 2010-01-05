@@ -5624,619 +5624,544 @@ void vvTexRend::updateLUT(float dist)
   vvGLTools::printGLError("leave updateLUT()");
 }
 
-  //----------------------------------------------------------------------------
-  /** Set user's viewing direction.
-    This information is needed to correctly orientate the texture slices
-    in 3D texturing mode if the user is inside the volume.
-    @param vd  viewing direction in object coordinates
-  */
-  void vvTexRend::setViewingDirection(const vvVector3* vd)
-  {
-    vvDebugMsg::msg(3, "vvTexRend::setViewingDirection()");
-    viewDir.copy(vd);
-  }
+//----------------------------------------------------------------------------
+/** Set user's viewing direction.
+  This information is needed to correctly orientate the texture slices
+  in 3D texturing mode if the user is inside the volume.
+  @param vd  viewing direction in object coordinates
+*/
+void vvTexRend::setViewingDirection(const vvVector3* vd)
+{
+  vvDebugMsg::msg(3, "vvTexRend::setViewingDirection()");
+  viewDir.copy(vd);
+}
 
-  //----------------------------------------------------------------------------
-  /** Set the direction from the viewer to the object.
-    This information is needed to correctly orientate the texture slices
-    in 3D texturing mode if the viewer is outside of the volume.
-    @param vd  object direction in object coordinates
-  */
-  void vvTexRend::setObjectDirection(const vvVector3* vd)
-  {
-    vvDebugMsg::msg(3, "vvTexRend::setObjectDirection()");
-    objDir.copy(vd);
-  }
+//----------------------------------------------------------------------------
+/** Set the direction from the viewer to the object.
+  This information is needed to correctly orientate the texture slices
+  in 3D texturing mode if the viewer is outside of the volume.
+  @param vd  object direction in object coordinates
+*/
+void vvTexRend::setObjectDirection(const vvVector3* vd)
+{
+  vvDebugMsg::msg(3, "vvTexRend::setObjectDirection()");
+  objDir.copy(vd);
+}
 
-  //----------------------------------------------------------------------------
-  // see parent
-  void vvTexRend::setParameter(ParameterType param, float newValue, char*)
-  {
-    bool newInterpol;
+//----------------------------------------------------------------------------
+// see parent
+void vvTexRend::setParameter(ParameterType param, float newValue, char*)
+{
+  bool newInterpol;
 
-    vvDebugMsg::msg(3, "vvTexRend::setParameter()");
-    switch (param)
-    {
-      case vvRenderer::VV_SLICEINT:
-        newInterpol = (newValue == 0.0f) ? false : true;
-        if (interpolation!=newInterpol)
+  vvDebugMsg::msg(3, "vvTexRend::setParameter()");
+  switch (param)
+  {
+    case vvRenderer::VV_SLICEINT:
+      newInterpol = (newValue == 0.0f) ? false : true;
+      if (interpolation!=newInterpol)
+      {
+        interpolation = newInterpol;
+        if (_numThreads > 0)
         {
-          interpolation = newInterpol;
-          if (_numThreads > 0)
+          for (int i = 0; i < _numThreads; ++i)
           {
-            for (int i = 0; i < _numThreads; ++i)
-            {
-              makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
-            }
+            makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
           }
-          else
-          {
-            makeTextures(texNames, &textures);
-          }
-        }
-        break;
-      case vvRenderer::VV_MIN_SLICE:
-        minSlice = int(newValue);
-        break;
-      case vvRenderer::VV_MAX_SLICE:
-        maxSlice = int(newValue);
-        break;
-      case vvRenderer::VV_OPCORR:
-        opacityCorrection = (newValue==0.0f) ? false : true;
-        break;
-      case vvRenderer::VV_SLICEORIENT:
-        _sliceOrientation = SliceOrientation(int(newValue));
-        break;
-      case vvRenderer::VV_PREINT:
-        preIntegration = (newValue == 0.0f) ? false : true;
-        updateTransferFunction();
-        break;
-      case vvRenderer::VV_BINNING:
-        if (newValue==0.0f) vd->_binning = vvVolDesc::LINEAR;
-        else if (newValue==1.0f) vd->_binning = vvVolDesc::ISO_DATA;
-        else vd->_binning = vvVolDesc::OPACITY;
-        break;      
-      case vvRenderer::VV_GPUPROXYGEO:
-        _proxyGeometryOnGpu = (newValue == 0.0f) ? false : true;
-        break;
-      case vvRenderer::VV_LEAPEMPTY:
-        _renderState._emptySpaceLeaping = (newValue == 0.0f) ? false : true;
-        updateTransferFunction();
-        break;
-      default:
-        vvRenderer::setParameter(param, newValue);
-        break;
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  // see parent for comments
-  float vvTexRend::getParameter(ParameterType param, char*)
-  {
-    vvDebugMsg::msg(3, "vvTexRend::getParameter()");
-
-    switch (param)
-    {
-      case vvRenderer::VV_SLICEINT:
-        return (interpolation) ? 1.0f : 0.0f;
-      case vvRenderer::VV_MIN_SLICE:
-        return float(minSlice);
-      case vvRenderer::VV_MAX_SLICE:
-        return float(maxSlice);
-      case vvRenderer::VV_SLICEORIENT:
-        return float(_sliceOrientation);
-      case vvRenderer::VV_PREINT:
-        return float(preIntegration);
-      case vvRenderer::VV_BINNING:
-        return float(vd->_binning);
-      default: return vvRenderer::getParameter(param);
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  /** Get information on hardware support for rendering modes.
-    This routine cannot guarantee that a requested method works on any
-    dataset, but it will at least work for datasets which fit into
-    texture memory.
-    @param geom geometry type to get information about
-    @return true if the requested rendering type is supported by
-      the system's graphics hardware.
-  */
-  bool vvTexRend::isSupported(GeometryType geom)
-  {
-    vvDebugMsg::msg(3, "vvTexRend::isSupported(0)");
-
-    switch (geom)
-    {
-      case VV_AUTO:
-      case VV_SLICES:
-      case VV_CUBIC2D:
-        return true;
-
-      case VV_VIEWPORT:
-      case VV_BRICKS:
-      case VV_SPHERICAL:
-#if defined(__APPLE__) && defined(GL_VERSION_1_2)
-        return true;
-#else
-        return vvGLTools::isGLextensionSupported("GL_EXT_texture3D");
-#endif
-      default:
-        return false;
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  /** Get information on hardware support for rendering modes.
-    @param geom voxel type to get information about
-    @return true if the requested voxel type is supported by
-      the system's graphics hardware.
-  */
-  bool vvTexRend::isSupported(VoxelType voxel)
-  {
-    vvDebugMsg::msg(3, "vvTexRend::isSupported(1)");
-
-    switch(voxel)
-    {
-      case VV_BEST:
-      case VV_RGBA:
-        return true;
-      case VV_SGI_LUT:
-        return vvGLTools::isGLextensionSupported("GL_SGI_texture_color_table");
-      case VV_PAL_TEX:
-        return vvGLTools::isGLextensionSupported("GL_EXT_paletted_texture");
-      case VV_TEX_SHD:
-        return vvGLTools::isGLextensionSupported("GL_ARB_multitexture") &&
-          vvGLTools::isGLextensionSupported("GL_NV_texture_shader") &&
-          vvGLTools::isGLextensionSupported("GL_NV_texture_shader2") &&
-          vvGLTools::isGLextensionSupported("GL_ARB_texture_env_combine") &&
-          vvGLTools::isGLextensionSupported("GL_NV_register_combiners") &&
-          vvGLTools::isGLextensionSupported("GL_NV_register_combiners2");
-      case VV_PIX_SHD:
-#ifdef HAVE_CG
-        return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
-#else
-        return false;
-#endif
-      case VV_FRG_PRG:
-        return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
-      default: return false;
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  /** Return true if a feature is supported.
-   */
-  bool vvTexRend::isSupported(FeatureType feature)
-  {
-    vvDebugMsg::msg(3, "vvTexRend::isSupported()");
-    switch(feature)
-    {
-      case VV_MIP: return true;
-      default: assert(0); break;
-    }
-    return false;
-  }
-
-  //----------------------------------------------------------------------------
-  /** Return the currently used rendering geometry.
-    This is expecially useful if VV_AUTO was passed in the constructor.
-  */
-  vvTexRend::GeometryType vvTexRend::getGeomType()
-  {
-    vvDebugMsg::msg(3, "vvTexRend::getGeomType()");
-    return geomType;
-  }
-
-  //----------------------------------------------------------------------------
-  /** Return the currently used voxel type.
-    This is expecially useful if VV_AUTO was passed in the constructor.
-  */
-  vvTexRend::VoxelType vvTexRend::getVoxelType()
-  {
-    vvDebugMsg::msg(3, "vvTexRend::getVoxelType()");
-    return voxelType;
-  }
-
-  //----------------------------------------------------------------------------
-  /** Return the currently used pixel shader [0..numShaders-1].
-   */
-  int vvTexRend::getCurrentShader()
-  {
-    vvDebugMsg::msg(3, "vvTexRend::getCurrentShader()");
-    return _currentShader;
-  }
-
-  //----------------------------------------------------------------------------
-  /** Set the currently used pixel shader [0..numShaders-1].
-   */
-  void vvTexRend::setCurrentShader(int shader)
-  {
-    vvDebugMsg::msg(3, "vvTexRend::setCurrentShader()");
-    if(shader >= NUM_PIXEL_SHADERS || shader < 0)
-       shader = 0;
-    _currentShader = shader;
-  }
-
-  //----------------------------------------------------------------------------
-  /// inherited from vvRenderer, only valid for planar textures
-  void vvTexRend::renderQualityDisplay()
-  {
-    int numSlices = int(_renderState._quality * 100.0f);
-    vvPrintGL* printGL = new vvPrintGL();
-    printGL->print(-0.9f, 0.9f, "Textures: %d", numSlices);
-    delete printGL;
-  }
-
-  //----------------------------------------------------------------------------
-  void vvTexRend::enableTexture(GLenum target)
-  {
-    if (voxelType==VV_TEX_SHD)
-    {
-      glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, target);
-    }
-    else
-    {
-      glEnable(target);
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  void vvTexRend::disableTexture(GLenum target)
-  {
-    if (voxelType==VV_TEX_SHD)
-    {
-      glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_NONE);
-    }
-    else
-    {
-      glDisable(target);
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  void vvTexRend::enableNVShaders()
-  {
-    glEnable(GL_TEXTURE_SHADER_NV);
-
-    glActiveTextureARB(GL_TEXTURE0_ARB);          // the volume data
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    vvGLTools::printGLError("Texture unit 0");
-
-    glActiveTextureARB(GL_TEXTURE1_ARB);
-    glBindTexture(GL_TEXTURE_2D, pixLUTName);
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_DEPENDENT_AR_TEXTURE_2D_NV);
-    glTexEnvi(GL_TEXTURE_SHADER_NV, GL_PREVIOUS_TEXTURE_INPUT_NV, GL_TEXTURE0_ARB);
-    vvGLTools::printGLError("Texture unit 1");
-
-    glActiveTextureARB(GL_TEXTURE2_ARB);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_3D);
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_NONE);
-    glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_NONE);
-
-    glActiveTextureARB(GL_TEXTURE3_ARB);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_3D);
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_NONE);
-    glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_NONE);
-
-    glActiveTextureARB(GL_TEXTURE0_ARB);
-  }
-
-  //----------------------------------------------------------------------------
-  void vvTexRend::disableNVShaders()
-  {
-    glDisable(GL_TEXTURE_SHADER_NV);
-    glActiveTextureARB(GL_TEXTURE1_ARB);
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_TEXTURE_2D);
-    glActiveTextureARB(GL_TEXTURE0_ARB);
-  }
-
-  //----------------------------------------------------------------------------
-  void vvTexRend::enableFragProg()
-  {
-    glActiveTextureARB(GL_TEXTURE1_ARB);
-    glBindTexture(GL_TEXTURE_2D, pixLUTName);
-    glActiveTextureARB(GL_TEXTURE0_ARB);
-
-    glEnable(GL_FRAGMENT_PROGRAM_ARB);
-    switch(geomType)
-    {
-      case VV_CUBIC2D:
-      case VV_SLICES:
-        glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_2D]);
-        break;
-      case VV_VIEWPORT:
-      case VV_SPHERICAL:
-      case VV_BRICKS:
-        if(usePreIntegration)
-        {
-          glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_PREINT]);
         }
         else
         {
-          glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_3D]);
+          makeTextures(texNames, &textures);
         }
-        break;
-      default:
-        vvDebugMsg::msg(1, "vvTexRend::enableFragProg(): unknown method used\n");
-        break;
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  void vvTexRend::disableFragProg()
-  {
-    glDisable(GL_FRAGMENT_PROGRAM_ARB);
-  }
-
-#ifdef HAVE_CG
-  //----------------------------------------------------------------------------
-  /// Automatically called when a Cg error occurs.
-  void checkCgError(CGcontext ctx, CGerror cgerr, void *)
-  {
-    if(cgerr != CG_NO_ERROR) 
-      cerr << cgGetErrorString(cgerr) << "(" << static_cast<int>(cgerr) << ")" << endl;
-    for(GLint glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
-    {
-      cerr << "GL error: " << gluErrorString(glerr) << endl;
-    }
-    if(ctx && cgerr==CG_COMPILER_ERROR)
-    {
-       if(const char *listing = cgGetLastListing(ctx))
-       {
-          cerr << "last listing:" << endl;
-          cerr << listing << endl;
-       }
-    }
-  }
-#endif
-
-  //----------------------------------------------------------------------------
-#ifdef HAVE_CG
-  void vvTexRend::enablePixelShaders(CGprogram*& cgProgram, CGparameter& cgPixLUT)
-#else
-  void vvTexRend::enablePixelShaders()
-#endif
-  {_currentShader = 12;
-#ifdef HAVE_CG
-    if(VV_PIX_SHD == voxelType)
-    {
-      // Load, enable, and bind fragment shader:
-
-      cgGLLoadProgram(cgProgram[_currentShader]);
-      cgGLEnableProfile(_cgFragProfile[_currentShader]);
-      cgGLBindProgram(cgProgram[_currentShader]);
-
-      // Set fragment program parameters:
-      if (_currentShader != 4)                    // pixLUT, doesn't work with grayscale shader
-      {
-        glBindTexture(GL_TEXTURE_2D, pixLUTName);
-        cgPixLUT = cgGetNamedParameter(cgProgram[_currentShader], "pixLUT");
-        cgGLSetTextureParameter(cgPixLUT, pixLUTName);
-        cgGLEnableTextureParameter(cgPixLUT);
       }
-                                                  // chan4color
-      if (_currentShader == 3 || _currentShader == 7)
-      {
-        _cgChannel4Color = cgGetNamedParameter(_cgProgram[_currentShader], "chan4color");
-        cgGLSetParameter3fv(_cgChannel4Color, _channel4Color);
-      }
-                                                  // opWeights
-      if (_currentShader > 4 && _currentShader < 8)
-      {
-        _cgOpacityWeights = cgGetNamedParameter(_cgProgram[_currentShader], "opWeights");
-        cgGLSetParameter4fv(_cgOpacityWeights, _opacityWeights);
-      }
-    }
-#endif
+      break;
+    case vvRenderer::VV_MIN_SLICE:
+      minSlice = int(newValue);
+      break;
+    case vvRenderer::VV_MAX_SLICE:
+      maxSlice = int(newValue);
+      break;
+    case vvRenderer::VV_OPCORR:
+      opacityCorrection = (newValue==0.0f) ? false : true;
+      break;
+    case vvRenderer::VV_SLICEORIENT:
+      _sliceOrientation = SliceOrientation(int(newValue));
+      break;
+    case vvRenderer::VV_PREINT:
+      preIntegration = (newValue == 0.0f) ? false : true;
+      updateTransferFunction();
+      break;
+    case vvRenderer::VV_BINNING:
+      if (newValue==0.0f) vd->_binning = vvVolDesc::LINEAR;
+      else if (newValue==1.0f) vd->_binning = vvVolDesc::ISO_DATA;
+      else vd->_binning = vvVolDesc::OPACITY;
+      break;
+    case vvRenderer::VV_GPUPROXYGEO:
+      _proxyGeometryOnGpu = (newValue == 0.0f) ? false : true;
+      break;
+    case vvRenderer::VV_LEAPEMPTY:
+      _renderState._emptySpaceLeaping = (newValue == 0.0f) ? false : true;
+      updateTransferFunction();
+      break;
+    default:
+      vvRenderer::setParameter(param, newValue);
+      break;
   }
+}
 
-  //----------------------------------------------------------------------------
-#ifdef HAVE_CG
-  void vvTexRend::disablePixelShaders(CGparameter& cgPixLUT)
+//----------------------------------------------------------------------------
+// see parent for comments
+float vvTexRend::getParameter(ParameterType param, char*)
+{
+  vvDebugMsg::msg(3, "vvTexRend::getParameter()");
+
+  switch (param)
+  {
+    case vvRenderer::VV_SLICEINT:
+      return (interpolation) ? 1.0f : 0.0f;
+    case vvRenderer::VV_MIN_SLICE:
+      return float(minSlice);
+    case vvRenderer::VV_MAX_SLICE:
+      return float(maxSlice);
+    case vvRenderer::VV_SLICEORIENT:
+      return float(_sliceOrientation);
+    case vvRenderer::VV_PREINT:
+      return float(preIntegration);
+    case vvRenderer::VV_BINNING:
+      return float(vd->_binning);
+    default: return vvRenderer::getParameter(param);
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Get information on hardware support for rendering modes.
+  This routine cannot guarantee that a requested method works on any
+  dataset, but it will at least work for datasets which fit into
+  texture memory.
+  @param geom geometry type to get information about
+  @return true if the requested rendering type is supported by
+    the system's graphics hardware.
+*/
+bool vvTexRend::isSupported(GeometryType geom)
+{
+  vvDebugMsg::msg(3, "vvTexRend::isSupported(0)");
+
+  switch (geom)
+  {
+    case VV_AUTO:
+    case VV_SLICES:
+    case VV_CUBIC2D:
+      return true;
+
+    case VV_VIEWPORT:
+    case VV_BRICKS:
+    case VV_SPHERICAL:
+#if defined(__APPLE__) && defined(GL_VERSION_1_2)
+      return true;
 #else
-  void vvTexRend::disablePixelShaders()
+      return vvGLTools::isGLextensionSupported("GL_EXT_texture3D");
 #endif
+    default:
+      return false;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Get information on hardware support for rendering modes.
+  @param geom voxel type to get information about
+  @return true if the requested voxel type is supported by
+    the system's graphics hardware.
+*/
+bool vvTexRend::isSupported(VoxelType voxel)
+{
+  vvDebugMsg::msg(3, "vvTexRend::isSupported(1)");
+
+  switch(voxel)
   {
+    case VV_BEST:
+    case VV_RGBA:
+      return true;
+    case VV_SGI_LUT:
+      return vvGLTools::isGLextensionSupported("GL_SGI_texture_color_table");
+    case VV_PAL_TEX:
+      return vvGLTools::isGLextensionSupported("GL_EXT_paletted_texture");
+    case VV_TEX_SHD:
+      return vvGLTools::isGLextensionSupported("GL_ARB_multitexture") &&
+        vvGLTools::isGLextensionSupported("GL_NV_texture_shader") &&
+        vvGLTools::isGLextensionSupported("GL_NV_texture_shader2") &&
+        vvGLTools::isGLextensionSupported("GL_ARB_texture_env_combine") &&
+        vvGLTools::isGLextensionSupported("GL_NV_register_combiners") &&
+        vvGLTools::isGLextensionSupported("GL_NV_register_combiners2");
+    case VV_PIX_SHD:
 #ifdef HAVE_CG
-    if(VV_PIX_SHD == voxelType)
-    {
-      cgGLDisableTextureParameter(cgPixLUT);
-      cgGLDisableProfile(_cgFragProfile[_currentShader]);
-    }
-#endif
-  }
-
-  //----------------------------------------------------------------------------
-  void vvTexRend::enableIntersectionShader(vvShaderManager*& isectShader)
-  {
-    if(_proxyGeometryOnGpu)
-    {
-      isectShader->enableShader(0);
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  void vvTexRend::disableIntersectionShader(vvShaderManager*& isectShader)
-  {
-    if(_proxyGeometryOnGpu)
-    {
-      isectShader->disableShader(0);
-    }
-  }
-
-  //----------------------------------------------------------------------------
-  /** @return true if initialization successful
-   */
-#ifdef HAVE_CG
-  bool vvTexRend::initPixelShaders(CGcontext& cgContext, CGprogram*& cgProgram)
+      return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
 #else
-  bool vvTexRend::initPixelShaders()
+      return false;
 #endif
+    case VV_FRG_PRG:
+      return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
+    default: return false;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Return true if a feature is supported.
+ */
+bool vvTexRend::isSupported(FeatureType feature)
+{
+  vvDebugMsg::msg(3, "vvTexRend::isSupported()");
+  switch(feature)
   {
+    case VV_MIP: return true;
+    default: assert(0); break;
+  }
+  return false;
+}
+
+//----------------------------------------------------------------------------
+/** Return the currently used rendering geometry.
+  This is expecially useful if VV_AUTO was passed in the constructor.
+*/
+vvTexRend::GeometryType vvTexRend::getGeomType()
+{
+  vvDebugMsg::msg(3, "vvTexRend::getGeomType()");
+  return geomType;
+}
+
+//----------------------------------------------------------------------------
+/** Return the currently used voxel type.
+  This is expecially useful if VV_AUTO was passed in the constructor.
+*/
+vvTexRend::VoxelType vvTexRend::getVoxelType()
+{
+  vvDebugMsg::msg(3, "vvTexRend::getVoxelType()");
+  return voxelType;
+}
+
+//----------------------------------------------------------------------------
+/** Return the currently used pixel shader [0..numShaders-1].
+ */
+int vvTexRend::getCurrentShader()
+{
+  vvDebugMsg::msg(3, "vvTexRend::getCurrentShader()");
+  return _currentShader;
+}
+
+//----------------------------------------------------------------------------
+/** Set the currently used pixel shader [0..numShaders-1].
+ */
+void vvTexRend::setCurrentShader(int shader)
+{
+  vvDebugMsg::msg(3, "vvTexRend::setCurrentShader()");
+  if(shader >= NUM_PIXEL_SHADERS || shader < 0)
+     shader = 0;
+  _currentShader = shader;
+}
+
+//----------------------------------------------------------------------------
+/// inherited from vvRenderer, only valid for planar textures
+void vvTexRend::renderQualityDisplay()
+{
+  int numSlices = int(_renderState._quality * 100.0f);
+  vvPrintGL* printGL = new vvPrintGL();
+  printGL->print(-0.9f, 0.9f, "Textures: %d", numSlices);
+  delete printGL;
+}
+
+//----------------------------------------------------------------------------
+void vvTexRend::enableTexture(GLenum target)
+{
+  if (voxelType==VV_TEX_SHD)
+  {
+    glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, target);
+  }
+  else
+  {
+    glEnable(target);
+  }
+}
+
+//----------------------------------------------------------------------------
+void vvTexRend::disableTexture(GLenum target)
+{
+  if (voxelType==VV_TEX_SHD)
+  {
+    glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_NONE);
+  }
+  else
+  {
+    glDisable(target);
+  }
+}
+
+//----------------------------------------------------------------------------
+void vvTexRend::enableNVShaders()
+{
+  glEnable(GL_TEXTURE_SHADER_NV);
+
+  glActiveTextureARB(GL_TEXTURE0_ARB);          // the volume data
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  vvGLTools::printGLError("Texture unit 0");
+
+  glActiveTextureARB(GL_TEXTURE1_ARB);
+  glBindTexture(GL_TEXTURE_2D, pixLUTName);
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_DEPENDENT_AR_TEXTURE_2D_NV);
+  glTexEnvi(GL_TEXTURE_SHADER_NV, GL_PREVIOUS_TEXTURE_INPUT_NV, GL_TEXTURE0_ARB);
+  vvGLTools::printGLError("Texture unit 1");
+
+  glActiveTextureARB(GL_TEXTURE2_ARB);
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_TEXTURE_3D);
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_NONE);
+  glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_NONE);
+
+  glActiveTextureARB(GL_TEXTURE3_ARB);
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_TEXTURE_3D);
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_NONE);
+  glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_NONE);
+
+  glActiveTextureARB(GL_TEXTURE0_ARB);
+}
+
+//----------------------------------------------------------------------------
+void vvTexRend::disableNVShaders()
+{
+  glDisable(GL_TEXTURE_SHADER_NV);
+  glActiveTextureARB(GL_TEXTURE1_ARB);
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_TEXTURE_2D);
+  glActiveTextureARB(GL_TEXTURE0_ARB);
+}
+
+//----------------------------------------------------------------------------
+void vvTexRend::enableFragProg()
+{
+  glActiveTextureARB(GL_TEXTURE1_ARB);
+  glBindTexture(GL_TEXTURE_2D, pixLUTName);
+  glActiveTextureARB(GL_TEXTURE0_ARB);
+
+  glEnable(GL_FRAGMENT_PROGRAM_ARB);
+  switch(geomType)
+  {
+    case VV_CUBIC2D:
+    case VV_SLICES:
+      glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_2D]);
+      break;
+    case VV_VIEWPORT:
+    case VV_SPHERICAL:
+    case VV_BRICKS:
+      if(usePreIntegration)
+      {
+        glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_PREINT]);
+      }
+      else
+      {
+        glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_3D]);
+      }
+      break;
+    default:
+      vvDebugMsg::msg(1, "vvTexRend::enableFragProg(): unknown method used\n");
+      break;
+  }
+}
+
+//----------------------------------------------------------------------------
+void vvTexRend::disableFragProg()
+{
+  glDisable(GL_FRAGMENT_PROGRAM_ARB);
+}
+
+#ifdef HAVE_CG
+//----------------------------------------------------------------------------
+/// Automatically called when a Cg error occurs.
+void checkCgError(CGcontext ctx, CGerror cgerr, void *)
+{
+  if(cgerr != CG_NO_ERROR)
+    cerr << cgGetErrorString(cgerr) << "(" << static_cast<int>(cgerr) << ")" << endl;
+  for(GLint glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
+  {
+    cerr << "GL error: " << gluErrorString(glerr) << endl;
+  }
+  if(ctx && cgerr==CG_COMPILER_ERROR)
+  {
+     if(const char *listing = cgGetLastListing(ctx))
+     {
+        cerr << "last listing:" << endl;
+        cerr << listing << endl;
+     }
+  }
+}
+#endif
+
+//----------------------------------------------------------------------------
+#ifdef HAVE_CG
+void vvTexRend::enablePixelShaders(CGprogram*& cgProgram, CGparameter& cgPixLUT)
+#else
+void vvTexRend::enablePixelShaders()
+#endif
+{_currentShader = 12;
+#ifdef HAVE_CG
+  if(VV_PIX_SHD == voxelType)
+  {
+    // Load, enable, and bind fragment shader:
+
+    cgGLLoadProgram(cgProgram[_currentShader]);
+    cgGLEnableProfile(_cgFragProfile[_currentShader]);
+    cgGLBindProgram(cgProgram[_currentShader]);
+
+    // Set fragment program parameters:
+    if (_currentShader != 4)                    // pixLUT, doesn't work with grayscale shader
+    {
+      glBindTexture(GL_TEXTURE_2D, pixLUTName);
+      cgPixLUT = cgGetNamedParameter(cgProgram[_currentShader], "pixLUT");
+      cgGLSetTextureParameter(cgPixLUT, pixLUTName);
+      cgGLEnableTextureParameter(cgPixLUT);
+    }
+                                                // chan4color
+    if (_currentShader == 3 || _currentShader == 7)
+    {
+      _cgChannel4Color = cgGetNamedParameter(_cgProgram[_currentShader], "chan4color");
+      cgGLSetParameter3fv(_cgChannel4Color, _channel4Color);
+    }
+                                                // opWeights
+    if (_currentShader > 4 && _currentShader < 8)
+    {
+      _cgOpacityWeights = cgGetNamedParameter(_cgProgram[_currentShader], "opWeights");
+      cgGLSetParameter4fv(_cgOpacityWeights, _opacityWeights);
+    }
+  }
+#endif
+}
+
+//----------------------------------------------------------------------------
+#ifdef HAVE_CG
+void vvTexRend::disablePixelShaders(CGparameter& cgPixLUT)
+#else
+void vvTexRend::disablePixelShaders()
+#endif
+{
+#ifdef HAVE_CG
+  if(VV_PIX_SHD == voxelType)
+  {
+    cgGLDisableTextureParameter(cgPixLUT);
+    cgGLDisableProfile(_cgFragProfile[_currentShader]);
+  }
+#endif
+}
+
+//----------------------------------------------------------------------------
+void vvTexRend::enableIntersectionShader(vvShaderManager*& isectShader)
+{
+  if(_proxyGeometryOnGpu)
+  {
+    isectShader->enableShader(0);
+  }
+}
+
+//----------------------------------------------------------------------------
+void vvTexRend::disableIntersectionShader(vvShaderManager*& isectShader)
+{
+  if(_proxyGeometryOnGpu)
+  {
+    isectShader->disableShader(0);
+  }
+}
+
+//----------------------------------------------------------------------------
+/** @return true if initialization successful
+ */
+#ifdef HAVE_CG
+bool vvTexRend::initPixelShaders(CGcontext& cgContext, CGprogram*& cgProgram)
+#else
+bool vvTexRend::initPixelShaders()
+#endif
+{
 #ifdef HAVE_CG
 #ifdef _WIN32
-    const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
+  const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
 #endif
-    const char* shaderFileName = "vv_shader";
-    const char* shaderEnv = "VV_SHADER_PATH";
-    const char* shaderExt = ".cg";
-    const char* unixShaderDir = NULL;
-    char* shaderFile = NULL;
-    char* shaderPath = NULL;
-    char shaderDir[256];
-    int i;
+  const char* shaderFileName = "vv_shader";
+  const char* shaderEnv = "VV_SHADER_PATH";
+  const char* shaderExt = ".cg";
+  const char* unixShaderDir = NULL;
+  char* shaderFile = NULL;
+  char* shaderPath = NULL;
+  char shaderDir[256];
+  int i;
 
-    cerr << "enable PIX called"<< endl;
+  cerr << "enable PIX called"<< endl;
 
-    cgContext = cgCreateContext();
-    if (!cgContext) cerr << "Could not create Cg context." << endl;
+  cgContext = cgCreateContext();
+  if (!cgContext) cerr << "Could not create Cg context." << endl;
 
-    cgSetErrorHandler(checkCgError, NULL);
+  cgSetErrorHandler(checkCgError, NULL);
 
-    // Check if correct version of pixel shaders is available:
-    if(cgGLIsProfileSupported(CG_PROFILE_ARBFP1)) // test for GL_ARB_fragment_program
-    {
-                                                  // FIXME: why isn't this a show stopper?
-      cerr << "Hardware may not support extension CG_PROFILE_ARBFP1" << endl;
-      //    return false;
-    }
-                                                  // test for GL_NV_fragment_program
-    if(cgGLIsProfileSupported(CG_PROFILE_FP20)==CG_TRUE)
-    {
-      cerr << "Hardware may not support extension CG_PROFILE_VP20" << endl;
-      //    return false;
-    }
-                                                  // test for GL_NV_fragment_program
-    if(cgGLIsProfileSupported(CG_PROFILE_FP30)==CG_TRUE)
-    {
-      cerr << "Hardware may not support extension CG_PROFILE_VP30" << endl;
-      //    return false;
-    }
+  // Check if correct version of pixel shaders is available:
+  if(cgGLIsProfileSupported(CG_PROFILE_ARBFP1)) // test for GL_ARB_fragment_program
+  {
+                                                // FIXME: why isn't this a show stopper?
+    cerr << "Hardware may not support extension CG_PROFILE_ARBFP1" << endl;
+    //    return false;
+  }
+                                                // test for GL_NV_fragment_program
+  if(cgGLIsProfileSupported(CG_PROFILE_FP20)==CG_TRUE)
+  {
+    cerr << "Hardware may not support extension CG_PROFILE_VP20" << endl;
+    //    return false;
+  }
+                                                // test for GL_NV_fragment_program
+  if(cgGLIsProfileSupported(CG_PROFILE_FP30)==CG_TRUE)
+  {
+    cerr << "Hardware may not support extension CG_PROFILE_VP30" << endl;
+    //    return false;
+  }
 
-    // Specify shader path:
-    cerr << "Searching for shader files..." << endl;
-    if (getenv(shaderEnv))
-    {
-      cerr << "Environment variable " << shaderEnv << " found: " << getenv(shaderEnv) << endl;
-      unixShaderDir = getenv(shaderEnv);
-    }
-    else
-    {
-      cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
+  // Specify shader path:
+  cerr << "Searching for shader files..." << endl;
+  if (getenv(shaderEnv))
+  {
+    cerr << "Environment variable " << shaderEnv << " found: " << getenv(shaderEnv) << endl;
+    unixShaderDir = getenv(shaderEnv);
+  }
+  else
+  {
+    cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
 #ifdef _WIN32
-      vvToolshed::getProgramDirectory(shaderDir, 256);
-      strcat(shaderDir, primaryWin32ShaderDir);
-      cerr << "Trying shader path: " << shaderDir << endl;
-      if (!vvToolshed::isDirectory(shaderDir))
-      {
-	 vvToolshed::getProgramDirectory(shaderDir, 256);
-      }
-      cerr << "Using shader path: " << shaderDir << endl;
-      unixShaderDir = shaderDir;
+    vvToolshed::getProgramDirectory(shaderDir, 256);
+    strcat(shaderDir, primaryWin32ShaderDir);
+    cerr << "Trying shader path: " << shaderDir << endl;
+    if (!vvToolshed::isDirectory(shaderDir))
+    {
+       vvToolshed::getProgramDirectory(shaderDir, 256);
+    }
+    cerr << "Using shader path: " << shaderDir << endl;
+    unixShaderDir = shaderDir;
 #else
-      const char* deskVoxShaderPath = "../";
+    const char* deskVoxShaderPath = "../";
 #ifdef SHADERDIR
-      unixShaderDir = SHADERDIR;
+    unixShaderDir = SHADERDIR;
 #else
-      vvToolshed::getProgramDirectory(shaderDir, 256);
-      strcat(shaderDir, deskVoxShaderPath);
-      unixShaderDir = shaderDir;
+    vvToolshed::getProgramDirectory(shaderDir, 256);
+    strcat(shaderDir, deskVoxShaderPath);
+    unixShaderDir = shaderDir;
 #endif
 #endif
-    }
-    cerr << "Using shader path: " << unixShaderDir << endl;
-
-    // Load shader files:
-    for (i=0; i<NUM_PIXEL_SHADERS; ++i)
-    {
-      shaderFile = new char[strlen(shaderFileName) + 2 + strlen(shaderExt) + 1];
-      sprintf(shaderFile, "%s%02d%s", shaderFileName, i+1, shaderExt);
-
-      _cgFragProfile[i] = CG_PROFILE_ARBFP1;      // The GL Fragment Profile
-      cgGLSetOptimalOptions(_cgFragProfile[i]);
-
-      // Load Vertex Shader From File:
-      // FIXME: why don't relative paths work under Linux?
-      shaderPath = new char[strlen(unixShaderDir) + 1 + strlen(shaderFile) + 1];
-#ifdef _WIN32
-      sprintf(shaderPath, "%s\\%s", unixShaderDir, shaderFile);
-#else
-      sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
-#endif
-
-      cerr << "Loading shader file: " << shaderPath << endl;
-
-      cgProgram[i] = cgCreateProgramFromFile(cgContext, CG_SOURCE, shaderPath, _cgFragProfile[i], "main", 0);
-
-      delete[] shaderFile;
-      delete[] shaderPath;
-
-      // Validate success:
-      if (cgProgram[i] == NULL)
-      {
-        cerr << "Error: failed to compile fragment program " << i+1 << endl;
-        return false;
-      }
-      else cerr << "Fragment program " << i+1 << " compiled" << endl;
-    }
-
-    cerr << "Fragment programs ready." << endl;
-#endif
-    return true;
   }
+  cerr << "Using shader path: " << unixShaderDir << endl;
 
-  //----------------------------------------------------------------------------
-  /** @return true if initialization successful
-   */
-  bool vvTexRend::initIntersectionShader(vvShaderManager*& isectShader)
+  // Load shader files:
+  for (i=0; i<NUM_PIXEL_SHADERS; ++i)
   {
-#ifdef _WIN32
-    const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
-#endif
-    const char* shaderFileName = "vv_intersection.cg";
-    const char* shaderEnv = "VV_SHADER_PATH";
-    const char* unixShaderDir = NULL;
-    char* shaderFile = NULL;
-    char* shaderPath = NULL;
-    char shaderDir[256];
+    shaderFile = new char[strlen(shaderFileName) + 2 + strlen(shaderExt) + 1];
+    sprintf(shaderFile, "%s%02d%s", shaderFileName, i+1, shaderExt);
 
-    if (getenv(shaderEnv))
-    {
-      unixShaderDir = getenv(shaderEnv);
-    }
-    else
-    {
-      cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
-#ifdef _WIN32
-      vvToolshed::getProgramDirectory(shaderDir, 256);
-      strcat(shaderDir, primaryWin32ShaderDir);
-      cerr << "Trying shader path: " << shaderDir << endl;
-      if (!vvToolshed::isDirectory(shaderDir))
-      {
-   vvToolshed::getProgramDirectory(shaderDir, 256);
-      }
-      cerr << "Using shader path: " << shaderDir << endl;
-      unixShaderDir = shaderDir;
-#else
-      const char* deskVoxShaderPath = "../";
-#ifdef SHADERDIR
-      unixShaderDir = SHADERDIR;
-#else
-      vvToolshed::getProgramDirectory(shaderDir, 256);
-      strcat(shaderDir, deskVoxShaderPath);
-      unixShaderDir = shaderDir;
-#endif
-#endif
-    }
+    _cgFragProfile[i] = CG_PROFILE_ARBFP1;      // The GL Fragment Profile
+    cgGLSetOptimalOptions(_cgFragProfile[i]);
 
-    shaderFile = new char[strlen(shaderFileName) + 1];
-    sprintf(shaderFile, "%s", shaderFileName);
-
+    // Load Vertex Shader From File:
+    // FIXME: why don't relative paths work under Linux?
     shaderPath = new char[strlen(unixShaderDir) + 1 + strlen(shaderFile) + 1];
 #ifdef _WIN32
     sprintf(shaderPath, "%s\\%s", unixShaderDir, shaderFile);
@@ -6244,336 +6169,411 @@ void vvTexRend::updateLUT(float dist)
     sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
 #endif
 
-    _isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
+    cerr << "Loading shader file: " << shaderPath << endl;
+
+    cgProgram[i] = cgCreateProgramFromFile(cgContext, CG_SOURCE, shaderPath, _cgFragProfile[i], "main", 0);
 
     delete[] shaderFile;
     delete[] shaderPath;
 
-    setupIntersectionParameters(isectShader);
-
-    return true;
-  }
-
-  void vvTexRend::setupIntersectionParameters(vvShaderManager*& isectShader)
-  {
-    int parameterCount = 12;
-    const char** parameterNames = new const char*[parameterCount];
-    vvShaderParameterType* parameterTypes = new vvShaderParameterType[parameterCount];
-    parameterNames[0] = "sequence";       parameterTypes[0] = VV_SHD_ARRAY;
-    parameterNames[1] = "v1";             parameterTypes[1] = VV_SHD_ARRAY;
-    parameterNames[2] = "v2";             parameterTypes[2] = VV_SHD_ARRAY;
-
-    parameterNames[3] = "brickMin";       parameterTypes[3] = VV_SHD_VEC4;
-    parameterNames[4] = "brickDimInv";    parameterTypes[4] = VV_SHD_VEC3;
-    parameterNames[5] = "texRange";       parameterTypes[5] = VV_SHD_VEC3;
-    parameterNames[6] = "texMin";         parameterTypes[6] = VV_SHD_VEC3;
-    parameterNames[7] = "modelViewProj";  parameterTypes[7] = VV_SHD_ARRAY;
-    parameterNames[8] = "delta";          parameterTypes[8] = VV_SHD_SCALAR;
-    parameterNames[9] = "planeNormal";    parameterTypes[9] = VV_SHD_VEC3;
-    parameterNames[10] = "frontIndex";     parameterTypes[10] = VV_SHD_SCALAR;
-    parameterNames[11] = "vertices";       parameterTypes[11] = VV_SHD_ARRAY;
-
-    _isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);
-
-    // Global scope, values will never be changed.
-    
-    isectShader->setArrayParameter1i(0, "sequence", 0, 0);
-    isectShader->setArrayParameter1i(0, "sequence", 1, 1);
-    isectShader->setArrayParameter1i(0, "sequence", 2, 2);
-    isectShader->setArrayParameter1i(0, "sequence", 3, 3);
-    isectShader->setArrayParameter1i(0, "sequence", 4, 4);
-    isectShader->setArrayParameter1i(0, "sequence", 5, 5);
-    isectShader->setArrayParameter1i(0, "sequence", 6, 6);
-    isectShader->setArrayParameter1i(0, "sequence", 7, 7);
-
-    isectShader->setArrayParameter1i(0, "sequence", 8, 1);
-    isectShader->setArrayParameter1i(0, "sequence", 9, 2);
-    isectShader->setArrayParameter1i(0, "sequence", 10, 3);
-    isectShader->setArrayParameter1i(0, "sequence", 11, 0);
-    isectShader->setArrayParameter1i(0, "sequence", 12, 7);
-    isectShader->setArrayParameter1i(0, "sequence", 13, 4);
-    isectShader->setArrayParameter1i(0, "sequence", 14, 5);
-    isectShader->setArrayParameter1i(0, "sequence", 15, 6);
-
-    isectShader->setArrayParameter1i(0, "sequence", 16, 2);
-    isectShader->setArrayParameter1i(0, "sequence", 17, 7);
-    isectShader->setArrayParameter1i(0, "sequence", 18, 6);
-    isectShader->setArrayParameter1i(0, "sequence", 19, 3);
-    isectShader->setArrayParameter1i(0, "sequence", 20, 4);
-    isectShader->setArrayParameter1i(0, "sequence", 21, 1);
-    isectShader->setArrayParameter1i(0, "sequence", 22, 0);
-    isectShader->setArrayParameter1i(0, "sequence", 23, 5);
-
-    isectShader->setArrayParameter1i(0, "sequence", 24, 3);
-    isectShader->setArrayParameter1i(0, "sequence", 25, 6);
-    isectShader->setArrayParameter1i(0, "sequence", 26, 5);
-    isectShader->setArrayParameter1i(0, "sequence", 27, 0);
-    isectShader->setArrayParameter1i(0, "sequence", 28, 7);
-    isectShader->setArrayParameter1i(0, "sequence", 29, 2);
-    isectShader->setArrayParameter1i(0, "sequence", 30, 1);
-    isectShader->setArrayParameter1i(0, "sequence", 31, 4);
-
-    isectShader->setArrayParameter1i(0, "sequence", 32, 4);
-    isectShader->setArrayParameter1i(0, "sequence", 33, 5);
-    isectShader->setArrayParameter1i(0, "sequence", 34, 6);
-    isectShader->setArrayParameter1i(0, "sequence", 35, 7);
-    isectShader->setArrayParameter1i(0, "sequence", 36, 0);
-    isectShader->setArrayParameter1i(0, "sequence", 37, 1);
-    isectShader->setArrayParameter1i(0, "sequence", 38, 2);
-    isectShader->setArrayParameter1i(0, "sequence", 39, 3);
-
-    isectShader->setArrayParameter1i(0, "sequence", 40, 5);
-    isectShader->setArrayParameter1i(0, "sequence", 41, 0);
-    isectShader->setArrayParameter1i(0, "sequence", 42, 3);
-    isectShader->setArrayParameter1i(0, "sequence", 43, 6);
-    isectShader->setArrayParameter1i(0, "sequence", 44, 1);
-    isectShader->setArrayParameter1i(0, "sequence", 45, 4);
-    isectShader->setArrayParameter1i(0, "sequence", 46, 7);
-    isectShader->setArrayParameter1i(0, "sequence", 47, 2);
-
-    isectShader->setArrayParameter1i(0, "sequence", 48, 6);
-    isectShader->setArrayParameter1i(0, "sequence", 49, 7);
-    isectShader->setArrayParameter1i(0, "sequence", 50, 4);
-    isectShader->setArrayParameter1i(0, "sequence", 51, 5);
-    isectShader->setArrayParameter1i(0, "sequence", 52, 2);
-    isectShader->setArrayParameter1i(0, "sequence", 53, 3);
-    isectShader->setArrayParameter1i(0, "sequence", 54, 0);
-    isectShader->setArrayParameter1i(0, "sequence", 55, 1);
-
-    isectShader->setArrayParameter1i(0, "sequence", 56, 7);
-    isectShader->setArrayParameter1i(0, "sequence", 57, 6);
-    isectShader->setArrayParameter1i(0, "sequence", 58, 3);
-    isectShader->setArrayParameter1i(0, "sequence", 59, 2);
-    isectShader->setArrayParameter1i(0, "sequence", 60, 5);
-    isectShader->setArrayParameter1i(0, "sequence", 61, 4);
-    isectShader->setArrayParameter1i(0, "sequence", 62, 1);
-    isectShader->setArrayParameter1i(0, "sequence", 63, 0);
-
-    // P0.
-    isectShader->setArrayParameter1i(0, "v1", 0, 0); isectShader->setArrayParameter1i(0, "v2", 0, 1);
-    isectShader->setArrayParameter1i(0, "v1", 1, 1); isectShader->setArrayParameter1i(0, "v2", 1, 2);
-    isectShader->setArrayParameter1i(0, "v1", 2, 2); isectShader->setArrayParameter1i(0, "v2", 2, 7);
-
-    // P2.
-    isectShader->setArrayParameter1i(0, "v1", 8, 0); isectShader->setArrayParameter1i(0, "v2", 8, 5);
-    isectShader->setArrayParameter1i(0, "v1", 9, 5); isectShader->setArrayParameter1i(0, "v2", 9, 4);
-    isectShader->setArrayParameter1i(0, "v1", 10, 4); isectShader->setArrayParameter1i(0, "v2", 10, 7);
-
-    // P4.
-    isectShader->setArrayParameter1i(0, "v1", 16, 0); isectShader->setArrayParameter1i(0, "v2", 16, 3);
-    isectShader->setArrayParameter1i(0, "v1", 17, 3); isectShader->setArrayParameter1i(0, "v2", 17, 6);
-    isectShader->setArrayParameter1i(0, "v1", 18, 6); isectShader->setArrayParameter1i(0, "v2", 18, 7);
-
-    // P1.
-    // First intersect the dotted edge.
-    isectShader->setArrayParameter1i(0, "v1", 4, 1); isectShader->setArrayParameter1i(0, "v2", 4, 4);
-    // Then intersect the path.
-    isectShader->setArrayParameter1i(0, "v1", 5, 0); isectShader->setArrayParameter1i(0, "v2", 5, 1);
-    isectShader->setArrayParameter1i(0, "v1", 6, 1); isectShader->setArrayParameter1i(0, "v2", 6, 2);
-    isectShader->setArrayParameter1i(0, "v1", 7, 2); isectShader->setArrayParameter1i(0, "v2", 7, 7);
-
-    // P3.
-    // First intersect the dotted edge.
-    isectShader->setArrayParameter1i(0, "v1", 12, 5); isectShader->setArrayParameter1i(0, "v2", 12, 6);
-    // Then intersect the path.
-    isectShader->setArrayParameter1i(0, "v1", 13, 0); isectShader->setArrayParameter1i(0, "v2", 13, 5);
-    isectShader->setArrayParameter1i(0, "v1", 14, 5); isectShader->setArrayParameter1i(0, "v2", 14, 4);
-    isectShader->setArrayParameter1i(0, "v1", 15, 4); isectShader->setArrayParameter1i(0, "v2", 15, 7);
-
-    // P5.
-    // First intersect the dotted edge.
-    isectShader->setArrayParameter1i(0, "v1", 20, 3); isectShader->setArrayParameter1i(0, "v2", 20, 2);
-    // Then intersect the path.
-    isectShader->setArrayParameter1i(0, "v1", 21, 0); isectShader->setArrayParameter1i(0, "v2", 21, 3);
-    isectShader->setArrayParameter1i(0, "v1", 22, 3); isectShader->setArrayParameter1i(0, "v2", 22, 6);
-    isectShader->setArrayParameter1i(0, "v1", 23, 6); isectShader->setArrayParameter1i(0, "v2", 23, 7);
-  }
-
-  //----------------------------------------------------------------------------
-  void vvTexRend::printLUT()
-  {
-    int i,c;
-    int lutEntries[3];
-    int total;
-
-    total = getLUTSize(lutEntries);
-    for (i=0; i<total; ++i)
+    // Validate success:
+    if (cgProgram[i] == NULL)
     {
-      cerr << "#" << i << ": ";
-      for (c=0; c<4; ++c)
+      cerr << "Error: failed to compile fragment program " << i+1 << endl;
+      return false;
+    }
+    else cerr << "Fragment program " << i+1 << " compiled" << endl;
+  }
+
+  cerr << "Fragment programs ready." << endl;
+#endif
+  return true;
+}
+
+//----------------------------------------------------------------------------
+/** @return true if initialization successful
+ */
+bool vvTexRend::initIntersectionShader(vvShaderManager*& isectShader)
+{
+#ifdef _WIN32
+  const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
+#endif
+  const char* shaderFileName = "vv_intersection.cg";
+  const char* shaderEnv = "VV_SHADER_PATH";
+  const char* unixShaderDir = NULL;
+  char* shaderFile = NULL;
+  char* shaderPath = NULL;
+  char shaderDir[256];
+
+  if (getenv(shaderEnv))
+  {
+    unixShaderDir = getenv(shaderEnv);
+  }
+  else
+  {
+    cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
+#ifdef _WIN32
+    vvToolshed::getProgramDirectory(shaderDir, 256);
+    strcat(shaderDir, primaryWin32ShaderDir);
+    cerr << "Trying shader path: " << shaderDir << endl;
+    if (!vvToolshed::isDirectory(shaderDir))
+    {
+ vvToolshed::getProgramDirectory(shaderDir, 256);
+    }
+    cerr << "Using shader path: " << shaderDir << endl;
+    unixShaderDir = shaderDir;
+#else
+    const char* deskVoxShaderPath = "../";
+#ifdef SHADERDIR
+    unixShaderDir = SHADERDIR;
+#else
+    vvToolshed::getProgramDirectory(shaderDir, 256);
+    strcat(shaderDir, deskVoxShaderPath);
+    unixShaderDir = shaderDir;
+#endif
+#endif
+  }
+
+  shaderFile = new char[strlen(shaderFileName) + 1];
+  sprintf(shaderFile, "%s", shaderFileName);
+
+  shaderPath = new char[strlen(unixShaderDir) + 1 + strlen(shaderFile) + 1];
+#ifdef _WIN32
+  sprintf(shaderPath, "%s\\%s", unixShaderDir, shaderFile);
+#else
+  sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
+#endif
+
+  _isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
+
+  delete[] shaderFile;
+  delete[] shaderPath;
+
+  setupIntersectionParameters(isectShader);
+
+  return true;
+}
+
+void vvTexRend::setupIntersectionParameters(vvShaderManager*& isectShader)
+{
+  int parameterCount = 12;
+  const char** parameterNames = new const char*[parameterCount];
+  vvShaderParameterType* parameterTypes = new vvShaderParameterType[parameterCount];
+  parameterNames[0] = "sequence";       parameterTypes[0] = VV_SHD_ARRAY;
+  parameterNames[1] = "v1";             parameterTypes[1] = VV_SHD_ARRAY;
+  parameterNames[2] = "v2";             parameterTypes[2] = VV_SHD_ARRAY;
+
+  parameterNames[3] = "brickMin";       parameterTypes[3] = VV_SHD_VEC4;
+  parameterNames[4] = "brickDimInv";    parameterTypes[4] = VV_SHD_VEC3;
+  parameterNames[5] = "texRange";       parameterTypes[5] = VV_SHD_VEC3;
+  parameterNames[6] = "texMin";         parameterTypes[6] = VV_SHD_VEC3;
+  parameterNames[7] = "modelViewProj";  parameterTypes[7] = VV_SHD_ARRAY;
+  parameterNames[8] = "delta";          parameterTypes[8] = VV_SHD_SCALAR;
+  parameterNames[9] = "planeNormal";    parameterTypes[9] = VV_SHD_VEC3;
+  parameterNames[10] = "frontIndex";     parameterTypes[10] = VV_SHD_SCALAR;
+  parameterNames[11] = "vertices";       parameterTypes[11] = VV_SHD_ARRAY;
+
+  _isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);
+
+  // Global scope, values will never be changed.
+
+  isectShader->setArrayParameter1i(0, "sequence", 0, 0);
+  isectShader->setArrayParameter1i(0, "sequence", 1, 1);
+  isectShader->setArrayParameter1i(0, "sequence", 2, 2);
+  isectShader->setArrayParameter1i(0, "sequence", 3, 3);
+  isectShader->setArrayParameter1i(0, "sequence", 4, 4);
+  isectShader->setArrayParameter1i(0, "sequence", 5, 5);
+  isectShader->setArrayParameter1i(0, "sequence", 6, 6);
+  isectShader->setArrayParameter1i(0, "sequence", 7, 7);
+
+  isectShader->setArrayParameter1i(0, "sequence", 8, 1);
+  isectShader->setArrayParameter1i(0, "sequence", 9, 2);
+  isectShader->setArrayParameter1i(0, "sequence", 10, 3);
+  isectShader->setArrayParameter1i(0, "sequence", 11, 0);
+  isectShader->setArrayParameter1i(0, "sequence", 12, 7);
+  isectShader->setArrayParameter1i(0, "sequence", 13, 4);
+  isectShader->setArrayParameter1i(0, "sequence", 14, 5);
+  isectShader->setArrayParameter1i(0, "sequence", 15, 6);
+
+  isectShader->setArrayParameter1i(0, "sequence", 16, 2);
+  isectShader->setArrayParameter1i(0, "sequence", 17, 7);
+  isectShader->setArrayParameter1i(0, "sequence", 18, 6);
+  isectShader->setArrayParameter1i(0, "sequence", 19, 3);
+  isectShader->setArrayParameter1i(0, "sequence", 20, 4);
+  isectShader->setArrayParameter1i(0, "sequence", 21, 1);
+  isectShader->setArrayParameter1i(0, "sequence", 22, 0);
+  isectShader->setArrayParameter1i(0, "sequence", 23, 5);
+
+  isectShader->setArrayParameter1i(0, "sequence", 24, 3);
+  isectShader->setArrayParameter1i(0, "sequence", 25, 6);
+  isectShader->setArrayParameter1i(0, "sequence", 26, 5);
+  isectShader->setArrayParameter1i(0, "sequence", 27, 0);
+  isectShader->setArrayParameter1i(0, "sequence", 28, 7);
+  isectShader->setArrayParameter1i(0, "sequence", 29, 2);
+  isectShader->setArrayParameter1i(0, "sequence", 30, 1);
+  isectShader->setArrayParameter1i(0, "sequence", 31, 4);
+
+  isectShader->setArrayParameter1i(0, "sequence", 32, 4);
+  isectShader->setArrayParameter1i(0, "sequence", 33, 5);
+  isectShader->setArrayParameter1i(0, "sequence", 34, 6);
+  isectShader->setArrayParameter1i(0, "sequence", 35, 7);
+  isectShader->setArrayParameter1i(0, "sequence", 36, 0);
+  isectShader->setArrayParameter1i(0, "sequence", 37, 1);
+  isectShader->setArrayParameter1i(0, "sequence", 38, 2);
+  isectShader->setArrayParameter1i(0, "sequence", 39, 3);
+
+  isectShader->setArrayParameter1i(0, "sequence", 40, 5);
+  isectShader->setArrayParameter1i(0, "sequence", 41, 0);
+  isectShader->setArrayParameter1i(0, "sequence", 42, 3);
+  isectShader->setArrayParameter1i(0, "sequence", 43, 6);
+  isectShader->setArrayParameter1i(0, "sequence", 44, 1);
+  isectShader->setArrayParameter1i(0, "sequence", 45, 4);
+  isectShader->setArrayParameter1i(0, "sequence", 46, 7);
+  isectShader->setArrayParameter1i(0, "sequence", 47, 2);
+
+  isectShader->setArrayParameter1i(0, "sequence", 48, 6);
+  isectShader->setArrayParameter1i(0, "sequence", 49, 7);
+  isectShader->setArrayParameter1i(0, "sequence", 50, 4);
+  isectShader->setArrayParameter1i(0, "sequence", 51, 5);
+  isectShader->setArrayParameter1i(0, "sequence", 52, 2);
+  isectShader->setArrayParameter1i(0, "sequence", 53, 3);
+  isectShader->setArrayParameter1i(0, "sequence", 54, 0);
+  isectShader->setArrayParameter1i(0, "sequence", 55, 1);
+
+  isectShader->setArrayParameter1i(0, "sequence", 56, 7);
+  isectShader->setArrayParameter1i(0, "sequence", 57, 6);
+  isectShader->setArrayParameter1i(0, "sequence", 58, 3);
+  isectShader->setArrayParameter1i(0, "sequence", 59, 2);
+  isectShader->setArrayParameter1i(0, "sequence", 60, 5);
+  isectShader->setArrayParameter1i(0, "sequence", 61, 4);
+  isectShader->setArrayParameter1i(0, "sequence", 62, 1);
+  isectShader->setArrayParameter1i(0, "sequence", 63, 0);
+
+  // P0.
+  isectShader->setArrayParameter1i(0, "v1", 0, 0); isectShader->setArrayParameter1i(0, "v2", 0, 1);
+  isectShader->setArrayParameter1i(0, "v1", 1, 1); isectShader->setArrayParameter1i(0, "v2", 1, 2);
+  isectShader->setArrayParameter1i(0, "v1", 2, 2); isectShader->setArrayParameter1i(0, "v2", 2, 7);
+
+  // P2.
+  isectShader->setArrayParameter1i(0, "v1", 8, 0); isectShader->setArrayParameter1i(0, "v2", 8, 5);
+  isectShader->setArrayParameter1i(0, "v1", 9, 5); isectShader->setArrayParameter1i(0, "v2", 9, 4);
+  isectShader->setArrayParameter1i(0, "v1", 10, 4); isectShader->setArrayParameter1i(0, "v2", 10, 7);
+
+  // P4.
+  isectShader->setArrayParameter1i(0, "v1", 16, 0); isectShader->setArrayParameter1i(0, "v2", 16, 3);
+  isectShader->setArrayParameter1i(0, "v1", 17, 3); isectShader->setArrayParameter1i(0, "v2", 17, 6);
+  isectShader->setArrayParameter1i(0, "v1", 18, 6); isectShader->setArrayParameter1i(0, "v2", 18, 7);
+
+  // P1.
+  // First intersect the dotted edge.
+  isectShader->setArrayParameter1i(0, "v1", 4, 1); isectShader->setArrayParameter1i(0, "v2", 4, 4);
+  // Then intersect the path.
+  isectShader->setArrayParameter1i(0, "v1", 5, 0); isectShader->setArrayParameter1i(0, "v2", 5, 1);
+  isectShader->setArrayParameter1i(0, "v1", 6, 1); isectShader->setArrayParameter1i(0, "v2", 6, 2);
+  isectShader->setArrayParameter1i(0, "v1", 7, 2); isectShader->setArrayParameter1i(0, "v2", 7, 7);
+
+  // P3.
+  // First intersect the dotted edge.
+  isectShader->setArrayParameter1i(0, "v1", 12, 5); isectShader->setArrayParameter1i(0, "v2", 12, 6);
+  // Then intersect the path.
+  isectShader->setArrayParameter1i(0, "v1", 13, 0); isectShader->setArrayParameter1i(0, "v2", 13, 5);
+  isectShader->setArrayParameter1i(0, "v1", 14, 5); isectShader->setArrayParameter1i(0, "v2", 14, 4);
+  isectShader->setArrayParameter1i(0, "v1", 15, 4); isectShader->setArrayParameter1i(0, "v2", 15, 7);
+
+  // P5.
+  // First intersect the dotted edge.
+  isectShader->setArrayParameter1i(0, "v1", 20, 3); isectShader->setArrayParameter1i(0, "v2", 20, 2);
+  // Then intersect the path.
+  isectShader->setArrayParameter1i(0, "v1", 21, 0); isectShader->setArrayParameter1i(0, "v2", 21, 3);
+  isectShader->setArrayParameter1i(0, "v1", 22, 3); isectShader->setArrayParameter1i(0, "v2", 22, 6);
+  isectShader->setArrayParameter1i(0, "v1", 23, 6); isectShader->setArrayParameter1i(0, "v2", 23, 7);
+}
+
+//----------------------------------------------------------------------------
+void vvTexRend::printLUT()
+{
+  int i,c;
+  int lutEntries[3];
+  int total;
+
+  total = getLUTSize(lutEntries);
+  for (i=0; i<total; ++i)
+  {
+    cerr << "#" << i << ": ";
+    for (c=0; c<4; ++c)
+    {
+      cerr << int(rgbaLUT[i * 4 + c]);
+      if (c<3) cerr << ", ";
+    }
+    cerr << endl;
+  }
+}
+
+unsigned char* vvTexRend::getHeightFieldData(float points[4][3], int& width, int& height)
+{
+  GLint viewport[4];
+  unsigned char *pixels, *data, *result=NULL;
+  int numPixels;
+  int i, j, k;
+  int x, y, c;
+  int index;
+  float sizeX, sizeY;
+  vvVector3 size, size2;
+  vvVector3 texcoord[4];
+
+  std::cerr << "getHeightFieldData" << endl;
+
+  glGetIntegerv(GL_VIEWPORT, viewport);
+
+  width = int(ceil(getManhattenDist(points[0], points[1])));
+  height = int(ceil(getManhattenDist(points[0], points[3])));
+
+  numPixels = width * height;
+  pixels = new unsigned char[4*numPixels];
+
+  glReadPixels(viewport[0], viewport[1], width, height,
+    GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glLoadIdentity();
+
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
+
+  size.copy(vd->getSize());
+  for (i = 0; i < 3; ++i)
+    size2.e[i]   = 0.5f * size.e[i];
+
+  for (j = 0; j < 4; j++)
+    for (k = 0; k < 3; k++)
+  {
+    texcoord[j][k] = (points[j][k] + size2.e[k]) / size.e[k];
+    texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
+  }
+
+  enableTexture(GL_TEXTURE_3D_EXT);
+  glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
+
+  if (glIsTexture(texNames[vd->getCurrentFrame()]))
+    std::cerr << "true" << endl;
+  else
+    std::cerr << "false" << endl;
+
+  sizeX = 2.0f * float(width)  / float(viewport[2] - 1);
+  sizeY = 2.0f * float(height) / float(viewport[3] - 1);
+
+  std::cerr << "SizeX: " << sizeX << endl;
+  std::cerr << "SizeY: " << sizeY << endl;
+  std::cerr << "Viewport[2]: " << viewport[2] << endl;
+  std::cerr << "Viewport[3]: " << viewport[3] << endl;
+
+  std::cerr << "TexCoord1: " << texcoord[0][0] << " " << texcoord[0][1] << " " << texcoord[0][2] << endl;
+  std::cerr << "TexCoord2: " << texcoord[1][0] << " " << texcoord[1][1] << " " << texcoord[1][2] << endl;
+  std::cerr << "TexCoord3: " << texcoord[2][0] << " " << texcoord[2][1] << " " << texcoord[2][2] << endl;
+  std::cerr << "TexCoord4: " << texcoord[3][0] << " " << texcoord[3][1] << " " << texcoord[3][2] << endl;
+
+  glBegin(GL_QUADS);
+  glTexCoord3f(texcoord[0][0], texcoord[0][1], texcoord[0][2]);
+  glVertex3f(-1.0, -1.0, -1.0);
+  glTexCoord3f(texcoord[1][0], texcoord[1][1], texcoord[1][2]);
+  glVertex3f(sizeX, -1.0, -1.0);
+  glTexCoord3f(texcoord[2][0], texcoord[2][1], texcoord[2][2]);
+  glVertex3f(sizeX, sizeY, -1.0);
+  glTexCoord3f(texcoord[3][0], texcoord[3][1], texcoord[3][2]);
+  glVertex3f(-1.0, sizeY, -1.0);
+  glEnd();
+
+  glFinish();
+  glReadBuffer(GL_BACK);
+
+  data = new unsigned char[texelsize * numPixels];
+  memset(data, 0, texelsize * numPixels);
+  glReadPixels(viewport[0], viewport[1], width, height,
+    GL_RGB, GL_UNSIGNED_BYTE, data);
+
+  std::cerr << "data read" << endl;
+
+  if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
+  {
+    result = new unsigned char[numPixels];
+    for (y = 0; y < height; y++)
+      for (x = 0; x < width; x++)
+    {
+      index = y * width + x;
+      switch (voxelType)
       {
-        cerr << int(rgbaLUT[i * 4 + c]);
-        if (c<3) cerr << ", ";
+        case VV_SGI_LUT:
+          result[index] = data[2*index];
+          break;
+        case VV_PAL_TEX:
+        case VV_FRG_PRG:
+          result[index] = data[index];
+          break;
+        case VV_TEX_SHD:
+        case VV_PIX_SHD:
+          result[index] = data[4*index];
+          break;
+        case VV_RGBA:
+          assert(0);
+          break;
+        default:
+          assert(0);
+          break;
       }
-      cerr << endl;
+      std::cerr << "Result: " << index << " " << (int) (result[index]) << endl;
     }
   }
-
-  unsigned char* vvTexRend::getHeightFieldData(float points[4][3], int& width, int& height)
+  else if (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4)
   {
-    GLint viewport[4];
-    unsigned char *pixels, *data, *result=NULL;
-    int numPixels;
-    int i, j, k;
-    int x, y, c;
-    int index;
-    float sizeX, sizeY;
-    vvVector3 size, size2;
-    vvVector3 texcoord[4];
-
-    std::cerr << "getHeightFieldData" << endl;
-
-    glGetIntegerv(GL_VIEWPORT, viewport);
-
-    width = int(ceil(getManhattenDist(points[0], points[1])));
-    height = int(ceil(getManhattenDist(points[0], points[3])));
-
-    numPixels = width * height;
-    pixels = new unsigned char[4*numPixels];
-
-    glReadPixels(viewport[0], viewport[1], width, height,
-      GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-
-    size.copy(vd->getSize());
-    for (i = 0; i < 3; ++i)
-      size2.e[i]   = 0.5f * size.e[i];
-
-    for (j = 0; j < 4; j++)
-      for (k = 0; k < 3; k++)
+    if ((voxelType == VV_RGBA) || (voxelType == VV_PIX_SHD))
     {
-      texcoord[j][k] = (points[j][k] + size2.e[k]) / size.e[k];
-      texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
-    }
+      result = new unsigned char[vd->chan * numPixels];
 
-    enableTexture(GL_TEXTURE_3D_EXT);
-    glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
-
-    if (glIsTexture(texNames[vd->getCurrentFrame()]))
-      std::cerr << "true" << endl;
-    else
-      std::cerr << "false" << endl;
-
-    sizeX = 2.0f * float(width)  / float(viewport[2] - 1);
-    sizeY = 2.0f * float(height) / float(viewport[3] - 1);
-
-    std::cerr << "SizeX: " << sizeX << endl;
-    std::cerr << "SizeY: " << sizeY << endl;
-    std::cerr << "Viewport[2]: " << viewport[2] << endl;
-    std::cerr << "Viewport[3]: " << viewport[3] << endl;
-
-    std::cerr << "TexCoord1: " << texcoord[0][0] << " " << texcoord[0][1] << " " << texcoord[0][2] << endl;
-    std::cerr << "TexCoord2: " << texcoord[1][0] << " " << texcoord[1][1] << " " << texcoord[1][2] << endl;
-    std::cerr << "TexCoord3: " << texcoord[2][0] << " " << texcoord[2][1] << " " << texcoord[2][2] << endl;
-    std::cerr << "TexCoord4: " << texcoord[3][0] << " " << texcoord[3][1] << " " << texcoord[3][2] << endl;
-
-    glBegin(GL_QUADS);
-    glTexCoord3f(texcoord[0][0], texcoord[0][1], texcoord[0][2]);
-    glVertex3f(-1.0, -1.0, -1.0);
-    glTexCoord3f(texcoord[1][0], texcoord[1][1], texcoord[1][2]);
-    glVertex3f(sizeX, -1.0, -1.0);
-    glTexCoord3f(texcoord[2][0], texcoord[2][1], texcoord[2][2]);
-    glVertex3f(sizeX, sizeY, -1.0);
-    glTexCoord3f(texcoord[3][0], texcoord[3][1], texcoord[3][2]);
-    glVertex3f(-1.0, sizeY, -1.0);
-    glEnd();
-
-    glFinish();
-    glReadBuffer(GL_BACK);
-
-    data = new unsigned char[texelsize * numPixels];
-    memset(data, 0, texelsize * numPixels);
-    glReadPixels(viewport[0], viewport[1], width, height,
-      GL_RGB, GL_UNSIGNED_BYTE, data);
-
-    std::cerr << "data read" << endl;
-
-    if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
-    {
-      result = new unsigned char[numPixels];
       for (y = 0; y < height; y++)
         for (x = 0; x < width; x++)
       {
-        index = y * width + x;
-        switch (voxelType)
+        index = (y * width + x) * vd->chan;
+        for (c = 0; c < vd->chan; c++)
         {
-          case VV_SGI_LUT:
-            result[index] = data[2*index];
-            break;
-          case VV_PAL_TEX:
-          case VV_FRG_PRG:
-            result[index] = data[index];
-            break;
-          case VV_TEX_SHD:
-          case VV_PIX_SHD:
-            result[index] = data[4*index];
-            break;
-          case VV_RGBA:
-            assert(0);
-            break;
-          default:
-            assert(0);
-            break;
-        }
-        std::cerr << "Result: " << index << " " << (int) (result[index]) << endl;
-      }
-    }
-    else if (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4)
-    {
-      if ((voxelType == VV_RGBA) || (voxelType == VV_PIX_SHD))
-      {
-        result = new unsigned char[vd->chan * numPixels];
-
-        for (y = 0; y < height; y++)
-          for (x = 0; x < width; x++)
-        {
-          index = (y * width + x) * vd->chan;
-          for (c = 0; c < vd->chan; c++)
-          {
-            result[index + c] = data[index + c];
-            std::cerr << "Result: " << index+c << " " << (int) (result[index+c]) << endl;
-          }
+          result[index + c] = data[index + c];
+          std::cerr << "Result: " << index+c << " " << (int) (result[index+c]) << endl;
         }
       }
-      else
-        assert(0);
     }
-
-    std::cerr << "result read" << endl;
-
-    disableTexture(GL_TEXTURE_3D_EXT);
-
-    glPopMatrix();
-
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-
-    glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-    return result;
+    else
+      assert(0);
   }
 
-  float vvTexRend::getManhattenDist(float p1[3], float p2[3])
+  std::cerr << "result read" << endl;
+
+  disableTexture(GL_TEXTURE_3D_EXT);
+
+  glPopMatrix();
+
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
+
+  glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+  return result;
+}
+
+float vvTexRend::getManhattenDist(float p1[3], float p2[3])
+{
+  float dist = 0;
+  int i;
+
+  for (i=0; i<3; ++i)
   {
-    float dist = 0;
-    int i;
-
-    for (i=0; i<3; ++i)
-    {
-      dist += float(fabs(p1[i] - p2[i])) / float(vd->getSize()[i] * vd->vox[i]);
-    }
-
-    std::cerr << "Manhattan Distance: " << dist << endl;
-
-    return dist;
+    dist += float(fabs(p1[i] - p2[i])) / float(vd->getSize()[i] * vd->vox[i]);
   }
+
+  std::cerr << "Manhattan Distance: " << dist << endl;
+
+  return dist;
+}
 
 void vvTexRend::initVertArray(const int numSlices)
 {
