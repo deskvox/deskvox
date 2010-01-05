@@ -25,9 +25,19 @@ vvShaderManager::~vvShaderManager()
 
 }
 
-void vvShaderManager::init()
+void vvShaderManager::printCompatibilityInfo()
 {
+  throw "Function printCompatibilityInfo not implemented by inherited class";
+}
 
+void vvShaderManager::enableTexture(const int, const char*)
+{
+  throw "Function setParameter1f not implemented by inherited class";
+}
+
+void vvShaderManager::disableTexture(const int, const char*)
+{
+  throw "Function setParameter1f not implemented by inherited class";
 }
 
 void vvShaderManager::setParameter1f(const int, const char*,
@@ -174,7 +184,17 @@ void vvShaderManager::setArrayParameter4i(const int, const char*, const int,
   throw "Function setArrayParameter4i not implemented by inherited class";
 }
 
+void vvShaderManager::setParameterTexId(const int, const char*, const unsigned int&)
+{
+  throw "Function setParameterTexId not implemented by inherited class";
+}
+
 void vvShaderManager::setModelViewProj(int, const char*)
 {
   throw "Function setModelViewProj not implemented by inherited class";
+}
+
+void vvShaderManager::init()
+{
+
 }

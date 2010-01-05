@@ -502,6 +502,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   // If no Cg is available, the factory will return a NULL pointer.
   _isectShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
+  _pixelShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
 
   extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax");
   extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation");
@@ -600,20 +601,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
       fragProgStringPreint);
   }
 
-#ifdef HAVE_CG
-  _cgProgram     = new CGprogram[NUM_PIXEL_SHADERS];
-  _cgFragProfile = new CGprofile[NUM_PIXEL_SHADERS];
-#endif
-
   if (_numThreads == 0)
   {
     if (voxelType==VV_PIX_SHD)
     {
-#ifdef HAVE_CG
-      if (!initPixelShaders(_cgContext, _cgProgram))
-#else
-      if (!initPixelShaders())
-#endif
+      if (!initPixelShaders(_pixelShader))
       {
         voxelType = VV_RGBA;
       }
@@ -690,8 +682,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   initIntersectionShader(_isectShader);
   setupIntersectionParameters(_isectShader);
-  glGenBuffers(1, &_vbos[0]);
-  glGenBuffers(1, &_vbos[1]);
 }
 
 //----------------------------------------------------------------------------
@@ -699,13 +689,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 vvTexRend::~vvTexRend()
 {
   vvDebugMsg::msg(1, "vvTexRend::~vvTexRend()");
-
-  if (voxelType==VV_PIX_SHD)
-  {
-#ifdef HAVE_CG
-    cgDestroyContext(_cgContext);                 // destroy our Cg context and all programs contained within it
-#endif
-  }
 
   if (voxelType==VV_FRG_PRG)
   {
@@ -724,19 +707,13 @@ vvTexRend::~vvTexRend()
   delete[] rgbaTF;
   delete[] rgbaLUT;
 
-#ifdef HAVE_CG
-  delete[] _cgProgram;
-  delete[] _cgFragProfile;
-#endif
-
 
   if (_proxyGeometryOnGpu)
   {
     glDisableClientState(GL_VERTEX_ARRAY);
   }
   delete _isectShader;
-  glDeleteBuffers(1, &_vbos[0]);
-  glDeleteBuffers(1, &_vbos[1]);
+  delete _pixelShader;
 
   delete[] preintTable;
 
@@ -2842,11 +2819,7 @@ void vvTexRend::unsetGLenvironment()
 }
 
 //----------------------------------------------------------------------------
-#ifdef HAVE_CG
-void vvTexRend::enableLUTMode(CGprogram*& cgProgram, CGparameter& cgPixLUT)
-#else
-void vvTexRend::enableLUTMode()
-#endif
+void vvTexRend::enableLUTMode(vvShaderManager*& pixelShader)
 {
   switch(voxelType)
   {
@@ -2857,9 +2830,7 @@ void vvTexRend::enableLUTMode()
       enableNVShaders();
       break;
     case VV_PIX_SHD:
-#ifdef HAVE_CG
-      enablePixelShaders(cgProgram, cgPixLUT);
-#endif
+      enablePixelShaders(pixelShader);
       break;
     case VV_SGI_LUT:
       glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -2874,11 +2845,7 @@ void vvTexRend::enableLUTMode()
 }
 
 //----------------------------------------------------------------------------
-#ifdef HAVE_CG
-void vvTexRend::disableLUTMode(CGparameter& cgPixLUT)
-#else
-void vvTexRend::disableLUTMode()
-#endif
+void vvTexRend::disableLUTMode(vvShaderManager*& pixelShader)
 {
   switch(voxelType)
   {
@@ -2889,9 +2856,7 @@ void vvTexRend::disableLUTMode()
       disableNVShaders();
       break;
     case VV_PIX_SHD:
-#ifdef HAVE_CG
-      disablePixelShaders(cgPixLUT);
-#endif
+      disablePixelShaders(pixelShader);
       break;
     case VV_SGI_LUT:
       if (glsTexColTable==(uchar)true) glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -3101,7 +3066,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
 
   // Compute farthest point to draw texture at:
   farthest.copy(&delta);
-  farthest.scale((float)(numSlices - 1) / -2.0f);
+  farthest.scale((float)(numSlices - 1) * -0.5f);
   farthest.add(&probePosObj);
 
   if (_renderState._clipMode)                     // clipping plane present?
@@ -3396,12 +3361,8 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     H.copy(L);
     H.add(&V);
     H.normalize();
-    CGparameter cgL;
-    CGparameter cgH;
-    cgL = cgGetNamedParameter(_cgProgram[_currentShader], "L");
-    cgH = cgGetNamedParameter(_cgProgram[_currentShader], "H");
-    cgGLSetParameter3f(cgL, L[0], L[1], L[2]);
-    cgGLSetParameter3f(cgH, H[0], H[1], H[2]);
+    _pixelShader->setParameter3f(_currentShader, "L", L[0], L[1], L[2]);
+    _pixelShader->setParameter3f(_currentShader, "H", H[0], H[1], H[2]);
   }
 #endif
 
@@ -3410,7 +3371,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
   // Compute farthest point to draw texture at:
   farthest.copy(&delta);
-  farthest.scale((float)(numSlices - 1) / -2.0f);
+  farthest.scale((float)(numSlices - 1) * -0.5f);
   if(!_proxyGeometryOnGpu)
     farthest.add(&probePosObj);
 
@@ -3633,23 +3594,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
   }
   else
   {
-#ifdef HAVE_CG
-    CGcontext cgContext;                            // one cg context for each thread
-    CGprogram* cgProgram;                           // a list of cg programs for each thread
-    CGparameter cgPixLUT;
-    CGcontext cgIsectContext;
-    CGprogram cgIsectProgram;
-    CGprofile cgIsectProfile;
-
-    CGparameter* cgVertices = new CGparameter[8];
-    CGparameter cgBrickMin;
-    CGparameter cgBrickDimInv;
-    CGparameter cgModelViewProj;
-    CGparameter cgDelta;
-    CGparameter cgPlaneNormal;
-    CGparameter cgVertexList;
-    CGparameter cgFrontIndex;
-#endif
 
     vvStopwatch* stopwatch;
 
@@ -3672,10 +3616,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // Make textures.
     /////////////////////////////////////////////////////////
     pthread_mutex_lock(data->makeTextureMutex);
-#ifdef HAVE_CG
-    cgProgram = new CGprogram[NUM_PIXEL_SHADERS];
-    data->renderer->initPixelShaders(cgContext, cgProgram);
-#endif
+    data->renderer->initPixelShaders(data->renderer->_pixelShader);
     data->renderer->texelsize=4;
     data->renderer->internalTexFormat = GL_RGBA;
     data->renderer->texFormat = GL_RGBA;
@@ -3756,11 +3697,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
       pthread_barrier_wait(data->renderStartBarrier);
-#ifdef HAVE_CG
-      data->renderer->enableLUTMode(cgProgram, cgPixLUT);
-#else
-      data->renderer->enableLUTMode();
-#endif
+      data->renderer->enableLUTMode(data->renderer->_pixelShader);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
@@ -3792,8 +3729,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       stopwatch->start();
 
-      Brick* tmp;
-
       GLuint** vertIndices = NULL;
       GLsizei* elemCounts = NULL;
       GLuint* vertIndicesTmp = NULL;
@@ -3823,11 +3758,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                     data->renderer->_isectShader, true);
       }
       glDisable(GL_TEXTURE_3D_EXT);
-#ifdef HAVE_CG
-      data->renderer->disableLUTMode(cgPixLUT);
-#else
-      data->renderer->disableLUTMode();
-#endif
+      data->renderer->disableLUTMode(data->renderer->_pixelShader);
 
       if(data->renderer->_proxyGeometryOnGpu)
       {
@@ -3857,10 +3788,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     // Exited render loop - perform cleanup.
     //data->texRend->removeTextures(privateTexNames);
-#ifdef HAVE_CG
-    delete[] cgProgram;
-    delete[] cgVertices;
-#endif
     delete stopwatch;
   }
   pthread_exit(NULL);
@@ -3907,12 +3834,8 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
     // Make textures.
     /////////////////////////////////////////////////////////
     pthread_mutex_lock(data->makeTextureMutex);
-#ifdef HAVE_CG
-    cgProgram = new CGprogram[NUM_PIXEL_SHADERS];
-    data->renderer->initPixelShaders(cgContext, cgProgram);
-#else
-    data->renderer->initPixelShaders();
-#endif
+
+    data->renderer->initPixelShaders(data->renderer->_pixelShader);
     data->renderer->texelsize=4;
     data->renderer->internalTexFormat = GL_RGBA;
     data->renderer->texFormat = GL_RGBA;
@@ -3952,11 +3875,7 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
       pthread_barrier_wait(data->renderStartBarrier);
-#ifdef HAVE_CG
-      data->renderer->enableLUTMode(cgProgram, cgPixLUT);
-#else
-      data->renderer->enableLUTMode();
-#endif
+      data->renderer->enableLUTMode(data->renderer->_pixelShader);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
@@ -4057,11 +3976,7 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
         vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
       }
       glDisable(GL_TEXTURE_3D_EXT);
-#ifdef HAVE_CG
-      data->renderer->disableLUTMode(cgPixLUT);
-#else
-      data->renderer->disableLUTMode();
-#endif
+      data->renderer->disableLUTMode(data->renderer->_pixelShader);
 
       // When all worker threads and the main thread have waited once (per frame) on
       // this barrier, all workers have finished rendering this frame and the main
@@ -4203,7 +4118,7 @@ void vvTexRend::renderBricks(vvMatrix* mv)
 
   // Compute farthest point to draw texture at:
   farthest.copy(&delta);
-  farthest.scale((float)(numSlices - 1) / -2.0f);
+  farthest.scale((float)(numSlices - 1) * -0.5f);
   farthest.add(&probePosObj);
 
   vvVector3 temp, clipPosObj, normClipPoint;
@@ -4368,12 +4283,9 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   else
   {
     // Volume render a 3D texture:
-#ifdef HAVE_CG
-    if(voxelType == VV_PIX_SHD)
-      cgGLDisableProfile(_cgFragProfile[_currentShader]);
-#endif
-      glBegin(GL_LINES);
-      glColor4f(1.0, 1.0, 1.0, 1.0);
+    _pixelShader->disableShader(_currentShader);
+    glBegin(GL_LINES);
+    glColor4f(1.0, 1.0, 1.0, 1.0);
     for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
     {
       Brick *tmp = *it;
@@ -4430,8 +4342,7 @@ void vvTexRend::renderBricks(vvMatrix* mv)
 
       vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
     }
-      glEnd();
-
+    glEnd();
   }
   disableTexture(GL_TEXTURE_3D_EXT);
   glMatrixMode(GL_MODELVIEW);
@@ -5347,11 +5258,7 @@ void vvTexRend::renderVolumeGL()
   {
     if (geomType != VV_BRICKS || !_renderState._showBricks)
     {
-#ifdef HAVE_CG
-      enableLUTMode(_cgProgram, _cgPixLUT);
-#else
-      enableLUTMode();
-#endif
+      enableLUTMode(_pixelShader);
     }
   }
 
@@ -5372,11 +5279,7 @@ void vvTexRend::renderVolumeGL()
 
   if (_numThreads == 0)
   {
-#ifdef HAVE_CG
-    disableLUTMode(_cgPixLUT);
-#else
-    disableLUTMode();
-#endif
+    disableLUTMode(_pixelShader);
     unsetGLenvironment();
     disableIntersectionShader(_isectShader);
   }
@@ -5996,59 +5899,118 @@ void checkCgError(CGcontext ctx, CGerror cgerr, void *)
 #endif
 
 //----------------------------------------------------------------------------
-#ifdef HAVE_CG
-void vvTexRend::enablePixelShaders(CGprogram*& cgProgram, CGparameter& cgPixLUT)
-#else
-void vvTexRend::enablePixelShaders()
-#endif
+void vvTexRend::enablePixelShaders(vvShaderManager*& pixelShader)
 {_currentShader = 12;
-#ifdef HAVE_CG
   if(VV_PIX_SHD == voxelType)
   {
     // Load, enable, and bind fragment shader:
+    pixelShader->enableShader(_currentShader);
 
-    cgGLLoadProgram(cgProgram[_currentShader]);
-    cgGLEnableProfile(_cgFragProfile[_currentShader]);
-    cgGLBindProgram(cgProgram[_currentShader]);
+    const int MAX_PARAMETERS = 5;
+    const char* parameterNames[MAX_PARAMETERS];
+    vvShaderParameterType parameterTypes[MAX_PARAMETERS];
+    void* values[MAX_PARAMETERS];
+
+    int parameterCount = 0;
 
     // Set fragment program parameters:
-    if (_currentShader != 4)                    // pixLUT, doesn't work with grayscale shader
+    if (_currentShader != 4)                          // pixLUT, doesn't work with grayscale shader
     {
       glBindTexture(GL_TEXTURE_2D, pixLUTName);
-      cgPixLUT = cgGetNamedParameter(cgProgram[_currentShader], "pixLUT");
-      cgGLSetTextureParameter(cgPixLUT, pixLUTName);
-      cgGLEnableTextureParameter(cgPixLUT);
+
+      // TODO: cgGLEnableTextureParameter.
+      parameterNames[parameterCount] = "pixLUT";
+      parameterTypes[parameterCount] = VV_SHD_TEXTURE_ID;
+      values[parameterCount] = (void*)pixLUTName;
+      parameterCount++;
     }
-                                                // chan4color
-    if (_currentShader == 3 || _currentShader == 7)
+
+    if (_currentShader == 3 || _currentShader == 7)   // chan4color
     {
-      _cgChannel4Color = cgGetNamedParameter(_cgProgram[_currentShader], "chan4color");
-      cgGLSetParameter3fv(_cgChannel4Color, _channel4Color);
+      parameterNames[parameterCount] = "chan4color";
+      parameterTypes[parameterCount] = VV_SHD_VEC3;
+      values[parameterCount] = _channel4Color;
+      parameterCount++;
     }
-                                                // opWeights
-    if (_currentShader > 4 && _currentShader < 8)
+
+    if (_currentShader > 4 && _currentShader < 8)     // opWeights
     {
-      _cgOpacityWeights = cgGetNamedParameter(_cgProgram[_currentShader], "opWeights");
-      cgGLSetParameter4fv(_cgOpacityWeights, _opacityWeights);
+      parameterNames[parameterCount] = "opWeights";
+      parameterTypes[parameterCount] = VV_SHD_VEC4;
+      values[parameterCount] = _opacityWeights;
+      parameterCount++;
+    }
+
+    if (_currentShader == 12)                         // L and H vectors for local illumination
+    {
+      parameterNames[parameterCount] = "L";
+      parameterTypes[parameterCount] = VV_SHD_VEC3;
+      values[parameterCount] = NULL;
+      parameterCount++;
+
+      parameterNames[parameterCount] = "H";
+      parameterTypes[parameterCount] = VV_SHD_VEC3;
+      values[parameterCount] = NULL;
+      parameterCount++;
+    }
+
+    // Copy data to arrays on heap.
+    const char** names = new const char*[parameterCount];
+    vvShaderParameterType* types = new vvShaderParameterType[parameterCount];
+
+    for (int i = 0; i < parameterCount; ++i)
+    {
+      names[i] = parameterNames[i];
+      types[i] = parameterTypes[i];
+    }
+
+    pixelShader->initParameters(_currentShader, names, types, parameterCount);
+
+    // Set the values.
+    GLuint tmpGLuint;
+    float* tmp3;
+    float* tmp4;
+    for (int i = 0; i < parameterCount; ++i)
+    {
+      switch (types[i])
+      {
+      case VV_SHD_TEXTURE_ID:
+        tmpGLuint = (GLuint)values[i];
+        pixelShader->setParameterTexId(_currentShader, names[i], tmpGLuint);
+        pixelShader->enableTexture(_currentShader, names[i]);
+        break;
+      case VV_SHD_VEC3:
+        tmp3 = (float*)values[i];
+        if (tmp3 != NULL)
+        {
+          pixelShader->setParameter3f(_currentShader, names[i], tmp3[0], tmp3[1], tmp3[2]);
+        }
+        break;
+      case VV_SHD_VEC4:
+        tmp4 = (float*)values[i];
+        if (tmp4 != NULL)
+        {
+          pixelShader->setParameter4f(_currentShader, names[i], tmp4[0], tmp4[1], tmp4[2], tmp4[3]);
+        }
+        break;
+      default:
+        break;
+      }
     }
   }
-#endif
 }
 
 //----------------------------------------------------------------------------
-#ifdef HAVE_CG
-void vvTexRend::disablePixelShaders(CGparameter& cgPixLUT)
-#else
-void vvTexRend::disablePixelShaders()
-#endif
+void vvTexRend::disablePixelShaders(vvShaderManager*& pixelShader)
 {
-#ifdef HAVE_CG
-  if(VV_PIX_SHD == voxelType)
+  if(voxelType == VV_PIX_SHD)
   {
-    cgGLDisableTextureParameter(cgPixLUT);
-    cgGLDisableProfile(_cgFragProfile[_currentShader]);
+    if (_currentShader != 4)
+    {
+      pixelShader->disableTexture(_currentShader, "pixLUT");
+    }
+    pixelShader->disableShader(_currentShader);
   }
-#endif
 }
 
 //----------------------------------------------------------------------------
@@ -6072,13 +6034,8 @@ void vvTexRend::disableIntersectionShader(vvShaderManager*& isectShader)
 //----------------------------------------------------------------------------
 /** @return true if initialization successful
  */
-#ifdef HAVE_CG
-bool vvTexRend::initPixelShaders(CGcontext& cgContext, CGprogram*& cgProgram)
-#else
-bool vvTexRend::initPixelShaders()
-#endif
+bool vvTexRend::initPixelShaders(vvShaderManager*& pixelShader)
 {
-#ifdef HAVE_CG
 #ifdef _WIN32
   const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
 #endif
@@ -6093,30 +6050,9 @@ bool vvTexRend::initPixelShaders()
 
   cerr << "enable PIX called"<< endl;
 
-  cgContext = cgCreateContext();
-  if (!cgContext) cerr << "Could not create Cg context." << endl;
-
   cgSetErrorHandler(checkCgError, NULL);
 
-  // Check if correct version of pixel shaders is available:
-  if(cgGLIsProfileSupported(CG_PROFILE_ARBFP1)) // test for GL_ARB_fragment_program
-  {
-                                                // FIXME: why isn't this a show stopper?
-    cerr << "Hardware may not support extension CG_PROFILE_ARBFP1" << endl;
-    //    return false;
-  }
-                                                // test for GL_NV_fragment_program
-  if(cgGLIsProfileSupported(CG_PROFILE_FP20)==CG_TRUE)
-  {
-    cerr << "Hardware may not support extension CG_PROFILE_VP20" << endl;
-    //    return false;
-  }
-                                                // test for GL_NV_fragment_program
-  if(cgGLIsProfileSupported(CG_PROFILE_FP30)==CG_TRUE)
-  {
-    cerr << "Hardware may not support extension CG_PROFILE_VP30" << endl;
-    //    return false;
-  }
+  pixelShader->printCompatibilityInfo();
 
   // Specify shader path:
   cerr << "Searching for shader files..." << endl;
@@ -6157,9 +6093,6 @@ bool vvTexRend::initPixelShaders()
     shaderFile = new char[strlen(shaderFileName) + 2 + strlen(shaderExt) + 1];
     sprintf(shaderFile, "%s%02d%s", shaderFileName, i+1, shaderExt);
 
-    _cgFragProfile[i] = CG_PROFILE_ARBFP1;      // The GL Fragment Profile
-    cgGLSetOptimalOptions(_cgFragProfile[i]);
-
     // Load Vertex Shader From File:
     // FIXME: why don't relative paths work under Linux?
     shaderPath = new char[strlen(unixShaderDir) + 1 + strlen(shaderFile) + 1];
@@ -6171,22 +6104,14 @@ bool vvTexRend::initPixelShaders()
 
     cerr << "Loading shader file: " << shaderPath << endl;
 
-    cgProgram[i] = cgCreateProgramFromFile(cgContext, CG_SOURCE, shaderPath, _cgFragProfile[i], "main", 0);
+    pixelShader->loadShader(shaderPath, vvShaderManager::VV_FRAG_SHD);
 
     delete[] shaderFile;
     delete[] shaderPath;
-
-    // Validate success:
-    if (cgProgram[i] == NULL)
-    {
-      cerr << "Error: failed to compile fragment program " << i+1 << endl;
-      return false;
-    }
-    else cerr << "Fragment program " << i+1 << " compiled" << endl;
   }
 
   cerr << "Fragment programs ready." << endl;
-#endif
+
   return true;
 }
 

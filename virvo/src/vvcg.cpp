@@ -37,16 +37,9 @@ void vvCg::loadShader(const char* shaderFileName, const ShaderType& shaderType)
 
   _shaderFileNames.push_back(shaderFileName);
 
-  CGcontext cgContext = cgCreateContext();
-
-  if (cgContext == NULL)
-  {
-    cerr << "Can't create Cg context" << endl;
-  }
-
   CGprofile cgProfile = cgGLGetLatestProfile(toCgEnum(shaderType));
   cgGLSetOptimalOptions(cgProfile);
-  CGprogram cgProgram = cgCreateProgramFromFile(cgContext, CG_SOURCE, shaderFileName,
+  CGprogram cgProgram = cgCreateProgramFromFile(_cgContext, CG_SOURCE, shaderFileName,
                                                 cgProfile, "main", 0);
   _cgPrograms.push_back(cgProgram);
   _cgProfiles.push_back(cgProfile);
@@ -62,6 +55,7 @@ void vvCg::loadShader(const char* shaderFileName, const ShaderType& shaderType)
   {
     cerr << "Couldn't load shader program from file: " << shaderFileName << endl;
   }
+  _cgParameterNameMaps.push_back(ParameterNameMap());
 }
 
 void vvCg::loadShaderByString(const char*, const ShaderType&)
@@ -88,8 +82,9 @@ void vvCg::initParameters(const int index,
 {
   assert((parameterNames != NULL) && (parameterTypes != NULL));
 
+  _cgParameters.clear();
+
   ParameterVector params(parameterCount);
-  _cgParameterNameMaps.push_back(ParameterNameMap());
 
   for (int i = 0; i < parameterCount; ++i)
   {
@@ -104,6 +99,41 @@ void vvCg::initParameters(const int index,
 
   _cgParameters.push_back(params);
   _parametersInitialized[index] = true;
+}
+
+void vvCg::printCompatibilityInfo()
+{
+  // Check if correct version of pixel shaders is available:
+  if(cgGLIsProfileSupported(CG_PROFILE_ARBFP1)) // test for GL_ARB_fragment_program
+  {
+    cerr << "Hardware may not support extension CG_PROFILE_ARBFP1" << endl;
+  }
+
+  if(cgGLIsProfileSupported(CG_PROFILE_FP20)==CG_TRUE) // test for GL_NV_fragment_program
+  {
+    cerr << "Hardware may not support extension CG_PROFILE_VP20" << endl;
+  }
+
+  if(cgGLIsProfileSupported(CG_PROFILE_FP30)==CG_TRUE) // test for GL_NV_fragment_program
+  {
+    cerr << "Hardware may not support extension CG_PROFILE_VP30" << endl;
+  }
+}
+
+void vvCg::enableTexture(const int programIndex, const char* textureParameterName)
+{
+  assert(_parametersInitialized[programIndex] == true);
+
+  vvCgParameter param = _cgParameterNameMaps[programIndex][textureParameterName];
+  cgGLEnableTextureParameter(param.getParameter());
+}
+
+void vvCg::disableTexture(const int programIndex, const char* textureParameterName)
+{
+  assert(_parametersInitialized[programIndex] == true);
+
+  vvCgParameter param = _cgParameterNameMaps[programIndex][textureParameterName];
+  cgGLDisableTextureParameter(param.getParameter());
 }
 
 void vvCg::setParameter1f(const int programIndex, const char* parameterName,
@@ -124,6 +154,14 @@ void vvCg::setParameter1i(const int programIndex, const char* parameterName,
   cgGLSetParameter1f(param.getParameter(), i1);
 }
 
+void vvCg::setParameterTexId(const int programIndex, const char* parameterName, const unsigned int& ui1)
+{
+  assert(_parametersInitialized[programIndex] == true);
+
+  vvCgParameter param = _cgParameterNameMaps[programIndex][parameterName];
+  cgGLSetTextureParameter(param.getParameter(), ui1);
+}
+
 void vvCg::setParameter3f(const int programIndex, const char* parameterName,
                           const float& f1, const float& f2, const float& f3)
 {
@@ -131,15 +169,6 @@ void vvCg::setParameter3f(const int programIndex, const char* parameterName,
 
   vvCgParameter param = _cgParameterNameMaps[programIndex][parameterName];
   cgGLSetParameter3f(param.getParameter(), f1, f2, f3);
-}
-
-void vvCg::setParameter4f(const int programIndex, const char* parameterName,
-                          const float& f1, const float& f2, const float& f3, const float& f4)
-{
-  assert(_parametersInitialized[programIndex] == true);
-
-  vvCgParameter param = _cgParameterNameMaps[programIndex][parameterName];
-  cgGLSetParameter4f(param.getParameter(), f1, f2, f3, f4);
 }
 
 void vvCg::setArrayParameter3f(const int programIndex, const char* parameterName, const int arrayIndex,
@@ -150,6 +179,15 @@ void vvCg::setArrayParameter3f(const int programIndex, const char* parameterName
 
   // There exists no similar cg function for integers ==> use the float equivalent.
   cgGLSetParameter3f(element, f1, f2, f3);
+}
+
+void vvCg::setParameter4f(const int programIndex, const char* parameterName,
+                          const float& f1, const float& f2, const float& f3, const float& f4)
+{
+  assert(_parametersInitialized[programIndex] == true);
+
+  vvCgParameter param = _cgParameterNameMaps[programIndex][parameterName];
+  cgGLSetParameter4f(param.getParameter(), f1, f2, f3, f4);
 }
 
 void vvCg::setArrayParameter1i(const int programIndex, const char* parameterName, const int arrayIndex,
@@ -170,7 +208,12 @@ void vvCg::setModelViewProj(const int programIndex, const char* parameterName)
 
 void vvCg::init()
 {
+  _cgContext = cgCreateContext();
 
+  if (_cgContext == NULL)
+  {
+    cerr << "Can't create Cg context" << endl;
+  }
 }
 
 CGGLenum vvCg::toCgEnum(const ShaderType& shaderType)

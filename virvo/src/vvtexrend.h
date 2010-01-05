@@ -323,16 +323,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int _lastFrame;                               ///< last frame rendered
 
     vvShaderManager* _isectShader;                ///< shader performing intersection test on gpu
-#ifdef HAVE_CG
-    CGcontext _cgContext;                         ///< context for running fragment program
-    CGprogram* _cgProgram;                        ///< handles for fragment program
-    CGprofile* _cgFragProfile;                    ///< profiles to determine which version of cg to compile with
-    CGparameter _cgPixLUT;                        ///< fragment program input: RGBA look-up table
-    CGparameter _cgChannel4Color;                 ///< fragment program input: color of 4th channel
-    CGparameter _cgOpacityWeights;                ///< fragment program input: opacity of color channels
+    vvShaderManager* _pixelShader;                ///< shader for applying transfer function on gpu
 
-    GLuint _vbos[2];                              ///< vertex buffer objects for efficient slice transfer to gpu
-#endif
     int _currentShader;                           ///< ID of currently used fragment shader
 
     // GL state variables:
@@ -363,19 +355,14 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     ErrorType makeTextures(GLuint*& privateTexNames, int* numTextures);
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures);
-#ifdef HAVE_CG
-    bool initPixelShaders(CGcontext& cgContext, CGprogram*& cgProgram);
-    void enableLUTMode(CGprogram*& cgProgram, CGparameter& cgPixLUT);
-    void disableLUTMode(CGparameter& cgPixLUT);
-    void enablePixelShaders(CGprogram*& cgProgram, CGparameter& cgPixLUT);
-    void disablePixelShaders(CGparameter& cgPixLUT);
-#else
-    bool initPixelShaders();
-    void enableLUTMode();
-    void disableLUTMode();
-    void enablePixelShaders();
-    void disablePixelShaders();
-#endif
+
+    bool initPixelShaders(vvShaderManager*& pixelShader);
+    void enablePixelShaders(vvShaderManager*& pixelShader);
+    void disablePixelShaders(vvShaderManager*& pixelShader);
+
+    void enableLUTMode(vvShaderManager*& pixelShader);
+    void disableLUTMode(vvShaderManager*& pixelShader);
+
     bool initIntersectionShader(vvShaderManager*& isectShader);
     void setupIntersectionParameters(vvShaderManager*& isectShader);
     void enableIntersectionShader(vvShaderManager*& isectShader);

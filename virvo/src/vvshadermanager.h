@@ -28,6 +28,7 @@ using std::endl;
 enum vvShaderParameterType
 {
   VV_SHD_SCALAR = 0,
+  VV_SHD_TEXTURE_ID,
   VV_SHD_VEC3,
   VV_SHD_VEC4,
   VV_SHD_ARRAY
@@ -114,6 +115,11 @@ public:
                               const vvShaderParameterType* parameterTypes,
                               const int parameterCount) = 0;
 
+  virtual void printCompatibilityInfo();
+
+  virtual void enableTexture(const int programIndex, const char* textureParameterName);
+  virtual void disableTexture(const int programIndex, const char* textureParameterName);
+
   // If you desire any of the following functions, implement them in your specific implementation.
   // Note that using the methods of this (abstract) base class will result in thrown exceptions.
   // The functions aren't defined to be = 0 so that inherited classes may, but don't necessarily
@@ -171,6 +177,8 @@ public:
                                    const int& i1, const int& i2, const int& i3);
   virtual void setArrayParameter4i(const int programIndex, const char* parameterName, const int arrayIndex,
                                    const int& i1, const int& i2, const int& i3, const int& i4);
+
+  virtual void setParameterTexId(const int programIndex, const char* parameterName, const unsigned int& ui1);
 
   /*!
    * \brief         Init parameter with model view projection matrix.

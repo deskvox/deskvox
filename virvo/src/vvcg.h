@@ -56,6 +56,10 @@ public:
                               const char** parameterNames,
                               const vvShaderParameterType* parameterTypes,
                               const int parameterCount);
+  virtual void printCompatibilityInfo();
+
+  virtual void enableTexture(const int programIndex, const char* textureParameterName);
+  virtual void disableTexture(const int programIndex, const char* textureParameterName);
 
   /*!
    * \brief         Set a scalar cg float parameter.
@@ -83,9 +87,12 @@ public:
   virtual void setArrayParameter1i(const int programIndex, const char* parameterName, const int arrayIndex,
                                    const int& i1);
 
+  virtual void setParameterTexId(const int programIndex, const char* parameterName, const unsigned int& ui1);
+
   virtual void setModelViewProj(const int programIndex, const char* parameterName);
 private:
   // Cg specific stuff.
+  CGcontext _cgContext;
   std::vector<CGprofile> _cgProfiles;
   std::vector<CGprogram> _cgPrograms;
   typedef std::vector<vvCgParameter> ParameterVector;
