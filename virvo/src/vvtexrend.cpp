@@ -71,6 +71,7 @@
 #include "vvtexrend.h"
 #include "vvstopwatch.h"
 #include "vvprintgl.h"
+#include "vvshaderfactory.h"
 
 #ifdef __APPLE__
 typedef struct pthead_barrierattr_t_ { int dummy; } pthread_barrierattr_t;
@@ -6298,7 +6299,7 @@ void vvTexRend::updateLUT(float dist)
     sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
 #endif
 
-    _isectShader = new vvCg();
+    _isectShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
     _isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
 
     delete[] shaderFile;

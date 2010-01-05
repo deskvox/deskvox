@@ -39,6 +39,7 @@ SOURCES = vvcolor.cpp \
     vvvisitor.cpp \
     vvvffile.cpp \
     vvvoldesc.cpp \
+    vvshaderfactory.cpp \
     vvshadermanager.cpp \
     vvcg.cpp \
     vvglsl.cpp \
@@ -76,6 +77,7 @@ HEADERS = glext-orig.h \
     vvvirvo.h \
     vvvisitor.h \
     vvvoldesc.h \
+    vvshaderfactory.h \
     vvshadermanager.h \
     vvcg.h \
     vvglsl.h \
