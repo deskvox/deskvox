@@ -19,6 +19,8 @@
 #include "vvexport.h"
 #include "vvshadermanager.h"
 
+#include <vector>
+
 enum vvShaderManagerType
 {
   VV_CG_MANAGER = 0,

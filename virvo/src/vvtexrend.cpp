@@ -151,17 +151,10 @@ struct ThreadArgs
   pthread_mutex_t* makeTextureMutex;          ///< mutex ensuring that textures for each thread are built up synchronized
 };
 
-#ifdef HAVE_CG
 void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
                    const vvVector3& probeMin, const vvVector3& probeMax,
                    GLuint*& texNames, vvShaderManager*& isectShader, bool setupEdges)
-#else
-void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
-                   const vvVector3& farthest, const vvVector3& delta,
-                   const vvVector3& probeMin, const vvVector3& probeMax,
-                   GLuint*& texNames)
-#endif
 {
   vvVector3 dist = max;
   dist.sub(&min);
@@ -176,141 +169,140 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
 
   vvVector3 texPoint;
   texPoint.copy(&farthest);
-#ifdef HAVE_CG
+
   if(renderer->_proxyGeometryOnGpu)
   {
-  // XXX
-  glEnableClientState(GL_VERTEX_ARRAY);
-  (void)numSlices;
-  // Clip probe object to brick extends.
-  vvVector3 minObjClipped;
-  vvVector3 maxObjClipped;
+    // XXX
+    glEnableClientState(GL_VERTEX_ARRAY);
+    (void)numSlices;
+    // Clip probe object to brick extends.
+    vvVector3 minObjClipped;
+    vvVector3 maxObjClipped;
 
-  for (int i = 0; i < 3; ++i)
-  {
-    if (minObj[i] < probeMin[i])
+    for (int i = 0; i < 3; ++i)
     {
-      minObjClipped[i] = probeMin[i];
-    }
-    else
-    {
-      minObjClipped[i] = minObj[i];
-    }
-
-    if (maxObj[i] > probeMax[i])
-    {
-      maxObjClipped[i] = probeMax[i];
-    }
-    else
-    {
-      maxObjClipped[i] = maxObj[i];
-    }
-
-    texRange[i] = (1.0f - 1.0f / (float)texels[i] / dist[i] * distObj[i]);
-    texMin[i] = (1.0f / (2.0f * (float)texels[i]));
-  }
-
-  vvAABB box(minObjClipped, maxObjClipped);
-  const vvVector3 (&verts)[8] = box.calcVertices();
-
-  float minDot;
-  float maxDot;
-  ushort idx = getFrontIndex(verts, texPoint, normal, minDot, maxDot);
-  isectShader->setArrayParameter3f(0, "vertices", 0, verts[0].e[0], verts[0].e[1], verts[0].e[2]);
-  if(setupEdges)
-  {
-  for (int i = 1; i < 8; ++i)
-  {
-    isectShader->setArrayParameter3f(0, "vertices", i, verts[i].e[0]-verts[0].e[0],
-                                                   verts[i].e[1]-verts[0].e[1],
-                                                   verts[i].e[2]-verts[0].e[2]);
-  }
-  }
-
-  isectShader->setParameter4f(0, "brickMin", minObj[0], minObj[1], minObj[2], -texPoint.length());
-  isectShader->setParameter3f(0, "brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
-  // Mind that textures overlap a little bit for correct interpolation at the borders.
-  // Thus add that little difference.
-  isectShader->setParameter3f(0, "texRange", texRange[0], texRange[1], texRange[2]);
-  isectShader->setParameter3f(0, "texMin", texMin[0], texMin[1], texMin[2]);
-
-  float deltaInv = 1.0f / delta.length();
-
-  int startSlices = ceilf(minDot * deltaInv);
-  int endSlices = floorf(maxDot * deltaInv);
-
-  isectShader->setParameter1i(0, "frontIndex", idx);
-
-  int primCount = (endSlices - startSlices) + 1;
-
-  glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
-  glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
-
-  glDisableClientState(GL_VERTEX_ARRAY);
-  }
-  else
-#endif
-  {
-  vvVector3 maxClipped;
-  vvVector3 minClipped;
-  for (int i = 0; i < 3; i++)
-  {
-    if (min.e[i] < probeMin.e[i])
-      minClipped.e[i] = probeMin.e[i];
-    else
-      minClipped.e[i] = min.e[i];
-
-    if (max.e[i] > probeMax.e[i])
-      maxClipped.e[i] = probeMax.e[i];
-    else
-      maxClipped.e[i] = max.e[i];
-
-    texRange[i] = 1.0f - 1.0f / (float)texels[i];
-    texMin[i] = 1.0f / (2.0f * (float)texels[i]);
-  }
-  for (int i = 0; i < numSlices; ++i)               // loop thru all drawn textures
-  {
-    // Search for intersections between texture plane (defined by texPoint and
-    // normal) and texture object (0..1):
-    vvVector3 isect[6];
-    int isectCnt = isect->isectPlaneCuboid(&normal, &texPoint, &minClipped, &maxClipped);
-
-    texPoint.add(&delta);
-
-    if (isectCnt < 3) continue;                 // at least 3 intersections needed for drawing
-
-    // Check volume section mode:
-    if (renderer->minSlice != -1 && i < renderer->minSlice) continue;
-    if (renderer->maxSlice != -1 && i > renderer->maxSlice) continue;
-
-    // Put the intersecting 3 to 6 vertices in cyclic order to draw adjacent
-    // and non-overlapping triangles:
-    isect->cyclicSort(isectCnt, &normal);
-
-    // Generate vertices in texture coordinates:
-    vvVector3 texcoord[6];
-    for (int j = 0; j < isectCnt; ++j)
-    {
-      for (int k = 0; k < 3; ++k)
+      if (minObj[i] < probeMin[i])
       {
-        texcoord[j][k] = (isect[j][k] - min.e[k]) / dist[k];
-        texcoord[j][k] = texcoord[j][k] * texRange[k] + texMin[k];
+        minObjClipped[i] = probeMin[i];
+      }
+      else
+      {
+        minObjClipped[i] = minObj[i];
+      }
+
+      if (maxObj[i] > probeMax[i])
+      {
+        maxObjClipped[i] = probeMax[i];
+      }
+      else
+      {
+        maxObjClipped[i] = maxObj[i];
+      }
+
+      texRange[i] = (1.0f - 1.0f / (float)texels[i] / dist[i] * distObj[i]);
+      texMin[i] = (1.0f / (2.0f * (float)texels[i]));
+    }
+
+    vvAABB box(minObjClipped, maxObjClipped);
+    const vvVector3 (&verts)[8] = box.calcVertices();
+
+    float minDot;
+    float maxDot;
+    ushort idx = getFrontIndex(verts, texPoint, normal, minDot, maxDot);
+    isectShader->setArrayParameter3f(0, "vertices", 0, verts[0].e[0], verts[0].e[1], verts[0].e[2]);
+    if(setupEdges)
+    {
+      for (int i = 1; i < 8; ++i)
+      {
+        isectShader->setArrayParameter3f(0, "vertices", i, verts[i].e[0]-verts[0].e[0],
+                                                           verts[i].e[1]-verts[0].e[1],
+                                                           verts[i].e[2]-verts[0].e[2]);
       }
     }
 
-    glBegin(GL_TRIANGLE_FAN);
-    glColor4f(1.0, 1.0, 1.0, 1.0);
+    isectShader->setParameter4f(0, "brickMin", minObj[0], minObj[1], minObj[2], -texPoint.length());
+    isectShader->setParameter3f(0, "brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
+    // Mind that textures overlap a little bit for correct interpolation at the borders.
+    // Thus add that little difference.
+    isectShader->setParameter3f(0, "texRange", texRange[0], texRange[1], texRange[2]);
+    isectShader->setParameter3f(0, "texMin", texMin[0], texMin[1], texMin[2]);
 
-    glNormal3f(normal[0], normal[1], normal[2]);
+    float deltaInv = 1.0f / delta.length();
 
-    for (int j = 0; j < isectCnt; ++j)
-    {
-      // The following lines are the bottleneck of this method:
-      glTexCoord3f(texcoord[j][0], texcoord[j][1], texcoord[j][2]);
-      glVertex3f(isect[j][0], isect[j][1], isect[j][2]);
-    }
-    glEnd();
+    int startSlices = ceilf(minDot * deltaInv);
+    int endSlices = floorf(maxDot * deltaInv);
+
+    isectShader->setParameter1i(0, "frontIndex", idx);
+
+    int primCount = (endSlices - startSlices) + 1;
+
+    glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
+    glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
+
+    glDisableClientState(GL_VERTEX_ARRAY);
   }
+  else // render proxy geometry on gpu? else then:
+  {
+    vvVector3 maxClipped;
+    vvVector3 minClipped;
+    for (int i = 0; i < 3; i++)
+    {
+      if (min.e[i] < probeMin.e[i])
+        minClipped.e[i] = probeMin.e[i];
+      else
+        minClipped.e[i] = min.e[i];
+
+      if (max.e[i] > probeMax.e[i])
+        maxClipped.e[i] = probeMax.e[i];
+      else
+        maxClipped.e[i] = max.e[i];
+
+      texRange[i] = 1.0f - 1.0f / (float)texels[i];
+      texMin[i] = 1.0f / (2.0f * (float)texels[i]);
+    }
+    for (int i = 0; i < numSlices; ++i)               // loop thru all drawn textures
+    {
+      // Search for intersections between texture plane (defined by texPoint and
+      // normal) and texture object (0..1):
+      vvVector3 isect[6];
+      int isectCnt = isect->isectPlaneCuboid(&normal, &texPoint, &minClipped, &maxClipped);
+
+      texPoint.add(&delta);
+
+      if (isectCnt < 3) continue;                 // at least 3 intersections needed for drawing
+
+      // Check volume section mode:
+      if (renderer->minSlice != -1 && i < renderer->minSlice) continue;
+      if (renderer->maxSlice != -1 && i > renderer->maxSlice) continue;
+
+      // Put the intersecting 3 to 6 vertices in cyclic order to draw adjacent
+      // and non-overlapping triangles:
+      isect->cyclicSort(isectCnt, &normal);
+
+      // Generate vertices in texture coordinates:
+      vvVector3 texcoord[6];
+      for (int j = 0; j < isectCnt; ++j)
+      {
+        for (int k = 0; k < 3; ++k)
+        {
+          texcoord[j][k] = (isect[j][k] - min.e[k]) / dist[k];
+          texcoord[j][k] = texcoord[j][k] * texRange[k] + texMin[k];
+        }
+      }
+
+      glBegin(GL_TRIANGLE_FAN);
+      glColor4f(1.0, 1.0, 1.0, 1.0);
+
+      glNormal3f(normal[0], normal[1], normal[2]);
+
+      for (int j = 0; j < isectCnt; ++j)
+      {
+        // The following lines are the bottleneck of this method:
+        glTexCoord3f(texcoord[j][0], texcoord[j][1], texcoord[j][2]);
+        glVertex3f(isect[j][0], isect[j][1], isect[j][2]);
+      }
+      glEnd();
+    }
   }
 }
 
@@ -508,6 +500,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   arbMltTex = vvGLTools::isGLextensionSupported("GL_ARB_multitexture");
 #endif
 
+  // If no Cg is available, the factory will return a NULL pointer.
+  _isectShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
+
   extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax");
   extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation");
   extColLUT = isSupported(VV_SGI_LUT);
@@ -693,19 +688,10 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     pthread_barrier_wait(&_distributedBricksBarrier);
   }
 
-#ifdef HAVE_CG
-  _cgVertices = new CGparameter[8];
-  initIntersectionShader(_cgIsectContext, _cgIsectProfile, _cgIsectProgram,
-                         _cgBrickMin, _cgBrickDimInv, _cgModelViewProj,
-                         _cgDelta, _cgPlaneNormal,
-                         _cgFrontIndex, _cgVertexList, _cgVertices);
-  setupIntersectionCGParameters(_cgIsectProgram,
-                                _cgBrickMin, _cgBrickDimInv, _cgModelViewProj,
-                                _cgDelta, _cgPlaneNormal,
-                                _cgFrontIndex, _cgVertexList, _cgVertices);
+  initIntersectionShader(_isectShader);
+  setupIntersectionParameters(_isectShader);
   glGenBuffers(1, &_vbos[0]);
   glGenBuffers(1, &_vbos[1]);
-#endif
 }
 
 //----------------------------------------------------------------------------
@@ -743,14 +729,15 @@ vvTexRend::~vvTexRend()
   delete[] _cgFragProfile;
 #endif
 
-#ifdef HAVE_CG
-  cgGLDisableProfile(_cgIsectProfile);
-  cgDestroyContext(_cgIsectContext);
-  glDisableClientState(GL_VERTEX_ARRAY);
+
+  if (_proxyGeometryOnGpu)
+  {
+    glDisableClientState(GL_VERTEX_ARRAY);
+  }
+  delete _isectShader;
   glDeleteBuffers(1, &_vbos[0]);
   glDeleteBuffers(1, &_vbos[1]);
-  delete[] _cgVertices;
-#endif
+
   delete[] preintTable;
 
 
@@ -3592,16 +3579,15 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   {
     // Volume render a 3D texture:
     enableTexture(GL_TEXTURE_3D_EXT);
-#ifdef HAVE_CG
+
     if(_proxyGeometryOnGpu)
     {
-    // Per frame parameters.
-    _isectShader->setModelViewProj(0, "modelViewProj");
+      // Per frame parameters.
+      _isectShader->setModelViewProj(0, "modelViewProj");
 
-    _isectShader->setParameter1f(0, "delta", delta.length());
-    _isectShader->setParameter3f(0, "planeNormal", normal[0], normal[1], normal[2]);
+      _isectShader->setParameter1f(0, "delta", delta.length());
+      _isectShader->setParameter3f(0, "planeNormal", normal[0], normal[1], normal[2]);
     }
-#endif
 
     // Count empty-space leaped bricks.
     discarded = 0;
@@ -3615,15 +3601,10 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
       }
       else
       {
-#ifdef HAVE_CG
-      (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
-                  texNames,
-                  _isectShader, !((*it)->insideProbe && lastInsideProbe));
-#else
-      (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
-                  texNames);
-#endif
-         lastInsideProbe = (*it)->insideProbe;
+        (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
+                    texNames,
+                    _isectShader, !((*it)->insideProbe && lastInsideProbe));
+        lastInsideProbe = (*it)->insideProbe;
       }
     }
 
@@ -3717,20 +3698,14 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // Setup an appropriate GL state.
     /////////////////////////////////////////////////////////
     data->renderer->setGLenvironment();
-#ifdef HAVE_CG
+
     if(data->renderer->_proxyGeometryOnGpu)
     {
-    data->renderer->initIntersectionShader(cgIsectContext, cgIsectProfile, cgIsectProgram,
-                                           cgBrickMin, cgBrickDimInv, cgModelViewProj,
-                                           cgDelta, cgPlaneNormal,
-                                           cgFrontIndex, cgVertexList, cgVertices);
-    data->renderer->setupIntersectionCGParameters(cgIsectProgram,
-                                  cgBrickMin, cgBrickDimInv, cgModelViewProj,
-                                  cgDelta, cgPlaneNormal,
-                                  cgFrontIndex, cgVertexList, cgVertices);
-    data->renderer->enableIntersectionShader(cgIsectProgram, cgIsectProfile);
+      data->renderer->initIntersectionShader(data->renderer->_isectShader);
+      data->renderer->setupIntersectionParameters(data->renderer->_isectShader);
+      data->renderer->enableIntersectionShader(data->renderer->_isectShader);
     }
-#endif
+
     GLuint tex;
 
     // Init framebuffer objects.
@@ -3819,37 +3794,33 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       Brick* tmp;
 
-      GLuint** vertIndices;
-      GLsizei* elemCounts;
-#ifdef HAVE_CG
+      GLuint** vertIndices = NULL;
+      GLsizei* elemCounts = NULL;
+      GLuint* vertIndicesTmp = NULL;
+
       // Allocate memory for 6 vertices per slice. These will
       // be sent to the gpu later on. Memory is allocated here
       // to avoid doing this in the inner loop
-      GLuint* vertIndicesTmp = new GLuint[data->numSlices * 6];
-      vertIndices = new GLuint*[data->numSlices];
-      elemCounts = new GLsizei[data->numSlices];
-      for (int i = 0; i < data->numSlices; ++i)
+      if (data->renderer->_proxyGeometryOnGpu)
       {
-        vertIndices[i] = &vertIndicesTmp[i*6];
-        elemCounts[i] = 0;
+        vertIndicesTmp = new GLuint[data->numSlices * 6];
+        vertIndices = new GLuint*[data->numSlices];
+        elemCounts = new GLsizei[data->numSlices];
+        for (int i = 0; i < data->numSlices; ++i)
+        {
+          vertIndices[i] = &vertIndicesTmp[i*6];
+          elemCounts[i] = 0;
+        }
       }
-#endif
 
       for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
       {
         Brick *tmp = *it;
-#ifdef HAVE_CG
         tmp->render(data->renderer, data->numSlices, data->normal,
                     data->farthest, data->delta,
                     data->probeMin, data->probeMax,
                     data->privateTexNames,
                     data->renderer->_isectShader, true);
-#else
-        tmp->render(data->renderer, data->numSlices, data->normal,
-                    data->farthest, data->delta,
-                    data->probeMin, data->probeMax,
-                    data->privateTexNames);
-#endif
       }
       glDisable(GL_TEXTURE_3D_EXT);
 #ifdef HAVE_CG
@@ -3858,14 +3829,13 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       data->renderer->disableLUTMode();
 #endif
 
-#ifdef HAVE_CG
       if(data->renderer->_proxyGeometryOnGpu)
       {
-      delete[] vertIndices;
-      delete[] vertIndicesTmp;
-      delete[] elemCounts;
+        delete[] vertIndices;
+        delete[] vertIndicesTmp;
+        delete[] elemCounts;
       }
-#endif
+
       // When all worker threads and the main thread have waited once (per frame) on
       // this barrier, all workers have finished rendering this frame and the main
       // thread may resume.
@@ -5326,11 +5296,7 @@ void vvTexRend::renderVolumeGL()
   {
     if (geomType == VV_BRICKS && !_renderState._showBricks)
     {
-#ifdef HAVE_CG
-      enableIntersectionShader(_cgIsectProgram, _cgIsectProfile);
-#else
-      enableIntersectionShader();
-#endif
+      enableIntersectionShader(_isectShader);
     }
   }
 
@@ -5412,7 +5378,7 @@ void vvTexRend::renderVolumeGL()
     disableLUTMode();
 #endif
     unsetGLenvironment();
-    disableIntersectionShader();
+    disableIntersectionShader(_isectShader);
   }
   vvRenderer::renderVolumeGL();
 
@@ -6086,29 +6052,21 @@ void vvTexRend::updateLUT(float dist)
   }
 
   //----------------------------------------------------------------------------
-#ifdef HAVE_CG
-  void vvTexRend::enableIntersectionShader(CGprogram& cgIsectProgram, CGprofile& cgIsectProfile)
-#else
-  void vvTexRend::enableIntersectionShader()
-#endif
+  void vvTexRend::enableIntersectionShader(vvShaderManager*& isectShader)
   {
-#ifdef HAVE_CG
     if(_proxyGeometryOnGpu)
     {
-    _isectShader->enableShader(0);
+      isectShader->enableShader(0);
     }
-#endif
   }
 
   //----------------------------------------------------------------------------
-  void vvTexRend::disableIntersectionShader()
+  void vvTexRend::disableIntersectionShader(vvShaderManager*& isectShader)
   {
-#ifdef HAVE_CG
     if(_proxyGeometryOnGpu)
     {
-    _isectShader->disableShader(0);
+      isectShader->disableShader(0);
     }
-#endif
   }
 
   //----------------------------------------------------------------------------
@@ -6235,20 +6193,8 @@ void vvTexRend::updateLUT(float dist)
   //----------------------------------------------------------------------------
   /** @return true if initialization successful
    */
-#ifdef HAVE_CG
-  bool vvTexRend::initIntersectionShader(CGcontext& cgIsectContext,
-                                         CGprofile& cgIsectProfile,
-                                         CGprogram& cgIsectProgram,
-                                         CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
-                                         CGparameter& cgModelViewProj,
-                                         CGparameter& cgDelta, CGparameter& cgPlaneNormal,
-                                         CGparameter& cgFrontIndex, CGparameter& cgVertexList,
-                                         CGparameter*& cgVertices)
-#else
-  bool vvTexRend::initIntersectionShader()
-#endif
+  bool vvTexRend::initIntersectionShader(vvShaderManager*& isectShader)
   {
-#ifdef HAVE_CG
 #ifdef _WIN32
     const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
 #endif
@@ -6258,7 +6204,6 @@ void vvTexRend::updateLUT(float dist)
     char* shaderFile = NULL;
     char* shaderPath = NULL;
     char shaderDir[256];
-    int i;
 
     if (getenv(shaderEnv))
     {
@@ -6299,27 +6244,17 @@ void vvTexRend::updateLUT(float dist)
     sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
 #endif
 
-    _isectShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
     _isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
 
     delete[] shaderFile;
     delete[] shaderPath;
 
-    setupIntersectionCGParameters(cgIsectProgram,
-                                  cgBrickMin, cgBrickDimInv, cgModelViewProj,
-                                  cgDelta, cgPlaneNormal,
-                                  cgFrontIndex, cgVertexList, cgVertices);
-#endif
+    setupIntersectionParameters(isectShader);
+
     return true;
   }
 
-#ifdef HAVE_CG
-  void vvTexRend::setupIntersectionCGParameters(CGprogram& cgIsectProgram,
-                                                CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
-                                                CGparameter& cgModelViewProj,
-                                                CGparameter& cgDelta, CGparameter& cgPlaneNormal,
-                                                CGparameter& cgFrontIndex, CGparameter& cgVertexList,
-                                                CGparameter*& cgVertices)
+  void vvTexRend::setupIntersectionParameters(vvShaderManager*& isectShader)
   {
     int parameterCount = 12;
     const char** parameterNames = new const char*[parameterCount];
@@ -6342,118 +6277,117 @@ void vvTexRend::updateLUT(float dist)
 
     // Global scope, values will never be changed.
     
-    _isectShader->setArrayParameter1i(0, "sequence", 0, 0);
-    _isectShader->setArrayParameter1i(0, "sequence", 1, 1);
-    _isectShader->setArrayParameter1i(0, "sequence", 2, 2);
-    _isectShader->setArrayParameter1i(0, "sequence", 3, 3);
-    _isectShader->setArrayParameter1i(0, "sequence", 4, 4);
-    _isectShader->setArrayParameter1i(0, "sequence", 5, 5);
-    _isectShader->setArrayParameter1i(0, "sequence", 6, 6);
-    _isectShader->setArrayParameter1i(0, "sequence", 7, 7);
+    isectShader->setArrayParameter1i(0, "sequence", 0, 0);
+    isectShader->setArrayParameter1i(0, "sequence", 1, 1);
+    isectShader->setArrayParameter1i(0, "sequence", 2, 2);
+    isectShader->setArrayParameter1i(0, "sequence", 3, 3);
+    isectShader->setArrayParameter1i(0, "sequence", 4, 4);
+    isectShader->setArrayParameter1i(0, "sequence", 5, 5);
+    isectShader->setArrayParameter1i(0, "sequence", 6, 6);
+    isectShader->setArrayParameter1i(0, "sequence", 7, 7);
 
-    _isectShader->setArrayParameter1i(0, "sequence", 8, 1);
-    _isectShader->setArrayParameter1i(0, "sequence", 9, 2);
-    _isectShader->setArrayParameter1i(0, "sequence", 10, 3);
-    _isectShader->setArrayParameter1i(0, "sequence", 11, 0);
-    _isectShader->setArrayParameter1i(0, "sequence", 12, 7);
-    _isectShader->setArrayParameter1i(0, "sequence", 13, 4);
-    _isectShader->setArrayParameter1i(0, "sequence", 14, 5);
-    _isectShader->setArrayParameter1i(0, "sequence", 15, 6);
+    isectShader->setArrayParameter1i(0, "sequence", 8, 1);
+    isectShader->setArrayParameter1i(0, "sequence", 9, 2);
+    isectShader->setArrayParameter1i(0, "sequence", 10, 3);
+    isectShader->setArrayParameter1i(0, "sequence", 11, 0);
+    isectShader->setArrayParameter1i(0, "sequence", 12, 7);
+    isectShader->setArrayParameter1i(0, "sequence", 13, 4);
+    isectShader->setArrayParameter1i(0, "sequence", 14, 5);
+    isectShader->setArrayParameter1i(0, "sequence", 15, 6);
 
-    _isectShader->setArrayParameter1i(0, "sequence", 16, 2);
-    _isectShader->setArrayParameter1i(0, "sequence", 17, 7);
-    _isectShader->setArrayParameter1i(0, "sequence", 18, 6);
-    _isectShader->setArrayParameter1i(0, "sequence", 19, 3);
-    _isectShader->setArrayParameter1i(0, "sequence", 20, 4);
-    _isectShader->setArrayParameter1i(0, "sequence", 21, 1);
-    _isectShader->setArrayParameter1i(0, "sequence", 22, 0);
-    _isectShader->setArrayParameter1i(0, "sequence", 23, 5);
+    isectShader->setArrayParameter1i(0, "sequence", 16, 2);
+    isectShader->setArrayParameter1i(0, "sequence", 17, 7);
+    isectShader->setArrayParameter1i(0, "sequence", 18, 6);
+    isectShader->setArrayParameter1i(0, "sequence", 19, 3);
+    isectShader->setArrayParameter1i(0, "sequence", 20, 4);
+    isectShader->setArrayParameter1i(0, "sequence", 21, 1);
+    isectShader->setArrayParameter1i(0, "sequence", 22, 0);
+    isectShader->setArrayParameter1i(0, "sequence", 23, 5);
 
-    _isectShader->setArrayParameter1i(0, "sequence", 24, 3);
-    _isectShader->setArrayParameter1i(0, "sequence", 25, 6);
-    _isectShader->setArrayParameter1i(0, "sequence", 26, 5);
-    _isectShader->setArrayParameter1i(0, "sequence", 27, 0);
-    _isectShader->setArrayParameter1i(0, "sequence", 28, 7);
-    _isectShader->setArrayParameter1i(0, "sequence", 29, 2);
-    _isectShader->setArrayParameter1i(0, "sequence", 30, 1);
-    _isectShader->setArrayParameter1i(0, "sequence", 31, 4);
+    isectShader->setArrayParameter1i(0, "sequence", 24, 3);
+    isectShader->setArrayParameter1i(0, "sequence", 25, 6);
+    isectShader->setArrayParameter1i(0, "sequence", 26, 5);
+    isectShader->setArrayParameter1i(0, "sequence", 27, 0);
+    isectShader->setArrayParameter1i(0, "sequence", 28, 7);
+    isectShader->setArrayParameter1i(0, "sequence", 29, 2);
+    isectShader->setArrayParameter1i(0, "sequence", 30, 1);
+    isectShader->setArrayParameter1i(0, "sequence", 31, 4);
 
-    _isectShader->setArrayParameter1i(0, "sequence", 32, 4);
-    _isectShader->setArrayParameter1i(0, "sequence", 33, 5);
-    _isectShader->setArrayParameter1i(0, "sequence", 34, 6);
-    _isectShader->setArrayParameter1i(0, "sequence", 35, 7);
-    _isectShader->setArrayParameter1i(0, "sequence", 36, 0);
-    _isectShader->setArrayParameter1i(0, "sequence", 37, 1);
-    _isectShader->setArrayParameter1i(0, "sequence", 38, 2);
-    _isectShader->setArrayParameter1i(0, "sequence", 39, 3);
+    isectShader->setArrayParameter1i(0, "sequence", 32, 4);
+    isectShader->setArrayParameter1i(0, "sequence", 33, 5);
+    isectShader->setArrayParameter1i(0, "sequence", 34, 6);
+    isectShader->setArrayParameter1i(0, "sequence", 35, 7);
+    isectShader->setArrayParameter1i(0, "sequence", 36, 0);
+    isectShader->setArrayParameter1i(0, "sequence", 37, 1);
+    isectShader->setArrayParameter1i(0, "sequence", 38, 2);
+    isectShader->setArrayParameter1i(0, "sequence", 39, 3);
 
-    _isectShader->setArrayParameter1i(0, "sequence", 40, 5);
-    _isectShader->setArrayParameter1i(0, "sequence", 41, 0);
-    _isectShader->setArrayParameter1i(0, "sequence", 42, 3);
-    _isectShader->setArrayParameter1i(0, "sequence", 43, 6);
-    _isectShader->setArrayParameter1i(0, "sequence", 44, 1);
-    _isectShader->setArrayParameter1i(0, "sequence", 45, 4);
-    _isectShader->setArrayParameter1i(0, "sequence", 46, 7);
-    _isectShader->setArrayParameter1i(0, "sequence", 47, 2);
+    isectShader->setArrayParameter1i(0, "sequence", 40, 5);
+    isectShader->setArrayParameter1i(0, "sequence", 41, 0);
+    isectShader->setArrayParameter1i(0, "sequence", 42, 3);
+    isectShader->setArrayParameter1i(0, "sequence", 43, 6);
+    isectShader->setArrayParameter1i(0, "sequence", 44, 1);
+    isectShader->setArrayParameter1i(0, "sequence", 45, 4);
+    isectShader->setArrayParameter1i(0, "sequence", 46, 7);
+    isectShader->setArrayParameter1i(0, "sequence", 47, 2);
 
-    _isectShader->setArrayParameter1i(0, "sequence", 48, 6);
-    _isectShader->setArrayParameter1i(0, "sequence", 49, 7);
-    _isectShader->setArrayParameter1i(0, "sequence", 50, 4);
-    _isectShader->setArrayParameter1i(0, "sequence", 51, 5);
-    _isectShader->setArrayParameter1i(0, "sequence", 52, 2);
-    _isectShader->setArrayParameter1i(0, "sequence", 53, 3);
-    _isectShader->setArrayParameter1i(0, "sequence", 54, 0);
-    _isectShader->setArrayParameter1i(0, "sequence", 55, 1);
+    isectShader->setArrayParameter1i(0, "sequence", 48, 6);
+    isectShader->setArrayParameter1i(0, "sequence", 49, 7);
+    isectShader->setArrayParameter1i(0, "sequence", 50, 4);
+    isectShader->setArrayParameter1i(0, "sequence", 51, 5);
+    isectShader->setArrayParameter1i(0, "sequence", 52, 2);
+    isectShader->setArrayParameter1i(0, "sequence", 53, 3);
+    isectShader->setArrayParameter1i(0, "sequence", 54, 0);
+    isectShader->setArrayParameter1i(0, "sequence", 55, 1);
 
-    _isectShader->setArrayParameter1i(0, "sequence", 56, 7);
-    _isectShader->setArrayParameter1i(0, "sequence", 57, 6);
-    _isectShader->setArrayParameter1i(0, "sequence", 58, 3);
-    _isectShader->setArrayParameter1i(0, "sequence", 59, 2);
-    _isectShader->setArrayParameter1i(0, "sequence", 60, 5);
-    _isectShader->setArrayParameter1i(0, "sequence", 61, 4);
-    _isectShader->setArrayParameter1i(0, "sequence", 62, 1);
-    _isectShader->setArrayParameter1i(0, "sequence", 63, 0);
+    isectShader->setArrayParameter1i(0, "sequence", 56, 7);
+    isectShader->setArrayParameter1i(0, "sequence", 57, 6);
+    isectShader->setArrayParameter1i(0, "sequence", 58, 3);
+    isectShader->setArrayParameter1i(0, "sequence", 59, 2);
+    isectShader->setArrayParameter1i(0, "sequence", 60, 5);
+    isectShader->setArrayParameter1i(0, "sequence", 61, 4);
+    isectShader->setArrayParameter1i(0, "sequence", 62, 1);
+    isectShader->setArrayParameter1i(0, "sequence", 63, 0);
 
     // P0.
-    _isectShader->setArrayParameter1i(0, "v1", 0, 0); _isectShader->setArrayParameter1i(0, "v2", 0, 1);
-    _isectShader->setArrayParameter1i(0, "v1", 1, 1); _isectShader->setArrayParameter1i(0, "v2", 1, 2);
-    _isectShader->setArrayParameter1i(0, "v1", 2, 2); _isectShader->setArrayParameter1i(0, "v2", 2, 7);
+    isectShader->setArrayParameter1i(0, "v1", 0, 0); isectShader->setArrayParameter1i(0, "v2", 0, 1);
+    isectShader->setArrayParameter1i(0, "v1", 1, 1); isectShader->setArrayParameter1i(0, "v2", 1, 2);
+    isectShader->setArrayParameter1i(0, "v1", 2, 2); isectShader->setArrayParameter1i(0, "v2", 2, 7);
 
     // P2.
-    _isectShader->setArrayParameter1i(0, "v1", 8, 0); _isectShader->setArrayParameter1i(0, "v2", 8, 5);
-    _isectShader->setArrayParameter1i(0, "v1", 9, 5); _isectShader->setArrayParameter1i(0, "v2", 9, 4);
-    _isectShader->setArrayParameter1i(0, "v1", 10, 4); _isectShader->setArrayParameter1i(0, "v2", 10, 7);
+    isectShader->setArrayParameter1i(0, "v1", 8, 0); isectShader->setArrayParameter1i(0, "v2", 8, 5);
+    isectShader->setArrayParameter1i(0, "v1", 9, 5); isectShader->setArrayParameter1i(0, "v2", 9, 4);
+    isectShader->setArrayParameter1i(0, "v1", 10, 4); isectShader->setArrayParameter1i(0, "v2", 10, 7);
 
     // P4.
-    _isectShader->setArrayParameter1i(0, "v1", 16, 0); _isectShader->setArrayParameter1i(0, "v2", 16, 3);
-    _isectShader->setArrayParameter1i(0, "v1", 17, 3); _isectShader->setArrayParameter1i(0, "v2", 17, 6);
-    _isectShader->setArrayParameter1i(0, "v1", 18, 6); _isectShader->setArrayParameter1i(0, "v2", 18, 7);
+    isectShader->setArrayParameter1i(0, "v1", 16, 0); isectShader->setArrayParameter1i(0, "v2", 16, 3);
+    isectShader->setArrayParameter1i(0, "v1", 17, 3); isectShader->setArrayParameter1i(0, "v2", 17, 6);
+    isectShader->setArrayParameter1i(0, "v1", 18, 6); isectShader->setArrayParameter1i(0, "v2", 18, 7);
 
     // P1.
     // First intersect the dotted edge.
-    _isectShader->setArrayParameter1i(0, "v1", 4, 1); _isectShader->setArrayParameter1i(0, "v2", 4, 4);
+    isectShader->setArrayParameter1i(0, "v1", 4, 1); isectShader->setArrayParameter1i(0, "v2", 4, 4);
     // Then intersect the path.
-    _isectShader->setArrayParameter1i(0, "v1", 5, 0); _isectShader->setArrayParameter1i(0, "v2", 5, 1);
-    _isectShader->setArrayParameter1i(0, "v1", 6, 1); _isectShader->setArrayParameter1i(0, "v2", 6, 2);
-    _isectShader->setArrayParameter1i(0, "v1", 7, 2); _isectShader->setArrayParameter1i(0, "v2", 7, 7);
+    isectShader->setArrayParameter1i(0, "v1", 5, 0); isectShader->setArrayParameter1i(0, "v2", 5, 1);
+    isectShader->setArrayParameter1i(0, "v1", 6, 1); isectShader->setArrayParameter1i(0, "v2", 6, 2);
+    isectShader->setArrayParameter1i(0, "v1", 7, 2); isectShader->setArrayParameter1i(0, "v2", 7, 7);
 
     // P3.
     // First intersect the dotted edge.
-    _isectShader->setArrayParameter1i(0, "v1", 12, 5); _isectShader->setArrayParameter1i(0, "v2", 12, 6);
+    isectShader->setArrayParameter1i(0, "v1", 12, 5); isectShader->setArrayParameter1i(0, "v2", 12, 6);
     // Then intersect the path.
-    _isectShader->setArrayParameter1i(0, "v1", 13, 0); _isectShader->setArrayParameter1i(0, "v2", 13, 5);
-    _isectShader->setArrayParameter1i(0, "v1", 14, 5); _isectShader->setArrayParameter1i(0, "v2", 14, 4);
-    _isectShader->setArrayParameter1i(0, "v1", 15, 4); _isectShader->setArrayParameter1i(0, "v2", 15, 7);
+    isectShader->setArrayParameter1i(0, "v1", 13, 0); isectShader->setArrayParameter1i(0, "v2", 13, 5);
+    isectShader->setArrayParameter1i(0, "v1", 14, 5); isectShader->setArrayParameter1i(0, "v2", 14, 4);
+    isectShader->setArrayParameter1i(0, "v1", 15, 4); isectShader->setArrayParameter1i(0, "v2", 15, 7);
 
     // P5.
     // First intersect the dotted edge.
-    _isectShader->setArrayParameter1i(0, "v1", 20, 3); _isectShader->setArrayParameter1i(0, "v2", 20, 2);
+    isectShader->setArrayParameter1i(0, "v1", 20, 3); isectShader->setArrayParameter1i(0, "v2", 20, 2);
     // Then intersect the path.
-    _isectShader->setArrayParameter1i(0, "v1", 21, 0); _isectShader->setArrayParameter1i(0, "v2", 21, 3);
-    _isectShader->setArrayParameter1i(0, "v1", 22, 3); _isectShader->setArrayParameter1i(0, "v2", 22, 6);
-    _isectShader->setArrayParameter1i(0, "v1", 23, 6); _isectShader->setArrayParameter1i(0, "v2", 23, 7);
+    isectShader->setArrayParameter1i(0, "v1", 21, 0); isectShader->setArrayParameter1i(0, "v2", 21, 3);
+    isectShader->setArrayParameter1i(0, "v1", 22, 3); isectShader->setArrayParameter1i(0, "v2", 22, 6);
+    isectShader->setArrayParameter1i(0, "v1", 23, 6); isectShader->setArrayParameter1i(0, "v2", 23, 7);
   }
-#endif
 
   //----------------------------------------------------------------------------
   void vvTexRend::printLUT()
@@ -6641,7 +6575,7 @@ void vvTexRend::updateLUT(float dist)
     return dist;
   }
 
-void vvTexRend::initVertArray(int numSlices)
+void vvTexRend::initVertArray(const int numSlices)
 {
   if(_elemCounts.size() >= numSlices)
     return;

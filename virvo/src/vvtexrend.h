@@ -40,6 +40,8 @@
 #include "vvrenderer.h"
 #include "vvtransfunc.h"
 #include "vvbsptree.h"
+#include "vvshadermanager.h"
+#include "vvopengl.h"
 
 // Posix threads:
 #include <pthread.h>
@@ -99,17 +101,10 @@ public:
       return false;
     }
   }
-#ifdef HAVE_CG
   void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
               GLuint*& texNames, vvShaderManager*& isectShader, bool setupEdges);
-#else
-  void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
-              const vvVector3& farthest, const vvVector3& delta,
-              const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames);
-#endif
 
   virtual vvAABB getAABB()
   {
@@ -326,7 +321,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     bool _proxyGeometryOnGpu;                     ///< indicate wether proxy geometry is to be computed on gpu
     int _lastFrame;                               ///< last frame rendered
-    
+
+    vvShaderManager* _isectShader;                ///< shader performing intersection test on gpu
 #ifdef HAVE_CG
     CGcontext _cgContext;                         ///< context for running fragment program
     CGprogram* _cgProgram;                        ///< handles for fragment program
@@ -334,22 +330,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     CGparameter _cgPixLUT;                        ///< fragment program input: RGBA look-up table
     CGparameter _cgChannel4Color;                 ///< fragment program input: color of 4th channel
     CGparameter _cgOpacityWeights;                ///< fragment program input: opacity of color channels
-
-    vvShaderManager* _isectShader;                ///< shader performing intersection test on gpu
-    CGcontext _cgIsectContext;                    ///< context for gpu intersection program
-    CGprofile _cgIsectProfile;                    ///< cg profile for gpu intersection program
-    CGprogram _cgIsectProgram;                    ///< cg shader program for gpu intersection
-
-    CGparameter _cgBrickMin;
-    CGparameter _cgBrickDimInv;
-
-    CGparameter _cgModelViewProj;
-    CGparameter _cgDelta;
-    CGparameter _cgPlaneNormal;
-    CGparameter _cgFrontIndex;
-
-    CGparameter _cgVertexList;
-    CGparameter* _cgVertices;
 
     GLuint _vbos[2];                              ///< vertex buffer objects for efficient slice transfer to gpu
 #endif
@@ -387,34 +367,19 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool initPixelShaders(CGcontext& cgContext, CGprogram*& cgProgram);
     void enableLUTMode(CGprogram*& cgProgram, CGparameter& cgPixLUT);
     void disableLUTMode(CGparameter& cgPixLUT);
-    void enableIntersectionShader(CGprogram& cgIsectProgram, CGprofile& cgIsectProfile);
     void enablePixelShaders(CGprogram*& cgProgram, CGparameter& cgPixLUT);
     void disablePixelShaders(CGparameter& cgPixLUT);
-    bool initIntersectionShader(CGcontext& cgIsectContext,
-                                CGprofile& cgIsectProfile,
-                                CGprogram& cgIsectProgram,
-                                CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
-                                CGparameter& cgModelViewProj,
-                                CGparameter& cgDelta, CGparameter& cgPlaneNormal,
-                                CGparameter& cgFrontIndex, CGparameter& cgVertexList,
-                                CGparameter*& cgVertices);
-    void setupIntersectionCGParameters(CGprogram& cgIsectProgram,
-                                       CGparameter& cgBrickMin, CGparameter& cgBrickDimInv,
-                                       CGparameter& cgModelViewProj,
-                                       CGparameter& cgDelta, CGparameter& cgPlaneNormal,
-                                       CGparameter& cgFrontIndex, CGparameter& cgVertexList,
-                                       CGparameter*& cgVertices);
 #else
     bool initPixelShaders();
     void enableLUTMode();
     void disableLUTMode();
-    void enableIntersectionShader();
     void enablePixelShaders();
     void disablePixelShaders();
-    void disableIntersectionShaders();
-    bool initIntersectionShader();
 #endif
-    void disableIntersectionShader();
+    bool initIntersectionShader(vvShaderManager*& isectShader);
+    void setupIntersectionParameters(vvShaderManager*& isectShader);
+    void enableIntersectionShader(vvShaderManager*& isectShader);
+    void disableIntersectionShader(vvShaderManager*& isectShader);
 
     ErrorType makeTextures3D();
     void removeTextures();
@@ -449,7 +414,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&);
     void getBricksInProbe(vvVector3, vvVector3);
     void computeBrickSize();
-    void initVertArray(int numSlices);
+    void initVertArray(const int numSlices);
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST);
     virtual ~vvTexRend();
