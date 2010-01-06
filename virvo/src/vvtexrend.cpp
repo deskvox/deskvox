@@ -1615,7 +1615,6 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
 {
   ErrorType err = OK;
 
-  vvHalfSpace* tmp;
   int i;
 
   // A new game... .
@@ -3219,10 +3218,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 {
   vvMatrix invMV;                                 // inverse of model-view matrix
   vvMatrix pm;                                    // OpenGL projection matrix
-  vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
-  vvVector3 texcoord[6];                          // intersection points in texture coordinate space [0..1]
   vvVector3 farthest;                             // volume vertex farthest from the viewer
-  vvVector3 texPoint;                             // arbitrary point on current texture
   vvVector3 delta;                                // distance vector between textures [object space]
   vvVector3 normal;                               // normal vector of textures
   vvVector3 origin;                               // origin (0|0|0) transformed to object space
@@ -3232,15 +3228,10 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   vvVector3 probeSizeObj;                         // probe size [object space]
   vvVector3 probeMin, probeMax;                   // probe min and max coordinates [object space]
   vvVector3 min, max;                             // min and max pos of current brick (cut with probe)
-  vvVector3 texRange;                             // range of texture coordinates
   vvVector3 texMin;                               // minimum texture coordinate
-  vvVector3 dist;                                 // dimensions of current brick
-  Brick* tmp;                                     // current brick
   float     diagonal;                             // probe diagonal [object space]
-  int       isectCnt;                             // intersection counter
   int       numSlices;                            // number of texture slices along diagonal
-  int       drawn;                                // counter for drawn textures
-  int       i, j, k;                              // general counters
+  int       i;                                    // general counters
   int       discarded;                            // count discarded bricks due to empty-space leaping
 
   vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
@@ -3871,16 +3862,6 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
       /////////////////////////////////////////////////////////
       glEnable(GL_TEXTURE_3D_EXT);
       int drawn;
-      Brick* tmp;
-      vvVector3 dist;
-      vvVector3 texRange;
-      vvVector3 texPoint;
-      vvVector3 texcoord[6];                          // intersection points in texture coordinate space [0..1]
-      vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
-      int i, j, k;
-      int isectCnt;
-
-      int barResult;                                  // return value for pthread_barrier_wait
 
       glClearColor(0.0, 0.0, 0.0, 0.0);
       glClear(GL_COLOR_BUFFER_BIT);
@@ -3900,7 +3881,7 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
         Brick *tmp = dynamic_cast<Brick *>(*it);
         drawn = 0;
 
-        for (i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
         {
           if (tmp->min.e[i] < data->probeMin.e[i])
             data->min.e[i] = data->probeMin.e[i];
@@ -3984,10 +3965,7 @@ void vvTexRend::renderBricks(vvMatrix* mv)
 {
   vvMatrix invMV;                                 // inverse of model-view matrix
   vvMatrix pm;                                    // OpenGL projection matrix
-  vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
-  vvVector3 texcoord[6];                          // intersection points in texture coordinate space [0..1]
   vvVector3 farthest;                             // volume vertex farthest from the viewer
-  vvVector3 texPoint;                             // arbitrary point on current texture
   vvVector3 delta;                                // distance vector between textures [object space]
   vvVector3 normal;                               // normal vector of textures
   vvVector3 origin;                               // origin (0|0|0) transformed to object space
@@ -3997,15 +3975,11 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   vvVector3 probeSizeObj;                         // probe size [object space]
   vvVector3 probeMin, probeMax;                   // probe min and max coordinates [object space]
   vvVector3 min, max;                             // min and max pos of current brick (cut with probe)
-  vvVector3 texRange;                             // range of texture coordinates
   vvVector3 texMin;                               // minimum texture coordinate
-  vvVector3 dist;                                 // dimensions of current brick
-  Brick* tmp;                                     // current brick
   float     diagonal;                             // probe diagonal [object space]
-  int       isectCnt;                             // intersection counter
   int       numSlices;                            // number of texture slices along diagonal
   int       drawn;                                // counter for drawn textures
-  int       i, j, k;                              // general counters
+  int       i;                                    // general counters
 
   vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
 
