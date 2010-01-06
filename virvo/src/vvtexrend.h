@@ -263,8 +263,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     static const int NUM_PIXEL_SHADERS;           ///< number of pixel shaders used
   private:
-    enum AxisType                                 /// names for coordinate axes
-    { X_AXIS, Y_AXIS, Z_AXIS };
     enum FragmentProgram
     {
       VV_FRAG_PROG_2D = 0,

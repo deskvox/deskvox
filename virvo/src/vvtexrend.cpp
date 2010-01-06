@@ -141,9 +141,6 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   vvVector3 dist = max;
   dist.sub(&min);
 
-  vvVector3 distObj = maxObj;
-  distObj.sub(&minObj);
-
   vvVector3 texRange;
   vvVector3 texMin;
 
@@ -154,9 +151,13 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
 
   if(renderer->_proxyGeometryOnGpu)
   {
-    // XXX
-    glEnableClientState(GL_VERTEX_ARRAY);
     (void)numSlices;
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    vvVector3 distObj = maxObj;
+    distObj.sub(&minObj);
+
     // Clip probe object to brick extends.
     vvVector3 minObjClipped;
     vvVector3 maxObjClipped;
@@ -3215,7 +3216,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
   // Compute length of probe diagonal [object space]:
-  diagonal = (float)sqrt(
+  diagonal = sqrtf(
     probeSizeObj[0] * probeSizeObj[0] +
     probeSizeObj[1] * probeSizeObj[1] +
     probeSizeObj[2] * probeSizeObj[2]);
@@ -3376,7 +3377,6 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   // Translate object by its position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
-  //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
   if (_numThreads > 0)
   {
@@ -3962,7 +3962,7 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
   // Compute length of probe diagonal [object space]:
-  diagonal = (float)sqrt(
+  diagonal = sqrtf(
     probeSizeObj[0] * probeSizeObj[0] +
     probeSizeObj[1] * probeSizeObj[1] +
     probeSizeObj[2] * probeSizeObj[2]);
@@ -5082,15 +5082,11 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
 void vvTexRend::renderVolumeGL()
 {
   static vvStopwatch sw;                          // stop watch for performance measurements
-  AxisType principal;                             // principal viewing direction
   vvMatrix mv;                                    // current modelview matrix
-  vvVector3 origin(0.0f, 0.0f, 0.0f);             // zero vector
-  vvVector3 xAxis(1.0f, 0.0f, 0.0f);              // vector in x axis direction
-  vvVector3 yAxis(0.0f, 1.0f, 0.0f);              // vector in y axis direction
-  vvVector3 zAxis(0.0f, 0.0f, 1.0f);              // vector in z axis direction
   vvVector3 probeSizeObj;                         // probe size [object space]
   vvVector3 size;                                 // volume size [world coordinates]
   float zx, zy, zz;                               // base vector z coordinates
+  vvRenderer::AxisType principal;                 // principal viewing axis with mv transformation applied
   int i;
 
   vvDebugMsg::msg(3, "vvTexRend::renderVolumeGL()");
@@ -5136,37 +5132,6 @@ void vvTexRend::renderVolumeGL()
   // Get OpenGL modelview matrix:
   getModelviewMatrix(&mv);
 
-  // Transform 4 point vectors with the modelview matrix:
-  origin.multiply(&mv);
-  xAxis.multiply(&mv);
-  yAxis.multiply(&mv);
-  zAxis.multiply(&mv);
-
-  // Generate coordinate system base vectors from those vectors:
-  xAxis.sub(&origin);
-  yAxis.sub(&origin);
-  zAxis.sub(&origin);
-
-  xAxis.normalize();
-  yAxis.normalize();
-  zAxis.normalize();
-
-  // Only z component of base vectors is needed:
-  zx = xAxis.e[2];
-  zy = yAxis.e[2];
-  zz = zAxis.e[2];
-
-  if (fabs(zx) > fabs(zy))
-  {
-    if (fabs(zx) > fabs(zz)) principal = X_AXIS;
-    else principal = Z_AXIS;
-  }
-  else
-  {
-    if (fabs(zy) > fabs(zz)) principal = Y_AXIS;
-    else principal = Z_AXIS;
-  }
-
   if (_numThreads == 0)
   {
     if (geomType != VV_BRICKS || !_renderState._showBricks)
@@ -5178,8 +5143,12 @@ void vvTexRend::renderVolumeGL()
   switch (geomType)
   {
     default:
-    case VV_SLICES:    renderTex2DSlices(zz); break;
-    case VV_CUBIC2D:   renderTex2DCubic(principal, zx, zy, zz); break;
+    case VV_SLICES:
+      getPrincipalViewingAxis(mv, zx, zy, zz);renderTex2DSlices(zz);
+      break;
+    case VV_CUBIC2D:
+      principal = getPrincipalViewingAxis(mv, zx, zy, zz);renderTex2DSlices(zz);
+      renderTex2DCubic(principal, zx, zy, zz); break;
     case VV_SPHERICAL: renderTex3DSpherical(&mv); break;
     case VV_VIEWPORT:  renderTex3DPlanar(&mv); break;
     case VV_BRICKS:

@@ -237,6 +237,45 @@ vvVolDesc* vvRenderer::getVolDesc()
   return vd;
 }
 
+vvRenderer::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
+                                                         float& zx, float& zy, float& zz)
+{
+  vvVector3 origin(0.0f, 0.0f, 0.0f);             // zero vector
+  vvVector3 xAxis(1.0f, 0.0f, 0.0f);              // vector in x axis direction
+  vvVector3 yAxis(0.0f, 1.0f, 0.0f);              // vector in y axis direction
+  vvVector3 zAxis(0.0f, 0.0f, 1.0f);              // vector in z axis direction
+
+  // Transform 4 point vectors with the modelview matrix:
+  origin.multiply(&mv);
+  xAxis.multiply(&mv);
+  yAxis.multiply(&mv);
+  zAxis.multiply(&mv);
+
+  // Generate coordinate system base vectors from those vectors:
+  xAxis.sub(&origin);
+  yAxis.sub(&origin);
+  zAxis.sub(&origin);
+
+  xAxis.normalize();
+  yAxis.normalize();
+  zAxis.normalize();
+
+  // Only z component of base vectors is needed:
+  zx = xAxis.e[2];
+  zy = yAxis.e[2];
+  zz = zAxis.e[2];
+
+  if (fabs(zx) > fabs(zy))
+  {
+    if (fabs(zx) > fabs(zz)) return X_AXIS;
+    else return Z_AXIS;
+  }
+  else
+  {
+    if (fabs(zy) > fabs(zz)) return Y_AXIS;
+    else return Z_AXIS;
+  }
+}
 
 //----------------------------------------------------------------------------
 /// Initialization routine for class variables.
