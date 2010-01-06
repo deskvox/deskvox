@@ -27,13 +27,8 @@
 #endif
 
 #include <iostream>
-#include <iomanip>
 #include <algorithm>
-
 #include <limits.h>
-
-#include <stdlib.h>
-#include <assert.h>
 #include <math.h>
 
 #include "vvopengl.h"
