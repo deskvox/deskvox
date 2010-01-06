@@ -5961,7 +5961,8 @@ void vvTexRend::enablePixelShaders(vvShaderManager*& pixelShader)
       switch (types[i])
       {
       case VV_SHD_TEXTURE_ID:
-        tmpGLuint = (GLuint)values[i];
+        // Cast to GLuint would mean precision loss on 64 bit systems - something GCC won't like.
+        tmpGLuint = (unsigned long)values[i];
         pixelShader->setParameterTexId(_currentShader, names[i], tmpGLuint);
         pixelShader->enableTexture(_currentShader, names[i]);
         break;
