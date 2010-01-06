@@ -32,7 +32,6 @@
 
 #include <limits.h>
 
-#include <stdlib.h>
 #include <assert.h>
 #include <math.h>
 #if defined(__linux) || defined(LINUX)
@@ -6023,16 +6022,11 @@ void vvTexRend::disableIntersectionShader(vvShaderManager*& isectShader)
  */
 bool vvTexRend::initPixelShaders(vvShaderManager*& pixelShader)
 {
-#ifdef _WIN32
-  const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
-#endif
   const char* shaderFileName = "vv_shader";
-  const char* shaderEnv = "VV_SHADER_PATH";
   const char* shaderExt = ".cg";
   const char* unixShaderDir = NULL;
   char* shaderFile = NULL;
   char* shaderPath = NULL;
-  char shaderDir[256];
   int i;
 
   cerr << "enable PIX called"<< endl;
@@ -6041,35 +6035,8 @@ bool vvTexRend::initPixelShaders(vvShaderManager*& pixelShader)
 
   // Specify shader path:
   cerr << "Searching for shader files..." << endl;
-  if (getenv(shaderEnv))
-  {
-    cerr << "Environment variable " << shaderEnv << " found: " << getenv(shaderEnv) << endl;
-    unixShaderDir = getenv(shaderEnv);
-  }
-  else
-  {
-    cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
-#ifdef _WIN32
-    vvToolshed::getProgramDirectory(shaderDir, 256);
-    strcat(shaderDir, primaryWin32ShaderDir);
-    cerr << "Trying shader path: " << shaderDir << endl;
-    if (!vvToolshed::isDirectory(shaderDir))
-    {
-       vvToolshed::getProgramDirectory(shaderDir, 256);
-    }
-    cerr << "Using shader path: " << shaderDir << endl;
-    unixShaderDir = shaderDir;
-#else
-    const char* deskVoxShaderPath = "../";
-#ifdef SHADERDIR
-    unixShaderDir = SHADERDIR;
-#else
-    vvToolshed::getProgramDirectory(shaderDir, 256);
-    strcat(shaderDir, deskVoxShaderPath);
-    unixShaderDir = shaderDir;
-#endif
-#endif
-  }
+
+  unixShaderDir = pixelShader->getShaderDir();
   cerr << "Using shader path: " << unixShaderDir << endl;
 
   // Load shader files:
@@ -6109,43 +6076,14 @@ bool vvTexRend::initIntersectionShader(vvShaderManager*& isectShader)
   const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
 #endif
   const char* shaderFileName = "vv_intersection.cg";
-  const char* shaderEnv = "VV_SHADER_PATH";
   const char* unixShaderDir = NULL;
   char* shaderFile = NULL;
   char* shaderPath = NULL;
-  char shaderDir[256];
-
-  if (getenv(shaderEnv))
-  {
-    unixShaderDir = getenv(shaderEnv);
-  }
-  else
-  {
-    cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
-#ifdef _WIN32
-    vvToolshed::getProgramDirectory(shaderDir, 256);
-    strcat(shaderDir, primaryWin32ShaderDir);
-    cerr << "Trying shader path: " << shaderDir << endl;
-    if (!vvToolshed::isDirectory(shaderDir))
-    {
- vvToolshed::getProgramDirectory(shaderDir, 256);
-    }
-    cerr << "Using shader path: " << shaderDir << endl;
-    unixShaderDir = shaderDir;
-#else
-    const char* deskVoxShaderPath = "../";
-#ifdef SHADERDIR
-    unixShaderDir = SHADERDIR;
-#else
-    vvToolshed::getProgramDirectory(shaderDir, 256);
-    strcat(shaderDir, deskVoxShaderPath);
-    unixShaderDir = shaderDir;
-#endif
-#endif
-  }
 
   shaderFile = new char[strlen(shaderFileName) + 1];
   sprintf(shaderFile, "%s", shaderFileName);
+
+  unixShaderDir = isectShader->getShaderDir();
 
   shaderPath = new char[strlen(unixShaderDir) + 1 + strlen(shaderFile) + 1];
 #ifdef _WIN32
@@ -6514,6 +6452,6 @@ void vvTexRend::initVertArray(const int numSlices)
   }
 }
 
-  //============================================================================
-  // End of File
-  //============================================================================
+//============================================================================
+// End of File
+//============================================================================

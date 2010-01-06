@@ -30,6 +30,11 @@ void vvShaderManager::printCompatibilityInfo()
   throw "Function printCompatibilityInfo not implemented by inherited class";
 }
 
+const char* vvShaderManager::getShaderDir()
+{
+  throw "Function getShaderDir not implemented by inherited class";
+}
+
 void vvShaderManager::enableTexture(const int, const char*)
 {
   throw "Function setParameter1f not implemented by inherited class";
