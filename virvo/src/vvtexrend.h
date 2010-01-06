@@ -323,17 +323,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int _currentShader;                           ///< ID of currently used fragment shader
 
     // GL state variables:
-    GLboolean glsCulling;                         ///< stores GL_CULL_FACE
-    GLboolean glsBlend;                           ///< stores GL_BLEND
-    GLboolean glsColorMaterial;                   ///< stores GL_COLOR_MATERIAL
-    GLint glsBlendSrc;                            ///< stores glBlendFunc(source,...)
-    GLint glsBlendDst;                            ///< stores glBlendFunc(...,destination)
-    GLboolean glsLighting;                        ///< stores GL_LIGHTING
-    GLboolean glsDepthTest;                       ///< stores GL_DEPTH_TEST
-    GLint glsMatrixMode;                          ///< stores GL_MATRIX_MODE
-    GLint glsDepthFunc;                           ///< stores glDepthFunc
-    GLint glsBlendEquation;                       ///< stores GL_BLEND_EQUATION_EXT
-    GLboolean glsDepthMask;                       ///< stores glDepthMask
     GLboolean glsTexColTable;                     ///< stores GL_TEXTURE_COLOR_TABLE_SGI
     GLboolean glsSharedTexPal;                    ///< stores GL_SHARED_TEXTURE_PALETTE_EXT
 

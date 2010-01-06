@@ -2708,29 +2708,8 @@ void vvTexRend::setGLenvironment()
   vvDebugMsg::msg(3, "vvTexRend::setGLenvironment()");
 
   // Save current GL state:
-  glGetBooleanv(GL_CULL_FACE, &glsCulling);
-  glGetBooleanv(GL_BLEND, &glsBlend);
-  glGetBooleanv(GL_COLOR_MATERIAL, &glsColorMaterial);
-  glGetIntegerv(GL_BLEND_SRC, &glsBlendSrc);
-  glGetIntegerv(GL_BLEND_DST, &glsBlendDst);
-  glGetBooleanv(GL_LIGHTING, &glsLighting);
-  glGetBooleanv(GL_DEPTH_TEST, &glsDepthTest);
-  glGetIntegerv(GL_MATRIX_MODE, &glsMatrixMode);
-  glGetIntegerv(GL_DEPTH_FUNC, &glsDepthFunc);
-
-  if (extMinMax) glGetIntegerv(GL_BLEND_EQUATION_EXT, &glsBlendEquation);
-  glGetBooleanv(GL_DEPTH_WRITEMASK, &glsDepthMask);
-
-  switch (voxelType)
-  {
-    case VV_SGI_LUT:
-      glGetBooleanv(GL_TEXTURE_COLOR_TABLE_SGI, &glsTexColTable);
-      break;
-    case VV_PAL_TEX:
-      glGetBooleanv(GL_SHARED_TEXTURE_PALETTE_EXT, &glsSharedTexPal);
-      break;
-    default: break;
-  }
+  glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT
+               | GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_TRANSFORM_BIT);
 
   // Set new GL state:
   glDisable(GL_CULL_FACE);
@@ -2770,7 +2749,7 @@ void vvTexRend::setGLenvironment()
     case 1: glBlendEquation(GL_MAX); break;   // maximum intensity projection
     case 2: glBlendEquation(GL_MIN); break;   // minimum intensity projection
     default: break;
-}
+  }
   vvDebugMsg::msg(3, "vvTexRend::setGLenvironment() done");
 }
 
@@ -2780,26 +2759,8 @@ void vvTexRend::unsetGLenvironment()
 {
   vvDebugMsg::msg(3, "vvTexRend::unsetGLenvironment()");
 
-  if (glsCulling==GL_TRUE) glEnable(GL_CULL_FACE);
-  else glDisable(GL_CULL_FACE);
+  glPopAttrib();
 
-  if (glsBlend==GL_TRUE) glEnable(GL_BLEND);
-  else glDisable(GL_BLEND);
-
-  if (glsColorMaterial==GL_TRUE) glEnable(GL_COLOR_MATERIAL);
-  else glDisable(GL_COLOR_MATERIAL);
-
-  if (glsDepthTest==GL_TRUE) glEnable(GL_DEPTH_TEST);
-  else glDisable(GL_DEPTH_TEST);
-
-  if (glsLighting==GL_TRUE) glEnable(GL_LIGHTING);
-  else glDisable(GL_LIGHTING);
-
-  glDepthMask(glsDepthMask);
-  glDepthFunc(glsDepthFunc);
-  glBlendFunc(glsBlendSrc, glsBlendDst);
-  glBlendEquation(glsBlendEquation);
-  glMatrixMode(glsMatrixMode);
   vvDebugMsg::msg(3, "vvTexRend::unsetGLenvironment() done");
 }
 
