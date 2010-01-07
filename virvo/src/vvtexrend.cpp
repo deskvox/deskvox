@@ -1821,20 +1821,23 @@ void vvTexRend::computeBrickSize()
     return;
   }
 
+  int maxBricksXZ = 64;
+  int maxBricksY = 16;
+
   // this has been tested to be optimal on a Quadro FX570m
   _useOnlyOneBrick = true;
   for(int i=0; i<3; ++i)
   {
     newBrickSize[i] = vvToolshed::getTextureSize(vd->vox[i]);
-    if(newBrickSize[i] > 64)
+    if(newBrickSize[i] > maxBricksXZ)
     {
-      newBrickSize[i] = 64;
+      newBrickSize[i] = maxBricksXZ;
       _useOnlyOneBrick = false;
     }
   }
-  if(newBrickSize[1] > 16)
+  if(newBrickSize[1] > maxBricksY)
   {
-    newBrickSize[1] = 16;
+    newBrickSize[1] = maxBricksY;
     _useOnlyOneBrick = false;
   }
 
