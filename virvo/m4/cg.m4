@@ -66,7 +66,7 @@ if test "$enable_cg" != "no"; then
         if test "$have_cg_h" = "yes" -a "$have_libcggl" = "yes" ; then
             AC_DEFINE(HAVE_CG, 1, [Cg shaders enabled])
             CG_INCLUDES="-I$cg_incdir"
-            CG_LIBS="-L$cg_libdir -lCgGL -lCg"
+            CG_LIBS="-rpath $cg_libdir -L$cg_libdir -lCgGL -lCg"
             AC_SUBST(CG_INCLUDES)
             AC_SUBST(CG_LIBS)
         fi
