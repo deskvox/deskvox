@@ -23,8 +23,10 @@ SOURCES = vvcolor.cpp \
     vvgltools.cpp \
     vvideo.cpp \
     vvimage.cpp \
+    vvoffscreenbuffer.cpp \
     vvprintgl.cpp \
     vvrenderer.cpp \
+    vvrendertarget.cpp \
     vvsocket.cpp \
     vvsocketio.cpp \
     vvsphere.cpp \
@@ -58,9 +60,11 @@ HEADERS = glext-orig.h \
     vvgltools.h \
     vvideo.h \
     vvimage.h \
+    vvoffscreenbuffer.h \
     vvopengl.h \
     vvprintgl.h \
     vvrenderer.h \
+    vvrendertarget.h \
     vvsllist.h \
     vvsocket.h \
     vvsocketio.h \

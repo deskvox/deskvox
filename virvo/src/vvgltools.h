@@ -40,11 +40,16 @@ class VIRVOEXPORT vvGLTools
       CONSECUTIVE = 0,                            ///< using entire line length
       ONE_BY_ONE  = 1                             ///< one extension per line
     };
+    struct Viewport                             /// for convenience
+    {
+      int values[4];
+    };
     static void printGLError(const char*);
     static bool isGLextensionSupported(const char*);
     static void displayOpenGLextensions(DisplayStyle);
     static void checkOpenGLextensions();
     static void draw(vvVector3* vec);
+    static Viewport getViewport();
 };
 #endif
 

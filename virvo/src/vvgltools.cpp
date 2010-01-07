@@ -197,6 +197,18 @@ void vvGLTools::draw(vvVector3* vec)
   glEnable(GL_DEPTH_TEST);
 }
 
+
+
+//----------------------------------------------------------------------------
+/** Get OpenGL viewport info: 0 ==> x, 1 ==> y, 2 ==> width, 3 ==> height.
+*/
+vvGLTools::Viewport vvGLTools::getViewport()
+{
+  Viewport result;
+  glGetIntegerv(GL_VIEWPORT, result.values);
+  return result;
+}
+
 //============================================================================
 // End of File
 //============================================================================

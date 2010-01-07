@@ -25,6 +25,7 @@
 #include "vvvecmath.h"
 #include "vvvoldesc.h"
 #include "vvrenderer.h"
+#include "vvrendertarget.h"
 
 //============================================================================
 // Class Definition
@@ -62,7 +63,11 @@ class VIRVOEXPORT vvRenderState
     bool  _opacityWeights;                        ///< true = for multi-channel data sets only: allow weighted opacities in channels
     float _boundColor[3];                         ///< boundary color (R,G,B in [0..1])
     float _probeColor[3];                         ///< probe boundary color (R,G,B in [0..1])
-	bool _showTexture;							  ///< true = show texture mapping, if applicable, added by Han, Feb 2008
+    bool  _useOffscreenBuffer;                    ///< render target for image downscaling
+    float _imageScale;                            ///< undersampling by downscaling rendered img [0..1]
+    BufferPrecision _imagePrecision;              ///< render to high-res offscreen buffer (32 bit float) to minimize rounding error
+                                                  ///< caused by adding up contribution of to many slices
+    bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
     const char** _displayNames;                   ///< list with displays of the form host:x.y
     int _numDisplays;
 
@@ -110,6 +115,7 @@ class VIRVOEXPORT vvRenderer
       VV_SLICEORIENT,                             ///< slice orientation for planer 3d textures
       VV_GPUPROXYGEO,                             ///< compute proxy geometry on GPU
       VV_LEAPEMPTY,                               ///< empty space leaping
+      VV_IMG_SCALE                                ///< downsample img by reducing img resolution [0..1]
     };
     enum BasicColorType                           /// basic colors
     {
@@ -118,6 +124,7 @@ class VIRVOEXPORT vvRenderer
       VV_BLUE,
       VV_ALPHA
     };
+
     vvRenderState _renderState;                   ///< state of renderer
 
   protected:
@@ -193,9 +200,9 @@ class VIRVOEXPORT vvRenderer
     virtual void  setOpacityWeight(BasicColorType, float);
     virtual float getOpacityWeight(BasicColorType);
 
-	// added by Han Kim Feb. 2008
-	virtual void setVolDesc(vvVolDesc*);
-	virtual vvVolDesc* getVolDesc();
+    // added by Han Kim Feb. 2008
+    virtual void setVolDesc(vvVolDesc*);
+    virtual vvVolDesc* getVolDesc();
 
     virtual AxisType getPrincipalViewingAxis(const vvMatrix& mv, float& zx, float& zy, float& zz);
 };

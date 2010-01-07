@@ -36,6 +36,7 @@
 #include "vvtransfunc.h"
 #include "vvbsptree.h"
 #include "vvshadermanager.h"
+#include "vvrendertarget.h"
 #include "vvopengl.h"
 
 // Posix threads:
@@ -314,6 +315,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     bool _proxyGeometryOnGpu;                     ///< indicate wether proxy geometry is to be computed on gpu
     int _lastFrame;                               ///< last frame rendered
+
+    vvRenderTarget* _renderTarget;                ///< can e.g. be an offscreen buffer to use with image downscaling
+                                                  ///< or an image creator making a screenshot
 
     vvShaderManager* _isectShader;                ///< shader performing intersection test on gpu
     vvShaderManager* _pixelShader;                ///< shader for applying transfer function on gpu

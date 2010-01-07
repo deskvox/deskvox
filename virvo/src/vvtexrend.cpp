@@ -56,6 +56,7 @@
 #include "vvsphere.h"
 #include "vvtexrend.h"
 #include "vvstopwatch.h"
+#include "vvoffscreenbuffer.h"
 #include "vvprintgl.h"
 #include "vvshaderfactory.h"
 
@@ -464,6 +465,15 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   opacityCorrection = true;
   interpolation = true;
 
+  if (_renderState._useOffscreenBuffer)
+  {
+    _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, VV_BYTE);
+  }
+  else
+  {
+    _renderTarget = new vvRenderTarget();
+  }
+
   if (vvShaderFactory::isSupported(VV_CG_MANAGER))
   {
     _currentShader = vd->chan - 1;
@@ -676,6 +686,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 vvTexRend::~vvTexRend()
 {
   vvDebugMsg::msg(1, "vvTexRend::~vvTexRend()");
+
+  delete _renderTarget;
 
   if (voxelType==VV_FRG_PRG)
   {
@@ -3477,6 +3489,8 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     // Volume render a 3D texture:
     enableTexture(GL_TEXTURE_3D_EXT);
 
+    glClear(GL_COLOR_BUFFER_BIT);
+
     if(_proxyGeometryOnGpu)
     {
       // Per frame parameters.
@@ -5093,6 +5107,9 @@ void vvTexRend::renderVolumeGL()
 
   sw.start();
 
+  // Reroute output to alternative render target.
+  _renderTarget->initForRender();
+
   size.copy(vd->getSize());
 
   // Draw boundary lines (must be done before setGLenvironment()):
@@ -5168,6 +5185,10 @@ void vvTexRend::renderVolumeGL()
   vvRenderer::renderVolumeGL();
 
   glFinish();                                     // make sure rendering is done to measure correct time
+
+  // Write output of alternative render target. Depending on the type of render target,
+  // output can be redirected to the screen or for example an image file.
+  _renderTarget->writeBack();
   _lastRenderTime = sw.getTime();
 
   vvDebugMsg::msg(3, "vvTexRend::renderVolumeGL() done");
@@ -5500,6 +5521,21 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
     case vvRenderer::VV_LEAPEMPTY:
       _renderState._emptySpaceLeaping = (newValue == 0.0f) ? false : true;
       updateTransferFunction();
+      break;
+    case vvRenderer::VV_IMG_SCALE:
+      _renderState._imageScale = newValue;
+      if (_renderState._useOffscreenBuffer)
+      {
+        if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
+        {
+          dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setScale(newValue);
+        }
+        else
+        {
+          delete _renderTarget;
+          _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, _renderState._imagePrecision);
+        }
+      }
       break;
     default:
       vvRenderer::setParameter(param, newValue);
