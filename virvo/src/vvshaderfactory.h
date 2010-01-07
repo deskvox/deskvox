@@ -66,7 +66,7 @@ public:
    *                the managers array.
    * \return        managers Manipulatable array of available manager types.
    */
-  static std::vector<vvShaderManagerType> getSupportedShaderManagers();
+  static const std::vector<vvShaderManagerType> &getSupportedShaderManagers();
 
   /*!
    * \brief         Use this method to check if a particular shader manager is supported.

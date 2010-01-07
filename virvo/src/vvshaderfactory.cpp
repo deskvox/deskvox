@@ -45,14 +45,13 @@ vvShaderManager* vvShaderFactory::provideShaderManager(const vvShaderManagerType
   return result;
 }
 
-std::vector<vvShaderManagerType> vvShaderFactory::getSupportedShaderManagers()
+const std::vector<vvShaderManagerType> &vvShaderFactory::getSupportedShaderManagers()
 {
   if (!vvShaderFactory::c_supportedTypes.empty())
   {
     // Don't rebuild if not necessary.
     return vvShaderFactory::c_supportedTypes;
   }
-  std::vector<vvShaderManagerType> result;
 #ifdef HAVE_CG
   vvShaderFactory::c_supportedTypes.push_back(VV_CG_MANAGER);
 #endif
