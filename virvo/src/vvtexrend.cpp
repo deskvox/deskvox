@@ -156,9 +156,6 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
 
     glEnableClientState(GL_VERTEX_ARRAY);
 
-    vvVector3 distObj = maxObj;
-    distObj.sub(&minObj);
-
     // Clip probe object to brick extends.
     vvVector3 minObjClipped;
     vvVector3 maxObjClipped;
@@ -183,7 +180,7 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
         maxObjClipped[i] = maxObj[i];
       }
 
-      texRange[i] = (1.0f - 1.0f / (float)texels[i] / dist[i] * distObj[i]);
+      texRange[i] = (1.0f - 1.0f / (float)texels[i]);
       texMin[i] = (1.0f / (2.0f * (float)texels[i]));
     }
 
@@ -204,7 +201,7 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
       }
     }
 
-    isectShader->setParameter4f(0, "brickMin", minObj[0], minObj[1], minObj[2], -texPoint.length());
+    isectShader->setParameter4f(0, "brickMin", min[0], min[1], min[2], -texPoint.length());
     isectShader->setParameter3f(0, "brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
     // Mind that textures overlap a little bit for correct interpolation at the borders.
     // Thus add that little difference.
@@ -1413,15 +1410,11 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
           bool atBorder = false;
           for (int d = 0; d < 3; ++d)
           {
-            minObj[d] = (float)startOffset[d] / (float)vd->vox[d];
-            minObj[d] *= vd->getSize()[d];
-            if (minObj[d] > vd->getSize()[d]) { atBorder = true;  minObj[d] = vd->getSize()[d]; }
-            minObj[d] -= vd->getSize()[d] * 0.5f;
+            minObj[d] = (startOffset[d] - halfVolume[d]) * vd->dist[d] * vd->_scale;
 
-            maxObj[d] = (float)(startOffset[d] + bs[d]) / (float)vd->vox[d];
-            maxObj[d] *= vd->getSize()[d];
+            maxObj[d] = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
             if (maxObj[d] > vd->getSize()[d]) { atBorder=true; maxObj[d] = vd->getSize()[d]; }
-            maxObj[d] -= vd->getSize()[d] * 0.5f;
+            maxObj[d] -= (halfVolume[d] * vd->dist[d] * vd->_scale);
           }
 
           currBrick->minObj = minObj;
@@ -3302,7 +3295,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     L.negate();
 
     // Viewing vector.
-    vvVector3 V;
+    vvVector3 V(0, 1, 0);
     V.copy(&normal);
     V.negate();
 
