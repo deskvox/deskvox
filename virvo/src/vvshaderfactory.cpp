@@ -79,12 +79,5 @@ bool vvShaderFactory::isSupported(const vvShaderManagerType& shaderManagerType)
                 vvShaderFactory::c_supportedTypes.end(),
                 shaderManagerType);
 
-  if (*result == shaderManagerType)
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  return result != vvShaderFactory::c_supportedTypes.end();
 }
