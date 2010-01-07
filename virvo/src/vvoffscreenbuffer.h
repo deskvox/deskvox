@@ -29,8 +29,10 @@ public:
   virtual void resize(const int w, const int h);
 
   void setScale(const float scale);
+  void setPrecision(const BufferPrecision& precision);
 
   float getScale() const;
+  BufferPrecision getPrecision() const;
 private:
   int _viewportWidth;
   int _viewportHeight;

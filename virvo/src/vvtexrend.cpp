@@ -5537,6 +5537,37 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
         }
       }
       break;
+    case vvRenderer::VV_IMG_PRECISION:
+      if (_renderState._useOffscreenBuffer)
+      {
+        if (int(newValue) <= 8)
+        {
+          if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
+          {
+            dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPrecision(VV_BYTE);
+          }
+          else
+          {
+            delete _renderTarget;
+            _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, VV_BYTE);
+          }
+          break;
+        }
+
+        if (int(newValue) >= 32)
+        {
+          if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
+          {
+            dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPrecision(VV_FLOAT);
+          }
+          else
+          {
+            delete _renderTarget;
+            _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, VV_FLOAT);
+          }
+          break;
+        }
+      }
     default:
       vvRenderer::setParameter(param, newValue);
       break;

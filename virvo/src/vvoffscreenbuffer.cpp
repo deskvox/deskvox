@@ -115,6 +115,22 @@ void vvOffscreenBuffer::setScale(const float scale)
   update();
 }
 
+void vvOffscreenBuffer::setPrecision(const BufferPrecision& precision)
+{
+  _precision = precision;
+  update();
+}
+
+float vvOffscreenBuffer::getScale() const
+{
+  return _scale;
+}
+
+BufferPrecision vvOffscreenBuffer::getPrecision() const
+{
+  return _precision;
+}
+
 void vvOffscreenBuffer::doScale()
 {
   _bufferWidth = (float)_viewportWidth * _scale;

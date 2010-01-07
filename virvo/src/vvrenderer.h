@@ -115,7 +115,8 @@ class VIRVOEXPORT vvRenderer
       VV_SLICEORIENT,                             ///< slice orientation for planer 3d textures
       VV_GPUPROXYGEO,                             ///< compute proxy geometry on GPU
       VV_LEAPEMPTY,                               ///< empty space leaping
-      VV_IMG_SCALE                                ///< downsample img by reducing img resolution [0..1]
+      VV_IMG_SCALE,                               ///< downsample img by reducing img resolution [0..1]
+      VV_IMG_PRECISION                            ///< render to high-res target to minimize slicing rounding error
     };
     enum BasicColorType                           /// basic colors
     {
