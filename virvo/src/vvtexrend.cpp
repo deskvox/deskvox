@@ -5506,14 +5506,7 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
       }
       else
       {
-        if (vvShaderFactory::isSupported(VV_CG_MANAGER))
-        {
-          _proxyGeometryOnGpu = true;
-        }
-        else
-        {
-          _proxyGeometryOnGpu = false;
-        }
+        _proxyGeometryOnGpu = _isectShader;
       }
       break;
     case vvRenderer::VV_LEAPEMPTY:
