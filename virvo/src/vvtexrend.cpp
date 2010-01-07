@@ -137,7 +137,7 @@ struct ThreadArgs
 void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
                    const vvVector3& probeMin, const vvVector3& probeMax,
-                   GLuint*& texNames, vvShaderManager*& isectShader, bool setupEdges)
+                   GLuint*& texNames, vvShaderManager* isectShader, bool setupEdges)
 {
   vvVector3 dist = max;
   dist.sub(&min);
@@ -2774,7 +2774,7 @@ void vvTexRend::unsetGLenvironment()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableLUTMode(vvShaderManager*& pixelShader)
+void vvTexRend::enableLUTMode(vvShaderManager* pixelShader)
 {
   switch(voxelType)
   {
@@ -2800,7 +2800,7 @@ void vvTexRend::enableLUTMode(vvShaderManager*& pixelShader)
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableLUTMode(vvShaderManager*& pixelShader)
+void vvTexRend::disableLUTMode(vvShaderManager* pixelShader)
 {
   switch(voxelType)
   {
@@ -5856,7 +5856,7 @@ void vvTexRend::disableFragProg()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enablePixelShaders(vvShaderManager*& pixelShader)
+void vvTexRend::enablePixelShaders(vvShaderManager* pixelShader)
 {_currentShader = 12;
   if(VV_PIX_SHD == voxelType)
   {
@@ -5958,7 +5958,7 @@ void vvTexRend::enablePixelShaders(vvShaderManager*& pixelShader)
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disablePixelShaders(vvShaderManager*& pixelShader)
+void vvTexRend::disablePixelShaders(vvShaderManager* pixelShader)
 {
   if(voxelType == VV_PIX_SHD)
   {
@@ -5971,7 +5971,7 @@ void vvTexRend::disablePixelShaders(vvShaderManager*& pixelShader)
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableIntersectionShader(vvShaderManager*& isectShader)
+void vvTexRend::enableIntersectionShader(vvShaderManager* isectShader)
 {
   if(_proxyGeometryOnGpu)
   {
@@ -5980,7 +5980,7 @@ void vvTexRend::enableIntersectionShader(vvShaderManager*& isectShader)
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableIntersectionShader(vvShaderManager*& isectShader)
+void vvTexRend::disableIntersectionShader(vvShaderManager* isectShader)
 {
   if(_proxyGeometryOnGpu)
   {
@@ -5991,7 +5991,7 @@ void vvTexRend::disableIntersectionShader(vvShaderManager*& isectShader)
 //----------------------------------------------------------------------------
 /** @return true if initialization successful
  */
-bool vvTexRend::initPixelShaders(vvShaderManager*& pixelShader)
+bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader)
 {
   const char* shaderFileName = "vv_shader";
   const char* shaderExt = ".cg";
@@ -6041,7 +6041,7 @@ bool vvTexRend::initPixelShaders(vvShaderManager*& pixelShader)
 //----------------------------------------------------------------------------
 /** @return true if initialization successful
  */
-bool vvTexRend::initIntersectionShader(vvShaderManager*& isectShader)
+bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader)
 {
   const char* shaderFileName = "vv_intersection.cg";
   const char* unixShaderDir = NULL;
@@ -6070,7 +6070,7 @@ bool vvTexRend::initIntersectionShader(vvShaderManager*& isectShader)
   return true;
 }
 
-void vvTexRend::setupIntersectionParameters(vvShaderManager*& isectShader)
+void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader)
 {
   int parameterCount = 12;
   const char** parameterNames = new const char*[parameterCount];

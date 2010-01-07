@@ -100,7 +100,7 @@ public:
   void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, vvShaderManager*& isectShader, bool setupEdges);
+              GLuint*& texNames, vvShaderManager* isectShader, bool setupEdges);
 
   virtual vvAABB getAABB()
   {
@@ -342,17 +342,17 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType makeTextures(GLuint*& privateTexNames, int* numTextures);
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures);
 
-    bool initPixelShaders(vvShaderManager*& pixelShader);
-    void enablePixelShaders(vvShaderManager*& pixelShader);
-    void disablePixelShaders(vvShaderManager*& pixelShader);
+    bool initPixelShaders(vvShaderManager* pixelShader);
+    void enablePixelShaders(vvShaderManager* pixelShader);
+    void disablePixelShaders(vvShaderManager* pixelShader);
 
-    void enableLUTMode(vvShaderManager*& pixelShader);
-    void disableLUTMode(vvShaderManager*& pixelShader);
+    void enableLUTMode(vvShaderManager* pixelShader);
+    void disableLUTMode(vvShaderManager* pixelShader);
 
-    bool initIntersectionShader(vvShaderManager*& isectShader);
-    void setupIntersectionParameters(vvShaderManager*& isectShader);
-    void enableIntersectionShader(vvShaderManager*& isectShader);
-    void disableIntersectionShader(vvShaderManager*& isectShader);
+    bool initIntersectionShader(vvShaderManager* isectShader);
+    void setupIntersectionParameters(vvShaderManager* isectShader);
+    void enableIntersectionShader(vvShaderManager* isectShader);
+    void disableIntersectionShader(vvShaderManager* isectShader);
 
     ErrorType makeTextures3D();
     void removeTextures();
