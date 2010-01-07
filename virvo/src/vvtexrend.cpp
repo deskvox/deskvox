@@ -5465,11 +5465,13 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
           for (int i = 0; i < _numThreads; ++i)
           {
             makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
+            updateTransferFunction();
           }
         }
         else
         {
           makeTextures(texNames, &textures);
+          updateTransferFunction();
         }
       }
       break;
