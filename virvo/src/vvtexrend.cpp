@@ -5522,6 +5522,14 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
       _renderState._emptySpaceLeaping = (newValue == 0.0f) ? false : true;
       updateTransferFunction();
       break;
+    case vvRenderer::VV_OFFSCREENBUFFER:
+      _renderState._useOffscreenBuffer = (newValue == 0.0f) ? false : true;
+      if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) == NULL)
+      {
+        delete _renderTarget;
+        _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, _renderState._imagePrecision);
+      }
+      break;
     case vvRenderer::VV_IMG_SCALE:
       _renderState._imageScale = newValue;
       if (_renderState._useOffscreenBuffer)
