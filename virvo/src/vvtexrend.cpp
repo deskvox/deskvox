@@ -4235,6 +4235,9 @@ void vvTexRend::renderBricks(vvMatrix* mv)
     {
       _pixelShader->disableShader(_currentShader);
     }
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     glBegin(GL_LINES);
     glColor4f(1.0, 1.0, 1.0, 1.0);
     for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
