@@ -97,7 +97,7 @@ public:
       return false;
     }
   }
-  void render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
+  void render(vvTexRend* renderer, vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
               GLuint*& texNames, vvShaderManager* isectShader, bool setupEdges);

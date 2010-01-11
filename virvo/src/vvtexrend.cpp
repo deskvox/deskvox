@@ -134,7 +134,7 @@ struct ThreadArgs
   pthread_mutex_t* makeTextureMutex;          ///< mutex ensuring that textures for each thread are built up synchronized
 };
 
-void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
+void Brick::render(vvTexRend* renderer, vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
                    const vvVector3& probeMin, const vvVector3& probeMax,
                    GLuint*& texNames, vvShaderManager* isectShader, bool setupEdges)
@@ -152,8 +152,6 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
 
   if(renderer->_proxyGeometryOnGpu)
   {
-    (void)numSlices;
-
     glEnableClientState(GL_VERTEX_ARRAY);
 
     // Clip probe object to brick extends.
@@ -224,31 +222,59 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
   }
   else // render proxy geometry on gpu? else then:
   {
-    vvVector3 maxClipped;
-    vvVector3 minClipped;
-    for (int i = 0; i < 3; i++)
+    // Clip probe object to brick extends.
+    vvVector3 minObjClipped;
+    vvVector3 maxObjClipped;
+
+    for (int i = 0; i < 3; ++i)
     {
-      if (min.e[i] < probeMin.e[i])
-        minClipped.e[i] = probeMin.e[i];
+      if (minObj[i] < probeMin[i])
+      {
+        minObjClipped[i] = probeMin[i];
+      }
       else
-        minClipped.e[i] = min.e[i];
+      {
+        minObjClipped[i] = minObj[i];
+      }
 
-      if (max.e[i] > probeMax.e[i])
-        maxClipped.e[i] = probeMax.e[i];
+      if (maxObj[i] > probeMax[i])
+      {
+        maxObjClipped[i] = probeMax[i];
+      }
       else
-        maxClipped.e[i] = max.e[i];
+      {
+        maxObjClipped[i] = maxObj[i];
+      }
 
-      texRange[i] = 1.0f - 1.0f / (float)texels[i];
-      texMin[i] = 1.0f / (2.0f * (float)texels[i]);
+      texRange[i] = (1.0f - 1.0f / (float)texels[i]);
+      texMin[i] = (1.0f / (2.0f * (float)texels[i]));
     }
-    for (int i = 0; i < numSlices; ++i)               // loop thru all drawn textures
-    {
-      // Search for intersections between texture plane (defined by texPoint and
-      // normal) and texture object (0..1):
-      vvVector3 isect[6];
-      int isectCnt = isect->isectPlaneCuboid(&normal, &texPoint, &minClipped, &maxClipped);
 
-      texPoint.add(&delta);
+    vvAABB box(minObjClipped, maxObjClipped);
+    const vvVector3 (&verts)[8] = box.calcVertices();
+
+    // Abuse getFrontIndex to calcuate minDot and maxDot.
+    float minDot;
+    float maxDot;
+    getFrontIndex(verts, texPoint, normal, minDot, maxDot);
+
+    float deltaInv = 1.0f / delta.length();
+
+    int startSlices = ceilf(minDot * deltaInv);
+    int endSlices = floorf(maxDot * deltaInv);
+
+    vvVector3 startPoint;
+    startPoint.copy(farthest);
+    vvVector3 add;
+    add.copy(delta);
+    add.scale(startSlices);
+    startPoint.add(&add);
+
+    for (int i = startSlices; i <= endSlices; ++i)
+    {
+      vvVector3 isect[6];
+      int isectCnt = isect->isectPlaneCuboid(&normal, &startPoint, &minObjClipped, &maxObjClipped);
+      startPoint.add(&delta);
 
       if (isectCnt < 3) continue;                 // at least 3 intersections needed for drawing
 
@@ -273,9 +299,7 @@ void Brick::render(vvTexRend* renderer, const int numSlices, vvVector3& normal,
 
       glBegin(GL_TRIANGLE_FAN);
       glColor4f(1.0, 1.0, 1.0, 1.0);
-
       glNormal3f(normal[0], normal[1], normal[2]);
-
       for (int j = 0; j < isectCnt; ++j)
       {
         // The following lines are the bottleneck of this method:
@@ -1822,7 +1846,7 @@ void vvTexRend::computeBrickSize()
   }
 
   int maxBricksXZ = 64;
-  int maxBricksY = 16;
+  int maxBricksY = 64;
 
   // this has been tested to be optimal on a Quadro FX570m
   _useOnlyOneBrick = true;
@@ -3487,6 +3511,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
     glClear(GL_COLOR_BUFFER_BIT);
 
+
     if(_proxyGeometryOnGpu)
     {
       // Per frame parameters.
@@ -3508,7 +3533,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
       }
       else
       {
-        (*it)->render(this, numSlices, normal, farthest, delta, probeMin, probeMax,
+        (*it)->render(this, normal, farthest, delta, probeMin, probeMax,
                     texNames,
                     _isectShader, !((*it)->insideProbe && lastInsideProbe));
         lastInsideProbe = (*it)->insideProbe;
@@ -3698,7 +3723,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
       {
         Brick *tmp = *it;
-        tmp->render(data->renderer, data->numSlices, data->normal,
+        tmp->render(data->renderer, data->normal,
                     data->farthest, data->delta,
                     data->probeMin, data->probeMax,
                     data->privateTexNames,
