@@ -155,34 +155,34 @@ void Brick::render(vvTexRend* renderer, vvVector3& normal,
     glEnableClientState(GL_VERTEX_ARRAY);
 
     // Clip probe object to brick extends.
-    vvVector3 minObjClipped;
-    vvVector3 maxObjClipped;
+    vvVector3 minClipped;
+    vvVector3 maxClipped;
 
     for (int i = 0; i < 3; ++i)
     {
-      if (minObj[i] < probeMin[i])
+      if (min[i] < probeMin[i])
       {
-        minObjClipped[i] = probeMin[i];
+        minClipped[i] = probeMin[i];
       }
       else
       {
-        minObjClipped[i] = minObj[i];
+        minClipped[i] = min[i];
       }
 
-      if (maxObj[i] > probeMax[i])
+      if (max[i] > probeMax[i])
       {
-        maxObjClipped[i] = probeMax[i];
+        maxClipped[i] = probeMax[i];
       }
       else
       {
-        maxObjClipped[i] = maxObj[i];
+        maxClipped[i] = max[i];
       }
 
       texRange[i] = (1.0f - 1.0f / (float)texels[i]);
       texMin[i] = (1.0f / (2.0f * (float)texels[i]));
     }
 
-    vvAABB box(minObjClipped, maxObjClipped);
+    vvAABB box(minClipped, maxClipped);
     const vvVector3 (&verts)[8] = box.calcVertices();
 
     float minDot;
@@ -223,34 +223,34 @@ void Brick::render(vvTexRend* renderer, vvVector3& normal,
   else // render proxy geometry on gpu? else then:
   {
     // Clip probe object to brick extends.
-    vvVector3 minObjClipped;
-    vvVector3 maxObjClipped;
+    vvVector3 minClipped;
+    vvVector3 maxClipped;
 
     for (int i = 0; i < 3; ++i)
     {
-      if (minObj[i] < probeMin[i])
+      if (min[i] < probeMin[i])
       {
-        minObjClipped[i] = probeMin[i];
+        minClipped[i] = probeMin[i];
       }
       else
       {
-        minObjClipped[i] = minObj[i];
+        minClipped[i] = min[i];
       }
 
-      if (maxObj[i] > probeMax[i])
+      if (max[i] > probeMax[i])
       {
-        maxObjClipped[i] = probeMax[i];
+        maxClipped[i] = probeMax[i];
       }
       else
       {
-        maxObjClipped[i] = maxObj[i];
+        maxClipped[i] = max[i];
       }
 
       texRange[i] = (1.0f - 1.0f / (float)texels[i]);
       texMin[i] = (1.0f / (2.0f * (float)texels[i]));
     }
 
-    vvAABB box(minObjClipped, maxObjClipped);
+    vvAABB box(minClipped, maxClipped);
     const vvVector3 (&verts)[8] = box.calcVertices();
 
     // Abuse getFrontIndex to calcuate minDot and maxDot.
@@ -273,7 +273,7 @@ void Brick::render(vvTexRend* renderer, vvVector3& normal,
     for (int i = startSlices; i <= endSlices; ++i)
     {
       vvVector3 isect[6];
-      int isectCnt = isect->isectPlaneCuboid(&normal, &startPoint, &minObjClipped, &maxObjClipped);
+      int isectCnt = isect->isectPlaneCuboid(&normal, &startPoint, &minClipped, &maxClipped);
       startPoint.add(&delta);
 
       if (isectCnt < 3) continue;                 // at least 3 intersections needed for drawing
@@ -1417,9 +1417,6 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
           currBrick->maxValue = maxValue;
           currBrick->visible = true;
 
-          // Calc obj space coords for this brick, i.e. coordinates related to the extend of the overall volume.
-          vvVector3 minObj;
-          vvVector3 maxObj;
           int bs[3];
           bs[0] = _renderState._brickSize[0];
           bs[1] = _renderState._brickSize[1];
@@ -1431,18 +1428,15 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
             bs[2] += 1;
           }
 
-          bool atBorder = false;
+          bool atBorder = true;
           for (int d = 0; d < 3; ++d)
           {
-            minObj[d] = (startOffset[d] - halfVolume[d]) * vd->dist[d] * vd->_scale;
-
-            maxObj[d] = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
-            if (maxObj[d] > vd->getSize()[d]) { atBorder=true; maxObj[d] = vd->getSize()[d]; }
-            maxObj[d] -= (halfVolume[d] * vd->dist[d] * vd->_scale);
+            float maxObj = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
+            if (maxObj > vd->getSize()[d])
+            {
+              atBorder = true;
+            }
           }
-
-          currBrick->minObj = minObj;
-          currBrick->maxObj = maxObj;
           currBrick->atBorder= atBorder;
 
           currBrick->index = texIndex;
@@ -1455,6 +1449,15 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
           currBrick->max.set(vd->pos[0] + voxSize[0] * (startOffset[0] + (tmpTexels[0] - 1) - halfVolume[0]),
             vd->pos[1] + voxSize[1] * (startOffset[1] + (tmpTexels[1] - 1) - halfVolume[1]),
             vd->pos[2] + voxSize[2] * (startOffset[2] + (tmpTexels[2] - 1) - halfVolume[2]));
+
+          for (int d = 0; d < 3; ++d)
+          {
+            if (currBrick->max[d] > vd->getSize()[d])
+            {
+              currBrick->max[d] = vd->getSize()[d];
+            }
+          }
+
           currBrick->texels[0] = tmpTexels[0];
           currBrick->texels[1] = tmpTexels[1];
           currBrick->texels[2] = tmpTexels[2];

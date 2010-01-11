@@ -69,8 +69,6 @@ public:
     pos = vvVector3(&rhs->pos);
     min = vvVector3(&rhs->min);
     max = vvVector3(&rhs->max);
-    minObj = vvVector3(&rhs->minObj);
-    maxObj = vvVector3(&rhs->maxObj);
     minValue = rhs->minValue;
     maxValue = rhs->maxValue;
     visible = rhs->visible;
@@ -104,7 +102,7 @@ public:
 
   virtual vvAABB getAABB()
   {
-    return vvAABB(minObj, maxObj);
+    return vvAABB(min, max);
   }
 
   ushort getFrontIndex(const vvVector3* vertices,         ///< front index of the brick dependent upon the current model view
@@ -116,8 +114,6 @@ public:
   vvVector3 pos;                                    ///< center position of brick
   vvVector3 min;                                    ///< minimum position of brick
   vvVector3 max;                                    ///< maximum position of brick
-  vvVector3 minObj;                                 ///< minimum position of brick in obj coords of the volume
-  vvVector3 maxObj;                                 ///< maximum position of brick in obj coords of the volume
   int minValue;                                     ///< min scalar value after lut, needed for empty space leaping
   int maxValue;                                     ///< max scalar value after lut, needed for empty space leaping
   bool visible;                                     ///< if brick isn't visible, it won't be rendered at all
