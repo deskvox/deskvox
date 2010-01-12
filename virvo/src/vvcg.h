@@ -16,7 +16,10 @@
 #ifndef _VV_CC_H_
 #define _VV_CG_H_
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
 #include "vvshadermanager.h"
 
 #include <map>

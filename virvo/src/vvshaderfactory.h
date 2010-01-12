@@ -16,7 +16,10 @@
 #ifndef _VV_SHADERFACTORY_H_
 #define _VV_SHADERFACTORY_H_
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
 #include "vvexport.h"
 #include "vvshadermanager.h"
 
