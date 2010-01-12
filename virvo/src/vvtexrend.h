@@ -56,7 +56,7 @@ class vvTexRend;
 // Class Definitions
 //============================================================================
 
-class Brick : public vvConvexObj
+class VIRVOEXPORT Brick : public vvConvexObj
 {
 public:
   Brick()                                     ///< dflt. constructor (needed for C++ templates)
@@ -136,7 +136,7 @@ public:
   @author stefan Zellmann
   @see vvVisitor
  */
-class vvThreadVisitor : public vvVisitor
+class VIRVOEXPORT vvThreadVisitor : public vvVisitor
 {
 public:
   virtual ~vvThreadVisitor();
