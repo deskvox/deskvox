@@ -16,12 +16,14 @@
 #ifndef _VV_CC_H_
 #define _VV_CG_H_
 
-#ifdef HAVE_CG
-
+#include "config.h"
 #include "vvshadermanager.h"
 
 #include <map>
 #include <vector>
+
+#ifdef HAVE_CG
+
 #include <Cg/cg.h>
 #include <Cg/cgGL.h>
 
@@ -44,7 +46,6 @@ private:
 class VIRVOEXPORT vvCg : public vvShaderManager
 {
 public:
-
   vvCg();
   virtual ~vvCg();
 

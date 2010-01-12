@@ -10,6 +10,7 @@ libvirvo_a_headers = \
 	glext-orig.h \
 	vvarray.h \
 	vvbsptree.h \
+        vvcg.h \
         vvcolor.h \
 	vvdebugmsg.h \
 	vvdicom.h \
@@ -48,6 +49,7 @@ libvirvo_a_headers = \
 libvirvo_a_SOURCES = \
 	$(libvirvo_a_headers) \
 	vvbsptree.cpp \
+        vvcg.cpp \
         vvcolor.cpp \
 	vvdebugmsg.cpp \
 	vvdicom.cpp \

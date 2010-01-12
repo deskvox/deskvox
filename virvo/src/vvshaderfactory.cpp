@@ -54,6 +54,8 @@ const std::vector<vvShaderManagerType> &vvShaderFactory::getSupportedShaderManag
   }
 #ifdef HAVE_CG
   vvShaderFactory::c_supportedTypes.push_back(VV_CG_MANAGER);
+#else
+  std::cout << "Cg not supported" << std::endl;
 #endif
 
 #if defined GL_VERSION_1_1 || defined GL_VERSION_1_2 \

@@ -16,6 +16,7 @@
 #ifndef _VV_SHADERMANAGER_H_
 #define _VV_SHADERMANAGER_H_
 
+#include "config.h"
 #include "vvvecmath.h"
 
 #include <iostream>

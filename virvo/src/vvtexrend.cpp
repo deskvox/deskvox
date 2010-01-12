@@ -5695,7 +5695,7 @@ bool vvTexRend::isSupported(VoxelType voxel)
         vvGLTools::isGLextensionSupported("GL_ARB_texture_env_combine") &&
         vvGLTools::isGLextensionSupported("GL_NV_register_combiners") &&
         vvGLTools::isGLextensionSupported("GL_NV_register_combiners2");
-    case VV_PIX_SHD:
+    case VV_PIX_SHD:std::cout << "Cg supported?" << std::endl;
       if (vvShaderFactory::isSupported(VV_CG_MANAGER))
       {
         return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
