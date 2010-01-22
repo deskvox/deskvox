@@ -170,7 +170,7 @@ void vvCg::enableTexture(const int programIndex, const char* textureParameterNam
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][textureParameterName];
+  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(textureParameterName)];
   cgGLEnableTextureParameter(param.getParameter());
 }
 
@@ -178,7 +178,7 @@ void vvCg::disableTexture(const int programIndex, const char* textureParameterNa
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][textureParameterName];
+  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(textureParameterName)];
   cgGLDisableTextureParameter(param.getParameter());
 }
 
@@ -187,7 +187,7 @@ void vvCg::setParameter1f(const int programIndex, const char* parameterName,
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][parameterName];
+  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
   cgGLSetParameter1f(param.getParameter(), f1);
 }
 
@@ -196,7 +196,7 @@ void vvCg::setParameter1i(const int programIndex, const char* parameterName,
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][parameterName];
+  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
   cgGLSetParameter1f(param.getParameter(), i1);
 }
 
@@ -204,7 +204,7 @@ void vvCg::setParameterTexId(const int programIndex, const char* parameterName, 
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][parameterName];
+  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
   cgGLSetTextureParameter(param.getParameter(), ui1);
 }
 
@@ -213,7 +213,7 @@ void vvCg::setParameter3f(const int programIndex, const char* parameterName,
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][parameterName];
+  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
   cgGLSetParameter3f(param.getParameter(), f1, f2, f3);
 }
 
@@ -232,7 +232,7 @@ void vvCg::setParameter4f(const int programIndex, const char* parameterName,
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][parameterName];
+  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
   cgGLSetParameter4f(param.getParameter(), f1, f2, f3, f4);
 }
 

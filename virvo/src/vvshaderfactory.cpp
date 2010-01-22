@@ -16,6 +16,7 @@
 #include "vvshaderfactory.h"
 
 // Include headers to your custom shader manager here rather than in the header.
+
 #include "vvcg.h"
 #include "vvglsl.h"
 

@@ -81,8 +81,8 @@ class VIRVOEXPORT vvFileIO
     };
 
     vvFileIO();
-    ErrorType saveVolumeData(vvVolDesc*, bool, LoadType = ALL_DATA);
-    ErrorType loadVolumeData(vvVolDesc*, LoadType = ALL_DATA, bool addFrame=false);
+    ErrorType saveVolumeData(vvVolDesc*, bool, LoadType sec = ALL_DATA);
+    ErrorType loadVolumeData(vvVolDesc*, LoadType sec = ALL_DATA, bool addFrame=false);
     ErrorType loadDicomFile(vvVolDesc*, int* = NULL, int* = NULL, float* = NULL);
     ErrorType loadRawFile(vvVolDesc*, int, int, int, int, int, int);
     ErrorType loadXB7File(vvVolDesc*,int=128,int=8,bool=true);

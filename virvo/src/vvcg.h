@@ -27,6 +27,13 @@
 
 #ifdef HAVE_CG
 
+#ifdef _WIN32
+#ifndef WIN32
+#define WIN32 1
+#endif
+#include <windows.h>
+#endif
+
 #include <Cg/cg.h>
 #include <Cg/cgGL.h>
 
@@ -101,7 +108,7 @@ private:
   std::vector<CGprofile> _cgProfiles;
   std::vector<CGprogram> _cgPrograms;
   typedef std::vector<vvCgParameter> ParameterVector;
-  typedef std::map<const char*, vvCgParameter> ParameterNameMap;
+  typedef std::map<std::string, vvCgParameter> ParameterNameMap;
   std::vector<ParameterVector> _cgParameters;
   std::vector<ParameterNameMap> _cgParameterNameMaps;
 
