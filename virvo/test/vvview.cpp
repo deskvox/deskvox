@@ -104,7 +104,7 @@ vvView::vvView()
    animSpeed             = 1.0f;
    iconMode              = false;
    gpuproxygeo           = true;
-   useOffscreenBuffer    = true;
+   useOffscreenBuffer    = false;
    bufferPrecision       = 8;
 }
 

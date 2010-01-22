@@ -112,6 +112,7 @@ struct ThreadArgs
   GLfloat* pixels;                            ///< after rendering each thread will read back its data to this array
   float lastRenderTime;                       ///< measured for dynamic load balancing
   float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
+  bool transferFunctionChanged;
 
 #ifdef HAVE_X11
   // Glx rendering specific.
@@ -123,6 +124,8 @@ struct ThreadArgs
   // Gl state specific.
   GLuint* privateTexNames;
   int numTextures;
+  GLuint pixLUTName;
+  uchar* rgbaLUT;
 
   // Pthread specific.
   pthread_barrier_t* initBarrier;             ///< when this barrier is passed, the main rendering loop may be initially entered
@@ -134,10 +137,10 @@ struct ThreadArgs
   pthread_mutex_t* makeTextureMutex;          ///< mutex ensuring that textures for each thread are built up synchronized
 };
 
-void Brick::render(vvTexRend* renderer, vvVector3& normal,
+void Brick::render(vvTexRend* renderer, const vvVector3& normal,
                    const vvVector3& farthest, const vvVector3& delta,
                    const vvVector3& probeMin, const vvVector3& probeMax,
-                   GLuint*& texNames, vvShaderManager* isectShader, bool setupEdges)
+                   GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges)
 {
   vvVector3 dist = max;
   dist.sub(&min);
@@ -187,7 +190,7 @@ void Brick::render(vvTexRend* renderer, vvVector3& normal,
 
     float minDot;
     float maxDot;
-    ushort idx = getFrontIndex(verts, texPoint, normal, minDot, maxDot);
+    const ushort idx = getFrontIndex(verts, texPoint, normal, minDot, maxDot);
     isectShader->setArrayParameter3f(0, "vertices", 0, verts[0].e[0], verts[0].e[1], verts[0].e[2]);
     if(setupEdges)
     {
@@ -206,14 +209,14 @@ void Brick::render(vvTexRend* renderer, vvVector3& normal,
     isectShader->setParameter3f(0, "texRange", texRange[0], texRange[1], texRange[2]);
     isectShader->setParameter3f(0, "texMin", texMin[0], texMin[1], texMin[2]);
 
-    float deltaInv = 1.0f / delta.length();
+    const float deltaInv = 1.0f / delta.length();
 
-    int startSlices = ceilf(minDot * deltaInv);
-    int endSlices = floorf(maxDot * deltaInv);
+    const int startSlices = ceilf(minDot * deltaInv);
+    const int endSlices = floorf(maxDot * deltaInv);
 
     isectShader->setParameter1i(0, "frontIndex", idx);
 
-    int primCount = (endSlices - startSlices) + 1;
+    const int primCount = (endSlices - startSlices) + 1;
 
     glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
     glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
@@ -258,10 +261,10 @@ void Brick::render(vvTexRend* renderer, vvVector3& normal,
     float maxDot;
     getFrontIndex(verts, texPoint, normal, minDot, maxDot);
 
-    float deltaInv = 1.0f / delta.length();
+    const float deltaInv = 1.0f / delta.length();
 
-    int startSlices = ceilf(minDot * deltaInv);
-    int endSlices = floorf(maxDot * deltaInv);
+    const int startSlices = ceilf(minDot * deltaInv);
+    const int endSlices = floorf(maxDot * deltaInv);
 
     vvVector3 startPoint;
     startPoint.copy(farthest);
@@ -273,7 +276,7 @@ void Brick::render(vvTexRend* renderer, vvVector3& normal,
     for (int i = startSlices; i <= endSlices; ++i)
     {
       vvVector3 isect[6];
-      int isectCnt = isect->isectPlaneCuboid(&normal, &startPoint, &minClipped, &maxClipped);
+      const int isectCnt = isect->isectPlaneCuboid(&normal, &startPoint, &minClipped, &maxClipped);
       startPoint.add(&delta);
 
       if (isectCnt < 3) continue;                 // at least 3 intersections needed for drawing
@@ -342,7 +345,7 @@ ushort Brick::getFrontIndex(const vvVector3* vertices,
   {
     vvVector3 v = vertices[i];
     v.sub(&point);
-    float dot = v.dot(&normal);
+    const float dot = v.dot(&normal);
     if (dot > maxDot)
     {
       maxDot = dot;
@@ -669,9 +672,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
     if (voxelType != VV_RGBA)
     {
-      makeTextures(texNames, &textures);                             // we only have to do this once for non-RGBA textures
+      makeTextures(texNames, &textures, pixLUTName, rgbaLUT);      // we only have to do this once for non-RGBA textures
     }
-    updateTransferFunction();
+    updateTransferFunction(pixLUTName, rgbaLUT);
   }
   else
   {
@@ -688,6 +691,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     vvVector3 probeSizeObj;
     vvVector3 probeMin, probeMax;
 
+    // Build global transfer function once in order to build up _nonemptyList.
+    updateTransferFunction(pixLUTName, rgbaLUT);
     calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
     getBricksInProbe(probePosObj, probeSizeObj);
     distributeBricks();
@@ -758,6 +763,7 @@ vvTexRend::~vvTexRend()
     for (int i = 0; i < _numThreads; ++i)
     {
       delete[] _threadData[i].pixels;
+      delete[] _threadData[i].rgbaLUT;
     }
 
     // Cleanup locking specific stuff.
@@ -859,7 +865,8 @@ void vvTexRend::removeTextures()
 
 //----------------------------------------------------------------------------
 /// Generate textures for all rendering modes.
-vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numTextures)
+vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numTextures,
+                                             GLuint& lutName, uchar*& lutData)
 {
   static bool first = true;
   ErrorType err = OK;
@@ -876,7 +883,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numT
     case VV_SLICES:  err=makeTextures2D(1); updateTextures2D(1, 0, 10, 20, 15, 10, 5); break;
     case VV_CUBIC2D: err=makeTextures2D(3); updateTextures2D(3, 0, 10, 20, 15, 10, 5); break;
     // Threads will make their own copies of the textures as well as their own gl ids.
-    case VV_BRICKS:  err=makeTextureBricks(privateTexNames, numTextures); break;
+    case VV_BRICKS:  err=makeTextureBricks(privateTexNames, numTextures, lutData); break;
     default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
   }
   vvGLTools::printGLError("vvTexRend::makeTextures");
@@ -885,7 +892,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numT
   {
     //if (first)
     {
-      makeLUTTexture();                           // FIXME: works only once, then generates OpenGL error
+      makeLUTTexture(lutName, lutData);               // FIXME: works only once, then generates OpenGL error
       first = false;
     }
   }
@@ -894,7 +901,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numT
 
 //----------------------------------------------------------------------------
 /// Generate texture for look-up table.
-void vvTexRend::makeLUTTexture()
+void vvTexRend::makeLUTTexture(GLuint& lutName, uchar* lutData)
 {
   int size[3];
 
@@ -902,7 +909,7 @@ void vvTexRend::makeLUTTexture()
   if(voxelType!=VV_PIX_SHD)
      glActiveTextureARB(GL_TEXTURE1_ARB);
   getLUTSize(size);
-  glBindTexture(GL_TEXTURE_2D, pixLUTName);
+  glBindTexture(GL_TEXTURE_2D, lutName);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -910,7 +917,7 @@ void vvTexRend::makeLUTTexture()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size[0], size[1], 0,
-    GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
+    GL_RGBA, GL_UNSIGNED_BYTE, lutData);
   if(voxelType!=VV_PIX_SHD)
      glActiveTextureARB(GL_TEXTURE0_ARB);
   vvGLTools::printGLError("leave makeLUTTexture");
@@ -1137,7 +1144,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
   return err;
 }
 
-vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures)
+vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData)
 {
   ErrorType err = OK;
   GLint glWidth;                                  // return value from OpenGL call
@@ -1333,7 +1340,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                       break;
                     case VV_RGBA:
                       for (c = 0; c < 4; c++)
-                        texData[4 * texOffset + c] = rgbaLUT[rawVal[0] * 4 + c];
+                        texData[4 * texOffset + c] = lutData[rawVal[0] * 4 + c];
                       break;
                     default:
                       assert(0);
@@ -1382,7 +1389,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                     if (vd->chan >= 4)  // RGBA
                     {
                       if (voxelType == VV_RGBA)
-                        texData[4 * texOffset + 3] = rgbaLUT[rawVal[3] * 4 + 3];
+                        texData[4 * texOffset + 3] = lutData[rawVal[3] * 4 + 3];
                       else
                         texData[4 * texOffset + 3] = (uchar) rawVal[3];
                     }
@@ -1392,7 +1399,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                       for (c = 0; c < vd->chan; c++)
                       {
                         // alpha: mean of sum of RGB conversion table results:
-                        alpha += (int) rgbaLUT[rawVal[c] * 4 + c];
+                        alpha += (int) lutData[rawVal[c] * 4 + c];
                       }
                       texData[4 * texOffset + 3] = (uchar) (alpha / vd->chan);
                     }
@@ -1428,7 +1435,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
             bs[2] += 1;
           }
 
-          bool atBorder = true;
+          bool atBorder = false;
           for (int d = 0; d < 3; ++d)
           {
             float maxObj = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
@@ -1625,7 +1632,9 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     // During load balancing, the share will (probably) be adjusted.
     _threadData[i].share = 1.0f / static_cast<float>(_numThreads);
     _threadData[i].pixels = new GLfloat[WIDTH * HEIGHT * 4];
+    _threadData[i].transferFunctionChanged = false;
     glGenTextures(1, &_imageSpaceTextures[i]);
+    _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
     XMapWindow(_threadData[i].display, _threadData[i].drawable);
     XFlush(_threadData[i].display);
   }
@@ -1757,12 +1766,13 @@ void vvTexRend::setComputeBrickSize(bool flag)
       {
         for (int i = 0; i < _numThreads; ++i)
         {
-          makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
+          makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
+                       _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
         }
       }
       else
       {
-        makeTextures(texNames, &textures);
+        makeTextures(texNames, &textures, pixLUTName, rgbaLUT);
       }
     }
   }
@@ -1783,12 +1793,13 @@ void vvTexRend::setBrickSize(int newSize)
   {
     for (int i = 0; i < _numThreads; ++i)
     {
-      makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
+      makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
+                   _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
     }
   }
   else
   {
-    makeTextures(texNames, &textures);
+    makeTextures(texNames, &textures, pixLUTName, rgbaLUT);
   }
 }
 
@@ -1814,12 +1825,13 @@ void vvTexRend::setTexMemorySize(int newSize)
       {
         for (int i = 0; i < _numThreads; ++i)
         {
-          makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
+          makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
+                       _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
         }
       }
       else
       {
-        makeTextures(texNames, &textures);
+        makeTextures(texNames, &textures, pixLUTName, rgbaLUT);
       }
     }
   }
@@ -1893,9 +1905,25 @@ void vvTexRend::computeBrickSize()
   }
 }
 
+
 //----------------------------------------------------------------------------
 /// Update transfer function from volume description.
 void vvTexRend::updateTransferFunction()
+{
+  if (_numThreads == 0)
+  {
+    updateTransferFunction(pixLUTName, rgbaLUT);
+  }
+  else
+  {
+    for (int i = 0; i < _numThreads; ++i)
+    {
+      _threadData[i].transferFunctionChanged = true;
+    }
+  }
+}
+
+void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData)
 {
   int size[3];
 
@@ -1922,48 +1950,57 @@ void vvTexRend::updateTransferFunction()
   vd->computeTFTexture(size[0], size[1], size[2], rgbaTF);
 
   if(!instantClassification())
-    updateLUT(1.0f);                                // generate color/alpha lookup table
+    updateLUT(1.0f, lutName, lutData);                                // generate color/alpha lookup table
   else
     lutDistance = -1.;                              // invalidate LUT
 
-  // Each bricks visible flag was initially set to true.
-  // If empty-space leaping isn't active, all bricks are
-  // visible by default.
-  if (_renderState._emptySpaceLeaping)
+  // No space leaping per thread, but only once. Otherwise brick list setup would collide.
+  bool calledByWorkerThread = (lutName != pixLUTName);
+  if (!calledByWorkerThread)
   {
-     int nbricks = 0, nvis=0;
-    // Empty-space leaping only for 'ordinary' transfer function lookup.
-    if ((voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12))
+    // Each bricks visible flag was initially set to true.
+    // If empty-space leaping isn't active, all bricks are
+    // visible by default.
+    if (_renderState._emptySpaceLeaping)
     {
-      _nonemptyList.clear();
-      _nonemptyList.resize(_brickList.size());
-      // Determine visibility of each single brick in all frames
-      for(int frame = 0; frame < _brickList.size(); ++frame)
+      int nbricks = 0, nvis=0;
+      // Empty-space leaping only for 'ordinary' transfer function lookup.
+      if ((voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12))
       {
-         for(BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
-         {
-            Brick *tmp = *it;
-            nbricks++;
+        _nonemptyList.clear();
+        _nonemptyList.resize(_brickList.size());
+        // Determine visibility of each single brick in all frames
+        for (int frame = 0; frame < _brickList.size(); ++frame)
+        {
+           for (BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
+           {
+              Brick *tmp = *it;
+              nbricks++;
 
-            // If max intensity projection, make all bricks visible.
-            if (_renderState._mipMode > 0)
-            {
-               _nonemptyList[frame].push_back(tmp);
-               nvis++;
-            }
-            else
-            {
-               for (int i = tmp->minValue; i <= tmp->maxValue; ++i)
-               {
-                  if(rgbaTF[i * 4 + 3] > 0.)
-                  {
-                     _nonemptyList[frame].push_back(tmp);
-                     nvis++;
-                     break;
-                  }
-               }
-            }
-         }
+              // If max intensity projection, make all bricks visible.
+              if (_renderState._mipMode > 0)
+              {
+                 _nonemptyList[frame].push_back(tmp);
+                 nvis++;
+              }
+              else
+              {
+                 for (int i = tmp->minValue; i <= tmp->maxValue; ++i)
+                 {
+                    if(rgbaTF[i * 4 + 3] > 0.)
+                    {
+                       _nonemptyList[frame].push_back(tmp);
+                       nvis++;
+                       break;
+                    }
+                 }
+              }
+           }
+        }
+      }
+      else
+      {
+        _nonemptyList = _brickList;
       }
     }
     else
@@ -1977,8 +2014,6 @@ void vvTexRend::updateTransferFunction()
   }
 
   _renderState._isROIChanged = true; // have to update list of visible bricks
-
-  //printLUT();
 }
 
 //----------------------------------------------------------------------------
@@ -1996,12 +2031,13 @@ void vvTexRend::updateVolumeData()
   {
     for (int i = 0; i < _numThreads; ++i)
     {
-      makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
+      makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
+                   _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
     }
   }
   else
   {
-    makeTextures(texNames, &textures);
+    makeTextures(texNames, &textures, pixLUTName, rgbaLUT);
   }
 }
 
@@ -2801,18 +2837,18 @@ void vvTexRend::unsetGLenvironment()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableLUTMode(vvShaderManager* pixelShader)
+void vvTexRend::enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName)
 {
   switch(voxelType)
   {
     case VV_FRG_PRG:
-      enableFragProg();
+      enableFragProg(lutName);
       break;
     case VV_TEX_SHD:
       enableNVShaders();
       break;
     case VV_PIX_SHD:
-      enablePixelShaders(pixelShader);
+      enablePixelShaders(pixelShader, lutName);
       break;
     case VV_SGI_LUT:
       glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -3039,7 +3075,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     // by trying to keep the number of slices constant
     if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
     {
-      updateLUT(thickness);
+      updateLUT(thickness, pixLUTName, rgbaLUT);
     }
   }
 
@@ -3083,7 +3119,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
       // Make slice opaque if possible:
       if (instantClassification())
       {
-        updateLUT(0.0f);
+        updateLUT(0.0f, pixLUTName, rgbaLUT);
       }
     }
   }
@@ -3226,7 +3262,6 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   vvVector3 probeMin, probeMax;                   // probe min and max coordinates [object space]
   vvVector3 min, max;                             // min and max pos of current brick (cut with probe)
   vvVector3 texMin;                               // minimum texture coordinate
-  float     diagonal;                             // probe diagonal [object space]
   int       numSlices;                            // number of texture slices along diagonal
   int       i;                                    // general counters
   int       discarded;                            // count discarded bricks due to empty-space leaping
@@ -3251,14 +3286,13 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
   // Compute length of probe diagonal [object space]:
-  diagonal = sqrtf(
-    probeSizeObj[0] * probeSizeObj[0] +
-    probeSizeObj[1] * probeSizeObj[1] +
-    probeSizeObj[2] * probeSizeObj[2]);
+  const float diagonal = sqrtf(probeSizeObj[0] * probeSizeObj[0] +
+                               probeSizeObj[1] * probeSizeObj[1] +
+                               probeSizeObj[2] * probeSizeObj[2]);
 
-  float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
-    vd->vox[1] * vd->vox[1] +
-    vd->vox[2] * vd->vox[2]));
+  const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
+                                           vd->vox[1] * vd->vox[1] +
+                                           vd->vox[2] * vd->vox[2]));
   numSlices = int(_renderState._quality * diagonalVoxels);
   if (numSlices < 1) numSlices = 1;               // make sure that at least one slice is drawn
 
@@ -3272,7 +3306,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
       float thickness = diagonalVoxels / float(numSlices);
       if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
       {
-        updateLUT(thickness);
+        updateLUT(thickness, pixLUTName, rgbaLUT);
       }
     }
   }
@@ -3381,7 +3415,17 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
       // Make slice opaque if possible:
       if (instantClassification())
       {
-        updateLUT(1.0f);
+        if (_numThreads == 0)
+        {
+          updateLUT(1.0f, pixLUTName, rgbaLUT);
+        }
+        else
+        {
+          for (i = 0; i < _numThreads; ++i)
+          {
+            updateLUT(1.0f, _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+          }
+        }
       }
     }
   }
@@ -3584,24 +3628,26 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // a parallel callback.
     pthread_barrier_wait(data->initBarrier);
 
-	// Init glew.
+    // Init glew.
     glewInit();	
 
     /////////////////////////////////////////////////////////
     // Make textures.
     /////////////////////////////////////////////////////////
     pthread_mutex_lock(data->makeTextureMutex);
+    glGenTextures(1, &data->pixLUTName);
     data->renderer->initPixelShaders(pixelShader);
     data->renderer->texelsize=4;
     data->renderer->internalTexFormat = GL_RGBA;
     data->renderer->texFormat = GL_RGBA;
     data->renderer->_areBricksCreated = false;
     data->renderer->computeBrickSize();
-    data->renderer->updateTransferFunction();
+    data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
     // Generate a set of gl tex names private to this thread.
     // This solution differs from the one chosen for sequential
     // execution where the texNames array is a member.
-    data->renderer->makeTextures(data->privateTexNames, &data->numTextures);
+    data->renderer->makeTextures(data->privateTexNames, &data->numTextures,
+                                 data->pixLUTName, data->rgbaLUT);
     pthread_mutex_unlock(data->makeTextureMutex);
 
     // Now that the textures are built, the bricks may be distributed
@@ -3672,7 +3718,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
       pthread_barrier_wait(data->renderStartBarrier);
-      data->renderer->enableLUTMode(pixelShader);
+      data->renderer->enableLUTMode(pixelShader, data->pixLUTName);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
@@ -3681,7 +3727,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         diagonalVoxels = sqrtf(float(data->renderer->vd->vox[0] * data->renderer->vd->vox[0] +
           data->renderer->vd->vox[1] * data->renderer->vd->vox[1] +
           data->renderer->vd->vox[2] * data->renderer->vd->vox[2]));
-        data->renderer->updateLUT(diagonalVoxels / float(data->numSlices));
+          data->renderer->updateLUT(diagonalVoxels / float(data->numSlices),
+                                    data->pixLUTName, data->rgbaLUT);
       }
       /////////////////////////////////////////////////////////
       // Start rendering.
@@ -3759,6 +3806,12 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       data->lastRenderTime = stopwatch->getTime();
 
       pthread_barrier_wait(data->compositingBarrier);
+
+      // Finally update the transfer function in a synchronous fashion.
+      if (data->transferFunctionChanged)
+      {
+        data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
+      }
     }
 
     // Exited render loop - perform cleanup.
@@ -3811,11 +3864,12 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
     data->renderer->texFormat = GL_RGBA;
     data->renderer->_areBricksCreated = false;
     data->renderer->computeBrickSize();
-    data->renderer->updateTransferFunction();
+    data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
     // Generate a set of gl tex names private to this thread.
     // This solution differs from the one chosen for sequential
     // execution where the texNames array is a member.
-    data->renderer->makeTextures(data->privateTexNames, &data->numTextures);
+    data->renderer->makeTextures(data->privateTexNames, &data->numTextures,
+                                 data->pixLUTName, data->rgbaLUT);
     pthread_mutex_unlock(data->makeTextureMutex);
 
     // Now that the textures are built, the bricks may be distributed
@@ -3853,7 +3907,8 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
         diagonalVoxels = sqrtf(float(data->renderer->vd->vox[0] * data->renderer->vd->vox[0] +
           data->renderer->vd->vox[1] * data->renderer->vd->vox[1] +
           data->renderer->vd->vox[2] * data->renderer->vd->vox[2]));
-        data->renderer->updateLUT(diagonalVoxels / float(data->numSlices));
+        data->renderer->updateLUT(diagonalVoxels / float(data->numSlices),
+                                  data->pixLUTName, data->rgbaLUT);
       }
 
       /////////////////////////////////////////////////////////
@@ -4020,7 +4075,7 @@ void vvTexRend::renderBricks(vvMatrix* mv)
       diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
         vd->vox[1] * vd->vox[1] +
         vd->vox[2] * vd->vox[2]));
-      updateLUT(diagonalVoxels / float(numSlices));
+      updateLUT(diagonalVoxels / float(numSlices), pixLUTName, rgbaLUT);
     }
   }
 
@@ -4099,12 +4154,6 @@ void vvTexRend::renderBricks(vvMatrix* mv)
       delta.scale((float)(numSlices-1));
       farthest.add(&delta);
       numSlices = 1;
-
-      // Make slice opaque if possible:
-      if (instantClassification())
-      {
-        updateLUT(1.0f);
-      }
     }
   }
 
@@ -4405,10 +4454,10 @@ bool vvTexRend::testBrickVisibility(Brick* brick)
 bool vvTexRend::testBrickVisibility(Brick* brick, const vvMatrix& mvpMat)
 {
   //sample the brick at many point and test them all for visibility
-  float numSteps = 3;
-  float xStep = (brick->max[0] - brick->min[0]) / (numSteps - 1.0f);
-  float yStep = (brick->max[1] - brick->min[1]) / (numSteps - 1.0f);
-  float zStep = (brick->max[2] - brick->min[2]) / (numSteps - 1.0f);
+  const float numSteps = 3;
+  const float xStep = (brick->max[0] - brick->min[0]) / (numSteps - 1.0f);
+  const float yStep = (brick->max[1] - brick->min[1]) / (numSteps - 1.0f);
+  const float zStep = (brick->max[2] - brick->min[2]) / (numSteps - 1.0f);
   for(int i = 0; i < numSteps; i++)
   {
     float x = brick->min.e[0] + xStep * i;
@@ -4497,8 +4546,8 @@ void vvTexRend::markBricksInFrustum()
 
   updateFrustum();
 
-  bool inside = insideFrustum(probeMin, probeMax);
-  bool outside = !intersectsFrustum(probeMin, probeMax);
+  const bool inside = insideFrustum(probeMin, probeMax);
+  const bool outside = !intersectsFrustum(probeMin, probeMax);
   
   for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
     if(inside || outside)
@@ -4520,16 +4569,8 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
   vvVector3 tmpVec = size;
   tmpVec.scale(0.5);
 
-  vvVector3 min = pos - tmpVec;
-  vvVector3 max = pos + tmpVec;
-
-  //   vvMatrix mvMat;
-  //   vvMatrix pMat;
-  //   vvMatrix mvpMat;
-  //   getModelviewMatrix(&mvMat);
-  //   getProjectionMatrix(&pMat);
-  //   mvpMat = mvMat * pMat;
-
+  const vvVector3 min = pos - tmpVec;
+  const vvVector3 max = pos + tmpVec;
 
   int countVisible = 0, countInvisible = 0;
 
@@ -4555,7 +4596,6 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
       ++countInvisible;
     }
   }
-  //        cerr << "Bricks visible: " << countVisible << " Bricks invisible: " << countInvisible << endl;
 
   _sortedList.clear();
   for(std::vector<vvConvexObj *>::iterator it = _insideList.begin(); it != _insideList.end(); ++it)
@@ -4570,7 +4610,7 @@ struct BrickCompare
   }
 };
 
-void vvTexRend::sortBrickList(const int threadId, vvVector3 pos, vvVector3 normal, bool isOrtho)
+void vvTexRend::sortBrickList(const int threadId, const vvVector3& pos, const vvVector3& normal, const bool isOrtho)
 {
   if (_numThreads > 0)
   {
@@ -4605,7 +4645,6 @@ void vvTexRend::sortBrickList(const int threadId, vvVector3 pos, vvVector3 norma
 
 void vvTexRend::performLoadBalancing()
 {
-  int i;
   float* idealDistribution;
   float* actualDistribution;
   float deviation;
@@ -4614,7 +4653,7 @@ void vvTexRend::performLoadBalancing()
   // Only redistribute if the deviation of the rendering times
   // exceeds a certain limit.
   float expectedValue = 0;
-  for (i = 0; i < _numThreads; ++i)
+  for (int i = 0; i < _numThreads; ++i)
   {
     expectedValue += _threadData[i].lastRenderTime;
   }
@@ -4628,7 +4667,7 @@ void vvTexRend::performLoadBalancing()
   actualDistribution = new float[_numThreads];
 
   // Build both arrays.
-  for (i = 0; i < _numThreads; ++i)
+  for (int i = 0; i < _numThreads; ++i)
   {
     idealDistribution[i] = expectedValue;
     actualDistribution[i] = _threadData[i].lastRenderTime;
@@ -4650,7 +4689,7 @@ void vvTexRend::performLoadBalancing()
       tmp = 0.0f;
 
       // Rearrange the share for each thread.
-      for (i = 0; i < _numThreads; ++i)
+      for (int i = 0; i < _numThreads; ++i)
       {
         float cmp = _threadData[i].lastRenderTime - expectedValue;
         if (cmp < MAX_IND_DEVIATION)
@@ -4672,7 +4711,7 @@ void vvTexRend::performLoadBalancing()
       }
 
       // Normalize partitioning.
-      for (i = 0; i < _numThreads; ++i)
+      for (int i = 0; i < _numThreads; ++i)
       {
         _threadData[i].share /= tmp;
       }
@@ -4778,7 +4817,7 @@ void vvTexRend::renderTex3DSpherical(vvMatrix* view)
     float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
       vd->vox[1] * vd->vox[1] +
       vd->vox[2] * vd->vox[2]));
-    updateLUT(diagonalVoxels / numShells);
+    updateLUT(diagonalVoxels / numShells, pixLUTName, rgbaLUT);
   }
 
   vvSphere shell;
@@ -4892,7 +4931,7 @@ void vvTexRend::renderTex2DSlices(float zz)
     float diagVoxels = sqrtf(float(vd->vox[0]*vd->vox[0]
       + vd->vox[1]*vd->vox[1]
       + vd->vox[2]*vd->vox[2]));
-    updateLUT(diagVoxels/numTextures);
+    updateLUT(diagVoxels/numTextures, pixLUTName, rgbaLUT);
   }
 
   // Volume rendering with multiple 2D textures:
@@ -5078,7 +5117,7 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
     float diagVoxels = sqrtf(float(vd->vox[0]*vd->vox[0]
       + vd->vox[1]*vd->vox[1]
       + vd->vox[2]*vd->vox[2]));
-    updateLUT(diagVoxels/numTextures);
+    updateLUT(diagVoxels/numTextures, pixLUTName, rgbaLUT);
   }
 
   // Volume render a 2D texture:
@@ -5180,7 +5219,7 @@ void vvTexRend::renderVolumeGL()
   {
     if (geomType != VV_BRICKS || !_renderState._showBricks)
     {
-      enableLUTMode(_pixelShader);
+      enableLUTMode(_pixelShader, pixLUTName);
     }
   }
 
@@ -5364,7 +5403,7 @@ int vvTexRend::getPreintTableSize()
  @param dist  slice distance relative to 3D texture sample point distance
               (1.0 for original distance, 0.0 for all opaque).
 */
-void vvTexRend::updateLUT(float dist)
+void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData)
 {
   vvDebugMsg::msg(3, "Generating texture LUT. Slice distance = ", dist);
 
@@ -5407,7 +5446,7 @@ void vvTexRend::updateLUT(float dist)
       // Convert float to uchar and copy to rgbaLUT array:
       for (c=0; c<4; ++c)
       {
-        rgbaLUT[i * 4 + c] = uchar(corr[c] * 255.0f);
+        lutData[i * 4 + c] = uchar(corr[c] * 255.0f);
       }
     }
   }
@@ -5419,7 +5458,8 @@ void vvTexRend::updateLUT(float dist)
     case VV_RGBA:
       if (_numThreads == 0)
       {
-        makeTextures(texNames, &textures); // this mode doesn't use a hardware LUT, so every voxel has to be updated
+        makeTextures(texNames, &textures,
+                     lutName, lutData);// this mode doesn't use a hardware LUT, so every voxel has to be updated
       }
       break;
     case VV_SGI_LUT:
@@ -5437,7 +5477,7 @@ void vvTexRend::updateLUT(float dist)
     case VV_FRG_PRG:
       if(voxelType!=VV_PIX_SHD)
         glActiveTextureARB(GL_TEXTURE1_ARB);
-      glBindTexture(GL_TEXTURE_2D, pixLUTName);
+      glBindTexture(GL_TEXTURE_2D, lutName);
       if(usePreIntegration)
       {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, getPreintTableSize(), getPreintTableSize(), 0,
@@ -5446,7 +5486,7 @@ void vvTexRend::updateLUT(float dist)
       else
       {
          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, lutSize[0], lutSize[1], 0,
-               GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
+               GL_RGBA, GL_UNSIGNED_BYTE, lutData);
       }
       if(voxelType!=VV_PIX_SHD)
         glActiveTextureARB(GL_TEXTURE0_ARB);
@@ -5498,14 +5538,15 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
         {
           for (int i = 0; i < _numThreads; ++i)
           {
-            makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures);
-            updateTransferFunction();
+            makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
+                         _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+            updateTransferFunction(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
           }
         }
         else
         {
-          makeTextures(texNames, &textures);
-          updateTransferFunction();
+          makeTextures(texNames, &textures, pixLUTName, rgbaLUT);
+          updateTransferFunction(pixLUTName, rgbaLUT);
         }
       }
       break;
@@ -5523,7 +5564,7 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
       break;
     case vvRenderer::VV_PREINT:
       preIntegration = (newValue == 0.0f) ? false : true;
-      updateTransferFunction();
+      updateTransferFunction(pixLUTName, rgbaLUT);
       break;
     case vvRenderer::VV_BINNING:
       if (newValue==0.0f) vd->_binning = vvVolDesc::LINEAR;
@@ -5542,7 +5583,7 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
       break;
     case vvRenderer::VV_LEAPEMPTY:
       _renderState._emptySpaceLeaping = (newValue == 0.0f) ? false : true;
-      updateTransferFunction();
+      updateTransferFunction(pixLUTName, rgbaLUT);
       break;
     case vvRenderer::VV_OFFSCREENBUFFER:
       _renderState._useOffscreenBuffer = (newValue == 0.0f) ? false : true;
@@ -5842,10 +5883,10 @@ void vvTexRend::disableNVShaders()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableFragProg()
+void vvTexRend::enableFragProg(GLuint& lutName)
 {
   glActiveTextureARB(GL_TEXTURE1_ARB);
-  glBindTexture(GL_TEXTURE_2D, pixLUTName);
+  glBindTexture(GL_TEXTURE_2D, lutName);
   glActiveTextureARB(GL_TEXTURE0_ARB);
 
   glEnable(GL_FRAGMENT_PROGRAM_ARB);
@@ -5880,8 +5921,8 @@ void vvTexRend::disableFragProg()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enablePixelShaders(vvShaderManager* pixelShader)
-{_currentShader = 12;
+void vvTexRend::enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName)
+{
   if(VV_PIX_SHD == voxelType)
   {
     // Load, enable, and bind fragment shader:
@@ -5897,12 +5938,12 @@ void vvTexRend::enablePixelShaders(vvShaderManager* pixelShader)
     // Set fragment program parameters:
     if (_currentShader != 4)                          // pixLUT, doesn't work with grayscale shader
     {
-      glBindTexture(GL_TEXTURE_2D, pixLUTName);
+      glBindTexture(GL_TEXTURE_2D, lutName);
 
       // TODO: cgGLEnableTextureParameter.
       parameterNames[parameterCount] = "pixLUT";
       parameterTypes[parameterCount] = VV_SHD_TEXTURE_ID;
-      values[parameterCount] = (void*)pixLUTName;
+      values[parameterCount] = (void*)lutName;
       parameterCount++;
     }
 

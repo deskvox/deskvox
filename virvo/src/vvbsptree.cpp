@@ -52,18 +52,18 @@ float vvAABB::calcDepth() const
 
 const vvBoxCorners &vvAABB::calcVertices()
 {
-    for(int i=0; i<8; ++i)
-    {
-       // return the edges in the necessary order
-       int d=i;
-       if(i>=2 && i<=5)
-          d ^= 1;
+  for(int i=0; i<8; ++i)
+  {
+    // return the edges in the necessary order
+    int d=i;
+    if(i>=2 && i<=5)
+      d ^= 1;
 
-       for(int c=0; c<3; ++c)
-       {
-          _vertices[i].e[c] = (1<<c)&d ? _bottomLeftBackCorner.e[c] : _topRightFrontCorner.e[c];
-       }
+    for(int c=0; c<3; ++c)
+    {
+      _vertices[i].e[c] = (1<<c)&d ? _bottomLeftBackCorner.e[c] : _topRightFrontCorner.e[c];
     }
+  }
 
   return _vertices;
 }

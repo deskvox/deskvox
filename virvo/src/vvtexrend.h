@@ -95,10 +95,10 @@ public:
       return false;
     }
   }
-  void render(vvTexRend* renderer, vvVector3& normal,
+  void render(vvTexRend* renderer, const vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, vvShaderManager* isectShader, bool setupEdges);
+              GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges);
 
   virtual vvAABB getAABB()
   {
@@ -324,7 +324,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLboolean glsTexColTable;                     ///< stores GL_TEXTURE_COLOR_TABLE_SGI
     GLboolean glsSharedTexPal;                    ///< stores GL_SHARED_TEXTURE_PALETTE_EXT
 
-    void makeLUTTexture();
+    void makeLUTTexture(GLuint& lutName, uchar* lutData);
     ErrorType makeTextures2D(int axes);
 
     ErrorType setDisplayNames(const char** displayNames, const unsigned int numNames);
@@ -332,17 +332,17 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType distributeBricks();
     static void* threadFuncTexBricks(void* threadargs);
     static void* threadFuncBricks(void* threadargs);
-    void sortBrickList(const int, vvVector3, vvVector3, bool);
+    void sortBrickList(const int, const vvVector3&, const vvVector3&, const bool);
     void performLoadBalancing();
 
-    ErrorType makeTextures(GLuint*& privateTexNames, int* numTextures);
-    ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures);
+    ErrorType makeTextures(GLuint*& privateTexNames, int* numTextures, GLuint& lutName, uchar*& lutData);
+    ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData);
 
     bool initPixelShaders(vvShaderManager* pixelShader);
-    void enablePixelShaders(vvShaderManager* pixelShader);
+    void enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName);
     void disablePixelShaders(vvShaderManager* pixelShader);
 
-    void enableLUTMode(vvShaderManager* pixelShader);
+    void enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName);
     void disableLUTMode(vvShaderManager* pixelShader);
 
     bool initIntersectionShader(vvShaderManager* isectShader);
@@ -365,12 +365,12 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void renderTex2DCubic(AxisType, float, float, float);
     VoxelType findBestVoxelType(VoxelType);
     GeometryType findBestGeometry(GeometryType, VoxelType);
-    void updateLUT(float);
+    void updateLUT(const float, GLuint& lutName, uchar*& lutData);
     int  getLUTSize(int*);
     int  getPreintTableSize();
     void enableNVShaders();
     void disableNVShaders();
-    void enableFragProg();
+    void enableFragProg(GLuint& lutName);
     void disableFragProg();
     void enableTexture(GLenum target);
     void disableTexture(GLenum target);
@@ -389,8 +389,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     virtual ~vvTexRend();
     void  renderVolumeGL();
     void  updateTransferFunction();
+    void  updateTransferFunction(GLuint& lutName, uchar*& lutData);
     void  updateVolumeData();
-    void updateVolumeData(int, int, int, int, int, int);
+    void  updateVolumeData(int, int, int, int, int, int);
     void  activateClippingPlane();
     void  deactivateClippingPlane();
     void  setNumLights(int);
