@@ -3556,9 +3556,6 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     // Volume render a 3D texture:
     enableTexture(GL_TEXTURE_3D_EXT);
 
-    glClear(GL_COLOR_BUFFER_BIT);
-
-
     if(_proxyGeometryOnGpu)
     {
       // Per frame parameters.
