@@ -180,9 +180,9 @@ void Brick::render(vvTexRend* renderer, const vvVector3& normal,
       {
         maxClipped[i] = max[i];
       }
-
-      texRange[i] = (1.0f - 1.0f / (float)texels[i]);
-      texMin[i] = (1.0f / (2.0f * (float)texels[i]));
+      const float overlapNorm = (float)(brickTexelOverlap[i]) / (float)texels[i];
+      texRange[i] = (1.0f - overlapNorm);
+      texMin[i] = (1.0f / (2.0f * (float)(renderer->_renderState._brickTexelOverlap) * (float)texels[i]));
     }
 
     vvAABB box(minClipped, maxClipped);
@@ -248,9 +248,9 @@ void Brick::render(vvTexRend* renderer, const vvVector3& normal,
       {
         maxClipped[i] = max[i];
       }
-
-      texRange[i] = (1.0f - 1.0f / (float)texels[i]);
-      texMin[i] = (1.0f / (2.0f * (float)texels[i]));
+      const float overlapNorm = (float)(brickTexelOverlap[i]) / (float)texels[i];
+      texRange[i] = (1.0f - overlapNorm);
+      texMin[i] = (1.0f / (2.0f * (float)(renderer->_renderState._brickTexelOverlap) * (float)texels[i]));
     }
 
     vvAABB box(minClipped, maxClipped);
@@ -1239,7 +1239,9 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
   voxSize[1] /= (vd->vox[1]-1);
   voxSize[2] /= (vd->vox[2]-1);
 
-  halfBrick.set(float(texels[0]-1), float(texels[1]-1), float(texels[2]-1));
+  halfBrick.set(float(texels[0]-_renderState._brickTexelOverlap),
+                float(texels[1]-_renderState._brickTexelOverlap),
+                float(texels[2]-_renderState._brickTexelOverlap));
   halfBrick.scale(0.5);
 
   halfVolume.set(float(vd->vox[0]), float(vd->vox[1]), float(vd->vox[2]));
@@ -1250,7 +1252,6 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
   for (f = 0; f < frames; f++)
   {
     raw = vd->getRaw(f);
-
 
     for (bx = 0; bx < _numBricks[0]; bx++)
       for (by = 0; by < _numBricks[1]; by++)
@@ -1430,18 +1431,20 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
           bs[2] = _renderState._brickSize[2];
           if (_useOnlyOneBrick)
           {
-            bs[0] += 1;
-            bs[1] += 1;
-            bs[2] += 1;
+            bs[0] += _renderState._brickTexelOverlap;
+            bs[1] += _renderState._brickTexelOverlap;
+            bs[2] += _renderState._brickTexelOverlap;
           }
 
           bool atBorder = false;
           for (int d = 0; d < 3; ++d)
           {
-            float maxObj = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
+            currBrick->brickTexelOverlap[d] = _renderState._brickTexelOverlap;
+            const float maxObj = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
             if (maxObj > vd->getSize()[d])
             {
               atBorder = true;
+              currBrick->brickTexelOverlap[d] = 0;
             }
           }
           currBrick->atBorder= atBorder;
@@ -1453,9 +1456,9 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
           currBrick->min.set(vd->pos[0] + voxSize[0] * (startOffset[0] - halfVolume[0]),
             vd->pos[1] + voxSize[1] * (startOffset[1] - halfVolume[1]),
             vd->pos[2] + voxSize[2] * (startOffset[2] - halfVolume[2]));
-          currBrick->max.set(vd->pos[0] + voxSize[0] * (startOffset[0] + (tmpTexels[0] - 1) - halfVolume[0]),
-            vd->pos[1] + voxSize[1] * (startOffset[1] + (tmpTexels[1] - 1) - halfVolume[1]),
-            vd->pos[2] + voxSize[2] * (startOffset[2] + (tmpTexels[2] - 1) - halfVolume[2]));
+          currBrick->max.set(vd->pos[0] + voxSize[0] * (startOffset[0] + (tmpTexels[0] - currBrick->brickTexelOverlap[0]) - halfVolume[0]),
+            vd->pos[1] + voxSize[1] * (startOffset[1] + (tmpTexels[1] - currBrick->brickTexelOverlap[1]) - halfVolume[1]),
+            vd->pos[2] + voxSize[2] * (startOffset[2] + (tmpTexels[2] - currBrick->brickTexelOverlap[2]) - halfVolume[2]));
 
           for (int d = 0; d < 3; ++d)
           {
@@ -1754,7 +1757,7 @@ bool vvTexRend::getShowBricks()
   return _renderState._showBricks;
 }
 
-void vvTexRend::setComputeBrickSize(bool flag)
+void vvTexRend::setComputeBrickSize(const bool flag)
 {
   _renderState._computeBrickSize = flag;
   if (_renderState._computeBrickSize)
@@ -1860,47 +1863,42 @@ void vvTexRend::computeBrickSize()
     return;
   }
 
-  int maxBricksXZ = 64;
-  int maxBricksY = 64;
+  const int maxBrickSize[3] = { 64, 64, 64 };
 
   // this has been tested to be optimal on a Quadro FX570m
   _useOnlyOneBrick = true;
   for(int i=0; i<3; ++i)
   {
     newBrickSize[i] = vvToolshed::getTextureSize(vd->vox[i]);
-    if(newBrickSize[i] > maxBricksXZ)
+    if(newBrickSize[i] > maxBrickSize[i])
     {
-      newBrickSize[i] = maxBricksXZ;
+      newBrickSize[i] = maxBrickSize[i];
       _useOnlyOneBrick = false;
     }
   }
-  if(newBrickSize[1] > maxBricksY)
-  {
-    newBrickSize[1] = maxBricksY;
-    _useOnlyOneBrick = false;
-  }
 
+  const int overlap = _renderState._brickTexelOverlap;
   if(_useOnlyOneBrick)
   {
     setROIEnable(false);
   }
   else
   {
-    probeSize[0] = 2 * (newBrickSize[0]-1) / (float) vd->vox[0];
-    probeSize[1] = 2 * (newBrickSize[1]-1) / (float) vd->vox[1];
-    probeSize[2] = 2 * (newBrickSize[2]-1) / (float) vd->vox[2];
+    probeSize[0] = 2 * (newBrickSize[0]-overlap) / (float) vd->vox[0];
+    probeSize[1] = 2 * (newBrickSize[1]-overlap) / (float) vd->vox[1];
+    probeSize[2] = 2 * (newBrickSize[2]-overlap) / (float) vd->vox[2];
 
     setProbeSize(&probeSize);
     //setROIEnable(true);
   }
-  if (newBrickSize[0]-1 != _renderState._brickSize[0]
-      || newBrickSize[1]-1 != _renderState._brickSize[1]
-      || newBrickSize[2]-1 != _renderState._brickSize[2]
+  if (newBrickSize[0]-overlap != _renderState._brickSize[0]
+      || newBrickSize[1]-overlap != _renderState._brickSize[1]
+      || newBrickSize[2]-overlap != _renderState._brickSize[2]
       || !_areBricksCreated)
   {
-    _renderState._brickSize[0] = newBrickSize[0]-1;
-    _renderState._brickSize[1] = newBrickSize[1]-1;
-    _renderState._brickSize[2] = newBrickSize[2]-1;
+    _renderState._brickSize[0] = newBrickSize[0]-overlap;
+    _renderState._brickSize[1] = newBrickSize[1]-overlap;
+    _renderState._brickSize[2] = newBrickSize[2]-overlap;
     _areBricksCreated = false;
   }
 }

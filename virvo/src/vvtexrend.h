@@ -122,6 +122,7 @@ public:
   int index;                                        ///< index for texture object
   int startOffset[3];                               ///< startvoxel of brick
   int texels[3];                                    ///< number of texels in each dimension
+  int brickTexelOverlap[3];                         ///< overlap in each dimension
   float dist;                                       ///< distance from plane given by eye and normal
 };
 
@@ -413,7 +414,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void updateBrickGeom();
     void setShowBricks(bool);
     bool getShowBricks();
-    void setComputeBrickSize(bool);
+    void setComputeBrickSize(const bool);
     bool getComputeBrickSize();
     void setBrickSize(int);
     int getBrickSize();
