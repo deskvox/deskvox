@@ -1877,28 +1877,27 @@ void vvTexRend::computeBrickSize()
     }
   }
 
-  const int overlap = _renderState._brickTexelOverlap;
   if(_useOnlyOneBrick)
   {
     setROIEnable(false);
   }
   else
   {
-    probeSize[0] = 2 * (newBrickSize[0]-overlap) / (float) vd->vox[0];
-    probeSize[1] = 2 * (newBrickSize[1]-overlap) / (float) vd->vox[1];
-    probeSize[2] = 2 * (newBrickSize[2]-overlap) / (float) vd->vox[2];
+    probeSize[0] = 2 * (newBrickSize[0]-_renderState._brickTexelOverlap) / (float) vd->vox[0];
+    probeSize[1] = 2 * (newBrickSize[1]-_renderState._brickTexelOverlap) / (float) vd->vox[1];
+    probeSize[2] = 2 * (newBrickSize[2]-_renderState._brickTexelOverlap) / (float) vd->vox[2];
 
     setProbeSize(&probeSize);
     //setROIEnable(true);
   }
-  if (newBrickSize[0]-overlap != _renderState._brickSize[0]
-      || newBrickSize[1]-overlap != _renderState._brickSize[1]
-      || newBrickSize[2]-overlap != _renderState._brickSize[2]
+  if (newBrickSize[0]-_renderState._brickTexelOverlap != _renderState._brickSize[0]
+      || newBrickSize[1]-_renderState._brickTexelOverlap != _renderState._brickSize[1]
+      || newBrickSize[2]-_renderState._brickTexelOverlap != _renderState._brickSize[2]
       || !_areBricksCreated)
   {
-    _renderState._brickSize[0] = newBrickSize[0]-overlap;
-    _renderState._brickSize[1] = newBrickSize[1]-overlap;
-    _renderState._brickSize[2] = newBrickSize[2]-overlap;
+    _renderState._brickSize[0] = newBrickSize[0]-_renderState._brickTexelOverlap;
+    _renderState._brickSize[1] = newBrickSize[1]-_renderState._brickTexelOverlap;
+    _renderState._brickSize[2] = newBrickSize[2]-_renderState._brickTexelOverlap;
     _areBricksCreated = false;
   }
 }
