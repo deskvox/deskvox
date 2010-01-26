@@ -197,6 +197,8 @@ public:
    * \param         parameterName Name of the parameter to modify.
    */
   virtual void setModelViewProj(const int programIndex, const char* parameterName);
+
+  virtual bool parametersInitialized(const int programIndex) const;
 protected:
   // Non-public data.
 

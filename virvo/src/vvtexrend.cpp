@@ -3623,7 +3623,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     pthread_barrier_wait(data->initBarrier);
 
     // Init glew.
-    glewInit();	
+    glewInit();
 
     /////////////////////////////////////////////////////////
     // Make textures.
@@ -6021,7 +6021,7 @@ void vvTexRend::disablePixelShaders(vvShaderManager* pixelShader)
 {
   if(voxelType == VV_PIX_SHD)
   {
-    if (_currentShader != 4)
+    if ((_currentShader != 4) && (pixelShader->parametersInitialized(_currentShader)))
     {
       pixelShader->disableTexture(_currentShader, "pixLUT");
     }

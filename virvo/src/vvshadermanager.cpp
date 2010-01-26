@@ -199,6 +199,11 @@ void vvShaderManager::setModelViewProj(int, const char*)
   throw "Function setModelViewProj not implemented by inherited class";
 }
 
+bool vvShaderManager::parametersInitialized(const int programIndex) const
+{
+  return _parametersInitialized[programIndex];
+}
+
 void vvShaderManager::init()
 {
 
