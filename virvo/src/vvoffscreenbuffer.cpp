@@ -117,6 +117,11 @@ void vvOffscreenBuffer::resize(const int w, const int h)
   _updatePosted = false;
 }
 
+void vvOffscreenBuffer::clearBuffer()
+{
+  glClear(GL_COLOR_BUFFER_BIT);
+}
+
 void vvOffscreenBuffer::setScale(const float scale)
 {
   _scale = scale;

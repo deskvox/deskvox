@@ -27,6 +27,7 @@ public:
   virtual void initForRender();
   virtual void writeBack();
   virtual void resize(const int w, const int h);
+  virtual void clearBuffer();
 
   void setScale(const float scale);
   void setPrecision(const BufferPrecision& precision);

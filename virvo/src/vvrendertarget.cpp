@@ -44,3 +44,8 @@ void vvRenderTarget::resize(const int, const int)
 {
 
 }
+
+void vvRenderTarget::clearBuffer()
+{
+
+}

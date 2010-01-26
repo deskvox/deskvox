@@ -1420,7 +1420,6 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
 
           currBrick = new Brick();
 
-
           currBrick->minValue = minValue;
           currBrick->maxValue = maxValue;
           currBrick->visible = true;
@@ -3300,7 +3299,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     // Use alpha correction in indexed mode: adapt alpha values to number of textures:
     if (instantClassification())
     {
-      float thickness = diagonalVoxels / float(numSlices);
+      const float thickness = diagonalVoxels / float(numSlices);
       if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
       {
         updateLUT(thickness, pixLUTName, rgbaLUT);
@@ -3310,7 +3309,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
   // Get projection matrix:
   getProjectionMatrix(&pm);
-  bool isOrtho = pm.isProjOrtho();
+  const bool isOrtho = pm.isProjOrtho();
 
   // Compute normal vector of textures using the following strategy:
   // For orthographic projections or if viewDir is (0|0|0) use
@@ -3410,19 +3409,9 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
       numSlices = 1;
 
       // Make slice opaque if possible:
-      if (instantClassification())
+      if (instantClassification() && (_numThreads == 0))
       {
-        if (_numThreads == 0)
-        {
-          updateLUT(1.0f, pixLUTName, rgbaLUT);
-        }
-        else
-        {
-          for (i = 0; i < _numThreads; ++i)
-          {
-            updateLUT(1.0f, _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
-          }
-        }
+        updateLUT(1.0f, pixLUTName, rgbaLUT);
       }
     }
   }
@@ -3552,6 +3541,11 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   {
     // Volume render a 3D texture:
     enableTexture(GL_TEXTURE_3D_EXT);
+
+    // If the render target is of base class type, nothing
+    // will happen here. Offscreen buffers e.g. need to
+    // cleanup the content from the last rendering step.
+    _renderTarget->clearBuffer();
 
     if(_proxyGeometryOnGpu)
     {
@@ -3717,8 +3711,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
       {
-        float diagonalVoxels;
-        diagonalVoxels = sqrtf(float(data->renderer->vd->vox[0] * data->renderer->vd->vox[0] +
+        const float diagonalVoxels = sqrtf(float(data->renderer->vd->vox[0] * data->renderer->vd->vox[0] +
           data->renderer->vd->vox[1] * data->renderer->vd->vox[1] +
           data->renderer->vd->vox[2] * data->renderer->vd->vox[2]));
           data->renderer->updateLUT(diagonalVoxels / float(data->numSlices),
@@ -5241,6 +5234,10 @@ void vvTexRend::renderVolumeGL()
     disableLUTMode(_pixelShader);
     unsetGLenvironment();
     disableIntersectionShader(_isectShader);
+  }
+  else
+  {
+    unsetGLenvironment();
   }
   vvRenderer::renderVolumeGL();
 

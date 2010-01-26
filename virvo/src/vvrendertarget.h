@@ -40,6 +40,7 @@ public:
   virtual void initForRender();
   virtual void writeBack();
   virtual void resize(const int w, const int h);
+  virtual void clearBuffer();
 
   inline RenderTargetType getType() const { return _type; }
 protected:
