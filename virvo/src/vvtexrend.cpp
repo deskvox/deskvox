@@ -1486,13 +1486,13 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
           glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
           glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-          glTexImage3DEXT(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
+          glTexImage3D(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
             tmpTexels[0], tmpTexels[1], tmpTexels[2], 0, texFormat, GL_UNSIGNED_BYTE, NULL);
 
           glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
           if (glWidth != 0)
           {
-            glTexImage3DEXT(GL_TEXTURE_3D_EXT, 0, internalTexFormat, tmpTexels[0], tmpTexels[1], tmpTexels[2], 0,
+            glTexImage3D(GL_TEXTURE_3D_EXT, 0, internalTexFormat, tmpTexels[0], tmpTexels[1], tmpTexels[2], 0,
               texFormat, GL_UNSIGNED_BYTE, texData);
           }
           else accommodated = false;
@@ -2266,12 +2266,12 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
       glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
       glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-      glTexImage3DEXT(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
+      glTexImage3D(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
         texels[0], texels[1], texels[2], 0, texFormat, GL_UNSIGNED_BYTE, NULL);
       glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
       if (glWidth!=0)
       {
-        glTexImage3DEXT(GL_TEXTURE_3D_EXT, 0, internalTexFormat, texels[0], texels[1], texels[2], 0,
+        glTexImage3D(GL_TEXTURE_3D_EXT, 0, internalTexFormat, texels[0], texels[1], texels[2], 0,
           texFormat, GL_UNSIGNED_BYTE, texData);
       }
       else
