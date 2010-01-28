@@ -54,7 +54,7 @@ const vvBoxCorners &vvAABB::calcVertices()
 {
   for(int i=0; i<8; ++i)
   {
-    // return the edges in the necessary order
+    // return the vertices in the necessary order
     int d=i;
     if(i>=2 && i<=5)
       d ^= 1;
@@ -580,6 +580,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *o
   // the axis along which to split as well as the desired ratio.
   float leastError = FLT_MAX;
   splitAxis = -1;
+
   for (i = 0; i < 3; ++i)
   {
     if (meanSqrErrorRatio[i] < leastError)
@@ -658,6 +659,7 @@ vvBspTree::vvBspTree(float* partitioning, const int length, std::vector<vvConvex
   _leafs = new std::vector<vvHalfSpace*>();
   distributeObjects(_root, objects);
   _root->_actualPercent = 100.0f;
+  _visitor = NULL;
 }
 
 vvBspTree::~vvBspTree()
@@ -684,6 +686,7 @@ void vvBspTree::print()
 
 void vvBspTree::setVisitor(vvVisitor* visitor)
 {
+  delete _visitor;
   _visitor = visitor;
 }
 

@@ -71,8 +71,6 @@ static int pthread_barrier_destroy(pthread_barrier_t * /*barrier*/) { return 1; 
 // The following values will have to be approved empirically yet... .
 
 // TODO: reasonable determination of these values.
-#define WIDTH 512
-#define HEIGHT 512
 
 // Redistribute bricks if rendering time deviation > MAX_DEVIATION %
 #define MAX_DEVIATION 10.0f
@@ -110,6 +108,8 @@ struct ThreadArgs
   GLfloat* projection;                        ///< the current GL_PROJECTION matrix
   vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
   GLfloat* pixels;                            ///< after rendering each thread will read back its data to this array
+  int width;                                  ///< viewport width to init the fbo with
+  int height;                                 ///< viewport height to init the fbo with
   float lastRenderTime;                       ///< measured for dynamic load balancing
   float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
   bool transferFunctionChanged;
@@ -386,7 +386,7 @@ void vvThreadVisitor::visit(vvVisitable* obj)
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, _pixels[hs->getId()]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, _width, _height, 0, GL_RGBA, GL_FLOAT, _pixels[hs->getId()]);
 
   glBegin(GL_QUADS);
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -424,6 +424,16 @@ void vvThreadVisitor::setImageSpaceTextures(GLuint*& imageSpaceTextures)
 void vvThreadVisitor::setPixels(GLfloat**& pixels)
 {
   _pixels = pixels;
+}
+
+void vvThreadVisitor::setWidth(const int width)
+{
+  _width = width;
+}
+
+void vvThreadVisitor::setHeight(const int height)
+{
+  _height = height;
 }
 
 //----------------------------------------------------------------------------
@@ -488,6 +498,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   textures = 0;
   opacityCorrection = true;
   interpolation = true;
+  _bspTree = NULL;
 
   if (_renderState._useOffscreenBuffer)
   {
@@ -619,57 +630,57 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
       fragProgStringPreint);
   }
 
+  if (voxelType==VV_PIX_SHD)
+  {
+    if (!initPixelShaders(_pixelShader))
+    {
+      voxelType = VV_RGBA;
+    }
+  }
+
+  textures = 0;
+
+  switch(voxelType)
+  {
+    case VV_FRG_PRG:
+      texelsize=1;
+      internalTexFormat = GL_LUMINANCE;
+      texFormat = GL_LUMINANCE;
+      break;
+    case VV_PAL_TEX:
+      texelsize=1;
+      internalTexFormat = GL_COLOR_INDEX8_EXT;
+      texFormat = GL_COLOR_INDEX;
+      break;
+    case VV_TEX_SHD:
+    case VV_PIX_SHD:
+      texelsize=4;
+      internalTexFormat = GL_RGBA;
+      texFormat = GL_RGBA;
+      break;
+    case VV_SGI_LUT:
+      texelsize=2;
+      internalTexFormat = GL_LUMINANCE_ALPHA;
+      texFormat = GL_LUMINANCE_ALPHA;
+      break;
+    case VV_RGBA:
+      internalTexFormat = GL_RGBA;
+      texFormat = GL_RGBA;
+      texelsize=4;
+      break;
+    default:
+      assert(0);
+      break;
+  }
+
+  if ((geomType == VV_BRICKS) && _renderState._computeBrickSize)
+  {
+    _areBricksCreated = false;
+    computeBrickSize();
+  }
+
   if (_numThreads == 0)
   {
-    if (voxelType==VV_PIX_SHD)
-    {
-      if (!initPixelShaders(_pixelShader))
-      {
-        voxelType = VV_RGBA;
-      }
-    }
-
-    textures = 0;
-
-    switch(voxelType)
-    {
-      case VV_FRG_PRG:
-        texelsize=1;
-        internalTexFormat = GL_LUMINANCE;
-        texFormat = GL_LUMINANCE;
-        break;
-      case VV_PAL_TEX:
-        texelsize=1;
-        internalTexFormat = GL_COLOR_INDEX8_EXT;
-        texFormat = GL_COLOR_INDEX;
-        break;
-      case VV_TEX_SHD:
-      case VV_PIX_SHD:
-        texelsize=4;
-        internalTexFormat = GL_RGBA;
-        texFormat = GL_RGBA;
-        break;
-      case VV_SGI_LUT:
-        texelsize=2;
-        internalTexFormat = GL_LUMINANCE_ALPHA;
-        texFormat = GL_LUMINANCE_ALPHA;
-        break;
-      case VV_RGBA:
-        internalTexFormat = GL_RGBA;
-        texFormat = GL_RGBA;
-        texelsize=4;
-        break;
-      default:
-        assert(0);
-        break;
-    }
-
-    if ((geomType == VV_BRICKS) && _renderState._computeBrickSize)
-    {
-      _areBricksCreated = false;
-      computeBrickSize();
-    }
-
     if (voxelType != VV_RGBA)
     {
       makeTextures(texNames, &textures, pixLUTName, rgbaLUT);      // we only have to do this once for non-RGBA textures
@@ -700,7 +711,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     pthread_barrier_wait(&_distributedBricksBarrier);
   }
 
-  if (_proxyGeometryOnGpu)
+  if (_proxyGeometryOnGpu && (_numThreads == 0))
   {
     initIntersectionShader(_isectShader);
     setupIntersectionParameters(_isectShader);
@@ -822,11 +833,24 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(vvTexRend::VoxelType vox)
   {
     if (vd->chan==1)
     {
-      if (arbFrgPrg) return VV_FRG_PRG;
-      else if (extPixShd) return VV_PIX_SHD;
-      else if (extTexShd) return VV_TEX_SHD;
-      else if (extPalTex) return VV_PAL_TEX;
-      else if (extColLUT) return VV_SGI_LUT;
+      // TODO: make threads compatible with arb fragment program.
+      // Until then, Cg pixel shaders are prefered over arbFrgPrg.
+      if (_numThreads == 0)
+      {
+        if (arbFrgPrg) return VV_FRG_PRG;
+        else if (extPixShd) return VV_PIX_SHD;
+        else if (extTexShd) return VV_TEX_SHD;
+        else if (extPalTex) return VV_PAL_TEX;
+        else if (extColLUT) return VV_SGI_LUT;
+      }
+      else
+      {
+        if (extPixShd) return VV_PIX_SHD;
+        else if (arbFrgPrg) return VV_FRG_PRG;
+        else if (extTexShd) return VV_TEX_SHD;
+        else if (extPalTex) return VV_PAL_TEX;
+        else if (extColLUT) return VV_SGI_LUT;
+      }
     }
     else
     {
@@ -1142,6 +1166,11 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
   for (i=3-axes; i<3; ++i)
     delete[] rgbaSlice[i];
   return err;
+}
+
+vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
+{
+  // TODO: separate generation of brick hulls from uploading brick textures.
 }
 
 vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData)
@@ -1585,7 +1614,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
                       | EnterWindowMask | LeaveWindowMask | FocusChangeMask | ButtonMotionMask
                       | PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
     _threadData[i].glxContext = glXCreateContext(_threadData[i].display, vi, NULL, GL_TRUE);
-    _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, 1, 1, 0,
+    _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, 512, 512, 0,
                                             vi->depth, InputOutput, vi->visual,
                                             CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap, &wa );
   }
@@ -1621,6 +1650,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
   // One texture per context, blended during compositing.
   _imageSpaceTextures = new GLuint[_numThreads];
 
+  vvGLTools::Viewport viewport = vvGLTools::getViewport();
   for (i = 0; i < _numThreads; ++i)
   {
     _threadData[i].threadId = i;
@@ -1633,7 +1663,9 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     // Start solution for load balancing: every thread renders 1/n of the volume.
     // During load balancing, the share will (probably) be adjusted.
     _threadData[i].share = 1.0f / static_cast<float>(_numThreads);
-    _threadData[i].pixels = new GLfloat[WIDTH * HEIGHT * 4];
+    _threadData[i].width = viewport.values[2];
+    _threadData[i].height = viewport.values[3];
+    _threadData[i].pixels = new GLfloat[viewport.values[2] * viewport.values[3] * 4];
     _threadData[i].transferFunctionChanged = false;
     glGenTextures(1, &_imageSpaceTextures[i]);
     _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
@@ -1686,6 +1718,10 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
     pixels[i] = _threadData[i].pixels;
   }
   visitor->setPixels(pixels);
+
+  vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  visitor->setWidth(viewport.values[2]);
+  visitor->setHeight(viewport.values[3]);
 
   _bspTree->setVisitor(visitor);
 
@@ -3625,17 +3661,13 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     pthread_mutex_lock(data->makeTextureMutex);
     glGenTextures(1, &data->pixLUTName);
     data->renderer->initPixelShaders(pixelShader);
-    data->renderer->texelsize=4;
-    data->renderer->internalTexFormat = GL_RGBA;
-    data->renderer->texFormat = GL_RGBA;
     data->renderer->_areBricksCreated = false;
-    data->renderer->computeBrickSize();
-    data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
     // Generate a set of gl tex names private to this thread.
     // This solution differs from the one chosen for sequential
     // execution where the texNames array is a member.
     data->renderer->makeTextures(data->privateTexNames, &data->numTextures,
                                  data->pixLUTName, data->rgbaLUT);
+    data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
     pthread_mutex_unlock(data->makeTextureMutex);
 
     // Now that the textures are built, the bricks may be distributed
@@ -3649,11 +3681,13 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     /////////////////////////////////////////////////////////
     data->renderer->setGLenvironment();
 
+    vvShaderManager* isectShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
+
     if(data->renderer->_proxyGeometryOnGpu)
     {
-      data->renderer->initIntersectionShader(data->renderer->_isectShader);
-      data->renderer->setupIntersectionParameters(data->renderer->_isectShader);
-      data->renderer->enableIntersectionShader(data->renderer->_isectShader);
+      data->renderer->initIntersectionShader(isectShader);
+      data->renderer->setupIntersectionParameters(isectShader);
+      data->renderer->enableIntersectionShader(isectShader);
     }
 
     GLuint tex;
@@ -3663,7 +3697,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, data->renderer->_frameBufferObjects[data->threadId]);
     glGenRenderbuffersEXT(1, &data->renderer->_depthBuffers[data->threadId]);
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, data->renderer->_depthBuffers[data->threadId]);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, WIDTH, HEIGHT);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, data->width, data->height);
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
                                  GL_RENDERBUFFER_EXT, data->renderer->_depthBuffers[data->threadId]);
     glGenTextures(1, &tex);
@@ -3673,7 +3707,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, data->width, data->height, 0, GL_RGBA, GL_FLOAT, NULL);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
                               tex, 0);
     GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
@@ -3727,7 +3761,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       glClear(GL_COLOR_BUFFER_BIT);
 
       glPushAttrib(GL_VIEWPORT_BIT);
-      glViewport(0, 0, WIDTH, HEIGHT);
+      glViewport(0, 0, data->width, data->height);
 
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
@@ -3738,23 +3772,13 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       stopwatch->start();
 
-      GLuint** vertIndices = NULL;
-      GLsizei* elemCounts = NULL;
-      GLuint* vertIndicesTmp = NULL;
-
-      // Allocate memory for 6 vertices per slice. These will
-      // be sent to the gpu later on. Memory is allocated here
-      // to avoid doing this in the inner loop
-      if (data->renderer->_proxyGeometryOnGpu)
+      if(data->renderer->_proxyGeometryOnGpu)
       {
-        vertIndicesTmp = new GLuint[data->numSlices * 6];
-        vertIndices = new GLuint*[data->numSlices];
-        elemCounts = new GLsizei[data->numSlices];
-        for (int i = 0; i < data->numSlices; ++i)
-        {
-          vertIndices[i] = &vertIndicesTmp[i*6];
-          elemCounts[i] = 0;
-        }
+        // Per frame parameters.
+        isectShader->setModelViewProj(0, "modelViewProj");
+
+        isectShader->setParameter1f(0, "delta", data->delta.length());
+        isectShader->setParameter3f(0, "planeNormal", data->normal[0], data->normal[1], data->normal[2]);
       }
 
       for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
@@ -3763,18 +3787,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         tmp->render(data->renderer, data->normal,
                     data->farthest, data->delta,
                     data->probeMin, data->probeMax,
-                    data->privateTexNames,
-                    data->renderer->_isectShader, true);
+                    data->privateTexNames, isectShader, true);
       }
       glDisable(GL_TEXTURE_3D_EXT);
       data->renderer->disableLUTMode(pixelShader);
-
-      if(data->renderer->_proxyGeometryOnGpu)
-      {
-        delete[] vertIndices;
-        delete[] vertIndicesTmp;
-        delete[] elemCounts;
-      }
 
       // When all worker threads and the main thread have waited once (per frame) on
       // this barrier, all workers have finished rendering this frame and the main
@@ -3785,9 +3801,20 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       // This call switches the currently readable buffer to the fbo offscreen buffer.
       glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-      glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGBA, GL_FLOAT, data->pixels);
+      glReadPixels(0, 0, data->width, data->height, GL_RGBA, GL_FLOAT, data->pixels);
       glPopAttrib();
       glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
+#if 1
+      // Output to screen.
+      glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, data->renderer->_frameBufferObjects[data->threadId]);
+      glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
+      glBlitFramebufferEXT(0, 0, data->width, data->height,
+                           0, 0, data->width, data->height,
+                           GL_COLOR_BUFFER_BIT, GL_LINEAR);
+      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+      glFlush();
+#endif
 
       // Store the time to render. Based upon this, dynamic load balancing will be performed.
       data->lastRenderTime = stopwatch->getTime();
@@ -3803,6 +3830,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     // Exited render loop - perform cleanup.
     //data->texRend->removeTextures(privateTexNames);
+    delete isectShader;
     delete pixelShader;
     delete stopwatch;
   }
@@ -3983,7 +4011,7 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
       pthread_barrier_wait(data->renderReadyBarrier);
 
       // Blend the images to one single image.
-      glReadPixels(0, 0, WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, data->pixels);
+      glReadPixels(0, 0, data->width, data->height, GL_RGBA, GL_UNSIGNED_BYTE, data->pixels);
 
       // Store the time to render. Based upon this, dynamic load balancing will be performed.
       data->lastRenderTime = stopwatch->getTime();
@@ -6116,7 +6144,7 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader)
   sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
 #endif
 
-  _isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
+  isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
 
   delete[] shaderFile;
   delete[] shaderPath;
@@ -6145,7 +6173,7 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader)
   parameterNames[10] = "frontIndex";     parameterTypes[10] = VV_SHD_SCALAR;
   parameterNames[11] = "vertices";       parameterTypes[11] = VV_SHD_ARRAY;
 
-  _isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);
+  isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);
 
   // Global scope, values will never be changed.
 

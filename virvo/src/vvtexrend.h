@@ -147,11 +147,15 @@ public:
   void setDepthBuffers(GLuint*& depthBuffers);
   void setImageSpaceTextures(GLuint*& imageSpaceTextures);
   void setPixels(GLfloat**& pixels);
+  void setWidth(const int width);
+  void setHeight(const int height);
 private:
   GLuint* _frameBufferObjects;
   GLuint* _depthBuffers;
   GLuint* _imageSpaceTextures;
   GLfloat** _pixels;
+  int _width;
+  int _height;
 };
 
 /** Volume rendering engine using a texture-based algorithm.
@@ -337,6 +341,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void performLoadBalancing();
 
     ErrorType makeTextures(GLuint*& privateTexNames, int* numTextures, GLuint& lutName, uchar*& lutData);
+    ErrorType makeEmptyBricks();
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData);
 
     bool initPixelShaders(vvShaderManager* pixelShader);
