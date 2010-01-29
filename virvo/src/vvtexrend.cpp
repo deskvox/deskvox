@@ -92,7 +92,6 @@ struct ThreadArgs
   // Algorithm specific.
   vvHalfSpace* halfSpace;
   std::vector<Brick*> sortedList;                ///< sorted list built up from the brick sets
-  int numBricks;                              ///< number of bricks in the bricks array
   vvVector3 min;
   vvVector3 max;
   vvVector3 probeMin;
@@ -1171,6 +1170,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
 vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
 {
   // TODO: separate generation of brick hulls from uploading brick textures.
+  return OK;
 }
 
 vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData)
@@ -1987,7 +1987,7 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData)
     lutDistance = -1.;                              // invalidate LUT
 
   // No space leaping per thread, but only once. Otherwise brick list setup would collide.
-  bool calledByWorkerThread = (lutName != pixLUTName);
+  const bool calledByWorkerThread = (lutName != pixLUTName);
   if (!calledByWorkerThread)
   {
     // Each bricks visible flag was initially set to true.
@@ -3667,7 +3667,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // execution where the texNames array is a member.
     data->renderer->makeTextures(data->privateTexNames, &data->numTextures,
                                  data->pixLUTName, data->rgbaLUT);
-    data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
     pthread_mutex_unlock(data->makeTextureMutex);
 
     // Now that the textures are built, the bricks may be distributed
