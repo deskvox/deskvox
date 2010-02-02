@@ -69,8 +69,8 @@ class VIRVOEXPORT vvTransFunc
     void computeTFTexture(int, int, int, float*, float, float, float=0.0f, float=0.0f, float=0.0f, float=0.0f);
     vvColor computeBGColor(float, float, float);
     void computeTFTextureGamma(int, float*, float, float, int, float[], float[]);
-	void computeTFTextureHighPass(int, float*, float, float, int, float[], float[], float[]);
-	void computeTFTextureHistCDF(int, float*, float, float, int, int, uint*, float[], float[]);
+    void computeTFTextureHighPass(int, float*, float, float, int, float[], float[], float[]);
+    void computeTFTextureHistCDF(int, float*, float, float, int, int, uint*, float[], float[]);
     vvColor computeColor(float, float=-1.0f, float=-1.0f);
     float computeOpacity(float, float=-1.0f, float=-1.0f);
     void makeColorBar(int, uchar*, float, float, bool);
@@ -90,6 +90,12 @@ class VIRVOEXPORT vvTransFunc
     int  saveMeshviewer(const char*);
     int  saveBinMeshviewer(const char*);
     int  loadMeshviewer(const char*);
+
+    /*!
+     * \brief     Copy all widgets from another transfer function.
+     * \param     rhs The other transfer function.
+     */
+    vvTransFunc& operator=(vvTransFunc& rhs);
 };
 #endif
 

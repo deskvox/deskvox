@@ -1192,7 +1192,7 @@ int vvTransFunc::loadMeshviewer(const char* filename)
     cuw->_size[0] = end - begin;
     cuw->_pos[0] = (begin + end) / 2.0f;
 
-    // Adjust point positions:    
+    // Adjust point positions:
     list<vvTFPoint*>::iterator iter;
     for(iter=cuw->_points.begin(); iter!=cuw->_points.end(); iter++) 
     {
@@ -1233,6 +1233,73 @@ int vvTransFunc::getNumWidgets(WidgetType wt)
     _widgets.next();
   }
   return num;
+}
+
+//----------------------------------------------------------------------------
+/** Copy all widgets from another transfer function
+ */
+vvTransFunc& vvTransFunc::operator=(vvTransFunc& rhs)
+{
+  deleteWidgets(TF_COLOR);
+  deleteWidgets(TF_PYRAMID);
+  deleteWidgets(TF_BELL);
+  deleteWidgets(TF_CUSTOM);
+  deleteWidgets(TF_CUSTOM_2D);
+  deleteWidgets(TF_MAP);
+  deleteWidgets(TF_SKIP);
+
+  _widgets.first();
+  rhs._widgets.first();
+
+  for (int i = 0; i < rhs._widgets.count(); ++i)
+  {
+    vvTFWidget* w = rhs._widgets.getData();
+
+    vvTFColor* tfColor = dynamic_cast<vvTFColor*>(w);
+    vvTFPyramid* tfPyramid = dynamic_cast<vvTFPyramid*>(w);
+    vvTFBell* tfBell = dynamic_cast<vvTFBell*>(w);
+    vvTFSkip* tfSkip = dynamic_cast<vvTFSkip*>(w);
+    vvTFCustom* tfCustom = dynamic_cast<vvTFCustom*>(w);
+    vvTFCustom2D* tfCustom2D = dynamic_cast<vvTFCustom2D*>(w);
+    vvTFCustomMap* tfCustomMap = dynamic_cast<vvTFCustomMap*>(w);
+
+    if (tfColor != NULL)
+    {
+      _widgets.append(new vvTFColor(tfColor), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    }
+
+    if (tfPyramid != NULL)
+    {
+      _widgets.append(new vvTFPyramid(tfPyramid), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    }
+
+    if (tfBell != NULL)
+    {
+      _widgets.append(new vvTFBell(tfBell), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    }
+
+    if (tfSkip != NULL)
+    {
+      _widgets.append(new vvTFSkip(tfSkip), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    }
+
+    if (tfCustom != NULL)
+    {
+      _widgets.append(new vvTFCustom(tfCustom), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    }
+
+    if (tfCustom2D != NULL)
+    {
+      _widgets.append(new vvTFCustom2D(tfCustom2D), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    }
+
+    if (tfCustomMap != NULL)
+    {
+      _widgets.append(new vvTFCustomMap(tfCustomMap), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    }
+    rhs._widgets.next();
+  }
+  return *this;
 }
 
 //----------------------------------------------------------------------------
