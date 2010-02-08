@@ -2550,28 +2550,34 @@ char* vvToolshed::file2string(const char *filename)
 	return content;
 }
 
-int vvToolshed::string2Int(const char* str, const int elements)
+int vvToolshed::string2Int(const char* str)
 {
   int result = 0;
-  int i = 0;
-  char tmp = str[i];
+  size_t i = 0;
+  size_t len = strlen(str);
   int sign = 1;
+
+  char tmp = str[i];
 
   if (tmp == '-')
   {
     sign = -1;
+    ++i;
+    tmp = str[i];
   }
 
-  while ((tmp >= '0') && (tmp <= '9'))
+  while (i < len)
   {
+    if ((tmp >= '0') && (tmp <= '9'))
+    {
       result *= 10;
       result += static_cast<int>(tmp-48);
-
-      ++i;
-      tmp = str[i];
+    }
+    ++i;
+    tmp = str[i];
   }
 
-  result *= -1;
+  result *= sign;
   return result;
 }
 
