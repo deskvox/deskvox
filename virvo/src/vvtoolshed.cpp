@@ -2550,7 +2550,30 @@ char* vvToolshed::file2string(const char *filename)
 	return content;
 }
 
+int vvToolshed::string2Int(const char* str, const int elements)
+{
+  int result = 0;
+  int i = 0;
+  char tmp = str[i];
+  int sign = 1;
 
+  if (tmp == '-')
+  {
+    sign = -1;
+  }
+
+  while ((tmp >= '0') && (tmp <= '9'))
+  {
+      result *= 10;
+      result += static_cast<int>(tmp-48);
+
+      ++i;
+      tmp = str[i];
+  }
+
+  result *= -1;
+  return result;
+}
 
 //----------------------------------------------------------------------------
 /// Main function for standalone test mode.
