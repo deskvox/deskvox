@@ -132,7 +132,7 @@ vvPerformanceTest::~vvPerformanceTest()
 
 void vvPerformanceTest::writeResultFiles()
 {
-#if defined(__linux) || defined(LINUX) || defined(_WIN32)
+#if defined(__linux) || defined(LINUX)
   // Text file with summary.
   char* summaryFile = new char[80];
   time_t now = time(NULL);
