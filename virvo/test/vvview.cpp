@@ -48,6 +48,7 @@ using std::ios;
 #include "../src/vvdebugmsg.h"
 #include "../src/vvtexrend.h"
 #include "vvobjview.h"
+#include "vvperformancetest.h"
 #include "vvview.h"
 
 const int vvView::ROT_TIMER_DELAY = 20;
@@ -198,7 +199,7 @@ void vvView::mainLoop(int argc, char *argv[])
 */
 void vvView::addDisplay(const char* name)
 {
-  int i;
+  unsigned int i;
 
   ++numDisplays;
   const char** tmp = new const char*[numDisplays];
@@ -212,6 +213,7 @@ void vvView::addDisplay(const char* name)
   delete[] displayNames;
   displayNames = tmp;
 }
+
 
 //----------------------------------------------------------------------------
 /** Callback method for window resizes.
@@ -496,7 +498,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
    if (numDisplays > 0)
    {
       cerr << "Running in threaded mode using the following displays:" << endl;
-      for (int i=0; i<numDisplays; ++i)
+      for (unsigned int i=0; i<numDisplays; ++i)
       {
          cerr << displayNames[i] << endl;
       }
@@ -1191,77 +1193,179 @@ void vvView::viewMenuCallback(int item)
 
 //----------------------------------------------------------------------------
 /** Do a performance test.
+  Default behavior:
   The test resets the view position (but not the projection mode)
   and measures the time needed for a
   360 degrees rotation of the volume about its vertical axis.
   The image is drawn every 2 degrees.
+  <br>
+  Behavior if file "test.csv" is found in working directory is
+  to parse setups for performance tests from this file.
 */
 void vvView::performanceTest()
 {
    vvDebugMsg::msg(1, "vvView::performanceTest()");
 
-   vvStopwatch* totalTime;
-   char  projectMode[2][16] = {"parallel","perspective"};
-   char  interpolMode[2][32] = {"nearest neighbor","linear"};
-   char  onOffMode[2][8] = {"off","on"};
-   const int HOST_NAME_LEN = 80;
-   char  localHost[HOST_NAME_LEN];
-   float step = 2.0f * VV_PI / 180.0f;
-   GLint viewport[4];                             // OpenGL viewport information (position and size)
-   int   angle;
-   int   framesRendered = 0;
+   vvTestSuite* testSuite = new vvTestSuite("test.csv");
+   if (testSuite->isInitialized())
+   {
+     std::vector<vvPerformanceTest*> tests = testSuite->getTests();
+     std::vector<vvPerformanceTest*>::const_iterator it;
+     float step = 2.0f * VV_PI / 180.0f;
 
-   // Prepare test:
-   totalTime = new vvStopwatch();
+     for(it = tests.begin(); it != tests.end(); ++it)
+     {
+       vvPerformanceTest* test = *it;
 
-   ds->hqMode = false;
-   ds->ov->reset();
-   ds->displayCallback();
-   glGetIntegerv(GL_VIEWPORT, viewport);
-#ifdef _WIN32 
-   strcpy(localHost, "n/a");
+       std::vector<float> diffTimes;
+
+       vvStopwatch* totalTime = new vvStopwatch();
+       totalTime->start();
+
+       int framesRendered = 0;
+       ds->hqMode = false;
+       ds->draftQuality = test->getQuality();
+       ds->ov->reset();
+       ds->ov->resetMV();
+       // Do this once to propagate the changes... .
+       ds->displayCallback();
+       ds->renderer->profileStart();
+
+       if (test->getVerbose())
+       {
+         printProfilingInfo(test->getId(), tests.size());
+       }
+
+       for (int ite = 0; ite < test->getIterations(); ++ite)
+       {
+         for (int i = 0; i < test->getFrames(); ++i)
+         {
+           vvVector3 dir;
+           switch (test->getTestAnimation())
+           {
+           case vvPerformanceTest::VV_ROT_X:
+             ds->ov->mv.rotate(step, 1.0f, 0.0f, 0.0f);
+             break;
+           case vvPerformanceTest::VV_ROT_Y:
+             ds->ov->mv.rotate(step, 0.0f, 1.0f, 0.0f);
+             break;
+           case vvPerformanceTest::VV_ROT_Z:
+             ds->ov->mv.rotate(step, 0.0f, 0.0f, 1.0f);
+             break;
+           case vvPerformanceTest::VV_ROT_RAND:
+             dir.random(0.0f, 1.0f);
+             ds->ov->mv.rotate(step, &dir);
+             break;
+           default:
+             break;
+           }
+           ds->displayCallback();
+           diffTimes.push_back(totalTime->getDiff());
+
+           ++framesRendered;
+         }
+       }
+       test->getTestResult()->setDiffTimes(diffTimes);
+       test->writeResultFiles();
+
+       if (test->getVerbose())
+       {
+         printProfilingResult(totalTime, framesRendered);
+       }
+       delete totalTime;
+     }
+   }
+   else
+   {
+     vvStopwatch* totalTime;
+     float step = 2.0f * VV_PI / 180.0f;
+     int   angle;
+     int   framesRendered = 0;
+
+     // Prepare test:
+     totalTime = new vvStopwatch();
+
+     ds->hqMode = false;
+     ds->ov->reset();
+     ds->displayCallback();
+
+     printProfilingInfo();
+
+     // Perform test:
+     totalTime->start();
+     ds->renderer->profileStart();
+     for (angle=0; angle<180; angle+=2)
+     {
+        ds->ov->mv.rotate(step, 0.0f, 1.0f, 0.0f);  // rotate model view matrix
+        ds->displayCallback();
+        ++framesRendered;
+     }
+     ds->renderer->profileStop();
+     //totalTime->stop();
+
+
+     printProfilingResult(totalTime, framesRendered);
+
+     delete totalTime;
+   }
+   delete testSuite;
+}
+
+
+//----------------------------------------------------------------------------
+/** Print information about the most recent test run.
+    @param testNr Number of the current test (1-based).
+    @param testCnt Number of tests in total.
+  */
+void vvView::printProfilingInfo(const int testNr, const int testCnt)
+{
+  GLint viewport[4];                             // OpenGL viewport information (position and size)
+  char  projectMode[2][16] = {"parallel","perspective"};
+  char  interpolMode[2][32] = {"nearest neighbor","linear"};
+  char  onOffMode[2][8] = {"off","on"};
+  const int HOST_NAME_LEN = 80;
+  char  localHost[HOST_NAME_LEN];
+  glGetIntegerv(GL_VIEWPORT, viewport);
+#ifdef _WIN32
+  strcpy(localHost, "n/a");
 #else
-   if (gethostname(localHost, HOST_NAME_LEN-1)) strcpy(localHost, "n/a");
+  if (gethostname(localHost, HOST_NAME_LEN-1)) strcpy(localHost, "n/a");
 #endif
 
-   // Print profiling info:
-   cerr.setf(ios::fixed, ios::floatfield);
-   cerr.precision(3);
-   cerr << "*******************************************************************************" << endl;
-   cerr << "Local host........................................" << localHost << endl;
-   cerr << "Renderer geometry................................." << ds->currentGeom << endl;
-   cerr << "Voxel type........................................" << ds->currentVoxels << endl;
-   cerr << "Volume file name.................................." << ds->vd->getFilename() << endl;
-   cerr << "Volume size [voxels].............................." << ds->vd->vox[0] << " x " << ds->vd->vox[1] << " x " << ds->vd->vox[2] << endl;
-   cerr << "Output image size [pixels]........................" << viewport[2] << " x " << viewport[3] << endl;
-   cerr << "Image quality....................................." << ds->renderer->_renderState._quality << endl;
-   cerr << "Projection........................................" << projectMode[ds->perspectiveMode] << endl;
-   cerr << "Interpolation mode................................" << interpolMode[ds->interpolMode] << endl;
-   cerr << "Empty space leaping for bricks...................." << onOffMode[ds->emptySpaceLeapingMode] << endl;
-   cerr << "Render to offscreen buffer........................" << onOffMode[ds->useOffscreenBuffer] << endl;
-   cerr << "Precision of offscreen buffer....................." << ds->bufferPrecision << "bit" << endl;
-   cerr << "Generate proxy geometry on GPU...................." << onOffMode[ds->gpuproxygeo] << endl;
-   cerr << "Opacity correction................................" << onOffMode[ds->opCorrMode] << endl;
-   cerr << "Gamma correction.................................." << onOffMode[ds->gammaMode] << endl;
+  // Print profiling info:
+  cerr.setf(ios::fixed, ios::floatfield);
+  cerr.precision(3);
+  cerr << "*******************************************************************************" << endl;
+  cerr << "Test (" << testNr << "/" << testCnt << ")" << endl;
+  cerr << "Local host........................................" << localHost << endl;
+  cerr << "Renderer geometry................................." << ds->currentGeom << endl;
+  cerr << "Voxel type........................................" << ds->currentVoxels << endl;
+  cerr << "Volume file name.................................." << ds->vd->getFilename() << endl;
+  cerr << "Volume size [voxels].............................." << ds->vd->vox[0] << " x " << ds->vd->vox[1] << " x " << ds->vd->vox[2] << endl;
+  cerr << "Output image size [pixels]........................" << viewport[2] << " x " << viewport[3] << endl;
+  cerr << "Image quality....................................." << ds->renderer->_renderState._quality << endl;
+  cerr << "Projection........................................" << projectMode[ds->perspectiveMode] << endl;
+  cerr << "Interpolation mode................................" << interpolMode[ds->interpolMode] << endl;
+  cerr << "Empty space leaping for bricks...................." << onOffMode[ds->emptySpaceLeapingMode] << endl;
+  cerr << "Render to offscreen buffer........................" << onOffMode[ds->useOffscreenBuffer] << endl;
+  cerr << "Precision of offscreen buffer....................." << ds->bufferPrecision << "bit" << endl;
+  cerr << "Generate proxy geometry on GPU...................." << onOffMode[ds->gpuproxygeo] << endl;
+  cerr << "Opacity correction................................" << onOffMode[ds->opCorrMode] << endl;
+  cerr << "Gamma correction.................................." << onOffMode[ds->gammaMode] << endl;
+}
 
-   // Perform test:
-   totalTime->start();
-   ds->renderer->profileStart();
-   for (angle=0; angle<180; angle+=2)
-   {
-      ds->ov->mv.rotate(step, 0.0f, 1.0f, 0.0f);  // rotate model view matrix
-      ds->displayCallback();
-      ++framesRendered;
-   }
-   ds->renderer->profileStop();
-   //totalTime->stop();
 
-   cerr << "Total profiling time [sec]........................" << totalTime->getTime() << endl;
-   cerr << "Frames rendered..................................." << framesRendered << endl;
-   cerr << "Average time per frame [sec]......................" << (float(totalTime->getTime()/framesRendered)) << endl;
-   cerr << "*******************************************************************************" << endl;
-
-   delete totalTime;
+//----------------------------------------------------------------------------
+/** Conclude profiling info with the final result.
+    @param totalTime A stop watch to read the profiling time from.
+    @param framesRendered The number of frames rendered for the test.
+  */
+void vvView::printProfilingResult(vvStopwatch* totalTime, const int framesRendered)
+{
+  cerr << "Total profiling time [sec]........................" << totalTime->getTime() << endl;
+  cerr << "Frames rendered..................................." << framesRendered << endl;
+  cerr << "Average time per frame [sec]......................" << (float(totalTime->getTime()/framesRendered)) << endl;
+  cerr << "*******************************************************************************" << endl;
 }
 
 
