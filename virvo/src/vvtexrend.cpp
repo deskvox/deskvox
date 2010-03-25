@@ -22,8 +22,10 @@
 
 // No circular dependencies between gl.h and glew.h
 #ifndef GLEW_INCLUDED
+#if !defined(__APPLE__)
 #include <GL/glew.h>
 #define GLEW_INCLUDED
+#endif
 #endif
 
 #include <iostream>
@@ -546,8 +548,10 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two");
 
+#if !defined(__APPLE__)
   // Init glew.
   glewInit();
+#endif
 
   // Determine best rendering algorithm for current hardware:
   voxelType = findBestVoxelType(vox);
@@ -3652,8 +3656,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // a parallel callback.
     pthread_barrier_wait(data->initBarrier);
 
+#if !defined(__APPLE__)
     // Init glew.
     glewInit();
+#endif
 
     /////////////////////////////////////////////////////////
     // Make textures.

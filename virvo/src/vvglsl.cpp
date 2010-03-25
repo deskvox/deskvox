@@ -48,6 +48,7 @@ vvGLSL::vvGLSL() : vvShaderManager(), nTexture(0)
   if (!vvGLTools::isGLextensionSupported("GL_ARB_multitexture"))
 	  std::cerr << "ARB multitexture NOT supported!\n";
 
+#if !defined(__APPLE__)
   DYNAMIC_BIND_NAME(glCreateShader, PFNGLCREATESHADERPROC );
   DYNAMIC_BIND_NAME(glShaderSource, PFNGLSHADERSOURCEPROC );
   DYNAMIC_BIND_NAME(glCompileShader, PFNGLCOMPILESHADERPROC);
@@ -78,6 +79,7 @@ vvGLSL::vvGLSL() : vvShaderManager(), nTexture(0)
   DYNAMIC_BIND_NAME(glDetachShader, PFNGLDETACHSHADERPROC);
   DYNAMIC_BIND_NAME(glDeleteShader, PFNGLDELETESHADERPROC );
   DYNAMIC_BIND_NAME(glDeleteProgram, PFNGLDELETEPROGRAMPROC );
+#endif
 }
 
 vvGLSL::~vvGLSL()
