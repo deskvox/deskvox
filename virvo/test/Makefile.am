@@ -3,8 +3,8 @@ AUTOMAKE_OPTIONS = foreign
 noinst_PROGRAMS = vview
 
 vview_SOURCES = \
-		vvview.cpp \
-		vvobjview.cpp \
+                vvview.cpp \
+                vvobjview.cpp \
                 vvperformancetest.cpp
 
 INCLUDES = -I../src  $(CG_INCLUDES) $(GLEW_INCLUDES) $(STINGRAY_INCLUDES) $(GLUT_INCLUDES) $(GLU_INCLUDES) $(PTHREAD_INCLUDES)
