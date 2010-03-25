@@ -5250,7 +5250,7 @@ void vvTexRend::renderVolumeGL()
       getPrincipalViewingAxis(mv, zx, zy, zz);renderTex2DSlices(zz);
       break;
     case VV_CUBIC2D:
-      principal = getPrincipalViewingAxis(mv, zx, zy, zz);renderTex2DSlices(zz);
+      principal = getPrincipalViewingAxis(mv, zx, zy, zz);
       renderTex2DCubic(principal, zx, zy, zz); break;
     case VV_SPHERICAL: renderTex3DSpherical(&mv); break;
     case VV_VIEWPORT:  renderTex3DPlanar(&mv); break;
