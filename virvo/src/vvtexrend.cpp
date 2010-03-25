@@ -212,8 +212,8 @@ void Brick::render(vvTexRend* renderer, const vvVector3& normal,
 
     const float deltaInv = 1.0f / delta.length();
 
-    const int startSlices = ceilf(minDot * deltaInv);
-    const int endSlices = floorf(maxDot * deltaInv);
+    const int startSlices = (int)ceilf(minDot * deltaInv);
+    const int endSlices = (int)floorf(maxDot * deltaInv);
 
     isectShader->setParameter1i(0, "frontIndex", idx);
 
@@ -264,8 +264,8 @@ void Brick::render(vvTexRend* renderer, const vvVector3& normal,
 
     const float deltaInv = 1.0f / delta.length();
 
-    const int startSlices = ceilf(minDot * deltaInv);
-    const int endSlices = floorf(maxDot * deltaInv);
+    const int startSlices = (int)ceilf(minDot * deltaInv);
+    const int endSlices = (int)floorf(maxDot * deltaInv);
 
     vvVector3 startPoint;
     startPoint.copy(farthest);
@@ -588,13 +588,13 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     }
   }
 
-  if(voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG)
+  if ((_numThreads == 0) && voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG)
   {
     glGenTextures(1, &pixLUTName);
   }
 
   // Init fragment program:
-  if(voxelType==VV_FRG_PRG)
+  if((_numThreads == 0) && (voxelType == VV_FRG_PRG))
   {
     glGenProgramsARB(VV_FRAG_PROG_MAX, fragProgName);
 
@@ -3568,7 +3568,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     // rendered by the bsp tree's visitor.
     _bspTree->traverse(eye);
 
-    performLoadBalancing();
+    //performLoadBalancing();
 
     vvGLTools::printGLError("orthotexture");
     glPopMatrix();
