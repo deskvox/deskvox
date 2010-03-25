@@ -91,6 +91,10 @@ class VIRVOEXPORT vvGLSL : public vvShaderManager
   */
   GLuint getFragProgramHandle(const int i);
 
+  /** returns the last handle in the list
+  */
+  GLuint getFragProgramHandleLast();
+
 	/** Calls glUseProgram
 
 	  @param program The handle of the program object whose executables are to be used as part of current rendering state.

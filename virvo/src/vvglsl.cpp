@@ -173,6 +173,11 @@ GLuint vvGLSL::getFragProgramHandle(const int i)
   return *programArray.get(i);
 }
 
+GLuint vvGLSL::getFragProgramHandleLast()
+{
+  return *programArray.get(programArray.count()-1);
+}
+
 void vvGLSL::useProgram(GLuint program)
 {
   //std::cerr << "using shader program: " << program << endl;
