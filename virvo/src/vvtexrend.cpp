@@ -5016,7 +5016,7 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   pos.copy(&vd->pos);
-  //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
+  glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
   // Enable clipping plane if appropriate:
   if (_renderState._clipMode) activateClippingPlane();
