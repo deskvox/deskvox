@@ -351,10 +351,10 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName);
     void disableLUTMode(vvShaderManager* pixelShader);
 
-    bool initIntersectionShader(vvShaderManager* isectShader);
+    bool initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL);
     void setupIntersectionParameters(vvShaderManager* isectShader);
-    void enableIntersectionShader(vvShaderManager* isectShader);
-    void disableIntersectionShader(vvShaderManager* isectShader);
+    void enableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL);
+    void disableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL);
 
     ErrorType makeTextures3D();
     void removeTextures();
