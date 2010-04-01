@@ -584,7 +584,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   {
     if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
     {
-      _currentShader = 9;
+      _currentShader = get2DTextureShader();
     }
   }
 
@@ -6422,6 +6422,13 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3])
   std::cerr << "Manhattan Distance: " << dist << endl;
 
   return dist;
+}
+
+int vvTexRend::get2DTextureShader()
+{
+  // this is trivial, but a better idea than x times writing
+  // shader = 9 in your code and later changing that value... .
+  return 9;
 }
 
 void vvTexRend::initVertArray(const int numSlices)

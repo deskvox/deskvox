@@ -426,6 +426,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int getTexMemorySize();
     unsigned char* getHeightFieldData(float[4][3], int&, int&);
     float getManhattenDist(float[3], float[3]);
+
+    static int get2DTextureShader();
 };
 #endif
 
