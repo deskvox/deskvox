@@ -298,8 +298,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool extBlendEquation;                        ///< true = support for blend equation extension
     bool arbFrgPrg;                               ///< true = ARB fragment program support
     bool arbMltTex;                               ///< true = ARB multitexture support
-    vvVector3 viewDir;                            ///< user's current viewing direction [object coordinates]
-    vvVector3 objDir;                             ///< direction from viewer to object [object coordinates]
     bool preIntegration;                          ///< true = try to use pre-integrated rendering (planar 3d textures)
     bool usePreIntegration;                       ///< true = pre-integrated rendering is actually used
     bool interpolation;                           ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor

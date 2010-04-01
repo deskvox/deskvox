@@ -3040,54 +3040,8 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   getProjectionMatrix(&pm);
   bool isOrtho = pm.isProjOrtho();
 
-  // Compute normal vector of textures using the following strategy:
-  // For orthographic projections or if viewDir is (0|0|0) use
-  // (0|0|1) as the normal vector.
-  // Otherwise use objDir as the normal.
-  // Exception: if user's eye is inside object and probe mode is off,
-  // then use viewDir as the normal.
-  if (_sliceOrientation==VV_CLIPPLANE ||
-     (_sliceOrientation==VV_VARIABLE && _renderState._clipMode))
-  {
-    normal.copy(&_renderState._clipNormal);
-  }
-  else if(_sliceOrientation==VV_VIEWPLANE)
-  {
-    normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
-    vvMatrix invPM;
-    invPM.copy(&pm);
-    invPM.invert();
-    normal.multiply(&invPM);
-    normal.multiply(&invMV);
-    normal.negate();
-  }
-  else if (_sliceOrientation==VV_ORTHO ||
-          (_sliceOrientation==VV_VARIABLE &&
-          (isOrtho || (viewDir.e[0]==0.0f && viewDir.e[1]==0.0f && viewDir.e[2]==0.0f))))
-  {
-    // Draw slices parallel to projection plane:
-    normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
-    normal.multiply(&invMV);
-    origin.zero();
-    origin.multiply(&invMV);
-    normal.sub(&origin);
-  }
-  else if (_sliceOrientation==VV_VIEWDIR || 
-          (_sliceOrientation==VV_VARIABLE && (!_renderState._isROIUsed && isInVolume(&eye))))
-  {
-    // Draw slices perpendicular to viewing direction:
-    normal.copy(&viewDir);
-    normal.negate();                              // viewDir points away from user, the normal should point towards them
-  }
-  else
-  {
-    // Draw slices perpendicular to line eye->object:
-    normal.copy(&objDir);
-    normal.negate();
-  }
+  getObjNormal(normal, origin, eye, invMV, isOrtho);
 
-  // Compute distance vector between textures:
-  normal.normalize();
   // compute number of slices to draw
   float depth = fabs(normal[0]*probeSizeObj[0]) + fabs(normal[1]*probeSizeObj[1]) + fabs(normal[2]*probeSizeObj[2]);
   int minDistanceInd = 0;
@@ -3359,39 +3313,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   getProjectionMatrix(&pm);
   const bool isOrtho = pm.isProjOrtho();
 
-  // Compute normal vector of textures using the following strategy:
-  // For orthographic projections or if viewDir is (0|0|0) use
-  // (0|0|1) as the normal vector.
-  // Otherwise use objDir as the normal.
-  // Exception: if user's eye is inside object and probe mode is off,
-  // then use viewDir as the normal.
-  if (_renderState._clipMode)
-  {
-    normal.copy(&_renderState._clipNormal);
-  }
-  else if (isOrtho || (viewDir.e[0] == 0.0f && viewDir.e[1] == 0.0f && viewDir.e[2] == 0.0f))
-  {
-    // Draw slices parallel to projection plane:
-    normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
-    normal.multiply(&invMV);
-    origin.zero();
-    origin.multiply(&invMV);
-    normal.sub(&origin);
-  }
-  else if (!_renderState._isROIUsed && isInVolume(&eye))
-  {
-    // Draw slices perpendicular to viewing direction:
-    normal.copy(&viewDir);
-    normal.negate();                              // viewDir points away from user, the normal should point towards them
-  }
-  else
-  {
-    // Draw slices perpendicular to line eye->object:
-    normal.copy(&objDir);
-    normal.negate();
-  }
-
-  normal.normalize();
+  getObjNormal(normal, origin, eye, invMV, isOrtho);
 
   // Local illumination based on blinn-phong shading.
   if (voxelType == VV_PIX_SHD && _currentShader == 12)
@@ -4106,39 +4028,8 @@ void vvTexRend::renderBricks(vvMatrix* mv)
   getProjectionMatrix(&pm);
   bool isOrtho = pm.isProjOrtho();
 
-  // Compute normal vector of textures using the following strategy:
-  // For orthographic projections or if viewDir is (0|0|0) use
-  // (0|0|1) as the normal vector.
-  // Otherwise use objDir as the normal.
-  // Exception: if user's eye is inside object and probe mode is off,
-  // then use viewDir as the normal.
-  if (_renderState._clipMode)
-  {
-    normal.copy(&_renderState._clipNormal);
-  }
-  else if (isOrtho || (viewDir.e[0] == 0.0f && viewDir.e[1] == 0.0f && viewDir.e[2] == 0.0f))
-  {
-    // Draw slices parallel to projection plane:
-    normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
-    normal.multiply(&invMV);
-    origin.zero();
-    origin.multiply(&invMV);
-    normal.sub(&origin);
-  }
-  else if (!_renderState._isROIUsed && isInVolume(&eye))
-  {
-    // Draw slices perpendicular to viewing direction:
-    normal.copy(&viewDir);
-    normal.negate();                              // viewDir points away from user, the normal should point towards them
-  }
-  else
-  {
-    // Draw slices perpendicular to line eye->object:
-    normal.copy(&objDir);
-    normal.negate();
-  }
+  getObjNormal(normal, origin, eye, invMV, isOrtho);
 
-  normal.normalize();
   delta.copy(&normal);
   delta.scale(diagonal / ((float)numSlices));
 

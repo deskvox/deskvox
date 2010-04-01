@@ -246,30 +246,21 @@ vvVolDesc* vvRenderer::getVolDesc()
 vvRenderer::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
                                                          float& zx, float& zy, float& zz)
 {
-  vvVector3 origin(0.0f, 0.0f, 0.0f);             // zero vector
-  vvVector3 xAxis(1.0f, 0.0f, 0.0f);              // vector in x axis direction
-  vvVector3 yAxis(0.0f, 1.0f, 0.0f);              // vector in y axis direction
-  vvVector3 zAxis(0.0f, 0.0f, 1.0f);              // vector in z axis direction
+  vvMatrix invMV;
+  invMV.copy(&mv);
+  invMV.invert();
 
-  // Transform 4 point vectors with the modelview matrix:
-  origin.multiply(&mv);
-  xAxis.multiply(&mv);
-  yAxis.multiply(&mv);
-  zAxis.multiply(&mv);
+  vvVector3 eye;
+  getEyePosition(&eye);
+  eye.multiply(&invMV);
 
-  // Generate coordinate system base vectors from those vectors:
-  xAxis.sub(&origin);
-  yAxis.sub(&origin);
-  zAxis.sub(&origin);
+  vvVector3 normal;
+  vvVector3 origin;
+  getObjNormal(normal, origin, eye, invMV);
 
-  xAxis.normalize();
-  yAxis.normalize();
-  zAxis.normalize();
-
-  // Only z component of base vectors is needed:
-  zx = xAxis.e[2];
-  zy = yAxis.e[2];
-  zz = zAxis.e[2];
+  zx = normal.e[0];
+  zy = normal.e[1];
+  zz = normal.e[2];
 
   if (fabs(zx) > fabs(zy))
   {
@@ -303,6 +294,45 @@ void vvRenderer::init()
   {
     _opacityWeights[i] = 1.0f;
   }
+}
+
+void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
+                                  const vvVector3& eye, const vvMatrix& invMV,
+                                  const bool isOrtho)
+{
+  // Compute normal vector of textures using the following strategy:
+  // For orthographic projections or if viewDir is (0|0|0) use
+  // (0|0|1) as the normal vector.
+  // Otherwise use objDir as the normal.
+  // Exception: if user's eye is inside object and probe mode is off,
+  // then use viewDir as the normal.
+  if (_renderState._clipMode)
+  {
+    normal.copy(&_renderState._clipNormal);
+  }
+  else if (isOrtho || (viewDir.e[0] == 0.0f && viewDir.e[1] == 0.0f && viewDir.e[2] == 0.0f))
+  {
+    // Draw slices parallel to projection plane:
+    normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
+    normal.multiply(&invMV);
+    origin.zero();
+    origin.multiply(&invMV);
+    normal.sub(&origin);
+  }
+  else if (!_renderState._isROIUsed && isInVolume(&eye))
+  {
+    // Draw slices perpendicular to viewing direction:
+    normal.copy(&viewDir);
+    normal.negate();                              // viewDir points away from user, the normal should point towards them
+  }
+  else
+  {
+    // Draw slices perpendicular to line eye->object:
+    normal.copy(&objDir);
+    normal.negate();
+  }
+
+  normal.normalize();
 }
 
 //----------------------------------------------------------------------------

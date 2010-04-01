@@ -142,8 +142,16 @@ class VIRVOEXPORT vvRenderer
     vvVolDesc* vd;                                ///< volume description
     float      _channel4Color[3];                 ///< weights for visualization of 4th channel in RGB mode
     float      _opacityWeights[4];                ///< opacity weights for alpha blending with 4 channels
+    vvVector3 viewDir;                            ///< user's current viewing direction [object coordinates]
+    vvVector3 objDir;                             ///< direction from viewer to object [object coordinates]
 
     virtual void init();                   		  ///< initialization routine
+
+    void getObjNormal(vvVector3& normal,
+                          vvVector3& origin,
+                          const vvVector3& eye,
+                          const vvMatrix& invMV,
+                          const bool isOrtho = false);
 
     // Class Methods:
   public:                                         // public methods will be inherited as public
