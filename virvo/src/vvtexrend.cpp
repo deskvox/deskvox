@@ -588,6 +588,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     }
   }
 
+  if (geomType == VV_BRICKS)
+  {
+    validateEmptySpaceLeaping();
+  }
+
   if ((_numThreads == 0) && (voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG))
   {
     glGenTextures(1, &pixLUTName);
@@ -2011,43 +2016,35 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData)
     if (_renderState._emptySpaceLeaping)
     {
       int nbricks = 0, nvis=0;
-      // Empty-space leaping only for 'ordinary' transfer function lookup.
-      if ((voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12))
+      _nonemptyList.clear();
+      _nonemptyList.resize(_brickList.size());
+      // Determine visibility of each single brick in all frames
+      for (int frame = 0; frame < _brickList.size(); ++frame)
       {
-        _nonemptyList.clear();
-        _nonemptyList.resize(_brickList.size());
-        // Determine visibility of each single brick in all frames
-        for (int frame = 0; frame < _brickList.size(); ++frame)
-        {
-           for (BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
-           {
-              Brick *tmp = *it;
-              nbricks++;
+         for (BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
+         {
+            Brick *tmp = *it;
+            nbricks++;
 
-              // If max intensity projection, make all bricks visible.
-              if (_renderState._mipMode > 0)
-              {
-                 _nonemptyList[frame].push_back(tmp);
-                 nvis++;
-              }
-              else
-              {
-                 for (int i = tmp->minValue; i <= tmp->maxValue; ++i)
-                 {
-                    if(rgbaTF[i * 4 + 3] > 0.)
-                    {
-                       _nonemptyList[frame].push_back(tmp);
-                       nvis++;
-                       break;
-                    }
-                 }
-              }
-           }
-        }
-      }
-      else
-      {
-        _nonemptyList = _brickList;
+            // If max intensity projection, make all bricks visible.
+            if (_renderState._mipMode > 0)
+            {
+               _nonemptyList[frame].push_back(tmp);
+               nvis++;
+            }
+            else
+            {
+               for (int i = tmp->minValue; i <= tmp->maxValue; ++i)
+               {
+                  if(rgbaTF[i * 4 + 3] > 0.)
+                  {
+                     _nonemptyList[frame].push_back(tmp);
+                     nvis++;
+                     break;
+                  }
+               }
+            }
+         }
       }
     }
     else
@@ -5633,6 +5630,8 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
       break;
     case vvRenderer::VV_LEAPEMPTY:
       _renderState._emptySpaceLeaping = (newValue == 0.0f) ? false : true;
+      // Maybe a tf type was chosen which is incompatible with empty space leaping.
+      validateEmptySpaceLeaping();
       updateTransferFunction(pixLUTName, rgbaLUT);
       break;
     case vvRenderer::VV_OFFSCREENBUFFER:
@@ -6551,6 +6550,16 @@ void vvTexRend::initVertArray(const int numSlices)
       _vertArray[vertIterator] = i;
       ++vertIterator;
     }
+  }
+}
+
+void vvTexRend::validateEmptySpaceLeaping()
+{
+  // Only do empty space leaping for ordinary transfer functions
+  if (_renderState._emptySpaceLeaping == true)
+  {
+    _renderState._emptySpaceLeaping &= (voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12);
+    _renderState._emptySpaceLeaping &= (voxelType != VV_RGBA);
   }
 }
 

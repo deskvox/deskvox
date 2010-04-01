@@ -390,6 +390,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void getBricksInProbe(vvVector3, vvVector3);
     void computeBrickSize();
     void initVertArray(const int numSlices);
+    void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST);
     virtual ~vvTexRend();
