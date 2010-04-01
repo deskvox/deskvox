@@ -3590,11 +3590,6 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     // Volume render a 3D texture:
     enableTexture(GL_TEXTURE_3D_EXT);
 
-    // If the render target is of base class type, nothing
-    // will happen here. Offscreen buffers e.g. need to
-    // cleanup the content from the last rendering step.
-    _renderTarget->clearBuffer();
-
     if(_proxyGeometryOnGpu)
     {
       // Per frame parameters.
@@ -5259,6 +5254,11 @@ void vvTexRend::renderVolumeGL()
     }
   }
 
+  // If the render target is of base class type, nothing
+  // will happen here. Offscreen buffers e.g. need to
+  // cleanup the content from the last rendering step.
+  _renderTarget->clearBuffer();
+
   switch (geomType)
   {
     default:
@@ -6562,6 +6562,7 @@ void vvTexRend::validateEmptySpaceLeaping()
   // Only do empty space leaping for ordinary transfer functions
   if (_renderState._emptySpaceLeaping == true)
   {
+    _renderState._emptySpaceLeaping &= (geomType == VV_BRICKS);
     _renderState._emptySpaceLeaping &= (voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12);
     _renderState._emptySpaceLeaping &= (voxelType != VV_RGBA);
   }
