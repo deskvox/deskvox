@@ -1625,7 +1625,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
                                       DefaultScreen(_threadData[i].display),
                                       attrList);
 
-    XSetWindowAttributes wa = { 0 };
+    XSetWindowAttributes wa = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     wa.colormap = XCreateColormap(_threadData[i].display, parent, vi->visual, AllocNone );
     wa.background_pixmap = None;
     wa.border_pixel = 0;
