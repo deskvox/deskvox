@@ -6189,8 +6189,12 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
   if (pixelShader != NULL)
   {
     const char* passthroughFile = "vv_shader00.cg";
-    char* passthroughShader = new char[strlen(unixShaderDir) + 1 + strlen(passthroughFile) + 1];;
-    sprintf(passthroughShader, "%s/%s", unixShaderDir, passthroughFile);std::cout << passthroughShader << std::endl;
+    char* passthroughShader = new char[strlen(unixShaderDir) + 1 + strlen(passthroughFile) + 1];
+#ifdef _WIN32
+    sprintf(passthroughShader, "%s\\%s", unixShaderDir, passthroughFile);
+#else
+    sprintf(passthroughShader, "%s/%s", unixShaderDir, passthroughFile);
+#endif
     pixelShader->loadShader(passthroughShader, vvShaderManager::VV_FRAG_SHD);
     delete[] passthroughShader;
   }

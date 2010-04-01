@@ -357,7 +357,6 @@ void vvToolshed::strTrim(char* str)
  */
 unsigned int vvToolshed::parseNextUint32(const char* str, size_t& iterator)
 {
-  int current;
   int result;
 
   result = 0;
