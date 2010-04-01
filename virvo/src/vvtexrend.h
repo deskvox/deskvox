@@ -411,7 +411,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GeometryType getGeomType();
     VoxelType getVoxelType();
     int  getCurrentShader();
-    void setCurrentShader(int);
+    void setCurrentShader(const int);
     void renderQualityDisplay();
     void printLUT();
     void setFloatZoom(float, float);

@@ -5737,12 +5737,17 @@ int vvTexRend::getCurrentShader()
 //----------------------------------------------------------------------------
 /** Set the currently used pixel shader [0..numShaders-1].
  */
-void vvTexRend::setCurrentShader(int shader)
+void vvTexRend::setCurrentShader(const int shader)
 {
   vvDebugMsg::msg(3, "vvTexRend::setCurrentShader()");
   if(shader >= NUM_PIXEL_SHADERS || shader < 0)
-     shader = 0;
-  _currentShader = shader;
+  {
+    _currentShader = 0;
+  }
+  else
+  {
+    _currentShader = shader;
+  }
 }
 
 //----------------------------------------------------------------------------
