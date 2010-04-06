@@ -107,6 +107,7 @@ vvView::vvView()
    gpuproxygeo           = true;
    useOffscreenBuffer    = false;
    bufferPrecision       = 8;
+   useHeadLight          = false;
 }
 
 
@@ -846,19 +847,23 @@ void vvView::optionsMenuCallback(int item)
 	 ds->renderer->setParameter(vvRenderer::VV_OFFSCREENBUFFER, ds->useOffscreenBuffer);
 	 cerr << "Offscreen Buffering set to " << int(ds->useOffscreenBuffer) << endl;
 	 break;
-      case 7:                                     // increase z size
+      case 7:
+         ds->useHeadLight = !ds->useHeadLight;
+         ds->renderer->setParameter(vvRenderer::VV_LIGHTING, ds->useHeadLight);
+         break;
+      case 8:                                     // increase z size
          //ds->renderer->getVoxelSize(&size);
          size.e[2] *= 1.05f;
          //ds->renderer->setVoxelSize(&size);
          cerr << "Z size set to " << size.e[2] << endl;
          break;
-      case 8:                                     // decrease z size
+      case 9:                                     // decrease z size
          //ds->renderer->getVoxelSize(&size);
          size.e[2] *= 0.95f;
          //ds->renderer->setVoxelSize(&size);
          cerr << "Z size set to " << size.e[2] << endl;
          break;
-      case 9:                                     // increase precision of visual
+      case 10:                                     // increase precision of visual
 	 if (ds->useOffscreenBuffer)
 	 {
 	    if (ds->bufferPrecision == 8)
@@ -877,7 +882,7 @@ void vvView::optionsMenuCallback(int item)
 	 }
 	 ds->renderer->setParameter(vvRenderer::VV_IMG_PRECISION, ds->bufferPrecision);
 	 break;
-      case 10:                                    // increase precision of visual
+      case 11:                                    // increase precision of visual
 	 if (ds->useOffscreenBuffer)
 	 {
 	    if (ds->bufferPrecision == 32)
@@ -896,7 +901,7 @@ void vvView::optionsMenuCallback(int item)
 	 }
 	 ds->renderer->setParameter(vvRenderer::VV_IMG_PRECISION, ds->bufferPrecision);
 	 break;
-      case 11:                                     // toggle showing of bricks
+      case 12:                                     // toggle showing of bricks
          {
             vvTexRend *rend = dynamic_cast<vvTexRend *>(ds->renderer);
             bool show = rend->getShowBricks();
@@ -904,7 +909,7 @@ void vvView::optionsMenuCallback(int item)
             cerr << (show?"not ":"") << "showing bricks" << endl;
          }
          break;
-      case 12:
+      case 13:
          {
             vvTexRend *rend = dynamic_cast<vvTexRend *>(ds->renderer);
             int shader = rend->getCurrentShader()+1;
@@ -1416,11 +1421,12 @@ void vvView::createMenus()
    glutAddMenuEntry("Toggle gamma correction", 4);
    glutAddMenuEntry("Toggle empty space leaping", 5);
    glutAddMenuEntry("Toggle offscreen buffering", 6);
-   glutAddMenuEntry("Increase z size [H]", 7);
-   glutAddMenuEntry("Decrease z size [h]", 8);
-   glutAddMenuEntry("Increase buffer precision", 9);
-   glutAddMenuEntry("Decrease buffer precision", 10);
-   glutAddMenuEntry("Show/hide bricks", 11);
+   glutAddMenuEntry("Toggle head light", 7);
+   glutAddMenuEntry("Increase z size [H]", 8);
+   glutAddMenuEntry("Decrease z size [h]", 9);
+   glutAddMenuEntry("Increase buffer precision", 10);
+   glutAddMenuEntry("Decrease buffer precision", 11);
+   glutAddMenuEntry("Show/hide bricks", 12);
 
    // Transfer function menu:
    transferMenu = glutCreateMenu(transferMenuCallback);

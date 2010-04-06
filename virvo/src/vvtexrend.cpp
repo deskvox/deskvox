@@ -513,10 +513,12 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   if (vvShaderFactory::isSupported(VV_CG_MANAGER))
   {
     _currentShader = vd->chan - 1;
+    _previousShader = _currentShader;
   }
   else
   {
     _currentShader = 0;
+    _previousShader = 0;
   }
   _useOnlyOneBrick = false;
   _areBricksCreated = false;
@@ -3041,6 +3043,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   bool isOrtho = pm.isProjOrtho();
 
   getObjNormal(normal, origin, eye, invMV, isOrtho);
+  evaluateLocalIllumination(normal);
 
   // compute number of slices to draw
   float depth = fabs(normal[0]*probeSizeObj[0]) + fabs(normal[1]*probeSizeObj[1]) + fabs(normal[2]*probeSizeObj[2]);
@@ -3314,29 +3317,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   const bool isOrtho = pm.isProjOrtho();
 
   getObjNormal(normal, origin, eye, invMV, isOrtho);
-
-  // Local illumination based on blinn-phong shading.
-  if (voxelType == VV_PIX_SHD && _currentShader == 12)
-  {
-    // Currently the light is exactly at the current viewing position.
-    // TODO: arbitrary (not necessarily frame dependend) lighting position.
-    vvVector3 L;
-    L.copy(&normal);
-    L.negate();
-
-    // Viewing vector.
-    vvVector3 V(0, 1, 0);
-    V.copy(&normal);
-    V.negate();
-
-    // Half way vector.
-    vvVector3 H;
-    H.copy(L);
-    H.add(&V);
-    H.normalize();
-    _pixelShader->setParameter3f(_currentShader, "L", L[0], L[1], L[2]);
-    _pixelShader->setParameter3f(_currentShader, "H", H[0], H[1], H[2]);
-  }
+  evaluateLocalIllumination(normal);
 
   delta.copy(&normal);
   delta.scale(diagonal / ((float)numSlices));
@@ -5587,6 +5568,18 @@ void vvTexRend::setParameter(ParameterType param, float newValue, char*)
           break;
         }
       }
+      break;
+    case vvRenderer::VV_LIGHTING:
+      if (bool(newValue) == true)
+      {
+        _previousShader = _currentShader;
+        _currentShader = getLocalIlluminationShader();
+      }
+      else
+      {
+        _currentShader = _previousShader;
+      }
+      break;
     default:
       vvRenderer::setParameter(param, newValue);
       break;
@@ -6431,6 +6424,11 @@ int vvTexRend::get2DTextureShader()
   return 9;
 }
 
+int vvTexRend::getLocalIlluminationShader()
+{
+  return 12;
+}
+
 void vvTexRend::initVertArray(const int numSlices)
 {
   if(_elemCounts.size() >= numSlices)
@@ -6468,6 +6466,32 @@ void vvTexRend::validateEmptySpaceLeaping()
     _renderState._emptySpaceLeaping &= (geomType == VV_BRICKS);
     _renderState._emptySpaceLeaping &= (voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12);
     _renderState._emptySpaceLeaping &= (voxelType != VV_RGBA);
+  }
+}
+
+void vvTexRend::evaluateLocalIllumination(const vvVector3& normal)
+{
+  // Local illumination based on blinn-phong shading.
+  if (voxelType == VV_PIX_SHD && _currentShader == 12)
+  {
+    // Currently the light is exactly at the current viewing position.
+    // TODO: arbitrary (not necessarily frame dependend) lighting position.
+    vvVector3 L;
+    L.copy(&normal);
+    L.negate();
+
+    // Viewing vector.
+    vvVector3 V(0, 1, 0);
+    V.copy(&normal);
+    V.negate();
+
+    // Half way vector.
+    vvVector3 H;
+    H.copy(L);
+    H.add(&V);
+    H.normalize();
+    _pixelShader->setParameter3f(_currentShader, "L", L[0], L[1], L[2]);
+    _pixelShader->setParameter3f(_currentShader, "H", H[0], H[1], H[2]);
   }
 }
 

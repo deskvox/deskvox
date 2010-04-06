@@ -106,6 +106,7 @@ class vvView
       unsigned int numDisplays;                   ///< number of displays to use
       bool gpuproxygeo;                           ///< true=compute proxy geometry on gpu
       bool useOffscreenBuffer;                    ///< render to an offscreen buffer. Mandatory for setting buffer precision
+      bool useHeadLight;                          ///< toggle head light 
       int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
 
    public:

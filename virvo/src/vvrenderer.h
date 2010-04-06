@@ -119,7 +119,8 @@ class VIRVOEXPORT vvRenderer
       VV_LEAPEMPTY,                               ///< empty space leaping
       VV_OFFSCREENBUFFER,                         ///< offscreen buffer on/off
       VV_IMG_SCALE,                               ///< downsample img by reducing img resolution [0..1]
-      VV_IMG_PRECISION                            ///< render to high-res target to minimize slicing rounding error
+      VV_IMG_PRECISION,                           ///< render to high-res target to minimize slicing rounding error
+      VV_LIGHTING
     };
     enum BasicColorType                           /// basic colors
     {

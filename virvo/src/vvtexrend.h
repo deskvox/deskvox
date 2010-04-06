@@ -322,6 +322,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     vvShaderManager* _pixelShader;                ///< shader for applying transfer function on gpu
 
     int _currentShader;                           ///< ID of currently used fragment shader
+    int _previousShader;                          ///< ID of previous shader
 
     // GL state variables:
     GLboolean glsTexColTable;                     ///< stores GL_TEXTURE_COLOR_TABLE_SGI
@@ -389,6 +390,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void computeBrickSize();
     void initVertArray(const int numSlices);
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
+    void evaluateLocalIllumination(const vvVector3& normal);
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST);
     virtual ~vvTexRend();
@@ -428,6 +430,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     float getManhattenDist(float[3], float[3]);
 
     static int get2DTextureShader();
+    static int getLocalIlluminationShader();
 };
 #endif
 
