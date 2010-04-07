@@ -580,6 +580,18 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     case VV_FRG_PRG: cerr << "VV_FRG_PRG"; break;
     default: assert(0); break;
   }
+  if (geomType == VV_BRICKS)
+  {
+    cerr << ", proxy geometry is generated on the ";
+    if (_proxyGeometryOnGpu)
+    {
+      cerr << "GPU";
+    }
+    else
+    {
+      cerr << "CPU";
+    }
+  }
   cerr << endl;
 
   if (vvShaderFactory::isSupported(VV_CG_MANAGER))
