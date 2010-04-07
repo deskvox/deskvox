@@ -4419,7 +4419,7 @@ void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, v
       }
       if (probeMin[i] < -size2[i]) probeMin[i] = -size2[i];
       if (probeMax[i] >  size2[i]) probeMax[i] =  size2[i];
-      probePosObj[i] = (probeMax[i] + probeMin[i]) / 2.0f;
+      probePosObj[i] = (probeMax[i] + probeMin[i]) * 0.5f;
     }
 
     // Compute probe edge lengths:
@@ -4429,9 +4429,8 @@ void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, v
   else                                            // probe mode off
   {
     probeSizeObj.copy(&size);
-    probePosObj.copy(&vd->pos);
-    probeMin = probePosObj-size2;
-    probeMax = probePosObj+size2;
+    probeMin = -size2;
+    probeMax = size2;
   }
 }
 
@@ -4532,7 +4531,7 @@ void vvTexRend::sortBrickList(const int threadId, const vvVector3& pos, const vv
       if (isOrtho)
         (*it)->dist = -(*it)->pos.dot(&normal);
       else
-        (*it)->dist = ((*it)->pos - pos).length();
+        (*it)->dist = ((*it)->pos + vd->pos - pos).length();
     }
 
     std::sort(_sortedList.begin(), _sortedList.end(), BrickCompare());
