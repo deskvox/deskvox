@@ -1500,15 +1500,15 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
           currBrick->atBorder= atBorder;
 
           currBrick->index = texIndex;
-          currBrick->pos.set(vd->pos[0] + voxSize[0] * (startOffset[0] + halfBrick[0] - halfVolume[0]),
-            vd->pos[1] + voxSize[1] * (startOffset[1] + halfBrick[1] - halfVolume[1]),
-            vd->pos[2] + voxSize[2] * (startOffset[2] + halfBrick[2] - halfVolume[2]));
-          currBrick->min.set(vd->pos[0] + voxSize[0] * (startOffset[0] - halfVolume[0]),
-            vd->pos[1] + voxSize[1] * (startOffset[1] - halfVolume[1]),
-            vd->pos[2] + voxSize[2] * (startOffset[2] - halfVolume[2]));
-          currBrick->max.set(vd->pos[0] + voxSize[0] * (startOffset[0] + (tmpTexels[0] - currBrick->brickTexelOverlap[0]) - halfVolume[0]),
-            vd->pos[1] + voxSize[1] * (startOffset[1] + (tmpTexels[1] - currBrick->brickTexelOverlap[1]) - halfVolume[1]),
-            vd->pos[2] + voxSize[2] * (startOffset[2] + (tmpTexels[2] - currBrick->brickTexelOverlap[2]) - halfVolume[2]));
+          currBrick->pos.set(voxSize[0] * (startOffset[0] + halfBrick[0] - halfVolume[0]),
+            voxSize[1] * (startOffset[1] + halfBrick[1] - halfVolume[1]),
+            voxSize[2] * (startOffset[2] + halfBrick[2] - halfVolume[2]));
+          currBrick->min.set(voxSize[0] * (startOffset[0] - halfVolume[0]),
+            voxSize[1] * (startOffset[1] - halfVolume[1]),
+            voxSize[2] * (startOffset[2] - halfVolume[2]));
+          currBrick->max.set(voxSize[0] * (startOffset[0] + (tmpTexels[0] - currBrick->brickTexelOverlap[0]) - halfVolume[0]),
+            voxSize[1] * (startOffset[1] + (tmpTexels[1] - currBrick->brickTexelOverlap[1]) - halfVolume[1]),
+            voxSize[2] * (startOffset[2] + (tmpTexels[2] - currBrick->brickTexelOverlap[2]) - halfVolume[2]));
 
           for (int d = 0; d < 3; ++d)
           {
@@ -3058,7 +3058,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   if(_renderState._isROIUsed && _renderState._quality < 2.0)
   {
     // draw at least twice as many slices as there are samples in the probe depth.
-    sliceDistance = voxelDistance / 2.0f;
+    sliceDistance = voxelDistance * 0.5f;
   }
   numSlices = 2*(int)ceilf(depth/sliceDistance*.5f);
 
@@ -3128,7 +3128,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   // Translate object by its position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
-  //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
+  glTranslatef(pos[0], pos[1], pos[2]);
 
   vvVector3 texPoint;                             // arbitrary point on current texture
   int isectCnt;                                   // intersection counter
@@ -3393,6 +3393,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
   // Translate object by its position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
+  glTranslatef(pos[0], pos[1], pos[2]);
 
   if (_numThreads > 0)
   {
