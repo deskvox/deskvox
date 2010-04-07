@@ -1388,8 +1388,8 @@ void vvView::createMenus()
    if (vvTexRend::isSupported(vvTexRend::VV_SLICES))    glutAddMenuEntry("2D textures - slices [1]", 1);
    if (vvTexRend::isSupported(vvTexRend::VV_CUBIC2D))   glutAddMenuEntry("2D textures - cubic [2]", 2);
    if (vvTexRend::isSupported(vvTexRend::VV_VIEWPORT))  glutAddMenuEntry("3D textures - viewport aligned [3]", 3);
-   if (vvTexRend::isSupported(vvTexRend::VV_SPHERICAL)) glutAddMenuEntry("3D textures - spherical [4]", 5);
-   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("3D textures - bricked [5]", 4);
+   if (vvTexRend::isSupported(vvTexRend::VV_SPHERICAL)) glutAddMenuEntry("3D textures - spherical [4]", 4);
+   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("3D textures - bricked [5]", 5);
    if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("Bricks - generate proxy geometry on GPU [6]", 6);
    glutAddMenuEntry("Decrease quality [-]", 98);
    glutAddMenuEntry("Increase quality [+]", 99);
