@@ -763,6 +763,16 @@ void vvView::rendererMenuCallback(int item)
    {
       ds->gpuproxygeo = !ds->gpuproxygeo;
       ds->renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, ds->gpuproxygeo);
+      cerr << "Switched to proxy geometry generation on the ";
+      if (ds->gpuproxygeo)
+      {
+         cerr << "GPU";
+      }
+      else
+      {
+         cerr << "CPU";
+      }
+      cerr << endl;
    }
    else if (item==98 || item==99)
    {
