@@ -4505,7 +4505,7 @@ struct BrickCompare
   }
 };
 
-void vvTexRend::sortBrickList(const int threadId, const vvVector3& pos, const vvVector3& normal, const bool isOrtho)
+void vvTexRend::sortBrickList(const int threadId, const vvVector3& eye, const vvVector3& normal, const bool isOrtho)
 {
   if (_numThreads > 0)
   {
@@ -4518,7 +4518,7 @@ void vvTexRend::sortBrickList(const int threadId, const vvVector3& pos, const vv
       if (isOrtho)
         brick->dist = -brick->pos.dot(&normal);
       else
-        brick->dist = (brick->pos - pos).length();
+        brick->dist = (brick->pos + vd->pos - eye).length();
 
       _threadData[threadId].sortedList.push_back(brick);
     }
@@ -4531,7 +4531,7 @@ void vvTexRend::sortBrickList(const int threadId, const vvVector3& pos, const vv
       if (isOrtho)
         (*it)->dist = -(*it)->pos.dot(&normal);
       else
-        (*it)->dist = ((*it)->pos + vd->pos - pos).length();
+        (*it)->dist = ((*it)->pos + vd->pos - eye).length();
     }
 
     std::sort(_sortedList.begin(), _sortedList.end(), BrickCompare());
