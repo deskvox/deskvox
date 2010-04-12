@@ -1453,12 +1453,19 @@ void vvVector3::random(double from, double to)
 }
 
 /// Print a vector
-void vvVector3::print(const char* text)
+void vvVector3::print(const char* text) const
 {
   cerr.setf(ios::fixed, ios::floatfield);
   cerr.precision(3);
 
-  cerr << text << "\t" << e[0] << ", " << e[1] << ", " << e[2] << endl;
+  if (text == 0)
+  {
+    cerr << text << "\t" << e[0] << ", " << e[1] << ", " << e[2] << endl;
+  }
+  else
+  {
+    cerr << e[0] << ", " << e[1] << ", " << e[2] << endl;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -2229,12 +2236,19 @@ void vvVector4::copy(const vvVector4* v)
 
 //----------------------------------------------------------------------------
 /// Print a 4-vector
-void vvVector4::print(const char* text)
+void vvVector4::print(const char* text) const
 {
   cerr.setf(ios::fixed, ios::floatfield);
   cerr.precision(3);
 
-  cerr << text << "\t" << e[0] << ", " << e[1] << ", " << e[2] << ", " << e[3] << endl;
+  if (text == 0)
+  {
+    cerr << e[0] << ", " << e[1] << ", " << e[2] << ", " << e[3] << endl;
+  }
+  else
+  {
+    cerr << text << "\t" << e[0] << ", " << e[1] << ", " << e[2] << ", " << e[3] << endl;
+  }
   cerr << "   Normalized: " << e[0]/e[3] << ", " << e[1]/e[3] << ", " <<
     e[2]/e[3] << endl;
 }

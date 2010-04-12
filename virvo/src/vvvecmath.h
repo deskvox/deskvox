@@ -138,7 +138,7 @@ class VIRVOEXPORT vvVector4
     void set(float, float, float, float);
     void multiply(const vvMatrix*);
     void copy(const vvVector4*);
-    void print(const char*);
+    void print(const char* text = 0) const;
 };
 
 /** 3D vector primitive, also used for points
@@ -182,7 +182,7 @@ class VIRVOEXPORT vvVector3
     void  random(int, int);
     void  random(float, float);
     void  random(double, double);
-    void  print(const char*);
+    void  print(const char* text = 0) const;
     void  getRow(const vvMatrix*, int);
     void  getColumn(const vvMatrix*, int);
     void  swap(vvVector3*);
