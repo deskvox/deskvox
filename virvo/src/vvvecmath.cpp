@@ -1458,7 +1458,7 @@ void vvVector3::print(const char* text) const
   cerr.setf(ios::fixed, ios::floatfield);
   cerr.precision(3);
 
-  if (text == 0)
+  if (text != 0)
   {
     cerr << text << "\t" << e[0] << ", " << e[1] << ", " << e[2] << endl;
   }
