@@ -146,18 +146,12 @@ public:
 
   void setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
                            const int numOffscreenBuffers);
-  void setFrameBufferObjects(GLuint*& frameBufferObjects);
-  void setDepthBuffers(GLuint*& depthBuffers);
-  void setImageSpaceTextures(GLuint*& imageSpaceTextures);
   void setPixels(GLfloat**& pixels);
   void setWidth(const int width);
   void setHeight(const int height);
 private:
   vvOffscreenBuffer** _offscreenBuffers;
   int _numOffscreenBuffers;
-  GLuint* _frameBufferObjects;
-  GLuint* _depthBuffers;
-  GLuint* _imageSpaceTextures;
   GLfloat** _pixels;
   int _width;
   int _height;

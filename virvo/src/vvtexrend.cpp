@@ -420,21 +420,6 @@ void vvThreadVisitor::setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
   _numOffscreenBuffers = numOffscreenBuffers;
 }
 
-void vvThreadVisitor::setFrameBufferObjects(GLuint*& frameBufferObjects)
-{
-  _frameBufferObjects = frameBufferObjects;
-}
-
-void vvThreadVisitor::setDepthBuffers(GLuint*& depthBuffers)
-{
-  _depthBuffers = depthBuffers;
-}
-
-void vvThreadVisitor::setImageSpaceTextures(GLuint*& imageSpaceTextures)
-{
-  _imageSpaceTextures = imageSpaceTextures;
-}
-
 void vvThreadVisitor::setPixels(GLfloat**& pixels)
 {
   _pixels = pixels;
