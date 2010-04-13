@@ -361,11 +361,16 @@ ushort Brick::getFrontIndex(const vvVector3* vertices,
   return frontIndex;
 }
 
+vvThreadVisitor::vvThreadVisitor()
+  : vvVisitor()
+{
+  _offscreenBuffers = NULL;
+  _numOffscreenBuffers = 0;
+}
+
 vvThreadVisitor::~vvThreadVisitor()
 {
-  delete[] _pixels;
-  delete[] _frameBufferObjects;
-  delete[] _imageSpaceTextures;
+  clearOffscreenBuffers();
 }
 
 //----------------------------------------------------------------------------
@@ -383,7 +388,7 @@ void vvThreadVisitor::visit(vvVisitable* obj)
 
   glActiveTextureARB(GL_TEXTURE0_ARB);
   glEnable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, _imageSpaceTextures[hs->getId()]);
+  _offscreenBuffers[hs->getId()]->bindTexture();
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
@@ -405,6 +410,14 @@ void vvThreadVisitor::visit(vvVisitable* obj)
     glTexCoord2f(0.0f, 1.0f);
     glVertex3f(-1.0f, 1.0f, 0.0f);
   glEnd();
+}
+
+void vvThreadVisitor::setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
+                                          const int numOffscreenBuffers)
+{
+  clearOffscreenBuffers();
+  _offscreenBuffers = offscreenBuffers;
+  _numOffscreenBuffers = numOffscreenBuffers;
 }
 
 void vvThreadVisitor::setFrameBufferObjects(GLuint*& frameBufferObjects)
@@ -435,6 +448,15 @@ void vvThreadVisitor::setWidth(const int width)
 void vvThreadVisitor::setHeight(const int height)
 {
   _height = height;
+}
+
+void vvThreadVisitor::clearOffscreenBuffers()
+{
+  for (int i = 0; i < _numOffscreenBuffers; ++i)
+  {
+    delete _offscreenBuffers[i];
+  }
+  delete[] _offscreenBuffers;
 }
 
 //----------------------------------------------------------------------------
@@ -820,11 +842,14 @@ vvTexRend::~vvTexRend()
     // Clean up arrays.
     delete[] _threads;
     delete[] _threadData;
-    delete[] _frameBufferObjects;
-    delete[] _depthBuffers;
-    delete[] _imageSpaceTextures;
     delete[] _displayNames;
     delete[] _screens;
+
+    for (int i = 0; i < _numThreads; ++i)
+    {
+      delete _offscreenBuffers[i];
+    }
+    delete[] _offscreenBuffers;
 
     delete _bspTree;
   }
@@ -1675,14 +1700,14 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
   // This mutex is used to ensure that each thread will built up its 3D texture one after another.
   pthread_mutex_init(&_makeTextureMutex, NULL);
 
-  // Frame buffer object for render to texture functionality.
-  _frameBufferObjects = new GLuint[_numThreads];
-
-  // Depth buffers for the frame buffer objects.
-  _depthBuffers = new GLuint[_numThreads];
-
-  // One texture per context, blended during compositing.
-  _imageSpaceTextures = new GLuint[_numThreads];
+  // Container for offscreen buffers. The threads will initialize
+  // their buffers themselves when their respective gl context is
+  // bound, thus the buffers are set to 0 initially.
+  _offscreenBuffers = new vvOffscreenBuffer*[_numThreads];
+  for (int i = 0; i < _numThreads; ++i)
+  {
+    _offscreenBuffers[i] = NULL;
+  }
 
   vvGLTools::Viewport viewport = vvGLTools::getViewport();
   for (i = 0; i < _numThreads; ++i)
@@ -1701,7 +1726,6 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     _threadData[i].height = viewport.values[3];
     _threadData[i].pixels = new GLfloat[viewport.values[2] * viewport.values[3] * 4];
     _threadData[i].transferFunctionChanged = false;
-    glGenTextures(1, &_imageSpaceTextures[i]);
     _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
     XMapWindow(_threadData[i].display, _threadData[i].drawable);
     XFlush(_threadData[i].display);
@@ -1741,9 +1765,8 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   // The visitor (supplies rendering logic) must have knowledge
   // about the texture ids of the compositing polygons.
   // Thus provide a pointer to these.
-  vvThreadVisitor* visitor = new vvThreadVisitor;
-  visitor->setFrameBufferObjects(_frameBufferObjects);
-  visitor->setImageSpaceTextures(_imageSpaceTextures);
+  vvThreadVisitor* visitor = new vvThreadVisitor();
+  visitor->setOffscreenBuffers(_offscreenBuffers, _numThreads);
 
   // Provide the visitor with the pixel data of each thread either.
   GLfloat** pixels = new GLfloat*[_numThreads];
@@ -3614,39 +3637,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       data->renderer->enableIntersectionShader(isectShader);
     }
 
-    GLuint tex;
+    data->renderer->_offscreenBuffers[data->threadId] = new vvOffscreenBuffer(1.0f, VV_FLOAT);
 
     // Init framebuffer objects.
-    glGenFramebuffersEXT(1, &data->renderer->_frameBufferObjects[data->threadId]);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, data->renderer->_frameBufferObjects[data->threadId]);
-    glGenRenderbuffersEXT(1, &data->renderer->_depthBuffers[data->threadId]);
-    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, data->renderer->_depthBuffers[data->threadId]);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, data->width, data->height);
-    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                                 GL_RENDERBUFFER_EXT, data->renderer->_depthBuffers[data->threadId]);
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, data->width, data->height, 0, GL_RGBA, GL_FLOAT, NULL);
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
-                              tex, 0);
-    GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-    switch (status)
-    {
-    case GL_FRAMEBUFFER_COMPLETE_EXT:
-      std::cerr << "Framebuffer complete" << std::endl;
-      break;
-    case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
-      std::cerr << "Framebuffer unsupported" << std::endl;
-      break;
-    default:
-      std::cerr << "Unknown error while initializing framebuffer objects" << std::endl;
-      break;
-    }
+    data->renderer->_offscreenBuffers[data->threadId]->initForRender();
 
     // Init stop watch.
     stopwatch = new vvStopwatch();
@@ -3680,7 +3674,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       /////////////////////////////////////////////////////////
       glEnable(GL_TEXTURE_3D_EXT);
 
-      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, data->renderer->_frameBufferObjects[data->threadId]);
+      data->renderer->_offscreenBuffers[data->threadId]->bindFramebuffer();
       glClearColor(0.0, 0.0, 0.0, 0.0);
       glClear(GL_COLOR_BUFFER_BIT);
 
@@ -3727,9 +3721,9 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
       glReadPixels(0, 0, data->width, data->height, GL_RGBA, GL_FLOAT, data->pixels);
       glPopAttrib();
-      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+      data->renderer->_offscreenBuffers[data->threadId]->unbindFramebuffer();
 
-#if 1
+#if 0
       // Output to screen.
       glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, data->renderer->_frameBufferObjects[data->threadId]);
       glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);

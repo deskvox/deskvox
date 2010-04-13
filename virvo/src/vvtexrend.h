@@ -36,7 +36,7 @@
 #include "vvtransfunc.h"
 #include "vvbsptree.h"
 #include "vvshadermanager.h"
-#include "vvrendertarget.h"
+#include "vvoffscreenbuffer.h"
 #include "vvopengl.h"
 
 // Posix threads:
@@ -140,9 +140,12 @@ public:
 class VIRVOEXPORT vvThreadVisitor : public vvVisitor
 {
 public:
+  vvThreadVisitor();
   virtual ~vvThreadVisitor();
   virtual void visit(vvVisitable* obj);
 
+  void setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
+                           const int numOffscreenBuffers);
   void setFrameBufferObjects(GLuint*& frameBufferObjects);
   void setDepthBuffers(GLuint*& depthBuffers);
   void setImageSpaceTextures(GLuint*& imageSpaceTextures);
@@ -150,12 +153,16 @@ public:
   void setWidth(const int width);
   void setHeight(const int height);
 private:
+  vvOffscreenBuffer** _offscreenBuffers;
+  int _numOffscreenBuffers;
   GLuint* _frameBufferObjects;
   GLuint* _depthBuffers;
   GLuint* _imageSpaceTextures;
   GLfloat** _pixels;
   int _width;
   int _height;
+
+  void clearOffscreenBuffers();
 };
 
 /** Volume rendering engine using a texture-based algorithm.
@@ -214,9 +221,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     std::vector<GLsizei> _elemCounts;
     std::vector<GLuint> _vertIndicesAll;
     std::vector<GLuint *> _vertIndices;
-    GLuint* _frameBufferObjects;
-    GLuint* _depthBuffers;
-    GLuint* _imageSpaceTextures;                  ///< each thread will overlay the current output with a 2D texture of its px buffer
+    vvOffscreenBuffer** _offscreenBuffers;
     bool _somethingChanged;                       ///< when smth changed (e.g. the transfer function, bricks will possibly be rearranged)
     vvBspTree* _bspTree;
     int _deviationExceedCnt;
