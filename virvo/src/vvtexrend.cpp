@@ -3725,12 +3725,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
 #if 0
       // Output to screen.
-      glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, data->renderer->_frameBufferObjects[data->threadId]);
-      glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
-      glBlitFramebufferEXT(0, 0, data->width, data->height,
-                           0, 0, data->width, data->height,
-                           GL_COLOR_BUFFER_BIT, GL_LINEAR);
-      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+      data->renderer->_offscreenBuffers[data->threadId]->writeBack(data->width, data->height);
       glFlush();
 #endif
 

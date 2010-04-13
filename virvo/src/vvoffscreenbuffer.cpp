@@ -60,14 +60,22 @@ void vvOffscreenBuffer::initForRender()
   glViewport(0, 0, _bufferWidth, _bufferHeight);
 }
 
-void vvOffscreenBuffer::writeBack()
+void vvOffscreenBuffer::writeBack(const int w, const int h)
 {
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-
-  glPopAttrib();
-
   GLint viewport[4];
-  glGetIntegerv(GL_VIEWPORT, viewport);
+  if ((w == -1) || (h == -1))
+  {
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
+    glPopAttrib();
+
+    glGetIntegerv(GL_VIEWPORT, viewport);
+  }
+  else
+  {
+    viewport[2] = w;
+    viewport[3] = h;
+  }
 
   glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, _frameBufferObject);
   glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);

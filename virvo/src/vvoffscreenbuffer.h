@@ -25,7 +25,20 @@ public:
   virtual ~vvOffscreenBuffer();
 
   virtual void initForRender();
-  virtual void writeBack();
+  /*!
+   * \brief         Write data back to hardware framebuffer.
+   *
+   *                If not provided with width and height,
+   *                this method will unbind the current buffer,
+   *                get the viewport information from the
+   *                hardware buffer and rebind the buffer again.
+   *                In cases one knows width and height of the
+   *                viewport, it is preferable to pass these
+   *                to the function to avoid this behavior.
+   * \param         w Width of the hardware buffer viewport.
+   * \param         h Height of the hardware buffer viewport.
+   */
+  virtual void writeBack(const int w = -1, const int h = -1);
   virtual void resize(const int w, const int h);
   virtual void clearBuffer();
 
