@@ -29,6 +29,9 @@
 vvOffscreenBuffer::vvOffscreenBuffer(const float scale = 1.0f, const BufferPrecision precision = VV_BYTE)
   : vvRenderTarget()
 {
+#if !defined(__APPLE__)
+  glewInit();
+#endif
   _type = VV_OFFSCREEN_BUFFER;
   vvGLTools::Viewport v = vvGLTools::getViewport();
   _viewportWidth = v.values[2];
@@ -122,6 +125,16 @@ void vvOffscreenBuffer::resize(const int w, const int h)
 void vvOffscreenBuffer::clearBuffer()
 {
   glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void vvOffscreenBuffer::bindFramebuffer() const
+{
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
+}
+
+void vvOffscreenBuffer::unbindFramebuffer() const
+{
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
 void vvOffscreenBuffer::bindTexture() const
