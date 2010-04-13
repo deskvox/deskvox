@@ -29,6 +29,8 @@ public:
   virtual void resize(const int w, const int h);
   virtual void clearBuffer();
 
+  void bindTexture() const;
+
   void setScale(const float scale);
   void setPrecision(const BufferPrecision& precision);
 

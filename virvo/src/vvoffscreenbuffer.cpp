@@ -124,6 +124,11 @@ void vvOffscreenBuffer::clearBuffer()
   glClear(GL_COLOR_BUFFER_BIT);
 }
 
+void vvOffscreenBuffer::bindTexture() const
+{
+  glBindTexture(GL_TEXTURE_2D, _textureId);
+}
+
 void vvOffscreenBuffer::setScale(const float scale)
 {
   _scale = scale;
