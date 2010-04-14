@@ -35,7 +35,7 @@ void vvRenderTarget::initForRender()
 
 }
 
-void vvRenderTarget::writeBack()
+void vvRenderTarget::writeBack(const int, const int)
 {
 
 }

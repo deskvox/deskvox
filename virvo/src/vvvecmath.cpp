@@ -218,9 +218,10 @@ vvMatrix vvMatrix::rotate(float a, float x, float y, float z)
     cerr << "vvMatrix::rotate: invalid rotation vector" << endl;
     return rot;                       // division by zero error
   }
-  x /= d;
-  y /= d;
-  z /= d;
+  float dInv = 1.0f / d;
+  x *= dInv;
+  y *= dInv;
+  z *= dInv;
 
   // Precompute recurring values:
   cosfa = cosf(a);

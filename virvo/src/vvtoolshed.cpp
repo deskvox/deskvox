@@ -2570,7 +2570,7 @@ int vvToolshed::string2Int(const char* str)
     if ((tmp >= '0') && (tmp <= '9'))
     {
       result *= 10;
-      result += static_cast<int>(tmp-48);
+      result += static_cast<int>(tmp-'0');
     }
     ++i;
     tmp = str[i];
