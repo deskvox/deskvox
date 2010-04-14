@@ -736,7 +736,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
     getBricksInProbe(probePosObj, probeSizeObj);
     distributeBricks();
-    _somethingChanged = true;
     pthread_barrier_wait(&_distributedBricksBarrier);
   }
 
