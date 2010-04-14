@@ -4708,7 +4708,7 @@ void vvTexRend::renderTex3DSpherical(vvMatrix* view)
   float offset[3];
   for (k=0; k<3; ++k)
   {
-    offset[k] = -(0.5f - (texMin[k] + texMax[k]) / 2.0f);
+    offset[k] = -(0.5f - (texMin[k] + texMax[k]) * 0.5f);
   }
   shell.setTextureOffset(offset);
 
@@ -4717,6 +4717,7 @@ void vvTexRend::renderTex3DSpherical(vvMatrix* view)
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
+  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
 
   // Volume render a 3D texture:
   enableTexture(GL_TEXTURE_3D_EXT);
