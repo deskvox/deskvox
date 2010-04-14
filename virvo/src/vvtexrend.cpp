@@ -2303,17 +2303,17 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
 
     if (geomType == VV_SPHERICAL)
     {
-      // Set edge values to 0 for spheric textures, because textures
-      // may exceed texel volume:
+      // Set edge values and values beyond edges to 0 for spheric textures,
+      // because textures may exceed texel volume:
       for (s = offsetZ; s < (offsetZ + sizeZ); ++s)
       {
         for (y = offsetY; y < (offsetY + sizeY); ++y)
         {
           for (x = offsetX; x < (offsetX + sizeX); ++x)
           {
-            if ((s == 0) || (s==vd->vox[2]-1) ||
-              (y == 0) || (y==vd->vox[1]-1) ||
-              (x == 0) || (x==vd->vox[0]-1))
+            if ((s == 0) || (s>=vd->vox[2]-1) ||
+                (y == 0) || (y>=vd->vox[1]-1) ||
+                (x == 0) || (x>=vd->vox[0]-1))
             {
               texOffset = x + y * texels[0] + s * texels[0] * texels[1];
               for(int i=0; i<texelsize; i++)
