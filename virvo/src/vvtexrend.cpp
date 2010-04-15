@@ -1640,6 +1640,13 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
   int i;
   int attrList[] = { GLX_RGBA , GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8, None};
 
+  int slaveWindowWidth = 1;
+  int slaveWindowHeight = 1;
+  if (vvDebugMsg::getDebugLevel() > 0)
+  {
+    slaveWindowWidth = 512;
+    slaveWindowHeight = 512;
+  }
   for (i = 0; i < _numThreads; ++i)
   {
     _threadData[i].display = XOpenDisplay(_displayNames[i]);
@@ -1658,7 +1665,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
                       | EnterWindowMask | LeaveWindowMask | FocusChangeMask | ButtonMotionMask
                       | PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
     _threadData[i].glxContext = glXCreateContext(_threadData[i].display, vi, NULL, GL_TRUE);
-    _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, 512, 512, 0,
+    _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, slaveWindowWidth, slaveWindowHeight, 0,
                                             vi->depth, InputOutput, vi->visual,
                                             CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap, &wa );
   }
@@ -3716,11 +3723,12 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       glPopAttrib();
       data->renderer->_offscreenBuffers[data->threadId]->unbindFramebuffer();
 
-#if 0
-      // Output to screen.
-      data->renderer->_offscreenBuffers[data->threadId]->writeBack(data->width, data->height);
-      glFlush();
-#endif
+      // Output to screen in debug mode.
+      if (vvDebugMsg::getDebugLevel() > 0)
+      {
+        data->renderer->_offscreenBuffers[data->threadId]->writeBack(data->width, data->height);
+        glFlush();
+      }
 
       // Store the time to render. Based upon this, dynamic load balancing will be performed.
       data->lastRenderTime = stopwatch->getTime();
