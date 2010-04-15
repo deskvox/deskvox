@@ -1661,13 +1661,19 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     wa.background_pixmap = None;
     wa.border_pixel = 0;
 
-    wa.event_mask =  (StructureNotifyMask | ExposureMask | KeyPressMask | KeyReleaseMask
-                      | EnterWindowMask | LeaveWindowMask | FocusChangeMask | ButtonMotionMask
-                      | PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
+    if (vvDebugMsg::getDebugLevel() == 0)
+    {
+      wa.override_redirect = true;
+    }
+    else
+    {
+      wa.override_redirect = false;
+    }
+
     _threadData[i].glxContext = glXCreateContext(_threadData[i].display, vi, NULL, GL_TRUE);
     _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, slaveWindowWidth, slaveWindowHeight, 0,
                                             vi->depth, InputOutput, vi->visual,
-                                            CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap, &wa );
+                                            CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa );
   }
 
   _visitor = NULL;
