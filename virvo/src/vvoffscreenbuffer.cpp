@@ -162,6 +162,16 @@ void vvOffscreenBuffer::setPrecision(const BufferPrecision& precision)
   update();
 }
 
+int vvOffscreenBuffer::getBufferWidth() const
+{
+  return _bufferWidth;
+}
+
+int vvOffscreenBuffer::getBufferHeight() const
+{
+  return _bufferHeight;
+}
+
 float vvOffscreenBuffer::getScale() const
 {
   return _scale;

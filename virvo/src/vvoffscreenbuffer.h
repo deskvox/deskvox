@@ -49,6 +49,8 @@ public:
   void setScale(const float scale);
   void setPrecision(const BufferPrecision& precision);
 
+  int getBufferWidth() const;
+  int getBufferHeight() const;
   float getScale() const;
   BufferPrecision getPrecision() const;
 private:

@@ -40,9 +40,14 @@ class VIRVOEXPORT vvGLTools
       CONSECUTIVE = 0,                            ///< using entire line length
       ONE_BY_ONE  = 1                             ///< one extension per line
     };
-    struct Viewport                             /// for convenience
+    struct Viewport                               /// for convenience
     {
       int values[4];
+
+      inline int operator[](const unsigned int i)
+      {
+        return values[i];
+      }
     };
     static void printGLError(const char*);
     static bool isGLextensionSupported(const char*);

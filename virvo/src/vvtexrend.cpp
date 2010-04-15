@@ -82,6 +82,9 @@ static int pthread_barrier_destroy(pthread_barrier_t * /*barrier*/) { return 1; 
 #define MAX_IND_DEVIATION 0.001
 #define INC 0.05
 
+const int MAX_VIEWPORT_WIDTH = 4800;
+const int MAX_VIEWPORT_HEIGHT = 1200;
+
 using namespace std;
 
 //----------------------------------------------------------------------------
@@ -109,8 +112,8 @@ struct ThreadArgs
   GLfloat* projection;                        ///< the current GL_PROJECTION matrix
   vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
   GLfloat* pixels;                            ///< after rendering each thread will read back its data to this array
-  int width;                                  ///< viewport width to init the fbo with
-  int height;                                 ///< viewport height to init the fbo with
+  int width;                                  ///< viewport width to init the offscreen buffer with
+  int height;                                 ///< viewport height to init the offscreen buffer with
   float lastRenderTime;                       ///< measured for dynamic load balancing
   float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
   bool transferFunctionChanged;
@@ -118,7 +121,7 @@ struct ThreadArgs
 #ifdef HAVE_X11
   // Glx rendering specific.
   GLXContext glxContext;                      ///< the initial glx context
-  Display* display;						      ///< a pointer to the current glx display
+  Display* display;						                ///< a pointer to the current glx display
   Drawable drawable;
 #endif
 
@@ -392,7 +395,10 @@ void vvThreadVisitor::visit(vvVisitable* obj)
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, _width, _height, 0, GL_RGBA, GL_FLOAT, _pixels[hs->getId()]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16,
+               _offscreenBuffers[hs->getId()]->getBufferWidth(),
+               _offscreenBuffers[hs->getId()]->getBufferHeight(),
+               0, GL_RGBA, GL_FLOAT, _pixels[hs->getId()]);
 
   glBegin(GL_QUADS);
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -829,12 +835,7 @@ vvTexRend::~vvTexRend()
     delete[] _displayNames;
     delete[] _screens;
 
-    for (int i = 0; i < _numThreads; ++i)
-    {
-      delete _offscreenBuffers[i];
-    }
-    delete[] _offscreenBuffers;
-
+    delete _visitor;
     delete _bspTree;
   }
 }
@@ -1662,6 +1663,8 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
                                             CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap, &wa );
   }
 
+  _visitor = NULL;
+
   // If smth changed, the bricks will be distributed among the threads before rendering.
   // Obviously, initially something changed.
   _somethingChanged = true;
@@ -1706,9 +1709,9 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     // Start solution for load balancing: every thread renders 1/n of the volume.
     // During load balancing, the share will (probably) be adjusted.
     _threadData[i].share = 1.0f / static_cast<float>(_numThreads);
-    _threadData[i].width = viewport.values[2];
-    _threadData[i].height = viewport.values[3];
-    _threadData[i].pixels = new GLfloat[viewport.values[2] * viewport.values[3] * 4];
+    _threadData[i].width = viewport[2];
+    _threadData[i].height = viewport[3];
+    _threadData[i].pixels = new GLfloat[MAX_VIEWPORT_WIDTH * MAX_VIEWPORT_HEIGHT * 4];
     _threadData[i].transferFunctionChanged = false;
     _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
     XMapWindow(_threadData[i].display, _threadData[i].drawable);
@@ -1749,8 +1752,9 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   // The visitor (supplies rendering logic) must have knowledge
   // about the texture ids of the compositing polygons.
   // Thus provide a pointer to these.
-  vvThreadVisitor* visitor = new vvThreadVisitor();
-  visitor->setOffscreenBuffers(_offscreenBuffers, _numThreads);
+  delete _visitor;
+  _visitor = new vvThreadVisitor();
+  _visitor->setOffscreenBuffers(_offscreenBuffers, _numThreads);
 
   // Provide the visitor with the pixel data of each thread either.
   GLfloat** pixels = new GLfloat*[_numThreads];
@@ -1758,13 +1762,13 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   {
     pixels[i] = _threadData[i].pixels;
   }
-  visitor->setPixels(pixels);
+  _visitor->setPixels(pixels);
 
   vvGLTools::Viewport viewport = vvGLTools::getViewport();
-  visitor->setWidth(viewport.values[2]);
-  visitor->setHeight(viewport.values[3]);
+  _visitor->setWidth(viewport.values[2]);
+  _visitor->setHeight(viewport.values[3]);
 
-  _bspTree->setVisitor(visitor);
+  _bspTree->setVisitor(_visitor);
 
   delete[] part;
 
@@ -3422,6 +3426,8 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     GLfloat* projection = new GLfloat[16];
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
 
+    vvGLTools::Viewport viewport = vvGLTools::getViewport();
+
     // Make sure that the _threadData array is only changed again (due to the
     // fact that the main thread already wants to sort the brick list again for
     // the next frame) until all workers have finished rendering the current
@@ -3448,6 +3454,8 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
       _threadData[i].modelview = modelview;
       _threadData[i].projection = projection;
+      _threadData[i].width = viewport[2];
+      _threadData[i].height = viewport[3];
 
       _threadData[i].renderReadyBarrier = &_renderReadyBarrier;
       _threadData[i].compositingBarrier = &_compositingBarrier;
@@ -3642,6 +3650,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
       pthread_barrier_wait(data->renderStartBarrier);
+      data->renderer->_offscreenBuffers[data->threadId]->resize(data->width, data->height);
       data->renderer->enableLUTMode(pixelShader, data->pixLUTName);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:

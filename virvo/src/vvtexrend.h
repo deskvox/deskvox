@@ -218,6 +218,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     vvOffscreenBuffer** _offscreenBuffers;
     bool _somethingChanged;                       ///< when smth changed (e.g. the transfer function, bricks will possibly be rearranged)
     vvBspTree* _bspTree;
+    vvThreadVisitor* _visitor;
     int _deviationExceedCnt;
 
     int _numBricks[3];                            ///< number of bricks for each dimension
