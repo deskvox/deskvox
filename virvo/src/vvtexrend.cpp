@@ -1647,33 +1647,51 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     slaveWindowWidth = 512;
     slaveWindowHeight = 512;
   }
+  int unresolvedDisplays = 0;
   for (i = 0; i < _numThreads; ++i)
   {
     _threadData[i].display = XOpenDisplay(_displayNames[i]);
-    Drawable parent = RootWindow(_threadData[i].display, _screens[i]);
 
-    XVisualInfo* vi = glXChooseVisual(_threadData[i].display,
-                                      DefaultScreen(_threadData[i].display),
-                                      attrList);
-
-    XSetWindowAttributes wa = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    wa.colormap = XCreateColormap(_threadData[i].display, parent, vi->visual, AllocNone );
-    wa.background_pixmap = None;
-    wa.border_pixel = 0;
-
-    if (vvDebugMsg::getDebugLevel() == 0)
+    if (_threadData[i].display != NULL)
     {
-      wa.override_redirect = true;
+      Drawable parent = RootWindow(_threadData[i].display, _screens[i]);
+
+      XVisualInfo* vi = glXChooseVisual(_threadData[i].display,
+                                        DefaultScreen(_threadData[i].display),
+                                        attrList);
+
+      XSetWindowAttributes wa = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+      wa.colormap = XCreateColormap(_threadData[i].display, parent, vi->visual, AllocNone );
+      wa.background_pixmap = None;
+      wa.border_pixel = 0;
+
+      if (vvDebugMsg::getDebugLevel() == 0)
+      {
+        wa.override_redirect = true;
+      }
+      else
+      {
+        wa.override_redirect = false;
+      }
+
+      _threadData[i].glxContext = glXCreateContext(_threadData[i].display, vi, NULL, GL_TRUE);
+      _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, slaveWindowWidth, slaveWindowHeight, 0,
+                                              vi->depth, InputOutput, vi->visual,
+                                              CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa );
     }
     else
     {
-      wa.override_redirect = false;
+      cerr << "Couldn't open display: " << _displayNames[i] << endl;
+      ++unresolvedDisplays;
     }
+  }
 
-    _threadData[i].glxContext = glXCreateContext(_threadData[i].display, vi, NULL, GL_TRUE);
-    _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, slaveWindowWidth, slaveWindowHeight, 0,
-                                            vi->depth, InputOutput, vi->visual,
-                                            CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa );
+  _numThreads -= unresolvedDisplays;
+
+  if (_numThreads == 0)
+  {
+    cerr << "Falling back to none-threaded rendering mode" << endl;
+    return NO_DISPLAYS_OPENED;
   }
 
   _visitor = NULL;

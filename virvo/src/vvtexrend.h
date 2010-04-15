@@ -228,6 +228,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       TRAM_ERROR,                                 ///< not enough texture memory
       NO3DTEX,                                    ///< 3D textures not supported on this hardware
       NO_DISPLAYS_SPECIFIED,                      ///< no x-displays in _renderState, thus no multi-threading
+      NO_DISPLAYS_OPENED,                         ///< no additional x-displays could be opened, thus no multi-threading
       UNSUPPORTED                                 ///< general error code
     };
     enum GeometryType                             /// Geometry textures are projected on
