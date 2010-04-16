@@ -3716,9 +3716,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       if(data->renderer->_proxyGeometryOnGpu)
       {
+        data->renderer->enableIntersectionShader(isectShader);
+
         // Per frame parameters.
         isectShader->setModelViewProj(0, "modelViewProj");
-
         isectShader->setParameter1f(0, "delta", data->delta.length());
         isectShader->setParameter3f(0, "planeNormal", data->normal[0], data->normal[1], data->normal[2]);
       }
@@ -3759,10 +3760,16 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       pthread_barrier_wait(data->compositingBarrier);
 
+      if (data->renderer->_proxyGeometryOnGpu)
+      {
+        data->renderer->disableIntersectionShader(isectShader);
+      }
+
       // Finally update the transfer function in a synchronous fashion.
       if (data->transferFunctionChanged)
       {
         data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
+        data->transferFunctionChanged = false;
       }
     }
 
