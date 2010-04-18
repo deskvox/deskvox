@@ -193,6 +193,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\test\vvperformancetest.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\test\vvview.cpp"
 				>
 			</File>
@@ -203,6 +207,10 @@
 			>
 			<File
 				RelativePath="..\test\vvobjview.h"
+				>
+			</File>
+			<File
+				RelativePath="..\test\vvperformancetest.h"
 				>
 			</File>
 			<File
