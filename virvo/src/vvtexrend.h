@@ -100,6 +100,8 @@ public:
               const vvVector3& probeMin, const vvVector3& probeMax,
               GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges);
 
+  void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax);
+
   virtual vvAABB getAABB()
   {
     return vvAABB(min, max);
@@ -134,7 +136,7 @@ public:
   This logic is supplied by the visitor which needs to be initialized
   once and passed to the bsp tree after initialization. Thus the bsp
   tree may be utilized in context not that specific as this one.
-  @author stefan Zellmann
+  @author Stefan Zellmann
   @see vvVisitor
  */
 class VIRVOEXPORT vvThreadVisitor : public vvVisitor
@@ -361,12 +363,12 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType updateTextures3D(int, int, int, int, int, int, bool);
     ErrorType updateTextures2D(int, int, int, int, int, int, int);
     ErrorType updateTextureBricks(int, int, int, int, int, int);
+    void beforeSetGLenvironment();
     void setGLenvironment();
     void unsetGLenvironment();
     void renderTex3DSpherical(vvMatrix*);
     void renderTex3DPlanar(vvMatrix*);
     void renderTexBricks(vvMatrix*);
-    void renderBricks(vvMatrix*);
     void renderTex2DSlices(float);
     void renderTex2DCubic(AxisType, float, float, float);
     VoxelType findBestVoxelType(VoxelType);

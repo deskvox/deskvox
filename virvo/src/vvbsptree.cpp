@@ -18,9 +18,11 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include <cmath>
 #include <set>
 
 #include "vvbsptree.h"
+#include "vvgltools.h"
 #include "vvopengl.h"
 #include "vvtoolshed.h"
 
@@ -37,17 +39,17 @@ vvAABB::vvAABB(const vvVector3& bottomLeftBackCorner,
 
 float vvAABB::calcWidth() const
 {
-  return calcMaxExtend(vvVector3(1, 0, 0)) - calcMinExtend(vvVector3(1, 0, 0));
+  return calcMaxExtent(vvVector3(1, 0, 0)) - calcMinExtent(vvVector3(1, 0, 0));
 }
 
 float vvAABB::calcHeight() const
 {
-  return calcMaxExtend(vvVector3(0, 1, 0)) - calcMinExtend(vvVector3(0, 1, 0));
+  return calcMaxExtent(vvVector3(0, 1, 0)) - calcMinExtent(vvVector3(0, 1, 0));
 }
 
 float vvAABB::calcDepth() const
 {
-  return calcMaxExtend(vvVector3(0, 0, 1)) - calcMinExtend(vvVector3(0, 0, 1));
+  return calcMaxExtent(vvVector3(0, 0, 1)) - calcMinExtent(vvVector3(0, 0, 1));
 }
 
 const vvBoxCorners &vvAABB::calcVertices()
@@ -68,14 +70,14 @@ const vvBoxCorners &vvAABB::calcVertices()
   return _vertices;
 }
 
-float vvAABB::calcMinExtend(const vvVector3& axis) const
+float vvAABB::calcMinExtent(const vvVector3& axis) const
 {
   return _bottomLeftBackCorner.e[0] * axis.e[0]
        + _bottomLeftBackCorner.e[1] * axis.e[1]
        + _bottomLeftBackCorner.e[2] * axis.e[2];
 }
 
-float vvAABB::calcMaxExtend(const vvVector3& axis) const
+float vvAABB::calcMaxExtent(const vvVector3& axis) const
 {
   return _topRightFrontCorner.e[0] * axis.e[0]
        + _topRightFrontCorner.e[1] * axis.e[1]
@@ -84,9 +86,59 @@ float vvAABB::calcMaxExtend(const vvVector3& axis) const
 
 vvVector3 vvAABB::calcCenter() const
 {
-  return vvVector3((_bottomLeftBackCorner.e[0] + _topRightFrontCorner.e[0]) / 2,
-                   (_bottomLeftBackCorner.e[1] + _topRightFrontCorner.e[1]) / 2,
-                   (_bottomLeftBackCorner.e[2] + _topRightFrontCorner.e[2]) / 2);
+  return vvVector3((_bottomLeftBackCorner.e[0] + _topRightFrontCorner.e[0]) * 0.5f,
+                   (_bottomLeftBackCorner.e[1] + _topRightFrontCorner.e[1]) * 0.5f,
+                   (_bottomLeftBackCorner.e[2] + _topRightFrontCorner.e[2]) * 0.5f);
+}
+
+vvRect* vvAABB::getProjectedScreenRect()
+{
+  GLdouble modelview[16];
+  glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+
+  GLdouble projection[16];
+  glGetDoublev(GL_PROJECTION_MATRIX, projection);
+
+  vvGLTools::Viewport viewport = vvGLTools::getViewport();
+
+  calcVertices();
+  float minX = FLT_MAX;
+  float minY = FLT_MAX;
+  float maxX = -FLT_MAX;
+  float maxY = -FLT_MAX;
+
+  for (int i = 0; i < 8; ++i)
+  {
+    GLdouble vertex[3];
+    gluProject(_vertices[i][0], _vertices[i][1], _vertices[i][2],
+               modelview, projection, viewport.values,
+               &vertex[0], &vertex[1], &vertex[2]);
+
+    if (vertex[0] < minX)
+    {
+      minX = vertex[0];
+    }
+    if (vertex[0] > maxX)
+    {
+      maxX = vertex[0];
+    }
+
+    if (vertex[1] < minY)
+    {
+      minY = vertex[1];
+    }
+    if (vertex[1] > maxY)
+    {
+      maxY = vertex[1];
+    }
+  }
+
+  vvRect* result = new vvRect;
+  result->x = static_cast<int>(minX);
+  result->y = static_cast<int>(minY);
+  result->width = static_cast<int>(fabsf(maxX - minX));
+  result->height = static_cast<int>(fabsf(maxY - minY));
+  return result;
 }
 
 void vvAABB::render()
@@ -122,6 +174,12 @@ void vvAABB::render()
     glVertex3f(vertices[4].e[0], vertices[4].e[1], vertices[4].e[2]);
   glEnd();
   glEnable(GL_LIGHTING);
+}
+
+void vvAABB::print()
+{
+  _bottomLeftBackCorner.print();
+  _topRightFrontCorner.print();
 }
 
 //============================================================================
@@ -173,6 +231,8 @@ vvHalfSpace::vvHalfSpace()
 
   _splitPlane = NULL;
   _objects = NULL;
+  _boundingBox = NULL;
+  _projectedScreenRect = NULL;
 }
 
 vvHalfSpace::~vvHalfSpace()
@@ -180,6 +240,8 @@ vvHalfSpace::~vvHalfSpace()
   delete _splitPlane;
   delete _firstSon;
   delete _nextBrother;
+  delete _boundingBox;
+  delete _projectedScreenRect;
 }
 
 void vvHalfSpace::accept(vvVisitor* visitor)
@@ -261,6 +323,28 @@ void vvHalfSpace::setSplitPlane(vvPlane* splitPlane)
 
 void vvHalfSpace::setObjects(std::vector<vvConvexObj*>* objects)
 {
+  vvVector3 minCorner = vvVector3(FLT_MAX, FLT_MAX, FLT_MAX);
+  vvVector3 maxCorner = vvVector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+  for (std::vector<vvConvexObj*>::const_iterator it = objects->begin(); it != objects->end(); ++it)
+  {
+    vvAABB aabb = (*it)->getAABB();
+    const vvVector3 minAABB = aabb._bottomLeftBackCorner;
+    const vvVector3 maxAABB = aabb._topRightFrontCorner;
+    for (int i = 0; i < 3; ++i)
+    {
+      if (minAABB[i] < minCorner[i])
+      {
+        minCorner[i] = minAABB[i];
+      }
+      else if (maxAABB[i] > maxCorner[i])
+      {
+        maxCorner[i] = maxAABB[i];
+      }
+    }
+  }
+  delete _boundingBox;
+  _boundingBox = new vvAABB(minCorner, maxCorner);
   _objects = objects;
 }
 
@@ -302,6 +386,44 @@ float vvHalfSpace::getPercent() const
 float vvHalfSpace::getActualPercent() const
 {
   return _actualPercent;
+}
+
+vvAABB* vvHalfSpace::getBoundingBox() const
+{
+  return _boundingBox;
+}
+
+vvRect* vvHalfSpace::getProjectedScreenRect(const vvVector3* probeMin, const vvVector3* probeMax, const bool recalculate)
+{
+  if (recalculate)
+  {
+    delete _projectedScreenRect;
+    vvVector3 min;
+    vvVector3 max;
+    for (int i = 0; i < 3; i++)
+    {
+      if (_boundingBox->_bottomLeftBackCorner[i] < probeMin->e[i])
+      {
+        min.e[i] = probeMin->e[i];
+      }
+      else
+      {
+        min.e[i] = _boundingBox->_bottomLeftBackCorner[i];
+      }
+
+      if (_boundingBox->_topRightFrontCorner[i] > probeMax->e[i])
+      {
+        max.e[i] = probeMax->e[i];
+      }
+      else
+      {
+        max.e[i] = _boundingBox->_topRightFrontCorner[i];
+      }
+    }
+    vvAABB aabb(min, max);
+    _projectedScreenRect = aabb.getProjectedScreenRect();
+  }
+  return _projectedScreenRect;
 }
 
 float vvHalfSpace::calcContainedVolume() const
@@ -374,37 +496,37 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *o
       ++it)
   {
     tmp = *it;
-    tmpf = tmp->getAABB().calcMaxExtend(vvVector3(1, 0, 0));
+    tmpf = tmp->getAABB().calcMaxExtent(vvVector3(1, 0, 0));
     if (tmpf > max[0])
     {
       max[0] = tmpf;
     }
 
-    tmpf = tmp->getAABB().calcMinExtend(vvVector3(1, 0, 0));
+    tmpf = tmp->getAABB().calcMinExtent(vvVector3(1, 0, 0));
     if (tmpf < min[0])
     {
       min[0] = tmpf;
     }
 
-    tmpf = tmp->getAABB().calcMaxExtend(vvVector3(0, 1, 0));
+    tmpf = tmp->getAABB().calcMaxExtent(vvVector3(0, 1, 0));
     if (tmpf > max[1])
     {
       max[1] = tmpf;
     }
 
-    tmpf = tmp->getAABB().calcMinExtend(vvVector3(0, 1, 0));
+    tmpf = tmp->getAABB().calcMinExtent(vvVector3(0, 1, 0));
     if (tmpf < min[1])
     {
       min[1] = tmpf;
     }
 
-    tmpf = tmp->getAABB().calcMaxExtend(vvVector3(0, 0, 1));
+    tmpf = tmp->getAABB().calcMaxExtent(vvVector3(0, 0, 1));
     if (tmpf > max[2])
     {
       max[2] = tmpf;
     }
 
-    tmpf = tmp->getAABB().calcMinExtend(vvVector3(0, 0, 1));
+    tmpf = tmp->getAABB().calcMinExtent(vvVector3(0, 0, 1));
     if (tmpf < min[2])
     {
       min[2] = tmpf;

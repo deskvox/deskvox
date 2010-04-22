@@ -24,6 +24,11 @@
 #include "vvexport.h"
 #include "vvvecmath.h"
 
+#include <iostream>
+
+using std::cerr;
+using std::endl;
+
 //============================================================================
 // Class Definitions
 //============================================================================
@@ -47,6 +52,14 @@ class VIRVOEXPORT vvGLTools
       inline int operator[](const unsigned int i)
       {
         return values[i];
+      }
+
+      inline void print()
+      {
+        cerr << "Left: " << values[0] << " "
+             << "Top: " << values[1] << " "
+             << "Width: " << values[2] << " "
+             << "Height: " << values[3] << endl;
       }
     };
     static void printGLError(const char*);

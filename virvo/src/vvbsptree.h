@@ -27,6 +27,14 @@
 
 typedef vvVector3 vvBoxCorners[8];
 
+struct vvRect
+{
+  int x;
+  int y;
+  int width;
+  int height;
+};
+
 /*!
  * \brief           Axis aligned bounding box (AABB).
  *
@@ -37,6 +45,7 @@ typedef vvVector3 vvBoxCorners[8];
  */
 class vvAABB
 {
+  friend class vvHalfSpace;
 public:
   vvAABB(const vvVector3& bottomLeftBackCorner,
          const vvVector3& topRightFrontCorner);
@@ -79,7 +88,7 @@ public:
   const vvBoxCorners& calcVertices();
 
   /*!
-   * \brief         Calc the minimum extend along the specified axis.
+   * \brief         Calc the minimum extent along the specified axis.
    *
    *                If you desire the x-value of the left side of the
    *                box, pass vvVector3(1, 0, 0) as axis. Make sure that
@@ -87,9 +96,9 @@ public:
    *                equals 1.
    * \param         axis A normalized vector representing the coord axis.
    */
-  float calcMinExtend(const vvVector3& axis) const;
+  float calcMinExtent(const vvVector3& axis) const;
   /*!
-   * \brief         Calc the maximum extend along the specified axis.
+   * \brief         Calc the maximum extent along the specified axis.
    *
    *                If you desire the x-value of the right side of the
    *                box, pass vvVector3(1, 0, 0) as axis. Make sure that
@@ -97,7 +106,7 @@ public:
    *                equals 1.
    * \param         axis A normalized vector representing the coord axis.
    */
-  float calcMaxExtend(const vvVector3& axis) const;
+  float calcMaxExtent(const vvVector3& axis) const;
   /*!
    * \brief         Calc the center point.
    *
@@ -107,12 +116,28 @@ public:
   vvVector3 calcCenter() const;
 
   /*!
+   * \brief         Get a rectangle of the projected screen section.
+   *
+   *                Calcs the rectangle defined to fully enclose the
+   *                the projected area do to the current camera transformations.
+   * \return        The rectangle of the projected screen section.
+   */
+  vvRect* getProjectedScreenRect();
+
+  /*!
    * \brief         Render the bounding box.
    *
    *                Render the outlines of the bounding box using opengl
    *                commands.
    */
   void render();
+  /*!
+   * \brief         Print the box extents to stdout.
+   *
+   *                Print the bottom/left/back corner and the
+   *                top/right/front corner in that order.
+   */
+  void print();
 private:
   vvVector3 _bottomLeftBackCorner;
   vvVector3 _topRightFrontCorner;
@@ -319,6 +344,32 @@ public:
    */
   float getActualPercent() const;
   /*!
+   * \brief         Get the bounding box of the half space.
+   *
+   *                Get an axis aligned bounding box surrounding the objects
+   *                contained within this halfspace.
+   * \return        The bounding box around the objects.
+   */
+  vvAABB* getBoundingBox() const;
+  /*!
+   * \brief         Calc the projected screen rect.
+   *
+   *                Compute a rectangle in scree coordinates completely
+   *                occluding the sub-volume as tight as possible.
+   *                The rect is stored as a member for later retrieval.
+   *                If a probe is present, the bounding box is clipped
+   *                against it, otherwise the bounding box is clipped
+   *                against the volume.
+   *                TODO: Don't clip here, but rather when distributing
+   *                the convex objects.
+   * \param         probeMin Used to clip the bounding box.
+   * \param         probeMax Used to clip the bounding box.
+   * \param         recalculate If true, the member rect will be recalculated.
+   * \return        A pointer to the screen rect.
+   */
+  vvRect* getProjectedScreenRect(const vvVector3* probeMin = 0, const vvVector3* probeMax = 0,
+                                 const bool recalculate = false);
+  /*!
    * \brief         Debug function. Calculate the contained volume.
    *
    *                Calculate the contained volume by evaluating the volume
@@ -336,6 +387,8 @@ private:
   std::vector<vvConvexObj*> *_objects;
   float _percent;
   float _actualPercent;
+  vvAABB* _boundingBox;
+  vvRect* _projectedScreenRect;
 };
 
 /*!
