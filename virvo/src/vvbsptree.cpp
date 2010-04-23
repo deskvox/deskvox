@@ -21,6 +21,7 @@
 #include <cmath>
 #include <set>
 
+#include "vvbrick.h"
 #include "vvbsptree.h"
 #include "vvgltools.h"
 #include "vvopengl.h"
@@ -183,44 +184,6 @@ void vvAABB::print()
 }
 
 //============================================================================
-// vvConvexObj Method Definitions
-//============================================================================
-
-void vvConvexObj::sortByCenter(vvConvexObj** objects, const int numObjects,
-                               const vvVector3& axis)
-{
-  vvConvexObj* tmp;
-  vvConvexObj* tmp2;
-  vvConvexObj* tmp3;
-  vvVector3* axisGetter;
-  int i, j, k;
-  int a;
-
-  axisGetter = new vvVector3(0, 1, 2);
-  a = axis.dot(axisGetter);
-  delete axisGetter;
-
-  // Selection sort.
-  for (i = 0; i < numObjects; ++i)
-  {
-    for (j = i; j < numObjects; ++j)
-    {
-      tmp = objects[j];
-      for (k = i + 1; k < numObjects; ++k)
-      {
-        tmp2 = objects[k];
-        if (tmp->getAABB().calcCenter().e[a] > tmp2->getAABB().calcCenter().e[a])
-        {
-          tmp3 = objects[j];
-          objects[j] = objects[k];
-          objects[k] = tmp3;
-        }
-      }
-    }
-  }
-}
-
-//============================================================================
 // vvHalfSpace Method Definitions
 //============================================================================
 
@@ -230,7 +193,7 @@ vvHalfSpace::vvHalfSpace()
   _nextBrother = NULL;
 
   _splitPlane = NULL;
-  _objects = NULL;
+  _bricks = NULL;
   _boundingBox = NULL;
   _projectedScreenRect = NULL;
 }
@@ -321,12 +284,12 @@ void vvHalfSpace::setSplitPlane(vvPlane* splitPlane)
   _splitPlane = splitPlane;
 }
 
-void vvHalfSpace::setObjects(std::vector<vvConvexObj*>* objects)
+void vvHalfSpace::setBricks(std::vector<Brick*>* bricks)
 {
   vvVector3 minCorner = vvVector3(FLT_MAX, FLT_MAX, FLT_MAX);
   vvVector3 maxCorner = vvVector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-  for (std::vector<vvConvexObj*>::const_iterator it = objects->begin(); it != objects->end(); ++it)
+  for (std::vector<Brick*>::const_iterator it = bricks->begin(); it != bricks->end(); ++it)
   {
     vvAABB aabb = (*it)->getAABB();
     const vvVector3 minAABB = aabb._bottomLeftBackCorner;
@@ -345,7 +308,7 @@ void vvHalfSpace::setObjects(std::vector<vvConvexObj*>* objects)
   }
   delete _boundingBox;
   _boundingBox = new vvAABB(minCorner, maxCorner);
-  _objects = objects;
+  _bricks = bricks;
 }
 
 void vvHalfSpace::setPercent(const float percent)
@@ -373,9 +336,9 @@ vvPlane* vvHalfSpace::getSplitPlane() const
   return _splitPlane;
 }
 
-std::vector<vvConvexObj*>* vvHalfSpace::getObjects() const
+std::vector<Brick*>* vvHalfSpace::getBricks() const
 {
-  return _objects;
+  return _bricks;
 }
 
 float vvHalfSpace::getPercent() const
@@ -431,9 +394,9 @@ float vvHalfSpace::calcContainedVolume() const
   float w, h, d;
 
   w = h = d = 0.0f;
-  for(std::vector<vvConvexObj *>::iterator it = _objects->begin(); it != _objects->end(); ++it)
+  for(std::vector<Brick*>::iterator it = _bricks->begin(); it != _bricks->end(); ++it)
   {
-    vvConvexObj *tmp = *it;
+    Brick *tmp = *it;
     w += tmp->getAABB().calcWidth();
     h += tmp->getAABB().calcHeight();
     d += tmp->getAABB().calcDepth();
@@ -444,13 +407,13 @@ float vvHalfSpace::calcContainedVolume() const
 //============================================================================
 // vvSpacePartitioner Method Definitions
 //============================================================================
-vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *objects,
+vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<Brick*>* bricks,
                                                    const float percent1, const float percent2)
 {
   vvHalfSpace* result = new vvHalfSpace[2];
 
-  vvConvexObj* tmp;
-  vvConvexObj** tmpArray;
+  Brick* tmp;
+  Brick** tmpArray;
   vvVector3 n1, n2;
   vvVector3 pnt;
   float dim[3];
@@ -473,7 +436,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *o
   // 2.) for each axis x, y, z, determine if the volume could be split
   //     so that two half spaces with non overlapping bricks would result
   //     with one half space containing x% and the other one containing y%.
-  //     of the objects.
+  //     of the bricks.
   // 3.) If 2.) is true for one or more axes, split the volume along this
   //     one / an arbitrary one of these.
   // 4.= If 2.) isn't true, for each axis determine the pair of x':y' values
@@ -488,11 +451,11 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *o
   max[2] = -FLT_MAX;
   min[2] = FLT_MAX;
 
-  tmpArray = new vvConvexObj*[objects->size()];
+  tmpArray = new Brick*[bricks->size()];
   i = 0;
 
-  for(std::vector<vvConvexObj *>::iterator it = objects->begin();
-      it != objects->end();
+  for(std::vector<Brick*>::iterator it = bricks->begin();
+      it != bricks->end();
       ++it)
   {
     tmp = *it;
@@ -546,8 +509,8 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *o
   for (i = 0; i < 3; ++i)
   {
     std::set<float> vals;
-    for(std::vector<vvConvexObj *>::iterator it = objects->begin();
-      it != objects->end();
+    for(std::vector<Brick*>::iterator it = bricks->begin();
+      it != bricks->end();
       ++it)
     {
       vals.insert((*it)->getAABB().calcCenter().e[i]);
@@ -559,15 +522,15 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *o
   // valid that each obj occupies the same volume (determined through its aabb).
 
   // Sort overall array by x-axis.
-  vvConvexObj::sortByCenter(tmpArray, objects->size(), vvVector3(1, 0, 0));
+  Brick::sortByCenter(tmpArray, bricks->size(), vvVector3(1, 0, 0));
 
-  vvConvexObj*** dimX = new vvConvexObj**[cnt[0]];
+  Brick*** dimX = new Brick**[cnt[0]];
 
   // Build the first dimension.
   int iterator = 0;
   for (i = 0; i < cnt[0]; ++i)
   {
-    dimX[i] = new vvConvexObj*[cnt[1] * cnt[2]];
+    dimX[i] = new Brick*[cnt[1] * cnt[2]];
     for (j = 0; j < cnt[1] * cnt[2]; ++j)
     {
       dimX[i][j] = tmpArray[iterator];
@@ -578,18 +541,18 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *o
   // Sort for second dimension.
   for (i = 0; i < cnt[0]; ++i)
   {
-    vvConvexObj::sortByCenter(dimX[i], cnt[1]*cnt[2], vvVector3(0, 1, 0));
+    Brick::sortByCenter(dimX[i], cnt[1]*cnt[2], vvVector3(0, 1, 0));
   }
 
   // Build second dimension.
-  vvConvexObj**** grid = new vvConvexObj***[cnt[0]];
+  Brick**** grid = new Brick***[cnt[0]];
   for (i = 0; i < cnt[0]; ++i)
   {
-    grid[i] = new vvConvexObj**[cnt[1]];
+    grid[i] = new Brick**[cnt[1]];
     iterator = 0;
     for (j = 0; j < cnt[1]; ++j)
     {
-      grid[i][j] = new vvConvexObj*[cnt[2]];
+      grid[i][j] = new Brick*[cnt[2]];
       for (k = 0; k < cnt[2]; ++k)
       {
         grid[i][j][k] = dimX[i][iterator];
@@ -597,7 +560,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *o
       }
 
       // Sort on the fly.
-      vvConvexObj::sortByCenter(grid[i][j], cnt[2], vvVector3(0, 0, 1));
+      Brick::sortByCenter(grid[i][j], cnt[2], vvVector3(0, 0, 1));
     }
   }
 
@@ -736,21 +699,21 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *o
   result[0].setSplitPlane(new vvPlane(pnt, n1));
   result[1].setSplitPlane(new vvPlane(pnt, n2));
 
-  // Finally distribute pointers to the objects.
-  result[0].setObjects(new std::vector<vvConvexObj*>());
-  result[1].setObjects(new std::vector<vvConvexObj*>());
-  for(std::vector<vvConvexObj *>::iterator it = objects->begin();
-    it != objects->end();
+  // Finally distribute pointers to the bricks.
+  result[0].setBricks(new std::vector<Brick*>());
+  result[1].setBricks(new std::vector<Brick*>());
+  for(std::vector<Brick*>::iterator it = bricks->begin();
+    it != bricks->end();
     ++it)
   {
-    vvConvexObj *tmp = *it;
+    Brick *tmp = *it;
     if (tmp->getAABB().calcCenter().e[splitAxis] < pnt.e[splitAxis])
     {
-      result[0].getObjects()->push_back(tmp);
+      result[0].getBricks()->push_back(tmp);
     }
     else
     {
-      result[1].getObjects()->push_back(tmp);
+      result[1].getBricks()->push_back(tmp);
     }
   }
 
@@ -773,13 +736,13 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvConvexObj *> *o
 // vvBspTree Method Definitions
 //============================================================================
 
-vvBspTree::vvBspTree(float* partitioning, const int length, std::vector<vvConvexObj*>* objects)
+vvBspTree::vvBspTree(float* partitioning, const int length, std::vector<Brick*>* bricks)
 {
   _root = new vvHalfSpace;
   _root->setPercent(100.0f);
   buildHierarchy(_root, partitioning, length, 0, length - 1);
   _leafs = new std::vector<vvHalfSpace*>();
-  distributeObjects(_root, objects);
+  distributeBricks(_root, bricks);
   _root->_actualPercent = 100.0f;
   _visitor = NULL;
 }
@@ -870,7 +833,7 @@ void vvBspTree::buildHierarchy(vvHalfSpace* node, float* partitioning, const int
   }
 }
 
-void vvBspTree::distributeObjects(vvHalfSpace* node, std::vector<vvConvexObj*>* objects)
+void vvBspTree::distributeBricks(vvHalfSpace* node, std::vector<Brick*>* bricks)
 {
   // No leaf?
   if (node->getFirstSon() != NULL)
@@ -878,24 +841,24 @@ void vvBspTree::distributeObjects(vvHalfSpace* node, std::vector<vvConvexObj*>* 
     // Only one child?
     if (node->getFirstSon()->getNextBrother() != NULL)
     {
-      vvHalfSpace* hs = vvSpacePartitioner::getAABBHalfSpaces(objects,
+      vvHalfSpace* hs = vvSpacePartitioner::getAABBHalfSpaces(bricks,
                                                               node->getFirstSon()->getPercent(),
                                                               node->getFirstSon()->getNextBrother()->getPercent());
       node->getFirstSon()->_actualPercent = hs[0].getActualPercent();
       node->getFirstSon()->setSplitPlane(new vvPlane(hs[0].getSplitPlane()->_point, hs[0].getSplitPlane()->_normal));
       node->getFirstSon()->getNextBrother()->_actualPercent = hs[1].getActualPercent();
       node->getFirstSon()->getNextBrother()->setSplitPlane(new vvPlane(hs[1].getSplitPlane()->_point, hs[1].getSplitPlane()->_normal));
-      distributeObjects(node->getFirstSon(), hs[0].getObjects());
-      distributeObjects(node->getFirstSon()->getNextBrother(), hs[1].getObjects());
+      distributeBricks(node->getFirstSon(), hs[0].getBricks());
+      distributeBricks(node->getFirstSon()->getNextBrother(), hs[1].getBricks());
 
-      // Just delete the array, not the objects!
+      // Just delete the array, not the bricks!
       delete[] hs;
     }
   }
   else
   {
-    // Leafs store objects.
-    node->setObjects(objects);
+    // Leafs store bricks.
+    node->setBricks(bricks);
     _leafs->push_back(node);
   }
 }
@@ -921,7 +884,7 @@ void vvBspTree::print(vvHalfSpace* node, const int indent)
     {
       std::cerr << " ";
     }
-    std::cerr << "# objects: " << node->getObjects()->size() << std::endl;
+    std::cerr << "# bricks: " << node->getBricks()->size() << std::endl;
     for (i = 0; i < indent; ++i)
     {
       std::cerr << " ";

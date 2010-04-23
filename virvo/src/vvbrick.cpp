@@ -340,3 +340,36 @@ ushort Brick::getFrontIndex(const vvVector3* vertices,
   }
   return frontIndex;
 }
+
+void Brick::sortByCenter(Brick** bricks, const int numBricks, const vvVector3& axis)
+{
+  Brick* tmp;
+  Brick* tmp2;
+  Brick* tmp3;
+  vvVector3* axisGetter;
+  int i, j, k;
+  int a;
+
+  axisGetter = new vvVector3(0, 1, 2);
+  a = axis.dot(axisGetter);
+  delete axisGetter;
+
+  // Selection sort.
+  for (i = 0; i < numBricks; ++i)
+  {
+    for (j = i; j < numBricks; ++j)
+    {
+      tmp = bricks[j];
+      for (k = i + 1; k < numBricks; ++k)
+      {
+        tmp2 = bricks[k];
+        if (tmp->getAABB().calcCenter().e[a] > tmp2->getAABB().calcCenter().e[a])
+        {
+          tmp3 = bricks[j];
+          bricks[j] = bricks[k];
+          bricks[k] = tmp3;
+        }
+      }
+    }
+  }
+}

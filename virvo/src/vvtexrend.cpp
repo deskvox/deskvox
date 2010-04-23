@@ -776,7 +776,8 @@ vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numT
     // Threads will make their own copies of the textures as well as their own gl ids.
     case VV_BRICKS:
       err = makeEmptyBricks();
-      if (err == OK)
+      // If in threaded mode, each thread will upload its texture data on its own.
+      if ((err == OK) && (_numThreads == 0))
       {
         err = makeTextureBricks(privateTexNames, numTextures, lutData);
       }
@@ -1161,6 +1162,10 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
           currBrick->startOffset[1] = startOffset[1];
           currBrick->startOffset[2] = startOffset[2];
 
+          const int texIndex = (f * _numBricks[0] * _numBricks[1] * _numBricks[2]) + (bx * _numBricks[2] * _numBricks[1])
+            + (by * _numBricks[2]) + bz;
+          currBrick->index = texIndex;
+
           _brickList[f].push_back(currBrick);
         } // # foreach (numBricks[i])
   } // # frames
@@ -1176,7 +1181,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
   int rawVal[4];                                  // raw values for R,G,B,A
   int texLineOffset;                              // index into currently processed line of texture data array [texels]
   int srcIndex;
-  int alpha, texIndex;
+  int alpha;
   bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
 
   if (_numThreads == 0)
@@ -1200,182 +1205,180 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
   vvDebugMsg::msg(2, "Transferring textures to TRAM. Total size [KB]: ",
     *numTextures * texSize / 1024);
 
-  for (int f = 0; f < frames; f++)
+  int f = 0;
+  for(std::vector<BrickList>::iterator frame = _brickList.begin();
+      frame != _brickList.end();
+      ++frame)
   {
     const uchar* raw = vd->getRaw(f);
+    ++f;
 
     int brickIdx = 0;
-    for (int bx = 0; bx < _numBricks[0]; bx++)
-      for (int by = 0; by < _numBricks[1]; by++)
-        for (int bz = 0; bz < _numBricks[2]; bz++)
+    for(BrickList::iterator b = frame->begin(); b != frame->end(); ++b)
+    {
+      Brick* currBrick = *b;
+      ++brickIdx;
+      // offset to first voxel of current brick
+      const int startOffset[3] = { currBrick->startOffset[0],
+                                   currBrick->startOffset[1],
+                                   currBrick->startOffset[2] };
+
+      const int tmpTexels[3] = { currBrick->texels[0],
+                                 currBrick->texels[1],
+                                 currBrick->texels[2] };
+
+      // Memorize the max and min scalar values in the volume. These are stored
+      // to perform empty space leaping later on.
+      int minValue = INT_MAX;
+      int maxValue = INT_MIN;
+
+      memset(texData, 0, texSize);
+
+      // Essentially: for s :=  startOffset[2] to (startOffset[2] + texels[2]) do
+      for (int s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
+      {
+        if (s < 0) continue;
+        const int rawSliceOffset = (vd->vox[2] - s - 1) * vd->getSliceBytes();
+        // Essentially: for y :=  startOffset[1] to (startOffset[1] + texels[1]) do
+        for (int y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
         {
-          Brick* currBrick = _brickList[f][brickIdx];
-          ++brickIdx;
-          // offset to first voxel of current brick
-          const int startOffset[3] = { currBrick->startOffset[0],
-                                       currBrick->startOffset[1],
-                                       currBrick->startOffset[2] };
-
-          const int tmpTexels[3] = { currBrick->texels[0],
-                                     currBrick->texels[1],
-                                     currBrick->texels[2] };
-
-          // Memorize the max and min scalar values in the volume. These are stored
-          // to perform empty space leaping later on.
-          int minValue = INT_MAX;
-          int maxValue = INT_MIN;
-
-          memset(texData, 0, texSize);
-
-          // Essentially: for s :=  startOffset[2] to (startOffset[2] + texels[2]) do
-          for (int s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
+          if (y < 0) continue;
+          const int heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
+          texLineOffset = (y - startOffset[1]) * tmpTexels[0] + (s - startOffset[2]) * tmpTexels[0] * tmpTexels[1];
+          if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
           {
-            if (s < 0) continue;
-            const int rawSliceOffset = (vd->vox[2] - s - 1) * vd->getSliceBytes();
-            // Essentially: for y :=  startOffset[1] to (startOffset[1] + texels[1]) do
-            for (int y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
+            // Essentially: for x :=  startOffset[0] to (startOffset[0] + texels[0]) do
+            for (int x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
             {
-              if (y < 0) continue;
-              const int heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
-              texLineOffset = (y - startOffset[1]) * tmpTexels[0] + (s - startOffset[2]) * tmpTexels[0] * tmpTexels[1];
-              if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
+              if (x < 0) continue;
+              srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
+              if (vd->bpc == 1) rawVal[0] = (int) raw[srcIndex];
+              else if (vd->bpc == 2)
               {
-                // Essentially: for x :=  startOffset[0] to (startOffset[0] + texels[0]) do
-                for (int x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
+                rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
+                rawVal[0] >>= 4;
+              }
+              else  // vd->bpc == 4
+              {
+                fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+                rawVal[0] = vd->mapFloat2Int(fval);
+              }
+
+              // Store min and max for empty space leaping.
+              if (rawVal[0] > maxValue)
+              {
+                maxValue = rawVal[0];
+              }
+              if (rawVal[0] < minValue)
+              {
+                minValue = rawVal[0];
+              }
+
+              const int texOffset = (x - startOffset[0]) + texLineOffset;
+              switch (voxelType)
+              {
+                case VV_SGI_LUT:
+                  texData[2*texOffset] = texData[2*texOffset + 1] = (uchar) rawVal[0];
+                  break;
+                case VV_PAL_TEX:
+                case VV_FRG_PRG:
+                  texData[texOffset] = (uchar) rawVal[0];
+                  break;
+                case VV_TEX_SHD:
+                  for (int c = 0; c < 4; c++)
+                  {
+                    texData[4 * texOffset + c] = (uchar) rawVal[0];
+                  }
+                  break;
+                case VV_PIX_SHD:
+                  texData[4 * texOffset] = (uchar) rawVal[0];
+                  break;
+                case VV_RGBA:
+                  for (int c = 0; c < 4; c++)
+                  {
+                    texData[4 * texOffset + c] = lutData[rawVal[0] * 4 + c];
+                  }
+                  break;
+                default:
+                  assert(0);
+                  break;
+              }
+            }
+          }
+          else if (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4)
+          {
+            if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
+            {
+              for (int x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
+              {
+                if (x < 0) continue;
+
+                const int texOffset = (x - startOffset[0]) + texLineOffset;
+
+                // fetch component values from memory:
+                for (int c = 0; c < ts_min(vd->chan, 4); c++)
                 {
-                  if (x < 0) continue;
-                  srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
-                  if (vd->bpc == 1) rawVal[0] = (int) raw[srcIndex];
+                  srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
+                  if (vd->bpc == 1)
+                    rawVal[c] = (int) raw[srcIndex];
                   else if (vd->bpc == 2)
                   {
-                    rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                    rawVal[0] >>= 4;
+                    rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
+                    rawVal[c] >>= 4;
                   }
-                  else  // vd->bpc == 4
+                 else  // vd->bpc==4
                   {
-                    fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                    rawVal[0] = vd->mapFloat2Int(fval);
-                  }
-
-                  // Store min and max for empty space leaping.
-                  if (rawVal[0] > maxValue)
-                  {
-                    maxValue = rawVal[0];
-                  }
-                  if (rawVal[0] < minValue)
-                  {
-                    minValue = rawVal[0];
-                  }
-
-                  const int texOffset = (x - startOffset[0]) + texLineOffset;
-                  switch (voxelType)
-                  {
-                    case VV_SGI_LUT:
-                      texData[2*texOffset] = texData[2*texOffset + 1] = (uchar) rawVal[0];
-                      break;
-                    case VV_PAL_TEX:
-                    case VV_FRG_PRG:
-                      texData[texOffset] = (uchar) rawVal[0];
-                      break;
-                    case VV_TEX_SHD:
-                      for (int c = 0; c < 4; c++)
-                      {
-                        texData[4 * texOffset + c] = (uchar) rawVal[0];
-                      }
-                      break;
-                    case VV_PIX_SHD:
-                      texData[4 * texOffset] = (uchar) rawVal[0];
-                      break;
-                    case VV_RGBA:
-                      for (int c = 0; c < 4; c++)
-                      {
-                        texData[4 * texOffset + c] = lutData[rawVal[0] * 4 + c];
-                      }
-                      break;
-                    default:
-                      assert(0);
-                      break;
+                    fval = *((float*) (raw + srcIndex));
+                    rawVal[c] = vd->mapFloat2Int(fval);
                   }
                 }
-              }
-              else if (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4)
-              {
-                if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
+
+                // TODO: init empty-space leaping minValue and maxValue for multiple channels as well.
+
+
+                // copy color components:
+                for (int c = 0; c < ts_min(vd->chan, 3); c++)
                 {
-                  for (int x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
+                  texData[4 * texOffset + c] = (uchar) rawVal[c];
+                }
+
+                // alpha channel
+                if (vd->chan >= 4)  // RGBA
+                {
+                  if (voxelType == VV_RGBA)
+                    texData[4 * texOffset + 3] = lutData[rawVal[3] * 4 + 3];
+                  else
+                    texData[4 * texOffset + 3] = (uchar) rawVal[3];
+                }
+                else if(vd->chan > 0) // compute alpha from color components
+                {
+                  alpha = 0;
+                  for (int c = 0; c < vd->chan; c++)
                   {
-                    if (x < 0) continue;
-
-                    const int texOffset = (x - startOffset[0]) + texLineOffset;
-
-                    // fetch component values from memory:
-                    for (int c = 0; c < ts_min(vd->chan, 4); c++)
-                    {
-                      srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
-                      if (vd->bpc == 1)
-                        rawVal[c] = (int) raw[srcIndex];
-                      else if (vd->bpc == 2)
-                      {
-                        rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                        rawVal[c] >>= 4;
-                      }
-                     else  // vd->bpc==4
-                      {
-                        fval = *((float*) (raw + srcIndex));
-                        rawVal[c] = vd->mapFloat2Int(fval);
-                      }
-                    }
-
-                    // TODO: init empty-space leaping minValue and maxValue for multiple channels as well.
-
-
-                    // copy color components:
-                    for (int c = 0; c < ts_min(vd->chan, 3); c++)
-                    {
-                      texData[4 * texOffset + c] = (uchar) rawVal[c];
-                    }
-                
-                    // alpha channel
-                    if (vd->chan >= 4)  // RGBA
-                    {
-                      if (voxelType == VV_RGBA)
-                        texData[4 * texOffset + 3] = lutData[rawVal[3] * 4 + 3];
-                      else
-                        texData[4 * texOffset + 3] = (uchar) rawVal[3];
-                    }
-                    else if(vd->chan > 0) // compute alpha from color components
-                    {
-                      alpha = 0;
-                      for (int c = 0; c < vd->chan; c++)
-                      {
-                        // alpha: mean of sum of RGB conversion table results:
-                        alpha += (int) lutData[rawVal[c] * 4 + c];
-                      }
-                      texData[4 * texOffset + 3] = (uchar) (alpha / vd->chan);
-                    }
-                    else
-                    {
-                      texData[4 * texOffset + 3] = 0;
-                    }
+                    // alpha: mean of sum of RGB conversion table results:
+                    alpha += (int) lutData[rawVal[c] * 4 + c];
                   }
+                  texData[4 * texOffset + 3] = (uchar) (alpha / vd->chan);
+                }
+                else
+                {
+                  texData[4 * texOffset + 3] = 0;
                 }
               }
-              else cerr << "Cannot create texture: unsupported voxel format (3)." << endl;
-            } // startoffset[1] to startoffset[1]+tmpTexels[1]
-          } // startoffset[2] to startoffset[2]+tmpTexels[2]
+            }
+          }
+          else cerr << "Cannot create texture: unsupported voxel format (3)." << endl;
+        } // startoffset[1] to startoffset[1]+tmpTexels[1]
+      } // startoffset[2] to startoffset[2]+tmpTexels[2]
 
-          texIndex = (f * _numBricks[0] * _numBricks[1] * _numBricks[2]) + (bx * _numBricks[2] * _numBricks[1])
-            + (by * _numBricks[2]) + bz;
-          currBrick->index = texIndex;
+      currBrick->minValue = minValue;
+      currBrick->maxValue = maxValue;
+      currBrick->visible = true;
 
-          currBrick->minValue = minValue;
-          currBrick->maxValue = maxValue;
-          currBrick->visible = true;
-
-          accommodated = currBrick->upload3DTexture(privateTexNames[texIndex], texData,
-                                                    texFormat, internalTexFormat,
-                                                    interpolation);
-        } // # foreach (numBricks[i])
+      accommodated = currBrick->upload3DTexture(privateTexNames[currBrick->index], texData,
+                                                texFormat, internalTexFormat,
+                                                interpolation);
+    } // # foreach (numBricks[i])
   } // # frames
 
   if (!accommodated)
@@ -3494,6 +3497,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // execution where the texNames array is a member.
     data->renderer->makeTextures(data->privateTexNames, &data->numTextures,
                                  data->pixLUTName, data->rgbaLUT);
+    data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
+                                      data->rgbaLUT);
     pthread_mutex_unlock(data->makeTextureMutex);
 
     // Now that the textures are built, the bricks may be distributed
@@ -3791,8 +3796,8 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
 
       stopwatch->start();
 
-      for(std::vector<vvConvexObj *>::iterator it = data->halfSpace->getObjects()->begin();
-          it != data->halfSpace->getObjects()->end();
+      for(std::vector<Brick*>::iterator it = data->halfSpace->getBricks()->begin();
+          it != data->halfSpace->getBricks()->end();
           ++it)
       {
         Brick *tmp = dynamic_cast<Brick *>(*it);
@@ -4121,7 +4126,7 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
   }
 
   _sortedList.clear();
-  for(std::vector<vvConvexObj *>::iterator it = _insideList.begin(); it != _insideList.end(); ++it)
+  for(std::vector<Brick*>::iterator it = _insideList.begin(); it != _insideList.end(); ++it)
      _sortedList.push_back(static_cast<Brick *>(*it));
 }
 
@@ -4138,8 +4143,8 @@ void vvTexRend::sortBrickList(const int threadId, const vvVector3& eye, const vv
   if (_numThreads > 0)
   {
     _threadData[threadId].sortedList.clear();
-    for(std::vector<vvConvexObj *>::iterator it = _threadData[threadId].halfSpace->getObjects()->begin();
-        it != _threadData[threadId].halfSpace->getObjects()->end();
+    for(std::vector<Brick*>::iterator it = _threadData[threadId].halfSpace->getBricks()->begin();
+        it != _threadData[threadId].halfSpace->getBricks()->end();
         ++it)
     {
       Brick *brick = static_cast<Brick*>(*it);

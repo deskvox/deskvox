@@ -244,7 +244,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     typedef std::vector<Brick *> BrickList;
     std::vector<BrickList> _brickList;            ///< contains all created bricks for all frames
     std::vector<BrickList> _nonemptyList;         ///< contains all non-transparent bricks for all frames
-    std::vector<vvConvexObj *> _insideList;       ///< contains all non-empty bricks inside the probe
+    BrickList _insideList;                        ///< contains all non-empty bricks inside the probe
     BrickList _sortedList;                        ///< contains all bricks inside the probe in a sorted order (back to front)
     bool _useOnlyOneBrick;                        ///< true if whole data fits in texture memory
     vvVector4 _frustum[6];                        ///< current planes of view frustum

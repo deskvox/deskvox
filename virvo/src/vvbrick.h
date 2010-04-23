@@ -29,7 +29,7 @@
 
 class vvTexRend;
 
-class VIRVOEXPORT Brick : public vvConvexObj
+class VIRVOEXPORT Brick
 {
 public:
   Brick()                                     ///< dflt. constructor (needed for C++ templates)
@@ -88,6 +88,10 @@ public:
                        const vvVector3& normal,
                        float& minDot,
                        float& maxDot);
+
+  static void sortByCenter(Brick** bricks,
+                           const int numBricks,
+                           const vvVector3& axis);
                                                     ///< and assuming that vertices are ordered back to front
   vvVector3 pos;                                    ///< center position of brick
   vvVector3 min;                                    ///< minimum position of brick

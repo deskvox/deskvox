@@ -21,9 +21,12 @@
 #ifndef VVBSPTREE_H
 #define VVBSPTREE_H
 
-#include <vector>
 #include "vvvecmath.h"
 #include "vvvisitor.h"
+
+#include <vector>
+
+class Brick;
 
 typedef vvVector3 vvBoxCorners[8];
 
@@ -145,45 +148,6 @@ private:
 };
 
 /*!
- * \brief           Abstract base class for space partitionable objects.
- *
- *                  If you want to arrange your primitives in a space
- *                  partitioning tree, make sure to override the virtual
- *                  method \ref getAABB().
- */
-class vvConvexObj
-{
-public:
-   virtual ~vvConvexObj() {}
-
-  /*!
-   * \brief         Get the axis aligned bounding box of this object.
-   *
-   *                Overwrite this method and return an axis aligned
-   *                bounding box (AABB). Though your (individual) space
-   *                partitioning algorithm (see \ref vvSpacePartitioner)
-   *                may not rely on these, it is mandatory to provide
-   *                this method.
-   * \return        An axis aligned bounding box.
-   */
-  virtual vvAABB getAABB() = 0;
-
-  /*!
-   * \brief         Sort an array of convex objects by the center point.
-   *
-   *                Given an array of objects, this class method sorts
-   *                them along the specified axis. To sort the objects
-   *                along the x-axis, pass vvVector3(1, 0, 0) (length = 1)!
-   *                as axis argument.
-   * \param         objects The array to sort.
-   * \param         numObjects The number of objects.
-   * \param         axis A vector representing the axis. Unit length!
-   */
-  static void sortByCenter(vvConvexObj** objects, const int numObjects,
-                           const vvVector3& axis);
-};
-
-/*!
  * \brief           Space node in a bsp tree hierarchy.
  *
  *                  The part of the space this node occupies is propagated to the
@@ -273,10 +237,10 @@ public:
   /*!
    * \brief         Set object list.
    *
-   *                Set the list of objects this partial space contains.
-   * \param         objects An array with pointers to convex objects.
+   *                Set the list of bricks this partial space contains.
+   * \param         bricks An array with pointers to convex bricks.
    */
-  void setObjects(std::vector<vvConvexObj*> *objects);
+  void setBricks(std::vector<Brick*> * bricks);
   /*!
    * \brief         Set percent of parent space this one occupies.
    *
@@ -317,12 +281,12 @@ public:
    */
   vvPlane* getSplitPlane() const;
   /*!
-   * \brief         Get object list.
+   * \brief         Get brick list.
    *
-   *                Get the list of objects this partial space contains.
-   * \return        An array with pointers to convex objects.
+   *                Get the list of bricks this partial space contains.
+   * \return        An array with pointers to convex bricks.
    */
-  std::vector<vvConvexObj*> *getObjects() const;
+  std::vector<Brick*>* getBricks() const;
   /*!
    * \brief         Get percent of parent space this one occupies.
    *
@@ -346,9 +310,9 @@ public:
   /*!
    * \brief         Get the bounding box of the half space.
    *
-   *                Get an axis aligned bounding box surrounding the objects
+   *                Get an axis aligned bounding box surrounding the bricks
    *                contained within this halfspace.
-   * \return        The bounding box around the objects.
+   * \return        The bounding box around the bricks.
    */
   vvAABB* getBoundingBox() const;
   /*!
@@ -361,7 +325,7 @@ public:
    *                against it, otherwise the bounding box is clipped
    *                against the volume.
    *                TODO: Don't clip here, but rather when distributing
-   *                the convex objects.
+   *                the convex bricks.
    * \param         probeMin Used to clip the bounding box.
    * \param         probeMax Used to clip the bounding box.
    * \param         recalculate If true, the member rect will be recalculated.
@@ -373,7 +337,7 @@ public:
    * \brief         Debug function. Calculate the contained volume.
    *
    *                Calculate the contained volume by evaluating the volume
-   *                of the aabbs of the contained objects. Useful for
+   *                of the aabbs of the contained bricks. Useful for
    *                debugging, otherwise quite time consuming.
    * \return        The contained volume.
    */
@@ -384,7 +348,7 @@ private:
   vvHalfSpace* _nextBrother;
 
   vvPlane* _splitPlane;
-  std::vector<vvConvexObj*> *_objects;
+  std::vector<Brick*> *_bricks;
   float _percent;
   float _actualPercent;
   vvAABB* _boundingBox;
@@ -400,7 +364,7 @@ private:
  *                  <br>
  *                  Space partitioning can be performed on bricks (aabb's), but
  *                  this isn't necessarily the case. Thus the method used for
- *                  space partitioning is dependent on the object located in the
+ *                  space partitioning is dependent on the brick located in the
  *                  spaces. Thus a generic interface to space partitioning is
  *                  necessary.
  */
@@ -412,17 +376,16 @@ public:
    *
    *                This partitioner will produce to half spaces, each of which
    *                will contain appr. percent1 or percent2 of the provided
-   *                objects respectivelly. Make sure to provide objects that
+   *                bricks respectivelly. Make sure to provide bricks that
    *                are granulare enough to be divided according to the percent
    *                values. Otherwise the percent values will only be approximated.
-   *                The provided objects need to have AABBs. AABBs need to be
+   *                The provided bricks need to have AABBs. AABBs need to be
    *                partitionable.
-   * \param         objects All objects to be contained in this half space.
-   * \param         numObjects The overall number of objects for the whole space.
+   * \param         bricks All bricks to be contained in this half space.
    * \param         percent1 The share for half space 1.
    * \param         percent2 The share for half space 2.
    */
-  static vvHalfSpace* getAABBHalfSpaces(std::vector<vvConvexObj*> *objects,
+  static vvHalfSpace* getAABBHalfSpaces(std::vector<Brick*>* bricks,
                                         const float percent1, const float percent2);
 private:
 };
@@ -438,7 +401,7 @@ private:
 class vvBspTree
 {
 public:
-  vvBspTree(float* partitioning, const int length, std::vector<vvConvexObj*>* objects);
+  vvBspTree(float* partitioning, const int length, std::vector<Brick*>* bricks);
   virtual ~vvBspTree();
 
   void traverse(const vvVector3& pos);
@@ -458,12 +421,12 @@ public:
   void print();
 
   /*!
-   * \brief         Set the tree's visitor object.
+   * \brief         Set the tree's visitor brick.
    *
    *                Tree traversal is realized using the visitor
    *                pattern. The rendering logic is supplied by
    *                an externally implemented visitor class which
-   *                essentially will render the contained objects
+   *                essentially will render the contained bricks
    *                based upon the knowledge of their type.
    * \param         visitor The visitor.
    */
@@ -487,7 +450,7 @@ private:
    */
   void buildHierarchy(vvHalfSpace* node, float* partitioning, const int length,
                       const int startIdx, const int endIdx);
-  void distributeObjects(vvHalfSpace* node, std::vector<vvConvexObj*> *objects);
+  void distributeBricks(vvHalfSpace* node, std::vector<Brick*>* bricks);
   void print(vvHalfSpace* node, const int indent);
   void traverse(const vvVector3& pos, vvHalfSpace* node);
 };
