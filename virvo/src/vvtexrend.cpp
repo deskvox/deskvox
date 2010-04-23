@@ -774,7 +774,13 @@ vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numT
     case VV_SLICES:  err=makeTextures2D(1); updateTextures2D(1, 0, 10, 20, 15, 10, 5); break;
     case VV_CUBIC2D: err=makeTextures2D(3); updateTextures2D(3, 0, 10, 20, 15, 10, 5); break;
     // Threads will make their own copies of the textures as well as their own gl ids.
-    case VV_BRICKS:  err=makeTextureBricks(privateTexNames, numTextures, lutData); break;
+    case VV_BRICKS:
+      err = makeEmptyBricks();
+      if (err == OK)
+      {
+        err = makeTextureBricks(privateTexNames, numTextures, lutData);
+      }
+      break;
     default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
   }
   vvGLTools::printGLError("vvTexRend::makeTextures");
@@ -1037,48 +1043,18 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
 
 vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
 {
-  // TODO: separate generation of brick hulls from uploading brick textures.
-  return OK;
-}
-
-vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData)
-{
   ErrorType err = OK;
-  uchar* texData;                                 // data for texture memory
-  uchar* raw;                                     // raw volume data
-  vvVector3 voxSize;                              // size of a voxel
-  vvVector3 halfBrick;                            // middle of the current brick in texels
-  vvVector3 halfVolume;                           // middle of the volume in voxel
-  float fval;                                     // floating point voxel value
-  int rawVal[4];                                  // raw values for R,G,B,A
-  int frames;
   int tmpTexels[3];                               // number of texels in each dimension for current brick
-  int texSize;                                    // texture size in bytes
-  int sliceSize;                                  // number of voxels in a raw slice
-  int startOffset[3];                             // offset to first voxel of current brick
-  int texOffset;                                  // currently processed texel [texels]
-  int texLineOffset;                              // index into currently processed line of texture data array [texels]
-  int rawSliceOffset;                             // slice offset in raw data
-  int heightOffset, srcIndex;
-  int bx, by, bz, x, y, s, f, c, alpha, texIndex;
-  bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
-  Brick* currBrick;
 
   if (!extTex3d) return NO3DTEX;
 
   if (_renderState._brickSize == 0)
   {
     vvDebugMsg::msg(1, "3D Texture brick size unknown");
-    return err;
+    return TEX_SIZE_UNKNOWN;
   }
 
-  if (_numThreads == 0)
-  {
-    // TODO: make removeTextures() compatible with "privateTexNames"
-    removeTextures();
-  }
-
-  frames = vd->frames;
+  const int frames = vd->frames;
 
   for(std::vector<BrickList>::iterator frame = _brickList.begin();
       frame != _brickList.end();
@@ -1090,60 +1066,37 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
   }
   _brickList.clear();
 
-  // number of textures needed
-  *numTextures = frames * _numBricks[0] * _numBricks[1] * _numBricks[2];
-
-  texSize = texels[0] * texels[1] * texels[2] * texelsize;
+  const int texSize = texels[0] * texels[1] * texels[2] * texelsize;
 
   vvDebugMsg::msg(1, "3D Texture (bricking) width     = ", texels[0]);
   vvDebugMsg::msg(1, "3D Texture (bricking) height    = ", texels[1]);
   vvDebugMsg::msg(1, "3D Texture (bricking) depth     = ", texels[2]);
   vvDebugMsg::msg(1, "3D Texture (bricking) size (KB) = ", texSize / 1024);
 
-  texData = new uchar[texSize];
-
-  sliceSize = vd->getSliceBytes();
-
-  vvDebugMsg::msg(2, "Creating texture names. # of names: ", *numTextures);
-  privateTexNames = new GLuint[*numTextures];
-  glGenTextures(*numTextures, privateTexNames);
-
-  // generate textures contents:
-  vvDebugMsg::msg(2, "Transferring textures to TRAM. Total size [KB]: ",
-    *numTextures * texSize / 1024);
-
   // helper variables
-  voxSize = vd->getSize();
-  voxSize[0] /= (vd->vox[0]-1);
-  voxSize[1] /= (vd->vox[1]-1);
-  voxSize[2] /= (vd->vox[2]-1);
+  const vvVector3 voxSize(vd->getSize()[0] / (vd->vox[0] - 1),
+                          vd->getSize()[1] / (vd->vox[1] - 1),
+                          vd->getSize()[2] / (vd->vox[2] - 1));
 
-  halfBrick.set(float(texels[0]-_renderState._brickTexelOverlap),
-                float(texels[1]-_renderState._brickTexelOverlap),
-                float(texels[2]-_renderState._brickTexelOverlap));
-  halfBrick.scale(0.5);
+  const vvVector3 halfBrick(float(texels[0]-_renderState._brickTexelOverlap) * 0.5f,
+                            float(texels[1]-_renderState._brickTexelOverlap) * 0.5f,
+                            float(texels[2]-_renderState._brickTexelOverlap) * 0.5f);
 
-  halfVolume.set(float(vd->vox[0]), float(vd->vox[1]), float(vd->vox[2]));
-  halfVolume.sub(1.0);
-  halfVolume.scale(0.5);
+  const vvVector3 halfVolume(float(vd->vox[0] - 1) * 0.5f,
+                             float(vd->vox[1] - 1) * 0.5f,
+                             float(vd->vox[2] - 1) * 0.5f);
 
   _brickList.resize(frames);
-  for (f = 0; f < frames; f++)
+  for (int f = 0; f < frames; f++)
   {
-    raw = vd->getRaw(f);
-
-    for (bx = 0; bx < _numBricks[0]; bx++)
-      for (by = 0; by < _numBricks[1]; by++)
-        for (bz = 0; bz < _numBricks[2]; bz++)
+    for (int bx = 0; bx < _numBricks[0]; bx++)
+      for (int by = 0; by < _numBricks[1]; by++)
+        for (int bz = 0; bz < _numBricks[2]; bz++)
         {
-          // Memorize the max and min scalar values in the volume. These are stored
-          // to perform empty space leaping later on.
-          int minValue = INT_MAX;
-          int maxValue = INT_MIN;
-
-          startOffset[0] = bx * _renderState._brickSize[0];
-          startOffset[1] = by * _renderState._brickSize[1];
-          startOffset[2] = bz * _renderState._brickSize[2];
+          // offset to first voxel of current brick
+          const int startOffset[3] = { bx * _renderState._brickSize[0],
+                                       by * _renderState._brickSize[1],
+                                       bz * _renderState._brickSize[2] };
 
           // Guarantee that startOffset[i] + brickSize[i] won't exceed actual size of the volume.
           if ((startOffset[0] + _renderState._brickSize[0]) >= vd->vox[0])
@@ -1159,23 +1112,136 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
           else
             tmpTexels[2] = texels[2];
 
+          Brick* currBrick = new Brick();
+          int bs[3];
+          bs[0] = _renderState._brickSize[0];
+          bs[1] = _renderState._brickSize[1];
+          bs[2] = _renderState._brickSize[2];
+          if (_useOnlyOneBrick)
+          {
+            bs[0] += _renderState._brickTexelOverlap;
+            bs[1] += _renderState._brickTexelOverlap;
+            bs[2] += _renderState._brickTexelOverlap;
+          }
+
+          bool atBorder = false;
+          for (int d = 0; d < 3; ++d)
+          {
+            currBrick->brickTexelOverlap[d] = _renderState._brickTexelOverlap;
+            const float maxObj = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
+            if (maxObj > vd->getSize()[d])
+            {
+              atBorder = true;
+              currBrick->brickTexelOverlap[d] = 0;
+            }
+          }
+          currBrick->atBorder = atBorder;
+
+          currBrick->pos.set(voxSize[0] * (startOffset[0] + halfBrick[0] - halfVolume[0]),
+            voxSize[1] * (startOffset[1] + halfBrick[1] - halfVolume[1]),
+            voxSize[2] * (startOffset[2] + halfBrick[2] - halfVolume[2]));
+          currBrick->min.set(voxSize[0] * (startOffset[0] - halfVolume[0]),
+            voxSize[1] * (startOffset[1] - halfVolume[1]),
+            voxSize[2] * (startOffset[2] - halfVolume[2]));
+          currBrick->max.set(voxSize[0] * (startOffset[0] + (tmpTexels[0] - currBrick->brickTexelOverlap[0]) - halfVolume[0]),
+            voxSize[1] * (startOffset[1] + (tmpTexels[1] - currBrick->brickTexelOverlap[1]) - halfVolume[1]),
+            voxSize[2] * (startOffset[2] + (tmpTexels[2] - currBrick->brickTexelOverlap[2]) - halfVolume[2]));
+
+          for (int d = 0; d < 3; ++d)
+          {
+            if (currBrick->max[d] > vd->getSize()[d])
+            {
+              currBrick->max[d] = vd->getSize()[d];
+            }
+          }
+          currBrick->texels[0] = tmpTexels[0];
+          currBrick->texels[1] = tmpTexels[1];
+          currBrick->texels[2] = tmpTexels[2];
+          currBrick->startOffset[0] = startOffset[0];
+          currBrick->startOffset[1] = startOffset[1];
+          currBrick->startOffset[2] = startOffset[2];
+
+          _brickList[f].push_back(currBrick);
+        } // # foreach (numBricks[i])
+  } // # frames
+
+  return err;
+}
+
+vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData)
+{
+  ErrorType err = OK;
+  uchar* texData;                                 // data for texture memory
+  float fval;                                     // floating point voxel value
+  int rawVal[4];                                  // raw values for R,G,B,A
+  int texLineOffset;                              // index into currently processed line of texture data array [texels]
+  int srcIndex;
+  int alpha, texIndex;
+  bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
+
+  if (_numThreads == 0)
+  {
+    // TODO: make removeTextures() compatible with "privateTexNames"
+    removeTextures();
+  }
+
+  const int frames = vd->frames;
+
+  const int texSize = texels[0] * texels[1] * texels[2] * texelsize;
+  texData = new uchar[texSize];
+
+  // number of textures needed
+  *numTextures = frames * _numBricks[0] * _numBricks[1] * _numBricks[2];
+
+  privateTexNames = new GLuint[*numTextures];
+  glGenTextures(*numTextures, privateTexNames);
+
+  // generate textures contents:
+  vvDebugMsg::msg(2, "Transferring textures to TRAM. Total size [KB]: ",
+    *numTextures * texSize / 1024);
+
+  for (int f = 0; f < frames; f++)
+  {
+    const uchar* raw = vd->getRaw(f);
+
+    int brickIdx = 0;
+    for (int bx = 0; bx < _numBricks[0]; bx++)
+      for (int by = 0; by < _numBricks[1]; by++)
+        for (int bz = 0; bz < _numBricks[2]; bz++)
+        {
+          Brick* currBrick = _brickList[f][brickIdx];
+          ++brickIdx;
+          // offset to first voxel of current brick
+          const int startOffset[3] = { currBrick->startOffset[0],
+                                       currBrick->startOffset[1],
+                                       currBrick->startOffset[2] };
+
+          const int tmpTexels[3] = { currBrick->texels[0],
+                                     currBrick->texels[1],
+                                     currBrick->texels[2] };
+
+          // Memorize the max and min scalar values in the volume. These are stored
+          // to perform empty space leaping later on.
+          int minValue = INT_MAX;
+          int maxValue = INT_MIN;
+
           memset(texData, 0, texSize);
 
           // Essentially: for s :=  startOffset[2] to (startOffset[2] + texels[2]) do
-          for (s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
+          for (int s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
           {
             if (s < 0) continue;
-            rawSliceOffset = (vd->vox[2] - s - 1) * sliceSize;
+            const int rawSliceOffset = (vd->vox[2] - s - 1) * vd->getSliceBytes();
             // Essentially: for y :=  startOffset[1] to (startOffset[1] + texels[1]) do
-            for (y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
+            for (int y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
             {
               if (y < 0) continue;
-              heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
+              const int heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
               texLineOffset = (y - startOffset[1]) * tmpTexels[0] + (s - startOffset[2]) * tmpTexels[0] * tmpTexels[1];
               if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
               {
                 // Essentially: for x :=  startOffset[0] to (startOffset[0] + texels[0]) do
-                for (x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
+                for (int x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
                 {
                   if (x < 0) continue;
                   srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
@@ -1201,7 +1267,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                     minValue = rawVal[0];
                   }
 
-                  texOffset = (x - startOffset[0]) + texLineOffset;
+                  const int texOffset = (x - startOffset[0]) + texLineOffset;
                   switch (voxelType)
                   {
                     case VV_SGI_LUT:
@@ -1212,15 +1278,19 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                       texData[texOffset] = (uchar) rawVal[0];
                       break;
                     case VV_TEX_SHD:
-                      for (c = 0; c < 4; c++)
+                      for (int c = 0; c < 4; c++)
+                      {
                         texData[4 * texOffset + c] = (uchar) rawVal[0];
+                      }
                       break;
                     case VV_PIX_SHD:
                       texData[4 * texOffset] = (uchar) rawVal[0];
                       break;
                     case VV_RGBA:
-                      for (c = 0; c < 4; c++)
+                      for (int c = 0; c < 4; c++)
+                      {
                         texData[4 * texOffset + c] = lutData[rawVal[0] * 4 + c];
+                      }
                       break;
                     default:
                       assert(0);
@@ -1232,14 +1302,14 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
               {
                 if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
                 {
-                  for (x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
+                  for (int x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
                   {
                     if (x < 0) continue;
 
-                    texOffset = (x - startOffset[0]) + texLineOffset;
+                    const int texOffset = (x - startOffset[0]) + texLineOffset;
 
                     // fetch component values from memory:
-                    for (c = 0; c < ts_min(vd->chan, 4); c++)
+                    for (int c = 0; c < ts_min(vd->chan, 4); c++)
                     {
                       srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
                       if (vd->bpc == 1)
@@ -1260,7 +1330,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
 
 
                     // copy color components:
-                    for (c = 0; c < ts_min(vd->chan, 3); c++)
+                    for (int c = 0; c < ts_min(vd->chan, 3); c++)
                     {
                       texData[4 * texOffset + c] = (uchar) rawVal[c];
                     }
@@ -1276,7 +1346,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                     else if(vd->chan > 0) // compute alpha from color components
                     {
                       alpha = 0;
-                      for (c = 0; c < vd->chan; c++)
+                      for (int c = 0; c < vd->chan; c++)
                       {
                         // alpha: mean of sum of RGB conversion table results:
                         alpha += (int) lutData[rawVal[c] * 4 + c];
@@ -1296,67 +1366,15 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
 
           texIndex = (f * _numBricks[0] * _numBricks[1] * _numBricks[2]) + (bx * _numBricks[2] * _numBricks[1])
             + (by * _numBricks[2]) + bz;
-
-          currBrick = new Brick();
+          currBrick->index = texIndex;
 
           currBrick->minValue = minValue;
           currBrick->maxValue = maxValue;
           currBrick->visible = true;
 
-          int bs[3];
-          bs[0] = _renderState._brickSize[0];
-          bs[1] = _renderState._brickSize[1];
-          bs[2] = _renderState._brickSize[2];
-          if (_useOnlyOneBrick)
-          {
-            bs[0] += _renderState._brickTexelOverlap;
-            bs[1] += _renderState._brickTexelOverlap;
-            bs[2] += _renderState._brickTexelOverlap;
-          }
-
-          bool atBorder = false;
-          for (int d = 0; d < 3; ++d)
-          {
-            currBrick->brickTexelOverlap[d] = _renderState._brickTexelOverlap;
-            const float maxObj = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
-            if (maxObj > vd->getSize()[d])
-            {
-              atBorder = true;
-              currBrick->brickTexelOverlap[d] = 0;
-            }
-          }
-          currBrick->atBorder = atBorder;
-
-          currBrick->index = texIndex;
-          currBrick->pos.set(voxSize[0] * (startOffset[0] + halfBrick[0] - halfVolume[0]),
-            voxSize[1] * (startOffset[1] + halfBrick[1] - halfVolume[1]),
-            voxSize[2] * (startOffset[2] + halfBrick[2] - halfVolume[2]));
-          currBrick->min.set(voxSize[0] * (startOffset[0] - halfVolume[0]),
-            voxSize[1] * (startOffset[1] - halfVolume[1]),
-            voxSize[2] * (startOffset[2] - halfVolume[2]));
-          currBrick->max.set(voxSize[0] * (startOffset[0] + (tmpTexels[0] - currBrick->brickTexelOverlap[0]) - halfVolume[0]),
-            voxSize[1] * (startOffset[1] + (tmpTexels[1] - currBrick->brickTexelOverlap[1]) - halfVolume[1]),
-            voxSize[2] * (startOffset[2] + (tmpTexels[2] - currBrick->brickTexelOverlap[2]) - halfVolume[2]));
-
-          for (int d = 0; d < 3; ++d)
-          {
-            if (currBrick->max[d] > vd->getSize()[d])
-            {
-              currBrick->max[d] = vd->getSize()[d];
-            }
-          }
-
-          currBrick->texels[0] = tmpTexels[0];
-          currBrick->texels[1] = tmpTexels[1];
-          currBrick->texels[2] = tmpTexels[2];
-          currBrick->startOffset[0] = startOffset[0];
-          currBrick->startOffset[1] = startOffset[1];
-          currBrick->startOffset[2] = startOffset[2];
-
           accommodated = currBrick->upload3DTexture(privateTexNames[texIndex], texData,
                                                     texFormat, internalTexFormat,
                                                     interpolation);
-          _brickList[f].push_back(currBrick);
         } // # foreach (numBricks[i])
   } // # frames
 

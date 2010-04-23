@@ -161,6 +161,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     {
       OK = 0,                                     ///< no error
       TRAM_ERROR,                                 ///< not enough texture memory
+      TEX_SIZE_UNKNOWN,                           ///< size of 3D texture is unknown
       NO3DTEX,                                    ///< 3D textures not supported on this hardware
       NO_DISPLAYS_SPECIFIED,                      ///< no x-displays in _renderState, thus no multi-threading
       NO_DISPLAYS_OPENED,                         ///< no additional x-displays could be opened, thus no multi-threading
