@@ -809,6 +809,10 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   }
   else
   {
+    if (vvDebugMsg::getDebugLevel() > 1)
+    {
+      generateDebugColors();
+    }
     // Here initialization is done. I.e. the worker threads may start rendering as soon as the
     // brick list is built up properly. Waiting for a properly sorted brick list is assured
     // by another barrier.
@@ -3846,7 +3850,19 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       glEnable(GL_TEXTURE_3D_EXT);
 
       data->renderer->_offscreenBuffers[data->threadId]->bindFramebuffer();
-      glClearColor(0.0, 0.0, 0.0, 0.0);
+
+      // Individual per thread color to visualize the screen rect
+      // occupied by the the content rendered by this thread.
+      if (vvDebugMsg::getDebugLevel() > 1)
+      {
+        glClearColor(data->renderer->_debugColors[data->threadId][0],
+                     data->renderer->_debugColors[data->threadId][1],
+                     data->renderer->_debugColors[data->threadId][2], 0.0);
+      }
+      else
+      {
+        glClearColor(0.0, 0.0, 0.0, 0.0);
+      }
       glClear(GL_COLOR_BUFFER_BIT);
 
       glPushAttrib(GL_VIEWPORT_BIT);
@@ -4949,6 +4965,18 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
   deactivateClippingPlane();
+}
+
+void vvTexRend::generateDebugColors()
+{
+  _debugColors[0] = vvColor(0.5f, 0.7f, 0.4f);
+  _debugColors[1] = vvColor(0.7f, 0.5f, 0.0f);
+  _debugColors[2] = vvColor(0.0f, 0.5f, 0.7f);
+  _debugColors[3] = vvColor(0.7f, 0.0f, 0.5f);
+  _debugColors[4] = vvColor(1.0f, 1.0f, 0.0f);
+  _debugColors[5] = vvColor(0.0f, 1.0f, 0.0f);
+  _debugColors[6] = vvColor(0.0f, 0.0f, 1.0f);
+  _debugColors[7] = vvColor(1.0f, 0.0f, 0.0f);
 }
 
 //----------------------------------------------------------------------------

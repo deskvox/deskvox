@@ -52,6 +52,12 @@ struct ThreadArgs;
 
 class vvTexRend;
 
+/*!
+ * Generate more colors by adjusting this literal and \ref generateDebugColors()
+ * if more than 8 threads need to be colorized for debugging.
+ */
+const int MAX_DEBUG_COLORS = 8;
+
 //============================================================================
 // Class Definitions
 //============================================================================
@@ -317,6 +323,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     bool _proxyGeometryOnGpu;                     ///< indicate wether proxy geometry is to be computed on gpu
     int _lastFrame;                               ///< last frame rendered
+    vvColor _debugColors[MAX_DEBUG_COLORS];       ///< array of colors to visualize threads in dbg mode (debug level >= 2).
+                                                  ///< Feel free to use these colors for similar purposes either.
 
     vvRenderTarget* _renderTarget;                ///< can e.g. be an offscreen buffer to use with image downscaling
                                                   ///< or an image creator making a screenshot
@@ -371,6 +379,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void renderTexBricks(vvMatrix*);
     void renderTex2DSlices(float);
     void renderTex2DCubic(AxisType, float, float, float);
+    void generateDebugColors();
     VoxelType findBestVoxelType(VoxelType);
     GeometryType findBestGeometry(GeometryType, VoxelType);
     void updateLUT(const float, GLuint& lutName, uchar*& lutData);
