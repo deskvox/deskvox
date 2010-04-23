@@ -264,6 +264,37 @@ void Brick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax)
   glEnd();
 }
 
+bool Brick::upload3DTexture(GLuint& texName, uchar* texData,
+                            GLenum texFormat, GLint internalTexFormat,
+                            const bool interpolation)
+{
+  glBindTexture(GL_TEXTURE_3D_EXT, texName);
+
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+  glTexImage3D(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
+    texels[0], texels[1], texels[2], 0, texFormat, GL_UNSIGNED_BYTE, NULL);
+
+  GLint glWidth;
+  glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
+  if (glWidth != 0)
+  {
+    glTexImage3D(GL_TEXTURE_3D_EXT, 0, internalTexFormat, texels[0], texels[1], texels[2], 0,
+      texFormat, GL_UNSIGNED_BYTE, texData);
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
 /** Get front index of the brick based upon the current modelview matrix.
   @param vertices  NOTE THE FOLLOWING: albeit vertices are constituents of
                    bricks, these are passed along with the function call in

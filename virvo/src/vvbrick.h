@@ -74,13 +74,16 @@ public:
               GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges);
 
   void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax);
+  bool upload3DTexture(GLuint& texName, uchar* texData,
+                       GLenum texFormat, GLint internalTexFormat,
+                       const bool interpolation = true);
 
   virtual vvAABB getAABB()
   {
     return vvAABB(min, max);
   }
 
-  ushort getFrontIndex(const vvVector3* vertices,         ///< front index of the brick dependent upon the current model view
+  ushort getFrontIndex(const vvVector3* vertices,   ///< front index of the brick dependent upon the current model view
                        const vvVector3& point,
                        const vvVector3& normal,
                        float& minDot,

@@ -1044,7 +1044,6 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
 vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData)
 {
   ErrorType err = OK;
-  GLint glWidth;                                  // return value from OpenGL call
   uchar* texData;                                 // data for texture memory
   uchar* raw;                                     // raw volume data
   vvVector3 voxSize;                              // size of a voxel
@@ -1354,28 +1353,10 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
           currBrick->startOffset[1] = startOffset[1];
           currBrick->startOffset[2] = startOffset[2];
 
+          accommodated = currBrick->upload3DTexture(privateTexNames[texIndex], texData,
+                                                    texFormat, internalTexFormat,
+                                                    interpolation);
           _brickList[f].push_back(currBrick);
-
-          glBindTexture(GL_TEXTURE_3D_EXT, privateTexNames[texIndex]);
-
-          glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-          glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
-          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
-          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
-
-          glTexImage3D(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat,
-            tmpTexels[0], tmpTexels[1], tmpTexels[2], 0, texFormat, GL_UNSIGNED_BYTE, NULL);
-
-          glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
-          if (glWidth != 0)
-          {
-            glTexImage3D(GL_TEXTURE_3D_EXT, 0, internalTexFormat, tmpTexels[0], tmpTexels[1], tmpTexels[2], 0,
-              texFormat, GL_UNSIGNED_BYTE, texData);
-          }
-          else accommodated = false;
         } // # foreach (numBricks[i])
   } // # frames
 
