@@ -15,7 +15,8 @@ SRCDIR = $${BASEDIR}/src/kernel/virvo
 win32:DEFINES += VIRVO_EXPORT \
     UNICODE
 DEFINES *= NO_CONFIG_H
-SOURCES = vvcolor.cpp \
+SOURCES = vvbrick.cpp \
+    vvcolor.cpp \
     vvdebugmsg.cpp \
     vvdicom.cpp \
     vvdynlib.cpp \
@@ -50,6 +51,7 @@ SOURCES = vvcolor.cpp \
     vvmultirend/vvtexmultirendmngr.cpp
 HEADERS = glext-orig.h \
     vvarray.h \
+    vvbrick.h \
     vvcolor.h \
     vvdebugmsg.h \
     vvdicom.h \

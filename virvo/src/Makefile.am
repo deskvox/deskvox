@@ -9,6 +9,7 @@ lib_LIBRARIES = libvirvo.a
 libvirvo_a_headers = \
         glext-orig.h \
         vvarray.h \
+        vvbrick.h \
         vvbsptree.h \
         vvcg.h \
         vvcolor.h \
@@ -48,6 +49,7 @@ libvirvo_a_headers = \
 
 libvirvo_a_SOURCES = \
         $(libvirvo_a_headers) \
+        vvbrick.cpp \
         vvbsptree.cpp \
         vvcg.cpp \
         vvcolor.cpp \

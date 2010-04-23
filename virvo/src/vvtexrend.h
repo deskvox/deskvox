@@ -30,6 +30,7 @@
 #include <vector>
 
 // Virvo:
+#include "vvbrick.h"
 #include "vvexport.h"
 #include "vvvoldesc.h"
 #include "vvrenderer.h"
@@ -50,8 +51,6 @@ typedef struct pthread_barrier_t_ { int dummy; } pthread_barrier_t;
 
 struct ThreadArgs;
 
-class vvTexRend;
-
 /*!
  * Generate more colors by adjusting this literal and \ref generateDebugColors()
  * if more than 8 threads need to be colorized for debugging.
@@ -61,78 +60,6 @@ const int MAX_DEBUG_COLORS = 8;
 //============================================================================
 // Class Definitions
 //============================================================================
-
-class VIRVOEXPORT Brick : public vvConvexObj
-{
-public:
-  Brick()                                     ///< dflt. constructor (needed for C++ templates)
-  {
-
-  }
-
-  Brick(Brick* rhs)                           ///< copy constructor (from ptr)
-  {
-    pos = vvVector3(&rhs->pos);
-    min = vvVector3(&rhs->min);
-    max = vvVector3(&rhs->max);
-    minValue = rhs->minValue;
-    maxValue = rhs->maxValue;
-    visible = rhs->visible;
-    atBorder = rhs->atBorder;
-    insideProbe = rhs->insideProbe;
-    index = rhs->index;
-    startOffset[0] = rhs->startOffset[0];
-    startOffset[1] = rhs->startOffset[1];
-    startOffset[2] = rhs->startOffset[2];
-    texels[0] = rhs->texels[0];
-    texels[1] = rhs->texels[1];
-    texels[2] = rhs->texels[2];
-    dist = rhs->dist;
-  }
-
-  inline bool operator<(const Brick& rhs) const      ///< compare bricks based upon dist to eye position
-  {
-    if (dist < rhs.dist)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-  void render(vvTexRend* renderer, const vvVector3& normal,
-              const vvVector3& farthest, const vvVector3& delta,
-              const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges);
-
-  void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax);
-
-  virtual vvAABB getAABB()
-  {
-    return vvAABB(min, max);
-  }
-
-  ushort getFrontIndex(const vvVector3* vertices,         ///< front index of the brick dependent upon the current model view
-                       const vvVector3& point,
-                       const vvVector3& normal,
-                       float& minDot,
-                       float& maxDot);
-                                                    ///< and assuming that vertices are ordered back to front
-  vvVector3 pos;                                    ///< center position of brick
-  vvVector3 min;                                    ///< minimum position of brick
-  vvVector3 max;                                    ///< maximum position of brick
-  int minValue;                                     ///< min scalar value after lut, needed for empty space leaping
-  int maxValue;                                     ///< max scalar value after lut, needed for empty space leaping
-  bool visible;                                     ///< if brick isn't visible, it won't be rendered at all
-  bool insideProbe;                                 ///< true iff brick is completely included inside probe
-  bool atBorder;                                    ///< true iff brick at border is not fully used
-  int index;                                        ///< index for texture object
-  int startOffset[3];                               ///< startvoxel of brick
-  int texels[3];                                    ///< number of texels in each dimension
-  int brickTexelOverlap[3];                         ///< overlap in each dimension
-  float dist;                                       ///< distance from plane given by eye and normal
-};
 
 /** The content of each thread is rendered via the visitor pattern.
   The rendered results of each thread are managed using a bsp tree
