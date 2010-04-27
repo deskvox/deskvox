@@ -70,7 +70,7 @@ class VIRVOEXPORT vvRenderState
     BufferPrecision _imagePrecision;              ///< render to high-res offscreen buffer (32 bit float) to minimize rounding error
                                                   ///< caused by adding up contribution of to many slices
     bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
-    const char** _displayNames;                   ///< list with displays of the form host:x.y
+    const char** _displayNames;
     int _numDisplays;
 
     vvRenderState();

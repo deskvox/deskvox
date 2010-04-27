@@ -27,6 +27,8 @@
 #include "vvshadermanager.h"
 #include "vvtoolshed.h"
 
+#include <limits.h>
+
 class vvTexRend;
 
 class VIRVOEXPORT Brick
@@ -34,7 +36,8 @@ class VIRVOEXPORT Brick
 public:
   Brick()                                     ///< dflt. constructor (needed for C++ templates)
   {
-
+    minValue = INT_MAX;
+    maxValue = -INT_MAX;
   }
 
   Brick(Brick* rhs)                           ///< copy constructor (from ptr)
@@ -107,5 +110,7 @@ public:
   int brickTexelOverlap[3];                         ///< overlap in each dimension
   float dist;                                       ///< distance from plane given by eye and normal
 };
+
+typedef std::vector<Brick *> BrickList;
 
 #endif // _VVBRICK_H_

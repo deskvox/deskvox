@@ -132,9 +132,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       }
     };
     unsigned int _numThreads;                     ///< thread count
-
-    const char** _displayNames;                   ///< xorg display names, e.g. const char("host:0.0")
-    unsigned int* _screens;                       ///< display name = :0.x ==> corresponding screen: x
     
     pthread_t* _threads;                          ///< worker threads
     ThreadArgs* _threadData;                      ///< args for each thread
@@ -241,7 +238,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool opacityCorrection;                       ///< true = opacity correction on
     int  minSlice, maxSlice;                      ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
     bool _areBricksCreated;                       ///< true after the first creation of the bricks
-    typedef std::vector<Brick *> BrickList;
     std::vector<BrickList> _brickList;            ///< contains all created bricks for all frames
     std::vector<BrickList> _nonemptyList;         ///< contains all non-transparent bricks for all frames
     BrickList _insideList;                        ///< contains all non-empty bricks inside the probe
@@ -251,6 +247,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     bool _proxyGeometryOnGpu;                     ///< indicate wether proxy geometry is to be computed on gpu
     int _lastFrame;                               ///< last frame rendered
+    int _numDisplays;                             ///< # additional displays for multi-gpu rendering
+    const char** _displayNames;                   ///< list with displays of the form host:x.y
+    unsigned int* _screens;                       ///< display name = :0.x ==> corresponding screen: x
     vvColor _debugColors[MAX_DEBUG_COLORS];       ///< array of colors to visualize threads in dbg mode (debug level >= 2).
                                                   ///< Feel free to use these colors for similar purposes either.
 
@@ -280,7 +279,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     ErrorType makeTextures(GLuint*& privateTexNames, int* numTextures, GLuint& lutName, uchar*& lutData);
     ErrorType makeEmptyBricks();
-    ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData);
+    ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
+                                std::vector<BrickList> bricks);
 
     bool initPixelShaders(vvShaderManager* pixelShader);
     void enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName);
@@ -332,7 +332,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
     void evaluateLocalIllumination(const vvVector3& normal);
   public:
-    vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST);
+    vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST,
+              const char** displayNames = 0, const int numDisplays = 0);
     virtual ~vvTexRend();
     void  renderVolumeGL();
     void  updateTransferFunction();

@@ -493,8 +493,6 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
    // Multi threading parameters.
    // These are needed before construction of the renderer so that
    // additional rendering contexts and x-windows can be created.
-   renderState._numDisplays = numDisplays;
-   renderState._displayNames = displayNames;
 
    if (numDisplays > 0)
    {
@@ -503,9 +501,12 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
       {
          cerr << displayNames[i] << endl;
       }
+      renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, displayNames, numDisplays);
    }
-   
-   renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels);
+   else
+   {
+      renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels);
+   }
    //static_cast<vvTexRend *>(renderer)->setTexMemorySize( 4 );
    //static_cast<vvTexRend *>(renderer)->setComputeBrickSize( false );
    //static_cast<vvTexRend *>(renderer)->setBrickSize( 64 );

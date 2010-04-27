@@ -97,6 +97,7 @@ struct ThreadArgs
   // Algorithm specific.
   vvHalfSpace* halfSpace;
   std::vector<Brick*> sortedList;             ///< sorted list built up from the brick sets
+  std::vector<BrickList> brickList;
   vvVector3 min;
   vvVector3 max;
   vvVector3 probeMin;
@@ -253,11 +254,13 @@ void vvThreadVisitor::clearOffscreenBuffers()
   @param vd  volume description
   @param m   render geometry (default: automatic)
 */
-vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox) : vvRenderer(vd, renderState)
+vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox,
+                     const char** displayNames, const int numDisplays)
+  : vvRenderer(vd, renderState)
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
 
-  setDisplayNames(renderState._displayNames, renderState._numDisplays);
+  setDisplayNames(displayNames, numDisplays);
   dispatchThreadedGLXContexts();
 
   if (vvDebugMsg::isActive(1))
@@ -779,7 +782,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numT
       // If in threaded mode, each thread will upload its texture data on its own.
       if ((err == OK) && (_numThreads == 0))
       {
-        err = makeTextureBricks(privateTexNames, numTextures, lutData);
+        err = makeTextureBricks(privateTexNames, numTextures, lutData, _brickList);
       }
       break;
     default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
@@ -1173,7 +1176,8 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
   return err;
 }
 
-vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData)
+vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
+                                                  std::vector<BrickList> brickList)
 {
   ErrorType err = OK;
   uchar* texData;                                 // data for texture memory
@@ -1206,8 +1210,8 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
     *numTextures * texSize / 1024);
 
   int f = 0;
-  for(std::vector<BrickList>::iterator frame = _brickList.begin();
-      frame != _brickList.end();
+  for(std::vector<BrickList>::iterator frame = brickList.begin();
+      frame != brickList.end();
       ++frame)
   {
     const uchar* raw = vd->getRaw(f);
@@ -1619,6 +1623,14 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   {
     _threadData[i].halfSpace = *it;
     _threadData[i].halfSpace->setId(_threadData[i].threadId);
+
+    _threadData[i].brickList.clear();
+    _threadData[i].brickList.push_back(BrickList());
+    for (std::vector<Brick*>::iterator brickIt = _threadData[i].halfSpace->getBricks()->begin();
+         brickIt != _threadData[i].halfSpace->getBricks()->end(); ++brickIt)
+    {
+      _threadData[i].brickList[0].push_back(*brickIt);
+    }
     ++i;
     if (i >= _numThreads) break;
   }
@@ -3498,7 +3510,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     data->renderer->makeTextures(data->privateTexNames, &data->numTextures,
                                  data->pixLUTName, data->rgbaLUT);
     data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
-                                      data->rgbaLUT);
+                                      data->rgbaLUT, data->renderer->_brickList);
     pthread_mutex_unlock(data->makeTextureMutex);
 
     // Now that the textures are built, the bricks may be distributed
@@ -3506,6 +3518,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     pthread_barrier_wait(data->distributeBricksBarrier);
     // For the main thread, this will take some time... .
     pthread_barrier_wait(data->distributedBricksBarrier);
+    std::cout << data->brickList[0].size() << std::endl;
 
     /////////////////////////////////////////////////////////
     // Setup an appropriate GL state.
