@@ -23,8 +23,8 @@ AC_ARG_WITH(glew-include,
 
 ac_cppflags_save=$CPPFLAGS
 ac_ldflags_save=$LDFLAGS
-CPPFLAGS="$CPPFLAGS -I$glew_incdir"
-LDFLAGS="$LDFLAGS -L$glew_libdir"
+CPPFLAGS="$CPPFLAGS -I$glew_incdir $GL_INCLUDES"
+LDFLAGS="$LDFLAGS -L$glew_libdir $GL_LIBS"
 AC_CHECK_HEADERS([GL/glew.h], [have_glew_h=yes])
 AC_CHECK_LIB(GLEW, glewIsSupported, [LDFLAGS="$LDFLAGS -lGLEW"; have_libglew=yes])
 
