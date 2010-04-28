@@ -1,6 +1,6 @@
 #! /bin/sh
 aclocal -I virvo/m4 -I vox-desk/m4
-libtoolize
+libtoolize || glibtoolize
 autoheader
 automake --add-missing --copy --foreign
 autoconf
