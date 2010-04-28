@@ -31,10 +31,7 @@
 using std::cerr;
 using std::endl;
 
-// Actually I'm not sure if / how this works e.g. with Apple.
-#if defined(__linux) || defined(LINUX) || defined(_WIN32)
 #include <sys/stat.h>
-#endif
 
 #define MAX_LINE_LEN 4096
 
