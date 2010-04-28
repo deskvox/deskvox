@@ -6,13 +6,13 @@ AC_ARG_WITH(glu,
 	[glu_dir=/usr]
 )
 
-glu_libdir=$glu_dir/lib
+glu_libdir="$glu_dir/lib$LIBSUFFIX"
 glu_incdir=$glu_dir/include
 
 AC_ARG_WITH(glu-libs,
 	AC_HELP_STRING([--with-glu-libs],[location of GLU libraries]),
 	[glu_libdir=$withval],
-	[glu_libdir=$glu_dir/lib]
+	[glu_libdir="$glu_dir/lib$LIBSUFFIX"]
 )
 
 AC_ARG_WITH(glu-include,

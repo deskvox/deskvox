@@ -6,13 +6,13 @@ AC_ARG_WITH(pthread,
 	[pthread_dir=/usr]
 )
 
-pthread_libdir=$pthread_dir/lib
+pthread_libdir="$pthread_dir/lib$LIBSUFFIX"
 pthread_incdir=$pthread_dir/include
 
 AC_ARG_WITH(pthread-libs,
 	AC_HELP_STRING([--with-pthread-libs],[location of POSIX thread libraries]),
 	[pthread_libdir=$withval],
-	[pthread_libdir=$pthread_dir/lib]
+	[pthread_libdir="$pthread_dir/lib$LIBSUFFIX"]
 )
 
 AC_ARG_WITH(pthread-include,

@@ -6,13 +6,13 @@ AC_ARG_WITH(glut,
 	[glut_dir=/usr]
 )
 
-glut_libdir=$glut_dir/lib
+glut_libdir="$glut_dir/lib$LIBSUFFIX"
 glut_incdir=$glut_dir/include
 
 AC_ARG_WITH(glut-libs,
 	AC_HELP_STRING([--with-glut-libs],[location of GLUT libraries]),
 	[glut_libdir=$withval],
-	[glut_libdir=$glut_dir/lib]
+	[glut_libdir="$glut_dir/lib$LIBSUFFIX"]
 )
 
 AC_ARG_WITH(glut-include,

@@ -6,13 +6,13 @@ AC_ARG_WITH(glew,
 	[glew_dir=/usr]
 )
 
-glew_libdir=$glew_dir/lib
+glew_libdir="$glew_dir/lib$LIBSUFFIX"
 glew_incdir=$glew_dir/include
 
 AC_ARG_WITH(glew-libs,
 	AC_HELP_STRING([--with-glew-libs],[location of GLEW libraries]),
 	[glew_libdir=$withval],
-	[glew_libdir=$glew_dir/lib]
+	[glew_libdir="$glew_dir/lib$LIBSUFFIX"]
 )
 
 AC_ARG_WITH(glew-include,

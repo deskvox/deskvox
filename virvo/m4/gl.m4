@@ -6,13 +6,13 @@ AC_ARG_WITH(gl,
 	[gl_dir=/usr]
 )
 
-gl_libdir=$gl_dir/lib
+gl_libdir="$gl_dir/lib$LIBSUFFIX"
 gl_incdir=$gl_dir/include
 
 AC_ARG_WITH(gl-libs,
 	AC_HELP_STRING([--with-gl-libs],[location of OpenGL libraries]),
 	[gl_libdir=$withval],
-	[gl_libdir=$gl_dir/lib]
+	[gl_libdir="$gl_dir/lib$LIBSUFFIX"]
 )
 
 AC_ARG_WITH(gl-include,
