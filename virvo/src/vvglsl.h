@@ -169,7 +169,6 @@ class VIRVOEXPORT vvGLSL : public vvShaderManager
   vvArray<GLuint> programArray;				///< array of program IDs
 	int nTexture;								///< the number of texture activated
 
-#if !defined(__APPLE__)
 	// function pointers
 	PFNGLCREATESHADERPROC glCreateShader;
 	PFNGLSHADERSOURCEPROC glShaderSource ;
@@ -201,7 +200,6 @@ class VIRVOEXPORT vvGLSL : public vvShaderManager
 	PFNGLDETACHSHADERPROC glDetachShader;
 	PFNGLDELETESHADERPROC glDeleteShader;
 	PFNGLDELETEPROGRAMPROC glDeleteProgram;
-#endif
 
   GLenum toGLenum(const ShaderType& shaderType);
 };

@@ -22,10 +22,8 @@
 
 // No circular dependencies between gl.h and glew.h
 #ifndef GLEW_INCLUDED
-#if !defined(__APPLE__)
 #include <GL/glew.h>
 #define GLEW_INCLUDED
-#endif
 #endif
 
 #include <iostream>
@@ -103,10 +101,8 @@ vvTexMultiRend::vvTexMultiRend(vvVolDesc* vd, vvRenderState renderState, Geometr
   extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax");
   extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation");
 
-#if !defined(__APPLE__)
   // Init glew.
   glewInit();
-#endif
 
   // Determine best rendering algorithm for current hardware:
 #ifdef NDEBUG
@@ -410,20 +406,20 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
 		for (int c = 0; c < vd->chan; c++)
 		{
 		  // interleave channels within each frame for texName
-		  glBindTexture(GL_TEXTURE_3D, texNames[f*vd->chan + c]);
+		  glBindTexture(GL_TEXTURE_3D_EXT, texNames[f*vd->chan + c]);
 		  glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 		  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-		  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-		  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
-		  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		  glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+		  glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+		  glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
+		  glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		  glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
 		  // consecutive data in each channel for texData
 		  // GL_LUMINANCE will make R,G,B equal to this value and alpha 1 in the shader
-		  glTexImage3DEXT(GL_TEXTURE_3D, 0, GL_LUMINANCE, texels[0], texels[1], texels[2], 0,
+		  glTexImage3DEXT(GL_TEXTURE_3D_EXT, 0, GL_LUMINANCE, texels[0], texels[1], texels[2], 0,
 			  GL_LUMINANCE, GL_UNSIGNED_BYTE, &texData[c * size]);
-		  glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &glWidth);
+		  glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
 		  if (glWidth!=0)	accommodated = false;
 
 		  // FIXME: WARNING! DOESN'T WORK FOR >1 FRAME
@@ -432,20 +428,20 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
 	  }
 	  else
 	  {
-		glBindTexture(GL_TEXTURE_3D, texNames[f]);
+		glBindTexture(GL_TEXTURE_3D_EXT, texNames[f]);
 		glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
-		glTexImage3DEXT(GL_PROXY_TEXTURE_3D, 0, internalTexFormat, texels[0], texels[1], texels[2], 
+		glTexImage3DEXT(GL_PROXY_TEXTURE_3D_EXT, 0, internalTexFormat, texels[0], texels[1], texels[2], 
 						0, texFormat, GL_UNSIGNED_BYTE, NULL);
-		glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D, 0, GL_TEXTURE_WIDTH, &glWidth);
+		glGetTexLevelParameteriv(GL_PROXY_TEXTURE_3D_EXT, 0, GL_TEXTURE_WIDTH, &glWidth);
 		if (glWidth!=0)
-		  glTexImage3DEXT(GL_TEXTURE_3D, 0, internalTexFormat, texels[0], texels[1], texels[2], 
+		  glTexImage3DEXT(GL_TEXTURE_3D_EXT, 0, internalTexFormat, texels[0], texels[1], texels[2], 
 			  			0, texFormat, GL_UNSIGNED_BYTE, texData);
 		else
 		  accommodated = false;
@@ -453,8 +449,8 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
 	}
     else
     {
-      glBindTexture(GL_TEXTURE_3D, texNames[f]);
-      glTexSubImage3DEXT(GL_TEXTURE_3D, 0, offsetX, offsetY, offsetZ,
+      glBindTexture(GL_TEXTURE_3D_EXT, texNames[f]);
+      glTexSubImage3DEXT(GL_TEXTURE_3D_EXT, 0, offsetX, offsetY, offsetZ,
         				sizeX, sizeY, sizeZ, texFormat, GL_UNSIGNED_BYTE, texData);
     }
   }
@@ -718,8 +714,8 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   releye.sub(&pos);
 
   // Volume render a 3D texture:
-  glEnable(GL_TEXTURE_3D);
-  glBindTexture(GL_TEXTURE_3D, texNames[vd->getCurrentFrame()]);
+  glEnable(GL_TEXTURE_3D_EXT);
+  glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
   texPoint.copy(&farthest);
   for (i=0; i<numSlices; ++i)                     // loop thru all drawn textures
   {
@@ -761,7 +757,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     glEnd();
   }
   vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
-  glDisable(GL_TEXTURE_3D);
+  glDisable(GL_TEXTURE_3D_EXT);
 
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();

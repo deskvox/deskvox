@@ -17,10 +17,8 @@
 
 // No circular dependencies between gl.h and glew.h
 #ifndef GLEW_INCLUDED
-#if !defined(__APPLE__)
 #include <GL/glew.h>
 #define GLEW_INCLUDED
-#endif
 #endif
 
 #include "vvgltools.h"
