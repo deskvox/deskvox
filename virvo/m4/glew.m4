@@ -34,6 +34,8 @@ if test "$have_glew_h" = "yes" -a "$have_libglew" = "yes" ; then
     GLEW_LIBS="-L$glew_libdir -lGLEW"
     AC_SUBST(GLEW_INCLUDES)
     AC_SUBST(GLEW_LIBS)
+else
+    AC_MSG_ERROR([GLEW not found (required)])
 fi
 
 CPPFLAGS=$ac_cppflags_save
