@@ -343,7 +343,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void  activateClippingPlane();
     void  deactivateClippingPlane();
     void  setNumLights(int);
-    bool  instantClassification();
+    bool  instantClassification() const;
     void  setViewingDirection(const vvVector3*);
     void  setObjectDirection(const vvVector3*);
     void  setParameter(ParameterType, float, char* = NULL);

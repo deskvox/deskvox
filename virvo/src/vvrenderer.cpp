@@ -888,7 +888,7 @@ void vvRenderer::drawPlanePerimeter(vvVector3* oSize, vvVector3* oPos, vvVector3
   @return true if updateTransferFunction() can be processed immediately
           (eg. for color indexed textures), otherwise false is returned.
 */
-bool vvRenderer::instantClassification()
+bool vvRenderer::instantClassification() const
 {
   vvDebugMsg::msg(1, "vvRenderer::instantClassification()");
   return false;

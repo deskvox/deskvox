@@ -259,7 +259,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
 
   setDisplayNames(displayNames, numDisplays);
-  dispatchThreadedGLXContexts();
+
+  if (_numThreads > 0)
+  {
+    dispatchThreadedGLXContexts();
+  }
 
   if (vvDebugMsg::isActive(1))
   {
@@ -1495,13 +1499,14 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     }
   }
 
-  _numThreads -= unresolvedDisplays;
 
-  if (_numThreads == 0)
+  if (unresolvedDisplays >= _numThreads)
   {
+    _numThreads = 0;
     cerr << "Falling back to none-threaded rendering mode" << endl;
     return NO_DISPLAYS_OPENED;
   }
+  _numThreads -= unresolvedDisplays;
 
   _visitor = NULL;
 
@@ -3299,6 +3304,9 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     GLfloat* projection = new GLfloat[16];
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
 
+    GLfloat* clearcolor = new GLfloat[4];
+    glGetFloatv(GL_COLOR_CLEAR_VALUE, clearcolor);
+
     vvGLTools::Viewport viewport = vvGLTools::getViewport();
 
     // Make sure that the _threadData array is only changed again (due to the
@@ -3354,8 +3362,9 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
     // Blend the images from the worker threads onto a 2D-texture.
 
-    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClearColor(clearcolor[0], clearcolor[1], clearcolor[2], clearcolor[3]);
     glClear(GL_COLOR_BUFFER_BIT);
+    delete[] clearcolor;
 
     // Orthographic projection.
     glMatrixMode(GL_PROJECTION);
@@ -3512,7 +3521,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     pthread_barrier_wait(data->distributeBricksBarrier);
     // For the main thread, this will take some time... .
     pthread_barrier_wait(data->distributedBricksBarrier);
-    std::cout << data->brickList[0].size() << std::endl;
 
     /////////////////////////////////////////////////////////
     // Setup an appropriate GL state.
@@ -3611,6 +3619,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         isectShader->setParameter3f(0, "planeNormal", data->normal[0], data->normal[1], data->normal[2]);
       }
 
+      int discarded = 0;
       if (data->renderer->_renderState._showBricks)
       {
         // Debugging mode: render the brick outlines and deactivate shaders,
@@ -3621,7 +3630,14 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         data->renderer->disablePixelShaders(pixelShader);
         for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
         {
-          (*it)->renderOutlines(data->probeMin, data->probeMax);
+          if ((*it)->visible)
+          {
+            (*it)->renderOutlines(data->probeMin, data->probeMax);
+          }
+          else
+          {
+            ++discarded;
+          }
         }
       }
       else
@@ -3629,10 +3645,17 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
         {
           Brick *tmp = *it;
-          tmp->render(data->renderer, data->normal,
-                      data->farthest, data->delta,
-                      data->probeMin, data->probeMax,
-                      data->privateTexNames, isectShader, true);
+          if ((*it)->visible)
+          {
+            tmp->render(data->renderer, data->normal,
+                        data->farthest, data->delta,
+                        data->probeMin, data->probeMax,
+                        data->privateTexNames, isectShader, true);
+          }
+          else
+          {
+            ++discarded;
+          }
         }
       }
       glDisable(GL_TEXTURE_3D_EXT);
@@ -4896,7 +4919,7 @@ void vvTexRend::setNumLights(int numLights)
 
 //----------------------------------------------------------------------------
 /// @return true if classification is done in no time
-bool vvTexRend::instantClassification()
+bool vvTexRend::instantClassification() const
 {
   vvDebugMsg::msg(3, "vvTexRend::instantClassification()");
   if (voxelType == VV_RGBA) return false;

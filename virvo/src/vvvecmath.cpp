@@ -205,7 +205,7 @@ void vvMatrix::scale(float a)
  (Source: Foley et.al. page 227)
  @return rotation matrix
 */
-vvMatrix vvMatrix::rotate(float a, float x, float y, float z) 
+vvMatrix vvMatrix::rotate(float a, float x, float y, float z)
 {
   vvMatrix rot;                                   // rotation matrix
   float cosfa, sinfa;                             // shortcuts

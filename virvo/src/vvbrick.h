@@ -37,7 +37,7 @@ public:
   Brick()                                     ///< dflt. constructor (needed for C++ templates)
   {
     minValue = INT_MAX;
-    maxValue = -INT_MAX;
+    maxValue = INT_MIN;
   }
 
   Brick(Brick* rhs)                           ///< copy constructor (from ptr)
