@@ -23,10 +23,10 @@
 
 #include <math.h>
 
-void Brick::render(vvTexRend* renderer, const vvVector3& normal,
-                   const vvVector3& farthest, const vvVector3& delta,
-                   const vvVector3& probeMin, const vvVector3& probeMax,
-                   GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges)
+void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
+                     const vvVector3& farthest, const vvVector3& delta,
+                     const vvVector3& probeMin, const vvVector3& probeMax,
+                     GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges)
 {
   vvVector3 dist = max;
   dist.sub(&min);
@@ -200,7 +200,7 @@ void Brick::render(vvTexRend* renderer, const vvVector3& normal,
   }
 }
 
-void Brick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax)
+void vvBrick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax)
 {
   vvVector3 minClipped;
   vvVector3 maxClipped;
@@ -264,9 +264,9 @@ void Brick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax)
   glEnd();
 }
 
-bool Brick::upload3DTexture(GLuint& texName, uchar* texData,
-                            GLenum texFormat, GLint internalTexFormat,
-                            const bool interpolation)
+bool vvBrick::upload3DTexture(GLuint& texName, uchar* texData,
+                              GLenum texFormat, GLint internalTexFormat,
+                              const bool interpolation)
 {
   glBindTexture(GL_TEXTURE_3D_EXT, texName);
 
@@ -310,11 +310,11 @@ bool Brick::upload3DTexture(GLuint& texName, uchar* texData,
   @param maxDot    The maximum dot product of vector point-vertex and normal,
                    passed along for later calculations.
 */
-ushort Brick::getFrontIndex(const vvVector3* vertices,
-                            const vvVector3& point,
-                            const vvVector3& normal,
-                            float& minDot,
-                            float& maxDot)
+ushort vvBrick::getFrontIndex(const vvVector3* vertices,
+                              const vvVector3& point,
+                              const vvVector3& normal,
+                              float& minDot,
+                              float& maxDot)
 {
 
   // Get vertices with max and min distance to point along normal.
@@ -341,11 +341,11 @@ ushort Brick::getFrontIndex(const vvVector3* vertices,
   return frontIndex;
 }
 
-void Brick::sortByCenter(Brick** bricks, const int numBricks, const vvVector3& axis)
+void vvBrick::sortByCenter(vvBrick** bricks, const int numBricks, const vvVector3& axis)
 {
-  Brick* tmp;
-  Brick* tmp2;
-  Brick* tmp3;
+  vvBrick* tmp;
+  vvBrick* tmp2;
+  vvBrick* tmp3;
   vvVector3* axisGetter;
   int i, j, k;
   int a;

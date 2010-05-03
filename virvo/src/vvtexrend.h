@@ -109,11 +109,11 @@ private:
 */
 class VIRVOEXPORT vvTexRend : public vvRenderer
 {
-  friend class Brick;
+  friend class vvBrick;
   public:
     struct BrickSet
     {
-      vvSLList<Brick*> bricks;
+      vvSLList<vvBrick*> bricks;
       int parentThreadId;
 
       vvVector3 center;
@@ -319,8 +319,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void disableFragProg();
     void enableTexture(GLenum target);
     void disableTexture(GLenum target);
-    bool testBrickVisibility(Brick* brick, const vvMatrix& mvpMat);
-    bool testBrickVisibility(Brick*);
+    bool testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat);
+    bool testBrickVisibility(vvBrick*);
     bool intersectsFrustum(const vvVector3 &min, const vvVector3 &max);
     bool insideFrustum(const vvVector3 &min, const vvVector3 &max);
     void markBricksInFrustum();

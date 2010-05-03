@@ -26,7 +26,7 @@
 
 #include <vector>
 
-class Brick;
+class vvBrick;
 
 typedef vvVector3 vvBoxCorners[8];
 
@@ -240,7 +240,7 @@ public:
    *                Set the list of bricks this partial space contains.
    * \param         bricks An array with pointers to convex bricks.
    */
-  void setBricks(std::vector<Brick*> * bricks);
+  void setBricks(std::vector<vvBrick*> * bricks);
   /*!
    * \brief         Set percent of parent space this one occupies.
    *
@@ -286,7 +286,7 @@ public:
    *                Get the list of bricks this partial space contains.
    * \return        An array with pointers to convex bricks.
    */
-  std::vector<Brick*>* getBricks() const;
+  std::vector<vvBrick*>* getBricks() const;
   /*!
    * \brief         Get percent of parent space this one occupies.
    *
@@ -348,7 +348,7 @@ private:
   vvHalfSpace* _nextBrother;
 
   vvPlane* _splitPlane;
-  std::vector<Brick*> *_bricks;
+  std::vector<vvBrick*> *_bricks;
   float _percent;
   float _actualPercent;
   vvAABB* _boundingBox;
@@ -385,7 +385,7 @@ public:
    * \param         percent1 The share for half space 1.
    * \param         percent2 The share for half space 2.
    */
-  static vvHalfSpace* getAABBHalfSpaces(std::vector<Brick*>* bricks,
+  static vvHalfSpace* getAABBHalfSpaces(std::vector<vvBrick*>* bricks,
                                         const float percent1, const float percent2);
 private:
 };
@@ -401,7 +401,7 @@ private:
 class vvBspTree
 {
 public:
-  vvBspTree(float* partitioning, const int length, std::vector<Brick*>* bricks);
+  vvBspTree(float* partitioning, const int length, std::vector<vvBrick*>* bricks);
   virtual ~vvBspTree();
 
   void traverse(const vvVector3& pos);
@@ -450,7 +450,7 @@ private:
    */
   void buildHierarchy(vvHalfSpace* node, float* partitioning, const int length,
                       const int startIdx, const int endIdx);
-  void distributeBricks(vvHalfSpace* node, std::vector<Brick*>* bricks);
+  void distributeBricks(vvHalfSpace* node, std::vector<vvBrick*>* bricks);
   void print(vvHalfSpace* node, const int indent);
   void traverse(const vvVector3& pos, vvHalfSpace* node);
 };

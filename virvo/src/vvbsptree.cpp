@@ -284,12 +284,12 @@ void vvHalfSpace::setSplitPlane(vvPlane* splitPlane)
   _splitPlane = splitPlane;
 }
 
-void vvHalfSpace::setBricks(std::vector<Brick*>* bricks)
+void vvHalfSpace::setBricks(std::vector<vvBrick*>* bricks)
 {
   vvVector3 minCorner = vvVector3(FLT_MAX, FLT_MAX, FLT_MAX);
   vvVector3 maxCorner = vvVector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-  for (std::vector<Brick*>::const_iterator it = bricks->begin(); it != bricks->end(); ++it)
+  for (std::vector<vvBrick*>::const_iterator it = bricks->begin(); it != bricks->end(); ++it)
   {
     vvAABB aabb = (*it)->getAABB();
     const vvVector3 minAABB = aabb._bottomLeftBackCorner;
@@ -336,7 +336,7 @@ vvPlane* vvHalfSpace::getSplitPlane() const
   return _splitPlane;
 }
 
-std::vector<Brick*>* vvHalfSpace::getBricks() const
+std::vector<vvBrick*>* vvHalfSpace::getBricks() const
 {
   return _bricks;
 }
@@ -394,9 +394,9 @@ float vvHalfSpace::calcContainedVolume() const
   float w, h, d;
 
   w = h = d = 0.0f;
-  for(std::vector<Brick*>::iterator it = _bricks->begin(); it != _bricks->end(); ++it)
+  for(std::vector<vvBrick*>::iterator it = _bricks->begin(); it != _bricks->end(); ++it)
   {
-    Brick *tmp = *it;
+    vvBrick *tmp = *it;
     w += tmp->getAABB().calcWidth();
     h += tmp->getAABB().calcHeight();
     d += tmp->getAABB().calcDepth();
@@ -407,13 +407,13 @@ float vvHalfSpace::calcContainedVolume() const
 //============================================================================
 // vvSpacePartitioner Method Definitions
 //============================================================================
-vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<Brick*>* bricks,
+vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks,
                                                    const float percent1, const float percent2)
 {
   vvHalfSpace* result = new vvHalfSpace[2];
 
-  Brick* tmp;
-  Brick** tmpArray;
+  vvBrick* tmp;
+  vvBrick** tmpArray;
   vvVector3 n1, n2;
   vvVector3 pnt;
   float dim[3];
@@ -451,10 +451,10 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<Brick*>* bricks,
   max[2] = -FLT_MAX;
   min[2] = FLT_MAX;
 
-  tmpArray = new Brick*[bricks->size()];
+  tmpArray = new vvBrick*[bricks->size()];
   i = 0;
 
-  for(std::vector<Brick*>::iterator it = bricks->begin();
+  for(std::vector<vvBrick*>::iterator it = bricks->begin();
       it != bricks->end();
       ++it)
   {
@@ -509,7 +509,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<Brick*>* bricks,
   for (i = 0; i < 3; ++i)
   {
     std::set<float> vals;
-    for(std::vector<Brick*>::iterator it = bricks->begin();
+    for(std::vector<vvBrick*>::iterator it = bricks->begin();
       it != bricks->end();
       ++it)
     {
@@ -522,15 +522,15 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<Brick*>* bricks,
   // valid that each obj occupies the same volume (determined through its aabb).
 
   // Sort overall array by x-axis.
-  Brick::sortByCenter(tmpArray, bricks->size(), vvVector3(1, 0, 0));
+  vvBrick::sortByCenter(tmpArray, bricks->size(), vvVector3(1, 0, 0));
 
-  Brick*** dimX = new Brick**[cnt[0]];
+  vvBrick*** dimX = new vvBrick**[cnt[0]];
 
   // Build the first dimension.
   int iterator = 0;
   for (i = 0; i < cnt[0]; ++i)
   {
-    dimX[i] = new Brick*[cnt[1] * cnt[2]];
+    dimX[i] = new vvBrick*[cnt[1] * cnt[2]];
     for (j = 0; j < cnt[1] * cnt[2]; ++j)
     {
       dimX[i][j] = tmpArray[iterator];
@@ -541,18 +541,18 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<Brick*>* bricks,
   // Sort for second dimension.
   for (i = 0; i < cnt[0]; ++i)
   {
-    Brick::sortByCenter(dimX[i], cnt[1]*cnt[2], vvVector3(0, 1, 0));
+    vvBrick::sortByCenter(dimX[i], cnt[1]*cnt[2], vvVector3(0, 1, 0));
   }
 
   // Build second dimension.
-  Brick**** grid = new Brick***[cnt[0]];
+  vvBrick**** grid = new vvBrick***[cnt[0]];
   for (i = 0; i < cnt[0]; ++i)
   {
-    grid[i] = new Brick**[cnt[1]];
+    grid[i] = new vvBrick**[cnt[1]];
     iterator = 0;
     for (j = 0; j < cnt[1]; ++j)
     {
-      grid[i][j] = new Brick*[cnt[2]];
+      grid[i][j] = new vvBrick*[cnt[2]];
       for (k = 0; k < cnt[2]; ++k)
       {
         grid[i][j][k] = dimX[i][iterator];
@@ -560,7 +560,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<Brick*>* bricks,
       }
 
       // Sort on the fly.
-      Brick::sortByCenter(grid[i][j], cnt[2], vvVector3(0, 0, 1));
+      vvBrick::sortByCenter(grid[i][j], cnt[2], vvVector3(0, 0, 1));
     }
   }
 
@@ -700,13 +700,13 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<Brick*>* bricks,
   result[1].setSplitPlane(new vvPlane(pnt, n2));
 
   // Finally distribute pointers to the bricks.
-  result[0].setBricks(new std::vector<Brick*>());
-  result[1].setBricks(new std::vector<Brick*>());
-  for(std::vector<Brick*>::iterator it = bricks->begin();
+  result[0].setBricks(new std::vector<vvBrick*>());
+  result[1].setBricks(new std::vector<vvBrick*>());
+  for(std::vector<vvBrick*>::iterator it = bricks->begin();
     it != bricks->end();
     ++it)
   {
-    Brick *tmp = *it;
+    vvBrick *tmp = *it;
     if (tmp->getAABB().calcCenter().e[splitAxis] < pnt.e[splitAxis])
     {
       result[0].getBricks()->push_back(tmp);
@@ -736,7 +736,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<Brick*>* bricks,
 // vvBspTree Method Definitions
 //============================================================================
 
-vvBspTree::vvBspTree(float* partitioning, const int length, std::vector<Brick*>* bricks)
+vvBspTree::vvBspTree(float* partitioning, const int length, std::vector<vvBrick*>* bricks)
 {
   _root = new vvHalfSpace;
   _root->setPercent(100.0f);
@@ -833,7 +833,7 @@ void vvBspTree::buildHierarchy(vvHalfSpace* node, float* partitioning, const int
   }
 }
 
-void vvBspTree::distributeBricks(vvHalfSpace* node, std::vector<Brick*>* bricks)
+void vvBspTree::distributeBricks(vvHalfSpace* node, std::vector<vvBrick*>* bricks)
 {
   // No leaf?
   if (node->getFirstSon() != NULL)

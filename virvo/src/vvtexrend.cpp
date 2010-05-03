@@ -94,7 +94,7 @@ struct ThreadArgs
 
   // Algorithm specific.
   vvHalfSpace* halfSpace;
-  std::vector<Brick*> sortedList;             ///< sorted list built up from the brick sets
+  std::vector<vvBrick*> sortedList;             ///< sorted list built up from the brick sets
   std::vector<BrickList> brickList;
   vvVector3 min;
   vvVector3 max;
@@ -1116,7 +1116,7 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
           else
             tmpTexels[2] = texels[2];
 
-          Brick* currBrick = new Brick();
+          vvBrick* currBrick = new vvBrick();
           int bs[3];
           bs[0] = _renderState._brickSize[0];
           bs[1] = _renderState._brickSize[1];
@@ -1220,7 +1220,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
     int brickIdx = 0;
     for(BrickList::iterator b = frame->begin(); b != frame->end(); ++b)
     {
-      Brick* currBrick = *b;
+      vvBrick* currBrick = *b;
       ++brickIdx;
       // offset to first voxel of current brick
       const int startOffset[3] = { currBrick->startOffset[0],
@@ -1627,7 +1627,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
 
     _threadData[i].brickList.clear();
     _threadData[i].brickList.push_back(BrickList());
-    for (std::vector<Brick*>::iterator brickIt = _threadData[i].halfSpace->getBricks()->begin();
+    for (std::vector<vvBrick*>::iterator brickIt = _threadData[i].halfSpace->getBricks()->begin();
          brickIt != _threadData[i].halfSpace->getBricks()->end(); ++brickIt)
     {
       _threadData[i].brickList[0].push_back(*brickIt);
@@ -1644,7 +1644,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
 void vvTexRend::updateBrickGeom()
 {
   int c, f;
-  Brick* tmp;
+  vvBrick* tmp;
   vvVector3 voxSize;
   vvVector3 halfBrick;
   vvVector3 halfVolume;
@@ -1901,7 +1901,7 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData)
       {
          for (BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
          {
-            Brick *tmp = *it;
+            vvBrick *tmp = *it;
             nbricks++;
 
             // If max intensity projection, make all bricks visible.
@@ -3644,7 +3644,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       {
         for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
         {
-          Brick *tmp = *it;
+          vvBrick *tmp = *it;
           if ((*it)->visible)
           {
             tmp->render(data->renderer, data->normal,
@@ -3826,11 +3826,11 @@ void* vvTexRend::threadFuncBricks(void* threadargs)
 
       stopwatch->start();
 
-      for(std::vector<Brick*>::iterator it = data->halfSpace->getBricks()->begin();
+      for(std::vector<vvBrick*>::iterator it = data->halfSpace->getBricks()->begin();
           it != data->halfSpace->getBricks()->end();
           ++it)
       {
-        Brick *tmp = dynamic_cast<Brick *>(*it);
+        vvBrick *tmp = dynamic_cast<vvBrick *>(*it);
         drawn = 0;
 
         for (int i = 0; i < 3; i++)
@@ -4005,12 +4005,12 @@ bool vvTexRend::intersectsFrustum(const vvVector3 &min, const vvVector3 &max)
   return true;
 }
 
-bool vvTexRend::testBrickVisibility(Brick* brick)
+bool vvTexRend::testBrickVisibility(vvBrick* brick)
 {
   return intersectsFrustum(brick->min, brick->max);
 }
 
-bool vvTexRend::testBrickVisibility(Brick* brick, const vvMatrix& mvpMat)
+bool vvTexRend::testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat)
 {
   //sample the brick at many point and test them all for visibility
   const float numSteps = 3;
@@ -4135,7 +4135,7 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
   int frame = vd->getCurrentFrame();
   for(BrickList::iterator it = _nonemptyList[frame].begin(); it != _nonemptyList[frame].end(); ++it)
   {
-    Brick *tmp = *it;
+    vvBrick *tmp = *it;
     if ((tmp->min.e[0] <= max.e[0]) && (tmp->max.e[0] >= min.e[0]) &&
       (tmp->min.e[1] <= max.e[1]) && (tmp->max.e[1] >= min.e[1]) &&
       (tmp->min.e[2] <= max.e[2]) && (tmp->max.e[2] >= min.e[2]))
@@ -4156,13 +4156,13 @@ void vvTexRend::getBricksInProbe(vvVector3 pos, vvVector3 size)
   }
 
   _sortedList.clear();
-  for(std::vector<Brick*>::iterator it = _insideList.begin(); it != _insideList.end(); ++it)
-     _sortedList.push_back(static_cast<Brick *>(*it));
+  for(std::vector<vvBrick*>::iterator it = _insideList.begin(); it != _insideList.end(); ++it)
+     _sortedList.push_back(static_cast<vvBrick *>(*it));
 }
 
 struct BrickCompare
 {
-  bool operator()(Brick *a, Brick *b)
+  bool operator()(vvBrick *a, vvBrick *b)
   {
     return a->dist > b->dist;
   }
@@ -4173,11 +4173,11 @@ void vvTexRend::sortBrickList(const int threadId, const vvVector3& eye, const vv
   if (_numThreads > 0)
   {
     _threadData[threadId].sortedList.clear();
-    for(std::vector<Brick*>::iterator it = _threadData[threadId].halfSpace->getBricks()->begin();
+    for(std::vector<vvBrick*>::iterator it = _threadData[threadId].halfSpace->getBricks()->begin();
         it != _threadData[threadId].halfSpace->getBricks()->end();
         ++it)
     {
-      Brick *brick = static_cast<Brick*>(*it);
+      vvBrick *brick = static_cast<vvBrick*>(*it);
       if (isOrtho)
         brick->dist = -brick->pos.dot(&normal);
       else

@@ -31,16 +31,16 @@
 
 class vvTexRend;
 
-class VIRVOEXPORT Brick
+class VIRVOEXPORT vvBrick
 {
 public:
-  Brick()                                     ///< dflt. constructor (needed for C++ templates)
+  vvBrick()                                     ///< dflt. constructor (needed for C++ templates)
   {
     minValue = INT_MAX;
     maxValue = INT_MIN;
   }
 
-  Brick(Brick* rhs)                           ///< copy constructor (from ptr)
+  vvBrick(vvBrick* rhs)                           ///< copy constructor (from ptr)
   {
     pos = vvVector3(&rhs->pos);
     min = vvVector3(&rhs->min);
@@ -60,7 +60,7 @@ public:
     dist = rhs->dist;
   }
 
-  inline bool operator<(const Brick& rhs) const      ///< compare bricks based upon dist to eye position
+  inline bool operator<(const vvBrick& rhs) const      ///< compare bricks based upon dist to eye position
   {
     if (dist < rhs.dist)
     {
@@ -92,7 +92,7 @@ public:
                        float& minDot,
                        float& maxDot);
 
-  static void sortByCenter(Brick** bricks,
+  static void sortByCenter(vvBrick** bricks,
                            const int numBricks,
                            const vvVector3& axis);
                                                     ///< and assuming that vertices are ordered back to front
@@ -111,6 +111,6 @@ public:
   float dist;                                       ///< distance from plane given by eye and normal
 };
 
-typedef std::vector<Brick *> BrickList;
+typedef std::vector<vvBrick*> BrickList;
 
 #endif // _VVBRICK_H_
