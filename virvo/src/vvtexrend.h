@@ -282,11 +282,12 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
                                 std::vector<BrickList> bricks);
 
+    void initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]);
     bool initPixelShaders(vvShaderManager* pixelShader);
     void enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName);
     void disablePixelShaders(vvShaderManager* pixelShader);
 
-    void enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName);
+    void enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
     void disableLUTMode(vvShaderManager* pixelShader);
 
     bool initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL);
@@ -315,7 +316,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int  getPreintTableSize();
     void enableNVShaders();
     void disableNVShaders();
-    void enableFragProg(GLuint& lutName);
+    void enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
     void disableFragProg();
     void enableTexture(GLenum target);
     void disableTexture(GLenum target);

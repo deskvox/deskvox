@@ -94,7 +94,7 @@ struct ThreadArgs
 
   // Algorithm specific.
   vvHalfSpace* halfSpace;
-  std::vector<vvBrick*> sortedList;             ///< sorted list built up from the brick sets
+  std::vector<vvBrick*> sortedList;           ///< sorted list built up from the brick sets
   std::vector<BrickList> brickList;
   vvVector3 min;
   vvVector3 max;
@@ -167,7 +167,7 @@ void vvThreadVisitor::visit(vvVisitable* obj)
   // Make sure not to recalculate the screen rect, since the
   // modelview and perspective transformations currently applied
   // won't match the one's used for rendering.
-  vvRect* screenRect = hs->getProjectedScreenRect(false);
+  const vvRect* screenRect = hs->getProjectedScreenRect(false);
 
   glActiveTextureARB(GL_TEXTURE0_ARB);
   glEnable(GL_TEXTURE_2D);
@@ -429,41 +429,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   // Init fragment program:
   if((_numThreads == 0) && (voxelType == VV_FRG_PRG))
   {
-    glGenProgramsARB(VV_FRAG_PROG_MAX, fragProgName);
-
-    char fragProgString2D[] = "!!ARBfp1.0\n"
-      "TEMP temp;\n"
-      "TEX  temp, fragment.texcoord[0], texture[0], 2D;\n"
-      "TEX  result.color, temp, texture[1], 2D;\n"
-      "END\n";
-    glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_2D]);
-    glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
-      GL_PROGRAM_FORMAT_ASCII_ARB,
-      strlen(fragProgString2D),
-      fragProgString2D);
-
-    char fragProgString3D[] = "!!ARBfp1.0\n"
-      "TEMP temp;\n"
-      "TEX  temp, fragment.texcoord[0], texture[0], 3D;\n"
-      "TEX  result.color, temp, texture[1], 2D;\n"
-      "END\n";
-    glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_3D]);
-    glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
-      GL_PROGRAM_FORMAT_ASCII_ARB,
-      strlen(fragProgString3D),
-      fragProgString3D);
-
-    char fragProgStringPreint[] = "!!ARBfp1.0\n"
-      "TEMP temp;\n"
-      "TEX  temp.x, fragment.texcoord[0], texture[0], 3D;\n"
-      "TEX  temp.y, fragment.texcoord[1], texture[0], 3D;\n"
-      "TEX  result.color, temp, texture[1], 2D;\n"
-      "END\n";
-    glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_PREINT]);
-    glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
-      GL_PROGRAM_FORMAT_ASCII_ARB,
-      strlen(fragProgStringPreint),
-      fragProgStringPreint);
+    initArbFragmentProgram(fragProgName);
   }
 
   if (voxelType==VV_PIX_SHD)
@@ -681,24 +647,11 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(vvTexRend::VoxelType vox)
   {
     if (vd->chan==1)
     {
-      // TODO: make threads compatible with arb fragment program.
-      // Until then, Cg pixel shaders are prefered over arbFrgPrg.
-      if (_numThreads == 0)
-      {
-        if (arbFrgPrg) return VV_FRG_PRG;
-        else if (extPixShd) return VV_PIX_SHD;
-        else if (extTexShd) return VV_TEX_SHD;
-        else if (extPalTex) return VV_PAL_TEX;
-        else if (extColLUT) return VV_SGI_LUT;
-      }
-      else
-      {
-        if (extPixShd) return VV_PIX_SHD;
-        else if (arbFrgPrg) return VV_FRG_PRG;
-        else if (extTexShd) return VV_TEX_SHD;
-        else if (extPalTex) return VV_PAL_TEX;
-        else if (extColLUT) return VV_SGI_LUT;
-      }
+      if (arbFrgPrg) return VV_FRG_PRG;
+      else if (extPixShd) return VV_PIX_SHD;
+      else if (extTexShd) return VV_TEX_SHD;
+      else if (extPalTex) return VV_PAL_TEX;
+      else if (extColLUT) return VV_SGI_LUT;
     }
     else
     {
@@ -2784,12 +2737,13 @@ void vvTexRend::unsetGLenvironment()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName)
+void vvTexRend::enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName,
+                              GLuint progName[VV_FRAG_PROG_MAX])
 {
   switch(voxelType)
   {
     case VV_FRG_PRG:
-      enableFragProg(lutName);
+      enableFragProg(lutName, progName);
       break;
     case VV_TEX_SHD:
       enableNVShaders();
@@ -3481,6 +3435,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
   else
   {
     vvShaderManager* pixelShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
+    GLuint fragProgName[VV_FRAG_PROG_MAX];
 
     vvStopwatch* stopwatch;
 
@@ -3506,6 +3461,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     glGenTextures(1, &data->pixLUTName);
     data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
     data->renderer->initPixelShaders(pixelShader);
+    data->renderer->initArbFragmentProgram(fragProgName);
     data->renderer->_areBricksCreated = false;
     // Generate a set of gl tex names private to this thread.
     // This solution differs from the one chosen for sequential
@@ -3565,7 +3521,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // thread will issue an alert if this is the case.
       pthread_barrier_wait(data->renderStartBarrier);
       data->renderer->_offscreenBuffers[data->threadId]->resize(data->width, data->height);
-      data->renderer->enableLUTMode(pixelShader, data->pixLUTName);
+      data->renderer->enableLUTMode(pixelShader, data->pixLUTName, fragProgName);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
@@ -4781,7 +4737,7 @@ void vvTexRend::renderVolumeGL()
   {
     if (geomType != VV_BRICKS || !_renderState._showBricks)
     {
-      enableLUTMode(_pixelShader, pixLUTName);
+      enableLUTMode(_pixelShader, pixLUTName, fragProgName);
     }
   }
 
@@ -5477,7 +5433,7 @@ void vvTexRend::disableNVShaders()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableFragProg(GLuint& lutName)
+void vvTexRend::enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX])
 {
   glActiveTextureARB(GL_TEXTURE1_ARB);
   glBindTexture(GL_TEXTURE_2D, lutName);
@@ -5488,18 +5444,18 @@ void vvTexRend::enableFragProg(GLuint& lutName)
   {
     case VV_CUBIC2D:
     case VV_SLICES:
-      glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_2D]);
+      glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_2D]);
       break;
     case VV_VIEWPORT:
     case VV_SPHERICAL:
     case VV_BRICKS:
       if(usePreIntegration)
       {
-        glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_PREINT]);
+        glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_PREINT]);
       }
       else
       {
-        glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, fragProgName[VV_FRAG_PROG_3D]);
+        glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_3D]);
       }
       break;
     default:
@@ -5655,6 +5611,45 @@ void vvTexRend::disableIntersectionShader(vvShaderManager* isectShader, vvShader
       pixelShader->disableShader(0);
     }
   }
+}
+
+void vvTexRend::initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX])
+{
+  glGenProgramsARB(VV_FRAG_PROG_MAX, progName);
+
+  char fragProgString2D[] = "!!ARBfp1.0\n"
+    "TEMP temp;\n"
+    "TEX  temp, fragment.texcoord[0], texture[0], 2D;\n"
+    "TEX  result.color, temp, texture[1], 2D;\n"
+    "END\n";
+  glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_2D]);
+  glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
+    GL_PROGRAM_FORMAT_ASCII_ARB,
+    strlen(fragProgString2D),
+    fragProgString2D);
+
+  char fragProgString3D[] = "!!ARBfp1.0\n"
+    "TEMP temp;\n"
+    "TEX  temp, fragment.texcoord[0], texture[0], 3D;\n"
+    "TEX  result.color, temp, texture[1], 2D;\n"
+    "END\n";
+  glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_3D]);
+  glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
+    GL_PROGRAM_FORMAT_ASCII_ARB,
+    strlen(fragProgString3D),
+    fragProgString3D);
+
+  char fragProgStringPreint[] = "!!ARBfp1.0\n"
+    "TEMP temp;\n"
+    "TEX  temp.x, fragment.texcoord[0], texture[0], 3D;\n"
+    "TEX  temp.y, fragment.texcoord[1], texture[0], 3D;\n"
+    "TEX  result.color, temp, texture[1], 2D;\n"
+    "END\n";
+  glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_PREINT]);
+  glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
+    GL_PROGRAM_FORMAT_ASCII_ARB,
+    strlen(fragProgStringPreint),
+    fragProgStringPreint);
 }
 
 //----------------------------------------------------------------------------
