@@ -1135,7 +1135,7 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   @param newValue   new value
   @param objName    name of the object to change (default: NULL)
 */
-void vvRenderer::setParameter(ParameterType, float, char*)
+void vvRenderer::setParameter(const ParameterType, const float, char*)
 {
   vvDebugMsg::msg(3, "vvRenderer::setParameter()");
 }
@@ -1145,7 +1145,7 @@ void vvRenderer::setParameter(ParameterType, float, char*)
   @param param    parameter to get value of
   @param objName  name of the object to get value of (default: NULL)
 */
-float vvRenderer::getParameter(ParameterType, char*)
+float vvRenderer::getParameter(const ParameterType, char*) const
 {
   vvDebugMsg::msg(3, "vvRenderer::getParameter()");
   return -VV_FLT_MAX;

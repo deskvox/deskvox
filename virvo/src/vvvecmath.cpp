@@ -2066,7 +2066,7 @@ Example call:<BR><TT>
   vvVector3 vecA(0,0,0), vecB(0,1,0), vecSum;<BR>
   vecSum = vecA + vecB; </TT><P>
 */
-vvVector3 vvVector3::operator + ( const vvVector3 &other )
+vvVector3 vvVector3::operator + ( const vvVector3 &other ) const
 {
   vvVector3 vResult(0.0f, 0.0f, 0.0f);
 
@@ -2087,7 +2087,7 @@ Example call:<BR><TT>
   vvVector3 vecA(1,1,0), vecB(0,1,0), vecDiff;<BR>
   vecDiff = vecA - vecB; </TT><P>
 */
-vvVector3 vvVector3::operator - ( const vvVector3 &other )
+vvVector3 vvVector3::operator - ( const vvVector3 &other ) const
 {
   vvVector3 vResult(0.0f, 0.0f, 0.0f);
 
@@ -2105,7 +2105,7 @@ vvVector3 vvVector3::operator - ( void ) const
   return vResult;
 }
 
-vvVector3 vvVector3::operator * ( const vvVector3 &other )
+vvVector3 vvVector3::operator * ( const vvVector3 &other ) const
 {
   vvVector3 vResult(0.0f, 0.0f, 0.0f);
 
@@ -2116,7 +2116,7 @@ vvVector3 vvVector3::operator * ( const vvVector3 &other )
   return vResult;
 }
 
-vvVector3 vvVector3::operator * ( const float scalar )
+vvVector3 vvVector3::operator * ( const float scalar ) const
 {
   vvVector3 vResult(0.0f, 0.0f, 0.0f);
 

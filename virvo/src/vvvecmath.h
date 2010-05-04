@@ -200,11 +200,11 @@ class VIRVOEXPORT vvVector3
     void  getSpherical(float*, float*, float*);
     void  directionCosines(const vvVector3*);
     static float signum(float);
-    vvVector3 operator + (const vvVector3 &other);
-    vvVector3 operator - (const vvVector3 &other);
-    vvVector3 operator * (const vvVector3 &other);
+    vvVector3 operator + (const vvVector3 &other) const;
+    vvVector3 operator - (const vvVector3 &other) const;
+    vvVector3 operator * (const vvVector3 &other) const;
 
-    vvVector3 operator * (const float scalar);
+    vvVector3 operator * (const float scalar) const;
     friend vvVector3 operator * (const float scalar, const vvVector3 &other);
 
     vvVector3& operator = (const vvVector3 &other);

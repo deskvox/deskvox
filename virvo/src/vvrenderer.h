@@ -201,8 +201,8 @@ class VIRVOEXPORT vvRenderer
     virtual void  getEyePosition(vvVector3*);
     virtual bool  isInVolume(const vvVector3*);
     virtual float getAlphaValue(float, float, float);
-    virtual void  setParameter(ParameterType, float, char* = NULL);
-    virtual float getParameter(ParameterType, char* = NULL);
+    virtual void  setParameter(const ParameterType, const float, char* = NULL);
+    virtual float getParameter(const ParameterType, char* = NULL) const;
     virtual void  profileStart();
     virtual void  profileStop();
     virtual void  setGamma(BasicColorType, float);

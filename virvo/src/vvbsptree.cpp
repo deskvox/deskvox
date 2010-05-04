@@ -427,7 +427,6 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   float bestWorkLoad[3][2];                       // stored for convenience
   float meanSqrErrorRatio[3];
   int splitAxis;
-  int i, j, k;
 
   // Determine the appropriate axis for the division plane as follows:
   //
@@ -453,7 +452,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   min[2] = FLT_MAX;
 
   tmpArray = new vvBrick*[bricks->size()];
-  i = 0;
+  int i = 0;
 
   for(std::vector<vvBrick*>::iterator it = bricks->begin();
       it != bricks->end();
@@ -529,10 +528,10 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
 
   // Build the first dimension.
   int iterator = 0;
-  for (i = 0; i < cnt[0]; ++i)
+  for (int i = 0; i < cnt[0]; ++i)
   {
     dimX[i] = new vvBrick*[cnt[1] * cnt[2]];
-    for (j = 0; j < cnt[1] * cnt[2]; ++j)
+    for (int j = 0; j < cnt[1] * cnt[2]; ++j)
     {
       dimX[i][j] = tmpArray[iterator];
       ++iterator;
@@ -540,21 +539,21 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   }
 
   // Sort for second dimension.
-  for (i = 0; i < cnt[0]; ++i)
+  for (int i = 0; i < cnt[0]; ++i)
   {
     vvBrick::sortByCenter(dimX[i], cnt[1]*cnt[2], vvVector3(0, 1, 0));
   }
 
   // Build second dimension.
   vvBrick**** grid = new vvBrick***[cnt[0]];
-  for (i = 0; i < cnt[0]; ++i)
+  for (int i = 0; i < cnt[0]; ++i)
   {
     grid[i] = new vvBrick**[cnt[1]];
     iterator = 0;
-    for (j = 0; j < cnt[1]; ++j)
+    for (int j = 0; j < cnt[1]; ++j)
     {
       grid[i][j] = new vvBrick*[cnt[2]];
-      for (k = 0; k < cnt[2]; ++k)
+      for (int k = 0; k < cnt[2]; ++k)
       {
         grid[i][j][k] = dimX[i][iterator];
         ++iterator;
@@ -566,7 +565,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   }
 
   // No need for this anymore.
-  for (i = 0; i < cnt[0]; ++i)
+  for (int i = 0; i < cnt[0]; ++i)
   {
     delete[] dimX[i];
   }
@@ -599,14 +598,12 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
       int iteratorY = 0;
       int iteratorZ = 0;
 
-      float workLoad[2];
-      workLoad[0] = 0.0f;
-      workLoad[1] = 0.0f;
+      float workLoad[] = { 0.0f, 0.0f };
 
       // For left and right work load.
-      for (j = 0; j < 2; ++j)
+      for (int j = 0; j < 2; ++j)
       {
-        for (k = 0; k < ratio[i][j]; ++k)
+        for (int k = 0; k < ratio[i][j]; ++k)
         {
           switch (i)
           {
@@ -719,9 +716,9 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   }
 
   // Clean up.
-  for (i = 0; i < cnt[0]; ++i)
+  for (int i = 0; i < cnt[0]; ++i)
   {
-    for (j = 0; j < cnt[1]; ++j)
+    for (int j = 0; j < cnt[1]; ++j)
     {
       delete[] grid[i][j];
     }

@@ -65,8 +65,7 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
     texMin[i] = (1.0f / (2.0f * (float)(renderer->_renderState._brickTexelOverlap) * (float)texels[i]));
   }
 
-  vvAABB box(minClipped, maxClipped);
-  const vvVector3 (&verts)[8] = box.calcVertices();
+  const vvVector3 (&verts)[8] = vvAABB(minClipped, maxClipped).calcVertices();
 
   float minDot;
   float maxDot;
@@ -110,10 +109,7 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
   }
   else // render proxy geometry on gpu? else then:
   {
-    vvVector3 add(delta);
-    add.scale(startSlices);
-    vvVector3 startPoint = farthest;
-    startPoint.add(&add);
+    vvVector3 startPoint = farthest + delta * startSlices;
 
     for (int i = startSlices; i <= endSlices; ++i)
     {
@@ -221,7 +217,7 @@ void vvBrick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMa
 }
 
 bool vvBrick::upload3DTexture(GLuint& texName, uchar* texData,
-                              GLenum texFormat, GLint internalTexFormat,
+                              const GLenum texFormat, const GLint internalTexFormat,
                               const bool interpolation)
 {
   glBindTexture(GL_TEXTURE_3D_EXT, texName);
