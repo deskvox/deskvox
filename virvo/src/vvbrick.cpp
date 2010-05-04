@@ -34,57 +34,55 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
                      const vvVector3& probeMin, const vvVector3& probeMax,
                      GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges)
 {
-  vvVector3 dist = max;
-  dist.sub(&min);
+  const vvVector3 dist = max - min;
 
+  // Clip probe object to brick extends.
+  vvVector3 minClipped;
+  vvVector3 maxClipped;
   vvVector3 texRange;
   vvVector3 texMin;
-
-  glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
-
-  vvVector3 texPoint;
-  texPoint.copy(&farthest);
-
-  if(renderer->_proxyGeometryOnGpu)
+  for (int i = 0; i < 3; ++i)
   {
-    glEnableClientState(GL_VERTEX_ARRAY);
-
-    // Clip probe object to brick extends.
-    vvVector3 minClipped;
-    vvVector3 maxClipped;
-
-    for (int i = 0; i < 3; ++i)
+    if (min[i] < probeMin[i])
     {
-      if (min[i] < probeMin[i])
-      {
-        minClipped[i] = probeMin[i];
-      }
-      else
-      {
-        minClipped[i] = min[i];
-      }
-
-      if (max[i] > probeMax[i])
-      {
-        maxClipped[i] = probeMax[i];
-      }
-      else
-      {
-        maxClipped[i] = max[i];
-      }
-      const float overlapNorm = (float)(brickTexelOverlap[i]) / (float)texels[i];
-      texRange[i] = (1.0f - overlapNorm);
-      texMin[i] = (1.0f / (2.0f * (float)(renderer->_renderState._brickTexelOverlap) * (float)texels[i]));
+      minClipped[i] = probeMin[i];
+    }
+    else
+    {
+      minClipped[i] = min[i];
     }
 
-    vvAABB box(minClipped, maxClipped);
-    const vvVector3 (&verts)[8] = box.calcVertices();
+    if (max[i] > probeMax[i])
+    {
+      maxClipped[i] = probeMax[i];
+    }
+    else
+    {
+      maxClipped[i] = max[i];
+    }
+    const float overlapNorm = (float)(brickTexelOverlap[i]) / (float)texels[i];
+    texRange[i] = (1.0f - overlapNorm);
+    texMin[i] = (1.0f / (2.0f * (float)(renderer->_renderState._brickTexelOverlap) * (float)texels[i]));
+  }
 
-    float minDot;
-    float maxDot;
-    const ushort idx = getFrontIndex(verts, texPoint, normal, minDot, maxDot);
+  vvAABB box(minClipped, maxClipped);
+  const vvVector3 (&verts)[8] = box.calcVertices();
+
+  float minDot;
+  float maxDot;
+  const ushort idx = getFrontIndex(verts, farthest, normal, minDot, maxDot);
+
+  const float deltaInv = 1.0f / delta.length();
+
+  const int startSlices = (int)ceilf(minDot * deltaInv);
+  const int endSlices = (int)floorf(maxDot * deltaInv);
+
+  glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
+  if (renderer->_proxyGeometryOnGpu)
+  {
+    glEnableClientState(GL_VERTEX_ARRAY);
     isectShader->setArrayParameter3f(0, "vertices", 0, verts[0].e[0], verts[0].e[1], verts[0].e[2]);
-    if(setupEdges)
+    if (setupEdges)
     {
       for (int i = 1; i < 8; ++i)
       {
@@ -94,17 +92,12 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
       }
     }
 
-    isectShader->setParameter4f(0, "brickMin", min[0], min[1], min[2], -texPoint.length());
+    isectShader->setParameter4f(0, "brickMin", min[0], min[1], min[2], -farthest.length());
     isectShader->setParameter3f(0, "brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
     // Mind that textures overlap a little bit for correct interpolation at the borders.
     // Thus add that little difference.
     isectShader->setParameter3f(0, "texRange", texRange[0], texRange[1], texRange[2]);
     isectShader->setParameter3f(0, "texMin", texMin[0], texMin[1], texMin[2]);
-
-    const float deltaInv = 1.0f / delta.length();
-
-    const int startSlices = (int)ceilf(minDot * deltaInv);
-    const int endSlices = (int)floorf(maxDot * deltaInv);
 
     isectShader->setParameter1i(0, "frontIndex", idx);
 
@@ -117,52 +110,9 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
   }
   else // render proxy geometry on gpu? else then:
   {
-    // Clip probe object to brick extends.
-    vvVector3 minClipped;
-    vvVector3 maxClipped;
-
-    for (int i = 0; i < 3; ++i)
-    {
-      if (min[i] < probeMin[i])
-      {
-        minClipped[i] = probeMin[i];
-      }
-      else
-      {
-        minClipped[i] = min[i];
-      }
-
-      if (max[i] > probeMax[i])
-      {
-        maxClipped[i] = probeMax[i];
-      }
-      else
-      {
-        maxClipped[i] = max[i];
-      }
-      const float overlapNorm = (float)(brickTexelOverlap[i]) / (float)texels[i];
-      texRange[i] = (1.0f - overlapNorm);
-      texMin[i] = (1.0f / (2.0f * (float)(renderer->_renderState._brickTexelOverlap) * (float)texels[i]));
-    }
-
-    vvAABB box(minClipped, maxClipped);
-    const vvVector3 (&verts)[8] = box.calcVertices();
-
-    // Abuse getFrontIndex to calcuate minDot and maxDot.
-    float minDot;
-    float maxDot;
-    getFrontIndex(verts, texPoint, normal, minDot, maxDot);
-
-    const float deltaInv = 1.0f / delta.length();
-
-    const int startSlices = (int)ceilf(minDot * deltaInv);
-    const int endSlices = (int)floorf(maxDot * deltaInv);
-
-    vvVector3 startPoint;
-    startPoint.copy(farthest);
-    vvVector3 add;
-    add.copy(delta);
+    vvVector3 add(delta);
     add.scale(startSlices);
+    vvVector3 startPoint = farthest;
     startPoint.add(&add);
 
     for (int i = startSlices; i <= endSlices; ++i)
