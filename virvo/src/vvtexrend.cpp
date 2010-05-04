@@ -3667,6 +3667,11 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       }
     }
 
+    if (data->renderer->voxelType==VV_FRG_PRG)
+    {
+      glDeleteProgramsARB(3, fragProgName);
+    }
+
     // Exited render loop - perform cleanup.
     //data->texRend->removeTextures(privateTexNames);
     delete isectShader;
