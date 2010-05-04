@@ -1077,7 +1077,7 @@ void vvTexMultiRend::setObjectDirection(const vvVector3* vd)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvTexMultiRend::setParameter(ParameterType param, float newValue, char*)
+void vvTexMultiRend::setParameter(const ParameterType param, float newValue, char*)
 {
   bool newInterpol;
 
@@ -1117,7 +1117,7 @@ void vvTexMultiRend::setParameter(ParameterType param, float newValue, char*)
 
 //----------------------------------------------------------------------------
 // see parent for comments
-float vvTexMultiRend::getParameter(ParameterType param, char*)
+float vvTexMultiRend::getParameter(const ParameterType param, char*) const
 {
   vvDebugMsg::msg(3, "vvTexMultiRend::getParameter()");
 
