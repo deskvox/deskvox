@@ -3129,8 +3129,9 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
 
-  // make sure that at least one slice is drawn
-  int numSlices = ::max(1, static_cast<int>(_renderState._quality * diagonalVoxels));
+  // make sure that at least one slice is drawn.
+  // <> deceives msvc so that it won't use the windows.h max macro.
+  int numSlices = ::max<>(1, static_cast<int>(_renderState._quality * diagonalVoxels));
 
   vvDebugMsg::msg(3, "Number of texture slices rendered: ", numSlices);
 
