@@ -336,7 +336,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST,
               const char** displayNames = 0, const int numDisplays = 0,
-              const BufferPrecision multiGpuBufferPrecision = VV_FLOAT);
+              const BufferPrecision multiGpuBufferPrecision = VV_SHORT);
     virtual ~vvTexRend();
     void  renderVolumeGL();
     void  updateTransferFunction();

@@ -21,8 +21,9 @@
 
 enum BufferPrecision
 {
-  VV_BYTE = 0,
-  VV_FLOAT
+  VV_BYTE = 0,   ///< 8 bit
+  VV_SHORT,      ///< 16 bit
+  VV_FLOAT       ///< 32 bit
 };
 
 enum RenderTargetType
