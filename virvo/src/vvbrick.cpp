@@ -276,8 +276,7 @@ ushort vvBrick::getFrontIndex(const vvVector3* vertices,
 
   for (int i=0; i<8; i++)
   {
-    vvVector3 v = vertices[i];
-    v.sub(&point);
+    const vvVector3 v = vertices[i] - point;
     const float dot = v.dot(&normal);
     if (dot > maxDot)
     {

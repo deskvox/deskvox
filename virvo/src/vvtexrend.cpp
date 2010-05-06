@@ -3237,9 +3237,6 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     GLfloat* projection = new GLfloat[16];
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
 
-    GLfloat* clearcolor = new GLfloat[4];
-    glGetFloatv(GL_COLOR_CLEAR_VALUE, clearcolor);
-
     vvGLTools::Viewport viewport = vvGLTools::getViewport();
 
     // Make sure that the _threadData array is only changed again (due to the
@@ -3294,10 +3291,6 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
     pthread_barrier_destroy(&_renderReadyBarrier);
 
     // Blend the images from the worker threads onto a 2D-texture.
-
-    glClearColor(clearcolor[0], clearcolor[1], clearcolor[2], clearcolor[3]);
-    glClear(GL_COLOR_BUFFER_BIT);
-    delete[] clearcolor;
 
     // Orthographic projection.
     glMatrixMode(GL_PROJECTION);
@@ -3531,6 +3524,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         glClearColor(0.0, 0.0, 0.0, 0.0);
       }
       glClear(GL_COLOR_BUFFER_BIT);
+      data->renderer->setGLenvironment();
 
       glPushAttrib(GL_VIEWPORT_BIT);
       glViewport(0, 0, data->width, data->height);
@@ -3612,6 +3606,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
       glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_FLOAT, data->pixels);
       glPopAttrib();
+      data->renderer->unsetGLenvironment();
       data->renderer->_offscreenBuffers[data->threadId]->unbindFramebuffer();
 
       // Output to screen in debug mode.
