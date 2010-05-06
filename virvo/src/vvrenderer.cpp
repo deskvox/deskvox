@@ -91,8 +91,6 @@ vvRenderState::vvRenderState()
   _imageScale = 1.0f;
   _imagePrecision = VV_BYTE;
   _showTexture = true;	// added by Han, Feb 2008
-  _displayNames = NULL;
-  _numDisplays = 0;
 }
 
 //----------------------------------------------------------------------------

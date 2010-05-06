@@ -107,6 +107,7 @@ struct ThreadArgs
   float texMin[3];
   int minSlice;
   int maxSlice;
+  BufferPrecision precision;                  ///< precision of the offscreen buffer
   GLfloat* modelview;                         ///< the current GL_MODELVIEW matrix
   GLfloat* projection;                        ///< the current GL_PROJECTION matrix
   vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
@@ -253,12 +254,14 @@ void vvThreadVisitor::clearOffscreenBuffers()
   @param m   render geometry (default: automatic)
 */
 vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox,
-                     const char** displayNames, const int numDisplays)
+                     const char** displayNames, const int numDisplays,
+                     const BufferPrecision multiGpuBufferPrecision)
   : vvRenderer(vd, renderState)
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
 
   setDisplayNames(displayNames, numDisplays);
+  _multiGpuBufferPrecision = multiGpuBufferPrecision;
 
   if (_numThreads > 0)
   {
@@ -1505,6 +1508,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     _threadData[i].pixels = new GLfloat[MAX_VIEWPORT_WIDTH * MAX_VIEWPORT_HEIGHT * 4];
     _threadData[i].transferFunctionChanged = false;
     _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
+    _threadData[i].precision = _multiGpuBufferPrecision;
     XMapWindow(_threadData[i].display, _threadData[i].drawable);
     XFlush(_threadData[i].display);
   }
@@ -3471,7 +3475,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       data->renderer->enableIntersectionShader(isectShader);
     }
 
-    data->renderer->_offscreenBuffers[data->threadId] = new vvOffscreenBuffer(1.0f, VV_FLOAT);
+    data->renderer->_offscreenBuffers[data->threadId] = new vvOffscreenBuffer(1.0f, data->precision);
 
     // Init framebuffer objects.
     data->renderer->_offscreenBuffers[data->threadId]->initForRender();

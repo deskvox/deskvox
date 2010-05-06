@@ -249,6 +249,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int _lastFrame;                               ///< last frame rendered
     int _numDisplays;                             ///< # additional displays for multi-gpu rendering
     const char** _displayNames;                   ///< list with displays of the form host:x.y
+    BufferPrecision _multiGpuBufferPrecision;     ///< 8, 16 or 32 bit precision for the render slave offscreen buffers
     unsigned int* _screens;                       ///< display name = :0.x ==> corresponding screen: x
     vvColor _debugColors[MAX_DEBUG_COLORS];       ///< array of colors to visualize threads in dbg mode (debug level >= 2).
                                                   ///< Feel free to use these colors for similar purposes either.
@@ -334,7 +335,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void evaluateLocalIllumination(const vvVector3& normal);
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST,
-              const char** displayNames = 0, const int numDisplays = 0);
+              const char** displayNames = 0, const int numDisplays = 0,
+              const BufferPrecision multiGpuBufferPrecision = VV_FLOAT);
     virtual ~vvTexRend();
     void  renderVolumeGL();
     void  updateTransferFunction();
