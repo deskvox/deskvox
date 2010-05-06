@@ -165,9 +165,9 @@ class VIRVOEXPORT vvVector3
     void  add(float, float, float);
     void  sub(const vvVector3*);
     void  sub(float);
-    void  scale(float);
+    void  scale(const float);
     void  scale(const vvVector3*);
-    void  scale(float, float, float);
+    void  scale(const float, const float, const float);
     float dot(const vvVector3*) const;
     float angle(vvVector3*);
     void  cross(const vvVector3*);

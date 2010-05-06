@@ -307,7 +307,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void unsetGLenvironment() const;
     void renderTex3DSpherical(vvMatrix*);
     void renderTex3DPlanar(vvMatrix*);
-    void renderTexBricks(vvMatrix*);
+    void renderTexBricks(const vvMatrix*);
     void renderTex2DSlices(float);
     void renderTex2DCubic(AxisType, float, float, float);
     void generateDebugColors();
@@ -326,7 +326,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool testBrickVisibility(vvBrick*);
     bool intersectsFrustum(const vvVector3 &min, const vvVector3 &max);
     bool insideFrustum(const vvVector3 &min, const vvVector3 &max);
-    void markBricksInFrustum();
+    void markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax);
     void updateFrustum();
     void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&);
     void getBricksInProbe(const vvVector3, const vvVector3);

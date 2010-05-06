@@ -3080,7 +3080,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   glPopMatrix();
 }
 
-void vvTexRend::renderTexBricks(vvMatrix* mv)
+void vvTexRend::renderTexBricks(const vvMatrix* mv)
 {
   vvMatrix pm;                                    // OpenGL projection matrix
   vvVector3 farthest;                             // volume vertex farthest from the viewer
@@ -3200,7 +3200,7 @@ void vvTexRend::renderTexBricks(vvMatrix* mv)
 
   getBricksInProbe(probePosObj, probeSizeObj);
 
-  markBricksInFrustum();
+  markBricksInFrustum(probeMin, probeMax);
 
   if (_numThreads > 0)
   {
@@ -3882,12 +3882,12 @@ void vvTexRend::updateFrustum()
 
 bool vvTexRend::insideFrustum(const vvVector3 &min, const vvVector3 &max)
 {
-  vvVector3 pv, normal;
+  vvVector3 pv;
 
   // get p-vertex (that's the farthest vertex in the direction of the normal plane
   for (int i = 0; i < 6; i++)
   {
-    normal.set(_frustum[i][0], _frustum[i][1], _frustum[i][2]);
+    const vvVector3 normal(_frustum[i][0], _frustum[i][1], _frustum[i][2]);
 
     for(int j = 0; j < 8; ++j)
     {
@@ -3906,7 +3906,7 @@ bool vvTexRend::insideFrustum(const vvVector3 &min, const vvVector3 &max)
 
 bool vvTexRend::intersectsFrustum(const vvVector3 &min, const vvVector3 &max)
 {
-  vvVector3 pv, normal;
+  vvVector3 pv;
 
   // get p-vertex (that's the farthest vertex in the direction of the normal plane
   for (int i = 0; i < 6; i++)
@@ -3924,7 +3924,7 @@ bool vvTexRend::intersectsFrustum(const vvVector3 &min, const vvVector3 &max)
     else
       pv[2] = min[2];
 
-    normal.set(_frustum[i][0], _frustum[i][1], _frustum[i][2]);
+    const vvVector3 normal(_frustum[i][0], _frustum[i][1], _frustum[i][2]);
 
     if ((pv.dot(&normal) + _frustum[i][3]) < 0)
     {
@@ -3955,7 +3955,7 @@ bool vvTexRend::testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat)
       float y = brick->min.e[1] + yStep * j;
       for(int k = 0; k < numSteps; k++)
       {
-        float z = brick->min.e[2] + zStep * k;
+        const float z = brick->min.e[2] + zStep * k;
         vvVector3 clipPnt(x, y, z);
         clipPnt.multiply(&mvpMat);
 
@@ -3974,17 +3974,11 @@ bool vvTexRend::testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat)
 
 void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, vvVector3& probeMin, vvVector3& probeMax)
 {
-  vvVector3 size, size2;                          // full and half object sizes
-  vvVector3 pos;                                  // volume location
-  vvVector3 maxSize;                              // probe edge length [object space]
-  int i;
-
-  pos.copy(&vd->pos);
+  const vvVector3 pos(vd->pos);
 
   // Determine texture object dimensions and half object size as a shortcut:
-  size.copy(vd->getSize());
-  size2 = size;
-  size2.scale(0.5);
+  const vvVector3 size(vd->getSize());
+  const vvVector3 size2 = size * 0.5f;
 
   if (_renderState._isROIUsed)
   {
@@ -3993,17 +3987,13 @@ void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, v
     probePosObj.sub(&pos);                        // eliminate object position from probe position
 
     // Compute probe min/max coordinates in object space:
-    maxSize[0] = _renderState._roiSize[0] * size2[0];
-    maxSize[1] = _renderState._roiSize[1] * size2[1];
-    maxSize[2] = _renderState._roiSize[2] * size2[2];
+    const vvVector3 maxSize = _renderState._roiSize * size2;
 
-    probeMin = probePosObj;
-    probeMin.sub(&maxSize);
-    probeMax = probePosObj;
-    probeMax.add(&maxSize);
+    probeMin = probePosObj - maxSize;
+    probeMax = probePosObj + maxSize;
 
     // Constrain probe boundaries to volume data area:
-    for (i = 0; i < 3; ++i)
+    for (int i = 0; i < 3; ++i)
     {
       if (probeMin[i] > size2[i] || probeMax[i] < -size2[i])
       {
@@ -4016,8 +4006,7 @@ void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, v
     }
 
     // Compute probe edge lengths:
-    probeSizeObj = probeMax;
-    probeSizeObj.sub(&probeMin);
+    probeSizeObj = probeMax - probeMin;
   }
   else                                            // probe mode off
   {
@@ -4027,11 +4016,8 @@ void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, v
   }
 }
 
-void vvTexRend::markBricksInFrustum()
+void vvTexRend::markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax)
 {
-  vvVector3 probePosObj, probeSizeObj, probeMin, probeMax;
-  calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
-
   updateFrustum();
 
   const bool inside = insideFrustum(probeMin, probeMax);
@@ -4060,7 +4046,7 @@ void vvTexRend::getBricksInProbe(const vvVector3 pos, const vvVector3 size)
 
   int countVisible = 0, countInvisible = 0;
 
-  int frame = vd->getCurrentFrame();
+  const int frame = vd->getCurrentFrame();
   for(BrickList::iterator it = _nonemptyList[frame].begin(); it != _nonemptyList[frame].end(); ++it)
   {
     vvBrick *tmp = *it;
@@ -6023,9 +6009,8 @@ unsigned char* vvTexRend::getHeightFieldData(float points[4][3], int& width, int
 float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
 {
   float dist = 0;
-  int i;
 
-  for (i=0; i<3; ++i)
+  for (int i=0; i<3; ++i)
   {
     dist += float(fabs(p1[i] - p2[i])) / float(vd->getSize()[i] * vd->vox[i]);
   }

@@ -1256,7 +1256,7 @@ void vvVector3::sub(float val)
 
 //----------------------------------------------------------------------------
 /// Scale a vector by a scalar
-void vvVector3::scale(float s)
+void vvVector3::scale(const float s)
 {
   e[0] *= s;
   e[1] *= s;
@@ -1274,7 +1274,7 @@ void vvVector3::scale(const vvVector3* v)
 
 //----------------------------------------------------------------------------
 /// Scale a vector by different scalars for each component
-void vvVector3::scale(float x, float y, float z)
+void vvVector3::scale(const float x, const float y, const float z)
 {
   e[0] *= x;
   e[1] *= y;
