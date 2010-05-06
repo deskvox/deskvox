@@ -91,14 +91,14 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
       }
     }
 
+    // Pass planeStart along with brickMin and spare one setParameter call.
     isectShader->setParameter4f(0, "brickMin", min[0], min[1], min[2], -farthest.length());
-    isectShader->setParameter3f(0, "brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
+    // Pass front index along with brickDimInv and spare one setParameter call.
+    isectShader->setParameter4f(0, "brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2], idx);
     // Mind that textures overlap a little bit for correct interpolation at the borders.
     // Thus add that little difference.
     isectShader->setParameter3f(0, "texRange", texRange[0], texRange[1], texRange[2]);
     isectShader->setParameter3f(0, "texMin", texMin[0], texMin[1], texMin[2]);
-
-    isectShader->setParameter1i(0, "frontIndex", idx);
 
     const int primCount = (endSlices - startSlices) + 1;
 
