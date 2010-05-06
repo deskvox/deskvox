@@ -49,12 +49,12 @@ class VIRVOEXPORT vvGLTools
     {
       int values[4];
 
-      inline int operator[](const unsigned int i)
+      inline int operator[](const unsigned int i) const
       {
         return values[i];
       }
 
-      inline void print()
+      inline void print() const
       {
         cerr << "Left: " << values[0] << " "
              << "Top: " << values[1] << " "
@@ -64,7 +64,7 @@ class VIRVOEXPORT vvGLTools
     };
     static void printGLError(const char*);
     static bool isGLextensionSupported(const char*);
-    static void displayOpenGLextensions(DisplayStyle);
+    static void displayOpenGLextensions(const DisplayStyle);
     static void checkOpenGLextensions();
     static void draw(vvVector3* vec);
     static Viewport getViewport();

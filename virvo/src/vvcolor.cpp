@@ -28,7 +28,7 @@ vvColor::vvColor()
 
 /** @param r,g,b RGB color components [0..1]
 */
-vvColor::vvColor(float r, float g, float b)
+vvColor::vvColor(const float r, const float g, const float b)
 {
   _col[0] = r;
   _col[1] = g;

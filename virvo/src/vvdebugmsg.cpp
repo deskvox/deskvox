@@ -33,7 +33,7 @@ using namespace std;
 
 static vvDebugMsg::LevelType envDebugLevel()
 {
-   char *val = getenv("VV_DEBUG");
+   const char *val = getenv("VV_DEBUG");
    if(val)
       return vvDebugMsg::LevelType(atoi(val));
    else
@@ -46,7 +46,7 @@ const char* vvDebugMsg::DEBUG_TEXT = "###Debug message: ";
 vvDebugMsg::LevelType vvDebugMsg::debugLevel = envDebugLevel();
 
 /// Setter method for debugLevel
-void vvDebugMsg::setDebugLevel(LevelType newLevel)
+void vvDebugMsg::setDebugLevel(const LevelType newLevel)
 {
   debugLevel = newLevel;
   if (debugLevel!=NO_MESSAGES)
@@ -54,7 +54,7 @@ void vvDebugMsg::setDebugLevel(LevelType newLevel)
 }
 
 /// Setter method for debugLevel
-void vvDebugMsg::setDebugLevel(int newLevel)
+void vvDebugMsg::setDebugLevel(const int newLevel)
 
 {
   debugLevel = (LevelType)newLevel;
@@ -72,7 +72,7 @@ vvDebugMsg::LevelType vvDebugMsg::getDebugLevel()
 /// @param level level number of this message
 /// @param text  information string being printed if current debug level is lower or
 ///              equal to given one
-void vvDebugMsg::msg(int level, const char* text)
+void vvDebugMsg::msg(const int level, const char* text)
 {
   if (level <= debugLevel)
     cerr << DEBUG_TEXT << text << endl;
@@ -83,7 +83,7 @@ void vvDebugMsg::msg(int level, const char* text)
 /// @param text   information string being printed if current debug level is lower or
 ///               equal to given one
 /// @param number integer string to be displayed after the message string
-void vvDebugMsg::msg(int level, const char* text, int number)
+void vvDebugMsg::msg(const int level, const char* text, const int number)
 {
   if (level <= debugLevel)
     cerr << DEBUG_TEXT << text << number << endl;
@@ -95,7 +95,7 @@ void vvDebugMsg::msg(int level, const char* text, int number)
 ///               equal to given one
 /// @param n1     first integer string to be displayed
 /// @param n2     second integer string to be displayed
-void vvDebugMsg::msg(int level, const char* text, int n1, int n2)
+void vvDebugMsg::msg(const int level, const char* text, const int n1, const int n2)
 {
   if (level <= debugLevel)
     cerr << DEBUG_TEXT << text << n1 << ", " << n2 << endl;
@@ -108,7 +108,7 @@ void vvDebugMsg::msg(int level, const char* text, int n1, int n2)
 /// @param n1     first integer string to be displayed
 /// @param n2     second integer string to be displayed
 /// @param n3     third integer string to be displayed
-void vvDebugMsg::msg(int level, const char* text, int n1, int n2, int n3)
+void vvDebugMsg::msg(const int level, const char* text, const int n1, const int n2, const int n3)
 {
   if (level <= debugLevel)
     cerr << DEBUG_TEXT << text << n1 << ", " << n2 << ", " << n3 << endl;
@@ -122,7 +122,7 @@ void vvDebugMsg::msg(int level, const char* text, int n1, int n2, int n3)
 /// @param n2     second integer string to be displayed
 /// @param n3     third integer string to be displayed
 /// @param n4     fourth integer string to be displayed
-void vvDebugMsg::msg(int level, const char* text, int n1, int n2, int n3, int n4)
+void vvDebugMsg::msg(const int level, const char* text, const int n1, const int n2, const int n3, const int n4)
 {
   if (level <= debugLevel)
     cerr << DEBUG_TEXT << text << n1 << ", " << n2 << ", " << n3 << ", " << n4 << endl;
@@ -133,7 +133,7 @@ void vvDebugMsg::msg(int level, const char* text, int n1, int n2, int n3, int n4
 /// @param text   information string being printed if current debug level is lower or
 ///               equal to given one
 /// @param number float number to be displayed
-void vvDebugMsg::msg(int level, const char* text, float number)
+void vvDebugMsg::msg(const int level, const char* text, const float number)
 {
   if (level <= debugLevel)
     cerr << DEBUG_TEXT << text << number << endl;
@@ -145,7 +145,7 @@ void vvDebugMsg::msg(int level, const char* text, float number)
 ///               equal to given one
 /// @param n1     first float number to be displayed
 /// @param n2     second float number to be displayed
-void vvDebugMsg::msg(int level, const char* text, float n1, float n2)
+void vvDebugMsg::msg(const int level, const char* text, const float n1, const float n2)
 {
   if (level <= debugLevel)
     cerr << DEBUG_TEXT << text << n1 << ", " << n2 << endl;
@@ -158,7 +158,7 @@ void vvDebugMsg::msg(int level, const char* text, float n1, float n2)
 /// @param n1     first float number to be displayed
 /// @param n2     second float number to be displayed
 /// @param n3     third float number to be displayed
-void vvDebugMsg::msg(int level, const char* text, float n1, float n2, float n3)
+void vvDebugMsg::msg(const int level, const char* text, const float n1, const float n2, const float n3)
 {
   if (level <= debugLevel)
     cerr << DEBUG_TEXT << text << n1 << ", " << n2 << ", " << n3 << endl;
@@ -172,7 +172,7 @@ void vvDebugMsg::msg(int level, const char* text, float n1, float n2, float n3)
 /// @param n2     second float number to be displayed
 /// @param n3     third float number to be displayed
 /// @param n4     fourth float number to be displayed
-void vvDebugMsg::msg(int level, const char* text, float n1, float n2, float n3, float n4)
+void vvDebugMsg::msg(const int level, const char* text, const float n1, const float n2, const float n3, const float n4)
 {
   if (level <= debugLevel)
     cerr << DEBUG_TEXT << text << n1 << ", " << n2 << ", " << n3 << ", " << n4 << endl;
@@ -183,7 +183,7 @@ void vvDebugMsg::msg(int level, const char* text, float n1, float n2, float n3, 
 /// @param text   information string being printed if current debug level is lower or
 ///               equal to given one
 /// @param str    additional string to be displayed
-void vvDebugMsg::msg(int level, const char* text, const char* str)
+void vvDebugMsg::msg(const int level, const char* text, const char* str)
 {
   if (level <= debugLevel)
     cerr << DEBUG_TEXT << text << str << endl;
@@ -192,10 +192,9 @@ void vvDebugMsg::msg(int level, const char* text, const char* str)
 /// Check for active debug messages on the given debug level.
 /// @param level debug level of this request
 //  @return Return true if debug info shall be printed
-bool vvDebugMsg::isActive(int level)
+bool vvDebugMsg::isActive(const int level)
 {
-  if (level <= debugLevel) return true;
-  else return false;
+  return (level <= debugLevel);
 }
 
 //****************************************************************************

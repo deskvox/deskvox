@@ -1136,6 +1136,7 @@ void vvView::viewMenuCallback(int item)
          break;
       case 2:                                     // frame rate
          ds->fpsMode = !ds->fpsMode;
+         ds->renderer->_renderState._fpsDisplay = !ds->renderer->_renderState._fpsDisplay;
          cerr << "Frame rate display " << ds->onOff[ds->fpsMode] << endl;
          break;
       case 3:                                     // transfer function

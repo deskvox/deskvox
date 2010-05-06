@@ -1123,7 +1123,7 @@ vvVector3::vvVector3()
 
 //----------------------------------------------------------------------------
 /// Constructor for a preset vector
-vvVector3::vvVector3(float x, float y, float z)
+vvVector3::vvVector3(const float x, const float y, const float z)
 {
   e[0] = x;
   e[1] = y;
@@ -1152,21 +1152,21 @@ vvVector3 vvVector3::operator^ (const vvVector3 operand) const
 
 //----------------------------------------------------------------------------
 /// Overload subscription operator.
-float &vvVector3::operator[](int index)
+float &vvVector3::operator[](const int index)
 {
   return e[index];
 }
 
 //----------------------------------------------------------------------------
 /// Overload subscription operator.
-float vvVector3::operator[](int index) const
+float vvVector3::operator[](const int index) const
 {
   return e[index];
 }
 
 //----------------------------------------------------------------------------
 /// Set all elements of a vector.
-void vvVector3::set(float x, float y, float z)
+void vvVector3::set(const float x, const float y, const float z)
 {
   e[0] = x;
   e[1] = y;
@@ -1204,9 +1204,10 @@ void vvVector3::copy(const vvVector3& v)
 /// Copy a vvVector4
 void vvVector3::copy(const vvVector4* v)
 {
-  e[0] = v->e[0] / v->e[3];
-  e[1] = v->e[1] / v->e[3];
-  e[2] = v->e[2] / v->e[3];
+  const float inv = 1.0f / v->e[3];
+  e[0] = v->e[0] * inv;
+  e[1] = v->e[1] * inv;
+  e[2] = v->e[2] * inv;
 }
 
 //----------------------------------------------------------------------------
@@ -1220,7 +1221,7 @@ void vvVector3::add(const vvVector3* v)
 
 //----------------------------------------------------------------------------
 /// Add the same scalar value to each component.
-void vvVector3::add(float val)
+void vvVector3::add(const float val)
 {
   e[0] += val;
   e[1] += val;
@@ -1229,7 +1230,7 @@ void vvVector3::add(float val)
 
 //----------------------------------------------------------------------------
 /// Add a different scalar value to each component.
-void vvVector3::add(float x, float y, float z)
+void vvVector3::add(const float x, const float y, const float z)
 {
   e[0] += x;
   e[1] += y;
@@ -1247,7 +1248,7 @@ void vvVector3::sub(const vvVector3* v)
 
 //----------------------------------------------------------------------------
 /// Subtract a scalar value
-void vvVector3::sub(float val)
+void vvVector3::sub(const float val)
 {
   e[0] -= val;
   e[1] -= val;
@@ -1474,7 +1475,7 @@ void vvVector3::print(const char* text) const
   @param m    matrix
   @param row  row number [0..2]
 */
-void vvVector3::getRow(const vvMatrix* m, int row)
+void vvVector3::getRow(const vvMatrix* m, const int row)
 {
   e[0] = m->e[row][0];
   e[1] = m->e[row][1];
@@ -1486,7 +1487,7 @@ void vvVector3::getRow(const vvMatrix* m, int row)
   @param m    matrix
   @param col  column number [0..2]
 */
-void vvVector3::getColumn(const vvMatrix* m, int col)
+void vvVector3::getColumn(const vvMatrix* m, const int col)
 {
   e[0] = m->e[0][col];
   e[1] = m->e[1][col];
@@ -1517,27 +1518,21 @@ void vvVector3::swap(vvVector3* v)
           vector components are set to 0.0f
 */
 bool vvVector3::isectPlaneLine(const vvVector3* n, const vvVector3* p,
-const vvVector3* v1, const vvVector3* v2)
+                               const vvVector3* v1, const vvVector3* v2)
 {
-  float numer;                                    // numerator (=Zahler)
-  float denom;                                    // denominator (=Nenner)
-  vvVector3 diff1;                                // difference vector between v1 and v2
-  vvVector3 diff2;                                // difference vector between pp and v1
   vvVector3 normal;                               // normalized normal
 
   normal.copy(n);
   normal.normalize();
-  diff1.copy(v1);
-  diff1.sub(v2);                                  // diff1 = v1 - v2
-  denom = diff1.dot(&normal);                     // denom = diff1 . n
+  vvVector3 diff1 = *v1 - *v2;                    // diff1 = v1 - v2
+  const float denom = diff1.dot(&normal);         // denom = diff1 . n
   if (denom==0.0f)                                // are ray and plane parallel?
   {
     e[0] = e[1] = e[2] = 0.0f;                    // no intersection
     return false;
   }
-  diff2.copy(p);
-  diff2.sub(v1);                                  // diff2 = p - v1
-  numer = diff2.dot(&normal);                     // number = diff2 . n
+  const vvVector3 diff2 = *p - *v1;               // diff2 = p - v1
+  const float numer = diff2.dot(&normal);         // number = diff2 . n
   diff1.scale(numer / denom);                     // diff1 = diff1 * numer / denom
   this->copy(v1);
   this->add(&diff1);                              // this = v1 + diff1
@@ -1939,18 +1934,17 @@ bool vvVector3::isInTriangle(const vvVector3* v1, const vvVector3* v2, const vvV
   @param numVectors number of vectors in 'this' array to be sorted
   @param axis     normal vector defining cycle direction
 */
-void vvVector3::cyclicSort(int numVectors, const vvVector3* axis)
+void vvVector3::cyclicSort(const int numVectors, const vvVector3* axis)
 {
   vvVector3* diff;                                // difference vectors between pairs of points
   vvVector3 normal;                               // normal vector
-  int i,j;                                        // loop counters
   bool swapped;                                   // true = vectors were swapped
 
   // Allocate array of difference vectors:
   diff = new vvVector3[numVectors-1];
 
   // Compute difference vectors:
-  for (i=0; i<numVectors-1; ++i)
+  for (int i=0; i<numVectors-1; ++i)
   {
     diff[i].copy(&this[i+1]);
     diff[i].sub(&this[0]);
@@ -1961,9 +1955,9 @@ void vvVector3::cyclicSort(int numVectors, const vvVector3* axis)
   while (swapped)
   {
     swapped = false;
-    for (i=0; i<numVectors-2 && swapped==false; ++i)
+    for (int i=0; i<numVectors-2 && swapped==false; ++i)
     {
-      for (j=i+1; j<numVectors-1 && swapped==false; ++j)
+      for (int j=i+1; j<numVectors-1 && swapped==false; ++j)
       {
         normal.copy(&diff[i]);
         normal.cross(&diff[i+1]);
@@ -1991,8 +1985,7 @@ void vvVector3::zero()
 /// @return true if all vector elements are zero
 bool vvVector3::isZero()
 {
-  if (e[0]==0.0f && e[1]==0.0f && e[2]==0.0f) return true;
-  else return false;
+  return (e[0]==0.0f && e[1]==0.0f && e[2]==0.0f);
 }
 
 //----------------------------------------------------------------------------
@@ -2188,14 +2181,14 @@ vvVector4::vvVector4(const vvVector4* v)
 
 //----------------------------------------------------------------------------
 /// Overload subscription operator.
-float &vvVector4::operator[](int index)
+float &vvVector4::operator[](const int index)
 {
   return e[index];
 }
 
 //----------------------------------------------------------------------------
 /// Overload subscription operator.
-float vvVector4::operator[](int index) const
+float vvVector4::operator[](const int index) const
 {
   return e[index];
 }

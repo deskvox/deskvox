@@ -181,8 +181,8 @@ class VIRVOEXPORT vvRenderer
     virtual void  renderPalette();
     virtual void  renderQualityDisplay();
     virtual void  renderFPSDisplay();
-    virtual void  drawBoundingBox(vvVector3*, vvVector3*, float*);
-    virtual void  drawPlanePerimeter(vvVector3*, vvVector3*, vvVector3*, vvVector3*, float*);
+    virtual void  drawBoundingBox(const vvVector3*, const vvVector3*, float*) const;
+    virtual void  drawPlanePerimeter(const vvVector3*, const vvVector3*, vvVector3*, vvVector3*, float*);
     virtual bool  instantClassification() const;
     virtual void  setViewingDirection(const vvVector3*);
     virtual void  setObjectDirection(const vvVector3*);

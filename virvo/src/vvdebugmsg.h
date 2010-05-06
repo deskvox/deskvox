@@ -46,20 +46,20 @@ class VIRVOEXPORT vvDebugMsg
     static LevelType debugLevel;                  ///< current debug level
 
   public:
-    static void setDebugLevel(LevelType);
-    static void setDebugLevel(int);
+    static void setDebugLevel(const LevelType);
+    static void setDebugLevel(const int);
     static LevelType getDebugLevel();
-    static void msg(int, const char*);
-    static void msg(int, const char*, int);
-    static void msg(int, const char*, int, int);
-    static void msg(int, const char*, int, int, int);
-    static void msg(int, const char*, int, int, int, int);
-    static void msg(int, const char*, float);
-    static void msg(int, const char*, float, float);
-    static void msg(int, const char*, float, float, float);
-    static void msg(int, const char*, float, float, float, float);
-    static void msg(int, const char*, const char*);
-    static bool isActive(int);
+    static void msg(const int, const char*);
+    static void msg(const int, const char*, const int);
+    static void msg(const int, const char*, const int, const int);
+    static void msg(const int, const char*, const int, const int, const int);
+    static void msg(const int, const char*, const int, const int, const int, const int);
+    static void msg(const int, const char*, const float);
+    static void msg(const int, const char*, const float, const float);
+    static void msg(const int, const char*, const float, const float, const float);
+    static void msg(const int, const char*, const float, const float, const float, const float);
+    static void msg(const int, const char*, const char*);
+    static bool isActive(const int);
 };
 #endif
 

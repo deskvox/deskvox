@@ -100,7 +100,7 @@ vvRect* vvAABB::getProjectedScreenRect()
   GLdouble projection[16];
   glGetDoublev(GL_PROJECTION_MATRIX, projection);
 
-  vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
 
   calcVertices();
   float minX = FLT_MAX;
@@ -292,7 +292,7 @@ void vvHalfSpace::setBricks(std::vector<vvBrick*>* bricks)
 
   for (std::vector<vvBrick*>::const_iterator it = bricks->begin(); it != bricks->end(); ++it)
   {
-    vvAABB aabb = (*it)->getAABB();
+    const vvAABB aabb = (*it)->getAABB();
     const vvVector3 minAABB = aabb._bottomLeftBackCorner;
     const vvVector3 maxAABB = aabb._topRightFrontCorner;
     for (int i = 0; i < 3; ++i)
@@ -497,7 +497,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
 
     tmpArray[i] = tmp;
     ++i;
-}
+  }
 
   // Get w, h and d.
   for (i = 0; i < 3; ++i)
@@ -791,21 +791,21 @@ void vvBspTree::buildHierarchy(vvHalfSpace* node, float* partitioning, const int
 
     // Get the indices the 2 children will use to
     // address the percent array values.
-    if ((length % 2) == 0)
+    if ((length & 1) == 0)
     {
-      length1 = length2 = length / 2;
+      length1 = length2 = (length >> 1);
       startIdx1 = startIdx;
-      endIdx1 = startIdx+length/2-1;
-      startIdx2 = startIdx+length/2;
+      endIdx1 = startIdx+(length >> 1) - 1;
+      startIdx2 = startIdx+(length >> 1);
       endIdx2 = endIdx;
     }
     else
     {
-      length1 = length/2+1;
-      length2 = length/2;
+      length1 = (length >> 1) + 1;
+      length2 = (length >> 1);
       startIdx1 = startIdx;
-      endIdx1 = startIdx+length/2;
-      startIdx2 = startIdx+length/2+1;
+      endIdx1 = startIdx + (length >> 1);
+      startIdx2 = startIdx + (length >> 1) + 1;
       endIdx2 = endIdx;
     }
 
@@ -863,7 +863,7 @@ void vvBspTree::distributeBricks(vvHalfSpace* node, std::vector<vvBrick*>* brick
 
 void vvBspTree::print(vvHalfSpace* node, const int indent)
 {
-  int inc = 4;
+  const int inc = 4;
   int i;
 
   for (i = 0; i < indent; ++i)

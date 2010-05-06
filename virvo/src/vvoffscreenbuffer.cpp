@@ -27,11 +27,9 @@
 vvOffscreenBuffer::vvOffscreenBuffer(const float scale = 1.0f, const BufferPrecision precision = VV_BYTE)
   : vvRenderTarget()
 {
-#if !defined(__APPLE__)
   glewInit();
-#endif
   _type = VV_OFFSCREEN_BUFFER;
-  vvGLTools::Viewport v = vvGLTools::getViewport();
+  const vvGLTools::Viewport v = vvGLTools::getViewport();
   _viewportWidth = v.values[2];
   _viewportHeight = v.values[3];
   _scale = scale;
@@ -60,19 +58,19 @@ void vvOffscreenBuffer::initForRender()
 
 void vvOffscreenBuffer::writeBack(const int w, const int h)
 {
-  GLint viewport[4];
+  vvGLTools::Viewport viewport;
   if ((w == -1) || (h == -1))
   {
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
     glPopAttrib();
 
-    glGetIntegerv(GL_VIEWPORT, viewport);
+    glGetIntegerv(GL_VIEWPORT, viewport.values);
   }
   else
   {
-    viewport[2] = w;
-    viewport[3] = h;
+    viewport.values[2] = w;
+    viewport.values[3] = h;
   }
 
   glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, _frameBufferObject);

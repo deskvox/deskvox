@@ -31,7 +31,7 @@ class VIRVOEXPORT vvColor
     float _col[3];                                ///< RGB color [0..1]
 
     vvColor();
-    vvColor(float, float, float);
+    vvColor(const float, const float, const float);
     float operator[](const int) const;
     float& operator[](const int);
     vvColor operator+(const vvColor) const;

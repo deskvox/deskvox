@@ -133,8 +133,8 @@ class VIRVOEXPORT vvVector4
 
     vvVector4();
     vvVector4(const vvVector4*);
-    float &operator[](int);
-    float operator[](int) const;
+    float &operator[](const int);
+    float operator[](const int) const;
     void set(float, float, float, float);
     void multiply(const vvMatrix*);
     void copy(const vvVector4*);
@@ -150,21 +150,21 @@ class VIRVOEXPORT vvVector3
     float e[3];                                   ///< vector elements (x|y|z)
 
     vvVector3();
-    vvVector3(float, float, float);
+    vvVector3(const float, const float, const float);
     vvVector3(const vvVector3*);
     vvVector3 operator^(const vvVector3) const;
-    float &operator[](int);
-    float operator[](int) const;
-    void  set(float, float, float);
+    float &operator[](const int);
+    float operator[](const int) const;
+    void  set(const float, const float, const float);
     void  get(float*, float*, float*);
     void  copy(const vvVector3*);
     void  copy(const vvVector3&);
     void  copy(const vvVector4*);
     void  add(const vvVector3*);
-    void  add(float);
-    void  add(float, float, float);
+    void  add(const float);
+    void  add(const float, const float, const float);
     void  sub(const vvVector3*);
-    void  sub(float);
+    void  sub(const float);
     void  scale(const float);
     void  scale(const vvVector3*);
     void  scale(const float, const float, const float);
@@ -183,8 +183,8 @@ class VIRVOEXPORT vvVector3
     void  random(float, float);
     void  random(double, double);
     void  print(const char* text = 0) const;
-    void  getRow(const vvMatrix*, int);
-    void  getColumn(const vvMatrix*, int);
+    void  getRow(const vvMatrix*, const int);
+    void  getColumn(const vvMatrix*, const int);
     void  swap(vvVector3*);
     bool  isectPlaneLine(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*);
     bool  isectPlaneRay(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*);
@@ -194,7 +194,7 @@ class VIRVOEXPORT vvVector3
     float isectLineLine(const vvVector3&, const vvVector3&, const vvVector3&, const vvVector3&);
     bool  isSameSideLine2D(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*);
     bool  isInTriangle(const vvVector3*, const vvVector3*, const vvVector3*);
-    void  cyclicSort(int, const vvVector3*);
+    void  cyclicSort(const int, const vvVector3*);
     void  zero();
     bool  isZero();
     void  getSpherical(float*, float*, float*);

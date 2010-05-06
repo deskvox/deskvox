@@ -611,7 +611,7 @@ vvTexRend::~vvTexRend()
   @param geom desired geometry
 */
 vvTexRend::GeometryType vvTexRend::findBestGeometry(const vvTexRend::GeometryType geom,
-                                                    const vvTexRend::VoxelType vox)
+                                                    const vvTexRend::VoxelType vox) const
 {
   (void)vox;
   vvDebugMsg::msg(1, "vvTexRend::findBestGeometry()");
@@ -634,7 +634,7 @@ vvTexRend::GeometryType vvTexRend::findBestGeometry(const vvTexRend::GeometryTyp
 //----------------------------------------------------------------------------
 /// Chooses the best voxel type depending on the graphics hardware's
 /// capabilities.
-vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox)
+vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox) const
 {
   vvDebugMsg::msg(1, "vvTexRend::findBestVoxelType()");
 
@@ -774,7 +774,7 @@ void vvTexRend::makeLUTTexture(GLuint& lutName, uchar* lutData)
 
 //----------------------------------------------------------------------------
 /// Generate 2D textures for cubic 2D mode.
-vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
+vvTexRend::ErrorType vvTexRend::makeTextures2D(const int axes)
 {
   GLint glWidth;                                  // return value from OpenGL call
   uchar* rgbaSlice[3];                            // RGBA slice data for texture memory for each principal axis
@@ -782,7 +782,6 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
   int rawSliceSize;                               // number of bytes in a slice of the raw data array
   int rawLineSize;                                // number of bytes in a row of the raw data array
   int texSize[3];                                 // size of a 2D texture in bytes for each principal axis
-  int frames;                                     // sequence timesteps
   uchar* raw;                                     // raw volume data
   int texIndex=0;                                 // index of current texture
   int texSliceIndex;                              // index of current voxel in texture
@@ -793,8 +792,6 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
   int rawStepH[3];                                // raw data step size for texture column, for each principal axis
   int rawStepS[3];                                // raw data step size for texture slices, for each principal axis
   uchar* rawVoxel;                                // current raw data voxel
-  float fval;
-  int i, s, w, h, f, c, alpha;
   bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
   ErrorType err = OK;
 
@@ -804,7 +801,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
 
   removeTextures();                               // first remove previously generated textures from TRAM
 
-  frames = vd->frames;
+  const int frames = vd->frames;
   
   // Determine total number of textures:
   if (axes==1)
@@ -829,7 +826,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
   th[1] = tw[2] = texels[0];
   tw[0] = th[2] = texels[1];
   tw[1] = th[0] = texels[2];
-  for (i=3-axes; i<3; ++i)
+  for (int i=3-axes; i<3; ++i)
   {
     texSize[i] = tw[i] * th[i] * texelsize;
   }
@@ -856,28 +853,28 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
   rawStepS[2] = rawSliceSize;
 
   // Generate texture data arrays:
-  for (i=3-axes; i<3; ++i)
+  for (int i=3-axes; i<3; ++i)
   {
     rgbaSlice[i] = new uchar[texSize[i]];
   }
 
   // Generate texture data:
-  for (f=0; f<frames; ++f)
+  for (int f=0; f<frames; ++f)
   {
     raw = vd->getRaw(f);                          // points to beginning of frame in raw data
-    for (i=3-axes; i<3; ++i)                      // generate textures for each principal axis
+    for (int i=3-axes; i<3; ++i)                      // generate textures for each principal axis
     {
       memset(rgbaSlice[i], 0, texSize[i]);        // initialize with 0's for invisible empty regions
 
       // Generate texture contents:
-      for (s=0; s<rs[i]; ++s)                     // loop thru texture and raw data slices
+      for (int s=0; s<rs[i]; ++s)                 // loop thru texture and raw data slices
       {
-        for (h=0; h<rh[i]; ++h)                   // loop thru raw data rows
+        for (int h=0; h<rh[i]; ++h)               // loop thru raw data rows
         {
           // Set voxel to starting position in raw data array:
           rawVoxel = raw + rawStart[i] + s * rawStepS[i] + h * rawStepH[i];
 
-          for (w=0; w<rw[i]; ++w)                 // loop thru raw data columns
+          for (int w=0; w<rw[i]; ++w)             // loop thru raw data columns
           {
             texSliceIndex = texelsize * (w + h * tw[i]);
             if (vd->chan==1 && (vd->bpc==1 || vd->bpc==2 || vd->bpc==4))
@@ -893,7 +890,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
               }
               else                                // float voxels
               {
-                fval = *((float*)(rawVoxel));
+                const float fval = *((float*)(rawVoxel));
                 rawVal[0] = vd->mapFloat2Int(fval);
               }
               switch(voxelType)
@@ -906,7 +903,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
                   rgbaSlice[i][texSliceIndex] = (uchar)rawVal[0];
                   break;
                 case VV_TEX_SHD:
-                  for (c=0; c<4; ++c)
+                  for (int c=0; c<4; ++c)
                   {
                     rgbaSlice[i][texSliceIndex + c]   = (uchar)rawVal[0];
                   }
@@ -915,7 +912,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
                   rgbaSlice[i][texSliceIndex] = (uchar)rawVal[0];
                   break;
                 case VV_RGBA:
-                  for (c=0; c<4; ++c)
+                  for (int c=0; c<4; ++c)
                   {
                     rgbaSlice[i][texSliceIndex + c] = rgbaLUT[rawVal[0] * 4 + c];
                   }
@@ -927,13 +924,13 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
             {
               //XXX: das in Ordnung bringen fuer 2D-Texturen mit LUT
               // Fetch component values from memory:
-              for (c=0; c<ts_min(vd->chan,4); ++c)
+              for (int c=0; c<ts_min(vd->chan,4); ++c)
               {
                 rawVal[c] = *(rawVoxel + c);
               }
 
               // Copy color components:
-              for (c=0; c<ts_min(vd->chan,3); ++c)
+              for (int c=0; c<ts_min(vd->chan,3); ++c)
               {
                 rgbaSlice[i][texSliceIndex + c] = (uchar)rawVal[c];
               }
@@ -945,8 +942,8 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
               }
               else                                // compute alpha from color components
               {
-                alpha = 0;
-                for (c=0; c<vd->chan; ++c)
+                int alpha = 0;
+                for (int c=0; c<vd->chan; ++c)
                 {
                   // Alpha: mean of sum of RGB conversion table results:
                   alpha += (int)rgbaLUT[rawVal[c] * 4 + c];
@@ -988,7 +985,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(int axes)
   err = TRAM_ERROR;
 
   assert(texIndex == textures);
-  for (i=3-axes; i<3; ++i)
+  for (int i=3-axes; i<3; ++i)
     delete[] rgbaSlice[i];
   return err;
 }
@@ -1129,7 +1126,6 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
 {
   ErrorType err = OK;
   uchar* texData;                                 // data for texture memory
-  float fval;                                     // floating point voxel value
   int rawVal[4];                                  // raw values for R,G,B,A
   bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
 
@@ -1209,7 +1205,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
               }
               else  // vd->bpc == 4
               {
-                fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+                const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
                 rawVal[0] = vd->mapFloat2Int(fval);
               }
 
@@ -1277,7 +1273,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                   }
                  else  // vd->bpc==4
                   {
-                    fval = *((float*) (raw + srcIndex));
+                    const float fval = *((float*) (raw + srcIndex));
                     rawVal[c] = vd->mapFloat2Int(fval);
                   }
                 }
@@ -1481,7 +1477,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     _offscreenBuffers[i] = NULL;
   }
 
-  vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
   for (int i = 0; i < _numThreads; ++i)
   {
     _threadData[i].threadId = i;
@@ -1548,7 +1544,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   }
   _visitor->setPixels(pixels);
 
-  vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
   _visitor->setWidth(viewport.values[2]);
   _visitor->setHeight(viewport.values[3]);
 
@@ -1927,22 +1923,13 @@ void vvTexRend::updateVolumeData(int offsetX, int offsetY, int offsetZ,
    @param newTex: true: create a new texture
                   false: update an existing texture
 */
-vvTexRend::ErrorType vvTexRend::updateTextures3D(int offsetX, int offsetY, int offsetZ,
-int sizeX, int sizeY, int sizeZ, bool newTex)
+vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int offsetY, const int offsetZ,
+                                                 const int sizeX, const int sizeY, const int sizeZ, const bool newTex)
 {
   ErrorType err;
-  int frames;
-  int texSize;
-  int sliceSize;
-  int rawSliceOffset;
-  int heightOffset;
-  int texLineOffset;
   int srcIndex;
   int texOffset=0;
   int rawVal[4];
-  int alpha;
-  int c, f, s, x, y;
-  float fval;
   unsigned char* raw;
   unsigned char* texData;
   bool accommodated = true;
@@ -1952,9 +1939,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
 
   if (!extTex3d) return NO3DTEX;
 
-  frames = vd->frames;
-
-  texSize = sizeX * sizeY * sizeZ * texelsize;
+  const int texSize = sizeX * sizeY * sizeZ * texelsize;
 
   vvDebugMsg::msg(1, "3D Texture width     = ", sizeX);
   vvDebugMsg::msg(1, "3D Texture height    = ", sizeY);
@@ -1964,36 +1949,36 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
   texData = new uchar[texSize];
   memset(texData, 0, texSize);
 
-  sliceSize = vd->getSliceBytes();
+  const int sliceSize = vd->getSliceBytes();
 
   if (newTex)
   {
-    vvDebugMsg::msg(2, "Creating texture names. # of names: ", frames);
+    vvDebugMsg::msg(2, "Creating texture names. # of names: ", vd->frames);
 
     removeTextures();
-    textures  = frames;
+    textures  = vd->frames;
     delete[] texNames;
     texNames = new GLuint[textures];
-    glGenTextures(frames, texNames);
+    glGenTextures(vd->frames, texNames);
   }
 
   vvDebugMsg::msg(2, "Transferring textures to TRAM. Total size [KB]: ",
-    frames * texSize / 1024);
+    vd->frames * texSize / 1024);
 
   // Generate sub texture contents:
-  for (f = 0; f < frames; f++)
+  for (int f = 0; f < vd->frames; f++)
   {
     raw = vd->getRaw(f);
-    for (s = offsetZ; s < (offsetZ + sizeZ); s++)
+    for (int s = offsetZ; s < (offsetZ + sizeZ); s++)
     {
-      rawSliceOffset = (vd->vox[2] - min(s,vd->vox[2]-1) - 1) * sliceSize;
-      for (y = offsetY; y < (offsetY + sizeY); y++)
+      const int rawSliceOffset = (vd->vox[2] - min(s,vd->vox[2]-1) - 1) * sliceSize;
+      for (int y = offsetY; y < (offsetY + sizeY); y++)
       {
-        heightOffset = (vd->vox[1] - min(y,vd->vox[1]-1) - 1) * vd->vox[0] * vd->bpc * vd->chan;
-        texLineOffset = (y - offsetY) * sizeX + (s - offsetZ) * sizeX * sizeY;
+        const int heightOffset = (vd->vox[1] - min(y,vd->vox[1]-1) - 1) * vd->vox[0] * vd->bpc * vd->chan;
+        const int texLineOffset = (y - offsetY) * sizeX + (s - offsetZ) * sizeX * sizeY;
         if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
         {
-          for (x = offsetX; x < (offsetX + sizeX); x++)
+          for (int x = offsetX; x < (offsetX + sizeX); x++)
           {
             srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
             if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
@@ -2004,7 +1989,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
             }
             else // vd->bpc==4: convert floating point to 8bit value
             {
-              fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+              const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
               rawVal[0] = vd->mapFloat2Int(fval);
             }
             texOffset = (x - offsetX) + texLineOffset;
@@ -2018,7 +2003,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
                 texData[texOffset] = (uchar) rawVal[0];
                 break;
               case VV_TEX_SHD:
-                for (c = 0; c < 4; c++)
+                for (int c = 0; c < 4; c++)
                 {
                   texData[4 * texOffset + c] = (uchar) rawVal[0];
                 }
@@ -2027,7 +2012,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
                 texData[4 * texOffset] = (uchar) rawVal[0];
                 break;
               case VV_RGBA:
-                for (c = 0; c < 4; c++)
+                for (int c = 0; c < 4; c++)
                 {
                   texData[4 * texOffset + c] = rgbaLUT[rawVal[0] * 4 + c];
                 }
@@ -2042,10 +2027,10 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
         {
           if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
           {
-            for (x = offsetX; x < (offsetX + sizeX); x++)
+            for (int x = offsetX; x < (offsetX + sizeX); x++)
             {
               texOffset = (x - offsetX) + texLineOffset;
-              for (c = 0; c < ts_min(vd->chan,4); c++)
+              for (int c = 0; c < ts_min(vd->chan,4); c++)
               {
                 srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
                 if (vd->bpc == 1)
@@ -2057,13 +2042,13 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
                 }
                 else  // vd->bpc == 4
                 {
-                  fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+                  const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
                   rawVal[c] = vd->mapFloat2Int(fval);
                 }
               }
 
               // Copy color components:
-              for (c = 0; c < ts_min(vd->chan, 3); c++)
+              for (int c = 0; c < ts_min(vd->chan, 3); c++)
               {
                 texData[4 * texOffset + c] = (uchar) rawVal[c];
               }
@@ -2076,8 +2061,8 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
             }
             else
             {
-              alpha = 0;
-              for (c = 0; c < vd->chan; c++)
+              int alpha = 0;
+              for (int c = 0; c < vd->chan; c++)
               {
                 // Alpha: mean of sum of RGB conversion table results:
                 alpha += (int) rgbaLUT[rawVal[c] * 4 + c];
@@ -2094,11 +2079,11 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
     {
       // Set edge values and values beyond edges to 0 for spheric textures,
       // because textures may exceed texel volume:
-      for (s = offsetZ; s < (offsetZ + sizeZ); ++s)
+      for (int s = offsetZ; s < (offsetZ + sizeZ); ++s)
       {
-        for (y = offsetY; y < (offsetY + sizeY); ++y)
+        for (int y = offsetY; y < (offsetY + sizeY); ++y)
         {
-          for (x = offsetX; x < (offsetX + sizeX); ++x)
+          for (int x = offsetX; x < (offsetX + sizeX); ++x)
           {
             if ((s == 0) || (s>=vd->vox[2]-1) ||
                 (y == 0) || (y>=vd->vox[1]-1) ||
@@ -2153,14 +2138,14 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
   return OK;
 }
 
-vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes, int offsetX, int offsetY, int offsetZ,
-  int sizeX, int sizeY, int sizeZ)
+vvTexRend::ErrorType vvTexRend::updateTextures2D(const int axes,
+                                                 const int offsetX, const int offsetY, const int offsetZ,
+                                                 const int sizeX, const int sizeY, const int sizeZ)
 {
   int rawVal[4];
   int rawSliceSize;
   int rawLineSize;
   int texSize[3];
-  int frames;
   int texIndex = 0;
   int texSliceIndex;
   int texW[3], texH[3];
@@ -2174,12 +2159,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes, int offsetX, int offs
   uchar* rgbaSlice[3];
   uchar* raw;
   uchar* rawVoxel;
-  float fval;
-  int i, s, w, h, f, c, alpha;
 
   assert(axes == 1 || axes == 3);
-
-  frames = vd->frames;
 
   ss[0] = vd->vox[0] - offsetX - sizeX;
   sw[0] = offsetY;
@@ -2236,23 +2217,23 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes, int offsetX, int offs
   tw[0] = th[2] = sizeY;
   tw[1] = th[0] = sizeZ;
 
-  for (i = 3-axes; i < 3; i++)
+  for (int i = 3-axes; i < 3; i++)
   {
     texSize[i] = tw[i] * th[i] * texelsize;
   }
 
   // generate texture data arrays
-  for (i=3-axes; i<3; ++i)
+  for (int i=3-axes; i<3; ++i)
   {
     rgbaSlice[i] = new uchar[texSize[i]];
   }
 
   // generate texture data
-  for (f = 0; f < frames; f++)
+  for (int f = 0; f < vd->frames; f++)
   {
     raw = vd->getRaw(f);
 
-    for (i = 3-axes; i < 3; i++)
+    for (int i = 3-axes; i < 3; i++)
     {
       memset(rgbaSlice[i], 0, texSize[i]);
 
@@ -2272,18 +2253,18 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes, int offsetX, int offs
       }
 
       // generate texture contents
-      for (s = ss[i]; s < rs[i]; s++)
+      for (int s = ss[i]; s < rs[i]; s++)
       {
         if (s < 0) continue;
 
-        for (h = sh[i]; h < rh[i]; h++)
+        for (int h = sh[i]; h < rh[i]; h++)
         {
           if (h < 0) continue;
 
           // set voxel to starting position in raw data array
           rawVoxel = raw + rawStart[i] + s * rawStepS[i] + h * rawStepH[i] + sw[i];
 
-          for (w = sw[i]; w < rw[i]; w++)
+          for (int w = sw[i]; w < rw[i]; w++)
           {
             if (w < 0) continue;
 
@@ -2300,21 +2281,21 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes, int offsetX, int offs
               }
               else
               {
-                fval = *((float*)(rawVoxel));
+                const float fval = *((float*)(rawVoxel));
                 rawVal[0] = vd->mapFloat2Int(fval);
               }
 
-              for (c = 0; c < texelsize; c++)
+              for (int c = 0; c < texelsize; c++)
                 rgbaSlice[i][texSliceIndex + c] = rgbaLUT[rawVal[0] * 4 + c];
             }
             else if (vd->bpc == 1)
             {
               // fetch component values from memory
-              for (c = 0; c < ts_min(vd->chan,4); c++)
+              for (int c = 0; c < ts_min(vd->chan,4); c++)
                 rawVal[c] = *(rawVoxel + c);
 
               // copy color components
-              for (c = 0; c < ts_min(vd->chan,3); c++)
+              for (int c = 0; c < ts_min(vd->chan,3); c++)
                 rgbaSlice[i][texSliceIndex + c] = (uchar) rawVal[c];
 
               // alpha channel
@@ -2322,8 +2303,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes, int offsetX, int offs
                 rgbaSlice[i][texSliceIndex + 3] = rgbaLUT[rawVal[3] * 4 + 3];
               else
               {
-                alpha = 0;
-                for (c = 0; c < vd->chan; c++)
+                int alpha = 0;
+                for (int c = 0; c < vd->chan; c++)
                   // alpha: mean of sum of RGB conversion table results
                   alpha += (int)rgbaLUT[rawVal[c] * 4 + c];
 
@@ -2344,7 +2325,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes, int offsetX, int offs
     }
   }
 
-  for (i = 3-axes; i < 3; i++)
+  for (int i = 3-axes; i < 3; i++)
   {
     delete[] rgbaSlice[i];
   }
@@ -2353,7 +2334,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes, int offsetX, int offs
 }
 
 vvTexRend::ErrorType vvTexRend::updateTextureBricks(int offsetX, int offsetY, int offsetZ,
-int sizeX, int sizeY, int sizeZ)
+                                                    int sizeX, int sizeY, int sizeZ)
 {
   int frames;
   int texSize;
@@ -2631,8 +2612,7 @@ int sizeX, int sizeY, int sizeZ)
 /// Do things that need to be done before virvo sets the rendering specific gl environment.
 void vvTexRend::beforeSetGLenvironment()
 {
-  vvVector3 probeSizeObj;                         // probe size [object space]
-  vvVector3 size(vd->getSize());                  // volume size [world coordinates]
+  const vvVector3 size(vd->getSize());            // volume size [world coordinates]
 
   // Draw boundary lines (must be done before setGLenvironment()):
   if (_renderState._boundaries)
@@ -2641,7 +2621,9 @@ void vvTexRend::beforeSetGLenvironment()
   }
   if (_renderState._isROIUsed)
   {
-    probeSizeObj.set(size[0] * _renderState._roiSize[0], size[1] * _renderState._roiSize[1], size[2] * _renderState._roiSize[2]);
+    const vvVector3 probeSizeObj(size[0] * _renderState._roiSize[0],
+                                 size[1] * _renderState._roiSize[1],
+                                 size[2] * _renderState._roiSize[2]);
     drawBoundingBox(&probeSizeObj, &_renderState._roiPos, _renderState._probeColor);
   }
   if (_renderState._clipMode && _renderState._clipPerimeter)
@@ -3232,7 +3214,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     GLfloat* projection = new GLfloat[16];
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
 
-    vvGLTools::Viewport viewport = vvGLTools::getViewport();
+    const vvGLTools::Viewport viewport = vvGLTools::getViewport();
 
     // Make sure that the _threadData array is only changed again (due to the
     // fact that the main thread already wants to sort the brick list again for
@@ -3706,7 +3688,7 @@ void vvTexRend::updateFrustum()
     clip.e[3][2]-clip.e[2][2], clip.e[3][3]-clip.e[2][3]);
 }
 
-bool vvTexRend::insideFrustum(const vvVector3 &min, const vvVector3 &max)
+bool vvTexRend::insideFrustum(const vvVector3 &min, const vvVector3 &max) const
 {
   vvVector3 pv;
 
@@ -3730,12 +3712,12 @@ bool vvTexRend::insideFrustum(const vvVector3 &min, const vvVector3 &max)
   return true;
 }
 
-bool vvTexRend::intersectsFrustum(const vvVector3 &min, const vvVector3 &max)
+bool vvTexRend::intersectsFrustum(const vvVector3 &min, const vvVector3 &max) const
 {
   vvVector3 pv;
 
   // get p-vertex (that's the farthest vertex in the direction of the normal plane
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 6; ++i)
   {
     if (_frustum[i][0] > 0.0)
       pv[0] = max[0];
@@ -3761,12 +3743,12 @@ bool vvTexRend::intersectsFrustum(const vvVector3 &min, const vvVector3 &max)
   return true;
 }
 
-bool vvTexRend::testBrickVisibility(vvBrick* brick)
+bool vvTexRend::testBrickVisibility(vvBrick* brick) const
 {
   return intersectsFrustum(brick->min, brick->max);
 }
 
-bool vvTexRend::testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat)
+bool vvTexRend::testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat) const
 {
   //sample the brick at many point and test them all for visibility
   const float numSteps = 3;
@@ -3775,10 +3757,10 @@ bool vvTexRend::testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat)
   const float zStep = (brick->max[2] - brick->min[2]) / (numSteps - 1.0f);
   for(int i = 0; i < numSteps; i++)
   {
-    float x = brick->min.e[0] + xStep * i;
+    const float x = brick->min.e[0] + xStep * i;
     for(int j = 0; j < numSteps; j++)
     {
-      float y = brick->min.e[1] + yStep * j;
+      const float y = brick->min.e[1] + yStep * j;
       for(int k = 0; k < numSteps; k++)
       {
         const float z = brick->min.e[2] + zStep * k;
@@ -3798,7 +3780,7 @@ bool vvTexRend::testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat)
   return false;
 }
 
-void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, vvVector3& probeMin, vvVector3& probeMax)
+void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, vvVector3& probeMin, vvVector3& probeMax) const
 {
   const vvVector3 pos(vd->pos);
 
@@ -3809,8 +3791,7 @@ void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, v
   if (_renderState._isROIUsed)
   {
     // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj.copy(&_renderState._roiPos);
-    probePosObj.sub(&pos);                        // eliminate object position from probe position
+    probePosObj = _renderState._roiPos - pos;
 
     // Compute probe min/max coordinates in object space:
     const vvVector3 maxSize = _renderState._roiSize * size2;
@@ -4646,8 +4627,7 @@ void vvTexRend::setNumLights(int numLights)
 bool vvTexRend::instantClassification() const
 {
   vvDebugMsg::msg(3, "vvTexRend::instantClassification()");
-  if (voxelType == VV_RGBA) return false;
-  else return true;
+  return (voxelType != VV_RGBA);
 }
 
 //----------------------------------------------------------------------------
@@ -5437,7 +5417,7 @@ void vvTexRend::initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const
 //----------------------------------------------------------------------------
 /** @return true if initialization successful
  */
-bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader)
+bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader) const
 {
   const char* shaderFileName = "vv_shader";
   const char* shaderExt = ".cg";

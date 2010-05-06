@@ -91,7 +91,7 @@ vvPrintGL::~vvPrintGL()
   @param x,y text position [0..1]
   @param fmt printf compatible argument format
 */
-void vvPrintGL::print(float x, float y, const char *fmt, ...)
+void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
 {
   vvDebugMsg::msg(3, "vvPrintGL::print()");
 

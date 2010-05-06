@@ -42,10 +42,10 @@ using namespace std;
 */
 void vvGLTools::printGLError(const char* msg)
 {
-  GLenum err = glGetError();
+  const GLenum err = glGetError();
   if(err != GL_NO_ERROR)
   {
-    char* str = (char*)gluErrorString(err);
+    const char* str = (const char*)gluErrorString(err);
     cerr << "GL error: " << msg << ", " << str << endl;
   }
 }
@@ -57,25 +57,21 @@ void vvGLTools::printGLError(const char* msg)
 */
 bool vvGLTools::isGLextensionSupported(const char* extension)
 {
-  const GLubyte *extensions = NULL;
-  const GLubyte *start;
-  GLubyte *where, *terminator;
-
   // Check requested extension name for existence and for spaces:
-  where = (GLubyte*)strchr(extension, ' ');
+  const GLubyte* where = (GLubyte*)strchr(extension, ' ');
   if (where || *extension=='\0') return false;
 
   // Get extensions string from OpenGL:
-  extensions = glGetString(GL_EXTENSIONS);
+  const GLubyte* extensions = glGetString(GL_EXTENSIONS);
   if (extensions=='\0') return false;
 
   // Parse OpenGL extensions string:
-  start = extensions;
+  const GLubyte* start = extensions;
   for (;;)
   {
     where = (GLubyte*)strstr((const char*)start, extension);
     if (!where) return false;
-    terminator = where + strlen(extension);
+    const GLubyte* terminator = where + strlen(extension);
     if (where==start || *(where - 1)==' ')
       if (*terminator==' ' || *terminator=='\0')
         return true;
@@ -88,13 +84,11 @@ bool vvGLTools::isGLextensionSupported(const char* extension)
   run time.
   @param style display style
 */
-void vvGLTools::displayOpenGLextensions(DisplayStyle style)
+void vvGLTools::displayOpenGLextensions(const DisplayStyle style)
 {
-  char* extensions = NULL;                        // OpenGL extensions string
   char* extCopy;                                  // local copy of extensions string for modifications
-  int i;
 
-  extensions = (char*)glGetString(GL_EXTENSIONS);
+  const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
 
   switch (style)
   {
@@ -105,7 +99,7 @@ void vvGLTools::displayOpenGLextensions(DisplayStyle style)
     case ONE_BY_ONE:
       extCopy = new char[strlen(extensions) + 1];
       strcpy(extCopy, extensions);
-      for (i=0; i<(int)strlen(extCopy); ++i)
+      for (int i=0; i<(int)strlen(extCopy); ++i)
         if (extCopy[i] == ' ') extCopy[i] = '\n';
       cerr << extCopy << endl;
       delete[] extCopy;
@@ -119,7 +113,7 @@ void vvGLTools::displayOpenGLextensions(DisplayStyle style)
 */
 void vvGLTools::checkOpenGLextensions()
 {
-  const char* status[3] = {"supported", "not found"};
+  const char* status[2] = {"supported", "not found"};
 
   cerr << "GL_EXT_texture3D...............";
   cerr << ((vvGLTools::isGLextensionSupported("GL_EXT_texture3D")) ? status[0] : status[1]) << endl;

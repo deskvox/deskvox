@@ -45,7 +45,7 @@ class VIRVOEXPORT vvPrintGL
   public:
     vvPrintGL();
     virtual ~vvPrintGL();
-    void print(float, float, const char *, ...);
+    void print(const float, const float, const char *, ...);
 };
 #endif
 

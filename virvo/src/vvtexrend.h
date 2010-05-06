@@ -268,7 +268,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLboolean glsSharedTexPal;                    ///< stores GL_SHARED_TEXTURE_PALETTE_EXT
 
     void makeLUTTexture(GLuint& lutName, uchar* lutData);
-    ErrorType makeTextures2D(int axes);
+    ErrorType makeTextures2D(const int axes);
 
     ErrorType setDisplayNames(const char** displayNames, const unsigned int numNames);
     ErrorType dispatchThreadedGLXContexts();
@@ -284,7 +284,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     void initPostClassificationStage(vvShaderManager* pixelShader, GLuint progName[VV_FRAG_PROG_MAX]);
     void initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const;
-    bool initPixelShaders(vvShaderManager* pixelShader);
+    bool initPixelShaders(vvShaderManager* pixelShader) const;
     void enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName);
     void disablePixelShaders(vvShaderManager* pixelShader);
 
@@ -298,8 +298,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     ErrorType makeTextures3D();
     void removeTextures();
-    ErrorType updateTextures3D(int, int, int, int, int, int, bool);
-    ErrorType updateTextures2D(int, int, int, int, int, int, int);
+    ErrorType updateTextures3D(const int, const int, const int, const int, const int, const int, const bool);
+    ErrorType updateTextures2D(const int, const int, const int, const int, const int, const int, const int);
     ErrorType updateTextureBricks(int, int, int, int, int, int);
     void beforeSetGLenvironment();
     void setGLenvironment() const;
@@ -310,8 +310,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void renderTex2DSlices(float);
     void renderTex2DCubic(AxisType, float, float, float);
     void generateDebugColors();
-    VoxelType findBestVoxelType(const VoxelType);
-    GeometryType findBestGeometry(const GeometryType, const VoxelType);
+    VoxelType findBestVoxelType(const VoxelType) const;
+    GeometryType findBestGeometry(const GeometryType, const VoxelType) const;
     void updateLUT(const float, GLuint& lutName, uchar*& lutData);
     int  getLUTSize(int*) const;
     int  getPreintTableSize() const;
@@ -321,13 +321,13 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void disableFragProg();
     void enableTexture(const GLenum target);
     void disableTexture(const GLenum target);
-    bool testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat);
-    bool testBrickVisibility(vvBrick*);
-    bool intersectsFrustum(const vvVector3 &min, const vvVector3 &max);
-    bool insideFrustum(const vvVector3 &min, const vvVector3 &max);
+    bool testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat) const;
+    bool testBrickVisibility(vvBrick*) const;
+    bool intersectsFrustum(const vvVector3 &min, const vvVector3 &max) const;
+    bool insideFrustum(const vvVector3 &min, const vvVector3 &max) const;
     void markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax);
     void updateFrustum();
-    void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&);
+    void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&) const;
     void getBricksInProbe(const vvVector3, const vvVector3);
     void computeBrickSize();
     void initVertArray(const int numSlices);

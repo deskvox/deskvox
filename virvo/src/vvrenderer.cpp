@@ -724,7 +724,7 @@ void vvRenderer::renderFPSDisplay()
   @param oPos   position of boundary box center [object coordinates]
 @param color  bounding box color (R,G,B) [0..1], array of 3 floats expected
 */
-void vvRenderer::drawBoundingBox(vvVector3* oSize, vvVector3* oPos, float* color)
+void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, float* color) const
 {
   vvVector3 vertvec[8];                           // vertex vectors in object space
   GLboolean glsLighting;                          // stores GL_LIGHTING
@@ -815,7 +815,7 @@ void vvRenderer::drawBoundingBox(vvVector3* oSize, vvVector3* oPos, float* color
   @param oNorm   normal of plane [object coordinates]
   @param color   box color (R,G,B) [0..1], array of 3 floats expected
 */
-void vvRenderer::drawPlanePerimeter(vvVector3* oSize, vvVector3* oPos, vvVector3* oPlane, vvVector3* oNorm, float* color)
+void vvRenderer::drawPlanePerimeter(const vvVector3* oSize, const vvVector3* oPos, vvVector3* oPlane, vvVector3* oNorm, float* color)
 {
   GLboolean glsLighting;                          // stores GL_LIGHTING
   GLfloat   glsColor[4];                          // stores GL_CURRENT_COLOR

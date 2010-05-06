@@ -271,7 +271,7 @@ CGGLenum vvCg::toCgEnum(const ShaderType& shaderType)
   case VV_FRAG_SHD:
     result = CG_GL_FRAGMENT;
     break;
-#if 0 // TODO - find out if geometry shaders are supported.
+#ifdef GL_GEOMETRY_SHADER_ARB
   case VV_GEOM_SHD:
     result = CG_GL_GEOMETRY;
     break;
