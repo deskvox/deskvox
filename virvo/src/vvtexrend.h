@@ -284,7 +284,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
                                 std::vector<BrickList> bricks);
 
     void initPostClassificationStage(vvShaderManager* pixelShader, GLuint progName[VV_FRAG_PROG_MAX]);
-    void initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]);
+    void initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const;
     bool initPixelShaders(vvShaderManager* pixelShader);
     void enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName);
     void disablePixelShaders(vvShaderManager* pixelShader);

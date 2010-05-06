@@ -3360,6 +3360,10 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     }
     else
     {
+      if (_proxyGeometryOnGpu)
+      {
+        glEnableClientState(GL_VERTEX_ARRAY);
+      }
       for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
       {
         if (!(*it)->visible)
@@ -3373,6 +3377,10 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
                       _isectShader, !((*it)->insideProbe && lastInsideProbe));
           lastInsideProbe = (*it)->insideProbe;
         }
+      }
+      if (_proxyGeometryOnGpu)
+      {
+        glDisableClientState(GL_VERTEX_ARRAY);
       }
     }
 
@@ -3566,6 +3574,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       }
       else
       {
+        if (data->renderer->_proxyGeometryOnGpu)
+        {
+          glEnableClientState(GL_VERTEX_ARRAY);
+        }
         for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
         {
           vvBrick *tmp = *it;
@@ -3580,6 +3592,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
           {
             ++discarded;
           }
+        }
+        if (data->renderer->_proxyGeometryOnGpu)
+        {
+          glDisableClientState(GL_VERTEX_ARRAY);
         }
       }
       glDisable(GL_TEXTURE_3D_EXT);
@@ -5569,7 +5585,7 @@ void vvTexRend::initPostClassificationStage(vvShaderManager* pixelShader, GLuint
   }
 }
 
-void vvTexRend::initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX])
+void vvTexRend::initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const
 {
   glGenProgramsARB(VV_FRAG_PROG_MAX, progName);
 

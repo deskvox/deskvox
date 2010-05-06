@@ -79,7 +79,6 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
   glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
   if (renderer->_proxyGeometryOnGpu)
   {
-    glEnableClientState(GL_VERTEX_ARRAY);
     isectShader->setArrayParameter3f(0, "vertices", 0, verts[0].e[0], verts[0].e[1], verts[0].e[2]);
     if (setupEdges)
     {
@@ -104,8 +103,6 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
 
     glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
     glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
-
-    glDisableClientState(GL_VERTEX_ARRAY);
   }
   else // render proxy geometry on gpu? else then:
   {
