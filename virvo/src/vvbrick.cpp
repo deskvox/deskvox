@@ -32,7 +32,7 @@
 void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
                      const vvVector3& farthest, const vvVector3& delta,
                      const vvVector3& probeMin, const vvVector3& probeMax,
-                     GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges)
+                     GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges) const
 {
   const vvVector3 dist = max - min;
 
@@ -152,7 +152,7 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
   }
 }
 
-void vvBrick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax)
+void vvBrick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const
 {
   vvVector3 minClipped;
   vvVector3 maxClipped;
@@ -266,7 +266,7 @@ ushort vvBrick::getFrontIndex(const vvVector3* vertices,
                               const vvVector3& point,
                               const vvVector3& normal,
                               float& minDot,
-                              float& maxDot)
+                              float& maxDot) const
 {
 
   // Get vertices with max and min distance to point along normal.

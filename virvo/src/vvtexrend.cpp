@@ -429,18 +429,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     glGenTextures(1, &pixLUTName);
   }
 
-  // Init fragment program:
-  if((_numThreads == 0) && (voxelType == VV_FRG_PRG))
+  if (_numThreads == 0)
   {
-    initArbFragmentProgram(fragProgName);
-  }
-
-  if (voxelType==VV_PIX_SHD)
-  {
-    if (!initPixelShaders(_pixelShader))
-    {
-      voxelType = VV_RGBA;
-    }
+    initPostClassificationStage(_pixelShader, fragProgName);
   }
 
   textures = 0;
@@ -1416,7 +1407,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
 
     if (_threadData[i].display != NULL)
     {
-      Drawable parent = RootWindow(_threadData[i].display, _screens[i]);
+      const Drawable parent = RootWindow(_threadData[i].display, _screens[i]);
 
       XVisualInfo* vi = glXChooseVisual(_threadData[i].display,
                                         DefaultScreen(_threadData[i].display),
@@ -2661,7 +2652,7 @@ void vvTexRend::beforeSetGLenvironment()
 
 //----------------------------------------------------------------------------
 /// Set GL environment for texture rendering.
-void vvTexRend::setGLenvironment()
+void vvTexRend::setGLenvironment() const
 {
   vvDebugMsg::msg(3, "vvTexRend::setGLenvironment()");
 
@@ -2713,7 +2704,7 @@ void vvTexRend::setGLenvironment()
 
 //----------------------------------------------------------------------------
 /// Unset GL environment for texture rendering.
-void vvTexRend::unsetGLenvironment()
+void vvTexRend::unsetGLenvironment() const
 {
   vvDebugMsg::msg(3, "vvTexRend::unsetGLenvironment()");
 
@@ -3436,8 +3427,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     pthread_mutex_lock(data->makeTextureMutex);
     glGenTextures(1, &data->pixLUTName);
     data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
-    data->renderer->initPixelShaders(pixelShader);
-    data->renderer->initArbFragmentProgram(fragProgName);
+
+    data->renderer->initPostClassificationStage(pixelShader, fragProgName);
     data->renderer->_areBricksCreated = false;
     // Generate a set of gl tex names private to this thread.
     // This solution differs from the one chosen for sequential
@@ -5573,6 +5564,21 @@ void vvTexRend::disableIntersectionShader(vvShaderManager* isectShader, vvShader
     {
       // Deactivate the passthrough shader.
       pixelShader->disableShader(0);
+    }
+  }
+}
+
+void vvTexRend::initPostClassificationStage(vvShaderManager* pixelShader, GLuint progName[VV_FRAG_PROG_MAX])
+{
+  if (voxelType == VV_FRG_PRG)
+  {
+    initArbFragmentProgram(progName);
+  }
+  else if (voxelType==VV_PIX_SHD)
+  {
+    if (!initPixelShaders(pixelShader))
+    {
+      voxelType = VV_RGBA;
     }
   }
 }

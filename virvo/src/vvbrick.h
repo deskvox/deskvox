@@ -74,9 +74,9 @@ public:
   void render(vvTexRend* renderer, const vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges);
+              GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges) const;
 
-  void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax);
+  void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const;
   bool upload3DTexture(GLuint& texName, uchar* texData,
                        const GLenum texFormat, const GLint internalTexFormat,
                        const bool interpolation = true);
@@ -90,7 +90,7 @@ public:
                        const vvVector3& point,
                        const vvVector3& normal,
                        float& minDot,
-                       float& maxDot);
+                       float& maxDot) const;
 
   static void sortByCenter(vvBrick** bricks,
                            const int numBricks,

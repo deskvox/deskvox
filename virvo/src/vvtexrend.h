@@ -283,6 +283,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
                                 std::vector<BrickList> bricks);
 
+    void initPostClassificationStage(vvShaderManager* pixelShader, GLuint progName[VV_FRAG_PROG_MAX]);
     void initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]);
     bool initPixelShaders(vvShaderManager* pixelShader);
     void enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName);
@@ -302,8 +303,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType updateTextures2D(int, int, int, int, int, int, int);
     ErrorType updateTextureBricks(int, int, int, int, int, int);
     void beforeSetGLenvironment();
-    void setGLenvironment();
-    void unsetGLenvironment();
+    void setGLenvironment() const;
+    void unsetGLenvironment() const;
     void renderTex3DSpherical(vvMatrix*);
     void renderTex3DPlanar(vvMatrix*);
     void renderTexBricks(vvMatrix*);
