@@ -24,9 +24,13 @@
 #include <float.h>
 #include <errno.h>
 #ifdef _WIN32
-#include <windows.h>
+  // Min windows version: WinXP.
+  #ifndef _WIN32_WINNT                
+  #define _WIN32_WINNT 0x0501
+  #endif 
+  #include <windows.h>
 #elif _LINUX64BIT
-#include <dlfcn.h>
+  #include <dlfcn.h>
 #else
   #include <sys/types.h>
   #include <sys/stat.h>
@@ -1571,7 +1575,7 @@ int vvToolshed::getNumProcessors()
 {
 #ifdef _WIN32
   SYSTEM_INFO sysinfo;
-  GetSystemInfo(&sysinfo);
+  GetNativeSystemInfo(&sysinfo);
   return sysinfo.dwNumberOfProcessors;
 #elif defined(__hpux)
   struct pst_dynamic psd;
