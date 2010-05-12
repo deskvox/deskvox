@@ -1914,7 +1914,8 @@ int vvToolshed::writeFloat(FILE* fp, float val, vvToolshed::EndianType end)
  */
 int vvToolshed::align(const int i, const int pot)
 {
-  return (i + (pot - 1)) & ~(pot - 1);
+  const int alignment = sizeof(int) * pot;
+  return (i + (alignment - 1)) & ~(alignment - 1);
 }
 
 //----------------------------------------------------------------------------
