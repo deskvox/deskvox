@@ -271,7 +271,7 @@ CGGLenum vvCg::toCgEnum(const ShaderType& shaderType)
   case VV_FRAG_SHD:
     result = CG_GL_FRAGMENT;
     break;
-#ifdef GL_GEOMETRY_SHADER_ARB
+#ifdef CG_PROFILE_GLSLG
   case VV_GEOM_SHD:
     result = CG_GL_GEOMETRY;
     break;
