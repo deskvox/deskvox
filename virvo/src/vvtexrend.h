@@ -271,7 +271,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType makeTextures2D(const int axes);
 
     ErrorType setDisplayNames(const char** displayNames, const unsigned int numNames);
+    ErrorType dispatchThreadedWGLContexts(); 
     ErrorType dispatchThreadedGLXContexts();
+    ErrorType dispatchThreads();
     ErrorType distributeBricks();
     static void* threadFuncTexBricks(void* threadargs);
     void sortBrickList(const int, const vvVector3&, const vvVector3&, const bool);

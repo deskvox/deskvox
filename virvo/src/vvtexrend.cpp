@@ -123,6 +123,10 @@ struct ThreadArgs
   GLXContext glxContext;                      ///< the initial glx context
   Display* display;						                ///< a pointer to the current glx display
   Drawable drawable;
+#elif defined _WIN32
+  HGLRC wglContext;
+  HWND window;
+  HDC deviceContext;
 #endif
 
   // Gl state specific.
@@ -266,6 +270,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   if (_numThreads > 0)
   {
     dispatchThreadedGLXContexts();
+    dispatchThreadedWGLContexts();
   }
 
   if (vvDebugMsg::isActive(1))
@@ -552,7 +557,6 @@ vvTexRend::~vvTexRend()
 
   delete[] rgbaTF;
   delete[] rgbaLUT;
-
 
   if (_proxyGeometryOnGpu)
   {
@@ -1377,6 +1381,106 @@ vvTexRend::ErrorType vvTexRend::setDisplayNames(const char** displayNames, const
   return err;
 }
 
+LRESULT CALLBACK WndProcedure(HWND hWnd, UINT Msg,
+			   WPARAM wParam, LPARAM lParam)
+{
+    switch(Msg)
+    {
+    // If the user wants to close the application
+    case WM_DESTROY:
+        // then close it
+        PostQuitMessage(WM_QUIT);
+        break;
+    default:
+        // Process the left-over messages
+        return DefWindowProc(hWnd, Msg, wParam, lParam);
+    }
+    // If something was not done, let it go
+    return 0;
+}
+
+vvTexRend::ErrorType vvTexRend::dispatchThreadedWGLContexts()
+{
+#if !defined(_WIN32)
+  return UNSUPPORTED
+#else
+  ErrorType err = OK;
+
+  DISPLAY_DEVICE dispDev;
+  DEVMODE devMode;
+  dispDev.cb = sizeof(DISPLAY_DEVICE);
+
+  for (unsigned int i = 0; i < _numThreads; ++i)
+  {
+    if (EnumDisplayDevices(NULL, i, &dispDev, NULL))
+    {
+      EnumDisplaySettings(dispDev.DeviceName, ENUM_CURRENT_SETTINGS, &devMode);
+    }
+
+    HINSTANCE hInstance = GetModuleHandle(0);
+    WNDCLASSEX WndClsEx;
+    ZeroMemory(&WndClsEx, sizeof(WNDCLASSEX));
+
+
+    LPCTSTR ClsName = L"Virvo Multi-GPU Renderer";
+    LPCTSTR WndName = L"Debug Window";
+
+    WndClsEx.cbSize        = sizeof(WNDCLASSEX);
+    WndClsEx.style         = CS_HREDRAW | CS_VREDRAW;
+    WndClsEx.lpfnWndProc   = WndProcedure;
+    WndClsEx.cbClsExtra    = 0;
+    WndClsEx.cbWndExtra    = 0;
+    WndClsEx.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
+    WndClsEx.hCursor       = LoadCursor(NULL, IDC_ARROW);
+    WndClsEx.lpszMenuName  = NULL;
+    WndClsEx.lpszClassName = ClsName;
+    WndClsEx.hInstance     = hInstance;
+    WndClsEx.hbrBackground = 0;
+    WndClsEx.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
+    ATOM WindowAtom = RegisterClassEx(&WndClsEx);
+
+    PIXELFORMATDESCRIPTOR pfd;
+    ZeroMemory(&pfd, sizeof(PIXELFORMATDESCRIPTOR));
+    pfd.nSize = sizeof(pfd);
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 32;
+    pfd.cDepthBits = 16;
+    pfd.iLayerType = PFD_MAIN_PLANE;
+
+    HWND hWnd = CreateWindow(ClsName, WndName, WS_OVERLAPPEDWINDOW,
+                             CW_USEDEFAULT, CW_USEDEFAULT, 512, 512,
+                             NULL, NULL, hInstance, NULL);
+
+    if (!hWnd)
+    {
+      cerr << "Couldn't create window on display: " << i << endl;
+    }
+    else
+    {
+      _threadData[i].window = hWnd;
+
+      //if (vvDebugMsg::getDebugLevel() > 0)
+      {
+        ShowWindow(hWnd, SW_SHOWNORMAL);
+      }
+      _threadData[i].deviceContext = GetDC(hWnd);
+      int pixelFormat = ChoosePixelFormat(_threadData[i].deviceContext, &pfd);
+      if (pixelFormat != 0)
+      {
+        SetPixelFormat(_threadData[i].deviceContext, pixelFormat, &pfd);
+        _threadData[i].wglContext = wglCreateContext(_threadData[i].deviceContext);
+      }
+    }
+  }
+
+  err = dispatchThreads();
+
+  return err;
+#endif
+}
+
 vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
 {
 #ifndef HAVE_X11
@@ -1431,7 +1535,6 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     }
   }
 
-
   if (unresolvedDisplays >= _numThreads)
   {
     _numThreads = 0;
@@ -1439,6 +1542,16 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     return NO_DISPLAYS_OPENED;
   }
   _numThreads -= unresolvedDisplays;
+
+  err = dispatchThreads();
+
+  return err;
+#endif
+}
+
+vvTexRend::ErrorType vvTexRend::dispatchThreads()
+{
+  ErrorType err = OK;
 
   _visitor = NULL;
 
@@ -1468,13 +1581,13 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
   // their buffers themselves when their respective gl context is
   // bound, thus the buffers are set to 0 initially.
   _offscreenBuffers = new vvOffscreenBuffer*[_numThreads];
-  for (int i = 0; i < _numThreads; ++i)
+  for (unsigned int i = 0; i < _numThreads; ++i)
   {
     _offscreenBuffers[i] = NULL;
   }
 
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-  for (int i = 0; i < _numThreads; ++i)
+  for (unsigned int i = 0; i < _numThreads; ++i)
   {
     _threadData[i].threadId = i;
     _threadData[i].renderer = this;
@@ -1492,19 +1605,21 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     _threadData[i].transferFunctionChanged = false;
     _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
     _threadData[i].precision = _multiGpuBufferPrecision;
+#ifdef HAVE_X11
     XMapWindow(_threadData[i].display, _threadData[i].drawable);
     XFlush(_threadData[i].display);
+#endif
   }
 
   // Dispatch the threads. This has to be done in a separate loop since the first operation
   // the callback function will perform is making its gl context current. This would most
   // probably interfer with the context creation performed in the loop above.
-  for (int i = 0; i < _numThreads; ++i)
+  for (unsigned int i = 0; i < _numThreads; ++i)
   {
     pthread_create(&_threads[i], NULL, threadFuncTexBricks, (void*)&_threadData[i]);
   }
+
   return err;
-#endif
 }
 
 /*!
@@ -3375,14 +3490,17 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
  */
 void* vvTexRend::threadFuncTexBricks(void* threadargs)
 {
-#ifndef HAVE_X11
-  return NULL;
-#else
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
 
+#ifdef HAVE_X11
   if (!glXMakeCurrent(data->display, data->drawable, data->glxContext))
+#elif defined _WIN32
+  if (!wglMakeCurrent(data->deviceContext, data->wglContext))
+#else
+  if (0)
+#endif
   {
-    vvDebugMsg::msg(3, "Couldn't make glx context current");
+    vvDebugMsg::msg(3, "Couldn't make OpenGL context current");
   }
   else
   {
@@ -3641,6 +3759,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     delete stopwatch;
   }
   pthread_exit(NULL);
+#ifndef HAVE_X11
+  return NULL;
 #endif
 }
 
