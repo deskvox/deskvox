@@ -547,7 +547,7 @@ vvTexRend::~vvTexRend()
 
   if (_numThreads == 0)
   {
-    removeTextures();
+    removeTextures(texNames, &textures);
   }
 
   delete[] rgbaTF;
@@ -670,16 +670,16 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox
 
 //----------------------------------------------------------------------------
 /// Remove all textures from texture memory.
-void vvTexRend::removeTextures()
+void vvTexRend::removeTextures(GLuint*& privateTexNames, int* numTextures)
 {
   vvDebugMsg::msg(1, "vvTexRend::removeTextures()");
 
   if (textures>0)
   {
-    glDeleteTextures(textures, texNames);
-    delete[] texNames;
-    texNames = NULL;
-    textures = 0;
+    glDeleteTextures(*numTextures, privateTexNames);
+    delete[] privateTexNames;
+    privateTexNames = NULL;
+    numTextures = 0;
   }
 }
 
@@ -799,7 +799,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(const int axes)
 
   assert(axes==1 || axes==3);
 
-  removeTextures();                               // first remove previously generated textures from TRAM
+  removeTextures(texNames, &textures);            // first remove previously generated textures from TRAM
 
   const int frames = vd->frames;
   
@@ -1129,11 +1129,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
   int rawVal[4];                                  // raw values for R,G,B,A
   bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
 
-  if (_numThreads == 0)
-  {
-    // TODO: make removeTextures() compatible with "privateTexNames"
-    removeTextures();
-  }
+  removeTextures(privateTexNames, numTextures);
 
   const int frames = vd->frames;
 
@@ -1955,7 +1951,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int of
   {
     vvDebugMsg::msg(2, "Creating texture names. # of names: ", vd->frames);
 
-    removeTextures();
+    removeTextures(texNames, &textures);
     textures  = vd->frames;
     delete[] texNames;
     texNames = new GLuint[textures];

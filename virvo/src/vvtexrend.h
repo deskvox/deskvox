@@ -297,7 +297,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void disableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL);
 
     ErrorType makeTextures3D();
-    void removeTextures();
+    void removeTextures(GLuint*& privateTexNames, int* numTextures);
     ErrorType updateTextures3D(const int, const int, const int, const int, const int, const int, const bool);
     ErrorType updateTextures2D(const int, const int, const int, const int, const int, const int, const int);
     ErrorType updateTextureBricks(int, int, int, int, int, int);
