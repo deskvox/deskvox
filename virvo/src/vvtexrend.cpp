@@ -1122,7 +1122,7 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
 }
 
 vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
-                                                  std::vector<BrickList> brickList)
+                                                  std::vector<BrickList>& brickList)
 {
   ErrorType err = OK;
   uchar* texData;                                 // data for texture memory
@@ -1528,7 +1528,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   }
 
   delete _bspTree;
-  _bspTree = new vvBspTree(part, _numThreads, &_insideList);
+  _bspTree = new vvBspTree(part, _numThreads, &_brickList[0]);
   // The visitor (supplies rendering logic) must have knowledge
   // about the texture ids of the compositing polygons.
   // Thus provide a pointer to these.
@@ -3425,8 +3425,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // execution where the texNames array is a member.
     data->renderer->makeTextures(data->privateTexNames, &data->numTextures,
                                  data->pixLUTName, data->rgbaLUT);
-    data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
-                                      data->rgbaLUT, data->renderer->_brickList);
     pthread_mutex_unlock(data->makeTextureMutex);
 
     // Now that the textures are built, the bricks may be distributed
@@ -3434,6 +3432,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     pthread_barrier_wait(data->distributeBricksBarrier);
     // For the main thread, this will take some time... .
     pthread_barrier_wait(data->distributedBricksBarrier);
+    data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
+                                      data->rgbaLUT, data->brickList);
 
     /////////////////////////////////////////////////////////
     // Setup an appropriate GL state.
