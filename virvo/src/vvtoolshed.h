@@ -231,6 +231,7 @@ class VIRVOEXPORT vvToolshed
     static void    makeColorBoardTexture(int, int, float, uchar*);
     static void    convertXY2HS(float, float, float*, float*);
     static void    convertHS2XY(float, float, float*, float*);
+    static int     align(const int i, const int pot = 16);
     static uchar   read8(FILE*);
     static int     write8(FILE*, uchar);
     static ushort  read16(FILE*, vvToolshed::EndianType = VV_BIG_END);

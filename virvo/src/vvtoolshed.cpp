@@ -1910,6 +1910,14 @@ int vvToolshed::writeFloat(FILE* fp, float val, vvToolshed::EndianType end)
 }
 
 //----------------------------------------------------------------------------
+/** Return an integer aligned to a power of two (dflt: 16).
+ */
+int vvToolshed::align(const int i, const int pot)
+{
+  return (i + (pot - 1)) & ~(pot - 1);
+}
+
+//----------------------------------------------------------------------------
 /** Read an unsigned char value from a buffer.
  */
 uchar vvToolshed::read8(uchar* src)
