@@ -1381,28 +1381,25 @@ vvTexRend::ErrorType vvTexRend::setDisplayNames(const char** displayNames, const
   return err;
 }
 
-LRESULT CALLBACK WndProcedure(HWND hWnd, UINT Msg,
-			   WPARAM wParam, LPARAM lParam)
+#ifdef _WIN32
+LRESULT CALLBACK WndProcedure(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-    switch(Msg)
-    {
-    // If the user wants to close the application
-    case WM_DESTROY:
-        // then close it
-        PostQuitMessage(WM_QUIT);
-        break;
-    default:
-        // Process the left-over messages
-        return DefWindowProc(hWnd, Msg, wParam, lParam);
-    }
-    // If something was not done, let it go
-    return 0;
+  switch(Msg)
+  {
+  case WM_DESTROY:
+    PostQuitMessage(WM_QUIT);
+    break;
+  default:
+    return DefWindowProc(hWnd, Msg, wParam, lParam);
+  }
+  return 0;
 }
+#endif
 
 vvTexRend::ErrorType vvTexRend::dispatchThreadedWGLContexts()
 {
 #if !defined(_WIN32)
-  return UNSUPPORTED
+  return UNSUPPORTED;
 #else
   ErrorType err = OK;
 
