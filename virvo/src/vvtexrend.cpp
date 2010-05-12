@@ -73,12 +73,12 @@ static int pthread_barrier_destroy(pthread_barrier_t * /*barrier*/) { return 1; 
 // TODO: reasonable determination of these values.
 
 // Redistribute bricks if rendering time deviation > MAX_DEVIATION %
-#define MAX_DEVIATION 10.0f
+const float MAX_DEVIATION = 10.0f;
 // Don't redistribute bricks for peaks, but rather for constant deviation.
-#define LIMIT 10
+const int LIMIT = 10;
 // Maximum individual deviation (otherwise the share will be adjusted).
-#define MAX_IND_DEVIATION 0.001
-#define INC 0.05
+const float MAX_IND_DEVIATION = 0.001f;
+const float INC = 0.05f;
 
 const int MAX_VIEWPORT_WIDTH = 4800;
 const int MAX_VIEWPORT_HEIGHT = 1200;
@@ -575,13 +575,13 @@ vvTexRend::~vvTexRend()
   if (_numThreads > 0)
   {
     // Finally join the threads.
-    for (int i = 0; i < _numThreads; ++i)
+    for (unsigned int i = 0; i < _numThreads; ++i)
     {
       void* exitStatus;
       pthread_join(_threads[i], &exitStatus);
     }
 
-    for (int i = 0; i < _numThreads; ++i)
+    for (unsigned int i = 0; i < _numThreads; ++i)
     {
       delete[] _threadData[i].pixels;
       delete[] _threadData[i].rgbaLUT;
@@ -1352,7 +1352,7 @@ vvTexRend::ErrorType vvTexRend::setDisplayNames(const char** displayNames, const
   _screens = new unsigned int[_numThreads];
 
   bool hostSeen;
-  for (int i = 0; i < _numThreads; ++i)
+  for (unsigned int i = 0; i < _numThreads; ++i)
   {
     _displayNames[i] = displayNames[i];
     hostSeen = false;
@@ -1518,7 +1518,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   _deviationExceedCnt = 0;
 
   float* part = new float[_numThreads];
-  for (int i = 0; i < _numThreads; ++i)
+  for (unsigned int i = 0; i < _numThreads; ++i)
   {
     part[i] = _threadData[i].share;
   }
@@ -1534,7 +1534,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
 
   // Provide the visitor with the pixel data of each thread either.
   GLfloat** pixels = new GLfloat*[_numThreads];
-  for (int i = 0; i < _numThreads; ++i)
+  for (unsigned int i = 0; i < _numThreads; ++i)
   {
     pixels[i] = _threadData[i].pixels;
   }
@@ -1548,7 +1548,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
 
   delete[] part;
 
-  int i = 0;
+  unsigned int i = 0;
   for(std::vector<vvHalfSpace *>::const_iterator it = _bspTree->getLeafs()->begin();
       it != _bspTree->getLeafs()->end();
       ++it)
@@ -1579,7 +1579,7 @@ void vvTexRend::updateBrickGeom()
   vvVector3 halfBrick;
   vvVector3 halfVolume;
 
-  for (int f = 0; f < _brickList.size(); ++f)
+  for (size_t f = 0; f < _brickList.size(); ++f)
   {
     // help variables
     voxSize = vd->getSize();
@@ -1594,7 +1594,7 @@ void vvTexRend::updateBrickGeom()
     halfVolume.sub(1.0);
     halfVolume.scale(0.5);
 
-    for (int c = 0; c < _brickList[f].size(); ++c)
+    for (size_t c = 0; c < _brickList[f].size(); ++c)
     {
       tmp = _brickList[f][c];
       tmp->pos.set(vd->pos[0] + voxSize[0] * (tmp->startOffset[0] + halfBrick[0] - halfVolume[0]),
@@ -1630,7 +1630,7 @@ void vvTexRend::setComputeBrickSize(const bool flag)
     {
       if (_numThreads > 0)
       {
-        for (int i = 0; i < _numThreads; ++i)
+        for (unsigned int i = 0; i < _numThreads; ++i)
         {
           makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
                        _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
@@ -1657,7 +1657,7 @@ void vvTexRend::setBrickSize(const int newSize)
 
   if (_numThreads > 0)
   {
-    for (int i = 0; i < _numThreads; ++i)
+    for (unsigned int i = 0; i < _numThreads; ++i)
     {
       makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
                    _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
@@ -1689,7 +1689,7 @@ void vvTexRend::setTexMemorySize(const int newSize)
     {
       if (_numThreads > 0)
       {
-        for (int i = 0; i < _numThreads; ++i)
+        for (unsigned int i = 0; i < _numThreads; ++i)
         {
           makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
                        _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
@@ -1770,7 +1770,7 @@ void vvTexRend::updateTransferFunction()
   }
   else
   {
-    for (int i = 0; i < _numThreads; ++i)
+    for (unsigned int i = 0; i < _numThreads; ++i)
     {
       _threadData[i].transferFunctionChanged = true;
     }
@@ -1821,7 +1821,7 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData)
       _nonemptyList.clear();
       _nonemptyList.resize(_brickList.size());
       // Determine visibility of each single brick in all frames
-      for (int frame = 0; frame < _brickList.size(); ++frame)
+      for (size_t frame = 0; frame < _brickList.size(); ++frame)
       {
          for (BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
          {
@@ -1875,7 +1875,7 @@ void vvTexRend::updateVolumeData()
 
   if (_numThreads > 0)
   {
-    for (int i = 0; i < _numThreads; ++i)
+    for (unsigned int i = 0; i < _numThreads; ++i)
     {
       makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
                    _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
@@ -2819,7 +2819,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
       }
       if (probeMin[i] < -size2[i]) probeMin[i] = -size2[i];
       if (probeMax[i] >  size2[i]) probeMax[i] =  size2[i];
-      probePosObj[i] = (probeMax[i] + probeMin[i]) *0.5;
+      probePosObj[i] = (probeMax[i] + probeMin[i]) *0.5f;
     }
 
     // Compute probe edge lengths:
@@ -3071,7 +3071,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   vvVector3 probeMin, probeMax;                   // probe min and max coordinates [object space]
   vvVector3 min, max;                             // min and max pos of current brick (cut with probe)
   vvVector3 texMin;                               // minimum texture coordinate
-  int       i;                                    // general counters
   int       discarded;                            // count discarded bricks due to empty-space leaping
 
   vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
@@ -3182,7 +3181,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   if (_numThreads > 0)
   {
-    for (i = 0; i < _numThreads; ++i)
+    for (unsigned int i = 0; i < _numThreads; ++i)
     {
       sortBrickList(i, eye, normal, isOrtho);
     }
@@ -3220,7 +3219,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
     pthread_barrier_init(&_compositingBarrier, NULL, _numThreads + 1);
 
-    for (i = 0; i < _numThreads; ++i)
+    for (unsigned i = 0; i < _numThreads; ++i)
     {
       _threadData[i].probeMin = vvVector3(&probeMin);
       _threadData[i].probeMax = vvVector3(&probeMax);
@@ -3923,7 +3922,7 @@ void vvTexRend::performLoadBalancing()
   // Only redistribute if the deviation of the rendering times
   // exceeds a certain limit.
   float expectedValue = 0;
-  for (int i = 0; i < _numThreads; ++i)
+  for (unsigned int i = 0; i < _numThreads; ++i)
   {
     expectedValue += _threadData[i].lastRenderTime;
   }
@@ -3937,7 +3936,7 @@ void vvTexRend::performLoadBalancing()
   float* actualDistribution = new float[_numThreads];
 
   // Build both arrays.
-  for (int i = 0; i < _numThreads; ++i)
+  for (unsigned int i = 0; i < _numThreads; ++i)
   {
     idealDistribution[i] = expectedValue;
     actualDistribution[i] = _threadData[i].lastRenderTime;
@@ -3958,7 +3957,7 @@ void vvTexRend::performLoadBalancing()
       tmp = 0.0f;
 
       // Rearrange the share for each thread.
-      for (int i = 0; i < _numThreads; ++i)
+      for (unsigned int i = 0; i < _numThreads; ++i)
       {
         float cmp = _threadData[i].lastRenderTime - expectedValue;
         if (cmp < MAX_IND_DEVIATION)
@@ -3980,7 +3979,7 @@ void vvTexRend::performLoadBalancing()
       }
 
       // Normalize partitioning.
-      for (int i = 0; i < _numThreads; ++i)
+      for (unsigned int i = 0; i < _numThreads; ++i)
       {
         _threadData[i].share /= tmp;
       }
@@ -4810,7 +4809,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, ch
         interpolation = newInterpol;
         if (_numThreads > 0)
         {
-          for (int i = 0; i < _numThreads; ++i)
+          for (unsigned int i = 0; i < _numThreads; ++i)
           {
             makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
                          _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
@@ -4925,7 +4924,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, ch
       }
       break;
     case vvRenderer::VV_LIGHTING:
-      if (bool(newValue) == true)
+      if (static_cast<bool>(newValue) == true)
       {
         _previousShader = _currentShader;
         _currentShader = getLocalIlluminationShader();
@@ -5836,7 +5835,7 @@ int vvTexRend::getLocalIlluminationShader()
 
 void vvTexRend::initVertArray(const int numSlices)
 {
-  if(_elemCounts.size() >= numSlices)
+  if(static_cast<int>(_elemCounts.size()) >= numSlices)
     return;
 
   _elemCounts.resize(numSlices);

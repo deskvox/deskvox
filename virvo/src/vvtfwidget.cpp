@@ -1311,7 +1311,7 @@ void vvTFCustom2D::drawFreeContour()
    {
       list<vvTFPoint*>::iterator prev_it = _points.begin();
       list<vvTFPoint*>::iterator next_it = ++prev_it;
-      for (int i = 1; i < _points.size(); ++i)
+      for (size_t i = 1; i < _points.size(); ++i)
       {
          int x1 = int((**prev_it)._pos[0] * 255);
          int y1 = int((**prev_it)._pos[1] * 255);

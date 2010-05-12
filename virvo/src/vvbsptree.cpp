@@ -117,20 +117,20 @@ vvRect* vvAABB::getProjectedScreenRect()
 
     if (vertex[0] < minX)
     {
-      minX = vertex[0];
+      minX = static_cast<float>(vertex[0]);
     }
     if (vertex[0] > maxX)
     {
-      maxX = vertex[0];
+      maxX = static_cast<float>(vertex[0]);
     }
 
     if (vertex[1] < minY)
     {
-      minY = vertex[1];
+      minY = static_cast<float>(vertex[1]);
     }
     if (vertex[1] > maxY)
     {
-      maxY = vertex[1];
+      maxY = static_cast<float>(vertex[1]);
     }
   }
 

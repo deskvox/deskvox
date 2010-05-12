@@ -197,7 +197,7 @@ void vvCg::setParameter1i(const int programIndex, const char* parameterName,
   assert(_parametersInitialized[programIndex] == true);
 
   vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
-  cgGLSetParameter1f(param.getParameter(), i1);
+  cgGLSetParameter1f(param.getParameter(), static_cast<float>(i1));
 }
 
 void vvCg::setParameterTexId(const int programIndex, const char* parameterName, const unsigned int& ui1)
@@ -243,7 +243,7 @@ void vvCg::setArrayParameter1i(const int programIndex, const char* parameterName
   CGparameter element = cgGetArrayParameter(array, arrayIndex);
 
   // There exists no similar cg function for integers ==> use the float equivalent.
-  cgGLSetParameter1f(element, i1);
+  cgGLSetParameter1f(element, static_cast<float>(i1));
 }
 
 void vvCg::setModelViewProj(const int programIndex, const char* parameterName)
