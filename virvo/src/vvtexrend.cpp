@@ -674,7 +674,7 @@ void vvTexRend::removeTextures(GLuint*& privateTexNames, int* numTextures)
 {
   vvDebugMsg::msg(1, "vvTexRend::removeTextures()");
 
-  if (textures>0)
+  if (*numTextures > 0)
   {
     glDeleteTextures(*numTextures, privateTexNames);
     delete[] privateTexNames;
