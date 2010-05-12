@@ -176,6 +176,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\vvbrick.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\src\vvbsptree.cpp"
 				>
 			</File>
@@ -314,6 +318,10 @@
 			</File>
 			<File
 				RelativePath="..\src\vvarray.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\vvbrick.h"
 				>
 			</File>
 			<File
