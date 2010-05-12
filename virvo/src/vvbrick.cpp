@@ -106,7 +106,7 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
   }
   else // render proxy geometry on gpu? else then:
   {
-    vvVector3 startPoint = farthest + delta * startSlices;
+    vvVector3 startPoint = farthest + delta * static_cast<float>(startSlices);
 
     for (int i = startSlices; i <= endSlices; ++i)
     {
@@ -292,7 +292,7 @@ ushort vvBrick::getFrontIndex(const vvVector3* vertices,
 void vvBrick::sortByCenter(vvBrick** bricks, const int numBricks, const vvVector3& axis)
 {
   const vvVector3 axisGetter(0, 1, 2);
-  const int a = axis.dot(&axisGetter);
+  const int a = static_cast<const int>(axis.dot(&axisGetter));
 
   // Selection sort.
   for (int i = 0; i < numBricks; ++i)
