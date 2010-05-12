@@ -271,7 +271,7 @@ CGGLenum vvCg::toCgEnum(const ShaderType& shaderType)
   case VV_FRAG_SHD:
     result = CG_GL_FRAGMENT;
     break;
-#ifdef CG_PROFILE_GLSLG
+#if CG_VERSION_NUM >= 2000
   case VV_GEOM_SHD:
     result = CG_GL_GEOMETRY;
     break;
