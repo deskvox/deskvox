@@ -40,7 +40,7 @@ public:
     maxValue = INT_MIN;
   }
 
-  vvBrick(vvBrick* rhs)                           ///< copy constructor (from ptr)
+  vvBrick(const vvBrick* rhs)                   ///< copy constructor (from ptr)
   {
     pos = vvVector3(&rhs->pos);
     min = vvVector3(&rhs->min);
@@ -79,9 +79,9 @@ public:
   void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const;
   bool upload3DTexture(GLuint& texName, uchar* texData,
                        const GLenum texFormat, const GLint internalTexFormat,
-                       const bool interpolation = true);
+                       const bool interpolation = true) const;
 
-  virtual vvAABB getAABB()
+  vvAABB getAABB() const
   {
     return vvAABB(min, max);
   }

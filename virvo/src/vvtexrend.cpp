@@ -134,15 +134,6 @@ struct ThreadArgs
   int numTextures;
   GLuint pixLUTName;
   uchar* rgbaLUT;
-
-  // Pthread specific.
-  pthread_barrier_t* initBarrier;             ///< when this barrier is passed, the main rendering loop may be initially entered
-  pthread_barrier_t* distributeBricksBarrier;
-  pthread_barrier_t* distributedBricksBarrier;
-  pthread_barrier_t* renderStartBarrier;      ///< when this barrier is passed, the main loop may resume rendering
-  pthread_barrier_t* compositingBarrier;      ///< when this barrier is passed, compositing is done
-  pthread_barrier_t* renderReadyBarrier;      ///< when this barrier is passed, all threads have completed rendering the current frame
-  pthread_mutex_t* makeTextureMutex;          ///< mutex ensuring that textures for each thread are built up synchronized
 };
 
 vvThreadVisitor::vvThreadVisitor()
@@ -1588,11 +1579,6 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
   {
     _threadData[i].threadId = i;
     _threadData[i].renderer = this;
-    _threadData[i].initBarrier = &_initBarrier;
-    _threadData[i].distributeBricksBarrier = &_distributeBricksBarrier;
-    _threadData[i].distributedBricksBarrier = &_distributedBricksBarrier;
-    _threadData[i].renderStartBarrier = &_renderStartBarrier;
-    _threadData[i].makeTextureMutex = &_makeTextureMutex;
     // Start solution for load balancing: every thread renders 1/n of the volume.
     // During load balancing, the share will (probably) be adjusted.
     _threadData[i].share = 1.0f / static_cast<float>(_numThreads);
@@ -3351,9 +3337,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       _threadData[i].projection = projection;
       _threadData[i].width = viewport[2];
       _threadData[i].height = viewport[3];
-
-      _threadData[i].renderReadyBarrier = &_renderReadyBarrier;
-      _threadData[i].compositingBarrier = &_compositingBarrier;
     }
 
     // The sorted brick lists are distributed among the threads. All other data specific
@@ -3516,7 +3499,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // call pthread_barrier_wait on initBarrier right at the time when initialization
     // is performed, i.e. on the sequential path of the program rather than in
     // a parallel callback.
-    pthread_barrier_wait(data->initBarrier);
+    pthread_barrier_wait(&data->renderer->_initBarrier);
 
     // Init glew.
     glewInit();
@@ -3524,7 +3507,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     /////////////////////////////////////////////////////////
     // Make textures.initPixelShaders
     /////////////////////////////////////////////////////////
-    pthread_mutex_lock(data->makeTextureMutex);
+    pthread_mutex_lock(&data->renderer->_makeTextureMutex);
     glGenTextures(1, &data->pixLUTName);
     data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
 
@@ -3535,13 +3518,13 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // execution where the texNames array is a member.
     data->renderer->makeTextures(data->privateTexNames, &data->numTextures,
                                  data->pixLUTName, data->rgbaLUT);
-    pthread_mutex_unlock(data->makeTextureMutex);
+    pthread_mutex_unlock(&data->renderer->_makeTextureMutex);
 
     // Now that the textures are built, the bricks may be distributed
     // by the main thread.
-    pthread_barrier_wait(data->distributeBricksBarrier);
+    pthread_barrier_wait(&data->renderer->_distributeBricksBarrier);
     // For the main thread, this will take some time... .
-    pthread_barrier_wait(data->distributedBricksBarrier);
+    pthread_barrier_wait(&data->renderer->_distributedBricksBarrier);
     data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
                                       data->rgbaLUT, data->brickList);
 
@@ -3586,7 +3569,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // Don't start rendering until the bricks are sorted in back to front order
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
-      pthread_barrier_wait(data->renderStartBarrier);
+      pthread_barrier_wait(&data->renderer->_renderStartBarrier);
       data->renderer->_offscreenBuffers[data->threadId]->resize(data->width, data->height);
       data->renderer->enableLUTMode(pixelShader, data->pixLUTName, fragProgName);
 
@@ -3696,7 +3679,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // When all worker threads and the main thread have waited once (per frame) on
       // this barrier, all workers have finished rendering this frame and the main
       // thread may resume.
-      pthread_barrier_wait(data->renderReadyBarrier);
+      pthread_barrier_wait(&data->renderer->_renderReadyBarrier);
 
       // Blend the images to one single image.
 
@@ -3722,7 +3705,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // Store the time to render. Based upon this, dynamic load balancing will be performed.
       data->lastRenderTime = stopwatch->getTime();
 
-      pthread_barrier_wait(data->compositingBarrier);
+      pthread_barrier_wait(&data->renderer->_compositingBarrier);
 
       if (data->renderer->_proxyGeometryOnGpu)
       {
@@ -3750,7 +3733,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       glDeleteProgramsARB(3, fragProgName);
     }
 
-    //data->texRend->removeTextures(privateTexNames);
+    data->renderer->removeTextures(data->privateTexNames, &data->numTextures);
     delete isectShader;
     delete pixelShader;
     delete stopwatch;
