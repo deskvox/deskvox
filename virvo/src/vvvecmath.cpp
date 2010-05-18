@@ -114,7 +114,7 @@ vvMatrix vvMatrix::operator*(const vvMatrix operand) const
 
 //----------------------------------------------------------------------------
 /// Print the matrix to stdout for debugging
-void vvMatrix::print(const char* title)
+void vvMatrix::print(const char* title) const
 {
   int row, col;
 
@@ -1319,14 +1319,19 @@ void vvVector3::multiply(const vvMatrix* m)
 {
   const float v1[4] = { e[0], e[1], e[2], 1.0f };
 
-  for (int row=0; row<4; ++row)
+  for (int row=0; row<3; ++row)
   {
     e[row] = 0.0f;
-    for(int col=0; col<4; ++col)
+    for (int col=0; col<4; ++col)
       e[row] += m->e[row][col] * v1[col];
   }
 
-  if (e[3] != 1.0f)
+  const float w = m->e[3][0] * v1[0]
+                + m->e[3][1] * v1[1]
+                + m->e[3][2] * v1[2]
+                + m->e[3][3] * v1[3];
+
+  if (w != 1.0f)
   {
     const float wInv = 1.0f / e[3];
     for (int row=0; row<3; ++row)
