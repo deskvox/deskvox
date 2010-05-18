@@ -268,7 +268,7 @@ ushort vvBrick::getFrontIndex(const vvVector3* vertices,
 {
 
   // Get vertices with max and min distance to point along normal.
-  maxDot = FLT_MIN;
+  maxDot = -FLT_MAX;
   minDot = FLT_MAX;
   ushort frontIndex;
 

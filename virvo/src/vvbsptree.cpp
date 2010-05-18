@@ -94,8 +94,8 @@ vvRect* vvAABB::getProjectedScreenRect()
   calcVertices();
   float minX = FLT_MAX;
   float minY = FLT_MAX;
-  float maxX = FLT_MIN;
-  float maxY = FLT_MIN;
+  float maxX = -FLT_MAX;
+  float maxY = -FLT_MAX;
 
   for (int i = 0; i < 8; ++i)
   {
@@ -293,7 +293,7 @@ void vvHalfSpace::setSplitPlane(vvPlane* splitPlane)
 void vvHalfSpace::setBricks(std::vector<vvBrick*>* bricks)
 {
   vvVector3 minCorner = vvVector3(FLT_MAX, FLT_MAX, FLT_MAX);
-  vvVector3 maxCorner = vvVector3(FLT_MIN, FLT_MIN, FLT_MIN);
+  vvVector3 maxCorner = vvVector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
   for (std::vector<vvBrick*>::const_iterator it = bricks->begin(); it != bricks->end(); ++it)
   {
@@ -448,11 +448,11 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   //     the overall meanSqrError.
 
   // Get the aabb for the parent share of the volume.
-  max[0] = FLT_MIN;
+  max[0] = -FLT_MAX;
   min[0] = FLT_MAX;
-  max[1] = FLT_MIN;
+  max[1] = -FLT_MAX;
   min[1] = FLT_MAX;
-  max[2] = FLT_MIN;
+  max[2] = -FLT_MAX;
   min[2] = FLT_MAX;
 
   std::vector<vvBrick*> tmpArray = std::vector<vvBrick*>(bricks->size());
