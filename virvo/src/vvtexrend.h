@@ -330,7 +330,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax);
     void updateFrustum();
     void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&) const;
-    void getBricksInProbe(const vvVector3, const vvVector3);
+    void getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
+                          const vvVector3, const vvVector3, bool& roiChanged);
     void computeBrickSize();
     void initVertArray(const int numSlices);
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
@@ -345,6 +346,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void  updateTransferFunction(GLuint& lutName, uchar*& lutData);
     void  updateVolumeData();
     void  updateVolumeData(int, int, int, int, int, int);
+    void  fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vector<BrickList>& brickList) const;
     void  activateClippingPlane();
     void  deactivateClippingPlane();
     void  setNumLights(const int);

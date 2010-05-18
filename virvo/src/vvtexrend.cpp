@@ -94,15 +94,21 @@ struct ThreadArgs
 
   // Algorithm specific.
   vvHalfSpace* halfSpace;
-  std::vector<vvBrick*> sortedList;           ///< sorted list built up from the brick sets
   std::vector<BrickList> brickList;
+  std::vector<BrickList> nonemptyList;
+  BrickList sortedList;                       ///< sorted list built up from the brick sets
+  BrickList insideList;
   vvVector3 min;
   vvVector3 max;
   vvVector3 probeMin;
   vvVector3 probeMax;
+  vvVector3 probePosObj;
+  vvVector3 probeSizeObj;
   vvVector3 delta;
   vvVector3 farthest;
   vvVector3 normal;
+  vvVector3 eye;
+  bool isOrtho;
   int numSlices;
   float texMin[3];
   int minSlice;
@@ -500,7 +506,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     // Build global transfer function once in order to build up _nonemptyList.
     updateTransferFunction(pixLUTName, rgbaLUT);
     calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
-    getBricksInProbe(probePosObj, probeSizeObj);
+    getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _renderState._isROIChanged);
     distributeBricks();
     pthread_barrier_wait(&_distributedBricksBarrier);
   }
@@ -1657,7 +1663,6 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
          brickIt != _threadData[i].halfSpace->getBricks()->end(); ++brickIt)
     {
       _threadData[i].brickList[0].push_back(*brickIt);
-      _threadData[i].sortedList.push_back(*brickIt);
     }
     ++i;
     if (i >= _numThreads) break;
@@ -1905,51 +1910,7 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData)
   const bool calledByWorkerThread = (lutName != pixLUTName);
   if (!calledByWorkerThread)
   {
-    // Each bricks visible flag was initially set to true.
-    // If empty-space leaping isn't active, all bricks are
-    // visible by default.
-    if (_renderState._emptySpaceLeaping)
-    {
-      int nbricks = 0, nvis=0;
-      _nonemptyList.clear();
-      _nonemptyList.resize(_brickList.size());
-      // Determine visibility of each single brick in all frames
-      for (size_t frame = 0; frame < _brickList.size(); ++frame)
-      {
-         for (BrickList::iterator it = _brickList[frame].begin(); it != _brickList[frame].end(); ++it)
-         {
-            vvBrick *tmp = *it;
-            nbricks++;
-
-            // If max intensity projection, make all bricks visible.
-            if (_renderState._mipMode > 0)
-            {
-               _nonemptyList[frame].push_back(tmp);
-               nvis++;
-            }
-            else
-            {
-               for (int i = tmp->minValue; i <= tmp->maxValue; ++i)
-               {
-                  if(rgbaTF[i * 4 + 3] > 0.)
-                  {
-                     _nonemptyList[frame].push_back(tmp);
-                     nvis++;
-                     break;
-                  }
-               }
-            }
-         }
-      }
-    }
-    else
-    {
-      _nonemptyList = _brickList;
-    }
-  }
-  else
-  {
-    _nonemptyList = _brickList;
+    fillNonemptyList(_nonemptyList, _brickList);
   }
 
   _renderState._isROIChanged = true; // have to update list of visible bricks
@@ -2000,6 +1961,51 @@ void vvTexRend::updateVolumeData(int offsetX, int offsetY, int offsetZ,
     default:
       // nothing to do
       break;
+  }
+}
+
+void vvTexRend::fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vector<BrickList>& brickList) const
+{
+  // Each bricks visible flag was initially set to true.
+  // If empty-space leaping isn't active, all bricks are
+  // visible by default.
+  if (_renderState._emptySpaceLeaping)
+  {
+    int nbricks = 0, nvis=0;
+    nonemptyList.clear();
+    nonemptyList.resize(_brickList.size());
+    // Determine visibility of each single brick in all frames
+    for (size_t frame = 0; frame < brickList.size(); ++frame)
+    {
+       for (BrickList::iterator it = brickList[frame].begin(); it != brickList[frame].end(); ++it)
+       {
+          vvBrick *tmp = *it;
+          nbricks++;
+
+          // If max intensity projection, make all bricks visible.
+          if (_renderState._mipMode > 0)
+          {
+             nonemptyList[frame].push_back(tmp);
+             nvis++;
+          }
+          else
+          {
+             for (int i = tmp->minValue; i <= tmp->maxValue; ++i)
+             {
+                if(rgbaTF[i * 4 + 3] > 0.)
+                {
+                   nonemptyList[frame].push_back(tmp);
+                   nvis++;
+                   break;
+                }
+             }
+          }
+       }
+    }
+  }
+  else
+  {
+    nonemptyList = brickList;
   }
 }
 
@@ -3163,7 +3169,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   vvVector3 probeMin, probeMax;                   // probe min and max coordinates [object space]
   vvVector3 min, max;                             // min and max pos of current brick (cut with probe)
   vvVector3 texMin;                               // minimum texture coordinate
-  int       discarded;                            // count discarded bricks due to empty-space leaping
 
   vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
 
@@ -3263,7 +3268,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   initVertArray(numSlices);
 
-  getBricksInProbe(probePosObj, probeSizeObj);
+  getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _renderState._isROIChanged);
 
   markBricksInFrustum(probeMin, probeMax);
 
@@ -3272,11 +3277,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     if (_somethingChanged)
     {
       distributeBricks();
-    }
-
-    for (unsigned int i = 0; i < _numThreads; ++i)
-    {
-      sortBrickList(_threadData[i].sortedList, eye, normal, isOrtho);
     }
   }
   else
@@ -3311,11 +3311,15 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     {
       _threadData[i].probeMin = vvVector3(&probeMin);
       _threadData[i].probeMax = vvVector3(&probeMax);
+      _threadData[i].probePosObj = vvVector3(&probePosObj);
+      _threadData[i].probeSizeObj = vvVector3(&probeSizeObj);
       _threadData[i].min = vvVector3(&min);
       _threadData[i].max = vvVector3(&max);
       _threadData[i].delta = vvVector3(&delta);
       _threadData[i].farthest = vvVector3(&farthest);
       _threadData[i].normal = vvVector3(&normal);
+      _threadData[i].eye = vvVector3(&eye);
+      _threadData[i].isOrtho = isOrtho;
       _threadData[i].numSlices = numSlices;
       _threadData[i].texMin[0] = texMin[0];
       _threadData[i].texMin[1] = texMin[1];
@@ -3395,9 +3399,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       _isectShader->setParameter3f(0, "planeNormal", normal[0], normal[1], normal[2]);
     }
 
-    // Count empty-space leaped bricks.
-    discarded = 0;
-
     bool lastInsideProbe = false; // don't update brick edge vectors if they didn't change
 
     if (_renderState._showBricks)
@@ -3407,17 +3408,11 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       glDisable(GL_TEXTURE_3D_EXT);
       glDisable(GL_LIGHTING);
       disablePixelShaders(_pixelShader);
+      disableFragProg();
       for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
       {
-        if (!(*it)->visible)
-        {
-          ++discarded;
-        }
-        else
-        {
-          (*it)->renderOutlines(probeMin, probeMax);
-          lastInsideProbe = (*it)->insideProbe;
-        }
+        (*it)->renderOutlines(probeMin, probeMax);
+        lastInsideProbe = (*it)->insideProbe;
       }
     }
     else
@@ -3428,17 +3423,10 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       }
       for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
       {
-        if (!(*it)->visible)
-        {
-          ++discarded;
-        }
-        else
-        {
-          (*it)->render(this, normal, farthest, delta, probeMin, probeMax,
-                      texNames,
-                      _isectShader, !((*it)->insideProbe && lastInsideProbe));
-          lastInsideProbe = (*it)->insideProbe;
-        }
+        (*it)->render(this, normal, farthest, delta, probeMin, probeMax,
+                    texNames,
+                    _isectShader, !((*it)->insideProbe && lastInsideProbe));
+        lastInsideProbe = (*it)->insideProbe;
       }
       if (_proxyGeometryOnGpu)
       {
@@ -3446,7 +3434,8 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       }
     }
 
-    vvDebugMsg::msg(3, "Bricks discarded: ", discarded);
+    vvDebugMsg::msg(3, "Bricks discarded: ",
+                    static_cast<int>(_brickList[vd->getCurrentFrame()].size() - _sortedList.size()));
   }
 
   disableTexture(GL_TEXTURE_3D_EXT);
@@ -3513,6 +3502,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     pthread_barrier_wait(&data->renderer->_distributedBricksBarrier);
     data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
                                       data->rgbaLUT, data->brickList);
+    data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
 
     /////////////////////////////////////////////////////////
     // Setup an appropriate GL state.
@@ -3543,6 +3533,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // Init stop watch.
     stopwatch = new vvStopwatch();
 
+    bool roiChanged = true;
+
     // TODO: identify if method is called from an ordinary worker thread or
     // the main thread. If the latter is the case, ensure that the environment
     // is reset properly after rendering.
@@ -3568,6 +3560,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
           data->renderer->updateLUT(diagonalVoxels / float(data->numSlices),
                                     data->pixLUTName, data->rgbaLUT);
       }
+
       /////////////////////////////////////////////////////////
       // Start rendering.
       /////////////////////////////////////////////////////////
@@ -3612,7 +3605,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         isectShader->setParameter3f(0, "planeNormal", data->normal[0], data->normal[1], data->normal[2]);
       }
 
-      int discarded = 0;
+      data->renderer->getBricksInProbe(data->nonemptyList, data->insideList, data->sortedList,
+                                       data->probePosObj, data->probeSizeObj, roiChanged);
+      data->renderer->sortBrickList(data->sortedList, data->eye, data->normal, data->isOrtho);
+
       if (data->renderer->_renderState._showBricks)
       {
         // Debugging mode: render the brick outlines and deactivate shaders,
@@ -3621,16 +3617,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         glDisable(GL_LIGHTING);
         data->renderer->disableIntersectionShader(isectShader);
         data->renderer->disablePixelShaders(pixelShader);
+        data->renderer->disableFragProg();
         for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
         {
-          if ((*it)->visible)
-          {
-            (*it)->renderOutlines(data->probeMin, data->probeMax);
-          }
-          else
-          {
-            ++discarded;
-          }
+          (*it)->renderOutlines(data->probeMin, data->probeMax);
         }
       }
       else
@@ -3642,23 +3632,21 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
         {
           vvBrick *tmp = *it;
-          if ((*it)->visible)
-          {
-            tmp->render(data->renderer, data->normal,
-                        data->farthest, data->delta,
-                        data->probeMin, data->probeMax,
-                        data->privateTexNames, isectShader, true);
-          }
-          else
-          {
-            ++discarded;
-          }
+          tmp->render(data->renderer, data->normal,
+                      data->farthest, data->delta,
+                      data->probeMin, data->probeMax,
+                      data->privateTexNames, isectShader, true);
         }
         if (data->renderer->_proxyGeometryOnGpu)
         {
           glDisableClientState(GL_VERTEX_ARRAY);
         }
       }
+
+      vvDebugMsg::msg(3, "Bricks discarded: ",
+                      static_cast<int>(data->brickList[data->renderer->vd->getCurrentFrame()].size()
+                                       - data->sortedList.size()));
+
       glDisable(GL_TEXTURE_3D_EXT);
       data->renderer->disableLUTMode(pixelShader);
 
@@ -3926,15 +3914,16 @@ void vvTexRend::markBricksInFrustum(const vvVector3& probeMin, const vvVector3& 
   }
 }
 
-void vvTexRend::getBricksInProbe(const vvVector3 pos, const vvVector3 size)
+void vvTexRend::getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
+                                 const vvVector3 pos, const vvVector3 size, bool& roiChanged)
 {
-  if(!_renderState._isROIChanged && vd->getCurrentFrame() == _lastFrame)
+  if(!roiChanged && vd->getCurrentFrame() == _lastFrame)
     return;
 
   _lastFrame = vd->getCurrentFrame();
-  _renderState._isROIChanged = false;
+  roiChanged = false;
 
-  _insideList.clear();
+  insideList.clear();
 
   const vvVector3 tmpVec = size * 0.5f;
   const vvVector3 min = pos - tmpVec;
@@ -3943,14 +3932,14 @@ void vvTexRend::getBricksInProbe(const vvVector3 pos, const vvVector3 size)
   int countVisible = 0, countInvisible = 0;
 
   const int frame = vd->getCurrentFrame();
-  for(BrickList::iterator it = _nonemptyList[frame].begin(); it != _nonemptyList[frame].end(); ++it)
+  for(BrickList::iterator it = nonemptyList[frame].begin(); it != nonemptyList[frame].end(); ++it)
   {
     vvBrick *tmp = *it;
     if ((tmp->min.e[0] <= max.e[0]) && (tmp->max.e[0] >= min.e[0]) &&
       (tmp->min.e[1] <= max.e[1]) && (tmp->max.e[1] >= min.e[1]) &&
       (tmp->min.e[2] <= max.e[2]) && (tmp->max.e[2] >= min.e[2]))
     {
-      _insideList.push_back(tmp);
+      insideList.push_back(tmp);
       if ((tmp->min.e[0] >= min.e[0]) && (tmp->max.e[0] <= max.e[0]) &&
         (tmp->min.e[1] >= min.e[1]) && (tmp->max.e[1] <= max.e[1]) &&
         (tmp->min.e[2] >= min.e[2]) && (tmp->max.e[2] <= max.e[2]))
@@ -3965,9 +3954,9 @@ void vvTexRend::getBricksInProbe(const vvVector3 pos, const vvVector3 size)
     }
   }
 
-  _sortedList.clear();
-  for(std::vector<vvBrick*>::iterator it = _insideList.begin(); it != _insideList.end(); ++it)
-     _sortedList.push_back(static_cast<vvBrick *>(*it));
+  sortedList.clear();
+  for(std::vector<vvBrick*>::iterator it = insideList.begin(); it != insideList.end(); ++it)
+     sortedList.push_back(static_cast<vvBrick *>(*it));
 }
 
 void vvTexRend::sortBrickList(std::vector<vvBrick*>& list, const vvVector3& eye, const vvVector3& normal, const bool isOrtho)
