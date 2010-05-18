@@ -674,7 +674,7 @@ void vvTexRend::removeTextures(GLuint*& privateTexNames, int* numTextures)
 {
   vvDebugMsg::msg(1, "vvTexRend::removeTextures()");
 
-  if (*numTextures > 0)
+  if ((*numTextures > 0) && (privateTexNames != NULL))
   {
     glDeleteTextures(*numTextures, privateTexNames);
     delete[] privateTexNames;
@@ -1591,6 +1591,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
     _threadData[i].pixels = new GLfloat[MAX_VIEWPORT_WIDTH * MAX_VIEWPORT_HEIGHT * 4];
     _threadData[i].transferFunctionChanged = false;
     _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
+    _threadData[i].privateTexNames = NULL;
 #ifdef HAVE_X11
     XMapWindow(_threadData[i].display, _threadData[i].drawable);
     XFlush(_threadData[i].display);
