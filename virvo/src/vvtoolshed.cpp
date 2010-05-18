@@ -901,7 +901,7 @@ uint color, uchar* data, int bpp, int w, int h)
     @param imgSize  the image size [pixels]
     @return the closest power-of-2 value that is greater than or equal to imgSize.
 */
-int vvToolshed::getTextureSize(int imgSize)
+int vvToolshed::getTextureSize(const int imgSize)
 {
   return (int)powf(2.0f, (float)ceil(log((float)imgSize) / log(2.0f)));
 }
@@ -1229,7 +1229,7 @@ uchar* ucharArray, int elements, float min, float max, float zero)
     @param number number to examine (>1)
     @return largest prime factor, -1 on error
 */
-int vvToolshed::getLargestPrimeFactor(int number)
+int vvToolshed::getLargestPrimeFactor(const int number)
 {
   int remainder;
   int factor = 2, largest = 1;
@@ -1944,19 +1944,16 @@ int vvToolshed::write8(uchar* src, uchar val)
 /** Read a little endian unsigned short value system independently from a buffer
   (least significant byte first).
 */
-ushort vvToolshed::read16(uchar* src, vvToolshed::EndianType end)
+ushort vvToolshed::read16(uchar* src, const vvToolshed::EndianType end)
 {
-  int val;
-
   if (end==VV_LITTLE_END)
   {
-    val = (int)src[0] + (int)src[1] * (int)256;
+    return static_cast<ushort>((int)src[0] + (int)src[1] * (int)256);
   }
   else
   {
-    val = (int)src[0] * (int)256 + (int)src[1];
+    return static_cast<ushort>((int)src[0] * (int)256 + (int)src[1]);
   }
-  return (ushort)val;
 }
 
 //----------------------------------------------------------------------------
@@ -1984,21 +1981,18 @@ int vvToolshed::write16(uchar* buf, ushort val, vvToolshed::EndianType end)
 /** Read a little endian unsigned long value system independently from a buffer.
  Read four bytes in a row in unix-style (least significant byte first).
 */
-uint32_t vvToolshed::read32(uchar* buf, vvToolshed::EndianType end)
+uint32_t vvToolshed::read32(uchar* buf, const vvToolshed::EndianType end)
 {
-  uint32_t val;
-
   if (end==VV_LITTLE_END)
   {
-    val = (uint32_t)buf[3] * (uint32_t)16777216 + (uint32_t)buf[2] * (uint32_t)65536 +
+    return (uint32_t)buf[3] * (uint32_t)16777216 + (uint32_t)buf[2] * (uint32_t)65536 +
       (uint32_t)buf[1] * (uint32_t)256 + (uint32_t)buf[0];
   }
   else
   {
-    val = (uint32_t)buf[0] * (uint32_t)16777216 + (uint32_t)buf[1] * (uint32_t)65536 +
+    return (uint32_t)buf[0] * (uint32_t)16777216 + (uint32_t)buf[1] * (uint32_t)65536 +
       (uint32_t)buf[2] * (uint32_t)256 + (uint32_t)buf[3];
   }
-  return (uint32_t)val;
 }
 
 //----------------------------------------------------------------------------
@@ -2106,10 +2100,9 @@ void vvToolshed::makeArraySystemDependent(int numValues, float* array)
  */
 vvToolshed::EndianType vvToolshed::getEndianness()
 {
-  float one = 1.0f;                               // memory representation of 1.0 on big endian machines: 3F 80 00 00
-  uchar* ptr;
+  const float one = 1.0f;                          // memory representation of 1.0 on big endian machines: 3F 80 00 00
 
-  ptr = (uchar*)&one;
+  const uchar* ptr = (uchar*)&one;
   if (*ptr == 0x3f) return VV_BIG_END;
   else
   {

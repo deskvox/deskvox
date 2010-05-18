@@ -276,7 +276,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType dispatchThreads();
     ErrorType distributeBricks();
     static void* threadFuncTexBricks(void* threadargs);
-    void sortBrickList(const int, const vvVector3&, const vvVector3&, const bool);
+    void sortBrickList(std::vector<vvBrick*>& list, const vvVector3&, const vvVector3&, const bool);
     void performLoadBalancing();
 
     ErrorType makeTextures(GLuint*& privateTexNames, int* numTextures, GLuint& lutName, uchar*& lutData);
@@ -288,22 +288,22 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const;
     bool initPixelShaders(vvShaderManager* pixelShader) const;
     void enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName);
-    void disablePixelShaders(vvShaderManager* pixelShader);
+    void disablePixelShaders(vvShaderManager* pixelShader) const;
 
     void enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
     void disableLUTMode(vvShaderManager* pixelShader);
 
-    bool initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL);
-    void setupIntersectionParameters(vvShaderManager* isectShader);
-    void enableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL);
-    void disableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL);
+    bool initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL) const;
+    void setupIntersectionParameters(vvShaderManager* isectShader) const;
+    void enableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL) const;
+    void disableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL) const;
 
     ErrorType makeTextures3D();
     void removeTextures(GLuint*& privateTexNames, int* numTextures);
     ErrorType updateTextures3D(const int, const int, const int, const int, const int, const int, const bool);
     ErrorType updateTextures2D(const int, const int, const int, const int, const int, const int, const int);
     ErrorType updateTextureBricks(int, int, int, int, int, int);
-    void beforeSetGLenvironment();
+    void beforeSetGLenvironment() const;
     void setGLenvironment() const;
     void unsetGLenvironment() const;
     void renderTex3DSpherical(vvMatrix*);
@@ -323,8 +323,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void disableFragProg();
     void enableTexture(const GLenum target);
     void disableTexture(const GLenum target);
-    bool testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat) const;
-    bool testBrickVisibility(vvBrick*) const;
+    bool testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat) const;
+    bool testBrickVisibility(const vvBrick*) const;
     bool intersectsFrustum(const vvVector3 &min, const vvVector3 &max) const;
     bool insideFrustum(const vvVector3 &min, const vvVector3 &max) const;
     void markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax);
@@ -347,7 +347,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void  updateVolumeData(int, int, int, int, int, int);
     void  activateClippingPlane();
     void  deactivateClippingPlane();
-    void  setNumLights(int);
+    void  setNumLights(const int);
     bool  instantClassification() const;
     void  setViewingDirection(const vvVector3*);
     void  setObjectDirection(const vvVector3*);

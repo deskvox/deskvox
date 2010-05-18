@@ -44,7 +44,7 @@ void vvCg::loadShader(const char* shaderFileName, const ShaderType& shaderType)
 
   _shaderFileNames.push_back(shaderFileName);
 
-  CGprofile cgProfile = cgGLGetLatestProfile(toCgEnum(shaderType));
+  const CGprofile cgProfile = cgGLGetLatestProfile(toCgEnum(shaderType));
   cgGLSetOptimalOptions(cgProfile);
   CGprogram cgProgram = cgCreateProgramFromFile(_cgContext, CG_SOURCE, shaderFileName,
                                                 cgProfile, "main", 0);
@@ -108,7 +108,7 @@ void vvCg::initParameters(const int index,
   _parametersInitialized[index] = true;
 }
 
-void vvCg::printCompatibilityInfo()
+void vvCg::printCompatibilityInfo() const
 {
   // Check if correct version of pixel shaders is available:
   if(cgGLIsProfileSupported(CG_PROFILE_ARBFP1)) // test for GL_ARB_fragment_program
@@ -127,7 +127,7 @@ void vvCg::printCompatibilityInfo()
   }
 }
 
-const char* vvCg::getShaderDir()
+const char* vvCg::getShaderDir() const
 {
   const char* result = NULL;
 
@@ -170,7 +170,7 @@ void vvCg::enableTexture(const int programIndex, const char* textureParameterNam
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(textureParameterName)];
+  const vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(textureParameterName)];
   cgGLEnableTextureParameter(param.getParameter());
 }
 
@@ -178,7 +178,7 @@ void vvCg::disableTexture(const int programIndex, const char* textureParameterNa
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(textureParameterName)];
+  const vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(textureParameterName)];
   cgGLDisableTextureParameter(param.getParameter());
 }
 
@@ -187,7 +187,7 @@ void vvCg::setParameter1f(const int programIndex, const char* parameterName,
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
+  const vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
   cgGLSetParameter1f(param.getParameter(), f1);
 }
 
@@ -196,7 +196,7 @@ void vvCg::setParameter1i(const int programIndex, const char* parameterName,
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
+  const vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
   cgGLSetParameter1f(param.getParameter(), static_cast<float>(i1));
 }
 
@@ -204,7 +204,7 @@ void vvCg::setParameterTexId(const int programIndex, const char* parameterName, 
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
+  const vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
   cgGLSetTextureParameter(param.getParameter(), ui1);
 }
 
@@ -213,15 +213,15 @@ void vvCg::setParameter3f(const int programIndex, const char* parameterName,
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
+  const vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
   cgGLSetParameter3f(param.getParameter(), f1, f2, f3);
 }
 
 void vvCg::setArrayParameter3f(const int programIndex, const char* parameterName, const int arrayIndex,
                               const float& f1, const float& f2, const float& f3)
 {
-  CGparameter array = cgGetNamedParameter(_cgPrograms[programIndex], parameterName);
-  CGparameter element = cgGetArrayParameter(array, arrayIndex);
+  const CGparameter array = cgGetNamedParameter(_cgPrograms[programIndex], parameterName);
+  const CGparameter element = cgGetArrayParameter(array, arrayIndex);
 
   // There exists no similar cg function for integers ==> use the float equivalent.
   cgGLSetParameter3f(element, f1, f2, f3);
@@ -232,15 +232,15 @@ void vvCg::setParameter4f(const int programIndex, const char* parameterName,
 {
   assert(_parametersInitialized[programIndex] == true);
 
-  vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
+  const vvCgParameter param = _cgParameterNameMaps[programIndex][std::string(parameterName)];
   cgGLSetParameter4f(param.getParameter(), f1, f2, f3, f4);
 }
 
 void vvCg::setArrayParameter1i(const int programIndex, const char* parameterName, const int arrayIndex,
                               const int& i1)
 {
-  CGparameter array = cgGetNamedParameter(_cgPrograms[programIndex], parameterName);
-  CGparameter element = cgGetArrayParameter(array, arrayIndex);
+  const CGparameter array = cgGetNamedParameter(_cgPrograms[programIndex], parameterName);
+  const CGparameter element = cgGetArrayParameter(array, arrayIndex);
 
   // There exists no similar cg function for integers ==> use the float equivalent.
   cgGLSetParameter1f(element, static_cast<float>(i1));
@@ -248,7 +248,7 @@ void vvCg::setArrayParameter1i(const int programIndex, const char* parameterName
 
 void vvCg::setModelViewProj(const int programIndex, const char* parameterName)
 {
-  CGparameter modelViewProj = cgGetNamedParameter(_cgPrograms[programIndex], parameterName);
+  const CGparameter modelViewProj = cgGetNamedParameter(_cgPrograms[programIndex], parameterName);
   cgGLSetStateMatrixParameter(modelViewProj, CG_GL_MODELVIEW_PROJECTION_MATRIX, CG_GL_MATRIX_IDENTITY);
 }
 
@@ -263,7 +263,7 @@ void vvCg::init()
   }
 }
 
-CGGLenum vvCg::toCgEnum(const ShaderType& shaderType)
+CGGLenum vvCg::toCgEnum(const ShaderType& shaderType) const
 {
   CGGLenum result;
   switch (shaderType)

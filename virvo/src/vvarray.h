@@ -64,14 +64,14 @@ template<class T> class vvArray
     T*   first();
     T*   last();
     int  find(const T&);
-    int  count();
+    int  count() const;
     void print(char*);
     T*   getArrayPtr();
     void deleteElementsNormal();
     void deleteElementsArray();
 
     /// Direct array access:
-    T & operator[] (int index)
+    T & operator[] (const int index)
     {
       if (index<0 || index>(usedSize-1))
       {
@@ -81,7 +81,7 @@ template<class T> class vvArray
     }
 
     /// Direct array access:
-    const T & operator[] (int index) const
+    const T & operator[] (const int index) const
     {
       if (index<0 || index>(usedSize-1))
       {
@@ -364,7 +364,7 @@ template<class T> inline void vvArray<T>::set(int index, const T& newData)
 
 //----------------------------------------------------------------------------
 /// Returns the number of array enries.
-template<class T> inline int vvArray<T>::count()
+template<class T> inline int vvArray<T>::count() const
 {
   return usedSize;
 }

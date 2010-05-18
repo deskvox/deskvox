@@ -205,7 +205,7 @@ class VIRVOEXPORT vvToolshed
     static bool    increaseFilename(string&);
     static void    draw3DLine(int, int, int, int, int, int, uchar*, uchar*, int, int, int, int);
     static void    draw2DLine(int, int, int, int, uint, uchar*, int, int, int);
-    static int     getTextureSize(int);
+    static int     getTextureSize(const int);
     static bool    isFile(const char*);
     static bool    isDirectory(const char*);
     static long    getFileSize(const char*);
@@ -219,7 +219,7 @@ class VIRVOEXPORT vvToolshed
     static void    convertFloat2UCharClamp(const float*, uchar*, int, float, float);
     static void    convertFloat2ShortClamp(const float*, uchar*, int, float, float);
     static void    convertFloat2UCharClampZero(const float*, uchar*, int, float, float, float);
-    static int     getLargestPrimeFactor(int);
+    static int     getLargestPrimeFactor(const int);
     static int     round(float);
     static void    initProgress(int);
     static void    printProgress(int);
@@ -242,9 +242,9 @@ class VIRVOEXPORT vvToolshed
     static int     writeFloat(FILE*, float, vvToolshed::EndianType = VV_BIG_END);
     static uchar   read8(uchar*);
     static int     write8(uchar*, uchar);
-    static ushort  read16(uchar*, vvToolshed::EndianType = VV_BIG_END);
+    static ushort  read16(uchar*, const vvToolshed::EndianType = VV_BIG_END);
     static int     write16(uchar*, ushort, vvToolshed::EndianType = VV_BIG_END);
-    static uint32_t read32(uchar*, vvToolshed::EndianType = VV_BIG_END);
+    static uint32_t read32(uchar*, const vvToolshed::EndianType = VV_BIG_END);
     static int     write32(uchar*, uint32_t, vvToolshed::EndianType = VV_BIG_END);
     static float   readFloat(uchar*, vvToolshed::EndianType = VV_BIG_END);
     static int     writeFloat(uchar*, float, vvToolshed::EndianType = VV_BIG_END);

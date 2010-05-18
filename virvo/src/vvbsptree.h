@@ -43,8 +43,8 @@ struct vvRect
  *
  *                  These can simply be specified by two opposite
  *                  corner points. This implementations stores
- *                  the bottom-left-front corner as well as the
- *                  top-right-back corner.
+ *                  the precalculated values of the eight corner
+ *                  vertices and the center vertex.
  */
 class vvAABB
 {
@@ -82,15 +82,6 @@ public:
   float calcDepth() const;
 
   /*!
-   * \brief         Calc the 8 corner vertices.
-   *
-   *                Get the 8 corner vertices. Since only two corners
-   *                are stored, the remaining ones need to be calculated.
-   * \return        The calculated depth.
-   */
-  const vvBoxCorners& calcVertices();
-
-  /*!
    * \brief         Calc the minimum extent along the specified axis.
    *
    *                If you desire the x-value of the left side of the
@@ -110,13 +101,20 @@ public:
    * \param         axis A normalized vector representing the coord axis.
    */
   float calcMaxExtent(const vvVector3& axis) const;
+
   /*!
-   * \brief         Calc the center point.
+   * \brief         Get the box vertices.
    *
-   *                For time critical calculations, note that the center
-   *                point is calculated rather than stored.
+   *                Returns the precalculated box corner vertices.
    */
-  vvVector3 calcCenter() const;
+  const vvBoxCorners& getVertices() const;
+
+  /*!
+   * \brief         Get the center point.
+   *
+   *                Returns the stored center.
+   */
+  vvVector3 getCenter() const;
 
   /*!
    * \brief         Get a rectangle of the projected screen section.
@@ -133,18 +131,27 @@ public:
    *                Render the outlines of the bounding box using opengl
    *                commands.
    */
-  void render();
+  void render() const;
   /*!
    * \brief         Print the box extents to stdout.
    *
    *                Print the bottom/left/back corner and the
    *                top/right/front corner in that order.
    */
-  void print();
+  void print() const;
 private:
   vvVector3 _bottomLeftBackCorner;
   vvVector3 _topRightFrontCorner;
   vvVector3 _vertices[8];
+  vvVector3 _center;
+
+  /*!
+   * \brief         Calc the 8 corner vertices.
+   *
+   *                Calc the 8 corner vertices given the two vectors
+   *                with maximum extend.
+   */
+  void calcVertices();
 };
 
 /*!
@@ -195,7 +202,7 @@ public:
    * \param         pos The point to check this condition for.
    * \return        True if the point is in this half space.
    */
-  bool contains(const vvVector3& pos);
+  bool contains(const vvVector3& pos) const;
   /*!
    * \brief         Check if node has no children.
    *
@@ -401,7 +408,7 @@ private:
 class vvBspTree
 {
 public:
-  vvBspTree(float* partitioning, const int length, std::vector<vvBrick*>* bricks);
+  vvBspTree(const float* partitioning, const int length, std::vector<vvBrick*>* bricks);
   virtual ~vvBspTree();
 
   void traverse(const vvVector3& pos);
@@ -448,10 +455,10 @@ private:
    * \param         startIdx The start index into the partitioning array.
    * \param         endIdx The end index into the partitioning array.
    */
-  void buildHierarchy(vvHalfSpace* node, float* partitioning, const int length,
+  void buildHierarchy(vvHalfSpace* node, const float* partitioning, const int length,
                       const int startIdx, const int endIdx);
   void distributeBricks(vvHalfSpace* node, std::vector<vvBrick*>* bricks);
-  void print(vvHalfSpace* node, const int indent);
+  void print(const vvHalfSpace* node, const int indent);
   void traverse(const vvVector3& pos, vvHalfSpace* node);
 };
 

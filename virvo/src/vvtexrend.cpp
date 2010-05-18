@@ -107,7 +107,6 @@ struct ThreadArgs
   float texMin[3];
   int minSlice;
   int maxSlice;
-  BufferPrecision precision;                  ///< precision of the offscreen buffer
   GLfloat* modelview;                         ///< the current GL_MODELVIEW matrix
   GLfloat* projection;                        ///< the current GL_PROJECTION matrix
   vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
@@ -1587,7 +1586,6 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
     _threadData[i].pixels = new GLfloat[MAX_VIEWPORT_WIDTH * MAX_VIEWPORT_HEIGHT * 4];
     _threadData[i].transferFunctionChanged = false;
     _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
-    _threadData[i].precision = _multiGpuBufferPrecision;
 #ifdef HAVE_X11
     XMapWindow(_threadData[i].display, _threadData[i].drawable);
     XFlush(_threadData[i].display);
@@ -1660,6 +1658,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
          brickIt != _threadData[i].halfSpace->getBricks()->end(); ++brickIt)
     {
       _threadData[i].brickList[0].push_back(*brickIt);
+      _threadData[i].sortedList.push_back(*brickIt);
     }
     ++i;
     if (i >= _numThreads) break;
@@ -1987,7 +1986,7 @@ void vvTexRend::updateVolumeData()
 
 //----------------------------------------------------------------------------
 void vvTexRend::updateVolumeData(int offsetX, int offsetY, int offsetZ,
-  int sizeX, int sizeY, int sizeZ)
+                                 int sizeX, int sizeY, int sizeZ)
 {
   switch (geomType)
   {
@@ -2704,7 +2703,7 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(int offsetX, int offsetY, in
 
 //----------------------------------------------------------------------------
 /// Do things that need to be done before virvo sets the rendering specific gl environment.
-void vvTexRend::beforeSetGLenvironment()
+void vvTexRend::beforeSetGLenvironment() const
 {
   const vvVector3 size(vd->getSize());            // volume size [world coordinates]
 
@@ -3178,8 +3177,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   if (_brickList.empty()) return;
 
-  const vvVector3 pos(vd->pos);
-
   // Calculate inverted modelview matrix:
   vvMatrix invMV(mv);
   invMV.invert();
@@ -3231,8 +3228,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   // Compute farthest point to draw texture at:
   farthest.copy(&delta);
   farthest.scale((float)(numSlices - 1) * -0.5f);
-  if (!_proxyGeometryOnGpu)
-    farthest.add(&probePosObj);
 
   if (_renderState._clipMode)                     // clipping plane present?
   {
@@ -3245,7 +3240,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     temp.scale(-0.5f);
     farthest.add(&temp);                          // add a half delta to farthest
     vvVector3 clipPosObj(_renderState._clipPoint);
-    clipPosObj.sub(&pos);
+    clipPosObj.sub(&vd->pos);
     temp.copy(&probePosObj);
     temp.add(&normal);
     vvVector3 normClipPoint;
@@ -3279,25 +3274,25 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   if (_numThreads > 0)
   {
-    for (unsigned int i = 0; i < _numThreads; ++i)
-    {
-      sortBrickList(i, eye, normal, isOrtho);
-    }
-
     if (_somethingChanged)
     {
       distributeBricks();
     }
+
+    for (unsigned int i = 0; i < _numThreads; ++i)
+    {
+      sortBrickList(_threadData[i].sortedList, eye, normal, isOrtho);
+    }
   }
   else
   {
-    sortBrickList(-1, eye, normal, isOrtho);
+    sortBrickList(_sortedList, eye, normal, isOrtho);
   }
 
   // Translate object by its position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
-  glTranslatef(pos[0], pos[1], pos[2]);
+  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
 
   if (_numThreads > 0)
   {
@@ -3317,7 +3312,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
     pthread_barrier_init(&_compositingBarrier, NULL, _numThreads + 1);
 
-    for (unsigned i = 0; i < _numThreads; ++i)
+    for (unsigned int i = 0; i < _numThreads; ++i)
     {
       _threadData[i].probeMin = vvVector3(&probeMin);
       _threadData[i].probeMax = vvVector3(&probeMax);
@@ -3513,9 +3508,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     data->renderer->initPostClassificationStage(pixelShader, fragProgName);
     data->renderer->_areBricksCreated = false;
-    // Generate a set of gl tex names private to this thread.
-    // This solution differs from the one chosen for sequential
-    // execution where the texNames array is a member.
     data->renderer->makeTextures(data->privateTexNames, &data->numTextures,
                                  data->pixLUTName, data->rgbaLUT);
     pthread_mutex_unlock(&data->renderer->_makeTextureMutex);
@@ -3549,7 +3541,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       data->renderer->enableIntersectionShader(isectShader);
     }
 
-    data->renderer->_offscreenBuffers[data->threadId] = new vvOffscreenBuffer(1.0f, data->precision);
+    data->renderer->_offscreenBuffers[data->threadId] = new vvOffscreenBuffer(1.0f, data->renderer->_multiGpuBufferPrecision);
 
     // Init framebuffer objects.
     data->renderer->_offscreenBuffers[data->threadId]->initForRender();
@@ -3838,18 +3830,19 @@ bool vvTexRend::intersectsFrustum(const vvVector3 &min, const vvVector3 &max) co
   return true;
 }
 
-bool vvTexRend::testBrickVisibility(vvBrick* brick) const
+bool vvTexRend::testBrickVisibility(const vvBrick* brick) const
 {
   return intersectsFrustum(brick->min, brick->max);
 }
 
-bool vvTexRend::testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat) const
+bool vvTexRend::testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat) const
 {
   //sample the brick at many point and test them all for visibility
   const float numSteps = 3;
-  const float xStep = (brick->max[0] - brick->min[0]) / (numSteps - 1.0f);
-  const float yStep = (brick->max[1] - brick->min[1]) / (numSteps - 1.0f);
-  const float zStep = (brick->max[2] - brick->min[2]) / (numSteps - 1.0f);
+  const float divisorInv = 1.0f / (numSteps - 1.0f);
+  const float xStep = (brick->max[0] - brick->min[0]) * divisorInv;
+  const float yStep = (brick->max[1] - brick->min[1]) * divisorInv;
+  const float zStep = (brick->max[2] - brick->min[2]) * divisorInv;
   for(int i = 0; i < numSteps; i++)
   {
     const float x = brick->min.e[0] + xStep * i;
@@ -3877,8 +3870,6 @@ bool vvTexRend::testBrickVisibility(vvBrick* brick, const vvMatrix& mvpMat) cons
 
 void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, vvVector3& probeMin, vvVector3& probeMax) const
 {
-  const vvVector3 pos(vd->pos);
-
   // Determine texture object dimensions and half object size as a shortcut:
   const vvVector3 size(vd->getSize());
   const vvVector3 size2 = size * 0.5f;
@@ -3886,7 +3877,7 @@ void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, v
   if (_renderState._isROIUsed)
   {
     // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj = _renderState._roiPos - pos;
+    probePosObj = _renderState._roiPos;
 
     // Compute probe min/max coordinates in object space:
     const vvVector3 maxSize = _renderState._roiSize * size2;
@@ -3924,12 +3915,21 @@ void vvTexRend::markBricksInFrustum(const vvVector3& probeMin, const vvVector3& 
 
   const bool inside = insideFrustum(probeMin, probeMax);
   const bool outside = !intersectsFrustum(probeMin, probeMax);
-  
-  for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
-    if(inside || outside)
+
+  if (inside || outside)
+  {
+    for (BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
+    {
       (*it)->visible = inside;
-    else
+    }
+  }
+  else
+  {
+    for (BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
+    {
       (*it)->visible = testBrickVisibility( *it );
+    }
+  }
 }
 
 void vvTexRend::getBricksInProbe(const vvVector3 pos, const vvVector3 size)
@@ -3976,45 +3976,23 @@ void vvTexRend::getBricksInProbe(const vvVector3 pos, const vvVector3 size)
      _sortedList.push_back(static_cast<vvBrick *>(*it));
 }
 
-struct BrickCompare
+void vvTexRend::sortBrickList(std::vector<vvBrick*>& list, const vvVector3& eye, const vvVector3& normal, const bool isOrtho)
 {
-  bool operator()(vvBrick *a, vvBrick *b) const
+  if (isOrtho)
   {
-    return a->dist > b->dist;
-  }
-};
-
-void vvTexRend::sortBrickList(const int threadId, const vvVector3& eye, const vvVector3& normal, const bool isOrtho)
-{
-  if (_numThreads > 0)
-  {
-    _threadData[threadId].sortedList.clear();
-    for(std::vector<vvBrick*>::iterator it = _threadData[threadId].halfSpace->getBricks()->begin();
-        it != _threadData[threadId].halfSpace->getBricks()->end();
-        ++it)
+    for(std::vector<vvBrick*>::iterator it = list.begin(); it != list.end(); ++it)
     {
-      vvBrick *brick = static_cast<vvBrick*>(*it);
-      if (isOrtho)
-        brick->dist = -brick->pos.dot(&normal);
-      else
-        brick->dist = (brick->pos + vd->pos - eye).length();
-
-      _threadData[threadId].sortedList.push_back(brick);
+      (*it)->dist = -(*it)->pos.dot(&normal);
     }
-    std::sort(_threadData[threadId].sortedList.begin(), _threadData[threadId].sortedList.end(), BrickCompare());
   }
   else
   {
-    for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
+    for(std::vector<vvBrick*>::iterator it = list.begin(); it != list.end(); ++it)
     {
-      if (isOrtho)
-        (*it)->dist = -(*it)->pos.dot(&normal);
-      else
-        (*it)->dist = ((*it)->pos + vd->pos - eye).length();
+      (*it)->dist = ((*it)->pos + vd->pos - eye).length();
     }
-
-    std::sort(_sortedList.begin(), _sortedList.end(), BrickCompare());
   }
+  std::sort(list.begin(), list.end(), vvBrick::Compare());
 }
 
 void vvTexRend::performLoadBalancing()
@@ -4686,7 +4664,7 @@ void vvTexRend::deactivateClippingPlane()
   Fixed material characteristics are used with each setting.
   @param numLights  number of lights in scene (0=ambient light only)
 */
-void vvTexRend::setNumLights(int numLights)
+void vvTexRend::setNumLights(const int numLights)
 {
   const float ambient[]  = {0.5f, 0.5f, 0.5f, 1.0f};
   const float pos0[] = {0.0f, 10.0f, 10.0f, 0.0f};
@@ -5415,7 +5393,7 @@ void vvTexRend::enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disablePixelShaders(vvShaderManager* pixelShader)
+void vvTexRend::disablePixelShaders(vvShaderManager* pixelShader) const
 {
   if (voxelType == VV_PIX_SHD)
   {
@@ -5428,7 +5406,7 @@ void vvTexRend::disablePixelShaders(vvShaderManager* pixelShader)
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader)
+void vvTexRend::enableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader) const
 {
   if (_proxyGeometryOnGpu)
   {
@@ -5442,7 +5420,7 @@ void vvTexRend::enableIntersectionShader(vvShaderManager* isectShader, vvShaderM
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader)
+void vvTexRend::disableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader) const
 {
   if (_proxyGeometryOnGpu)
   {
@@ -5561,7 +5539,7 @@ bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader) const
 //----------------------------------------------------------------------------
 /** @return true if initialization successful
  */
-bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader)
+bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader) const
 {
   const char* shaderFileName = "vv_intersection.cg";
   const char* unixShaderDir = NULL;
@@ -5603,7 +5581,7 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
   return true;
 }
 
-void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader)
+void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
 {
   const int parameterCount = 12;
   const char** parameterNames = new const char*[parameterCount];
@@ -5623,6 +5601,8 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader)
   parameterNames[11] = "vertices";       parameterTypes[11] = VV_SHD_ARRAY;
 
   isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);
+
+  delete[] parameterNames;
 
   // Global scope, values will never be changed.
 

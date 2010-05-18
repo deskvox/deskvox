@@ -426,7 +426,7 @@ void vvMatrix::killRot()
 
 //----------------------------------------------------------------------------
 /// Compares two matrices. Returns true if equal, otherwise false
-bool vvMatrix::equal(const vvMatrix* m)
+bool vvMatrix::equal(const vvMatrix* m) const
 {
   bool result = true;
   int row, col;
@@ -452,7 +452,7 @@ bool vvMatrix::equal(const vvMatrix* m)
 format used e.g. in the glLoadMatrixf() command.
 @see getGL
 */
-void vvMatrix::makeGL(float* array)
+void vvMatrix::makeGL(float* array) const
 {
   int row, col, i=0;
 
@@ -465,7 +465,7 @@ void vvMatrix::makeGL(float* array)
 /** Converts an OpenGL matrix to the vecmath matrix format
   @see makeGL
 */
-void vvMatrix::getGL(float* glmatrix)
+void vvMatrix::getGL(const float* glmatrix)
 {
   int row, col, i=0;
 
@@ -479,10 +479,9 @@ void vvMatrix::getGL(float* glmatrix)
  */
 void vvMatrix::getGL(double* glmatrix)
 {
-  int i;
   float mat[16];
 
-  for (i=0; i<16; ++i)
+  for (int i=0; i<16; ++i)
   {
     mat[i] = float(glmatrix[i]);
   }
@@ -509,7 +508,7 @@ void vvMatrix::get(float* elements)
 /** Copies the matrix from a source which is in float format.
  A float array with 16 float elements must be given!
 */
-void vvMatrix::set(float* elements)
+void vvMatrix::set(const float* elements)
 {
   int col, row, i=0;
 
@@ -541,7 +540,7 @@ void vvMatrix::get(double* elements)
 /** Copies the matrix from a source which is in double format.
  A double array with 16 double elements must be given!
 */
-void vvMatrix::set(double* elements)
+void vvMatrix::set(const double* elements)
 {
   int col, row, i=0;
 
@@ -786,16 +785,16 @@ void vvMatrix::LUDecomposition(int index[4], float &d)
 */
 void vvMatrix::LUBackSubstitution(int index[4], float b[4])
 {
-  int   i, ip, j;
+  int   i, j;
   int   ii = -1;
   float sum;
 
   // Special case for n=4, could be any positive number
-  int n = 4;
+  const int n = 4;
 
   for (i = 0; i < n; i++)
   {
-    ip    = index[i];
+    const int ip    = index[i];
     sum   = b[ip];
     b[ip] = b[i];
     if (ii >= 0)
@@ -966,10 +965,9 @@ D2 is the perspective scale factor for the Z axis.<BR>
 If all scale factors are zero, an orthogonal projection is used.
 @return true if matrix is an orthogonal projection matrix, otherwise false
 */
-bool vvMatrix::isProjOrtho()
+bool vvMatrix::isProjOrtho() const
 {
-  if (e[3][0]==0.0f && e[3][1]==0.0f && e[3][2]==0.0f) return true;
-  else return false;
+  return (e[3][0]==0.0f && e[3][1]==0.0f && e[3][2]==0.0f);
 }
 
 //-----------------------------------------------------------------------------
@@ -978,8 +976,8 @@ bool vvMatrix::isProjOrtho()
   of the scene, and an UP vector.
 */
 void vvMatrix::makeLookAt(float eyeX, float eyeY, float eyeZ,
-float centerX, float centerY, float centerZ,
-float upX, float upY, float upZ)
+                          float centerX, float centerY, float centerZ,
+                          float upX, float upY, float upZ)
 {
   vvVector3 f, up, s, u, center, eye;
 
@@ -1009,7 +1007,7 @@ float upX, float upY, float upZ)
   e[2][1] =  u[2];
   e[2][2] = -f[2];
 
-  vvMatrix trans, result;
+  vvMatrix trans;
   trans.identity();
   eye = -eye;
   trans.setColumn(3, eye);
@@ -1020,7 +1018,7 @@ float upX, float upY, float upZ)
 /** Determine Z coordinate of near plane from glFrustum generated projection matrices.
   @return z coordinate of near plane
 */
-float vvMatrix::getNearPlaneZ()
+float vvMatrix::getNearPlaneZ() const
 {
   return e[2][3] / 2.0f * ((e[2][2] + 1.0f) / (e[2][2] - 1.0f) - 1.0f);
 }
@@ -1175,7 +1173,7 @@ void vvVector3::set(const float x, const float y, const float z)
 
 //----------------------------------------------------------------------------
 /// Get all elements of a vector.
-void vvVector3::get(float* x, float* y, float* z)
+void vvVector3::get(float* x, float* y, float* z) const
 {
   *x = e[0];
   *y = e[1];
@@ -1291,17 +1289,15 @@ float vvVector3::dot(const vvVector3* v) const
 
 //----------------------------------------------------------------------------
 /// Return the angle (in radians) between two vectors
-float vvVector3::angle(vvVector3* v)
+float vvVector3::angle(const vvVector3* v) const
 {
-  float multLength, div;                          // precomputed values
-
-  multLength = this->length() * v->length();
+  const float multLength = this->length() * v->length();
   if (multLength == 0.0) return 0.0;
 
-  div = this->dot(v) / multLength;
+  const float div = this->dot(v) / multLength;
 
-  if (div < -1.0) return (float)(VV_PI / 2.0);
-  if (div > 1.0)  return 0.0;
+  if (div < -1.0) return (float)(VV_PI * 0.5);
+  if (div > 1.0)  return 0.0f;
 
   return acosf(div);
 }
@@ -1310,7 +1306,7 @@ float vvVector3::angle(vvVector3* v)
 /// Create the cross product of two vectors
 void vvVector3::cross(const vvVector3* v)
 {
-  vvVector3 bak(this);
+  const vvVector3 bak(this);
 
   e[0] = bak.e[1] * v->e[2] - bak.e[2] * v->e[1];
   e[1] = bak.e[2] * v->e[0] - bak.e[0] * v->e[2];
@@ -1321,33 +1317,28 @@ void vvVector3::cross(const vvVector3* v)
 /// Multiplies a vector with a matrix (V' = M x V)
 void vvVector3::multiply(const vvMatrix* m)
 {
-  int row, col;
-  float v1[4], v2[4];
+  const float v1[4] = { e[0], e[1], e[2], 1.0f };
 
-  for (int i=0; i<3; i++)
-    v1[i] = e[i];
-  v1[3] = 1.0f;
-
-  for (row=0; row<4; ++row)
+  for (int row=0; row<4; ++row)
   {
-    v2[row] = 0.0f;
-    for(col=0; col<4; ++col)
-      v2[row] += m->e[row][col] * v1[col];
+    e[row] = 0.0f;
+    for(int col=0; col<4; ++col)
+      e[row] += m->e[row][col] * v1[col];
   }
 
-  for (row=0; row<3; ++row)
-    e[row] = v2[row] / v2[3];
+  if (e[3] != 1.0f)
+  {
+    const float wInv = 1.0f / e[3];
+    for (int row=0; row<3; ++row)
+      e[row] *= wInv;
+  }
 }
 
 //----------------------------------------------------------------------------
 /// Compute the distance between two points
-float vvVector3::distance(const vvVector3* v)
+float vvVector3::distance(const vvVector3* v) const
 {
-  float diff[3];
-
-  diff[0] = v->e[0] - e[0];
-  diff[1] = v->e[1] - e[1];
-  diff[2] = v->e[2] - e[2];
+  const float diff[3] = { v->e[0] - e[0], v->e[1] - e[1], v->e[2] - e[2] };
   return (float)(sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]));
 }
 
@@ -1365,7 +1356,7 @@ float vvVector3::length() const
   @param dir directional vector on the plane
 */
 void vvVector3::planeNormalPPV(const vvVector3* point1, const vvVector3* point2,
-const vvVector3* dir)
+                               const vvVector3* dir)
 {
   vvVector3 diff;                                 // difference vector between point1 and point2
 
@@ -1397,13 +1388,12 @@ float vvVector3::distPointPlane(const vvVector3* n, const vvVector3* p) const
 /// Normalize a vector
 void vvVector3::normalize()
 {
-  float d;                                        // divisor
-
-  d = (float)(sqrt(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]));
+  const float d = (float)(sqrt(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]));
   if (d == 0.0) return;                           // division by zero error
-  e[0] /= d;
-  e[1] /= d;
-  e[2] /= d;
+  const float dInv = 1.0f / d;
+  e[0] *= dInv;
+  e[1] *= dInv;
+  e[2] *= dInv;
 }
 
 //----------------------------------------------------------------------------
@@ -1419,9 +1409,7 @@ void vvVector3::negate()
 /// Compares two vectors. Returns true if equal, otherwise false
 bool vvVector3::equal(const vvVector3* v)
 {
-  if (e[0] == v->e[0]  && e[1] == v->e[1]  && e[2] == v->e[2])
-    return true;
-  else return false;
+  return (e[0] == v->e[0]  && e[1] == v->e[1]  && e[2] == v->e[2]);
 }
 
 //----------------------------------------------------------------------------
@@ -1498,7 +1486,7 @@ void vvVector3::getColumn(const vvMatrix* m, const int col)
 /// Swap two vector element matrices
 void vvVector3::swap(vvVector3* v)
 {
-  vvVector3 bak(this);
+  const vvVector3 bak(this);
 
   e[0] = v->e[0];
   e[1] = v->e[1];
@@ -1983,7 +1971,7 @@ void vvVector3::zero()
 
 //----------------------------------------------------------------------------
 /// @return true if all vector elements are zero
-bool vvVector3::isZero()
+bool vvVector3::isZero() const
 {
   return (e[0]==0.0f && e[1]==0.0f && e[2]==0.0f);
 }
@@ -2285,9 +2273,7 @@ bool vvPlane::isSameSide(const vvVector3& p1, const vvVector3& p2) const
 */
 float vvPlane::dist(const vvVector3& p) const
 {
-  float d;                                        // scalar component of hessian form of plane
-
-  d = -_normal.dot(&_point);
+  const float d = -_normal.dot(&_point); // scalar component of hessian form of plane
   return (_normal.dot(&p) + d);
 }
 

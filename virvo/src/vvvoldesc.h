@@ -155,24 +155,24 @@ class VIRVOEXPORT vvVolDesc
     virtual ~vvVolDesc();
 
     // Getters and setters:
-    int    getSliceBytes();
-    int    getFrameBytes();
-    int    getMovieBytes();
-    int    getSliceVoxels();
-    int    getFrameVoxels();
-    int    getMovieVoxels();
-    uchar* getRaw(int);
+    int    getSliceBytes() const;
+    int    getFrameBytes() const;
+    int    getMovieBytes() const;
+    int    getSliceVoxels() const;
+    int    getFrameVoxels() const;
+    int    getMovieVoxels() const;
+    uchar* getRaw(const int);
     uchar* getRaw();
-    const char* getFilename();
+    const char* getFilename() const;
     void   setFilename(const char*);
     void   setCurrentFrame(int);
-    int    getCurrentFrame();
-    int    getBPV();
+    int    getCurrentFrame() const;
+    int    getBPV() const;
     void   setDist(float, float, float);
     void   setDist(vvVector3&);
-    vvVector3 getSize();
-    int    getStoredFrames();
-    float  getValueRange();
+    vvVector3 getSize() const;
+    int    getStoredFrames() const;
+    float  getValueRange() const;
 
     // Conversion routines:
     void   convertBPC(int, bool=false);
@@ -229,7 +229,7 @@ class VIRVOEXPORT vvVolDesc
     void   drawLine(int, int, int, int, int, int, uchar*);
     void   drawBoundaries(uchar*, int=-1);
     int    serializeAttributes(uchar* = NULL);
-    void   deserializeAttributes(uchar*, int=SERIAL_ATTRIB_SIZE);
+    void   deserializeAttributes(uchar*, const int=SERIAL_ATTRIB_SIZE);
     void   setSliceData(uchar*, int=0, int=0);
     void   extractSliceData(int, AxisType, int, uchar*);
     void   makeSliceImage(int, AxisType, int, uchar*);

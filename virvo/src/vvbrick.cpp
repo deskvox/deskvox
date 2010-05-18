@@ -27,6 +27,7 @@
 #include "vvbrick.h"
 #include "vvtexrend.h"
 
+#include <algorithm>
 #include <math.h>
 
 void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
@@ -65,7 +66,7 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
     texMin[i] = (1.0f / (2.0f * (float)(renderer->_renderState._brickTexelOverlap) * (float)texels[i]));
   }
 
-  const vvVector3 (&verts)[8] = vvAABB(minClipped, maxClipped).calcVertices();
+  const vvVector3 (&verts)[8] = vvAABB(minClipped, maxClipped).getVertices();
 
   float minDot;
   float maxDot;
@@ -73,8 +74,8 @@ void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
 
   const float deltaInv = 1.0f / delta.length();
 
-  const int startSlices = (int)ceilf(minDot * deltaInv);
-  const int endSlices = (int)floorf(maxDot * deltaInv);
+  const int startSlices = static_cast<const int>(ceilf(minDot * deltaInv));
+  const int endSlices = static_cast<const int>(floorf(maxDot * deltaInv));
 
   glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
   if (renderer->_proxyGeometryOnGpu)
@@ -267,7 +268,7 @@ ushort vvBrick::getFrontIndex(const vvVector3* vertices,
 {
 
   // Get vertices with max and min distance to point along normal.
-  maxDot = -FLT_MAX;
+  maxDot = FLT_MIN;
   minDot = FLT_MAX;
   ushort frontIndex;
 
@@ -289,27 +290,14 @@ ushort vvBrick::getFrontIndex(const vvVector3* vertices,
   return frontIndex;
 }
 
-void vvBrick::sortByCenter(vvBrick** bricks, const int numBricks, const vvVector3& axis)
+void vvBrick::sortByCenter(std::vector<vvBrick*>& bricks, const vvVector3& axis)
 {
   const vvVector3 axisGetter(0, 1, 2);
   const int a = static_cast<const int>(axis.dot(&axisGetter));
 
-  // Selection sort.
-  for (int i = 0; i < numBricks; ++i)
+  for(std::vector<vvBrick*>::iterator it = bricks.begin(); it != bricks.end(); ++it)
   {
-    for (int j = i; j < numBricks; ++j)
-    {
-      vvBrick* tmp = bricks[j];
-      for (int k = i + 1; k < numBricks; ++k)
-      {
-        vvBrick* tmp2 = bricks[k];
-        if (tmp->getAABB().calcCenter().e[a] > tmp2->getAABB().calcCenter().e[a])
-        {
-          vvBrick* tmp3 = bricks[j];
-          bricks[j] = bricks[k];
-          bricks[k] = tmp3;
-        }
-      }
-    }
+    (*it)->dist = (*it)->getAABB().getCenter()[a];
   }
+  std::sort(bricks.begin(), bricks.end(), vvBrick::Compare());
 }

@@ -25,12 +25,12 @@ vvShaderManager::~vvShaderManager()
 
 }
 
-void vvShaderManager::printCompatibilityInfo()
+void vvShaderManager::printCompatibilityInfo() const
 {
   throw "Function printCompatibilityInfo not implemented by inherited class";
 }
 
-const char* vvShaderManager::getShaderDir()
+const char* vvShaderManager::getShaderDir() const
 {
   throw "Function getShaderDir not implemented by inherited class";
 }
@@ -194,7 +194,7 @@ void vvShaderManager::setParameterTexId(const int, const char*, const unsigned i
   throw "Function setParameterTexId not implemented by inherited class";
 }
 
-void vvShaderManager::setModelViewProj(int, const char*)
+void vvShaderManager::setModelViewProj(const int, const char*)
 {
   throw "Function setModelViewProj not implemented by inherited class";
 }

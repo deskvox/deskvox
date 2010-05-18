@@ -263,7 +263,6 @@ vvFileIO::ErrorType vvFileIO::loadASCFile(vvVolDesc* vd)
 vvFileIO::ErrorType vvFileIO::saveRVFFile(vvVolDesc* vd)
 {
   FILE* fp;                                       // volume file pointer
-  int frameSize;                                  // size of a frame in bytes
   uchar* raw;                                     // raw volume data
   vvVolDesc* v;                                   // temporary volume description
 
@@ -281,7 +280,7 @@ vvFileIO::ErrorType vvFileIO::saveRVFFile(vvVolDesc* vd)
     cerr << "Converting data to 1 channel" << endl;
     v->convertChannels(1);
   }
-  frameSize = v->getFrameBytes();
+  const int frameSize = v->getFrameBytes();
   raw = v->getRaw();                              // save only current frame of loaded sequence
   if (frameSize==0 || raw==NULL)
   {
@@ -326,8 +325,6 @@ vvFileIO::ErrorType vvFileIO::saveRVFFile(vvVolDesc* vd)
 vvFileIO::ErrorType vvFileIO::loadRVFFile(vvVolDesc* vd)
 {
   FILE* fp;                                       // volume file pointer
-  int frameSize;                                  // size of a frame in bytes
-  uchar* raw;                                     // raw volume data
 
   vvDebugMsg::msg(1, "vvFileIO::loadRVFFile()");
 
@@ -346,13 +343,13 @@ vvFileIO::ErrorType vvFileIO::loadRVFFile(vvVolDesc* vd)
   vd->vox[2] = vvToolshed::read16(fp);
   vd->frames = 1;
   vd->bpc    = 1;
-  vd->chan    = 1;
+  vd->chan   = 1;
 
   // Create new data space for volume data:
   if ((_sections & RAW_DATA) != 0)
   {
-    frameSize = vd->getFrameBytes();
-    raw = new uchar[frameSize];
+    const int frameSize = vd->getFrameBytes();
+    uchar* raw = new uchar[frameSize];
 
     // Load volume data:
     if ((int)fread(raw, 1, frameSize, fp) != frameSize)
@@ -437,10 +434,6 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   FILE* fp;                                       // volume file pointer
   uchar serialized[vvVolDesc::SERIAL_ATTRIB_SIZE];// space for serialized volume data
   char tfName[257];                               // transfer function name
-  int f;                                          // counter for frames
-  int c, i;                                       // counters
-  int frameSize;                                  // size of a frame in bytes
-  uchar* raw;                                     // raw volume data
   uchar* encoded = NULL;                          // encoded volume data
   int headerSize;                                 // total header size in bytes, including ID string
   int ctype;                                      // compression type
@@ -449,7 +442,6 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   bool done;
   int serializedSize;                             // size of serialized part of header
   int encodedSize;                                // size of encoded data array
-  int offset;                                     // byte offset into file
   float v[9];                                     // TF elements
   size_t retval;
 
@@ -466,7 +458,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   vd->removeSequence();                           // delete previous volume sequence
 
   // Read header:
-  for (i=0; i<(int)strlen(_xvfID); ++i)
+  for (int i=0; i<(int)strlen(_xvfID); ++i)
   {
     if (fgetc(fp) != _xvfID[i])
     {
@@ -525,7 +517,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
     vd->iconSize = vvToolshed::read16(fp);
   }
 
-  frameSize = vd->getFrameBytes();
+  const int frameSize = vd->getFrameBytes();
 
   // Print file information:
   if (vvDebugMsg::isActive(1))
@@ -541,9 +533,9 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   {
     fseek(fp, headerSize, SEEK_SET);
     if (ctype==1) encoded = new uchar[frameSize];
-    for (f=0; f<vd->frames; ++f)
+    for (int f=0; f<vd->frames; ++f)
     {
-      raw = new uchar[frameSize];                 // create new data space for volume data
+      uchar* raw = new uchar[frameSize];                 // create new data space for volume data
       switch (ctype)
       {
         default:
@@ -597,9 +589,9 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   }
 
   // Read transfer function(s):
-  offset = headerSize;
+  int offset = headerSize;
   fseek(fp, offset, SEEK_SET);
-  for (f=0; f<vd->frames; ++f)
+  for (int f=0; f<vd->frames; ++f)
   {
     switch (ctype)
     {
@@ -614,10 +606,10 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
     }
     fseek(fp, offset, SEEK_SET);
   }
-  for (i=0; i<tnum; ++i)
+  for (int i=0; i<tnum; ++i)
   {
     // Read zero terminated TF name:
-    c = 0;
+    int c = 0;
     do
     {
       tfName[c] = char(fgetc(fp));
@@ -632,7 +624,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
       done = false;
       while (done==false)
       {
-        for (c=0; c<9; ++c)
+        for (int c=0; c<9; ++c)
         {
           v[c] = vvToolshed::readFloat(fp);
         }
@@ -645,9 +637,9 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   if (!feof(fp) && vd->iconSize>0)
   {
     delete[] vd->iconData;
-    int iconBytes = vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP;
+    const int iconBytes = vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP;
     vd->iconData = new uchar[iconBytes];
-    int encodedSize = vvToolshed::read32(fp);
+    const int encodedSize = vvToolshed::read32(fp);
     if (encodedSize>0)                            // compressed icon?
     {
       uchar* encoded = new uchar[encodedSize];
@@ -4539,7 +4531,6 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
   vvDebugMsg::msg(1, "vvFileIO::loadVolumeData()");
 
   ErrorType err = OK;
-  char* suffix;
 
   if (vd==NULL) return PARAM_ERROR;               // volume description missing
 
@@ -4556,7 +4547,7 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
 
   _sections = sec;
 
-  suffix = new char[strlen(vd->getFilename())+1];
+  char* suffix = new char[strlen(vd->getFilename())+1];
   vvToolshed::extractExtension(suffix, vd->getFilename());
 
   // Load files according to extension:

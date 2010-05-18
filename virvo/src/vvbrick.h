@@ -62,15 +62,9 @@ public:
 
   inline bool operator<(const vvBrick& rhs) const      ///< compare bricks based upon dist to eye position
   {
-    if (dist < rhs.dist)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return (dist < rhs.dist);
   }
+
   void render(vvTexRend* renderer, const vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
@@ -92,8 +86,7 @@ public:
                        float& minDot,
                        float& maxDot) const;
 
-  static void sortByCenter(vvBrick** bricks,
-                           const int numBricks,
+  static void sortByCenter(std::vector<vvBrick*>& bricks,
                            const vvVector3& axis);
                                                     ///< and assuming that vertices are ordered back to front
   vvVector3 pos;                                    ///< center position of brick
@@ -109,6 +102,15 @@ public:
   int texels[3];                                    ///< number of texels in each dimension
   int brickTexelOverlap[3];                         ///< overlap in each dimension
   float dist;                                       ///< distance from plane given by eye and normal
+                                                    ///< or distance from (0|0|0) to brick center. Both used for sorting
+
+  struct Compare
+  {
+    bool operator()(vvBrick *a, vvBrick *b) const
+    {
+      return a->dist > b->dist;
+    }
+  };
 };
 
 typedef std::vector<vvBrick*> BrickList;

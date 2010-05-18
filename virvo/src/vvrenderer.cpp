@@ -240,7 +240,7 @@ vvVolDesc* vvRenderer::getVolDesc()
 }
 
 vvRenderer::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
-                                                         float& zx, float& zy, float& zz)
+                                                         float& zx, float& zy, float& zz) const
 {
   vvMatrix invMV;
   invMV.copy(&mv);
@@ -274,27 +274,25 @@ vvRenderer::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
 /// Initialization routine for class variables.
 void vvRenderer::init()
 {
-  int i;
-
   vvDebugMsg::msg(1, "vvRenderer::init()");
 
   rendererType = UNKNOWN;
   _lastRenderTime = 0.0f;
   _lastComputeTime = 0.0f;
   _lastPlaneSortingTime = 0.0f;
-  for(i=0; i<3; ++i)
+  for(int i=0; i<3; ++i)
   {
     _channel4Color[i] = 1.0f;
   }
-  for(i=0; i<4; ++i)
+  for(int i=0; i<4; ++i)
   {
     _opacityWeights[i] = 1.0f;
   }
 }
 
 void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
-                                  const vvVector3& eye, const vvMatrix& invMV,
-                                  const bool isOrtho)
+                              const vvVector3& eye, const vvMatrix& invMV,
+                              const bool isOrtho) const
 {
   // Compute normal vector of textures using the following strategy:
   // For orthographic projections or if viewDir is (0|0|0) use
@@ -372,7 +370,7 @@ float vvRenderer::adaptQuality(float quality, float curFPS, float desFPS, float 
 //----------------------------------------------------------------------------
 /** Returns the type of the renderer used.
  */
-vvRenderer::RendererType vvRenderer::getRendererType()
+vvRenderer::RendererType vvRenderer::getRendererType() const
 {
   return rendererType;
 }
@@ -724,7 +722,7 @@ void vvRenderer::renderFPSDisplay()
   @param oPos   position of boundary box center [object coordinates]
 @param color  bounding box color (R,G,B) [0..1], array of 3 floats expected
 */
-void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, float* color) const
+void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, const float* color) const
 {
   vvVector3 vertvec[8];                           // vertex vectors in object space
   GLboolean glsLighting;                          // stores GL_LIGHTING
@@ -815,7 +813,8 @@ void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, 
   @param oNorm   normal of plane [object coordinates]
   @param color   box color (R,G,B) [0..1], array of 3 floats expected
 */
-void vvRenderer::drawPlanePerimeter(const vvVector3* oSize, const vvVector3* oPos, vvVector3* oPlane, vvVector3* oNorm, float* color)
+void vvRenderer::drawPlanePerimeter(const vvVector3* oSize, const vvVector3* oPos,
+                                    const vvVector3* oPlane, const vvVector3* oNorm, const float* color) const
 {
   GLboolean glsLighting;                          // stores GL_LIGHTING
   GLfloat   glsColor[4];                          // stores GL_CURRENT_COLOR
@@ -849,8 +848,8 @@ void vvRenderer::drawPlanePerimeter(const vvVector3* oSize, const vvVector3* oPo
 
   glLineWidth(3.0f);
 
-  boxMin.set(oPos->e[0] - oSize->e[0] / 2.0f, oPos->e[1] - oSize->e[1] / 2.0f, oPos->e[2] - oSize->e[2] / 2.0f);
-  boxMax.set(oPos->e[0] + oSize->e[0] / 2.0f, oPos->e[1] + oSize->e[1] / 2.0f, oPos->e[2] + oSize->e[2] / 2.0f);
+  boxMin.set(oPos->e[0] - oSize->e[0] * 0.5f, oPos->e[1] - oSize->e[1] * 0.5f, oPos->e[2] - oSize->e[2] * 0.5f);
+  boxMax.set(oPos->e[0] + oSize->e[0] * 0.5f, oPos->e[1] + oSize->e[1] * 0.5f, oPos->e[2] + oSize->e[2] * 0.5f);
 
   isectCnt = isect->isectPlaneCuboid(oNorm, oPlane, &boxMin, &boxMax);
 
@@ -925,14 +924,14 @@ void vvRenderer::setObjectDirection(const vvVector3*)
   vvDebugMsg::msg(3, "vvRenderer::setObjectDirection()");
 }
 
-void vvRenderer::setROIEnable(bool flag)
+void vvRenderer::setROIEnable(const bool flag)
 {
   vvDebugMsg::msg(1, "vvRenderer::setROIEnable()");
   _renderState._isROIChanged = true;
   _renderState._isROIUsed = flag;
 }
 
-bool vvRenderer::isROIEnabled()
+bool vvRenderer::isROIEnabled() const
 {
   return _renderState._isROIUsed;
 }
@@ -952,7 +951,7 @@ void vvRenderer::setProbePosition(const vvVector3* pos)
 /** Get the probe position.
   @param pos  returned position [object space]
 */
-void vvRenderer::getProbePosition(vvVector3* pos)
+void vvRenderer::getProbePosition(vvVector3* pos) const
 {
   vvDebugMsg::msg(3, "vvRenderer::getProbePosition()");
   pos->copy(&_renderState._roiPos);
@@ -962,7 +961,7 @@ void vvRenderer::getProbePosition(vvVector3* pos)
 /** Set the probe size.
   @param newSize  probe size. 0.0 turns off probe draw mode
 */
-void vvRenderer::setProbeSize(vvVector3* newSize)
+void vvRenderer::setProbeSize(const vvVector3* newSize)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProbeSize()");
   _renderState._isROIChanged = true;
@@ -973,7 +972,7 @@ void vvRenderer::setProbeSize(vvVector3* newSize)
 /** Get the probe size.
   @return probe size (0.0 = probe mode off)
 */
-void vvRenderer::getProbeSize(vvVector3* size)
+void vvRenderer::getProbeSize(vvVector3* size) const
 {
   vvDebugMsg::msg(3, "vvRenderer::getProbeSize()");
   size->copy(&_renderState._roiSize);
@@ -983,7 +982,7 @@ void vvRenderer::getProbeSize(vvVector3* size)
 /** Get the current modelview matrix.
   @param a matrix which will be set to the current modelview matrix
 */
-void vvRenderer::getModelviewMatrix(vvMatrix* mv)
+void vvRenderer::getModelviewMatrix(vvMatrix* mv) const
 {
   GLfloat glmatrix[16];                           // OpenGL compatible matrix
 
@@ -996,7 +995,7 @@ void vvRenderer::getModelviewMatrix(vvMatrix* mv)
 /** Get the current projection matrix.
   @param a matrix which will be set to the current projection matrix
 */
-void vvRenderer::getProjectionMatrix(vvMatrix* pm)
+void vvRenderer::getProjectionMatrix(vvMatrix* pm) const
 {
   vvDebugMsg::msg(3, "vvRenderer::getProjectionMatrix()");
 
@@ -1009,7 +1008,7 @@ void vvRenderer::getProjectionMatrix(vvMatrix* pm)
 /** Set the OpenGL modelview matrix.
   @param new OpenGL modelview matrix
 */
-void vvRenderer::setModelviewMatrix(vvMatrix* mv)
+void vvRenderer::setModelviewMatrix(const vvMatrix* mv)
 {
   vvDebugMsg::msg(3, "vvRenderer::setModelviewMatrix()");
 
@@ -1023,7 +1022,7 @@ void vvRenderer::setModelviewMatrix(vvMatrix* mv)
 /** Set the OpenGL projection matrix.
   @param new OpenGL projection matrix
 */
-void vvRenderer::setProjectionMatrix(vvMatrix* pm)
+void vvRenderer::setProjectionMatrix(const vvMatrix* pm)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProjectionMatrix()");
 
@@ -1038,7 +1037,7 @@ void vvRenderer::setProjectionMatrix(vvMatrix* pm)
 /** Compute user's eye position.
   @param eye  vector to receive eye position [world space]
 */
-void vvRenderer::getEyePosition(vvVector3* eye)
+void vvRenderer::getEyePosition(vvVector3* eye) const
 {
   vvMatrix invPM;                                 // inverted projection matrix
   vvVector4 projEye;                              // eye x PM
@@ -1057,7 +1056,7 @@ void vvRenderer::getEyePosition(vvVector3* eye)
   @param point  point to test [object coordinates]
   @return true if the given point is inside or on the volume boundaries.
 */
-bool vvRenderer::isInVolume(const vvVector3* point)
+bool vvRenderer::isInVolume(const vvVector3* point) const
 {
   vvVector3 size;                                 // object size
   vvVector3 size2;                                // half object size

@@ -110,12 +110,12 @@ template<class T> class vvSLList
     bool previous();
     bool first();
     bool last();
-    bool isLast();
+    bool isLast() const;
     bool isEmpty();
     bool remove();
     bool makeCurrent(int);
     bool find(const T&);
-    int  count();
+    int  count() const;
     void append(const T&, typename vvSLNode<T>::DeleteType);
     void insertAfter(const T&, typename vvSLNode<T>::DeleteType);
     void insertBefore(const T&, typename vvSLNode<T>::DeleteType);
@@ -341,11 +341,9 @@ template<class T> bool vvSLList<T>::last()
 //----------------------------------------------------------------------------
 /** @return true if current element is the last in the list or the list is empty.
  */
-template<class T> bool vvSLList<T>::isLast()
+template<class T> bool vvSLList<T>::isLast() const
 {
-  if (head==NULL) return true;
-  if (cur->next==NULL) return true;
-  else return false;
+  return ((head == NULL) || (cur->next == NULL));
 }
 
 //----------------------------------------------------------------------------
@@ -432,7 +430,7 @@ template<class T> bool vvSLList<T>::find(const T& x)
 
 //----------------------------------------------------------------------------
 /// Return the number of elements in the list.
-template<class T> int vvSLList<T>::count()
+template<class T> int vvSLList<T>::count() const
 {
   int numElements = 0;
   vvSLNode<T>* tmp = head;

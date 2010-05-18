@@ -33,9 +33,13 @@
 
 vvAABB::vvAABB(const vvVector3& bottomLeftBackCorner,
                const vvVector3& topRightFrontCorner)
+                 : _bottomLeftBackCorner(bottomLeftBackCorner),
+                   _topRightFrontCorner(topRightFrontCorner)
 {
-  _bottomLeftBackCorner = bottomLeftBackCorner;
-  _topRightFrontCorner = topRightFrontCorner;
+  _center = vvVector3((_bottomLeftBackCorner.e[0] + _topRightFrontCorner.e[0]) * 0.5f,
+                      (_bottomLeftBackCorner.e[1] + _topRightFrontCorner.e[1]) * 0.5f,
+                      (_bottomLeftBackCorner.e[2] + _topRightFrontCorner.e[2]) * 0.5f);
+  calcVertices();
 }
 
 float vvAABB::calcWidth() const
@@ -53,24 +57,6 @@ float vvAABB::calcDepth() const
   return calcMaxExtent(vvVector3(0, 0, 1)) - calcMinExtent(vvVector3(0, 0, 1));
 }
 
-const vvBoxCorners &vvAABB::calcVertices()
-{
-  for(int i=0; i<8; ++i)
-  {
-    // return the vertices in the necessary order
-    int d=i;
-    if(i>=2 && i<=5)
-      d ^= 1;
-
-    for(int c=0; c<3; ++c)
-    {
-      _vertices[i].e[c] = (1<<c)&d ? _bottomLeftBackCorner.e[c] : _topRightFrontCorner.e[c];
-    }
-  }
-
-  return _vertices;
-}
-
 float vvAABB::calcMinExtent(const vvVector3& axis) const
 {
   return _bottomLeftBackCorner.e[0] * axis.e[0]
@@ -85,11 +71,14 @@ float vvAABB::calcMaxExtent(const vvVector3& axis) const
        + _topRightFrontCorner.e[2] * axis.e[2];
 }
 
-vvVector3 vvAABB::calcCenter() const
+const vvBoxCorners& vvAABB::getVertices() const
 {
-  return vvVector3((_bottomLeftBackCorner.e[0] + _topRightFrontCorner.e[0]) * 0.5f,
-                   (_bottomLeftBackCorner.e[1] + _topRightFrontCorner.e[1]) * 0.5f,
-                   (_bottomLeftBackCorner.e[2] + _topRightFrontCorner.e[2]) * 0.5f);
+  return _vertices;
+}
+
+vvVector3 vvAABB::getCenter() const
+{
+  return _center;
 }
 
 vvRect* vvAABB::getProjectedScreenRect()
@@ -105,8 +94,8 @@ vvRect* vvAABB::getProjectedScreenRect()
   calcVertices();
   float minX = FLT_MAX;
   float minY = FLT_MAX;
-  float maxX = -FLT_MAX;
-  float maxY = -FLT_MAX;
+  float maxX = FLT_MIN;
+  float maxY = FLT_MIN;
 
   for (int i = 0; i < 8; ++i)
   {
@@ -143,9 +132,9 @@ vvRect* vvAABB::getProjectedScreenRect()
   return result;
 }
 
-void vvAABB::render()
+void vvAABB::render() const
 {
-  const vvVector3 (&vertices)[8] = calcVertices();
+  const vvVector3 (&vertices)[8] = getVertices();
   glDisable(GL_LIGHTING);
   glBegin(GL_LINES);
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -178,10 +167,26 @@ void vvAABB::render()
   glEnable(GL_LIGHTING);
 }
 
-void vvAABB::print()
+void vvAABB::print() const
 {
   _bottomLeftBackCorner.print();
   _topRightFrontCorner.print();
+}
+
+void vvAABB::calcVertices()
+{
+  for (int i=0; i<8; ++i)
+  {
+    // return the vertices in the necessary order
+    int d=i;
+    if(i>=2 && i<=5)
+      d ^= 1;
+
+    for (int c=0; c<3; ++c)
+    {
+      _vertices[i].e[c] = (1<<c)&d ? _bottomLeftBackCorner.e[c] : _topRightFrontCorner.e[c];
+    }
+  }
 }
 
 //============================================================================
@@ -227,7 +232,7 @@ void vvHalfSpace::addChild(vvHalfSpace* child)
   }
 }
 
-bool vvHalfSpace::contains(const vvVector3& pos)
+bool vvHalfSpace::contains(const vvVector3& pos) const
 {
   int i;
 
@@ -288,7 +293,7 @@ void vvHalfSpace::setSplitPlane(vvPlane* splitPlane)
 void vvHalfSpace::setBricks(std::vector<vvBrick*>* bricks)
 {
   vvVector3 minCorner = vvVector3(FLT_MAX, FLT_MAX, FLT_MAX);
-  vvVector3 maxCorner = vvVector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+  vvVector3 maxCorner = vvVector3(FLT_MIN, FLT_MIN, FLT_MIN);
 
   for (std::vector<vvBrick*>::const_iterator it = bricks->begin(); it != bricks->end(); ++it)
   {
@@ -414,7 +419,6 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   vvHalfSpace* result = new vvHalfSpace[2];
 
   vvBrick* tmp;
-  vvBrick** tmpArray;
   vvVector3 n1, n2;
   vvVector3 pnt;
   float dim[3];
@@ -444,14 +448,14 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   //     the overall meanSqrError.
 
   // Get the aabb for the parent share of the volume.
-  max[0] = -FLT_MAX;
+  max[0] = FLT_MIN;
   min[0] = FLT_MAX;
-  max[1] = -FLT_MAX;
+  max[1] = FLT_MIN;
   min[1] = FLT_MAX;
-  max[2] = -FLT_MAX;
+  max[2] = FLT_MIN;
   min[2] = FLT_MAX;
 
-  tmpArray = new vvBrick*[bricks->size()];
+  std::vector<vvBrick*> tmpArray = std::vector<vvBrick*>(bricks->size());
   int i = 0;
 
   for(std::vector<vvBrick*>::iterator it = bricks->begin();
@@ -513,7 +517,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
       it != bricks->end();
       ++it)
     {
-      vals.insert((*it)->getAABB().calcCenter().e[i]);
+      vals.insert((*it)->getAABB().getCenter().e[i]);
     }
     cnt[i] = vals.size();
   }
@@ -522,18 +526,18 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   // valid that each obj occupies the same volume (determined through its aabb).
 
   // Sort overall array by x-axis.
-  vvBrick::sortByCenter(tmpArray, bricks->size(), vvVector3(1, 0, 0));
+  vvBrick::sortByCenter(tmpArray, vvVector3(1, 0, 0));
 
-  vvBrick*** dimX = new vvBrick**[cnt[0]];
+  std::vector<BrickList> dimX = std::vector<BrickList>(cnt[0]);
 
   // Build the first dimension.
   int iterator = 0;
   for (int i = 0; i < cnt[0]; ++i)
   {
-    dimX[i] = new vvBrick*[cnt[1] * cnt[2]];
+    dimX.push_back(BrickList(cnt[1] * cnt[2]));
     for (int j = 0; j < cnt[1] * cnt[2]; ++j)
     {
-      dimX[i][j] = tmpArray[iterator];
+      dimX[i].push_back(tmpArray[iterator]);
       ++iterator;
     }
   }
@@ -541,18 +545,19 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   // Sort for second dimension.
   for (int i = 0; i < cnt[0]; ++i)
   {
-    vvBrick::sortByCenter(dimX[i], cnt[1]*cnt[2], vvVector3(0, 1, 0));
+    vvBrick::sortByCenter(dimX[i], vvVector3(0, 1, 0));
   }
 
   // Build second dimension.
-  vvBrick**** grid = new vvBrick***[cnt[0]];
+  typedef std::vector<BrickList> ListOfBrickLists;
+  std::vector<ListOfBrickLists> grid = std::vector<ListOfBrickLists>(cnt[0]);
   for (int i = 0; i < cnt[0]; ++i)
   {
-    grid[i] = new vvBrick**[cnt[1]];
+    grid.push_back(ListOfBrickLists(cnt[1]));
     iterator = 0;
     for (int j = 0; j < cnt[1]; ++j)
     {
-      grid[i][j] = new vvBrick*[cnt[2]];
+      grid[i].push_back(BrickList(cnt[2]));
       for (int k = 0; k < cnt[2]; ++k)
       {
         grid[i][j][k] = dimX[i][iterator];
@@ -560,17 +565,9 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
       }
 
       // Sort on the fly.
-      vvBrick::sortByCenter(grid[i][j], cnt[2], vvVector3(0, 0, 1));
+      vvBrick::sortByCenter(grid[i][j], vvVector3(0, 0, 1));
     }
   }
-
-  // No need for this anymore.
-  for (int i = 0; i < cnt[0]; ++i)
-  {
-    delete[] dimX[i];
-  }
-  delete[] dimX;
-
 
   // Derive the ratios for the three axes respectivly.
 
@@ -705,7 +702,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
     ++it)
   {
     vvBrick *tmp = *it;
-    if (tmp->getAABB().calcCenter().e[splitAxis] < pnt.e[splitAxis])
+    if (tmp->getAABB().getCenter().e[splitAxis] < pnt.e[splitAxis])
     {
       result[0].getBricks()->push_back(tmp);
     }
@@ -715,18 +712,6 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
     }
   }
 
-  // Clean up.
-  for (int i = 0; i < cnt[0]; ++i)
-  {
-    for (int j = 0; j < cnt[1]; ++j)
-    {
-      delete[] grid[i][j];
-    }
-    delete[] grid[i];
-  }
-  delete[] grid;
-  delete[] tmpArray;
-
   return result;
 }
 
@@ -734,7 +719,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
 // vvBspTree Method Definitions
 //============================================================================
 
-vvBspTree::vvBspTree(float* partitioning, const int length, std::vector<vvBrick*>* bricks)
+vvBspTree::vvBspTree(const float* partitioning, const int length, std::vector<vvBrick*>* bricks)
 {
   _root = new vvHalfSpace;
   _root->setPercent(100.0f);
@@ -773,14 +758,12 @@ void vvBspTree::setVisitor(vvVisitor* visitor)
   _visitor = visitor;
 }
 
-void vvBspTree::buildHierarchy(vvHalfSpace* node, float* partitioning, const int length,
+void vvBspTree::buildHierarchy(vvHalfSpace* node, const float* partitioning, const int length,
                                const int startIdx, const int endIdx)
 {
-  float percent;                                          // Share for this node.
   float percent1, percent2;                               // Share for the two child nodes.
   int startIdx1, startIdx2, endIdx1, endIdx2;
   int length1, length2;
-  int i;
 
   if (length > 1)
   {
@@ -811,17 +794,17 @@ void vvBspTree::buildHierarchy(vvHalfSpace* node, float* partitioning, const int
 
     // Distribute share to children.
     percent1 = percent2 = 0.0f;
-    for (i = startIdx1; i <= endIdx1; ++i)
+    for (int i = startIdx1; i <= endIdx1; ++i)
     {
       percent1 += partitioning[i];
     }
 
-    for (i = startIdx2; i <= endIdx2; ++i)
+    for (int i = startIdx2; i <= endIdx2; ++i)
     {
       percent2 += partitioning[i];
     }
 
-    percent = percent1 + percent2;
+    const float percent = percent1 + percent2;
     childLeft->setPercent(percent1 / percent * 100);
     childRight->setPercent(percent2 / percent * 100);
 
@@ -861,7 +844,7 @@ void vvBspTree::distributeBricks(vvHalfSpace* node, std::vector<vvBrick*>* brick
   }
 }
 
-void vvBspTree::print(vvHalfSpace* node, const int indent)
+void vvBspTree::print(const vvHalfSpace* node, const int indent)
 {
   const int inc = 4;
   int i;

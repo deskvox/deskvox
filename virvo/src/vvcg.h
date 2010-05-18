@@ -67,8 +67,8 @@ public:
                               const char** parameterNames,
                               const vvShaderParameterType* parameterTypes,
                               const int parameterCount);
-  virtual void printCompatibilityInfo();
-  virtual const char* getShaderDir();
+  virtual void printCompatibilityInfo() const;
+  virtual const char* getShaderDir() const;
 
   virtual void enableTexture(const int programIndex, const char* textureParameterName);
   virtual void disableTexture(const int programIndex, const char* textureParameterName);
@@ -113,7 +113,7 @@ private:
   std::vector<ParameterNameMap> _cgParameterNameMaps;
 
   void init();
-  CGGLenum toCgEnum(const ShaderType& shaderType);
+  CGGLenum toCgEnum(const ShaderType& shaderType) const;
 
   static void cgErrorHandler(CGcontext context, CGerror error, void* appData);
 };

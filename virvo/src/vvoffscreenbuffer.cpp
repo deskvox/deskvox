@@ -46,7 +46,7 @@ vvOffscreenBuffer::~vvOffscreenBuffer()
 
 void vvOffscreenBuffer::initForRender()
 {
-  vvGLTools::Viewport v = vvGLTools::getViewport();
+  const vvGLTools::Viewport v = vvGLTools::getViewport();
   resize(v.values[2], v.values[3]);
 
   glPushAttrib(GL_VIEWPORT_BIT);

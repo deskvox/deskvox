@@ -422,7 +422,7 @@ const char* vvVolDesc::getChannelName(int channel)
 /** Get slice size.
  @return slice size in number of bytes
 */
-int vvVolDesc::getSliceBytes()
+int vvVolDesc::getSliceBytes() const
 {
   return vox[0] * vox[1] * getBPV();
 }
@@ -431,7 +431,7 @@ int vvVolDesc::getSliceBytes()
 /** Get frame size.
  @return frame size in number of bytes
 */
-int vvVolDesc::getFrameBytes()
+int vvVolDesc::getFrameBytes() const
 {
   return vox[0] * vox[1] * vox[2] * getBPV();
 }
@@ -440,28 +440,28 @@ int vvVolDesc::getFrameBytes()
 /** Get movie size.
  @return movie size in bytes (movie = timely sequence of all volume frames)
 */
-int vvVolDesc::getMovieBytes()
+int vvVolDesc::getMovieBytes() const
 {
   return vox[0] * vox[1] * vox[2] * frames * getBPV();
 }
 
 //----------------------------------------------------------------------------
 /// Get number of voxels in a slice.
-int vvVolDesc::getSliceVoxels()
+int vvVolDesc::getSliceVoxels() const
 {
   return vox[0] * vox[1];
 }
 
 //----------------------------------------------------------------------------
 /// Get number of voxels in a frame.
-int vvVolDesc::getFrameVoxels()
+int vvVolDesc::getFrameVoxels() const
 {
   return vox[0] * vox[1] * vox[2];
 }
 
 //----------------------------------------------------------------------------
 /// Get number of voxels in the volume movie.
-int vvVolDesc::getMovieVoxels()
+int vvVolDesc::getMovieVoxels() const
 {
   return vox[0] * vox[1] * vox[2] * frames;
 }
@@ -621,7 +621,7 @@ vvVolDesc::ErrorType vvVolDesc::mergeFrames()
   @param frame  index of desired frame (0 for first frame) if frame does not
                 exist, NULL will be returned; -1 for current frame
 */
-uchar* vvVolDesc::getRaw(int frame)
+uchar* vvVolDesc::getRaw(const int frame)
 {
   if (frame<-1 || frame>=frames) return NULL;     // frame does not exist
   if (frame > -1) raw.makeCurrent(frame);
@@ -675,7 +675,7 @@ void vvVolDesc::addFrame(uchar* ptr, DeleteType deleteData)
 
 //----------------------------------------------------------------------------
 /// Return the number of frames actually stored.
-int vvVolDesc::getStoredFrames()
+int vvVolDesc::getStoredFrames() const
 {
   return raw.count();
 }
@@ -1192,7 +1192,7 @@ void vvVolDesc::setFilename(const char* fn)
 /** Get file name.
   @return pointer to file name. Don't delete this pointer.
 */
-const char* vvVolDesc::getFilename()
+const char* vvVolDesc::getFilename() const
 {
   return filename;
 }
@@ -1208,14 +1208,14 @@ void vvVolDesc::setCurrentFrame(int f)
 
 //----------------------------------------------------------------------------
 /// Get current frame.
-int vvVolDesc::getCurrentFrame()
+int vvVolDesc::getCurrentFrame() const
 {
   return currentFrame;
 }
 
 //----------------------------------------------------------------------------
 /// Get number of bytes per voxel.
-int vvVolDesc::getBPV()
+int vvVolDesc::getBPV() const
 {
   return bpc * chan;
 }
@@ -1225,7 +1225,7 @@ int vvVolDesc::getBPV()
     Useful for creating histograms.
  @return the range of values in each channel; returns 0.0f on error.
 */
-float vvVolDesc::getValueRange()
+float vvVolDesc::getValueRange() const
 {
   switch(bpc)
   {
@@ -3272,17 +3272,15 @@ int vvVolDesc::serializeAttributes(uchar* buffer)
                   size are allowed and only fill the values up to the
                   passed value. The remaining values will be set to default values.
 */
-void vvVolDesc::deserializeAttributes(uchar* buffer, int bufSize)
+void vvVolDesc::deserializeAttributes(uchar* buffer, const int bufSize)
 {
-  uchar* ptr;                                     // pointer to current serialization buffer element
-
   vvDebugMsg::msg(3, "vvVolDesc::deserializeAttributes()");
   assert(buffer!=NULL);
 
   // Set default values for all serializable attributes:
   setDefaults();
 
-  ptr = buffer;
+  uchar* ptr = buffer;
   if (ptr+4 - buffer <= bufSize)
     vox[0] = vvToolshed::read32(ptr);
   else return;
@@ -4308,7 +4306,7 @@ void vvVolDesc::computeVolume(int algorithm, int vx, int vy, int vz)
   }
 }
 
-vvVector3 vvVolDesc::getSize()
+vvVector3 vvVolDesc::getSize() const
 {
   vvVector3 size(dist[0] * float(vox[0]) * _scale,
     dist[1] * float(vox[1]) * _scale,

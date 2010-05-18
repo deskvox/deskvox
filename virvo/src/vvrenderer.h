@@ -147,10 +147,10 @@ class VIRVOEXPORT vvRenderer
     virtual void init();                   		  ///< initialization routine
 
     void getObjNormal(vvVector3& normal,
-                          vvVector3& origin,
-                          const vvVector3& eye,
-                          const vvMatrix& invMV,
-                          const bool isOrtho = false);
+                      vvVector3& origin,
+                      const vvVector3& eye,
+                      const vvMatrix& invMV,
+                      const bool isOrtho = false) const;
 
     // Class Methods:
   public:                                         // public methods will be inherited as public
@@ -165,7 +165,7 @@ class VIRVOEXPORT vvRenderer
     static float adaptQuality(float, float, float, float);
 
     // Public methods that should be redefined by subclasses:
-    virtual RendererType getRendererType();
+    virtual RendererType getRendererType() const;
     virtual void  renderVolumeGL();
     virtual void  renderVolumeRGB(int, int, uchar*);
     virtual void  renderMultipleVolume();
@@ -181,23 +181,23 @@ class VIRVOEXPORT vvRenderer
     virtual void  renderPalette();
     virtual void  renderQualityDisplay();
     virtual void  renderFPSDisplay();
-    virtual void  drawBoundingBox(const vvVector3*, const vvVector3*, float*) const;
-    virtual void  drawPlanePerimeter(const vvVector3*, const vvVector3*, vvVector3*, vvVector3*, float*);
+    virtual void  drawBoundingBox(const vvVector3*, const vvVector3*, const float*) const;
+    virtual void  drawPlanePerimeter(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*, const float*) const;
     virtual bool  instantClassification() const;
     virtual void  setViewingDirection(const vvVector3*);
     virtual void  setObjectDirection(const vvVector3*);
-    virtual void  setROIEnable(bool);
-    virtual bool  isROIEnabled();
+    virtual void  setROIEnable(const bool);
+    virtual bool  isROIEnabled() const;
     virtual void  setProbePosition(const vvVector3*);
-    virtual void  getProbePosition(vvVector3*);
-    virtual void  setProbeSize(vvVector3*);
-    virtual void  getProbeSize(vvVector3*);
-    virtual void  getModelviewMatrix(vvMatrix*);
-    virtual void  getProjectionMatrix(vvMatrix*);
-    virtual void  setModelviewMatrix(vvMatrix*);
-    virtual void  setProjectionMatrix(vvMatrix*);
-    virtual void  getEyePosition(vvVector3*);
-    virtual bool  isInVolume(const vvVector3*);
+    virtual void  getProbePosition(vvVector3*) const;
+    virtual void  setProbeSize(const vvVector3*);
+    virtual void  getProbeSize(vvVector3*) const;
+    virtual void  getModelviewMatrix(vvMatrix*) const;
+    virtual void  getProjectionMatrix(vvMatrix*) const;
+    virtual void  setModelviewMatrix(const vvMatrix*);
+    virtual void  setProjectionMatrix(const vvMatrix*);
+    virtual void  getEyePosition(vvVector3*) const;
+    virtual bool  isInVolume(const vvVector3*) const;
     virtual float getAlphaValue(float, float, float);
     virtual void  setParameter(const ParameterType, const float, char* = NULL);
     virtual float getParameter(const ParameterType, char* = NULL) const;
@@ -215,7 +215,7 @@ class VIRVOEXPORT vvRenderer
     virtual void setVolDesc(vvVolDesc*);
     virtual vvVolDesc* getVolDesc();
 
-    virtual AxisType getPrincipalViewingAxis(const vvMatrix& mv, float& zx, float& zy, float& zz);
+    virtual AxisType getPrincipalViewingAxis(const vvMatrix& mv, float& zx, float& zy, float& zz) const;
 };
 #endif
 
