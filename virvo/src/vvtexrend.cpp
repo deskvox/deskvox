@@ -3697,7 +3697,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       if (data->transferFunctionChanged)
       {
         data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
+        data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
         data->transferFunctionChanged = false;
+        // TODO: reorganize getBricksInProbe so that this hack is no longer necessary.
+        roiChanged = true;
       }
     }
 
