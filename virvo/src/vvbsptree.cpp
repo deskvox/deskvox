@@ -92,10 +92,10 @@ vvRect* vvAABB::getProjectedScreenRect()
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
 
   calcVertices();
-  float minX = FLT_MAX;
-  float minY = FLT_MAX;
-  float maxX = -FLT_MAX;
-  float maxY = -FLT_MAX;
+  float minX = VV_FLT_MAX;
+  float minY = VV_FLT_MAX;
+  float maxX = -VV_FLT_MAX;
+  float maxY = -VV_FLT_MAX;
 
   for (int i = 0; i < 8; ++i)
   {
@@ -292,8 +292,8 @@ void vvHalfSpace::setSplitPlane(vvPlane* splitPlane)
 
 void vvHalfSpace::setBricks(std::vector<vvBrick*>* bricks)
 {
-  vvVector3 minCorner = vvVector3(FLT_MAX, FLT_MAX, FLT_MAX);
-  vvVector3 maxCorner = vvVector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+  vvVector3 minCorner = vvVector3(VV_FLT_MAX, VV_FLT_MAX, VV_FLT_MAX);
+  vvVector3 maxCorner = vvVector3(-VV_FLT_MAX, -VV_FLT_MAX, -VV_FLT_MAX);
 
   for (std::vector<vvBrick*>::const_iterator it = bricks->begin(); it != bricks->end(); ++it)
   {
@@ -448,12 +448,12 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   //     the overall meanSqrError.
 
   // Get the aabb for the parent share of the volume.
-  max[0] = -FLT_MAX;
-  min[0] = FLT_MAX;
-  max[1] = -FLT_MAX;
-  min[1] = FLT_MAX;
-  max[2] = -FLT_MAX;
-  min[2] = FLT_MAX;
+  max[0] = -VV_FLT_MAX;
+  min[0] = VV_FLT_MAX;
+  max[1] = -VV_FLT_MAX;
+  min[1] = VV_FLT_MAX;
+  max[2] = -VV_FLT_MAX;
+  min[2] = VV_FLT_MAX;
 
   std::vector<vvBrick*> tmpArray = std::vector<vvBrick*>(bricks->size());
   int i = 0;
@@ -578,7 +578,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
 
   for (i = 0; i < 3; ++i)
   {
-    meanSqrErrorRatio[i] = FLT_MAX;
+    meanSqrErrorRatio[i] = VV_FLT_MAX;
 
     // Start solution.
     ratio[i][0] = cnt[i];
@@ -658,7 +658,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
 
   // Now find the axis with the smallest mean abs error. This yields
   // the axis along which to split as well as the desired ratio.
-  float leastError = FLT_MAX;
+  float leastError = VV_FLT_MAX;
   splitAxis = -1;
 
   for (i = 0; i < 3; ++i)
