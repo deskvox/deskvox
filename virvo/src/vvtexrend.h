@@ -279,7 +279,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void sortBrickList(std::vector<vvBrick*>& list, const vvVector3&, const vvVector3&, const bool);
     void performLoadBalancing();
 
-    ErrorType makeTextures(GLuint*& privateTexNames, int* numTextures, GLuint& lutName, uchar*& lutData);
+    ErrorType makeTextures(GLuint& lutName, uchar*& lutData);
     ErrorType makeEmptyBricks();
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
                                 std::vector<BrickList>& bricks);

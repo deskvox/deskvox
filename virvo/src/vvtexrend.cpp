@@ -474,7 +474,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   {
     if (voxelType != VV_RGBA)
     {
-      makeTextures(texNames, &textures, pixLUTName, rgbaLUT);      // we only have to do this once for non-RGBA textures
+      makeTextures(pixLUTName, rgbaLUT);      // we only have to do this once for non-RGBA textures
     }
     updateTransferFunction(pixLUTName, rgbaLUT);
   }
@@ -679,8 +679,7 @@ void vvTexRend::removeTextures(GLuint*& privateTexNames, int* numTextures)
 
 //----------------------------------------------------------------------------
 /// Generate textures for all rendering modes.
-vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numTextures,
-                                             GLuint& lutName, uchar*& lutData)
+vvTexRend::ErrorType vvTexRend::makeTextures(GLuint& lutName, uchar*& lutData)
 {
   static bool first = true;
   ErrorType err = OK;
@@ -724,7 +723,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(GLuint*& privateTexNames, int* numT
       // If in threaded mode, each thread will upload its texture data on its own.
       if ((err == OK) && (_numThreads == 0))
       {
-        err = makeTextureBricks(privateTexNames, numTextures, lutData, _brickList);
+        err = makeTextureBricks(texNames, &textures, lutData, _brickList);
       }
       break;
     default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
@@ -1729,13 +1728,12 @@ void vvTexRend::setComputeBrickSize(const bool flag)
       {
         for (unsigned int i = 0; i < _numThreads; ++i)
         {
-          makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
-                       _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+          makeTextures(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
         }
       }
       else
       {
-        makeTextures(texNames, &textures, pixLUTName, rgbaLUT);
+        makeTextures(pixLUTName, rgbaLUT);
       }
     }
   }
@@ -1756,13 +1754,12 @@ void vvTexRend::setBrickSize(const int newSize)
   {
     for (unsigned int i = 0; i < _numThreads; ++i)
     {
-      makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
-                   _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+      makeTextures(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
     }
   }
   else
   {
-    makeTextures(texNames, &textures, pixLUTName, rgbaLUT);
+    makeTextures(pixLUTName, rgbaLUT);
   }
 }
 
@@ -1788,13 +1785,12 @@ void vvTexRend::setTexMemorySize(const int newSize)
       {
         for (unsigned int i = 0; i < _numThreads; ++i)
         {
-          makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
-                       _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+          makeTextures(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
         }
       }
       else
       {
-        makeTextures(texNames, &textures, pixLUTName, rgbaLUT);
+        makeTextures(pixLUTName, rgbaLUT);
       }
     }
   }
@@ -1974,13 +1970,12 @@ void vvTexRend::updateVolumeData()
   {
     for (unsigned int i = 0; i < _numThreads; ++i)
     {
-      makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
-                   _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+      makeTextures(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
     }
   }
   else
   {
-    makeTextures(texNames, &textures, pixLUTName, rgbaLUT);
+    makeTextures(pixLUTName, rgbaLUT);
   }
 }
 
@@ -3508,8 +3503,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     data->renderer->initPostClassificationStage(pixelShader, fragProgName);
     data->renderer->_areBricksCreated = false;
-    data->renderer->makeTextures(data->privateTexNames, &data->numTextures,
-                                 data->pixLUTName, data->rgbaLUT);
+    data->renderer->makeTextures(data->pixLUTName, data->rgbaLUT);
     pthread_mutex_unlock(&data->renderer->_makeTextureMutex);
 
     // Now that the textures are built, the bricks may be distributed
@@ -4809,8 +4803,7 @@ void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData)
     case VV_RGBA:
       if (_numThreads == 0)
       {
-        makeTextures(texNames, &textures,
-                     lutName, lutData);// this mode doesn't use a hardware LUT, so every voxel has to be updated
+        makeTextures(lutName, lutData);// this mode doesn't use a hardware LUT, so every voxel has to be updated
       }
       break;
     case VV_SGI_LUT:
@@ -4889,14 +4882,13 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, ch
         {
           for (unsigned int i = 0; i < _numThreads; ++i)
           {
-            makeTextures(_threadData[i].privateTexNames, &_threadData[i].numTextures,
-                         _threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+            makeTextures(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
             updateTransferFunction(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
           }
         }
         else
         {
-          makeTextures(texNames, &textures, pixLUTName, rgbaLUT);
+          makeTextures(pixLUTName, rgbaLUT);
           updateTransferFunction(pixLUTName, rgbaLUT);
         }
       }
