@@ -239,8 +239,7 @@ bool vvHalfSpace::contains(const vvVector3& pos) const
     {
       return (pos.e[i] < _splitPlane->_point.e[i]);
     }
-
-    if (_splitPlane->_normal.e[i] > 0.0f)
+    else if (_splitPlane->_normal.e[i] > 0.0f)
     {
       return (pos.e[i] > _splitPlane->_point.e[i]);
     }
@@ -729,7 +728,7 @@ std::vector<vvHalfSpace*>* vvBspTree::getLeafs() const
   return _leafs;
 }
 
-void vvBspTree::print()
+void vvBspTree::print() const
 {
   print(_root, 0);
 }
@@ -826,7 +825,7 @@ void vvBspTree::distributeBricks(vvHalfSpace* node, std::vector<vvBrick*>* brick
   }
 }
 
-void vvBspTree::print(const vvHalfSpace* node, const int indent)
+void vvBspTree::print(const vvHalfSpace* node, const int indent) const
 {
   const int inc = 4;
   int i;
@@ -866,7 +865,7 @@ void vvBspTree::print(const vvHalfSpace* node, const int indent)
   }
 }
 
-void vvBspTree::traverse(const vvVector3& pos, vvHalfSpace* node)
+void vvBspTree::traverse(const vvVector3& pos, vvHalfSpace* node) const
 {
   if (node->isLeaf())
   {

@@ -425,7 +425,7 @@ public:
    *
    *                Print the tree with indented nodes to std::cerr.
    */
-  void print();
+  void print() const;
 
   /*!
    * \brief         Set the tree's visitor brick.
@@ -458,8 +458,8 @@ private:
   void buildHierarchy(vvHalfSpace* node, const float* partitioning, const int length,
                       const int startIdx, const int endIdx);
   void distributeBricks(vvHalfSpace* node, std::vector<vvBrick*>* bricks);
-  void print(const vvHalfSpace* node, const int indent);
-  void traverse(const vvVector3& pos, vvHalfSpace* node);
+  void print(const vvHalfSpace* node, const int indent) const;
+  void traverse(const vvVector3& pos, vvHalfSpace* node) const;
 };
 
 #endif // VVBSPTREE_H

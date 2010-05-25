@@ -158,7 +158,7 @@ vvThreadVisitor::~vvThreadVisitor()
     thread.
   @param obj  node to render
 */
-void vvThreadVisitor::visit(vvVisitable* obj)
+void vvThreadVisitor::visit(vvVisitable* obj) const
 {
   // This is rather specific: the visitor knows the thread id
   // of the bsp tree node, looks up the appropriate thread
@@ -203,16 +203,16 @@ void vvThreadVisitor::visit(vvVisitable* obj)
     glNormal3f(0.0f, 0.0f, 1.0f);
 
     glTexCoord2f(0.0f, 0.0f);
-    glVertex3f(x1, y1, 0.0f);
+    glVertex2f(x1, y1);
 
     glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(x2, y1, 0.0f);
+    glVertex2f(x2, y1);
 
     glTexCoord2f(1.0f, 1.0f);
-    glVertex3f(x2, y2, 0.0f);
+    glVertex2f(x2, y2);
 
     glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(x1, y2, 0.0f);
+    glVertex2f(x1, y2);
   glEnd();
 }
 
@@ -318,6 +318,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   usePreIntegration = false;
   textures = 0;
   opacityCorrection = true;
+  _measureRenderTime = false;
   interpolation = true;
   _bspTree = NULL;
 
@@ -1126,7 +1127,6 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                                                   std::vector<BrickList>& brickList)
 {
   ErrorType err = OK;
-  uchar* texData;                                 // data for texture memory
   int rawVal[4];                                  // raw values for R,G,B,A
   bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
 
@@ -1135,7 +1135,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
   const int frames = vd->frames;
 
   const int texSize = texels[0] * texels[1] * texels[2] * texelsize;
-  texData = new uchar[texSize];
+  uchar* texData = new uchar[texSize];
 
   // number of textures needed
   *numTextures = frames * _numBricks[0] * _numBricks[1] * _numBricks[2];
@@ -1147,6 +1147,10 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
   vvDebugMsg::msg(2, "Transferring textures to TRAM. Total size [KB]: ",
     *numTextures * texSize / 1024);
 
+  const bool bpcValid = (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4);
+  const bool oneChannel = ((vd->chan == 1) && bpcValid);
+  const int rawSliceSize = vd->getSliceBytes();
+
   int f = 0;
   for(std::vector<BrickList>::iterator frame = brickList.begin();
       frame != brickList.end();
@@ -1155,11 +1159,9 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
     const uchar* raw = vd->getRaw(f);
     ++f;
 
-    int brickIdx = 0;
     for(BrickList::iterator b = frame->begin(); b != frame->end(); ++b)
     {
       vvBrick* currBrick = *b;
-      ++brickIdx;
       // offset to first voxel of current brick
       const int startOffset[3] = { currBrick->startOffset[0],
                                    currBrick->startOffset[1],
@@ -1172,7 +1174,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
       // Memorize the max and min scalar values in the volume. These are stored
       // to perform empty space leaping later on.
       int minValue = INT_MAX;
-      int maxValue = INT_MIN;
+      int maxValue = -INT_MAX;
 
       memset(texData, 0, texSize);
 
@@ -1180,20 +1182,20 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
       for (int s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
       {
         if (s < 0) continue;
-        const int rawSliceOffset = (vd->vox[2] - s - 1) * vd->getSliceBytes();
+        const int rawSliceOffset = (vd->vox[2] - s - 1) * rawSliceSize;
         // Essentially: for y :=  startOffset[1] to (startOffset[1] + texels[1]) do
         for (int y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
         {
           if (y < 0) continue;
           const int heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
           const int texLineOffset = (y - startOffset[1]) * tmpTexels[0] + (s - startOffset[2]) * tmpTexels[0] * tmpTexels[1];
-          if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
+          if (oneChannel)
           {
             // Essentially: for x :=  startOffset[0] to (startOffset[0] + texels[0]) do
             for (int x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
             {
               if (x < 0) continue;
-              int srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
+              const int srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
               if (vd->bpc == 1) rawVal[0] = (int) raw[srcIndex];
               else if (vd->bpc == 2)
               {
@@ -1247,7 +1249,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
               }
             }
           }
-          else if (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4)
+          else if (bpcValid)
           {
             if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
             {
@@ -4521,7 +4523,10 @@ void vvTexRend::renderVolumeGL()
 
   vvDebugMsg::msg(3, "vvTexRend::renderVolumeGL()");
 
-  sw.start();
+  if (_measureRenderTime)
+  {
+    sw.start();
+  }
 
   // Reroute output to alternative render target.
   _renderTarget->initForRender();
@@ -4552,8 +4557,6 @@ void vvTexRend::renderVolumeGL()
     texMin[i] = 0.5f / (float)texels[i];
     texMax[i] = (float)vd->vox[i] / (float)texels[i] - texMin[i];
   }
-
-  // Find principle viewing direction:
 
   // Get OpenGL modelview matrix:
   getModelviewMatrix(&mv);
@@ -4606,12 +4609,17 @@ void vvTexRend::renderVolumeGL()
   }
   vvRenderer::renderVolumeGL();
 
-  glFinish();                                     // make sure rendering is done to measure correct time
-
   // Write output of alternative render target. Depending on the type of render target,
   // output can be redirected to the screen or for example an image file.
   _renderTarget->writeBack();
-  _lastRenderTime = sw.getTime();
+
+  if (_measureRenderTime)
+  {
+    // Make sure rendering is done to measure correct time.
+    // Since this operation is costly, only do it if necessary.
+    glFinish();
+    _lastRenderTime = sw.getTime();
+  }
 
   vvDebugMsg::msg(3, "vvTexRend::renderVolumeGL() done");
 }
@@ -5012,6 +5020,9 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, ch
       {
         _currentShader = _previousShader;
       }
+      break;
+    case vvRenderer::VV_MEASURETIME:
+      _measureRenderTime = static_cast<bool>(newValue);
       break;
     default:
       vvRenderer::setParameter(param, newValue);

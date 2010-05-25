@@ -64,7 +64,7 @@ class vvVisitor
 {
 public:
   virtual ~vvVisitor() {}
-  virtual void visit(vvVisitable* obj) = 0;
+  virtual void visit(vvVisitable* obj) const = 0;
 private:
 };
 

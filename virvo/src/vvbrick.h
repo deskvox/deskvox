@@ -71,7 +71,7 @@ public:
               GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges) const;
 
   void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const;
-  bool upload3DTexture(GLuint& texName, uchar* texData,
+  bool upload3DTexture(const GLuint& texName, const uchar* texData,
                        const GLenum texFormat, const GLint internalTexFormat,
                        const bool interpolation = true) const;
 

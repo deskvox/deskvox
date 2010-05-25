@@ -214,7 +214,7 @@ void vvBrick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMa
   glEnd();
 }
 
-bool vvBrick::upload3DTexture(GLuint& texName, uchar* texData,
+bool vvBrick::upload3DTexture(const GLuint& texName, const uchar* texData,
                               const GLenum texFormat, const GLint internalTexFormat,
                               const bool interpolation) const
 {
