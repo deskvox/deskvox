@@ -123,7 +123,7 @@ public:
    *                the projected area do to the current camera transformations.
    * \return        The rectangle of the projected screen section.
    */
-  vvRect* getProjectedScreenRect();
+  vvRect* getProjectedScreenRect() const;
 
   /*!
    * \brief         Render the bounding box.

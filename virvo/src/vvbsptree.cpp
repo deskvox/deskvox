@@ -81,7 +81,7 @@ vvVector3 vvAABB::getCenter() const
   return _center;
 }
 
-vvRect* vvAABB::getProjectedScreenRect()
+vvRect* vvAABB::getProjectedScreenRect() const
 {
   GLdouble modelview[16];
   glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
@@ -91,7 +91,6 @@ vvRect* vvAABB::getProjectedScreenRect()
 
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
 
-  calcVertices();
   float minX = VV_FLT_MAX;
   float minY = VV_FLT_MAX;
   float maxX = -VV_FLT_MAX;
