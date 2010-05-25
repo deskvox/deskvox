@@ -121,14 +121,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
       inline bool operator<(const BrickSet& rhs) const      ///< compare bricks based upon dist to eye position
       {
-        if (dist < rhs.dist)
-        {
-          return true;
-        }
-        else
-        {
-          return false;
-        }
+        return (dist < rhs.dist);
       }
     };
     unsigned int _numThreads;                     ///< thread count
@@ -301,7 +294,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void disableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL) const;
 
     ErrorType makeTextures3D();
-    void removeTextures(GLuint*& privateTexNames, int* numTextures);
+    void removeTextures(GLuint*& privateTexNames, int* numTextures) const;
     ErrorType updateTextures3D(const int, const int, const int, const int, const int, const int, const bool);
     ErrorType updateTextures2D(const int, const int, const int, const int, const int, const int, const int);
     ErrorType updateTextureBricks(int, int, int, int, int, int);

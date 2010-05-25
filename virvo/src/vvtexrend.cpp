@@ -98,8 +98,6 @@ struct ThreadArgs
   std::vector<BrickList> nonemptyList;
   BrickList sortedList;                       ///< sorted list built up from the brick sets
   BrickList insideList;
-  vvVector3 min;
-  vvVector3 max;
   vvVector3 probeMin;
   vvVector3 probeMax;
   vvVector3 probePosObj;
@@ -110,9 +108,6 @@ struct ThreadArgs
   vvVector3 eye;
   bool isOrtho;
   int numSlices;
-  float texMin[3];
-  int minSlice;
-  int maxSlice;
   GLfloat* modelview;                         ///< the current GL_MODELVIEW matrix
   GLfloat* projection;                        ///< the current GL_PROJECTION matrix
   vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
@@ -673,7 +668,7 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox
 
 //----------------------------------------------------------------------------
 /// Remove all textures from texture memory.
-void vvTexRend::removeTextures(GLuint*& privateTexNames, int* numTextures)
+void vvTexRend::removeTextures(GLuint*& privateTexNames, int* numTextures) const
 {
   vvDebugMsg::msg(1, "vvTexRend::removeTextures()");
 
@@ -3175,8 +3170,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   vvVector3 probePosObj;                          // probe midpoint [object space]
   vvVector3 probeSizeObj;                         // probe size [object space]
   vvVector3 probeMin, probeMax;                   // probe min and max coordinates [object space]
-  vvVector3 min, max;                             // min and max pos of current brick (cut with probe)
-  vvVector3 texMin;                               // minimum texture coordinate
 
   vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
 
@@ -3321,19 +3314,12 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       _threadData[i].probeMax = vvVector3(&probeMax);
       _threadData[i].probePosObj = vvVector3(&probePosObj);
       _threadData[i].probeSizeObj = vvVector3(&probeSizeObj);
-      _threadData[i].min = vvVector3(&min);
-      _threadData[i].max = vvVector3(&max);
       _threadData[i].delta = vvVector3(&delta);
       _threadData[i].farthest = vvVector3(&farthest);
       _threadData[i].normal = vvVector3(&normal);
       _threadData[i].eye = vvVector3(&eye);
       _threadData[i].isOrtho = isOrtho;
       _threadData[i].numSlices = numSlices;
-      _threadData[i].texMin[0] = texMin[0];
-      _threadData[i].texMin[1] = texMin[1];
-      _threadData[i].texMin[2] = texMin[2];
-      _threadData[i].minSlice = minSlice;
-      _threadData[i].maxSlice = maxSlice;
 
       _threadData[i].modelview = modelview;
       _threadData[i].projection = projection;
@@ -4519,7 +4505,6 @@ void vvTexRend::renderVolumeGL()
   static vvStopwatch sw;                          // stop watch for performance measurements
   vvMatrix mv;                                    // current modelview matrix
   float zx, zy, zz;                               // base vector z coordinates
-  vvRenderer::AxisType principal;                 // principal viewing axis with mv transformation applied
 
   vvDebugMsg::msg(3, "vvTexRend::renderVolumeGL()");
 
@@ -4581,8 +4566,7 @@ void vvTexRend::renderVolumeGL()
       getPrincipalViewingAxis(mv, zx, zy, zz);renderTex2DSlices(zz);
       break;
     case VV_CUBIC2D:
-      principal = getPrincipalViewingAxis(mv, zx, zy, zz);
-      renderTex2DCubic(principal, zx, zy, zz); break;
+      renderTex2DCubic(getPrincipalViewingAxis(mv, zx, zy, zz), zx, zy, zz); break;
     case VV_SPHERICAL: renderTex3DSpherical(&mv); break;
     case VV_VIEWPORT:  renderTex3DPlanar(&mv); break;
     case VV_BRICKS:
