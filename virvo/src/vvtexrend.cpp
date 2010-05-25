@@ -3292,19 +3292,13 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   if (_numThreads > 0)
   {
-    GLfloat* modelview = new GLfloat[16];
+    GLfloat modelview[16];
     glGetFloatv(GL_MODELVIEW_MATRIX , modelview);
 
-    GLfloat* projection = new GLfloat[16];
+    GLfloat projection[16];
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
 
     const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-
-    // Make sure that the _threadData array is only changed again (due to the
-    // fact that the main thread already wants to sort the brick list again for
-    // the next frame) until all workers have finished rendering the current
-    // frame. Of course, this barrier has to be reinitialized frame per frame.
-    pthread_barrier_init(&_renderReadyBarrier, NULL, _numThreads + 1);
 
     pthread_barrier_init(&_compositingBarrier, NULL, _numThreads + 1);
 
@@ -3332,18 +3326,8 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     // rendering loops to resume.
     pthread_barrier_wait(&_renderStartBarrier);
 
-    // Resume sequential operations only after all worker threads have finished rendering.
-    pthread_barrier_wait(&_renderReadyBarrier);
-
     // Do compositing.
     pthread_barrier_wait(&_compositingBarrier);
-
-    delete[] projection;
-    delete[] modelview;
-
-    // Destroy this barrier to resume execution. The barrier will be reinitialized with
-    // the next frame.
-    pthread_barrier_destroy(&_renderReadyBarrier);
 
     // Blend the images from the worker threads onto a 2D-texture.
 
@@ -3651,11 +3635,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       glDisable(GL_TEXTURE_3D_EXT);
       data->renderer->disableLUTMode(pixelShader);
-
-      // When all worker threads and the main thread have waited once (per frame) on
-      // this barrier, all workers have finished rendering this frame and the main
-      // thread may resume.
-      pthread_barrier_wait(&data->renderer->_renderReadyBarrier);
 
       // Blend the images to one single image.
 
