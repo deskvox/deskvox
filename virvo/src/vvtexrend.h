@@ -128,7 +128,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     
     pthread_t* _threads;                          ///< worker threads
     ThreadArgs* _threadData;                      ///< args for each thread
-    pthread_barrier_t _initBarrier;               ///< barrier assures that the render loop isn't entered before (pre)initialization
     pthread_barrier_t _distributeBricksBarrier;   ///< barrier assures that bricks are distributed before rendering and after (pre)initialization
     pthread_barrier_t _distributedBricksBarrier;  ///< barrier is passed when bricks are distributed eventually
     pthread_barrier_t _renderStartBarrier;        ///< barrier assures that the render loop doesn't resume until proper data is supplied
@@ -276,7 +275,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType makeTextures(GLuint& lutName, uchar*& lutData);
     ErrorType makeEmptyBricks();
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
-                                std::vector<BrickList>& bricks);
+                                std::vector<BrickList>& bricks, bool& areBricksCreated) const;
 
     void initPostClassificationStage(vvShaderManager* pixelShader, GLuint progName[VV_FRAG_PROG_MAX]);
     void initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const;
