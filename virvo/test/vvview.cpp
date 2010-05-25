@@ -489,7 +489,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
    if(renderer)
       renderState = renderer->_renderState;
    delete renderer;
-   
+
    // Multi threading parameters.
    // These are needed before construction of the renderer so that
    // additional rendering contexts and x-windows can be created.

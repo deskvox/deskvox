@@ -575,6 +575,8 @@ vvTexRend::~vvTexRend()
   if (_numThreads > 0)
   {
     // Finally join the threads.
+    _terminateThreads = true;
+    pthread_barrier_wait(&_renderStartBarrier);
     for (unsigned int i = 0; i < _numThreads; ++i)
     {
       void* exitStatus;
@@ -1546,6 +1548,9 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
   ErrorType err = OK;
 
   _visitor = NULL;
+
+  // Only set to true by destructor to join threads.
+  _terminateThreads = false;
 
   // If smth changed, the bricks will be distributed among the threads before rendering.
   // Obviously, initially something changed.
@@ -3549,6 +3554,14 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
       pthread_barrier_wait(&data->renderer->_renderStartBarrier);
+
+      // Break out of loop if dtor was called.
+      if (data->renderer->_terminateThreads)
+      {
+        vvDebugMsg::msg(3, "Thread exiting rendering loop: ", data->threadId);
+        break;
+      }
+
       data->renderer->_offscreenBuffers[data->threadId]->resize(data->width, data->height);
       data->renderer->enableLUTMode(pixelShader, data->pixLUTName, fragProgName);
 
@@ -3715,6 +3728,9 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     delete isectShader;
     delete pixelShader;
     delete stopwatch;
+#ifdef HAVE_X11
+    XCloseDisplay(data->display);
+#endif
   }
   pthread_exit(NULL);
 #ifndef HAVE_X11

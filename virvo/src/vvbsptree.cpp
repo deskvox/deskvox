@@ -713,9 +713,10 @@ vvBspTree::vvBspTree(const float* partitioning, const int length, std::vector<vv
 
 vvBspTree::~vvBspTree()
 {
+  // Only delete _root and _leafs, the renderer is responsible
+  // for deleting the single _visitor instance.
   delete _root;
   delete _leafs;
-  delete _visitor;
 }
 
 void vvBspTree::traverse(const vvVector3& pos)
