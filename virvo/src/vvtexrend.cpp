@@ -678,7 +678,7 @@ void vvTexRend::removeTextures(GLuint*& privateTexNames, int* numTextures) const
 
 //----------------------------------------------------------------------------
 /// Generate textures for all rendering modes.
-vvTexRend::ErrorType vvTexRend::makeTextures(GLuint& lutName, uchar*& lutData)
+vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutData)
 {
   static bool first = true;
   ErrorType err = OK;
@@ -742,7 +742,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(GLuint& lutName, uchar*& lutData)
 
 //----------------------------------------------------------------------------
 /// Generate texture for look-up table.
-void vvTexRend::makeLUTTexture(GLuint& lutName, uchar* lutData)
+void vvTexRend::makeLUTTexture(const GLuint& lutName, uchar* lutData) const
 {
   int size[3];
 
@@ -2810,7 +2810,7 @@ void vvTexRend::enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName,
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableLUTMode(vvShaderManager* pixelShader)
+void vvTexRend::disableLUTMode(vvShaderManager* pixelShader) const
 {
   switch(voxelType)
   {
@@ -5166,7 +5166,7 @@ void vvTexRend::disableTexture(const GLenum target)
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableNVShaders()
+void vvTexRend::enableNVShaders() const
 {
   glEnable(GL_TEXTURE_SHADER_NV);
 
@@ -5197,7 +5197,7 @@ void vvTexRend::enableNVShaders()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableNVShaders()
+void vvTexRend::disableNVShaders() const
 {
   glDisable(GL_TEXTURE_SHADER_NV);
   glActiveTextureARB(GL_TEXTURE1_ARB);
@@ -5207,7 +5207,7 @@ void vvTexRend::disableNVShaders()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX])
+void vvTexRend::enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]) const
 {
   glActiveTextureARB(GL_TEXTURE1_ARB);
   glBindTexture(GL_TEXTURE_2D, lutName);
@@ -5239,7 +5239,7 @@ void vvTexRend::enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableFragProg()
+void vvTexRend::disableFragProg() const
 {
   glDisable(GL_FRAGMENT_PROGRAM_ARB);
 }

@@ -260,7 +260,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLboolean glsTexColTable;                     ///< stores GL_TEXTURE_COLOR_TABLE_SGI
     GLboolean glsSharedTexPal;                    ///< stores GL_SHARED_TEXTURE_PALETTE_EXT
 
-    void makeLUTTexture(GLuint& lutName, uchar* lutData);
+    void makeLUTTexture(const GLuint& lutName, uchar* lutData) const;
     ErrorType makeTextures2D(const int axes);
 
     ErrorType setDisplayNames(const char** displayNames, const unsigned int numNames);
@@ -272,7 +272,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void sortBrickList(std::vector<vvBrick*>& list, const vvVector3&, const vvVector3&, const bool);
     void performLoadBalancing();
 
-    ErrorType makeTextures(GLuint& lutName, uchar*& lutData);
+    ErrorType makeTextures(const GLuint& lutName, uchar*& lutData);
     ErrorType makeEmptyBricks();
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
                                 std::vector<BrickList>& bricks, bool& areBricksCreated) const;
@@ -284,7 +284,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void disablePixelShaders(vvShaderManager* pixelShader) const;
 
     void enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
-    void disableLUTMode(vvShaderManager* pixelShader);
+    void disableLUTMode(vvShaderManager* pixelShader) const;
 
     bool initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL) const;
     void setupIntersectionParameters(vvShaderManager* isectShader) const;
@@ -310,10 +310,10 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void updateLUT(const float, GLuint& lutName, uchar*& lutData);
     int  getLUTSize(int*) const;
     int  getPreintTableSize() const;
-    void enableNVShaders();
-    void disableNVShaders();
-    void enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
-    void disableFragProg();
+    void enableNVShaders() const;
+    void disableNVShaders() const;
+    void enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]) const;
+    void disableFragProg() const;
     void enableTexture(const GLenum target);
     void disableTexture(const GLenum target);
     bool testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat) const;
