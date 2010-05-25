@@ -233,32 +233,16 @@ void vvHalfSpace::addChild(vvHalfSpace* child)
 
 bool vvHalfSpace::contains(const vvVector3& pos) const
 {
-  int i;
-
-  for (i = 0; i < 3; ++i)
+  for (int i = 0; i < 3; ++i)
   {
     if (_splitPlane->_normal.e[i] < 0.0f)
     {
-      if (pos.e[i] < _splitPlane->_point.e[i])
-      {
-        return true;
-      }
-      else
-      {
-        return false;
-      }
+      return (pos.e[i] < _splitPlane->_point.e[i]);
     }
 
     if (_splitPlane->_normal.e[i] > 0.0f)
     {
-      if (pos.e[i] > _splitPlane->_point.e[i])
-      {
-        return true;
-      }
-      else
-      {
-        return false;
-      }
+      return (pos.e[i] > _splitPlane->_point.e[i]);
     }
   }
   return false;
@@ -401,7 +385,7 @@ float vvHalfSpace::calcContainedVolume() const
   w = h = d = 0.0f;
   for(std::vector<vvBrick*>::iterator it = _bricks->begin(); it != _bricks->end(); ++it)
   {
-    vvBrick *tmp = *it;
+    const vvBrick *tmp = *it;
     w += tmp->getAABB().calcWidth();
     h += tmp->getAABB().calcHeight();
     d += tmp->getAABB().calcDepth();
@@ -571,9 +555,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
   // Derive the ratios for the three axes respectivly.
 
   // We will compare the actual workload against this one.
-  float idealWorkLoad[2];
-  idealWorkLoad[0] = percent1;
-  idealWorkLoad[1] = percent2;
+  float idealWorkLoad[] = { percent1, percent2 };
 
   for (i = 0; i < 3; ++i)
   {
@@ -639,7 +621,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<vvBrick*>* bricks
       }
 
       // If the mean sqr error is least, this is the best work load so far.
-      float err = vvToolshed::meanAbsError(idealWorkLoad, workLoad, 2);
+      const float err = vvToolshed::meanAbsError(idealWorkLoad, workLoad, 2);
       if (err < meanSqrErrorRatio[i])
       {
         bestRatio[i][0] = ratio[i][0];
