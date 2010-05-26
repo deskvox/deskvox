@@ -116,6 +116,7 @@ struct ThreadArgs
   int height;                                 ///< viewport height to init the offscreen buffer with
   float lastRenderTime;                       ///< measured for dynamic load balancing
   float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
+  bool brickDataChanged;
   bool transferFunctionChanged;
 
 #ifdef HAVE_X11
@@ -1583,6 +1584,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
     _threadData[i].width = viewport[2];
     _threadData[i].height = viewport[3];
     _threadData[i].pixels = new GLfloat[MAX_VIEWPORT_WIDTH * MAX_VIEWPORT_HEIGHT * 4];
+    _threadData[i].brickDataChanged = false;
     _threadData[i].transferFunctionChanged = false;
     _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
     _threadData[i].privateTexNames = NULL;
@@ -1728,7 +1730,7 @@ void vvTexRend::setComputeBrickSize(const bool flag)
       {
         for (unsigned int i = 0; i < _numThreads; ++i)
         {
-          makeTextures(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+          _threadData[i].brickDataChanged = true;
         }
       }
       else
@@ -1754,7 +1756,7 @@ void vvTexRend::setBrickSize(const int newSize)
   {
     for (unsigned int i = 0; i < _numThreads; ++i)
     {
-      makeTextures(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+      _threadData[i].brickDataChanged = true;
     }
   }
   else
@@ -1785,7 +1787,7 @@ void vvTexRend::setTexMemorySize(const int newSize)
       {
         for (unsigned int i = 0; i < _numThreads; ++i)
         {
-          makeTextures(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+          _threadData[i].brickDataChanged = true;
         }
       }
       else
@@ -1926,7 +1928,7 @@ void vvTexRend::updateVolumeData()
   {
     for (unsigned int i = 0; i < _numThreads; ++i)
     {
-      makeTextures(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+      _threadData[i].brickDataChanged = true;
     }
   }
   else
@@ -3649,7 +3651,16 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         }
       }
 
-      // Finally update the transfer function in a synchronous fashion.
+      // Rebuild textures synchronized.
+      if (data->brickDataChanged)
+      {
+        data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
+                                          data->rgbaLUT, data->brickList, areBricksCreated);
+        data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
+        data->brickDataChanged = false;
+      }
+
+      // Finally pdate the transfer function in a synchronous fashion.
       if (data->transferFunctionChanged)
       {
         data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
@@ -4837,8 +4848,8 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, ch
         {
           for (unsigned int i = 0; i < _numThreads; ++i)
           {
-            makeTextures(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
-            updateTransferFunction(_threadData[i].pixLUTName, _threadData[i].rgbaLUT);
+            _threadData[i].brickDataChanged = true;
+            _threadData[i].transferFunctionChanged = true;
           }
         }
         else
