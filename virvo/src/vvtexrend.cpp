@@ -591,7 +591,6 @@ vvTexRend::~vvTexRend()
     pthread_barrier_destroy(&_distributeBricksBarrier);
     pthread_barrier_destroy(&_distributedBricksBarrier);
     pthread_barrier_destroy(&_renderStartBarrier);
-    pthread_mutex_destroy(&_makeTextureMutex);
 
     // Clean up arrays.
     delete[] _threads;
@@ -1563,9 +1562,6 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
   // This barrier will be waited for by every worker thread and additionally once by the main
   // thread for every frame.
   pthread_barrier_init(&_renderStartBarrier, NULL, _numThreads + 1);
-
-  // This mutex is used to ensure that each thread will built up its 3D texture one after another.
-  pthread_mutex_init(&_makeTextureMutex, NULL);
 
   // Container for offscreen buffers. The threads will initialize
   // their buffers themselves when their respective gl context is
@@ -3449,13 +3445,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
     data->renderer->initPostClassificationStage(pixelShader, fragProgName);
 
-    /////////////////////////////////////////////////////////
-    // Make textures.initPixelShaders
-    /////////////////////////////////////////////////////////
-
-    pthread_mutex_lock(&data->renderer->_makeTextureMutex);
     data->renderer->makeTextures(data->pixLUTName, data->rgbaLUT);
-    pthread_mutex_unlock(&data->renderer->_makeTextureMutex);
 
     // Now that the textures are built, the bricks may be distributed
     // by the main thread.

@@ -132,7 +132,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     pthread_barrier_t _distributedBricksBarrier;  ///< barrier is passed when bricks are distributed eventually
     pthread_barrier_t _renderStartBarrier;        ///< barrier assures that the render loop doesn't resume until proper data is supplied
     pthread_barrier_t _compositingBarrier;        ///< barrier assures synchronization for compositing
-    pthread_mutex_t _makeTextureMutex;            ///< mutex ensuring that textures for each thread are build up synchronized
     bool _terminateThreads;
 
     std::vector<GLint> _vertArray;
