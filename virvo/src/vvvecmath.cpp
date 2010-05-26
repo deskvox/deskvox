@@ -1202,10 +1202,19 @@ void vvVector3::copy(const vvVector3& v)
 /// Copy a vvVector4
 void vvVector3::copy(const vvVector4* v)
 {
-  const float inv = 1.0f / v->e[3];
-  e[0] = v->e[0] * inv;
-  e[1] = v->e[1] * inv;
-  e[2] = v->e[2] * inv;
+  if (v->e[3] != 0.0f)
+  {
+    const float inv = 1.0f / v->e[3];
+    e[0] = v->e[0] * inv;
+    e[1] = v->e[1] * inv;
+    e[2] = v->e[2] * inv;
+  }
+  else
+  {
+    e[0] = v->e[0];
+    e[1] = v->e[1];
+    e[2] = v->e[2];
+  }
 }
 
 //----------------------------------------------------------------------------
