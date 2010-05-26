@@ -258,12 +258,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   setDisplayNames(displayNames, numDisplays);
   _multiGpuBufferPrecision = multiGpuBufferPrecision;
 
-  if (_numThreads > 0)
-  {
-    dispatchThreadedGLXContexts();
-    dispatchThreadedWGLContexts();
-  }
-
   if (vvDebugMsg::isActive(1))
   {
 #ifdef _WIN32
@@ -407,6 +401,18 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     }
   }
   cerr << endl;
+
+  if ((_numThreads > 0) && (geomType != VV_BRICKS))
+  {
+    cerr << "No multi-gpu support for the chosen render algorithm. Falling back to single-gpu mode" << endl;
+    _numThreads = 0;
+  }
+
+  if (_numThreads > 0)
+  {
+    dispatchThreadedGLXContexts();
+    dispatchThreadedWGLContexts();
+  }
 
   if (vvShaderFactory::isSupported(VV_CG_MANAGER))
   {
