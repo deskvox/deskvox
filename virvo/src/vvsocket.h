@@ -260,7 +260,7 @@ return -1;
 
 // Send 10 bytes of data with write_data()
 uchar buffer[10];
-if (sock->write_data(&buffer, 10) != vvSocket::VV_OK)
+if (sock->write_data(buffer, 10) != vvSocket::VV_OK)
 {
 delete sock;
 return -1;
@@ -293,7 +293,7 @@ return -1;
 
 // Get 10 bytes of data with read_data()
 uchar buffer[10];
-if (sock->read_data(&buffer, 10) != vvSocket::VV_OK)
+if (sock->read_data(buffer, 10) != vvSocket::VV_OK)
 {
 delete sock;
 return -1;
