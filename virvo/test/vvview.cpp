@@ -130,7 +130,6 @@ void vvView::mainLoop(int argc, char *argv[])
    vvDebugMsg::msg(0, "vvView::mainLoop()");
 
    vvFileIO* fio;
-   vvVector3 size;  
  
    if (filename!=NULL && strlen(filename)==0) filename = NULL;
    if (filename!=NULL)
@@ -527,6 +526,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
    //renderer->setClippingMode(false);
    renderer->_renderState._quality = (hqMode) ? highQuality : draftQuality;
    renderer->setParameter(vvRenderer::VV_LEAPEMPTY, emptySpaceLeapingMode);
+   renderer->setParameter(vvRenderer::VV_LIGHTING, useHeadLight);
    renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, ds->gpuproxygeo);
    renderer->setParameter(vvRenderer::VV_OFFSCREENBUFFER, useOffscreenBuffer);
    renderer->setParameter(vvRenderer::VV_IMG_PRECISION, bufferPrecision);
@@ -1648,6 +1648,9 @@ void vvView::displayHelpInfo()
    cerr << "-dsp <host:display.screen>" << endl;
    cerr << "  Add x-org display for additional rendering context" << endl;
    cerr << endl;
+   cerr << "-lighting" << endl;
+   cerr << " Use headlight for local illumination" << endl;
+   cerr << endl;
    cerr << "-help (-h)" << endl;
    cerr << "Display this help information" << endl;
    cerr << endl;
@@ -1763,6 +1766,10 @@ bool vvView::parseCommandLine(int argc, char** argv)
            return false;
          }
          addDisplay(argv[arg]);
+      }
+      else if (vvToolshed::strCompare(argv[arg], "-lighting")==0)
+      {
+         useHeadLight = true;
       }
       else if (vvToolshed::strCompare(argv[arg], "-debug")==0)
       {
