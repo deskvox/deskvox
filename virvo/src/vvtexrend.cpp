@@ -2948,7 +2948,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   bool isOrtho = pm.isProjOrtho();
 
   getObjNormal(normal, origin, eye, invMV, isOrtho);
-  evaluateLocalIllumination(normal);
+  evaluateLocalIllumination(_pixelShader, normal);
 
   // compute number of slices to draw
   float depth = fabs(normal[0]*probeSizeObj[0]) + fabs(normal[1]*probeSizeObj[1]) + fabs(normal[2]*probeSizeObj[2]);
@@ -3197,8 +3197,15 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   vvDebugMsg::msg(3, "Number of texture slices rendered: ", numSlices);
 
+  // Get projection matrix:
+  getProjectionMatrix(&pm);
+  const bool isOrtho = pm.isProjOrtho();
+
+  getObjNormal(normal, origin, eye, invMV, isOrtho);
   if (_numThreads == 0)
   {
+    evaluateLocalIllumination(_pixelShader, normal);
+
     // Use alpha correction in indexed mode: adapt alpha values to number of textures:
     if (instantClassification())
     {
@@ -3209,13 +3216,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       }
     }
   }
-
-  // Get projection matrix:
-  getProjectionMatrix(&pm);
-  const bool isOrtho = pm.isProjOrtho();
-
-  getObjNormal(normal, origin, eye, invMV, isOrtho);
-  evaluateLocalIllumination(normal);
 
   delta.copy(&normal);
   delta.scale(diagonal / ((float)numSlices));
@@ -3267,18 +3267,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   markBricksInFrustum(probeMin, probeMax);
 
-  if (_numThreads > 0)
-  {
-    if (_somethingChanged)
-    {
-      distributeBricks();
-    }
-  }
-  else
-  {
-    sortBrickList(_sortedList, eye, normal, isOrtho);
-  }
-
   // Translate object by its position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
@@ -3286,6 +3274,11 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   if (_numThreads > 0)
   {
+    if (_somethingChanged)
+    {
+      distributeBricks();
+    }
+
     GLfloat modelview[16];
     glGetFloatv(GL_MODELVIEW_MATRIX , modelview);
 
@@ -3361,6 +3354,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   {
     // Volume render a 3D texture:
     enableTexture(GL_TEXTURE_3D_EXT);
+    sortBrickList(_sortedList, eye, normal, isOrtho);
 
     if(_proxyGeometryOnGpu)
     {
@@ -3513,6 +3507,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       data->renderer->_offscreenBuffers[data->threadId]->resize(data->width, data->height);
       data->renderer->enableLUTMode(pixelShader, data->pixLUTName, fragProgName);
+      data->renderer->evaluateLocalIllumination(pixelShader, data->normal);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
@@ -5147,7 +5142,7 @@ void vvTexRend::renderQualityDisplay()
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableTexture(const GLenum target)
+void vvTexRend::enableTexture(const GLenum target) const
 {
   if (voxelType==VV_TEX_SHD)
   {
@@ -5160,7 +5155,7 @@ void vvTexRend::enableTexture(const GLenum target)
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableTexture(const GLenum target)
+void vvTexRend::disableTexture(const GLenum target) const
 {
   if (voxelType==VV_TEX_SHD)
   {
@@ -5914,7 +5909,7 @@ void vvTexRend::validateEmptySpaceLeaping()
   }
 }
 
-void vvTexRend::evaluateLocalIllumination(const vvVector3& normal)
+void vvTexRend::evaluateLocalIllumination(vvShaderManager*& pixelShader, const vvVector3& normal)
 {
   // Local illumination based on blinn-phong shading.
   if (voxelType == VV_PIX_SHD && _currentShader == 12)
@@ -5928,8 +5923,8 @@ void vvTexRend::evaluateLocalIllumination(const vvVector3& normal)
     // Half way vector.
     vvVector3 H(L + V);
     H.normalize();
-    _pixelShader->setParameter3f(_currentShader, "L", L[0], L[1], L[2]);
-    _pixelShader->setParameter3f(_currentShader, "H", H[0], H[1], H[2]);
+    pixelShader->setParameter3f(_currentShader, "L", L[0], L[1], L[2]);
+    pixelShader->setParameter3f(_currentShader, "H", H[0], H[1], H[2]);
   }
 }
 

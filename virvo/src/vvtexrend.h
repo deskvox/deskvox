@@ -313,8 +313,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void disableNVShaders() const;
     void enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]) const;
     void disableFragProg() const;
-    void enableTexture(const GLenum target);
-    void disableTexture(const GLenum target);
+    void enableTexture(const GLenum target) const;
+    void disableTexture(const GLenum target) const;
     bool testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat) const;
     bool testBrickVisibility(const vvBrick*) const;
     bool intersectsFrustum(const vvVector3 &min, const vvVector3 &max) const;
@@ -327,7 +327,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void computeBrickSize();
     void initVertArray(const int numSlices);
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
-    void evaluateLocalIllumination(const vvVector3& normal);
+    void evaluateLocalIllumination(vvShaderManager*& pixelShader, const vvVector3& normal);
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST,
               const char** displayNames = 0, const int numDisplays = 0,
