@@ -132,7 +132,10 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd)
     vd->vox[0] = vvToolshed::read16(&buffer[0]);
     vd->vox[1] = vvToolshed::read16(&buffer[2]);
     vd->vox[2] = vvToolshed::read16(&buffer[4]);
+    vd->bpc = 1;
+    vd->chan = 1;
     vd->frames = 1;
+    vd->setFilename("default.rvf");
     delete[] buffer;
 
   }
