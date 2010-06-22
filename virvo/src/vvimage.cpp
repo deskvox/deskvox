@@ -376,7 +376,8 @@ void vvImage::setSize(int s)
  */
 void vvImage::setVideoSize(int s)
 {
-  fprintf(stderr, "setVideoSize: s=%d\n", s);
+  if (vvDebugMsg::isActive(3))
+    fprintf(stderr, "setVideoSize: s=%d\n", s);
   videosize = s;
 }
 
