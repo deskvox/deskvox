@@ -193,7 +193,7 @@ vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
 
   buffer = new uchar[3];
   for (int i=0; i<3; i++)
-    buffer[i] = (uchar)ext[i];
+    buffer[i] = (uchar)ext[i];cerr << buffer << endl;
   if (vvDebugMsg::isActive(3))
     cerr<<"Sending extension ..."<<endl;
   if ((retval = vvSocket::write_data(buffer, 3)) != vvSocket::VV_OK)
@@ -288,7 +288,8 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
   im->setSize(imagesize);
   im->setKeyframe(keyframe);
   im->setVideoSize(videosize);
-  fprintf(stderr, "imgsize=%d, keyframe=%d, videosize=%d\n", imagesize, keyframe, videosize);
+  if (vvDebugMsg::isActive(3))
+    fprintf(stderr, "imgsize=%d, keyframe=%d, videosize=%d\n", imagesize, keyframe, videosize);
   if ((retval = vvSocket::read_data(im->getCodedImage(), imagesize)) != vvSocket::VV_OK)
   {
     return retval;
