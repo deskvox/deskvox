@@ -193,7 +193,7 @@ vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
 
   buffer = new uchar[3];
   for (int i=0; i<3; i++)
-    buffer[i] = (uchar)ext[i];cerr << buffer << endl;
+    buffer[i] = (uchar)ext[i];
   if (vvDebugMsg::isActive(3))
     cerr<<"Sending extension ..."<<endl;
   if ((retval = vvSocket::write_data(buffer, 3)) != vvSocket::VV_OK)
