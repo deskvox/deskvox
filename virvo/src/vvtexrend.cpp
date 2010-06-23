@@ -122,7 +122,7 @@ struct ThreadArgs
 #ifdef HAVE_X11
   // Glx rendering specific.
   GLXContext glxContext;                      ///< the initial glx context
-  Display* display;						                ///< a pointer to the current glx display
+  Display* display;                           ///< a pointer to the current glx display
   Drawable drawable;
 #elif defined _WIN32
   HGLRC wglContext;

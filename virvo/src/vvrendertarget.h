@@ -29,6 +29,7 @@ enum BufferPrecision
 enum RenderTargetType
 {
   VV_OFFSCREEN_BUFFER = 0,
+  VV_PBUFFER,
   VV_RENDER_TARGET
 };
 

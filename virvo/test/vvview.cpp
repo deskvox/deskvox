@@ -43,9 +43,11 @@ using std::ios;
 #include "../src/vvoffscreenbuffer.h"
 #include "../src/vvprintgl.h"
 #include "../src/vvstopwatch.h"
+#include "../src/vvrendercontext.h"
 #include "../src/vvrenderer.h"
 #include "../src/vvfileio.h"
 #include "../src/vvdebugmsg.h"
+#include "../src/vvsocketio.h"
 #include "../src/vvtexrend.h"
 #include "vvobjview.h"
 #include "vvperformancetest.h"
@@ -56,6 +58,8 @@ const int vvView::DEFAULTSIZE = 512;
 const float vvView::OBJ_SIZE  = 1.0f;
 const int vvView::DEFAULT_PORT = 31050;
 vvView* vvView::ds = NULL;
+
+//#define CLIPPING_TEST
 
 //----------------------------------------------------------------------------
 /// Constructor
@@ -108,6 +112,11 @@ vvView::vvView()
    useOffscreenBuffer    = false;
    bufferPrecision       = 8;
    useHeadLight          = false;
+   slaveMode             = false;
+   sio                   = NULL;
+   remoteRendering       = true;
+   clipBuffer            = NULL;
+   framebufferDump       = NULL;
 }
 
 
@@ -118,6 +127,7 @@ vvView::~vvView()
    delete renderer;
    delete ov;
    delete vd;
+   delete sio;
 }
 
 
@@ -129,64 +139,173 @@ void vvView::mainLoop(int argc, char *argv[])
 {
    vvDebugMsg::msg(0, "vvView::mainLoop()");
 
-   vvFileIO* fio;
- 
-   if (filename!=NULL && strlen(filename)==0) filename = NULL;
-   if (filename!=NULL)
+   if (slaveMode)
    {
-      vd = new vvVolDesc(filename);
-      cerr << "Loading volume file: " << filename << endl;
+      cerr << "Renderer started in slave mode" << endl;
+
+      sio = new vvSocketIO(vvView::DEFAULT_PORT , vvSocket::VV_TCP);
+      sio->no_nagle();
+      sio->set_debuglevel(vvDebugMsg::getDebugLevel());
+      sio->init();
+
+      vd = new vvVolDesc();
+
+      // Get a volume
+      switch (sio->getVolume(vd))
+      {
+      case vvSocket::VV_OK:
+         cerr << "Volume transferred successfully" << endl;
+         break;
+      case vvSocket::VV_ALLOC_ERROR:
+         cerr << "Not enough memory" << endl;
+         break;
+      default:
+         cerr << "Cannot read volume from socket" << endl;
+         break;
+      }
+
+      if (vd != NULL)
+      {
+         vd->printInfoLine();
+
+         // Set default color scheme if no TF present:
+         if (vd->tf.isEmpty())
+         {
+            vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+            vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+         }
+
+         float div = 0.0f;
+         for(int i=0; i<3; i++)
+         {
+            cerr <<"sz: " << vd->dist[i]*vd->vox[i] << endl;
+            if(vd->dist[i]*vd->vox[i]/div > 1.)
+               div = vd->dist[i]*vd->vox[i];
+         }
+         cerr << "div=" << div << endl;
+         for(int i=0; i<3; i++)
+            vd->dist[i] /= div;
+
+         ov = new vvObjView();
+
+         vvRenderContext* context = new vvRenderContext();
+         if (context->makeCurrent())
+         {
+            ov = new vvObjView();
+            setProjectionMode(perspectiveMode);
+            setRenderer(currentGeom, currentVoxels);
+            srand(time(NULL));
+            vvMatrix pr;
+            vvMatrix mv;
+            while (1)
+            {
+               if ((sio->getMatrix(&pr) == vvSocket::VV_OK)
+                  && (sio->getMatrix(&mv) == vvSocket::VV_OK))
+               {
+                  renderRemotely(&pr, &mv);
+
+                  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
+                  uchar* pixels = new uchar[viewport[2] * viewport[3] * 4];
+                  glReadPixels(viewport[0], viewport[1], viewport[2], viewport[3], GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+                  vvImage img(viewport[3], viewport[2], pixels);
+                  sio->putImage(&img);
+                  delete[] pixels;
+               }
+            }
+         }
+      }
    }
    else
    {
-      vd = new vvVolDesc();
-      cerr << "Using default volume" << endl;
-   }
+      vvFileIO* fio;
 
-  fio = new vvFileIO();
-   if (fio->loadVolumeData(vd) != vvFileIO::OK)
-   {
-      cerr << "Error loading volume file" << endl;
-      delete vd;
+      if (filename!=NULL && strlen(filename)==0) filename = NULL;
+      if (filename!=NULL)
+      {
+         vd = new vvVolDesc(filename);
+         cerr << "Loading volume file: " << filename << endl;
+      }
+      else
+      {
+         vd = new vvVolDesc();
+         cerr << "Using default volume" << endl;
+      }
+
+      fio = new vvFileIO();
+      if (fio->loadVolumeData(vd) != vvFileIO::OK)
+      {
+         cerr << "Error loading volume file" << endl;
+         delete vd;
+         delete fio;
+         return;
+      }
+      else vd->printInfoLine();
       delete fio;
-      return;
+
+      float div = 1.;
+      for(int i=0; i<3; i++)
+      {
+         cerr <<"sz: " << vd->dist[i]*vd->vox[i] << endl;
+         if(vd->dist[i]*vd->vox[i]/div > 1.)
+            div = vd->dist[i]*vd->vox[i];
+      }
+      cerr << "div=" << div << endl;
+      for(int i=0; i<3; i++)
+         vd->dist[i] /= div;
+
+      // Set default color scheme if no TF present:
+      if (vd->tf.isEmpty())
+      {
+         vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+         vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+      }
+
+      if (remoteRendering)
+      {
+         char* servername = "http://vispme.rrz.uni-koeln.de";
+
+         sio = new vvSocketIO(vvView::DEFAULT_PORT, servername, vvSocket::VV_TCP);
+         sio->set_debuglevel(vvDebugMsg::getDebugLevel());
+
+         if (sio->init() == vvSocket::VV_OK)
+         {
+            switch (sio->putVolume(vd))
+            {
+            case vvSocket::VV_OK:
+               cerr << "Volume transferred successfully" << endl;
+               break;
+            case vvSocket::VV_ALLOC_ERROR:
+               cerr << "Not enough memory" << endl;
+               break;
+            default:
+               cerr << "Cannot write volume to socket" << endl;
+               break;
+            }
+         }
+         else
+         {
+            cerr << "No connection to remote rendering server established at: " << servername << endl;
+            cerr << "Falling back to local rendering" << endl;
+            remoteRendering = false;
+         }
+      }
+
+      animSpeed = vd->dt;
+      initGraphics(argc, argv);
+      createMenus();
+      ov = new vvObjView();
+
+      setProjectionMode(perspectiveMode);
+      setRenderer(currentGeom, currentVoxels);
+
+      // Set window title:
+      if (filename!=NULL) glutSetWindowTitle(filename);
+
+      srand(time(NULL));
+      glutMainLoop();
+
+      delete vd;
    }
-   else vd->printInfoLine();
-   delete fio;
-
-   float div = 1.;
-   for(int i=0; i<3; i++)
-   {
-      cerr <<"sz: " << vd->dist[i]*vd->vox[i] << endl;
-      if(vd->dist[i]*vd->vox[i]/div > 1.)
-         div = vd->dist[i]*vd->vox[i];
-   }
-   cerr << "div=" << div << endl;
-   for(int i=0; i<3; i++)
-      vd->dist[i] /= div;
-
-    // Set default color scheme if no TF present:
-   if (vd->tf.isEmpty())
-   {
-      vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-      vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
-   }
-
-   animSpeed = vd->dt;
-   initGraphics(argc, argv);
-   createMenus();
-   ov = new vvObjView();
-
-   setProjectionMode(perspectiveMode);
-   setRenderer(currentGeom, currentVoxels);
-
-   // Set window title:
-   if (filename!=NULL) glutSetWindowTitle(filename);
-
-   srand(time(NULL));
-   glutMainLoop();
-
-   delete vd;
 }
 
 //----------------------------------------------------------------------------
@@ -246,110 +365,144 @@ void vvView::displayCallback(void)
 {
    vvDebugMsg::msg(3, "vvView::displayCallback()");
 
-   float fps;                                     // frames per second
-   static vvStopwatch* sw = NULL;                 // stop watch
-
-   glDrawBuffer(GL_BACK);
-   glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-   ds->renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
-
-   if (ds->fpsMode)
+   if (ds->remoteRendering)
    {
-      if (!sw) sw = new vvStopwatch();
-      sw->start();
+      ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
+
+      float matrixGL[16];
+
+      vvMatrix pr;
+      glGetFloatv(GL_PROJECTION_MATRIX, matrixGL);
+      pr.set(matrixGL);
+      ds->sio->putMatrix(&pr);
+
+      vvMatrix mv;
+      glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
+      mv.set(matrixGL);
+      ds->sio->putMatrix(&mv);
+
+      const vvGLTools::Viewport viewport = vvGLTools::getViewport();
+      vvImage img = vvImage(viewport[3], viewport[2], new uchar[viewport[3] * viewport[2] * 4]);
+      ds->sio->getImage(&img);
+
+      glDrawBuffer(GL_BACK);
+      glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glDrawPixels(viewport[2], viewport[3], GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
+
+      glutSwapBuffers();
    }
-
-   // Draw volume:
-   glMatrixMode(GL_MODELVIEW);
-   if (ds->stereoMode>0)                          // stereo mode?
+   else
    {
-      if (ds->stereoMode==1)                      // active stereo?
-      {
-         // Draw right image:
-         glDrawBuffer(GL_BACK_RIGHT);
-         ds->ov->updateModelviewMatrix(vvObjView::RIGHT_EYE);
-         ds->renderer->renderVolumeGL();
+      float fps;                                     // frames per second
+      static vvStopwatch* sw = NULL;                 // stop watch
 
-         // Draw left image:
-         glDrawBuffer(GL_BACK_LEFT);
-         ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
-         ds->renderer->renderVolumeGL();
+      glDrawBuffer(GL_BACK);
+      glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+      ds->renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
+
+      if (ds->fpsMode)
+      {
+         if (!sw) sw = new vvStopwatch();
+         sw->start();
       }
-                                                  // passive stereo?
-      else if (ds->stereoMode==2 || ds->stereoMode==3)
-      {
-         ds->ov->setAspectRatio((float)ds->winWidth / 2 / (float)ds->winHeight);
-         for (int i=0; i<2; ++i)
-         {
-            // Specify eye to draw:
-            if (i==0) ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
-            else      ds->ov->updateModelviewMatrix(vvObjView::RIGHT_EYE);
 
-            // Specify where to draw it:
-            if ((ds->stereoMode==2 && i==0) || (ds->stereoMode==3 && i==1))
-            {
-                                                  // right
-               glViewport(ds->winWidth / 2, 0, ds->winWidth / 2, ds->winHeight);
-            }
-            else
-            {
-                                                  // left
-               glViewport(0, 0, ds->winWidth / 2, ds->winHeight);
-            }
+      // Draw volume:
+      glMatrixMode(GL_MODELVIEW);
+      if (ds->stereoMode>0)                          // stereo mode?
+      {
+         if (ds->stereoMode==1)                      // active stereo?
+         {
+            // Draw right image:
+            glDrawBuffer(GL_BACK_RIGHT);
+            ds->ov->updateModelviewMatrix(vvObjView::RIGHT_EYE);
+            ds->renderer->renderVolumeGL();
+
+            // Draw left image:
+            glDrawBuffer(GL_BACK_LEFT);
+            ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
             ds->renderer->renderVolumeGL();
          }
+                                                     // passive stereo?
+         else if (ds->stereoMode==2 || ds->stereoMode==3)
+         {
+            ds->ov->setAspectRatio((float)ds->winWidth / 2 / (float)ds->winHeight);
+            for (int i=0; i<2; ++i)
+            {
+               // Specify eye to draw:
+               if (i==0) ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
+               else      ds->ov->updateModelviewMatrix(vvObjView::RIGHT_EYE);
 
-         // Reset viewport and aspect ratio:
-         glViewport(0, 0, ds->winWidth, ds->winHeight);
-         ds->ov->setAspectRatio((float)ds->winWidth / (float)ds->winHeight);
+               // Specify where to draw it:
+               if ((ds->stereoMode==2 && i==0) || (ds->stereoMode==3 && i==1))
+               {
+                                                     // right
+                  glViewport(ds->winWidth / 2, 0, ds->winWidth / 2, ds->winHeight);
+               }
+               else
+               {
+                                                     // left
+                  glViewport(0, 0, ds->winWidth / 2, ds->winHeight);
+               }
+               ds->renderer->renderVolumeGL();
+            }
+
+            // Reset viewport and aspect ratio:
+            glViewport(0, 0, ds->winWidth, ds->winHeight);
+            ds->ov->setAspectRatio((float)ds->winWidth / (float)ds->winHeight);
+         }
       }
-   }
-   else                                           // mono mode
-   {
-      glDrawBuffer(GL_BACK);
-      ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
-      ds->renderer->renderVolumeGL();
-   }
-
-   if (ds->fpsMode)
-   {
-      glColor3f(1.0f - ds->bgColor[0], 1.0f - ds->bgColor[1], 1.0f - ds->bgColor[2]);
-      fps = sw->getTime();
-      if (fps > 0.0f) fps = 1.0f / fps;
-      else fps = -1.0f;
-      vvPrintGL* printGL;
-      printGL = new vvPrintGL();
-      printGL->print(0.3f, 0.9f, "fps: %-9.2f", fps);
-      delete printGL;
-   }
-
-   if (ds->iconMode)
-   {
-      if (ds->vd->iconSize>0)
+      else                                           // mono mode
       {
-         glMatrixMode(GL_PROJECTION);
-         glPushMatrix();
-         glLoadIdentity();
-         glMatrixMode(GL_MODELVIEW);
-         glPushMatrix();
-         glLoadIdentity();
-         glRasterPos2f(-1.0f, -0.0f);
-         glPixelZoom(1.0f, -1.0f);
-         glDrawPixels(ds->vd->iconSize, ds->vd->iconSize, GL_RGBA, GL_UNSIGNED_BYTE, ds->vd->iconData);
-         glPopMatrix();
-         glMatrixMode(GL_PROJECTION);
-         glPopMatrix();
-         glMatrixMode(GL_MODELVIEW);
+         glDrawBuffer(GL_BACK);
+         ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
+#ifdef CLIPPING_TEST
+         ds->renderClipObject();
+         ds->renderQuad();
+#endif
+         ds->renderer->renderVolumeGL();
       }
-      else
-      {
-         cerr << "No icon stored" << endl;
-      }
-   }
 
-   glutSwapBuffers();
+      if (ds->fpsMode)
+      {
+         glColor3f(1.0f - ds->bgColor[0], 1.0f - ds->bgColor[1], 1.0f - ds->bgColor[2]);
+         fps = sw->getTime();
+         if (fps > 0.0f) fps = 1.0f / fps;
+         else fps = -1.0f;
+         vvPrintGL* printGL;
+         printGL = new vvPrintGL();
+         printGL->print(0.3f, 0.9f, "fps: %-9.2f", fps);
+         delete printGL;
+      }
+
+      if (ds->iconMode)
+      {
+         if (ds->vd->iconSize>0)
+         {
+            glMatrixMode(GL_PROJECTION);
+            glPushMatrix();
+            glLoadIdentity();
+            glMatrixMode(GL_MODELVIEW);
+            glPushMatrix();
+            glLoadIdentity();
+            glRasterPos2f(-1.0f, -0.0f);
+            glPixelZoom(1.0f, -1.0f);
+            glDrawPixels(ds->vd->iconSize, ds->vd->iconSize, GL_RGBA, GL_UNSIGNED_BYTE, ds->vd->iconData);
+            glPopMatrix();
+            glMatrixMode(GL_PROJECTION);
+            glPopMatrix();
+            glMatrixMode(GL_MODELVIEW);
+         }
+         else
+         {
+            cerr << "No icon stored" << endl;
+         }
+      }
+
+      glutSwapBuffers();
+   }
 }
 
 
@@ -456,13 +609,13 @@ void vvView::motionCallback(int x, int y)
       case MIDDLE_BUTTON:
       case LEFT_BUTTON | RIGHT_BUTTON:
          if (ds->perspectiveMode==false)
-            ds->ov->mv.translate((float)dx / 100.0f, -(float)dy / 100.0f, 0.0f);
+            ds->ov->mv.translate((float)dx * 0.01f, -(float)dy * 0.01f, 0.0f);
          else
             ds->ov->mv.translate(0.0f, 0.0f, (float)dy / 10.0f);
          break;
 
       case RIGHT_BUTTON:
-         factor = 1.0f + ((float)dy) / 100.0f;
+         factor = 1.0f + ((float)dy) * 0.01f;
          if (factor > 2.0f) factor = 2.0f;
          if (factor < 0.5f) factor = 0.5f;
          ds->ov->mv.scale(factor, factor, factor);
@@ -1207,6 +1360,34 @@ void vvView::viewMenuCallback(int item)
    glutPostRedisplay();
 }
 
+//----------------------------------------------------------------------------
+/** Render remotely.
+  Render to an offscreen buffer that can be read back later on.
+ */
+void vvView::renderRemotely(vvMatrix* pr, vvMatrix* mv)
+{
+  vvDebugMsg::msg(3, "vvView::renderRemotely()");
+
+  glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  ds->renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
+
+  // Draw volume:
+  float matrixGL[16];
+
+  glMatrixMode(GL_PROJECTION);
+  pr->get(matrixGL);
+  glLoadMatrixf(matrixGL);
+
+  glMatrixMode(GL_MODELVIEW);
+  mv->get(matrixGL);
+  glLoadMatrixf(matrixGL);
+
+  ds->renderer->renderVolumeGL();
+
+  glFlush();
+}
 
 //----------------------------------------------------------------------------
 /** Do a performance test.
@@ -1610,6 +1791,114 @@ void vvView::setProjectionMode(bool newmode)
    }
 }
 
+void vvView::setupClipBuffer()
+{
+   delete clipBuffer;
+   clipBuffer = new vvOffscreenBuffer(1.0f, VV_FLOAT);
+   clipBuffer->initForRender();
+}
+
+void vvView::renderClipObject()
+{
+   if (clipBuffer == NULL)
+   {
+      setupClipBuffer();
+   }
+
+   clipBuffer->bindFramebuffer();
+   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   const float dim = 0.3f;
+   glBegin(GL_QUADS);
+
+      glColor3f(1.0f, 1.0f, 1.0f);
+
+      glNormal3f( 0.0f,  0.0f,  1.0f);
+      glVertex3f(-dim, -dim,  dim);
+      glVertex3f( dim, -dim,  dim);
+      glVertex3f( dim,  dim,  dim);
+      glVertex3f(-dim,  dim,  dim);
+
+      glNormal3f( 0.0f,  0.0f, -1.0f);
+      glVertex3f( dim, -dim, -dim);
+      glVertex3f(-dim, -dim, -dim);
+      glVertex3f(-dim,  dim, -dim);
+      glVertex3f( dim,  dim, -dim);
+
+      glNormal3f(-1.0f,  0.0f,  0.0f);
+      glVertex3f(-dim, -dim, -dim);
+      glVertex3f(-dim, -dim,  dim);
+      glVertex3f(-dim,  dim,  dim);
+      glVertex3f(-dim,  dim, -dim);
+
+      glNormal3f( 1.0f,  0.0f,  0.0f);
+      glVertex3f( dim, -dim,  dim);
+      glVertex3f( dim, -dim, -dim);
+      glVertex3f( dim,  dim, -dim);
+      glVertex3f( dim,  dim,  dim);
+
+      glNormal3f( 0.0f,  1.0f,  0.0f);
+      glVertex3f(-dim,  dim,  dim);
+      glVertex3f( dim,  dim,  dim);
+      glVertex3f( dim,  dim, -dim);
+      glVertex3f(-dim,  dim, -dim);
+
+      glNormal3f( 0.0f, -1.0f,  0.0f);
+      glVertex3f(-dim, -dim, -dim);
+      glVertex3f(-dim, -dim,  dim);
+      glVertex3f( dim, -dim,  dim);
+      glVertex3f( dim, -dim, -dim);
+
+   glEnd();
+   delete[] framebufferDump;
+   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
+   framebufferDump = new GLfloat[viewport[2] * viewport[3] * 4];
+   glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+   glReadPixels(viewport[0], viewport[1], viewport[2], viewport[3], GL_RGBA, GL_FLOAT, framebufferDump);
+   clipBuffer->unbindFramebuffer();
+}
+
+void vvView::renderQuad() const
+{
+   glEnable(GL_TEXTURE_2D);
+   clipBuffer->bindTexture();
+   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, viewport[2], viewport[3],
+                0, GL_RGBA, GL_FLOAT, framebufferDump);
+   glDisable(GL_LIGHTING);
+   glDisable(GL_DEPTH_TEST);
+   glMatrixMode(GL_PROJECTION);
+   glPushMatrix();
+   glLoadIdentity();
+   glMatrixMode(GL_MODELVIEW);
+   glPushMatrix();
+   glLoadIdentity();
+
+   glBegin(GL_QUADS);
+       glColor3f(1.0f, 1.0f, 1.0f);
+
+       glTexCoord2f(0.0f, 0.0f);
+       glVertex3f(-1.0f, -1.0f, 0.0f);
+
+       glTexCoord2f(1.0f, 0.0f);
+       glVertex3f(1.0f, -1.0f, 0.0f);
+
+       glTexCoord2f(1.0f, 1.0f);
+       glVertex3f(1.0f, 1.0f, 0.0f);
+
+       glTexCoord2f(0.0f, 1.0f);
+       glVertex3f(-1.0f, 1.0f, 0.0f);
+   glEnd();
+   glPopMatrix();
+   glMatrixMode(GL_PROJECTION);
+   glPopMatrix();
+   glEnable(GL_LIGHTING);
+   glEnable(GL_DEPTH_TEST);
+}
+
 
 //----------------------------------------------------------------------------
 /// Display command usage help on the command line.
@@ -1626,6 +1915,9 @@ void vvView::displayHelpInfo()
    cerr << "file types." << endl;
    cerr << endl;
    cerr << "Available options:" << endl;
+   cerr << endl;
+   cerr << "-slave (-s)" << endl;
+   cerr << " Renderer is a render slave and accepts assignments from a master renderer";
    cerr << endl;
    cerr << "-renderer <num> (-r)" << endl;
    cerr << " Select the default renderer:" << endl;
@@ -1708,6 +2000,10 @@ bool vvView::parseCommandLine(int argc, char** argv)
       {
          displayHelpInfo();
          return false;
+      }
+      else if (vvToolshed::strCompare(argv[arg], "-s")==0)
+      {
+         slaveMode = true;
       }
       else if (vvToolshed::strCompare(argv[arg], "-r")==0 ||
          vvToolshed::strCompare(argv[arg], "-renderer")==0)

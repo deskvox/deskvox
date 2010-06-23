@@ -33,6 +33,8 @@
  * @author Juergen Schulze (schulze@cs.brown.de)
  */
 
+class vvOffscreenBuffer;
+class vvSocketIO;
 class vvStopwatch;
 
 class vvView
@@ -69,6 +71,7 @@ class vvView
       int   x1,y1,x2,y2;                          ///< mouse coordinates for auto-rotation
       int   lastWidth, lastHeight;                ///< last window size
       int   lastPosX, lastPosY;                   ///< last window position
+      bool  slaveMode;                            ///< true = renderer started as slave
       bool  emptySpaceLeapingMode;                ///< true = bricks invisible due to current transfer function aren't rendered
       bool  perspectiveMode;                      ///< true = perspective projection
       bool  boundariesMode;                       ///< true = display boundaries
@@ -108,6 +111,10 @@ class vvView
       bool useOffscreenBuffer;                    ///< render to an offscreen buffer. Mandatory for setting buffer precision
       bool useHeadLight;                          ///< toggle head light 
       int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
+      vvSocketIO*  sio;                           ///< socket for renderer in server or client mode
+      bool remoteRendering;                       ///< remote rendering in client mode
+      vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
+      GLfloat* framebufferDump;
 
    public:
       vvView();
@@ -129,6 +136,7 @@ class vvView
       static void transferMenuCallback(int);
       static void animMenuCallback(int);
       static void viewMenuCallback(int);
+      static void renderRemotely(vvMatrix* pr, vvMatrix* mv);
       static void performanceTest();
       static void printProfilingInfo(const int testNr = 1, const int testCnt = 1);
       static void printProfilingResult(vvStopwatch* totalTime, const int framesRendered);
@@ -137,6 +145,9 @@ class vvView
       void createMenus();
       void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST);
       void setProjectionMode(bool);
+      void setupClipBuffer();
+      void renderClipObject();
+      void renderQuad() const;
       void displayHelpInfo();
       bool parseCommandLine(int argc, char *argv[]);
       void addDisplay(const char* name);
