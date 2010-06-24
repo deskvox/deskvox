@@ -54,7 +54,9 @@ bool vvRenderContext::makeCurrent() const
 {
   if (_initialized)
   {
+#ifdef HAVE_X11
     return glXMakeCurrent(_archData->display, _archData->drawable, _archData->glxContext);
+#endif
   }
   return false;
 }
