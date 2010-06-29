@@ -5269,7 +5269,7 @@ void vvTexRend::enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName
       // TODO: cgGLEnableTextureParameter.
       parameterNames[parameterCount] = "pixLUT";
       parameterTypes[parameterCount] = VV_SHD_TEXTURE_ID;
-      values[parameterCount] = (void*)lutName;
+      values[parameterCount] = reinterpret_cast<void*>(lutName);
       parameterCount++;
     }
 
