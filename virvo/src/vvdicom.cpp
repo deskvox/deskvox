@@ -706,7 +706,7 @@ void vvDicom::readDicomData(FILE* fp)
             buff[e_len] = '\0';
             float a=0.0f, b=0.0f;
             int ret = sscanf(buff, "%f\\%f", &a, &b);
-            if (ret != 1)
+            if (ret != 2)
             {
               cerr << "vvDicom::readDicomData: read error" << endl;
             }
@@ -874,6 +874,21 @@ void vvDicom::readDicomData(FILE* fp)
             assert(n == 1);
             fseek(fp, pos, SEEK_SET);
           }
+          break ;
+          case 0x2114 :  infoText = "Lossy Image Compression Method";
+          t=VV_STRING;
+          {
+            char* buff = (char*)new uchar[e_len+1];
+            pos = ftell(fp);
+            int n = fread(buff, e_len, 1, fp);
+            if(n != 1)
+              cerr << "Returned value from fread is " << n << ", expected 1" << endl;
+            assert(n == 1);
+            fseek(fp, pos, SEEK_SET);
+            buff[e_len] = 0;
+            fprintf(stderr,"lossy compression %s\n",buff);
+            delete[] buff;
+          }
           break;
         }
         break;
@@ -991,10 +1006,10 @@ void vvDicom::readDicomData(FILE* fp)
 
   // Read the actual pixel data:
   info->raw = new uchar[info->height * info->width * info->bpp];
-  int n = fread(info->raw, info->height * info->width * info->bpp, 1, fp);
-  if(n != 1)
-    cerr << "vvDicom::readDicomData: Error reading actual pixel data" << endl;
-  assert(n == 1);
+  int n = fread(info->raw,  1, info->height * info->width * info->bpp, fp);
+  //if(n != 1)
+    //cerr << "vvDicom::readDicomData: Error reading actual pixel data" << endl;
+    cerr << "vvDicom::readDicomData:  reading actual pixel data " <<n<< endl;
 }
 
 //----------------------------------------------------------------------------

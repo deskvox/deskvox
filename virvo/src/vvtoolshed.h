@@ -29,6 +29,9 @@
 #ifndef _MSC_VER
 #include <stdint.h>
 #else
+#ifdef HAVE_GDCM
+#include "stdint.h"
+#else
 typedef char int8_t;
 typedef unsigned char uint8_t;
 typedef short int16_t;
@@ -37,6 +40,7 @@ typedef int int32_t;
 typedef unsigned int uint32_t;
 typedef long long int64_t;
 typedef unsigned long long uint64_t;
+#endif
 #endif
 #else
 #include <inttypes.h>

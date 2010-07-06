@@ -6,6 +6,7 @@ PROJECT = General
 CONFIG *= dll \
     dl \
     cg \
+    gdcm \
     glew \
     pthread \
     wnoerror

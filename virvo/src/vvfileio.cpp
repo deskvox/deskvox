@@ -20,6 +20,22 @@
 
 #include <iostream>
 #include <iomanip>
+#ifdef HAVE_GDCM
+#include "gdcmReader.h"
+#include "gdcmImageReader.h"
+#include "gdcmMediaStorage.h"
+#include "gdcmFile.h"
+#include "gdcmDataSet.h"
+#include "gdcmUIDs.h"
+#include "gdcmGlobal.h"
+#include "gdcmModules.h"
+#include "gdcmDefs.h"
+#include "gdcmOrientation.h"
+#include "gdcmVersion.h"
+#include "gdcmMD5.h"
+#include "gdcmSystem.h"
+#include "gdcmDirectory.h"
+#endif
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -3163,6 +3179,125 @@ vvFileIO::ErrorType vvFileIO::loadPXMRawImage(vvVolDesc* vd)
 */
 vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcmSlice, float* dcmSPos)
 {
+#ifdef HAVE_GDCM
+
+   
+  //const char *filename = argv[1];
+  //std::cout << "filename: " << filename << std::endl;
+  gdcm::Reader reader;
+  reader.SetFileName((char*)vd->getFilename());
+  if( !reader.Read() )
+    {
+    std::cerr << "Failed to read: " << (char*)vd->getFilename() << std::endl;
+    return FILE_ERROR;
+    }
+  const gdcm::File &file = reader.GetFile();
+  const gdcm::DataSet &ds = file.GetDataSet();
+  gdcm::MediaStorage ms;
+  ms.SetFromFile(file);
+  /*
+   * Until gdcm::MediaStorage is fixed only *compile* time constant will be handled
+   * see -> http://chuckhahm.com/Ischem/Zurich/XX_0134
+   * which make gdcm::UIDs useless :(
+   */
+  if( ms.IsUndefined() )
+    {
+    std::cerr << "Unknown MediaStorage" << std::endl;
+    return FILE_ERROR;
+    }
+
+  gdcm::UIDs uid;
+  uid.SetFromUID( ms.GetString() );
+  std::cout << "MediaStorage is " << ms << " [" << uid.GetName() << "]" << std::endl;
+  const gdcm::TransferSyntax &ts = file.GetHeader().GetDataSetTransferSyntax();
+  uid.SetFromUID( ts.GetString() );
+  std::cout << "TransferSyntax is " << ts << " [" << uid.GetName() <<  "]" << std::endl;
+
+  if( gdcm::MediaStorage::IsImage( ms ) )
+    {
+    gdcm::ImageReader reader;
+    reader.SetFileName( (char*)vd->getFilename() );
+    if( !reader.Read() )
+      {
+      std::cerr << "Could not read image from: " << (char*)vd->getFilename() << std::endl;
+      return FILE_ERROR;
+      }
+    const gdcm::File &file = reader.GetFile();
+    const gdcm::DataSet &ds = file.GetDataSet();
+    const gdcm::Image &image = reader.GetImage();
+    const double *dircos = image.GetDirectionCosines();
+    gdcm::Orientation::OrientationType type = gdcm::Orientation::GetType(dircos);
+    const char *label = gdcm::Orientation::GetLabel( type );
+    //image.Print( std::cout );
+    std::cout << "Orientation Label: " << label << std::endl;
+    bool lossy = image.IsLossy();
+    std::cout << "Encapsulated Stream was found to be: " << (lossy ? "lossy" : "lossless") << std::endl;
+    
+
+  // Make sure variables are tested for NULL because they might be default:
+  /*if (dcmSeq   != NULL) *dcmSeq   = prop.sequence;
+  if (dcmSlice != NULL) *dcmSlice = prop.image;
+  if (dcmSPos  != NULL) *dcmSPos  = image.getSl;*/
+  const unsigned int *dim = image.GetDimensions();
+  vd->vox[0] = dim[0];
+  vd->vox[1] = dim[1];
+  vd->vox[2] = 1;
+  const double *spacing = image.GetSpacing();
+  for (int i=0; i<3; ++i)
+  {
+    vd->dist[i] =spacing[i];
+  }
+  gdcm::PixelFormat pf = image.GetPixelFormat();
+  switch(pf.GetBitsAllocated()/8)
+  {
+    case 1:
+    case 2:
+      vd->bpc = pf.GetBitsAllocated()/8;
+      vd->chan = 1;
+      break;
+    case 3:
+    case 4:
+      vd->bpc = 1;
+      vd->chan = pf.GetBitsAllocated()/8;
+      break;
+    default: assert(0); break;
+  }
+     
+  char *rawData = new char[image.GetBufferLength()];
+  image.GetBuffer(rawData);
+  vd->addFrame((uchar *)rawData, vvVolDesc::ARRAY_DELETE);
+  ++vd->frames;
+
+  // Make big endian data:
+  // TODO if (prop.littleEndian) vd->toggleEndianness(vd->frames-1);
+
+  // Shift bits so that most significant used bit is leftmost:
+  vd->bitShiftData(pf.GetHighBit() - (pf.GetBitsAllocated() - 1), vd->frames-1);
+
+  // Make unsigned data:
+  // TODO if (prop.isSigned) vd->toggleSign(vd->frames-1);
+ /*   if( md5sum )
+      {
+      char *buffer = new char[ image.GetBufferLength() ];
+      image.GetBuffer( buffer );
+      char digest[33] = {};
+      gdcm::MD5::Compute( buffer, image.GetBufferLength(), digest );
+      std::cout << "md5sum: " << digest << std::endl;
+      delete[] buffer;
+      }*/
+    }
+  else if ( ms == gdcm::MediaStorage::EncapsulatedPDFStorage ) 
+    {
+    std::cout << "  Encapsulated PDF File not supported yet" << std::endl;
+    }
+// Do the IOD verification !
+    //bool v = defs.Verify( file );
+    //std::cerr << "IOD Verification: " << (v ? "succeed" : "failed") << std::endl;
+
+   
+
+  return OK;
+#else
   vvDicom* dicomReader;
   vvDicomProperties prop;
   int i;
@@ -3217,6 +3352,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
 
   delete dicomReader;
   return OK;
+#endif
 }
 
 //----------------------------------------------------------------------------
