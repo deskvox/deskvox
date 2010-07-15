@@ -144,9 +144,9 @@ void vvView::mainLoop(int argc, char *argv[])
       cerr << "Renderer started in slave mode" << endl;
 
       sio = new vvSocketIO(vvView::DEFAULT_PORT , vvSocket::VV_TCP);
-      sio->no_nagle();
       sio->set_debuglevel(vvDebugMsg::getDebugLevel());
       sio->init();
+      sio->no_nagle();
 
       vd = new vvVolDesc();
 

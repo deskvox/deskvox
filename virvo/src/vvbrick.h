@@ -65,10 +65,10 @@ public:
     return (dist < rhs.dist);
   }
 
-  void render(vvTexRend* renderer, const vvVector3& normal,
+  void render(vvTexRend* const renderer, const vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges) const;
+              GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges) const;
 
   void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const;
   bool upload3DTexture(const GLuint& texName, const uchar* texData,

@@ -30,10 +30,10 @@
 #include <algorithm>
 #include <math.h>
 
-void vvBrick::render(vvTexRend* renderer, const vvVector3& normal,
+void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
                      const vvVector3& farthest, const vvVector3& delta,
                      const vvVector3& probeMin, const vvVector3& probeMax,
-                     GLuint*& texNames, vvShaderManager* isectShader, const bool setupEdges) const
+                     GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges) const
 {
   const vvVector3 dist = max - min;
 
