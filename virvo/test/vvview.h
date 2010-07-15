@@ -113,8 +113,10 @@ class vvView
       int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
       vvSocketIO*  sio;                           ///< socket for renderer in server or client mode
       bool remoteRendering;                       ///< remote rendering in client mode
+      vvOffscreenBuffer* offscreenBuffer;         ///< used for remote rendering
       vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
       GLfloat* framebufferDump;
+      char* hostname;
 
    public:
       vvView();

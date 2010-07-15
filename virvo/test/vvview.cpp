@@ -117,6 +117,8 @@ vvView::vvView()
    remoteRendering       = true;
    clipBuffer            = NULL;
    framebufferDump       = NULL;
+   hostname              = NULL;
+   offscreenBuffer       = NULL;
 }
 
 
@@ -128,6 +130,7 @@ vvView::~vvView()
    delete ov;
    delete vd;
    delete sio;
+   delete offscreenBuffer;
 }
 
 
@@ -142,6 +145,8 @@ void vvView::mainLoop(int argc, char *argv[])
    if (slaveMode)
    {
       cerr << "Renderer started in slave mode" << endl;
+
+      offscreenBuffer = new vvOffscreenBuffer(1.0f, VV_BYTE);
 
       sio = new vvSocketIO(vvView::DEFAULT_PORT , vvSocket::VV_TCP);
       sio->set_debuglevel(vvDebugMsg::getDebugLevel());
@@ -260,12 +265,16 @@ void vvView::mainLoop(int argc, char *argv[])
          vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
       }
 
+      if (hostname == NULL)
+      {
+         remoteRendering = false;
+      }
+
       if (remoteRendering)
       {
-         char* servername = "http://vispme.rrz.uni-koeln.de";
-
-         sio = new vvSocketIO(vvView::DEFAULT_PORT, servername, vvSocket::VV_TCP);
+         sio = new vvSocketIO(vvView::DEFAULT_PORT, hostname, vvSocket::VV_TCP);
          sio->set_debuglevel(vvDebugMsg::getDebugLevel());
+         sio->no_nagle();
 
          if (sio->init() == vvSocket::VV_OK)
          {
@@ -284,7 +293,7 @@ void vvView::mainLoop(int argc, char *argv[])
          }
          else
          {
-            cerr << "No connection to remote rendering server established at: " << servername << endl;
+            cerr << "No connection to remote rendering server established at: " << hostname << endl;
             cerr << "Falling back to local rendering" << endl;
             remoteRendering = false;
          }
@@ -1366,27 +1375,31 @@ void vvView::viewMenuCallback(int item)
  */
 void vvView::renderRemotely(vvMatrix* pr, vvMatrix* mv)
 {
-  vvDebugMsg::msg(3, "vvView::renderRemotely()");
+   vvDebugMsg::msg(3, "vvView::renderRemotely()");
 
-  glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   ds->offscreenBuffer->initForRender();
 
-  ds->renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
+   glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  // Draw volume:
-  float matrixGL[16];
+   ds->renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
 
-  glMatrixMode(GL_PROJECTION);
-  pr->get(matrixGL);
-  glLoadMatrixf(matrixGL);
+   // Draw volume:
+   float matrixGL[16];
 
-  glMatrixMode(GL_MODELVIEW);
-  mv->get(matrixGL);
-  glLoadMatrixf(matrixGL);
+   glMatrixMode(GL_PROJECTION);
+   pr->get(matrixGL);
+   glLoadMatrixf(matrixGL);
 
-  ds->renderer->renderVolumeGL();
+   glMatrixMode(GL_MODELVIEW);
+   mv->get(matrixGL);
+   glLoadMatrixf(matrixGL);
 
-  glFlush();
+   ds->renderer->renderVolumeGL();
+
+   glFlush();
+
+   ds->offscreenBuffer->clearBuffer();
 }
 
 //----------------------------------------------------------------------------
@@ -2058,14 +2071,23 @@ bool vvView::parseCommandLine(int argc, char** argv)
       {
          if ((++arg)>=argc)
          {
-           cerr << "Display name unspecified." << endl;
-           return false;
+            cerr << "Display name unspecified." << endl;
+            return false;
          }
          addDisplay(argv[arg]);
       }
       else if (vvToolshed::strCompare(argv[arg], "-lighting")==0)
       {
          useHeadLight = true;
+      }
+      else if (vvToolshed::strCompare(argv[arg], "-host")==0)
+      {
+         if ((++arg)>=argc)
+         {
+            cerr << "Host unspecified." << endl;
+            return false;
+         }
+         hostname = argv[arg];
       }
       else if (vvToolshed::strCompare(argv[arg], "-debug")==0)
       {
