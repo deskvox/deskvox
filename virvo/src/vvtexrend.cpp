@@ -1318,7 +1318,11 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
       accommodated = currBrick->upload3DTexture(privateTexNames[currBrick->index], texData,
                                                 texFormat, internalTexFormat,
                                                 interpolation);
+      if(!accommodated)
+         break;
     } // # foreach (numBricks[i])
+    if(!accommodated)
+       break;
   } // # frames
 
   if (!accommodated)
