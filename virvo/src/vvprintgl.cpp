@@ -105,6 +105,13 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
   vsprintf(text, fmt, ap);                        // And Converts Symbols To Actual Numbers
   va_end(ap);                                     // Results Are Stored In Text
 
+  // make sure that only valid display lists are called
+  for(char *p=text; *p; ++p)
+  {
+      if(*p < 32 || *p >= 128)
+          *p = '+';
+  }
+
   saveGLState();
 
   glMatrixMode(GL_MODELVIEW);
