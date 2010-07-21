@@ -691,6 +691,9 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
 
   vvDebugMsg::msg(2, "vvTexRend::makeTextures()");
 
+  if (vd->vox[0] == 0 || vd->vox[1] == 0 || vd->vox[2] == 0)
+    return err;
+
   if (geomType != VV_BRICKS)
   {
     // Compute texture dimensions (must be power of 2):
