@@ -2033,6 +2033,13 @@ void vvView::displayHelpInfo()
    cerr << "-dsp <host:display.screen>" << endl;
    cerr << "  Add x-org display for additional rendering context" << endl;
    cerr << endl;
+   cerr << "-slave <url>" << endl;
+   cerr << "  Add a slave renderer connected to over tcp ip" << endl;
+   cerr << endl;
+   cerr << "-slavefilename <path to file>" << endl;
+   cerr << "  Path to a file where the slave can find its volume data" << endl;
+   cerr << "  If this entry is -slavefilename n, the n'th slave will try to load this file" << endl;
+   cerr << endl;
    cerr << "-lighting" << endl;
    cerr << " Use headlight for local illumination" << endl;
    cerr << endl;
@@ -2160,11 +2167,11 @@ bool vvView::parseCommandLine(int argc, char** argv)
       {
          useHeadLight = true;
       }
-      else if (vvToolshed::strCompare(argv[arg], "-host")==0)
+      else if (vvToolshed::strCompare(argv[arg], "-slave")==0)
       {
          if ((++arg)>=argc)
          {
-            cerr << "Host unspecified." << endl;
+            cerr << "Slave unspecified." << endl;
             return false;
          }
          hostname = argv[arg];
