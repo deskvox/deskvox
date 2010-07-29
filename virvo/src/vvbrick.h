@@ -86,6 +86,8 @@ public:
                        float& minDot,
                        float& maxDot) const;
 
+  void print() const;
+
   static void sortByCenter(std::vector<vvBrick*>& bricks,
                            const vvVector3& axis);
                                                     ///< and assuming that vertices are ordered back to front

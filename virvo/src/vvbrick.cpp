@@ -290,6 +290,22 @@ ushort vvBrick::getFrontIndex(const vvVector3* vertices,
   return frontIndex;
 }
 
+void vvBrick::print() const
+{
+  cerr << "Brick:\t" << index << endl;
+  pos.print("pos:");
+  min.print("min:");
+  max.print("max:");
+  cerr << "minValue:\t" << minValue << endl;
+  cerr << "maxValue:\t" << maxValue << endl;
+  cerr << "visible:\t" << visible << endl;
+  cerr << "atBorder:\t" << atBorder << endl;
+  cerr << "insideProbe:\t" << insideProbe << endl;
+  cerr << "startOffset:\t" << startOffset[0] << " " << startOffset[1] << " " << startOffset[2] << endl;
+  cerr << "texels:\t" << texels[0] << " " << texels[1] << " " << texels[2] << endl;
+  cerr << "dist:\t" << dist << endl;
+}
+
 void vvBrick::sortByCenter(std::vector<vvBrick*>& bricks, const vvVector3& axis)
 {
   const vvVector3 axisGetter(0, 1, 2);
