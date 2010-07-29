@@ -132,6 +132,8 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType putBricks(std::vector<vvBrick*>& bricks);
     ErrorType getImage(vvImage*);
     ErrorType putImage(vvImage*);
+    ErrorType getFileName(char*& fn);
+    ErrorType putFileName(const char* fn);
     ErrorType getData(uchar**, int&);             //  unknown number and type
     ErrorType putData(uchar*, int);
     ErrorType getMatrix(vvMatrix*);

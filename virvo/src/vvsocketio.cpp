@@ -528,6 +528,70 @@ vvSocket::ErrorType vvSocketIO::putImage(vvImage* im)
 }
 
 //----------------------------------------------------------------------------
+/** Get a file name from the socket.
+ @param fn  the file name.
+*/
+vvSocket::ErrorType vvSocketIO::getFileName(char*& fn)
+{
+  uchar* buffer;
+  vvSocket::ErrorType retval;
+
+  buffer = new uchar[4];
+  if ((retval = vvSocket::read_data(buffer, 4)) != vvSocket::VV_OK)
+  {
+    delete[] buffer;
+    return retval;
+  }
+  const size_t len = vvToolshed::read32(buffer);
+  delete[] buffer;
+
+  buffer = new uchar[len];
+  if ((retval = vvSocket::read_data(buffer, len)) != vvSocket::VV_OK)
+  {
+    delete[] buffer;
+    return retval;
+  }
+
+  fn = new char[len + 1];
+
+  for (size_t i=0; i<len; ++i)
+  {
+    fn[i] = (char)buffer[i];cerr << fn[i] << endl;
+  }
+  fn[len] = '\0';
+
+  // TODO: check if this is really a file name... .
+
+  return vvSocket::VV_OK;
+}
+
+//----------------------------------------------------------------------------
+/** Write a file name to the socket.
+ @param fn  the file name.
+*/
+vvSocket::ErrorType vvSocketIO::putFileName(const char* fn)
+{
+  uchar* buffer;
+  vvSocket::ErrorType retval;
+
+  const size_t len = strlen(fn);
+  buffer = new uchar[4 + len];
+  vvToolshed::write32(&buffer[0], len);
+
+  for (size_t i=0; i<len; ++i)
+  {
+    buffer[4 + i] = (uchar)fn[i];
+  }
+
+  if ((retval = vvSocket::write_data(buffer, 4 + len)) != vvSocket::VV_OK)
+  {
+    delete[] buffer;
+    return retval;
+  }
+  return vvSocket::VV_OK;
+}
+
+//----------------------------------------------------------------------------
 /** Gets arbitrary data of arbitrary size from the socket.
  @param data  pointer to the pointer where data shall be written. Memory is
  allocated which has to be deallocated outside this function.
