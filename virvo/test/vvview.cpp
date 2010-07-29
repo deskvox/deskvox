@@ -119,6 +119,8 @@ vvView::vvView()
    framebufferDump       = NULL;
    hostname              = NULL;
    offscreenBuffer       = NULL;
+   redistributeVolData   = false;
+   allFileNamesAreEqual  = false;
 }
 
 
@@ -329,12 +331,21 @@ void vvView::mainLoop(int argc, char *argv[])
          if (sio->init() == vvSocket::VV_OK)
          {
             // TODO: make this configurable.
-            const bool loadVolumeFromFile = true;
+            const bool loadVolumeFromFile = !redistributeVolData;
             sio->putBool(loadVolumeFromFile);
 
             if (loadVolumeFromFile)
             {
-               sio->putFileName("/home/stefan/Documents/3D/3D/res/volume/head256.rvf");
+               allFileNamesAreEqual = (slaveFileNames.size() == 0);
+               if (allFileNamesAreEqual)
+               {
+                  sio->putFileName(filename);
+               }
+               else
+               {
+                  // TODO: if more slaves can be accomodated, communicate all file names.
+                  sio->putFileName(slaveFileNames[0]);
+               }
             }
             else
             {
@@ -2040,6 +2051,9 @@ void vvView::displayHelpInfo()
    cerr << "  Path to a file where the slave can find its volume data" << endl;
    cerr << "  If this entry is -slavefilename n, the n'th slave will try to load this file" << endl;
    cerr << endl;
+   cerr << "redistributevoldata" << endl;
+   cerr << "  Don't load slave volume data from file, it will be redistributed by the master to all slaves" << endl;
+   cerr << endl;
    cerr << "-lighting" << endl;
    cerr << " Use headlight for local illumination" << endl;
    cerr << endl;
@@ -2175,6 +2189,19 @@ bool vvView::parseCommandLine(int argc, char** argv)
             return false;
          }
          hostname = argv[arg];
+      }
+      else if (vvToolshed::strCompare(argv[arg], "-slavefilename")==0)
+      {
+         if ((++arg)>=argc)
+         {
+            cerr << "Slave file name unspecified" << endl;
+            return false;
+         }
+         slaveFileNames.push_back(argv[arg]);
+      }
+      else if (vvToolshed::strCompare(argv[arg], "-redistributevoldata")==0)
+      {
+         redistributeVolData = true;
       }
       else if (vvToolshed::strCompare(argv[arg], "-debug")==0)
       {

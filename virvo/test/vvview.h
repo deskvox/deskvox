@@ -37,6 +37,8 @@ class vvOffscreenBuffer;
 class vvSocketIO;
 class vvStopwatch;
 
+#include <vector>
+
 class vvView
 {
    private:
@@ -117,6 +119,10 @@ class vvView
       vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
       GLfloat* framebufferDump;
       char* hostname;
+      bool redistributeVolData;                   ///< don't load slave volume data from file, but let master send it through socket
+      bool allFileNamesAreEqual;                  ///< if no slave file names were specified and the option redistributedata wasn't chosen,
+                                                  ///< the file name passed to the master render will be communicated to each slave
+      std::vector<char*> slaveFileNames;          ///< a list with file names where slaves can find the appropriate volume data
 
    public:
       vvView();
