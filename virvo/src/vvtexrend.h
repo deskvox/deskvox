@@ -228,6 +228,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool interpolation;                           ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
     bool opacityCorrection;                       ///< true = opacity correction on
     int  minSlice, maxSlice;                      ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
+    bool _areEmptyBricksCreated;                  ///< true when brick outlines are created or assigned through constructor
     bool _areBricksCreated;                       ///< true after the first creation of the bricks
     bool _measureRenderTime;                      ///< if time needs not to be measured, a costly call to glFinish can be spared
     std::vector<BrickList> _brickList;            ///< contains all created bricks for all frames
@@ -331,7 +332,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST,
               const char** displayNames = 0, const int numDisplays = 0,
-              const BufferPrecision multiGpuBufferPrecision = VV_SHORT);
+              const BufferPrecision multiGpuBufferPrecision = VV_SHORT,
+              std::vector<BrickList>* bricks = 0);
     virtual ~vvTexRend();
     void  renderVolumeGL();
     void  updateTransferFunction();

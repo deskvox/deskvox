@@ -256,7 +256,8 @@ void vvThreadVisitor::clearOffscreenBuffers()
 */
 vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox,
                      const char** displayNames, const int numDisplays,
-                     const BufferPrecision multiGpuBufferPrecision)
+                     const BufferPrecision multiGpuBufferPrecision,
+                     std::vector<BrickList>* bricks)
   : vvRenderer(vd, renderState)
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
@@ -337,6 +338,15 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     _previousShader = 0;
   }
   _useOnlyOneBrick = false;
+  if (bricks != NULL)
+  {
+    _brickList = *bricks;
+    _areEmptyBricksCreated = true;
+  }
+  else
+  {
+    _areEmptyBricksCreated = false;
+  }
   _areBricksCreated = false;
   _lastFrame = -1;
   lutDistance = -1.0;
@@ -732,7 +742,10 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
     case VV_CUBIC2D: err=makeTextures2D(3); updateTextures2D(3, 0, 10, 20, 15, 10, 5); break;
     // Threads will make their own copies of the textures as well as their own gl ids.
     case VV_BRICKS:
-      err = makeEmptyBricks();
+      if (!_areEmptyBricksCreated)
+      {
+        err = makeEmptyBricks();
+      }
       // If in threaded mode, each thread will upload its texture data on its own.
       if ((err == OK) && (_numThreads == 0))
       {
@@ -1123,6 +1136,8 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
           _brickList[f].push_back(currBrick);
         } // # foreach (numBricks[i])
   } // # frames
+
+  _areEmptyBricksCreated = true;
 
   return err;
 }
@@ -1932,6 +1947,7 @@ void vvTexRend::updateVolumeData()
   vvRenderer::updateVolumeData();
   if (_renderState._computeBrickSize)
   {
+    _areEmptyBricksCreated = false;
     _areBricksCreated = false;
     computeBrickSize();
   }
