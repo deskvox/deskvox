@@ -244,6 +244,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     const char** _displayNames;                   ///< list with displays of the form host:x.y
     BufferPrecision _multiGpuBufferPrecision;     ///< 8, 16 or 32 bit precision for the render slave offscreen buffers
     unsigned int* _screens;                       ///< display name = :0.x ==> corresponding screen: x
+    int _numSlaveNodes;                           ///< number of available distributed memory hosts
     vvColor _debugColors[MAX_DEBUG_COLORS];       ///< array of colors to visualize threads in dbg mode (debug level >= 2).
                                                   ///< Feel free to use these colors for similar purposes either.
 
@@ -369,7 +370,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int getTexMemorySize() const;
     unsigned char* getHeightFieldData(float[4][3], int&, int&);
     float getManhattenDist(float[3], float[3]) const;
+    void prepareDistributedRendering(const int numSlaveNodes);
     std::vector<BrickList>** getBrickListsToDistribute();
+    int getNumBrickListsToDistribute() const;
 
     static int get2DTextureShader();
     static int getLocalIlluminationShader();

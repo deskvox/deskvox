@@ -117,7 +117,6 @@ vvView::vvView()
    remoteRendering       = true;
    clipBuffer            = NULL;
    framebufferDump       = NULL;
-   hostname              = NULL;
    offscreenBuffer       = NULL;
    redistributeVolData   = false;
    allFileNamesAreEqual  = false;
@@ -317,20 +316,19 @@ void vvView::mainLoop(int argc, char *argv[])
          vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
       }
 
-      if (hostname == NULL)
+      if (slaveNames.size() == 0)
       {
          remoteRendering = false;
       }
 
       if (remoteRendering)
       {
-         sio = new vvSocketIO(vvView::DEFAULT_PORT, hostname, vvSocket::VV_TCP);
+         sio = new vvSocketIO(vvView::DEFAULT_PORT, slaveNames[0], vvSocket::VV_TCP);
          sio->set_debuglevel(vvDebugMsg::getDebugLevel());
          sio->no_nagle();
 
          if (sio->init() == vvSocket::VV_OK)
          {
-            // TODO: make this configurable.
             const bool loadVolumeFromFile = !redistributeVolData;
             sio->putBool(loadVolumeFromFile);
 
@@ -365,7 +363,7 @@ void vvView::mainLoop(int argc, char *argv[])
          }
          else
          {
-            cerr << "No connection to remote rendering server established at: " << hostname << endl;
+            cerr << "No connection to remote rendering server established at: " << slaveNames[0] << endl;
             cerr << "Falling back to local rendering" << endl;
             remoteRendering = false;
          }
@@ -381,6 +379,8 @@ void vvView::mainLoop(int argc, char *argv[])
 
       if (remoteRendering)
       {
+         // This will build up the bsp tree of the master node.
+         dynamic_cast<vvTexRend*>(renderer)->prepareDistributedRendering(slaveNames.size());
          switch (sio->putBricks(dynamic_cast<vvTexRend*>(renderer)->getBrickListsToDistribute()[0]->at(0)))
          {
          case vvSocket::VV_OK:
@@ -2188,7 +2188,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
             cerr << "Slave unspecified." << endl;
             return false;
          }
-         hostname = argv[arg];
+         slaveNames.push_back(argv[arg]);
       }
       else if (vvToolshed::strCompare(argv[arg], "-slavefilename")==0)
       {

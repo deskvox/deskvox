@@ -317,6 +317,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _measureRenderTime = false;
   interpolation = true;
   _bspTree = NULL;
+  _numSlaveNodes = 0;
 
   if (_renderState._useOffscreenBuffer)
   {
@@ -5885,14 +5886,42 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
   return dist;
 }
 
+void vvTexRend::prepareDistributedRendering(const int numSlaveNodes)
+{
+  _numSlaveNodes = numSlaveNodes;
+  // No load balancing for now, distribute equally among nodes.
+  float* part = new float[_numSlaveNodes];
+  for (unsigned int i = 0; i < _numSlaveNodes; ++i)
+  {
+    part[i] = 1.0f / static_cast<float>(_numSlaveNodes);
+  }
+
+  delete _bspTree;
+  _bspTree = new vvBspTree(part, _numSlaveNodes, &_brickList[0]);
+
+  delete[] part;
+}
+
 std::vector<BrickList>** vvTexRend::getBrickListsToDistribute()
 {
-  // TODO: Instead of returning an array with only one vector,
-  // return an array with pointers to the brick lists to
-  // distribute among distributed memory compute nodes.
-  std::vector<BrickList>** result = new std::vector<BrickList>*[1];
-  result[0] = &_brickList;
+  std::vector<vvHalfSpace*>* _bspTreeLeafs = _bspTree->getLeafs();
+  std::vector<BrickList>** result = new std::vector<BrickList>*[_bspTreeLeafs->size()];
+
+  int i = 0;
+  for (std::vector<vvHalfSpace*>::const_iterator it = _bspTreeLeafs->begin();
+       it != _bspTreeLeafs->end(); ++it)
+  {
+    // TODO: support multiple frames.
+    result[i] = new std::vector<BrickList>();
+    result[i]->push_back(*((*it)->getBricks()));
+    ++i;
+  }
   return result;
+}
+
+int vvTexRend::getNumBrickListsToDistribute() const
+{
+  return _bspTree->getLeafs()->size();
 }
 
 int vvTexRend::get2DTextureShader()

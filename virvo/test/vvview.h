@@ -118,7 +118,7 @@ class vvView
       vvOffscreenBuffer* offscreenBuffer;         ///< used for remote rendering
       vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
       GLfloat* framebufferDump;
-      char* hostname;
+      std::vector<char*> slaveNames;
       bool redistributeVolData;                   ///< don't load slave volume data from file, but let master send it through socket
       bool allFileNamesAreEqual;                  ///< if no slave file names were specified and the option redistributedata wasn't chosen,
                                                   ///< the file name passed to the master render will be communicated to each slave
