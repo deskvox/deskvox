@@ -146,8 +146,6 @@ void vvView::mainLoop(int argc, char *argv[])
    {
       cerr << "Renderer started in slave mode" << endl;
 
-      offscreenBuffer = new vvOffscreenBuffer(1.0f, VV_BYTE);
-
       sio = new vvSocketIO(vvView::DEFAULT_PORT , vvSocket::VV_TCP);
       sio->set_debuglevel(vvDebugMsg::getDebugLevel());
       sio->init();
@@ -1377,6 +1375,10 @@ void vvView::renderRemotely(vvMatrix* pr, vvMatrix* mv)
 {
    vvDebugMsg::msg(3, "vvView::renderRemotely()");
 
+   if (ds->offscreenBuffer == NULL)
+   {
+     ds->offscreenBuffer = new vvOffscreenBuffer(1.0f, VV_BYTE);
+   }
    ds->offscreenBuffer->initForRender();
 
    glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
