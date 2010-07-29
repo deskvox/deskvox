@@ -369,6 +369,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int getTexMemorySize() const;
     unsigned char* getHeightFieldData(float[4][3], int&, int&);
     float getManhattenDist(float[3], float[3]) const;
+    std::vector<BrickList>** getBrickListsToDistribute();
 
     static int get2DTextureShader();
     static int getLocalIlluminationShader();

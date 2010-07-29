@@ -5885,6 +5885,16 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
   return dist;
 }
 
+std::vector<BrickList>** vvTexRend::getBrickListsToDistribute()
+{
+  // TODO: Instead of returning an array with only one vector,
+  // return an array with pointers to the brick lists to
+  // distribute among distributed memory compute nodes.
+  std::vector<BrickList>** result = new std::vector<BrickList>*[1];
+  result[0] = &_brickList;
+  return result;
+}
+
 int vvTexRend::get2DTextureShader()
 {
   // this is trivial, but a better idea than x times writing

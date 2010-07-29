@@ -145,7 +145,8 @@ class vvView
       void setAnimationFrame(int);
       void initGraphics(int argc, char *argv[]);
       void createMenus();
-      void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST);
+      void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST,
+                       std::vector<BrickList>* bricks = 0);
       void setProjectionMode(bool);
       void setupClipBuffer();
       void renderClipObject();

@@ -167,6 +167,20 @@ void vvView::mainLoop(int argc, char *argv[])
          break;
       }
 
+      // Get bricks to render
+      std::vector<BrickList>* frames = new std::vector<BrickList>();
+      BrickList bricks;
+      switch (sio->getBricks(bricks))
+      {
+      case vvSocket::VV_OK:
+         cerr << "Brick outlines received" << endl;
+         break;
+      default:
+         cerr << "Unable to retrieve brick outlines" << endl;
+         break;
+      }
+      frames->push_back(bricks);
+
       if (vd != NULL)
       {
          vd->printInfoLine();
@@ -196,7 +210,7 @@ void vvView::mainLoop(int argc, char *argv[])
          {
             ov = new vvObjView();
             setProjectionMode(perspectiveMode);
-            setRenderer(currentGeom, currentVoxels);
+            setRenderer(currentGeom, currentVoxels, frames);
             srand(time(NULL));
             vvMatrix pr;
             vvMatrix mv;
@@ -218,6 +232,15 @@ void vvView::mainLoop(int argc, char *argv[])
             }
          }
       }
+      for (std::vector<BrickList>::const_iterator it1 = frames->begin(); it1 != frames->end(); ++it1)
+      {
+         BrickList bl = (*it1);
+         for (BrickList::const_iterator it2 = bl.begin(); it2 != bl.end(); ++it2)
+         {
+            delete (*it2);
+         }
+      }
+      delete frames;
    }
    else
    {
@@ -305,6 +328,20 @@ void vvView::mainLoop(int argc, char *argv[])
 
       setProjectionMode(perspectiveMode);
       setRenderer(currentGeom, currentVoxels);
+
+      if (remoteRendering)
+      {
+         switch (sio->putBricks(dynamic_cast<vvTexRend*>(renderer)->getBrickListsToDistribute()[0]->at(0)))
+         {
+         case vvSocket::VV_OK:
+            cerr << "Brick outlines transferred successfully" << endl;
+            break;
+         default:
+            cerr << "Unable to transfer brick outlines" << endl;
+            remoteRendering = false;
+            break;
+          }
+      }
 
       // Set window title:
       if (filename!=NULL) glutSetWindowTitle(filename);
@@ -639,7 +676,8 @@ void vvView::motionCallback(int x, int y)
 //----------------------------------------------------------------------------
 /** Set active rendering algorithm.
  */
-void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
+void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
+                         std::vector<BrickList>* bricks)
 {
    vvDebugMsg::msg(3, "vvView::setRenderer()");
 
@@ -661,11 +699,11 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
       {
          cerr << displayNames[i] << endl;
       }
-      renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, displayNames, numDisplays);
+      renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks, displayNames, numDisplays);
    }
    else
    {
-      renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels);
+      renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks);
    }
    //static_cast<vvTexRend *>(renderer)->setTexMemorySize( 4 );
    //static_cast<vvTexRend *>(renderer)->setComputeBrickSize( false );
