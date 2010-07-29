@@ -365,14 +365,14 @@ vvSocket::ErrorType vvSocketIO::getBricks(std::vector<vvBrick*>& bricks)
 
   buffer = new uchar[4];
 
-  if ((retval = vvSocket::read_data(buffer, 1)) != vvSocket::VV_OK)
+  if ((retval = vvSocket::read_data(buffer, 4)) != vvSocket::VV_OK)
   {
     delete[] buffer;
     return retval;
   }
+  const int numBricks = vvToolshed::read32(&buffer[0]);
   delete[] buffer;
 
-  const int numBricks = vvToolshed::read32(&buffer[0]);
   bricks.resize(numBricks);
 
   for (int i=0; i<numBricks; ++i)
@@ -382,6 +382,7 @@ vvSocket::ErrorType vvSocketIO::getBricks(std::vector<vvBrick*>& bricks)
     {
       return retval;
     }
+    bricks[i] = brick;
   }
   return vvSocket::VV_OK;
 }
@@ -402,7 +403,7 @@ vvSocket::ErrorType vvSocketIO::putBricks(std::vector<vvBrick*>& bricks)
 
   if (vvDebugMsg::isActive(3))
     cerr<<"Sending num bricks ..."<<endl;
-  if ((retval = vvSocket::write_data(buffer, 1)) != vvSocket::VV_OK)
+  if ((retval = vvSocket::write_data(&buffer[0], 4)) != vvSocket::VV_OK)
   {
     delete[] buffer;
     return retval;
