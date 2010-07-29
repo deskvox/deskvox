@@ -556,7 +556,7 @@ vvSocket::ErrorType vvSocketIO::getFileName(char*& fn)
 
   for (size_t i=0; i<len; ++i)
   {
-    fn[i] = (char)buffer[i];cerr << fn[i] << endl;
+    fn[i] = (char)buffer[i];
   }
   fn[len] = '\0';
 
@@ -801,6 +801,34 @@ vvSocket::ErrorType vvSocketIO::getMatrix(vvMatrix* m)
     for (int j=0; j<4; j++)
       m->e[i][j] = vvToolshed::readFloat(buffer+4*(4*i+j));
   delete[] buffer;
+  return vvSocket::VV_OK;
+}
+
+//----------------------------------------------------------------------------
+/** Writes a boolean flag to the socket.
+ @param val  the boolean flag.
+*/
+vvSocket::ErrorType vvSocketIO::putBool(const bool val)
+{
+  uchar buffer[] = { (uchar)val };
+  return vvSocket::write_data(&buffer[0], 1);
+}
+
+//----------------------------------------------------------------------------
+/** Reads a boolean flag from the socket.
+ @param val  the boolean flag.
+*/
+vvSocket::ErrorType vvSocketIO::getBool(bool& val)
+{
+  uchar buffer[1];
+  vvSocket::ErrorType retval;
+
+  if ((retval = vvSocket::read_data(&buffer[0], 1)) != vvSocket::VV_OK)
+  {
+    return retval;
+  }
+  val = (bool)buffer[0];
+
   return vvSocket::VV_OK;
 }
 

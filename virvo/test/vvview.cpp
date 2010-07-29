@@ -151,20 +151,48 @@ void vvView::mainLoop(int argc, char *argv[])
       sio->init();
       sio->no_nagle();
 
-      vd = new vvVolDesc();
+      bool loadVolumeFromFile;
+      sio->getBool(loadVolumeFromFile);
 
-      // Get a volume
-      switch (sio->getVolume(vd))
+      if (loadVolumeFromFile)
       {
-      case vvSocket::VV_OK:
-         cerr << "Volume transferred successfully" << endl;
-         break;
-      case vvSocket::VV_ALLOC_ERROR:
-         cerr << "Not enough memory" << endl;
-         break;
-      default:
-         cerr << "Cannot read volume from socket" << endl;
-         break;
+         char* fn = 0;
+         sio->getFileName(fn);
+         cerr << "Load volume from file: " << fn << endl;
+         vd = new vvVolDesc(fn);
+
+         vvFileIO* fio = new vvFileIO();
+         if (fio->loadVolumeData(vd) != vvFileIO::OK)
+         {
+            cerr << "Error loading volume file" << endl;
+            delete vd;
+            delete fio;
+            return;
+         }
+         else
+         {
+            vd->printInfoLine();
+            delete fio;
+         }
+      }
+      else
+      {
+         cerr << "Wait for volume data to be transferred..." << endl;
+         vd = new vvVolDesc();
+
+         // Get a volume
+         switch (sio->getVolume(vd))
+         {
+         case vvSocket::VV_OK:
+            cerr << "Volume transferred successfully" << endl;
+            break;
+         case vvSocket::VV_ALLOC_ERROR:
+            cerr << "Not enough memory" << endl;
+            break;
+         default:
+            cerr << "Cannot read volume from socket" << endl;
+            break;
+         }
       }
 
       // Get bricks to render
@@ -300,17 +328,28 @@ void vvView::mainLoop(int argc, char *argv[])
 
          if (sio->init() == vvSocket::VV_OK)
          {
-            switch (sio->putVolume(vd))
+            // TODO: make this configurable.
+            const bool loadVolumeFromFile = true;
+            sio->putBool(loadVolumeFromFile);
+
+            if (loadVolumeFromFile)
             {
-            case vvSocket::VV_OK:
-               cerr << "Volume transferred successfully" << endl;
-               break;
-            case vvSocket::VV_ALLOC_ERROR:
-               cerr << "Not enough memory" << endl;
-               break;
-            default:
-               cerr << "Cannot write volume to socket" << endl;
-               break;
+               sio->putFileName("/home/stefan/Documents/3D/3D/res/volume/head256.rvf");
+            }
+            else
+            {
+               switch (sio->putVolume(vd))
+               {
+               case vvSocket::VV_OK:
+                  cerr << "Volume transferred successfully" << endl;
+                  break;
+               case vvSocket::VV_ALLOC_ERROR:
+                  cerr << "Not enough memory" << endl;
+                  break;
+               default:
+                  cerr << "Cannot write volume to socket" << endl;
+                  break;
+               }
             }
          }
          else

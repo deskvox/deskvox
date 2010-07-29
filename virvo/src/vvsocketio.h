@@ -138,6 +138,8 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType putData(uchar*, int);
     ErrorType getMatrix(vvMatrix*);
     ErrorType putMatrix(vvMatrix*);
+    ErrorType getBool(bool& val);
+    ErrorType putBool(const bool val);
     ErrorType getData(void*, int, DataType);      // known number and type
     ErrorType putData(void*, int, DataType);
     void set_sock_param(float, float, int=65536, int=0);
