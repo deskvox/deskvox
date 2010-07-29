@@ -108,7 +108,8 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
   // make sure that only valid display lists are called
   for(char *p=text; *p; ++p)
   {
-      if(*p < 32 || *p >= 128)
+      int c = *p;
+      if(c < 32 || c)
           *p = '+';
   }
 
