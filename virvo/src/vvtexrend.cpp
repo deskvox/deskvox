@@ -255,9 +255,9 @@ void vvThreadVisitor::clearOffscreenBuffers()
   @param multiGpuBufferPrecision precision of the offscreen buffer used for multi-gpu rendering
 */
 vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox,
+                     std::vector<BrickList>* bricks,
                      const char** displayNames, const int numDisplays,
-                     const BufferPrecision multiGpuBufferPrecision,
-                     std::vector<BrickList>* bricks)
+                     const BufferPrecision multiGpuBufferPrecision)
   : vvRenderer(vd, renderState)
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");

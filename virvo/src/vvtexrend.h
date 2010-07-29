@@ -331,9 +331,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void evaluateLocalIllumination(vvShaderManager*& pixelShader, const vvVector3& normal);
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST,
+              std::vector<BrickList>* bricks = 0,
               const char** displayNames = 0, const int numDisplays = 0,
-              const BufferPrecision multiGpuBufferPrecision = VV_SHORT,
-              std::vector<BrickList>* bricks = 0);
+              const BufferPrecision multiGpuBufferPrecision = VV_SHORT);
     virtual ~vvTexRend();
     void  renderVolumeGL();
     void  updateTransferFunction();
