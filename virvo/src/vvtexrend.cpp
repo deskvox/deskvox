@@ -246,8 +246,13 @@ void vvThreadVisitor::clearOffscreenBuffers()
 
 //----------------------------------------------------------------------------
 /** Constructor.
-  @param vd  volume description
-  @param m   render geometry (default: automatic)
+  @param vd                      volume description
+  @param renderState             object describing the render state
+  @param geom                    render geometry (default: automatic)
+  @param vox                     voxel type (default: best)
+  @param displayNames            names of x-displays (host:display.screen) for multi-gpu rendering
+  @param numDisplays             # displays for multi-gpu rendering
+  @param multiGpuBufferPrecision precision of the offscreen buffer used for multi-gpu rendering
 */
 vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox,
                      const char** displayNames, const int numDisplays,
