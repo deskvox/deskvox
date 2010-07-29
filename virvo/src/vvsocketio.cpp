@@ -283,9 +283,9 @@ vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick)
   brick->minValue = (int)vvToolshed::read32(&buffer[36]);
   brick->maxValue = (int)vvToolshed::read32(&buffer[40]);
 
-  brick->visible = (bool)&buffer[44];
-  brick->atBorder = (bool)&buffer[45];
-  brick->insideProbe = (bool)&buffer[46];
+  brick->visible = (bool)buffer[44];
+  brick->atBorder = (bool)buffer[45];
+  brick->insideProbe = (bool)buffer[46];
   // One byte for padding.
   brick->index = (int)vvToolshed::read32(&buffer[48]);
 
