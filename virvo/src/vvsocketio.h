@@ -21,6 +21,7 @@
 #ifndef _VVSOCKETIO_H_
 #define _VVSOCKETIO_H_
 
+#include "vvbrick.h"
 #include "vvexport.h"
 #include "vvsocket.h"
 #include "vvvoldesc.h"
@@ -125,6 +126,10 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     bool sock_action();
     ErrorType getVolume(vvVolDesc*);
     ErrorType putVolume(vvVolDesc*);
+    ErrorType getBrick(vvBrick* brick);
+    ErrorType putBrick(vvBrick* brick);
+    ErrorType getBricks(std::vector<vvBrick*>& bricks);
+    ErrorType putBricks(std::vector<vvBrick*>& bricks);
     ErrorType getImage(vvImage*);
     ErrorType putImage(vvImage*);
     ErrorType getData(uchar**, int&);             //  unknown number and type
@@ -134,5 +139,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType getData(void*, int, DataType);      // known number and type
     ErrorType putData(void*, int, DataType);
     void set_sock_param(float, float, int=65536, int=0);
+private:
+    int sizeOfBrick() const;
 };
 #endif

@@ -251,6 +251,176 @@ vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
 }
 
 //----------------------------------------------------------------------------
+/** Get a single brick from the socket.
+  @param brick  pointer to a vvBrick.
+*/
+vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick)
+{
+  uchar* buffer;
+  vvSocket::ErrorType retval;
+
+  const int sob = sizeOfBrick();
+  buffer = new uchar[sob];
+
+  if ((retval = vvSocket::read_data(buffer, sob)) != vvSocket::VV_OK)
+  {
+    delete[] buffer;
+    return retval;
+  }
+
+  brick->pos[0] = vvToolshed::readFloat(&buffer[0]);
+  brick->pos[1] = vvToolshed::readFloat(&buffer[4]);
+  brick->pos[2] = vvToolshed::readFloat(&buffer[8]);
+
+  brick->min[0] = vvToolshed::readFloat(&buffer[12]);
+  brick->min[1] = vvToolshed::readFloat(&buffer[16]);
+  brick->min[2] = vvToolshed::readFloat(&buffer[20]);
+
+  brick->max[0] = vvToolshed::readFloat(&buffer[24]);
+  brick->max[1] = vvToolshed::readFloat(&buffer[28]);
+  brick->max[2] = vvToolshed::readFloat(&buffer[32]);
+
+  brick->minValue = (int)vvToolshed::read32(&buffer[36]);
+  brick->maxValue = (int)vvToolshed::read32(&buffer[40]);
+
+  brick->visible = (bool)&buffer[44];
+  brick->atBorder = (bool)&buffer[45];
+  brick->insideProbe = (bool)&buffer[46];
+  // One byte for padding.
+  brick->index = (int)vvToolshed::read32(&buffer[48]);
+
+  brick->startOffset[0] = (int)vvToolshed::read32(&buffer[52]);
+  brick->startOffset[1] = (int)vvToolshed::read32(&buffer[56]);
+  brick->startOffset[2] = (int)vvToolshed::read32(&buffer[60]);
+
+  brick->texels[0] = (int)vvToolshed::read32(&buffer[64]);
+  brick->texels[1] = (int)vvToolshed::read32(&buffer[68]);
+  brick->texels[2] = (int)vvToolshed::read32(&buffer[72]);
+
+  brick->dist = vvToolshed::readFloat(&buffer[76]);
+
+  return vvSocket::VV_OK;
+}
+
+//----------------------------------------------------------------------------
+/** Write a single brick to the socket.
+  @param brick  pointer to a vvBrick.
+*/
+vvSocket::ErrorType vvSocketIO::putBrick(vvBrick* brick)
+{
+  uchar* buffer;
+  vvSocket::ErrorType retval;
+
+  const int sob = sizeOfBrick();
+  buffer = new uchar[sob];
+
+  vvToolshed::writeFloat(&buffer[0], brick->pos[0]);
+  vvToolshed::writeFloat(&buffer[4], brick->pos[1]);
+  vvToolshed::writeFloat(&buffer[8], brick->pos[2]);
+
+  vvToolshed::writeFloat(&buffer[12], brick->min[0]);
+  vvToolshed::writeFloat(&buffer[16], brick->min[1]);
+  vvToolshed::writeFloat(&buffer[20], brick->min[2]);
+
+  vvToolshed::writeFloat(&buffer[24], brick->max[0]);
+  vvToolshed::writeFloat(&buffer[28], brick->max[1]);
+  vvToolshed::writeFloat(&buffer[32], brick->max[2]);
+
+  vvToolshed::write32(&buffer[36], brick->minValue);
+  vvToolshed::write32(&buffer[40], brick->maxValue);
+
+  buffer[44] = (uchar)brick->visible;
+  buffer[45] = (uchar)brick->atBorder;
+  buffer[46] = (uchar)brick->insideProbe;
+  // One byte for padding.
+  vvToolshed::write32(&buffer[48], brick->index);
+
+  vvToolshed::write32(&buffer[52], brick->startOffset[0]);
+  vvToolshed::write32(&buffer[56], brick->startOffset[1]);
+  vvToolshed::write32(&buffer[60], brick->startOffset[2]);
+
+  vvToolshed::write32(&buffer[64], brick->texels[0]);
+  vvToolshed::write32(&buffer[68], brick->texels[1]);
+  vvToolshed::write32(&buffer[72], brick->texels[2]);
+
+  vvToolshed::writeFloat(&buffer[76], brick->dist);
+
+  if ((retval = vvSocket::write_data(buffer, sob)) != vvSocket::VV_OK)
+  {
+    delete[] buffer;
+    return retval;
+  }
+
+  return vvSocket::VV_OK;
+}
+
+//----------------------------------------------------------------------------
+/** Get brick list from the socket. Bricks contain no volume data.
+  @param bricks  std::vector with pointers to bricks.
+*/
+vvSocket::ErrorType vvSocketIO::getBricks(std::vector<vvBrick*>& bricks)
+{
+  uchar* buffer;
+  vvSocket::ErrorType retval;
+
+  buffer = new uchar[4];
+
+  if ((retval = vvSocket::read_data(buffer, 1)) != vvSocket::VV_OK)
+  {
+    delete[] buffer;
+    return retval;
+  }
+  delete[] buffer;
+
+  const int numBricks = vvToolshed::read32(&buffer[0]);
+  bricks.resize(numBricks);
+
+  for (int i=0; i<numBricks; ++i)
+  {
+    vvBrick* brick = new vvBrick();
+    if ((retval = getBrick(brick)) != vvSocket::VV_OK)
+    {
+      return retval;
+    }
+  }
+  return vvSocket::VV_OK;
+}
+
+//----------------------------------------------------------------------------
+/** Write brick list to the socket. Bricks contain no volume data.
+  @param bricks  std::vector with pointers to bricks.
+*/
+vvSocket::ErrorType vvSocketIO::putBricks(std::vector<vvBrick*>& bricks)
+{
+  uchar* buffer;
+  vvSocket::ErrorType retval;
+
+  const int numBricks = (const int)bricks.size();
+
+  buffer = new uchar[4];
+  vvToolshed::write32(&buffer[0], numBricks);
+
+  if (vvDebugMsg::isActive(3))
+    cerr<<"Sending num bricks ..."<<endl;
+  if ((retval = vvSocket::write_data(buffer, 1)) != vvSocket::VV_OK)
+  {
+    delete[] buffer;
+    return retval;
+  }
+  delete[] buffer;
+
+  for(std::vector<vvBrick*>::iterator it = bricks.begin(); it != bricks.end(); ++it)
+  {
+    vvBrick* brick = (*it);
+    if ((retval = putBrick(brick)) != vvSocket::VV_OK)
+    {
+      return retval;
+    }
+  }
+  return vvSocket::VV_OK;
+}
+
+//----------------------------------------------------------------------------
 /** Get an image from the socket.
  @param im  pointer to a vvImage object.
 */
@@ -581,6 +751,27 @@ vvSocket::ErrorType vvSocketIO::putMatrix(vvMatrix* m)
     for (int j=0; j<4; j++)
       vvToolshed::writeFloat(&buffer[4*(4*i+j)], m->e[i][j]);
   return putData(buffer, 64);
+}
+
+//----------------------------------------------------------------------------
+/** Allocate memory for a single brick.
+*/
+int vvSocketIO::sizeOfBrick() const
+{
+  // Assume integers and floats to be 4 byte long.
+  return 3 * 4 // pos
+       + 3 * 4 // min
+       + 3 * 4 // max
+       + 4 // minValue
+       + 4 // maxValue
+       + 1 // isVisible
+       + 1 // atBorder
+       + 1 // insideProbe
+       + 1 // a padding for alignment, no data here
+       + 4 // index
+       + 3 * 4 // startOffset
+       + 3 * 4 // texels
+       + 1 * 4; // dist
 }
 
 // EOF
