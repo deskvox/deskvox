@@ -213,6 +213,7 @@ void vvView::mainLoop(int argc, char *argv[])
                   vvImage img(viewport[3], viewport[2], pixels);
                   sio->putImage(&img);
                   delete[] pixels;
+                  offscreenBuffer->unbindFramebuffer();
                }
             }
          }
@@ -1378,8 +1379,10 @@ void vvView::renderRemotely(vvMatrix* pr, vvMatrix* mv)
    if (ds->offscreenBuffer == NULL)
    {
      ds->offscreenBuffer = new vvOffscreenBuffer(1.0f, VV_BYTE);
+     ds->offscreenBuffer->initForRender();
    }
-   ds->offscreenBuffer->initForRender();
+
+   ds->offscreenBuffer->bindFramebuffer();
 
    glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1400,8 +1403,6 @@ void vvView::renderRemotely(vvMatrix* pr, vvMatrix* mv)
    ds->renderer->renderVolumeGL();
 
    glFlush();
-
-   ds->offscreenBuffer->clearBuffer();
 }
 
 //----------------------------------------------------------------------------
