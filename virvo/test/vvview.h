@@ -144,7 +144,6 @@ class vvView
       static void transferMenuCallback(int);
       static void animMenuCallback(int);
       static void viewMenuCallback(int);
-      static void renderRemotely(vvMatrix* pr, vvMatrix* mv);
       static void performanceTest();
       static void printProfilingInfo(const int testNr = 1, const int testCnt = 1);
       static void printProfilingResult(vvStopwatch* totalTime, const int framesRendered);

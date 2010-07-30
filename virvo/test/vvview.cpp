@@ -44,6 +44,7 @@ using std::ios;
 #include "../src/vvprintgl.h"
 #include "../src/vvstopwatch.h"
 #include "../src/vvrendercontext.h"
+#include "../src/vvrenderslave.h"
 #include "../src/vvrenderer.h"
 #include "../src/vvfileio.h"
 #include "../src/vvdebugmsg.h"
@@ -149,78 +150,34 @@ void vvView::mainLoop(int argc, char *argv[])
    if (slaveMode)
    {
       cerr << "Renderer started in slave mode" << endl;
+      vvRenderSlave* renderSlave = new vvRenderSlave();
 
-      // When renderer is a slave, only one socket instance will be needed.
-      sockets.push_back(new vvSocketIO(vvView::DEFAULT_PORT , vvSocket::VV_TCP));
-      sockets[0]->set_debuglevel(vvDebugMsg::getDebugLevel());
-
-      if (sockets[0]->init() != vvSocket::VV_OK)
+      if (renderSlave->initRemoteRenderingSocket(vvView::DEFAULT_PORT, vvSocket::VV_TCP) != vvSocket::VV_OK)
       {
-        // TODO: Evaluate the error type, maybe don't even return but try again.
-        cerr << "Couldn't initialize the socket connection" << endl;
-        cerr << "Exiting..." << endl;
-        return;
+         // TODO: Evaluate the error type, maybe don't even return but try again.
+         cerr << "Couldn't initialize the socket connection" << endl;
+         cerr << "Exiting..." << endl;
+         return;
       }
-      sockets[0]->no_nagle();
 
-      bool loadVolumeFromFile;
-      sockets[0]->getBool(loadVolumeFromFile);
-
-      if (loadVolumeFromFile)
+      if (renderSlave->initRemoteRenderingData(vd) != vvTexRend::OK)
       {
-         char* fn = 0;
-         sockets[0]->getFileName(fn);
-         cerr << "Load volume from file: " << fn << endl;
-         vd = new vvVolDesc(fn);
-
-         vvFileIO* fio = new vvFileIO();
-         if (fio->loadVolumeData(vd) != vvFileIO::OK)
-         {
-            cerr << "Error loading volume file" << endl;
-            delete vd;
-            delete fio;
-            return;
-         }
-         else
-         {
-            vd->printInfoLine();
-            delete fio;
-         }
-      }
-      else
-      {
-         cerr << "Wait for volume data to be transferred..." << endl;
-         vd = new vvVolDesc();
-
-         // Get a volume
-         switch (sockets[0]->getVolume(vd))
-         {
-         case vvSocket::VV_OK:
-            cerr << "Volume transferred successfully" << endl;
-            break;
-         case vvSocket::VV_ALLOC_ERROR:
-            cerr << "Not enough memory" << endl;
-            break;
-         default:
-            cerr << "Cannot read volume from socket" << endl;
-            break;
-         }
+         cerr << "Exiting..." << endl;
+         return;
       }
 
       // Get bricks to render
       std::vector<BrickList>* frames = new std::vector<BrickList>();
       BrickList bricks;
-      switch (sockets[0]->getBricks(bricks))
-      {
-      case vvSocket::VV_OK:
-         cerr << "Brick outlines received" << endl;
-         break;
-      default:
-         cerr << "Unable to retrieve brick outlines" << endl;
-         break;
-      }
-      frames->push_back(bricks);
 
+      if (renderSlave->initRemoteRenderingBricks(bricks) != vvSocket::VV_OK)
+      {
+         delete frames;
+         cerr << "Exiting..." << endl;
+         return;
+      }
+
+      frames->push_back(bricks);
       if (vd != NULL)
       {
          vd->printInfoLine();
@@ -252,24 +209,10 @@ void vvView::mainLoop(int argc, char *argv[])
             setProjectionMode(perspectiveMode);
             setRenderer(currentGeom, currentVoxels, frames);
             srand(time(NULL));
-            vvMatrix pr;
-            vvMatrix mv;
-            while (1)
-            {
-               if ((sockets[0]->getMatrix(&pr) == vvSocket::VV_OK)
-                  && (sockets[0]->getMatrix(&mv) == vvSocket::VV_OK))
-               {
-                  renderRemotely(&pr, &mv);
 
-                  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-                  uchar* pixels = new uchar[viewport[2] * viewport[3] * 4];
-                  glReadPixels(viewport[0], viewport[1], viewport[2], viewport[3], GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-                  vvImage img(viewport[3], viewport[2], pixels);
-                  sockets[0]->putImage(&img);
-                  delete[] pixels;
-                  offscreenBuffer->unbindFramebuffer();
-               }
-            }
+            // TODO: reset quality per frame.
+            renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
+            renderSlave->remoteRenderingLoop(dynamic_cast<vvTexRend*>(renderer));
          }
       }
       for (std::vector<BrickList>::const_iterator it1 = frames->begin(); it1 != frames->end(); ++it1)
@@ -281,6 +224,7 @@ void vvView::mainLoop(int argc, char *argv[])
          }
       }
       delete frames;
+      delete renderSlave;
    }
    else
    {
@@ -489,7 +433,6 @@ void vvView::displayCallback(void)
 
    if (ds->remoteRendering)
    {
-      const int s = 0;
       ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
 
       float matrixGL[16];
@@ -1487,43 +1430,6 @@ void vvView::viewMenuCallback(int item)
          break;
    }
    glutPostRedisplay();
-}
-
-//----------------------------------------------------------------------------
-/** Render remotely.
-  Render to an offscreen buffer that can be read back later on.
- */
-void vvView::renderRemotely(vvMatrix* pr, vvMatrix* mv)
-{
-   vvDebugMsg::msg(3, "vvView::renderRemotely()");
-
-   if (ds->offscreenBuffer == NULL)
-   {
-     ds->offscreenBuffer = new vvOffscreenBuffer(1.0f, VV_BYTE);
-     ds->offscreenBuffer->initForRender();
-   }
-
-   ds->offscreenBuffer->bindFramebuffer();
-
-   glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-   ds->renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
-
-   // Draw volume:
-   float matrixGL[16];
-
-   glMatrixMode(GL_PROJECTION);
-   pr->get(matrixGL);
-   glLoadMatrixf(matrixGL);
-
-   glMatrixMode(GL_MODELVIEW);
-   mv->get(matrixGL);
-   glLoadMatrixf(matrixGL);
-
-   ds->renderer->renderVolumeGL();
-
-   glFlush();
 }
 
 //----------------------------------------------------------------------------

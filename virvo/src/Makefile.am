@@ -42,6 +42,7 @@ libvirvo_a_headers = \
         vvglsl.h \
         vvshadermanager.h \
         vvshaderfactory.h \
+        vvrenderslave.h \
         vvrendertarget.h \
         vvrendercontext.h \
         vvoffscreenbuffer.h \
@@ -78,6 +79,7 @@ libvirvo_a_SOURCES = \
         vvglsl.cpp \
         vvshadermanager.cpp \
         vvshaderfactory.cpp \
+        vvrenderslave.cpp \
         vvrendertarget.cpp \
         vvrendercontext.cpp \
         vvoffscreenbuffer.cpp \
