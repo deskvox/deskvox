@@ -50,6 +50,7 @@ typedef struct pthread_barrier_t_ { int dummy; } pthread_barrier_t;
 #endif
 
 struct ThreadArgs;
+class vvThreadVisitor;
 
 /*!
  * Generate more colors by adjusting this literal and \ref generateDebugColors()
@@ -60,39 +61,6 @@ const int MAX_DEBUG_COLORS = 8;
 //============================================================================
 // Class Definitions
 //============================================================================
-
-/** The content of each thread is rendered via the visitor pattern.
-  The rendered results of each thread are managed using a bsp tree
-  structure. Using the visitor pattern was a design decision so
-  that the bsp tree doesn't need knowledge about the (rather specific)
-  rendering code its half spaces utilize to display their results.
-  This logic is supplied by the visitor which needs to be initialized
-  once and passed to the bsp tree after initialization. Thus the bsp
-  tree may be utilized in context not that specific as this one.
-  @author Stefan Zellmann
-  @see vvVisitor
- */
-class VIRVOEXPORT vvThreadVisitor : public vvVisitor
-{
-public:
-  vvThreadVisitor();
-  virtual ~vvThreadVisitor();
-  virtual void visit(vvVisitable* obj) const;
-
-  void setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
-                           const int numOffscreenBuffers);
-  void setPixels(GLfloat**& pixels);
-  void setWidth(const int width);
-  void setHeight(const int height);
-private:
-  vvOffscreenBuffer** _offscreenBuffers;
-  int _numOffscreenBuffers;
-  GLfloat** _pixels;
-  int _width;
-  int _height;
-
-  void clearOffscreenBuffers();
-};
 
 /** Volume rendering engine using a texture-based algorithm.
   Textures can be drawn as planes or spheres. In planes mode a rendering

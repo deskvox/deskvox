@@ -51,6 +51,7 @@ SOURCES = vvbrick.cpp \
     vvcg.cpp \
     vvglsl.cpp \
     vvbsptree.cpp \
+    vvbsptreevisitor.cpp \
     vvmultirend/vvtexmultirend.cpp \
     vvmultirend/vvtexmultirendmngr.cpp
 HEADERS = glext-orig.h \
@@ -95,6 +96,7 @@ HEADERS = glext-orig.h \
     vvcg.h \
     vvglsl.h \
     vvbsptree.h \
+    vvbsptreevisitor.h \
     vvmultirend/vvtexmultirend.h \
     vvmultirend/vvtexmultirendmngr.h
 TARGET = coVirvo

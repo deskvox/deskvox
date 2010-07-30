@@ -11,6 +11,7 @@ libvirvo_a_headers = \
         vvarray.h \
         vvbrick.h \
         vvbsptree.h \
+        vvbsptreevisitor.h \
         vvcg.h \
         vvcolor.h \
         vvdebugmsg.h \
@@ -54,6 +55,7 @@ libvirvo_a_SOURCES = \
         $(libvirvo_a_headers) \
         vvbrick.cpp \
         vvbsptree.cpp \
+        vvbsptreevisitor.cpp \
         vvcg.cpp \
         vvcolor.cpp \
         vvdebugmsg.cpp \
