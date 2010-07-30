@@ -113,7 +113,6 @@ vvView::vvView()
    bufferPrecision       = 8;
    useHeadLight          = false;
    slaveMode             = false;
-   sio                   = NULL;
    remoteRendering       = true;
    clipBuffer            = NULL;
    framebufferDump       = NULL;
@@ -130,7 +129,11 @@ vvView::~vvView()
    delete renderer;
    delete ov;
    delete vd;
-   delete sio;
+   for (std::vector<vvSocketIO*>::const_iterator it = sockets.begin();
+        it != sockets.end(); ++it)
+   {
+     delete (*it);
+   }
    delete offscreenBuffer;
 }
 
@@ -147,24 +150,26 @@ void vvView::mainLoop(int argc, char *argv[])
    {
       cerr << "Renderer started in slave mode" << endl;
 
-      sio = new vvSocketIO(vvView::DEFAULT_PORT , vvSocket::VV_TCP);
-      sio->set_debuglevel(vvDebugMsg::getDebugLevel());
-      if (sio->init() != vvSocket::VV_OK)
+      // When renderer is a slave, only one socket instance will be needed.
+      sockets.push_back(new vvSocketIO(vvView::DEFAULT_PORT , vvSocket::VV_TCP));
+      sockets[0]->set_debuglevel(vvDebugMsg::getDebugLevel());
+
+      if (sockets[0]->init() != vvSocket::VV_OK)
       {
         // TODO: Evaluate the error type, maybe don't even return but try again.
         cerr << "Couldn't initialize the socket connection" << endl;
         cerr << "Exiting..." << endl;
         return;
       }
-      sio->no_nagle();
+      sockets[0]->no_nagle();
 
       bool loadVolumeFromFile;
-      sio->getBool(loadVolumeFromFile);
+      sockets[0]->getBool(loadVolumeFromFile);
 
       if (loadVolumeFromFile)
       {
          char* fn = 0;
-         sio->getFileName(fn);
+         sockets[0]->getFileName(fn);
          cerr << "Load volume from file: " << fn << endl;
          vd = new vvVolDesc(fn);
 
@@ -188,7 +193,7 @@ void vvView::mainLoop(int argc, char *argv[])
          vd = new vvVolDesc();
 
          // Get a volume
-         switch (sio->getVolume(vd))
+         switch (sockets[0]->getVolume(vd))
          {
          case vvSocket::VV_OK:
             cerr << "Volume transferred successfully" << endl;
@@ -205,7 +210,7 @@ void vvView::mainLoop(int argc, char *argv[])
       // Get bricks to render
       std::vector<BrickList>* frames = new std::vector<BrickList>();
       BrickList bricks;
-      switch (sio->getBricks(bricks))
+      switch (sockets[0]->getBricks(bricks))
       {
       case vvSocket::VV_OK:
          cerr << "Brick outlines received" << endl;
@@ -251,8 +256,8 @@ void vvView::mainLoop(int argc, char *argv[])
             vvMatrix mv;
             while (1)
             {
-               if ((sio->getMatrix(&pr) == vvSocket::VV_OK)
-                  && (sio->getMatrix(&mv) == vvSocket::VV_OK))
+               if ((sockets[0]->getMatrix(&pr) == vvSocket::VV_OK)
+                  && (sockets[0]->getMatrix(&mv) == vvSocket::VV_OK))
                {
                   renderRemotely(&pr, &mv);
 
@@ -260,7 +265,7 @@ void vvView::mainLoop(int argc, char *argv[])
                   uchar* pixels = new uchar[viewport[2] * viewport[3] * 4];
                   glReadPixels(viewport[0], viewport[1], viewport[2], viewport[3], GL_RGBA, GL_UNSIGNED_BYTE, pixels);
                   vvImage img(viewport[3], viewport[2], pixels);
-                  sio->putImage(&img);
+                  sockets[0]->putImage(&img);
                   delete[] pixels;
                   offscreenBuffer->unbindFramebuffer();
                }
@@ -329,49 +334,60 @@ void vvView::mainLoop(int argc, char *argv[])
 
       if (remoteRendering)
       {
-         sio = new vvSocketIO(vvView::DEFAULT_PORT, slaveNames[0], vvSocket::VV_TCP);
-         sio->set_debuglevel(vvDebugMsg::getDebugLevel());
-         sio->no_nagle();
-
-         if (sio->init() == vvSocket::VV_OK)
+         const bool loadVolumeFromFile = !redistributeVolData;
+         for (int s=0; s<slaveNames.size(); ++s)
          {
-            const bool loadVolumeFromFile = !redistributeVolData;
-            sio->putBool(loadVolumeFromFile);
+            sockets.push_back(new vvSocketIO(vvView::DEFAULT_PORT, slaveNames[s], vvSocket::VV_TCP));
+            sockets[s]->set_debuglevel(vvDebugMsg::getDebugLevel());
+            sockets[s]->no_nagle();
 
-            if (loadVolumeFromFile)
+            if (sockets[s]->init() == vvSocket::VV_OK)
             {
-               allFileNamesAreEqual = (slaveFileNames.size() == 0);
-               if (allFileNamesAreEqual)
+               sockets[s]->putBool(loadVolumeFromFile);
+
+               if (loadVolumeFromFile)
                {
-                  sio->putFileName(filename);
+                  allFileNamesAreEqual = (slaveFileNames.size() == 0);
+                  if (allFileNamesAreEqual)
+                  {
+                     sockets[s]->putFileName(filename);
+                  }
+                  else
+                  {
+                     if (slaveFileNames.size() > s)
+                     {
+                        sockets[s]->putFileName(slaveFileNames[s]);
+                     }
+                     else
+                     {
+                        // Not enough file names specified, try this one.
+                        sockets[s]->putFileName(filename);
+                     }
+                  }
                }
                else
                {
-                  // TODO: if more slaves can be accomodated, communicate all file names.
-                  sio->putFileName(slaveFileNames[0]);
+                  switch (sockets[s]->putVolume(vd))
+                  {
+                  case vvSocket::VV_OK:
+                     cerr << "Volume transferred successfully" << endl;
+                     break;
+                  case vvSocket::VV_ALLOC_ERROR:
+                     cerr << "Not enough memory" << endl;
+                     break;
+                  default:
+                     cerr << "Cannot write volume to socket" << endl;
+                     break;
+                  }
                }
             }
             else
             {
-               switch (sio->putVolume(vd))
-               {
-               case vvSocket::VV_OK:
-                  cerr << "Volume transferred successfully" << endl;
-                  break;
-               case vvSocket::VV_ALLOC_ERROR:
-                  cerr << "Not enough memory" << endl;
-                  break;
-               default:
-                  cerr << "Cannot write volume to socket" << endl;
-                  break;
-               }
+               cerr << "No connection to remote rendering server established at: " << slaveNames[0] << endl;
+               cerr << "Falling back to local rendering" << endl;
+               remoteRendering = false;
+               break;
             }
-         }
-         else
-         {
-            cerr << "No connection to remote rendering server established at: " << slaveNames[0] << endl;
-            cerr << "Falling back to local rendering" << endl;
-            remoteRendering = false;
          }
       }
 
@@ -387,16 +403,21 @@ void vvView::mainLoop(int argc, char *argv[])
       {
          // This will build up the bsp tree of the master node.
          dynamic_cast<vvTexRend*>(renderer)->prepareDistributedRendering(slaveNames.size());
-         switch (sio->putBricks(dynamic_cast<vvTexRend*>(renderer)->getBrickListsToDistribute()[0]->at(0)))
+
+         // Distribute the bricks from the bsp tree
+         for (int s=0; s<sockets.size(); ++s)
          {
-         case vvSocket::VV_OK:
-            cerr << "Brick outlines transferred successfully" << endl;
-            break;
-         default:
-            cerr << "Unable to transfer brick outlines" << endl;
-            remoteRendering = false;
-            break;
-          }
+            switch (sockets[s]->putBricks(dynamic_cast<vvTexRend*>(renderer)->getBrickListsToDistribute()[s]->at(0)))
+            {
+            case vvSocket::VV_OK:
+               cerr << "Brick outlines transferred successfully" << endl;
+               break;
+            default:
+               cerr << "Unable to transfer brick outlines" << endl;
+               remoteRendering = false;
+               break;
+            }
+         }
       }
 
       // Set window title:
@@ -468,6 +489,7 @@ void vvView::displayCallback(void)
 
    if (ds->remoteRendering)
    {
+      const int s = 0;
       ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
 
       float matrixGL[16];
@@ -475,21 +497,26 @@ void vvView::displayCallback(void)
       vvMatrix pr;
       glGetFloatv(GL_PROJECTION_MATRIX, matrixGL);
       pr.set(matrixGL);
-      ds->sio->putMatrix(&pr);
 
       vvMatrix mv;
       glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
       mv.set(matrixGL);
-      ds->sio->putMatrix(&mv);
 
       const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-      vvImage img = vvImage(viewport[3], viewport[2], new uchar[viewport[3] * viewport[2] * 4]);
-      ds->sio->getImage(&img);
 
-      glDrawBuffer(GL_BACK);
-      glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glDrawPixels(viewport[2], viewport[3], GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
+      for (int s=0; s<ds->sockets.size(); ++s)
+      {
+         ds->sockets[s]->putMatrix(&pr);
+         ds->sockets[s]->putMatrix(&mv);
+
+         vvImage img = vvImage(viewport[3], viewport[2], new uchar[viewport[3] * viewport[2] * 4]);
+         ds->sockets[s]->getImage(&img);
+
+         glDrawBuffer(GL_BACK);
+         glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+         glDrawPixels(viewport[2], viewport[3], GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
+      }
 
       glutSwapBuffers();
    }

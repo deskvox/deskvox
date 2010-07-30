@@ -113,7 +113,7 @@ class vvView
       bool useOffscreenBuffer;                    ///< render to an offscreen buffer. Mandatory for setting buffer precision
       bool useHeadLight;                          ///< toggle head light 
       int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
-      vvSocketIO*  sio;                           ///< socket for renderer in server or client mode
+      std::vector<vvSocketIO*>  sockets;          ///< socket for renderer in server or client mode
       bool remoteRendering;                       ///< remote rendering in client mode
       vvOffscreenBuffer* offscreenBuffer;         ///< used for remote rendering
       vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
