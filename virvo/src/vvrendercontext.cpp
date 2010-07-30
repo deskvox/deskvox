@@ -61,13 +61,12 @@ bool vvRenderContext::makeCurrent() const
   return false;
 }
 
-void vvRenderContext::init()
+void vvRenderContext::init(const bool debug)
 {
 #ifdef HAVE_X11
   // TODO: make this configurable.
   _archData->display = XOpenDisplay(":0");
 
-  const bool debug = true;
   if (_archData->display != NULL)
   {
     const Drawable parent = RootWindow(_archData->display, 0);

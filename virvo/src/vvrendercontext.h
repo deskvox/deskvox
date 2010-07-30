@@ -35,7 +35,7 @@ private:
 
   bool _initialized;
 
-  void init();
+  void init(const bool debug = false);
 };
 
 #endif // _VV_RENDERCONTEXT_H_
