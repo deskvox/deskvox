@@ -18,6 +18,12 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+// No circular dependencies between gl.h and glew.h
+#ifndef GLEW_INCLUDED
+#include <GL/glew.h>
+#define GLEW_INCLUDED
+#endif
+
 #include "vvbsptree.h"
 #include "vvbsptreevisitors.h"
 #include "vvgltools.h"
@@ -147,7 +153,7 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
   _sockets[s]->putMatrix(&pr);
   _sockets[s]->putMatrix(&mv);
 
-  vvImage img = vvImage(viewport[3], viewport[2], new uchar[viewport[3] * viewport[2] * 4]);
+  vvImage img = vvImage();
   _sockets[s]->getImage(&img);
 
   glActiveTextureARB(GL_TEXTURE0_ARB);
