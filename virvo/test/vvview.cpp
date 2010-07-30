@@ -152,7 +152,7 @@ void vvView::mainLoop(int argc, char *argv[])
       cerr << "Renderer started in slave mode" << endl;
       vvRenderSlave* renderSlave = new vvRenderSlave();
 
-      if (renderSlave->initRemoteRenderingSocket(vvView::DEFAULT_PORT, vvSocket::VV_TCP) != vvSocket::VV_OK)
+      if (renderSlave->initRemoteRenderingSocket(vvView::DEFAULT_PORT, vvSocket::VV_TCP) != vvRenderSlave::VV_OK)
       {
          // TODO: Evaluate the error type, maybe don't even return but try again.
          cerr << "Couldn't initialize the socket connection" << endl;
@@ -160,7 +160,7 @@ void vvView::mainLoop(int argc, char *argv[])
          return;
       }
 
-      if (renderSlave->initRemoteRenderingData(vd) != vvTexRend::OK)
+      if (renderSlave->initRemoteRenderingData(vd) != vvRenderSlave::VV_OK)
       {
          cerr << "Exiting..." << endl;
          return;
@@ -170,7 +170,7 @@ void vvView::mainLoop(int argc, char *argv[])
       std::vector<BrickList>* frames = new std::vector<BrickList>();
       BrickList bricks;
 
-      if (renderSlave->initRemoteRenderingBricks(bricks) != vvSocket::VV_OK)
+      if (renderSlave->initRemoteRenderingBricks(bricks) != vvRenderSlave::VV_OK)
       {
          delete frames;
          cerr << "Exiting..." << endl;

@@ -29,12 +29,19 @@
 class VIRVOEXPORT vvRenderSlave
 {
 public:
+  enum ErrorType
+  {
+    VV_OK = 0,
+    VV_SOCKET_ERROR,
+    VV_FILEIO_ERROR
+  };
+
   vvRenderSlave();
   ~vvRenderSlave();
 
-  vvSocket::ErrorType initRemoteRenderingSocket(const int port, vvSocket::SocketType st);
-  vvTexRend::ErrorType initRemoteRenderingData(vvVolDesc*& vd);
-  vvSocket::ErrorType initRemoteRenderingBricks(std::vector<vvBrick*>& bricks);
+  vvRenderSlave::ErrorType initRemoteRenderingSocket(const int port, vvSocket::SocketType st);
+  vvRenderSlave::ErrorType initRemoteRenderingData(vvVolDesc*& vd);
+  vvRenderSlave::ErrorType initRemoteRenderingBricks(std::vector<vvBrick*>& bricks);
   void  remoteRenderingLoop(vvTexRend* renderer);
 private:
   vvOffscreenBuffer* _remoteRenderingBuffer;    ///< offscreen buffer for remote rendering

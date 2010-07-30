@@ -35,17 +35,25 @@ vvRenderSlave::~vvRenderSlave()
   delete _remoteRenderingSocket;
 }
 
-vvSocket::ErrorType vvRenderSlave::initRemoteRenderingSocket(const int port, const vvSocket::SocketType st)
+vvRenderSlave::ErrorType vvRenderSlave::initRemoteRenderingSocket(const int port, const vvSocket::SocketType st)
 {
   _remoteRenderingSocket = new vvSocketIO(port, st);
   _remoteRenderingSocket->set_debuglevel(vvDebugMsg::getDebugLevel());
 
   const vvSocket::ErrorType err = _remoteRenderingSocket->init();
   _remoteRenderingSocket->no_nagle();
-  return err;
+
+  if (err != vvSocket::VV_OK)
+  {
+    return VV_SOCKET_ERROR;
+  }
+  else
+  {
+    return VV_OK;
+  }
 }
 
-vvTexRend::ErrorType vvRenderSlave::initRemoteRenderingData(vvVolDesc*& vd)
+vvRenderSlave::ErrorType vvRenderSlave::initRemoteRenderingData(vvVolDesc*& vd)
 {
   bool loadVolumeFromFile;
   _remoteRenderingSocket->getBool(loadVolumeFromFile);
@@ -63,7 +71,7 @@ vvTexRend::ErrorType vvRenderSlave::initRemoteRenderingData(vvVolDesc*& vd)
       cerr << "Error loading volume file" << endl;
       delete vd;
       delete fio;
-      return vvTexRend::UNSUPPORTED;
+      return VV_FILEIO_ERROR;
     }
     else
     {
@@ -84,16 +92,16 @@ vvTexRend::ErrorType vvRenderSlave::initRemoteRenderingData(vvVolDesc*& vd)
       break;
     case vvSocket::VV_ALLOC_ERROR:
       cerr << "Not enough memory" << endl;
-      return vvTexRend::UNSUPPORTED;
+      return VV_SOCKET_ERROR;
     default:
       cerr << "Cannot read volume from socket" << endl;
-      return vvTexRend::UNSUPPORTED;
+      return VV_SOCKET_ERROR;
     }
   }
-  return vvTexRend::OK;
+  return VV_OK;
 }
 
-vvSocket::ErrorType vvRenderSlave::initRemoteRenderingBricks(std::vector<vvBrick*>& bricks)
+vvRenderSlave::ErrorType vvRenderSlave::initRemoteRenderingBricks(std::vector<vvBrick*>& bricks)
 {
   const vvSocket::ErrorType err = _remoteRenderingSocket->getBricks(bricks);
   switch (err)
@@ -103,9 +111,9 @@ vvSocket::ErrorType vvRenderSlave::initRemoteRenderingBricks(std::vector<vvBrick
     break;
   default:
     cerr << "Unable to retrieve brick outlines" << endl;
-    break;
+    return VV_SOCKET_ERROR;
   }
-  return err;
+  return VV_OK;
 }
 
 //----------------------------------------------------------------------------
