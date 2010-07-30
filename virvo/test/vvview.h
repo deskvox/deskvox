@@ -123,7 +123,7 @@ class vvView
       bool allFileNamesAreEqual;                  ///< if no slave file names were specified and the option redistributedata wasn't chosen,
                                                   ///< the file name passed to the master render will be communicated to each slave
       std::vector<char*> slaveFileNames;          ///< a list with file names where slaves can find the appropriate volume data
-
+      GLuint remoteTexId;
    public:
       vvView();
       ~vvView();

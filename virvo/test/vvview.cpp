@@ -278,6 +278,7 @@ void vvView::mainLoop(int argc, char *argv[])
 
       if (remoteRendering)
       {
+         glGenTextures(1, &remoteTexId);
          const bool loadVolumeFromFile = !redistributeVolData;
          for (int s=0; s<slaveNames.size(); ++s)
          {
@@ -458,7 +459,32 @@ void vvView::displayCallback(void)
          glDrawBuffer(GL_BACK);
          glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-         glDrawPixels(viewport[2], viewport[3], GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
+
+         // Orthographic projection.
+         glMatrixMode(GL_PROJECTION);
+         glPushMatrix();
+         glLoadIdentity();
+
+         // Fix the proxy quad for the frame buffer texture.
+         glMatrixMode(GL_MODELVIEW);
+         glPushMatrix();
+         glLoadIdentity();
+
+         glActiveTextureARB(GL_TEXTURE0_ARB);
+         glEnable(GL_TEXTURE_2D);
+         glBindTexture(GL_TEXTURE_2D, ds->remoteTexId);
+         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.getWidth(), img.getHeight(),
+                      0, GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
+         vvGLTools::drawViewAlignedQuad();
+
+         glMatrixMode(GL_PROJECTION);
+         glPopMatrix();
+
+         glMatrixMode(GL_MODELVIEW);
+         glPopMatrix();
       }
 
       glutSwapBuffers();

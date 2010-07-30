@@ -191,7 +191,31 @@ void vvGLTools::draw(vvVector3* vec)
   glEnable(GL_DEPTH_TEST);
 }
 
+//----------------------------------------------------------------------------
+/** Draw view aligned quad. If no vertex coordinates are specified,
+    these default to: (-1.0f, -1.0f) (1.0f, 1.0f). No multi texture coordinates
+    supported.
+*/
+void vvGLTools::drawViewAlignedQuad(const float x1, const float y1,
+                                    const float x2, const float y2)
+{
+  glBegin(GL_QUADS);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    glNormal3f(0.0f, 0.0f, 1.0f);
 
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex2f(x1, y1);
+
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex2f(x2, y1);
+
+    glTexCoord2f(1.0f, 1.0f);
+    glVertex2f(x2, y2);
+
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex2f(x1, y2);
+  glEnd();
+}
 
 //----------------------------------------------------------------------------
 /** Get OpenGL viewport info: 0 ==> x, 1 ==> y, 2 ==> width, 3 ==> height.

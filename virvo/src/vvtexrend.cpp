@@ -194,22 +194,7 @@ void vvThreadVisitor::visit(vvVisitable* obj) const
                     / static_cast<float>(_offscreenBuffers[hs->getId()]->getBufferHeight()))
                    * 2.0f - 1.0f;
 
-  glBegin(GL_QUADS);
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-    glNormal3f(0.0f, 0.0f, 1.0f);
-
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex2f(x1, y1);
-
-    glTexCoord2f(1.0f, 0.0f);
-    glVertex2f(x2, y1);
-
-    glTexCoord2f(1.0f, 1.0f);
-    glVertex2f(x2, y2);
-
-    glTexCoord2f(0.0f, 1.0f);
-    glVertex2f(x1, y2);
-  glEnd();
+  vvGLTools::drawViewAlignedQuad(x1, x2, y1, y2);
 }
 
 void vvThreadVisitor::setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
