@@ -26,7 +26,7 @@ struct ContextArchData;
 class vvRenderContext : public vvRenderTarget
 {
 public:
-  vvRenderContext();
+  vvRenderContext(const bool debug = false);
   ~vvRenderContext();
 
   bool makeCurrent() const;

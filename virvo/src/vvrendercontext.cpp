@@ -37,12 +37,12 @@ struct ContextArchData
 #endif
 };
 
-vvRenderContext::vvRenderContext()
+vvRenderContext::vvRenderContext(const bool debug)
   : vvRenderTarget()
 {
   _archData = new ContextArchData;
   _initialized = false;
-  init();
+  init(debug);
 }
 
 vvRenderContext::~vvRenderContext()
