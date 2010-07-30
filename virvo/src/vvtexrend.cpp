@@ -194,7 +194,7 @@ void vvThreadVisitor::visit(vvVisitable* obj) const
                     / static_cast<float>(_offscreenBuffers[hs->getId()]->getBufferHeight()))
                    * 2.0f - 1.0f;
 
-  vvGLTools::drawViewAlignedQuad(x1, x2, y1, y2);
+  vvGLTools::drawViewAlignedQuad(x1, y1, x2, y2);
 }
 
 void vvThreadVisitor::setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
