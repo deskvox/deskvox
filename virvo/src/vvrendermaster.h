@@ -18,34 +18,44 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_RENDERSLAVE_H_
-#define _VV_RENDERSLAVE_H_
+#ifndef _VV_RENDERMASTER_H_
+#define _VV_RENDERMASTER_H_
 
 #include "vvexport.h"
-#include "vvoffscreenbuffer.h"
+#include "vvopengl.h"
 #include "vvsocketio.h"
-#include "vvtexrend.h"
+#include "vvvoldesc.h"
 
-class VIRVOEXPORT vvRenderSlave
+#include <vector>
+
+class vvTexRend;
+
+class VIRVOEXPORT vvRenderMaster
 {
 public:
   enum ErrorType
   {
     VV_OK = 0,
-    VV_SOCKET_ERROR,
-    VV_FILEIO_ERROR
+    VV_SOCKET_ERROR
   };
 
-  vvRenderSlave();
-  ~vvRenderSlave();
+  vvRenderMaster(std::vector<char*>& slaveNames, std::vector<char*>& slaveFileNames,
+                 const char* fileName);
+  ~vvRenderMaster();
 
-  vvRenderSlave::ErrorType initSocket(const int port, vvSocket::SocketType st);
-  vvRenderSlave::ErrorType initData(vvVolDesc*& vd);
-  vvRenderSlave::ErrorType initBricks(std::vector<vvBrick*>& bricks);
-  void  renderLoop(vvTexRend* renderer);
+  ErrorType initSockets(const int port, vvSocket::SocketType st,
+                        const bool redistributeVolData,
+                        vvVolDesc*& vd);
+  ErrorType initBricks(vvTexRend* renderer);
+  void render(const float bgColor[3]);
 private:
-  vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering
-  vvSocketIO* _socket;                    ///< socket for remote rendering
+  std::vector<char*> _slaveNames;
+  std::vector<char*> _slaveFileNames;
+  std::vector<vvSocketIO*>  _sockets;
+
+  const char* _fileName;
+
+  GLuint _textureId;
 };
 
 #endif

@@ -34,6 +34,7 @@
  */
 
 class vvOffscreenBuffer;
+class vvRenderMaster;
 class vvSocketIO;
 class vvStopwatch;
 
@@ -113,17 +114,13 @@ class vvView
       bool useOffscreenBuffer;                    ///< render to an offscreen buffer. Mandatory for setting buffer precision
       bool useHeadLight;                          ///< toggle head light 
       int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
-      std::vector<vvSocketIO*>  sockets;          ///< socket for renderer in server or client mode
       bool remoteRendering;                       ///< remote rendering in client mode
-      vvOffscreenBuffer* offscreenBuffer;         ///< used for remote rendering
       vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
       GLfloat* framebufferDump;
       std::vector<char*> slaveNames;
       bool redistributeVolData;                   ///< don't load slave volume data from file, but let master send it through socket
-      bool allFileNamesAreEqual;                  ///< if no slave file names were specified and the option redistributedata wasn't chosen,
-                                                  ///< the file name passed to the master render will be communicated to each slave
       std::vector<char*> slaveFileNames;          ///< a list with file names where slaves can find the appropriate volume data
-      GLuint remoteTexId;
+      vvRenderMaster* _renderMaster;
    public:
       vvView();
       ~vvView();

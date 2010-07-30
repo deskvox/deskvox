@@ -44,6 +44,7 @@ using std::ios;
 #include "../src/vvprintgl.h"
 #include "../src/vvstopwatch.h"
 #include "../src/vvrendercontext.h"
+#include "../src/vvrendermaster.h"
 #include "../src/vvrenderslave.h"
 #include "../src/vvrenderer.h"
 #include "../src/vvfileio.h"
@@ -117,9 +118,8 @@ vvView::vvView()
    remoteRendering       = true;
    clipBuffer            = NULL;
    framebufferDump       = NULL;
-   offscreenBuffer       = NULL;
    redistributeVolData   = false;
-   allFileNamesAreEqual  = false;
+   _renderMaster         = NULL;
 }
 
 
@@ -130,12 +130,7 @@ vvView::~vvView()
    delete renderer;
    delete ov;
    delete vd;
-   for (std::vector<vvSocketIO*>::const_iterator it = sockets.begin();
-        it != sockets.end(); ++it)
-   {
-     delete (*it);
-   }
-   delete offscreenBuffer;
+   delete _renderMaster;
 }
 
 
@@ -278,62 +273,9 @@ void vvView::mainLoop(int argc, char *argv[])
 
       if (remoteRendering)
       {
-         glGenTextures(1, &remoteTexId);
-         const bool loadVolumeFromFile = !redistributeVolData;
-         for (int s=0; s<slaveNames.size(); ++s)
-         {
-            sockets.push_back(new vvSocketIO(vvView::DEFAULT_PORT, slaveNames[s], vvSocket::VV_TCP));
-            sockets[s]->set_debuglevel(vvDebugMsg::getDebugLevel());
-            sockets[s]->no_nagle();
-
-            if (sockets[s]->init() == vvSocket::VV_OK)
-            {
-               sockets[s]->putBool(loadVolumeFromFile);
-
-               if (loadVolumeFromFile)
-               {
-                  allFileNamesAreEqual = (slaveFileNames.size() == 0);
-                  if (allFileNamesAreEqual)
-                  {
-                     sockets[s]->putFileName(filename);
-                  }
-                  else
-                  {
-                     if (slaveFileNames.size() > s)
-                     {
-                        sockets[s]->putFileName(slaveFileNames[s]);
-                     }
-                     else
-                     {
-                        // Not enough file names specified, try this one.
-                        sockets[s]->putFileName(filename);
-                     }
-                  }
-               }
-               else
-               {
-                  switch (sockets[s]->putVolume(vd))
-                  {
-                  case vvSocket::VV_OK:
-                     cerr << "Volume transferred successfully" << endl;
-                     break;
-                  case vvSocket::VV_ALLOC_ERROR:
-                     cerr << "Not enough memory" << endl;
-                     break;
-                  default:
-                     cerr << "Cannot write volume to socket" << endl;
-                     break;
-                  }
-               }
-            }
-            else
-            {
-               cerr << "No connection to remote rendering server established at: " << slaveNames[0] << endl;
-               cerr << "Falling back to local rendering" << endl;
-               remoteRendering = false;
-               break;
-            }
-         }
+         _renderMaster = new vvRenderMaster(slaveNames, slaveFileNames, filename);
+         remoteRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT, vvSocket::VV_TCP,
+                                                       redistributeVolData, vd) == vvRenderMaster::VV_OK);
       }
 
       animSpeed = vd->dt;
@@ -346,23 +288,7 @@ void vvView::mainLoop(int argc, char *argv[])
 
       if (remoteRendering)
       {
-         // This will build up the bsp tree of the master node.
-         dynamic_cast<vvTexRend*>(renderer)->prepareDistributedRendering(slaveNames.size());
-
-         // Distribute the bricks from the bsp tree
-         for (int s=0; s<sockets.size(); ++s)
-         {
-            switch (sockets[s]->putBricks(dynamic_cast<vvTexRend*>(renderer)->getBrickListsToDistribute()[s]->at(0)))
-            {
-            case vvSocket::VV_OK:
-               cerr << "Brick outlines transferred successfully" << endl;
-               break;
-            default:
-               cerr << "Unable to transfer brick outlines" << endl;
-               remoteRendering = false;
-               break;
-            }
-         }
+         remoteRendering = (_renderMaster->initBricks(dynamic_cast<vvTexRend*>(renderer)) == vvRenderMaster::VV_OK);
       }
 
       // Set window title:
@@ -436,56 +362,7 @@ void vvView::displayCallback(void)
    {
       ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
 
-      float matrixGL[16];
-
-      vvMatrix pr;
-      glGetFloatv(GL_PROJECTION_MATRIX, matrixGL);
-      pr.set(matrixGL);
-
-      vvMatrix mv;
-      glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
-      mv.set(matrixGL);
-
-      const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-
-      for (int s=0; s<ds->sockets.size(); ++s)
-      {
-         ds->sockets[s]->putMatrix(&pr);
-         ds->sockets[s]->putMatrix(&mv);
-
-         vvImage img = vvImage(viewport[3], viewport[2], new uchar[viewport[3] * viewport[2] * 4]);
-         ds->sockets[s]->getImage(&img);
-
-         glDrawBuffer(GL_BACK);
-         glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
-         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-         // Orthographic projection.
-         glMatrixMode(GL_PROJECTION);
-         glPushMatrix();
-         glLoadIdentity();
-
-         // Fix the proxy quad for the frame buffer texture.
-         glMatrixMode(GL_MODELVIEW);
-         glPushMatrix();
-         glLoadIdentity();
-
-         glActiveTextureARB(GL_TEXTURE0_ARB);
-         glEnable(GL_TEXTURE_2D);
-         glBindTexture(GL_TEXTURE_2D, ds->remoteTexId);
-         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.getWidth(), img.getHeight(),
-                      0, GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
-         vvGLTools::drawViewAlignedQuad();
-
-         glMatrixMode(GL_PROJECTION);
-         glPopMatrix();
-
-         glMatrixMode(GL_MODELVIEW);
-         glPopMatrix();
-      }
+      ds->_renderMaster->render(ds->bgColor);
 
       glutSwapBuffers();
    }
