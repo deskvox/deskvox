@@ -149,7 +149,13 @@ void vvView::mainLoop(int argc, char *argv[])
 
       sio = new vvSocketIO(vvView::DEFAULT_PORT , vvSocket::VV_TCP);
       sio->set_debuglevel(vvDebugMsg::getDebugLevel());
-      sio->init();
+      if (sio->init() != vvSocket::VV_OK)
+      {
+        // TODO: Evaluate the error type, maybe don't even return but try again.
+        cerr << "Couldn't initialize the socket connection" << endl;
+        cerr << "Exiting..." << endl;
+        return;
+      }
       sio->no_nagle();
 
       bool loadVolumeFromFile;
