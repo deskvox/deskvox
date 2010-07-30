@@ -226,6 +226,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int _previousShader;                          ///< ID of previous shader
 
     vvVector3 _eye;                               ///< the current eye position
+    vvAABB* _aabbMask;                            ///< mask out the relevant portion of the volume
+    bool _isSlave;                                ///< let the renderer know if it is a rendering slave
 
     // GL state variables:
     GLboolean glsTexColTable;                     ///< stores GL_TEXTURE_COLOR_TABLE_SGI
@@ -340,6 +342,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int getTexMemorySize() const;
     vvBspTree* getBspTree() const;
     vvVector3 getCurrentEyePos() const;
+    void setAABBMask(vvAABB* aabbMask);
+    void setIsSlave(const bool isSlave);
     unsigned char* getHeightFieldData(float[4][3], int&, int&);
     float getManhattenDist(float[3], float[3]) const;
     void prepareDistributedRendering(const int numSlaveNodes);

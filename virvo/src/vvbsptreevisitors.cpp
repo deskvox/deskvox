@@ -136,6 +136,7 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
   // upon the visitors knowledge which node it is currently
   // processing.
   vvHalfSpace* hs = dynamic_cast<vvHalfSpace*>(obj);
+  const vvRect* screenRect = hs->getProjectedScreenRect(false);
 
   const int s = hs->getId();
 
@@ -155,9 +156,30 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.getWidth(), img.getHeight(),
+#if 1
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport[2], viewport[3],
                0, GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
   vvGLTools::drawViewAlignedQuad();
+#else
+  // TODO: only send projected screen rect (do this in vvRenderSlave::renderLoop().
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screenRect->width, screenRect->height,
+               0, GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
+
+  // See documentation for vvThreadVisitor::visit().
+  const float x1 = (static_cast<float>(screenRect->x)
+                    / static_cast<float>(img.getWidth()))
+                   * 2.0f - 1.0f;
+  const float x2 = (static_cast<float>(screenRect->x + screenRect->width)
+                    / static_cast<float>(img.getWidth()))
+                   * 2.0f - 1.0f;
+  const float y1 = (static_cast<float>(screenRect->y)
+                    / static_cast<float>(img.getHeight()))
+                   * 2.0f - 1.0f;
+  const float y2 = (static_cast<float>(screenRect->y + screenRect->height)
+                    / static_cast<float>(img.getHeight()))
+                   * 2.0f - 1.0f;
+  vvGLTools::drawViewAlignedQuad(x1, y1, x2, y3);
+#endif
 }
 
 void vvSlaveVisitor::setSockets(std::vector<vvSocketIO*>& sockets)

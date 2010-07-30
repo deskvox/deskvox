@@ -124,6 +124,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
 {
   vvMatrix pr;
   vvMatrix mv;
+  renderer->setIsSlave(true);
   while (1)
   {
     if ((_socket->getMatrix(&pr) == vvSocket::VV_OK)

@@ -127,7 +127,6 @@ vvRenderMaster::ErrorType vvRenderMaster::initBricks(vvTexRend* renderer)
 
 void vvRenderMaster::render(const float bgColor[3])
 {
-
   float matrixGL[16];
 
   vvMatrix pr;

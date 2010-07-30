@@ -212,6 +212,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   interpolation = true;
   _bspTree = NULL;
   _numSlaveNodes = 0;
+  _aabbMask = NULL;
+  _isSlave = false;
 
   if (_renderState._useOffscreenBuffer)
   {
@@ -1735,6 +1737,22 @@ vvVector3 vvTexRend::getCurrentEyePos() const
   return _eye;
 }
 
+//----------------------------------------------------------------------------
+/** A mask telling which portion of the loaded volume data this
+    renderer instance is responsible for. Used to calculate the
+    projected screen rect.
+    TODO: load only the relevant portion of the volume data.
+ */
+void vvTexRend::setAABBMask(vvAABB* aabbMask)
+{
+  _aabbMask = aabbMask;
+}
+
+void vvTexRend::setIsSlave(const bool isSlave)
+{
+  _isSlave = isSlave;
+}
+
 void vvTexRend::computeBrickSize()
 {
   vvVector3 probeSize;
@@ -2674,7 +2692,7 @@ void vvTexRend::setGLenvironment() const
   glEnable(GL_COLOR_MATERIAL);
   glEnable(GL_BLEND);
 
-  if (_numThreads > 0)
+  if ((_numThreads > 0) || (_isSlave))
   {
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
   }
