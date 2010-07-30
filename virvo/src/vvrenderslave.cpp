@@ -24,24 +24,24 @@
 #include "vvtexrend.h"
 
 vvRenderSlave::vvRenderSlave()
-  : _remoteRenderingBuffer(0), _remoteRenderingSocket(0)
+  : _offscreenBuffer(0), _socket(0)
 {
 
 }
 
 vvRenderSlave::~vvRenderSlave()
 {
-  delete _remoteRenderingBuffer;
-  delete _remoteRenderingSocket;
+  delete _offscreenBuffer;
+  delete _socket;
 }
 
-vvRenderSlave::ErrorType vvRenderSlave::initRemoteRenderingSocket(const int port, const vvSocket::SocketType st)
+vvRenderSlave::ErrorType vvRenderSlave::initSocket(const int port, const vvSocket::SocketType st)
 {
-  _remoteRenderingSocket = new vvSocketIO(port, st);
-  _remoteRenderingSocket->set_debuglevel(vvDebugMsg::getDebugLevel());
+  _socket = new vvSocketIO(port, st);
+  _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
 
-  const vvSocket::ErrorType err = _remoteRenderingSocket->init();
-  _remoteRenderingSocket->no_nagle();
+  const vvSocket::ErrorType err = _socket->init();
+  _socket->no_nagle();
 
   if (err != vvSocket::VV_OK)
   {
@@ -53,15 +53,15 @@ vvRenderSlave::ErrorType vvRenderSlave::initRemoteRenderingSocket(const int port
   }
 }
 
-vvRenderSlave::ErrorType vvRenderSlave::initRemoteRenderingData(vvVolDesc*& vd)
+vvRenderSlave::ErrorType vvRenderSlave::initData(vvVolDesc*& vd)
 {
   bool loadVolumeFromFile;
-  _remoteRenderingSocket->getBool(loadVolumeFromFile);
+  _socket->getBool(loadVolumeFromFile);
 
   if (loadVolumeFromFile)
   {
     char* fn = 0;
-    _remoteRenderingSocket->getFileName(fn);
+    _socket->getFileName(fn);
     cerr << "Load volume from file: " << fn << endl;
     vd = new vvVolDesc(fn);
 
@@ -85,7 +85,7 @@ vvRenderSlave::ErrorType vvRenderSlave::initRemoteRenderingData(vvVolDesc*& vd)
     vd = new vvVolDesc();
 
     // Get a volume
-    switch (_remoteRenderingSocket->getVolume(vd))
+    switch (_socket->getVolume(vd))
     {
     case vvSocket::VV_OK:
       cerr << "Volume transferred successfully" << endl;
@@ -101,9 +101,9 @@ vvRenderSlave::ErrorType vvRenderSlave::initRemoteRenderingData(vvVolDesc*& vd)
   return VV_OK;
 }
 
-vvRenderSlave::ErrorType vvRenderSlave::initRemoteRenderingBricks(std::vector<vvBrick*>& bricks)
+vvRenderSlave::ErrorType vvRenderSlave::initBricks(std::vector<vvBrick*>& bricks)
 {
-  const vvSocket::ErrorType err = _remoteRenderingSocket->getBricks(bricks);
+  const vvSocket::ErrorType err = _socket->getBricks(bricks);
   switch (err)
   {
   case vvSocket::VV_OK:
@@ -120,25 +120,25 @@ vvRenderSlave::ErrorType vvRenderSlave::initRemoteRenderingBricks(std::vector<vv
 /** Perform remote rendering, read back pixel data and send it over socket
     connections using a vvImage instance.
 */
-void vvRenderSlave::remoteRenderingLoop(vvTexRend* renderer)
+void vvRenderSlave::renderLoop(vvTexRend* renderer)
 {
   vvMatrix pr;
   vvMatrix mv;
   while (1)
   {
-    if ((_remoteRenderingSocket->getMatrix(&pr) == vvSocket::VV_OK)
-       && (_remoteRenderingSocket->getMatrix(&mv) == vvSocket::VV_OK))
+    if ((_socket->getMatrix(&pr) == vvSocket::VV_OK)
+       && (_socket->getMatrix(&mv) == vvSocket::VV_OK))
     {
       vvDebugMsg::msg(3, "vvView::renderRemotely()");
 
-      if (_remoteRenderingBuffer == NULL)
+      if (_offscreenBuffer == NULL)
       {
-        _remoteRenderingBuffer = new vvOffscreenBuffer(1.0f, VV_BYTE);
-        _remoteRenderingBuffer->initForRender();
+        _offscreenBuffer = new vvOffscreenBuffer(1.0f, VV_BYTE);
+        _offscreenBuffer->initForRender();
       }
 
-      _remoteRenderingBuffer->bindFramebuffer();
-      _remoteRenderingBuffer->clearBuffer();
+      _offscreenBuffer->bindFramebuffer();
+      _offscreenBuffer->clearBuffer();
 
       // Draw volume:
       float matrixGL[16];
@@ -159,9 +159,9 @@ void vvRenderSlave::remoteRenderingLoop(vvTexRend* renderer)
       uchar* pixels = new uchar[viewport[2] * viewport[3] * 4];
       glReadPixels(viewport[0], viewport[1], viewport[2], viewport[3], GL_RGBA, GL_UNSIGNED_BYTE, pixels);
       vvImage img(viewport[3], viewport[2], pixels);
-      _remoteRenderingSocket->putImage(&img);
+      _socket->putImage(&img);
       delete[] pixels;
-      _remoteRenderingBuffer->unbindFramebuffer();
+      _offscreenBuffer->unbindFramebuffer();
     }
   }
 }

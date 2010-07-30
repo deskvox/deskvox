@@ -152,7 +152,7 @@ void vvView::mainLoop(int argc, char *argv[])
       cerr << "Renderer started in slave mode" << endl;
       vvRenderSlave* renderSlave = new vvRenderSlave();
 
-      if (renderSlave->initRemoteRenderingSocket(vvView::DEFAULT_PORT, vvSocket::VV_TCP) != vvRenderSlave::VV_OK)
+      if (renderSlave->initSocket(vvView::DEFAULT_PORT, vvSocket::VV_TCP) != vvRenderSlave::VV_OK)
       {
          // TODO: Evaluate the error type, maybe don't even return but try again.
          cerr << "Couldn't initialize the socket connection" << endl;
@@ -160,7 +160,7 @@ void vvView::mainLoop(int argc, char *argv[])
          return;
       }
 
-      if (renderSlave->initRemoteRenderingData(vd) != vvRenderSlave::VV_OK)
+      if (renderSlave->initData(vd) != vvRenderSlave::VV_OK)
       {
          cerr << "Exiting..." << endl;
          return;
@@ -170,7 +170,7 @@ void vvView::mainLoop(int argc, char *argv[])
       std::vector<BrickList>* frames = new std::vector<BrickList>();
       BrickList bricks;
 
-      if (renderSlave->initRemoteRenderingBricks(bricks) != vvRenderSlave::VV_OK)
+      if (renderSlave->initBricks(bricks) != vvRenderSlave::VV_OK)
       {
          delete frames;
          cerr << "Exiting..." << endl;
@@ -212,7 +212,7 @@ void vvView::mainLoop(int argc, char *argv[])
 
             // TODO: reset quality per frame.
             renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
-            renderSlave->remoteRenderingLoop(dynamic_cast<vvTexRend*>(renderer));
+            renderSlave->renderLoop(dynamic_cast<vvTexRend*>(renderer));
          }
       }
       for (std::vector<BrickList>::const_iterator it1 = frames->begin(); it1 != frames->end(); ++it1)

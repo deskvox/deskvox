@@ -39,13 +39,13 @@ public:
   vvRenderSlave();
   ~vvRenderSlave();
 
-  vvRenderSlave::ErrorType initRemoteRenderingSocket(const int port, vvSocket::SocketType st);
-  vvRenderSlave::ErrorType initRemoteRenderingData(vvVolDesc*& vd);
-  vvRenderSlave::ErrorType initRemoteRenderingBricks(std::vector<vvBrick*>& bricks);
-  void  remoteRenderingLoop(vvTexRend* renderer);
+  vvRenderSlave::ErrorType initSocket(const int port, vvSocket::SocketType st);
+  vvRenderSlave::ErrorType initData(vvVolDesc*& vd);
+  vvRenderSlave::ErrorType initBricks(std::vector<vvBrick*>& bricks);
+  void  renderLoop(vvTexRend* renderer);
 private:
-  vvOffscreenBuffer* _remoteRenderingBuffer;    ///< offscreen buffer for remote rendering
-  vvSocketIO* _remoteRenderingSocket;           ///< socket for remote rendering
+  vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering
+  vvSocketIO* _socket;                    ///< socket for remote rendering
 };
 
 #endif
