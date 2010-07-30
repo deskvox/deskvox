@@ -49,7 +49,7 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
-#include "vvbsptreevisitor.h"
+#include "vvbsptreevisitors.h"
 #include "vvvecmath.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
@@ -1725,6 +1725,16 @@ int vvTexRend::getTexMemorySize() const
   return _renderState._texMemorySize;
 }
 
+vvBspTree* vvTexRend::getBspTree() const
+{
+  return _bspTree;
+}
+
+vvVector3 vvTexRend::getCurrentEyePos() const
+{
+  return _eye;
+}
+
 void vvTexRend::computeBrickSize()
 {
   vvVector3 probeSize;
@@ -3102,6 +3112,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   // Find eye position:
   getEyePosition(&eye);
   eye.multiply(&invMV);
+  _eye = eye;
 
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
@@ -5792,6 +5803,15 @@ void vvTexRend::prepareDistributedRendering(const int numSlaveNodes)
 
   delete _bspTree;
   _bspTree = new vvBspTree(part, _numSlaveNodes, &_brickList[0]);
+
+  int i = 0;
+  for (std::vector<vvHalfSpace*>::const_iterator it = _bspTree->getLeafs()->begin();
+       it != _bspTree->getLeafs()->end(); ++it)
+  {
+    vvHalfSpace* hs = (*it);
+    hs->setId(i);
+    ++i;
+  }
 
   delete[] part;
 }

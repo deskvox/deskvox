@@ -225,6 +225,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int _currentShader;                           ///< ID of currently used fragment shader
     int _previousShader;                          ///< ID of previous shader
 
+    vvVector3 _eye;                               ///< the current eye position
+
     // GL state variables:
     GLboolean glsTexColTable;                     ///< stores GL_TEXTURE_COLOR_TABLE_SGI
     GLboolean glsSharedTexPal;                    ///< stores GL_SHARED_TEXTURE_PALETTE_EXT
@@ -336,6 +338,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int getBrickSize() const;
     void setTexMemorySize(const int);
     int getTexMemorySize() const;
+    vvBspTree* getBspTree() const;
+    vvVector3 getCurrentEyePos() const;
     unsigned char* getHeightFieldData(float[4][3], int&, int&);
     float getManhattenDist(float[3], float[3]) const;
     void prepareDistributedRendering(const int numSlaveNodes);

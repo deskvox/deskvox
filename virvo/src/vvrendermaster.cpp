@@ -18,6 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include "vvbsptreevisitors.h"
 #include "vvgltools.h"
 #include "vvrendermaster.h"
 #include "vvtexrend.h"
@@ -26,12 +27,13 @@ vvRenderMaster::vvRenderMaster(std::vector<char*>& slaveNames, std::vector<char*
                                const char* fileName)
   : _slaveNames(slaveNames), _slaveFileNames(slaveFileNames), _fileName(fileName)
 {
-  glGenTextures(1, &_textureId);
+  _visitor = new vvSlaveVisitor();
 }
 
 vvRenderMaster::~vvRenderMaster()
 {
-
+  // The visitor will delete the sockets either.
+  delete _visitor;
 }
 
 vvRenderMaster::ErrorType vvRenderMaster::initSockets(const int port, vvSocket::SocketType st,
@@ -92,6 +94,7 @@ vvRenderMaster::ErrorType vvRenderMaster::initSockets(const int port, vvSocket::
       return VV_SOCKET_ERROR;
     }
   }
+  _visitor->setSockets(_sockets);
   return VV_OK;
 }
 
@@ -99,6 +102,12 @@ vvRenderMaster::ErrorType vvRenderMaster::initBricks(vvTexRend* renderer)
 {
   // This will build up the bsp tree of the master node.
   renderer->prepareDistributedRendering(_slaveNames.size());
+
+  // Store a pointer to the bsp tree and set its visitor.
+  _bspTree = renderer->getBspTree();
+  _bspTree->setVisitor(_visitor);
+
+  _renderer = renderer;
 
   // Distribute the bricks from the bsp tree
   for (int s=0; s<_sockets.size(); ++s)
@@ -118,6 +127,7 @@ vvRenderMaster::ErrorType vvRenderMaster::initBricks(vvTexRend* renderer)
 
 void vvRenderMaster::render(const float bgColor[3])
 {
+
   float matrixGL[16];
 
   vvMatrix pr;
@@ -128,44 +138,36 @@ void vvRenderMaster::render(const float bgColor[3])
   glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
   mv.set(matrixGL);
 
-  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  _visitor->setProjectionMatrix(pr);
+  _visitor->setModelviewMatrix(mv);
 
-  for (int s=0; s<_sockets.size(); ++s)
-  {
-     _sockets[s]->putMatrix(&pr);
-     _sockets[s]->putMatrix(&mv);
+  glDrawBuffer(GL_BACK);
+  glClearColor(bgColor[0], bgColor[1], bgColor[2], 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-     vvImage img = vvImage(viewport[3], viewport[2], new uchar[viewport[3] * viewport[2] * 4]);
-     _sockets[s]->getImage(&img);
+  // Orthographic projection.
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
 
-     glDrawBuffer(GL_BACK);
-     glClearColor(bgColor[0], bgColor[1], bgColor[2], 1.0f);
-     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  // Fix the proxy quad for the frame buffer texture.
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glLoadIdentity();
 
-     // Orthographic projection.
-     glMatrixMode(GL_PROJECTION);
-     glPushMatrix();
-     glLoadIdentity();
+  // Setup compositing.
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_DEPTH_TEST);
+  glEnable(GL_COLOR_MATERIAL);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-     // Fix the proxy quad for the frame buffer texture.
-     glMatrixMode(GL_MODELVIEW);
-     glPushMatrix();
-     glLoadIdentity();
+  _bspTree->traverse(_renderer->getCurrentEyePos());
 
-     glActiveTextureARB(GL_TEXTURE0_ARB);
-     glEnable(GL_TEXTURE_2D);
-     glBindTexture(GL_TEXTURE_2D, _textureId);
-     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-     glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.getWidth(), img.getHeight(),
-                  0, GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
-     vvGLTools::drawViewAlignedQuad();
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix();
 
-     glMatrixMode(GL_PROJECTION);
-     glPopMatrix();
-
-     glMatrixMode(GL_MODELVIEW);
-     glPopMatrix();
-  }
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
 }

@@ -18,12 +18,16 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_BSPTREEVISITOR_H_
-#define _VV_BSPTREEVISITOR_H_
+#ifndef _VV_BSPTREEVISITORS_H_
+#define _VV_BSPTREEVISITORS_H_
 
 #include "vvoffscreenbuffer.h"
 #include "vvopengl.h"
 #include "vvvisitor.h"
+#include "vvimage.h"
+#include "vvsocketio.h"
+
+#include <vector>
 
 /** The content of each thread is rendered via the visitor pattern.
   The rendered results of each thread are managed using a bsp tree
@@ -40,8 +44,8 @@ class VIRVOEXPORT vvThreadVisitor : public vvVisitor
 {
 public:
   vvThreadVisitor();
-  virtual ~vvThreadVisitor();
-  virtual void visit(vvVisitable* obj) const;
+  ~vvThreadVisitor();
+  void visit(vvVisitable* obj) const;
 
   void setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
                            const int numOffscreenBuffers);
@@ -56,6 +60,26 @@ private:
   int _height;
 
   void clearOffscreenBuffers();
+};
+
+class VIRVOEXPORT vvSlaveVisitor : public vvVisitor
+{
+public:
+  vvSlaveVisitor();
+  ~vvSlaveVisitor();
+  void visit(vvVisitable* obj) const;
+
+  void setSockets(std::vector<vvSocketIO*>& sockets);
+
+  void setProjectionMatrix(const vvMatrix& pr);
+  void setModelviewMatrix(const vvMatrix& mv);
+private:
+  std::vector<vvSocketIO*> _sockets;
+
+  vvMatrix _pr;
+  vvMatrix _mv;
+
+  GLuint* _textureIds;
 };
 
 #endif

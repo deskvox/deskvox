@@ -21,6 +21,7 @@
 #ifndef _VV_RENDERMASTER_H_
 #define _VV_RENDERMASTER_H_
 
+#include "vvbsptree.h"
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvsocketio.h"
@@ -28,6 +29,7 @@
 
 #include <vector>
 
+class vvSlaveVisitor;
 class vvTexRend;
 
 class VIRVOEXPORT vvRenderMaster
@@ -55,7 +57,9 @@ private:
 
   const char* _fileName;
 
-  GLuint _textureId;
+  vvTexRend* _renderer;
+  vvBspTree* _bspTree;
+  vvSlaveVisitor* _visitor;
 };
 
 #endif

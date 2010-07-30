@@ -19,7 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvbsptree.h"
-#include "vvbsptreevisitor.h"
+#include "vvbsptreevisitors.h"
 #include "vvgltools.h"
 
 vvThreadVisitor::vvThreadVisitor()
@@ -112,4 +112,71 @@ void vvThreadVisitor::clearOffscreenBuffers()
     delete _offscreenBuffers[i];
   }
   delete[] _offscreenBuffers;
+}
+
+vvSlaveVisitor::vvSlaveVisitor()
+  : vvVisitor()
+{
+  _textureIds = NULL;
+}
+
+vvSlaveVisitor::~vvSlaveVisitor()
+{
+  for (std::vector<vvSocketIO*>::const_iterator it = _sockets.begin();
+       it != _sockets.end(); ++it)
+  {
+    delete (*it);
+  }
+  delete[] _textureIds;
+}
+
+void vvSlaveVisitor::visit(vvVisitable* obj) const
+{
+  // The relation between halfspace and socket is based
+  // upon the visitors knowledge which node it is currently
+  // processing.
+  vvHalfSpace* hs = dynamic_cast<vvHalfSpace*>(obj);
+
+  const int s = hs->getId();
+
+  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
+
+  vvMatrix pr = _pr;
+  vvMatrix mv = _mv;
+  _sockets[s]->putMatrix(&pr);
+  _sockets[s]->putMatrix(&mv);
+
+  vvImage img = vvImage(viewport[3], viewport[2], new uchar[viewport[3] * viewport[2] * 4]);
+  _sockets[s]->getImage(&img);
+
+  glActiveTextureARB(GL_TEXTURE0_ARB);
+  glEnable(GL_TEXTURE_2D);
+  glBindTexture(GL_TEXTURE_2D, _textureIds[s]);
+  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.getWidth(), img.getHeight(),
+               0, GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
+  vvGLTools::drawViewAlignedQuad();
+}
+
+void vvSlaveVisitor::setSockets(std::vector<vvSocketIO*>& sockets)
+{
+  _sockets = sockets;
+
+  _textureIds = new GLuint[_sockets.size()];
+  for (int i=0; i<_sockets.size(); ++i)
+  {
+    glGenTextures(1, &_textureIds[i]);
+  }
+}
+
+void vvSlaveVisitor::setProjectionMatrix(const vvMatrix& pr)
+{
+  _pr = pr;
+}
+
+void vvSlaveVisitor::setModelviewMatrix(const vvMatrix& mv)
+{
+  _mv = mv;
 }
