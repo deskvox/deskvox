@@ -29,6 +29,7 @@ SOURCES = vvbrick.cpp \
     vvprintgl.cpp \
     vvrendercontext.cpp \
     vvrenderer.cpp \
+    vvrenderslave.cpp \
     vvrendertarget.cpp \
     vvsocket.cpp \
     vvsocketio.cpp \
@@ -69,6 +70,7 @@ HEADERS = glext-orig.h \
     vvprintgl.h \
     vvrendercontext.h \
     vvrenderer.h \
+    vvrenderslave.h \
     vvrendertarget.h \
     vvsllist.h \
     vvsocket.h \
