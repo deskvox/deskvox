@@ -49,7 +49,7 @@ public:
                         const bool redistributeVolData,
                         vvVolDesc*& vd);
   ErrorType initBricks(vvTexRend* renderer);
-  void render(const float bgColor[3]);
+  void render(const float bgColor[3]) const;
 private:
   std::vector<char*> _slaveNames;
   std::vector<char*> _slaveFileNames;

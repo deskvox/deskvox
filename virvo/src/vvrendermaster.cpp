@@ -125,7 +125,7 @@ vvRenderMaster::ErrorType vvRenderMaster::initBricks(vvTexRend* renderer)
   return VV_OK;
 }
 
-void vvRenderMaster::render(const float bgColor[3])
+void vvRenderMaster::render(const float bgColor[3]) const
 {
   float matrixGL[16];
 

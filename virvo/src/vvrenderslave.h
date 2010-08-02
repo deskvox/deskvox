@@ -40,8 +40,8 @@ public:
   ~vvRenderSlave();
 
   vvRenderSlave::ErrorType initSocket(const int port, vvSocket::SocketType st);
-  vvRenderSlave::ErrorType initData(vvVolDesc*& vd);
-  vvRenderSlave::ErrorType initBricks(std::vector<vvBrick*>& bricks);
+  vvRenderSlave::ErrorType initData(vvVolDesc*& vd) const;
+  vvRenderSlave::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
   void  renderLoop(vvTexRend* renderer);
 private:
   vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering

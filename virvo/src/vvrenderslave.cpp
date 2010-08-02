@@ -53,7 +53,7 @@ vvRenderSlave::ErrorType vvRenderSlave::initSocket(const int port, const vvSocke
   }
 }
 
-vvRenderSlave::ErrorType vvRenderSlave::initData(vvVolDesc*& vd)
+vvRenderSlave::ErrorType vvRenderSlave::initData(vvVolDesc*& vd) const
 {
   bool loadVolumeFromFile;
   _socket->getBool(loadVolumeFromFile);
@@ -101,7 +101,7 @@ vvRenderSlave::ErrorType vvRenderSlave::initData(vvVolDesc*& vd)
   return VV_OK;
 }
 
-vvRenderSlave::ErrorType vvRenderSlave::initBricks(std::vector<vvBrick*>& bricks)
+vvRenderSlave::ErrorType vvRenderSlave::initBricks(std::vector<vvBrick*>& bricks) const
 {
   const vvSocket::ErrorType err = _socket->getBricks(bricks);
   switch (err)
@@ -125,18 +125,16 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
   vvMatrix pr;
   vvMatrix mv;
   renderer->setIsSlave(true);
+
+  _offscreenBuffer = new vvOffscreenBuffer(1.0f, VV_BYTE);
+  _offscreenBuffer->initForRender();
+
   while (1)
   {
     if ((_socket->getMatrix(&pr) == vvSocket::VV_OK)
        && (_socket->getMatrix(&mv) == vvSocket::VV_OK))
     {
       vvDebugMsg::msg(3, "vvView::renderRemotely()");
-
-      if (_offscreenBuffer == NULL)
-      {
-        _offscreenBuffer = new vvOffscreenBuffer(1.0f, VV_BYTE);
-        _offscreenBuffer->initForRender();
-      }
 
       _offscreenBuffer->bindFramebuffer();
       _offscreenBuffer->clearBuffer();
