@@ -238,6 +238,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   if (bricks != NULL)
   {
     _brickList = *bricks;
+    calcAABBMask();_aabbMask->print();
     _areEmptyBricksCreated = true;
   }
   else
@@ -1740,7 +1741,29 @@ vvBspTree* vvTexRend::getBspTree() const
  */
 void vvTexRend::setAABBMask(vvAABB* aabbMask)
 {
+  delete aabbMask;
   _aabbMask = aabbMask;
+}
+
+vvAABB* vvTexRend::getAABBMask() const
+{
+  return _aabbMask;
+}
+
+vvAABB vvTexRend::getProbedMask() const
+{
+  vvAABB result = vvAABB(*_aabbMask);
+
+  vvVector3 probePosObj;
+  vvVector3 probeSizeObj;
+  vvVector3 probeMin, probeMax;
+
+  calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
+  vvAABB probeBox = vvAABB(probeMin, probeMax);
+
+  result.intersect(&probeBox);probeBox.print();result.print();
+
+  return result;
 }
 
 void vvTexRend::setIsSlave(const bool isSlave)
@@ -3805,6 +3828,37 @@ void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, v
   }
 }
 
+void vvTexRend::calcAABBMask()
+{
+  vvVector3 min = vvVector3( FLT_MAX,  FLT_MAX,  FLT_MAX);
+  vvVector3 max = vvVector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+  for (std::vector<BrickList>::const_iterator it1 = _brickList.begin();
+       it1 != _brickList.end(); ++it1)
+  {
+    for (BrickList::const_iterator it2 = (*it1).begin();
+         it2 != (*it1).end(); ++it2)
+    {
+      vvBrick* brick = (*it2);
+
+      for (int i = 0; i < 3; ++i)
+      {
+        if (brick->min[i] < min[i])
+        {
+          min[i] = brick->min[i];
+        }
+
+        if (brick->max[i] > max[i])
+        {
+          max[i] = brick->max[i];
+        }
+      }
+    }
+  }
+  delete _aabbMask;
+  _aabbMask = new vvAABB(min, max);
+}
+
 void vvTexRend::markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax)
 {
   updateFrustum();
@@ -5848,6 +5902,21 @@ std::vector<BrickList>** vvTexRend::getBrickListsToDistribute()
 int vvTexRend::getNumBrickListsToDistribute() const
 {
   return _bspTree->getLeafs()->size();
+}
+
+void vvTexRend::calcProjectedScreenRects()
+{
+  vvVector3 probePosObj;
+  vvVector3 probeSizeObj;
+  vvVector3 probeMin, probeMax;
+
+  calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
+
+  for (std::vector<vvHalfSpace*>::const_iterator it = _bspTree->getLeafs()->begin();
+       it != _bspTree->getLeafs()->end(); ++it)
+  {
+    (*it)->getProjectedScreenRect(&probeMin, &probeMax, true);
+  }
 }
 
 int vvTexRend::get2DTextureShader()

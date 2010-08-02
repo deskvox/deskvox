@@ -137,6 +137,8 @@ void vvRenderMaster::render(const float bgColor[3]) const
   glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
   mv.set(matrixGL);
 
+  _renderer->calcProjectedScreenRects();
+
   _visitor->setProjectionMatrix(pr);
   _visitor->setModelviewMatrix(mv);
 

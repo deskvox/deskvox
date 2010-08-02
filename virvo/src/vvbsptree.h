@@ -126,6 +126,15 @@ public:
   vvRect* getProjectedScreenRect() const;
 
   /*!
+   * \brief         Shring the box to the intersection with another one.
+   *
+   *                Get the box resulting from intersecting this box with
+   *                the one specified.
+   * \param         rhs The box to intersect with.
+   */
+  void intersect(vvAABB* rhs);
+
+  /*!
    * \brief         Render the bounding box.
    *
    *                Render the outlines of the bounding box using opengl

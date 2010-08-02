@@ -123,12 +123,29 @@ vvRect* vvAABB::getProjectedScreenRect() const
   }
 
   vvRect* result = new vvRect;
-  result->x = max(0, static_cast<int>(floorf(minX)));
-  result->y = max(0, static_cast<int>(floorf(minY)));
-  result->width = min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2]);
-  result->height = min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3]);
+  result->x = ::max(0, static_cast<int>(floorf(minX)));
+  result->y = ::max(0, static_cast<int>(floorf(minY)));
+  result->width = ::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2]);
+  result->height = ::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3]);
 
   return result;
+}
+
+void vvAABB::intersect(vvAABB* rhs)
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    if (rhs->_bottomLeftBackCorner[i] > _bottomLeftBackCorner[i])
+    {
+      _bottomLeftBackCorner[i] = rhs->_bottomLeftBackCorner[i];
+    }
+
+    if (rhs->_topRightFrontCorner[i] < _topRightFrontCorner[i])
+    {
+      _topRightFrontCorner[i] = rhs->_topRightFrontCorner[i];
+    }
+  }
+  calcVertices();
 }
 
 void vvAABB::render() const

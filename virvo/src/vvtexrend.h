@@ -296,6 +296,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax);
     void updateFrustum();
     void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&) const;
+    void calcAABBMask();
     void getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
                           const vvVector3, const vvVector3, bool& roiChanged);
     void computeBrickSize();
@@ -342,12 +343,15 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int getTexMemorySize() const;
     vvBspTree* getBspTree() const;
     void setAABBMask(vvAABB* aabbMask);
+    vvAABB* getAABBMask() const;
+    vvAABB getProbedMask() const;
     void setIsSlave(const bool isSlave);
     unsigned char* getHeightFieldData(float[4][3], int&, int&);
     float getManhattenDist(float[3], float[3]) const;
     void prepareDistributedRendering(const int numSlaveNodes);
     std::vector<BrickList>** getBrickListsToDistribute();
     int getNumBrickListsToDistribute() const;
+    void calcProjectedScreenRects();
 
     static int get2DTextureShader();
     static int getLocalIlluminationShader();
