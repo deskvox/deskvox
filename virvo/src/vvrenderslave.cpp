@@ -154,19 +154,12 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
 
       glFlush();
 
-#if 0
-      const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-
-      uchar* pixels = new uchar[viewport[2] * viewport[3] * 4];
-      glReadPixels(viewport[0], viewport[1], viewport[2], viewport[3], GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-      vvImage img(viewport[3], viewport[2], pixels);
-#else
       vvRect* screenRect = renderer->getProbedMask().getProjectedScreenRect();
 
       uchar* pixels = new uchar[screenRect->width * screenRect->height * 4];
       glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
       vvImage img(screenRect->height, screenRect->width, pixels);
-#endif
+
       _socket->putImage(&img);
       delete[] pixels;
       _offscreenBuffer->unbindFramebuffer();

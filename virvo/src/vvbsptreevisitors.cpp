@@ -159,11 +159,7 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-#if 0
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, viewport[2], viewport[3],
-               0, GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
-  vvGLTools::drawViewAlignedQuad();
-#else
+
   const vvRect* screenRect = hs->getProjectedScreenRect();
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
 
@@ -184,7 +180,6 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
                     / static_cast<float>(viewport[3]))
                    * 2.0f - 1.0f;
   vvGLTools::drawViewAlignedQuad(x1, y1, x2, y2);
-#endif
 }
 
 void vvSlaveVisitor::setSockets(std::vector<vvSocketIO*>& sockets)

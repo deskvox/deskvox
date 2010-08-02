@@ -1761,7 +1761,7 @@ vvAABB vvTexRend::getProbedMask() const
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
   vvAABB probeBox = vvAABB(probeMin, probeMax);
 
-  result.intersect(&probeBox);probeBox.print();result.print();
+  result.intersect(&probeBox);
 
   return result;
 }
