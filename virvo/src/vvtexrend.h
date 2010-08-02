@@ -341,7 +341,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void setTexMemorySize(const int);
     int getTexMemorySize() const;
     vvBspTree* getBspTree() const;
-    vvVector3 getCurrentEyePos() const;
     void setAABBMask(vvAABB* aabbMask);
     void setIsSlave(const bool isSlave);
     unsigned char* getHeightFieldData(float[4][3], int&, int&);

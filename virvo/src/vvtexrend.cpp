@@ -1732,11 +1732,6 @@ vvBspTree* vvTexRend::getBspTree() const
   return _bspTree;
 }
 
-vvVector3 vvTexRend::getCurrentEyePos() const
-{
-  return _eye;
-}
-
 //----------------------------------------------------------------------------
 /** A mask telling which portion of the loaded volume data this
     renderer instance is responsible for. Used to calculate the
@@ -3130,7 +3125,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   // Find eye position:
   getEyePosition(&eye);
   eye.multiply(&invMV);
-  _eye = eye;
 
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 

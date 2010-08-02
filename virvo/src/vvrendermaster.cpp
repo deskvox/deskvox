@@ -144,6 +144,13 @@ void vvRenderMaster::render(const float bgColor[3])
   glClearColor(bgColor[0], bgColor[1], bgColor[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  // Retrieve the eye position for bsp-tree traversal
+  vvVector3 eye;
+  _renderer->getEyePosition(&eye);
+  vvMatrix invMV(&mv);
+  invMV.invert();
+  eye.multiply(&invMV);
+
   // Orthographic projection.
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
@@ -162,7 +169,7 @@ void vvRenderMaster::render(const float bgColor[3])
   glEnable(GL_BLEND);
   glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-  _bspTree->traverse(_renderer->getCurrentEyePos());
+  _bspTree->traverse(eye);
 
   glMatrixMode(GL_PROJECTION);
   glPopMatrix();
