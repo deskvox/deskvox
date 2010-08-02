@@ -55,7 +55,7 @@ void vvThreadVisitor::visit(vvVisitable* obj) const
   // Make sure not to recalculate the screen rect, since the
   // modelview and perspective transformations currently applied
   // won't match the one's used for rendering.
-  const vvRect* screenRect = hs->getProjectedScreenRect(false);
+  const vvRect* screenRect = hs->getProjectedScreenRect(0, 0, false);
 
   glActiveTextureARB(GL_TEXTURE0_ARB);
   glEnable(GL_TEXTURE_2D);
@@ -142,7 +142,7 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
   // upon the visitors knowledge which node it is currently
   // processing.
   vvHalfSpace* hs = dynamic_cast<vvHalfSpace*>(obj);
-  const vvRect* screenRect = hs->getProjectedScreenRect(false);
+  const vvRect* screenRect = hs->getProjectedScreenRect(0, 0, false);
 
   const int s = hs->getId();
 
