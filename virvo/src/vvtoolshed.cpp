@@ -18,6 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 
@@ -2585,6 +2586,34 @@ int vvToolshed::string2Int(const char* str)
 
   result *= sign;
   return result;
+}
+
+//----------------------------------------------------------------------------
+/** Write pixels (texture, framebuffer content, etc.) to a ppm file
+    for debugging purposes.
+*/
+void vvToolshed::pixels2Ppm(unsigned char* pixels, const int width, const int height,
+                            const char* fileName)
+{
+  std::ofstream ppm;
+  ppm.open(fileName);
+
+  ppm << "P3" << endl;
+  ppm << width << " " << height << endl;
+  ppm << "255" << endl;
+
+  int ite = 0;
+  for (int y = 0; y < height; ++y)
+  {
+    for (int x = 0; x < width; ++x)
+    {
+      ppm << (int)pixels[ite + 0] << " ";
+      ppm << (int)pixels[ite + 1] << " ";
+      ppm << (int)pixels[ite + 2] << " ";
+      ite += 4;
+    }
+    ppm << endl;
+  }
 }
 
 //----------------------------------------------------------------------------
