@@ -115,6 +115,7 @@ vvView::vvView()
    bufferPrecision       = 8;
    useHeadLight          = false;
    slaveMode             = false;
+   slavePort             = vvView::DEFAULT_PORT;
    remoteRendering       = true;
    clipBuffer            = NULL;
    framebufferDump       = NULL;
@@ -147,7 +148,7 @@ void vvView::mainLoop(int argc, char *argv[])
       cerr << "Renderer started in slave mode" << endl;
       vvRenderSlave* renderSlave = new vvRenderSlave();
 
-      if (renderSlave->initSocket(vvView::DEFAULT_PORT, vvSocket::VV_TCP) != vvRenderSlave::VV_OK)
+      if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvRenderSlave::VV_OK)
       {
          // TODO: Evaluate the error type, maybe don't even return but try again.
          cerr << "Couldn't initialize the socket connection" << endl;
@@ -273,7 +274,7 @@ void vvView::mainLoop(int argc, char *argv[])
 
       if (remoteRendering)
       {
-         _renderMaster = new vvRenderMaster(slaveNames, slaveFileNames, filename);
+         _renderMaster = new vvRenderMaster(slaveNames, slavePorts, slaveFileNames, filename);
          remoteRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT, vvSocket::VV_TCP,
                                                        redistributeVolData, vd) == vvRenderMaster::VV_OK);
       }
@@ -1862,8 +1863,11 @@ void vvView::displayHelpInfo()
    cerr << endl;
    cerr << "Available options:" << endl;
    cerr << endl;
-   cerr << "-slave (-s)" << endl;
-   cerr << " Renderer is a render slave and accepts assignments from a master renderer";
+   cerr << "-s" << endl;
+   cerr << " Renderer is a render slave and accepts assignments from a master renderer" << endl;
+   cerr << endl;
+   cerr << "-port" << endl;
+   cerr << " Renderer is a render slave. Don't use the default port (31050), but the specified one" << endl;
    cerr << endl;
    cerr << "-renderer <num> (-r)" << endl;
    cerr << " Select the default renderer:" << endl;
@@ -1886,7 +1890,7 @@ void vvView::displayHelpInfo()
    cerr << "-dsp <host:display.screen>" << endl;
    cerr << "  Add x-org display for additional rendering context" << endl;
    cerr << endl;
-   cerr << "-slave <url>" << endl;
+   cerr << "-slave <url>[:port]" << endl;
    cerr << "  Add a slave renderer connected to over tcp ip" << endl;
    cerr << endl;
    cerr << "-slavefilename <path to file>" << endl;
@@ -1961,6 +1965,19 @@ bool vvView::parseCommandLine(int argc, char** argv)
       {
          slaveMode = true;
       }
+      else if (vvToolshed::strCompare(argv[arg], "-port")==0)
+      {
+         if ((++arg)>=argc)
+         {
+            cerr << "No port specified, defaulting to: " << vvView::DEFAULT_PORT << endl;
+            slavePort = vvView::DEFAULT_PORT;
+            return false;
+         }
+         else
+         {
+            slavePort = atoi(argv[arg]);
+         }
+      }
       else if (vvToolshed::strCompare(argv[arg], "-r")==0 ||
          vvToolshed::strCompare(argv[arg], "-renderer")==0)
       {
@@ -2030,7 +2047,19 @@ bool vvView::parseCommandLine(int argc, char** argv)
             cerr << "Slave unspecified." << endl;
             return false;
          }
-         slaveNames.push_back(argv[arg]);
+         const int port = vvToolshed::parsePort(argv[arg]);
+         slavePorts.push_back(port);
+
+         char* sname;
+         if (port != -1)
+         {
+            sname = vvToolshed::stripPort(argv[arg]);
+         }
+         else
+         {
+            sname = argv[arg];
+         }
+         slaveNames.push_back(sname);
       }
       else if (vvToolshed::strCompare(argv[arg], "-slavefilename")==0)
       {

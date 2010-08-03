@@ -75,6 +75,7 @@ class vvView
       int   lastWidth, lastHeight;                ///< last window size
       int   lastPosX, lastPosY;                   ///< last window position
       bool  slaveMode;                            ///< true = renderer started as slave
+      int   slavePort;                            ///< port the slave renderer uses to listen for incoming connections
       bool  emptySpaceLeapingMode;                ///< true = bricks invisible due to current transfer function aren't rendered
       bool  perspectiveMode;                      ///< true = perspective projection
       bool  boundariesMode;                       ///< true = display boundaries
@@ -118,6 +119,7 @@ class vvView
       vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
       GLfloat* framebufferDump;
       std::vector<char*> slaveNames;
+      std::vector<int> slavePorts;
       bool redistributeVolData;                   ///< don't load slave volume data from file, but let master send it through socket
       std::vector<char*> slaveFileNames;          ///< a list with file names where slaves can find the appropriate volume data
       vvRenderMaster* _renderMaster;

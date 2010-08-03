@@ -23,9 +23,11 @@
 #include "vvrendermaster.h"
 #include "vvtexrend.h"
 
-vvRenderMaster::vvRenderMaster(std::vector<char*>& slaveNames, std::vector<char*>& slaveFileNames,
+vvRenderMaster::vvRenderMaster(std::vector<char*>& slaveNames, std::vector<int>& slavePorts,
+                               std::vector<char*>& slaveFileNames,
                                const char* fileName)
-  : _slaveNames(slaveNames), _slaveFileNames(slaveFileNames), _fileName(fileName)
+  : _slaveNames(slaveNames), _slavePorts(slavePorts),
+  _slaveFileNames(slaveFileNames), _fileName(fileName)
 {
   _visitor = new vvSlaveVisitor();
 }
@@ -36,14 +38,21 @@ vvRenderMaster::~vvRenderMaster()
   delete _visitor;
 }
 
-vvRenderMaster::ErrorType vvRenderMaster::initSockets(const int port, vvSocket::SocketType st,
+vvRenderMaster::ErrorType vvRenderMaster::initSockets(const int defaultPort, vvSocket::SocketType st,
                                                       const bool redistributeVolData,
                                                       vvVolDesc*& vd)
 {
   const bool loadVolumeFromFile = !redistributeVolData;
   for (int s=0; s<_slaveNames.size(); ++s)
   {
-    _sockets.push_back(new vvSocketIO(port, _slaveNames[s], st));
+    if (_slavePorts[s] == -1)
+    {
+      _sockets.push_back(new vvSocketIO(defaultPort, _slaveNames[s], st));
+    }
+    else
+    {
+      _sockets.push_back(new vvSocketIO(_slavePorts[s], _slaveNames[s], st));
+    }
     _sockets[s]->set_debuglevel(vvDebugMsg::getDebugLevel());
     _sockets[s]->no_nagle();
 

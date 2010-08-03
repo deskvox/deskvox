@@ -273,6 +273,8 @@ class VIRVOEXPORT vvToolshed
     static float   meanSqrError(float*, float*, const int);
     static char*   file2string(const char* filename);
     static int     string2Int(const char* str);
+    static int     parsePort(const char* url);
+    static char*   stripPort(const char* url);
 };
 #endif
 

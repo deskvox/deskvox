@@ -41,7 +41,8 @@ public:
     VV_SOCKET_ERROR
   };
 
-  vvRenderMaster(std::vector<char*>& slaveNames, std::vector<char*>& slaveFileNames,
+  vvRenderMaster(std::vector<char*>& slaveNames, std::vector<int>& slavePorts,
+                 std::vector<char*>& slaveFileNames,
                  const char* fileName);
   ~vvRenderMaster();
 
@@ -52,6 +53,7 @@ public:
   void render(const float bgColor[3]) const;
 private:
   std::vector<char*> _slaveNames;
+  std::vector<int> _slavePorts;
   std::vector<char*> _slaveFileNames;
   std::vector<vvSocketIO*>  _sockets;
 

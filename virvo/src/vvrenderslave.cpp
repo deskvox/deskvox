@@ -40,6 +40,8 @@ vvRenderSlave::ErrorType vvRenderSlave::initSocket(const int port, const vvSocke
   _socket = new vvSocketIO(port, st);
   _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
 
+  cerr << "Listening on port " << port << endl;
+
   const vvSocket::ErrorType err = _socket->init();
   _socket->no_nagle();
 

@@ -38,6 +38,7 @@
   #include <dirent.h>
 #endif
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <float.h>
 #include <math.h>
@@ -2583,6 +2584,72 @@ int vvToolshed::string2Int(const char* str)
   }
 
   result *= sign;
+  return result;
+}
+
+//----------------------------------------------------------------------------
+/** Parse port from an url specified like this:
+    <hostname>[:port]
+    If no port is found, -1 is returned.
+    @param url  The url to parse the port from
+    @return  The port if specified, -1 otherwise.
+*/
+int vvToolshed::parsePort(const char* url)
+{
+  const char delimiter[] = ":";
+  char* token;
+  char* str = new char[strlen(url)];
+  strcpy(str, url);
+
+  int port = -1;
+
+  if (token = (strtok(str, delimiter)))
+  {
+    while (token = (strtok(NULL, delimiter)))
+    {
+      port = atoi(token);
+    }
+  }
+  delete[] str;
+
+  return port;
+}
+
+//----------------------------------------------------------------------------
+/** Remove port from an url specified as follows:
+    <hostname>[:port]
+    No checks will be performed if their is actually
+    a port substring. The caller is responsible for
+    performing this check.
+    @param url  The url to strip.
+    @return The stripped result.
+*/
+char* vvToolshed::stripPort(const char* url)
+{
+  int stripCount = 0;
+  bool colonSeen = false;
+  char* result = 0;
+
+  for (int i = strlen(url) - 1; i >= 0; --i)
+  {
+    char c = url[i];
+
+    if ((c != ':') && (!colonSeen))
+    {
+      ++stripCount;
+    }
+    else if ((c == ':') && (!colonSeen))
+    {
+      ++stripCount;
+      colonSeen = true;
+      result = new char[strlen(url) - stripCount - 1];
+    }
+    else
+    {
+      result[i] = url[i];
+    }
+  }
+  result[strlen(url) - stripCount] = '\0';
   return result;
 }
 
