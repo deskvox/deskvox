@@ -47,11 +47,13 @@ public:
   void bindTexture() const;
 
   void setScale(const float scale);
+  void setPreserveDepthBuffer(const bool preserveDepthBuffer);
   void setPrecision(const BufferPrecision& precision);
 
   int getBufferWidth() const;
   int getBufferHeight() const;
   float getScale() const;
+  bool getPreserveFramebuffer() const;
   BufferPrecision getPrecision() const;
 private:
   int _viewportWidth;
@@ -61,6 +63,7 @@ private:
   int _bufferHeight;
 
   float _scale;
+  bool _preserveDepthBuffer;
 
   BufferPrecision _precision;
 
@@ -68,10 +71,17 @@ private:
   GLuint _depthBuffer;
   GLuint _textureId;
 
+  unsigned char* _pixels;
+  GLfloat* _depthPixels;
+
   bool _updatePosted;
 
   void doScale();
   void update();
+  void storeColorBuffer();
+  void storeDepthBuffer();
+  void renderToViewAlignedQuad() const;
+  void writeBackDepthBuffer() const;
 };
 
 #endif

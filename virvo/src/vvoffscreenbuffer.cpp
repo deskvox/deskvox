@@ -33,19 +33,28 @@ vvOffscreenBuffer::vvOffscreenBuffer(const float scale = 1.0f, const BufferPreci
   _viewportWidth = v.values[2];
   _viewportHeight = v.values[3];
   _scale = scale;
+  _preserveDepthBuffer = false;
   _precision = precision;
   glGenTextures(1, &_textureId);
   _updatePosted = true;
+  _pixels = NULL;
+  _depthPixels = NULL;
   resize(_viewportWidth, _viewportHeight);
 }
 
 vvOffscreenBuffer::~vvOffscreenBuffer()
 {
-
+  delete[] _pixels;
+  delete[] _depthPixels;
 }
 
 void vvOffscreenBuffer::initForRender()
 {
+  if (_preserveDepthBuffer)
+  {
+    storeDepthBuffer();
+  }
+
   const vvGLTools::Viewport v = vvGLTools::getViewport();
   resize(v.values[2], v.values[3]);
 
@@ -58,6 +67,11 @@ void vvOffscreenBuffer::initForRender()
 
 void vvOffscreenBuffer::writeBack(const int w, const int h)
 {
+  if (_preserveDepthBuffer)
+  {
+    storeColorBuffer();
+  }
+
   vvGLTools::Viewport viewport;
   if ((w == -1) || (h == -1))
   {
@@ -73,12 +87,19 @@ void vvOffscreenBuffer::writeBack(const int w, const int h)
     viewport.values[3] = h;
   }
 
-  glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, _frameBufferObject);
-  glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
-  glBlitFramebufferEXT(0, 0, _bufferWidth, _bufferHeight,
-                       0, 0, viewport[2], viewport[3],
-                       GL_COLOR_BUFFER_BIT, GL_LINEAR);
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  if (_preserveDepthBuffer)
+  {
+    renderToViewAlignedQuad();
+  }
+  else
+  {
+    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, _frameBufferObject);
+    glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
+    glBlitFramebufferEXT(0, 0, _bufferWidth, _bufferHeight,
+                         0, 0, viewport[2], viewport[3],
+                         GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  }
 }
 
 void vvOffscreenBuffer::resize(const int w, const int h)
@@ -131,7 +152,13 @@ void vvOffscreenBuffer::resize(const int w, const int h)
 
 void vvOffscreenBuffer::clearBuffer()
 {
+  glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_COLOR_BUFFER_BIT);
+
+  if (_preserveDepthBuffer)
+  {
+    writeBackDepthBuffer();
+  }
 }
 
 void vvOffscreenBuffer::bindFramebuffer() const
@@ -155,6 +182,11 @@ void vvOffscreenBuffer::setScale(const float scale)
   update();
 }
 
+void vvOffscreenBuffer::setPreserveDepthBuffer(const bool preserveDepthBuffer)
+{
+  _preserveDepthBuffer = preserveDepthBuffer;
+}
+
 void vvOffscreenBuffer::setPrecision(const BufferPrecision& precision)
 {
   _precision = precision;
@@ -176,6 +208,11 @@ float vvOffscreenBuffer::getScale() const
   return _scale;
 }
 
+bool vvOffscreenBuffer::getPreserveFramebuffer() const
+{
+  return _preserveDepthBuffer;
+}
+
 BufferPrecision vvOffscreenBuffer::getPrecision() const
 {
   return _precision;
@@ -191,4 +228,72 @@ void vvOffscreenBuffer::update()
 {
   // After the next render step, the resize() method won't return although size didn't change.
   _updatePosted = true;
+}
+
+void vvOffscreenBuffer::storeColorBuffer()
+{
+  delete[] _pixels;
+  _pixels = new unsigned char[_bufferWidth * _bufferHeight * 4];
+  glReadPixels(0, 0, _bufferWidth, _bufferHeight, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
+}
+
+void vvOffscreenBuffer::storeDepthBuffer()
+{
+  glFinish();
+
+  delete[] _depthPixels;
+  _depthPixels = new float[_bufferWidth * _bufferHeight];
+  glReadPixels(0, 0, _bufferWidth, _bufferHeight, GL_DEPTH_COMPONENT, GL_FLOAT, _depthPixels);
+}
+
+void vvOffscreenBuffer::renderToViewAlignedQuad() const
+{
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
+
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glLoadIdentity();
+
+  glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT
+               | GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_TRANSFORM_BIT);
+
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_DEPTH_TEST);
+  glEnable(GL_COLOR_MATERIAL);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+  glEnable(GL_TEXTURE_2D);
+  bindTexture();
+  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _bufferWidth, _bufferHeight,
+               0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
+  vvGLTools::drawViewAlignedQuad();
+
+  glPopAttrib();
+
+  glPopMatrix();
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix();
+}
+
+void vvOffscreenBuffer::writeBackDepthBuffer() const
+{
+  glPushAttrib(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
+
+  glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+  glDepthMask(GL_TRUE);
+  glDepthFunc(GL_ALWAYS);
+  glEnable(GL_DEPTH_TEST);
+  glWindowPos2i(0, 0);
+  glDrawPixels(_bufferWidth, _bufferHeight, GL_DEPTH_COMPONENT, GL_FLOAT, _depthPixels);
+
+  glPopClientAttrib();
+  glPopAttrib();
 }

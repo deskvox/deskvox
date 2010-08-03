@@ -218,6 +218,10 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   if (_renderState._useOffscreenBuffer)
   {
     _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, VV_BYTE);
+    if (_renderState._opaqueGeometryPresent)
+    {
+      dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPreserveDepthBuffer(true);
+    }
   }
   else
   {
@@ -2710,7 +2714,7 @@ void vvTexRend::setGLenvironment() const
   glEnable(GL_COLOR_MATERIAL);
   glEnable(GL_BLEND);
 
-  if ((_numThreads > 0) || (_isSlave))
+  if ((_numThreads > 0) || (_isSlave) || (_renderState._opaqueGeometryPresent))
   {
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
   }
@@ -4899,6 +4903,10 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, ch
         {
           delete _renderTarget;
           _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, _renderState._imagePrecision);
+          if (_renderState._opaqueGeometryPresent)
+          {
+            dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPreserveDepthBuffer(true);
+          }
         }
       }
       else
