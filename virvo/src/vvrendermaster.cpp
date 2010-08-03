@@ -160,6 +160,8 @@ void vvRenderMaster::render(const float bgColor[3]) const
   _renderer->getEyePosition(&eye);
   vvMatrix invMV(&mv);
   invMV.invert();
+  // This is a gl matrix ==> transpose.
+  invMV.transpose();
   eye.multiply(&invMV);
 
   // Orthographic projection.
