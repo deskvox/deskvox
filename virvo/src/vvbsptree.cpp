@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-
+#define NOMINMAX
 #include <cmath>
 #include <set>
 
@@ -123,10 +123,10 @@ vvRect* vvAABB::getProjectedScreenRect() const
   }
 
   vvRect* result = new vvRect;
-  result->x = ::max(0, static_cast<int>(floorf(minX)));
-  result->y = ::max(0, static_cast<int>(floorf(minY)));
-  result->width = ::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2]);
-  result->height = ::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3]);
+  result->x = std::max(0, static_cast<int>(floorf(minX)));
+  result->y = std::max(0, static_cast<int>(floorf(minY)));
+  result->width = std::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2]);
+  result->height = std::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3]);
 
   return result;
 }
