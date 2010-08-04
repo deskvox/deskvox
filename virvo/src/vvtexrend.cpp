@@ -4480,14 +4480,14 @@ void vvTexRend::renderVolumeGL()
   // Reroute output to alternative render target.
   _renderTarget->initForRender();
 
+  beforeSetGLenvironment();
+
+  setGLenvironment();
+
   // If the render target is of base class type, nothing
   // will happen here. Offscreen buffers e.g. need to
   // cleanup the content from the last rendering step.
   _renderTarget->clearBuffer();
-
-  beforeSetGLenvironment();
-
-  setGLenvironment();
 
   if (_numThreads == 0)
   {
