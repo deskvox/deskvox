@@ -62,6 +62,7 @@ const int vvView::DEFAULT_PORT = 31050;
 vvView* vvView::ds = NULL;
 
 //#define CLIPPING_TEST
+//#define FBO_WITH_GEOMETRY_TEST
 
 //----------------------------------------------------------------------------
 /// Constructor
@@ -436,6 +437,11 @@ void vvView::displayCallback(void)
 #ifdef CLIPPING_TEST
          ds->renderClipObject();
          ds->renderQuad();
+#endif
+
+#ifdef FBO_WITH_GEOMETRY_TEST
+         ds->renderCube();
+         ds->renderer->_renderState._opaqueGeometryPresent = true;
 #endif
          ds->renderer->renderVolumeGL();
       }
@@ -1755,54 +1761,67 @@ void vvView::renderClipObject()
    clipBuffer->bindFramebuffer();
    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   const float dim = 0.3f;
-   glBegin(GL_QUADS);
 
-      glColor3f(1.0f, 1.0f, 1.0f);
+   renderCube();
 
-      glNormal3f( 0.0f,  0.0f,  1.0f);
-      glVertex3f(-dim, -dim,  dim);
-      glVertex3f( dim, -dim,  dim);
-      glVertex3f( dim,  dim,  dim);
-      glVertex3f(-dim,  dim,  dim);
-
-      glNormal3f( 0.0f,  0.0f, -1.0f);
-      glVertex3f( dim, -dim, -dim);
-      glVertex3f(-dim, -dim, -dim);
-      glVertex3f(-dim,  dim, -dim);
-      glVertex3f( dim,  dim, -dim);
-
-      glNormal3f(-1.0f,  0.0f,  0.0f);
-      glVertex3f(-dim, -dim, -dim);
-      glVertex3f(-dim, -dim,  dim);
-      glVertex3f(-dim,  dim,  dim);
-      glVertex3f(-dim,  dim, -dim);
-
-      glNormal3f( 1.0f,  0.0f,  0.0f);
-      glVertex3f( dim, -dim,  dim);
-      glVertex3f( dim, -dim, -dim);
-      glVertex3f( dim,  dim, -dim);
-      glVertex3f( dim,  dim,  dim);
-
-      glNormal3f( 0.0f,  1.0f,  0.0f);
-      glVertex3f(-dim,  dim,  dim);
-      glVertex3f( dim,  dim,  dim);
-      glVertex3f( dim,  dim, -dim);
-      glVertex3f(-dim,  dim, -dim);
-
-      glNormal3f( 0.0f, -1.0f,  0.0f);
-      glVertex3f(-dim, -dim, -dim);
-      glVertex3f(-dim, -dim,  dim);
-      glVertex3f( dim, -dim,  dim);
-      glVertex3f( dim, -dim, -dim);
-
-   glEnd();
    delete[] framebufferDump;
    const vvGLTools::Viewport viewport = vvGLTools::getViewport();
    framebufferDump = new GLfloat[viewport[2] * viewport[3] * 4];
    glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
    glReadPixels(viewport[0], viewport[1], viewport[2], viewport[3], GL_RGBA, GL_FLOAT, framebufferDump);
    clipBuffer->unbindFramebuffer();
+}
+
+void vvView::renderCube() const
+{
+  const float width = 0.3f;
+  const float height = 0.3f;
+  const float depth = 0.3f;
+  const float posX = 0.0f;
+  const float posY = 0.0f;
+  const float posZ = 0.0f;
+
+  glBegin(GL_QUADS);
+
+     glColor3f(1.0f, 1.0f, 1.0f);
+
+     glNormal3f( 0.0f,  0.0f,  1.0f);
+     glVertex3f(posX - width, posY - height, posZ + depth);
+     glVertex3f(posX + width, posY - height, posZ + depth);
+     glVertex3f(posX + width, posY + height, posZ + depth);
+     glVertex3f(posX - width, posY + height, posZ + depth);
+
+     glNormal3f( 0.0f,  0.0f, -1.0f);
+     glVertex3f(posX + width, posY - height, posZ - depth);
+     glVertex3f(posX - width, posY - height, posZ - depth);
+     glVertex3f(posX - width, posY + height, posZ - depth);
+     glVertex3f(posX + width, posY + height, posZ - depth);
+
+     glNormal3f(-1.0f,  0.0f,  0.0f);
+     glVertex3f(posX - width, posY - height, posZ - depth);
+     glVertex3f(posX - width, posY - height, posZ + depth);
+     glVertex3f(posX - width, posY + height, posZ + depth);
+     glVertex3f(posX - width, posY + height, posZ - depth);
+
+     glNormal3f( 1.0f,  0.0f,  0.0f);
+     glVertex3f(posX + width, posY - height, posZ + depth);
+     glVertex3f(posX + width, posY - height, posZ - depth);
+     glVertex3f(posX + width, posY + height, posZ - depth);
+     glVertex3f(posX + width, posY + height, posZ + depth);
+
+     glNormal3f( 0.0f,  1.0f,  0.0f);
+     glVertex3f(posX - width, posY + height, posZ + depth);
+     glVertex3f(posX + width, posY + height, posZ + depth);
+     glVertex3f(posX + width, posY + height, posZ - depth);
+     glVertex3f(posX - width, posY + height, posZ - depth);
+
+     glNormal3f( 0.0f, -1.0f,  0.0f);
+     glVertex3f(posX - width, posY - height, -depth);
+     glVertex3f(posX - width, posY - height,  depth);
+     glVertex3f(posX + width, posY - height,  depth);
+     glVertex3f(posX + width, posY - height, -depth);
+
+  glEnd();
 }
 
 void vvView::renderQuad() const
@@ -1824,21 +1843,8 @@ void vvView::renderQuad() const
    glPushMatrix();
    glLoadIdentity();
 
-   glBegin(GL_QUADS);
-       glColor3f(1.0f, 1.0f, 1.0f);
+   vvGLTools::drawViewAlignedQuad();
 
-       glTexCoord2f(0.0f, 0.0f);
-       glVertex3f(-1.0f, -1.0f, 0.0f);
-
-       glTexCoord2f(1.0f, 0.0f);
-       glVertex3f(1.0f, -1.0f, 0.0f);
-
-       glTexCoord2f(1.0f, 1.0f);
-       glVertex3f(1.0f, 1.0f, 0.0f);
-
-       glTexCoord2f(0.0f, 1.0f);
-       glVertex3f(-1.0f, 1.0f, 0.0f);
-   glEnd();
    glPopMatrix();
    glMatrixMode(GL_PROJECTION);
    glPopMatrix();

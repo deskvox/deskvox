@@ -154,6 +154,7 @@ class vvView
       void setProjectionMode(bool);
       void setupClipBuffer();
       void renderClipObject();
+      void renderCube() const;
       void renderQuad() const;
       void displayHelpInfo();
       bool parseCommandLine(int argc, char *argv[]);
