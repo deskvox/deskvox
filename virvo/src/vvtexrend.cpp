@@ -4480,6 +4480,11 @@ void vvTexRend::renderVolumeGL()
   // Reroute output to alternative render target.
   _renderTarget->initForRender();
 
+  // If the render target is of base class type, nothing
+  // will happen here. Offscreen buffers e.g. need to
+  // cleanup the content from the last rendering step.
+  _renderTarget->clearBuffer();
+
   beforeSetGLenvironment();
 
   setGLenvironment();
@@ -4517,11 +4522,6 @@ void vvTexRend::renderVolumeGL()
       enableLUTMode(_pixelShader, pixLUTName, fragProgName);
     }
   }
-
-  // If the render target is of base class type, nothing
-  // will happen here. Offscreen buffers e.g. need to
-  // cleanup the content from the last rendering step.
-  _renderTarget->clearBuffer();
 
   switch (geomType)
   {
