@@ -48,12 +48,14 @@ public:
 
   void setScale(const float scale);
   void setPreserveDepthBuffer(const bool preserveDepthBuffer);
+  void setUseNVDepthStencil(const bool useNVDepthStencil);
   void setPrecision(const BufferPrecision& precision);
 
   int getBufferWidth() const;
   int getBufferHeight() const;
   float getScale() const;
   bool getPreserveFramebuffer() const;
+  bool getUseNVDepthStencil() const;
   BufferPrecision getPrecision() const;
 private:
   int _viewportWidth;
@@ -64,6 +66,7 @@ private:
 
   float _scale;
   bool _preserveDepthBuffer;
+  bool _useNVDepthStencil;
 
   BufferPrecision _precision;
 
@@ -72,7 +75,15 @@ private:
   GLuint _textureId;
 
   unsigned char* _pixels;
-  GLfloat* _depthPixels;
+
+  /*!
+   * \brief         This pointer is used if the depth buffer is stored as GL_FLOAT.
+   */
+  GLfloat* _depthPixelsF;
+  /*!
+   * \brief         This pointer is used with the GL_DEPTH_STENCIL_NV for storing the depth buffer.
+   */
+  GLuint* _depthPixelsNV;
 
   bool _updatePosted;
 

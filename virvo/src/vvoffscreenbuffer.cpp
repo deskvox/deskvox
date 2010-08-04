@@ -34,18 +34,21 @@ vvOffscreenBuffer::vvOffscreenBuffer(const float scale = 1.0f, const BufferPreci
   _viewportHeight = v.values[3];
   _scale = scale;
   _preserveDepthBuffer = false;
+  _useNVDepthStencil = true;
   _precision = precision;
   glGenTextures(1, &_textureId);
   _updatePosted = true;
   _pixels = NULL;
-  _depthPixels = NULL;
+  _depthPixelsF = NULL;
+  _depthPixelsNV = NULL;
   resize(_viewportWidth, _viewportHeight);
 }
 
 vvOffscreenBuffer::~vvOffscreenBuffer()
 {
   delete[] _pixels;
-  delete[] _depthPixels;
+  delete[] _depthPixelsF;
+  delete[] _depthPixelsNV;
 }
 
 void vvOffscreenBuffer::initForRender()
@@ -187,6 +190,11 @@ void vvOffscreenBuffer::setPreserveDepthBuffer(const bool preserveDepthBuffer)
   _preserveDepthBuffer = preserveDepthBuffer;
 }
 
+void vvOffscreenBuffer::setUseNVDepthStencil(const bool useNVDepthStencil)
+{
+  _useNVDepthStencil = useNVDepthStencil;
+}
+
 void vvOffscreenBuffer::setPrecision(const BufferPrecision& precision)
 {
   _precision = precision;
@@ -211,6 +219,11 @@ float vvOffscreenBuffer::getScale() const
 bool vvOffscreenBuffer::getPreserveFramebuffer() const
 {
   return _preserveDepthBuffer;
+}
+
+bool vvOffscreenBuffer::getUseNVDepthStencil() const
+{
+  return _useNVDepthStencil;
 }
 
 BufferPrecision vvOffscreenBuffer::getPrecision() const
@@ -241,9 +254,19 @@ void vvOffscreenBuffer::storeDepthBuffer()
 {
   glFinish();
 
-  delete[] _depthPixels;
-  _depthPixels = new float[_bufferWidth * _bufferHeight];
-  glReadPixels(0, 0, _bufferWidth, _bufferHeight, GL_DEPTH_COMPONENT, GL_FLOAT, _depthPixels);
+  delete[] _depthPixelsNV;
+  delete[] _depthPixelsF;
+
+  if (_useNVDepthStencil)
+  {
+    _depthPixelsNV = new GLuint[_bufferWidth * _bufferHeight];
+    glReadPixels(0, 0, _bufferWidth, _bufferHeight, GL_DEPTH_STENCIL_NV, GL_UNSIGNED_INT_24_8_NV, _depthPixelsNV);
+  }
+  else
+  {
+    _depthPixelsF = new float[_bufferWidth * _bufferHeight];
+    glReadPixels(0, 0, _bufferWidth, _bufferHeight, GL_DEPTH_COMPONENT, GL_FLOAT, _depthPixelsF);
+  }
 }
 
 void vvOffscreenBuffer::renderToViewAlignedQuad() const
@@ -292,7 +315,15 @@ void vvOffscreenBuffer::writeBackDepthBuffer() const
   glDepthFunc(GL_ALWAYS);
   glEnable(GL_DEPTH_TEST);
   glWindowPos2i(0, 0);
-  glDrawPixels(_bufferWidth, _bufferHeight, GL_DEPTH_COMPONENT, GL_FLOAT, _depthPixels);
+
+  if (_useNVDepthStencil)
+  {
+    glDrawPixels(_bufferWidth, _bufferHeight, GL_DEPTH_STENCIL_NV, GL_UNSIGNED_INT_24_8_NV, _depthPixelsNV);
+  }
+  else
+  {
+    glDrawPixels(_bufferWidth, _bufferHeight, GL_DEPTH_COMPONENT, GL_FLOAT, _depthPixelsF);
+  }
 
   glPopClientAttrib();
   glPopAttrib();
