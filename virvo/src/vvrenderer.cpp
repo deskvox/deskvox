@@ -88,7 +88,7 @@ vvRenderState::vvRenderState()
   }
 
   _useOffscreenBuffer = false;
-  _imageScale = 1.0f;
+  _imageScale = 0.5f;
   _imagePrecision = VV_BYTE;
   _showTexture = true;	// added by Han, Feb 2008
   _opaqueGeometryPresent = false;

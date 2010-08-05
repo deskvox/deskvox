@@ -73,6 +73,7 @@ private:
   GLuint _frameBufferObject;
   GLuint _depthBuffer;
   GLuint _textureId;
+  GLuint _depthTextureId;
 
   unsigned char* _pixels;
 
@@ -84,6 +85,8 @@ private:
    * \brief         This pointer is used with the GL_DEPTH_STENCIL_NV for storing the depth buffer.
    */
   GLuint* _depthPixelsNV;
+
+  vvOffscreenBuffer* _scaledDepthBuffer;
 
   bool _updatePosted;
 
