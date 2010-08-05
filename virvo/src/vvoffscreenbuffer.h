@@ -71,6 +71,7 @@ private:
   BufferPrecision _precision;
 
   GLuint _frameBufferObject;
+  GLuint _colorBuffer;
   GLuint _depthBuffer;
   GLuint _textureId;
   GLuint _depthTextureId;
