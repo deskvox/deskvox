@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opengl32.lib glu32.lib glut.lib glew32.lib libvirvo.lib pthreadVC2.lib cg.lib cgGL.lib"
+				AdditionalDependencies="opengl32.lib glu32.lib glut.lib glew32.lib libvirvo.lib pthreadVC2.lib cg.lib cgGL.lib Ws2_32.lib"
 				AdditionalLibraryDirectories="..\obj;&quot;$(EXTERNLIBS)\glut\lib&quot;;&quot;$(EXTERNLIBS)\glew\lib&quot;;&quot;$(EXTERNLIBS)\pthreads\lib&quot;;&quot;$(EXTERNLIBS)\Cg\lib&quot;"
 			/>
 			<Tool
@@ -152,7 +152,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opengl32.lib glu32.lib glut.lib glew32.lib libvirvo.lib pthreadVC2.lib cg.lib cgGL.lib"
+				AdditionalDependencies="opengl32.lib glu32.lib glut.lib glew32.lib libvirvo.lib pthreadVC2.lib cg.lib cgGL.lib Ws2_32.lib"
 				AdditionalLibraryDirectories="..\obj;&quot;$(EXTERNLIBS)\glut\lib&quot;;&quot;$(EXTERNLIBS)\glew\lib&quot;;&quot;$(EXTERNLIBS)\pthreads\lib&quot;;&quot;$(EXTERNLIBS)\Cg\lib&quot;"
 			/>
 			<Tool
