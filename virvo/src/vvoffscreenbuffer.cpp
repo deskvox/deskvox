@@ -52,6 +52,11 @@ vvOffscreenBuffer::~vvOffscreenBuffer()
   delete _scaledDepthBuffer;
   delete[] _depthPixelsF;
   delete[] _depthPixelsNV;
+
+  glDeleteTextures(1, &_colorBuffer);
+  glDeleteRenderbuffersEXT(1, &_depthBuffer);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  glDeleteFramebuffersEXT(1, &_frameBufferObject);
 }
 
 void vvOffscreenBuffer::initForRender()
@@ -121,7 +126,6 @@ void vvOffscreenBuffer::resize(const int w, const int h)
 
   doScale();
 
-  GLuint tex;
   glGenFramebuffersEXT(1, &_frameBufferObject);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
   glGenRenderbuffersEXT(1, &_depthBuffer);
@@ -129,8 +133,8 @@ void vvOffscreenBuffer::resize(const int w, const int h)
   glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, _bufferWidth, _bufferHeight);
   glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
                                GL_RENDERBUFFER_EXT, _depthBuffer);
-  glGenTextures(1, &tex);
-  glBindTexture(GL_TEXTURE_2D, tex);
+  glGenTextures(1, &_colorBuffer);
+  glBindTexture(GL_TEXTURE_2D, _colorBuffer);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -150,7 +154,7 @@ void vvOffscreenBuffer::resize(const int w, const int h)
   }
 
   glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
-                            tex, 0);
+                            _colorBuffer, 0);
 
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
@@ -312,7 +316,7 @@ void vvOffscreenBuffer::renderToViewAlignedQuad() const
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _bufferWidth, _bufferHeight,
                0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
   vvGLTools::drawViewAlignedQuad();
-  glDeleteTextures(1, &_textureId);
+  glDeleteTextures(1, &_textureId);vvGLTools::printGLError("ERROR");
 
   glPopAttrib();
 
