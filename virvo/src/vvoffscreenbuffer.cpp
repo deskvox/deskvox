@@ -312,6 +312,7 @@ void vvOffscreenBuffer::renderToViewAlignedQuad() const
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _bufferWidth, _bufferHeight,
                0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
   vvGLTools::drawViewAlignedQuad();
+  glDeleteTextures(1, &_textureId);
 
   glPopAttrib();
 
