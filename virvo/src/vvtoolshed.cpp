@@ -2660,9 +2660,32 @@ void vvToolshed::pixels2Ppm(float* pixels, const int width, const int height,
 
   unsigned char* tmp = new unsigned char[size];
 
+  float max = 0.0f;
+  float min = 255.0f;
+
   for (int i = 0; i < size; ++i)
   {
     tmp[i] = static_cast<unsigned char>(pixels[i] * 255.0f);
+
+    if ((int)tmp[i] < min)
+    {
+      min = static_cast<float>(tmp[i]);
+    }
+
+    if ((int)tmp[i] > max)
+    {
+      max = static_cast<float>(tmp[i]);
+    }
+  }
+
+  // Clamp / scale up to 0..255.
+  if (true)
+  {
+    const float diffInv = 1.0f / (max - min);
+    for (int i = 0; i < size; ++i)
+    {
+      float f = static_cast<float>(tmp[i]) - min;
+      tmp[i] = static_cast<unsigned char>(f * diffInv * max);
     }
   }
 
