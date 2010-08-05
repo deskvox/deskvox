@@ -210,6 +210,12 @@ void vvOffscreenBuffer::setPrecision(const BufferPrecision& precision)
   update();
 }
 
+void vvOffscreenBuffer::setInterpolation(const bool interpolation)
+{
+  _interpolation = interpolation;
+  update();
+}
+
 int vvOffscreenBuffer::getBufferWidth() const
 {
   return _bufferWidth;
@@ -238,6 +244,11 @@ bool vvOffscreenBuffer::getUseNVDepthStencil() const
 BufferPrecision vvOffscreenBuffer::getPrecision() const
 {
   return _precision;
+}
+
+bool vvOffscreenBuffer::getInterpolation() const
+{
+  return _interpolation;
 }
 
 void vvOffscreenBuffer::doScale()
