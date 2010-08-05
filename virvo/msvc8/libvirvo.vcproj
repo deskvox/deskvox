@@ -184,6 +184,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\vvbsptreevisitors.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\src\vvcg.cpp"
 				>
 			</File>
@@ -232,7 +236,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\vvrendercontext.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\src\vvrenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\vvrendermaster.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\vvrenderslave.cpp"
 				>
 			</File>
 			<File
@@ -325,6 +341,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\vvbsptreevisitors.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\vvcolor.h"
 				>
 			</File>
@@ -373,7 +393,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\vvrendercontext.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\vvrenderer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\vvrendermaster.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\vvrenderslave.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\vvrendertarget.h"
 				>
 			</File>
 			<File
