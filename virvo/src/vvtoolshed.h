@@ -182,6 +182,12 @@ class VIRVOEXPORT vvToolshed
       VV_BIG_END                                  ///< big endian: hight-order byte is stored first
     };
 
+    enum Format
+    {
+      VV_LUMINANCE = 0,
+      VV_RGBA
+    };
+
     static bool    isWhitespace(const char);
     static int     strCompare(const char*, const char*);
     static int     strCompare(const char*, const char*, int n);
@@ -274,7 +280,9 @@ class VIRVOEXPORT vvToolshed
     static char*   file2string(const char* filename);
     static int     string2Int(const char* str);
     static void    pixels2Ppm(unsigned char* pixels, const int width, const int height,
-                              const char* fileName);
+                              const char* fileName, const Format format = VV_RGBA);
+    static void    pixels2Ppm(float* pixels, const int width, const int height,
+                              const char* fileName, const Format format = VV_RGBA);
     static int     parsePort(const char* url);
     static char*   stripPort(const char* url);
 };

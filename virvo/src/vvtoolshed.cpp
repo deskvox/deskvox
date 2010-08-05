@@ -2593,7 +2593,7 @@ int vvToolshed::string2Int(const char* str)
     for debugging purposes.
 */
 void vvToolshed::pixels2Ppm(unsigned char* pixels, const int width, const int height,
-                            const char* fileName)
+                            const char* fileName, const vvToolshed::Format format)
 {
   std::ofstream ppm;
   ppm.open(fileName);
@@ -2602,18 +2602,64 @@ void vvToolshed::pixels2Ppm(unsigned char* pixels, const int width, const int he
   ppm << width << " " << height << endl;
   ppm << "255" << endl;
 
+  int limit = 0;
+  switch (format)
+  {
+  case VV_RGBA:
+    limit = 4;
+    break;
+  case VV_LUMINANCE:
+    limit = 1;
+    break;
+  default:
+    break;
+  }
+
   int ite = 0;
   for (int y = 0; y < height; ++y)
   {
     for (int x = 0; x < width; ++x)
     {
-      ppm << (int)pixels[ite + 0] << " ";
-      ppm << (int)pixels[ite + 1] << " ";
-      ppm << (int)pixels[ite + 2] << " ";
-      ite += 4;
+      for (int l = 0; l < (limit - 1); ++l)
+      {
+        ppm << (int)pixels[ite + l] << " ";
+      }
+      ite += limit;
     }
     ppm << endl;
   }
+}
+
+//----------------------------------------------------------------------------
+/** Write pixels (texture, framebuffer content, etc.) to a ppm file
+    for debugging purposes. Overloaded version for float textures,
+    floats will be converted to bytes before rendering.
+*/
+void vvToolshed::pixels2Ppm(float* pixels, const int width, const int height,
+                            const char* fileName, const vvToolshed::Format format)
+{
+  int size = 0;
+
+  switch (format)
+  {
+  case VV_RGBA:
+    size = width * height * 4;
+    break;
+  case VV_LUMINANCE:
+    size = width * height;
+    break;
+  default:
+    break;
+  }
+
+  unsigned char* tmp = new unsigned char[size];
+
+  for (int i = 0; i < size; ++i)
+  {cerr << pixels[i] << endl;
+    tmp[i] = static_cast<unsigned char>(pixels[i] * 255.0f);
+  }
+  pixels2Ppm(tmp, width, height, fileName, format);
+  delete[] tmp;
 }
 
 //----------------------------------------------------------------------------
