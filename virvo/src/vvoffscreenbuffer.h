@@ -50,6 +50,7 @@ public:
   void setPreserveDepthBuffer(const bool preserveDepthBuffer);
   void setUseNVDepthStencil(const bool useNVDepthStencil);
   void setPrecision(const BufferPrecision& precision);
+  void setInterpolation(const bool interpolation);
 
   int getBufferWidth() const;
   int getBufferHeight() const;
@@ -57,6 +58,7 @@ public:
   bool getPreserveFramebuffer() const;
   bool getUseNVDepthStencil() const;
   BufferPrecision getPrecision() const;
+  bool getInterpolation() const;
 private:
   int _viewportWidth;
   int _viewportHeight;
@@ -69,6 +71,8 @@ private:
   bool _useNVDepthStencil;
 
   BufferPrecision _precision;
+
+  bool _interpolation;
 
   GLuint _frameBufferObject;
   GLuint _colorBuffer;

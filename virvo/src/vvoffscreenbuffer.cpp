@@ -36,6 +36,7 @@ vvOffscreenBuffer::vvOffscreenBuffer(const float scale = 1.0f, const BufferPreci
   _preserveDepthBuffer = false;
   _useNVDepthStencil = false;
   _precision = precision;
+  _interpolation = true;
   glGenTextures(1, &_textureId);
   glGenTextures(1, &_depthTextureId);
   _updatePosted = true;
@@ -310,13 +311,13 @@ void vvOffscreenBuffer::renderToViewAlignedQuad() const
 
   glEnable(GL_TEXTURE_2D);
   bindTexture();
-  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
+  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _bufferWidth, _bufferHeight,
                0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
   vvGLTools::drawViewAlignedQuad();
-  glDeleteTextures(1, &_textureId);vvGLTools::printGLError("ERROR");
+  glDeleteTextures(1, &_textureId);
 
   glPopAttrib();
 
