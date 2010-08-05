@@ -2602,31 +2602,37 @@ void vvToolshed::pixels2Ppm(unsigned char* pixels, const int width, const int he
   ppm << width << " " << height << endl;
   ppm << "255" << endl;
 
-  int limit = 0;
-  switch (format)
+  if (format == VV_RGBA)
   {
-  case VV_RGBA:
-    limit = 4;
-    break;
-  case VV_LUMINANCE:
-    limit = 1;
-    break;
-  default:
-    break;
-  }
-
-  int ite = 0;
-  for (int y = 0; y < height; ++y)
-  {
-    for (int x = 0; x < width; ++x)
+    int ite = 0;
+    for (int y = 0; y < height; ++y)
     {
-      for (int l = 0; l < (limit - 1); ++l)
+      for (int x = 0; x < width; ++x)
       {
-        ppm << (int)pixels[ite + l] << " ";
+        ppm << (int)pixels[ite + 0] << " ";
+        ppm << (int)pixels[ite + 1] << " ";
+        ppm << (int)pixels[ite + 2] << " ";
+
+        ite += 4;
       }
-      ite += limit;
+      ppm << endl;
     }
-    ppm << endl;
+  }
+  else if (format == VV_LUMINANCE)
+  {
+    int ite = 0;
+    for (int y = 0; y < height; ++y)
+    {
+      for (int x = 0; x < width; ++x)
+      {
+        ppm << (int)pixels[ite] << " ";
+        ppm << (int)pixels[ite] << " ";
+        ppm << (int)pixels[ite] << " ";
+
+        ite += 1;
+      }
+      ppm << endl;
+    }
   }
 }
 
@@ -2655,9 +2661,11 @@ void vvToolshed::pixels2Ppm(float* pixels, const int width, const int height,
   unsigned char* tmp = new unsigned char[size];
 
   for (int i = 0; i < size; ++i)
-  {cerr << pixels[i] << endl;
+  {
     tmp[i] = static_cast<unsigned char>(pixels[i] * 255.0f);
+    }
   }
+
   pixels2Ppm(tmp, width, height, fileName, format);
   delete[] tmp;
 }
