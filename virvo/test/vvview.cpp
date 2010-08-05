@@ -62,7 +62,7 @@ const int vvView::DEFAULT_PORT = 31050;
 vvView* vvView::ds = NULL;
 
 //#define CLIPPING_TEST
-#define FBO_WITH_GEOMETRY_TEST
+//#define FBO_WITH_GEOMETRY_TEST
 
 //----------------------------------------------------------------------------
 /// Constructor
