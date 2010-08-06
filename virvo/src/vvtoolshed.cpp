@@ -2709,9 +2709,9 @@ int vvToolshed::parsePort(const char* url)
 
   int port = -1;
 
-  if (token = (strtok(str, delimiter)))
+  if ((token = (strtok(str, delimiter))))
   {
-    while (token = (strtok(NULL, delimiter)))
+    while ((token = (strtok(NULL, delimiter))))
     {
       port = atoi(token);
     }
