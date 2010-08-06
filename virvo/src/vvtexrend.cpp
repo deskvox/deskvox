@@ -2932,7 +2932,9 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     minDistanceInd=2;
   float voxelDistance = probeSizeObj[minDistanceInd]/probeTexels[minDistanceInd];
 
-  float sliceDistance = voxelDistance / _renderState._quality;
+  const float quality = calcQualityAndScaleImage();
+
+  float sliceDistance = voxelDistance / quality;
   if(_renderState._isROIUsed && _renderState._quality < 2.0)
   {
     // draw at least twice as many slices as there are samples in the probe depth.
@@ -3164,17 +3166,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
 
-  float quality = _renderState._quality;
-
-  if (quality < 1.0f)
-  {
-    vvOffscreenBuffer* offscreenBuffer = dynamic_cast<vvOffscreenBuffer*>(_renderTarget);
-    if (offscreenBuffer != NULL)
-    {
-      quality = powf(quality, 1.0f/3.0f);
-      offscreenBuffer->setScale(quality);
-    }
-  }
+  const float quality = calcQualityAndScaleImage();
 
   // make sure that at least one slice is drawn.
   // <> deceives msvc so that it won't use the windows.h max macro.
@@ -5937,6 +5929,27 @@ void vvTexRend::calcProjectedScreenRects()
   {
     (*it)->getProjectedScreenRect(&probeMin, &probeMax, true);
   }
+}
+
+//----------------------------------------------------------------------------
+/** Get the quality to adjust numSlices. If the render target is an offscreen
+    buffer, that one gets scaled and the quality return value is adjusted since
+    part of the quality reduction is accomodated through image scaling.
+    @return The quality.
+*/
+float vvTexRend::calcQualityAndScaleImage()
+{
+  float quality = _renderState._quality;
+  if (quality < 1.0f)
+  {
+    vvOffscreenBuffer* offscreenBuffer = dynamic_cast<vvOffscreenBuffer*>(_renderTarget);
+    if (offscreenBuffer != NULL)
+    {
+      quality = powf(quality, 1.0f/3.0f);
+      offscreenBuffer->setScale(quality);
+    }
+  }
+  return quality;
 }
 
 int vvTexRend::get2DTextureShader()

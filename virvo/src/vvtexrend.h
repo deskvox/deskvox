@@ -352,6 +352,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     std::vector<BrickList>** getBrickListsToDistribute();
     int getNumBrickListsToDistribute() const;
     void calcProjectedScreenRects();
+    float calcQualityAndScaleImage();
 
     static int get2DTextureShader();
     static int getLocalIlluminationShader();
