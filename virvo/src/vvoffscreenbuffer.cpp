@@ -230,7 +230,6 @@ void vvOffscreenBuffer::init()
   freeGLResources();
 
   glGenFramebuffersEXT(1, &_frameBufferObject);
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
   genColorAndDepthTextures();
 
   _initialized = true;
@@ -241,6 +240,7 @@ void vvOffscreenBuffer::genColorAndDepthTextures()
   glDeleteRenderbuffersEXT(1, &_depthBuffer);
   glDeleteTextures(1, &_colorBuffer);
 
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
   glGenRenderbuffersEXT(1, &_depthBuffer);
   glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _depthBuffer);
   glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, _bufferWidth, _bufferHeight);
