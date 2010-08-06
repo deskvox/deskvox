@@ -39,12 +39,13 @@ vvOffscreenBuffer::vvOffscreenBuffer(const float scale = 1.0f, const BufferPreci
   _interpolation = true;
   glGenTextures(1, &_textureId);
   glGenTextures(1, &_depthTextureId);
+  _initialized = false;
   _updatePosted = true;
   _pixels = NULL;
   _scaledDepthBuffer = NULL;
   _depthPixelsF = NULL;
   _depthPixelsNV = NULL;
-  resize(_viewportWidth, _viewportHeight);
+  genTextures(_viewportWidth, _viewportHeight);
 }
 
 vvOffscreenBuffer::~vvOffscreenBuffer()
@@ -64,7 +65,7 @@ void vvOffscreenBuffer::initForRender()
   }
 
   const vvGLTools::Viewport v = vvGLTools::getViewport();
-  resize(v.values[2], v.values[3]);
+  genTextures(v.values[2], v.values[3]);
 
   glPushAttrib(GL_VIEWPORT_BIT);
 
@@ -111,7 +112,7 @@ void vvOffscreenBuffer::writeBack(const int w, const int h)
   }
 }
 
-void vvOffscreenBuffer::resize(const int w, const int h)
+void vvOffscreenBuffer::genTextures(const int w, const int h)
 {
   if ((_viewportWidth == w) && (_viewportHeight == h) && (!_updatePosted))
   {
@@ -123,39 +124,14 @@ void vvOffscreenBuffer::resize(const int w, const int h)
 
   doScale();
 
-  freeGLResources();
-
-  glGenFramebuffersEXT(1, &_frameBufferObject);
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
-  glGenRenderbuffersEXT(1, &_depthBuffer);
-  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _depthBuffer);
-  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, _bufferWidth, _bufferHeight);
-  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                               GL_RENDERBUFFER_EXT, _depthBuffer);
-  glGenTextures(1, &_colorBuffer);
-  glBindTexture(GL_TEXTURE_2D, _colorBuffer);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  switch (_precision)
+  if (!_initialized)
   {
-  case VV_BYTE:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    break;
-  case VV_SHORT:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F_ARB, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_SHORT, NULL);
-    break;
-  case VV_FLOAT:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-    break;
+    init();
   }
-
-  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
-                            _colorBuffer, 0);
-
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  else
+  {
+    genTextures();
+  }
 
   _updatePosted = false;
 }
@@ -247,6 +223,54 @@ BufferPrecision vvOffscreenBuffer::getPrecision() const
 bool vvOffscreenBuffer::getInterpolation() const
 {
   return _interpolation;
+}
+
+void vvOffscreenBuffer::init()
+{
+  freeGLResources();
+
+  glGenFramebuffersEXT(1, &_frameBufferObject);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
+  genTextures();
+
+  _initialized = true;
+}
+
+void vvOffscreenBuffer::genTextures()
+{
+  glDeleteRenderbuffersEXT(1, &_depthBuffer);
+  glDeleteTextures(1, &_colorBuffer);
+
+  glGenRenderbuffersEXT(1, &_depthBuffer);
+  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _depthBuffer);
+  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, _bufferWidth, _bufferHeight);
+  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
+                               GL_RENDERBUFFER_EXT, _depthBuffer);
+
+  glGenTextures(1, &_colorBuffer);
+  glBindTexture(GL_TEXTURE_2D, _colorBuffer);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  switch (_precision)
+  {
+  case VV_BYTE:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    break;
+  case VV_SHORT:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F_ARB, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_SHORT, NULL);
+    break;
+  case VV_FLOAT:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+    break;
+  }
+
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
+                            _colorBuffer, 0);
+
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
 void vvOffscreenBuffer::freeGLResources() const
