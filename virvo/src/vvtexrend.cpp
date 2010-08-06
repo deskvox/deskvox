@@ -3164,9 +3164,21 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
 
+  float quality = _renderState._quality;
+
+  if (quality < 1.0f)
+  {
+    vvOffscreenBuffer* offscreenBuffer = dynamic_cast<vvOffscreenBuffer*>(_renderTarget);
+    if (offscreenBuffer != NULL)
+    {
+      quality = powf(quality, 1.0f/3.0f);
+      offscreenBuffer->setScale(quality);
+    }
+  }
+
   // make sure that at least one slice is drawn.
   // <> deceives msvc so that it won't use the windows.h max macro.
-  int numSlices = ::max<>(1, static_cast<int>(_renderState._quality * diagonalVoxels));
+  int numSlices = ::max<>(1, static_cast<int>(quality * diagonalVoxels));
 
   vvDebugMsg::msg(3, "Number of texture slices rendered: ", numSlices);
 
