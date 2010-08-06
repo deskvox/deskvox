@@ -39,7 +39,7 @@ public:
    * \param         h Height of the hardware buffer viewport.
    */
   virtual void writeBack(const int w = -1, const int h = -1);
-  virtual void genTextures(const int w, const int h);
+  virtual void resize(const int w, const int h);
   virtual void clearBuffer();
 
   void bindFramebuffer() const;
@@ -97,7 +97,7 @@ private:
   bool _updatePosted;
 
   void init();
-  void genTextures();
+  void genColorAndDepthTextures();
   void freeGLResources() const;
   void doScale();
   void update();

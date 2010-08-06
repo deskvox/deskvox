@@ -41,7 +41,7 @@ public:
 
   virtual void initForRender();
   virtual void writeBack(const int w = -1, const int h = -1);
-  virtual void resize(const int w, const int h);
+  virtual void genTextures(const int w, const int h);
   virtual void clearBuffer();
 
   inline RenderTargetType getType() const { return _type; }

@@ -3482,7 +3482,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         break;
       }
 
-      data->renderer->_offscreenBuffers[data->threadId]->resize(data->width, data->height);
+      data->renderer->_offscreenBuffers[data->threadId]->genTextures(data->width, data->height);
       data->renderer->enableLUTMode(pixelShader, data->pixLUTName, fragProgName);
       data->renderer->evaluateLocalIllumination(pixelShader, data->normal);
 

@@ -112,7 +112,7 @@ void vvOffscreenBuffer::writeBack(const int w, const int h)
   }
 }
 
-void vvOffscreenBuffer::genTextures(const int w, const int h)
+void vvOffscreenBuffer::resize(const int w, const int h)
 {
   if ((_viewportWidth == w) && (_viewportHeight == h) && (!_updatePosted))
   {
@@ -130,7 +130,7 @@ void vvOffscreenBuffer::genTextures(const int w, const int h)
   }
   else
   {
-    genTextures();
+    genColorAndDepthTextures();
   }
 
   _updatePosted = false;
@@ -231,12 +231,12 @@ void vvOffscreenBuffer::init()
 
   glGenFramebuffersEXT(1, &_frameBufferObject);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
-  genTextures();
+  genColorAndDepthTextures();
 
   _initialized = true;
 }
 
-void vvOffscreenBuffer::genTextures()
+void vvOffscreenBuffer::genColorAndDepthTextures()
 {
   glDeleteRenderbuffersEXT(1, &_depthBuffer);
   glDeleteTextures(1, &_colorBuffer);
