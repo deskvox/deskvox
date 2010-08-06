@@ -40,7 +40,7 @@ void vvRenderTarget::writeBack(const int, const int)
 
 }
 
-void vvRenderTarget::genTextures(const int, const int)
+void vvRenderTarget::resize(const int, const int)
 {
 
 }

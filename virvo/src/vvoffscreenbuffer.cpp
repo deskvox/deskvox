@@ -45,7 +45,7 @@ vvOffscreenBuffer::vvOffscreenBuffer(const float scale = 1.0f, const BufferPreci
   _scaledDepthBuffer = NULL;
   _depthPixelsF = NULL;
   _depthPixelsNV = NULL;
-  genTextures(_viewportWidth, _viewportHeight);
+  resize(_viewportWidth, _viewportHeight);
 }
 
 vvOffscreenBuffer::~vvOffscreenBuffer()
@@ -65,7 +65,7 @@ void vvOffscreenBuffer::initForRender()
   }
 
   const vvGLTools::Viewport v = vvGLTools::getViewport();
-  genTextures(v.values[2], v.values[3]);
+  resize(v.values[2], v.values[3]);
 
   glPushAttrib(GL_VIEWPORT_BIT);
 
