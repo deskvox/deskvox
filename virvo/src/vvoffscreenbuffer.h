@@ -95,6 +95,7 @@ private:
 
   bool _updatePosted;
 
+  void freeGLResources() const;
   void doScale();
   void update();
   void storeColorBuffer();

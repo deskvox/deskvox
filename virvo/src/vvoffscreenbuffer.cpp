@@ -53,11 +53,7 @@ vvOffscreenBuffer::~vvOffscreenBuffer()
   delete _scaledDepthBuffer;
   delete[] _depthPixelsF;
   delete[] _depthPixelsNV;
-
-  glDeleteTextures(1, &_colorBuffer);
-  glDeleteRenderbuffersEXT(1, &_depthBuffer);
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-  glDeleteFramebuffersEXT(1, &_frameBufferObject);
+  freeGLResources();
 }
 
 void vvOffscreenBuffer::initForRender()
@@ -126,6 +122,8 @@ void vvOffscreenBuffer::resize(const int w, const int h)
   _viewportHeight = h;
 
   doScale();
+
+  freeGLResources();
 
   glGenFramebuffersEXT(1, &_frameBufferObject);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
@@ -249,6 +247,14 @@ BufferPrecision vvOffscreenBuffer::getPrecision() const
 bool vvOffscreenBuffer::getInterpolation() const
 {
   return _interpolation;
+}
+
+void vvOffscreenBuffer::freeGLResources() const
+{
+  glDeleteTextures(1, &_colorBuffer);
+  glDeleteRenderbuffersEXT(1, &_depthBuffer);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  glDeleteFramebuffersEXT(1, &_frameBufferObject);
 }
 
 void vvOffscreenBuffer::doScale()
