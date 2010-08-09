@@ -22,6 +22,8 @@ class VIRVOEXPORT vvOffscreenBuffer : public vvRenderTarget
 {
 public:
   vvOffscreenBuffer(const float scale, const BufferPrecision precision);
+  vvOffscreenBuffer(const int w, const int h,
+                    const float scale, const BufferPrecision precision);
   virtual ~vvOffscreenBuffer();
 
   virtual void initForRender();
@@ -96,7 +98,9 @@ private:
   bool _initialized;
   bool _updatePosted;
 
-  void init();
+  void init(const int w, const int h,
+            const float scale, const BufferPrecision precision);
+  void initFbo();
   void genColorAndDepthTextures();
   void freeGLResources() const;
   void doScale();

@@ -27,25 +27,14 @@
 vvOffscreenBuffer::vvOffscreenBuffer(const float scale = 1.0f, const BufferPrecision precision = VV_BYTE)
   : vvRenderTarget()
 {
-  glewInit();
-  _type = VV_OFFSCREEN_BUFFER;
   const vvGLTools::Viewport v = vvGLTools::getViewport();
-  _viewportWidth = v.values[2];
-  _viewportHeight = v.values[3];
-  _scale = scale;
-  _preserveDepthBuffer = false;
-  _useNVDepthStencil = false;
-  _precision = precision;
-  _interpolation = true;
-  glGenTextures(1, &_textureId);
-  glGenTextures(1, &_depthTextureId);
-  _initialized = false;
-  _updatePosted = true;
-  _pixels = NULL;
-  _scaledDepthBuffer = NULL;
-  _depthPixelsF = NULL;
-  _depthPixelsNV = NULL;
-  resize(_viewportWidth, _viewportHeight);
+  init(v[2], v[3], scale, precision);
+}
+
+vvOffscreenBuffer::vvOffscreenBuffer(const int w, const int h, const float scale, const BufferPrecision precision)
+  : vvRenderTarget()
+{
+  init(w, h, scale, precision);
 }
 
 vvOffscreenBuffer::~vvOffscreenBuffer()
@@ -127,7 +116,7 @@ void vvOffscreenBuffer::resize(const int w, const int h)
 
   if (!_initialized)
   {
-    init();
+    initFbo();
   }
   else
   {
@@ -226,7 +215,30 @@ bool vvOffscreenBuffer::getInterpolation() const
   return _interpolation;
 }
 
-void vvOffscreenBuffer::init()
+void vvOffscreenBuffer::init(const int w, const int h,
+                             const float scale, const BufferPrecision precision)
+{
+  glewInit();
+  _type = VV_OFFSCREEN_BUFFER;
+  _viewportWidth = w;
+  _viewportHeight = h;
+  _scale = scale;
+  _preserveDepthBuffer = false;
+  _useNVDepthStencil = false;
+  _precision = precision;
+  _interpolation = true;
+  glGenTextures(1, &_textureId);
+  glGenTextures(1, &_depthTextureId);
+  _initialized = false;
+  _updatePosted = true;
+  _pixels = NULL;
+  _scaledDepthBuffer = NULL;
+  _depthPixelsF = NULL;
+  _depthPixelsNV = NULL;
+  resize(_viewportWidth, _viewportHeight);
+}
+
+void vvOffscreenBuffer::initFbo()
 {
   freeGLResources();
 
@@ -306,7 +318,7 @@ void vvOffscreenBuffer::storeDepthBuffer()
   glFinish();
 
   delete _scaledDepthBuffer;
-  _scaledDepthBuffer = new vvOffscreenBuffer(_scale);
+  _scaledDepthBuffer = new vvOffscreenBuffer(_bufferWidth, _bufferHeight, 1.0f, _precision);
 
   glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, 0);
   glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, _scaledDepthBuffer->_frameBufferObject);
