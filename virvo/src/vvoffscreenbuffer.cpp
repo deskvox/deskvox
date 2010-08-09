@@ -59,12 +59,13 @@ vvOffscreenBuffer::~vvOffscreenBuffer()
 
 void vvOffscreenBuffer::initForRender()
 {
+  const vvGLTools::Viewport v = vvGLTools::getViewport();
+
   if (_preserveDepthBuffer)
   {
     storeDepthBuffer();
   }
 
-  const vvGLTools::Viewport v = vvGLTools::getViewport();
   resize(v.values[2], v.values[3]);
 
   glPushAttrib(GL_VIEWPORT_BIT);
@@ -327,7 +328,6 @@ void vvOffscreenBuffer::storeDepthBuffer()
     _depthPixelsF = new float[_bufferWidth * _bufferHeight];
     glReadPixels(0, 0, _bufferWidth, _bufferHeight, GL_DEPTH_COMPONENT, GL_FLOAT, _depthPixelsF);
   }
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
 void vvOffscreenBuffer::renderToViewAlignedQuad() const
