@@ -4481,10 +4481,10 @@ void vvTexRend::renderVolumeGL()
     sw.start();
   }
 
+  beforeSetGLenvironment();
+
   // Reroute output to alternative render target.
   _renderTarget->initForRender();
-
-  beforeSetGLenvironment();
 
   setGLenvironment();
 
