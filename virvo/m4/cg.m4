@@ -13,18 +13,12 @@ AC_ARG_WITH(cg,
 )
 
 cg_libdir=$cg_dir/lib
-AC_CHECK_SIZEOF([long])
-if test $ac_cv_sizeof_long = 8
-then cg_libdir=$cg_dir/lib64; fi
 cg_incdir=$cg_dir/include
 
 AC_ARG_WITH(cg-libs,
 	AC_HELP_STRING([--with-cg-libs],[location of Cg libraries]),
 	[cg_libdir=$withval],
-	[AS_IF([test "$ac_cv_sizeof_long" -eq 4],
-	[cg_libdir=$cg_dir/lib],
-	[AS_IF([test "$ac_cv_sizeof_long" -eq 8],
-	[cg_libdir=$cg_dir/lib64])])]
+	[cg_libdir=$cg_dir/lib]
 )
 
 AC_ARG_WITH(cg-include,
