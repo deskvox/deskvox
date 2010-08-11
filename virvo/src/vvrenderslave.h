@@ -36,8 +36,12 @@ public:
     VV_FILEIO_ERROR
   };
 
-  vvRenderSlave();
+  vvRenderSlave(const BufferPrecision compositingPrecision = VV_SHORT);
   ~vvRenderSlave();
+
+  void setCompositingPrecision(const BufferPrecision compositingPrecision);
+
+  BufferPrecision getCompositingPrecision() const;
 
   vvRenderSlave::ErrorType initSocket(const int port, vvSocket::SocketType st);
   vvRenderSlave::ErrorType initData(vvVolDesc*& vd) const;
@@ -46,6 +50,8 @@ public:
 private:
   vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering
   vvSocketIO* _socket;                    ///< socket for remote rendering
+
+  BufferPrecision _compositingPrecision;  ///< the precision of the buffer used for compositing (default: 16bit)
 };
 
 #endif

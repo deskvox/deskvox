@@ -23,16 +23,26 @@
 #include "vvrenderslave.h"
 #include "vvtexrend.h"
 
-vvRenderSlave::vvRenderSlave()
-  : _offscreenBuffer(0), _socket(0)
+vvRenderSlave::vvRenderSlave(const BufferPrecision compositingPrecision)
+  : _compositingPrecision(compositingPrecision), _offscreenBuffer(0), _socket(0)
 {
-
+  _compositingPrecision = VV_SHORT;
 }
 
 vvRenderSlave::~vvRenderSlave()
 {
   delete _offscreenBuffer;
   delete _socket;
+}
+
+void vvRenderSlave::setCompositingPrecision(const BufferPrecision compositingPrecision)
+{
+  _compositingPrecision = compositingPrecision;
+}
+
+BufferPrecision vvRenderSlave::getCompositingPrecision() const
+{
+  return _compositingPrecision;
 }
 
 vvRenderSlave::ErrorType vvRenderSlave::initSocket(const int port, const vvSocket::SocketType st)
@@ -128,7 +138,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
   vvMatrix mv;
   renderer->setIsSlave(true);
 
-  _offscreenBuffer = new vvOffscreenBuffer(1.0f, VV_BYTE);
+  _offscreenBuffer = new vvOffscreenBuffer(1.0f, _compositingPrecision);
   _offscreenBuffer->initForRender();
 
   while (1)
