@@ -52,10 +52,10 @@ void vvOffscreenBuffer::initForRender()
 
   if (_preserveDepthBuffer)
   {
-    storeDepthBuffer();
+    storeDepthBuffer(getScaled(v[2]), getScaled(v[3]));
   }
 
-  resize(v.values[2], v.values[3]);
+  resize(v[2], v[3]);
 
   glPushAttrib(GL_VIEWPORT_BIT);
 
@@ -294,10 +294,15 @@ void vvOffscreenBuffer::freeGLResources() const
   glDeleteFramebuffersEXT(1, &_frameBufferObject);
 }
 
+int vvOffscreenBuffer::getScaled(const int v) const
+{
+  return (int)((float)v * _scale);
+}
+
 void vvOffscreenBuffer::doScale()
 {
-  _bufferWidth = (int)((float)_viewportWidth * _scale);
-  _bufferHeight = (int)((float)_viewportHeight * _scale);
+  _bufferWidth = getScaled(_viewportWidth);
+  _bufferHeight = getScaled(_viewportHeight);
 }
 
 void vvOffscreenBuffer::update()
@@ -313,12 +318,12 @@ void vvOffscreenBuffer::storeColorBuffer()
   glReadPixels(0, 0, _bufferWidth, _bufferHeight, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
 }
 
-void vvOffscreenBuffer::storeDepthBuffer()
+void vvOffscreenBuffer::storeDepthBuffer(const int scaledWidth, const int scaledHeight)
 {
   glFinish();
 
   delete _scaledDepthBuffer;
-  _scaledDepthBuffer = new vvOffscreenBuffer(_bufferWidth, _bufferHeight, 1.0f, _precision);
+  _scaledDepthBuffer = new vvOffscreenBuffer(scaledWidth, scaledHeight, 1.0f, _precision);
 
   glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, 0);
   glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, _scaledDepthBuffer->_frameBufferObject);
@@ -388,7 +393,6 @@ void vvOffscreenBuffer::writeBackDepthBuffer() const
   glDepthMask(GL_TRUE);
   glDepthFunc(GL_ALWAYS);
   glEnable(GL_DEPTH_TEST);
-  glWindowPos2i(0, 0);
 
   if (_useNVDepthStencil)
   {

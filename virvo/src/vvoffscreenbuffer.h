@@ -103,10 +103,11 @@ private:
   void initFbo();
   void genColorAndDepthTextures();
   void freeGLResources() const;
+  int getScaled(const int v) const;
   void doScale();
   void update();
   void storeColorBuffer();
-  void storeDepthBuffer();
+  void storeDepthBuffer(const int scaledWidth, const int scaledHeight);
   void renderToViewAlignedQuad() const;
   void writeBackDepthBuffer() const;
 };
