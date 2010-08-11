@@ -26,7 +26,7 @@
 vvRenderSlave::vvRenderSlave(const BufferPrecision compositingPrecision)
   : _compositingPrecision(compositingPrecision), _offscreenBuffer(0), _socket(0)
 {
-  _compositingPrecision = VV_SHORT;
+
 }
 
 vvRenderSlave::~vvRenderSlave()
