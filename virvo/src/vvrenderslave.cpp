@@ -24,7 +24,7 @@
 #include "vvtexrend.h"
 
 vvRenderSlave::vvRenderSlave(const BufferPrecision compositingPrecision)
-  : _compositingPrecision(compositingPrecision), _offscreenBuffer(0), _socket(0)
+  : _offscreenBuffer(0), _socket(0), _compositingPrecision(compositingPrecision)
 {
 
 }
