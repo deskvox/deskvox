@@ -3157,10 +3157,20 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
+  vvVector3 clippedProbeSizeObj;
+  clippedProbeSizeObj.copy(&probeSizeObj);
+  for (int i=0; i<3; ++i)
+  {
+    if (clippedProbeSizeObj[i] < vd->getSize()[i])
+    {
+      clippedProbeSizeObj[i] = vd->getSize()[i];
+    }
+  }
+
   // Compute length of probe diagonal [object space]:
-  const float diagonal = sqrtf(probeSizeObj[0] * probeSizeObj[0] +
-                               probeSizeObj[1] * probeSizeObj[1] +
-                               probeSizeObj[2] * probeSizeObj[2]);
+  const float diagonal = sqrtf(clippedProbeSizeObj[0] * clippedProbeSizeObj[0] +
+                               clippedProbeSizeObj[1] * clippedProbeSizeObj[1] +
+                               clippedProbeSizeObj[2] * clippedProbeSizeObj[2]);
 
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
                                            vd->vox[1] * vd->vox[1] +
