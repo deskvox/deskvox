@@ -1342,7 +1342,7 @@ void vvVector3::multiply(const vvMatrix* m)
 
   if (w != 1.0f)
   {
-    const float wInv = 1.0f / e[3];
+    const float wInv = 1.0f / w;
     for (int row=0; row<3; ++row)
       e[row] *= wInv;
   }
