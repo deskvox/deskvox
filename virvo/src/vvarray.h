@@ -294,7 +294,6 @@ template<class T> inline int vvArray<T>::find(const T& element)
 */
 template<class T> void vvArray<T>::resize(int newSize)
 {
-  int i;
   T* newData;
 
   newData = new T[allocSize];
