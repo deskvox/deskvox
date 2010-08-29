@@ -21,12 +21,6 @@
 #ifndef _VVTEXREND_H_
 #define _VVTEXREND_H_
 
-#ifndef NO_CONFIG_H
-#ifndef _WIN32
-#include "config.h"
-#endif
-#endif
-
 #include <vector>
 
 // Virvo:

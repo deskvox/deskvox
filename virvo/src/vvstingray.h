@@ -21,10 +21,8 @@
 #ifndef _VVSTINGRAY_H_
 #define _VVSTINGRAY_H_
 
-#ifndef NO_CONFIG_H
-#ifndef _WIN32
-  #include "config.h"
-#endif
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
 #endif
 
 // Cg:

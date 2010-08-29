@@ -22,6 +22,10 @@
 
 #include <algorithm>
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 std::vector<vvShaderManagerType> vvShaderFactory::c_supportedTypes = std::vector<vvShaderManagerType>();
 
 vvShaderManager* vvShaderFactory::provideShaderManager(const vvShaderManagerType& shaderManagerType)

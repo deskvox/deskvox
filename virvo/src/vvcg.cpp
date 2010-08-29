@@ -14,7 +14,7 @@
 // Lesser General Public License for more details.
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "vvconfig.h"
 #endif
 
 #include "vvcg.h"

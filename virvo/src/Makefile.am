@@ -91,7 +91,7 @@ libvirvo_a_SOURCES = \
         vvmultirend/vvtexmultirendmngr.cpp
 
 libvirvoincludedir = $(includedir)/virvo
-libvirvoinclude_HEADERS = $(libvirvo_a_headers) config.h
+libvirvoinclude_HEADERS = $(libvirvo_a_headers) vvconfig.h
 
 INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(GLEW_INCLUDES) $(XLIBS_INCLUDES) $(STINGRAY_INCLUDES) $(PIC_FLAGS)
 LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(GLEW_LIBS) $(GL_LIBS) $(XLIBS_LIBS) $(STINGRAY_LIBS)

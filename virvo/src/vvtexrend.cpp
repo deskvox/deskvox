@@ -20,6 +20,10 @@
 
 // Glew:
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 // No circular dependencies between gl.h and glew.h
 #ifndef GLEW_INCLUDED
 #include <GL/glew.h>

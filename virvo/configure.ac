@@ -2,7 +2,7 @@ AC_PREREQ(2.13)
 AC_INIT(src/vvvirvo.h)
 AM_INIT_AUTOMAKE(virvo,2.0)
 AC_CONFIG_SRCDIR(configure.ac)
-AM_CONFIG_HEADER(src/config.h)
+AM_CONFIG_HEADER(src/vvconfig.h)
 AC_CONFIG_MACRO_DIR([m4])
 
 LT_INIT
