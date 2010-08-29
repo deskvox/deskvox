@@ -189,11 +189,11 @@ void vvView::mainLoop(int argc, char *argv[])
          float div = 0.0f;
          for(int i=0; i<3; i++)
          {
-            cerr <<"sz: " << vd->dist[i]*vd->vox[i] << endl;
+            vvDebugMsg::msg(2, "sz: ", vd->dist[i]*vd->vox[i]);
             if(vd->dist[i]*vd->vox[i]/div > 1.)
                div = vd->dist[i]*vd->vox[i];
          }
-         cerr << "div=" << div << endl;
+         vvDebugMsg::msg(2, "div: ", div);
          for(int i=0; i<3; i++)
             vd->dist[i] /= div;
 
