@@ -56,12 +56,12 @@ class VIRVOEXPORT vvGLSL : public vvShaderManager
 
     @param shaderFileName The name of a fragment program source file
 	*/
-  void loadShader(const char* shaderFileName, const ShaderType& shaderType);
+  bool loadShader(const char* shaderFileName, const ShaderType& shaderType);
 
 	/** initializes, compiles and links a shader program
     @param shaderString a character array containing the program string
 	*/
-  void loadShaderByString(const char* shaderString, const ShaderType& shaderType);
+  bool loadShaderByString(const char* shaderString, const ShaderType& shaderType);
 
   /** TODO: implement this method
     @param Intention: index into a vector of shader programs and use the one found there.

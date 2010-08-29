@@ -59,8 +59,8 @@ public:
   vvCg();
   virtual ~vvCg();
 
-  virtual void loadShader(const char* shaderFileName, const ShaderType& shaderType);
-  virtual void loadShaderByString(const char* shaderString, const ShaderType& shaderType);
+  virtual bool loadShader(const char* shaderFileName, const ShaderType& shaderType);
+  virtual bool loadShaderByString(const char* shaderString, const ShaderType& shaderType);
   virtual void enableShader(const int programIndex);
   virtual void disableShader(const int programIndex);
   virtual void initParameters(const int index,

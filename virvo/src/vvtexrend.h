@@ -207,6 +207,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     vvVector4 _frustum[6];                        ///< current planes of view frustum
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     bool _proxyGeometryOnGpu;                     ///< indicate wether proxy geometry is to be computed on gpu
+    bool _proxyGeometryOnGpuSupported;            ///< indicate wether proxy geometry computation on gpu would work
     int _lastFrame;                               ///< last frame rendered
     int _numDisplays;                             ///< # additional displays for multi-gpu rendering
     const char** _displayNames;                   ///< list with displays of the form host:x.y

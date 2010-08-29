@@ -38,7 +38,7 @@ vvCg::~vvCg()
 
 }
 
-void vvCg::loadShader(const char* shaderFileName, const ShaderType& shaderType)
+bool vvCg::loadShader(const char* shaderFileName, const ShaderType& shaderType)
 {
   assert(shaderFileName != NULL);
 
@@ -58,16 +58,21 @@ void vvCg::loadShader(const char* shaderFileName, const ShaderType& shaderType)
   // behavior if they weren't initialized before.
   _parametersInitialized.push_back(false);
 
+  _cgParameterNameMaps.push_back(ParameterNameMap());
+
   if (cgProgram == NULL)
   {
     cerr << "Couldn't load shader program from file: " << shaderFileName << endl;
+    return false;
   }
-  _cgParameterNameMaps.push_back(ParameterNameMap());
+
+  return true;
 }
 
-void vvCg::loadShaderByString(const char*, const ShaderType&)
+bool vvCg::loadShaderByString(const char*, const ShaderType&)
 {
   throw "Not implemented yet";
+  return false;
 }
 
 void vvCg::enableShader(const int index)

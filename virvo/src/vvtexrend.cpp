@@ -274,7 +274,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   extTexShd = isSupported(VV_TEX_SHD);
   extPixShd = isSupported(VV_PIX_SHD);
   arbFrgPrg = isSupported(VV_FRG_PRG);
-  _proxyGeometryOnGpu = extPixShd && arbFrgPrg && _isectShader;
+  _proxyGeometryOnGpuSupported = extPixShd && arbFrgPrg && _isectShader;
+  _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported;
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two");
 
@@ -435,13 +436,16 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     // necessary that passes the color through.
     if (voxelType == VV_RGBA)
     {
-      initIntersectionShader(_isectShader, _pixelShader);
+      _proxyGeometryOnGpuSupported = initIntersectionShader(_isectShader, _pixelShader);
     }
     else
     {
-      initIntersectionShader(_isectShader);
+      _proxyGeometryOnGpuSupported = initIntersectionShader(_isectShader);
     }
-    setupIntersectionParameters(_isectShader);
+    if (_proxyGeometryOnGpuSupported)
+      setupIntersectionParameters(_isectShader);
+    else
+      _proxyGeometryOnGpu = false;
   }
 }
 
@@ -4900,7 +4904,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, ch
       }
       else
       {
-        _proxyGeometryOnGpu = _isectShader;
+        _proxyGeometryOnGpu = _isectShader && _proxyGeometryOnGpuSupported;
       }
       break;
     case vvRenderer::VV_LEAPEMPTY:
@@ -5486,6 +5490,7 @@ bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader) const
   unixShaderDir = pixelShader->getShaderDir();
   cerr << "Using shader path: " << unixShaderDir << endl;
 
+  bool ok = true;
   // Load shader files:
   for (int i=0; i<NUM_PIXEL_SHADERS; ++i)
   {
@@ -5503,15 +5508,18 @@ bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader) const
 
     cerr << "Loading shader file: " << shaderPath << endl;
 
-    pixelShader->loadShader(shaderPath, vvShaderManager::VV_FRAG_SHD);
+    ok &= pixelShader->loadShader(shaderPath, vvShaderManager::VV_FRAG_SHD);
 
     delete[] shaderFile;
     delete[] shaderPath;
+
+    if (!ok)
+      break;
   }
 
   cerr << "Fragment programs ready." << endl;
 
-  return true;
+  return ok;
 }
 
 //----------------------------------------------------------------------------
@@ -5536,9 +5544,9 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
   sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
 #endif
 
-  isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
+  bool ok = isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
 
-  if (pixelShader != NULL)
+  if (ok && pixelShader != NULL)
   {
     const char* passthroughFile = "vv_shader00.cg";
     char* passthroughShader = new char[strlen(unixShaderDir) + 1 + strlen(passthroughFile) + 1];
@@ -5547,16 +5555,17 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
 #else
     sprintf(passthroughShader, "%s/%s", unixShaderDir, passthroughFile);
 #endif
-    pixelShader->loadShader(passthroughShader, vvShaderManager::VV_FRAG_SHD);
+    ok &= pixelShader->loadShader(passthroughShader, vvShaderManager::VV_FRAG_SHD);
     delete[] passthroughShader;
   }
 
   delete[] shaderFile;
   delete[] shaderPath;
 
-  setupIntersectionParameters(isectShader);
+  if (ok)
+    setupIntersectionParameters(isectShader);
 
-  return true;
+  return ok;
 }
 
 void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const

@@ -91,7 +91,7 @@ vvGLSL::~vvGLSL()
   }
 }
 
-void vvGLSL::loadShader(const char* shaderFileName, const ShaderType& shaderType)
+bool vvGLSL::loadShader(const char* shaderFileName, const ShaderType& shaderType)
 {
   assert(shaderFileName != NULL);
 
@@ -102,24 +102,26 @@ void vvGLSL::loadShader(const char* shaderFileName, const ShaderType& shaderType
 
   if(fileString == NULL)
   {
-  cerr << "vvToolshed::file2string error for: " << shaderFileName << endl;
-  return;
+    cerr << "vvToolshed::file2string error for: " << shaderFileName << endl;
+    return false;
   }
 
-  loadShaderByString(fileString, shaderType);
+  bool ok = loadShaderByString(fileString, shaderType);
 
   delete[] fileString;
+
+  return ok;
 }
 
-void vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shaderType)
+bool vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shaderType)
 {
   GLuint fragShader;
   GLuint fragProgram;
 
   if(shaderString == NULL)
   {
-	cerr << "Shader string is NULL" << endl;
-  return;
+    cerr << "Shader string is NULL" << endl;
+    return false;
   }
 
   fragShader = glCreateShader(toGLenum(shaderType));
@@ -136,17 +138,19 @@ void vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shad
 
   if(!compiled)
   {
-	GLint length;
-	GLchar* compileLog;
-	glGetShaderiv(fragShader, GL_INFO_LOG_LENGTH, &length);
-	compileLog = new GLchar[length];
-	glGetShaderInfoLog(fragShader, length, &length, compileLog);
-	cerr << "glCompileShader failed: " << compileLog << endl;
-  return;
+    GLint length;
+    GLchar* compileLog;
+    glGetShaderiv(fragShader, GL_INFO_LOG_LENGTH, &length);
+    compileLog = new GLchar[length];
+    glGetShaderInfoLog(fragShader, length, &length, compileLog);
+    cerr << "glCompileShader failed: " << compileLog << endl;
+    return false;
   }
 
   glAttachShader(fragProgram, fragShader);
   glLinkProgram(fragProgram);
+
+  return true;
 }
 
 void vvGLSL::enableShader(const int)

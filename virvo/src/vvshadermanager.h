@@ -72,7 +72,7 @@ public:
    * \param         shaderFileName Absolute path to the shader file.
    * \param         shaderType Type of shader (fragment, geometry, vertex).
    */
-  virtual void loadShader(const char* shaderFileName, const ShaderType& shaderType) = 0;
+  virtual bool loadShader(const char* shaderFileName, const ShaderType& shaderType) = 0;
   /*!
    * \brief         Load a shader from a source string.
    *
@@ -82,7 +82,7 @@ public:
    * \param         shaderString The source code of the shader.
    * \param         shaderType Type of shader (fragment, geometry, vertex).
    */
-  virtual void loadShaderByString(const char* shaderString, const ShaderType& shaderType) = 0;
+  virtual bool loadShaderByString(const char* shaderString, const ShaderType& shaderType) = 0;
   /*!
    * \brief         Enable a loaded shader.
    *
