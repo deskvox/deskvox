@@ -54,7 +54,8 @@ class vvView
       enum                                        ///  Timer callback types
       {
          ANIMATION_TIMER = 0,                     ///< volume animation timer callback
-         ROTATION_TIMER  = 1                      ///< rotation animation timer callback
+         ROTATION_TIMER  = 1,                     ///< rotation animation timer callback
+         BENCHMARK_TIMER  = 2                     ///< benchmark timer callback
       };
       static const int ROT_TIMER_DELAY;           ///< rotation timer delay in milliseconds
       static const int DEFAULTSIZE;               ///< default window size (width and height) in pixels
@@ -121,6 +122,7 @@ class vvView
       std::vector<char*> slaveNames;
       std::vector<int> slavePorts;
       bool redistributeVolData;                   ///< don't load slave volume data from file, but let master send it through socket
+      bool benchmark;                             ///< don't run interactively, just perform timed rendering and exit
       std::vector<char*> slaveFileNames;          ///< a list with file names where slaves can find the appropriate volume data
       vvRenderMaster* _renderMaster;
    public:

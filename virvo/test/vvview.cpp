@@ -297,6 +297,11 @@ void vvView::mainLoop(int argc, char *argv[])
       if (filename!=NULL) glutSetWindowTitle(filename);
 
       srand(time(NULL));
+      if(benchmark)
+      {
+         glutTimerFunc(1, timerCallback, BENCHMARK_TIMER);
+      }
+
       glutMainLoop();
 
       delete vd;
@@ -789,6 +794,12 @@ void vvView::timerCallback(int id)
             glutPostRedisplay();
             glutTimerFunc(ROT_TIMER_DELAY, timerCallback, ROTATION_TIMER);
          }
+         break;
+      case BENCHMARK_TIMER:
+         performanceTest();
+         performanceTest();
+         performanceTest();
+         exit(0);
          break;
       default:
          break;
@@ -1903,11 +1914,14 @@ void vvView::displayHelpInfo()
    cerr << "  Path to a file where the slave can find its volume data" << endl;
    cerr << "  If this entry is -slavefilename n, the n'th slave will try to load this file" << endl;
    cerr << endl;
-   cerr << "redistributevoldata" << endl;
+   cerr << "-redistributevoldata" << endl;
    cerr << "  Don't load slave volume data from file, it will be redistributed by the master to all slaves" << endl;
    cerr << endl;
    cerr << "-lighting" << endl;
    cerr << " Use headlight for local illumination" << endl;
+   cerr << endl;
+   cerr << "-benchmark" << endl;
+   cerr << " Time 3 half rotations and exit" << endl;
    cerr << endl;
    cerr << "-help (-h)" << endl;
    cerr << "Display this help information" << endl;
@@ -2079,6 +2093,10 @@ bool vvView::parseCommandLine(int argc, char** argv)
       else if (vvToolshed::strCompare(argv[arg], "-redistributevoldata")==0)
       {
          redistributeVolData = true;
+      }
+      else if (vvToolshed::strCompare(argv[arg], "-benchmark")==0)
+      {
+         benchmark = true;
       }
       else if (vvToolshed::strCompare(argv[arg], "-debug")==0)
       {
