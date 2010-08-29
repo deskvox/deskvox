@@ -30,7 +30,7 @@ AC_ARG_WITH(cg-include,
 AC_ARG_WITH(cg-framework,
 	AC_HELP_STRING([--with-cg-framework],[location of Cg framework (Mac OS X)]),
 	[cg_framework=$withval],
-	[cg_framework=no]
+	[cg_framework=yes]
 )
 
 if test "$enable_cg" != "no"; then
@@ -46,13 +46,18 @@ if test "$enable_cg" != "no"; then
 
         if test "$have_cg_h" = "yes"; then
             AC_DEFINE(HAVE_CG, 1, [Cg shaders enabled])
-            CG_INCLUDES="$cg_framework_path -framework Cg"
+            CG_INCLUDES="$cg_framework_path"
             # only for shared libs
-            #CG_LIBS="$cg_framework_path -framework Cg"
+            CG_LIBS="$cg_framework_path -framework Cg"
             AC_SUBST(CG_INCLUDES)
             AC_SUBST(CG_LIBS)
+        else
+            CPPFLAGS=$ac_cppflags_save
+            LDFLAGS=$ac_ldflags_save
         fi
-    else
+    fi
+
+    if test "$have_cg_h" != "yes"; then
         CPPFLAGS="$CPPFLAGS -I$cg_incdir"
         LDFLAGS="$LDFLAGS -L$cg_libdir"
         AC_CHECK_HEADERS([Cg/cg.h], [have_cg_h=yes])

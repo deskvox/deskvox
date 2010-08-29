@@ -34,6 +34,18 @@ if test "$have_glut_h" = "yes" -a "$have_libglut" = "yes" ; then
     GLUT_LIBS="-L$glut_libdir -lglut"
     AC_SUBST(GLUT_INCLUDES)
     AC_SUBST(GLUT_LIBS)
+else
+    AC_CHECK_HEADERS([GLUT/glut.h], [have_glut_glut_h=yes])
+    LDFLAGS="$LDFLAGS -framework GLUT"
+    AC_CHECK_FUNC(glutInit, [have_glut_framework=yes])
+    if test "$have_glut_glut_h" = "yes" -a "$have_glut_framework" = "yes" ; then
+            AC_DEFINE(HAVE_GLUT_FRAMEWORK, 1, [GLUT framework])
+
+            if test -n "$glut_dir"; then
+                    GLUT_INCLUDES="-F$glut_dir"
+            fi
+            GLUT_LIBS="-framework GLUT"
+    fi
 fi
 
 CPPFLAGS=$ac_cppflags_save
