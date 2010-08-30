@@ -60,7 +60,10 @@ if test "$enable_cg" != "no"; then
     if test "$have_cg_h" != "yes"; then
         CPPFLAGS="$CPPFLAGS -I$cg_incdir"
         LDFLAGS="$LDFLAGS -L$cg_libdir"
-        AC_CHECK_HEADERS([Cg/cg.h], [have_cg_h=yes])
+        header=Cg/cg.h
+        cache_var=AS_TR_SH([ac_cv_header_$header])
+        $as_unset $cache_var
+        AC_CHECK_HEADERS([$header], [have_cg_h=yes])
         AC_CHECK_LIB(m, log, [LDFLAGS="$LDFLAGS -lm"])
         AC_CHECK_LIB(pthread, pthread_once, [LDFLAGS="$LDFLAGS -lpthread"])
         AC_CHECK_LIB(GL, glGetIntegerv, [LDFLAGS="$LDFLAGS -lGL"])
