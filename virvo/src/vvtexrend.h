@@ -56,7 +56,7 @@ const int MAX_DEBUG_COLORS = 8;
 //#define ISECT_CG
 #ifndef ISECT_CG
 // Uncomment to use instanced geometry transfer rather than using vertex arrays.
-#define ISECT_GLSL_INST
+//#define ISECT_GLSL_INST
 #endif
 
 //============================================================================
