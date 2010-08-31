@@ -277,12 +277,17 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax");
   extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation");
-  extColLUT = isSupported(VV_SGI_LUT);
-  extPalTex = isSupported(VV_PAL_TEX);
-  extTexShd = isSupported(VV_TEX_SHD);
-  extPixShd = isSupported(VV_PIX_SHD);
-  arbFrgPrg = isSupported(VV_FRG_PRG);
+  extColLUT  = isSupported(VV_SGI_LUT);
+  extPalTex  = isSupported(VV_PAL_TEX);
+  extTexShd  = isSupported(VV_TEX_SHD);
+  extPixShd  = isSupported(VV_PIX_SHD);
+  arbFrgPrg  = isSupported(VV_FRG_PRG);
+  extGlslShd = isSupported(VV_GLSL_SHD);
+#ifdef ISECT_CG
   _proxyGeometryOnGpuSupported = extPixShd && arbFrgPrg && _isectShader;
+#else
+  _proxyGeometryOnGpuSupported = extGlslShd && arbFrgPrg && _isectShader;
+#endif
   _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported;
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two");
@@ -5114,6 +5119,8 @@ bool vvTexRend::isSupported(const VoxelType voxel)
       }
     case VV_FRG_PRG:
       return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
+    case VV_GLSL_SHD:
+      return vvShaderFactory::isSupported(VV_GLSL_MANAGER);
     default: return false;
   }
 }

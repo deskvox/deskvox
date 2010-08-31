@@ -150,7 +150,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       VV_PAL_TEX,                                 ///< OpenGL paletted textures
       VV_TEX_SHD,                                 ///< Nvidia texture shader
       VV_PIX_SHD,                                 ///< Nvidia pixel shader
-      VV_FRG_PRG                                  ///< ARB fragment program
+      VV_FRG_PRG,                                 ///< ARB fragment program
+      VV_GLSL_SHD                                 ///< Glsl programs
     };
     enum FeatureType                              /// Rendering features
     {
@@ -198,6 +199,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool extMinMax;                               ///< true = maximum/minimum intensity projections supported
     bool extTexShd;                               ///< true = Nvidia texture shader & texture shader 2 support
     bool extPixShd;                               ///< true = Nvidia pixel shader support (requires GeForce FX)
+    bool extGlslShd;                              ///< true = Glsl program support
     bool extBlendEquation;                        ///< true = support for blend equation extension
     bool arbFrgPrg;                               ///< true = ARB fragment program support
     bool arbMltTex;                               ///< true = ARB multitexture support
