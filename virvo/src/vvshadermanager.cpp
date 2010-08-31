@@ -51,6 +51,12 @@ void vvShaderManager::setParameter1f(const int, const char*,
   throw "Function setParameter1f not implemented by inherited class";
 }
 
+void vvShaderManager::setParameter1f(const int, const int,
+                                     const float&)
+{
+  throw "Function setParameter1f not implemented by inherited class";
+}
+
 void vvShaderManager::setParameter2f(const int, const char*,
                                      const float&, const float&)
 {
@@ -63,7 +69,19 @@ void vvShaderManager::setParameter3f(const int, const char*,
   throw "Function setParameter3f not implemented by inherited class";
 }
 
+void vvShaderManager::setParameter3f(const int, const int,
+                                     const float&, const float&, const float&)
+{
+  throw "Function setParameter3f not implemented by inherited class";
+}
+
 void vvShaderManager::setParameter4f(const int, const char*,
+                                     const float&, const float&, const float&, const float&)
+{
+  throw "Function setParameter4f not implemented by inherited class";
+}
+
+void vvShaderManager::setParameter4f(const int, const int,
                                      const float&, const float&, const float&, const float&)
 {
   throw "Function setParameter4f not implemented by inherited class";
@@ -159,6 +177,12 @@ void vvShaderManager::setArrayParameter3f(const int, const char*, const int,
   throw "Function setArrayParameter3f not implemented by inherited class";
 }
 
+void vvShaderManager::setArrayParameter3f(const int, const int, const int,
+                                          const float&, const float&, const float&)
+{
+  throw "Function setArrayParameter3f not implemented by inherited class";
+}
+
 void vvShaderManager::setArrayParameter4f(const int, const char*, const int,
                                           const float&, const float&, const float&, const float&)
 {
@@ -166,6 +190,12 @@ void vvShaderManager::setArrayParameter4f(const int, const char*, const int,
 }
 
 void vvShaderManager::setArrayParameter1i(const int, const char*, const int,
+                                          const int&)
+{
+  throw "Function setArrayParameter1i not implemented by inherited class";
+}
+
+void vvShaderManager::setArrayParameter1i(const int, const int, const int,
                                           const int&)
 {
   throw "Function setArrayParameter1i not implemented by inherited class";
@@ -187,6 +217,16 @@ void vvShaderManager::setArrayParameter4i(const int, const char*, const int,
                                           const int&, const int&, const int&, const int&)
 {
   throw "Function setArrayParameter4i not implemented by inherited class";
+}
+
+void vvShaderManager::setArray3f(const int, const int, const float*, const int)
+{
+  throw "Function setArrayf3 not implemented by inherited class";
+}
+
+void vvShaderManager::setArray1i(const int, const int, const int*, const int)
+{
+  throw "Function setArray1i not implemented by inherited class";
 }
 
 void vvShaderManager::setParameterTexId(const int, const char*, const unsigned int&)

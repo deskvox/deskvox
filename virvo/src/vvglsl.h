@@ -42,7 +42,7 @@
  */
 class VIRVOEXPORT vvGLSL : public vvShaderManager
 {
-  public:
+public:
 
 	/** Creates a vvGLSL. Function pointers for shader programs are initialized
 	*/
@@ -85,6 +85,25 @@ class VIRVOEXPORT vvGLSL : public vvShaderManager
     @param Intention: initialize a stack with parameter handles to refer to.
   */
   void initParameters(const int programIndex);
+
+  void printCompatibilityInfo() const;
+  const char* getShaderDir() const;
+
+  virtual void setParameter1f(const int programIndex, const int parameterIndex,
+                              const float& f1);
+
+  virtual void setParameter3f(const int programIndex, const char* parameterName,
+                              const float& f1, const float& f2, const float& f3);
+
+  virtual void setParameter3f(const int programIndex, const int parameterIndex,
+                              const float& f1, const float& f2, const float& f3);
+
+  virtual void setParameter4f(const int programIndex, const int parameterIndex,
+                              const float& f1, const float& f2, const float& f3, const float& f4);
+
+  virtual void setArray3f(const int programIndex, const int parameterIndex, const float* array, const int count);
+
+  virtual void setArray1i(const int programIndex, const int parameterIndex, const int* array, const int count);
 
   /** returns a handle to a shader program
     @param index of the fragment program in the program array
@@ -164,42 +183,47 @@ class VIRVOEXPORT vvGLSL : public vvShaderManager
 	void enableLUTMode(GLuint tfTex[], GLuint gl3dTex[], float volweight, int numchan, float w[], vvVector3 color[], int alphaMode);
 	*/
 
-  private:
+private:
   vvArray<GLuint> fragShaderArray;			///< array of shader IDs
   vvArray<GLuint> programArray;				///< array of program IDs
-	int nTexture;								///< the number of texture activated
+  int nTexture;                                         ///< the number of texture activated
 
-	// function pointers
-	PFNGLCREATESHADERPROC glCreateShader;
-	PFNGLSHADERSOURCEPROC glShaderSource ;
-	PFNGLCOMPILESHADERPROC glCompileShader ;
-	PFNGLGETSHADERIVPROC glGetShaderiv ;
-	PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog ;
-	PFNGLCREATEPROGRAMPROC glCreateProgram;
-	PFNGLATTACHSHADERPROC glAttachShader;
-	PFNGLLINKPROGRAMPROC glLinkProgram;
-	PFNGLUSEPROGRAMPROC glUseProgram;
-	PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
-	PFNGLUNIFORM1IPROC glUniform1i;
-	PFNGLUNIFORM2IPROC glUniform2i;
-	PFNGLUNIFORM3IPROC glUniform3i;
-	PFNGLUNIFORM4IPROC glUniform4i;
-	PFNGLUNIFORM1IVPROC glUniform1iv;
-	PFNGLUNIFORM2IVPROC glUniform2iv;
-	PFNGLUNIFORM3IVPROC glUniform3iv;
-	PFNGLUNIFORM4IVPROC glUniform4iv;
-	PFNGLUNIFORM1FPROC glUniform1f;
-	PFNGLUNIFORM2FPROC glUniform2f;
-	PFNGLUNIFORM3FPROC glUniform3f;
-	PFNGLUNIFORM4FPROC glUniform4f;
-	PFNGLUNIFORM1FVPROC glUniform1fv;
-	PFNGLUNIFORM2FVPROC glUniform2fv;
-	PFNGLUNIFORM3FVPROC glUniform3fv;
-	PFNGLUNIFORM4FVPROC glUniform4fv;
-	PFNGLACTIVETEXTUREPROC glActiveTexture;
-	PFNGLDETACHSHADERPROC glDetachShader;
-	PFNGLDELETESHADERPROC glDeleteShader;
-	PFNGLDELETEPROGRAMPROC glDeleteProgram;
+  // function pointers
+  PFNGLCREATESHADERPROC glCreateShader;
+  PFNGLSHADERSOURCEPROC glShaderSource ;
+  PFNGLCOMPILESHADERPROC glCompileShader ;
+  PFNGLGETSHADERIVPROC glGetShaderiv ;
+  PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog ;
+  PFNGLCREATEPROGRAMPROC glCreateProgram;
+  PFNGLATTACHSHADERPROC glAttachShader;
+  PFNGLLINKPROGRAMPROC glLinkProgram;
+  PFNGLUSEPROGRAMPROC glUseProgram;
+  PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
+  PFNGLUNIFORM1IPROC glUniform1i;
+  PFNGLUNIFORM2IPROC glUniform2i;
+  PFNGLUNIFORM3IPROC glUniform3i;
+  PFNGLUNIFORM4IPROC glUniform4i;
+  PFNGLUNIFORM1IVPROC glUniform1iv;
+  PFNGLUNIFORM2IVPROC glUniform2iv;
+  PFNGLUNIFORM3IVPROC glUniform3iv;
+  PFNGLUNIFORM4IVPROC glUniform4iv;
+  PFNGLUNIFORM1FPROC glUniform1f;
+  PFNGLUNIFORM2FPROC glUniform2f;
+  PFNGLUNIFORM3FPROC glUniform3f;
+  PFNGLUNIFORM4FPROC glUniform4f;
+  PFNGLUNIFORM1FVPROC glUniform1fv;
+  PFNGLUNIFORM2FVPROC glUniform2fv;
+  PFNGLUNIFORM3FVPROC glUniform3fv;
+  PFNGLUNIFORM4FVPROC glUniform4fv;
+  PFNGLACTIVETEXTUREPROC glActiveTexture;
+  PFNGLDETACHSHADERPROC glDetachShader;
+  PFNGLDELETESHADERPROC glDeleteShader;
+  PFNGLDELETEPROGRAMPROC glDeleteProgram;
+
+  /*!
+   * TODO: accomodate multiple programs.
+   */
+  GLint* _uniformParameters;
 
   GLenum toGLenum(const ShaderType& shaderType);
 };

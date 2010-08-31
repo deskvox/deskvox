@@ -80,25 +80,37 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
   if (renderer->_proxyGeometryOnGpu)
   {
-    isectShader->setArrayParameter3f(0, "vertices", 0, verts[0].e[0], verts[0].e[1], verts[0].e[2]);
+#ifdef ISECT_CG
+    isectShader->setArrayParameter3f(0, ISECT_SHADER_VERTICES, 0, verts[0].e[0], verts[0].e[1], verts[0].e[2]);
     if (setupEdges)
     {
       for (int i = 1; i < 8; ++i)
       {
-        isectShader->setArrayParameter3f(0, "vertices", i, verts[i].e[0]-verts[0].e[0],
-                                                           verts[i].e[1]-verts[0].e[1],
-                                                           verts[i].e[2]-verts[0].e[2]);
+        isectShader->setArrayParameter3f(0, ISECT_SHADER_VERTICES, i,
+                                         verts[i].e[0]-verts[0].e[0],
+                                         verts[i].e[1]-verts[0].e[1],
+                                         verts[i].e[2]-verts[0].e[2]);
       }
     }
+#else
+    float edges[8 * 3];
+    for (int i = 0; i < 8; ++i)
+    {
+      edges[i * 3] = verts[i].e[0];
+      edges[i * 3 + 1] = verts[i].e[1];
+      edges[i * 3 + 2] =  verts[i].e[2];
+    }
+    isectShader->setArray3f(0, ISECT_SHADER_VERTICES, edges, 8 * 3);
+#endif
 
     // Pass planeStart along with brickMin and spare one setParameter call.
-    isectShader->setParameter4f(0, "brickMin", min[0], min[1], min[2], -farthest.length());
+    isectShader->setParameter4f(0, ISECT_SHADER_BRICKMIN, min[0], min[1], min[2], -farthest.length());
     // Pass front index along with brickDimInv and spare one setParameter call.
-    isectShader->setParameter4f(0, "brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2], idx);
+    isectShader->setParameter4f(0, ISECT_SHADER_BRICKDIMINV, 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2], idx);
     // Mind that textures overlap a little bit for correct interpolation at the borders.
     // Thus add that little difference.
-    isectShader->setParameter3f(0, "texRange", texRange[0], texRange[1], texRange[2]);
-    isectShader->setParameter3f(0, "texMin", texMin[0], texMin[1], texMin[2]);
+    isectShader->setParameter3f(0, ISECT_SHADER_TEXRANGE, texRange[0], texRange[1], texRange[2]);
+    isectShader->setParameter3f(0, ISECT_SHADER_TEXMIN, texMin[0], texMin[1], texMin[2]);
 
     const int primCount = (endSlices - startSlices) + 1;
 

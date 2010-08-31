@@ -196,6 +196,15 @@ void vvCg::setParameter1f(const int programIndex, const char* parameterName,
   cgGLSetParameter1f(param.getParameter(), f1);
 }
 
+void vvCg::setParameter1f(const int programIndex, const int parameterIndex,
+                          const float& f1)
+{
+  assert(_parametersInitialized[programIndex] == true);
+
+  const vvCgParameter param = _cgParameters[programIndex][parameterIndex];
+  cgGLSetParameter1f(param.getParameter(), f1);
+}
+
 void vvCg::setParameter1i(const int programIndex, const char* parameterName,
                           const int& i1)
 {
@@ -222,14 +231,13 @@ void vvCg::setParameter3f(const int programIndex, const char* parameterName,
   cgGLSetParameter3f(param.getParameter(), f1, f2, f3);
 }
 
-void vvCg::setArrayParameter3f(const int programIndex, const char* parameterName, const int arrayIndex,
-                              const float& f1, const float& f2, const float& f3)
+void vvCg::setParameter3f(const int programIndex, const int parameterIndex,
+                          const float& f1, const float& f2, const float& f3)
 {
-  const CGparameter array = cgGetNamedParameter(_cgPrograms[programIndex], parameterName);
-  const CGparameter element = cgGetArrayParameter(array, arrayIndex);
+  assert(_parametersInitialized[programIndex] == true);
 
-  // There exists no similar cg function for integers ==> use the float equivalent.
-  cgGLSetParameter3f(element, f1, f2, f3);
+  const vvCgParameter param = _cgParameters[programIndex][parameterIndex];
+  cgGLSetParameter3f(param.getParameter(), f1, f2, f3);
 }
 
 void vvCg::setParameter4f(const int programIndex, const char* parameterName,
@@ -241,10 +249,49 @@ void vvCg::setParameter4f(const int programIndex, const char* parameterName,
   cgGLSetParameter4f(param.getParameter(), f1, f2, f3, f4);
 }
 
-void vvCg::setArrayParameter1i(const int programIndex, const char* parameterName, const int arrayIndex,
-                              const int& i1)
+void vvCg::setParameter4f(const int programIndex, const int parameterIndex,
+                          const float& f1, const float& f2, const float& f3, const float& f4)
+{
+  assert(_parametersInitialized[programIndex] == true);
+
+  const vvCgParameter param = _cgParameters[programIndex][parameterIndex];
+  cgGLSetParameter4f(param.getParameter(), f1, f2, f3, f4);
+}
+
+void vvCg::setArrayParameter3f(const int programIndex, const char* parameterName, const int arrayIndex,
+                              const float& f1, const float& f2, const float& f3)
 {
   const CGparameter array = cgGetNamedParameter(_cgPrograms[programIndex], parameterName);
+  const CGparameter element = cgGetArrayParameter(array, arrayIndex);
+
+  // There exists no similar cg function for integers ==> use the float equivalent.
+  cgGLSetParameter3f(element, f1, f2, f3);
+}
+
+void vvCg::setArrayParameter3f(const int programIndex, const int parameterIndex, const int arrayIndex,
+                              const float& f1, const float& f2, const float& f3)
+{
+  const CGparameter array = _cgParameters[programIndex][parameterIndex].getParameter();
+  const CGparameter element = cgGetArrayParameter(array, arrayIndex);
+
+  // There exists no similar cg function for integers ==> use the float equivalent.
+  cgGLSetParameter3f(element, f1, f2, f3);
+}
+
+void vvCg::setArrayParameter1i(const int programIndex, const char* parameterName, const int arrayIndex,
+                               const int& i1)
+{
+  const CGparameter array = cgGetNamedParameter(_cgPrograms[programIndex], parameterName);
+  const CGparameter element = cgGetArrayParameter(array, arrayIndex);
+
+  // There exists no similar cg function for integers ==> use the float equivalent.
+  cgGLSetParameter1f(element, static_cast<float>(i1));
+}
+
+void vvCg::setArrayParameter1i(const int programIndex, const int parameterIndex, const int arrayIndex,
+                               const int& i1)
+{
+  const CGparameter array = _cgParameters[programIndex][parameterIndex].getParameter();
   const CGparameter element = cgGetArrayParameter(array, arrayIndex);
 
   // There exists no similar cg function for integers ==> use the float equivalent.

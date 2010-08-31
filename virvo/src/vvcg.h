@@ -83,20 +83,30 @@ public:
    */
   virtual void setParameter1f(const int programIndex, const char* parameterName,
                               const float& f1);
+  virtual void setParameter1f(const int programIndex, const int parameterIndex,
+                              const float& f1);
 
   virtual void setParameter1i(const int programIndex, const char* parameterName,
                               const int& i1);
 
   virtual void setParameter3f(const int programIndex, const char* parameterName,
                               const float& f1, const float& f2, const float& f3);
+  virtual void setParameter3f(const int programIndex, const int parameterIndex,
+                              const float& f1, const float& f2, const float& f3);
 
   virtual void setParameter4f(const int programIndex, const char* parameterName,
+                              const float& f1, const float& f2, const float& f3, const float& f4);
+  virtual void setParameter4f(const int programIndex, const int parameterIndex,
                               const float& f1, const float& f2, const float& f3, const float& f4);
 
   virtual void setArrayParameter3f(const int programIndex, const char* parameterName, const int arrayIndex,
                                    const float& f1, const float& f2, const float& f3);
+  virtual void setArrayParameter3f(const int programIndex, const int parameterIndex, const int arrayIndex,
+                                   const float& f1, const float& f2, const float& f3);
 
   virtual void setArrayParameter1i(const int programIndex, const char* parameterName, const int arrayIndex,
+                                   const int& i1);
+  virtual void setArrayParameter1i(const int programIndex, const int parameterIndex, const int arrayIndex,
                                    const int& i1);
 
   virtual void setParameterTexId(const int programIndex, const char* parameterName, const unsigned int& ui1);

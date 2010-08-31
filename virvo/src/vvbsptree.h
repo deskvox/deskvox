@@ -358,6 +358,9 @@ public:
    * \return        The contained volume.
    */
   float calcContainedVolume() const;
+
+  void clipProbe(vvVector3& probeMin, vvVector3& probeMax,
+                 vvVector3& probePosObj, vvVector3& probeSizeObj) const;
 private:
   int _id;
   vvHalfSpace* _firstSon;

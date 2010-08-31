@@ -78,6 +78,8 @@ vvGLSL::vvGLSL() : vvShaderManager(), nTexture(0)
   DYNAMIC_BIND_NAME(glDetachShader, PFNGLDETACHSHADERPROC);
   DYNAMIC_BIND_NAME(glDeleteShader, PFNGLDELETESHADERPROC );
   DYNAMIC_BIND_NAME(glDeleteProgram, PFNGLDELETEPROGRAMPROC );
+
+  _uniformParameters = NULL;
 }
 
 vvGLSL::~vvGLSL()
@@ -89,6 +91,7 @@ vvGLSL::~vvGLSL()
 	glDeleteShader(fragShaderArray[n]);
 	glDeleteProgram(programArray[n]);
   }
+  delete[] _uniformParameters;
 }
 
 bool vvGLSL::loadShader(const char* shaderFileName, const ShaderType& shaderType)
@@ -153,21 +156,77 @@ bool vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shad
   return true;
 }
 
-void vvGLSL::enableShader(const int)
+void vvGLSL::enableShader(const int index)
 {
-  throw "Not implemented yet";
+  glUseProgramObjectARB(getFragProgramHandle(index));
 }
 
 void vvGLSL::disableShader(const int)
 {
-  throw "Not implemented yet";
+  glUseProgramObjectARB(0);
 }
 
-void vvGLSL::initParameters(const int,
-                            const char**,
-                            const vvShaderParameterType*,  const int)
+void vvGLSL::initParameters(const int index,
+                            const char** parameterNames,
+                            const vvShaderParameterType*,  const int parameterCount)
 {
-  throw "Not implemented yet";
+  delete[] _uniformParameters;
+  _uniformParameters = new GLint[parameterCount];
+
+  for (int i = 0; i < parameterCount; ++i)
+  {
+    _uniformParameters[i] = glGetUniformLocation(getFragProgramHandle(index), parameterNames[i]);
+  }
+}
+
+void vvGLSL::printCompatibilityInfo() const
+{
+
+}
+
+const char* vvGLSL::getShaderDir() const
+{
+  return "/raid/home/zellmans/deskvox/trunk/virvo/shader/";
+}
+
+void vvGLSL::setParameter1f(const int programIndex, const int parameterIndex,
+                            const float& f1)
+{
+  (void)programIndex;
+  glUniform1f(_uniformParameters[parameterIndex], f1);
+}
+
+void vvGLSL::setParameter3f(const int programIndex, const char* parameterName,
+                            const float& f1, const float& f2, const float& f3)
+{
+  const GLint uniform = glGetUniformLocation(getFragProgramHandle(programIndex), parameterName);
+  glUniform3f(uniform, f1, f2, f3);
+}
+
+void vvGLSL::setParameter3f(const int programIndex, const int parameterIndex,
+                            const float& f1, const float& f2, const float& f3)
+{
+  (void)programIndex;
+  glUniform3f(_uniformParameters[parameterIndex], f1, f2, f3);
+}
+
+void vvGLSL::setParameter4f(const int programIndex, const int parameterIndex,
+                            const float& f1, const float& f2, const float& f3, const float& f4)
+{
+  (void)programIndex;
+  glUniform4f(_uniformParameters[parameterIndex], f1, f2, f3, f4);
+}
+
+void vvGLSL::setArray3f(const int programIndex, const int parameterIndex, const float* array, const int count)
+{
+  (void)programIndex;
+  glUniform3fv(_uniformParameters[parameterIndex], count, array);
+}
+
+void vvGLSL::setArray1i(const int programIndex, const int parameterIndex, const int* array, const int count)
+{
+  (void)programIndex;
+  glUniform1iv(_uniformParameters[parameterIndex], count, array);
 }
 
 GLuint vvGLSL::getFragProgramHandle(const int i)
@@ -395,7 +454,7 @@ GLenum vvGLSL::toGLenum(const ShaderType& shaderType)
     break;
 #endif
   case VV_VERT_SHD:
-    result = GL_FRAGMENT_SHADER;
+    result = GL_VERTEX_SHADER;
     break;
   default:
     result = GL_FRAGMENT_SHADER;

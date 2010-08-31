@@ -52,6 +52,8 @@ class vvThreadVisitor;
  */
 const int MAX_DEBUG_COLORS = 8;
 
+//#define ISECT_CG
+
 //============================================================================
 // Class Definitions
 //============================================================================
@@ -69,6 +71,20 @@ const int MAX_DEBUG_COLORS = 8;
   @author Stefan Zellmann
   @see vvRenderer
 */
+
+const int ISECT_SHADER_SEQUENCE      = 0;
+const int ISECT_SHADER_V1            = 1;
+const int ISECT_SHADER_V2            = 2;
+const int ISECT_SHADER_BRICKMIN      = 3;
+const int ISECT_SHADER_BRICKDIMINV   = 4;
+const int ISECT_SHADER_TEXRANGE      = 5;
+const int ISECT_SHADER_TEXMIN        = 6;
+const int ISECT_SHADER_MODELVIEWPROJ = 7;
+const int ISECT_SHADER_DELTA         = 8;
+const int ISECT_SHADER_PLANENORMAL   = 9;
+const int ISECT_SHADER_FRONTINDEX    = 10;
+const int ISECT_SHADER_VERTICES      = 11;
+
 class VIRVOEXPORT vvTexRend : public vvRenderer
 {
   friend class vvBrick;

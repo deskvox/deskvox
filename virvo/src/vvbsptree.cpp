@@ -409,6 +409,16 @@ float vvHalfSpace::calcContainedVolume() const
   return w * h * d;
 }
 
+void vvHalfSpace::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
+                            vvVector3& probePosObj, vvVector3& probeSizeObj) const
+{
+  vvAABB probe(probeMin, probeMax);
+  probe.intersect(_boundingBox);
+
+  probeMin = probe._bottomLeftBackCorner;
+  probeMax = probe._topRightFrontCorner;
+}
+
 //============================================================================
 // vvSpacePartitioner Method Definitions
 //============================================================================
