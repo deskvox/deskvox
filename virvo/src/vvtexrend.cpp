@@ -3398,6 +3398,13 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       if (_proxyGeometryOnGpu)
       {
         glEnableClientState(GL_VERTEX_ARRAY);
+        GLint vertArray[12] = { 0, 0,
+                                1, 0,
+                                2, 0,
+                                3, 0,
+                                4, 0,
+                                5, 0 };
+        glVertexPointer(2, GL_INT, 0, vertArray);
       }
       for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
       {
@@ -5557,7 +5564,11 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
 #ifdef ISECT_CG
   const char* shaderFileName = "vv_intersection.cg";
 #else
+#ifdef ISECT_GLSL_INST
+  const char* shaderFileName = "vv_intersection_inst.glsl";
+#else
   const char* shaderFileName = "vv_intersection.glsl";
+#endif
 #endif
   const char* unixShaderDir = NULL;
   char* shaderFile = NULL;
@@ -5601,7 +5612,11 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
 
 void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
 {
+#if defined(ISECT_CG) || !defined(ISECT_GLSL_INST)
   const int parameterCount = 12;
+#else
+  const int parameterCount = 13;
+#endif
   const char** parameterNames = new const char*[parameterCount];
   vvShaderParameterType* parameterTypes = new vvShaderParameterType[parameterCount];
   parameterNames[ISECT_SHADER_SEQUENCE] = "sequence";            parameterTypes[ISECT_SHADER_SEQUENCE] = VV_SHD_ARRAY;
@@ -5617,6 +5632,9 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
   parameterNames[ISECT_SHADER_PLANENORMAL] = "planeNormal";      parameterTypes[ISECT_SHADER_PLANENORMAL] = VV_SHD_VEC3;
   parameterNames[ISECT_SHADER_FRONTINDEX] = "frontIndex";        parameterTypes[ISECT_SHADER_FRONTINDEX] = VV_SHD_SCALAR;
   parameterNames[ISECT_SHADER_VERTICES] = "vertices";            parameterTypes[ISECT_SHADER_VERTICES] = VV_SHD_ARRAY;
+#ifdef ISECT_GLSL_INST
+  parameterNames[ISECT_SHADER_FIRSTPLANE] = "firstPlane";        parameterTypes[ISECT_SHADER_FIRSTPLANE] = VV_SHD_SCALAR;
+#endif
 
   isectShader->enableShader(0);
   isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);

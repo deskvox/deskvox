@@ -130,6 +130,12 @@ void vvShaderManager::setParameter1i(const int, const char*,
   throw "Function setParameter1i not implemented by inherited class";
 }
 
+void vvShaderManager::setParameter1i(const int, const int,
+                                     const int&)
+{
+  throw "Function setParameter1i not implemented by inherited class";
+}
+
 void vvShaderManager::setParameter2i(const int, const char*,
                                      const int&, const int&)
 {

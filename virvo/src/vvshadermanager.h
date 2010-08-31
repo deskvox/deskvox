@@ -149,6 +149,8 @@ public:
 
   virtual void setParameter1i(const int programIndex, const char* parameterName,
                               const int& i1);
+  virtual void setParameter1i(const int programIndex, const int parameterIndex,
+                              const int& i1);
   virtual void setParameter2i(const int programIndex, const char* parameterName,
                               const int& i1, const int& i2);
   virtual void setParameter3i(const int programIndex, const char* parameterName,

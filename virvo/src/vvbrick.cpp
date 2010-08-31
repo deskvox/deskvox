@@ -114,8 +114,15 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
 
     const int primCount = (endSlices - startSlices) + 1;
 
+#ifndef ISECT_GLSL_INST
     glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
     glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
+#else
+    GLushort indexArray[6] = { 0, 1, 2, 3, 4, 5 };
+
+    isectShader->setParameter1i(0, ISECT_SHADER_FIRSTPLANE, startSlices);
+    glDrawElementsInstanced(GL_POLYGON, 6, GL_UNSIGNED_SHORT, indexArray, primCount);
+#endif
   }
   else // render proxy geometry on gpu? else then:
   {

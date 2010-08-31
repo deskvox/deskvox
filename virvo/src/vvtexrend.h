@@ -52,7 +52,12 @@ class vvThreadVisitor;
  */
 const int MAX_DEBUG_COLORS = 8;
 
+// Uncomment to prefer Cg intersection program over Glsl program.
 //#define ISECT_CG
+#ifndef ISECT_CG
+// Uncomment to use instanced geometry transfer rather than using vertex arrays.
+#define ISECT_GLSL_INST
+#endif
 
 //============================================================================
 // Class Definitions
@@ -84,6 +89,9 @@ const int ISECT_SHADER_DELTA         = 8;
 const int ISECT_SHADER_PLANENORMAL   = 9;
 const int ISECT_SHADER_FRONTINDEX    = 10;
 const int ISECT_SHADER_VERTICES      = 11;
+#if !defined(ISECT_CG) && defined(ISECT_GLSL_INST)
+const int ISECT_SHADER_FIRSTPLANE    = 12;
+#endif
 
 class VIRVOEXPORT vvTexRend : public vvRenderer
 {

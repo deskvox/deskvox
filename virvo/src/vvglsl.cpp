@@ -212,6 +212,13 @@ void vvGLSL::setParameter4f(const int programIndex, const int parameterIndex,
   glUniform4f(_uniformParameters[parameterIndex], f1, f2, f3, f4);
 }
 
+void vvGLSL::setParameter1i(const int programIndex, const int parameterIndex,
+                            const int& i1)
+{
+  (void)programIndex;
+  glUniform1i(_uniformParameters[parameterIndex], i1);
+}
+
 void vvGLSL::setArray3f(const int programIndex, const int parameterIndex, const float* array, const int count)
 {
   (void)programIndex;

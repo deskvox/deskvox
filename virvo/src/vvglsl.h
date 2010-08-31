@@ -100,6 +100,9 @@ public:
   virtual void setParameter4f(const int programIndex, const int parameterIndex,
                               const float& f1, const float& f2, const float& f3, const float& f4);
 
+  virtual void setParameter1i(const int programIndex, const int parameterIndex,
+                              const int& i1);
+
   virtual void setArray3f(const int programIndex, const int parameterIndex, const float* array, const int count);
 
   virtual void setArray1i(const int programIndex, const int parameterIndex, const int* array, const int count);
