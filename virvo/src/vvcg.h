@@ -68,7 +68,6 @@ public:
                               const vvShaderParameterType* parameterTypes,
                               const int parameterCount);
   virtual void printCompatibilityInfo() const;
-  virtual const char* getShaderDir() const;
 
   virtual void enableTexture(const int programIndex, const char* textureParameterName);
   virtual void disableTexture(const int programIndex, const char* textureParameterName);

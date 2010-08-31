@@ -116,6 +116,13 @@ public:
                               const int parameterCount) = 0;
 
   virtual void printCompatibilityInfo() const;
+  /*!
+   * \brief         Get the shader directory.
+   *
+   *                Overwrite this function if your shaders aren't stored
+   *                at the default location.
+   * \return        The shader directory.
+   */
   virtual const char* getShaderDir() const;
 
   virtual void enableTexture(const int programIndex, const char* textureParameterName);

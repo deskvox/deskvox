@@ -14,6 +14,9 @@
 // Lesser General Public License for more details.
 
 #include "vvshadermanager.h"
+#include "vvtoolshed.h"
+
+#include <stdlib.h>
 
 vvShaderManager::vvShaderManager()
 {
@@ -32,7 +35,41 @@ void vvShaderManager::printCompatibilityInfo() const
 
 const char* vvShaderManager::getShaderDir() const
 {
-  throw "Function getShaderDir not implemented by inherited class";
+  const char* result = NULL;
+
+  const char* shaderEnv = "VV_SHADER_PATH";
+  if (getenv(shaderEnv))
+  {
+    cerr << "Environment variable " << shaderEnv << " found: " << getenv(shaderEnv) << endl;
+    result = getenv(shaderEnv);
+  }
+  else
+  {
+    cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
+    char shaderDir[256];
+#ifdef _WIN32
+    const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
+    vvToolshed::getProgramDirectory(shaderDir, 256);
+    strcat(shaderDir, primaryWin32ShaderDir);
+    cerr << "Trying shader path: " << shaderDir << endl;
+    if (!vvToolshed::isDirectory(shaderDir))
+    {
+       vvToolshed::getProgramDirectory(shaderDir, 256);
+    }
+    cerr << "Using shader path: " << shaderDir << endl;
+    result = shaderDir;
+#else
+    const char* deskVoxShaderPath = "../";
+#ifdef SHADERDIR
+    result = SHADERDIR;
+#else
+    vvToolshed::getProgramDirectory(shaderDir, 256);
+    strcat(shaderDir, deskVoxShaderPath);
+    result = shaderDir;
+#endif
+#endif
+  }
+  return result;
 }
 
 void vvShaderManager::enableTexture(const int, const char*)

@@ -184,11 +184,6 @@ void vvGLSL::printCompatibilityInfo() const
 
 }
 
-const char* vvGLSL::getShaderDir() const
-{
-  return "/raid/home/zellmans/deskvox/trunk/virvo/shader/";
-}
-
 void vvGLSL::setParameter1f(const int programIndex, const int parameterIndex,
                             const float& f1)
 {

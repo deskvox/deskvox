@@ -87,7 +87,6 @@ public:
   void initParameters(const int programIndex);
 
   void printCompatibilityInfo() const;
-  const char* getShaderDir() const;
 
   virtual void setParameter1f(const int programIndex, const int parameterIndex,
                               const float& f1);
