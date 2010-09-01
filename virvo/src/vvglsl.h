@@ -221,6 +221,7 @@ private:
   PFNGLDETACHSHADERPROC glDetachShader;
   PFNGLDELETESHADERPROC glDeleteShader;
   PFNGLDELETEPROGRAMPROC glDeleteProgram;
+  PFNGLUSEPROGRAMOBJECTARBPROC glUseProgramObjectARB;
 
   /*!
    * TODO: accomodate multiple programs.
