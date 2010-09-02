@@ -2151,6 +2151,15 @@ bool vvView::parseCommandLine(int argc, char** argv)
       {
          paletteMode = true;
       }
+      else if (vvToolshed::strCompare(argv[arg], "-display")==0)
+      {
+          // handled by GLUT
+         if ((++arg)>=argc)
+         {
+            cerr << "Display name unspecified" << endl;
+            return false;
+         }
+      }
       else
       {
          filename = argv[arg];
