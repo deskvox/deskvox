@@ -122,6 +122,7 @@ vvView::vvView()
    framebufferDump       = NULL;
    redistributeVolData   = false;
    _renderMaster         = NULL;
+   benchmark             = false;
 }
 
 
@@ -283,6 +284,7 @@ void vvView::mainLoop(int argc, char *argv[])
       animSpeed = vd->dt;
       initGraphics(argc, argv);
       createMenus();
+
       ov = new vvObjView();
 
       setProjectionMode(perspectiveMode);
@@ -1672,6 +1674,7 @@ void vvView::initGraphics(int argc, char *argv[])
    cerr << "Number of CPUs found: " << vvToolshed::getNumProcessors() << endl;
    cerr << "Initializing GLUT." << endl;
    glutInit(&argc, argv);                // initialize GLUT
+#define __APPLE__
 #ifndef __APPLE__
                                                   // create stereo context
    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_STEREO | GLUT_DEPTH);
@@ -1727,7 +1730,7 @@ void vvView::initGraphics(int argc, char *argv[])
 
    vvGLTools::checkOpenGLextensions();
 
-   if (vvDebugMsg::isActive(1))
+   if (vvDebugMsg::isActive(2))
    {
       cerr << "\nSupported OpenGL extensions:" << endl;
       vvGLTools::displayOpenGLextensions(vvGLTools::ONE_BY_ONE);
