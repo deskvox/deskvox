@@ -18,12 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-// No circular dependencies between gl.h and glew.h
-#ifndef GLEW_INCLUDED
-#include <GL/glew.h>
-#define GLEW_INCLUDED
-#endif
-
+#include "vvglew.h"
 #include "vvbsptree.h"
 #include "vvbsptreevisitors.h"
 #include "vvgltools.h"

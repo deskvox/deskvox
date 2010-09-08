@@ -13,6 +13,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
+#include "vvglew.h"
 #include <iostream>
 #include "vvtoolshed.h"
 #include "vvglsl.h"
@@ -20,9 +21,8 @@
 #include "vvdynlib.h"
 #include <assert.h>
 
-#define DYNAMIC_BIND_NAME( funcname , type ) \
-funcname = (type) vvDynLib::glSym(#funcname); \
-	if ( ! funcname ) { std::cerr << "#funcname() not initialized\n"; return; }
+#define CHECK( funcname ) \
+	if ( !funcname ) { std::cerr << "#funcname() not initialized\n"; return; }
 
 /** OpenGL Shading Language
  */
@@ -31,39 +31,10 @@ vvGLSL::vvGLSL()
 : vvShaderManager()
 , nTexture(0)
 , _isSupported(false)
-, glCreateShader(NULL)
-, glShaderSource(NULL)
-, glCompileShader(NULL)
-, glGetShaderiv(NULL)
-, glGetShaderInfoLog(NULL)
-, glCreateProgram(NULL)
-, glAttachShader(NULL)
-, glLinkProgram(NULL)
-, glUseProgram(NULL)
-, glGetUniformLocation(NULL)
-, glUniform1i(NULL)
-, glUniform2i(NULL)
-, glUniform3i(NULL)
-, glUniform4i(NULL)
-, glUniform1iv(NULL)
-, glUniform2iv(NULL)
-, glUniform3iv(NULL)
-, glUniform4iv(NULL)
-, glUniform1f(NULL)
-, glUniform2f(NULL)
-, glUniform3f(NULL)
-, glUniform4f(NULL)
-, glUniform1fv(NULL)
-, glUniform2fv(NULL)
-, glUniform3fv(NULL)
-, glUniform4fv(NULL)
-, glActiveTexture(NULL)
-, glDetachShader(NULL)
-, glDeleteShader(NULL)
-, glDeleteProgram(NULL)
-, glUseProgramObjectARB(NULL)
 , _uniformParameters(NULL)
 {
+  glewInit();
+
   if (!vvGLTools::isGLextensionSupported("GL_ARB_fragment_shader"))
   {
 	const char* ext = (char*) glGetString(GL_EXTENSIONS);
@@ -83,37 +54,37 @@ vvGLSL::vvGLSL()
   if (!vvGLTools::isGLextensionSupported("GL_ARB_multitexture"))
 	  std::cerr << "ARB multitexture NOT supported!\n";
 
-  DYNAMIC_BIND_NAME(glCreateShader, PFNGLCREATESHADERPROC );
-  DYNAMIC_BIND_NAME(glShaderSource, PFNGLSHADERSOURCEPROC );
-  DYNAMIC_BIND_NAME(glCompileShader, PFNGLCOMPILESHADERPROC);
-  DYNAMIC_BIND_NAME(glGetShaderiv, PFNGLGETSHADERIVPROC );
-  DYNAMIC_BIND_NAME(glGetShaderInfoLog, PFNGLGETSHADERINFOLOGPROC );
-  DYNAMIC_BIND_NAME(glCreateProgram, PFNGLCREATEPROGRAMPROC);
-  DYNAMIC_BIND_NAME(glAttachShader, PFNGLATTACHSHADERPROC);
-  DYNAMIC_BIND_NAME(glLinkProgram, PFNGLLINKPROGRAMPROC);
-  DYNAMIC_BIND_NAME(glUseProgram, PFNGLUSEPROGRAMPROC);
-  DYNAMIC_BIND_NAME(glGetUniformLocation, PFNGLGETUNIFORMLOCATIONPROC);
-  DYNAMIC_BIND_NAME(glUniform1i, PFNGLUNIFORM1IPROC);
-  DYNAMIC_BIND_NAME(glUniform2i, PFNGLUNIFORM2IPROC);
-  DYNAMIC_BIND_NAME(glUniform3i, PFNGLUNIFORM3IPROC);
-  DYNAMIC_BIND_NAME(glUniform4i, PFNGLUNIFORM4IPROC);
-  DYNAMIC_BIND_NAME(glUniform1iv, PFNGLUNIFORM1IVPROC);
-  DYNAMIC_BIND_NAME(glUniform2iv, PFNGLUNIFORM2IVPROC);
-  DYNAMIC_BIND_NAME(glUniform3iv, PFNGLUNIFORM3IVPROC);
-  DYNAMIC_BIND_NAME(glUniform4iv, PFNGLUNIFORM4IVPROC);
-  DYNAMIC_BIND_NAME(glUniform1f, PFNGLUNIFORM1FPROC);
-  DYNAMIC_BIND_NAME(glUniform2f, PFNGLUNIFORM2FPROC);
-  DYNAMIC_BIND_NAME(glUniform3f, PFNGLUNIFORM3FPROC);
-  DYNAMIC_BIND_NAME(glUniform4f, PFNGLUNIFORM4FPROC);
-  DYNAMIC_BIND_NAME(glUniform1fv, PFNGLUNIFORM1FVPROC);
-  DYNAMIC_BIND_NAME(glUniform2fv, PFNGLUNIFORM2FVPROC);
-  DYNAMIC_BIND_NAME(glUniform3fv, PFNGLUNIFORM3FVPROC);
-  DYNAMIC_BIND_NAME(glUniform4fv, PFNGLUNIFORM4FVPROC);
-  DYNAMIC_BIND_NAME(glActiveTexture, PFNGLACTIVETEXTUREPROC);
-  DYNAMIC_BIND_NAME(glDetachShader, PFNGLDETACHSHADERPROC);
-  DYNAMIC_BIND_NAME(glDeleteShader, PFNGLDELETESHADERPROC );
-  DYNAMIC_BIND_NAME(glDeleteProgram, PFNGLDELETEPROGRAMPROC );
-  DYNAMIC_BIND_NAME(glUseProgramObjectARB, PFNGLUSEPROGRAMOBJECTARBPROC );
+  CHECK(glCreateShader);
+  CHECK(glShaderSource);
+  CHECK(glCompileShader);
+  CHECK(glGetShaderiv);
+  CHECK(glGetShaderInfoLog);
+  CHECK(glCreateProgram);
+  CHECK(glAttachShader);
+  CHECK(glLinkProgram);
+  CHECK(glUseProgram);
+  CHECK(glGetUniformLocation);
+  CHECK(glUniform1i);
+  CHECK(glUniform2i);
+  CHECK(glUniform3i);
+  CHECK(glUniform4i);
+  CHECK(glUniform1iv);
+  CHECK(glUniform2iv);
+  CHECK(glUniform3iv);
+  CHECK(glUniform4iv);
+  CHECK(glUniform1f);
+  CHECK(glUniform2f);
+  CHECK(glUniform3f);
+  CHECK(glUniform4f);
+  CHECK(glUniform1fv);
+  CHECK(glUniform2fv);
+  CHECK(glUniform3fv);
+  CHECK(glUniform4fv);
+  CHECK(glActiveTexture);
+  CHECK(glDetachShader);
+  CHECK(glDeleteShader);
+  CHECK(glDeleteProgram);
+  CHECK(glUseProgramObjectARB);
 
   _uniformParameters = NULL;
 

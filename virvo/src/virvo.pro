@@ -54,7 +54,7 @@ SOURCES = vvbrick.cpp \
     vvbsptreevisitors.cpp \
     vvmultirend/vvtexmultirend.cpp \
     vvmultirend/vvtexmultirendmngr.cpp
-HEADERS = glext-orig.h \
+HEADERS = \
     vvarray.h \
     vvbrick.h \
     vvcolor.h \
@@ -63,12 +63,12 @@ HEADERS = glext-orig.h \
     vvdynlib.h \
     vvexport.h \
     vvfileio.h \
-    vvglext.h \
     vvgltools.h \
     vvideo.h \
     vvimage.h \
     vvoffscreenbuffer.h \
     vvopengl.h \
+    vvglew.h \
     vvprintgl.h \
     vvrendercontext.h \
     vvrenderer.h \

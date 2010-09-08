@@ -13,14 +13,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-// Glew:
-
-// No circular dependencies between gl.h and glew.h
-#ifndef GLEW_INCLUDED
-#include <GL/glew.h>
-#define GLEW_INCLUDED
-#endif
-
+#include "vvglew.h"
 #include "vvgltools.h"
 #include "vvoffscreenbuffer.h"
 

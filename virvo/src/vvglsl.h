@@ -16,8 +16,6 @@
 #ifndef _VV_GLSL_H_
 #define _VV_GLSL_H_
 
-#include "vvopengl.h"
-#include "vvglext.h"
 #include "vvvecmath.h"
 #include "vvarray.h"
 #include "vvshadermanager.h"
@@ -190,39 +188,6 @@ private:
   vvArray<GLuint> programArray;				///< array of program IDs
   int nTexture;                                         ///< the number of texture activated
   bool _isSupported;                                    ///< true if there is GLSL support
-
-  // function pointers
-  PFNGLCREATESHADERPROC glCreateShader;
-  PFNGLSHADERSOURCEPROC glShaderSource ;
-  PFNGLCOMPILESHADERPROC glCompileShader ;
-  PFNGLGETSHADERIVPROC glGetShaderiv ;
-  PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog ;
-  PFNGLCREATEPROGRAMPROC glCreateProgram;
-  PFNGLATTACHSHADERPROC glAttachShader;
-  PFNGLLINKPROGRAMPROC glLinkProgram;
-  PFNGLUSEPROGRAMPROC glUseProgram;
-  PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
-  PFNGLUNIFORM1IPROC glUniform1i;
-  PFNGLUNIFORM2IPROC glUniform2i;
-  PFNGLUNIFORM3IPROC glUniform3i;
-  PFNGLUNIFORM4IPROC glUniform4i;
-  PFNGLUNIFORM1IVPROC glUniform1iv;
-  PFNGLUNIFORM2IVPROC glUniform2iv;
-  PFNGLUNIFORM3IVPROC glUniform3iv;
-  PFNGLUNIFORM4IVPROC glUniform4iv;
-  PFNGLUNIFORM1FPROC glUniform1f;
-  PFNGLUNIFORM2FPROC glUniform2f;
-  PFNGLUNIFORM3FPROC glUniform3f;
-  PFNGLUNIFORM4FPROC glUniform4f;
-  PFNGLUNIFORM1FVPROC glUniform1fv;
-  PFNGLUNIFORM2FVPROC glUniform2fv;
-  PFNGLUNIFORM3FVPROC glUniform3fv;
-  PFNGLUNIFORM4FVPROC glUniform4fv;
-  PFNGLACTIVETEXTUREPROC glActiveTexture;
-  PFNGLDETACHSHADERPROC glDetachShader;
-  PFNGLDELETESHADERPROC glDeleteShader;
-  PFNGLDELETEPROGRAMPROC glDeleteProgram;
-  PFNGLUSEPROGRAMOBJECTARBPROC glUseProgramObjectARB;
 
   /*!
    * TODO: accomodate multiple programs.
