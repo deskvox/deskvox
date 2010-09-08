@@ -22,12 +22,47 @@
 
 #define DYNAMIC_BIND_NAME( funcname , type ) \
 funcname = (type) vvDynLib::glSym(#funcname); \
-	if ( ! funcname ) std::cerr << "#funcname() not initialized\n";
+	if ( ! funcname ) { std::cerr << "#funcname() not initialized\n"; return; }
 
 /** OpenGL Shading Language
  */
 
-vvGLSL::vvGLSL() : vvShaderManager(), nTexture(0)
+vvGLSL::vvGLSL()
+: vvShaderManager()
+, nTexture(0)
+, _isSupported(false)
+, glCreateShader(NULL)
+, glShaderSource(NULL)
+, glCompileShader(NULL)
+, glGetShaderiv(NULL)
+, glGetShaderInfoLog(NULL)
+, glCreateProgram(NULL)
+, glAttachShader(NULL)
+, glLinkProgram(NULL)
+, glUseProgram(NULL)
+, glGetUniformLocation(NULL)
+, glUniform1i(NULL)
+, glUniform2i(NULL)
+, glUniform3i(NULL)
+, glUniform4i(NULL)
+, glUniform1iv(NULL)
+, glUniform2iv(NULL)
+, glUniform3iv(NULL)
+, glUniform4iv(NULL)
+, glUniform1f(NULL)
+, glUniform2f(NULL)
+, glUniform3f(NULL)
+, glUniform4f(NULL)
+, glUniform1fv(NULL)
+, glUniform2fv(NULL)
+, glUniform3fv(NULL)
+, glUniform4fv(NULL)
+, glActiveTexture(NULL)
+, glDetachShader(NULL)
+, glDeleteShader(NULL)
+, glDeleteProgram(NULL)
+, glUseProgramObjectARB(NULL)
+, _uniformParameters(NULL)
 {
   if (!vvGLTools::isGLextensionSupported("GL_ARB_fragment_shader"))
   {
@@ -81,16 +116,21 @@ vvGLSL::vvGLSL() : vvShaderManager(), nTexture(0)
   DYNAMIC_BIND_NAME(glUseProgramObjectARB, PFNGLUSEPROGRAMOBJECTARBPROC );
 
   _uniformParameters = NULL;
+
+  _isSupported = true;
 }
 
 vvGLSL::~vvGLSL()
 {
-  glUseProgram(0);
-  for (int n = 0; n < programArray.count(); n++)
+  if(_isSupported)
   {
-	glDetachShader(programArray[n], fragShaderArray[n]);
-	glDeleteShader(fragShaderArray[n]);
-	glDeleteProgram(programArray[n]);
+    glUseProgram(0);
+    for (int n = 0; n < programArray.count(); n++)
+    {
+      glDetachShader(programArray[n], fragShaderArray[n]);
+      glDeleteShader(fragShaderArray[n]);
+      glDeleteProgram(programArray[n]);
+    }
   }
   delete[] _uniformParameters;
 }
@@ -98,6 +138,9 @@ vvGLSL::~vvGLSL()
 bool vvGLSL::loadShader(const char* shaderFileName, const ShaderType& shaderType)
 {
   assert(shaderFileName != NULL);
+
+  if(!_isSupported)
+     return false;
 
   _shaderFileNames.push_back(shaderFileName);
   _shaderTypes.push_back(shaderType);
@@ -119,6 +162,9 @@ bool vvGLSL::loadShader(const char* shaderFileName, const ShaderType& shaderType
 
 bool vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shaderType)
 {
+  if(!_isSupported)
+     return false;
+
   GLuint fragShader;
   GLuint fragProgram;
 
