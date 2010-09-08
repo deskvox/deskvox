@@ -7,7 +7,6 @@ DISTCLEANFILES =
 lib_LIBRARIES = libvirvo.a
 
 libvirvo_a_headers = \
-        glext-orig.h \
         vvarray.h \
         vvbrick.h \
         vvbsptree.h \
@@ -19,7 +18,7 @@ libvirvo_a_headers = \
         vvdynlib.h \
         vvexport.h \
         vvfileio.h \
-        vvglext.h \
+        vvglew.h \
         vvgltools.h \
         vvimage.h \
         vvopengl.h \
