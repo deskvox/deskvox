@@ -36,7 +36,7 @@ vvGLSL::vvGLSL()
   glewInit();
 
   if (!vvGLTools::isGLextensionSupported("GL_ARB_fragment_shader")
-          && !vvGLTools(isGLVersionSupported(2,0,0)))
+          && !vvGLTools::isGLVersionSupported(2,0,0))
   {
 	const char* ext = (char*) glGetString(GL_EXTENSIONS);
 
