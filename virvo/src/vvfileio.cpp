@@ -1630,7 +1630,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
                   raw[i++] = uchar(ival & 0xFF);
                   break;
                 case 4:
-                  *((float*)raw) = tokenizer->nval;
+                  *((float*)(raw+i)) = tokenizer->nval;
                   i += 3;
                   break;
               }
