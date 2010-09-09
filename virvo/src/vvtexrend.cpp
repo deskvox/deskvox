@@ -192,6 +192,27 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #ifdef GL_VERSION_2_0
     cerr << ", 2.0";
 #endif
+#ifdef GL_VERSION_2_1
+    cerr << ", 2.1";
+#endif
+#ifdef GL_VERSION_3_0
+    cerr << ", 3.0";
+#endif
+#ifdef GL_VERSION_3_1
+    cerr << ", 3.1";
+#endif
+#ifdef GL_VERSION_3_2
+    cerr << ", 3.2";
+#endif
+#ifdef GL_VERSION_3_3
+    cerr << ", 3.3";
+#endif
+#ifdef GL_VERSION_4_0
+    cerr << ", 4.0";
+#endif
+#ifdef GL_VERSION_4_1
+    cerr << ", 4.1";
+#endif
     cerr << endl;
   }
 
@@ -255,13 +276,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _renderState._isROIChanged = true;
 
   // Find out which OpenGL extensions are supported:
-#if defined(GL_VERSION_1_2) && defined(__APPLE__)
-  extTex3d  = true;
-  arbMltTex = true;
-#else
-  extTex3d  = vvGLTools::isGLextensionSupported("GL_EXT_texture3D");
-  arbMltTex = vvGLTools::isGLextensionSupported("GL_ARB_multitexture");
-#endif
+  extTex3d  = vvGLTools::isGLextensionSupported("GL_EXT_texture3D") || vvGLTools::isGLVersionSupported(1,2,0);
+  arbMltTex = vvGLTools::isGLextensionSupported("GL_ARB_multitexture") || vvGLTools::isGLVersionSupported(1,2,1);
 
   // If no Cg is available, the factory will return a NULL pointer.
 #ifdef ISECT_CG
@@ -5075,11 +5091,7 @@ bool vvTexRend::isSupported(const GeometryType geom)
     case VV_VIEWPORT:
     case VV_BRICKS:
     case VV_SPHERICAL:
-#if defined(__APPLE__) && defined(GL_VERSION_1_2)
-      return true;
-#else
-      return vvGLTools::isGLextensionSupported("GL_EXT_texture3D");
-#endif
+      return vvGLTools::isGLextensionSupported("GL_EXT_texture3D") || vvGLTools::isGLVersionSupported(1,2,0);
     default:
       return false;
   }

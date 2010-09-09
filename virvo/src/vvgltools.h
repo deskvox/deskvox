@@ -63,6 +63,7 @@ class VIRVOEXPORT vvGLTools
       }
     };
     static void printGLError(const char*);
+    static bool isGLVersionSupported(int major, int minor, int release);
     static bool isGLextensionSupported(const char*);
     static void displayOpenGLextensions(const DisplayStyle);
     static void checkOpenGLextensions();

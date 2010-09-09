@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include "vvopengl.h"
+#include "vvdebugmsg.h"
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -48,6 +49,53 @@ void vvGLTools::printGLError(const char* msg)
     const char* str = (const char*)gluErrorString(err);
     cerr << "GL error: " << msg << ", " << str << endl;
   }
+}
+
+//----------------------------------------------------------------------------
+/** Checks OpenGL for a specific OpenGL version.
+    @param major OpenGL major version to check
+    @param minor OpenGL minor version to check
+    @param release OpenGL release version to check
+    @return true if version is supported
+*/
+bool vvGLTools::isGLVersionSupported(int major, int minor, int release)
+{
+  // Get version string from OpenGL:
+  const GLubyte* verstring = glGetString(GL_VERSION);
+  if (verstring=='\0') return false;
+
+  int ver[3] = { 0, 0, 0 };
+  int idx = 0;
+  for (const GLubyte *p = verstring;
+      *p && *p != ' ' && idx < 3;
+      ++p)
+  {
+    if (*p == '.')
+    {
+      ++idx;
+    }
+    else if (*p >= '0' && *p <= '9')
+    {
+      ver[idx] *= 10;
+      ver[idx] += *p-'0';
+    }
+    else
+      return false;
+  }
+
+  vvDebugMsg::msg(3, "GL version ", ver[0], ver[1], ver[2]);
+
+  if(ver[0] < major)
+    return false;
+  if(ver[0] > major)
+    return true;
+
+  if(ver[1] < minor)
+    return false;
+  if(ver[1] >= minor)
+    return true;
+
+  return false;
 }
 
 //----------------------------------------------------------------------------
