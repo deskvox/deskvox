@@ -1438,6 +1438,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
   int identifier;                                 // ID of string identifier in file header
   bool done;
   bool error;
+  bool oldformat = false;
 
   vvDebugMsg::msg(1, "vvFileIO::loadAVFFile()");
 
@@ -1503,6 +1504,30 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
       identifier = 13;
     else if (strcmp(tokenizer->sval, "ZPOS")==0)
       identifier = 14;
+    else if (strcmp(tokenizer->sval, "FORMAT")==0)
+    {
+      // old format: followed by format specifier
+      ttype = tokenizer->nextToken();
+      if (ttype == vvTokenizer::VV_WORD)
+        if (strcmp(tokenizer->sval, "SCALAR8")==0
+            || strcmp(tokenizer->sval, "SCALAR8")==0)
+        {
+          vd->bpc = 1;
+          vd->chan = 1;
+          oldformat = true;
+          continue;
+        }
+        else
+        {
+          done = error = true;
+        }
+    }
+    else if (strcmp(tokenizer->sval, "DATA")==0)
+    {
+      // old format: starts raw data section
+      done = true;
+      continue;
+    }
     else
     {
       done = error = true;
@@ -1578,6 +1603,11 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
                 delete tokenizer;
                 fclose(fp);
                 return DATA_ERROR;
+              }
+              if (oldformat)
+              {
+                raw[i++] = uchar(ts_clamp(tokenizer->nval, 0.f, 1.f) * 255.99f);
+                continue;
               }
               if (vd->bpc==1 || vd->bpc==2)
               {
