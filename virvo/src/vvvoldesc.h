@@ -40,10 +40,6 @@
   @author Juergen Schulze-Doebold (schulze@hlrs.de)
 */
 
-#ifndef __APPLE__
-template class VIRVOEXPORT vvSLList<uchar*>;
-#endif
-
 class VIRVOEXPORT vvVolDesc
 {
   public:
