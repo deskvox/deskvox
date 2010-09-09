@@ -276,8 +276,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _renderState._isROIChanged = true;
 
   // Find out which OpenGL extensions are supported:
-  extTex3d  = vvGLTools::isGLextensionSupported("GL_EXT_texture3D") || vvGLTools::isGLVersionSupported(1,2,0);
-  arbMltTex = vvGLTools::isGLextensionSupported("GL_ARB_multitexture") || vvGLTools::isGLVersionSupported(1,2,1);
+  extTex3d  = vvGLTools::isGLextensionSupported("GL_EXT_texture3D") || vvGLTools::isGLVersionSupported(1,2,1);
+  arbMltTex = vvGLTools::isGLextensionSupported("GL_ARB_multitexture") || vvGLTools::isGLVersionSupported(1,3,0);
 
   // If no Cg is available, the factory will return a NULL pointer.
 #ifdef ISECT_CG
@@ -287,8 +287,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #endif
   _pixelShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
 
-  extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax");
-  extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation");
+  extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax") || vvGLTools::isGLVersionSupported(1,4,0);
+  extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation") || vvGLTools::isGLVersionSupported(1,1,0);
   extColLUT  = isSupported(VV_SGI_LUT);
   extPalTex  = isSupported(VV_PAL_TEX);
   extTexShd  = isSupported(VV_TEX_SHD);
@@ -302,7 +302,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #endif
   _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported;
 
-  extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two");
+  extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two") || vvGLTools::isGLVersionSupported(2,0,0);
 
   // Init glew.
   glewInit();
@@ -5117,7 +5117,7 @@ bool vvTexRend::isSupported(const VoxelType voxel)
     case VV_PAL_TEX:
       return vvGLTools::isGLextensionSupported("GL_EXT_paletted_texture");
     case VV_TEX_SHD:
-      return vvGLTools::isGLextensionSupported("GL_ARB_multitexture") &&
+      return (vvGLTools::isGLextensionSupported("GL_ARB_multitexture") || vvGLTools::isGLVersionSupported(1,3,0)) &&
         vvGLTools::isGLextensionSupported("GL_NV_texture_shader") &&
         vvGLTools::isGLextensionSupported("GL_NV_texture_shader2") &&
         vvGLTools::isGLextensionSupported("GL_ARB_texture_env_combine") &&

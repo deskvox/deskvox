@@ -35,7 +35,8 @@ vvGLSL::vvGLSL()
 {
   glewInit();
 
-  if (!vvGLTools::isGLextensionSupported("GL_ARB_fragment_shader"))
+  if (!vvGLTools::isGLextensionSupported("GL_ARB_fragment_shader")
+          && !vvGLTools(isGLVersionSupported(2,0,0)))
   {
 	const char* ext = (char*) glGetString(GL_EXTENSIONS);
 
@@ -51,7 +52,8 @@ vvGLSL::vvGLSL()
   //if (!vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two"))
   //	std::cerr << "Texture with non-power-of-two NOT supported!\n";
 
-  if (!vvGLTools::isGLextensionSupported("GL_ARB_multitexture"))
+  if (!vvGLTools::isGLextensionSupported("GL_ARB_multitexture")
+          && !vvGLTools::isGLVersionSupported(1,3,0))
 	  std::cerr << "ARB multitexture NOT supported!\n";
 
   CHECK(glCreateShader);
