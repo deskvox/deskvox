@@ -18,8 +18,6 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-// Glew:
-
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
 #endif
@@ -1024,14 +1022,15 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
           }
 
           bool atBorder = false;
+          int brickTexelOverlap[3];
           for (int d = 0; d < 3; ++d)
           {
-            currBrick->brickTexelOverlap[d] = _renderState._brickTexelOverlap;
+            brickTexelOverlap[d] = _renderState._brickTexelOverlap;
             const float maxObj = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
             if (maxObj > vd->getSize()[d])
             {
               atBorder = true;
-              currBrick->brickTexelOverlap[d] = 0;
+              brickTexelOverlap[d] = 0;
             }
           }
           currBrick->atBorder = atBorder;
@@ -1042,9 +1041,9 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
           currBrick->min.set(voxSize[0] * (startOffset[0] - halfVolume[0]),
             voxSize[1] * (startOffset[1] - halfVolume[1]),
             voxSize[2] * (startOffset[2] - halfVolume[2]));
-          currBrick->max.set(voxSize[0] * (startOffset[0] + (tmpTexels[0] - currBrick->brickTexelOverlap[0]) - halfVolume[0]),
-            voxSize[1] * (startOffset[1] + (tmpTexels[1] - currBrick->brickTexelOverlap[1]) - halfVolume[1]),
-            voxSize[2] * (startOffset[2] + (tmpTexels[2] - currBrick->brickTexelOverlap[2]) - halfVolume[2]));
+          currBrick->max.set(voxSize[0] * (startOffset[0] + (tmpTexels[0] - brickTexelOverlap[0]) - halfVolume[0]),
+            voxSize[1] * (startOffset[1] + (tmpTexels[1] - brickTexelOverlap[1]) - halfVolume[1]),
+            voxSize[2] * (startOffset[2] + (tmpTexels[2] - brickTexelOverlap[2]) - halfVolume[2]));
 
           for (int d = 0; d < 3; ++d)
           {
@@ -1052,13 +1051,13 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
             {
               currBrick->max[d] = vd->getSize()[d];
             }
+
+            currBrick->texels[d] = tmpTexels[d];
+            currBrick->startOffset[d] = startOffset[d];
+            const float overlapNorm = (float)(brickTexelOverlap[d]) / (float)tmpTexels[d];
+            currBrick->texRange[d] = (1.0f - overlapNorm);
+            currBrick->texMin[d] = (1.0f / (2.0f * (float)(_renderState._brickTexelOverlap) * (float)tmpTexels[d]));
           }
-          currBrick->texels[0] = tmpTexels[0];
-          currBrick->texels[1] = tmpTexels[1];
-          currBrick->texels[2] = tmpTexels[2];
-          currBrick->startOffset[0] = startOffset[0];
-          currBrick->startOffset[1] = startOffset[1];
-          currBrick->startOffset[2] = startOffset[2];
 
           const int texIndex = (f * _numBricks[0] * _numBricks[1] * _numBricks[2]) + (bx * _numBricks[2] * _numBricks[1])
             + (by * _numBricks[2]) + bz;
@@ -3421,8 +3420,9 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
       {
         (*it)->render(this, normal, farthest, delta, probeMin, probeMax,
-                    texNames,
-                    _isectShader, !((*it)->insideProbe && lastInsideProbe));
+                     texNames,
+                     _isectShader, !((*it)->insideProbe && lastInsideProbe),
+                     eye, isOrtho);
         lastInsideProbe = (*it)->insideProbe;
       }
       if (_proxyGeometryOnGpu)
@@ -3628,7 +3628,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
           tmp->render(data->renderer, data->normal,
                       data->farthest, data->delta,
                       data->probeMin, data->probeMax,
-                      data->privateTexNames, isectShader, true);
+                      data->privateTexNames, isectShader, true,
+                      data->eye, data->isOrtho);
         }
         if (data->renderer->_proxyGeometryOnGpu)
         {
@@ -5569,6 +5570,9 @@ bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader) const
  */
 bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader) const
 {
+#ifdef ISECT_GLSL_GEO
+  const char* shaderFileName = "vv_intersection_geo.glsl";
+#else
 #ifdef ISECT_CG
   const char* shaderFileName = "vv_intersection.cg";
 #else
@@ -5576,6 +5580,7 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
   const char* shaderFileName = "vv_intersection_inst.glsl";
 #else
   const char* shaderFileName = "vv_intersection.glsl";
+#endif
 #endif
 #endif
   const char* unixShaderDir = NULL;
@@ -5594,7 +5599,18 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
   sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
 #endif
 
+#ifdef ISECT_GLSL_GEO
+  const char* vertexFileName = "vv_intersection_ver.glsl";
+  char* vertexPath = new char[strlen(unixShaderDir) + 1 + strlen(vertexFileName) + 1];
+#ifdef _WIN32
+  sprintf(vertexPath, "%s\\%s", unixShaderDir, vertexFileName);
+#else
+  sprintf(vertexPath, "%s/%s", unixShaderDir, vertexFileName);
+#endif
+  bool ok = isectShader->loadGeomShader(vertexPath, shaderPath);
+#else
   bool ok = isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
+#endif
 
   if (ok && pixelShader != NULL)
   {
@@ -5661,6 +5677,21 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
                        6, 7, 4, 5, 2, 3, 0, 1,
                        7, 6, 3, 2, 5, 4, 1, 0 };
 
+#ifdef ISECT_GLSL_GEO
+  int v1[24] = { 1, 0, 1, 2,
+                 0, 1, 2, -1,
+                 0, 5, 4, -1,
+                 3, 0, 3, 6,
+                 5, 0, 5, 4,
+                 0, 3, 6, -1 };
+
+  int v2[24] = { 4, 1, 2, 7,
+                 1, 2, 7, -1,
+                 5, 4, 7, -1,
+                 2, 3, 6, 7,
+                 6, 5, 4, 7,
+                 3, 6, 7, -1 };
+#else
   int v1[24] = { 0, 1, 2, -1,
                  1, 0, 1, 2,
                  0, 5, 4, -1,
@@ -5674,6 +5705,7 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
                  6, 5, 4, 7,
                  3, 6, 7, -1,
                  2, 3, 6, 7 };
+#endif
 
   isectShader->setArray1i(0, ISECT_SHADER_SEQUENCE, sequence, 64);
   isectShader->setArray1i(0, ISECT_SHADER_V1, v1, 24);
@@ -6077,16 +6109,27 @@ void vvTexRend::initVertArray(const int numSlices)
 
   _elemCounts.resize(numSlices);
   _vertIndices.resize(numSlices);
+#ifdef ISECT_GLSL_GEO
+  _vertIndicesAll.resize(numSlices*1);
+  _vertArray.resize(numSlices*2);
+#else
   _vertIndicesAll.resize(numSlices*6);
   _vertArray.resize(numSlices*12);
+#endif
 
   int idxIterator = 0;
   int vertIterator = 0;
   for (int i = 0; i < numSlices; ++i)
   {
-    _elemCounts[i] = 6;
-    _vertIndices[i] = &_vertIndicesAll[i*6];
+#ifdef ISECT_GLSL_GEO
+    _elemCounts[i] = 1;
+    _vertIndices[i] = &_vertIndicesAll[i*1];
+    for (int j = 0; j < 1; ++j)
+#else
+      _elemCounts[i] = 6;
+      _vertIndices[i] = &_vertIndicesAll[i*6];
     for (int j = 0; j < 6; ++j)
+#endif
     {
       _vertIndices[i][j] = idxIterator;
       ++idxIterator;

@@ -133,6 +133,96 @@ bool vvGLSL::loadShader(const char* shaderFileName, const ShaderType& shaderType
   return ok;
 }
 
+bool vvGLSL::loadGeomShader(const char* vertFileName, const char* geomFileName)
+{
+  assert(vertFileName != NULL);
+  assert(geomFileName != NULL);
+
+  if(!_isSupported)
+     return false;
+
+  _shaderFileNames.push_back(vertFileName);
+  _shaderTypes.push_back(VV_VERT_SHD);
+
+  const char* vertFileString = vvToolshed::file2string(vertFileName);
+
+  if(vertFileString == NULL)
+  {
+    cerr << "vvToolshed::file2string error for: " << vertFileName << endl;
+    return false;
+  }
+
+  _shaderFileNames.push_back(geomFileName);
+  _shaderTypes.push_back(VV_GEOM_SHD);
+
+  const char* geomFileString = vvToolshed::file2string(geomFileName);
+
+  if(geomFileString == NULL)
+  {
+    cerr << "vvToolshed::file2string error for: " << geomFileName << endl;
+    return false;
+  }
+
+  GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
+  GLuint geomShader = glCreateShader(GL_GEOMETRY_SHADER_EXT);
+
+  glShaderSource(vertShader, 1, &vertFileString, NULL);
+  glShaderSource(geomShader, 1, &geomFileString, NULL);
+
+  glCompileShader(vertShader);
+  glCompileShader(geomShader);
+
+  GLuint program = glCreateProgram();
+
+  glAttachShader(program, vertShader);
+  glAttachShader(program, geomShader);
+
+  glProgramParameteriEXT(program, GL_GEOMETRY_INPUT_TYPE_EXT, GL_POINTS);
+  glProgramParameteriEXT(program, GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLE_STRIP);
+
+  int maxGeometryOutputVertices;
+  glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES_EXT, &maxGeometryOutputVertices);
+  glProgramParameteriEXT(program, GL_GEOMETRY_VERTICES_OUT_EXT, maxGeometryOutputVertices);
+
+  glLinkProgram(program);
+
+  fragShaderArray.append(vertShader);
+  fragShaderArray.append(geomShader);
+  programArray.append(program);
+
+  delete[] vertFileString;
+  delete[] geomFileString;
+
+  GLint compiled;
+  glGetShaderiv(vertShader, GL_COMPILE_STATUS, &compiled);
+
+  if(!compiled)
+  {
+    GLint length;
+    GLchar* compileLog;
+    glGetShaderiv(vertShader, GL_INFO_LOG_LENGTH, &length);
+    compileLog = new GLchar[length];
+    glGetShaderInfoLog(vertShader, length, &length, compileLog);
+    cerr << "glCompileShader failed: " << compileLog << endl;
+    return false;
+  }
+
+  glGetShaderiv(geomShader, GL_COMPILE_STATUS, &compiled);
+
+  if(!compiled)
+  {
+    GLint length;
+    GLchar* compileLog;
+    glGetShaderiv(geomShader, GL_INFO_LOG_LENGTH, &length);
+    compileLog = new GLchar[length];
+    glGetShaderInfoLog(geomShader, length, &length, compileLog);
+    cerr << "glCompileShader failed: " << compileLog << endl;
+    return false;
+  }
+
+  return true;
+}
+
 bool vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shaderType)
 {
   if(!_isSupported)
@@ -470,11 +560,9 @@ GLenum vvGLSL::toGLenum(const ShaderType& shaderType)
   case VV_FRAG_SHD:
     result = GL_FRAGMENT_SHADER;
     break;
-#if 0 // TODO - find out if geometry shaders are supported.
   case VV_GEOM_SHD:
     result = GL_GEOMETRY_SHADER_EXT;
     break;
-#endif
   case VV_VERT_SHD:
     result = GL_VERTEX_SHADER;
     break;

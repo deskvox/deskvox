@@ -45,6 +45,8 @@ public:
     pos = vvVector3(&rhs->pos);
     min = vvVector3(&rhs->min);
     max = vvVector3(&rhs->max);
+    texRange = vvVector3(&rhs->texRange);
+    texMin = vvVector3(&rhs->texMin);
     minValue = rhs->minValue;
     maxValue = rhs->maxValue;
     visible = rhs->visible;
@@ -68,7 +70,13 @@ public:
   void render(vvTexRend* const renderer, const vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges) const;
+              GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges,
+              const vvVector3& eye, const bool isOrtho) const;
+
+  void renderGL(vvTexRend* const renderer, const vvVector3& normal,
+                const vvVector3& farthest, const vvVector3& delta,
+                const vvVector3& probeMin, const vvVector3& probeMax,
+                GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges) const;
 
   void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const;
   bool upload3DTexture(const GLuint& texName, const uchar* texData,
@@ -94,6 +102,8 @@ public:
   vvVector3 pos;                                    ///< center position of brick
   vvVector3 min;                                    ///< minimum position of brick
   vvVector3 max;                                    ///< maximum position of brick
+  vvVector3 texRange;
+  vvVector3 texMin;
   int minValue;                                     ///< min scalar value after lut, needed for empty space leaping
   int maxValue;                                     ///< max scalar value after lut, needed for empty space leaping
   bool visible;                                     ///< if brick isn't visible, it won't be rendered at all
@@ -102,7 +112,6 @@ public:
   int index;                                        ///< index for texture object
   int startOffset[3];                               ///< startvoxel of brick
   int texels[3];                                    ///< number of texels in each dimension
-  int brickTexelOverlap[3];                         ///< overlap in each dimension
   float dist;                                       ///< distance from plane given by eye and normal
                                                     ///< or distance from (0|0|0) to brick center. Both used for sorting
 

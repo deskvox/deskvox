@@ -56,6 +56,8 @@ public:
 	*/
   bool loadShader(const char* shaderFileName, const ShaderType& shaderType);
 
+  bool loadGeomShader(const char* vertFileName, const char* geomFileName);
+
 	/** initializes, compiles and links a shader program
     @param shaderString a character array containing the program string
 	*/

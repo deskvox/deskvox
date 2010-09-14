@@ -52,6 +52,8 @@ class vvThreadVisitor;
  */
 const int MAX_DEBUG_COLORS = 8;
 
+//#define ISECT_GLSL_GEO
+
 // Uncomment to prefer Cg intersection program over Glsl program.
 //#define ISECT_CG
 #ifndef ISECT_CG

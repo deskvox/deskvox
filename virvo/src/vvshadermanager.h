@@ -79,6 +79,12 @@ public:
    * \param         shaderType Type of shader (fragment, geometry, vertex).
    */
   virtual bool loadShaderByString(const char* shaderString, const ShaderType& shaderType) = 0;
+  virtual bool loadGeomShader(const char* vertFileName, const char* geomFileName)
+  {
+    (void)vertFileName;
+    (void)geomFileName;
+  }
+
   /*!
    * \brief         Enable a loaded shader.
    *

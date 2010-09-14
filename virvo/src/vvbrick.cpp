@@ -29,15 +29,123 @@
 void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
                      const vvVector3& farthest, const vvVector3& delta,
                      const vvVector3& probeMin, const vvVector3& probeMax,
-                     GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges) const
+                     GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges,
+                     const vvVector3& eye, const bool isOrtho) const
+{
+  std::vector<vvBrick*> bricks;
+
+  const vvVector3 voxSize(renderer->vd->getSize()[0] / (renderer->vd->vox[0] - 1),
+                          renderer->vd->getSize()[1] / (renderer->vd->vox[1] - 1),
+                          renderer->vd->getSize()[2] / (renderer->vd->vox[2] - 1));
+
+  const vvVector3 halfBrick(float(renderer->texels[0]-renderer->_renderState._brickTexelOverlap) * 0.25f * voxSize[0],
+                            float(renderer->texels[1]-renderer->_renderState._brickTexelOverlap) * 0.25f * voxSize[1],
+                            float(renderer->texels[2]-renderer->_renderState._brickTexelOverlap) * 0.25f * voxSize[2]);
+#if 0
+  const float xHalf = (max[0] + min[0]) * 0.5f;
+  const float x14   = pos[0] - halfBrick[0];
+  const float x34   = pos[0] + halfBrick[0];
+
+  const float yHalf = (max[1] + min[1]) * 0.5f;
+  const float y14   = pos[1] - halfBrick[1];
+  const float y34   = pos[1] + halfBrick[1];
+
+  const float zHalf = (max[2] + min[2]) * 0.5f;
+  const float z14   = pos[2] - halfBrick[2];
+  const float z34   = pos[2] + halfBrick[2];
+
+  const float texRangeX = (texRange[0] - texMin[0]) * 0.5f;
+  const float texRangeY = (texRange[1] - texMin[1]) * 0.5f;
+  const float texRangeZ = (texRange[2] - texMin[2]) * 0.5f;
+
+  vvBrick brick0 = vvBrick(this);
+  brick0.min = vvVector3(min[0], min[1], min[0]);//brick0.min.print("min");
+  brick0.max = vvVector3(xHalf, yHalf, zHalf);//brick0.max.print("max");
+  brick0.pos = vvVector3(x14, y14, z14);//brick0.pos.print("pos");
+  brick0.texMin = vvVector3(texMin[0], texMin[1], texMin[2]);
+  brick0.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
+  bricks.push_back(&brick0);
+
+  vvBrick brick1 = vvBrick(this);
+  brick1.min = vvVector3(xHalf, min[1], min[2]);
+  brick1.max = vvVector3(max[0], yHalf, zHalf);
+  brick1.pos = vvVector3(x34, y14, z14);
+  brick1.texMin = vvVector3(0.5f, texMin[1], texMin[2]);
+  brick1.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
+  bricks.push_back(&brick1);
+
+  vvBrick brick2 = vvBrick(this);
+  brick2.min = vvVector3(min[0], yHalf, min[2]);
+  brick2.max = vvVector3(xHalf, max[1], zHalf);
+  brick2.pos = vvVector3(x14, y34, z14);
+  brick2.texMin = vvVector3(texMin[0], 0.5f, texMin[2]);
+  brick2.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
+  bricks.push_back(&brick2);
+
+  vvBrick brick3 = vvBrick(this);
+  brick3.min = vvVector3(xHalf, yHalf, min[2]);
+  brick3.max = vvVector3(max[0], max[1], zHalf);
+  brick3.pos = vvVector3(x34, y34, z14);
+  brick3.texMin = vvVector3(0.5f, 0.5f, texMin[2]);
+  brick3.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
+  bricks.push_back(&brick3);
+
+  vvBrick brick4 = vvBrick(this);
+  brick4.min = vvVector3(min[0], min[1], zHalf);
+  brick4.max = vvVector3(xHalf, yHalf, max[2]);
+  brick4.pos = vvVector3(x14, y14, z34);
+  brick4.texMin = vvVector3(texMin[0], texMin[1], 0.5f);
+  brick4.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
+  bricks.push_back(&brick4);
+
+  vvBrick brick5 = vvBrick(this);
+  brick5.min = vvVector3(xHalf, min[1], zHalf);
+  brick5.max = vvVector3(max[0], yHalf, max[2]);
+  brick5.pos = vvVector3(x34, y14, z34);
+  brick5.texMin = vvVector3(0.5f, texMin[1], 0.5f);
+  brick5.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
+  bricks.push_back(&brick5);
+
+  vvBrick brick6 = vvBrick(this);
+  brick6.min = vvVector3(min[0], yHalf, zHalf);
+  brick6.max = vvVector3(xHalf, max[1], max[2]);
+  brick6.pos = vvVector3(x14, y34, z34);
+  brick6.texMin = vvVector3(texMin[0], 0.5f,  0.5f);
+  brick6.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
+  bricks.push_back(&brick6);
+
+  vvBrick brick7 = vvBrick(this);
+  brick7.min = vvVector3(xHalf, yHalf, zHalf);
+  brick7.max = vvVector3(max[0], max[1], max[2]);
+  brick7.pos = vvVector3(x34, y34, z34);
+  brick7.texMin = vvVector3(0.5f, 0.5f, 0.5f);
+  brick7.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
+  bricks.push_back(&brick7);
+
+  renderer->sortBrickList(bricks, eye, normal, isOrtho);
+#else
+  vvBrick brick = vvBrick(this);
+  bricks.push_back(&brick);
+#endif
+
+  glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
+  for (std::vector<vvBrick*>::const_iterator it = bricks.begin(); it != bricks.end(); ++it)
+  {
+    (*it)->renderGL(renderer, normal, farthest, delta, probeMin, probeMax,
+                    texNames, isectShader, setupEdges);
+  }
+}
+
+void vvBrick::renderGL(vvTexRend* const renderer, const vvVector3& normal,
+                       const vvVector3& farthest, const vvVector3& delta,
+                       const vvVector3& probeMin, const vvVector3& probeMax,
+                       GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges) const
 {
   const vvVector3 dist = max - min;
 
-  // Clip probe object to brick extends.
+  // Clip probe object to brick extents.
   vvVector3 minClipped;
   vvVector3 maxClipped;
-  vvVector3 texRange;
-  vvVector3 texMin;
   for (int i = 0; i < 3; ++i)
   {
     if (min[i] < probeMin[i])
@@ -57,9 +165,6 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     {
       maxClipped[i] = max[i];
     }
-    const float overlapNorm = (float)(brickTexelOverlap[i]) / (float)texels[i];
-    texRange[i] = (1.0f - overlapNorm);
-    texMin[i] = (1.0f / (2.0f * (float)(renderer->_renderState._brickTexelOverlap) * (float)texels[i]));
   }
 
   const vvVector3 (&verts)[8] = vvAABB(minClipped, maxClipped).getVertices();
@@ -73,7 +178,6 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   const int startSlices = static_cast<const int>(ceilf(minDot * deltaInv));
   const int endSlices = static_cast<const int>(floorf(maxDot * deltaInv));
 
-  glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
   if (renderer->_proxyGeometryOnGpu)
   {
 #ifdef ISECT_CG
@@ -111,8 +215,14 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     const int primCount = (endSlices - startSlices) + 1;
 
 #ifndef ISECT_GLSL_INST
+#ifdef ISECT_GLSL_GEO
+    glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*2]);
+    glMultiDrawElements(GL_POINTS, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
+#else
     glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
     glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
+#endif
+
 #else
     GLushort indexArray[6] = { 0, 1, 2, 3, 4, 5 };
 
@@ -311,6 +421,8 @@ void vvBrick::print() const
   pos.print("pos:");
   min.print("min:");
   max.print("max:");
+  texRange.print("texRange:");
+  texMin.print("texMin:");
   cerr << "minValue:\t" << minValue << endl;
   cerr << "maxValue:\t" << maxValue << endl;
   cerr << "visible:\t" << visible << endl;
