@@ -50,7 +50,7 @@ bool test(const int idx)
 void send(const int idx)
 {
   gl_Position = gl_PositionIn[idx];
-  gl_TexCoord = gl_TexCoordIn[idx];
+  gl_TexCoord[0] = gl_TexCoordIn[idx][0];
   EmitVertex();
 }
 

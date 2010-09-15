@@ -13,7 +13,7 @@ uniform int v2[24];
 
 void main()
 {
-  float planeDist = brickMin.w + (float(firstPlane) + float(gl_InstanceID)) * delta;
+  float planeDist = brickMin.w + (float(firstPlane) + float(gl_InstanceIDARB)) * delta;
   vec3 pos;
 
   for (int i=0; i<4; ++i)
