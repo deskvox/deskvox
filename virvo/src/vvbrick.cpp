@@ -216,8 +216,8 @@ void vvBrick::renderGL(vvTexRend* const renderer, const vvVector3& normal,
 
 #ifndef ISECT_GLSL_INST
 #ifdef ISECT_GLSL_GEO
-    glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*2]);
-    glMultiDrawElements(GL_POINTS, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
+    glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*6]);
+    glMultiDrawElements(GL_TRIANGLES, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
 #else
     glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
     glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);

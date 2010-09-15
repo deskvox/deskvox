@@ -94,6 +94,10 @@ const int ISECT_SHADER_VERTICES      = 11;
 #if !defined(ISECT_CG) && defined(ISECT_GLSL_INST)
 const int ISECT_SHADER_FIRSTPLANE    = 12;
 #endif
+#ifdef ISECT_GLSL_GEO
+const int ISECT_SHADER_V1_MAYBE      = 12;
+const int ISECT_SHADER_V2_MAYBE      = 13;
+#endif
 
 class VIRVOEXPORT vvTexRend : public vvRenderer
 {

@@ -5637,7 +5637,11 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
 void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
 {
 #if defined(ISECT_CG) || !defined(ISECT_GLSL_INST)
+#ifdef ISECT_GLSL_GEO
+  const int parameterCount = 14;
+#else
   const int parameterCount = 12;
+#endif
 #else
   const int parameterCount = 13;
 #endif
@@ -5659,6 +5663,10 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
 #ifdef ISECT_GLSL_INST
   parameterNames[ISECT_SHADER_FIRSTPLANE] = "firstPlane";        parameterTypes[ISECT_SHADER_FIRSTPLANE] = VV_SHD_SCALAR;
 #endif
+#ifdef ISECT_GLSL_GEO
+  parameterNames[ISECT_SHADER_V1_MAYBE] = "v1Maybe";             parameterTypes[ISECT_SHADER_V1_MAYBE] = VV_SHD_ARRAY;
+  parameterNames[ISECT_SHADER_V2_MAYBE] = "v2Maybe";             parameterTypes[ISECT_SHADER_V2_MAYBE] = VV_SHD_ARRAY;
+#endif
 
   isectShader->enableShader(0);
   isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);
@@ -5678,19 +5686,22 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
                        7, 6, 3, 2, 5, 4, 1, 0 };
 
 #ifdef ISECT_GLSL_GEO
-  int v1[24] = { 1, 0, 1, 2,
-                 0, 1, 2, -1,
-                 0, 5, 4, -1,
-                 3, 0, 3, 6,
-                 5, 0, 5, 4,
-                 0, 3, 6, -1 };
+  int v1[9] = { 0, 1, 2,
+                0, 5, 4,
+                0, 3, 6 };
 
-  int v2[24] = { 4, 1, 2, 7,
-                 1, 2, 7, -1,
-                 5, 4, 7, -1,
-                 2, 3, 6, 7,
-                 6, 5, 4, 7,
-                 3, 6, 7, -1 };
+  int v2[9] = { 1, 2, 7,
+                5, 4, 7,
+                3, 6, 7 };
+
+  int v1Maybe[3] = { 1, 5, 3 };
+  int v2Maybe[3] = { 4, 6, 2 };
+
+  isectShader->setArray1i(0, ISECT_SHADER_SEQUENCE, sequence, 64);
+  isectShader->setArray1i(0, ISECT_SHADER_V1, v1, 9);
+  isectShader->setArray1i(0, ISECT_SHADER_V2, v2, 9);
+  isectShader->setArray1i(0, ISECT_SHADER_V1_MAYBE, v1Maybe, 3);
+  isectShader->setArray1i(0, ISECT_SHADER_V2_MAYBE, v2Maybe, 3);
 #else
   int v1[24] = { 0, 1, 2, -1,
                  1, 0, 1, 2,
@@ -5705,11 +5716,11 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
                  6, 5, 4, 7,
                  3, 6, 7, -1,
                  2, 3, 6, 7 };
-#endif
-
   isectShader->setArray1i(0, ISECT_SHADER_SEQUENCE, sequence, 64);
   isectShader->setArray1i(0, ISECT_SHADER_V1, v1, 24);
   isectShader->setArray1i(0, ISECT_SHADER_V2, v2, 24);
+#endif
+
 #else
   isectShader->setArrayParameter1i(0, ISECT_SHADER_SEQUENCE, 0, 0);
   isectShader->setArrayParameter1i(0, ISECT_SHADER_SEQUENCE, 1, 1);
@@ -6110,8 +6121,8 @@ void vvTexRend::initVertArray(const int numSlices)
   _elemCounts.resize(numSlices);
   _vertIndices.resize(numSlices);
 #ifdef ISECT_GLSL_GEO
-  _vertIndicesAll.resize(numSlices*1);
-  _vertArray.resize(numSlices*2);
+  _vertIndicesAll.resize(numSlices*3);
+  _vertArray.resize(numSlices*6);
 #else
   _vertIndicesAll.resize(numSlices*6);
   _vertArray.resize(numSlices*12);
@@ -6122,14 +6133,12 @@ void vvTexRend::initVertArray(const int numSlices)
   for (int i = 0; i < numSlices; ++i)
   {
 #ifdef ISECT_GLSL_GEO
-    _elemCounts[i] = 1;
-    _vertIndices[i] = &_vertIndicesAll[i*1];
-    for (int j = 0; j < 1; ++j)
+    _elemCounts[i] = 3;
 #else
       _elemCounts[i] = 6;
-      _vertIndices[i] = &_vertIndicesAll[i*6];
-    for (int j = 0; j < 6; ++j)
 #endif
+     _vertIndices[i] = &_vertIndicesAll[i*_elemCounts[i]];
+    for (int j = 0; j < _elemCounts[i]; ++j)
     {
       _vertIndices[i][j] = idxIterator;
       ++idxIterator;

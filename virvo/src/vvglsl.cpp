@@ -177,7 +177,7 @@ bool vvGLSL::loadGeomShader(const char* vertFileName, const char* geomFileName)
   glAttachShader(program, vertShader);
   glAttachShader(program, geomShader);
 
-  glProgramParameteriEXT(program, GL_GEOMETRY_INPUT_TYPE_EXT, GL_POINTS);
+  glProgramParameteriEXT(program, GL_GEOMETRY_INPUT_TYPE_EXT, GL_TRIANGLES);
   glProgramParameteriEXT(program, GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLE_STRIP);
 
   int maxGeometryOutputVertices;
