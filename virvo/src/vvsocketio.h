@@ -119,6 +119,14 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_FLOAT
     };
 
+    enum CommReason                               /// before sending data, let the recipient know what to expect
+    {
+      VV_EXIT = 0,
+      VV_IMAGE,
+      VV_MATRIX,
+      VV_VOLUME
+    };
+
     vvSocketIO(int, char*, vvSocket::SocketType, int clminport=0, int clmaxport=0);
     vvSocketIO(int, vvSocket::SocketType);
     ~vvSocketIO();

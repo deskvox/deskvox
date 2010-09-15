@@ -128,10 +128,6 @@ vvRenderSlave::ErrorType vvRenderSlave::initBricks(std::vector<vvBrick*>& bricks
   return VV_OK;
 }
 
-//----------------------------------------------------------------------------
-/** Perform remote rendering, read back pixel data and send it over socket
-    connections using a vvImage instance.
-*/
 void vvRenderSlave::renderLoop(vvTexRend* renderer)
 {
   vvMatrix pr;
@@ -146,35 +142,44 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
     if ((_socket->getMatrix(&pr) == vvSocket::VV_OK)
        && (_socket->getMatrix(&mv) == vvSocket::VV_OK))
     {
-      vvDebugMsg::msg(3, "vvView::renderRemotely()");
-
-      _offscreenBuffer->bindFramebuffer();
-      _offscreenBuffer->clearBuffer();
-
-      // Draw volume:
-      float matrixGL[16];
-
-      glMatrixMode(GL_PROJECTION);
-      pr.get(matrixGL);
-      glLoadMatrixf(matrixGL);
-
-      glMatrixMode(GL_MODELVIEW);
-      mv.get(matrixGL);
-      glLoadMatrixf(matrixGL);
-
-      renderer->renderVolumeGL();
-
-      glFlush();
-
-      vvRect* screenRect = renderer->getProbedMask().getProjectedScreenRect();
-
-      uchar* pixels = new uchar[screenRect->width * screenRect->height * 4];
-      glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-      vvImage img(screenRect->height, screenRect->width, pixels);
-
-      _socket->putImage(&img);
-      delete[] pixels;
-      _offscreenBuffer->unbindFramebuffer();
+      renderImage(pr, mv, renderer);
     }
   }
+}
+
+//----------------------------------------------------------------------------
+/** Perform remote rendering, read back pixel data and send it over socket
+    connections using a vvImage instance.
+*/
+void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
+{
+  vvDebugMsg::msg(3, "vvRenderSlave::renderImage()");
+
+  _offscreenBuffer->bindFramebuffer();
+  _offscreenBuffer->clearBuffer();
+
+  // Draw volume:
+  float matrixGL[16];
+
+  glMatrixMode(GL_PROJECTION);
+  pr.get(matrixGL);
+  glLoadMatrixf(matrixGL);
+
+  glMatrixMode(GL_MODELVIEW);
+  mv.get(matrixGL);
+  glLoadMatrixf(matrixGL);
+
+  renderer->renderVolumeGL();
+
+  glFlush();
+
+  vvRect* screenRect = renderer->getProbedMask().getProjectedScreenRect();
+
+  uchar* pixels = new uchar[screenRect->width * screenRect->height * 4];
+  glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+  vvImage img(screenRect->height, screenRect->width, pixels);
+
+  _socket->putImage(&img);
+  delete[] pixels;
+  _offscreenBuffer->unbindFramebuffer();
 }

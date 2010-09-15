@@ -52,6 +52,8 @@ private:
   vvSocketIO* _socket;                    ///< socket for remote rendering
 
   BufferPrecision _compositingPrecision;  ///< the precision of the buffer used for compositing (default: 16bit)
+
+  void renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer);
 };
 
 #endif
