@@ -83,6 +83,7 @@ public:
   {
     (void)vertFileName;
     (void)geomFileName;
+    return false;
   }
 
   /*!

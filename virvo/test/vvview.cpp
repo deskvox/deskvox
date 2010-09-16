@@ -5,6 +5,8 @@
 // Affiliation:     Brown University, Department of Computer Science
 //****************************************************************************
 
+#include "../src/vvglew.h"
+
 #include <iostream>
 #include <iomanip>
 using std::cerr;
