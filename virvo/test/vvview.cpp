@@ -1679,7 +1679,6 @@ void vvView::initGraphics(int argc, char *argv[])
    cerr << "Number of CPUs found: " << vvToolshed::getNumProcessors() << endl;
    cerr << "Initializing GLUT." << endl;
    glutInit(&argc, argv);                // initialize GLUT
-#define __APPLE__
 #ifndef __APPLE__
                                                   // create stereo context
    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_STEREO | GLUT_DEPTH);
