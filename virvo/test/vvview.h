@@ -125,6 +125,7 @@ class vvView
       bool benchmark;                             ///< don't run interactively, just perform timed rendering and exit
       std::vector<char*> slaveFileNames;          ///< a list with file names where slaves can find the appropriate volume data
       vvRenderMaster* _renderMaster;
+      const char* testSuiteFileName;
    public:
       vvView();
       ~vvView();

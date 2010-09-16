@@ -125,6 +125,7 @@ vvView::vvView()
    redistributeVolData   = false;
    _renderMaster         = NULL;
    benchmark             = false;
+   testSuiteFileName     = NULL;
 }
 
 
@@ -1365,14 +1366,12 @@ void vvView::viewMenuCallback(int item)
   360 degrees rotation of the volume about its vertical axis.
   The image is drawn every 2 degrees.
   <br>
-  Behavior if file "test.csv" is found in working directory is
-  to parse setups for performance tests from this file.
 */
 void vvView::performanceTest()
 {
    vvDebugMsg::msg(1, "vvView::performanceTest()");
 
-   vvTestSuite* testSuite = new vvTestSuite("test.csv");
+   vvTestSuite* testSuite = new vvTestSuite(ds->testSuiteFileName);
    if (testSuite->isInitialized())
    {
      std::vector<vvPerformanceTest*> tests = testSuite->getTests();
@@ -1962,6 +1961,10 @@ void vvView::displayHelpInfo()
    cerr << endl;
    cerr << "-transfunc (-t)" << endl;
    cerr << " Display transfer function color bar. Only works with 8 and 16 bit volumes" << endl;
+   cerr << endl;
+   cerr << "-testsuitefilename" << endl;
+   cerr << " Specify a file with performance tests" << endl;
+   cerr << endl;
 #ifndef WIN32
    cerr << endl;
 #endif
@@ -2099,6 +2102,14 @@ bool vvView::parseCommandLine(int argc, char** argv)
             return false;
          }
          slaveFileNames.push_back(argv[arg]);
+      }
+      else if (vvToolshed::strCompare(argv[arg], "-testsuitefilename")==0)
+      {
+         if ((++arg)>=argc)
+         {
+            cerr << "Test suite file name unspecified" << endl;
+         }
+         testSuiteFileName = argv[arg];
       }
       else if (vvToolshed::strCompare(argv[arg], "-redistributevoldata")==0)
       {
