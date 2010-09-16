@@ -199,7 +199,7 @@ void (*vvDynLib::glSym(const char *symbolname))(void)
   symbol = NULL;
   if (NSIsSymbolNameDefined (mangledSymbolName))
     symbol = NSLookupAndBindSymbol (mangledSymbolName);
-  free (mangledSymbolName);
+  delete[] (mangledSymbolName);
   return symbol ? (void (*)(void))NSAddressOfSymbol (symbol) : NULL;
 #endif
 #elif defined(GLX_ARB_get_proc_address)

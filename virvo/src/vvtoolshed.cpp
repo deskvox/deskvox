@@ -2702,7 +2702,7 @@ int vvToolshed::parsePort(const char* url)
 {
   const char delimiter[] = ":";
   char* token;
-  char* str = new char[strlen(url)];
+  char* str = new char[strlen(url)+1];
   strcpy(str, url);
 
   int port = -1;

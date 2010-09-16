@@ -2820,12 +2820,12 @@ vvFileIO::ErrorType vvFileIO::loadTGAFile(vvVolDesc* vd)
     {
       std::cerr<<"vvFileIO::loadTGAFile fread failed"<<std::endl;
       fclose(fp);
-      delete idBlock;
+      delete[] idBlock;
       return FILE_ERROR;
     }
     idBlock[idLength]='\0';
     vvDebugMsg::msg(1, " Image ID block: ", idBlock);
-    delete(idBlock);
+    delete[] idBlock;
   }
 
   if (2!=imageType)
