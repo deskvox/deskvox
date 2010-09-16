@@ -20,8 +20,8 @@ void main()
   for (int i=0; i<3; ++i)
   {
     // int(brickDimInv[3] == frontIndex.
-    int vIdx1 = sequence[int(brickDimInv[3]) * 8 + v1[int(gl_Vertex.x) * 3 + i]];
-    int vIdx2 = sequence[int(brickDimInv[3]) * 8 + v2[int(gl_Vertex.x) * 3 + i]];
+    int vIdx1 = sequence[int(brickDimInv[3]) + v1[int(gl_Vertex.x) * 3 + i]];
+    int vIdx2 = sequence[int(brickDimInv[3]) + v2[int(gl_Vertex.x) * 3 + i]];
     
     vec3 vecV1 = vertices[vIdx1];
     vec3 vecV2 = vertices[vIdx2];

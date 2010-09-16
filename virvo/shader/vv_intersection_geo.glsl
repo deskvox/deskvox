@@ -17,8 +17,8 @@ varying in float planeDist[3];
 
 bool test(const int idx)
 {
-  int vIdx1 = sequence[int(brickDimInv[3]) * 8 + v1Maybe[idx]];
-  int vIdx2 = sequence[int(brickDimInv[3]) * 8 + v2Maybe[idx]];
+  int vIdx1 = sequence[int(brickDimInv[3]) + v1Maybe[idx]];
+  int vIdx2 = sequence[int(brickDimInv[3]) + v2Maybe[idx]];
     
   vec3 vecV1 = vertices[vIdx1];
   vec3 vecV2 = vertices[vIdx2];

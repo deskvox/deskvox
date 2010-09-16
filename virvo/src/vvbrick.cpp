@@ -206,7 +206,7 @@ void vvBrick::renderGL(vvTexRend* const renderer, const vvVector3& normal,
     // Pass planeStart along with brickMin and spare one setParameter call.
     isectShader->setParameter4f(0, ISECT_SHADER_BRICKMIN, min[0], min[1], min[2], -farthest.length());
     // Pass front index along with brickDimInv and spare one setParameter call.
-    isectShader->setParameter4f(0, ISECT_SHADER_BRICKDIMINV, 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2], idx);
+    isectShader->setParameter4f(0, ISECT_SHADER_BRICKDIMINV, 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2], idx * 8);
     // Mind that textures overlap a little bit for correct interpolation at the borders.
     // Thus add that little difference.
     isectShader->setParameter3f(0, ISECT_SHADER_TEXRANGE, texRange[0], texRange[1], texRange[2]);

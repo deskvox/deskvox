@@ -27,8 +27,8 @@ void main(
   for (int i=0; i<4; ++i)
   {
     // int(brickDimInv[3]) == frontIndex.
-    int vIdx1 = sequence[int(brickDimInv[3] * 8 + v1[vin.x*4+i])];
-    int vIdx2 = sequence[int(brickDimInv[3] * 8 + v2[vin.x*4+i])];
+    int vIdx1 = sequence[int(brickDimInv[3] + v1[vin.x*4+i])];
+    int vIdx2 = sequence[int(brickDimInv[3] + v2[vin.x*4+i])];
 
     float3 vecV1 = vertices[vIdx1];
     if(vIdx1 != 0)
