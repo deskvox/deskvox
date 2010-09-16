@@ -1379,6 +1379,11 @@ void vvView::performanceTest()
      std::vector<vvPerformanceTest*>::const_iterator it;
      float step = 2.0f * VV_PI / 180.0f;
 
+     if (tests.size() < 1)
+     {
+        cerr << "No tests in test suite" << endl;
+     }
+
      for(it = tests.begin(); it != tests.end(); ++it)
      {
        vvPerformanceTest* test = *it;

@@ -120,6 +120,10 @@ vvPerformanceTest::vvPerformanceTest()
 {
   _verbose = true;
   _testResult = new vvTestResult();
+  _iterations = 1;
+  _testAnimation = VV_ROT_Y;
+  _frames = 90;
+  _quality = 1.0f;
 }
 
 vvPerformanceTest::~vvPerformanceTest()
@@ -329,6 +333,7 @@ void vvTestSuite::init()
     {
       // One test per line (except the first one, which contains the header mapping).
       vvPerformanceTest* test = NULL;
+      bool testSaved = false;
       int itemCount = 0;
       char* item;
       item = strtok(line, ",");
@@ -365,10 +370,18 @@ void vvTestSuite::init()
           // Thus and so that the ids are more legible, they are 1-based.
           test->setId(lineCount);
           _tests.push_back(test);
+          testSaved = true;
         }
+      }
+
+      if ((lineCount > 0) && (!testSaved))
+      {
+        test->setId(lineCount);
+        _tests.push_back(test);
       }
       ++lineCount;
     }
+
     fclose(handle);
     _initialized = true;
   }
