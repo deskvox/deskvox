@@ -121,9 +121,11 @@ vvPerformanceTest::vvPerformanceTest()
   _verbose = true;
   _testResult = new vvTestResult();
   _iterations = 1;
-  _testAnimation = VV_ROT_Y;
   _frames = 90;
   _quality = 1.0f;
+  _geomType = vvTexRend::VV_AUTO;
+  _voxelType = vvTexRend::VV_BEST;
+  _testAnimation = VV_ROT_Y;
 }
 
 vvPerformanceTest::~vvPerformanceTest()

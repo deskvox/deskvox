@@ -1393,6 +1393,7 @@ void vvView::performanceTest()
        totalTime->start();
 
        int framesRendered = 0;
+       ds->setRenderer(test->getGeomType(), test->getVoxelType());
        ds->hqMode = false;
        ds->draftQuality = test->getQuality();
        ds->ov->reset();
