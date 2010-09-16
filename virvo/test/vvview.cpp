@@ -802,8 +802,6 @@ void vvView::timerCallback(int id)
          break;
       case BENCHMARK_TIMER:
          performanceTest();
-         performanceTest();
-         performanceTest();
          exit(0);
          break;
       default:
