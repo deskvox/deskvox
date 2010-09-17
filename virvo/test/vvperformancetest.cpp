@@ -135,7 +135,7 @@ vvPerformanceTest::~vvPerformanceTest()
 
 void vvPerformanceTest::writeResultFiles()
 {
-#if defined(__linux) || defined(LINUX) || defined(__APPLE__)
+#if !defined(_WIN32)
   // Text file with summary.
   char* summaryFile = new char[80];
   time_t now = time(NULL);
