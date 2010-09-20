@@ -5612,6 +5612,15 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
   bool ok = isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
 #endif
 
+  if (ok)
+  {
+    cerr << "Using intersection shader from: " << shaderPath << endl;
+  }
+  else
+  {
+    cerr << "An error occurred when trying to load: " << shaderPath << endl;
+  }
+
   if (ok && pixelShader != NULL)
   {
     const char* passthroughFile = "vv_shader00.cg";
