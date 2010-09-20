@@ -89,7 +89,7 @@ void vvTestResult::calc()
   std::vector<float>::const_iterator it;
   for (it = _diffTimes.begin(); it != _diffTimes.end(); ++it)
   {
-    float t = *it;
+    const float t = *it;
 
     if (t > _maxTime)
     {

@@ -277,6 +277,7 @@ void vvView::mainLoop(int argc, char *argv[])
          remoteRendering = false;
       }
 
+      initGraphics(argc, argv);
       if (remoteRendering)
       {
          _renderMaster = new vvRenderMaster(slaveNames, slavePorts, slaveFileNames, filename);
@@ -285,7 +286,6 @@ void vvView::mainLoop(int argc, char *argv[])
       }
 
       animSpeed = vd->dt;
-      initGraphics(argc, argv);
       createMenus();
 
       ov = new vvObjView();
