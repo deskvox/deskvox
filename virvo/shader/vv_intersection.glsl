@@ -1,28 +1,22 @@
 uniform vec3 planeNormal;
 
 uniform float delta;
-uniform int sequence[64];
 uniform vec3 vertices[8];
 uniform vec4 brickMin;
 uniform vec4 brickDimInv;
 uniform vec3 texMin;
 uniform vec3 texRange;
 uniform int v1[24];
-uniform int v2[24];
 
 void main()
 {
   float planeDist = brickMin.w + gl_Vertex.y * delta;
   vec3 pos;
 
-  for (int i=0; i<4; ++i)
+  vec3 vecV1 = vertices[v1[int(gl_Vertex.x)]];
+  for (int i=0; i<3; ++i)
   {
-    // int(brickDimInv[3] == frontIndex.
-    int vIdx1 = sequence[int(brickDimInv[3] + float(v1[int(gl_Vertex.x)*4+i]))];
-    int vIdx2 = sequence[int(brickDimInv[3] + float(v2[int(gl_Vertex.x)*4+i]))];
-
-    vec3 vecV1 = vertices[vIdx1];
-    vec3 vecV2 = vertices[vIdx2];
+    vec3 vecV2 = vertices[v1[int(gl_Vertex.x) + i + 1]];
 
     vec3 vecStart = vecV1;
     vec3 vecDir = vecV2-vecV1;
@@ -38,6 +32,7 @@ void main()
       pos = vecStart + lambda * vecDir;
       break;
     }
+    vecV1 = vecV2;
   }
 
   gl_Position = gl_ModelViewProjectionMatrix * vec4(pos, 1.0);

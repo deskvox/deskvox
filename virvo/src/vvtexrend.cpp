@@ -5685,14 +5685,6 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
   // Global scope, values will never be changed.
 
 #ifndef ISECT_CG
-  int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
-                       1, 2, 3, 0, 7, 4, 5, 6,
-                       2, 7, 6, 3, 4, 1, 0, 5,
-                       3, 6, 5, 0, 7, 2, 1, 4,
-                       4, 5, 6, 7, 0, 1, 2, 3,
-                       5, 0, 3, 6, 1, 4, 7, 2,
-                       6, 7, 4, 5, 2, 3, 0, 1,
-                       7, 6, 3, 2, 5, 4, 1, 0 };
 
 #ifdef ISECT_GLSL_GEO
   int v1[9] = { 0, 1, 2,
@@ -5703,31 +5695,17 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
                 5, 4, 7,
                 3, 6, 7 };
 
-  int v1Maybe[3] = { 1, 5, 3 };
-  int v2Maybe[3] = { 4, 6, 2 };
-
-  isectShader->setArray1i(0, ISECT_SHADER_SEQUENCE, sequence, 64);
   isectShader->setArray1i(0, ISECT_SHADER_V1, v1, 9);
   isectShader->setArray1i(0, ISECT_SHADER_V2, v2, 9);
-  isectShader->setArray1i(0, ISECT_SHADER_V1_MAYBE, v1Maybe, 3);
-  isectShader->setArray1i(0, ISECT_SHADER_V2_MAYBE, v2Maybe, 3);
 #else
-  int v1[24] = { 0, 1, 2, -1,
-                 1, 0, 1, 2,
-                 0, 5, 4, -1,
-                 5, 0, 5, 4,
-                 0, 3, 6, -1,
-                 3, 0, 3, 6 };
-
-  int v2[24] = { 1, 2, 7, -1,
-                 4, 1, 2, 7,
-                 5, 4, 7, -1,
-                 6, 5, 4, 7,
-                 3, 6, 7, -1,
-                 2, 3, 6, 7 };
-  isectShader->setArray1i(0, ISECT_SHADER_SEQUENCE, sequence, 64);
+  int v1[24] = { 0, 1, 2, 7,
+                 0, 1, 4, 7,
+                 0, 5, 4, 7,
+                 0, 5, 6, 7,
+                 0, 3, 6, 7,
+                 0, 3, 2, 7 };
   isectShader->setArray1i(0, ISECT_SHADER_V1, v1, 24);
-  isectShader->setArray1i(0, ISECT_SHADER_V2, v2, 24);
+  //isectShader->setArray1i(0, ISECT_SHADER_V2, v2, 24);
 #endif
 
 #else
@@ -6139,6 +6117,13 @@ void vvTexRend::initVertArray(const int numSlices)
 
   int idxIterator = 0;
   int vertIterator = 0;
+
+  // Spare some instructions in shader:
+#ifdef ISECT_GLSL_GEO
+  int mul = 3; // ==> x-values: 0, 3, 6 instead of 0, 1, 2
+#else
+  int mul = 4; // ==> x-values: 0, 4, 8, 12, 16, 20 instead of 0, 1, 2, 3, 4, 5
+#endif
   for (int i = 0; i < numSlices; ++i)
   {
 #ifdef ISECT_GLSL_GEO
@@ -6152,7 +6137,7 @@ void vvTexRend::initVertArray(const int numSlices)
       _vertIndices[i][j] = idxIterator;
       ++idxIterator;
 
-      _vertArray[vertIterator] = j;
+      _vertArray[vertIterator] = j * mul;
       ++vertIterator;
       _vertArray[vertIterator] = i;
       ++vertIterator;
