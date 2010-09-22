@@ -5677,6 +5677,7 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
   parameterNames[ISECT_SHADER_V2_MAYBE] = "v2Maybe";             parameterTypes[ISECT_SHADER_V2_MAYBE] = VV_SHD_ARRAY;
 #endif
 
+  isectShader->enableShader(0);
   isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);
 
   delete[] parameterNames;
@@ -5819,6 +5820,7 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
   isectShader->setArrayParameter1i(0, ISECT_SHADER_V1, 22, 3); isectShader->setArrayParameter1i(0, ISECT_SHADER_V2, 22, 6);
   isectShader->setArrayParameter1i(0, ISECT_SHADER_V1, 23, 6); isectShader->setArrayParameter1i(0, ISECT_SHADER_V2, 23, 7);
 #endif
+  isectShader->disableShader(0);
 }
 
 //----------------------------------------------------------------------------
