@@ -50,9 +50,19 @@ void vvTestResult::setDiffTimes(const std::vector<float> diffTimes)
   _diffTimes = diffTimes;
 }
 
+void vvTestResult::setModelViewMatrices(const std::vector<vvMatrix> modelViewMatrices)
+{
+  _modelViewMatrices = modelViewMatrices;
+}
+
 std::vector<float> vvTestResult::getDiffTimes() const
 {
   return _diffTimes;
+}
+
+std::vector<vvMatrix> vvTestResult::getModelViewMatrices() const
+{
+  return _modelViewMatrices;
 }
 
 float vvTestResult::getTotalTime() const
@@ -171,12 +181,21 @@ void vvPerformanceTest::writeResultFiles()
   if (handle != NULL)
   {
     std::vector<float> times = _testResult->getDiffTimes();
+    std::vector<vvMatrix> matrices = _testResult->getModelViewMatrices();
     std::vector<float>::const_iterator it;
 
-    fprintf(handle, "\"TIME\",\"MODELVIEW_MATRIX\"");
+    fprintf(handle, "\"TIME\",\"MODELVIEW_MATRIX\"\n");
+    int i = 0;
     for (it = times.begin(); it != times.end(); ++it)
     {
-      fprintf(handle, "%f\n", *it);
+      fprintf(handle, "[%f],", *it);
+      fprintf(handle, "[%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f]",
+             matrices[i].e[0][0], matrices[i].e[0][1], matrices[i].e[0][2], matrices[i].e[0][3],
+             matrices[i].e[1][0], matrices[i].e[1][1], matrices[i].e[1][2], matrices[i].e[1][3],
+             matrices[i].e[2][0], matrices[i].e[2][1], matrices[i].e[2][2], matrices[i].e[2][3],
+             matrices[i].e[3][0], matrices[i].e[3][1], matrices[i].e[3][2], matrices[i].e[3][3]);
+      fprintf(handle, "\n");
+      ++i;
     }
     fclose(handle);
   }

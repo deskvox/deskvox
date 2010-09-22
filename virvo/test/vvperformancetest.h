@@ -36,8 +36,10 @@ class vvTestResult
     virtual ~vvTestResult();
 
     void setDiffTimes(const std::vector<float> diffTimes);
+    void setModelViewMatrices(const std::vector<vvMatrix> modelViewMatrices);
 
     std::vector<float> getDiffTimes() const;
+    std::vector<vvMatrix> getModelViewMatrices() const;
     float getTotalTime() const;
     float getAvgTime() const;
     float getMaxTime() const;
@@ -47,6 +49,7 @@ class vvTestResult
     void calc();
   private:
     std::vector<float> _diffTimes;
+    std::vector<vvMatrix> _modelViewMatrices;
     float _totalTime;
     float _avgTime;
     float _maxTime;

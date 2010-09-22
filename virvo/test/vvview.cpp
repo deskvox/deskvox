@@ -1386,6 +1386,7 @@ void vvView::performanceTest()
        vvPerformanceTest* test = *it;
 
        std::vector<float> diffTimes;
+       std::vector<vvMatrix> modelViewMatrices;
 
        vvStopwatch* totalTime = new vvStopwatch();
        totalTime->start();
@@ -1439,11 +1440,13 @@ void vvView::performanceTest()
            }
            ds->displayCallback();
            diffTimes.push_back(totalTime->getDiff());
+           modelViewMatrices.push_back(ds->ov->mv);
 
            ++framesRendered;
          }
        }
        test->getTestResult()->setDiffTimes(diffTimes);
+       test->getTestResult()->setModelViewMatrices(modelViewMatrices);
        test->writeResultFiles();
 
        if (test->getVerbose())
