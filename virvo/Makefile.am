@@ -3,7 +3,9 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 SHADERS = \
-	shader/vv_intersection.cg \
+	shader/vv_intersection.glsl \
+	shader/vv_intersection_ver.glsl \
+	shader/vv_intersection_geo.glsl \
 	shader/vv_shader01.cg \
 	shader/vv_shader02.cg \
 	shader/vv_shader03.cg \
