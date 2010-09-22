@@ -71,14 +71,14 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
   if (renderer->_proxyGeometryOnGpu)
   {
-    int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
-                         1, 2, 3, 0, 7, 4, 5, 6,
-                         2, 7, 6, 3, 4, 1, 0, 5,
-                         3, 6, 5, 0, 7, 2, 1, 4,
-                         4, 5, 6, 7, 0, 1, 2, 3,
-                         5, 0, 3, 6, 1, 4, 7, 2,
-                         6, 7, 4, 5, 2, 3, 0, 1,
-                         7, 6, 3, 2, 5, 4, 1, 0 };
+    const int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
+                               1, 2, 3, 0, 7, 4, 5, 6,
+                               2, 7, 6, 3, 4, 1, 0, 5,
+                               3, 6, 5, 0, 7, 2, 1, 4,
+                               4, 5, 6, 7, 0, 1, 2, 3,
+                               5, 0, 3, 6, 1, 4, 7, 2,
+                               6, 7, 4, 5, 2, 3, 0, 1,
+                               7, 6, 3, 2, 5, 4, 1, 0 };
 
     float edges[8 * 3];
     for (int i = 0; i < 8; ++i)
@@ -92,7 +92,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     // Pass planeStart along with brickMin and spare one setParameter call.
     isectShader->setParameter4f(0, ISECT_SHADER_BRICKMIN, min[0], min[1], min[2], -farthest.length());
     // Pass front index along with brickDimInv and spare one setParameter call.
-    isectShader->setParameter4f(0, ISECT_SHADER_BRICKDIMINV, 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2], idx * 8);
+    isectShader->setParameter3f(0, ISECT_SHADER_BRICKDIMINV, 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
     // Mind that textures overlap a little bit for correct interpolation at the borders.
     // Thus add that little difference.
     isectShader->setParameter3f(0, ISECT_SHADER_TEXRANGE, texRange[0], texRange[1], texRange[2]);
@@ -110,10 +110,17 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
 #endif
 
 #else
-    GLushort indexArray[6] = { 0, 1, 2, 3, 4, 5 };
+#ifdef ISECT_GLSL_GEO
+    const GLushort indexArray[3] = { 0, 1, 2 };
+
+    isectShader->setParameter1i(0, ISECT_SHADER_FIRSTPLANE, startSlices);
+    glDrawElementsInstanced(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, indexArray, primCount);
+#else
+    const GLushort indexArray[6] = { 0, 1, 2, 3, 4, 5 };
 
     isectShader->setParameter1i(0, ISECT_SHADER_FIRSTPLANE, startSlices);
     glDrawElementsInstanced(GL_POLYGON, 6, GL_UNSIGNED_SHORT, indexArray, primCount);
+#endif
 #endif
   }
   else // render proxy geometry on gpu? else then:

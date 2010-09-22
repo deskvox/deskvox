@@ -53,7 +53,7 @@ class vvThreadVisitor;
 const int MAX_DEBUG_COLORS = 8;
 
 // Uncomment to use geometry programs in addition to vertex programs.
-#define ISECT_GLSL_GEO
+//#define ISECT_GLSL_GEO
 
 // Uncomment to use instanced geometry transfer rather than using vertex arrays.
 //#define ISECT_GLSL_INST
@@ -88,13 +88,9 @@ const int ISECT_SHADER_DELTA         = 8;
 const int ISECT_SHADER_PLANENORMAL   = 9;
 const int ISECT_SHADER_FRONTINDEX    = 10;
 const int ISECT_SHADER_VERTICES      = 11;
-#if !defined(ISECT_CG) && defined(ISECT_GLSL_INST)
-const int ISECT_SHADER_FIRSTPLANE    = 12;
-#endif
-#ifdef ISECT_GLSL_GEO
 const int ISECT_SHADER_V1_MAYBE      = 12;
 const int ISECT_SHADER_V2_MAYBE      = 13;
-#endif
+const int ISECT_SHADER_FIRSTPLANE    = 14;
 
 class VIRVOEXPORT vvTexRend : public vvRenderer
 {

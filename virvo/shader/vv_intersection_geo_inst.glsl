@@ -1,5 +1,6 @@
 #version 120
 #extension GL_EXT_geometry_shader4 : enable
+#extension GL_ARB_draw_instanced : enable
 
 uniform vec3 planeNormal;
 

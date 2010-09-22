@@ -1,3 +1,6 @@
+#extension GL_ARB_draw_instanced : enable
+
+uniform int firstPlane;
 uniform vec3 planeNormal;
 
 uniform float delta;
@@ -6,17 +9,23 @@ uniform vec4 brickMin;
 uniform vec3 brickDimInv;
 uniform vec3 texMin;
 uniform vec3 texRange;
-uniform int v1[24];
+uniform int v1[9];
+uniform int v2[9];
+
+varying float planeDist;
 
 void main()
 {
-  float planeDist = brickMin.w + gl_Vertex.y * delta;
+  planeDist = brickMin.w + (float(firstPlane) + float(gl_InstanceID)) * delta;
   vec3 pos;
-
-  vec3 vecV1 = vertices[v1[int(gl_Vertex.x)]];
+  
   for (int i=0; i<3; ++i)
   {
-    vec3 vecV2 = vertices[v1[int(gl_Vertex.x) + i + 1]];
+    int vIdx1 = v1[int(gl_Vertex.x) + i];
+    int vIdx2 = v2[int(gl_Vertex.x) + i];
+    
+    vec3 vecV1 = vertices[vIdx1];
+    vec3 vecV2 = vertices[vIdx2];
 
     vec3 vecStart = vecV1;
     vec3 vecDir = vecV2-vecV1;
@@ -32,9 +41,8 @@ void main()
       pos = vecStart + lambda * vecDir;
       break;
     }
-    vecV1 = vecV2;
   }
-
+  
   gl_Position = gl_ModelViewProjectionMatrix * vec4(pos, 1.0);
   gl_TexCoord[0].xyz = (pos - brickMin.xyz) * brickDimInv.xyz;
   gl_TexCoord[0].xyz = gl_TexCoord[0].xyz * texRange + texMin;

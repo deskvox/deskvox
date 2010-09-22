@@ -3390,13 +3390,22 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       if (_proxyGeometryOnGpu)
       {
         glEnableClientState(GL_VERTEX_ARRAY);
-        GLint vertArray[12] = { 0, 0,
-                                1, 0,
-                                2, 0,
-                                3, 0,
-                                4, 0,
-                                5, 0 };
+#ifdef ISECT_GLSL_INST
+#ifdef ISECT_GLSL_GEO
+        const GLint vertArray[6] = { 0, 0,
+                                     3, 0,
+                                     6, 0 };
+
+#else
+        const GLint vertArray[12] = { 0, 0,
+                                      4, 0,
+                                      8, 0,
+                                      12, 0,
+                                      16, 0,
+                                      20, 0 };
+#endif
         glVertexPointer(2, GL_INT, 0, vertArray);
+#endif
       }
       for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
       {
@@ -5545,20 +5554,23 @@ bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader) const
 bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader) const
 {
 #ifdef ISECT_GLSL_GEO
-  const char* shaderFileName = "vv_intersection_geo.glsl";
+  const char* shaderFileName = "vv_intersection_geo";
 #else
+  const char* shaderFileName = "vv_intersection";
+#endif
+
 #ifdef ISECT_GLSL_INST
-  const char* shaderFileName = "vv_intersection_inst.glsl";
+  const char* instStr = "_inst";
 #else
-  const char* shaderFileName = "vv_intersection.glsl";
+  const char* instStr = "";
 #endif
-#endif
+  const char* shaderExt = ".glsl";
   const char* unixShaderDir = NULL;
   char* shaderFile = NULL;
   char* shaderPath = NULL;
 
-  shaderFile = new char[strlen(shaderFileName) + 1];
-  sprintf(shaderFile, "%s", shaderFileName);
+  shaderFile = new char[strlen(shaderFileName) + strlen(instStr) + strlen(shaderExt) + 1];
+  sprintf(shaderFile, "%s%s%s", shaderFileName, instStr, shaderExt);
 
   unixShaderDir = isectShader->getShaderDir();
 
@@ -5570,12 +5582,14 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
 #endif
 
 #ifdef ISECT_GLSL_GEO
-  const char* vertexFileName = "vv_intersection_ver.glsl";
+  const char* vertexFileName = "vv_intersection_ver";
+  char* vertexFile = new char[strlen(vertexFileName) + strlen(instStr) + strlen(shaderExt) + 1];
+  sprintf(vertexFile, "%s%s%s", vertexFileName, instStr, shaderExt);
   char* vertexPath = new char[strlen(unixShaderDir) + 1 + strlen(vertexFileName) + 1];
 #ifdef _WIN32
-  sprintf(vertexPath, "%s\\%s", unixShaderDir, vertexFileName);
+  sprintf(vertexPath, "%s\\%s", unixShaderDir, vertexFile);
 #else
-  sprintf(vertexPath, "%s/%s", unixShaderDir, vertexFileName);
+  sprintf(vertexPath, "%s/%s", unixShaderDir, vertexFile);
 #endif
   bool ok = isectShader->loadGeomShader(vertexPath, shaderPath);
 #else
@@ -5615,15 +5629,8 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
 
 void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
 {
-#ifndef ISECT_GLSL_INST
-#ifdef ISECT_GLSL_GEO
-  const int parameterCount = 14;
-#else
-  const int parameterCount = 12;
-#endif
-#else
-  const int parameterCount = 13;
-#endif
+  const int parameterCount = 15;
+
   const char** parameterNames = new const char*[parameterCount];
   vvShaderParameterType* parameterTypes = new vvShaderParameterType[parameterCount];
   parameterNames[ISECT_SHADER_SEQUENCE] = "sequence";            parameterTypes[ISECT_SHADER_SEQUENCE] = VV_SHD_ARRAY;
@@ -5639,13 +5646,9 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
   parameterNames[ISECT_SHADER_PLANENORMAL] = "planeNormal";      parameterTypes[ISECT_SHADER_PLANENORMAL] = VV_SHD_VEC3;
   parameterNames[ISECT_SHADER_FRONTINDEX] = "frontIndex";        parameterTypes[ISECT_SHADER_FRONTINDEX] = VV_SHD_SCALAR;
   parameterNames[ISECT_SHADER_VERTICES] = "vertices";            parameterTypes[ISECT_SHADER_VERTICES] = VV_SHD_ARRAY;
-#ifdef ISECT_GLSL_INST
-  parameterNames[ISECT_SHADER_FIRSTPLANE] = "firstPlane";        parameterTypes[ISECT_SHADER_FIRSTPLANE] = VV_SHD_SCALAR;
-#endif
-#ifdef ISECT_GLSL_GEO
   parameterNames[ISECT_SHADER_V1_MAYBE] = "v1Maybe";             parameterTypes[ISECT_SHADER_V1_MAYBE] = VV_SHD_ARRAY;
   parameterNames[ISECT_SHADER_V2_MAYBE] = "v2Maybe";             parameterTypes[ISECT_SHADER_V2_MAYBE] = VV_SHD_ARRAY;
-#endif
+  parameterNames[ISECT_SHADER_FIRSTPLANE] = "firstPlane";        parameterTypes[ISECT_SHADER_FIRSTPLANE] = VV_SHD_SCALAR;
 
   isectShader->enableShader(0);
   isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);

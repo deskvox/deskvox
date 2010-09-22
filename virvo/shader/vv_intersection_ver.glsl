@@ -3,7 +3,7 @@ uniform vec3 planeNormal;
 uniform float delta;
 uniform vec3 vertices[8];
 uniform vec4 brickMin;
-uniform vec4 brickDimInv;
+uniform vec3 brickDimInv;
 uniform vec3 texMin;
 uniform vec3 texRange;
 uniform int v1[9];
