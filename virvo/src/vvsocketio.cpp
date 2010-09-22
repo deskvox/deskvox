@@ -284,7 +284,6 @@ vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick)
   brick->maxValue = (int)vvToolshed::read32(&buffer[40]);
 
   brick->visible = (bool)buffer[44];
-  brick->atBorder = (bool)buffer[45];
   brick->insideProbe = (bool)buffer[46];
   // One byte for padding.
   brick->index = (int)vvToolshed::read32(&buffer[48]);
@@ -330,7 +329,6 @@ vvSocket::ErrorType vvSocketIO::putBrick(vvBrick* brick)
   vvToolshed::write32(&buffer[40], brick->maxValue);
 
   buffer[44] = (uchar)brick->visible;
-  buffer[45] = (uchar)brick->atBorder;
   buffer[46] = (uchar)brick->insideProbe;
   // One byte for padding.
   vvToolshed::write32(&buffer[48], brick->index);

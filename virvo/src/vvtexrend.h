@@ -52,14 +52,11 @@ class vvThreadVisitor;
  */
 const int MAX_DEBUG_COLORS = 8;
 
+// Uncomment to use geometry programs in addition to vertex programs.
 #define ISECT_GLSL_GEO
 
-// Uncomment to prefer Cg intersection program over Glsl program.
-//#define ISECT_CG
-#ifndef ISECT_CG
 // Uncomment to use instanced geometry transfer rather than using vertex arrays.
 //#define ISECT_GLSL_INST
-#endif
 
 //============================================================================
 // Class Definitions

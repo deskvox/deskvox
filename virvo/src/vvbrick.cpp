@@ -29,117 +29,7 @@
 void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
                      const vvVector3& farthest, const vvVector3& delta,
                      const vvVector3& probeMin, const vvVector3& probeMax,
-                     GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges,
-                     const vvVector3& eye, const bool isOrtho) const
-{
-  std::vector<vvBrick*> bricks;
-
-  const vvVector3 voxSize(renderer->vd->getSize()[0] / (renderer->vd->vox[0] - 1),
-                          renderer->vd->getSize()[1] / (renderer->vd->vox[1] - 1),
-                          renderer->vd->getSize()[2] / (renderer->vd->vox[2] - 1));
-
-  const vvVector3 halfBrick(float(renderer->texels[0]-renderer->_renderState._brickTexelOverlap) * 0.25f * voxSize[0],
-                            float(renderer->texels[1]-renderer->_renderState._brickTexelOverlap) * 0.25f * voxSize[1],
-                            float(renderer->texels[2]-renderer->_renderState._brickTexelOverlap) * 0.25f * voxSize[2]);
-#if 0
-  const float xHalf = (max[0] + min[0]) * 0.5f;
-  const float x14   = pos[0] - halfBrick[0];
-  const float x34   = pos[0] + halfBrick[0];
-
-  const float yHalf = (max[1] + min[1]) * 0.5f;
-  const float y14   = pos[1] - halfBrick[1];
-  const float y34   = pos[1] + halfBrick[1];
-
-  const float zHalf = (max[2] + min[2]) * 0.5f;
-  const float z14   = pos[2] - halfBrick[2];
-  const float z34   = pos[2] + halfBrick[2];
-
-  const float texRangeX = (texRange[0] - texMin[0]) * 0.5f;
-  const float texRangeY = (texRange[1] - texMin[1]) * 0.5f;
-  const float texRangeZ = (texRange[2] - texMin[2]) * 0.5f;
-
-  vvBrick brick0 = vvBrick(this);
-  brick0.min = vvVector3(min[0], min[1], min[0]);//brick0.min.print("min");
-  brick0.max = vvVector3(xHalf, yHalf, zHalf);//brick0.max.print("max");
-  brick0.pos = vvVector3(x14, y14, z14);//brick0.pos.print("pos");
-  brick0.texMin = vvVector3(texMin[0], texMin[1], texMin[2]);
-  brick0.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
-  bricks.push_back(&brick0);
-
-  vvBrick brick1 = vvBrick(this);
-  brick1.min = vvVector3(xHalf, min[1], min[2]);
-  brick1.max = vvVector3(max[0], yHalf, zHalf);
-  brick1.pos = vvVector3(x34, y14, z14);
-  brick1.texMin = vvVector3(0.5f, texMin[1], texMin[2]);
-  brick1.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
-  bricks.push_back(&brick1);
-
-  vvBrick brick2 = vvBrick(this);
-  brick2.min = vvVector3(min[0], yHalf, min[2]);
-  brick2.max = vvVector3(xHalf, max[1], zHalf);
-  brick2.pos = vvVector3(x14, y34, z14);
-  brick2.texMin = vvVector3(texMin[0], 0.5f, texMin[2]);
-  brick2.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
-  bricks.push_back(&brick2);
-
-  vvBrick brick3 = vvBrick(this);
-  brick3.min = vvVector3(xHalf, yHalf, min[2]);
-  brick3.max = vvVector3(max[0], max[1], zHalf);
-  brick3.pos = vvVector3(x34, y34, z14);
-  brick3.texMin = vvVector3(0.5f, 0.5f, texMin[2]);
-  brick3.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
-  bricks.push_back(&brick3);
-
-  vvBrick brick4 = vvBrick(this);
-  brick4.min = vvVector3(min[0], min[1], zHalf);
-  brick4.max = vvVector3(xHalf, yHalf, max[2]);
-  brick4.pos = vvVector3(x14, y14, z34);
-  brick4.texMin = vvVector3(texMin[0], texMin[1], 0.5f);
-  brick4.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
-  bricks.push_back(&brick4);
-
-  vvBrick brick5 = vvBrick(this);
-  brick5.min = vvVector3(xHalf, min[1], zHalf);
-  brick5.max = vvVector3(max[0], yHalf, max[2]);
-  brick5.pos = vvVector3(x34, y14, z34);
-  brick5.texMin = vvVector3(0.5f, texMin[1], 0.5f);
-  brick5.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
-  bricks.push_back(&brick5);
-
-  vvBrick brick6 = vvBrick(this);
-  brick6.min = vvVector3(min[0], yHalf, zHalf);
-  brick6.max = vvVector3(xHalf, max[1], max[2]);
-  brick6.pos = vvVector3(x14, y34, z34);
-  brick6.texMin = vvVector3(texMin[0], 0.5f,  0.5f);
-  brick6.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
-  bricks.push_back(&brick6);
-
-  vvBrick brick7 = vvBrick(this);
-  brick7.min = vvVector3(xHalf, yHalf, zHalf);
-  brick7.max = vvVector3(max[0], max[1], max[2]);
-  brick7.pos = vvVector3(x34, y34, z34);
-  brick7.texMin = vvVector3(0.5f, 0.5f, 0.5f);
-  brick7.texRange = vvVector3(texRangeX, texRangeY, texRangeZ);
-  bricks.push_back(&brick7);
-
-  renderer->sortBrickList(bricks, eye, normal, isOrtho);
-#else
-  vvBrick brick = vvBrick(this);
-  bricks.push_back(&brick);
-#endif
-
-  glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
-  for (std::vector<vvBrick*>::const_iterator it = bricks.begin(); it != bricks.end(); ++it)
-  {
-    (*it)->renderGL(renderer, normal, farthest, delta, probeMin, probeMax,
-                    texNames, isectShader, setupEdges);
-  }
-}
-
-void vvBrick::renderGL(vvTexRend* const renderer, const vvVector3& normal,
-                       const vvVector3& farthest, const vvVector3& delta,
-                       const vvVector3& probeMin, const vvVector3& probeMax,
-                       GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges) const
+                     GLuint*& texNames, vvShaderManager* const isectShader) const
 {
   const vvVector3 dist = max - min;
 
@@ -178,21 +68,9 @@ void vvBrick::renderGL(vvTexRend* const renderer, const vvVector3& normal,
   const int startSlices = static_cast<const int>(ceilf(minDot * deltaInv));
   const int endSlices = static_cast<const int>(floorf(maxDot * deltaInv));
 
+  glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
   if (renderer->_proxyGeometryOnGpu)
   {
-#ifdef ISECT_CG
-    isectShader->setArrayParameter3f(0, ISECT_SHADER_VERTICES, 0, verts[0].e[0], verts[0].e[1], verts[0].e[2]);
-    if (setupEdges)
-    {
-      for (int i = 1; i < 8; ++i)
-      {
-        isectShader->setArrayParameter3f(0, ISECT_SHADER_VERTICES, i,
-                                         verts[i].e[0]-verts[0].e[0],
-                                         verts[i].e[1]-verts[0].e[1],
-                                         verts[i].e[2]-verts[0].e[2]);
-      }
-    }
-#else
     int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
                          1, 2, 3, 0, 7, 4, 5, 6,
                          2, 7, 6, 3, 4, 1, 0, 5,
@@ -210,7 +88,6 @@ void vvBrick::renderGL(vvTexRend* const renderer, const vvVector3& normal,
       edges[i * 3 + 2] =  verts[sequence[idx * 8 + i]].e[2];
     }
     isectShader->setArray3f(0, ISECT_SHADER_VERTICES, edges, 8 * 3);
-#endif
 
     // Pass planeStart along with brickMin and spare one setParameter call.
     isectShader->setParameter4f(0, ISECT_SHADER_BRICKMIN, min[0], min[1], min[2], -farthest.length());
@@ -435,7 +312,6 @@ void vvBrick::print() const
   cerr << "minValue:\t" << minValue << endl;
   cerr << "maxValue:\t" << maxValue << endl;
   cerr << "visible:\t" << visible << endl;
-  cerr << "atBorder:\t" << atBorder << endl;
   cerr << "insideProbe:\t" << insideProbe << endl;
   cerr << "startOffset:\t" << startOffset[0] << " " << startOffset[1] << " " << startOffset[2] << endl;
   cerr << "texels:\t" << texels[0] << " " << texels[1] << " " << texels[2] << endl;

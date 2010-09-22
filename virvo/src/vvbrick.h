@@ -50,7 +50,6 @@ public:
     minValue = rhs->minValue;
     maxValue = rhs->maxValue;
     visible = rhs->visible;
-    atBorder = rhs->atBorder;
     insideProbe = rhs->insideProbe;
     index = rhs->index;
     startOffset[0] = rhs->startOffset[0];
@@ -70,13 +69,7 @@ public:
   void render(vvTexRend* const renderer, const vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges,
-              const vvVector3& eye, const bool isOrtho) const;
-
-  void renderGL(vvTexRend* const renderer, const vvVector3& normal,
-                const vvVector3& farthest, const vvVector3& delta,
-                const vvVector3& probeMin, const vvVector3& probeMax,
-                GLuint*& texNames, vvShaderManager* const isectShader, const bool setupEdges) const;
+              GLuint*& texNames, vvShaderManager* const isectShader) const;
 
   void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const;
   bool upload3DTexture(const GLuint& texName, const uchar* texData,
@@ -108,7 +101,6 @@ public:
   int maxValue;                                     ///< max scalar value after lut, needed for empty space leaping
   bool visible;                                     ///< if brick isn't visible, it won't be rendered at all
   bool insideProbe;                                 ///< true iff brick is completely included inside probe
-  bool atBorder;                                    ///< true iff brick at border is not fully used
   int index;                                        ///< index for texture object
   int startOffset[3];                               ///< startvoxel of brick
   int texels[3];                                    ///< number of texels in each dimension
