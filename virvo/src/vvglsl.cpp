@@ -294,6 +294,13 @@ void vvGLSL::printCompatibilityInfo() const
 
 }
 
+void vvGLSL::setParameter1f(const int programIndex, const char* parameterName,
+                            const float& f1)
+{
+  const GLint uniform = glGetUniformLocation(getFragProgramHandle(programIndex), parameterName);
+  glUniform1f(uniform, f1);
+}
+
 void vvGLSL::setParameter1f(const int programIndex, const int parameterIndex,
                             const float& f1)
 {
@@ -315,11 +322,25 @@ void vvGLSL::setParameter3f(const int programIndex, const int parameterIndex,
   glUniform3f(_uniformParameters[parameterIndex], f1, f2, f3);
 }
 
+void vvGLSL::setParameter4f(const int programIndex, const char* parameterName,
+                            const float& f1, const float& f2, const float& f3, const float& f4)
+{
+  const GLint uniform = glGetUniformLocation(getFragProgramHandle(programIndex), parameterName);
+  glUniform4f(uniform, f1, f2, f3, f4);
+}
+
 void vvGLSL::setParameter4f(const int programIndex, const int parameterIndex,
                             const float& f1, const float& f2, const float& f3, const float& f4)
 {
   (void)programIndex;
   glUniform4f(_uniformParameters[parameterIndex], f1, f2, f3, f4);
+}
+
+void vvGLSL::setParameter1i(const int programIndex, const char* parameterName,
+                            const int& i1)
+{
+  const GLint uniform = glGetUniformLocation(getFragProgramHandle(programIndex), parameterName);
+  glUniform1i(uniform, i1);
 }
 
 void vvGLSL::setParameter1i(const int programIndex, const int parameterIndex,

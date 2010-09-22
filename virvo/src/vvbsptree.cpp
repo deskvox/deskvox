@@ -410,7 +410,7 @@ float vvHalfSpace::calcContainedVolume() const
 }
 
 void vvHalfSpace::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
-                            vvVector3& probePosObj, vvVector3& probeSizeObj) const
+                            vvVector3&, vvVector3&) const
 {
   vvAABB probe(probeMin, probeMax);
   probe.intersect(_boundingBox);

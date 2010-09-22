@@ -1509,6 +1509,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
       // old format: followed by format specifier
       ttype = tokenizer->nextToken();
       if (ttype == vvTokenizer::VV_WORD)
+      {
         if (strcmp(tokenizer->sval, "SCALAR8")==0
             || strcmp(tokenizer->sval, "SCALAR8")==0)
         {
@@ -1521,6 +1522,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
         {
           done = error = true;
         }
+      }
     }
     else if (strcmp(tokenizer->sval, "DATA")==0)
     {

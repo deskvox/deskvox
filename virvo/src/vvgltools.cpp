@@ -60,6 +60,7 @@ void vvGLTools::printGLError(const char* msg)
 */
 bool vvGLTools::isGLVersionSupported(int major, int minor, int release)
 {
+  (void)release;
   // Get version string from OpenGL:
   const GLubyte* verstring = glGetString(GL_VERSION);
   if (verstring=='\0') return false;

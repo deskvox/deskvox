@@ -88,18 +88,23 @@ public:
 
   void printCompatibilityInfo() const;
 
+  virtual void setParameter1f(const int programIndex, const char* parameterName,
+                              const float& f1);
   virtual void setParameter1f(const int programIndex, const int parameterIndex,
                               const float& f1);
 
   virtual void setParameter3f(const int programIndex, const char* parameterName,
                               const float& f1, const float& f2, const float& f3);
-
   virtual void setParameter3f(const int programIndex, const int parameterIndex,
                               const float& f1, const float& f2, const float& f3);
 
+  virtual void setParameter4f(const int programIndex, const char* parameterName,
+                              const float& f1, const float& f2, const float& f3, const float& f4);
   virtual void setParameter4f(const int programIndex, const int parameterIndex,
                               const float& f1, const float& f2, const float& f3, const float& f4);
 
+  virtual void setParameter1i(const int programIndex, const char* parameterName,
+                              const int& i1);
   virtual void setParameter1i(const int programIndex, const int parameterIndex,
                               const int& i1);
 

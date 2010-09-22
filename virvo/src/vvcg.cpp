@@ -175,6 +175,15 @@ void vvCg::setParameter1i(const int programIndex, const char* parameterName,
   cgGLSetParameter1f(param.getParameter(), static_cast<float>(i1));
 }
 
+void vvCg::setParameter1i(const int programIndex, const int parameterIndex,
+                          const int& i1)
+{
+  assert(_parametersInitialized[programIndex] == true);
+
+  const vvCgParameter param = _cgParameters[programIndex][parameterIndex];
+  cgGLSetParameter1f(param.getParameter(), static_cast<float>(i1));
+}
+
 void vvCg::setParameterTexId(const int programIndex, const char* parameterName, const unsigned int& ui1)
 {
   assert(_parametersInitialized[programIndex] == true);
