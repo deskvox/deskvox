@@ -126,6 +126,7 @@ class vvView
       std::vector<char*> slaveFileNames;          ///< a list with file names where slaves can find the appropriate volume data
       vvRenderMaster* _renderMaster;
       const char* testSuiteFileName;
+      bool showBricks;                           ///< show brick outlines when brick renderer is used
    public:
       vvView();
       ~vvView();

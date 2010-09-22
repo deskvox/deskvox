@@ -126,6 +126,7 @@ vvView::vvView()
    _renderMaster         = NULL;
    benchmark             = false;
    testSuiteFileName     = NULL;
+   showBricks           = false;
 }
 
 
@@ -675,6 +676,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
    renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, ds->gpuproxygeo);
    renderer->setParameter(vvRenderer::VV_OFFSCREENBUFFER, useOffscreenBuffer);
    renderer->setParameter(vvRenderer::VV_IMG_PRECISION, bufferPrecision);
+   static_cast<vvTexRend*>(renderer)->setShowBricks(showBricks);
 }
 
 
@@ -702,6 +704,7 @@ void vvView::keyboardCallback(unsigned char key, int, int)
       case '+':
       case '=': ds->rendererMenuCallback(99); break;
       case 'a': ds->animMenuCallback(2);  break;
+      case 'B': ds->optionsMenuCallback(12); break;
       case 'b': ds->viewMenuCallback(0);  break;
       case 'c': ds->viewMenuCallback(10); break;
       case 'd': ds->mainMenuCallback(5);  break;
@@ -1064,9 +1067,9 @@ void vvView::optionsMenuCallback(int item)
       case 12:                                     // toggle showing of bricks
          {
             vvTexRend *rend = dynamic_cast<vvTexRend *>(ds->renderer);
-            bool show = rend->getShowBricks();
-            rend->setShowBricks( !show );
-            cerr << (show?"not ":"") << "showing bricks" << endl;
+            ds->showBricks = !ds->showBricks;
+            rend->setShowBricks( ds->showBricks );
+            cerr << (!ds->showBricks?"not ":"") << "showing bricks" << endl;
          }
          break;
       case 13:
@@ -1602,7 +1605,7 @@ void vvView::createMenus()
    glutAddMenuEntry("Decrease z size [h]", 9);
    glutAddMenuEntry("Increase buffer precision", 10);
    glutAddMenuEntry("Decrease buffer precision", 11);
-   glutAddMenuEntry("Show/hide bricks", 12);
+   glutAddMenuEntry("Show/hide bricks [B]", 12);
 
    // Transfer function menu:
    transferMenu = glutCreateMenu(transferMenuCallback);
@@ -1975,6 +1978,9 @@ void vvView::displayHelpInfo()
    cerr << "-testsuitefilename" << endl;
    cerr << " Specify a file with performance tests" << endl;
    cerr << endl;
+   cerr << "-showbricks" << endl;
+   cerr << " Show the brick outlines \\wo volume when brick renderer is used" << endl;
+   cerr << endl;
 #ifndef WIN32
    cerr << endl;
 #endif
@@ -2190,6 +2196,10 @@ bool vvView::parseCommandLine(int argc, char** argv)
             cerr << "Display name unspecified" << endl;
             return false;
          }
+      }
+      else if (vvToolshed::strCompare(argv[arg], "-showbricks")==0)
+      {
+         showBricks = true;
       }
       else
       {
