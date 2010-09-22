@@ -25,8 +25,9 @@
 
 #include "../src/vvtexrend.h"
 #include "../src/vvvecmath.h"
+#include "vvobjview.h"
 
-#define NUM_COL_HEADERS 9
+#define NUM_COL_HEADERS 10
 
 class vvTestResult
 {
@@ -81,6 +82,7 @@ class vvPerformanceTest
     void setVoxelType(const vvTexRend::VoxelType voxelType);
     void setFrames(const int frames);
     void setTestAnimation(const TestAnimation testAnimation);
+    void setProjectionType(const vvObjView::ProjectionType projectionType);
 
     int getId() const;
     int getIterations() const;
@@ -91,6 +93,7 @@ class vvPerformanceTest
     vvTexRend::VoxelType getVoxelType() const;
     int getFrames() const;
     TestAnimation getTestAnimation() const;
+    vvObjView::ProjectionType getProjectionType() const;
     vvTestResult* getTestResult() const;
   private:
     int _id;
@@ -102,6 +105,7 @@ class vvPerformanceTest
     vvTexRend::VoxelType _voxelType;
     int _frames;
     TestAnimation _testAnimation;
+    vvObjView::ProjectionType _projectionType;
     vvTestResult* _testResult;
 };
 

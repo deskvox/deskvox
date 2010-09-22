@@ -126,6 +126,7 @@ vvPerformanceTest::vvPerformanceTest()
   _geomType = vvTexRend::VV_AUTO;
   _voxelType = vvTexRend::VV_BEST;
   _testAnimation = VV_ROT_Y;
+  _projectionType = vvObjView::PERSPECTIVE;
 }
 
 vvPerformanceTest::~vvPerformanceTest()
@@ -242,6 +243,11 @@ void vvPerformanceTest::setTestAnimation(const TestAnimation testAnimation)
   _testAnimation = testAnimation;
 }
 
+void vvPerformanceTest::setProjectionType(const vvObjView::ProjectionType projectionType)
+{
+  _projectionType = projectionType;
+}
+
 int vvPerformanceTest::getId() const
 {
   return _id;
@@ -285,6 +291,11 @@ int vvPerformanceTest::getFrames() const
 vvPerformanceTest::TestAnimation vvPerformanceTest::getTestAnimation() const
 {
   return _testAnimation;
+}
+
+vvObjView::ProjectionType vvPerformanceTest::getProjectionType() const
+{
+  return _projectionType;
 }
 
 vvTestResult* vvPerformanceTest::getTestResult() const
@@ -404,6 +415,7 @@ void vvTestSuite::initColumnHeaders()
   _columnHeaders[6] = "VOXELTYPE";      _headerPos[6] = 6;
   _columnHeaders[7] = "FRAMES";         _headerPos[7] = 7;
   _columnHeaders[8] = "TESTANIMATION";  _headerPos[8] = 8;
+  _columnHeaders[9] = "PROJECTIONTYPE"; _headerPos[9] = 9;
 }
 
 void vvTestSuite::initHeader(char* str, const int col)
@@ -520,6 +532,17 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const int col)
     else if (strcmp(str, "VV_ROT_RAND") == 0)
     {
       test->setTestAnimation(vvPerformanceTest::VV_ROT_RAND);
+    }
+  }
+  else if (strcmp(headerName, "PROJECTIONTYPE") == 0)
+  {
+    if (strcmp(str, "ORTHO") == 0)
+    {
+      test->setProjectionType(vvObjView::ORTHO);
+    }
+    else if (strcmp(str, "PERSPECTIVE") == 0)
+    {
+      test->setProjectionType(vvObjView::PERSPECTIVE);
     }
   }
 }

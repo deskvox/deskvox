@@ -1396,6 +1396,15 @@ void vvView::performanceTest()
        ds->draftQuality = test->getQuality();
        ds->ov->reset();
        ds->ov->resetMV();
+       ds->perspectiveMode = (test->getProjectionType() == vvObjView::PERSPECTIVE);
+       if (ds->perspectiveMode)
+       {
+          ds->ov->setProjection(vvObjView::PERSPECTIVE, 45.0f, 0.01f, 100.0f);
+       }
+       else
+       {
+          ds->ov->setProjection(vvObjView::ORTHO, 1.5f, -100.0, 100.0);
+       }
        // Do this once to propagate the changes... .
        ds->displayCallback();
        ds->renderer->profileStart();
