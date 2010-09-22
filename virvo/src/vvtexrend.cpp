@@ -3264,7 +3264,9 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     }
   }
 
+#ifndef ISECT_GLSL_INST
   initVertArray(numSlices);
+#endif
 
   getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _renderState._isROIChanged);
 
