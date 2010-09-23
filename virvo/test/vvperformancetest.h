@@ -134,7 +134,11 @@ class vvTestSuite
     void init();
     void initColumnHeaders();
     void initHeader(char* str, const int col);
-    void initValue(vvPerformanceTest* test, char* str, const int col);
+    void initValue(vvPerformanceTest* test, char* str, const char* headerName);
+    void initValue(vvPerformanceTest* test, char* str, const int col,
+                   vvPerformanceTest* previousTest);
+    void initFromPreviousValue(vvPerformanceTest* test, const char* headerName,
+                               vvPerformanceTest* previousTest);
     char* getStripped(const char* item);
     void toUpper(char* str);
     bool isHeader(const char* str);

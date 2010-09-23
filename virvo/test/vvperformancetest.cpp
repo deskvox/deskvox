@@ -365,6 +365,11 @@ void vvTestSuite::init()
     {
       // One test per line (except the first one, which contains the header mapping).
       vvPerformanceTest* test = NULL;
+      vvPerformanceTest* previousTest = NULL;
+      if (!_tests.empty())
+      {
+        previousTest = _tests.back();
+      }
       bool testSaved = false;
       int itemCount = 0;
       char* item;
@@ -377,7 +382,7 @@ void vvTestSuite::init()
       else
       {
         test = new vvPerformanceTest();
-        initValue(test, tmp, itemCount);
+        initValue(test, tmp, itemCount, previousTest);
       }
       ++itemCount;
       delete[] tmp;
@@ -392,7 +397,7 @@ void vvTestSuite::init()
         }
         else
         {
-          initValue(test, tmp, itemCount);
+          initValue(test, tmp, itemCount, previousTest);
         }
         ++itemCount;
         delete[] tmp;
@@ -446,12 +451,8 @@ void vvTestSuite::initHeader(char* str, const int col)
   }
 }
 
-void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const int col)
+void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const char* headerName)
 {
-  toUpper(str);
-
-  const char* headerName = getHeaderName(col);
-
   if (strcmp(headerName, "BRICKSIZE_X") == 0)
   {
     test->setBrickDimX(atoi(str));
@@ -529,6 +530,10 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const int col)
     {
       test->setVoxelType(vvTexRend::VV_FRG_PRG);
     }
+    else if (strcmp(str, "VV_GLSL_SHD") == 0)
+    {
+      test->setVoxelType(vvTexRend::VV_GLSL_SHD);
+    }
   }
   else if (strcmp(headerName, "FRAMES") == 0)
   {
@@ -564,6 +569,154 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const int col)
       test->setProjectionType(vvObjView::PERSPECTIVE);
     }
   }
+}
+
+void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const int col,
+                            vvPerformanceTest* previousTest)
+{
+  toUpper(str);
+
+  const char* headerName = getHeaderName(col);
+
+  if (strcmp(str, "*") == 0)
+  {
+    // * means: take the value from the previous text.
+    initFromPreviousValue(test, headerName, previousTest);
+  }
+  else
+  {
+    initValue(test, str, headerName);
+  }
+}
+
+void vvTestSuite::initFromPreviousValue(vvPerformanceTest* test, const char* headerName,
+                                        vvPerformanceTest* previousTest)
+{
+  char* str = new char[256];
+  if (strcmp(headerName, "BRICKSIZE_X") == 0)
+  {
+    sprintf(str, "%i", (int)previousTest->getBrickDims()[0]);
+  }
+  else if (strcmp(headerName, "BRICKSIZE_Y") == 0)
+  {
+    sprintf(str, "%i", (int)previousTest->getBrickDims()[1]);
+  }
+  else if (strcmp(headerName, "BRICKSIZE_Z") == 0)
+  {
+    sprintf(str, "%i", (int)previousTest->getBrickDims()[2]);
+  }
+  else if (strcmp(headerName, "ITERATIONS") == 0)
+  {
+    sprintf(str, "%i", previousTest->getIterations());
+  }
+  else if (strcmp(headerName, "QUALITY") == 0)
+  {
+    sprintf(str, "%f", previousTest->getQuality());
+  }
+  else if (strcmp(headerName, "GEOMTYPE") == 0)
+  {
+    switch (previousTest->getGeomType())
+    {
+    case vvTexRend::VV_AUTO:
+      sprintf(str, "%s", "VV_AUTO");
+      break;
+    case vvTexRend::VV_SLICES:
+      sprintf(str, "%s", "VV_SLICES");
+      break;
+    case vvTexRend::VV_CUBIC2D:
+      sprintf(str, "%s", "VV_CUBIC2D");
+      break;
+    case vvTexRend::VV_VIEWPORT:
+      sprintf(str, "%s", "VV_VIEWPORT");
+      break;
+    case vvTexRend::VV_BRICKS:
+      sprintf(str, "%s", "VV_BRICKS");
+      break;
+    case vvTexRend::VV_SPHERICAL:
+      sprintf(str, "%s", "VV_SPHERICAL");
+      break;
+    default:
+      sprintf(str, "%s", "VV_AUTO");
+      break;
+    }
+  }
+  else if (strcmp(headerName, "VOXELTYPE") == 0)
+  {
+    switch (previousTest->getVoxelType())
+    {
+    case vvTexRend::VV_BEST:
+      sprintf(str, "%s", "VV_BEST");
+      break;
+    case vvTexRend::VV_RGBA:
+      sprintf(str, "%s", "VV_RGBA");
+      break;
+    case vvTexRend::VV_SGI_LUT:
+      sprintf(str, "%s", "VV_SGI_LUT");
+      break;
+    case vvTexRend::VV_PAL_TEX:
+      sprintf(str, "%s", "VV_PAL_TEX");
+      break;
+    case vvTexRend::VV_TEX_SHD:
+      sprintf(str, "%s", "VV_TEX_SHD");
+      break;
+    case vvTexRend::VV_PIX_SHD:
+      sprintf(str, "%s", "VV_PIX_SHD");
+      break;
+    case vvTexRend::VV_FRG_PRG:
+      sprintf(str, "%s", "VV_FRG_PRG");
+      break;
+    case vvTexRend::VV_GLSL_SHD:
+      sprintf(str, "%s", "VV_GLSL_SHD");
+      break;
+    default:
+      sprintf(str, "%s", "VV_BEST");
+      break;
+    }
+  }
+  else if (strcmp(headerName, "FRAMES") == 0)
+  {
+    sprintf(str, "%i", previousTest->getFrames());
+  }
+  else if (strcmp(headerName, "TESTANIMATION") == 0)
+  {
+    switch (previousTest->getTestAnimation())
+    {
+    case vvPerformanceTest::VV_ROT_X:
+      sprintf(str, "%s", "VV_ROT_X");
+      break;
+    case vvPerformanceTest::VV_ROT_Y:
+      sprintf(str, "%s", "VV_ROT_Y");
+      break;
+    case vvPerformanceTest::VV_ROT_Z:
+      sprintf(str, "%s", "VV_ROT_Z");
+      break;
+    case vvPerformanceTest::VV_ROT_RAND:
+      sprintf(str, "%s", "VV_ROT_RAND");
+      break;
+    default:
+      sprintf(str, "%s", "VV_ROT_Y");
+      break;
+    }
+  }
+  else if (strcmp(headerName, "PROJECTIONTYPE") == 0)
+  {
+    switch (previousTest->getProjectionType())
+    {
+    case vvObjView::FRUSTUM:
+      sprintf(str, "%s", "FRUSTUM");
+      break;
+    case vvObjView::ORTHO:
+      sprintf(str, "%s", "ORTHOG");
+      break;
+    case vvObjView::PERSPECTIVE:
+      sprintf(str, "%s", "PERSPECTIVE");
+      break;
+    default:
+      sprintf(str, "%s", "PERSPECTIVE");
+      break;
+    }
+  }
+  initValue(test, str, headerName);
 }
 
 char* vvTestSuite::getStripped(const char* item)
