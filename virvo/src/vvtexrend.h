@@ -53,7 +53,7 @@ class vvThreadVisitor;
 const int MAX_DEBUG_COLORS = 8;
 
 // Uncomment to use geometry programs in addition to vertex programs.
-//#define ISECT_GLSL_GEO
+#define ISECT_GLSL_GEO
 
 // Uncomment to use instanced geometry transfer rather than using vertex arrays.
 //#define ISECT_GLSL_INST

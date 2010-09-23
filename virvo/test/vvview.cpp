@@ -624,7 +624,8 @@ void vvView::motionCallback(int x, int y)
 /** Set active rendering algorithm.
  */
 void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
-                         std::vector<BrickList>* bricks)
+                         std::vector<BrickList>* bricks, const int maxBrickSizeX,
+                         const int maxBrickSizeY, const int maxBrickSizeZ)
 {
    vvDebugMsg::msg(3, "vvView::setRenderer()");
 
@@ -634,6 +635,9 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
    if(renderer)
       renderState = renderer->_renderState;
    delete renderer;
+   renderState._maxBrickSize[0] = maxBrickSizeX;
+   renderState._maxBrickSize[1] = maxBrickSizeY;
+   renderState._maxBrickSize[2] = maxBrickSizeZ;
 
    // Multi threading parameters.
    // These are needed before construction of the renderer so that
@@ -1395,7 +1399,10 @@ void vvView::performanceTest()
        totalTime->start();
 
        int framesRendered = 0;
-       ds->setRenderer(test->getGeomType(), test->getVoxelType());
+       ds->setRenderer(test->getGeomType(), test->getVoxelType(), 0,
+                       test->getBrickDims()[0],
+                       test->getBrickDims()[1],
+                       test->getBrickDims()[2]);
        ds->hqMode = false;
        ds->draftQuality = test->getQuality();
        ds->ov->reset();

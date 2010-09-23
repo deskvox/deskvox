@@ -62,6 +62,9 @@ vvRenderState::vvRenderState()
   _roiSize.set(0.5f, 0.5f, 0.5f);
   _isROIUsed = false;
   _brickSize[0] = _brickSize[1] = _brickSize[2] = 0;
+  _maxBrickSize[0] = 64;
+  _maxBrickSize[1] = 64;
+  _maxBrickSize[2] = 64;
   _brickTexelOverlap = 1;
   _showBricks = false;
   _computeBrickSize = true;

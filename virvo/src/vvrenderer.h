@@ -54,6 +54,7 @@ class VIRVOEXPORT vvRenderState
     bool  _isROIUsed;                             ///< true = use roi
     vvVector3 _roiPos;                            ///< object space coordinates of ROI midpoint [mm]
     int   _brickSize[3];                          ///< last bricksize in x/y/z
+    int   _maxBrickSize[3];                       ///< max allowed bricksize in x/y/z
     int   _brickTexelOverlap;                     ///< overlap needed for performing calculations at brick borders
                                                   ///< max value: min(brickSize[d])/2-1
     bool  _showBricks;                            ///< true = show brick boundarys

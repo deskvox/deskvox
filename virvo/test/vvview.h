@@ -154,7 +154,8 @@ class vvView
       void initGraphics(int argc, char *argv[]);
       void createMenus();
       void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST,
-                       std::vector<BrickList>* bricks = 0);
+                       std::vector<BrickList>* bricks = 0, const int maxBrickSizeX = 64,
+                       const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);
       void setProjectionMode(bool);
       void setupClipBuffer();
       void renderClipObject();
