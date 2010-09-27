@@ -7,6 +7,7 @@ DISTCLEANFILES =
 lib_LIBRARIES = libvirvo.a
 
 libvirvo_a_headers = \
+        vvversioninfo.h \
         vvarray.h \
         vvbrick.h \
         vvbsptree.h \
