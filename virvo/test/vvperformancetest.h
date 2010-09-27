@@ -27,7 +27,7 @@
 #include "../src/vvvecmath.h"
 #include "vvobjview.h"
 
-#define NUM_COL_HEADERS 10
+#define NUM_COL_HEADERS 11
 
 class vvTestResult
 {
@@ -60,6 +60,13 @@ class vvTestResult
 class vvPerformanceTest
 {
   public:
+    enum OutputType
+    {
+      VV_BRICKSIZES = 0,               ///< Special output mode for testing different brick sizes
+      VV_DETAILED,                     ///< Summary file and file with rendering times per frame (default)
+      VV_SUMMARY                       ///< Summary file only
+    };
+
     enum TestAnimation
     {
       VV_ROT_X = 0,
@@ -74,6 +81,8 @@ class vvPerformanceTest
     void writeResultFiles();
 
     void setId(const int id);
+    void setOutputType(const OutputType outputType);
+    void setDatasetName(const char* datasetName);
     void setIterations(const int iterations);
     void setVerbose(const bool verbose);
     void setQuality(const float quality);
@@ -88,6 +97,8 @@ class vvPerformanceTest
     void setProjectionType(const vvObjView::ProjectionType projectionType);
 
     int getId() const;
+    OutputType getOutputType() const;
+    const char* getDatasetName() const;
     int getIterations() const;
     bool getVerbose() const;
     float getQuality() const;
@@ -100,6 +111,8 @@ class vvPerformanceTest
     vvTestResult* getTestResult() const;
   private:
     int _id;
+    OutputType _outputType;
+    const char* _datasetName;
     int _iterations;
     bool _verbose;
     float _quality;

@@ -128,6 +128,8 @@ void vvTestResult::calc()
 
 vvPerformanceTest::vvPerformanceTest()
 {
+  _outputType = VV_DETAILED;
+  _datasetName = "";
   _verbose = true;
   _testResult = new vvTestResult();
   _iterations = 1;
@@ -147,56 +149,100 @@ vvPerformanceTest::~vvPerformanceTest()
 void vvPerformanceTest::writeResultFiles()
 {
 #if !defined(_WIN32)
-  // Text file with summary.
-  char* summaryFile = new char[80];
-  time_t now = time(NULL);
-  struct tm  *ts;
-
-  ts = localtime(&now);
-  strftime(summaryFile, 80, "%Y-%m-%d_%H:%M:%S_%Z_summary.txt", ts);
-
-  FILE* handle = fopen(summaryFile, "w");
-
-  if (handle != NULL)
+  _testResult->calc();
+  if ((_outputType == VV_SUMMARY) || (_outputType == VV_DETAILED))
   {
-    _testResult->calc();
-    char* dateStr = new char[80];
-    strftime(dateStr, 80, "%Y-%m-%d, %H:%M:%S %Z", ts);
-    fprintf(handle, "************************* Summary test %i *************************\n", _id);
-    fprintf(handle, "Test performed at:....................%s\n", dateStr);
-    fprintf(handle, "Total profiling time:.................%f\n", _testResult->getTotalTime());
-    fprintf(handle, "Average time per frame:...............%f\n", _testResult->getAvgTime());
-    fprintf(handle, "Variance:.............................%f\n", _testResult->getVariance());
-    fprintf(handle, "Max rendering time:...................%f\n", _testResult->getMaxTime());
-    fprintf(handle, "Min rendering time:...................%f\n", _testResult->getMinTime());
-    fclose(handle);
-  }
+    // Text file with summary.
+    char* summaryFile = new char[80];
+    time_t now = time(NULL);
+    struct tm  *ts;
 
-  // Csv file simply with the diff times.
-  char* csvFile = new char[80];
-  strftime(csvFile, 80, "%Y-%m-%d_%H:%M:%S_%Z_times.csv", ts);
+    ts = localtime(&now);
+    strftime(summaryFile, 80, "%Y-%m-%d_%H:%M:%S_%Z_summary.txt", ts);
 
-  handle = fopen(csvFile, "w");
+    FILE* handle = fopen(summaryFile, "w");
 
-  if (handle != NULL)
-  {
-    std::vector<float> times = _testResult->getDiffTimes();
-    std::vector<vvMatrix> matrices = _testResult->getModelViewMatrices();
-    std::vector<float>::const_iterator it;
-
-    fprintf(handle, "\"TIME\",\"MODELVIEW_MATRIX\"\n");
-    int i = 0;
-    for (it = times.begin(); it != times.end(); ++it)
+    if (handle != NULL)
     {
-      fprintf(handle, "[%f],", *it);
-      fprintf(handle, "[%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f]",
-             matrices[i].e[0][0], matrices[i].e[0][1], matrices[i].e[0][2], matrices[i].e[0][3],
-             matrices[i].e[1][0], matrices[i].e[1][1], matrices[i].e[1][2], matrices[i].e[1][3],
-             matrices[i].e[2][0], matrices[i].e[2][1], matrices[i].e[2][2], matrices[i].e[2][3],
-             matrices[i].e[3][0], matrices[i].e[3][1], matrices[i].e[3][2], matrices[i].e[3][3]);
-      fprintf(handle, "\n");
-      ++i;
+      char* dateStr = new char[80];
+      strftime(dateStr, 80, "%Y-%m-%d, %H:%M:%S %Z", ts);
+      fprintf(handle, "************************* Summary test %i *************************\n", _id);
+      fprintf(handle, "Test performed at:....................%s\n", dateStr);
+      fprintf(handle, "Total profiling time:.................%f\n", _testResult->getTotalTime());
+      fprintf(handle, "Average time per frame:...............%f\n", _testResult->getAvgTime());
+      fprintf(handle, "Variance:.............................%f\n", _testResult->getVariance());
+      fprintf(handle, "Max rendering time:...................%f\n", _testResult->getMaxTime());
+      fprintf(handle, "Min rendering time:...................%f\n", _testResult->getMinTime());
+      fclose(handle);
     }
+
+    if (_outputType == VV_DETAILED)
+    {
+      // Csv file simply with the diff times.
+      char* csvFile = new char[80];
+      strftime(csvFile, 80, "%Y-%m-%d_%H:%M:%S_%Z_times.csv", ts);
+
+      handle = fopen(csvFile, "w");
+
+      if (handle != NULL)
+      {
+        std::vector<float> times = _testResult->getDiffTimes();
+        std::vector<vvMatrix> matrices = _testResult->getModelViewMatrices();
+        std::vector<float>::const_iterator it;
+
+        fprintf(handle, "\"TIME\",\"MODELVIEW_MATRIX\"\n");
+        int i = 0;
+        for (it = times.begin(); it != times.end(); ++it)
+        {
+          fprintf(handle, "[%f],", *it);
+          fprintf(handle, "[%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f]",
+                 matrices[i].e[0][0], matrices[i].e[0][1], matrices[i].e[0][2], matrices[i].e[0][3],
+                 matrices[i].e[1][0], matrices[i].e[1][1], matrices[i].e[1][2], matrices[i].e[1][3],
+                 matrices[i].e[2][0], matrices[i].e[2][1], matrices[i].e[2][2], matrices[i].e[2][3],
+                 matrices[i].e[3][0], matrices[i].e[3][1], matrices[i].e[3][2], matrices[i].e[3][3]);
+          fprintf(handle, "\n");
+          ++i;
+        }
+        fclose(handle);
+      }
+    }
+  }
+  else if (_outputType == VV_BRICKSIZES)
+  {
+    // Csv file with avg time for  the given brick size.
+    const int HOST_NAME_LEN = 80;
+    char  localHost[HOST_NAME_LEN];
+  #ifdef _WIN32
+    strcpy(localHost, "n/a");
+  #else
+    if (gethostname(localHost, HOST_NAME_LEN-1))
+    {
+      strcpy(localHost, "n/a");
+    }
+  #endif
+
+    char brickFile[HOST_NAME_LEN + 4];
+    sprintf(brickFile, "%s.csv", localHost);
+    FILE* handle;
+    const bool fileExists = (handle = fopen(brickFile, "r"));
+    if (fileExists)
+    {
+      fclose(handle);
+    }
+    handle = fopen(brickFile, "a+");
+
+    // Write header if file didn't exist until now.
+    if (!fileExists)
+    {
+      fprintf(handle, "HOSTNAME,DATASET_NAME,BRICKSIZE_X,BRICKSIZE_Y,BRICKSIZE_Z,AVG_TIME\n");
+    }
+
+    // Append timing result.
+    fprintf(handle, "%s,%s,%i,%i,%i,%f\n", localHost, _datasetName,
+            static_cast<int>(_brickDims[0]),
+            static_cast<int>(_brickDims[1]),
+            static_cast<int>(_brickDims[2]),
+            _testResult->getAvgTime());
     fclose(handle);
   }
 #endif
@@ -205,6 +251,16 @@ void vvPerformanceTest::writeResultFiles()
 void vvPerformanceTest::setId(const int id)
 {
   _id = id;
+}
+
+void vvPerformanceTest::setOutputType(const OutputType outputType)
+{
+  _outputType = outputType;
+}
+
+void vvPerformanceTest::setDatasetName(const char* datasetName)
+{
+  _datasetName = datasetName;
 }
 
 void vvPerformanceTest::setIterations(const int iterations)
@@ -270,6 +326,16 @@ void vvPerformanceTest::setProjectionType(const vvObjView::ProjectionType projec
 int vvPerformanceTest::getId() const
 {
   return _id;
+}
+
+vvPerformanceTest::OutputType vvPerformanceTest::getOutputType() const
+{
+  return _outputType;
+}
+
+const char* vvPerformanceTest::getDatasetName() const
+{
+  return _datasetName;
 }
 
 int vvPerformanceTest::getIterations() const
@@ -440,6 +506,7 @@ void vvTestSuite::initColumnHeaders()
   _columnHeaders[7] = "FRAMES";         _headerPos[7] = 7;
   _columnHeaders[8] = "TESTANIMATION";  _headerPos[8] = 8;
   _columnHeaders[9] = "PROJECTIONTYPE"; _headerPos[9] = 9;
+  _columnHeaders[10] = "OUTPUTTYPE";    _headerPos[10] = 10;
 }
 
 void vvTestSuite::initHeader(char* str, const int col)
@@ -569,6 +636,21 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const char* head
       test->setProjectionType(vvObjView::PERSPECTIVE);
     }
   }
+  else if (strcmp(headerName, "OUTPUTTYPE") == 0)
+  {
+    if (strcmp(str, "VV_BRICKSIZES") == 0)
+    {
+      test->setOutputType(vvPerformanceTest::VV_BRICKSIZES);
+    }
+    else if (strcmp(str, "VV_DETAILED") == 0)
+    {
+      test->setOutputType(vvPerformanceTest::VV_DETAILED);
+    }
+    else if (strcmp(str, "VV_SUMMARY") == 0)
+    {
+      test->setOutputType(vvPerformanceTest::VV_SUMMARY);
+    }
+  }
 }
 
 void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const int col,
@@ -578,7 +660,8 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const int col,
 
   const char* headerName = getHeaderName(col);
 
-  if (strcmp(str, "*") == 0)
+  // TODO: fix the \n hack... .
+  if ((strcmp(str, "*") == 0) || (strcmp(str, "*\n") == 0))
   {
     // * means: take the value from the previous text.
     initFromPreviousValue(test, headerName, previousTest);
@@ -713,6 +796,24 @@ void vvTestSuite::initFromPreviousValue(vvPerformanceTest* test, const char* hea
       break;
     default:
       sprintf(str, "%s", "PERSPECTIVE");
+      break;
+    }
+  }
+  else if (strcmp(headerName, "OUTPUTTYPE") == 0)
+  {
+    switch (previousTest->getOutputType())
+    {
+    case vvPerformanceTest::VV_BRICKSIZES:
+      sprintf(str, "%s", "VV_BRICKSIZES");
+      break;
+    case vvPerformanceTest::VV_DETAILED:
+      sprintf(str, "%s", "VV_DETAILED");
+      break;
+    case vvPerformanceTest::VV_SUMMARY:
+      sprintf(str, "%s", "VV_SUMMARY");
+      break;
+    default:
+      sprintf(str, "%s", "VV_DETAILED");
       break;
     }
   }

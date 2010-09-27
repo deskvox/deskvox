@@ -1392,6 +1392,9 @@ void vvView::performanceTest()
      {
        vvPerformanceTest* test = *it;
 
+       // TODO: make dataset configurable.
+       test->setDatasetName(ds->filename);
+
        std::vector<float> diffTimes;
        std::vector<vvMatrix> modelViewMatrices;
 
