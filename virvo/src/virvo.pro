@@ -101,6 +101,7 @@ HEADERS = \
     vvmultirend/vvtexmultirendmngr.h
 TARGET = coVirvo
 DEVFILES = $$HEADERS
+DEFINES += VV_COVISE
 
 # ## don't modify anything below this line ###
 !include ($$(COVISEDIR)/mkspecs/config-last.pri):error(include of config-last.pri failed)

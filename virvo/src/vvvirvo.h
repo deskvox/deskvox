@@ -49,7 +49,9 @@ and vvMatrix are components of vvVecmath, a useful library for linear algebra.
 #endif
 
 // Current version (to be updated on every release, see makeversion.sh in virvo folder):
+#ifndef VV_COVISE
 #include "vvversioninfo.h"
+#endif
 #endif
 
 //============================================================================
