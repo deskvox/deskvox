@@ -655,6 +655,10 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const char* head
     {
       test->setOutputType(vvPerformanceTest::VV_DETAILED);
     }
+    else if (strcmp(str, "VV_NONE") == 0)
+    {
+      test->setOutputType(vvPerformanceTest::VV_NONE);
+    }
     else if (strcmp(str, "VV_SUMMARY") == 0)
     {
       test->setOutputType(vvPerformanceTest::VV_SUMMARY);
@@ -817,6 +821,9 @@ void vvTestSuite::initFromPreviousValue(vvPerformanceTest* test, const char* hea
       break;
     case vvPerformanceTest::VV_DETAILED:
       sprintf(str, "%s", "VV_DETAILED");
+      break;
+    case vvPerformanceTest::VV_NONE:
+      sprintf(str, "%s", "VV_NONE");
       break;
     case vvPerformanceTest::VV_SUMMARY:
       sprintf(str, "%s", "VV_SUMMARY");

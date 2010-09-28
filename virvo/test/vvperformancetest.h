@@ -64,6 +64,7 @@ class vvPerformanceTest
     {
       VV_BRICKSIZES = 0,               ///< Special output mode for testing different brick sizes
       VV_DETAILED,                     ///< Summary file and file with rendering times per frame (default)
+      VV_NONE,                         ///< No output files
       VV_SUMMARY                       ///< Summary file only
     };
 
