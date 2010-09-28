@@ -21,6 +21,7 @@
 #include "vvperformancetest.h"
 #include "../src/vvtoolshed.h"
 #include "../src/vvvecmath.h"
+#include "../src/vvvirvo.h"
 
 #include <cstdio>
 #include <cstring>
@@ -168,6 +169,9 @@ void vvPerformanceTest::writeResultFiles()
       strftime(dateStr, 80, "%Y-%m-%d, %H:%M:%S %Z", ts);
       fprintf(handle, "************************* Summary test %i *************************\n", _id);
       fprintf(handle, "Test performed at:....................%s\n", dateStr);
+      fprintf(handle, "Virvo version:........................%s.%s\n",
+              virvo::getVersionMajor(), virvo::getReleaseCounter());
+      fprintf(handle, "Svn revision:.........................%s\n", virvo::getSvnRevision());
       fprintf(handle, "Total profiling time:.................%f\n", _testResult->getTotalTime());
       fprintf(handle, "Average time per frame:...............%f\n", _testResult->getAvgTime());
       fprintf(handle, "Variance:.............................%f\n", _testResult->getVariance());
