@@ -62,7 +62,15 @@ class VIRVOEXPORT vvGLTools
              << "Height: " << values[3] << endl;
       }
     };
+    struct GLInfo
+    {
+      const char* vendor;
+      const char* renderer;
+      const char* version;
+    };
+
     static void printGLError(const char*);
+    static GLInfo getGLInfo();
     static bool isGLVersionSupported(int major, int minor, int release);
     static bool isGLextensionSupported(const char*);
     static void displayOpenGLextensions(const DisplayStyle);

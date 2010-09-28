@@ -51,6 +51,17 @@ void vvGLTools::printGLError(const char* msg)
   }
 }
 
+vvGLTools::GLInfo vvGLTools::getGLInfo()
+{
+  GLInfo result;
+
+  result.vendor = (const char*)glGetString(GL_VENDOR);
+  result.renderer = (const char*)glGetString(GL_RENDERER);
+  result.version = (const char*)glGetString(GL_VERSION);
+
+  return result;
+}
+
 //----------------------------------------------------------------------------
 /** Checks OpenGL for a specific OpenGL version.
     @param major OpenGL major version to check

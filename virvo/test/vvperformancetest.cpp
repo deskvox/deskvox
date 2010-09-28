@@ -19,6 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvperformancetest.h"
+#include "../src/vvgltools.h"
 #include "../src/vvtoolshed.h"
 #include "../src/vvvecmath.h"
 #include "../src/vvvirvo.h"
@@ -165,6 +166,7 @@ void vvPerformanceTest::writeResultFiles()
 
     if (handle != NULL)
     {
+      vvGLTools::GLInfo glInfo = vvGLTools::getGLInfo();
       char* dateStr = new char[80];
       strftime(dateStr, 80, "%Y-%m-%d, %H:%M:%S %Z", ts);
       fprintf(handle, "************************* Summary test %i *************************\n", _id);
@@ -172,6 +174,9 @@ void vvPerformanceTest::writeResultFiles()
       fprintf(handle, "Virvo version:........................%s.%s\n",
               virvo::getVersionMajor(), virvo::getReleaseCounter());
       fprintf(handle, "Svn revision:.........................%s\n", virvo::getSvnRevision());
+      fprintf(handle, "OpenGL vendor string:.................%s\n", glInfo.vendor);
+      fprintf(handle, "OpenGL renderer string:...............%s\n", glInfo.renderer);
+      fprintf(handle, "OpenGL version string:................%s\n", glInfo.version);
       fprintf(handle, "Total profiling time:.................%f\n", _testResult->getTotalTime());
       fprintf(handle, "Average time per frame:...............%f\n", _testResult->getAvgTime());
       fprintf(handle, "Variance:.............................%f\n", _testResult->getVariance());
