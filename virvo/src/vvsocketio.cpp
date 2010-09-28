@@ -298,6 +298,14 @@ vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick)
 
   brick->dist = vvToolshed::readFloat(&buffer[76]);
 
+  brick->texRange[0] = vvToolshed::readFloat(&buffer[80]);
+  brick->texRange[1] = vvToolshed::readFloat(&buffer[84]);
+  brick->texRange[2] = vvToolshed::readFloat(&buffer[88]);
+
+  brick->texMin[0] = vvToolshed::readFloat(&buffer[92]);
+  brick->texMin[1] = vvToolshed::readFloat(&buffer[96]);
+  brick->texMin[2] = vvToolshed::readFloat(&buffer[100]);
+
   return vvSocket::VV_OK;
 }
 
@@ -342,6 +350,14 @@ vvSocket::ErrorType vvSocketIO::putBrick(vvBrick* brick)
   vvToolshed::write32(&buffer[72], brick->texels[2]);
 
   vvToolshed::writeFloat(&buffer[76], brick->dist);
+
+  vvToolshed::writeFloat(&buffer[80], brick->texRange[0]);
+  vvToolshed::writeFloat(&buffer[84], brick->texRange[1]);
+  vvToolshed::writeFloat(&buffer[88], brick->texRange[2]);
+
+  vvToolshed::writeFloat(&buffer[92], brick->texMin[0]);
+  vvToolshed::writeFloat(&buffer[96], brick->texMin[1]);
+  vvToolshed::writeFloat(&buffer[100], brick->texMin[2]);
 
   if ((retval = vvSocket::write_data(buffer, sob)) != vvSocket::VV_OK)
   {
@@ -862,7 +878,9 @@ int vvSocketIO::sizeOfBrick() const
        + 4 // index
        + 3 * 4 // startOffset
        + 3 * 4 // texels
-       + 1 * 4; // dist
+       + 1 * 4 // dist
+       + 3 * 4 // texRange
+       + 3 * 4; // texMin
 }
 
 // EOF
