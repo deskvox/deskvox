@@ -1732,9 +1732,9 @@ void vvView::initGraphics(int argc, char *argv[])
    // Create window title.
    // Don't use sprintf, it won't work with macros on Irix!
    strcpy(title, "Virvo File Viewer V");
-   strcat(title, VV_VERSION);
+   strcat(title, virvo::getVersionMajor());
    strcat(title, ".");
-   strcat(title, VV_RELEASE);
+   strcat(title, virvo::getReleaseCounter());
    window = glutCreateWindow(title);              // open window and set window title
 
    // Set GL state:
@@ -2238,8 +2238,8 @@ int vvView::run(int argc, char** argv)
 {
    vvDebugMsg::msg(1, "vvView::run()");
 
-   cerr << "VView " << VV_VERSION << "." << VV_RELEASE << endl;
-   cerr << "(c) " << VV_YEAR << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
+   cerr << "VView " << virvo::getVersionMajor() << "." << virvo::getReleaseCounter() << endl;
+   cerr << "(c) " << virvo::getYearOfRelease() << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
    cerr << "Brown University" << endl << endl;
 
    if (argc<2)

@@ -78,6 +78,7 @@ libvirvo_a_SOURCES = \
         vvtransfunc.cpp \
         vvvecmath.cpp \
         vvvffile.cpp \
+        vvvirvo.cpp \
         vvvoldesc.cpp \
         vvglsl.cpp \
         vvshadermanager.cpp \

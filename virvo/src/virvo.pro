@@ -45,6 +45,7 @@ SOURCES = vvbrick.cpp \
     vvvecmath.cpp \
     vvvisitor.cpp \
     vvvffile.cpp \
+    vvvirvo.cpp \
     vvvoldesc.cpp \
     vvshaderfactory.cpp \
     vvshadermanager.cpp \

@@ -2301,8 +2301,8 @@ int vvConv::run(int argc, char** argv)
 {
   int error = 0;
 
-  cerr << "VConv Version " << VV_VERSION << "." << VV_RELEASE << endl;
-  cerr << "(C) " << VV_YEAR << " Brown University" << endl;
+  cerr << "VConv Version " << virvo::getVersionMajor() << "." << virvo::getReleaseCounter() << endl;
+  cerr << "(C) " << virvo::getYearOfRelease() << " Brown University" << endl;
   cerr << "Author: Jurgen P. Schulze (jschulze@ucsd.edu)" << endl;
   cerr << "VConv comes with ABSOLUTELY NO WARRANTY." << endl;
   cerr << "It is free software, and you are welcome to redistribute it under" << endl;

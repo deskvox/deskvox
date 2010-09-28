@@ -48,9 +48,13 @@ and vvMatrix are components of vvVecmath, a useful library for linear algebra.
 #pragma warning(disable: 4514)                    // disable warning about unreferenced inline function
 #endif
 
-// Current version (to be updated on every release, see makeversion.sh in virvo folder):
-#ifndef VV_COVISE
-#include "vvversioninfo.h"
+namespace virvo
+{
+  const char* getSvnRevision();
+  const char* getVersionMajor();
+  const char* getReleaseCounter();
+  int getYearOfRelease();
+}
 #endif
 #endif
 
