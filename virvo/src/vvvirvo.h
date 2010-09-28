@@ -56,7 +56,6 @@ namespace virvo
   int getYearOfRelease();
 }
 #endif
-#endif
 
 //============================================================================
 // End of File
