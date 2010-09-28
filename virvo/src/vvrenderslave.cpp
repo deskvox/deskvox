@@ -130,19 +130,39 @@ vvRenderSlave::ErrorType vvRenderSlave::initBricks(std::vector<vvBrick*>& bricks
 
 void vvRenderSlave::renderLoop(vvTexRend* renderer)
 {
-  vvMatrix pr;
-  vvMatrix mv;
   renderer->setIsSlave(true);
 
   _offscreenBuffer = new vvOffscreenBuffer(1.0f, _compositingPrecision);
   _offscreenBuffer->initForRender();
 
+  vvSocketIO::CommReason commReason;
+  vvMatrix pr;
+  vvMatrix mv;
+  int w;
+  int h;
+
   while (1)
   {
-    if ((_socket->getMatrix(&pr) == vvSocket::VV_OK)
-       && (_socket->getMatrix(&mv) == vvSocket::VV_OK))
+    if (_socket->getCommReason(commReason) == vvSocket::VV_OK)
     {
-      renderImage(pr, mv, renderer);
+      switch (commReason)
+      {
+      case vvSocketIO::VV_MATRIX:
+        if ((_socket->getMatrix(&pr) == vvSocket::VV_OK)
+           && (_socket->getMatrix(&mv) == vvSocket::VV_OK))
+        {
+          renderImage(pr, mv, renderer);
+        }
+        break;
+      case vvSocketIO::VV_RESIZE:
+        if ((_socket->getWinDims(w, h)) == vvSocket::VV_OK)
+        {
+          _offscreenBuffer->resize(w, h);
+        }
+        break;
+      default:
+        break;
+      }
     }
   }
 }

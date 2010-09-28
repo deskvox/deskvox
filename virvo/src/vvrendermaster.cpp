@@ -190,3 +190,14 @@ void vvRenderMaster::render(const float bgColor[3]) const
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
 }
+
+void vvRenderMaster::resize(const int w, const int h)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putWinDims(w, h);
+    }
+  }
+}

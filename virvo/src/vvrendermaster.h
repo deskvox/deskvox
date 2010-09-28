@@ -51,6 +51,7 @@ public:
                         vvVolDesc*& vd);
   ErrorType initBricks(vvTexRend* renderer);
   void render(const float bgColor[3]) const;
+  void resize(const int w, const int h);
 private:
   std::vector<char*> _slaveNames;
   std::vector<int> _slavePorts;

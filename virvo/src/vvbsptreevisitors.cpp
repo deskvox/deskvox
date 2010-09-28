@@ -142,6 +142,7 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
 
   vvMatrix pr = _pr;
   vvMatrix mv = _mv;
+  _sockets[s]->putCommReason(vvSocketIO::VV_MATRIX);
   _sockets[s]->putMatrix(&pr);
   _sockets[s]->putMatrix(&mv);
 

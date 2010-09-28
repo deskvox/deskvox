@@ -847,6 +847,59 @@ vvSocket::ErrorType vvSocketIO::getBool(bool& val)
 }
 
 //----------------------------------------------------------------------------
+/** Writes a comm reason to the socket.
+ @param val  the comm reason.
+*/
+vvSocket::ErrorType vvSocketIO::putCommReason(const CommReason val)
+{
+  uchar buffer[] = { (uchar)val };
+  return vvSocket::write_data(&buffer[0], 4);
+}
+
+//----------------------------------------------------------------------------
+/** Reads a comm reason from the socket.
+ @param val  the comm reason.
+*/
+vvSocket::ErrorType vvSocketIO::getCommReason(CommReason& val)
+{
+  uchar buffer[4];
+  vvSocket::ErrorType retval;
+
+  if ((retval = vvSocket::read_data(&buffer[0], 4)) != vvSocket::VV_OK)
+  {
+    return retval;
+  }
+  val = (CommReason)buffer[0];
+
+  return vvSocket::VV_OK;
+}
+
+vvSocket::ErrorType vvSocketIO::putWinDims(const int w, const int h)
+{
+  uchar buffer[8];
+
+  vvToolshed::write32(&buffer[0], w);
+  vvToolshed::write32(&buffer[4], h);
+
+  return vvSocket::write_data(&buffer[0], 8);
+}
+
+vvSocket::ErrorType vvSocketIO::getWinDims(int& w, int& h)
+{
+  uchar buffer[8];
+  vvSocket::ErrorType retval;
+
+  if ((retval = vvSocket::read_data(&buffer[0], 8)) != vvSocket::VV_OK)
+  {
+    return  retval;
+  }
+  w = vvToolshed::read32(&buffer[0]);
+  h = vvToolshed::read32(&buffer[4]);
+
+  return vvSocket::VV_OK;
+}
+
+//----------------------------------------------------------------------------
 /** Writes a Matrix to the socket.
  @param m  pointer to the matrix to write, has to be an object of vvMatrix.
 */
