@@ -139,8 +139,10 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
   vvMatrix pr;
   vvMatrix mv;
   float quality;
+  int mipMode;
   int w;
   int h;
+  bool interpolation;
 
   while (1)
   {
@@ -148,11 +150,19 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
     {
       switch (commReason)
       {
+      case vvSocketIO::VV_EXIT:
+        break;
       case vvSocketIO::VV_MATRIX:
         if ((_socket->getMatrix(&pr) == vvSocket::VV_OK)
            && (_socket->getMatrix(&mv) == vvSocket::VV_OK))
         {
           renderImage(pr, mv, renderer);
+        }
+        break;
+      case vvSocketIO::VV_MIPMODE:
+        if ((_socket->getInt32(mipMode)) == vvSocket::VV_OK)
+        {
+          renderer->_renderState._mipMode = mipMode;
         }
         break;
       case vvSocketIO::VV_QUALITY:
@@ -166,6 +176,15 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
         {
           _offscreenBuffer->resize(w, h);
         }
+        break;
+      case vvSocketIO::VV_INTERPOLATION:
+        if ((_socket->getBool(interpolation)) == vvSocket::VV_OK)
+        {
+          renderer->setParameter(vvRenderer::VV_SLICEINT, interpolation ? 1.0f : 0.0f);
+        }
+        break;
+      case vvSocketIO::VV_TOGGLE_BOUNDINGBOX:
+        renderer->_renderState._boundaries = !renderer->_renderState._boundaries;
         break;
       default:
         break;
@@ -209,4 +228,9 @@ void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
   _socket->putImage(&img);
   delete[] pixels;
   _offscreenBuffer->unbindFramebuffer();
+
+  if (vvDebugMsg::getDebugLevel() > 0)
+  {
+    _offscreenBuffer->writeBack();
+  }
 }

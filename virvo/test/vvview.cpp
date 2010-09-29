@@ -212,8 +212,6 @@ void vvView::mainLoop(int argc, char *argv[])
             setRenderer(currentGeom, currentVoxels, frames);
             srand(time(NULL));
 
-            // TODO: reset quality per frame.
-            renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
             renderSlave->renderLoop(dynamic_cast<vvTexRend*>(renderer));
          }
       }
@@ -988,6 +986,10 @@ void vvView::optionsMenuCallback(int item)
          ds->interpolMode = !ds->interpolMode;
          ds->renderer->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
          cerr << "Interpolation mode set to " << int(ds->interpolMode) << endl;
+         if (ds->remoteRendering)
+         {
+            ds->_renderMaster->setInterpolation(ds->interpolMode);
+         }
          break;
       case 1:
          ds->preintMode = !ds->preintMode;
@@ -999,6 +1001,10 @@ void vvView::optionsMenuCallback(int item)
          if (ds->mipMode>2) ds->mipMode = 0;
          ds->renderer->_renderState._mipMode = ds->mipMode;
          cerr << "MIP mode set to " << ds->mipMode << endl;
+         if (ds->remoteRendering)
+         {
+            ds->_renderMaster->setMipMode(ds->mipMode);
+         }
          break;
       case 3:                                     // opacity correction
          ds->opCorrMode = !ds->opCorrMode;
@@ -1293,6 +1299,10 @@ void vvView::viewMenuCallback(int item)
          ds->boundariesMode = !ds->boundariesMode;
          ds->renderer->_renderState._boundaries = ds->boundariesMode;
          cerr << "Bounding box " << ds->onOff[ds->boundariesMode] << endl;
+         if (ds->remoteRendering)
+         {
+            ds->_renderMaster->toggleBoundingBox();
+         }
          break;
       case 1:                                     // axis orientation
          ds->orientationMode = !ds->orientationMode;

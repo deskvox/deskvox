@@ -212,3 +212,33 @@ void vvRenderMaster::resize(const int w, const int h)
     }
   }
 }
+
+void vvRenderMaster::setInterpolation(const bool interpolation)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_INTERPOLATION) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putBool(interpolation);
+    }
+  }
+}
+
+void vvRenderMaster::setMipMode(const int mipMode)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_MIPMODE) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putInt32(mipMode);
+    }
+  }
+}
+
+void vvRenderMaster::toggleBoundingBox()
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    _sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_BOUNDINGBOX);
+  }
+}

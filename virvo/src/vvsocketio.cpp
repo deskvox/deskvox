@@ -847,6 +847,35 @@ vvSocket::ErrorType vvSocketIO::getBool(bool& val)
 }
 
 //----------------------------------------------------------------------------
+/** Writes an int value to the socket.
+ @param val  the int value.
+*/
+vvSocket::ErrorType vvSocketIO::putInt32(const int val)
+{
+  uchar buffer[4];
+  vvToolshed::write32(&buffer[0], val);
+  return vvSocket::write_data(&buffer[0], 4);
+}
+
+//----------------------------------------------------------------------------
+/** Reads an int value from the socket.
+ @param val  the int value.
+*/
+vvSocket::ErrorType vvSocketIO::getInt32(int& val)
+{
+  uchar buffer[4];
+  vvSocket::ErrorType retval;
+
+  if ((retval = vvSocket::read_data(&buffer[0], 4)) != vvSocket::VV_OK)
+  {
+    return retval;
+  }
+
+  val = vvToolshed::read32(&buffer[0]);
+  return retval;
+}
+
+//----------------------------------------------------------------------------
 /** Writes a float value to the socket.
  @param val  the float value.
 */

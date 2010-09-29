@@ -54,6 +54,9 @@ public:
 
   void adjustQuality(const float quality);
   void resize(const int w, const int h);
+  void setInterpolation(const bool interpolation);
+  void setMipMode(const int mipMode);
+  void toggleBoundingBox();
 private:
   std::vector<char*> _slaveNames;
   std::vector<int> _slavePorts;
