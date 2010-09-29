@@ -272,6 +272,7 @@ void vvOffscreenBuffer::genColorAndDepthTextures()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_FLOAT, NULL);
     break;
   }
+  glViewport(0, 0, _bufferWidth, _bufferHeight);
 
   glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
                             _colorBuffer, 0);

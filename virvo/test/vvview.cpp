@@ -362,6 +362,11 @@ void vvView::reshapeCallback(int w, int h)
    glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
                                                   // clear window
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+   if (ds->remoteRendering)
+   {
+     ds->_renderMaster->resize(w, h);
+   }
 }
 
 
