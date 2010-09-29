@@ -39,6 +39,10 @@
 #include "vvprintgl.h"
 #include "vvdebugmsg.h"
 
+#ifdef HAVE_X11
+Display* vvPrintGL::dsp = NULL;
+#endif
+
 /** Constructor.
   Builds the bitmap font.
   @param hDC Windows device context
@@ -72,6 +76,26 @@ vvPrintGL::vvPrintGL()
   SelectObject(hDC, font);                        // Selects The Font We Want
 
   wglUseFontBitmaps(hDC, 32, 96, base);           // Builds 96 Characters Starting At Character 32
+#elif defined(HAVE_X11)
+  if (vvPrintGL::dsp == NULL)
+  {
+    vvPrintGL::dsp = XOpenDisplay(":0");
+  }
+  XFontStruct* font = XLoadQueryFont(vvPrintGL::dsp, "-*-courier-bold-r-normal--20-*-*-*-*-*-*-*");
+
+  if (font)
+  {
+    const Font id = font->fid;
+    uint first = font->min_char_or_byte2;
+    uint last = font->max_char_or_byte2;
+    base = glGenLists(last + 1);
+
+    if (base)
+    {
+      glXUseXFont(id, first, last - first + 1, base + first);
+    }
+  }
+
 #endif
 }
 
@@ -122,7 +146,11 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
 
   glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
   glRasterPos2f(x, y);                            // set text position
+#ifdef _WIN32
   glListBase(base - 32);                          // Sets The Base Character to 32
+#else
+  glListBase(base);
+#endif
                                                   // Draws The Display List Text
   glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
 
