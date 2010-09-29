@@ -847,6 +847,35 @@ vvSocket::ErrorType vvSocketIO::getBool(bool& val)
 }
 
 //----------------------------------------------------------------------------
+/** Writes a float value to the socket.
+ @param val  the float value.
+*/
+vvSocket::ErrorType vvSocketIO::putFloat(const float val)
+{
+  uchar buffer[4];
+  vvToolshed::writeFloat(&buffer[0], val);
+  return vvSocket::write_data(&buffer[0], 4);
+}
+
+//----------------------------------------------------------------------------
+/** Reads a float value from the socket.
+ @param val  the float value.
+*/
+vvSocket::ErrorType vvSocketIO::getFloat(float& val)
+{
+  uchar buffer[4];
+  vvSocket::ErrorType retval;
+
+  if ((retval = vvSocket::read_data(&buffer[0], 4)) != vvSocket::VV_OK)
+  {
+    return retval;
+  }
+
+  val = vvToolshed::readFloat(&buffer[0]);
+  return retval;
+}
+
+//----------------------------------------------------------------------------
 /** Writes a comm reason to the socket.
  @param val  the comm reason.
 */

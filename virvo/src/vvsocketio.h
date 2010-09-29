@@ -124,6 +124,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_EXIT = 0,
       VV_IMAGE,
       VV_MATRIX,
+      VV_QUALITY,
       VV_RESIZE,
       VV_VOLUME
     };
@@ -149,6 +150,8 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType putMatrix(vvMatrix*);
     ErrorType getBool(bool& val);
     ErrorType putBool(const bool val);
+    ErrorType getFloat(float& val);
+    ErrorType putFloat(const float val);
     ErrorType getCommReason(CommReason& val);
     ErrorType putCommReason(const CommReason val);
     ErrorType getWinDims(int& w, int& h);

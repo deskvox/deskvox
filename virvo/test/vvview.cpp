@@ -949,6 +949,10 @@ void vvView::rendererMenuCallback(int item)
       ds->renderer->_renderState._quality = (ds->hqMode) ? ds->highQuality : ds->draftQuality;
       cerr << QUALITY_NAMES[ds->hqMode] << " quality: " <<
          ((ds->hqMode) ? ds->highQuality : ds->draftQuality) << endl;
+      if (ds->remoteRendering)
+      {
+         ds->_renderMaster->adjustQuality(ds->renderer->_renderState._quality);
+      }
    }
    glutPostRedisplay();
 }

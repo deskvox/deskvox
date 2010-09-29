@@ -191,6 +191,17 @@ void vvRenderMaster::render(const float bgColor[3]) const
   glPopMatrix();
 }
 
+void vvRenderMaster::adjustQuality(const float quality)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_QUALITY) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putFloat(quality);
+    }
+  }
+}
+
 void vvRenderMaster::resize(const int w, const int h)
 {
   for (int s=0; s<_sockets.size(); ++s)

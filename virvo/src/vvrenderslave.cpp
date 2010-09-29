@@ -138,6 +138,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
   vvSocketIO::CommReason commReason;
   vvMatrix pr;
   vvMatrix mv;
+  float quality;
   int w;
   int h;
 
@@ -152,6 +153,12 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
            && (_socket->getMatrix(&mv) == vvSocket::VV_OK))
         {
           renderImage(pr, mv, renderer);
+        }
+        break;
+      case vvSocketIO::VV_QUALITY:
+        if ((_socket->getFloat(quality)) == vvSocket::VV_OK)
+        {
+          renderer->_renderState._quality = quality;
         }
         break;
       case vvSocketIO::VV_RESIZE:
