@@ -21,18 +21,10 @@
 #ifndef _VVPRINTGL_H_
 #define _VVPRINTGL_H_
 
-#if !defined(_WIN32) && !defined(__APPLE__)
-#define HAVE_X11
-#endif
-
-#ifdef HAVE_X11
-#include <GL/glx.h>
-#include <X11/Xlib.h>
-#endif
-
 #include <float.h>
 
 #include "vvexport.h"
+#include "vvx11.h"
 
 //============================================================================
 // Class Definition

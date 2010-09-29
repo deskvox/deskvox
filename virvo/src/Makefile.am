@@ -48,6 +48,7 @@ libvirvo_a_headers = \
         vvrendertarget.h \
         vvrendercontext.h \
         vvoffscreenbuffer.h \
+        vvx11.h \
         vvmultirend/vvtexmultirend.h \
         vvmultirend/vvtexmultirendmngr.h
 

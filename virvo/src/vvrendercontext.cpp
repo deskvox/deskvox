@@ -17,14 +17,7 @@
 
 #include <iostream>
 
-#if !defined(_WIN32) && !defined(__APPLE__)
-#define HAVE_X11
-#endif
-
-#ifdef HAVE_X11
-#include <GL/glx.h>
-#include <X11/Xlib.h>
-#endif
+#include "vvx11.h"
 
 using namespace std;
 

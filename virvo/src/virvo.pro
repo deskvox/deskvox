@@ -97,6 +97,7 @@ HEADERS = \
     vvcg.h \
     vvglsl.h \
     vvbsptree.h \
+    vvx11.h \
     vvbsptreevisitors.h \
     vvmultirend/vvtexmultirend.h \
     vvmultirend/vvtexmultirendmngr.h

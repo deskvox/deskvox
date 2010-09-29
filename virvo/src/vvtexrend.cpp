@@ -32,15 +32,7 @@
 #include "vvopengl.h"
 #include "vvdynlib.h"
 
-#if !defined(_WIN32) && !defined(__APPLE__)
-#define HAVE_X11
-#endif
-
-// xlib:
-#ifdef HAVE_X11
-#include <GL/glx.h>
-#include <X11/Xlib.h>
-#endif
+#include "vvx11.h"
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
