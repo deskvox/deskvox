@@ -79,6 +79,7 @@ class VIRVOEXPORT vvGLTools
     static void drawViewAlignedQuad(const float x1 = -1.0f, const float y1 = -1.0f,
                                     const float x2 =  1.0f, const float y2 =  1.0f);
     static Viewport getViewport();
+    static vvVector4 queryClearColor();
 };
 #endif
 

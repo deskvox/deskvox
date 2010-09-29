@@ -287,6 +287,16 @@ vvGLTools::Viewport vvGLTools::getViewport()
   return result;
 }
 
+//----------------------------------------------------------------------------
+/** Query the color specificied using glClearColor (rgba)
+*/
+vvVector4 vvGLTools::queryClearColor()
+{
+  vvVector4 result;
+  glGetFloatv(GL_COLOR_CLEAR_VALUE, result.e);
+  return result;
+}
+
 //============================================================================
 // End of File
 //============================================================================

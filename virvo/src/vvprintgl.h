@@ -24,6 +24,7 @@
 #include <float.h>
 
 #include "vvexport.h"
+#include "vvvecmath.h"
 #include "vvx11.h"
 
 //============================================================================
@@ -43,6 +44,8 @@ class VIRVOEXPORT vvPrintGL
 #ifdef HAVE_X11
     static Display* dsp;
 #endif
+    vvVector4 _fontColor;
+
     void saveGLState();
     void restoreGLState();
 
@@ -50,6 +53,8 @@ class VIRVOEXPORT vvPrintGL
     vvPrintGL();
     virtual ~vvPrintGL();
     void print(const float, const float, const char *, ...);
+
+    void setFontColor(const vvVector4& fontColor);
 };
 #endif
 

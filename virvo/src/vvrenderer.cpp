@@ -24,6 +24,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+#include "vvgltools.h"
 #include "vvopengl.h"
 #include <string.h>
 #include <math.h>
@@ -690,8 +691,10 @@ void vvRenderer::renderPalette()
 /// Display rendering quality.
 void vvRenderer::renderQualityDisplay()
 {
-  vvPrintGL* printGL;
-  printGL = new vvPrintGL();
+  vvPrintGL* printGL = new vvPrintGL();
+  vvVector4 clearColor = vvGLTools::queryClearColor();
+  vvVector4 fontColor = vvVector4(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f);
+  printGL->setFontColor(fontColor);
   printGL->print(-0.9f, 0.9f, "Quality: %-9.2f", _renderState._quality);
   delete printGL;
 }
@@ -704,6 +707,9 @@ void vvRenderer::renderFPSDisplay()
   if (fps > 0.0f) fps = 1.0f / fps;
   else fps = -1.0f;
   vvPrintGL* printGL = new vvPrintGL();
+  vvVector4 clearColor = vvGLTools::queryClearColor();
+  vvVector4 fontColor = vvVector4(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f);
+  printGL->setFontColor(fontColor);
   printGL->print(0.3f, 0.9f, "fps: %-9.1f", fps);
   delete printGL;
 }

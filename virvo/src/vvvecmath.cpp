@@ -2172,6 +2172,16 @@ vvVector4::vvVector4()
 }
 
 //----------------------------------------------------------------------------
+/// xyzw constructor
+vvVector4::vvVector4(const float x, const float y, const float z, const float w)
+{
+  e[0] = x;
+  e[1] = y;
+  e[2] = z;
+  e[3] = w;
+}
+
+//----------------------------------------------------------------------------
 /// Constructor for a copy of a vector
 vvVector4::vvVector4(const vvVector4* v)
 {

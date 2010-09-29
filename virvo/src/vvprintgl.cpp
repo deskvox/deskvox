@@ -51,6 +51,8 @@ vvPrintGL::vvPrintGL()
 {
   vvDebugMsg::msg(3, "vvPrintGL::vvPrintGL()");
 
+  _fontColor = vvVector4(1.0f, 1.0f, 1.0f, 1.0f);
+
 #ifdef _WIN32
   HFONT font;                                     // Windows Font ID
   HDC   hDC;                                      // Windows device context
@@ -133,7 +135,7 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
   for(char *p=text; *p; ++p)
   {
       int c = *p;
-      if(c < 32 || c)
+      if(c < 32 || c >= 128)
           *p = '+';
   }
 
@@ -144,7 +146,7 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
-  glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+  glColor4f(_fontColor[0], _fontColor[1], _fontColor[2], _fontColor[3]);
   glRasterPos2f(x, y);                            // set text position
 #ifdef _WIN32
   glListBase(base - 32);                          // Sets The Base Character to 32
@@ -155,6 +157,13 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
   glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
 
   restoreGLState();
+}
+
+//----------------------------------------------------------------------------
+/// Set the font color.
+void vvPrintGL::setFontColor(const vvVector4& fontColor)
+{
+  _fontColor = fontColor;
 }
 
 //----------------------------------------------------------------------------
