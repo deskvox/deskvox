@@ -384,20 +384,13 @@ void vvView::displayCallback(void)
    }
    else
    {
-      float fps;                                     // frames per second
-      static vvStopwatch* sw = NULL;                 // stop watch
-
       glDrawBuffer(GL_BACK);
       glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       ds->renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
 
-      if (ds->fpsMode)
-      {
-         if (!sw) sw = new vvStopwatch();
-         sw->start();
-      }
+      ds->renderer->setParameter(vvRenderer::VV_MEASURETIME, (float)ds->fpsMode);
 
       // Draw volume:
       glMatrixMode(GL_MODELVIEW);
@@ -458,18 +451,6 @@ void vvView::displayCallback(void)
          ds->renderer->_renderState._opaqueGeometryPresent = true;
 #endif
          ds->renderer->renderVolumeGL();
-      }
-
-      if (ds->fpsMode)
-      {
-         glColor3f(1.0f - ds->bgColor[0], 1.0f - ds->bgColor[1], 1.0f - ds->bgColor[2]);
-         fps = sw->getTime();
-         if (fps > 0.0f) fps = 1.0f / fps;
-         else fps = -1.0f;
-         vvPrintGL* printGL;
-         printGL = new vvPrintGL();
-         printGL->print(0.3f, 0.9f, "fps: %-9.2f", fps);
-         delete printGL;
       }
 
       if (ds->iconMode)
