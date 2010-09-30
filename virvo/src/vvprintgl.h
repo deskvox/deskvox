@@ -45,6 +45,7 @@ class VIRVOEXPORT vvPrintGL
     static Display* dsp;
 #endif
     vvVector4 _fontColor;
+    bool _consoleOutput;
 
     void saveGLState();
     void restoreGLState();

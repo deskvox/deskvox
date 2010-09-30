@@ -48,6 +48,7 @@ Display* vvPrintGL::dsp = NULL;
   @param hDC Windows device context
 */
 vvPrintGL::vvPrintGL()
+  : _consoleOutput(false)
 {
   vvDebugMsg::msg(3, "vvPrintGL::vvPrintGL()");
 
@@ -97,7 +98,9 @@ vvPrintGL::vvPrintGL()
       glXUseXFont(id, first, last - first + 1, base + first);
     }
   }
-
+#else
+  // Don't render to OpenGL window, but to console.
+  _consoleOutput = true;
 #endif
 }
 
@@ -119,6 +122,7 @@ vvPrintGL::~vvPrintGL()
 */
 void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
 {
+
   vvDebugMsg::msg(3, "vvPrintGL::print()");
 
   va_list ap;                                     // Pointer To List Of Arguments
@@ -139,24 +143,31 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
           *p = '+';
   }
 
-  saveGLState();
+  if (!_consoleOutput)
+  {
+    saveGLState();
 
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
 
-  glColor4f(_fontColor[0], _fontColor[1], _fontColor[2], _fontColor[3]);
-  glRasterPos2f(x, y);                            // set text position
-#ifdef _WIN32
-  glListBase(base - 32);                          // Sets The Base Character to 32
-#else
-  glListBase(base);
-#endif
-                                                  // Draws The Display List Text
-  glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
+    glColor4f(_fontColor[0], _fontColor[1], _fontColor[2], _fontColor[3]);
+    glRasterPos2f(x, y);                            // set text position
+  #ifdef _WIN32
+    glListBase(base - 32);                          // Sets The Base Character to 32
+  #else
+    glListBase(base);
+  #endif
+                                                    // Draws The Display List Text
+    glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
 
-  restoreGLState();
+    restoreGLState();
+  }
+  else
+  {
+    cerr << text << endl;
+  }
 }
 
 //----------------------------------------------------------------------------
