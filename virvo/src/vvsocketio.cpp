@@ -905,6 +905,39 @@ vvSocket::ErrorType vvSocketIO::getFloat(float& val)
 }
 
 //----------------------------------------------------------------------------
+/** Writes a vvVector3 to the socket.
+ @param val  the vvVector3.
+*/
+vvSocket::ErrorType vvSocketIO::putVector3(const vvVector3& val)
+{
+  uchar buffer[12];
+  vvToolshed::writeFloat(&buffer[0], val[0]);
+  vvToolshed::writeFloat(&buffer[4], val[1]);
+  vvToolshed::writeFloat(&buffer[8], val[2]);
+  return vvSocket::write_data(&buffer[0], 12);
+}
+
+//----------------------------------------------------------------------------
+/** Reads a vvVector3 from the socket.
+ @param val  the vvVector3.
+*/
+vvSocket::ErrorType vvSocketIO::getVector3(vvVector3& val)
+{
+  uchar buffer[12];
+  vvSocket::ErrorType retval;
+
+  if ((retval = vvSocket::read_data(&buffer[0], 12)) != vvSocket::VV_OK)
+  {
+    return retval;
+  }
+
+  val[0] = vvToolshed::readFloat(&buffer[0]);
+  val[1] = vvToolshed::readFloat(&buffer[4]);
+  val[2] = vvToolshed::readFloat(&buffer[8]);
+  return retval;
+}
+
+//----------------------------------------------------------------------------
 /** Writes a comm reason to the socket.
  @param val  the comm reason.
 */

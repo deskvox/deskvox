@@ -126,6 +126,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_MATRIX,
       VV_MIPMODE,
       VV_QUALITY,
+      VV_POSITION,
       VV_RESIZE,
       VV_TOGGLE_BOUNDINGBOX,
       VV_INTERPOLATION,
@@ -157,6 +158,8 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType putInt32(const int val);
     ErrorType getFloat(float& val);
     ErrorType putFloat(const float val);
+    ErrorType getVector3(vvVector3& val);
+    ErrorType putVector3(const vvVector3& val);
     ErrorType getCommReason(CommReason& val);
     ErrorType putCommReason(const CommReason val);
     ErrorType getWinDims(int& w, int& h);

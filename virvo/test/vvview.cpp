@@ -760,6 +760,11 @@ void vvView::specialCallback(int key, int, int)
          break;
       default: break;
    }
+
+   if (ds->remoteRendering)
+   {
+     ds->_renderMaster->setPosition(ds->pos);
+   }
    glutPostRedisplay();
 }
 

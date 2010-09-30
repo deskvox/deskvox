@@ -56,6 +56,7 @@ public:
   void resize(const int w, const int h);
   void setInterpolation(const bool interpolation);
   void setMipMode(const int mipMode);
+  void setPosition(const vvVector3& position);
   void toggleBoundingBox();
 private:
   std::vector<char*> _slaveNames;

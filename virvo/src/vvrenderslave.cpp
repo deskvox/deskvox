@@ -140,6 +140,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
   vvMatrix mv;
   float quality;
   int mipMode;
+  vvVector3 position;
   int w;
   int h;
   bool interpolation;
@@ -169,6 +170,12 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
         if ((_socket->getFloat(quality)) == vvSocket::VV_OK)
         {
           renderer->_renderState._quality = quality;
+        }
+        break;
+      case vvSocketIO::VV_POSITION:
+        if ((_socket->getVector3(position)) == vvSocket::VV_OK)
+        {
+          renderer->setPosition(&position);
         }
         break;
       case vvSocketIO::VV_RESIZE:

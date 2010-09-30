@@ -235,6 +235,17 @@ void vvRenderMaster::setMipMode(const int mipMode)
   }
 }
 
+void vvRenderMaster::setPosition(const vvVector3& position)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putVector3(position);
+    }
+  }
+}
+
 void vvRenderMaster::toggleBoundingBox()
 {
   for (int s=0; s<_sockets.size(); ++s)
