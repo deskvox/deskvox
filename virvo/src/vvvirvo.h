@@ -48,6 +48,7 @@ and vvMatrix are components of vvVecmath, a useful library for linear algebra.
 #pragma warning(disable: 4514)                    // disable warning about unreferenced inline function
 #endif
 
+#ifndef VV_COVISE
 namespace virvo
 {
   const char* getSvnRevision();
@@ -55,6 +56,8 @@ namespace virvo
   const char* getReleaseCounter();
   int getYearOfRelease();
 }
+#endif
+
 #endif
 
 //============================================================================
