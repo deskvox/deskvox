@@ -282,6 +282,7 @@ vvSocket::ErrorType vvSocket::accept_timeo()
     }
   }
   alarm(0);                                       /* turn off the alarm */
+  close(sockfd);
   sockfd = n;
   signal(SIGALRM, sigfunc);
 #endif
@@ -300,6 +301,8 @@ vvSocket::ErrorType vvSocket::accept_nontimeo()
     VV_ERRNO( 1, debuglevel,"Error: accept()");
     return VV_ACCEPT_ERROR;
   }
+
+  close(sockfd);
   sockfd = n;
   return VV_OK;
 }
@@ -1500,6 +1503,11 @@ vvSocket::ErrorType vvSocket::read_nontimeo(uchar* dataptr, size_t size)
   {
     VV_TRACE( 1, debuglevel,"Reading data failed, read_nontimeo()");
     return VV_READ_ERROR;
+  }
+  if (s == 0)
+  {
+    VV_TRACE( 1, debuglevel,"Peer performed orderly shutdown");
+    return VV_PEER_SHUTDOWN;
   }
   VV_TRACE( 3, debuglevel,"Getting "<< s << " Bytes of Data");
   return VV_OK;
