@@ -40,6 +40,12 @@ vvRenderContext::vvRenderContext(const bool debug)
 
 vvRenderContext::~vvRenderContext()
 {
+  if (_initialized)
+  {
+#ifdef HAVE_X11
+    XCloseDisplay(_archData->display);
+#endif
+  }
   delete _archData;
 }
 
