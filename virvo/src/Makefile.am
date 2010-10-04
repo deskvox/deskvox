@@ -98,7 +98,9 @@ libvirvoinclude_HEADERS = $(libvirvo_a_headers) vvconfig.h
 INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(GLEW_INCLUDES) $(XLIBS_INCLUDES) $(STINGRAY_INCLUDES) $(PIC_FLAGS)
 LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(GLEW_LIBS) $(GL_LIBS) $(XLIBS_LIBS) $(STINGRAY_LIBS)
 
+BUILT_SOURCES=vvversioninfo.h
+
 vvversioninfo.h: FORCE
-	../makeversion.sh $(top_srcdir) $(srcdir) 0
+	$(abs_top_srcdir)/makeversion.sh $(abs_top_srcdir) $(abs_srcdir) 0
 
 FORCE:
