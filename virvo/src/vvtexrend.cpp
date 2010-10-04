@@ -5560,7 +5560,7 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
   char* shaderFile = NULL;
   char* shaderPath = NULL;
 
-  shaderFile = new char[strlen(shaderFileName) + strlen(instStr) + strlen(shaderExt) + 1];
+  shaderFile = new char[strlen(shaderFileName) + 2 + strlen(instStr) + strlen(shaderExt) + 1];
   sprintf(shaderFile, "%s%s%s", shaderFileName, instStr, shaderExt);
 
   unixShaderDir = isectShader->getShaderDir();
