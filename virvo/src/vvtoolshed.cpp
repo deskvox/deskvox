@@ -2533,26 +2533,26 @@ float vvToolshed::meanSqrError(float* val1, float* val2, const int numValues)
 
 char* vvToolshed::file2string(const char *filename)
 {
-	FILE *fp = fopen(filename,"rt");
+  FILE *fp = fopen(filename,"rt");
 
-	if (fp == NULL)
-	{
-		cerr << "File NOT found: " << filename << endl;
-		return NULL;
-	}
+  if (fp == NULL)
+  {
+    cerr << "File NOT found: " << filename << endl;
+    return NULL;
+  }
 
-	fseek(fp, 0, SEEK_END);
-	int count = ftell(fp);
-	rewind(fp);
+  fseek(fp, 0, SEEK_END);
+  int count = ftell(fp);
+  rewind(fp);
 
-	char* content = new char[count+1];
+  char* content = new char[count+1];
 
-	count = fread(content,sizeof(char),count,fp);
-	content[count] = '\0';
-	
-	fclose(fp);
+  count = fread(content,sizeof(char),count,fp);
+  content[count] = '\0';
 
-	return content;
+  fclose(fp);
+
+  return content;
 }
 
 int vvToolshed::string2Int(const char* str)
