@@ -33,13 +33,13 @@ const float vvObjView::VIEWER_POS_Y = 0.0f;
 const float vvObjView::VIEWER_POS_Z = -2.0f;
 
 //----------------------------------------------------------------------------
-/// Constructor.
-vvObjView::vvObjView()
-{
-   vvDebugMsg::msg(1, "vvObjView::vvObjView()");
-   aspect = 1.0f;                                 // default aspect ratio is 1:1
-   cameraString = "VIRVO_CAMERA";
-   reset();
+  /// Constructor.
+  vvObjView::vvObjView()
+  {
+  vvDebugMsg::msg(1, "vvObjView::vvObjView()");
+  aspect = 1.0f;                                 // default aspect ratio is 1:1
+  cameraString = "VIRVO_CAMERA";
+  reset();
 }
 
 
@@ -50,14 +50,14 @@ vvObjView::vvObjView()
 */
 void vvObjView::reset()
 {
-   vvDebugMsg::msg(1, "vvObjView::reset()");
-   projType  = ORTHO;                             // default projection mode is orthographic
-   eyeDist   = -0.03f;                            // default eye distance (empirical value)
-   rotAngle  = 5.0f;                              // default rotational angle (empirical value)
-   fov       = 2.0f;                              // default field of view
-   zNear     = -100.0f;
-   zFar      = 100.0f;
-   resetMV();
+  vvDebugMsg::msg(1, "vvObjView::reset()");
+  projType  = ORTHO;                             // default projection mode is orthographic
+  eyeDist   = -0.03f;                            // default eye distance (empirical value)
+  rotAngle  = 5.0f;                              // default rotational angle (empirical value)
+  fov       = 2.0f;                              // default field of view
+  zNear     = -100.0f;
+  zFar      = 100.0f;
+  resetMV();
 }
 
 
@@ -66,9 +66,9 @@ void vvObjView::reset()
  */
 void vvObjView::resetMV()
 {
-   vvDebugMsg::msg(1, "vvObjView::resetMV()");
-   mv.identity();
-   mv.translate(VIEWER_POS_X, VIEWER_POS_Y, VIEWER_POS_Z);
+  vvDebugMsg::msg(1, "vvObjView::resetMV()");
+  mv.identity();
+  mv.translate(VIEWER_POS_X, VIEWER_POS_Y, VIEWER_POS_Z);
 }
 
 
@@ -87,21 +87,21 @@ void vvObjView::resetMV()
 */
 bool vvObjView::saveMV(const char* filename)
 {
-   FILE* fp;
-   int i;
+  FILE* fp;
+  int i;
 
-   vvDebugMsg::msg(1, "vvObjView::saveMV()");
+  vvDebugMsg::msg(1, "vvObjView::saveMV()");
 
-   fp = fopen(filename, "wb");
-   if (fp==NULL) return false;
-   fputs(cameraString, fp);
-   fputc('\n', fp);
-   for (i=0; i<4; ++i)
-   {
-      fprintf(fp, "%f %f %f %f\n", mv.e[i][0], mv.e[i][1], mv.e[i][2], mv.e[i][3]);
-   }
-   fclose(fp);
-   return true;
+  fp = fopen(filename, "wb");
+  if (fp==NULL) return false;
+  fputs(cameraString, fp);
+  fputc('\n', fp);
+  for (i=0; i<4; ++i)
+  {
+    fprintf(fp, "%f %f %f %f\n", mv.e[i][0], mv.e[i][1], mv.e[i][2], mv.e[i][3]);
+  }
+  fclose(fp);
+  return true;
 }
 
 
@@ -112,42 +112,42 @@ bool vvObjView::saveMV(const char* filename)
 */
 bool vvObjView::loadMV(const char* filename)
 {
-   FILE* fp;
-   int i,j;
-   bool retval = false;
-   vvMatrix camera;
+  FILE* fp;
+  int i,j;
+  bool retval = false;
+  vvMatrix camera;
 
-   vvDebugMsg::msg(1, "vvObjView::loadMV()");
+  vvDebugMsg::msg(1, "vvObjView::loadMV()");
 
-   fp = fopen(filename, "rb");
-   if (fp==NULL) return false;
+  fp = fopen(filename, "rb");
+  if (fp==NULL) return false;
 
-   // Initialize tokenizer:
-   vvTokenizer::TokenType ttype;
-   vvTokenizer* tokenizer = new vvTokenizer(fp);
-   tokenizer->setCommentCharacter('#');
-   tokenizer->setEOLisSignificant(false);
-   tokenizer->setCaseConversion(vvTokenizer::VV_UPPER);
-   tokenizer->setParseNumbers(true);
+  // Initialize tokenizer:
+  vvTokenizer::TokenType ttype;
+  vvTokenizer* tokenizer = new vvTokenizer(fp);
+  tokenizer->setCommentCharacter('#');
+  tokenizer->setEOLisSignificant(false);
+  tokenizer->setCaseConversion(vvTokenizer::VV_UPPER);
+  tokenizer->setParseNumbers(true);
 
-   // Parse file:
-   ttype = tokenizer->nextToken();
-   if (ttype!=vvTokenizer::VV_WORD) goto done;
-   if (strcmp(tokenizer->sval, cameraString) != 0) goto done;
-   for (i=0; i<4; ++i)
-      for (j=0; j<4; ++j)
-   {
-      ttype = tokenizer->nextToken();
-      if (ttype != vvTokenizer::VV_NUMBER) goto done;
-      camera.e[i][j] = tokenizer->nval;
-   }
-   mv.copy(&camera);
-   retval = true;
+  // Parse file:
+  ttype = tokenizer->nextToken();
+  if (ttype!=vvTokenizer::VV_WORD) goto done;
+  if (strcmp(tokenizer->sval, cameraString) != 0) goto done;
+  for (i=0; i<4; ++i)
+    for (j=0; j<4; ++j)
+  {
+    ttype = tokenizer->nextToken();
+    if (ttype != vvTokenizer::VV_NUMBER) goto done;
+    camera.e[i][j] = tokenizer->nval;
+  }
+  mv.copy(&camera);
+  retval = true;
 
-   done:
-   delete tokenizer;
-   fclose(fp);
-   return retval;
+  done:
+  delete tokenizer;
+  fclose(fp);
+  return retval;
 }
 
 
@@ -163,22 +163,22 @@ bool vvObjView::loadMV(const char* filename)
 */
 void vvObjView::setProjection(ProjectionType pt, float range, float nearPlane, float farPlane)
 {
-   const float MINIMUM = 0.0001f;                 // minimum value for perspective near/far planes
+  const float MINIMUM = 0.0001f;                 // minimum value for perspective near/far planes
 
-   vvDebugMsg::msg(2, "vvObjView::setProjection()");
+  vvDebugMsg::msg(2, "vvObjView::setProjection()");
 
-   // Near and far planes need value checking for perspective modes:
-   if (pt!=ORTHO)
-   {
-      if (nearPlane<=0.0f) nearPlane = MINIMUM;
-      if (farPlane <=0.0f) farPlane  = MINIMUM;
-   }
+  // Near and far planes need value checking for perspective modes:
+  if (pt!=ORTHO)
+  {
+    if (nearPlane<=0.0f) nearPlane = MINIMUM;
+    if (farPlane <=0.0f) farPlane  = MINIMUM;
+  }
 
-   fov   = range;
-   zNear = nearPlane;
-   zFar  = farPlane;
-   projType  = pt;
-   updateProjectionMatrix();
+  fov   = range;
+  zNear = nearPlane;
+  zFar  = farPlane;
+  projType  = pt;
+  updateProjectionMatrix();
 }
 
 
@@ -187,39 +187,39 @@ void vvObjView::setProjection(ProjectionType pt, float range, float nearPlane, f
  */
 void vvObjView::updateProjectionMatrix()
 {
-   GLint glsMatrixMode;                           // stores GL_MATRIX_MODE
-   float xHalf, yHalf;                            // half x and y coordinate range
-   float fovy;                                    // field of view in y direction
+  GLint glsMatrixMode;                           // stores GL_MATRIX_MODE
+  float xHalf, yHalf;                            // half x and y coordinate range
+  float fovy;                                    // field of view in y direction
 
-   vvDebugMsg::msg(2, "vvObjView::updateProjectionMatrix()");
+  vvDebugMsg::msg(2, "vvObjView::updateProjectionMatrix()");
 
-   // Save matrix mode:
-   glGetIntegerv(GL_MATRIX_MODE, &glsMatrixMode);
-   glMatrixMode(GL_PROJECTION);
-   glLoadIdentity();
+  // Save matrix mode:
+  glGetIntegerv(GL_MATRIX_MODE, &glsMatrixMode);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
 
-   // Precompute x and y range:
-   xHalf = 0.5f * ((aspect < 1.0f) ? fov : (fov * aspect));
-   yHalf = 0.5f * ((aspect > 1.0f) ? fov : (fov / aspect));
-   fovy  = (aspect > 1.0f) ? fov : (180.0f / VV_PI * ((float)atan(tan(fov * VV_PI / 180.0f) / aspect)));
+  // Precompute x and y range:
+  xHalf = 0.5f * ((aspect < 1.0f) ? fov : (fov * aspect));
+  yHalf = 0.5f * ((aspect > 1.0f) ? fov : (fov / aspect));
+  fovy  = (aspect > 1.0f) ? fov : (180.0f / VV_PI * ((float)atan(tan(fov * VV_PI / 180.0f) / aspect)));
 
-   // Set new projection matrix:
-   switch (projType)
-   {
-      case ORTHO:
-         glOrtho(-xHalf, xHalf, -yHalf, yHalf, zNear, zFar);
-         break;
-      case FRUSTUM:
-         glFrustum(-xHalf, xHalf, -yHalf, yHalf, zNear, zFar);
-         break;
-      case PERSPECTIVE:
-         gluPerspective(fovy, aspect, zNear, zFar);
-         break;
-      default: break;
-   }
+  // Set new projection matrix:
+  switch (projType)
+  {
+  case ORTHO:
+    glOrtho(-xHalf, xHalf, -yHalf, yHalf, zNear, zFar);
+    break;
+  case FRUSTUM:
+    glFrustum(-xHalf, xHalf, -yHalf, yHalf, zNear, zFar);
+    break;
+  case PERSPECTIVE:
+    gluPerspective(fovy, aspect, zNear, zFar);
+    break;
+  default: break;
+  }
 
-   // Restore matrix mode:
-   glMatrixMode(glsMatrixMode);
+  // Restore matrix mode:
+  glMatrixMode(glsMatrixMode);
 }
 
 
@@ -229,12 +229,12 @@ void vvObjView::updateProjectionMatrix()
 */
 void vvObjView::setAspectRatio(float ar)
 {
-   vvDebugMsg::msg(2, "vvObjView::setAspectRatio()");
-   if (aspect>0.0f)
-   {
-      aspect = ar;
-      updateProjectionMatrix();
-   }
+  vvDebugMsg::msg(2, "vvObjView::setAspectRatio()");
+  if (aspect>0.0f)
+  {
+    aspect = ar;
+    updateProjectionMatrix();
+  }
 }
 
 
@@ -244,10 +244,10 @@ void vvObjView::setAspectRatio(float ar)
 */
 void vvObjView::setDepthRange(float newNP, float newFP)
 {
-   vvDebugMsg::msg(2, "vvObjView::setDepthRange()");
-   zNear = newNP;
-   zFar  = newFP;
-   updateProjectionMatrix();
+  vvDebugMsg::msg(2, "vvObjView::setDepthRange()");
+  zNear = newNP;
+  zFar  = newFP;
+  updateProjectionMatrix();
 }
 
 
@@ -258,42 +258,42 @@ void vvObjView::setDepthRange(float newNP, float newFP)
 */
 void vvObjView::updateModelviewMatrix(EyeType eye)
 {
-   vvMatrix mvRight;                             // modelview matrix for right eye
-   vvMatrix invRot;                              // inverse rotational matrix
-   vvVector3 v(0.0, -1.0, 0.0);                   // rotational vector
-   GLint glsMatrixMode;                           // stores GL_MATRIX_MODE
-   float flat[16];
+  vvMatrix mvRight;                             // modelview matrix for right eye
+  vvMatrix invRot;                              // inverse rotational matrix
+  vvVector3 v(0.0, -1.0, 0.0);                   // rotational vector
+  GLint glsMatrixMode;                           // stores GL_MATRIX_MODE
+  float flat[16];
 
-   vvDebugMsg::msg(2, "vvObjView::updateModelviewMatrix()");
+  vvDebugMsg::msg(2, "vvObjView::updateModelviewMatrix()");
 
-   // Save matrix mode:
-   glGetIntegerv(GL_MATRIX_MODE, &glsMatrixMode);
-   glMatrixMode(GL_MODELVIEW);
+  // Save matrix mode:
+  glGetIntegerv(GL_MATRIX_MODE, &glsMatrixMode);
+  glMatrixMode(GL_MODELVIEW);
 
-   if (eye!=RIGHT_EYE)                             // use stored matrix for left eye
-   {
-      mv.makeGL(flat);
-   }
-   else                                           // convert for right eye
-   {
-      // Convert axis coordinates (v) from WCS to OCS:
-      mvRight.copy(&mv);
-      invRot.identity();
-      invRot.copyRot(&mv);
-      invRot.invertOrtho();
-      v.multiply(&invRot);
-      v.normalize();                              // normalize before rotation!
+  if (eye!=RIGHT_EYE)                             // use stored matrix for left eye
+  {
+    mv.makeGL(flat);
+  }
+  else                                           // convert for right eye
+  {
+    // Convert axis coordinates (v) from WCS to OCS:
+    mvRight.copy(&mv);
+    invRot.identity();
+    invRot.copyRot(&mv);
+    invRot.invertOrtho();
+    v.multiply(&invRot);
+    v.normalize();                              // normalize before rotation!
 
-      mvRight.rotate(rotAngle * (float)VV_PI / 180.0f, v.e[0], v.e[1], v.e[2]);
-      mvRight.translate(eyeDist, 0.0f, 0.0f);
-      mvRight.makeGL(flat);
-   }
+    mvRight.rotate(rotAngle * (float)VV_PI / 180.0f, v.e[0], v.e[1], v.e[2]);
+    mvRight.translate(eyeDist, 0.0f, 0.0f);
+    mvRight.makeGL(flat);
+  }
 
-   // Load matrix to OpenGL:
-   glLoadMatrixf(flat);
+  // Load matrix to OpenGL:
+  glLoadMatrixf(flat);
 
-   // Restore matrix mode:
-   glMatrixMode(glsMatrixMode);
+  // Restore matrix mode:
+  glMatrixMode(glsMatrixMode);
 }
 
 
@@ -305,7 +305,7 @@ void vvObjView::updateModelviewMatrix(EyeType eye)
 */
 void vvObjView::trackballRotation(int width, int height, int fromX, int fromY, int toX, int toY)
 {
-   mv.trackballRotation(width, height, fromX, fromY, toX, toY);
+  mv.trackballRotation(width, height, fromX, fromY, toX, toY);
 }
 
 
@@ -315,7 +315,7 @@ void vvObjView::trackballRotation(int width, int height, int fromX, int fromY, i
 */
 void vvObjView::setEyeDistance(float ed)
 {
-   eyeDist = ed;
+  eyeDist = ed;
 }
 
 
@@ -325,7 +325,7 @@ void vvObjView::setEyeDistance(float ed)
 */
 void vvObjView::setRotationalAngle(float angle)
 {
-   rotAngle = angle;
+  rotAngle = angle;
 }
 
 

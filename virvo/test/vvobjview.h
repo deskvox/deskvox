@@ -20,42 +20,42 @@
 */
 class vvObjView
 {
-   public:
-      enum EyeType                                /// eyes for stereo viewing
-      { LEFT_EYE, RIGHT_EYE };
-      enum ProjectionType                         /// projection types
-      { ORTHO, FRUSTUM, PERSPECTIVE };
+  public:
+    enum EyeType                                /// eyes for stereo viewing
+    { LEFT_EYE, RIGHT_EYE };
+    enum ProjectionType                         /// projection types
+    { ORTHO, FRUSTUM, PERSPECTIVE };
 
-   private:
-      static const float VIEWER_POS_X;            ///< default viewer position on x axis
-      static const float VIEWER_POS_Y;            ///< default viewer position on y axis
-      static const float VIEWER_POS_Z;            ///< default viewer position on z axis
-      ProjectionType projType;                    ///< projection type
-      float   eyeDist;                            ///< eye distance for stereo mode [world space]
-      float   rotAngle;                           ///< rotational angle for stereo mode [degrees]
-      float   fov;                                ///< minimum field of view in either world space coordinates
-      ///< or degrees, depending on projection type
-      float   zNear;                              ///< near viewport clipping plane
-      float   zFar;                               ///< far viewport clipping plane
-      float   aspect;                             ///< viewport aspect ratio
-      const char* cameraString;                   ///< string to store as camera file header
+  private:
+    static const float VIEWER_POS_X;            ///< default viewer position on x axis
+    static const float VIEWER_POS_Y;            ///< default viewer position on y axis
+    static const float VIEWER_POS_Z;            ///< default viewer position on z axis
+    ProjectionType projType;                    ///< projection type
+    float   eyeDist;                            ///< eye distance for stereo mode [world space]
+    float   rotAngle;                           ///< rotational angle for stereo mode [degrees]
+    float   fov;                                ///< minimum field of view in either world space coordinates
+    ///< or degrees, depending on projection type
+    float   zNear;                              ///< near viewport clipping plane
+    float   zFar;                               ///< far viewport clipping plane
+    float   aspect;                             ///< viewport aspect ratio
+    const char* cameraString;                   ///< string to store as camera file header
 
-   public:
-      vvMatrix mv;                               ///< modelview matrix for left eye and mono mode
+  public:
+    vvMatrix mv;                               ///< modelview matrix for left eye and mono mode
 
-      vvObjView();
-      void  reset();
-      void  resetMV();
-      bool  saveMV(const char*);
-      bool  loadMV(const char*);
-      void  setProjection(ProjectionType, float, float, float);
-      void  setAspectRatio(float);
-      void  setDepthRange(float, float);
-      void  trackballRotation(int, int, int, int, int, int);
-      void  setEyeDistance(float);
-      void  setRotationalAngle(float);
-      void  updateProjectionMatrix();
-      void  updateModelviewMatrix(EyeType = LEFT_EYE);
+    vvObjView();
+    void  reset();
+    void  resetMV();
+    bool  saveMV(const char*);
+    bool  loadMV(const char*);
+    void  setProjection(ProjectionType, float, float, float);
+    void  setAspectRatio(float);
+    void  setDepthRange(float, float);
+    void  trackballRotation(int, int, int, int, int, int);
+    void  setEyeDistance(float);
+    void  setRotationalAngle(float);
+    void  updateProjectionMatrix();
+    void  updateModelviewMatrix(EyeType = LEFT_EYE);
 };
 #endif
 
