@@ -147,12 +147,13 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
 
   while (1)
   {
-    if (_socket->getCommReason(commReason) == vvSocket::VV_OK)
+    vvSocket::ErrorType err = _socket->getCommReason(commReason);
+    if (err == vvSocket::VV_OK)
     {
       switch (commReason)
       {
       case vvSocketIO::VV_EXIT:
-        break;
+        return;
       case vvSocketIO::VV_MATRIX:
         if ((_socket->getMatrix(&pr) == vvSocket::VV_OK)
            && (_socket->getMatrix(&mv) == vvSocket::VV_OK))
@@ -196,6 +197,12 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
       default:
         break;
       }
+    }
+    else if (err == vvSocket::VV_PEER_SHUTDOWN)
+    {
+      delete _socket;
+      _socket = NULL;
+      return;
     }
   }
 }

@@ -110,7 +110,8 @@ class VIRVOEXPORT vvSocket
       VV_ALLOC_ERROR,                             ///< allocation error: not enough memory
       VV_CREATE_ERROR,                            ///< socket could not be opened
       VV_HEADER_ERROR,                            ///< invalid header received
-      VV_DATA_ERROR                               ///< volume data format error: e.g., too many voxels received
+      VV_DATA_ERROR,                              ///< volume data format error: e.g., too many voxels received
+      VV_PEER_SHUTDOWN                            ///< the connection was closed by peer
     };
 
     enum SocketType

@@ -151,80 +151,82 @@ void vvView::mainLoop(int argc, char *argv[])
 
    if (slaveMode)
    {
-      cerr << "Renderer started in slave mode" << endl;
-      vvRenderSlave* renderSlave = new vvRenderSlave();
-
-      if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvRenderSlave::VV_OK)
+      while (1)
       {
-         // TODO: Evaluate the error type, maybe don't even return but try again.
-         cerr << "Couldn't initialize the socket connection" << endl;
-         cerr << "Exiting..." << endl;
-         return;
-      }
+         cerr << "Renderer started in slave mode" << endl;
+         vvRenderSlave* renderSlave = new vvRenderSlave();
 
-      if (renderSlave->initData(vd) != vvRenderSlave::VV_OK)
-      {
-         cerr << "Exiting..." << endl;
-         return;
-      }
-
-      // Get bricks to render
-      std::vector<BrickList>* frames = new std::vector<BrickList>();
-      BrickList bricks;
-
-      if (renderSlave->initBricks(bricks) != vvRenderSlave::VV_OK)
-      {
-         delete frames;
-         cerr << "Exiting..." << endl;
-         return;
-      }
-
-      frames->push_back(bricks);
-      if (vd != NULL)
-      {
-         vd->printInfoLine();
-
-         // Set default color scheme if no TF present:
-         if (vd->tf.isEmpty())
+         if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvRenderSlave::VV_OK)
          {
-            vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-            vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+            // TODO: Evaluate the error type, maybe don't even return but try again.
+            cerr << "Couldn't initialize the socket connection" << endl;
+            cerr << "Exiting..." << endl;
+            return;
          }
 
-         float div = 0.0f;
-         for(int i=0; i<3; i++)
+         if (renderSlave->initData(vd) != vvRenderSlave::VV_OK)
          {
-            vvDebugMsg::msg(2, "sz: ", vd->dist[i]*vd->vox[i]);
-            if(vd->dist[i]*vd->vox[i]/div > 1.)
-               div = vd->dist[i]*vd->vox[i];
+            cerr << "Exiting..." << endl;
+            return;
          }
-         vvDebugMsg::msg(2, "div: ", div);
-         for(int i=0; i<3; i++)
-            vd->dist[i] /= div;
 
-         ov = new vvObjView();
+         // Get bricks to render
+         std::vector<BrickList>* frames = new std::vector<BrickList>();
+         BrickList bricks;
 
-         vvRenderContext* context = new vvRenderContext(true);
-         if (context->makeCurrent())
+         if (renderSlave->initBricks(bricks) != vvRenderSlave::VV_OK)
          {
+            delete frames;
+            cerr << "Exiting..." << endl;
+            return;
+         }
+
+         frames->push_back(bricks);
+         if (vd != NULL)
+         {
+            vd->printInfoLine();
+
+            // Set default color scheme if no TF present:
+            if (vd->tf.isEmpty())
+            {
+               vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+               vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+            }
+
+            float div = 0.0f;
+            for(int i=0; i<3; i++)
+            {
+               vvDebugMsg::msg(2, "sz: ", vd->dist[i]*vd->vox[i]);
+               if(vd->dist[i]*vd->vox[i]/div > 1.)
+                  div = vd->dist[i]*vd->vox[i];
+            }
+            vvDebugMsg::msg(2, "div: ", div);
+            for(int i=0; i<3; i++)
+               vd->dist[i] /= div;
+
             ov = new vvObjView();
-            setProjectionMode(perspectiveMode);
-            setRenderer(currentGeom, currentVoxels, frames);
-            srand(time(NULL));
 
-            renderSlave->renderLoop(dynamic_cast<vvTexRend*>(renderer));
+            vvRenderContext* context = new vvRenderContext(true);
+            if (context->makeCurrent())
+            {
+               ov = new vvObjView();
+               setProjectionMode(perspectiveMode);
+               setRenderer(currentGeom, currentVoxels, frames);
+               srand(time(NULL));
+
+               renderSlave->renderLoop(dynamic_cast<vvTexRend*>(renderer));
+               cerr << "Exiting..." << endl;
+            }
+            delete context;
          }
+
+         // Frames vector with bricks is deleted along with the renderer.
+         // Don't free them here.
+         // see setRenderer().
+
+         delete renderSlave;
+         renderSlave = NULL;
       }
-      for (std::vector<BrickList>::const_iterator it1 = frames->begin(); it1 != frames->end(); ++it1)
-      {
-         BrickList bl = (*it1);
-         for (BrickList::const_iterator it2 = bl.begin(); it2 != bl.end(); ++it2)
-         {
-            delete (*it2);
-         }
-      }
-      delete frames;
-      delete renderSlave;
    }
    else
    {
@@ -619,6 +621,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
    if(renderer)
       renderState = renderer->_renderState;
    delete renderer;
+   renderer = NULL;
    renderState._maxBrickSize[0] = maxBrickSizeX;
    renderState._maxBrickSize[1] = maxBrickSizeY;
    renderState._maxBrickSize[2] = maxBrickSizeZ;
