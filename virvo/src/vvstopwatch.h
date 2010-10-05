@@ -76,7 +76,7 @@ class VIRVOEXPORT vvStopwatch
 class VIRVOEXPORT vvTimer
 {
   public:
-    vvTimer(const char *label);
+    vvTimer(const char *label = 0);
     ~vvTimer();
   private:
     const char *label;
@@ -84,6 +84,8 @@ class VIRVOEXPORT vvTimer
 };
 
 #define TIME_BLOCK vvTimer automatic_timer(__PRETTY_FUNCTION__)
+#define TIME_BLOCK_BEGIN vvTimer* itIsVeryUnlikelyThatSomeoneWillChooseThisNameForHisVariable = new vvTimer();
+#define TIME_BLOCK_END delete itIsVeryUnlikelyThatSomeoneWillChooseThisNameForHisVariable;
 
 #endif
 

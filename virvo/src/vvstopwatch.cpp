@@ -126,7 +126,14 @@ vvTimer::vvTimer(const char *label)
 
 vvTimer::~vvTimer()
 {
-  std::cerr << label << ": " << watch.getTime()*1000. << " ms" << std::endl;
+  if (label)
+  {
+    std::cerr << label << ": " << watch.getTime() * 1000.0f << " ms" << std::endl;
+  }
+  else
+  {
+    std::cerr << watch.getTime() * 1000.0f << " ms" << std::endl;
+  }
 }
 
 //============================================================================
