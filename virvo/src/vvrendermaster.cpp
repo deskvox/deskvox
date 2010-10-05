@@ -54,10 +54,10 @@ vvRenderMaster::ErrorType vvRenderMaster::initSockets(const int defaultPort, vvS
       _sockets.push_back(new vvSocketIO(_slavePorts[s], _slaveNames[s], st));
     }
     _sockets[s]->set_debuglevel(vvDebugMsg::getDebugLevel());
-    _sockets[s]->no_nagle();
 
     if (_sockets[s]->init() == vvSocket::VV_OK)
     {
+      _sockets[s]->no_nagle();
       _sockets[s]->putBool(loadVolumeFromFile);
 
       if (loadVolumeFromFile)
