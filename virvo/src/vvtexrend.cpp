@@ -253,7 +253,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   if (bricks != NULL)
   {
     _brickList = *bricks;
-    calcAABBMask();_aabbMask->print();
+    calcAABBMask();
     _areEmptyBricksCreated = true;
   }
   else
