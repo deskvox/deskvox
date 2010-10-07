@@ -2278,9 +2278,9 @@ int main(int argc, char** argv)
   flag |= _CRTDBG_LEAK_CHECK_DF;                 // Turn on leak-checking bit
   flag |=  _CRTDBG_CHECK_ALWAYS_DF;
   _CrtSetDbgFlag(flag);                          // Set flag to the new value
-  #endif
+#endif
 
-  #ifdef VV_DEBUG_MEMORY
+#ifdef VV_DEBUG_MEMORY
   _CrtMemState s1, s2, s3;
   _CrtCheckMemory();
   _CrtMemCheckpoint( &s1 );
