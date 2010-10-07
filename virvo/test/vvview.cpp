@@ -731,6 +731,8 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'z': ds->viewMenuCallback(5);  break;
   case '<': ds->transferMenuCallback(11);  break;
   case '>': ds->transferMenuCallback(12);  break;
+  case '[': ds->mainMenuCallback(98); break;
+  case ']': ds->mainMenuCallback(99); break;
   case ' ': ds->optionsMenuCallback(8); break;
   default: cerr << "key '" << char(key) << "' has no function'" << endl; break;
   }
@@ -871,6 +873,8 @@ void vvView::mainMenuCallback(int item)
 {
   vvDebugMsg::msg(1, "vvView::mainMenuCallback()");
 
+  vvVector3 probeSize;
+
   switch (item)
   {
   case 0:                                     // projection mode
@@ -922,6 +926,8 @@ void vvView::mainMenuCallback(int item)
       cerr << "Arrow left:         -x, arrow right:      +x" << endl;
       cerr << "Arrow down:         -y, arrow up:         +y" << endl;
       cerr << "Arrow down + shift: -z, arrow up + shift: +z" << endl;
+      cerr << endl;
+      cerr << "Use '[‘ and ‘]‘ to resize probe" << endl;
     }
     else
     {
@@ -932,6 +938,40 @@ void vvView::mainMenuCallback(int item)
     glutDestroyWindow(ds->window);
     delete ds;
     exit(0);
+    break;
+  case 98:
+    if (ds->roiEnabled)
+    {
+      ds->renderer->getProbeSize(&probeSize);
+      probeSize.sub(0.1f);
+      const float size = probeSize[0];
+      if (size <= 0.0f)
+      {
+        probeSize = vvVector3(0.00001f);
+      }
+      ds->renderer->setProbeSize(&probeSize);
+    }
+    else
+    {
+      cerr << "Function only available in ROI mode" << endl;
+    }
+    break;
+  case 99:
+    if (ds->roiEnabled)
+    {
+      ds->renderer->getProbeSize(&probeSize);
+      probeSize.add(0.1f);
+      const float size = probeSize[0];
+      if (size > 1.0f)
+      {
+        probeSize = vvVector3(1.0f);
+      }
+      ds->renderer->setProbeSize(&probeSize);
+    }
+    else
+    {
+      cerr << "Function only available in ROI mode" << endl;
+    }
     break;
   default: break;
   }
@@ -1761,6 +1801,8 @@ void vvView::createMenus()
   glutAddMenuEntry("Save volume to file", 9);
   glutAddMenuEntry("Performance test [t]", 11);
   glutAddMenuEntry("Toggle region of intereset mode [R]", 12);
+  glutAddMenuEntry("ROI size-- ['[']", 98);
+  glutAddMenuEntry("ROI size++ [']']", 99);
   glutAddMenuEntry("Quit [q]", 13);
 
   glutSetMenu(mainMenu);
