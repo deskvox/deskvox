@@ -920,6 +920,12 @@ void vvView::mainMenuCallback(int item)
   case 12:                                    // toggle roi mode
     ds->roiEnabled = !ds->roiEnabled;
     ds->renderer->setROIEnable(ds->roiEnabled);
+
+    if (ds->remoteRendering)
+    {
+      ds->_renderMaster->setROIEnabled(ds->roiEnabled);
+    }
+
     if (ds->roiEnabled)
     {
       cerr << "Region of interest mode enabled" << endl;

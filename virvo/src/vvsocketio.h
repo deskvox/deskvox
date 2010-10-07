@@ -129,6 +129,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_POSITION,
       VV_RESIZE,
       VV_TOGGLE_BOUNDINGBOX,
+      VV_TOGGLE_ROI,
       VV_INTERPOLATION,
       VV_VOLUME
     };

@@ -58,6 +58,7 @@ public:
   void setInterpolation(const bool interpolation);
   void setMipMode(const int mipMode);
   void setPosition(const vvVector3& position);
+  void setROIEnabled(const bool roiEnabled);
   void toggleBoundingBox();
 private:
   std::vector<char*> _slaveNames;

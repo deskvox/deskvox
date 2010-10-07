@@ -255,6 +255,17 @@ void vvRenderMaster::setPosition(const vvVector3& position)
   }
 }
 
+void vvRenderMaster::setROIEnabled(const bool roiEnabled)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_ROI))
+    {
+      _sockets[s]->putBool(roiEnabled);
+    }
+  }
+}
+
 void vvRenderMaster::toggleBoundingBox()
 {
   for (int s=0; s<_sockets.size(); ++s)

@@ -144,6 +144,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
   int w;
   int h;
   bool interpolation;
+  bool roiEnabled;
 
   while (1)
   {
@@ -193,6 +194,12 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
         break;
       case vvSocketIO::VV_TOGGLE_BOUNDINGBOX:
         renderer->_renderState._boundaries = !renderer->_renderState._boundaries;
+        break;
+      case vvSocketIO::VV_TOGGLE_ROI:
+        if ((_socket->getBool(roiEnabled)) == vvSocket::VV_OK)
+        {
+          renderer->setROIEnable(roiEnabled);
+        }
         break;
       default:
         break;
