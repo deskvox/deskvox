@@ -1120,6 +1120,13 @@ vvVector3::vvVector3()
 }
 
 //----------------------------------------------------------------------------
+/// Constructor with one value for x, y and z
+vvVector3::vvVector3(const float val)
+{
+  e[0] = e[1] = e[2] = val;
+}
+
+//----------------------------------------------------------------------------
 /// Constructor for a preset vector
 vvVector3::vvVector3(const float x, const float y, const float z)
 {
@@ -2169,6 +2176,13 @@ vvVector3& vvVector3::operator -= ( const vvVector3 &other )
 vvVector4::vvVector4()
 {
   e[0] = e[1] = e[2] = e[3] = 0.0f;
+}
+
+//----------------------------------------------------------------------------
+/// Constructor with one value for x, y, z and w
+vvVector4::vvVector4(const float val)
+{
+  e[0] = e[1] = e[2] = e[3] = val;
 }
 
 //----------------------------------------------------------------------------

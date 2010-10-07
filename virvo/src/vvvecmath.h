@@ -132,6 +132,7 @@ class VIRVOEXPORT vvVector4
     float e[4];                                   ///< vector elements (x|y|z|w)
 
     vvVector4();
+    vvVector4(const float val);
     vvVector4(const float x, const float y, const float z, const float w);
     vvVector4(const vvVector4*);
     float &operator[](const int);
@@ -151,6 +152,7 @@ class VIRVOEXPORT vvVector3
     float e[3];                                   ///< vector elements (x|y|z)
 
     vvVector3();
+    vvVector3(const float);
     vvVector3(const float, const float, const float);
     vvVector3(const vvVector3*);
     vvVector3 operator^(const vvVector3) const;
