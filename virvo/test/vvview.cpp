@@ -126,7 +126,8 @@ vvView::vvView()
   _renderMaster         = NULL;
   benchmark             = false;
   testSuiteFileName     = NULL;
-  showBricks           = false;
+  showBricks            = false;
+  roiEnabled            = false;
 }
 
 
@@ -717,8 +718,9 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'p': ds->mainMenuCallback(0);  break;
   case 'P': ds->optionsMenuCallback(1);  break;
   case 27:                                    // Escape
-  case 'q': ds->mainMenuCallback(12); break;
+  case 'q': ds->mainMenuCallback(13); break;
   case 'r': ds->mainMenuCallback(7);  break;
+  case 'R': ds->mainMenuCallback(12); break;
   case 's': ds->animMenuCallback(4);  break;
   case 'S': ds->animMenuCallback(5);  break;
   case 't': ds->mainMenuCallback(11); break;
@@ -743,23 +745,75 @@ void vvView::specialCallback(int key, int, int)
 {
   vvDebugMsg::msg(3, "vvView::specialCallback()");
 
+  vvVector3 probePos;
+  ds->renderer->getProbePosition(&probePos);
+
+  const int modifiers = glutGetModifiers();
+  const float delta = 0.1f;
+
   switch(key)
   {
   case GLUT_KEY_LEFT:
-    ds->pos.e[0] -= 0.1f;
-    ds->renderer->setPosition(&ds->pos);
+    if (ds->roiEnabled)
+    {
+      probePos.e[0] -= delta;
+      ds->renderer->setProbePosition(&probePos);
+    }
+    else
+    {
+      ds->pos.e[0] -= delta;
+      ds->renderer->setPosition(&ds->pos);
+    }
     break;
   case GLUT_KEY_RIGHT:
-    ds->pos.e[0] += 0.1f;
-    ds->renderer->setPosition(&ds->pos);
+    if (ds->roiEnabled)
+    {
+      probePos.e[0] += delta;
+      ds->renderer->setProbePosition(&probePos);
+    }
+    else
+    {
+      ds->pos.e[0] += delta;
+      ds->renderer->setPosition(&ds->pos);
+    }
     break;
   case GLUT_KEY_UP:
-    ds->pos.e[1] += 0.1f;
-    ds->renderer->setPosition(&ds->pos);
+    if (ds->roiEnabled)
+    {
+      if (modifiers & GLUT_ACTIVE_SHIFT)
+      {
+        probePos.e[2] += delta;
+      }
+      else
+      {
+        probePos.e[1] += delta;
+      }
+      ds->renderer->setProbePosition(&probePos);
+    }
+    else
+    {
+      ds->pos.e[1] += delta;
+      ds->renderer->setPosition(&ds->pos);
+    }
     break;
   case GLUT_KEY_DOWN:
-    ds->pos.e[1] -= 0.1f;
-    ds->renderer->setPosition(&ds->pos);
+    if (ds->roiEnabled)
+    {
+      if (modifiers & GLUT_ACTIVE_SHIFT)
+      {
+        probePos.e[2] -= delta;
+      }
+      else
+      {
+        probePos.e[1] -= delta;
+      }
+      ds->renderer->setProbePosition(&probePos);
+    }
+    else
+    {
+      ds->pos.e[1] -= delta;
+      ds->renderer->setPosition(&ds->pos);
+    }
     break;
   default: break;
   }
@@ -859,7 +913,22 @@ void vvView::mainMenuCallback(int item)
   case 11:                                    // performance test
     performanceTest();
     break;
-  case 12:                                    // quit
+  case 12:                                    // toggle roi mode
+    ds->roiEnabled = !ds->roiEnabled;
+    ds->renderer->setROIEnable(ds->roiEnabled);
+    if (ds->roiEnabled)
+    {
+      cerr << "Region of interest mode enabled" << endl;
+      cerr << "Arrow left:         -x, arrow right:      +x" << endl;
+      cerr << "Arrow down:         -y, arrow up:         +y" << endl;
+      cerr << "Arrow down + shift: -z, arrow up + shift: +z" << endl;
+    }
+    else
+    {
+      cerr << "Region of interest mode disabled" << endl;
+    }
+    break;
+  case 13:                                    // quit
     glutDestroyWindow(ds->window);
     delete ds;
     exit(0);
@@ -1691,7 +1760,8 @@ void vvView::createMenus()
   glutAddMenuEntry("Toggle popup menu/zoom mode [m]", 8);
   glutAddMenuEntry("Save volume to file", 9);
   glutAddMenuEntry("Performance test [t]", 11);
-  glutAddMenuEntry("Quit [q]", 12);
+  glutAddMenuEntry("Toggle region of intereset mode [R]", 12);
+  glutAddMenuEntry("Quit [q]", 13);
 
   glutSetMenu(mainMenu);
   glutAttachMenu(GLUT_RIGHT_BUTTON);
