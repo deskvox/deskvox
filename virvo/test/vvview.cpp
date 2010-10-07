@@ -644,6 +644,13 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   {
     renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks);
   }
+
+  renderer->setROIEnable(roiEnabled);
+  printROIMessage();
+  if (remoteRendering)
+  {
+    _renderMaster->setROIEnabled(roiEnabled);
+  }
   //static_cast<vvTexRend *>(renderer)->setTexMemorySize( 4 );
   //static_cast<vvTexRend *>(renderer)->setComputeBrickSize( false );
   //static_cast<vvTexRend *>(renderer)->setBrickSize( 64 );
@@ -925,20 +932,7 @@ void vvView::mainMenuCallback(int item)
     {
       ds->_renderMaster->setROIEnabled(ds->roiEnabled);
     }
-
-    if (ds->roiEnabled)
-    {
-      cerr << "Region of interest mode enabled" << endl;
-      cerr << "Arrow left:         -x, arrow right:      +x" << endl;
-      cerr << "Arrow down:         -y, arrow up:         +y" << endl;
-      cerr << "Arrow down + shift: -z, arrow up + shift: +z" << endl;
-      cerr << endl;
-      cerr << "Use '[‘ and ‘]‘ to resize probe" << endl;
-    }
-    else
-    {
-      cerr << "Region of interest mode disabled" << endl;
-    }
+    printROIMessage();
     break;
   case 13:                                    // quit
     glutDestroyWindow(ds->window);
@@ -1686,6 +1680,27 @@ void vvView::printProfilingResult(vvStopwatch* totalTime, const int framesRender
 
 
 //----------------------------------------------------------------------------
+/** Print a short info how to interact with the probe in roi mode
+  */
+void vvView::printROIMessage()
+{
+  if (ds->roiEnabled)
+  {
+    cerr << "Region of interest mode enabled" << endl;
+    cerr << "Arrow left:         -x, arrow right:      +x" << endl;
+    cerr << "Arrow down:         -y, arrow up:         +y" << endl;
+    cerr << "Arrow down + shift: -z, arrow up + shift: +z" << endl;
+    cerr << endl;
+    cerr << "Use '[‘ and ‘]‘ to resize probe" << endl;
+  }
+  else
+  {
+    cerr << "Region of interest mode disabled" << endl;
+  }
+}
+
+
+//----------------------------------------------------------------------------
 /// Create the pop-up menus.
 void vvView::createMenus()
 {
@@ -2148,6 +2163,10 @@ bool vvView::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-s")==0)
     {
       slaveMode = true;
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-roi")==0)
+    {
+      roiEnabled = true;
     }
     else if (vvToolshed::strCompare(argv[arg], "-port")==0)
     {

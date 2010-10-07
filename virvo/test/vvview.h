@@ -151,6 +151,7 @@ class vvView
     static void performanceTest();
     static void printProfilingInfo(const int testNr = 1, const int testCnt = 1);
     static void printProfilingResult(vvStopwatch* totalTime, const int framesRendered);
+    static void printROIMessage();
     void setAnimationFrame(int);
     void initGraphics(int argc, char *argv[]);
     void createMenus();
