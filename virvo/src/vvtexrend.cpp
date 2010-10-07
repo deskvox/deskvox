@@ -5576,7 +5576,7 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
   const char* vertexFileName = "vv_intersection_ver";
   char* vertexFile = new char[strlen(vertexFileName) + strlen(instStr) + strlen(shaderExt) + 1];
   sprintf(vertexFile, "%s%s%s", vertexFileName, instStr, shaderExt);
-  char* vertexPath = new char[strlen(unixShaderDir) + 1 + strlen(vertexFileName) + 1];
+  char* vertexPath = new char[strlen(unixShaderDir) + 2 + strlen(vertexFileName) + 1];
 #ifdef _WIN32
   sprintf(vertexPath, "%s\\%s", unixShaderDir, vertexFile);
 #else
