@@ -69,9 +69,9 @@ public:
   void visit(vvVisitable* obj) const;
 
   void generateTextureIds(const int numImages);
-  void setImages(std::vector<vvImage*>& images);
+  void setImages(std::vector<vvImage*>* images);
 private:
-  std::vector<vvImage*> _images;
+  std::vector<vvImage*>* _images;
 
   GLuint* _textureIds;
 };

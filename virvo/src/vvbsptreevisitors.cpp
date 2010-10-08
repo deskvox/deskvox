@@ -135,7 +135,7 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
 
   const int s = hs->getId();
 
-  vvImage* img = _images.at(s);
+  vvImage* img = _images->at(s);
 
   glActiveTextureARB(GL_TEXTURE0_ARB);
   glEnable(GL_TEXTURE_2D);
@@ -175,7 +175,7 @@ void vvSlaveVisitor::generateTextureIds(const int numImages)
   }
 }
 
-void vvSlaveVisitor::setImages(std::vector<vvImage*>& images)
+void vvSlaveVisitor::setImages(std::vector<vvImage*>* images)
 {
   _images = images;
 }

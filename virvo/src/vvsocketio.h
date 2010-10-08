@@ -168,9 +168,6 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType getData(void*, int, DataType);      // known number and type
     ErrorType putData(void*, int, DataType);
     void set_sock_param(float, float, int=65536, int=0);
-
-    static ErrorType getImages(std::vector<vvImage*>& images,
-                               std::vector<vvSocketIO*>& sockets);
 private:
     int sizeOfBrick() const;
 };

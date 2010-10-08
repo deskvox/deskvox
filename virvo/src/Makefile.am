@@ -5,7 +5,6 @@ EXTRA_DIST =
 DISTCLEANFILES =
 
 lib_LIBRARIES = libvirvo.a
-CXXFLAGS += -fopenmp
 
 libvirvo_a_headers = \
         vvversioninfo.h \

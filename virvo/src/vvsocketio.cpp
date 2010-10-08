@@ -88,25 +88,6 @@ void vvSocketIO::set_sock_param(float c_timer, float t_timer, int sock_buff, int
 }
 
 //----------------------------------------------------------------------------
-/** Gets images in a parallelized fashion using openmp threads.
-  @param images  A vector which will be filled with the images.
-  @param sockets Vector with the sockets.
- */
-vvSocket::ErrorType vvSocketIO::getImages(std::vector<vvImage*>& images, std::vector<vvSocketIO*>& sockets)
-{
-  images.resize(sockets.size());
-
-  #pragma omp parallel for
-  for (int s=0; s<sockets.size(); ++s)
-  {
-    vvImage* img = new vvImage();
-    sockets.at(s)->getImage(img);
-    images[s] = img;
-  }
-  return VV_OK;
-}
-
-//----------------------------------------------------------------------------
 /** Checks if there is data in the socket receive buffer.
  @return  true for data in the socket receive buffer, false for not.
 */

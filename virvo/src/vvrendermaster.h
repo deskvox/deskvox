@@ -27,6 +27,7 @@
 #include "vvsocketio.h"
 #include "vvvoldesc.h"
 
+#include <pthread.h>
 #include <vector>
 
 class vvSlaveVisitor;
@@ -71,6 +72,20 @@ private:
   vvTexRend* _renderer;
   vvBspTree* _bspTree;
   vvSlaveVisitor* _visitor;
+
+  struct ThreadArgs
+  {
+    int threadId;
+    vvRenderMaster* renderMaster;
+    std::vector<vvImage*>* images;
+  };
+
+  pthread_t* _threads;
+  ThreadArgs* _threadData;
+
+  void createThreads(std::vector<vvImage*>* images);
+  void joinThreads();
+  static void* getImageFromSocket(void* threadargs);
 };
 
 #endif

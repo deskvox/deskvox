@@ -1,5 +1,4 @@
 AUTOMAKE_OPTIONS = foreign
-CXXFLAGS += -fopenmp
 
 noinst_PROGRAMS = vview
 
