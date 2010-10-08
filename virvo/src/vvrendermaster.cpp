@@ -103,7 +103,7 @@ vvRenderMaster::ErrorType vvRenderMaster::initSockets(const int defaultPort, vvS
       return VV_SOCKET_ERROR;
     }
   }
-  _visitor->setSockets(_sockets);
+  _visitor->generateTextureIds(_sockets.size());
   return VV_OK;
 }
 
@@ -146,10 +146,23 @@ void vvRenderMaster::render(const float bgColor[3]) const
   glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
   mv.set(matrixGL);
 
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    _sockets[s]->putCommReason(vvSocketIO::VV_MATRIX);
+    _sockets[s]->putMatrix(&pr);
+    _sockets[s]->putMatrix(&mv);
+  }
+
   _renderer->calcProjectedScreenRects();
 
-  _visitor->setProjectionMatrix(pr);
-  _visitor->setModelviewMatrix(mv);
+  std::vector<vvImage*> images;
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    vvImage* img = new vvImage();
+    _sockets[s]->getImage(img);
+    images.push_back(img);
+  }
+  _visitor->setImages(images);
 
   glDrawBuffer(GL_BACK);
   glClearColor(bgColor[0], bgColor[1], bgColor[2], 1.0f);
@@ -189,6 +202,12 @@ void vvRenderMaster::render(const float bgColor[3]) const
 
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
+
+  for (std::vector<vvImage*>::const_iterator it = images.begin(); it != images.end();
+       ++it)
+  {
+    delete (*it);
+  }
 }
 
 void vvRenderMaster::exit()

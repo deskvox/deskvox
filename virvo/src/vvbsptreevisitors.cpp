@@ -123,11 +123,6 @@ vvSlaveVisitor::vvSlaveVisitor()
 
 vvSlaveVisitor::~vvSlaveVisitor()
 {
-  for (std::vector<vvSocketIO*>::const_iterator it = _sockets.begin();
-       it != _sockets.end(); ++it)
-  {
-    delete (*it);
-  }
   delete[] _textureIds;
 }
 
@@ -140,14 +135,7 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
 
   const int s = hs->getId();
 
-  vvMatrix pr = _pr;
-  vvMatrix mv = _mv;
-  _sockets[s]->putCommReason(vvSocketIO::VV_MATRIX);
-  _sockets[s]->putMatrix(&pr);
-  _sockets[s]->putMatrix(&mv);
-
-  vvImage img = vvImage();
-  _sockets[s]->getImage(&img);
+  vvImage* img = _images.at(s);
 
   glActiveTextureARB(GL_TEXTURE0_ARB);
   glEnable(GL_TEXTURE_2D);
@@ -160,7 +148,7 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screenRect->width, screenRect->height,
-               0, GL_RGBA, GL_UNSIGNED_BYTE, img.getCodedImage());
+               0, GL_RGBA, GL_UNSIGNED_BYTE, img->getCodedImage());
 
   // See documentation for vvThreadVisitor::visit().
   const float x1 = (static_cast<float>(screenRect->x)
@@ -178,23 +166,16 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
   vvGLTools::drawViewAlignedQuad(x1, y1, x2, y2);
 }
 
-void vvSlaveVisitor::setSockets(std::vector<vvSocketIO*>& sockets)
+void vvSlaveVisitor::generateTextureIds(const int numImages)
 {
-  _sockets = sockets;
-
-  _textureIds = new GLuint[_sockets.size()];
-  for (int i=0; i<_sockets.size(); ++i)
+  _textureIds = new GLuint[numImages];
+  for (int i=0; i<numImages; ++i)
   {
     glGenTextures(1, &_textureIds[i]);
   }
 }
 
-void vvSlaveVisitor::setProjectionMatrix(const vvMatrix& pr)
+void vvSlaveVisitor::setImages(std::vector<vvImage*>& images)
 {
-  _pr = pr;
-}
-
-void vvSlaveVisitor::setModelviewMatrix(const vvMatrix& mv)
-{
-  _mv = mv;
+  _images = images;
 }

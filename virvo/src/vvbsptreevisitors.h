@@ -25,7 +25,6 @@
 #include "vvopengl.h"
 #include "vvvisitor.h"
 #include "vvimage.h"
-#include "vvsocketio.h"
 
 #include <vector>
 
@@ -69,15 +68,10 @@ public:
   ~vvSlaveVisitor();
   void visit(vvVisitable* obj) const;
 
-  void setSockets(std::vector<vvSocketIO*>& sockets);
-
-  void setProjectionMatrix(const vvMatrix& pr);
-  void setModelviewMatrix(const vvMatrix& mv);
+  void generateTextureIds(const int numImages);
+  void setImages(std::vector<vvImage*>& images);
 private:
-  std::vector<vvSocketIO*> _sockets;
-
-  vvMatrix _pr;
-  vvMatrix _mv;
+  std::vector<vvImage*> _images;
 
   GLuint* _textureIds;
 };
