@@ -134,7 +134,7 @@ vvRenderMaster::ErrorType vvRenderMaster::initBricks(vvTexRend* renderer)
   return VV_OK;
 }
 
-void vvRenderMaster::render(const float bgColor[3]) const
+void vvRenderMaster::render(const float bgColor[3])
 {
   float matrixGL[16];
 
@@ -156,12 +156,7 @@ void vvRenderMaster::render(const float bgColor[3]) const
   _renderer->calcProjectedScreenRects();
 
   std::vector<vvImage*> images;
-  for (int s=0; s<_sockets.size(); ++s)
-  {
-    vvImage* img = new vvImage();
-    _sockets[s]->getImage(img);
-    images.push_back(img);
-  }
+  vvSocketIO::getImages(images, _sockets);
   _visitor->setImages(images);
 
   glDrawBuffer(GL_BACK);

@@ -50,7 +50,7 @@ public:
                         const bool redistributeVolData,
                         vvVolDesc*& vd);
   ErrorType initBricks(vvTexRend* renderer);
-  void render(const float bgColor[3]) const;
+  void render(const float bgColor[3]);
   void exit();
 
   void adjustQuality(const float quality);
@@ -64,7 +64,7 @@ private:
   std::vector<char*> _slaveNames;
   std::vector<int> _slavePorts;
   std::vector<char*> _slaveFileNames;
-  std::vector<vvSocketIO*>  _sockets;
+  std::vector<vvSocketIO*> _sockets;
 
   const char* _fileName;
 
