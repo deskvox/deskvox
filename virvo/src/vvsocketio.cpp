@@ -20,6 +20,8 @@
 
 #include "vvsocketio.h"
 
+#include "omp.h"
+
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -86,59 +88,21 @@ void vvSocketIO::set_sock_param(float c_timer, float t_timer, int sock_buff, int
 }
 
 //----------------------------------------------------------------------------
-/** Reads data in the order sockets are readable. Uses the unix select() mechanism
-  to determine which sockets to read from first.
+/** Gets images in a parallelized fashion using openmp threads.
   @param images  A vector which will be filled with the images.
   @param sockets Vector with the sockets.
  */
 vvSocket::ErrorType vvSocketIO::getImages(std::vector<vvImage*>& images, std::vector<vvSocketIO*>& sockets)
 {
-#ifndef _WIN32
   images.resize(sockets.size());
-  fd_set sockfds;
-  FD_ZERO(&sockfds);
 
-  int totalRead = 0;
-
-  while (totalRead < sockets.size())
-  {
-    int maxSocket = 0;
-    for (int s=0; s<sockets.size(); ++s)
-    {
-      FD_SET(sockets.at(s)->sockfd, &sockfds);
-      if (sockets.at(s)->sockfd > maxSocket)
-      {
-        maxSocket = sockets.at(s)->sockfd;
-      }
-    }
-
-    int selectResult = -1;
-    do
-    {
-      selectResult = select(maxSocket + 1, &sockfds, NULL, NULL, NULL);
-    }
-    while ((selectResult == -1) || (errno == EINTR));
-
-    for (int s=0; s<sockets.size(); ++s)
-    {
-      if (FD_ISSET(sockets.at(s)->sockfd, &sockfds))
-      {
-        vvImage* img = new vvImage();
-        sockets.at(s)->getImage(img);
-        images[s] = img;
-        ++totalRead;
-      }
-    }
-  }
-#else
-  // Not multiplexed!
+  #pragma omp parallel for
   for (int s=0; s<sockets.size(); ++s)
   {
     vvImage* img = new vvImage();
     sockets.at(s)->getImage(img);
-    images.push_back(img);
+    images[s] = img;
   }
-#endif
   return VV_OK;
 }
 
