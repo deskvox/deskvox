@@ -645,12 +645,12 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
     renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks);
   }
 
-  renderer->setROIEnable(roiEnabled);
-  printROIMessage();
-  if (remoteRendering)
+  if (!slaveMode)
   {
-    _renderMaster->setROIEnabled(roiEnabled);
+    renderer->setROIEnable(roiEnabled);
+    printROIMessage();
   }
+
   //static_cast<vvTexRend *>(renderer)->setTexMemorySize( 4 );
   //static_cast<vvTexRend *>(renderer)->setComputeBrickSize( false );
   //static_cast<vvTexRend *>(renderer)->setBrickSize( 64 );
