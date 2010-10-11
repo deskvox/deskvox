@@ -195,9 +195,10 @@ void vvView::mainLoop(int argc, char *argv[])
         }
 
         float div = 1.0f;
+        const char* txt[] = { "sx", "sy", "sz" };
         for(int i=0; i<3; i++)
         {
-          vvDebugMsg::msg(2, "sz: ", vd->dist[i]*vd->vox[i]);
+          vvDebugMsg::msg(2, txt[i], vd->dist[i]*vd->vox[i]);
           if(vd->dist[i]*vd->vox[i]/div > 1.)
             div = vd->dist[i]*vd->vox[i];
         }
@@ -257,9 +258,10 @@ void vvView::mainLoop(int argc, char *argv[])
     delete fio;
 
     float div = 1.;
+    const char* txt[] = { "sx", "sy", "sz" };
     for(int i=0; i<3; i++)
     {
-      cerr <<"sz: " << vd->dist[i]*vd->vox[i] << endl;
+      cerr << txt[i] << ": " << vd->dist[i]*vd->vox[i] << endl;
       if(vd->dist[i]*vd->vox[i]/div > 1.)
         div = vd->dist[i]*vd->vox[i];
     }
