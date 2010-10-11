@@ -119,11 +119,11 @@ class vvView
     bool remoteRendering;                       ///< remote rendering in client mode
     vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
     GLfloat* framebufferDump;
-    std::vector<char*> slaveNames;
+    std::vector<const char*> slaveNames;
     std::vector<int> slavePorts;
     bool redistributeVolData;                   ///< don't load slave volume data from file, but let master send it through socket
     bool benchmark;                             ///< don't run interactively, just perform timed rendering and exit
-    std::vector<char*> slaveFileNames;          ///< a list with file names where slaves can find the appropriate volume data
+    std::vector<const char*> slaveFileNames;    ///< a list with file names where slaves can find the appropriate volume data
     vvRenderMaster* _renderMaster;
     const char* testSuiteFileName;
     bool showBricks;                            ///< show brick outlines when brick renderer is used
