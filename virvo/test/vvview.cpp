@@ -194,7 +194,7 @@ void vvView::mainLoop(int argc, char *argv[])
           vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
         }
 
-        float div = 0.0f;
+        float div = 1.0f;
         for(int i=0; i<3; i++)
         {
           vvDebugMsg::msg(2, "sz: ", vd->dist[i]*vd->vox[i]);
