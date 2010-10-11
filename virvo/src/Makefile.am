@@ -24,6 +24,7 @@ libvirvo_a_headers = \
         vvimage.h \
         vvopengl.h \
         vvprintgl.h \
+        vvpthread.h \
         vvrenderer.h \
         vvsllist.h \
         vvsocket.h \
@@ -66,6 +67,7 @@ libvirvo_a_SOURCES = \
         vvgltools.cpp \
         vvimage.cpp \
         vvprintgl.cpp \
+        vvpthread.cpp \
         vvrenderer.cpp \
         vvsocket.cpp \
         vvsocketio.cpp \

@@ -26,8 +26,8 @@
 #include "vvopengl.h"
 #include "vvsocketio.h"
 #include "vvvoldesc.h"
+#include "vvpthread.h"
 
-#include <pthread.h>
 #include <vector>
 
 class vvSlaveVisitor;
@@ -82,9 +82,11 @@ private:
 
   pthread_t* _threads;
   ThreadArgs* _threadData;
+  pthread_barrier_t _startBarrier;
+  pthread_barrier_t _readyBarrier;
 
-  void createThreads(std::vector<vvImage*>* images);
-  void joinThreads();
+  void createThreads();
+  void destroyThreads();
   static void* getImageFromSocket(void* threadargs);
 };
 

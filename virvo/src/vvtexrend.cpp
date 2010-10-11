@@ -51,14 +51,6 @@
 #include "vvprintgl.h"
 #include "vvshaderfactory.h"
 
-#ifdef __APPLE__
-typedef struct pthead_barrierattr_t_ { int dummy; } pthread_barrierattr_t;
-static int pthread_barrier_wait(pthread_barrier_t * /*barrier*/) { return 1; }
-static int pthread_barrier_init(pthread_barrier_t * /*barrier*/,
-                    const pthread_barrierattr_t * /*attr*/, unsigned /*count*/) { return 1; }
-static int pthread_barrier_destroy(pthread_barrier_t * /*barrier*/) { return 1; }
-#endif
-
 // The following values will have to be approved empirically yet... .
 
 // TODO: reasonable determination of these values.

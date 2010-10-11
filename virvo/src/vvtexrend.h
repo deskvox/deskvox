@@ -33,15 +33,7 @@
 #include "vvshadermanager.h"
 #include "vvoffscreenbuffer.h"
 #include "vvopengl.h"
-
-// Posix threads:
-#include <pthread.h>
-
-#ifdef __APPLE__
-/* these are not available on OS X:
- * they are only used together with X11, so this should not matter too much */
-typedef struct pthread_barrier_t_ { int dummy; } pthread_barrier_t;
-#endif
+#include "vvpthread.h"
 
 struct ThreadArgs;
 class vvThreadVisitor;

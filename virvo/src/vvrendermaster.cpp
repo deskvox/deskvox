@@ -36,8 +36,7 @@ vvRenderMaster::vvRenderMaster(std::vector<char*>& slaveNames, std::vector<int>&
 
 vvRenderMaster::~vvRenderMaster()
 {
-  delete[] _threads;
-  delete[] _threadData;
+  destroyThreads();
   // The visitor will delete the sockets either.
   delete _visitor;
 }
@@ -108,8 +107,7 @@ vvRenderMaster::ErrorType vvRenderMaster::initSockets(const int defaultPort, vvS
     }
   }
   _visitor->generateTextureIds(_sockets.size());
-  _threadData = new ThreadArgs[_sockets.size()];
-  _threads = new pthread_t[_sockets.size()];
+  createThreads();
   return VV_OK;
 }
 
@@ -152,7 +150,6 @@ void vvRenderMaster::render(const float bgColor[3])
   glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
   mv.set(matrixGL);
 
-  std::vector<vvImage*>* images = new std::vector<vvImage*>(_sockets.size());
   for (int s=0; s<_sockets.size(); ++s)
   {
     _sockets[s]->putCommReason(vvSocketIO::VV_MATRIX);
@@ -162,11 +159,9 @@ void vvRenderMaster::render(const float bgColor[3])
 
   _renderer->calcProjectedScreenRects();
 
-  createThreads(images);
+  pthread_barrier_wait(&_startBarrier);
 
-  _visitor->setImages(images);
-
-  joinThreads();
+  pthread_barrier_wait(&_readyBarrier);
 
   glDrawBuffer(GL_BACK);
   glClearColor(bgColor[0], bgColor[1], bgColor[2], 1.0f);
@@ -207,12 +202,7 @@ void vvRenderMaster::render(const float bgColor[3])
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
 
-  for (std::vector<vvImage*>::const_iterator it = images->begin(); it != images->end();
-       ++it)
-  {
-    delete (*it);
-  }
-  delete images;
+  _visitor->clearImages();
 }
 
 void vvRenderMaster::exit()
@@ -298,8 +288,13 @@ void vvRenderMaster::toggleBoundingBox()
   }
 }
 
-void vvRenderMaster::createThreads(std::vector<vvImage*>* images)
+void vvRenderMaster::createThreads()
 {
+  _threadData = new ThreadArgs[_sockets.size()];
+  _threads = new pthread_t[_sockets.size()];
+  pthread_barrier_init(&_startBarrier, NULL, _sockets.size() + 1);
+  pthread_barrier_init(&_readyBarrier, NULL, _sockets.size() + 1);
+  std::vector<vvImage*>* images = new std::vector<vvImage*>(_sockets.size());
   for (int s=0; s<_sockets.size(); ++s)
   {
     _threadData[s].threadId = s;
@@ -307,22 +302,35 @@ void vvRenderMaster::createThreads(std::vector<vvImage*>* images)
     _threadData[s].images = images;
     pthread_create(&_threads[s], NULL, getImageFromSocket, (void*)&_threadData[s]);
   }
+  _visitor->setImages(images);
 }
 
-void vvRenderMaster::joinThreads()
+void vvRenderMaster::destroyThreads()
 {
+  pthread_barrier_destroy(&_startBarrier);
+  pthread_barrier_destroy(&_readyBarrier);
   for (int s=0; s<_sockets.size(); ++s)
   {
-    void* exitStatus;
     pthread_join(_threads[s], NULL);
   }
+  delete[] _threads;
+  delete[] _threadData;
+  _threads = NULL;
+  _threadData = NULL;
 }
 
 void* vvRenderMaster::getImageFromSocket(void* threadargs)
 {
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
 
-  vvImage* img = new vvImage();
-  data->renderMaster->_sockets.at(data->threadId)->getImage(img);
-  data->images->at(data->threadId) = img;
+  while (1)
+  {
+    pthread_barrier_wait(&data->renderMaster->_startBarrier);
+
+    vvImage* img = new vvImage();
+    data->renderMaster->_sockets.at(data->threadId)->getImage(img);
+    data->images->at(data->threadId) = img;
+
+    pthread_barrier_wait(&data->renderMaster->_readyBarrier);
+  }
 }

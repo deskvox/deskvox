@@ -123,6 +123,11 @@ vvSlaveVisitor::vvSlaveVisitor()
 
 vvSlaveVisitor::~vvSlaveVisitor()
 {
+  if (_images != NULL)
+  {
+    clearImages();
+  }
+  delete _images;
   delete[] _textureIds;
 }
 
@@ -178,4 +183,13 @@ void vvSlaveVisitor::generateTextureIds(const int numImages)
 void vvSlaveVisitor::setImages(std::vector<vvImage*>* images)
 {
   _images = images;
+}
+
+void vvSlaveVisitor::clearImages()
+{
+  for (std::vector<vvImage*>::const_iterator it = _images->begin(); it != _images->end();
+       ++it)
+  {
+    delete (*it);
+  }
 }

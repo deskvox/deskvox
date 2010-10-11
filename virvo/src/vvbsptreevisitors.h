@@ -70,6 +70,7 @@ public:
 
   void generateTextureIds(const int numImages);
   void setImages(std::vector<vvImage*>* images);
+  void clearImages();
 private:
   std::vector<vvImage*>* _images;
 

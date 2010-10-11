@@ -27,6 +27,7 @@ SOURCES = vvbrick.cpp \
     vvimage.cpp \
     vvoffscreenbuffer.cpp \
     vvprintgl.cpp \
+    vvpthread.cpp \
     vvrendercontext.cpp \
     vvrenderer.cpp \
     vvrendermaster.cpp \
@@ -71,6 +72,7 @@ HEADERS = \
     vvopengl.h \
     vvglew.h \
     vvprintgl.h \
+    vvpthread.h \
     vvrendercontext.h \
     vvrenderer.h \
     vvrendermaster.h \
