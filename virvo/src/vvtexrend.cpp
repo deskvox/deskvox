@@ -3560,7 +3560,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         data->renderer->enableIntersectionShader(isectShader);
 
         // Per frame parameters.
-        isectShader->setModelViewProj(0, "modelViewProj");
         isectShader->setParameter1f(0, "delta", data->delta.length());
         isectShader->setParameter3f(0, "planeNormal", data->normal[0], data->normal[1], data->normal[2]);
       }
