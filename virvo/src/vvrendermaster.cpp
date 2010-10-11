@@ -333,4 +333,5 @@ void* vvRenderMaster::getImageFromSocket(void* threadargs)
 
     pthread_barrier_wait(&data->renderMaster->_readyBarrier);
   }
+  pthread_exit(NULL);
 }
