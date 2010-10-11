@@ -42,8 +42,8 @@ public:
     VV_SOCKET_ERROR
   };
 
-  vvRenderMaster(std::vector<char*>& slaveNames, std::vector<int>& slavePorts,
-                 std::vector<char*>& slaveFileNames,
+  vvRenderMaster(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+                 std::vector<const char*>& slaveFileNames,
                  const char* fileName);
   ~vvRenderMaster();
 
@@ -62,9 +62,9 @@ public:
   void setROIEnabled(const bool roiEnabled);
   void toggleBoundingBox();
 private:
-  std::vector<char*> _slaveNames;
+  std::vector<const char*> _slaveNames;
   std::vector<int> _slavePorts;
-  std::vector<char*> _slaveFileNames;
+  std::vector<const char*> _slaveFileNames;
   std::vector<vvSocketIO*> _sockets;
 
   const char* _fileName;

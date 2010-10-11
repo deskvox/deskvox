@@ -134,7 +134,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_VOLUME
     };
 
-    vvSocketIO(int, char*, vvSocket::SocketType, int clminport=0, int clmaxport=0);
+    vvSocketIO(int, const char*, vvSocket::SocketType, int clminport=0, int clmaxport=0);
     vvSocketIO(int, vvSocket::SocketType);
     ~vvSocketIO();
     ErrorType init();

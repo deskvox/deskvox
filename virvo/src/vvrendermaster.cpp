@@ -23,8 +23,8 @@
 #include "vvrendermaster.h"
 #include "vvtexrend.h"
 
-vvRenderMaster::vvRenderMaster(std::vector<char*>& slaveNames, std::vector<int>& slavePorts,
-                               std::vector<char*>& slaveFileNames,
+vvRenderMaster::vvRenderMaster(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+                               std::vector<const char*>& slaveFileNames,
                                const char* fileName)
   : _slaveNames(slaveNames), _slavePorts(slavePorts),
   _slaveFileNames(slaveFileNames), _fileName(fileName)
