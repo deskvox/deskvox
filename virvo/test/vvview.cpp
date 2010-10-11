@@ -128,6 +128,7 @@ vvView::vvView()
   testSuiteFileName     = NULL;
   showBricks            = false;
   roiEnabled            = false;
+  mvScale               = 1.0f;
 }
 
 
@@ -194,18 +195,6 @@ void vvView::mainLoop(int argc, char *argv[])
           vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
         }
 
-        float div = 1.0f;
-        const char* txt[] = { "sx", "sy", "sz" };
-        for(int i=0; i<3; i++)
-        {
-          vvDebugMsg::msg(2, txt[i], vd->dist[i]*vd->vox[i]);
-          if(vd->dist[i]*vd->vox[i]/div > 1.)
-            div = vd->dist[i]*vd->vox[i];
-        }
-        vvDebugMsg::msg(2, "div: ", div);
-        for(int i=0; i<3; i++)
-          vd->dist[i] /= div;
-
         ov = new vvObjView();
 
         vvRenderContext* context = new vvRenderContext(true);
@@ -265,9 +254,8 @@ void vvView::mainLoop(int argc, char *argv[])
       if(vd->dist[i]*vd->vox[i]/div > 1.)
         div = vd->dist[i]*vd->vox[i];
     }
-    cerr << "div=" << div << endl;
-    for(int i=0; i<3; i++)
-      vd->dist[i] /= div;
+    mvScale = vd->dist[0] / div;
+    cerr << "Scale modelview matrix by " << mvScale << endl;
 
     // Set default color scheme if no TF present:
     if (vd->tf.isEmpty())
@@ -293,6 +281,7 @@ void vvView::mainLoop(int argc, char *argv[])
     createMenus();
 
     ov = new vvObjView();
+    ds->ov->mv.scale(mvScale);
 
     setProjectionMode(perspectiveMode);
     setRenderer(currentGeom, currentVoxels);
@@ -446,7 +435,7 @@ void vvView::displayCallback(void)
     {
       glDrawBuffer(GL_BACK);
       ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
-      #ifdef CLIPPING_TEST
+#ifdef CLIPPING_TEST
       ds->renderClipObject();
       ds->renderQuad();
 #endif
@@ -1528,6 +1517,7 @@ void vvView::performanceTest()
       ds->draftQuality = test->getQuality();
       ds->ov->reset();
       ds->ov->resetMV();
+      ds->ov->mv.scale(ds->mvScale);
       ds->perspectiveMode = (test->getProjectionType() == vvObjView::PERSPECTIVE);
       if (ds->perspectiveMode)
       {
@@ -1599,6 +1589,7 @@ void vvView::performanceTest()
 
     ds->hqMode = false;
     ds->ov->reset();
+    ds->ov->mv.scale(ds->mvScale);
     ds->displayCallback();
 
     printProfilingInfo();
