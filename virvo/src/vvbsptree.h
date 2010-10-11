@@ -30,12 +30,15 @@ class vvBrick;
 
 typedef vvVector3 vvBoxCorners[8];
 
-struct vvRect
+class vvRect
 {
+public:
   int x;
   int y;
   int width;
   int height;
+
+  void print() const;
 };
 
 /*!
