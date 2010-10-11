@@ -64,7 +64,7 @@ void vvRenderContext::init(const bool debug)
 {
 #ifdef HAVE_X11
   // TODO: make this configurable.
-  _archData->display = XOpenDisplay(":0");
+  _archData->display = XOpenDisplay(NULL);
 
   if (_archData->display != NULL)
   {

@@ -82,7 +82,7 @@ vvPrintGL::vvPrintGL()
 #elif defined(HAVE_X11)
   if (vvPrintGL::dsp == NULL)
   {
-    vvPrintGL::dsp = XOpenDisplay(":0");
+    vvPrintGL::dsp = XOpenDisplay(NULL);
   }
   XFontStruct* font = XLoadQueryFont(vvPrintGL::dsp, "-*-courier-bold-r-normal--20-*-*-*-*-*-*-*");
 
