@@ -111,5 +111,7 @@ void vvRenderContext::init(const bool debug)
     cerr << "Couldn't open X display" << endl;
     _initialized = false;
   }
+#else
+  (void)debug;
 #endif
 }
