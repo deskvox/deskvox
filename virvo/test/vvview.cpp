@@ -749,7 +749,7 @@ void vvView::specialCallback(int key, int, int)
   ds->renderer->getProbePosition(&probePos);
 
   const int modifiers = glutGetModifiers();
-  const float delta = 0.1f;
+  const float delta = 0.1f / ds->mvScale;
 
   switch(key)
   {
