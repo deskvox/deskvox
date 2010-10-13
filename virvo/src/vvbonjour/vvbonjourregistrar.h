@@ -21,10 +21,10 @@
 #ifndef _VV_BONJOURREGISTRAR_H_
 #define _VV_BONJOURREGISTRAR_H_
 
+#ifdef HAVE_BONJOUR
+
 #include "vvbonjourentry.h"
 #include "vvsocket.h"
-
-#ifdef HAVE_BONJOUR
 
 #include <dns_sd.h>
 
