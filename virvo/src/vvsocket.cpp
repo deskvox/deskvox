@@ -302,7 +302,11 @@ vvSocket::ErrorType vvSocket::accept_nontimeo()
     return VV_ACCEPT_ERROR;
   }
 
+#ifdef _WIN32
+  closesocket(sockfd);
+#else
   close(sockfd);
+#endif
   sockfd = n;
   return VV_OK;
 }
