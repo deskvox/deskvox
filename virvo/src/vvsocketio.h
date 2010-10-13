@@ -125,12 +125,14 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_IMAGE,
       VV_MATRIX,
       VV_MIPMODE,
+      VV_OBJECT_DIRECTION,
       VV_QUALITY,
       VV_POSITION,
       VV_RESIZE,
       VV_TOGGLE_BOUNDINGBOX,
       VV_TOGGLE_ROI,
       VV_INTERPOLATION,
+      VV_VIEWING_DIRECTION,
       VV_VOLUME
     };
 

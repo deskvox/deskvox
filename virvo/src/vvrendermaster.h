@@ -58,8 +58,10 @@ public:
   void resize(const int w, const int h);
   void setInterpolation(const bool interpolation);
   void setMipMode(const int mipMode);
+  void setObjectDirection(const vvVector3& od);
   void setPosition(const vvVector3& position);
   void setROIEnabled(const bool roiEnabled);
+  void setViewingDirection(const vvVector3& vd);
   void toggleBoundingBox();
 private:
   std::vector<const char*> _slaveNames;

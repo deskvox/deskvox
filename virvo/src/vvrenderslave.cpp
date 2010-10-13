@@ -141,6 +141,8 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
   float quality;
   int mipMode;
   vvVector3 position;
+  vvVector3 viewDir;
+  vvVector3 objDir;
   int w;
   int h;
   bool interpolation;
@@ -166,6 +168,12 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
         if ((_socket->getInt32(mipMode)) == vvSocket::VV_OK)
         {
           renderer->_renderState._mipMode = mipMode;
+        }
+        break;
+      case vvSocketIO::VV_OBJECT_DIRECTION:
+        if ((_socket->getVector3(objDir)) == vvSocket::VV_OK)
+        {
+          renderer->setObjectDirection(&objDir);
         }
         break;
       case vvSocketIO::VV_QUALITY:
@@ -199,6 +207,12 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
         if ((_socket->getBool(roiEnabled)) == vvSocket::VV_OK)
         {
           renderer->setROIEnable(roiEnabled);
+        }
+        break;
+      case vvSocketIO::VV_VIEWING_DIRECTION:
+        if ((_socket->getVector3(viewDir)) == vvSocket::VV_OK)
+        {
+          renderer->setViewingDirection(&viewDir);
         }
         break;
       default:

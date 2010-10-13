@@ -258,6 +258,17 @@ void vvRenderMaster::setMipMode(const int mipMode)
   }
 }
 
+void vvRenderMaster::setObjectDirection(const vvVector3& od)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_OBJECT_DIRECTION) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putVector3(od);
+    }
+  }
+}
+
 void vvRenderMaster::setPosition(const vvVector3& position)
 {
   for (int s=0; s<_sockets.size(); ++s)
@@ -273,9 +284,20 @@ void vvRenderMaster::setROIEnabled(const bool roiEnabled)
 {
   for (int s=0; s<_sockets.size(); ++s)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_ROI))
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_ROI) == vvSocket::VV_OK)
     {
       _sockets[s]->putBool(roiEnabled);
+    }
+  }
+}
+
+void vvRenderMaster::setViewingDirection(const vvVector3& vd)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putVector3(vd);
     }
   }
 }
