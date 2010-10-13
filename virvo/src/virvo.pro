@@ -54,6 +54,9 @@ SOURCES = vvbrick.cpp \
     vvglsl.cpp \
     vvbsptree.cpp \
     vvbsptreevisitors.cpp \
+    vvbonjour/vvbonjourentry.cpp \
+    vvbonjour/vvbonjourregistrar.cpp \
+    vvbonjour/vvbonjourresolver.cpp \
     vvmultirend/vvtexmultirend.cpp \
     vvmultirend/vvtexmultirendmngr.cpp
 HEADERS = \
@@ -101,6 +104,9 @@ HEADERS = \
     vvbsptree.h \
     vvx11.h \
     vvbsptreevisitors.h \
+    vvbonjour/vvbonjourentry.h \
+    vvbonjour/vvbonjourregistrar.h \
+    vvbonjour/vvbonjourresolver.h \
     vvmultirend/vvtexmultirend.h \
     vvmultirend/vvtexmultirendmngr.h
 TARGET = coVirvo
