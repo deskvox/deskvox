@@ -4851,10 +4851,10 @@ void vvTexRend::setViewingDirection(const vvVector3* vd)
   in 3D texturing mode if the viewer is outside of the volume.
   @param vd  object direction in object coordinates
 */
-void vvTexRend::setObjectDirection(const vvVector3* vd)
+void vvTexRend::setObjectDirection(const vvVector3* od)
 {
   vvDebugMsg::msg(3, "vvTexRend::setObjectDirection()");
-  objDir.copy(vd);
+  objDir.copy(od);
 }
 
 //----------------------------------------------------------------------------
