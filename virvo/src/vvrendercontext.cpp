@@ -13,6 +13,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
+#include "vvdebugmsg.h"
 #include "vvrendercontext.h"
 
 #include <iostream>
@@ -30,12 +31,12 @@ struct ContextArchData
 #endif
 };
 
-vvRenderContext::vvRenderContext(const bool debug)
+vvRenderContext::vvRenderContext()
   : vvRenderTarget()
 {
   _archData = new ContextArchData;
   _initialized = false;
-  init(debug);
+  init();
 }
 
 vvRenderContext::~vvRenderContext()
@@ -60,7 +61,7 @@ bool vvRenderContext::makeCurrent() const
   return false;
 }
 
-void vvRenderContext::init(const bool debug)
+void vvRenderContext::init()
 {
 #ifdef HAVE_X11
   // TODO: make this configurable.
@@ -87,13 +88,20 @@ void vvRenderContext::init(const bool debug)
     wa.background_pixmap = None;
     wa.border_pixel = 0;
 
-    wa.override_redirect = !debug;
+    if (vvDebugMsg::getDebugLevel() == 0)
+    {
+      wa.override_redirect = true;
+    }
+    else
+    {
+      wa.override_redirect = false;
+    }
 
     _archData->glxContext = glXCreateContext(_archData->display, vi, NULL, True);
 
     int windowWidth = 1;
     int windowHeight = 1;
-    if (debug)
+    if (vvDebugMsg::getDebugLevel() > 0)
     {
       windowWidth = 512;
       windowHeight = 512;
@@ -111,7 +119,5 @@ void vvRenderContext::init(const bool debug)
     cerr << "Couldn't open X display" << endl;
     _initialized = false;
   }
-#else
-  (void)debug;
 #endif
 }

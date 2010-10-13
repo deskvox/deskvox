@@ -197,7 +197,7 @@ void vvView::mainLoop(int argc, char *argv[])
 
         ov = new vvObjView();
 
-        vvRenderContext* context = new vvRenderContext(true);
+        vvRenderContext* context = new vvRenderContext();
         if (context->makeCurrent())
         {
           ov = new vvObjView();
