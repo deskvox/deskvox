@@ -889,6 +889,7 @@ void vvView::mainMenuCallback(int item)
     break;
   case 7:                                     // reset object position
     ds->ov->reset();
+    ds->ov->mv.scale(ds->mvScale);
     ds->setProjectionMode(ds->perspectiveMode);
     break;
   case 8:                                     // menu/zoom mode
