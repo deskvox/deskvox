@@ -29,6 +29,7 @@ libvirvo_a_headers = \
         vvsllist.h \
         vvsocket.h \
         vvsocketio.h \
+        vvsocketmonitor.h \
         vvsphere.h \
         vvstingray.h \
         vvstopwatch.h \
@@ -50,6 +51,7 @@ libvirvo_a_headers = \
         vvrendercontext.h \
         vvoffscreenbuffer.h \
         vvx11.h \
+        vvbonjour/vvbonjourbrowser.h \
         vvbonjour/vvbonjourentry.h \
         vvbonjour/vvbonjourregistrar.h \
         vvbonjour/vvbonjourresolver.h \
@@ -74,6 +76,7 @@ libvirvo_a_SOURCES = \
         vvrenderer.cpp \
         vvsocket.cpp \
         vvsocketio.cpp \
+        vvsocketmonitor.cpp \
         vvsphere.cpp \
         vvstingray.cpp \
         vvstopwatch.cpp \
@@ -94,6 +97,7 @@ libvirvo_a_SOURCES = \
         vvrendertarget.cpp \
         vvrendercontext.cpp \
         vvoffscreenbuffer.cpp \
+        vvbonjour/vvbonjourbrowser.cpp \
         vvbonjour/vvbonjourentry.cpp \
         vvbonjour/vvbonjourregistrar.cpp \
         vvbonjour/vvbonjourresolver.cpp \

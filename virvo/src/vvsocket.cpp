@@ -1295,21 +1295,12 @@ ssize_t vvSocket::writen_udp(const char* buffer, size_t size)
  @param portnumber   port number
  @param st           socket type
 */
-vvSocket::vvSocket(int portnumber, SocketType st)
+vvSocket::vvSocket(const short portnumber, SocketType st)
 :  port(portnumber),socktype(st)
 {
   hostname = 0;
   sockfd = -1;
-  debuglevel = 1;
-  sock_buffsize = -1;
-  transfer_timer = 0.0;                           // No timeouts as default
-  connect_timer = 0;
-  bufflen = sizeof(send_buffsize);
-#ifdef _WIN32
-  WSADATA wsaData;
-  if (WSAStartup(MAKEWORD(2,0), &wsaData) != 0)
-    VV_TRACE( 1, debuglevel,"WSAStartup failed!");
-#endif
+  initVars();
 }
 
 //----------------------------------------------------------------------------
@@ -1320,20 +1311,26 @@ vvSocket::vvSocket(int portnumber, SocketType st)
  @param clminport    minimum outgoing port
  @param clmaxport    maximum outgoing port
 */
-vvSocket::vvSocket(int portnumber, const char* servername, SocketType st, int clminport, int clmaxport)
+vvSocket::vvSocket(const short portnumber, const char* servername,
+                   SocketType st, int clminport, int clmaxport)
 :  port(portnumber),   hostname(servername),socktype(st),cl_min_port(clminport),cl_max_port(clmaxport)
 {
   sockfd = -1;
-  debuglevel = 1;
-  sock_buffsize = -1;
-  transfer_timer = 0.0;                           // No timeouts as default
-  connect_timer = 0;
-  bufflen = sizeof(send_buffsize);
-#ifdef _WIN32
-  WSADATA wsaData;
-  if (WSAStartup(MAKEWORD(2,0), &wsaData) != 0)
-    VV_TRACE( 1, debuglevel,"WSAStartup failed!");
-#endif
+  initVars();
+}
+
+//----------------------------------------------------------------------------
+/** Constructor from already accept() 'ed socket file descriptor.
+ @param sockfd       socket file descriptor
+ @param st           socket type
+*/
+vvSocket::vvSocket(const int sockfd, const SocketType socktype)
+  :socktype(socktype)
+{
+  port = -1;
+  hostname = NULL;
+  this->sockfd = sockfd;
+  initVars();
 }
 
 //----------------------------------------------------------------------------
@@ -1577,10 +1574,16 @@ vvSocket::ErrorType vvSocket::write_nontimeo(const uchar* dataptr, size_t size)
 //----------------------------------------------------------------------------
 /** Initializes a socket. Has to be called after the creation
  of an socket class instance. Calls init_client() for client and init_server()
- for server.
+ for server if socket wasn't constructed from an already initialized sockfd.
 */
 vvSocket::ErrorType vvSocket::init()
 {
+  if (sockfd != -1)
+  {
+    VV_ERRNO(1, debuglevel, "Error: called init() on initialized socket");
+    return VV_SOCKFD_ERROR;
+  }
+
   if (hostname)
   {
     if (socktype == VV_TCP)
@@ -1705,7 +1708,7 @@ void vvSocket::set_timer(float ct, float tt)
 //----------------------------------------------------------------------------
 /** Returns the socket file descriptor.
  */
-int vvSocket::get_sockfd()
+int vvSocket::get_sockfd() const
 {
   return sockfd;
 }
@@ -2010,4 +2013,21 @@ vvSocket::EndianType vvSocket::getEndianness()
     assert(*ptr == 0);
     return VV_LITTLE_END;
   }
+}
+
+//----------------------------------------------------------------------------
+/** Called from constructor.
+ */
+void vvSocket::initVars()
+{
+  debuglevel = 1;
+  sock_buffsize = -1;
+  transfer_timer = 0.0;                           // No timeouts as default
+  connect_timer = 0;
+  bufflen = sizeof(send_buffsize);
+#ifdef _WIN32
+  WSADATA wsaData;
+  if (WSAStartup(MAKEWORD(2,0), &wsaData) != 0)
+    VV_TRACE( 1, debuglevel,"WSAStartup failed!");
+#endif
 }

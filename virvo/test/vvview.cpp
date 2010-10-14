@@ -53,6 +53,8 @@ using std::ios;
 #include "../src/vvdebugmsg.h"
 #include "../src/vvsocketio.h"
 #include "../src/vvtexrend.h"
+#include "../src/vvbonjour/vvbonjourbrowser.h"
+#include "../src/vvbonjour/vvbonjourresolver.h"
 #include "vvobjview.h"
 #include "vvperformancetest.h"
 #include "vvview.h"
@@ -266,6 +268,22 @@ void vvView::mainLoop(int argc, char *argv[])
 
     if (slaveNames.size() == 0)
     {
+#ifdef HAVE_BONJOUR
+      vvBonjourBrowser* bonjourBrowser = new vvBonjourBrowser();
+      bonjourBrowser->browseForServiceType("_distrendering._tcp");
+      int timeout = 1000;
+      while (bonjourBrowser->expectingServices() && timeout > 0)
+      {
+        --timeout;
+        sleep(1);
+      }
+      std::vector<vvBonjourEntry> entries = bonjourBrowser->getBonjourEntries();
+      for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
+      {
+        vvBonjourResolver* bonjourResolver = new vvBonjourResolver();
+        bonjourResolver->resolveBonjourEntry((*it));
+      }
+#endif
       remoteRendering = false;
     }
 

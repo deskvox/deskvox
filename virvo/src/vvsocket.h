@@ -111,7 +111,8 @@ class VIRVOEXPORT vvSocket
       VV_CREATE_ERROR,                            ///< socket could not be opened
       VV_HEADER_ERROR,                            ///< invalid header received
       VV_DATA_ERROR,                              ///< volume data format error: e.g., too many voxels received
-      VV_PEER_SHUTDOWN                            ///< the connection was closed by peer
+      VV_PEER_SHUTDOWN,                           ///< the connection was closed by peer
+      VV_SOCKFD_ERROR
     };
 
     enum SocketType
@@ -126,8 +127,10 @@ class VIRVOEXPORT vvSocket
       VV_BIG_END                                  ///< big endian: hight-order byte is stored first
     };
 
-    vvSocket( int, SocketType socktype = VV_TCP);
-    vvSocket(int, const char*, SocketType socktype = VV_TCP, int clminport = 0 , int clmaxport = 0);
+    vvSocket(const short portnumber, SocketType socktype = VV_TCP);
+    vvSocket(const short portnumber, const char*,
+             SocketType socktype = VV_TCP, int clminport = 0 , int clmaxport = 0);
+    vvSocket(const int sockfd, const SocketType socktype = VV_TCP);
     virtual ~vvSocket();
 
     ErrorType init();
@@ -139,7 +142,7 @@ class VIRVOEXPORT vvSocket
     int is_data_waiting();
     ErrorType read_string(char* , int);
     ErrorType write_string(const char*);
-    int get_sockfd();
+    int get_sockfd() const;
     void set_sockfd(int fd);
     int get_recv_buffsize();
     int get_send_buffsize();
@@ -159,7 +162,8 @@ class VIRVOEXPORT vvSocket
     enum {NUM_TIMERS = 2};
     struct sockaddr_in host_addr;
     struct hostent *host;
-    int sockfd, port;
+    int sockfd;
+    short port;
     const char* hostname;
     SocketType socktype;
     int cl_min_port, cl_max_port;
@@ -215,6 +219,8 @@ class VIRVOEXPORT vvSocket
     int RTT_server(int);
     int checkMSS_MTU(int, int);
     EndianType getEndianness();
+  private:
+    void initVars();
 };
 
 //----------------------------------------------------------------------------
@@ -226,7 +232,7 @@ class VIRVOEXPORT vvSocket
     - automatic bandwidth delay product discovery to set the socket buffers to the
       optimal values. Not supported under Windows and when VV_BDP Flag is not set.
       For automatic banwidth delay product discovery the socket buffer size has
-      to be set to 0. Optimized for networks with more than 10 Mbits/sec. Please
+      to be set to 0. Optimized for networks with more than 10 Mbits/sec. Please
       don't use if you have a lower speed (would take awhile).
     - Nagle algorithm can be disabled
 - Linger time can be set<BR>

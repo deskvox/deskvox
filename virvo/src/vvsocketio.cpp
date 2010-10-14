@@ -37,7 +37,7 @@ using namespace std;
  @param clminport  minimum outgoing port.
  @param clmaxport  maximum outgoing port.
 */
-vvSocketIO::vvSocketIO(int port, const char* servername, vvSocket::SocketType st,int clminport, int clmaxport)
+vvSocketIO::vvSocketIO(const short port, const char* servername, vvSocket::SocketType st,int clminport, int clmaxport)
 : vvSocket(port, servername, st, clminport, clmaxport)
 {
 }
@@ -48,7 +48,7 @@ vvSocketIO::vvSocketIO(int port, const char* servername, vvSocket::SocketType st
  @param st  type of socket to create. vvSocket::VV_TCP for TCP,
  vvSocket::VV_UDP for UDP.
 */
-vvSocketIO::vvSocketIO(int port, vvSocket::SocketType st) : vvSocket(port, st)
+vvSocketIO::vvSocketIO(const short port, vvSocket::SocketType st) : vvSocket(port, st)
 {
 }
 

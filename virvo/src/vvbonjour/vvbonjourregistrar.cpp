@@ -18,13 +18,18 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifdef HAVE_BONJOUR
-
 #include "vvbonjourregistrar.h"
 #include "vvdebugmsg.h"
 
+#include <iostream>
+
+using std::cerr;
+using std::endl;
+
+#ifdef HAVE_BONJOUR
+
 vvBonjourRegistrar::vvBonjourRegistrar()
-  : _dnsServiceRef(NULL)
+  : _dnsServiceRef(NULL), _socketMonitor(NULL)
 {
 
 }
@@ -36,6 +41,12 @@ vvBonjourRegistrar::~vvBonjourRegistrar()
     DNSServiceRefDeallocate(_dnsServiceRef);
     _dnsServiceRef = NULL;
   }
+
+  if (_socketMonitor != NULL)
+  {
+    _socketMonitor->clear();
+  }
+  delete _socketMonitor;
 }
 
 void vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const int port)
@@ -51,10 +62,10 @@ void vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const int 
   // Convert port to big endian.
   const ushort nwport = htons((ushort)port);
 
-  DNSServiceErrorType error = DNSServiceRegister(&_dnsServiceRef, NULL, NULL, entry.getServiceName().c_str(),
+  DNSServiceErrorType error = DNSServiceRegister(&_dnsServiceRef, 0, 0, entry.getServiceName().c_str(),
                                                  entry.getRegisteredType().c_str(),
                                                  entry.getReplyDomain().empty() ? NULL : entry.getReplyDomain().c_str(),
-                                                 NULL, nwport, NULL, NULL, bonjourRegisterService, this);
+                                                 0, nwport, 0, 0, bonjourRegisterService, this);
 
   if (error != kDNSServiceErr_NoError)
   {
@@ -72,11 +83,33 @@ void vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const int 
     vvDebugMsg::msg(0, "vvBonjourRegistrar::registerService(): DNSServiceRefSockFD returned -1");
     return;
   }
+
+  vvSocket* socket = new vvSocket(sockfd);
+  std::vector<vvSocket*> sockets;
+  sockets.push_back(socket);
+
+  _socketMonitor = new vvSocketMonitor(sockets);
+
+  // No need to loop. Only one socket.
+  _socketMonitor->wait();
+  bonjourSocketReadyRead();
 }
 
 vvBonjourEntry vvBonjourRegistrar::getRegisteredService() const
 {
   return _registeredService;
+}
+
+void vvBonjourRegistrar::bonjourSocketReadyRead()
+{
+  vvDebugMsg::msg(3, "vvBonjourRegistrar::bonjourSocketReadyRead()");
+
+  DNSServiceErrorType error = DNSServiceProcessResult(_dnsServiceRef);
+  if (error != kDNSServiceErr_NoError)
+  {
+    vvDebugMsg::msg(0, "vvBonjourRegistrar::bonjourSocketReadyRead(): DNSServiceProcessResult failed with error code ", error);
+    return;
+  }
 }
 
 void vvBonjourRegistrar::bonjourRegisterService(DNSServiceRef, DNSServiceFlags, DNSServiceErrorType errorCode,

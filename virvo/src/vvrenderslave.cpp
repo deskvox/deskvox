@@ -23,8 +23,7 @@
 #include "vvrenderslave.h"
 #include "vvtexrend.h"
 
-//#define HAVE_BONJOUR
-#if HAVE_BONJOUR
+#ifdef HAVE_BONJOUR
 #include "vvbonjour/vvbonjourregistrar.h"
 #endif
 
@@ -56,11 +55,11 @@ vvRenderSlave::ErrorType vvRenderSlave::initSocket(const int port, const vvSocke
   _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
 
 #ifdef HAVE_BONJOUR
-    // Register the bonjour service for the slave.
-    vvBonjourRegistrar* registrar = new vvBonjourRegistrar();
-    const vvBonjourEntry entry = vvBonjourEntry("VView renderer 1",
-                                                "_distrendering._tcp", "");
-    registrar->registerService(entry, port);
+  // Register the bonjour service for the slave.
+  vvBonjourRegistrar* registrar = new vvBonjourRegistrar();
+  const vvBonjourEntry entry = vvBonjourEntry("Virvo render slave",
+                                              "_distrendering._tcp", "");
+  registrar->registerService(entry, port);
 #endif
 
   cerr << "Listening on port " << port << endl;

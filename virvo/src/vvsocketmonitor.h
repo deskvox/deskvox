@@ -18,37 +18,24 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_BONJOURENTRY_H_
-#define _VV_BONJOURENTRY_H_
+#ifndef _VV_SOCKETMONITOR_H_
+#define _VV_SOCKETMONITOR_H_
 
-#ifdef HAVE_BONJOUR
+#ifndef _WIN32
 
-#include <string>
+#include "vvsocket.h"
 
-using std::string;
+#include <vector>
 
-/*!
- * The bonjour implementation is strongly influenced by the Qt Quarterly titled
- * 'Zero-Configuration Networking in Qt' which could, as of October 14, 2010,
- * be found at this location: http://doc.trolltech.com/qq/qq23-bonjour.html .
- */
-class vvBonjourEntry
+class vvSocketMonitor
 {
 public:
-  vvBonjourEntry();
-  vvBonjourEntry(const string& serviceName,
-                 const string& registeredType,
-                 const string& replyDomain);
+  vvSocketMonitor(std::vector<vvSocket*>& sockets);
 
-  string getServiceName() const;
-  string getRegisteredType() const;
-  string getReplyDomain() const;
-
-  bool operator==(const vvBonjourEntry& rhs) const;
+  vvSocket* wait();
+  void clear();
 private:
-  string _serviceName;
-  string _registeredType;
-  string _replyDomain;
+  std::vector<vvSocket*> _sockets;
 };
 
 #endif

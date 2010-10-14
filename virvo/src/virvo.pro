@@ -35,6 +35,7 @@ SOURCES = vvbrick.cpp \
     vvrendertarget.cpp \
     vvsocket.cpp \
     vvsocketio.cpp \
+    vvsocketmonitor.cpp \
     vvsphere.cpp \
     vvstingray.cpp \
     vvstopwatch.cpp \
@@ -54,6 +55,7 @@ SOURCES = vvbrick.cpp \
     vvglsl.cpp \
     vvbsptree.cpp \
     vvbsptreevisitors.cpp \
+    vvbonjour/vvbonjourbrowser.cpp \
     vvbonjour/vvbonjourentry.cpp \
     vvbonjour/vvbonjourregistrar.cpp \
     vvbonjour/vvbonjourresolver.cpp \
@@ -84,6 +86,7 @@ HEADERS = \
     vvsllist.h \
     vvsocket.h \
     vvsocketio.h \
+    vvsocketmonitor.h \
     vvsphere.h \
     vvstingray.h \
     vvstopwatch.h \
@@ -104,6 +107,7 @@ HEADERS = \
     vvbsptree.h \
     vvx11.h \
     vvbsptreevisitors.h \
+    vvbonjour/vvbonjourbrowser.h \
     vvbonjour/vvbonjourentry.h \
     vvbonjour/vvbonjourregistrar.h \
     vvbonjour/vvbonjourresolver.h \

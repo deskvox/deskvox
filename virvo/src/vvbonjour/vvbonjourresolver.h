@@ -17,3 +17,37 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+#ifndef _VV_BONJOURRESOLVER_H_
+#define _VV_BONJOURRESOLVER_H_
+
+#ifdef HAVE_BONJOUR
+
+#include "vvbonjourentry.h"
+#include "vvsocketmonitor.h"
+
+#include <dns_sd.h>
+
+class vvBonjourResolver
+{
+public:
+  vvBonjourResolver();
+  ~vvBonjourResolver();
+
+  void resolveBonjourEntry(const vvBonjourEntry& entry);
+private:
+  DNSServiceRef _dnsServiceRef;
+
+  vvSocketMonitor* _socketMonitor;
+
+  void bonjourSocketReadyRead();
+
+  static void DNSSD_API bonjourResolveReply(DNSServiceRef, DNSServiceFlags, uint32_t,
+                                            DNSServiceErrorType errorCode, const char*,
+                                            const char* hostTarget, uint16_t port, uint16_t,
+                                            const uchar*, void* data);
+};
+
+#endif
+
+#endif

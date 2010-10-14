@@ -18,39 +18,50 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_BONJOURREGISTRAR_H_
-#define _VV_BONJOURREGISTRAR_H_
+#ifndef _VV_BONJOURBROWSER_H_
+#define _VV_BONJOURBROWSER_H_
 
 #ifdef HAVE_BONJOUR
 
 #include "vvbonjourentry.h"
+#include "vvpthread.h"
 #include "vvsocketmonitor.h"
 
 #include <dns_sd.h>
+#include <vector>
 
-class vvBonjourRegistrar
+class vvBonjourBrowser
 {
 public:
-  vvBonjourRegistrar();
-  ~vvBonjourRegistrar();
+  vvBonjourBrowser();
+  ~vvBonjourBrowser();
 
-  void registerService(const vvBonjourEntry& entry, const int port);
+  void browseForServiceType(const string& serviceType);
 
-  vvBonjourEntry getRegisteredService() const;
+  bool expectingServices() const;
+
+  std::vector<vvBonjourEntry> getBonjourEntries() const;
 private:
   DNSServiceRef _dnsServiceRef;
-  vvBonjourEntry _registeredService;
+  std::vector<vvBonjourEntry> _bonjourEntries;
 
   vvSocketMonitor* _socketMonitor;
+
+  pthread_t _thread;
+  bool _threadRunning;
+  bool _noServicesComing;
 
   void bonjourSocketReadyRead();
 
   /*!
    * \brief           Callback function passed to bonjour.
    */
-  static void DNSSD_API bonjourRegisterService(DNSServiceRef, DNSServiceFlags, DNSServiceErrorType errorCode,
-                                               const char* serviceName, const char* registeredType,
-                                               const char* replyDomain, void* data);
+  static void DNSSD_API bonjourBrowseReply(DNSServiceRef, DNSServiceFlags flags, unsigned int,
+                                           DNSServiceErrorType errorCode,
+                                           const char* serviceName, const char* registeredType,
+                                           const char* replyDomain,
+                                           void* data);
+  static void* waitSocketReadyRead(void* threadargs);
 };
 
 #endif
