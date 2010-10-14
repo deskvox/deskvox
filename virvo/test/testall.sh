@@ -1,2 +1,2 @@
 #!/bin/bash
-./vview -testsuitefilename testall.csv "$@" -benchmark
+VV_SHADER_PATH=../shader ./vview -testsuitefilename testall.csv "$@" -benchmark
