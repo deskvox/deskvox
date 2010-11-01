@@ -4500,6 +4500,9 @@ void vvTexRend::renderVolumeGL()
 
   vvDebugMsg::msg(3, "vvTexRend::renderVolumeGL()");
 
+  if (vd->vox[0] * vd->vox[1] * vd->vox[2] == 0)
+    return;
+
   if (_measureRenderTime)
   {
     sw.start();
