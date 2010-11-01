@@ -191,7 +191,6 @@ public:
 	*/
 
 private:
-  vvArray<GLuint> fragShaderArray;			///< array of shader IDs
   vvArray<GLuint> programArray;				///< array of program IDs
   int nTexture;                                         ///< the number of texture activated
   bool _isSupported;                                    ///< true if there is GLSL support

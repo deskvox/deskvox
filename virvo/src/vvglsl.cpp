@@ -100,9 +100,8 @@ vvGLSL::~vvGLSL()
     glUseProgram(0);
     for (int n = 0; n < programArray.count(); n++)
     {
-      glDetachShader(programArray[n], fragShaderArray[n]);
-      glDeleteShader(fragShaderArray[n]);
-      glDeleteProgram(programArray[n]);
+      if(programArray[n] != 0)
+        glDeleteProgram(programArray[n]);
     }
   }
   delete[] _uniformParameters;
@@ -185,9 +184,9 @@ bool vvGLSL::loadGeomShader(const char* vertFileName, const char* geomFileName)
   glProgramParameteriEXT(program, GL_GEOMETRY_VERTICES_OUT_EXT, maxGeometryOutputVertices);
 
   glLinkProgram(program);
+  glDeleteShader(vertShader);
+  glDeleteShader(geomShader);
 
-  fragShaderArray.append(vertShader);
-  fragShaderArray.append(geomShader);
   programArray.append(program);
 
   delete[] vertFileString;
@@ -240,7 +239,6 @@ bool vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shad
   fragShader = glCreateShader(toGLenum(shaderType));
   fragProgram = glCreateProgram();
 
-  fragShaderArray.append( fragShader );
   programArray.append( fragProgram );
 
   glShaderSource(fragShader, 1, &shaderString, NULL);
@@ -262,6 +260,7 @@ bool vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shad
 
   glAttachShader(fragProgram, fragShader);
   glLinkProgram(fragProgram);
+  glDeleteShader(fragShader);
 
   return true;
 }
@@ -391,9 +390,8 @@ void vvGLSL::deleteProgram(GLuint program)
   {
 	if(programArray[n] == program)
 	{
-	  glDetachShader(programArray[n], fragShaderArray[n]);
-	  glDeleteShader(fragShaderArray[n]);
 	  glDeleteProgram(programArray[n]);
+          programArray[n] = 0;
 
 	  return;
 	}
