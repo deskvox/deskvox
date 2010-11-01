@@ -436,9 +436,16 @@ void vvTestSuite::init()
   if (handle)
   {
     int lineCount = 0;
-    char line[MAX_LINE_LEN];
-    while (fgets(line, MAX_LINE_LEN, handle))
+    char rawline[MAX_LINE_LEN];
+    while (fgets(rawline, MAX_LINE_LEN, handle))
     {
+      char *line = stripSpace(rawline);
+      if(!line || !strcmp(line, ""))
+      {
+        // skip empty lines
+        continue;
+      }
+
       // One test per line (except the first one, which contains the header mapping).
       vvPerformanceTest* test = NULL;
       vvPerformanceTest* previousTest = NULL;
@@ -447,36 +454,26 @@ void vvTestSuite::init()
         previousTest = _tests.back();
       }
       bool testSaved = false;
+
       int itemCount = 0;
-      char* item;
-      item = strtok(line, ",");
-      char* tmp = getStripped(item);
-      if (lineCount == 0)
-      {
-        initHeader(tmp, itemCount);
-      }
-      else
+      char* item = stripQuotes(stripSpace(strtok(line, ",")));
+      if(item)
       {
         test = new vvPerformanceTest();
-        initValue(test, tmp, itemCount, previousTest);
+        if(previousTest)
+          *test = *previousTest;
       }
-      ++itemCount;
-      delete[] tmp;
-
-      while ((item = strtok(NULL, ",")))
+      while(item)
       {
-        tmp = getStripped(item);
-
         if (lineCount == 0)
         {
-          initHeader(tmp, itemCount);
+          initHeader(item, itemCount);
         }
         else
         {
-          initValue(test, tmp, itemCount, previousTest);
+          initValue(test, item, itemCount, previousTest);
         }
         ++itemCount;
-        delete[] tmp;
 
         if ((test != NULL) && (itemCount == NUM_COL_HEADERS))
         {
@@ -485,6 +482,7 @@ void vvTestSuite::init()
           _tests.push_back(test);
           testSaved = true;
         }
+        item = stripQuotes(stripSpace(strtok(NULL, ",")));
       }
 
       if ((lineCount > 0) && (!testSaved))
@@ -837,34 +835,44 @@ void vvTestSuite::initFromPreviousValue(vvPerformanceTest* test, const char* hea
   initValue(test, str, headerName);
 }
 
-char* vvTestSuite::getStripped(const char* item)
+char* vvTestSuite::stripSpace(char* item)
 {
+  if(!item)
+    return NULL;
+
+  // strip white space at head and tail
+  while(isspace(*item))
+    ++item;
   size_t len = strlen(item);
-  if ((len >= 2) && (item[0] == '\"')
-    && ((item[len - 1] == '\"') || (item[len - 1] == '\n')))
+  if(len > 0)
   {
-    char* result = new char[len - 1];
-    size_t i;
-    size_t margin = (item[len - 1] == '\n') ? 3 : 2;
-    for (i = 0; i < len - margin; ++i)
+    for(size_t i=len-1; i>0; --i)
     {
-      result[i] = item[i + 1];
+      if(isspace(item[i]))
+      {
+        item[i] = '\0';
+        --len;
+      }
     }
-    result[i] = '\0';
-    return result;
   }
-  else
+
+  return item;
+}
+
+char* vvTestSuite::stripQuotes(char* item)
+{
+  if(!item)
+    return NULL;
+
+  // possibly strip quotation marks
+  size_t len = strlen(item);
+  if(len >=2 && item[0]=='\"' && item[len-1]=='\"')
   {
-    // Simply copy the string.
-    char* result = new char[len + 1];
-    size_t i;
-    for (i = 0; i < len; ++i)
-    {
-      result[i] = item[i];
-    }
-    result[i] = '\0';
-    return result;
+    item[len-1] = '\0';
+    ++item;
   }
+
+  return item;
 }
 
 void vvTestSuite::toUpper(char* str)
@@ -873,7 +881,7 @@ void vvTestSuite::toUpper(char* str)
 
   for (size_t i = 0; i < len; ++i)
   {
-    if ((str[i] >= 97) && (str[i] <= 122))
+    if ((str[i] >= 'a') && (str[i] <= 'z'))
     {
       str[i] -= 32;
     }

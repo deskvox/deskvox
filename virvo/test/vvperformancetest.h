@@ -153,7 +153,8 @@ class vvTestSuite
                    vvPerformanceTest* previousTest);
     void initFromPreviousValue(vvPerformanceTest* test, const char* headerName,
                                vvPerformanceTest* previousTest);
-    char* getStripped(const char* item);
+    char* stripSpace(char* item);
+    char* stripQuotes(char* item);
     void toUpper(char* str);
     bool isHeader(const char* str);
     void setHeaderPos(const char* header, const int pos);
