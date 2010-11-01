@@ -1119,7 +1119,7 @@ void vvSoftVR::setParameter(ParameterType param, float newValue, char*)
 
 //----------------------------------------------------------------------------
 // see parent
-float vvSoftVR::getParameter(ParameterType param, char*)
+float vvSoftVR::getParameter(ParameterType param, char*) const
 {
    vvDebugMsg::msg(3, "vvSoftVR::getParameter()");
 
