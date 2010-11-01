@@ -88,6 +88,8 @@ vvView::vvView()
   ov = NULL;
   currentGeom = vvTexRend::VV_AUTO;              // vvTexRend::VV_SLICES;
   currentVoxels = vvTexRend::VV_BEST;            // vvTexRend::VV_RGBA;
+  softwareRenderer = false;
+  cudaRenderer = false;
   bgColor[0] = bgColor[1] = bgColor[2] = 0.0f;
   frame = 0;
   filename = NULL;
