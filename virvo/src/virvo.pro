@@ -55,6 +55,10 @@ SOURCES = vvbrick.cpp \
     vvglsl.cpp \
     vvbsptree.cpp \
     vvbsptreevisitors.cpp \
+    vvsoftimg.cpp \
+    vvsoftpar.cpp \
+    vvsoftper.cpp \
+    vvsoftvr.cpp \
     vvbonjour/vvbonjourbrowser.cpp \
     vvbonjour/vvbonjourentry.cpp \
     vvbonjour/vvbonjourregistrar.cpp \
@@ -107,6 +111,10 @@ HEADERS = \
     vvbsptree.h \
     vvx11.h \
     vvbsptreevisitors.h \
+    vvsoftimg.h \
+    vvsoftpar.h \
+    vvsoftper.h \
+    vvsoftvr.h \
     vvbonjour/vvbonjourbrowser.h \
     vvbonjour/vvbonjourentry.h \
     vvbonjour/vvbonjourregistrar.h \

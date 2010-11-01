@@ -53,6 +53,8 @@ using std::ios;
 #include "../src/vvdebugmsg.h"
 #include "../src/vvsocketio.h"
 #include "../src/vvtexrend.h"
+#include "../src/vvsoftpar.h"
+#include "../src/vvsoftper.h"
 #include "../src/vvbonjour/vvbonjourbrowser.h"
 #include "../src/vvbonjour/vvbonjourresolver.h"
 #include "vvobjview.h"
@@ -617,6 +619,15 @@ void vvView::motionCallback(int x, int y)
 
 
 //----------------------------------------------------------------------------
+/** Set software renderering flag.
+ */
+void vvView::setSoftwareRenderer(bool enable)
+{
+   softwareRenderer = enable;
+}
+
+
+//----------------------------------------------------------------------------
 /** Set active rendering algorithm.
  */
 void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
@@ -640,7 +651,14 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   // These are needed before construction of the renderer so that
   // additional rendering contexts and x-windows can be created.
 
-  if (numDisplays > 0)
+  if(softwareRenderer)
+  {
+    if(perspectiveMode)
+      renderer = new vvSoftPer(vd, renderState);
+    else
+      renderer = new vvSoftPar(vd, renderState);
+  }
+  else if (numDisplays > 0)
   {
     cerr << "Running in threaded mode using the following displays:" << endl;
     for (unsigned int i=0; i<numDisplays; ++i)
@@ -1003,6 +1021,11 @@ void vvView::rendererMenuCallback(int item)
     "Draft", "High"
   };
 
+  if (item>=0 && item<=5)
+  {
+    ds->setSoftwareRenderer(false);
+  }
+
   if (item==0)
   {
     ds->setRenderer(vvTexRend::VV_AUTO, ds->currentVoxels);
@@ -1041,6 +1064,12 @@ void vvView::rendererMenuCallback(int item)
       cerr << "CPU";
     }
     cerr << endl;
+  }
+  else if (item==7)
+  {
+    cerr << "Switched to software shear-warp renderer" << endl;
+    ds->setSoftwareRenderer(true);
+    ds->setRenderer();
   }
   else if (item==98 || item==99)
   {
@@ -1729,6 +1758,7 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_SPHERICAL)) glutAddMenuEntry("3D textures - spherical [4]", 4);
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("3D textures - bricked [5]", 5);
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("Bricks - generate proxy geometry on GPU [6]", 6);
+  glutAddMenuEntry("Shear-warp [7]", 7);
   glutAddMenuEntry("Decrease quality [-]", 98);
   glutAddMenuEntry("Increase quality [+]", 99);
 
@@ -1746,8 +1776,8 @@ void vvView::createMenus()
   optionsMenu = glutCreateMenu(optionsMenuCallback);
   glutAddMenuEntry("Toggle slice interpolation [i]", 0);
   if (vvTexRend::isSupported(vvTexRend::VV_FRG_PRG)
-    && vvTexRend::isSupported(vvTexRend::VV_VIEWPORT)
-    && vvGLTools::isGLextensionSupported("GL_ARB_multitexture"))
+      && vvTexRend::isSupported(vvTexRend::VV_VIEWPORT)
+      && vvGLTools::isGLextensionSupported("GL_ARB_multitexture"))
   {
     glutAddMenuEntry("Toggle pre-integration [P]", 1);
   }

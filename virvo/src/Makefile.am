@@ -51,6 +51,10 @@ libvirvo_a_headers = \
         vvrendercontext.h \
         vvoffscreenbuffer.h \
         vvx11.h \
+	vvsoftimg.h \
+	vvsoftpar.h \
+	vvsoftper.h \
+	vvsoftvr.h \
         vvbonjour/vvbonjourbrowser.h \
         vvbonjour/vvbonjourentry.h \
         vvbonjour/vvbonjourregistrar.h \
@@ -97,6 +101,10 @@ libvirvo_a_SOURCES = \
         vvrendertarget.cpp \
         vvrendercontext.cpp \
         vvoffscreenbuffer.cpp \
+	vvsoftimg.cpp \
+	vvsoftpar.cpp \
+	vvsoftper.cpp \
+	vvsoftvr.cpp \
         vvbonjour/vvbonjourbrowser.cpp \
         vvbonjour/vvbonjourentry.cpp \
         vvbonjour/vvbonjourregistrar.cpp \
