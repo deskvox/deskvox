@@ -728,7 +728,19 @@ void vvSoftPer::findScaleMatrix()
    scale.identity();
 
    const vvVector3 size = vd->getSize();
-   scale.scale(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
+   switch(principal)
+   {
+      case X_AXIS:
+         scale.scale(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]);
+         break;
+      case Y_AXIS:
+         scale.scale(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]);
+         break;
+      case Z_AXIS:
+      default:
+         scale.scale(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
+         break;
+   }
 
    if (stacking==true)
       sf = 1.0f - sdShear.e[3][2];

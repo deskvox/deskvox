@@ -954,7 +954,21 @@ void vvSoftPar::findShearMatrix()
 
    // Add scale factor depending on object size:
    const vvVector3 size = vd->getSize();
-   siShear.scale(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
+   vvMatrix scaleMat;
+   scaleMat.identity();
+   switch(principal)
+   {
+      case X_AXIS:
+         scaleMat.scale(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]);
+         break;
+      case Y_AXIS:
+         scaleMat.scale(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]);
+         break;
+      case Z_AXIS:
+         scaleMat.scale(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
+         break;
+   }
+   siShear.multiplyPost(&scaleMat);
 
    // Create conversion matrix for intermediate image coordinates:
    // Shift right and down.
