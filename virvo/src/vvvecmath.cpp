@@ -2230,6 +2230,26 @@ void vvVector4::set(float a, float b, float c, float d)
 }
 
 //----------------------------------------------------------------------------
+/// Add two vectors
+void vvVector4::add(const vvVector4* v)
+{
+  e[0] += v->e[0];
+  e[1] += v->e[1];
+  e[2] += v->e[2];
+  e[3] += v->e[3];
+}
+
+//----------------------------------------------------------------------------
+/// Subtract two vectors
+void vvVector4::sub(const vvVector4* v)
+{
+  e[0] -= v->e[0];
+  e[1] -= v->e[1];
+  e[2] -= v->e[2];
+  e[3] -= v->e[3];
+}
+
+//----------------------------------------------------------------------------
 /// Multiplies a vector with a matrix (V' = M x V)
 void vvVector4::multiply(const vvMatrix* m)
 {

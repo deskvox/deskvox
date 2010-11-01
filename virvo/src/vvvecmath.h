@@ -140,6 +140,8 @@ class VIRVOEXPORT vvVector4
     void set(float, float, float, float);
     void multiply(const vvMatrix*);
     void copy(const vvVector4*);
+    void add(const vvVector4*);
+    void sub(const vvVector4*);
     void print(const char* text = 0) const;
 };
 

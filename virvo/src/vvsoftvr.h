@@ -122,6 +122,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       void findViewMatrix();
       void findPermutationMatrix();
       void findViewportMatrix(int, int);
+      void findSlicePosition(int, vvVector4*, vvVector4*);
       void findSlicePosition(int, vvVector3*, vvVector3*);
       void findClipPlaneEquation();
       bool isVoxelClipped(int, int, int);

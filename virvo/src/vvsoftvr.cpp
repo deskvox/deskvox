@@ -689,6 +689,23 @@ void vvSoftVR::findViewportMatrix(int w, int h)
 */
 void vvSoftVR::findSlicePosition(int slice, vvVector3* start, vvVector3* end)
 {
+   vvVector4 start4, end4;
+   findSlicePosition(slice, &start4, end?&end4:NULL);
+   start->copy(&start4);
+   if (end)
+      end->copy(&end4);
+}
+
+
+//----------------------------------------------------------------------------
+/** Determine intermediate image positions of bottom left and top right
+  corner of a slice.
+  @param slice  current slice index
+  @param start  bottom left corner
+  @param end    top right corner (pass NULL if not required)
+*/
+void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
+{
    // Determine voxel coordinates in object space:
    switch (principal)
    {
@@ -696,33 +713,39 @@ void vvSoftVR::findSlicePosition(int slice, vvVector3* start, vvVector3* end)
          start->e[0] =  0.5f * _size[0] - (float)slice / (float)len[2] * _size[0];
          start->e[1] = -0.5f * _size[1];
          start->e[2] = -0.5f * _size[2];
+         start->e[3] = 1.;
          if (end)
          {
             end->e[0]   =  start->e[0];
             end->e[1]   = -start->e[1];
             end->e[2]   = -start->e[2];
+            end->e[3] = 1.;
          }
          break;
       case Y_AXIS:
          start->e[0] = -0.5f * _size[0];
          start->e[1] =  0.5f * _size[1] - (float)slice / (float)len[2] * _size[1];
          start->e[2] = -0.5f * _size[2];
+         start->e[3] = 1.;
          if (end)
          {
             end->e[0]   = -start->e[0];
             end->e[1]   =  start->e[1];
             end->e[2]   = -start->e[2];
+            end->e[3] = 1.;
          }
          break;
       case Z_AXIS:
          start->e[0] = -0.5f * _size[0];
          start->e[1] = -0.5f * _size[1];
          start->e[2] =  0.5f * _size[2] - (float)slice / (float)len[2] * _size[2];
+         start->e[3] = 1.;
          if (end)
          {
             end->e[0]   = -start->e[0];
             end->e[1]   = -start->e[1];
             end->e[2]   =  start->e[2];
+            end->e[3] = 1.;
          }
          break;
    }
