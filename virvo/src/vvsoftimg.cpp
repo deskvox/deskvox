@@ -22,6 +22,8 @@
 using std::cerr;
 using std::endl;
 
+#include "vvglew.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -34,6 +36,7 @@ using std::endl;
 #include "vvdebugmsg.h"
 #include "vvvecmath.h"
 #include "vvsoftimg.h"
+#include "vvgltools.h"
 
 const int vvSoftImg::PIXEL_SIZE = 4;
 
@@ -45,6 +48,8 @@ vvSoftImg::vvSoftImg(int w, int h)
 {
    vvDebugMsg::msg(1, "vvSoftImg::vvSoftImg(): ", w, h);
 
+   glewInit();
+
    width  = w;
    height = h;
    warpInterpolation = true;                      // set default interpolation type for warp
@@ -53,11 +58,15 @@ vvSoftImg::vvSoftImg(int w, int h)
       data = new uchar[width * height * PIXEL_SIZE];
    else
       data = NULL;
+   pboName = 0;
+
+   canUsePbo = glGenBuffers && glDeleteBuffers && glBufferData && glBindBuffer;
 
 #ifndef VV_REMOTE_RENDERING
    // Generate texture name:
    glGenTextures(1, &texName);
 #endif
+   reinitTex = true;
 }
 
 
@@ -66,6 +75,11 @@ vvSoftImg::vvSoftImg(int w, int h)
 vvSoftImg::~vvSoftImg()
 {
    vvDebugMsg::msg(1, "vvSoftImg::~vvSoftImg()");
+#ifndef VV_REMOTE_RENDERING
+   glDeleteTextures(1, &texName);
+   if (canUsePbo && pboName != 0)
+      glDeleteBuffers(1, &pboName);
+#endif
    if (deleteData) delete[] data;
 }
 
@@ -75,19 +89,89 @@ vvSoftImg::~vvSoftImg()
   @param w new image width in pixels
   @param h new image height in pixels
 */
-void vvSoftImg::setSize(int w, int h)
+void vvSoftImg::setSize(int w, int h, uchar *buf, bool usePbo)
 {
    vvDebugMsg::msg(3, "vvSoftImg::setSize() ", w, h);
 
-   if (width!=w || height!=h)                     // recreate image buffer only if needed
+   if (width!=w || height!=h || (buf != data) || (usePbo!=(pboName!=0))) // recreate image buffer only if needed
    {
       width  = w;
       height = h;
       if (deleteData) delete[] data;
-      data = new uchar[width * height * PIXEL_SIZE];
-      deleteData = true;
+      if (buf)
+      {
+         data = buf;
+         deleteData = false;
+      }
+      else
+      {
+         data = new uchar[width * height * PIXEL_SIZE];
+         deleteData = true;
+      }
+#ifndef VV_REMOTE_RENDERING
+      if (canUsePbo)
+      {
+          if (usePbo)
+          {
+              if (pboName == 0)
+                  glGenBuffers(1, &pboName);
+              glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboName);
+              glBufferData(GL_PIXEL_UNPACK_BUFFER, width*height*PIXEL_SIZE, NULL, GL_STREAM_COPY);
+              glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+          }
+          else if (pboName)
+          {
+              glDeleteBuffers(1, &pboName);
+              pboName = 0;
+          }
+      }
+
+      reinitTex = true;
+#endif
       vvDebugMsg::msg(1, "New image size is: ", width, height);
    }
+}
+
+
+//----------------------------------------------------------------------------
+/** Initialize texture.
+*/
+void vvSoftImg::initTexture(GLuint format)
+{
+   vvDebugMsg::msg(3, "vvSoftImg::initTexture()");
+
+   int texWidth  = vvToolshed::getTextureSize(width);
+   int texHeight = vvToolshed::getTextureSize(height);
+
+   glBindTexture(GL_TEXTURE_2D, texName);
+
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (warpInterpolation) ? GL_LINEAR : GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (warpInterpolation) ? GL_LINEAR : GL_NEAREST);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+   // try GL_REPLACE and GL_MODULATE
+   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+   // Only load texture if it can be accomodated:
+   glTexImage2D(GL_PROXY_TEXTURE_2D, 0, format, texWidth, texHeight, 0,
+      format, GL_UNSIGNED_BYTE, NULL);
+
+   GLint glWidth;                                 // return value from OpenGL call
+   glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &glWidth);
+   if (glWidth==0)
+   {
+      cerr << "Unsupported intermediate image texture size (" <<
+         texWidth << " x " << texHeight << ")." << endl;
+   }
+   else
+   {
+       glTexImage2D(GL_TEXTURE_2D, 0, format, texWidth, texHeight, 0,
+               format, GL_UNSIGNED_BYTE, NULL);
+   }
+
+   reinitTex = false;
+
+   vvGLTools::printGLError("vvSoftImg::initTexture()");
 }
 
 
@@ -332,7 +416,6 @@ void vvSoftImg::warpTex(vvMatrix* w)
 #ifndef VV_REMOTE_RENDERING
    const float ZPOS = 0.0f;                       // texture z position. TODO: make zPos changeable and adjust warp matrix accordingly
    static vvSoftImg texImg(1,1);                  // texture image
-   GLint glWidth;                                 // return value from OpenGL call
    GLfloat glmatrix[16];                          // OpenGL compatible matrix
    GLenum format;                                 // pixel format
    int texWidth, texHeight;                       // texture compatible image size
@@ -341,6 +424,15 @@ void vvSoftImg::warpTex(vvMatrix* w)
 
    vvDebugMsg::msg(3, "vvSoftImg::warpTex()");
    if (vvDebugMsg::isActive(3)) w->print("warp matrix");
+
+   /* Save intermediate image to file:
+     {
+        FILE* fp;
+        fp = fopen("image.rgba", "wb");
+        fwrite(imgUsed->data, imgUsed->height * imgUsed->width * 4, 1, fp);
+        fclose(fp);
+     }
+   */
 
    saveGLState();
 
@@ -381,63 +473,46 @@ void vvSoftImg::warpTex(vvMatrix* w)
    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
    // Generate texture:
+   if (reinitTex)
+       initTexture(format);
+
+   if (canUsePbo && pboName)
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboName);
+
    glBindTexture(GL_TEXTURE_2D, texName);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (warpInterpolation) ? GL_LINEAR : GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (warpInterpolation) ? GL_LINEAR : GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-                                                  // try GL_REPLACE and GL_MODULATE
-   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+   // Now texture can be loaded:
+   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, imgUsed->width, imgUsed->height,
+           format, GL_UNSIGNED_BYTE, pboName ? 0 : imgUsed->data);
 
-   // Only load texture if it can be accomodated:
-   glTexImage2D(GL_PROXY_TEXTURE_2D, 0, format, imgUsed->width, imgUsed->height, 0,
-      format, GL_UNSIGNED_BYTE, imgUsed->data);
+   // Modelview matrix becomes warp matrix:
+   glMatrixMode(GL_MODELVIEW);
+   w->makeGL(glmatrix);
+   glLoadMatrixf(glmatrix);
 
-   /* Save intermediate image to file:
-     {
-        FILE* fp;
-        fp = fopen("image.rgba", "wb");
-        fwrite(imgUsed->data, imgUsed->height * imgUsed->width * 4, 1, fp);
-        fclose(fp);
-     }
-   */
-   glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &glWidth);
-   if (glWidth==0)
-   {
-      cerr << "Unsupported intermediate image texture size (" <<
-         imgUsed->width << " x " << imgUsed->height << ")." << endl;
-   }
-   else
-   {
-      // Now texture can be loaded:
-      glTexImage2D(GL_TEXTURE_2D, 0, format, imgUsed->width, imgUsed->height, 0,
-         format, GL_UNSIGNED_BYTE, imgUsed->data);
+   // Projection matrix is identity matrix:
+   glMatrixMode(GL_PROJECTION);
+   glLoadIdentity();
 
-      // Modelview matrix becomes warp matrix:
-      glMatrixMode(GL_MODELVIEW);
-      w->makeGL(glmatrix);
-      glLoadMatrixf(glmatrix);
+   // Draw texture image:
+   glBegin(GL_QUADS);
+   glColor4f(1.0, 1.0, 1.0, 1.0);
+   glNormal3f(0.0, 0.0, 1.0);
+   // bottom left
+   glTexCoord2f(0.0f, 0.0f); glVertex3f( 0.0f,                 0.0f,                   ZPOS);
+   // bottom right
+   glTexCoord2f(1.0f, 0.0f); glVertex3f((float)imgUsed->width, 0.0f,                   ZPOS);
+   // top right
+   glTexCoord2f(1.0f, 1.0f); glVertex3f((float)imgUsed->width, (float)imgUsed->height, ZPOS);
+   // top left
+   glTexCoord2f(0.0f, 1.0f); glVertex3f( 0.0f,                 (float)imgUsed->height, ZPOS);
+   glEnd();
 
-      // Projection matrix is identity matrix:
-      glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();
-
-      // Draw texture image:
-      glBegin(GL_QUADS);
-      glColor4f(1.0, 1.0, 1.0, 1.0);
-      glNormal3f(0.0, 0.0, 1.0);
-                                                  // bottom left
-      glTexCoord2f(0.0f, 0.0f); glVertex3f( 0.0f,                 0.0f,                   ZPOS);
-                                                  // bottom right
-      glTexCoord2f(1.0f, 0.0f); glVertex3f((float)imgUsed->width, 0.0f,                   ZPOS);
-                                                  // top right
-      glTexCoord2f(1.0f, 1.0f); glVertex3f((float)imgUsed->width, (float)imgUsed->height, ZPOS);
-                                                  // top left
-      glTexCoord2f(0.0f, 1.0f); glVertex3f( 0.0f,                 (float)imgUsed->height, ZPOS);
-      glEnd();
-   }
+   if (canUsePbo && pboName)
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
    restoreGLState();
+
+   vvGLTools::printGLError("vvSoftImg::warpTex");
 #else
    w = w;                                         // suppress compiler warning
 #endif
@@ -569,6 +644,7 @@ void vvSoftImg::setWarpInterpolation(bool newMode)
 {
    vvDebugMsg::msg(3, "vvSoftImg::setWarpInterpolation()");
    warpInterpolation = newMode;
+   reinitTex = true;
 }
 
 
@@ -599,6 +675,15 @@ void vvSoftImg::print(const char* title)
 {
    if (title) cerr << title << " ";
    cerr << "width  = " << width << ", height = " << height << endl;
+}
+
+
+//----------------------------------------------------------------------------
+/** Return name for PBO used for CUDA/OpenGL interoperability
+*/
+GLuint vvSoftImg::getPboName() const
+{
+   return pboName;
 }
 
 

@@ -37,6 +37,7 @@
   @see vvSoftPer
   @see vvSoftVR
 */
+
 class VIRVOEXPORT vvSoftImg
 {
    private:
@@ -46,6 +47,7 @@ class VIRVOEXPORT vvSoftImg
       };
 #ifndef VV_REMOTE_RENDERING
       GLuint    texName;                          ///< name of warp texture
+      GLuint    pboName;                          ///< name for PBO for CUDA/OpenGL interop
       GLboolean glsTexture2D;                     ///< state buffer for GL_TEXTURE_2D
       GLboolean glsBlend;                         ///< stores GL_BLEND
       GLboolean glsLighting;                      ///< stores GL_LIGHTING
@@ -56,6 +58,8 @@ class VIRVOEXPORT vvSoftImg
       GLfloat   glsRasterPos[4];                  ///< current raster position (glRasterPos)
 #endif
       bool      warpInterpolation;                ///< true = linear interpolation, false = nearest neighbor interpolation
+      bool      reinitTex;                        ///< true if texture parameters have to be (re-)set
+      bool      canUsePbo;                        ///< true if GL functions for PBOs are available
 
    public:
       static const int PIXEL_SIZE;                ///< byte per pixel (3 for RGB, 4 for RGBA)
@@ -68,7 +72,8 @@ class VIRVOEXPORT vvSoftImg
 
       vvSoftImg(int=0, int=0);
       virtual ~vvSoftImg();
-      void setSize(int, int);
+      void setSize(int, int, uchar *buf=NULL, bool usePbo=false);
+      void initTexture(GLuint format);
       void zoom(vvSoftImg*);
       void copy(AlignType, vvSoftImg*);
       void overlay(vvSoftImg*);
@@ -85,6 +90,7 @@ class VIRVOEXPORT vvSoftImg
       void setWarpInterpolation(bool);
       void setImageData(int, int, uchar*);
       void print(const char*);
+      GLuint getPboName() const;
 };
 #endif
 
