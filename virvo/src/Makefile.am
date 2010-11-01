@@ -4,6 +4,11 @@ EXTRA_DIST =
 
 DISTCLEANFILES =
 
+.cu.lo:
+	$(top_builddir)/cudalt.py $@ $(NVCC) -c $(NVCCFLAGS) $<
+.cu.o:
+	$(NVCC) -c $(NVCCFLAGS) $<
+
 lib_LIBRARIES = libvirvo.a
 
 libvirvo_a_headers = \
