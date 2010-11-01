@@ -5,9 +5,9 @@ EXTRA_DIST =
 DISTCLEANFILES =
 
 .cu.lo:
-	$(top_builddir)/cudalt.py $@ $(NVCC) -c $(NVCCFLAGS) $<
+	$(top_builddir)/cudalt.py $@ $(NVCC) $(DEFS) -c $(NVCCFLAGS) $<
 .cu.o:
-	$(NVCC) -c $(NVCCFLAGS) $<
+	$(NVCC) $(DEFS) -c $(NVCCFLAGS) $<
 
 lib_LIBRARIES = libvirvo.a
 
@@ -60,6 +60,7 @@ libvirvo_a_headers = \
 	vvsoftpar.h \
 	vvsoftper.h \
 	vvsoftvr.h \
+	vvcuda.h \
         vvbonjour/vvbonjourbrowser.h \
         vvbonjour/vvbonjourentry.h \
         vvbonjour/vvbonjourregistrar.h \
@@ -110,6 +111,7 @@ libvirvo_a_SOURCES = \
 	vvsoftpar.cpp \
 	vvsoftper.cpp \
 	vvsoftvr.cpp \
+	vvcuda.cpp \
         vvbonjour/vvbonjourbrowser.cpp \
         vvbonjour/vvbonjourentry.cpp \
         vvbonjour/vvbonjourregistrar.cpp \
@@ -120,7 +122,7 @@ libvirvo_a_SOURCES = \
 libvirvoincludedir = $(includedir)/virvo
 libvirvoinclude_HEADERS = $(libvirvo_a_headers) vvconfig.h
 
-INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(GLEW_INCLUDES) $(XLIBS_INCLUDES) $(STINGRAY_INCLUDES) $(PIC_FLAGS)
+INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(GLEW_INCLUDES) $(XLIBS_INCLUDES) $(STINGRAY_INCLUDES) $(PIC_FLAGS) $(CUDA_INCLUDES)
 LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(GLEW_LIBS) $(GL_LIBS) $(XLIBS_LIBS) $(STINGRAY_LIBS)
 
 BUILT_SOURCES=vvversioninfo.h
