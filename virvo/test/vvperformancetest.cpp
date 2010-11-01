@@ -141,6 +141,7 @@ vvPerformanceTest::vvPerformanceTest()
   _voxelType = vvTexRend::VV_BEST;
   _testAnimation = VV_ROT_Y;
   _projectionType = vvObjView::PERSPECTIVE;
+  _brickDims[0] = _brickDims[1] = _brickDims[2] = 64;
 }
 
 vvPerformanceTest::~vvPerformanceTest()
