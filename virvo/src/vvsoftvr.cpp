@@ -529,7 +529,7 @@ void vvSoftVR::updateTransferFunction()
    // Copy RGBA values to internal array:
    for (i=0; i<lutEntries; ++i)
       for (c=0; c<4; ++c)
-         rgbaConv[i][c] = (uchar)(rgba[c * lutEntries + i] * 255.0f);
+         rgbaConv[i][c] = (uchar)(rgba[i*4+c] * 255.0f);
    delete[] rgba;
 
    // Make pre-integrated LUT:
