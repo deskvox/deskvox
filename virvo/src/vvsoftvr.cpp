@@ -628,7 +628,7 @@ void vvSoftVR::updateVolumeData()
 
 //----------------------------------------------------------------------------
 // See parent for comments
-bool vvSoftVR::instantClassification()
+bool vvSoftVR::instantClassification() const
 {
    vvDebugMsg::msg(3, "vvSoftVR::instantClassification()");
    return true;

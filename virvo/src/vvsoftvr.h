@@ -138,7 +138,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       void     makeLookupTextureCorrect(float = 1.0f);
       void     makeLookupTextureOptimized(float = 1.0f);
       void     updateVolumeData();
-      bool     instantClassification();
+      bool     instantClassification() const;
       void     setWarpMode(WarpType);
       WarpType getWarpMode();
       void     setCurrentFrame(int);
