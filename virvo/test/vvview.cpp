@@ -913,6 +913,14 @@ void vvView::mainMenuCallback(int item)
   {
   case 0:                                     // projection mode
     ds->setProjectionMode(!ds->perspectiveMode);
+    if (ds->softwareRenderer)
+    {
+      delete ds->renderer;
+      if(ds->perspectiveMode)
+        ds->renderer = new vvSoftPer(ds->vd, ds->renderState);
+      else
+        ds->renderer = new vvSoftPar(ds->vd, ds->renderState);
+    }
     break;
   case 4:                                     // refinement mode
     if (ds->refinement) ds->refinement = false;
