@@ -1076,7 +1076,7 @@ int vvSoftVR::getCullingStatus(float nearPlaneZ)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvSoftVR::setParameter(float newValue, ParameterType param, char*)
+void vvSoftVR::setParameter(ParameterType param, float newValue, char*)
 {
    vvDebugMsg::msg(3, "vvSoftVR::setParameter()");
    switch (param)

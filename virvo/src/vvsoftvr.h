@@ -146,7 +146,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       void     getIntermediateImage(vvImage*);
       void     getWarpMatrix(vvMatrix*);
       bool     prepareRendering();
-      void     setParameter(float, ParameterType, char* = NULL);
+      void     setParameter(ParameterType, float, char* = NULL);
       float    getParameter(ParameterType, char* = NULL);
       virtual void compositeVolume(int = -1, int = -1) = 0;
       virtual void getIntermediateImageExtent(int*, int*, int*, int*);
