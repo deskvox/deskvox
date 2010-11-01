@@ -61,6 +61,7 @@ libvirvo_a_headers = \
 	vvsoftper.h \
 	vvsoftvr.h \
 	vvcuda.h \
+	vvcudapar.h \
         vvbonjour/vvbonjourbrowser.h \
         vvbonjour/vvbonjourentry.h \
         vvbonjour/vvbonjourregistrar.h \
@@ -112,6 +113,7 @@ libvirvo_a_SOURCES = \
 	vvsoftper.cpp \
 	vvsoftvr.cpp \
 	vvcuda.cpp \
+	vvcudapar.cu \
         vvbonjour/vvbonjourbrowser.cpp \
         vvbonjour/vvbonjourentry.cpp \
         vvbonjour/vvbonjourregistrar.cpp \

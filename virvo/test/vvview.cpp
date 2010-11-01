@@ -55,11 +55,15 @@ using std::ios;
 #include "../src/vvtexrend.h"
 #include "../src/vvsoftpar.h"
 #include "../src/vvsoftper.h"
+#include "../src/vvcudapar.h"
+#include "../src/vvcuda.h"
 #include "../src/vvbonjour/vvbonjourbrowser.h"
 #include "../src/vvbonjour/vvbonjourresolver.h"
 #include "vvobjview.h"
 #include "vvperformancetest.h"
 #include "vvview.h"
+
+#define vvCudaPer vvCudaPar
 
 const int vvView::ROT_TIMER_DELAY = 20;
 const int vvView::DEFAULTSIZE = 512;
@@ -290,6 +294,9 @@ void vvView::mainLoop(int argc, char *argv[])
     }
 
     initGraphics(argc, argv);
+#ifdef HAVE_CUDA
+    vvCuda::initGlInterop();
+#endif
     if (remoteRendering)
     {
       _renderMaster = new vvRenderMaster(slaveNames, slavePorts, slaveFileNames, filename);
@@ -628,6 +635,15 @@ void vvView::setSoftwareRenderer(bool enable)
 
 
 //----------------------------------------------------------------------------
+/** Set software renderering flag.
+ */
+void vvView::setCudaRenderer(bool enable)
+{
+   cudaRenderer = enable;
+}
+
+
+//----------------------------------------------------------------------------
 /** Set active rendering algorithm.
  */
 void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
@@ -651,7 +667,14 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   // These are needed before construction of the renderer so that
   // additional rendering contexts and x-windows can be created.
 
-  if(softwareRenderer)
+  if (cudaRenderer)
+  {
+    if(perspectiveMode)
+      renderer = new vvCudaPer(vd, renderState);
+    else
+      renderer = new vvCudaPar(vd, renderState);
+  }
+  else if (softwareRenderer)
   {
     if(perspectiveMode)
       renderer = new vvSoftPer(vd, renderState);
@@ -913,10 +936,18 @@ void vvView::mainMenuCallback(int item)
   {
   case 0:                                     // projection mode
     ds->setProjectionMode(!ds->perspectiveMode);
-    if (ds->softwareRenderer)
+    if (ds->cudaRenderer)
     {
       delete ds->renderer;
-      if(ds->perspectiveMode)
+      if (ds->perspectiveMode)
+        ds->renderer = new vvCudaPer(ds->vd, ds->renderState);
+      else
+        ds->renderer = new vvCudaPar(ds->vd, ds->renderState);
+    }
+    else if (ds->softwareRenderer)
+    {
+      delete ds->renderer;
+      if (ds->perspectiveMode)
         ds->renderer = new vvSoftPer(ds->vd, ds->renderState);
       else
         ds->renderer = new vvSoftPar(ds->vd, ds->renderState);
@@ -1032,6 +1063,7 @@ void vvView::rendererMenuCallback(int item)
   if (item>=0 && item<=5)
   {
     ds->setSoftwareRenderer(false);
+    ds->setCudaRenderer(false);
   }
 
   if (item==0)
@@ -1077,6 +1109,14 @@ void vvView::rendererMenuCallback(int item)
   {
     cerr << "Switched to software shear-warp renderer" << endl;
     ds->setSoftwareRenderer(true);
+    ds->setCudaRenderer(false);
+    ds->setRenderer();
+  }
+  else if (item==8)
+  {
+    cerr << "Switched to CUDA shear-warp renderer" << endl;
+    ds->setSoftwareRenderer(false);
+    ds->setCudaRenderer(true);
     ds->setRenderer();
   }
   else if (item==98 || item==99)
@@ -1766,7 +1806,8 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_SPHERICAL)) glutAddMenuEntry("3D textures - spherical [4]", 4);
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("3D textures - bricked [5]", 5);
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("Bricks - generate proxy geometry on GPU [6]", 6);
-  glutAddMenuEntry("Shear-warp [7]", 7);
+  glutAddMenuEntry("CPU Shear-warp [7]", 7);
+  glutAddMenuEntry("GPU Shear-warp [8]", 8);
   glutAddMenuEntry("Decrease quality [-]", 98);
   glutAddMenuEntry("Increase quality [+]", 99);
 
@@ -2115,6 +2156,9 @@ void vvView::displayHelpInfo()
   cerr << " 2  = 2D Textures - Cubic" << endl;
   cerr << " 3  = 3D Textures - Viewport aligned" << endl;
   cerr << " 4  = 3D Textures - Spherical" << endl;
+  cerr << " 5  = 3D Textures - Bricks" << endl;
+  cerr << " 7  = Shear-warp (CPU)" << endl;
+  cerr << " 8  = Shear-warp (GPU)" << endl;
   cerr << endl;
   cerr << "-voxeltype <num>" << endl;
   cerr << " Select the default voxel type:" << endl;
@@ -2239,8 +2283,23 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cerr << "Renderer ID missing." << endl;
         return false;
       }
-      currentGeom = (vvTexRend::GeometryType)atoi(argv[arg]);
-      if (currentGeom<0 || currentGeom>5)
+      int val = atoi(argv[arg]);
+      if(val >= 0 && val <= 5)
+      {
+        currentGeom = (vvTexRend::GeometryType)val;
+        softwareRenderer = cudaRenderer = false;
+      }
+      else if(val == 7)
+      {
+        softwareRenderer = true;
+        cudaRenderer = false;
+      }
+      else if(val == 8)
+      {
+        softwareRenderer = false;
+        cudaRenderer = true;
+      }
+      else
       {
         cerr << "Invalid geometry type." << endl;
         return false;

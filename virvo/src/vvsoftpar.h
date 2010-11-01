@@ -74,7 +74,7 @@ ovView  = wvConv x iwWarp x siShear x osPerm
 */
 class VIRVOEXPORT vvSoftPar : public vvSoftVR
 {
-   private:
+   protected:
       vvVector3 wViewDir;                         ///< viewing direction [world space]
       vvVector3 oViewDir;                         ///< viewing direction [object space]
       vvVector3 sViewDir;                         ///< viewing direction [standard object space]

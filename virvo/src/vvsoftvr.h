@@ -74,7 +74,8 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       enum WarpType                               /// possible warp techniques
       {
          SOFTWARE,                                ///< perform warp in software
-         TEXTURE                                  ///< use 2D texturing hardware for warp
+         TEXTURE,                                 ///< use 2D texturing hardware for warp
+         CUDATEXTURE                              ///< use direct copy from CUDA and 2D texturing hardware
       };
       enum
       {

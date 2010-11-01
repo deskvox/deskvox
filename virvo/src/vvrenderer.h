@@ -99,6 +99,8 @@ class VIRVOEXPORT vvRenderer
       TEXREND = 0,                                ///< texture based renderer
       SOFTPAR,                                    ///< software based renderer for parallel projection
       SOFTPER,                                    ///< software based renderer for perspective projection
+      CUDAPAR,                                    ///< CUDA based renderer for parallel projection
+      CUDAPER,                                    ///< CUDA based renderer for perspective projection
       VOLPACK,                                    ///< Phil Lacroute's VolPack renderer
       SIMIAN,                                     ///< Joe Kniss's Simian renderer
       IMGREND,                                    ///< 2D image renderer

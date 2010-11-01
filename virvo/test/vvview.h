@@ -101,6 +101,7 @@ class vvView
     vvTexRend::GeometryType currentGeom;        ///< current rendering geometry
     vvTexRend::VoxelType currentVoxels;         ///< current voxel type
     bool  softwareRenderer;                     ///< true = use software renderer
+    bool  cudaRenderer;                         ///< true = use CUDA based renderer
     float bgColor[3];                           ///< background color (R,G,B in [0..1])
     float draftQuality;                         ///< current draft mode rendering quality (>0)
     float highQuality;                          ///< current high quality mode rendering quality (>0)
@@ -158,6 +159,7 @@ class vvView
     void initGraphics(int argc, char *argv[]);
     void createMenus();
     void setSoftwareRenderer(bool enable);
+    void setCudaRenderer(bool enable);
     void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST,
                      std::vector<BrickList>* bricks = 0, const int maxBrickSizeX = 64,
                      const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);
