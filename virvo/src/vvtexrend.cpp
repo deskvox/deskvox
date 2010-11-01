@@ -1873,7 +1873,7 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData)
     lutDistance = -1.;                              // invalidate LUT
 
   // No space leaping per thread, but only once. Otherwise brick list setup would collide.
-  const bool calledByWorkerThread = (lutName != pixLUTName);
+  const bool calledByWorkerThread = (lutName != pixLUTName); // FIXME: pixLUTName only initialised for certain voxel types
   if (!calledByWorkerThread)
   {
     fillNonemptyList(_nonemptyList, _brickList);
