@@ -57,6 +57,7 @@ using std::ios;
 #include "../src/vvsoftper.h"
 #include "../src/vvcudapar.h"
 #include "../src/vvcuda.h"
+#include "../src/vvrayrend.h"
 #include "../src/vvbonjour/vvbonjourbrowser.h"
 #include "../src/vvbonjour/vvbonjourresolver.h"
 #include "vvobjview.h"
@@ -139,6 +140,7 @@ vvView::vvView()
   showBricks            = false;
   roiEnabled            = false;
   mvScale               = 1.0f;
+  rayRenderer           = true;
 }
 
 
@@ -632,7 +634,7 @@ void vvView::motionCallback(int x, int y)
  */
 void vvView::setSoftwareRenderer(bool enable)
 {
-   softwareRenderer = enable;
+  softwareRenderer = enable;
 }
 
 
@@ -641,7 +643,16 @@ void vvView::setSoftwareRenderer(bool enable)
  */
 void vvView::setCudaRenderer(bool enable)
 {
-   cudaRenderer = enable;
+  cudaRenderer = enable;
+}
+
+
+//----------------------------------------------------------------------------
+/** Set ray rendering flag.
+ */
+void vvView::setRayRenderer(const bool enable)
+{
+  rayRenderer = enable;
 }
 
 
@@ -682,6 +693,10 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       renderer = new vvSoftPer(vd, renderState);
     else
       renderer = new vvSoftPar(vd, renderState);
+  }
+  else if (rayRenderer)
+  {
+    renderer = new vvRayRend(vd, renderState);
   }
   else if (numDisplays > 0)
   {
@@ -1066,6 +1081,7 @@ void vvView::rendererMenuCallback(int item)
   {
     ds->setSoftwareRenderer(false);
     ds->setCudaRenderer(false);
+    ds->setRayRenderer(false);
   }
 
   if (item==0)
@@ -1119,6 +1135,14 @@ void vvView::rendererMenuCallback(int item)
     cerr << "Switched to CUDA shear-warp renderer" << endl;
     ds->setSoftwareRenderer(false);
     ds->setCudaRenderer(true);
+    ds->setRenderer();
+  }
+  else if (item == 9)
+  {
+    cerr << "Switched to CUDA ray casting renderer" << endl;
+    ds->setSoftwareRenderer(false);
+    ds->setCudaRenderer(false);
+    ds->setRayRenderer(true);
     ds->setRenderer();
   }
   else if (item==98 || item==99)
@@ -1810,6 +1834,7 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("Bricks - generate proxy geometry on GPU [6]", 6);
   glutAddMenuEntry("CPU Shear-warp [7]", 7);
   glutAddMenuEntry("GPU Shear-warp [8]", 8);
+  glutAddMenuEntry("GPU Ray casting [9]", 9);
   glutAddMenuEntry("Decrease quality [-]", 98);
   glutAddMenuEntry("Increase quality [+]", 99);
 

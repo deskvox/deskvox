@@ -131,6 +131,7 @@ class vvView
     bool showBricks;                            ///< show brick outlines when brick renderer is used
     bool roiEnabled;                            ///< mode where probe is shown and can be moved via arrow keys
     float mvScale;                              ///< scale factor for the mv matrix to view the whole volume
+    bool rayRenderer;
   public:
     vvView();
     ~vvView();
@@ -160,6 +161,7 @@ class vvView
     void createMenus();
     void setSoftwareRenderer(bool enable);
     void setCudaRenderer(bool enable);
+    void setRayRenderer(bool enable);
     void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST,
                      std::vector<BrickList>* bricks = 0, const int maxBrickSizeX = 64,
                      const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);

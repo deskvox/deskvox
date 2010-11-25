@@ -30,6 +30,7 @@ libvirvo_a_headers = \
         vvopengl.h \
         vvprintgl.h \
         vvpthread.h \
+        vvrayrend.h \
         vvrenderer.h \
         vvsllist.h \
         vvsocket.h \
@@ -61,6 +62,7 @@ libvirvo_a_headers = \
 	vvsoftper.h \
 	vvsoftvr.h \
 	vvcuda.h \
+        vvcudautils.h \
 	vvcudapar.h \
         vvbonjour/vvbonjourbrowser.h \
         vvbonjour/vvbonjourentry.h \
@@ -84,6 +86,7 @@ libvirvo_a_SOURCES = \
         vvimage.cpp \
         vvprintgl.cpp \
         vvpthread.cpp \
+        vvrayrend.cu \
         vvrenderer.cpp \
         vvsocket.cpp \
         vvsocketio.cpp \

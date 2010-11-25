@@ -19,6 +19,7 @@ DEFINES *= NO_CONFIG_H
 SOURCES = vvbrick.cpp \
     vvcolor.cpp \
     vvdebugmsg.cpp \
+    vvcuda.cpp \
     vvdicom.cpp \
     vvdynlib.cpp \
     vvfileio.cpp \
@@ -28,6 +29,7 @@ SOURCES = vvbrick.cpp \
     vvoffscreenbuffer.cpp \
     vvprintgl.cpp \
     vvpthread.cpp \
+    vvrayrend.cu \
     vvrendercontext.cpp \
     vvrenderer.cpp \
     vvrendermaster.cpp \
@@ -70,6 +72,8 @@ HEADERS = \
     vvbrick.h \
     vvcolor.h \
     vvdebugmsg.h \
+    vvcuda.h \
+    vvcudautils.h \
     vvdicom.h \
     vvdynlib.h \
     vvexport.h \
@@ -82,6 +86,7 @@ HEADERS = \
     vvglew.h \
     vvprintgl.h \
     vvpthread.h \
+    vvrayrend.h \
     vvrendercontext.h \
     vvrenderer.h \
     vvrendermaster.h \

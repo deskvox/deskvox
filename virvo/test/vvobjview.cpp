@@ -19,6 +19,8 @@
 #include <GL/glu.h>
 #endif
 
+#include <iostream>
+
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -27,6 +29,10 @@
 #include "../src/vvdebugmsg.h"
 #include "../src/vvtokenizer.h"
 #include "vvobjview.h"
+
+using std::cerr;
+using std::cout;
+using std::endl;
 
 const float vvObjView::VIEWER_POS_X = 0.0f;
 const float vvObjView::VIEWER_POS_Y = 0.0f;
@@ -209,7 +215,7 @@ void vvObjView::updateProjectionMatrix()
   case ORTHO:
     glOrtho(-xHalf, xHalf, -yHalf, yHalf, zNear, zFar);
     break;
-  case FRUSTUM:
+  case FRUSTUM:cerr << "FRUSTUM" << endl;
     glFrustum(-xHalf, xHalf, -yHalf, yHalf, zNear, zFar);
     break;
   case PERSPECTIVE:
