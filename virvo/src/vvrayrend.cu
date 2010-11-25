@@ -88,9 +88,9 @@ int iDivUp(int a, int b)
 typedef struct
 {
   float4 m[4];
-} float4x4;
+} matrix4x4;
 
-__constant__ float4x4 c_invViewMatrix;  // inverse view matrix
+__constant__ matrix4x4 c_invViewMatrix;  // inverse view matrix
 
 struct Ray
 {
@@ -98,7 +98,8 @@ struct Ray
   float3 d;
 };
 
-__device__ bool intersectBox(Ray r, float3 boxmin, float3 boxmax, float *tnear, float *tfar)
+__device__ bool intersectBox(const Ray& r, const float3& boxmin, const float3& boxmax,
+                             float *tnear, float *tfar)
 {
     // compute intersection of ray with all six bbox planes
     float3 invR = make_float3(1.0f, 1.0f, 1.0f) / r.d;
@@ -123,7 +124,7 @@ __device__ bool intersectBox(Ray r, float3 boxmin, float3 boxmax, float *tnear, 
     return ((tmax >= tmin) && (tmax >= 0.0f));
 }
 
-__device__ float4 mul(const float4x4& M, const float4& v)
+__device__ float4 mul(const matrix4x4& M, const float4& v)
 {
     float4 r;
     r.x = dot(v, M.m[0]);
@@ -155,13 +156,14 @@ __device__ uint rgbaFloatToInt(float3 rgb)
 }
 
 template<bool frontToBack>
-__global__ void render(uint *d_output, const uint width, const uint height, const float dist)
+__global__ void render(uint *d_output, const uint width, const uint height, const float dist,
+                       const float3 volSize)
 {
   const int maxSteps = 10000;
   const float tstep = dist;
   const float opacityThreshold = 0.95f;
-  const float3 boxMin = make_float3(-1.0f, -1.0f, -1.0f);
-  const float3 boxMax = make_float3(1.0f, 1.0f, 1.0f);
+  const float3 boxMin = make_float3(-volSize.x, -volSize.y, -volSize.z);
+  const float3 boxMax = make_float3(volSize.x, volSize.y, volSize.z);
 
   const uint x = blockIdx.x * blockDim.x + threadIdx.x;
   const uint y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -192,7 +194,7 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   int hit = intersectBox(eyeRay, boxMin, boxMax, &tnear, &tfar);
   if (!hit)
   {
-    d_output[y*width + x] = 0;
+    d_output[y * width + x] = 0;
     return;
   }
 
@@ -203,15 +205,15 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
 
   float4 dst = make_float4(0.0f);
   float t = tnear;
-  float3 pos = eyeRay.o + eyeRay.d*tnear;
+  float3 pos = eyeRay.o + eyeRay.d * tnear;
   float3 step = eyeRay.d * tstep;
 
   for (int i=0; i<maxSteps; ++i)
   {
     const float sample = tex3D(volTexture,
-                               pos.x * 0.5f + 0.5f,
-                               pos.y * 0.5f + 0.5f,
-                               pos.z * 0.5f + 0.5f);
+                               (pos.x + volSize.x) / (volSize.x * 2),
+                               (pos.y + volSize.y) / (volSize.y * 2),
+                               (pos.z + volSize.z) / (volSize.z * 2));
 
     // Post-classification transfer-function lookup.
     float4 src = tex1D(tfTexture, sample);
@@ -376,7 +378,25 @@ void vvRayRend::renderVolumeGL()
   cudaMemcpyToSymbol(c_invViewMatrix, viewM, sizeof(float4) * 4);
   delete[] viewM;
 
-  render<true><<<gridSize, blockSize>>>(d_output, width, height, 2.0f / (float)numSlices);
+  float3 volSize;
+
+  if ((vd->vox[0] >= vd->vox[1]) && (vd->vox[0] >= vd->vox[2]))
+  {
+    const float inv = 1.0f / vd->vox[0];
+    volSize = make_float3(1.0f, vd->vox[1] * inv, vd->vox[2] * inv);
+  }
+  else if ((vd->vox[1] >= vd->vox[0]) && (vd->vox[1] >= vd->vox[2]))
+  {
+    const float inv = 1.0f / vd->vox[1];
+    volSize = make_float3(vd->vox[0] * inv, 1.0f, vd->vox[2] * inv);
+  }
+  else
+  {
+    const float inv = 1.0f / vd->vox[2];
+    volSize = make_float3(vd->vox[0] * inv, vd->vox[1] * inv, 1.0f);
+  }
+
+  render<true><<<gridSize, blockSize>>>(d_output, width, height, 2.0f / (float)numSlices, volSize);
   cudaGLUnmapBufferObject(pbo);
 
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
