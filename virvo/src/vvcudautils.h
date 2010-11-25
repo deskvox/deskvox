@@ -126,6 +126,11 @@ inline __device__ __host__ float4 make_float4(const float v)
     return make_float4(v, v, v, v);
 }
 
+inline __device__ __host__ float4 make_float4(const float3& v)
+{
+    return make_float4(v.x, v.y, v.z, 1.0f);
+}
+
 inline __device__ __host__ void operator+=(float3& v, const float f)
 {
     v.x += f;

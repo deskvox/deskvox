@@ -26,11 +26,14 @@ public:
 private:
   bool _interpolation;              ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
   cudaArray* d_transferFuncArray;
+  cudaArray* d_randArray;
 
   GLuint _pbo;                      ///< gl pbo object
   GLuint _gltex;                    ///< texture associated with \see _pbo
 
   void initPbo(int width, int height);
+  void initRandTexture();
+  void initVolumeTexture();
   void renderQuad(int width, int height) const;
 };
 

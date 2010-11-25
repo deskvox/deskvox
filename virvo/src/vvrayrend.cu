@@ -7,6 +7,7 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #include <cuda_gl_interop.h>
+#include <ctime>
 #include <iostream>
 
 using std::cerr;
@@ -14,8 +15,9 @@ using std::endl;
 
 texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture;
 texture<float4, 1, cudaReadModeElementType> tfTexture;
+texture<float4, 1, cudaReadModeElementType> randTexture;
 
-struct cudaGraphicsResource *cuda_pbo_resource; // CUDA Graphics Resource (to transfer PBO)
+const int NUM_RAND_VECS = 8192;
 
 cudaArray* d_volumeArray = 0;
 
@@ -208,7 +210,7 @@ __device__ float4 phong(const float4& classification, const float3& pos,
   return make_float4(tmp.x, tmp.y, tmp.z, classification.w);
 }
 
-template<bool frontToBack, int mipMode, bool lighting, bool clipSphere, bool clipPlane>
+template<bool frontToBack, int mipMode, bool lighting, bool jittering, bool clipSphere, bool clipPlane>
 __global__ void render(uint *d_output, const uint width, const uint height, const float dist,
                        const float3 volSizeHalf, const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
@@ -279,6 +281,12 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   float4 dst = make_float4(0.0f);
   float t = tnear;
   float3 pos = ray.o + ray.d * tnear;
+
+  if (jittering)
+  {
+    const float4 randOffset = tex1D(randTexture, (y * width + x) % NUM_RAND_VECS);
+    pos += make_float3(randOffset);
+  }
   const float3 step = ray.d * tstep;
 
   float maxIntensity = 0.0f;
@@ -309,8 +317,9 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
       continue;
     }
 
-    const float3 texCoord = calcTexCoord(pos, volSizeHalf);
-    const float sample = volume(texCoord);
+    float3 texCoord = calcTexCoord(pos, volSizeHalf);
+
+    const float sample = volume(texCoord/* + randOffset*/);
 
     // Post-classification transfer-function lookup.
     float4 src;
@@ -397,33 +406,10 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
   initPbo(512, 512);
 
-  cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
-
-  cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<uchar>();
-  cudaMalloc3DArray(&d_volumeArray, &channelDesc, volumeSize);
-
-  cudaMemcpy3DParms copyParams = { 0 };
-  copyParams.srcPtr = make_cudaPitchedPtr(vd->getRaw(0), volumeSize.width*sizeof(uchar), volumeSize.width, volumeSize.height);
-  copyParams.dstArray = d_volumeArray;
-  copyParams.extent = volumeSize;
-  copyParams.kind = cudaMemcpyHostToDevice;
-  cudaMemcpy3D(&copyParams);
-
   _interpolation = true;
-  volTexture.normalized = true;
-  if (_interpolation)
-  {
-    volTexture.filterMode = cudaFilterModeLinear;
-  }
-  else
-  {
-    volTexture.filterMode = cudaFilterModePoint;
-  }
-  volTexture.addressMode[0] = cudaAddressModeClamp;
-  volTexture.addressMode[1] = cudaAddressModeClamp;
-
-  // bind array to 3D texture
-  cudaBindTextureToArray(volTexture, d_volumeArray, channelDesc);
+  d_randArray = 0;
+  initRandTexture();
+  initVolumeTexture();
 
   d_transferFuncArray = 0;
   updateTransferFunction();
@@ -432,6 +418,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 vvRayRend::~vvRayRend()
 {
   cudaFreeArray(d_transferFuncArray);
+  cudaFreeArray(d_randArray);
 }
 
 int vvRayRend::getLUTSize() const
@@ -452,6 +439,7 @@ void vvRayRend::updateTransferFunction()
   cudaFreeArray(d_transferFuncArray);
   cudaMallocArray(&d_transferFuncArray, &channelDesc2, lutEntries, 1);
   cudaMemcpyToArray(d_transferFuncArray, 0, 0, rgba, lutEntries * 4 * sizeof(float), cudaMemcpyHostToDevice);
+
 
   tfTexture.filterMode = cudaFilterModeLinear;
   tfTexture.normalized = true;    // access with normalized texture coordinates
@@ -557,8 +545,8 @@ void vvRayRend::renderVolumeGL()
   const float3 H = normalize(L + V);
 
   // Clip sphere.
-  const float3 center = make_float3(0.0f, 128.0f, 128.0f);
-  const float radius = 150.0f;
+  const float3 center = make_float3(0.0f, -128.0f, -128.0f);
+  const float radius = 150;
 
   // Clip plane.
 
@@ -570,10 +558,11 @@ void vvRayRend::renderVolumeGL()
          true, // Front to back.
          0, // Mip mode.
          true, // Local illumination.
+         false, // Jittering.
          true, // Clip sphere.
-         true // Clip plane.
+         false // Clip plane.
         ><<<gridSize, blockSize>>>(d_output, width, height,
-                                   200.0f / (float)numSlices,
+                                   500.0f / (float)numSlices,
                                    volSize * 0.5f,
                                    L, H,
                                    center, radius * radius,
@@ -619,6 +608,64 @@ void vvRayRend::initPbo(const int width, const int height)
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                GL_UNSIGNED_BYTE, NULL);
+}
+
+void vvRayRend::initRandTexture()
+{
+  const float scale = 1.0f;
+
+  //srand(time(NULL));
+
+  float4* randVecs = new float4[NUM_RAND_VECS];
+  for (int i=0; i<NUM_RAND_VECS; ++i)
+  {
+    randVecs[i].x = (static_cast<float>(rand()) / static_cast<float>(INT_MAX)) * scale;
+    randVecs[i].y = (static_cast<float>(rand()) / static_cast<float>(INT_MAX)) * scale;
+    randVecs[i].z = (static_cast<float>(rand()) / static_cast<float>(INT_MAX)) * scale;
+  }
+
+  cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
+
+  cudaFreeArray(d_randArray);
+  cudaMallocArray(&d_randArray, &channelDesc, NUM_RAND_VECS, 1);
+  cudaMemcpyToArray(d_randArray, 0, 0, randVecs, NUM_RAND_VECS * sizeof(float4), cudaMemcpyHostToDevice);
+
+  randTexture.filterMode = cudaFilterModeLinear;
+  randTexture.addressMode[0] = cudaAddressModeClamp;
+
+  cudaBindTextureToArray(randTexture, d_randArray, channelDesc);
+
+  delete[] randVecs;
+}
+
+void vvRayRend::initVolumeTexture()
+{
+  cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
+
+  cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<uchar>();
+  cudaMalloc3DArray(&d_volumeArray, &channelDesc, volumeSize);
+
+  cudaMemcpy3DParms copyParams = { 0 };
+  copyParams.srcPtr = make_cudaPitchedPtr(vd->getRaw(0), volumeSize.width*sizeof(uchar), volumeSize.width, volumeSize.height);
+  copyParams.dstArray = d_volumeArray;
+  copyParams.extent = volumeSize;
+  copyParams.kind = cudaMemcpyHostToDevice;
+  cudaMemcpy3D(&copyParams);
+
+  volTexture.normalized = true;
+  if (_interpolation)
+  {
+    volTexture.filterMode = cudaFilterModeLinear;
+  }
+  else
+  {
+    volTexture.filterMode = cudaFilterModePoint;
+  }
+  volTexture.addressMode[0] = cudaAddressModeClamp;
+  volTexture.addressMode[1] = cudaAddressModeClamp;
+
+  // bind array to 3D texture
+  cudaBindTextureToArray(volTexture, d_volumeArray, channelDesc);
 }
 
 void vvRayRend::renderQuad(const int width, const int height) const
