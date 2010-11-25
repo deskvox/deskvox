@@ -435,6 +435,8 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
         src = blinnPhong(src, texCoord, L, H, Ka, Kd, Ks, shininess);
       }
     }
+    justClippedPlane = false;
+    justClippedSphere = false;
 
     // "under" operator for back-to-front blending
     //dst = lerp(dst, src, src.w);
