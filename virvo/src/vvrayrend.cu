@@ -87,16 +87,26 @@ int iDivUp(int a, int b)
 
 typedef struct
 {
-  float4 m[4];
+  float m[4][4];
 } matrix4x4;
 
-__constant__ matrix4x4 c_invViewMatrix;  // inverse view matrix
+__constant__ matrix4x4 c_invViewMatrix;
 
 struct Ray
 {
   float3 o;
   float3 d;
 };
+
+__device__ float volume(const float x, const float y, const float z)
+{
+  return tex3D(volTexture, x, y, z);
+}
+
+__device__ float volume(const float3& pos)
+{
+  return tex3D(volTexture, pos.x, pos.y, pos.z);
+}
 
 __device__ bool intersectBox(const Ray& r, const float3& boxmin, const float3& boxmax,
                              float *tnear, float *tfar)
@@ -126,12 +136,18 @@ __device__ bool intersectBox(const Ray& r, const float3& boxmin, const float3& b
 
 __device__ float4 mul(const matrix4x4& M, const float4& v)
 {
-    float4 r;
-    r.x = dot(v, M.m[0]);
-    r.y = dot(v, M.m[1]);
-    r.z = dot(v, M.m[2]);
-    r.w = dot(v, M.m[3]);
-    return r;
+    float4 result;
+    result.x = M.m[0][0] * v.x + M.m[0][1] * v.y + M.m[0][2] * v.z + M.m[0][3] * v.w;
+    result.y = M.m[1][0] * v.x + M.m[1][1] * v.y + M.m[1][2] * v.z + M.m[1][3] * v.w;
+    result.z = M.m[2][0] * v.x + M.m[2][1] * v.y + M.m[2][2] * v.z + M.m[2][3] * v.w;
+    result.w = M.m[3][0] * v.x + M.m[3][1] * v.y + M.m[3][2] * v.z + M.m[3][3] * v.w;
+
+//    result.x = M.m[0][0] * v.x + M.m[1][0] * v.y + M.m[2][0] * v.z + M.m[3][0] * v.w;
+//    result.y = M.m[0][1] * v.x + M.m[1][1] * v.y + M.m[2][1] * v.z + M.m[3][1] * v.w;
+//    result.z = M.m[0][2] * v.x + M.m[1][2] * v.y + M.m[2][2] * v.z + M.m[3][2] * v.w;
+//    result.w = M.m[0][3] * v.x + M.m[1][3] * v.y + M.m[2][3] * v.z + M.m[3][3] * v.w;
+
+    return result;
 }
 
 __device__ float3 perspectiveDivide(const float4& v)
@@ -151,19 +167,48 @@ __device__ uint rgbaFloatToInt(float4 rgba)
 
 __device__ uint rgbaFloatToInt(float3 rgb)
 {
-    float4 rgba = make_float4(rgb.x, rgb.y, rgb.z, 1.0f);
-    return rgbaFloatToInt(rgba);
+  float4 rgba = make_float4(rgb.x, rgb.y, rgb.z, 1.0f);
+  return rgbaFloatToInt(rgba);
 }
 
-template<bool frontToBack>
-__global__ void render(uint *d_output, const uint width, const uint height, const float dist,
-                       const float3 volSize)
+__device__ float4 phong(const float4& classification, const float3& pos,
+                        const float3& L, const float3& H,
+                        const float3& Ka, const float3& Kd, const float3& Ks,
+                        const float shininess)
 {
-  const int maxSteps = 10000;
+  float3 N;
+  float3 sample1;
+  float3 sample2;
+  const float DELTA = 0.01f;
+  sample1.x = volume(pos - make_float3(DELTA, 0.0f, 0.0f));
+  sample2.x = volume(pos + make_float3(DELTA, 0.0f, 0.0f));
+  sample1.y = volume(pos - make_float3(0.0f, DELTA, 0.0f));
+  sample2.y = volume(pos + make_float3(0.0f, DELTA, 0.0f));
+  sample1.z = volume(pos - make_float3(0.0f, 0.0f, DELTA));
+  sample2.z = volume(pos + make_float3(0.0f, 0.0f, DELTA));
+
+  N = normalize(sample2 - sample1);
+  const float diffuse = fabsf(dot(L, N));
+  const float specular = powf(dot(H, N), shininess);
+
+  const float3 c = make_float3(classification);
+  float3 tmp = Ka * c + Kd * diffuse * c;
+  if (specular > 0.0f)
+  {
+    tmp += Ks * specular * c;
+  }
+  return make_float4(tmp.x, tmp.y, tmp.z, classification.w);
+}
+
+template<bool frontToBack, bool lighting>
+__global__ void render(uint *d_output, const uint width, const uint height, const float dist,
+                       const float3 volSizeHalf, const float3 L, const float3 H)
+{
+  const int maxSteps = INT_MAX;
   const float tstep = dist;
   const float opacityThreshold = 0.95f;
-  const float3 boxMin = make_float3(-volSize.x, -volSize.y, -volSize.z);
-  const float3 boxMax = make_float3(volSize.x, volSize.y, volSize.z);
+  const float3 boxMin = make_float3(-volSizeHalf.x, -volSizeHalf.y, -volSizeHalf.z);
+  const float3 boxMax = make_float3(volSizeHalf.x, volSizeHalf.y, volSizeHalf.z);
 
   const uint x = blockIdx.x * blockDim.x + threadIdx.x;
   const uint y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -206,17 +251,27 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   float4 dst = make_float4(0.0f);
   float t = tnear;
   float3 pos = eyeRay.o + eyeRay.d * tnear;
-  float3 step = eyeRay.d * tstep;
+  const float3 step = eyeRay.d * tstep;
 
   for (int i=0; i<maxSteps; ++i)
   {
-    const float sample = tex3D(volTexture,
-                               (pos.x + volSize.x) / (volSize.x * 2),
-                               (pos.y + volSize.y) / (volSize.y * 2),
-                               (pos.z + volSize.z) / (volSize.z * 2));
+    const float3 texCoord = make_float3((pos.x + volSizeHalf.x) / (volSizeHalf.x * 2),
+                                        (pos.y + volSizeHalf.y) / (volSizeHalf.y * 2),
+                                        (pos.z + volSizeHalf.z) / (volSizeHalf.z * 2));
+    const float sample = volume(texCoord);
 
     // Post-classification transfer-function lookup.
     float4 src = tex1D(tfTexture, sample);
+
+    // Local illumination.
+    if (lighting && (src.w > 0.1))
+    {
+      const float3 Ka = make_float3(0.0f, 0.0f, 0.0f);
+      const float3 Kd = make_float3(0.8f, 0.8f, 0.8f);
+      const float3 Ks = make_float3(0.8f, 0.8f, 0.8f);
+      const float shininess = 1000.0f;
+      src = phong(src, texCoord, L, H, Ka, Kd, Ks, shininess);
+    }
 
     // "under" operator for back-to-front blending
     //dst = lerp(dst, src, src.w);
@@ -369,6 +424,13 @@ void vvRayRend::renderVolumeGL()
   // Inverse modelview-projection matrix.
   vvMatrix mvp, pr;
   getModelviewMatrix(&mvp);
+
+  // Not related.
+  vvMatrix invMV;
+  invMV.copy(&mvp);
+  invMV.invert();
+  // Not related.
+
   getProjectionMatrix(&pr);
   mvp.multiplyPost(&pr);
   mvp.invert();
@@ -396,7 +458,27 @@ void vvRayRend::renderVolumeGL()
     volSize = make_float3(vd->vox[0] * inv, vd->vox[1] * inv, 1.0f);
   }
 
-  render<true><<<gridSize, blockSize>>>(d_output, width, height, 2.0f / (float)numSlices, volSize);
+  bool isOrtho = pr.isProjOrtho();
+
+  vvVector3 eye;
+  getEyePosition(&eye);
+  eye.multiply(&invMV);
+
+  vvVector3 origin;
+
+  vvVector3 normal;
+  getObjNormal(normal, origin, eye, invMV, isOrtho);
+
+  const float3 N = make_float3(normal[0], normal[1], normal[2]);
+
+  const float3 L(-N);
+
+  // Viewing direction.
+  const float3 V(-N);
+
+  // Half way vector.
+  const float3 H = normalize(L + V);
+  render<true, true><<<gridSize, blockSize>>>(d_output, width, height, 2.0f / (float)numSlices, volSize * 0.5f, L, H);
   cudaGLUnmapBufferObject(pbo);
 
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
