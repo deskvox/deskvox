@@ -21,11 +21,17 @@ public:
 
   int getLUTSize() const;
   void updateTransferFunction();
-  void resize(const int width, const int height);
+  void resize(int width, int height);
   void renderVolumeGL();
 private:
-  bool interpolation;                           ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
+  bool _interpolation;              ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
   cudaArray* d_transferFuncArray;
+
+  GLuint _pbo;                      ///< gl pbo object
+  GLuint _gltex;                    ///< texture associated with \see _pbo
+
+  void initPbo(int width, int height);
+  void renderQuad(int width, int height) const;
 };
 
 #endif // HAVE_CUDA

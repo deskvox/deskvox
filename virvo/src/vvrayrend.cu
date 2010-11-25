@@ -15,70 +15,13 @@ using std::endl;
 texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture;
 texture<float4, 1, cudaReadModeElementType> tfTexture;
 
-GLuint pbo = 0;     // OpenGL pixel buffer object
-GLuint gltex = 0;     // OpenGL texture object
 struct cudaGraphicsResource *cuda_pbo_resource; // CUDA Graphics Resource (to transfer PBO)
 
 cudaArray* d_volumeArray = 0;
 
-void initPbo(const int width, const int height)
-{
-  const int bitsPerPixel = 4;
-  const int bufferSize = sizeof(GLubyte) * width * height * bitsPerPixel;
-  GLubyte* pboSrc = (GLubyte*)malloc(bufferSize);
-  glGenBuffers(1, &pbo);
-  glBindBuffer(GL_ARRAY_BUFFER, pbo);
-  glBufferData(GL_ARRAY_BUFFER, bufferSize, pboSrc, GL_DYNAMIC_DRAW);
-  free(pboSrc);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  cudaGLRegisterBufferObject(pbo);
-
-  glGenTextures(1, &gltex);
-  glBindTexture(GL_TEXTURE_2D, gltex);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-               GL_UNSIGNED_BYTE, NULL);
-}
-
-void renderQuad(const int width, const int height)
-{
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-    glEnable(GL_TEXTURE_2D);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
-
-    glMatrixMode( GL_MODELVIEW);
-    glLoadIdentity();
-
-    glViewport(0, 0, width, height);
-
-    glClear(GL_COLOR_BUFFER_BIT);
-    glBegin(GL_QUADS);
-        glTexCoord2f(0.0, 0.0); glVertex3f(-1.0, -1.0, 0.5);
-        glTexCoord2f(1.0, 0.0); glVertex3f(1.0, -1.0, 0.5);
-        glTexCoord2f(1.0, 1.0); glVertex3f(1.0, 1.0, 0.5);
-        glTexCoord2f(0.0, 1.0); glVertex3f(-1.0, 1.0, 0.5);
-    glEnd();
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-
-    glDisable(GL_TEXTURE_2D);
-}
-
 int iDivUp(int a, int b)
 {
-    return (a % b != 0) ? (a / b + 1) : (a / b);
+  return (a % b != 0) ? (a / b + 1) : (a / b);
 }
 
 typedef struct
@@ -171,23 +114,6 @@ __device__ void intersectSphere(const Ray& ray, const float3& center, const floa
 {
   Ray r = ray;
   r.o -= center;
-#if 0
-  float discr1 = r.o.x * r.d.x
-            + 2 * r.o.x * r.d.x * r.o.y * r.d.y + 2 * r.o.x * r.d.x * r.o.z * r.d.z
-            + 2 * r.o.y * r.d.y * r.o.z * r.d.z - r.o.x  + radiusSqr * 0.5  - r.d.x  - r.o.y  - r.o.z -
-            r.d.y*r.d.y  *   r.o.x*r.o.x  + r.d.y*r.d.y  *radiusSqr  - r.d.y*r.d.y * r.d.x*r.d.x  - r.d.y*r.d.y * r.o.z*r.o.z
-            - r.d.z*r.d.z * r.o.x*r.o.x  + r.d.z*r.d.z * radiusSqr  - r.d.z*r.d.z * r.d.x*r.d.x  - r.d.z*r.d.z * r.o.y*r.o.y;
-
-  float discr2 = r.o.x*r.o.x *  r.d.x*r.d.x  + 2 * r.o.x * r.d.x * r.o.y * r.d.y + 2 * r.o.x * r.d.x * r.o.z * r.d.z + 2 * r.o.y * r.d.y * r.o.z * r.d.z - r.o.x*r.o.x  + radiusSqr  - r.d.x*r.d.x  - r.o.y*r.o.y  - r.o.z*r.o.z
-                 - r.d.y*r.d.y * r.o.x*r.o.x  + r.d.y*r.d.y * radiusSqr  - r.d.y*r.d.y * r.d.x*r.d.x  - r.d.y*r.d.y * r.o.z*r.o.z  - r.d.z*r.d.z  * r.o.x*r.o.x  + r.d.z*r.d.z * radiusSqr  - r.d.z*r.d.z * r.d.x*r.d.x  - r.d.z*r.d.z * r.o.y*r.o.y ;
-
-  float q = (1 + r.d.y * r.d.y + r.d.z * r.d.z);
-
-  float one = (-r.o.x * r.d.x - r.o.y * r.d.y - r.o.z * r.d.z  + sqrtf(discr1)) / q;
-  float two = -(r.o.x * r.d.x + r.o.y * r.d.y + r.o.z * r.d.z + sqrtf(discr2)) / q;
-  *tnear = min(one, two);
-  *tfar = max(one, two);
-#else
   float A = r.d.x * r.d.x + r.d.y * r.d.y
           + r.d.z * r.d.z;
   float B = 2 * (r.d.x * r.o.x + r.d.y * r.o.y
@@ -195,7 +121,6 @@ __device__ void intersectSphere(const Ray& ray, const float3& center, const floa
   float C = r.o.x * r.o.x + r.o.y * r.o.y
           + r.o.z * r.o.z - radiusSqr;
   solveQuadraticEquation(A, B, C, tnear, tfar);
-#endif
 }
 
 __device__ void intersectPlane(const Ray& ray, const float3& normal, const float& dist,
@@ -226,17 +151,17 @@ __device__ float4 mul(const matrix4x4& M, const float4& v)
 
 __device__ float3 perspectiveDivide(const float4& v)
 {
-    const float wInv = 1.0f / v.w;
-    return make_float3(v.x * wInv, v.y * wInv, v.z * wInv);
+  const float wInv = 1.0f / v.w;
+  return make_float3(v.x * wInv, v.y * wInv, v.z * wInv);
 }
 
 __device__ uint rgbaFloatToInt(float4 rgba)
 {
-    clamp(rgba.x);
-    clamp(rgba.y);
-    clamp(rgba.z);
-    clamp(rgba.w);
-    return (uint(rgba.w*255)<<24) | (uint(rgba.z*255)<<16) | (uint(rgba.y*255)<<8) | uint(rgba.x*255);
+  clamp(rgba.x);
+  clamp(rgba.y);
+  clamp(rgba.z);
+  clamp(rgba.w);
+  return (uint(rgba.w*255)<<24) | (uint(rgba.z*255)<<16) | (uint(rgba.y*255)<<8) | uint(rgba.x*255);
 }
 
 __device__ uint rgbaFloatToInt(float3 rgb)
@@ -466,6 +391,10 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 {
   glewInit();
   cudaGLSetGLDevice(0);
+
+  _pbo = NULL;
+  _gltex = NULL;
+
   initPbo(512, 512);
 
   cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
@@ -480,9 +409,9 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   copyParams.kind = cudaMemcpyHostToDevice;
   cudaMemcpy3D(&copyParams);
 
-  interpolation = true;
+  _interpolation = true;
   volTexture.normalized = true;
-  if (interpolation)
+  if (_interpolation)
   {
     volTexture.filterMode = cudaFilterModeLinear;
   }
@@ -549,7 +478,7 @@ void vvRayRend::renderVolumeGL()
 
   uint* d_output = 0;
   // map PBO to get CUDA device pointer
-  cudaGLMapBufferObject((void**)&d_output, pbo);
+  cudaGLMapBufferObject((void**)&d_output, _pbo);
 
   dim3 blockSize(16, 16);
   dim3 gridSize = dim3(iDivUp(width, blockSize.x), iDivUp(height, blockSize.y));
@@ -649,7 +578,7 @@ void vvRayRend::renderVolumeGL()
                                    L, H,
                                    center, radius * radius,
                                    pnormal, pdist, debug);
-  cudaGLUnmapBufferObject(pbo);
+  cudaGLUnmapBufferObject(_pbo);
 
   float* output = new float[width * height * 3];
   cudaMemcpy(output, debug, sizeof(float3) * width * height, cudaMemcpyDeviceToHost);
@@ -659,10 +588,66 @@ void vvRayRend::renderVolumeGL()
   }
   delete[] output;
 
-  glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-  glBindTexture(GL_TEXTURE_2D, gltex);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, _pbo);
+  glBindTexture(GL_TEXTURE_2D, _gltex);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 
   renderQuad(width, height);
+}
+
+void vvRayRend::initPbo(const int width, const int height)
+{
+  const int bitsPerPixel = 4;
+  const int pboSize = width * height * bitsPerPixel;
+  const int bufferSize = sizeof(GLubyte) * pboSize;
+  GLubyte* pboSrc = new GLubyte[pboSize];
+  glGenBuffers(1, &_pbo);
+  glBindBuffer(GL_ARRAY_BUFFER, _pbo);
+  glBufferData(GL_ARRAY_BUFFER, bufferSize, pboSrc, GL_DYNAMIC_DRAW);
+  delete[] pboSrc;
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  cudaGLRegisterBufferObject(_pbo);
+
+  glGenTextures(1, &_gltex);
+  glBindTexture(GL_TEXTURE_2D, _gltex);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+               GL_UNSIGNED_BYTE, NULL);
+}
+
+void vvRayRend::renderQuad(const int width, const int height) const
+{
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_LIGHTING);
+  glEnable(GL_TEXTURE_2D);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
+  glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+
+  glMatrixMode( GL_MODELVIEW);
+  glLoadIdentity();
+
+  glViewport(0, 0, width, height);
+
+  glClear(GL_COLOR_BUFFER_BIT);
+  glBegin(GL_QUADS);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-1.0, -1.0, 0.5);
+    glTexCoord2f(1.0, 0.0); glVertex3f(1.0, -1.0, 0.5);
+    glTexCoord2f(1.0, 1.0); glVertex3f(1.0, 1.0, 0.5);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-1.0, 1.0, 0.5);
+  glEnd();
+
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix();
+
+  glDisable(GL_TEXTURE_2D);
 }
