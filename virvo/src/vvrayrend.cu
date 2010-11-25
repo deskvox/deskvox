@@ -218,7 +218,15 @@ __device__ float4 phong(const float4& classification, const float3& pos,
   return make_float4(tmp.x, tmp.y, tmp.z, classification.w);
 }
 
-template<bool frontToBack, int mipMode, bool lighting, bool jittering, bool clipSphere, bool clipPlane>
+template<
+         bool frontToBack,
+         int mipMode,
+         bool lighting,
+         bool opacityCorrection,
+         bool jittering,
+         bool clipSphere,
+         bool clipPlane
+        >
 __global__ void render(uint *d_output, const uint width, const uint height, const float dist,
                        const float3 volSizeHalf, const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
@@ -374,6 +382,11 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
     justClippedPlane = false;
     justClippedSphere = false;
 
+    if (opacityCorrection)
+    {
+      src.w = 1 - powf(1 - src.w, dist);
+    }
+
     // pre-multiply alpha
     src.x *= src.w;
     src.y *= src.w;
@@ -513,7 +526,6 @@ void vvRayRend::renderVolumeGL()
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
   int numSlices = max(1, static_cast<int>(_renderState._quality * diagonalVoxels));
-  //std::cerr << diagonalVoxels << " " << numSlices << std::endl;
 
   // Inverse modelview-projection matrix.
   vvMatrix mvp, pr;
@@ -571,11 +583,12 @@ void vvRayRend::renderVolumeGL()
          true, // Front to back.
          0, // Mip mode.
          true, // Local illumination.
+         true, // Opacity correction.
          false, // Jittering.
-         true, // Clip sphere.
-         true // Clip plane.
+         false, // Clip sphere.
+         false // Clip plane.
         ><<<gridSize, blockSize>>>(d_output, width, height,
-                                   500.0f / (float)numSlices,
+                                   diagonalVoxels / (float)numSlices,
                                    volSize * 0.5f,
                                    L, H,
                                    center, radius * radius,
