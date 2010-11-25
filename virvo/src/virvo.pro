@@ -29,7 +29,7 @@ SOURCES = vvbrick.cpp \
     vvoffscreenbuffer.cpp \
     vvprintgl.cpp \
     vvpthread.cpp \
-    vvrayrend.cu \
+#    vvrayrend.cu \
     vvrendercontext.cpp \
     vvrenderer.cpp \
     vvrendermaster.cpp \
@@ -86,7 +86,7 @@ HEADERS = \
     vvglew.h \
     vvprintgl.h \
     vvpthread.h \
-    vvrayrend.h \
+#    vvrayrend.h \
     vvrendercontext.h \
     vvrenderer.h \
     vvrendermaster.h \
