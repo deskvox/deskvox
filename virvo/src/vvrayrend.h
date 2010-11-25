@@ -21,7 +21,8 @@ public:
 
   int getLUTSize() const;
   void updateTransferFunction();
-  void  renderVolumeGL();
+  void resize(const int width, const int height);
+  void renderVolumeGL();
 private:
   bool interpolation;                           ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
   cudaArray* d_transferFuncArray;

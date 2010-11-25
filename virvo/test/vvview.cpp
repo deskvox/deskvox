@@ -390,6 +390,11 @@ void vvView::reshapeCallback(int w, int h)
   {
     ds->_renderMaster->resize(w, h);
   }
+
+  if (ds->rayRenderer)
+  {
+    dynamic_cast<vvRayRend*>(ds->renderer)->resize(w, h);
+  }
 }
 
 

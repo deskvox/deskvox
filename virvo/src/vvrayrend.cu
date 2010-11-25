@@ -21,12 +21,8 @@ struct cudaGraphicsResource *cuda_pbo_resource; // CUDA Graphics Resource (to tr
 
 cudaArray* d_volumeArray = 0;
 
-void initPbo()
+void initPbo(const int width, const int height)
 {
-  vvGLTools::Viewport vp = vvGLTools::getViewport();
-  const int width = vp[2];
-  const int height = vp[3];
-
   const int bitsPerPixel = 4;
   const int bufferSize = sizeof(GLubyte) * width * height * bitsPerPixel;
   GLubyte* pboSrc = (GLubyte*)malloc(bufferSize);
@@ -213,17 +209,17 @@ __device__ void intersectPlane(const Ray& ray, const float3& normal, const float
 
 __device__ float4 mul(const matrix4x4& M, const float4& v)
 {
+  float4 result;
 #if 1
-    float4 result;
-    result.x = M.m[0][0] * v.x + M.m[0][1] * v.y + M.m[0][2] * v.z + M.m[0][3] * v.w;
-    result.y = M.m[1][0] * v.x + M.m[1][1] * v.y + M.m[1][2] * v.z + M.m[1][3] * v.w;
-    result.z = M.m[2][0] * v.x + M.m[2][1] * v.y + M.m[2][2] * v.z + M.m[2][3] * v.w;
-    result.w = M.m[3][0] * v.x + M.m[3][1] * v.y + M.m[3][2] * v.z + M.m[3][3] * v.w;
+  result.x = M.m[0][0] * v.x + M.m[0][1] * v.y + M.m[0][2] * v.z + M.m[0][3] * v.w;
+  result.y = M.m[1][0] * v.x + M.m[1][1] * v.y + M.m[1][2] * v.z + M.m[1][3] * v.w;
+  result.z = M.m[2][0] * v.x + M.m[2][1] * v.y + M.m[2][2] * v.z + M.m[2][3] * v.w;
+  result.w = M.m[3][0] * v.x + M.m[3][1] * v.y + M.m[3][2] * v.z + M.m[3][3] * v.w;
 #else
-    result.x = M.m[0][0] * v.x + M.m[1][0] * v.y + M.m[2][0] * v.z + M.m[3][0] * v.w;
-    result.y = M.m[0][1] * v.x + M.m[1][1] * v.y + M.m[2][1] * v.z + M.m[3][1] * v.w;
-    result.z = M.m[0][2] * v.x + M.m[1][2] * v.y + M.m[2][2] * v.z + M.m[3][2] * v.w;
-    result.w = M.m[0][3] * v.x + M.m[1][3] * v.y + M.m[2][3] * v.z + M.m[3][3] * v.w;
+  result.x = M.m[0][0] * v.x + M.m[1][0] * v.y + M.m[2][0] * v.z + M.m[3][0] * v.w;
+  result.y = M.m[0][1] * v.x + M.m[1][1] * v.y + M.m[2][1] * v.z + M.m[3][1] * v.w;
+  result.z = M.m[0][2] * v.x + M.m[1][2] * v.y + M.m[2][2] * v.z + M.m[3][2] * v.w;
+  result.w = M.m[0][3] * v.x + M.m[1][3] * v.y + M.m[2][3] * v.z + M.m[3][3] * v.w;
 #endif
     return result;
 }
@@ -249,11 +245,11 @@ __device__ uint rgbaFloatToInt(float3 rgb)
   return rgbaFloatToInt(rgba);
 }
 
-__device__ float4 blinnPhong(const float4& classification, const float3& pos,
-                                     const float3& L, const float3& H,
-                                     const float3& Ka, const float3& Kd, const float3& Ks,
-                                     const float shininess,
-                                     const float3* normal = NULL)
+__device__ float4 phong(const float4& classification, const float3& pos,
+                        const float3& L, const float3& H,
+                        const float3& Ka, const float3& Kd, const float3& Ks,
+                        const float shininess,
+                       const float3* normal = NULL)
 {
   float3 N;
   float3 sample1;
@@ -297,8 +293,6 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   const int maxSteps = INT_MAX;
   const float tstep = dist;
   const float opacityThreshold = 0.95f;
-  const float3 boxMin = make_float3(-volSizeHalf.x, -volSizeHalf.y, -volSizeHalf.z);
-  const float3 boxMax = make_float3(volSizeHalf.x, volSizeHalf.y, volSizeHalf.z);
 
   const uint x = blockIdx.x * blockDim.x + threadIdx.x;
   const uint y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -329,7 +323,7 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
 //  debug[y * width + x + 2] = ray.o.z;
   float tnear;
   float tfar;
-  const bool hit = intersectBox(ray, boxMin, boxMax, &tnear, &tfar);
+  const bool hit = intersectBox(ray, -volSizeHalf, volSizeHalf, &tnear, &tfar);
   if (!hit)
   {
     d_output[y * width + x] = 0;
@@ -420,19 +414,18 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
       const float shininess = 1000.0f;
       if (justClippedPlane)
       {
-        src = blinnPhong(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal);
+        src = phong(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal);
         justClippedPlane = false;
       }
       else if (justClippedSphere)
       {
-        float3 sphereNormal;
-        // TODO: calc sphere normal at intersection point.
-        src = blinnPhong(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
+        float3 sphereNormal = normalize(pos- sphereCenter);
+        src = phong(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
         justClippedSphere = false;
       }
       else
       {
-        src = blinnPhong(src, texCoord, L, H, Ka, Kd, Ks, shininess);
+        src = phong(src, texCoord, L, H, Ka, Kd, Ks, shininess);
       }
     }
     justClippedPlane = false;
@@ -473,7 +466,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 {
   glewInit();
   cudaGLSetGLDevice(0);
-  initPbo();
+  initPbo(512, 512);
 
   cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
 
@@ -540,6 +533,12 @@ void vvRayRend::updateTransferFunction()
   delete[] rgba;
 }
 
+void vvRayRend::resize(const int width, const int height)
+{
+  initPbo(width, height);
+  renderVolumeGL();
+}
+
 void vvRayRend::renderVolumeGL()
 {
   vvDebugMsg::msg(1, "vvRayRend::renderVolumeGL()");
@@ -548,7 +547,7 @@ void vvRayRend::renderVolumeGL()
   const int width = vp[2];
   const int height = vp[3];
 
-  uint *d_output = 0;
+  uint* d_output = 0;
   // map PBO to get CUDA device pointer
   cudaGLMapBufferObject((void**)&d_output, pbo);
 
@@ -605,23 +604,7 @@ void vvRayRend::renderVolumeGL()
   cudaMemcpyToSymbol(c_invViewMatrix, viewM, sizeof(float4) * 4);
   delete[] viewM;
 
-  float3 volSize;
-
-  if ((vd->vox[0] >= vd->vox[1]) && (vd->vox[0] >= vd->vox[2]))
-  {
-    const float inv = 1.0f / vd->vox[0];
-    volSize = make_float3(1.0f, vd->vox[1] * inv, vd->vox[2] * inv);
-  }
-  else if ((vd->vox[1] >= vd->vox[0]) && (vd->vox[1] >= vd->vox[2]))
-  {
-    const float inv = 1.0f / vd->vox[1];
-    volSize = make_float3(vd->vox[0] * inv, 1.0f, vd->vox[2] * inv);
-  }
-  else
-  {
-    const float inv = 1.0f / vd->vox[2];
-    volSize = make_float3(vd->vox[0] * inv, vd->vox[1] * inv, 1.0f);
-  }
+  float3 volSize = make_float3(vd->vox[0], vd->vox[1], vd->vox[2]);
 
   bool isOrtho = pr.isProjOrtho();
 
@@ -645,8 +628,8 @@ void vvRayRend::renderVolumeGL()
   const float3 H = normalize(L + V);
 
   // Clip sphere.
-  const float3 center = make_float3(0.0f, 0.5f, 0.5f);
-  const float radius = 0.7f;
+  const float3 center = make_float3(0.0f, 128.0f, 128.0f);
+  const float radius = 150.0f;
 
   // Clip plane.
 
@@ -658,14 +641,14 @@ void vvRayRend::renderVolumeGL()
          true, // Front to back.
          0, // Mip mode.
          true, // Local illumination.
-         false, // Clip sphere.
+         true, // Clip sphere.
          true // Clip plane.
         ><<<gridSize, blockSize>>>(d_output, width, height,
-                                                    2.0f / (float)numSlices,
-                                                    volSize * 0.5f,
-                                                    L, H,
-                                                    center, radius * radius,
-                                                    pnormal, pdist, debug);
+                                   200.0f / (float)numSlices,
+                                   volSize * 0.5f,
+                                   L, H,
+                                   center, radius * radius,
+                                   pnormal, pdist, debug);
   cudaGLUnmapBufferObject(pbo);
 
   float* output = new float[width * height * 3];
