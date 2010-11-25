@@ -57,7 +57,9 @@ using std::ios;
 #include "../src/vvsoftper.h"
 #include "../src/vvcudapar.h"
 #include "../src/vvcuda.h"
+#if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
 #include "../src/vvrayrend.h"
+#endif
 #include "../src/vvbonjour/vvbonjourbrowser.h"
 #include "../src/vvbonjour/vvbonjourresolver.h"
 #include "vvobjview.h"
@@ -390,11 +392,12 @@ void vvView::reshapeCallback(int w, int h)
   {
     ds->_renderMaster->resize(w, h);
   }
-
+#if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
   if (ds->rayRenderer)
   {
     dynamic_cast<vvRayRend*>(ds->renderer)->resize(w, h);
   }
+#endif
 }
 
 
@@ -699,10 +702,12 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
     else
       renderer = new vvSoftPar(vd, renderState);
   }
+#if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
   else if (rayRenderer)
   {
     renderer = new vvRayRend(vd, renderState);
   }
+#endif
   else if (numDisplays > 0)
   {
     cerr << "Running in threaded mode using the following displays:" << endl;
@@ -1142,6 +1147,7 @@ void vvView::rendererMenuCallback(int item)
     ds->setCudaRenderer(true);
     ds->setRenderer();
   }
+#if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
   else if (item == 9)
   {
     cerr << "Switched to CUDA ray casting renderer" << endl;
@@ -1150,6 +1156,7 @@ void vvView::rendererMenuCallback(int item)
     ds->setRayRenderer(true);
     ds->setRenderer();
   }
+#endif
   else if (item==98 || item==99)
   {
     if (item==98)
@@ -1839,7 +1846,9 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("Bricks - generate proxy geometry on GPU [6]", 6);
   glutAddMenuEntry("CPU Shear-warp [7]", 7);
   glutAddMenuEntry("GPU Shear-warp [8]", 8);
+#if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
   glutAddMenuEntry("GPU Ray casting [9]", 9);
+#endif
   glutAddMenuEntry("Decrease quality [-]", 98);
   glutAddMenuEntry("Increase quality [+]", 99);
 

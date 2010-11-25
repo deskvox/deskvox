@@ -1,3 +1,13 @@
+//
+// This software contains source code provided by NVIDIA Corporation.
+//
+
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+
 #include "vvcudautils.h"
 #include "vvdebugmsg.h"
 #include "vvglew.h"
@@ -19,9 +29,7 @@ texture<float4, 1, cudaReadModeElementType> randTexture;
 
 const int NUM_RAND_VECS = 8192;
 
-cudaArray* d_volumeArray = 0;
-
-int iDivUp(int a, int b)
+int iDivUp(const int a, const int b)
 {
   return (a % b != 0) ? (a / b + 1) : (a / b);
 }
@@ -88,27 +96,27 @@ __device__ void solveQuadraticEquation(const float A, const float B, const float
 __device__ bool intersectBox(const Ray& ray, const float3& boxmin, const float3& boxmax,
                              float* tnear, float* tfar)
 {
-    // compute intersection of ray with all six bbox planes
-    float3 invR = make_float3(1.0f, 1.0f, 1.0f) / ray.d;
-    float t1 = (boxmin.x - ray.o.x) * invR.x;
-    float t2 = (boxmax.x - ray.o.x) * invR.x;
-    float tmin = fminf(t1, t2);
-    float tmax = fmaxf(t1, t2);
+  // compute intersection of ray with all six bbox planes
+  float3 invR = make_float3(1.0f, 1.0f, 1.0f) / ray.d;
+  float t1 = (boxmin.x - ray.o.x) * invR.x;
+  float t2 = (boxmax.x - ray.o.x) * invR.x;
+  float tmin = fminf(t1, t2);
+  float tmax = fmaxf(t1, t2);
 
-    t1 = (boxmin.y - ray.o.y) * invR.y;
-    t2 = (boxmax.y - ray.o.y) * invR.y;
-    tmin = fmaxf(fminf(t1, t2), tmin);
-    tmax = fminf(fmaxf(t1, t2), tmax);
+  t1 = (boxmin.y - ray.o.y) * invR.y;
+  t2 = (boxmax.y - ray.o.y) * invR.y;
+  tmin = fmaxf(fminf(t1, t2), tmin);
+  tmax = fminf(fmaxf(t1, t2), tmax);
 
-    t1 = (boxmin.z - ray.o.z) * invR.z;
-    t2 = (boxmax.z - ray.o.z) * invR.z;
-    tmin = fmaxf(fminf(t1, t2), tmin);
-    tmax = fminf(fmaxf(t1, t2), tmax);
+  t1 = (boxmin.z - ray.o.z) * invR.z;
+  t2 = (boxmax.z - ray.o.z) * invR.z;
+  tmin = fmaxf(fminf(t1, t2), tmin);
+  tmax = fminf(fmaxf(t1, t2), tmax);
 
-    *tnear = tmin;
-    *tfar = tmax;
+  *tnear = tmin;
+  *tfar = tmax;
 
-    return ((tmax >= tmin) && (tmax >= 0.0f));
+  return ((tmax >= tmin) && (tmax >= 0.0f));
 }
 
 __device__ void intersectSphere(const Ray& ray, const float3& center, const float radiusSqr,
@@ -176,7 +184,7 @@ __device__ float4 phong(const float4& classification, const float3& pos,
                         const float3& L, const float3& H,
                         const float3& Ka, const float3& Kd, const float3& Ks,
                         const float shininess,
-                       const float3* normal = NULL)
+                        const float3* normal = NULL)
 {
   float3 N;
   float3 sample1;
@@ -239,11 +247,12 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
    * Then the rays will be oriented so that they can hit the volume.
    */
   const float4 o = mul(c_invViewMatrix, make_float4(u, v, -1.0f, 1.0f));
-  const float4 d = mul(c_invViewMatrix, make_float4(0.0f, 0.0f, 1.0f, 1.0f));
+  const float4 d = mul(c_invViewMatrix, make_float4(u, v, 1.0f, 1.0f));
 
   Ray ray;
   ray.o = perspectiveDivide(o);
   ray.d = perspectiveDivide(d);
+  ray.d = ray.d - ray.o;
   ray.d = normalize(ray.d);
 //  debug[y * width + x] = ray.o.x;
 //  debug[y * width + x + 1] = ray.o.y;
@@ -353,7 +362,7 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
       }
       else if (justClippedSphere)
       {
-        float3 sphereNormal = normalize(pos- sphereCenter);
+        float3 sphereNormal = normalize(pos - sphereCenter);
         src = phong(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
         justClippedSphere = false;
       }
@@ -365,9 +374,6 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
     justClippedPlane = false;
     justClippedSphere = false;
 
-    // "under" operator for back-to-front blending
-    //dst = lerp(dst, src, src.w);
-
     // pre-multiply alpha
     src.x *= src.w;
     src.y *= src.w;
@@ -376,6 +382,10 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
     if (frontToBack && (mipMode == 0))
     {
       dst = dst + src * (1.0f - dst.w);
+    }
+    else if (!frontToBack && (mipMode == 0))
+    {
+      //dst = dst * src.w + src * (1.0f - src.w);
     }
 
     // Early ray termination.
@@ -409,6 +419,8 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _interpolation = true;
   d_randArray = 0;
   initRandTexture();
+
+  d_volumeArray = 0;
   initVolumeTexture();
 
   d_transferFuncArray = 0;
@@ -417,6 +429,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
 vvRayRend::~vvRayRend()
 {
+  cudaFreeArray(d_volumeArray);
   cudaFreeArray(d_transferFuncArray);
   cudaFreeArray(d_randArray);
 }
@@ -434,10 +447,10 @@ void vvRayRend::updateTransferFunction()
 
   vd->computeTFTexture(lutEntries, 1, 1, rgba);
 
-  cudaChannelFormatDesc channelDesc2 = cudaCreateChannelDesc<float4>();
+  cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
 
   cudaFreeArray(d_transferFuncArray);
-  cudaMallocArray(&d_transferFuncArray, &channelDesc2, lutEntries, 1);
+  cudaMallocArray(&d_transferFuncArray, &channelDesc, lutEntries, 1);
   cudaMemcpyToArray(d_transferFuncArray, 0, 0, rgba, lutEntries * 4 * sizeof(float), cudaMemcpyHostToDevice);
 
 
@@ -445,7 +458,7 @@ void vvRayRend::updateTransferFunction()
   tfTexture.normalized = true;    // access with normalized texture coordinates
   tfTexture.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
 
-  cudaBindTextureToArray(tfTexture, d_transferFuncArray, channelDesc2);
+  cudaBindTextureToArray(tfTexture, d_transferFuncArray, channelDesc);
 
   delete[] rgba;
 }
@@ -545,7 +558,7 @@ void vvRayRend::renderVolumeGL()
   const float3 H = normalize(L + V);
 
   // Clip sphere.
-  const float3 center = make_float3(0.0f, -128.0f, -128.0f);
+  const float3 center = make_float3(0.0f, 128.0f, 128.0f);
   const float radius = 150;
 
   // Clip plane.
@@ -560,7 +573,7 @@ void vvRayRend::renderVolumeGL()
          true, // Local illumination.
          false, // Jittering.
          true, // Clip sphere.
-         false // Clip plane.
+         true // Clip plane.
         ><<<gridSize, blockSize>>>(d_output, width, height,
                                    500.0f / (float)numSlices,
                                    volSize * 0.5f,
@@ -612,7 +625,7 @@ void vvRayRend::initPbo(const int width, const int height)
 
 void vvRayRend::initRandTexture()
 {
-  const float scale = 1.0f;
+  const float scale = 2.0f;
 
   //srand(time(NULL));
 
@@ -698,3 +711,5 @@ void vvRayRend::renderQuad(const int width, const int height) const
 
   glDisable(GL_TEXTURE_2D);
 }
+
+#endif

@@ -1,3 +1,7 @@
+//
+// This software contains source code provided by NVIDIA Corporation.
+//
+
 #ifndef _VV_RAYREND_H_
 #define _VV_RAYREND_H_
 
@@ -11,8 +15,14 @@
 #include "vvconfig.h"
 #endif
 
-#ifdef HAVE_CUDA
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
+/** Ray casting renderer. Based on the volume
+  rendering implementation from the NVIDIA CUDA SDK,
+  as of November 25th, 2010 could be downloaded from
+  the following location:
+  http://developer.download.nvidia.com/compute/cuda/sdk/website/samples.html
+ */
 class VIRVOEXPORT vvRayRend : public vvRenderer
 {
 public:
@@ -25,6 +35,7 @@ public:
   void renderVolumeGL();
 private:
   bool _interpolation;              ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
+  cudaArray* d_volumeArray;
   cudaArray* d_transferFuncArray;
   cudaArray* d_randArray;
 
