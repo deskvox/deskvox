@@ -108,23 +108,59 @@ __device__ float volume(const float3& pos)
   return tex3D(volTexture, pos.x, pos.y, pos.z);
 }
 
-__device__ bool intersectBox(const Ray& r, const float3& boxmin, const float3& boxmax,
-                             float *tnear, float *tfar)
+__device__ float3 calcTexCoord(const float3& pos, const float3& volSizeHalf)
+{
+  return make_float3((pos.x + volSizeHalf.x) / (volSizeHalf.x * 2.0f),
+                     (pos.y + volSizeHalf.y) / (volSizeHalf.y * 2.0f),
+                     (pos.z + volSizeHalf.z) / (volSizeHalf.z * 2.0f));
+}
+
+__device__ void solveQuadraticEquation(const float A, const float B, const float C,
+                                       float* tnear, float* tfar)
+{
+  const float discrim = B * B - 4.0f * A * C;
+  if (discrim < 0.0f)
+  {
+    *tnear = -1.0f;
+    *tfar = -1.0f;
+  }
+  const float rootDiscrim = __fsqrt_rn(discrim);
+  float q;
+  if (B < 0)
+  {
+    q = -0.5f * (B - rootDiscrim);
+  }
+  else
+  {
+    q = -0.5f * (B + rootDiscrim);
+  }
+  *tnear = q / A;
+  *tfar = C / q;
+  if (*tnear > *tfar)
+  {
+    float tmp = *tnear;
+    *tnear = *tfar;
+    *tfar = tmp;
+  }
+}
+
+__device__ bool intersectBox(const Ray& ray, const float3& boxmin, const float3& boxmax,
+                             float* tnear, float* tfar)
 {
     // compute intersection of ray with all six bbox planes
-    float3 invR = make_float3(1.0f, 1.0f, 1.0f) / r.d;
-    float t1 = (boxmin.x - r.o.x) * invR.x;
-    float t2 = (boxmax.x - r.o.x) * invR.x;
+    float3 invR = make_float3(1.0f, 1.0f, 1.0f) / ray.d;
+    float t1 = (boxmin.x - ray.o.x) * invR.x;
+    float t2 = (boxmax.x - ray.o.x) * invR.x;
     float tmin = fminf(t1, t2);
     float tmax = fmaxf(t1, t2);
 
-    t1 = (boxmin.y - r.o.y) * invR.y;
-    t2 = (boxmax.y - r.o.y) * invR.y;
+    t1 = (boxmin.y - ray.o.y) * invR.y;
+    t2 = (boxmax.y - ray.o.y) * invR.y;
     tmin = fmaxf(fminf(t1, t2), tmin);
     tmax = fminf(fmaxf(t1, t2), tmax);
 
-    t1 = (boxmin.z - r.o.z) * invR.z;
-    t2 = (boxmax.z - r.o.z) * invR.z;
+    t1 = (boxmin.z - ray.o.z) * invR.z;
+    t2 = (boxmax.z - ray.o.z) * invR.z;
     tmin = fmaxf(fminf(t1, t2), tmin);
     tmax = fminf(fmaxf(t1, t2), tmax);
 
@@ -134,19 +170,61 @@ __device__ bool intersectBox(const Ray& r, const float3& boxmin, const float3& b
     return ((tmax >= tmin) && (tmax >= 0.0f));
 }
 
+__device__ void intersectSphere(const Ray& ray, const float3& center, const float radiusSqr,
+                                float* tnear, float* tfar)
+{
+  Ray r = ray;
+  r.o -= center;
+#if 0
+  float discr1 = r.o.x * r.d.x
+            + 2 * r.o.x * r.d.x * r.o.y * r.d.y + 2 * r.o.x * r.d.x * r.o.z * r.d.z
+            + 2 * r.o.y * r.d.y * r.o.z * r.d.z - r.o.x  + radiusSqr * 0.5  - r.d.x  - r.o.y  - r.o.z -
+            r.d.y*r.d.y  *   r.o.x*r.o.x  + r.d.y*r.d.y  *radiusSqr  - r.d.y*r.d.y * r.d.x*r.d.x  - r.d.y*r.d.y * r.o.z*r.o.z
+            - r.d.z*r.d.z * r.o.x*r.o.x  + r.d.z*r.d.z * radiusSqr  - r.d.z*r.d.z * r.d.x*r.d.x  - r.d.z*r.d.z * r.o.y*r.o.y;
+
+  float discr2 = r.o.x*r.o.x *  r.d.x*r.d.x  + 2 * r.o.x * r.d.x * r.o.y * r.d.y + 2 * r.o.x * r.d.x * r.o.z * r.d.z + 2 * r.o.y * r.d.y * r.o.z * r.d.z - r.o.x*r.o.x  + radiusSqr  - r.d.x*r.d.x  - r.o.y*r.o.y  - r.o.z*r.o.z
+                 - r.d.y*r.d.y * r.o.x*r.o.x  + r.d.y*r.d.y * radiusSqr  - r.d.y*r.d.y * r.d.x*r.d.x  - r.d.y*r.d.y * r.o.z*r.o.z  - r.d.z*r.d.z  * r.o.x*r.o.x  + r.d.z*r.d.z * radiusSqr  - r.d.z*r.d.z * r.d.x*r.d.x  - r.d.z*r.d.z * r.o.y*r.o.y ;
+
+  float q = (1 + r.d.y * r.d.y + r.d.z * r.d.z);
+
+  float one = (-r.o.x * r.d.x - r.o.y * r.d.y - r.o.z * r.d.z  + sqrtf(discr1)) / q;
+  float two = -(r.o.x * r.d.x + r.o.y * r.d.y + r.o.z * r.d.z + sqrtf(discr2)) / q;
+  *tnear = min(one, two);
+  *tfar = max(one, two);
+#else
+  float A = r.d.x * r.d.x + r.d.y * r.d.y
+          + r.d.z * r.d.z;
+  float B = 2 * (r.d.x * r.o.x + r.d.y * r.o.y
+               + r.d.z * r.o.z);
+  float C = r.o.x * r.o.x + r.o.y * r.o.y
+          + r.o.z * r.o.z - radiusSqr;
+  solveQuadraticEquation(A, B, C, tnear, tfar);
+#endif
+}
+
+__device__ void intersectPlane(const Ray& ray, const float3& normal, const float& dist,
+                               float* nddot, float* tnear)
+{
+  *nddot = dot(normal, ray.d);
+  const float vOrigin = dist - dot(normal, ray.o);
+  *tnear = vOrigin / *nddot;
+}
+
+
 __device__ float4 mul(const matrix4x4& M, const float4& v)
 {
+#if 1
     float4 result;
     result.x = M.m[0][0] * v.x + M.m[0][1] * v.y + M.m[0][2] * v.z + M.m[0][3] * v.w;
     result.y = M.m[1][0] * v.x + M.m[1][1] * v.y + M.m[1][2] * v.z + M.m[1][3] * v.w;
     result.z = M.m[2][0] * v.x + M.m[2][1] * v.y + M.m[2][2] * v.z + M.m[2][3] * v.w;
     result.w = M.m[3][0] * v.x + M.m[3][1] * v.y + M.m[3][2] * v.z + M.m[3][3] * v.w;
-
-//    result.x = M.m[0][0] * v.x + M.m[1][0] * v.y + M.m[2][0] * v.z + M.m[3][0] * v.w;
-//    result.y = M.m[0][1] * v.x + M.m[1][1] * v.y + M.m[2][1] * v.z + M.m[3][1] * v.w;
-//    result.z = M.m[0][2] * v.x + M.m[1][2] * v.y + M.m[2][2] * v.z + M.m[3][2] * v.w;
-//    result.w = M.m[0][3] * v.x + M.m[1][3] * v.y + M.m[2][3] * v.z + M.m[3][3] * v.w;
-
+#else
+    result.x = M.m[0][0] * v.x + M.m[1][0] * v.y + M.m[2][0] * v.z + M.m[3][0] * v.w;
+    result.y = M.m[0][1] * v.x + M.m[1][1] * v.y + M.m[2][1] * v.z + M.m[3][1] * v.w;
+    result.z = M.m[0][2] * v.x + M.m[1][2] * v.y + M.m[2][2] * v.z + M.m[3][2] * v.w;
+    result.w = M.m[0][3] * v.x + M.m[1][3] * v.y + M.m[2][3] * v.z + M.m[3][3] * v.w;
+#endif
     return result;
 }
 
@@ -200,9 +278,12 @@ __device__ float4 phong(const float4& classification, const float3& pos,
   return make_float4(tmp.x, tmp.y, tmp.z, classification.w);
 }
 
-template<bool frontToBack, bool lighting>
+template<bool frontToBack, int mipMode, bool lighting, bool clipSphere, bool clipPlane>
 __global__ void render(uint *d_output, const uint width, const uint height, const float dist,
-                       const float3 volSizeHalf, const float3 L, const float3 H)
+                       const float3 volSizeHalf, const float3 L, const float3 H,
+                       const float3 sphereCenter, const float sphereRadius,
+                       const float3 planeNormal, const float planeDist,
+                       float* debug)
 {
   const int maxSteps = INT_MAX;
   const float tstep = dist;
@@ -230,13 +311,16 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   const float4 o = mul(c_invViewMatrix, make_float4(u, v, -1.0f, 1.0f));
   const float4 d = mul(c_invViewMatrix, make_float4(0.0f, 0.0f, 1.0f, 1.0f));
 
-  Ray eyeRay;
-  eyeRay.o = perspectiveDivide(o);
-  eyeRay.d = perspectiveDivide(d);
-  eyeRay.d = normalize(eyeRay.d);
-
-  float tnear, tfar;
-  int hit = intersectBox(eyeRay, boxMin, boxMax, &tnear, &tfar);
+  Ray ray;
+  ray.o = perspectiveDivide(o);
+  ray.d = perspectiveDivide(d);
+  ray.d = normalize(ray.d);
+//  debug[y * width + x] = ray.o.x;
+//  debug[y * width + x + 1] = ray.o.y;
+//  debug[y * width + x + 2] = ray.o.z;
+  float tnear;
+  float tfar;
+  const bool hit = intersectBox(ray, boxMin, boxMax, &tnear, &tfar);
   if (!hit)
   {
     d_output[y * width + x] = 0;
@@ -248,20 +332,68 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
     tnear = 0.0f;
   }
 
+  // Calc hits with clip sphere.
+  float tsnear;
+  float tsfar;
+  if (clipSphere)
+  {
+    intersectSphere(ray, sphereCenter, sphereRadius, &tsnear, &tsfar);
+  }
+
+  // Calc hits with clip plane.
+  float tpnear;
+  float nddot;
+  if (clipPlane)
+  {
+    intersectPlane(ray, planeNormal, planeDist, &nddot, &tpnear);
+  }
+
   float4 dst = make_float4(0.0f);
   float t = tnear;
-  float3 pos = eyeRay.o + eyeRay.d * tnear;
-  const float3 step = eyeRay.d * tstep;
+  float3 pos = ray.o + ray.d * tnear;
+  const float3 step = ray.d * tstep;
+
+  float maxIntensity = 0.0f;
+  float minIntensity = FLT_MAX;
 
   for (int i=0; i<maxSteps; ++i)
   {
-    const float3 texCoord = make_float3((pos.x + volSizeHalf.x) / (volSizeHalf.x * 2),
-                                        (pos.y + volSizeHalf.y) / (volSizeHalf.y * 2),
-                                        (pos.z + volSizeHalf.z) / (volSizeHalf.z * 2));
+    // Test for clipping.
+    if ((
+        (clipSphere && (t >= tsnear) && (t <= tsfar)) // Sphere.
+     || (clipPlane && (((t <= tpnear) && (nddot >= 0.0f))
+         || ((t >= tpnear) && (nddot < 0.0f)))) // Plane.
+    ))
+    {
+      t += tstep;
+      if (t > tfar)
+      {
+        break;
+      }
+      pos += step;
+      continue;
+    }
+
+    const float3 texCoord = calcTexCoord(pos, volSizeHalf);
     const float sample = volume(texCoord);
 
     // Post-classification transfer-function lookup.
-    float4 src = tex1D(tfTexture, sample);
+    float4 src;
+
+    if (mipMode == 0)
+    {
+      src = tex1D(tfTexture, sample);
+    }
+    else if (mipMode == 1 && (sample > maxIntensity))
+    {
+      dst = tex1D(tfTexture, sample);
+      maxIntensity = sample;
+    }
+    else if (mipMode == 2 && (sample  < minIntensity))
+    {
+      dst = tex1D(tfTexture, sample);
+      minIntensity = sample;
+    }
 
     // Local illumination.
     if (lighting && (src.w > 0.1))
@@ -281,7 +413,7 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
     src.y *= src.w;
     src.z *= src.w;
 
-    if (frontToBack)
+    if (frontToBack && (mipMode == 0))
     {
       dst = dst + src * (1.0f - dst.w);
     }
@@ -478,8 +610,38 @@ void vvRayRend::renderVolumeGL()
 
   // Half way vector.
   const float3 H = normalize(L + V);
-  render<true, true><<<gridSize, blockSize>>>(d_output, width, height, 2.0f / (float)numSlices, volSize * 0.5f, L, H);
+
+  // Clip sphere.
+  const float3 center = make_float3(0.0f, 0.5f, 0.5f);
+  const float radius = 0.7f;
+
+  // Clip plane.
+
+  float* debug;
+  cudaMalloc((void**)&debug, sizeof(float3) * width * height);
+  const float3 pnormal = normalize(make_float3(0.0f, 0.71f, 0.63f));
+  const float pdist = 0.0f;
+  render<
+         true, // Front to back.
+         0, // Mip mode.
+         true, // Local illumination.
+         false, // Clip sphere.
+         true // Clip plane.
+        ><<<gridSize, blockSize>>>(d_output, width, height,
+                                                    2.0f / (float)numSlices,
+                                                    volSize * 0.5f,
+                                                    L, H,
+                                                    center, radius * radius,
+                                                    pnormal, pdist, debug);
   cudaGLUnmapBufferObject(pbo);
+
+  float* output = new float[width * height * 3];
+  cudaMemcpy(output, debug, sizeof(float3) * width * height, cudaMemcpyDeviceToHost);
+  for (int i=0; i<width*height; i+=3)
+  {
+    //std::cerr << output[i] << " " << output[i + 1] << " " << output[i + 2] << std::endl;
+  }
+  delete[] output;
 
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
   glBindTexture(GL_TEXTURE_2D, gltex);
