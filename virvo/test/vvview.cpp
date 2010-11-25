@@ -1953,7 +1953,7 @@ void vvView::createMenus()
   glutAddMenuEntry("Toggle popup menu/zoom mode [m]", 8);
   glutAddMenuEntry("Save volume to file", 9);
   glutAddMenuEntry("Performance test [t]", 11);
-  glutAddMenuEntry("Toggle region of intereset mode [R]", 12);
+  glutAddMenuEntry("Toggle region of interest mode [R]", 12);
   glutAddMenuEntry("ROI size-- ['[']", 98);
   glutAddMenuEntry("ROI size++ [']']", 99);
   glutAddMenuEntry("Quit [q]", 13);
