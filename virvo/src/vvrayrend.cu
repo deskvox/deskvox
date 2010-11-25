@@ -249,10 +249,11 @@ __device__ uint rgbaFloatToInt(float3 rgb)
   return rgbaFloatToInt(rgba);
 }
 
-__device__ float4 phong(const float4& classification, const float3& pos,
-                        const float3& L, const float3& H,
-                        const float3& Ka, const float3& Kd, const float3& Ks,
-                        const float shininess)
+__device__ float4 blinnPhong(const float4& classification, const float3& pos,
+                                     const float3& L, const float3& H,
+                                     const float3& Ka, const float3& Kd, const float3& Ks,
+                                     const float shininess,
+                                     const float3* normal = NULL)
 {
   float3 N;
   float3 sample1;
@@ -266,6 +267,14 @@ __device__ float4 phong(const float4& classification, const float3& pos,
   sample2.z = volume(pos + make_float3(0.0f, 0.0f, DELTA));
 
   N = normalize(sample2 - sample1);
+
+  if (normal != NULL)
+  {
+    // Interpolate gradient with normal from clip object (based on opacity).
+    N = (*normal * classification.w) + (N * (1.0f - classification.w));
+    N = normalize(N);
+  }
+
   const float diffuse = fabsf(dot(L, N));
   const float specular = powf(dot(H, N), shininess);
 
@@ -356,15 +365,22 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   float maxIntensity = 0.0f;
   float minIntensity = FLT_MAX;
 
+  // If just clipped, shade with the normal of the clipping surface.
+  bool justClippedPlane = false;
+  bool justClippedSphere = false;
+
   for (int i=0; i<maxSteps; ++i)
   {
     // Test for clipping.
-    if ((
-        (clipSphere && (t >= tsnear) && (t <= tsfar)) // Sphere.
-     || (clipPlane && (((t <= tpnear) && (nddot >= 0.0f))
-         || ((t >= tpnear) && (nddot < 0.0f)))) // Plane.
-    ))
+    const bool clippedPlane = (clipPlane && (((t <= tpnear) && (nddot >= 0.0f))
+                                          || ((t >= tpnear) && (nddot < 0.0f))));
+    const bool clippedSphere = (clipSphere && (t >= tsnear) && (t <= tsfar));
+
+    if (clippedPlane || clippedSphere)
     {
+      justClippedPlane = clippedPlane;
+      justClippedSphere = clippedSphere;
+
       t += tstep;
       if (t > tfar)
       {
@@ -402,7 +418,22 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
       const float3 Kd = make_float3(0.8f, 0.8f, 0.8f);
       const float3 Ks = make_float3(0.8f, 0.8f, 0.8f);
       const float shininess = 1000.0f;
-      src = phong(src, texCoord, L, H, Ka, Kd, Ks, shininess);
+      if (justClippedPlane)
+      {
+        src = blinnPhong(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal);
+        justClippedPlane = false;
+      }
+      else if (justClippedSphere)
+      {
+        float3 sphereNormal;
+        // TODO: calc sphere normal at intersection point.
+        src = blinnPhong(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
+        justClippedSphere = false;
+      }
+      else
+      {
+        src = blinnPhong(src, texCoord, L, H, Ka, Kd, Ks, shininess);
+      }
     }
 
     // "under" operator for back-to-front blending
