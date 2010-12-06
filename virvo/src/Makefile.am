@@ -86,7 +86,6 @@ libvirvo_a_SOURCES = \
         vvimage.cpp \
         vvprintgl.cpp \
         vvpthread.cpp \
-        vvrayrend.cu \
         vvrenderer.cpp \
         vvsocket.cpp \
         vvsocketio.cpp \
@@ -116,13 +115,18 @@ libvirvo_a_SOURCES = \
 	vvsoftper.cpp \
 	vvsoftvr.cpp \
 	vvcuda.cpp \
-	vvcudapar.cu \
         vvbonjour/vvbonjourbrowser.cpp \
         vvbonjour/vvbonjourentry.cpp \
         vvbonjour/vvbonjourregistrar.cpp \
         vvbonjour/vvbonjourresolver.cpp \
         vvmultirend/vvtexmultirend.cpp \
         vvmultirend/vvtexmultirendmngr.cpp
+
+if CUDA
+libvirvo_a_SOURCES += \
+	vvcudapar.cu \
+        vvrayrend.cu
+endif
 
 libvirvoincludedir = $(includedir)/virvo
 libvirvoinclude_HEADERS = $(libvirvo_a_headers) vvconfig.h

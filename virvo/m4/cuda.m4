@@ -44,6 +44,7 @@ if test "$have_cuda_h" = "yes" -a "$have_cuda_lib" = yes; then
     AC_SUBST(CUDA_LIBS)
     AC_SUBST(NVCC)
     AC_DEFINE(HAVE_CUDA, 1, [CUDA framework])
+    ac_have_cuda=yes
 fi
 
 # ------------------------------------------------------------------------------
