@@ -4561,7 +4561,11 @@ void vvTexRend::renderVolumeGL()
       getPrincipalViewingAxis(mv, zx, zy, zz);renderTex2DSlices(zz);
       break;
     case VV_CUBIC2D:
-      renderTex2DCubic(getPrincipalViewingAxis(mv, zx, zy, zz), zx, zy, zz); break;
+      {
+        const AxisType at = getPrincipalViewingAxis(mv, zx, zy, zz);
+        renderTex2DCubic(at, zx, zy, zz);
+      }
+      break;
     case VV_SPHERICAL: renderTex3DSpherical(&mv); break;
     case VV_VIEWPORT:  renderTex3DPlanar(&mv); break;
     case VV_BRICKS:
