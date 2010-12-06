@@ -107,6 +107,7 @@ vvView::vvView()
   animating             = false;
   rotating              = false;
   activeStereoCapable   = false;
+  tryQuadBuffer         = false;
   boundariesMode        = false;
   orientationMode       = false;
   fpsMode               = false;
@@ -1986,23 +1987,26 @@ void vvView::initGraphics(int argc, char *argv[])
   cerr << "Number of CPUs found: " << vvToolshed::getNumProcessors() << endl;
   cerr << "Initializing GLUT." << endl;
   glutInit(&argc, argv);                // initialize GLUT
-#ifndef __APPLE__
-                                                  // create stereo context
-  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_STEREO | GLUT_DEPTH);
-  if (!glutGet(GLUT_DISPLAY_MODE_POSSIBLE))
+  if (tryQuadBuffer)
   {
-    cerr << "Stereo mode not supported by display driver." << endl;
-#endif
-                                                  // create double buffering context
+    // create stereo context
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_STEREO | GLUT_DEPTH);
+    if (!glutGet(GLUT_DISPLAY_MODE_POSSIBLE))
+    {
+      cerr << "Stereo mode not supported by display driver." << endl;
+      tryQuadBuffer = false;
+    }
+  }
+  if (!tryQuadBuffer)
+  {
+    // create double buffering context
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-#ifndef __APPLE__
   }
   else
   {
     cerr << "Stereo mode found." << endl;
     activeStereoCapable = true;
   }
-#endif
   if (!glutGet(GLUT_DISPLAY_MODE_POSSIBLE))
   {
     cerr << "Error: Glut needs a double buffering OpenGL context with alpha channel." << endl;
@@ -2255,6 +2259,9 @@ void vvView::displayHelpInfo()
   cerr << "-boundaries (-b)" << endl;
   cerr << " Draw volume data set boundaries" << endl;
   cerr << endl;
+  cerr << "-quad (-q)" << endl;
+  cerr << " Try to request a quad buffered visual" << endl;
+  cerr << endl;
   cerr << "-astereo" << endl;
   cerr << " Enable active stereo mode (if available)" << endl;
   cerr << endl;
@@ -2473,6 +2480,11 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cerr << "Invalid debug level." << endl;
         return false;
       }
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-q")==0
+            || vvToolshed::strCompare(argv[arg], "-quad")==0)
+    {
+      tryQuadBuffer = true;
     }
     else if (vvToolshed::strCompare(argv[arg], "-astereo")==0)
     {

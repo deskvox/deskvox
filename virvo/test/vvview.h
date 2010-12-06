@@ -85,6 +85,7 @@ class vvView
     bool  paletteMode;                          ///< true = display transfer function palette
     int   stereoMode;                           ///< 0=mono, 1=active stereo, 2=passive stereo (views side by side)
     bool  activeStereoCapable;                  ///< true = hardware is active stereo capable
+    bool  tryQuadBuffer;                        ///< true = try to request a quad buffered visual
     bool  interpolMode;                         ///< true = linear interpolation in slices
     bool  preintMode;                           ///< true = use pre-integration
     bool  opCorrMode;                           ///< true = do opacity correction
