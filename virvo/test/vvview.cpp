@@ -2200,6 +2200,7 @@ void vvView::displayHelpInfo()
   cerr << " 5  = 3D Textures - Bricks" << endl;
   cerr << " 7  = Shear-warp (CPU)" << endl;
   cerr << " 8  = Shear-warp (GPU)" << endl;
+  cerr << " 9  = Ray casting (GPU)" << endl;
   cerr << endl;
   cerr << "-voxeltype <num>" << endl;
   cerr << " Select the default voxel type:" << endl;
@@ -2328,17 +2329,25 @@ bool vvView::parseCommandLine(int argc, char** argv)
       if(val >= 0 && val <= 5)
       {
         currentGeom = (vvTexRend::GeometryType)val;
-        softwareRenderer = cudaRenderer = false;
+        softwareRenderer = cudaRenderer = rayRenderer = false;
       }
       else if(val == 7)
       {
         softwareRenderer = true;
         cudaRenderer = false;
+        rayRenderer = false;
       }
       else if(val == 8)
       {
         softwareRenderer = false;
         cudaRenderer = true;
+        rayRenderer = false;
+      }
+      else if(val == 9)
+      {
+        softwareRenderer = false;
+        cudaRenderer = false;
+        rayRenderer = true;
       }
       else
       {
