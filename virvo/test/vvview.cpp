@@ -652,6 +652,8 @@ void vvView::setSoftwareRenderer(bool enable)
 void vvView::setCudaRenderer(bool enable)
 {
   cudaRenderer = enable;
+  if (enable)
+    perspectiveMode = false;
 }
 
 
@@ -783,9 +785,11 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'B': ds->optionsMenuCallback(12); break;
   case 'b': ds->viewMenuCallback(0);  break;
   case 'c': ds->viewMenuCallback(10); break;
+  case 'C': ds->optionsMenuCallback(14); break;
   case 'd': ds->mainMenuCallback(5);  break;
   case 'e': ds->mainMenuCallback(4);  break;
   case 'f': ds->viewMenuCallback(2);  break;
+  case 'g': ds->optionsMenuCallback(14);  break;
   case 'H': ds->optionsMenuCallback(5); break;
   case 'h': ds->optionsMenuCallback(6); break;
   case 'i': ds->optionsMenuCallback(0);  break;
@@ -1120,28 +1124,13 @@ void vvView::rendererMenuCallback(int item)
   }
   else if (item==6)
   {
-    ds->gpuproxygeo = !ds->gpuproxygeo;
-    ds->renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, ds->gpuproxygeo);
-    cerr << "Switched to proxy geometry generation on the ";
-    if (ds->gpuproxygeo)
-    {
-      cerr << "GPU";
-    }
-    else
-    {
-      cerr << "CPU";
-    }
-    cerr << endl;
-  }
-  else if (item==7)
-  {
     cerr << "Switched to software shear-warp renderer" << endl;
     ds->setSoftwareRenderer(true);
     ds->setCudaRenderer(false);
     ds->setRayRenderer(false);
     ds->setRenderer();
   }
-  else if (item==8)
+  else if (item==7)
   {
     cerr << "Switched to CUDA shear-warp renderer" << endl;
     ds->setSoftwareRenderer(false);
@@ -1150,7 +1139,7 @@ void vvView::rendererMenuCallback(int item)
     ds->setRenderer();
   }
 #if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
-  else if (item == 9)
+  else if (item == 8)
   {
     cerr << "Switched to CUDA ray casting renderer" << endl;
     ds->setSoftwareRenderer(false);
@@ -1317,11 +1306,27 @@ void vvView::optionsMenuCallback(int item)
     }
     break;
   case 13:
+    ds->gpuproxygeo = !ds->gpuproxygeo;
+    ds->renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, ds->gpuproxygeo);
+    cerr << "Switched to proxy geometry generation on the ";
+    if (ds->gpuproxygeo)
     {
-      vvTexRend *rend = dynamic_cast<vvTexRend *>(ds->renderer);
-      int shader = rend->getCurrentShader()+1;
-      rend->setCurrentShader(shader);
-      cerr << "shader set to " << rend->getCurrentShader() << endl;
+      cerr << "GPU";
+    }
+    else
+    {
+      cerr << "CPU";
+    }
+    cerr << endl;
+    break;
+  case 14:
+    {
+      if(vvTexRend *rend = dynamic_cast<vvTexRend *>(ds->renderer))
+      {
+        int shader = rend->getCurrentShader()+1;
+        rend->setCurrentShader(shader);
+        cerr << "shader set to " << rend->getCurrentShader() << endl;
+      }
     }
     break;
   default: break;
@@ -1845,11 +1850,10 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_VIEWPORT))  glutAddMenuEntry("3D textures - viewport aligned [3]", 3);
   if (vvTexRend::isSupported(vvTexRend::VV_SPHERICAL)) glutAddMenuEntry("3D textures - spherical [4]", 4);
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("3D textures - bricked [5]", 5);
-  if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("Bricks - generate proxy geometry on GPU [6]", 6);
-  glutAddMenuEntry("CPU Shear-warp [7]", 7);
-  glutAddMenuEntry("GPU Shear-warp [8]", 8);
+  glutAddMenuEntry("CPU Shear-warp [6]", 6);
+  glutAddMenuEntry("GPU Shear-warp [7]", 6);
 #if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
-  glutAddMenuEntry("GPU Ray casting [9]", 9);
+  glutAddMenuEntry("GPU Ray casting [8]", 8);
 #endif
   glutAddMenuEntry("Decrease quality [-]", 98);
   glutAddMenuEntry("Increase quality [+]", 99);
@@ -1887,6 +1891,10 @@ void vvView::createMenus()
   glutAddMenuEntry("Increase buffer precision", 10);
   glutAddMenuEntry("Decrease buffer precision", 11);
   glutAddMenuEntry("Show/hide bricks [B]", 12);
+  if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))
+    glutAddMenuEntry("Bricks - generate proxy geometry on GPU [g]", 13);
+  if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD))
+    glutAddMenuEntry("Cycle shader [C]", 14);
 
   // Transfer function menu:
   transferMenu = glutCreateMenu(transferMenuCallback);
@@ -2200,9 +2208,9 @@ void vvView::displayHelpInfo()
   cerr << " 3  = 3D Textures - Viewport aligned" << endl;
   cerr << " 4  = 3D Textures - Bricks" << endl;
   cerr << " 5  = 3D Textures - Spherical" << endl;
-  cerr << " 7  = Shear-warp (CPU)" << endl;
-  cerr << " 8  = Shear-warp (GPU)" << endl;
-  cerr << " 9  = Ray casting (GPU)" << endl;
+  cerr << " 6  = Shear-warp (CPU)" << endl;
+  cerr << " 7  = Shear-warp (GPU)" << endl;
+  cerr << " 8  = Ray casting (GPU)" << endl;
   cerr << endl;
   cerr << "-voxeltype <num>" << endl;
   cerr << " Select the default voxel type:" << endl;
