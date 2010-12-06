@@ -2196,8 +2196,8 @@ void vvView::displayHelpInfo()
   cerr << " 1  = 2D Textures - Slices" << endl;
   cerr << " 2  = 2D Textures - Cubic" << endl;
   cerr << " 3  = 3D Textures - Viewport aligned" << endl;
-  cerr << " 4  = 3D Textures - Spherical" << endl;
-  cerr << " 5  = 3D Textures - Bricks" << endl;
+  cerr << " 4  = 3D Textures - Bricks" << endl;
+  cerr << " 5  = 3D Textures - Spherical" << endl;
   cerr << " 7  = Shear-warp (CPU)" << endl;
   cerr << " 8  = Shear-warp (GPU)" << endl;
   cerr << " 9  = Ray casting (GPU)" << endl;
