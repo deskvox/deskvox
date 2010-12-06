@@ -142,7 +142,7 @@ vvView::vvView()
   showBricks            = false;
   roiEnabled            = false;
   mvScale               = 1.0f;
-  rayRenderer           = true;
+  rayRenderer           = false;
 }
 
 
@@ -395,7 +395,7 @@ void vvView::reshapeCallback(int w, int h)
 #if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
   if (ds->rayRenderer)
   {
-    dynamic_cast<vvRayRend*>(ds->renderer)->resize(w, h);
+    static_cast<vvRayRend*>(ds->renderer)->resize(w, h);
   }
 #endif
 }
@@ -1138,6 +1138,7 @@ void vvView::rendererMenuCallback(int item)
     cerr << "Switched to software shear-warp renderer" << endl;
     ds->setSoftwareRenderer(true);
     ds->setCudaRenderer(false);
+    ds->setRayRenderer(false);
     ds->setRenderer();
   }
   else if (item==8)
@@ -1145,6 +1146,7 @@ void vvView::rendererMenuCallback(int item)
     cerr << "Switched to CUDA shear-warp renderer" << endl;
     ds->setSoftwareRenderer(false);
     ds->setCudaRenderer(true);
+    ds->setRayRenderer(false);
     ds->setRenderer();
   }
 #if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
