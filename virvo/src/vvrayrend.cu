@@ -89,7 +89,7 @@ __device__ float3 calcTexCoord(const float3& pos, const float3& volSizeHalf)
                      (pos.z + volSizeHalf.z) / (volSizeHalf.z * 2.0f));
 }
 
-__device__ void solveQuadraticEquation(const float A, const float B, const float C,
+__device__ bool solveQuadraticEquation(const float A, const float B, const float C,
                                        float* tnear, float* tfar)
 {
   const float discrim = B * B - 4.0f * A * C;
@@ -115,7 +115,9 @@ __device__ void solveQuadraticEquation(const float A, const float B, const float
     float tmp = *tnear;
     *tnear = *tfar;
     *tfar = tmp;
+    return true;
   }
+  return false;
 }
 
 __device__ bool intersectBox(const Ray& ray, const float3& boxmin, const float3& boxmax,
@@ -144,7 +146,7 @@ __device__ bool intersectBox(const Ray& ray, const float3& boxmin, const float3&
   return ((tmax >= tmin) && (tmax >= 0.0f));
 }
 
-__device__ void intersectSphere(const Ray& ray, const float3& center, const float radiusSqr,
+__device__ bool intersectSphere(const Ray& ray, const float3& center, const float radiusSqr,
                                 float* tnear, float* tfar)
 {
   Ray r = ray;
@@ -155,7 +157,7 @@ __device__ void intersectSphere(const Ray& ray, const float3& center, const floa
                + r.d.z * r.o.z);
   float C = r.o.x * r.o.x + r.o.y * r.o.y
           + r.o.z * r.o.z - radiusSqr;
-  solveQuadraticEquation(A, B, C, tnear, tfar);
+  return solveQuadraticEquation(A, B, C, tnear, tfar);
 }
 
 __device__ void intersectPlane(const Ray& ray, const float3& normal, const float& dist,
@@ -252,7 +254,8 @@ template<
          bool opacityCorrection,
          bool jittering,
          bool clipSphere,
-         bool clipPlane
+         bool clipPlane,
+         bool useSphereAsProbe
         >
 __global__ void render(uint *d_output, const uint width, const uint height, const float dist,
                        const float3 volSizeHalf, const float3 L, const float3 H,
@@ -308,7 +311,13 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   float tsfar;
   if (clipSphere)
   {
-    intersectSphere(ray, sphereCenter, sphereRadius, &tsnear, &tsfar);
+    // In probe mode, rays that don't hit the sphere simply aren't rendered.
+    // In ordinary sphere mode, the intersection data is memorized.
+    if (!intersectSphere(ray, sphereCenter, sphereRadius, &tsnear, &tsfar) && useSphereAsProbe)
+    {
+      d_output[y * width + x] = 0;
+      return;
+    }
   }
 
   // Calc hits with clip plane.
@@ -342,7 +351,8 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
     // Test for clipping.
     const bool clippedPlane = (clipPlane && (((t <= tpnear) && (nddot >= 0.0f))
                                           || ((t >= tpnear) && (nddot < 0.0f))));
-    const bool clippedSphere = (clipSphere && (t >= tsnear) && (t <= tsfar));
+    const bool clippedSphere = useSphereAsProbe ? (clipSphere && ((t < tsnear) || (t > tsfar)))
+                                                : (clipSphere && (t >= tsnear) && (t <= tsfar));
 
     if (clippedPlane || clippedSphere)
     {
@@ -613,7 +623,8 @@ void vvRayRend::renderVolumeGL()
              true, // Opacity correction.
              false, // Jittering.
              false, // Clip sphere.
-             false // Clip plane.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
             ><<<gridSize, blockSize>>>(d_output, width, height,
                                        diagonalVoxels / (float)numSlices,
                                        volSize * 0.5f,
@@ -630,8 +641,9 @@ void vvRayRend::renderVolumeGL()
              true, // Local illumination.
              true, // Opacity correction.
              false, // Jittering.
-             false, // Clip sphere.
-             false // Clip plane.
+             true, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
             ><<<gridSize, blockSize>>>(d_output, width, height,
                                        diagonalVoxels / (float)numSlices,
                                        volSize * 0.5f,
