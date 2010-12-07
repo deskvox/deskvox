@@ -6001,6 +6001,8 @@ void vvTexRend::validateEmptySpaceLeaping()
     _renderState._emptySpaceLeaping &= (geomType == VV_BRICKS);
     _renderState._emptySpaceLeaping &= (voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12);
     _renderState._emptySpaceLeaping &= (voxelType != VV_RGBA);
+    // TODO: only implemented for 8-bit 1-channel volumes. Support higher volume resolutions.
+    _renderState._emptySpaceLeaping &= ((vd->chan == 1) && (vd->bpc == 1));
   }
 }
 
