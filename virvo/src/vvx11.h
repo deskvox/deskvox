@@ -16,7 +16,11 @@
 #ifndef _VVX11_H_
 #define _VVX11_H_
 
+#include <vvconfig.h>
+
 #if !defined(_WIN32) && !defined(__APPLE__)
+#define HAVE_X11
+#elif defined(HAVE_XLIBS) && !defined(HAVE_GL_FRAMEWORK)
 #define HAVE_X11
 #endif
 

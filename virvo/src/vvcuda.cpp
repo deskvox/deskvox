@@ -26,9 +26,7 @@
 
 #ifdef HAVE_CUDA
 
-#ifdef HAVE_XLIBS
-#include <GL/glx.h>
-#endif
+#include <vvx11.h>
 
 #include <string>
 #include <cstring>
@@ -92,7 +90,7 @@ bool vvCuda::initGlInterop()
     if (done)
        return true;
 
-#ifdef HAVE_XLIBS
+#ifdef HAVE_X11
     GLXContext ctx = glXGetCurrentContext();
     Display *dsp = XOpenDisplay(NULL);
     XSynchronize(dsp, True);
