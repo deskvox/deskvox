@@ -653,8 +653,10 @@ void vvView::setSoftwareRenderer(bool enable)
 void vvView::setCudaRenderer(bool enable)
 {
   cudaRenderer = enable;
-  if (enable)
-    perspectiveMode = false;
+  if (enable && perspectiveMode)
+  {
+    setProjectionMode(false);
+  }
 }
 
 
