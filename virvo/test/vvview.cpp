@@ -1372,21 +1372,24 @@ void vvView::transferMenuCallback(int item)
   case 6:                                     // white
     ds->vd->tf.setDefaultColors(6, 0.0, 1.0);
     break;
-  case 7:                                     // alpha: ascending
+  case 7:                                     // cool to warm
+    ds->vd->tf.setDefaultColors(7, 0.0, 1.0);
+    break;
+  case 8:                                     // alpha: ascending
     ds->vd->tf.setDefaultAlpha(0, 0.0, 1.0);
     break;
-  case 8:                                     // alpha: descending
+  case 9:                                     // alpha: descending
     ds->vd->tf.setDefaultAlpha(1, 0.0, 1.0);
     break;
-  case 9:                                     // alpha: opaque
+  case 10:                                     // alpha: opaque
     ds->vd->tf.setDefaultAlpha(2, 0.0, 1.0);
     break;
-  case 10:                                    // alpha: display peak
-  case 11:                                    // alpha: shift left peak
-  case 12:                                    // alpha: shift right peak
-    if(item == 11)
+  case 11:                                    // alpha: display peak
+  case 12:                                    // alpha: shift left peak
+  case 13:                                    // alpha: shift right peak
+    if(item == 12)
       peakPosX -= .05;
-    else if(item == 12)
+    else if(item == 13)
       peakPosX += .05;
     if (peakPosX < 0.0f) peakPosX += 1.0f;
     if (peakPosX > 1.0f) peakPosX -= 1.0f;
@@ -1400,45 +1403,45 @@ void vvView::transferMenuCallback(int item)
           new vvTFPyramid(vvColor(1.f, 1.f, 1.f), false, 1.f, peakPosX, .2f, 0.f),
           vvSLNode<vvTFWidget*>::NORMAL_DELETE);
     break;
-  case 13:                                    // gamma red
-  case 14:
+  case 14:                                    // gamma red
+  case 15:
     gamma = ds->renderer->getGamma(vvRenderer::VV_RED);
-    gamma *= (item==13) ? 0.95f : 1.05f;
+    gamma *= (item==14) ? 0.95f : 1.05f;
     ds->renderer->setGamma(vvRenderer::VV_RED, gamma);
     cerr << "gamma red = " << gamma << endl;
     break;
-  case 15:                                    // gamma green
-  case 16:
+  case 16:                                    // gamma green
+  case 17:
     gamma = ds->renderer->getGamma(vvRenderer::VV_GREEN);
-    gamma *= (item==15) ? 0.95f : 1.05f;
+    gamma *= (item==16) ? 0.95f : 1.05f;
     ds->renderer->setGamma(vvRenderer::VV_GREEN, gamma);
     cerr << "gamma green = " << gamma << endl;
     break;
-  case 17:                                    // gamma blue
-  case 18:
+  case 18:                                    // gamma blue
+  case 19:
     gamma = ds->renderer->getGamma(vvRenderer::VV_BLUE);
-    gamma *= (item==17) ? 0.95f : 1.05f;
+    gamma *= (item==18) ? 0.95f : 1.05f;
     ds->renderer->setGamma(vvRenderer::VV_BLUE, gamma);
     cerr << "gamma blue = " << gamma << endl;
     break;
-  case 19:                                    // channel 4 red
-  case 20:
+  case 20:                                    // channel 4 red
+  case 21:
     chan4 = ds->renderer->getOpacityWeight(vvRenderer::VV_RED);
-    chan4 *= (item==19) ? 0.95f : 1.05f;
+    chan4 *= (item==20) ? 0.95f : 1.05f;
     ds->renderer->setOpacityWeight(vvRenderer::VV_RED, chan4);
     cerr << "channel 4 red = " << chan4 << endl;
     break;
-  case 21:                                    // channel 4 green
-  case 22:
+  case 22:                                    // channel 4 green
+  case 23:
     chan4 = ds->renderer->getOpacityWeight(vvRenderer::VV_GREEN);
-    chan4 *= (item==21) ? 0.95f : 1.05f;
+    chan4 *= (item==22) ? 0.95f : 1.05f;
     ds->renderer->setOpacityWeight(vvRenderer::VV_GREEN, chan4);
     cerr << "channel 4 green = " << chan4 << endl;
     break;
-  case 23:                                    // channel 4 blue
-  case 24:
+  case 24:                                    // channel 4 blue
+  case 25:
     chan4 = ds->renderer->getOpacityWeight(vvRenderer::VV_BLUE);
-    chan4 *= (item==23) ? 0.95f : 1.05f;
+    chan4 *= (item==24) ? 0.95f : 1.05f;
     ds->renderer->setOpacityWeight(vvRenderer::VV_BLUE, chan4);
     cerr << "channel 4 blue = " << chan4 << endl;
     break;
@@ -1908,24 +1911,25 @@ void vvView::createMenus()
   glutAddMenuEntry("Colors: red", 4);
   glutAddMenuEntry("Colors: green", 5);
   glutAddMenuEntry("Colors: blue", 6);
-  glutAddMenuEntry("Alpha: ascending", 7);
-  glutAddMenuEntry("Alpha: descending", 8);
-  glutAddMenuEntry("Alpha: opaque", 9);
-  glutAddMenuEntry("Alpha: single peak", 10);
-  glutAddMenuEntry("Alpha: shift peak left [<]", 11);
-  glutAddMenuEntry("Alpha: shift peak right [>]", 12);
-  glutAddMenuEntry("Gamma: less red [1]", 13);
-  glutAddMenuEntry("Gamma: more red [2]", 14);
-  glutAddMenuEntry("Gamma: less green [3]", 15);
-  glutAddMenuEntry("Gamma: more green [4]", 16);
-  glutAddMenuEntry("Gamma: less blue [5]", 17);
-  glutAddMenuEntry("Gamma: more blue [6]", 18);
-  glutAddMenuEntry("Channel 4: less red", 19);
-  glutAddMenuEntry("Channel 4: more red", 20);
-  glutAddMenuEntry("Channel 4: less green", 21);
-  glutAddMenuEntry("Channel 4: more green", 22);
-  glutAddMenuEntry("Channel 4: less blue", 23);
-  glutAddMenuEntry("Channel 4: more blue", 24);
+  glutAddMenuEntry("Colors: cool to warm", 7);
+  glutAddMenuEntry("Alpha: ascending", 8);
+  glutAddMenuEntry("Alpha: descending", 9);
+  glutAddMenuEntry("Alpha: opaque", 10);
+  glutAddMenuEntry("Alpha: single peak", 11);
+  glutAddMenuEntry("Alpha: shift peak left [<]", 12);
+  glutAddMenuEntry("Alpha: shift peak right [>]", 13);
+  glutAddMenuEntry("Gamma: less red [1]", 14);
+  glutAddMenuEntry("Gamma: more red [2]", 15);
+  glutAddMenuEntry("Gamma: less green [3]", 16);
+  glutAddMenuEntry("Gamma: more green [4]", 17);
+  glutAddMenuEntry("Gamma: less blue [5]", 18);
+  glutAddMenuEntry("Gamma: more blue [6]", 19);
+  glutAddMenuEntry("Channel 4: less red", 20);
+  glutAddMenuEntry("Channel 4: more red", 21);
+  glutAddMenuEntry("Channel 4: less green", 22);
+  glutAddMenuEntry("Channel 4: more green", 23);
+  glutAddMenuEntry("Channel 4: less blue", 24);
+  glutAddMenuEntry("Channel 4: more blue", 25);
 
   // Animation menu:
   animMenu = glutCreateMenu(animMenuCallback);

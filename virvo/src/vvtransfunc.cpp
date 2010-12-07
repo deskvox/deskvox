@@ -185,6 +185,14 @@ void vvTransFunc::setDefaultColors(int index, float min, float max)
       _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
       break;
+    case 7:                                       // cool to warm map
+      // see http://www.cs.unm.edu/~kmorel/documents/ColorMaps/ColorMapsExpanded.pdf
+      _widgets.append(new vvTFColor(vvColor(0.231f, 0.298f, 0.752f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.552f, 0.690f, 0.996f), (max-min) * 0.25f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.866f, 0.866f, 0.866f), (max-min) * 0.5f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.956f, 0.603f, 0.486f), (max-min) * 0.75f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.append(new vvTFColor(vvColor(0.705f, 0.015f, 0.149f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      break;
   }
 }
 
@@ -192,7 +200,7 @@ void vvTransFunc::setDefaultColors(int index, float min, float max)
 /// Returns the number of default color schemes.
 int vvTransFunc::getNumDefaultColors()
 {
-  return 7;
+  return 8;
 }
 
 //----------------------------------------------------------------------------
