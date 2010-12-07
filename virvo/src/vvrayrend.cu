@@ -23,7 +23,8 @@
 using std::cerr;
 using std::endl;
 
-texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture;
+texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture8;
+texture<ushort, 3, cudaReadModeNormalizedFloat> volTexture16;
 texture<float4, 1, cudaReadModeElementType> tfTexture;
 texture<float4, 1, cudaReadModeElementType> randTexture;
 
@@ -47,14 +48,38 @@ struct Ray
   float3 d;
 };
 
+template<int bpc>
 __device__ float volume(const float x, const float y, const float z)
 {
-  return tex3D(volTexture, x, y, z);
+  if (bpc == 1)
+  {
+    return tex3D(volTexture8, x, y, z);
+  }
+  else if (bpc == 2)
+  {
+    return tex3D(volTexture16, x, y, z);
+  }
+  else
+  {
+    return -1.0f;
+  }
 }
 
+template<int bpc>
 __device__ float volume(const float3& pos)
 {
-  return tex3D(volTexture, pos.x, pos.y, pos.z);
+  if (bpc == 1)
+  {
+    return tex3D(volTexture8, pos.x, pos.y, pos.z);
+  }
+  else if (bpc == 2)
+  {
+    return tex3D(volTexture16, pos.x, pos.y, pos.z);
+  }
+  else
+  {
+    return -1.0f;
+  }
 }
 
 __device__ float3 calcTexCoord(const float3& pos, const float3& volSizeHalf)
@@ -180,6 +205,7 @@ __device__ uint rgbaFloatToInt(float3 rgb)
   return rgbaFloatToInt(rgba);
 }
 
+template<int bpc>
 __device__ float4 phong(const float4& classification, const float3& pos,
                         const float3& L, const float3& H,
                         const float3& Ka, const float3& Kd, const float3& Ks,
@@ -190,12 +216,12 @@ __device__ float4 phong(const float4& classification, const float3& pos,
   float3 sample1;
   float3 sample2;
   const float DELTA = 0.01f;
-  sample1.x = volume(pos - make_float3(DELTA, 0.0f, 0.0f));
-  sample2.x = volume(pos + make_float3(DELTA, 0.0f, 0.0f));
-  sample1.y = volume(pos - make_float3(0.0f, DELTA, 0.0f));
-  sample2.y = volume(pos + make_float3(0.0f, DELTA, 0.0f));
-  sample1.z = volume(pos - make_float3(0.0f, 0.0f, DELTA));
-  sample2.z = volume(pos + make_float3(0.0f, 0.0f, DELTA));
+  sample1.x = volume<bpc>(pos - make_float3(DELTA, 0.0f, 0.0f));
+  sample2.x = volume<bpc>(pos + make_float3(DELTA, 0.0f, 0.0f));
+  sample1.y = volume<bpc>(pos - make_float3(0.0f, DELTA, 0.0f));
+  sample2.y = volume<bpc>(pos + make_float3(0.0f, DELTA, 0.0f));
+  sample1.z = volume<bpc>(pos - make_float3(0.0f, 0.0f, DELTA));
+  sample2.z = volume<bpc>(pos + make_float3(0.0f, 0.0f, DELTA));
 
   N = normalize(sample2 - sample1);
 
@@ -220,6 +246,7 @@ __device__ float4 phong(const float4& classification, const float3& pos,
 
 template<
          bool frontToBack,
+         int bpc,
          int mipMode,
          bool lighting,
          bool opacityCorrection,
@@ -230,8 +257,7 @@ template<
 __global__ void render(uint *d_output, const uint width, const uint height, const float dist,
                        const float3 volSizeHalf, const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
-                       const float3 planeNormal, const float planeDist,
-                       float* debug)
+                       const float3 planeNormal, const float planeDist)
 {
   const int maxSteps = INT_MAX;
   const float tstep = dist;
@@ -262,9 +288,7 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   ray.d = perspectiveDivide(d);
   ray.d = ray.d - ray.o;
   ray.d = normalize(ray.d);
-//  debug[y * width + x] = ray.o.x;
-//  debug[y * width + x + 1] = ray.o.y;
-//  debug[y * width + x + 2] = ray.o.z;
+
   float tnear;
   float tfar;
   const bool hit = intersectBox(ray, -volSizeHalf, volSizeHalf, &tnear, &tfar);
@@ -336,7 +360,7 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
 
     float3 texCoord = calcTexCoord(pos, volSizeHalf);
 
-    const float sample = volume(texCoord/* + randOffset*/);
+    const float sample = volume<bpc>(texCoord);
 
     // Post-classification transfer-function lookup.
     float4 src;
@@ -345,12 +369,12 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
     {
       src = tex1D(tfTexture, sample);
     }
-    else if (mipMode == 1 && (sample > maxIntensity))
+    else if ((mipMode == 1) && (sample > maxIntensity))
     {
       dst = tex1D(tfTexture, sample);
       maxIntensity = sample;
     }
-    else if (mipMode == 2 && (sample  < minIntensity))
+    else if ((mipMode == 2) && (sample  < minIntensity))
     {
       dst = tex1D(tfTexture, sample);
       minIntensity = sample;
@@ -365,18 +389,18 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
       const float shininess = 1000.0f;
       if (justClippedPlane)
       {
-        src = phong(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal);
+        src = phong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal);
         justClippedPlane = false;
       }
       else if (justClippedSphere)
       {
         float3 sphereNormal = normalize(pos - sphereCenter);
-        src = phong(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
+        src = phong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
         justClippedSphere = false;
       }
       else
       {
-        src = phong(src, texCoord, L, H, Ka, Kd, Ks, shininess);
+        src = phong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess);
       }
     }
     justClippedPlane = false;
@@ -570,38 +594,52 @@ void vvRayRend::renderVolumeGL()
   const float3 H = normalize(L + V);
 
   // Clip sphere.
-  const float3 center = make_float3(0.0f, 128.0f, 128.0f);
-  const float radius = 150;
+  const float3 center = make_float3(_renderState._roiPos[0],
+                                    _renderState._roiPos[1],
+                                    _renderState._roiPos[2]);//make_float3(0.0f, 128.0f, 128.0f);
+  const float radius = _renderState._roiSize[0] * vd->getSize()[0];//150;
 
   // Clip plane.
-
-  float* debug;
-  cudaMalloc((void**)&debug, sizeof(float3) * width * height);
   const float3 pnormal = normalize(make_float3(0.0f, 0.71f, 0.63f));
   const float pdist = 0.0f;
-  render<
-         true, // Front to back.
-         0, // Mip mode.
-         true, // Local illumination.
-         true, // Opacity correction.
-         false, // Jittering.
-         false, // Clip sphere.
-         false // Clip plane.
-        ><<<gridSize, blockSize>>>(d_output, width, height,
-                                   diagonalVoxels / (float)numSlices,
-                                   volSize * 0.5f,
-                                   L, H,
-                                   center, radius * radius,
-                                   pnormal, pdist, debug);
-  cudaGLUnmapBufferObject(_pbo);
 
-  float* output = new float[width * height * 3];
-  cudaMemcpy(output, debug, sizeof(float3) * width * height, cudaMemcpyDeviceToHost);
-  for (int i=0; i<width*height; i+=3)
+  if (vd->bpc == 1)
   {
-    //std::cerr << output[i] << " " << output[i + 1] << " " << output[i + 2] << std::endl;
+      render<
+             true, // Front to back.
+             1, // Bytes per channel.
+             0, // Mip mode.
+             true, // Local illumination.
+             true, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false // Clip plane.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
   }
-  delete[] output;
+  else if (vd->bpc == 2)
+  {
+      render<
+             true, // Front to back.
+             2, // Bytes per channel.
+             0, // Mip mode.
+             true, // Local illumination.
+             true, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false // Clip plane.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+  }
+  cudaGLUnmapBufferObject(_pbo);
 
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, _pbo);
   glBindTexture(GL_TEXTURE_2D, _gltex);
@@ -668,30 +706,73 @@ void vvRayRend::initVolumeTexture()
 {
   cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
 
-  cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<uchar>();
+  cudaChannelFormatDesc channelDesc;
+  if (vd->bpc == 1)
+  {
+    channelDesc = cudaCreateChannelDesc<uchar>();
+  }
+  else if (vd->bpc == 2)
+  {
+    channelDesc = cudaCreateChannelDesc<ushort>();
+  }
   cudaMalloc3DArray(&d_volumeArray, &channelDesc, volumeSize);
 
   cudaMemcpy3DParms copyParams = { 0 };
-  copyParams.srcPtr = make_cudaPitchedPtr(vd->getRaw(0), volumeSize.width*sizeof(uchar), volumeSize.width, volumeSize.height);
+
+  if (vd->bpc == 1)
+  {
+    copyParams.srcPtr = make_cudaPitchedPtr(vd->getRaw(0), volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
+  }
+  else if (vd->bpc == 2)
+  {
+    const int size = vd->vox[0] * vd->vox[1] * vd->vox[2] * vd->bpc;
+    uchar* raw = vd->getRaw(0);
+    uchar* data = new uchar[size];
+
+    for (int i=0; i<size; i+=2)
+    {
+      int val = ((int) raw[i] << 8) | (int) raw[i + 1];
+      val >>= 4;
+      data[i] = raw[i];
+      data[i + 1] = val;
+    }
+    copyParams.srcPtr = make_cudaPitchedPtr(data, volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
+  }
   copyParams.dstArray = d_volumeArray;
   copyParams.extent = volumeSize;
   copyParams.kind = cudaMemcpyHostToDevice;
   cudaMemcpy3D(&copyParams);
 
-  volTexture.normalized = true;
-  if (_interpolation)
+  if (vd->bpc == 1)
   {
-    volTexture.filterMode = cudaFilterModeLinear;
+      volTexture8.normalized = true;
+      if (_interpolation)
+      {
+        volTexture8.filterMode = cudaFilterModeLinear;
+      }
+      else
+      {
+        volTexture8.filterMode = cudaFilterModePoint;
+      }
+      volTexture8.addressMode[0] = cudaAddressModeClamp;
+      volTexture8.addressMode[1] = cudaAddressModeClamp;
+      cudaBindTextureToArray(volTexture8, d_volumeArray, channelDesc);
   }
-  else
+  else if (vd->bpc == 2)
   {
-    volTexture.filterMode = cudaFilterModePoint;
+      volTexture16.normalized = true;
+      if (_interpolation)
+      {
+        volTexture16.filterMode = cudaFilterModeLinear;
+      }
+      else
+      {
+        volTexture16.filterMode = cudaFilterModePoint;
+      }
+      volTexture16.addressMode[0] = cudaAddressModeClamp;
+      volTexture16.addressMode[1] = cudaAddressModeClamp;
+      cudaBindTextureToArray(volTexture16, d_volumeArray, channelDesc);
   }
-  volTexture.addressMode[0] = cudaAddressModeClamp;
-  volTexture.addressMode[1] = cudaAddressModeClamp;
-
-  // bind array to 3D texture
-  cudaBindTextureToArray(volTexture, d_volumeArray, channelDesc);
 }
 
 void vvRayRend::renderQuad(const int width, const int height) const
@@ -713,10 +794,10 @@ void vvRayRend::renderQuad(const int width, const int height) const
 
   glClear(GL_COLOR_BUFFER_BIT);
   glBegin(GL_QUADS);
-    glTexCoord2f(0.0, 0.0); glVertex3f(-1.0, -1.0, 0.5);
-    glTexCoord2f(1.0, 0.0); glVertex3f(1.0, -1.0, 0.5);
-    glTexCoord2f(1.0, 1.0); glVertex3f(1.0, 1.0, 0.5);
-    glTexCoord2f(0.0, 1.0); glVertex3f(-1.0, 1.0, 0.5);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-1.0, -1.0, 0.0);
+    glTexCoord2f(1.0, 0.0); glVertex3f(1.0, -1.0, 0.0);
+    glTexCoord2f(1.0, 1.0); glVertex3f(1.0, 1.0, 0.0);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-1.0, 1.0, 0.0);
   glEnd();
 
   glMatrixMode(GL_PROJECTION);
