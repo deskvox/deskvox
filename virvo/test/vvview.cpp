@@ -2529,14 +2529,22 @@ bool vvView::parseCommandLine(int argc, char** argv)
     {
       paletteMode = true;
     }
-    else if (vvToolshed::strCompare(argv[arg], "-display")==0)
+    else if (vvToolshed::strCompare(argv[arg], "-display")==0
+            || vvToolshed::strCompare(argv[arg], "-geometry")==0)
     {
       // handled by GLUT
       if ((++arg)>=argc)
       {
-        cerr << "Display name unspecified" << endl;
+        cerr << "Required argument unspecified" << endl;
         return false;
       }
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-iconic")==0
+            || vvToolshed::strCompare(argv[arg], "-direct")==0
+            || vvToolshed::strCompare(argv[arg], "-indirect")==0
+            || vvToolshed::strCompare(argv[arg], "-gldebug")==0
+            || vvToolshed::strCompare(argv[arg], "-sync")==0)
+    {
     }
     else if (vvToolshed::strCompare(argv[arg], "-showbricks")==0)
     {
