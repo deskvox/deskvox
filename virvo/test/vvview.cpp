@@ -695,10 +695,12 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
 
   if (cudaRenderer)
   {
+#ifdef HAVE_CUDA
     if(perspectiveMode)
       renderer = new vvCudaPer(vd, renderState);
     else
       renderer = new vvCudaPar(vd, renderState);
+#endif
   }
   else if (softwareRenderer)
   {
