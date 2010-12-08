@@ -652,11 +652,16 @@ void vvView::setSoftwareRenderer(bool enable)
  */
 void vvView::setCudaRenderer(bool enable)
 {
+#ifdef HAVE_CUDA
   cudaRenderer = enable;
   if (enable && perspectiveMode)
   {
     setProjectionMode(false);
   }
+#else
+  if (enable)
+    setSoftwareRenderer(enable);
+#endif
 }
 
 
@@ -693,22 +698,22 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   // These are needed before construction of the renderer so that
   // additional rendering contexts and x-windows can be created.
 
-  if (cudaRenderer)
-  {
-#ifdef HAVE_CUDA
-    if(perspectiveMode)
-      renderer = new vvCudaPer(vd, renderState);
-    else
-      renderer = new vvCudaPar(vd, renderState);
-#endif
-  }
-  else if (softwareRenderer)
+  if (softwareRenderer)
   {
     if(perspectiveMode)
       renderer = new vvSoftPer(vd, renderState);
     else
       renderer = new vvSoftPar(vd, renderState);
   }
+#ifdef HAVE_CUDA
+  else if (cudaRenderer)
+  {
+    if(perspectiveMode)
+      renderer = new vvCudaPer(vd, renderState);
+    else
+      renderer = new vvCudaPar(vd, renderState);
+  }
+#endif
 #if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
   else if (rayRenderer)
   {
@@ -972,17 +977,7 @@ void vvView::mainMenuCallback(int item)
   {
   case 0:                                     // projection mode
     ds->setProjectionMode(!ds->perspectiveMode);
-    if (ds->cudaRenderer)
-    {
-#ifdef HAVE_CUDA
-      delete ds->renderer;
-      if (ds->perspectiveMode)
-        ds->renderer = new vvCudaPer(ds->vd, ds->renderState);
-      else
-        ds->renderer = new vvCudaPar(ds->vd, ds->renderState);
-#endif
-    }
-    else if (ds->softwareRenderer)
+    if (ds->softwareRenderer)
     {
       delete ds->renderer;
       if (ds->perspectiveMode)
@@ -990,6 +985,16 @@ void vvView::mainMenuCallback(int item)
       else
         ds->renderer = new vvSoftPar(ds->vd, ds->renderState);
     }
+#ifdef HAVE_CUDA
+    else if (ds->cudaRenderer)
+    {
+      delete ds->renderer;
+      if (ds->perspectiveMode)
+        ds->renderer = new vvCudaPer(ds->vd, ds->renderState);
+      else
+        ds->renderer = new vvCudaPar(ds->vd, ds->renderState);
+    }
+#endif
     break;
   case 4:                                     // refinement mode
     if (ds->refinement) ds->refinement = false;
@@ -1137,6 +1142,7 @@ void vvView::rendererMenuCallback(int item)
     ds->setRayRenderer(false);
     ds->setRenderer();
   }
+#ifdef HAVE_CUDA
   else if (item==7)
   {
     cerr << "Switched to CUDA shear-warp renderer" << endl;
@@ -1145,6 +1151,7 @@ void vvView::rendererMenuCallback(int item)
     ds->setRayRenderer(false);
     ds->setRenderer();
   }
+#endif
 #if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
   else if (item == 8)
   {
