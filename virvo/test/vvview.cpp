@@ -974,11 +974,13 @@ void vvView::mainMenuCallback(int item)
     ds->setProjectionMode(!ds->perspectiveMode);
     if (ds->cudaRenderer)
     {
+#ifdef HAVE_CUDA
       delete ds->renderer;
       if (ds->perspectiveMode)
         ds->renderer = new vvCudaPer(ds->vd, ds->renderState);
       else
         ds->renderer = new vvCudaPar(ds->vd, ds->renderState);
+#endif
     }
     else if (ds->softwareRenderer)
     {
