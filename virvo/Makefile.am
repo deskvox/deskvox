@@ -2,6 +2,8 @@ SUBDIRS = src test
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
+EXTRA_DIST = makeversion.sh
+
 SHADERS = \
 	shader/vv_intersection.glsl \
 	shader/vv_intersection_ver.glsl \
