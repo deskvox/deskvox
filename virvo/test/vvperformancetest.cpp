@@ -33,8 +33,6 @@
 using std::cerr;
 using std::endl;
 
-#include <sys/stat.h>
-
 #define MAX_LINE_LEN 4096
 
 vvTestResult::vvTestResult()
@@ -403,9 +401,7 @@ vvTestSuite::vvTestSuite(const char* pathToFile)
 {
   _initialized = false;
 
-  struct stat info;
-
-  if (stat(pathToFile, &info) == 0)
+  if (_pathToFile)
   {
       init();
   }
