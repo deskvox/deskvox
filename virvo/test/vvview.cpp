@@ -261,15 +261,11 @@ void vvView::mainLoop(int argc, char *argv[])
     else vd->printInfoLine();
     delete fio;
 
-    float div = 1.;
-    const char* txt[] = { "sx", "sy", "sz" };
-    for(int i=0; i<3; i++)
-    {
-      cerr << txt[i] << ": " << vd->dist[i]*vd->vox[i] << endl;
-      if(vd->dist[i]*vd->vox[i]/div > 1.)
-        div = vd->dist[i]*vd->vox[i];
-    }
-    mvScale = vd->dist[0] / div;
+    const vvVector3 size = vd->getSize();
+    const float diagonal = sqrtf(size[0] * size[0] + size[1] * size[1] + size[2] * size[2]);
+    const float radius = diagonal * 0.5f;
+    // Move back by radius of the bounding sphere + 20% of said radius.
+    mvScale = 1.0f / (radius * 1.2f);
     cerr << "Scale modelview matrix by " << mvScale << endl;
 
     // Set default color scheme if no TF present:
