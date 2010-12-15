@@ -59,7 +59,7 @@ const char* vvShaderManager::getShaderDir() const
     cerr << "Using shader path: " << shaderDir << endl;
     result = shaderDir;
 #else
-    const char* deskVoxShaderPath = "../";
+    const char* deskVoxShaderPath = "/..";
 #ifdef SHADERDIR
     result = SHADERDIR;
 #else
