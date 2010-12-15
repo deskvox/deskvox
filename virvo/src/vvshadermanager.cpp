@@ -46,7 +46,7 @@ const char* vvShaderManager::getShaderDir() const
   else
   {
     cerr << "Warning: you should set the environment variable " << shaderEnv << " to point to your shader directory" << endl;
-    char shaderDir[256];
+    static char shaderDir[256];
 #ifdef _WIN32
     const char* primaryWin32ShaderDir = "..\\..\\..\\virvo\\shader";
     vvToolshed::getProgramDirectory(shaderDir, 256);
