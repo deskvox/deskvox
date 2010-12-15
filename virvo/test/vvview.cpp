@@ -1278,6 +1278,11 @@ void vvView::optionsMenuCallback(int item)
     {
       if (ds->bufferPrecision == 8)
       {
+        ds->bufferPrecision = 16;
+        cerr << "Buffer precision set to 16bit" << endl;
+      }
+      else if (ds->bufferPrecision == 16)
+      {
         ds->bufferPrecision = 32;
         cerr << "Buffer precision set to 32bit" << endl;
       }
@@ -1296,6 +1301,11 @@ void vvView::optionsMenuCallback(int item)
     if (ds->useOffscreenBuffer)
     {
       if (ds->bufferPrecision == 32)
+      {
+        ds->bufferPrecision = 16;
+        cerr << "Buffer precision set to 16bit" << endl;
+      }
+      else if (ds->bufferPrecision == 16)
       {
         ds->bufferPrecision = 8;
         cerr << "Buffer precision set to 8bit" << endl;

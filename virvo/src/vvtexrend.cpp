@@ -4981,8 +4981,20 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, ch
           }
           break;
         }
-
-        if (int(newValue) >= 32)
+        else if ((int(newValue) > 8) && (int(newValue) < 32))
+        {
+          if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
+          {
+            dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPrecision(VV_SHORT);
+          }
+          else
+          {
+            delete _renderTarget;
+            _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, VV_SHORT);
+          }
+          break;
+        }
+        else if (int(newValue) >= 32)
         {
           if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
           {
