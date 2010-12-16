@@ -84,8 +84,7 @@ private:
 
   pthread_t* _threads;
   ThreadArgs* _threadData;
-  pthread_barrier_t _startBarrier;
-  pthread_barrier_t _readyBarrier;
+  pthread_barrier_t _barrier;
 
   void createThreads();
   void destroyThreads();

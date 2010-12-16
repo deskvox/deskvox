@@ -159,9 +159,7 @@ void vvRenderMaster::render(const float bgColor[3])
 
   _renderer->calcProjectedScreenRects();
 
-  pthread_barrier_wait(&_startBarrier);
-
-  pthread_barrier_wait(&_readyBarrier);
+  pthread_barrier_wait(&_barrier);
 
   glDrawBuffer(GL_BACK);
   glClearColor(bgColor[0], bgColor[1], bgColor[2], 1.0f);
@@ -314,8 +312,7 @@ void vvRenderMaster::createThreads()
 {
   _threadData = new ThreadArgs[_sockets.size()];
   _threads = new pthread_t[_sockets.size()];
-  pthread_barrier_init(&_startBarrier, NULL, _sockets.size() + 1);
-  pthread_barrier_init(&_readyBarrier, NULL, _sockets.size() + 1);
+  pthread_barrier_init(&_barrier, NULL, _sockets.size() + 1);
   std::vector<vvImage*>* images = new std::vector<vvImage*>(_sockets.size());
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -329,8 +326,7 @@ void vvRenderMaster::createThreads()
 
 void vvRenderMaster::destroyThreads()
 {
-  pthread_barrier_destroy(&_startBarrier);
-  pthread_barrier_destroy(&_readyBarrier);
+  pthread_barrier_destroy(&_barrier);
   for (int s=0; s<_sockets.size(); ++s)
   {
     pthread_join(_threads[s], NULL);
@@ -347,13 +343,11 @@ void* vvRenderMaster::getImageFromSocket(void* threadargs)
 
   while (1)
   {
-    pthread_barrier_wait(&data->renderMaster->_startBarrier);
-
     vvImage* img = new vvImage();
     data->renderMaster->_sockets.at(data->threadId)->getImage(img);
     data->images->at(data->threadId) = img;
 
-    pthread_barrier_wait(&data->renderMaster->_readyBarrier);
+    pthread_barrier_wait(&data->renderMaster->_barrier);
   }
   pthread_exit(NULL);
 }
