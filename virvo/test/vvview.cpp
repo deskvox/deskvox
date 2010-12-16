@@ -2371,19 +2371,21 @@ bool vvView::parseCommandLine(int argc, char** argv)
         currentGeom = (vvTexRend::GeometryType)val;
         softwareRenderer = cudaRenderer = rayRenderer = false;
       }
-      else if(val == 7)
+      else if(val == 6)
       {
         softwareRenderer = true;
         cudaRenderer = false;
         rayRenderer = false;
       }
-      else if(val == 8)
+      else if(val == 7)
       {
         softwareRenderer = false;
         cudaRenderer = true;
         rayRenderer = false;
+
+        perspectiveMode = false;
       }
-      else if(val == 9)
+      else if(val == 8)
       {
         softwareRenderer = false;
         cudaRenderer = false;
