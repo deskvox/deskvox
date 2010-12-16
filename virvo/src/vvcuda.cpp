@@ -93,7 +93,8 @@ bool vvCuda::initGlInterop()
 #ifdef HAVE_X11
     GLXContext ctx = glXGetCurrentContext();
     Display *dsp = XOpenDisplay(NULL);
-    XSynchronize(dsp, True);
+    if(dsp)
+        XSynchronize(dsp, True);
     if(!dsp || !glXIsDirect(dsp, ctx))
     {
         vvDebugMsg::msg(1, "no CUDA/GL interop possible");
