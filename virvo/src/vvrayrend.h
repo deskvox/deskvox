@@ -33,14 +33,19 @@ public:
   void updateTransferFunction();
   void resize(int width, int height);
   void renderVolumeGL();
+  void setParameter(const ParameterType, const float, char* = NULL);
 private:
-  bool _interpolation;              ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
   cudaArray* d_volumeArray;
   cudaArray* d_transferFuncArray;
   cudaArray* d_randArray;
 
   GLuint _pbo;                      ///< gl pbo object
   GLuint _gltex;                    ///< texture associated with \see _pbo
+
+  bool _earlyRayTermination;        ///< Terminate ray marching when enough alpha was gathered
+  bool _illumination;               ///< Use local illumination
+  bool _interpolation;              ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
+  bool _opacityCorrection;          ///< true = opacity correction on
 
   void initPbo(int width, int height);
   void initRandTexture();

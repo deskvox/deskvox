@@ -172,18 +172,11 @@ __device__ void intersectPlane(const Ray& ray, const float3& normal, const float
 __device__ float4 mul(const matrix4x4& M, const float4& v)
 {
   float4 result;
-#if 1
   result.x = M.m[0][0] * v.x + M.m[0][1] * v.y + M.m[0][2] * v.z + M.m[0][3] * v.w;
   result.y = M.m[1][0] * v.x + M.m[1][1] * v.y + M.m[1][2] * v.z + M.m[1][3] * v.w;
   result.z = M.m[2][0] * v.x + M.m[2][1] * v.y + M.m[2][2] * v.z + M.m[2][3] * v.w;
   result.w = M.m[3][0] * v.x + M.m[3][1] * v.y + M.m[3][2] * v.z + M.m[3][3] * v.w;
-#else
-  result.x = M.m[0][0] * v.x + M.m[1][0] * v.y + M.m[2][0] * v.z + M.m[3][0] * v.w;
-  result.y = M.m[0][1] * v.x + M.m[1][1] * v.y + M.m[2][1] * v.z + M.m[3][1] * v.w;
-  result.z = M.m[0][2] * v.x + M.m[1][2] * v.y + M.m[2][2] * v.z + M.m[3][2] * v.w;
-  result.w = M.m[0][3] * v.x + M.m[1][3] * v.y + M.m[2][3] * v.z + M.m[3][3] * v.w;
-#endif
-    return result;
+  return result;
 }
 
 __device__ float3 perspectiveDivide(const float4& v)
@@ -254,6 +247,7 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
 }
 
 template<
+         bool earlyRayTermination,
          bool frontToBack,
          int bpc,
          int mipMode,
@@ -442,8 +436,7 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
       //dst = dst * src.w + src * (1.0f - src.w);
     }
 
-    // Early ray termination.
-    if (dst.w > opacityThreshold)
+    if (earlyRayTermination && (dst.w > opacityThreshold))
     {
       break;
     }
@@ -465,12 +458,16 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   glewInit();
   cudaGLSetGLDevice(0);
 
+  _earlyRayTermination = true;
+  _illumination = false;
+  _interpolation = true;
+  _opacityCorrection = true;
+
   _pbo = NULL;
   _gltex = NULL;
 
   initPbo(512, 512);
 
-  _interpolation = true;
   d_randArray = 0;
   initRandTexture();
 
@@ -622,7 +619,10 @@ void vvRayRend::renderVolumeGL()
 
   if (vd->bpc == 1)
   {
+    if (_illumination && _earlyRayTermination && _opacityCorrection)
+    {
       render<
+             true, // Early ray termination.
              true, // Front to back.
              1, // Bytes per channel.
              0, // Mip mode.
@@ -638,10 +638,154 @@ void vvRayRend::renderVolumeGL()
                                        L, H,
                                        center, radius * radius,
                                        pnormal, pdist);
+    }
+    else if (!_illumination && _earlyRayTermination && _opacityCorrection)
+    {
+      render<
+             true, // Early ray termination.
+             true, // Front to back.
+             1, // Bytes per channel.
+             0, // Mip mode.
+             false, // Local illumination.
+             true, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (_illumination && !_earlyRayTermination && _opacityCorrection)
+    {
+      render<
+             false, // Early ray termination.
+             true, // Front to back.
+             1, // Bytes per channel.
+             0, // Mip mode.
+             true, // Local illumination.
+             true, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (_illumination && _earlyRayTermination && !_opacityCorrection)
+    {
+      render<
+             true, // Early ray termination.
+             true, // Front to back.
+             1, // Bytes per channel.
+             0, // Mip mode.
+             true, // Local illumination.
+             false, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (!_illumination && !_earlyRayTermination && _opacityCorrection)
+    {
+      render<
+             false, // Early ray termination.
+             true, // Front to back.
+             1, // Bytes per channel.
+             0, // Mip mode.
+             false, // Local illumination.
+             true, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (_illumination && !_earlyRayTermination && !_opacityCorrection)
+    {
+      render<
+             false, // Early ray termination.
+             true, // Front to back.
+             1, // Bytes per channel.
+             0, // Mip mode.
+             true, // Local illumination.
+             false, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (!_illumination && _earlyRayTermination && !_opacityCorrection)
+    {
+      render<
+             true, // Early ray termination.
+             true, // Front to back.
+             1, // Bytes per channel.
+             0, // Mip mode.
+             false, // Local illumination.
+             false, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (!_illumination && !_earlyRayTermination && !_opacityCorrection)
+    {
+      render<
+             false, // Early ray termination.
+             true, // Front to back.
+             1, // Bytes per channel.
+             0, // Mip mode.
+             false, // Local illumination.
+             false, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
   }
   else if (vd->bpc == 2)
   {
+    if (_illumination && _earlyRayTermination && _opacityCorrection)
+    {
       render<
+             true, // Early ray termination.
              true, // Front to back.
              2, // Bytes per channel.
              0, // Mip mode.
@@ -657,6 +801,147 @@ void vvRayRend::renderVolumeGL()
                                        L, H,
                                        center, radius * radius,
                                        pnormal, pdist);
+    }
+    else if (!_illumination && _earlyRayTermination && _opacityCorrection)
+    {
+      render<
+             true, // Early ray termination.
+             true, // Front to back.
+             2, // Bytes per channel.
+             0, // Mip mode.
+             false, // Local illumination.
+             true, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (_illumination && !_earlyRayTermination && _opacityCorrection)
+    {
+      render<
+             false, // Early ray termination.
+             true, // Front to back.
+             2, // Bytes per channel.
+             0, // Mip mode.
+             true, // Local illumination.
+             true, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (_illumination && _earlyRayTermination && !_opacityCorrection)
+    {
+      render<
+             true, // Early ray termination.
+             true, // Front to back.
+             2, // Bytes per channel.
+             0, // Mip mode.
+             true, // Local illumination.
+             false, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (!_illumination && !_earlyRayTermination && _opacityCorrection)
+    {
+      render<
+             false, // Early ray termination.
+             true, // Front to back.
+             2, // Bytes per channel.
+             0, // Mip mode.
+             false, // Local illumination.
+             true, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (_illumination && !_earlyRayTermination && !_opacityCorrection)
+    {
+      render<
+             false, // Early ray termination.
+             true, // Front to back.
+             2, // Bytes per channel.
+             0, // Mip mode.
+             true, // Local illumination.
+             false, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (!_illumination && _earlyRayTermination && !_opacityCorrection)
+    {
+      render<
+             true, // Early ray termination.
+             true, // Front to back.
+             2, // Bytes per channel.
+             0, // Mip mode.
+             false, // Local illumination.
+             false, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
+    else if (!_illumination && !_earlyRayTermination && !_opacityCorrection)
+    {
+      render<
+             false, // Early ray termination.
+             true, // Front to back.
+             2, // Bytes per channel.
+             0, // Mip mode.
+             false, // Local illumination.
+             false, // Opacity correction.
+             false, // Jittering.
+             false, // Clip sphere.
+             false, // Clip plane.
+             false // Show what's inside the clip sphere.
+            ><<<gridSize, blockSize>>>(d_output, width, height,
+                                       diagonalVoxels / (float)numSlices,
+                                       volSize * 0.5f,
+                                       L, H,
+                                       center, radius * radius,
+                                       pnormal, pdist);
+    }
   }
   cudaGLUnmapBufferObject(_pbo);
 
@@ -666,6 +951,37 @@ void vvRayRend::renderVolumeGL()
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 
   renderQuad(width, height);
+}
+
+//----------------------------------------------------------------------------
+// see parent
+void vvRayRend::setParameter(const ParameterType param, const float newValue, char*)
+{
+  vvDebugMsg::msg(3, "vvTexRend::setParameter()");
+
+  switch (param)
+  {
+  case vvRenderer::VV_SLICEINT:
+    {
+      const bool newInterpol = static_cast<bool>(newValue);
+      if (_interpolation != newInterpol)
+      {
+        _interpolation = newInterpol;
+        initVolumeTexture();
+        updateTransferFunction();
+      }
+    }
+    break;
+  case vvRenderer::VV_LIGHTING:
+    _illumination = static_cast<bool>(newValue);
+    break;
+  case vvRenderer::VV_OPCORR:
+    _opacityCorrection = static_cast<bool>(newValue);
+    break;
+  default:
+    vvRenderer::setParameter(param, newValue);
+    break;
+  }
 }
 
 void vvRayRend::initPbo(const int width, const int height)
