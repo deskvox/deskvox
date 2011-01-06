@@ -2279,8 +2279,8 @@ void vvView::displayHelpInfo()
   cerr << " The default window size is " << DEFAULTSIZE << " * " << DEFAULTSIZE <<
           " pixels" << endl;
   cerr << endl;
-  cerr << "-perspective (-p)" << endl;
-  cerr << " Use perspective projection mode" << endl;
+  cerr << "-parallel (-p)" << endl;
+  cerr << " Use parallel projection mode" << endl;
   cerr << endl;
   cerr << "-boundaries (-b)" << endl;
   cerr << " Draw volume data set boundaries" << endl;
@@ -2385,6 +2385,8 @@ bool vvView::parseCommandLine(int argc, char** argv)
         softwareRenderer = false;
         cudaRenderer = true;
         rayRenderer = false;
+
+        perspectiveMode = true;
       }
       else if(val == 8)
       {
@@ -2534,10 +2536,10 @@ bool vvView::parseCommandLine(int argc, char** argv)
     {
       stereoMode = 3;
     }
-    else if (vvToolshed::strCompare(argv[arg], "-perspective")==0 ||
+    else if (vvToolshed::strCompare(argv[arg], "-parallel")==0 ||
              vvToolshed::strCompare(argv[arg], "-p")==0)
     {
-      perspectiveMode = true;
+      perspectiveMode = false;
     }
     else if (vvToolshed::strCompare(argv[arg], "-boundaries")==0 ||
              vvToolshed::strCompare(argv[arg], "-b")==0)
