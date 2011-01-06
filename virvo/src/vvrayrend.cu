@@ -699,19 +699,18 @@ void vvRayRend::renderVolumeGL()
   const float3 pnormal = normalize(make_float3(0.0f, 0.71f, 0.63f));
   const float pdist = 0.0f;
 
+  renderKernel kernel = NULL;
   if (vd->bpc == 1)
   {
-    renderKernel kernel = getKernelWithBpc<1>(this);
-    (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
-                                      diagonalVoxels / (float)numSlices,
-                                      volSize * 0.5f,
-                                      L, H,
-                                      center, radius * radius,
-                                      pnormal, pdist);
+    kernel = getKernelWithBpc<1>(this);
   }
   else if (vd->bpc == 2)
   {
     renderKernel kernel = getKernelWithBpc<2>(this);
+  }
+
+  if (kernel != NULL)
+  {
     (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
                                       diagonalVoxels / (float)numSlices,
                                       volSize * 0.5f,
@@ -719,6 +718,7 @@ void vvRayRend::renderVolumeGL()
                                       center, radius * radius,
                                       pnormal, pdist);
   }
+
   cudaGLUnmapBufferObject(_pbo);
 
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, _pbo);
