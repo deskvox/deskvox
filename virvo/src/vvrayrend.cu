@@ -208,16 +208,13 @@ __device__ uint rgbaFloatToInt(float3 rgb)
 }
 
 template<int bpc>
-__device__ float4 phong(const float4& classification, const float3& pos,
-                        const float3& L, const float3& H,
-                        const float3& Ka, const float3& Kd, const float3& Ks,
-                        const float shininess,
-                        const float3* normal = NULL)
+__device__ float3 gradient(const float3& pos)
 {
-  float3 N;
+  const float DELTA = 0.01f;
+
   float3 sample1;
   float3 sample2;
-  const float DELTA = 0.01f;
+
   sample1.x = volume<bpc>(pos - make_float3(DELTA, 0.0f, 0.0f));
   sample2.x = volume<bpc>(pos + make_float3(DELTA, 0.0f, 0.0f));
   sample1.y = volume<bpc>(pos - make_float3(0.0f, DELTA, 0.0f));
@@ -225,7 +222,17 @@ __device__ float4 phong(const float4& classification, const float3& pos,
   sample1.z = volume<bpc>(pos - make_float3(0.0f, 0.0f, DELTA));
   sample2.z = volume<bpc>(pos + make_float3(0.0f, 0.0f, DELTA));
 
-  N = normalize(sample2 - sample1);
+  return sample2 - sample1;
+}
+
+template<int bpc>
+__device__ float4 blinnPhong(const float4& classification, const float3& pos,
+                             const float3& L, const float3& H,
+                             const float3& Ka, const float3& Kd, const float3& Ks,
+                             const float shininess,
+                             const float3* normal = NULL)
+{
+  float3 N = normalize(gradient<bpc>(pos));
 
   if (normal != NULL)
   {
@@ -399,18 +406,18 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
       const float shininess = 1000.0f;
       if (justClippedPlane)
       {
-        src = phong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal);
+        src = blinnPhong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal);
         justClippedPlane = false;
       }
       else if (justClippedSphere)
       {
         float3 sphereNormal = normalize(pos - sphereCenter);
-        src = phong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
+        src = blinnPhong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
         justClippedSphere = false;
       }
       else
       {
-        src = phong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess);
+        src = blinnPhong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess);
       }
     }
     justClippedPlane = false;
@@ -641,7 +648,7 @@ void vvRayRend::renderVolumeGL()
              true, // Local illumination.
              true, // Opacity correction.
              false, // Jittering.
-             true, // Clip sphere.
+             false, // Clip sphere.
              false, // Clip plane.
              false // Show what's inside the clip sphere.
             ><<<gridSize, blockSize>>>(d_output, width, height,
