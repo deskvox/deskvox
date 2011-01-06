@@ -479,7 +479,7 @@ void vvView::displayCallback(void)
 #ifdef FBO_WITH_GEOMETRY_TEST
       ds->renderCube();
       ds->renderer->_renderState._opaqueGeometryPresent = true;
-      #endif
+#endif
       ds->renderer->renderVolumeGL();
     }
 
@@ -2249,6 +2249,9 @@ void vvView::displayHelpInfo()
   cerr << " 5 = Nvidia pixel shader" << endl;
   cerr << " 6 = ARB fragment program" << endl;
   cerr << endl;
+  cerr << "-quality <value> (-q)" << endl;
+  cerr << "Set the render quality (default: 1.0)" << endl;
+  cerr << endl;
   cerr << "-dsp <host:display.screen>" << endl;
   cerr << "  Add x-org display for additional rendering context" << endl;
   cerr << endl;
@@ -2276,8 +2279,8 @@ void vvView::displayHelpInfo()
   cerr << " The default window size is " << DEFAULTSIZE << " * " << DEFAULTSIZE <<
           " pixels" << endl;
   cerr << endl;
-  cerr << "-parallel (-p)" << endl;
-  cerr << " Use parallel projection mode" << endl;
+  cerr << "-perspective (-p)" << endl;
+  cerr << " Use perspective projection mode" << endl;
   cerr << endl;
   cerr << "-boundaries (-b)" << endl;
   cerr << " Draw volume data set boundaries" << endl;
@@ -2382,8 +2385,6 @@ bool vvView::parseCommandLine(int argc, char** argv)
         softwareRenderer = false;
         cudaRenderer = true;
         rayRenderer = false;
-
-        perspectiveMode = false;
       }
       else if(val == 8)
       {
@@ -2431,6 +2432,16 @@ bool vvView::parseCommandLine(int argc, char** argv)
         return false;
       }
     }
+    else if ((vvToolshed::strCompare(argv[arg], "-q") == 0)
+          |  (vvToolshed::strCompare(argv[arg], "-quality") == 0))
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Quality missing." << endl;
+        return false;
+      }
+      ds->draftQuality = strtof(argv[arg], NULL);
+    }
     else if (vvToolshed::strCompare(argv[arg], "-dsp")==0)
     {
       if ((++arg)>=argc)
@@ -2438,7 +2449,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cerr << "Display name unspecified." << endl;
         return false;
       }
-        addDisplay(argv[arg]);
+      addDisplay(argv[arg]);
     }
     else if (vvToolshed::strCompare(argv[arg], "-lighting")==0)
     {
@@ -2523,10 +2534,10 @@ bool vvView::parseCommandLine(int argc, char** argv)
     {
       stereoMode = 3;
     }
-    else if (vvToolshed::strCompare(argv[arg], "-parallel")==0 ||
+    else if (vvToolshed::strCompare(argv[arg], "-perspective")==0 ||
              vvToolshed::strCompare(argv[arg], "-p")==0)
     {
-      perspectiveMode = false;
+      perspectiveMode = true;
     }
     else if (vvToolshed::strCompare(argv[arg], "-boundaries")==0 ||
              vvToolshed::strCompare(argv[arg], "-b")==0)
