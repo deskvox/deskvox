@@ -48,14 +48,14 @@ struct Ray
   float3 d;
 };
 
-template<int bpc>
+template<int t_bpc>
 __device__ float volume(const float x, const float y, const float z)
 {
-  if (bpc == 1)
+  if (t_bpc == 1)
   {
     return tex3D(volTexture8, x, y, z);
   }
-  else if (bpc == 2)
+  else if (t_bpc == 2)
   {
     return tex3D(volTexture16, x, y, z);
   }
@@ -65,14 +65,14 @@ __device__ float volume(const float x, const float y, const float z)
   }
 }
 
-template<int bpc>
+template<int t_bpc>
 __device__ float volume(const float3& pos)
 {
-  if (bpc == 1)
+  if (t_bpc == 1)
   {
     return tex3D(volTexture8, pos.x, pos.y, pos.z);
   }
-  else if (bpc == 2)
+  else if (t_bpc == 2)
   {
     return tex3D(volTexture16, pos.x, pos.y, pos.z);
   }
@@ -200,7 +200,7 @@ __device__ uint rgbaFloatToInt(float3 rgb)
   return rgbaFloatToInt(rgba);
 }
 
-template<int bpc>
+template<int t_bpc>
 __device__ float3 gradient(const float3& pos)
 {
   const float DELTA = 0.01f;
@@ -208,24 +208,24 @@ __device__ float3 gradient(const float3& pos)
   float3 sample1;
   float3 sample2;
 
-  sample1.x = volume<bpc>(pos - make_float3(DELTA, 0.0f, 0.0f));
-  sample2.x = volume<bpc>(pos + make_float3(DELTA, 0.0f, 0.0f));
-  sample1.y = volume<bpc>(pos - make_float3(0.0f, DELTA, 0.0f));
-  sample2.y = volume<bpc>(pos + make_float3(0.0f, DELTA, 0.0f));
-  sample1.z = volume<bpc>(pos - make_float3(0.0f, 0.0f, DELTA));
-  sample2.z = volume<bpc>(pos + make_float3(0.0f, 0.0f, DELTA));
+  sample1.x = volume<t_bpc>(pos - make_float3(DELTA, 0.0f, 0.0f));
+  sample2.x = volume<t_bpc>(pos + make_float3(DELTA, 0.0f, 0.0f));
+  sample1.y = volume<t_bpc>(pos - make_float3(0.0f, DELTA, 0.0f));
+  sample2.y = volume<t_bpc>(pos + make_float3(0.0f, DELTA, 0.0f));
+  sample1.z = volume<t_bpc>(pos - make_float3(0.0f, 0.0f, DELTA));
+  sample2.z = volume<t_bpc>(pos + make_float3(0.0f, 0.0f, DELTA));
 
   return sample2 - sample1;
 }
 
-template<int bpc>
+template<int t_bpc>
 __device__ float4 blinnPhong(const float4& classification, const float3& pos,
                              const float3& L, const float3& H,
                              const float3& Ka, const float3& Kd, const float3& Ks,
                              const float shininess,
                              const float3* normal = NULL)
 {
-  float3 N = normalize(gradient<bpc>(pos));
+  float3 N = normalize(gradient<t_bpc>(pos));
 
   if (normal != NULL)
   {
@@ -247,16 +247,16 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
 }
 
 template<
-         bool earlyRayTermination,
-         bool frontToBack,
-         int bpc,
-         int mipMode,
-         bool lighting,
-         bool opacityCorrection,
-         bool jittering,
-         bool clipSphere,
-         bool clipPlane,
-         bool useSphereAsProbe
+         bool t_earlyRayTermination,
+         bool t_frontToBack,
+         int t_bpc,
+         int t_mipMode,
+         bool t_lighting,
+         bool t_opacityCorrection,
+         bool t_jittering,
+         bool t_clipSphere,
+         bool t_clipPlane,
+         bool t_useSphereAsProbe
         >
 __global__ void render(uint *d_output, const uint width, const uint height, const float dist,
                        const float3 volSizeHalf, const float3 L, const float3 H,
@@ -310,11 +310,11 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   // Calc hits with clip sphere.
   float tsnear;
   float tsfar;
-  if (clipSphere)
+  if (t_clipSphere)
   {
     // In probe mode, rays that don't hit the sphere simply aren't rendered.
     // In ordinary sphere mode, the intersection data is memorized.
-    if (!intersectSphere(ray, sphereCenter, sphereRadius, &tsnear, &tsfar) && useSphereAsProbe)
+    if (!intersectSphere(ray, sphereCenter, sphereRadius, &tsnear, &tsfar) && t_useSphereAsProbe)
     {
       d_output[y * width + x] = 0;
       return;
@@ -324,7 +324,7 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   // Calc hits with clip plane.
   float tpnear;
   float nddot;
-  if (clipPlane)
+  if (t_clipPlane)
   {
     intersectPlane(ray, planeNormal, planeDist, &nddot, &tpnear);
   }
@@ -333,7 +333,7 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   float t = tnear;
   float3 pos = ray.o + ray.d * tnear;
 
-  if (jittering)
+  if (t_jittering)
   {
     const float4 randOffset = tex1D(randTexture, (y * width + x) % NUM_RAND_VECS);
     pos += make_float3(randOffset);
@@ -350,10 +350,10 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
   for (int i=0; i<maxSteps; ++i)
   {
     // Test for clipping.
-    const bool clippedPlane = (clipPlane && (((t <= tpnear) && (nddot >= 0.0f))
-                                          || ((t >= tpnear) && (nddot < 0.0f))));
-    const bool clippedSphere = useSphereAsProbe ? (clipSphere && ((t < tsnear) || (t > tsfar)))
-                                                : (clipSphere && (t >= tsnear) && (t <= tsfar));
+    const bool clippedPlane = (t_clipPlane && (((t <= tpnear) && (nddot >= 0.0f))
+                                            || ((t >= tpnear) && (nddot < 0.0f))));
+    const bool clippedSphere = t_useSphereAsProbe ? (t_clipSphere && ((t < tsnear) || (t > tsfar)))
+                                                  : (t_clipSphere && (t >= tsnear) && (t <= tsfar));
 
     if (clippedPlane || clippedSphere)
     {
@@ -371,28 +371,28 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
 
     float3 texCoord = calcTexCoord(pos, volSizeHalf);
 
-    const float sample = volume<bpc>(texCoord);
+    const float sample = volume<t_bpc>(texCoord);
 
     // Post-classification transfer-function lookup.
     float4 src;
 
-    if (mipMode == 0)
+    if (t_mipMode == 0)
     {
       src = tex1D(tfTexture, sample);
     }
-    else if ((mipMode == 1) && (sample > maxIntensity))
+    else if ((t_mipMode == 1) && (sample > maxIntensity))
     {
       dst = tex1D(tfTexture, sample);
       maxIntensity = sample;
     }
-    else if ((mipMode == 2) && (sample  < minIntensity))
+    else if ((t_mipMode == 2) && (sample  < minIntensity))
     {
       dst = tex1D(tfTexture, sample);
       minIntensity = sample;
     }
 
     // Local illumination.
-    if (lighting && (src.w > 0.1))
+    if (t_lighting && (src.w > 0.1))
     {
       const float3 Ka = make_float3(0.0f, 0.0f, 0.0f);
       const float3 Kd = make_float3(0.8f, 0.8f, 0.8f);
@@ -400,24 +400,24 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
       const float shininess = 1000.0f;
       if (justClippedPlane)
       {
-        src = blinnPhong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal);
+        src = blinnPhong<t_bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal);
         justClippedPlane = false;
       }
       else if (justClippedSphere)
       {
         float3 sphereNormal = normalize(pos - sphereCenter);
-        src = blinnPhong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
+        src = blinnPhong<t_bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
         justClippedSphere = false;
       }
       else
       {
-        src = blinnPhong<bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess);
+        src = blinnPhong<t_bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess);
       }
     }
     justClippedPlane = false;
     justClippedSphere = false;
 
-    if (opacityCorrection)
+    if (t_opacityCorrection)
     {
       src.w = 1 - powf(1 - src.w, dist);
     }
@@ -427,16 +427,16 @@ __global__ void render(uint *d_output, const uint width, const uint height, cons
     src.y *= src.w;
     src.z *= src.w;
 
-    if (frontToBack && (mipMode == 0))
+    if (t_frontToBack && (t_mipMode == 0))
     {
       dst = dst + src * (1.0f - dst.w);
     }
-    else if (!frontToBack && (mipMode == 0))
+    else if (!t_frontToBack && (t_mipMode == 0))
     {
       //dst = dst * src.w + src * (1.0f - src.w);
     }
 
-    if (earlyRayTermination && (dst.w > opacityThreshold))
+    if (t_earlyRayTermination && (dst.w > opacityThreshold))
     {
       break;
     }
