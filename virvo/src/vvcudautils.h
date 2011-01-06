@@ -49,6 +49,11 @@ inline __device__ __host__ float4 operator+(const float4& v1, const float4& v2)
     return make_float4(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w);
 }
 
+inline __device__ __host__ uchar4 operator+(const uchar4& v1, const uchar4& v2)
+{
+    return make_uchar4(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w);
+}
+
 inline __device__ __host__ float3 operator-(const float3& v1, const float3& v2)
 {
     return make_float3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
@@ -129,6 +134,11 @@ inline __device__ __host__ float4 make_float4(const float v)
 inline __device__ __host__ float4 make_float4(const float3& v)
 {
     return make_float4(v.x, v.y, v.z, 1.0f);
+}
+
+inline __device__ __host__ uchar4 make_uchar4(const unsigned char v)
+{
+    return make_uchar4(v, v, v, v);
 }
 
 inline __device__ __host__ void operator+=(float3& v, const float f)
