@@ -34,6 +34,11 @@ public:
   void resize(int width, int height);
   void renderVolumeGL();
   void setParameter(const ParameterType, const float, char* = NULL);
+
+  bool getEarlyRayTermination() const;
+  bool getIllumination() const;
+  bool getInterpolation() const;
+  bool getOpacityCorrection() const;
 private:
   cudaArray* d_volumeArray;
   cudaArray* d_transferFuncArray;
