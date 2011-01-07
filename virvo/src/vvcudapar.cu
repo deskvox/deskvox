@@ -135,9 +135,9 @@ __global__ void compositeSlicesNearest(
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
 #ifdef FLOATIMG
-        imgLine[ix] = make_float4(0.f,0.f,0.f,0.f);
+        imgLine[ix] = make_float4(0.f,0.f,0.f,1.f);
 #else
-        imgLine[ix] = make_uchar4(0,0,0,0);
+        imgLine[ix] = make_uchar4(0,0,0,255);
 #endif
     }
 
@@ -234,21 +234,21 @@ __global__ void compositeSlicesNearest(
             float4 d = *pix;
 
             // blend
-            const float w = (1.f-d.w)*c.w;
+            const float w = d.w*c.w;
             d.x += w*c.x;
             d.y += w*c.y;
             d.z += w*c.z;
-            d.w += w;
+            d.w -= w;
 #else
             uchar4 *pix = imgLine + iidx;
             uchar4 d = *pix;
 
             // blend
-            const float w = (255-d.w)*c.w;
+            const float w = d.w*c.w;
             d.x += w*c.x;
             d.y += w*c.y;
             d.z += w*c.z;
-            d.w += w;
+            d.w -= w;
 #endif
 
             // store into shmem
@@ -270,8 +270,9 @@ __global__ void compositeSlicesNearest(
         *dest = make_uchar4(imgLine[ix].x * 255.f,
                 imgLine[ix].y * 255.f,
                 imgLine[ix].z * 255.f,
-                imgLine[ix].w * 255.f);
+                (1.f-imgLine[ix].w) * 255.f);
 #else
+        imgLine[ix].w = 255 - imgLine[ix].w;
         *dest = imgLine[ix];
 #endif
     }
