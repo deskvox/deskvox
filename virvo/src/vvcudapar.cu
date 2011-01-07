@@ -49,8 +49,13 @@ static float2 h_start[MAX_SLICES];
 #define FLOATDATA
 //#define CONSTLOAD
 #define THREADPERVOXEL
+#define CONSTDATA
 
 const int Repetitions = 1;
+
+#ifdef CONSTDATA
+#undef SHMLOAD
+#endif
 
 #ifdef CONSTLOAD
 #undef NOLOAD
@@ -181,10 +186,12 @@ __global__ void compositeSlicesNearest(
             const int vidx = ix - iPosX;
             const int iidx = ix;
 #endif
+#ifdef CONSTDATA
+            const float4 c = tex1Dfetch(tex_tf, ix);
+#else
 #ifdef SHMCLASS
             const uchar4 v = *(voxel + BPV * vidx);
             const float4 c = make_float4(v.x/255.f, v.y/255.f, v.z/255.f, v.w/255.f);
-            uchar4 *pix = imgLine + iidx;
 #else
             // fetch scalar voxel value
 #ifdef SHMLOAD
@@ -192,8 +199,6 @@ __global__ void compositeSlicesNearest(
 #else
             const Scalar *v = voxLine + BPV * vidx;
 #endif
-            // pointer to destination pixel
-            uchar4 *pix = imgLine + iidx;
             // apply transfer function
 #ifdef FLOATDATA
             const float4 c = tex1Dfetch(tex_tf, *v*255.f);
@@ -201,6 +206,9 @@ __global__ void compositeSlicesNearest(
             const float4 c = tex1Dfetch(tex_tf, *v);
 #endif
 #endif
+#endif
+            // pointer to destination pixel
+            uchar4 *pix = imgLine + iidx;
             uchar4 d = *pix;
 
             // blend
