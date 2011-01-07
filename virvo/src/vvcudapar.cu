@@ -46,8 +46,8 @@ const int MaxCompositeSlices = 1024;
 //#define NOLOAD
 //#define NODISPLAY
 //#define SHMLOAD
-//#define ARRAY
-#define PITCHED
+#define VOL3TEX3D
+//#define PITCHED
 #define FLOATDATA
 //#define CONSTLOAD
 //#define THREADPERVOXEL
@@ -56,6 +56,15 @@ const int MaxCompositeSlices = 1024;
 #define EARLYRAYTERM
 
 const int Repetitions = 1;
+
+#ifdef VOL3TEX3D
+#undef PITCHED
+#undef CONSTLOAD
+#undef CONSTDATA
+#undef NOLOAD
+#undef SHMLOAD
+#undef SHMCLASS
+#endif
 
 #ifdef CONSTDATA
 #undef SHMLOAD
@@ -76,6 +85,13 @@ texture<uchar4, 1, cudaReadModeElementType> tex_tf;
 texture<uchar4, 1, cudaReadModeNormalizedFloat> tex_tf;
 #endif
 
+#ifdef VOL3TEX3D
+#ifdef FLOATDATA
+texture<float, 3, cudaReadModeElementType> tex_raw;
+#else
+texture<uchar, 3, cudaReadModeNormalizedFloat> tex_raw;
+#endif
+#endif
 
 #ifdef FLOATDATA
 typedef float Scalar;
@@ -242,6 +258,10 @@ __global__ void compositeSlicesNearest(
 #endif
 #endif
 
+#ifdef VOL3TEX3D
+            const float v = tex3D(tex_raw, float(vidx), float(c_vox[principal+1]+iPosY-line-1), float(slice));
+            const float4 c = tex1Dfetch(tex_tf, v*255.f);
+#else
 #ifdef CONSTDATA
             const float4 c = tex1Dfetch(tex_tf, ix);
 #else
@@ -260,6 +280,7 @@ __global__ void compositeSlicesNearest(
             const float4 c = tex1Dfetch(tex_tf, *v*255.f);
 #else
             const float4 c = tex1Dfetch(tex_tf, *v);
+#endif
 #endif
 #endif
 #endif
@@ -357,16 +378,17 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
 #endif
 
    bool ok = true;
-#if defined(PITCHED) || defined(ARRAY)
+#if defined(PITCHED) || defined(VOL3TEX3D)
    for (int i=0; i<3; ++i)
    {
-       cudaExtent extent = make_cudaExtent(vd->vox[(i+1)%3]*sizeof(Scalar), vd->vox[(i+2)%3], vd->vox[(i+3)%3]);
 #ifdef PITCHED
+       cudaExtent extent = make_cudaExtent(vd->vox[(i+1)%3]*sizeof(Scalar), vd->vox[(i+2)%3], vd->vox[(i+3)%3]);
        if(!vvCuda::checkError(&ok, cudaMalloc3D(&d_voxptr[i], extent), "cudaMalloc3D vox"))
            break;
 #else
-       cudaChannelFormatDesc desc = cudaCreateChannelDesc(8, 0, 0, 0, cudaChannelFormatKindUnsigned);
-       if(!vvCuda::checkError(&ok, cudaMalloc3DArray(&d_voxarr[i], desc, extent, 0), "cudaMalloc3DArray vox"))
+       cudaExtent extent = make_cudaExtent(vd->vox[(i+1)%3], vd->vox[(i+2)%3], vd->vox[(i+3)%3]);
+       cudaChannelFormatDesc desc = cudaCreateChannelDesc<Scalar>();
+       if(!vvCuda::checkError(&ok, cudaMalloc3DArray(&d_voxarr[i], &desc, extent, 0), "cudaMalloc3DArray vox"))
            break;
 #endif
        cudaMemcpy3DParms parms = {0};
@@ -375,12 +397,14 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
 #else
        parms.srcPtr = make_cudaPitchedPtr(raw[i], sizeof(Scalar)*vd->vox[(i+1)%3], vd->vox[(i+1)%3], vd->vox[(i+2)%3]);
 #endif
+
 #ifdef PITCHED
        parms.dstPtr = d_voxptr[i];
+       parms.extent = make_cudaExtent(vd->vox[(i+1)%3]*sizeof(Scalar), vd->vox[(i+2)%3], vd->vox[(i+3)%3]);
 #else
        parms.dstArray = d_voxarr[i];
+       parms.extent = make_cudaExtent(vd->vox[(i+1)%3], vd->vox[(i+2)%3], vd->vox[(i+3)%3]);
 #endif
-       parms.extent = make_cudaExtent(vd->vox[(i+1)%3]*sizeof(Scalar), vd->vox[(i+2)%3], vd->vox[(i+3)%3]);
        parms.kind = cudaMemcpyHostToDevice;
        if(!vvCuda::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D vox"))
            break;
@@ -456,11 +480,16 @@ vvCudaPar::~vvCudaPar()
    cudaUnbindTexture(tex_tf);
 
    cudaFree(d_tf);
+#ifdef VOL3TEX3D
+   for(int i=0; i<3; ++i)
+     cudaFree(d_voxarr[i]);
+#else
 #ifdef PITCHED
    for(int i=0; i<3; ++i)
        cudaFree(d_voxptr[i].ptr);
 #else
    cudaFree(d_voxels);
+#endif
 #endif
 }
 
@@ -553,6 +582,16 @@ void vvCudaPar::compositeVolume(int from, int to)
    bool ok = true;
    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
 
+#ifdef VOL3TEX3D
+   tex_raw.normalized = false;
+   tex_raw.filterMode = cudaFilterModePoint;
+   tex_raw.addressMode[0] = cudaAddressModeClamp;
+   tex_raw.addressMode[1] = cudaAddressModeClamp;
+   tex_raw.addressMode[2] = cudaAddressModeClamp;
+   cudaChannelFormatDesc desc = cudaCreateChannelDesc<Scalar>();
+   cudaBindTextureToArray(tex_raw, d_voxarr[principal], desc);
+#endif
+
 #ifndef NODISPLAY
    // prepare intermediate image
    if (warpMode==CUDATEXTURE)
@@ -598,6 +637,10 @@ void vvCudaPar::compositeVolume(int from, int to)
                from, to);
 #endif
    }
+
+#ifdef VOL3TEX3D
+   cudaUnbindTexture(tex_raw);
+#endif
 
    // copy back or unmap for using as PBO
    ok = vvCuda::checkError(&ok, cudaGetLastError(), "start kernel");
