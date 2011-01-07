@@ -50,10 +50,15 @@ fi
 # ------------------------------------------------------------------------------
 # Setup nvcc flags
 # ------------------------------------------------------------------------------
+#NVCCFLAGS="-arch=sm_12"
+#NVCCFLAGS="-arch=sm_20 -DSM20"
+#NVCCFLAGS="-Xptxas -dlcm=cg -arch=sm_20"
+#NVCCFLAGS="-arch=sm_20"
+NVCCFLAGS="-gencode arch=compute_10,code=sm_10 -gencode arch=compute_10,code=sm_12 -gencode arch=compute_20,code=sm_20"
 if test x$DEBUG = xtrue; then
-   NVCCFLAGS="-g -G --ptxas-options=-v"
+   NVCCFLAGS="$NVCCFLAGS -g -G -keep --ptxas-options=-v"
 else
-   NVCCFLAGS="-O3 -use_fast_math --ptxas-options=-v"
+   NVCCFLAGS="$NVCCFLAGS -O3 -use_fast_math -keep --ptxas-options=-v"
 fi
 AC_SUBST(NVCCFLAGS)
 
