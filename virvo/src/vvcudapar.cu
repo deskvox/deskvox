@@ -80,6 +80,16 @@ typedef float Scalar;
 typedef uchar Scalar;
 #endif
 
+typedef void (*CompositionFunction)(
+      uchar4 * __restrict__ img, int width, int height,
+#ifdef PITCHED
+      const cudaPitchedPtr pvoxels,
+#else
+      const Scalar * __restrict__ voxels,
+#endif
+      int firstSlice, int lastSlice,
+      int from, int to);
+
 //----------------------------------------------------------------------------
 // device code (CUDA)
 //----------------------------------------------------------------------------
@@ -436,6 +446,46 @@ void vvCudaPar::updateTransferFunction()
    vvCuda::checkError(NULL, cudaMemcpy(d_tf, rgbaConv, sizeof(rgbaConv), cudaMemcpyHostToDevice), "cudaMemcpy tf");
 }
 
+template<int principal, int sliceStep>
+CompositionFunction selectComposition()
+{
+   return compositeSlicesNearest<Scalar, 1, sliceStep, principal>;
+}
+
+template<int principal>
+CompositionFunction selectCompositionWithSliceStep(int sliceStep)
+{
+    switch(sliceStep)
+    {
+        case 1:
+            return selectComposition<principal,1>();
+        case -1:
+            return selectComposition<principal,-1>();
+        default:
+            assert("slice step out of range" == NULL);
+    }
+
+    return NULL;
+}
+
+CompositionFunction selectCompositionWithPrincipalAndSliceStep(int principal, int sliceStep)
+{
+    switch(principal)
+    {
+        case 0:
+            return selectCompositionWithSliceStep<0>(sliceStep);
+        case 1:
+            return selectCompositionWithSliceStep<1>(sliceStep);
+        case 2:
+            return selectCompositionWithSliceStep<2>(sliceStep);
+        default:
+            assert("principal axis out of range" == NULL);
+
+    }
+
+    return NULL;
+}
+
 
 //----------------------------------------------------------------------------
 /** Composite the volume slices to the intermediate image.
@@ -501,44 +551,22 @@ void vvCudaPar::compositeVolume(int from, int to)
    shmsize += vd->vox[principal]*vd->getBPV()*sizeof(Scalar);
 #endif
 
+   CompositionFunction compose = selectCompositionWithPrincipalAndSliceStep(principal, sliceStep);
+
    // do the computation on the device
 #ifdef PITCHED
-#define compositeNearest(sliceStep, principal) \
-   compositeSlicesNearest<Scalar, 1, sliceStep, principal> <<<to-from, 128, shmsize>>>( \
+   compose <<<to-from, 128, shmsize>>>( \
          d_img, intImg->width, intImg->height, \
          d_voxptr[principal], \
          firstSlice, lastSlice, \
-         from, to)
+         from, to);
 #else
-#define compositeNearest(sliceStep, principal) \
-   compositeSlicesNearest<Scalar, 1, sliceStep, principal> <<<to-from, 128, shmsize>>>( \
+   compose <<<to-from, 128, shmsize>>>( \
          d_img, intImg->width, intImg->height, \
          (Scalar *)(d_voxels+sizeof(Scalar)*vd->getBPV()*principal*(vd->vox[0]*vd->vox[1]*vd->vox[2])), \
          firstSlice, lastSlice, \
-         from, to)
+         from, to);
 #endif
-
-   if (principal==0)
-   {
-       if(sliceStep == 1)
-           compositeNearest(1, 0);
-       else
-           compositeNearest(-1, 0);
-   }
-   else if (principal==1)
-   {
-       if (sliceStep == 1)
-           compositeNearest(1, 1);
-       else
-           compositeNearest(-1, 1);
-   }
-   else
-   {
-       if (sliceStep == 1)
-           compositeNearest(1, 2);
-       else
-           compositeNearest(-1, 2);
-   }
 
    // copy back or unmap for using as PBO
    ok = vvCuda::checkError(&ok, cudaGetLastError(), "start kernel");
