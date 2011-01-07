@@ -33,9 +33,11 @@ using std::endl;
 #include "vvcuda.h"
 #include "vvcudapar.h"
 
+const int MAX_SLICES = 512;
+
 __constant__ int   c_vox[5];
-__constant__ float c_start[4];
-__constant__ float c_inc[4];
+__constant__ float2 c_start[MAX_SLICES];
+static float2 h_start[MAX_SLICES];
 
 texture<uchar4, 1, cudaReadModeNormalizedFloat> tex_tf;
 
@@ -63,8 +65,6 @@ __global__ void compositeSlicesNearest(
     if (line >= to)
         return;
 
-    float cur[4] = { c_start[0], c_start[1], c_start[2], c_start[3] };
-
     // initialise intermediate image line
     __shared__ extern uchar4 imgLine[];
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
@@ -76,12 +76,8 @@ __global__ void compositeSlicesNearest(
     for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
     {
         // compute upper left image corner
-        const float w1 = 1.f/cur[3];
-        const int iPosX = int(cur[0]*w1+0.5f);
-        const int iPosY = int(cur[1]*w1+0.5f);
-        cur[0] += c_inc[0];
-        cur[1] += c_inc[1];
-        cur[3] += c_inc[3];
+        const int iPosX = int(c_start[slice].x+0.5f);
+        const int iPosY = int(c_start[slice].y+0.5f);
 
         if(line < iPosY)
             continue;
@@ -261,15 +257,16 @@ void vvCudaPar::compositeVolume(int from, int to)
    findSlicePosition(firstSlice, &start, NULL);
    findSlicePosition(firstSlice+sliceStep, &inc, NULL);
    inc.sub(&start);
-   float h_start[4], h_inc[4];
-   for (int i=0; i<4; ++i)
+   vvVector4 cur = start;
+   for(int slice=firstSlice; slice != lastSlice; slice += sliceStep)
    {
-       h_start[i] = start.e[i];
-       h_inc[i] = inc.e[i];
+       h_start[slice].x = cur.e[0] / cur.e[3];
+       h_start[slice].y = cur.e[1] / cur.e[3];
+       cur.add(&inc);
    }
+
    bool ok = true;
-   vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(float)*4), "cudaMemcpy start");
-   vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_inc, h_inc, sizeof(float)*4), "cudaMemcpy inc");
+   vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
 
    // prepare intermediate image
    if (warpMode==CUDATEXTURE)
