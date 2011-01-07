@@ -147,13 +147,18 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
    {
        // we need a power-of-2 image size for glTexImage2D
        int imgSize = vvToolshed::getTextureSize(2 * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]));
-       intImg->setSize(imgSize, imgSize, NULL, true);
 
        if (vvCuda::initGlInterop())
        {
            vvDebugMsg::msg(1, "using CUDA/GL interop");
            // avoid image copy from GPU to CPU and back
            setWarpMode(CUDATEXTURE);
+           intImg->setSize(imgSize, imgSize, NULL, true);
+       }
+       else
+       {
+         vvDebugMsg::msg(1, "can't use CUDA/GL interop");
+         intImg->setSize(imgSize, imgSize);
        }
    }
 
