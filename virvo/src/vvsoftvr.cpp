@@ -1105,7 +1105,18 @@ void vvSoftVR::allocateIntImg()
 
 void vvSoftVR::deallocateIntImg()
 {
-  cudaGraphicsUnregisterResource(intImgRes);
+  if (warpMode==CUDATEXTURE)
+  {
+    cudaGraphicsUnregisterResource(intImgRes);
+  }
+  else if (mappedImage)
+  {
+    cudaFreeHost(h_img);
+  }
+  else
+  {
+    cudaFree(d_img);
+  }
 }
 
 
