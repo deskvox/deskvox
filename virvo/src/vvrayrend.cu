@@ -6,7 +6,7 @@
 #include "vvconfig.h"
 #endif
 
-#if 1//defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
 #include "vvcuda.h"
 #include "vvcudautils.h"
@@ -184,19 +184,13 @@ __device__ float3 perspectiveDivide(const float4& v)
   return make_float3(v.x * wInv, v.y * wInv, v.z * wInv);
 }
 
-__device__ uint rgbaFloatToInt(float4 rgba)
+__device__ uchar4 rgbaFloatToInt(float4 rgba)
 {
   clamp(rgba.x);
   clamp(rgba.y);
   clamp(rgba.z);
   clamp(rgba.w);
-  return (uint(rgba.w*255)<<24) | (uint(rgba.z*255)<<16) | (uint(rgba.y*255)<<8) | uint(rgba.x*255);
-}
-
-__device__ uint rgbaFloatToInt(float3 rgb)
-{
-  float4 rgba = make_float4(rgb.x, rgb.y, rgb.z, 1.0f);
-  return rgbaFloatToInt(rgba);
+  return make_uchar4(rgba.x * 255, rgba.y * 255,rgba.z * 255, rgba.w * 255);
 }
 
 template<int t_bpc>
@@ -257,7 +251,7 @@ template<
          bool t_clipPlane,
          bool t_useSphereAsProbe
         >
-__global__ void render(uint* d_output, const uint width, const uint height, const float dist,
+__global__ void render(uchar4* d_output, const uint width, const uint height, const float dist,
                        const float3 volSizeHalf, const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist)
@@ -297,7 +291,7 @@ __global__ void render(uint* d_output, const uint width, const uint height, cons
   const bool hit = intersectBox(ray, -volSizeHalf, volSizeHalf, &tnear, &tfar);
   if (!hit)
   {
-    d_output[y * width + x] = 0;
+    d_output[y * width + x] = make_uchar4(0);
     return;
   }
 
@@ -315,7 +309,7 @@ __global__ void render(uint* d_output, const uint width, const uint height, cons
     // In ordinary sphere mode, the intersection data is memorized.
     if (!intersectSphere(ray, sphereCenter, sphereRadius, &tsnear, &tsfar) && t_useSphereAsProbe)
     {
-      d_output[y * width + x] = 0;
+      d_output[y * width + x] = make_uchar4(0);
       return;
     }
   }
@@ -451,7 +445,7 @@ __global__ void render(uint* d_output, const uint width, const uint height, cons
   d_output[y * width + x] = rgbaFloatToInt(dst);
 }
 
-typedef void(*renderKernel)(uint*, const uint, const uint, const float, const float3, const float3,
+typedef void(*renderKernel)(uchar4*, const uint, const uint, const float, const float3, const float3,
                              const float3, const float3, const float, const float3, const float);
 
 template<
@@ -543,12 +537,9 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _interpolation = true;
   _opacityCorrection = true;
 
-  if (!vvCuda::initGlInterop())
-  {
-    setWarpMode(SOFTWARE);
-  }
+  initIntImg(512);
   factorViewMatrix();
-  cudaGLRegisterBufferObject(intImg->getPboName());
+  allocateIntImg();
 
   d_randArray = 0;
   initRandTexture();
@@ -565,7 +556,7 @@ vvRayRend::~vvRayRend()
   cudaFreeArray(d_volumeArray);
   cudaFreeArray(d_transferFuncArray);
   cudaFreeArray(d_randArray);
-  cudaGLUnregisterBufferObject(intImg->getPboName());
+  deallocateIntImg();
 }
 
 int vvRayRend::getLUTSize() const
@@ -601,9 +592,7 @@ void vvRayRend::compositeVolume(int, int)
 {
   vvDebugMsg::msg(1, "vvRayRend::compositeVolume()");
 
-  uint* d_output = 0;
-  bool ok = true;
-  vvCuda::checkError(&ok, cudaGLMapBufferObject((void**)&d_output, intImg->getPboName()));
+  mapIntImg();
 
   vvGLTools::Viewport vp = vvGLTools::getViewport();
   const int w = vvToolshed::getTextureSize(vp[2]);
@@ -702,7 +691,7 @@ void vvRayRend::compositeVolume(int, int)
 
   if (kernel != NULL)
   {
-    (kernel)<<<gridSize, blockSize>>>(d_output, intImg->width, intImg->height,
+    (kernel)<<<gridSize, blockSize>>>(d_img, intImg->width, intImg->height,
                                       diagonalVoxels / (float)numSlices,
                                       volSize * 0.5f,
                                       L, H,
@@ -710,7 +699,7 @@ void vvRayRend::compositeVolume(int, int)
                                       pnormal, pdist);
   }
 
-  cudaGLUnmapBufferObject(intImg->getPboName());
+  unmapIntImg();
 }
 
 //----------------------------------------------------------------------------
@@ -877,9 +866,9 @@ void vvRayRend::factorViewMatrix()
 
   if ((intImg->width != w) || (intImg->height != h))
   {
-    cudaGLUnregisterBufferObject(intImg->getPboName());
+    deallocateIntImg();
     intImg->setSize(w, h, NULL, true);
-    cudaGLRegisterBufferObject(intImg->getPboName());
+    allocateIntImg();
   }
 
   iwWarp.identity();

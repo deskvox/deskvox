@@ -26,6 +26,16 @@
 #include "vvsoftimg.h"
 #include "vvimage.h"
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+#ifdef HAVE_CUDA
+#include <cuda_gl_interop.h>
+#include <cuda_runtime.h>
+#include "vvcuda.h"
+#endif
+
 /** A new rendering algorithm based on shear-warp factorization.
   This is the dispatcher class which chooses among the
   parallel (vvSoftPar) and perspective (vvSoftPer) projection variants,
@@ -115,6 +125,13 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       bool _timing;
       vvVector3 _size;
 
+#ifdef HAVE_CUDA
+      cudaGraphicsResource* intImgRes;            ///< CUDA resource mapped to PBO
+      uchar4* d_img;
+      uchar* h_img;
+      bool mappedImage;
+#endif
+
       void setOutputImageSize();
       void findVolumeDimensions();
       void findAxisRepresentations();
@@ -130,6 +147,11 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       void compositeOutline();
       virtual int  getCullingStatus(float);
       virtual void factorViewMatrix() = 0;
+      void initIntImg(int imgSize);               ///< cuda specific: try to init pbo, if not possible, fall back to cpu/gpu copy mode
+      void allocateIntImg();                      ///< cuda specific: register pbo or allocate cpu memory for image
+      void deallocateIntImg();                    ///< cuda specific: unregister pbo
+      void mapIntImg();                           ///< cuda specific: map pbo
+      void unmapIntImg();                         ///< cuda specific: unmap pbo
 
    public:
       vvSoftImg* intImg;                          ///< intermediate image

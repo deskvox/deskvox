@@ -34,6 +34,7 @@ using std::endl;
 
 #include <assert.h>
 #include <math.h>
+#include "vvcuda.h"
 #include "vvdebugmsg.h"
 #include "vvvecmath.h"
 #include "vvsoftimg.h"
@@ -1042,6 +1043,101 @@ int vvSoftVR::getCullingStatus(float nearPlaneZ)
    if (fabs(volDist) < radius) return 0;
    else if (volDist < 0) return 1;
    else return -1;
+}
+
+
+//----------------------------------------------------------------------------
+/** init int img
+  @param imgSize  size of the image
+*/
+void vvSoftVR::initIntImg(const int imgSize)
+{
+  if (warpMode==TEXTURE)
+  {
+    if (vvCuda::initGlInterop())
+    {
+#ifdef HAVE_CUDA
+      vvDebugMsg::msg(1, "using CUDA/GL interop");
+      // avoid image copy from GPU to CPU and back
+      setWarpMode(CUDATEXTURE);
+      intImg->setSize(imgSize, imgSize, NULL, true);
+#else
+      vvDebugMsg::msg(1, "HAVE_CUDA undefined");
+#endif
+    }
+    else
+    {
+      vvDebugMsg::msg(1, "can't use CUDA/GL interop");
+      intImg->setSize(imgSize, imgSize);
+    }
+  }
+  else
+  {
+    vvDebugMsg::msg(1, "set img size");
+    intImg->setSize(imgSize, imgSize);
+  }
+}
+
+
+void vvSoftVR::allocateIntImg()
+{
+  bool ok = true;
+  if (warpMode==CUDATEXTURE)
+  {
+      vvCuda::checkError(&ok, cudaGraphicsGLRegisterBuffer(&intImgRes, intImg->getPboName(), cudaGraphicsMapFlagsWriteDiscard), "map PBO to CUDA");
+  }
+  else if (mappedImage)
+  {
+      vvCuda::checkError(&ok, cudaHostAlloc(&h_img, intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped), "img alloc");;
+      intImg->setSize(intImg->width, intImg->height, h_img, false);
+      vvCuda::checkError(&ok, cudaHostGetDevicePointer(&d_img, h_img, 0), "get dev ptr img");
+  }
+  else
+  {
+      vvCuda::checkError(&ok, cudaMalloc(&d_img, intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE), "cudaMalloc img");
+  }
+}
+
+
+void vvSoftVR::deallocateIntImg()
+{
+  cudaGraphicsUnregisterResource(intImgRes);
+}
+
+
+void vvSoftVR::mapIntImg()
+{
+  bool ok = true;
+  if (warpMode==CUDATEXTURE)
+  {
+      vvCuda::checkError(&ok, cudaGraphicsMapResources(1, &intImgRes, NULL), "map CUDA resource");
+      size_t size;
+      vvCuda::checkError(&ok, cudaGraphicsResourceGetMappedPointer((void**)&d_img, &size, intImgRes), "get PBO mapping");
+      assert(size == intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE);
+  }
+  else
+  {
+      intImg->clear();
+  }
+}
+
+
+void vvSoftVR::unmapIntImg()
+{
+  bool ok = true;
+  if (warpMode==CUDATEXTURE)
+  {
+      vvCuda::checkError(&ok, cudaGraphicsUnmapResources(1, &intImgRes, NULL), "unmap CUDA resource");
+  }
+  else if (mappedImage)
+  {
+      cudaThreadSynchronize();
+  }
+  else
+  {
+      cudaMemcpy(intImg->data, d_img, intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost);
+      ok = vvCuda::checkError(&ok, cudaGetLastError(), "cpy to host");
+  }
 }
 
 
