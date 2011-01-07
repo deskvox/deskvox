@@ -6,16 +6,15 @@
 #include "vvconfig.h"
 #endif
 
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if 1//defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
+#include "vvcuda.h"
 #include "vvcudautils.h"
 #include "vvdebugmsg.h"
 #include "vvglew.h"
 #include "vvgltools.h"
 #include "vvrayrend.h"
 
-#include <cuda.h>
-#include <cuda_runtime_api.h>
 #include <cuda_gl_interop.h>
 #include <ctime>
 #include <iostream>
@@ -535,20 +534,21 @@ renderKernel getKernelWithBpc(vvRayRend* rayRend)
 }
 
 vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
-  : vvRenderer(vd, renderState)
+  : vvSoftVR(vd, renderState)
 {
   glewInit();
-  cudaGLSetGLDevice(0);
 
   _earlyRayTermination = true;
   _illumination = false;
   _interpolation = true;
   _opacityCorrection = true;
 
-  _pbo = NULL;
-  _gltex = NULL;
-
-  initPbo(512, 512);
+  if (!vvCuda::initGlInterop())
+  {
+    setWarpMode(SOFTWARE);
+  }
+  factorViewMatrix();
+  cudaGLRegisterBufferObject(intImg->getPboName());
 
   d_randArray = 0;
   initRandTexture();
@@ -565,11 +565,12 @@ vvRayRend::~vvRayRend()
   cudaFreeArray(d_volumeArray);
   cudaFreeArray(d_transferFuncArray);
   cudaFreeArray(d_randArray);
+  cudaGLUnregisterBufferObject(intImg->getPboName());
 }
 
 int vvRayRend::getLUTSize() const
 {
-   vvDebugMsg::msg(2, "vvSoftVR::getLUTSize()");
+   vvDebugMsg::msg(2, "vvRayRend::getLUTSize()");
    return (vd->getBPV()==2) ? 4096 : 256;
 }
 
@@ -596,26 +597,20 @@ void vvRayRend::updateTransferFunction()
   delete[] rgba;
 }
 
-void vvRayRend::resize(const int width, const int height)
+void vvRayRend::compositeVolume(int, int)
 {
-  initPbo(width, height);
-  renderVolumeGL();
-}
-
-void vvRayRend::renderVolumeGL()
-{
-  vvDebugMsg::msg(1, "vvRayRend::renderVolumeGL()");
-
-  const vvGLTools::Viewport vp = vvGLTools::getViewport();
-  const int width = vp[2];
-  const int height = vp[3];
+  vvDebugMsg::msg(1, "vvRayRend::compositeVolume()");
 
   uint* d_output = 0;
-  // map PBO to get CUDA device pointer
-  cudaGLMapBufferObject((void**)&d_output, _pbo);
+  bool ok = true;
+  vvCuda::checkError(&ok, cudaGLMapBufferObject((void**)&d_output, intImg->getPboName()));
+
+  vvGLTools::Viewport vp = vvGLTools::getViewport();
+  const int w = vvToolshed::getTextureSize(vp[2]);
+  const int h = vvToolshed::getTextureSize(vp[3]);
 
   dim3 blockSize(16, 16);
-  dim3 gridSize = dim3(iDivUp(width, blockSize.x), iDivUp(height, blockSize.y));
+  dim3 gridSize = dim3(iDivUp(w, blockSize.x), iDivUp(h, blockSize.y));
 
   const vvVector3 size(vd->getSize());
   const vvVector3 size2 = size * 0.5f;
@@ -637,10 +632,6 @@ void vvRayRend::renderVolumeGL()
       clippedProbeSizeObj[i] = vd->getSize()[i];
     }
   }
-
-  const float diagonal = sqrtf(clippedProbeSizeObj[0] * clippedProbeSizeObj[0] +
-                               clippedProbeSizeObj[1] * clippedProbeSizeObj[1] +
-                               clippedProbeSizeObj[2] * clippedProbeSizeObj[2]);
 
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
                                            vd->vox[1] * vd->vox[1] +
@@ -706,12 +697,12 @@ void vvRayRend::renderVolumeGL()
   }
   else if (vd->bpc == 2)
   {
-    renderKernel kernel = getKernelWithBpc<2>(this);
+    kernel = getKernelWithBpc<2>(this);
   }
 
   if (kernel != NULL)
   {
-    (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
+    (kernel)<<<gridSize, blockSize>>>(d_output, intImg->width, intImg->height,
                                       diagonalVoxels / (float)numSlices,
                                       volSize * 0.5f,
                                       L, H,
@@ -719,14 +710,7 @@ void vvRayRend::renderVolumeGL()
                                       pnormal, pdist);
   }
 
-  cudaGLUnmapBufferObject(_pbo);
-
-  glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, _pbo);
-  glBindTexture(GL_TEXTURE_2D, _gltex);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-  glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
-
-  renderQuad(width, height);
+  cudaGLUnmapBufferObject(intImg->getPboName());
 }
 
 //----------------------------------------------------------------------------
@@ -781,27 +765,7 @@ bool vvRayRend::getOpacityCorrection() const
 
 void vvRayRend::initPbo(const int width, const int height)
 {
-  const int bitsPerPixel = 4;
-  const int pboSize = width * height * bitsPerPixel;
-  const int bufferSize = sizeof(GLubyte) * pboSize;
-  GLubyte* pboSrc = new GLubyte[pboSize];
-  glGenBuffers(1, &_pbo);
-  glBindBuffer(GL_ARRAY_BUFFER, _pbo);
-  glBufferData(GL_ARRAY_BUFFER, bufferSize, pboSrc, GL_DYNAMIC_DRAW);
-  delete[] pboSrc;
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  cudaGLRegisterBufferObject(_pbo);
 
-  glGenTextures(1, &_gltex);
-  glBindTexture(GL_TEXTURE_2D, _gltex);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-               GL_UNSIGNED_BYTE, NULL);
 }
 
 void vvRayRend::initRandTexture()
@@ -905,35 +869,22 @@ void vvRayRend::initVolumeTexture()
   }
 }
 
-void vvRayRend::renderQuad(const int width, const int height) const
+void vvRayRend::factorViewMatrix()
 {
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_LIGHTING);
-  glEnable(GL_TEXTURE_2D);
-  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  vvGLTools::Viewport vp = vvGLTools::getViewport();
+  const int w = vvToolshed::getTextureSize(vp[2]);
+  const int h = vvToolshed::getTextureSize(vp[3]);
 
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+  if ((intImg->width != w) || (intImg->height != h))
+  {
+    cudaGLUnregisterBufferObject(intImg->getPboName());
+    intImg->setSize(w, h, NULL, true);
+    cudaGLRegisterBufferObject(intImg->getPboName());
+  }
 
-  glMatrixMode( GL_MODELVIEW);
-  glLoadIdentity();
-
-  glViewport(0, 0, width, height);
-
-  glClear(GL_COLOR_BUFFER_BIT);
-  glBegin(GL_QUADS);
-    glTexCoord2f(0.0, 0.0); glVertex3f(-1.0, -1.0, 0.0);
-    glTexCoord2f(1.0, 0.0); glVertex3f(1.0, -1.0, 0.0);
-    glTexCoord2f(1.0, 1.0); glVertex3f(1.0, 1.0, 0.0);
-    glTexCoord2f(0.0, 1.0); glVertex3f(-1.0, 1.0, 0.0);
-  glEnd();
-
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-
-  glDisable(GL_TEXTURE_2D);
+  iwWarp.identity();
+  iwWarp.translate(-1.0f, -1.0f, 0.0f);
+  iwWarp.scale(1.0f / (static_cast<float>(w) * 0.5f), 1.0f / (static_cast<float>(h) * 0.5f), 0.0f);
 }
 
 #endif

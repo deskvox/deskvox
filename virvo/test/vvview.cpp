@@ -306,6 +306,7 @@ void vvView::mainLoop(int argc, char *argv[])
       remoteRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT, vvSocket::VV_TCP,
                                              redistributeVolData, vd) == vvRenderMaster::VV_OK);
     }
+    vvGLTools::printGLError("vview1");
 
     animSpeed = vd->dt;
     createMenus();
@@ -389,12 +390,6 @@ void vvView::reshapeCallback(int w, int h)
   {
     ds->_renderMaster->resize(w, h);
   }
-#if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
-  if (ds->rayRenderer)
-  {
-    static_cast<vvRayRend*>(ds->renderer)->resize(w, h);
-  }
-#endif
 }
 
 
@@ -2386,7 +2381,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cudaRenderer = true;
         rayRenderer = false;
 
-        perspectiveMode = false;
+        perspectiveMode = true;
       }
       else if(val == 8)
       {
