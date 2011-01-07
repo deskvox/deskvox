@@ -49,6 +49,8 @@ texture<uchar4, 1, cudaReadModeNormalizedFloat> tex_tf;
 #define MUL24(a,b) __umul24((a),(b))
 #endif
 
+#define SHMLOAD
+
 
 //----------------------------------------------------------------------------
 // device code (CUDA)
@@ -66,7 +68,9 @@ __global__ void compositeSlicesNearest(
         return;
 
     // initialise intermediate image line
-    __shared__ extern uchar4 imgLine[];
+    __shared__ extern uchar smem[];
+    uchar4 *imgLine = (uchar4 *)smem;
+    uchar *voxel = smem+width*4;
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         imgLine[ix] = make_uchar4(0,0,0,0);
@@ -88,6 +92,15 @@ __global__ void compositeSlicesNearest(
         const uchar *voxLine = voxels +BPV * (MUL24(slice+1,MUL24(c_vox[principal+1],c_vox[principal+0]))
                 + MUL24((iPosY-line-1),c_vox[principal+0]));
 
+#ifdef SHMLOAD
+        for (int ix=threadIdx.x; ix<c_vox[principal+0]; ix+=blockDim.x)
+        {
+            //((uchar4 *)voxel)[ix] = ((uchar4 *)voxels)[ix];
+            voxel[ix] = voxLine[ix];
+        }
+        __syncthreads();
+#endif
+
         // Traverse intermediate image pixels which correspond to the current slice.
         // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
         for (int ix=threadIdx.x; ix<c_vox[principal+0]+iPosX; ix+=blockDim.x)
@@ -95,7 +108,11 @@ __global__ void compositeSlicesNearest(
             if(ix<iPosX)
                 continue;
             // fetch scalar voxel value
+#ifdef SHMLOAD
+            const uchar *v = voxel + BPV * (ix-iPosX);
+#else
             const uchar *v = voxLine + BPV * (ix-iPosX);
+#endif
             // pointer to destination pixel
             uchar4 *pix = imgLine + ix;
             // apply transfer function
@@ -110,7 +127,7 @@ __global__ void compositeSlicesNearest(
             d.w += w;
 
             // store into shmem
-            *pix = d;
+            *pix = d;//make_uchar4(*v, ix&0xff, ix&0xff, 255);
         }
     }
 
@@ -283,7 +300,7 @@ void vvCudaPar::compositeVolume(int from, int to)
 
    // do the computation on the device
 #define compositeNearest(sliceStep, principal) \
-   compositeSlicesNearest<1, sliceStep, principal> <<<to-from, 128, intImg->width*vvSoftImg::PIXEL_SIZE>>>( \
+   compositeSlicesNearest<1, sliceStep, principal> <<<to-from, 128, intImg->width*vvSoftImg::PIXEL_SIZE+vd->vox[principal]*vd->getBPV()>>>( \
          d_img, intImg->width, intImg->height, \
          d_voxels+vd->getBPV()*principal*(vd->vox[0]*vd->vox[1]*vd->vox[2]), \
          firstSlice, lastSlice, \
