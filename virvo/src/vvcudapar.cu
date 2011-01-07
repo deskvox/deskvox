@@ -43,13 +43,14 @@ static float2 h_start[MAX_SLICES];
 //#define NOOP
 //#define NOLOAD
 //#define NODISPLAY
-#define SHMLOAD
+//#define SHMLOAD
 //#define ARRAY
 #define PITCHED
 #define FLOATDATA
 //#define CONSTLOAD
 #define THREADPERVOXEL
-#define CONSTDATA
+//#define CONSTDATA
+#define FLOATIMG
 
 const int Repetitions = 1;
 
@@ -106,18 +107,28 @@ __global__ void compositeSlicesNearest(
 
     // initialise intermediate image line
     extern __shared__ char smem[];
+#ifdef FLOATIMG
+    float4 *imgLine = (float4 *)smem;
+    const int pixsize = sizeof(float4);
+#else
     uchar4 *imgLine = (uchar4 *)smem;
+    const int pixsize = sizeof(uchar4);
+#endif
 #ifdef SHMLOAD
 #ifdef SHMCLASS
-    uchar4 *voxel = (uchar4 *)(smem+width*4);
+    uchar4 *voxel = (uchar4 *)(smem+width*pixsize);
 #else
-    Scalar *voxel = (Scalar *)(smem+width*4);
+    Scalar *voxel = (Scalar *)(smem+width*pixsize);
 #endif
 #endif
 
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
+#ifdef FLOATIMG
+        imgLine[ix] = make_float4(0.f,0.f,0.f,0.f);
+#else
         imgLine[ix] = make_uchar4(0,0,0,0);
+#endif
     }
 
     for(int i=0; i<Repetitions; ++i)
@@ -208,6 +219,17 @@ __global__ void compositeSlicesNearest(
 #endif
 #endif
             // pointer to destination pixel
+#ifdef FLOATIMG
+            float4 *pix = imgLine + iidx;
+            float4 d = *pix;
+
+            // blend
+            const float w = (1.f-d.w)*c.w;
+            d.x += w*c.x;
+            d.y += w*c.y;
+            d.z += w*c.z;
+            d.w += w;
+#else
             uchar4 *pix = imgLine + iidx;
             uchar4 d = *pix;
 
@@ -217,10 +239,10 @@ __global__ void compositeSlicesNearest(
             d.y += w*c.y;
             d.z += w*c.z;
             d.w += w;
+#endif
 
             // store into shmem
             *pix = d;
-
 #ifdef THREADPERVOXEL
             __syncthreads();
 #endif
@@ -234,7 +256,14 @@ __global__ void compositeSlicesNearest(
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         uchar4 *dest = img + line*width+ix;
+#ifdef FLOATIMG
+        *dest = make_uchar4(imgLine[ix].x * 255.f,
+                imgLine[ix].y * 255.f,
+                imgLine[ix].z * 255.f,
+                imgLine[ix].w * 255.f);
+#else
         *dest = imgLine[ix];
+#endif
     }
 #endif
 }
@@ -463,17 +492,26 @@ void vvCudaPar::compositeVolume(int from, int to)
    }
 #endif
 
+#ifdef FLOATIMG
+   int shmsize = intImg->width*sizeof(float4);
+#else
+   int shmsize = intImg->width*vvSoftImg::PIXEL_SIZE;
+#endif
+#ifdef SHMLOAD
+   shmsize += vd->vox[principal]*vd->getBPV()*sizeof(Scalar);
+#endif
+
    // do the computation on the device
 #ifdef PITCHED
 #define compositeNearest(sliceStep, principal) \
-   compositeSlicesNearest<Scalar, 1, sliceStep, principal> <<<to-from, 128, intImg->width*vvSoftImg::PIXEL_SIZE+ vd->vox[principal]*vd->getBPV()*sizeof(Scalar)>>>( \
+   compositeSlicesNearest<Scalar, 1, sliceStep, principal> <<<to-from, 128, shmsize>>>( \
          d_img, intImg->width, intImg->height, \
          d_voxptr[principal], \
          firstSlice, lastSlice, \
          from, to)
 #else
 #define compositeNearest(sliceStep, principal) \
-   compositeSlicesNearest<Scalar, 1, sliceStep, principal> <<<to-from, 128, intImg->width*vvSoftImg::PIXEL_SIZE+vd->vox[principal]*vd->getBPV()*sizeof(Scalar)>>>( \
+   compositeSlicesNearest<Scalar, 1, sliceStep, principal> <<<to-from, 128, shmsize>>>( \
          d_img, intImg->width, intImg->height, \
          (Scalar *)(d_voxels+sizeof(Scalar)*vd->getBPV()*principal*(vd->vox[0]*vd->vox[1]*vd->vox[2])), \
          firstSlice, lastSlice, \
