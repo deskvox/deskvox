@@ -48,6 +48,7 @@ static float2 h_start[MAX_SLICES];
 #define PITCHED
 #define FLOATDATA
 //#define CONSTLOAD
+#define THREADPERVOXEL
 
 const int Repetitions = 1;
 
@@ -163,23 +164,36 @@ __global__ void compositeSlicesNearest(
 #ifndef NOOP
         // Traverse intermediate image pixels which correspond to the current slice.
         // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
+#ifdef THREADPERVOXEL
+        for (int ix=threadIdx.x; ix<c_vox[principal+0]; ix+=blockDim.x)
+#else
         for (int ix=threadIdx.x; ix<c_vox[principal+0]+iPosX; ix+=blockDim.x)
+#endif
         {
+#ifndef THREADPERVOXEL
             if(ix<iPosX)
                 continue;
+#endif
+#ifdef THREADPERVOXEL
+            const int vidx = ix;
+            const int iidx = ix + iPosX;
+#else
+            const int vidx = ix - iPosX;
+            const int iidx = ix;
+#endif
 #ifdef SHMCLASS
-            const uchar4 v = *(voxel + BPV * (ix-iPosX));
+            const uchar4 v = *(voxel + BPV * vidx);
             const float4 c = make_float4(v.x/255.f, v.y/255.f, v.z/255.f, v.w/255.f);
-            uchar4 *pix = imgLine + ix;
+            uchar4 *pix = imgLine + iidx;
 #else
             // fetch scalar voxel value
 #ifdef SHMLOAD
-            const Scalar *v = voxel + BPV * (ix-iPosX);
+            const Scalar *v = voxel + BPV * vidx;
 #else
-            const Scalar *v = voxLine + BPV * (ix-iPosX);
+            const Scalar *v = voxLine + BPV * vidx;
 #endif
             // pointer to destination pixel
-            uchar4 *pix = imgLine + ix;
+            uchar4 *pix = imgLine + iidx;
             // apply transfer function
 #ifdef FLOATDATA
             const float4 c = tex1Dfetch(tex_tf, *v*255.f);
@@ -198,6 +212,10 @@ __global__ void compositeSlicesNearest(
 
             // store into shmem
             *pix = d;
+
+#ifdef THREADPERVOXEL
+            __syncthreads();
+#endif
         }
 #endif
     }
