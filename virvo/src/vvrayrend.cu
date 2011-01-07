@@ -252,7 +252,7 @@ template<
          bool t_useSphereAsProbe
         >
 __global__ void render(uchar4* d_output, const uint width, const uint height,
-                       const uint texwidth, const uint texheight, const float dist,
+                       const uint texwidth, const float dist,
                        const float3 volSizeHalf, const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist)
@@ -446,7 +446,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   d_output[y * texwidth + x] = rgbaFloatToInt(dst);
 }
 
-typedef void(*renderKernel)(uchar4*, const uint, const uint, const uint, const uint, const float, const float3, const float3,
+typedef void(*renderKernel)(uchar4*, const uint, const uint, const uint, const float, const float3, const float3,
                              const float3, const float3, const float, const float3, const float);
 
 template<
@@ -688,7 +688,7 @@ void vvRayRend::compositeVolume(int, int)
 
   if (kernel != NULL)
   {
-    (kernel)<<<gridSize, blockSize>>>(d_img, vp[2], vp[3], intImg->width, intImg->height,
+    (kernel)<<<gridSize, blockSize>>>(d_img, vp[2], vp[3], intImg->width,
                                       diagonalVoxels / (float)numSlices,
                                       volSize * 0.5f,
                                       L, H,
