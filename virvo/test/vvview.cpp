@@ -2386,7 +2386,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cudaRenderer = true;
         rayRenderer = false;
 
-        perspectiveMode = true;
+        perspectiveMode = false;
       }
       else if(val == 8)
       {
