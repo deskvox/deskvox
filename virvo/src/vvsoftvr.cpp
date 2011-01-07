@@ -73,6 +73,10 @@ vvSoftVR::vvSoftVR(vvVolDesc* vd, vvRenderState rs) : vvRenderer(vd, rs)
    // Create intermediate image:
    intImg = new vvSoftImg(0,0);
 
+#ifdef HAVE_CUDA
+   mappedImage = false;
+#endif
+
    // Create output image size:
    outImg = NULL;
    vWidth = vHeight = -1;
