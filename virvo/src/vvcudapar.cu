@@ -39,84 +39,154 @@ __constant__ int   c_vox[5];
 __constant__ float2 c_start[MAX_SLICES];
 static float2 h_start[MAX_SLICES];
 
-texture<uchar4, 1, cudaReadModeNormalizedFloat> tex_tf;
+//#define SHMCLASS
+//#define NOOP
+//#define NOLOAD
+//#define NODISPLAY
+#define SHMLOAD
+//#define ARRAY
+#define PITCHED
+#define FLOATDATA
+//#define CONSTLOAD
 
+const int Repetitions = 1;
 
-#define SM20
-#ifdef SM20
-#define MUL24(a,b) ((a)*(b))
-#else
-#define MUL24(a,b) __umul24((a),(b))
+#ifdef CONSTLOAD
+#undef NOLOAD
 #endif
 
+#ifdef NOLOAD
 #define SHMLOAD
+#endif
 
+#ifdef SHMCLASS
+#define SHMLOAD
+texture<uchar4, 1, cudaReadModeElementType> tex_tf;
+#else
+texture<uchar4, 1, cudaReadModeNormalizedFloat> tex_tf;
+#endif
+
+
+#ifdef FLOATDATA
+typedef float Scalar;
+#else
+typedef uchar Scalar;
+#endif
 
 //----------------------------------------------------------------------------
 // device code (CUDA)
 //----------------------------------------------------------------------------
 
-template<int BPV, int sliceStep, int principal>
+template<typename Scalar, int BPV, int sliceStep, int principal>
 __global__ void compositeSlicesNearest(
       uchar4 * __restrict__ img, int width, int height,
-      const uchar * __restrict__ voxels,
+#ifdef PITCHED
+      const cudaPitchedPtr pvoxels,
+#else
+      const Scalar * __restrict__ voxels,
+#endif
       int firstSlice, int lastSlice,
       int from, int to)
 {
+#ifdef PITCHED
+    const Scalar *voxels = (Scalar *)pvoxels.ptr;
+    const int pitch = pvoxels.pitch;
+#else
+    const int pitch = c_vox[principal] * BPV * sizeof(Scalar);
+#endif
     const int line = blockIdx.x+from;
     if (line >= to)
         return;
 
     // initialise intermediate image line
-    __shared__ extern uchar smem[];
+    extern __shared__ char smem[];
     uchar4 *imgLine = (uchar4 *)smem;
-    uchar *voxel = smem+width*4;
+#ifdef SHMLOAD
+#ifdef SHMCLASS
+    uchar4 *voxel = (uchar4 *)(smem+width*4);
+#else
+    Scalar *voxel = (Scalar *)(smem+width*4);
+#endif
+#endif
+
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         imgLine[ix] = make_uchar4(0,0,0,0);
     }
 
+    for(int i=0; i<Repetitions; ++i)
+    {
+
     // composite slices for this image line
     for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
     {
+#ifdef CONSTLOAD
+        const Scalar *voxLine = (Scalar *)(((uchar *)voxels) + pitch * c_vox[principal+1]);
+#endif
+#ifdef NOOP
+        const int iPosY = line;
+#else
         // compute upper left image corner
-        const int iPosX = int(c_start[slice].x+0.5f);
-        const int iPosY = int(c_start[slice].y+0.5f);
+        const int iPosY = float2int(c_start[slice].y+0.5f);
 
         if(line < iPosY)
             continue;
         if(line >= iPosY+c_vox[principal+1])
             continue;
 
+        const int iPosX = float2int(c_start[slice].x+0.5f);
+#endif
+
         // the voxel row of the current slice corresponding to this image line
-        const uchar *voxLine = voxels +BPV * (MUL24(slice+1,MUL24(c_vox[principal+1],c_vox[principal+0]))
-                + MUL24((iPosY-line-1),c_vox[principal+0]));
+#ifndef NOLOAD
+#ifndef CONSTLOAD
+        const Scalar *voxLine = (Scalar *)(((uchar *)voxels) + pitch * ((slice+1)*c_vox[principal+1] + (iPosY-line-1)));
+#endif
 
 #ifdef SHMLOAD
         for (int ix=threadIdx.x; ix<c_vox[principal+0]; ix+=blockDim.x)
         {
-            //((uchar4 *)voxel)[ix] = ((uchar4 *)voxels)[ix];
+#ifdef SHMCLASS
+#ifdef FLOATDATA
+            voxel[ix] = tex1Dfetch(tex_tf, voxLine[ix]*255.f);
+#else
+            voxel[ix] = tex1Dfetch(tex_tf, voxLine[ix]);
+#endif
+#else
             voxel[ix] = voxLine[ix];
+#endif
         }
         __syncthreads();
 #endif
+#endif
 
+#ifndef NOOP
         // Traverse intermediate image pixels which correspond to the current slice.
         // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
         for (int ix=threadIdx.x; ix<c_vox[principal+0]+iPosX; ix+=blockDim.x)
         {
             if(ix<iPosX)
                 continue;
+#ifdef SHMCLASS
+            const uchar4 v = *(voxel + BPV * (ix-iPosX));
+            const float4 c = make_float4(v.x/255.f, v.y/255.f, v.z/255.f, v.w/255.f);
+            uchar4 *pix = imgLine + ix;
+#else
             // fetch scalar voxel value
 #ifdef SHMLOAD
-            const uchar *v = voxel + BPV * (ix-iPosX);
+            const Scalar *v = voxel + BPV * (ix-iPosX);
 #else
-            const uchar *v = voxLine + BPV * (ix-iPosX);
+            const Scalar *v = voxLine + BPV * (ix-iPosX);
 #endif
             // pointer to destination pixel
             uchar4 *pix = imgLine + ix;
             // apply transfer function
+#ifdef FLOATDATA
+            const float4 c = tex1Dfetch(tex_tf, *v*255.f);
+#else
             const float4 c = tex1Dfetch(tex_tf, *v);
+#endif
+#endif
             uchar4 d = *pix;
 
             // blend
@@ -127,16 +197,20 @@ __global__ void compositeSlicesNearest(
             d.w += w;
 
             // store into shmem
-            *pix = d;//make_uchar4(*v, ix&0xff, ix&0xff, 255);
+            *pix = d;
         }
+#endif
+    }
     }
 
+#ifndef NODISPLAY
     // copy line to intermediate image
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
-        uchar4 *dest = img + MUL24(line,width)+ix;
+        uchar4 *dest = img + line*width+ix;
         *dest = imgLine[ix];
     }
+#endif
 }
 
 
@@ -161,6 +235,7 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
        // we need a power-of-2 image size for glTexImage2D
        int imgSize = vvToolshed::getTextureSize(2 * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]));
 
+#ifndef NODISPLAY
        if (vvCuda::initGlInterop())
        {
            vvDebugMsg::msg(1, "using CUDA/GL interop");
@@ -173,24 +248,73 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
          vvDebugMsg::msg(1, "can't use CUDA/GL interop");
          intImg->setSize(imgSize, imgSize);
        }
+#endif
    }
 
    wViewDir.set(0.0f, 0.0f, 1.0f);
 
+#ifdef FLOATDATA
+   for(int i=0; i<3; ++i)
+   {
+       size_t vox = vd->vox[0]*vd->vox[1]*vd->vox[2];
+       fraw[i] = new float[vox];
+       for(size_t j=0; j<vox; ++j)
+       {
+           fraw[i][j] = raw[i][j] / 255.f;
+       }
+   }
+#endif
+
    bool ok = true;
-   // alloc memory for voxel arrays (for each principal viewing direction)
-   vvCuda::checkError(&ok, cudaMalloc(&d_voxels, vd->vox[0]*vd->vox[1]*vd->vox[2]*3), "cudaMalloc vox");
+#if defined(PITCHED) || defined(ARRAY)
    for (int i=0; i<3; ++i)
    {
-       if (!vvCuda::checkError(&ok, cudaMemcpy(d_voxels+i*vd->vox[0]*vd->vox[1]*vd->vox[2],
+       cudaExtent extent = make_cudaExtent(vd->vox[(i+1)%3]*sizeof(Scalar), vd->vox[(i+2)%3], vd->vox[(i+3)%3]);
+#ifdef PITCHED
+       if(!vvCuda::checkError(&ok, cudaMalloc3D(&d_voxptr[i], extent), "cudaMalloc3D vox"))
+           break;
+#else
+       cudaChannelFormatDesc desc = cudaCreateChannelDesc(8, 0, 0, 0, cudaChannelFormatKindUnsigned);
+       if(!vvCuda::checkError(&ok, cudaMalloc3DArray(&d_voxarr[i], desc, extent, 0), "cudaMalloc3DArray vox"))
+           break;
+#endif
+       cudaMemcpy3DParms parms = {0};
+#ifdef FLOATDATA
+       parms.srcPtr = make_cudaPitchedPtr(fraw[i], sizeof(Scalar)*vd->vox[(i+1)%3], vd->vox[(i+1)%3], vd->vox[(i+2)%3]);
+#else
+       parms.srcPtr = make_cudaPitchedPtr(raw[i], sizeof(Scalar)*vd->vox[(i+1)%3], vd->vox[(i+1)%3], vd->vox[(i+2)%3]);
+#endif
+#ifdef PITCHED
+       parms.dstPtr = d_voxptr[i];
+#else
+       parms.dstArray = d_voxarr[i];
+#endif
+       parms.extent = make_cudaExtent(vd->vox[(i+1)%3]*sizeof(Scalar), vd->vox[(i+2)%3], vd->vox[(i+3)%3]);
+       parms.kind = cudaMemcpyHostToDevice;
+       if(!vvCuda::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D vox"))
+           break;
+   }
+#else
+   // alloc memory for voxel arrays (for each principal viewing direction)
+   vvCuda::checkError(&ok, cudaMalloc(&d_voxels, sizeof(Scalar)*vd->vox[0]*vd->vox[1]*vd->vox[2]*3), "cudaMalloc vox");
+   for (int i=0; i<3; ++i)
+   {
+#ifdef FLOATDATA
+       if (!vvCuda::checkError(&ok, cudaMemcpy(d_voxels+i*sizeof(Scalar)*vd->vox[0]*vd->vox[1]*vd->vox[2],
+                   fraw[i], sizeof(Scalar)*vd->getFrameBytes(), cudaMemcpyHostToDevice), "cudaMemcpy vox"))
+#else
+       if (!vvCuda::checkError(&ok, cudaMemcpy(d_voxels+i*sizeof(Scalar)*vd->vox[0]*vd->vox[1]*vd->vox[2],
                    raw[i], vd->getFrameBytes(), cudaMemcpyHostToDevice), "cudaMemcpy vox"))
+#endif
           break;
    }
+#endif
 
    // transfer function is stored as a texture
    vvCuda::checkError(&ok, cudaMalloc(&d_tf, 4096*4), "cudaMalloc tf");
    vvCuda::checkError(&ok, cudaBindTexture(NULL, tex_tf, d_tf, 4096), "bind tf tex");
 
+#ifndef NODISPLAY
    // allocate output image (intermediate image)
    if (warpMode==CUDATEXTURE)
    {
@@ -203,6 +327,7 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
        vvCuda::checkError(&ok, cudaHostGetDevicePointer(&d_img, h_img, 0), "get dev ptr img");
    }
    else
+#endif
    {
        vvCuda::checkError(&ok, cudaMalloc(&d_img, intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE), "cudaMalloc img");
    }
@@ -223,17 +348,29 @@ vvCudaPar::~vvCudaPar()
 {
    vvDebugMsg::msg(1, "vvCudaPar::~vvCudaPar()");
 
+#ifdef FLOATDATA
+   for(int i=0; i<3; ++i)
+     delete[] fraw[i];
+#endif
+
+#ifndef NODISPLAY
    if (warpMode==CUDATEXTURE)
       cudaGraphicsUnregisterResource(intImgRes);
    else if (mappedImage)
        cudaFreeHost(h_img);
    else
+#endif
        cudaFree(d_img);
 
    cudaUnbindTexture(tex_tf);
 
    cudaFree(d_tf);
+#ifdef PITCHED
+   for(int i=0; i<3; ++i)
+       cudaFree(d_voxptr[i].ptr);
+#else
    cudaFree(d_voxels);
+#endif
 }
 
 void vvCudaPar::updateTransferFunction()
@@ -285,6 +422,7 @@ void vvCudaPar::compositeVolume(int from, int to)
    bool ok = true;
    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
 
+#ifndef NODISPLAY
    // prepare intermediate image
    if (warpMode==CUDATEXTURE)
    {
@@ -297,14 +435,24 @@ void vvCudaPar::compositeVolume(int from, int to)
    {
        intImg->clear();
    }
+#endif
 
    // do the computation on the device
+#ifdef PITCHED
 #define compositeNearest(sliceStep, principal) \
-   compositeSlicesNearest<1, sliceStep, principal> <<<to-from, 128, intImg->width*vvSoftImg::PIXEL_SIZE+vd->vox[principal]*vd->getBPV()>>>( \
+   compositeSlicesNearest<Scalar, 1, sliceStep, principal> <<<to-from, 128, intImg->width*vvSoftImg::PIXEL_SIZE+ vd->vox[principal]*vd->getBPV()*sizeof(Scalar)>>>( \
          d_img, intImg->width, intImg->height, \
-         d_voxels+vd->getBPV()*principal*(vd->vox[0]*vd->vox[1]*vd->vox[2]), \
+         d_voxptr[principal], \
          firstSlice, lastSlice, \
          from, to)
+#else
+#define compositeNearest(sliceStep, principal) \
+   compositeSlicesNearest<Scalar, 1, sliceStep, principal> <<<to-from, 128, intImg->width*vvSoftImg::PIXEL_SIZE+vd->vox[principal]*vd->getBPV()*sizeof(Scalar)>>>( \
+         d_img, intImg->width, intImg->height, \
+         (Scalar *)(d_voxels+sizeof(Scalar)*vd->getBPV()*principal*(vd->vox[0]*vd->vox[1]*vd->vox[2])), \
+         firstSlice, lastSlice, \
+         from, to)
+#endif
 
    if (principal==0)
    {
@@ -330,6 +478,7 @@ void vvCudaPar::compositeVolume(int from, int to)
 
    // copy back or unmap for using as PBO
    ok = vvCuda::checkError(&ok, cudaGetLastError(), "start kernel");
+#ifndef NODISPLAY
    if (warpMode==CUDATEXTURE)
    {
        vvCuda::checkError(&ok, cudaGraphicsUnmapResources(1, &intImgRes, NULL), "unmap CUDA resource");
@@ -343,6 +492,7 @@ void vvCudaPar::compositeVolume(int from, int to)
        cudaMemcpy(intImg->data, d_img, intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost);
        ok = vvCuda::checkError(&ok, cudaGetLastError(), "cpy to host");
    }
+#endif
 }
 //============================================================================
 // End of File

@@ -47,12 +47,16 @@ struct cudaGraphicsResource;
 class VIRVOEXPORT vvCudaPar : public vvSoftPar
 {
    private:
+      cudaArray *d_voxarr[3];
+      cudaPitchedPtr d_voxptr[3];
       uchar *d_voxels;
       uchar4 *d_img;
       uchar4 *d_tf;
       uchar *h_img;
       cudaGraphicsResource *intImgRes;              ///< CUDA resource mapped to PBO
       bool mappedImage;
+
+      float *fraw[3];
 
    protected:
       virtual void updateTransferFunction();
