@@ -48,9 +48,10 @@ static float2 h_start[MAX_SLICES];
 #define PITCHED
 #define FLOATDATA
 //#define CONSTLOAD
-#define THREADPERVOXEL
+//#define THREADPERVOXEL
 //#define CONSTDATA
-#define FLOATIMG
+//#define FLOATIMG
+#define EARLYRAYTERM
 
 const int Repetitions = 1;
 
@@ -207,6 +208,24 @@ __global__ void compositeSlicesNearest(
             const int vidx = ix - iPosX;
             const int iidx = ix;
 #endif
+
+            // pointer to destination pixel
+#ifdef FLOATIMG
+            float4 *pix = imgLine + iidx;
+            float4 d = *pix;
+#ifdef EARLYRAYTERM
+            if(d.w < 0.001f)
+                continue;
+#endif
+#else
+            uchar4 *pix = imgLine + iidx;
+            uchar4 d = *pix;
+#ifdef EARLYRAYTERM
+            if(d.w < 1)
+                continue;
+#endif
+#endif
+
 #ifdef CONSTDATA
             const float4 c = tex1Dfetch(tex_tf, ix);
 #else
@@ -228,10 +247,6 @@ __global__ void compositeSlicesNearest(
 #endif
 #endif
 #endif
-            // pointer to destination pixel
-#ifdef FLOATIMG
-            float4 *pix = imgLine + iidx;
-            float4 d = *pix;
 
             // blend
             const float w = d.w*c.w;
@@ -239,17 +254,6 @@ __global__ void compositeSlicesNearest(
             d.y += w*c.y;
             d.z += w*c.z;
             d.w -= w;
-#else
-            uchar4 *pix = imgLine + iidx;
-            uchar4 d = *pix;
-
-            // blend
-            const float w = d.w*c.w;
-            d.x += w*c.x;
-            d.y += w*c.y;
-            d.z += w*c.z;
-            d.w -= w;
-#endif
 
             // store into shmem
             *pix = d;
