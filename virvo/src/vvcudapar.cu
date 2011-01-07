@@ -39,6 +39,8 @@ __constant__ int   c_vox[5];
 __constant__ float2 c_start[MAX_SLICES];
 static float2 h_start[MAX_SLICES];
 
+const int MaxCompositeSlices = 1024;
+
 //#define SHMCLASS
 //#define NOOP
 //#define NOLOAD
@@ -94,6 +96,20 @@ typedef void (*CompositionFunction)(
 //----------------------------------------------------------------------------
 // device code (CUDA)
 //----------------------------------------------------------------------------
+
+__global__ void clearImage(uchar4 * __restrict__ img, int width, int height,
+      int from, int to)
+{
+    const int line = blockIdx.x+from;
+    if (line >= to)
+        return;
+
+    for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
+    {
+        uchar4 *dest = img + line*width+ix;
+        *dest = make_uchar4(0, 0, 0, 0);
+    }
+}
 
 template<typename Scalar, int BPV, int sliceStep, int principal>
 __global__ void compositeSlicesNearest(
@@ -270,14 +286,19 @@ __global__ void compositeSlicesNearest(
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         uchar4 *dest = img + line*width+ix;
+        uchar4 c = *dest;
 #ifdef FLOATIMG
-        *dest = make_uchar4(imgLine[ix].x * 255.f,
-                imgLine[ix].y * 255.f,
-                imgLine[ix].z * 255.f,
-                (1.f-imgLine[ix].w) * 255.f);
+        *dest = make_uchar4(imgLine[ix].x * 255.f + c.x*imgLine[ix].w,
+                imgLine[ix].y * 255.f + c.y*imgLine[ix].w,
+                imgLine[ix].z * 255.f + c.z*imgLine[ix].w,
+                (1.f-imgLine[ix].w) * (255-c.w) + c.w);
 #else
+        const float w= imgLine[ix].w/255.f;
         imgLine[ix].w = 255 - imgLine[ix].w;
-        *dest = imgLine[ix];
+        *dest = make_uchar4(imgLine[ix].x + c.x*w,
+                imgLine[ix].y + c.y*w,
+                imgLine[ix].z + c.z*w,
+                (1.f-w) * (255-c.w) + c.w);
 #endif
     }
 #endif
@@ -556,22 +577,27 @@ void vvCudaPar::compositeVolume(int from, int to)
    shmsize += vd->vox[principal]*vd->getBPV()*sizeof(Scalar);
 #endif
 
-   CompositionFunction compose = selectCompositionWithPrincipalAndSliceStep(principal, sliceStep);
+   clearImage <<<to-from, 128, shmsize>>>(d_img, intImg->width, intImg->height, from, to);
 
+   CompositionFunction compose = selectCompositionWithPrincipalAndSliceStep(principal, sliceStep);
    // do the computation on the device
+   for(int i=lastSlice; i*sliceStep>firstSlice*sliceStep; i-=sliceStep*MaxCompositeSlices)
+   {
+       cudaThreadSynchronize();
 #ifdef PITCHED
-   compose <<<to-from, 128, shmsize>>>( \
-         d_img, intImg->width, intImg->height, \
-         d_voxptr[principal], \
-         firstSlice, lastSlice, \
-         from, to);
+       compose <<<to-from, 128, shmsize>>>(
+               d_img, intImg->width, intImg->height,
+               d_voxptr[principal],
+               sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
+               from, to);
 #else
-   compose <<<to-from, 128, shmsize>>>( \
-         d_img, intImg->width, intImg->height, \
-         (Scalar *)(d_voxels+sizeof(Scalar)*vd->getBPV()*principal*(vd->vox[0]*vd->vox[1]*vd->vox[2])), \
-         firstSlice, lastSlice, \
-         from, to);
+       compose <<<to-from, 128, shmsize>>>(
+               d_img, intImg->width, intImg->height,
+               (Scalar *)(d_voxels+sizeof(Scalar)*vd->getBPV()*principal*(vd->vox[0]*vd->vox[1]*vd->vox[2])),
+               sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
+               from, to);
 #endif
+   }
 
    // copy back or unmap for using as PBO
    ok = vvCuda::checkError(&ok, cudaGetLastError(), "start kernel");
