@@ -251,7 +251,8 @@ template<
          bool t_clipPlane,
          bool t_useSphereAsProbe
         >
-__global__ void render(uchar4* d_output, const uint width, const uint height, const float dist,
+__global__ void render(uchar4* d_output, const uint width, const uint height,
+                       const uint texwidth, const uint texheight, const float dist,
                        const float3 volSizeHalf, const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist)
@@ -267,7 +268,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height, co
   {
     return;
   }
-
+//d_output[y * texwidth + x] = make_uchar4(0, 128, 128, 255);return;
   const float u = (x / static_cast<float>(width)) * 2.0f - 1.0f;
   const float v = (y / static_cast<float>(height)) * 2.0f - 1.0f;
 
@@ -291,7 +292,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height, co
   const bool hit = intersectBox(ray, -volSizeHalf, volSizeHalf, &tnear, &tfar);
   if (!hit)
   {
-    d_output[y * width + x] = make_uchar4(0);
+    d_output[y * texwidth + x] = make_uchar4(0);
     return;
   }
 
@@ -309,7 +310,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height, co
     // In ordinary sphere mode, the intersection data is memorized.
     if (!intersectSphere(ray, sphereCenter, sphereRadius, &tsnear, &tsfar) && t_useSphereAsProbe)
     {
-      d_output[y * width + x] = make_uchar4(0);
+      d_output[y * texwidth + x] = make_uchar4(0);
       return;
     }
   }
@@ -442,10 +443,10 @@ __global__ void render(uchar4* d_output, const uint width, const uint height, co
 
     pos += step;
   }
-  d_output[y * width + x] = rgbaFloatToInt(dst);
+  d_output[y * texwidth + x] = rgbaFloatToInt(dst);
 }
 
-typedef void(*renderKernel)(uchar4*, const uint, const uint, const float, const float3, const float3,
+typedef void(*renderKernel)(uchar4*, const uint, const uint, const uint, const uint, const float, const float3, const float3,
                              const float3, const float3, const float, const float3, const float);
 
 template<
@@ -595,12 +596,8 @@ void vvRayRend::compositeVolume(int, int)
   mapIntImg();
 
   vvGLTools::Viewport vp = vvGLTools::getViewport();
-  const int w = vvToolshed::getTextureSize(vp[2]);
-  const int h = vvToolshed::getTextureSize(vp[3]);
-
   dim3 blockSize(16, 16);
-  dim3 gridSize = dim3(iDivUp(w, blockSize.x), iDivUp(h, blockSize.y));
-
+  dim3 gridSize = dim3(iDivUp(vp[2], blockSize.x), iDivUp(vp[3], blockSize.y));
   const vvVector3 size(vd->getSize());
   const vvVector3 size2 = size * 0.5f;
 
@@ -691,7 +688,7 @@ void vvRayRend::compositeVolume(int, int)
 
   if (kernel != NULL)
   {
-    (kernel)<<<gridSize, blockSize>>>(d_img, intImg->width, intImg->height,
+    (kernel)<<<gridSize, blockSize>>>(d_img, vp[2], vp[3], intImg->width, intImg->height,
                                       diagonalVoxels / (float)numSlices,
                                       volSize * 0.5f,
                                       L, H,
@@ -873,7 +870,7 @@ void vvRayRend::factorViewMatrix()
 
   iwWarp.identity();
   iwWarp.translate(-1.0f, -1.0f, 0.0f);
-  iwWarp.scale(1.0f / (static_cast<float>(w) * 0.5f), 1.0f / (static_cast<float>(h) * 0.5f), 0.0f);
+  iwWarp.scale(1.0f / (static_cast<float>(vp[2]) * 0.5f), 1.0f / (static_cast<float>(vp[3]) * 0.5f), 0.0f);
 }
 
 #endif
