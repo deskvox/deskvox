@@ -256,7 +256,7 @@ vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
 */
 vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
 {
-
+  return vvSocket::VV_OK;
 }
 
 //----------------------------------------------------------------------------
@@ -274,6 +274,8 @@ vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
     tf._widgets.getData()->write(buffer);
     tf._widgets.next();
   }
+  
+  return vvSocket::VV_OK;
 }
 
 //----------------------------------------------------------------------------
