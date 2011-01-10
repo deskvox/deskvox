@@ -184,7 +184,11 @@ void vvSoftVR::renderVolumeGL()
       outImg->draw();
    }
    else
+   {
       intImg->warpTex(&iwWarp);
+      if (vvDebugMsg::isActive(3))
+         intImg->draw();
+   }
 
    if (_renderState._boundaries)
                                                   // draw front boundaries
