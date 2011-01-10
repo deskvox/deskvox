@@ -78,6 +78,7 @@ class VIRVOEXPORT vvSoftImg
       void copy(AlignType, vvSoftImg*);
       void overlay(vvSoftImg*);
       void draw();
+      void drawTex();
       void clear();
       void fill(int, int, int, int);
       void drawBorder(int, int, int);

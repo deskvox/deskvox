@@ -251,6 +251,32 @@ vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
 }
 
 //----------------------------------------------------------------------------
+/** Get a transfer function from the socket.
+  @param tf  pointer to a vvTransFunc.
+*/
+vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
+{
+
+}
+
+//----------------------------------------------------------------------------
+/** Write a transfer function to the socket.
+  @param tf  pointer to a vvTransFunc.
+*/
+vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
+{
+  const int numTF = tf._widgets.count();
+  uchar* buffer;
+
+  tf._widgets.first();
+  for (int i=0; i<numTF; ++i)
+  {
+    tf._widgets.getData()->write(buffer);
+    tf._widgets.next();
+  }
+}
+
+//----------------------------------------------------------------------------
 /** Get a single brick from the socket.
   @param brick  pointer to a vvBrick.
 */

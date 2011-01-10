@@ -123,16 +123,20 @@ vvRenderMaster::ErrorType vvRenderMaster::initBricks(vvTexRend* renderer)
   _renderer = renderer;
 
   // Distribute the bricks from the bsp tree
+  std::vector<BrickList>** bricks = renderer->getBrickListsToDistribute();
   for (int s=0; s<_sockets.size(); ++s)
   {
-    switch (_sockets[s]->putBricks(renderer->getBrickListsToDistribute()[s]->at(0)))
+    for (int f=0; f<renderer->getVolDesc()->frames; ++f)
     {
-    case vvSocket::VV_OK:
-      cerr << "Brick outlines transferred successfully" << endl;
-      break;
-    default:
-      cerr << "Unable to transfer brick outlines" << endl;
-      return VV_SOCKET_ERROR;
+      switch (_sockets[s]->putBricks(bricks[s]->at(f)))
+      {
+      case vvSocket::VV_OK:
+        cerr << "Brick outlines transferred successfully" << endl;
+        break;
+      default:
+        cerr << "Unable to transfer brick outlines" << endl;
+        return VV_SOCKET_ERROR;
+      }
     }
   }
   return VV_OK;
@@ -230,6 +234,17 @@ void vvRenderMaster::resize(const int w, const int h)
     if (_sockets[s]->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
     {
       _sockets[s]->putWinDims(w, h);
+    }
+  }
+}
+
+void vvRenderMaster::setCurrentFrame(const int currentFrame)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_CURRENT_FRAME) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putInt32(currentFrame);
     }
   }
 }

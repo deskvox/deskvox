@@ -189,16 +189,19 @@ void vvView::mainLoop(int argc, char *argv[])
 
       // Get bricks to render
       std::vector<BrickList>* frames = new std::vector<BrickList>();
-      BrickList bricks;
 
-      if (renderSlave->initBricks(bricks) != vvRenderSlave::VV_OK)
+      for (int f=0; f<vd->frames; ++f)
       {
-        delete frames;
-        cerr << "Exiting..." << endl;
-        return;
+        BrickList bricks;
+        if (renderSlave->initBricks(bricks) != vvRenderSlave::VV_OK)
+        {
+          delete frames;
+          cerr << "Exiting..." << endl;
+          return;
+        }
+        frames->push_back(bricks);
       }
 
-      frames->push_back(bricks);
       if (vd != NULL)
       {
         vd->printInfoLine();
@@ -1478,6 +1481,12 @@ void vvView::setAnimationFrame(int f)
     frame = vd->frames - 1;
 
   renderer->setCurrentFrame(frame);
+
+  if (ds->remoteRendering)
+  {
+    ds->_renderMaster->setCurrentFrame(frame);
+  }
+
   cerr << "Time step: " << (frame+1) << endl;
   glutPostRedisplay();
 }

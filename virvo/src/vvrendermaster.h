@@ -56,6 +56,7 @@ public:
 
   void adjustQuality(const float quality);
   void resize(const int w, const int h);
+  void setCurrentFrame(int currentFrame);
   void setInterpolation(const bool interpolation);
   void setMipMode(const int mipMode);
   void setObjectDirection(const vvVector3& od);

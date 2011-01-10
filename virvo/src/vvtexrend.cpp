@@ -5919,11 +5919,15 @@ std::vector<BrickList>** vvTexRend::getBrickListsToDistribute()
   for (std::vector<vvHalfSpace*>::const_iterator it = _bspTreeLeafs->begin();
        it != _bspTreeLeafs->end(); ++it)
   {
-    // TODO: support multiple frames.
-    result[i] = new std::vector<BrickList>();
-    result[i]->push_back(((*it)->getBrickList()[0]));
+    result[i] = new std::vector<BrickList>[vd->frames];
+
+    for (int f=0; f<vd->frames; ++f)
+    {
+      result[i]->push_back(((*it)->getBrickList()[f]));
+    }
     ++i;
   }
+
   return result;
 }
 

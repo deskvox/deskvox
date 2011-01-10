@@ -121,13 +121,14 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
 
     enum CommReason                               /// before sending data, let the recipient know what to expect
     {
-      VV_EXIT = 0,
+      VV_CURRENT_FRAME = 0,
+      VV_EXIT,
       VV_IMAGE,
       VV_MATRIX,
       VV_MIPMODE,
       VV_OBJECT_DIRECTION,
-      VV_QUALITY,
       VV_POSITION,
+      VV_QUALITY,
       VV_RESIZE,
       VV_TOGGLE_BOUNDINGBOX,
       VV_TOGGLE_ROI,
@@ -143,6 +144,8 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     bool sock_action();
     ErrorType getVolume(vvVolDesc*);
     ErrorType putVolume(vvVolDesc*);
+    ErrorType getTransferFunction(vvTransFunc& tf);
+    ErrorType putTransferFunction(vvTransFunc& tf);
     ErrorType getBrick(vvBrick* brick);
     ErrorType putBrick(vvBrick* brick);
     ErrorType getBricks(std::vector<vvBrick*>& bricks);

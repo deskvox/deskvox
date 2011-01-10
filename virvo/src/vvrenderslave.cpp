@@ -159,6 +159,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
   int h;
   bool interpolation;
   bool roiEnabled;
+  int currentFrame;
 
   while (1)
   {
@@ -167,6 +168,12 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
     {
       switch (commReason)
       {
+      case vvSocketIO::VV_CURRENT_FRAME:
+        if ((_socket->getInt32(currentFrame)) == vvSocket::VV_OK)
+        {
+          renderer->setCurrentFrame(currentFrame);
+        }
+        break;
       case vvSocketIO::VV_EXIT:
         return;
       case vvSocketIO::VV_MATRIX:
