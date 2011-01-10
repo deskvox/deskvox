@@ -310,7 +310,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&) const;
     void calcAABBMask();
     void getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
-                          const vvVector3, const vvVector3, bool& roiChanged);
+                          const vvVector3, const vvVector3, bool& roiChanged, int threadId = -1); ///< threadId = -1 ==> main thread
     void computeBrickSize();
     void initVertArray(const int numSlices);
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this

@@ -724,20 +724,20 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<BrickList>& brick
   {
     result[0].getBrickList().push_back(BrickList());
     result[1].getBrickList().push_back(BrickList());
-  }
 
-  for(BrickList::iterator it = brickList[0].begin();
-    it != brickList[0].end();
-    ++it)
-  {
-    vvBrick *tmp = *it;
-    if (tmp->getAABB().getCenter().e[splitAxis] < pnt.e[splitAxis])
+    for(BrickList::iterator it = brickList[f].begin();
+      it != brickList[f].end();
+      ++it)
     {
-      result[0].getBrickList()[0].push_back(tmp);
-    }
-    else
-    {
-      result[1].getBrickList()[0].push_back(tmp);
+      vvBrick *tmp = *it;
+      if (tmp->getAABB().getCenter().e[splitAxis] < pnt.e[splitAxis])
+      {
+        result[0].getBrickList()[f].push_back(tmp);
+      }
+      else
+      {
+        result[1].getBrickList()[f].push_back(tmp);
+      }
     }
   }
 

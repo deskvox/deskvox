@@ -101,6 +101,7 @@ struct ThreadArgs
   float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
   bool brickDataChanged;
   bool transferFunctionChanged;
+  int lastFrame;                              ///< last rendered animation frame
 
 #ifdef HAVE_X11
   // Glx rendering specific.
@@ -1515,6 +1516,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
     _threadData[i].pixels = new GLfloat[MAX_VIEWPORT_WIDTH * MAX_VIEWPORT_HEIGHT * 4];
     _threadData[i].brickDataChanged = false;
     _threadData[i].transferFunctionChanged = false;
+    _threadData[i].lastFrame = -1;
     _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
     _threadData[i].privateTexNames = NULL;
 #ifdef HAVE_X11
@@ -1584,11 +1586,15 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
     _threadData[i].halfSpace->setId(_threadData[i].threadId);
 
     _threadData[i].brickList.clear();
-    _threadData[i].brickList.push_back(BrickList());
-    for (BrickList::iterator brickIt = _threadData[i].halfSpace->getBrickList()[0].begin();
-         brickIt != _threadData[i].halfSpace->getBrickList()[0].end(); ++brickIt)
+
+    for (int f=0; f<_threadData[i].halfSpace->getBrickList().size(); ++f)
     {
-      _threadData[i].brickList[0].push_back(*brickIt);
+      _threadData[i].brickList.push_back(BrickList());
+      for (BrickList::iterator brickIt = _threadData[i].halfSpace->getBrickList()[f].begin();
+           brickIt != _threadData[i].halfSpace->getBrickList()[f].end(); ++brickIt)
+      {
+        _threadData[i].brickList[f].push_back(*brickIt);
+      }
     }
     ++i;
     if (i >= _numThreads) break;
@@ -1944,30 +1950,30 @@ void vvTexRend::fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vect
     // Determine visibility of each single brick in all frames
     for (size_t frame = 0; frame < brickList.size(); ++frame)
     {
-       for (BrickList::iterator it = brickList[frame].begin(); it != brickList[frame].end(); ++it)
-       {
-          vvBrick *tmp = *it;
-          nbricks++;
+      for (BrickList::iterator it = brickList[frame].begin(); it != brickList[frame].end(); ++it)
+      {
+        vvBrick *tmp = *it;
+        nbricks++;
 
-          // If max intensity projection, make all bricks visible.
-          if (_renderState._mipMode > 0)
+        // If max intensity projection, make all bricks visible.
+        if (_renderState._mipMode > 0)
+        {
+          nonemptyList[frame].push_back(tmp);
+          nvis++;
+        }
+        else
+        {
+          for (int i = tmp->minValue; i <= tmp->maxValue; ++i)
           {
-             nonemptyList[frame].push_back(tmp);
-             nvis++;
+            if(rgbaTF[i * 4 + 3] > 0.)
+            {
+              nonemptyList[frame].push_back(tmp);
+              nvis++;
+              break;
+            }
           }
-          else
-          {
-             for (int i = tmp->minValue; i <= tmp->maxValue; ++i)
-             {
-                if(rgbaTF[i * 4 + 3] > 0.)
-                {
-                   nonemptyList[frame].push_back(tmp);
-                   nvis++;
-                   break;
-                }
-             }
-          }
-       }
+        }
+      }
     }
   }
   else
@@ -3249,7 +3255,10 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   initVertArray(numSlices);
 #endif
 
-  getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _renderState._isROIChanged);
+  if (_numThreads == 0)
+  {
+    getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _renderState._isROIChanged);
+  }
 
   markBricksInFrustum(probeMin, probeMax);
 
@@ -3453,7 +3462,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     bool areBricksCreated;
     data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
                                       data->rgbaLUT, data->brickList, areBricksCreated);
-    data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
 
     /////////////////////////////////////////////////////////
     // Setup an appropriate GL state.
@@ -3495,6 +3503,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // thread specific data is supplied.
     while (1)
     {
+      data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
+
       // Don't start rendering until the bricks are sorted in back to front order
       // and appropriatly distributed among the respective worker threads. The main
       // thread will issue an alert if this is the case.
@@ -3565,7 +3575,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       }
 
       data->renderer->getBricksInProbe(data->nonemptyList, data->insideList, data->sortedList,
-                                       data->probePosObj, data->probeSizeObj, roiChanged);
+                                       data->probePosObj, data->probeSizeObj, roiChanged, data->threadId);
       data->renderer->sortBrickList(data->sortedList, data->eye, data->normal, data->isOrtho);
 
       if (data->renderer->_renderState._showBricks)
@@ -3915,12 +3925,22 @@ void vvTexRend::markBricksInFrustum(const vvVector3& probeMin, const vvVector3& 
 }
 
 void vvTexRend::getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
-                                 const vvVector3 pos, const vvVector3 size, bool& roiChanged)
+                                 const vvVector3 pos, const vvVector3 size, bool& roiChanged, const int threadId)
 {
-  if(!roiChanged && vd->getCurrentFrame() == _lastFrame)
-    return;
-
-  _lastFrame = vd->getCurrentFrame();
+  if (threadId == -1)
+  {
+    // Single gpu mode.
+    if(!roiChanged && vd->getCurrentFrame() == _lastFrame)
+      return;
+    _lastFrame = vd->getCurrentFrame();
+  }
+  else
+  {
+    // Multi gpu mode.
+    if(!roiChanged && vd->getCurrentFrame() == _threadData[threadId].lastFrame)
+      return;
+    _threadData[threadId].lastFrame = vd->getCurrentFrame();
+  }
   roiChanged = false;
 
   insideList.clear();
