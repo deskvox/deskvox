@@ -128,17 +128,17 @@ void vvCudaImg::init()
 {
   if (_mode==TEXTURE)
   {
+#ifdef HAVE_CUDA
     if (vvCuda::initGlInterop())
     {
-#ifdef HAVE_CUDA
       vvDebugMsg::msg(1, "using CUDA/GL interop");
       // avoid image copy from GPU to CPU and back
       setSize(width, height, NULL, true);
+    }
+    else
 #else
       vvDebugMsg::msg(1, "HAVE_CUDA undefined");
 #endif
-    }
-    else
     {
       vvDebugMsg::msg(1, "can't use CUDA/GL interop");
       _mode = SW_FALLBACK;

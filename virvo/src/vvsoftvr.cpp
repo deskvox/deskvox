@@ -1062,18 +1062,18 @@ void vvSoftVR::initIntImg(const int imgSize)
 {
   if (warpMode==TEXTURE)
   {
+#ifdef HAVE_CUDA
     if (vvCuda::initGlInterop())
     {
-#ifdef HAVE_CUDA
       vvDebugMsg::msg(1, "using CUDA/GL interop");
       // avoid image copy from GPU to CPU and back
       setWarpMode(CUDATEXTURE);
       intImg->setSize(imgSize, imgSize, NULL, true);
+    }
+    else
 #else
       vvDebugMsg::msg(1, "HAVE_CUDA undefined");
 #endif
-    }
-    else
     {
       vvDebugMsg::msg(1, "can't use CUDA/GL interop");
       intImg->setSize(imgSize, imgSize);
@@ -1089,6 +1089,7 @@ void vvSoftVR::initIntImg(const int imgSize)
 
 void vvSoftVR::allocateIntImg()
 {
+#ifdef HAVE_CUDA
   bool ok = true;
   if (warpMode==CUDATEXTURE)
   {
@@ -1104,11 +1105,13 @@ void vvSoftVR::allocateIntImg()
   {
       vvCuda::checkError(&ok, cudaMalloc(&d_img, intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE), "cudaMalloc img");
   }
+#endif
 }
 
 
 void vvSoftVR::deallocateIntImg()
 {
+#ifdef HAVE_CUDA
   if (warpMode==CUDATEXTURE)
   {
     cudaGraphicsUnregisterResource(intImgRes);
@@ -1121,11 +1124,13 @@ void vvSoftVR::deallocateIntImg()
   {
     cudaFree(d_img);
   }
+#endif
 }
 
 
 void vvSoftVR::mapIntImg()
 {
+#ifdef HAVE_CUDA
   bool ok = true;
   if (warpMode==CUDATEXTURE)
   {
@@ -1138,11 +1143,13 @@ void vvSoftVR::mapIntImg()
   {
       intImg->clear();
   }
+#endif
 }
 
 
 void vvSoftVR::unmapIntImg()
 {
+#ifdef HAVE_CUDA
   bool ok = true;
   if (warpMode==CUDATEXTURE)
   {
@@ -1157,6 +1164,7 @@ void vvSoftVR::unmapIntImg()
       cudaMemcpy(intImg->data, d_img, intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost);
       ok = vvCuda::checkError(&ok, cudaGetLastError(), "cpy to host");
   }
+#endif
 }
 
 
