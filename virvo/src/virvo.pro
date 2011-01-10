@@ -20,6 +20,7 @@ SOURCES = vvbrick.cpp \
     vvcolor.cpp \
     vvdebugmsg.cpp \
     vvcuda.cpp \
+    vvcudaimg.cpp \
     vvdicom.cpp \
     vvdynlib.cpp \
     vvfileio.cpp \
@@ -73,6 +74,7 @@ HEADERS = \
     vvcolor.h \
     vvdebugmsg.h \
     vvcuda.h \
+    vvcudaimg.h \
     vvcudautils.h \
     vvdicom.h \
     vvdynlib.h \
