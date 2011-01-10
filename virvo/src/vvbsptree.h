@@ -28,6 +28,7 @@
 
 class vvBrick;
 
+typedef std::vector<vvBrick*> BrickList;
 typedef vvVector3 vvBoxCorners[8];
 
 class vvRect
@@ -259,7 +260,7 @@ public:
    *                Set the list of bricks this partial space contains.
    * \param         bricks An array with pointers to convex bricks.
    */
-  void setBricks(std::vector<vvBrick*> * bricks);
+  void setBricks(const BrickList& bricks);
   /*!
    * \brief         Set percent of parent space this one occupies.
    *
@@ -305,7 +306,7 @@ public:
    *                Get the list of bricks this partial space contains.
    * \return        An array with pointers to convex bricks.
    */
-  std::vector<vvBrick*>* getBricks() const;
+  BrickList& getBricks();
   /*!
    * \brief         Get percent of parent space this one occupies.
    *
@@ -370,7 +371,7 @@ private:
   vvHalfSpace* _nextBrother;
 
   vvPlane* _splitPlane;
-  std::vector<vvBrick*> *_bricks;
+  BrickList _bricks;
   float _percent;
   float _actualPercent;
   vvAABB* _boundingBox;
@@ -407,7 +408,7 @@ public:
    * \param         percent1 The share for half space 1.
    * \param         percent2 The share for half space 2.
    */
-  static vvHalfSpace* getAABBHalfSpaces(std::vector<vvBrick*>* bricks,
+  static vvHalfSpace* getAABBHalfSpaces(BrickList& bricks,
                                         const float percent1, const float percent2);
 private:
 };
@@ -423,7 +424,7 @@ private:
 class vvBspTree
 {
 public:
-  vvBspTree(const float* partitioning, const int length, std::vector<vvBrick*>* bricks);
+  vvBspTree(const float* partitioning, const int length, BrickList& bricks);
   virtual ~vvBspTree();
 
   void traverse(const vvVector3& pos);
@@ -440,7 +441,7 @@ public:
    *
    *                Print the tree with indented nodes to std::cerr.
    */
-  void print() const;
+  void print();
 
   /*!
    * \brief         Set the tree's visitor brick.
@@ -472,8 +473,8 @@ private:
    */
   void buildHierarchy(vvHalfSpace* node, const float* partitioning, const int length,
                       const int startIdx, const int endIdx);
-  void distributeBricks(vvHalfSpace* node, std::vector<vvBrick*>* bricks);
-  void print(const vvHalfSpace* node, const int indent) const;
+  void distributeBricks(vvHalfSpace* node, BrickList& bricks);
+  void print(vvHalfSpace* node, const int indent);
   void traverse(const vvVector3& pos, vvHalfSpace* node) const;
 };
 

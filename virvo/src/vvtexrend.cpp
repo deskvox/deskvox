@@ -1551,7 +1551,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   }
 
   delete _bspTree;
-  _bspTree = new vvBspTree(part, _numThreads, &_brickList[0]);
+  _bspTree = new vvBspTree(part, _numThreads, _brickList[0]);
   // The visitor (supplies rendering logic) must have knowledge
   // about the texture ids of the compositing polygons.
   // Thus provide a pointer to these.
@@ -1585,8 +1585,8 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
 
     _threadData[i].brickList.clear();
     _threadData[i].brickList.push_back(BrickList());
-    for (std::vector<vvBrick*>::iterator brickIt = _threadData[i].halfSpace->getBricks()->begin();
-         brickIt != _threadData[i].halfSpace->getBricks()->end(); ++brickIt)
+    for (BrickList::iterator brickIt = _threadData[i].halfSpace->getBricks().begin();
+         brickIt != _threadData[i].halfSpace->getBricks().end(); ++brickIt)
     {
       _threadData[i].brickList[0].push_back(*brickIt);
     }
@@ -5876,7 +5876,7 @@ void vvTexRend::prepareDistributedRendering(const int numSlaveNodes)
   }
 
   delete _bspTree;
-  _bspTree = new vvBspTree(part, _numSlaveNodes, &_brickList[0]);
+  _bspTree = new vvBspTree(part, _numSlaveNodes, _brickList[0]);
 
   int i = 0;
   for (std::vector<vvHalfSpace*>::const_iterator it = _bspTree->getLeafs()->begin();
@@ -5901,7 +5901,7 @@ std::vector<BrickList>** vvTexRend::getBrickListsToDistribute()
   {
     // TODO: support multiple frames.
     result[i] = new std::vector<BrickList>();
-    result[i]->push_back(*((*it)->getBricks()));
+    result[i]->push_back(((*it)->getBricks()));
     ++i;
   }
   return result;
