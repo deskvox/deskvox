@@ -742,7 +742,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   //renderer->setOrientationMode(orientationMode);
   //renderer->setTimingMode(timingMode);
   //renderer->setPaletteMode(paletteMode);
-  //renderer->setParameter(vvRenderer::VV_SLICEINT, (interpolMode) ? 1.0f : 0.0f);
+  renderer->setParameter(vvRenderer::VV_SLICEINT, (interpolMode) ? 1.0f : 0.0f);
   renderer->setParameter(vvRenderer::VV_PREINT, (preintMode) ? 1.0f : 0.0f);
   renderer->_renderState._mipMode = mipMode;
   //renderer->setParameter(vvRenderer::VV_GAMMA, (gammaMode) ? 1.0f : 0.0f);
