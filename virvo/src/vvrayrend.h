@@ -39,7 +39,8 @@ public:
   bool getInterpolation() const;
   bool getOpacityCorrection() const;
 private:
-  cudaArray* d_volumeArray;
+  cudaChannelFormatDesc _channelDesc;
+  cudaArray** d_volumeArrays;
   cudaArray* d_transferFuncArray;
   cudaArray* d_randArray;
 

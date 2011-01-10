@@ -545,7 +545,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   d_randArray = 0;
   initRandTexture();
 
-  d_volumeArray = 0;
+  d_volumeArrays = 0;
   initVolumeTexture();
 
   d_transferFuncArray = 0;
@@ -554,7 +554,11 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
 vvRayRend::~vvRayRend()
 {
-  cudaFreeArray(d_volumeArray);
+  for (int f=0; f<vd->frames; ++f)
+  {
+    cudaFreeArray(d_volumeArrays[f]);
+  }
+  delete[] d_volumeArrays;
   cudaFreeArray(d_transferFuncArray);
   cudaFreeArray(d_randArray);
   deallocateIntImg();
@@ -688,6 +692,14 @@ void vvRayRend::compositeVolume(int, int)
 
   if (kernel != NULL)
   {
+    if (vd->bpc == 1)
+    {
+      cudaBindTextureToArray(volTexture8, d_volumeArrays[vd->getCurrentFrame()], _channelDesc);
+    }
+    else if (vd->bpc == 2)
+    {
+      cudaBindTextureToArray(volTexture16, d_volumeArrays[vd->getCurrentFrame()], _channelDesc);
+    }
     (kernel)<<<gridSize, blockSize>>>(d_img, vp[2], vp[3], intImg->width,
                                       diagonalVoxels / (float)numSlices,
                                       volSize * 0.5f,
@@ -786,42 +798,45 @@ void vvRayRend::initVolumeTexture()
 {
   cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
 
-  cudaChannelFormatDesc channelDesc;
   if (vd->bpc == 1)
   {
-    channelDesc = cudaCreateChannelDesc<uchar>();
+    _channelDesc = cudaCreateChannelDesc<uchar>();
   }
   else if (vd->bpc == 2)
   {
-    channelDesc = cudaCreateChannelDesc<ushort>();
+    _channelDesc = cudaCreateChannelDesc<ushort>();
   }
-  cudaMalloc3DArray(&d_volumeArray, &channelDesc, volumeSize);
-
-  cudaMemcpy3DParms copyParams = { 0 };
-
-  if (vd->bpc == 1)
+  d_volumeArrays = new cudaArray*[vd->frames];
+  for (int f=0; f<vd->frames; ++f)
   {
-    copyParams.srcPtr = make_cudaPitchedPtr(vd->getRaw(0), volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
-  }
-  else if (vd->bpc == 2)
-  {
-    const int size = vd->vox[0] * vd->vox[1] * vd->vox[2] * vd->bpc;
-    uchar* raw = vd->getRaw(0);
-    uchar* data = new uchar[size];
+    cudaMalloc3DArray(&d_volumeArrays[f], &_channelDesc, volumeSize);
 
-    for (int i=0; i<size; i+=2)
+    cudaMemcpy3DParms copyParams = { 0 };
+
+    if (vd->bpc == 1)
     {
-      int val = ((int) raw[i] << 8) | (int) raw[i + 1];
-      val >>= 4;
-      data[i] = raw[i];
-      data[i + 1] = val;
+      copyParams.srcPtr = make_cudaPitchedPtr(vd->getRaw(f), volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
     }
-    copyParams.srcPtr = make_cudaPitchedPtr(data, volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
+    else if (vd->bpc == 2)
+    {
+      const int size = vd->vox[0] * vd->vox[1] * vd->vox[2] * vd->bpc;
+      uchar* raw = vd->getRaw(0);
+      uchar* data = new uchar[size];
+
+      for (int i=0; i<size; i+=2)
+      {
+        int val = ((int) raw[i] << 8) | (int) raw[i + 1];
+        val >>= 4;
+        data[i] = raw[i];
+        data[i + 1] = val;
+      }
+      copyParams.srcPtr = make_cudaPitchedPtr(data, volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
+    }
+    copyParams.dstArray = d_volumeArrays[f];
+    copyParams.extent = volumeSize;
+    copyParams.kind = cudaMemcpyHostToDevice;
+    cudaMemcpy3D(&copyParams);
   }
-  copyParams.dstArray = d_volumeArray;
-  copyParams.extent = volumeSize;
-  copyParams.kind = cudaMemcpyHostToDevice;
-  cudaMemcpy3D(&copyParams);
 
   if (vd->bpc == 1)
   {
@@ -836,7 +851,7 @@ void vvRayRend::initVolumeTexture()
       }
       volTexture8.addressMode[0] = cudaAddressModeClamp;
       volTexture8.addressMode[1] = cudaAddressModeClamp;
-      cudaBindTextureToArray(volTexture8, d_volumeArray, channelDesc);
+      cudaBindTextureToArray(volTexture8, d_volumeArrays[0], _channelDesc);
   }
   else if (vd->bpc == 2)
   {
@@ -851,7 +866,7 @@ void vvRayRend::initVolumeTexture()
       }
       volTexture16.addressMode[0] = cudaAddressModeClamp;
       volTexture16.addressMode[1] = cudaAddressModeClamp;
-      cudaBindTextureToArray(volTexture16, d_volumeArray, channelDesc);
+      cudaBindTextureToArray(volTexture16, d_volumeArrays[0], _channelDesc);
   }
 }
 
