@@ -313,7 +313,12 @@ void vvSoftImg::draw()
       case 4:
       default: format = GL_RGBA; break;
    }
-   glDrawPixels(width, height, format, GL_UNSIGNED_BYTE, (GLvoid*)data);
+
+   if (canUsePbo && pboName)
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboName);
+   glDrawPixels(width, height, format, GL_UNSIGNED_BYTE, pboName ? 0 : data);
+   if (canUsePbo && pboName)
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
    restoreGLState();
 #endif
