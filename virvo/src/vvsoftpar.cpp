@@ -290,6 +290,7 @@ void vvSoftPar::compositeSliceBilinear(int slice)
    float  weight[4];                              // resampling weights, one for each of the four neighboring voxels (for indices see vScalar[])
    float  tmp;
    int    i;
+   const bool postClassification = false;
 
    findSlicePosition(slice, &vStart, NULL);
    iPosX     = int(vStart[0]) + 1;                // use intermediate image column right of bottom left voxel location
@@ -334,6 +335,31 @@ void vvSoftPar::compositeSliceBilinear(int slice)
                if (ia>=1.0f) ++earlyRayTermination;
                if (ia < 1.0f)                     // skip opaque intermediate image pixels
                {
+                  if(postClassification)
+                  {
+                     // Determine interpolated voxel value:
+                     uchar v = *vScalar[0] * weight[0]
+                        + *vScalar[1] * weight[1]
+                        + *vScalar[2] * weight[2]
+                        + *vScalar[3] * weight[3];
+                     va = rgbaConv[v][3] / 255.0f;
+                     if (va>0.0f)                    // skip transparent voxels (yes, do it again!)
+                     {
+                        vr = rgbaConv[v][0] / 255.0f;
+                        vg = rgbaConv[v][1] / 255.0f;
+                        vb = rgbaConv[v][2] / 255.0f;
+                        // start over with intermediate image components
+                        iPixel -= vvSoftImg::PIXEL_SIZE;
+
+                        // Accumulate new intermediate image pixel values.
+                        *(iPixel++) = (uchar)((tmp = (255.0f * (ir + (1.0f - ia) * vr * va))) < 255.0f ? tmp : 255.0f);
+                        *(iPixel++) = (uchar)((tmp = (255.0f * (ig + (1.0f - ia) * vg * va))) < 255.0f ? tmp : 255.0f);
+                        *(iPixel++) = (uchar)((tmp = (255.0f * (ib + (1.0f - ia) * vb * va))) < 255.0f ? tmp : 255.0f);
+                        *(iPixel++) = (uchar)((tmp = (255.0f * (ia + (1.0f - ia) * va))) < 255.0f ? tmp : 255.0f);
+                     }
+                  }
+                  else
+                  {
                   // Determine interpolated voxel color components and scale to [0..1]:
                   va = ((float)rgbaConv[*vScalar[0]][3] * weight[0] +
                      (float)rgbaConv[*vScalar[1]][3] * weight[1] +
@@ -368,6 +394,7 @@ void vvSoftPar::compositeSliceBilinear(int slice)
                      *(iPixel++) = (uchar)((tmp = (255.0f * (ig + (1.0f - ia) * vg * va))) < 255.0f ? tmp : 255.0f);
                      *(iPixel++) = (uchar)((tmp = (255.0f * (ib + (1.0f - ia) * vb * va))) < 255.0f ? tmp : 255.0f);
                      *(iPixel++) = (uchar)((tmp = (255.0f * (ia + (1.0f - ia) * va))) < 255.0f ? tmp : 255.0f);
+                  }
                   }
                }
             }
