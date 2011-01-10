@@ -260,7 +260,7 @@ public:
    *                Set the list of bricks this partial space contains.
    * \param         bricks An array with pointers to convex bricks.
    */
-  void setBricks(const BrickList& bricks);
+  void setBrickList(const std::vector<BrickList>& brickList);
   /*!
    * \brief         Set percent of parent space this one occupies.
    *
@@ -306,7 +306,7 @@ public:
    *                Get the list of bricks this partial space contains.
    * \return        An array with pointers to convex bricks.
    */
-  BrickList& getBricks();
+  std::vector<BrickList>& getBrickList();
   /*!
    * \brief         Get percent of parent space this one occupies.
    *
@@ -371,7 +371,7 @@ private:
   vvHalfSpace* _nextBrother;
 
   vvPlane* _splitPlane;
-  BrickList _bricks;
+  std::vector<BrickList> _brickList;
   float _percent;
   float _actualPercent;
   vvAABB* _boundingBox;
@@ -408,7 +408,7 @@ public:
    * \param         percent1 The share for half space 1.
    * \param         percent2 The share for half space 2.
    */
-  static vvHalfSpace* getAABBHalfSpaces(BrickList& bricks,
+  static vvHalfSpace* getAABBHalfSpaces(std::vector<BrickList>& bricks,
                                         const float percent1, const float percent2);
 private:
 };
@@ -424,7 +424,7 @@ private:
 class vvBspTree
 {
 public:
-  vvBspTree(const float* partitioning, const int length, BrickList& bricks);
+  vvBspTree(const float* partitioning, const int length, std::vector<BrickList>& bricks);
   virtual ~vvBspTree();
 
   void traverse(const vvVector3& pos);
@@ -473,7 +473,7 @@ private:
    */
   void buildHierarchy(vvHalfSpace* node, const float* partitioning, const int length,
                       const int startIdx, const int endIdx);
-  void distributeBricks(vvHalfSpace* node, BrickList& bricks);
+  void distributeBricks(vvHalfSpace* node, std::vector<BrickList>& brickList);
   void print(vvHalfSpace* node, const int indent);
   void traverse(const vvVector3& pos, vvHalfSpace* node) const;
 };
