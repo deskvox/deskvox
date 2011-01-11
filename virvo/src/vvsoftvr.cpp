@@ -484,8 +484,8 @@ void vvSoftVR::updateTransferFunction()
    // Make pre-integrated LUT:
    if (preIntegration)
    {
-      makeLookupTextureOptimized(1.0f);           // use this line for fast pre-integration LUT
-      //makeLookupTextureCorrect(1.0f);   // use this line for slow but more correct pre-integration LUT
+      //makeLookupTextureOptimized(1.0f);           // use this line for fast pre-integration LUT
+      makeLookupTextureCorrect(1.0f);   // use this line for slow but more correct pre-integration LUT
    }
 }
 
