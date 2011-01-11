@@ -33,13 +33,22 @@ using std::endl;
 #include "vvcuda.h"
 #include "vvcudapar.h"
 
-const int MAX_SLICES = 512;
+const int MAX_SLICES = 1600;
 
 __constant__ int   c_vox[5];
-__constant__ float2 c_start[MAX_SLICES];
-static float2 h_start[MAX_SLICES];
+__constant__ int2 c_start[MAX_SLICES];
+static int2 h_start[MAX_SLICES];
+__constant__ int2 c_stop[MAX_SLICES];
+static int2 h_stop[MAX_SLICES];
+__constant__ float2 c_tcStart[MAX_SLICES];
+static float2 h_tcStart[MAX_SLICES];
+__constant__ float2 c_tcStep[MAX_SLICES];
+static float2 h_tcStep[MAX_SLICES];
+__constant__ float c_tc3[MAX_SLICES];
+static float h_tc3[MAX_SLICES];
 
-const int MaxCompositeSlices = 1024;
+
+const int MaxCompositeSlices = MAX_SLICES;
 
 //#define SHMCLASS
 //#define NOOP
@@ -48,11 +57,11 @@ const int MaxCompositeSlices = 1024;
 //#define SHMLOAD
 #define VOLTEX3D 1 // undef, 1 or 3
 //#define PITCHED
-#define FLOATDATA
+//#define FLOATDATA
 //#define CONSTLOAD
 //#define THREADPERVOXEL
 //#define CONSTDATA
-//#define FLOATIMG
+#define FLOATIMG
 #define EARLYRAYTERM
 
 const int Repetitions = 1;
@@ -187,14 +196,14 @@ __global__ void compositeSlicesNearest(
         const int iPosY = line;
 #else
         // compute upper left image corner
-        const int iPosY = float2int(c_start[slice].y+0.5f);
+        const int iPosY = c_start[slice].y;
 
         if(line < iPosY)
             continue;
         if(line >= iPosY+c_vox[principal+1])
             continue;
 
-        const int iPosX = float2int(c_start[slice].x+0.5f);
+        const int iPosX = c_start[slice].x;
 #endif
 
         // the voxel row of the current slice corresponding to this image line
@@ -266,10 +275,10 @@ __global__ void compositeSlicesNearest(
             switch(principal)
             {
                 case 0:
-                    v = tex3D(tex_raw, c_vox[2]-slice, c_vox[0]-vidx, c_vox[1]+iPosY-line-1);
+                    v = tex3D(tex_raw, c_vox[2]-slice-1, c_vox[0]-vidx-1, c_vox[1]+iPosY-line-1);
                     break;
                 case 1:
-                    v = tex3D(tex_raw, line+1-iPosY, slice, c_vox[1]-vidx);
+                    v = tex3D(tex_raw, line-iPosY, slice, c_vox[1]-vidx-1);
                     break;
                 case 2:
                     v = tex3D(tex_raw, vidx, c_vox[0]+iPosY-line-1, slice);
@@ -341,6 +350,136 @@ __global__ void compositeSlicesNearest(
 #endif
 }
 
+
+#ifdef VOLTEX3D
+template<typename Scalar, int BPV, int sliceStep, int principal>
+__global__ void compositeSlicesBilinear(
+      uchar4 * __restrict__ img, int width, int height,
+#ifdef PITCHED
+      const cudaPitchedPtr pvoxels,
+#else
+      const Scalar * __restrict__ voxels,
+#endif
+      int firstSlice, int lastSlice,
+      int from, int to)
+{
+    const int line = blockIdx.x+from;
+    if (line >= to)
+        return;
+
+    // initialise intermediate image line
+    extern __shared__ char smem[];
+#ifdef FLOATIMG
+    float4 *imgLine = (float4 *)smem;
+    const int pixsize = sizeof(float4);
+#else
+    uchar4 *imgLine = (uchar4 *)smem;
+    const int pixsize = sizeof(uchar4);
+#endif
+
+    for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
+    {
+#ifdef FLOATIMG
+        imgLine[ix] = make_float4(0.f,0.f,0.f,1.f);
+#else
+        imgLine[ix] = make_uchar4(0,0,0,255);
+#endif
+    }
+
+    // composite slices for this image line
+    for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
+    {
+        // compute upper left image corner
+        const int iPosY = c_start[slice].y;
+
+        if(line < iPosY)
+            continue;
+        if(line >= iPosY+c_vox[principal+1])
+            continue;
+
+        const int iPosX = c_start[slice].x;
+
+        // Traverse intermediate image pixels which correspond to the current slice.
+        // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
+        for (int ix=threadIdx.x; ix<c_vox[principal+0]+iPosX; ix+=blockDim.x)
+        {
+            if(ix<iPosX)
+                continue;
+            const int vidx = ix - iPosX;
+            const int iidx = ix;
+
+            // pointer to destination pixel
+#ifdef FLOATIMG
+            float4 *pix = imgLine + iidx;
+            float4 d = *pix;
+#ifdef EARLYRAYTERM
+            if(d.w < 0.001f)
+                continue;
+#endif
+#else
+            uchar4 *pix = imgLine + iidx;
+            uchar4 d = *pix;
+#ifdef EARLYRAYTERM
+            if(d.w < 1)
+                continue;
+#endif
+#endif
+
+            const float x = c_tcStart[slice].x + c_tcStep[slice].x*vidx;
+            const float y = c_tcStart[slice].y + c_tcStep[slice].y*(line-iPosY);
+            const float z = c_tc3[slice];
+#if VOLTEX3D==3
+            const float v = tex3D(tex_raw, x, y, z);
+#else
+            float v;
+            switch(principal)
+            {
+                case 0:
+                    v = tex3D(tex_raw, z, x, y);
+                    break;
+                case 1:
+                    v = tex3D(tex_raw, y, z, x);
+                    break;
+                case 2:
+                    v = tex3D(tex_raw, x, y, z);
+                    break;
+            }
+#endif
+            const float4 c = tex1Dfetch(tex_tf, v*255.f);
+
+            // blend
+            const float w = d.w*c.w;
+            d.x += w*c.x;
+            d.y += w*c.y;
+            d.z += w*c.z;
+            d.w -= w;
+
+            // store into shmem
+            *pix = d;
+        }
+    }
+
+    // copy line to intermediate image
+    for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
+    {
+        uchar4 *dest = img + line*width+ix;
+        uchar4 c = *dest;
+#ifdef FLOATIMG
+        *dest = make_uchar4(imgLine[ix].x * 255.f + c.x*imgLine[ix].w,
+                imgLine[ix].y * 255.f + c.y*imgLine[ix].w,
+                imgLine[ix].z * 255.f + c.z*imgLine[ix].w,
+                (1.f-imgLine[ix].w) * (255-c.w) + c.w);
+#else
+        const float w= imgLine[ix].w/255.f;
+        imgLine[ix].w = 255 - imgLine[ix].w;
+        *dest = make_uchar4(imgLine[ix].x + c.x*w,
+                imgLine[ix].y + c.y*w,
+                imgLine[ix].z + c.z*w,
+                (1.f-w) * (255-c.w) + c.w);
+#endif
+    }
+}
+#endif
 
 //----------------------------------------------------------------------------
 // host code
@@ -538,20 +677,25 @@ void vvCudaPar::updateTransferFunction()
 }
 
 template<int principal, int sliceStep>
-CompositionFunction selectComposition()
+CompositionFunction selectComposition(bool sliceInterpol)
 {
-   return compositeSlicesNearest<Scalar, 1, sliceStep, principal>;
+#ifdef VOLTEX3D
+    if(sliceInterpol)
+        return compositeSlicesBilinear<Scalar, 1, sliceStep, principal>;
+    else
+#endif
+        return compositeSlicesNearest<Scalar, 1, sliceStep, principal>;
 }
 
 template<int principal>
-CompositionFunction selectCompositionWithSliceStep(int sliceStep)
+CompositionFunction selectCompositionWithSliceStep(int sliceStep, bool sliceInterpol)
 {
     switch(sliceStep)
     {
         case 1:
-            return selectComposition<principal,1>();
+            return selectComposition<principal,1>(sliceInterpol);
         case -1:
-            return selectComposition<principal,-1>();
+            return selectComposition<principal,-1>(sliceInterpol);
         default:
             assert("slice step out of range" == NULL);
     }
@@ -559,16 +703,16 @@ CompositionFunction selectCompositionWithSliceStep(int sliceStep)
     return NULL;
 }
 
-CompositionFunction selectCompositionWithPrincipalAndSliceStep(int principal, int sliceStep)
+CompositionFunction selectCompositionWithSliceStepAndPrincipal(int sliceStep, int principal, bool sliceInterpol)
 {
     switch(principal)
     {
         case 0:
-            return selectCompositionWithSliceStep<0>(sliceStep);
+            return selectCompositionWithSliceStep<0>(sliceStep, sliceInterpol);
         case 1:
-            return selectCompositionWithSliceStep<1>(sliceStep);
+            return selectCompositionWithSliceStep<1>(sliceStep, sliceInterpol);
         case 2:
-            return selectCompositionWithSliceStep<2>(sliceStep);
+            return selectCompositionWithSliceStep<2>(sliceStep, sliceInterpol);
         default:
             assert("principal axis out of range" == NULL);
 
@@ -603,24 +747,88 @@ void vvCudaPar::compositeVolume(int from, int to)
        to = intImg->height;
 
    // compute data for determining upper left image corner of each slice and copy it to device
-   vvVector4 start, inc;
-   findSlicePosition(firstSlice, &start, NULL);
-   findSlicePosition(firstSlice+sliceStep, &inc, NULL);
-   inc.sub(&start);
-   vvVector4 cur = start;
+   vvVector4 start, end;
+   findSlicePosition(firstSlice, &start, &end);
+   vvVector4 sinc, einc;
+   findSlicePosition(firstSlice+sliceStep, &sinc, &einc);
+   sinc.sub(&start);
+   einc.sub(&end);
+   vvVector4 scur = start;
+   vvVector4 ecur = end;
+#if defined(VOLTEX3D) && VOLTEX3D==1
+   const int p = principal;
+#else
+   const int p = 2;
+#endif
    for(int slice=firstSlice; slice != lastSlice; slice += sliceStep)
    {
-       h_start[slice].x = cur.e[0] / cur.e[3];
-       h_start[slice].y = cur.e[1] / cur.e[3];
-       cur.add(&inc);
+       if(sliceInterpol)
+       {
+           const float sx = scur.e[0]/scur.e[3];
+           const float sy = scur.e[1]/scur.e[3];
+           const float ex = ecur.e[0]/ecur.e[3];
+           const float ey = ecur.e[1]/ecur.e[3];
+
+           h_start[slice].x = int(floor(sx));
+           h_start[slice].y = int(floor(sy));
+
+           h_stop[slice].x = int(ceil(ex));
+           h_stop[slice].y = int(ceil(ey));
+
+           switch(p)
+           {
+               case 0:
+                   h_tcStep[slice].x = -1.f/(ex-sx);
+                   h_tcStep[slice].y = -1.f/(ey-sy);
+
+                   h_tcStart[slice].x = 1.f + (h_start[slice].x - sx + 0.5f)*h_tcStep[slice].x;
+                   h_tcStart[slice].y = 1.f + (h_start[slice].y - sy + 0.5f)*h_tcStep[slice].y;
+
+                   h_tc3[slice] = 1.f-(slice+0.5f)*1.f/vd->vox[principal];
+                   break;
+                case 1:
+                   h_tcStep[slice].x = -1.f/(ex-sx);
+                   h_tcStep[slice].y = 1.f/(ey-sy);
+
+                   h_tcStart[slice].x = 1.f + (h_start[slice].x - sx + 0.5f)*h_tcStep[slice].x;
+                   h_tcStart[slice].y = (h_start[slice].y - sy + 0.5f)*h_tcStep[slice].y;
+
+                   h_tc3[slice] = (slice+0.5f)*1.f/vd->vox[principal];
+                   break;
+                case 2:
+                   h_tcStep[slice].x = 1.f/(ex-sx);
+                   h_tcStep[slice].y = -1.f/(ey-sy);
+
+                   h_tcStart[slice].x = (h_start[slice].x - sx + 0.5f)*h_tcStep[slice].x;
+                   h_tcStart[slice].y = 1.f + (h_start[slice].y - sy + 0.5f)*h_tcStep[slice].y;
+
+                   h_tc3[slice] = (slice+0.5f)*1.f/vd->vox[principal];
+                   break;
+           }
+
+           ecur.add(&sinc);
+       }
+       else
+       {
+           h_start[slice].x = int(scur.e[0] / scur.e[3] + 0.5f);
+           h_start[slice].y = int(scur.e[1] / scur.e[3] + 0.5f);
+       }
+       scur.add(&sinc);
    }
 
    bool ok = true;
    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
+   if(sliceInterpol)
+   {
+       vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_stop, h_stop, sizeof(h_stop)), "cudaMemcpy stop");
+       vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStart, h_tcStart, sizeof(h_tcStart)), "cudaMemcpy tcStart");
+       vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStep, h_tcStep, sizeof(h_tcStep)), "cudaMemcpy tcStep");
+       vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tc3, h_tc3, sizeof(h_tc3)), "cudaMemcpy tc3");
+   }
 
 #ifdef VOLTEX3D
-   tex_raw.normalized = false;
-   tex_raw.filterMode = cudaFilterModePoint;
+   tex_raw.normalized = sliceInterpol;
+   tex_raw.filterMode = sliceInterpol ? cudaFilterModeLinear : cudaFilterModePoint;
    tex_raw.addressMode[0] = cudaAddressModeClamp;
    tex_raw.addressMode[1] = cudaAddressModeClamp;
    tex_raw.addressMode[2] = cudaAddressModeClamp;
@@ -658,7 +866,7 @@ void vvCudaPar::compositeVolume(int from, int to)
 
    clearImage <<<to-from, 128, shmsize>>>(d_img, intImg->width, intImg->height, from, to);
 
-   CompositionFunction compose = selectCompositionWithPrincipalAndSliceStep(principal, sliceStep);
+   CompositionFunction compose = selectCompositionWithSliceStepAndPrincipal(sliceStep, principal, sliceInterpol);
    // do the computation on the device
    for(int i=lastSlice; i*sliceStep>firstSlice*sliceStep; i-=sliceStep*MaxCompositeSlices)
    {
