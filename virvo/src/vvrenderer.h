@@ -101,6 +101,7 @@ class VIRVOEXPORT vvRenderer
       SOFTPER,                                    ///< software based renderer for perspective projection
       CUDAPAR,                                    ///< CUDA based renderer for parallel projection
       CUDAPER,                                    ///< CUDA based renderer for perspective projection
+      RAYREND,                                    ///< CUDA based ray casting renderer
       VOLPACK,                                    ///< Phil Lacroute's VolPack renderer
       SIMIAN,                                     ///< Joe Kniss's Simian renderer
       IMGREND,                                    ///< 2D image renderer
