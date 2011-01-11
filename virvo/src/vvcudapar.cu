@@ -31,6 +31,7 @@ using std::endl;
 #include "vvvecmath.h"
 #include "vvstopwatch.h"
 #include "vvcuda.h"
+#include "vvcudaimg.h"
 #include "vvcudapar.h"
 
 const int MAX_SLICES = 1600;
@@ -560,29 +561,13 @@ vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
 
    imagePrecision = 8;
    earlyRayTerm = true;
-   mappedImage = false;
-   if (Base::warpMode==Base::TEXTURE)
-   {
-       // we need a power-of-2 image size for glTexImage2D
-       int imgSize = vvToolshed::getTextureSize(2 * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]));
 
-#ifndef NODISPLAY
-       if (vvCuda::initGlInterop())
-       {
-           vvDebugMsg::msg(1, "using CUDA/GL interop");
-           // avoid image copy from GPU to CPU and back
-           setWarpMode(Base::CUDATEXTURE);
-           Base::intImg->setSize(imgSize, imgSize);
-       }
-       else
-       {
-         vvDebugMsg::msg(1, "can't use CUDA/GL interop");
-         Base::intImg->setSize(imgSize, imgSize);
-       }
-#endif
-   }
-
-   //wViewDir.set(0.0f, 0.0f, 1.0f);
+   delete Base::intImg; // already allocated as vvSoftImg by vvSoftPer/vvSoftPar
+   // we need a power-of-2 image size for glTexImage2D
+   int imgSize = vvToolshed::getTextureSize(2 * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]));
+   Base::intImg = new vvCudaImg(imgSize, imgSize);
+   if(static_cast<vvCudaImg*>(Base::intImg)->getMode() == vvCudaImg::TEXTURE)
+       Base::setWarpMode(Base::CUDATEXTURE);
 
 #ifdef FLOATDATA
    for(int i=0; i<3; ++i)
@@ -677,25 +662,6 @@ vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
    tex_preint.addressMode[1] = cudaAddressModeClamp;
    vvCuda::checkError(&ok, cudaBindTextureToArray(tex_preint, d_preint, desc), "bind preint tex");
 
-#ifndef NODISPLAY
-   // allocate output image (intermediate image)
-   if (Base::warpMode==Base::CUDATEXTURE)
-   {
-       vvCuda::checkError(&ok, cudaGraphicsGLRegisterBuffer(&intImgRes, Base::intImg->getPboName(), cudaGraphicsMapFlagsWriteDiscard), "map PBO to CUDA");
-   }
-   else if (mappedImage)
-   {
-       vvCuda::checkError(&ok, cudaHostAlloc(&h_img, Base::intImg->width*Base::intImg->height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped), "img alloc");;
-       Base::intImg->setBuffer(h_img);
-       Base::intImg->setSize(Base::intImg->width, Base::intImg->height);
-       vvCuda::checkError(&ok, cudaHostGetDevicePointer(&d_img, h_img, 0), "get dev ptr img");
-   }
-   else
-#endif
-   {
-       vvCuda::checkError(&ok, cudaMalloc(&d_img, Base::intImg->width*Base::intImg->height*vvSoftImg::PIXEL_SIZE), "cudaMalloc img");
-   }
-
    // copy volume size (in voxels)
    int h_vox[5];
    for (int i=0; i<5; ++i)
@@ -717,15 +683,6 @@ vvCudaSW<Base>::~vvCudaSW()
    for(int i=0; i<3; ++i)
      delete[] fraw[i];
 #endif
-
-#ifndef NODISPLAY
-   if (Base::warpMode==Base::CUDATEXTURE)
-      cudaGraphicsUnregisterResource(intImgRes);
-   else if (mappedImage)
-       cudaFreeHost(h_img);
-   else
-#endif
-       cudaFree(d_img);
 
    cudaUnbindTexture(tex_tf);
    cudaFree(d_tf);
@@ -959,20 +916,7 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
 #endif
 #endif
 
-#ifndef NODISPLAY
-   // prepare intermediate image
-   if (Base::warpMode==Base::CUDATEXTURE)
-   {
-       vvCuda::checkError(&ok, cudaGraphicsMapResources(1, &intImgRes, NULL), "map CUDA resource");
-       size_t size;
-       vvCuda::checkError(&ok, cudaGraphicsResourceGetMappedPointer((void**)&d_img, &size, intImgRes), "get PBO mapping");
-       assert(size == Base::intImg->width*Base::intImg->height*vvSoftImg::PIXEL_SIZE);
-   }
-   else
-   {
-       Base::intImg->clear();
-   }
-#endif
+   static_cast<vvCudaImg*>(Base::intImg)->map();
 
    int shmsize = Base::intImg->width*imagePrecision/8*4;
 #ifdef SHMLOAD
@@ -983,6 +927,7 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
        shmsize += Base::intImg->width*sizeof(Scalar);
    }
 
+   uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDImg();
    clearImage <<<to-from, 128, shmsize>>>(d_img, Base::intImg->width, Base::intImg->height, from, to);
 
    CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep);
@@ -1010,22 +955,7 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
 #endif
 
    // copy back or unmap for using as PBO
-   ok = vvCuda::checkError(&ok, cudaGetLastError(), "start kernel");
-#ifndef NODISPLAY
-   if (Base::warpMode==Base::CUDATEXTURE)
-   {
-       vvCuda::checkError(&ok, cudaGraphicsUnmapResources(1, &intImgRes, NULL), "unmap CUDA resource");
-   }
-   else if (mappedImage)
-   {
-       cudaThreadSynchronize();
-   }
-   else
-   {
-       cudaMemcpy(Base::intImg->data, d_img, Base::intImg->width*Base::intImg->height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost);
-       ok = vvCuda::checkError(&ok, cudaGetLastError(), "cpy to host");
-   }
-#endif
+   static_cast<vvCudaImg*>(Base::intImg)->unmap();
 }
 
 template<class Base>

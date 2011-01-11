@@ -53,12 +53,8 @@ class VIRVOEXPORT vvCudaSW : public Base
       cudaArray *d_voxarr[3];
       cudaPitchedPtr d_voxptr[3];
       uchar *d_voxels;
-      uchar4 *d_img;
       uchar4 *d_tf;
       cudaArray *d_preint;
-      uchar *h_img;
-      cudaGraphicsResource *intImgRes;              ///< CUDA resource mapped to PBO
-      bool mappedImage;
       bool earlyRayTerm;
       int imagePrecision;
 
