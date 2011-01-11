@@ -64,8 +64,6 @@ const int MaxCompositeSlices = MAX_SLICES;
 #define FLOATIMG
 #define EARLYRAYTERM
 
-const int Repetitions = 1;
-
 #ifdef VOLTEX3D
 #undef PITCHED
 #undef CONSTLOAD
@@ -102,6 +100,12 @@ texture<uchar, 3, cudaReadModeNormalizedFloat> tex_raw;
 #endif
 #endif
 
+#ifdef FLOATIMG
+typedef float4 Pixel;
+#else
+typedef uchar4 Pixel;
+#endif
+
 #ifdef FLOATDATA
 typedef float Scalar;
 #else
@@ -136,7 +140,59 @@ __global__ void clearImage(uchar4 * __restrict__ img, int width, int height,
     }
 }
 
-template<typename Scalar, int BPV, int sliceStep, int principal>
+__device__ void blend(uchar4 *dst, float4 src)
+{
+    uchar4 c = *dst;
+    *dst = make_uchar4(src.x * 255.f + c.x*src.w,
+            src.y * 255.f + c.y*src.w,
+            src.z * 255.f + c.z*src.w,
+            (1.f-src.w) * (255-c.w) + c.w);
+}
+
+__device__ void blend(uchar4 *dst, uchar4 src)
+{
+    uchar4 c = *dst;
+    const float w = src.w/255.f;
+    //src.w = 255 - src.w;
+    *dst = make_uchar4(src.x + c.x*w,
+            src.y + c.y*w,
+            src.z + c.z*w,
+            (1.f-w) * (255-c.w) + c.w);
+}
+
+__device__ void initPixel(float4 *pix)
+{
+    *pix = make_float4(0, 0, 0, 1.f);
+}
+
+__device__ void initPixel(uchar4 *pix)
+{
+    *pix = make_uchar4(0, 0, 0, 255);
+}
+
+__device__ bool isOpaque(float4 pix)
+{
+    return (pix.w < 0.003f);
+}
+
+__device__ bool isOpaque(uchar4 pix)
+{
+    return (pix.w < 1);
+}
+
+template<typename Pixel>
+__device__ Pixel classify(float s)
+{
+    return tex1Dfetch(tex_tf, s*255.f);
+}
+
+template<typename Pixel>
+__device__ Pixel classify(uchar s)
+{
+    return tex1Dfetch(tex_tf, s);
+}
+
+template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal>
 __global__ void compositeSlicesNearest(
       uchar4 * __restrict__ img, int width, int height,
 #ifdef PITCHED
@@ -147,11 +203,13 @@ __global__ void compositeSlicesNearest(
       int firstSlice, int lastSlice,
       int from, int to)
 {
+#ifndef VOLTEX3D
 #ifdef PITCHED
     const Scalar *voxels = (Scalar *)pvoxels.ptr;
     const int pitch = pvoxels.pitch;
 #else
     const int pitch = c_vox[principal] * BPV * sizeof(Scalar);
+#endif
 #endif
     const int line = blockIdx.x+from;
     if (line >= to)
@@ -159,32 +217,19 @@ __global__ void compositeSlicesNearest(
 
     // initialise intermediate image line
     extern __shared__ char smem[];
-#ifdef FLOATIMG
-    float4 *imgLine = (float4 *)smem;
-    const int pixsize = sizeof(float4);
-#else
-    uchar4 *imgLine = (uchar4 *)smem;
-    const int pixsize = sizeof(uchar4);
-#endif
+    Pixel *imgLine = (Pixel *)smem;
 #ifdef SHMLOAD
 #ifdef SHMCLASS
-    uchar4 *voxel = (uchar4 *)(smem+width*pixsize);
+    uchar4 *voxel = (uchar4 *)(smem+width*sizeof(Pixel));
 #else
-    Scalar *voxel = (Scalar *)(smem+width*pixsize);
+    Scalar *voxel = (Scalar *)(smem+width*sizeof(Pixel));
 #endif
 #endif
 
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
-#ifdef FLOATIMG
-        imgLine[ix] = make_float4(0.f,0.f,0.f,1.f);
-#else
-        imgLine[ix] = make_uchar4(0,0,0,255);
-#endif
+        initPixel(&imgLine[ix]);
     }
-
-    for(int i=0; i<Repetitions; ++i)
-    {
 
     // composite slices for this image line
     for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
@@ -209,18 +254,16 @@ __global__ void compositeSlicesNearest(
         // the voxel row of the current slice corresponding to this image line
 #ifndef NOLOAD
 #ifndef CONSTLOAD
+#ifndef VOLTEX3D
         const Scalar *voxLine = (Scalar *)(((uchar *)voxels) + pitch * ((slice+1)*c_vox[principal+1] + (iPosY-line-1)));
+#endif
 #endif
 
 #ifdef SHMLOAD
         for (int ix=threadIdx.x; ix<c_vox[principal+0]; ix+=blockDim.x)
         {
 #ifdef SHMCLASS
-#ifdef FLOATDATA
-            voxel[ix] = tex1Dfetch(tex_tf, voxLine[ix]*255.f);
-#else
-            voxel[ix] = tex1Dfetch(tex_tf, voxLine[ix]);
-#endif
+            voxel[ix] = classify<uchar4>(voxLine[ix]);
 #else
             voxel[ix] = voxLine[ix];
 #endif
@@ -251,20 +294,11 @@ __global__ void compositeSlicesNearest(
 #endif
 
             // pointer to destination pixel
-#ifdef FLOATIMG
-            float4 *pix = imgLine + iidx;
-            float4 d = *pix;
+            Pixel *pix = imgLine + iidx;
+            Pixel d = *pix;
 #ifdef EARLYRAYTERM
-            if(d.w < 0.001f)
+            if(isOpaque(d))
                 continue;
-#endif
-#else
-            uchar4 *pix = imgLine + iidx;
-            uchar4 d = *pix;
-#ifdef EARLYRAYTERM
-            if(d.w < 1)
-                continue;
-#endif
 #endif
 
 #ifdef VOLTEX3D
@@ -285,10 +319,10 @@ __global__ void compositeSlicesNearest(
                     break;
             }
 #endif
-            const float4 c = tex1Dfetch(tex_tf, v*255.f);
+            const float4 c = classify<float4>(v);
 #else
 #ifdef CONSTDATA
-            const float4 c = tex1Dfetch(tex_tf, ix);
+            const float4 c = classify<float4>(uchar(ix));
 #else
 #ifdef SHMCLASS
             const uchar4 v = *(voxel + BPV * vidx);
@@ -301,11 +335,7 @@ __global__ void compositeSlicesNearest(
             const Scalar *v = voxLine + BPV * vidx;
 #endif
             // apply transfer function
-#ifdef FLOATDATA
-            const float4 c = tex1Dfetch(tex_tf, *v*255.f);
-#else
-            const float4 c = tex1Dfetch(tex_tf, *v);
-#endif
+            const float4 c = classify<float4>(*v);
 #endif
 #endif
 #endif
@@ -325,34 +355,20 @@ __global__ void compositeSlicesNearest(
         }
 #endif
     }
-    }
 
 #ifndef NODISPLAY
     // copy line to intermediate image
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         uchar4 *dest = img + line*width+ix;
-        uchar4 c = *dest;
-#ifdef FLOATIMG
-        *dest = make_uchar4(imgLine[ix].x * 255.f + c.x*imgLine[ix].w,
-                imgLine[ix].y * 255.f + c.y*imgLine[ix].w,
-                imgLine[ix].z * 255.f + c.z*imgLine[ix].w,
-                (1.f-imgLine[ix].w) * (255-c.w) + c.w);
-#else
-        const float w= imgLine[ix].w/255.f;
-        imgLine[ix].w = 255 - imgLine[ix].w;
-        *dest = make_uchar4(imgLine[ix].x + c.x*w,
-                imgLine[ix].y + c.y*w,
-                imgLine[ix].z + c.z*w,
-                (1.f-w) * (255-c.w) + c.w);
-#endif
+        blend(dest, imgLine[ix]);
     }
 #endif
 }
 
 
 #ifdef VOLTEX3D
-template<typename Scalar, int BPV, int sliceStep, int principal>
+template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal>
 __global__ void compositeSlicesBilinear(
       uchar4 * __restrict__ img, int width, int height,
 #ifdef PITCHED
@@ -369,21 +385,11 @@ __global__ void compositeSlicesBilinear(
 
     // initialise intermediate image line
     extern __shared__ char smem[];
-#ifdef FLOATIMG
-    float4 *imgLine = (float4 *)smem;
-    const int pixsize = sizeof(float4);
-#else
-    uchar4 *imgLine = (uchar4 *)smem;
-    const int pixsize = sizeof(uchar4);
-#endif
+    Pixel *imgLine = (Pixel *)smem;
 
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
-#ifdef FLOATIMG
-        imgLine[ix] = make_float4(0.f,0.f,0.f,1.f);
-#else
-        imgLine[ix] = make_uchar4(0,0,0,255);
-#endif
+        initPixel(&imgLine[ix]);
     }
 
     // composite slices for this image line
@@ -409,20 +415,11 @@ __global__ void compositeSlicesBilinear(
             const int iidx = ix;
 
             // pointer to destination pixel
-#ifdef FLOATIMG
-            float4 *pix = imgLine + iidx;
-            float4 d = *pix;
+            Pixel *pix = imgLine + iidx;
+            Pixel d = *pix;
 #ifdef EARLYRAYTERM
-            if(d.w < 0.001f)
+            if(isOpaque(d))
                 continue;
-#endif
-#else
-            uchar4 *pix = imgLine + iidx;
-            uchar4 d = *pix;
-#ifdef EARLYRAYTERM
-            if(d.w < 1)
-                continue;
-#endif
 #endif
 
             const float x = c_tcStart[slice].x + c_tcStep[slice].x*vidx;
@@ -445,7 +442,7 @@ __global__ void compositeSlicesBilinear(
                     break;
             }
 #endif
-            const float4 c = tex1Dfetch(tex_tf, v*255.f);
+            const float4 c = classify<float4>(v);
 
             // blend
             const float w = d.w*c.w;
@@ -463,20 +460,7 @@ __global__ void compositeSlicesBilinear(
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         uchar4 *dest = img + line*width+ix;
-        uchar4 c = *dest;
-#ifdef FLOATIMG
-        *dest = make_uchar4(imgLine[ix].x * 255.f + c.x*imgLine[ix].w,
-                imgLine[ix].y * 255.f + c.y*imgLine[ix].w,
-                imgLine[ix].z * 255.f + c.z*imgLine[ix].w,
-                (1.f-imgLine[ix].w) * (255-c.w) + c.w);
-#else
-        const float w= imgLine[ix].w/255.f;
-        imgLine[ix].w = 255 - imgLine[ix].w;
-        *dest = make_uchar4(imgLine[ix].x + c.x*w,
-                imgLine[ix].y + c.y*w,
-                imgLine[ix].z + c.z*w,
-                (1.f-w) * (255-c.w) + c.w);
-#endif
+        blend(dest, imgLine[ix]);
     }
 }
 #endif
@@ -681,10 +665,10 @@ CompositionFunction selectComposition(bool sliceInterpol)
 {
 #ifdef VOLTEX3D
     if(sliceInterpol)
-        return compositeSlicesBilinear<Scalar, 1, sliceStep, principal>;
+        return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal>;
     else
 #endif
-        return compositeSlicesNearest<Scalar, 1, sliceStep, principal>;
+        return compositeSlicesNearest<Scalar, 1, Pixel, sliceStep, principal>;
 }
 
 template<int principal>
@@ -762,6 +746,7 @@ void vvCudaPar::compositeVolume(int from, int to)
 #endif
    for(int slice=firstSlice; slice != lastSlice; slice += sliceStep)
    {
+#ifdef VOLTEX3D
        if(sliceInterpol)
        {
            const float sx = scur.e[0]/scur.e[3];
@@ -809,6 +794,7 @@ void vvCudaPar::compositeVolume(int from, int to)
            ecur.add(&sinc);
        }
        else
+#endif
        {
            h_start[slice].x = int(scur.e[0] / scur.e[3] + 0.5f);
            h_start[slice].y = int(scur.e[1] / scur.e[3] + 0.5f);
@@ -818,6 +804,7 @@ void vvCudaPar::compositeVolume(int from, int to)
 
    bool ok = true;
    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
+#ifdef VOLTEX3D
    if(sliceInterpol)
    {
        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_stop, h_stop, sizeof(h_stop)), "cudaMemcpy stop");
@@ -825,6 +812,7 @@ void vvCudaPar::compositeVolume(int from, int to)
        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStep, h_tcStep, sizeof(h_tcStep)), "cudaMemcpy tcStep");
        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tc3, h_tc3, sizeof(h_tc3)), "cudaMemcpy tc3");
    }
+#endif
 
 #ifdef VOLTEX3D
    tex_raw.normalized = sliceInterpol;
@@ -855,11 +843,7 @@ void vvCudaPar::compositeVolume(int from, int to)
    }
 #endif
 
-#ifdef FLOATIMG
-   int shmsize = intImg->width*sizeof(float4);
-#else
-   int shmsize = intImg->width*vvSoftImg::PIXEL_SIZE;
-#endif
+   int shmsize = intImg->width*sizeof(Pixel);
 #ifdef SHMLOAD
    shmsize += vd->vox[principal]*vd->getBPV()*sizeof(Scalar);
 #endif
