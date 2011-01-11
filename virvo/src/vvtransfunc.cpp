@@ -34,6 +34,7 @@
 #include "vvdebugmsg.h"
 #include "vvvecmath.h"
 #include "vvtransfunc.h"
+#include "vvcudatransfunc.h"
 #include "vvvoldesc.h"
 
 //----------------------------------------------------------------------------
@@ -776,14 +777,18 @@ of the principal viewing axis (defaults to 1.0)
 */
 void vvTransFunc::makePreintLUTCorrect(int width, uchar *preIntTable, float thickness, float min, float max)
 {
-  const int minLookupSteps = 2;
-  const int addLookupSteps = 1;
-
   vvDebugMsg::msg(1, "vvTransFunc::makePreintLUTCorrect()");
 
   // Generate arrays from pins:
   float *rgba = new float[width * 4];
   computeTFTexture(width, 1, 1, rgba, min, max);
+
+#ifdef HAVE_CUDA
+  if(!makePreintLUTCorrectCuda(width, preIntTable, thickness, min, max, rgba))
+#endif
+  {
+  const int minLookupSteps = 2;
+  const int addLookupSteps = 1;
 
   // cerr << "Calculating dependent texture - Please wait ...";
   vvToolshed::initProgress(width);
@@ -832,8 +837,9 @@ void vvTransFunc::makePreintLUTCorrect(int width, uchar *preIntTable, float thic
     }
     vvToolshed::printProgress(sb);
   }
-  delete[] rgba;
   // cerr << "done." << endl;
+  }
+  delete[] rgba;
 }
 
 //----------------------------------------------------------------------------

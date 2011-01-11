@@ -65,6 +65,7 @@ libvirvo_a_headers = \
         vvcudaimg.h \
         vvcudautils.h \
 	vvcudapar.h \
+	vvcudatransfunc.h \
         vvbonjour/vvbonjourbrowser.h \
         vvbonjour/vvbonjourentry.h \
         vvbonjour/vvbonjourregistrar.h \
@@ -127,7 +128,8 @@ libvirvo_a_SOURCES = \
 if CUDA
 libvirvo_a_SOURCES += \
 	vvcudapar.cu \
-        vvrayrend.cu
+        vvrayrend.cu \
+	vvcudatransfunc.cu
 endif
 
 libvirvoincludedir = $(includedir)/virvo
