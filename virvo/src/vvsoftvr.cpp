@@ -63,6 +63,8 @@ vvSoftVR::vvSoftVR(vvVolDesc* vd, vvRenderState rs) : vvRenderer(vd, rs)
    bilinLookup = false;
    opCorr = false;
    earlyRayTermination = 0;
+   oldQuality = 1.f;
+   quality = 1.f;
    _timing = false;
    _size = vd->getSize();
 
@@ -129,6 +131,13 @@ void vvSoftVR::renderVolumeGL()
       sw = new vvStopwatch();
       sw->start();
    }
+
+   if(oldQuality != _renderState._quality)
+   {
+     setQuality(_renderState._quality);
+     oldQuality = _renderState._quality;
+   }
+
 
    // Memorize current OpenGL matrix mode and modelview matrix
    // because prepareRendering modifies the modelview matrix:
@@ -1055,6 +1064,7 @@ void vvSoftVR::setParameter(ParameterType param, float newValue, char*)
    {
       case vvRenderer::VV_SLICEINT:
          sliceInterpol = (newValue == 0.0f) ? false : true;
+         setQuality(_renderState._quality);
          break;
 #if 0
       case vvRenderer::VV_WARPINT:
@@ -1117,6 +1127,12 @@ float vvSoftVR::getParameter(ParameterType param, char*) const
          return (preIntegration) ? 1.0f : 0.0f;
       default: return vvRenderer::getParameter(param);
    }
+}
+
+void vvSoftVR::setQuality(float q)
+{
+  quality = 1.f;
+  _renderState._quality = q;
 }
 
 

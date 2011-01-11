@@ -113,6 +113,8 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       bool sliceBuffer;                           ///< slice buffer: true=intermediate image aligned, false=slice aligned
       bool bilinLookup;                           ///< true=bilinear lookup in pre-integration table, false=nearest neighbor lookup
       bool opCorr;                                ///< true=opacity correction on
+      float quality;                              ///< quality actually used
+      float oldQuality;                           ///< previous image quality
                                                   ///< size of pre-integrated LUT ([sf][sb][RGBA])
       uchar preIntTable[PRE_INT_TABLE_SIZE][PRE_INT_TABLE_SIZE][4];
       int earlyRayTermination;                    ///< counter for number of voxels which are skipped due to early ray termination
@@ -134,6 +136,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       void compositeOutline();
       virtual int  getCullingStatus(float);
       virtual void factorViewMatrix() = 0;
+      virtual void setQuality(float q);
 
    public:
       vvSoftImg* intImg;                          ///< intermediate image

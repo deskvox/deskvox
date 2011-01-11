@@ -70,6 +70,7 @@ class VIRVOEXPORT vvCudaSW : public Base
       void compositeVolume(int = -1, int = -1);
       virtual void setParameter(typename Base::ParameterType, float, char *);
       virtual float getParameter(typename Base::ParameterType, char *) const;
+      virtual void setQuality(float q);
 
       int getPrincipal() const { return Base::principal; }
       bool getPreIntegration() const { return Base::preIntegration; }

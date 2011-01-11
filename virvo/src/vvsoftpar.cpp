@@ -1005,6 +1005,7 @@ void vvSoftPar::findShearMatrix()
    //  0   0    1    0
    //  0   0    0    1
    imgConv.identity();
+   imgConv.scale(quality, quality, 1.0f);
    imgConv.e[0][3] = (float)(intImg->width / 2);
    imgConv.e[1][3] = (float)(intImg->height / 2);
    siShear.multiplyPost(&imgConv);

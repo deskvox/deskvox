@@ -726,7 +726,7 @@ template<class Base, typename Pixel, int principal, int sliceStep, bool earlyRay
 CompositionFunction selectComposition(vvCudaSW<Base> *rend)
 {
 #ifdef VOLTEX3D
-    if(rend->getSliceInterpol())
+    if(rend->getSliceInterpol() || rend->getRendererType() == vvRenderer::CUDAPER)
     {
         if(rend->getPreIntegration())
             return compositeSlicesPreIntegrated<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
@@ -735,7 +735,12 @@ CompositionFunction selectComposition(vvCudaSW<Base> *rend)
     }
     else
 #endif
-        return compositeSlicesNearest<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
+    {
+        if(rend->getRendererType() == vvRenderer::CUDAPAR)
+            return compositeSlicesNearest<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
+    }
+
+    return NULL;
 }
 
 template<class Base, typename Pixel, int principal, int sliceStep>
@@ -847,11 +852,11 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
            const float ex = ecur.e[0]/ecur.e[3];
            const float ey = ecur.e[1]/ecur.e[3];
 
-           h_start[slice].x = int(floor(sx));
-           h_start[slice].y = int(floor(sy));
+           h_start[slice].x = max(0,int(floor(sx)));
+           h_start[slice].y = max(0,int(floor(sy)));
 
-           h_stop[slice].x = int(ceil(ex));
-           h_stop[slice].y = int(ceil(ey));
+           h_stop[slice].x = min(Base::intImg->width-1,int(ceil(ex)));
+           h_stop[slice].y = min(Base::intImg->height-1,int(ceil(ey)));
 
            switch(p)
            {
@@ -935,24 +940,26 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
    uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDImg();
    clearImage <<<to-from, 128, shmsize>>>(d_img, Base::intImg->width, Base::intImg->height, from, to);
 
-   CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep);
-   // do the computation on the device
-   for(int i=lastSlice; i*sliceStep>firstSlice*sliceStep; i-=sliceStep*MaxCompositeSlices)
+   if(CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep))
    {
-       cudaThreadSynchronize();
+       // do the computation on the device
+       for(int i=lastSlice; i*sliceStep>firstSlice*sliceStep; i-=sliceStep*MaxCompositeSlices)
+       {
+           cudaThreadSynchronize();
 #ifdef PITCHED
-       compose <<<to-from, 128, shmsize>>>(
-               d_img, Base::intImg->width, Base::intImg->height,
-               d_voxptr[principal],
-               sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
-               from, to);
+           compose <<<to-from, 128, shmsize>>>(
+                   d_img, Base::intImg->width, Base::intImg->height,
+                   d_voxptr[principal],
+                   sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
+                   from, to);
 #else
-       compose <<<to-from, 128, shmsize>>>(
-               d_img, Base::intImg->width, Base::intImg->height,
-               (Scalar *)(d_voxels+sizeof(Scalar)*Base::vd->getBPV()*Base::principal*(Base::vd->vox[0]*Base::vd->vox[1]*Base::vd->vox[2])),
-               sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
-               from, to);
+           compose <<<to-from, 128, shmsize>>>(
+                   d_img, Base::intImg->width, Base::intImg->height,
+                   (Scalar *)(d_voxels+sizeof(Scalar)*Base::vd->getBPV()*Base::principal*(Base::vd->vox[0]*Base::vd->vox[1]*Base::vd->vox[2])),
+                   sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
+                   from, to);
 #endif
+       }
    }
 
 #ifdef VOLTEX3D
@@ -997,6 +1004,53 @@ float vvCudaSW<Base>::getParameter(typename Base::ParameterType param, char *cva
         default:
             return Base::getParameter(param, cval);
     }
+}
+
+//----------------------------------------------------------------------------
+/** Set rendering quality.
+  When quality changes, the intermediate image must be resized and the shear
+  matrix has to be recomputed.
+  @see vvRenderer#setQuality
+*/
+template<>
+void vvCudaSW<vvSoftPar>::setQuality(float q)
+{
+   typedef vvSoftPar Base;
+
+   vvDebugMsg::msg(3, "vvCudaSW::setQuality()", q);
+
+#ifdef VV_XVID
+   q = 1.0f;
+#endif
+
+   Base::_renderState._quality = q;
+
+   if(!Base::sliceInterpol)
+       q = 1.f;
+
+   quality = q;
+
+   // edge size of intermediate image [pixels]
+   int intImgSize = (int)((2.0f * q) * ts_max(Base::vd->vox[0], Base::vd->vox[1], Base::vd->vox[2]));
+   if (intImgSize<1)
+   {
+      intImgSize = 1;
+      quality = 1.0f / (2.0f * ts_max(Base::vd->vox[0], Base::vd->vox[1], Base::vd->vox[2]));
+   }
+
+   intImgSize = ts_clamp(intImgSize, 16, 4096);
+   intImgSize = vvToolshed::getTextureSize(intImgSize);
+
+   Base::intImg->setSize(intImgSize, intImgSize);
+   vvSoftPar::findShearMatrix();
+   vvDebugMsg::msg(3, "Intermediate image edge length: ", intImgSize);
+}
+
+template<>
+void vvCudaSW<vvSoftPer>::setQuality(float q)
+{
+   vvDebugMsg::msg(3, "vvCudaSW::setQuality()", q);
+   vvSoftPer::setQuality(q);
 }
 
 vvCudaPer::vvCudaPer(vvVolDesc *vd, vvRenderState rs)
