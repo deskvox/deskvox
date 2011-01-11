@@ -47,7 +47,7 @@ public:
 
   vvCudaImg(int w, int h, Mode mode = TEXTURE);
   ~vvCudaImg();
-  void setSize(int, int, uchar *buf=NULL, bool usePbo=false);
+  void setSize(int w, int h);
 
   void setMapped(bool mapped);
 

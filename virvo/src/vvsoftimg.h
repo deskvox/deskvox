@@ -60,6 +60,8 @@ class VIRVOEXPORT vvSoftImg
       bool      warpInterpolation;                ///< true = linear interpolation, false = nearest neighbor interpolation
       bool      reinitTex;                        ///< true if texture parameters have to be (re-)set
       bool      canUsePbo;                        ///< true if GL functions for PBOs are available
+   protected:
+      bool      usePbo;                           ///< default: false
 
    public:
       static const int PIXEL_SIZE;                ///< byte per pixel (3 for RGB, 4 for RGBA)
@@ -72,7 +74,8 @@ class VIRVOEXPORT vvSoftImg
 
       vvSoftImg(int=0, int=0);
       virtual ~vvSoftImg();
-      virtual void setSize(int, int, uchar *buf=NULL, bool usePbo=false);
+      void setBuffer(uchar* buf);
+      virtual void setSize(int, int);
       void initTexture(GLuint format);
       void zoom(vvSoftImg*);
       void copy(AlignType, vvSoftImg*);

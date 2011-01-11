@@ -572,7 +572,7 @@ vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
            vvDebugMsg::msg(1, "using CUDA/GL interop");
            // avoid image copy from GPU to CPU and back
            setWarpMode(Base::CUDATEXTURE);
-           Base::intImg->setSize(imgSize, imgSize, NULL, true);
+           Base::intImg->setSize(imgSize, imgSize);
        }
        else
        {
@@ -686,7 +686,8 @@ vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
    else if (mappedImage)
    {
        vvCuda::checkError(&ok, cudaHostAlloc(&h_img, Base::intImg->width*Base::intImg->height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped), "img alloc");;
-       Base::intImg->setSize(Base::intImg->width, Base::intImg->height, h_img, false);
+       Base::intImg->setBuffer(h_img);
+       Base::intImg->setSize(Base::intImg->width, Base::intImg->height);
        vvCuda::checkError(&ok, cudaHostGetDevicePointer(&d_img, h_img, 0), "get dev ptr img");
    }
    else

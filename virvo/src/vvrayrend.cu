@@ -885,7 +885,7 @@ void vvRayRend::factorViewMatrix()
 
   if ((intImg->width != w) || (intImg->height != h))
   {
-    intImg->setSize(w, h, NULL, true);
+    intImg->setSize(w, h);
   }
 
   iwWarp.identity();

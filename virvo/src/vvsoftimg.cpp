@@ -50,6 +50,7 @@ vvSoftImg::vvSoftImg(int w, int h)
 
    glewInit();
 
+   usePbo = false;
    width  = w;
    height = h;
    warpInterpolation = true;                      // set default interpolation type for warp
@@ -85,28 +86,36 @@ vvSoftImg::~vvSoftImg()
 
 
 //----------------------------------------------------------------------------
+/** Set data array from buffer.
+  @param buf  data to render
+*/
+void vvSoftImg::setBuffer(uchar* buf)
+{
+  vvDebugMsg::msg(3, "vvSoftImg::setBuffer()");
+
+  if (deleteData) delete[] data;
+  data = buf;
+  deleteData = false;
+}
+
+
+//----------------------------------------------------------------------------
 /** Resize image.
   @param w new image width in pixels
   @param h new image height in pixels
 */
-void vvSoftImg::setSize(int w, int h, uchar *buf, bool usePbo)
+void vvSoftImg::setSize(int w, int h)
 {
    vvDebugMsg::msg(3, "vvSoftImg::setSize() ", w, h);
 
-   if (width!=w || height!=h || (buf != data) || (usePbo!=(pboName!=0))) // recreate image buffer only if needed
+   if (width!=w || height!=h || (usePbo!=(pboName!=0))) // recreate image buffer only if needed
    {
       width  = w;
       height = h;
-      if (deleteData) delete[] data;
-      if (buf)
+      if (deleteData)
       {
-         data = buf;
-         deleteData = false;
-      }
-      else
-      {
-         data = new uchar[width * height * PIXEL_SIZE];
-         deleteData = true;
+        delete[] data;
+        data = new uchar[width * height * PIXEL_SIZE];
       }
 #ifndef VV_REMOTE_RENDERING
       if (canUsePbo)

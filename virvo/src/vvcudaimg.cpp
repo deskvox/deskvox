@@ -26,9 +26,7 @@ vvCudaImg::vvCudaImg(const int w, const int h, const Mode mode)
 {
   _mode = mode;
   _mapped = false;
-#ifdef HAVE_CUDA
   _imgRes = NULL;
-#endif
   init();
   allocate();
 }
@@ -38,10 +36,11 @@ vvCudaImg::~vvCudaImg()
   deallocate();
 }
 
-void vvCudaImg::setSize(int w, int h, uchar *buf, bool usePbo)
+void vvCudaImg::setSize(int w, int h)
 {
   deallocate();
-  vvSoftImg::setSize(w, h, buf, usePbo);
+  usePbo = (_mode==TEXTURE);
+  vvSoftImg::setSize(w, h);
   allocate();
 }
 
@@ -65,8 +64,9 @@ void vvCudaImg::allocate()
   }
   else if (_mapped)
   {
-    vvCuda::checkError(&ok, cudaHostAlloc(&h_img, width*height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped), "img alloc");;
-    setSize(width, height, h_img, false);
+    vvCuda::checkError(&ok, cudaHostAlloc(&h_img, width*height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped), "img alloc");
+    setBuffer(h_img);
+    setSize(width, height);
     vvCuda::checkError(&ok, cudaHostGetDevicePointer(&d_img, h_img, 0), "get dev ptr img");
   }
   else
@@ -165,7 +165,7 @@ void vvCudaImg::init()
     {
       vvDebugMsg::msg(1, "using CUDA/GL interop");
       // avoid image copy from GPU to CPU and back
-      setSize(width, height, NULL, true);
+      setSize(width, height);
     }
     else
 #else
