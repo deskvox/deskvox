@@ -185,6 +185,28 @@ __device__ Pixel classify(uchar s)
     return tex1Dfetch(tex_tf, s);
 }
 
+#ifdef VOLTEX3D
+__device__ float volume(int px, int py, int slice, int principal)
+{
+    const float x = c_tcStart[slice].x + c_tcStep[slice].x*px;
+    const float y = c_tcStart[slice].y + c_tcStep[slice].y*py;
+    const float z = c_tc3[slice];
+#if VOLTEX3D==3
+    return tex3D(tex_raw, x, y, z);
+#else
+    switch(principal)
+    {
+        case 0:
+            return tex3D(tex_raw, z, x, y);
+        case 1:
+            return tex3D(tex_raw, y, z, x);
+        case 2:
+            return tex3D(tex_raw, x, y, z);
+    }
+#endif
+}
+#endif
+
 template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm>
 __global__ void compositeSlicesNearest(
       uchar4 * __restrict__ img, int width, int height,
@@ -411,26 +433,7 @@ __global__ void compositeSlicesBilinear(
             if(earlyRayTerm && isOpaque(d))
                 continue;
 
-            const float x = c_tcStart[slice].x + c_tcStep[slice].x*vidx;
-            const float y = c_tcStart[slice].y + c_tcStep[slice].y*(line-iPosY);
-            const float z = c_tc3[slice];
-#if VOLTEX3D==3
-            const float v = tex3D(tex_raw, x, y, z);
-#else
-            float v;
-            switch(principal)
-            {
-                case 0:
-                    v = tex3D(tex_raw, z, x, y);
-                    break;
-                case 1:
-                    v = tex3D(tex_raw, y, z, x);
-                    break;
-                case 2:
-                    v = tex3D(tex_raw, x, y, z);
-                    break;
-            }
-#endif
+            const float v = volume(vidx, line-iPosY, slice, principal);
             const float4 c = classify<float4>(v);
 
             // blend
@@ -507,26 +510,7 @@ __global__ void compositeSlicesPreIntegrated(
             if(earlyRayTerm && isOpaque(d))
                 continue;
 
-            const float x = c_tcStart[slice].x + c_tcStep[slice].x*vidx;
-            const float y = c_tcStart[slice].y + c_tcStep[slice].y*(line-iPosY);
-            const float z = c_tc3[slice];
-#if VOLTEX3D==3
-            const float sb = tex3D(tex_raw, x, y, z);
-#else
-            float sb;
-            switch(principal)
-            {
-                case 0:
-                    sb = tex3D(tex_raw, z, x, y);
-                    break;
-                case 1:
-                    sb = tex3D(tex_raw, y, z, x);
-                    break;
-                case 2:
-                    sb = tex3D(tex_raw, x, y, z);
-                    break;
-            }
-#endif
+            const float sb = volume(vidx, line-iPosY, slice, principal);
             if(slice != firstSlice)
             {
                 const float4 c = tex2D(tex_preint, sf[ix], sb);
