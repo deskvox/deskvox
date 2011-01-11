@@ -26,7 +26,7 @@
 
 #ifdef HAVE_CUDA
 
-#include <vvx11.h>
+#include "vvx11.h"
 
 #include <string>
 #include <cstring>
