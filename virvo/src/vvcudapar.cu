@@ -55,14 +55,12 @@ const int MaxCompositeSlices = MAX_SLICES;
 //#define NOLOAD
 //#define NODISPLAY
 //#define SHMLOAD
-#define VOLTEX3D 1 // undef, 1 or 3
+#define VOLTEX3D 3 // undef, 1 or 3
 //#define PITCHED
 //#define FLOATDATA
 //#define CONSTLOAD
 //#define THREADPERVOXEL
 //#define CONSTDATA
-#define FLOATIMG
-#define EARLYRAYTERM
 
 #ifdef VOLTEX3D
 #undef PITCHED
@@ -98,12 +96,6 @@ texture<float, 3, cudaReadModeElementType> tex_raw;
 #else
 texture<uchar, 3, cudaReadModeNormalizedFloat> tex_raw;
 #endif
-#endif
-
-#ifdef FLOATIMG
-typedef float4 Pixel;
-#else
-typedef uchar4 Pixel;
 #endif
 
 #ifdef FLOATDATA
@@ -192,7 +184,7 @@ __device__ Pixel classify(uchar s)
     return tex1Dfetch(tex_tf, s);
 }
 
-template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal>
+template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm>
 __global__ void compositeSlicesNearest(
       uchar4 * __restrict__ img, int width, int height,
 #ifdef PITCHED
@@ -296,10 +288,8 @@ __global__ void compositeSlicesNearest(
             // pointer to destination pixel
             Pixel *pix = imgLine + iidx;
             Pixel d = *pix;
-#ifdef EARLYRAYTERM
-            if(isOpaque(d))
+            if(earlyRayTerm && isOpaque(d))
                 continue;
-#endif
 
 #ifdef VOLTEX3D
 #if VOLTEX3D == 3
@@ -368,7 +358,7 @@ __global__ void compositeSlicesNearest(
 
 
 #ifdef VOLTEX3D
-template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal>
+template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm>
 __global__ void compositeSlicesBilinear(
       uchar4 * __restrict__ img, int width, int height,
 #ifdef PITCHED
@@ -417,10 +407,8 @@ __global__ void compositeSlicesBilinear(
             // pointer to destination pixel
             Pixel *pix = imgLine + iidx;
             Pixel d = *pix;
-#ifdef EARLYRAYTERM
-            if(isOpaque(d))
+            if(earlyRayTerm && isOpaque(d))
                 continue;
-#endif
 
             const float x = c_tcStart[slice].x + c_tcStep[slice].x*vidx;
             const float y = c_tcStart[slice].y + c_tcStep[slice].y*(line-iPosY);
@@ -480,6 +468,8 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
    vvDebugMsg::msg(1, "vvCudaPar::vvCudaPar()");
 
    rendererType = CUDAPAR;
+   imagePrecision = 8;
+   earlyRayTerm = true;
    mappedImage = false;
    if (warpMode==TEXTURE)
    {
@@ -660,26 +650,35 @@ void vvCudaPar::updateTransferFunction()
    vvCuda::checkError(NULL, cudaMemcpy(d_tf, rgbaConv, sizeof(rgbaConv), cudaMemcpyHostToDevice), "cudaMemcpy tf");
 }
 
-template<int principal, int sliceStep>
-CompositionFunction selectComposition(bool sliceInterpol)
+template<typename Pixel, int principal, int sliceStep, bool earlyRayTerm>
+CompositionFunction selectComposition(vvCudaPar *rend)
 {
 #ifdef VOLTEX3D
-    if(sliceInterpol)
-        return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal>;
+    if(rend->getSliceInterpol())
+        return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
     else
 #endif
-        return compositeSlicesNearest<Scalar, 1, Pixel, sliceStep, principal>;
+        return compositeSlicesNearest<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
 }
 
-template<int principal>
-CompositionFunction selectCompositionWithSliceStep(int sliceStep, bool sliceInterpol)
+template<typename Pixel, int principal, int sliceStep>
+CompositionFunction selectCompositionWithEarlyTermination(vvCudaPar *rend)
+{
+    if(rend->getEarlyRayTerm())
+        return selectComposition<Pixel, principal, sliceStep, true>(rend);
+    else
+        return selectComposition<Pixel, principal, sliceStep, false>(rend);
+}
+
+template<typename Pixel, int principal>
+CompositionFunction selectCompositionWithSliceStep(vvCudaPar *rend, int sliceStep)
 {
     switch(sliceStep)
     {
         case 1:
-            return selectComposition<principal,1>(sliceInterpol);
+            return selectCompositionWithEarlyTermination<Pixel, principal,1>(rend);
         case -1:
-            return selectComposition<principal,-1>(sliceInterpol);
+            return selectCompositionWithEarlyTermination<Pixel, principal,-1>(rend);
         default:
             assert("slice step out of range" == NULL);
     }
@@ -687,16 +686,17 @@ CompositionFunction selectCompositionWithSliceStep(int sliceStep, bool sliceInte
     return NULL;
 }
 
-CompositionFunction selectCompositionWithSliceStepAndPrincipal(int sliceStep, int principal, bool sliceInterpol)
+template<typename Pixel>
+CompositionFunction selectCompositionWithPrincipal(vvCudaPar *rend, int sliceStep)
 {
-    switch(principal)
+    switch(rend->getPrincipal())
     {
         case 0:
-            return selectCompositionWithSliceStep<0>(sliceStep, sliceInterpol);
+            return selectCompositionWithSliceStep<Pixel, 0>(rend, sliceStep);
         case 1:
-            return selectCompositionWithSliceStep<1>(sliceStep, sliceInterpol);
+            return selectCompositionWithSliceStep<Pixel, 1>(rend, sliceStep);
         case 2:
-            return selectCompositionWithSliceStep<2>(sliceStep, sliceInterpol);
+            return selectCompositionWithSliceStep<Pixel, 2>(rend, sliceStep);
         default:
             assert("principal axis out of range" == NULL);
 
@@ -705,6 +705,20 @@ CompositionFunction selectCompositionWithSliceStepAndPrincipal(int sliceStep, in
     return NULL;
 }
 
+CompositionFunction selectCompositionWithPrecision(vvCudaPar *rend, int sliceStep)
+{
+    switch(rend->getPrecision())
+    {
+        case 8:
+            return selectCompositionWithPrincipal<uchar4>(rend, sliceStep);
+        case 32:
+            return selectCompositionWithPrincipal<float4>(rend, sliceStep);
+        default:
+            assert("invalid precision" == NULL);
+    }
+
+    return NULL;
+}
 
 //----------------------------------------------------------------------------
 /** Composite the volume slices to the intermediate image.
@@ -843,14 +857,14 @@ void vvCudaPar::compositeVolume(int from, int to)
    }
 #endif
 
-   int shmsize = intImg->width*sizeof(Pixel);
+   int shmsize = intImg->width*imagePrecision/8*4;
 #ifdef SHMLOAD
    shmsize += vd->vox[principal]*vd->getBPV()*sizeof(Scalar);
 #endif
 
    clearImage <<<to-from, 128, shmsize>>>(d_img, intImg->width, intImg->height, from, to);
 
-   CompositionFunction compose = selectCompositionWithSliceStepAndPrincipal(sliceStep, principal, sliceInterpol);
+   CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep);
    // do the computation on the device
    for(int i=lastSlice; i*sliceStep>firstSlice*sliceStep; i-=sliceStep*MaxCompositeSlices)
    {
@@ -892,6 +906,41 @@ void vvCudaPar::compositeVolume(int from, int to)
    }
 #endif
 }
+
+void vvCudaPar::setParameter(ParameterType param, float val, char *cval)
+{
+    vvDebugMsg::msg(3, "vvCudaPar::setParameter()");
+    switch(param)
+    {
+        case VV_IMG_PRECISION:
+            if(val == 8)
+                imagePrecision = 8;
+            else
+                imagePrecision = 32;
+            break;
+        case VV_TERMINATEEARLY:
+            earlyRayTerm = (val != 0.f);
+            break;
+        default:
+            vvSoftPar::setParameter(param, val, cval);
+            break;
+    }
+}
+
+float vvCudaPar::getParameter(ParameterType param, char *cval) const
+{
+    vvDebugMsg::msg(3, "vvCudaPar::getParameter()");
+    switch(param)
+    {
+        case VV_IMG_PRECISION:
+            return imagePrecision;
+        case VV_TERMINATEEARLY:
+            return (earlyRayTerm ? 1.f : 0.f);
+        default:
+            return vvSoftPar::getParameter(param, cval);
+    }
+}
+
 //============================================================================
 // End of File
 //============================================================================

@@ -117,6 +117,7 @@ vvView::vvView()
   preintMode            = false;
   paletteMode           = false;
   emptySpaceLeapingMode = true;
+  earlyRayTermination   = true;
   perspectiveMode       = true;
   timingMode            = false;
   opCorrMode            = true;
@@ -753,6 +754,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   //renderer->setClippingMode(false);
   renderer->_renderState._quality = (hqMode) ? highQuality : draftQuality;
   renderer->setParameter(vvRenderer::VV_LEAPEMPTY, emptySpaceLeapingMode);
+  renderer->setParameter(vvRenderer::VV_TERMINATEEARLY, earlyRayTermination);
   renderer->setParameter(vvRenderer::VV_LIGHTING, useHeadLight);
   renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, ds->gpuproxygeo);
   renderer->setParameter(vvRenderer::VV_OFFSCREENBUFFER, useOffscreenBuffer);
@@ -1267,17 +1269,12 @@ void vvView::optionsMenuCallback(int item)
     cerr << "Z size set to " << size.e[2] << endl;
     break;
   case 10:                                     // increase precision of visual
-    if (ds->useOffscreenBuffer)
+    if (ds->cudaRenderer || ds->softwareRenderer || ds->rayRenderer)
     {
-      if (ds->bufferPrecision == 8)
-      {
-        ds->bufferPrecision = 16;
-        cerr << "Buffer precision set to 16bit" << endl;
-      }
-      else if (ds->bufferPrecision == 16)
+      if (ds->bufferPrecision < 32)
       {
         ds->bufferPrecision = 32;
-        cerr << "Buffer precision set to 32bit" << endl;
+        cerr << "Buffer precision set to 32 bit floating point" << endl;
       }
       else
       {
@@ -1286,22 +1283,37 @@ void vvView::optionsMenuCallback(int item)
     }
     else
     {
-      cerr << "Enable offscreen buffering to change visual precision" << endl;
+      if (ds->useOffscreenBuffer)
+      {
+        if (ds->bufferPrecision == 8)
+        {
+          ds->bufferPrecision = 16;
+          cerr << "Buffer precision set to 16bit" << endl;
+        }
+        else if (ds->bufferPrecision == 16)
+        {
+          ds->bufferPrecision = 32;
+          cerr << "Buffer precision set to 32bit" << endl;
+        }
+        else
+        {
+          cerr << "Highest precision reached" << endl;
+        }
+      }
+      else
+      {
+        cerr << "Enable offscreen buffering to change visual precision" << endl;
+      }
     }
     ds->renderer->setParameter(vvRenderer::VV_IMG_PRECISION, ds->bufferPrecision);
     break;
   case 11:                                    // increase precision of visual
-    if (ds->useOffscreenBuffer)
+    if (ds->cudaRenderer || ds->softwareRenderer || ds->rayRenderer)
     {
       if (ds->bufferPrecision == 32)
       {
-        ds->bufferPrecision = 16;
-        cerr << "Buffer precision set to 16bit" << endl;
-      }
-      else if (ds->bufferPrecision == 16)
-      {
         ds->bufferPrecision = 8;
-        cerr << "Buffer precision set to 8bit" << endl;
+        cerr << "Buffer precision set to 8 bit fixed point" << endl;
       }
       else
       {
@@ -1310,7 +1322,27 @@ void vvView::optionsMenuCallback(int item)
     }
     else
     {
-      cerr << "Enable offscreen buffering to change visual precision" << endl;
+      if (ds->useOffscreenBuffer)
+      {
+        if (ds->bufferPrecision == 32)
+        {
+          ds->bufferPrecision = 16;
+          cerr << "Buffer precision set to 16bit" << endl;
+        }
+        else if (ds->bufferPrecision == 16)
+        {
+          ds->bufferPrecision = 8;
+          cerr << "Buffer precision set to 8bit" << endl;
+        }
+        else
+        {
+          cerr << "Lowest precision reached" << endl;
+        }
+      }
+      else
+      {
+        cerr << "Enable offscreen buffering to change visual precision" << endl;
+      }
     }
     ds->renderer->setParameter(vvRenderer::VV_IMG_PRECISION, ds->bufferPrecision);
     break;
@@ -1345,6 +1377,11 @@ void vvView::optionsMenuCallback(int item)
         cerr << "shader set to " << rend->getCurrentShader() << endl;
       }
     }
+    break;
+  case 15:
+    ds->earlyRayTermination = !ds->earlyRayTermination;
+    ds->renderer->setParameter(vvRenderer::VV_TERMINATEEARLY, ds->earlyRayTermination);
+    cerr << "Early ray termination set to " << int(ds->earlyRayTermination) << endl;
     break;
   default: break;
   }
@@ -1910,6 +1947,7 @@ void vvView::createMenus()
   glutAddMenuEntry("Toggle opacity correction", 3);
   glutAddMenuEntry("Toggle gamma correction", 4);
   glutAddMenuEntry("Toggle empty space leaping", 5);
+  glutAddMenuEntry("Toggle early ray termination", 15);
   glutAddMenuEntry("Toggle offscreen buffering", 6);
   glutAddMenuEntry("Toggle head light", 7);
   glutAddMenuEntry("Increase z size [H]", 8);

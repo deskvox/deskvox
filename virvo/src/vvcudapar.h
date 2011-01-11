@@ -55,6 +55,8 @@ class VIRVOEXPORT vvCudaPar : public vvSoftPar
       uchar *h_img;
       cudaGraphicsResource *intImgRes;              ///< CUDA resource mapped to PBO
       bool mappedImage;
+      bool earlyRayTerm;
+      int imagePrecision;
 
       float *fraw[3];
 
@@ -65,6 +67,14 @@ class VIRVOEXPORT vvCudaPar : public vvSoftPar
       vvCudaPar(vvVolDesc*, vvRenderState);
       virtual ~vvCudaPar();
       void compositeVolume(int = -1, int = -1);
+      virtual void setParameter(ParameterType, float, char *);
+      virtual float getParameter(ParameterType, char *) const;
+
+      int getPrincipal() const { return principal; }
+      bool getPreIntegration() const { return preIntegration; }
+      bool getSliceInterpol() const { return sliceInterpol; }
+      bool getEarlyRayTerm() const { return earlyRayTerm; }
+      int getPrecision() const { return imagePrecision; }
 };
 #endif /* HAVE_CUDA */
 

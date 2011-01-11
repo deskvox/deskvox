@@ -78,6 +78,7 @@ class vvView
     bool  slaveMode;                            ///< true = renderer started as slave
     int   slavePort;                            ///< port the slave renderer uses to listen for incoming connections
     bool  emptySpaceLeapingMode;                ///< true = bricks invisible due to current transfer function aren't rendered
+    bool  earlyRayTermination;                  ///< true = don't compute invisible fragments
     bool  perspectiveMode;                      ///< true = perspective projection
     bool  boundariesMode;                       ///< true = display boundaries
     bool  orientationMode;                      ///< true = display axis orientation
