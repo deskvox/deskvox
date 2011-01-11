@@ -55,7 +55,7 @@ using std::ios;
 #include "../src/vvtexrend.h"
 #include "../src/vvsoftpar.h"
 #include "../src/vvsoftper.h"
-#include "../src/vvcudapar.h"
+#include "../src/vvcudasw.h"
 #include "../src/vvcuda.h"
 #if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 #include "../src/vvrayrend.h"

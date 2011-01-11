@@ -32,7 +32,7 @@ using std::endl;
 #include "vvstopwatch.h"
 #include "vvcuda.h"
 #include "vvcudaimg.h"
-#include "vvcudapar.h"
+#include "vvcudasw.h"
 
 const int MAX_SLICES = 1600;
 

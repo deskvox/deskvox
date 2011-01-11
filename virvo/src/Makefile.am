@@ -64,7 +64,7 @@ libvirvo_a_headers = \
 	vvcuda.h \
         vvcudaimg.h \
         vvcudautils.h \
-	vvcudapar.h \
+	vvcudasw.h \
 	vvcudatransfunc.h \
         vvbonjour/vvbonjourbrowser.h \
         vvbonjour/vvbonjourentry.h \
@@ -127,7 +127,7 @@ libvirvo_a_SOURCES = \
 
 if CUDA
 libvirvo_a_SOURCES += \
-	vvcudapar.cu \
+	vvcudasw.cu \
         vvrayrend.cu \
 	vvcudatransfunc.cu
 endif
