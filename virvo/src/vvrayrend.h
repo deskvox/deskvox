@@ -17,6 +17,8 @@
 
 #if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
+#include "vvcuda.h"
+
 /** Ray casting renderer. Based on the volume
   rendering implementation from the NVIDIA CUDA SDK,
   as of November 25th, 2010 could be downloaded from
