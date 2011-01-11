@@ -26,7 +26,9 @@ vvCudaImg::vvCudaImg(const int w, const int h, const Mode mode)
 {
   _mode = mode;
   _mapped = false;
+#ifdef HAVE_CUDA
   _imgRes = NULL;
+#endif
   init();
   allocate();
 }

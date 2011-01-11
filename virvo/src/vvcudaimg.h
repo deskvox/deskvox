@@ -69,8 +69,8 @@ private:
 #ifdef HAVE_CUDA
   cudaGraphicsResource* _imgRes;            ///< CUDA resource mapped to PBO
   uchar4* d_img;
-  uchar* h_img;
 #endif
+  uchar* h_img;
 
   void init();
 };
