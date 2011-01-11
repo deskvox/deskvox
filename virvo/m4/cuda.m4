@@ -39,12 +39,15 @@ LDFLAGS="$CUDA_LIBS $LDFLAGS"
 AC_CHECK_HEADERS([cuda.h], [have_cuda_h=yes])
 AC_CHECK_LIB(cudart, cudaFree, [have_cuda_lib=yes])
 
-if test "$have_cuda_h" = "yes" -a "$have_cuda_lib" = yes; then
+if test "$have_cuda_h" = "yes" -a "$have_cuda_lib" = "yes"; then
     AC_SUBST(CUDA_INCLUDES)
     AC_SUBST(CUDA_LIBS)
     AC_SUBST(NVCC)
     AC_DEFINE(HAVE_CUDA, 1, [CUDA framework])
     ac_have_cuda=yes
+else
+    CUDA_INCLUDES=""
+    CUDA_LIBS=""
 fi
 
 # ------------------------------------------------------------------------------
