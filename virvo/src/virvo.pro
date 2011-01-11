@@ -30,7 +30,6 @@ SOURCES = vvbrick.cpp \
     vvoffscreenbuffer.cpp \
     vvprintgl.cpp \
     vvpthread.cpp \
-#    vvrayrend.cu \
     vvrendercontext.cpp \
     vvrenderer.cpp \
     vvrendermaster.cpp \
@@ -68,6 +67,7 @@ SOURCES = vvbrick.cpp \
     vvbonjour/vvbonjourresolver.cpp \
     vvmultirend/vvtexmultirend.cpp \
     vvmultirend/vvtexmultirendmngr.cpp
+DEVFILES = *.h
 HEADERS = \
     vvarray.h \
     vvbrick.h \
@@ -88,7 +88,7 @@ HEADERS = \
     vvglew.h \
     vvprintgl.h \
     vvpthread.h \
-#    vvrayrend.h \
+    vvrayrend.h \
     vvrendercontext.h \
     vvrenderer.h \
     vvrendermaster.h \
@@ -129,11 +129,8 @@ HEADERS = \
     vvmultirend/vvtexmultirend.h \
     vvmultirend/vvtexmultirendmngr.h
 TARGET = coVirvo
-DEVFILES = $$HEADERS
-DEFINES += VV_COVISE
 
-# ## don't modify anything below this line ###
-!include ($$(COVISEDIR)/mkspecs/config-last.pri):error(include of config-last.pri failed)
+DEFINES += VV_COVISE
 
 # work around bug in intel compiler
 caymanopt { 
@@ -141,3 +138,17 @@ caymanopt {
     QMAKE_CXXFLAGS += -O1
     QMAKE_CXXFLAGS_RELEASE -= -O2
 }
+
+CUDA = $$(CUDA_DEFINES)
+contains(CUDA,HAVE_CUDA) {
+        CONFIG *= cuda \
+                  cudart
+        CUDA_SOURCES += vvrayrend.cu
+        DEFINES *= HAVE_CUDA \
+                   NV_PROPRIETARY_CODE
+}
+
+QMAKE_CUFLAGS += "-D__builtin_stdarg_start=__builtin_va_start"
+
+# ## don't modify anything below this line ###
+!include ($$(COVISEDIR)/mkspecs/config-last.pri):error(include of config-last.pri failed)
