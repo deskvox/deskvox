@@ -67,7 +67,6 @@ SOURCES = vvbrick.cpp \
     vvbonjour/vvbonjourresolver.cpp \
     vvmultirend/vvtexmultirend.cpp \
     vvmultirend/vvtexmultirendmngr.cpp
-DEVFILES = *.h
 HEADERS = \
     vvarray.h \
     vvbrick.h \
@@ -129,7 +128,7 @@ HEADERS = \
     vvmultirend/vvtexmultirend.h \
     vvmultirend/vvtexmultirendmngr.h
 TARGET = coVirvo
-
+DEVFILES = $$HEADERS
 DEFINES += VV_COVISE
 
 # work around bug in intel compiler
