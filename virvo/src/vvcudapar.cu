@@ -129,7 +129,7 @@ __global__ void clearImage(uchar4 * __restrict__ img, int width, int height,
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         uchar4 *dest = img + line*width+ix;
-        *dest = make_uchar4(255, 0, 0, 0);
+        *dest = make_uchar4(0, 0, 0, 0);
     }
 }
 
