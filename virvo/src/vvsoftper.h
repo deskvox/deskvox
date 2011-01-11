@@ -82,7 +82,7 @@ ivWarp  = wvConv x owView x soPerm x shift-1 x dsShear x scale-1 x idConv
 */
 class VIRVOEXPORT vvSoftPer : public vvSoftVR
 {
-   private:
+   protected:
       vvVector4 oEye;                             ///< eye position [object space]
       vvVector4 sEye;                             ///< eye position [standard object space]
       vvMatrix shift;                            ///< shift volume if eye in slice 0 = T_shift

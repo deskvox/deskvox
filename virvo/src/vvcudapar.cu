@@ -129,7 +129,7 @@ __global__ void clearImage(uchar4 * __restrict__ img, int width, int height,
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         uchar4 *dest = img + line*width+ix;
-        *dest = make_uchar4(0, 0, 0, 0);
+        *dest = make_uchar4(255, 0, 0, 0);
     }
 }
 
@@ -548,15 +548,20 @@ __global__ void compositeSlicesPreIntegrated(
   @param vd volume description of volume to display
   @see vvRenderer
 */
-vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
+template<class Base>
+vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
 {
-   vvDebugMsg::msg(1, "vvCudaPar::vvCudaPar()");
+   vvDebugMsg::msg(1, "vvCudaSW::vvCudaSW()");
 
-   rendererType = CUDAPAR;
+   if(Base::rendererType == Base::SOFTPAR)
+       Base::rendererType = Base::CUDAPAR;
+   else if(Base::rendererType == Base::SOFTPER)
+       Base::rendererType = Base::CUDAPER;
+
    imagePrecision = 8;
    earlyRayTerm = true;
    mappedImage = false;
-   if (warpMode==TEXTURE)
+   if (Base::warpMode==Base::TEXTURE)
    {
        // we need a power-of-2 image size for glTexImage2D
        int imgSize = vvToolshed::getTextureSize(2 * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]));
@@ -566,18 +571,18 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
        {
            vvDebugMsg::msg(1, "using CUDA/GL interop");
            // avoid image copy from GPU to CPU and back
-           setWarpMode(CUDATEXTURE);
-           intImg->setSize(imgSize, imgSize, NULL, true);
+           setWarpMode(Base::CUDATEXTURE);
+           Base::intImg->setSize(imgSize, imgSize, NULL, true);
        }
        else
        {
          vvDebugMsg::msg(1, "can't use CUDA/GL interop");
-         intImg->setSize(imgSize, imgSize);
+         Base::intImg->setSize(imgSize, imgSize);
        }
 #endif
    }
 
-   wViewDir.set(0.0f, 0.0f, 1.0f);
+   //wViewDir.set(0.0f, 0.0f, 1.0f);
 
 #ifdef FLOATDATA
    for(int i=0; i<3; ++i)
@@ -624,7 +629,7 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
 #ifdef FLOATDATA
        parms.srcPtr = make_cudaPitchedPtr(fraw[i], sizeof(Scalar)*vd->vox[(i+1)%3], vd->vox[(i+1)%3], vd->vox[(i+2)%3]);
 #else
-       parms.srcPtr = make_cudaPitchedPtr(raw[i], sizeof(Scalar)*vd->vox[(i+1)%3], vd->vox[(i+1)%3], vd->vox[(i+2)%3]);
+       parms.srcPtr = make_cudaPitchedPtr(Base::raw[i], sizeof(Scalar)*vd->vox[(i+1)%3], vd->vox[(i+1)%3], vd->vox[(i+2)%3]);
 #endif
 #endif
 
@@ -665,29 +670,29 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
 
    // pre-integration table
    cudaChannelFormatDesc desc = cudaCreateChannelDesc<uchar4>();
-   vvCuda::checkError(&ok, cudaMallocArray(&d_preint, &desc, PRE_INT_TABLE_SIZE, PRE_INT_TABLE_SIZE), "cudaMalloc preint");
+   vvCuda::checkError(&ok, cudaMallocArray(&d_preint, &desc, Base::PRE_INT_TABLE_SIZE, Base::PRE_INT_TABLE_SIZE), "cudaMalloc preint");
    tex_preint.normalized = true;
-   tex_preint.filterMode = bilinLookup ? cudaFilterModeLinear : cudaFilterModePoint;
+   tex_preint.filterMode = Base::bilinLookup ? cudaFilterModeLinear : cudaFilterModePoint;
    tex_preint.addressMode[0] = cudaAddressModeClamp;
    tex_preint.addressMode[1] = cudaAddressModeClamp;
    vvCuda::checkError(&ok, cudaBindTextureToArray(tex_preint, d_preint, desc), "bind preint tex");
 
 #ifndef NODISPLAY
    // allocate output image (intermediate image)
-   if (warpMode==CUDATEXTURE)
+   if (Base::warpMode==Base::CUDATEXTURE)
    {
-       vvCuda::checkError(&ok, cudaGraphicsGLRegisterBuffer(&intImgRes, intImg->getPboName(), cudaGraphicsMapFlagsWriteDiscard), "map PBO to CUDA");
+       vvCuda::checkError(&ok, cudaGraphicsGLRegisterBuffer(&intImgRes, Base::intImg->getPboName(), cudaGraphicsMapFlagsWriteDiscard), "map PBO to CUDA");
    }
    else if (mappedImage)
    {
-       vvCuda::checkError(&ok, cudaHostAlloc(&h_img, intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped), "img alloc");;
-       intImg->setSize(intImg->width, intImg->height, h_img, false);
+       vvCuda::checkError(&ok, cudaHostAlloc(&h_img, Base::intImg->width*Base::intImg->height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped), "img alloc");;
+       Base::intImg->setSize(Base::intImg->width, Base::intImg->height, h_img, false);
        vvCuda::checkError(&ok, cudaHostGetDevicePointer(&d_img, h_img, 0), "get dev ptr img");
    }
    else
 #endif
    {
-       vvCuda::checkError(&ok, cudaMalloc(&d_img, intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE), "cudaMalloc img");
+       vvCuda::checkError(&ok, cudaMalloc(&d_img, Base::intImg->width*Base::intImg->height*vvSoftImg::PIXEL_SIZE), "cudaMalloc img");
    }
 
    // copy volume size (in voxels)
@@ -702,9 +707,10 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
 
 //----------------------------------------------------------------------------
 /// Destructor.
-vvCudaPar::~vvCudaPar()
+template<class Base>
+vvCudaSW<Base>::~vvCudaSW()
 {
-   vvDebugMsg::msg(1, "vvCudaPar::~vvCudaPar()");
+   vvDebugMsg::msg(1, "vvCudaSW::~vvCudaSW()");
 
 #ifdef FLOATDATA
    for(int i=0; i<3; ++i)
@@ -712,7 +718,7 @@ vvCudaPar::~vvCudaPar()
 #endif
 
 #ifndef NODISPLAY
-   if (warpMode==CUDATEXTURE)
+   if (Base::warpMode==Base::CUDATEXTURE)
       cudaGraphicsUnregisterResource(intImgRes);
    else if (mappedImage)
        cudaFreeHost(h_img);
@@ -738,22 +744,23 @@ vvCudaPar::~vvCudaPar()
 #endif
 }
 
-void vvCudaPar::updateTransferFunction()
+template<class Base>
+void vvCudaSW<Base>::updateTransferFunction()
 {
-   vvDebugMsg::msg(2, "vvCudaPar::updateTransferFunction()");
+   vvDebugMsg::msg(2, "vvCudaSW::updateTransferFunction()");
 
-   vvSoftPar::updateTransferFunction();
+   Base::updateTransferFunction();
 
-   vvCuda::checkError(NULL, cudaMemcpy(d_tf, rgbaConv, sizeof(rgbaConv), cudaMemcpyHostToDevice), "cudaMemcpy tf");
-   if(preIntegration)
+   vvCuda::checkError(NULL, cudaMemcpy(d_tf, Base::rgbaConv, sizeof(Base::rgbaConv), cudaMemcpyHostToDevice), "cudaMemcpy tf");
+   if(Base::preIntegration)
    {
-       vvCuda::checkError(NULL, cudaMemcpyToArray(d_preint, 0, 0, &preIntTable[0][0][0],
-                   PRE_INT_TABLE_SIZE*PRE_INT_TABLE_SIZE*4, cudaMemcpyHostToDevice), "cudaMemcpy preint");
+       vvCuda::checkError(NULL, cudaMemcpyToArray(d_preint, 0, 0, &Base::preIntTable[0][0][0],
+                   Base::PRE_INT_TABLE_SIZE*Base::PRE_INT_TABLE_SIZE*4, cudaMemcpyHostToDevice), "cudaMemcpy preint");
    }
 }
 
-template<typename Pixel, int principal, int sliceStep, bool earlyRayTerm>
-CompositionFunction selectComposition(vvCudaPar *rend)
+template<class Base, typename Pixel, int principal, int sliceStep, bool earlyRayTerm>
+CompositionFunction selectComposition(vvCudaSW<Base> *rend)
 {
 #ifdef VOLTEX3D
     if(rend->getSliceInterpol())
@@ -768,24 +775,24 @@ CompositionFunction selectComposition(vvCudaPar *rend)
         return compositeSlicesNearest<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
 }
 
-template<typename Pixel, int principal, int sliceStep>
-CompositionFunction selectCompositionWithEarlyTermination(vvCudaPar *rend)
+template<class Base, typename Pixel, int principal, int sliceStep>
+CompositionFunction selectCompositionWithEarlyTermination(vvCudaSW<Base> *rend)
 {
     if(rend->getEarlyRayTerm())
-        return selectComposition<Pixel, principal, sliceStep, true>(rend);
+        return selectComposition<Base, Pixel, principal, sliceStep, true>(rend);
     else
-        return selectComposition<Pixel, principal, sliceStep, false>(rend);
+        return selectComposition<Base, Pixel, principal, sliceStep, false>(rend);
 }
 
-template<typename Pixel, int principal>
-CompositionFunction selectCompositionWithSliceStep(vvCudaPar *rend, int sliceStep)
+template<class Base, typename Pixel, int principal>
+CompositionFunction selectCompositionWithSliceStep(vvCudaSW<Base> *rend, int sliceStep)
 {
     switch(sliceStep)
     {
         case 1:
-            return selectCompositionWithEarlyTermination<Pixel, principal,1>(rend);
+            return selectCompositionWithEarlyTermination<Base, Pixel, principal,1>(rend);
         case -1:
-            return selectCompositionWithEarlyTermination<Pixel, principal,-1>(rend);
+            return selectCompositionWithEarlyTermination<Base, Pixel, principal,-1>(rend);
         default:
             assert("slice step out of range" == NULL);
     }
@@ -793,17 +800,17 @@ CompositionFunction selectCompositionWithSliceStep(vvCudaPar *rend, int sliceSte
     return NULL;
 }
 
-template<typename Pixel>
-CompositionFunction selectCompositionWithPrincipal(vvCudaPar *rend, int sliceStep)
+template<class Base, typename Pixel>
+CompositionFunction selectCompositionWithPrincipal(vvCudaSW<Base> *rend, int sliceStep)
 {
     switch(rend->getPrincipal())
     {
         case 0:
-            return selectCompositionWithSliceStep<Pixel, 0>(rend, sliceStep);
+            return selectCompositionWithSliceStep<Base, Pixel, 0>(rend, sliceStep);
         case 1:
-            return selectCompositionWithSliceStep<Pixel, 1>(rend, sliceStep);
+            return selectCompositionWithSliceStep<Base, Pixel, 1>(rend, sliceStep);
         case 2:
-            return selectCompositionWithSliceStep<Pixel, 2>(rend, sliceStep);
+            return selectCompositionWithSliceStep<Base, Pixel, 2>(rend, sliceStep);
         default:
             assert("principal axis out of range" == NULL);
 
@@ -812,14 +819,15 @@ CompositionFunction selectCompositionWithPrincipal(vvCudaPar *rend, int sliceSte
     return NULL;
 }
 
-CompositionFunction selectCompositionWithPrecision(vvCudaPar *rend, int sliceStep)
+template<class Base>
+CompositionFunction selectCompositionWithPrecision(vvCudaSW<Base> *rend, int sliceStep)
 {
     switch(rend->getPrecision())
     {
         case 8:
-            return selectCompositionWithPrincipal<uchar4>(rend, sliceStep);
+            return selectCompositionWithPrincipal<Base, uchar4>(rend, sliceStep);
         case 32:
-            return selectCompositionWithPrincipal<float4>(rend, sliceStep);
+            return selectCompositionWithPrincipal<Base, float4>(rend, sliceStep);
         default:
             assert("invalid precision" == NULL);
     }
@@ -835,40 +843,41 @@ CompositionFunction selectCompositionWithPrecision(vvCudaPar *rend, int sliceSte
   @param from,to optional arguments to define first and last intermediate image line to render.
                  if not passed, the entire intermediate image will be rendered
 */
-void vvCudaPar::compositeVolume(int from, int to)
+template<class Base>
+void vvCudaSW<Base>::compositeVolume(int from, int to)
 {
-   vvDebugMsg::msg(3, "vvCudaPar::compositeVolume(): ", from, to);
+   vvDebugMsg::msg(3, "vvCudaSW::compositeVolume(): ", from, to);
 
    // If stacking==true then draw front to back, else draw back to front:
-   int firstSlice = (stacking) ? 0 : (len[2]-1);  // first slice to process
-   int lastSlice  = (stacking) ? (len[2]-1) : 0;  // last slice to process
-   int sliceStep  = (stacking) ? 1 : -1;          // step size to get to next slice
+   int firstSlice = (Base::stacking) ? 0 : (Base::len[2]-1);  // first slice to process
+   int lastSlice  = (Base::stacking) ? (Base::len[2]-1) : 0;  // last slice to process
+   int sliceStep  = (Base::stacking) ? 1 : -1;          // step size to get to next slice
 
-   earlyRayTermination = 0;
+   Base::earlyRayTermination = 0;
 
    if (from == -1)
        from = 0;
    if (to == -1)
-       to = intImg->height;
+       to = Base::intImg->height;
 
    // compute data for determining upper left image corner of each slice and copy it to device
    vvVector4 start, end;
-   findSlicePosition(firstSlice, &start, &end);
+   Base::findSlicePosition(firstSlice, &start, &end);
    vvVector4 sinc, einc;
-   findSlicePosition(firstSlice+sliceStep, &sinc, &einc);
+   Base::findSlicePosition(firstSlice+sliceStep, &sinc, &einc);
    sinc.sub(&start);
    einc.sub(&end);
    vvVector4 scur = start;
    vvVector4 ecur = end;
 #if defined(VOLTEX3D) && VOLTEX3D==1
-   const int p = principal;
+   const int p = Base::principal;
 #else
    const int p = 2;
 #endif
    for(int slice=firstSlice; slice != lastSlice; slice += sliceStep)
    {
 #ifdef VOLTEX3D
-       if(sliceInterpol)
+       if(Base::sliceInterpol)
        {
            const float sx = scur.e[0]/scur.e[3];
            const float sy = scur.e[1]/scur.e[3];
@@ -890,7 +899,7 @@ void vvCudaPar::compositeVolume(int from, int to)
                    h_tcStart[slice].x = 1.f + (h_start[slice].x - sx + 0.5f)*h_tcStep[slice].x;
                    h_tcStart[slice].y = 1.f + (h_start[slice].y - sy + 0.5f)*h_tcStep[slice].y;
 
-                   h_tc3[slice] = 1.f-(slice+0.5f)*1.f/vd->vox[principal];
+                   h_tc3[slice] = 1.f-(slice+0.5f)*1.f/Base::vd->vox[Base::principal];
                    break;
                 case 1:
                    h_tcStep[slice].x = -1.f/(ex-sx);
@@ -899,7 +908,7 @@ void vvCudaPar::compositeVolume(int from, int to)
                    h_tcStart[slice].x = 1.f + (h_start[slice].x - sx + 0.5f)*h_tcStep[slice].x;
                    h_tcStart[slice].y = (h_start[slice].y - sy + 0.5f)*h_tcStep[slice].y;
 
-                   h_tc3[slice] = (slice+0.5f)*1.f/vd->vox[principal];
+                   h_tc3[slice] = (slice+0.5f)*1.f/Base::vd->vox[Base::principal];
                    break;
                 case 2:
                    h_tcStep[slice].x = 1.f/(ex-sx);
@@ -908,7 +917,7 @@ void vvCudaPar::compositeVolume(int from, int to)
                    h_tcStart[slice].x = (h_start[slice].x - sx + 0.5f)*h_tcStep[slice].x;
                    h_tcStart[slice].y = 1.f + (h_start[slice].y - sy + 0.5f)*h_tcStep[slice].y;
 
-                   h_tc3[slice] = (slice+0.5f)*1.f/vd->vox[principal];
+                   h_tc3[slice] = (slice+0.5f)*1.f/Base::vd->vox[Base::principal];
                    break;
            }
 
@@ -926,7 +935,7 @@ void vvCudaPar::compositeVolume(int from, int to)
    bool ok = true;
    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
 #ifdef VOLTEX3D
-   if(sliceInterpol)
+   if(Base::sliceInterpol)
    {
        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_stop, h_stop, sizeof(h_stop)), "cudaMemcpy stop");
        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStart, h_tcStart, sizeof(h_tcStart)), "cudaMemcpy tcStart");
@@ -936,8 +945,8 @@ void vvCudaPar::compositeVolume(int from, int to)
 #endif
 
 #ifdef VOLTEX3D
-   tex_raw.normalized = sliceInterpol;
-   tex_raw.filterMode = sliceInterpol ? cudaFilterModeLinear : cudaFilterModePoint;
+   tex_raw.normalized = Base::sliceInterpol;
+   tex_raw.filterMode = Base::sliceInterpol ? cudaFilterModeLinear : cudaFilterModePoint;
    tex_raw.addressMode[0] = cudaAddressModeClamp;
    tex_raw.addressMode[1] = cudaAddressModeClamp;
    tex_raw.addressMode[2] = cudaAddressModeClamp;
@@ -945,35 +954,35 @@ void vvCudaPar::compositeVolume(int from, int to)
 #if VOLTEX3D == 1
    cudaBindTextureToArray(tex_raw, d_voxarr[0], desc);
 #else
-   cudaBindTextureToArray(tex_raw, d_voxarr[principal], desc);
+   cudaBindTextureToArray(tex_raw, d_voxarr[Base::principal], desc);
 #endif
 #endif
 
 #ifndef NODISPLAY
    // prepare intermediate image
-   if (warpMode==CUDATEXTURE)
+   if (Base::warpMode==Base::CUDATEXTURE)
    {
        vvCuda::checkError(&ok, cudaGraphicsMapResources(1, &intImgRes, NULL), "map CUDA resource");
        size_t size;
        vvCuda::checkError(&ok, cudaGraphicsResourceGetMappedPointer((void**)&d_img, &size, intImgRes), "get PBO mapping");
-       assert(size == intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE);
+       assert(size == Base::intImg->width*Base::intImg->height*vvSoftImg::PIXEL_SIZE);
    }
    else
    {
-       intImg->clear();
+       Base::intImg->clear();
    }
 #endif
 
-   int shmsize = intImg->width*imagePrecision/8*4;
+   int shmsize = Base::intImg->width*imagePrecision/8*4;
 #ifdef SHMLOAD
-   shmsize += vd->vox[principal]*vd->getBPV()*sizeof(Scalar);
+   shmsize += Base::vd->vox[Base::principal]*Base::vd->getBPV()*sizeof(Scalar);
 #endif
-   if(preIntegration)
+   if(Base::preIntegration)
    {
-       shmsize += intImg->width*sizeof(Scalar);
+       shmsize += Base::intImg->width*sizeof(Scalar);
    }
 
-   clearImage <<<to-from, 128, shmsize>>>(d_img, intImg->width, intImg->height, from, to);
+   clearImage <<<to-from, 128, shmsize>>>(d_img, Base::intImg->width, Base::intImg->height, from, to);
 
    CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep);
    // do the computation on the device
@@ -982,14 +991,14 @@ void vvCudaPar::compositeVolume(int from, int to)
        cudaThreadSynchronize();
 #ifdef PITCHED
        compose <<<to-from, 128, shmsize>>>(
-               d_img, intImg->width, intImg->height,
+               d_img, Base::intImg->width, Base::intImg->height,
                d_voxptr[principal],
                sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
                from, to);
 #else
        compose <<<to-from, 128, shmsize>>>(
-               d_img, intImg->width, intImg->height,
-               (Scalar *)(d_voxels+sizeof(Scalar)*vd->getBPV()*principal*(vd->vox[0]*vd->vox[1]*vd->vox[2])),
+               d_img, Base::intImg->width, Base::intImg->height,
+               (Scalar *)(d_voxels+sizeof(Scalar)*Base::vd->getBPV()*Base::principal*(Base::vd->vox[0]*Base::vd->vox[1]*Base::vd->vox[2])),
                sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
                from, to);
 #endif
@@ -1002,7 +1011,7 @@ void vvCudaPar::compositeVolume(int from, int to)
    // copy back or unmap for using as PBO
    ok = vvCuda::checkError(&ok, cudaGetLastError(), "start kernel");
 #ifndef NODISPLAY
-   if (warpMode==CUDATEXTURE)
+   if (Base::warpMode==Base::CUDATEXTURE)
    {
        vvCuda::checkError(&ok, cudaGraphicsUnmapResources(1, &intImgRes, NULL), "unmap CUDA resource");
    }
@@ -1012,46 +1021,57 @@ void vvCudaPar::compositeVolume(int from, int to)
    }
    else
    {
-       cudaMemcpy(intImg->data, d_img, intImg->width*intImg->height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost);
+       cudaMemcpy(Base::intImg->data, d_img, Base::intImg->width*Base::intImg->height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost);
        ok = vvCuda::checkError(&ok, cudaGetLastError(), "cpy to host");
    }
 #endif
 }
 
-void vvCudaPar::setParameter(ParameterType param, float val, char *cval)
+template<class Base>
+void vvCudaSW<Base>::setParameter(typename Base::ParameterType param, float val, char *cval)
 {
-    vvDebugMsg::msg(3, "vvCudaPar::setParameter()");
+    vvDebugMsg::msg(3, "vvCudaSW::setParameter()");
     switch(param)
     {
-        case VV_IMG_PRECISION:
+        case Base::VV_IMG_PRECISION:
             if(val == 8)
                 imagePrecision = 8;
             else
                 imagePrecision = 32;
             break;
-        case VV_TERMINATEEARLY:
+        case Base::VV_TERMINATEEARLY:
             earlyRayTerm = (val != 0.f);
             break;
         default:
-            vvSoftPar::setParameter(param, val, cval);
+            Base::setParameter(param, val, cval);
             break;
     }
 }
 
-float vvCudaPar::getParameter(ParameterType param, char *cval) const
+template<class Base>
+float vvCudaSW<Base>::getParameter(typename Base::ParameterType param, char *cval) const
 {
-    vvDebugMsg::msg(3, "vvCudaPar::getParameter()");
+    vvDebugMsg::msg(3, "vvCudaSW::getParameter()");
     switch(param)
     {
-        case VV_IMG_PRECISION:
+        case Base::VV_IMG_PRECISION:
             return imagePrecision;
-        case VV_TERMINATEEARLY:
+        case Base::VV_TERMINATEEARLY:
             return (earlyRayTerm ? 1.f : 0.f);
         default:
-            return vvSoftPar::getParameter(param, cval);
+            return Base::getParameter(param, cval);
     }
 }
 
+vvCudaPer::vvCudaPer(vvVolDesc *vd, vvRenderState rs)
+: vvCudaSW<vvSoftPer>(vd, rs)
+{
+}
+
+vvCudaPar::vvCudaPar(vvVolDesc *vd, vvRenderState rs)
+: vvCudaSW<vvSoftPar>(vd, rs)
+{
+}
 //============================================================================
 // End of File
 //============================================================================

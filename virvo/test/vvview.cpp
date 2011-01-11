@@ -66,8 +66,6 @@ using std::ios;
 #include "vvperformancetest.h"
 #include "vvview.h"
 
-#define vvCudaPer vvCudaPar
-
 const int vvView::ROT_TIMER_DELAY = 20;
 const int vvView::DEFAULTSIZE = 512;
 const float vvView::OBJ_SIZE  = 1.0f;
@@ -648,10 +646,6 @@ void vvView::setCudaRenderer(bool enable)
 {
 #ifdef HAVE_CUDA
   cudaRenderer = enable;
-  if (enable && perspectiveMode)
-  {
-    setProjectionMode(false);
-  }
 #else
   if (enable)
     setSoftwareRenderer(enable);
@@ -2426,8 +2420,6 @@ bool vvView::parseCommandLine(int argc, char** argv)
         softwareRenderer = false;
         cudaRenderer = true;
         rayRenderer = false;
-
-        perspectiveMode = false;
       }
       else if(val == 8)
       {

@@ -23,6 +23,7 @@
 
 #include "vvrenderer.h"
 #include "vvsoftimg.h"
+#include "vvsoftper.h"
 #include "vvsoftpar.h"
 #include "vvexport.h"
 
@@ -42,9 +43,11 @@ struct cudaGraphicsResource;
 @see vvRenderer
 @see vvSoftVR
 @see vvSoftPar
+@see vvSoftPer
 @see vvSoftImg
 */
-class VIRVOEXPORT vvCudaPar : public vvSoftPar
+template<class Base>
+class VIRVOEXPORT vvCudaSW : public Base
 {
    private:
       cudaArray *d_voxarr[3];
@@ -63,21 +66,34 @@ class VIRVOEXPORT vvCudaPar : public vvSoftPar
 
    protected:
       virtual void updateTransferFunction();
+      using Base::factorViewMatrix;
 
    public:
-      vvCudaPar(vvVolDesc*, vvRenderState);
-      virtual ~vvCudaPar();
+      vvCudaSW(vvVolDesc*, vvRenderState);
+      virtual ~vvCudaSW();
       void compositeVolume(int = -1, int = -1);
-      virtual void setParameter(ParameterType, float, char *);
-      virtual float getParameter(ParameterType, char *) const;
+      virtual void setParameter(typename Base::ParameterType, float, char *);
+      virtual float getParameter(typename Base::ParameterType, char *) const;
 
-      int getPrincipal() const { return principal; }
-      bool getPreIntegration() const { return preIntegration; }
-      bool getSliceInterpol() const { return sliceInterpol; }
+      int getPrincipal() const { return Base::principal; }
+      bool getPreIntegration() const { return Base::preIntegration; }
+      bool getSliceInterpol() const { return Base::sliceInterpol; }
       bool getEarlyRayTerm() const { return earlyRayTerm; }
       int getPrecision() const { return imagePrecision; }
 };
 #endif /* HAVE_CUDA */
+
+class vvCudaPer: public vvCudaSW<vvSoftPer>
+{
+    public:
+    vvCudaPer(vvVolDesc *vd, vvRenderState rs);
+};
+
+class vvCudaPar: public vvCudaSW<vvSoftPar>
+{
+    public:
+    vvCudaPar(vvVolDesc *vd, vvRenderState rs);
+};
 
 #endif
 //============================================================================
