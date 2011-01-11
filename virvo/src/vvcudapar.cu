@@ -393,14 +393,17 @@ __global__ void compositeSlicesBilinear(
       int firstSlice, int lastSlice,
       int from, int to)
 {
+    // this block's line from the intermediate image
     const int line = blockIdx.x+from;
     if (line >= to)
         return;
 
     // initialise intermediate image line
     extern __shared__ char smem[];
+    // store intermediate image line in shmem
     Pixel *imgLine = (Pixel *)smem;
 
+    // clear image line
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         initPixel(&imgLine[ix]);
@@ -414,14 +417,15 @@ __global__ void compositeSlicesBilinear(
 
         if(line < iPosY)
             continue;
-        if(line >= iPosY+c_vox[principal+1])
+        if(line >= c_stop[slice].y)
             continue;
 
         const int iPosX = c_start[slice].x;
+        const int endX = c_stop[slice].x;
 
         // Traverse intermediate image pixels which correspond to the current slice.
         // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
-        for (int ix=threadIdx.x; ix<c_vox[principal+0]+iPosX; ix+=blockDim.x)
+        for (int ix=threadIdx.x; ix<endX; ix+=blockDim.x)
         {
             if(ix<iPosX)
                 continue;
@@ -491,14 +495,15 @@ __global__ void compositeSlicesPreIntegrated(
 
         if(line < iPosY)
             continue;
-        if(line >= iPosY+c_vox[principal+1])
+        if(line >= c_stop[slice].y)
             continue;
 
         const int iPosX = c_start[slice].x;
+        const int endX = c_stop[slice].x;
 
         // Traverse intermediate image pixels which correspond to the current slice.
         // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
-        for (int ix=threadIdx.x; ix<c_vox[principal+0]+iPosX; ix+=blockDim.x)
+        for (int ix=threadIdx.x; ix<endX; ix+=blockDim.x)
         {
             if(ix<iPosX)
                 continue;
