@@ -574,6 +574,8 @@ vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
    if(static_cast<vvCudaImg*>(Base::intImg)->getMode() == vvCudaImg::TEXTURE)
        Base::setWarpMode(Base::CUDATEXTURE);
 
+   setQuality(Base::_renderState._quality);
+
 #ifdef FLOATDATA
    for(int i=0; i<3; ++i)
    {
