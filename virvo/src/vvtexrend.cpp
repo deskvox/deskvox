@@ -4780,7 +4780,7 @@ void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData)
 
   if(usePreIntegration)
   {
-    vd->tf.makePreintLUTOptimized(getPreintTableSize(), preintTable, dist);
+    vd->tf.makePreintLUTCorrect(getPreintTableSize(), preintTable, dist);
   }
   else
   {
