@@ -52,7 +52,7 @@ vvSoftPar::vvSoftPar(vvVolDesc* vd, vvRenderState rs) : vvSoftVR(vd, rs)
 
    // Provide enough space for all possible shear matrices:
    imgSize = 2 * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]);
-   intImg->setSize(imgSize, imgSize);
+   intImg = new vvSoftImg(imgSize, imgSize);
 }
 
 

@@ -44,6 +44,8 @@ vvSoftPer::vvSoftPer(vvVolDesc* vd, vvRenderState rs) : vvSoftVR(vd, rs)
 
    rendererType = SOFTPER;
 
+   intImg = new vvSoftImg(0, 0);
+
    setQuality(_renderState._quality);                           // not only sets quality but also resizes intermediate image
 }
 
