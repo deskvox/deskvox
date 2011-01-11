@@ -52,6 +52,7 @@ class VIRVOEXPORT vvCudaPar : public vvSoftPar
       uchar *d_voxels;
       uchar4 *d_img;
       uchar4 *d_tf;
+      cudaArray *d_preint;
       uchar *h_img;
       cudaGraphicsResource *intImgRes;              ///< CUDA resource mapped to PBO
       bool mappedImage;

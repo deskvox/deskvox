@@ -91,6 +91,7 @@ texture<uchar4, 1, cudaReadModeNormalizedFloat> tex_tf;
 #endif
 
 #ifdef VOLTEX3D
+texture<uchar4, 2, cudaReadModeNormalizedFloat> tex_preint;
 #ifdef FLOATDATA
 texture<float, 3, cudaReadModeElementType> tex_raw;
 #else
@@ -451,6 +452,106 @@ __global__ void compositeSlicesBilinear(
         blend(dest, imgLine[ix]);
     }
 }
+
+template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm>
+__global__ void compositeSlicesPreIntegrated(
+      uchar4 * __restrict__ img, int width, int height,
+#ifdef PITCHED
+      const cudaPitchedPtr pvoxels,
+#else
+      const Scalar * __restrict__ voxels,
+#endif
+      int firstSlice, int lastSlice,
+      int from, int to)
+{
+    const int line = blockIdx.x+from;
+    if (line >= to)
+        return;
+
+    // initialise intermediate image line
+    extern __shared__ char smem[];
+    Pixel *imgLine = (Pixel *)smem;
+    Scalar *sf = (Scalar *)&imgLine[width];
+
+    for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
+    {
+        initPixel(&imgLine[ix]);
+        sf[ix] = 0.f;
+    }
+
+    // composite slices for this image line
+    for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
+    {
+        // compute upper left image corner
+        const int iPosY = c_start[slice].y;
+
+        if(line < iPosY)
+            continue;
+        if(line >= iPosY+c_vox[principal+1])
+            continue;
+
+        const int iPosX = c_start[slice].x;
+
+        // Traverse intermediate image pixels which correspond to the current slice.
+        // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
+        for (int ix=threadIdx.x; ix<c_vox[principal+0]+iPosX; ix+=blockDim.x)
+        {
+            if(ix<iPosX)
+                continue;
+            const int vidx = ix - iPosX;
+            const int iidx = ix;
+
+            // pointer to destination pixel
+            Pixel *pix = imgLine + iidx;
+            Pixel d = *pix;
+            if(earlyRayTerm && isOpaque(d))
+                continue;
+
+            const float x = c_tcStart[slice].x + c_tcStep[slice].x*vidx;
+            const float y = c_tcStart[slice].y + c_tcStep[slice].y*(line-iPosY);
+            const float z = c_tc3[slice];
+#if VOLTEX3D==3
+            const float sb = tex3D(tex_raw, x, y, z);
+#else
+            float sb;
+            switch(principal)
+            {
+                case 0:
+                    sb = tex3D(tex_raw, z, x, y);
+                    break;
+                case 1:
+                    sb = tex3D(tex_raw, y, z, x);
+                    break;
+                case 2:
+                    sb = tex3D(tex_raw, x, y, z);
+                    break;
+            }
+#endif
+            if(slice != firstSlice)
+            {
+                const float4 c = tex2D(tex_preint, sf[ix], sb);
+
+                // blend
+                const float w = d.w*c.w;
+                d.x += w*c.x;
+                d.y += w*c.y;
+                d.z += w*c.z;
+                d.w -= w;
+
+                // store into shmem
+                *pix = d;
+            }
+            sf[ix] = sb;
+        }
+    }
+
+    // copy line to intermediate image
+    for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
+    {
+        uchar4 *dest = img + line*width+ix;
+        blend(dest, imgLine[ix]);
+    }
+}
 #endif
 
 //----------------------------------------------------------------------------
@@ -578,6 +679,15 @@ vvCudaPar::vvCudaPar(vvVolDesc* vd, vvRenderState rs) : vvSoftPar(vd, rs)
    vvCuda::checkError(&ok, cudaMalloc(&d_tf, 4096*4), "cudaMalloc tf");
    vvCuda::checkError(&ok, cudaBindTexture(NULL, tex_tf, d_tf, 4096), "bind tf tex");
 
+   // pre-integration table
+   cudaChannelFormatDesc desc = cudaCreateChannelDesc<uchar4>();
+   vvCuda::checkError(&ok, cudaMallocArray(&d_preint, &desc, PRE_INT_TABLE_SIZE, PRE_INT_TABLE_SIZE), "cudaMalloc preint");
+   tex_preint.normalized = true;
+   tex_preint.filterMode = bilinLookup ? cudaFilterModeLinear : cudaFilterModePoint;
+   tex_preint.addressMode[0] = cudaAddressModeClamp;
+   tex_preint.addressMode[1] = cudaAddressModeClamp;
+   vvCuda::checkError(&ok, cudaBindTextureToArray(tex_preint, d_preint, desc), "bind preint tex");
+
 #ifndef NODISPLAY
    // allocate output image (intermediate image)
    if (warpMode==CUDATEXTURE)
@@ -627,8 +737,10 @@ vvCudaPar::~vvCudaPar()
        cudaFree(d_img);
 
    cudaUnbindTexture(tex_tf);
-
    cudaFree(d_tf);
+
+   cudaUnbindTexture(tex_preint);
+   cudaFree(d_preint);
 #ifdef VOLTEX3D
    for(int i=0; i<VOLTEX3D; ++i)
      cudaFree(d_voxarr[i]);
@@ -647,7 +759,13 @@ void vvCudaPar::updateTransferFunction()
    vvDebugMsg::msg(2, "vvCudaPar::updateTransferFunction()");
 
    vvSoftPar::updateTransferFunction();
+
    vvCuda::checkError(NULL, cudaMemcpy(d_tf, rgbaConv, sizeof(rgbaConv), cudaMemcpyHostToDevice), "cudaMemcpy tf");
+   if(preIntegration)
+   {
+       vvCuda::checkError(NULL, cudaMemcpyToArray(d_preint, 0, 0, &preIntTable[0][0][0],
+                   PRE_INT_TABLE_SIZE*PRE_INT_TABLE_SIZE*4, cudaMemcpyHostToDevice), "cudaMemcpy preint");
+   }
 }
 
 template<typename Pixel, int principal, int sliceStep, bool earlyRayTerm>
@@ -655,7 +773,12 @@ CompositionFunction selectComposition(vvCudaPar *rend)
 {
 #ifdef VOLTEX3D
     if(rend->getSliceInterpol())
-        return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
+    {
+        if(rend->getPreIntegration())
+            return compositeSlicesPreIntegrated<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
+        else
+            return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
+    }
     else
 #endif
         return compositeSlicesNearest<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
@@ -861,6 +984,10 @@ void vvCudaPar::compositeVolume(int from, int to)
 #ifdef SHMLOAD
    shmsize += vd->vox[principal]*vd->getBPV()*sizeof(Scalar);
 #endif
+   if(preIntegration)
+   {
+       shmsize += intImg->width*sizeof(Scalar);
+   }
 
    clearImage <<<to-from, 128, shmsize>>>(d_img, intImg->width, intImg->height, from, to);
 
