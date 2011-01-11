@@ -72,7 +72,7 @@ class VIRVOEXPORT vvSoftImg
 
       vvSoftImg(int=0, int=0);
       virtual ~vvSoftImg();
-      void setSize(int, int, uchar *buf=NULL, bool usePbo=false);
+      virtual void setSize(int, int, uchar *buf=NULL, bool usePbo=false);
       void initTexture(GLuint format);
       void zoom(vvSoftImg*);
       void copy(AlignType, vvSoftImg*);

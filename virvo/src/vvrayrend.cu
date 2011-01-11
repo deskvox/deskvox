@@ -8,10 +8,12 @@
 
 #if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
+#include "vvglew.h"
+
 #include "vvcuda.h"
+#include "vvcudaimg.h"
 #include "vvcudautils.h"
 #include "vvdebugmsg.h"
-#include "vvglew.h"
 #include "vvgltools.h"
 #include "vvrayrend.h"
 
@@ -538,9 +540,15 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _interpolation = true;
   _opacityCorrection = true;
 
-  initIntImg(512);
+  intImg = new vvCudaImg(0, 0);
+
+  const vvCudaImg::Mode mode = dynamic_cast<vvCudaImg*>(intImg)->getMode();
+  if (mode == vvCudaImg::TEXTURE)
+  {
+    setWarpMode(CUDATEXTURE);
+  }
+
   factorViewMatrix();
-  allocateIntImg();
 
   d_randArray = 0;
   initRandTexture();
@@ -561,7 +569,6 @@ vvRayRend::~vvRayRend()
   delete[] d_volumeArrays;
   cudaFreeArray(d_transferFuncArray);
   cudaFreeArray(d_randArray);
-  deallocateIntImg();
 }
 
 int vvRayRend::getLUTSize() const
@@ -597,7 +604,7 @@ void vvRayRend::compositeVolume(int, int)
 {
   vvDebugMsg::msg(1, "vvRayRend::compositeVolume()");
 
-  mapIntImg();
+  dynamic_cast<vvCudaImg*>(intImg)->map();
 
   vvGLTools::Viewport vp = vvGLTools::getViewport();
   dim3 blockSize(16, 16);
@@ -700,7 +707,7 @@ void vvRayRend::compositeVolume(int, int)
     {
       cudaBindTextureToArray(volTexture16, d_volumeArrays[vd->getCurrentFrame()], _channelDesc);
     }
-    (kernel)<<<gridSize, blockSize>>>(d_img, vp[2], vp[3], intImg->width,
+    (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3], intImg->width,
                                       diagonalVoxels / (float)numSlices,
                                       volSize * 0.5f,
                                       L, H,
@@ -708,7 +715,7 @@ void vvRayRend::compositeVolume(int, int)
                                       pnormal, pdist);
   }
 
-  unmapIntImg();
+  dynamic_cast<vvCudaImg*>(intImg)->unmap();
 }
 
 //----------------------------------------------------------------------------
@@ -878,9 +885,7 @@ void vvRayRend::factorViewMatrix()
 
   if ((intImg->width != w) || (intImg->height != h))
   {
-    deallocateIntImg();
     intImg->setSize(w, h, NULL, true);
-    allocateIntImg();
   }
 
   iwWarp.identity();

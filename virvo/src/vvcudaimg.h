@@ -46,6 +46,8 @@ public:
   };
 
   vvCudaImg(int w, int h, Mode mode = TEXTURE);
+  ~vvCudaImg();
+  void setSize(int, int, uchar *buf=NULL, bool usePbo=false);
 
   void setMapped(bool mapped);
 
@@ -55,6 +57,11 @@ public:
   void deallocate();
   void map();
   void unmap();
+
+#ifdef HAVE_CUDA
+  uchar4* getDImg() const;
+#endif
+  uchar* getHImg() const;
 private:
   bool _mapped;
   Mode _mode;

@@ -26,7 +26,21 @@ vvCudaImg::vvCudaImg(const int w, const int h, const Mode mode)
 {
   _mode = mode;
   _mapped = false;
+  _imgRes = NULL;
   init();
+  allocate();
+}
+
+vvCudaImg::~vvCudaImg()
+{
+  deallocate();
+}
+
+void vvCudaImg::setSize(int w, int h, uchar *buf, bool usePbo)
+{
+  deallocate();
+  vvSoftImg::setSize(w, h, buf, usePbo);
+  allocate();
 }
 
 void vvCudaImg::setMapped(const bool mapped)
@@ -65,17 +79,21 @@ void vvCudaImg::allocate()
 void vvCudaImg::deallocate()
 {
 #ifdef HAVE_CUDA
+  bool ok = true;
   if (_mode==TEXTURE)
   {
-    cudaGraphicsUnregisterResource(_imgRes);
+    if (_imgRes != NULL)
+    {
+      vvCuda::checkError(&ok, cudaGraphicsUnregisterResource(_imgRes), "cudaGraphicsUnregisterResource");
+    }
   }
   else if (_mapped)
   {
-    cudaFreeHost(h_img);
+    vvCuda::checkError(&ok, cudaFreeHost(h_img), "cudaFreeHost");
   }
   else
   {
-    cudaFree(d_img);
+    vvCuda::checkError(&ok, cudaFree(d_img), "cudaFree");
   }
 #else
   vvDebugMsg::msg(1, "HAVE_CUDA undefined");
@@ -122,6 +140,18 @@ void vvCudaImg::unmap()
 #else
  vvDebugMsg::msg(1, "HAVE_CUDA undefined");
 #endif
+}
+
+#ifdef HAVE_CUDA
+uchar4* vvCudaImg::getDImg() const
+{
+  return d_img;
+}
+#endif
+
+uchar* vvCudaImg::getHImg() const
+{
+  return h_img;
 }
 
 void vvCudaImg::init()
