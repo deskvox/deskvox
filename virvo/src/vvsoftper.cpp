@@ -528,7 +528,7 @@ float* r, float* g, float* b, float* a)
 */
 void vvSoftPer::setQuality(float q)
 {
-   const float SIZE_FACTOR = 4.0f;                // size factor for intermediate image size
+   const float SIZE_FACTOR = 2.0f;                // size factor for intermediate image size
    int intImgSize;                                // edge size of intermediate image [pixels]
 
    vvDebugMsg::msg(3, "vvSoftPer::setQuality()", q);
@@ -753,7 +753,7 @@ void vvSoftPer::findScaleMatrix()
    scale.scale(sf, sf, 1.0f);
 
    // Adjust intermediate image size to desired image quality:
-   scale.scale(2.0f * _renderState._quality, 2.0f * _renderState._quality, 1.0f);
+   scale.scale(_renderState._quality, _renderState._quality, 1.0f);
 
    if (vvDebugMsg::isActive(3)) scale.print("scale");
 }
