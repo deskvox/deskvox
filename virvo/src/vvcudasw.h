@@ -37,7 +37,8 @@
 
 struct cudaGraphicsResource;
 
-/** Parallel implementation of parallel projection shear-warp algorithm using CUDA.
+/** Parallel implementation of shear-warp algorithm using CUDA.
+ Only vvSoftPar and vvSoftPer are supported for Base.
 
 @author Martin Aumueller <aumueller@uni-koeln.de>
 @see vvRenderer
@@ -50,15 +51,15 @@ template<class Base>
 class VIRVOEXPORT vvCudaSW : public Base
 {
    private:
-      cudaArray *d_voxarr[3];
-      cudaPitchedPtr d_voxptr[3];
-      uchar *d_voxels;
-      uchar4 *d_tf;
-      cudaArray *d_preint;
-      bool earlyRayTerm;
-      int imagePrecision;
+      cudaArray *d_voxarr[3]; ///< device storage for voxel data (3d texture)
+      cudaPitchedPtr d_voxptr[3]; ///< device storage for voxel data (pitched)
+      uchar *d_voxels; ///< device storage for voxel data (linear array)
+      uchar4 *d_tf; ///< device storage for transfer function
+      cudaArray *d_preint; ///< device storage for pre-integration table
+      bool earlyRayTerm; ///< true = approximate early ray termination
+      int imagePrecision; ///< number of bits per pixel component used during compositing
 
-      float *fraw[3];
+      float *fraw[3]; ///< pointer to voxel data converted to floating point
 
    protected:
       virtual void updateTransferFunction();
@@ -78,20 +79,31 @@ class VIRVOEXPORT vvCudaSW : public Base
       bool getEarlyRayTerm() const { return earlyRayTerm; }
       int getPrecision() const { return imagePrecision; }
 };
-#endif /* HAVE_CUDA */
 
+/** Parallel implementation of perspective shear-warp algorithm using CUDA.
+
+@author Martin Aumueller <aumueller@uni-koeln.de>
+@see vvSoftPer
+@see vvCudaSW
+*/
 class vvCudaPer: public vvCudaSW<vvSoftPer>
 {
     public:
     vvCudaPer(vvVolDesc *vd, vvRenderState rs);
 };
 
+/** Parallel implementation of parallel projection shear-warp algorithm using CUDA.
+
+@author Martin Aumueller <aumueller@uni-koeln.de>
+@see vvSoftPar
+@see vvCudaSW
+*/
 class vvCudaPar: public vvCudaSW<vvSoftPar>
 {
     public:
     vvCudaPar(vvVolDesc *vd, vvRenderState rs);
 };
-
+#endif /* HAVE_CUDA */
 #endif
 //============================================================================
 // End of File
