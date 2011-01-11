@@ -138,8 +138,7 @@ void vvCudaImg::unmap()
   }
   else
   {
-    cudaMemcpy(data, d_img, width*height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost);
-    ok = vvCuda::checkError(&ok, cudaGetLastError(), "cpy to host");
+      vvCuda::checkError(&ok, cudaMemcpy(data, d_img, width*height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost), "cpy to host");
   }
 #else
  vvDebugMsg::msg(1, "HAVE_CUDA undefined");
