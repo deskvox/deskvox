@@ -57,7 +57,7 @@ using std::ios;
 #include "../src/vvsoftper.h"
 #include "../src/vvcudapar.h"
 #include "../src/vvcuda.h"
-#if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 #include "../src/vvrayrend.h"
 #endif
 #include "../src/vvbonjour/vvbonjourbrowser.h"
@@ -707,7 +707,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       renderer = new vvCudaPar(vd, renderState);
   }
 #endif
-#if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
   else if (rayRenderer)
   {
     renderer = new vvRayRend(vd, renderState);
@@ -1145,7 +1145,7 @@ void vvView::rendererMenuCallback(int item)
     ds->setRenderer();
   }
 #endif
-#if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
   else if (item == 8)
   {
     cerr << "Switched to CUDA ray casting renderer" << endl;
@@ -1878,7 +1878,7 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("3D textures - bricked [5]", 5);
   glutAddMenuEntry("CPU Shear-warp [6]", 6);
   glutAddMenuEntry("GPU Shear-warp [7]", 6);
-#if defined(HAVE_CUDA) and defined(NV_PROPRIETARY_CODE)
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
   glutAddMenuEntry("GPU Ray casting [8]", 8);
 #endif
   glutAddMenuEntry("Decrease quality [-]", 98);
