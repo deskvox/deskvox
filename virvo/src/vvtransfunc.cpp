@@ -796,20 +796,22 @@ void vvTransFunc::makePreintLUTCorrect(int width, uchar *preIntTable, float thic
       double r=0., g=0., b=0., tau=0.;
       for (int i=0;i<n;i++)
       {
-        double s = sf+(sb-sf)*(double)i/n;
-        int is = (int)s;
-        double tauc = thickness*stepWidth*(rgba[is*4+3]*(s-floor(s))+rgba[(is+1)*4+3]*(1.0-s+floor(s)));
+        const double s = sf+(sb-sf)*(double)i/n;
+        const int is = (int)s;
+        const double fract_s = s-floor(s);
+        const double tauc = thickness*stepWidth*(rgba[is*4+3]*fract_s+rgba[(is+1)*4+3]*(1.0-fract_s));
+        const double e_tau = exp(-tau);
 #ifdef STANDARD
         /* standard optical model: r,g,b densities are multiplied with opacity density */
-        double rc = exp(-tau)*tauc*(rgba[is*4+0]*(s-floor(s))+rgba[(is+1)*4+0]*(1.0-s+floor(s)));
-        double gc = exp(-tau)*tauc*(rgba[is*4+1]*(s-floor(s))+rgba[(is+1)*4+1]*(1.0-s+floor(s)));
-        double bc = exp(-tau)*tauc*(rgba[is*4+2]*(s-floor(s))+rgba[(is+1)*4+2]*(1.0-s+floor(s)));
+        const double rc = e_tau*tauc*(rgba[is*4+0]*fract_s+rgba[(is+1)*4+0]*(1.0-fract_s));
+        const double gc = e_tau*tauc*(rgba[is*4+1]*fract_s+rgba[(is+1)*4+1]*(1.0-fract_s));
+        const double bc = e_tau*tauc*(rgba[is*4+2]*fract_s+rgba[(is+1)*4+2]*(1.0-fract_s));
 
 #else
         /* Willhelms, Van Gelder optical model: r,g,b densities are not multiplied */
-        double rc = exp(-tau)*stepWidth*(rgba[is*4+0]*(s-floor(s))+rgba[(is+1)*4+0]*(1.0-s+floor(s)));
-        double gc = exp(-tau)*stepWidth*(rgba[is*4+1]*(s-floor(s))+rgba[(is+1)*4+1]*(1.0-s+floor(s)));
-        double bc = exp(-tau)*stepWidth*(rgba[is*4+2]*(s-floor(s))+rgba[(is+1)*4+2]*(1.0-s+floor(s)));
+        const double rc = e_tau*stepWidth*(rgba[is*4+0]*fract_s+rgba[(is+1)*4+0]*(1.0-fract_s));
+        const double gc = e_tau*stepWidth*(rgba[is*4+1]*fract_s+rgba[(is+1)*4+1]*(1.0-fract_s));
+        const double bc = e_tau*stepWidth*(rgba[is*4+2]*fract_s+rgba[(is+1)*4+2]*(1.0-fract_s));
 #endif
 
         r = r+rc;
