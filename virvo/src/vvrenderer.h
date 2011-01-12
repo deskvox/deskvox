@@ -52,6 +52,7 @@ class VIRVOEXPORT vvRenderState
     bool _isROIChanged;                           ///< true = roi related values have been changed
     vvVector3 _roiSize;                           ///< size of roi in each dimension [0..1]
     bool  _isROIUsed;                             ///< true = use roi
+    bool  _sphericalROI;                          ///< true = use sphere rather than cube for roi
     vvVector3 _roiPos;                            ///< object space coordinates of ROI midpoint [mm]
     int   _brickSize[3];                          ///< last bricksize in x/y/z
     int   _maxBrickSize[3];                       ///< max allowed bricksize in x/y/z

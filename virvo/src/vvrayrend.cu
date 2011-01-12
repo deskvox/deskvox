@@ -257,8 +257,8 @@ template<
          bool t_lighting,
          bool t_opacityCorrection,
          bool t_jittering,
-         bool t_clipSphere,
          bool t_clipPlane,
+         bool t_clipSphere,
          bool t_useSphereAsProbe
         >
 __global__ void render(uchar4* d_output, const uint width, const uint height,
@@ -479,9 +479,11 @@ template<
          bool t_illumination,
          bool t_opacityCorrection,
          bool t_earlyRayTermination,
-         bool t_clipPlane
+         bool t_clipPlane,
+         bool t_clipSphere,
+         bool t_useSphereAsProbe
         >
-renderKernel getKernelWithClipPlane(vvRayRend*)
+renderKernel getKernelWithSphereAsProbe(vvRayRend*)
 {
   return &render<t_earlyRayTermination, // Early ray termination.
                  true, // Space skipping.
@@ -491,10 +493,45 @@ renderKernel getKernelWithClipPlane(vvRayRend*)
                  t_illumination, // Local illumination.
                  t_opacityCorrection, // Opacity correction.
                  false, // Jittering.
-                 false, // Clip sphere.
                  t_clipPlane, // Clip plane.
-                 false // Show what's inside the clip sphere.
+                 t_clipSphere, // Clip sphere.
+                 t_useSphereAsProbe // Show what's inside the clip sphere.
                 >;
+}
+
+template<
+         int t_bpc,
+         bool t_illumination,
+         bool t_opacityCorrection,
+         bool t_earlyRayTermination,
+         bool t_clipPlane
+        >
+renderKernel getKernelWithClipPlane(vvRayRend* rayRend)
+{
+  if (rayRend->_renderState._isROIUsed && rayRend->_renderState._sphericalROI)
+  {
+    return getKernelWithSphereAsProbe<
+                                      t_bpc,
+                                      t_illumination,
+                                      t_opacityCorrection,
+                                      t_earlyRayTermination,
+                                      t_clipPlane,
+                                      true,
+                                      true
+                                     >(rayRend);
+  }
+  else
+  {
+    return getKernelWithSphereAsProbe<
+                                      t_bpc,
+                                      t_illumination,
+                                      t_opacityCorrection,
+                                      t_earlyRayTermination,
+                                      t_clipPlane,
+                                      false,
+                                      false
+                                     >(rayRend);
+  }
 }
 
 template<
