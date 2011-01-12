@@ -63,6 +63,7 @@ class VIRVOEXPORT vvCudaSW : public Base
 
    protected:
       virtual void updateTransferFunction();
+      virtual void findAxisRepresentations();
       using Base::factorViewMatrix;
 
    public:

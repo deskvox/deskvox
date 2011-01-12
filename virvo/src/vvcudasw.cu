@@ -56,7 +56,7 @@ const int MaxCompositeSlices = MAX_SLICES;
 //#define NOLOAD
 //#define NODISPLAY
 //#define SHMLOAD
-#define VOLTEX3D 3 // undef, 1 or 3
+#define VOLTEX3D 1 // undef, 1 or 3
 //#define PITCHED
 //#define FLOATDATA
 //#define CONSTLOAD
@@ -205,6 +205,8 @@ __device__ float volume(int px, int py, int slice, int principal)
             return tex3D(tex_raw, x, y, z);
     }
 #endif
+
+    return -1.f;
 }
 #endif
 
@@ -615,7 +617,7 @@ vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
 #ifdef FLOATDATA
        parms.srcPtr = make_cudaPitchedPtr(fraw[2], sizeof(Scalar)*vd->vox[0], vd->vox[0], vd->vox[1]);
 #else
-       parms.srcPtr = make_cudaPitchedPtr(raw[2], sizeof(Scalar)*vd->vox[0], vd->vox[0], vd->vox[1]);
+       parms.srcPtr = make_cudaPitchedPtr(vd->getRaw(), sizeof(Scalar)*vd->vox[0], vd->vox[0], vd->vox[1]);
 #endif
 #else
 #ifdef FLOATDATA
@@ -706,6 +708,14 @@ vvCudaSW<Base>::~vvCudaSW()
 #else
    cudaFree(d_voxels);
 #endif
+#endif
+}
+
+template<class Base>
+void vvCudaSW<Base>::findAxisRepresentations()
+{
+#if !defined(VOLTEX3D) || VOLTEX3D!=1
+    Base::findAxisRepresentations();
 #endif
 }
 

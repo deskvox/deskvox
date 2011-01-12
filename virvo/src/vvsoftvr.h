@@ -123,7 +123,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
 
       void setOutputImageSize();
       void findVolumeDimensions();
-      void findAxisRepresentations();
+      virtual void findAxisRepresentations();
       void encodeRLE();
       int  getLUTSize();
       void findViewMatrix();
