@@ -6,7 +6,7 @@
 #include "vvconfig.h"
 #endif
 
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if 1//defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
 #include "vvglew.h"
 
@@ -27,6 +27,7 @@ using std::endl;
 texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture8;
 texture<ushort, 3, cudaReadModeNormalizedFloat> volTexture16;
 texture<float4, 1, cudaReadModeElementType> tfTexture;
+texture<bool, 3, cudaReadModeElementType> spaceSkippingTexture;
 texture<float4, 1, cudaReadModeElementType> randTexture;
 
 const int NUM_RAND_VECS = 8192;
@@ -270,7 +271,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   {
     return;
   }
-//d_output[y * texwidth + x] = make_uchar4(0, 128, 128, 255);return;
+
   const float u = (x / static_cast<float>(width)) * 2.0f - 1.0f;
   const float v = (y / static_cast<float>(height)) * 2.0f - 1.0f;
 
@@ -539,6 +540,15 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _illumination = false;
   _interpolation = true;
   _opacityCorrection = true;
+  _spaceSkipping = true;
+  h_spaceSkippingArray = NULL;
+  h_cellMinValues = NULL;
+  h_cellMaxValues = NULL;
+
+  _rgbaTF = NULL;
+
+  const int numCells[] = { 16, 16, 16 };
+  setNumSpaceSkippingCells(numCells);
 
   intImg = new vvCudaImg(0, 0);
 
@@ -562,13 +572,21 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
 vvRayRend::~vvRayRend()
 {
-  for (int f=0; f<vd->frames; ++f)
+  if (d_volumeArrays != 0)
   {
-    cudaFreeArray(d_volumeArrays[f]);
+    for (int f=0; f<vd->frames; ++f)
+    {
+      cudaFreeArray(d_volumeArrays[f]);
+    }
   }
   delete[] d_volumeArrays;
   cudaFreeArray(d_transferFuncArray);
   cudaFreeArray(d_randArray);
+  cudaFreeArray(d_spaceSkippingArray);
+  delete[] h_spaceSkippingArray;
+  delete[] h_cellMinValues;
+  delete[] h_cellMaxValues;
+  delete[] _rgbaTF;
 }
 
 int vvRayRend::getLUTSize() const
@@ -580,15 +598,22 @@ int vvRayRend::getLUTSize() const
 void vvRayRend::updateTransferFunction()
 {
   int lutEntries = getLUTSize();
-  float* rgba = new float[4 * lutEntries];
+  delete[] _rgbaTF;
+  _rgbaTF = new float[4 * lutEntries];
 
-  vd->computeTFTexture(lutEntries, 1, 1, rgba);
+  vd->computeTFTexture(lutEntries, 1, 1, _rgbaTF);
+
+  if (_spaceSkipping)
+  {
+    computeSpaceSkippingTexture();
+    initSpaceSkippingTexture();
+  }
 
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
 
   cudaFreeArray(d_transferFuncArray);
   cudaMallocArray(&d_transferFuncArray, &channelDesc, lutEntries, 1);
-  cudaMemcpyToArray(d_transferFuncArray, 0, 0, rgba, lutEntries * 4 * sizeof(float), cudaMemcpyHostToDevice);
+  cudaMemcpyToArray(d_transferFuncArray, 0, 0, _rgbaTF, lutEntries * 4 * sizeof(float), cudaMemcpyHostToDevice);
 
 
   tfTexture.filterMode = cudaFilterModeLinear;
@@ -596,8 +621,6 @@ void vvRayRend::updateTransferFunction()
   tfTexture.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
 
   cudaBindTextureToArray(tfTexture, d_transferFuncArray, channelDesc);
-
-  delete[] rgba;
 }
 
 void vvRayRend::compositeVolume(int, int)
@@ -734,6 +757,11 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue, ch
         _interpolation = newInterpol;
         initVolumeTexture();
         updateTransferFunction();
+
+        if (_spaceSkipping)
+        {
+          initSpaceSkippingTexture();
+        }
       }
     }
     break;
@@ -747,6 +775,15 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue, ch
     vvRenderer::setParameter(param, newValue);
     break;
   }
+}
+
+void vvRayRend::setNumSpaceSkippingCells(const int numSpaceSkippingCells[3])
+{
+  for (int d=0; d<3; ++d)
+  {
+    h_numCells[d] = numSpaceSkippingCells[d];
+  }
+  calcSpaceSkippingGrid();
 }
 
 bool vvRayRend::getEarlyRayTermination() const
@@ -768,9 +805,9 @@ bool vvRayRend::getOpacityCorrection() const
   return _opacityCorrection;
 }
 
-void vvRayRend::initPbo(const int width, const int height)
+bool vvRayRend::getSpaceSkipping() const
 {
-
+  return _spaceSkipping;
 }
 
 void vvRayRend::initRandTexture()
@@ -799,6 +836,24 @@ void vvRayRend::initRandTexture()
   cudaBindTextureToArray(randTexture, d_randArray, channelDesc);
 
   delete[] randVecs;
+}
+
+void vvRayRend::initSpaceSkippingTexture()
+{
+  cudaExtent numBricks = make_cudaExtent(h_numCells[0], h_numCells[1], h_numCells[2]);
+
+  cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<bool>();
+
+  cudaFreeArray(d_spaceSkippingArray);
+  cudaMalloc3DArray(&d_spaceSkippingArray, &channelDesc, numBricks);
+
+  cudaMemcpy3DParms copyParams = { 0 };
+
+  copyParams.srcPtr = make_cudaPitchedPtr(h_spaceSkippingArray, numBricks.width*vd->bpc, numBricks.width, numBricks.height);
+  copyParams.dstArray = d_spaceSkippingArray;
+  copyParams.extent = numBricks;
+  copyParams.kind = cudaMemcpyHostToDevice;
+  cudaMemcpy3D(&copyParams);
 }
 
 void vvRayRend::initVolumeTexture()
@@ -891,6 +946,120 @@ void vvRayRend::factorViewMatrix()
   iwWarp.identity();
   iwWarp.translate(-1.0f, -1.0f, 0.0f);
   iwWarp.scale(1.0f / (static_cast<float>(vp[2]) * 0.5f), 1.0f / (static_cast<float>(vp[3]) * 0.5f), 0.0f);
+}
+
+void vvRayRend::calcSpaceSkippingGrid()
+{
+  delete[] h_cellMinValues;
+  delete[] h_cellMaxValues;
+  const int numCells = h_numCells[0] * h_numCells[1] * h_numCells[2];
+  h_cellMinValues = new int[numCells];
+  h_cellMaxValues = new int[numCells];
+
+  // Cells are uniformly sized. If vd->size[d] isn't a multiple of cellSize[d],
+  // the last cell will be larger than the other cells for that dimension.
+  const int cellSizeAll[] = {
+                              (int)vd->getSize()[0] / (h_numCells[0]),
+                              (int)vd->getSize()[1] / (h_numCells[1]),
+                              (int)vd->getSize()[2] / (h_numCells[2])
+                          };
+  const int lastCellSize[] = {
+                               cellSizeAll[0] + (int)vd->getSize()[0] % h_numCells[0],
+                               cellSizeAll[1] + (int)vd->getSize()[1] % h_numCells[1],
+                               cellSizeAll[2] + (int)vd->getSize()[2] % h_numCells[2]
+                              };
+  int cellSize[3];
+  int from[3];
+  int to[3];
+  const vvVector3 size = vd->getSize();
+  for (int z=0; z<h_numCells[2]; ++z)
+  {
+    cellSize[2] = (z == (h_numCells[2] - 1)) ? lastCellSize[2] : cellSizeAll[2];
+    from[2] = cellSizeAll[2] * z;
+    to[2] = from[2] + cellSize[2];
+
+    for (int y=0; y<h_numCells[1]; ++y)
+    {
+      cellSize[1] = (y == (h_numCells[1] - 1)) ? lastCellSize[1] : cellSizeAll[1];
+      from[1] = cellSizeAll[1] * y;
+      to[1] = from[1] + cellSize[1];
+
+      for (int x=0; x<h_numCells[2]; ++x)
+      {
+        cellSize[0] = (x == (h_numCells[0] - 1)) ? lastCellSize[0] : cellSizeAll[0];
+        from[0] = cellSizeAll[0] * x;
+        to[0] = from[0] + cellSize[0];
+
+        // Memorize the max and min scalar values in the volume. These are stored
+        // to perform space skipping later on.
+        int minValue = INT_MAX;
+        int maxValue = -INT_MAX;
+
+        for (int vz=from[2]; vz<to[2]; ++vz)
+        {
+          for (int vy=from[1]; vy<to[1]; ++vy)
+          {
+            for (int vx=from[0]; vx<to[0]; ++vx)
+            {
+              const uchar vox = vd->getRaw()[vz * (int)(size[0] * size[1]) + vy * (int)size[0] + vx];
+
+              // Store min and max for empty space leaping.
+              if (vox > maxValue)
+              {
+                maxValue = vox;
+              }
+              if (vox < minValue)
+              {
+                minValue = vox;
+              }
+            }
+          }
+        }
+        const int idx = x * h_numCells[1] * h_numCells[2] + y * h_numCells[2] + z;
+        h_cellMinValues[idx] = minValue;
+        h_cellMaxValues[idx] = maxValue;
+      }
+    }
+  }
+}
+
+void vvRayRend::computeSpaceSkippingTexture()
+{
+  if (vd->bpc == 1)
+  {
+    delete[] h_spaceSkippingArray;
+    const int numCells = h_numCells[0] * h_numCells[1] * h_numCells[2];
+    h_spaceSkippingArray = new bool[numCells];
+    int discarded = 0;
+    for (int i=0; i<numCells; ++i)
+    {
+      h_spaceSkippingArray[i] = true;
+      for (int j=h_cellMinValues[i]; j<=h_cellMaxValues[i]; ++j)
+      {
+        if(_rgbaTF[j * 4 + 3] > 0.0f)
+        {
+          h_spaceSkippingArray[i] = false;
+          break;
+        }
+      }
+      if (h_spaceSkippingArray[i])
+      {
+        ++discarded;
+      }
+    }
+    vvDebugMsg::msg(3, "Cells discarded: ", discarded);
+  }
+  else
+  {
+    // Only for bpc == 1 so far.
+    _spaceSkipping = false;
+    delete[] h_spaceSkippingArray;
+    h_spaceSkippingArray = NULL;
+    delete[] h_cellMinValues;
+    h_cellMinValues = NULL;
+    delete[] h_cellMaxValues;
+    h_cellMaxValues = NULL;
+  }
 }
 
 #endif
