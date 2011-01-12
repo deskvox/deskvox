@@ -87,15 +87,17 @@ const int nthreads = 128;
 #define SHMLOAD
 #endif
 
+typedef uchar4 LutEntry;
+
 #ifdef SHMCLASS
 #define SHMLOAD
-texture<uchar4, 1, cudaReadModeElementType> tex_tf;
+texture<LutEntry, 1, cudaReadModeElementType> tex_tf;
 #else
-texture<uchar4, 1, cudaReadModeNormalizedFloat> tex_tf;
+texture<LutEntry, 1, cudaReadModeNormalizedFloat> tex_tf;
 #endif
 
 #ifdef VOLTEX3D
-texture<uchar4, 2, cudaReadModeNormalizedFloat> tex_preint;
+texture<LutEntry, 2, cudaReadModeNormalizedFloat> tex_preint;
 #ifdef FLOATDATA
 texture<float, 3, cudaReadModeElementType> tex_raw;
 #else
@@ -150,7 +152,6 @@ __device__ void blend(uchar4 *dst, uchar4 src)
 {
     uchar4 c = *dst;
     const float w = src.w/255.f;
-    //src.w = 255 - src.w;
     *dst = make_uchar4(src.x + c.x*w,
             src.y + c.y*w,
             src.z + c.z*w,
@@ -671,11 +672,11 @@ vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
 #endif
 
    // transfer function is stored as a texture
-   vvCuda::checkError(&ok, cudaMalloc(&d_tf, 4096*4), "cudaMalloc tf");
-   vvCuda::checkError(&ok, cudaBindTexture(NULL, tex_tf, d_tf, 4096), "bind tf tex");
+   vvCuda::checkError(&ok, cudaMalloc(&d_tf, Base::getLUTSize()*sizeof(LutEntry)), "cudaMalloc tf");
+   vvCuda::checkError(&ok, cudaBindTexture(NULL, tex_tf, d_tf, Base::getLUTSize()*sizeof(LutEntry)), "bind tf tex");
 
    // pre-integration table
-   cudaChannelFormatDesc desc = cudaCreateChannelDesc<uchar4>();
+   cudaChannelFormatDesc desc = cudaCreateChannelDesc<LutEntry>();
    vvCuda::checkError(&ok, cudaMallocArray(&d_preint, &desc, Base::PRE_INT_TABLE_SIZE, Base::PRE_INT_TABLE_SIZE), "cudaMalloc preint");
    tex_preint.normalized = true;
    tex_preint.filterMode = Base::bilinLookup ? cudaFilterModeLinear : cudaFilterModePoint;
@@ -776,11 +777,11 @@ void vvCudaSW<Base>::updateLUT(float dist)
         Base::makeLookupTextureCorrect(dist);   // use this line for slow but more correct pre-integration LUT
     }
 
-    vvCuda::checkError(NULL, cudaMemcpy(d_tf, Base::rgbaConv, sizeof(Base::rgbaConv), cudaMemcpyHostToDevice), "cudaMemcpy tf");
+    vvCuda::checkError(NULL, cudaMemcpy(d_tf, Base::rgbaConv, Base::getLUTSize()*sizeof(LutEntry), cudaMemcpyHostToDevice), "cudaMemcpy tf");
     if(Base::preIntegration)
     {
         vvCuda::checkError(NULL, cudaMemcpyToArray(d_preint, 0, 0, &Base::preIntTable[0][0][0],
-                    Base::PRE_INT_TABLE_SIZE*Base::PRE_INT_TABLE_SIZE*4, cudaMemcpyHostToDevice), "cudaMemcpy preint");
+                    Base::PRE_INT_TABLE_SIZE*Base::PRE_INT_TABLE_SIZE*sizeof(LutEntry), cudaMemcpyHostToDevice), "cudaMemcpy preint");
     }
 }
 
