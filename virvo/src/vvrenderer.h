@@ -161,6 +161,12 @@ class VIRVOEXPORT vvRenderer
                       const vvMatrix& invMV,
                       const bool isOrtho = false) const;
 
+    void getShadingNormal(vvVector3& normal,
+                          vvVector3& origin,
+                          const vvVector3& eye,
+                          const vvMatrix& invMV,
+                          const bool isOrtho = false) const;
+
     // Class Methods:
   public:                                         // public methods will be inherited as public
     vvRenderer(vvVolDesc*, vvRenderState);

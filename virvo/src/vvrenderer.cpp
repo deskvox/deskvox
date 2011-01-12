@@ -331,6 +331,38 @@ void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
   normal.normalize();
 }
 
+void vvRenderer::getShadingNormal(vvVector3& normal, vvVector3& origin,
+                                  const vvVector3& eye, const vvMatrix& invMV,
+                                  const bool isOrtho) const
+{
+  // See calcutions in getObjNormal(). Only difference: if clip plane
+  // is active, this is ignored. This normal isn't used to align
+  // slices or such with the clipping plane, but for shading calculations.
+  if (isOrtho || (viewDir.e[0] == 0.0f && viewDir.e[1] == 0.0f && viewDir.e[2] == 0.0f))
+  {
+    // Draw slices parallel to projection plane:
+    normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
+    normal.multiply(&invMV);
+    origin.zero();
+    origin.multiply(&invMV);
+    normal.sub(&origin);
+  }
+  else if (!_renderState._isROIUsed && isInVolume(&eye))
+  {
+    // Draw slices perpendicular to viewing direction:
+    normal.copy(&viewDir);
+    normal.negate();                              // viewDir points away from user, the normal should point towards them
+  }
+  else
+  {
+    // Draw slices perpendicular to line eye->object:
+    normal.copy(&objDir);
+    normal.negate();
+  }
+
+  normal.normalize();
+}
+
 //----------------------------------------------------------------------------
 /** Destructor, called when program ends or when rendering method changes.
    Clear up all dynamically allocated memory space here.

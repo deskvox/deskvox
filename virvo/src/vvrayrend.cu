@@ -781,7 +781,7 @@ void vvRayRend::compositeVolume(int, int)
   vvVector3 origin;
 
   vvVector3 normal;
-  getObjNormal(normal, origin, eye, invMV, isOrtho);
+  getShadingNormal(normal, origin, eye, invMV, isOrtho);
 
   const float3 N = make_float3(normal[0], normal[1], normal[2]);
 
