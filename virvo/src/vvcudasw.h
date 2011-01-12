@@ -62,7 +62,7 @@ class VIRVOEXPORT vvCudaSW : public Base
       float *fraw[3]; ///< pointer to voxel data converted to floating point
 
    protected:
-      virtual void updateTransferFunction();
+      virtual void updateLUT(float dist);
       virtual void findAxisRepresentations();
       using Base::factorViewMatrix;
 

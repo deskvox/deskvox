@@ -99,6 +99,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       AxisType principal;                         ///< principal viewing axis
       bool stacking;                              ///< slice stacking order; true=front to back
       WarpType warpMode;                          ///< current warp mode
+      float rgbaTF[4096*4];                       ///< transfer function lookup table
       uchar rgbaConv[4096][4];                    ///< density to RGBA conversion table (max. 8 bit density supported) [scalar values][RGBA]
       vvVector3 xClipNormal;                      ///< clipping plane normal in permuted voxel coordinate system
       float xClipDist;                            ///< clipping plane distance in permuted voxel coordinate system
@@ -137,6 +138,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       virtual int  getCullingStatus(float);
       virtual void factorViewMatrix() = 0;
       virtual void setQuality(float q);
+      virtual void updateLUT(float dist);
 
    public:
       vvSoftImg* intImg;                          ///< intermediate image

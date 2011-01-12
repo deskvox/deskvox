@@ -473,28 +473,30 @@ void vvSoftVR::encodeRLE()
 // See parent for comments.
 void vvSoftVR::updateTransferFunction()
 {
-   int i, c;
-   float* rgba;
-   int lutEntries;
-
    vvDebugMsg::msg(1, "vvSoftVR::updateTransferFunction()");
 
-   lutEntries = getLUTSize();
-   rgba = new float[4 * lutEntries];
+   int lutEntries = getLUTSize();
 
-   vd->computeTFTexture(lutEntries, 1, 1, rgba);
+   vd->computeTFTexture(lutEntries, 1, 1, rgbaTF);
 
+   updateLUT(1.f);
+}
+
+void vvSoftVR::updateLUT(float dist)
+{
+   vvDebugMsg::msg(1, "vvSoftVR::updateLUT()", dist);
+
+   const int lutEntries = getLUTSize();
    // Copy RGBA values to internal array:
-   for (i=0; i<lutEntries; ++i)
-      for (c=0; c<4; ++c)
-         rgbaConv[i][c] = (uchar)(rgba[i*4+c] * 255.0f);
-   delete[] rgba;
+   for (int i=0; i<lutEntries; ++i)
+      for (int c=0; c<4; ++c)
+         rgbaConv[i][c] = (uchar)(rgbaTF[i*4+c] * 255.0f);
 
    // Make pre-integrated LUT:
    if (preIntegration)
    {
-      //makeLookupTextureOptimized(1.0f);           // use this line for fast pre-integration LUT
-      makeLookupTextureCorrect(1.0f);   // use this line for slow but more correct pre-integration LUT
+      //makeLookupTextureOptimized(dist);           // use this line for fast pre-integration LUT
+      makeLookupTextureCorrect(dist);   // use this line for slow but more correct pre-integration LUT
    }
 }
 
@@ -1087,7 +1089,7 @@ void vvSoftVR::setParameter(ParameterType param, float newValue, char*)
  #endif
       case vvRenderer::VV_PREINT:
          preIntegration = (newValue == 0.0f) ? false : true;
-         if (preIntegration) updateTransferFunction();
+         if (preIntegration) updateLUT(1.f);
          cerr << "preIntegration set to " << int(preIntegration) << endl;
          break;
      case vvRenderer::VV_OPCORR:

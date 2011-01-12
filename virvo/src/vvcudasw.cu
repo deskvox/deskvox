@@ -677,7 +677,7 @@ vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
        h_vox[i] = vd->vox[(i+1)%3];
    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_vox, h_vox, sizeof(int)*5), "cudaMemcpy vox");
 
-   updateTransferFunction();
+   Base::updateTransferFunction();
 }
 
 
@@ -720,18 +720,56 @@ void vvCudaSW<Base>::findAxisRepresentations()
 }
 
 template<class Base>
-void vvCudaSW<Base>::updateTransferFunction()
+void vvCudaSW<Base>::updateLUT(float dist)
 {
-   vvDebugMsg::msg(2, "vvCudaSW::updateTransferFunction()");
+    vvDebugMsg::msg(3, "vvCudaSW::updateLUT()", dist);
 
-   Base::updateTransferFunction();
+    float corr[4];                                  // gamma/alpha corrected RGBA values [0..1]
 
-   vvCuda::checkError(NULL, cudaMemcpy(d_tf, Base::rgbaConv, sizeof(Base::rgbaConv), cudaMemcpyHostToDevice), "cudaMemcpy tf");
-   if(Base::preIntegration)
-   {
-       vvCuda::checkError(NULL, cudaMemcpyToArray(d_preint, 0, 0, &Base::preIntTable[0][0][0],
-                   Base::PRE_INT_TABLE_SIZE*Base::PRE_INT_TABLE_SIZE*4, cudaMemcpyHostToDevice), "cudaMemcpy preint");
-   }
+    const int lutEntries = Base::getLUTSize();
+    for (int i=0; i<lutEntries; ++i)
+    {
+        // Gamma correction:
+        if (Base::_renderState._gammaCorrection)
+        {
+            corr[0] = gammaCorrect(Base::rgbaTF[i * 4],     Base::VV_RED);
+            corr[1] = gammaCorrect(Base::rgbaTF[i * 4 + 1], Base::VV_GREEN);
+            corr[2] = gammaCorrect(Base::rgbaTF[i * 4 + 2], Base::VV_BLUE);
+            corr[3] = gammaCorrect(Base::rgbaTF[i * 4 + 3], Base::VV_ALPHA);
+        }
+        else
+        {
+            corr[0] = Base::rgbaTF[i * 4];
+            corr[1] = Base::rgbaTF[i * 4 + 1];
+            corr[2] = Base::rgbaTF[i * 4 + 2];
+            corr[3] = Base::rgbaTF[i * 4 + 3];
+        }
+
+        // Opacity correction:
+        // for 0 distance draw opaque slices
+        if (dist<=0.0 || (Base::_renderState._clipMode && Base::_renderState._clipOpaque)) corr[3] = 1.0f;
+        else if (Base::opCorr) corr[3] = 1.0f - powf(1.0f - corr[3], dist);
+
+        // Convert float to uchar and copy to rgbaLUT array:
+        for (int c=0; c<4; ++c)
+        {
+            Base::rgbaConv[i][c] = uchar(corr[c] * 255.0f);
+        }
+    }
+
+    // Make pre-integrated LUT:
+    if (Base::preIntegration)
+    {
+        //Base::makeLookupTextureOptimized(dist);           // use this line for fast pre-integration LUT
+        Base::makeLookupTextureCorrect(dist);   // use this line for slow but more correct pre-integration LUT
+    }
+
+    vvCuda::checkError(NULL, cudaMemcpy(d_tf, Base::rgbaConv, sizeof(Base::rgbaConv), cudaMemcpyHostToDevice), "cudaMemcpy tf");
+    if(Base::preIntegration)
+    {
+        vvCuda::checkError(NULL, cudaMemcpyToArray(d_preint, 0, 0, &Base::preIntTable[0][0][0],
+                    Base::PRE_INT_TABLE_SIZE*Base::PRE_INT_TABLE_SIZE*4, cudaMemcpyHostToDevice), "cudaMemcpy preint");
+    }
 }
 
 template<class Base, typename Pixel, int principal, int sliceStep, bool earlyRayTerm>
@@ -847,6 +885,10 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
    Base::findSlicePosition(firstSlice+sliceStep, &sinc, &einc);
    sinc.sub(&start);
    einc.sub(&end);
+
+   float dist = sqrtf(1.0f + sinc.e[0] * sinc.e[0] + sinc.e[1] * sinc.e[1]);
+   updateLUT(dist);
+
    vvVector4 scur = start;
    vvVector4 ecur = end;
 #if defined(VOLTEX3D) && VOLTEX3D==1
