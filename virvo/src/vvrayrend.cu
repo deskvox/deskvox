@@ -478,9 +478,10 @@ template<
          int t_bpc,
          bool t_illumination,
          bool t_opacityCorrection,
-         bool t_earlyRayTermination
+         bool t_earlyRayTermination,
+         bool t_clipPlane
         >
-renderKernel getKernelWithEarlyRayTermination(vvRayRend*)
+renderKernel getKernelWithClipPlane(vvRayRend*)
 {
   return &render<t_earlyRayTermination, // Early ray termination.
                  true, // Space skipping.
@@ -491,9 +492,41 @@ renderKernel getKernelWithEarlyRayTermination(vvRayRend*)
                  t_opacityCorrection, // Opacity correction.
                  false, // Jittering.
                  false, // Clip sphere.
-                 false, // Clip plane.
+                 t_clipPlane, // Clip plane.
                  false // Show what's inside the clip sphere.
                 >;
+}
+
+template<
+         int t_bpc,
+         bool t_illumination,
+         bool t_opacityCorrection,
+         bool t_earlyRayTermination
+        >
+renderKernel getKernelWithEarlyRayTermination(vvRayRend* rayRend)
+{
+  if (rayRend->_renderState._clipMode)
+  {
+    return getKernelWithClipPlane<
+                                  t_bpc,
+                                  t_illumination,
+                                  t_opacityCorrection,
+                                  t_earlyRayTermination,
+                                  true
+                                 >(rayRend);
+  }
+  else
+  {
+    {
+      return getKernelWithClipPlane<
+                                    t_bpc,
+                                    t_illumination,
+                                    t_opacityCorrection,
+                                    t_earlyRayTermination,
+                                    false
+                                   >(rayRend);
+    }
+  }
 }
 
 template<
@@ -730,8 +763,15 @@ void vvRayRend::compositeVolume(int, int)
   const float radius = _renderState._roiSize[0] * vd->getSize()[0];//150;
 
   // Clip plane.
-  const float3 pnormal = normalize(make_float3(0.0f, 0.71f, 0.63f));
-  const float pdist = 0.0f;
+  const float3 pnormal = normalize(make_float3(_renderState._clipNormal[0],
+                                               _renderState._clipNormal[1],
+                                               _renderState._clipNormal[2]));
+  const float pdist = _renderState._clipNormal.dot(&_renderState._clipPoint);
+
+  if (_renderState._clipMode && _renderState._clipPerimeter)
+  {
+    drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, _renderState._clipColor);
+  }
 
   renderKernel kernel = NULL;
   if (vd->bpc == 1)
