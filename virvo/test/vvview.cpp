@@ -142,6 +142,9 @@ vvView::vvView()
   testSuiteFileName     = NULL;
   showBricks            = false;
   roiEnabled            = false;
+  sphericalROI          = false;
+  clipPlane             = false;
+  clipPerimeter         = false;
   mvScale               = 1.0f;
   rayRenderer           = false;
 }
@@ -795,6 +798,7 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'H': ds->optionsMenuCallback(5); break;
   case 'h': ds->optionsMenuCallback(6); break;
   case 'i': ds->optionsMenuCallback(0);  break;
+  case 'I': ds->clipMenuCallback(0); break;
   case 'j': ds->transferMenuCallback(19); break;
   case 'J': ds->transferMenuCallback(20); break;
   case 'k': ds->transferMenuCallback(21); break;
@@ -1543,7 +1547,7 @@ void vvView::animMenuCallback(int item)
 
 
 //----------------------------------------------------------------------------
-/** Callback for animation menu.
+/** Callback for roi menu.
   @param item selected menu item index
 */
 void vvView::roiMenuCallback(const int item)
@@ -1617,6 +1621,25 @@ void vvView::roiMenuCallback(const int item)
     }
     break;
   default:
+    break;
+  }
+  glutPostRedisplay();
+}
+
+
+//----------------------------------------------------------------------------
+/** Callback for clip menu.
+  @param item selected menu item index
+*/
+void vvView::clipMenuCallback(const int item)
+{
+  vvDebugMsg::msg(1, "vvView::clipMenuCallback()");
+
+  switch (item)
+  {
+  case 0:
+    ds->clipPlane = !ds->clipPlane;
+    ds->renderer->_renderState._clipMode = ds->clipPlane;
     break;
   }
   glutPostRedisplay();
@@ -1956,7 +1979,7 @@ void vvView::printROIMessage()
 /// Create the pop-up menus.
 void vvView::createMenus()
 {
-  int rendererMenu, voxelMenu, optionsMenu, transferMenu, animMenu, roiMenu, viewMenu;
+  int rendererMenu, voxelMenu, optionsMenu, transferMenu, animMenu, roiMenu, clipMenu, viewMenu;
 
   vvDebugMsg::msg(1, "vvView::createMenus()");
 
@@ -2057,10 +2080,15 @@ void vvView::createMenus()
   glutAddMenuEntry("Animation speed down [S]", 5);
   glutAddMenuEntry("Reset speed", 6);
 
+  // Region of interest menu:
   roiMenu = glutCreateMenu(roiMenuCallback);
   glutAddMenuEntry("Toggle region of interest mode [R]", 0);
   glutAddMenuEntry("size-- [[]", 98);
   glutAddMenuEntry("size++ []]", 99);
+
+  // Clip menu:
+  clipMenu = glutCreateMenu(clipMenuCallback);
+  glutAddMenuEntry("Toggle clip mode [I]", 0);
 
   // Viewing Window Menu:
   viewMenu = glutCreateMenu(viewMenuCallback);
@@ -2084,6 +2112,7 @@ void vvView::createMenus()
   glutAddSubMenu("Transfer function", transferMenu);
   glutAddSubMenu("Animation", animMenu);
   glutAddSubMenu("Region of interest", roiMenu);
+  glutAddSubMenu("Clipping", clipMenu);
   glutAddSubMenu("Viewing window", viewMenu);
   glutAddMenuEntry("Toggle perspective mode [p]", 0);
   glutAddMenuEntry("Toggle auto refinement [e]", 4);

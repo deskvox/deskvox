@@ -134,6 +134,8 @@ class vvView
     bool showBricks;                            ///< show brick outlines when brick renderer is used
     bool roiEnabled;                            ///< mode where probe is shown and can be moved via arrow keys
     bool sphericalROI;                          ///< use sphere instead of cube
+    bool clipPlane;                             ///< use clip plane
+    bool clipPerimeter;                         ///< draw clip perimeter
     float mvScale;                              ///< scale factor for the mv matrix to view the whole volume
     bool rayRenderer;
   public:
@@ -156,6 +158,7 @@ class vvView
     static void transferMenuCallback(int);
     static void animMenuCallback(int);
     static void roiMenuCallback(int);
+    static void clipMenuCallback(int);
     static void viewMenuCallback(int);
     static void performanceTest();
     static void printProfilingInfo(const int testNr = 1, const int testCnt = 1);
