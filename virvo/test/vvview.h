@@ -88,6 +88,7 @@ class vvView
     bool  activeStereoCapable;                  ///< true = hardware is active stereo capable
     bool  tryQuadBuffer;                        ///< true = try to request a quad buffered visual
     bool  interpolMode;                         ///< true = linear interpolation in slices
+    bool  warpInterpolMode;                     ///< true = linear interpolation during warp (shear-warp)
     bool  preintMode;                           ///< true = use pre-integration
     bool  opCorrMode;                           ///< true = do opacity correction
     bool  gammaMode;                            ///< true = do gamma correction

@@ -1066,10 +1066,10 @@ void vvSoftVR::setParameter(ParameterType param, float newValue, char*)
          sliceInterpol = (newValue == 0.0f) ? false : true;
          setQuality(_renderState._quality);
          break;
-#if 0
       case vvRenderer::VV_WARPINT:
          warpInterpol = (newValue == 0.0f) ? false : true;
          break;
+#if 0
       case vvRenderer::VV_COMPRESS:
          compression = (newValue == 0.0f) ? false : true;
          break;
@@ -1109,9 +1109,9 @@ float vvSoftVR::getParameter(ParameterType param, char*) const
    {
       case vvRenderer::VV_SLICEINT:
          return (sliceInterpol) ? 1.0f : 0.0f;
-#if 0
       case vvRenderer::VV_WARPINT:
          return (warpInterpol) ? 1.0f : 0.0f;
+#if 0
       case vvRenderer::VV_COMPRESS:
          return (compression) ? 1.0f : 0.0f;
       case vvRenderer::VV_MULTIPROC:
@@ -1120,9 +1120,9 @@ float vvSoftVR::getParameter(ParameterType param, char*) const
          return (sliceBuffer) ? 1.0f : 0.0f;
       case vvRenderer::VV_LOOKUP:
          return (bilinLookup) ? 1.0f : 0.0f;
+#endif
       case vvRenderer::VV_OPCORR:
          return (opCorr) ? 1.0f : 0.0f;
-#endif
       case vvRenderer::VV_PREINT:
          return (preIntegration) ? 1.0f : 0.0f;
       default: return vvRenderer::getParameter(param);

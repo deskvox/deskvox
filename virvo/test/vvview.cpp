@@ -112,6 +112,7 @@ vvView::vvView()
   stereoMode            = 0;
   fullscreenMode        = false;
   interpolMode          = true;
+  warpInterpolMode      = true;
   preintMode            = false;
   paletteMode           = false;
   emptySpaceLeapingMode = true;
@@ -741,6 +742,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   //renderer->setTimingMode(timingMode);
   //renderer->setPaletteMode(paletteMode);
   renderer->setParameter(vvRenderer::VV_SLICEINT, (interpolMode) ? 1.0f : 0.0f);
+  renderer->setParameter(vvRenderer::VV_WARPINT, (warpInterpolMode) ? 1.0f : 0.0f);
   renderer->setParameter(vvRenderer::VV_PREINT, (preintMode) ? 1.0f : 0.0f);
   renderer->_renderState._mipMode = mipMode;
   //renderer->setParameter(vvRenderer::VV_GAMMA, (gammaMode) ? 1.0f : 0.0f);
@@ -786,6 +788,7 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'c': ds->viewMenuCallback(10); break;
   case 'C': ds->optionsMenuCallback(14); break;
   case 'd': ds->mainMenuCallback(5);  break;
+  case 'D': ds->mainMenuCallback(14);  break;
   case 'e': ds->mainMenuCallback(4);  break;
   case 'f': ds->viewMenuCallback(2);  break;
   case 'g': ds->optionsMenuCallback(13);  break;
@@ -814,12 +817,15 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'u': ds->viewMenuCallback(8);  break;
   case 'v': ds->viewMenuCallback(9);  break;
   case 'w': ds->viewMenuCallback(6);  break;
+  case 'W': ds->optionsMenuCallback(16);  break;
   case 'x': ds->optionsMenuCallback(2); break;
   case 'z': ds->viewMenuCallback(5);  break;
   case '<': ds->transferMenuCallback(12);  break;
   case '>': ds->transferMenuCallback(13);  break;
   case '[': ds->mainMenuCallback(98); break;
   case ']': ds->mainMenuCallback(99); break;
+  case '{': ds->optionsMenuCallback(11); break;
+  case '}': ds->optionsMenuCallback(10); break;
   case ' ': ds->optionsMenuCallback(8); break;
   default: cerr << "key '" << char(key) << "' has no function'" << endl; break;
   }
@@ -1037,6 +1043,13 @@ void vvView::mainMenuCallback(int item)
     glutDestroyWindow(ds->window);
     delete ds;
     exit(0);
+    break;
+  case 14:                                    // rotate debug level
+    {
+        int l = vvDebugMsg::getDebugLevel()+1;
+        l %= 4;
+        vvDebugMsg::setDebugLevel(l);
+    }
     break;
   case 98:
     if (ds->roiEnabled)
@@ -1301,7 +1314,7 @@ void vvView::optionsMenuCallback(int item)
     }
     ds->renderer->setParameter(vvRenderer::VV_IMG_PRECISION, ds->bufferPrecision);
     break;
-  case 11:                                    // increase precision of visual
+  case 11:                                    // decrease precision of visual
     if (ds->cudaRenderer || ds->softwareRenderer || ds->rayRenderer)
     {
       if (ds->bufferPrecision == 32)
@@ -1376,6 +1389,11 @@ void vvView::optionsMenuCallback(int item)
     ds->earlyRayTermination = !ds->earlyRayTermination;
     ds->renderer->setParameter(vvRenderer::VV_TERMINATEEARLY, ds->earlyRayTermination);
     cerr << "Early ray termination set to " << int(ds->earlyRayTermination) << endl;
+    break;
+  case 16:
+    ds->warpInterpolMode = !ds->warpInterpolMode;
+    ds->renderer->setParameter(vvRenderer::VV_WARPINT, ds->warpInterpolMode);
+    cerr << "Warp interpolation set to " << int(ds->warpInterpolMode) << endl;
     break;
   default: break;
   }
@@ -1908,7 +1926,9 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_SPHERICAL)) glutAddMenuEntry("3D textures - spherical [4]", 4);
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("3D textures - bricked [5]", 5);
   glutAddMenuEntry("CPU Shear-warp [6]", 6);
-  glutAddMenuEntry("GPU Shear-warp [7]", 6);
+#if defined(HAVE_CUDA)
+  glutAddMenuEntry("GPU Shear-warp [7]", 7);
+#endif
 #if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
   glutAddMenuEntry("GPU Ray casting [8]", 8);
 #endif
@@ -1928,6 +1948,7 @@ void vvView::createMenus()
   // Renderer options menu:
   optionsMenu = glutCreateMenu(optionsMenuCallback);
   glutAddMenuEntry("Toggle slice interpolation [i]", 0);
+  glutAddMenuEntry("Toggle warp interpolation [W]", 16);
   if (vvTexRend::isSupported(vvTexRend::VV_FRG_PRG)
       && vvTexRend::isSupported(vvTexRend::VV_VIEWPORT)
       && vvGLTools::isGLextensionSupported("GL_ARB_multitexture"))
@@ -2023,8 +2044,9 @@ void vvView::createMenus()
   glutAddMenuEntry("Save volume to file", 9);
   glutAddMenuEntry("Performance test [t]", 11);
   glutAddMenuEntry("Toggle region of interest mode [R]", 12);
-  glutAddMenuEntry("ROI size-- ['[']", 98);
-  glutAddMenuEntry("ROI size++ [']']", 99);
+  glutAddMenuEntry("ROI size-- [[]", 98);
+  glutAddMenuEntry("ROI size++ []]", 99);
+  glutAddMenuEntry("Change debug level [D]", 14);
   glutAddMenuEntry("Quit [q]", 13);
 
   glutSetMenu(mainMenu);
