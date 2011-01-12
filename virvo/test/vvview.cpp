@@ -1555,8 +1555,26 @@ void vvView::roiMenuCallback(const int item)
   switch (item)
   {
   case 0:                                    // toggle roi mode
-    ds->roiEnabled = !ds->roiEnabled;
+    if (!ds->roiEnabled && !ds->sphericalROI)
+    {
+      // Cuboid roi.
+      ds->roiEnabled = true;
+      ds->sphericalROI = false;
+    }
+    else if (ds->roiEnabled && !ds->sphericalROI)
+    {
+      // Spherical roi.
+      ds->roiEnabled = true;
+      ds->sphericalROI = true;
+    }
+    else
+    {
+      // No roi.
+      ds->roiEnabled = false;
+      ds->sphericalROI = false;
+    }
     ds->renderer->setROIEnable(ds->roiEnabled);
+    ds->renderer->setSphericalROI(ds->sphericalROI);
 
     if (ds->remoteRendering)
     {
@@ -1913,6 +1931,14 @@ void vvView::printROIMessage()
   if (ds->roiEnabled)
   {
     cerr << "Region of interest mode enabled" << endl;
+    if (ds->sphericalROI)
+    {
+      cerr << "Region of interest mode: spherical" << endl;
+    }
+    else
+    {
+      cerr << "Region of interest mode: cuboid" << endl;
+    }
     cerr << "Arrow left:         -x, arrow right:      +x" << endl;
     cerr << "Arrow down:         -y, arrow up:         +y" << endl;
     cerr << "Arrow down + shift: -z, arrow up + shift: +z" << endl;

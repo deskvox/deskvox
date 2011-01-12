@@ -938,6 +938,12 @@ void vvRenderer::setROIEnable(const bool flag)
   _renderState._isROIUsed = flag;
 }
 
+void vvRenderer::setSphericalROI(const bool sphericalROI)
+{
+  vvDebugMsg::msg(1, "vvRenderer::setSphericalROI()");
+  _renderState._sphericalROI = sphericalROI;
+}
+
 bool vvRenderer::isROIEnabled() const
 {
   return _renderState._isROIUsed;

@@ -133,6 +133,7 @@ class vvView
     const char* testSuiteFileName;
     bool showBricks;                            ///< show brick outlines when brick renderer is used
     bool roiEnabled;                            ///< mode where probe is shown and can be moved via arrow keys
+    bool sphericalROI;                          ///< use sphere instead of cube
     float mvScale;                              ///< scale factor for the mv matrix to view the whole volume
     bool rayRenderer;
   public:
