@@ -51,6 +51,9 @@ static float h_tc3[MAX_SLICES];
 
 const int MaxCompositeSlices = MAX_SLICES;
 
+const int nthreads = 128;
+
+//#define NOSHMEM
 //#define SHMCLASS
 //#define NOOP
 //#define NOLOAD
@@ -204,9 +207,8 @@ __device__ float volume(int px, int py, int slice, int principal)
         case 2:
             return tex3D(tex_raw, x, y, z);
     }
-#endif
-
     return -1.f;
+#endif
 }
 #endif
 
@@ -400,13 +402,79 @@ __global__ void compositeSlicesBilinear(
     if (line >= to)
         return;
 
+#ifdef NOSHMEM
+    for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
+    {
+        Pixel d;
+        initPixel(&d);
+        Scalar sf = 0.f;
+
+        // composite slices for this image line
+        for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
+        {
+            if(earlyRayTerm && isOpaque(d))
+                break;
+
+            // compute upper left image corner
+            const int iPosY = c_start[slice].y;
+
+            const int iPosX = c_start[slice].x;
+            const int endX = c_stop[slice].x;
+
+            if(line < iPosY)
+                continue;
+            if(line >= c_stop[slice].y)
+                continue;
+
+            // Traverse intermediate image pixels which correspond to the current slice.
+            // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
+            if(ix<iPosX)
+                continue;
+            if(ix>=endX)
+                continue;
+
+            const int vidx = ix - iPosX;
+
+            if(preInt)
+            {
+                const float sb = volume(vidx, line-iPosY, slice, principal);
+                if(slice != firstSlice)
+                {
+                    const float4 c = tex2D(tex_preint, sf, sb);
+
+                    // blend
+                    const float w = d.w*c.w;
+                    d.x += w*c.x;
+                    d.y += w*c.y;
+                    d.z += w*c.z;
+                    d.w -= w;
+                }
+                sf = sb;
+            }
+            else
+            {
+                const float v = volume(vidx, line-iPosY, slice, principal);
+                const float4 c = classify<float4>(v);
+
+                // blend
+                const float w = d.w*c.w;
+                d.x += w*c.x;
+                d.y += w*c.y;
+                d.z += w*c.z;
+                d.w -= w;
+            }
+        }
+
+        // copy pixel to intermediate image
+        uchar4 *dest = img + line*width+ix;
+        blend(dest, d);
+    }
+#else
     // initialise intermediate image line
     extern __shared__ char smem[];
-    // store intermediate image line in shmem
     Pixel *imgLine = (Pixel *)smem;
     Scalar *sf = (Scalar *)&imgLine[width*preInt];
 
-    // clear image line
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         initPixel(&imgLine[ix]);
@@ -486,6 +554,7 @@ __global__ void compositeSlicesBilinear(
         uchar4 *dest = img + line*width+ix;
         blend(dest, imgLine[ix]);
     }
+#endif
 }
 #endif
 
@@ -933,9 +1002,13 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
    {
        shmsize += Base::intImg->width*sizeof(Scalar);
    }
+#ifdef NOSHMEM
+   if(Base::sliceInterpol)
+       shmsize = 0;
+#endif
 
    uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDImg();
-   clearImage <<<to-from, 128, shmsize>>>(d_img, Base::intImg->width, Base::intImg->height, from, to);
+   clearImage <<<to-from, nthreads>>>(d_img, Base::intImg->width, Base::intImg->height, from, to);
 
    if(CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep))
    {
@@ -944,13 +1017,13 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
        {
            cudaThreadSynchronize();
 #ifdef PITCHED
-           compose <<<to-from, 128, shmsize>>>(
+           compose <<<to-from, nthreads, shmsize>>>(
                    d_img, Base::intImg->width, Base::intImg->height,
                    d_voxptr[principal],
                    sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
                    from, to);
 #else
-           compose <<<to-from, 128, shmsize>>>(
+           compose <<<to-from, nthreads, shmsize>>>(
                    d_img, Base::intImg->width, Base::intImg->height,
                    (Scalar *)(d_voxels+sizeof(Scalar)*Base::vd->getBPV()*Base::principal*(Base::vd->vox[0]*Base::vd->vox[1]*Base::vd->vox[2])),
                    sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
