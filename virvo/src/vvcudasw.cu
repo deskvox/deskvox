@@ -384,7 +384,7 @@ __global__ void compositeSlicesNearest(
 
 
 #ifdef VOLTEX3D
-template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm>
+template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm, bool preInt>
 __global__ void compositeSlicesBilinear(
       uchar4 * __restrict__ img, int width, int height,
 #ifdef PITCHED
@@ -404,11 +404,14 @@ __global__ void compositeSlicesBilinear(
     extern __shared__ char smem[];
     // store intermediate image line in shmem
     Pixel *imgLine = (Pixel *)smem;
+    Scalar *sf = (Scalar *)&imgLine[width*preInt];
 
     // clear image line
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         initPixel(&imgLine[ix]);
+        if(preInt)
+            sf[ix] = 0.f;
     }
 
     // composite slices for this image line
@@ -440,88 +443,29 @@ __global__ void compositeSlicesBilinear(
             if(earlyRayTerm && isOpaque(d))
                 continue;
 
-            const float v = volume(vidx, line-iPosY, slice, principal);
-            const float4 c = classify<float4>(v);
-
-            // blend
-            const float w = d.w*c.w;
-            d.x += w*c.x;
-            d.y += w*c.y;
-            d.z += w*c.z;
-            d.w -= w;
-
-            // store into shmem
-            *pix = d;
-        }
-    }
-
-    // copy line to intermediate image
-    for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
-    {
-        uchar4 *dest = img + line*width+ix;
-        blend(dest, imgLine[ix]);
-    }
-}
-
-template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm>
-__global__ void compositeSlicesPreIntegrated(
-      uchar4 * __restrict__ img, int width, int height,
-#ifdef PITCHED
-      const cudaPitchedPtr pvoxels,
-#else
-      const Scalar * __restrict__ voxels,
-#endif
-      int firstSlice, int lastSlice,
-      int from, int to)
-{
-    const int line = blockIdx.x+from;
-    if (line >= to)
-        return;
-
-    // initialise intermediate image line
-    extern __shared__ char smem[];
-    Pixel *imgLine = (Pixel *)smem;
-    Scalar *sf = (Scalar *)&imgLine[width];
-
-    for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
-    {
-        initPixel(&imgLine[ix]);
-        sf[ix] = 0.f;
-    }
-
-    // composite slices for this image line
-    for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
-    {
-        // compute upper left image corner
-        const int iPosY = c_start[slice].y;
-
-        if(line < iPosY)
-            continue;
-        if(line >= c_stop[slice].y)
-            continue;
-
-        const int iPosX = c_start[slice].x;
-        const int endX = c_stop[slice].x;
-
-        // Traverse intermediate image pixels which correspond to the current slice.
-        // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
-        for (int ix=threadIdx.x; ix<endX; ix+=blockDim.x)
-        {
-            if(ix<iPosX)
-                continue;
-            const int vidx = ix - iPosX;
-            const int iidx = ix;
-
-            // pointer to destination pixel
-            Pixel *pix = imgLine + iidx;
-            Pixel d = *pix;
-            if(earlyRayTerm && isOpaque(d))
-                continue;
-
-            const float sb = volume(vidx, line-iPosY, slice, principal);
-            if(slice != firstSlice)
+            if(preInt)
             {
-                const float4 c = tex2D(tex_preint, sf[ix], sb);
+                const float sb = volume(vidx, line-iPosY, slice, principal);
+                if(slice != firstSlice)
+                {
+                    const float4 c = tex2D(tex_preint, sf[ix], sb);
+
+                    // blend
+                    const float w = d.w*c.w;
+                    d.x += w*c.x;
+                    d.y += w*c.y;
+                    d.z += w*c.z;
+                    d.w -= w;
+
+                    // store into shmem
+                    *pix = d;
+                }
+                sf[ix] = sb;
+            }
+            else
+            {
+                const float v = volume(vidx, line-iPosY, slice, principal);
+                const float4 c = classify<float4>(v);
 
                 // blend
                 const float w = d.w*c.w;
@@ -533,7 +477,6 @@ __global__ void compositeSlicesPreIntegrated(
                 // store into shmem
                 *pix = d;
             }
-            sf[ix] = sb;
         }
     }
 
@@ -779,9 +722,9 @@ CompositionFunction selectComposition(vvCudaSW<Base> *rend)
     if(rend->getSliceInterpol() || rend->getRendererType() == vvRenderer::CUDAPER)
     {
         if(rend->getPreIntegration())
-            return compositeSlicesPreIntegrated<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
+            return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, true>;
         else
-            return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
+            return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, false>;
     }
     else
 #endif
