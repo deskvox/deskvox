@@ -793,6 +793,7 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'd': ds->mainMenuCallback(5);  break;
   case 'D': ds->mainMenuCallback(13);  break;
   case 'e': ds->mainMenuCallback(4);  break;
+  case 'E': ds->clipMenuCallback(1); break;
   case 'f': ds->viewMenuCallback(2);  break;
   case 'g': ds->optionsMenuCallback(12);  break;
   case 'H': ds->optionsMenuCallback(5); break;
@@ -2146,7 +2147,7 @@ void vvView::createMenus()
   // Clip menu:
   clipMenu = glutCreateMenu(clipMenuCallback);
   glutAddMenuEntry("Toggle clip mode [I]", 0);
-  glutAddMenuEntry("Toggle clipping edit mode", 1);
+  glutAddMenuEntry("Toggle clipping edit mode [E]", 1);
 
   // Viewing Window Menu:
   viewMenu = glutCreateMenu(viewMenuCallback);
