@@ -6,7 +6,7 @@
 #include "vvconfig.h"
 #endif
 
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if 1//defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
 #include "vvglew.h"
 
@@ -27,7 +27,7 @@ using std::endl;
 texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture8;
 texture<ushort, 3, cudaReadModeNormalizedFloat> volTexture16;
 texture<float4, 1, cudaReadModeElementType> tfTexture;
-texture<bool, 3, cudaReadModeElementType> spaceSkippingTexture;
+texture<float, 3, cudaReadModeElementType> spaceSkippingTexture;
 texture<float4, 1, cudaReadModeElementType> randTexture;
 
 const int NUM_RAND_VECS = 8192;
@@ -82,6 +82,12 @@ __device__ float volume(const float3& pos)
   {
     return -1.0f;
   }
+}
+
+__device__ bool skipSpace(const float3& pos)
+{
+  //return (tex3D(spaceSkippingTexture, pos.x, pos.y, pos.z) == 0.0f);
+  return false;
 }
 
 __device__ float3 calcTexCoord(const float3& pos, const float3& volSizeHalf)
@@ -244,6 +250,7 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
 
 template<
          bool t_earlyRayTermination,
+         bool t_spaceSkipping,
          bool t_frontToBack,
          int t_bpc,
          int t_mipMode,
@@ -366,7 +373,22 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       continue;
     }
 
-    float3 texCoord = calcTexCoord(pos, volSizeHalf);
+    const float3 texCoord = calcTexCoord(pos, volSizeHalf);
+
+    // Skip over homogeneous space.
+    if (t_spaceSkipping)
+    {
+      if (skipSpace(texCoord))
+      {
+        t += tstep;
+        if (t > tfar)
+        {
+          break;
+        }
+        pos += step;
+        continue;
+      }
+    }
 
     const float sample = volume<t_bpc>(texCoord);
 
@@ -458,9 +480,10 @@ template<
          bool t_opacityCorrection,
          bool t_earlyRayTermination
         >
-renderKernel getKernelWithEarlyRayTermination(vvRayRend* rayRend)
+renderKernel getKernelWithEarlyRayTermination(vvRayRend*)
 {
   return &render<t_earlyRayTermination, // Early ray termination.
+                 true, // Space skipping.
                  true, // Front to back.
                  t_bpc, // Bytes per channel.
                  0, // Mip mode.
