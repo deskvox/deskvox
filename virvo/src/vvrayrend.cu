@@ -971,6 +971,11 @@ void vvRayRend::factorViewMatrix()
   iwWarp.scale(1.0f / (static_cast<float>(vp[2]) * 0.5f), 1.0f / (static_cast<float>(vp[3]) * 0.5f), 0.0f);
 }
 
+void vvRayRend::findAxisRepresentations()
+{
+  // Overwrite default behavior.
+}
+
 void vvRayRend::calcSpaceSkippingGrid()
 {
   delete[] h_cellMinValues;

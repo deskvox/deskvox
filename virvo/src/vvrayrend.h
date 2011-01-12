@@ -66,6 +66,7 @@ private:
   void initSpaceSkippingTexture();
   void initVolumeTexture();
   void factorViewMatrix();
+  void findAxisRepresentations();
 
   void calcSpaceSkippingGrid();
   void computeSpaceSkippingTexture();
