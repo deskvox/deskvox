@@ -138,8 +138,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       VV_SLICES,                                  ///< render slices parallel to xy axis plane using 2D textures
       VV_CUBIC2D,                                 ///< render slices parallel to all axis planes using 2D textures
       VV_VIEWPORT,                                ///< render planar slices using a 3D texture
-      VV_BRICKS,                                  ///< render volume using bricking
-      VV_SPHERICAL                                ///< render spheres originating at viewer using a 3D texture
+      VV_SPHERICAL,                               ///< render spheres originating at viewer using a 3D texture
+      VV_BRICKS                                   ///< render volume using bricking
     };
     enum VoxelType                                /// Internal data type used in textures
     {
