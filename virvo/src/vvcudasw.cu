@@ -408,7 +408,7 @@ __global__ void compositeSlicesBilinear(
     {
         Pixel d;
         initPixel(&d);
-        Scalar sf = 0.f;
+        float sf = -1.f;
 
         // composite slices for this image line
         for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
@@ -439,7 +439,7 @@ __global__ void compositeSlicesBilinear(
             if(preInt)
             {
                 const float sb = volume(vidx, line-iPosY, slice, principal);
-                if(slice != firstSlice)
+                if(sf >= 0.f)
                 {
                     const float4 c = tex2D(tex_preint, sf, sb);
 
@@ -474,13 +474,13 @@ __global__ void compositeSlicesBilinear(
     // initialise intermediate image line
     extern __shared__ char smem[];
     Pixel *imgLine = (Pixel *)smem;
-    Scalar *sf = (Scalar *)&imgLine[width*preInt];
+    float *sf = (float *)&imgLine[width*preInt];
 
     for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
     {
         initPixel(&imgLine[ix]);
         if(preInt)
-            sf[ix] = 0.f;
+            sf[ix] = -1.f;
     }
 
     // composite slices for this image line
@@ -515,7 +515,7 @@ __global__ void compositeSlicesBilinear(
             if(preInt)
             {
                 const float sb = volume(vidx, line-iPosY, slice, principal);
-                if(slice != firstSlice)
+                if(sf[ix] >= 0.f)
                 {
                     const float4 c = tex2D(tex_preint, sf[ix], sb);
 
@@ -1001,7 +1001,7 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
 #endif
    if(Base::preIntegration)
    {
-       shmsize += Base::intImg->width*sizeof(Scalar);
+       shmsize += Base::intImg->width*sizeof(float);
    }
 #ifdef NOSHMEM
    if(Base::sliceInterpol)
