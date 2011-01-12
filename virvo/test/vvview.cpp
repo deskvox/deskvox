@@ -788,10 +788,10 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'c': ds->viewMenuCallback(10); break;
   case 'C': ds->optionsMenuCallback(14); break;
   case 'd': ds->mainMenuCallback(5);  break;
-  case 'D': ds->mainMenuCallback(14);  break;
+  case 'D': ds->mainMenuCallback(13);  break;
   case 'e': ds->mainMenuCallback(4);  break;
   case 'f': ds->viewMenuCallback(2);  break;
-  case 'g': ds->optionsMenuCallback(13);  break;
+  case 'g': ds->optionsMenuCallback(12);  break;
   case 'H': ds->optionsMenuCallback(5); break;
   case 'h': ds->optionsMenuCallback(6); break;
   case 'i': ds->optionsMenuCallback(0);  break;
@@ -808,9 +808,9 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'p': ds->mainMenuCallback(0);  break;
   case 'P': ds->optionsMenuCallback(1);  break;
   case 27:                                    // Escape
-  case 'q': ds->mainMenuCallback(13); break;
+  case 'q': ds->mainMenuCallback(12); break;
   case 'r': ds->mainMenuCallback(7);  break;
-  case 'R': ds->mainMenuCallback(12); break;
+  case 'R': ds->roiMenuCallback(0); break;
   case 's': ds->animMenuCallback(4);  break;
   case 'S': ds->animMenuCallback(5);  break;
   case 't': ds->mainMenuCallback(11); break;
@@ -822,8 +822,8 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'z': ds->viewMenuCallback(5);  break;
   case '<': ds->transferMenuCallback(12);  break;
   case '>': ds->transferMenuCallback(13);  break;
-  case '[': ds->mainMenuCallback(98); break;
-  case ']': ds->mainMenuCallback(99); break;
+  case '[': ds->roiMenuCallback(98); break;
+  case ']': ds->roiMenuCallback(99); break;
   case '{': ds->optionsMenuCallback(11); break;
   case '}': ds->optionsMenuCallback(10); break;
   case ' ': ds->optionsMenuCallback(8); break;
@@ -966,8 +966,6 @@ void vvView::mainMenuCallback(int item)
 {
   vvDebugMsg::msg(1, "vvView::mainMenuCallback()");
 
-  vvVector3 probeSize;
-
   switch (item)
   {
   case 0:                                     // projection mode
@@ -1029,60 +1027,16 @@ void vvView::mainMenuCallback(int item)
   case 11:                                    // performance test
     performanceTest();
     break;
-  case 12:                                    // toggle roi mode
-    ds->roiEnabled = !ds->roiEnabled;
-    ds->renderer->setROIEnable(ds->roiEnabled);
-
-    if (ds->remoteRendering)
-    {
-      ds->_renderMaster->setROIEnabled(ds->roiEnabled);
-    }
-    printROIMessage();
-    break;
-  case 13:                                    // quit
+  case 12:                                    // quit
     glutDestroyWindow(ds->window);
     delete ds;
     exit(0);
     break;
-  case 14:                                    // rotate debug level
+  case 13:                                    // rotate debug level
     {
         int l = vvDebugMsg::getDebugLevel()+1;
         l %= 4;
         vvDebugMsg::setDebugLevel(l);
-    }
-    break;
-  case 98:
-    if (ds->roiEnabled)
-    {
-      ds->renderer->getProbeSize(&probeSize);
-      probeSize.sub(0.1f);
-      const float size = probeSize[0];
-      if (size <= 0.0f)
-      {
-        probeSize = vvVector3(0.00001f);
-      }
-      ds->renderer->setProbeSize(&probeSize);
-    }
-    else
-    {
-      cerr << "Function only available in ROI mode" << endl;
-    }
-    break;
-  case 99:
-    if (ds->roiEnabled)
-    {
-      ds->renderer->getProbeSize(&probeSize);
-      probeSize.add(0.1f);
-      const float size = probeSize[0];
-      if (size > 1.0f)
-      {
-        probeSize = vvVector3(1.0f);
-      }
-      ds->renderer->setProbeSize(&probeSize);
-    }
-    else
-    {
-      cerr << "Function only available in ROI mode" << endl;
     }
     break;
   default: break;
@@ -1589,6 +1543,69 @@ void vvView::animMenuCallback(int item)
 
 
 //----------------------------------------------------------------------------
+/** Callback for animation menu.
+  @param item selected menu item index
+*/
+void vvView::roiMenuCallback(const int item)
+{
+  vvDebugMsg::msg(1, "vvView::roiMenuCallback()");
+
+  vvVector3 probeSize;
+
+  switch (item)
+  {
+  case 0:                                    // toggle roi mode
+    ds->roiEnabled = !ds->roiEnabled;
+    ds->renderer->setROIEnable(ds->roiEnabled);
+
+    if (ds->remoteRendering)
+    {
+      ds->_renderMaster->setROIEnabled(ds->roiEnabled);
+    }
+    printROIMessage();
+    break;
+  case 98:
+    if (ds->roiEnabled)
+    {
+      ds->renderer->getProbeSize(&probeSize);
+      probeSize.sub(0.1f);
+      const float size = probeSize[0];
+      if (size <= 0.0f)
+      {
+        probeSize = vvVector3(0.00001f);
+      }
+      ds->renderer->setProbeSize(&probeSize);
+    }
+    else
+    {
+      cerr << "Function only available in ROI mode" << endl;
+    }
+    break;
+  case 99:
+    if (ds->roiEnabled)
+    {
+      ds->renderer->getProbeSize(&probeSize);
+      probeSize.add(0.1f);
+      const float size = probeSize[0];
+      if (size > 1.0f)
+      {
+        probeSize = vvVector3(1.0f);
+      }
+      ds->renderer->setProbeSize(&probeSize);
+    }
+    else
+    {
+      cerr << "Function only available in ROI mode" << endl;
+    }
+    break;
+  default:
+    break;
+  }
+  glutPostRedisplay();
+}
+
+
+//----------------------------------------------------------------------------
 /** Callback for viewing window menu.
   @param item selected menu item index
 */
@@ -1913,7 +1930,7 @@ void vvView::printROIMessage()
 /// Create the pop-up menus.
 void vvView::createMenus()
 {
-  int rendererMenu, voxelMenu, optionsMenu, transferMenu, animMenu, viewMenu;
+  int rendererMenu, voxelMenu, optionsMenu, transferMenu, animMenu, roiMenu, viewMenu;
 
   vvDebugMsg::msg(1, "vvView::createMenus()");
 
@@ -2014,6 +2031,11 @@ void vvView::createMenus()
   glutAddMenuEntry("Animation speed down [S]", 5);
   glutAddMenuEntry("Reset speed", 6);
 
+  roiMenu = glutCreateMenu(roiMenuCallback);
+  glutAddMenuEntry("Toggle region of interest mode [R]", 0);
+  glutAddMenuEntry("size-- [[]", 98);
+  glutAddMenuEntry("size++ []]", 99);
+
   // Viewing Window Menu:
   viewMenu = glutCreateMenu(viewMenuCallback);
   glutAddMenuEntry("Toggle bounding box [b]", 0);
@@ -2035,6 +2057,7 @@ void vvView::createMenus()
   glutAddSubMenu("Renderer options", optionsMenu);
   glutAddSubMenu("Transfer function", transferMenu);
   glutAddSubMenu("Animation", animMenu);
+  glutAddSubMenu("Region of interest", roiMenu);
   glutAddSubMenu("Viewing window", viewMenu);
   glutAddMenuEntry("Toggle perspective mode [p]", 0);
   glutAddMenuEntry("Toggle auto refinement [e]", 4);
@@ -2043,11 +2066,8 @@ void vvView::createMenus()
   glutAddMenuEntry("Toggle popup menu/zoom mode [m]", 8);
   glutAddMenuEntry("Save volume to file", 9);
   glutAddMenuEntry("Performance test [t]", 11);
-  glutAddMenuEntry("Toggle region of interest mode [R]", 12);
-  glutAddMenuEntry("ROI size-- [[]", 98);
-  glutAddMenuEntry("ROI size++ []]", 99);
-  glutAddMenuEntry("Change debug level [D]", 14);
-  glutAddMenuEntry("Quit [q]", 13);
+  glutAddMenuEntry("Change debug level [D]", 13);
+  glutAddMenuEntry("Quit [q]", 12);
 
   glutSetMenu(mainMenu);
   glutAttachMenu(GLUT_RIGHT_BUTTON);

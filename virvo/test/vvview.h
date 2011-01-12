@@ -154,6 +154,7 @@ class vvView
     static void optionsMenuCallback(int);
     static void transferMenuCallback(int);
     static void animMenuCallback(int);
+    static void roiMenuCallback(int);
     static void viewMenuCallback(int);
     static void performanceTest();
     static void printProfilingInfo(const int testNr = 1, const int testCnt = 1);
