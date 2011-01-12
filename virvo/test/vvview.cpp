@@ -822,8 +822,32 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'v': ds->viewMenuCallback(9);  break;
   case 'w': ds->viewMenuCallback(6);  break;
   case 'W': ds->optionsMenuCallback(16);  break;
-  case 'x': ds->optionsMenuCallback(2); break;
-  case 'z': ds->viewMenuCallback(5);  break;
+  case 'x':
+    if (ds->clipEditMode)
+    {
+      ds->editClipPlane(PLANE_X, 0.05f);
+    }
+    else
+    {
+      ds->optionsMenuCallback(2);
+    }
+    break;
+  case 'y':
+    if (ds->clipEditMode)
+    {
+      ds->editClipPlane(PLANE_Y, 0.05f);
+    }
+    break;
+  case 'z':
+    if (ds->clipEditMode)
+    {
+      ds->editClipPlane(PLANE_Z, 0.05f);
+    }
+    else
+    {
+      ds->viewMenuCallback(5);
+    }
+    break;
   case '<': ds->transferMenuCallback(12);  break;
   case '>': ds->transferMenuCallback(13);  break;
   case '[': ds->roiMenuCallback(98); break;
@@ -858,6 +882,10 @@ void vvView::specialCallback(int key, int, int)
       probePos.e[0] -= delta;
       ds->renderer->setProbePosition(&probePos);
     }
+    else if (ds->clipEditMode)
+    {
+      ds->renderer->_renderState._clipPoint -= ds->renderer->_renderState._clipNormal * delta;
+    }
     else
     {
       ds->pos.e[0] -= delta;
@@ -869,6 +897,10 @@ void vvView::specialCallback(int key, int, int)
     {
       probePos.e[0] += delta;
       ds->renderer->setProbePosition(&probePos);
+    }
+    else if (ds->clipEditMode)
+    {
+      ds->renderer->_renderState._clipPoint += ds->renderer->_renderState._clipNormal * delta;
     }
     else
     {
@@ -889,6 +921,10 @@ void vvView::specialCallback(int key, int, int)
       }
       ds->renderer->setProbePosition(&probePos);
     }
+    else if (ds->clipEditMode)
+    {
+      ds->renderer->_renderState._clipPoint += ds->renderer->_renderState._clipNormal * delta;
+    }
     else
     {
       ds->pos.e[1] += delta;
@@ -907,6 +943,10 @@ void vvView::specialCallback(int key, int, int)
         probePos.e[1] -= delta;
       }
       ds->renderer->setProbePosition(&probePos);
+    }
+    else if (ds->clipEditMode)
+    {
+      ds->renderer->_renderState._clipPoint -= ds->renderer->_renderState._clipNormal * delta;
     }
     else
     {
@@ -1640,6 +1680,23 @@ void vvView::clipMenuCallback(const int item)
   case 0:
     ds->clipPlane = !ds->clipPlane;
     ds->renderer->_renderState._clipMode = ds->clipPlane;
+    cerr << "Clipping " << ds->onOff[ds->boundariesMode] << endl;
+    break;
+  case 1:
+    ds->clipEditMode = !ds->clipEditMode;
+    if (ds->clipEditMode)
+    {
+      ds->clipPlane = true;
+      ds->renderer->_renderState._clipMode = ds->clipPlane;
+      cerr << "Clip edit mode activated" << endl;
+      cerr << "x|y|z keys:\t\trotation along (x|y|z) axis" << endl;
+      cerr << "Arrow down/left:\tmove in negative normal direction" << endl;
+      cerr << "Arrow up/right:\tmove in positive normal direction" << endl;
+    }
+    else
+    {
+      cerr << "Clip edit mode deactivated" << endl;
+    }
     break;
   }
   glutPostRedisplay();
@@ -2089,6 +2146,7 @@ void vvView::createMenus()
   // Clip menu:
   clipMenu = glutCreateMenu(clipMenuCallback);
   glutAddMenuEntry("Toggle clip mode [I]", 0);
+  glutAddMenuEntry("Toggle clipping edit mode", 1);
 
   // Viewing Window Menu:
   viewMenu = glutCreateMenu(viewMenuCallback);
@@ -2334,6 +2392,45 @@ void vvView::renderQuad() const
   glPopMatrix();
   glEnable(GL_LIGHTING);
   glEnable(GL_DEPTH_TEST);
+}
+
+
+void vvView::editClipPlane(const int command, const float val)
+{
+  switch (command)
+  {
+  case PLANE_X:
+    {
+      vvMatrix m;
+      m.identity();
+      const vvVector3 axis(1, 0, 0);
+      m.rotate(val, &axis);
+      ds->renderer->_renderState._clipNormal.multiply(&m);
+    }
+    break;
+  case PLANE_Y:
+    {
+      vvMatrix m;
+      m.identity();
+      const vvVector3 axis(0, 1, 0);
+      m.rotate(val, &axis);
+      ds->renderer->_renderState._clipNormal.multiply(&m);
+    }
+    break;
+  case PLANE_Z:
+    {
+      vvMatrix m;
+      m.identity();
+      const vvVector3 axis(0, 0, 1);
+      m.rotate(val, &axis);
+      ds->renderer->_renderState._clipNormal.multiply(&m);
+    }
+    break;
+  default:
+    cerr << "Unknown command" << endl;
+    break;
+  }
+  glutPostRedisplay();
 }
 
 

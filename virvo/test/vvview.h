@@ -57,6 +57,15 @@ class vvView
       ROTATION_TIMER  = 1,                     ///< rotation animation timer callback
       BENCHMARK_TIMER  = 2                     ///< benchmark timer callback
     };
+    /// Clipping edit mode
+    enum
+    {
+      PLANE_X = 0,                              ///< rotate plane normal along x-axis
+      PLANE_Y,                                  ///< rotate plane normal along y-axis
+      PLANE_Z,                                  ///< rotate plane normal along z-axis
+      PLANE_NEG,                                ///< move plane along negative normal dir
+      PLANE_POS                                 ///< move plane along positive normal dir
+    };
     static const int ROT_TIMER_DELAY;           ///< rotation timer delay in milliseconds
     static const int DEFAULTSIZE;               ///< default window size (width and height) in pixels
     static const float OBJ_SIZE;                ///< default object size
@@ -136,7 +145,9 @@ class vvView
     bool sphericalROI;                          ///< use sphere instead of cube
     bool clipPlane;                             ///< use clip plane
     bool clipPerimeter;                         ///< draw clip perimeter
+    bool clipEditMode;                          ///< edit clip plane using keyboard
     float mvScale;                              ///< scale factor for the mv matrix to view the whole volume
+    vvVector3 planeRot;                         ///< rotation of clipping plane normal
     bool rayRenderer;
   public:
     vvView();
@@ -178,6 +189,7 @@ class vvView
     void renderClipObject();
     void renderCube() const;
     void renderQuad() const;
+    void editClipPlane(int command, float val);
     void displayHelpInfo();
     bool parseCommandLine(int argc, char *argv[]);
     void addDisplay(const char* name);
