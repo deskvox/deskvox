@@ -408,7 +408,7 @@ public:
    * \param         percent1 The share for half space 1.
    * \param         percent2 The share for half space 2.
    */
-  static vvHalfSpace* getAABBHalfSpaces(std::vector<BrickList>& bricks,
+  static vvHalfSpace* getAABBHalfSpaces(const std::vector<BrickList>& bricks,
                                         const float percent1, const float percent2);
 private:
 };
@@ -424,7 +424,7 @@ private:
 class vvBspTree
 {
 public:
-  vvBspTree(const float* partitioning, const int length, std::vector<BrickList>& bricks);
+  vvBspTree(const float* partitioning, const int length, const std::vector<BrickList>& bricks);
   virtual ~vvBspTree();
 
   void traverse(const vvVector3& pos);
@@ -473,7 +473,7 @@ private:
    */
   void buildHierarchy(vvHalfSpace* node, const float* partitioning, const int length,
                       const int startIdx, const int endIdx);
-  void distributeBricks(vvHalfSpace* node, std::vector<BrickList>& brickList);
+  void distributeBricks(vvHalfSpace* node, const std::vector<BrickList>& brickList);
   void print(vvHalfSpace* node, const int indent);
   void traverse(const vvVector3& pos, vvHalfSpace* node) const;
 };

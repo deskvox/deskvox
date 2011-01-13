@@ -437,7 +437,7 @@ void vvHalfSpace::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
 //============================================================================
 // vvSpacePartitioner Method Definitions
 //============================================================================
-vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<BrickList>& brickList,
+vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>& brickList,
                                                    const float percent1, const float percent2)
 {
   vvHalfSpace* result = new vvHalfSpace[2];
@@ -482,7 +482,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<BrickList>& brick
   BrickList tmpArray = BrickList(brickList[0].size());
   int i = 0;
 
-  for(BrickList::iterator it = brickList[0].begin();
+  for(BrickList::const_iterator it = brickList[0].begin();
       it != brickList[0].end();
       ++it)
   {
@@ -537,7 +537,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<BrickList>& brick
   for (i = 0; i < 3; ++i)
   {
     std::set<float> vals;
-    for(BrickList::iterator it = brickList[0].begin();
+    for(BrickList::const_iterator it = brickList[0].begin();
       it != brickList[0].end();
       ++it)
     {
@@ -725,7 +725,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<BrickList>& brick
     result[0].getBrickList().push_back(BrickList());
     result[1].getBrickList().push_back(BrickList());
 
-    for(BrickList::iterator it = brickList[f].begin();
+    for(BrickList::const_iterator it = brickList[f].begin();
       it != brickList[f].end();
       ++it)
     {
@@ -748,7 +748,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(std::vector<BrickList>& brick
 // vvBspTree Method Definitions
 //============================================================================
 
-vvBspTree::vvBspTree(const float* partitioning, const int length, std::vector<BrickList>& brickList)
+vvBspTree::vvBspTree(const float* partitioning, const int length, const std::vector<BrickList>& brickList)
 {
   _root = new vvHalfSpace;
   _root->setPercent(100.0f);
@@ -844,7 +844,7 @@ void vvBspTree::buildHierarchy(vvHalfSpace* node, const float* partitioning, con
   }
 }
 
-void vvBspTree::distributeBricks(vvHalfSpace* node, std::vector<BrickList>& brickList)
+void vvBspTree::distributeBricks(vvHalfSpace* node, const std::vector<BrickList>& brickList)
 {
   // No leaf?
   if (node->getFirstSon() != NULL)
