@@ -1561,11 +1561,13 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   _deviationExceedCnt = 0;
 
   float* part = new float[_usedThreads];
+  int p = 0;
   for (unsigned int i = 0; i < _numThreads; ++i)
   {
     if (_threadData[i].active)
     {
-      part[i] = _threadData[i].share;
+      part[p] = _threadData[i].share;
+      ++p;
     }
   }
 
