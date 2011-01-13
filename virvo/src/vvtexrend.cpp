@@ -653,11 +653,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
 
   if (voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG || voxelType==VV_TEX_SHD)
   {
-    //if (first)
-    {
-      makeLUTTexture(lutName, lutData);               // FIXME: works only once, then generates OpenGL error
-      first = false;
-    }
+    makeLUTTexture(lutName, lutData);
   }
   return err;
 }
