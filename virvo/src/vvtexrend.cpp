@@ -1581,12 +1581,16 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   _visitor->setOffscreenBuffers(_offscreenBuffers, _usedThreads);
 
   // Provide the visitor with the pixel data of each thread either.
-  GLfloat** pixels = new GLfloat*[_usedThreads];
+  GLfloat** pixels = new GLfloat*[_numThreads];
   for (unsigned int i = 0; i < _numThreads; ++i)
   {
     if (_threadData[i].active)
     {
       pixels[i] = _threadData[i].pixels;
+    }
+    else
+    {
+      pixels[i] = NULL;
     }
   }
   _visitor->setPixels(pixels);
