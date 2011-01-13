@@ -102,6 +102,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       }
     };
     unsigned int _numThreads;                     ///< thread count
+    unsigned int _usedThreads;                    ///< actually used threads, some maybe can't be used because of errors
     
     pthread_t* _threads;                          ///< worker threads
     ThreadArgs* _threadData;                      ///< args for each thread
@@ -223,6 +224,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int _numDisplays;                             ///< # additional displays for multi-gpu rendering
     const char** _displayNames;                   ///< list with displays of the form host:x.y
     BufferPrecision _multiGpuBufferPrecision;     ///< 8, 16 or 32 bit precision for the render slave offscreen buffers
+    unsigned int* _displays;                      ///< display name = :x.0 ==> corresponding display: x
     unsigned int* _screens;                       ///< display name = :0.x ==> corresponding screen: x
     int _numSlaveNodes;                           ///< number of available distributed memory hosts
     vvColor _debugColors[MAX_DEBUG_COLORS];       ///< array of colors to visualize threads in dbg mode (debug level >= 2).
