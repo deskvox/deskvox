@@ -628,20 +628,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
   }
   else
   {
-    // compute number of texels / per brick (should be of power 2)
-    texels[0] = vvToolshed::getTextureSize(_renderState._brickSize[0]);
-    texels[1] = vvToolshed::getTextureSize(_renderState._brickSize[1]);
-    texels[2] = vvToolshed::getTextureSize(_renderState._brickSize[2]);
-
-    // compute number of bricks
-    if ((_useOnlyOneBrick) ||
-      ((texels[0] == vd->vox[0]) && (texels[1] == vd->vox[1]) && (texels[2] == vd->vox[2])))
-      _numBricks[0] = _numBricks[1] = _numBricks[2] = 1;
-
-    else
-    {
-      calcNumBricks();
-    }
+    calcNumBricks();
   }
 
   switch (geomType)
@@ -1870,15 +1857,22 @@ void vvTexRend::computeBrickSize()
 
 void vvTexRend::calcNumBricks()
 {
-  if ((texels[0] == 0) || (texels[1] == 0) || (texels[2] == 0))
+  // compute number of texels / per brick (should be of power 2)
+  texels[0] = vvToolshed::getTextureSize(_renderState._brickSize[0]);
+  texels[1] = vvToolshed::getTextureSize(_renderState._brickSize[1]);
+  texels[2] = vvToolshed::getTextureSize(_renderState._brickSize[2]);
+
+  // compute number of bricks
+  if ((_useOnlyOneBrick) ||
+    ((texels[0] == vd->vox[0]) && (texels[1] == vd->vox[1]) && (texels[2] == vd->vox[2])))
+    _numBricks[0] = _numBricks[1] = _numBricks[2] = 1;
+
+  else
   {
-    texels[0] = vvToolshed::getTextureSize(_renderState._brickSize[0]);
-    texels[1] = vvToolshed::getTextureSize(_renderState._brickSize[1]);
-    texels[2] = vvToolshed::getTextureSize(_renderState._brickSize[2]);
+    _numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_renderState._brickSize[0]));
+    _numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_renderState._brickSize[1]));
+    _numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_renderState._brickSize[2]));
   }
-  _numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_renderState._brickSize[0]));
-  _numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_renderState._brickSize[1]));
-  _numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_renderState._brickSize[2]));
 }
 
 //----------------------------------------------------------------------------
