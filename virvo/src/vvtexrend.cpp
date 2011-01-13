@@ -1300,6 +1300,11 @@ vvTexRend::ErrorType vvTexRend::setDisplayNames(const char** displayNames, const
         ++j;
         _screens[i] = vvToolshed::parseNextUint32(_displayNames[i], j);
       }
+      else
+      {
+        // Default to screen 0.
+        _screens[i] = 0;
+      }
     }
   }
 
