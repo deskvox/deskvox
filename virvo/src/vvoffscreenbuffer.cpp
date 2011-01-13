@@ -243,15 +243,18 @@ void vvOffscreenBuffer::initFbo()
 
 void vvOffscreenBuffer::genColorAndDepthTextures()
 {
-  glDeleteRenderbuffersEXT(1, &_depthBuffer);
   glDeleteTextures(1, &_colorBuffer);
 
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
-  glGenRenderbuffersEXT(1, &_depthBuffer);
-  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _depthBuffer);
-  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, _bufferWidth, _bufferHeight);
-  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                               GL_RENDERBUFFER_EXT, _depthBuffer);
+  if (_preserveDepthBuffer)
+  {
+    glDeleteRenderbuffersEXT(1, &_depthBuffer);
+    glGenRenderbuffersEXT(1, &_depthBuffer);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _depthBuffer);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, _bufferWidth, _bufferHeight);
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
+                                 GL_RENDERBUFFER_EXT, _depthBuffer);
+  }
 
   glGenTextures(1, &_colorBuffer);
   glBindTexture(GL_TEXTURE_2D, _colorBuffer);
@@ -283,7 +286,10 @@ void vvOffscreenBuffer::genColorAndDepthTextures()
 void vvOffscreenBuffer::freeGLResources() const
 {
   glDeleteTextures(1, &_colorBuffer);
-  glDeleteRenderbuffersEXT(1, &_depthBuffer);
+  if (_preserveDepthBuffer)
+  {
+    glDeleteRenderbuffersEXT(1, &_depthBuffer);
+  }
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
   glDeleteFramebuffersEXT(1, &_frameBufferObject);
 }
