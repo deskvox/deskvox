@@ -1492,7 +1492,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
       _threadData[i].renderer = this;
       // Start solution for load balancing: every thread renders 1/n of the volume.
       // During load balancing, the share will (probably) be adjusted.
-      _threadData[i].share = 1.0f / static_cast<float>(_numThreads);
+      _threadData[i].share = 1.0f / static_cast<float>(_usedThreads);
       _threadData[i].width = viewport[2];
       _threadData[i].height = viewport[3];
       _threadData[i].pixels = new GLfloat[MAX_VIEWPORT_WIDTH * MAX_VIEWPORT_HEIGHT * 4];
