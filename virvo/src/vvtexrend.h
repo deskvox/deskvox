@@ -106,7 +106,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     
     pthread_t* _threads;                          ///< worker threads
     ThreadArgs* _threadData;                      ///< args for each thread
-    pthread_barrier_t _distributeBricksBarrier;   ///< barrier assures that bricks are distributed before rendering and after (pre)initialization
+    pthread_barrier_t _madeEmptyBricksBarrier;    ///< Workers: don't load up textures, before brick outlines are generated
     pthread_barrier_t _distributedBricksBarrier;  ///< barrier is passed when bricks are distributed eventually
     pthread_barrier_t _renderStartBarrier;        ///< barrier assures that the render loop doesn't resume until proper data is supplied
     pthread_barrier_t _compositingBarrier;        ///< barrier assures synchronization for compositing
@@ -314,6 +314,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
                           const vvVector3, const vvVector3, bool& roiChanged, int threadId = -1); ///< threadId = -1 ==> main thread
     void computeBrickSize();
+    void calcNumBricks();
     void initVertArray(const int numSlices);
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
     void evaluateLocalIllumination(vvShaderManager*& pixelShader, const vvVector3& normal);

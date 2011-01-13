@@ -140,6 +140,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
 
+  _usedThreads = 0;
   setDisplayNames(displayNames, numDisplays);
   _multiGpuBufferPrecision = multiGpuBufferPrecision;
 
@@ -413,19 +414,21 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
       generateDebugColors();
     }
 
-    // Each thread will make its own share of textures and texture ids. Don't distribute
-    // the bricks before this is completed.
-    pthread_barrier_wait(&_distributeBricksBarrier);
-
     vvVector3 probePosObj;
     vvVector3 probeSizeObj;
     vvVector3 probeMin, probeMax;
+
+    calcNumBricks();
+    makeEmptyBricks();
+
+    pthread_barrier_wait(&_madeEmptyBricksBarrier);
 
     // Build global transfer function once in order to build up _nonemptyList.
     updateTransferFunction(pixLUTName, rgbaLUT);
     calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
     getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _renderState._isROIChanged);
     distributeBricks();
+
     pthread_barrier_wait(&_distributedBricksBarrier);
   }
 
@@ -511,7 +514,7 @@ vvTexRend::~vvTexRend()
     }
 
     // Cleanup locking specific stuff.
-    pthread_barrier_destroy(&_distributeBricksBarrier);
+    pthread_barrier_destroy(&_madeEmptyBricksBarrier);
     pthread_barrier_destroy(&_distributedBricksBarrier);
     pthread_barrier_destroy(&_renderStartBarrier);
 
@@ -637,9 +640,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
 
     else
     {
-      _numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_renderState._brickSize[0]));
-      _numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_renderState._brickSize[1]));
-      _numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_renderState._brickSize[2]));
+      calcNumBricks();
     }
   }
 
@@ -654,7 +655,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
         err = makeEmptyBricks();
       }
       // If in threaded mode, each thread will upload its texture data on its own.
-      if ((err == OK) && (_usedThreads == 0))
+      if (err == OK)
       {
         err = makeTextureBricks(texNames, &textures, lutData, _brickList, _areBricksCreated);
       }
@@ -1519,10 +1520,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
   // Obviously, initially something changed.
   _somethingChanged = true;
 
-  // First a barrier is passed that ensures that each thread built its textures (_distributeBricksBarrier).
-  // The following barrier (_distributedBricksBarrier) is passed right after each thread
-  // was assigned the bricks it is responsible for.
-  pthread_barrier_init(&_distributeBricksBarrier, NULL, _usedThreads + 1);
+  pthread_barrier_init(&_madeEmptyBricksBarrier, NULL, _usedThreads + 1);
   pthread_barrier_init(&_distributedBricksBarrier, NULL, _usedThreads + 1);
 
   // This barrier will be waited for by every worker thread and additionally once by the main
@@ -1869,6 +1867,19 @@ void vvTexRend::computeBrickSize()
   }
 }
 
+
+void vvTexRend::calcNumBricks()
+{
+  if ((texels[0] == 0) || (texels[1] == 0) || (texels[2] == 0))
+  {
+    texels[0] = vvToolshed::getTextureSize(_renderState._brickSize[0]);
+    texels[1] = vvToolshed::getTextureSize(_renderState._brickSize[1]);
+    texels[2] = vvToolshed::getTextureSize(_renderState._brickSize[2]);
+  }
+  _numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_renderState._brickSize[0]));
+  _numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_renderState._brickSize[1]));
+  _numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_renderState._brickSize[2]));
+}
 
 //----------------------------------------------------------------------------
 /// Update transfer function from volume description.
@@ -3504,20 +3515,22 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
     data->renderer->initPostClassificationStage(pixelShader, fragProgName);
 
-    data->renderer->makeTextures(data->pixLUTName, data->rgbaLUT);
+    pthread_barrier_wait(&data->renderer->_madeEmptyBricksBarrier);
 
-    // Now that the textures are built, the bricks may be distributed
-    // by the main thread.
-    pthread_barrier_wait(&data->renderer->_distributeBricksBarrier);
     // For the main thread, this will take some time... .
     pthread_barrier_wait(&data->renderer->_distributedBricksBarrier);
+
     bool areBricksCreated;
     data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
                                       data->rgbaLUT, data->brickList, areBricksCreated);
 
-    /////////////////////////////////////////////////////////
-    // Setup an appropriate GL state.
-    /////////////////////////////////////////////////////////
+    if (data->renderer->voxelType==VV_PIX_SHD
+     || data->renderer->voxelType==VV_FRG_PRG
+     || data->renderer->voxelType==VV_TEX_SHD)
+    {
+      data->renderer->makeLUTTexture(data->pixLUTName, data->rgbaLUT);
+    }
+
     data->renderer->setGLenvironment();
 
     vvShaderManager* isectShader = vvShaderFactory::provideShaderManager(VV_GLSL_MANAGER);
@@ -3583,9 +3596,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                                     data->pixLUTName, data->rgbaLUT);
       }
 
-      /////////////////////////////////////////////////////////
-      // Start rendering.
-      /////////////////////////////////////////////////////////
       glEnable(GL_TEXTURE_3D_EXT);
 
       data->renderer->_offscreenBuffers[data->threadId]->bindFramebuffer();
