@@ -346,6 +346,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     validateEmptySpaceLeaping();
   }
 
+  pixLUTName = 0;
   if ((_usedThreads == 0) && (voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG))
   {
     glGenTextures(1, &pixLUTName);
@@ -1501,6 +1502,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
       _threadData[i].lastFrame = -1;
       _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
       _threadData[i].privateTexNames = NULL;
+      _threadData[i].numTextures = 0;
 #ifdef HAVE_X11
       XMapWindow(_threadData[i].display, _threadData[i].drawable);
       XFlush(_threadData[i].display);
