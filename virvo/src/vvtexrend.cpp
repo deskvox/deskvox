@@ -2746,7 +2746,14 @@ void vvTexRend::setGLenvironment() const
   glEnable(GL_COLOR_MATERIAL);
   glEnable(GL_BLEND);
 
-  glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+  if (glBlendFuncSeparate)
+  {
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+  }
+  else
+  {
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  }
 
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity();
