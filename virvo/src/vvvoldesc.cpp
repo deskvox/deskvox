@@ -467,6 +467,14 @@ int vvVolDesc::getMovieVoxels() const
 }
 
 //----------------------------------------------------------------------------
+/// Get bounding box of the volume.
+vvAABB vvVolDesc::getBoundingBox() const
+{
+  const vvVector3 size2 = getSize() * 0.5f;
+  return vvAABB(pos - size2, pos + size2);
+}
+
+//----------------------------------------------------------------------------
 /** Merge two volume datasets into one file.
  The data will be moved to the target volume.<BR>
  No problems occur if either one of the sequences is empty.<BR>

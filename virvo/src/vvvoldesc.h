@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 
+#include "vvaabb.h"
 #include "vvexport.h"
 #include "vvtoolshed.h"
 #include "vvvecmath.h"
@@ -157,6 +158,7 @@ class VIRVOEXPORT vvVolDesc
     int    getSliceVoxels() const;
     int    getFrameVoxels() const;
     int    getMovieVoxels() const;
+    vvAABB getBoundingBox() const;
     uchar* getRaw(const int);
     uchar* getRaw();
     const char* getFilename() const;
