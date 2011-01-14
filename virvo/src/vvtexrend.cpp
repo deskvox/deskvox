@@ -3539,28 +3539,23 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // thread specific data is supplied.
     while (1)
     {
-      // Rebuild textures synchronized.
+      // Synchronous data setup per frame.
       if (data->brickDataChanged)
       {
         data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
                                           data->rgbaLUT, data->brickList, areBricksCreated);
-       // data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
         data->brickDataChanged = false;
       }
 
-      // Update the transfer function in a synchronous fashion.
       if (data->transferFunctionChanged)
       {
         data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
         data->transferFunctionChanged = false;
-        // TODO: reorganize getBricksInProbe so that this hack is no longer necessary.
-        roiChanged = true;
       }
+      roiChanged = data->renderer->_renderState._isROIChanged;
       data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
 
-      // Don't start rendering until the bricks are sorted in back to front order
-      // and appropriatly distributed among the respective worker threads. The main
-      // thread will issue an alert if this is the case.
+      // Start rendering.
       pthread_barrier_wait(&data->renderer->_renderStartBarrier);
 
       // Break out of loop if dtor was called.
