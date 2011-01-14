@@ -72,6 +72,7 @@ HEADERS = vvaabb.h \
     vvarray.h \
     vvbrick.h \
     vvcolor.h \
+    vvcudatransfunc.h \
     vvdebugmsg.h \
     vvcuda.h \
     vvcudaimg.h \
@@ -143,7 +144,8 @@ CUDA = $$(CUDA_DEFINES)
 contains(CUDA,HAVE_CUDA) {
         CONFIG *= cuda \
                   cudart
-        CUDA_SOURCES += vvrayrend.cu
+        CUDA_SOURCES += vvcudatransfunc.cu \
+                        vvrayrend.cu
         DEFINES *= HAVE_CUDA \
                    NV_PROPRIETARY_CODE
 }
