@@ -310,7 +310,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool insideFrustum(const vvVector3 &min, const vvVector3 &max) const;
     void markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax);
     void updateFrustum();
-    void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&) const;
     void calcAABBMask();
     void getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
                           const vvVector3, const vvVector3, bool& roiChanged, int threadId = -1); ///< threadId = -1 ==> main thread

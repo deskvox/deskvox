@@ -3855,47 +3855,6 @@ bool vvTexRend::testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat
   return false;
 }
 
-void vvTexRend::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, vvVector3& probeMin, vvVector3& probeMax) const
-{
-  // Determine texture object dimensions and half object size as a shortcut:
-  const vvVector3 size(vd->getSize());
-  const vvVector3 size2 = size * 0.5f;
-
-  if (_renderState._isROIUsed)
-  {
-    // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj = _renderState._roiPos;
-
-    // Compute probe min/max coordinates in object space:
-    const vvVector3 maxSize = _renderState._roiSize * size2;
-
-    probeMin = probePosObj - maxSize;
-    probeMax = probePosObj + maxSize;
-
-    // Constrain probe boundaries to volume data area:
-    for (int i = 0; i < 3; ++i)
-    {
-      if (probeMin[i] > size2[i] || probeMax[i] < -size2[i])
-      {
-        vvDebugMsg::msg(3, "probe outside of volume");
-        return;
-      }
-      if (probeMin[i] < -size2[i]) probeMin[i] = -size2[i];
-      if (probeMax[i] >  size2[i]) probeMax[i] =  size2[i];
-      probePosObj[i] = (probeMax[i] + probeMin[i]) * 0.5f;
-    }
-
-    // Compute probe edge lengths:
-    probeSizeObj = probeMax - probeMin;
-  }
-  else                                            // probe mode off
-  {
-    probeSizeObj.copy(&size);
-    probeMin = -size2;
-    probeMax = size2;
-  }
-}
-
 void vvTexRend::calcAABBMask()
 {
   vvVector3 min = vvVector3( FLT_MAX,  FLT_MAX,  FLT_MAX);

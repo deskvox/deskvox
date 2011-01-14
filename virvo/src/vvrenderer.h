@@ -166,6 +166,7 @@ class VIRVOEXPORT vvRenderer
                           const vvVector3& eye,
                           const vvMatrix& invMV,
                           const bool isOrtho = false) const;
+    void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&) const;
 
     // Class Methods:
   public:                                         // public methods will be inherited as public
