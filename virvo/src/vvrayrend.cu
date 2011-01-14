@@ -6,7 +6,7 @@
 #include "vvconfig.h"
 #endif
 
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if 1//defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
 #include "vvglew.h"
 
@@ -90,11 +90,11 @@ __device__ bool skipSpace(const float3& pos)
   return false;
 }
 
-__device__ float3 calcTexCoord(const float3& pos, const float3& volSizeHalf)
+__device__ float3 calcTexCoord(const float3& pos, const float3& volPos, const float3& volSizeHalf)
 {
-  return make_float3((pos.x + volSizeHalf.x) / (volSizeHalf.x * 2.0f),
-                     (pos.y + volSizeHalf.y) / (volSizeHalf.y * 2.0f),
-                     (pos.z + volSizeHalf.z) / (volSizeHalf.z * 2.0f));
+  return make_float3((pos.x - volPos.x + volSizeHalf.x) / (volSizeHalf.x * 2.0f),
+                     (pos.y - volPos.y + volSizeHalf.y) / (volSizeHalf.y * 2.0f),
+                     (pos.z - volPos.z + volSizeHalf.z) / (volSizeHalf.z * 2.0f));
 }
 
 __device__ bool solveQuadraticEquation(const float A, const float B, const float C,
@@ -263,7 +263,8 @@ template<
         >
 __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const uint texwidth, const float dist,
-                       const float3 volSizeHalf, const float3 L, const float3 H,
+                       const float3 volSizeHalf, const float3 volPos,
+                       const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist)
 {
@@ -299,7 +300,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
   float tnear;
   float tfar;
-  const bool hit = intersectBox(ray, -volSizeHalf, volSizeHalf, &tnear, &tfar);
+  const bool hit = intersectBox(ray, volPos - volSizeHalf, volPos + volSizeHalf, &tnear, &tfar);
   if (!hit)
   {
     d_output[y * texwidth + x] = make_uchar4(0);
@@ -373,7 +374,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       continue;
     }
 
-    const float3 texCoord = calcTexCoord(pos, volSizeHalf);
+    const float3 texCoord = calcTexCoord(pos, volPos, volSizeHalf);
 
     // Skip over homogeneous space.
     if (t_spaceSkipping)
@@ -472,7 +473,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 }
 
 typedef void(*renderKernel)(uchar4*, const uint, const uint, const uint, const float, const float3, const float3,
-                             const float3, const float3, const float, const float3, const float);
+                            const float3, const float3, const float3, const float, const float3, const float);
 
 template<
          int t_bpc,
@@ -771,6 +772,7 @@ void vvRayRend::compositeVolume(int, int)
   delete[] viewM;
 
   float3 volSize = make_float3(vd->vox[0], vd->vox[1], vd->vox[2]);
+  float3 volPos = make_float3(vd->pos[0], vd->pos[1], vd->pos[2]);
 
   bool isOrtho = pr.isProjOrtho();
 
@@ -832,7 +834,7 @@ void vvRayRend::compositeVolume(int, int)
     }
     (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3], intImg->width,
                                       diagonalVoxels / (float)numSlices,
-                                      volSize * 0.5f,
+                                      volSize * 0.5f, volPos,
                                       L, H,
                                       center, radius * radius,
                                       pnormal, pdist);

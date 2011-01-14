@@ -15,7 +15,7 @@
 #include "vvconfig.h"
 #endif
 
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if 1//defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
 #include "vvcuda.h"
 
