@@ -3483,8 +3483,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // Init glew.
     glewInit();
 
-    glGenTextures(1, &data->pixLUTName);
-    data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
     data->renderer->initPostClassificationStage(pixelShader, fragProgName);
 
     pthread_barrier_wait(&data->renderer->_madeEmptyBricksBarrier);
@@ -3496,6 +3494,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
                                       data->rgbaLUT, data->brickList, areBricksCreated);
 
+    glGenTextures(1, &data->pixLUTName);
     if (data->renderer->voxelType==VV_PIX_SHD
      || data->renderer->voxelType==VV_FRG_PRG
      || data->renderer->voxelType==VV_TEX_SHD)
