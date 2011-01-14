@@ -2746,14 +2746,8 @@ void vvTexRend::setGLenvironment() const
   glEnable(GL_COLOR_MATERIAL);
   glEnable(GL_BLEND);
 
-  if ((_usedThreads > 0) || (_isSlave) || (_renderState._opaqueGeometryPresent))
-  {
-    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-  }
-  else
-  {
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  }
+  glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity();
   glMatrixMode(GL_MODELVIEW);
