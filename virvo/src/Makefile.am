@@ -13,6 +13,7 @@ lib_LIBRARIES = libvirvo.a
 
 libvirvo_a_headers = \
         vvversioninfo.h \
+        vvaabb.h \
         vvarray.h \
         vvbrick.h \
         vvbsptree.h \
@@ -75,6 +76,7 @@ libvirvo_a_headers = \
 
 libvirvo_a_SOURCES = \
         $(libvirvo_a_headers) \
+        vvaabb.cpp \
         vvbrick.cpp \
         vvbsptree.cpp \
         vvbsptreevisitors.cpp \
