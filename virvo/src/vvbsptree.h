@@ -52,9 +52,11 @@ public:
  */
 class vvAABB
 {
-  friend class vvHalfSpace;
 public:
   vvAABB(const vvVector3& min, const vvVector3& max);
+
+  vvVector3 min() const;
+  vvVector3 max() const;
 
   /*!
    * \brief         Calc the width of the aabb.

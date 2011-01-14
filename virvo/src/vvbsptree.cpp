@@ -49,6 +49,16 @@ vvAABB::vvAABB(const vvVector3& min, const vvVector3& max)
   calcVertices();
 }
 
+vvVector3 vvAABB::min() const
+{
+  return _min;
+}
+
+vvVector3 vvAABB::max() const
+{
+  return _max;
+}
+
 float vvAABB::calcWidth() const
 {
   return calcMaxExtent(vvVector3(1, 0, 0)) - calcMinExtent(vvVector3(1, 0, 0));
@@ -305,8 +315,8 @@ void vvHalfSpace::setBrickList(const std::vector<BrickList>& brickList)
     for (BrickList::const_iterator it = brickList[f].begin(); it != brickList[f].end(); ++it)
     {
       const vvAABB aabb = (*it)->getAABB();
-      const vvVector3 minAABB = aabb._min;
-      const vvVector3 maxAABB = aabb._max;
+      const vvVector3 minAABB = aabb.min();
+      const vvVector3 maxAABB = aabb.max();
       for (int i = 0; i < 3; ++i)
       {
         if (minAABB[i] < minCorner[i])
@@ -380,22 +390,22 @@ vvRect* vvHalfSpace::getProjectedScreenRect(const vvVector3* probeMin, const vvV
     vvVector3 max;
     for (int i = 0; i < 3; i++)
     {
-      if (_boundingBox->_min[i] < probeMin->e[i])
+      if (_boundingBox->min()[i] < probeMin->e[i])
       {
         min.e[i] = probeMin->e[i];
       }
       else
       {
-        min.e[i] = _boundingBox->_min[i];
+        min.e[i] = _boundingBox->min()[i];
       }
 
-      if (_boundingBox->_max[i] > probeMax->e[i])
+      if (_boundingBox->max()[i] > probeMax->e[i])
       {
         max.e[i] = probeMax->e[i];
       }
       else
       {
-        max.e[i] = _boundingBox->_max[i];
+        max.e[i] = _boundingBox->max()[i];
       }
     }
     vvAABB aabb(min, max);
@@ -428,8 +438,8 @@ void vvHalfSpace::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
   vvAABB probe(probeMin, probeMax);
   probe.intersect(_boundingBox);
 
-  probeMin = probe._min;
-  probeMax = probe._max;
+  probeMin = probe.min();
+  probeMax = probe.max();
 }
 
 //============================================================================
