@@ -6,7 +6,7 @@
 #include "vvconfig.h"
 #endif
 
-#if 1//defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
 #include "vvglew.h"
 
@@ -263,7 +263,8 @@ template<
         >
 __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const uint texwidth, const float dist,
-                       const float3 volSizeHalf, const float3 volPos,
+                       const float3 volPos, const float3 volSizeHalf,
+                       const float3 probePos, const float3 probeSizeHalf,
                        const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist)
@@ -300,7 +301,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
   float tnear;
   float tfar;
-  const bool hit = intersectBox(ray, volPos - volSizeHalf, volPos + volSizeHalf, &tnear, &tfar);
+  const bool hit = intersectBox(ray, probePos - probeSizeHalf, probePos + probeSizeHalf, &tnear, &tfar);
   if (!hit)
   {
     d_output[y * texwidth + x] = make_uchar4(0);
@@ -473,7 +474,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 }
 
 typedef void(*renderKernel)(uchar4*, const uint, const uint, const uint, const float, const float3, const float3,
-                            const float3, const float3, const float3, const float, const float3, const float);
+                            const float3, const float3, const float3, const float3, const float3,
+                            const float, const float3, const float);
 
 template<
          int t_bpc,
@@ -727,15 +729,12 @@ void vvRayRend::compositeVolume(int, int)
   dim3 blockSize(16, 16);
   dim3 gridSize = dim3(iDivUp(vp[2], blockSize.x), iDivUp(vp[3], blockSize.y));
   const vvVector3 size(vd->getSize());
-  const vvVector3 size2 = size * 0.5f;
 
-  // Assume: no probe.
+  vvVector3 probePosObj;
   vvVector3 probeSizeObj;
-  probeSizeObj.copy(&size);
   vvVector3 probeMin;
-  probeMin = -size2;
   vvVector3 probeMax;
-  probeMax = size2;
+  calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
   vvVector3 clippedProbeSizeObj;
   clippedProbeSizeObj.copy(&probeSizeObj);
@@ -745,6 +744,11 @@ void vvRayRend::compositeVolume(int, int)
     {
       clippedProbeSizeObj[i] = vd->getSize()[i];
     }
+  }
+
+  if (_renderState._isROIUsed && !_renderState._sphericalROI)
+  {
+    drawBoundingBox(&probeSizeObj, &_renderState._roiPos, _renderState._probeColor);
   }
 
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
@@ -771,10 +775,20 @@ void vvRayRend::compositeVolume(int, int)
   cudaMemcpyToSymbol(c_invViewMatrix, viewM, sizeof(float4) * 4);
   delete[] viewM;
 
-  float3 volSize = make_float3(vd->vox[0], vd->vox[1], vd->vox[2]);
-  float3 volPos = make_float3(vd->pos[0], vd->pos[1], vd->pos[2]);
+  const float3 volPos = make_float3(vd->pos[0], vd->pos[1], vd->pos[2]);
+  float3 probePos = volPos;
+  if (_renderState._isROIUsed && !_renderState._sphericalROI)
+  {
+    probePos = make_float3(probePosObj[0],  probePosObj[1], probePosObj[2]);
+  }
+  const float3 volSize = make_float3(vd->vox[0], vd->vox[1], vd->vox[2]);
+  float3 probeSize = make_float3(probeSizeObj[0], probeSizeObj[1], probeSizeObj[2]);
+  if (_renderState._sphericalROI)
+  {
+    probeSize = make_float3(vd->vox[0], vd->vox[1], vd->vox[2]);
+  }
 
-  bool isOrtho = pr.isProjOrtho();
+  const bool isOrtho = pr.isProjOrtho();
 
   vvVector3 eye;
   getEyePosition(&eye);
@@ -798,8 +812,8 @@ void vvRayRend::compositeVolume(int, int)
   // Clip sphere.
   const float3 center = make_float3(_renderState._roiPos[0],
                                     _renderState._roiPos[1],
-                                    _renderState._roiPos[2]);//make_float3(0.0f, 128.0f, 128.0f);
-  const float radius = _renderState._roiSize[0] * vd->getSize()[0];//150;
+                                    _renderState._roiPos[2]);
+  const float radius = _renderState._roiSize[0] * vd->getSize()[0];
 
   // Clip plane.
   const float3 pnormal = normalize(make_float3(_renderState._clipNormal[0],
@@ -834,7 +848,8 @@ void vvRayRend::compositeVolume(int, int)
     }
     (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3], intImg->width,
                                       diagonalVoxels / (float)numSlices,
-                                      volSize * 0.5f, volPos,
+                                      volPos, volSize * 0.5f,
+                                      probePos, probeSize * 0.5f,
                                       L, H,
                                       center, radius * radius,
                                       pnormal, pdist);
