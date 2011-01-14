@@ -255,6 +255,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType dispatchThreadedGLXContexts();
     ErrorType dispatchThreads();
     ErrorType distributeBricks();
+    void notifyThreads(bool brickDataChanged, bool transferFunctionChanged);
     static void* threadFuncTexBricks(void* threadargs);
     void sortBrickList(std::vector<vvBrick*>& list, const vvVector3&, const vvVector3&, const bool);
     void performLoadBalancing();

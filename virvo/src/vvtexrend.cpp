@@ -1617,6 +1617,18 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   return err;
 }
 
+void vvTexRend::notifyThreads(const bool brickDataChanged, const bool transferFunctionChanged)
+{
+  for (unsigned int i = 0; i < _numThreads; ++i)
+  {
+    if (_threadData[i].active)
+    {
+      _threadData[i].brickDataChanged = brickDataChanged;
+      _threadData[i].transferFunctionChanged = transferFunctionChanged;
+    }
+  }
+}
+
 void vvTexRend::updateBrickGeom()
 {
   vvBrick* tmp;
@@ -1675,13 +1687,7 @@ void vvTexRend::setComputeBrickSize(const bool flag)
     {
       if (_numThreads > 0)
       {
-        for (unsigned int i = 0; i < _numThreads; ++i)
-        {
-          if (_threadData[i].active)
-          {
-            _threadData[i].brickDataChanged = true;
-          }
-        }
+        notifyThreads(true, false);
       }
       else
       {
@@ -1704,13 +1710,7 @@ void vvTexRend::setBrickSize(const int newSize)
 
   if (_numThreads > 0)
   {
-    for (unsigned int i = 0; i < _numThreads; ++i)
-    {
-      if (_threadData[i].active)
-      {
-        _threadData[i].brickDataChanged = true;
-      }
-    }
+    notifyThreads(true, false);
   }
   else
   {
@@ -1738,13 +1738,7 @@ void vvTexRend::setTexMemorySize(const int newSize)
     {
       if (_numThreads > 0)
       {
-        for (unsigned int i = 0; i < _numThreads; ++i)
-        {
-          if (_threadData[i].active)
-          {
-            _threadData[i].brickDataChanged = true;
-          }
-        }
+        notifyThreads(true, false);
       }
       else
       {
@@ -1946,13 +1940,7 @@ void vvTexRend::updateVolumeData()
 
   if (_numThreads > 0)
   {
-    for (unsigned int i = 0; i < _numThreads; ++i)
-    {
-      if (_threadData[i].active)
-      {
-        _threadData[i].brickDataChanged = true;
-      }
-    }
+    notifyThreads(true, false);
   }
   else
   {
@@ -4964,14 +4952,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, ch
         interpolation = newInterpol;
         if (_numThreads > 0)
         {
-          for (unsigned int i = 0; i < _numThreads; ++i)
-          {
-            if (_threadData[i].active)
-            {
-              _threadData[i].brickDataChanged = true;
-              _threadData[i].transferFunctionChanged = true;
-            }
-          }
+          notifyThreads(true, true);
         }
         else
         {
