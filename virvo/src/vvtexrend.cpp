@@ -1875,13 +1875,7 @@ void vvTexRend::updateTransferFunction()
   }
   else
   {
-    for (unsigned int i = 0; i < _numThreads; ++i)
-    {
-      if (_threadData[i].active)
-      {
-        _threadData[i].transferFunctionChanged = true;
-      }
-    }
+    notifyThreads(false, true);
   }
 }
 
@@ -3546,6 +3540,23 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // thread specific data is supplied.
     while (1)
     {
+      // Rebuild textures synchronized.
+      if (data->brickDataChanged)
+      {
+        data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
+                                          data->rgbaLUT, data->brickList, areBricksCreated);
+       // data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
+        data->brickDataChanged = false;
+      }
+
+      // Update the transfer function in a synchronous fashion.
+      if (data->transferFunctionChanged)
+      {
+        data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
+        data->transferFunctionChanged = false;
+        // TODO: reorganize getBricksInProbe so that this hack is no longer necessary.
+        roiChanged = true;
+      }
       data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
 
       // Don't start rendering until the bricks are sorted in back to front order
@@ -3695,25 +3706,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         {
           data->renderer->disableIntersectionShader(isectShader, pixelShader);
         }
-      }
-
-      // Rebuild textures synchronized.
-      if (data->brickDataChanged)
-      {
-        data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
-                                          data->rgbaLUT, data->brickList, areBricksCreated);
-        data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
-        data->brickDataChanged = false;
-      }
-
-      // Finally pdate the transfer function in a synchronous fashion.
-      if (data->transferFunctionChanged)
-      {
-        data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
-        data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
-        data->transferFunctionChanged = false;
-        // TODO: reorganize getBricksInProbe so that this hack is no longer necessary.
-        roiChanged = true;
       }
     }
 
