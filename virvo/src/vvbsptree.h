@@ -54,8 +54,7 @@ class vvAABB
 {
   friend class vvHalfSpace;
 public:
-  vvAABB(const vvVector3& bottomLeftBackCorner,
-         const vvVector3& topRightFrontCorner);
+  vvAABB(const vvVector3& min, const vvVector3& max);
 
   /*!
    * \brief         Calc the width of the aabb.
@@ -153,8 +152,8 @@ public:
    */
   void print() const;
 private:
-  vvVector3 _bottomLeftBackCorner;
-  vvVector3 _topRightFrontCorner;
+  vvVector3 _min;
+  vvVector3 _max;
   vvVector3 _vertices[8];
   vvVector3 _center;
 

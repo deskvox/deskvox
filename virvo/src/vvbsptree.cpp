@@ -40,14 +40,12 @@ void vvRect::print() const
 // vvAABB Method Definitions
 //============================================================================
 
-vvAABB::vvAABB(const vvVector3& bottomLeftBackCorner,
-               const vvVector3& topRightFrontCorner)
-                 : _bottomLeftBackCorner(bottomLeftBackCorner),
-                   _topRightFrontCorner(topRightFrontCorner)
+vvAABB::vvAABB(const vvVector3& min, const vvVector3& max)
+                 : _min(min), _max(max)
 {
-  _center = vvVector3((_bottomLeftBackCorner.e[0] + _topRightFrontCorner.e[0]) * 0.5f,
-                      (_bottomLeftBackCorner.e[1] + _topRightFrontCorner.e[1]) * 0.5f,
-                      (_bottomLeftBackCorner.e[2] + _topRightFrontCorner.e[2]) * 0.5f);
+  _center = vvVector3((_min.e[0] + _max.e[0]) * 0.5f,
+                      (_min.e[1] + _max.e[1]) * 0.5f,
+                      (_min.e[2] + _max.e[2]) * 0.5f);
   calcVertices();
 }
 
@@ -68,16 +66,16 @@ float vvAABB::calcDepth() const
 
 float vvAABB::calcMinExtent(const vvVector3& axis) const
 {
-  return _bottomLeftBackCorner.e[0] * axis.e[0]
-       + _bottomLeftBackCorner.e[1] * axis.e[1]
-       + _bottomLeftBackCorner.e[2] * axis.e[2];
+  return _min.e[0] * axis.e[0]
+       + _min.e[1] * axis.e[1]
+       + _min.e[2] * axis.e[2];
 }
 
 float vvAABB::calcMaxExtent(const vvVector3& axis) const
 {
-  return _topRightFrontCorner.e[0] * axis.e[0]
-       + _topRightFrontCorner.e[1] * axis.e[1]
-       + _topRightFrontCorner.e[2] * axis.e[2];
+  return _max.e[0] * axis.e[0]
+       + _max.e[1] * axis.e[1]
+       + _max.e[2] * axis.e[2];
 }
 
 const vvBoxCorners& vvAABB::getVertices() const
@@ -144,14 +142,14 @@ void vvAABB::intersect(vvAABB* rhs)
 {
   for (int i = 0; i < 3; ++i)
   {
-    if (rhs->_bottomLeftBackCorner[i] > _bottomLeftBackCorner[i])
+    if (rhs->_min[i] > _min[i])
     {
-      _bottomLeftBackCorner[i] = rhs->_bottomLeftBackCorner[i];
+      _min[i] = rhs->_min[i];
     }
 
-    if (rhs->_topRightFrontCorner[i] < _topRightFrontCorner[i])
+    if (rhs->_max[i] < _max[i])
     {
-      _topRightFrontCorner[i] = rhs->_topRightFrontCorner[i];
+      _max[i] = rhs->_max[i];
     }
   }
   calcVertices();
@@ -194,8 +192,8 @@ void vvAABB::render() const
 
 void vvAABB::print() const
 {
-  _bottomLeftBackCorner.print();
-  _topRightFrontCorner.print();
+  _min.print();
+  _max.print();
 }
 
 void vvAABB::calcVertices()
@@ -209,7 +207,7 @@ void vvAABB::calcVertices()
 
     for (int c=0; c<3; ++c)
     {
-      _vertices[i].e[c] = (1<<c)&d ? _bottomLeftBackCorner.e[c] : _topRightFrontCorner.e[c];
+      _vertices[i].e[c] = (1<<c)&d ? _min.e[c] : _max.e[c];
     }
   }
 }
@@ -307,8 +305,8 @@ void vvHalfSpace::setBrickList(const std::vector<BrickList>& brickList)
     for (BrickList::const_iterator it = brickList[f].begin(); it != brickList[f].end(); ++it)
     {
       const vvAABB aabb = (*it)->getAABB();
-      const vvVector3 minAABB = aabb._bottomLeftBackCorner;
-      const vvVector3 maxAABB = aabb._topRightFrontCorner;
+      const vvVector3 minAABB = aabb._min;
+      const vvVector3 maxAABB = aabb._max;
       for (int i = 0; i < 3; ++i)
       {
         if (minAABB[i] < minCorner[i])
@@ -382,22 +380,22 @@ vvRect* vvHalfSpace::getProjectedScreenRect(const vvVector3* probeMin, const vvV
     vvVector3 max;
     for (int i = 0; i < 3; i++)
     {
-      if (_boundingBox->_bottomLeftBackCorner[i] < probeMin->e[i])
+      if (_boundingBox->_min[i] < probeMin->e[i])
       {
         min.e[i] = probeMin->e[i];
       }
       else
       {
-        min.e[i] = _boundingBox->_bottomLeftBackCorner[i];
+        min.e[i] = _boundingBox->_min[i];
       }
 
-      if (_boundingBox->_topRightFrontCorner[i] > probeMax->e[i])
+      if (_boundingBox->_max[i] > probeMax->e[i])
       {
         max.e[i] = probeMax->e[i];
       }
       else
       {
-        max.e[i] = _boundingBox->_topRightFrontCorner[i];
+        max.e[i] = _boundingBox->_max[i];
       }
     }
     vvAABB aabb(min, max);
@@ -430,8 +428,8 @@ void vvHalfSpace::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
   vvAABB probe(probeMin, probeMax);
   probe.intersect(_boundingBox);
 
-  probeMin = probe._bottomLeftBackCorner;
-  probeMax = probe._topRightFrontCorner;
+  probeMin = probe._min;
+  probeMax = probe._max;
 }
 
 //============================================================================
