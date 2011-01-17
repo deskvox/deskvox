@@ -179,11 +179,29 @@ void vvTFBell::write(FILE* fp)
     _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
 }
 
-void vvTFBell::write(uchar* buffer)
+void vvTFBell::write(std::ostream& out)
 {
-  sprintf((char*)buffer, "TF_BELL %s %g %g %g %g %g %g %g %g %g %d %g\n", (_name) ? _name : NO_NAME,
-    _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2],
-    _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
+  out << "TF_BELL ";
+  if (_name != NULL)
+  {
+    out << _name << " ";
+  }
+  else
+  {
+    out << NO_NAME << " ";
+  }
+  out << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
+      << _size[0] << " " << _size[1] << " " << _size[2] << " "
+      << _col[0] << " " << _col[1] << " " << _col[2] << " ";
+  if (_ownColor)
+  {
+    out << 1 << " ";
+  }
+  else
+  {
+    out << 0 << " ";
+  }
+  out << _opacity << "\n";
 }
 
 /** The 2D gaussian function can be found at:
@@ -347,11 +365,29 @@ void vvTFPyramid::write(FILE* fp)
     _top[0], _top[1], _top[2], _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
 }
 
-void vvTFPyramid::write(uchar* buffer)
+void vvTFPyramid::write(std::ostream& out)
 {
-  sprintf((char*)buffer, "TF_PYRAMID %s %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n", (_name) ? _name : NO_NAME,
-    _pos[0], _pos[1], _pos[2], _bottom[0], _bottom[1], _bottom[2],
-    _top[0], _top[1], _top[2], _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
+  out << "TF_PYRAMID ";
+  if (_name != NULL)
+  {
+    out << _name << " ";
+  }
+  else
+  {
+    out << NO_NAME << " ";
+  }
+  out << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
+      << _bottom[0] << " " << _bottom[1] << " " << _bottom[2] << " "
+      << _col[0] << " " << _col[1] << " " << _col[2] << " ";
+  if (_ownColor)
+  {
+    out << 1 << " ";
+  }
+  else
+  {
+    out << 0 << " ";
+  }
+  out << _opacity << "\n";
 }
 
 float vvTFPyramid::getOpacity(float x, float y, float z)
@@ -568,10 +604,19 @@ void vvTFColor::write(FILE* fp)
     _pos[0], _pos[1], _pos[2], _col[0], _col[1], _col[2]);
 }
 
-void vvTFColor::write(uchar* buffer)
+void vvTFColor::write(std::ostream& out)
 {
-  sprintf((char*)buffer, "TF_COLOR %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
-    _pos[0], _pos[1], _pos[2], _col[0], _col[1], _col[2]);
+  out << "TF_COLOR ";
+  if (_name != NULL)
+  {
+    out << _name << " ";
+  }
+  else
+  {
+    out << NO_NAME << " ";
+  }
+  out << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
+      << _col[0] << " " << _col[1] << " " << _col[2] << "\n";
 }
 
 //============================================================================
@@ -625,10 +670,19 @@ void vvTFSkip::write(FILE* fp)
     _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2]);
 }
 
-void vvTFSkip::write(uchar* buffer)
+void vvTFSkip::write(std::ostream& out)
 {
-  sprintf((char*)buffer, "TF_SKIP %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
-    _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2]);
+  out << "TF_SKIP ";
+  if (_name != NULL)
+  {
+    out << _name << " ";
+  }
+  else
+  {
+    out << NO_NAME << " ";
+  }
+  out << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
+      << _size[0] << " " << _size[1] << " " << _size[2] << "\n";
 }
 
 /** @return 0 if x/y/z point is within skipped area, otherwise -1
@@ -766,16 +820,25 @@ void vvTFCustom::write(FILE* fp)
   }
 }
 
-void vvTFCustom::write(uchar* buffer)
+void vvTFCustom::write(std::ostream& out)
 {
   list<vvTFPoint*>::iterator iter;
 
-  sprintf((char*)buffer, "TF_CUSTOM %s %g %g %g %d\n", (_name) ? _name : NO_NAME,
-    _size[0], _size[1], _size[2], (int)_points.size());
+  out << "TF_CUSTOM ";
+  if (_name != NULL)
+  {
+    out << _name << " ";
+  }
+  else
+  {
+    out << NO_NAME << " ";
+  }
+  out << _size[0] << " " << _size[1] << " " << _size[2] << " "
+      << (int)_points.size() << "\n";
 
   for(iter=_points.begin(); iter!=_points.end(); iter++)
   {
-    sprintf((char*)buffer, "%g %g %g %g\n", (*iter)->_opacity, (*iter)->_pos[0], (*iter)->_pos[1], (*iter)->_pos[2]);
+    out << (*iter)->_opacity << " " << (*iter)->_pos[0] << " " << (*iter)->_pos[1] << " " << (*iter)->_pos[2] << "\n";
   }
 }
 
@@ -1080,7 +1143,7 @@ void vvTFCustom2D::write(FILE*)
    //TODO!!
 }
 
-void vvTFCustom2D::write(uchar*)
+void vvTFCustom2D::write(std::ostream&)
 {
    //TODO!!
 }
@@ -1503,7 +1566,7 @@ void vvTFCustomMap::write(FILE*)
    //TODO!!
 }
 
-void vvTFCustomMap::write(uchar*)
+void vvTFCustomMap::write(std::ostream&)
 {
    //TODO!!
 }
