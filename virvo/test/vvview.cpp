@@ -995,6 +995,7 @@ void vvView::timerCallback(int id)
     break;
   case BENCHMARK_TIMER:
     performanceTest();
+    performanceTest();
     exit(0);
     break;
   default:
@@ -1929,15 +1930,31 @@ void vvView::performanceTest()
     // Perform test:
     totalTime->start();
     ds->renderer->profileStart();
+
     for (angle=0; angle<180; angle+=2)
     {
       ds->ov->mv.rotate(step, 0.0f, 1.0f, 0.0f);  // rotate model view matrix
       ds->displayCallback();
       ++framesRendered;
     }
-    ds->renderer->profileStop();
-    //totalTime->stop();
 
+    ds->ov->reset();
+    ds->ov->mv.scale(ds->mvScale);
+    for (angle=0; angle<180; angle+=2)
+    {
+      ds->ov->mv.rotate(step, 0.0f, 0.0f, 1.0f);  // rotate model view matrix
+      ds->displayCallback();
+      ++framesRendered;
+    }
+
+    ds->ov->reset();
+    ds->ov->mv.scale(ds->mvScale);
+    for (angle=0; angle<180; angle+=2)
+    {
+      ds->ov->mv.rotate(step, 1.0f, 0.0f, 0.0f);  // rotate model view matrix
+      ds->displayCallback();
+      ++framesRendered;
+    }
 
     printProfilingResult(totalTime, framesRendered);
 
