@@ -14,7 +14,8 @@ unix:!macx:CONFIG *= x11
 osx11:CONFIG *= x11
 SRCDIR = $${BASEDIR}/src/kernel/virvo
 win32:DEFINES += VIRVO_EXPORT \
-    UNICODE
+    UNICODE \
+    NOMINMAX
 DEFINES *= NO_CONFIG_H
 SOURCES = vvaabb.cpp \
     vvbrick.cpp \
