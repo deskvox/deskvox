@@ -781,7 +781,8 @@ void vvRayRend::compositeVolume(int, int)
   {
     probePos = make_float3(probePosObj[0],  probePosObj[1], probePosObj[2]);
   }
-  const float3 volSize = make_float3(vd->vox[0], vd->vox[1], vd->vox[2]);
+  vvVector3 sz = vd->getSize();
+  const float3 volSize = make_float3(sz[0], sz[1], sz[2]);
   float3 probeSize = make_float3(probeSizeObj[0], probeSizeObj[1], probeSizeObj[2]);
   if (_renderState._sphericalROI)
   {
