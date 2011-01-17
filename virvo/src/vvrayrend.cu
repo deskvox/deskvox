@@ -888,6 +888,9 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue, ch
   case vvRenderer::VV_OPCORR:
     _opacityCorrection = static_cast<bool>(newValue);
     break;
+  case vvRenderer::VV_TERMINATEEARLY:
+    _earlyRayTermination = static_cast<bool>(newValue);
+    break;
   default:
     vvRenderer::setParameter(param, newValue);
     break;
