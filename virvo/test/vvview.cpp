@@ -270,8 +270,10 @@ void vvView::mainLoop(int argc, char *argv[])
     const vvVector3 size = vd->getSize();
     const float diagonal = sqrtf(size[0] * size[0] + size[1] * size[1] + size[2] * size[2]);
     const float radius = diagonal * 0.5f;
+    const float maxedge = ts_max(size[0], size[1], size[2]);
+
     // Move back by radius of the bounding sphere + 20% of said radius.
-    mvScale = 1.0f / (radius * 1.2f);
+    mvScale = 1.0f / maxedge;
     cerr << "Scale modelview matrix by " << mvScale << endl;
 
     // Set default color scheme if no TF present:
@@ -1858,7 +1860,7 @@ void vvView::performanceTest()
       }
       else
       {
-        ds->ov->setProjection(vvObjView::ORTHO, 1.5f, -100.0, 100.0);
+        ds->ov->setProjection(vvObjView::ORTHO, 2.0f, -100.0, 100.0);
       }
       // Do this once to propagate the changes... .
       ds->displayCallback();
@@ -2300,7 +2302,7 @@ void vvView::setProjectionMode(bool newmode)
   }
   else
   {
-    ov->setProjection(vvObjView::ORTHO, 1.5f, -100.0, 100.0);
+    ov->setProjection(vvObjView::ORTHO, 2.0f, -100.0, 100.0);
   }
 }
 
