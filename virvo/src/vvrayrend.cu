@@ -636,15 +636,17 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _illumination = false;
   _interpolation = true;
   _opacityCorrection = true;
-  _spaceSkipping = true;
+  _spaceSkipping = false;
   h_spaceSkippingArray = NULL;
   h_cellMinValues = NULL;
   h_cellMaxValues = NULL;
 
   _rgbaTF = NULL;
 
+#if 0
   const int numCells[] = { 16, 16, 16 };
   setNumSpaceSkippingCells(numCells);
+#endif
 
   intImg = new vvCudaImg(0, 0);
 
