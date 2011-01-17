@@ -6,6 +6,7 @@
 //****************************************************************************
 
 #include "../src/vvglew.h"
+#include "../src/vvconfig.h"
 
 #include <iostream>
 #include <iomanip>
@@ -60,6 +61,9 @@ using std::ios;
 #if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 #include "../src/vvrayrend.h"
 #endif
+#ifdef HAVE_VOLPACK
+#include "../src/vvrendervp.h"
+#endif
 #include "../src/vvbonjour/vvbonjourbrowser.h"
 #include "../src/vvbonjour/vvbonjourresolver.h"
 #include "vvobjview.h"
@@ -89,8 +93,7 @@ vvView::vvView()
   ov = NULL;
   currentGeom = vvTexRend::VV_AUTO;              // vvTexRend::VV_SLICES;
   currentVoxels = vvTexRend::VV_BEST;            // vvTexRend::VV_RGBA;
-  softwareRenderer = false;
-  cudaRenderer = false;
+  rendererType = vvRenderer::TEXREND;
   bgColor[0] = bgColor[1] = bgColor[2] = 0.0f;
   frame = 0;
   filename = NULL;
@@ -146,7 +149,6 @@ vvView::vvView()
   clipPlane             = false;
   clipPerimeter         = false;
   mvScale               = 1.0f;
-  rayRenderer           = false;
 }
 
 
@@ -639,32 +641,9 @@ void vvView::motionCallback(int x, int y)
 //----------------------------------------------------------------------------
 /** Set software renderering flag.
  */
-void vvView::setSoftwareRenderer(bool enable)
+void vvView::setRendererType(enum vvRenderer::RendererType type)
 {
-  softwareRenderer = enable;
-}
-
-
-//----------------------------------------------------------------------------
-/** Set software renderering flag.
- */
-void vvView::setCudaRenderer(bool enable)
-{
-#ifdef HAVE_CUDA
-  cudaRenderer = enable;
-#else
-  if (enable)
-    setSoftwareRenderer(enable);
-#endif
-}
-
-
-//----------------------------------------------------------------------------
-/** Set ray rendering flag.
- */
-void vvView::setRayRenderer(const bool enable)
-{
-  rayRenderer = enable;
+  rendererType = type;
 }
 
 
@@ -692,40 +671,48 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   // These are needed before construction of the renderer so that
   // additional rendering contexts and x-windows can be created.
 
-  if (softwareRenderer)
+  switch(rendererType)
   {
-    if(perspectiveMode)
-      renderer = new vvSoftPer(vd, renderState);
-    else
-      renderer = new vvSoftPar(vd, renderState);
-  }
+    case vvRenderer::SOFTPAR:
+    case vvRenderer::SOFTPER:
+      if(perspectiveMode)
+        renderer = new vvSoftPer(vd, renderState);
+      else
+        renderer = new vvSoftPar(vd, renderState);
+      break;
+    case vvRenderer::CUDAPAR:
+    case vvRenderer::CUDAPER:
 #ifdef HAVE_CUDA
-  else if (cudaRenderer)
-  {
-    if(perspectiveMode)
-      renderer = new vvCudaPer(vd, renderState);
-    else
-      renderer = new vvCudaPar(vd, renderState);
-  }
+      if(perspectiveMode)
+        renderer = new vvCudaPer(vd, renderState);
+      else
+        renderer = new vvCudaPar(vd, renderState);
 #endif
+      break;
+    case vvRenderer::RAYREND:
 #if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
-  else if (rayRenderer)
-  {
-    renderer = new vvRayRend(vd, renderState);
-  }
+      renderer = new vvRayRend(vd, renderState);
 #endif
-  else if (numDisplays > 0)
-  {
-    cerr << "Running in threaded mode using the following displays:" << endl;
-    for (unsigned int i=0; i<numDisplays; ++i)
-    {
-      cerr << displayNames[i] << endl;
-    }
-    renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks, displayNames, numDisplays);
-  }
-  else
-  {
-    renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks);
+      break;
+#ifdef HAVE_VOLPACK
+    case vvRenderer::VOLPACK:
+      renderer = new vvRenderVP(vd, renderState);
+      break;
+#endif
+    default:
+      if (numDisplays > 0)
+      {
+        cerr << "Running in threaded mode using the following displays:" << endl;
+        for (unsigned int i=0; i<numDisplays; ++i)
+        {
+          cerr << displayNames[i] << endl;
+        }
+        renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks, displayNames, numDisplays);
+      }
+      else
+      {
+        renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks);
+      }
   }
 
   if (!slaveMode)
@@ -1018,24 +1005,29 @@ void vvView::mainMenuCallback(int item)
   {
   case 0:                                     // projection mode
     ds->setProjectionMode(!ds->perspectiveMode);
-    if (ds->softwareRenderer)
+    switch(ds->rendererType)
     {
-      delete ds->renderer;
-      if (ds->perspectiveMode)
-        ds->renderer = new vvSoftPer(ds->vd, ds->renderState);
-      else
-        ds->renderer = new vvSoftPar(ds->vd, ds->renderState);
-    }
+      case vvRenderer::SOFTPAR:
+      case vvRenderer::SOFTPER:
+        delete ds->renderer;
+        if (ds->perspectiveMode)
+          ds->renderer = new vvSoftPer(ds->vd, ds->renderState);
+        else
+          ds->renderer = new vvSoftPar(ds->vd, ds->renderState);
+        break;
+      case vvRenderer::CUDAPAR:
+      case vvRenderer::CUDAPER:
 #ifdef HAVE_CUDA
-    else if (ds->cudaRenderer)
-    {
-      delete ds->renderer;
-      if (ds->perspectiveMode)
-        ds->renderer = new vvCudaPer(ds->vd, ds->renderState);
-      else
-        ds->renderer = new vvCudaPar(ds->vd, ds->renderState);
-    }
+        delete ds->renderer;
+        if (ds->perspectiveMode)
+          ds->renderer = new vvCudaPer(ds->vd, ds->renderState);
+        else
+          ds->renderer = new vvCudaPar(ds->vd, ds->renderState);
 #endif
+        break;
+      default:
+        break;
+    }
     break;
   case 4:                                     // refinement mode
     if (ds->refinement) ds->refinement = false;
@@ -1109,9 +1101,7 @@ void vvView::rendererMenuCallback(int item)
 
   if (item>=0 && item<=5)
   {
-    ds->setSoftwareRenderer(false);
-    ds->setCudaRenderer(false);
-    ds->setRayRenderer(false);
+    ds->setRendererType(vvRenderer::TEXREND);
   }
 
   if (item==0)
@@ -1141,18 +1131,20 @@ void vvView::rendererMenuCallback(int item)
   else if (item==6)
   {
     cerr << "Switched to software shear-warp renderer" << endl;
-    ds->setSoftwareRenderer(true);
-    ds->setCudaRenderer(false);
-    ds->setRayRenderer(false);
+    if(ds->perspectiveMode)
+      ds->setRendererType(vvRenderer::SOFTPAR);
+    else
+      ds->setRendererType(vvRenderer::SOFTPER);
     ds->setRenderer();
   }
 #ifdef HAVE_CUDA
   else if (item==7)
   {
     cerr << "Switched to CUDA shear-warp renderer" << endl;
-    ds->setSoftwareRenderer(false);
-    ds->setCudaRenderer(true);
-    ds->setRayRenderer(false);
+    if(ds->perspectiveMode)
+      ds->setRendererType(vvRenderer::CUDAPAR);
+    else
+      ds->setRendererType(vvRenderer::CUDAPER);
     ds->setRenderer();
   }
 #endif
@@ -1160,9 +1152,15 @@ void vvView::rendererMenuCallback(int item)
   else if (item == 8)
   {
     cerr << "Switched to CUDA ray casting renderer" << endl;
-    ds->setSoftwareRenderer(false);
-    ds->setCudaRenderer(false);
-    ds->setRayRenderer(true);
+    ds->setRendererType(vvRenderer::RAYREND);
+    ds->setRenderer();
+  }
+#endif
+#ifdef HAVE_VOLPACK
+  else if (item == 9)
+  {
+    cerr << "Switched to VolPack shear-warp renderer" << endl;
+    ds->setRendererType(vvRenderer::VOLPACK);
     ds->setRenderer();
   }
 #endif
@@ -1278,80 +1276,94 @@ void vvView::optionsMenuCallback(int item)
     cerr << "Z size set to " << size.e[2] << endl;
     break;
   case 10:                                     // increase precision of visual
-    if (ds->cudaRenderer || ds->softwareRenderer || ds->rayRenderer)
+    switch(ds->rendererType)
     {
-      if (ds->bufferPrecision < 32)
-      {
-        ds->bufferPrecision = 32;
-        cerr << "Buffer precision set to 32 bit floating point" << endl;
-      }
-      else
-      {
-        cerr << "Highest precision reached" << endl;
-      }
-    }
-    else
-    {
-      if (ds->useOffscreenBuffer)
-      {
-        if (ds->bufferPrecision == 8)
-        {
-          ds->bufferPrecision = 16;
-          cerr << "Buffer precision set to 16bit" << endl;
-        }
-        else if (ds->bufferPrecision == 16)
+      case vvRenderer::SOFTPAR:
+      case vvRenderer::SOFTPER:
+      case vvRenderer::CUDAPAR:
+      case vvRenderer::CUDAPER:
+      case vvRenderer::RAYREND:
+        if (ds->bufferPrecision < 32)
         {
           ds->bufferPrecision = 32;
-          cerr << "Buffer precision set to 32bit" << endl;
+          cerr << "Buffer precision set to 32 bit floating point" << endl;
         }
         else
         {
           cerr << "Highest precision reached" << endl;
         }
-      }
-      else
-      {
+        break;
+      case vvRenderer::TEXREND:
+        if (ds->useOffscreenBuffer)
+        {
+          if (ds->bufferPrecision == 8)
+          {
+            ds->bufferPrecision = 16;
+            cerr << "Buffer precision set to 16bit" << endl;
+          }
+          else if (ds->bufferPrecision == 16)
+          {
+            ds->bufferPrecision = 32;
+            cerr << "Buffer precision set to 32bit" << endl;
+          }
+          else
+          {
+            cerr << "Highest precision reached" << endl;
+          }
+        }
+        else
+        {
         cerr << "Enable offscreen buffering to change visual precision" << endl;
-      }
+        }
+        break;
+      default:
+        break;
     }
     ds->renderer->setParameter(vvRenderer::VV_IMG_PRECISION, ds->bufferPrecision);
     break;
   case 11:                                    // decrease precision of visual
-    if (ds->cudaRenderer || ds->softwareRenderer || ds->rayRenderer)
+    switch(ds->rendererType)
     {
-      if (ds->bufferPrecision == 32)
-      {
-        ds->bufferPrecision = 8;
-        cerr << "Buffer precision set to 8 bit fixed point" << endl;
-      }
-      else
-      {
-        cerr << "Lowest precision reached" << endl;
-      }
-    }
-    else
-    {
-      if (ds->useOffscreenBuffer)
-      {
+      case vvRenderer::SOFTPAR:
+      case vvRenderer::SOFTPER:
+      case vvRenderer::CUDAPAR:
+      case vvRenderer::CUDAPER:
+      case vvRenderer::RAYREND:
         if (ds->bufferPrecision == 32)
         {
-          ds->bufferPrecision = 16;
-          cerr << "Buffer precision set to 16bit" << endl;
-        }
-        else if (ds->bufferPrecision == 16)
-        {
           ds->bufferPrecision = 8;
-          cerr << "Buffer precision set to 8bit" << endl;
+          cerr << "Buffer precision set to 8 bit fixed point" << endl;
         }
         else
         {
           cerr << "Lowest precision reached" << endl;
         }
-      }
-      else
-      {
-        cerr << "Enable offscreen buffering to change visual precision" << endl;
-      }
+        break;
+      case vvRenderer::TEXREND:
+        if (ds->useOffscreenBuffer)
+        {
+          if (ds->bufferPrecision == 32)
+          {
+            ds->bufferPrecision = 16;
+            cerr << "Buffer precision set to 16bit" << endl;
+          }
+          else if (ds->bufferPrecision == 16)
+          {
+            ds->bufferPrecision = 8;
+            cerr << "Buffer precision set to 8bit" << endl;
+          }
+          else
+          {
+            cerr << "Lowest precision reached" << endl;
+          }
+        }
+        else
+        {
+          cerr << "Enable offscreen buffering to change visual precision" << endl;
+        }
+        break;
+      default:
+        break;
     }
     ds->renderer->setParameter(vvRenderer::VV_IMG_PRECISION, ds->bufferPrecision);
     break;
@@ -2487,6 +2499,9 @@ void vvView::displayHelpInfo()
   cerr << " 6  = Shear-warp (CPU)" << endl;
   cerr << " 7  = Shear-warp (GPU)" << endl;
   cerr << " 8  = Ray casting (GPU)" << endl;
+#ifdef HAVE_VOLPACK
+  cerr << " 9  = VolPack (CPU)" << endl;
+#endif
   cerr << endl;
   cerr << "-voxeltype <num>" << endl;
   cerr << " Select the default voxel type:" << endl;
@@ -2621,26 +2636,32 @@ bool vvView::parseCommandLine(int argc, char** argv)
       if(val >= 0 && val <= 5)
       {
         currentGeom = (vvTexRend::GeometryType)val;
-        softwareRenderer = cudaRenderer = rayRenderer = false;
+        setRendererType(vvRenderer::TEXREND);
       }
       else if(val == 6)
       {
-        softwareRenderer = true;
-        cudaRenderer = false;
-        rayRenderer = false;
+        if(perspectiveMode)
+          setRendererType(vvRenderer::SOFTPAR);
+        else
+          setRendererType(vvRenderer::SOFTPER);
       }
       else if(val == 7)
       {
-        softwareRenderer = false;
-        cudaRenderer = true;
-        rayRenderer = false;
+        if(perspectiveMode)
+          setRendererType(vvRenderer::CUDAPAR);
+        else
+          setRendererType(vvRenderer::CUDAPER);
       }
       else if(val == 8)
       {
-        softwareRenderer = false;
-        cudaRenderer = false;
-        rayRenderer = true;
+        setRendererType(vvRenderer::RAYREND);
       }
+#ifdef HAVE_VOLPACK
+      else if(val == 9)
+      {
+        setRendererType(vvRenderer::VOLPACK);
+      }
+#endif
       else
       {
         cerr << "Invalid geometry type." << endl;

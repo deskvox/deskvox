@@ -112,8 +112,7 @@ class vvView
     int   frame;                                ///< current animation frame
     vvTexRend::GeometryType currentGeom;        ///< current rendering geometry
     vvTexRend::VoxelType currentVoxels;         ///< current voxel type
-    bool  softwareRenderer;                     ///< true = use software renderer
-    bool  cudaRenderer;                         ///< true = use CUDA based renderer
+    int   rendererType;                         ///< current renderer type
     float bgColor[3];                           ///< background color (R,G,B in [0..1])
     float draftQuality;                         ///< current draft mode rendering quality (>0)
     float highQuality;                          ///< current high quality mode rendering quality (>0)
@@ -148,7 +147,6 @@ class vvView
     bool clipEditMode;                          ///< edit clip plane using keyboard
     float mvScale;                              ///< scale factor for the mv matrix to view the whole volume
     vvVector3 planeRot;                         ///< rotation of clipping plane normal
-    bool rayRenderer;
   public:
     vvView();
     ~vvView();
@@ -178,9 +176,7 @@ class vvView
     void setAnimationFrame(int);
     void initGraphics(int argc, char *argv[]);
     void createMenus();
-    void setSoftwareRenderer(bool enable);
-    void setCudaRenderer(bool enable);
-    void setRayRenderer(bool enable);
+    void setRendererType(vvRenderer::RendererType type);
     void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST,
                      std::vector<BrickList>* bricks = 0, const int maxBrickSizeX = 64,
                      const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);

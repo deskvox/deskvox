@@ -58,6 +58,7 @@ libvirvo_a_headers = \
         vvrendercontext.h \
         vvoffscreenbuffer.h \
         vvx11.h \
+	vvrendervp.h \
 	vvsoftimg.h \
 	vvsoftpar.h \
 	vvsoftper.h \
@@ -127,6 +128,10 @@ libvirvo_a_SOURCES = \
         vvmultirend/vvtexmultirend.cpp \
         vvmultirend/vvtexmultirendmngr.cpp
 
+if VOLPACK
+libvirvo_a_SOURCES += vvrendervp.cpp
+endif
+
 if CUDA
 libvirvo_a_SOURCES += \
 	vvcudasw.cu \
@@ -137,8 +142,8 @@ endif
 libvirvoincludedir = $(includedir)/virvo
 libvirvoinclude_HEADERS = $(libvirvo_a_headers) vvconfig.h
 
-INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(GLEW_INCLUDES) $(XLIBS_INCLUDES) $(STINGRAY_INCLUDES) $(PIC_FLAGS) $(CUDA_INCLUDES)
-LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(GLEW_LIBS) $(GL_LIBS) $(XLIBS_LIBS) $(STINGRAY_LIBS)
+INCLUDES=$(LIBVIRVO_CFLAGS) $(CG_INCLUDES) $(GLEW_INCLUDES) $(XLIBS_INCLUDES) $(STINGRAY_INCLUDES) $(VOLPACK_INCLUDES) $(PIC_FLAGS) $(CUDA_INCLUDES)
+LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(GLEW_LIBS) $(GL_LIBS) $(XLIBS_LIBS) $(STINGRAY_LIBS) $(VOLPACK_LIBS)
 
 BUILT_SOURCES=vvversioninfo.h
 
