@@ -647,6 +647,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   const int numCells[] = { 16, 16, 16 };
   setNumSpaceSkippingCells(numCells);
 #endif
+  d_spaceSkippingArray = 0;
 
   intImg = new vvCudaImg(0, 0);
 
