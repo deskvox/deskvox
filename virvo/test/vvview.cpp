@@ -2708,7 +2708,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cerr << "Quality missing." << endl;
         return false;
       }
-      ds->draftQuality = strtof(argv[arg], NULL);
+      ds->draftQuality = (float)strtod(argv[arg], NULL);
     }
     else if (vvToolshed::strCompare(argv[arg], "-dsp")==0)
     {
