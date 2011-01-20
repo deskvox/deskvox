@@ -938,9 +938,9 @@ bool vvToolshed::isFile(const char* filename)
 bool vvToolshed::isDirectory(const char* path)
 {
 #ifdef _WIN32
-  WIN32_FIND_DATA fileInfo;
+  WIN32_FIND_DATAA fileInfo;
   HANDLE found;
-  found = FindFirstFile((LPCWSTR)path, &fileInfo);
+  found = FindFirstFileA(path, &fileInfo);
   bool ret;
 
   if (found == INVALID_HANDLE_VALUE) return false;
@@ -2218,7 +2218,7 @@ void vvToolshed::getCurrentDirectory(char* path, int maxChars)
 {
   char* buf = new char[maxChars + 64];
 #ifdef _WIN32
-  GetCurrentDirectory(maxChars, (LPWSTR)buf);
+  GetCurrentDirectoryA(maxChars, buf);
 #else
   if(!getcwd(buf, maxChars))
      std::cerr << "vvToolshed::getCurrentDirectory failed: " << strerror(errno) << std::endl;
@@ -2232,7 +2232,7 @@ void vvToolshed::getCurrentDirectory(char* path, int maxChars)
 void vvToolshed::setCurrentDirectory(const char* path)
 {
 #ifdef _WIN32
-  SetCurrentDirectory((LPCWSTR)path);
+  SetCurrentDirectoryA(path);
 #else
   if(chdir(path) == -1)
      std::cerr << "vvToolshed::setCurrentDirectory failed: " << strerror(errno) << std::endl;
@@ -2248,7 +2248,7 @@ void vvToolshed::getProgramDirectory(char* path, int maxChars)
 {
 #ifdef _WIN32
   char* buf = new char[maxChars + 64];
-  GetModuleFileName(NULL, (LPWCH)buf, maxChars);
+  GetModuleFileNameA(NULL, buf, maxChars);
   extractDirname(path, buf);
 #elif _LINUX64BIT                               // This code unfortunately doesn't work under 32 bit
   struct load_module_desc desc;
@@ -2363,12 +2363,12 @@ float vvToolshed::interpolateLinear(float x1, float y1, float x2, float y2, floa
 bool vvToolshed::makeFileList(std::string& path, std::list<std::string>& fileNames, std::list<std::string>& folderNames)
 {
 #ifdef _WIN32
-  WIN32_FIND_DATA fileInfo;
+  WIN32_FIND_DATAA fileInfo;
   HANDLE fileHandle;
   string searchPath;
   
   searchPath = path + "\\*";
-  fileHandle = FindFirstFile((LPCWSTR)searchPath.c_str(), &fileInfo);
+  fileHandle = FindFirstFileA(searchPath.c_str(), &fileInfo);
   if (fileHandle == INVALID_HANDLE_VALUE) 
   {
     cerr << "FindFirstFile failed: " << GetLastError() << endl;
@@ -2379,14 +2379,14 @@ bool vvToolshed::makeFileList(std::string& path, std::list<std::string>& fileNam
     cerr << "file=" << fileInfo.cFileName << endl;
     if(fileInfo.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)
     {
-      folderNames.push_back((const std::string &)fileInfo.cFileName);
+      folderNames.push_back(fileInfo.cFileName);
     }
     else
     {
-      fileNames.push_back((const std::string &)fileInfo.cFileName);
+      fileNames.push_back(fileInfo.cFileName);
     }
   }
-  while (FindNextFile((HANDLE)fileHandle, &fileInfo));   // was another file found?
+  while (FindNextFileA(fileHandle, &fileInfo));   // was another file found?
   FindClose(fileHandle);
 #else
   DIR* dirHandle;

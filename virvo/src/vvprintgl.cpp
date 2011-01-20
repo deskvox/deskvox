@@ -73,7 +73,7 @@ vvPrintGL::vvPrintGL()
     CLIP_DEFAULT_PRECIS,                          // Clipping Precision
     ANTIALIASED_QUALITY,                          // Output Quality
     FF_DONTCARE|DEFAULT_PITCH,                    // Family And Pitch
-    (LPCWSTR)"Courier New");                               // Font Name
+    TEXT("Courier New"));                         // Font Name
 
   hDC = wglGetCurrentDC();
   SelectObject(hDC, font);                        // Selects The Font We Want

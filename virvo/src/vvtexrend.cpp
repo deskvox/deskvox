@@ -1335,8 +1335,8 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedWGLContexts()
     ZeroMemory(&WndClsEx, sizeof(WNDCLASSEX));
 
 
-    LPCTSTR ClsName = L"Virvo Multi-GPU Renderer";
-    LPCTSTR WndName = L"Debug Window";
+    LPCTSTR ClsName = TEXT("Virvo Multi-GPU Renderer");
+    LPCTSTR WndName = TEXT("Debug Window");
 
     WndClsEx.cbSize        = sizeof(WNDCLASSEX);
     WndClsEx.style         = CS_HREDRAW | CS_VREDRAW;
