@@ -21,6 +21,8 @@
 #ifndef _VVVIRVO_H_
 #define _VVVIRVO_H_
 
+#include "vvexport.h"
+
 /** \mainpage Virvo
   <DL>
     <DT><B>Functionality</B>         <DD>VIRVO stands for VIrtual Reality VOlume renderer.
@@ -51,10 +53,10 @@ and vvMatrix are components of vvVecmath, a useful library for linear algebra.
 #ifndef VV_COVISE
 namespace virvo
 {
-  const char* getSvnRevision();
-  const char* getVersionMajor();
-  const char* getReleaseCounter();
-  int getYearOfRelease();
+  VIRVOEXPORT const char* getSvnRevision();
+  VIRVOEXPORT const char* getVersionMajor();
+  VIRVOEXPORT const char* getReleaseCounter();
+  VIRVOEXPORT int getYearOfRelease();
 }
 #endif
 

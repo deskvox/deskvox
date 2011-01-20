@@ -23,7 +23,7 @@
  */
 struct ContextArchData;
 
-class vvRenderContext : public vvRenderTarget
+class VIRVOEXPORT vvRenderContext : public vvRenderTarget
 {
 public:
   vvRenderContext();
