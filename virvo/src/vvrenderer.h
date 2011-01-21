@@ -115,6 +115,7 @@ class VIRVOEXPORT vvRenderer
       VV_OPCORR = 0,                              ///< opacity correction on/off
       VV_SLICEINT,                                ///< interpolation within slice
       VV_WARPINT,                                 ///< interpolation during warp (shear-warp)
+      VV_INTERSLICEINT,                           ///< interpolation between slices
       VV_PREINT,                                  ///< pre-integration on/off
       VV_MIN_SLICE,                               ///< minimum slice index to render
       VV_MAX_SLICE,                               ///< maximum slice index to render
