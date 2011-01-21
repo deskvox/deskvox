@@ -1319,6 +1319,36 @@ vvTransFunc& vvTransFunc::operator=(vvTransFunc& rhs)
 }
 
 //----------------------------------------------------------------------------
+/** Compute a min/max table for the transfer function 
+ * the table contains the maximum opacity for each interval
+ @param width size of one edge of the allocated 2d minmax array
+ @param minmax 2d array (sized width^2) allocated by caller
+ @param min,max data range for color scheme
+*/
+void vvTransFunc::makeMinMaxTable(int width, uchar *minmax, float min, float max)
+{
+  // Generate arrays from pins:
+  float *rgba = new float[width * 4];
+  computeTFTexture(width, 1, 1, rgba, min, max);
+
+  for(int mn=0; mn<width; ++mn)
+  {
+    for(int mx=0; mx<width; ++mx)
+    {
+      float op = 0.f;
+      for(int i=mn; i<=mx; ++i)
+      {
+        if(rgba[i*4+3] > op)
+          op = rgba[i*4+3];
+      }
+      minmax[mn+width*mx] = op*255.99f;
+    }
+  }
+
+  delete[] rgba;
+}
+
+//----------------------------------------------------------------------------
 /** @set the transfer function type to LUT_1D and set LUT
  */
 /*
