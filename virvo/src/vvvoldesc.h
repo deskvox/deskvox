@@ -259,6 +259,7 @@ class VIRVOEXPORT vvVolDesc
     void computeTFTexture(int, int, int, float*);
     void makeLineTexture(DiagType, uchar, int, int, bool, vvArray<float*>, uchar*);
     void makeLineHistogram(int, int, vvArray<float*>, int*);
+    void computeMinMaxArrays(uchar *minArray, uchar *maxArray, int downsample, int channel=0, int frame=-1) const;
 
   private:
     char*  filename;                              ///< name of volume data file, including extension, excluding path ("" if undefined)

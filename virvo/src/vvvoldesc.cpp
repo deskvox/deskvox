@@ -5249,4 +5249,60 @@ void vvVolDesc::makeBinTexture(uchar* texture, int width)
   }
 }
 
+static const size_t index(int i, int j, int k, int d0, int d1, int d2)
+{
+  (void)d2;
+  return i+j*d0+k*d0*d1;
+}
+
+//----------------------------------------------------------------------------
+/** Create 2 arrays containing min and max for downsample^3 sized blocks
+ * memory has to be allocated by the user
+  @param minArray minimum data
+  @param maxArray maximum data
+  @param downsample edge length of block for which data is summarized
+  @param channel no. of channel to extract data from
+  @param frame no. of channel to extract data from
+*/
+void vvVolDesc::computeMinMaxArrays(uchar *minArray, uchar *maxArray, int downsample, int channel, int frame) const
+{
+  vvDebugMsg::msg(2, "vvVolDesc::computeMinMaxArrays()");
+
+  if(bpc != 1)
+    return;
+
+  const int v0 = (vox[0]+downsample-1)/downsample;
+  const int v1 = (vox[1]+downsample-1)/downsample;
+  const int v2 = (vox[2]+downsample-1)/downsample;
+
+  uchar *raw = const_cast<vvVolDesc *>(this)->getRaw(frame);
+  for(int k=0; k<vox[2]; k += downsample)
+  {
+    for(int j=0; j<vox[1]; j += downsample)
+    {
+      for(int i=0; i<vox[0]; i += downsample)
+      {
+        uchar cMin = 255, cMax = 0;
+        {
+          for(int kk=k; kk<vox[2] && kk<k+downsample; ++kk)
+            for(int jj=j; jj<vox[1] && jj<j+downsample; ++jj)
+            {
+              for(int ii=i; ii<vox[0] && ii<i+downsample; ++ii)
+              {
+                uchar v = raw[chan*index(ii, jj, kk, vox[0], vox[1], vox[2])+channel];
+                if(cMin > v)
+                  cMin = v;
+                if(cMax < v)
+                  cMax = v;
+              }
+            }
+        }
+        size_t idx = index(i/downsample, j/downsample, k/downsample, v0, v1, v2);
+        minArray[idx] = cMin;
+        maxArray[idx] = cMax;
+      }
+    }
+  }
+}
+
 ///// EOF /////
