@@ -36,6 +36,7 @@ using std::endl;
 
 const int MAX_SLICES = 1600;
 const int SliceStack = 32;
+const int SkipBlockSize = 16;
 
 __constant__ int   c_vox[5];
 __constant__ int2 c_start[MAX_SLICES];
@@ -114,6 +115,7 @@ texture<uchar, 3, cudaReadModeNormalizedFloat> tex_raw;
 #endif
 texture<uchar, 3, cudaReadModeNormalizedFloat> tex_min;
 texture<uchar, 3, cudaReadModeNormalizedFloat> tex_max;
+texture<uchar, 3, cudaReadModeNormalizedFloat> tex_opacity;
 
 #ifdef FLOATDATA
 typedef float Scalar;
@@ -286,6 +288,20 @@ __device__ float2 minmax(float x, float y, float z, int principal)
     return make_float2(-1.f, -1.f);
 }
 
+__device__ float opacity(float x, float y, float z, int principal)
+{
+    switch(principal)
+    {
+        case 0:
+            return tex3D(tex_opacity, 1.f-z, 1.f-x, y);
+        case 1:
+            return tex3D(tex_opacity, 1.f-y, z, 1.f-x);
+        case 2:
+            return tex3D(tex_opacity, x, y, z);
+    }
+    return -1.f;
+}
+
 __device__ float volume(float x, float y, float z, int principal)
 {
 #if VOLTEX3D==3
@@ -326,7 +342,7 @@ __device__ float volume(int px, int py, int slice, int principal)
 }
 #endif
 
-template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm>
+template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm, bool emptySpaceSkip>
 __global__ void compositeSlicesNearest(
       uchar4 * __restrict__ img, int width, int height,
       const Scalar * __restrict__ voxels, int pitch,
@@ -562,7 +578,7 @@ __device__ bool fullyInsideIntersection(int2 p1, int2 p2, int2 from1, int2 to1, 
 }
 
 #ifdef VOLTEX3D
-template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm, bool preInt>
+template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm, bool emptySpaceSkip, bool preInt>
 __global__ void compositeSlicesBilinear(
       uchar4 * __restrict__ img, int width, int height,
       const Scalar * __restrict__ voxels, int pitch,
@@ -786,7 +802,64 @@ __device__ float2 texcoord(int2 p, int slice)
             (p.y-c_start[slice].y)*c_tcStep[slice].y+c_tcStart[slice].y);
 }
 
-template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm, bool preInt>
+__device__ float3 texcoord(int2 p, int slice, int sliceStep, int principal)
+{
+    float z = sliceStep==1 ? 0.f : 1.f;
+#if VOLTEX3D==1
+    if(principal == 0)
+    {
+        z = sliceStep==1 ? 1.f : 0.f;
+    }
+#endif
+    return make_float3((p.x-c_start[slice].x)*c_tcStep[slice].x+c_tcStart[slice].x,
+            (p.y-c_start[slice].y)*c_tcStep[slice].y+c_tcStart[slice].y,
+#if VOLTEX3D==1
+            z - (principal==0 ? 1.f : -1.f) * c_zStep*slice
+#else
+            z - c_zStep*slice
+#endif
+            );
+}
+
+__device__ void advance(float3 &tc, const float3 &inc, int steps=1)
+{
+    tc.x += steps*inc.x;
+    tc.y += steps*inc.y;
+    tc.z += steps*inc.z;
+}
+
+__device__ bool skipIfPossible(float3 &tc, const float3 &inc, int check, int skip, int principal)
+{
+    float3 tcn = tc;
+    advance(tcn, inc, check);
+    bool canSkip = opacity(tcn.x, tcn.y, tcn.z, principal) < 0.001f;
+#ifdef BLOCKVOTE
+    __shared__ bool allSkip;
+    allSkip = true;
+    __syncthreads();
+    if(!canSkip)
+        allSkip = false;
+    __syncthreads();
+    if(allSkip)
+    {
+        advance(tc, inc, skip);
+    }
+    return allSkip;
+#else
+#if __CUDA_ARCH__ >=  130
+    if(__all(canSkip))
+#else
+    if(canSkip)
+#endif
+    {
+        advance(tc, inc, skip);
+        return true;
+    }
+    return false;
+#endif
+}
+
+template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm, bool emptySpaceSkip, bool preInt>
 __global__ void compositeSORC(
       uchar4 * __restrict__ img, int width, int height,
       const Scalar * __restrict__ voxels, int pitch,
@@ -797,26 +870,18 @@ __global__ void compositeSORC(
     int2 p(coord(from));
     const int unroll = 8;
 
-    float2 tc = texcoord(p, 0);
-    float2 tc_inc = texcoord(p, 1);
-    float z = sliceStep == -1 ? 1.f : 0.f;
-#if VOLTEX3D!=3
-    if(principal == 0)
-    {
-        z = sliceStep == -1 ? 0.f : 1.f;
-    }
-#endif
+    float3 tc = texcoord(p, 0, sliceStep, principal);
+    float3 tc_inc = texcoord(p, 1, sliceStep, principal);
     tc_inc.x -= tc.x;
     tc_inc.y -= tc.y;
+    tc_inc.z -= tc.z;
     tc_inc.x *= scale;
     tc_inc.y *= scale;
 
-    float3 orig = make_float3(tc.x, tc.y, z);
-    float3 dir = make_float3(tc_inc.x, tc_inc.y, -c_zStep);
-    float tnear, tfar;
-    bool isect = intersectTexCube(orig, dir, &tnear, &tfar);
+    const int maxSkip = ((nslice/(c_vox[principal]/SkipBlockSize+1))/unroll*unroll)/2;
 
-    if(!isect)
+    float tnear, tfar;
+    if(!intersectTexCube(tc, tc_inc, &tnear, &tfar))
     {
         // copy pixel to intermediate image
         if(p.x >= from.x && p.x < to.x && p.y >= from.y && p.y < to.y)
@@ -827,18 +892,14 @@ __global__ void compositeSORC(
         return;
     }
 
-    int slstart = 0;
-    int slstop = nslice;
-
-#if 1
     int2 c[4];
     c[0] = coordMin(from);
     c[1] = coordMax(from);
     c[2] = coordMin(from); c[2].x = c[1].x;
     c[3] = coordMax(from); c[3].x = c[0].x;
 
-    slstart = nslice;
-    slstop = 0;
+    int slstart = nslice;
+    int slstop = 0;
     int unistop = nslice;
     int unistart = 0;
     int nisect = 0;
@@ -850,11 +911,10 @@ __global__ void compositeSORC(
         tc1_inc.y -= tc1.y;
         tc1_inc.x *= scale;
         tc1_inc.y *= scale;
-        float3 orig1 = make_float3(tc1.x, tc1.y, z);
+        float3 orig1 = make_float3(tc1.x, tc1.y, tc.z);
         float3 dir1 = make_float3(tc1_inc.x, tc1_inc.y, -c_zStep);
         float tnear1, tfar1;
-        bool isect1 = intersectTexCube(orig1, dir1, &tnear1, &tfar1);
-        if(isect1)
+        if(intersectTexCube(orig1, dir1, &tnear1, &tfar1))
         {
             ++nisect;
             slstart = fminf(tnear1, slstart);
@@ -886,65 +946,50 @@ __global__ void compositeSORC(
         unistart=nslice;
         unistop=nslice;
     }
+    advance(tc, tc_inc, slstart);
 
-    z -= slstart* c_zStep;
-    tc.x += slstart*tc_inc.x;
-    tc.y += slstart*tc_inc.y;
-#else
-    float3 orig = make_float3(tc.x, tc.y, z);
-    float3 dir = make_float3(tc_inc.x, tc_inc.y, -c_zStep);
-    float tnear, tfar;
-    bool isect = intersectTexCube(orig, dir, &tnear, &tfar);
-
-    if(!isect)
-        return;
-
-    slstart=tnear;
-    z -= slstart* c_zStep;
-    tc.x += slstart*tc_inc.x;
-    tc.y += slstart*tc_inc.y;
-    slstop=tfar;
-#endif
-
+    // non-uniform part at volume entry
     for(int sl=slstart; sl<unistart; ++sl)
     {
         if(earlyRayTerm && isOpaque(ray.d))
-            break;;
+            break;
+
+        int leap = min(2*maxSkip, unistart-sl);
+        if(emptySpaceSkip && leap>0 && skipIfPossible(tc, tc_inc, maxSkip, leap, principal))
+        {
+            sl += leap-1;
+            continue;
+        }
 
         if(tc.x >= 0.f && tc.x < 1.f
                 && tc.y >= 0.f && tc.y < 1.f)
-            ray.accumulate(tc.x, tc.y, z);
-
-        tc.x += tc_inc.x;
-        tc.y += tc_inc.y;
-#if VOLTEX3D != 3
-        if(principal == 0)
-            z += c_zStep;
-        else
-#endif
-            z -= c_zStep;
+        {
+            ray.accumulate(tc.x, tc.y, tc.z);
+        }
+        advance(tc, tc_inc);
     }
 
+    // uniform part where all rays are inside the volume
     for(int sl=unistart; sl<unistop; sl+=unroll)
     {
         if(earlyRayTerm && isOpaque(ray.d))
             break;
+
+        if(emptySpaceSkip && maxSkip>=unroll && skipIfPossible(tc, tc_inc, maxSkip, 2*maxSkip, principal))
+        {
+            sl += 2*maxSkip-unroll;
+            continue;
+        }
+
 #pragma unroll 8
         for(int ssl=0; ssl<unroll; ++ssl)
         {
-            ray.accumulate(tc.x, tc.y, z);
-
-            tc.x += tc_inc.x;
-            tc.y += tc_inc.y;
-#if VOLTEX3D != 3
-            if(principal == 0)
-                z += c_zStep;
-            else
-#endif
-                z -= c_zStep;
+            ray.accumulate(tc.x, tc.y, tc.z);
+            advance(tc, tc_inc);
         }
     }
 
+    // non-uniform part where rays exit the volume
     for(int sl=unistop; sl<slstop; ++sl)
     {
         if(earlyRayTerm && isOpaque(ray.d))
@@ -952,16 +997,11 @@ __global__ void compositeSORC(
 
         if(tc.x >= 0.f && tc.x < 1.f
                 && tc.y >= 0.f && tc.y < 1.f)
-            ray.accumulate(tc.x, tc.y, z);
+        {
+            ray.accumulate(tc.x, tc.y, tc.z);
+        }
 
-        tc.x += tc_inc.x;
-        tc.y += tc_inc.y;
-#if VOLTEX3D != 3
-        if(principal == 0)
-            z += c_zStep;
-        else
-#endif
-            z -= c_zStep;
+        advance(tc, tc_inc);
     }
 
     // copy pixel to intermediate image
@@ -1225,44 +1265,52 @@ void vvCudaSW<Base>::freePreInt()
 template<class Base>
 bool vvCudaSW<Base>::initMinMax()
 {
-   uchar *minArr = NULL, *maxArr = NULL;
    bool ok = true;
+   h_minarr = NULL;
+   h_maxarr = NULL;
    if(Base::vd->bpc == 1)
    {
-       const int ds = 16; // downsampling factor
+       const int ds = SkipBlockSize; // downsampling factor
        int vox[3];
        for(int i=0; i<3; ++i)
            vox[i] = (Base::vd->vox[i]+ds-1)/ds;
 
-       minArr = new uchar[vox[0]*vox[1]*vox[2]];
-       maxArr = new uchar[vox[0]*vox[1]*vox[2]];
+       h_minarr = new uchar[vox[0]*vox[1]*vox[2]];
+       h_maxarr = new uchar[vox[0]*vox[1]*vox[2]];
+       h_minmaxTable = new uchar[Base::getLUTSize()*Base::getLUTSize()];
 
-       Base::vd->computeMinMaxArrays(minArr, maxArr, ds);
+       Base::vd->computeMinMaxArrays(h_minarr, h_maxarr, ds);
        cudaExtent extent = make_cudaExtent(vox[0], vox[1], vox[2]);
        cudaChannelFormatDesc desc = cudaCreateChannelDesc<uchar>();
        vvCuda::checkError(&ok,
                cudaMalloc3DArray(&d_minarr, &desc, extent, 0), "cudaMalloc3DArray min");
        vvCuda::checkError(&ok,
                cudaMalloc3DArray(&d_maxarr, &desc, extent, 0), "cudaMalloc3DArray max");
+       vvCuda::checkError(&ok,
+               cudaMalloc3DArray(&d_oparr, &desc, extent, 0), "cudaMalloc3DArray opacity");
        cudaMemcpy3DParms parms = {0};
        parms.kind = cudaMemcpyHostToDevice;
        parms.extent = make_cudaExtent(vox[0], vox[1], vox[2]);
-       parms.srcPtr = make_cudaPitchedPtr(minArr, vox[0], vox[0], vox[1]);
+       parms.srcPtr = make_cudaPitchedPtr(h_minarr, vox[0], vox[0], vox[1]);
        parms.dstArray = d_minarr;
        vvCuda::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D min");
-       parms.srcPtr = make_cudaPitchedPtr(maxArr, vox[0], vox[0], vox[1]);
+       parms.srcPtr = make_cudaPitchedPtr(h_maxarr, vox[0], vox[0], vox[1]);
        parms.dstArray = d_maxarr;
        vvCuda::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D max");
-
-       delete[] minArr;
-       delete[] maxArr;
-       minArr = NULL;
-       maxArr = NULL;
    }
 
    // min-max-table
    cudaChannelFormatDesc descMinMaxTable = cudaCreateChannelDesc<uchar>();
    vvCuda::checkError(&ok, cudaMallocArray(&d_minmaxTable, &descMinMaxTable, Base::getLUTSize(), Base::getLUTSize()), "cudaMalloc minmax");
+   tex_minmaxTable.normalized = true;
+   tex_minmaxTable.filterMode = cudaFilterModePoint;
+   tex_minmaxTable.addressMode[0] = cudaAddressModeClamp;
+   tex_minmaxTable.addressMode[1] = cudaAddressModeClamp;
+   vvCuda::checkError(&ok, cudaBindTextureToArray(tex_minmaxTable, d_minmaxTable, descMinMaxTable), "bind minmax tex");
+
+   // opacity texture
+   cudaChannelFormatDesc descOpacityTable = cudaCreateChannelDesc<uchar>();
+   vvCuda::checkError(&ok, cudaMallocArray(&d_minmaxTable, &descOpacityTable, Base::getLUTSize(), Base::getLUTSize()), "cudaMalloc minmax");
    tex_minmaxTable.normalized = true;
    tex_minmaxTable.filterMode = cudaFilterModePoint;
    tex_minmaxTable.addressMode[0] = cudaAddressModeClamp;
@@ -1275,10 +1323,15 @@ bool vvCudaSW<Base>::initMinMax()
 template<class Base>
 void vvCudaSW<Base>::freeMinMax()
 {
-   cudaUnbindTexture(tex_minmaxTable);
-   cudaFree(d_minmaxTable);
-   cudaFree(d_minarr);
-   cudaFree(d_maxarr);
+    delete[] h_minarr;
+    delete[] h_maxarr;
+    delete[] h_minmaxTable;
+
+    cudaUnbindTexture(tex_minmaxTable);
+    cudaFree(d_minmaxTable);
+    cudaFree(d_minarr);
+    cudaFree(d_maxarr);
+    cudaFree(d_oparr);
 }
 
 template<class Base>
@@ -1358,11 +1411,11 @@ void vvCudaSW<Base>::updateLUT(float dist)
     }
 
     // update min-max-table
-    uchar *minmax = new uchar[lutEntries*lutEntries];
-    Base::vd->tf.makeMinMaxTable(lutEntries, minmax);
-    vvCuda::checkError(NULL, cudaMemcpyToArray(d_minmaxTable, 0, 0, minmax,
+    Base::vd->tf.makeMinMaxTable(lutEntries, h_minmaxTable);
+    vvCuda::checkError(NULL, cudaMemcpyToArray(d_minmaxTable, 0, 0, h_minmaxTable,
                 lutEntries*lutEntries, cudaMemcpyHostToDevice), "cudaMemcpy minmax");
-    delete[] minmax;
+
+    updateOpacityMap();
 
     // Make pre-integrated LUT:
     if (Base::preIntegration)
@@ -1379,39 +1432,99 @@ void vvCudaSW<Base>::updateLUT(float dist)
     }
 }
 
-template<class Base, typename Pixel, int principal, int sliceStep, bool earlyRayTerm>
+template<class Base>
+bool vvCudaSW<Base>::updateOpacityMap()
+{
+    bool ok = true;
+
+    if(Base::vd->bpc == 1)
+    {
+        const int lutSize = Base::getLUTSize();
+        const int ds = SkipBlockSize; // downsampling factor
+        int vox[3];
+        for(int i=0; i<3; ++i)
+            vox[i] = (Base::vd->vox[i]+ds-1)/ds;
+
+        uchar *oparr = new uchar[vox[0]*vox[1]*vox[2]];
+        for(int i=0; i<vox[0]*vox[1]*vox[2]; ++i)
+        {
+            oparr[i] = h_minmaxTable[h_minarr[i] + lutSize * h_maxarr[i]] > 0 ? 255 : 0;
+        }
+
+        cudaExtent extent = make_cudaExtent(vox[0], vox[1], vox[2]);
+        cudaChannelFormatDesc desc = cudaCreateChannelDesc<uchar>();
+#if 0
+        vvCuda::checkError(&ok,
+                cudaMalloc3DArray(&d_oparr, &desc, extent, 0), "cudaMalloc3DArray opacity");
+#endif
+        cudaMemcpy3DParms parms = {0};
+        parms.kind = cudaMemcpyHostToDevice;
+        parms.extent = make_cudaExtent(vox[0], vox[1], vox[2]);
+        parms.srcPtr = make_cudaPitchedPtr(oparr, vox[0], vox[0], vox[1]);
+        parms.dstArray = d_oparr;
+        vvCuda::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D opacity");
+
+        delete[] oparr;
+    }
+    else
+    {
+        ok = false;
+    }
+
+    // opacity texture
+    cudaChannelFormatDesc descOpacityTable = cudaCreateChannelDesc<uchar>();
+    tex_opacity.normalized = true;
+    tex_opacity.filterMode = cudaFilterModeLinear;
+    tex_opacity.addressMode[0] = cudaAddressModeClamp;
+    tex_opacity.addressMode[1] = cudaAddressModeClamp;
+    tex_opacity.addressMode[2] = cudaAddressModeClamp;
+    vvCuda::checkError(&ok, cudaBindTextureToArray(tex_opacity, d_oparr, descOpacityTable), "bind opacity tex");
+
+    return ok;
+}
+
+template<class Base, typename Pixel, int principal, int sliceStep, bool earlyRayTerm, bool emptySpaceSkip>
 CompositionFunction selectComposition(vvCudaSW<Base> *rend)
 {
     switch(selectKernelType(rend))
     {
         case KernelNearest:
             if(rend->getRendererType() == vvRenderer::CUDAPAR)
-                return compositeSlicesNearest<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm>;
+                return compositeSlicesNearest<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, emptySpaceSkip>;
             break;
 #ifdef VOLTEX3D
         case KernelBilinear:
             if(rend->getPreIntegration())
-                return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, true>;
+                return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, emptySpaceSkip, true>;
             else
-                return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, false>;
+                return compositeSlicesBilinear<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, emptySpaceSkip, false>;
         case KernelRaycast:
             if(rend->getPreIntegration())
-                return compositeSORC<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, true>;
+                return compositeSORC<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, emptySpaceSkip, true>;
             else
-                return compositeSORC<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, false>;
+                return compositeSORC<Scalar, 1, Pixel, sliceStep, principal, earlyRayTerm, emptySpaceSkip, false>;
 #endif
     }
 
     return NULL;
 }
 
+template<class Base, typename Pixel, int principal, int sliceStep, bool ert>
+CompositionFunction selectCompositionWithEmptySpaceSkipping(vvCudaSW<Base> *rend)
+{
+    if(rend->getEmptySpaceLeaping())
+        return selectComposition<Base, Pixel, principal, sliceStep, ert, true>(rend);
+    else
+        return selectComposition<Base, Pixel, principal, sliceStep, ert, false>(rend);
+}
+
 template<class Base, typename Pixel, int principal, int sliceStep>
 CompositionFunction selectCompositionWithEarlyTermination(vvCudaSW<Base> *rend)
 {
     if(rend->getEarlyRayTerm())
-        return selectComposition<Base, Pixel, principal, sliceStep, true>(rend);
+        return selectCompositionWithEmptySpaceSkipping<Base, Pixel, principal, sliceStep, true>(rend);
     else
-        return selectComposition<Base, Pixel, principal, sliceStep, false>(rend);
+        return selectCompositionWithEmptySpaceSkipping<Base, Pixel, principal, sliceStep, false>(rend);
 }
 
 template<class Base, typename Pixel, int principal>
@@ -1909,6 +2022,9 @@ void vvCudaSW<Base>::setParameter(typename Base::ParameterType param, float val,
         case Base::VV_TERMINATEEARLY:
             earlyRayTerm = (val != 0.f);
             break;
+        case Base::VV_LEAPEMPTY:
+            emptySpaceSkip = (val != 0.f);
+            break;
         case Base::VV_INTERSLICEINT:
             interSliceInt = (val != 0.f);
             break;
@@ -1928,6 +2044,8 @@ float vvCudaSW<Base>::getParameter(typename Base::ParameterType param, char *cva
             return imagePrecision;
         case Base::VV_TERMINATEEARLY:
             return (earlyRayTerm ? 1.f : 0.f);
+        case Base::VV_LEAPEMPTY:
+            return (emptySpaceSkip ? 1.f : 0.f);
         case Base::VV_INTERSLICEINT:
             return (interSliceInt ? 1.f : 0.f);
         default:

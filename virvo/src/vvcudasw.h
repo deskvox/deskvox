@@ -54,15 +54,19 @@ class VIRVOEXPORT vvCudaSW : public Base
       cudaArray *d_voxarr[3]; ///< device storage for voxel data (3d texture)
       cudaArray *d_minarr; ///< device storage for min data (3d texture)
       cudaArray *d_maxarr; ///< device storage for max data (3d texture)
+      cudaArray *d_oparr; ///< device storage for max data (3d texture)
       cudaArray *d_minmaxTable; ///< device storage for min/max table (2d texture)
       cudaPitchedPtr d_voxptr[3]; ///< device storage for voxel data (pitched)
       uchar *d_voxels; ///< device storage for voxel data (linear array)
       uchar4 *d_tf; ///< device storage for transfer function
       cudaArray *d_preint; ///< device storage for pre-integration table
       bool earlyRayTerm; ///< true = approximate early ray termination
+      bool emptySpaceSkip; ///< true = try to skip empty voxels
       bool interSliceInt; ///< true = tri-linear inter-slice interpolation
       int imagePrecision; ///< number of bits per pixel component used during compositing
       float oldLutDist;
+      uchar *h_minarr, *h_maxarr;
+      uchar *h_minmaxTable;
 
       float *fraw[3]; ///< pointer to voxel data converted to floating point
 
@@ -85,6 +89,8 @@ class VIRVOEXPORT vvCudaSW : public Base
       bool compositeBilinear(int fromY, int toY, int firstSlice, int lastSlice, int sliceStep);
       bool compositeRaycast(int fromY, int toY, int firstSlice, int lastSlice, int sliceStep);
 
+      bool updateOpacityMap();
+
    protected:
       virtual void updateLUT(float dist);
       virtual void findAxisRepresentations();
@@ -103,6 +109,7 @@ class VIRVOEXPORT vvCudaSW : public Base
       bool getSliceInterpol() const { return Base::sliceInterpol; }
       bool getInterSliceInterpol() const { return interSliceInt; }
       bool getEarlyRayTerm() const { return earlyRayTerm; }
+      bool getEmptySpaceLeaping() const { return emptySpaceSkip; }
       int getPrecision() const { return imagePrecision; }
 };
 
