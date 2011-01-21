@@ -6,7 +6,7 @@
 #include "vvconfig.h"
 #endif
 
-#if 1//defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
 #include "vvglew.h"
 
@@ -702,6 +702,22 @@ renderKernel getKernelWithBpc(vvRayRend* rayRend)
   }
 }
 
+renderKernel getKernel(vvRayRend* rayRend)
+{
+  if (rayRend->getVolDesc()->bpc == 1)
+  {
+    return getKernelWithBpc<1>(rayRend);
+  }
+  else if (rayRend->getVolDesc()->bpc == 2)
+  {
+    return getKernelWithBpc<2>(rayRend);
+  }
+  else
+  {
+    return getKernelWithBpc<1>(rayRend);
+  }
+}
+
 vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvSoftVR(vd, renderState)
 {
@@ -909,15 +925,7 @@ void vvRayRend::compositeVolume(int, int)
   glGetFloatv(GL_COLOR_CLEAR_VALUE, bgcolor);
   float4 backgroundColor = make_float4(bgcolor[0], bgcolor[1], bgcolor[2], bgcolor[3]);
 
-  renderKernel kernel = NULL;
-  if (vd->bpc == 1)
-  {
-    kernel = getKernelWithBpc<1>(this);
-  }
-  else if (vd->bpc == 2)
-  {
-    kernel = getKernelWithBpc<2>(this);
-  }
+  renderKernel kernel = getKernel(this);
 
   if (kernel != NULL)
   {
