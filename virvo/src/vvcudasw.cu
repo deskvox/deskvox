@@ -52,19 +52,25 @@ static float h_tc3[MAX_SLICES];
 const int MaxCompositeSlices = MAX_SLICES;
 
 const int nthreads = 128;
+const dim3 Patch(16, 16);
 
+#define PATCHES
 //#define NOSHMEM
 //#define SHMCLASS
 //#define NOOP
 //#define NOLOAD
 //#define NODISPLAY
 //#define SHMLOAD
-#define VOLTEX3D 1 // undef, 1 or 3
+#define VOLTEX3D 3 // undef, 1 or 3
 //#define PITCHED
 //#define FLOATDATA
 //#define CONSTLOAD
 //#define THREADPERVOXEL
 //#define CONSTDATA
+
+#ifdef PATCHES
+#define NOSHMEM
+#endif
 
 #ifdef VOLTEX3D
 #undef PITCHED
@@ -125,18 +131,23 @@ typedef void (*CompositionFunction)(
 // device code (CUDA)
 //----------------------------------------------------------------------------
 
+__device__ int2 coord(int from)
+{
+    return make_int2(threadIdx.x + blockDim.x*blockIdx.x,
+            threadIdx.y + blockDim.y*blockIdx.y + from);
+}
+
 __global__ void clearImage(uchar4 * __restrict__ img, int width, int height,
       int from, int to)
 {
-    const int line = blockIdx.x+from;
-    if (line >= to)
+    const int2 p = coord(from);
+    if (p.y >= to)
+        return;
+    if (p.x >= width)
         return;
 
-    for (int ix=threadIdx.x; ix<width; ix+=blockDim.x)
-    {
-        uchar4 *dest = img + line*width+ix;
-        *dest = make_uchar4(0, 0, 0, 0);
-    }
+    uchar4 *dest = img + p.y*width+p.x;
+    *dest = make_uchar4(0, 0, 0, 0);
 }
 
 __device__ void blend(uchar4 *dst, float4 src)
@@ -398,6 +409,72 @@ __global__ void compositeSlicesBilinear(
       int firstSlice, int lastSlice,
       int from, int to)
 {
+#ifdef PATCHES
+    const int2 p = coord(from);
+    Pixel d;
+    initPixel(&d);
+    float sf = -1.f;
+
+    // composite slices for this image line
+    for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
+    {
+        if(earlyRayTerm && isOpaque(d))
+            break;
+
+        // compute upper left image corner
+        const int iPosY = c_start[slice].y;
+
+        const int iPosX = c_start[slice].x;
+        const int endX = c_stop[slice].x;
+
+        if(p.y < iPosY)
+            continue;
+        if(p.y >= c_stop[slice].y)
+            continue;
+
+        // Traverse intermediate image pixels which correspond to the current slice.
+        // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
+        if(p.x<iPosX)
+            continue;
+        if(p.x>=endX)
+            continue;
+
+        const int vidx = p.x - iPosX;
+
+        if(preInt)
+        {
+            const float sb = volume(vidx, p.y-iPosY, slice, principal);
+            if(sf >= 0.f)
+            {
+                const float4 c = tex2D(tex_preint, sf, sb);
+
+                // blend
+                const float w = d.w*c.w;
+                d.x += w*c.x;
+                d.y += w*c.y;
+                d.z += w*c.z;
+                d.w -= w;
+            }
+            sf = sb;
+        }
+        else
+        {
+            const float v = volume(vidx, p.y-iPosY, slice, principal);
+            const float4 c = classify<float4>(v);
+
+            // blend
+            const float w = d.w*c.w;
+            d.x += w*c.x;
+            d.y += w*c.y;
+            d.z += w*c.z;
+            d.w -= w;
+        }
+    }
+
+    // copy pixel to intermediate image
+    uchar4 *dest = img + p.y*width+p.x;
+    blend(dest, d);
+#else
     // this block's line from the intermediate image
     const int line = blockIdx.x+from;
     if (line >= to)
@@ -555,6 +632,7 @@ __global__ void compositeSlicesBilinear(
         uchar4 *dest = img + line*width+ix;
         blend(dest, imgLine[ix]);
     }
+#endif
 #endif
 }
 #endif
@@ -1009,7 +1087,8 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
 #endif
 
    uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDImg();
-   clearImage <<<to-from, nthreads>>>(d_img, Base::intImg->width, Base::intImg->height, from, to);
+   dim3 grid((Base::intImg->width+Patch.x-1)/Patch.x, (to-from+Patch.y-1)/Patch.y);
+   clearImage <<<grid, Patch>>>(d_img, Base::intImg->width, Base::intImg->height, from, to);
 
    if(CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep))
    {
@@ -1018,13 +1097,13 @@ void vvCudaSW<Base>::compositeVolume(int from, int to)
        {
            cudaThreadSynchronize();
 #ifdef PITCHED
-           compose <<<to-from, nthreads, shmsize>>>(
+           compose <<<grid, Patch, shmsize>>>(
                    d_img, Base::intImg->width, Base::intImg->height,
                    d_voxptr[principal],
                    sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
                    from, to);
 #else
-           compose <<<to-from, nthreads, shmsize>>>(
+           compose <<<grid, Patch, shmsize>>>(
                    d_img, Base::intImg->width, Base::intImg->height,
                    (Scalar *)(d_voxels+sizeof(Scalar)*Base::vd->getBPV()*Base::principal*(Base::vd->vox[0]*Base::vd->vox[1]*Base::vd->vox[2])),
                    sliceStep*max(sliceStep*i-MaxCompositeSlices, sliceStep*firstSlice), i,
