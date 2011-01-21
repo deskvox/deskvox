@@ -35,6 +35,7 @@ using std::endl;
 #include "vvcudasw.h"
 
 const int MAX_SLICES = 1600;
+const int SliceStack = 32;
 
 __constant__ int   c_vox[5];
 __constant__ int2 c_start[MAX_SLICES];
@@ -55,6 +56,7 @@ const int nthreads = 128;
 const dim3 Patch(16, 16);
 
 #define PATCHES
+#define UNROLL
 //#define NOSHMEM
 //#define SHMCLASS
 //#define NOOP
@@ -398,6 +400,80 @@ __global__ void compositeSlicesNearest(
 }
 
 
+template<typename Pixel, int principal, bool preInt>
+struct Ray
+{
+};
+
+template<typename Pixel, int principal>
+struct Ray<Pixel, principal, false>
+{
+    Pixel d;
+
+    __device__ Ray()
+    {
+        initPixel(&d);
+    }
+
+    __device__ void accumulate(int x, int y, int z)
+    {
+        const float v = volume(x, y, z, principal);
+        const float4 c = classify<float4>(v);
+
+        // blend
+        const float w = d.w*c.w;
+        d.x += w*c.x;
+        d.y += w*c.y;
+        d.z += w*c.z;
+        d.w -= w;
+    }
+};
+
+template<typename Pixel, int principal>
+struct Ray<Pixel, principal, true>
+{
+    Pixel d;
+    float sf;
+
+    __device__ Ray()
+        : sf(-1.f)
+    {
+        initPixel(&d);
+    }
+
+    __device__ void accumulate(int x, int y, int z)
+    {
+        const float sb = volume(x, y, z, principal);
+        if(sf >= 0.f)
+        {
+            const float4 c = tex2D(tex_preint, sf, sb);
+            // blend
+            const float w = d.w*c.w;
+            d.x += w*c.x;
+            d.y += w*c.y;
+            d.z += w*c.z;
+            d.w -= w;
+        }
+        sf = sb;
+    }
+};
+
+__device__ bool outsideBounds(int2 p, int2 from1, int2 to1, int2 from2, int2 to2)
+{
+    return (p.x < from1.x && p.x < from2.x)
+        || (p.y < from1.y && p.y < from2.y)
+        || (p.x >= to1.x && p.x >= to2.x)
+        || (p.y >= to1.y && p.y >= to2.y);
+}
+
+__device__ bool fullyInsideIntersection(int2 p1, int2 p2, int2 from1, int2 to1, int2 from2, int2 to2)
+{
+    return p1.x >= from1.x && p1.x >= from2.x
+        && p1.y >= from1.y && p1.y >= from2.y
+        && p2.x < to1.x && p2.x < to2.x
+        && p2.y < to1.y && p2.y < to2.y;
+}
+
 #ifdef VOLTEX3D
 template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm, bool preInt>
 __global__ void compositeSlicesBilinear(
@@ -411,64 +487,74 @@ __global__ void compositeSlicesBilinear(
       int2 from, int2 to)
 {
 #ifdef PATCHES
-    const int2 p = coord(from);
-    Pixel d;
-    initPixel(&d);
-    float sf = -1.f;
+    Ray<Pixel, principal, preInt> ray;
+    int2 p(coord(from));
 
     // composite slices for this image line
-    for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
+    for (int sliceb=firstSlice; sliceStep>0 ? sliceb<lastSlice : sliceb>lastSlice; sliceb += sliceStep*SliceStack)
     {
-        if(earlyRayTerm && isOpaque(d))
+        if(earlyRayTerm && isOpaque(ray.d))
             break;
 
-        // compute upper left image corner
-        const int iPosY = c_start[slice].y;
+        int last = lastSlice;
+        if(sliceStep > 0 && last>sliceb+SliceStack)
+            last = sliceb+SliceStack;
+        if(sliceStep < 0 && last<sliceb-SliceStack)
+            last = sliceb-SliceStack;
 
-        const int iPosX = c_start[slice].x;
-        const int endX = c_stop[slice].x;
-
-        if(p.y < iPosY)
-            continue;
-        if(p.y >= c_stop[slice].y)
-            continue;
-
-        // Traverse intermediate image pixels which correspond to the current slice.
-        // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
-        if(p.x<iPosX)
-            continue;
-        if(p.x>=endX)
+        if(outsideBounds(p, c_start[sliceb], c_stop[sliceb],
+                    c_start[last-sliceStep], c_stop[last-sliceStep]))
             continue;
 
-        const int vidx = p.x - iPosX;
-
-        if(preInt)
+#ifdef UNROLL
+        const int2 p1 = make_int2(blockDim.x*blockIdx.x+from.x,
+                blockDim.y*blockIdx.y+from.y);
+        const int2 p2 = make_int2(blockDim.x*blockIdx.x+from.x+blockDim.x-1,
+                blockDim.y*blockIdx.y+from.y+blockDim.y-1);
+        if(fullyInsideIntersection(p1, p2,
+                    c_start[sliceb], c_stop[sliceb],
+                    c_start[last-sliceStep], c_stop[last-sliceStep]))
         {
-            const float sb = volume(vidx, p.y-iPosY, slice, principal);
-            if(sf >= 0.f)
+#pragma unroll 4
+            for (int slice=sliceb; sliceStep>0 ? slice<last : slice>last; slice += sliceStep)
             {
-                const float4 c = tex2D(tex_preint, sf, sb);
 
-                // blend
-                const float w = d.w*c.w;
-                d.x += w*c.x;
-                d.y += w*c.y;
-                d.z += w*c.z;
-                d.w -= w;
+                // compute upper left image corner
+                const int iPosY = c_start[slice].y;
+                const int iPosX = c_start[slice].x;
+                const int vidx = p.x - iPosX;
+                ray.accumulate(vidx, p.y-iPosY, slice);
             }
-            sf = sb;
         }
         else
+#endif
         {
-            const float v = volume(vidx, p.y-iPosY, slice, principal);
-            const float4 c = classify<float4>(v);
+            for (int slice=sliceb; sliceStep>0 ? slice<last : slice>last; slice += sliceStep)
+            {
+                if(earlyRayTerm && isOpaque(ray.d))
+                    break;
 
-            // blend
-            const float w = d.w*c.w;
-            d.x += w*c.x;
-            d.y += w*c.y;
-            d.z += w*c.z;
-            d.w -= w;
+                // compute upper left image corner
+                const int iPosY = c_start[slice].y;
+
+                const int iPosX = c_start[slice].x;
+                const int endX = c_stop[slice].x;
+
+                if(p.y < iPosY)
+                    continue;
+                if(p.y >= c_stop[slice].y)
+                    continue;
+
+                // Traverse intermediate image pixels which correspond to the current slice.
+                // 1 is subtracted from each loop counter to remain inside of the volume boundaries:
+                if(p.x<iPosX)
+                    continue;
+                if(p.x>=endX)
+                    continue;
+
+                const int vidx = p.x - iPosX;
+                ray.accumulate(vidx, p.y-iPosY, slice);
+            }
         }
     }
 
@@ -476,7 +562,7 @@ __global__ void compositeSlicesBilinear(
     if(p.x >= from.x && p.x < to.x && p.y >= from.y && p.y < to.y)
     {
         uchar4 *dest = img + p.y*width+p.x;
-        blend(dest, d);
+        blend(dest, ray.d);
     }
 #else
     // this block's line from the intermediate image
@@ -487,14 +573,12 @@ __global__ void compositeSlicesBilinear(
 #ifdef NOSHMEM
     for (int ix=threadIdx.x+from.x; ix<to.x; ix+=blockDim.x)
     {
-        Pixel d;
-        initPixel(&d);
-        float sf = -1.f;
+        Ray<Pixel, principal, preInt> ray;
 
         // composite slices for this image line
         for (int slice=firstSlice; slice!=lastSlice; slice += sliceStep)
         {
-            if(earlyRayTerm && isOpaque(d))
+            if(earlyRayTerm && isOpaque(ray.d))
                 break;
 
             // compute upper left image corner
@@ -516,40 +600,12 @@ __global__ void compositeSlicesBilinear(
                 continue;
 
             const int vidx = ix - iPosX;
-
-            if(preInt)
-            {
-                const float sb = volume(vidx, line-iPosY, slice, principal);
-                if(sf >= 0.f)
-                {
-                    const float4 c = tex2D(tex_preint, sf, sb);
-
-                    // blend
-                    const float w = d.w*c.w;
-                    d.x += w*c.x;
-                    d.y += w*c.y;
-                    d.z += w*c.z;
-                    d.w -= w;
-                }
-                sf = sb;
-            }
-            else
-            {
-                const float v = volume(vidx, line-iPosY, slice, principal);
-                const float4 c = classify<float4>(v);
-
-                // blend
-                const float w = d.w*c.w;
-                d.x += w*c.x;
-                d.y += w*c.y;
-                d.z += w*c.z;
-                d.w -= w;
-            }
+            ray.accumulate(vidx, line-iPosY, slice);
         }
 
         // copy pixel to intermediate image
         uchar4 *dest = img + line*width+ix;
-        blend(dest, d);
+        blend(dest, ray.d);
     }
 #else
     // initialise intermediate image line
