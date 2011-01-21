@@ -169,7 +169,8 @@ class vvView
     static void roiMenuCallback(int);
     static void clipMenuCallback(int);
     static void viewMenuCallback(int);
-    static void performanceTest();
+    static void runTest();
+    static double performanceTest();
     static void printProfilingInfo(const int testNr = 1, const int testCnt = 1);
     static void printProfilingResult(vvStopwatch* totalTime, const int framesRendered);
     static void printROIMessage();
@@ -180,6 +181,7 @@ class vvView
     void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST,
                      std::vector<BrickList>* bricks = 0, const int maxBrickSizeX = 64,
                      const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);
+    void applyRendererParameters();
     void setProjectionMode(bool);
     void setupClipBuffer();
     void renderClipObject();

@@ -644,6 +644,33 @@ void vvView::setRendererType(enum vvRenderer::RendererType type)
   rendererType = type;
 }
 
+void vvView::applyRendererParameters()
+{
+  //renderer->setBoundariesMode(boundariesMode);
+  renderer->_renderState._boundaries = boundariesMode;
+  //renderer->setBoundariesColor(1.0f-bgColor[0], 1.0f-bgColor[1], 1.0f-bgColor[2]);
+  //renderer->resizeEdgeMax(OBJ_SIZE);
+  renderer->setPosition(&pos);
+  //renderer->setOrientationMode(orientationMode);
+  //renderer->setTimingMode(timingMode);
+  //renderer->setPaletteMode(paletteMode);
+  renderer->setParameter(vvRenderer::VV_SLICEINT, (interpolMode) ? 1.0f : 0.0f);
+  renderer->setParameter(vvRenderer::VV_WARPINT, (warpInterpolMode) ? 1.0f : 0.0f);
+  renderer->setParameter(vvRenderer::VV_PREINT, (preintMode) ? 1.0f : 0.0f);
+  renderer->_renderState._mipMode = mipMode;
+  //renderer->setParameter(vvRenderer::VV_GAMMA, (gammaMode) ? 1.0f : 0.0f);
+  //renderer->setParameter(vvRenderer::VV_OPCORR, (opCorrMode) ? 1.0f : 0.0f);
+  //renderer->setClippingMode(false);
+  renderer->_renderState._quality = (hqMode) ? highQuality : draftQuality;
+  renderer->setParameter(vvRenderer::VV_LEAPEMPTY, emptySpaceLeapingMode);
+  renderer->setParameter(vvRenderer::VV_TERMINATEEARLY, earlyRayTermination);
+  renderer->setParameter(vvRenderer::VV_LIGHTING, useHeadLight);
+  renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, gpuproxygeo);
+  renderer->setParameter(vvRenderer::VV_OFFSCREENBUFFER, useOffscreenBuffer);
+  renderer->setParameter(vvRenderer::VV_IMG_PRECISION, bufferPrecision);
+  static_cast<vvTexRend*>(renderer)->setShowBricks(showBricks);
+}
+
 
 //----------------------------------------------------------------------------
 /** Set active rendering algorithm.
@@ -722,30 +749,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   //static_cast<vvTexRend *>(renderer)->setTexMemorySize( 4 );
   //static_cast<vvTexRend *>(renderer)->setComputeBrickSize( false );
   //static_cast<vvTexRend *>(renderer)->setBrickSize( 64 );
-
-  //renderer->setBoundariesMode(boundariesMode);
-  renderer->_renderState._boundaries = boundariesMode;
-  //renderer->setBoundariesColor(1.0f-bgColor[0], 1.0f-bgColor[1], 1.0f-bgColor[2]);
-  //renderer->resizeEdgeMax(OBJ_SIZE);
-  renderer->setPosition(&pos);
-  //renderer->setOrientationMode(orientationMode);
-  //renderer->setTimingMode(timingMode);
-  //renderer->setPaletteMode(paletteMode);
-  renderer->setParameter(vvRenderer::VV_SLICEINT, (interpolMode) ? 1.0f : 0.0f);
-  renderer->setParameter(vvRenderer::VV_WARPINT, (warpInterpolMode) ? 1.0f : 0.0f);
-  renderer->setParameter(vvRenderer::VV_PREINT, (preintMode) ? 1.0f : 0.0f);
-  renderer->_renderState._mipMode = mipMode;
-  //renderer->setParameter(vvRenderer::VV_GAMMA, (gammaMode) ? 1.0f : 0.0f);
-  //renderer->setParameter(vvRenderer::VV_OPCORR, (opCorrMode) ? 1.0f : 0.0f);
-  //renderer->setClippingMode(false);
-  renderer->_renderState._quality = (hqMode) ? highQuality : draftQuality;
-  renderer->setParameter(vvRenderer::VV_LEAPEMPTY, emptySpaceLeapingMode);
-  renderer->setParameter(vvRenderer::VV_TERMINATEEARLY, earlyRayTermination);
-  renderer->setParameter(vvRenderer::VV_LIGHTING, useHeadLight);
-  renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, ds->gpuproxygeo);
-  renderer->setParameter(vvRenderer::VV_OFFSCREENBUFFER, useOffscreenBuffer);
-  renderer->setParameter(vvRenderer::VV_IMG_PRECISION, bufferPrecision);
-  static_cast<vvTexRend*>(renderer)->setShowBricks(showBricks);
+  applyRendererParameters();
 }
 
 
@@ -952,6 +956,19 @@ void vvView::specialCallback(int key, int, int)
   glutPostRedisplay();
 }
 
+void vvView::runTest()
+{
+  double tmin = DBL_MAX;
+  ds->applyRendererParameters();
+  for(int i=0; i<3; ++i)
+  {
+    double t = performanceTest();
+    if(t < tmin)
+      tmin = t;
+  }
+  printf("%f\n", tmin);
+}
+
 
 //----------------------------------------------------------------------------
 /** Timer callback method, triggered by glutTimerFunc().
@@ -981,8 +998,96 @@ void vvView::timerCallback(int id)
     }
     break;
   case BENCHMARK_TIMER:
-    performanceTest();
-    performanceTest();
+    {
+#if 0
+        ds->vd->tf.setDefaultColors(0, 0.0, 1.0);
+        ds->vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+        ds->setProjectionMode(false);
+
+        ds->useOffscreenBuffer = false;
+        ds->preintMode = false;
+        ds->earlyRayTermination = false;
+        ds->emptySpaceLeapingMode = false;
+        ds->bufferPrecision = 8;
+
+        // CUDA SW
+        ds->setRendererType(vvRenderer::CUDAPAR);
+        ds->setRenderer();
+        runTest();
+
+        ds->preintMode = true;
+        runTest();
+        ds->preintMode = false;
+
+        ds->earlyRayTermination = true;
+        runTest();
+        ds->earlyRayTermination = false;
+
+        ds->emptySpaceLeapingMode = true;
+        runTest();
+        ds->emptySpaceLeapingMode = false;
+
+        ds->useOffscreenBuffer = true;
+        ds->bufferPrecision = 32;
+        runTest();
+
+        ds->preintMode = true;
+        runTest();
+        ds->preintMode = false;
+
+        ds->earlyRayTermination = true;
+        runTest();
+        ds->earlyRayTermination = false;
+
+        ds->emptySpaceLeapingMode = true;
+        runTest();
+        ds->emptySpaceLeapingMode = false;
+
+        // RAYCAST
+        ds->setRendererType(vvRenderer::RAYREND);
+        ds->setRenderer();
+        runTest();
+
+        ds->earlyRayTermination = true;
+        runTest();
+        ds->earlyRayTermination = false;
+
+        // TEX2D
+        ds->useOffscreenBuffer = false;
+        ds->bufferPrecision = 8;
+        ds->setRendererType(vvRenderer::TEXREND);
+        ds->setRenderer(vvTexRend::VV_CUBIC2D);
+        runTest();
+
+        ds->useOffscreenBuffer = true;
+        ds->bufferPrecision = 32;
+        runTest();
+
+        // TEX3D
+        ds->useOffscreenBuffer = false;
+        ds->bufferPrecision = 8;
+        ds->setRendererType(vvRenderer::TEXREND);
+        ds->setRenderer(vvTexRend::VV_VIEWPORT);
+        runTest();
+
+        ds->preintMode = true;
+        runTest();
+        ds->preintMode = false;
+
+        ds->useOffscreenBuffer = true;
+        ds->bufferPrecision = 32;
+        runTest();
+
+        ds->preintMode = true;
+        runTest();
+        ds->preintMode = false;
+
+        // VOLPACK
+        ds->setRendererType(vvRenderer::VOLPACK);
+        ds->setRenderer();
+#endif
+        runTest();
+    }
     exit(0);
     break;
   default:
@@ -1828,9 +1933,11 @@ break;
   The image is drawn every 2 degrees.
   <br>
 */
-void vvView::performanceTest()
+double vvView::performanceTest()
 {
   vvDebugMsg::msg(1, "vvView::performanceTest()");
+
+  double total = 0.;
 
   vvTestSuite* testSuite = new vvTestSuite(ds->testSuiteFileName);
   if (testSuite->isInitialized())
@@ -1915,6 +2022,8 @@ void vvView::performanceTest()
           ++framesRendered;
         }
       }
+      total = totalTime->getTime();
+
       test->getTestResult()->setDiffTimes(diffTimes);
       test->getTestResult()->setModelViewMatrices(modelViewMatrices);
       test->writeResultFiles();
@@ -1971,12 +2080,15 @@ void vvView::performanceTest()
       ds->displayCallback();
       ++framesRendered;
     }
+    total = totalTime->getTime();
 
     printProfilingResult(totalTime, framesRendered);
 
     delete totalTime;
   }
   delete testSuite;
+
+  return total;
 }
 
 
@@ -2006,6 +2118,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   cerr << "*******************************************************************************" << endl;
   cerr << "Test (" << testNr << "/" << testCnt << ")" << endl;
   cerr << "Local host........................................" << localHost << endl;
+  cerr << "Renderer.........................................." << ds->rendererType << endl;
   cerr << "Renderer geometry................................." << ds->currentGeom << endl;
   cerr << "Voxel type........................................" << ds->currentVoxels << endl;
   cerr << "Volume file name.................................." << ds->vd->getFilename() << endl;
@@ -2015,6 +2128,8 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   cerr << "Projection........................................" << projectMode[ds->perspectiveMode] << endl;
   cerr << "Interpolation mode................................" << interpolMode[ds->interpolMode] << endl;
   cerr << "Empty space leaping for bricks...................." << onOffMode[ds->emptySpaceLeapingMode] << endl;
+  cerr << "Early ray termination............................." << onOffMode[ds->earlyRayTermination] << endl;
+  cerr << "Pre-integration..................................." << onOffMode[ds->preintMode] << endl;
   cerr << "Render to offscreen buffer........................" << onOffMode[ds->useOffscreenBuffer] << endl;
   cerr << "Precision of offscreen buffer....................." << ds->bufferPrecision << "bit" << endl;
   cerr << "Generate proxy geometry on GPU...................." << onOffMode[ds->gpuproxygeo] << endl;
