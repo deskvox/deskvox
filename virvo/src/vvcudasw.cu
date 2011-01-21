@@ -138,19 +138,60 @@ typedef void (*CompositionFunction)(
 // device code (CUDA)
 //----------------------------------------------------------------------------
 
-__device__ int2 coord(int2 from)
+__device__ bool intersectTexCube(const float3 &orig, const float3 &dir,
+                             float* tnear, float* tfar)
+{
+  // compute intersection of ray with all six bbox planes
+  float3 invR = make_float3(1.0f/dir.x, 1.0f/dir.y, 1.0f/dir.z);
+  float t1 = (0.f - orig.x) * invR.x;
+  float t2 = (1.f - orig.x) * invR.x;
+  float tmin = fminf(t1, t2);
+  float tmax = fmaxf(t1, t2);
+
+  t1 = (0.f - orig.y) * invR.y;
+  t2 = (1.f - orig.y) * invR.y;
+  tmin = fmaxf(fminf(t1, t2), tmin);
+  tmax = fminf(fmaxf(t1, t2), tmax);
+
+  t1 = (0.f - orig.z) * invR.z;
+  t2 = (1.f - orig.z) * invR.z;
+  tmin = fmaxf(fminf(t1, t2), tmin);
+  tmax = fminf(fmaxf(t1, t2), tmax);
+
+  *tnear = tmin;
+  *tfar = tmax;
+
+  return ((tmax >= tmin) && (tmax >= 0.0f));
+}
+
+__device__ int2 coordThread(int2 from, uint3 tid)
 {
 #if 0
-    return make_int2(threadIdx.x + blockDim.x*blockIdx.x + from.x,
-            threadIdx.y + blockDim.y*blockIdx.y + from.y);
+    return make_int2(tid.x + blockDim.x*blockIdx.x + from.x,
+            tid.y + blockDim.y*blockIdx.y + from.y);
 #else
-    const int xr = threadIdx.x & 3;
-    const int x4 = threadIdx.x >> 2;
-    const int yr = threadIdx.y & 3;
-    const int y4 = threadIdx.y >> 2;
+    const int xr = tid.x & 3;
+    const int x4 = tid.x >> 2;
+    const int yr = tid.y & 3;
+    const int y4 = tid.y >> 2;
     return make_int2(xr + 4 * yr + blockDim.x*blockIdx.x + from.x,
             x4 + 4 * y4 + blockDim.y*blockIdx.y + from.y);
 #endif
+}
+
+__device__ int2 coordMin(int2 from)
+{
+    return coordThread(from, make_uint3(0, 0, 0));
+}
+
+__device__ int2 coordMax(int2 from)
+{
+    return coordThread(from, make_uint3(blockDim.x-1, blockDim.y-1, 0));
+}
+
+__device__ int2 coord(int2 from)
+{
+    return coordThread(from, threadIdx);
 }
 
 __global__ void clearImage(uchar4 * __restrict__ img, int width, int height,
@@ -739,6 +780,12 @@ __global__ void compositeSlicesBilinear(
 #endif
 }
 
+__device__ float2 texcoord(int2 p, int slice)
+{
+    return make_float2((p.x-c_start[slice].x)*c_tcStep[slice].x+c_tcStart[slice].x,
+            (p.y-c_start[slice].y)*c_tcStep[slice].y+c_tcStart[slice].y);
+}
+
 template<typename Scalar, int BPV, typename Pixel, int sliceStep, int principal, bool earlyRayTerm, bool preInt>
 __global__ void compositeSORC(
       uchar4 * __restrict__ img, int width, int height,
@@ -748,11 +795,10 @@ __global__ void compositeSORC(
 {
     Ray<Pixel, principal, sliceStep, preInt> ray;
     int2 p(coord(from));
+    const int unroll = 8;
 
-    float2 tc = make_float2((p.x-c_start[firstSlice].x)*c_tcStep[firstSlice].x+c_tcStart[firstSlice].x,
-            (p.y-c_start[firstSlice].y)*c_tcStep[firstSlice].y+c_tcStart[firstSlice].y);
-    float2 tc_inc = make_float2((p.x-c_start[firstSlice+sliceStep].x)*c_tcStep[firstSlice+sliceStep].x+c_tcStart[firstSlice+sliceStep].x,
-            (p.y-c_start[firstSlice+sliceStep].y)*c_tcStep[firstSlice+sliceStep].y+c_tcStart[firstSlice+sliceStep].y);
+    float2 tc = texcoord(p, 0);
+    float2 tc_inc = texcoord(p, 1);
     float z = sliceStep == -1 ? 1.f : 0.f;
 #if VOLTEX3D!=3
     if(principal == 0)
@@ -765,30 +811,110 @@ __global__ void compositeSORC(
     tc_inc.x *= scale;
     tc_inc.y *= scale;
 
-    // composite slices for this image line
-    for(int sl =0; sl<nslice; ++sl)
+    float3 orig = make_float3(tc.x, tc.y, z);
+    float3 dir = make_float3(tc_inc.x, tc_inc.y, -c_zStep);
+    float tnear, tfar;
+    bool isect = intersectTexCube(orig, dir, &tnear, &tfar);
+
+    if(!isect)
+    {
+        // copy pixel to intermediate image
+        if(p.x >= from.x && p.x < to.x && p.y >= from.y && p.y < to.y)
+        {
+            uchar4 *dest = img + p.y*width+p.x;
+            setpixel(dest, ray.d);
+        }
+        return;
+    }
+
+    int slstart = 0;
+    int slstop = nslice;
+
+#if 1
+    int2 c[4];
+    c[0] = coordMin(from);
+    c[1] = coordMax(from);
+    c[2] = coordMin(from); c[2].x = c[1].x;
+    c[3] = coordMax(from); c[3].x = c[0].x;
+
+    slstart = nslice;
+    slstop = 0;
+    int unistop = nslice;
+    int unistart = 0;
+    int nisect = 0;
+    for(int i=0; i<4; ++i)
+    {
+        float2 tc1 = texcoord(c[i], 0);
+        float2 tc1_inc = texcoord(c[i], 1);
+        tc1_inc.x -= tc1.x;
+        tc1_inc.y -= tc1.y;
+        tc1_inc.x *= scale;
+        tc1_inc.y *= scale;
+        float3 orig1 = make_float3(tc1.x, tc1.y, z);
+        float3 dir1 = make_float3(tc1_inc.x, tc1_inc.y, -c_zStep);
+        float tnear1, tfar1;
+        bool isect1 = intersectTexCube(orig1, dir1, &tnear1, &tfar1);
+        if(isect1)
+        {
+            ++nisect;
+            slstart = fminf(tnear1, slstart);
+            unistart = fmaxf(tnear1, unistart);
+
+            slstop = fmaxf(tfar1+1.f, slstop);
+            unistop = fminf(tfar1, unistop);
+        }
+    }
+
+    if(nisect==4)
+    {
+        unistart += 1;
+        unistop -= 1;
+        if(slstop < unistop)
+            unistop = slstop;
+        if(unistop > unistart)
+        {
+            unistop = (unistop-unistart)/unroll*unroll+unistart;
+        }
+        else
+        {
+            unistart=nslice;
+            unistop=nslice;
+        }
+    }
+    else
+    {
+        unistart=nslice;
+        unistop=nslice;
+    }
+
+    z -= slstart* c_zStep;
+    tc.x += slstart*tc_inc.x;
+    tc.y += slstart*tc_inc.y;
+#else
+    float3 orig = make_float3(tc.x, tc.y, z);
+    float3 dir = make_float3(tc_inc.x, tc_inc.y, -c_zStep);
+    float tnear, tfar;
+    bool isect = intersectTexCube(orig, dir, &tnear, &tfar);
+
+    if(!isect)
+        return;
+
+    slstart=tnear;
+    z -= slstart* c_zStep;
+    tc.x += slstart*tc_inc.x;
+    tc.y += slstart*tc_inc.y;
+    slstop=tfar;
+#endif
+
+    for(int sl=slstart; sl<unistart; ++sl)
     {
         if(earlyRayTerm && isOpaque(ray.d))
             break;;
 
         if(tc.x >= 0.f && tc.x < 1.f
                 && tc.y >= 0.f && tc.y < 1.f)
-        {
-#if 0
-            float2 mm = minmax(tc.x, tc.y, z, principal);
-            float op = tex2D(tex_minmaxTable, mm.x, mm.y);
-            if(op == 0.f)
-            {
-                tc.x += 16*tc_inc.x;
-                tc.y += 16*tc_inc.y;
-                if(principal == 0)
-                    z += 16*c_zStep;
-                else
-                    z -= 16*c_zStep;
-            }
-#endif
-                ray.accumulate(tc.x, tc.y, z);
-        }
+            ray.accumulate(tc.x, tc.y, z);
+
         tc.x += tc_inc.x;
         tc.y += tc_inc.y;
 #if VOLTEX3D != 3
@@ -797,10 +923,45 @@ __global__ void compositeSORC(
         else
 #endif
             z -= c_zStep;
-        if(sliceStep==1 && z > 1.f)
+    }
+
+    for(int sl=unistart; sl<unistop; sl+=unroll)
+    {
+        if(earlyRayTerm && isOpaque(ray.d))
             break;
-        if(sliceStep==-1 && z < 0.f)
+#pragma unroll 8
+        for(int ssl=0; ssl<unroll; ++ssl)
+        {
+            ray.accumulate(tc.x, tc.y, z);
+
+            tc.x += tc_inc.x;
+            tc.y += tc_inc.y;
+#if VOLTEX3D != 3
+            if(principal == 0)
+                z += c_zStep;
+            else
+#endif
+                z -= c_zStep;
+        }
+    }
+
+    for(int sl=unistop; sl<slstop; ++sl)
+    {
+        if(earlyRayTerm && isOpaque(ray.d))
             break;
+
+        if(tc.x >= 0.f && tc.x < 1.f
+                && tc.y >= 0.f && tc.y < 1.f)
+            ray.accumulate(tc.x, tc.y, z);
+
+        tc.x += tc_inc.x;
+        tc.y += tc_inc.y;
+#if VOLTEX3D != 3
+        if(principal == 0)
+            z += c_zStep;
+        else
+#endif
+            z -= c_zStep;
     }
 
     // copy pixel to intermediate image
@@ -1529,7 +1690,6 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 
     uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDImg();
     dim3 grid((Base::intImg->width+Patch.x-1)/Patch.x, (toY-fromY+Patch.y-1)/Patch.y);
-    clearImage <<<grid, Patch>>>(d_img, Base::intImg->width, Base::intImg->height, fromY, toY);
 
     cudaChannelFormatDesc minmaxDesc = cudaCreateChannelDesc<uchar>();
     tex_min.normalized = true;
@@ -1598,7 +1758,7 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 #else
     const int p = 2;
 #endif
-    for(int slice=firstSlice; slice != lastSlice; slice += sliceStep)
+    for(int slice=0; slice<2; ++slice)
     {
         const float sx = scur.e[0]/scur.e[3];
         const float sy = scur.e[1]/scur.e[3];
@@ -1625,8 +1785,6 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 
                 h_tcStart[slice].x = 1.f + (h_start[slice].x - sx + 0.5f)*h_tcStep[slice].x;
                 h_tcStart[slice].y = 1.f + (h_start[slice].y - sy + 0.5f)*h_tcStep[slice].y;
-
-                h_tc3[slice] = 1.f-(slice+0.5f)*1.f/Base::vd->vox[Base::principal];
                 break;
             case 1:
                 h_tcStep[slice].x = -1.f/(ex-sx);
@@ -1634,8 +1792,6 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 
                 h_tcStart[slice].x = 1.f + (h_start[slice].x - sx + 0.5f)*h_tcStep[slice].x;
                 h_tcStart[slice].y = (h_start[slice].y - sy + 0.5f)*h_tcStep[slice].y;
-
-                h_tc3[slice] = (slice+0.5f)*1.f/Base::vd->vox[Base::principal];
                 break;
             case 2:
                 h_tcStep[slice].x = 1.f/(ex-sx);
@@ -1643,34 +1799,27 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 
                 h_tcStart[slice].x = (h_start[slice].x - sx + 0.5f)*h_tcStep[slice].x;
                 h_tcStart[slice].y = 1.f + (h_start[slice].y - sy + 0.5f)*h_tcStep[slice].y;
-
-                h_tc3[slice] = (slice+0.5f)*1.f/Base::vd->vox[Base::principal];
                 break;
         }
 
         ecur.add(&einc);
         scur.add(&sinc);
     }
-    from.y = max(from.y, fromY);
-    to.y = min(to.y, toY);
+
+    from.y = fromY;
+    to.y = toY;
+    from.x = 0;
+    to.x = Base::intImg->width;
 
     //fprintf(stderr, "p=%d: (%d,%d) - (%d,%d)\n", Base::principal, from.x, from.y, to.x, to.y);
 
-    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
-#ifdef VOLTEX3D
-    if(Base::sliceInterpol)
-    {
-        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_stop, h_stop, sizeof(h_stop)), "cudaMemcpy stop");
-        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStart, h_tcStart, sizeof(h_tcStart)), "cudaMemcpy tcStart");
-        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStep, h_tcStep, sizeof(h_tcStep)), "cudaMemcpy tcStep");
-        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tc3, h_tc3, sizeof(h_tc3)), "cudaMemcpy tc3");
-    }
-#endif
+    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start[0])*2), "cudaMemcpy start");
+    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_stop, h_stop, sizeof(h_stop[0])*2), "cudaMemcpy stop");
+    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStart, h_tcStart, sizeof(h_tcStart[0])*2), "cudaMemcpy tcStart");
+    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStep, h_tcStep, sizeof(h_tcStep[0])*2), "cudaMemcpy tcStep");
 
     if(CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep))
     {
-        grid = dim3((to.x-from.x+Patch.x-1)/Patch.x, (to.y-from.y+Patch.y-1)/Patch.y);
-
         // do the computation on the device
         compose <<<grid, Patch>>>(
                 d_img, Base::intImg->width, Base::intImg->height,
