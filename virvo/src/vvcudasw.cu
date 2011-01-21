@@ -170,12 +170,12 @@ __device__ void initPixel(uchar4 *pix)
 
 __device__ bool isOpaque(float4 pix)
 {
-    return (pix.w < 0.003f);
+    return (pix.w < 0.05f);
 }
 
 __device__ bool isOpaque(uchar4 pix)
 {
-    return (pix.w < 1);
+    return (pix.w < 13);
 }
 
 template<typename Pixel>
