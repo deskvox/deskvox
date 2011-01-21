@@ -903,6 +903,7 @@ __global__ void compositeSORC(
     int unistop = nslice;
     int unistart = 0;
     int nisect = 0;
+#if 0
     for(int i=0; i<4; ++i)
     {
         float2 tc1 = texcoord(c[i], 0);
@@ -946,6 +947,12 @@ __global__ void compositeSORC(
         unistart=nslice;
         unistop=nslice;
     }
+#else
+    slstart = tnear;
+    slstop = tfar+1.f;
+    unistart = slstart;
+    unistop = (slstop-slstart)/unroll*unroll+slstart;
+#endif
     advance(tc, tc_inc, slstart);
 
     // non-uniform part at volume entry
