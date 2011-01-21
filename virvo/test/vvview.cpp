@@ -149,6 +149,22 @@ vvView::vvView()
   clipPlane             = false;
   clipPerimeter         = false;
   mvScale               = 1.0f;
+
+
+  // keep in sync with vvrenderer.h
+  rendererName.push_back("TexRend");
+  rendererName.push_back("Parallel software shear-warp");
+  rendererName.push_back("Perspective software shear-warp");
+  rendererName.push_back("Parallel GPU shear-warp");
+  rendererName.push_back("Perspective GPU shear-warp");
+  rendererName.push_back("CUDA ray caster");
+  rendererName.push_back("VolPack");
+  rendererName.push_back("Simian");
+  rendererName.push_back("Imgrend");
+  rendererName.push_back("Unknown");
+  rendererName.push_back("Stingray");
+  rendererName.push_back("Out of core texture renderer");
+  assert(rendererName.size() == vvRenderer::VIRTEXREND+1);
 }
 
 
@@ -2118,7 +2134,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   cerr << "*******************************************************************************" << endl;
   cerr << "Test (" << testNr << "/" << testCnt << ")" << endl;
   cerr << "Local host........................................" << localHost << endl;
-  cerr << "Renderer.........................................." << ds->rendererType << endl;
+  cerr << "Renderer.........................................." << ds->rendererName[ds->rendererType] << endl;
   cerr << "Renderer geometry................................." << ds->currentGeom << endl;
   cerr << "Voxel type........................................" << ds->currentVoxels << endl;
   cerr << "Volume file name.................................." << ds->vd->getFilename() << endl;
