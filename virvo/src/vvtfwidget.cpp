@@ -174,34 +174,18 @@ vvTFBell::vvTFBell(FILE* fp) : vvTFWidget()
 
 void vvTFBell::write(FILE* fp)
 {
-  fprintf(fp, "TF_BELL %s %g %g %g %g %g %g %g %g %g %d %g\n", (_name) ? _name : NO_NAME,
-    _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2],
-    _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
+  fprintf(fp, toString());
 }
 
-void vvTFBell::write(std::ostream& out)
+const char* vvTFBell::toString()
 {
-  out << "TF_BELL ";
-  if (_name != NULL)
-  {
-    out << _name << " ";
-  }
-  else
-  {
-    out << NO_NAME << " ";
-  }
-  out << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
-      << _size[0] << " " << _size[1] << " " << _size[2] << " "
-      << _col[0] << " " << _col[1] << " " << _col[2] << " ";
-  if (_ownColor)
-  {
-    out << 1 << " ";
-  }
-  else
-  {
-    out << 0 << " ";
-  }
-  out << _opacity << "\n";
+  char* result = NULL;
+
+  sprintf(result, "TF_BELL %s %g %g %g %g %g %g %g %g %g %d %g\n", (_name) ? _name : NO_NAME,
+    _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2],
+    _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
+
+  return result;
 }
 
 /** The 2D gaussian function can be found at:
@@ -360,34 +344,18 @@ vvTFPyramid::vvTFPyramid(FILE* fp) : vvTFWidget()
 
 void vvTFPyramid::write(FILE* fp)
 {
-  fprintf(fp, "TF_PYRAMID %s %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n", (_name) ? _name : NO_NAME,
-    _pos[0], _pos[1], _pos[2], _bottom[0], _bottom[1], _bottom[2],
-    _top[0], _top[1], _top[2], _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
+  fprintf(fp, toString());
 }
 
-void vvTFPyramid::write(std::ostream& out)
+const char* vvTFPyramid::toString()
 {
-  out << "TF_PYRAMID ";
-  if (_name != NULL)
-  {
-    out << _name << " ";
-  }
-  else
-  {
-    out << NO_NAME << " ";
-  }
-  out << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
-      << _bottom[0] << " " << _bottom[1] << " " << _bottom[2] << " "
-      << _col[0] << " " << _col[1] << " " << _col[2] << " ";
-  if (_ownColor)
-  {
-    out << 1 << " ";
-  }
-  else
-  {
-    out << 0 << " ";
-  }
-  out << _opacity << "\n";
+  char* result = NULL;
+
+  sprintf(result, "TF_PYRAMID %s %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n", (_name) ? _name : NO_NAME,
+      _pos[0], _pos[1], _pos[2], _bottom[0], _bottom[1], _bottom[2],
+      _top[0], _top[1], _top[2], _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
+
+  return result;
 }
 
 float vvTFPyramid::getOpacity(float x, float y, float z)
@@ -600,23 +568,17 @@ vvTFColor::vvTFColor(FILE* fp) : vvTFWidget()
 
 void vvTFColor::write(FILE* fp)
 {
-  fprintf(fp, "TF_COLOR %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
-    _pos[0], _pos[1], _pos[2], _col[0], _col[1], _col[2]);
+  fprintf(fp, toString());
 }
 
-void vvTFColor::write(std::ostream& out)
+const char* vvTFColor::toString()
 {
-  out << "TF_COLOR ";
-  if (_name != NULL)
-  {
-    out << _name << " ";
-  }
-  else
-  {
-    out << NO_NAME << " ";
-  }
-  out << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
-      << _col[0] << " " << _col[1] << " " << _col[2] << "\n";
+  char* result = NULL;
+
+  sprintf(result, "TF_COLOR %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
+    _pos[0], _pos[1], _pos[2], _col[0], _col[1], _col[2]);
+
+  return result;
 }
 
 //============================================================================
@@ -666,23 +628,17 @@ vvTFSkip::vvTFSkip(FILE* fp) : vvTFWidget()
 
 void vvTFSkip::write(FILE* fp)
 {
-  fprintf(fp, "TF_SKIP %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
-    _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2]);
+  fprintf(fp, toString());
 }
 
-void vvTFSkip::write(std::ostream& out)
+const char* vvTFSkip::toString()
 {
-  out << "TF_SKIP ";
-  if (_name != NULL)
-  {
-    out << _name << " ";
-  }
-  else
-  {
-    out << NO_NAME << " ";
-  }
-  out << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
-      << _size[0] << " " << _size[1] << " " << _size[2] << "\n";
+  char* result = NULL;
+
+  sprintf(result, "TF_SKIP %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
+    _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2]);
+
+  return result;
 }
 
 /** @return 0 if x/y/z point is within skipped area, otherwise -1
@@ -809,37 +765,24 @@ vvTFCustom::~vvTFCustom()
 */
 void vvTFCustom::write(FILE* fp)
 {
-  list<vvTFPoint*>::iterator iter;
-
-  fprintf(fp, "TF_CUSTOM %s %g %g %g %d\n", (_name) ? _name : NO_NAME,
-    _size[0], _size[1], _size[2], (int)_points.size());
-
-  for(iter=_points.begin(); iter!=_points.end(); iter++) 
-  {
-    fprintf(fp, "%g %g %g %g\n", (*iter)->_opacity, (*iter)->_pos[0], (*iter)->_pos[1], (*iter)->_pos[2]);
-  }
+  fprintf(fp, toString());
 }
 
-void vvTFCustom::write(std::ostream& out)
+const char* vvTFCustom::toString()
 {
+  char* result = NULL;
+
   list<vvTFPoint*>::iterator iter;
 
-  out << "TF_CUSTOM ";
-  if (_name != NULL)
-  {
-    out << _name << " ";
-  }
-  else
-  {
-    out << NO_NAME << " ";
-  }
-  out << _size[0] << " " << _size[1] << " " << _size[2] << " "
-      << (int)_points.size() << "\n";
+  sprintf(result, "TF_CUSTOM %s %g %g %g %d\n", (_name) ? _name : NO_NAME,
+    _size[0], _size[1], _size[2], (int)_points.size());
 
   for(iter=_points.begin(); iter!=_points.end(); iter++)
   {
-    out << (*iter)->_opacity << " " << (*iter)->_pos[0] << " " << (*iter)->_pos[1] << " " << (*iter)->_pos[2] << "\n";
+    sprintf(result, "%g %g %g %g\n", (*iter)->_opacity, (*iter)->_pos[0], (*iter)->_pos[1], (*iter)->_pos[2]);
   }
+
+  return result;
 }
 
 /** @return opacity of a value in the TF, as defined by this widget
@@ -1143,9 +1086,10 @@ void vvTFCustom2D::write(FILE*)
    //TODO!!
 }
 
-void vvTFCustom2D::write(std::ostream&)
+const char* vvTFCustom2D::toString()
 {
    //TODO!!
+   return NULL;
 }
 
 float vvTFCustom2D::getOpacity(float x, float y, float)
@@ -1566,9 +1510,10 @@ void vvTFCustomMap::write(FILE*)
    //TODO!!
 }
 
-void vvTFCustomMap::write(std::ostream&)
+const char* vvTFCustomMap::toString()
 {
    //TODO!!
+   return NULL;
 }
 
 // Given x, y, z in volume space, find the index in the map 

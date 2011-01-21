@@ -266,12 +266,13 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
 vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
 {
   const int numTF = tf._widgets.count();
+  ostream* out;
   //uchar* buffer;
 
   tf._widgets.first();
   for (int i=0; i<numTF; ++i)
   {
-    //tf._widgets.getData()->write(buffer);
+    //tf._widgets.getData()->write(*out);
     tf._widgets.next();
   }
   
