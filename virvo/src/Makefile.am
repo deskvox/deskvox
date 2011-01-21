@@ -148,6 +148,6 @@ LIBS=$(LIBVIRVO_LIBS) $(CG_LIBS) $(GLEW_LIBS) $(GL_LIBS) $(XLIBS_LIBS) $(STINGRA
 BUILT_SOURCES=vvversioninfo.h
 
 vvversioninfo.h: FORCE
-	$(abs_top_srcdir)/makeversion.sh $(abs_top_srcdir) $(abs_srcdir) 0
+	$(srcdir)/../makeversion.sh $(srcdir) 0
 
 FORCE:

@@ -1,25 +1,23 @@
 #! /bin/sh
 
 # Expected variables:
-# $1 build directory
-# $2 src directory
-# $3 verbose [ 0 | 1 ]
+# $1 src directory
+# $2 verbose [ 0 | 1 ]
 
-if [ $3 = 0 ];
+if [ $2 = 0 ];
 then
   echo "Executing $0"
-  echo "Build directory: $1"
-  echo "Src directory: $2"
+  echo "Src directory: $1"
 fi
 
-FILENAME=$2/vvversioninfo.h
+FILENAME=$1/vvversioninfo.h
 FILENAME_TMP=vvversioninfo.h~
 PWD=`pwd`
 COMMENT="// Auto generated file created using: $PWD/$0"
 INFO=`(svn info $1 2> /dev/null | grep ^Revision: )`
 REVISION=`echo $INFO | grep ^Revision: | sed -e 's/^Revision: /r/' || echo '(unknown)'`
 
-if [ $3 = 0 ];
+if [ $2 = 0 ];
 then
   echo "Current svn revision is $REVISION"
 fi
@@ -47,20 +45,20 @@ then
   DIFF=`/usr/bin/diff $FILENAME $FILENAME_TMP`;
   if [ -z "$DIFF" ];
   then
-    if [ $3 = 0 ];
+    if [ $2 = 0 ];
     then
       echo "No need to update $FILENAME";
     fi
     REGENERATE=1;
   else
-    if [ $3 = 0 ];
+    if [ $2 = 0 ];
     then
       echo "$FILENAME is out of date. Regenerate it.";
     fi
     REGENERATE=0;
   fi;
 else
-  if [ $3 = 0 ];
+  if [ $2 = 0 ];
   then
     echo "$FILENAME doesn't exist. Generate it.";
   fi
