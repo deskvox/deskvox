@@ -12,7 +12,7 @@ fi
 
 FILENAME=$1/vvversioninfo.h
 FILENAME_TMP=vvversioninfo.h~
-PWD=`pwd`
+PWD=`pwd -P`
 COMMENT="// Auto generated file created using: $PWD/$0"
 INFO=`(svn info $1 2> /dev/null | grep ^Revision: )`
 REVISION=`echo $INFO | grep ^Revision: | sed -e 's/^Revision: /r/' || echo '(unknown)'`

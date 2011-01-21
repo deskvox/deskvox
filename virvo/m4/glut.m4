@@ -34,6 +34,7 @@ if test "$have_glut_h" = "yes" -a "$have_libglut" = "yes" ; then
     GLUT_LIBS="-L$glut_libdir -lglut"
     AC_SUBST(GLUT_INCLUDES)
     AC_SUBST(GLUT_LIBS)
+    ac_have_glut="yes"
 else
     AC_CHECK_HEADERS([GLUT/glut.h], [have_glut_glut_h=yes])
     LDFLAGS="$LDFLAGS -framework GLUT"
@@ -45,6 +46,9 @@ else
                     GLUT_INCLUDES="-F$glut_dir"
             fi
             GLUT_LIBS="-framework GLUT"
+            ac_have_glut="yes"
+    else
+            ac_have_glut="no"
     fi
 fi
 

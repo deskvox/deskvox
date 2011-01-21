@@ -52,6 +52,7 @@ CHECK_NV
 ENABLE_PIC
 
 AM_CONDITIONAL(CUDA, test x$ac_have_cuda = xyes)
+AM_CONDITIONAL(GLUT, test x$ac_have_glut = xyes)
 AM_CONDITIONAL(VOLPACK, test x$enable_volpack = xyes)
 
 AC_SUBST(CPPFLAGS)
