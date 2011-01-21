@@ -52,6 +52,7 @@ class VIRVOEXPORT vvTFWidget
 {
   protected:
     static const char* NO_NAME;
+    static const int MAX_STR_LEN;
     char* _name;                                  ///< widget name (bone, soft tissue, etc)
 
   public:
@@ -65,7 +66,7 @@ class VIRVOEXPORT vvTFWidget
     virtual void setName(const char*);
     virtual const char* getName();
     virtual void readName(FILE*);
-    virtual void write(FILE*);
+    void write(FILE*);
     virtual const char* toString() = 0;
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);

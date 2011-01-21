@@ -46,6 +46,7 @@ vvTFPoint::vvTFPoint(float op, float x, float y, float z)
 //============================================================================
 
 const char* vvTFWidget::NO_NAME = "UNNAMED";
+const int vvTFWidget::MAX_STR_LEN = 65535;
 
 /** Default constructor.
 */
@@ -179,7 +180,7 @@ vvTFBell::vvTFBell(FILE* fp) : vvTFWidget()
 
 const char* vvTFBell::toString()
 {
-  char* result = NULL;
+  char* result = new char[MAX_STR_LEN];
 
   sprintf(result, "TF_BELL %s %g %g %g %g %g %g %g %g %g %d %g\n", (_name) ? _name : NO_NAME,
     _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2],
@@ -344,7 +345,7 @@ vvTFPyramid::vvTFPyramid(FILE* fp) : vvTFWidget()
 
 const char* vvTFPyramid::toString()
 {
-  char* result = NULL;
+  char* result = new char[MAX_STR_LEN];
 
   sprintf(result, "TF_PYRAMID %s %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n", (_name) ? _name : NO_NAME,
       _pos[0], _pos[1], _pos[2], _bottom[0], _bottom[1], _bottom[2],
@@ -563,7 +564,7 @@ vvTFColor::vvTFColor(FILE* fp) : vvTFWidget()
 
 const char* vvTFColor::toString()
 {
-  char* result = NULL;
+  char* result = new char[MAX_STR_LEN];
 
   sprintf(result, "TF_COLOR %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
     _pos[0], _pos[1], _pos[2], _col[0], _col[1], _col[2]);
@@ -618,7 +619,7 @@ vvTFSkip::vvTFSkip(FILE* fp) : vvTFWidget()
 
 const char* vvTFSkip::toString()
 {
-  char* result = NULL;
+  char* result = new char[MAX_STR_LEN];
 
   sprintf(result, "TF_SKIP %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
     _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2]);
@@ -747,7 +748,7 @@ vvTFCustom::~vvTFCustom()
 
 const char* vvTFCustom::toString()
 {
-  char* result = NULL;
+  char* result = new char[MAX_STR_LEN];
 
   list<vvTFPoint*>::iterator iter;
 
