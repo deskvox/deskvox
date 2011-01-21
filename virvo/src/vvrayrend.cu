@@ -346,9 +346,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   }
   const float3 step = ray.d * tstep;
 
-  float maxIntensity = 0.0f;
-  float minIntensity = FLT_MAX;
-
   // If just clipped, shade with the normal of the clipping surface.
   bool justClippedPlane = false;
   bool justClippedSphere = false;
@@ -395,21 +392,21 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     const float sample = volume<t_bpc>(texCoord);
 
     // Post-classification transfer-function lookup.
-    float4 src;
+    float4 src = tex1D(tfTexture, sample);
 
-    if (t_mipMode == 0)
+    if (t_mipMode == 1)
     {
-      src = tex1D(tfTexture, sample);
+      dst.x = fmaxf(src.x, dst.x);
+      dst.y = fmaxf(src.y, dst.y);
+      dst.z = fmaxf(src.z, dst.z);
+      dst.w = 1;
     }
-    else if ((t_mipMode == 1) && (sample > maxIntensity))
+    else if (t_mipMode == 2)
     {
-      dst = tex1D(tfTexture, sample);
-      maxIntensity = sample;
-    }
-    else if ((t_mipMode == 2) && (sample  < minIntensity))
-    {
-      dst = tex1D(tfTexture, sample);
-      minIntensity = sample;
+      dst.x = fminf(src.x, dst.x);
+      dst.y = fminf(src.y, dst.y);
+      dst.z = fminf(src.z, dst.z);
+      dst.w = 1;
     }
 
     // Local illumination.
@@ -484,15 +481,16 @@ template<
          bool t_earlyRayTermination,
          bool t_clipPlane,
          bool t_clipSphere,
-         bool t_useSphereAsProbe
+         bool t_useSphereAsProbe,
+         int t_mipMode
         >
-renderKernel getKernelWithSphereAsProbe(vvRayRend*)
+renderKernel getKernelWithMip(vvRayRend*)
 {
   return &render<t_earlyRayTermination, // Early ray termination.
                  true, // Space skipping.
                  true, // Front to back.
                  t_bpc, // Bytes per channel.
-                 0, // Mip mode.
+                 t_mipMode, // Mip mode.
                  t_illumination, // Local illumination.
                  t_opacityCorrection, // Opacity correction.
                  false, // Jittering.
@@ -500,6 +498,68 @@ renderKernel getKernelWithSphereAsProbe(vvRayRend*)
                  t_clipSphere, // Clip sphere.
                  t_useSphereAsProbe // Show what's inside the clip sphere.
                 >;
+}
+
+template<
+         int t_bpc,
+         bool t_illumination,
+         bool t_opacityCorrection,
+         bool t_earlyRayTermination,
+         bool t_clipPlane,
+         bool t_clipSphere,
+         bool t_useSphereAsProbe
+        >
+renderKernel getKernelWithSphereAsProbe(vvRayRend* rayRend)
+{
+  switch (rayRend->_renderState._mipMode)
+  {
+  case 0:
+    return getKernelWithMip<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            t_earlyRayTermination,
+                            t_clipPlane,
+                            t_clipSphere,
+                            t_useSphereAsProbe,
+                            0
+                           >(rayRend);
+  case 1:
+    // No early ray termination possible with max intensity projection.
+    return getKernelWithMip<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            false,
+                            t_clipPlane,
+                            t_clipSphere,
+                            t_useSphereAsProbe,
+                            1
+                           >(rayRend);
+  case 2:
+    // No early ray termination possible with min intensity projection.
+    return getKernelWithMip<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            false,
+                            t_clipPlane,
+                            t_clipSphere,
+                            t_useSphereAsProbe,
+                            2
+                           >(rayRend);
+  default:
+    return getKernelWithMip<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            t_earlyRayTermination,
+                            t_clipPlane,
+                            t_clipSphere,
+                            t_useSphereAsProbe,
+                            0
+                           >(rayRend);
+  }
 }
 
 template<
