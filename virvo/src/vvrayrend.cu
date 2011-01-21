@@ -6,7 +6,7 @@
 #include "vvconfig.h"
 #endif
 
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if 1//defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
 #include "vvglew.h"
 
@@ -262,6 +262,7 @@ template<
          bool t_useSphereAsProbe
         >
 __global__ void render(uchar4* d_output, const uint width, const uint height,
+                       const float4 backgroundColor,
                        const uint texwidth, const float dist,
                        const float3 volPos, const float3 volSizeHalf,
                        const float3 probePos, const float3 probeSizeHalf,
@@ -335,7 +336,17 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     intersectPlane(ray, planeNormal, planeDist, &nddot, &tpnear);
   }
 
-  float4 dst = make_float4(0.0f);
+  float4 dst;
+
+  if (t_mipMode > 0)
+  {
+    dst = backgroundColor;
+  }
+  else
+  {
+    dst = make_float4(0.0f);
+  }
+
   float t = tnear;
   float3 pos = ray.o + ray.d * tnear;
 
@@ -440,10 +451,13 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       src.w = 1 - powf(1 - src.w, dist);
     }
 
-    // pre-multiply alpha
-    src.x *= src.w;
-    src.y *= src.w;
-    src.z *= src.w;
+    if (t_mipMode == 0)
+    {
+      // pre-multiply alpha
+      src.x *= src.w;
+      src.y *= src.w;
+      src.z *= src.w;
+    }
 
     if (t_frontToBack && (t_mipMode == 0))
     {
@@ -470,7 +484,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   d_output[y * texwidth + x] = rgbaFloatToInt(dst);
 }
 
-typedef void(*renderKernel)(uchar4*, const uint, const uint, const uint, const float, const float3, const float3,
+typedef void(*renderKernel)(uchar4*, const uint, const uint, const float4,
+                            const uint, const float, const float3, const float3,
                             const float3, const float3, const float3, const float3, const float3,
                             const float, const float3, const float);
 
@@ -890,6 +905,10 @@ void vvRayRend::compositeVolume(int, int)
     drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, _renderState._clipColor);
   }
 
+  GLfloat bgcolor[4];
+  glGetFloatv(GL_COLOR_CLEAR_VALUE, bgcolor);
+  float4 backgroundColor = make_float4(bgcolor[0], bgcolor[1], bgcolor[2], bgcolor[3]);
+
   renderKernel kernel = NULL;
   if (vd->bpc == 1)
   {
@@ -910,8 +929,8 @@ void vvRayRend::compositeVolume(int, int)
     {
       cudaBindTextureToArray(volTexture16, d_volumeArrays[vd->getCurrentFrame()], _channelDesc);
     }
-    (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3], intImg->width,
-                                      diagonalVoxels / (float)numSlices,
+    (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
+                                      backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                                       volPos, volSize * 0.5f,
                                       probePos, probeSize * 0.5f,
                                       L, H,
