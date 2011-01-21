@@ -140,8 +140,17 @@ typedef void (*CompositionFunction)(
 
 __device__ int2 coord(int2 from)
 {
+#if 0
     return make_int2(threadIdx.x + blockDim.x*blockIdx.x + from.x,
             threadIdx.y + blockDim.y*blockIdx.y + from.y);
+#else
+    const int xr = threadIdx.x & 3;
+    const int x4 = threadIdx.x >> 2;
+    const int yr = threadIdx.y & 3;
+    const int y4 = threadIdx.y >> 2;
+    return make_int2(xr + 4 * yr + blockDim.x*blockIdx.x + from.x,
+            x4 + 4 * y4 + blockDim.y*blockIdx.y + from.y);
+#endif
 }
 
 __global__ void clearImage(uchar4 * __restrict__ img, int width, int height,
