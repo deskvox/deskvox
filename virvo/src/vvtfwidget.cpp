@@ -713,7 +713,6 @@ vvTFCustom::vvTFCustom(float xpos, float xsize, float ypos, float ysize, float z
 */
 vvTFCustom::vvTFCustom(FILE* fp) : vvTFWidget()
 {
-  list<vvTFPoint*>::iterator iter;
   vvTFPoint* point;
   float op, x, y, z;
   int numPoints;
