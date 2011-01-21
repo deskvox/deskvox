@@ -66,6 +66,25 @@ class VIRVOEXPORT vvCudaSW : public Base
 
       float *fraw[3]; ///< pointer to voxel data converted to floating point
 
+      bool initTF();
+      void freeTF();
+      bool initPreInt();
+      void freePreInt();
+      bool initMinMax();
+      void freeMinMax();
+      bool initFloatData();
+      void freeFloatData();
+      bool initVolData();
+      void freeVolData();
+      bool initVolDataPitched();
+      void freeVolDataPitched();
+      bool initVolTex();
+      void freeVolTex();
+
+      bool compositeNearest(int fromY, int toY, int firstSlice, int lastSlice, int sliceStep);
+      bool compositeBilinear(int fromY, int toY, int firstSlice, int lastSlice, int sliceStep);
+      bool compositeRaycast(int fromY, int toY, int firstSlice, int lastSlice, int sliceStep);
+
    protected:
       virtual void updateLUT(float dist);
       virtual void findAxisRepresentations();
