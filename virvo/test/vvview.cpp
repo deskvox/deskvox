@@ -118,8 +118,8 @@ vvView::vvView()
   warpInterpolMode      = true;
   preintMode            = false;
   paletteMode           = false;
-  emptySpaceLeapingMode = true;
-  earlyRayTermination   = true;
+  emptySpaceLeapingMode = false;
+  earlyRayTermination   = false;
   perspectiveMode       = true;
   timingMode            = false;
   opCorrMode            = true;
