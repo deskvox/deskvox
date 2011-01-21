@@ -65,7 +65,7 @@ class VIRVOEXPORT vvTFWidget
     virtual void setName(const char*);
     virtual const char* getName();
     virtual void readName(FILE*);
-    virtual void write(FILE*) = 0;
+    virtual void write(FILE*);
     virtual const char* toString() = 0;
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
@@ -86,7 +86,6 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
     vvTFBell(vvTFBell*);
     vvTFBell(vvColor, bool, float, float, float, float=0.5f, float=1.0f, float=0.5f, float=1.0f);
     vvTFBell(FILE*);
-    virtual void write(FILE*);
     virtual const char* toString();
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
@@ -111,7 +110,6 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     vvTFPyramid(vvTFPyramid*);
     vvTFPyramid(vvColor, bool, float, float, float, float, float=0.5f, float=1.0f, float=0.0f, float=0.5f, float=1.0f, float=0.0f);
     vvTFPyramid(FILE*);
-    virtual void write(FILE*);
     virtual const char* toString();
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
@@ -130,7 +128,6 @@ class VIRVOEXPORT vvTFColor : public vvTFWidget
     vvTFColor(vvTFColor*);
     vvTFColor(vvColor, float, float=0.0f, float=0.0f);
     vvTFColor(FILE*);
-    virtual void write(FILE*);
     virtual const char* toString();
 };
 
@@ -145,7 +142,6 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
     vvTFSkip(vvTFSkip*);
     vvTFSkip(float, float, float=0.5f, float=0.0f, float=0.5f, float=0.0f);
     vvTFSkip(FILE*);
-    virtual void write(FILE*);
     virtual const char* toString();
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
 };
@@ -166,7 +162,6 @@ class VIRVOEXPORT vvTFCustom : public vvTFWidget
     vvTFCustom(float, float, float=0.5f, float=0.0f, float=0.5f, float=0.0f);
     vvTFCustom(FILE*);
     virtual ~vvTFCustom();
-    virtual void write(FILE*);
     virtual const char* toString();
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     vvTFPoint* addPoint(float, float=-1.0f, float=-1.0f);
@@ -204,7 +199,6 @@ public:
     vvTFCustom2D(vvTFCustom2D*);
     vvTFCustom2D(FILE*);
     virtual ~vvTFCustom2D();
-    virtual void write(FILE*);
     virtual const char* toString();
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     vvTFPoint* addPoint(float opacity, float x, float y);
@@ -249,7 +243,6 @@ class VIRVOEXPORT vvTFCustomMap : public vvTFWidget
     vvTFCustomMap(vvTFCustomMap*);
     vvTFCustomMap(FILE*);
     virtual ~vvTFCustomMap();
-    virtual void write(FILE*);
     virtual const char* toString();
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     void setOpacity(float val, float x, float y=-1.0f, float z=-1.0f);

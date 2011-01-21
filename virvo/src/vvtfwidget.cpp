@@ -112,6 +112,11 @@ void vvTFWidget::readName(FILE* fp)
   setName(tmpName);
 }
 
+void vvTFWidget::write(FILE* fp)
+{
+  fprintf(fp, toString());
+}
+
 float vvTFWidget::getOpacity(float, float, float)
 {
   return 0.0f;
@@ -170,11 +175,6 @@ vvTFBell::vvTFBell(FILE* fp) : vvTFWidget()
     &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity) != 11)
      std::cerr << "vvTFBell: fscanf failed" << std::endl;
   _ownColor = ownColorInt;
-}
-
-void vvTFBell::write(FILE* fp)
-{
-  fprintf(fp, toString());
 }
 
 const char* vvTFBell::toString()
@@ -340,11 +340,6 @@ vvTFPyramid::vvTFPyramid(FILE* fp) : vvTFWidget()
     &_top[0], &_top[1], &_top[2], &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity) != 14)
      std::cerr << "vvTFPyramid: fscanf failed" << std::endl;
   _ownColor = ownColorInt;
-}
-
-void vvTFPyramid::write(FILE* fp)
-{
-  fprintf(fp, toString());
 }
 
 const char* vvTFPyramid::toString()
@@ -566,11 +561,6 @@ vvTFColor::vvTFColor(FILE* fp) : vvTFWidget()
      std::cerr << "vvTFColor: fscanf failed" << std::endl;
 }
 
-void vvTFColor::write(FILE* fp)
-{
-  fprintf(fp, toString());
-}
-
 const char* vvTFColor::toString()
 {
   char* result = NULL;
@@ -624,11 +614,6 @@ vvTFSkip::vvTFSkip(FILE* fp) : vvTFWidget()
   readName(fp);
   if(fscanf(fp, " %g %g %g %g %g %g\n", &_pos[0], &_pos[1], &_pos[2], &_size[0], &_size[1], &_size[2]) != 6)
      std::cerr << "vvTFSkip: fscanf failed" << std::endl;
-}
-
-void vvTFSkip::write(FILE* fp)
-{
-  fprintf(fp, toString());
 }
 
 const char* vvTFSkip::toString()
@@ -759,13 +744,6 @@ vvTFCustom::~vvTFCustom()
     delete *iter;
   }
   _points.clear();
-}
-
-/** Write class parameters to file.
-*/
-void vvTFCustom::write(FILE* fp)
-{
-  fprintf(fp, toString());
 }
 
 const char* vvTFCustom::toString()
@@ -1079,11 +1057,6 @@ vvTFCustom2D::~vvTFCustom2D()
 
    if (_map != NULL)
       delete[] _map;
-}
-
-void vvTFCustom2D::write(FILE*)
-{
-   //TODO!!
 }
 
 const char* vvTFCustom2D::toString()
@@ -1503,11 +1476,6 @@ vvTFCustomMap::vvTFCustomMap(vvTFCustomMap* other)
 vvTFCustomMap::~vvTFCustomMap()
 {
    delete[] _map;
-}
-
-void vvTFCustomMap::write(FILE*)
-{
-   //TODO!!
 }
 
 const char* vvTFCustomMap::toString()
