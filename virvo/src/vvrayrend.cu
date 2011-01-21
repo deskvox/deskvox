@@ -309,6 +309,12 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     return;
   }
 
+  if (fmodf(tnear, dist) != 0.0f)
+  {
+    int tmp = (tnear / dist);
+    tnear = dist * tmp;
+  }
+
   if (tnear < 0.0f)
   {
     tnear = 0.0f;
