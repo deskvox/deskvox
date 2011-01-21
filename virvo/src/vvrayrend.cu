@@ -856,22 +856,20 @@ void vvRayRend::compositeVolume(int, int)
                                            vd->vox[2] * vd->vox[2]));
   int numSlices = max(1, static_cast<int>(_renderState._quality * diagonalVoxels));
 
-  // Inverse modelview-projection matrix.
-  vvMatrix mvp, pr;
-  getModelviewMatrix(&mvp);
+  vvMatrix invMv;
+  getModelviewMatrix(&invMv);
+  invMv.invert();
 
-  // Not related.
-  vvMatrix invMV;
-  invMV.copy(&mvp);
-  invMV.invert();
-  // Not related.
-
+  vvMatrix pr;
   getProjectionMatrix(&pr);
-  mvp.multiplyPost(&pr);
-  mvp.invert();
+
+  vvMatrix invMvpr;
+  getModelviewMatrix(&invMvpr);
+  invMvpr.multiplyPost(&pr);
+  invMvpr.invert();
 
   float* viewM = new float[16];
-  mvp.get(viewM);
+  invMvpr.get(viewM);
   cudaMemcpyToSymbol(c_invViewMatrix, viewM, sizeof(float4) * 4);
   delete[] viewM;
 
@@ -893,12 +891,12 @@ void vvRayRend::compositeVolume(int, int)
 
   vvVector3 eye;
   getEyePosition(&eye);
-  eye.multiply(&invMV);
+  eye.multiply(&invMv);
 
   vvVector3 origin;
 
   vvVector3 normal;
-  getShadingNormal(normal, origin, eye, invMV, isOrtho);
+  getShadingNormal(normal, origin, eye, invMv, isOrtho);
 
   const float3 N = make_float3(normal[0], normal[1], normal[2]);
 
