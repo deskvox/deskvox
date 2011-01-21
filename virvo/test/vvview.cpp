@@ -1524,6 +1524,10 @@ void vvView::transferMenuCallback(int item)
   }
 
   ds->renderer->updateTransferFunction();
+  if (ds->remoteRendering)
+  {
+    ds->_renderMaster->updateTransferFunction(ds->vd->tf);
+  }
   glutPostRedisplay();
 }
 

@@ -25,7 +25,8 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
-using namespace std;
+#include <sstream>
+#include <string>
 
 //----------------------------------------------------------------------------
 /** Constructor for client.
@@ -265,15 +266,26 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
 */
 vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
 {
+  uchar* buffer;
+  vvSocket::ErrorType retval;
+
   const int numTF = tf._widgets.count();
-  ostream* out;
-  //uchar* buffer;
+  ostringstream out;
 
   tf._widgets.first();
   for (int i=0; i<numTF; ++i)
   {
-    //tf._widgets.getData()->write(*out);
+    out << tf._widgets.getData()->toString();
     tf._widgets.next();
+  }
+
+  // TODO: avoid bad cast.
+  buffer = (uchar*)out.str().c_str();
+
+  if ((retval = vvSocket::write_data(buffer, strlen(out.str().c_str()))) != vvSocket::VV_OK)
+  {
+    delete[] buffer;
+    return retval;
   }
   
   return vvSocket::VV_OK;

@@ -160,6 +160,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
   bool interpolation;
   bool roiEnabled;
   int currentFrame;
+  vvTransFunc tf;
 
   while (1)
   {
@@ -226,6 +227,12 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
         if ((_socket->getBool(roiEnabled)) == vvSocket::VV_OK)
         {
           renderer->setROIEnable(roiEnabled);
+        }
+        break;
+      case vvSocketIO::VV_TRANSFER_FUNCTION:
+        if ((_socket->getTransferFunction(tf)) == vvSocket::VV_OK)
+        {
+          //renderer->getVolDesc()-> = tf;
         }
         break;
       case vvSocketIO::VV_VIEWING_DIRECTION:

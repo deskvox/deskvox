@@ -64,6 +64,7 @@ public:
   void setROIEnabled(const bool roiEnabled);
   void setViewingDirection(const vvVector3& vd);
   void toggleBoundingBox();
+  void updateTransferFunction(vvTransFunc& tf);
 private:
   std::vector<const char*> _slaveNames;
   std::vector<int> _slavePorts;

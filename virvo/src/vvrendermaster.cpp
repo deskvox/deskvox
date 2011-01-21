@@ -323,6 +323,17 @@ void vvRenderMaster::toggleBoundingBox()
   }
 }
 
+void vvRenderMaster::updateTransferFunction(vvTransFunc& tf)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_TRANSFER_FUNCTION) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putTransferFunction(tf);
+    }
+  }
+}
+
 void vvRenderMaster::createThreads()
 {
   _threadData = new ThreadArgs[_sockets.size()];
