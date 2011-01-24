@@ -1,4 +1,8 @@
+if GLUT
 SUBDIRS = src test
+else
+SUBDIRS = src
+endif
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
