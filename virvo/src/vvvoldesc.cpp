@@ -5249,7 +5249,7 @@ void vvVolDesc::makeBinTexture(uchar* texture, int width)
   }
 }
 
-static const size_t index(int i, int j, int k, int d0, int d1, int d2)
+static size_t index(int i, int j, int k, int d0, int d1, int d2)
 {
   (void)d2;
   return i+j*d0+k*d0*d1;

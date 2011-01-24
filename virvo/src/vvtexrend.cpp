@@ -611,7 +611,6 @@ void vvTexRend::removeTextures(GLuint*& privateTexNames, int* numTextures) const
 /// Generate textures for all rendering modes.
 vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutData)
 {
-  static bool first = true;
   ErrorType err = OK;
 
   vvDebugMsg::msg(2, "vvTexRend::makeTextures()");
