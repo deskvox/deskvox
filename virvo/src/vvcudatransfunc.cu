@@ -84,11 +84,11 @@ bool makePreintLUTCorrectCuda(int width, uchar *preIntTable, float thickness, fl
     uchar4 *d_preIntTable = NULL;
 
     bool ok = true;
-    vvCuda::checkError(&ok, cudaMalloc(&d_rgba, sizeof(float4)*width), "cudaMalloc d_rgba");
+    vvCuda::checkError(&ok, cudaMalloc(&d_rgba, sizeof(float4)*(width+1)), "cudaMalloc d_rgba");
     if(ok)
         vvCuda::checkError(&ok, cudaMalloc(&d_preIntTable, sizeof(uchar4)*width*width), "cudaMalloc d_preIntTable");
     if(ok)
-        vvCuda::checkError(&ok, cudaMemcpy(d_rgba, rgba, sizeof(float4)*width, cudaMemcpyHostToDevice), "cudaMemcpy rgba");
+        vvCuda::checkError(&ok, cudaMemcpy(d_rgba, rgba, sizeof(float4)*(width+1), cudaMemcpyHostToDevice), "cudaMemcpy rgba");
 
     if(ok)
         makePreintLUTCorrectKernel<<<width, width>>>(width, d_preIntTable, thickness, min, max, d_rgba);

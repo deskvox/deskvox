@@ -780,8 +780,12 @@ void vvTransFunc::makePreintLUTCorrect(int width, uchar *preIntTable, float thic
   vvDebugMsg::msg(1, "vvTransFunc::makePreintLUTCorrect()");
 
   // Generate arrays from pins:
-  float *rgba = new float[width * 4];
+  float *rgba = new float[width * 4 + 4];
   computeTFTexture(width, 1, 1, rgba, min, max);
+  rgba[width*4] = rgba[(width-1)*4];
+  rgba[width*4+1] = rgba[(width-1)*4+1];
+  rgba[width*4+2] = rgba[(width-1)*4+2];
+  rgba[width*4+3] = rgba[(width-1)*4+3];
 
 #ifdef HAVE_CUDA
   if(!makePreintLUTCorrectCuda(width, preIntTable, thickness, min, max, rgba))
