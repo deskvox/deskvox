@@ -26,7 +26,8 @@
 #endif
 
 #ifdef HAVE_CUDA
-
+#include <winsock2.h>
+#include <windows.h>
 #include <cstdlib>
 
 #include <cuda.h>

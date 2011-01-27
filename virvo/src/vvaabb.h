@@ -22,6 +22,10 @@
 #define VV_AABB_H
 
 #include "vvvecmath.h"
+#ifdef min
+#undef min
+#undef max
+#endif
 
 typedef vvVector3 vvBoxCorners[8];
 
