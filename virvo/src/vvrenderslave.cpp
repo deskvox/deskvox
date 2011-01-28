@@ -159,6 +159,8 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
   int h;
   bool interpolation;
   bool roiEnabled;
+  vvVector3 roiPos;
+  vvVector3 roiSize;
   int currentFrame;
   vvTransFunc tf;
 
@@ -229,6 +231,17 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
           renderer->setROIEnable(roiEnabled);
         }
         break;
+      case vvSocketIO::VV_ROI_POSITION:
+        if ((_socket->getVector3(roiPos)) == vvSocket::VV_OK)
+        {
+          renderer->_renderState._roiPos = roiPos;
+        }
+        break;
+      case vvSocketIO::VV_ROI_SIZE:
+        if ((_socket->getVector3(roiSize)) == vvSocket::VV_OK)
+        {
+          renderer->_renderState._roiSize = roiSize;
+        }
       case vvSocketIO::VV_TRANSFER_FUNCTION:
         tf._widgets.removeAll();
         if ((_socket->getTransferFunction(tf)) == vvSocket::VV_OK)

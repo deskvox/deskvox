@@ -304,6 +304,28 @@ void vvRenderMaster::setROIEnabled(const bool roiEnabled)
   }
 }
 
+void vvRenderMaster::setROIPos(const vvVector3& roiPos)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_ROI_POSITION) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putVector3(roiPos);
+    }
+  }
+}
+
+void vvRenderMaster::setROISize(const vvVector3& roiSize)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_ROI_SIZE) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putVector3(roiSize);
+    }
+  }
+}
+
 void vvRenderMaster::setViewingDirection(const vvVector3& vd)
 {
   for (int s=0; s<_sockets.size(); ++s)

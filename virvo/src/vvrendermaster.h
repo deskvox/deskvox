@@ -62,6 +62,8 @@ public:
   void setObjectDirection(const vvVector3& od);
   void setPosition(const vvVector3& position);
   void setROIEnabled(const bool roiEnabled);
+  void setROIPos(const vvVector3& roiPos);
+  void setROISize(const vvVector3& roiSize);
   void setViewingDirection(const vvVector3& vd);
   void toggleBoundingBox();
   void updateTransferFunction(vvTransFunc& tf);

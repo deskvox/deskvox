@@ -968,6 +968,7 @@ void vvView::specialCallback(int key, int, int)
   if (ds->remoteRendering)
   {
     ds->_renderMaster->setPosition(ds->pos);
+    ds->_renderMaster->setROIPos(probePos);
   }
   glutPostRedisplay();
 }
@@ -1776,6 +1777,11 @@ void vvView::roiMenuCallback(const int item)
         probeSize = vvVector3(0.00001f);
       }
       ds->renderer->setProbeSize(&probeSize);
+
+      if (ds->remoteRendering)
+      {
+        ds->_renderMaster->setROISize(probeSize);
+      }
     }
     else
     {
@@ -1793,6 +1799,11 @@ void vvView::roiMenuCallback(const int item)
         probeSize = vvVector3(1.0f);
       }
       ds->renderer->setProbeSize(&probeSize);
+
+      if (ds->remoteRendering)
+      {
+        ds->_renderMaster->setROISize(probeSize);
+      }
     }
     else
     {
