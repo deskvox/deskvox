@@ -128,6 +128,31 @@ bool vvTFWidget::getColor(vvColor&, float, float, float)
   return false;
 }
 
+vvTFWidget* vvTFWidget::produce(const WidgetType type)
+{
+  switch (type)
+  {
+  case vvTFWidget::TF_COLOR:
+    return new vvTFColor;
+  case vvTFWidget::TF_BELL:
+    return new vvTFBell;
+  case vvTFWidget::TF_PYRAMID:
+    return new vvTFPyramid;
+  case vvTFWidget::TF_SKIP:
+    return new vvTFSkip;
+  case vvTFWidget::TF_MAP:
+    return new vvTFCustomMap;
+  case vvTFWidget::TF_CUSTOM:
+    return new vvTFCustom;
+  case vvTFWidget::TF_CUSTOM_2D:
+    cerr << "vvTFWidget::produce() not implemented for TF_CUSTOM_2D. Returning NULL." << endl;
+    return NULL;
+  default:
+    cerr << "Unknown widget type. Defaulting to TF_COLOR" << endl;
+    return new vvTFColor;
+  }
+}
+
 //============================================================================
 
 vvTFBell::vvTFBell() : vvTFWidget()
@@ -1371,6 +1396,10 @@ void vvTFCustom2D::setOwnColor(bool flag)
    _ownColor = flag;
 }
 
+vvTFCustomMap::vvTFCustomMap()
+{
+  // Not implemented.
+}
 
 //
 //

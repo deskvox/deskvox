@@ -52,12 +52,24 @@ class VIRVOEXPORT vvTFWidget
 {
   protected:
     static const char* NO_NAME;
-    static const int MAX_STR_LEN;
     char* _name;                                  ///< widget name (bone, soft tissue, etc)
 
   public:
+    enum WidgetType
+    {
+      TF_COLOR,
+      TF_PYRAMID,
+      TF_BELL,
+      TF_SKIP,
+      TF_CUSTOM,
+
+      TF_CUSTOM_2D,
+      TF_MAP
+    };
+    static const int MAX_STR_LEN;
+
     float _pos[3];                                ///< position of widget's center [volume data space]
-	float _opacity;                               ///< maximum opacity [0..1]
+    float _opacity;                               ///< maximum opacity [0..1]
 
     vvTFWidget();
     vvTFWidget(float, float, float);
@@ -70,6 +82,8 @@ class VIRVOEXPORT vvTFWidget
     virtual const char* toString() = 0;
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
+
+    static vvTFWidget* produce(WidgetType type);
 };
 
 /** Transfer function widget shaped like a Gaussian bell.

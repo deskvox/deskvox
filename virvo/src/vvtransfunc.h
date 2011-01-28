@@ -42,17 +42,6 @@ class VIRVOEXPORT vvTransFunc
     int _discreteColors;                          ///< number of discrete colors to use for color interpolation (0 for smooth colors)
 
   public:
-    enum WidgetType
-    {
-      TF_COLOR,
-      TF_PYRAMID,
-      TF_BELL,
-      TF_SKIP,
-      TF_CUSTOM,
-
-      TF_CUSTOM_2D,
-      TF_MAP
-    };
     vvSLList<vvTFWidget*> _widgets;  ///< TF widget list
 
     vvTransFunc();
@@ -64,8 +53,8 @@ class VIRVOEXPORT vvTransFunc
     int  getNumDefaultColors();
     void setDefaultAlpha(int, float, float);
     int  getNumDefaultAlpha();
-    int  getNumWidgets(WidgetType);
-    void deleteWidgets(WidgetType);
+    int  getNumWidgets(vvTFWidget::WidgetType);
+    void deleteWidgets(vvTFWidget::WidgetType);
     void computeTFTexture(int, int, int, float*, float, float, float=0.0f, float=0.0f, float=0.0f, float=0.0f);
     vvColor computeBGColor(float, float, float);
     void computeTFTextureGamma(int, float*, float, float, int, float[], float[]);
@@ -91,6 +80,7 @@ class VIRVOEXPORT vvTransFunc
     int  saveMeshviewer(const char*);
     int  saveBinMeshviewer(const char*);
     int  loadMeshviewer(const char*);
+    static vvTFWidget::WidgetType getWidgetType(const char* str);
 
     /*!
      * \brief     Copy all widgets from another transfer function.

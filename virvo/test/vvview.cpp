@@ -1591,10 +1591,10 @@ void vvView::transferMenuCallback(int item)
     if (peakPosX > 1.0f) peakPosX -= 1.0f;
     cerr << "Peak position: " << peakPosX << endl;
 
-    ds->vd->tf.deleteWidgets(vvTransFunc::TF_PYRAMID);
-    ds->vd->tf.deleteWidgets(vvTransFunc::TF_BELL);
-    ds->vd->tf.deleteWidgets(vvTransFunc::TF_CUSTOM);
-    ds->vd->tf.deleteWidgets(vvTransFunc::TF_SKIP);
+    ds->vd->tf.deleteWidgets(vvTFWidget::TF_PYRAMID);
+    ds->vd->tf.deleteWidgets(vvTFWidget::TF_BELL);
+    ds->vd->tf.deleteWidgets(vvTFWidget::TF_CUSTOM);
+    ds->vd->tf.deleteWidgets(vvTFWidget::TF_SKIP);
     ds->vd->tf._widgets.append(
           new vvTFPyramid(vvColor(1.f, 1.f, 1.f), false, 1.f, peakPosX, .2f, 0.f),
           vvSLNode<vvTFWidget*>::NORMAL_DELETE);

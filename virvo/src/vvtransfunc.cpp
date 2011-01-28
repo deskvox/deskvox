@@ -98,7 +98,7 @@ vvTransFunc::~vvTransFunc()
 /** Delete all pins of given pin type from the list.
   @param wt widget type to delete
 */
-void vvTransFunc::deleteWidgets(WidgetType wt)
+void vvTransFunc::deleteWidgets(vvTFWidget::vvTFWidget::WidgetType wt)
 {
   vvTFWidget* w;
   bool done = false;
@@ -107,13 +107,13 @@ void vvTransFunc::deleteWidgets(WidgetType wt)
   while (!done && !_widgets.isEmpty())
   {
     w = _widgets.getData();
-    if ((wt==TF_COLOR   && dynamic_cast<vvTFColor*>(w)) ||
-      (wt==TF_PYRAMID   && dynamic_cast<vvTFPyramid*>(w)) ||
-      (wt==TF_BELL      && dynamic_cast<vvTFBell*>(w)) ||
-      (wt==TF_SKIP      && dynamic_cast<vvTFSkip*>(w)) ||
-      (wt==TF_CUSTOM    && dynamic_cast<vvTFCustom*>(w)) ||
-      (wt==TF_CUSTOM_2D && dynamic_cast<vvTFCustom2D*>(w)) ||
-      (wt==TF_MAP       && dynamic_cast<vvTFCustomMap*>(w)))
+    if ((wt==vvTFWidget::TF_COLOR   && dynamic_cast<vvTFColor*>(w)) ||
+      (wt==vvTFWidget::TF_PYRAMID   && dynamic_cast<vvTFPyramid*>(w)) ||
+      (wt==vvTFWidget::TF_BELL      && dynamic_cast<vvTFBell*>(w)) ||
+      (wt==vvTFWidget::TF_SKIP      && dynamic_cast<vvTFSkip*>(w)) ||
+      (wt==vvTFWidget::TF_CUSTOM    && dynamic_cast<vvTFCustom*>(w)) ||
+      (wt==vvTFWidget::TF_CUSTOM_2D && dynamic_cast<vvTFCustom2D*>(w)) ||
+      (wt==vvTFWidget::TF_MAP       && dynamic_cast<vvTFCustomMap*>(w)))
     {
       _widgets.remove();
       _widgets.first();
@@ -138,7 +138,7 @@ bool vvTransFunc::isEmpty()
 */
 void vvTransFunc::setDefaultColors(int index, float min, float max)
 {
-  deleteWidgets(TF_COLOR);
+  deleteWidgets(vvTFWidget::TF_COLOR);
   switch (index)
   {
     case 0:                                       // bright colors
@@ -213,12 +213,12 @@ void vvTransFunc::setDefaultAlpha(int index, float min, float max)
 {
   vvDebugMsg::msg(2, "vvTransFunc::setDefaultAlpha()");
 
-  deleteWidgets(TF_PYRAMID);
-  deleteWidgets(TF_BELL);
-  deleteWidgets(TF_CUSTOM);
-  deleteWidgets(TF_CUSTOM_2D);
-  deleteWidgets(TF_MAP);
-  deleteWidgets(TF_SKIP);
+  deleteWidgets(vvTFWidget::TF_PYRAMID);
+  deleteWidgets(vvTFWidget::TF_BELL);
+  deleteWidgets(vvTFWidget::TF_CUSTOM);
+  deleteWidgets(vvTFWidget::TF_CUSTOM_2D);
+  deleteWidgets(vvTFWidget::TF_MAP);
+  deleteWidgets(vvTFWidget::TF_SKIP);
   switch (index)
   {
     case 0:                                       // ascending (0->1)
@@ -1063,7 +1063,7 @@ int vvTransFunc::saveMeshviewer(const char* filename)
   }
   
   // Write color pins to file:
-  fprintf(fp, "ColorMapKnots: %d\n", getNumWidgets(TF_COLOR));
+  fprintf(fp, "ColorMapKnots: %d\n", getNumWidgets(vvTFWidget::TF_COLOR));
   _widgets.first();
   for (i=0; i<_widgets.count(); ++i)
   { 
@@ -1227,9 +1227,46 @@ int vvTransFunc::loadMeshviewer(const char* filename)
 }
 
 //----------------------------------------------------------------------------
+/** Translate a string to a widget type
+*/
+vvTFWidget::WidgetType vvTransFunc::getWidgetType(const char* str)
+{
+  if (strcmp(str, "TF_COLOR") == 0)
+  {
+    return vvTFWidget::TF_COLOR;
+  }
+  else if (strcmp(str, "TF_PYRAMID") == 0)
+  {
+    return vvTFWidget::TF_PYRAMID;
+  }
+  else if (strcmp(str, "TF_BELL") == 0)
+  {
+    return vvTFWidget::TF_BELL;
+  }
+  else if (strcmp(str, "TF_SKIP") == 0)
+  {
+    return vvTFWidget::TF_CUSTOM;
+  }
+  else if (strcmp(str, "TF_CUSTOM_2D") == 0)
+  {
+    return vvTFWidget::TF_CUSTOM_2D;
+  }
+  else if (strcmp(str, "TF_MAP") == 0)
+  {
+    return vvTFWidget::TF_MAP;
+  }
+  else
+  {
+    // TODO: More appropriate error handling.
+    cerr << "Unknown tfwidget type. Assuming TF_COLOR" << endl;
+    return vvTFWidget::TF_COLOR;
+  }
+}
+
+//----------------------------------------------------------------------------
 /** @return the number of widgets of a given type
 */
-int vvTransFunc::getNumWidgets(WidgetType wt)
+int vvTransFunc::getNumWidgets(vvTFWidget::WidgetType wt)
 {
   vvTFWidget* w;
   int num = 0;
@@ -1241,14 +1278,14 @@ int vvTransFunc::getNumWidgets(WidgetType wt)
     w = _widgets.getData();
     switch(wt)
     {
-      case TF_COLOR:   if (dynamic_cast<vvTFColor*>(w))   ++num; break;
-      case TF_PYRAMID: if (dynamic_cast<vvTFPyramid*>(w)) ++num; break;
-      case TF_BELL:    if (dynamic_cast<vvTFBell*>(w))    ++num; break;
-      case TF_SKIP:    if (dynamic_cast<vvTFSkip*>(w))    ++num; break;
-      case TF_CUSTOM:  if (dynamic_cast<vvTFCustom*>(w))  ++num; break;
+      case vvTFWidget::TF_COLOR:   if (dynamic_cast<vvTFColor*>(w))   ++num; break;
+      case vvTFWidget::TF_PYRAMID: if (dynamic_cast<vvTFPyramid*>(w)) ++num; break;
+      case vvTFWidget::TF_BELL:    if (dynamic_cast<vvTFBell*>(w))    ++num; break;
+      case vvTFWidget::TF_SKIP:    if (dynamic_cast<vvTFSkip*>(w))    ++num; break;
+      case vvTFWidget::TF_CUSTOM:  if (dynamic_cast<vvTFCustom*>(w))  ++num; break;
 
-      case TF_CUSTOM_2D: if (dynamic_cast<vvTFCustom2D*>(w))  ++num; break;
-      case TF_MAP:       if (dynamic_cast<vvTFCustomMap*>(w)) ++num; break;
+      case vvTFWidget::TF_CUSTOM_2D: if (dynamic_cast<vvTFCustom2D*>(w))  ++num; break;
+      case vvTFWidget::TF_MAP:       if (dynamic_cast<vvTFCustomMap*>(w)) ++num; break;
     }
     _widgets.next();
   }
@@ -1260,13 +1297,13 @@ int vvTransFunc::getNumWidgets(WidgetType wt)
  */
 vvTransFunc& vvTransFunc::operator=(vvTransFunc& rhs)
 {
-  deleteWidgets(TF_COLOR);
-  deleteWidgets(TF_PYRAMID);
-  deleteWidgets(TF_BELL);
-  deleteWidgets(TF_CUSTOM);
-  deleteWidgets(TF_CUSTOM_2D);
-  deleteWidgets(TF_MAP);
-  deleteWidgets(TF_SKIP);
+  deleteWidgets(vvTFWidget::TF_COLOR);
+  deleteWidgets(vvTFWidget::TF_PYRAMID);
+  deleteWidgets(vvTFWidget::TF_BELL);
+  deleteWidgets(vvTFWidget::TF_CUSTOM);
+  deleteWidgets(vvTFWidget::TF_CUSTOM_2D);
+  deleteWidgets(vvTFWidget::TF_MAP);
+  deleteWidgets(vvTFWidget::TF_SKIP);
 
   _widgets.first();
   rhs._widgets.first();
