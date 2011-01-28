@@ -230,6 +230,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
         }
         break;
       case vvSocketIO::VV_TRANSFER_FUNCTION:
+        tf._widgets.removeAll();
         if ((_socket->getTransferFunction(tf)) == vvSocket::VV_OK)
         {
           renderer->getVolDesc()->tf = tf;
