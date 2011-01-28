@@ -130,6 +130,30 @@ int vvToolshed::strCompare(const char* str1, const char* str2, int n)
 #endif
 }
 
+std::vector<std::string> vvToolshed::split(const std::string& str, const std::string& delim)
+{
+  std::vector<std::string> result;
+
+  std::string strCopy(str);
+  int pos = strCopy.find_first_of(delim);
+  while (pos != std::string::npos)
+  {
+    if (pos > 0)
+    {
+      result.push_back(strCopy.substr(0, pos));
+      strCopy = strCopy.substr(pos + 1);
+      pos = strCopy.find_first_of(delim);
+    }
+  }
+
+  if (strCopy.length() > 0)
+  {
+    result.push_back(strCopy);
+  }
+
+  return result;
+}
+
 //----------------------------------------------------------------------------
 /** Case insensitive string suffix comparison.
     @param str    pointer to string

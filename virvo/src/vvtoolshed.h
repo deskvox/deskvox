@@ -23,6 +23,7 @@
 
 #include <list>
 #include <string>
+#include <vector>
 
 #include <stdio.h>
 #ifndef __sgi
@@ -191,6 +192,7 @@ class VIRVOEXPORT vvToolshed
     static bool    isWhitespace(const char);
     static int     strCompare(const char*, const char*);
     static int     strCompare(const char*, const char*, int n);
+    static std::vector<std::string> split(const std::string& str, const std::string& delim);
     static bool    isSuffix(const char*, const char*);
     static void    HSBtoRGB(float*, float*, float*);
     static void    HSBtoRGB(float, float, float, float*, float*, float*);
