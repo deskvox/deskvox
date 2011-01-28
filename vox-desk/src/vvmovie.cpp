@@ -377,16 +377,16 @@ bool vvMovie::setStep(int step)
           break;
         case MOVEPEAK:
           peak[0] += steps->getData()->param[0];
-          _canvas->_vd->tf.deleteWidgets(vvTransFunc::TF_PYRAMID);
-          _canvas->_vd->tf.deleteWidgets(vvTransFunc::TF_BELL);
+          _canvas->_vd->tf.deleteWidgets(vvTFWidget::TF_PYRAMID);
+          _canvas->_vd->tf.deleteWidgets(vvTFWidget::TF_BELL);
           _canvas->_vd->tf._widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, peak[0], peak[1], 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
           tfChanged = true;
           break;
         case SETPEAK:
           peak[0] = steps->getData()->param[0];
           peak[1] = steps->getData()->param[1];
-          _canvas->_vd->tf.deleteWidgets(vvTransFunc::TF_PYRAMID);
-          _canvas->_vd->tf.deleteWidgets(vvTransFunc::TF_BELL);
+          _canvas->_vd->tf.deleteWidgets(vvTFWidget::TF_PYRAMID);
+          _canvas->_vd->tf.deleteWidgets(vvTFWidget::TF_BELL);
           _canvas->_vd->tf._widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, peak[0], peak[1], 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
           tfChanged = true;
           break;
