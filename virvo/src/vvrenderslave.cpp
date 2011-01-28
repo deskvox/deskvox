@@ -233,6 +233,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
         if ((_socket->getTransferFunction(tf)) == vvSocket::VV_OK)
         {
           renderer->getVolDesc()->tf = tf;
+          renderer->updateTransferFunction();
         }
         break;
       case vvSocketIO::VV_VIEWING_DIRECTION:

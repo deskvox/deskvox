@@ -281,12 +281,18 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
     std::string line = std::string(cline);
 
     // Skip over erroneous lines.
-    if (line.length() < 2)
+    if (line.length() < 3)
     {
       continue;
     }
 
     std::vector<std::string> tokens = vvToolshed::split(line, " ");
+
+    // At least widget type and name.
+    if (tokens.size() < 2)
+    {
+      continue;
+    }
     const char* name = tokens[0].c_str();
 
     vvTFWidget* widget = vvTFWidget::produce(vvTFWidget::getWidgetType(name));
