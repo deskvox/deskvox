@@ -251,6 +251,12 @@ const char* vvTFBell::toString()
   return result;
 }
 
+void vvTFBell::fromString(const std::string& str)
+{
+  std::vector<std::string> tokens = vvToolshed::split(str, " ");
+  strcpy(_name, tokens[1].c_str());
+}
+
 /** The 2D gaussian function can be found at:
   http://mathworld.wolfram.com/GaussianFunction.html
 */
@@ -414,6 +420,12 @@ const char* vvTFPyramid::toString()
       _top[0], _top[1], _top[2], _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
 
   return result;
+}
+
+void vvTFPyramid::fromString(const std::string& str)
+{
+  std::vector<std::string> tokens = vvToolshed::split(str, " ");
+  strcpy(_name, tokens[1].c_str());
 }
 
 float vvTFPyramid::getOpacity(float x, float y, float z)
@@ -634,6 +646,12 @@ const char* vvTFColor::toString()
   return result;
 }
 
+void vvTFColor::fromString(const std::string& str)
+{
+  std::vector<std::string> tokens = vvToolshed::split(str, " ");
+  strcpy(_name, tokens[1].c_str());
+}
+
 //============================================================================
 
 /** Default constructor.
@@ -687,6 +705,12 @@ const char* vvTFSkip::toString()
     _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2]);
 
   return result;
+}
+
+void vvTFSkip::fromString(const std::string& str)
+{
+  std::vector<std::string> tokens = vvToolshed::split(str, " ");
+  strcpy(_name, tokens[1].c_str());
 }
 
 /** @return 0 if x/y/z point is within skipped area, otherwise -1
@@ -823,6 +847,12 @@ const char* vvTFCustom::toString()
   }
 
   return result;
+}
+
+void vvTFCustom::fromString(const std::string& str)
+{
+  std::vector<std::string> tokens = vvToolshed::split(str, " ");
+  strcpy(_name, tokens[1].c_str());
 }
 
 /** @return opacity of a value in the TF, as defined by this widget
@@ -1125,6 +1155,11 @@ const char* vvTFCustom2D::toString()
 {
    //TODO!!
    return NULL;
+}
+
+void vvTFCustom2D::fromString(const std::string&)
+{
+  //TODO!!
 }
 
 float vvTFCustom2D::getOpacity(float x, float y, float)
@@ -1548,6 +1583,11 @@ const char* vvTFCustomMap::toString()
 {
    //TODO!!
    return NULL;
+}
+
+void vvTFCustomMap::fromString(const std::string&)
+{
+  //TODO!!
 }
 
 // Given x, y, z in volume space, find the index in the map 
