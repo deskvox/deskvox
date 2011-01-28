@@ -18,6 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include <cstdlib>
 #include <math.h>
 #include "vvtfwidget.h"
 #include "vvtoolshed.h"
@@ -254,6 +255,10 @@ const char* vvTFBell::toString()
 void vvTFBell::fromString(const std::string& str)
 {
   std::vector<std::string> tokens = vvToolshed::split(str, " ");
+  assert(tokens.size() == 13);
+  assert(tokens[0].compare("TF_BELL") == 0);
+
+  _name = new char[tokens[1].length()];
   strcpy(_name, tokens[1].c_str());
 }
 
@@ -425,7 +430,31 @@ const char* vvTFPyramid::toString()
 void vvTFPyramid::fromString(const std::string& str)
 {
   std::vector<std::string> tokens = vvToolshed::split(str, " ");
+  assert(tokens.size() == 16);
+  assert(tokens[0].compare("TF_PYRAMID") == 0);
+
+  _name = new char[tokens[1].length()];
   strcpy(_name, tokens[1].c_str());
+
+  _pos[0] = atof(tokens[2].c_str());
+  _pos[1] = atof(tokens[3].c_str());
+  _pos[2] = atof(tokens[4].c_str());
+
+  _bottom[0] = atof(tokens[5].c_str());
+  _bottom[1] = atof(tokens[6].c_str());
+  _bottom[2] = atof(tokens[7].c_str());
+
+  _top[0] = atof(tokens[8].c_str());
+  _top[1] = atof(tokens[9].c_str());
+  _top[2] = atof(tokens[10].c_str());
+
+  _col[0] = atof(tokens[11].c_str());
+  _col[1] = atof(tokens[12].c_str());
+  _col[2] = atof(tokens[13].c_str());
+
+  _ownColor = (tokens[14].compare("1") == 0);
+
+  _opacity = atof(tokens[15].c_str());
 }
 
 float vvTFPyramid::getOpacity(float x, float y, float z)
@@ -649,7 +678,19 @@ const char* vvTFColor::toString()
 void vvTFColor::fromString(const std::string& str)
 {
   std::vector<std::string> tokens = vvToolshed::split(str, " ");
+  assert(tokens.size() == 8);
+  assert(tokens[0].compare("TF_COLOR") == 0);
+
+  _name = new char[tokens[1].length()];
   strcpy(_name, tokens[1].c_str());
+
+  _pos[0] = atof(tokens[2].c_str());
+  _pos[1] = atof(tokens[3].c_str());
+  _pos[2] = atof(tokens[4].c_str());
+
+  _col[0] = atof(tokens[5].c_str());
+  _col[1] = atof(tokens[6].c_str());
+  _col[2] = atof(tokens[7].c_str());
 }
 
 //============================================================================
@@ -710,6 +751,10 @@ const char* vvTFSkip::toString()
 void vvTFSkip::fromString(const std::string& str)
 {
   std::vector<std::string> tokens = vvToolshed::split(str, " ");
+  assert(tokens.size() == 8);
+  assert(tokens[0].compare("TF_SKIP") == 0);
+
+  _name = new char[tokens[1].length()];
   strcpy(_name, tokens[1].c_str());
 }
 
@@ -852,6 +897,10 @@ const char* vvTFCustom::toString()
 void vvTFCustom::fromString(const std::string& str)
 {
   std::vector<std::string> tokens = vvToolshed::split(str, " ");
+  assert(tokens.size() >= 6);
+  assert(tokens[0].compare("TF_CUSTOM") == 0);
+
+  _name = new char[tokens[1].length()];
   strcpy(_name, tokens[1].c_str());
 }
 

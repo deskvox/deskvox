@@ -257,6 +257,44 @@ vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
 */
 vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
 {
+  uchar* buffer;
+  vvSocket::ErrorType retval;
+  int len;
+
+  if ((retval = getInt32(len)) != vvSocket::VV_OK)
+  {
+    return retval;
+  }
+
+  buffer = new uchar[len];
+  if ((retval = vvSocket::read_data(buffer, len)) != vvSocket::VV_OK)
+  {
+    delete[] buffer;
+    return retval;
+  }
+
+  istringstream in;
+  in.str((const char*)buffer);
+  char cline[vvTFWidget::MAX_STR_LEN];
+  while (in.getline(cline, vvTFWidget::MAX_STR_LEN))
+  {
+    std::string line = std::string(cline);
+
+    // Skip over erroneous lines.
+    if (line.length() < 2)
+    {
+      continue;
+    }
+
+    std::vector<std::string> tokens = vvToolshed::split(line, " ");
+    const char* name = tokens[0].c_str();
+
+    vvTFWidget* widget = vvTFWidget::produce(vvTFWidget::getWidgetType(name));
+
+    widget->fromString(line);
+    tf._widgets.append(widget, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+  }
+
   return vvSocket::VV_OK;
 }
 
@@ -279,10 +317,12 @@ vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
     tf._widgets.next();
   }
 
-  // TODO: avoid bad cast.
   buffer = (uchar*)out.str().c_str();
 
-  if ((retval = vvSocket::write_data(buffer, strlen(out.str().c_str()))) != vvSocket::VV_OK)
+  const size_t len = strlen(out.str().c_str());
+  putInt32((int)len);
+
+  if ((retval = vvSocket::write_data(buffer, len)) != vvSocket::VV_OK)
   {
     delete[] buffer;
     return retval;
