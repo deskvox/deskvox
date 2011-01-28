@@ -84,6 +84,7 @@ class VIRVOEXPORT vvTFWidget
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
 
     static vvTFWidget* produce(WidgetType type);
+    static WidgetType getWidgetType(const char* str);
 };
 
 /** Transfer function widget shaped like a Gaussian bell.

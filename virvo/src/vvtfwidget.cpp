@@ -153,6 +153,43 @@ vvTFWidget* vvTFWidget::produce(const WidgetType type)
   }
 }
 
+//----------------------------------------------------------------------------
+/** Translate a string to a widget type
+*/
+vvTFWidget::WidgetType vvTFWidget::getWidgetType(const char* str)
+{
+  if (strcmp(str, "TF_COLOR") == 0)
+  {
+    return vvTFWidget::TF_COLOR;
+  }
+  else if (strcmp(str, "TF_PYRAMID") == 0)
+  {
+    return vvTFWidget::TF_PYRAMID;
+  }
+  else if (strcmp(str, "TF_BELL") == 0)
+  {
+    return vvTFWidget::TF_BELL;
+  }
+  else if (strcmp(str, "TF_SKIP") == 0)
+  {
+    return vvTFWidget::TF_CUSTOM;
+  }
+  else if (strcmp(str, "TF_CUSTOM_2D") == 0)
+  {
+    return vvTFWidget::TF_CUSTOM_2D;
+  }
+  else if (strcmp(str, "TF_MAP") == 0)
+  {
+    return vvTFWidget::TF_MAP;
+  }
+  else
+  {
+    // TODO: More appropriate error handling.
+    cerr << "Unknown tfwidget type. Assuming TF_COLOR" << endl;
+    return vvTFWidget::TF_COLOR;
+  }
+}
+
 //============================================================================
 
 vvTFBell::vvTFBell() : vvTFWidget()

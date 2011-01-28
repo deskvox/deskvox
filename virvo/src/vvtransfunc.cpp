@@ -1227,43 +1227,6 @@ int vvTransFunc::loadMeshviewer(const char* filename)
 }
 
 //----------------------------------------------------------------------------
-/** Translate a string to a widget type
-*/
-vvTFWidget::WidgetType vvTransFunc::getWidgetType(const char* str)
-{
-  if (strcmp(str, "TF_COLOR") == 0)
-  {
-    return vvTFWidget::TF_COLOR;
-  }
-  else if (strcmp(str, "TF_PYRAMID") == 0)
-  {
-    return vvTFWidget::TF_PYRAMID;
-  }
-  else if (strcmp(str, "TF_BELL") == 0)
-  {
-    return vvTFWidget::TF_BELL;
-  }
-  else if (strcmp(str, "TF_SKIP") == 0)
-  {
-    return vvTFWidget::TF_CUSTOM;
-  }
-  else if (strcmp(str, "TF_CUSTOM_2D") == 0)
-  {
-    return vvTFWidget::TF_CUSTOM_2D;
-  }
-  else if (strcmp(str, "TF_MAP") == 0)
-  {
-    return vvTFWidget::TF_MAP;
-  }
-  else
-  {
-    // TODO: More appropriate error handling.
-    cerr << "Unknown tfwidget type. Assuming TF_COLOR" << endl;
-    return vvTFWidget::TF_COLOR;
-  }
-}
-
-//----------------------------------------------------------------------------
 /** @return the number of widgets of a given type
 */
 int vvTransFunc::getNumWidgets(vvTFWidget::WidgetType wt)

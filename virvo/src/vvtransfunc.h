@@ -80,7 +80,6 @@ class VIRVOEXPORT vvTransFunc
     int  saveMeshviewer(const char*);
     int  saveBinMeshviewer(const char*);
     int  loadMeshviewer(const char*);
-    static vvTFWidget::WidgetType getWidgetType(const char* str);
 
     /*!
      * \brief     Copy all widgets from another transfer function.
