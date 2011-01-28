@@ -149,8 +149,8 @@ vvTFWidget* vvTFWidget::produce(const WidgetType type)
     cerr << "vvTFWidget::produce() not implemented for TF_CUSTOM_2D. Returning NULL." << endl;
     return NULL;
   default:
-    cerr << "Unknown widget type. Defaulting to TF_COLOR" << endl;
-    return new vvTFColor;
+    cerr << "Unknown widget type. Returning NULL" << endl;
+    return NULL;
   }
 }
 
@@ -185,9 +185,8 @@ vvTFWidget::WidgetType vvTFWidget::getWidgetType(const char* str)
   }
   else
   {
-    // TODO: More appropriate error handling.
-    cerr << "Unknown tfwidget type. Assuming TF_COLOR" << endl;
-    return vvTFWidget::TF_COLOR;
+    cerr << "Unknown tfwidget type encountered" << endl;
+    return vvTFWidget::TF_UNKNOWN;
   }
 }
 

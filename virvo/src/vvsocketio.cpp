@@ -297,8 +297,11 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
 
     vvTFWidget* widget = vvTFWidget::produce(vvTFWidget::getWidgetType(name));
 
-    widget->fromString(line);
-    tf._widgets.append(widget, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    if (widget)
+    {
+      widget->fromString(line);
+      tf._widgets.append(widget, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    }
   }
 
   return vvSocket::VV_OK;

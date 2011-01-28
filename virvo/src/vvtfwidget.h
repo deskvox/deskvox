@@ -64,7 +64,9 @@ class VIRVOEXPORT vvTFWidget
       TF_CUSTOM,
 
       TF_CUSTOM_2D,
-      TF_MAP
+      TF_MAP,
+
+      TF_UNKNOWN
     };
     static const int MAX_STR_LEN;
 
