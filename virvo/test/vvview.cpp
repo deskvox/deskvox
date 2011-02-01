@@ -40,6 +40,10 @@ using std::ios;
 #include <sys/stat.h>
 #endif
 
+#ifndef _WIN32
+#include <execinfo.h>
+#endif
+
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -1965,9 +1969,14 @@ break;
   generated
 */
 void vvView::debugCallbackARB(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum /*severity*/,
-                      GLsizei /*length*/, GLchar const* /*message*/, GLvoid* /*userParam*/)
+                      GLsizei /*length*/, GLchar const* message, GLvoid* /*userParam*/)
 {
-  std::cerr << "ohoh" << std::endl;
+  cerr << "=======================================================" << endl;
+  cerr << "Execution stopped because an OpenGL error was detected." << endl;
+  cerr << "Message: " << message << endl;
+  cerr << "Backtrace is following" << endl;
+  cerr << "=======================================================" << endl;
+  ds->printBacktrace();
   exit(EXIT_FAILURE);
 }
 
@@ -2497,6 +2506,28 @@ void vvView::initARBDebugOutput()
 #endif // FREEGLUT
 
   dbgOutputExtSet = true;
+}
+
+
+void vvView::printBacktrace() const
+{
+#ifndef _WIN32
+  const int MaxFrames = 16;
+
+  void* buffer[MaxFrames] = { 0 };
+  const int count = backtrace(buffer, MaxFrames);
+
+  char** symbols = backtrace_symbols(buffer, count);
+
+  if (symbols)
+  {
+    for (int n=0; n<count; ++n)
+    {
+      fprintf(stderr, "%s\n", symbols[n]);
+    }
+    free(symbols);
+  }
+#endif
 }
 
 //----------------------------------------------------------------------------
