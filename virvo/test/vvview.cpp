@@ -20,6 +20,10 @@ using std::ios;
 #include <GLUT/glut.h>
 #else
 #include <GL/glut.h>
+#ifdef FREEGLUT
+// For glutInitContextFlags(GLUT_DEBUG), needed for GL_ARB_debug_output
+#include <GL/freeglut.h>
+#endif
 #endif
 #include <time.h>
 #include <assert.h>
@@ -149,6 +153,7 @@ vvView::vvView()
   clipPlane             = false;
   clipPerimeter         = false;
   mvScale               = 1.0f;
+  dbgOutputExtSet       = false;
 
 
   // keep in sync with vvrenderer.h
@@ -696,6 +701,9 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
                          const int maxBrickSizeY, const int maxBrickSizeZ)
 {
   vvDebugMsg::msg(3, "vvView::setRenderer()");
+
+  glewInit();
+  ds->initARBDebugOutput();
 
   currentGeom = gt;
   currentVoxels = vt;
@@ -1951,6 +1959,18 @@ break;
   glutPostRedisplay();
 }
 
+/** Callback function for gl errors.
+  If the extension GL_ARB_debug_output is available, this callback
+  function will be called automatically if an opengl error is
+  generated
+*/
+void vvView::debugCallbackARB(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum /*severity*/,
+                      GLsizei /*length*/, GLchar const* /*message*/, GLvoid* /*userParam*/)
+{
+  std::cerr << "ohoh" << std::endl;
+  exit(EXIT_FAILURE);
+}
+
 //----------------------------------------------------------------------------
 /** Do a performance test.
   Default behavior:
@@ -2375,7 +2395,15 @@ void vvView::initGraphics(int argc, char *argv[])
 
   cerr << "Number of CPUs found: " << vvToolshed::getNumProcessors() << endl;
   cerr << "Initializing GLUT." << endl;
+
   glutInit(&argc, argv);                // initialize GLUT
+
+// Other glut versions than freeglut currently don't support
+// debug context flags.
+#ifdef FREEGLUT
+  glutInitContextFlags(GLUT_DEBUG);
+#endif // FREEGLUT
+
   if (tryQuadBuffer)
   {
     // create stereo context
@@ -2441,6 +2469,35 @@ void vvView::initGraphics(int argc, char *argv[])
   }
 }
 
+
+void vvView::initARBDebugOutput()
+{
+  if (dbgOutputExtSet)
+  {
+    return;
+  }
+
+// As of January 2011, only freeglut supports glutInitContextFlags
+// with GLUT_DEBUG. This may be outdated in the meantime as may be
+// those checks!
+#ifdef FREEGLUT
+#ifdef GL_ARB_debug_output
+  if (glDebugMessageCallbackARB != NULL)
+  {
+    cerr << "Init callback function for GL_ARB_debug_output extension" << endl;
+    glDebugMessageCallbackARB(debugCallbackARB, NULL);
+  }
+  else
+  {
+    cerr << "glDebugMessageCallbackARB not available" << endl;
+  }
+#else
+  cerr << "Consider installing GLEW >= 1.5.7 for extension GL_ARB_debug_output" << endl;
+#endif // GL_ARB_debug_output
+#endif // FREEGLUT
+
+  dbgOutputExtSet = true;
+}
 
 //----------------------------------------------------------------------------
 /** Set projection mode to perspective or parallel.

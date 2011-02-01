@@ -148,6 +148,7 @@ class vvView
     bool clipEditMode;                          ///< edit clip plane using keyboard
     float mvScale;                              ///< scale factor for the mv matrix to view the whole volume
     vvVector3 planeRot;                         ///< rotation of clipping plane normal
+    bool dbgOutputExtSet;                       ///< callback func for gl debug output was registered or can't be registered
   public:
     vvView();
     ~vvView();
@@ -170,6 +171,8 @@ class vvView
     static void roiMenuCallback(int);
     static void clipMenuCallback(int);
     static void viewMenuCallback(int);
+    static void debugCallbackARB(GLenum source, GLenum type, GLuint id, GLenum severity,
+                                 GLsizei length, GLchar const* message, GLvoid* userParam);
     static void runTest();
     static double performanceTest();
     static void printProfilingInfo(const int testNr = 1, const int testCnt = 1);
@@ -177,6 +180,7 @@ class vvView
     static void printROIMessage();
     void setAnimationFrame(int);
     void initGraphics(int argc, char *argv[]);
+    void initARBDebugOutput();
     void createMenus();
     void setRendererType(vvRenderer::RendererType type);
     void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST,
