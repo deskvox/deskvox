@@ -955,7 +955,7 @@ void vvRayRend::compositeVolume(int, int)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvRayRend::setParameter(const ParameterType param, const float newValue, char*)
+void vvRayRend::setParameter(const ParameterType param, const float newValue, const char*)
 {
   vvDebugMsg::msg(3, "vvTexRend::setParameter()");
 

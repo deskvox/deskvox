@@ -2015,7 +2015,7 @@ void vvCudaSW<Base>::compositeVolume(int fromY, int toY)
 }
 
 template<class Base>
-void vvCudaSW<Base>::setParameter(typename Base::ParameterType param, float val, char *cval)
+void vvCudaSW<Base>::setParameter(typename Base::ParameterType param, float val, const char *cval)
 {
     vvDebugMsg::msg(3, "vvCudaSW::setParameter()");
     switch(param)

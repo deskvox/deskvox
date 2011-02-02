@@ -34,7 +34,7 @@ public:
   int getLUTSize() const;
   void updateTransferFunction();
   void compositeVolume(int = -1, int = -1);
-  void setParameter(const ParameterType, const float, char* = NULL);
+  void setParameter(ParameterType, float, const char* = NULL);
   void setNumSpaceSkippingCells(const int numSpaceSkippingCells[3]);
 
   bool getEarlyRayTermination() const;
