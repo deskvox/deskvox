@@ -98,7 +98,7 @@ vvTransFunc::~vvTransFunc()
 /** Delete all pins of given pin type from the list.
   @param wt widget type to delete
 */
-void vvTransFunc::deleteWidgets(vvTFWidget::vvTFWidget::WidgetType wt)
+void vvTransFunc::deleteWidgets(vvTFWidget::WidgetType wt)
 {
   vvTFWidget* w;
   bool done = false;

@@ -47,7 +47,6 @@ vvTFPoint::vvTFPoint(float op, float x, float y, float z)
 //============================================================================
 
 const char* vvTFWidget::NO_NAME = "UNNAMED";
-const int vvTFWidget::MAX_STR_LEN = 65535;
 
 /** Default constructor.
 */

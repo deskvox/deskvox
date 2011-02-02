@@ -68,7 +68,7 @@ class VIRVOEXPORT vvTFWidget
 
       TF_UNKNOWN
     };
-    static const int MAX_STR_LEN;
+    static const int MAX_STR_LEN = 65535;
 
     float _pos[3];                                ///< position of widget's center [volume data space]
     float _opacity;                               ///< maximum opacity [0..1]
