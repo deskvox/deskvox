@@ -1218,7 +1218,7 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   @param newValue   new value
   @param objName    name of the object to change (default: NULL)
 */
-void vvRenderer::setParameter(const ParameterType, const float, char*)
+void vvRenderer::setParameter(const ParameterType, const float, const char*)
 {
   vvDebugMsg::msg(3, "vvRenderer::setParameter()");
 }

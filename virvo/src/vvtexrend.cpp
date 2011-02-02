@@ -4883,7 +4883,7 @@ void vvTexRend::setObjectDirection(const vvVector3* od)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvTexRend::setParameter(const ParameterType param, const float newValue, char*)
+void vvTexRend::setParameter(const ParameterType param, const float newValue, const char*)
 {
   bool newInterpol;
 
