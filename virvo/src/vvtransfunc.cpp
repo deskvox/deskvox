@@ -1249,6 +1249,8 @@ int vvTransFunc::getNumWidgets(vvTFWidget::WidgetType wt)
 
       case vvTFWidget::TF_CUSTOM_2D: if (dynamic_cast<vvTFCustom2D*>(w))  ++num; break;
       case vvTFWidget::TF_MAP:       if (dynamic_cast<vvTFCustomMap*>(w)) ++num; break;
+
+      case vvTFWidget::TF_UNKNOWN: break;
     }
     _widgets.next();
   }
