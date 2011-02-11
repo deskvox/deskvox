@@ -128,7 +128,7 @@ void vvHalfSpace::setBrickList(const std::vector<BrickList>& brickList)
         {
           minCorner[i] = minAABB[i];
         }
-        else if (maxAABB[i] > maxCorner[i])
+        if (maxAABB[i] > maxCorner[i])
         {
           maxCorner[i] = maxAABB[i];
         }
