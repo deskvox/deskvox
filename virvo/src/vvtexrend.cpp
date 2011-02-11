@@ -3487,7 +3487,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     data->renderer->makeTextureBricks(texNames, &numTextures, rgbaLUT, data->brickList, areBricksCreated);
 
     float lutDistance = -1.0f;
-    GLuint pixLUTName;
+    GLuint pixLUTName = 0;
     if (data->renderer->voxelType==VV_PIX_SHD
      || data->renderer->voxelType==VV_FRG_PRG
      || data->renderer->voxelType==VV_TEX_SHD)
@@ -3711,6 +3711,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     data->renderer->removeTextures(texNames, &numTextures);
     delete isectShader;
     delete pixelShader;
+    glDeleteTextures(1, &pixLUTName);
     delete[] rgbaLUT;
     delete stopwatch;
 #ifdef HAVE_X11
