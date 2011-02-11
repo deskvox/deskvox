@@ -120,6 +120,7 @@ struct ThreadArgs
   int numTextures;
   GLuint pixLUTName;
   uchar* rgbaLUT;
+  float lutDistance;
 };
 
 //----------------------------------------------------------------------------
@@ -405,7 +406,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     {
       makeTextures(pixLUTName, rgbaLUT);      // we only have to do this once for non-RGBA textures
     }
-    updateTransferFunction(pixLUTName, rgbaLUT);
+    updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
   }
   else
   {
@@ -424,7 +425,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     pthread_barrier_wait(&_madeEmptyBricksBarrier);
 
     // Build global transfer function once in order to build up _nonemptyList.
-    updateTransferFunction(pixLUTName, rgbaLUT);
+    updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
     calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
     getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _renderState._isROIChanged);
     distributeBricks();
@@ -1484,6 +1485,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
       _threadData[i].transferFunctionChanged = false;
       _threadData[i].lastFrame = -1;
       _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
+      _threadData[i].lutDistance = -1.0f;
       _threadData[i].privateTexNames = NULL;
       _threadData[i].numTextures = 0;
 #ifdef HAVE_X11
@@ -1870,7 +1872,7 @@ void vvTexRend::updateTransferFunction()
 {
   if (_numThreads == 0)
   {
-    updateTransferFunction(pixLUTName, rgbaLUT);
+    updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
   }
   else
   {
@@ -1878,7 +1880,8 @@ void vvTexRend::updateTransferFunction()
   }
 }
 
-void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData)
+void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData, float& lutDistance,
+                                       int& currentShader, bool& usePreIntegration)
 {
   int size[3];
 
@@ -1890,14 +1893,14 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData)
       (voxelType==VV_FRG_PRG || (voxelType==VV_PIX_SHD && (_currentShader==0 || _currentShader==11))))
   {
     usePreIntegration = true;
-    if(_currentShader==0)
-      _currentShader = 11;
+    if(currentShader==0)
+       currentShader = 11;
   }
   else
   {
     usePreIntegration = false;
     if(_currentShader==11)
-      _currentShader = 0;
+       currentShader = 0;
   }
 
   // Generate arrays from pins:
@@ -1905,7 +1908,7 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData)
   vd->computeTFTexture(size[0], size[1], size[2], rgbaTF);
 
   if(!instantClassification())
-    updateLUT(1.0f, lutName, lutData);                                // generate color/alpha lookup table
+    updateLUT(1.0f, lutName, lutData, lutDistance);                     // generate color/alpha lookup table
   else
     lutDistance = -1.;                              // invalidate LUT
 
@@ -2988,7 +2991,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     // by trying to keep the number of slices constant
     if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
     {
-      updateLUT(thickness, pixLUTName, rgbaLUT);
+      updateLUT(thickness, pixLUTName, rgbaLUT, lutDistance);
     }
   }
 
@@ -3032,7 +3035,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
       // Make slice opaque if possible:
       if (instantClassification())
       {
-        updateLUT(0.0f, pixLUTName, rgbaLUT);
+        updateLUT(0.0f, pixLUTName, rgbaLUT, lutDistance);
       }
     }
   }
@@ -3231,7 +3234,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       const float thickness = diagonalVoxels / float(numSlices);
       if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
       {
-        updateLUT(thickness, pixLUTName, rgbaLUT);
+        updateLUT(thickness, pixLUTName, rgbaLUT, lutDistance);
       }
     }
   }
@@ -3275,7 +3278,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       // Make slice opaque if possible:
       if (instantClassification() && (_usedThreads == 0))
       {
-        updateLUT(1.0f, pixLUTName, rgbaLUT);
+        updateLUT(1.0f, pixLUTName, rgbaLUT, lutDistance);
       }
     }
   }
@@ -3549,7 +3552,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       if (data->transferFunctionChanged)
       {
-        data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT);
+        int currentShader;
+        bool usePreIntegration;
+        data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT, data->lutDistance,
+                                               currentShader, usePreIntegration);
         data->transferFunctionChanged = false;
       }
       roiChanged = data->renderer->_renderState._isROIChanged;
@@ -3575,8 +3581,11 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         const float diagonalVoxels = sqrtf(float(data->renderer->vd->vox[0] * data->renderer->vd->vox[0] +
           data->renderer->vd->vox[1] * data->renderer->vd->vox[1] +
           data->renderer->vd->vox[2] * data->renderer->vd->vox[2]));
-          data->renderer->updateLUT(diagonalVoxels / float(data->numSlices),
-                                    data->pixLUTName, data->rgbaLUT);
+        const float thickness = diagonalVoxels / float(data->numSlices);
+        if(data->lutDistance/thickness < 0.88 || thickness/data->lutDistance < 0.88)
+        {
+          data->renderer->updateLUT(thickness, data->pixLUTName, data->rgbaLUT, data->lutDistance);
+        }
       }
 
       glEnable(GL_TEXTURE_3D_EXT);
@@ -4157,7 +4166,7 @@ void vvTexRend::renderTex3DSpherical(vvMatrix* view)
     float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
       vd->vox[1] * vd->vox[1] +
       vd->vox[2] * vd->vox[2]));
-    updateLUT(diagonalVoxels / numShells, pixLUTName, rgbaLUT);
+    updateLUT(diagonalVoxels / numShells, pixLUTName, rgbaLUT, lutDistance);
   }
 
   vvSphere shell;
@@ -4269,7 +4278,7 @@ void vvTexRend::renderTex2DSlices(float zz)
     float diagVoxels = sqrtf(float(vd->vox[0]*vd->vox[0]
       + vd->vox[1]*vd->vox[1]
       + vd->vox[2]*vd->vox[2]));
-    updateLUT(diagVoxels/numTextures, pixLUTName, rgbaLUT);
+    updateLUT(diagVoxels/numTextures, pixLUTName, rgbaLUT, lutDistance);
   }
 
   // Volume rendering with multiple 2D textures:
@@ -4455,7 +4464,7 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
     float diagVoxels = sqrtf(float(vd->vox[0]*vd->vox[0]
       + vd->vox[1]*vd->vox[1]
       + vd->vox[2]*vd->vox[2]));
-    updateLUT(diagVoxels/numTextures, pixLUTName, rgbaLUT);
+    updateLUT(diagVoxels/numTextures, pixLUTName, rgbaLUT, lutDistance);
   }
 
   // Volume render a 2D texture:
@@ -4766,7 +4775,7 @@ int vvTexRend::getPreintTableSize() const
  @param dist  slice distance relative to 3D texture sample point distance
               (1.0 for original distance, 0.0 for all opaque).
 */
-void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData)
+void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData, float& lutDistance)
 {
   vvDebugMsg::msg(3, "Generating texture LUT. Slice distance = ", dist);
 
@@ -4902,7 +4911,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, co
         else
         {
           makeTextures(pixLUTName, rgbaLUT);
-          updateTransferFunction(pixLUTName, rgbaLUT);
+          updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
         }
       }
       break;
@@ -4920,7 +4929,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, co
       break;
     case vvRenderer::VV_PREINT:
       preIntegration = (newValue == 0.0f) ? false : true;
-      updateTransferFunction(pixLUTName, rgbaLUT);
+      updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
       break;
     case vvRenderer::VV_BINNING:
       if (newValue==0.0f) vd->_binning = vvVolDesc::LINEAR;
@@ -4941,7 +4950,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, co
       _renderState._emptySpaceLeaping = (newValue == 0.0f) ? false : true;
       // Maybe a tf type was chosen which is incompatible with empty space leaping.
       validateEmptySpaceLeaping();
-      updateTransferFunction(pixLUTName, rgbaLUT);
+      updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
       break;
     case vvRenderer::VV_OFFSCREENBUFFER:
       _renderState._useOffscreenBuffer = (newValue == 0.0f) ? false : true;

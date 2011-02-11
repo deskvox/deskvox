@@ -295,7 +295,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void generateDebugColors();
     VoxelType findBestVoxelType(const VoxelType) const;
     GeometryType findBestGeometry(const GeometryType, const VoxelType) const;
-    void updateLUT(const float, GLuint& lutName, uchar*& lutData);
+    void updateLUT(const float, GLuint& lutName, uchar*& lutData, float& lutDistance);
     int  getLUTSize(int*) const;
     int  getPreintTableSize() const;
     void enableNVShaders() const;
@@ -326,7 +326,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     virtual ~vvTexRend();
     void  renderVolumeGL();
     void  updateTransferFunction();
-    void  updateTransferFunction(GLuint& lutName, uchar*& lutData);
+    void  updateTransferFunction(GLuint& lutName, uchar*& lutData, float& lutDistance,
+                                 int& currentShader, bool& usePreIntegration);
     void  updateVolumeData();
     void  updateVolumeData(int, int, int, int, int, int);
     void  fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vector<BrickList>& brickList) const;
