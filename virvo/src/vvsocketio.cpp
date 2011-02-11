@@ -257,12 +257,13 @@ vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
 */
 vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
 {
-  uchar* buffer;
+  uchar* buffer = NULL;
   vvSocket::ErrorType retval;
   int len;
 
   if ((retval = getInt32(len)) != vvSocket::VV_OK)
   {
+    delete[] buffer;
     return retval;
   }
 
@@ -304,6 +305,7 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
     }
   }
 
+  delete[] buffer;
   return vvSocket::VV_OK;
 }
 
@@ -313,7 +315,7 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
 */
 vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
 {
-  uchar* buffer;
+  uchar* buffer = NULL;
   vvSocket::ErrorType retval;
 
   const int numTF = tf._widgets.count();
@@ -326,10 +328,10 @@ vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
     tf._widgets.next();
   }
 
-  buffer = new uchar[out.str().length()];
+  const size_t len = strlen(out.str().c_str());
+  buffer = new uchar[len];
   strcpy((char*)buffer, out.str().c_str());
 
-  const size_t len = strlen(out.str().c_str());
   putInt32((int)len);
 
   if ((retval = vvSocket::write_data(buffer, len)) != vvSocket::VV_OK)
