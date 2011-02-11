@@ -3471,7 +3471,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     vvStopwatch* stopwatch;
 
-    // Init glew.
     glewInit();
 
     data->renderer->initPostClassificationStage(pixelShader, fragProgName);
@@ -3489,11 +3488,11 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     float lutDistance = -1.0f;
     GLuint pixLUTName;
-    glGenTextures(1, &pixLUTName);
     if (data->renderer->voxelType==VV_PIX_SHD
      || data->renderer->voxelType==VV_FRG_PRG
      || data->renderer->voxelType==VV_TEX_SHD)
     {
+      glGenTextures(1, &pixLUTName);
       data->renderer->makeLUTTexture(pixLUTName, rgbaLUT);
     }
 
