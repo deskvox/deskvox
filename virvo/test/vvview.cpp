@@ -1483,9 +1483,16 @@ void vvView::optionsMenuCallback(int item)
   case 12:                                     // toggle showing of bricks
     {
       vvTexRend *rend = dynamic_cast<vvTexRend *>(ds->renderer);
-      ds->showBricks = !ds->showBricks;
-      rend->setShowBricks( ds->showBricks );
-      cerr << (!ds->showBricks?"not ":"") << "showing bricks" << endl;
+      if (rend != NULL)
+      {
+        ds->showBricks = !ds->showBricks;
+        rend->setShowBricks( ds->showBricks );
+        cerr << (!ds->showBricks?"not ":"") << "showing bricks" << endl;
+      }
+      else
+      {
+        cerr << "Option not available for this renderer" << endl;
+      }
     }
     break;
   case 13:
