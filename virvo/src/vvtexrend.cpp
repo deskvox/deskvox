@@ -3562,7 +3562,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       }
 
       data->renderer->_offscreenBuffers[data->threadId]->resize(data->width, data->height);
-      data->renderer->enableLUTMode(pixelShader,pixLUTName, fragProgName);
+      data->renderer->enableLUTMode(pixelShader, pixLUTName, fragProgName);
       data->renderer->evaluateLocalIllumination(pixelShader, data->normal);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:

@@ -158,6 +158,7 @@ vvView::vvView()
   clipPerimeter         = false;
   mvScale               = 1.0f;
   dbgOutputExtSet       = false;
+  showBt                = true;
 
 
   // keep in sync with vvrenderer.h
@@ -1975,9 +1976,15 @@ void vvView::debugCallbackARB(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/,
   cerr << "=======================================================" << endl;
   cerr << "Execution stopped because an OpenGL error was detected." << endl;
   cerr << "Message: " << message << endl;
-  cerr << "Backtrace is following" << endl;
+  if (ds->showBt)
+  {
+    cerr << "Backtrace is following" << endl;
+  }
   cerr << "=======================================================" << endl;
-  ds->printBacktrace();
+  if (ds->showBt)
+  {
+    ds->printBacktrace();
+  }
   exit(EXIT_FAILURE);
 }
 
@@ -2798,6 +2805,9 @@ void vvView::displayHelpInfo()
   cerr << "-fps (-f)" << endl;
   cerr << " Display rendering speed [frames per second]" << endl;
   cerr << endl;
+  cerr << "-nobt" << endl;
+  cerr << " Don't show backtrace on OpenGL error (GL_ARB_debug_output only)" << endl;
+  cerr << endl;
   cerr << "-transfunc (-t)" << endl;
   cerr << " Display transfer function color bar. Only works with 8 and 16 bit volumes" << endl;
   cerr << endl;
@@ -2839,6 +2849,10 @@ bool vvView::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-s")==0)
     {
       slaveMode = true;
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-nobt")==0)
+    {
+      showBt = false;
     }
     else if (vvToolshed::strCompare(argv[arg], "-roi")==0)
     {
