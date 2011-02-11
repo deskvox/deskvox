@@ -143,8 +143,8 @@ vvRect* vvAABB::getProjectedScreenRect() const
   vvRect* result = new vvRect;
   result->x = std::max(0, static_cast<int>(floorf(minX)));
   result->y = std::max(0, static_cast<int>(floorf(minY)));
-  result->width = std::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2]);
-  result->height = std::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3]);
+  result->width = std::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2] - result->x);
+  result->height = std::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3] - result->y);
 
   return result;
 }

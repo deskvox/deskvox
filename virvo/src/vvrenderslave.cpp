@@ -292,11 +292,15 @@ void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
   mv.get(matrixGL);
   glLoadMatrixf(matrixGL);
 
+  vvRect* screenRect = renderer->getProbedMask().getProjectedScreenRect();
+
+  glTranslatef(-renderer->getVolDesc()->pos[0],
+               -renderer->getVolDesc()->pos[1],
+               -renderer->getVolDesc()->pos[2]);
+
   renderer->renderVolumeGL();
 
   glFlush();
-
-  vvRect* screenRect = renderer->getProbedMask().getProjectedScreenRect();
 
   uchar* pixels = new uchar[screenRect->width * screenRect->height * 4];
   glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
