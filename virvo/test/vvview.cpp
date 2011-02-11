@@ -816,7 +816,7 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 'e': ds->mainMenuCallback(4);  break;
   case 'E': ds->clipMenuCallback(1); break;
   case 'f': ds->viewMenuCallback(2);  break;
-  case 'g': ds->optionsMenuCallback(12);  break;
+  case 'g': ds->optionsMenuCallback(13);  break;
   case 'H': ds->optionsMenuCallback(5); break;
   case 'h': ds->optionsMenuCallback(6); break;
   case 'i': ds->optionsMenuCallback(0);  break;
