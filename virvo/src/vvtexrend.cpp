@@ -114,13 +114,6 @@ struct ThreadArgs
   HWND window;
   HDC deviceContext;
 #endif
-
-  // Gl state specific.
-  GLuint* privateTexNames;
-  int numTextures;
-  GLuint pixLUTName;
-  uchar* rgbaLUT;
-  float lutDistance;
 };
 
 //----------------------------------------------------------------------------
@@ -511,7 +504,6 @@ vvTexRend::~vvTexRend()
     for (unsigned int i = 0; i < _usedThreads; ++i)
     {
       delete[] _threadData[i].pixels;
-      delete[] _threadData[i].rgbaLUT;
     }
 
     // Cleanup locking specific stuff.
@@ -1484,10 +1476,6 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
       _threadData[i].brickDataChanged = false;
       _threadData[i].transferFunctionChanged = false;
       _threadData[i].lastFrame = -1;
-      _threadData[i].rgbaLUT = new uchar[256 * 256 * 4];
-      _threadData[i].lutDistance = -1.0f;
-      _threadData[i].privateTexNames = NULL;
-      _threadData[i].numTextures = 0;
 #ifdef HAVE_X11
       XMapWindow(_threadData[i].display, _threadData[i].drawable);
       XFlush(_threadData[i].display);
@@ -3493,16 +3481,20 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     // For the main thread, this will take some time... .
     pthread_barrier_wait(&data->renderer->_distributedBricksBarrier);
 
+    uchar* rgbaLUT = new uchar[256 * 256 * 4];
+    GLuint* texNames = NULL;
+    int numTextures;
     bool areBricksCreated;
-    data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
-                                      data->rgbaLUT, data->brickList, areBricksCreated);
+    data->renderer->makeTextureBricks(texNames, &numTextures, rgbaLUT, data->brickList, areBricksCreated);
 
-    glGenTextures(1, &data->pixLUTName);
+    float lutDistance = -1.0f;
+    GLuint pixLUTName;
+    glGenTextures(1, &pixLUTName);
     if (data->renderer->voxelType==VV_PIX_SHD
      || data->renderer->voxelType==VV_FRG_PRG
      || data->renderer->voxelType==VV_TEX_SHD)
     {
-      data->renderer->makeLUTTexture(data->pixLUTName, data->rgbaLUT);
+      data->renderer->makeLUTTexture(pixLUTName, rgbaLUT);
     }
 
     data->renderer->setGLenvironment();
@@ -3545,8 +3537,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // Synchronous data setup per frame.
       if (data->brickDataChanged)
       {
-        data->renderer->makeTextureBricks(data->privateTexNames, &data->numTextures,
-                                          data->rgbaLUT, data->brickList, areBricksCreated);
+        data->renderer->makeTextureBricks(texNames, &numTextures, rgbaLUT, data->brickList, areBricksCreated);
         data->brickDataChanged = false;
       }
 
@@ -3554,7 +3545,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       {
         int currentShader;
         bool usePreIntegration;
-        data->renderer->updateTransferFunction(data->pixLUTName, data->rgbaLUT, data->lutDistance,
+        data->renderer->updateTransferFunction(pixLUTName, rgbaLUT, lutDistance,
                                                currentShader, usePreIntegration);
         data->transferFunctionChanged = false;
       }
@@ -3572,7 +3563,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       }
 
       data->renderer->_offscreenBuffers[data->threadId]->resize(data->width, data->height);
-      data->renderer->enableLUTMode(pixelShader, data->pixLUTName, fragProgName);
+      data->renderer->enableLUTMode(pixelShader,pixLUTName, fragProgName);
       data->renderer->evaluateLocalIllumination(pixelShader, data->normal);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
@@ -3582,9 +3573,9 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
           data->renderer->vd->vox[1] * data->renderer->vd->vox[1] +
           data->renderer->vd->vox[2] * data->renderer->vd->vox[2]));
         const float thickness = diagonalVoxels / float(data->numSlices);
-        if(data->lutDistance/thickness < 0.88 || thickness/data->lutDistance < 0.88)
+        if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
         {
-          data->renderer->updateLUT(thickness, data->pixLUTName, data->rgbaLUT, data->lutDistance);
+          data->renderer->updateLUT(thickness, pixLUTName, rgbaLUT, lutDistance);
         }
       }
 
@@ -3658,7 +3649,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
           tmp->render(data->renderer, data->normal,
                       data->farthest, data->delta,
                       data->probeMin, data->probeMax,
-                      data->privateTexNames, isectShader);
+                      texNames, isectShader);
         }
         if (data->renderer->_proxyGeometryOnGpu)
         {
@@ -3718,9 +3709,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       glDeleteProgramsARB(3, fragProgName);
     }
 
-    data->renderer->removeTextures(data->privateTexNames, &data->numTextures);
+    data->renderer->removeTextures(texNames, &numTextures);
     delete isectShader;
     delete pixelShader;
+    delete[] rgbaLUT;
     delete stopwatch;
 #ifdef HAVE_X11
     XCloseDisplay(data->display);
