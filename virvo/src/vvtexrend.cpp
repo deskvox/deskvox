@@ -3383,13 +3383,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     enableTexture(GL_TEXTURE_3D_EXT);
     sortBrickList(_sortedList, eye, normal, isOrtho);
 
-    if(_proxyGeometryOnGpu)
-    {
-      // Per frame parameters.
-      _isectShader->setParameter1f(0, ISECT_SHADER_DELTA, delta.length());
-      _isectShader->setParameter3f(0, ISECT_SHADER_PLANENORMAL, normal[0], normal[1], normal[2]);
-    }
-
     if (_renderState._showBricks)
     {
       // Debugging mode: render the brick outlines and deactivate shaders,
@@ -3407,6 +3400,9 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     {
       if (_proxyGeometryOnGpu)
       {
+        _isectShader->setParameter1f(0, ISECT_SHADER_DELTA, delta.length());
+        _isectShader->setParameter3f(0, ISECT_SHADER_PLANENORMAL, normal[0], normal[1], normal[2]);
+
         glEnableClientState(GL_VERTEX_ARRAY);
 #ifdef ISECT_GLSL_INST
 #ifdef ISECT_GLSL_GEO
