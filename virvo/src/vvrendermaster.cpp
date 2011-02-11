@@ -144,12 +144,6 @@ vvRenderMaster::ErrorType vvRenderMaster::initBricks(vvTexRend* renderer)
 
 void vvRenderMaster::render(const float bgColor[3])
 {
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glTranslatef(_renderer->getVolDesc()->pos[0],
-               _renderer->getVolDesc()->pos[1],
-               _renderer->getVolDesc()->pos[2]);
-
   float matrixGL[16];
 
   vvMatrix pr;
@@ -211,9 +205,6 @@ void vvRenderMaster::render(const float bgColor[3])
   glPopMatrix();
 
   _visitor->clearImages();
-
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
 }
 
 void vvRenderMaster::exit()

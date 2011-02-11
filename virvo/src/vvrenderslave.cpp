@@ -294,10 +294,6 @@ void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
 
   vvRect* screenRect = renderer->getProbedMask().getProjectedScreenRect();
 
-  glTranslatef(-renderer->getVolDesc()->pos[0],
-               -renderer->getVolDesc()->pos[1],
-               -renderer->getVolDesc()->pos[2]);
-
   renderer->renderVolumeGL();
 
   glFlush();

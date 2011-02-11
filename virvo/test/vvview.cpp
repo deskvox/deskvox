@@ -908,11 +908,6 @@ void vvView::specialCallback(int key, int, int)
     {
       ds->renderer->_renderState._clipPoint -= ds->renderer->_renderState._clipNormal * delta;
     }
-    else
-    {
-      ds->pos.e[0] -= delta;
-      ds->renderer->setPosition(&ds->pos);
-    }
     break;
   case GLUT_KEY_RIGHT:
     if (ds->roiEnabled)
@@ -923,11 +918,6 @@ void vvView::specialCallback(int key, int, int)
     else if (ds->clipEditMode)
     {
       ds->renderer->_renderState._clipPoint += ds->renderer->_renderState._clipNormal * delta;
-    }
-    else
-    {
-      ds->pos.e[0] += delta;
-      ds->renderer->setPosition(&ds->pos);
     }
     break;
   case GLUT_KEY_UP:
@@ -947,11 +937,6 @@ void vvView::specialCallback(int key, int, int)
     {
       ds->renderer->_renderState._clipPoint += ds->renderer->_renderState._clipNormal * delta;
     }
-    else
-    {
-      ds->pos.e[1] += delta;
-      ds->renderer->setPosition(&ds->pos);
-    }
     break;
   case GLUT_KEY_DOWN:
     if (ds->roiEnabled)
@@ -970,18 +955,12 @@ void vvView::specialCallback(int key, int, int)
     {
       ds->renderer->_renderState._clipPoint -= ds->renderer->_renderState._clipNormal * delta;
     }
-    else
-    {
-      ds->pos.e[1] -= delta;
-      ds->renderer->setPosition(&ds->pos);
-    }
     break;
   default: break;
   }
 
   if (ds->remoteRendering)
   {
-    ds->_renderMaster->setPosition(ds->pos);
     ds->_renderMaster->setROIPos(probePos);
   }
   glutPostRedisplay();

@@ -3028,11 +3028,6 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     }
   }
 
-  // Translate object by its position:
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glTranslatef(pos[0], pos[1], pos[2]);
-
   vvVector3 texPoint;                             // arbitrary point on current texture
   int isectCnt;                                   // intersection counter
   int j,k;                                        // counters
@@ -3146,9 +3141,6 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   }
   vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
   disableTexture(GL_TEXTURE_3D_EXT);
-
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
 }
 
 void vvTexRend::renderTexBricks(const vvMatrix* mv)
@@ -3281,11 +3273,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   }
 
   markBricksInFrustum(probeMin, probeMax);
-
-  // Translate object by its position:
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
 
   if (_usedThreads > 0)
   {
@@ -3438,8 +3425,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   }
 
   disableTexture(GL_TEXTURE_3D_EXT);
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
 }
 
 /** Partially renders the volume data set. Only that part is rendered that is
@@ -4214,12 +4199,6 @@ void vvTexRend::renderTex2DSlices(float zz)
 
   vvDebugMsg::msg(3, "vvTexRend::renderTex2DSlices()");
 
-  // Translate object by its position:
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  pos.copy(&vd->pos);
-  glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
-
   // Enable clipping plane if appropriate:
   if (_renderState._clipMode) activateClippingPlane();
 
@@ -4298,8 +4277,6 @@ void vvTexRend::renderTex2DSlices(float zz)
   }
 
   disableTexture(GL_TEXTURE_2D);
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
   deactivateClippingPlane();
   vvDebugMsg::msg(3, "Number of textures stored: ", vd->vox[2]);
   vvDebugMsg::msg(3, "Number of textures drawn:  ", numTextures);
@@ -4326,12 +4303,6 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
   int    i;
 
   vvDebugMsg::msg(3, "vvTexRend::renderTex2DCubic()");
-
-  // Translate object by its position:
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  pos.copy(&vd->pos);
-  glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
   // Enable clipping plane if appropriate:
   if (_renderState._clipMode) activateClippingPlane();
@@ -4485,8 +4456,6 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
     texIndex += texStep;
   }
   disableTexture(GL_TEXTURE_2D);
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
   deactivateClippingPlane();
 }
 
