@@ -326,7 +326,8 @@ vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
     tf._widgets.next();
   }
 
-  buffer = (uchar*)out.str().c_str();
+  buffer = new uchar[out.str().length()];
+  strcpy((char*)buffer, out.str().c_str());
 
   const size_t len = strlen(out.str().c_str());
   putInt32((int)len);
@@ -337,6 +338,7 @@ vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
     return retval;
   }
   
+  delete[] buffer;
   return vvSocket::VV_OK;
 }
 
