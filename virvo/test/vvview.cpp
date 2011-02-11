@@ -295,7 +295,6 @@ void vvView::mainLoop(int argc, char *argv[])
     delete fio;
 
     const vvVector3 size = vd->getSize();
-    const float diagonal = sqrtf(size[0] * size[0] + size[1] * size[1] + size[2] * size[2]);
     const float maxedge = ts_max(size[0], size[1], size[2]);
 
     mvScale = 1.0f / maxedge;
@@ -767,6 +766,8 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
         renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks);
       }
   }
+
+  remoteRendering &= ((rendererType == vvRenderer::TEXREND) && (currentGeom == vvTexRend::VV_BRICKS));
 
   if (!slaveMode)
   {
