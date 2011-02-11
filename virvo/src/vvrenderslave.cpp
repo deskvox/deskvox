@@ -242,6 +242,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
         {
           renderer->_renderState._roiSize = roiSize;
         }
+        break;
       case vvSocketIO::VV_TRANSFER_FUNCTION:
         tf._widgets.removeAll();
         if ((_socket->getTransferFunction(tf)) == vvSocket::VV_OK)
