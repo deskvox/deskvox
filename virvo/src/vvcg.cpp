@@ -95,6 +95,7 @@ void vvCg::initParameters(const int index,
   assert((parameterNames != NULL) && (parameterTypes != NULL));
 
   _cgParameters.clear();
+  _cgParameterNameMaps.clear();
 
   ParameterVector params(parameterCount);
 

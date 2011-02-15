@@ -5377,6 +5377,9 @@ void vvTexRend::enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName
         break;
       }
     }
+
+    delete[] names;
+    delete[] types;
   }
 }
 
@@ -5634,6 +5637,7 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
   isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);
 
   delete[] parameterNames;
+  delete[] parameterTypes;
 
   // Global scope, values will never be changed.
 

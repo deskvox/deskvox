@@ -46,11 +46,11 @@ public:
 
   inline CGparameter getParameter() const { return _parameter; }
   inline vvShaderParameterType getType() const { return _type; }
-  inline const char* getIdentifier() const { return _identifier; }
+  inline const std::string &getIdentifier() const { return _identifier; }
 private:
   CGparameter _parameter;
   vvShaderParameterType _type;
-  const char* _identifier;
+  std::string _identifier;
 };
 
 class VIRVOEXPORT vvCg : public vvShaderManager
