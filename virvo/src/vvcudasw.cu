@@ -902,8 +902,8 @@ __global__ void compositeSORC(
     int slstop = 0;
     int unistop = nslice;
     int unistart = 0;
-    int nisect = 0;
 #if 0
+    int nisect = 0;
     for(int i=0; i<4; ++i)
     {
         float2 tc1 = texcoord(c[i], 0);
