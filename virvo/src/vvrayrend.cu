@@ -6,7 +6,7 @@
 #include "vvconfig.h"
 #endif
 
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if 1 //defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
 #include "vvglew.h"
 
@@ -271,7 +271,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 planeNormal, const float planeDist)
 {
   const int maxSteps = INT_MAX;
-  const float tstep = dist;
   const float opacityThreshold = 0.95f;
 
   const uint x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -361,7 +360,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     const float4 randOffset = tex1D(randTexture, (y * width + x) % NUM_RAND_VECS);
     pos += make_float3(randOffset);
   }
-  const float3 step = ray.d * tstep;
+  const float3 step = ray.d * dist;
 
   // If just clipped, shade with the normal of the clipping surface.
   bool justClippedPlane = false;
@@ -380,7 +379,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       justClippedPlane = clippedPlane;
       justClippedSphere = clippedSphere;
 
-      t += tstep;
+      t += dist;
       if (t > tfar)
       {
         break;
@@ -396,7 +395,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     {
       if (skipSpace(texCoord))
       {
-        t += tstep;
+        t += dist;
         if (t > tfar)
         {
           break;
@@ -479,13 +478,25 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       break;
     }
 
-    t += tstep;
+    t += dist;
     if (t > tfar)
     {
       break;
     }
 
     pos += step;
+#ifdef STAFF_CODE
+    //---------------------------------------------------------------
+    // 2.5d-calculation
+    //---------------------------------------------------------------
+    if(src.w > 0.5)
+    {
+      // calc distance from ray-origin to current position
+      depth_out[y * texwidth + x] = i * dist;
+    }
+    //---------------------------------------------------------------
+    //###############################################################
+#endif
   }
   d_output[y * texwidth + x] = rgbaFloatToInt(dst);
 }

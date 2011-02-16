@@ -587,7 +587,7 @@ void vvRenderMaster::createThreads()
     pthread_create(&_threads[s], NULL, getImageFromSocket, (void*)&_threadData[s]);
   }
 
-  _visitor->setImages(images);
+  _visitor->setImages(_images);
 
   if(_sockets.size()>1)
   {
@@ -663,8 +663,6 @@ void* vvRenderMaster::getImageFromSocket(void* threadargs)
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
     data->renderMaster->_slaveCnt--;
     pthread_mutex_unlock( &data->renderMaster->_slaveMutex );
-
-    //sleep(1);
   }
 
   pthread_exit(NULL);
