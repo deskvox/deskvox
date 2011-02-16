@@ -5,10 +5,15 @@
 // Affiliation:     Brown University, Department of Computer Science
 //****************************************************************************
 
+#define IMAGESPACE_APPROX
+
 #include "../src/vvglew.h"
 #include "../src/vvconfig.h"
 
 #include <iostream>
+#include <fstream>
+#include <istream>
+#include <string>
 #include <iomanip>
 using std::cerr;
 using std::endl;
@@ -175,6 +180,8 @@ vvView::vvView()
   rendererName.push_back("Stingray");
   rendererName.push_back("Out of core texture renderer");
   assert(rendererName.size() == vvRenderer::VIRTEXREND+1);
+  rayRenderer           = false;
+
 }
 
 
@@ -352,6 +359,9 @@ void vvView::mainLoop(int argc, char *argv[])
     if (remoteRendering)
     {
       remoteRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
+#ifdef IMAGESPACE_APPROX
+      _renderMaster->setISA(true);
+#endif
     }
 
     // Set window title:
@@ -508,6 +518,7 @@ void vvView::displayCallback(void)
       ds->renderer->_renderState._opaqueGeometryPresent = true;
 #endif
       ds->renderer->renderVolumeGL();
+      //ds->renderCube();
     }
 
     if (ds->iconMode)
@@ -2571,56 +2582,13 @@ void vvView::renderClipObject()
   clipBuffer->unbindFramebuffer();
 }
 
+
+
+
 void vvView::renderCube() const
 {
-  const float width = 0.3f;
-  const float height = 0.3f;
-  const float depth = 0.3f;
-  const float posX = 0.0f;
-  const float posY = 0.0f;
-  const float posZ = 0.0f;
 
-  glBegin(GL_QUADS);
 
-    glColor3f(1.0f, 1.0f, 1.0f);
-
-    glNormal3f( 0.0f,  0.0f,  1.0f);
-    glVertex3f(posX - width, posY - height, posZ + depth);
-    glVertex3f(posX + width, posY - height, posZ + depth);
-    glVertex3f(posX + width, posY + height, posZ + depth);
-    glVertex3f(posX - width, posY + height, posZ + depth);
-
-    glNormal3f( 0.0f,  0.0f, -1.0f);
-    glVertex3f(posX + width, posY - height, posZ - depth);
-    glVertex3f(posX - width, posY - height, posZ - depth);
-    glVertex3f(posX - width, posY + height, posZ - depth);
-    glVertex3f(posX + width, posY + height, posZ - depth);
-
-    glNormal3f(-1.0f,  0.0f,  0.0f);
-    glVertex3f(posX - width, posY - height, posZ - depth);
-    glVertex3f(posX - width, posY - height, posZ + depth);
-    glVertex3f(posX - width, posY + height, posZ + depth);
-    glVertex3f(posX - width, posY + height, posZ - depth);
-
-    glNormal3f( 1.0f,  0.0f,  0.0f);
-    glVertex3f(posX + width, posY - height, posZ + depth);
-    glVertex3f(posX + width, posY - height, posZ - depth);
-    glVertex3f(posX + width, posY + height, posZ - depth);
-    glVertex3f(posX + width, posY + height, posZ + depth);
-
-    glNormal3f( 0.0f,  1.0f,  0.0f);
-    glVertex3f(posX - width, posY + height, posZ + depth);
-    glVertex3f(posX + width, posY + height, posZ + depth);
-    glVertex3f(posX + width, posY + height, posZ - depth);
-    glVertex3f(posX - width, posY + height, posZ - depth);
-
-    glNormal3f( 0.0f, -1.0f,  0.0f);
-    glVertex3f(posX - width, posY - height, -depth);
-    glVertex3f(posX - width, posY - height,  depth);
-    glVertex3f(posX + width, posY - height,  depth);
-    glVertex3f(posX + width, posY - height, -depth);
-
-  glEnd();
 }
 
 void vvView::renderQuad() const

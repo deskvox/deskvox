@@ -34,7 +34,9 @@ public:
   {
     VV_OK = 0,
     VV_BAD_RENDERER_ERROR,
-    VV_SOCKET_ERROR
+    VV_SOCKET_ERROR,
+    VV_MUTEX_ERROR,
+    VV_BAD_IMAGE
   };
 
   vvRemoteClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,

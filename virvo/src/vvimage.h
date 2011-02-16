@@ -89,9 +89,9 @@ class VIRVOEXPORT vvImage
     void setNewImagePtr(uchar*);
     void setVideoStyle(int);
     void setVideoQuant(int);
+    short getCodeType();
     short getHeight();
     short getWidth();
-    short getCodeType();
     int getSize();
     int getVideoSize();
     int getKeyframe();
@@ -109,8 +109,6 @@ class VIRVOEXPORT vvImage
     };
 
     Type t;
-    short height;
-    short width;
     short codetype;
     int size;
     int videosize;
@@ -135,5 +133,27 @@ class VIRVOEXPORT vvImage
     void put_same(short&, int&);
     int videoEncode();
     int videoDecode();
+
+  protected:
+    short height;
+    short width;
 };
+
+class VIRVOEXPORT vvImage2_5d : public vvImage
+{
+  public:
+    vvImage2_5d(short, short, uchar*);
+    vvImage2_5d();
+    virtual ~vvImage2_5d();
+
+    float getdepth(uint x, uint y);
+    void setdepth(uint x, uint y, float);
+
+    float* getpixeldepth();
+    int alloc_pd();
+
+  private:
+    float* pixeldepth;
+};
+
 #endif

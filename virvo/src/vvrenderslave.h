@@ -53,6 +53,8 @@ private:
 
   BufferPrecision _compositingPrecision;  ///< the precision of the buffer used for compositing (default: 16bit)
 
+  bool _immagespaceApprox;  ///< flag to turn additional image calculations for immagespace-approximation on and off
+
   void renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer);
 };
 

@@ -636,6 +636,46 @@ vvSocket::ErrorType vvSocketIO::putImage(vvImage* im)
 }
 
 //----------------------------------------------------------------------------
+/** Get an 2.5d-image from the socket.
+ @param im  pointer to a vvImage2_5d object.
+*/
+vvSocket::ErrorType vvSocketIO::getImage2_5d(vvImage2_5d* im)
+{
+  vvSocket::ErrorType err;
+
+  // get regular image-data
+  if((err = getImage(im)) != vvSocket::VV_OK)
+    return err;
+
+  if(im->alloc_pd())
+    return vvSocket::VV_ALLOC_ERROR;
+
+  // get extended 2.5D-data
+  if((err = getData(im->getpixeldepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_FLOAT)) != vvSocket::VV_OK)
+    return err;
+
+  return vvSocket::VV_OK;
+}
+
+//----------------------------------------------------------------------------
+/** Write an 2.5d-image to the socket.
+ @param im  pointer to an vvImage2_5d object.
+*/
+vvSocket::ErrorType vvSocketIO::putImage2_5d(vvImage2_5d* im)
+{
+  vvSocket::ErrorType err;
+
+  if((err = putImage(im)) != vvSocket::VV_OK)
+    return err;
+
+  // additional 2.5d-data
+  if((err = putData(im->getpixeldepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_FLOAT)) != vvSocket::VV_OK)
+    return err;
+
+  return vvSocket::VV_OK;
+}
+
+//----------------------------------------------------------------------------
 /** Get a file name from the socket.
  @param fn  the file name.
 */

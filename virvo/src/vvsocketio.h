@@ -124,6 +124,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_CURRENT_FRAME = 0,
       VV_EXIT,
       VV_IMAGE,
+      VV_IMAGE2_5D,
       VV_MATRIX,
       VV_MIPMODE,
       VV_OBJECT_DIRECTION,
@@ -137,7 +138,8 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_TRANSFER_FUNCTION,
       VV_INTERPOLATION,
       VV_VIEWING_DIRECTION,
-      VV_VOLUME
+      VV_VOLUME,
+      VV_IMMAGESPACE_APPROX
     };
 
     vvSocketIO(const short, const char*, vvSocket::SocketType, int clminport=0, int clmaxport=0);
@@ -155,6 +157,8 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType putBricks(std::vector<vvBrick*>& bricks);
     ErrorType getImage(vvImage*);
     ErrorType putImage(vvImage*);
+    ErrorType getImage2_5d(vvImage2_5d*);
+    ErrorType putImage2_5d(vvImage2_5d*);
     ErrorType getFileName(char*& fn);
     ErrorType putFileName(const char* fn);
     ErrorType getData(uchar**, int&);             //  unknown number and type

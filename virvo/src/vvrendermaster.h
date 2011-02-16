@@ -28,6 +28,7 @@
 #include "vvvoldesc.h"
 #include "vvpthread.h"
 
+
 #include <vector>
 
 class vvRenderer;
@@ -36,6 +37,16 @@ class vvSlaveVisitor;
 class VIRVOEXPORT vvRenderMaster : public vvRemoteClient
 {
 public:
+
+  vvMatrix _mv;
+  vvMatrix _pr;
+
+  bool _gapStart;
+
+  vvVector3 _eye;
+  GLuint _pointVBO;
+  GLuint _colorVBO;
+
   vvRenderMaster(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                  std::vector<const char*>& slaveFileNames,
                  const char* fileName);
@@ -57,6 +68,8 @@ public:
   void toggleBoundingBox();
   void updateTransferFunction(vvTransFunc& tf);
   void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
+  void setISA(const bool isa);
+
 private:
   vvBspTree* _bspTree;
   vvSlaveVisitor* _visitor;
@@ -75,9 +88,19 @@ private:
   void adjustQuality(float quality);
   void setInterpolation(bool interpolation);
 
+  // Mutex to count socket-threads that are ready
+  pthread_mutex_t _slaveMutex;
+  bool _slaveRdy;
+  int  _slaveCnt;
+
+  bool    _imagespaceApprox;
+  vvRect* _isaRect[2];
+  void    initIsaFrame();
+
   void createThreads();
   void destroyThreads();
   static void* getImageFromSocket(void* threadargs);
+
 };
 
 #endif

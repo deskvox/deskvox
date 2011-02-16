@@ -150,6 +150,8 @@ class vvView
     vvVector3 planeRot;                         ///< rotation of clipping plane normal
     bool dbgOutputExtSet;                       ///< callback func for gl debug output was registered or can't be registered
     bool showBt;                                ///< Show backtrace if execution stopped due to OpenGL errors
+    bool rayRenderer;
+
   public:
     vvView();
     ~vvView();

@@ -905,3 +905,53 @@ int vvImage::gen_RLC_decode(uchar* in, uchar* out, int size, int symbol_size, in
   }
   return 0;
 }
+
+//----------------------------------------------------------------------------
+
+vvImage2_5d::vvImage2_5d(short h, short w, uchar* image)
+: vvImage(h, w, image)
+{
+  pixeldepth = new float[h*w];
+}
+
+vvImage2_5d::vvImage2_5d()
+: vvImage()
+{
+  pixeldepth = 0;
+}
+
+vvImage2_5d::~vvImage2_5d()
+{
+  if(pixeldepth)
+    delete pixeldepth;
+}
+
+float vvImage2_5d::getdepth(uint x, uint y)
+{
+  return pixeldepth[y*width+x];
+}
+
+void vvImage2_5d::setdepth(uint x, uint y, float d)
+{
+  pixeldepth[y*width+x] = d;
+}
+
+float* vvImage2_5d::getpixeldepth()
+{
+  return pixeldepth;
+}
+
+//----------------------------------------------------------------------------
+/** Allocates momory for a new image and 2.5d-data
+ */
+int vvImage2_5d::alloc_pd()
+{
+  if(pixeldepth !=0)
+    delete pixeldepth;
+
+  pixeldepth = new float[width*height];
+  if (!pixeldepth)
+    return -1;
+
+  return 0;
+}

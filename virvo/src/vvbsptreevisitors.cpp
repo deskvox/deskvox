@@ -128,6 +128,7 @@ vvSlaveVisitor::~vvSlaveVisitor()
 
 void vvSlaveVisitor::visit(vvVisitable* obj) const
 {
+
   // The relation between halfspace and socket is based
   // upon the visitors knowledge which node it is currently
   // processing.
@@ -146,7 +147,8 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
 
   const vvRect* screenRect = hs->getProjectedScreenRect();
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-
+  if(screenRect == 0) std::cerr << "screenRect empty!" << std::endl;
+  if(img == 0) std::cerr << "img empty!" << std::endl;
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screenRect->width, screenRect->height,
                0, GL_RGBA, GL_UNSIGNED_BYTE, img->getCodedImage());
 
@@ -164,6 +166,8 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
                     / static_cast<float>(viewport[3]))
                    * 2.0f - 1.0f;
   vvGLTools::drawViewAlignedQuad(x1, y1, x2, y2);
+
+  glDisable(GL_TEXTURE_2D);
 }
 
 void vvSlaveVisitor::generateTextureIds(const int numImages)
@@ -180,11 +184,14 @@ void vvSlaveVisitor::setImages(std::vector<vvImage*>* images)
   _images = images;
 }
 
+int count1 = 0;
+
 void vvSlaveVisitor::clearImages()
 {
-  for (std::vector<vvImage*>::const_iterator it = _images->begin(); it != _images->end();
+  for (std::vector<vvImage*>::iterator it = _images->begin(); it != _images->end();
        ++it)
   {
     delete (*it);
+    (*it) = NULL;
   }
 }
