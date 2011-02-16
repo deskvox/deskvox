@@ -39,6 +39,8 @@ vvRenderMaster::~vvRenderMaster()
 {
   destroyThreads();
   // The visitor will delete the sockets either.
+  _visitor->clearImages();
+  delete _images;
   delete _visitor;
 }
 
@@ -102,7 +104,7 @@ vvRemoteClient::ErrorType vvRenderMaster::initSockets(const int defaultPort, vvS
     }
     else
     {
-      cerr << "No connection to remote rendering server established at: " << _slaveNames[0] << endl;
+      cerr << "No connection to remote rendering server established at: " << _slaveNames[s] << endl;
       cerr << "Falling back to local rendering" << endl;
       return VV_SOCKET_ERROR;
     }
@@ -406,15 +408,15 @@ void vvRenderMaster::createThreads()
   _threadData = new ThreadArgs[_sockets.size()];
   _threads = new pthread_t[_sockets.size()];
   pthread_barrier_init(&_barrier, NULL, _sockets.size() + 1);
-  std::vector<vvImage*>* images = new std::vector<vvImage*>(_sockets.size());
+  _images = new std::vector<vvImage*>(_sockets.size());
   for (int s=0; s<_sockets.size(); ++s)
   {
     _threadData[s].threadId = s;
     _threadData[s].renderMaster = this;
-    _threadData[s].images = images;
+    _threadData[s].images = _images;
     pthread_create(&_threads[s], NULL, getImageFromSocket, (void*)&_threadData[s]);
   }
-  _visitor->setImages(images);
+  _visitor->setImages(_images);
 }
 
 void vvRenderMaster::destroyThreads()

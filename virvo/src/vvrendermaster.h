@@ -69,6 +69,7 @@ private:
 
   vvBspTree* _bspTree;
   vvSlaveVisitor* _visitor;
+  std::vector<vvImage*>* _images;
 
   struct ThreadArgs
   {
