@@ -95,120 +95,264 @@ vvRenderState::vvRenderState()
   _opaqueGeometryPresent = false;
 }
 
-//----------------------------------------------------------------------------
-/** Set clipping plane parameters.
-  Parameters must be given in object coordinates.
-  The clipping plane will be fixed in object space.
-  The clipping plane will only be used for clipping the volume. I will
-  be switched off before the volume render command returns.
-  @param point   arbitrary point on clipping plane
-  @param normal  normal vector of clipping plane, direction points
-                 to clipped area. If length of normal is 0, the clipping plane
-                 parameters are not changed.
-*/
-void vvRenderState::setClippingPlane(const vvVector3* point, const vvVector3* normal)
+void vvRenderState::setParameter(const ParameterType param, const float newValue)
 {
-  vvDebugMsg::msg(3, "vvRenderState::setClippingPlane()");
-  if (normal->length()==0.0f) return;             // ignore call if normal is zero
-  _clipPoint.copy(point);
-  _clipNormal.copy(normal);
-  _clipNormal.normalize();
+  vvDebugMsg::msg(3, "vvRenderState::setParameter()");
+
+  switch (param)
+  {
+  case VV_QUALITY:
+    _quality = newValue;
+    break;
+  case VV_MIP_MODE:
+    _mipMode = (int)newValue;
+    break;
+  case VV_ALPHA_MODE:
+    _alphaMode = (int)newValue;
+    break;
+  case VV_LEAPEMPTY:
+    _emptySpaceLeaping = (bool)newValue;
+    break;
+  case VV_CLIP_PERIMETER:
+    _clipPerimeter = (bool)newValue;
+    break;
+  case VV_BOUNDARIES:
+    _boundaries = (bool)newValue;
+    break;
+  case VV_ORIENTATION:
+    _orientation = (bool)newValue;
+    break;
+  case VV_PALETTE:
+    _palette = (bool)newValue;
+    break;
+  case VV_QUALITY_DISPLAY:
+    _qualityDisplay = (bool)newValue;
+    break;
+  case VV_CLIP_MODE:
+    _clipMode = (bool)newValue;
+    break;
+  case VV_CLIP_SINGLE_SLICE:
+    _clipSingleSlice = (bool)newValue;
+    break;
+  case VV_CLIP_OPAQUE:
+    _clipOpaque = (bool)newValue;
+    break;
+  case VV_IS_ROI_USED:
+    _isROIUsed = (bool)newValue;
+    break;
+  case VV_IS_ROI_CHANGED:
+    _isROIChanged = (bool)newValue;
+    break;
+  case VV_SPHERICAL_ROI:
+    _sphericalROI = (bool)newValue;
+    break;
+  case VV_BRICK_TEXEL_OVERLAP:
+    _brickTexelOverlap = (int)newValue;
+    break;
+  case VV_SHOW_BRICKS:
+    _showBricks = (bool)newValue;
+    break;
+  case VV_COMPUTE_BRICK_SIZE:
+    _computeBrickSize = (bool)newValue;
+    break;
+  case VV_TEX_MEMORY_SIZE:
+    _texMemorySize = (int)newValue;
+    break;
+  case VV_FPS_DISPLAY:
+    _fpsDisplay = (bool)newValue;
+    break;
+  case VV_GAMMA_CORRECTION:
+    _gammaCorrection = (bool)newValue;
+    break;
+  case VV_OPACITY_WEIGHTS:
+    _opacityWeights = (bool)newValue;
+    break;
+  case VV_USE_OFFSCREEN_BUFFER:
+    _useOffscreenBuffer = (bool)newValue;
+    break;
+  case VV_IMAGE_SCALE:
+    _imageScale = newValue;
+    break;
+  case VV_IMAGE_PRECISION:
+    _imagePrecision = (BufferPrecision)newValue;
+    break;
+  case VV_SHOW_TEXTURE:
+    _showTexture = (bool)newValue;
+    break;
+  case VV_OPAQUE_GEOMETRY_PRESENT:
+    _opaqueGeometryPresent = (bool)newValue;
+    break;
+  default:
+    break;
+  }
 }
 
-//----------------------------------------------------------------------------
-/** @return clipping plane parameters in point and normal
-  Parameters are in object coordinates.
-  @param point   point on clipping plane
-  @param normal  normal vector of clipping plane, direction points
-                 to clipped area. If length of normal is 0, the clipping plane
-                 parameters are not changed.
-*/
-void vvRenderState::getClippingPlane(vvVector3* point, vvVector3* normal)
+void vvRenderState::setParameterV3(const ParameterType param, const vvVector3& newValue)
 {
-  vvDebugMsg::msg(3, "vvRenderState::getClippingPlane()");
-  point->copy(&_clipPoint);
-  normal->copy(&_clipNormal);
+  vvDebugMsg::msg(3, "vvRenderState::setParameterV3()");
+
+  switch (param)
+  {
+  case VV_CLIP_POINT:
+    _clipPoint = newValue;
+    break;
+  case VV_CLIP_NORMAL:
+    _clipNormal = newValue;
+    _clipNormal.normalize();
+    break;
+  case VV_CLIP_COLOR:
+    _clipColor = vvColor(newValue[0], newValue[1], newValue[2]);
+    break;
+  case VV_ROI_POS:
+    _roiPos = newValue;
+    break;
+  case VV_ROI_SIZE:
+    _roiSize = newValue;
+    break;
+  case VV_BRICK_SIZE:
+    {
+      for (int i=0; i<3; ++i)
+      {
+        _brickSize[i] = newValue[i];
+      }
+    }
+    break;
+  case VV_MAX_BRICK_SIZE:
+    {
+      for (int i=0; i<3; ++i)
+      {
+        _maxBrickSize[i] = newValue[i];
+      }
+    }
+    break;
+  case VV_BOUND_COLOR:
+    _boundColor = vvColor(newValue[0], newValue[1], newValue[2]);
+    break;
+  case VV_PROBE_COLOR:
+    _probeColor = vvColor(newValue[0], newValue[1], newValue[2]);
+    break;
+  default:
+    break;
+  }
 }
 
-//----------------------------------------------------------------------------
-/** Set clipping plane boundary color.
-  @param red,green,blue   RGB values [0..1] of boundaries color values
-*/
-void vvRenderState::setClipColor(float red, float green, float blue)
+void vvRenderState::setParameterV4(const ParameterType param, const vvVector4& newValue)
 {
-  vvDebugMsg::msg(3, "vvRenderState::setClipColor()");
-  red   = ts_clamp(red,   0.0f, 1.0f);
-  green = ts_clamp(green, 0.0f, 1.0f);
-  blue  = ts_clamp(blue,  0.0f, 1.0f);
-  _clipColor[0] = red;
-  _clipColor[1] = green;
-  _clipColor[2] = blue;
+  vvDebugMsg::msg(3, "vvRenderState::setParameterV4()");
+
+  switch (param)
+  {
+  case VV_GAMMA:
+    _gamma = newValue;
+    break;
+  default:
+    break;
+  }
 }
 
-//----------------------------------------------------------------------------
-/** Get clipping plane boundary color.
-  @param red,green,blue   RGB values [0..1] of boundaries color values
-*/
-void vvRenderState::getClipColor(float* red, float* green, float* blue)
+float vvRenderState::getParameter(const ParameterType param) const
 {
-  vvDebugMsg::msg(1, "vvRenderState::getClipColor()");
-  *red   = _clipColor[0];
-  *green = _clipColor[1];
-  *blue  = _clipColor[2];
+  vvDebugMsg::msg(3, "vvRenderState::getParameter()");
+
+  switch (param)
+  {
+  case VV_QUALITY:
+    return _quality;
+  case VV_MIP_MODE:
+    return _mipMode;
+  case VV_ALPHA_MODE:
+    return _alphaMode;
+  case VV_CLIP_PERIMETER:
+    return _clipPerimeter;
+  case VV_BOUNDARIES:
+    return _boundaries;
+  case VV_ORIENTATION:
+    return _orientation;
+  case VV_PALETTE:
+    return _palette;
+  case VV_QUALITY_DISPLAY:
+    return _qualityDisplay;
+  case VV_CLIP_MODE:
+    return _clipMode;
+  case VV_CLIP_SINGLE_SLICE:
+    return _clipSingleSlice;
+  case VV_CLIP_OPAQUE:
+    return _clipOpaque;
+  case VV_IS_ROI_CHANGED:
+    return _isROIChanged;
+  case VV_IS_ROI_USED:
+    return _isROIUsed;
+  case VV_SPHERICAL_ROI:
+    return _sphericalROI;
+  case VV_BRICK_TEXEL_OVERLAP:
+    return _brickTexelOverlap;
+  case VV_TEX_MEMORY_SIZE:
+    return _texMemorySize;
+  case VV_FPS_DISPLAY:
+    return _fpsDisplay;
+  case VV_GAMMA_CORRECTION:
+    return _gammaCorrection;
+  case VV_OPACITY_WEIGHTS:
+    return _opacityWeights;
+  case VV_USE_OFFSCREEN_BUFFER:
+    return _useOffscreenBuffer;
+  case VV_IMAGE_SCALE:
+    return _imageScale;
+  case VV_IMAGE_PRECISION:
+    return _imagePrecision;
+  case VV_SHOW_TEXTURE:
+    return _showTexture;
+  case VV_OPAQUE_GEOMETRY_PRESENT:
+    return _opaqueGeometryPresent;
+  default:
+    return -VV_FLT_MAX;
+    break;
+  }
+  return -VV_FLT_MAX;
 }
 
-//----------------------------------------------------------------------------
-/** Set boundaries color.
-  @param red,green,blue   RGB values [0..1] of boundaries color values
-*/
-void vvRenderState::setBoundariesColor(float red, float green, float blue)
+vvVector3 vvRenderState::getParameterV3(const ParameterType param) const
 {
-  vvDebugMsg::msg(3, "vvRenderer::setBoundariesColor()");
-  red   = ts_clamp(red,   0.0f, 1.0f);
-  green = ts_clamp(green, 0.0f, 1.0f);
-  blue  = ts_clamp(blue,  0.0f, 1.0f);
-  _boundColor[0] = red;
-  _boundColor[1] = green;
-  _boundColor[2] = blue;
+  vvDebugMsg::msg(3, "vvRenderState::getParameterV3()");
+
+  switch (param)
+  {
+  case VV_CLIP_POINT:
+    return _clipPoint;
+  case VV_CLIP_NORMAL:
+    return _clipNormal;
+  case VV_CLIP_COLOR:
+    return _clipColor;
+  case VV_ROI_SIZE:
+    return _roiSize;
+  case VV_ROI_POS:
+    return _roiPos;
+  case VV_BRICK_SIZE:
+    return vvVector3(_brickSize[0], _brickSize[1], _brickSize[2]);
+  case VV_MAX_BRICK_SIZE:
+    return vvVector3(_maxBrickSize[0], _maxBrickSize[1], _maxBrickSize[2]);
+  case VV_BOUND_COLOR:
+    return _boundColor;
+  case VV_PROBE_COLOR:
+    return _probeColor;
+  default:
+    break;
+  }
+  return vvVector3(-VV_FLT_MAX, -VV_FLT_MAX, -VV_FLT_MAX);
 }
 
-//----------------------------------------------------------------------------
-/** Get boundaries color.
-  @param red,green,blue   RGB values [0..1] of boundaries color values
-*/
-void vvRenderState::getBoundariesColor(float* red, float* green, float* blue)
+vvVector4 vvRenderState::getParameterV4(const ParameterType param) const
 {
-  vvDebugMsg::msg(1, "vvRenderer::getBoundariesColor()");
-  *red   = _boundColor[0];
-  *green = _boundColor[1];
-  *blue  = _boundColor[2];
-}
+  vvDebugMsg::msg(3, "vvRenderState::getParameterV4()");
 
-//----------------------------------------------------------------------------
-/** Set probe boundaries color.
-  @param red,green,blue   RGB values [0..1] of probe boundaries color values
-*/
-void vvRenderState::setProbeColor(float red, float green, float blue)
-{
-  vvDebugMsg::msg(3, "vvRenderer::setProbeColor()");
-  red   = ts_clamp(red,   0.0f, 1.0f);
-  green = ts_clamp(green, 0.0f, 1.0f);
-  blue  = ts_clamp(blue,  0.0f, 1.0f);
-  _probeColor[0] = red;
-  _probeColor[1] = green;
-  _probeColor[2] = blue;
-}
-
-//----------------------------------------------------------------------------
-/** Get probe boundaries color.
-  @param red,green,blue   RGB values [0..1] of probe boundaries color values
-*/
-void vvRenderState::getProbeColor(float* red, float* green, float* blue)
-{
-  vvDebugMsg::msg(1, "vvRenderer::getProbeColor()");
-  *red   = _probeColor[0];
-  *green = _probeColor[1];
-  *blue  = _probeColor[2];
+  switch (param)
+  {
+  case VV_GAMMA:
+    return _gamma;
+  default:
+    break;
+  }
+  return vvVector4(-VV_FLT_MAX, -VV_FLT_MAX, -VV_FLT_MAX, -VV_FLT_MAX);
 }
 
 //----------------------------------------------------------------------------
@@ -219,11 +363,11 @@ void vvRenderState::getProbeColor(float* red, float* green, float* blue)
   @param renderState contains variables for the renderer
 */
 vvRenderer::vvRenderer(vvVolDesc* voldesc, vvRenderState renderState)
+  : vvRenderState(renderState)
 {
   vvDebugMsg::msg(1, "vvRenderer::vvRenderer()");
   assert(voldesc!=NULL);
   vd = voldesc;
-  _renderState = renderState;
   init();
 }
 
@@ -302,9 +446,9 @@ void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
   // Otherwise use objDir as the normal.
   // Exception: if user's eye is inside object and probe mode is off,
   // then use viewDir as the normal.
-  if (_renderState._clipMode)
+  if (_clipMode)
   {
-    normal.copy(&_renderState._clipNormal);
+    normal.copy(&_clipNormal);
   }
   else if (isOrtho || (viewDir[0] == 0.0f && viewDir[1] == 0.0f && viewDir[2] == 0.0f))
   {
@@ -315,7 +459,7 @@ void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
     origin.multiply(&invMV);
     normal.sub(&origin);
   }
-  else if (!_renderState._isROIUsed && isInVolume(&eye))
+  else if (!_isROIUsed && isInVolume(&eye))
   {
     // Draw slices perpendicular to viewing direction:
     normal.copy(&viewDir);
@@ -347,7 +491,7 @@ void vvRenderer::getShadingNormal(vvVector3& normal, vvVector3& origin,
     origin.multiply(&invMV);
     normal.sub(&origin);
   }
-  else if (!_renderState._isROIUsed && isInVolume(&eye))
+  else if (!_isROIUsed && isInVolume(&eye))
   {
     // Draw slices perpendicular to viewing direction:
     normal.copy(&viewDir);
@@ -369,13 +513,13 @@ void vvRenderer::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, 
   const vvVector3 size(vd->getSize());
   const vvVector3 size2 = size * 0.5f;
 
-  if (_renderState._isROIUsed)
+  if (_isROIUsed)
   {
     // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj = _renderState._roiPos;
+    probePosObj = _roiPos;
 
     // Compute probe min/max coordinates in object space:
-    const vvVector3 maxSize = _renderState._roiSize * size2;
+    const vvVector3 maxSize = _roiSize * size2;
 
     probeMin = probePosObj - maxSize;
     probeMax = probePosObj + maxSize;
@@ -466,10 +610,10 @@ void vvRenderer::renderVolumeGL()
   vvDebugMsg::msg(3, "vvRenderer::renderVolumeGL()");
 
   // Draw legend if requested:
-  if (_renderState._orientation) renderCoordinates();
-  if (_renderState._palette) renderPalette();
-  if (_renderState._qualityDisplay) renderQualityDisplay();
-  if (_renderState._fpsDisplay) renderFPSDisplay();
+  if (_orientation) renderCoordinates();
+  if (_palette) renderPalette();
+  if (_qualityDisplay) renderQualityDisplay();
+  if (_fpsDisplay) renderFPSDisplay();
 }
 
 //----------------------------------------------------------------------------
@@ -769,7 +913,7 @@ void vvRenderer::renderQualityDisplay()
   vvVector4 clearColor = vvGLTools::queryClearColor();
   vvVector4 fontColor = vvVector4(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f);
   printGL->setFontColor(fontColor);
-  printGL->print(-0.9f, 0.9f, "Quality: %-9.2f", _renderState._quality);
+  printGL->print(-0.9f, 0.9f, "Quality: %-9.2f", _quality);
   delete printGL;
 }
 
@@ -802,7 +946,7 @@ void vvRenderer::renderFPSDisplay()
   @param oPos   position of boundary box center [object coordinates]
 @param color  bounding box color (R,G,B) [0..1], array of 3 floats expected
 */
-void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, const float* color) const
+void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, const vvColor* color) const
 {
   vvVector3 vertvec[8];                           // vertex vectors in object space
   GLboolean glsLighting;                          // stores GL_LIGHTING
@@ -847,7 +991,7 @@ void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, 
   glTranslatef((*oPos)[0], (*oPos)[1], (*oPos)[2]);
 
   // Set box color:
-  glColor4f(color[0], color[1], color[2], 1.0);
+  glColor4f((*color)[0], (*color)[1], (*color)[2], 1.0);
 
   // Disable lighting:
   glDisable(GL_LIGHTING);
@@ -1007,19 +1151,19 @@ void vvRenderer::setObjectDirection(const vvVector3*)
 void vvRenderer::setROIEnable(const bool flag)
 {
   vvDebugMsg::msg(1, "vvRenderer::setROIEnable()");
-  _renderState._isROIChanged = true;
-  _renderState._isROIUsed = flag;
+  _isROIChanged = true;
+  _isROIUsed = flag;
 }
 
 void vvRenderer::setSphericalROI(const bool sphericalROI)
 {
   vvDebugMsg::msg(1, "vvRenderer::setSphericalROI()");
-  _renderState._sphericalROI = sphericalROI;
+  _sphericalROI = sphericalROI;
 }
 
 bool vvRenderer::isROIEnabled() const
 {
-  return _renderState._isROIUsed;
+  return _isROIUsed;
 }
 
 //----------------------------------------------------------------------------
@@ -1029,8 +1173,8 @@ bool vvRenderer::isROIEnabled() const
 void vvRenderer::setProbePosition(const vvVector3* pos)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProbePosition()");
-  _renderState._isROIChanged = true;
-  _renderState._roiPos.copy(pos);
+  _isROIChanged = true;
+  _roiPos.copy(pos);
 }
 
 //----------------------------------------------------------------------------
@@ -1040,7 +1184,7 @@ void vvRenderer::setProbePosition(const vvVector3* pos)
 void vvRenderer::getProbePosition(vvVector3* pos) const
 {
   vvDebugMsg::msg(3, "vvRenderer::getProbePosition()");
-  pos->copy(&_renderState._roiPos);
+  pos->copy(&_roiPos);
 }
 
 //----------------------------------------------------------------------------
@@ -1050,8 +1194,8 @@ void vvRenderer::getProbePosition(vvVector3* pos) const
 void vvRenderer::setProbeSize(const vvVector3* newSize)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProbeSize()");
-  _renderState._isROIChanged = true;
-  _renderState._roiSize.copy(newSize);
+  _isROIChanged = true;
+  _roiSize.copy(newSize);
 }
 
 //----------------------------------------------------------------------------
@@ -1061,7 +1205,7 @@ void vvRenderer::setProbeSize(const vvVector3* newSize)
 void vvRenderer::getProbeSize(vvVector3* size) const
 {
   vvDebugMsg::msg(3, "vvRenderer::getProbeSize()");
-  size->copy(&_renderState._roiSize);
+  size->copy(&_roiSize);
 }
 
 //----------------------------------------------------------------------------
@@ -1218,9 +1362,10 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   @param newValue   new value
   @param objName    name of the object to change (default: NULL)
 */
-void vvRenderer::setParameter(const ParameterType, const float, const char*)
+void vvRenderer::setParameter(const ParameterType param, const float newValue)
 {
   vvDebugMsg::msg(3, "vvRenderer::setParameter()");
+  vvRenderState::setParameter(param, newValue);
 }
 
 //----------------------------------------------------------------------------
@@ -1228,10 +1373,10 @@ void vvRenderer::setParameter(const ParameterType, const float, const char*)
   @param param    parameter to get value of
   @param objName  name of the object to get value of (default: NULL)
 */
-float vvRenderer::getParameter(const ParameterType, char*) const
+float vvRenderer::getParameter(const ParameterType param) const
 {
   vvDebugMsg::msg(3, "vvRenderer::getParameter()");
-  return -VV_FLT_MAX;
+  return vvRenderState::getParameter(param);
 }
 
 //----------------------------------------------------------------------------
@@ -1258,10 +1403,10 @@ void  vvRenderer::setGamma(BasicColorType color, float val)
   vvDebugMsg::msg(3, "vvRenderer::setGamma()");
   switch(color)
   {
-    case VV_RED:   _renderState._gamma[0] = val; break;
-    case VV_GREEN: _renderState._gamma[1] = val; break;
-    case VV_BLUE:  _renderState._gamma[2] = val; break;
-    case VV_ALPHA: _renderState._gamma[3] = val; break;
+    case VV_RED:   _gamma[0] = val; break;
+    case VV_GREEN: _gamma[1] = val; break;
+    case VV_BLUE:  _gamma[2] = val; break;
+    case VV_ALPHA: _gamma[3] = val; break;
     default: assert(0); break;
   }
 }
@@ -1276,10 +1421,10 @@ float vvRenderer::getGamma(BasicColorType color)
   vvDebugMsg::msg(3, "vvRenderer::getGamma()");
   switch(color)
   {
-    case VV_RED:   return _renderState._gamma[0];
-    case VV_GREEN: return _renderState._gamma[1];
-    case VV_BLUE:  return _renderState._gamma[2];
-    case VV_ALPHA: return _renderState._gamma[3];
+    case VV_RED:   return _gamma[0];
+    case VV_GREEN: return _gamma[1];
+    case VV_BLUE:  return _gamma[2];
+    case VV_ALPHA: return _gamma[3];
     default: assert(0); return -1.0f;
   }
 }

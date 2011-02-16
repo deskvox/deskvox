@@ -189,7 +189,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
       case vvSocketIO::VV_MIPMODE:
         if ((_socket->getInt32(mipMode)) == vvSocket::VV_OK)
         {
-          renderer->_renderState._mipMode = mipMode;
+          renderer->setParameter(vvRenderState::VV_MIP_MODE, mipMode);
         }
         break;
       case vvSocketIO::VV_OBJECT_DIRECTION:
@@ -201,7 +201,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
       case vvSocketIO::VV_QUALITY:
         if ((_socket->getFloat(quality)) == vvSocket::VV_OK)
         {
-          renderer->_renderState._quality = quality;
+          renderer->setParameter(vvRenderState::VV_QUALITY, quality);
         }
         break;
       case vvSocketIO::VV_POSITION:
@@ -223,7 +223,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
         }
         break;
       case vvSocketIO::VV_TOGGLE_BOUNDINGBOX:
-        renderer->_renderState._boundaries = !renderer->_renderState._boundaries;
+        renderer->setParameter(vvRenderState::VV_BOUNDARIES, !((bool)renderer->getParameter(vvRenderState::VV_BOUNDARIES)));
         break;
       case vvSocketIO::VV_TOGGLE_ROI:
         if ((_socket->getBool(roiEnabled)) == vvSocket::VV_OK)
@@ -234,13 +234,13 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
       case vvSocketIO::VV_ROI_POSITION:
         if ((_socket->getVector3(roiPos)) == vvSocket::VV_OK)
         {
-          renderer->_renderState._roiPos = roiPos;
+          renderer->setParameterV3(vvRenderState::VV_ROI_POS, roiPos);
         }
         break;
       case vvSocketIO::VV_ROI_SIZE:
         if ((_socket->getVector3(roiSize)) == vvSocket::VV_OK)
         {
-          renderer->_renderState._roiSize = roiSize;
+          renderer->setParameterV3(vvRenderState::VV_ROI_SIZE, roiSize);
         }
         break;
       case vvSocketIO::VV_TRANSFER_FUNCTION:

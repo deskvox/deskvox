@@ -445,7 +445,7 @@ void vvView::displayCallback(void)
     glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    ds->renderer->_renderState._quality = ((ds->hqMode) ? ds->highQuality : ds->draftQuality);
+    ds->renderer->setParameter(vvRenderState::VV_QUALITY, ((ds->hqMode) ? ds->highQuality : ds->draftQuality));
 
     ds->renderer->setParameter(vvRenderer::VV_MEASURETIME, (float)ds->fpsMode);
 
@@ -671,29 +671,20 @@ void vvView::setRendererType(enum vvRenderer::RendererType type)
 
 void vvView::applyRendererParameters()
 {
-  //renderer->setBoundariesMode(boundariesMode);
-  renderer->_renderState._boundaries = boundariesMode;
-  //renderer->setBoundariesColor(1.0f-bgColor[0], 1.0f-bgColor[1], 1.0f-bgColor[2]);
-  //renderer->resizeEdgeMax(OBJ_SIZE);
+  renderer->setParameter(vvRenderState::VV_BOUNDARIES, boundariesMode);
   renderer->setPosition(&pos);
-  //renderer->setOrientationMode(orientationMode);
-  //renderer->setTimingMode(timingMode);
-  //renderer->setPaletteMode(paletteMode);
-  renderer->setParameter(vvRenderer::VV_SLICEINT, (interpolMode) ? 1.0f : 0.0f);
+  renderer->setParameter(vvRenderState::VV_SLICEINT, (interpolMode) ? 1.0f : 0.0f);
   renderer->setParameter(vvRenderer::VV_WARPINT, (warpInterpolMode) ? 1.0f : 0.0f);
   renderer->setParameter(vvRenderer::VV_PREINT, (preintMode) ? 1.0f : 0.0f);
-  renderer->_renderState._mipMode = mipMode;
-  //renderer->setParameter(vvRenderer::VV_GAMMA, (gammaMode) ? 1.0f : 0.0f);
-  //renderer->setParameter(vvRenderer::VV_OPCORR, (opCorrMode) ? 1.0f : 0.0f);
-  //renderer->setClippingMode(false);
-  renderer->_renderState._quality = (hqMode) ? highQuality : draftQuality;
+  renderer->setParameter(vvRenderState::VV_MIP_MODE, mipMode);
+  renderer->setParameter(vvRenderState::VV_QUALITY, (hqMode) ? highQuality : draftQuality);
   renderer->setParameter(vvRenderer::VV_LEAPEMPTY, emptySpaceLeapingMode);
   renderer->setParameter(vvRenderer::VV_TERMINATEEARLY, earlyRayTermination);
   renderer->setParameter(vvRenderer::VV_LIGHTING, useHeadLight);
   renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, gpuproxygeo);
   renderer->setParameter(vvRenderer::VV_OFFSCREENBUFFER, useOffscreenBuffer);
   renderer->setParameter(vvRenderer::VV_IMG_PRECISION, bufferPrecision);
-  static_cast<vvTexRend*>(renderer)->setShowBricks(showBricks);
+  renderer->setParameter(vvRenderState::VV_SHOW_BRICKS, showBricks);
 }
 
 
@@ -713,12 +704,11 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   currentVoxels = vt;
 
   if(renderer)
-  renderState = renderer->_renderState;
+  renderState = *renderer;
   delete renderer;
   renderer = NULL;
-  renderState._maxBrickSize[0] = maxBrickSizeX;
-  renderState._maxBrickSize[1] = maxBrickSizeY;
-  renderState._maxBrickSize[2] = maxBrickSizeZ;
+  vvVector3 maxBrickSize(maxBrickSizeX, maxBrickSizeY, maxBrickSizeZ);
+  renderState.setParameterV3(vvRenderState::VV_MAX_BRICK_SIZE, maxBrickSize);
 
   // Multi threading parameters.
   // These are needed before construction of the renderer so that
@@ -896,6 +886,9 @@ void vvView::specialCallback(int key, int, int)
   const int modifiers = glutGetModifiers();
   const float delta = 0.1f / ds->mvScale;
 
+  const vvVector3 clipPoint = ds->renderer->getParameterV3(vvRenderState::VV_CLIP_POINT);
+  const vvVector3 clipNormal = ds->renderer->getParameterV3(vvRenderState::VV_CLIP_NORMAL);
+
   switch(key)
   {
   case GLUT_KEY_LEFT:
@@ -906,7 +899,7 @@ void vvView::specialCallback(int key, int, int)
     }
     else if (ds->clipEditMode)
     {
-      ds->renderer->_renderState._clipPoint -= ds->renderer->_renderState._clipNormal * delta;
+      ds->renderer->setParameterV3(vvRenderState::VV_CLIP_POINT, clipPoint - clipNormal * delta);
     }
     break;
   case GLUT_KEY_RIGHT:
@@ -917,7 +910,7 @@ void vvView::specialCallback(int key, int, int)
     }
     else if (ds->clipEditMode)
     {
-      ds->renderer->_renderState._clipPoint += ds->renderer->_renderState._clipNormal * delta;
+      ds->renderer->setParameterV3(vvRenderState::VV_CLIP_POINT, clipPoint + clipNormal * delta);
     }
     break;
   case GLUT_KEY_UP:
@@ -935,7 +928,7 @@ void vvView::specialCallback(int key, int, int)
     }
     else if (ds->clipEditMode)
     {
-      ds->renderer->_renderState._clipPoint += ds->renderer->_renderState._clipNormal * delta;
+      ds->renderer->setParameterV3(vvRenderState::VV_CLIP_POINT, clipPoint + clipNormal * delta);
     }
     break;
   case GLUT_KEY_DOWN:
@@ -953,7 +946,7 @@ void vvView::specialCallback(int key, int, int)
     }
     else if (ds->clipEditMode)
     {
-      ds->renderer->_renderState._clipPoint -= ds->renderer->_renderState._clipNormal * delta;
+      ds->renderer->setParameterV3(vvRenderState::VV_CLIP_POINT, clipPoint - clipNormal * delta);
     }
     break;
   default: break;
@@ -1287,12 +1280,12 @@ void vvView::rendererMenuCallback(int item)
     {
       ((ds->hqMode) ? ds->highQuality : ds->draftQuality) *= QUALITY_CHANGE;
     }
-    ds->renderer->_renderState._quality = (ds->hqMode) ? ds->highQuality : ds->draftQuality;
+    ds->renderer->setParameter(vvRenderState::VV_QUALITY, (ds->hqMode) ? ds->highQuality : ds->draftQuality);
     cerr << QUALITY_NAMES[ds->hqMode] << " quality: " <<
         ((ds->hqMode) ? ds->highQuality : ds->draftQuality) << endl;
     if (ds->remoteRendering)
     {
-      ds->_renderMaster->adjustQuality(ds->renderer->_renderState._quality);
+      ds->_renderMaster->setParameter(vvRenderState::VV_QUALITY, (ds->hqMode) ? ds->highQuality : ds->draftQuality);
     }
   }
   glutPostRedisplay();
@@ -1342,7 +1335,7 @@ void vvView::optionsMenuCallback(int item)
   case 2:                                     // min/maximum intensity projection
     ++ds->mipMode;
     if (ds->mipMode>2) ds->mipMode = 0;
-    ds->renderer->_renderState._mipMode = ds->mipMode;
+    ds->renderer->setParameter(vvRenderState::VV_MIP_MODE, ds->mipMode);
     cerr << "MIP mode set to " << ds->mipMode << endl;
     if (ds->remoteRendering)
     {
@@ -1486,7 +1479,7 @@ void vvView::optionsMenuCallback(int item)
       if (rend != NULL)
       {
         ds->showBricks = !ds->showBricks;
-        rend->setShowBricks( ds->showBricks );
+        ds->renderer->setParameter(vvRenderState::VV_SHOW_BRICKS, ds->showBricks);
         cerr << (!ds->showBricks?"not ":"") << "showing bricks" << endl;
       }
       else
@@ -1829,7 +1822,7 @@ void vvView::clipMenuCallback(const int item)
   {
   case 0:
     ds->clipPlane = !ds->clipPlane;
-    ds->renderer->_renderState._clipMode = ds->clipPlane;
+    ds->renderer->setParameter(vvRenderState::VV_CLIP_MODE, ds->clipPlane);
     cerr << "Clipping " << ds->onOff[ds->boundariesMode] << endl;
     break;
   case 1:
@@ -1837,7 +1830,7 @@ void vvView::clipMenuCallback(const int item)
     if (ds->clipEditMode)
     {
       ds->clipPlane = true;
-      ds->renderer->_renderState._clipMode = ds->clipPlane;
+      ds->renderer->setParameter(vvRenderState::VV_CLIP_MODE, ds->clipPlane);
       cerr << "Clip edit mode activated" << endl;
       cerr << "x|y|z keys:\t\trotation along (x|y|z) axis" << endl;
       cerr << "Arrow down/left:\tmove in negative normal direction" << endl;
@@ -1866,7 +1859,7 @@ void vvView::viewMenuCallback(int item)
   default:
   case 0:                                     // bounding box
     ds->boundariesMode = !ds->boundariesMode;
-    ds->renderer->_renderState._boundaries = ds->boundariesMode;
+    ds->renderer->setParameter(vvRenderState::VV_BOUNDARIES, ds->boundariesMode);
     cerr << "Bounding box " << ds->onOff[ds->boundariesMode] << endl;
     if (ds->remoteRendering)
     {
@@ -1875,17 +1868,18 @@ void vvView::viewMenuCallback(int item)
     break;
   case 1:                                     // axis orientation
     ds->orientationMode = !ds->orientationMode;
-    ds->renderer->_renderState._orientation = !ds->renderer->_renderState._orientation;
+    ds->renderer->setParameter(vvRenderState::VV_ORIENTATION,
+                                 !(bool)ds->renderer->getParameter(vvRenderState::VV_ORIENTATION));
     cerr << "Coordinate axes display " << ds->onOff[ds->orientationMode] << endl;
     break;
   case 2:                                     // frame rate
     ds->fpsMode = !ds->fpsMode;
-    ds->renderer->_renderState._fpsDisplay = !ds->renderer->_renderState._fpsDisplay;
+    ds->renderer->setParameter(vvRenderState::VV_FPS_DISPLAY, !ds->renderer->getParameter(vvRenderState::VV_FPS_DISPLAY));
     cerr << "Frame rate display " << ds->onOff[ds->fpsMode] << endl;
     break;
   case 3:                                     // transfer function
     ds->paletteMode = !ds->paletteMode;
-    ds->renderer->_renderState._palette = !ds->renderer->_renderState._palette;
+    ds->renderer->setParameter(vvRenderState::VV_PALETTE, !(bool)ds->renderer->getParameter(vvRenderState::VV_PALETTE));
     cerr << "Palette display " << ds->onOff[ds->paletteMode] << endl;
     break;
   case 4:                                     // stereo mode
@@ -2179,7 +2173,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   cerr << "Volume file name.................................." << ds->vd->getFilename() << endl;
   cerr << "Volume size [voxels].............................." << ds->vd->vox[0] << " x " << ds->vd->vox[1] << " x " << ds->vd->vox[2] << endl;
   cerr << "Output image size [pixels]........................" << viewport[2] << " x " << viewport[3] << endl;
-  cerr << "Image quality....................................." << ds->renderer->_renderState._quality << endl;
+  cerr << "Image quality....................................." << ds->renderer->getParameter(vvRenderState::VV_QUALITY) << endl;
   cerr << "Projection........................................" << projectMode[ds->perspectiveMode] << endl;
   cerr << "Interpolation mode................................" << interpolMode[ds->interpolMode] << endl;
   cerr << "Empty space leaping for bricks...................." << onOffMode[ds->emptySpaceLeapingMode] << endl;
@@ -2660,6 +2654,7 @@ void vvView::renderQuad() const
 
 void vvView::editClipPlane(const int command, const float val)
 {
+  vvVector3 clipNormal = ds->renderer->getParameterV3(vvRenderState::VV_CLIP_NORMAL);
   switch (command)
   {
   case PLANE_X:
@@ -2668,7 +2663,7 @@ void vvView::editClipPlane(const int command, const float val)
       m.identity();
       const vvVector3 axis(1, 0, 0);
       m.rotate(val, &axis);
-      ds->renderer->_renderState._clipNormal.multiply(&m);
+      clipNormal.multiply(&m);
     }
     break;
   case PLANE_Y:
@@ -2677,7 +2672,7 @@ void vvView::editClipPlane(const int command, const float val)
       m.identity();
       const vvVector3 axis(0, 1, 0);
       m.rotate(val, &axis);
-      ds->renderer->_renderState._clipNormal.multiply(&m);
+      clipNormal.multiply(&m);
     }
     break;
   case PLANE_Z:
@@ -2686,13 +2681,14 @@ void vvView::editClipPlane(const int command, const float val)
       m.identity();
       const vvVector3 axis(0, 0, 1);
       m.rotate(val, &axis);
-      ds->renderer->_renderState._clipNormal.multiply(&m);
+      clipNormal.multiply(&m);
     }
     break;
   default:
     cerr << "Unknown command" << endl;
     break;
   }
+  ds->renderer->setParameterV3(vvRenderState::VV_CLIP_NORMAL, clipNormal);
   glutPostRedisplay();
 }
 

@@ -515,17 +515,17 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   getEyePosition(&eye);
   eye.multiply(&invMV);
 
-  if (_renderState._isROIUsed)
+  if (_isROIUsed)
   {
     // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj.copy(&_renderState._roiPos);
+    probePosObj.copy(&_roiPos);
     probePosObj.sub(&pos);                        // eliminate object position from probe position
 
     // Compute probe min/max coordinates in object space:
     for (i=0; i<3; ++i)
     {
-      probeMin[i] = probePosObj[i] - (_renderState._roiSize[i] * size[i]) / 2.0f;
-      probeMax[i] = probePosObj[i] + (_renderState._roiSize[i] * size[i]) / 2.0f;
+      probeMin[i] = probePosObj[i] - (_roiSize[i] * size[i]) / 2.0f;
+      probeMax[i] = probePosObj[i] + (_roiSize[i] * size[i]) / 2.0f;
     }
 
     // Constrain probe boundaries to volume data area:
@@ -554,7 +554,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   }
 
   // Initialize texture counters
-  if (_renderState._roiSize[0])
+  if (_roiSize[0])
   {
     probeTexels.zero();
     for (i=0; i<3; ++i)
@@ -578,9 +578,9 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   // Exception: if user's eye is inside object and probe mode is off,
   // then use viewDir as the normal.
   if (_sliceOrientation==VV_CLIPPLANE ||
-     (_sliceOrientation==VV_VARIABLE && _renderState._clipMode))
+     (_sliceOrientation==VV_VARIABLE && _clipMode))
   {
-    normal.copy(&_renderState._clipNormal);
+    normal.copy(&_clipNormal);
   }
   else if(_sliceOrientation==VV_VIEWPLANE)
   {
@@ -604,7 +604,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     normal.sub(&origin);
   }
   else if (_sliceOrientation==VV_VIEWDIR || 
-          (_sliceOrientation==VV_VARIABLE && (!_renderState._isROIUsed && isInVolume(&eye))))
+          (_sliceOrientation==VV_VARIABLE && (!_isROIUsed && isInVolume(&eye))))
   {
     // Draw slices perpendicular to viewing direction:
     normal.copy(&viewDir);
@@ -628,8 +628,8 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     minDistanceInd=2;
   float voxelDistance = probeSizeObj[minDistanceInd]/probeTexels[minDistanceInd];
 
-  float sliceDistance = voxelDistance / _renderState._quality;
-  if(_renderState._isROIUsed && _renderState._quality < 2.0)
+  float sliceDistance = voxelDistance / _quality;
+  if(_isROIUsed && _quality < 2.0)
   {
     // draw at least twice as many slices as there are samples in the probe depth.
     sliceDistance = voxelDistance / 2.0f;
@@ -661,7 +661,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   farthest.scale((float)(numSlices - 1) / -2.0f);
   farthest.add(&probePosObj);
 
-  if (_renderState._clipMode)                     // clipping plane present?
+  if (_clipMode)                     // clipping plane present?
   {
     // Adjust numSlices and set farthest point so that textures are only
     // drawn up to the clipPoint. (Delta may not be changed
@@ -671,7 +671,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     temp.copy(&delta);
     temp.scale(-0.5f);
     farthest.add(&temp);                          // add a half delta to farthest
-    clipPosObj.copy(&_renderState._clipPoint);
+    clipPosObj.copy(&_clipPoint);
     clipPosObj.sub(&pos);
     temp.copy(&probePosObj);
     temp.add(&normal);
@@ -682,7 +682,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     temp.scale((float)(1 - numSlices));
     farthest.copy(&normClipPoint);
     farthest.add(&temp);
-    if (_renderState._clipSingleSlice)
+    if (_clipSingleSlice)
     {
       // Compute slice position:
       temp.copy(&delta);
@@ -788,18 +788,18 @@ void vvTexMultiRend::renderVolumeGL()
   size.copy(vd->getSize());
 
   // Draw boundary lines (must be done before setGLenvironment()):
-  if (_renderState._boundaries)
+  if (_boundaries)
   {
-    drawBoundingBox(&size, &vd->pos, _renderState._boundColor);
+    drawBoundingBox(&size, &vd->pos, &_boundColor);
   }
-  if (_renderState._isROIUsed)
+  if (_isROIUsed)
   {
-    probeSizeObj.set(size[0] * _renderState._roiSize[0], size[1] * _renderState._roiSize[1], size[2] * _renderState._roiSize[2]);
-    drawBoundingBox(&probeSizeObj, &_renderState._roiPos, _renderState._probeColor);
+    probeSizeObj.set(size[0] * _roiSize[0], size[1] * _roiSize[1], size[2] * _roiSize[2]);
+    drawBoundingBox(&probeSizeObj, &_roiPos, &_probeColor);
   }
-  if (_renderState._clipMode && _renderState._clipPerimeter)
+  if (_clipMode && _clipPerimeter)
   {
-    drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, &_renderState._clipColor);
+    drawPlanePerimeter(&size, &vd->pos, &_clipPoint, &_clipNormal, &_clipColor);
   }
 
   //setGLenvironment();
@@ -935,7 +935,7 @@ void vvTexMultiRend::updateLUT(float dist)
     for (i=0; i<total; ++i)
     {
       // Gamma correction:
-      if (_renderState._gammaCorrection)
+      if (_gammaCorrection)
       {
         corr[0] = gammaCorrect(rgbaTF[i * 4],     VV_RED);
         corr[1] = gammaCorrect(rgbaTF[i * 4 + 1], VV_GREEN);
@@ -952,7 +952,7 @@ void vvTexMultiRend::updateLUT(float dist)
 
       // Opacity correction:
                                                   // for 0 distance draw opaque slices
-      if (dist<=0.0 || (_renderState._clipMode && _renderState._clipOpaque)) corr[3] = 1.0f;
+      if (dist<=0.0 || (_clipMode && _clipOpaque)) corr[3] = 1.0f;
       
 	  corr[3] = 1.0f - powf(1.0f - corr[3], dist);
 
@@ -1047,8 +1047,8 @@ void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
   }
 
   //glslShader->setValue(program, "numChan", 1, &(vd->chan));
-  glslShader->setValue(program, "normAlpha", 1, _renderState._alphaMode == 0 ? &maxWeight : &sumWeight);
-  glslShader->setValue(program, "alphaMode", 1, &_renderState._alphaMode);
+  glslShader->setValue(program, "normAlpha", 1, _alphaMode == 0 ? &maxWeight : &sumWeight);
+  glslShader->setValue(program, "alphaMode", 1, &_alphaMode);
 }
 
 
@@ -1078,7 +1078,7 @@ void vvTexMultiRend::setObjectDirection(const vvVector3* vd)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvTexMultiRend::setParameter(const ParameterType param, const float newValue, const char*)
+void vvTexMultiRend::setParameter(const ParameterType param, const float newValue)
 {
   bool newInterpol;
 
@@ -1111,14 +1111,14 @@ void vvTexMultiRend::setParameter(const ParameterType param, const float newValu
 	  else vd->_binning = vvVolDesc::OPACITY;
 	  break;      
 	default:
-	  vvRenderer::setParameter(param, newValue);
+          vvRenderer::setParameter(param, newValue);
 	  break;
   }
 }
 
 //----------------------------------------------------------------------------
 // see parent for comments
-float vvTexMultiRend::getParameter(const ParameterType param, char*) const
+float vvTexMultiRend::getParameter(const ParameterType param) const
 {
   vvDebugMsg::msg(3, "vvTexMultiRend::getParameter()");
 
@@ -1189,7 +1189,7 @@ vvTexMultiRend::VoxelType vvTexMultiRend::getVoxelType()
 void vvTexMultiRend::renderQualityDisplay()
 {
   //int numSlices = int(_renderState._quality * 100.0f);
-  numSlices = int(_renderState._quality * 100.0f);
+  numSlices = int(_quality * 100.0f);
   vvPrintGL* printGL = new vvPrintGL();
   printGL->print(-0.9f, 0.9f, "Textures: %d", numSlices);
   delete printGL;
@@ -1298,12 +1298,12 @@ void vvTexMultiRend::preRendering()
   tr.mv.makeGL(tr.glMV);
 
   // drawing bounding boxes
-  if(_renderState._boundaries)
+  if(_boundaries)
   {
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadMatrixf(tr.glMV);
-	drawBoundingBox(&size, &vd->pos, _renderState._boundColor);
+        drawBoundingBox(&size, &vd->pos, &_boundColor);
 	glPopMatrix();
   }
 
@@ -1336,7 +1336,7 @@ void vvTexMultiRend::preRendering()
   probePosObj.zero();
 
   // Initialize texture counters
-  if (_renderState._roiSize[0])
+  if (_roiSize[0])
   {
 	  probeTexels.zero();
 	  for (int i=0; i<3; ++i)

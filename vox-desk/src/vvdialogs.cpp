@@ -550,7 +550,7 @@ VVClippingDialog::~VVClippingDialog()
 
 long VVClippingDialog::onEnableChange(FXObject*,FXSelector,void* ptr)
 {
-  _canvas->_renderer->_renderState._clipMode = (ptr != NULL);
+  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_MODE, (ptr != NULL));
   if(_shell->_glcanvas->makeCurrent())
   {
     _canvas->_renderer->updateTransferFunction();
@@ -562,19 +562,19 @@ long VVClippingDialog::onEnableChange(FXObject*,FXSelector,void* ptr)
 
 long VVClippingDialog::onSingleChange(FXObject*,FXSelector,void* ptr)
 {
-  _canvas->_renderer->_renderState._clipSingleSlice = (ptr != 0);
+  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_SINGLE_SLICE, (ptr != 0));
   return 1;
 }
 
 long VVClippingDialog::onPerimeterChange(FXObject*,FXSelector,void* ptr)
 {
-  _canvas->_renderer->_renderState._clipPerimeter = (ptr != 0);
+  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PERIMETER, (ptr != 0));
   return 1;
 }
 
 long VVClippingDialog::onOpaqueChange(FXObject*,FXSelector,void* ptr)
 {
-  _canvas->_renderer->_renderState._clipOpaque = (ptr != 0);
+  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_OPAQUE, (ptr != 0));
   if(_shell->_glcanvas->makeCurrent())
   {
     _canvas->_renderer->updateTransferFunction();
@@ -602,20 +602,21 @@ void VVClippingDialog::updateClipParameters()
   normal.normalize();
   point.copy(&normal);
   point.scale(d);
-  _canvas->_renderer->_renderState.setClippingPlane(&point, &normal);
+  _canvas->_renderer->setParameterV3(vvRenderState::VV_CLIP_POINT, point);
+  _canvas->_renderer->setParameterV3(vvRenderState::VV_CLIP_NORMAL, normal);
 }
 
 void VVClippingDialog::updateValues()
 {
-  vvVector3 point;
-  vvVector3 normal;
-
-  _enableCheck->setCheck(_canvas->_renderer->_renderState._clipMode);
-  _singleCheck->setCheck(_canvas->_renderer->_renderState._clipSingleSlice);
-  _opaqueCheck->setCheck(_canvas->_renderer->_renderState._clipOpaque);
-  _perimeterCheck->setCheck(_canvas->_renderer->_renderState._clipPerimeter);
-  _canvas->_renderer->_renderState.getClippingPlane(&point, &normal);
+  vvVector3 point = _canvas->_renderer->getParameterV3(vvRenderState::VV_CLIP_POINT);
+  vvVector3 normal = _canvas->_renderer->getParameterV3(vvRenderState::VV_CLIP_NORMAL);
   normal.normalize();
+
+  _enableCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_MODE));
+  _singleCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_SINGLE_SLICE));
+  _opaqueCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_OPAQUE));
+  _perimeterCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PERIMETER));
+
   _xSlider->setValue(normal.e[0]);
   _ySlider->setValue(normal.e[1]);
   _zSlider->setValue(normal.e[2]);
@@ -2140,7 +2141,7 @@ long VVGammaDialog::onSetDefaults(FXObject*, FXSelector, void*)
 
 long VVGammaDialog::onGammaChange(FXObject*, FXSelector, void* ptr)
 {
-  _canvas->_renderer->_renderState._gammaCorrection = (ptr != NULL);
+  _canvas->_renderer->setParameter(vvRenderState::VV_GAMMA_CORRECTION, (ptr != NULL));
   if (ptr)
   {
     _gRedDial->enable();
@@ -2224,7 +2225,7 @@ void VVGammaDialog::updateValues()
 
   if (_canvas->_renderer) 
   { 
-    bool gamma = _canvas->_renderer->_renderState._gammaCorrection;
+    bool gamma = _canvas->_renderer->getParameter(vvRenderState::VV_GAMMA_CORRECTION);
     handle(this, FXSEL(SEL_COMMAND, ID_GAMMA), (void*)gamma);
   }
 }
@@ -2456,7 +2457,7 @@ long VVOpacityDialog::onAlphaChange(FXObject*,FXSelector,void*)
 
 long VVOpacityDialog::onEnableChange(FXObject*, FXSelector, void* ptr)
 {
-  _canvas->_renderer->_renderState._opacityWeights = (ptr != NULL);
+  _canvas->_renderer->setParameter(vvRenderState::VV_OPACITY_WEIGHTS, (ptr != NULL));
   if (ptr)
   {
     _redSlider->enable();
@@ -2504,7 +2505,7 @@ void VVOpacityDialog::updateValues()
     b  = _canvas->_renderer->getOpacityWeight(vvRenderer::VV_BLUE);
     a  = _canvas->_renderer->getOpacityWeight(vvRenderer::VV_ALPHA);
 
-    bool enabled = _canvas->_renderer->_renderState._opacityWeights;
+    bool enabled = _canvas->_renderer->getParameter(vvRenderState::VV_OPACITY_WEIGHTS);
     handle(this, FXSEL(SEL_COMMAND, ID_ENABLE), (void*)enabled);
   }
 

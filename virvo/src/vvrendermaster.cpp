@@ -233,17 +233,6 @@ void vvRenderMaster::exit()
   }
 }
 
-void vvRenderMaster::adjustQuality(const float quality)
-{
-  for (int s=0; s<_sockets.size(); ++s)
-  {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_QUALITY) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putFloat(quality);
-    }
-  }
-}
-
 void vvRenderMaster::resize(const int w, const int h)
 {
   for (int s=0; s<_sockets.size(); ++s)
@@ -377,12 +366,26 @@ void vvRenderMaster::setParameter(const vvRenderer::ParameterType param, const f
   vvDebugMsg::msg(3, "vvRenderMaster::setParameter()");
   switch (param)
   {
+  case vvRenderer::VV_QUALITY:
+    adjustQuality(newValue);
+    break;
   case vvRenderer::VV_SLICEINT:
     setInterpolation((newValue != 0.0f));
     break;
   default:
     vvRemoteClient::setParameter(param, newValue);
     break;
+  }
+}
+
+void vvRenderMaster::adjustQuality(const float quality)
+{
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_QUALITY) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putFloat(quality);
+    }
   }
 }
 

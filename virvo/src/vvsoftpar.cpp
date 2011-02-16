@@ -235,7 +235,7 @@ void vvSoftPar::compositeSliceNearest(int slice, int from, int to)
          if (rgbaConv[*vScalar][3]==0) ++earlyRayTermination;
          if (rgbaConv[*vScalar][3]>0 &&           // skip transparent voxels
                                                   // skip clipped voxels
-            (!_renderState._clipMode || !isVoxelClipped(ix, iSlice[1]-iy-1, slice)))
+            (!_clipMode || !isVoxelClipped(ix, iSlice[1]-iy-1, slice)))
          {
             // Determine image color components and scale to [0..1]:
             ir = (float)(*(iPixel++)) / 255.0f;
@@ -320,7 +320,7 @@ void vvSoftPar::compositeSliceBilinear(int slice)
       for (ix=0; ix<iSlice[0]-1; ++ix)
       {
                                                   // skip clipped voxels
-         if (!_renderState._clipMode || !isVoxelClipped(ix, iSlice[1]-iy-1, slice))
+         if (!_clipMode || !isVoxelClipped(ix, iSlice[1]-iy-1, slice))
          {
                                                   // skip transparent voxels
             if (rgbaConv[*vScalar[0]][3]>0 || rgbaConv[*vScalar[1]][3]>0 ||
@@ -596,7 +596,7 @@ void vvSoftPar::compositeSliceCompressedBilinear(int slice)
       for (ix=0; ix<iSlice[0]-1; ++ix)
       {
                                                   // skip clipped voxels
-         if (!_renderState._clipMode || !isVoxelClipped(ix, iSlice[1]-iy-1, slice))
+         if (!_clipMode || !isVoxelClipped(ix, iSlice[1]-iy-1, slice))
          {
                                                   // skip transparent voxels
             if (rgbaConv[*vScalar[0]][3]>0 || rgbaConv[*vScalar[1]][3]>0 ||

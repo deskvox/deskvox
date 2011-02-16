@@ -1056,7 +1056,7 @@ vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
    if(static_cast<vvCudaImg*>(Base::intImg)->getMode() == vvCudaImg::TEXTURE)
        Base::setWarpMode(Base::CUDATEXTURE);
 
-   setQuality(Base::_renderState._quality);
+   setQuality(Base::getParameter(vvRenderState::VV_QUALITY));
 
    initFloatData();
 #if defined(VOLTEX3D)
@@ -1390,7 +1390,7 @@ void vvCudaSW<Base>::updateLUT(float dist)
     for (int i=0; i<lutEntries; ++i)
     {
         // Gamma correction:
-        if (Base::_renderState._gammaCorrection)
+        if (Base::_gammaCorrection)
         {
             corr[0] = gammaCorrect(Base::rgbaTF[i * 4],     Base::VV_RED);
             corr[1] = gammaCorrect(Base::rgbaTF[i * 4 + 1], Base::VV_GREEN);
@@ -1407,7 +1407,7 @@ void vvCudaSW<Base>::updateLUT(float dist)
 
         // Opacity correction:
         // for 0 distance draw opaque slices
-        if (dist<=0.0 || (Base::_renderState._clipMode && Base::_renderState._clipOpaque)) corr[3] = 1.0f;
+        if (dist<=0.0 || (Base::_clipMode && Base::_clipOpaque)) corr[3] = 1.0f;
         else if (Base::opCorr) corr[3] = 1.0f - powf(1.0f - corr[3], dist);
 
         // Convert float to uchar and copy to rgbaLUT array:
@@ -1836,7 +1836,7 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 
     float dist = sqrtf(1.0f + sinc.e[0] * sinc.e[0] + sinc.e[1] * sinc.e[1]);
 
-    float s = 1.f/(dist * Base::_renderState._quality);
+    float s = 1.f/(dist * Base::getParameter(vvRenderState::VV_QUALITY));
     int nslice = Base::len[2]/s;
 
     float zstep = -s / Base::vd->vox[Base::principal];
@@ -1861,7 +1861,7 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 
     cudaMemcpyToSymbol(c_zStep, &zstep, sizeof(float));
 
-    float lutDist = 1.f/Base::_renderState._quality;
+    float lutDist = 1.f/Base::getParameter(vvRenderState::VV_QUALITY);
     if(oldLutDist/lutDist < 0.9f || lutDist/oldLutDist < 0.9f)
     {
         updateLUT(lutDist);
@@ -2015,7 +2015,7 @@ void vvCudaSW<Base>::compositeVolume(int fromY, int toY)
 }
 
 template<class Base>
-void vvCudaSW<Base>::setParameter(typename Base::ParameterType param, float val, const char *cval)
+void vvCudaSW<Base>::setParameter(typename Base::ParameterType param, float val)
 {
     vvDebugMsg::msg(3, "vvCudaSW::setParameter()");
     switch(param)
@@ -2036,13 +2036,13 @@ void vvCudaSW<Base>::setParameter(typename Base::ParameterType param, float val,
             interSliceInt = (val != 0.f);
             break;
         default:
-            Base::setParameter(param, val, cval);
+            Base::setParameter(param, val);
             break;
     }
 }
 
 template<class Base>
-float vvCudaSW<Base>::getParameter(typename Base::ParameterType param, char *cval) const
+float vvCudaSW<Base>::getParameter(typename Base::ParameterType param) const
 {
     vvDebugMsg::msg(3, "vvCudaSW::getParameter()");
     switch(param)
@@ -2056,7 +2056,7 @@ float vvCudaSW<Base>::getParameter(typename Base::ParameterType param, char *cva
         case Base::VV_INTERSLICEINT:
             return (interSliceInt ? 1.f : 0.f);
         default:
-            return Base::getParameter(param, cval);
+            return Base::getParameter(param);
     }
 }
 
@@ -2077,7 +2077,7 @@ void vvCudaSW<vvSoftPar>::setQuality(float q)
    q = 1.0f;
 #endif
 
-   Base::_renderState._quality = q;
+   Base::setParameter(vvRenderState::VV_QUALITY, q);
 
    if(!Base::sliceInterpol)
        q = 1.f;

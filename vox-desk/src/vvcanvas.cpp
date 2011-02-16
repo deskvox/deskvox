@@ -462,7 +462,7 @@ void vvCanvas::setRenderer(int alg, vvTexRend::GeometryType gt, vvTexRend::Voxel
 
   if (_renderer) 
   {
-    renderState = _renderer->_renderState;    // if previous renderer existed, save its state
+    renderState = *_renderer;    // if previous renderer existed, save its state
     delete _renderer;
   }
 
@@ -503,8 +503,8 @@ void vvCanvas::setBackgroundColor(float r, float g, float b)
   float bColor;
   if (_bgColor[0] + _bgColor[1] + _bgColor[2] > 1.5f) bColor = 0.0f;
   else bColor = 1.0f;
-  _renderer->_renderState.setBoundariesColor(bColor, bColor, bColor);
-  _renderer->_renderState.setClipColor(bColor, bColor, bColor);
+  _renderer->setParameterV3(vvRenderState::VV_BOUND_COLOR, vvVector3(bColor, bColor, bColor));
+  _renderer->setParameterV3(vvRenderState::VV_CLIP_COLOR, vvVector3(bColor, bColor, bColor));
 }
 
 //----------------------------------------------------------------------------

@@ -319,13 +319,13 @@ bool VVShell::initViewMenu(FXMenuPane* viewmenu)
   vvDebugMsg::msg(1, "VVShell::initViewMenu()");
 
   _orientItem = new FXMenuCheck(viewmenu,   "Show Orientation", this, ID_ORIENTATION);
-  _orientItem->setCheck(dummyState._orientation);
+  _orientItem->setCheck(dummyState.getParameter(vvRenderState::VV_ORIENTATION));
   _boundaryItem = new FXMenuCheck(viewmenu, "Show Boundaries", this, ID_BOUNDARIES);
-  _boundaryItem->setCheck(dummyState._boundaries);
+  _boundaryItem->setCheck(dummyState.getParameter(vvRenderState::VV_BOUNDARIES));
   _paletteItem = new FXMenuCheck(viewmenu, "Show Palette", this, ID_PALETTE);
-  _paletteItem->setCheck(dummyState._palette);
+  _paletteItem->setCheck(dummyState.getParameter(vvRenderState::VV_PALETTE));
   _qualityItem = new FXMenuCheck(viewmenu, "Show #Textures", this, ID_QUALITY);
-  _qualityItem->setCheck(dummyState._qualityDisplay);
+  _qualityItem->setCheck(dummyState.getParameter(vvRenderState::VV_QUALITY_DISPLAY));
   _fpsItem = new FXMenuCheck(viewmenu, "Show Frame Rate", this, ID_FPS);
   _fpsItem->setCheck(false);
   _spinItem = new FXMenuCheck(viewmenu, "Auto rotation", this, ID_SPIN);
@@ -436,7 +436,7 @@ long VVShell::onLeftMouseDown(FXObject*,FXSelector,void* ptr)
   FXEvent *ev=(FXEvent*)ptr;
   if (_canvas) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::LEFT_BUTTON);
   if (_spinItem->getCheck()) stopSpinTimer();
-  _canvas->_renderer->_renderState._quality = _prefWindow->getQualityMDialValue();
+  _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY, _prefWindow->getQualityMDialValue());
   return 1;
 }
 
@@ -448,7 +448,7 @@ long VVShell::onLeftMouseUp(FXObject*,FXSelector,void* ptr)
   FXEvent *ev=(FXEvent*)ptr;
   if(_canvas) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
   if (_spinItem->getCheck()) startSpinTimer();
-  _canvas->_renderer->_renderState._quality = _prefWindow->getQualitySDialValue();
+  _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY, _prefWindow->getQualitySDialValue());
   return 1;
 }
 
@@ -459,7 +459,7 @@ long VVShell::onMidMouseDown(FXObject*,FXSelector,void* ptr)
 
   FXEvent *ev=(FXEvent*)ptr;
   if(_canvas != NULL) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::MIDDLE_BUTTON);
-  _canvas->_renderer->_renderState._quality = _prefWindow->getQualityMDialValue();
+  _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY, _prefWindow->getQualityMDialValue());
   return 1;
 }
 
@@ -470,7 +470,7 @@ long VVShell::onMidMouseUp(FXObject*,FXSelector,void* ptr)
 
   FXEvent *ev=(FXEvent*)ptr;
   if(_canvas != NULL) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
-  _canvas->_renderer->_renderState._quality = _prefWindow->getQualitySDialValue();
+  _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY, _prefWindow->getQualitySDialValue());
   return 1;
 }
 
@@ -481,7 +481,7 @@ long VVShell::onRightMouseDown(FXObject*,FXSelector,void* ptr)
 
   FXEvent *ev=(FXEvent*)ptr;
   if (_canvas) _canvas->mousePressed(ev->win_x, ev->win_y, vvCanvas::RIGHT_BUTTON);
-  _canvas->_renderer->_renderState._quality = _prefWindow->getQualityMDialValue();
+  _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY, _prefWindow->getQualityMDialValue());
   return 1;
 }
 
@@ -492,7 +492,7 @@ long VVShell::onRightMouseUp(FXObject*,FXSelector,void* ptr)
 
   FXEvent *ev=(FXEvent*)ptr;
   if (_canvas) _canvas->mouseReleased(ev->win_x, ev->win_y, vvCanvas::NO_BUTTON);
-  _canvas->_renderer->_renderState._quality = _prefWindow->getQualitySDialValue();
+  _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY, _prefWindow->getQualitySDialValue());
   return 1;
 }
 
@@ -1402,8 +1402,8 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, int algorithm, vvTexRend::Geometr
 
     _canvas->setRenderer(algorithm, gt, vt);
 
-    if (vd->chan>1 && _canvas->_renderer->_renderState._mipMode==0) _prefWindow->toggleMIP();
-    else if (vd->chan==1 && _canvas->_renderer->_renderState._mipMode > 0) _prefWindow->toggleMIP();
+    if (vd->chan>1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE)==0) _prefWindow->toggleMIP();
+    else if (vd->chan==1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE) > 0) _prefWindow->toggleMIP();
     vd->makeInfoString(string);
     _statusBar->setText(string);
     _volumeDialog->updateValues();
@@ -1571,7 +1571,7 @@ long VVShell::onSpinTimerEvent(FXObject*,FXSelector,void*)
 //----------------------------------------------------------------------------
 long VVShell::onDispOrientChange(FXObject*,FXSelector,void* ptr)
 {
-  _canvas->_renderer->_renderState._orientation = (ptr != NULL);
+  _canvas->_renderer->setParameter(vvRenderState::VV_ORIENTATION, (ptr != NULL));
   drawScene();
   return 1;
 }
@@ -1579,7 +1579,7 @@ long VVShell::onDispOrientChange(FXObject*,FXSelector,void* ptr)
 //----------------------------------------------------------------------------
 long VVShell::onDispBoundsChange(FXObject*,FXSelector,void* ptr)
 {
-  _canvas->_renderer->_renderState._boundaries = (ptr != NULL);
+  _canvas->_renderer->setParameter(vvRenderState::VV_BOUNDARIES, (ptr != NULL));
   drawScene();
   return 1;
 }
@@ -1619,7 +1619,7 @@ void VVShell::toggleQualityDisplay()
 //----------------------------------------------------------------------------
 long VVShell::onDispPaletteChange(FXObject*,FXSelector,void* ptr)
 {
-  _canvas->_renderer->_renderState._palette = (ptr != NULL);
+  _canvas->_renderer->setParameter(vvRenderState::VV_PALETTE, (ptr != NULL));
   drawScene();
   return 1;
 }
@@ -1627,7 +1627,7 @@ long VVShell::onDispPaletteChange(FXObject*,FXSelector,void* ptr)
 //----------------------------------------------------------------------------
 long VVShell::onDispQualityChange(FXObject*,FXSelector,void* ptr)
 {
-  _canvas->_renderer->_renderState._qualityDisplay = (ptr != NULL);
+  _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY_DISPLAY, (ptr != NULL));
   drawScene();
   return 1;
 }
@@ -1635,7 +1635,7 @@ long VVShell::onDispQualityChange(FXObject*,FXSelector,void* ptr)
 //----------------------------------------------------------------------------
 long VVShell::onDispFPSChange(FXObject*,FXSelector,void* ptr)
 {
-  _canvas->_renderer->_renderState._fpsDisplay = (ptr != NULL);
+  _canvas->_renderer->setParameter(vvRenderState::VV_FPS_DISPLAY, (ptr != NULL));
   drawScene();
   return 1;
 }
@@ -1680,7 +1680,7 @@ void VVShell::benchmarkTest()
   // Prepare test:
   totalTime = new vvStopwatch();
 
-  _canvas->_renderer->_renderState._quality = 1.0f;
+  _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY, 1.0f);
   _canvas->_ov.reset();
   if(_glcanvas->makeCurrent())
   {
@@ -1698,8 +1698,8 @@ void VVShell::benchmarkTest()
   cerr << "Volume file name.................................." << _canvas->_vd->getFilename() << endl;
   cerr << "Volume size [voxels].............................." << _canvas->_vd->vox[0] << " x " << _canvas->_vd->vox[1] << " x " << _canvas->_vd->vox[2] << endl;
   cerr << "Output image size [pixels]........................" << viewport[2] << " x " << viewport[3] << endl;
-  cerr << "Image quality....................................." << _canvas->_renderer->_renderState._quality << endl;
-  cerr << "Gamma correction.................................." << onOffMode[_canvas->_renderer->_renderState._gammaCorrection] << endl;
+  cerr << "Image quality....................................." << _canvas->_renderer->getParameter(vvRenderState::VV_QUALITY) << endl;
+  cerr << "Gamma correction.................................." << onOffMode[(int)_canvas->_renderer->getParameter(vvRenderState::VV_GAMMA_CORRECTION)] << endl;
 
   // Perform test:
   totalTime->start();

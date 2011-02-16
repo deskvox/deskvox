@@ -132,10 +132,10 @@ void vvSoftVR::renderVolumeGL()
       sw->start();
    }
 
-   if(oldQuality != _renderState._quality)
+   if(oldQuality != _quality)
    {
-     setQuality(_renderState._quality);
-     oldQuality = _renderState._quality;
+     setQuality(_quality);
+     oldQuality = _quality;
    }
 
 
@@ -173,9 +173,9 @@ void vvSoftVR::renderVolumeGL()
    if (vvDebugMsg::isActive(3))
       compositeOutline();
 
-   if (_renderState._boundaries)
+   if (_boundaries)
                                                   // draw back boundaries
-      drawBoundingBox(&_size, &vd->pos, _renderState._boundColor /*FIXME:, false*/);
+      drawBoundingBox(&_size, &vd->pos, &_boundColor /*FIXME:, false*/);
 
    if (warpMode==SOFTWARE)
    {
@@ -191,9 +191,9 @@ void vvSoftVR::renderVolumeGL()
          intImg->draw();
    }
 
-   if (_renderState._boundaries)
+   if (_boundaries)
                                                   // draw front boundaries
-      drawBoundingBox(&_size, &vd->pos, _renderState._boundColor /*FIXME:, true*/);
+      drawBoundingBox(&_size, &vd->pos, &_boundColor /*FIXME:, true*/);
 
    if (_timing)
    {
@@ -820,9 +820,9 @@ void vvSoftVR::findClipPlaneEquation()
    }
 
    // Find two points determining the plane:
-   planePoint.copy(&_renderState._clipPoint);
-   normalPoint.copy(&_renderState._clipPoint);
-   normalPoint.add(&_renderState._clipNormal);
+   planePoint.copy(&_clipPoint);
+   normalPoint.copy(&_clipPoint);
+   normalPoint.add(&_clipNormal);
 
    // Transfer points to voxel coordinate system:
    planePoint.multiply(&oxConv);
@@ -849,7 +849,7 @@ bool vvSoftVR::isVoxelClipped(int x, int y, int z)
 {
    vvDebugMsg::msg(3, "vvSoftVR::isClipped()");
 
-   if (!_renderState._clipMode) return false;
+   if (!_clipMode) return false;
 
    if (xClipNormal[0] * (float)x + xClipNormal[1] *
       (float)y + xClipNormal[2] * (float)z > xClipDist)
@@ -996,7 +996,7 @@ bool vvSoftVR::prepareRendering()
    findViewMatrix();
    factorViewMatrix();                            // do the factorization
    findVolumeDimensions();                        // precompute the permuted volume dimensions
-   if (_renderState._clipMode) findClipPlaneEquation();         // prepare clipping plane processing
+   if (_clipMode) findClipPlaneEquation();         // prepare clipping plane processing
 
    // Set interpolation types:
    intImg->setWarpInterpolation(warpInterpol);
@@ -1059,14 +1059,14 @@ int vvSoftVR::getCullingStatus(float nearPlaneZ)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvSoftVR::setParameter(ParameterType param, float newValue, const char*)
+void vvSoftVR::setParameter(ParameterType param, float newValue)
 {
    vvDebugMsg::msg(3, "vvSoftVR::setParameter()");
    switch (param)
    {
       case vvRenderer::VV_SLICEINT:
          sliceInterpol = (newValue == 0.0f) ? false : true;
-         setQuality(_renderState._quality);
+         setQuality(_quality);
          break;
       case vvRenderer::VV_WARPINT:
          warpInterpol = (newValue == 0.0f) ? false : true;
@@ -1096,14 +1096,15 @@ void vvSoftVR::setParameter(ParameterType param, float newValue, const char*)
          opCorr = (newValue == 0.0f) ? false : true;
          cerr << "opCorr set to " << int(opCorr) << endl;
          break;
-      default: break;
+      default: vvRenderer::setParameter(param, newValue);
+         break;
    }
 }
 
 
 //----------------------------------------------------------------------------
 // see parent
-float vvSoftVR::getParameter(ParameterType param, char*) const
+float vvSoftVR::getParameter(const ParameterType param) const
 {
    vvDebugMsg::msg(3, "vvSoftVR::getParameter()");
 
@@ -1134,7 +1135,7 @@ float vvSoftVR::getParameter(ParameterType param, char*) const
 void vvSoftVR::setQuality(float q)
 {
   quality = 1.f;
-  _renderState._quality = q;
+  _quality = q;
 }
 
 

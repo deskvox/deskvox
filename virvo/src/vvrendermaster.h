@@ -49,7 +49,6 @@ public:
   ErrorType render();
   void exit();
 
-  void adjustQuality(float quality);
   void resize(int w, int h);
   void setCurrentFrame(int index);
   void setMipMode(const int mipMode);
@@ -82,6 +81,7 @@ private:
   ThreadArgs* _threadData;
   pthread_barrier_t _barrier;
 
+  void adjustQuality(float quality);
   void setInterpolation(bool interpolation);
 
   void createThreads();

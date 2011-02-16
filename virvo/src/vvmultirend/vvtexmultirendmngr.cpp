@@ -437,7 +437,7 @@ void vvTexMultiRendMngr::setGLenvironment()
 
   if (glBlendEquationVV)
   {
-    switch (_rendererList[0]->_renderState._mipMode)
+    switch ((int)_rendererList[0]->getParameter(vvRenderState::VV_MIP_MODE))
     {
                                                   // alpha compositing
       case 0: glBlendEquationVV(GL_FUNC_ADD); break;
@@ -445,7 +445,7 @@ void vvTexMultiRendMngr::setGLenvironment()
       case 2: glBlendEquationVV(GL_MIN); break;   // minimum intensity projection
 
       default:
-		  glBlendEquationVV(_rendererList[0]->_renderState._mipMode);
+        glBlendEquationVV((int)_rendererList[0]->getParameter(vvRenderState::VV_MIP_MODE));
 		  break;
     }
   }

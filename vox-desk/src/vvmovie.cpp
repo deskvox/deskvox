@@ -394,42 +394,46 @@ bool vvMovie::setStep(int step)
           if (steps->getData()->param[0]==0.0f && steps->getData()->param[1]==0.0f &&
               steps->getData()->param[2]==0.0f && steps->getData()->param[3]==0.0f)
           {
-            _canvas->_renderer->_renderState._clipMode = false;
+            _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_MODE, false);
           }
           else
           {
-            _canvas->_renderer->_renderState._clipMode = true;
+            _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_MODE, true);
             vvVector3 normal(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
             normal.normalize();
             vvVector3 point(&normal);
             point.scale(steps->getData()->param[3]);
-            _canvas->_renderer->_renderState.setClippingPlane(&point, &normal);
+            _canvas->_renderer->setParameterV3(vvRenderState::VV_CLIP_NORMAL, normal);
+            _canvas->_renderer->setParameterV3(vvRenderState::VV_CLIP_POINT, point);
           }
           break;
         case MOVECLIP:
         {
           vvVector3 point, normal;
-          _canvas->_renderer->_renderState.getClippingPlane(&point, &normal);
+          normal = _canvas->_renderer->getParameterV3(vvRenderState::VV_CLIP_NORMAL);
+          normal = _canvas->_renderer->getParameterV3(vvRenderState::VV_CLIP_POINT);
           normal.add(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
           normal.normalize();
           vvVector3 diff(&normal);
           diff.scale(steps->getData()->param[3]);
           point.add(&diff);
-          _canvas->_renderer->_renderState.setClippingPlane(&point, &normal);
+          _canvas->_renderer->setParameterV3(vvRenderState::VV_CLIP_NORMAL, normal);
+          _canvas->_renderer->setParameterV3(vvRenderState::VV_CLIP_POINT, point); 
           break;
         }
         case SETCLIPPARAM:
         {
-          _canvas->_renderer->_renderState._clipSingleSlice = (steps->getData()->param[0] == 0.0f) ? false : true;
-          _canvas->_renderer->_renderState._clipOpaque      = (steps->getData()->param[1] == 0.0f) ? false : true;
-          _canvas->_renderer->_renderState._clipPerimeter   = (steps->getData()->param[2] == 0.0f) ? false : true;
+          _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_SINGLE_SLICE, (steps->getData()->param[0] == 0.0f) ? false : true);
+          _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_OPAQUE, (steps->getData()->param[1] == 0.0f) ? false : true);
+          _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PERIMETER, (steps->getData()->param[2] == 0.0f) ? false : true);
         }
         break;
         case SETQUALITY:
-          _canvas->_renderer->_renderState._quality = steps->getData()->param[0];
+          _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY, steps->getData()->param[0]);
           break;
         case CHANGEQUALITY:
-          _canvas->_renderer->_renderState._quality += steps->getData()->param[0];
+          _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY,
+                  _canvas->_renderer->getParameter(vvRenderState::VV_QUALITY) + steps->getData()->param[0]);
           break;
         case SHOW:
           done = true;

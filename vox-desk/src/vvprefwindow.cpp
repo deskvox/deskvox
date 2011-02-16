@@ -324,7 +324,7 @@ long VVPreferenceWindow::onQualityMChange(FXObject*,FXSelector,void*)
 
 long VVPreferenceWindow::onQualitySChange(FXObject*,FXSelector,void*)
 {
-  _canvas->_renderer->_renderState._quality = getQualitySDialValue();
+  _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY, getQualitySDialValue());
   _shell->drawScene();
   getApp()->reg().writeRealEntry("Settings", "RenderingQualityStill", getQualitySDialValue());
   getApp()->reg().write();  // update registry
@@ -348,7 +348,7 @@ long VVPreferenceWindow::onQualitySTextChange(FXObject*,FXSelector,void*)
 long VVPreferenceWindow::onMIPSelect(FXObject*,FXSelector,void* ptr)
 {
   _shell->_glcanvas->makeCurrent();
-  _canvas->_renderer->_renderState._mipMode = (ptr != NULL) ? 1 : 0;
+  _canvas->_renderer->setParameter(vvRenderState::VV_MIP_MODE, (ptr != NULL) ? 1 : 0);
   _shell->_glcanvas->makeNonCurrent();
   return 1;
 }
@@ -368,7 +368,7 @@ long VVPreferenceWindow::onShowBricksSelect(FXObject*, FXSelector, void* ptr)
   if (texrend)
   {
     _shell->_glcanvas->makeCurrent();
-    texrend->setShowBricks((_showBricksButton->getCheck()) ? true : false);
+    texrend->setParameter(vvRenderState::VV_SHOW_BRICKS, (_showBricksButton->getCheck()) ? true : false);
     _shell->_glcanvas->makeNonCurrent();
   }
   return 1;
@@ -475,7 +475,7 @@ void VVPreferenceWindow::scaleQuality(float factor)
   quality *= factor;
   setQualitySDialValue(quality);
   _qualitySTField->setText(FXStringFormat("%.2f", quality));
-  _canvas->_renderer->_renderState._quality = quality;
+  _canvas->_renderer->setParameter(vvRenderState::VV_QUALITY, quality);
   _shell->drawScene();
 }
 
@@ -487,7 +487,7 @@ void VVPreferenceWindow::updateValues()
   _eyeTField->setText(FXStringFormat("%d",(FXint)_canvas->_ov.getIOD()));
 
   _linterpButton->setCheck(_canvas->_renderer->getParameter(vvRenderer::VV_SLICEINT)==1.0f);
-  _mipButton->setCheck(_canvas->_renderer->_renderState._mipMode==1.0f);
+  _mipButton->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE)==1.0f);
   _artoolkitButton->setCheck(_canvas->getARToolkit());
 
   if (_shell->_glcanvas->makeCurrent())
@@ -580,8 +580,8 @@ void VVPreferenceWindow::updateValues()
 
     if ((texrend) && (texrend->getGeomType() == vvTexRend::VV_BRICKS))
     {
-      _showBricksButton->setCheck(texrend->getShowBricks());
-      if (texrend->getComputeBrickSize())
+      _showBricksButton->setCheck(texrend->getParameter(vvRenderState::VV_SHOW_BRICKS));
+      if (texrend->getParameter(vvRenderState::VV_COMPUTE_BRICK_SIZE))
       {
         _bsCombo->disable();
         _computeBrickSizeButton->setCheck(true);

@@ -215,10 +215,10 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _aabbMask = NULL;
   _isSlave = false;
 
-  if (_renderState._useOffscreenBuffer)
+  if (_useOffscreenBuffer)
   {
-    _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, VV_BYTE);
-    if (_renderState._opaqueGeometryPresent)
+    _renderTarget = new vvOffscreenBuffer(_imageScale, VV_BYTE);
+    if (_opaqueGeometryPresent)
     {
       dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPreserveDepthBuffer(true);
     }
@@ -252,7 +252,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _areBricksCreated = false;
   _lastFrame = -1;
   lutDistance = -1.0;
-  _renderState._isROIChanged = true;
+  _isROIChanged = true;
 
   // Find out which OpenGL extensions are supported:
   extTex3d  = vvGLTools::isGLextensionSupported("GL_EXT_texture3D") || vvGLTools::isGLVersionSupported(1,2,1);
@@ -387,7 +387,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
       break;
   }
 
-  if ((geomType == VV_BRICKS) && _renderState._computeBrickSize)
+  if ((geomType == VV_BRICKS) && _computeBrickSize)
   {
     _areBricksCreated = false;
     computeBrickSize();
@@ -420,7 +420,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     // Build global transfer function once in order to build up _nonemptyList.
     updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
     calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
-    getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _renderState._isROIChanged);
+    getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _isROIChanged);
     distributeBricks();
 
     pthread_barrier_wait(&_distributedBricksBarrier);
@@ -899,7 +899,7 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
 
   if (!extTex3d) return NO3DTEX;
 
-  if (_renderState._brickSize == 0)
+  if (_brickSize == 0)
   {
     vvDebugMsg::msg(1, "3D Texture brick size unknown");
     return TEX_SIZE_UNKNOWN;
@@ -929,9 +929,9 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
                           vd->getSize()[1] / (vd->vox[1] - 1),
                           vd->getSize()[2] / (vd->vox[2] - 1));
 
-  const vvVector3 halfBrick(float(texels[0]-_renderState._brickTexelOverlap) * 0.5f,
-                            float(texels[1]-_renderState._brickTexelOverlap) * 0.5f,
-                            float(texels[2]-_renderState._brickTexelOverlap) * 0.5f);
+  const vvVector3 halfBrick(float(texels[0]-_brickTexelOverlap) * 0.5f,
+                            float(texels[1]-_brickTexelOverlap) * 0.5f,
+                            float(texels[2]-_brickTexelOverlap) * 0.5f);
 
   const vvVector3 halfVolume(float(vd->vox[0] - 1) * 0.5f,
                              float(vd->vox[1] - 1) * 0.5f,
@@ -945,40 +945,38 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
         for (int bz = 0; bz < _numBricks[2]; bz++)
         {
           // offset to first voxel of current brick
-          const int startOffset[3] = { bx * _renderState._brickSize[0],
-                                       by * _renderState._brickSize[1],
-                                       bz * _renderState._brickSize[2] };
+          const int startOffset[3] = { bx * _brickSize[0], by * _brickSize[1], bz * _brickSize[2] };
 
           // Guarantee that startOffset[i] + brickSize[i] won't exceed actual size of the volume.
-          if ((startOffset[0] + _renderState._brickSize[0]) >= vd->vox[0])
+          if ((startOffset[0] + _brickSize[0]) >= vd->vox[0])
             tmpTexels[0] = vvToolshed::getTextureSize(vd->vox[0] - startOffset[0]);
           else
             tmpTexels[0] = texels[0];
-          if ((startOffset[1] + _renderState._brickSize[1]) >= vd->vox[1])
+          if ((startOffset[1] + _brickSize[1]) >= vd->vox[1])
             tmpTexels[1] = vvToolshed::getTextureSize(vd->vox[1] - startOffset[1]);
           else
             tmpTexels[1] = texels[1];
-          if ((startOffset[2] + _renderState._brickSize[2]) >= vd->vox[2])
+          if ((startOffset[2] + _brickSize[2]) >= vd->vox[2])
             tmpTexels[2] = vvToolshed::getTextureSize(vd->vox[2] - startOffset[2]);
           else
             tmpTexels[2] = texels[2];
 
           vvBrick* currBrick = new vvBrick();
           int bs[3];
-          bs[0] = _renderState._brickSize[0];
-          bs[1] = _renderState._brickSize[1];
-          bs[2] = _renderState._brickSize[2];
+          bs[0] = _brickSize[0];
+          bs[1] = _brickSize[1];
+          bs[2] = _brickSize[2];
           if (_useOnlyOneBrick)
           {
-            bs[0] += _renderState._brickTexelOverlap;
-            bs[1] += _renderState._brickTexelOverlap;
-            bs[2] += _renderState._brickTexelOverlap;
+            bs[0] += _brickTexelOverlap;
+            bs[1] += _brickTexelOverlap;
+            bs[2] += _brickTexelOverlap;
           }
 
           int brickTexelOverlap[3];
           for (int d = 0; d < 3; ++d)
           {
-            brickTexelOverlap[d] = _renderState._brickTexelOverlap;
+            brickTexelOverlap[d] = _brickTexelOverlap;
             const float maxObj = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
             if (maxObj > vd->getSize()[d])
             {
@@ -1007,7 +1005,7 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
             currBrick->startOffset[d] = startOffset[d];
             const float overlapNorm = (float)(brickTexelOverlap[d]) / (float)tmpTexels[d];
             currBrick->texRange[d] = (1.0f - overlapNorm);
-            currBrick->texMin[d] = (1.0f / (2.0f * (float)(_renderState._brickTexelOverlap) * (float)tmpTexels[d]));
+            currBrick->texMin[d] = (1.0f / (2.0f * (float)(_brickTexelOverlap) * (float)tmpTexels[d]));
           }
 
           const int texIndex = (f * _numBricks[0] * _numBricks[1] * _numBricks[2]) + (bx * _numBricks[2] * _numBricks[1])
@@ -1656,20 +1654,10 @@ void vvTexRend::updateBrickGeom()
   }
 }
 
-void vvTexRend::setShowBricks(const bool flag)
-{
-  _renderState._showBricks = flag;
-}
-
-bool vvTexRend::getShowBricks() const
-{
-  return _renderState._showBricks;
-}
-
 void vvTexRend::setComputeBrickSize(const bool flag)
 {
-  _renderState._computeBrickSize = flag;
-  if (_renderState._computeBrickSize)
+  _computeBrickSize = flag;
+  if (_computeBrickSize)
   {
     computeBrickSize();
     if(!_areBricksCreated)
@@ -1686,15 +1674,10 @@ void vvTexRend::setComputeBrickSize(const bool flag)
   }
 }
 
-bool vvTexRend::getComputeBrickSize() const
-{
-  return _renderState._computeBrickSize;
-}
-
 void vvTexRend::setBrickSize(const int newSize)
 {
   vvDebugMsg::msg(3, "vvRenderer::setBricksize()");
-  _renderState._brickSize[0] = _renderState._brickSize[1] = _renderState._brickSize[2] = newSize-1;
+  _brickSize[0] = _brickSize[1] = _brickSize[2] = newSize-1;
   _useOnlyOneBrick = false;
 
   if (_numThreads > 0)
@@ -1710,16 +1693,16 @@ void vvTexRend::setBrickSize(const int newSize)
 int vvTexRend::getBrickSize() const
 {
   vvDebugMsg::msg(3, "vvRenderer::getBricksize()");
-  return _renderState._brickSize[0]+1;
+  return _brickSize[0]+1;
 }
 
 void vvTexRend::setTexMemorySize(const int newSize)
 {
-  if (_renderState._texMemorySize == newSize)
+  if (_texMemorySize == newSize)
     return;
 
-  _renderState._texMemorySize = newSize;
-  if (_renderState._computeBrickSize)
+  _texMemorySize = newSize;
+  if (_computeBrickSize)
   {
     computeBrickSize();
 
@@ -1739,7 +1722,7 @@ void vvTexRend::setTexMemorySize(const int newSize)
 
 int vvTexRend::getTexMemorySize() const
 {
-  return _renderState._texMemorySize;
+  return _texMemorySize;
 }
 
 vvBspTree* vvTexRend::getBspTree() const
@@ -1790,7 +1773,7 @@ void vvTexRend::computeBrickSize()
   vvVector3 probeSize;
   int newBrickSize[3];
 
-  int texMemorySize = _renderState._texMemorySize;
+  int texMemorySize = _texMemorySize;
   if (texMemorySize == 0)
   {
      vvDebugMsg::msg(1, "vvTexRend::computeBrickSize(): unknown texture memory size, assuming 32 M");
@@ -1801,9 +1784,9 @@ void vvTexRend::computeBrickSize()
   for(int i=0; i<3; ++i)
   {
     newBrickSize[i] = vvToolshed::getTextureSize(vd->vox[i]);
-    if(newBrickSize[i] > _renderState._maxBrickSize[i])
+    if(newBrickSize[i] > _maxBrickSize[i])
     {
-      newBrickSize[i] = _renderState._maxBrickSize[i];
+      newBrickSize[i] = _maxBrickSize[i];
       _useOnlyOneBrick = false;
     }
   }
@@ -1814,21 +1797,21 @@ void vvTexRend::computeBrickSize()
   }
   else
   {
-    probeSize[0] = 2 * (newBrickSize[0]-_renderState._brickTexelOverlap) / (float) vd->vox[0];
-    probeSize[1] = 2 * (newBrickSize[1]-_renderState._brickTexelOverlap) / (float) vd->vox[1];
-    probeSize[2] = 2 * (newBrickSize[2]-_renderState._brickTexelOverlap) / (float) vd->vox[2];
+    probeSize[0] = 2 * (newBrickSize[0] - _brickTexelOverlap) / (float) vd->vox[0];
+    probeSize[1] = 2 * (newBrickSize[1] - _brickTexelOverlap) / (float) vd->vox[1];
+    probeSize[2] = 2 * (newBrickSize[2] - _brickTexelOverlap) / (float) vd->vox[2];
 
     setProbeSize(&probeSize);
     //setROIEnable(true);
   }
-  if (newBrickSize[0]-_renderState._brickTexelOverlap != _renderState._brickSize[0]
-      || newBrickSize[1]-_renderState._brickTexelOverlap != _renderState._brickSize[1]
-      || newBrickSize[2]-_renderState._brickTexelOverlap != _renderState._brickSize[2]
+  if (newBrickSize[0]-_brickTexelOverlap != _brickSize[0]
+      || newBrickSize[1]-_brickTexelOverlap != _brickSize[1]
+      || newBrickSize[2]-_brickTexelOverlap != _brickSize[2]
       || !_areBricksCreated)
   {
-    _renderState._brickSize[0] = newBrickSize[0]-_renderState._brickTexelOverlap;
-    _renderState._brickSize[1] = newBrickSize[1]-_renderState._brickTexelOverlap;
-    _renderState._brickSize[2] = newBrickSize[2]-_renderState._brickTexelOverlap;
+    _brickSize[0] = newBrickSize[0]-_brickTexelOverlap;
+    _brickSize[1] = newBrickSize[1]-_brickTexelOverlap;
+    _brickSize[2] = newBrickSize[2]-_brickTexelOverlap;
     _areBricksCreated = false;
   }
 }
@@ -1837,9 +1820,9 @@ void vvTexRend::computeBrickSize()
 void vvTexRend::calcNumBricks()
 {
   // compute number of texels / per brick (should be of power 2)
-  texels[0] = vvToolshed::getTextureSize(_renderState._brickSize[0]);
-  texels[1] = vvToolshed::getTextureSize(_renderState._brickSize[1]);
-  texels[2] = vvToolshed::getTextureSize(_renderState._brickSize[2]);
+  texels[0] = vvToolshed::getTextureSize(_brickSize[0]);
+  texels[1] = vvToolshed::getTextureSize(_brickSize[1]);
+  texels[2] = vvToolshed::getTextureSize(_brickSize[2]);
 
   // compute number of bricks
   if ((_useOnlyOneBrick) ||
@@ -1848,9 +1831,9 @@ void vvTexRend::calcNumBricks()
 
   else
   {
-    _numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_renderState._brickSize[0]));
-    _numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_renderState._brickSize[1]));
-    _numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_renderState._brickSize[2]));
+    _numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_brickSize[0]));
+    _numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_brickSize[1]));
+    _numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_brickSize[2]));
   }
 }
 
@@ -1877,7 +1860,7 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData, float& 
   if (preIntegration &&
       arbMltTex && 
       geomType==VV_VIEWPORT && 
-      !(_renderState._clipMode && (_renderState._clipSingleSlice || _renderState._clipOpaque)) &&
+      !(_clipMode && (_clipSingleSlice || _clipOpaque)) &&
       (voxelType==VV_FRG_PRG || (voxelType==VV_PIX_SHD && (_currentShader==0 || _currentShader==11))))
   {
     usePreIntegration = true;
@@ -1907,7 +1890,7 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData, float& 
     fillNonemptyList(_nonemptyList, _brickList);
   }
 
-  _renderState._isROIChanged = true; // have to update list of visible bricks
+  _isROIChanged = true; // have to update list of visible bricks
 }
 
 //----------------------------------------------------------------------------
@@ -1915,7 +1898,7 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData, float& 
 void vvTexRend::updateVolumeData()
 {
   vvRenderer::updateVolumeData();
-  if (_renderState._computeBrickSize)
+  if (_computeBrickSize)
   {
     _areEmptyBricksCreated = false;
     _areBricksCreated = false;
@@ -1961,7 +1944,7 @@ void vvTexRend::fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vect
   // Each bricks visible flag was initially set to true.
   // If empty-space leaping isn't active, all bricks are
   // visible by default.
-  if (_renderState._emptySpaceLeaping)
+  if (_emptySpaceLeaping)
   {
     int nbricks = 0, nvis=0;
     nonemptyList.clear();
@@ -1975,7 +1958,7 @@ void vvTexRend::fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vect
         nbricks++;
 
         // If max intensity projection, make all bricks visible.
-        if (_renderState._mipMode > 0)
+        if (_mipMode > 0)
         {
           nonemptyList[frame].push_back(tmp);
           nvis++;
@@ -2456,9 +2439,9 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(int offsetX, int offsetY, in
       startOffset[1] = (*brick)->startOffset[1];
       startOffset[2] = (*brick)->startOffset[2];
 
-      endOffset[0] = startOffset[0] + _renderState._brickSize[0];
-      endOffset[1] = startOffset[1] + _renderState._brickSize[1];
-      endOffset[2] = startOffset[2] + _renderState._brickSize[2];
+      endOffset[0] = startOffset[0] + _brickSize[0];
+      endOffset[1] = startOffset[1] + _brickSize[1];
+      endOffset[2] = startOffset[2] + _brickSize[2];
 
       endOffset[0] = ts_clamp(endOffset[0], 0, vd->vox[0] - 1);
       endOffset[1] = ts_clamp(endOffset[1], 0, vd->vox[1] - 1);
@@ -2701,20 +2684,18 @@ void vvTexRend::beforeSetGLenvironment() const
   const vvVector3 size(vd->getSize());            // volume size [world coordinates]
 
   // Draw boundary lines (must be done before setGLenvironment()):
-  if (_renderState._boundaries)
+  if (_boundaries)
   {
-    drawBoundingBox(&size, &vd->pos, _renderState._boundColor);
+    drawBoundingBox(&size, &vd->pos, &_boundColor);
   }
-  if (_renderState._isROIUsed)
+  if (_isROIUsed)
   {
-    const vvVector3 probeSizeObj(size[0] * _renderState._roiSize[0],
-                                 size[1] * _renderState._roiSize[1],
-                                 size[2] * _renderState._roiSize[2]);
-    drawBoundingBox(&probeSizeObj, &_renderState._roiPos, _renderState._probeColor);
+    const vvVector3 probeSizeObj(size[0] * _roiSize[0], size[1] * _roiSize[1], size[2] * _roiSize[2]);
+    drawBoundingBox(&probeSizeObj, &_roiPos, &_probeColor);
   }
-  if (_renderState._clipMode && _renderState._clipPerimeter)
+  if (_clipMode && _clipPerimeter)
   {
-    drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, &_renderState._clipColor);
+    drawPlanePerimeter(&size, &vd->pos, &_clipPoint, &_clipNormal, &_clipColor);
   }
 }
 
@@ -2760,7 +2741,7 @@ void vvTexRend::setGLenvironment() const
       break;
     default: break;
   }
-  switch (_renderState._mipMode)
+  switch (_mipMode)
   {
     // alpha compositing
     case 0: glBlendEquation(GL_FUNC_ADD); break;
@@ -2887,17 +2868,17 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   getEyePosition(&eye);
   eye.multiply(&invMV);
 
-  if (_renderState._isROIUsed)
+  if (_isROIUsed)
   {
     // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj.copy(&_renderState._roiPos);
+    probePosObj.copy(&_roiPos);
     probePosObj.sub(&pos);                        // eliminate object position from probe position
 
     // Compute probe min/max coordinates in object space:
     for (i=0; i<3; ++i)
     {
-      probeMin[i] = probePosObj[i] - (_renderState._roiSize[i] * size[i]) * 0.5f;
-      probeMax[i] = probePosObj[i] + (_renderState._roiSize[i] * size[i]) * 0.5f;
+      probeMin[i] = probePosObj[i] - (_roiSize[i] * size[i]) * 0.5f;
+      probeMax[i] = probePosObj[i] + (_roiSize[i] * size[i]) * 0.5f;
     }
 
     // Constrain probe boundaries to volume data area:
@@ -2926,7 +2907,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   }
 
   // Initialize texture counters
-  if (_renderState._roiSize[0])
+  if (_roiSize[0])
   {
     probeTexels.zero();
     for (i=0; i<3; ++i)
@@ -2958,7 +2939,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   const float quality = calcQualityAndScaleImage();
 
   float sliceDistance = voxelDistance / quality;
-  if(_renderState._isROIUsed && _renderState._quality < 2.0)
+  if(_isROIUsed && _quality < 2.0)
   {
     // draw at least twice as many slices as there are samples in the probe depth.
     sliceDistance = voxelDistance * 0.5f;
@@ -2991,7 +2972,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   farthest.scale((float)(numSlices - 1) * -0.5f);
   farthest.add(&probePosObj);
 
-  if (_renderState._clipMode)                     // clipping plane present?
+  if (_clipMode)                     // clipping plane present?
   {
     // Adjust numSlices and set farthest point so that textures are only
     // drawn up to the clipPoint. (Delta may not be changed
@@ -3001,7 +2982,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     temp.copy(&delta);
     temp.scale(-0.5f);
     farthest.add(&temp);                          // add a half delta to farthest
-    clipPosObj.copy(&_renderState._clipPoint);
+    clipPosObj.copy(&_clipPoint);
     clipPosObj.sub(&pos);
     temp.copy(&probePosObj);
     temp.add(&normal);
@@ -3012,7 +2993,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     temp.scale((float)(1 - numSlices));
     farthest.copy(&normClipPoint);
     farthest.add(&temp);
-    if (_renderState._clipSingleSlice)
+    if (_clipSingleSlice)
     {
       // Compute slice position:
       temp.copy(&delta);
@@ -3226,7 +3207,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   farthest.copy(&delta);
   farthest.scale((float)(numSlices - 1) * -0.5f);
 
-  if (_renderState._clipMode)                     // clipping plane present?
+  if (_clipMode)                     // clipping plane present?
   {
     // Adjust numSlices and set farthest point so that textures are only
     // drawn up to the clipPoint. (Delta may not be changed
@@ -3236,7 +3217,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     vvVector3 temp(delta);
     temp.scale(-0.5f);
     farthest.add(&temp);                          // add a half delta to farthest
-    vvVector3 clipPosObj(_renderState._clipPoint);
+    vvVector3 clipPosObj(_clipPoint);
     clipPosObj.sub(&vd->pos);
     temp.copy(&probePosObj);
     temp.add(&normal);
@@ -3248,7 +3229,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     temp.scale((float)(1 - numSlices));
     farthest.copy(&normClipPoint);
     farthest.add(&temp);
-    if (_renderState._clipSingleSlice)
+    if (_clipSingleSlice)
     {
       // Compute slice position:
       delta.scale((float)(numSlices-1));
@@ -3269,7 +3250,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   if (_usedThreads == 0)
   {
-    getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _renderState._isROIChanged);
+    getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _isROIChanged);
   }
 
   markBricksInFrustum(probeMin, probeMax);
@@ -3370,7 +3351,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     enableTexture(GL_TEXTURE_3D_EXT);
     sortBrickList(_sortedList, eye, normal, isOrtho);
 
-    if (_renderState._showBricks)
+    if (_showBricks)
     {
       // Debugging mode: render the brick outlines and deactivate shaders,
       // lighting and texturing.
@@ -3529,7 +3510,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                                                currentShader, usePreIntegration);
         data->transferFunctionChanged = false;
       }
-      roiChanged = data->renderer->_renderState._isROIChanged;
+      roiChanged = data->renderer->_isROIChanged;
       data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
 
       // Start rendering.
@@ -3603,7 +3584,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                                        data->probePosObj, data->probeSizeObj, roiChanged, data->threadId);
       data->renderer->sortBrickList(data->sortedList, data->eye, data->normal, data->isOrtho);
 
-      if (data->renderer->_renderState._showBricks)
+      if (data->renderer->_showBricks)
       {
         // Debugging mode: render the brick outlines and deactivate shaders,
         // lighting and texturing.
@@ -4076,7 +4057,7 @@ void vvTexRend::renderTex3DSpherical(vvMatrix* view)
   if (!extTex3d) return;
 
   // make sure that at least one shell is drawn
-  const int numShells = max(1, static_cast<int>(_renderState._quality * 100.0f));
+  const int numShells = max(1, static_cast<int>(_quality * 100.0f));
 
   // Determine texture object dimensions:
   const vvVector3 size(vd->getSize());
@@ -4164,7 +4145,7 @@ void vvTexRend::renderTex3DSpherical(vvMatrix* view)
   glBindTexture(GL_TEXTURE_3D_EXT, texNames[0]);
 
   // Enable clipping plane if appropriate:
-  if (_renderState._clipMode) activateClippingPlane();
+  if (_clipMode) activateClippingPlane();
 
   float radius = maxDist;
   for (int i=0; i<numShells; ++i)                     // loop thru all drawn textures
@@ -4200,7 +4181,7 @@ void vvTexRend::renderTex2DSlices(float zz)
   vvDebugMsg::msg(3, "vvTexRend::renderTex2DSlices()");
 
   // Enable clipping plane if appropriate:
-  if (_renderState._clipMode) activateClippingPlane();
+  if (_clipMode) activateClippingPlane();
 
   // Generate half object size as shortcut:
   size.copy(vd->getSize());
@@ -4208,7 +4189,7 @@ void vvTexRend::renderTex2DSlices(float zz)
   size2[1] = 0.5f * size[1];
   size2[2] = 0.5f * size[2];
 
-  numTextures = int(_renderState._quality * 100.0f);
+  numTextures = int(_quality * 100.0f);
   if (numTextures < 1) numTextures = 1;
 
   normal.set(0.0f, 0.0f, 1.0f);
@@ -4305,10 +4286,10 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
   vvDebugMsg::msg(3, "vvTexRend::renderTex2DCubic()");
 
   // Enable clipping plane if appropriate:
-  if (_renderState._clipMode) activateClippingPlane();
+  if (_clipMode) activateClippingPlane();
 
   // Initialize texture parameters:
-  numTextures = int(_renderState._quality * 100.0f);
+  numTextures = int(_quality * 100.0f);
   frameTextures = vd->vox[0] + vd->vox[1] + vd->vox[2];
   if (numTextures < 2)  numTextures = 2;          // make sure that at least one slice is drawn to prevent division by zero
 
@@ -4505,7 +4486,7 @@ void vvTexRend::renderVolumeGL()
 
   if (_usedThreads == 0)
   {
-    if ((geomType == VV_BRICKS) && (!_renderState._showBricks) && _proxyGeometryOnGpu)
+    if ((geomType == VV_BRICKS) && !_showBricks && _proxyGeometryOnGpu)
     {
       if (voxelType == VV_RGBA)
       {
@@ -4531,7 +4512,7 @@ void vvTexRend::renderVolumeGL()
 
   if (_usedThreads == 0)
   {
-    if (geomType != VV_BRICKS || !_renderState._showBricks)
+    if (geomType != VV_BRICKS || !_showBricks)
     {
       enableLUTMode(_pixelShader, pixLUTName, fragProgName);
     }
@@ -4604,23 +4585,23 @@ void vvTexRend::activateClippingPlane()
 
   // Generate OpenGL compatible clipping plane parameters:
   // normal points into oppisite direction
-  planeEq[0] = -_renderState._clipNormal[0];
-  planeEq[1] = -_renderState._clipNormal[1];
-  planeEq[2] = -_renderState._clipNormal[2];
-  planeEq[3] = _renderState._clipNormal.dot(&_renderState._clipPoint);
+  planeEq[0] = -_clipNormal[0];
+  planeEq[1] = -_clipNormal[1];
+  planeEq[2] = -_clipNormal[2];
+  planeEq[3] = _clipNormal.dot(&_clipPoint);
   glClipPlane(GL_CLIP_PLANE0, planeEq);
   glEnable(GL_CLIP_PLANE0);
 
   // Generate second clipping plane in single slice mode:
-  if (_renderState._clipSingleSlice)
+  if (_clipSingleSlice)
   {
     thickness = vd->_scale * vd->dist[0] * (vd->vox[0] * 0.01f);
-    clipNormal2.copy(&_renderState._clipNormal);
+    clipNormal2.copy(&_clipNormal);
     clipNormal2.negate();
     planeEq[0] = -clipNormal2[0];
     planeEq[1] = -clipNormal2[1];
     planeEq[2] = -clipNormal2[2];
-    planeEq[3] = clipNormal2.dot(&_renderState._clipPoint) + thickness;
+    planeEq[3] = clipNormal2.dot(&_clipPoint) + thickness;
     glClipPlane(GL_CLIP_PLANE1, planeEq);
     glEnable(GL_CLIP_PLANE1);
   }
@@ -4633,7 +4614,7 @@ void vvTexRend::deactivateClippingPlane()
 {
   vvDebugMsg::msg(3, "vvTexRend::deactivateClippingPlane()");
   glDisable(GL_CLIP_PLANE0);
-  if (_renderState._clipSingleSlice) glDisable(GL_CLIP_PLANE1);
+  if (_clipSingleSlice) glDisable(GL_CLIP_PLANE1);
 }
 
 //----------------------------------------------------------------------------
@@ -4751,7 +4732,7 @@ void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData, fl
     for (int i=0; i<total; ++i)
     {
       // Gamma correction:
-      if (_renderState._gammaCorrection)
+      if (_gammaCorrection)
       {
         corr[0] = gammaCorrect(rgbaTF[i * 4],     VV_RED);
         corr[1] = gammaCorrect(rgbaTF[i * 4 + 1], VV_GREEN);
@@ -4768,7 +4749,7 @@ void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData, fl
 
       // Opacity correction:
                                                   // for 0 distance draw opaque slices
-      if (dist<=0.0 || (_renderState._clipMode && _renderState._clipOpaque)) corr[3] = 1.0f;
+      if (dist<=0.0 || (_clipMode && _clipOpaque)) corr[3] = 1.0f;
       else if (opacityCorrection) corr[3] = 1.0f - powf(1.0f - corr[3], dist);
 
       // Convert float to uchar and copy to rgbaLUT array:
@@ -4849,7 +4830,7 @@ void vvTexRend::setObjectDirection(const vvVector3* od)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvTexRend::setParameter(const ParameterType param, const float newValue, const char*)
+void vvTexRend::setParameter(const ParameterType param, const float newValue)
 {
   bool newInterpol;
 
@@ -4904,20 +4885,20 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, co
       }
       break;
     case vvRenderer::VV_LEAPEMPTY:
-      _renderState._emptySpaceLeaping = (newValue == 0.0f) ? false : true;
+      _emptySpaceLeaping = (newValue == 0.0f) ? false : true;
       // Maybe a tf type was chosen which is incompatible with empty space leaping.
       validateEmptySpaceLeaping();
       updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
       break;
     case vvRenderer::VV_OFFSCREENBUFFER:
-      _renderState._useOffscreenBuffer = (newValue == 0.0f) ? false : true;
-      if (_renderState._useOffscreenBuffer)
+      _useOffscreenBuffer = (newValue == 0.0f) ? false : true;
+      if (_useOffscreenBuffer)
       {
         if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) == NULL)
         {
           delete _renderTarget;
-          _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, _renderState._imagePrecision);
-          if (_renderState._opaqueGeometryPresent)
+          _renderTarget = new vvOffscreenBuffer(_imageScale, _imagePrecision);
+          if (_opaqueGeometryPresent)
           {
             dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPreserveDepthBuffer(true);
           }
@@ -4930,8 +4911,8 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, co
       }
       break;
     case vvRenderer::VV_IMG_SCALE:
-      _renderState._imageScale = newValue;
-      if (_renderState._useOffscreenBuffer)
+      _imageScale = newValue;
+      if (_useOffscreenBuffer)
       {
         if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
         {
@@ -4940,12 +4921,12 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, co
         else
         {
           delete _renderTarget;
-          _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, _renderState._imagePrecision);
+          _renderTarget = new vvOffscreenBuffer(_imageScale, _imagePrecision);
         }
       }
       break;
     case vvRenderer::VV_IMG_PRECISION:
-      if (_renderState._useOffscreenBuffer)
+      if (_useOffscreenBuffer)
       {
         if (int(newValue) <= 8)
         {
@@ -4956,7 +4937,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, co
           else
           {
             delete _renderTarget;
-            _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, VV_BYTE);
+            _renderTarget = new vvOffscreenBuffer(_imageScale, VV_BYTE);
           }
           break;
         }
@@ -4969,7 +4950,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, co
           else
           {
             delete _renderTarget;
-            _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, VV_SHORT);
+            _renderTarget = new vvOffscreenBuffer(_imageScale, VV_SHORT);
           }
           break;
         }
@@ -4982,7 +4963,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, co
           else
           {
             delete _renderTarget;
-            _renderTarget = new vvOffscreenBuffer(_renderState._imageScale, VV_FLOAT);
+            _renderTarget = new vvOffscreenBuffer(_imageScale, VV_FLOAT);
           }
           break;
         }
@@ -5010,7 +4991,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue, co
 
 //----------------------------------------------------------------------------
 // see parent for comments
-float vvTexRend::getParameter(const ParameterType param, char*) const
+float vvTexRend::getParameter(const ParameterType param) const
 {
   vvDebugMsg::msg(3, "vvTexRend::getParameter()");
 
@@ -5167,7 +5148,7 @@ void vvTexRend::setCurrentShader(const int shader)
 /// inherited from vvRenderer, only valid for planar textures
 void vvTexRend::renderQualityDisplay()
 {
-  const int numSlices = int(_renderState._quality * 100.0f);
+  const int numSlices = int(_quality * 100.0f);
   vvPrintGL* printGL = new vvPrintGL();
   printGL->print(-0.9f, 0.9f, "Textures: %d", numSlices);
   delete printGL;
@@ -5922,7 +5903,7 @@ void vvTexRend::calcProjectedScreenRects()
 */
 float vvTexRend::calcQualityAndScaleImage()
 {
-  float quality = _renderState._quality;
+  float quality = _quality;
   if (quality < 1.0f)
   {
     vvOffscreenBuffer* offscreenBuffer = dynamic_cast<vvOffscreenBuffer*>(_renderTarget);
@@ -5995,13 +5976,13 @@ void vvTexRend::initVertArray(const int numSlices)
 void vvTexRend::validateEmptySpaceLeaping()
 {
   // Only do empty space leaping for ordinary transfer functions
-  if (_renderState._emptySpaceLeaping == true)
+  if (_emptySpaceLeaping == true)
   {
-    _renderState._emptySpaceLeaping &= (geomType == VV_BRICKS);
-    _renderState._emptySpaceLeaping &= (voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12);
-    _renderState._emptySpaceLeaping &= (voxelType != VV_RGBA);
+    _emptySpaceLeaping &= (geomType == VV_BRICKS);
+    _emptySpaceLeaping &= (voxelType != VV_PIX_SHD) || (_currentShader == 0) || (_currentShader == 12);
+    _emptySpaceLeaping &= (voxelType != VV_RGBA);
     // TODO: only implemented for 8-bit 1-channel volumes. Support higher volume resolutions.
-    _renderState._emptySpaceLeaping &= ((vd->chan == 1) && (vd->bpc == 1));
+    _emptySpaceLeaping &= ((vd->chan == 1) && (vd->bpc == 1));
   }
 }
 

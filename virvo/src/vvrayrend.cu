@@ -532,7 +532,7 @@ template<
         >
 renderKernel getKernelWithSphereAsProbe(vvRayRend* rayRend)
 {
-  switch (rayRend->_renderState._mipMode)
+  switch ((int)rayRend->getParameter(vvRenderState::VV_MIP_MODE))
   {
   case 0:
     return getKernelWithMip<
@@ -592,7 +592,8 @@ template<
         >
 renderKernel getKernelWithClipPlane(vvRayRend* rayRend)
 {
-  if (rayRend->_renderState._isROIUsed && rayRend->_renderState._sphericalROI)
+  if ((bool)rayRend->getParameter(vvRenderState::VV_IS_ROI_USED)
+     && (bool)rayRend->getParameter(vvRenderState::VV_SPHERICAL_ROI))
   {
     return getKernelWithSphereAsProbe<
                                       t_bpc,
@@ -626,7 +627,7 @@ template<
         >
 renderKernel getKernelWithEarlyRayTermination(vvRayRend* rayRend)
 {
-  if (rayRend->_renderState._clipMode)
+  if (rayRend->getParameter(vvRenderState::VV_CLIP_MODE))
   {
     return getKernelWithClipPlane<
                                   t_bpc,
@@ -846,15 +847,15 @@ void vvRayRend::compositeVolume(int, int)
     }
   }
 
-  if (_renderState._isROIUsed && !_renderState._sphericalROI)
+  if (_isROIUsed && !_sphericalROI)
   {
-    drawBoundingBox(&probeSizeObj, &_renderState._roiPos, _renderState._probeColor);
+    drawBoundingBox(&probeSizeObj, &_roiPos, &_probeColor);
   }
 
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
-  int numSlices = max(1, static_cast<int>(_renderState._quality * diagonalVoxels));
+  int numSlices = max(1, static_cast<int>(_quality * diagonalVoxels));
 
   vvMatrix invMv;
   getModelviewMatrix(&invMv);
@@ -875,14 +876,14 @@ void vvRayRend::compositeVolume(int, int)
 
   const float3 volPos = make_float3(vd->pos[0], vd->pos[1], vd->pos[2]);
   float3 probePos = volPos;
-  if (_renderState._isROIUsed && !_renderState._sphericalROI)
+  if (_isROIUsed && !_sphericalROI)
   {
     probePos = make_float3(probePosObj[0],  probePosObj[1], probePosObj[2]);
   }
   vvVector3 sz = vd->getSize();
   const float3 volSize = make_float3(sz[0], sz[1], sz[2]);
   float3 probeSize = make_float3(probeSizeObj[0], probeSizeObj[1], probeSizeObj[2]);
-  if (_renderState._sphericalROI)
+  if (_sphericalROI)
   {
     probeSize = make_float3(vd->vox[0], vd->vox[1], vd->vox[2]);
   }
@@ -909,20 +910,16 @@ void vvRayRend::compositeVolume(int, int)
   const float3 H = normalize(L + V);
 
   // Clip sphere.
-  const float3 center = make_float3(_renderState._roiPos[0],
-                                    _renderState._roiPos[1],
-                                    _renderState._roiPos[2]);
-  const float radius = _renderState._roiSize[0] * vd->getSize()[0];
+  const float3 center = make_float3(_roiPos[0], _roiPos[1], _roiPos[2]);
+  const float radius = _roiSize[0] * vd->getSize()[0];
 
   // Clip plane.
-  const float3 pnormal = normalize(make_float3(_renderState._clipNormal[0],
-                                               _renderState._clipNormal[1],
-                                               _renderState._clipNormal[2]));
-  const float pdist = _renderState._clipNormal.dot(&_renderState._clipPoint);
+  const float3 pnormal = normalize(make_float3(_clipNormal[0], _clipNormal[1], _clipNormal[2]));
+  const float pdist = _clipNormal.dot(&_clipPoint);
 
-  if (_renderState._clipMode && _renderState._clipPerimeter)
+  if (_clipMode && _clipPerimeter)
   {
-    drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, &_renderState._clipColor);
+    drawPlanePerimeter(&size, &vd->pos, &_clipPoint, &_clipNormal, &_clipColor);
   }
 
   GLfloat bgcolor[4];
@@ -955,7 +952,7 @@ void vvRayRend::compositeVolume(int, int)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvRayRend::setParameter(const ParameterType param, const float newValue, const char*)
+void vvRayRend::setParameter(const ParameterType param, const float newValue)
 {
   vvDebugMsg::msg(3, "vvTexRend::setParameter()");
 

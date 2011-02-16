@@ -46,7 +46,7 @@ vvSoftPer::vvSoftPer(vvVolDesc* vd, vvRenderState rs) : vvSoftVR(vd, rs)
 
    intImg = new vvSoftImg(0, 0);
 
-   setQuality(_renderState._quality);                           // not only sets quality but also resizes intermediate image
+   setQuality(_quality);                           // not only sets quality but also resizes intermediate image
 }
 
 
@@ -209,7 +209,7 @@ void vvSoftPer::compositeSliceNearest(int slice, int from, int to)
 #endif
          if ((ia<255) &&                          // early ray termination for opaque image pixels
                                                   // skip clipped voxels
-            (!_renderState._clipMode || (!isVoxelClipped(vPosX >> 16, vPosY >> 16, slice))))
+            (!_clipMode || (!isVoxelClipped(vPosX >> 16, vPosY >> 16, slice))))
          {
             // Determine voxel color components and scale to [0..1]:
 #ifdef FLOAT_MATH
@@ -355,7 +355,7 @@ void vvSoftPer::compositeSliceBilinear(int slice, int from, int to)
 
          if ((ia<255) &&                          // early ray termination for opaque image pixels
                                                   // skip clipped voxels
-            (_renderState._clipMode==false || (!isVoxelClipped((int)vPosX, (int)vPosY, slice))))
+            (_clipMode==false || (!isVoxelClipped((int)vPosX, (int)vPosY, slice))))
          {
             // Determine voxel color components and scale to [0..1]:
             if (zoomMode)
@@ -536,13 +536,13 @@ void vvSoftPer::setQuality(float q)
 #ifdef VV_XVID
    q = 1.0f;
 #endif
-   _renderState._quality = q;
+   _quality = q;
 
-   intImgSize = (int)(SIZE_FACTOR * (2.0f * _renderState._quality) * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]));
+   intImgSize = (int)(SIZE_FACTOR * (2.0f * _quality) * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]));
    if (intImgSize<1)
    {
       intImgSize = 1;
-      _renderState._quality = 1.0f / (SIZE_FACTOR * 2.0f * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]));
+      _quality = 1.0f / (SIZE_FACTOR * 2.0f * ts_max(vd->vox[0], vd->vox[1], vd->vox[2]));
    }
 
    intImgSize = ts_clamp(intImgSize, 16, 4096);
@@ -753,7 +753,7 @@ void vvSoftPer::findScaleMatrix()
    scale.scale(sf, sf, 1.0f);
 
    // Adjust intermediate image size to desired image quality:
-   scale.scale(_renderState._quality, _renderState._quality, 1.0f);
+   scale.scale(_quality, _quality, 1.0f);
 
    if (vvDebugMsg::isActive(3)) scale.print("scale");
 }

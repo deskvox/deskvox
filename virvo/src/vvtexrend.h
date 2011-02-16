@@ -337,8 +337,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool  instantClassification() const;
     void  setViewingDirection(const vvVector3*);
     void  setObjectDirection(const vvVector3*);
-    void  setParameter(ParameterType, float, const char* = NULL);
-    float getParameter(ParameterType, char* = NULL) const;
+    void  setParameter(ParameterType param, float newValue);
+    float getParameter(ParameterType param) const;
     static bool isSupported(const GeometryType);
     static bool isSupported(const VoxelType);
     bool isSupported(const FeatureType) const;
@@ -349,10 +349,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void renderQualityDisplay();
     void printLUT() const;
     void updateBrickGeom();
-    void setShowBricks(const bool);
-    bool getShowBricks() const;
     void setComputeBrickSize(const bool);
-    bool getComputeBrickSize() const;
     void setBrickSize(const int);
     int getBrickSize() const;
     void setTexMemorySize(const int);
