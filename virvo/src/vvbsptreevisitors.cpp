@@ -123,10 +123,6 @@ vvSlaveVisitor::vvSlaveVisitor()
 
 vvSlaveVisitor::~vvSlaveVisitor()
 {
-  if (_images != NULL)
-  {
-    clearImages();
-  }
   delete[] _textureIds;
 }
 

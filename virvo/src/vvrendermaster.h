@@ -25,7 +25,6 @@
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvremoteclient.h"
-#include "vvsocketio.h"
 #include "vvvoldesc.h"
 #include "vvpthread.h"
 
@@ -42,9 +41,6 @@ public:
                  const char* fileName);
   ~vvRenderMaster();
 
-  ErrorType initSockets(const int port, vvSocket::SocketType st,
-                        const bool redistributeVolData,
-                        vvVolDesc*& vd);
   ErrorType setRenderer(vvRenderer* renderer);
   ErrorType render();
   void exit();
@@ -62,14 +58,8 @@ public:
   void updateTransferFunction(vvTransFunc& tf);
   void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
 private:
-  std::vector<const char*> _slaveNames;
-  std::vector<int> _slavePorts;
-  std::vector<const char*> _slaveFileNames;
-  std::vector<vvSocketIO*> _sockets;
-
   vvBspTree* _bspTree;
   vvSlaveVisitor* _visitor;
-  std::vector<vvImage*>* _images;
 
   struct ThreadArgs
   {

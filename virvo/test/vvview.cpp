@@ -336,8 +336,8 @@ void vvView::mainLoop(int argc, char *argv[])
     if (remoteRendering)
     {
       _renderMaster = new vvRenderMaster(slaveNames, slavePorts, slaveFileNames, filename);
-      remoteRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT, vvSocket::VV_TCP,
-                                             redistributeVolData, vd) == vvRenderMaster::VV_OK);
+      remoteRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT,
+                                                    redistributeVolData, vd) == vvRenderMaster::VV_OK);
     }
 
     animSpeed = vd->dt;

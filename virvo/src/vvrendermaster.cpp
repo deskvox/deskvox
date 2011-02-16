@@ -26,9 +26,7 @@
 vvRenderMaster::vvRenderMaster(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                                std::vector<const char*>& slaveFileNames,
                                const char* fileName)
-  : vvRemoteClient(fileName),
-  _slaveNames(slaveNames), _slavePorts(slavePorts),
-  _slaveFileNames(slaveFileNames)
+  : vvRemoteClient(slaveNames, slavePorts, slaveFileNames, fileName)
 {
   _threads = NULL;
   _threadData = NULL;
@@ -38,80 +36,7 @@ vvRenderMaster::vvRenderMaster(std::vector<const char*>& slaveNames, std::vector
 vvRenderMaster::~vvRenderMaster()
 {
   destroyThreads();
-  // The visitor will delete the sockets either.
-  _visitor->clearImages();
-  delete _images;
   delete _visitor;
-}
-
-vvRemoteClient::ErrorType vvRenderMaster::initSockets(const int defaultPort, vvSocket::SocketType st,
-                                                      const bool redistributeVolData,
-                                                      vvVolDesc*& vd)
-{
-  const bool loadVolumeFromFile = !redistributeVolData;
-  for (int s=0; s<_slaveNames.size(); ++s)
-  {
-    if (_slavePorts[s] == -1)
-    {
-      _sockets.push_back(new vvSocketIO(defaultPort, _slaveNames[s], st));
-    }
-    else
-    {
-      _sockets.push_back(new vvSocketIO(_slavePorts[s], _slaveNames[s], st));
-    }
-    _sockets[s]->set_debuglevel(vvDebugMsg::getDebugLevel());
-
-    if (_sockets[s]->init() == vvSocket::VV_OK)
-    {
-      _sockets[s]->no_nagle();
-      _sockets[s]->putBool(loadVolumeFromFile);
-
-      if (loadVolumeFromFile)
-      {
-        const bool allFileNamesAreEqual = (_slaveFileNames.size() == 0);
-        if (allFileNamesAreEqual)
-        {
-          _sockets[s]->putFileName(_fileName);
-        }
-        else
-        {
-          if (_slaveFileNames.size() > s)
-          {
-            _sockets[s]->putFileName(_slaveFileNames[s]);
-          }
-          else
-          {
-            // Not enough file names specified, try this one.
-            _sockets[s]->putFileName(_fileName);
-          }
-        }
-      }
-      else
-      {
-        switch (_sockets[s]->putVolume(vd))
-        {
-        case vvSocket::VV_OK:
-          cerr << "Volume transferred successfully" << endl;
-          break;
-        case vvSocket::VV_ALLOC_ERROR:
-          cerr << "Not enough memory" << endl;
-          return VV_SOCKET_ERROR;
-        default:
-          cerr << "Cannot write volume to socket" << endl;
-          return VV_SOCKET_ERROR;
-        }
-      }
-    }
-    else
-    {
-      cerr << "No connection to remote rendering server established at: " << _slaveNames[s] << endl;
-      cerr << "Falling back to local rendering" << endl;
-      return VV_SOCKET_ERROR;
-    }
-  }
-  _visitor->generateTextureIds(_sockets.size());
-  createThreads();
-  return VV_OK;
 }
 
 vvRemoteClient::ErrorType vvRenderMaster::setRenderer(vvRenderer* renderer)
@@ -221,7 +146,7 @@ vvRemoteClient::ErrorType vvRenderMaster::render()
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
 
-  _visitor->clearImages();
+  clearImages();
 
   return VV_OK;
 }
@@ -405,10 +330,10 @@ void vvRenderMaster::setInterpolation(const bool interpolation)
 
 void vvRenderMaster::createThreads()
 {
+  _visitor->generateTextureIds(_sockets.size());
   _threadData = new ThreadArgs[_sockets.size()];
   _threads = new pthread_t[_sockets.size()];
   pthread_barrier_init(&_barrier, NULL, _sockets.size() + 1);
-  _images = new std::vector<vvImage*>(_sockets.size());
   for (int s=0; s<_sockets.size(); ++s)
   {
     _threadData[s].threadId = s;

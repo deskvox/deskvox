@@ -21,16 +21,90 @@
 #include "vvdebugmsg.h"
 #include "vvremoteclient.h"
 
-vvRemoteClient::vvRemoteClient(const char* fileName)
+vvRemoteClient::vvRemoteClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+                               std::vector<const char*>& slaveFileNames,
+                               const char* fileName)
   // : vvRenderer(/* */),
-  :_fileName(fileName)
+  : _fileName(fileName), _slaveNames(slaveNames),
+    _slavePorts(slavePorts),
+    _slaveFileNames(slaveFileNames)
 {
 
 }
 
 vvRemoteClient::~vvRemoteClient()
 {
+  clearImages();
+  delete _images;
+}
 
+vvRemoteClient::ErrorType vvRemoteClient::initSockets(const int defaultPort, const bool redistributeVolData,
+                                                      vvVolDesc*& vd)
+{
+  const bool loadVolumeFromFile = !redistributeVolData;
+  for (int s=0; s<_slaveNames.size(); ++s)
+  {
+    if (_slavePorts[s] == -1)
+    {
+        _sockets.push_back(new vvSocketIO(defaultPort, _slaveNames[s], vvSocket::VV_TCP));
+    }
+    else
+    {
+      _sockets.push_back(new vvSocketIO(_slavePorts[s], _slaveNames[s], vvSocket::VV_TCP));
+    }
+    _sockets[s]->set_debuglevel(vvDebugMsg::getDebugLevel());
+
+    if (_sockets[s]->init() == vvSocket::VV_OK)
+    {
+      _sockets[s]->no_nagle();
+      _sockets[s]->putBool(loadVolumeFromFile);
+
+      if (loadVolumeFromFile)
+      {
+        const bool allFileNamesAreEqual = (_slaveFileNames.size() == 0);
+        if (allFileNamesAreEqual)
+        {
+          _sockets[s]->putFileName(_fileName);
+        }
+        else
+        {
+          if (_slaveFileNames.size() > s)
+          {
+            _sockets[s]->putFileName(_slaveFileNames[s]);
+          }
+          else
+          {
+            // Not enough file names specified, try this one.
+            _sockets[s]->putFileName(_fileName);
+          }
+        }
+      }
+      else
+      {
+        switch (_sockets[s]->putVolume(vd))
+        {
+        case vvSocket::VV_OK:
+          cerr << "Volume transferred successfully" << endl;
+          break;
+        case vvSocket::VV_ALLOC_ERROR:
+          cerr << "Not enough memory" << endl;
+          return VV_SOCKET_ERROR;
+        default:
+          cerr << "Cannot write volume to socket" << endl;
+          return VV_SOCKET_ERROR;
+        }
+      }
+    }
+    else
+    {
+      cerr << "No connection to remote rendering server established at: " << _slaveNames[s] << endl;
+      cerr << "Falling back to local rendering" << endl;
+      return VV_SOCKET_ERROR;
+    }
+  }
+  createImageVector();
+  createThreads();
+  return VV_OK;
 }
 
 void vvRemoteClient::setBackgroundColor(const vvVector3& bgColor)
@@ -88,4 +162,18 @@ void vvRemoteClient::setParameter(const vvRenderer::ParameterType /* param */, c
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
   //vvRenderer::setParameter(param, newValue);
+}
+
+void vvRemoteClient::clearImages()
+{
+  for (std::vector<vvImage*>::const_iterator it = _images->begin(); it != _images->end();
+       ++it)
+  {
+    delete (*it);
+  }
+}
+
+void vvRemoteClient::createImageVector()
+{
+  _images = new std::vector<vvImage*>(_sockets.size());
 }

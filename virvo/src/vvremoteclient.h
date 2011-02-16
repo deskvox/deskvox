@@ -23,6 +23,7 @@
 
 #include "vvexport.h"
 #include "vvrenderer.h"
+#include "vvsocketio.h"
 #include "vvtransfunc.h"
 #include "vvvecmath.h"
 
@@ -36,10 +37,16 @@ public:
     VV_SOCKET_ERROR
   };
 
-  vvRemoteClient(const char* fileName);
+  vvRemoteClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+                 std::vector<const char*>& slaveFileNames,
+                 const char* fileName);
   virtual ~vvRemoteClient();
 
+  ErrorType initSockets(const int port, const bool redistributeVolData,
+                        vvVolDesc*& vd);
+
   virtual ErrorType setRenderer(vvRenderer* renderer) = 0;
+  virtual ErrorType render() = 0;
   virtual void setBackgroundColor(const vvVector3& bgColor);
 
   virtual void setCurrentFrame(int index);
@@ -52,11 +59,23 @@ public:
   virtual void updateTransferFunction(vvTransFunc& tf);
   virtual void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
 protected:
+  std::vector<const char*> _slaveNames;
+  std::vector<int> _slavePorts;
+  std::vector<const char*> _slaveFileNames;
+  std::vector<vvSocketIO*> _sockets;
+  std::vector<vvImage*>* _images;
+
   vvRenderer* _renderer;
 
   const char* _fileName;
 
   vvVector3 _bgColor;
+
+  void clearImages();
+  void createImageVector();
+private:
+  virtual void createThreads() { }
+  virtual void destroyThreads() { }
 };
 
 #endif
