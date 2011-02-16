@@ -32,6 +32,7 @@ SOURCES = vvaabb.cpp \
     vvoffscreenbuffer.cpp \
     vvprintgl.cpp \
     vvpthread.cpp \
+    vvremoteclient.cpp \
     vvrendercontext.cpp \
     vvrenderer.cpp \
     vvrendermaster.cpp \
@@ -91,6 +92,7 @@ HEADERS = vvaabb.h \
     vvprintgl.h \
     vvpthread.h \
     vvrayrend.h \
+    vvremoteclient.h \
     vvrendercontext.h \
     vvrenderer.h \
     vvrendermaster.h \

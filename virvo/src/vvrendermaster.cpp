@@ -26,8 +26,9 @@
 vvRenderMaster::vvRenderMaster(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                                std::vector<const char*>& slaveFileNames,
                                const char* fileName)
-  : _slaveNames(slaveNames), _slavePorts(slavePorts),
-  _slaveFileNames(slaveFileNames), _fileName(fileName)
+  : vvRemoteClient(fileName),
+  _slaveNames(slaveNames), _slavePorts(slavePorts),
+  _slaveFileNames(slaveFileNames)
 {
   _threads = NULL;
   _threadData = NULL;
@@ -41,7 +42,7 @@ vvRenderMaster::~vvRenderMaster()
   delete _visitor;
 }
 
-vvRenderMaster::ErrorType vvRenderMaster::initSockets(const int defaultPort, vvSocket::SocketType st,
+vvRemoteClient::ErrorType vvRenderMaster::initSockets(const int defaultPort, vvSocket::SocketType st,
                                                       const bool redistributeVolData,
                                                       vvVolDesc*& vd)
 {
@@ -111,22 +112,29 @@ vvRenderMaster::ErrorType vvRenderMaster::initSockets(const int defaultPort, vvS
   return VV_OK;
 }
 
-vvRenderMaster::ErrorType vvRenderMaster::initBricks(vvTexRend* renderer)
+vvRemoteClient::ErrorType vvRenderMaster::setRenderer(vvRenderer* renderer)
 {
+  vvTexRend* texRend = dynamic_cast<vvTexRend*>(renderer);
+  if (texRend == NULL)
+  {
+    cerr << "vvRenderMaster::setRenderer(): Renderer is no texture based renderer" << endl;
+    return vvRemoteClient::VV_BAD_RENDERER_ERROR;
+  }
+
   // This will build up the bsp tree of the master node.
-  renderer->prepareDistributedRendering(_slaveNames.size());
+  texRend->prepareDistributedRendering(_slaveNames.size());
 
   // Store a pointer to the bsp tree and set its visitor.
-  _bspTree = renderer->getBspTree();
+  _bspTree = texRend->getBspTree();
   _bspTree->setVisitor(_visitor);
 
-  _renderer = renderer;
+  _renderer = texRend;
 
   // Distribute the bricks from the bsp tree
-  std::vector<BrickList>** bricks = renderer->getBrickListsToDistribute();
+  std::vector<BrickList>** bricks = texRend->getBrickListsToDistribute();
   for (int s=0; s<_sockets.size(); ++s)
   {
-    for (int f=0; f<renderer->getVolDesc()->frames; ++f)
+    for (int f=0; f<texRend->getVolDesc()->frames; ++f)
     {
       switch (_sockets[s]->putBricks(bricks[s]->at(f)))
       {
@@ -142,8 +150,15 @@ vvRenderMaster::ErrorType vvRenderMaster::initBricks(vvTexRend* renderer)
   return VV_OK;
 }
 
-void vvRenderMaster::render(const float bgColor[3])
+vvRemoteClient::ErrorType vvRenderMaster::render()
 {
+  vvTexRend* renderer = dynamic_cast<vvTexRend*>(_renderer);
+
+  if (renderer == NULL)
+  {
+    cerr << "Renderer is no texture based renderer" << endl;
+    return vvRemoteClient::VV_BAD_RENDERER_ERROR;
+  }
   float matrixGL[16];
 
   vvMatrix pr;
@@ -161,12 +176,12 @@ void vvRenderMaster::render(const float bgColor[3])
     _sockets[s]->putMatrix(&mv);
   }
 
-  _renderer->calcProjectedScreenRects();
+  renderer->calcProjectedScreenRects();
 
   pthread_barrier_wait(&_barrier);
 
   glDrawBuffer(GL_BACK);
-  glClearColor(bgColor[0], bgColor[1], bgColor[2], 1.0f);
+  glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // Retrieve the eye position for bsp-tree traversal
@@ -205,6 +220,8 @@ void vvRenderMaster::render(const float bgColor[3])
   glPopMatrix();
 
   _visitor->clearImages();
+
+  return VV_OK;
 }
 
 void vvRenderMaster::exit()
@@ -238,24 +255,15 @@ void vvRenderMaster::resize(const int w, const int h)
   }
 }
 
-void vvRenderMaster::setCurrentFrame(const int currentFrame)
+void vvRenderMaster::setCurrentFrame(const int index)
 {
+  vvDebugMsg::msg(3, "vvRenderMaster::setCurrentFrame()");
+  vvRemoteClient::setCurrentFrame(index);
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_CURRENT_FRAME) == vvSocket::VV_OK)
     {
-      _sockets[s]->putInt32(currentFrame);
-    }
-  }
-}
-
-void vvRenderMaster::setInterpolation(const bool interpolation)
-{
-  for (int s=0; s<_sockets.size(); ++s)
-  {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_INTERPOLATION) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putBool(interpolation);
+      _sockets[s]->putInt32(index);
     }
   }
 }
@@ -271,30 +279,45 @@ void vvRenderMaster::setMipMode(const int mipMode)
   }
 }
 
-void vvRenderMaster::setObjectDirection(const vvVector3& od)
+void vvRenderMaster::setObjectDirection(const vvVector3* od)
 {
+  vvDebugMsg::msg(3, "vvRenderMaster::setObjectDirection()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_OBJECT_DIRECTION) == vvSocket::VV_OK)
     {
-      _sockets[s]->putVector3(od);
+      _sockets[s]->putVector3(*od);
     }
   }
 }
 
-void vvRenderMaster::setPosition(const vvVector3& position)
+void vvRenderMaster::setViewingDirection(const vvVector3* vd)
 {
+  vvDebugMsg::msg(3, "vvRenderMaster::setViewingDirection()");
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putVector3(*vd);
+    }
+  }
+}
+
+void vvRenderMaster::setPosition(const vvVector3* p)
+{
+  vvDebugMsg::msg(3, "vvRenderMaster::setPosition()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
     {
-      _sockets[s]->putVector3(position);
+      _sockets[s]->putVector3(*p);
     }
   }
 }
 
-void vvRenderMaster::setROIEnabled(const bool roiEnabled)
+void vvRenderMaster::setROIEnable(const bool roiEnabled)
 {
+  vvDebugMsg::msg(1, "vvRenderMaster::setROIEnable()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_ROI) == vvSocket::VV_OK)
@@ -304,41 +327,33 @@ void vvRenderMaster::setROIEnabled(const bool roiEnabled)
   }
 }
 
-void vvRenderMaster::setROIPos(const vvVector3& roiPos)
+void vvRenderMaster::setProbePosition(const vvVector3* pos)
 {
+  vvDebugMsg::msg(1, "vvRenderMaster::setProbePosition()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_ROI_POSITION) == vvSocket::VV_OK)
     {
-      _sockets[s]->putVector3(roiPos);
+      _sockets[s]->putVector3(*pos);
     }
   }
 }
 
-void vvRenderMaster::setROISize(const vvVector3& roiSize)
+void vvRenderMaster::setProbeSize(const vvVector3* newSize)
 {
+  vvDebugMsg::msg(1, "vvRenderMaster::setProbeSize()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_ROI_SIZE) == vvSocket::VV_OK)
     {
-      _sockets[s]->putVector3(roiSize);
-    }
-  }
-}
-
-void vvRenderMaster::setViewingDirection(const vvVector3& vd)
-{
-  for (int s=0; s<_sockets.size(); ++s)
-  {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putVector3(vd);
+      _sockets[s]->putVector3(*newSize);
     }
   }
 }
 
 void vvRenderMaster::toggleBoundingBox()
 {
+  vvDebugMsg::msg(3, "vvRenderMaster::toggleBoundingBox()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     _sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_BOUNDINGBOX);
@@ -347,11 +362,38 @@ void vvRenderMaster::toggleBoundingBox()
 
 void vvRenderMaster::updateTransferFunction(vvTransFunc& tf)
 {
+  vvDebugMsg::msg(1, "vvRenderMaster::updateTransferFunction()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_TRANSFER_FUNCTION) == vvSocket::VV_OK)
     {
       _sockets[s]->putTransferFunction(tf);
+    }
+  }
+}
+
+void vvRenderMaster::setParameter(const vvRenderer::ParameterType param, const float newValue, const char*)
+{
+  vvDebugMsg::msg(3, "vvRenderMaster::setParameter()");
+  switch (param)
+  {
+  case vvRenderer::VV_SLICEINT:
+    setInterpolation((newValue != 0.0f));
+    break;
+  default:
+    vvRemoteClient::setParameter(param, newValue);
+    break;
+  }
+}
+
+void vvRenderMaster::setInterpolation(const bool interpolation)
+{
+  vvDebugMsg::msg(3, "vvRenderMaster::setInterpolation()");
+  for (int s=0; s<_sockets.size(); ++s)
+  {
+    if (_sockets[s]->putCommReason(vvSocketIO::VV_INTERPOLATION) == vvSocket::VV_OK)
+    {
+      _sockets[s]->putBool(interpolation);
     }
   }
 }

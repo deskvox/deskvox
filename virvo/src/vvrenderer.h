@@ -203,7 +203,7 @@ class VIRVOEXPORT vvRenderer
     virtual bool  instantClassification() const;
     virtual void  setViewingDirection(const vvVector3*);
     virtual void  setObjectDirection(const vvVector3*);
-    virtual void  setROIEnable(const bool);
+    virtual void  setROIEnable(bool);
     virtual void  setSphericalROI(const bool sphericalROI);
     virtual bool  isROIEnabled() const;
     virtual void  setProbePosition(const vvVector3*);

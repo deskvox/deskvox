@@ -351,7 +351,7 @@ void vvView::mainLoop(int argc, char *argv[])
 
     if (remoteRendering)
     {
-      remoteRendering = (_renderMaster->initBricks(dynamic_cast<vvTexRend*>(renderer)) == vvRenderMaster::VV_OK);
+      remoteRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
     }
 
     // Set window title:
@@ -435,7 +435,7 @@ void vvView::displayCallback(void)
   {
     ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
 
-    ds->_renderMaster->render(ds->bgColor);
+    ds->_renderMaster->render();
 
     glutSwapBuffers();
   }
@@ -961,7 +961,7 @@ void vvView::specialCallback(int key, int, int)
 
   if (ds->remoteRendering)
   {
-    ds->_renderMaster->setROIPos(probePos);
+    ds->_renderMaster->setProbePosition(&probePos);
   }
   glutPostRedisplay();
 }
@@ -1331,7 +1331,7 @@ void vvView::optionsMenuCallback(int item)
     cerr << "Interpolation mode set to " << int(ds->interpolMode) << endl;
     if (ds->remoteRendering)
     {
-      ds->_renderMaster->setInterpolation(ds->interpolMode);
+      ds->_renderMaster->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
     }
     break;
   case 1:
@@ -1762,7 +1762,7 @@ void vvView::roiMenuCallback(const int item)
 
     if (ds->remoteRendering)
     {
-      ds->_renderMaster->setROIEnabled(ds->roiEnabled);
+      ds->_renderMaster->setROIEnable(ds->roiEnabled);
     }
     printROIMessage();
     break;
@@ -1780,7 +1780,7 @@ void vvView::roiMenuCallback(const int item)
 
       if (ds->remoteRendering)
       {
-        ds->_renderMaster->setROISize(probeSize);
+        ds->_renderMaster->setProbeSize(&probeSize);
       }
     }
     else
@@ -1802,7 +1802,7 @@ void vvView::roiMenuCallback(const int item)
 
       if (ds->remoteRendering)
       {
-        ds->_renderMaster->setROISize(probeSize);
+        ds->_renderMaster->setProbeSize(&probeSize);
       }
     }
     else
@@ -1921,6 +1921,11 @@ void vvView::viewMenuCallback(int item)
       ds->bgColor[0] = ds->bgColor[1] = ds->bgColor[2] = 0.0f;
       // Use opposite color for object boundaries:
       //ds->renderer->setBoundariesColor(1.0f-ds->bgColor[0], 1.0f-ds->bgColor[1], 1.0f-ds->bgColor[2]);
+
+    if (ds->remoteRendering)
+    {
+      ds->_renderMaster->setBackgroundColor(ds->bgColor);
+    }
 break;
   case 7:                                     // auto-rotation mode
     ds->rotationMode = !ds->rotationMode;

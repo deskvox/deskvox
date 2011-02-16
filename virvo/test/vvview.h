@@ -113,7 +113,7 @@ class vvView
     vvTexRend::GeometryType currentGeom;        ///< current rendering geometry
     vvTexRend::VoxelType currentVoxels;         ///< current voxel type
     int   rendererType;                         ///< current renderer type
-    float bgColor[3];                           ///< background color (R,G,B in [0..1])
+    vvVector3 bgColor;                          ///< background color (R,G,B in [0..1])
     float draftQuality;                         ///< current draft mode rendering quality (>0)
     float highQuality;                          ///< current high quality mode rendering quality (>0)
     bool  hqMode;                               ///< true = high quality mode on, false = draft quality

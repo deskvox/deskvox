@@ -24,24 +24,19 @@
 #include "vvbsptree.h"
 #include "vvexport.h"
 #include "vvopengl.h"
+#include "vvremoteclient.h"
 #include "vvsocketio.h"
 #include "vvvoldesc.h"
 #include "vvpthread.h"
 
 #include <vector>
 
+class vvRenderer;
 class vvSlaveVisitor;
-class vvTexRend;
 
-class VIRVOEXPORT vvRenderMaster
+class VIRVOEXPORT vvRenderMaster : public vvRemoteClient
 {
 public:
-  enum ErrorType
-  {
-    VV_OK = 0,
-    VV_SOCKET_ERROR
-  };
-
   vvRenderMaster(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                  std::vector<const char*>& slaveFileNames,
                  const char* fileName);
@@ -50,32 +45,29 @@ public:
   ErrorType initSockets(const int port, vvSocket::SocketType st,
                         const bool redistributeVolData,
                         vvVolDesc*& vd);
-  ErrorType initBricks(vvTexRend* renderer);
-  void render(const float bgColor[3]);
+  ErrorType setRenderer(vvRenderer* renderer);
+  ErrorType render();
   void exit();
 
-  void adjustQuality(const float quality);
-  void resize(const int w, const int h);
-  void setCurrentFrame(int currentFrame);
-  void setInterpolation(const bool interpolation);
+  void adjustQuality(float quality);
+  void resize(int w, int h);
+  void setCurrentFrame(int index);
   void setMipMode(const int mipMode);
-  void setObjectDirection(const vvVector3& od);
-  void setPosition(const vvVector3& position);
-  void setROIEnabled(const bool roiEnabled);
-  void setROIPos(const vvVector3& roiPos);
-  void setROISize(const vvVector3& roiSize);
-  void setViewingDirection(const vvVector3& vd);
+  void setObjectDirection(const vvVector3* od);
+  void setViewingDirection(const vvVector3* vd);
+  void setPosition(const vvVector3* p);
+  void setROIEnable(bool roiEnabled);
+  void setProbePosition(const vvVector3* pos);
+  void setProbeSize(const vvVector3* roiSize);
   void toggleBoundingBox();
   void updateTransferFunction(vvTransFunc& tf);
+  void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
 private:
   std::vector<const char*> _slaveNames;
   std::vector<int> _slavePorts;
   std::vector<const char*> _slaveFileNames;
   std::vector<vvSocketIO*> _sockets;
 
-  const char* _fileName;
-
-  vvTexRend* _renderer;
   vvBspTree* _bspTree;
   vvSlaveVisitor* _visitor;
 
@@ -89,6 +81,8 @@ private:
   pthread_t* _threads;
   ThreadArgs* _threadData;
   pthread_barrier_t _barrier;
+
+  void setInterpolation(bool interpolation);
 
   void createThreads();
   void destroyThreads();
