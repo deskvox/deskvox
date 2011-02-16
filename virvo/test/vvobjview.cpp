@@ -290,7 +290,7 @@ void vvObjView::updateModelviewMatrix(EyeType eye)
     v.multiply(&invRot);
     v.normalize();                              // normalize before rotation!
 
-    mvRight.rotate(rotAngle * (float)VV_PI / 180.0f, v.e[0], v.e[1], v.e[2]);
+    mvRight.rotate(rotAngle * (float)VV_PI / 180.0f, v[0], v[1], v[2]);
     mvRight.translate(eyeDist, 0.0f, 0.0f);
     mvRight.makeGL(flat);
   }

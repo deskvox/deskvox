@@ -44,9 +44,9 @@ void vvRect::print() const
 vvAABB::vvAABB(const vvVector3& min, const vvVector3& max)
                  : _min(min), _max(max)
 {
-  _center = vvVector3((_min.e[0] + _max.e[0]) * 0.5f,
-                      (_min.e[1] + _max.e[1]) * 0.5f,
-                      (_min.e[2] + _max.e[2]) * 0.5f);
+  _center = vvVector3((_min[0] + _max[0]) * 0.5f,
+                      (_min[1] + _max[1]) * 0.5f,
+                      (_min[2] + _max[2]) * 0.5f);
   calcVertices();
 }
 
@@ -77,16 +77,16 @@ float vvAABB::calcDepth() const
 
 float vvAABB::calcMinExtent(const vvVector3& axis) const
 {
-  return _min.e[0] * axis.e[0]
-       + _min.e[1] * axis.e[1]
-       + _min.e[2] * axis.e[2];
+  return _min[0] * axis[0]
+       + _min[1] * axis[1]
+       + _min[2] * axis[2];
 }
 
 float vvAABB::calcMaxExtent(const vvVector3& axis) const
 {
-  return _max.e[0] * axis.e[0]
-       + _max.e[1] * axis.e[1]
-       + _max.e[2] * axis.e[2];
+  return _max[0] * axis[0]
+       + _max[1] * axis[1]
+       + _max[2] * axis[2];
 }
 
 const vvBoxCorners& vvAABB::getVertices() const
@@ -173,30 +173,30 @@ void vvAABB::render() const
   glBegin(GL_LINES);
     glColor3f(1.0f, 1.0f, 1.0f);
 
-    glVertex3f(vertices[0].e[0], vertices[0].e[1], vertices[0].e[2]);
-    glVertex3f(vertices[1].e[0], vertices[1].e[1], vertices[1].e[2]);
+    glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
+    glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
 
-    glVertex3f(vertices[1].e[0], vertices[1].e[1], vertices[1].e[2]);
-    glVertex3f(vertices[2].e[0], vertices[2].e[1], vertices[2].e[2]);
+    glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
+    glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
 
-    glVertex3f(vertices[2].e[0], vertices[2].e[1], vertices[2].e[2]);
-    glVertex3f(vertices[3].e[0], vertices[3].e[1], vertices[3].e[2]);
+    glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
+    glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
 
-    glVertex3f(vertices[3].e[0], vertices[3].e[1], vertices[3].e[2]);
-    glVertex3f(vertices[0].e[0], vertices[0].e[1], vertices[0].e[2]);
+    glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
+    glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
 
 
-    glVertex3f(vertices[4].e[0], vertices[4].e[1], vertices[4].e[2]);
-    glVertex3f(vertices[5].e[0], vertices[5].e[1], vertices[5].e[2]);
+    glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
+    glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
 
-    glVertex3f(vertices[5].e[0], vertices[5].e[1], vertices[5].e[2]);
-    glVertex3f(vertices[6].e[0], vertices[6].e[1], vertices[6].e[2]);
+    glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
+    glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
 
-    glVertex3f(vertices[6].e[0], vertices[6].e[1], vertices[6].e[2]);
-    glVertex3f(vertices[7].e[0], vertices[7].e[1], vertices[7].e[2]);
+    glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
+    glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
 
-    glVertex3f(vertices[7].e[0], vertices[7].e[1], vertices[7].e[2]);
-    glVertex3f(vertices[4].e[0], vertices[4].e[1], vertices[4].e[2]);
+    glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
+    glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
   glEnd();
   glEnable(GL_LIGHTING);
 }
@@ -218,7 +218,7 @@ void vvAABB::calcVertices()
 
     for (int c=0; c<3; ++c)
     {
-      _vertices[i].e[c] = (1<<c)&d ? _min.e[c] : _max.e[c];
+      _vertices[i][c] = (1<<c)&d ? _min[c] : _max[c];
     }
   }
 }

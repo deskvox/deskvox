@@ -502,8 +502,8 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   size.copy(vd->getSize());
   for (i=0; i<3; ++i)
   {
-    texSize.e[i] = size.e[i] * (float)texels[i] / (float)vd->vox[i];
-    size2.e[i]   = 0.5f * size.e[i];
+    texSize[i] = size[i] * (float)texels[i] / (float)vd->vox[i];
+    size2[i]   = 0.5f * size[i];
   }
   pos.copy(&vd->pos);
 
@@ -559,7 +559,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     probeTexels.zero();
     for (i=0; i<3; ++i)
     {
-      probeTexels[i] = texels[i] * probeSizeObj[i] / texSize.e[i];
+      probeTexels[i] = texels[i] * probeSizeObj[i] / texSize[i];
     }
   }
   else                                            // probe mode off
@@ -594,7 +594,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   }
   else if (_sliceOrientation==VV_ORTHO ||
           (_sliceOrientation==VV_VARIABLE &&
-          (isOrtho || (viewDir.e[0]==0.0f && viewDir.e[1]==0.0f && viewDir.e[2]==0.0f))))
+          (isOrtho || (viewDir[0]==0.0f && viewDir[1]==0.0f && viewDir[2]==0.0f))))
   {
     // Draw slices parallel to projection plane:
     normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
@@ -740,7 +740,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
 	{
 	  for (k=0; k<3; ++k)
 	  {
-	    texcoord[j][k] = (isect[j][k] + size2.e[k]) / size.e[k];
+            texcoord[j][k] = (isect[j][k] + size2[k]) / size[k];
 	    texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
 	  }
 	}
@@ -799,7 +799,7 @@ void vvTexMultiRend::renderVolumeGL()
   }
   if (_renderState._clipMode && _renderState._clipPerimeter)
   {
-    drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, _renderState._clipColor);
+    drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, &_renderState._clipColor);
   }
 
   //setGLenvironment();
@@ -832,9 +832,9 @@ void vvTexMultiRend::renderVolumeGL()
   zAxis.normalize();
 
   // Only z component of base vectors is needed:
-  zx = xAxis.e[2];
-  zy = yAxis.e[2];
-  zz = zAxis.e[2];
+  zx = xAxis[2];
+  zy = yAxis[2];
+  zz = zAxis[2];
 
   if (fabs(zx) > fabs(zy))
   {
@@ -1042,7 +1042,8 @@ void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
 #else
 	snprintf(varName, sizeof(varName), "color[%d]", c);
 #endif
-	glslShader->setValue(program, varName, 3, 1, color[c].e);
+        float e[3] = { color[c][0], color[c][1], color[c][2] };
+        glslShader->setValue(program, varName, 3, 1, e);
   }
 
   //glslShader->setValue(program, "numChan", 1, &(vd->chan));
@@ -1316,8 +1317,8 @@ void vvTexMultiRend::preRendering()
   // Determine texture object dimensions and half object size as a shortcut:
   for (int i=0; i<3; ++i)
   {
-	texSize.e[i] = size.e[i] * (float)texels[i] / (float)vd->vox[i];
-	tr.size2.e[i]   = 0.5f * size.e[i];
+        texSize[i] = size[i] * (float)texels[i] / (float)vd->vox[i];
+        tr.size2[i]   = 0.5f * size[i];
   }
   pos.copy(&vd->pos);
 
@@ -1340,7 +1341,7 @@ void vvTexMultiRend::preRendering()
 	  probeTexels.zero();
 	  for (int i=0; i<3; ++i)
 	  {
-		  probeTexels[i] = texels[i] * probeSizeObj[i] / texSize.e[i];
+                  probeTexels[i] = texels[i] * probeSizeObj[i] / texSize[i];
 	  }
   }
   else                                            // probe mode off
@@ -1452,7 +1453,7 @@ void vvTexMultiRend::renderMultipleVolume()
   {
 	  for (int k=0; k<3; ++k)
 	  {
-		  texcoord[j][k] = (isect[j][k] + tr.size2.e[k]) / vd->getSize().e[k];
+                  texcoord[j][k] = (isect[j][k] + tr.size2[k]) / vd->getSize()[k];
 		  texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
 	  }
   }

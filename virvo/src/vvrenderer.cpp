@@ -256,9 +256,9 @@ vvRenderer::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
   vvVector3 origin;
   getObjNormal(normal, origin, eye, invMV);
 
-  zx = normal.e[0];
-  zy = normal.e[1];
-  zz = normal.e[2];
+  zx = normal[0];
+  zy = normal[1];
+  zz = normal[2];
 
   if (fabs(zx) > fabs(zy))
   {
@@ -306,7 +306,7 @@ void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
   {
     normal.copy(&_renderState._clipNormal);
   }
-  else if (isOrtho || (viewDir.e[0] == 0.0f && viewDir.e[1] == 0.0f && viewDir.e[2] == 0.0f))
+  else if (isOrtho || (viewDir[0] == 0.0f && viewDir[1] == 0.0f && viewDir[2] == 0.0f))
   {
     // Draw slices parallel to projection plane:
     normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
@@ -338,7 +338,7 @@ void vvRenderer::getShadingNormal(vvVector3& normal, vvVector3& origin,
   // See calcutions in getObjNormal(). Only difference: if clip plane
   // is active, this is ignored. This normal isn't used to align
   // slices or such with the clipping plane, but for shading calculations.
-  if (isOrtho || (viewDir.e[0] == 0.0f && viewDir.e[1] == 0.0f && viewDir.e[2] == 0.0f))
+  if (isOrtho || (viewDir[0] == 0.0f && viewDir[1] == 0.0f && viewDir[2] == 0.0f))
   {
     // Draw slices parallel to projection plane:
     normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
@@ -844,7 +844,7 @@ void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, 
   // Translate boundaries by volume position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();                                 // save modelview matrix
-  glTranslatef(oPos->e[0], oPos->e[1], oPos->e[2]);
+  glTranslatef((*oPos)[0], (*oPos)[1], (*oPos)[2]);
 
   // Set box color:
   glColor4f(color[0], color[1], color[2], 1.0);
@@ -894,7 +894,7 @@ void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, 
   @param color   box color (R,G,B) [0..1], array of 3 floats expected
 */
 void vvRenderer::drawPlanePerimeter(const vvVector3* oSize, const vvVector3* oPos,
-                                    const vvVector3* oPlane, const vvVector3* oNorm, const float* color) const
+                                    const vvVector3* oPlane, const vvVector3* oNorm, const vvColor* color) const
 {
   GLboolean glsLighting;                          // stores GL_LIGHTING
   GLfloat   glsColor[4];                          // stores GL_CURRENT_COLOR
@@ -918,18 +918,18 @@ void vvRenderer::drawPlanePerimeter(const vvVector3* oSize, const vvVector3* oPo
   // Translate by volume position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();                                 // save modelview matrix
-  glTranslatef(oPos->e[0], oPos->e[1], oPos->e[2]);
+  glTranslatef((*oPos)[0], (*oPos)[1], (*oPos)[2]);
 
   // Set color:
-  glColor4f(color[0], color[1], color[2], 1.0);
+  glColor4f((*color)[0], (*color)[1], (*color)[2], 1.0);
 
   // Disable lighting:
   glDisable(GL_LIGHTING);
 
   glLineWidth(3.0f);
 
-  boxMin.set(oPos->e[0] - oSize->e[0] * 0.5f, oPos->e[1] - oSize->e[1] * 0.5f, oPos->e[2] - oSize->e[2] * 0.5f);
-  boxMax.set(oPos->e[0] + oSize->e[0] * 0.5f, oPos->e[1] + oSize->e[1] * 0.5f, oPos->e[2] + oSize->e[2] * 0.5f);
+  boxMin.set((*oPos)[0] - (*oSize)[0] * 0.5f, (*oPos)[1] - (*oSize)[1] * 0.5f, (*oPos)[2] - (*oSize)[2] * 0.5f);
+  boxMax.set((*oPos)[0] + (*oSize)[0] * 0.5f, (*oPos)[1] + (*oSize)[1] * 0.5f, (*oPos)[2] + (*oSize)[2] * 0.5f);
 
   isectCnt = isect->isectPlaneCuboid(oNorm, oPlane, &boxMin, &boxMax);
 
@@ -1157,8 +1157,8 @@ bool vvRenderer::isInVolume(const vvVector3* point) const
   size2.scale(0.5f);
   for (i=0; i<3; ++i)
   {
-    if (point->e[i] < (pos.e[i] - size2.e[i])) return false;
-    if (point->e[i] > (pos.e[i] + size2.e[i])) return false;
+    if ((*point)[i] < (pos[i] - size2[i])) return false;
+    if ((*point)[i] > (pos[i] + size2[i])) return false;
   }
   return true;
 }
@@ -1189,10 +1189,10 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
 
   for (i=0; i<3; ++i)
   {
-    if (point.e[i] < (pos.e[i] - size2.e[i])) return -1.0f;
-    if (point.e[i] > (pos.e[i] + size2.e[i])) return -1.0f;
+    if (point[i] < (pos[i] - size2[i])) return -1.0f;
+    if (point[i] > (pos[i] + size2[i])) return -1.0f;
 
-    vp[i] = int(float(vd->vox[i]) * (point.e[i] - pos.e[i] + size2.e[i]) / size.e[i]);
+    vp[i] = int(float(vd->vox[i]) * (point[i] - pos[i] + size2[i]) / size[i]);
     vp[i] = ts_clamp(vp[i], 0, vd->vox[i]-1);
   }
 

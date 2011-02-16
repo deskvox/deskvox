@@ -73,13 +73,13 @@ bool vvHalfSpace::contains(const vvVector3& pos) const
 {
   for (int i = 0; i < 3; ++i)
   {
-    if (_splitPlane->_normal.e[i] < 0.0f)
+    if (_splitPlane->_normal[i] < 0.0f)
     {
-      return (pos.e[i] < _splitPlane->_point.e[i]);
+      return (pos[i] < _splitPlane->_point[i]);
     }
-    else if (_splitPlane->_normal.e[i] > 0.0f)
+    else if (_splitPlane->_normal[i] > 0.0f)
     {
-      return (pos.e[i] > _splitPlane->_point.e[i]);
+      return (pos[i] > _splitPlane->_point[i]);
     }
   }
   return false;
@@ -195,22 +195,22 @@ vvRect* vvHalfSpace::getProjectedScreenRect(const vvVector3* probeMin, const vvV
     vvVector3 max;
     for (int i = 0; i < 3; i++)
     {
-      if (_boundingBox->min()[i] < probeMin->e[i])
+      if (_boundingBox->min()[i] < (*probeMin)[i])
       {
-        min.e[i] = probeMin->e[i];
+        min[i] = (*probeMin)[i];
       }
       else
       {
-        min.e[i] = _boundingBox->min()[i];
+        min[i] = _boundingBox->min()[i];
       }
 
-      if (_boundingBox->max()[i] > probeMax->e[i])
+      if (_boundingBox->max()[i] > (*probeMax)[i])
       {
-        max.e[i] = probeMax->e[i];
+        max[i] = (*probeMax)[i];
       }
       else
       {
-        max.e[i] = _boundingBox->max()[i];
+        max[i] = _boundingBox->max()[i];
       }
     }
     vvAABB aabb(min, max);
@@ -354,7 +354,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
       it != brickList[0].end();
       ++it)
     {
-      vals.insert((*it)->getAABB().getCenter().e[i]);
+      vals.insert((*it)->getAABB().getCenter()[i]);
     }
     cnt[i] = vals.size();
   }
@@ -512,17 +512,17 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
   {
     if (i == splitAxis)
     {
-      n1.e[i] = -1;
-      n2.e[i] = 1;
-      pnt.e[i] = min[i] + bestWorkLoad[i][0] * dim[i] * 0.01f;
+      n1[i] = -1;
+      n2[i] = 1;
+      pnt[i] = min[i] + bestWorkLoad[i][0] * dim[i] * 0.01f;
       result[0]._actualPercent = bestWorkLoad[i][0];
       result[1]._actualPercent = bestWorkLoad[i][1];
     }
     else
     {
-      n1.e[i] = 0;
-      n2.e[i] = 0;
-      pnt.e[i] = 0;
+      n1[i] = 0;
+      n2[i] = 0;
+      pnt[i] = 0;
     }
   }
 
@@ -543,7 +543,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
       ++it)
     {
       vvBrick *tmp = *it;
-      if (tmp->getAABB().getCenter().e[splitAxis] < pnt.e[splitAxis])
+      if (tmp->getAABB().getCenter()[splitAxis] < pnt[splitAxis])
       {
         result[0].getBrickList()[f].push_back(tmp);
       }

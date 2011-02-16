@@ -2714,7 +2714,7 @@ void vvTexRend::beforeSetGLenvironment() const
   }
   if (_renderState._clipMode && _renderState._clipPerimeter)
   {
-    drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, _renderState._clipColor);
+    drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, &_renderState._clipColor);
   }
 }
 
@@ -2874,8 +2874,8 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   size.copy(vd->getSize());
   for (i=0; i<3; ++i)
   {
-    texSize.e[i] = size.e[i] * (float)texels[i] / (float)vd->vox[i];
-    size2.e[i]   = 0.5f * size.e[i];
+    texSize[i] = size[i] * (float)texels[i] / (float)vd->vox[i];
+    size2[i]   = 0.5f * size[i];
   }
   pos.copy(&vd->pos);
 
@@ -2931,7 +2931,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     probeTexels.zero();
     for (i=0; i<3; ++i)
     {
-      probeTexels[i] = texels[i] * probeSizeObj[i] / texSize.e[i];
+      probeTexels[i] = texels[i] * probeSizeObj[i] / texSize[i];
     }
   }
   else                                            // probe mode off
@@ -3098,10 +3098,10 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
 
         for (k=0; k<3; ++k)
         {
-          texcoord[j][k] = (back[k] + size2.e[k]) / size.e[k];
+          texcoord[j][k] = (back[k] + size2[k]) / size[k];
           texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
 
-          texcoord[j+6][k] = (front[k] + size2.e[k]) / size.e[k];
+          texcoord[j+6][k] = (front[k] + size2[k]) / size[k];
           texcoord[j+6][k] = texcoord[j+6][k] * (texMax[k] - texMin[k]) + texMin[k];
         }
       }
@@ -3112,7 +3112,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
       {
         for (k=0; k<3; ++k)
         {
-          texcoord[j][k] = (isect[j][k] + size2.e[k]) / size.e[k];
+          texcoord[j][k] = (isect[j][k] + size2[k]) / size[k];
           texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
         }
       }
@@ -3814,19 +3814,19 @@ bool vvTexRend::testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat
   const float zStep = (brick->max[2] - brick->min[2]) * divisorInv;
   for(int i = 0; i < numSteps; i++)
   {
-    const float x = brick->min.e[0] + xStep * i;
+    const float x = brick->min[0] + xStep * i;
     for(int j = 0; j < numSteps; j++)
     {
-      const float y = brick->min.e[1] + yStep * j;
+      const float y = brick->min[1] + yStep * j;
       for(int k = 0; k < numSteps; k++)
       {
-        const float z = brick->min.e[2] + zStep * k;
+        const float z = brick->min[2] + zStep * k;
         vvVector3 clipPnt(x, y, z);
         clipPnt.multiply(&mvpMat);
 
         //test if this point falls within screen space
-        if(clipPnt.e[0] >= -1.0 && clipPnt.e[0] <= 1.0 &&
-          clipPnt.e[1] >= -1.0 && clipPnt.e[1] <= 1.0)
+        if(clipPnt[0] >= -1.0 && clipPnt[0] <= 1.0 &&
+          clipPnt[1] >= -1.0 && clipPnt[1] <= 1.0)
         {
           return true;
         }
@@ -3922,14 +3922,14 @@ void vvTexRend::getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList
   for(BrickList::iterator it = nonemptyList[frame].begin(); it != nonemptyList[frame].end(); ++it)
   {
     vvBrick *tmp = *it;
-    if ((tmp->min.e[0] <= max.e[0]) && (tmp->max.e[0] >= min.e[0]) &&
-      (tmp->min.e[1] <= max.e[1]) && (tmp->max.e[1] >= min.e[1]) &&
-      (tmp->min.e[2] <= max.e[2]) && (tmp->max.e[2] >= min.e[2]))
+    if ((tmp->min[0] <= max[0]) && (tmp->max[0] >= min[0]) &&
+      (tmp->min[1] <= max[1]) && (tmp->max[1] >= min[1]) &&
+      (tmp->min[2] <= max[2]) && (tmp->max[2] >= min[2]))
     {
       insideList.push_back(tmp);
-      if ((tmp->min.e[0] >= min.e[0]) && (tmp->max.e[0] <= max.e[0]) &&
-        (tmp->min.e[1] >= min.e[1]) && (tmp->max.e[1] <= max.e[1]) &&
-        (tmp->min.e[2] >= min.e[2]) && (tmp->max.e[2] <= max.e[2]))
+      if ((tmp->min[0] >= min[0]) && (tmp->max[0] <= max[0]) &&
+        (tmp->min[1] >= min[1]) && (tmp->max[1] <= max[1]) &&
+        (tmp->min[2] >= min[2]) && (tmp->max[2] <= max[2]))
         tmp->insideProbe = true;
       else
         tmp->insideProbe = false;
@@ -4082,8 +4082,8 @@ void vvTexRend::renderTex3DSpherical(vvMatrix* view)
   const vvVector3 size(vd->getSize());
   for (int i=0; i<3; ++i)
   {
-    texSize.e[i]  = size.e[i] * (float)texels[i] / (float)vd->vox[i];
-    texSize2.e[i] = 0.5f * texSize.e[i];
+    texSize[i]  = size[i] * (float)texels[i] / (float)vd->vox[i];
+    texSize2[i] = 0.5f * texSize[i];
   }
 
   invView.copy(view);
@@ -4095,13 +4095,13 @@ void vvTexRend::renderTex3DSpherical(vvMatrix* view)
     for (int iy=0; iy<2; ++iy)
       for (int iz=0; iz<2; ++iz)
       {
-        volumeVertices[vertexIdx].e[0] = (float)ix;
-        volumeVertices[vertexIdx].e[1] = (float)iy;
-        volumeVertices[vertexIdx].e[2] = (float)iz;
+        volumeVertices[vertexIdx][0] = (float)ix;
+        volumeVertices[vertexIdx][1] = (float)iy;
+        volumeVertices[vertexIdx][2] = (float)iz;
         // transfers vertices to world coordinates:
         for (int k=0; k<3; ++k)
-          volumeVertices[vertexIdx].e[k] =
-            (volumeVertices[vertexIdx].e[k] * 2.0f - 1.0f) * texSize2.e[k];
+          volumeVertices[vertexIdx][k] =
+            (volumeVertices[vertexIdx][k] * 2.0f - 1.0f) * texSize2[k];
         volumeVertices[vertexIdx].multiply(view);
         vertexIdx++;
   }
@@ -4125,7 +4125,7 @@ void vvTexRend::renderTex3DSpherical(vvMatrix* view)
   bool inside = true;
   for (int k=0; k<3; ++k)
   {
-    if (eye.e[k] < -texSize2.e[k] || eye.e[k] > texSize2.e[k])
+    if (eye[k] < -texSize2[k] || eye[k] > texSize2[k])
       inside = false;
   }
   if (inside)
@@ -4204,18 +4204,18 @@ void vvTexRend::renderTex2DSlices(float zz)
 
   // Generate half object size as shortcut:
   size.copy(vd->getSize());
-  size2.e[0] = 0.5f * size.e[0];
-  size2.e[1] = 0.5f * size.e[1];
-  size2.e[2] = 0.5f * size.e[2];
+  size2[0] = 0.5f * size[0];
+  size2[1] = 0.5f * size[1];
+  size2[2] = 0.5f * size[2];
 
   numTextures = int(_renderState._quality * 100.0f);
   if (numTextures < 1) numTextures = 1;
 
   normal.set(0.0f, 0.0f, 1.0f);
-  zPos = -size2.e[2];
+  zPos = -size2[2];
   if (numTextures>1)                              // prevent division by zero
   {
-    texSpacing = size.e[2] / (float)(numTextures - 1);
+    texSpacing = size[2] / (float)(numTextures - 1);
     texStep = (float)(vd->vox[2] - 1) / (float)(numTextures - 1);
   }
   else
@@ -4237,7 +4237,7 @@ void vvTexRend::renderTex2DSlices(float zz)
   {
     zPos        = -zPos;
     texSpacing  = -texSpacing;
-    normal.e[2] = -normal.e[2];
+    normal[2]   = -normal[2];
   }
 
   if (instantClassification())
@@ -4265,11 +4265,11 @@ void vvTexRend::renderTex2DSlices(float zz)
 
     glBegin(GL_QUADS);
       glColor4f(1.0, 1.0, 1.0, 1.0);
-      glNormal3f(normal.e[0], normal.e[1], normal.e[2]);
-      glTexCoord2f(texMin[0], texMax[1]); glVertex3f(-size2.e[0],  size2.e[1], zPos);
-      glTexCoord2f(texMin[0], texMin[1]); glVertex3f(-size2.e[0], -size2.e[1], zPos);
-      glTexCoord2f(texMax[0], texMin[1]); glVertex3f( size2.e[0], -size2.e[1], zPos);
-      glTexCoord2f(texMax[0], texMax[1]); glVertex3f( size2.e[0],  size2.e[1], zPos);
+      glNormal3f(normal[0], normal[1], normal[2]);
+      glTexCoord2f(texMin[0], texMax[1]); glVertex3f(-size2[0],  size2[1], zPos);
+      glTexCoord2f(texMin[0], texMin[1]); glVertex3f(-size2[0], -size2[1], zPos);
+      glTexCoord2f(texMax[0], texMin[1]); glVertex3f( size2[0], -size2[1], zPos);
+      glTexCoord2f(texMax[0], texMax[1]); glVertex3f( size2[0],  size2[1], zPos);
     glEnd();
 
     zPos += texSpacing;
@@ -4335,15 +4335,15 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
       texBL.set(texMin[1], texMin[2], 0.0f);
       texBR.set(texMax[1], texMin[2], 0.0f);
 
-      texSpacing.set(size.e[0] / float(numTextures - 1), 0.0f, 0.0f);
+      texSpacing.set(size[0] / float(numTextures - 1), 0.0f, 0.0f);
       texStep = -1.0f * float(vd->vox[0] - 1) / float(numTextures - 1);
       normal.set(1.0f, 0.0f, 0.0f);
       texIndex = float(vd->getCurrentFrame() * frameTextures);
       if (zx<0)                                   // reverse order? draw right to left
       {
-        normal.e[0]     = -normal.e[0];
-        objTL.e[0]      = objTR.e[0] = objBL.e[0] = objBR.e[0] = size2[0];
-        texSpacing.e[0] = -texSpacing.e[0];
+        normal[0]       = -normal[0];
+        objTL[0]        = objTR[0] = objBL[0] = objBR[0] = size2[0];
+        texSpacing[0]   = -texSpacing[0];
         texStep         = -texStep;
       }
       else
@@ -4367,15 +4367,15 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
       texBL.set(texMin[2], texMin[0], 0.0f);
       texBR.set(texMax[2], texMin[0], 0.0f);
 
-      texSpacing.set(0.0f, size.e[1] / float(numTextures - 1), 0.0f);
+      texSpacing.set(0.0f, size[1] / float(numTextures - 1), 0.0f);
       texStep = -1.0f * float(vd->vox[1] - 1) / float(numTextures - 1);
       normal.set(0.0f, 1.0f, 0.0f);
       texIndex = float(vd->getCurrentFrame() * frameTextures + vd->vox[0]);
       if (zy<0)                                   // reverse order? draw top to bottom
       {
-        normal.e[1]     = -normal.e[1];
-        objTL.e[1]      = objTR.e[1] = objBL.e[1] = objBR.e[1] = size2[1];
-        texSpacing.e[1] = -texSpacing.e[1];
+        normal[1]       = -normal[1];
+        objTL[1]        = objTR[1] = objBL[1] = objBR[1] = size2[1];
+        texSpacing[1]   = -texSpacing[1];
         texStep         = -texStep;
       }
       else
@@ -4400,15 +4400,15 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
       texBL.set(texMin[0], texMin[1], 0.0f);
       texBR.set(texMax[0], texMin[1], 0.0f);
 
-      texSpacing.set(0.0f, 0.0f, size.e[2] / float(numTextures - 1));
+      texSpacing.set(0.0f, 0.0f, size[2] / float(numTextures - 1));
       normal.set(0.0f, 0.0f, 1.0f);
       texStep = -1.0f * float(vd->vox[2] - 1) / float(numTextures - 1);
       texIndex = float(vd->getCurrentFrame() * frameTextures + vd->vox[0] + vd->vox[1]);
       if (zz<0)                                   // reverse order? draw front to back
       {
-        normal.e[2]     = -normal.e[2];
-        objTL.e[2]      = objTR.e[2] = objBL.e[2] = objBR.e[2] = size2[2];
-        texSpacing.e[2] = -texSpacing.e[2];
+        normal[2]       = -normal[2];
+        objTL[2]        = objTR[2] = objBL[2] = objBR[2] = size2[2];
+        texSpacing[2]   = -texSpacing[2];
         texStep         = -texStep;
       }
       else                                        // draw back to front
@@ -4442,11 +4442,11 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
 
     glBegin(GL_QUADS);
     glColor4f(1.0, 1.0, 1.0, 1.0);
-    glNormal3f(normal.e[0], normal.e[1], normal.e[2]);
-    glTexCoord2f(texTL.e[0], texTL.e[1]); glVertex3f(objTL.e[0], objTL.e[1], objTL.e[2]);
-    glTexCoord2f(texBL.e[0], texBL.e[1]); glVertex3f(objBL.e[0], objBL.e[1], objBL.e[2]);
-    glTexCoord2f(texBR.e[0], texBR.e[1]); glVertex3f(objBR.e[0], objBR.e[1], objBR.e[2]);
-    glTexCoord2f(texTR.e[0], texTR.e[1]); glVertex3f(objTR.e[0], objTR.e[1], objTR.e[2]);
+    glNormal3f(normal[0], normal[1], normal[2]);
+    glTexCoord2f(texTL[0], texTL[1]); glVertex3f(objTL[0], objTL[1], objTL[2]);
+    glTexCoord2f(texBL[0], texBL[1]); glVertex3f(objBL[0], objBL[1], objBL[2]);
+    glTexCoord2f(texBR[0], texBR[1]); glVertex3f(objBR[0], objBR[1], objBR[2]);
+    glTexCoord2f(texTR[0], texTR[1]); glVertex3f(objTR[0], objTR[1], objTR[2]);
     glEnd();
     objTL.add(&texSpacing);
     objBL.add(&texSpacing);
@@ -5718,12 +5718,12 @@ unsigned char* vvTexRend::getHeightFieldData(float points[4][3], int& width, int
 
   size.copy(vd->getSize());
   for (i = 0; i < 3; ++i)
-    size2.e[i]   = 0.5f * size.e[i];
+    size2[i]   = 0.5f * size[i];
 
   for (j = 0; j < 4; j++)
     for (k = 0; k < 3; k++)
   {
-    texcoord[j][k] = (points[j][k] + size2.e[k]) / size.e[k];
+    texcoord[j][k] = (points[j][k] + size2[k]) / size[k];
     texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
   }
 

@@ -1157,9 +1157,9 @@ vvTFCustom2D::vvTFCustom2D(vvTFCustom2D* other) : vvTFWidget(other)
    this->_ownColor = other->_ownColor;
    if (_ownColor)
    {
-      this->_col._col[0] = other->_col._col[0];
-      this->_col._col[1] = other->_col._col[1];
-      this->_col._col[2] = other->_col._col[2];
+      this->_col[0] = other->_col[0];
+      this->_col[1] = other->_col[1];
+      this->_col[2] = other->_col[2];
    }
 
    this->_opacity = other->_opacity;
@@ -1497,9 +1497,9 @@ bool vvTFCustom2D::getColor(vvColor& col, float, float, float)
 {
    if (_ownColor)
    {
-      col._col[0] = this->_col._col[0];
-      col._col[1] = this->_col._col[1];
-      col._col[2] = this->_col._col[2];
+      col[0] = this->_col[0];
+      col[1] = this->_col[1];
+      col[2] = this->_col[2];
       return true;
    }
    return false;
@@ -1607,9 +1607,9 @@ vvTFCustomMap::vvTFCustomMap(vvTFCustomMap* other)
    this->_ownColor = other->_ownColor;
    if (_ownColor)
    {
-      this->_col._col[0] = other->_col._col[0];
-      this->_col._col[1] = other->_col._col[1];
-      this->_col._col[2] = other->_col._col[2];
+      this->_col[0] = other->_col[0];
+      this->_col[1] = other->_col[1];
+      this->_col[2] = other->_col[2];
    }
 
    this->_dim[0] = other->_dim[0];
@@ -1742,9 +1742,9 @@ bool vvTFCustomMap::getColor(vvColor& col, float, float, float)
 {
    if (_ownColor)
    {
-      col._col[0] = this->_col._col[0];
-      col._col[1] = this->_col._col[1];
-      col._col[2] = this->_col._col[2];
+      col[0] = this->_col[0];
+      col[1] = this->_col[1];
+      col[2] = this->_col[2];
       return true;
    }
    return false;

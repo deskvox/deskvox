@@ -83,9 +83,9 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     float edges[8 * 3];
     for (int i = 0; i < 8; ++i)
     {
-      edges[i * 3] = verts[sequence[idx * 8 + i]].e[0];
-      edges[i * 3 + 1] = verts[sequence[idx * 8 + i]].e[1];
-      edges[i * 3 + 2] =  verts[sequence[idx * 8 + i]].e[2];
+      edges[i * 3] = verts[sequence[idx * 8 + i]][0];
+      edges[i * 3 + 1] = verts[sequence[idx * 8 + i]][1];
+      edges[i * 3 + 2] =  verts[sequence[idx * 8 + i]][2];
     }
     isectShader->setArray3f(0, ISECT_SHADER_VERTICES, edges, 8 * 3);
 
@@ -149,7 +149,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
       {
         for (int k = 0; k < 3; ++k)
         {
-          texcoord[j][k] = (isect[j][k] - min.e[k]) / dist[k];
+          texcoord[j][k] = (isect[j][k] - min[k]) / dist[k];
           texcoord[j][k] = texcoord[j][k] * texRange[k] + texMin[k];
         }
       }
@@ -174,22 +174,22 @@ void vvBrick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMa
   vvVector3 maxClipped;
   for (int i = 0; i < 3; i++)
   {
-    if (min.e[i] < probeMin.e[i])
+    if (min[i] < probeMin[i])
     {
-      minClipped.e[i] = probeMin.e[i];
+      minClipped[i] = probeMin[i];
     }
     else
     {
-      minClipped.e[i] = min.e[i];
+      minClipped[i] = min[i];
     }
 
-    if (max.e[i] > probeMax.e[i])
+    if (max[i] > probeMax[i])
     {
-      maxClipped.e[i] = probeMax.e[i];
+      maxClipped[i] = probeMax[i];
     }
     else
     {
-      maxClipped.e[i] = max.e[i];
+      maxClipped[i] = max[i];
     }
   }
   glBegin(GL_LINES);

@@ -22,18 +22,15 @@
 #define _VV_COLOR_H_
 
 #include "vvexport.h"
+#include "vvvecmath.h"
 
 /** Creates a general color class for RGB colors.
  */
-class VIRVOEXPORT vvColor
+class VIRVOEXPORT vvColor : public vvVector3
 {
   public:
-    float _col[3];                                ///< RGB color [0..1]
-
     vvColor();
     vvColor(const float, const float, const float);
-    float operator[](const int) const;
-    float& operator[](const int);
     vvColor operator+(const vvColor) const;
     void setRGB(float, float, float);
     void setHSB(float, float, float);

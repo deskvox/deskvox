@@ -22,29 +22,17 @@
 #include "vvcolor.h"
 
 vvColor::vvColor()
+  : vvVector3(1.0f, 1.0f, 1.0f) // default color is white to be visible on typically black screens
 {
-  for (int i=0; i<3; ++i) _col[i] = 1.0f;         // default color is white to be visible on typically black screens
+
 }
 
 /** @param r,g,b RGB color components [0..1]
 */
 vvColor::vvColor(const float r, const float g, const float b)
+  : vvVector3(r, g, b)
 {
-  _col[0] = r;
-  _col[1] = g;
-  _col[2] = b;
-}
 
-/// Overload RHS subscription operator.
-float vvColor::operator[](const int index) const
-{
-  return _col[index];
-}
-
-/// Overload LHS subscription operator.
-float& vvColor::operator[](const int index)
-{
-  return _col[index];
 }
 
 /** Add two colors by using the maximum intensity of each channel.
@@ -56,7 +44,7 @@ vvColor vvColor::operator+ (const vvColor operand) const
 
   for (i=0; i<3; ++i)
   {
-    tmp._col[i] = ts_max(this->_col[i], operand._col[i]);
+    tmp[i] = ts_max(e[i], operand[i]);
   }
   return tmp;
 }
@@ -66,9 +54,9 @@ vvColor vvColor::operator+ (const vvColor operand) const
 */
 void vvColor::setRGB(float r, float g, float b)
 {
-  if (r>=0.0f) _col[0] = r;
-  if (g>=0.0f) _col[1] = g;
-  if (b>=0.0f) _col[2] = b;
+  if (r>=0.0f) e[0] = r;
+  if (g>=0.0f) e[1] = g;
+  if (b>=0.0f) e[2] = b;
 }
 
 /** Sets the color according to the HSB color model.
@@ -77,21 +65,21 @@ void vvColor::setRGB(float r, float g, float b)
 void vvColor::setHSB(float h, float s, float b)
 {
   float hOld, sOld, bOld;
-  vvToolshed::RGBtoHSB(_col[0], _col[1], _col[2], &hOld, &sOld, &bOld);
+  vvToolshed::RGBtoHSB(e[0], e[1], e[2], &hOld, &sOld, &bOld);
   if (h<0.0f) h = hOld;
   if (s<0.0f) s = sOld;
   if (b<0.0f) b = bOld;
-  vvToolshed::HSBtoRGB(h, s, b, &_col[0], &_col[1], &_col[2]);
+  vvToolshed::HSBtoRGB(h, s, b, &e[0], &e[1], &e[2]);
 }
 
 void vvColor::getRGB(float& r, float& g, float& b)
 {
-  r = _col[0];
-  g = _col[1];
-  b = _col[2];
+  r = e[0];
+  g = e[1];
+  b = e[2];
 }
 
 void vvColor::getHSB(float& h, float& s, float& b)
 {
-  vvToolshed::RGBtoHSB(_col[0], _col[1], _col[2], &h, &s, &b);
+  vvToolshed::RGBtoHSB(e[0], e[1], e[2], &h, &s, &b);
 }

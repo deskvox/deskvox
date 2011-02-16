@@ -167,9 +167,9 @@ void vvMatrix::translate(float x, float y, float z)
 /// Apply a translation.
 void vvMatrix::translate(const vvVector3* v)
 {
-  e[0][3] += v->e[0];
-  e[1][3] += v->e[1];
-  e[2][3] += v->e[2];
+  e[0][3] += (*v)[0];
+  e[1][3] += (*v)[1];
+  e[2][3] += (*v)[2];
 }
 
 //----------------------------------------------------------------------------
@@ -259,7 +259,7 @@ vvMatrix vvMatrix::rotate(float a, float x, float y, float z)
  */
 vvMatrix vvMatrix::rotate(float a, const vvVector3* v)
 {
-  return vvMatrix::rotate(a, v->e[0], v->e[1], v->e[2]);
+  return vvMatrix::rotate(a, (*v)[0], (*v)[1], (*v)[2]);
 }
 
 //----------------------------------------------------------------------------
@@ -573,9 +573,9 @@ void vvMatrix::setRow(int row, float a, float b, float c, float d)
 */
 void vvMatrix::setRow(int row, vvVector3* vec)
 {
-  e[row][0] = vec->e[0];
-  e[row][1] = vec->e[1];
-  e[row][2] = vec->e[2];
+  e[row][0] = (*vec)[0];
+  e[row][1] = (*vec)[1];
+  e[row][2] = (*vec)[2];
 }
 
 //----------------------------------------------------------------------------
@@ -599,9 +599,9 @@ void vvMatrix::setColumn(int col, float a, float b, float c, float d)
 */
 void vvMatrix::setColumn(int col, vvVector3* vec)
 {
-  e[0][col] = vec->e[0];
-  e[1][col] = vec->e[1];
-  e[2][col] = vec->e[2];
+  e[0][col] = (*vec)[0];
+  e[1][col] = (*vec)[1];
+  e[2][col] = (*vec)[2];
 }
 
 //----------------------------------------------------------------------------
@@ -635,9 +635,9 @@ void vvMatrix::getRow(int row, float* a, float* b, float* c, float* d)
 */
 void vvMatrix::getRow(int row, vvVector3* vec)
 {
-  vec->e[0] = e[row][0];
-  vec->e[1] = e[row][1];
-  vec->e[2] = e[row][2];
+  (*vec)[0] = e[row][0];
+  (*vec)[1] = e[row][1];
+  (*vec)[2] = e[row][2];
 }
 
 //----------------------------------------------------------------------------
@@ -661,9 +661,9 @@ void vvMatrix::getColumn(int col, float* a, float* b, float* c, float* d)
 */
 void vvMatrix::getColumn(int col, vvVector3* vec)
 {
-  vec->e[0] = e[0][col];
-  vec->e[1] = e[1][col];
-  vec->e[2] = e[2][col];
+  vec[0] = e[0][col];
+  vec[1] = e[1][col];
+  vec[2] = e[2][col];
 }
 
 //----------------------------------------------------------------------------
@@ -1048,16 +1048,16 @@ vvMatrix vvMatrix::trackballRotation(int width, int height, int fromX, int fromY
   halfWidth   = (float)width  / 2.0f;
   halfHeight  = (float)height / 2.0f;
   smallSize   = (halfWidth < halfHeight) ? halfWidth : halfHeight;
-  v1.e[0]     = ((float)fromX - halfWidth)  / smallSize;
-  v1.e[1]     = ((float)(height-fromY) - halfHeight) / smallSize;
-  v2.e[0]     = ((float)toX   - halfWidth)  / smallSize;
-  v2.e[1]     = ((float)(height-toY)   - halfHeight) / smallSize;
+  v1[0]       = ((float)fromX - halfWidth)  / smallSize;
+  v1[1]       = ((float)(height-fromY) - halfHeight) / smallSize;
+  v2[0]       = ((float)toX   - halfWidth)  / smallSize;
+  v2[1]       = ((float)(height-toY)   - halfHeight) / smallSize;
 
   // Compute z-coordinates on Gaussian trackball:
-  d       = sqrtf(v1.e[0] * v1.e[0] + v1.e[1] * v1.e[1]);
-  v1.e[2] = expf(-TRACKBALL_SIZE * d * d);
-  d       = sqrtf(v2.e[0] * v2.e[0] + v2.e[1] * v2.e[1]);
-  v2.e[2] = expf(-TRACKBALL_SIZE * d * d);
+  d       = sqrtf(v1[0] * v1[0] + v1[1] * v1[1]);
+  v1[2]   = expf(-TRACKBALL_SIZE * d * d);
+  d       = sqrtf(v2[0] * v2[0] + v2[1] * v2[1]);
+  v2[2]   = expf(-TRACKBALL_SIZE * d * d);
 
   // Compute rotational angle:
   angle = v1.angle(&v2);                          // angle = angle between v1 and v2
@@ -1073,7 +1073,7 @@ vvMatrix vvMatrix::trackballRotation(int width, int height, int fromX, int fromY
   v2.normalize();                                 // normalize v2 before rotation
 
   // Perform acutal model view matrix modification:
-  return rotate(-angle, v2.e[0], v2.e[1], v2.e[2]);      // rotate model view matrix
+  return rotate(-angle, v2[0], v2[1], v2[2]);      // rotate model view matrix
 }
 
 /** Compute Euler angles for a matrix. The angles are returned in Radians.

@@ -33,56 +33,56 @@
 
 class VIRVOEXPORT vvRenderState
 {
-  public:
-    vvVector3 _clipPoint;                         ///< point on clipping plane
-    vvVector3 _clipNormal;                        ///< clipping plane normal
-    float _clipColor[3];                          ///< clipping plane boundary color (R,G,B in [0..1])
-    float _quality;                               ///< rendering image quality (0=minimum, 1=sampling rate, >1=oversampling)
-    int   _mipMode;                               ///< min/maximum intensity projection (0=off, 1=max, 2=min)
-    int	  _alphaMode;                             ///< calculation for alpha value (0=max of channel weights*values, 1=weighted avg)
-    bool  _emptySpaceLeaping;                     ///< true = don't render bricks without contribution. Relevanct for VV_BRICKS only
-    bool  _clipPerimeter;                         ///< true = render line around clipping plane
-    bool  _boundaries;                            ///< true = display volume boundaries
-    bool  _orientation;                           ///< true = display object orientation
-    bool  _palette;                               ///< true = display transfer function palette
-    bool  _qualityDisplay;                        ///< true = display rendering quality level
-    bool  _clipMode;                              ///< true = clipping plane enabled, false=disabled
-    bool  _clipSingleSlice;                       ///< true = use single slice in clipping mode
-    bool  _clipOpaque;                            ///< true = make single slice opaque
-    bool _isROIChanged;                           ///< true = roi related values have been changed
-    vvVector3 _roiSize;                           ///< size of roi in each dimension [0..1]
-    bool  _isROIUsed;                             ///< true = use roi
-    bool  _sphericalROI;                          ///< true = use sphere rather than cube for roi
-    vvVector3 _roiPos;                            ///< object space coordinates of ROI midpoint [mm]
-    int   _brickSize[3];                          ///< last bricksize in x/y/z
-    int   _maxBrickSize[3];                       ///< max allowed bricksize in x/y/z
-    int   _brickTexelOverlap;                     ///< overlap needed for performing calculations at brick borders
-                                                  ///< max value: min(brickSize[d])/2-1
-    bool  _showBricks;                            ///< true = show brick boundarys
-    bool  _computeBrickSize;                      ///< true = calculate brick size
-    int   _texMemorySize;                         ///< size of texture memory
-    bool  _fpsDisplay;                            ///< true = show frame rate
-    bool  _gammaCorrection;                       ///< true = gamma correction on
-    float _gamma[4];                              ///< gamma correction value: 0=red, 1=green, 2=blue, 3=4th channel
-    bool  _opacityWeights;                        ///< true = for multi-channel data sets only: allow weighted opacities in channels
-    float _boundColor[3];                         ///< boundary color (R,G,B in [0..1])
-    float _probeColor[3];                         ///< probe boundary color (R,G,B in [0..1])
-    bool  _useOffscreenBuffer;                    ///< render target for image downscaling
-    float _imageScale;                            ///< undersampling by downscaling rendered img [0..1]
-    BufferPrecision _imagePrecision;              ///< render to high-res offscreen buffer (32 bit float) to minimize rounding error
-                                                  ///< caused by adding up contribution of to many slices
-    bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
-    bool _opaqueGeometryPresent;                  ///< true = opaque geometry was rendered before the volume
+public:
+  vvVector3 _clipPoint;                         ///< point on clipping plane
+  vvVector3 _clipNormal;                        ///< clipping plane normal
+  vvColor _clipColor;                           ///< clipping plane boundary color (R,G,B in [0..1])
+  float _quality;                               ///< rendering image quality (0=minimum, 1=sampling rate, >1=oversampling)
+  int   _mipMode;                               ///< min/maximum intensity projection (0=off, 1=max, 2=min)
+  int	_alphaMode;                             ///< calculation for alpha value (0=max of channel weights*values, 1=weighted avg)
+  bool  _emptySpaceLeaping;                     ///< true = don't render bricks without contribution. Relevanct for VV_BRICKS only
+  bool  _clipPerimeter;                         ///< true = render line around clipping plane
+  bool  _boundaries;                            ///< true = display volume boundaries
+  bool  _orientation;                           ///< true = display object orientation
+  bool  _palette;                               ///< true = display transfer function palette
+  bool  _qualityDisplay;                        ///< true = display rendering quality level
+  bool  _clipMode;                              ///< true = clipping plane enabled, false=disabled
+  bool  _clipSingleSlice;                       ///< true = use single slice in clipping mode
+  bool  _clipOpaque;                            ///< true = make single slice opaque
+  bool _isROIChanged;                           ///< true = roi related values have been changed
+  vvVector3 _roiSize;                           ///< size of roi in each dimension [0..1]
+  bool  _isROIUsed;                             ///< true = use roi
+  bool  _sphericalROI;                          ///< true = use sphere rather than cube for roi
+  vvVector3 _roiPos;                            ///< object space coordinates of ROI midpoint [mm]
+  int   _brickSize[3];                          ///< last bricksize in x/y/z
+  int   _maxBrickSize[3];                       ///< max allowed bricksize in x/y/z
+  int   _brickTexelOverlap;                     ///< overlap needed for performing calculations at brick borders
+                                                ///< max value: min(brickSize[d])/2-1
+  bool  _showBricks;                            ///< true = show brick boundarys
+  bool  _computeBrickSize;                      ///< true = calculate brick size
+  int   _texMemorySize;                         ///< size of texture memory
+  bool  _fpsDisplay;                            ///< true = show frame rate
+  bool  _gammaCorrection;                       ///< true = gamma correction on
+  float _gamma[4];                              ///< gamma correction value: 0=red, 1=green, 2=blue, 3=4th channel
+  bool  _opacityWeights;                        ///< true = for multi-channel data sets only: allow weighted opacities in channels
+  float _boundColor[3];                         ///< boundary color (R,G,B in [0..1])
+  float _probeColor[3];                         ///< probe boundary color (R,G,B in [0..1])
+  bool  _useOffscreenBuffer;                    ///< render target for image downscaling
+  float _imageScale;                            ///< undersampling by downscaling rendered img [0..1]
+  BufferPrecision _imagePrecision;              ///< render to high-res offscreen buffer (32 bit float) to minimize rounding error
+                                                ///< caused by adding up contribution of to many slices
+  bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
+  bool _opaqueGeometryPresent;                  ///< true = opaque geometry was rendered before the volume
 
-    vvRenderState();
-    void setClippingPlane(const vvVector3*, const vvVector3*);
-    void getClippingPlane(vvVector3*, vvVector3*);
-    void setClipColor(float, float, float);
-    void getClipColor(float*, float*, float*);
-    void setBoundariesColor(float, float, float);
-    void getBoundariesColor(float*, float*, float*);
-    void setProbeColor(float, float, float);
-    void getProbeColor(float*, float*, float*);
+  vvRenderState();
+  void setClippingPlane(const vvVector3*, const vvVector3*);
+  void getClippingPlane(vvVector3*, vvVector3*);
+  void setClipColor(float, float, float);
+  void getClipColor(float*, float*, float*);
+  void setBoundariesColor(float, float, float);
+  void getBoundariesColor(float*, float*, float*);
+  void setProbeColor(float, float, float);
+  void getProbeColor(float*, float*, float*);
 };
 
 /** Abstract volume rendering class.
@@ -199,7 +199,7 @@ class VIRVOEXPORT vvRenderer
     virtual void  renderQualityDisplay();
     virtual void  renderFPSDisplay();
     virtual void  drawBoundingBox(const vvVector3*, const vvVector3*, const float*) const;
-    virtual void  drawPlanePerimeter(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*, const float*) const;
+    virtual void  drawPlanePerimeter(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*, const vvColor*) const;
     virtual bool  instantClassification() const;
     virtual void  setViewingDirection(const vvVector3*);
     virtual void  setObjectDirection(const vvVector3*);

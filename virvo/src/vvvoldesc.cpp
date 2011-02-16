@@ -914,7 +914,7 @@ void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* siz
         texIndex = BPT * (x + y * size[0]);
         for (c=0; c<3; ++c)
         {
-          data[texIndex + c] = uchar(color->_col[c] * 255.0f);        // set foreground color
+          data[texIndex + c] = uchar((*color)[c] * 255.0f);        // set foreground color
         }
         data[texIndex + 3] = 255;                 // set alpha
       }

@@ -162,7 +162,7 @@ void vvSphere::calculateTexCoords()
 
   texMatrix.identity();
   texMatrix.translate(0.5,0.5,0.5);
-  texMatrix.scale(1.0f/mDimCube.e[0], 1.0f/mDimCube.e[1], 1.0f/mDimCube.e[2]);
+  texMatrix.scale(1.0f/mDimCube[0], 1.0f/mDimCube[1], 1.0f/mDimCube[2]);
   texMatrix.translate(texOffset[0], texOffset[1], texOffset[2]);
   texMatrix.multiplyPre(&mModelView);
 
@@ -170,9 +170,9 @@ void vvSphere::calculateTexCoords()
   {
     vvVector3 tmp(mVerticesWorld[i].x, mVerticesWorld[i].y, mVerticesWorld[i].z);
     tmp.multiply(&texMatrix);
-    mTexCoords[i].t[0] = tmp.e[0];
-    mTexCoords[i].t[1] = tmp.e[1];
-    mTexCoords[i].t[2] = tmp.e[2];
+    mTexCoords[i].t[0] = tmp[0];
+    mTexCoords[i].t[1] = tmp[1];
+    mTexCoords[i].t[2] = tmp[2];
   }
 }
 

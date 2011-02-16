@@ -268,10 +268,10 @@ void vvSoftVR::compositeOutline()
    // Draw lines:
    for (i=0; i<12; ++i)
    {
-      x  = (int)vertex[vert[i][0]].e[0];
-      y  = (int)vertex[vert[i][0]].e[1];
-      x1 = (int)vertex[vert[i][1]].e[0];
-      y1 = (int)vertex[vert[i][1]].e[1];
+      x  = (int)vertex[vert[i][0]][0];
+      y  = (int)vertex[vert[i][0]][1];
+      x1 = (int)vertex[vert[i][1]][0];
+      y1 = (int)vertex[vert[i][1]][1];
       intImg->drawLine(x, y, x1, y1, col[i][0],col[i][1],col[i][2]);
    }
 }
@@ -930,17 +930,17 @@ void vvSoftVR::getIntermediateImageExtent(int* xmin, int* xmax, int* ymin, int* 
    findSlicePosition(0, &corner[0], &corner[1]);
    findSlicePosition(len[2], &corner[2], &corner[3]);
 
-   *xmin = (int)corner[0].e[0];
-   *ymin = (int)corner[0].e[1];
-   *xmax = int(corner[0].e[0]) + 1;
-   *ymax = int(corner[0].e[1]) + 1;
+   *xmin = (int)corner[0][0];
+   *ymin = (int)corner[0][1];
+   *xmax = int(corner[0][0]) + 1;
+   *ymax = int(corner[0][1]) + 1;
 
    for (i=1; i<4; ++i)                            // loop thru rest of array
    {
-      *xmin = ts_min(*xmin, (int)corner[i].e[0]);
-      *ymin = ts_min(*ymin, (int)corner[i].e[1]);
-      *xmax = ts_max(*xmax, int(corner[i].e[0]) + 1);
-      *ymax = ts_max(*ymax, int(corner[i].e[1]) + 1);
+      *xmin = ts_min(*xmin, (int)corner[i][0]);
+      *ymin = ts_min(*ymin, (int)corner[i][1]);
+      *xmax = ts_max(*xmax, int(corner[i][0]) + 1);
+      *ymax = ts_max(*ymax, int(corner[i][1]) + 1);
    }
    *xmin = ts_clamp(*xmin, 0, intImg->width-1);
    *xmax = ts_clamp(*xmax, 0, intImg->width-1);

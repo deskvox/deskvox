@@ -901,7 +901,7 @@ void vvView::specialCallback(int key, int, int)
   case GLUT_KEY_LEFT:
     if (ds->roiEnabled)
     {
-      probePos.e[0] -= delta;
+      probePos[0] -= delta;
       ds->renderer->setProbePosition(&probePos);
     }
     else if (ds->clipEditMode)
@@ -912,7 +912,7 @@ void vvView::specialCallback(int key, int, int)
   case GLUT_KEY_RIGHT:
     if (ds->roiEnabled)
     {
-      probePos.e[0] += delta;
+      probePos[0] += delta;
       ds->renderer->setProbePosition(&probePos);
     }
     else if (ds->clipEditMode)
@@ -925,11 +925,11 @@ void vvView::specialCallback(int key, int, int)
     {
       if (modifiers & GLUT_ACTIVE_SHIFT)
       {
-        probePos.e[2] += delta;
+        probePos[2] += delta;
       }
       else
       {
-        probePos.e[1] += delta;
+        probePos[1] += delta;
       }
       ds->renderer->setProbePosition(&probePos);
     }
@@ -943,11 +943,11 @@ void vvView::specialCallback(int key, int, int)
     {
       if (modifiers & GLUT_ACTIVE_SHIFT)
       {
-        probePos.e[2] -= delta;
+        probePos[2] -= delta;
       }
       else
       {
-        probePos.e[1] -= delta;
+        probePos[1] -= delta;
       }
       ds->renderer->setProbePosition(&probePos);
     }
@@ -1378,15 +1378,15 @@ void vvView::optionsMenuCallback(int item)
     break;
   case 8:                                     // increase z size
     //ds->renderer->getVoxelSize(&size);
-    size.e[2] *= 1.05f;
+    size[2] *= 1.05f;
     //ds->renderer->setVoxelSize(&size);
-    cerr << "Z size set to " << size.e[2] << endl;
+    cerr << "Z size set to " << size[2] << endl;
     break;
   case 9:                                     // decrease z size
     //ds->renderer->getVoxelSize(&size);
-    size.e[2] *= 0.95f;
+    size[2] *= 0.95f;
     //ds->renderer->setVoxelSize(&size);
-    cerr << "Z size set to " << size.e[2] << endl;
+    cerr << "Z size set to " << size[2] << endl;
     break;
   case 10:                                     // increase precision of visual
     switch(ds->rendererType)

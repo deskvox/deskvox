@@ -922,7 +922,7 @@ void vvRayRend::compositeVolume(int, int)
 
   if (_renderState._clipMode && _renderState._clipPerimeter)
   {
-    drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, _renderState._clipColor);
+    drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint, &_renderState._clipNormal, &_renderState._clipColor);
   }
 
   GLfloat bgcolor[4];

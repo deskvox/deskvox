@@ -131,7 +131,7 @@ void vvSoftPar::compositeVolume(int from, int to)
       findSlicePosition(0, &pos1, &dummy);
       findSlicePosition(1, &pos2, &dummy);
       pos1.sub(&pos2);
-      dx = sqrtf(1.0f + pos1.e[0] * pos1.e[0] + pos1.e[1] * pos1.e[1]);
+      dx = sqrtf(1.0f + pos1[0] * pos1[0] + pos1[1] * pos1[1]);
       for (i=0; i<VV_OP_CORR_TABLE_SIZE; ++i)
       {
          opacityCorr[i] = (1.0f - powf(1.0f - i / float(VV_OP_CORR_TABLE_SIZE), dx)) * 256.0f;
