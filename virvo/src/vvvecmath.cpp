@@ -121,7 +121,7 @@ void vvMatrix::print(const char* title) const
   cerr << title << endl;
 
   cerr.setf(ios::fixed, ios::floatfield);
-  cerr.precision(6);
+  cerr.precision(3);
 
   for (row=0; row<4; ++row)
   {
