@@ -5,7 +5,7 @@
 // Affiliation:     Brown University, Department of Computer Science
 //****************************************************************************
 
-#define IMAGESPACE_APPROX
+//#define IMAGESPACE_APPROX
 
 #include "../src/vvglew.h"
 #include "../src/vvconfig.h"

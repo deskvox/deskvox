@@ -140,9 +140,13 @@ vvRenderSlave::ErrorType vvRenderSlave::initBricks(std::vector<vvBrick*>& bricks
   return VV_OK;
 }
 
-void vvRenderSlave::renderLoop(vvTexRend* renderer)
+void vvRenderSlave::renderLoop(vvRenderer* renderer)
 {
-  renderer->setIsSlave(true);
+  vvTexRend* tmp = dynamic_cast<vvTexRend*>(renderer);
+  if (tmp != NULL)
+  {
+    tmp->setIsSlave(true);
+  }
 
   _offscreenBuffer = new vvOffscreenBuffer(1.0f, _compositingPrecision);
   _offscreenBuffer->initForRender();
@@ -281,7 +285,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
 /** Perform remote rendering, read back pixel data and send it over socket
     connections using a vvImage instance.
 */
-void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
+void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 {
   vvDebugMsg::msg(3, "vvRenderSlave::renderImage()");
 
@@ -299,7 +303,7 @@ void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
   mv.get(matrixGL);
   glLoadMatrixf(matrixGL);
 
-  vvRect* screenRect = renderer->getProbedMask().getProjectedScreenRect();
+  vvRect* screenRect = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect();
 
   renderer->renderVolumeGL();
 

@@ -46,7 +46,7 @@ public:
   vvRenderSlave::ErrorType initSocket(const int port, vvSocket::SocketType st);
   vvRenderSlave::ErrorType initData(vvVolDesc*& vd) const;
   vvRenderSlave::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
-  void  renderLoop(vvTexRend* renderer);
+  void renderLoop(vvRenderer* renderer);
 private:
   vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering
   vvSocketIO* _socket;                    ///< socket for remote rendering
@@ -55,7 +55,7 @@ private:
 
   bool _immagespaceApprox;  ///< flag to turn additional image calculations for immagespace-approximation on and off
 
-  void renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer);
+  void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);
 };
 
 #endif
