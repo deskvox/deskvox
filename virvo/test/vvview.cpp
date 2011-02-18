@@ -7,8 +7,13 @@
 
 //#define IMAGESPACE_APPROX
 
+#ifdef HLRS
+#include "virvo/vvglew.h"
+//#include "virvo/vvconfig.h"
+#else
 #include "../src/vvglew.h"
 #include "../src/vvconfig.h"
+#endif
 
 #include <iostream>
 #include <fstream>
@@ -53,7 +58,33 @@ using std::ios;
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
-
+#ifdef HLRS
+#include "virvo/vvvirvo.h"
+#include "virvo/vvgltools.h"
+#include "virvo/vvoffscreenbuffer.h"
+#include "virvo/vvprintgl.h"
+#include "virvo/vvstopwatch.h"
+#include "virvo/vvrendercontext.h"
+#include "virvo/vvrendermaster.h"
+#include "virvo/vvrenderslave.h"
+#include "virvo/vvrenderer.h"
+#include "virvo/vvfileio.h"
+#include "virvo/vvdebugmsg.h"
+#include "virvo/vvsocketio.h"
+#include "virvo/vvtexrend.h"
+#include "virvo/vvsoftpar.h"
+#include "virvo/vvsoftper.h"
+#include "virvo/vvcudasw.h"
+#include "virvo/vvcuda.h"
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#include "virvo/vvrayrend.h"
+#endif
+#ifdef HAVE_VOLPACK
+#include "virvo/vvrendervp.h"
+#endif
+#include "virvo/vvbonjour/vvbonjourbrowser.h"
+#include "virvo/vvbonjour/vvbonjourresolver.h"
+#else
 #include "../src/vvvirvo.h"
 #include "../src/vvgltools.h"
 #include "../src/vvoffscreenbuffer.h"
@@ -79,6 +110,7 @@ using std::ios;
 #endif
 #include "../src/vvbonjour/vvbonjourbrowser.h"
 #include "../src/vvbonjour/vvbonjourresolver.h"
+#endif
 #include "vvobjview.h"
 #include "vvperformancetest.h"
 #include "vvview.h"
@@ -2414,7 +2446,7 @@ void vvView::initGraphics(int argc, char *argv[])
 // Other glut versions than freeglut currently don't support
 // debug context flags.
 #ifdef FREEGLUT
-  glutInitContextFlags(GLUT_DEBUG);
+  //glutInitContextFlags(GLUT_DEBUG);
 #endif // FREEGLUT
 
   if (tryQuadBuffer)

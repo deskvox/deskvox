@@ -8,7 +8,11 @@
 #ifndef _VVOBJVIEW_H_
 #define _VVOBJVIEW_H_
 
+#ifdef HLRS
+#include "virvo/vvvecmath.h"
+#else
 #include "../src/vvvecmath.h"
+#endif
 
 //============================================================================
 // Class Definition
