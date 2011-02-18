@@ -18,30 +18,46 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_COVISE
 
+#ifndef VV_COVISE
 #include "vvversioninfo.h"
+#endif
 #include "vvvirvo.h"
 
 const char* virvo::getSvnRevision()
 {
+#ifndef VV_COVISE
   return VV_SVN_REVISION;
+#else
+  return "unknown";
+#endif
 }
 
 const char* virvo::getVersionMajor()
 {
+#ifndef VV_COVISE
   return VV_VERSION;
+#else
+  return "unknown";
+#endif
 }
 
 const char* virvo::getReleaseCounter()
 {
+#ifndef VV_COVISE
   return VV_RELEASE;
+#else
+  return "unknown";
+#endif
 }
 
 int virvo::getYearOfRelease()
 {
+#ifndef VV_COVISE
   return VV_YEAR;
+#else
+  return 2010;
+#endif
 }
 
-#endif
 

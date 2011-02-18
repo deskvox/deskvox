@@ -148,6 +148,7 @@ contains(CUDA,HAVE_CUDA) {
         CONFIG *= cuda \
                   cudart
         CUDA_SOURCES += vvcudatransfunc.cu \
+                        vvcudasw.cu \
                         vvrayrend.cu
         DEFINES *= HAVE_CUDA \
                    NV_PROPRIETARY_CODE

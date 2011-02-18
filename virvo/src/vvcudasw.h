@@ -23,8 +23,8 @@
 
 #include "vvrenderer.h"
 #include "vvsoftimg.h"
-#include "vvsoftper.h"
 #include "vvsoftpar.h"
+#include "vvsoftper.h"
 #include "vvexport.h"
 
 #ifdef HAVE_CONFIG_H

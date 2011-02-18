@@ -1179,7 +1179,7 @@ bool vvCudaSW<Base>::initVolTex()
         else
             extent = make_cudaExtent(Base::vd->vox[(i+1)%3], Base::vd->vox[(i+2)%3], Base::vd->vox[(i+3)%3]);
         cudaChannelFormatDesc desc = cudaCreateChannelDesc<Scalar>();
-        if(!vvCuda::checkError(&ok, cudaMalloc3DArray(&d_voxarr[i], &desc, extent, 0), "cudaMalloc3DArray vox"))
+        if(!vvCuda::checkError(&ok, cudaMalloc3DArray(&d_voxarr[i], &desc, extent), "cudaMalloc3DArray vox"))
             break;
         cudaMemcpy3DParms parms = {0};
         if(ntex==1)
@@ -1290,11 +1290,11 @@ bool vvCudaSW<Base>::initMinMax()
        cudaExtent extent = make_cudaExtent(vox[0], vox[1], vox[2]);
        cudaChannelFormatDesc desc = cudaCreateChannelDesc<uchar>();
        vvCuda::checkError(&ok,
-               cudaMalloc3DArray(&d_minarr, &desc, extent, 0), "cudaMalloc3DArray min");
+               cudaMalloc3DArray(&d_minarr, &desc, extent), "cudaMalloc3DArray min");
        vvCuda::checkError(&ok,
-               cudaMalloc3DArray(&d_maxarr, &desc, extent, 0), "cudaMalloc3DArray max");
+               cudaMalloc3DArray(&d_maxarr, &desc, extent), "cudaMalloc3DArray max");
        vvCuda::checkError(&ok,
-               cudaMalloc3DArray(&d_oparr, &desc, extent, 0), "cudaMalloc3DArray opacity");
+               cudaMalloc3DArray(&d_oparr, &desc, extent), "cudaMalloc3DArray opacity");
        cudaMemcpy3DParms parms = {0};
        parms.kind = cudaMemcpyHostToDevice;
        parms.extent = make_cudaExtent(vox[0], vox[1], vox[2]);
@@ -1462,7 +1462,7 @@ bool vvCudaSW<Base>::updateOpacityMap()
         cudaChannelFormatDesc desc = cudaCreateChannelDesc<uchar>();
 #if 0
         vvCuda::checkError(&ok,
-                cudaMalloc3DArray(&d_oparr, &desc, extent, 0), "cudaMalloc3DArray opacity");
+                cudaMalloc3DArray(&d_oparr, &desc, extent), "cudaMalloc3DArray opacity");
 #endif
         cudaMemcpy3DParms parms = {0};
         parms.kind = cudaMemcpyHostToDevice;
@@ -2107,15 +2107,16 @@ void vvCudaSW<vvSoftPer>::setQuality(float q)
    vvSoftPer::setQuality(q);
 }
 
+vvCudaPar::vvCudaPar(vvVolDesc *vd, vvRenderState rs)
+: vvCudaSW<vvSoftPar>(vd, rs)
+{
+}
+
 vvCudaPer::vvCudaPer(vvVolDesc *vd, vvRenderState rs)
 : vvCudaSW<vvSoftPer>(vd, rs)
 {
 }
 
-vvCudaPar::vvCudaPar(vvVolDesc *vd, vvRenderState rs)
-: vvCudaSW<vvSoftPar>(vd, rs)
-{
-}
 //============================================================================
 // End of File
 //============================================================================
