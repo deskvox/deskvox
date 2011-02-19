@@ -7,7 +7,7 @@ PROJECT        = General
 
 TEMPLATE       = app
 
-CONFIG		   += virvo glut
+CONFIG		   += console virvo glut
 
 SOURCES        = vvview.cpp vvperformancetest.cpp vvobjview.cpp
 HEADERS        = vvview.h vvperformancetest.h vvobjview.h
