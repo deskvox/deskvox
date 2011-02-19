@@ -99,7 +99,7 @@ private:
 
   void createThreads();
   void destroyThreads();
-  static void* getImageFromSocket(void* threadargs);
+  static void *getImageFromSocket(void* threadargs);
 
 };
 

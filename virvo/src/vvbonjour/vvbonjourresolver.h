@@ -28,7 +28,7 @@
 
 #include <dns_sd.h>
 
-class vvBonjourResolver
+class VIRVOEXPORT vvBonjourResolver
 {
 public:
   vvBonjourResolver();

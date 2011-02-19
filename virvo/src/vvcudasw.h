@@ -119,7 +119,7 @@ class VIRVOEXPORT vvCudaSW : public Base
 @see vvSoftPer
 @see vvCudaSW
 */
-class vvCudaPer: public vvCudaSW<vvSoftPer>
+class VIRVOEXPORT vvCudaPer: public vvCudaSW<vvSoftPer>
 {
     public:
     vvCudaPer(vvVolDesc *vd, vvRenderState rs);
@@ -131,7 +131,7 @@ class vvCudaPer: public vvCudaSW<vvSoftPer>
 @see vvSoftPar
 @see vvCudaSW
 */
-class vvCudaPar: public vvCudaSW<vvSoftPar>
+class VIRVOEXPORT vvCudaPar: public vvCudaSW<vvSoftPar>
 {
     public:
     vvCudaPar(vvVolDesc *vd, vvRenderState rs);

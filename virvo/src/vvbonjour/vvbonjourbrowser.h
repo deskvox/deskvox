@@ -30,7 +30,7 @@
 #include <dns_sd.h>
 #include <vector>
 
-class vvBonjourBrowser
+class VIRVOEXPORT vvBonjourBrowser
 {
 public:
   vvBonjourBrowser();

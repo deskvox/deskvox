@@ -34,8 +34,9 @@
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include "vvexport.h"
 
-class vvCuda
+class VIRVOEXPORT vvCuda
 {
     public:
     static bool checkError(bool *success, cudaError_t err, const char *msg = NULL, bool syncIfDebug = true);

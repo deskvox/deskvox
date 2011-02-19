@@ -18,6 +18,9 @@
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef WIN32
+#include <winsock2.h>
+#endif
 #include <iostream>
 using std::cerr;
 using std::endl;
@@ -1837,7 +1840,7 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
     float dist = sqrtf(1.0f + sinc.e[0] * sinc.e[0] + sinc.e[1] * sinc.e[1]);
 
     float s = 1.f/(dist * Base::getParameter(vvRenderState::VV_QUALITY));
-    int nslice = Base::len[2]/s;
+    int nslice = (int)(Base::len[2]/s);
 
     float zstep = -s / Base::vd->vox[Base::principal];
     switch(Base::principal)
@@ -2048,7 +2051,7 @@ float vvCudaSW<Base>::getParameter(typename Base::ParameterType param) const
     switch(param)
     {
         case Base::VV_IMG_PRECISION:
-            return imagePrecision;
+            return (float)imagePrecision;
         case Base::VV_TERMINATEEARLY:
             return (earlyRayTerm ? 1.f : 0.f);
         case Base::VV_LEAPEMPTY:

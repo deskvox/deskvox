@@ -174,7 +174,14 @@ void vvRenderState::setParameter(const ParameterType param, const float newValue
     _imageScale = newValue;
     break;
   case VV_IMAGE_PRECISION:
-    _imagePrecision = (BufferPrecision)newValue;
+     {
+        if(newValue == 0.0)
+           _imagePrecision = VV_BYTE;
+        else if(newValue == 1.0)
+           _imagePrecision = VV_SHORT;
+        else if(newValue == 2.0)
+           _imagePrecision = VV_FLOAT;
+     }
     break;
   case VV_SHOW_TEXTURE:
     _showTexture = (bool)newValue;

@@ -262,6 +262,7 @@ vvRemoteClient::ErrorType vvRenderMaster::render()
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
+  return vvRemoteClient::VV_OK;
 }
 
 void vvRenderMaster::initIsaFrame()
@@ -608,7 +609,7 @@ void vvRenderMaster::destroyThreads()
   _threadData = NULL;
 }
 
-void* vvRenderMaster::getImageFromSocket(void* threadargs)
+void *vvRenderMaster::getImageFromSocket(void* threadargs)
 {
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
 
@@ -666,4 +667,5 @@ void* vvRenderMaster::getImageFromSocket(void* threadargs)
   }
 
   pthread_exit(NULL);
+  return NULL;
 }

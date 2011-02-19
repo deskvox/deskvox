@@ -162,10 +162,10 @@ template <class C> inline C ts_sqr(C a)
     @author Juergen Schulze-Doebold
 
     <B>Terminology for extraction functions:</B><BR>
-    Example: c: \ test \ vfview.exe
+    Example: c:/test/vfview.exe
     <UL>
-      <LI>Pathname  = c: \ test \ vfview.exe
-      <LI>Dirname   = c: \ test \ 
+      <LI>Pathname  = c:/test/vfview.exe
+      <LI>Dirname   = c:/test/ 
       <LI>Extension = exe
       <LI>Filename  = vfview.exe
 <LI>Basename  = vfview

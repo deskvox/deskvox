@@ -276,7 +276,11 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
 
   istringstream in;
   in.str((const char*)buffer);
+#ifdef WIN32
+  char cline[65535];
+#else
   char cline[vvTFWidget::MAX_STR_LEN];
+#endif
   while (in.getline(cline, vvTFWidget::MAX_STR_LEN))
   {
     std::string line = std::string(cline);

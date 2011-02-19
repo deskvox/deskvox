@@ -32,7 +32,7 @@ using std::string;
  * 'Zero-Configuration Networking in Qt' which could, as of October 14, 2010,
  * be found at this location: http://doc.trolltech.com/qq/qq23-bonjour.html .
  */
-class vvBonjourEntry
+class VIRVOEXPORT vvBonjourEntry
 {
 public:
   vvBonjourEntry();

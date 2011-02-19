@@ -28,7 +28,7 @@
 
 #include <dns_sd.h>
 
-class vvBonjourRegistrar
+class VIRVOEXPORT vvBonjourRegistrar
 {
 public:
   vvBonjourRegistrar();
