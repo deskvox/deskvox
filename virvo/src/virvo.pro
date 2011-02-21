@@ -35,7 +35,7 @@ SOURCES = vvaabb.cpp \
     vvremoteclient.cpp \
     vvrendercontext.cpp \
     vvrenderer.cpp \
-    vvrendermaster.cpp \
+    vvIsaClient.cpp \
     vvrenderslave.cpp \
     vvrendertarget.cpp \
     vvsocket.cpp \
@@ -69,7 +69,9 @@ SOURCES = vvaabb.cpp \
     vvbonjour/vvbonjourregistrar.cpp \
     vvbonjour/vvbonjourresolver.cpp \
     vvmultirend/vvtexmultirend.cpp \
-    vvmultirend/vvtexmultirendmngr.cpp
+    vvmultirend/vvtexmultirendmngr.cpp \
+    vvisaclient.cpp \
+    vvisaserver.cpp
 HEADERS = vvaabb.h \
     vvarray.h \
     vvbrick.h \
@@ -95,7 +97,7 @@ HEADERS = vvaabb.h \
     vvremoteclient.h \
     vvrendercontext.h \
     vvrenderer.h \
-    vvrendermaster.h \
+    vvIsaClient.h \
     vvrenderslave.h \
     vvrendertarget.h \
     vvsllist.h \
@@ -131,7 +133,9 @@ HEADERS = vvaabb.h \
     vvbonjour/vvbonjourregistrar.h \
     vvbonjour/vvbonjourresolver.h \
     vvmultirend/vvtexmultirend.h \
-    vvmultirend/vvtexmultirendmngr.h
+    vvmultirend/vvtexmultirendmngr.h \
+    vvisaclient.h \
+    vvisaserver.h
 TARGET = coVirvo
 DEVFILES = $$HEADERS
 DEFINES += VV_COVISE

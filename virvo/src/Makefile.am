@@ -28,6 +28,8 @@ libvirvo_a_headers = \
         vvglew.h \
         vvgltools.h \
         vvimage.h \
+        vvisaclient.h \
+        vvisaserver.h \
         vvopengl.h \
         vvprintgl.h \
         vvpthread.h \
@@ -90,6 +92,8 @@ libvirvo_a_SOURCES = \
         vvfileio.cpp \
         vvgltools.cpp \
         vvimage.cpp \
+        vvisaclient.cpp \
+        vvisaserver.cpp \
         vvprintgl.cpp \
         vvpthread.cpp \
         vvremoteclient.cpp \
