@@ -326,7 +326,6 @@ void vvView::mainLoop(int argc, char *argv[])
           cerr << "Exiting..." << endl;
           return;
         }
-
         if (renderSlave->initData(vd) != vvRenderSlave::VV_OK)
         {
           cerr << "Exiting..." << endl;
@@ -335,7 +334,6 @@ void vvView::mainLoop(int argc, char *argv[])
 
         // Get bricks to render
         std::vector<BrickList>* frames = new std::vector<BrickList>();
-
         for (int f=0; f<vd->frames; ++f)
         {
           BrickList bricks;
@@ -347,7 +345,6 @@ void vvView::mainLoop(int argc, char *argv[])
           }
           frames->push_back(bricks);
         }
-
         if (vd != NULL)
         {
           vd->printInfoLine();
@@ -360,7 +357,6 @@ void vvView::mainLoop(int argc, char *argv[])
           }
 
           ov = new vvObjView();
-
           vvRenderContext* context = new vvRenderContext();
           if (context->makeCurrent())
           {
@@ -478,6 +474,10 @@ void vvView::mainLoop(int argc, char *argv[])
     {
       remoteRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
     }
+    else if(clusterRendering)
+    {
+      clusterRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
+    }
 
     // Set window title:
     if (filename!=NULL) glutSetWindowTitle(filename);
@@ -561,7 +561,6 @@ void vvView::reshapeCallback(int w, int h)
 void vvView::displayCallback(void)
 {
   vvDebugMsg::msg(3, "vvView::displayCallback()");
-
   if (ds->clusterRendering)
   {
     ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
@@ -900,8 +899,11 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       }
   }
 
-  remoteRendering &= ((rendererType == vvRenderer::TEXREND)
-                      && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
+  if(remoteRendering)
+  {
+    remoteRendering &= ((rendererType == vvRenderer::TEXREND)
+                        && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
+  }
 
   if (!slaveMode)
   {

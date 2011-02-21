@@ -162,10 +162,8 @@ void vvRenderMaster::exit()
 
 void vvRenderMaster::resize(const int w, const int h)
 {
-  std::cout << "socket.size(): " << _sockets.size() << std::endl;
   for (int s=0; s<_sockets.size(); ++s)
   {
-    std::cout << "socket.size(): " << _sockets.size() << std::endl;
     if (_sockets[s]->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
     {
       _sockets[s]->putWinDims(w, h);
