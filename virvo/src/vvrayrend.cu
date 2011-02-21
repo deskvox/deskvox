@@ -497,6 +497,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     //---------------------------------------------------------------
     //###############################################################
 #endif
+
   }
   d_output[y * texwidth + x] = rgbaFloatToInt(dst);
 }
