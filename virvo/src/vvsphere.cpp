@@ -85,7 +85,7 @@ const vvTriangle& vvTriangle::operator=(const vvTriangle& t)
   return *this;
 }
 
-/// Copy constructor
+/// Default constructor
 vvTriangle::vvTriangle() : v1(0),v2(0),v3(0),visibility(0)
 {
 }

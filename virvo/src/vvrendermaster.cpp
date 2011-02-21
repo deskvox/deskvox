@@ -18,12 +18,10 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "vvglew.h"
 #include "vvbsptreevisitors.h"
 #include "vvgltools.h"
 #include "vvrendermaster.h"
 #include "vvtexrend.h"
-#include "float.h"
 
 vvRenderMaster::vvRenderMaster(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                                std::vector<const char*>& slaveFileNames,
@@ -33,30 +31,12 @@ vvRenderMaster::vvRenderMaster(std::vector<const char*>& slaveNames, std::vector
   _threads = NULL;
   _threadData = NULL;
   _visitor = new vvSlaveVisitor();
-
-  _imagespaceApprox = false;
-
-  glewInit();
-  glGenBuffers(1, &_pointVBO);
-  glGenBuffers(1, &_colorVBO);
-
-  _slaveCnt = 0;
-  _slaveRdy = 0;
-  _gapStart = 1;
-  _isaRect[0] = new vvRect();
-  _isaRect[1] = new vvRect();
-
-  pthread_mutex_init(&_slaveMutex, NULL);
 }
 
 vvRenderMaster::~vvRenderMaster()
 {
   destroyThreads();
   delete _visitor;
-  glDeleteBuffers(1, &_pointVBO);
-  glDeleteBuffers(1, &_colorVBO);
-  delete _isaRect[0];
-  delete _isaRect[1];
 }
 
 vvRemoteClient::ErrorType vvRenderMaster::setRenderer(vvRenderer* renderer)
@@ -106,278 +86,69 @@ vvRemoteClient::ErrorType vvRenderMaster::render()
     cerr << "Renderer is no texture based renderer" << endl;
     return vvRemoteClient::VV_BAD_RENDERER_ERROR;
   }
+  float matrixGL[16];
 
-  if(_slaveRdy == 0)
+  vvMatrix pr;
+  glGetFloatv(GL_PROJECTION_MATRIX, matrixGL);
+  pr.set(matrixGL);
+
+  vvMatrix mv;
+  glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
+  mv.set(matrixGL);
+
+  for (int s=0; s<_sockets.size(); ++s)
   {
-    renderer->calcProjectedScreenRects();
-
-    if(_imagespaceApprox)
-    {
-      // save screenrect for later frames
-      _isaRect[1]->x = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->x;
-      _isaRect[1]->y = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->y;
-      _isaRect[1]->height = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->height;
-      _isaRect[1]->width = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->width;
-    }
-
-    float matrixGL[16];
-
-    vvMatrix pr;
-    glGetFloatv(GL_PROJECTION_MATRIX, matrixGL);
-    pr.set(matrixGL);
-
-    vvMatrix mv;
-    glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
-    mv.set(matrixGL);
-
-    // Retrieve the eye position for bsp-tree traversal
-    renderer->getEyePosition(&_eye);
-    vvMatrix invMV(&mv);
-    invMV.invert();
-    // This is a gl matrix ==> transpose.
-    invMV.transpose();
-    _eye.multiply(&invMV);
-
-    for (int s=0; s<_sockets.size(); ++s)
-    {
-      _sockets[s]->putCommReason(vvSocketIO::VV_MATRIX);
-      _sockets[s]->putMatrix(&pr);
-      _sockets[s]->putMatrix(&mv);
-    }
-
-    pthread_mutex_lock(&_slaveMutex);
-    _slaveCnt = _sockets.size();
-    pthread_mutex_unlock(&_slaveMutex);
-
-    _slaveRdy = 1;
+    _sockets[s]->putCommReason(vvSocketIO::VV_MATRIX);
+    _sockets[s]->putMatrix(&pr);
+    _sockets[s]->putMatrix(&mv);
   }
 
-  // check _slaveCnt securely
-  pthread_mutex_lock( &_slaveMutex );
-  bool slavesFinished = (_slaveCnt == 0);
-  pthread_mutex_unlock( &_slaveMutex );
+  renderer->calcProjectedScreenRects();
 
-  if(slavesFinished)
-  {
-    _slaveRdy = 0;
+  pthread_barrier_wait(&_barrier);
 
-    if(_imagespaceApprox)
-    {
-      _gapStart = 1;
+  glDrawBuffer(GL_BACK);
+  glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      // switch to current screen-rect
-      _isaRect[0]->x = _isaRect[1]->x;
-      _isaRect[0]->y = _isaRect[1]->y;
-      _isaRect[0]->height = _isaRect[1]->height;
-      _isaRect[0]->width = _isaRect[1]->width;
-    }
+  // Retrieve the eye position for bsp-tree traversal
+  vvVector3 eye;
+  _renderer->getEyePosition(&eye);
+  vvMatrix invMV(&mv);
+  invMV.invert();
+  // This is a gl matrix ==> transpose.
+  invMV.transpose();
+  eye.multiply(&invMV);
 
-    glDrawBuffer(GL_BACK);
-    glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  // Orthographic projection.
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
 
-    // Orthographic projection.
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();vvGLTools::printGLError("push pr");
-    glLoadIdentity();
+  // Fix the proxy quad for the frame buffer texture.
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glLoadIdentity();
 
-    // Fix the proxy quad for the frame buffer texture.
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();vvGLTools::printGLError("push mv");
-    glLoadIdentity();
+  // Setup compositing.
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_DEPTH_TEST);
+  glEnable(GL_COLOR_MATERIAL);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Setup compositing.
-    GLboolean lighting;
-    glGetBooleanv(GL_LIGHTING, &lighting);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_COLOR_MATERIAL);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+  _bspTree->traverse(eye);
 
-    _bspTree->traverse(_eye);
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix();
 
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();vvGLTools::printGLError("pop pr");
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();vvGLTools::printGLError("pop mv");
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
 
-    glFlush();
+  clearImages();
 
-    glEnable(GL_CULL_FACE);
-    if (lighting)
-    {
-      glEnable(GL_LIGHTING);
-    }
-    else
-    {
-      glDisable(GL_LIGHTING);
-    }
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_COLOR_MATERIAL);
-    glDisable(GL_BLEND);
-
-  }
-  else if(_imagespaceApprox)
-  {
-    pthread_mutex_lock( &_slaveMutex );
-    if(_threadData[0].images->at(0) == NULL)
-    {
-      pthread_mutex_unlock( &_slaveMutex );
-      return vvRemoteClient::VV_MUTEX_ERROR;
-    }
-
-    vvImage2_5d* isaImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
-
-    pthread_mutex_unlock( &_slaveMutex );
-    if(!isaImg) return vvRemoteClient::VV_BAD_IMAGE;
-
-    // only calculate points-positions on very first "gap"-frame
-    if(_gapStart)
-    {
-      initIsaFrame();
-      _gapStart=false;
-    }
-
-    // prepare VBOs
-    glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
-    glVertexPointer(3, GL_FLOAT, 0, NULL);
-    glEnableClientState(GL_VERTEX_ARRAY);
-
-    glBindBuffer(GL_ARRAY_BUFFER, _colorVBO);
-    glColorPointer(4, GL_UNSIGNED_BYTE, 0, NULL);
-    glEnableClientState(GL_COLOR_ARRAY);
-
-    //glClearColor(1,0,0,1); // red for debug
-    glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    vvGLTools::Viewport vp = vvGLTools::getViewport();
-
-    glDrawArrays(GL_POINTS, 0, isaImg->getWidth()*isaImg->getHeight()*3);
-
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-  }
-  return vvRemoteClient::VV_OK;
-}
-
-void vvRenderMaster::initIsaFrame()
-{
-  vvTexRend* renderer = dynamic_cast<vvTexRend*>(_renderer);
-  if (renderer == NULL)
-  {
-    cerr << "Renderer is no texture based renderer" << endl;
-    return;
-  }
-
-  vvImage2_5d* isaImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
-  if(!isaImg) std::cerr << "error - illegal image pointer" << std::cerr;
-
-  vvGLTools::Viewport vp = vvGLTools::getViewport();
-
-  int h = isaImg->getHeight();
-  int w = isaImg->getWidth();
-
-  // Find out Pixel-gaps for drawing
-  GLdouble modelMatrix[16];
-  glGetDoublev(GL_MODELVIEW_MATRIX,modelMatrix);
-  GLdouble projMatrix[16];
-  glGetDoublev(GL_PROJECTION_MATRIX,projMatrix);
-
-  // prject center of Volume to window coordinates
-  float objPos[3] = {renderer->getVolDesc()->pos[0], renderer->getVolDesc()->pos[1], renderer->getVolDesc()->pos[2]};
-
-  GLdouble winCenter[3];
-  gluProject(	objPos[0], objPos[1], objPos[2], modelMatrix, projMatrix, vp.values, &winCenter[0], &winCenter[1], &winCenter[2]);
-
-  // [Note: since the rendered images are mirror-inverted, all following operations will be done upside-down.]
-
-  // Get top-left edge of screenrect
-  float winX = _isaRect[0]->x;
-  float winY = _isaRect[0]->y;
-  const float winZ = winCenter[2];
-
-  double topLeft[3];
-  gluUnProject(winX, winY, winZ, modelMatrix,projMatrix, vp.values, &topLeft[0],&topLeft[1],&topLeft[2]);
-
-  // get top-right edge
-  winX += w;
-  double toRight[3];
-  gluUnProject(winX, winY, winZ, modelMatrix,projMatrix, vp.values, &toRight[0],&toRight[1],&toRight[2]);
-
-  winX = _isaRect[0]->x;
-  winY += h;
-
-  // get left-down-edge
-  double toDown[3];
-  gluUnProject(winX,winY,winZ, modelMatrix,projMatrix, vp.values, &toDown[0],&toDown[1],&toDown[2]);
-
-  // write double-vars into our Vector-class for further operations
-  vvVector3 right = vvVector3(toRight[0], toRight[1], toRight[2]);
-  vvVector3 down = vvVector3(toDown[0], toDown[1], toDown[2]);
-  vvVector3 tLeft = vvVector3(topLeft[0], topLeft[1], topLeft[2]);
-
-  right = right - tLeft;
-  down = down - tLeft;
-
-  vvVector3 deep = vvVector3(right);
-  deep.cross(&down);
-  deep.normalize();
-
-  right.scale(float(1./w));
-  down.scale(float(1./h));
-  deep.scale(right.length());
-
-  // get pixel and depth-data
-  uchar* dataRGBA = isaImg->getCodedImage();
-  float* depth = isaImg->getpixeldepth();
-
-  uchar* colors = new uchar[w*h*4];
-  float* points = new float[w*h*3];
-
-  for(int y = 0; y<h; y++)
-  {
-    vvVector3 currPos = vvVector3(tLeft);
-    currPos += y*down;
-
-    for(int x = 0; x<w; x++)
-    {
-      int colorIndex = (y*w+x)*4;
-
-      // save color
-      colors[y*w*4+x*4]   = dataRGBA[colorIndex];
-      colors[y*w*4+x*4+1] = dataRGBA[colorIndex+1];
-      colors[y*w*4+x*4+2] = dataRGBA[colorIndex+2];
-      colors[y*w*4+x*4+3] = dataRGBA[colorIndex+3];
-
-      // save point-vertex
-      float deeper = depth[y*w+x];
-      points[y*w*3+x*3]   = currPos[0] + deeper*deep[0];
-      points[y*w*3+x*3+1] = currPos[1] + deeper*deep[1];
-      points[y*w*3+x*3+2] = currPos[2] + deeper*deep[2];
-
-      currPos += right;
-    }
-  }
-
-//  +++ DEBUG +++
-//  vvToolshed::pixels2Ppm(isaImg->getCodedImage(), isaImg->getWidth(), isaImg->getHeight(), "isaImage.ppm");
-//  _isaRect[0]->print();
-//  std::cerr << isaImg->getWidth() << " " << isaImg->getHeight() << std::endl;
-
-  // VBO for points
-  glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
-  glBufferData(GL_ARRAY_BUFFER, w*h*3*sizeof(float), points, GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  // VBO for colors
-  glBindBuffer(GL_ARRAY_BUFFER, _colorVBO);
-  glBufferData(GL_ARRAY_BUFFER, w*h*4*sizeof(uchar), colors, GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  return VV_OK;
 }
 
 void vvRenderMaster::exit()
@@ -557,23 +328,6 @@ void vvRenderMaster::setInterpolation(const bool interpolation)
   }
 }
 
-void vvRenderMaster::setISA(const bool isa)
-{
-  if(_sockets.size() > 1)
-  {
-    std::cerr << "immagespace-approximation is available for one slave only!" << std::endl;
-    return;
-  }
-  else
-  {
-    if (_sockets[0]->putCommReason(vvSocketIO::VV_IMMAGESPACE_APPROX) == vvSocket::VV_OK)
-    {
-      _imagespaceApprox = isa;
-      _sockets[0]->putBool(isa);
-    }
-  }
-}
-
 void vvRenderMaster::createThreads()
 {
   _visitor->generateTextureIds(_sockets.size());
@@ -587,18 +341,12 @@ void vvRenderMaster::createThreads()
     _threadData[s].images = _images;
     pthread_create(&_threads[s], NULL, getImageFromSocket, (void*)&_threadData[s]);
   }
-
   _visitor->setImages(_images);
-
-  if(_sockets.size()>1)
-  {
-    std::cerr << "Immagespace-approximation deactivated (more than 1 renderslaves active)" << std::endl;
-    _imagespaceApprox = false;
-  }
 }
 
 void vvRenderMaster::destroyThreads()
 {
+  pthread_barrier_destroy(&_barrier);
   for (int s=0; s<_sockets.size(); ++s)
   {
     pthread_join(_threads[s], NULL);
@@ -609,63 +357,17 @@ void vvRenderMaster::destroyThreads()
   _threadData = NULL;
 }
 
-void *vvRenderMaster::getImageFromSocket(void* threadargs)
+void* vvRenderMaster::getImageFromSocket(void* threadargs)
 {
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
 
-  vvSocketIO::CommReason commReason;
-  vvSocket::ErrorType err;
-
   while (1)
   {
-    err = data->renderMaster->_sockets.at(data->threadId)->getCommReason(commReason);
+    vvImage* img = new vvImage();
+    data->renderMaster->_sockets.at(data->threadId)->getImage(img);
+    data->images->at(data->threadId) = img;
 
-    if (err == vvSocket::VV_OK)
-    {
-      switch (commReason)
-      {
-      case vvSocketIO::VV_IMAGE:
-        {
-          std::cerr<<"get regular image"<<std::endl;
-
-          vvImage* img = new vvImage();
-          data->renderMaster->_sockets.at(data->threadId)->getImage(img);
-          delete data->images->at(data->threadId);
-          data->images->at(data->threadId) = img;
-        }
-        break;
-
-      case vvSocketIO::VV_IMAGE2_5D:
-        {
-          vvImage2_5d* img = new vvImage2_5d();
-
-          vvSocketIO::ErrorType err = data->renderMaster->_sockets.at(data->threadId)->getImage2_5d(img);
-          if(err != vvSocketIO::VV_OK)
-            std::cerr << "socket error" <<std::endl;
-
-          // switch pointers securely
-          pthread_mutex_lock( &data->renderMaster->_slaveMutex );
-          delete data->images->at(data->threadId);
-          data->images->at(data->threadId) = img;
-          pthread_mutex_unlock( &data->renderMaster->_slaveMutex );
-        }
-        break;
-      default:
-        std::cerr<<"getImageFromSocket(): wrong or missing CommReason no. "<<commReason<<std::endl;
-        break;
-      }
-    }
-    else
-    {
-      std::cerr<<"SocketIO error no."<<err<<std::endl;
-      break;
-    }
-
-    pthread_mutex_lock( &data->renderMaster->_slaveMutex );
-    data->renderMaster->_slaveCnt--;
-    pthread_mutex_unlock( &data->renderMaster->_slaveMutex );
+    pthread_barrier_wait(&data->renderMaster->_barrier);
   }
-
   pthread_exit(NULL);
-  return NULL;
 }

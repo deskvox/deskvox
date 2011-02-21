@@ -140,13 +140,9 @@ vvRenderSlave::ErrorType vvRenderSlave::initBricks(std::vector<vvBrick*>& bricks
   return VV_OK;
 }
 
-void vvRenderSlave::renderLoop(vvRenderer* renderer)
+void vvRenderSlave::renderLoop(vvTexRend* renderer)
 {
-  vvTexRend* tmp = dynamic_cast<vvTexRend*>(renderer);
-  if (tmp != NULL)
-  {
-    tmp->setIsSlave(true);
-  }
+  renderer->setIsSlave(true);
 
   _offscreenBuffer = new vvOffscreenBuffer(1.0f, _compositingPrecision);
   _offscreenBuffer->initForRender();
@@ -167,7 +163,6 @@ void vvRenderSlave::renderLoop(vvRenderer* renderer)
   vvVector3 roiSize;
   int currentFrame;
   vvTransFunc tf;
-  bool isa;
 
   while (1)
   {
@@ -262,12 +257,6 @@ void vvRenderSlave::renderLoop(vvRenderer* renderer)
           renderer->setViewingDirection(&viewDir);
         }
         break;
-      case vvSocketIO::VV_IMMAGESPACE_APPROX:
-        if ((_socket->getBool(isa)) == vvSocket::VV_OK)
-        {
-          _immagespaceApprox = isa;
-        }
-        break;
       default:
         break;
       }
@@ -285,7 +274,7 @@ void vvRenderSlave::renderLoop(vvRenderer* renderer)
 /** Perform remote rendering, read back pixel data and send it over socket
     connections using a vvImage instance.
 */
-void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
+void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
 {
   vvDebugMsg::msg(3, "vvRenderSlave::renderImage()");
 
@@ -303,7 +292,7 @@ void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer
   mv.get(matrixGL);
   glLoadMatrixf(matrixGL);
 
-  vvRect* screenRect = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect();
+  vvRect* screenRect = renderer->getProbedMask().getProjectedScreenRect();
 
   renderer->renderVolumeGL();
 
@@ -311,30 +300,9 @@ void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer
 
   uchar* pixels = new uchar[screenRect->width * screenRect->height * 4];
   glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+  vvImage img(screenRect->height, screenRect->width, pixels);
 
-  if(_immagespaceApprox)
-  {
-    vvImage2_5d* im2 = new vvImage2_5d(screenRect->height, screenRect->width, pixels);
-    // temp-generate random 2.5d-data
-    float* depth = im2->getpixeldepth();
-    for(unsigned int i=0;i<im2->getHeight();i++)
-      for(unsigned int j=0;j<im2->getWidth();j++)
-        depth[i*im2->getWidth()+j] = 0.;
-        //depth[i*im2->getWidth()+j] = float(pixels[(i*im2->getWidth()+j)*4+3]/2.);
-
-    _socket->putCommReason(vvSocketIO::VV_IMAGE2_5D);
-    _socket->putImage2_5d(im2);
-    delete im2;
-  }
-  else
-  {
-    vvImage* img = new vvImage(screenRect->height, screenRect->width, pixels);
-
-    _socket->putCommReason(vvSocketIO::VV_IMAGE);
-    _socket->putImage(img);
-    delete img;
-  }
-
+  _socket->putImage(&img);
   delete[] pixels;
   _offscreenBuffer->unbindFramebuffer();
 
