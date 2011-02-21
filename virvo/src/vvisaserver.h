@@ -18,15 +18,16 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_RENDERSLAVE_H_
-#define _VV_RENDERSLAVE_H_
+#ifndef _VV_ISASERVER_H_
+#define _VV_ISASERVER_H_
 
 #include "vvexport.h"
 #include "vvoffscreenbuffer.h"
 #include "vvsocketio.h"
 #include "vvtexrend.h"
+#include "vvremoteserver.h"
 
-class VIRVOEXPORT vvIsaServer
+class VIRVOEXPORT vvIsaServer : public vvRemoteServer
 {
 public:
   enum ErrorType
@@ -52,8 +53,6 @@ private:
   vvSocketIO* _socket;                    ///< socket for remote rendering
 
   BufferPrecision _compositingPrecision;  ///< the precision of the buffer used for compositing (default: 16bit)
-
-  bool _immagespaceApprox;  ///< flag to turn additional image calculations for immagespace-approximation on and off
 
   void renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer);
 };

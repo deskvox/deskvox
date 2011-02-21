@@ -124,7 +124,6 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_CURRENT_FRAME = 0,
       VV_EXIT,
       VV_IMAGE,
-      VV_IMAGE2_5D,
       VV_MATRIX,
       VV_MIPMODE,
       VV_OBJECT_DIRECTION,
@@ -139,7 +138,6 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_INTERPOLATION,
       VV_VIEWING_DIRECTION,
       VV_VOLUME,
-      VV_IMMAGESPACE_APPROX
     };
 
     vvSocketIO(const short, const char*, vvSocket::SocketType, int clminport=0, int clmaxport=0);

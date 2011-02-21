@@ -34,8 +34,6 @@ vvIsaClient::vvIsaClient(std::vector<const char*>& slaveNames, std::vector<int>&
   _threadData = NULL;
   _visitor = new vvSlaveVisitor();
 
-  _imagespaceApprox = false;
-
   glewInit();
   glGenBuffers(1, &_pointVBO);
   glGenBuffers(1, &_colorVBO);
@@ -111,14 +109,11 @@ vvRemoteClient::ErrorType vvIsaClient::render()
   {
     renderer->calcProjectedScreenRects();
 
-    if(_imagespaceApprox)
-    {
-      // save screenrect for later frames
-      _isaRect[1]->x = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->x;
-      _isaRect[1]->y = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->y;
-      _isaRect[1]->height = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->height;
-      _isaRect[1]->width = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->width;
-    }
+    // save screenrect for later frames
+    _isaRect[1]->x = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->x;
+    _isaRect[1]->y = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->y;
+    _isaRect[1]->height = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->height;
+    _isaRect[1]->width = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->width;
 
     float matrixGL[16];
 
@@ -161,16 +156,13 @@ vvRemoteClient::ErrorType vvIsaClient::render()
   {
     _slaveRdy = 0;
 
-    if(_imagespaceApprox)
-    {
       _gapStart = 1;
 
-      // switch to current screen-rect
-      _isaRect[0]->x = _isaRect[1]->x;
-      _isaRect[0]->y = _isaRect[1]->y;
-      _isaRect[0]->height = _isaRect[1]->height;
-      _isaRect[0]->width = _isaRect[1]->width;
-    }
+    // switch to current screen-rect
+    _isaRect[0]->x = _isaRect[1]->x;
+    _isaRect[0]->y = _isaRect[1]->y;
+    _isaRect[0]->height = _isaRect[1]->height;
+    _isaRect[0]->width = _isaRect[1]->width;
 
     glDrawBuffer(GL_BACK);
     glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 1.0f);
@@ -219,7 +211,7 @@ vvRemoteClient::ErrorType vvIsaClient::render()
     glDisable(GL_BLEND);
 
   }
-  else if(_imagespaceApprox)
+  else
   {
     pthread_mutex_lock( &_slaveMutex );
     if(_threadData[0].images->at(0) == NULL)
@@ -556,22 +548,22 @@ void vvIsaClient::setInterpolation(const bool interpolation)
   }
 }
 
-void vvIsaClient::setISA(const bool isa)
-{
-  if(_sockets.size() > 1)
-  {
-    std::cerr << "immagespace-approximation is available for one slave only!" << std::endl;
-    return;
-  }
-  else
-  {
-    if (_sockets[0]->putCommReason(vvSocketIO::VV_IMMAGESPACE_APPROX) == vvSocket::VV_OK)
-    {
-      _imagespaceApprox = isa;
-      _sockets[0]->putBool(isa);
-    }
-  }
-}
+//void vvIsaClient::setISA(const bool isa)
+//{
+//  if(_sockets.size() > 1)
+//  {
+//    std::cerr << "immagespace-approximation is available for one slave only!" << std::endl;
+//    return;
+//  }
+//  else
+//  {
+//    if (_sockets[0]->putCommReason(vvSocketIO::VV_IMMAGESPACE_APPROX) == vvSocket::VV_OK)
+//    {
+//      _imagespaceApprox = isa;
+//      _sockets[0]->putBool(isa);
+//    }
+//  }
+//}
 
 void vvIsaClient::createThreads()
 {
@@ -592,7 +584,6 @@ void vvIsaClient::createThreads()
   if(_sockets.size()>1)
   {
     std::cerr << "Immagespace-approximation deactivated (more than 1 renderslaves active)" << std::endl;
-    _imagespaceApprox = false;
   }
 }
 
@@ -617,50 +608,16 @@ void* vvIsaClient::getImageFromSocket(void* threadargs)
 
   while (1)
   {
-    err = data->renderMaster->_sockets.at(data->threadId)->getCommReason(commReason);
+    vvImage2_5d* img = new vvImage2_5d();
 
-    if (err == vvSocket::VV_OK)
-    {
-      switch (commReason)
-      {
-      case vvSocketIO::VV_IMAGE:
-        {
-          std::cerr<<"get regular image"<<std::endl;
+    vvSocketIO::ErrorType err = data->renderMaster->_sockets.at(data->threadId)->getImage2_5d(img);
+    if(err != vvSocketIO::VV_OK)
+      std::cerr << "socket error" <<std::endl;
 
-          vvImage* img = new vvImage();
-          data->renderMaster->_sockets.at(data->threadId)->getImage(img);
-          delete data->images->at(data->threadId);
-          data->images->at(data->threadId) = img;
-        }
-        break;
-
-      case vvSocketIO::VV_IMAGE2_5D:
-        {
-          vvImage2_5d* img = new vvImage2_5d();
-
-          vvSocketIO::ErrorType err = data->renderMaster->_sockets.at(data->threadId)->getImage2_5d(img);
-          if(err != vvSocketIO::VV_OK)
-            std::cerr << "socket error" <<std::endl;
-
-          // switch pointers securely
-          pthread_mutex_lock( &data->renderMaster->_slaveMutex );
-          delete data->images->at(data->threadId);
-          data->images->at(data->threadId) = img;
-          pthread_mutex_unlock( &data->renderMaster->_slaveMutex );
-        }
-        break;
-      default:
-        std::cerr<<"getImageFromSocket(): wrong or missing CommReason no. "<<commReason<<std::endl;
-        break;
-      }
-    }
-    else
-    {
-      std::cerr<<"SocketIO error no."<<err<<std::endl;
-      break;
-    }
-
+    // switch pointers securely
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
+    delete data->images->at(data->threadId);
+    data->images->at(data->threadId) = img;
     data->renderMaster->_slaveCnt--;
     pthread_mutex_unlock( &data->renderMaster->_slaveMutex );
   }

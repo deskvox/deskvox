@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_RENDERMASTER_H_
-#define _VV_RENDERMASTER_H_
+#ifndef _VV_ISACLIENT_H_
+#define _VV_ISACLIENT_H_
 
 #include "vvbsptree.h"
 #include "vvexport.h"
@@ -36,12 +36,6 @@ class vvSlaveVisitor;
 class VIRVOEXPORT vvIsaClient : public vvRemoteClient
 {
 public:
-
-  vvMatrix _mv;
-  vvMatrix _pr;
-
-  bool _gapStart;
-
   vvVector3 _eye;
   GLuint _pointVBO;
   GLuint _colorVBO;
@@ -67,9 +61,13 @@ public:
   void toggleBoundingBox();
   void updateTransferFunction(vvTransFunc& tf);
   void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
-  void setISA(const bool isa);
+  //void setISA(const bool isa);
 
 private:
+  vvMatrix _mv;
+  vvMatrix _pr;
+  bool _gapStart;
+
   vvBspTree* _bspTree;
   vvSlaveVisitor* _visitor;
 
@@ -92,7 +90,7 @@ private:
   bool _slaveRdy;
   int  _slaveCnt;
 
-  bool    _imagespaceApprox;
+//  bool    _imagespaceApprox;
   vvRect* _isaRect[2];
   void    initIsaFrame();
 

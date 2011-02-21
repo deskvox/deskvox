@@ -72,7 +72,8 @@ SOURCES = vvaabb.cpp \
     vvmultirend/vvtexmultirend.cpp \
     vvmultirend/vvtexmultirendmngr.cpp \
     vvisaclient.cpp \
-    vvisaserver.cpp
+    vvisaserver.cpp \
+    vvremoteserver.cpp
 HEADERS = vvaabb.h \
     vvarray.h \
     vvbrick.h \
@@ -137,7 +138,8 @@ HEADERS = vvaabb.h \
     vvmultirend/vvtexmultirend.h \
     vvmultirend/vvtexmultirendmngr.h \
     vvisaclient.h \
-    vvisaserver.h
+    vvisaserver.h \
+    vvremoteserver.h
 TARGET = coVirvo
 DEVFILES = $$HEADERS
 DEFINES += VV_COVISE

@@ -5,7 +5,7 @@
 // Affiliation:     Brown University, Department of Computer Science
 //****************************************************************************
 
-//#define IMAGESPACE_APPROX
+#define IMAGESPACE_APPROX
 
 #ifdef HLRS
 #include "virvo/vvglew.h"
@@ -67,6 +67,9 @@ using std::ios;
 #include "virvo/vvrendercontext.h"
 #include "virvo/vvrendermaster.h"
 #include "virvo/vvrenderslave.h"
+#include "virvo/vvisaclient.h"
+#include "virvo/vvisaserver.h"
+#include "virvo/vvremoteserver.h"
 #include "virvo/vvrenderer.h"
 #include "virvo/vvfileio.h"
 #include "virvo/vvdebugmsg.h"
@@ -93,6 +96,9 @@ using std::ios;
 #include "../src/vvrendercontext.h"
 #include "../src/vvrendermaster.h"
 #include "../src/vvrenderslave.h"
+#include "../src/vvremoteserver.h"
+#include "../src/vvisaclient.h"
+#include "../src/vvisaserver.h"
 #include "../src/vvrenderer.h"
 #include "../src/vvfileio.h"
 #include "../src/vvdebugmsg.h"
@@ -182,6 +188,7 @@ vvView::vvView()
   slaveMode             = false;
   slavePort             = vvView::DEFAULT_PORT;
   remoteRendering       = true;
+  clusterRendering      = false;
   clipBuffer            = NULL;
   framebufferDump       = NULL;
   redistributeVolData   = false;
@@ -240,71 +247,145 @@ void vvView::mainLoop(int argc, char *argv[])
   {
     while (1)
     {
-      cerr << "Renderer started in slave mode" << endl;
-      vvRenderSlave* renderSlave = new vvRenderSlave();
-
-      if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvRenderSlave::VV_OK)
+      cerr << "Renderer started in slave mode" << remoteRendering << " " << clusterRendering << endl;
+      if(remoteRendering)
       {
-        // TODO: Evaluate the error type, maybe don't even return but try again.
-        cerr << "Couldn't initialize the socket connection" << endl;
-        cerr << "Exiting..." << endl;
-        return;
-      }
+        vvIsaServer* renderSlave = new vvIsaServer();
 
-      if (renderSlave->initData(vd) != vvRenderSlave::VV_OK)
-      {
-        cerr << "Exiting..." << endl;
-        return;
-      }
-
-      // Get bricks to render
-      std::vector<BrickList>* frames = new std::vector<BrickList>();
-
-      for (int f=0; f<vd->frames; ++f)
-      {
-        BrickList bricks;
-        if (renderSlave->initBricks(bricks) != vvRenderSlave::VV_OK)
+        if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvIsaServer::VV_OK)
         {
-          delete frames;
+          // TODO: Evaluate the error type, maybe don't even return but try again.
+          cerr << "Couldn't initialize the socket connection" << endl;
           cerr << "Exiting..." << endl;
           return;
         }
-        frames->push_back(bricks);
-      }
 
-      if (vd != NULL)
-      {
-        vd->printInfoLine();
-
-        // Set default color scheme if no TF present:
-        if (vd->tf.isEmpty())
+        if (renderSlave->initData(vd) != vvIsaServer::VV_OK)
         {
-          vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-          vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
-        }
-
-        ov = new vvObjView();
-
-        vvRenderContext* context = new vvRenderContext();
-        if (context->makeCurrent())
-        {
-          ov = new vvObjView();
-          setProjectionMode(perspectiveMode);
-          setRenderer(currentGeom, currentVoxels, frames);
-          srand(time(NULL));
-
-          renderSlave->renderLoop(dynamic_cast<vvTexRend*>(renderer));
           cerr << "Exiting..." << endl;
+          return;
         }
-        delete context;
+
+        // Get bricks to render
+        std::vector<BrickList>* frames = new std::vector<BrickList>();
+
+        for (int f=0; f<vd->frames; ++f)
+        {
+          BrickList bricks;
+          if (renderSlave->initBricks(bricks) != vvIsaServer::VV_OK)
+          {
+            delete frames;
+            cerr << "Exiting..." << endl;
+            return;
+          }
+          frames->push_back(bricks);
+        }
+
+        if (vd != NULL)
+        {
+          vd->printInfoLine();
+
+          // Set default color scheme if no TF present:
+          if (vd->tf.isEmpty())
+          {
+            vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+            vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+          }
+
+          ov = new vvObjView();
+
+          vvRenderContext* context = new vvRenderContext();
+          if (context->makeCurrent())
+          {
+            ov = new vvObjView();
+            setProjectionMode(perspectiveMode);
+            setRenderer(currentGeom, currentVoxels, frames);
+            srand(time(NULL));
+
+            renderSlave->renderLoop(dynamic_cast<vvTexRend*>(renderer));
+            cerr << "Exiting..." << endl;
+          }
+          delete context;
+        }
+
+        // Frames vector with bricks is deleted along with the renderer.
+        // Don't free them here.
+        // see setRenderer().
+
+        delete renderSlave;
+        renderSlave = NULL;
       }
+      else if(clusterRendering)
+      {
+        vvRenderSlave* renderSlave = new vvRenderSlave();
 
-      // Frames vector with bricks is deleted along with the renderer.
-      // Don't free them here.
-      // see setRenderer().
+        if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvRenderSlave::VV_OK)
+        {
+          // TODO: Evaluate the error type, maybe don't even return but try again.
+          cerr << "Couldn't initialize the socket connection" << endl;
+          cerr << "Exiting..." << endl;
+          return;
+        }
 
-      delete renderSlave;
-      renderSlave = NULL;
+        if (renderSlave->initData(vd) != vvRenderSlave::VV_OK)
+        {
+          cerr << "Exiting..." << endl;
+          return;
+        }
+
+        // Get bricks to render
+        std::vector<BrickList>* frames = new std::vector<BrickList>();
+
+        for (int f=0; f<vd->frames; ++f)
+        {
+          BrickList bricks;
+          if (renderSlave->initBricks(bricks) != vvRenderSlave::VV_OK)
+          {
+            delete frames;
+            cerr << "Exiting..." << endl;
+            return;
+          }
+          frames->push_back(bricks);
+        }
+
+        if (vd != NULL)
+        {
+          vd->printInfoLine();
+
+          // Set default color scheme if no TF present:
+          if (vd->tf.isEmpty())
+          {
+            vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+            vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+          }
+
+          ov = new vvObjView();
+
+          vvRenderContext* context = new vvRenderContext();
+          if (context->makeCurrent())
+          {
+            ov = new vvObjView();
+            setProjectionMode(perspectiveMode);
+            setRenderer(currentGeom, currentVoxels, frames);
+            srand(time(NULL));
+
+            renderSlave->renderLoop(dynamic_cast<vvTexRend*>(renderer));
+            cerr << "Exiting..." << endl;
+          }
+          delete context;
+        }
+
+        // Frames vector with bricks is deleted along with the renderer.
+        // Don't free them here.
+        // see setRenderer().
+
+        delete renderSlave;
+        renderSlave = NULL;
+      }
+      else
+      {
+        break;
+      }
     }
   }
   else
@@ -365,7 +446,6 @@ void vvView::mainLoop(int argc, char *argv[])
         bonjourResolver->resolveBonjourEntry((*it));
       }
 #endif
-      remoteRendering = false;
     }
 
     initGraphics(argc, argv);
@@ -374,9 +454,15 @@ void vvView::mainLoop(int argc, char *argv[])
 #endif
     if (remoteRendering)
     {
-      _renderMaster = new vvRenderMaster(slaveNames, slavePorts, slaveFileNames, filename);
+      _renderMaster = new vvIsaClient(slaveNames, slavePorts, slaveFileNames, filename);
       remoteRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT,
-                                                    redistributeVolData, vd) == vvRenderMaster::VV_OK);
+                                                    redistributeVolData, vd) == vvRemoteClient::VV_OK);
+    }
+    else if(clusterRendering)
+    {
+      _renderMaster = new vvRenderMaster(slaveNames, slavePorts, slaveFileNames, filename);
+      clusterRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT,
+                                                     redistributeVolData, vd) == vvRemoteClient::VV_OK);
     }
 
     animSpeed = vd->dt;
@@ -391,9 +477,6 @@ void vvView::mainLoop(int argc, char *argv[])
     if (remoteRendering)
     {
       remoteRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
-#ifdef IMAGESPACE_APPROX
-      _renderMaster->setISA(true);
-#endif
     }
 
     // Set window title:
@@ -460,9 +543,15 @@ void vvView::reshapeCallback(int w, int h)
                                                  // clear window
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (ds->remoteRendering)
+  if (ds->clusterRendering)
   {
-    ds->_renderMaster->resize(w, h);
+    vvRenderMaster* rend = dynamic_cast<vvRenderMaster*>(ds->_renderMaster);
+    rend->resize(w, h);
+  }
+  else if(ds->remoteRendering)
+  {
+    vvIsaClient* rend = dynamic_cast<vvIsaClient*>(ds->_renderMaster);
+    rend->resize(w, h);
   }
 }
 
@@ -473,11 +562,21 @@ void vvView::displayCallback(void)
 {
   vvDebugMsg::msg(3, "vvView::displayCallback()");
 
-  if (ds->remoteRendering)
+  if (ds->clusterRendering)
   {
     ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
 
-    ds->_renderMaster->render();
+    vvRenderMaster* rend = dynamic_cast<vvRenderMaster*>(ds->_renderMaster);
+    rend->render();
+
+    glutSwapBuffers();
+  }
+  else if (ds->remoteRendering)
+  {
+    ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
+
+    vvIsaClient* rend = dynamic_cast<vvIsaClient*>(ds->_renderMaster);
+    rend->render();
 
     glutSwapBuffers();
   }
@@ -801,7 +900,8 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       }
   }
 
-  remoteRendering &= ((rendererType == vvRenderer::TEXREND) && (currentGeom == vvTexRend::VV_BRICKS));
+  remoteRendering &= ((rendererType == vvRenderer::TEXREND)
+                      && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
 
   if (!slaveMode)
   {
@@ -1359,6 +1459,8 @@ void vvView::optionsMenuCallback(int item)
 
   vvDebugMsg::msg(1, "vvView::optionsMenuCallback()");
 
+  vvRenderMaster* rend = dynamic_cast<vvRenderMaster*>(ds->_renderMaster);
+
   switch(item)
   {
   case 0:                                     // slice interpolation mode
@@ -1367,7 +1469,7 @@ void vvView::optionsMenuCallback(int item)
     cerr << "Interpolation mode set to " << int(ds->interpolMode) << endl;
     if (ds->remoteRendering)
     {
-      ds->_renderMaster->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
+      rend->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
     }
     break;
   case 1:
@@ -1382,7 +1484,7 @@ void vvView::optionsMenuCallback(int item)
     cerr << "MIP mode set to " << ds->mipMode << endl;
     if (ds->remoteRendering)
     {
-      ds->_renderMaster->setMipMode(ds->mipMode);
+      rend->setMipMode(ds->mipMode);
     }
     break;
   case 3:                                     // opacity correction

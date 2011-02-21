@@ -35,6 +35,7 @@ libvirvo_a_headers = \
         vvpthread.h \
         vvrayrend.h \
         vvremoteclient.h \
+        vvremoteserver.h \
         vvrenderer.h \
         vvsllist.h \
         vvsocket.h \
@@ -97,6 +98,7 @@ libvirvo_a_SOURCES = \
         vvprintgl.cpp \
         vvpthread.cpp \
         vvremoteclient.cpp \
+        vvremoteserver.cpp \
         vvrenderer.cpp \
         vvsocket.cpp \
         vvsocketio.cpp \

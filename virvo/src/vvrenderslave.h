@@ -25,8 +25,9 @@
 #include "vvoffscreenbuffer.h"
 #include "vvsocketio.h"
 #include "vvtexrend.h"
+#include "vvremoteserver.h"
 
-class VIRVOEXPORT vvRenderSlave
+class VIRVOEXPORT vvRenderSlave : public vvRemoteServer
 {
 public:
   enum ErrorType

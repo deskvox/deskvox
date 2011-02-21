@@ -258,12 +258,6 @@ void vvIsaServer::renderLoop(vvTexRend* renderer)
           renderer->setViewingDirection(&viewDir);
         }
         break;
-      case vvSocketIO::VV_IMMAGESPACE_APPROX:
-        if ((_socket->getBool(isa)) == vvSocket::VV_OK)
-        {
-          _immagespaceApprox = isa;
-        }
-        break;
       default:
         break;
       }
@@ -308,28 +302,16 @@ void vvIsaServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
   uchar* pixels = new uchar[screenRect->width * screenRect->height * 4];
   glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
-  if(_immagespaceApprox)
-  {
-    vvImage2_5d* im2 = new vvImage2_5d(screenRect->height, screenRect->width, pixels);
-    // temp-generate random 2.5d-data
-    float* depth = im2->getpixeldepth();
-    for(unsigned int i=0;i<im2->getHeight();i++)
-      for(unsigned int j=0;j<im2->getWidth();j++)
-        depth[i*im2->getWidth()+j] = 0.;
-        //depth[i*im2->getWidth()+j] = float(pixels[(i*im2->getWidth()+j)*4+3]/2.);
+  vvImage2_5d* im2 = new vvImage2_5d(screenRect->height, screenRect->width, pixels);
+  // temp-generate random 2.5d-data
+  float* depth = im2->getpixeldepth();
+  for(unsigned int i=0;i<im2->getHeight();i++)
+    for(unsigned int j=0;j<im2->getWidth();j++)
+      depth[i*im2->getWidth()+j] = 0.;
+      //depth[i*im2->getWidth()+j] = float(pixels[(i*im2->getWidth()+j)*4+3]/2.);
 
-    _socket->putCommReason(vvSocketIO::VV_IMAGE2_5D);
-    _socket->putImage2_5d(im2);
-    delete im2;
-  }
-  else
-  {
-    vvImage* img = new vvImage(screenRect->height, screenRect->width, pixels);
-
-    _socket->putCommReason(vvSocketIO::VV_IMAGE);
-    _socket->putImage(img);
-    delete img;
-  }
+  _socket->putImage2_5d(im2);
+  delete im2;
 
   delete[] pixels;
   _offscreenBuffer->unbindFramebuffer();
