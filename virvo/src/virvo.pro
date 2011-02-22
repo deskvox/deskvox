@@ -144,13 +144,6 @@ TARGET = coVirvo
 DEVFILES = $$HEADERS
 DEFINES += VV_COVISE
 
-# work around bug in intel compiler
-caymanopt { 
-    QMAKE_CXXFLAGS -= -O2
-    QMAKE_CXXFLAGS += -O1
-    QMAKE_CXXFLAGS_RELEASE -= -O2
-}
-
 CUDA = $$(CUDA_DEFINES)
 contains(CUDA,HAVE_CUDA) {
         CONFIG *= cuda \
@@ -166,3 +159,10 @@ QMAKE_CUFLAGS += "-D__builtin_stdarg_start=__builtin_va_start"
 
 # ## don't modify anything below this line ###
 !include ($$(COVISEDIR)/mkspecs/config-last.pri):error(include of config-last.pri failed)
+
+# work around bug in intel compiler - keep after config-last.pri
+caymanopt {
+    QMAKE_CXXFLAGS -= -O2
+    QMAKE_CXXFLAGS += -O1
+    QMAKE_CXXFLAGS_RELEASE -= -O2
+}
