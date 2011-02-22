@@ -187,7 +187,7 @@ vvView::vvView()
   useHeadLight          = false;
   slaveMode             = false;
   slavePort             = vvView::DEFAULT_PORT;
-  remoteRendering       = true;
+  remoteRendering       = false;
   clusterRendering      = false;
   clipBuffer            = NULL;
   framebufferDump       = NULL;
@@ -442,6 +442,8 @@ void vvView::mainLoop(int argc, char *argv[])
         bonjourResolver->resolveBonjourEntry((*it));
       }
 #endif
+      remoteRendering = false;
+      clusterRendering = false;
     }
 
     initGraphics(argc, argv);
