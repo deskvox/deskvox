@@ -1340,7 +1340,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedWGLContexts()
     WndClsEx.hInstance     = hInstance;
     WndClsEx.hbrBackground = 0;
     WndClsEx.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
-    ATOM WindowAtom = RegisterClassEx(&WndClsEx);
+    RegisterClassEx(&WndClsEx);
 
     PIXELFORMATDESCRIPTOR pfd;
     ZeroMemory(&pfd, sizeof(PIXELFORMATDESCRIPTOR));

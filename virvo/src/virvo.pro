@@ -8,8 +8,7 @@ CONFIG *= dll \
     cg \
     gdcm \
     glew \
-    pthread \
-    wnoerror
+    pthread
 unix:!macx:CONFIG *= x11
 osx11:CONFIG *= x11
 SRCDIR = $${BASEDIR}/src/kernel/virvo

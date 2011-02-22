@@ -115,7 +115,7 @@ void vvTFWidget::readName(FILE* fp)
 
 void vvTFWidget::write(FILE* fp)
 {
-  fprintf(fp, toString());
+  fprintf(fp, "%s", toString());
 }
 
 float vvTFWidget::getOpacity(float, float, float)

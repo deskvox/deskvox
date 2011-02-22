@@ -61,6 +61,8 @@ public:
   virtual void updateTransferFunction(vvTransFunc& tf);
   virtual void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
 protected:
+  const char* _fileName;
+
   std::vector<const char*> _slaveNames;
   std::vector<int> _slavePorts;
   std::vector<const char*> _slaveFileNames;
@@ -68,8 +70,6 @@ protected:
   std::vector<vvImage*>* _images;
 
   vvRenderer* _renderer;
-
-  const char* _fileName;
 
   vvVector3 _bgColor;
 

@@ -130,7 +130,7 @@ void vvRemoteClient::setROIEnable(const bool /* flag */)
   //vvRenderer::setROIEnable(flag);
 }
 
-void vvRemoteClient::setPosition(const vvVector3* p)
+void vvRemoteClient::setPosition(const vvVector3* /* p */)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setPosition()");
   //vvRenderer::setPosition(p);

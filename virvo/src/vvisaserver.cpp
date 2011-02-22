@@ -163,7 +163,6 @@ void vvIsaServer::renderLoop(vvTexRend* renderer)
   vvVector3 roiSize;
   int currentFrame;
   vvTransFunc tf;
-  bool isa;
 
   while (1)
   {

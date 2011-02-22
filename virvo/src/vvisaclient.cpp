@@ -245,8 +245,6 @@ vvRemoteClient::ErrorType vvIsaClient::render()
     glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    vvGLTools::Viewport vp = vvGLTools::getViewport();
-
     glDrawArrays(GL_POINTS, 0, isaImg->getWidth()*isaImg->getHeight()*3);
 
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -254,6 +252,8 @@ vvRemoteClient::ErrorType vvIsaClient::render()
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
+
+  return VV_OK;
 }
 
 void vvIsaClient::initIsaFrame()
@@ -602,9 +602,6 @@ void vvIsaClient::destroyThreads()
 void* vvIsaClient::getImageFromSocket(void* threadargs)
 {
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
-
-  vvSocketIO::CommReason commReason;
-  vvSocket::ErrorType err;
 
   while (1)
   {

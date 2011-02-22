@@ -40,7 +40,9 @@ using namespace std;
     @param image   pointer to the image
 */
 vvImage::vvImage(short h, short w, uchar* image)
-: height(h), width(w), imageptr(image)
+: imageptr(image)
+, height(h)
+, width(w)
 {
   vvDebugMsg::msg(3, "vvImage::vvImage(): ", w, h);
   videosize = 0;
