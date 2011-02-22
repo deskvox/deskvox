@@ -35,7 +35,6 @@ SOURCES = vvaabb.cpp \
     vvremoteclient.cpp \
     vvrendercontext.cpp \
     vvrenderer.cpp \
-    vvisaclient.cpp \
     vvrendermaster.cpp \
     vvrenderslave.cpp \
     vvrendertarget.cpp \
@@ -99,7 +98,6 @@ HEADERS = vvaabb.h \
     vvremoteclient.h \
     vvrendercontext.h \
     vvrenderer.h \
-    vvisaclient.h \
     vvrendermaster.h \
     vvrenderslave.h \
     vvrendertarget.h \
