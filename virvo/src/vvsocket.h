@@ -23,13 +23,8 @@
 
 #include <iostream>
 
-#ifdef _WIN32
-#ifndef COVISE
-# include <winsock2.h>
-#endif
-# include <windows.h>
-# include <time.h>
-#else
+#include "vvplatform.h"
+#ifndef _WIN32
 # include <netdb.h>
 # include <unistd.h>
 # include <arpa/inet.h>
@@ -43,10 +38,10 @@
 # include <sys/wait.h>
 # include <errno.h>
 #endif
-# include <string.h>
-# include <signal.h>
-# include <assert.h>
-# include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+#include <assert.h>
+#include <stdlib.h>
 #ifdef __sun
 #include <sys/filio.h>
 #endif

@@ -22,9 +22,7 @@
 using std::cerr;
 using std::endl;
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
+#include "vvplatform.h"
 
 #include <math.h>
 #include <assert.h>

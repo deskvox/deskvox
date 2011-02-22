@@ -20,20 +20,14 @@
 #include "vvconfig.h"
 #endif
 
+#include "vvplatform.h"
+
 #include "vvshadermanager.h"
 
 #include <map>
 #include <vector>
 
 #ifdef HAVE_CG
-
-#ifdef _WIN32
-#ifndef WIN32
-#define WIN32 1
-#endif
-#include <windows.h>
-#endif
-
 #include <Cg/cg.h>
 #include <Cg/cgGL.h>
 

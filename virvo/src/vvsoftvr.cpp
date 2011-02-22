@@ -22,11 +22,9 @@
 using std::cerr;
 using std::endl;
 
-#ifdef _WIN32
-#include <windows.h>
-#elif __linux
+#include "vvplatform.h"
+
 #include <string.h>
-#endif
 
 #ifndef VV_REMOTE_RENDERING
 #include "vvopengl.h"

@@ -21,9 +21,7 @@
 #include "vvglew.h"
 
 #include <stdlib.h>
-#ifdef _WIN32
-#include <windows.h>
-#endif
+#include "vvplatform.h"
 #include "vvgltools.h"
 #include "vvopengl.h"
 #include <string.h>

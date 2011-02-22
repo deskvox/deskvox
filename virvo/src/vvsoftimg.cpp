@@ -23,12 +23,9 @@ using std::cerr;
 using std::endl;
 
 #include "vvglew.h"
+#include "vvplatform.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
 #include <string.h>
-#endif
 #ifndef VV_REMOTE_RENDERING
 #include "vvopengl.h"
 #endif

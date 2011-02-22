@@ -21,12 +21,7 @@
 #ifndef _VV_STOPWATCH_H_
 #define _VV_STOPWATCH_H_
 
-#ifdef _WIN32
-#include <windows.h>
-#include <time.h>
-#else
-#include <sys/time.h>
-#endif
+#include "vvplatform.h"
 
 #include "vvexport.h"
 

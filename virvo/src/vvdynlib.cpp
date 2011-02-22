@@ -34,16 +34,7 @@
 #include <dlfcn.h>
 #endif
 
-#ifdef __APPLE__
-#  include <OpenGL/gl.h>
-#else
-#  ifdef _WIN32
-#    include <windows.h>
-#  else
-#    include <GL/glx.h>
-#  endif
-#  include <GL/gl.h>
-#endif
+#include "vvopengl.h"
 
 #include "vvdynlib.h"
 

@@ -21,9 +21,7 @@
 #ifndef _VF_FILE_H_
 #define _VF_FILE_H_
 
-#ifndef _WIN32
-#include <unistd.h>
-#endif
+#include "vvplatform.h"
 #include <stdio.h>
 #include <string.h>
 

@@ -24,20 +24,7 @@
 
 #include <float.h>
 #include <errno.h>
-#ifdef _WIN32
-  // Min windows version: WinXP.
-  #ifndef _WIN32_WINNT                
-  #define _WIN32_WINNT 0x0501
-  #endif 
-  #include <windows.h>
-#elif _LINUX64BIT
-  #include <dlfcn.h>
-#else
-  #include <sys/types.h>
-  #include <sys/stat.h>
-  #include <unistd.h>
-  #include <dirent.h>
-#endif
+#include "vvplatform.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

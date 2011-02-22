@@ -18,12 +18,9 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifdef _WIN32
-#include <windows.h>
-#else
+#include "vvplatform.h"
 #include <string.h>
 #include <stdarg.h>
-#endif
 #include <stdio.h>
 #include "vvopengl.h"
 #ifdef VV_GLUT

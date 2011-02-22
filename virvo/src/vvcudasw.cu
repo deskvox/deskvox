@@ -18,12 +18,7 @@
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifdef WIN32
-#include <winsock2.h>
-#endif
-#include <iostream>
-using std::cerr;
-using std::endl;
+#include "vvplatform.h"
 
 #include <cmath>
 #include <cassert>

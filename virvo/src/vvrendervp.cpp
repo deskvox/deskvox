@@ -11,12 +11,8 @@ using std::cerr;
 using std::endl;
 using std::setprecision;
 
-#ifdef WIN32
-  #include <windows.h>
-#elif __linux
-  #include <string.h>
-#endif
-
+#include <cstring>
+#include "vvplatform.h"
 #include "vvopengl.h"
 #include <assert.h>
 #include "vvrendervp.h"

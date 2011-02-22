@@ -26,10 +26,7 @@
 #endif
 
 #ifdef HAVE_CUDA
-#ifdef _WIN32
-#include <winsock2.h>
-#include <windows.h>
-#endif
+#include "vvplatform.h"
 #include <cstdlib>
 
 #include <cuda.h>

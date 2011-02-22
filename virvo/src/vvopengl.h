@@ -10,15 +10,7 @@
 #endif
 #endif
 
-#if defined(_WIN32)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#undef WIN32_LEAN_AND_MEAN
-#else
-#include <windows.h>
-#endif
-#endif
+#include "vvplatform.h"
 
 #if defined(__APPLE__)
 #include <OpenGL/gl.h>
@@ -26,6 +18,9 @@
 #else
 #include <GL/gl.h>
 #include <GL/glu.h>
+#ifndef _WIN32
+#include <GL/glx.h>
+#endif
 #endif
 
 #endif

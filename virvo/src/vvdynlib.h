@@ -21,9 +21,7 @@
 #ifndef VV_DYNLIB_H
 #define VV_DYNLIB_H
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
+#include "vvplatform.h"
 
 #ifdef __sgi
 #include <dlfcn.h>
