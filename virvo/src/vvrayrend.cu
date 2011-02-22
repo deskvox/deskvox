@@ -6,7 +6,7 @@
 #include "vvconfig.h"
 #endif
 
-#if 1 //defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 
 #include "vvglew.h"
 
@@ -834,6 +834,11 @@ void vvRayRend::updateTransferFunction()
 
 void vvRayRend::compositeVolume(int, int)
 {
+  if(!_volumeCopyToGpuOk)
+  {
+    std::cerr << "vvRayRend::compositeVolume() aborted because of previous CUDA-Error" << std::endl;
+    return;
+  }
   vvDebugMsg::msg(1, "vvRayRend::compositeVolume()");
 
   dynamic_cast<vvCudaImg*>(intImg)->map();
@@ -1095,7 +1100,11 @@ void vvRayRend::initVolumeTexture()
   d_volumeArrays = new cudaArray*[vd->frames];
   for (int f=0; f<vd->frames; ++f)
   {
-    cudaMalloc3DArray(&d_volumeArrays[f], &_channelDesc, volumeSize);
+    vvCuda::checkError(&_volumeCopyToGpuOk, cudaMalloc3DArray(&d_volumeArrays[f],
+                                              &_channelDesc,
+                                              volumeSize));
+    if(!_volumeCopyToGpuOk)
+      break;
 
     cudaMemcpy3DParms copyParams = { 0 };
 

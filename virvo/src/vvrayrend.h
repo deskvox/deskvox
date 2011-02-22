@@ -61,6 +61,7 @@ private:
   bool _interpolation;              ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
   bool _opacityCorrection;          ///< true = opacity correction on
   bool _spaceSkipping;              ///< true = skip over homogeneous regions
+  bool _volumeCopyToGpuOk;          ///< must be true for memCopy to be run
 
   void initRandTexture();
   void initSpaceSkippingTexture();
