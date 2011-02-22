@@ -317,7 +317,7 @@ void vvRenderVP::renderVolume(int w, int h)
 /// Render the volume onto currently selected drawBuffer.
 void vvRenderVP::renderVolumeGL()
 {
-  float defColor[3];      // default boundary box color
+  vvColor defColor(1.f, 1.f, 1.f); // default boundary box color
   GLfloat glmatrix[16];   // OpenGL matrix
   GLint viewport[4];      // OpenGL viewport information (position and size)
   vvVector3 pos;          // object location
@@ -336,7 +336,6 @@ void vvRenderVP::renderVolumeGL()
   if (w<=0 || h<=0) return;   // safety first
 
   pos.copy(&vd->pos);
-  defColor[0] = defColor[1] = defColor[2] = 1.0f;
 
   // Check for projection type:
   getProjectionMatrix(&pm);
@@ -365,10 +364,10 @@ void vvRenderVP::renderVolumeGL()
       delete sw;
     }
   }
-  if (_renderState._boundaries) 
+  if (_boundaries)
   {
     vvVector3 size = vd->getSize();
-    drawBoundingBox(&size, &pos, defColor);   // draw boundaries
+    drawBoundingBox(&size, &pos, &defColor);   // draw boundaries
   }
 
   vvRenderer::renderVolumeGL();
