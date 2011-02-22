@@ -742,6 +742,8 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 {
   glewInit();
 
+  _volumeCopyToGpuOk = true;
+
   _earlyRayTermination = true;
   _illumination = false;
   _interpolation = true;
