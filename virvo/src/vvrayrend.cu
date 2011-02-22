@@ -533,6 +533,33 @@ renderKernel getKernelWithMip(vvRayRend*)
                 >;
 }
 
+#ifdef FAST_COMPILE
+template<
+         int t_bpc,
+         bool t_illumination,
+         bool t_opacityCorrection,
+         bool t_earlyRayTermination,
+         bool t_clipPlane,
+         bool t_clipSphere,
+         bool t_useSphereAsProbe,
+         int t_mipMode
+        >
+renderKernel getKernel(vvRayRend*)
+{
+  return &render<t_earlyRayTermination, // Early ray termination.
+                 true, // Space skipping.
+                 true, // Front to back.
+                 t_bpc, // Bytes per channel.
+                 t_mipMode, // Mip mode.
+                 t_illumination, // Local illumination.
+                 t_opacityCorrection, // Opacity correction.
+                 false, // Jittering.
+                 t_clipPlane, // Clip plane.
+                 t_clipSphere, // Clip sphere.
+                 t_useSphereAsProbe // Show what's inside the clip sphere.
+                >;
+}
+#else
 template<
          int t_bpc,
          bool t_illumination,
@@ -736,6 +763,7 @@ renderKernel getKernel(vvRayRend* rayRend)
     return getKernelWithBpc<1>(rayRend);
   }
 }
+#endif
 
 vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvSoftVR(vd, renderState)
@@ -945,7 +973,20 @@ void vvRayRend::compositeVolume(int, int)
   glGetFloatv(GL_COLOR_CLEAR_VALUE, bgcolor);
   float4 backgroundColor = make_float4(bgcolor[0], bgcolor[1], bgcolor[2], bgcolor[3]);
 
+#ifdef FAST_COMPILE
+  renderKernel kernel = getKernel<
+                        1,
+                        true, // Local illumination.
+                        true, // Opacity correction
+                        true, // Early ray termination.
+                        false, // Use clip plane.
+                        false, // Use clip sphere.
+                        false, // Use clip sphere as probe (inverted sphere).
+                        0 // Mip mode.
+                       >(this);
+#else
   renderKernel kernel = getKernel(this);
+#endif
 
   if (kernel != NULL)
   {
