@@ -1141,13 +1141,25 @@ void vvRayRend::initVolumeTexture()
     _channelDesc = cudaCreateChannelDesc<ushort>();
   }
   d_volumeArrays = new cudaArray*[vd->frames];
+
+  int outOfMemFrame = -1;
   for (int f=0; f<vd->frames; ++f)
   {
     vvCuda::checkError(&_volumeCopyToGpuOk, cudaMalloc3DArray(&d_volumeArrays[f],
                                               &_channelDesc,
                                               volumeSize));
+    size_t availableMem;
+    size_t totalMem;
+    cudaMemGetInfo(&availableMem, &totalMem);
+
     if(!_volumeCopyToGpuOk)
+    {
+      outOfMemFrame = f;
       break;
+    }
+
+    vvDebugMsg::msg(1, "Total CUDA memory:     ", (int)totalMem);
+    vvDebugMsg::msg(1, "Available CUDA memory: ", (int)availableMem);
 
     cudaMemcpy3DParms copyParams = { 0 };
 
@@ -1176,35 +1188,48 @@ void vvRayRend::initVolumeTexture()
     cudaMemcpy3D(&copyParams);
   }
 
-  if (vd->bpc == 1)
+  if (outOfMemFrame >= 0)
   {
-      volTexture8.normalized = true;
-      if (_interpolation)
-      {
-        volTexture8.filterMode = cudaFilterModeLinear;
-      }
-      else
-      {
-        volTexture8.filterMode = cudaFilterModePoint;
-      }
-      volTexture8.addressMode[0] = cudaAddressModeClamp;
-      volTexture8.addressMode[1] = cudaAddressModeClamp;
-      cudaBindTextureToArray(volTexture8, d_volumeArrays[0], _channelDesc);
+    cerr << "Couldn't accomodate the volume" << endl;
+    for (int f=0; f<outOfMemFrame; ++f)
+    {
+      cudaFreeArray(d_volumeArrays[f]);
+      d_volumeArrays[f] = NULL;
+    }
   }
-  else if (vd->bpc == 2)
+
+  if (_volumeCopyToGpuOk)
   {
-      volTexture16.normalized = true;
-      if (_interpolation)
-      {
-        volTexture16.filterMode = cudaFilterModeLinear;
-      }
-      else
-      {
-        volTexture16.filterMode = cudaFilterModePoint;
-      }
-      volTexture16.addressMode[0] = cudaAddressModeClamp;
-      volTexture16.addressMode[1] = cudaAddressModeClamp;
-      cudaBindTextureToArray(volTexture16, d_volumeArrays[0], _channelDesc);
+    if (vd->bpc == 1)
+    {
+        volTexture8.normalized = true;
+        if (_interpolation)
+        {
+          volTexture8.filterMode = cudaFilterModeLinear;
+        }
+        else
+        {
+          volTexture8.filterMode = cudaFilterModePoint;
+        }
+        volTexture8.addressMode[0] = cudaAddressModeClamp;
+        volTexture8.addressMode[1] = cudaAddressModeClamp;
+        cudaBindTextureToArray(volTexture8, d_volumeArrays[0], _channelDesc);
+    }
+    else if (vd->bpc == 2)
+    {
+        volTexture16.normalized = true;
+        if (_interpolation)
+        {
+          volTexture16.filterMode = cudaFilterModeLinear;
+        }
+        else
+        {
+          volTexture16.filterMode = cudaFilterModePoint;
+        }
+        volTexture16.addressMode[0] = cudaAddressModeClamp;
+        volTexture16.addressMode[1] = cudaAddressModeClamp;
+        cudaBindTextureToArray(volTexture16, d_volumeArrays[0], _channelDesc);
+    }
   }
 }
 
