@@ -426,7 +426,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     }
 
     // Local illumination.
-    if (t_lighting && (src.w > 0.1))
+    if (t_lighting && (src.w > 0.1f))
     {
       const float3 Ka = make_float3(0.0f, 0.0f, 0.0f);
       const float3 Kd = make_float3(0.8f, 0.8f, 0.8f);
