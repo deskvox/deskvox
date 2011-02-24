@@ -1191,6 +1191,16 @@ void vvRayRend::initVolumeTexture()
   if (outOfMemFrame >= 0)
   {
     cerr << "Couldn't accomodate the volume" << endl;
+    for (int f=0; f<=outOfMemFrame; ++f)
+    {
+      cudaFree(d_volumeArrays[f]);
+      d_volumeArrays[f] = NULL;
+    }
+  }
+
+  if (vd->bpc == 1)
+  {
+    cerr << "Couldn't accomodate the volume" << endl;
     for (int f=0; f<outOfMemFrame; ++f)
     {
       cudaFreeArray(d_volumeArrays[f]);

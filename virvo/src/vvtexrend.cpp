@@ -104,6 +104,7 @@ struct ThreadArgs
   bool transferFunctionChanged;
   int lastFrame;                              ///< last rendered animation frame
 
+  bool usePbuffer;
 #ifdef HAVE_X11
   // Glx rendering specific.
   GLXContext glxContext;                      ///< the initial glx context
@@ -1390,7 +1391,6 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
   return UNSUPPORTED;
 #else
   ErrorType err = OK;
-  int attrList[] = { GLX_RGBA , GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8, None};
 
   int slaveWindowWidth = 1;
   int slaveWindowHeight = 1;
@@ -1400,6 +1400,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     slaveWindowHeight = 512;
   }
   int unresolvedDisplays = 0;
+
   for (int i = 0; i < _numThreads; ++i)
   {
     _threadData[i].display = XOpenDisplay(_displayNames[i]);
@@ -1407,30 +1408,69 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     if (_threadData[i].display != NULL)
     {
       _threadData[i].active = true;
-      const Drawable parent = RootWindow(_threadData[i].display, _screens[i]);
 
-      XVisualInfo* vi = glXChooseVisual(_threadData[i].display,
-                                        DefaultScreen(_threadData[i].display),
-                                        attrList);
+      int glxMajor;
+      int glxMinor;
+      glXQueryVersion(_threadData[i].display, &glxMajor, &glxMinor);
 
-      XSetWindowAttributes wa = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-      wa.colormap = XCreateColormap(_threadData[i].display, parent, vi->visual, AllocNone );
-      wa.background_pixmap = None;
-      wa.border_pixel = 0;
+      // Show windows in debug mode.
+      _threadData[i].usePbuffer = (vvDebugMsg::getDebugLevel() == 0);
+      // Supported since glx version 1.3.
+      _threadData[i].usePbuffer &= ((glxMajor >= 1) && (glxMinor >= 3));
 
-      if (vvDebugMsg::getDebugLevel() == 0)
+      bool pbufferFailed = !_threadData[i].usePbuffer;
+
+      if (_threadData[i].usePbuffer)
       {
-        wa.override_redirect = true;
-      }
-      else
-      {
-        wa.override_redirect = false;
+        int attrList[] = { GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8, None};
+
+        int nelements;
+        GLXFBConfig* configs = glXChooseFBConfig(_threadData[i].display, DefaultScreen(_threadData[i].display),
+                                                 attrList, &nelements);
+        if (configs && (nelements > 0))
+        {
+          // TODO: find the nicest fbconfig.
+          int pbAttrList[] = { GLX_PBUFFER_WIDTH, 0, GLX_PBUFFER_HEIGHT, 0, None };
+          GLXPbuffer pbuffer = glXCreatePbuffer(_threadData[i].display, configs[0], pbAttrList);
+          _threadData[i].glxContext = glXCreateNewContext(_threadData[i].display, configs[0], GLX_RGBA_TYPE, 0, False);
+          _threadData[i].drawable = pbuffer;
+        }
+        else
+        {
+          _threadData[i].usePbuffer = false;
+          pbufferFailed = true;
+        }
       }
 
-      _threadData[i].glxContext = glXCreateContext(_threadData[i].display, vi, NULL, GL_TRUE);
-      _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, slaveWindowWidth, slaveWindowHeight, 0,
-                                              vi->depth, InputOutput, vi->visual,
-                                              CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa );
+      // Use x-window.
+      if (pbufferFailed /* or no pbuffer desired */)
+      {
+        const Drawable parent = RootWindow(_threadData[i].display, _screens[i]);
+
+        int attrList[] = { GLX_RGBA, GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8, None};
+        XVisualInfo* vi = glXChooseVisual(_threadData[i].display,
+                                          DefaultScreen(_threadData[i].display),
+                                          attrList);
+
+        XSetWindowAttributes wa = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        wa.colormap = XCreateColormap(_threadData[i].display, parent, vi->visual, AllocNone );
+        wa.background_pixmap = None;
+        wa.border_pixel = 0;
+
+        if (vvDebugMsg::getDebugLevel() == 0)
+        {
+          wa.override_redirect = true;
+        }
+        else
+        {
+          wa.override_redirect = false;
+        }
+
+        _threadData[i].glxContext = glXCreateContext(_threadData[i].display, vi, NULL, GL_TRUE);
+        _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, slaveWindowWidth, slaveWindowHeight, 0,
+                                                vi->depth, InputOutput, vi->visual,
+                                                CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa );
+      }
     }
     else
     {
@@ -1475,8 +1515,11 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
       _threadData[i].transferFunctionChanged = false;
       _threadData[i].lastFrame = -1;
 #ifdef HAVE_X11
-      XMapWindow(_threadData[i].display, _threadData[i].drawable);
-      XFlush(_threadData[i].display);
+      if (!_threadData[i].usePbuffer)
+      {
+        XMapWindow(_threadData[i].display, _threadData[i].drawable);
+        XFlush(_threadData[i].display);
+      }
 #endif
     }
   }
