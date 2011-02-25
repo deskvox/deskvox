@@ -1432,7 +1432,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
           // TODO: find the nicest fbconfig.
           int pbAttrList[] = { GLX_PBUFFER_WIDTH, 0, GLX_PBUFFER_HEIGHT, 0, None };
           GLXPbuffer pbuffer = glXCreatePbuffer(_threadData[i].display, configs[0], pbAttrList);
-          _threadData[i].glxContext = glXCreateNewContext(_threadData[i].display, configs[0], GLX_RGBA_TYPE, 0, False);
+          _threadData[i].glxContext = glXCreateNewContext(_threadData[i].display, configs[0], GLX_RGBA_TYPE, 0, True);
           _threadData[i].drawable = pbuffer;
         }
         else
