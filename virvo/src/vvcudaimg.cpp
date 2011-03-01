@@ -62,7 +62,10 @@ void vvCudaImg::allocate()
   bool ok = true;
   if (_mode==TEXTURE)
   {
-    vvCuda::checkError(&ok, cudaGraphicsGLRegisterBuffer(&_imgRes, getPboName(), cudaGraphicsMapFlagsWriteDiscard), "map PBO to CUDA");
+    if ((width > 0) && (height > 0))
+    {
+      vvCuda::checkError(&ok, cudaGraphicsGLRegisterBuffer(&_imgRes, getPboName(), cudaGraphicsMapFlagsWriteDiscard), "map PBO to CUDA");
+    }
   }
   else if (_mapped)
   {
