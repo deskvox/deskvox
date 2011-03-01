@@ -368,6 +368,7 @@ void vvView::mainLoop(int argc, char *argv[])
             renderSlave->renderLoop(dynamic_cast<vvTexRend*>(renderer));
             cerr << "Exiting..." << endl;
           }
+          delete vd;
           delete context;
         }
 
