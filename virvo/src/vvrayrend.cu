@@ -1229,7 +1229,6 @@ void vvRayRend::initVolumeTexture()
 
   if (vd->bpc == 1)
   {
-    cerr << "Couldn't accomodate the volume" << endl;
     for (int f=0; f<outOfMemFrame; ++f)
     {
       vvCuda::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
