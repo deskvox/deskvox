@@ -1167,6 +1167,9 @@ void vvRayRend::initVolumeTexture()
   }
   d_volumeArrays = new cudaArray*[vd->frames];
 
+  // Free "cuda error cache".
+  vvCuda::checkError(&ok, cudaGetLastError(), "vvRayRend::initVolumeTexture()");
+
   int outOfMemFrame = -1;
   for (int f=0; f<vd->frames; ++f)
   {
