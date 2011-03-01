@@ -186,6 +186,7 @@ class VIRVOEXPORT vvToolshed
     enum Format
     {
       VV_LUMINANCE = 0,
+      VV_RGB,
       VV_RGBA
     };
 

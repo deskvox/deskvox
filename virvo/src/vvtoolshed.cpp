@@ -2611,7 +2611,23 @@ void vvToolshed::pixels2Ppm(unsigned char* pixels, const int width, const int he
   ppm << width << " " << height << endl;
   ppm << "255" << endl;
 
-  if (format == VV_RGBA)
+  if (format == VV_RGB)
+  {
+    int ite = 0;
+    for (int y = 0; y < height; ++y)
+    {
+      for (int x = 0; x < width; ++x)
+      {
+        ppm << (int)pixels[ite + 0] << " ";
+        ppm << (int)pixels[ite + 1] << " ";
+        ppm << (int)pixels[ite + 2] << " ";
+
+        ite += 3;
+      }
+      ppm << endl;
+    }
+  }
+  else if (format == VV_RGBA)
   {
     int ite = 0;
     for (int y = 0; y < height; ++y)
@@ -2657,6 +2673,9 @@ void vvToolshed::pixels2Ppm(float* pixels, const int width, const int height,
 
   switch (format)
   {
+  case VV_RGB:
+    size = width * height * 3;
+    break;
   case VV_RGBA:
     size = width * height * 4;
     break;
