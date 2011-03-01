@@ -811,17 +811,23 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
 vvRayRend::~vvRayRend()
 {
+  bool ok;
+
   if (d_volumeArrays != 0)
   {
     for (int f=0; f<vd->frames; ++f)
     {
-      cudaFreeArray(d_volumeArrays[f]);
+      vvCuda::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
+                         "vvRayRend::~vvRayRend()");
     }
   }
   delete[] d_volumeArrays;
-  cudaFreeArray(d_transferFuncArray);
-  cudaFreeArray(d_randArray);
-  cudaFreeArray(d_spaceSkippingArray);
+  vvCuda::checkError(&ok, cudaFreeArray(d_transferFuncArray),
+                     "vvRayRend::~vvRayRend()");
+  vvCuda::checkError(&ok, cudaFreeArray(d_randArray),
+                     "vvRayRend::~vvRayRend()");
+  vvCuda::checkError(&ok, cudaFreeArray(d_spaceSkippingArray),
+                     "vvRayRend::~vvRayRend()");
   delete[] h_spaceSkippingArray;
   delete[] h_cellMinValues;
   delete[] h_cellMaxValues;
@@ -836,6 +842,8 @@ int vvRayRend::getLUTSize() const
 
 void vvRayRend::updateTransferFunction()
 {
+  bool ok;
+
   int lutEntries = getLUTSize();
   delete[] _rgbaTF;
   _rgbaTF = new float[4 * lutEntries];
@@ -850,16 +858,21 @@ void vvRayRend::updateTransferFunction()
 
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
 
-  cudaFreeArray(d_transferFuncArray);
-  cudaMallocArray(&d_transferFuncArray, &channelDesc, lutEntries, 1);
-  cudaMemcpyToArray(d_transferFuncArray, 0, 0, _rgbaTF, lutEntries * 4 * sizeof(float), cudaMemcpyHostToDevice);
+  vvCuda::checkError(&ok, cudaFreeArray(d_transferFuncArray),
+                     "vvRayRend::updateTransferFunction()");
+  vvCuda::checkError(&ok, cudaMallocArray(&d_transferFuncArray, &channelDesc, lutEntries, 1),
+                     "vvRayRend::updateTransferFunction()");
+  vvCuda::checkError(&ok, cudaMemcpyToArray(d_transferFuncArray, 0, 0, _rgbaTF, lutEntries * 4 * sizeof(float),
+                                            cudaMemcpyHostToDevice),
+                     "vvRayRend::updateTransferFunction()");
 
 
   tfTexture.filterMode = cudaFilterModeLinear;
   tfTexture.normalized = true;    // access with normalized texture coordinates
   tfTexture.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
 
-  cudaBindTextureToArray(tfTexture, d_transferFuncArray, channelDesc);
+  vvCuda::checkError(&ok, cudaBindTextureToArray(tfTexture, d_transferFuncArray, channelDesc),
+                     "vvRayRend::updateTransferFunction()");
 }
 
 void vvRayRend::compositeVolume(int, int)
@@ -1084,6 +1097,8 @@ bool vvRayRend::getSpaceSkipping() const
 
 void vvRayRend::initRandTexture()
 {
+  bool ok;
+
   const float scale = 2.0f;
 
   //srand(time(NULL));
@@ -1098,26 +1113,34 @@ void vvRayRend::initRandTexture()
 
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
 
-  cudaFreeArray(d_randArray);
-  cudaMallocArray(&d_randArray, &channelDesc, NUM_RAND_VECS, 1);
-  cudaMemcpyToArray(d_randArray, 0, 0, randVecs, NUM_RAND_VECS * sizeof(float4), cudaMemcpyHostToDevice);
+  vvCuda::checkError(&ok, cudaFreeArray(d_randArray),
+                     "vvRayRend::initRandTexture()");
+  vvCuda::checkError(&ok, cudaMallocArray(&d_randArray, &channelDesc, NUM_RAND_VECS, 1),
+                     "vvRayRend::initRandTexture()");
+  vvCuda::checkError(&ok, cudaMemcpyToArray(d_randArray, 0, 0, randVecs, NUM_RAND_VECS * sizeof(float4),
+                                            cudaMemcpyHostToDevice), "vvRayRend::initRandTexture()");
 
   randTexture.filterMode = cudaFilterModeLinear;
   randTexture.addressMode[0] = cudaAddressModeClamp;
 
-  cudaBindTextureToArray(randTexture, d_randArray, channelDesc);
+  vvCuda::checkError(&ok, cudaBindTextureToArray(randTexture, d_randArray, channelDesc),
+                     "vvRayRend::initRandTexture()");
 
   delete[] randVecs;
 }
 
 void vvRayRend::initSpaceSkippingTexture()
 {
+  bool ok;
+
   cudaExtent numBricks = make_cudaExtent(h_numCells[0], h_numCells[1], h_numCells[2]);
 
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<bool>();
 
-  cudaFreeArray(d_spaceSkippingArray);
-  cudaMalloc3DArray(&d_spaceSkippingArray, &channelDesc, numBricks);
+  vvCuda::checkError(&ok, cudaFreeArray(d_spaceSkippingArray),
+                     "vvRayRend::initSpaceSkippingTexture()");
+  vvCuda::checkError(&ok, cudaMalloc3DArray(&d_spaceSkippingArray, &channelDesc, numBricks),
+                     "vvRayRend::initSpaceSkippingTexture()");
 
   cudaMemcpy3DParms copyParams = { 0 };
 
@@ -1125,11 +1148,13 @@ void vvRayRend::initSpaceSkippingTexture()
   copyParams.dstArray = d_spaceSkippingArray;
   copyParams.extent = numBricks;
   copyParams.kind = cudaMemcpyHostToDevice;
-  cudaMemcpy3D(&copyParams);
+  vvCuda::checkError(&ok, cudaMemcpy3D(&copyParams), "vvRayRend::initSpaceSkippingTexture()");
 }
 
 void vvRayRend::initVolumeTexture()
 {
+  bool ok;
+
   cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
 
   if (vd->bpc == 1)
@@ -1146,11 +1171,13 @@ void vvRayRend::initVolumeTexture()
   for (int f=0; f<vd->frames; ++f)
   {
     vvCuda::checkError(&_volumeCopyToGpuOk, cudaMalloc3DArray(&d_volumeArrays[f],
-                                              &_channelDesc,
-                                              volumeSize));
+                                            &_channelDesc,
+                                            volumeSize),
+                       "vvRayRend::initVolumeTexture()");
     size_t availableMem;
     size_t totalMem;
-    cudaMemGetInfo(&availableMem, &totalMem);
+    vvCuda::checkError(&ok, cudaMemGetInfo(&availableMem, &totalMem),
+                       "vvRayRend::initVolumeTexture()");
 
     if(!_volumeCopyToGpuOk)
     {
@@ -1185,7 +1212,8 @@ void vvRayRend::initVolumeTexture()
     copyParams.dstArray = d_volumeArrays[f];
     copyParams.extent = volumeSize;
     copyParams.kind = cudaMemcpyHostToDevice;
-    cudaMemcpy3D(&copyParams);
+    vvCuda::checkError(&ok, cudaMemcpy3D(&copyParams),
+                       "vvRayRend::initVolumeTexture()");
   }
 
   if (outOfMemFrame >= 0)
@@ -1193,7 +1221,8 @@ void vvRayRend::initVolumeTexture()
     cerr << "Couldn't accomodate the volume" << endl;
     for (int f=0; f<=outOfMemFrame; ++f)
     {
-      cudaFree(d_volumeArrays[f]);
+      vvCuda::checkError(&ok, cudaFree(d_volumeArrays[f]),
+                         "vvRayRend::initVolumeTexture()");
       d_volumeArrays[f] = NULL;
     }
   }
@@ -1203,7 +1232,8 @@ void vvRayRend::initVolumeTexture()
     cerr << "Couldn't accomodate the volume" << endl;
     for (int f=0; f<outOfMemFrame; ++f)
     {
-      cudaFreeArray(d_volumeArrays[f]);
+      vvCuda::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
+                         "vvRayRend::initVolumeTexture()");
       d_volumeArrays[f] = NULL;
     }
   }
@@ -1223,7 +1253,8 @@ void vvRayRend::initVolumeTexture()
         }
         volTexture8.addressMode[0] = cudaAddressModeClamp;
         volTexture8.addressMode[1] = cudaAddressModeClamp;
-        cudaBindTextureToArray(volTexture8, d_volumeArrays[0], _channelDesc);
+        vvCuda::checkError(&ok, cudaBindTextureToArray(volTexture8, d_volumeArrays[0], _channelDesc),
+                           "vvRayRend::initVolumeTexture()");
     }
     else if (vd->bpc == 2)
     {
@@ -1238,7 +1269,8 @@ void vvRayRend::initVolumeTexture()
         }
         volTexture16.addressMode[0] = cudaAddressModeClamp;
         volTexture16.addressMode[1] = cudaAddressModeClamp;
-        cudaBindTextureToArray(volTexture16, d_volumeArrays[0], _channelDesc);
+        vvCuda::checkError(&ok, cudaBindTextureToArray(volTexture16, d_volumeArrays[0], _channelDesc),
+                           "vvRayRend::initVolumeTexture()");
     }
   }
 }
