@@ -818,16 +818,16 @@ vvRayRend::~vvRayRend()
     for (int f=0; f<vd->frames; ++f)
     {
       vvCuda::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
-                         "vvRayRend::~vvRayRend()");
+                         "vvRayRend::~vvRayRend() - free volume frame");
     }
   }
   delete[] d_volumeArrays;
   vvCuda::checkError(&ok, cudaFreeArray(d_transferFuncArray),
-                     "vvRayRend::~vvRayRend()");
+                     "vvRayRend::~vvRayRend() - free tf");
   vvCuda::checkError(&ok, cudaFreeArray(d_randArray),
-                     "vvRayRend::~vvRayRend()");
+                     "vvRayRend::~vvRayRend() - free rand array");
   vvCuda::checkError(&ok, cudaFreeArray(d_spaceSkippingArray),
-                     "vvRayRend::~vvRayRend()");
+                     "vvRayRend::~vvRayRend() - free space skipping array");
   delete[] h_spaceSkippingArray;
   delete[] h_cellMinValues;
   delete[] h_cellMaxValues;
