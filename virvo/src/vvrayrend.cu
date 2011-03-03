@@ -1021,6 +1021,9 @@ void vvRayRend::compositeVolume(int, int)
   }
 
   dynamic_cast<vvCudaImg*>(intImg)->unmap();
+
+  // For bounding box, tf palette display, etc.
+  vvRenderer::renderVolumeGL();
 }
 
 //----------------------------------------------------------------------------
