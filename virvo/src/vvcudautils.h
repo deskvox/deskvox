@@ -34,6 +34,62 @@ inline float rsqrtf(const float x)
 
 #endif
 
+#include <ostream>
+
+inline std::ostream& operator<<(std::ostream& out, const uchar2& v)
+{
+  out << v.x << " " << v.y;
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const uchar3& v)
+{
+  out << v.x << " " << v.y << " " << v.z;
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const uchar4& v)
+{
+  out << v.x << " " << v.y << " " << v.z << " " << v.w;
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const int2& v)
+{
+  out << v.x << " " << v.y;
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const int3& v)
+{
+  out << v.x << " " << v.y << " " << v.z;
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const int4& v)
+{
+  out << v.x << " " << v.y << " " << v.z << " " << v.w;
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const float2& v)
+{
+  out << v.x << " " << v.y;
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const float3& v)
+{
+  out << v.x << " " << v.y << " " << v.z;
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const float4& v)
+{
+  out << v.x << " " << v.y << " " << v.z << " " << v.w;
+  return out;
+}
+
 inline __device__ __host__ float3 operator-(const float3& v)
 {
   return make_float3(-v.x, -v.y, -v.z);
