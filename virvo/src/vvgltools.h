@@ -49,6 +49,11 @@ class VIRVOEXPORT vvGLTools
     {
       int values[4];
 
+      inline int &operator[](const unsigned int i)
+      {
+        return values[i];
+      }
+
       inline int operator[](const unsigned int i) const
       {
         return values[i];
