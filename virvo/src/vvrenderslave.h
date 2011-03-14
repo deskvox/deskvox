@@ -45,7 +45,7 @@ public:
   BufferPrecision getCompositingPrecision() const;
 
   vvRenderSlave::ErrorType initSocket(const int port, vvSocket::SocketType st);
-  vvRenderSlave::ErrorType initData(vvVolDesc*& vd) const;
+  vvRenderSlave::ErrorType initData(vvVolDesc*& vd);
   vvRenderSlave::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
   void  renderLoop(vvTexRend* renderer);
 private:

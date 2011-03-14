@@ -9,3 +9,8 @@ vvRemoteServer::~vvRemoteServer()
 {
 
 }
+
+bool vvRemoteServer::getLoadVolumeFromFile() const
+{
+    return _loadVolumeFromFile;
+}

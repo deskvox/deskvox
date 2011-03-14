@@ -77,12 +77,11 @@ vvIsaServer::ErrorType vvIsaServer::initSocket(const int port, const vvSocket::S
   }
 }
 
-vvIsaServer::ErrorType vvIsaServer::initData(vvVolDesc*& vd) const
+vvIsaServer::ErrorType vvIsaServer::initData(vvVolDesc*& vd)
 {
-  bool loadVolumeFromFile;
-  _socket->getBool(loadVolumeFromFile);
+  _socket->getBool(_loadVolumeFromFile);
 
-  if (loadVolumeFromFile)
+  if (_loadVolumeFromFile)
   {
     char* fn = 0;
     _socket->getFileName(fn);

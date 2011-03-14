@@ -283,7 +283,10 @@ void vvView::mainLoop(int argc, char *argv[])
 
         if (vd != NULL)
         {
-          vd->printInfoLine();
+          if (renderSlave->getLoadVolumeFromFile())
+          {
+            vd->printInfoLine();
+          }
 
           // Set default color scheme if no TF present:
           if (vd->tf.isEmpty())
@@ -347,7 +350,10 @@ void vvView::mainLoop(int argc, char *argv[])
         }
         if (vd != NULL)
         {
-          vd->printInfoLine();
+          if (renderSlave->getLoadVolumeFromFile())
+          {
+            vd->printInfoLine();
+          }
 
           // Set default color scheme if no TF present:
           if (vd->tf.isEmpty())

@@ -12,6 +12,10 @@ class VIRVOEXPORT vvRemoteServer
 public:
   vvRemoteServer();
   virtual ~vvRemoteServer();
+
+  bool getLoadVolumeFromFile() const;
+protected:
+  bool _loadVolumeFromFile;
 };
 
 #endif // VVREMOTESERVER_H

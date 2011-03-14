@@ -77,12 +77,11 @@ vvRenderSlave::ErrorType vvRenderSlave::initSocket(const int port, const vvSocke
   }
 }
 
-vvRenderSlave::ErrorType vvRenderSlave::initData(vvVolDesc*& vd) const
+vvRenderSlave::ErrorType vvRenderSlave::initData(vvVolDesc*& vd)
 {
-  bool loadVolumeFromFile;
-  _socket->getBool(loadVolumeFromFile);
+  _socket->getBool(_loadVolumeFromFile);
 
-  if (loadVolumeFromFile)
+  if (_loadVolumeFromFile)
   {
     char* fn = 0;
     _socket->getFileName(fn);
