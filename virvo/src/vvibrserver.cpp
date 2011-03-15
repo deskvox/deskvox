@@ -291,12 +291,12 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRayRend* renderer)
   cudaMemcpy(pixels, dynamic_cast<vvCudaImg*>(renderer->intImg)->getDImg(), screenRect->width * screenRect->height*4, cudaMemcpyDeviceToHost);
 
   vvImage2_5d* im2;
-  im2->setDepthPrecision(_depthPrecision);
   switch(_depthPrecision)
   {
   case vvImage2_5d::VV_UCHAR:
     {
       im2 = new vvImage2_5d(screenRect->height, screenRect->width, (unsigned char*)pixels, vvImage2_5d::VV_UCHAR);
+      im2->setDepthPrecision(_depthPrecision);
       im2->alloc_pd();
       uchar* depthUchar = im2->getpixeldepthUchar();
       cudaMemcpy(depthUchar, renderer->_depthUchar, screenRect->width * screenRect->height *sizeof(uchar), cudaMemcpyDeviceToHost);
@@ -306,6 +306,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRayRend* renderer)
   case vvImage2_5d::VV_USHORT:
     {
       im2 = new vvImage2_5d(screenRect->height, screenRect->width, (unsigned char*)pixels, vvImage2_5d::VV_USHORT);
+      im2->setDepthPrecision(_depthPrecision);
       im2->alloc_pd();
       ushort* depthUshort = im2->getpixeldepthUshort();
       cudaMemcpy(depthUshort, renderer->_depthUshort, screenRect->width * screenRect->height *sizeof(ushort), cudaMemcpyDeviceToHost);
