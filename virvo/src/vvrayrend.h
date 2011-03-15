@@ -10,6 +10,7 @@
 #include "vvsoftvr.h"
 #include "vvtransfunc.h"
 #include "vvvoldesc.h"
+#include "vvimage.h"
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
@@ -33,15 +34,21 @@ public:
 
   int getLUTSize() const;
   void updateTransferFunction();
-  void compositeVolume(int = -1, int = -1);
+  void compositeVolume(int w = -1, int h = -1);
   void setParameter(ParameterType param, float newValue);
   void setNumSpaceSkippingCells(const int numSpaceSkippingCells[3]);
+  void setDepthPrecision(const vvImage2_5d::DepthPrecision dp);
 
   bool getEarlyRayTermination() const;
   bool getIllumination() const;
   bool getInterpolation() const;
   bool getOpacityCorrection() const;
   bool getSpaceSkipping() const;
+
+  uchar*  _depthUchar;
+  ushort* _depthUshort;
+  uint*   _depthUint;
+
 private:
   cudaChannelFormatDesc _channelDesc;
   cudaArray** d_volumeArrays;
@@ -62,6 +69,8 @@ private:
   bool _opacityCorrection;          ///< true = opacity correction on
   bool _spaceSkipping;              ///< true = skip over homogeneous regions
   bool _volumeCopyToGpuOk;          ///< must be true for memCopy to be run
+
+  vvImage2_5d::DepthPrecision _depthPrecision; ///< enum indicating precision of depth buffer for image based rendering
 
   void initRandTexture();
   void initSpaceSkippingTexture();

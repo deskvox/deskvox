@@ -151,7 +151,6 @@ contains(CUDA,HAVE_CUDA) {
         DEFINES *= HAVE_CUDA \
                    NV_PROPRIETARY_CODE
 }
-
 QMAKE_CUFLAGS += "-D__builtin_stdarg_start=__builtin_va_start"
 
 # ## don't modify anything below this line ###

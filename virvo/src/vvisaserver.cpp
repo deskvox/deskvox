@@ -21,36 +21,32 @@
 #include "vvfileio.h"
 #include "vvgltools.h"
 #include "vvisaserver.h"
-#include "vvtexrend.h"
+#include "vvrayrend.h"
+#include "vvcudaimg.h"
 
 #ifdef HAVE_BONJOUR
 #include "vvbonjour/vvbonjourregistrar.h"
 #endif
 
 vvIsaServer::vvIsaServer(const BufferPrecision compositingPrecision)
-  : _offscreenBuffer(0), _socket(0), _compositingPrecision(compositingPrecision)
+  : _socket(0)
 {
 
 }
 
 vvIsaServer::~vvIsaServer()
 {
-  delete _offscreenBuffer;
   delete _socket;
 }
 
-void vvIsaServer::setCompositingPrecision(const BufferPrecision compositingPrecision)
+void vvIsaServer::setDepthPrecision(const vvImage2_5d::DepthPrecision dp)
 {
-  _compositingPrecision = compositingPrecision;
-}
-
-BufferPrecision vvIsaServer::getCompositingPrecision() const
-{
-  return _compositingPrecision;
+  _depthPrecision = dp;
 }
 
 vvIsaServer::ErrorType vvIsaServer::initSocket(const int port, const vvSocket::SocketType st)
 {
+  delete _socket;
   _socket = new vvSocketIO(port, st);
   _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
 
@@ -139,13 +135,8 @@ vvIsaServer::ErrorType vvIsaServer::initBricks(std::vector<vvBrick*>& bricks) co
   return VV_OK;
 }
 
-void vvIsaServer::renderLoop(vvTexRend* renderer)
+void vvIsaServer::renderLoop(vvRayRend* renderer)
 {
-  renderer->setIsSlave(true);
-
-  _offscreenBuffer = new vvOffscreenBuffer(1.0f, _compositingPrecision);
-  _offscreenBuffer->initForRender();
-
   vvSocketIO::CommReason commReason;
   vvMatrix pr;
   vvMatrix mv;
@@ -166,6 +157,7 @@ void vvIsaServer::renderLoop(vvTexRend* renderer)
   while (1)
   {
     vvSocket::ErrorType err = _socket->getCommReason(commReason);
+
     if (err == vvSocket::VV_OK)
     {
       switch (commReason)
@@ -212,7 +204,7 @@ void vvIsaServer::renderLoop(vvTexRend* renderer)
       case vvSocketIO::VV_RESIZE:
         if ((_socket->getWinDims(w, h)) == vvSocket::VV_OK)
         {
-          _offscreenBuffer->resize(w, h);
+          glViewport(0, 0, w, h);
         }
         break;
       case vvSocketIO::VV_INTERPOLATION:
@@ -273,14 +265,11 @@ void vvIsaServer::renderLoop(vvTexRend* renderer)
 /** Perform remote rendering, read back pixel data and send it over socket
     connections using a vvImage instance.
 */
-void vvIsaServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
+void vvIsaServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRayRend* renderer)
 {
   vvDebugMsg::msg(3, "vvIsaServer::renderImage()");
 
-  _offscreenBuffer->bindFramebuffer();
-  _offscreenBuffer->clearBuffer();
-
-  // Draw volume:
+  // Render volume:
   float matrixGL[16];
 
   glMatrixMode(GL_PROJECTION);
@@ -291,31 +280,52 @@ void vvIsaServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
   mv.get(matrixGL);
   glLoadMatrixf(matrixGL);
 
-  vvRect* screenRect = renderer->getProbedMask().getProjectedScreenRect();
-
-  renderer->renderVolumeGL();
+  vvRect* screenRect = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect();
+  renderer->setDepthPrecision(_depthPrecision);
+  renderer->compositeVolume(screenRect->width, screenRect->height);
 
   glFlush();
 
-  uchar* pixels = new uchar[screenRect->width * screenRect->height * 4];
-  glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+  // Fetch rendered image
+  uchar* pixels = new uchar[screenRect->width*screenRect->height*4];
+  cudaMemcpy(pixels, dynamic_cast<vvCudaImg*>(renderer->intImg)->getDImg(), screenRect->width * screenRect->height*4, cudaMemcpyDeviceToHost);
 
-  vvImage2_5d* im2 = new vvImage2_5d(screenRect->height, screenRect->width, pixels);
-  // temp-generate random 2.5d-data
-  float* depth = im2->getpixeldepth();
-  for(unsigned int i=0;i<im2->getHeight();i++)
-    for(unsigned int j=0;j<im2->getWidth();j++)
-      depth[i*im2->getWidth()+j] = 0.;
-      //depth[i*im2->getWidth()+j] = float(pixels[(i*im2->getWidth()+j)*4+3]/2.);
+  vvImage2_5d* im2;
+  im2->setDepthPrecision(_depthPrecision);
+  switch(_depthPrecision)
+  {
+  case vvImage2_5d::VV_UCHAR:
+    {
+      im2 = new vvImage2_5d(screenRect->height, screenRect->width, (unsigned char*)pixels, vvImage2_5d::VV_UCHAR);
+      im2->alloc_pd();
+      uchar* depthUchar = im2->getpixeldepthUchar();
+      cudaMemcpy(depthUchar, renderer->_depthUchar, screenRect->width * screenRect->height *sizeof(uchar), cudaMemcpyDeviceToHost);
+      cudaFree(renderer->_depthUchar);
+    }
+    break;
+  case vvImage2_5d::VV_USHORT:
+    {
+      im2 = new vvImage2_5d(screenRect->height, screenRect->width, (unsigned char*)pixels, vvImage2_5d::VV_USHORT);
+      im2->alloc_pd();
+      ushort* depthUshort = im2->getpixeldepthUshort();
+      cudaMemcpy(depthUshort, renderer->_depthUshort, screenRect->width * screenRect->height *sizeof(ushort), cudaMemcpyDeviceToHost);
+      cudaFree(renderer->_depthUshort);
+    }
+    break;
+  case vvImage2_5d::VV_UINT:
+    {
+      im2 = new vvImage2_5d(screenRect->height, screenRect->width, (unsigned char*)pixels, vvImage2_5d::VV_UINT);
+      im2->alloc_pd();
+      uint* depthUint = im2->getpixeldepthUint();
+      cudaMemcpy(depthUint, renderer->_depthUint, screenRect->width * screenRect->height *sizeof(uint), cudaMemcpyDeviceToHost);
+      cudaFree(renderer->_depthUint);
+    }
+    break;
+  }
 
+  // Send image to client
   _socket->putImage2_5d(im2);
-  delete im2;
 
   delete[] pixels;
-  _offscreenBuffer->unbindFramebuffer();
-
-  if (vvDebugMsg::getDebugLevel() > 0)
-  {
-    _offscreenBuffer->writeBack();
-  }
+  delete im2;
 }

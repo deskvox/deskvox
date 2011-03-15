@@ -555,6 +555,7 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
     cerr<<"Header received"<< endl;
   w = vvToolshed::read16(&buffer[2]);
   h = vvToolshed::read16(&buffer[0]);
+
   ct = (short)vvToolshed::read8(&buffer[4]);
   im->setCodeType(ct);
   if (h != im->getHeight() || w  != im->getWidth() || ct != im->getCodeType() )
@@ -604,7 +605,6 @@ vvSocket::ErrorType vvSocketIO::putImage(vvImage* im)
   int videosize;
   int keyframe;
   int ct;
-
   imagesize = im->getSize();
   videosize = im->getVideoSize();
   keyframe = im->getKeyframe();
@@ -651,12 +651,26 @@ vvSocket::ErrorType vvSocketIO::getImage2_5d(vvImage2_5d* im)
   if((err = getImage(im)) != vvSocket::VV_OK)
     return err;
 
-  if(im->alloc_pd())
-    return vvSocket::VV_ALLOC_ERROR;
+  im->alloc_pd();
 
   // get extended 2.5D-data
-  if((err = getData(im->getpixeldepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_FLOAT)) != vvSocket::VV_OK)
-    return err;
+  switch(im->getDepthPrecision())
+  {
+  case vvImage2_5d::VV_UCHAR:
+    if((err = getData(im->getpixeldepthUchar(), im->getWidth()*im->getHeight(), vvSocketIO::VV_UCHAR)) != vvSocket::VV_OK)
+      return err;
+    break;
+  case vvImage2_5d::VV_USHORT:
+    if((err = getData(im->getpixeldepthUshort(), im->getWidth()*im->getHeight(), vvSocketIO::VV_USHORT)) != vvSocket::VV_OK)
+      return err;
+    break;
+  case vvImage2_5d::VV_UINT:
+    if((err = getData(im->getpixeldepthUint(), im->getWidth()*im->getHeight(), vvSocketIO::VV_INT)) != vvSocket::VV_OK)
+      return err;
+    break;
+  default:
+    std::cerr << "wrong depth precision type" << std::endl;
+  }
 
   return vvSocket::VV_OK;
 }
@@ -671,10 +685,22 @@ vvSocket::ErrorType vvSocketIO::putImage2_5d(vvImage2_5d* im)
 
   if((err = putImage(im)) != vvSocket::VV_OK)
     return err;
-
   // additional 2.5d-data
-  if((err = putData(im->getpixeldepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_FLOAT)) != vvSocket::VV_OK)
-    return err;
+  switch(im->getDepthPrecision())
+  {
+  case vvImage2_5d::VV_UCHAR:
+    if((err = putData(im->getpixeldepthUchar(), im->getWidth()*im->getHeight(), vvSocketIO::VV_UCHAR)) != vvSocket::VV_OK)
+      return err;
+    break;
+  case vvImage2_5d::VV_USHORT:
+    if((err = putData(im->getpixeldepthUshort(), im->getWidth()*im->getHeight(), vvSocketIO::VV_USHORT)) != vvSocket::VV_OK)
+      return err;
+    break;
+  case vvImage2_5d::VV_UINT:
+    if((err = putData(im->getpixeldepthUint(), im->getWidth()*im->getHeight(), vvSocketIO::VV_INT)) != vvSocket::VV_OK)
+      return err;
+    break;
+  }
 
   return vvSocket::VV_OK;
 }
@@ -823,6 +849,25 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
       if (vvDebugMsg::isActive(3))
         cerr<<"uchar received"<<endl;
     }break;
+    case VV_USHORT:
+    {
+      int tmp;
+      size = number*2;
+      buffer = new uchar[size];
+      if ((retval = vvSocket::read_data(buffer, size)) != vvSocket::VV_OK)
+      {
+        delete[] buffer;
+        return retval;
+      }
+      for (int i=0; i<number; i++)
+      {
+        tmp = vvToolshed::read16(&buffer[i*2]);
+        memcpy((uchar*)data+i*2, &tmp, 2);
+      }
+      if (vvDebugMsg::isActive(3))
+        cerr<<"ushort received"<<endl;
+      delete[] buffer;
+    }break;
     case VV_INT:
     {
       int tmp;
@@ -889,6 +934,20 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type)
       buffer = (uchar*)data;
       if (vvDebugMsg::isActive(3))
         cerr <<"Sending uchar ..."<< endl;
+    }break;
+    case (VV_USHORT):
+    {
+      int tmp;
+      size = number*2;
+      buffer = new uchar[size];
+
+      for (int i=0; i<number; i++)
+      {
+        memcpy(&tmp, (uchar*)data+i*2 , 2);
+        vvToolshed::write16(&buffer[i*2], (ushort)tmp);
+      }
+      if (vvDebugMsg::isActive(3))
+        cerr <<"Sending ushort ..."<< endl;
     }break;
     case (VV_INT):
     {

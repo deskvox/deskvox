@@ -20,6 +20,7 @@
 #include <cuda_gl_interop.h>
 #include <ctime>
 #include <iostream>
+#include <limits>
 
 using std::cerr;
 using std::endl;
@@ -43,6 +44,7 @@ typedef struct
 } matrix4x4;
 
 __constant__ matrix4x4 c_invViewMatrix;
+__constant__ matrix4x4 c_MvPrMatrix;
 
 struct Ray
 {
@@ -177,13 +179,23 @@ __device__ void intersectPlane(const Ray& ray, const float3& normal, const float
 }
 
 
-__device__ float4 mul(const matrix4x4& M, const float4& v)
+__device__ float4 mulPost(const matrix4x4& M, const float4& v)
 {
   float4 result;
   result.x = M.m[0][0] * v.x + M.m[0][1] * v.y + M.m[0][2] * v.z + M.m[0][3] * v.w;
   result.y = M.m[1][0] * v.x + M.m[1][1] * v.y + M.m[1][2] * v.z + M.m[1][3] * v.w;
   result.z = M.m[2][0] * v.x + M.m[2][1] * v.y + M.m[2][2] * v.z + M.m[2][3] * v.w;
   result.w = M.m[3][0] * v.x + M.m[3][1] * v.y + M.m[3][2] * v.z + M.m[3][3] * v.w;
+  return result;
+}
+
+__device__ float4 mulPre(const matrix4x4& M, const float4& v)
+{
+  float4 result;
+  result.x = M.m[0][0] * v.x + M.m[1][0] * v.y + M.m[2][0] * v.z + M.m[3][0] * v.w;
+  result.y = M.m[0][1] * v.x + M.m[1][1] * v.y + M.m[2][1] * v.z + M.m[3][1] * v.w;
+  result.z = M.m[0][2] * v.x + M.m[1][2] * v.y + M.m[2][2] * v.z + M.m[3][2] * v.w;
+  result.w = M.m[0][3] * v.x + M.m[1][3] * v.y + M.m[2][3] * v.z + M.m[3][3] * v.w;
   return result;
 }
 
@@ -248,6 +260,8 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
   return make_float4(tmp.x, tmp.y, tmp.z, classification.w);
 }
 
+
+
 template<
          bool t_earlyRayTermination,
          bool t_spaceSkipping,
@@ -268,8 +282,10 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 probePos, const float3 probeSizeHalf,
                        const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
-                       const float3 planeNormal, const float planeDist)
+                       const float3 planeNormal, const float planeDist,
+                       void* d_depth, vvImage2_5d::DepthPrecision dp)
 {
+  const bool t_isaDepth = true;
   const int maxSteps = INT_MAX;
   const float opacityThreshold = 0.95f;
 
@@ -290,8 +306,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
    * First of all, the rays will be transformed to fit to the frustum.
    * Then the rays will be oriented so that they can hit the volume.
    */
-  const float4 o = mul(c_invViewMatrix, make_float4(u, v, -1.0f, 1.0f));
-  const float4 d = mul(c_invViewMatrix, make_float4(u, v, 1.0f, 1.0f));
+  const float4 o = mulPost(c_invViewMatrix, make_float4(u, v, -1.0f, 1.0f));
+  const float4 d = mulPost(c_invViewMatrix, make_float4(u, v, 1.0f, 1.0f));
 
   Ray ray;
   ray.o = perspectiveDivide(o);
@@ -305,6 +321,21 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   if (!hit)
   {
     d_output[y * texwidth + x] = make_uchar4(0);
+    if(t_isaDepth)
+    {
+      switch(dp)
+      {
+      case vvImage2_5d::VV_UCHAR:
+        ((unsigned char*)(d_depth))[y * texwidth + x] = 0;
+        break;
+      case vvImage2_5d::VV_USHORT:
+        ((unsigned short*)(d_depth))[y * texwidth + x] = 0;
+        break;
+      case vvImage2_5d::VV_UINT:
+        ((unsigned int*)(d_depth))[y * texwidth + x] = 0;
+        break;
+      }
+    }
     return;
   }
 
@@ -366,6 +397,9 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   bool justClippedPlane = false;
   bool justClippedSphere = false;
 
+  float maxDiff = 0.;
+  float3 maxDiffDepth = make_float3(0., 0., 0.);
+  float lastAlpha = 0.;
   for (int i=0; i<maxSteps; ++i)
   {
     // Test for clipping.
@@ -485,19 +519,44 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     }
 
     pos += step;
-#ifdef STAFF_CODE
-    //---------------------------------------------------------------
-    // 2.5d-calculation
-    //---------------------------------------------------------------
-    if(src.w > 0.5)
-    {
-      // calc distance from ray-origin to current position
-      depth_out[y * texwidth + x] = i * dist;
-    }
-    //---------------------------------------------------------------
-    //###############################################################
-#endif
 
+    if(t_isaDepth)
+    {
+      if(dst.w - lastAlpha > maxDiff)
+      {
+        maxDiff = dst.w - lastAlpha;
+        maxDiffDepth = pos;
+      }
+      lastAlpha = dst.w;
+    }
+  }
+  if(t_isaDepth)
+  {
+    // convert position to window-coordinates
+    const float4 depthWin = mulPost(c_MvPrMatrix, make_float4(maxDiffDepth.x, maxDiffDepth.y, maxDiffDepth.z, 1.0f));
+    float3 depth = perspectiveDivide(depthWin);
+    // map and clip on near and far-clipping planes
+    depth.z++;
+    depth.z = depth.z/2.;
+
+    if(depth.z > 1.0)
+      depth.z = 1.0;
+    else if(depth.z < 0.0)
+      depth.z = 0.0;
+
+    switch(dp)
+    {
+    case vvImage2_5d::VV_UCHAR:
+      ((unsigned char*)(d_depth))[y * texwidth + x] = (unsigned char)(depth.z*float(UCHAR_MAX));
+      break;
+    case vvImage2_5d::VV_USHORT:
+      ((unsigned short*)(d_depth))[y * texwidth + x] = (unsigned short)(depth.z*float(USHRT_MAX));
+      break;
+    case vvImage2_5d::VV_UINT:
+      default:
+      ((unsigned int*)(d_depth))[y * texwidth + x] = (unsigned int)(depth.z*float(UINT_MAX));
+      break;
+    }
   }
   d_output[y * texwidth + x] = rgbaFloatToInt(dst);
 }
@@ -505,7 +564,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 typedef void(*renderKernel)(uchar4*, const uint, const uint, const float4,
                             const uint, const float, const float3, const float3,
                             const float3, const float3, const float3, const float3, const float3,
-                            const float, const float3, const float);
+                            const float, const float3, const float, void*, vvImage2_5d::DepthPrecision);
 
 template<
          int t_bpc,
@@ -798,7 +857,8 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   }
 
   factorViewMatrix();
-
+  bool ignoreMe;
+  vvCuda::checkError(&ignoreMe, cudaGetLastError(), "rayRend-constructor");
   d_randArray = 0;
   initRandTexture();
 
@@ -812,7 +872,6 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 vvRayRend::~vvRayRend()
 {
   bool ok;
-
   if (d_volumeArrays != 0)
   {
     for (int f=0; f<vd->frames; ++f)
@@ -822,12 +881,14 @@ vvRayRend::~vvRayRend()
     }
   }
   delete[] d_volumeArrays;
+
   vvCuda::checkError(&ok, cudaFreeArray(d_transferFuncArray),
                      "vvRayRend::~vvRayRend() - free tf");
   vvCuda::checkError(&ok, cudaFreeArray(d_randArray),
                      "vvRayRend::~vvRayRend() - free rand array");
   vvCuda::checkError(&ok, cudaFreeArray(d_spaceSkippingArray),
                      "vvRayRend::~vvRayRend() - free space skipping array");
+
   delete[] h_spaceSkippingArray;
   delete[] h_cellMinValues;
   delete[] h_cellMaxValues;
@@ -875,7 +936,7 @@ void vvRayRend::updateTransferFunction()
                      "vvRayRend::updateTransferFunction() - bind tf texture");
 }
 
-void vvRayRend::compositeVolume(int, int)
+void vvRayRend::compositeVolume(int w, int h)
 {
   if(!_volumeCopyToGpuOk)
   {
@@ -884,9 +945,30 @@ void vvRayRend::compositeVolume(int, int)
   }
   vvDebugMsg::msg(1, "vvRayRend::compositeVolume()");
 
+  vvGLTools::Viewport vp = vvGLTools::getViewport();
+
+  if ((w > 0) && (h > 0))
+  {
+    vp[2] = w;
+    vp[3] = h;
+    intImg->setSize(w, h);
+
+    switch(_depthPrecision)
+    {
+    case vvImage2_5d::VV_UCHAR:
+      cudaMalloc(&_depthUchar, w*h*sizeof(unsigned char));
+      break;
+    case vvImage2_5d::VV_USHORT:
+      cudaMalloc(&_depthUshort, w*h*sizeof(unsigned short));
+      break;
+    case vvImage2_5d::VV_UINT:
+      cudaMalloc(&_depthUint, w*h*sizeof(unsigned int));
+      break;
+    }
+  }
+
   dynamic_cast<vvCudaImg*>(intImg)->map();
 
-  vvGLTools::Viewport vp = vvGLTools::getViewport();
   dim3 blockSize(16, 16);
   dim3 gridSize = dim3(iDivUp(vp[2], blockSize.x), iDivUp(vp[3], blockSize.y));
   const vvVector3 size(vd->getSize());
@@ -917,8 +999,17 @@ void vvRayRend::compositeVolume(int, int)
                                            vd->vox[2] * vd->vox[2]));
   int numSlices = max(1, static_cast<int>(_quality * diagonalVoxels));
 
+  vvMatrix Mv, MvPr;
+  getModelviewMatrix(&Mv);
+  getProjectionMatrix(&MvPr);
+  MvPr.multiplyPre(&Mv);
+
+  float* mvprM = new float[16];
+  MvPr.get(mvprM);
+  cudaMemcpyToSymbol(c_MvPrMatrix, mvprM, sizeof(float4) * 4);
+
   vvMatrix invMv;
-  getModelviewMatrix(&invMv);
+  invMv.copy(&Mv);
   invMv.invert();
 
   vvMatrix pr;
@@ -1011,21 +1102,42 @@ void vvRayRend::compositeVolume(int, int)
     {
       cudaBindTextureToArray(volTexture16, d_volumeArrays[vd->getCurrentFrame()], _channelDesc);
     }
-    (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
-                                      backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
-                                      volPos, volSize * 0.5f,
-                                      probePos, probeSize * 0.5f,
-                                      L, H,
-                                      center, radius * radius,
-                                      pnormal, pdist);
+    switch(_depthPrecision)
+    {
+    case vvImage2_5d::VV_UCHAR:
+      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
+                                        backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
+                                        volPos, volSize * 0.5f,
+                                        probePos, probeSize * 0.5f,
+                                        L, H,
+                                        center, radius * radius,
+                                        pnormal, pdist, _depthUchar, _depthPrecision);
+      break;
+    case vvImage2_5d::VV_USHORT:
+      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
+                                        backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
+                                        volPos, volSize * 0.5f,
+                                        probePos, probeSize * 0.5f,
+                                        L, H,
+                                        center, radius * radius,
+                                        pnormal, pdist, _depthUshort, _depthPrecision);
+      break;
+    case vvImage2_5d::VV_UINT:
+      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
+                                        backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
+                                        volPos, volSize * 0.5f,
+                                        probePos, probeSize * 0.5f,
+                                        L, H,
+                                        center, radius * radius,
+                                        pnormal, pdist, _depthUint, _depthPrecision);
+      break;
+    }
   }
-
   dynamic_cast<vvCudaImg*>(intImg)->unmap();
 
   // For bounding box, tf palette display, etc.
   vvRenderer::renderVolumeGL();
 }
-
 //----------------------------------------------------------------------------
 // see parent
 void vvRayRend::setParameter(const ParameterType param, const float newValue)
@@ -1159,7 +1271,6 @@ void vvRayRend::initVolumeTexture()
   bool ok;
 
   cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
-
   if (vd->bpc == 1)
   {
     _channelDesc = cudaCreateChannelDesc<uchar>();
@@ -1285,6 +1396,7 @@ void vvRayRend::factorViewMatrix()
   vvGLTools::Viewport vp = vvGLTools::getViewport();
   const int w = vvToolshed::getTextureSize(vp[2]);
   const int h = vvToolshed::getTextureSize(vp[3]);
+  vp.print();
 
   if ((intImg->width != w) || (intImg->height != h))
   {
@@ -1413,6 +1525,11 @@ void vvRayRend::computeSpaceSkippingTexture()
     delete[] h_cellMaxValues;
     h_cellMaxValues = NULL;
   }
+}
+
+void vvRayRend::setDepthPrecision(vvImage2_5d::DepthPrecision dp)
+{
+  _depthPrecision = dp;
 }
 
 #endif

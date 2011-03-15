@@ -33,7 +33,7 @@ public:
   enum ErrorType
   {
     VV_OK = 0,
-    VV_BAD_RENDERER_ERROR,
+    VV_WRONG_RENDERER,
     VV_SOCKET_ERROR,
     VV_MUTEX_ERROR,
     VV_BAD_IMAGE
@@ -47,7 +47,11 @@ public:
   ErrorType initSockets(const int port, const bool redistributeVolData,
                         vvVolDesc*& vd);
 
-  virtual ErrorType setRenderer(vvRenderer* renderer) = 0;
+  virtual ErrorType setRenderer(vvRenderer*)
+  {
+    throw "vvRemoteClient::setRenderer(): Not implemented by inherited class\n";
+  }
+
   virtual ErrorType render() = 0;
   virtual void setBackgroundColor(const vvVector3& bgColor);
 

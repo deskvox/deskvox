@@ -24,7 +24,7 @@
 #include "vvexport.h"
 #include "vvoffscreenbuffer.h"
 #include "vvsocketio.h"
-#include "vvtexrend.h"
+#include "vvrayrend.h"
 #include "vvremoteserver.h"
 
 class VIRVOEXPORT vvIsaServer : public vvRemoteServer
@@ -40,21 +40,22 @@ public:
   vvIsaServer(const BufferPrecision compositingPrecision = VV_SHORT);
   ~vvIsaServer();
 
-  void setCompositingPrecision(const BufferPrecision compositingPrecision);
+//  void setCompositingPrecision(const BufferPrecision compositingPrecision);
+  void setDepthPrecision(const vvImage2_5d::DepthPrecision dp);
 
-  BufferPrecision getCompositingPrecision() const;
+//  BufferPrecision getCompositingPrecision() const;
 
   vvIsaServer::ErrorType initSocket(const int port, vvSocket::SocketType st);
   vvIsaServer::ErrorType initData(vvVolDesc*& vd);
   vvIsaServer::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
-  void  renderLoop(vvTexRend* renderer);
+  void  renderLoop(vvRayRend* renderer);
 private:
-  vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering
+//  vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering
   vvSocketIO* _socket;                    ///< socket for remote rendering
 
-  BufferPrecision _compositingPrecision;  ///< the precision of the buffer used for compositing (default: 16bit)
+  vvImage2_5d::DepthPrecision _depthPrecision;  ///< precision of depth buffer for image based rendering
 
-  void renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer);
+  void renderImage(vvMatrix& pr, vvMatrix& mv, vvRayRend* renderer);
 };
 
 #endif

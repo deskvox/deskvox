@@ -45,7 +45,7 @@ vvRemoteClient::ErrorType vvRenderMaster::setRenderer(vvRenderer* renderer)
   if (texRend == NULL)
   {
     cerr << "vvRenderMaster::setRenderer(): Renderer is no texture based renderer" << endl;
-    return vvRemoteClient::VV_BAD_RENDERER_ERROR;
+    return vvRemoteClient::VV_WRONG_RENDERER;
   }
 
   // This will build up the bsp tree of the master node.
@@ -84,7 +84,7 @@ vvRemoteClient::ErrorType vvRenderMaster::render()
   if (renderer == NULL)
   {
     cerr << "Renderer is no texture based renderer" << endl;
-    return vvRemoteClient::VV_BAD_RENDERER_ERROR;
+    return vvRemoteClient::VV_WRONG_RENDERER;
   }
   float matrixGL[16];
 

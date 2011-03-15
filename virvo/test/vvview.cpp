@@ -6,7 +6,6 @@
 //****************************************************************************
 
 #define IMAGESPACE_APPROX
-
 #ifdef HLRS
 #include "virvo/vvglew.h"
 //#include "virvo/vvconfig.h"
@@ -69,6 +68,7 @@ using std::ios;
 #include "virvo/vvrenderslave.h"
 #include "virvo/vvisaclient.h"
 #include "virvo/vvisaserver.h"
+#include "virvo/vvimage.h"
 #include "virvo/vvremoteserver.h"
 #include "virvo/vvrenderer.h"
 #include "virvo/vvfileio.h"
@@ -99,6 +99,7 @@ using std::ios;
 #include "../src/vvremoteserver.h"
 #include "../src/vvisaclient.h"
 #include "../src/vvisaserver.h"
+#include "../src/vvimage.h"
 #include "../src/vvrenderer.h"
 #include "../src/vvfileio.h"
 #include "../src/vvdebugmsg.h"
@@ -188,7 +189,8 @@ vvView::vvView()
   slaveMode             = false;
   slavePort             = vvView::DEFAULT_PORT;
   remoteRendering       = false;
-  clusterRendering      = true;
+  depthPrecision        = vvImage2_5d::VV_USHORT;
+  clusterRendering      = false;
   clipBuffer            = NULL;
   framebufferDump       = NULL;
   redistributeVolData   = false;
@@ -247,10 +249,11 @@ void vvView::mainLoop(int argc, char *argv[])
   {
     while (1)
     {
-      cerr << "Renderer started in slave mode" << remoteRendering << " " << clusterRendering << endl;
-      if(remoteRendering)
+      if(remoteRendering && rendererType == vvRenderer::RAYREND)
       {
         vvIsaServer* renderSlave = new vvIsaServer();
+
+        renderSlave->setDepthPrecision(depthPrecision);
 
         if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvIsaServer::VV_OK)
         {
@@ -262,23 +265,8 @@ void vvView::mainLoop(int argc, char *argv[])
 
         if (renderSlave->initData(vd) != vvIsaServer::VV_OK)
         {
-          cerr << "Exiting..." << endl;
+          cerr << "Exiting...(1)" << endl;
           return;
-        }
-
-        // Get bricks to render
-        std::vector<BrickList>* frames = new std::vector<BrickList>();
-
-        for (int f=0; f<vd->frames; ++f)
-        {
-          BrickList bricks;
-          if (renderSlave->initBricks(bricks) != vvIsaServer::VV_OK)
-          {
-            delete frames;
-            cerr << "Exiting..." << endl;
-            return;
-          }
-          frames->push_back(bricks);
         }
 
         if (vd != NULL)
@@ -302,11 +290,11 @@ void vvView::mainLoop(int argc, char *argv[])
           {
             ov = new vvObjView();
             setProjectionMode(perspectiveMode);
-            setRenderer(currentGeom, currentVoxels, frames);
+            setRenderer(currentGeom, currentVoxels);
             srand(time(NULL));
 
-            renderSlave->renderLoop(dynamic_cast<vvTexRend*>(renderer));
-            cerr << "Exiting..." << endl;
+            renderSlave->renderLoop(dynamic_cast<vvRayRend*>(renderer));
+            cerr << "Exiting...(2)" << endl;
           }
           delete context;
         }
@@ -376,6 +364,7 @@ void vvView::mainLoop(int argc, char *argv[])
           }
           delete vd;
           delete context;
+          delete vd;
         }
 
         // Frames vector with bricks is deleted along with the renderer.
@@ -387,6 +376,9 @@ void vvView::mainLoop(int argc, char *argv[])
       }
       else
       {
+        if(remoteRendering && rendererType == vvRenderer::RAYREND)
+          std::cerr << "remote rendering works with rayrend only." << std::endl;
+
         break;
       }
     }
@@ -457,9 +449,12 @@ void vvView::mainLoop(int argc, char *argv[])
 #ifdef HAVE_CUDA
     vvCuda::initGlInterop();
 #endif
+
+    std::cerr << "remoteRendering: " << remoteRendering << std::endl;
     if (remoteRendering)
     {
       _renderMaster = new vvIsaClient(slaveNames, slavePorts, slaveFileNames, filename);
+      dynamic_cast<vvIsaClient*>(_renderMaster)->setDepthPrecision(depthPrecision);
       remoteRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT,
                                                     redistributeVolData, vd) == vvRemoteClient::VV_OK);
     }
@@ -479,11 +474,12 @@ void vvView::mainLoop(int argc, char *argv[])
     setProjectionMode(perspectiveMode);
     setRenderer(currentGeom, currentVoxels);
 
-    if (remoteRendering)
+    if(remoteRendering)
     {
       remoteRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
     }
-    else if(clusterRendering)
+
+    if(clusterRendering)
     {
       clusterRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
     }
@@ -570,6 +566,11 @@ void vvView::reshapeCallback(int w, int h)
 void vvView::displayCallback(void)
 {
   vvDebugMsg::msg(3, "vvView::displayCallback()");
+
+  glDrawBuffer(GL_BACK);
+  glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
   if (ds->clusterRendering || ds->remoteRendering)
   {
     ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
@@ -580,10 +581,6 @@ void vvView::displayCallback(void)
   }
   else
   {
-    glDrawBuffer(GL_BACK);
-    glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     ds->renderer->setParameter(vvRenderState::VV_QUALITY, ((ds->hqMode) ? ds->highQuality : ds->draftQuality));
 
     ds->renderer->setParameter(vvRenderer::VV_MEASURETIME, (float)ds->fpsMode);
@@ -898,9 +895,18 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       }
   }
 
-  if(remoteRendering)
+  if(remoteRendering && slaveMode)
   {
-    remoteRendering &= ((rendererType == vvRenderer::TEXREND)
+    if(slaveMode)
+      remoteRendering = (rendererType == vvRenderer::RAYREND);
+    else
+      remoteRendering = ((rendererType == vvRenderer::TEXREND)
+                         && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
+  }
+
+  if(clusterRendering)
+  {
+    clusterRendering &= ((rendererType == vvRenderer::TEXREND)
                         && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
   }
 

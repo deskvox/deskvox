@@ -27,6 +27,7 @@
 #include "vvremoteclient.h"
 #include "vvvoldesc.h"
 #include "vvpthread.h"
+#include "vvgltools.h"
 
 #include <vector>
 
@@ -61,16 +62,9 @@ public:
   void toggleBoundingBox();
   void updateTransferFunction(vvTransFunc& tf);
   void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
-  //void setISA(const bool isa);
+  void setDepthPrecision(vvImage2_5d::DepthPrecision dp);
 
 private:
-  vvMatrix _mv;
-  vvMatrix _pr;
-  bool _gapStart;
-
-  vvBspTree* _bspTree;
-  vvSlaveVisitor* _visitor;
-
   struct ThreadArgs
   {
     int threadId;
@@ -78,9 +72,9 @@ private:
     std::vector<vvImage*>* images;
   };
 
-  pthread_t* _threads;
-  ThreadArgs* _threadData;
-  pthread_barrier_t _barrier;
+  pthread_t*        _threads;
+  ThreadArgs*       _threadData;
+//  pthread_barrier_t _barrier;
 
   void adjustQuality(float quality);
   void setInterpolation(bool interpolation);
@@ -90,14 +84,19 @@ private:
   bool _slaveRdy;
   int  _slaveCnt;
 
-//  bool    _imagespaceApprox;
-  vvRect* _isaRect[2];
-  void    initIsaFrame();
+  bool                _gapStart;
+  vvRect*             _isaRect[2];
+  vvGLTools::Viewport _vp[2];
+  float               _objPos[6];
+  GLdouble            _modelMatrix[32];
+  GLdouble            _projMatrix[32];
+  void initIsaFrame();
+
+  vvImage2_5d::DepthPrecision _depthPrecision;
 
   void createThreads();
   void destroyThreads();
   static void* getImageFromSocket(void* threadargs);
-
 };
 
 #endif

@@ -115,6 +115,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     enum DataType                                 /// data type for get/putData
     {
       VV_UCHAR,
+      VV_USHORT,
       VV_INT,
       VV_FLOAT
     };

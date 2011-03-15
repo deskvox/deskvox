@@ -99,20 +99,29 @@ void vvRenderContext::init()
 
     _archData->glxContext = glXCreateContext(_archData->display, vi, NULL, True);
 
-    int windowWidth = 1;
-    int windowHeight = 1;
-    if (vvDebugMsg::getDebugLevel() > 0)
+    if (_archData->glxContext != 0)
     {
-      windowWidth = 512;
-      windowHeight = 512;
-    }
 
-    _archData->drawable = XCreateWindow(_archData->display, parent, 0, 0, windowWidth, windowHeight, 0,
-                                        vi->depth, InputOutput, vi->visual,
-                                        CWBackPixmap|CWBorderPixel|CWColormap|CWOverrideRedirect, &wa);
-    XMapWindow(_archData->display, _archData->drawable);
-    XFlush(_archData->display);
-    _initialized = true;
+      int windowWidth = 1;
+      int windowHeight = 1;
+      if (vvDebugMsg::getDebugLevel() > 0)
+      {
+        windowWidth = 512;
+        windowHeight = 512;
+      }
+
+      _archData->drawable = XCreateWindow(_archData->display, parent, 0, 0, windowWidth, windowHeight, 0,
+                                          vi->depth, InputOutput, vi->visual,
+                                          CWBackPixmap|CWBorderPixel|CWColormap|CWOverrideRedirect, &wa);
+      XMapWindow(_archData->display, _archData->drawable);
+      XFlush(_archData->display);
+      _initialized = true;
+    }
+    else
+    {
+      cerr << "Couldn't create OpenGL context" << endl;
+      _initialized = false;
+    }
   }
   else
   {

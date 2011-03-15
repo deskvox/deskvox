@@ -39,6 +39,7 @@ class vvSocketIO;
 class vvStopwatch;
 
 #include <vector>
+#include "../src/vvimage.h"
 
 class vvView
 {
@@ -131,6 +132,7 @@ class vvView
     bool useHeadLight;                          ///< toggle head light
     int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
     bool remoteRendering;                       ///< remote rendering in client mode
+    vvImage2_5d::DepthPrecision  depthPrecision;///< Precision of depth buffer in remote rendering mode
     bool clusterRendering;                      ///< cluster rendering in client mode
     vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
     GLfloat* framebufferDump;

@@ -134,7 +134,7 @@ class VIRVOEXPORT vvImage
     int videoEncode();
     int videoDecode();
 
-  protected:
+protected:
     short height;
     short width;
 };
@@ -142,18 +142,29 @@ class VIRVOEXPORT vvImage
 class VIRVOEXPORT vvImage2_5d : public vvImage
 {
   public:
-    vvImage2_5d(short, short, uchar*);
+    enum DepthPrecision
+    {
+      VV_UCHAR,
+      VV_USHORT,
+      VV_UINT
+    };
+
+    vvImage2_5d(short, short, uchar*, DepthPrecision);
     vvImage2_5d();
     virtual ~vvImage2_5d();
 
-    float getdepth(uint x, uint y);
-    void setdepth(uint x, uint y, float);
+    uchar*  getpixeldepthUchar();
+    ushort* getpixeldepthUshort();
+    uint*   getpixeldepthUint();
+    void    alloc_pd();
 
-    float* getpixeldepth();
-    int alloc_pd();
-
+    void setDepthPrecision(DepthPrecision dp);
+    DepthPrecision getDepthPrecision();
   private:
-    float* pixeldepth;
+    DepthPrecision  _depthPrecision;
+    uchar*          _pixeldepthUchar;
+    ushort*         _pixeldepthUshort;
+    uint*           _pixeldepthUint;
 };
 
 #endif

@@ -672,7 +672,7 @@ int vvImage::alloc_mem()
     return -1;
   }
 #endif
-
+  std::cerr<< "alloc mem: " << width << " " << height << std::endl;
   if (imageptr == codedimage)
   {
     if (imageptr != 0)
@@ -910,50 +910,77 @@ int vvImage::gen_RLC_decode(uchar* in, uchar* out, int size, int symbol_size, in
 
 //----------------------------------------------------------------------------
 
-vvImage2_5d::vvImage2_5d(short h, short w, uchar* image)
+vvImage2_5d::vvImage2_5d(short h, short w, uchar* image, DepthPrecision dp)
 : vvImage(h, w, image)
 {
-  pixeldepth = new float[h*w];
+  _depthPrecision = dp;
+  _pixeldepthUchar  = 0;
+  _pixeldepthUshort = 0;
+  _pixeldepthUint   = 0;
 }
 
 vvImage2_5d::vvImage2_5d()
 : vvImage()
 {
-  pixeldepth = 0;
+  _pixeldepthUchar  = 0;
+  _pixeldepthUshort = 0;
+  _pixeldepthUint   = 0;
 }
 
 vvImage2_5d::~vvImage2_5d()
 {
-  if(pixeldepth)
-    delete pixeldepth;
+  delete[] _pixeldepthUchar;
+  delete[] _pixeldepthUshort;
+  delete[] _pixeldepthUint;
 }
 
-float vvImage2_5d::getdepth(uint x, uint y)
+uchar* vvImage2_5d::getpixeldepthUchar()
 {
-  return pixeldepth[y*width+x];
+  return _pixeldepthUchar;
 }
 
-void vvImage2_5d::setdepth(uint x, uint y, float d)
+ushort* vvImage2_5d::getpixeldepthUshort()
 {
-  pixeldepth[y*width+x] = d;
+  return _pixeldepthUshort;
 }
 
-float* vvImage2_5d::getpixeldepth()
-{
-  return pixeldepth;
+uint* vvImage2_5d::getpixeldepthUint()
+{std::cerr << "getpixeldepthUint " << _pixeldepthUint << std::endl;
+  return _pixeldepthUint;
 }
 
 //----------------------------------------------------------------------------
 /** Allocates momory for a new image and 2.5d-data
  */
-int vvImage2_5d::alloc_pd()
+void vvImage2_5d::alloc_pd()
 {
-  if(pixeldepth !=0)
-    delete pixeldepth;
+  delete[] _pixeldepthUchar;
+  delete[] _pixeldepthUshort;
+  delete[] _pixeldepthUint;
 
-  pixeldepth = new float[width*height];
-  if (!pixeldepth)
-    return -1;
+  _pixeldepthUchar  = NULL;
+  _pixeldepthUshort = NULL;
+  _pixeldepthUint   = NULL;
+  switch(_depthPrecision)
+  {
+  case VV_UCHAR:
+    _pixeldepthUchar = new uchar[width*height];
+    break;
+  case VV_USHORT:
+    _pixeldepthUshort = new ushort[width*height];
+    break;
+  case VV_UINT:
+    _pixeldepthUint = new uint[width*height];
+    break;
+  }
+}
 
-  return 0;
+vvImage2_5d::DepthPrecision vvImage2_5d::getDepthPrecision()
+{
+  return _depthPrecision;
+}
+
+void vvImage2_5d::setDepthPrecision(DepthPrecision dp)
+{
+  _depthPrecision = dp;
 }
