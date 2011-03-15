@@ -90,7 +90,7 @@ private:
   float               _objPos[6];
   GLdouble            _modelMatrix[32];
   GLdouble            _projMatrix[32];
-  void initIsaFrame();
+  void initIbrFrame();
 
   vvImage2_5d::DepthPrecision _depthPrecision;
 

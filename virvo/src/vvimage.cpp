@@ -672,7 +672,6 @@ int vvImage::alloc_mem()
     return -1;
   }
 #endif
-  std::cerr<< "alloc mem: " << width << " " << height << std::endl;
   if (imageptr == codedimage)
   {
     if (imageptr != 0)
@@ -945,7 +944,7 @@ ushort* vvImage2_5d::getpixeldepthUshort()
 }
 
 uint* vvImage2_5d::getpixeldepthUint()
-{std::cerr << "getpixeldepthUint " << _pixeldepthUint << std::endl;
+{
   return _pixeldepthUint;
 }
 

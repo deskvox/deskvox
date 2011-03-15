@@ -131,7 +131,7 @@ class vvView
     bool useOffscreenBuffer;                    ///< render to an offscreen buffer. Mandatory for setting buffer precision
     bool useHeadLight;                          ///< toggle head light
     int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
-    bool remoteRendering;                       ///< remote rendering in client mode
+    bool ibRendering;                       ///< remote rendering in client mode
     vvImage2_5d::DepthPrecision  depthPrecision;///< Precision of depth buffer in remote rendering mode
     bool clusterRendering;                      ///< cluster rendering in client mode
     vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code

@@ -188,7 +188,7 @@ vvView::vvView()
   useHeadLight          = false;
   slaveMode             = false;
   slavePort             = vvView::DEFAULT_PORT;
-  remoteRendering       = true;
+  ibRendering           = false;
   depthPrecision        = vvImage2_5d::VV_USHORT;
   clusterRendering      = false;
   clipBuffer            = NULL;
@@ -249,7 +249,7 @@ void vvView::mainLoop(int argc, char *argv[])
   {
     while (1)
     {
-      if(remoteRendering && rendererType == vvRenderer::RAYREND)
+      if(ibRendering && rendererType == vvRenderer::RAYREND)
       {
         vvIbrServer* renderSlave = new vvIbrServer();
 
@@ -376,7 +376,7 @@ void vvView::mainLoop(int argc, char *argv[])
       }
       else
       {
-        if(remoteRendering && rendererType == vvRenderer::RAYREND)
+        if(ibRendering && rendererType == vvRenderer::RAYREND)
           std::cerr << "remote rendering works with rayrend only." << std::endl;
 
         break;
@@ -441,7 +441,7 @@ void vvView::mainLoop(int argc, char *argv[])
         bonjourResolver->resolveBonjourEntry((*it));
       }
 #endif
-      remoteRendering = false;
+      ibRendering = false;
       clusterRendering = false;
     }
 
@@ -450,12 +450,12 @@ void vvView::mainLoop(int argc, char *argv[])
     vvCuda::initGlInterop();
 #endif
 
-    std::cerr << "remoteRendering: " << remoteRendering << std::endl;
-    if (remoteRendering)
+    std::cerr << "ibRendering: " << ibRendering << std::endl;
+    if (ibRendering)
     {
       _renderMaster = new vvIbrClient(slaveNames, slavePorts, slaveFileNames, filename);
       dynamic_cast<vvIbrClient*>(_renderMaster)->setDepthPrecision(depthPrecision);
-      remoteRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT,
+      ibRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT,
                                                     redistributeVolData, vd) == vvRemoteClient::VV_OK);
     }
     else if(clusterRendering)
@@ -474,9 +474,9 @@ void vvView::mainLoop(int argc, char *argv[])
     setProjectionMode(perspectiveMode);
     setRenderer(currentGeom, currentVoxels);
 
-    if(remoteRendering)
+    if(ibRendering)
     {
-      remoteRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
+      ibRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
     }
 
     if(clusterRendering)
@@ -553,7 +553,7 @@ void vvView::reshapeCallback(int w, int h)
     vvRenderMaster* rend = dynamic_cast<vvRenderMaster*>(ds->_renderMaster);
     rend->resize(w, h);
   }
-  else if(ds->remoteRendering)
+  else if(ds->ibRendering)
   {
     vvIbrClient* rend = dynamic_cast<vvIbrClient*>(ds->_renderMaster);
     rend->resize(w, h);
@@ -571,7 +571,7 @@ void vvView::displayCallback(void)
   glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (ds->clusterRendering || ds->remoteRendering)
+  if (ds->clusterRendering || ds->ibRendering)
   {
     ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
 
@@ -895,12 +895,12 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       }
   }
 
-  if(remoteRendering && slaveMode)
+  if(ibRendering && slaveMode)
   {
     if(slaveMode)
-      remoteRendering = (rendererType == vvRenderer::RAYREND);
+      ibRendering = (rendererType == vvRenderer::RAYREND);
     else
-      remoteRendering = ((rendererType == vvRenderer::TEXREND)
+      ibRendering = ((rendererType == vvRenderer::TEXREND)
                          && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
   }
 
@@ -1102,7 +1102,7 @@ void vvView::specialCallback(int key, int, int)
   default: break;
   }
 
-  if (ds->remoteRendering || ds->clusterRendering)
+  if (ds->ibRendering || ds->clusterRendering)
   {
     ds->_renderMaster->setProbePosition(&probePos);
   }
@@ -1433,7 +1433,7 @@ void vvView::rendererMenuCallback(int item)
     ds->renderer->setParameter(vvRenderState::VV_QUALITY, (ds->hqMode) ? ds->highQuality : ds->draftQuality);
     cerr << QUALITY_NAMES[ds->hqMode] << " quality: " <<
         ((ds->hqMode) ? ds->highQuality : ds->draftQuality) << endl;
-    if (ds->remoteRendering || ds->clusterRendering)
+    if (ds->ibRendering || ds->clusterRendering)
     {
       ds->_renderMaster->setParameter(vvRenderState::VV_QUALITY, (ds->hqMode) ? ds->highQuality : ds->draftQuality);
     }
@@ -1474,7 +1474,7 @@ void vvView::optionsMenuCallback(int item)
     ds->interpolMode = !ds->interpolMode;
     ds->renderer->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
     cerr << "Interpolation mode set to " << int(ds->interpolMode) << endl;
-    if (ds->remoteRendering || ds->clusterRendering)
+    if (ds->ibRendering || ds->clusterRendering)
     {
       rend->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
     }
@@ -1489,7 +1489,7 @@ void vvView::optionsMenuCallback(int item)
     if (ds->mipMode>2) ds->mipMode = 0;
     ds->renderer->setParameter(vvRenderState::VV_MIP_MODE, ds->mipMode);
     cerr << "MIP mode set to " << ds->mipMode << endl;
-    if (ds->remoteRendering || ds->clusterRendering)
+    if (ds->ibRendering || ds->clusterRendering)
     {
       rend->setMipMode(ds->mipMode);
     }
@@ -1791,7 +1791,7 @@ void vvView::transferMenuCallback(int item)
   }
 
   ds->renderer->updateTransferFunction();
-  if (ds->remoteRendering || ds->clusterRendering)
+  if (ds->ibRendering || ds->clusterRendering)
   {
     ds->_renderMaster->updateTransferFunction(ds->vd->tf);
   }
@@ -1814,7 +1814,7 @@ void vvView::setAnimationFrame(int f)
 
   renderer->setCurrentFrame(frame);
 
-  if (ds->remoteRendering || ds->clusterRendering)
+  if (ds->ibRendering || ds->clusterRendering)
   {
     ds->_renderMaster->setCurrentFrame(frame);
   }
@@ -1905,7 +1905,7 @@ void vvView::roiMenuCallback(const int item)
     ds->renderer->setROIEnable(ds->roiEnabled);
     ds->renderer->setSphericalROI(ds->sphericalROI);
 
-    if (ds->remoteRendering || ds->clusterRendering)
+    if (ds->ibRendering || ds->clusterRendering)
     {
       ds->_renderMaster->setROIEnable(ds->roiEnabled);
     }
@@ -1923,7 +1923,7 @@ void vvView::roiMenuCallback(const int item)
       }
       ds->renderer->setProbeSize(&probeSize);
 
-      if (ds->remoteRendering || ds->clusterRendering)
+      if (ds->ibRendering || ds->clusterRendering)
       {
         ds->_renderMaster->setProbeSize(&probeSize);
       }
@@ -1945,7 +1945,7 @@ void vvView::roiMenuCallback(const int item)
       }
       ds->renderer->setProbeSize(&probeSize);
 
-      if (ds->remoteRendering || ds->clusterRendering)
+      if (ds->ibRendering || ds->clusterRendering)
       {
         ds->_renderMaster->setProbeSize(&probeSize);
       }
@@ -2013,7 +2013,7 @@ void vvView::viewMenuCallback(int item)
     ds->boundariesMode = !ds->boundariesMode;
     ds->renderer->setParameter(vvRenderState::VV_BOUNDARIES, ds->boundariesMode);
     cerr << "Bounding box " << ds->onOff[ds->boundariesMode] << endl;
-    if (ds->remoteRendering || ds->clusterRendering)
+    if (ds->ibRendering || ds->clusterRendering)
     {
       ds->_renderMaster->toggleBoundingBox();
     }
@@ -2068,7 +2068,7 @@ void vvView::viewMenuCallback(int item)
       // Use opposite color for object boundaries:
       //ds->renderer->setBoundariesColor(1.0f-ds->bgColor[0], 1.0f-ds->bgColor[1], 1.0f-ds->bgColor[2]);
 
-    if (ds->remoteRendering || ds->clusterRendering)
+    if (ds->ibRendering || ds->clusterRendering)
     {
       ds->_renderMaster->setBackgroundColor(ds->bgColor);
     }

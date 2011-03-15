@@ -138,7 +138,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     }
 
     _slaveCnt = _sockets.size();  // reset count-down
-    initIsaFrame();               // initialize gap-frame
+    initIbrFrame();               // initialize gap-frame
 
     pthread_mutex_unlock(&_slaveMutex);
   }
@@ -175,29 +175,16 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   pthread_mutex_unlock( &_slaveMutex );
 
-  // DEBUG POINTS
-  double temp[3];
-    for(float i=0; i<255; i++)
-    {
-      gluUnProject(250,250,double(i/255.), _modelMatrix, _projMatrix, _vp[0].values,
-                   &temp[0],&temp[1],&temp[2]);
-      glBegin(GL_POINTS);
-      glColor3f(1., 0.,0.);
-      glVertex3f(temp[0],temp[1],temp[2]);
-      glEnd();
-    }
-
   glFlush();
 
   return VV_OK;
 }
 
-void vvIbrClient::initIsaFrame()
+void vvIbrClient::initIbrFrame()
 {
   vvImage2_5d* isaImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
   if(!isaImg)
   {
-    std::cerr << "error - no legal image pointer" << std::cerr;
     return;
   }
 
@@ -261,7 +248,6 @@ void vvIbrClient::initIsaFrame()
       gluUnProject(_isaRect[0]->x+x, _isaRect[0]->y+y, double(depth[y*w+x]),
                    _modelMatrix, _projMatrix, _vp[0].values,
                    &winPoint[0],&winPoint[1],&winPoint[2]);
-      //if(x==100 && y == 100) std::cerr << "depth for 100/100: " << depth[y*w+x] << " " << float(depth[y*w+x])/65535. << std::endl;
       points[y*w*3+x*3]   = winPoint[0];
       points[y*w*3+x*3+1] = winPoint[1];
       points[y*w*3+x*3+2] = winPoint[2];
