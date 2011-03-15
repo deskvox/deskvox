@@ -37,9 +37,6 @@ class vvSlaveVisitor;
 class VIRVOEXPORT vvIbrClient : public vvRemoteClient
 {
 public:
-  vvVector3 _eye;
-  GLuint _pointVBO;
-  GLuint _colorVBO;
 
   vvIbrClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                  std::vector<const char*>& slaveFileNames,
@@ -75,6 +72,10 @@ private:
   pthread_t*        _threads;
   ThreadArgs*       _threadData;
 //  pthread_barrier_t _barrier;
+
+  vvVector3 _eye;
+  GLuint _pointVBO;
+  GLuint _colorVBO;
 
   void adjustQuality(float quality);
   void setInterpolation(bool interpolation);
