@@ -85,7 +85,8 @@ class vvView
     int   x1,y1,x2,y2;                          ///< mouse coordinates for auto-rotation
     int   lastWidth, lastHeight;                ///< last window size
     int   lastPosX, lastPosY;                   ///< last window position
-    bool  slaveMode;                            ///< true = renderer started as slave
+    bool  clientMode;                           ///< true = renderer started as client
+    bool  serverMode;                           ///< true = renderer started as server
     int   slavePort;                            ///< port the slave renderer uses to listen for incoming connections
     bool  emptySpaceLeapingMode;                ///< true = bricks invisible due to current transfer function aren't rendered
     bool  earlyRayTermination;                  ///< true = don't compute invisible fragments

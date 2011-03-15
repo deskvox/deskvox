@@ -186,11 +186,12 @@ vvView::vvView()
   useOffscreenBuffer    = false;
   bufferPrecision       = 8;
   useHeadLight          = false;
-  slaveMode             = false;
+  clientMode            = false;
+  serverMode            = false;
   slavePort             = vvView::DEFAULT_PORT;
-  ibRendering           = true;
+  ibRendering           = false;
   depthPrecision        = vvImage2_5d::VV_USHORT;
-  clusterRendering      = true;
+  clusterRendering      = false;
   clipBuffer            = NULL;
   framebufferDump       = NULL;
   redistributeVolData   = false;
@@ -245,7 +246,7 @@ void vvView::mainLoop(int argc, char *argv[])
 {
   vvDebugMsg::msg(2, "vvView::mainLoop()");
 
-  if (slaveMode)
+  if (serverMode)
   {
     while (1)
     {
@@ -380,7 +381,7 @@ void vvView::mainLoop(int argc, char *argv[])
       }
       else
       {
-        if(ibRendering && rendererType == vvRenderer::RAYREND)
+        if(ibRendering && rendererType != vvRenderer::RAYREND)
           std::cerr << "remote rendering works with rayrend only." << std::endl;
 
         break;
@@ -898,9 +899,9 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       }
   }
 
-  if(ibRendering && slaveMode)
+  if(ibRendering && serverMode)
   {
-    if(slaveMode)
+    if(serverMode)
       ibRendering = (rendererType == vvRenderer::RAYREND);
     else
       ibRendering = ((rendererType == vvRenderer::TEXREND)
@@ -913,7 +914,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
                         && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
   }
 
-  if (!slaveMode)
+  if (!serverMode)
   {
     renderer->setROIEnable(roiEnabled);
     printROIMessage();
@@ -2821,8 +2822,17 @@ void vvView::displayHelpInfo()
   cerr << endl;
   cerr << "Available options:" << endl;
   cerr << endl;
-  cerr << "-s" << endl;
-  cerr << " Renderer is a render slave and accepts assignments from a master renderer" << endl;
+  cerr << "-serverMode <mode> (-s)" << endl;
+  cerr << " Renderer is a server in mode <mode> and accepts assignments from a client" << endl;
+  cerr << " Modes:" << endl;
+  cerr << " cluster = cluster rendering (default)" << endl;
+  cerr << " ibr     = image based rendering" << endl;
+  cerr << endl;
+  cerr << "-clientMode <mode> (-c)" << endl;
+  cerr << " Renderer is a client in mode <mode> and connects to server(s) given with -server" << endl;
+  cerr << " Modes:" << endl;
+  cerr << " cluster = cluster rendering (default)" << endl;
+  cerr << " ibr     = image based rendering" << endl;
   cerr << endl;
   cerr << "-port" << endl;
   cerr << " Renderer is a render slave. Don't use the default port (31050), but the specified one" << endl;
@@ -2858,12 +2868,12 @@ void vvView::displayHelpInfo()
   cerr << "-dsp <host:display.screen>" << endl;
   cerr << "  Add x-org display for additional rendering context" << endl;
   cerr << endl;
-  cerr << "-slave <url>[:port]" << endl;
-  cerr << "  Add a slave renderer connected to over tcp ip" << endl;
+  cerr << "-server <url>[:port]" << endl;
+  cerr << "  Add a server renderer connected to over tcp ip" << endl;
   cerr << endl;
-  cerr << "-slavefilename <path to file>" << endl;
-  cerr << "  Path to a file where the slave can find its volume data" << endl;
-  cerr << "  If this entry is -slavefilename n, the n'th slave will try to load this file" << endl;
+  cerr << "-serverfilename <path to file>" << endl;
+  cerr << "  Path to a file where the server can find its volume data" << endl;
+  cerr << "  If this entry is -serverfilename n, the n'th server will try to load this file" << endl;
   cerr << endl;
   cerr << "-redistributevoldata" << endl;
   cerr << "  Don't load slave volume data from file, it will be redistributed by the master to all slaves" << endl;
@@ -2945,9 +2955,64 @@ bool vvView::parseCommandLine(int argc, char** argv)
       displayHelpInfo();
       return false;
     }
-    else if (vvToolshed::strCompare(argv[arg], "-s")==0)
+    else if (vvToolshed::strCompare(argv[arg], "-s")==0 ||
+             vvToolshed::strCompare(argv[arg], "-serverMode")==0)
     {
-      slaveMode = true;
+      serverMode = true;
+
+      string val;
+      if(argv[arg+1])
+        val = argv[arg+1];
+
+      cerr << "val: [" << val << "]" << endl;
+
+      if(val == "cluster")
+      {
+        //currentGeom = (vvTexRend::GeometryType)val; // needed ?!?!????
+        clusterRendering = true;
+        setRendererType(vvRenderer::TEXREND);
+        arg++;
+      }
+      else if(val == "ibr")
+      {
+        ibRendering = true;
+        setRendererType(vvRenderer::RAYREND);
+        arg++;
+      }
+      else
+      {
+        cerr << "Set default server mode: cluster-rendering" << endl;
+        clusterRendering = true;
+        setRendererType(vvRenderer::TEXREND);
+      }
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-c")==0 ||
+             vvToolshed::strCompare(argv[arg], "-clientMode")==0)
+    {
+      clientMode = true;
+      string val;
+      if(argv[arg+1])
+        val = argv[arg+1];
+
+      cerr << "val: [" << val << "]" << endl;
+
+      if(val == "cluster")
+      {
+        //currentGeom = (vvTexRend::GeometryType)val; // needed ?!?!????
+        clusterRendering = true;
+        setRendererType(vvRenderer::TEXREND);
+        arg++;
+      }
+      else if(val == "ibr")
+      {
+        ibRendering = true;
+        arg++;
+      }
+      else
+      {
+        cerr << "Set default server mode: cluster-rendering" << endl;
+        clusterRendering = true;
+      }
     }
     else if (vvToolshed::strCompare(argv[arg], "-nobt")==0)
     {
@@ -3071,11 +3136,11 @@ bool vvView::parseCommandLine(int argc, char** argv)
     {
       useHeadLight = true;
     }
-    else if (vvToolshed::strCompare(argv[arg], "-slave")==0)
+    else if (vvToolshed::strCompare(argv[arg], "-server")==0)
     {
       if ((++arg)>=argc)
       {
-        cerr << "Slave unspecified." << endl;
+        cerr << "Server unspecified." << endl;
         return false;
       }
       const int port = vvToolshed::parsePort(argv[arg]);
@@ -3092,11 +3157,11 @@ bool vvView::parseCommandLine(int argc, char** argv)
       }
       slaveNames.push_back(sname);
     }
-    else if (vvToolshed::strCompare(argv[arg], "-slavefilename")==0)
+    else if (vvToolshed::strCompare(argv[arg], "-serverfilename")==0)
     {
       if ((++arg)>=argc)
       {
-        cerr << "Slave file name unspecified" << endl;
+        cerr << "Server file name unspecified" << endl;
         return false;
       }
       slaveFileNames.push_back(argv[arg]);
