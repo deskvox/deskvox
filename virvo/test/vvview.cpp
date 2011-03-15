@@ -66,8 +66,8 @@ using std::ios;
 #include "virvo/vvrendercontext.h"
 #include "virvo/vvrendermaster.h"
 #include "virvo/vvrenderslave.h"
-#include "virvo/vvisaclient.h"
-#include "virvo/vvisaserver.h"
+#include "virvo/vvibrclient.h"
+#include "virvo/vvibrserver.h"
 #include "virvo/vvimage.h"
 #include "virvo/vvremoteserver.h"
 #include "virvo/vvrenderer.h"
@@ -97,8 +97,8 @@ using std::ios;
 #include "../src/vvrendermaster.h"
 #include "../src/vvrenderslave.h"
 #include "../src/vvremoteserver.h"
-#include "../src/vvisaclient.h"
-#include "../src/vvisaserver.h"
+#include "../src/vvibrclient.h"
+#include "../src/vvibrserver.h"
 #include "../src/vvimage.h"
 #include "../src/vvrenderer.h"
 #include "../src/vvfileio.h"
@@ -188,7 +188,7 @@ vvView::vvView()
   useHeadLight          = false;
   slaveMode             = false;
   slavePort             = vvView::DEFAULT_PORT;
-  remoteRendering       = false;
+  remoteRendering       = true;
   depthPrecision        = vvImage2_5d::VV_USHORT;
   clusterRendering      = false;
   clipBuffer            = NULL;
@@ -251,11 +251,11 @@ void vvView::mainLoop(int argc, char *argv[])
     {
       if(remoteRendering && rendererType == vvRenderer::RAYREND)
       {
-        vvIsaServer* renderSlave = new vvIsaServer();
+        vvIbrServer* renderSlave = new vvIbrServer();
 
         renderSlave->setDepthPrecision(depthPrecision);
 
-        if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvIsaServer::VV_OK)
+        if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvIbrServer::VV_OK)
         {
           // TODO: Evaluate the error type, maybe don't even return but try again.
           cerr << "Couldn't initialize the socket connection" << endl;
@@ -263,7 +263,7 @@ void vvView::mainLoop(int argc, char *argv[])
           return;
         }
 
-        if (renderSlave->initData(vd) != vvIsaServer::VV_OK)
+        if (renderSlave->initData(vd) != vvIbrServer::VV_OK)
         {
           cerr << "Exiting...(1)" << endl;
           return;
@@ -453,8 +453,8 @@ void vvView::mainLoop(int argc, char *argv[])
     std::cerr << "remoteRendering: " << remoteRendering << std::endl;
     if (remoteRendering)
     {
-      _renderMaster = new vvIsaClient(slaveNames, slavePorts, slaveFileNames, filename);
-      dynamic_cast<vvIsaClient*>(_renderMaster)->setDepthPrecision(depthPrecision);
+      _renderMaster = new vvIbrClient(slaveNames, slavePorts, slaveFileNames, filename);
+      dynamic_cast<vvIbrClient*>(_renderMaster)->setDepthPrecision(depthPrecision);
       remoteRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT,
                                                     redistributeVolData, vd) == vvRemoteClient::VV_OK);
     }
@@ -555,7 +555,7 @@ void vvView::reshapeCallback(int w, int h)
   }
   else if(ds->remoteRendering)
   {
-    vvIsaClient* rend = dynamic_cast<vvIsaClient*>(ds->_renderMaster);
+    vvIbrClient* rend = dynamic_cast<vvIbrClient*>(ds->_renderMaster);
     rend->resize(w, h);
   }
 }

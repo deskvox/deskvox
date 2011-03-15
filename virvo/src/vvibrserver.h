@@ -27,7 +27,7 @@
 #include "vvrayrend.h"
 #include "vvremoteserver.h"
 
-class VIRVOEXPORT vvIsaServer : public vvRemoteServer
+class VIRVOEXPORT vvIbrServer : public vvRemoteServer
 {
 public:
   enum ErrorType
@@ -37,17 +37,17 @@ public:
     VV_FILEIO_ERROR
   };
 
-  vvIsaServer(const BufferPrecision compositingPrecision = VV_SHORT);
-  ~vvIsaServer();
+  vvIbrServer(const BufferPrecision compositingPrecision = VV_SHORT);
+  ~vvIbrServer();
 
 //  void setCompositingPrecision(const BufferPrecision compositingPrecision);
   void setDepthPrecision(const vvImage2_5d::DepthPrecision dp);
 
 //  BufferPrecision getCompositingPrecision() const;
 
-  vvIsaServer::ErrorType initSocket(const int port, vvSocket::SocketType st);
-  vvIsaServer::ErrorType initData(vvVolDesc*& vd);
-  vvIsaServer::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
+  vvIbrServer::ErrorType initSocket(const int port, vvSocket::SocketType st);
+  vvIbrServer::ErrorType initData(vvVolDesc*& vd);
+  vvIbrServer::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
   void  renderLoop(vvRayRend* renderer);
 private:
 //  vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering

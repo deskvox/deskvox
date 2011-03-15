@@ -21,12 +21,12 @@
 #include <limits>
 
 #include "vvglew.h"
-#include "vvisaclient.h"
+#include "vvibrclient.h"
 #include "vvgltools.h"
 #include "vvtexrend.h"
 #include "float.h"
 
-vvIsaClient::vvIsaClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+vvIbrClient::vvIbrClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                                std::vector<const char*>& slaveFileNames,
                                const char* fileName)
   : vvRemoteClient(slaveNames, slavePorts, slaveFileNames, fileName)
@@ -47,7 +47,7 @@ vvIsaClient::vvIsaClient(std::vector<const char*>& slaveNames, std::vector<int>&
   pthread_mutex_init(&_slaveMutex, NULL);
 }
 
-vvIsaClient::~vvIsaClient()
+vvIbrClient::~vvIbrClient()
 {
   destroyThreads();
   glDeleteBuffers(1, &_pointVBO);
@@ -56,7 +56,7 @@ vvIsaClient::~vvIsaClient()
   delete _isaRect[1];
 }
 
-vvRemoteClient::ErrorType vvIsaClient::setRenderer(vvRenderer* renderer)
+vvRemoteClient::ErrorType vvIbrClient::setRenderer(vvRenderer* renderer)
 {
   vvTexRend* texRend = dynamic_cast<vvTexRend*>(renderer);
   if (texRend == NULL)
@@ -70,7 +70,7 @@ vvRemoteClient::ErrorType vvIsaClient::setRenderer(vvRenderer* renderer)
   return VV_OK;
 }
 
-vvRemoteClient::ErrorType vvIsaClient::render()
+vvRemoteClient::ErrorType vvIbrClient::render()
 {
   vvTexRend* renderer = dynamic_cast<vvTexRend*>(_renderer);
   if (renderer == NULL)
@@ -192,7 +192,7 @@ vvRemoteClient::ErrorType vvIsaClient::render()
   return VV_OK;
 }
 
-void vvIsaClient::initIsaFrame()
+void vvIbrClient::initIsaFrame()
 {
   vvImage2_5d* isaImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
   if(!isaImg)
@@ -281,7 +281,7 @@ void vvIsaClient::initIsaFrame()
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void vvIsaClient::exit()
+void vvIbrClient::exit()
 {
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -290,7 +290,7 @@ void vvIsaClient::exit()
   }
 }
 
-void vvIsaClient::resize(const int w, const int h)
+void vvIbrClient::resize(const int w, const int h)
 {
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -301,9 +301,9 @@ void vvIsaClient::resize(const int w, const int h)
   }
 }
 
-void vvIsaClient::setCurrentFrame(const int index)
+void vvIbrClient::setCurrentFrame(const int index)
 {
-  vvDebugMsg::msg(3, "vvIsaClient::setCurrentFrame()");
+  vvDebugMsg::msg(3, "vvIbrClient::setCurrentFrame()");
   vvRemoteClient::setCurrentFrame(index);
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -314,7 +314,7 @@ void vvIsaClient::setCurrentFrame(const int index)
   }
 }
 
-void vvIsaClient::setMipMode(const int mipMode)
+void vvIbrClient::setMipMode(const int mipMode)
 {
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -325,9 +325,9 @@ void vvIsaClient::setMipMode(const int mipMode)
   }
 }
 
-void vvIsaClient::setObjectDirection(const vvVector3* od)
+void vvIbrClient::setObjectDirection(const vvVector3* od)
 {
-  vvDebugMsg::msg(3, "vvIsaClient::setObjectDirection()");
+  vvDebugMsg::msg(3, "vvIbrClient::setObjectDirection()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_OBJECT_DIRECTION) == vvSocket::VV_OK)
@@ -337,9 +337,9 @@ void vvIsaClient::setObjectDirection(const vvVector3* od)
   }
 }
 
-void vvIsaClient::setViewingDirection(const vvVector3* vd)
+void vvIbrClient::setViewingDirection(const vvVector3* vd)
 {
-  vvDebugMsg::msg(3, "vvIsaClient::setViewingDirection()");
+  vvDebugMsg::msg(3, "vvIbrClient::setViewingDirection()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
@@ -349,9 +349,9 @@ void vvIsaClient::setViewingDirection(const vvVector3* vd)
   }
 }
 
-void vvIsaClient::setPosition(const vvVector3* p)
+void vvIbrClient::setPosition(const vvVector3* p)
 {
-  vvDebugMsg::msg(3, "vvIsaClient::setPosition()");
+  vvDebugMsg::msg(3, "vvIbrClient::setPosition()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
@@ -361,9 +361,9 @@ void vvIsaClient::setPosition(const vvVector3* p)
   }
 }
 
-void vvIsaClient::setROIEnable(const bool roiEnabled)
+void vvIbrClient::setROIEnable(const bool roiEnabled)
 {
-  vvDebugMsg::msg(1, "vvIsaClient::setROIEnable()");
+  vvDebugMsg::msg(1, "vvIbrClient::setROIEnable()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_ROI) == vvSocket::VV_OK)
@@ -373,9 +373,9 @@ void vvIsaClient::setROIEnable(const bool roiEnabled)
   }
 }
 
-void vvIsaClient::setProbePosition(const vvVector3* pos)
+void vvIbrClient::setProbePosition(const vvVector3* pos)
 {
-  vvDebugMsg::msg(1, "vvIsaClient::setProbePosition()");
+  vvDebugMsg::msg(1, "vvIbrClient::setProbePosition()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_ROI_POSITION) == vvSocket::VV_OK)
@@ -385,9 +385,9 @@ void vvIsaClient::setProbePosition(const vvVector3* pos)
   }
 }
 
-void vvIsaClient::setProbeSize(const vvVector3* newSize)
+void vvIbrClient::setProbeSize(const vvVector3* newSize)
 {
-  vvDebugMsg::msg(1, "vvIsaClient::setProbeSize()");
+  vvDebugMsg::msg(1, "vvIbrClient::setProbeSize()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_ROI_SIZE) == vvSocket::VV_OK)
@@ -397,18 +397,18 @@ void vvIsaClient::setProbeSize(const vvVector3* newSize)
   }
 }
 
-void vvIsaClient::toggleBoundingBox()
+void vvIbrClient::toggleBoundingBox()
 {
-  vvDebugMsg::msg(3, "vvIsaClient::toggleBoundingBox()");
+  vvDebugMsg::msg(3, "vvIbrClient::toggleBoundingBox()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     _sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_BOUNDINGBOX);
   }
 }
 
-void vvIsaClient::updateTransferFunction(vvTransFunc& tf)
+void vvIbrClient::updateTransferFunction(vvTransFunc& tf)
 {
-  vvDebugMsg::msg(1, "vvIsaClient::updateTransferFunction()");
+  vvDebugMsg::msg(1, "vvIbrClient::updateTransferFunction()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_TRANSFER_FUNCTION) == vvSocket::VV_OK)
@@ -418,9 +418,9 @@ void vvIsaClient::updateTransferFunction(vvTransFunc& tf)
   }
 }
 
-void vvIsaClient::setParameter(const vvRenderer::ParameterType param, const float newValue, const char*)
+void vvIbrClient::setParameter(const vvRenderer::ParameterType param, const float newValue, const char*)
 {
-  vvDebugMsg::msg(3, "vvIsaClient::setParameter()");
+  vvDebugMsg::msg(3, "vvIbrClient::setParameter()");
   switch (param)
   {
   case vvRenderer::VV_QUALITY:
@@ -435,7 +435,7 @@ void vvIsaClient::setParameter(const vvRenderer::ParameterType param, const floa
   }
 }
 
-void vvIsaClient::adjustQuality(const float quality)
+void vvIbrClient::adjustQuality(const float quality)
 {
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -446,9 +446,9 @@ void vvIsaClient::adjustQuality(const float quality)
   }
 }
 
-void vvIsaClient::setInterpolation(const bool interpolation)
+void vvIbrClient::setInterpolation(const bool interpolation)
 {
-  vvDebugMsg::msg(3, "vvIsaClient::setInterpolation()");
+  vvDebugMsg::msg(3, "vvIbrClient::setInterpolation()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_INTERPOLATION) == vvSocket::VV_OK)
@@ -458,7 +458,7 @@ void vvIsaClient::setInterpolation(const bool interpolation)
   }
 }
 
-void vvIsaClient::createThreads()
+void vvIbrClient::createThreads()
 {
   _threadData = new ThreadArgs[_sockets.size()];
   _threads = new pthread_t[_sockets.size()];
@@ -476,7 +476,7 @@ void vvIsaClient::createThreads()
   }
 }
 
-void vvIsaClient::destroyThreads()
+void vvIbrClient::destroyThreads()
 {
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -488,12 +488,12 @@ void vvIsaClient::destroyThreads()
   _threadData = NULL;
 }
 
-void vvIsaClient::setDepthPrecision(vvImage2_5d::DepthPrecision dp)
+void vvIbrClient::setDepthPrecision(vvImage2_5d::DepthPrecision dp)
 {
   _depthPrecision = dp;
 }
 
-void* vvIsaClient::getImageFromSocket(void* threadargs)
+void* vvIbrClient::getImageFromSocket(void* threadargs)
 {
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
 
@@ -506,7 +506,7 @@ void* vvIsaClient::getImageFromSocket(void* threadargs)
     vvSocketIO::ErrorType err = data->renderMaster->_sockets.at(data->threadId)->getImage2_5d(img);
     if(err != vvSocketIO::VV_OK)
     {
-      std::cerr << "vvIsaClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
+      std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
       break;
     }
 

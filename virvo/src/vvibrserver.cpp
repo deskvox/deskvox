@@ -20,7 +20,7 @@
 
 #include "vvfileio.h"
 #include "vvgltools.h"
-#include "vvisaserver.h"
+#include "vvibrserver.h"
 #include "vvrayrend.h"
 #include "vvcudaimg.h"
 
@@ -28,23 +28,23 @@
 #include "vvbonjour/vvbonjourregistrar.h"
 #endif
 
-vvIsaServer::vvIsaServer(const BufferPrecision compositingPrecision)
+vvIbrServer::vvIbrServer(const BufferPrecision compositingPrecision)
   : _socket(0)
 {
 
 }
 
-vvIsaServer::~vvIsaServer()
+vvIbrServer::~vvIbrServer()
 {
   delete _socket;
 }
 
-void vvIsaServer::setDepthPrecision(const vvImage2_5d::DepthPrecision dp)
+void vvIbrServer::setDepthPrecision(const vvImage2_5d::DepthPrecision dp)
 {
   _depthPrecision = dp;
 }
 
-vvIsaServer::ErrorType vvIsaServer::initSocket(const int port, const vvSocket::SocketType st)
+vvIbrServer::ErrorType vvIbrServer::initSocket(const int port, const vvSocket::SocketType st)
 {
   delete _socket;
   _socket = new vvSocketIO(port, st);
@@ -73,7 +73,7 @@ vvIsaServer::ErrorType vvIsaServer::initSocket(const int port, const vvSocket::S
   }
 }
 
-vvIsaServer::ErrorType vvIsaServer::initData(vvVolDesc*& vd)
+vvIbrServer::ErrorType vvIbrServer::initData(vvVolDesc*& vd)
 {
   _socket->getBool(_loadVolumeFromFile);
 
@@ -120,7 +120,7 @@ vvIsaServer::ErrorType vvIsaServer::initData(vvVolDesc*& vd)
   return VV_OK;
 }
 
-vvIsaServer::ErrorType vvIsaServer::initBricks(std::vector<vvBrick*>& bricks) const
+vvIbrServer::ErrorType vvIbrServer::initBricks(std::vector<vvBrick*>& bricks) const
 {
   const vvSocket::ErrorType err = _socket->getBricks(bricks);
   switch (err)
@@ -135,7 +135,7 @@ vvIsaServer::ErrorType vvIsaServer::initBricks(std::vector<vvBrick*>& bricks) co
   return VV_OK;
 }
 
-void vvIsaServer::renderLoop(vvRayRend* renderer)
+void vvIbrServer::renderLoop(vvRayRend* renderer)
 {
   vvSocketIO::CommReason commReason;
   vvMatrix pr;
@@ -265,7 +265,7 @@ void vvIsaServer::renderLoop(vvRayRend* renderer)
 /** Perform remote rendering, read back pixel data and send it over socket
     connections using a vvImage instance.
 */
-void vvIsaServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRayRend* renderer)
+void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRayRend* renderer)
 {
   vvDebugMsg::msg(3, "vvIsaServer::renderImage()");
 

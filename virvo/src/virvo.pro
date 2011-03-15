@@ -69,8 +69,8 @@ SOURCES = vvaabb.cpp \
     vvbonjour/vvbonjourresolver.cpp \
     vvmultirend/vvtexmultirend.cpp \
     vvmultirend/vvtexmultirendmngr.cpp \
-    vvisaclient.cpp \
-    vvisaserver.cpp \
+    vvibrclient.cpp \
+    vvibrserver.cpp \
     vvremoteserver.cpp
 HEADERS = vvaabb.h \
     vvarray.h \
@@ -134,8 +134,8 @@ HEADERS = vvaabb.h \
     vvbonjour/vvbonjourresolver.h \
     vvmultirend/vvtexmultirend.h \
     vvmultirend/vvtexmultirendmngr.h \
-    vvisaclient.h \
-    vvisaserver.h \
+    vvibrclient.h \
+    vvibrserver.h \
     vvremoteserver.h
 TARGET = coVirvo
 DEVFILES = $$HEADERS

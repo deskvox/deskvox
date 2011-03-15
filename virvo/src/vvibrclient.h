@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_ISACLIENT_H_
-#define _VV_ISACLIENT_H_
+#ifndef _VV_IBRCLIENT_H_
+#define _VV_IBRCLIENT_H_
 
 #include "vvbsptree.h"
 #include "vvexport.h"
@@ -34,17 +34,17 @@
 class vvRenderer;
 class vvSlaveVisitor;
 
-class VIRVOEXPORT vvIsaClient : public vvRemoteClient
+class VIRVOEXPORT vvIbrClient : public vvRemoteClient
 {
 public:
   vvVector3 _eye;
   GLuint _pointVBO;
   GLuint _colorVBO;
 
-  vvIsaClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+  vvIbrClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                  std::vector<const char*>& slaveFileNames,
                  const char* fileName);
-  ~vvIsaClient();
+  ~vvIbrClient();
 
   ErrorType setRenderer(vvRenderer* renderer);
   ErrorType render();
@@ -68,7 +68,7 @@ private:
   struct ThreadArgs
   {
     int threadId;
-    vvIsaClient* renderMaster;
+    vvIbrClient* renderMaster;
     std::vector<vvImage*>* images;
   };
 
