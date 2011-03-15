@@ -37,20 +37,16 @@ public:
     VV_FILEIO_ERROR
   };
 
-  vvIbrServer(const BufferPrecision compositingPrecision = VV_SHORT);
+  vvIbrServer();
   ~vvIbrServer();
 
-//  void setCompositingPrecision(const BufferPrecision compositingPrecision);
   void setDepthPrecision(const vvImage2_5d::DepthPrecision dp);
-
-//  BufferPrecision getCompositingPrecision() const;
 
   vvIbrServer::ErrorType initSocket(const int port, vvSocket::SocketType st);
   vvIbrServer::ErrorType initData(vvVolDesc*& vd);
   vvIbrServer::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
   void  renderLoop(vvRayRend* renderer);
 private:
-//  vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering
   vvSocketIO* _socket;                    ///< socket for remote rendering
 
   vvImage2_5d::DepthPrecision _depthPrecision;  ///< precision of depth buffer for image based rendering

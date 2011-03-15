@@ -28,7 +28,7 @@
 #include "vvbonjour/vvbonjourregistrar.h"
 #endif
 
-vvIbrServer::vvIbrServer(const BufferPrecision compositingPrecision)
+vvIbrServer::vvIbrServer( )
   : _socket(0)
 {
 

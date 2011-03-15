@@ -188,9 +188,9 @@ vvView::vvView()
   useHeadLight          = false;
   slaveMode             = false;
   slavePort             = vvView::DEFAULT_PORT;
-  ibRendering           = false;
+  ibRendering           = true;
   depthPrecision        = vvImage2_5d::VV_USHORT;
-  clusterRendering      = false;
+  clusterRendering      = true;
   clipBuffer            = NULL;
   framebufferDump       = NULL;
   redistributeVolData   = false;
@@ -296,7 +296,10 @@ void vvView::mainLoop(int argc, char *argv[])
             renderSlave->renderLoop(dynamic_cast<vvRayRend*>(renderer));
             cerr << "Exiting...(2)" << endl;
           }
+          delete vd;
+          vd = NULL;
           delete context;
+          context = NULL;
         }
 
         // Frames vector with bricks is deleted along with the renderer.
@@ -363,8 +366,9 @@ void vvView::mainLoop(int argc, char *argv[])
             cerr << "Exiting..." << endl;
           }
           delete vd;
+          vd = NULL;
           delete context;
-          delete vd;
+          context = NULL;
         }
 
         // Frames vector with bricks is deleted along with the renderer.
