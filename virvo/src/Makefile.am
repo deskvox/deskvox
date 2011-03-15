@@ -19,6 +19,8 @@ libvirvo_a_headers = \
         vvbsptree.h \
         vvbsptreevisitors.h \
         vvcg.h \
+        vvclusterclient.h \
+        vvclusterserver.h \
         vvcolor.h \
         vvdebugmsg.h \
         vvdicom.h \
@@ -56,8 +58,6 @@ libvirvo_a_headers = \
         vvglsl.h \
         vvshadermanager.h \
         vvshaderfactory.h \
-        vvrendermaster.h \
-        vvrenderslave.h \
         vvrendertarget.h \
         vvrendercontext.h \
         vvoffscreenbuffer.h \
@@ -86,6 +86,8 @@ libvirvo_a_SOURCES = \
         vvbsptree.cpp \
         vvbsptreevisitors.cpp \
         vvcg.cpp \
+        vvclusterclient.cpp \
+        vvclusterserver.cpp \
         vvcolor.cpp \
         vvdebugmsg.cpp \
         vvdicom.cpp \
@@ -118,8 +120,6 @@ libvirvo_a_SOURCES = \
         vvglsl.cpp \
         vvshadermanager.cpp \
         vvshaderfactory.cpp \
-        vvrendermaster.cpp \
-        vvrenderslave.cpp \
         vvrendertarget.cpp \
         vvrendercontext.cpp \
         vvoffscreenbuffer.cpp \

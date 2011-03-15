@@ -20,6 +20,8 @@ SOURCES = vvaabb.cpp \
     vvbrick.cpp \
     vvcolor.cpp \
     vvdebugmsg.cpp \
+    vvclusterclient.cpp \
+    vvclusterserver.cpp \
     vvcuda.cpp \
     vvcudaimg.cpp \
     vvdicom.cpp \
@@ -34,8 +36,6 @@ SOURCES = vvaabb.cpp \
     vvremoteclient.cpp \
     vvrendercontext.cpp \
     vvrenderer.cpp \
-    vvrendermaster.cpp \
-    vvrenderslave.cpp \
     vvrendertarget.cpp \
     vvsocket.cpp \
     vvsocketio.cpp \
@@ -75,6 +75,8 @@ SOURCES = vvaabb.cpp \
 HEADERS = vvaabb.h \
     vvarray.h \
     vvbrick.h \
+    vvclusterclient.h \
+    vvclusterserver.h \
     vvcolor.h \
     vvcudatransfunc.h \
     vvdebugmsg.h \
@@ -97,8 +99,6 @@ HEADERS = vvaabb.h \
     vvremoteclient.h \
     vvrendercontext.h \
     vvrenderer.h \
-    vvrendermaster.h \
-    vvrenderslave.h \
     vvrendertarget.h \
     vvsllist.h \
     vvsocket.h \

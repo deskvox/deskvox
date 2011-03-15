@@ -94,8 +94,8 @@ using std::ios;
 #include "../src/vvprintgl.h"
 #include "../src/vvstopwatch.h"
 #include "../src/vvrendercontext.h"
-#include "../src/vvrendermaster.h"
-#include "../src/vvrenderslave.h"
+#include "../src/vvclusterclient.h"
+#include "../src/vvclusterserver.h"
 #include "../src/vvremoteserver.h"
 #include "../src/vvibrclient.h"
 #include "../src/vvibrserver.h"
@@ -194,7 +194,7 @@ vvView::vvView()
   clipBuffer            = NULL;
   framebufferDump       = NULL;
   redistributeVolData   = false;
-  _renderMaster         = NULL;
+  _clusterClient        = NULL;
   benchmark             = false;
   testSuiteFileName     = NULL;
   showBricks            = false;
@@ -233,7 +233,7 @@ vvView::~vvView()
   delete renderer;
   delete ov;
   delete vd;
-  delete _renderMaster;
+  delete _clusterClient;
 }
 
 
@@ -243,7 +243,7 @@ vvView::~vvView()
 */
 void vvView::mainLoop(int argc, char *argv[])
 {
-  vvDebugMsg::msg(0, "vvView::mainLoop()");
+  vvDebugMsg::msg(2, "vvView::mainLoop()");
 
   if (slaveMode)
   {
@@ -308,16 +308,16 @@ void vvView::mainLoop(int argc, char *argv[])
       }
       else if(clusterRendering)
       {
-        vvRenderSlave* renderSlave = new vvRenderSlave();
+        vvClusterServer* clusterServer = new vvClusterServer();
 
-        if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvRenderSlave::VV_OK)
+        if (clusterServer->initSocket(slavePort, vvSocket::VV_TCP) != vvClusterServer::VV_OK)
         {
           // TODO: Evaluate the error type, maybe don't even return but try again.
           cerr << "Couldn't initialize the socket connection" << endl;
           cerr << "Exiting..." << endl;
           return;
         }
-        if (renderSlave->initData(vd) != vvRenderSlave::VV_OK)
+        if (clusterServer->initData(vd) != vvClusterServer::VV_OK)
         {
           cerr << "Exiting..." << endl;
           return;
@@ -328,7 +328,7 @@ void vvView::mainLoop(int argc, char *argv[])
         for (int f=0; f<vd->frames; ++f)
         {
           BrickList bricks;
-          if (renderSlave->initBricks(bricks) != vvRenderSlave::VV_OK)
+          if (clusterServer->initBricks(bricks) != vvClusterServer::VV_OK)
           {
             delete frames;
             cerr << "Exiting..." << endl;
@@ -338,7 +338,7 @@ void vvView::mainLoop(int argc, char *argv[])
         }
         if (vd != NULL)
         {
-          if (renderSlave->getLoadVolumeFromFile())
+          if (clusterServer->getLoadVolumeFromFile())
           {
             vd->printInfoLine();
           }
@@ -359,7 +359,7 @@ void vvView::mainLoop(int argc, char *argv[])
             setRenderer(currentGeom, currentVoxels, frames);
             srand(time(NULL));
 
-            renderSlave->renderLoop(dynamic_cast<vvTexRend*>(renderer));
+            clusterServer->renderLoop(dynamic_cast<vvTexRend*>(renderer));
             cerr << "Exiting..." << endl;
           }
           delete vd;
@@ -371,8 +371,8 @@ void vvView::mainLoop(int argc, char *argv[])
         // Don't free them here.
         // see setRenderer().
 
-        delete renderSlave;
-        renderSlave = NULL;
+        delete clusterServer;
+        clusterServer = NULL;
       }
       else
       {
@@ -450,18 +450,17 @@ void vvView::mainLoop(int argc, char *argv[])
     vvCuda::initGlInterop();
 #endif
 
-    std::cerr << "ibRendering: " << ibRendering << std::endl;
     if (ibRendering)
     {
-      _renderMaster = new vvIbrClient(slaveNames, slavePorts, slaveFileNames, filename);
-      dynamic_cast<vvIbrClient*>(_renderMaster)->setDepthPrecision(depthPrecision);
-      ibRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT,
-                                                    redistributeVolData, vd) == vvRemoteClient::VV_OK);
+      _clusterClient = new vvIbrClient(slaveNames, slavePorts, slaveFileNames, filename);
+      dynamic_cast<vvIbrClient*>(_clusterClient)->setDepthPrecision(depthPrecision);
+      ibRendering = (_clusterClient->initSockets(vvView::DEFAULT_PORT,
+                                                 redistributeVolData, vd) == vvRemoteClient::VV_OK);
     }
     else if(clusterRendering)
     {
-      _renderMaster = new vvRenderMaster(slaveNames, slavePorts, slaveFileNames, filename);
-      clusterRendering = (_renderMaster->initSockets(vvView::DEFAULT_PORT,
+      _clusterClient = new vvClusterClient(slaveNames, slavePorts, slaveFileNames, filename);
+      clusterRendering = (_clusterClient->initSockets(vvView::DEFAULT_PORT,
                                                      redistributeVolData, vd) == vvRemoteClient::VV_OK);
     }
 
@@ -476,12 +475,12 @@ void vvView::mainLoop(int argc, char *argv[])
 
     if(ibRendering)
     {
-      ibRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
+      ibRendering = (_clusterClient->setRenderer(renderer) == vvRemoteClient::VV_OK);
     }
 
     if(clusterRendering)
     {
-      clusterRendering = (_renderMaster->setRenderer(renderer) == vvRemoteClient::VV_OK);
+      clusterRendering = (_clusterClient->setRenderer(renderer) == vvRemoteClient::VV_OK);
     }
 
     // Set window title:
@@ -550,13 +549,13 @@ void vvView::reshapeCallback(int w, int h)
 
   if (ds->clusterRendering)
   {
-    vvRenderMaster* rend = dynamic_cast<vvRenderMaster*>(ds->_renderMaster);
-    rend->resize(w, h);
+    vvClusterClient* client = dynamic_cast<vvClusterClient*>(ds->_clusterClient);
+    client->resize(w, h);
   }
   else if(ds->ibRendering)
   {
-    vvIbrClient* rend = dynamic_cast<vvIbrClient*>(ds->_renderMaster);
-    rend->resize(w, h);
+    vvIbrClient* client = dynamic_cast<vvIbrClient*>(ds->_clusterClient);
+    client->resize(w, h);
   }
 }
 
@@ -575,7 +574,7 @@ void vvView::displayCallback(void)
   {
     ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
 
-    ds->_renderMaster->render();
+    ds->_clusterClient->render();
 
     glutSwapBuffers();
   }
@@ -1104,7 +1103,7 @@ void vvView::specialCallback(int key, int, int)
 
   if (ds->ibRendering || ds->clusterRendering)
   {
-    ds->_renderMaster->setProbePosition(&probePos);
+    ds->_clusterClient->setProbePosition(&probePos);
   }
   glutPostRedisplay();
 }
@@ -1435,7 +1434,7 @@ void vvView::rendererMenuCallback(int item)
         ((ds->hqMode) ? ds->highQuality : ds->draftQuality) << endl;
     if (ds->ibRendering || ds->clusterRendering)
     {
-      ds->_renderMaster->setParameter(vvRenderState::VV_QUALITY, (ds->hqMode) ? ds->highQuality : ds->draftQuality);
+      ds->_clusterClient->setParameter(vvRenderState::VV_QUALITY, (ds->hqMode) ? ds->highQuality : ds->draftQuality);
     }
   }
   glutPostRedisplay();
@@ -1466,7 +1465,7 @@ void vvView::optionsMenuCallback(int item)
 
   vvDebugMsg::msg(1, "vvView::optionsMenuCallback()");
 
-  vvRenderMaster* rend = dynamic_cast<vvRenderMaster*>(ds->_renderMaster);
+  vvClusterClient* client = dynamic_cast<vvClusterClient*>(ds->_clusterClient);
 
   switch(item)
   {
@@ -1476,7 +1475,7 @@ void vvView::optionsMenuCallback(int item)
     cerr << "Interpolation mode set to " << int(ds->interpolMode) << endl;
     if (ds->ibRendering || ds->clusterRendering)
     {
-      rend->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
+      client->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
     }
     break;
   case 1:
@@ -1491,7 +1490,7 @@ void vvView::optionsMenuCallback(int item)
     cerr << "MIP mode set to " << ds->mipMode << endl;
     if (ds->ibRendering || ds->clusterRendering)
     {
-      rend->setMipMode(ds->mipMode);
+      client->setMipMode(ds->mipMode);
     }
     break;
   case 3:                                     // opacity correction
@@ -1793,7 +1792,7 @@ void vvView::transferMenuCallback(int item)
   ds->renderer->updateTransferFunction();
   if (ds->ibRendering || ds->clusterRendering)
   {
-    ds->_renderMaster->updateTransferFunction(ds->vd->tf);
+    ds->_clusterClient->updateTransferFunction(ds->vd->tf);
   }
   glutPostRedisplay();
 }
@@ -1816,7 +1815,7 @@ void vvView::setAnimationFrame(int f)
 
   if (ds->ibRendering || ds->clusterRendering)
   {
-    ds->_renderMaster->setCurrentFrame(frame);
+    ds->_clusterClient->setCurrentFrame(frame);
   }
 
   cerr << "Time step: " << (frame+1) << endl;
@@ -1907,7 +1906,7 @@ void vvView::roiMenuCallback(const int item)
 
     if (ds->ibRendering || ds->clusterRendering)
     {
-      ds->_renderMaster->setROIEnable(ds->roiEnabled);
+      ds->_clusterClient->setROIEnable(ds->roiEnabled);
     }
     printROIMessage();
     break;
@@ -1925,7 +1924,7 @@ void vvView::roiMenuCallback(const int item)
 
       if (ds->ibRendering || ds->clusterRendering)
       {
-        ds->_renderMaster->setProbeSize(&probeSize);
+        ds->_clusterClient->setProbeSize(&probeSize);
       }
     }
     else
@@ -1947,7 +1946,7 @@ void vvView::roiMenuCallback(const int item)
 
       if (ds->ibRendering || ds->clusterRendering)
       {
-        ds->_renderMaster->setProbeSize(&probeSize);
+        ds->_clusterClient->setProbeSize(&probeSize);
       }
     }
     else
@@ -2015,7 +2014,7 @@ void vvView::viewMenuCallback(int item)
     cerr << "Bounding box " << ds->onOff[ds->boundariesMode] << endl;
     if (ds->ibRendering || ds->clusterRendering)
     {
-      ds->_renderMaster->toggleBoundingBox();
+      ds->_clusterClient->toggleBoundingBox();
     }
     break;
   case 1:                                     // axis orientation
@@ -2070,7 +2069,7 @@ void vvView::viewMenuCallback(int item)
 
     if (ds->ibRendering || ds->clusterRendering)
     {
-      ds->_renderMaster->setBackgroundColor(ds->bgColor);
+      ds->_clusterClient->setBackgroundColor(ds->bgColor);
     }
 break;
   case 7:                                     // auto-rotation mode

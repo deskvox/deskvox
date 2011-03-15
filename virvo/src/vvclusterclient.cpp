@@ -20,12 +20,12 @@
 
 #include "vvbsptreevisitors.h"
 #include "vvgltools.h"
-#include "vvrendermaster.h"
+#include "vvclusterclient.h"
 #include "vvtexrend.h"
 
-vvRenderMaster::vvRenderMaster(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
-                               std::vector<const char*>& slaveFileNames,
-                               const char* fileName)
+vvClusterClient::vvClusterClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+                                 std::vector<const char*>& slaveFileNames,
+                                 const char* fileName)
   : vvRemoteClient(slaveNames, slavePorts, slaveFileNames, fileName)
 {
   _threads = NULL;
@@ -33,13 +33,13 @@ vvRenderMaster::vvRenderMaster(std::vector<const char*>& slaveNames, std::vector
   _visitor = new vvSlaveVisitor();
 }
 
-vvRenderMaster::~vvRenderMaster()
+vvClusterClient::~vvClusterClient()
 {
   destroyThreads();
   delete _visitor;
 }
 
-vvRemoteClient::ErrorType vvRenderMaster::setRenderer(vvRenderer* renderer)
+vvRemoteClient::ErrorType vvClusterClient::setRenderer(vvRenderer* renderer)
 {
   vvTexRend* texRend = dynamic_cast<vvTexRend*>(renderer);
   if (texRend == NULL)
@@ -77,7 +77,7 @@ vvRemoteClient::ErrorType vvRenderMaster::setRenderer(vvRenderer* renderer)
   return VV_OK;
 }
 
-vvRemoteClient::ErrorType vvRenderMaster::render()
+vvRemoteClient::ErrorType vvClusterClient::render()
 {
   vvTexRend* renderer = dynamic_cast<vvTexRend*>(_renderer);
 
@@ -151,7 +151,7 @@ vvRemoteClient::ErrorType vvRenderMaster::render()
   return VV_OK;
 }
 
-void vvRenderMaster::exit()
+void vvClusterClient::exit()
 {
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -160,7 +160,7 @@ void vvRenderMaster::exit()
   }
 }
 
-void vvRenderMaster::resize(const int w, const int h)
+void vvClusterClient::resize(const int w, const int h)
 {
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -171,7 +171,7 @@ void vvRenderMaster::resize(const int w, const int h)
   }
 }
 
-void vvRenderMaster::setCurrentFrame(const int index)
+void vvClusterClient::setCurrentFrame(const int index)
 {
   vvDebugMsg::msg(3, "vvRenderMaster::setCurrentFrame()");
   vvRemoteClient::setCurrentFrame(index);
@@ -184,7 +184,7 @@ void vvRenderMaster::setCurrentFrame(const int index)
   }
 }
 
-void vvRenderMaster::setMipMode(const int mipMode)
+void vvClusterClient::setMipMode(const int mipMode)
 {
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -195,7 +195,7 @@ void vvRenderMaster::setMipMode(const int mipMode)
   }
 }
 
-void vvRenderMaster::setObjectDirection(const vvVector3* od)
+void vvClusterClient::setObjectDirection(const vvVector3* od)
 {
   vvDebugMsg::msg(3, "vvRenderMaster::setObjectDirection()");
   for (int s=0; s<_sockets.size(); ++s)
@@ -207,7 +207,7 @@ void vvRenderMaster::setObjectDirection(const vvVector3* od)
   }
 }
 
-void vvRenderMaster::setViewingDirection(const vvVector3* vd)
+void vvClusterClient::setViewingDirection(const vvVector3* vd)
 {
   vvDebugMsg::msg(3, "vvRenderMaster::setViewingDirection()");
   for (int s=0; s<_sockets.size(); ++s)
@@ -219,7 +219,7 @@ void vvRenderMaster::setViewingDirection(const vvVector3* vd)
   }
 }
 
-void vvRenderMaster::setPosition(const vvVector3* p)
+void vvClusterClient::setPosition(const vvVector3* p)
 {
   vvDebugMsg::msg(3, "vvRenderMaster::setPosition()");
   for (int s=0; s<_sockets.size(); ++s)
@@ -231,7 +231,7 @@ void vvRenderMaster::setPosition(const vvVector3* p)
   }
 }
 
-void vvRenderMaster::setROIEnable(const bool roiEnabled)
+void vvClusterClient::setROIEnable(const bool roiEnabled)
 {
   vvDebugMsg::msg(1, "vvRenderMaster::setROIEnable()");
   for (int s=0; s<_sockets.size(); ++s)
@@ -243,7 +243,7 @@ void vvRenderMaster::setROIEnable(const bool roiEnabled)
   }
 }
 
-void vvRenderMaster::setProbePosition(const vvVector3* pos)
+void vvClusterClient::setProbePosition(const vvVector3* pos)
 {
   vvDebugMsg::msg(1, "vvRenderMaster::setProbePosition()");
   for (int s=0; s<_sockets.size(); ++s)
@@ -255,7 +255,7 @@ void vvRenderMaster::setProbePosition(const vvVector3* pos)
   }
 }
 
-void vvRenderMaster::setProbeSize(const vvVector3* newSize)
+void vvClusterClient::setProbeSize(const vvVector3* newSize)
 {
   vvDebugMsg::msg(1, "vvRenderMaster::setProbeSize()");
   for (int s=0; s<_sockets.size(); ++s)
@@ -267,7 +267,7 @@ void vvRenderMaster::setProbeSize(const vvVector3* newSize)
   }
 }
 
-void vvRenderMaster::toggleBoundingBox()
+void vvClusterClient::toggleBoundingBox()
 {
   vvDebugMsg::msg(3, "vvRenderMaster::toggleBoundingBox()");
   for (int s=0; s<_sockets.size(); ++s)
@@ -276,7 +276,7 @@ void vvRenderMaster::toggleBoundingBox()
   }
 }
 
-void vvRenderMaster::updateTransferFunction(vvTransFunc& tf)
+void vvClusterClient::updateTransferFunction(vvTransFunc& tf)
 {
   vvDebugMsg::msg(1, "vvRenderMaster::updateTransferFunction()");
   for (int s=0; s<_sockets.size(); ++s)
@@ -288,7 +288,7 @@ void vvRenderMaster::updateTransferFunction(vvTransFunc& tf)
   }
 }
 
-void vvRenderMaster::setParameter(const vvRenderer::ParameterType param, const float newValue, const char*)
+void vvClusterClient::setParameter(const vvRenderer::ParameterType param, const float newValue, const char*)
 {
   vvDebugMsg::msg(3, "vvRenderMaster::setParameter()");
   switch (param)
@@ -305,7 +305,7 @@ void vvRenderMaster::setParameter(const vvRenderer::ParameterType param, const f
   }
 }
 
-void vvRenderMaster::adjustQuality(const float quality)
+void vvClusterClient::adjustQuality(const float quality)
 {
   for (int s=0; s<_sockets.size(); ++s)
   {
@@ -316,7 +316,7 @@ void vvRenderMaster::adjustQuality(const float quality)
   }
 }
 
-void vvRenderMaster::setInterpolation(const bool interpolation)
+void vvClusterClient::setInterpolation(const bool interpolation)
 {
   vvDebugMsg::msg(3, "vvRenderMaster::setInterpolation()");
   for (int s=0; s<_sockets.size(); ++s)
@@ -328,7 +328,7 @@ void vvRenderMaster::setInterpolation(const bool interpolation)
   }
 }
 
-void vvRenderMaster::createThreads()
+void vvClusterClient::createThreads()
 {
   _visitor->generateTextureIds(_sockets.size());
   _threadData = new ThreadArgs[_sockets.size()];
@@ -337,14 +337,14 @@ void vvRenderMaster::createThreads()
   for (int s=0; s<_sockets.size(); ++s)
   {
     _threadData[s].threadId = s;
-    _threadData[s].renderMaster = this;
+    _threadData[s].clusterClient = this;
     _threadData[s].images = _images;
     pthread_create(&_threads[s], NULL, getImageFromSocket, (void*)&_threadData[s]);
   }
   _visitor->setImages(_images);
 }
 
-void vvRenderMaster::destroyThreads()
+void vvClusterClient::destroyThreads()
 {
   pthread_barrier_destroy(&_barrier);
   for (int s=0; s<_sockets.size(); ++s)
@@ -357,17 +357,17 @@ void vvRenderMaster::destroyThreads()
   _threadData = NULL;
 }
 
-void* vvRenderMaster::getImageFromSocket(void* threadargs)
+void* vvClusterClient::getImageFromSocket(void* threadargs)
 {
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
 
   while (1)
   {
     vvImage* img = new vvImage();
-    data->renderMaster->_sockets.at(data->threadId)->getImage(img);
+    data->clusterClient->_sockets.at(data->threadId)->getImage(img);
     data->images->at(data->threadId) = img;
 
-    pthread_barrier_wait(&data->renderMaster->_barrier);
+    pthread_barrier_wait(&data->clusterClient->_barrier);
   }
   pthread_exit(NULL);
 }

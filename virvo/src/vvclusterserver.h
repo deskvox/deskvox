@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_RENDERSLAVE_H_
-#define _VV_RENDERSLAVE_H_
+#ifndef _VV_CLUSTERSERVER_H_
+#define _VV_CLUSTERSERVER_H_
 
 #include "vvexport.h"
 #include "vvoffscreenbuffer.h"
@@ -27,7 +27,7 @@
 #include "vvtexrend.h"
 #include "vvremoteserver.h"
 
-class VIRVOEXPORT vvRenderSlave : public vvRemoteServer
+class VIRVOEXPORT vvClusterServer : public vvRemoteServer
 {
 public:
   enum ErrorType
@@ -37,16 +37,16 @@ public:
     VV_FILEIO_ERROR
   };
 
-  vvRenderSlave(const BufferPrecision compositingPrecision = VV_SHORT);
-  ~vvRenderSlave();
+  vvClusterServer(const BufferPrecision compositingPrecision = VV_SHORT);
+  ~vvClusterServer();
 
   void setCompositingPrecision(const BufferPrecision compositingPrecision);
 
   BufferPrecision getCompositingPrecision() const;
 
-  vvRenderSlave::ErrorType initSocket(const int port, vvSocket::SocketType st);
-  vvRenderSlave::ErrorType initData(vvVolDesc*& vd);
-  vvRenderSlave::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
+  vvClusterServer::ErrorType initSocket(const int port, vvSocket::SocketType st);
+  vvClusterServer::ErrorType initData(vvVolDesc*& vd);
+  vvClusterServer::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
   void  renderLoop(vvTexRend* renderer);
 private:
   vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering

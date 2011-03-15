@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_RENDERMASTER_H_
-#define _VV_RENDERMASTER_H_
+#ifndef _VV_CLUSTERCLIENT_H_
+#define _VV_CLUSTERCLIENT_H_
 
 #include "vvbsptree.h"
 #include "vvexport.h"
@@ -33,13 +33,13 @@
 class vvRenderer;
 class vvSlaveVisitor;
 
-class VIRVOEXPORT vvRenderMaster : public vvRemoteClient
+class VIRVOEXPORT vvClusterClient : public vvRemoteClient
 {
 public:
-  vvRenderMaster(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+  vvClusterClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                  std::vector<const char*>& slaveFileNames,
                  const char* fileName);
-  ~vvRenderMaster();
+  ~vvClusterClient();
 
   ErrorType setRenderer(vvRenderer* renderer);
   ErrorType render();
@@ -64,7 +64,7 @@ private:
   struct ThreadArgs
   {
     int threadId;
-    vvRenderMaster* renderMaster;
+    vvClusterClient* clusterClient;
     std::vector<vvImage*>* images;
   };
 

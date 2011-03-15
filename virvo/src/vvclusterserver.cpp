@@ -20,36 +20,36 @@
 
 #include "vvfileio.h"
 #include "vvgltools.h"
-#include "vvrenderslave.h"
+#include "vvclusterserver.h"
 #include "vvtexrend.h"
 
 #ifdef HAVE_BONJOUR
 #include "vvbonjour/vvbonjourregistrar.h"
 #endif
 
-vvRenderSlave::vvRenderSlave(const BufferPrecision compositingPrecision)
+vvClusterServer::vvClusterServer(const BufferPrecision compositingPrecision)
   : _offscreenBuffer(0), _socket(0), _compositingPrecision(compositingPrecision)
 {
 
 }
 
-vvRenderSlave::~vvRenderSlave()
+vvClusterServer::~vvClusterServer()
 {
   delete _offscreenBuffer;
   delete _socket;
 }
 
-void vvRenderSlave::setCompositingPrecision(const BufferPrecision compositingPrecision)
+void vvClusterServer::setCompositingPrecision(const BufferPrecision compositingPrecision)
 {
   _compositingPrecision = compositingPrecision;
 }
 
-BufferPrecision vvRenderSlave::getCompositingPrecision() const
+BufferPrecision vvClusterServer::getCompositingPrecision() const
 {
   return _compositingPrecision;
 }
 
-vvRenderSlave::ErrorType vvRenderSlave::initSocket(const int port, const vvSocket::SocketType st)
+vvClusterServer::ErrorType vvClusterServer::initSocket(const int port, const vvSocket::SocketType st)
 {
   _socket = new vvSocketIO(port, st);
   _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
@@ -77,7 +77,7 @@ vvRenderSlave::ErrorType vvRenderSlave::initSocket(const int port, const vvSocke
   }
 }
 
-vvRenderSlave::ErrorType vvRenderSlave::initData(vvVolDesc*& vd)
+vvClusterServer::ErrorType vvClusterServer::initData(vvVolDesc*& vd)
 {
   _socket->getBool(_loadVolumeFromFile);
 
@@ -124,7 +124,7 @@ vvRenderSlave::ErrorType vvRenderSlave::initData(vvVolDesc*& vd)
   return VV_OK;
 }
 
-vvRenderSlave::ErrorType vvRenderSlave::initBricks(std::vector<vvBrick*>& bricks) const
+vvClusterServer::ErrorType vvClusterServer::initBricks(std::vector<vvBrick*>& bricks) const
 {
   const vvSocket::ErrorType err = _socket->getBricks(bricks);
   switch (err)
@@ -139,7 +139,7 @@ vvRenderSlave::ErrorType vvRenderSlave::initBricks(std::vector<vvBrick*>& bricks
   return VV_OK;
 }
 
-void vvRenderSlave::renderLoop(vvTexRend* renderer)
+void vvClusterServer::renderLoop(vvTexRend* renderer)
 {
   renderer->setIsSlave(true);
 
@@ -273,7 +273,7 @@ void vvRenderSlave::renderLoop(vvTexRend* renderer)
 /** Perform remote rendering, read back pixel data and send it over socket
     connections using a vvImage instance.
 */
-void vvRenderSlave::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
+void vvClusterServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer)
 {
   vvDebugMsg::msg(3, "vvRenderSlave::renderImage()");
 
