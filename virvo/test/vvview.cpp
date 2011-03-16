@@ -189,13 +189,13 @@ vvView::vvView()
   clientMode            = false;
   serverMode            = false;
   slavePort             = vvView::DEFAULT_PORT;
-  ibRendering           = false;
   depthPrecision        = vvImage2_5d::VV_USHORT;
-  clusterRendering      = false;
+  remoteRendering       = false;
+  rrMode                = RR_NONE;
   clipBuffer            = NULL;
   framebufferDump       = NULL;
   redistributeVolData   = false;
-  _clusterClient        = NULL;
+  _remoteClient         = NULL;
   benchmark             = false;
   testSuiteFileName     = NULL;
   showBricks            = false;
@@ -234,7 +234,7 @@ vvView::~vvView()
   delete renderer;
   delete ov;
   delete vd;
-  delete _clusterClient;
+  delete _remoteClient;
 }
 
 
@@ -250,7 +250,7 @@ void vvView::mainLoop(int argc, char *argv[])
   {
     while (1)
     {
-      if(ibRendering && rendererType == vvRenderer::RAYREND)
+      if((rrMode == RR_IBR) && (rendererType == vvRenderer::RAYREND))
       {
         vvIbrServer* renderSlave = new vvIbrServer();
 
@@ -310,7 +310,7 @@ void vvView::mainLoop(int argc, char *argv[])
         delete renderSlave;
         renderSlave = NULL;
       }
-      else if(clusterRendering)
+      else if(rrMode == RR_CLUSTER)
       {
         vvClusterServer* clusterServer = new vvClusterServer();
 
@@ -381,7 +381,7 @@ void vvView::mainLoop(int argc, char *argv[])
       }
       else
       {
-        if(ibRendering && rendererType != vvRenderer::RAYREND)
+        if((rrMode == RR_IBR) && (rendererType != vvRenderer::RAYREND))
           std::cerr << "remote rendering works with rayrend only." << std::endl;
 
         break;
@@ -446,8 +446,7 @@ void vvView::mainLoop(int argc, char *argv[])
         bonjourResolver->resolveBonjourEntry((*it));
       }
 #endif
-      ibRendering = false;
-      clusterRendering = false;
+      remoteRendering = false;
     }
 
     initGraphics(argc, argv);
@@ -455,18 +454,25 @@ void vvView::mainLoop(int argc, char *argv[])
     vvCuda::initGlInterop();
 #endif
 
-    if (ibRendering)
+    if (rrMode == RR_IBR)
     {
-      _clusterClient = new vvIbrClient(ds->renderState, slaveNames, slavePorts, slaveFileNames, filename);
-      dynamic_cast<vvIbrClient*>(_clusterClient)->setDepthPrecision(depthPrecision);
-      ibRendering = (_clusterClient->initSockets(vvView::DEFAULT_PORT,
-                                                 redistributeVolData, vd) == vvRemoteClient::VV_OK);
+      _remoteClient = new vvIbrClient(ds->renderState,
+                                      slaveNames, slavePorts, slaveFileNames, filename,
+                                      depthPrecision);
     }
-    else if(clusterRendering)
+    else if(rrMode == RR_CLUSTER)
     {
-      _clusterClient = new vvClusterClient(ds->renderState, slaveNames, slavePorts, slaveFileNames, filename);
-      clusterRendering = (_clusterClient->initSockets(vvView::DEFAULT_PORT,
-                                                     redistributeVolData, vd) == vvRemoteClient::VV_OK);
+      _remoteClient = new vvClusterClient(ds->renderState, slaveNames, slavePorts, slaveFileNames, filename);
+    }
+
+    if (_remoteClient != NULL)
+    {
+      remoteRendering = (_remoteClient->initSockets(vvView::DEFAULT_PORT,
+                                                    redistributeVolData, vd) == vvRemoteClient::VV_OK);
+    }
+    else
+    {
+      remoteRendering = false;
     }
 
     animSpeed = vd->dt;
@@ -478,15 +484,7 @@ void vvView::mainLoop(int argc, char *argv[])
     setProjectionMode(perspectiveMode);
     setRenderer(currentGeom, currentVoxels);
 
-    if(ibRendering)
-    {
-      ibRendering = (_clusterClient->setRenderer(renderer) == vvRemoteClient::VV_OK);
-    }
-
-    if(clusterRendering)
-    {
-      clusterRendering = (_clusterClient->setRenderer(renderer) == vvRemoteClient::VV_OK);
-    }
+    remoteRendering = (_remoteClient->setRenderer(renderer) == vvRemoteClient::VV_OK);
 
     // Set window title:
     if (filename!=NULL) glutSetWindowTitle(filename);
@@ -552,9 +550,9 @@ void vvView::reshapeCallback(int w, int h)
                                                  // clear window
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (ds->clusterRendering || ds->ibRendering)
+  if (ds->remoteRendering)
   {
-    ds->_clusterClient->resize(w, h);
+    ds->_remoteClient->resize(w, h);
   }
 }
 
@@ -569,11 +567,11 @@ void vvView::displayCallback(void)
   glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (ds->clusterRendering || ds->ibRendering)
+  if (ds->remoteRendering)
   {
     ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
 
-    ds->_clusterClient->render();
+    ds->_remoteClient->render();
 
     glutSwapBuffers();
   }
@@ -893,22 +891,19 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       }
   }
 
-  if(ibRendering && serverMode)
+  if(serverMode)
   {
-    if(serverMode)
-      ibRendering = (rendererType == vvRenderer::RAYREND);
+    if((rrMode == RR_IBR))
+      remoteRendering = (rendererType == vvRenderer::RAYREND);
+    else if (rrMode == RR_CLUSTER)
+      remoteRendering = ((rendererType == vvRenderer::TEXREND)
+                           && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
     else
-      ibRendering = ((rendererType == vvRenderer::TEXREND)
-                         && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
+    {
+      remoteRendering = false;
+    }
   }
-
-  if(clusterRendering)
-  {
-    clusterRendering &= ((rendererType == vvRenderer::TEXREND)
-                        && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
-  }
-
-  if (!serverMode)
+  else
   {
     renderer->setROIEnable(roiEnabled);
     printROIMessage();
@@ -1100,9 +1095,9 @@ void vvView::specialCallback(int key, int, int)
   default: break;
   }
 
-  if (ds->ibRendering || ds->clusterRendering)
+  if (ds->remoteRendering)
   {
-    ds->_clusterClient->setProbePosition(&probePos);
+    ds->_remoteClient->setProbePosition(&probePos);
   }
   glutPostRedisplay();
 }
@@ -1431,9 +1426,9 @@ void vvView::rendererMenuCallback(int item)
     ds->renderer->setParameter(vvRenderState::VV_QUALITY, (ds->hqMode) ? ds->highQuality : ds->draftQuality);
     cerr << QUALITY_NAMES[ds->hqMode] << " quality: " <<
         ((ds->hqMode) ? ds->highQuality : ds->draftQuality) << endl;
-    if (ds->ibRendering || ds->clusterRendering)
+    if (ds->remoteRendering)
     {
-      ds->_clusterClient->setParameter(vvRenderState::VV_QUALITY, (ds->hqMode) ? ds->highQuality : ds->draftQuality);
+      ds->_remoteClient->setParameter(vvRenderState::VV_QUALITY, (ds->hqMode) ? ds->highQuality : ds->draftQuality);
     }
   }
   glutPostRedisplay();
@@ -1464,7 +1459,7 @@ void vvView::optionsMenuCallback(int item)
 
   vvDebugMsg::msg(1, "vvView::optionsMenuCallback()");
 
-  vvClusterClient* client = dynamic_cast<vvClusterClient*>(ds->_clusterClient);
+  vvClusterClient* client = dynamic_cast<vvClusterClient*>(ds->_remoteClient);
 
   switch(item)
   {
@@ -1472,7 +1467,7 @@ void vvView::optionsMenuCallback(int item)
     ds->interpolMode = !ds->interpolMode;
     ds->renderer->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
     cerr << "Interpolation mode set to " << int(ds->interpolMode) << endl;
-    if (ds->ibRendering || ds->clusterRendering)
+    if (ds->remoteRendering)
     {
       client->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
     }
@@ -1487,7 +1482,7 @@ void vvView::optionsMenuCallback(int item)
     if (ds->mipMode>2) ds->mipMode = 0;
     ds->renderer->setParameter(vvRenderState::VV_MIP_MODE, ds->mipMode);
     cerr << "MIP mode set to " << ds->mipMode << endl;
-    if (ds->ibRendering || ds->clusterRendering)
+    if (ds->remoteRendering)
     {
       client->setMipMode(ds->mipMode);
     }
@@ -1789,9 +1784,9 @@ void vvView::transferMenuCallback(int item)
   }
 
   ds->renderer->updateTransferFunction();
-  if (ds->ibRendering || ds->clusterRendering)
+  if (ds->remoteRendering)
   {
-    ds->_clusterClient->updateTransferFunction(ds->vd->tf);
+    ds->_remoteClient->updateTransferFunction(ds->vd->tf);
   }
   glutPostRedisplay();
 }
@@ -1812,9 +1807,9 @@ void vvView::setAnimationFrame(int f)
 
   renderer->setCurrentFrame(frame);
 
-  if (ds->ibRendering || ds->clusterRendering)
+  if (ds->remoteRendering)
   {
-    ds->_clusterClient->setCurrentFrame(frame);
+    ds->_remoteClient->setCurrentFrame(frame);
   }
 
   cerr << "Time step: " << (frame+1) << endl;
@@ -1903,9 +1898,9 @@ void vvView::roiMenuCallback(const int item)
     ds->renderer->setROIEnable(ds->roiEnabled);
     ds->renderer->setSphericalROI(ds->sphericalROI);
 
-    if (ds->ibRendering || ds->clusterRendering)
+    if (ds->remoteRendering)
     {
-      ds->_clusterClient->setROIEnable(ds->roiEnabled);
+      ds->_remoteClient->setROIEnable(ds->roiEnabled);
     }
     printROIMessage();
     break;
@@ -1921,9 +1916,9 @@ void vvView::roiMenuCallback(const int item)
       }
       ds->renderer->setProbeSize(&probeSize);
 
-      if (ds->ibRendering || ds->clusterRendering)
+      if (ds->remoteRendering)
       {
-        ds->_clusterClient->setProbeSize(&probeSize);
+        ds->_remoteClient->setProbeSize(&probeSize);
       }
     }
     else
@@ -1943,9 +1938,9 @@ void vvView::roiMenuCallback(const int item)
       }
       ds->renderer->setProbeSize(&probeSize);
 
-      if (ds->ibRendering || ds->clusterRendering)
+      if (ds->remoteRendering)
       {
-        ds->_clusterClient->setProbeSize(&probeSize);
+        ds->_remoteClient->setProbeSize(&probeSize);
       }
     }
     else
@@ -2011,9 +2006,9 @@ void vvView::viewMenuCallback(int item)
     ds->boundariesMode = !ds->boundariesMode;
     ds->renderer->setParameter(vvRenderState::VV_BOUNDARIES, ds->boundariesMode);
     cerr << "Bounding box " << ds->onOff[ds->boundariesMode] << endl;
-    if (ds->ibRendering || ds->clusterRendering)
+    if (ds->remoteRendering)
     {
-      ds->_clusterClient->toggleBoundingBox();
+      ds->_remoteClient->toggleBoundingBox();
     }
     break;
   case 1:                                     // axis orientation
@@ -2066,9 +2061,9 @@ void vvView::viewMenuCallback(int item)
       // Use opposite color for object boundaries:
       //ds->renderer->setBoundariesColor(1.0f-ds->bgColor[0], 1.0f-ds->bgColor[1], 1.0f-ds->bgColor[2]);
 
-    if (ds->ibRendering || ds->clusterRendering)
+    if (ds->remoteRendering)
     {
-      ds->_clusterClient->setBackgroundColor(ds->bgColor);
+      ds->_remoteClient->setBackgroundColor(ds->bgColor);
     }
 break;
   case 7:                                     // auto-rotation mode
@@ -2962,21 +2957,23 @@ bool vvView::parseCommandLine(int argc, char** argv)
 
       if(val == "cluster")
       {
-        //currentGeom = (vvTexRend::GeometryType)val; // needed ?!?!????
-        clusterRendering = true;
+        remoteRendering = true;
+        rrMode = RR_CLUSTER;
         setRendererType(vvRenderer::TEXREND);
         arg++;
       }
       else if(val == "ibr")
       {
-        ibRendering = true;
+        remoteRendering = true;
+        rrMode = RR_IBR;
         setRendererType(vvRenderer::RAYREND);
         arg++;
       }
       else
       {
         cerr << "Set default server mode: cluster-rendering" << endl;
-        clusterRendering = true;
+        remoteRendering = true;
+        rrMode = RR_CLUSTER;
         setRendererType(vvRenderer::TEXREND);
       }
     }
@@ -2992,20 +2989,23 @@ bool vvView::parseCommandLine(int argc, char** argv)
 
       if(val == "cluster")
       {
-        //currentGeom = (vvTexRend::GeometryType)val; // needed ?!?!????
-        clusterRendering = true;
+        remoteRendering = true;
+        rrMode = RR_CLUSTER;
         setRendererType(vvRenderer::TEXREND);
         arg++;
       }
       else if(val == "ibr")
       {
-        ibRendering = true;
+        remoteRendering = true;
+        rrMode = RR_IBR;
         arg++;
       }
       else
       {
         cerr << "Set default server mode: cluster-rendering" << endl;
-        clusterRendering = true;
+        remoteRendering = true;
+        rrMode = RR_CLUSTER;
+        setRendererType(vvRenderer::TEXREND);
       }
     }
     else if (vvToolshed::strCompare(argv[arg], "-nobt")==0)
