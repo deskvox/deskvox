@@ -37,7 +37,6 @@ class vvSlaveVisitor;
 class VIRVOEXPORT vvIbrClient : public vvRemoteClient
 {
 public:
-
   vvIbrClient(vvRenderState renderState,
               std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
               std::vector<const char*>& slaveFileNames,
@@ -45,13 +44,14 @@ public:
               vvImage2_5d::DepthPrecision dp = vvImage2_5d::VV_USHORT);
   ~vvIbrClient();
 
-  ErrorType setRenderer(vvRenderer* renderer);
-  ErrorType render();
-  void exit();
+  ErrorType setRenderer(vvRenderer* renderer);            ///< sets renderer
+  ErrorType render();                                     ///< render image with depth-values
+  void exit();                                            ///< check out from servers
 
-  void setDepthPrecision(vvImage2_5d::DepthPrecision dp);
+  void setDepthPrecision(vvImage2_5d::DepthPrecision dp); ///< set depth-value precision (1,2 or 4 bytes)
 
 private:
+  //! thread-data
   struct ThreadArgs
   {
     int threadId;
@@ -59,32 +59,26 @@ private:
     std::vector<vvImage*>* images;
   };
 
-  pthread_t*        _threads;
-  ThreadArgs*       _threadData;
-//  pthread_barrier_t _barrier;
+  pthread_t*  _threads;                   ///< list for threads of each server connection
+  ThreadArgs* _threadData;                ///< list for thread data
 
-  vvVector3 _eye;
-  GLuint _pointVBO;
-  GLuint _colorVBO;
+  pthread_mutex_t _slaveMutex;            ///< mutex for thread synchronization
+  bool   _slaveRdy;                       ///< flag to indicate that all servers are ready
+  int    _slaveCnt;                       ///< counter for servers
+  GLuint _pointVBO;                       ///< Vertex Buffer Object id for point-pixels
+  GLuint _colorVBO;                       ///< Vertex Buffer Object id for pixel-colors
 
-  // Mutex to count socket-threads that are ready
-  pthread_mutex_t _slaveMutex;
-  bool _slaveRdy;
-  int  _slaveCnt;
+  vvRect*             _isaRect[2];        ///< array for memorizing and flipping old and new screenrects
+  vvGLTools::Viewport _vp[2];             ///< array for memorizing and flipping old and new viewport
+  GLdouble            _modelMatrix[32];   ///< array for memorizing and flipping old and new modelview-matrix
+  GLdouble            _projMatrix[32];    ///< array for memorizing and flipping old and new projection-matrix
+  void initIbrFrame();                    ///< initialize pixel-points in object space
 
-  bool                _gapStart;
-  vvRect*             _isaRect[2];
-  vvGLTools::Viewport _vp[2];
-  float               _objPos[6];
-  GLdouble            _modelMatrix[32];
-  GLdouble            _projMatrix[32];
-  void initIbrFrame();
+  vvImage2_5d::DepthPrecision _depthPrecision;        ///< deph-value precision
 
-  vvImage2_5d::DepthPrecision _depthPrecision;
-
-  void createThreads();
-  void destroyThreads();
-  static void* getImageFromSocket(void* threadargs);
+  void createThreads();                               ///< creates threads for every socket connection
+  void destroyThreads();                              ///< quits threads
+  static void* getImageFromSocket(void* threadargs);  ///< get image from socket connection and wait for next
 };
 
 #endif

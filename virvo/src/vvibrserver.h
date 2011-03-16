@@ -30,16 +30,15 @@
 class VIRVOEXPORT vvIbrServer : public vvRemoteServer
 {
 public:
-
   vvIbrServer(const vvImage2_5d::DepthPrecision dp = vvImage2_5d::VV_USHORT);
   ~vvIbrServer();
 
   void setDepthPrecision(const vvImage2_5d::DepthPrecision dp);
+
 private:
   vvImage2_5d::DepthPrecision _depthPrecision;  ///< precision of depth buffer for image based rendering
 
   void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);
-
   void resize(int w, int h);
 };
 

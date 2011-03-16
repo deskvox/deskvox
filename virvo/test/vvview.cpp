@@ -2905,8 +2905,6 @@ bool vvView::parseCommandLine(int argc, char** argv)
       if(argv[arg+1])
         val = argv[arg+1];
 
-      cerr << "val: [" << val << "]" << endl;
-
       if(val == "cluster")
       {
         remoteRendering = true;
@@ -2936,8 +2934,6 @@ bool vvView::parseCommandLine(int argc, char** argv)
       string val;
       if(argv[arg+1])
         val = argv[arg+1];
-
-      cerr << "val: [" << val << "]" << endl;
 
       if(val == "cluster")
       {

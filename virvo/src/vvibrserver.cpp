@@ -30,7 +30,6 @@
 vvIbrServer::vvIbrServer(const vvImage2_5d::DepthPrecision dp)
   : vvRemoteServer(), _depthPrecision(dp)
 {
-
 }
 
 vvIbrServer::~vvIbrServer()
@@ -109,8 +108,6 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
     }
     break;
   }
-
-  // Send image to client
   _socket->putImage2_5d(im2);
 
   delete[] pixels;

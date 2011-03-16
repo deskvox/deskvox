@@ -43,7 +43,6 @@ vvIbrClient::vvIbrClient(vvRenderState renderState,
 
   _slaveCnt = 0;
   _slaveRdy = 0;
-  _gapStart = 1;
   _isaRect[0] = new vvRect();
   _isaRect[1] = new vvRect();
 
@@ -67,9 +66,7 @@ vvRemoteClient::ErrorType vvIbrClient::setRenderer(vvRenderer* renderer)
     cerr << "vvRenderMaster::setRenderer(): Renderer is no texture based renderer" << endl;
     return vvRemoteClient::VV_WRONG_RENDERER;
   }
-
   _renderer = texRend;
-
   return VV_OK;
 }
 
@@ -105,14 +102,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     // save Viewport for later frames
     _vp[1] = vvGLTools::getViewport();
 
-    // save position
-    _objPos[0] = _objPos[3];
-    _objPos[1] = _objPos[4];
-    _objPos[2] = _objPos[5];
-    _objPos[3] = renderer->getVolDesc()->pos[0];
-    _objPos[4] = renderer->getVolDesc()->pos[1];
-    _objPos[5] = renderer->getVolDesc()->pos[2];
-
     // remember MV and PR matrix
     for(int i=0; i<16;i++)
     {
@@ -139,7 +128,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       _sockets[s]->putMatrix(&pr);
       _sockets[s]->putMatrix(&mv);
     }
-
     _slaveCnt = _sockets.size();  // reset count-down
     initIbrFrame();               // initialize gap-frame
 
@@ -187,16 +175,10 @@ void vvIbrClient::initIbrFrame()
 {
   vvImage2_5d* isaImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
   if(!isaImg)
-  {
     return;
-  }
 
   int h = isaImg->getHeight();
   int w = isaImg->getWidth();
-
-  // project center of Volume to window coordinates
-  GLdouble winCenter[3];
-  gluProject(	_objPos[0], _objPos[1], _objPos[2], _modelMatrix, _projMatrix, _vp[0].values, &winCenter[0], &winCenter[1], &winCenter[2]);
 
   // get pixel and depth-data
   uchar* dataRGBA = isaImg->getCodedImage();
@@ -293,6 +275,7 @@ void vvIbrClient::createThreads()
 
   if(_sockets.size()>1)
   {
+    // current implementaion only
     std::cerr << "Immagespace-approximation works with one slave only." << std::endl;
   }
 }
@@ -321,7 +304,6 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
   while (1)
   {
     vvImage2_5d* img = new vvImage2_5d();
-
     img->setDepthPrecision(data->renderMaster->_depthPrecision);
 
     vvSocketIO::ErrorType err = data->renderMaster->_sockets.at(data->threadId)->getImage2_5d(img);
@@ -330,7 +312,6 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
       break;
     }
-
     // switch pointers securely
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
     delete data->images->at(data->threadId);
@@ -338,6 +319,5 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
     data->renderMaster->_slaveCnt--;
     pthread_mutex_unlock( &data->renderMaster->_slaveMutex );
   }
-
   pthread_exit(NULL);
 }

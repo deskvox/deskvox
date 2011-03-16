@@ -1396,7 +1396,6 @@ void vvRayRend::factorViewMatrix()
   vvGLTools::Viewport vp = vvGLTools::getViewport();
   const int w = vvToolshed::getTextureSize(vp[2]);
   const int h = vvToolshed::getTextureSize(vp[3]);
-  vp.print();
 
   if ((intImg->width != w) || (intImg->height != h))
   {
