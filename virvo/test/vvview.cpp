@@ -552,15 +552,9 @@ void vvView::reshapeCallback(int w, int h)
                                                  // clear window
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (ds->clusterRendering)
+  if (ds->clusterRendering || ds->ibRendering)
   {
-    vvClusterClient* client = dynamic_cast<vvClusterClient*>(ds->_clusterClient);
-    client->resize(w, h);
-  }
-  else if(ds->ibRendering)
-  {
-    vvIbrClient* client = dynamic_cast<vvIbrClient*>(ds->_clusterClient);
-    client->resize(w, h);
+    ds->_clusterClient->resize(w, h);
   }
 }
 

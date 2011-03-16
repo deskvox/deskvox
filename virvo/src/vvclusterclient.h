@@ -45,18 +45,6 @@ public:
   ErrorType render();
   void exit();
 
-  void resize(int w, int h);
-  void setCurrentFrame(int index);
-  void setMipMode(const int mipMode);
-  void setObjectDirection(const vvVector3* od);
-  void setViewingDirection(const vvVector3* vd);
-  void setPosition(const vvVector3* p);
-  void setROIEnable(bool roiEnabled);
-  void setProbePosition(const vvVector3* pos);
-  void setProbeSize(const vvVector3* roiSize);
-  void toggleBoundingBox();
-  void updateTransferFunction(vvTransFunc& tf);
-  void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
 private:
   vvBspTree* _bspTree;
   vvSlaveVisitor* _visitor;
@@ -71,9 +59,6 @@ private:
   pthread_t* _threads;
   ThreadArgs* _threadData;
   pthread_barrier_t _barrier;
-
-  void adjustQuality(float quality);
-  void setInterpolation(bool interpolation);
 
   void createThreads();
   void destroyThreads();

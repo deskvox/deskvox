@@ -55,15 +55,19 @@ public:
   virtual ErrorType render() = 0;
   virtual void setBackgroundColor(const vvVector3& bgColor);
 
-  virtual void setCurrentFrame(int index);
-  virtual void setPosition(const vvVector3* p);
-  virtual void setObjectDirection(const vvVector3* od);
-  virtual void setROIEnable(bool flag);
-  virtual void setProbePosition(const vvVector3* probePos);
-  virtual void setProbeSize(const vvVector3* newSize);
-  virtual void toggleBoundingBox();
-  virtual void updateTransferFunction(vvTransFunc& tf);
-  virtual void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
+  void resize(int w, int h);
+  void setCurrentFrame(int index);
+  void setMipMode(int mipMode);
+  void setObjectDirection(const vvVector3* od);
+  void setViewingDirection(const vvVector3* vd);
+  void setPosition(const vvVector3* p);
+  void setROIEnable(bool roiEnabled);
+  void setProbePosition(const vvVector3* pos);
+  void setProbeSize(const vvVector3* roiSize);
+  void toggleBoundingBox();
+  void updateTransferFunction(vvTransFunc& tf);
+  void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
+
 protected:
   const char* _fileName;
 
@@ -76,6 +80,9 @@ protected:
   vvRenderer* _renderer;
 
   vvVector3 _bgColor;
+
+  void adjustQuality(float quality);
+  void setInterpolation(bool interpolation);
 
   void clearImages();
   void createImageVector();

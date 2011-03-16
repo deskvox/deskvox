@@ -47,18 +47,6 @@ public:
   ErrorType render();
   void exit();
 
-  void resize(int w, int h);
-  void setCurrentFrame(int index);
-  void setMipMode(const int mipMode);
-  void setObjectDirection(const vvVector3* od);
-  void setViewingDirection(const vvVector3* vd);
-  void setPosition(const vvVector3* p);
-  void setROIEnable(bool roiEnabled);
-  void setProbePosition(const vvVector3* pos);
-  void setProbeSize(const vvVector3* roiSize);
-  void toggleBoundingBox();
-  void updateTransferFunction(vvTransFunc& tf);
-  void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
   void setDepthPrecision(vvImage2_5d::DepthPrecision dp);
 
 private:
@@ -76,9 +64,6 @@ private:
   vvVector3 _eye;
   GLuint _pointVBO;
   GLuint _colorVBO;
-
-  void adjustQuality(float quality);
-  void setInterpolation(bool interpolation);
 
   // Mutex to count socket-threads that are ready
   pthread_mutex_t _slaveMutex;
