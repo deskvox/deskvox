@@ -250,85 +250,43 @@ void vvView::mainLoop(int argc, char *argv[])
   {
     while (1)
     {
+      vvRemoteServer* server = NULL;
       if((rrMode == RR_IBR) && (rendererType == vvRenderer::RAYREND))
       {
-        vvIbrServer* renderSlave = new vvIbrServer();
-
-        renderSlave->setDepthPrecision(depthPrecision);
-
-        if (renderSlave->initSocket(slavePort, vvSocket::VV_TCP) != vvIbrServer::VV_OK)
-        {
-          // TODO: Evaluate the error type, maybe don't even return but try again.
-          cerr << "Couldn't initialize the socket connection" << endl;
-          cerr << "Exiting..." << endl;
-          return;
-        }
-
-        if (renderSlave->initData(vd) != vvIbrServer::VV_OK)
-        {
-          cerr << "Exiting...(1)" << endl;
-          return;
-        }
-
-        if (vd != NULL)
-        {
-          if (renderSlave->getLoadVolumeFromFile())
-          {
-            vd->printInfoLine();
-          }
-
-          // Set default color scheme if no TF present:
-          if (vd->tf.isEmpty())
-          {
-            vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-            vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
-          }
-
-          ov = new vvObjView();
-
-          vvRenderContext* context = new vvRenderContext();
-          if (context->makeCurrent())
-          {
-            ov = new vvObjView();
-            setProjectionMode(perspectiveMode);
-            setRenderer(currentGeom, currentVoxels);
-            srand(time(NULL));
-
-            renderSlave->renderLoop(dynamic_cast<vvRayRend*>(renderer));
-            cerr << "Exiting...(2)" << endl;
-          }
-          delete vd;
-          vd = NULL;
-          delete context;
-          context = NULL;
-        }
-
-        // Frames vector with bricks is deleted along with the renderer.
-        // Don't free them here.
-        // see setRenderer().
-
-        delete renderSlave;
-        renderSlave = NULL;
+        server = new vvIbrServer(depthPrecision);
       }
       else if(rrMode == RR_CLUSTER)
       {
-        vvClusterServer* clusterServer = new vvClusterServer();
+        server = new vvClusterServer();
+      }
+      else
+      {
+        if((rrMode == RR_IBR) && (rendererType != vvRenderer::RAYREND))
+          std::cerr << "remote rendering works with rayrend only." << std::endl;
+        break;
+      }
 
-        if (clusterServer->initSocket(slavePort, vvSocket::VV_TCP) != vvClusterServer::VV_OK)
-        {
-          // TODO: Evaluate the error type, maybe don't even return but try again.
-          cerr << "Couldn't initialize the socket connection" << endl;
-          cerr << "Exiting..." << endl;
-          return;
-        }
-        if (clusterServer->initData(vd) != vvClusterServer::VV_OK)
-        {
-          cerr << "Exiting..." << endl;
-          return;
-        }
+      if (server->initSocket(slavePort, vvSocket::VV_TCP) != vvIbrServer::VV_OK)
+      {
+        // TODO: Evaluate the error type, maybe don't even return but try again.
+        cerr << "Couldn't initialize the socket connection" << endl;
+        cerr << "Exiting..." << endl;
+        return;
+      }
 
-        // Get bricks to render
-        std::vector<BrickList>* frames = new std::vector<BrickList>();
+      if (server->initData(vd) != vvIbrServer::VV_OK)
+      {
+        cerr << "Exiting..." << endl;
+        return;
+      }
+
+      // Get bricks to render
+      std::vector<BrickList>* frames = new std::vector<BrickList>();
+      if (rrMode == RR_CLUSTER)
+      {
+        vvClusterServer* clusterServer = dynamic_cast<vvClusterServer*>(server);
+        assert(clusterServer != NULL);
+
         for (int f=0; f<vd->frames; ++f)
         {
           BrickList bricks;
@@ -340,52 +298,46 @@ void vvView::mainLoop(int argc, char *argv[])
           }
           frames->push_back(bricks);
         }
-        if (vd != NULL)
+      }
+
+      if (vd != NULL)
+      {
+        if (server->getLoadVolumeFromFile())
         {
-          if (clusterServer->getLoadVolumeFromFile())
-          {
-            vd->printInfoLine();
-          }
-
-          // Set default color scheme if no TF present:
-          if (vd->tf.isEmpty())
-          {
-            vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-            vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
-          }
-
-          ov = new vvObjView();
-          vvRenderContext* context = new vvRenderContext();
-          if (context->makeCurrent())
-          {
-            ov = new vvObjView();
-            setProjectionMode(perspectiveMode);
-            setRenderer(currentGeom, currentVoxels, frames);
-            srand(time(NULL));
-
-            clusterServer->renderLoop(dynamic_cast<vvTexRend*>(renderer));
-            cerr << "Exiting..." << endl;
-          }
-          delete vd;
-          vd = NULL;
-          delete context;
-          context = NULL;
+          vd->printInfoLine();
         }
 
-        // Frames vector with bricks is deleted along with the renderer.
-        // Don't free them here.
-        // see setRenderer().
+        // Set default color scheme if no TF present:
+        if (vd->tf.isEmpty())
+        {
+          vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+          vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+        }
 
-        delete clusterServer;
-        clusterServer = NULL;
-      }
-      else
-      {
-        if((rrMode == RR_IBR) && (rendererType != vvRenderer::RAYREND))
-          std::cerr << "remote rendering works with rayrend only." << std::endl;
+        ov = new vvObjView();
+        vvRenderContext* context = new vvRenderContext();
+        if (context->makeCurrent())
+        {
+          ov = new vvObjView();
+          setProjectionMode(perspectiveMode);
+          setRenderer(currentGeom, currentVoxels, frames);
+          srand(time(NULL));
 
-        break;
+          server->renderLoop(renderer);
+          cerr << "Exiting..." << endl;
+        }
+        delete vd;
+        vd = NULL;
+        delete context;
+        context = NULL;
       }
+
+      // Frames vector with bricks is deleted along with the renderer.
+      // Don't free them here.
+      // see setRenderer().
+
+      delete server;
+      server = NULL;
     }
   }
   else
