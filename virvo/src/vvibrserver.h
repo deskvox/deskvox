@@ -23,35 +23,24 @@
 
 #include "vvexport.h"
 #include "vvoffscreenbuffer.h"
-#include "vvsocketio.h"
 #include "vvrayrend.h"
+#include "vvsocketio.h"
 #include "vvremoteserver.h"
 
 class VIRVOEXPORT vvIbrServer : public vvRemoteServer
 {
 public:
-  enum ErrorType
-  {
-    VV_OK = 0,
-    VV_SOCKET_ERROR,
-    VV_FILEIO_ERROR
-  };
 
-  vvIbrServer();
+  vvIbrServer(const vvImage2_5d::DepthPrecision dp = vvImage2_5d::VV_USHORT);
   ~vvIbrServer();
 
   void setDepthPrecision(const vvImage2_5d::DepthPrecision dp);
-
-  vvIbrServer::ErrorType initSocket(const int port, vvSocket::SocketType st);
-  vvIbrServer::ErrorType initData(vvVolDesc*& vd);
-  vvIbrServer::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
-  void  renderLoop(vvRayRend* renderer);
 private:
-  vvSocketIO* _socket;                    ///< socket for remote rendering
-
   vvImage2_5d::DepthPrecision _depthPrecision;  ///< precision of depth buffer for image based rendering
 
-  void renderImage(vvMatrix& pr, vvMatrix& mv, vvRayRend* renderer);
+  void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);
+
+  void resize(int w, int h);
 };
 
 #endif

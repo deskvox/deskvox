@@ -23,20 +23,12 @@
 
 #include "vvexport.h"
 #include "vvoffscreenbuffer.h"
-#include "vvsocketio.h"
-#include "vvtexrend.h"
 #include "vvremoteserver.h"
+#include "vvsocketio.h"
 
 class VIRVOEXPORT vvClusterServer : public vvRemoteServer
 {
 public:
-  enum ErrorType
-  {
-    VV_OK = 0,
-    VV_SOCKET_ERROR,
-    VV_FILEIO_ERROR
-  };
-
   vvClusterServer(const BufferPrecision compositingPrecision = VV_SHORT);
   ~vvClusterServer();
 
@@ -44,17 +36,16 @@ public:
 
   BufferPrecision getCompositingPrecision() const;
 
-  vvClusterServer::ErrorType initSocket(const int port, vvSocket::SocketType st);
-  vvClusterServer::ErrorType initData(vvVolDesc*& vd);
   vvClusterServer::ErrorType initBricks(std::vector<vvBrick*>& bricks) const;
-  void  renderLoop(vvTexRend* renderer);
+  void renderLoop(vvRenderer* renderer);
 private:
   vvOffscreenBuffer* _offscreenBuffer;    ///< offscreen buffer for remote rendering
-  vvSocketIO* _socket;                    ///< socket for remote rendering
 
   BufferPrecision _compositingPrecision;  ///< the precision of the buffer used for compositing (default: 16bit)
 
-  void renderImage(vvMatrix& pr, vvMatrix& mv, vvTexRend* renderer);
+  void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);
+
+  void resize(int w, int h);
 };
 
 #endif
