@@ -436,7 +436,7 @@ void vvView::mainLoop(int argc, char *argv[])
     setProjectionMode(perspectiveMode);
     setRenderer(currentGeom, currentVoxels);
 
-    remoteRendering = (_remoteClient->setRenderer(renderer) == vvRemoteClient::VV_OK);
+    remoteRendering &= (_remoteClient->setRenderer(renderer) == vvRemoteClient::VV_OK);
 
     // Set window title:
     if (filename!=NULL) glutSetWindowTitle(filename);
@@ -846,9 +846,9 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   if(serverMode)
   {
     if((rrMode == RR_IBR))
-      remoteRendering = (rendererType == vvRenderer::RAYREND);
+      remoteRendering &= (rendererType == vvRenderer::RAYREND);
     else if (rrMode == RR_CLUSTER)
-      remoteRendering = ((rendererType == vvRenderer::TEXREND)
+      remoteRendering &= ((rendererType == vvRenderer::TEXREND)
                            && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
     else
     {
