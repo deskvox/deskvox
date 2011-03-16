@@ -2822,13 +2822,13 @@ void vvView::displayHelpInfo()
   cerr << endl;
   cerr << "Available options:" << endl;
   cerr << endl;
-  cerr << "-serverMode <mode> (-s)" << endl;
+  cerr << "-servermode <mode> (-s)" << endl;
   cerr << " Renderer is a server in mode <mode> and accepts assignments from a client" << endl;
   cerr << " Modes:" << endl;
   cerr << " cluster = cluster rendering (default)" << endl;
   cerr << " ibr     = image based rendering" << endl;
   cerr << endl;
-  cerr << "-clientMode <mode> (-c)" << endl;
+  cerr << "-clientmode <mode> (-c)" << endl;
   cerr << " Renderer is a client in mode <mode> and connects to server(s) given with -server" << endl;
   cerr << " Modes:" << endl;
   cerr << " cluster = cluster rendering (default)" << endl;
@@ -2956,7 +2956,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
       return false;
     }
     else if (vvToolshed::strCompare(argv[arg], "-s")==0 ||
-             vvToolshed::strCompare(argv[arg], "-serverMode")==0)
+             vvToolshed::strCompare(argv[arg], "-servermode")==0)
     {
       serverMode = true;
 
@@ -2987,7 +2987,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
       }
     }
     else if (vvToolshed::strCompare(argv[arg], "-c")==0 ||
-             vvToolshed::strCompare(argv[arg], "-clientMode")==0)
+             vvToolshed::strCompare(argv[arg], "-clientmode")==0)
     {
       clientMode = true;
       string val;
