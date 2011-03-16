@@ -21,11 +21,12 @@
 #include "vvdebugmsg.h"
 #include "vvremoteclient.h"
 
-vvRemoteClient::vvRemoteClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+vvRemoteClient::vvRemoteClient(vvRenderState renderState,
+                               std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                                std::vector<const char*>& slaveFileNames,
                                const char* fileName)
-  // : vvRenderer(/* */),
-  : _fileName(fileName), _slaveNames(slaveNames),
+   : vvRenderState(renderState),
+    _fileName(fileName), _slaveNames(slaveNames),
     _slavePorts(slavePorts),
     _slaveFileNames(slaveFileNames)
 {

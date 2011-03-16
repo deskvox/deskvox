@@ -27,7 +27,7 @@
 #include "vvtransfunc.h"
 #include "vvvecmath.h"
 
-class VIRVOEXPORT vvRemoteClient // : public vvRenderer // TODO: derive this from vvRenderer
+class VIRVOEXPORT vvRemoteClient : public vvRenderState
 {
 public:
   enum ErrorType
@@ -39,7 +39,8 @@ public:
     VV_BAD_IMAGE
   };
 
-  vvRemoteClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+  vvRemoteClient(vvRenderState renderState,
+                 std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                  std::vector<const char*>& slaveFileNames,
                  const char* fileName);
   virtual ~vvRemoteClient();

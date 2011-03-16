@@ -457,14 +457,14 @@ void vvView::mainLoop(int argc, char *argv[])
 
     if (ibRendering)
     {
-      _clusterClient = new vvIbrClient(slaveNames, slavePorts, slaveFileNames, filename);
+      _clusterClient = new vvIbrClient(ds->renderState, slaveNames, slavePorts, slaveFileNames, filename);
       dynamic_cast<vvIbrClient*>(_clusterClient)->setDepthPrecision(depthPrecision);
       ibRendering = (_clusterClient->initSockets(vvView::DEFAULT_PORT,
                                                  redistributeVolData, vd) == vvRemoteClient::VV_OK);
     }
     else if(clusterRendering)
     {
-      _clusterClient = new vvClusterClient(slaveNames, slavePorts, slaveFileNames, filename);
+      _clusterClient = new vvClusterClient(ds->renderState, slaveNames, slavePorts, slaveFileNames, filename);
       clusterRendering = (_clusterClient->initSockets(vvView::DEFAULT_PORT,
                                                      redistributeVolData, vd) == vvRemoteClient::VV_OK);
     }

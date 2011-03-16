@@ -38,9 +38,10 @@ class VIRVOEXPORT vvIbrClient : public vvRemoteClient
 {
 public:
 
-  vvIbrClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
-                 std::vector<const char*>& slaveFileNames,
-                 const char* fileName);
+  vvIbrClient(vvRenderState renderState,
+              std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+              std::vector<const char*>& slaveFileNames,
+              const char* fileName);
   ~vvIbrClient();
 
   ErrorType setRenderer(vvRenderer* renderer);

@@ -36,9 +36,10 @@ class vvSlaveVisitor;
 class VIRVOEXPORT vvClusterClient : public vvRemoteClient
 {
 public:
-  vvClusterClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
-                 std::vector<const char*>& slaveFileNames,
-                 const char* fileName);
+  vvClusterClient(vvRenderState renderState,
+                  std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+                  std::vector<const char*>& slaveFileNames,
+                  const char* fileName);
   ~vvClusterClient();
 
   ErrorType setRenderer(vvRenderer* renderer);

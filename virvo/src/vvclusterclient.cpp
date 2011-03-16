@@ -23,10 +23,11 @@
 #include "vvclusterclient.h"
 #include "vvtexrend.h"
 
-vvClusterClient::vvClusterClient(std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
+vvClusterClient::vvClusterClient(vvRenderState renderState,
+                                 std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                                  std::vector<const char*>& slaveFileNames,
                                  const char* fileName)
-  : vvRemoteClient(slaveNames, slavePorts, slaveFileNames, fileName)
+  : vvRemoteClient(renderState, slaveNames, slavePorts, slaveFileNames, fileName)
 {
   _threads = NULL;
   _threadData = NULL;
