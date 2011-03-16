@@ -41,7 +41,8 @@ public:
   vvIbrClient(vvRenderState renderState,
               std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
               std::vector<const char*>& slaveFileNames,
-              const char* fileName);
+              const char* fileName,
+              vvImage2_5d::DepthPrecision dp = vvImage2_5d::VV_USHORT);
   ~vvIbrClient();
 
   ErrorType setRenderer(vvRenderer* renderer);

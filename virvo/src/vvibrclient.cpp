@@ -29,8 +29,10 @@
 vvIbrClient::vvIbrClient(vvRenderState renderState,
                          std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                          std::vector<const char*>& slaveFileNames,
-                         const char* fileName)
-  : vvRemoteClient(renderState, slaveNames, slavePorts, slaveFileNames, fileName)
+                         const char* fileName,
+                         vvImage2_5d::DepthPrecision dp)
+  : vvRemoteClient(renderState, slaveNames, slavePorts, slaveFileNames, fileName),
+    _depthPrecision(dp)
 {
   _threads = NULL;
   _threadData = NULL;
