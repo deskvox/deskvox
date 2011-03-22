@@ -262,7 +262,7 @@ void vvView::mainLoop(int argc, char *argv[])
       else
       {
         if((rrMode == RR_IBR) && (rendererType != vvRenderer::RAYREND))
-          std::cerr << "remote rendering works with rayrend only." << std::endl;
+          std::cerr << "Image based remote rendering works with rayrend only." << std::endl;
         break;
       }
 
