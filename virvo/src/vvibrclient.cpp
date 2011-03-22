@@ -211,8 +211,8 @@ void vvIbrClient::initIbrFrame()
     break;
   }
 
-  uchar colors[w*h*4];
-  float points[w*h*3];
+  uchar* colors = new uchar[w*h*4];
+  float* points = new float[w*h*3];
   double winPoint[3];
 
   for(int y = 0; y<h; y++)
@@ -243,11 +243,13 @@ void vvIbrClient::initIbrFrame()
   glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
   glBufferData(GL_ARRAY_BUFFER, w*h*3*sizeof(float), points, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  delete[] points;
 
   // VBO for colors
   glBindBuffer(GL_ARRAY_BUFFER, _colorVBO);
   glBufferData(GL_ARRAY_BUFFER, w*h*4*sizeof(uchar), colors, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  delete[] colors;
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
