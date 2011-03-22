@@ -253,7 +253,9 @@ void vvView::mainLoop(int argc, char *argv[])
       vvRemoteServer* server = NULL;
       if((rrMode == RR_IBR) && (rendererType == vvRenderer::RAYREND))
       {
+#ifdef HAVE_CUDA
         server = new vvIbrServer(depthPrecision);
+#endif
       }
       else if(rrMode == RR_CLUSTER)
       {

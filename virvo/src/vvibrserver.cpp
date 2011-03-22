@@ -18,6 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef HAVE_CUDA
+
 #include "vvgltools.h"
 #include "vvibrserver.h"
 #include "vvrayrend.h"
@@ -118,3 +120,5 @@ void vvIbrServer::resize(const int w, const int h)
 {
   glViewport(0, 0, w, h);
 }
+
+#endif
