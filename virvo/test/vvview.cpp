@@ -436,7 +436,10 @@ void vvView::mainLoop(int argc, char *argv[])
     setProjectionMode(perspectiveMode);
     setRenderer(currentGeom, currentVoxels);
 
-    remoteRendering &= (_remoteClient->setRenderer(renderer) == vvRemoteClient::VV_OK);
+    if (remoteRendering)
+    {
+      remoteRendering &= (_remoteClient->setRenderer(renderer) == vvRemoteClient::VV_OK);
+    }
 
     // Set window title:
     if (filename!=NULL) glutSetWindowTitle(filename);
