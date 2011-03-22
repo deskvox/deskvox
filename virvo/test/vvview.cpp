@@ -268,7 +268,7 @@ void vvView::mainLoop(int argc, char *argv[])
         break;
       }
 
-      if (server->initSocket(slavePort, vvSocket::VV_TCP) != vvIbrServer::VV_OK)
+      if (server->initSocket(slavePort, vvSocket::VV_TCP) != vvRemoteServer::VV_OK)
       {
         // TODO: Evaluate the error type, maybe don't even return but try again.
         cerr << "Couldn't initialize the socket connection" << endl;
@@ -276,7 +276,7 @@ void vvView::mainLoop(int argc, char *argv[])
         return;
       }
 
-      if (server->initData(vd) != vvIbrServer::VV_OK)
+      if (server->initData(vd) != vvRemoteServer::VV_OK)
       {
         cerr << "Exiting..." << endl;
         return;

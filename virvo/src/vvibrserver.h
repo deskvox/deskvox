@@ -21,6 +21,12 @@
 #ifndef _VV_IBRSERVER_H_
 #define _VV_IBRSERVER_H_
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+#ifdef HAVE_CUDA
+
 #include "vvexport.h"
 #include "vvoffscreenbuffer.h"
 #include "vvrayrend.h"
@@ -41,5 +47,7 @@ private:
   void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);
   void resize(int w, int h);
 };
+
+#endif
 
 #endif
