@@ -241,7 +241,7 @@ void vvRemoteClient::updateTransferFunction(vvTransFunc& tf)
   }
 }
 
-void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const float newValue, const char*)
+void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const float newValue)
 {
   vvDebugMsg::msg(3, "vvRenderMaster::setParameter()");
   switch (param)

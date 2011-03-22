@@ -67,7 +67,7 @@ public:
   void setProbeSize(const vvVector3* roiSize);
   void toggleBoundingBox();
   void updateTransferFunction(vvTransFunc& tf);
-  void setParameter(vvRenderer::ParameterType param, float newValue, const char* = NULL);
+  void setParameter(vvRenderer::ParameterType param, float newValue);
 
 protected:
   const char* _fileName;
