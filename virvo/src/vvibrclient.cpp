@@ -182,7 +182,7 @@ void vvIbrClient::initIbrFrame()
 
   // get pixel and depth-data
   uchar* dataRGBA = isaImg->getCodedImage();
-  float depth[w*h];
+  std::vector<float> depth(w*h);
   switch(_depthPrecision)
   {
   case vvImage2_5d::VV_UCHAR:
@@ -211,8 +211,8 @@ void vvIbrClient::initIbrFrame()
     break;
   }
 
-  uchar* colors = new uchar[w*h*4];
-  float* points = new float[w*h*3];
+  std::vector<uchar> colors(w*h*4);
+  std::vector<float> points(w*h*3);
   double winPoint[3];
 
   for(int y = 0; y<h; y++)
@@ -241,15 +241,13 @@ void vvIbrClient::initIbrFrame()
 
   // VBO for points
   glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
-  glBufferData(GL_ARRAY_BUFFER, w*h*3*sizeof(float), points, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, w*h*3*sizeof(float), &points[0], GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  delete[] points;
 
   // VBO for colors
   glBindBuffer(GL_ARRAY_BUFFER, _colorVBO);
-  glBufferData(GL_ARRAY_BUFFER, w*h*4*sizeof(uchar), colors, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, w*h*4*sizeof(uchar), &colors[0], GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  delete[] colors;
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -322,4 +320,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
     pthread_mutex_unlock( &data->renderMaster->_slaveMutex );
   }
   pthread_exit(NULL);
+#ifdef _WIN32
+  return NULL;
+#endif
 }

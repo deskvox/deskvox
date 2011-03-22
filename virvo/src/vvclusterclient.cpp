@@ -203,4 +203,7 @@ void* vvClusterClient::getImageFromSocket(void* threadargs)
     pthread_barrier_wait(&data->clusterClient->_barrier);
   }
   pthread_exit(NULL);
+#ifdef _WIN32
+  return NULL;
+#endif
 }
