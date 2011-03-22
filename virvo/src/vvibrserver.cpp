@@ -18,7 +18,6 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifdef HAVE_CUDA
 
 #include "vvgltools.h"
 #include "vvibrserver.h"
@@ -29,6 +28,7 @@
 #include "vvbonjour/vvbonjourregistrar.h"
 #endif
 
+#ifdef HAVE_CUDA
 vvIbrServer::vvIbrServer(const vvImage2_5d::DepthPrecision dp)
   : vvRemoteServer(), _depthPrecision(dp)
 {
