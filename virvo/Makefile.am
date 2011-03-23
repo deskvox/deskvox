@@ -1,7 +1,7 @@
 if GLUT
-SUBDIRS = src test
+SUBDIRS = virvo test
 else
-SUBDIRS = src
+SUBDIRS = virvo
 endif
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4

@@ -6,13 +6,10 @@
 //****************************************************************************
 
 #define IMAGESPACE_APPROX
-#ifdef HLRS
-#include "virvo/vvglew.h"
-//#include "virvo/vvconfig.h"
-#else
-#include "../src/vvglew.h"
-#include "../src/vvconfig.h"
+#ifndef HLRS
+#include <virvo/vvconfig.h>
 #endif
+#include <virvo/vvglew.h>
 
 #include <iostream>
 #include <fstream>
@@ -57,67 +54,37 @@ using std::ios;
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
-#ifdef HLRS
-#include "virvo/vvvirvo.h"
-#include "virvo/vvgltools.h"
-#include "virvo/vvoffscreenbuffer.h"
-#include "virvo/vvprintgl.h"
-#include "virvo/vvstopwatch.h"
-#include "virvo/vvrendercontext.h"
-#include "virvo/vvclusterclient.h"
-#include "virvo/vvclusterserver.h"
-#include "virvo/vvibrclient.h"
-#include "virvo/vvibrserver.h"
-#include "virvo/vvimage.h"
-#include "virvo/vvremoteserver.h"
-#include "virvo/vvrenderer.h"
-#include "virvo/vvfileio.h"
-#include "virvo/vvdebugmsg.h"
-#include "virvo/vvsocketio.h"
-#include "virvo/vvtexrend.h"
-#include "virvo/vvsoftpar.h"
-#include "virvo/vvsoftper.h"
-#include "virvo/vvcudasw.h"
-#include "virvo/vvcuda.h"
+
+#include <virvo/vvvirvo.h>
+#include <virvo/vvgltools.h>
+#include <virvo/vvoffscreenbuffer.h>
+#include <virvo/vvprintgl.h>
+#include <virvo/vvstopwatch.h>
+#include <virvo/vvrendercontext.h>
+#include <virvo/vvclusterclient.h>
+#include <virvo/vvclusterserver.h>
+#include <virvo/vvibrclient.h>
+#include <virvo/vvibrserver.h>
+#include <virvo/vvimage.h>
+#include <virvo/vvremoteserver.h>
+#include <virvo/vvrenderer.h>
+#include <virvo/vvfileio.h>
+#include <virvo/vvdebugmsg.h>
+#include <virvo/vvsocketio.h>
+#include <virvo/vvtexrend.h>
+#include <virvo/vvsoftpar.h>
+#include <virvo/vvsoftper.h>
+#include <virvo/vvcudasw.h>
+#include <virvo/vvcuda.h>
 #if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
-#include "virvo/vvrayrend.h"
+#include <virvo/vvrayrend.h>
 #endif
 #ifdef HAVE_VOLPACK
-#include "virvo/vvrendervp.h"
+#include <virvo/vvrendervp.h>
 #endif
-#include "virvo/vvbonjour/vvbonjourbrowser.h"
-#include "virvo/vvbonjour/vvbonjourresolver.h"
-#else
-#include "../src/vvvirvo.h"
-#include "../src/vvgltools.h"
-#include "../src/vvoffscreenbuffer.h"
-#include "../src/vvprintgl.h"
-#include "../src/vvstopwatch.h"
-#include "../src/vvrendercontext.h"
-#include "../src/vvclusterclient.h"
-#include "../src/vvclusterserver.h"
-#include "../src/vvremoteserver.h"
-#include "../src/vvibrclient.h"
-#include "../src/vvibrserver.h"
-#include "../src/vvimage.h"
-#include "../src/vvrenderer.h"
-#include "../src/vvfileio.h"
-#include "../src/vvdebugmsg.h"
-#include "../src/vvsocketio.h"
-#include "../src/vvtexrend.h"
-#include "../src/vvsoftpar.h"
-#include "../src/vvsoftper.h"
-#include "../src/vvcudasw.h"
-#include "../src/vvcuda.h"
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
-#include "../src/vvrayrend.h"
-#endif
-#ifdef HAVE_VOLPACK
-#include "../src/vvrendervp.h"
-#endif
-#include "../src/vvbonjour/vvbonjourbrowser.h"
-#include "../src/vvbonjour/vvbonjourresolver.h"
-#endif
+#include <virvo/vvbonjour/vvbonjourbrowser.h>
+#include <virvo/vvbonjour/vvbonjourresolver.h>
+
 #include "vvobjview.h"
 #include "vvperformancetest.h"
 #include "vvview.h"

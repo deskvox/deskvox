@@ -23,13 +23,8 @@
 
 #include <vector>
 
-#ifdef HLRS
-#include "virvo/vvtexrend.h"
-#include "virvo/vvvecmath.h"
-#else
-#include "../src/vvtexrend.h"
-#include "../src/vvvecmath.h"
-#endif
+#include <virvo/vvtexrend.h>
+#include <virvo/vvvecmath.h>
 #include "vvobjview.h"
 
 #define NUM_COL_HEADERS 11

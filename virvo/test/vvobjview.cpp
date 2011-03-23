@@ -26,13 +26,8 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
-#ifdef HLRS
-#include "virvo/vvdebugmsg.h"
-#include "virvo/vvtokenizer.h"
-#else
-#include "../src/vvdebugmsg.h"
-#include "../src/vvtokenizer.h"
-#endif
+#include <virvo/vvdebugmsg.h>
+#include <virvo/vvtokenizer.h>
 #include "vvobjview.h"
 
 using std::cerr;

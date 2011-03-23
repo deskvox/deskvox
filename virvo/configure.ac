@@ -1,8 +1,8 @@
 AC_PREREQ(2.13)
-AC_INIT(src/vvvirvo.h)
+AC_INIT(virvo/vvvirvo.h)
 AM_INIT_AUTOMAKE(virvo,2.0)
 AC_CONFIG_SRCDIR(configure.ac)
-AM_CONFIG_HEADER(src/vvconfig.h)
+AM_CONFIG_HEADER(virvo/vvconfig.h)
 AC_CONFIG_MACRO_DIR([m4])
 
 LT_INIT
@@ -60,6 +60,6 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 AC_SUBST(LDFLAGS)
 
-AC_OUTPUT(Makefile src/Makefile test/Makefile)
+AC_OUTPUT(Makefile virvo/Makefile test/Makefile)
 
 

@@ -39,7 +39,7 @@ class vvSocketIO;
 class vvStopwatch;
 
 #include <vector>
-#include "../src/vvimage.h"
+#include <virvo/vvimage.h>
 
 class vvView
 {
