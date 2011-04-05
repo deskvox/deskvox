@@ -43,13 +43,13 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\glew\include&quot;;&quot;$(EXTERNLIBS)\glut\include&quot;;&quot;$(EXTERNLIBS)\pthreads\include&quot;;.."
-				PreprocessorDefinitions="VIRVO_EXPORT"
+				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\pthreads\include&quot;;&quot;$(EXTERNLIBS)\glut\include&quot;;&quot;$(EXTERNLIBS)\glew\include&quot;;&quot;$(EXTERNLIBS)\Cg\include&quot;;.."
+				PreprocessorDefinitions="GLUT_NO_LIB_PRAGMA;NODLL"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile=".\Release/libvirvo.pch"
+				PrecompiledHeaderFile=".\Release/test.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -71,6 +71,8 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glu32.lib glut.lib glew32.lib libvirvo.lib pthreadVC2.lib cg.lib cgGL.lib Ws2_32.lib"
 				AdditionalLibraryDirectories="..\obj;&quot;$(EXTERNLIBS)\glut\lib&quot;;&quot;$(EXTERNLIBS)\glew\lib&quot;;&quot;$(EXTERNLIBS)\pthreads\lib&quot;;&quot;$(EXTERNLIBS)\Cg\lib&quot;"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -122,8 +124,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\glew\include&quot;;&quot;$(EXTERNLIBS)\glut\include&quot;;&quot;$(EXTERNLIBS)\pthreads\include&quot;;.."
-				PreprocessorDefinitions="VIRVO_IMPORT"
+				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\pthreads\include&quot;;&quot;$(EXTERNLIBS)\glut\include&quot;;&quot;$(EXTERNLIBS)\glew\include&quot;;&quot;$(EXTERNLIBS)\Cg\include&quot;;.."
+				PreprocessorDefinitions="GLUT_NO_LIB_PRAGMA;NODLL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				RuntimeTypeInfo="true"
@@ -152,6 +154,8 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glu32.lib glut.lib glew32.lib libvirvo.lib pthreadVC2.lib cg.lib cgGL.lib Ws2_32.lib"
 				AdditionalLibraryDirectories="..\obj;&quot;$(EXTERNLIBS)\glut\lib&quot;;&quot;$(EXTERNLIBS)\glew\lib&quot;;&quot;$(EXTERNLIBS)\pthreads\lib&quot;;&quot;$(EXTERNLIBS)\Cg\lib&quot;"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
