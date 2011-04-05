@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="test"
 	ProjectGUID="{35D1B742-B624-4E49-8B19-B6E8C35935EC}"
 	TargetFrameworkVersion="131072"
@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\glut\include&quot;;&quot;$(EXTERNLIBS)\pthreads\include&quot;;..\src"
+				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\glew\include&quot;;&quot;$(EXTERNLIBS)\glut\include&quot;;&quot;$(EXTERNLIBS)\pthreads\include&quot;;.."
 				PreprocessorDefinitions="VIRVO_EXPORT"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -69,8 +69,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="glut32.lib"
-				AdditionalLibraryDirectories="&quot;$(EXTERNLIBS)\glut\lib&quot;"
+				AdditionalDependencies="opengl32.lib glu32.lib glut.lib glew32.lib libvirvo.lib pthreadVC2.lib cg.lib cgGL.lib Ws2_32.lib"
+				AdditionalLibraryDirectories="..\obj;&quot;$(EXTERNLIBS)\glut\lib&quot;;&quot;$(EXTERNLIBS)\glew\lib&quot;;&quot;$(EXTERNLIBS)\pthreads\lib&quot;;&quot;$(EXTERNLIBS)\Cg\lib&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -122,7 +122,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\glut\include&quot;;&quot;$(EXTERNLIBS)\pthreads\include&quot;;..\src"
+				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\glew\include&quot;;&quot;$(EXTERNLIBS)\glut\include&quot;;&quot;$(EXTERNLIBS)\pthreads\include&quot;;.."
 				PreprocessorDefinitions="VIRVO_IMPORT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -150,8 +150,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="glut32.lib"
-				AdditionalLibraryDirectories="&quot;$(EXTERNLIBS)\glut\lib&quot;"
+				AdditionalDependencies="opengl32.lib glu32.lib glut.lib glew32.lib libvirvo.lib pthreadVC2.lib cg.lib cgGL.lib Ws2_32.lib"
+				AdditionalLibraryDirectories="..\obj;&quot;$(EXTERNLIBS)\glut\lib&quot;;&quot;$(EXTERNLIBS)\glew\lib&quot;;&quot;$(EXTERNLIBS)\pthreads\lib&quot;;&quot;$(EXTERNLIBS)\Cg\lib&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -188,6 +188,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\test\vvperformancetest.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\test\vvview.cpp"
 				>
 			</File>
@@ -198,6 +202,10 @@
 			>
 			<File
 				RelativePath="..\test\vvobjview.h"
+				>
+			</File>
+			<File
+				RelativePath="..\test\vvperformancetest.h"
 				>
 			</File>
 			<File

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="libvirvo"
 	ProjectGUID="{35D1B742-B624-4E49-8B19-B6E8C35935EC}"
 	TargetFrameworkVersion="131072"
@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\pthreads\include&quot;;&quot;$(EXTERNLIBS)\Cg\include&quot;;&quot;$(EXTERNLIBS)\glew\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\pthreads\include&quot;;&quot;$(EXTERNLIBS)\Cg\include&quot;;&quot;$(EXTERNLIBS)\glew\include\&quot;"
 				PreprocessorDefinitions="VIRVO_EXPORT"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -116,7 +116,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\pthreads\include&quot;;&quot;$(EXTERNLIBS)\Cg\include&quot;;&quot;$(EXTERNLIBS)\glew\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\pthreads\include&quot;;&quot;$(EXTERNLIBS)\Cg\include&quot;;&quot;$(EXTERNLIBS)\glew\include\&quot;"
 				PreprocessorDefinitions="VIRVO_EXPORT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -177,123 +177,207 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvbsptree.cpp"
+				RelativePath="..\virvo\vvaabb.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvcg.cpp"
+				RelativePath="..\virvo\vvbrick.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvcolor.cpp"
+				RelativePath="..\virvo\vvbsptree.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvdebugmsg.cpp"
+				RelativePath="..\virvo\vvbsptreevisitors.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvdicom.cpp"
+				RelativePath="..\virvo\vvcg.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvdynlib.cpp"
+				RelativePath="..\virvo\vvclusterclient.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvfileio.cpp"
+				RelativePath="..\virvo\vvclusterserver.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvglsl.cpp"
+				RelativePath="..\virvo\vvcolor.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvgltools.cpp"
+				RelativePath="..\virvo\vvcuda.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvideo.cpp"
+				RelativePath="..\virvo\vvcudaimg.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvimage.cpp"
+				RelativePath="..\virvo\vvcudasw.cu"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvoffscreenbuffer.cpp"
+				RelativePath="..\virvo\vvcudatransfunc.cu"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvprintgl.cpp"
+				RelativePath="..\virvo\vvdebugmsg.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvrenderer.cpp"
+				RelativePath="..\virvo\vvdicom.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvrendertarget.cpp"
+				RelativePath="..\virvo\vvdynlib.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvshaderfactory.cpp"
+				RelativePath="..\virvo\vvfileio.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvshadermanager.cpp"
+				RelativePath="..\virvo\vvglsl.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvsocket.cpp"
+				RelativePath="..\virvo\vvgltools.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvsocketio.cpp"
+				RelativePath="..\virvo\vvibrclient.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvsphere.cpp"
+				RelativePath="..\virvo\vvibrserver.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvstingray.cpp"
+				RelativePath="..\virvo\vvideo.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvstopwatch.cpp"
+				RelativePath="..\virvo\vvimage.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvtexrend.cpp"
+				RelativePath="..\virvo\vvoffscreenbuffer.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvtfwidget.cpp"
+				RelativePath="..\virvo\vvprintgl.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvtokenizer.cpp"
+				RelativePath="..\virvo\vvpthread.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvtoolshed.cpp"
+				RelativePath="..\virvo\vvrayrend.cu"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvtransfunc.cpp"
+				RelativePath="..\virvo\vvremoteclient.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvvecmath.cpp"
+				RelativePath="..\virvo\vvremoteserver.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvvffile.cpp"
+				RelativePath="..\virvo\vvrendercontext.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvvoldesc.cpp"
+				RelativePath="..\virvo\vvrenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvrendertarget.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvshaderfactory.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvshadermanager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsocket.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsocketio.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsoftimg.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsoftpar.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsoftper.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsoftvr.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsphere.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvstingray.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvstopwatch.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvtexrend.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvtfwidget.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvtokenizer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvtoolshed.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvtransfunc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvvecmath.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvvffile.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvvirvo.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvvoldesc.cpp"
 				>
 			</File>
 		</Filter>
@@ -302,7 +386,7 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\src\glext-orig.h"
+				RelativePath="..\virvo\glext-orig.h"
 				>
 			</File>
 			<File
@@ -310,147 +394,235 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvarray.h"
+				RelativePath="..\virvo\vvaabb.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvbsptree.h"
+				RelativePath="..\virvo\vvarray.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvcg.h"
+				RelativePath="..\virvo\vvbrick.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvcolor.h"
+				RelativePath="..\virvo\vvbsptree.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvdebugmsg.h"
+				RelativePath="..\virvo\vvbsptreevisitors.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvdicom.h"
+				RelativePath="..\virvo\vvcg.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvdynlib.h"
+				RelativePath="..\virvo\vvclusterclient.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvexport.h"
+				RelativePath="..\virvo\vvclusterserver.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvfileio.h"
+				RelativePath="..\virvo\vvcolor.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvglext.h"
+				RelativePath="..\virvo\vvcuda.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvglsl.h"
+				RelativePath="..\virvo\vvcudaimg.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvgltools.h"
+				RelativePath="..\virvo\vvcudasw.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvideo.h"
+				RelativePath="..\virvo\vvcudatransfunc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvimage.h"
+				RelativePath="..\virvo\vvcudautils.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvoffscreenbuffer.h"
+				RelativePath="..\virvo\vvdebugmsg.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvopengl.h"
+				RelativePath="..\virvo\vvdicom.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvprintgl.h"
+				RelativePath="..\virvo\vvdynlib.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvrenderer.h"
+				RelativePath="..\virvo\vvexport.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvrendertarget.h"
+				RelativePath="..\virvo\vvfileio.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvshaderfactory.h"
+				RelativePath="..\virvo\vvglext.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvshadermanager.h"
+				RelativePath="..\virvo\vvglsl.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvsllist.h"
+				RelativePath="..\virvo\vvgltools.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvsocket.h"
+				RelativePath="..\virvo\vvibrclient.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvsocketio.h"
+				RelativePath="..\virvo\vvibrserver.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvsphere.h"
+				RelativePath="..\virvo\vvideo.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvstingray.h"
+				RelativePath="..\virvo\vvimage.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvstopwatch.h"
+				RelativePath="..\virvo\vvoffscreenbuffer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvtexrend.h"
+				RelativePath="..\virvo\vvopengl.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvtfwidget.h"
+				RelativePath="..\virvo\vvprintgl.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvtokenizer.h"
+				RelativePath="..\virvo\vvpthread.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvtoolshed.h"
+				RelativePath="..\virvo\vvrayrend.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvtransfunc.h"
+				RelativePath="..\virvo\vvremoteclient.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvvecmath.h"
+				RelativePath="..\virvo\vvremoteserver.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvvffile.h"
+				RelativePath="..\virvo\vvrendercontext.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvvirvo.h"
+				RelativePath="..\virvo\vvrenderer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\vvvoldesc.h"
+				RelativePath="..\virvo\vvrendertarget.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvshaderfactory.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvshadermanager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsllist.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsocket.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsocketio.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsoftimg.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsoftpar.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsoftper.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsoftvr.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvsphere.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvstingray.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvstopwatch.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvtexrend.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvtfwidget.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvtokenizer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvtoolshed.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvtransfunc.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvvecmath.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvvffile.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvvirvo.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvvoldesc.h"
+				>
+			</File>
+			<File
+				RelativePath="..\virvo\vvx11.h"
 				>
 			</File>
 		</Filter>
