@@ -539,13 +539,12 @@ vvSocket::ErrorType vvSocketIO::putBricks(std::vector<vvBrick*>& bricks)
 */
 vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
 {
-  const int BUFSIZE = 17;
+  const int BUFSIZE = 13;
   uchar buffer[BUFSIZE];
   vvSocket::ErrorType retval;
   short w, h, ct;
   int imagesize;
   int videosize;
-  int keyframe;
 
   if ((retval = vvSocket::read_data(&buffer[0], BUFSIZE)) != vvSocket::VV_OK)
   {
@@ -567,13 +566,11 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
       return vvSocket::VV_ALLOC_ERROR;
   }
   imagesize = (int)vvToolshed::read32(&buffer[5]);
-  keyframe = (int)vvToolshed::read32(&buffer[9]);
-  videosize = (int)vvToolshed::read32(&buffer[13]);
+  videosize = (int)vvToolshed::read32(&buffer[9]);
   im->setSize(imagesize);
-  im->setKeyframe(keyframe);
   im->setVideoSize(videosize);
   if (vvDebugMsg::isActive(3))
-    fprintf(stderr, "imgsize=%d, keyframe=%d, videosize=%d\n", imagesize, keyframe, videosize);
+    fprintf(stderr, "imgsize=%d, videosize=%d\n", imagesize, videosize);
   if ((retval = vvSocket::read_data(im->getCodedImage(), imagesize)) != vvSocket::VV_OK)
   {
     return retval;
@@ -598,23 +595,21 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
 */
 vvSocket::ErrorType vvSocketIO::putImage(vvImage* im)
 {
-  const int BUFSIZE = 17;
+  const int BUFSIZE = 13;
   uchar buffer[BUFSIZE];
   vvSocket::ErrorType retval;
   int imagesize;
   int videosize;
-  int keyframe;
   int ct;
   imagesize = im->getSize();
   videosize = im->getVideoSize();
-  keyframe = im->getKeyframe();
   ct = im->getCodeType();
   vvToolshed::write16(&buffer[0], im->getHeight());
   vvToolshed::write16(&buffer[2], im->getWidth());
   vvToolshed::write8(&buffer[4], (uchar)ct);
   vvToolshed::write32(&buffer[5], (ulong)imagesize);
-  vvToolshed::write32(&buffer[9], (ulong)keyframe);
-  vvToolshed::write32(&buffer[13], (ulong)videosize);
+  vvToolshed::write32(&buffer[9], (ulong)videosize);
+
   if (vvDebugMsg::isActive(3))
     cerr <<"Sending header ..."<< endl;
   if ((retval = vvSocket::write_data(&buffer[0], BUFSIZE)) != vvSocket::VV_OK)
@@ -681,9 +676,9 @@ vvSocket::ErrorType vvSocketIO::getImage2_5d(vvImage2_5d* im)
 */
 vvSocket::ErrorType vvSocketIO::putImage2_5d(vvImage2_5d* im)
 {
-  vvSocket::ErrorType err;
+  vvSocket::ErrorType err = putImage(im);
 
-  if((err = putImage(im)) != vvSocket::VV_OK)
+  if(err != vvSocket::VV_OK)
     return err;
   // additional 2.5d-data
   switch(im->getDepthPrecision())

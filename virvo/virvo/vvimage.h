@@ -85,7 +85,6 @@ class VIRVOEXPORT vvImage
     void setSize(int);
     void setVideoSize(int);
     void setImagePtr(uchar*);
-    void setKeyframe(int);
     void setNewImagePtr(uchar*);
     void setVideoStyle(int);
     void setVideoQuant(int);
@@ -94,7 +93,6 @@ class VIRVOEXPORT vvImage
     short getWidth();
     int getSize();
     int getVideoSize();
-    int getKeyframe();
     uchar* getImagePtr();
     uchar* getCodedImage();
     uchar* getVideoCodedImage();
@@ -112,7 +110,6 @@ class VIRVOEXPORT vvImage
     short codetype;
     int size;
     int videosize;
-    int keyframe;
     uchar* imageptr;
     uchar* codedimage;
     uchar* videoimageptr;

@@ -420,15 +420,6 @@ void vvImage::setVideoQuant(int q)
 }
 
 //----------------------------------------------------------------------------
-/** Sets an key frame
-@param k
-*/
-void vvImage::setKeyframe(int k)
-{
-  keyframe = k;
-}
-
-//----------------------------------------------------------------------------
 /**Returns the image height
  */
 short vvImage::getHeight()
@@ -466,14 +457,6 @@ int vvImage::getSize()
 int vvImage::getVideoSize()
 {
   return videosize;
-}
-
-//----------------------------------------------------------------------------
-/** Returns the key frame
- */
-int vvImage::getKeyframe()
-{
-  return keyframe;
 }
 
 //----------------------------------------------------------------------------
