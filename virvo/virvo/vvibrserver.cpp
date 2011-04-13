@@ -18,6 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include <cmath>
 
 #include "vvgltools.h"
 #include "vvibrserver.h"
@@ -29,8 +30,10 @@
 #endif
 
 #ifdef HAVE_CUDA
-vvIbrServer::vvIbrServer(const vvImage2_5d::DepthPrecision dp)
-  : vvRemoteServer(), _depthPrecision(dp)
+vvIbrServer::vvIbrServer(const vvImage2_5d::DepthPrecision dp,
+                         const vvRayRend::IbrDepthScale ds,
+                         const vvRayRend::IbrMode mode)
+  : vvRemoteServer(), _depthPrecision(dp), _depthScale(ds), _ibrMode(mode)
 {
 }
 
@@ -62,6 +65,39 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   glMatrixMode(GL_MODELVIEW);
   mv.get(matrixGL);
   glLoadMatrixf(matrixGL);
+
+  // calculate bounding sphere
+  vvAABB bbox(renderer->getVolDesc()->getBoundingBox().min(), renderer->getVolDesc()->getBoundingBox().max());
+  vvVector3 center(bbox.getCenter());
+  vvVector3 min(bbox.min());
+  vvVector3 max(bbox.max());
+
+  // transform gl-matrix to virvo matrix
+  mv.transpose();
+  mv.print("mv");
+
+  center.multiply(&mv);
+  min.multiply(&mv);
+  max.multiply(&mv);
+  mv.transpose();
+
+  float radius = (max-min).length() * 0.5;
+
+  std::cerr << "length: " << radius << std::endl;
+
+  std::cerr << "obj-distance: " << center.length() << std::endl;
+
+  // near clip
+  float near = center.length() - radius;
+  std::cerr << "new near clip: " << near << std::endl;
+
+  //center.scale(near);
+  //gluProject(center.e[0], center.e[1], center.e[2], mv.e, pr.e, glGetIntegerv(GL_VIEWPORT))
+
+  // far clip
+  float far = center.length() + radius;
+
+  std::cerr << "new far clip: " << far << std::endl;
 
   vvRect* screenRect = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect();
 

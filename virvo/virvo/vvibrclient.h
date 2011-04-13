@@ -28,6 +28,7 @@
 #include "vvvoldesc.h"
 #include "vvpthread.h"
 #include "vvgltools.h"
+#include "vvrayrend.h"
 
 #include <vector>
 
@@ -41,7 +42,8 @@ public:
               std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
               std::vector<const char*>& slaveFileNames,
               const char* fileName,
-              vvImage2_5d::DepthPrecision dp = vvImage2_5d::VV_USHORT);
+              vvImage2_5d::DepthPrecision dp = vvImage2_5d::VV_USHORT,
+              vvRayRend::IbrDepthScale ds = vvRayRend::VV_FULL_DEPTH);
   ~vvIbrClient();
 
   ErrorType setRenderer(vvRenderer* renderer);            ///< sets renderer

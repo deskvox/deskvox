@@ -78,6 +78,7 @@ using std::ios;
 #include <virvo/vvsoftper.h>
 #include <virvo/vvcudasw.h>
 #include <virvo/vvcuda.h>
+
 #if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 #include <virvo/vvrayrend.h>
 #endif
@@ -158,7 +159,9 @@ vvView::vvView()
   clientMode            = false;
   serverMode            = false;
   slavePort             = vvView::DEFAULT_PORT;
-  depthPrecision        = vvImage2_5d::VV_USHORT;
+  ibrPrecision          = vvImage2_5d::VV_USHORT;
+  ibrScale              = vvRayRend::VV_FULL_DEPTH;
+  ibrMode               = vvRayRend::VV_MAX_GRADIENT;
   remoteRendering       = false;
   rrMode                = RR_NONE;
   clipBuffer            = NULL;
@@ -223,7 +226,7 @@ void vvView::mainLoop(int argc, char *argv[])
       if((rrMode == RR_IBR) && (rendererType == vvRenderer::RAYREND))
       {
 #ifdef HAVE_CUDA
-        server = new vvIbrServer(depthPrecision);
+        server = new vvIbrServer(ibrPrecision, ibrScale, ibrMode);
 #endif
       }
       else if(rrMode == RR_CLUSTER)
@@ -379,9 +382,8 @@ void vvView::mainLoop(int argc, char *argv[])
 
     if (rrMode == RR_IBR)
     {
-      _remoteClient = new vvIbrClient(ds->renderState,
-                                      slaveNames, slavePorts, slaveFileNames, filename,
-                                      depthPrecision);
+      _remoteClient = new vvIbrClient(ds->renderState, slaveNames, slavePorts, slaveFileNames, filename,
+                                      ibrPrecision, ibrScale);
     }
     else if(rrMode == RR_CLUSTER)
     {

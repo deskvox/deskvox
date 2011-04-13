@@ -949,8 +949,7 @@ void vvRayRend::compositeVolume(int w, int h)
 
   if ((w > 0) && (h > 0))
   {
-    vp[2] = w;
-    vp[3] = h;
+    vp[2]=w; vp[3]=h;
     intImg->setSize(w, h);
 
     switch(_depthPrecision)
@@ -966,6 +965,8 @@ void vvRayRend::compositeVolume(int w, int h)
       break;
     }
   }
+
+  vp.print();
 
   dynamic_cast<vvCudaImg*>(intImg)->map();
 

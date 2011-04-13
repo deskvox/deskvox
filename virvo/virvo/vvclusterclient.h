@@ -42,9 +42,9 @@ public:
                   const char* fileName);
   ~vvClusterClient();
 
-  ErrorType setRenderer(vvRenderer* renderer);
-  ErrorType render();
-  void exit();
+  ErrorType setRenderer(vvRenderer* renderer);            ///< sets renderer
+  ErrorType render();                                     ///< render image with depth-values
+  void exit();                                            ///< check out from servers
 
 private:
   vvBspTree* _bspTree;
@@ -61,9 +61,9 @@ private:
   ThreadArgs* _threadData;
   pthread_barrier_t _barrier;
 
-  void createThreads();
-  void destroyThreads();
-  static void* getImageFromSocket(void* threadargs);
+  void createThreads();                               ///< creates threads for every socket connection
+  void destroyThreads();                              ///< quits threads
+  static void* getImageFromSocket(void* threadargs);  ///< get image from socket connection and wait for next
 };
 
 #endif

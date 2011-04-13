@@ -60,4 +60,3 @@ int virvo::getYearOfRelease()
 #endif
 }
 
-

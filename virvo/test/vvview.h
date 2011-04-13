@@ -39,7 +39,9 @@ class vvSocketIO;
 class vvStopwatch;
 
 #include <vector>
+
 #include <virvo/vvimage.h>
+#include <virvo/vvrayrend.h>
 
 class vvView
 {
@@ -141,7 +143,9 @@ class vvView
     int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
     bool remoteRendering;                       ///< memorize if remote rendering is possible
     int  rrMode;                                ///< memory remote rendering mode
-    vvImage2_5d::DepthPrecision  depthPrecision;///< Precision of depth buffer in remote rendering mode
+    vvImage2_5d::DepthPrecision ibrPrecision;   ///< Precision of depth buffer in image based (remote-)rendering mode
+    vvRayRend::IbrDepthScale    ibrScale;       ///< Scaling type of depthbuffer between near and far clipping planes
+    vvRayRend::IbrMode          ibrMode;        ///< interruption mode for depth-calculation
     vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
     GLfloat* framebufferDump;
     std::vector<const char*> slaveNames;

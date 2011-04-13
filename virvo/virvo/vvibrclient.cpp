@@ -25,12 +25,14 @@
 #include "vvgltools.h"
 #include "vvtexrend.h"
 #include "float.h"
+#include "vvrayrend.h"
 
 vvIbrClient::vvIbrClient(vvRenderState renderState,
                          std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                          std::vector<const char*>& slaveFileNames,
                          const char* fileName,
-                         vvImage2_5d::DepthPrecision dp)
+                         const vvImage2_5d::DepthPrecision dp,
+                         vvRayRend::IbrDepthScale ds)
   : vvRemoteClient(renderState, slaveNames, slavePorts, slaveFileNames, fileName),
     _depthPrecision(dp)
 {

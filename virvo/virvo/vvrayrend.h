@@ -29,6 +29,18 @@
 class VIRVOEXPORT vvRayRend : public vvSoftVR
 {
 public:
+  enum IbrDepthScale
+  {
+    VV_FULL_DEPTH,
+    VV_SCALED_DEPTH
+  };
+  enum IbrMode
+  {
+    VV_MAX_GRADIENT,
+    VV_MIDDLE,
+    VV_SURFACE
+  };
+
   vvRayRend(vvVolDesc* vd, vvRenderState renderState);
   ~vvRayRend();
 
