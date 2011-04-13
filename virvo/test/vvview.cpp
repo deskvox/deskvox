@@ -300,10 +300,11 @@ void vvView::mainLoop(int argc, char *argv[])
           server->renderLoop(renderer);
           cerr << "Exiting..." << endl;
         }
-        delete vd;
-        vd = NULL;
+
         delete context;
         context = NULL;
+        delete vd;
+        vd = NULL;
       }
 
       // Frames vector with bricks is deleted along with the renderer.

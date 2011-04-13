@@ -862,7 +862,6 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   d_randArray = 0;
   initRandTexture();
 
-  d_volumeArrays = 0;
   initVolumeTexture();
 
   d_transferFuncArray = 0;
@@ -872,15 +871,11 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 vvRayRend::~vvRayRend()
 {
   bool ok;
-  if (d_volumeArrays != 0)
+  for (int f=0; f<d_volumeArrays.size(); ++f)
   {
-    for (int f=0; f<vd->frames; ++f)
-    {
-      vvCuda::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
-                         "vvRayRend::~vvRayRend() - free volume frame");
-    }
+    vvCuda::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
+                       "vvRayRend::~vvRayRend() - free volume frame");
   }
-  delete[] d_volumeArrays;
 
   vvCuda::checkError(&ok, cudaFreeArray(d_transferFuncArray),
                      "vvRayRend::~vvRayRend() - free tf");
@@ -1280,7 +1275,7 @@ void vvRayRend::initVolumeTexture()
   {
     _channelDesc = cudaCreateChannelDesc<ushort>();
   }
-  d_volumeArrays = new cudaArray*[vd->frames];
+  d_volumeArrays.resize(vd->frames);
 
   // Free "cuda error cache".
   vvCuda::checkError(&ok, cudaGetLastError(), "vvRayRend::initVolumeTexture() - free cuda error cache");

@@ -63,7 +63,7 @@ public:
 
 private:
   cudaChannelFormatDesc _channelDesc;
-  cudaArray** d_volumeArrays;
+  std::vector<cudaArray*> d_volumeArrays;
   cudaArray* d_transferFuncArray;
   cudaArray* d_randArray;
   cudaArray* d_spaceSkippingArray;
