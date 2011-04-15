@@ -43,7 +43,7 @@ public:
               std::vector<const char*>& slaveFileNames,
               const char* fileName,
               vvImage2_5d::DepthPrecision dp = vvImage2_5d::VV_USHORT,
-              vvRayRend::IbrDepthScale ds = vvRayRend::VV_FULL_DEPTH);
+              vvImage2_5d::IbrDepthScale ds = vvImage2_5d::VV_FULL_DEPTH);
   ~vvIbrClient();
 
   ErrorType setRenderer(vvRenderer* renderer);            ///< sets renderer

@@ -20,6 +20,8 @@
 
 #include "vvcuda.h"
 
+#endif
+
 /** Ray casting renderer. Based on the volume
   rendering implementation from the NVIDIA CUDA SDK,
   as of November 25th, 2010 could be downloaded from
@@ -29,11 +31,6 @@
 class VIRVOEXPORT vvRayRend : public vvSoftVR
 {
 public:
-  enum IbrDepthScale
-  {
-    VV_FULL_DEPTH,
-    VV_SCALED_DEPTH
-  };
   enum IbrMode
   {
     VV_MAX_GRADIENT,
@@ -41,6 +38,7 @@ public:
     VV_SURFACE
   };
 
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
   vvRayRend(vvVolDesc* vd, vvRenderState renderState);
   ~vvRayRend();
 
@@ -92,8 +90,7 @@ private:
 
   void calcSpaceSkippingGrid();
   void computeSpaceSkippingTexture();
-};
-
 #endif // HAVE_CUDA
+};
 
 #endif

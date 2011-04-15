@@ -31,7 +31,7 @@
 
 #ifdef HAVE_CUDA
 vvIbrServer::vvIbrServer(const vvImage2_5d::DepthPrecision dp,
-                         const vvRayRend::IbrDepthScale ds,
+                         const vvImage2_5d::IbrDepthScale ds,
                          const vvRayRend::IbrMode mode)
   : vvRemoteServer(), _depthPrecision(dp), _depthScale(ds), _ibrMode(mode)
 {

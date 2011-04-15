@@ -144,7 +144,7 @@ class vvView
     bool remoteRendering;                       ///< memorize if remote rendering is possible
     int  rrMode;                                ///< memory remote rendering mode
     vvImage2_5d::DepthPrecision ibrPrecision;   ///< Precision of depth buffer in image based (remote-)rendering mode
-    vvRayRend::IbrDepthScale    ibrScale;       ///< Scaling type of depthbuffer between near and far clipping planes
+    vvImage2_5d::IbrDepthScale    ibrScale;       ///< Scaling type of depthbuffer between near and far clipping planes
     vvRayRend::IbrMode          ibrMode;        ///< interruption mode for depth-calculation
     vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
     GLfloat* framebufferDump;

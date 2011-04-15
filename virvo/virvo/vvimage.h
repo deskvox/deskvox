@@ -146,6 +146,12 @@ class VIRVOEXPORT vvImage2_5d : public vvImage
       VV_UINT
     };
 
+    enum IbrDepthScale
+    {
+      VV_FULL_DEPTH,
+      VV_SCALED_DEPTH
+    };
+
     vvImage2_5d(short, short, uchar*, DepthPrecision);
     vvImage2_5d();
     virtual ~vvImage2_5d();

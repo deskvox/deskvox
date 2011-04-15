@@ -35,7 +35,7 @@ vvIbrClient::vvIbrClient(vvRenderState renderState,
                          std::vector<const char*>& slaveFileNames,
                          const char* fileName,
                          const vvImage2_5d::DepthPrecision dp,
-                         vvRayRend::IbrDepthScale ds)
+                         vvImage2_5d::IbrDepthScale ds)
   : vvRemoteClient(renderState, slaveNames, slavePorts, slaveFileNames, fileName),
     _depthPrecision(dp)
 {
