@@ -21,6 +21,9 @@
 #include "vvdynlib.h"
 #include <assert.h>
 
+using std::cerr;
+using std::endl;
+
 #define CHECK( funcname ) \
 	if ( !funcname ) { std::cerr << "#funcname() not initialized\n"; return; }
 

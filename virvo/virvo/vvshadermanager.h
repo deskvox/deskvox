@@ -21,10 +21,6 @@
 #include <iostream>
 #include <vector>
 
-using std::cerr;
-using std::cout;
-using std::endl;
-
 enum vvShaderParameterType
 {
   VV_SHD_SCALAR = 0,

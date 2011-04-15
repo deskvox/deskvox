@@ -22,6 +22,9 @@
 #include "vvrenderer.h"
 #include "vvremoteserver.h"
 
+using std::cerr;
+using std::endl;
+
 vvRemoteServer::vvRemoteServer()
   : _socket(0)
 {

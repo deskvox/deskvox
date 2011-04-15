@@ -26,9 +26,6 @@
 
 #include <iostream>
 
-using std::cerr;
-using std::endl;
-
 //============================================================================
 // Class Definitions
 //============================================================================
@@ -61,10 +58,10 @@ class VIRVOEXPORT vvGLTools
 
       inline void print() const
       {
-        cerr << "Left: " << values[0] << " "
+          std::cerr << "Left: " << values[0] << " "
              << "Top: " << values[1] << " "
              << "Width: " << values[2] << " "
-             << "Height: " << values[3] << endl;
+             << "Height: " << values[3] << std::endl;
       }
     };
     struct GLInfo

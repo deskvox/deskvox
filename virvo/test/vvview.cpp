@@ -2878,7 +2878,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
     {
       serverMode = true;
 
-      string val;
+      std::string val;
       if(argv[arg+1])
         val = argv[arg+1];
 
@@ -2908,7 +2908,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
              vvToolshed::strCompare(argv[arg], "-clientmode")==0)
     {
       clientMode = true;
-      string val;
+      std::string val;
       if(argv[arg+1])
         val = argv[arg+1];
 

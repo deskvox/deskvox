@@ -23,6 +23,10 @@
 #include "vvtfwidget.h"
 #include "vvtoolshed.h"
 
+using std::cerr;
+using std::endl;
+using std::list;
+
 //============================================================================
 // Class vvTFWidget and related classes
 //============================================================================

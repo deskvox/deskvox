@@ -35,6 +35,10 @@
 #include "vvcudatransfunc.h"
 #include "vvvoldesc.h"
 
+using std::cerr;
+using std::endl;
+using std::list;
+
 //----------------------------------------------------------------------------
 /// Constructor
 vvTransFunc::vvTransFunc()

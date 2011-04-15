@@ -63,7 +63,7 @@ class VIRVOEXPORT vvTexMultiRendMngr
 	void unsetGLenvironment();
 
   protected:
-	vector<vvTexMultiRend*> _rendererList;
+        std::vector<vvTexMultiRend*> _rendererList;
 	int _numVolume;
 	int _currentVolume;
 

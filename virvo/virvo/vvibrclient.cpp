@@ -27,6 +27,9 @@
 #include "float.h"
 #include "vvrayrend.h"
 
+using std::cerr;
+using std::endl;
+
 vvIbrClient::vvIbrClient(vvRenderState renderState,
                          std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                          std::vector<const char*>& slaveFileNames,

@@ -39,8 +39,6 @@
 @author Jurgen P. Schulze
 */
 
-using namespace std;
-
 template<class T> class vvArray
 {
   public:
@@ -376,16 +374,16 @@ template<class T> inline void vvArray<T>::print(char* title)
 {
   int i;
 
-  cerr << title << endl;
+  std::cerr << title << std::endl;
 
   if (usedSize == 0)
   {
-    cerr << "empty array" << endl;
+      std::cerr << "empty array" << std::endl;
     return;
   }
 
   for (i=0; i<usedSize; ++i)
-    cerr << "[" << i << "]: " << data[i] << endl;
+    std::cerr << "[" << i << "]: " << data[i] << std::endl;
 }
 
 //----------------------------------------------------------------------------

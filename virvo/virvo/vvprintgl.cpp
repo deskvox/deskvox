@@ -36,6 +36,9 @@
 #include "vvprintgl.h"
 #include "vvdebugmsg.h"
 
+using std::cerr;
+using std::endl;
+
 #ifdef HAVE_X11
 Display* vvPrintGL::dsp = NULL;
 #endif

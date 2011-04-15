@@ -23,6 +23,9 @@
 #include "vvclusterclient.h"
 #include "vvtexrend.h"
 
+using std::cerr;
+using std::endl;
+
 vvClusterClient::vvClusterClient(vvRenderState renderState,
                                  std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                                  std::vector<const char*>& slaveFileNames,

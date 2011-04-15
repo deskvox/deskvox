@@ -21,6 +21,9 @@
 #include "vvdebugmsg.h"
 #include "vvremoteclient.h"
 
+using std::cerr;
+using std::endl;
+
 vvRemoteClient::vvRemoteClient(vvRenderState renderState,
                                std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                                std::vector<const char*>& slaveFileNames,

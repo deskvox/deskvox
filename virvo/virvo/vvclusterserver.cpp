@@ -26,6 +26,9 @@
 #include "vvbonjour/vvbonjourregistrar.h"
 #endif
 
+using std::cerr;
+using std::endl;
+
 vvClusterServer::vvClusterServer(const BufferPrecision compositingPrecision)
   : vvRemoteServer(),
     _offscreenBuffer(0), _compositingPrecision(compositingPrecision)

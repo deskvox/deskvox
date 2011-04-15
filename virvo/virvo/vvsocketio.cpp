@@ -28,6 +28,9 @@
 #include <sstream>
 #include <string>
 
+using std::cerr;
+using std::endl;
+
 //----------------------------------------------------------------------------
 /** Constructor for client.
  @param port  server port to connect to .
@@ -274,7 +277,7 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
     return retval;
   }
 
-  istringstream in;
+  std::istringstream in;
   in.str((const char*)buffer);
 #ifdef WIN32
   char cline[65535];
@@ -323,7 +326,7 @@ vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
   vvSocket::ErrorType retval;
 
   const int numTF = tf._widgets.count();
-  ostringstream out;
+  std::ostringstream out;
 
   tf._widgets.first();
   for (int i=0; i<numTF; ++i)

@@ -18,6 +18,9 @@
 
 #include <stdlib.h>
 
+using std::cerr;
+using std::endl;
+
 vvShaderManager::vvShaderManager()
 {
   init();

@@ -25,6 +25,9 @@
 #include <stdlib.h>
 #include <utility>
 
+using std::cerr;
+using std::endl;
+
 #ifdef HAVE_CG
 
 vvCg::vvCg()

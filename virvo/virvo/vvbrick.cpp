@@ -26,6 +26,9 @@
 #include <algorithm>
 #include <math.h>
 
+using std::cerr;
+using std::endl;
+
 void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
                      const vvVector3& farthest, const vvVector3& delta,
                      const vvVector3& probeMin, const vvVector3& probeMax,
