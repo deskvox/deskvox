@@ -286,7 +286,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 planeNormal, const float planeDist,
                        void* d_depth, vvImage2_5d::DepthPrecision dp)
 {
-  const int maxSteps = INT_MAX;
   const float opacityThreshold = 0.95f;
 
   const uint x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -400,7 +399,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   float maxDiff = 0.;
   float3 maxDiffDepth = make_float3(0., 0., 0.);
   float lastAlpha = 0.;
-  for (int i=0; i<maxSteps; ++i)
+  while(true)
   {
     // Test for clipping.
     const bool clippedPlane = (t_clipPlane && (((t <= tpnear) && (nddot >= 0.0f))
@@ -659,7 +658,8 @@ renderKernel getKernel(vvRayRend*)
                  false, // Jittering.
                  t_clipPlane, // Clip plane.
                  t_clipSphere, // Clip sphere.
-                 t_useSphereAsProbe // Show what's inside the clip sphere.
+                 t_useSphereAsProbe, // Show what's inside the clip sphere.
+                 false
                 >;
 }
 #else
@@ -1004,8 +1004,6 @@ void vvRayRend::compositeVolume(int w, int h)
       break;
     }
   }
-
-  vp.print();
 
   dynamic_cast<vvCudaImg*>(intImg)->map();
 
