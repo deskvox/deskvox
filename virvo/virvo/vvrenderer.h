@@ -73,6 +73,7 @@ public:
     VV_IMAGE_PRECISION,
     VV_SHOW_TEXTURE,
     VV_OPAQUE_GEOMETRY_PRESENT,
+    VV_USE_IBR,
 
     VV_OPCORR,                                  ///< opacity correction on/off
     VV_SLICEINT,                                ///< interpolation within slice
@@ -140,6 +141,7 @@ protected:
                                                      caused by adding up contribution of to many slices */
   bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
   bool _opaqueGeometryPresent;                  ///< true = opaque geometry was rendered before the volume
+  bool _useIbr;                                 ///< use ibr in rayrenderer
 public:
   vvRenderState();
 };

@@ -796,6 +796,8 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       break;
     case vvRenderer::RAYREND:
 #if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+      if(rrMode == RR_IBR)
+        renderState.setParameter(vvRenderer::VV_USE_IBR, 1.);
       renderer = new vvRayRend(vd, renderState);
 #endif
       break;

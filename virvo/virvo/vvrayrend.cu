@@ -273,7 +273,8 @@ template<
          bool t_jittering,
          bool t_clipPlane,
          bool t_clipSphere,
-         bool t_useSphereAsProbe
+         bool t_useSphereAsProbe,
+         bool t_isaDepth
         >
 __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float4 backgroundColor,
@@ -285,7 +286,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 planeNormal, const float planeDist,
                        void* d_depth, vvImage2_5d::DepthPrecision dp)
 {
-  const bool t_isaDepth = true;
   const int maxSteps = INT_MAX;
   const float opacityThreshold = 0.95f;
 
@@ -574,9 +574,10 @@ template<
          bool t_clipPlane,
          bool t_clipSphere,
          bool t_useSphereAsProbe,
-         int t_mipMode
+         int t_mipMode,
+         bool t_useIbr
         >
-renderKernel getKernelWithMip(vvRayRend*)
+renderKernel getKernelWithIbr(vvRayRend*)
 {
   return &render<t_earlyRayTermination, // Early ray termination.
                  true, // Space skipping.
@@ -588,8 +589,51 @@ renderKernel getKernelWithMip(vvRayRend*)
                  false, // Jittering.
                  t_clipPlane, // Clip plane.
                  t_clipSphere, // Clip sphere.
-                 t_useSphereAsProbe // Show what's inside the clip sphere.
+                 t_useSphereAsProbe, // Show what's inside the clip sphere.
+                 t_useIbr
                 >;
+}
+
+template<
+         int t_bpc,
+         bool t_illumination,
+         bool t_opacityCorrection,
+         bool t_earlyRayTermination,
+         bool t_clipPlane,
+         bool t_clipSphere,
+         bool t_useSphereAsProbe,
+         int t_mipMode
+        >
+renderKernel getKernelWithMip(vvRayRend* rayRend)
+{
+  if(rayRend->getParameter(vvRenderState::VV_USE_IBR))
+  {
+    return getKernelWithIbr<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            t_earlyRayTermination,
+                            t_clipPlane,
+                            t_clipSphere,
+                            t_useSphereAsProbe,
+                            t_mipMode,
+                            true
+                           >(rayRend);
+  }
+  else
+  {
+    return getKernelWithIbr<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            t_earlyRayTermination,
+                            t_clipPlane,
+                            t_clipSphere,
+                            t_useSphereAsProbe,
+                            t_mipMode,
+                            false
+                           >(rayRend);
+  }
 }
 
 #ifdef FAST_COMPILE

@@ -91,6 +91,7 @@ vvRenderState::vvRenderState()
   _imagePrecision = VV_BYTE;
   _showTexture = true;	// added by Han, Feb 2008
   _opaqueGeometryPresent = false;
+  _useIbr = false;
 }
 
 void vvRenderState::setParameter(const ParameterType param, const float newValue)
@@ -186,6 +187,9 @@ void vvRenderState::setParameter(const ParameterType param, const float newValue
     break;
   case VV_OPAQUE_GEOMETRY_PRESENT:
     _opaqueGeometryPresent = (bool)newValue;
+    break;
+  case VV_USE_IBR:
+    _useIbr = (bool)newValue;
     break;
   default:
     break;
@@ -309,6 +313,8 @@ float vvRenderState::getParameter(const ParameterType param) const
     return _showTexture;
   case VV_OPAQUE_GEOMETRY_PRESENT:
     return _opaqueGeometryPresent;
+  case VV_USE_IBR:
+    return _useIbr;
   default:
     return -VV_FLT_MAX;
     break;
