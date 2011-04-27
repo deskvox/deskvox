@@ -746,7 +746,3 @@ void vvGLSL::enableLUTMode(GLuint tfTex[], GLuint gl3dTex[],  float volweight, i
 	glUniform1i(loc, alphaMode);
 }
 #endif
-
-
-
-

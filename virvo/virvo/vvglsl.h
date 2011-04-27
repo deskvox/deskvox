@@ -43,48 +43,52 @@ class VIRVOEXPORT vvGLSL : public vvShaderManager
 {
 public:
 
-	/** Creates a vvGLSL. Function pointers for shader programs are initialized
-	*/
-	vvGLSL();
+  /** Creates a vvGLSL. Function pointers for shader programs are initialized
+   */
+  vvGLSL();
 
-	/** Deactivates and deletes shader programs that were generated and stored in this class
-	*/
+  /** Deactivates and deletes shader programs that were generated and stored in this class
+   */
   virtual ~vvGLSL();
 
-	/** Initializes, compiles, and links a shader program
+  /** Initializes, compiles, and links a shader program
 
     @param shaderFileName The name of a fragment program source file
-	*/
+   */
   bool loadShader(const char* shaderFileName, const ShaderType& shaderType);
 
   bool loadGeomShader(const char* vertFileName, const char* geomFileName);
 
-	/** initializes, compiles and links a shader program
+  /** initializes, compiles and links a shader program
+
     @param shaderString a character array containing the program string
-	*/
+   */
   bool loadShaderByString(const char* shaderString, const ShaderType& shaderType);
 
   /** TODO: implement this method
     @param Intention: index into a vector of shader programs and use the one found there.
-  */
+   */
   void enableShader(const int index);
 
   /** TODO: implement this method
+
     @param Intention: index into a vector of shader programs and disable the one found there.
-  */
+   */
   void disableShader(const int index);
 
   /** TODO: implement this method
+
     @param Intention: build up a mapping from names to uniform parameters.
-  */
+   */
   void initParameters(const int index,
                       const char** parameterNames,
                       const vvShaderParameterType* parameterTypes,
                       const int parameterCount);
 
   /** TODO: implement this method
+
     @param Intention: initialize a stack with parameter handles to refer to.
-  */
+   */
   void initParameters(const int programIndex);
 
   void printCompatibilityInfo() const;
@@ -114,82 +118,83 @@ public:
   virtual void setArray1i(const int programIndex, const int parameterIndex, const int* array, const int count);
 
   /** returns a handle to a shader program
+
     @param index of the fragment program in the program array
-  */
+   */
   GLuint getFragProgramHandle(int i);
 
   /** returns the last handle in the list
-  */
+   */
   GLuint getFragProgramHandleLast();
 
-	/** Calls glUseProgram
+  /** Calls glUseProgram
 
-	  @param program The handle of the program object whose executables are to be used as part of current rendering state.
-	*/
+    @param program The handle of the program object whose executables are to be used as part of current rendering state.
+   */
   void useProgram(GLuint program);
 
-	/** Calls glUseProgram(0);
-	*/
-	void disable();
+  /** Calls glUseProgram(0);
+   */
+  void disable();
 
-	/** Deletes the fragment shader program referenced by <i>program</i>.
+  /** Deletes the fragment shader program referenced by <i>program</i>.
 
-	  @param program the fragment shader program ID to be deleted.
-	*/
+    @param program the fragment shader program ID to be deleted.
+   */
   void deleteProgram(GLuint program);
 
 
-	/** Copies one value to the fragment shader program specified by program.
+  /** Copies one value to the fragment shader program specified by program.
 
-	  @param program Fragment program id returned by loadShader()
-	  @param name Variable name in fragment shader program
-	  @param length Type of data structure, between 1 (scalar) and 4 (4D vector)
-	  @param value Pointer to an array of floats/integers
-	*/
+    @param program Fragment program id returned by loadShader()
+    @param name Variable name in fragment shader program
+    @param length Type of data structure, between 1 (scalar) and 4 (4D vector)
+    @param value Pointer to an array of floats/integers
+   */
   void setValue(GLuint program, const char* name, int length, float* value);
   void setValue(GLuint program, const char* name, int length, int* value);
 
-	/** Copies an array of values to the fragment shader program specified by program.
+  /** Copies an array of values to the fragment shader program specified by program.
 
-	  @param program Fragment program ID returned by loadShader()
-	  @param name Variable name in this fragment shader program
-	  @param length Type of data structure, between 1 (scalar) and 4 (4D vector)
-	  @param count The number of elements to be copied
-	  @param value Pointer to an array of floats/integers
-	*/
+    @param program Fragment program ID returned by loadShader()
+    @param name Variable name in this fragment shader program
+    @param length Type of data structure, between 1 (scalar) and 4 (4D vector)
+    @param count The number of elements to be copied
+    @param value Pointer to an array of floats/integers
+   */
   void setValue(GLuint program, const char* name, int length, GLsizei count, float* value);
   void setValue(GLuint program, const char* name, int length, GLsizei count, int* value);
 
-	/** Reset the number of activated textures
-	*/
-	void resetTextureCount() { nTexture = 0; }
+  /** Reset the number of activated textures
+   */
+  void resetTextureCount() { nTexture = 0; }
 
-	/** Activates a texture and binds a texture specified by texId
-	  In order to add multiple textures, first you have to reset texture count by calling resetTextureCount().
-	  Then subsequent initializeMultiTextureXD() calls bind each texture with unique texture, GL_TEXTUREX, 
-	  where X denotes the texture number.
+  /** Activates a texture and binds a texture specified by texId
+    In order to add multiple textures, first you have to reset texture count by calling resetTextureCount().
+    Then subsequent initializeMultiTextureXD() calls bind each texture with unique texture, GL_TEXTUREX,
+    where X denotes the texture number.
 
-	  @param program Fragment program ID returned by loadShader()
-	  @param name Uniform variable defined in this fragment shader program
-	  @param texId Texture name
-	*/
+    @param program Fragment program ID returned by loadShader()
+    @param name Uniform variable defined in this fragment shader program
+    @param texId Texture name
+  */
   void initializeMultiTexture1D(GLuint program, const char* name, GLuint texId);
   void initializeMultiTexture2D(GLuint program, const char* name, GLuint texId);
   void initializeMultiTexture3D(GLuint program, const char* name, GLuint texId);
 
-	/** Disables multi-textures initialized by initializeMultiTextureXD()
-	  This method needs to be called whenever the multiple textures are no longer used.
-	*/
-	void disableMultiTexture1D();
-	void disableMultiTexture2D();
-	void disableMultiTexture3D();
+  /** Disables multi-textures initialized by initializeMultiTextureXD()
+    This method needs to be called whenever the multiple textures are no longer used.
+   */
+  void disableMultiTexture1D();
+  void disableMultiTexture2D();
+  void disableMultiTexture3D();
 
-        int getProgramCount() { return programArray.size(); }
+  int getProgramCount() { return programArray.size(); }
 
-	/* OBSOLETE
-	void loadShader();
-	void enableLUTMode(GLuint tfTex[], GLuint gl3dTex[], float volweight, int numchan, float w[], vvVector3 color[], int alphaMode);
-	*/
+  /* OBSOLETE
+  void loadShader();
+  void enableLUTMode(GLuint tfTex[], GLuint gl3dTex[], float volweight, int numchan, float w[], vvVector3 color[], int alphaMode);
+  */
 
 private:
   std::vector<GLuint> programArray;                     ///< array of program IDs
@@ -208,4 +213,3 @@ private:
 //============================================================================
 // End of File
 //============================================================================
-
