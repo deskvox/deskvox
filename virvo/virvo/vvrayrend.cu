@@ -405,9 +405,9 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   bool justClippedPlane = false;
   bool justClippedSphere = false;
 
-  float maxDiff = 0.;
+  float maxDiff = 0.0f;
   float3 maxDiffDepth = make_float3(0.0f, 0.0f, 0.0f);
-  float lastAlpha = 0.;
+  float lastAlpha = 0.0f;
 
   // Ensure that dist is big enough
   bool infinite = false;
@@ -552,7 +552,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     float3 depth = perspectiveDivide(depthWin);
     // map and clip on near and far-clipping planes
     depth.z++;
-    depth.z = depth.z/2.;
+    depth.z = depth.z/2.0f;
 
     if(depth.z > 1.0f)
       depth.z = 1.0f;
