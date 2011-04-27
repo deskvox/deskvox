@@ -248,14 +248,23 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
     N = normalize(N);
   }
 
-  const float diffuse = fabsf(dot(L, N));
-  const float specular = powf(dot(H, N), shininess);
+  const float ldot = dot(L, N);
 
   const float3 c = make_float3(classification);
-  float3 tmp = Ka * c + Kd * diffuse * c;
-  if (specular > 0.0f)
+
+  // Ambient term.
+  float3 tmp = Ka * c;
+  if (ldot > 0.0f)
   {
-    tmp += Ks * specular * c;
+    // Diffuse term.
+    tmp += Kd * ldot * c;
+
+    // Specular term.
+    const float spec = powf(dot(H, N), shininess);
+    if (spec > 0.0f)
+    {
+      tmp += Ks * spec * c;
+    }
   }
   return make_float4(tmp.x, tmp.y, tmp.z, classification.w);
 }
