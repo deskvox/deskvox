@@ -289,6 +289,10 @@ void vvView::mainLoop(int argc, char *argv[])
         }
 
         ov = new vvObjView();
+
+        delete renderer;
+        renderer = NULL;
+
         vvRenderContext* context = new vvRenderContext();
         if (context->makeCurrent())
         {
