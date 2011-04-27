@@ -135,6 +135,7 @@ class VIRVOEXPORT vvVector4
     vvVector4(const float val);
     vvVector4(const float x, const float y, const float z, const float w);
     vvVector4(const vvVector4*);
+    vvVector4(const vvVector3*, const float w);
     float &operator[](const int);
     float operator[](const int) const;
     void set(float, float, float, float);
@@ -143,6 +144,11 @@ class VIRVOEXPORT vvVector4
     void add(const vvVector4*);
     void sub(const vvVector4*);
     void print(const char* text = 0) const;
+    void perspectiveDivide();
+
+    vvVector4 operator + (const vvVector4 &other) const;
+    vvVector4 operator - (const vvVector4 &other) const;
+    vvVector4 operator * (const vvVector4 &other) const;
 };
 
 /** 3D vector primitive, also used for points

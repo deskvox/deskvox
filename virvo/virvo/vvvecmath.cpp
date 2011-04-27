@@ -2196,6 +2196,16 @@ vvVector4::vvVector4(const float x, const float y, const float z, const float w)
 }
 
 //----------------------------------------------------------------------------
+/// constructor for vector3 + w
+vvVector4::vvVector4(const vvVector3* v, const float w)
+{
+  e[0] = v->e[0];
+  e[1] = v->e[1];
+  e[2] = v->e[2];
+  e[3] = w;
+}
+
+//----------------------------------------------------------------------------
 /// Constructor for a copy of a vector
 vvVector4::vvVector4(const vvVector4* v)
 {
@@ -2291,6 +2301,56 @@ void vvVector4::print(const char* text) const
   }
   cerr << "   Normalized: " << e[0]/e[3] << ", " << e[1]/e[3] << ", " <<
     e[2]/e[3] << endl;
+}
+
+//----------------------------------------------------------------------------
+/// Do a perspective divide
+void vvVector4::perspectiveDivide()
+{
+  e[0] = e[0] / e[3];
+  e[1] = e[1] / e[3];
+  e[2] = e[2] / e[3];
+  e[3] = 1.0f;
+}
+
+//----------------------------------------------------------------------------
+/// Operator +
+vvVector4 vvVector4::operator + ( const vvVector4 &other ) const
+{
+  vvVector4 vResult(0.0f, 0.0f, 0.0f, 0.0f);
+
+  vResult.e[0] = e[0] + other.e[0];
+  vResult.e[1] = e[1] + other.e[1];
+  vResult.e[2] = e[2] + other.e[2];
+  vResult.e[3] = e[3] + other.e[3];
+
+  return vResult;
+}
+
+/// Operator -
+vvVector4 vvVector4::operator - ( const vvVector4 &other ) const
+{
+  vvVector4 vResult(0.0f, 0.0f, 0.0f, 0.0f);
+
+  vResult.e[0] = e[0] - other.e[0];
+  vResult.e[1] = e[1] - other.e[1];
+  vResult.e[2] = e[2] - other.e[2];
+  vResult.e[3] = e[3] - other.e[3];
+
+  return vResult;
+}
+
+/// Operator *
+vvVector4 vvVector4::operator * ( const vvVector4 &other ) const
+{
+  vvVector4 vResult(0.0f, 0.0f, 0.0f, 0.0f);
+
+  vResult.e[0] = e[0] * other.e[0];
+  vResult.e[1] = e[1] * other.e[1];
+  vResult.e[2] = e[2] * other.e[2];
+  vResult.e[3] = e[3] * other.e[3];
+
+  return vResult;
 }
 
 //----------------------------------------------------------------------------
