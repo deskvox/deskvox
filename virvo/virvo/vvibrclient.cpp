@@ -126,9 +126,9 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     {
       // calculate bounding sphere
       vvAABB bbox(renderer->getVolDesc()->getBoundingBox().min(), renderer->getVolDesc()->getBoundingBox().max());
-      vvVector4 center4(bbox.getCenter().e[0], bbox.getCenter().e[1], bbox.getCenter().e[2], 1.0f);
-      vvVector4 min4(bbox.min().e[0], bbox.min().e[1], bbox.min().e[2], 1.0f);
-      vvVector4 max4(bbox.max().e[0], bbox.max().e[1], bbox.max().e[2], 1.0f);
+      vvVector4 center4(bbox.getCenter()[0], bbox.getCenter()[1], bbox.getCenter()[2], 1.0f);
+      vvVector4 min4(bbox.min()[0], bbox.min()[1], bbox.min()[2], 1.0f);
+      vvVector4 max4(bbox.max()[0], bbox.max()[1], bbox.max()[2], 1.0f);
 
       // transform gl-matrix to virvo matrix
       float matrixGL[16];
@@ -159,14 +159,12 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       vvVector3 scal(center);
       scal.normalize();
       scal.scale(radius);
-      center.sub(&scal);
-      min = center;
-      center.add(&scal); center.add(&scal);
-      max = center;
+      min = center - scal;
+      max = center + scal;
 
-      center4 = vvVector4(center[0], center[1], center[2], 1.f);
-      min4 = vvVector4(min[0], min[1], min[2], 1.f);
-      max4 = vvVector4(max[0], max[1], max[2], 1.f);
+      center4 = vvVector4(&center, 1.f);
+      min4 = vvVector4(&min, 1.f);
+      max4 = vvVector4(&max, 1.f);
 
       // move eye to clip-coord
       center4.multiply(&pr);
@@ -174,18 +172,9 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       max4.multiply(&pr);
 
       // perspective divide
-      center4[0] /= center4[3];
-      center4[1] /= center4[3];
-      center4[2] /= center4[3];
-      center4[3] = 1.f;
-      min4[0] /= min4[3];
-      min4[1] /= min4[3];
-      min4[2] /= min4[3];
-      min4[3] = 1.f;
-      max4[0] /= max4[3];
-      max4[1] /= max4[3];
-      max4[2] /= max4[3];
-      max4[3] = 1.f;
+      center4.perspectiveDivide();
+      min4.perspectiveDivide();
+      max4.perspectiveDivide();
 
       _ibrPlanes[2] = (min4[2]+1.f)/2.f;
       _ibrPlanes[3] = (max4[2]+1.f)/2.f;
