@@ -79,11 +79,9 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
     vvVector4 min4(bbox.min()[0], bbox.min()[1], bbox.min()[2], 1.0f);
     vvVector4 max4(bbox.max()[0], bbox.max()[1], bbox.max()[2], 1.0f);
 
-    // transform gl-matrix to virvo matrix
     mv.transpose();
     pr.transpose();
 
-    // Move obj-coord to eye-coord
     center4.multiply(&mv);
     min4.multiply(&mv);
     max4.multiply(&mv);
@@ -92,7 +90,6 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
     vvVector3 min(min4.e[0], min4.e[1], min4.e[2]);
     vvVector3 max(max4.e[0], max4.e[1], max4.e[2]);
 
-    // calc radius
     float radius = (max-min).length() * 0.5;
 
     // Depth buffer of ibrPlanes
@@ -102,26 +99,15 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
     min = center - scal;
     max = center + scal;
 
-    center4 = vvVector4(&center, 1.f);
     min4 = vvVector4(&min, 1.f);
     max4 = vvVector4(&max, 1.f);
-
-    // move eye to clip-coord
-    center4.multiply(&pr);
     min4.multiply(&pr);
     max4.multiply(&pr);
-
-    // perspective divide
-    center4.perspectiveDivide();
     min4.perspectiveDivide();
     max4.perspectiveDivide();
 
     rayRend->_ibrPlanes[0] = (min4[2]+1.f)/2.f;
     rayRend->_ibrPlanes[1] = (max4[2]+1.f)/2.f;
-
-    // transpose back vivro to glMatrix
-    mv.transpose();
-    pr.transpose();
   }
 
   rayRend->setDepthPrecision(_depthPrecision);

@@ -130,7 +130,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       vvVector4 min4(bbox.min()[0], bbox.min()[1], bbox.min()[2], 1.0f);
       vvVector4 max4(bbox.max()[0], bbox.max()[1], bbox.max()[2], 1.0f);
 
-      // transform gl-matrix to virvo matrix
       float matrixGL[16];
       vvMatrix pr;
       glGetFloatv(GL_PROJECTION_MATRIX, matrixGL);
@@ -143,7 +142,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       mv.transpose();
       pr.transpose();
 
-      // Move obj-coord to eye-coord
       center4.multiply(&mv);
       min4.multiply(&mv);
       max4.multiply(&mv);
@@ -152,7 +150,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       vvVector3 min(min4.e[0], min4.e[1], min4.e[2]);
       vvVector3 max(max4.e[0], max4.e[1], max4.e[2]);
 
-      // calc radius
       float radius = (max-min).length() * 0.5;
 
       // Depth buffer of ibrPlanes
@@ -162,26 +159,15 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       min = center - scal;
       max = center + scal;
 
-      center4 = vvVector4(&center, 1.f);
       min4 = vvVector4(&min, 1.f);
       max4 = vvVector4(&max, 1.f);
-
-      // move eye to clip-coord
-      center4.multiply(&pr);
       min4.multiply(&pr);
       max4.multiply(&pr);
-
-      // perspective divide
-      center4.perspectiveDivide();
       min4.perspectiveDivide();
       max4.perspectiveDivide();
 
       _ibrPlanes[2] = (min4[2]+1.f)/2.f;
       _ibrPlanes[3] = (max4[2]+1.f)/2.f;
-
-      // transpose back vivro to glMatrix
-      mv.transpose();
-      pr.transpose();
     }
 
     float matrixGL[16];
@@ -201,8 +187,8 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       _sockets[s]->putMatrix(&pr);
       _sockets[s]->putMatrix(&mv);
     }
-    _slaveCnt = _sockets.size();  // reset count-down
-    initIbrFrame();               // initialize gap-frame
+    _slaveCnt = _sockets.size();
+    initIbrFrame();
 
     pthread_mutex_unlock(&_slaveMutex);
   }
@@ -216,9 +202,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   vvImage2_5d* isaImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
   if(!isaImg) return vvRemoteClient::VV_BAD_IMAGE;
-
-//  glBlendFunc(GL_ONE, GL_ONE_MINUS_DST_ALPHA);
-//  glEnable(GL_BLEND);
 
   // prepare VBOs
   glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
@@ -272,8 +255,6 @@ void vvIbrClient::initIbrFrame()
       for(int y = 0; y<h; y++)
         for(int x = 0; x<w; x++)
           depth[y*w+x] = float(d_ushort[y*w+x]) / float(USHRT_MAX);
-//      for(int i=0;i<w*h;i++)
-//        std::cout << d_ushort[i] << ", ";
     }
     break;
   case vvImage2_5d::VV_UINT:
