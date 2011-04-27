@@ -214,7 +214,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _bspTree = NULL;
   _numSlaveNodes = 0;
   _aabbMask = NULL;
-  _isSlave = false;
+  _isSlave = (bricks != NULL) && (bricks->size() > 0);
 
   if (_useOffscreenBuffer)
   {
@@ -413,8 +413,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     vvVector3 probeSizeObj;
     vvVector3 probeMin, probeMax;
 
-    calcNumBricks();
-    makeEmptyBricks();
+    if (!_isSlave)
+    {
+      calcNumBricks();
+      makeEmptyBricks();
+    }
 
     pthread_barrier_wait(&_madeEmptyBricksBarrier);
 
@@ -630,7 +633,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
     case VV_CUBIC2D: err=makeTextures2D(3); updateTextures2D(3, 0, 10, 20, 15, 10, 5); break;
     // Threads will make their own copies of the textures as well as their own gl ids.
     case VV_BRICKS:
-      if (!_areEmptyBricksCreated)
+      if (!_areEmptyBricksCreated && !_isSlave)
       {
         err = makeEmptyBricks();
       }
@@ -897,6 +900,8 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
 {
   ErrorType err = OK;
   int tmpTexels[3];                               // number of texels in each dimension for current brick
+
+  vvDebugMsg::msg(2, "vvTexRend::makeEmptyBricks()");
 
   if (!extTex3d) return NO3DTEX;
 
