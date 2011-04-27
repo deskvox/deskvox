@@ -94,10 +94,14 @@ vvGLSL::vvGLSL()
   _uniformParameters = NULL;
 
   _isSupported = true;
+
+  vvGLTools::printGLError("Leaving vvGLSL::vvGLSL()");
 }
 
 vvGLSL::~vvGLSL()
 {
+  vvGLTools::printGLError("Enter vvGLSL::~vvGLSL()");
+
   if(_isSupported)
   {
     glUseProgram(0);
@@ -108,10 +112,14 @@ vvGLSL::~vvGLSL()
     }
   }
   delete[] _uniformParameters;
+
+  vvGLTools::printGLError("Leaving vvGLSL::~vvGLSL()");
 }
 
 bool vvGLSL::loadShader(const char* shaderFileName, const ShaderType& shaderType)
 {
+  vvGLTools::printGLError("Enter vvGLSL::loadShader()");
+
   assert(shaderFileName != NULL);
 
   if(!_isSupported)
@@ -132,11 +140,15 @@ bool vvGLSL::loadShader(const char* shaderFileName, const ShaderType& shaderType
 
   delete[] fileString;
 
+  vvGLTools::printGLError("Leaving vvGLSL::loadShader()");
+
   return ok;
 }
 
 bool vvGLSL::loadGeomShader(const char* vertFileName, const char* geomFileName)
 {
+  vvGLTools::printGLError("Enter vvGLSL::loadGeomShader()");
+
   assert(vertFileName != NULL);
   assert(geomFileName != NULL);
 
@@ -222,11 +234,15 @@ bool vvGLSL::loadGeomShader(const char* vertFileName, const char* geomFileName)
     return false;
   }
 
+  vvGLTools::printGLError("Leaving vvGLSL::loadGeomShader()");
+
   return true;
 }
 
 bool vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shaderType)
 {
+  vvGLTools::printGLError("Enter vvGLSL::loadShaderByString()");
+
   if(!_isSupported)
      return false;
 
@@ -265,23 +281,35 @@ bool vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shad
   glLinkProgram(fragProgram);
   glDeleteShader(fragShader);
 
+  vvGLTools::printGLError("Leaving vvGLSL::loadShaderByString()");
+
   return true;
 }
 
 void vvGLSL::enableShader(const int index)
 {
+  vvGLTools::printGLError("Enter vvGLSL::enableShader()");
+
   glUseProgramObjectARB(getFragProgramHandle(index));
+
+  vvGLTools::printGLError("Leaving vvGLSL::enableShader()");
 }
 
 void vvGLSL::disableShader(const int)
 {
+  vvGLTools::printGLError("Enter vvGLSL::disableShader()");
+
   glUseProgramObjectARB(0);
+
+  vvGLTools::printGLError("Leaving vvGLSL::disableShader()");
 }
 
 void vvGLSL::initParameters(const int index,
                             const char** parameterNames,
                             const vvShaderParameterType*,  const int parameterCount)
 {
+  vvGLTools::printGLError("Enter vvGLSL::initParameters");
+
   delete[] _uniformParameters;
   _uniformParameters = new GLint[parameterCount];
 
@@ -289,6 +317,8 @@ void vvGLSL::initParameters(const int index,
   {
     _uniformParameters[i] = glGetUniformLocation(getFragProgramHandle(index), parameterNames[i]);
   }
+
+  vvGLTools::printGLError("Leaving vvGLSL::initParameters");
 }
 
 void vvGLSL::printCompatibilityInfo() const
@@ -391,9 +421,9 @@ void vvGLSL::deleteProgram(GLuint program)
 {
   for(int n = 0; n < programArray.size(); n++)
   {
-	if(programArray[n] == program)
+        if(programArray[n] == program)
 	{
-	  glDeleteProgram(programArray[n]);
+          glDeleteProgram(programArray[n]);
           programArray[n] = 0;
 
 	  return;

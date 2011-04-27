@@ -620,6 +620,8 @@ void vvRenderer::renderVolumeGL()
 {
   vvDebugMsg::msg(3, "vvRenderer::renderVolumeGL()");
 
+  vvGLTools::printGLError("enter vvRenderer::renderVolumeGL");
+
   // Draw legend if requested:
   if (_orientation) renderCoordinates();
   if (_palette) renderPalette();

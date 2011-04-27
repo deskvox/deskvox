@@ -135,6 +135,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
 
+  glewInit();
+
   _usedThreads = 0;
   setDisplayNames(displayNames, numDisplays);
   _multiGpuBufferPrecision = multiGpuBufferPrecision;
@@ -259,8 +261,12 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   extTex3d  = vvGLTools::isGLextensionSupported("GL_EXT_texture3D") || vvGLTools::isGLVersionSupported(1,2,1);
   arbMltTex = vvGLTools::isGLextensionSupported("GL_ARB_multitexture") || vvGLTools::isGLVersionSupported(1,3,0);
 
+  vvGLTools::printGLError("Before creating shader managers");
+
   _isectShader = vvShaderFactory::provideShaderManager(VV_GLSL_MANAGER);
   _pixelShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
+
+  vvGLTools::printGLError("After creating shader managers");
 
   extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax") || vvGLTools::isGLVersionSupported(1,4,0);
   extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation") || vvGLTools::isGLVersionSupported(1,1,0);
@@ -274,9 +280,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported;
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two") || vvGLTools::isGLVersionSupported(2,0,0);
-
-  // Init glew.
-  glewInit();
 
   // Determine best rendering algorithm for current hardware:
   voxelType = findBestVoxelType(vox);
@@ -3186,6 +3189,8 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   vvDebugMsg::msg(3, "vvTexRend::renderTexBricks()");
 
+  vvGLTools::printGLError("enter vvTexRend::renderTexBricks()");
+
   // needs 3D texturing extension
   if (!extTex3d) return;
 
@@ -4512,6 +4517,8 @@ void vvTexRend::renderVolumeGL()
 
   vvDebugMsg::msg(3, "vvTexRend::renderVolumeGL()");
 
+  vvGLTools::printGLError("enter vvTexRend::renderVolumeGL()");
+
   if (vd->vox[0] * vd->vox[1] * vd->vox[2] == 0)
     return;
 
@@ -5310,6 +5317,8 @@ void vvTexRend::disableFragProg() const
 //----------------------------------------------------------------------------
 void vvTexRend::enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName)
 {
+  vvGLTools::printGLError("Enter vvTexRend::enablePixelShaders()");
+
   if(VV_PIX_SHD == voxelType)
   {
     // Load, enable, and bind fragment shader:
@@ -5410,6 +5419,8 @@ void vvTexRend::enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName
     delete[] names;
     delete[] types;
   }
+
+  vvGLTools::printGLError("Leaving vvTexRend::enablePixelShaders()");
 }
 
 //----------------------------------------------------------------------------
@@ -5428,6 +5439,8 @@ void vvTexRend::disablePixelShaders(vvShaderManager* pixelShader) const
 //----------------------------------------------------------------------------
 void vvTexRend::enableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader) const
 {
+  vvGLTools::printGLError("Enter vvTexRend::enableIntersectionShaders()");
+
   if (_proxyGeometryOnGpu)
   {
     isectShader->enableShader(0);
@@ -5437,6 +5450,8 @@ void vvTexRend::enableIntersectionShader(vvShaderManager* isectShader, vvShaderM
       pixelShader->enableShader(0);
     }
   }
+
+  vvGLTools::printGLError("Leaving vvTexRend::enableIntersectionShaders()");
 }
 
 //----------------------------------------------------------------------------
@@ -5565,6 +5580,8 @@ bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader) const
  */
 bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader) const
 {
+  vvGLTools::printGLError("Enter vvTexRend::initIntersectionShader()");
+
 #ifdef ISECT_GLSL_GEO
   const char* shaderFileName = "vv_intersection_geo";
 #else
@@ -5636,11 +5653,15 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
   if (ok)
     setupIntersectionParameters(isectShader);
 
+  vvGLTools::printGLError("Leaving vvTexRend::initIntersectionShader()");
+
   return ok;
 }
 
 void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
 {
+  vvGLTools::printGLError("Enter vvTexRend::setupIntersectionParameters()");
+
   const int parameterCount = 15;
 
   const char** parameterNames = new const char*[parameterCount];
@@ -5692,6 +5713,8 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
 #endif
 
   isectShader->disableShader(0);
+
+  vvGLTools::printGLError("Leaving vvTexRend::setupIntersectionParameters()");
 }
 
 //----------------------------------------------------------------------------
