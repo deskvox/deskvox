@@ -101,7 +101,7 @@ vvGLSL::~vvGLSL()
   if(_isSupported)
   {
     glUseProgram(0);
-    for (int n = 0; n < programArray.count(); n++)
+    for (int n = 0; n < programArray.size(); n++)
     {
       if(programArray[n] != 0)
         glDeleteProgram(programArray[n]);
@@ -190,7 +190,7 @@ bool vvGLSL::loadGeomShader(const char* vertFileName, const char* geomFileName)
   glDeleteShader(vertShader);
   glDeleteShader(geomShader);
 
-  programArray.append(program);
+  programArray.push_back(program);
 
   delete[] vertFileString;
   delete[] geomFileString;
@@ -242,7 +242,7 @@ bool vvGLSL::loadShaderByString(const char* shaderString, const ShaderType& shad
   fragShader = glCreateShader(toGLenum(shaderType));
   fragProgram = glCreateProgram();
 
-  programArray.append( fragProgram );
+  programArray.push_back( fragProgram );
 
   glShaderSource(fragShader, 1, &shaderString, NULL);
   glCompileShader(fragShader);
@@ -366,12 +366,12 @@ void vvGLSL::setArray1i(const int programIndex, const int parameterIndex, const 
 
 GLuint vvGLSL::getFragProgramHandle(const int i)
 {
-  return *programArray.get(i);
+  return programArray.at(i);
 }
 
 GLuint vvGLSL::getFragProgramHandleLast()
 {
-  return *programArray.get(programArray.count()-1);
+  return programArray.at(programArray.size()-1);
 }
 
 void vvGLSL::useProgram(GLuint program)
@@ -389,7 +389,7 @@ void vvGLSL::disable()
 
 void vvGLSL::deleteProgram(GLuint program)
 {
-  for(int n = 0; n < programArray.count(); n++)
+  for(int n = 0; n < programArray.size(); n++)
   {
 	if(programArray[n] == program)
 	{

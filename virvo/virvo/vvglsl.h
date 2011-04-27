@@ -17,8 +17,9 @@
 #define _VV_GLSL_H_
 
 #include "vvvecmath.h"
-#include "vvarray.h"
 #include "vvshadermanager.h"
+
+#include <vector>
 
 //============================================================================
 // Class Definition
@@ -115,7 +116,7 @@ public:
   /** returns a handle to a shader program
     @param index of the fragment program in the program array
   */
-  GLuint getFragProgramHandle(const int i);
+  GLuint getFragProgramHandle(int i);
 
   /** returns the last handle in the list
   */
@@ -183,7 +184,7 @@ public:
 	void disableMultiTexture2D();
 	void disableMultiTexture3D();
 
-	int getProgramCount() { return programArray.count(); }
+        int getProgramCount() { return programArray.size(); }
 
 	/* OBSOLETE
 	void loadShader();
@@ -191,7 +192,7 @@ public:
 	*/
 
 private:
-  vvArray<GLuint> programArray;				///< array of program IDs
+  std::vector<GLuint> programArray;                     ///< array of program IDs
   int nTexture;                                         ///< the number of texture activated
   bool _isSupported;                                    ///< true if there is GLSL support
 
