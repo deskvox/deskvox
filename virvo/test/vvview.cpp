@@ -3064,6 +3064,15 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cerr << "Server unspecified." << endl;
         return false;
       }
+
+      if (!clientMode)
+      {
+        clientMode = true;
+        remoteRendering = true;
+        rrMode = RR_CLUSTER;
+        setRendererType(vvRenderer::TEXREND);
+      }
+
       const int port = vvToolshed::parsePort(argv[arg]);
       slavePorts.push_back(port);
 
