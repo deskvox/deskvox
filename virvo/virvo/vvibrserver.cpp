@@ -66,43 +66,74 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   mv.get(matrixGL);
   glLoadMatrixf(matrixGL);
 
-  // calculate bounding sphere
-  vvAABB bbox(renderer->getVolDesc()->getBoundingBox().min(), renderer->getVolDesc()->getBoundingBox().max());
-  vvVector3 center(bbox.getCenter());
-  vvVector3 min(bbox.min());
-  vvVector3 max(bbox.max());
-
-  // transform gl-matrix to virvo matrix
-  mv.transpose();
-  mv.print("mv");
-
-  center.multiply(&mv);
-  min.multiply(&mv);
-  max.multiply(&mv);
-  mv.transpose();
-
-  float radius = (max-min).length() * 0.5;
-
-  std::cerr << "length: " << radius << std::endl;
-
-  std::cerr << "obj-distance: " << center.length() << std::endl;
-
-  // near clip
-  float near = center.length() - radius;
-  std::cerr << "new near clip: " << near << std::endl;
-
-  //center.scale(near);
-  //gluProject(center.e[0], center.e[1], center.e[2], mv.e, pr.e, glGetIntegerv(GL_VIEWPORT))
-
-  // far clip
-  float far = center.length() + radius;
-
-  std::cerr << "new far clip: " << far << std::endl;
-
   vvRect* screenRect = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect();
 
   vvRayRend* rayRend = dynamic_cast<vvRayRend*>(renderer);
   assert(rayRend != NULL);
+
+  if(_depthScale == vvImage2_5d::VV_SCALED_DEPTH)
+  {
+    // calculate bounding sphere
+    vvAABB bbox(renderer->getVolDesc()->getBoundingBox().min(), renderer->getVolDesc()->getBoundingBox().max());
+    vvVector4 center4(bbox.getCenter().e[0], bbox.getCenter().e[1], bbox.getCenter().e[2], 1.0f);
+    vvVector4 min4(bbox.min().e[0], bbox.min().e[1], bbox.min().e[2], 1.0f);
+    vvVector4 max4(bbox.max().e[0], bbox.max().e[1], bbox.max().e[2], 1.0f);
+
+    // transform gl-matrix to virvo matrix
+    mv.transpose();
+    pr.transpose();
+
+    // Move obj-coord to eye-coord
+    center4.multiply(&mv);
+    min4.multiply(&mv);
+    max4.multiply(&mv);
+
+    vvVector3 center(center4[0], center4[1], center4[2]);
+    vvVector3 min(min4.e[0], min4.e[1], min4.e[2]);
+    vvVector3 max(max4.e[0], max4.e[1], max4.e[2]);
+
+    // calc radius
+    float radius = (max-min).length() * 0.5;
+
+    // Depth buffer of ibrPlanes
+    vvVector3 scal(center);
+    scal.normalize();
+    scal.scale(radius);
+    center.sub(&scal);
+    min = center;
+    center.add(&scal); center.add(&scal);
+    max = center;
+
+    center4 = vvVector4(center[0], center[1], center[2], 1.f);
+    min4 = vvVector4(min[0], min[1], min[2], 1.f);
+    max4 = vvVector4(max[0], max[1], max[2], 1.f);
+
+    // move eye to clip-coord
+    center4.multiply(&pr);
+    min4.multiply(&pr);
+    max4.multiply(&pr);
+
+    // perspective divide
+    center4[0] /= center4[3];
+    center4[1] /= center4[3];
+    center4[2] /= center4[3];
+    center4[3] = 1.f;
+    min4[0] /= min4[3];
+    min4[1] /= min4[3];
+    min4[2] /= min4[3];
+    min4[3] = 1.f;
+    max4[0] /= max4[3];
+    max4[1] /= max4[3];
+    max4[2] /= max4[3];
+    max4[3] = 1.f;
+
+    rayRend->_ibrPlanes[0] = (min4[2]+1.f)/2.f;
+    rayRend->_ibrPlanes[1] = (max4[2]+1.f)/2.f;
+
+    // transpose back vivro to glMatrix
+    mv.transpose();
+    pr.transpose();
+  }
 
   rayRend->setDepthPrecision(_depthPrecision);
   rayRend->compositeVolume(screenRect->width, screenRect->height);

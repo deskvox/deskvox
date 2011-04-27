@@ -45,7 +45,7 @@ public:
 
 private:
   vvImage2_5d::DepthPrecision _depthPrecision;  ///< precision of depth buffer for image based rendering
-  vvImage2_5d::IbrDepthScale    _depthScale;
+  vvImage2_5d::IbrDepthScale  _depthScale;
   vvRayRend::IbrMode          _ibrMode;
 
   void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);

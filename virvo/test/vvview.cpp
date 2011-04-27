@@ -159,8 +159,8 @@ vvView::vvView()
   clientMode            = false;
   serverMode            = false;
   slavePort             = vvView::DEFAULT_PORT;
-  ibrPrecision          = vvImage2_5d::VV_USHORT;
-  ibrScale              = vvImage2_5d::VV_FULL_DEPTH;
+  ibrPrecision          = vvImage2_5d::VV_UCHAR;
+  ibrScale              = vvImage2_5d::VV_SCALED_DEPTH;
   ibrMode               = vvRayRend::VV_MAX_GRADIENT;
   remoteRendering       = false;
   rrMode                = RR_NONE;

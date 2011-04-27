@@ -26,6 +26,7 @@
 #include "vvtexrend.h"
 #include "float.h"
 #include "vvrayrend.h"
+#include "vvtoolshed.h"
 
 using std::cerr;
 using std::endl;
@@ -37,7 +38,7 @@ vvIbrClient::vvIbrClient(vvRenderState renderState,
                          const vvImage2_5d::DepthPrecision dp,
                          vvImage2_5d::IbrDepthScale ds)
   : vvRemoteClient(renderState, slaveNames, slavePorts, slaveFileNames, fileName),
-    _depthPrecision(dp)
+    _depthPrecision(dp), _depthScale(ds)
 {
   _threads = NULL;
   _threadData = NULL;
@@ -96,7 +97,10 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     _isaRect[0]->y = _isaRect[1]->y;
     _isaRect[0]->height = _isaRect[1]->height;
     _isaRect[0]->width  = _isaRect[1]->width;
-    _vp[0] = _vp[1];
+    _vp[0][0] = _vp[1][0];
+    _vp[0][1] = _vp[1][1];
+    _vp[0][2] = _vp[1][2];
+    _vp[0][3] = _vp[1][3];
 
     // save screenrect for later frames
     _isaRect[1]->x = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->x;
@@ -115,6 +119,81 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     }
     glGetDoublev(GL_MODELVIEW_MATRIX,&_modelMatrix[16]);
     glGetDoublev(GL_PROJECTION_MATRIX,&_projMatrix[16]);
+
+    _ibrPlanes[0] = _ibrPlanes[2];
+    _ibrPlanes[1] = _ibrPlanes[3];
+    if(_depthScale == vvImage2_5d::VV_SCALED_DEPTH)
+    {
+      // calculate bounding sphere
+      vvAABB bbox(renderer->getVolDesc()->getBoundingBox().min(), renderer->getVolDesc()->getBoundingBox().max());
+      vvVector4 center4(bbox.getCenter().e[0], bbox.getCenter().e[1], bbox.getCenter().e[2], 1.0f);
+      vvVector4 min4(bbox.min().e[0], bbox.min().e[1], bbox.min().e[2], 1.0f);
+      vvVector4 max4(bbox.max().e[0], bbox.max().e[1], bbox.max().e[2], 1.0f);
+
+      // transform gl-matrix to virvo matrix
+      float matrixGL[16];
+      vvMatrix pr;
+      glGetFloatv(GL_PROJECTION_MATRIX, matrixGL);
+      pr.set(matrixGL);
+
+      vvMatrix mv;
+      glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
+      mv.set(matrixGL);
+
+      mv.transpose();
+      pr.transpose();
+
+      // Move obj-coord to eye-coord
+      center4.multiply(&mv);
+      min4.multiply(&mv);
+      max4.multiply(&mv);
+
+      vvVector3 center(center4[0], center4[1], center4[2]);
+      vvVector3 min(min4.e[0], min4.e[1], min4.e[2]);
+      vvVector3 max(max4.e[0], max4.e[1], max4.e[2]);
+
+      // calc radius
+      float radius = (max-min).length() * 0.5;
+
+      // Depth buffer of ibrPlanes
+      vvVector3 scal(center);
+      scal.normalize();
+      scal.scale(radius);
+      center.sub(&scal);
+      min = center;
+      center.add(&scal); center.add(&scal);
+      max = center;
+
+      center4 = vvVector4(center[0], center[1], center[2], 1.f);
+      min4 = vvVector4(min[0], min[1], min[2], 1.f);
+      max4 = vvVector4(max[0], max[1], max[2], 1.f);
+
+      // move eye to clip-coord
+      center4.multiply(&pr);
+      min4.multiply(&pr);
+      max4.multiply(&pr);
+
+      // perspective divide
+      center4[0] /= center4[3];
+      center4[1] /= center4[3];
+      center4[2] /= center4[3];
+      center4[3] = 1.f;
+      min4[0] /= min4[3];
+      min4[1] /= min4[3];
+      min4[2] /= min4[3];
+      min4[3] = 1.f;
+      max4[0] /= max4[3];
+      max4[1] /= max4[3];
+      max4[2] /= max4[3];
+      max4[3] = 1.f;
+
+      _ibrPlanes[2] = (min4[2]+1.f)/2.f;
+      _ibrPlanes[3] = (max4[2]+1.f)/2.f;
+
+      // transpose back vivro to glMatrix
+      mv.transpose();
+      pr.transpose();
+    }
 
     float matrixGL[16];
     vvMatrix pr;
@@ -204,6 +283,8 @@ void vvIbrClient::initIbrFrame()
       for(int y = 0; y<h; y++)
         for(int x = 0; x<w; x++)
           depth[y*w+x] = float(d_ushort[y*w+x]) / float(USHRT_MAX);
+//      for(int i=0;i<w*h;i++)
+//        std::cout << d_ushort[i] << ", ";
     }
     break;
   case vvImage2_5d::VV_UINT:
@@ -216,6 +297,7 @@ void vvIbrClient::initIbrFrame()
     break;
   }
 
+  vvToolshed::pixels2Ppm(&depth[0], w, h, "tiefenwerte.ppm", vvToolshed::VV_LUMINANCE);
   std::vector<uchar> colors(w*h*4);
   std::vector<float> points(w*h*3);
   double winPoint[3];
@@ -229,15 +311,35 @@ void vvIbrClient::initIbrFrame()
       colors[colorIndex]   = dataRGBA[colorIndex];
       colors[colorIndex+1] = dataRGBA[colorIndex+1];
       colors[colorIndex+2] = dataRGBA[colorIndex+2];
-      if(depth[y*w+x] == 0 && depth[y*w+x] == 65535)
+
+      if(depth[y*w+x] == 0 && depth[y*w+x] == 1.0f)
         colors[colorIndex+3] = 0;
       else
         colors[colorIndex+3] = dataRGBA[colorIndex+3];
 
       // save point-vertex
-      gluUnProject(_isaRect[0]->x+x, _isaRect[0]->y+y, double(depth[y*w+x]),
-                   _modelMatrix, _projMatrix, _vp[0].values,
-                   &winPoint[0],&winPoint[1],&winPoint[2]);
+      if(_depthScale == vvImage2_5d::VV_FULL_DEPTH)
+      {
+        gluUnProject(_isaRect[0]->x+x, _isaRect[0]->y+y, double(depth[y*w+x]),
+                     _modelMatrix, _projMatrix, _vp[0].values,
+                     &winPoint[0],&winPoint[1],&winPoint[2]);
+      }
+      else if(_depthScale == vvImage2_5d::VV_SCALED_DEPTH)
+      {
+        // push away clipped pixels
+        if(depth[y*w+x] == 0.0f || depth[y*w+x] == 1.0f)
+        {
+          depth[y*w+x] = 1.0f;
+        }
+        else
+        {
+          depth[y*w+x] = depth[y*w+x]*(_ibrPlanes[1] - _ibrPlanes[0]) +_ibrPlanes[0];
+        }
+
+        gluUnProject(_isaRect[0]->x+x, _isaRect[0]->y+y, double(depth[y*w+x]),
+                     _modelMatrix, _projMatrix, _vp[0].values,
+                     &winPoint[0],&winPoint[1],&winPoint[2]);
+      }
       points[y*w*3+x*3]   = winPoint[0];
       points[y*w*3+x*3+1] = winPoint[1];
       points[y*w*3+x*3+2] = winPoint[2];

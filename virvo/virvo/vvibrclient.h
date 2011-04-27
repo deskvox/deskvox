@@ -77,6 +77,8 @@ private:
   void initIbrFrame();                    ///< initialize pixel-points in object space
 
   vvImage2_5d::DepthPrecision _depthPrecision;        ///< deph-value precision
+  vvImage2_5d::IbrDepthScale  _depthScale;
+  float _ibrPlanes[4];
 
   void createThreads();                               ///< creates threads for every socket connection
   void destroyThreads();                              ///< quits threads

@@ -293,7 +293,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist,
-                       void* d_depth, vvImage2_5d::DepthPrecision dp)
+                       void* d_depth, vvImage2_5d::DepthPrecision dp,
+                       const float2 ibrPlanes)
 {
   const float opacityThreshold = 0.95f;
 
@@ -405,9 +406,9 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   bool justClippedPlane = false;
   bool justClippedSphere = false;
 
-  float maxDiff = 0.0f;
   float3 maxDiffDepth = make_float3(0.0f, 0.0f, 0.0f);
-  float lastAlpha = 0.0f;
+  float maxDiff     = 0.0f;
+  float lastAlpha   = 0.0f;
 
   // Ensure that dist is big enough
   bool infinite = false;
@@ -547,17 +548,21 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
   if(t_useIbr)
   {
+    float3 depth = make_float3(0.0f, 0.0f, 0.0f);
     // convert position to window-coordinates
     const float4 depthWin = mulPost(c_MvPrMatrix, make_float4(maxDiffDepth.x, maxDiffDepth.y, maxDiffDepth.z, 1.0f));
-    float3 depth = perspectiveDivide(depthWin);
-    // map and clip on near and far-clipping planes
+    depth = perspectiveDivide(depthWin);
+
     depth.z++;
     depth.z = depth.z/2.0f;
 
-    if(depth.z > 1.0f)
-      depth.z = 1.0f;
-    else if(depth.z < 0.0f)
-      depth.z = 0.0f;
+    if(ibrPlanes.x != 0.0f && ibrPlanes.y != 0.0f) // SCALED depth mode
+    {
+      depth.z = (depth.z - ibrPlanes.x) / (ibrPlanes.y - ibrPlanes.x);
+    }
+
+    if     (depth.z > 1.0f) depth.z = 1.0f;
+    else if(depth.z < 0.0f) depth.z = 0.0f;
 
     switch(dp)
     {
@@ -578,8 +583,36 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 typedef void(*renderKernel)(uchar4*, const uint, const uint, const float4,
                             const uint, const float, const float3, const float3,
                             const float3, const float3, const float3, const float3, const float3,
-                            const float, const float3, const float, void*, vvImage2_5d::DepthPrecision);
+                            const float, const float3, const float, void*, vvImage2_5d::DepthPrecision, const float2);
 
+#ifdef FAST_COMPILE
+template<
+         int t_bpc,
+         bool t_illumination,
+         bool t_opacityCorrection,
+         bool t_earlyRayTermination,
+         bool t_clipPlane,
+         bool t_clipSphere,
+         bool t_useSphereAsProbe,
+         int t_mipMode
+        >
+renderKernel getKernel(vvRayRend*)
+{
+  return &render<t_earlyRayTermination, // Early ray termination.
+                 true, // Space skipping.
+                 true, // Front to back.
+                 t_bpc, // Bytes per channel.
+                 t_mipMode, // Mip mode.
+                 false, // Local illumination.
+                 t_opacityCorrection, // Opacity correction.
+                 false, // Jittering.
+                 t_clipPlane, // Clip plane.
+                 t_clipSphere, // Clip sphere.
+                 t_useSphereAsProbe, // Show what's inside the clip sphere.
+                 true // image based rendering
+                >;
+}
+#else
 template<
          int t_bpc,
          bool t_illumination,
@@ -591,7 +624,7 @@ template<
          int t_mipMode,
          bool t_useIbr
         >
-renderKernel getKernelWithIbr(vvRayRend*)
+renderKernel getKernelWithIbr(vvRayRend* rayRend)
 {
   return &render<t_earlyRayTermination, // Early ray termination.
                  true, // Space skipping.
@@ -604,7 +637,7 @@ renderKernel getKernelWithIbr(vvRayRend*)
                  t_clipPlane, // Clip plane.
                  t_clipSphere, // Clip sphere.
                  t_useSphereAsProbe, // Show what's inside the clip sphere.
-                 t_useIbr
+                 t_useIbr // image based rendering
                 >;
 }
 
@@ -649,35 +682,6 @@ renderKernel getKernelWithMip(vvRayRend* rayRend)
                            >(rayRend);
   }
 }
-
-#ifdef FAST_COMPILE
-template<
-         int t_bpc,
-         bool t_illumination,
-         bool t_opacityCorrection,
-         bool t_earlyRayTermination,
-         bool t_clipPlane,
-         bool t_clipSphere,
-         bool t_useSphereAsProbe,
-         int t_mipMode
-        >
-renderKernel getKernel(vvRayRend*)
-{
-  return &render<t_earlyRayTermination, // Early ray termination.
-                 true, // Space skipping.
-                 true, // Front to back.
-                 t_bpc, // Bytes per channel.
-                 t_mipMode, // Mip mode.
-                 t_illumination, // Local illumination.
-                 t_opacityCorrection, // Opacity correction.
-                 false, // Jittering.
-                 t_clipPlane, // Clip plane.
-                 t_clipSphere, // Clip sphere.
-                 t_useSphereAsProbe, // Show what's inside the clip sphere.
-                 false
-                >;
-}
-#else
 template<
          int t_bpc,
          bool t_illumination,
@@ -899,6 +903,9 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   h_cellMinValues = NULL;
   h_cellMaxValues = NULL;
 
+  _ibrPlanes[0] = 0.0f;
+  _ibrPlanes[1] = 0.0f;
+
   _rgbaTF = NULL;
 
 #if 0
@@ -1010,12 +1017,15 @@ void vvRayRend::compositeVolume(int w, int h)
     {
     case vvImage2_5d::VV_UCHAR:
       cudaMalloc(&_depthUchar, w*h*sizeof(unsigned char));
+      cudaMemset(_depthUchar, 0, w*h*sizeof(unsigned char));
       break;
     case vvImage2_5d::VV_USHORT:
       cudaMalloc(&_depthUshort, w*h*sizeof(unsigned short));
+      cudaMemset(_depthUshort, 0, w*h*sizeof(unsigned short));
       break;
     case vvImage2_5d::VV_UINT:
       cudaMalloc(&_depthUint, w*h*sizeof(unsigned int));
+      cudaMemset(_depthUint, 0, w*h*sizeof(unsigned int));
       break;
     }
   }
@@ -1132,10 +1142,10 @@ void vvRayRend::compositeVolume(int w, int h)
 
 #ifdef FAST_COMPILE
   renderKernel kernel = getKernel<
-                        1,
-                        true, // Local illumination.
+                        1, // bpc.
+                        false, // Local illumination.
                         true, // Opacity correction
-                        true, // Early ray termination.
+                        false, // Early ray termination.
                         false, // Use clip plane.
                         false, // Use clip sphere.
                         false, // Use clip sphere as probe (inverted sphere).
@@ -1164,16 +1174,23 @@ void vvRayRend::compositeVolume(int w, int h)
                                         probePos, probeSize * 0.5f,
                                         L, H,
                                         center, radius * radius,
-                                        pnormal, pdist, _depthUchar, _depthPrecision);
+                                        pnormal, pdist, _depthUchar, _depthPrecision,
+                                        make_float2(_ibrPlanes[0], _ibrPlanes[1]));
       break;
     case vvImage2_5d::VV_USHORT:
+      {
+      std::cout << "start kernel with ibrPlanes: " << _ibrPlanes[0] << " and " << _ibrPlanes[1] << std::endl;
+      float2 test = make_float2(_ibrPlanes[0], _ibrPlanes[1]);
+      std::cout << test << std::endl;
       (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
                                         backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                                         volPos, volSize * 0.5f,
                                         probePos, probeSize * 0.5f,
                                         L, H,
                                         center, radius * radius,
-                                        pnormal, pdist, _depthUshort, _depthPrecision);
+                                        pnormal, pdist, _depthUshort, _depthPrecision,
+                                        test);
+      }
       break;
     case vvImage2_5d::VV_UINT:
       (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
@@ -1182,7 +1199,8 @@ void vvRayRend::compositeVolume(int w, int h)
                                         probePos, probeSize * 0.5f,
                                         L, H,
                                         center, radius * radius,
-                                        pnormal, pdist, _depthUint, _depthPrecision);
+                                        pnormal, pdist, _depthUint, _depthPrecision,
+                                        make_float2(_ibrPlanes[0], _ibrPlanes[1]));
       break;
     }
   }

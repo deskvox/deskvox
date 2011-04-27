@@ -55,9 +55,13 @@ public:
   bool getOpacityCorrection() const;
   bool getSpaceSkipping() const;
 
+  float* getIbrPlanes() const;
+
   uchar*  _depthUchar;
   ushort* _depthUshort;
   uint*   _depthUint;
+
+  float _ibrPlanes[2];                         ///< ibr clipping planes, updated every frame
 
 private:
   cudaChannelFormatDesc _channelDesc;
