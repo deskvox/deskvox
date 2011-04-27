@@ -397,7 +397,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   bool justClippedSphere = false;
 
   float maxDiff = 0.;
-  float3 maxDiffDepth = make_float3(0., 0., 0.);
+  float3 maxDiffDepth = make_float3(0.0f, 0.0f, 0.0f);
   float lastAlpha = 0.;
   while(true)
   {
@@ -538,10 +538,10 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     depth.z++;
     depth.z = depth.z/2.;
 
-    if(depth.z > 1.0)
-      depth.z = 1.0;
-    else if(depth.z < 0.0)
-      depth.z = 0.0;
+    if(depth.z > 1.0f)
+      depth.z = 1.0f;
+    else if(depth.z < 0.0f)
+      depth.z = 0.0f;
 
     switch(dp)
     {
