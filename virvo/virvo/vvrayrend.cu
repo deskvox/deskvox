@@ -283,7 +283,7 @@ template<
          bool t_clipPlane,
          bool t_clipSphere,
          bool t_useSphereAsProbe,
-         bool t_isaDepth
+         bool t_useIbr
         >
 __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float4 backgroundColor,
@@ -329,7 +329,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   if (!hit)
   {
     d_output[y * texwidth + x] = make_uchar4(0);
-    if(t_isaDepth)
+    if(t_useIbr)
     {
       switch(dp)
       {
@@ -408,7 +408,13 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   float maxDiff = 0.;
   float3 maxDiffDepth = make_float3(0.0f, 0.0f, 0.0f);
   float lastAlpha = 0.;
-  while(true)
+
+  // Ensure that dist is big enough
+  bool infinite = false;
+  if(tnear+dist != tnear && tfar+dist != tfar)
+    infinite = true;
+
+  while(infinite)
   {
     // Test for clipping.
     const bool clippedPlane = (t_clipPlane && (((t <= tpnear) && (nddot >= 0.0f))
@@ -528,7 +534,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     pos += step;
 
-    if(t_isaDepth)
+    if(t_useIbr)
     {
       if(dst.w - lastAlpha > maxDiff)
       {
@@ -538,7 +544,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       lastAlpha = dst.w;
     }
   }
-  if(t_isaDepth)
+
+  if(t_useIbr)
   {
     // convert position to window-coordinates
     const float4 depthWin = mulPost(c_MvPrMatrix, make_float4(maxDiffDepth.x, maxDiffDepth.y, maxDiffDepth.z, 1.0f));
@@ -561,7 +568,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       ((unsigned short*)(d_depth))[y * texwidth + x] = (unsigned short)(depth.z*float(USHRT_MAX));
       break;
     case vvImage2_5d::VV_UINT:
-      default:
       ((unsigned int*)(d_depth))[y * texwidth + x] = (unsigned int)(depth.z*float(UINT_MAX));
       break;
     }
