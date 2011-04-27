@@ -256,7 +256,7 @@ void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const f
     setInterpolation((newValue != 0.0f));
     break;
   default:
-    vvRemoteClient::setParameter(param, newValue);
+    vvRenderState::setParameter(param, newValue);
     break;
   }
 }
