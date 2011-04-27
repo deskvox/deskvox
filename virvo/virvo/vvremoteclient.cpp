@@ -274,7 +274,7 @@ void vvRemoteClient::adjustQuality(const float quality)
 
 void vvRemoteClient::setInterpolation(const bool interpolation)
 {
-  vvDebugMsg::msg(3, "vvIbrClient::setInterpolation()");
+  vvDebugMsg::msg(3, "vvRemoteClient::setInterpolation()");
   for (int s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_INTERPOLATION) == vvSocket::VV_OK)
