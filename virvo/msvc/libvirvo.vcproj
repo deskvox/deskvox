@@ -42,6 +42,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="-wd4244 -wd4251 -wd4514"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\pthreads\include&quot;;&quot;$(EXTERNLIBS)\Cg\include&quot;;&quot;$(EXTERNLIBS)\glew\include\&quot;"
@@ -117,6 +118,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="-wd4244 -wd4251 -wd4514"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\pthreads\include&quot;;&quot;$(EXTERNLIBS)\Cg\include&quot;;&quot;$(EXTERNLIBS)\glew\include\&quot;"
 				PreprocessorDefinitions="VIRVO_EXPORT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"

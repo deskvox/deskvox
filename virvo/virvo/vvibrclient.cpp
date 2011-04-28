@@ -310,9 +310,9 @@ void vvIbrClient::initIbrFrame()
                      _modelMatrix, _projMatrix, _vp[0].values,
                      &winPoint[0],&winPoint[1],&winPoint[2]);
       }
-      points[y*w*3+x*3]   = static_cast<float>(winPoint[0]);
-      points[y*w*3+x*3+1] = static_cast<float>(winPoint[1]);
-      points[y*w*3+x*3+2] = static_cast<float>(winPoint[2]);
+      points[y*w*3+x*3]   = winPoint[0];
+      points[y*w*3+x*3+1] = winPoint[1];
+      points[y*w*3+x*3+2] = winPoint[2];
     }
   }
 
