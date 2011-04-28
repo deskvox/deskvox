@@ -1349,7 +1349,7 @@ void vvTransFunc::makeMinMaxTable(int width, uchar *minmax, float min, float max
         if(rgba[i*4+3] > op)
           op = rgba[i*4+3];
       }
-      minmax[mn+width*mx] = op*255.99f;
+      minmax[mn+width*mx] = static_cast<uchar>(op*255.99f);
     }
   }
 

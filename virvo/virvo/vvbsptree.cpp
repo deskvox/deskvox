@@ -115,7 +115,7 @@ void vvHalfSpace::setBrickList(const std::vector<BrickList>& brickList)
   vvVector3 minCorner = vvVector3(VV_FLT_MAX, VV_FLT_MAX, VV_FLT_MAX);
   vvVector3 maxCorner = vvVector3(-VV_FLT_MAX, -VV_FLT_MAX, -VV_FLT_MAX);
 
-  for (int f=0; f<brickList.size(); ++f)
+  for (size_t f=0; f<brickList.size(); ++f)
   {
     for (BrickList::const_iterator it = brickList[f].begin(); it != brickList[f].end(); ++it)
     {
@@ -224,7 +224,7 @@ float vvHalfSpace::calcContainedVolume() const
   float w, h, d;
 
   w = h = d = 0.0f;
-  for (int f=0; f<_brickList.size(); ++f)
+  for (size_t f=0; f<_brickList.size(); ++f)
   {
     for(BrickList::const_iterator it = _brickList[f].begin(); it != _brickList[f].end(); ++it)
     {
@@ -533,7 +533,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
   result[0].setBrickList(std::vector<BrickList>());
   result[1].setBrickList(std::vector<BrickList>());
 
-  for (int f=0; f<brickList.size(); ++f)
+  for (size_t f=0; f<brickList.size(); ++f)
   {
     result[0].getBrickList().push_back(BrickList());
     result[1].getBrickList().push_back(BrickList());

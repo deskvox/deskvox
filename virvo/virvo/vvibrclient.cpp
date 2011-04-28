@@ -150,7 +150,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       vvVector3 min(min4.e[0], min4.e[1], min4.e[2]);
       vvVector3 max(max4.e[0], max4.e[1], max4.e[2]);
 
-      float radius = (max-min).length() * 0.5;
+      float radius = (max-min).length() * 0.5f;
 
       // Depth buffer of ibrPlanes
       vvVector3 scal(center);
@@ -181,7 +181,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
     pthread_mutex_lock(&_slaveMutex);
 
-    for (int s=0; s<_sockets.size(); ++s)
+    for (size_t s=0; s<_sockets.size(); ++s)
     {
       _sockets[s]->putCommReason(vvSocketIO::VV_MATRIX);
       _sockets[s]->putMatrix(&pr);
@@ -310,9 +310,9 @@ void vvIbrClient::initIbrFrame()
                      _modelMatrix, _projMatrix, _vp[0].values,
                      &winPoint[0],&winPoint[1],&winPoint[2]);
       }
-      points[y*w*3+x*3]   = winPoint[0];
-      points[y*w*3+x*3+1] = winPoint[1];
-      points[y*w*3+x*3+2] = winPoint[2];
+      points[y*w*3+x*3]   = static_cast<float>(winPoint[0]);
+      points[y*w*3+x*3+1] = static_cast<float>(winPoint[1]);
+      points[y*w*3+x*3+2] = static_cast<float>(winPoint[2]);
     }
   }
 
@@ -331,7 +331,7 @@ void vvIbrClient::initIbrFrame()
 
 void vvIbrClient::exit()
 {
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     _sockets[s]->putCommReason(vvSocketIO::VV_EXIT);
     delete _sockets[s];
@@ -342,7 +342,7 @@ void vvIbrClient::createThreads()
 {
   _threadData = new ThreadArgs[_sockets.size()];
   _threads = new pthread_t[_sockets.size()];
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     _threadData[s].threadId = s;
     _threadData[s].renderMaster = this;
@@ -359,7 +359,7 @@ void vvIbrClient::createThreads()
 
 void vvIbrClient::destroyThreads()
 {
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     pthread_join(_threads[s], NULL);
   }

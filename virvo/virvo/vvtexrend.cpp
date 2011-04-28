@@ -1635,7 +1635,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
 
       _threadData[i].brickList.clear();
 
-      for (int f=0; f<_threadData[i].halfSpace->getBrickList().size(); ++f)
+      for (uint f=0; f<_threadData[i].halfSpace->getBrickList().size(); ++f)
       {
         _threadData[i].brickList.push_back(BrickList());
         for (BrickList::iterator brickIt = _threadData[i].halfSpace->getBrickList()[f].begin();
@@ -5025,7 +5025,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
       }
       break;
     case vvRenderer::VV_LIGHTING:
-      if (static_cast<bool>(newValue) == true)
+      if (newValue != 0.0f)
       {
         _previousShader = _currentShader;
         _currentShader = getLocalIlluminationShader();
@@ -5036,7 +5036,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
       }
       break;
     case vvRenderer::VV_MEASURETIME:
-      _measureRenderTime = static_cast<bool>(newValue);
+      _measureRenderTime = (newValue != 0.0f);
       break;
     default:
       vvRenderer::setParameter(param, newValue);
@@ -5905,7 +5905,7 @@ void vvTexRend::prepareDistributedRendering(const int numSlaveNodes)
   _numSlaveNodes = numSlaveNodes;
   // No load balancing for now, distribute equally among nodes.
   float* part = new float[_numSlaveNodes];
-  for (unsigned int i = 0; i < _numSlaveNodes; ++i)
+  for (int i = 0; i < _numSlaveNodes; ++i)
   {
     part[i] = 1.0f / static_cast<float>(_numSlaveNodes);
   }

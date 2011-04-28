@@ -384,8 +384,8 @@ vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick)
   brick->minValue = (int)vvToolshed::read32(&buffer[36]);
   brick->maxValue = (int)vvToolshed::read32(&buffer[40]);
 
-  brick->visible = (bool)buffer[44];
-  brick->insideProbe = (bool)buffer[46];
+  brick->visible = (buffer[44] != 0);
+  brick->insideProbe = (buffer[46] != 0);
   // One byte for padding.
   brick->index = (int)vvToolshed::read32(&buffer[48]);
 
@@ -1036,7 +1036,7 @@ vvSocket::ErrorType vvSocketIO::getBool(bool& val)
   {
     return retval;
   }
-  val = (bool)buffer[0];
+  val = (buffer[0] != 0);
 
   return vvSocket::VV_OK;
 }

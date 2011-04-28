@@ -63,7 +63,7 @@ vvRemoteClient::ErrorType vvClusterClient::setRenderer(vvRenderer* renderer)
 
   // Distribute the bricks from the bsp tree
   std::vector<BrickList>** bricks = texRend->getBrickListsToDistribute();
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     for (int f=0; f<texRend->getVolDesc()->frames; ++f)
     {
@@ -100,7 +100,7 @@ vvRemoteClient::ErrorType vvClusterClient::render()
   glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
   mv.set(matrixGL);
 
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     _sockets[s]->putCommReason(vvSocketIO::VV_MATRIX);
     _sockets[s]->putMatrix(&pr);
@@ -157,7 +157,7 @@ vvRemoteClient::ErrorType vvClusterClient::render()
 
 void vvClusterClient::exit()
 {
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     _sockets[s]->putCommReason(vvSocketIO::VV_EXIT);
     delete _sockets[s];
@@ -170,7 +170,7 @@ void vvClusterClient::createThreads()
   _threadData = new ThreadArgs[_sockets.size()];
   _threads = new pthread_t[_sockets.size()];
   pthread_barrier_init(&_barrier, NULL, _sockets.size() + 1);
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     _threadData[s].threadId = s;
     _threadData[s].clusterClient = this;
@@ -183,7 +183,7 @@ void vvClusterClient::createThreads()
 void vvClusterClient::destroyThreads()
 {
   pthread_barrier_destroy(&_barrier);
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     pthread_join(_threads[s], NULL);
   }

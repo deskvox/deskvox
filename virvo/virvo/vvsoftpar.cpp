@@ -336,10 +336,10 @@ void vvSoftPar::compositeSliceBilinear(int slice)
                   if(postClassification)
                   {
                      // Determine interpolated voxel value:
-                     uchar v = *vScalar[0] * weight[0]
+                     uchar v = static_cast<uchar>(*vScalar[0] * weight[0]
                         + *vScalar[1] * weight[1]
                         + *vScalar[2] * weight[2]
-                        + *vScalar[3] * weight[3];
+                        + *vScalar[3] * weight[3]);
                      va = rgbaConv[v][3] / 255.0f;
                      if (va>0.0f)                    // skip transparent voxels (yes, do it again!)
                      {

@@ -38,7 +38,7 @@
 #include "vvprintgl.h"
 
 /*ARGSUSED*/
-
+#pragma warning(disable: 4251)
 //----------------------------------------------------------------------------
 vvRenderState::vvRenderState()
 {
@@ -110,64 +110,64 @@ void vvRenderState::setParameter(const ParameterType param, const float newValue
     _alphaMode = (int)newValue;
     break;
   case VV_LEAPEMPTY:
-    _emptySpaceLeaping = (bool)newValue;
+    _emptySpaceLeaping = (newValue != 0.0f);
     break;
   case VV_CLIP_PERIMETER:
-    _clipPerimeter = (bool)newValue;
+    _clipPerimeter = (newValue != 0.0f);
     break;
   case VV_BOUNDARIES:
-    _boundaries = (bool)newValue;
+    _boundaries = (newValue != 0.0f);
     break;
   case VV_ORIENTATION:
-    _orientation = (bool)newValue;
+    _orientation = (newValue != 0.0f);
     break;
   case VV_PALETTE:
-    _palette = (bool)newValue;
+    _palette = (newValue != 0.0f);
     break;
   case VV_QUALITY_DISPLAY:
-    _qualityDisplay = (bool)newValue;
+    _qualityDisplay = (newValue != 0.0f);
     break;
   case VV_CLIP_MODE:
-    _clipMode = (bool)newValue;
+    _clipMode = (newValue != 0.0f);
     break;
   case VV_CLIP_SINGLE_SLICE:
-    _clipSingleSlice = (bool)newValue;
+    _clipSingleSlice = (newValue != 0.0f);
     break;
   case VV_CLIP_OPAQUE:
-    _clipOpaque = (bool)newValue;
+    _clipOpaque = (newValue != 0.0f);
     break;
   case VV_IS_ROI_USED:
-    _isROIUsed = (bool)newValue;
+    _isROIUsed = (newValue != 0.0f);
     break;
   case VV_IS_ROI_CHANGED:
-    _isROIChanged = (bool)newValue;
+    _isROIChanged = (newValue != 0.0f);
     break;
   case VV_SPHERICAL_ROI:
-    _sphericalROI = (bool)newValue;
+    _sphericalROI = (newValue != 0.0f);
     break;
   case VV_BRICK_TEXEL_OVERLAP:
     _brickTexelOverlap = (int)newValue;
     break;
   case VV_SHOW_BRICKS:
-    _showBricks = (bool)newValue;
+    _showBricks = (newValue != 0.0f);
     break;
   case VV_COMPUTE_BRICK_SIZE:
-    _computeBrickSize = (bool)newValue;
+    _computeBrickSize = (newValue != 0.0f);
     break;
   case VV_TEX_MEMORY_SIZE:
     _texMemorySize = (int)newValue;
     break;
   case VV_FPS_DISPLAY:
-    _fpsDisplay = (bool)newValue;
+    _fpsDisplay = (newValue != 0.0f);
     break;
   case VV_GAMMA_CORRECTION:
-    _gammaCorrection = (bool)newValue;
+    _gammaCorrection = (newValue != 0.0f);
     break;
   case VV_OPACITY_WEIGHTS:
-    _opacityWeights = (bool)newValue;
+    _opacityWeights = (newValue != 0.0f);
     break;
   case VV_USE_OFFSCREEN_BUFFER:
-    _useOffscreenBuffer = (bool)newValue;
+    _useOffscreenBuffer = (newValue != 0.0f);
     break;
   case VV_IMAGE_SCALE:
     _imageScale = newValue;
@@ -183,13 +183,13 @@ void vvRenderState::setParameter(const ParameterType param, const float newValue
      }
     break;
   case VV_SHOW_TEXTURE:
-    _showTexture = (bool)newValue;
+    _showTexture = (newValue != 0.0f);
     break;
   case VV_OPAQUE_GEOMETRY_PRESENT:
-    _opaqueGeometryPresent = (bool)newValue;
+    _opaqueGeometryPresent = (newValue != 0.0f);
     break;
   case VV_USE_IBR:
-    _useIbr = (bool)newValue;
+    _useIbr = (newValue != 0.0f);
     break;
   default:
     break;
@@ -222,7 +222,7 @@ void vvRenderState::setParameterV3(const ParameterType param, const vvVector3& n
     {
       for (int i=0; i<3; ++i)
       {
-        _brickSize[i] = newValue[i];
+        _brickSize[i] = static_cast<int>(newValue[i]);
       }
     }
     break;
@@ -230,7 +230,7 @@ void vvRenderState::setParameterV3(const ParameterType param, const vvVector3& n
     {
       for (int i=0; i<3; ++i)
       {
-        _maxBrickSize[i] = newValue[i];
+        _maxBrickSize[i] = static_cast<int>(newValue[i]);
       }
     }
     break;
@@ -268,9 +268,9 @@ float vvRenderState::getParameter(const ParameterType param) const
   case VV_QUALITY:
     return _quality;
   case VV_MIP_MODE:
-    return _mipMode;
+    return static_cast<float>(_mipMode);
   case VV_ALPHA_MODE:
-    return _alphaMode;
+    return static_cast<float>(_alphaMode);
   case VV_CLIP_PERIMETER:
     return _clipPerimeter;
   case VV_BOUNDARIES:
@@ -294,9 +294,9 @@ float vvRenderState::getParameter(const ParameterType param) const
   case VV_SPHERICAL_ROI:
     return _sphericalROI;
   case VV_BRICK_TEXEL_OVERLAP:
-    return _brickTexelOverlap;
+    return static_cast<float>(_brickTexelOverlap);
   case VV_TEX_MEMORY_SIZE:
-    return _texMemorySize;
+    return static_cast<float>(_texMemorySize);
   case VV_FPS_DISPLAY:
     return _fpsDisplay;
   case VV_GAMMA_CORRECTION:
@@ -308,7 +308,7 @@ float vvRenderState::getParameter(const ParameterType param) const
   case VV_IMAGE_SCALE:
     return _imageScale;
   case VV_IMAGE_PRECISION:
-    return _imagePrecision;
+    return static_cast<float>(_imagePrecision);
   case VV_SHOW_TEXTURE:
     return _showTexture;
   case VV_OPAQUE_GEOMETRY_PRESENT:
@@ -339,9 +339,13 @@ vvVector3 vvRenderState::getParameterV3(const ParameterType param) const
   case VV_ROI_POS:
     return _roiPos;
   case VV_BRICK_SIZE:
-    return vvVector3(_brickSize[0], _brickSize[1], _brickSize[2]);
+    return vvVector3(static_cast<float>(_brickSize[0]), 
+                     static_cast<float>(_brickSize[1]),
+                     static_cast<float>(_brickSize[2]));
   case VV_MAX_BRICK_SIZE:
-    return vvVector3(_maxBrickSize[0], _maxBrickSize[1], _maxBrickSize[2]);
+    return vvVector3(static_cast<float>(_maxBrickSize[0]),
+                     static_cast<float>(_maxBrickSize[1]),
+                     static_cast<float>(_maxBrickSize[2]));
   case VV_BOUND_COLOR:
     return _boundColor;
   case VV_PROBE_COLOR:

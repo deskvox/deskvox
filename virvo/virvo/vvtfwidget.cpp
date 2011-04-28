@@ -240,7 +240,7 @@ vvTFBell::vvTFBell(FILE* fp) : vvTFWidget()
     &_pos[0], &_pos[1], &_pos[2], &_size[0], &_size[1], &_size[2],
     &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity) != 11)
      std::cerr << "vvTFBell: fscanf failed" << std::endl;
-  _ownColor = ownColorInt;
+  _ownColor = (ownColorInt != 0);
 }
 
 const char* vvTFBell::toString()
@@ -415,7 +415,7 @@ vvTFPyramid::vvTFPyramid(FILE* fp) : vvTFWidget()
     &_pos[0], &_pos[1], &_pos[2], &_bottom[0], &_bottom[1], &_bottom[2],
     &_top[0], &_top[1], &_top[2], &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity) != 14)
      std::cerr << "vvTFPyramid: fscanf failed" << std::endl;
-  _ownColor = ownColorInt;
+  _ownColor = (ownColorInt != 0);
 }
 
 const char* vvTFPyramid::toString()
@@ -438,25 +438,25 @@ void vvTFPyramid::fromString(const std::string& str)
   _name = new char[tokens[1].length()];
   strcpy(_name, tokens[1].c_str());
 
-  _pos[0] = atof(tokens[2].c_str());
-  _pos[1] = atof(tokens[3].c_str());
-  _pos[2] = atof(tokens[4].c_str());
+  _pos[0] = static_cast<float>(atof(tokens[2].c_str()));
+  _pos[1] = static_cast<float>(atof(tokens[3].c_str()));
+  _pos[2] = static_cast<float>(atof(tokens[4].c_str()));
 
-  _bottom[0] = atof(tokens[5].c_str());
-  _bottom[1] = atof(tokens[6].c_str());
-  _bottom[2] = atof(tokens[7].c_str());
+  _bottom[0] = static_cast<float>(atof(tokens[5].c_str()));
+  _bottom[1] = static_cast<float>(atof(tokens[6].c_str()));
+  _bottom[2] = static_cast<float>(atof(tokens[7].c_str()));
 
-  _top[0] = atof(tokens[8].c_str());
-  _top[1] = atof(tokens[9].c_str());
-  _top[2] = atof(tokens[10].c_str());
+  _top[0] = static_cast<float>(atof(tokens[8].c_str()));
+  _top[1] = static_cast<float>(atof(tokens[9].c_str()));
+  _top[2] = static_cast<float>(atof(tokens[10].c_str()));
 
-  _col[0] = atof(tokens[11].c_str());
-  _col[1] = atof(tokens[12].c_str());
-  _col[2] = atof(tokens[13].c_str());
+  _col[0] = static_cast<float>(atof(tokens[11].c_str()));
+  _col[1] = static_cast<float>(atof(tokens[12].c_str()));
+  _col[2] = static_cast<float>(atof(tokens[13].c_str()));
 
   _ownColor = (tokens[14].compare("1") == 0);
 
-  _opacity = atof(tokens[15].c_str());
+  _opacity = static_cast<float>(atof(tokens[15].c_str()));
 }
 
 float vvTFPyramid::getOpacity(float x, float y, float z)
@@ -686,13 +686,13 @@ void vvTFColor::fromString(const std::string& str)
   _name = new char[tokens[1].length()];
   strcpy(_name, tokens[1].c_str());
 
-  _pos[0] = atof(tokens[2].c_str());
-  _pos[1] = atof(tokens[3].c_str());
-  _pos[2] = atof(tokens[4].c_str());
+  _pos[0] = static_cast<float>(atof(tokens[2].c_str()));
+  _pos[1] = static_cast<float>(atof(tokens[3].c_str()));
+  _pos[2] = static_cast<float>(atof(tokens[4].c_str()));
 
-  _col[0] = atof(tokens[5].c_str());
-  _col[1] = atof(tokens[6].c_str());
-  _col[2] = atof(tokens[7].c_str());
+  _col[0] = static_cast<float>(atof(tokens[5].c_str()));
+  _col[1] = static_cast<float>(atof(tokens[6].c_str()));
+  _col[2] = static_cast<float>(atof(tokens[7].c_str()));
 }
 
 //============================================================================

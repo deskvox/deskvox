@@ -46,7 +46,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSockets(const int defaultPort, con
                                                       vvVolDesc*& vd)
 {
   const bool loadVolumeFromFile = !redistributeVolData;
-  for (int s=0; s<_slaveNames.size(); ++s)
+  for (size_t s=0; s<_slaveNames.size(); ++s)
   {
     if (_slavePorts[s] == -1)
     {
@@ -118,7 +118,7 @@ void vvRemoteClient::setBackgroundColor(const vvVector3& bgColor)
 
 void vvRemoteClient::resize(const int w, const int h)
 {
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
     {
@@ -130,8 +130,8 @@ void vvRemoteClient::resize(const int w, const int h)
 void vvRemoteClient::setCurrentFrame(const int index)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setCurrentFrame()");
-  vvRemoteClient::setCurrentFrame(index);
-  for (int s=0; s<_sockets.size(); ++s)
+
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_CURRENT_FRAME) == vvSocket::VV_OK)
     {
@@ -142,7 +142,7 @@ void vvRemoteClient::setCurrentFrame(const int index)
 
 void vvRemoteClient::setMipMode(const int mipMode)
 {
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_MIPMODE) == vvSocket::VV_OK)
     {
@@ -154,7 +154,7 @@ void vvRemoteClient::setMipMode(const int mipMode)
 void vvRemoteClient::setObjectDirection(const vvVector3* od)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setObjectDirection()");
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_OBJECT_DIRECTION) == vvSocket::VV_OK)
     {
@@ -166,7 +166,7 @@ void vvRemoteClient::setObjectDirection(const vvVector3* od)
 void vvRemoteClient::setViewingDirection(const vvVector3* vd)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setViewingDirection()");
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
     {
@@ -178,7 +178,7 @@ void vvRemoteClient::setViewingDirection(const vvVector3* vd)
 void vvRemoteClient::setPosition(const vvVector3* p)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setPosition()");
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
     {
@@ -190,7 +190,7 @@ void vvRemoteClient::setPosition(const vvVector3* p)
 void vvRemoteClient::setROIEnable(const bool roiEnabled)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::setROIEnable()");
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_ROI) == vvSocket::VV_OK)
     {
@@ -202,7 +202,7 @@ void vvRemoteClient::setROIEnable(const bool roiEnabled)
 void vvRemoteClient::setProbePosition(const vvVector3* pos)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::setProbePosition()");
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_ROI_POSITION) == vvSocket::VV_OK)
     {
@@ -214,7 +214,7 @@ void vvRemoteClient::setProbePosition(const vvVector3* pos)
 void vvRemoteClient::setProbeSize(const vvVector3* newSize)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::setProbeSize()");
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_ROI_SIZE) == vvSocket::VV_OK)
     {
@@ -226,7 +226,7 @@ void vvRemoteClient::setProbeSize(const vvVector3* newSize)
 void vvRemoteClient::toggleBoundingBox()
 {
   vvDebugMsg::msg(3, "vvRemoteClient::toggleBoundingBox()");
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     _sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_BOUNDINGBOX);
   }
@@ -235,7 +235,7 @@ void vvRemoteClient::toggleBoundingBox()
 void vvRemoteClient::updateTransferFunction(vvTransFunc& tf)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::updateTransferFunction()");
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_TRANSFER_FUNCTION) == vvSocket::VV_OK)
     {
@@ -263,7 +263,7 @@ void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const f
 
 void vvRemoteClient::adjustQuality(const float quality)
 {
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_QUALITY) == vvSocket::VV_OK)
     {
@@ -275,7 +275,7 @@ void vvRemoteClient::adjustQuality(const float quality)
 void vvRemoteClient::setInterpolation(const bool interpolation)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setInterpolation()");
-  for (int s=0; s<_sockets.size(); ++s)
+  for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_INTERPOLATION) == vvSocket::VV_OK)
     {

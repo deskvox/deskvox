@@ -161,7 +161,7 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
       case vvSocketIO::VV_MIPMODE:
         if ((_socket->getInt32(mipMode)) == vvSocket::VV_OK)
         {
-          renderer->setParameter(vvRenderState::VV_MIP_MODE, mipMode);
+          renderer->setParameter(vvRenderState::VV_MIP_MODE, static_cast<float>(mipMode));
         }
         break;
       case vvSocketIO::VV_OBJECT_DIRECTION:
@@ -195,7 +195,7 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
         }
         break;
       case vvSocketIO::VV_TOGGLE_BOUNDINGBOX:
-        renderer->setParameter(vvRenderState::VV_BOUNDARIES, !((bool)renderer->getParameter(vvRenderState::VV_BOUNDARIES)));
+        renderer->setParameter(vvRenderState::VV_BOUNDARIES, !(renderer->getParameter(vvRenderState::VV_BOUNDARIES) != 0.0f));
         break;
       case vvSocketIO::VV_TOGGLE_ROI:
         if ((_socket->getBool(roiEnabled)) == vvSocket::VV_OK)

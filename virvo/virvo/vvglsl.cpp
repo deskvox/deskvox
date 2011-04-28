@@ -105,7 +105,7 @@ vvGLSL::~vvGLSL()
   if(_isSupported)
   {
     glUseProgram(0);
-    for (int n = 0; n < programArray.size(); n++)
+    for (size_t n = 0; n < programArray.size(); n++)
     {
       if(programArray[n] != 0)
         glDeleteProgram(programArray[n]);
@@ -419,7 +419,7 @@ void vvGLSL::disable()
 
 void vvGLSL::deleteProgram(GLuint program)
 {
-  for(int n = 0; n < programArray.size(); n++)
+  for(size_t n = 0; n < programArray.size(); n++)
   {
         if(programArray[n] == program)
 	{

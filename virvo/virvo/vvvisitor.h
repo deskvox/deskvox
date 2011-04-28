@@ -60,7 +60,7 @@ private:
  *                  visitable objects as well as from the algorithm using
  *                  them.
  */
-class vvVisitor
+class VIRVOEXPORT vvVisitor
 {
 public:
   virtual ~vvVisitor() {}
