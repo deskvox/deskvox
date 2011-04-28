@@ -1949,7 +1949,7 @@ void vvView::viewMenuCallback(int item)
   case 1:                                     // axis orientation
     ds->orientationMode = !ds->orientationMode;
     ds->renderer->setParameter(vvRenderState::VV_ORIENTATION,
-                                 !(bool)ds->renderer->getParameter(vvRenderState::VV_ORIENTATION));
+                                 !(ds->renderer->getParameter(vvRenderState::VV_ORIENTATION) != 0.0f));
     cerr << "Coordinate axes display " << ds->onOff[ds->orientationMode] << endl;
     break;
   case 2:                                     // frame rate
@@ -1959,7 +1959,7 @@ void vvView::viewMenuCallback(int item)
     break;
   case 3:                                     // transfer function
     ds->paletteMode = !ds->paletteMode;
-    ds->renderer->setParameter(vvRenderState::VV_PALETTE, !(bool)ds->renderer->getParameter(vvRenderState::VV_PALETTE));
+    ds->renderer->setParameter(vvRenderState::VV_PALETTE, !(ds->renderer->getParameter(vvRenderState::VV_PALETTE) != 0.0f));
     cerr << "Palette display " << ds->onOff[ds->paletteMode] << endl;
     break;
   case 4:                                     // stereo mode

@@ -41,10 +41,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="-wd4244 -wd4251 -wd4514"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\pthreads\include&quot;;&quot;$(EXTERNLIBS)\glut\include&quot;;&quot;$(EXTERNLIBS)\glew\include&quot;;&quot;$(EXTERNLIBS)\Cg\include&quot;;.."
-				PreprocessorDefinitions="GLUT_NO_LIB_PRAGMA;NODLL"
+				PreprocessorDefinitions="GLUT_NO_LIB_PRAGMA;NODLL;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -123,9 +124,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="-wd4244 -wd4251 -wd4514"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(EXTERNLIBS)\pthreads\include&quot;;&quot;$(EXTERNLIBS)\glut\include&quot;;&quot;$(EXTERNLIBS)\glew\include&quot;;&quot;$(EXTERNLIBS)\Cg\include&quot;;.."
-				PreprocessorDefinitions="GLUT_NO_LIB_PRAGMA;NODLL"
+				PreprocessorDefinitions="GLUT_NO_LIB_PRAGMA;NODLL;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				RuntimeTypeInfo="true"
