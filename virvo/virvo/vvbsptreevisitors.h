@@ -39,7 +39,7 @@
   @author Stefan Zellmann
   @see vvVisitor
  */
-class VIRVOEXPORT vvThreadVisitor : public vvVisitor
+class vvThreadVisitor : public vvVisitor
 {
 public:
   vvThreadVisitor();
@@ -61,7 +61,7 @@ private:
   void clearOffscreenBuffers();
 };
 
-class VIRVOEXPORT vvSlaveVisitor : public vvVisitor
+class vvSlaveVisitor : public vvVisitor
 {
 public:
   vvSlaveVisitor();
