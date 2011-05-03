@@ -64,12 +64,11 @@ bool vvRenderContext::makeCurrent() const
 void vvRenderContext::init()
 {
 #ifdef HAVE_X11
-  // TODO: make this configurable.
   _archData->display = XOpenDisplay(NULL);
 
   if (_archData->display != NULL)
   {
-    const Drawable parent = RootWindow(_archData->display, 0);
+    const Drawable parent = RootWindow(_archData->display, DefaultScreen(_archData->display));
 
     int attrList[] = { GLX_RGBA,
                        GLX_RED_SIZE, 8,
