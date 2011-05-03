@@ -27,6 +27,7 @@
 #endif
 
 #include <virvo/vvdebugmsg.h>
+#include <virvo/vvgltools.h>
 #include <virvo/vvtokenizer.h>
 #include "vvobjview.h"
 
@@ -264,6 +265,8 @@ void vvObjView::setDepthRange(float newNP, float newFP)
 */
 void vvObjView::updateModelviewMatrix(EyeType eye)
 {
+  vvGLTools::printGLError("enter vvObjView::updateModelviewMatrix()");
+
   vvMatrix mvRight;                             // modelview matrix for right eye
   vvMatrix invRot;                              // inverse rotational matrix
   vvVector3 v(0.0, -1.0, 0.0);                   // rotational vector
@@ -300,6 +303,8 @@ void vvObjView::updateModelviewMatrix(EyeType eye)
 
   // Restore matrix mode:
   glMatrixMode(glsMatrixMode);
+
+  vvGLTools::printGLError("leave vvObjView::updateModelviewMatrix()");
 }
 
 

@@ -19,6 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvfileio.h"
+#include "vvgltools.h"
 #include "vvrendercontext.h"
 #include "vvrenderer.h"
 #include "vvremoteserver.h"
@@ -165,6 +166,8 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
 
   while (1)
   {
+    vvGLTools::printGLError("begin vvRemoteServer::renderLoop()");
+
     vvSocket::ErrorType err = _socket->getCommReason(commReason);
     if (err == vvSocket::VV_OK)
     {
@@ -266,5 +269,7 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
       _socket = NULL;
       return;
     }
+
+    vvGLTools::printGLError("end vvRemoteServer::renderLoop()");
   }
 }

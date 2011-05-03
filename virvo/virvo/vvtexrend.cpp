@@ -3489,6 +3489,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
   }
   else
   {
+    vvGLTools::printGLError("enter vvTexRend::threadFuncTexBricks()");
+
     vvShaderManager* pixelShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
     GLuint fragProgName[VV_FRAG_PROG_MAX];
 

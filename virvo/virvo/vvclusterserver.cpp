@@ -78,10 +78,14 @@ void vvClusterServer::renderLoop(vvRenderer* renderer)
 {
   vvDebugMsg::msg(1, "vvClusterServer::renderLoop()");
 
+  vvGLTools::printGLError("enter vvClusterServer::renderLoop()");
+
   _offscreenBuffer = new vvOffscreenBuffer(1.0f, _compositingPrecision);
   _offscreenBuffer->initForRender();
 
   vvRemoteServer::renderLoop(renderer);
+
+  vvGLTools::printGLError("leave vvClusterServer::renderLoop()");
 }
 
 //----------------------------------------------------------------------------
@@ -91,6 +95,8 @@ void vvClusterServer::renderLoop(vvRenderer* renderer)
 void vvClusterServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 {
   vvDebugMsg::msg(3, "vvClusterServer::renderImage()");
+
+  vvGLTools::printGLError("enter vvClusterServer::renderImage()");
 
   _offscreenBuffer->bindFramebuffer();
   _offscreenBuffer->clearBuffer();
@@ -129,6 +135,8 @@ void vvClusterServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* render
   {
     _offscreenBuffer->writeBack();
   }
+
+  vvGLTools::printGLError("leave vvClusterServer::renderImage()");
 }
 
 void vvClusterServer::resize(const int w, const int h)

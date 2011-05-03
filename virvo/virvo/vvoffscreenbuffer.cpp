@@ -60,6 +60,8 @@ void vvOffscreenBuffer::initForRender()
 
 void vvOffscreenBuffer::writeBack(const int w, const int h)
 {
+  vvGLTools::printGLError("enter vvOffscreenBuffer::bindFramebuffer()");
+
   if (_preserveDepthBuffer)
   {
     storeColorBuffer();
@@ -93,6 +95,8 @@ void vvOffscreenBuffer::writeBack(const int w, const int h)
                          GL_COLOR_BUFFER_BIT, GL_LINEAR);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
   }
+
+  vvGLTools::printGLError("leave vvOffscreenBuffer::bindFramebuffer()");
 }
 
 void vvOffscreenBuffer::resize(const int w, const int h)
@@ -133,11 +137,15 @@ void vvOffscreenBuffer::clearBuffer()
 void vvOffscreenBuffer::bindFramebuffer() const
 {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
+
+  vvGLTools::printGLError("leave vvOffscreenBuffer::bindFramebuffer()");
 }
 
 void vvOffscreenBuffer::unbindFramebuffer() const
 {
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
+  vvGLTools::printGLError("leave vvOffscreenBuffer::unbindFramebuffer()");
 }
 
 void vvOffscreenBuffer::bindTexture() const

@@ -493,6 +493,8 @@ void vvView::displayCallback(void)
 {
   vvDebugMsg::msg(3, "vvView::displayCallback()");
 
+  vvGLTools::printGLError("enter vvView::displayCallback()");
+
   glDrawBuffer(GL_BACK);
   glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -603,6 +605,8 @@ void vvView::displayCallback(void)
 
     glutSwapBuffers();
   }
+
+  vvGLTools::printGLError("leave vvView::displayCallback()");
 }
 
 
