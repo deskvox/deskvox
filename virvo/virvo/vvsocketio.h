@@ -160,7 +160,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType putImage2_5d(vvImage2_5d*);
     ErrorType getFileName(char*& fn);
     ErrorType putFileName(const char* fn);
-    ErrorType getData(uchar**, int&);             //  unknown number and type
+    ErrorType allocateAndGetData(uchar**, int&);             //  unknown number and type
     ErrorType putData(uchar*, int);
     ErrorType getMatrix(vvMatrix*);
     ErrorType putMatrix(vvMatrix*);

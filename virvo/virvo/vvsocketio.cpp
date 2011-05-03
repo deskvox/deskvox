@@ -773,10 +773,12 @@ vvSocket::ErrorType vvSocketIO::putFileName(const char* fn)
  allocated which has to be deallocated outside this function.
  @param size  reference of an integer which includes the number of read bytes.
 */
-vvSocket::ErrorType vvSocketIO::getData(uchar** data, int& size)
+vvSocket::ErrorType vvSocketIO::allocateAndGetData(uchar** data, int& size)
 {
   uchar buffer[4];
   vvSocket::ErrorType retval;
+
+  *data = NULL; // make it safe to delete[] *data
 
   if ((retval = vvSocket::read_data(&buffer[0], 4)) != vvSocket::VV_OK)
   {
@@ -996,10 +998,10 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type)
 */
 vvSocket::ErrorType vvSocketIO::getMatrix(vvMatrix* m)
 {
-  uchar* buffer;
+  uchar* buffer = NULL;
   int s;
 
-  switch(getData(&buffer, s))
+  switch(allocateAndGetData(&buffer, s))
   {
     case vvSocket::VV_OK: break;
     case vvSocket::VV_DATA_ERROR: delete[] buffer; return vvSocket::VV_DATA_ERROR; break;
