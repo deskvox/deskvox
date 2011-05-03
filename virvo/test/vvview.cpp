@@ -501,7 +501,11 @@ void vvView::displayCallback(void)
   {
     ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
 
-    ds->_remoteClient->render();
+    if (ds->_remoteClient->render() != vvRemoteClient::VV_OK)
+    {
+      cerr << "Remote rendering error, next frame will be rendered locally!" << endl;
+      ds->remoteRendering = false;
+    }
 
     glutSwapBuffers();
   }
