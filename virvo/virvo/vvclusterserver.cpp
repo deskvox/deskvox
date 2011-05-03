@@ -98,6 +98,11 @@ void vvClusterServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* render
 
   vvGLTools::printGLError("enter vvClusterServer::renderImage()");
 
+  if (vvDebugMsg::getDebugLevel() > 0)
+  {
+    _offscreenBuffer->initForRender();
+  }
+
   _offscreenBuffer->bindFramebuffer();
   _offscreenBuffer->clearBuffer();
 
