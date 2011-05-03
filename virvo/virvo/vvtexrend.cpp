@@ -416,6 +416,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     vvVector3 probeSizeObj;
     vvVector3 probeMin, probeMax;
 
+    calcNumTexels();
     calcNumBricks();
     if (!_isSlave)
     {
@@ -618,14 +619,8 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
   if (vd->vox[0] == 0 || vd->vox[1] == 0 || vd->vox[2] == 0)
     return err;
 
-  if (geomType != VV_BRICKS)
-  {
-    // Compute texture dimensions (must be power of 2):
-    texels[0] = vvToolshed::getTextureSize(vd->vox[0]);
-    texels[1] = vvToolshed::getTextureSize(vd->vox[1]);
-    texels[2] = vvToolshed::getTextureSize(vd->vox[2]);
-  }
-  else
+  calcNumTexels();
+  if (geomType == VV_BRICKS)
   {
     calcNumBricks();
   }
@@ -1868,13 +1863,26 @@ void vvTexRend::computeBrickSize()
 }
 
 
+void vvTexRend::calcNumTexels()
+{
+  // Compute texture dimensions (must be power of 2):
+  if (geomType != VV_BRICKS)
+  {
+    texels[0] = vvToolshed::getTextureSize(vd->vox[0]);
+    texels[1] = vvToolshed::getTextureSize(vd->vox[1]);
+    texels[2] = vvToolshed::getTextureSize(vd->vox[2]);
+  }
+  else
+  {
+    texels[0] = vvToolshed::getTextureSize(_brickSize[0]);
+    texels[1] = vvToolshed::getTextureSize(_brickSize[1]);
+    texels[2] = vvToolshed::getTextureSize(_brickSize[2]);
+  }
+}
+
+
 void vvTexRend::calcNumBricks()
 {
-  // compute number of texels / per brick (should be of power 2)
-  texels[0] = vvToolshed::getTextureSize(_brickSize[0]);
-  texels[1] = vvToolshed::getTextureSize(_brickSize[1]);
-  texels[2] = vvToolshed::getTextureSize(_brickSize[2]);
-
   // compute number of bricks
   if ((_useOnlyOneBrick) ||
     ((texels[0] == vd->vox[0]) && (texels[1] == vd->vox[1]) && (texels[2] == vd->vox[2])))
