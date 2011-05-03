@@ -416,9 +416,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     vvVector3 probeSizeObj;
     vvVector3 probeMin, probeMax;
 
+    calcNumBricks();
     if (!_isSlave)
     {
-      calcNumBricks();
       makeEmptyBricks();
     }
 
