@@ -39,7 +39,7 @@ vvIbrServer::vvIbrServer(const vvImage2_5d::DepthPrecision dp,
 
 vvIbrServer::~vvIbrServer()
 {
-  delete _socket;
+
 }
 
 void vvIbrServer::setDepthPrecision(const vvImage2_5d::DepthPrecision dp)

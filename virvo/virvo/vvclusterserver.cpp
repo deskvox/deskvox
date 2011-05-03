@@ -41,7 +41,6 @@ vvClusterServer::~vvClusterServer()
   vvDebugMsg::msg(1, "vvClusterServer::~vvClusterServer()");
 
   delete _offscreenBuffer;
-  delete _socket;
 }
 
 void vvClusterServer::setCompositingPrecision(const BufferPrecision compositingPrecision)
