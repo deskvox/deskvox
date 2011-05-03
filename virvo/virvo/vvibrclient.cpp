@@ -183,9 +183,20 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
     for (size_t s=0; s<_sockets.size(); ++s)
     {
-      _sockets[s]->putCommReason(vvSocketIO::VV_MATRIX);
-      _sockets[s]->putMatrix(&pr);
-      _sockets[s]->putMatrix(&mv);
+      if (_sockets[s]->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
+      {
+        return vvRemoteClient::VV_SOCKET_ERROR;
+      }
+
+      if (_sockets[s]->putMatrix(&pr) != vvSocket::VV_OK)
+      {
+        return vvRemoteClient::VV_SOCKET_ERROR;
+      }
+
+      if (_sockets[s]->putMatrix(&mv) != vvSocket::VV_OK)
+      {
+        return vvRemoteClient::VV_SOCKET_ERROR;
+      }
     }
     _slaveCnt = _sockets.size();
     initIbrFrame();
