@@ -25,6 +25,7 @@
 #include "vvoffscreenbuffer.h"
 #include "vvsocketio.h"
 
+class vvRenderContext;
 class vvRenderer;
 
 class VIRVOEXPORT vvRemoteServer
@@ -34,7 +35,8 @@ public:
   {
     VV_OK = 0,
     VV_SOCKET_ERROR,
-    VV_FILEIO_ERROR
+    VV_FILEIO_ERROR,
+    VV_RENDERCONTEXT_ERROR
   };
 
   vvRemoteServer();
@@ -44,10 +46,13 @@ public:
 
   vvRemoteServer::ErrorType initSocket(int port, vvSocket::SocketType st);
   vvRemoteServer::ErrorType initData(vvVolDesc*& vd);
+  vvRemoteServer::ErrorType initRenderContext();
 
   virtual void renderLoop(vvRenderer* renderer);
 protected:
   vvSocketIO* _socket;                    ///< socket for remote rendering
+
+  vvRenderContext* _renderContext;
 
   bool _loadVolumeFromFile;
 

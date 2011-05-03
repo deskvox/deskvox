@@ -19,6 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvfileio.h"
+#include "vvrendercontext.h"
 #include "vvrenderer.h"
 #include "vvremoteserver.h"
 
@@ -26,7 +27,7 @@ using std::cerr;
 using std::endl;
 
 vvRemoteServer::vvRemoteServer()
-  : _socket(0)
+  : _socket(NULL), _renderContext(NULL)
 {
   vvDebugMsg::msg(1, "vvRemoteServer::vvRemoteServer()");
 }
@@ -34,6 +35,9 @@ vvRemoteServer::vvRemoteServer()
 vvRemoteServer::~vvRemoteServer()
 {
   vvDebugMsg::msg(1, "vvRemoteServer::~vvRemoteServer()");
+
+  delete _socket;
+  delete _renderContext;
 }
 
 bool vvRemoteServer::getLoadVolumeFromFile() const
@@ -121,6 +125,21 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
     }
   }
   return VV_OK;
+}
+
+vvRemoteServer::ErrorType vvRemoteServer::initRenderContext()
+{
+  delete _renderContext;
+  _renderContext = new vvRenderContext;
+
+  if (_renderContext->makeCurrent())
+  {
+    return vvRemoteServer::VV_OK;
+  }
+  else
+  {
+    return vvRemoteServer::VV_RENDERCONTEXT_ERROR;
+  }
 }
 
 void vvRemoteServer::renderLoop(vvRenderer* renderer)

@@ -293,8 +293,7 @@ void vvView::mainLoop(int argc, char *argv[])
         delete renderer;
         renderer = NULL;
 
-        vvRenderContext* context = new vvRenderContext();
-        if (context->makeCurrent())
+        if (server->initRenderContext() == vvRemoteServer::VV_OK)
         {
           ov = new vvObjView();
           setProjectionMode(perspectiveMode);
@@ -305,8 +304,6 @@ void vvView::mainLoop(int argc, char *argv[])
           cerr << "Exiting..." << endl;
         }
 
-        delete context;
-        context = NULL;
         delete vd;
         vd = NULL;
       }
