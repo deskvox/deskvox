@@ -91,7 +91,7 @@ public:
    *                in the order they were created.
    * \param         index An index into the program stack.
    */
-  virtual void enableShader(const int index) = 0;
+  virtual void enableShader(int index) = 0;
   /*!
    * \brief         Disable a loaded shader.
    *
@@ -101,7 +101,7 @@ public:
    *                in the order they were created.
    * \param         index An index into the program stack.
    */
-  virtual void disableShader(const int index) = 0;
+  virtual void disableShader(int index) = 0;
   /*!
    * \brief         Initialize (uniform) parameters.
    *
@@ -113,10 +113,10 @@ public:
    * \param         parameterTypes For each name, specify the param type.
    * \param         parameterCount Count names and types.
    */
-  virtual void initParameters(const int index,
+  virtual void initParameters(int index,
                               const char** parameterNames,
                               const vvShaderParameterType* parameterTypes,
-                              const int parameterCount) = 0;
+                              int parameterCount) = 0;
 
   virtual void printCompatibilityInfo() const;
   /*!
@@ -135,77 +135,77 @@ public:
   // Note that using the methods of this (abstract) base class will result in thrown exceptions.
   // The functions aren't defined to be = 0 so that inherited classes may, but don't necessarily
   // need to implement all of the functions below.
-  virtual void setParameter1f(const int programIndex, const char* parameterName,
+  virtual void setParameter1f(int programIndex, const char* parameterName,
                               const float& f1);
-  virtual void setParameter1f(const int programIndex, const int parameterIndex,
+  virtual void setParameter1f(int programIndex, int parameterIndex,
                               const float& f1);
-  virtual void setParameter2f(const int programIndex, const char* parameterName,
+  virtual void setParameter2f(int programIndex, const char* parameterName,
                               const float& f1, const float& f2);
-  virtual void setParameter3f(const int programIndex, const char* parameterName,
+  virtual void setParameter3f(int programIndex, const char* parameterName,
                               const float& f1, const float& f2, const float& f3);
-  virtual void setParameter3f(const int programIndex, const int parameterIndex,
+  virtual void setParameter3f(int programIndex, int parameterIndex,
                               const float& f1, const float& f2, const float& f3);
-  virtual void setParameter4f(const int programIndex, const char* parameterName,
+  virtual void setParameter4f(int programIndex, const char* parameterName,
                               const float& f1, const float& f2, const float& f3, const float& f4);
-  virtual void setParameter4f(const int programIndex, const int parameterIndex,
+  virtual void setParameter4f(int programIndex, int parameterIndex,
                               const float& f1, const float& f2, const float& f3, const float& f4);
 
-  virtual void setParameter1i(const int programIndex, const char* parameterName,
+  virtual void setParameter1i(int programIndex, const char* parameterName,
                               const int& i1);
-  virtual void setParameter1i(const int programIndex, const int parameterIndex,
+  virtual void setParameter1i(int programIndex, int parameterIndex,
                               const int& i1);
-  virtual void setParameter2i(const int programIndex, const char* parameterName,
+  virtual void setParameter2i(int programIndex, const char* parameterName,
                               const int& i1, const int& i2);
-  virtual void setParameter3i(const int programIndex, const char* parameterName,
+  virtual void setParameter3i(int programIndex, const char* parameterName,
                               const int& i1, const int& i2, const int& i3);
-  virtual void setParameter4i(const int programIndex, const char* parameterName,
+  virtual void setParameter4i(int programIndex, const char* parameterName,
                               const int& i1, const int& i2, const int& i3, const int& i4);
 
-  virtual void setParameter1fv(const int programIndex, const char* parameterName,
+  virtual void setParameter1fv(int programIndex, const char* parameterName,
                                const float*& fv);
-  virtual void setParameter2fv(const int programIndex, const char* parameterName,
+  virtual void setParameter2fv(int programIndex, const char* parameterName,
                                const float*& fv);
-  virtual void setParameter3fv(const int programIndex, const char* parameterName,
+  virtual void setParameter3fv(int programIndex, const char* parameterName,
                                const float*& fv);
-  virtual void setParameter4fv(const int programIndex, const char* parameterName,
+  virtual void setParameter4fv(int programIndex, const char* parameterName,
                                const float*& fv);
 
-  virtual void setParameter1iv(const int programIndex, const char* parameterName,
+  virtual void setParameter1iv(int programIndex, const char* parameterName,
                                const int*& iv);
-  virtual void setParameter2iv(const int programIndex, const char* parameterName,
+  virtual void setParameter2iv(int programIndex, const char* parameterName,
                                const int*& iv);
-  virtual void setParameter3iv(const int programIndex, const char* parameterName,
+  virtual void setParameter3iv(int programIndex, const char* parameterName,
                                const int*& iv);
-  virtual void setParameter4iv(const int programIndex, const char* parameterName,
+  virtual void setParameter4iv(int programIndex, const char* parameterName,
                                const int*& iv);
 
-  virtual void setArrayParameter1f(const int programIndex, const char* parameterName, const int arrayIndex,
+  virtual void setArrayParameter1f(int programIndex, const char* parameterName, int arrayIndex,
                                    const float& f1);
-  virtual void setArrayParameter2f(const int programIndex, const char* parameterName, const int arrayIndex,
+  virtual void setArrayParameter2f(int programIndex, const char* parameterName, int arrayIndex,
                                    const float& f1, const float& f2);
-  virtual void setArrayParameter3f(const int programIndex, const char* parameterName, const int arrayIndex,
+  virtual void setArrayParameter3f(int programIndex, const char* parameterName, int arrayIndex,
                                    const float& f1, const float& f2, const float& f3);
-  virtual void setArrayParameter3f(const int programIndex, const int parameterIndex, const int arrayIndex,
+  virtual void setArrayParameter3f(int programIndex, int parameterIndex, int arrayIndex,
                                    const float& f1, const float& f2, const float& f3);
-  virtual void setArrayParameter4f(const int programIndex, const char* parameterName, const int arrayIndex,
+  virtual void setArrayParameter4f(int programIndex, const char* parameterName, int arrayIndex,
                                    const float& f1, const float& f2, const float& f3, const float& f4);
 
-  virtual void setArrayParameter1i(const int programIndex, const char* parameterName, const int arrayIndex,
+  virtual void setArrayParameter1i(int programIndex, const char* parameterName, int arrayIndex,
                                    const int& i1);
-  virtual void setArrayParameter1i(const int programIndex, const int parameterIndex, const int arrayIndex,
+  virtual void setArrayParameter1i(int programIndex, int parameterIndex, int arrayIndex,
                                    const int& i1);
-  virtual void setArrayParameter2i(const int programIndex, const char* parameterName, const int arrayIndex,
+  virtual void setArrayParameter2i(int programIndex, const char* parameterName, int arrayIndex,
                                    const int& i1, const int& i2);
-  virtual void setArrayParameter3i(const int programIndex, const char* parameterName, const int arrayIndex,
+  virtual void setArrayParameter3i(int programIndex, const char* parameterName, int arrayIndex,
                                    const int& i1, const int& i2, const int& i3);
-  virtual void setArrayParameter4i(const int programIndex, const char* parameterName, const int arrayIndex,
+  virtual void setArrayParameter4i(int programIndex, const char* parameterName, int arrayIndex,
                                    const int& i1, const int& i2, const int& i3, const int& i4);
 
-  virtual void setArray3f(const int programIndex, const int parameterIndex, const float* array, const int count);
+  virtual void setArray3f(int programIndex, int parameterIndex, const float* array, int count);
 
-  virtual void setArray1i(const int programIndex, const int parameterIndex, const int* array, const int count);
+  virtual void setArray1i(int programIndex, int parameterIndex, const int* array, int count);
 
-  virtual void setParameterTexId(const int programIndex, const char* parameterName, const unsigned int& ui1);
+  virtual void setParameterTexId(int programIndex, const char* parameterName, const unsigned int& ui1);
 
   /*!
    * \brief         Init parameter with model view projection matrix.
@@ -218,9 +218,9 @@ public:
    * \param         programIndex An index into the program stack.
    * \param         parameterName Name of the parameter to modify.
    */
-  virtual void setModelViewProj(const int programIndex, const char* parameterName);
+  virtual void setModelViewProj(int programIndex, const char* parameterName);
 
-  virtual bool parametersInitialized(const int programIndex) const;
+  virtual bool parametersInitialized(int programIndex) const;
 protected:
   // Non-public data.
 

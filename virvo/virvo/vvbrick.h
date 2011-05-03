@@ -73,8 +73,8 @@ public:
 
   void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const;
   bool upload3DTexture(const GLuint& texName, const uchar* texData,
-                       const GLenum texFormat, const GLint internalTexFormat,
-                       const bool interpolation = true) const;
+                       GLenum texFormat, GLint internalTexFormat,
+                       bool interpolation = true) const;
 
   vvAABB getAABB() const
   {

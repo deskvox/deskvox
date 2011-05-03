@@ -206,7 +206,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
                           vvVector3& origin,
                           const vvVector3& eye,
                           const vvMatrix& invMV,
-                          const bool isOrtho = false) const;
+                          bool isOrtho = false) const;
     void calcProbeDims(vvVector3&, vvVector3&, vvVector3&, vvVector3&) const;
 
     // Class Methods:
@@ -244,7 +244,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual void  setViewingDirection(const vvVector3*);
     virtual void  setObjectDirection(const vvVector3*);
     virtual void  setROIEnable(bool);
-    virtual void  setSphericalROI(const bool sphericalROI);
+    virtual void  setSphericalROI(bool sphericalROI);
     virtual bool  isROIEnabled() const;
     virtual void  setProbePosition(const vvVector3*);
     virtual void  getProbePosition(vvVector3*) const;

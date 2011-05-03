@@ -248,7 +248,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLboolean glsSharedTexPal;                    ///< stores GL_SHARED_TEXTURE_PALETTE_EXT
 
     void makeLUTTexture(const GLuint& lutName, uchar* lutData) const;
-    ErrorType makeTextures2D(const int axes);
+    ErrorType makeTextures2D(int axes);
 
     ErrorType setDisplayNames(const char** displayNames, const unsigned int numNames);
     ErrorType dispatchThreadedWGLContexts(); 
@@ -293,17 +293,17 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void renderTex2DSlices(float);
     void renderTex2DCubic(AxisType, float, float, float);
     void generateDebugColors();
-    VoxelType findBestVoxelType(const VoxelType) const;
-    GeometryType findBestGeometry(const GeometryType, const VoxelType) const;
-    void updateLUT(const float, GLuint& lutName, uchar*& lutData, float& lutDistance);
+    VoxelType findBestVoxelType(VoxelType) const;
+    GeometryType findBestGeometry(GeometryType, const VoxelType) const;
+    void updateLUT(float, GLuint& lutName, uchar*& lutData, float& lutDistance);
     int  getLUTSize(int*) const;
     int  getPreintTableSize() const;
     void enableNVShaders() const;
     void disableNVShaders() const;
     void enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]) const;
     void disableFragProg() const;
-    void enableTexture(const GLenum target) const;
-    void disableTexture(const GLenum target) const;
+    void enableTexture(GLenum target) const;
+    void disableTexture(GLenum target) const;
     bool testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat) const;
     bool testBrickVisibility(const vvBrick*) const;
     bool intersectsFrustum(const vvVector3 &min, const vvVector3 &max) const;
@@ -316,7 +316,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void computeBrickSize();
     void calcNumTexels();
     void calcNumBricks();
-    void initVertArray(const int numSlices);
+    void initVertArray(int numSlices);
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
     void evaluateLocalIllumination(vvShaderManager*& pixelShader, const vvVector3& normal);
   public:
@@ -334,26 +334,26 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void  fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vector<BrickList>& brickList) const;
     void  activateClippingPlane();
     void  deactivateClippingPlane();
-    void  setNumLights(const int);
+    void  setNumLights(int);
     bool  instantClassification() const;
     void  setViewingDirection(const vvVector3*);
     void  setObjectDirection(const vvVector3*);
     void  setParameter(ParameterType param, float newValue);
     float getParameter(ParameterType param) const;
-    static bool isSupported(const GeometryType);
-    static bool isSupported(const VoxelType);
-    bool isSupported(const FeatureType) const;
+    static bool isSupported(GeometryType);
+    static bool isSupported(VoxelType);
+    bool isSupported(FeatureType) const;
     GeometryType getGeomType() const;
     VoxelType getVoxelType() const;
     int  getCurrentShader() const;
-    void setCurrentShader(const int);
+    void setCurrentShader(int);
     void renderQualityDisplay();
     void printLUT() const;
     void updateBrickGeom();
-    void setComputeBrickSize(const bool);
-    void setBrickSize(const int);
+    void setComputeBrickSize(bool);
+    void setBrickSize(int);
     int getBrickSize() const;
-    void setTexMemorySize(const int);
+    void setTexMemorySize(int);
     int getTexMemorySize() const;
     vvBspTree* getBspTree() const;
     void setAABBMask(vvAABB* aabbMask);
@@ -362,7 +362,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void setIsSlave(const bool isSlave);
     unsigned char* getHeightFieldData(float[4][3], int&, int&);
     float getManhattenDist(float[3], float[3]) const;
-    void prepareDistributedRendering(const int numSlaveNodes);
+    void prepareDistributedRendering(int numSlaveNodes);
     std::vector<BrickList>** getBrickListsToDistribute();
     int getNumBrickListsToDistribute() const;
     void calcProjectedScreenRects();

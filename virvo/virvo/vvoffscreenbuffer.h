@@ -21,9 +21,8 @@
 class VIRVOEXPORT vvOffscreenBuffer : public vvRenderTarget
 {
 public:
-  vvOffscreenBuffer(const float scale, const BufferPrecision precision);
-  vvOffscreenBuffer(const int w, const int h,
-                    const float scale, const BufferPrecision precision);
+  vvOffscreenBuffer(float scale, BufferPrecision precision);
+  vvOffscreenBuffer(int w, int h, float scale, BufferPrecision precision);
   virtual ~vvOffscreenBuffer();
 
   virtual void initForRender();
@@ -40,19 +39,19 @@ public:
    * \param         w Width of the hardware buffer viewport.
    * \param         h Height of the hardware buffer viewport.
    */
-  virtual void writeBack(const int w = -1, const int h = -1);
-  virtual void resize(const int w, const int h);
+  virtual void writeBack(int w = -1, int h = -1);
+  virtual void resize(int w, int h);
   virtual void clearBuffer();
 
   void bindFramebuffer() const;
   void unbindFramebuffer() const;
   void bindTexture() const;
 
-  void setScale(const float scale);
-  void setPreserveDepthBuffer(const bool preserveDepthBuffer);
-  void setUseNVDepthStencil(const bool useNVDepthStencil);
+  void setScale(float scale);
+  void setPreserveDepthBuffer(bool preserveDepthBuffer);
+  void setUseNVDepthStencil(bool useNVDepthStencil);
   void setPrecision(const BufferPrecision& precision);
-  void setInterpolation(const bool interpolation);
+  void setInterpolation(bool interpolation);
 
   int getBufferWidth() const;
   int getBufferHeight() const;
@@ -98,16 +97,15 @@ private:
   bool _initialized;
   bool _updatePosted;
 
-  void init(const int w, const int h,
-            const float scale, const BufferPrecision precision);
+  void init(int w, int h, float scale, BufferPrecision precision);
   void initFbo();
   void genColorAndDepthTextures();
   void freeGLResources() const;
-  int getScaled(const int v) const;
+  int getScaled(int v) const;
   void doScale();
   void update();
   void storeColorBuffer();
-  void storeDepthBuffer(const int scaledWidth, const int scaledHeight);
+  void storeDepthBuffer(int scaledWidth, int scaledHeight);
   void renderToViewAlignedQuad() const;
   void writeBackDepthBuffer() const;
 };

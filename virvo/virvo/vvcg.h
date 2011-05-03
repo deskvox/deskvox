@@ -55,16 +55,16 @@ public:
 
   virtual bool loadShader(const char* shaderFileName, const ShaderType& shaderType);
   virtual bool loadShaderByString(const char* shaderString, const ShaderType& shaderType);
-  virtual void enableShader(const int programIndex);
-  virtual void disableShader(const int programIndex);
-  virtual void initParameters(const int index,
+  virtual void enableShader(int programIndex);
+  virtual void disableShader(int programIndex);
+  virtual void initParameters(int index,
                               const char** parameterNames,
                               const vvShaderParameterType* parameterTypes,
-                              const int parameterCount);
+                              int parameterCount);
   virtual void printCompatibilityInfo() const;
 
-  virtual void enableTexture(const int programIndex, const char* textureParameterName);
-  virtual void disableTexture(const int programIndex, const char* textureParameterName);
+  virtual void enableTexture(int programIndex, const char* textureParameterName);
+  virtual void disableTexture(int programIndex, const char* textureParameterName);
 
   /*!
    * \brief         Set a scalar cg float parameter.
@@ -74,39 +74,39 @@ public:
    * \param         programIndex Index of the program on the program stack.
    * \param         parameterIndex Index of the param on the param stack for the program.
    */
-  virtual void setParameter1f(const int programIndex, const char* parameterName,
+  virtual void setParameter1f(int programIndex, const char* parameterName,
                               const float& f1);
-  virtual void setParameter1f(const int programIndex, const int parameterIndex,
+  virtual void setParameter1f(int programIndex, int parameterIndex,
                               const float& f1);
 
-  virtual void setParameter1i(const int programIndex, const char* parameterName,
+  virtual void setParameter1i(int programIndex, const char* parameterName,
                               const int& i1);
-  virtual void setParameter1i(const int programIndex, const int parameterIndex,
+  virtual void setParameter1i(int programIndex, int parameterIndex,
                               const int& i1);
 
-  virtual void setParameter3f(const int programIndex, const char* parameterName,
+  virtual void setParameter3f(int programIndex, const char* parameterName,
                               const float& f1, const float& f2, const float& f3);
-  virtual void setParameter3f(const int programIndex, const int parameterIndex,
+  virtual void setParameter3f(int programIndex, int parameterIndex,
                               const float& f1, const float& f2, const float& f3);
 
-  virtual void setParameter4f(const int programIndex, const char* parameterName,
+  virtual void setParameter4f(int programIndex, const char* parameterName,
                               const float& f1, const float& f2, const float& f3, const float& f4);
-  virtual void setParameter4f(const int programIndex, const int parameterIndex,
+  virtual void setParameter4f(int programIndex, int parameterIndex,
                               const float& f1, const float& f2, const float& f3, const float& f4);
 
-  virtual void setArrayParameter3f(const int programIndex, const char* parameterName, const int arrayIndex,
+  virtual void setArrayParameter3f(int programIndex, const char* parameterName, int arrayIndex,
                                    const float& f1, const float& f2, const float& f3);
-  virtual void setArrayParameter3f(const int programIndex, const int parameterIndex, const int arrayIndex,
+  virtual void setArrayParameter3f(int programIndex, int parameterIndex, int arrayIndex,
                                    const float& f1, const float& f2, const float& f3);
 
-  virtual void setArrayParameter1i(const int programIndex, const char* parameterName, const int arrayIndex,
+  virtual void setArrayParameter1i(int programIndex, const char* parameterName, int arrayIndex,
                                    const int& i1);
-  virtual void setArrayParameter1i(const int programIndex, const int parameterIndex, const int arrayIndex,
+  virtual void setArrayParameter1i(int programIndex, int parameterIndex, int arrayIndex,
                                    const int& i1);
 
-  virtual void setParameterTexId(const int programIndex, const char* parameterName, const unsigned int& ui1);
+  virtual void setParameterTexId(int programIndex, const char* parameterName, const unsigned int& ui1);
 
-  virtual void setModelViewProj(const int programIndex, const char* parameterName);
+  virtual void setModelViewProj(int programIndex, const char* parameterName);
 private:
   // Cg specific stuff.
   CGcontext _cgContext;

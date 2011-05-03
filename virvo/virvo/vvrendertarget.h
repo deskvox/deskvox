@@ -40,8 +40,8 @@ public:
   virtual ~vvRenderTarget();
 
   virtual void initForRender();
-  virtual void writeBack(const int w = -1, const int h = -1);
-  virtual void resize(const int w, const int h);
+  virtual void writeBack(int w = -1, int h = -1);
+  virtual void resize(int w, int h);
   virtual void clearBuffer();
 
   inline RenderTargetType getType() const { return _type; }

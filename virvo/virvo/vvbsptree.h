@@ -95,7 +95,7 @@ public:
    *                with which thread.
    * \param         id The integer id.
    */
-  void setId(const int id);
+  void setId(int id);
   /*!
    * \brief         Set first son.
    *
@@ -132,7 +132,7 @@ public:
    *                parent node.
    * \param         percent The volume share relative to the share of the parent.
    */
-  void setPercent(const float percent);
+  void setPercent(float percent);
   /*!
    * \brief         Get a distinct integer id.
    *
@@ -216,7 +216,7 @@ public:
    * \return        A pointer to the screen rect.
    */
   vvRect* getProjectedScreenRect(const vvVector3* probeMin = 0, const vvVector3* probeMax = 0,
-                                 const bool recalculate = false);
+                                 bool recalculate = false);
   /*!
    * \brief         Debug function. Calculate the contained volume.
    *
@@ -273,7 +273,7 @@ public:
    * \param         percent2 The share for half space 2.
    */
   static vvHalfSpace* getAABBHalfSpaces(const std::vector<BrickList>& bricks,
-                                        const float percent1, const float percent2);
+                                        float percent1, float percent2);
 private:
 };
 
@@ -288,7 +288,7 @@ private:
 class vvBspTree
 {
 public:
-  vvBspTree(const float* partitioning, const int length, const std::vector<BrickList>& bricks);
+  vvBspTree(const float* partitioning, int length, const std::vector<BrickList>& bricks);
   virtual ~vvBspTree();
 
   void traverse(const vvVector3& pos);
@@ -335,10 +335,10 @@ private:
    * \param         startIdx The start index into the partitioning array.
    * \param         endIdx The end index into the partitioning array.
    */
-  void buildHierarchy(vvHalfSpace* node, const float* partitioning, const int length,
-                      const int startIdx, const int endIdx);
+  void buildHierarchy(vvHalfSpace* node, const float* partitioning,
+                      int length, int startIdx, int endIdx);
   void distributeBricks(vvHalfSpace* node, const std::vector<BrickList>& brickList);
-  void print(vvHalfSpace* node, const int indent);
+  void print(vvHalfSpace* node, int indent);
   void traverse(const vvVector3& pos, vvHalfSpace* node) const;
 };
 

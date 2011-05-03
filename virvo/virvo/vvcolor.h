@@ -30,7 +30,7 @@ class VIRVOEXPORT vvColor : public vvVector3
 {
   public:
     vvColor();
-    vvColor(const float, const float, const float);
+    vvColor(float, float, float);
     vvColor operator+(const vvColor) const;
     void setRGB(float, float, float);
     void setHSB(float, float, float);

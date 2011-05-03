@@ -68,54 +68,54 @@ public:
   /** TODO: implement this method
     @param Intention: index into a vector of shader programs and use the one found there.
    */
-  void enableShader(const int index);
+  void enableShader(int index);
 
   /** TODO: implement this method
 
     @param Intention: index into a vector of shader programs and disable the one found there.
    */
-  void disableShader(const int index);
+  void disableShader(int index);
 
   /** TODO: implement this method
 
     @param Intention: build up a mapping from names to uniform parameters.
    */
-  void initParameters(const int index,
+  void initParameters(int index,
                       const char** parameterNames,
                       const vvShaderParameterType* parameterTypes,
-                      const int parameterCount);
+                      int parameterCount);
 
   /** TODO: implement this method
 
     @param Intention: initialize a stack with parameter handles to refer to.
    */
-  void initParameters(const int programIndex);
+  void initParameters(int programIndex);
 
   void printCompatibilityInfo() const;
 
-  virtual void setParameter1f(const int programIndex, const char* parameterName,
+  virtual void setParameter1f(int programIndex, const char* parameterName,
                               const float& f1);
-  virtual void setParameter1f(const int programIndex, const int parameterIndex,
+  virtual void setParameter1f(int programIndex, int parameterIndex,
                               const float& f1);
 
-  virtual void setParameter3f(const int programIndex, const char* parameterName,
+  virtual void setParameter3f(int programIndex, const char* parameterName,
                               const float& f1, const float& f2, const float& f3);
-  virtual void setParameter3f(const int programIndex, const int parameterIndex,
+  virtual void setParameter3f(int programIndex, int parameterIndex,
                               const float& f1, const float& f2, const float& f3);
 
-  virtual void setParameter4f(const int programIndex, const char* parameterName,
+  virtual void setParameter4f(int programIndex, const char* parameterName,
                               const float& f1, const float& f2, const float& f3, const float& f4);
-  virtual void setParameter4f(const int programIndex, const int parameterIndex,
+  virtual void setParameter4f(int programIndex, int parameterIndex,
                               const float& f1, const float& f2, const float& f3, const float& f4);
 
-  virtual void setParameter1i(const int programIndex, const char* parameterName,
+  virtual void setParameter1i(int programIndex, const char* parameterName,
                               const int& i1);
-  virtual void setParameter1i(const int programIndex, const int parameterIndex,
+  virtual void setParameter1i(int programIndex, int parameterIndex,
                               const int& i1);
 
-  virtual void setArray3f(const int programIndex, const int parameterIndex, const float* array, const int count);
+  virtual void setArray3f(int programIndex, int parameterIndex, const float* array, int count);
 
-  virtual void setArray1i(const int programIndex, const int parameterIndex, const int* array, const int count);
+  virtual void setArray1i(int programIndex, int parameterIndex, const int* array, int count);
 
   /** returns a handle to a shader program
 
