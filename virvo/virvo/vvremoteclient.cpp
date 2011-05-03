@@ -33,11 +33,13 @@ vvRemoteClient::vvRemoteClient(vvRenderState renderState,
     _slavePorts(slavePorts),
     _slaveFileNames(slaveFileNames)
 {
-
+  vvDebugMsg::msg(1, "vvRemoteClient::vvRemoteClient()");
 }
 
 vvRemoteClient::~vvRemoteClient()
 {
+  vvDebugMsg::msg(1, "vvRemoteClient::~vvRemoteClient()");
+
   clearImages();
   delete _images;
 }
@@ -45,6 +47,8 @@ vvRemoteClient::~vvRemoteClient()
 vvRemoteClient::ErrorType vvRemoteClient::initSockets(const int defaultPort, const bool redistributeVolData,
                                                       vvVolDesc*& vd)
 {
+  vvDebugMsg::msg(1, "vvRemoteClient::initSockets()");
+
   const bool loadVolumeFromFile = !redistributeVolData;
   for (size_t s=0; s<_slaveNames.size(); ++s)
   {
@@ -113,11 +117,15 @@ vvRemoteClient::ErrorType vvRemoteClient::initSockets(const int defaultPort, con
 
 void vvRemoteClient::setBackgroundColor(const vvVector3& bgColor)
 {
+  vvDebugMsg::msg(1, "vvRemoteClient::setBackgroundColor");
+
   _bgColor = bgColor;
 }
 
 void vvRemoteClient::resize(const int w, const int h)
 {
+  vvDebugMsg::msg(1, "vvRemoteClient::resize()");
+
   for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
@@ -142,6 +150,8 @@ void vvRemoteClient::setCurrentFrame(const int index)
 
 void vvRemoteClient::setMipMode(const int mipMode)
 {
+  vvDebugMsg::msg(3, "vvRemoteClient::setMipMode()");
+
   for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_MIPMODE) == vvSocket::VV_OK)
@@ -263,6 +273,7 @@ void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const f
 
 void vvRemoteClient::adjustQuality(const float quality)
 {
+  vvDebugMsg::msg(3, "vvRemoteClient::adjustQuality()");
   for (size_t s=0; s<_sockets.size(); ++s)
   {
     if (_sockets[s]->putCommReason(vvSocketIO::VV_QUALITY) == vvSocket::VV_OK)
@@ -286,6 +297,7 @@ void vvRemoteClient::setInterpolation(const bool interpolation)
 
 void vvRemoteClient::clearImages()
 {
+  vvDebugMsg::msg(3, "vvRemoteClient::clearImages()");
   for (std::vector<vvImage*>::const_iterator it = _images->begin(); it != _images->end();
        ++it)
   {
@@ -295,5 +307,7 @@ void vvRemoteClient::clearImages()
 
 void vvRemoteClient::createImageVector()
 {
+  vvDebugMsg::msg(1, "vvRemoteClient::createImageVector()");
+
   _images = new std::vector<vvImage*>(_sockets.size());
 }

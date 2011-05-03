@@ -32,6 +32,8 @@ vvClusterClient::vvClusterClient(vvRenderState renderState,
                                  const char* fileName)
   : vvRemoteClient(renderState, slaveNames, slavePorts, slaveFileNames, fileName)
 {
+  vvDebugMsg::msg(1, "vvClusterClient::vvClusterClient()");
+
   _threads = NULL;
   _threadData = NULL;
   _visitor = new vvSlaveVisitor();
@@ -39,12 +41,16 @@ vvClusterClient::vvClusterClient(vvRenderState renderState,
 
 vvClusterClient::~vvClusterClient()
 {
+  vvDebugMsg::msg(1, "vvClusterClient::~vvClusterClient()");
+
   destroyThreads();
   delete _visitor;
 }
 
 vvRemoteClient::ErrorType vvClusterClient::setRenderer(vvRenderer* renderer)
 {
+  vvDebugMsg::msg(1, "vvClusterClient::setRenderer()");
+
   vvTexRend* texRend = dynamic_cast<vvTexRend*>(renderer);
   if (texRend == NULL)
   {
@@ -83,6 +89,8 @@ vvRemoteClient::ErrorType vvClusterClient::setRenderer(vvRenderer* renderer)
 
 vvRemoteClient::ErrorType vvClusterClient::render()
 {
+  vvDebugMsg::msg(3, "vvClusterClient::render()");
+
   vvTexRend* renderer = dynamic_cast<vvTexRend*>(_renderer);
 
   if (renderer == NULL)
@@ -157,6 +165,8 @@ vvRemoteClient::ErrorType vvClusterClient::render()
 
 void vvClusterClient::exit()
 {
+  vvDebugMsg::msg(1, "vvClusterClient::exit()");
+
   for (size_t s=0; s<_sockets.size(); ++s)
   {
     _sockets[s]->putCommReason(vvSocketIO::VV_EXIT);
@@ -166,6 +176,8 @@ void vvClusterClient::exit()
 
 void vvClusterClient::createThreads()
 {
+  vvDebugMsg::msg(1, "vvClusterClient::createThreads()");
+
   _visitor->generateTextureIds(_sockets.size());
   _threadData = new ThreadArgs[_sockets.size()];
   _threads = new pthread_t[_sockets.size()];
@@ -182,6 +194,8 @@ void vvClusterClient::createThreads()
 
 void vvClusterClient::destroyThreads()
 {
+  vvDebugMsg::msg(1, "vvClusterClient::destroyThreads()");
+
   pthread_barrier_destroy(&_barrier);
   for (size_t s=0; s<_sockets.size(); ++s)
   {
@@ -195,6 +209,8 @@ void vvClusterClient::destroyThreads()
 
 void* vvClusterClient::getImageFromSocket(void* threadargs)
 {
+  vvDebugMsg::msg(1, "vvClusterClient::getImageFromSocket()");
+
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
 
   while (1)

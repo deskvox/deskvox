@@ -28,21 +28,25 @@ using std::endl;
 vvRemoteServer::vvRemoteServer()
   : _socket(0)
 {
-
+  vvDebugMsg::msg(1, "vvRemoteServer::vvRemoteServer()");
 }
 
 vvRemoteServer::~vvRemoteServer()
 {
-
+  vvDebugMsg::msg(1, "vvRemoteServer::~vvRemoteServer()");
 }
 
 bool vvRemoteServer::getLoadVolumeFromFile() const
 {
-    return _loadVolumeFromFile;
+  vvDebugMsg::msg(1, "vvRemoteServer::getLoadVolumeFromFile()");
+
+  return _loadVolumeFromFile;
 }
 
 vvRemoteServer::ErrorType vvRemoteServer::initSocket(const int port, const vvSocket::SocketType st)
 {
+  vvDebugMsg::msg(1, "vvRemoteServer::initSocket()");
+
   delete _socket;
   _socket = new vvSocketIO(port, st);
   _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
@@ -72,6 +76,8 @@ vvRemoteServer::ErrorType vvRemoteServer::initSocket(const int port, const vvSoc
 
 vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
 {
+  vvDebugMsg::msg(1, "vvRemoteServer::initData()");
+
   _socket->getBool(_loadVolumeFromFile);
 
   if (_loadVolumeFromFile)
@@ -119,6 +125,8 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
 
 void vvRemoteServer::renderLoop(vvRenderer* renderer)
 {
+  vvDebugMsg::msg(1, "vvRemoteServer::renderLoop()");
+
   vvSocketIO::CommReason commReason;
   vvMatrix pr;
   vvMatrix mv;

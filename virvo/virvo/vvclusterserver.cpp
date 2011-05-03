@@ -33,27 +33,35 @@ vvClusterServer::vvClusterServer(const BufferPrecision compositingPrecision)
   : vvRemoteServer(),
     _offscreenBuffer(0), _compositingPrecision(compositingPrecision)
 {
-
+  vvDebugMsg::msg(1, "vvClusterServer::vvClusterServer()");
 }
 
 vvClusterServer::~vvClusterServer()
 {
+  vvDebugMsg::msg(1, "vvClusterServer::~vvClusterServer()");
+
   delete _offscreenBuffer;
   delete _socket;
 }
 
 void vvClusterServer::setCompositingPrecision(const BufferPrecision compositingPrecision)
 {
+  vvDebugMsg::msg(1, "vvClusterServer::setCompositingPrecision()");
+
   _compositingPrecision = compositingPrecision;
 }
 
 BufferPrecision vvClusterServer::getCompositingPrecision() const
 {
+  vvDebugMsg::msg(1, "vvClusterServer::getCompositingPrecision()");
+
   return _compositingPrecision;
 }
 
 vvRemoteServer::ErrorType vvClusterServer::initBricks(std::vector<vvBrick*>& bricks) const
 {
+  vvDebugMsg::msg(1, "vvClusterServer::initBricks()");
+
   const vvSocket::ErrorType err = _socket->getBricks(bricks);
   switch (err)
   {
@@ -69,6 +77,8 @@ vvRemoteServer::ErrorType vvClusterServer::initBricks(std::vector<vvBrick*>& bri
 
 void vvClusterServer::renderLoop(vvRenderer* renderer)
 {
+  vvDebugMsg::msg(1, "vvClusterServer::renderLoop()");
+
   _offscreenBuffer = new vvOffscreenBuffer(1.0f, _compositingPrecision);
   _offscreenBuffer->initForRender();
 
@@ -81,7 +91,7 @@ void vvClusterServer::renderLoop(vvRenderer* renderer)
 */
 void vvClusterServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 {
-  vvDebugMsg::msg(3, "vvRenderSlave::renderImage()");
+  vvDebugMsg::msg(3, "vvClusterServer::renderImage()");
 
   _offscreenBuffer->bindFramebuffer();
   _offscreenBuffer->clearBuffer();
@@ -124,5 +134,7 @@ void vvClusterServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* render
 
 void vvClusterServer::resize(const int w, const int h)
 {
+  vvDebugMsg::msg(1, "vvClusterServer::resize()");
+
   _offscreenBuffer->resize(w, h);
 }
