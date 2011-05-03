@@ -25,6 +25,10 @@
 
 #include "vvsocket.h"
 
+#ifndef _WIN32
+#include <signal.h>
+#endif
+
 using namespace std;
 
 //----------------------------------------------------------------------------
@@ -435,6 +439,10 @@ ssize_t vvSocket::writen_tcp(const char* buffer, size_t size)
 {
   size_t nleft;
   ssize_t nwritten;
+
+#ifndef _WIN32
+  ::signal(SIGPIPE, peerunreachable);
+#endif
 
   nleft = size;
   while(nleft > 0)
@@ -1406,6 +1414,15 @@ Sigfunc *vvSocket::Signal(int signo, Sigfunc *func)
 void vvSocket::nonameserver(int)
 {
   cerr<<"Nameserver not found. Contact your system administrator! Waiting for timeout..."<<endl;
+  return;
+}
+
+//----------------------------------------------------------------------------
+/** Error message if SIGPIPE is issued on write() / peer closed the connection.
+ */
+void vvSocket::peerunreachable(int)
+{
+  cerr<<"Caught signal SIGPIPE. Peer unreachable."<<endl;
   return;
 }
 

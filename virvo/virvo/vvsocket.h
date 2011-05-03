@@ -182,6 +182,7 @@ class VIRVOEXPORT vvSocket
     Sigfunc *signal(int, Sigfunc *);
     Sigfunc *Signal(int, Sigfunc *);
     static void nonameserver(int );
+    static void peerunreachable(int );
     int writeable_timeo();
     int readable_timeo();
     ErrorType read_timeo(uchar*, size_t);
