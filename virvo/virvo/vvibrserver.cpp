@@ -29,7 +29,7 @@
 #include "vvbonjour/vvbonjourregistrar.h"
 #endif
 
-#ifdef HAVE_CUDA
+#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
 vvIbrServer::vvIbrServer(const vvImage2_5d::DepthPrecision dp,
                          const vvImage2_5d::IbrDepthScale ds,
                          const vvRayRend::IbrMode mode)
