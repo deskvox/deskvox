@@ -2659,6 +2659,8 @@ void vvVolDesc::makeInfoString(char* infoString)
     vox[0], vox[1], vox[2], (frames>1) ? "voxels per frame" : "voxels",
     bpc, (bpc!=1) ? "bytes" : "byte", "per channel",
     chan, (chan!=1) ? "channels" : "channel");
+
+  delete[] basename;
 }
 
 //----------------------------------------------------------------------------

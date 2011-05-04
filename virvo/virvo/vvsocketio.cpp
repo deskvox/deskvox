@@ -407,6 +407,8 @@ vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick)
   brick->texMin[1] = vvToolshed::readFloat(&buffer[96]);
   brick->texMin[2] = vvToolshed::readFloat(&buffer[100]);
 
+  delete[] buffer;
+
   return vvSocket::VV_OK;
 }
 
@@ -465,6 +467,8 @@ vvSocket::ErrorType vvSocketIO::putBrick(vvBrick* brick)
     delete[] buffer;
     return retval;
   }
+
+  delete[] buffer;
 
   return vvSocket::VV_OK;
 }
@@ -728,6 +732,7 @@ vvSocket::ErrorType vvSocketIO::getFileName(char*& fn)
     return retval;
   }
 
+  delete[] fn;
   fn = new char[len + 1];
 
   for (size_t i=0; i<len; ++i)
@@ -735,6 +740,8 @@ vvSocket::ErrorType vvSocketIO::getFileName(char*& fn)
     fn[i] = (char)buffer[i];
   }
   fn[len] = '\0';
+
+  delete[] buffer;
 
   // TODO: check if this is really a file name... .
 
@@ -764,6 +771,9 @@ vvSocket::ErrorType vvSocketIO::putFileName(const char* fn)
     delete[] buffer;
     return retval;
   }
+
+  delete[] buffer;
+
   return vvSocket::VV_OK;
 }
 

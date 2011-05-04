@@ -41,9 +41,12 @@ vvRenderContext::vvRenderContext(const char* displayName)
 
 vvRenderContext::~vvRenderContext()
 {
+  vvDebugMsg::msg(1, "vvRenderContext::~vvRenderContext");
+
   if (_initialized)
   {
 #ifdef HAVE_X11
+    glXDestroyContext(_archData->display, _archData->glxContext);
     XCloseDisplay(_archData->display);
 #endif
   }
@@ -121,6 +124,8 @@ void vvRenderContext::init(const char* displayName)
       cerr << "Couldn't create OpenGL context" << endl;
       _initialized = false;
     }
+
+    delete vi;
   }
   else
   {

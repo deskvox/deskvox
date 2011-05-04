@@ -489,6 +489,7 @@ vvTexRend::~vvTexRend()
 
   delete[] preintTable;
 
+  delete _aabbMask;
 
   for(std::vector<BrickList>::iterator frame = _brickList.begin();
       frame != _brickList.end();
@@ -3740,6 +3741,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     delete[] rgbaLUT;
     delete stopwatch;
 #ifdef HAVE_X11
+    glXDestroyContext(data->display, data->glxContext);
     XCloseDisplay(data->display);
 #endif
   }

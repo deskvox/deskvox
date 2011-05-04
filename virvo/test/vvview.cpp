@@ -288,8 +288,6 @@ void vvView::mainLoop(int argc, char *argv[])
           vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
         }
 
-        ov = new vvObjView();
-
         delete renderer;
         renderer = NULL;
 
@@ -302,6 +300,9 @@ void vvView::mainLoop(int argc, char *argv[])
 
           server->renderLoop(renderer);
           cerr << "Exiting..." << endl;
+
+          delete ov;
+          ov = NULL;
         }
 
         delete vd;

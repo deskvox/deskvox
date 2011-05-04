@@ -91,6 +91,8 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
     _socket->getFileName(fn);
     cerr << "Load volume from file: " << fn << endl;
     vd = new vvVolDesc(fn);
+    delete[] fn;
+    fn = NULL;
 
     vvFileIO* fio = new vvFileIO();
     if (fio->loadVolumeData(vd) != vvFileIO::OK)

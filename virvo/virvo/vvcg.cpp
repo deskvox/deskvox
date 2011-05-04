@@ -18,6 +18,7 @@
 #endif
 
 #include "vvcg.h"
+#include "vvdebugmsg.h"
 #include "vvopengl.h"
 #include "vvtoolshed.h"
 
@@ -38,7 +39,13 @@ vvCg::vvCg()
 
 vvCg::~vvCg()
 {
+  vvDebugMsg::msg(1, "vvCg::~vvCg()");
 
+  if (_cgContext)
+  {
+    // Programs are destroyed along with the context.
+    cgDestroyContext(_cgContext);
+  }
 }
 
 bool vvCg::loadShader(const char* shaderFileName, const ShaderType& shaderType)
