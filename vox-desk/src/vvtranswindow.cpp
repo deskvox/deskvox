@@ -407,7 +407,7 @@ long VVTransferWindow::onCmdNewPoint(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onCmdDeletePoint(FXObject*,FXSelector,void*)
 {
-  list<vvTFPoint*>::iterator iter;
+  std::list<vvTFPoint*>::iterator iter;
   vvTFCustom* cuw;
   
   if ((cuw = dynamic_cast<vvTFCustom*>(_currentWidget)) != NULL)
@@ -968,7 +968,7 @@ void VVTransferWindow::computeHistogram()
 
   if (_isHistogramDirty)
   {
-    cerr << "Calculating histogram...";
+    std::cerr << "Calculating histogram...";
     switch (_tfBook->getCurrent())
     {
       case 0:
@@ -995,7 +995,7 @@ void VVTransferWindow::computeHistogram()
       }
       default: break;
     }
-    cerr << "done" << endl;
+    std::cerr << "done" << std::endl;
     _isHistogramDirty = false;
   }
 }
@@ -1206,7 +1206,7 @@ void VVTransferWindow::drawControlPoints(vvTFCustom* cuw)
 {
   float x,y;
 
-  list<vvTFPoint*>::iterator iter;
+  std::list<vvTFPoint*>::iterator iter;
   for(iter=cuw->_points.begin(); iter!=cuw->_points.end(); iter++) 
   {
     x = cuw->_pos[0] + (*iter)->_pos[0];

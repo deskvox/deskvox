@@ -1,8 +1,8 @@
 AC_PREREQ(2.13)
-AC_INIT(virvo/src/vvvirvo.h)
+AC_INIT(virvo/virvo/vvvirvo.h)
 AM_INIT_AUTOMAKE(deskvox,2.0)
 AC_CONFIG_SRCDIR(configure.ac)
-AM_CONFIG_HEADER(virvo/src/vvconfig.h)
+AM_CONFIG_HEADER(virvo/virvo/vvconfig.h)
 AC_CONFIG_MACRO_DIR([m4])
 
 LT_INIT
@@ -24,7 +24,7 @@ AC_SUBST(LIBVIRVO_VERSION)
 
 AM_INIT_AUTOMAKE(deskvox, $LIBVIRVO_VERSION)
 
-AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS")
+AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS -I virvo/m4")
 
 AM_MAINTAINER_MODE
 
@@ -61,4 +61,4 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 AC_SUBST(LDFLAGS)
 
-AC_OUTPUT(Makefile virvo/Makefile virvo/src/Makefile vox-desk/Makefile vox-desk/src/Makefile)
+AC_OUTPUT(Makefile virvo/Makefile virvo/virvo/Makefile vox-desk/Makefile vox-desk/src/Makefile)
