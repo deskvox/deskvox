@@ -26,7 +26,7 @@ struct ContextArchData;
 class VIRVOEXPORT vvRenderContext : public vvRenderTarget
 {
 public:
-  vvRenderContext();
+  vvRenderContext(const char* displayName = NULL);
   ~vvRenderContext();
 
   bool makeCurrent() const;
@@ -35,7 +35,7 @@ private:
 
   bool _initialized;
 
-  void init();
+  void init(const char* displayName);
 };
 
 #endif // _VV_RENDERCONTEXT_H_

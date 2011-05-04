@@ -31,12 +31,12 @@ struct ContextArchData
 #endif
 };
 
-vvRenderContext::vvRenderContext()
+vvRenderContext::vvRenderContext(const char* displayName)
   : vvRenderTarget()
 {
   _archData = new ContextArchData;
   _initialized = false;
-  init();
+  init(displayName);
 }
 
 vvRenderContext::~vvRenderContext()
@@ -61,10 +61,10 @@ bool vvRenderContext::makeCurrent() const
   return false;
 }
 
-void vvRenderContext::init()
+void vvRenderContext::init(const char* displayName)
 {
 #ifdef HAVE_X11
-  _archData->display = XOpenDisplay(NULL);
+  _archData->display = XOpenDisplay(displayName);
 
   if (_archData->display != NULL)
   {
