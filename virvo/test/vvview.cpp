@@ -781,10 +781,6 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   vvVector3 maxBrickSize(maxBrickSizeX, maxBrickSizeY, maxBrickSizeZ);
   renderState.setParameterV3(vvRenderState::VV_MAX_BRICK_SIZE, maxBrickSize);
 
-  // Multi threading parameters.
-  // These are needed before construction of the renderer so that
-  // additional rendering contexts and x-windows can be created.
-
   switch(rendererType)
   {
     case vvRenderer::SOFTPAR:
