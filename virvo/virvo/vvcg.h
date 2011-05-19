@@ -13,7 +13,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#ifndef _VV_CC_H_
+#ifndef _VV_CG_H_
 #define _VV_CG_H_
 
 #ifdef HAVE_CONFIG_H
