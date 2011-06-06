@@ -1642,7 +1642,8 @@ bool vvCudaSW<Base>::compositeNearest(int fromY, int toY, int firstSlice, int la
    shmsize += Base::vd->vox[Base::principal]*Base::vd->getBPV()*sizeof(Scalar);
 #endif
 
-   if(CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep))
+   CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep);
+   if(compose)
    {
        // do the computation on the device
        compose <<<to.y-from.y, nthreads, shmsize>>>(
@@ -1780,7 +1781,8 @@ bool vvCudaSW<Base>::compositeBilinear(int fromY, int toY, int firstSlice, int l
     shmsize = 0;
 #endif
 
-    if(CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep))
+    CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep);
+    if(compose)
     {
 #ifdef PATCHES
         grid = dim3((to.x-from.x+Patch.x-1)/Patch.x, (to.y-from.y+Patch.y-1)/Patch.y);
@@ -1936,7 +1938,8 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
     vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStart, h_tcStart, sizeof(h_tcStart[0])*2), "cudaMemcpy tcStart");
     vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStep, h_tcStep, sizeof(h_tcStep[0])*2), "cudaMemcpy tcStep");
 
-    if(CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep))
+    CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep);
+    if(compose)
     {
         // do the computation on the device
         compose <<<grid, Patch>>>(
