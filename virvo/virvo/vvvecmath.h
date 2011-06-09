@@ -22,6 +22,7 @@
 #define _VVECMATH_H_
 
 #include <float.h>
+#include <iostream>
 
 #include "vvexport.h"
 
@@ -240,6 +241,32 @@ class vvPlane
     bool isSameSide(const vvVector3&, const vvVector3&) const;
     float dist(const vvVector3&) const;
 };
+
+inline std::ostream& operator<<(std::ostream& out, const vvVector3& v)
+{
+  out << v[0] << " " << v[1] << " " << v[2];
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const vvVector4& v)
+{
+  out << v[0] << " " << v[1] << " " << v[2] << " " << v[3];
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const vvMatrix& m)
+{
+  for (int i = 0; i < 4; ++i)
+  {
+    for (int j = 0; j < 4; ++j)
+    {
+      out << " " << m.e[i][j];
+    }
+    out << "\n";
+  }
+  return out;
+}
+
 #endif
 
 // EOF
