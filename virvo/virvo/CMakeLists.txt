@@ -17,9 +17,8 @@ INCLUDE_DIRECTORIES(
   ${PTHREADW32_INCLUDE_DIR}
   ${GLEW_INCLUDE_DIR}
   ${CG_INCLUDE_DIR}
-  "${CMAKE_CURRENT_SOURCE_DIR}/vvbonjour"
-  "${CMAKE_CURRENT_SOURCE_DIR}/vvmultirend"
-  "${COMMONDIR}/src/kernel"
+  vvbonjour
+  vvmultirend
 )
 
 SET(VIRVO_SOURCES
