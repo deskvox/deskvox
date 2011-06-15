@@ -33,6 +33,9 @@
 #ifdef HAVE_GDCM
 #include "stdint.h"
 #else
+#if (_MSC_VER >= 1600)  /* VisualStudio 2010 comes with stdint.h */
+#include <stdint.h>
+#else
 typedef char int8_t;
 typedef unsigned char uint8_t;
 typedef short int16_t;
@@ -41,6 +44,7 @@ typedef int int32_t;
 typedef unsigned int uint32_t;
 typedef long long int64_t;
 typedef unsigned long long uint64_t;
+#endif
 #endif
 #endif
 #else
