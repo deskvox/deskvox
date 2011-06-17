@@ -280,5 +280,9 @@ ELSE(COVISE_BUILD)
     TARGET_LINK_LIBRARIES(virvo X11)
   ENDIF(X11_FOUND)
 
-  TARGET_LINK_LIBRARIES(virvo pthread)
+  IF(WIN32)
+    # TODO: no libdl, pthreads don't come with OS
+  ELSE(WIN32)
+    TARGET_LINK_LIBRARIES(virvo pthread dl)
+  ENDIF(WIN32)
 ENDIF(COVISE_BUILD)
