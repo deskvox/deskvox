@@ -1,0 +1,10 @@
+#cmakedefine HAVE_CG 1
+#cmakedefine HAVE_CG_CG_H 1
+#cmakedefine HAVE_CUDA 1
+#cmakedefine HAVE_CUDA_H 1
+#cmakedefine HAVE_GL 1
+#cmakedefine HAVE_GL_FRAMEWORK 1
+#cmakedefine HAVE_GLEW 1
+#cmakedefine HAVE_GLU 1
+#cmakedefine HAVE_GLUT 1
+#cmakedefine HAVE_VOLPACK 1
