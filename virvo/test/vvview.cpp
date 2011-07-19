@@ -2097,9 +2097,9 @@ double vvView::performanceTest()
 
       int framesRendered = 0;
       ds->setRenderer(test->getGeomType(), test->getVoxelType(), 0,
-                      test->getBrickDims()[0],
-                      test->getBrickDims()[1],
-                      test->getBrickDims()[2]);
+                      (int) test->getBrickDims()[0],
+                      (int) test->getBrickDims()[1],
+                      (int) test->getBrickDims()[2]);
       ds->hqMode = false;
       ds->draftQuality = test->getQuality();
       ds->ov->reset();
@@ -2484,7 +2484,7 @@ void vvView::initGraphics(int argc, char *argv[])
 
 // Other glut versions than freeglut currently don't support
 // debug context flags.
-#ifdef FREEGLUT
+#if defined(FREEGLUT) && defined(GLUT_INIT_MAJOR_VERSION)
   glutInitContextFlags(GLUT_DEBUG);
 #endif // FREEGLUT
 
