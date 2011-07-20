@@ -1,6 +1,22 @@
+// Virvo - Virtual Reality Volume Rendering
+// Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
-// This software contains source code provided by NVIDIA Corporation.
+// This file is part of Virvo.
 //
+// Virvo is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library (see license.txt); if not, write to the
+// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #ifndef _VV_RAYREND_H_
 #define _VV_RAYREND_H_
@@ -16,7 +32,7 @@
 #include "vvconfig.h"
 #endif
 
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#ifdef HAVE_CUDA
 
 #include "vvcuda.h"
 
@@ -38,7 +54,7 @@ public:
     VV_SURFACE
   };
 
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#ifdef HAVE_CUDA
   vvRayRend(vvVolDesc* vd, vvRenderState renderState);
   ~vvRayRend();
 

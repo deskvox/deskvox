@@ -79,7 +79,7 @@ using std::ios;
 #include <virvo/vvcudasw.h>
 #include <virvo/vvcuda.h>
 
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#ifdef HAVE_CUDA
 #include <virvo/vvrayrend.h>
 #endif
 #ifdef HAVE_VOLPACK
@@ -801,7 +801,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
 #endif
       break;
     case vvRenderer::RAYREND:
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#ifdef HAVE_CUDA
       if(rrMode == RR_IBR)
         renderState.setParameter(vvRenderer::VV_USE_IBR, 1.);
       renderer = new vvRayRend(vd, renderState);
@@ -1334,7 +1334,7 @@ void vvView::rendererMenuCallback(int item)
     ds->setRenderer();
   }
 #endif
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
+#ifdef HAVE_CUDA
   else if (item == 8)
   {
     cerr << "Switched to CUDA ray casting renderer" << endl;
@@ -2331,8 +2331,6 @@ void vvView::createMenus()
   glutAddMenuEntry("CPU Shear-warp [6]", 6);
 #if defined(HAVE_CUDA)
   glutAddMenuEntry("GPU Shear-warp [7]", 7);
-#endif
-#if defined(HAVE_CUDA) && defined(NV_PROPRIETARY_CODE)
   glutAddMenuEntry("GPU Ray casting [8]", 8);
 #endif
   glutAddMenuEntry("Decrease quality [-]", 98);

@@ -10,8 +10,7 @@ TEMPLATE       = app
 CONFIG		   += console virvo glut
 CUDA = $$(CUDA_DEFINES)
 contains(CUDA,HAVE_CUDA) {
-        DEFINES *= HAVE_CUDA \
-                   NV_PROPRIETARY_CODE
+        DEFINES *= HAVE_CUDA
 }
 
 SOURCES        = vvview.cpp vvperformancetest.cpp vvobjview.cpp

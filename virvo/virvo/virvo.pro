@@ -149,8 +149,7 @@ contains(CUDA,HAVE_CUDA) {
         CUDA_SOURCES += vvcudatransfunc.cu \
                         vvcudasw.cu \
                         vvrayrend.cu
-        DEFINES *= HAVE_CUDA \
-                   NV_PROPRIETARY_CODE
+        DEFINES *= HAVE_CUDA
 }
 QMAKE_CUFLAGS += "-D__builtin_stdarg_start=__builtin_va_start"
 
