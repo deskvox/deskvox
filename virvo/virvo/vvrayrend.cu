@@ -35,7 +35,7 @@ const int NUM_RAND_VECS = 8192;
 
 int iDivUp(const int a, const int b)
 {
-  return (a % b != 0) ? (a / b + 1) : (a / b);
+  return (a + b - 1) / b;
 }
 
 typedef struct
