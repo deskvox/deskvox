@@ -8,7 +8,7 @@
 #define IMAGESPACE_APPROX
 #ifndef HLRS
 #ifdef HAVE_CONFIG_H
-#include <virvo/vvconfig.h>
+#include "vvconfig.h"
 #endif
 #endif
 #include <virvo/vvglew.h>
