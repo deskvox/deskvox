@@ -76,6 +76,13 @@ The static virvo library will be located in ${BUILD_DIR}/virvo/virvo
 The vview test application will be located in ${BUILD_DIR}/virvo/test
 The deskvox application will be located in ${BUILD_DIR}/vox-desk
 The vconv application will be located in ${BUILD_DIR}vox-desk
+
+In order to install deskvox and its associated files, on Unix type:
+
+$ make install
+
+Deskvox will be installed to a default location, which can be modified
+before installing by editing CMakeCache.txt in ${BUILD_DIR}
 ============================================
 
 4. Hot to build the virvo library from source

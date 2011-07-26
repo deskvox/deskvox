@@ -1,5 +1,5 @@
 SET(CG_SHADERS
-  vv_passtrough_frag_shader.cg
+  vv_passthrough_frag_shader.cg
   vv_preint_frag.cg
   vv_preint_vert.cg
   vv_shader01.cg
@@ -14,7 +14,8 @@ SET(CG_SHADERS
   vv_shader10.cg
   vv_shader11.cg
   vv_shader12.cg
-  vv_shader13.cg)
+  vv_shader13.cg
+)
 
 SET(GLSL_SHADERS
   vv_intersection_geo.glsl
@@ -23,3 +24,13 @@ SET(GLSL_SHADERS
   vv_intersection_ver.glsl
   vv_intersection_ver_inst.glsl
 )
+
+IF(NOT COVISE_BUILD)
+  INSTALL(FILES ${CG_SHADERS}
+    DESTINATION ${INSTALL_DIR_SHARE}/virvo
+  )
+
+  INSTALL(FILES ${GLSL_SHADERS}
+    DESTINATION ${INSTALL_DIR_SHARE}/virvo
+  )
+ENDIF(NOT COVISE_BUILD)
