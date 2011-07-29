@@ -769,8 +769,8 @@ template<
         >
 renderKernel getKernelWithClipPlane(vvRayRend* rayRend)
 {
-  if ((bool)rayRend->getParameter(vvRenderState::VV_IS_ROI_USED)
-     && (bool)rayRend->getParameter(vvRenderState::VV_SPHERICAL_ROI))
+  if (((rayRend->getParameter(vvRenderState::VV_IS_ROI_USED)!=0.0)
+     && (rayRend->getParameter(vvRenderState::VV_SPHERICAL_ROI)!=0.0)))
   {
     return getKernelWithSphereAsProbe<
                                       t_bpc,
@@ -1115,7 +1115,7 @@ void vvRayRend::compositeVolume(int w, int h)
   float3 probeSize = make_float3(probeSizeObj[0], probeSizeObj[1], probeSizeObj[2]);
   if (_sphericalROI)
   {
-    probeSize = make_float3(vd->vox[0], vd->vox[1], vd->vox[2]);
+    probeSize = make_float3((float)vd->vox[0], (float)vd->vox[1], (float)vd->vox[2]);
   }
 
   const bool isOrtho = pr.isProjOrtho();
@@ -1235,7 +1235,7 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue)
   {
   case vvRenderer::VV_SLICEINT:
     {
-      const bool newInterpol = static_cast<bool>(newValue);
+      const bool newInterpol = (newValue!=0.0);
       if (_interpolation != newInterpol)
       {
         _interpolation = newInterpol;
@@ -1250,13 +1250,13 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue)
     }
     break;
   case vvRenderer::VV_LIGHTING:
-    _illumination = static_cast<bool>(newValue);
+    _illumination = (newValue!=0.0);
     break;
   case vvRenderer::VV_OPCORR:
-    _opacityCorrection = static_cast<bool>(newValue);
+    _opacityCorrection = (newValue!=0.0);
     break;
   case vvRenderer::VV_TERMINATEEARLY:
-    _earlyRayTermination = static_cast<bool>(newValue);
+    _earlyRayTermination = (newValue!=0.0);
     break;
   default:
     vvRenderer::setParameter(param, newValue);
