@@ -28,6 +28,8 @@ IF(CG_FOUND)
 ENDIF(CG_FOUND)
 
 SET(VIRVO_HEADERS
+  vvmultirend/vvtexmultirend.h
+  vvmultirend/vvtexmultirendmngr.h
   vvaabb.h
   vvbrick.h
   vvbsptree.h
@@ -92,6 +94,8 @@ SET(VIRVO_HEADERS
 )
 
 SET(VIRVO_SOURCES
+  vvmultirend/vvtexmultirend.cpp
+  vvmultirend/vvtexmultirendmngr.cpp
   vvaabb.cpp
   vvbrick.cpp
   vvbsptree.cpp
