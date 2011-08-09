@@ -670,13 +670,13 @@ void VVShell::loadVolumeFile(const char* filename)
     case vvFileIO::FILE_NOT_FOUND:
       vvDebugMsg::msg(2, "File not found: ", filename);
       message = "File Not Found: " + FXString(filename);
-      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", message.text());
+      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", "%s", message.text());
       delete vd;
       break;
     default:
       vvDebugMsg::msg(2, "Cannot load file: ", filename);
       message = "Cannot load: " + FXString(filename);
-      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", message.text());
+      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", "%s", message.text());
       delete vd;
       break;
   }
@@ -746,14 +746,14 @@ long VVShell::onCmdReloadVolume(FXObject*,FXSelector,void*)
       vvDebugMsg::msg(2, "File not found: ", vd->getFilename());
       msgString = "File Not Found:   ";
       msgString += vd->getFilename();
-      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", msgString.text());
+      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", "%s", msgString.text());
       delete vd;
       break;
     default:
       vvDebugMsg::msg(2, "Cannot load file: ", vd->getFilename());
       msgString = "Cannot Load File:   ";
       msgString += vd->getFilename();
-      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", msgString.text());
+      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", "%s", msgString.text());
       delete vd;
       break;
   }
@@ -839,14 +839,14 @@ void VVShell::mergeFiles(const char* firstFile, int num, int increment, vvVolDes
       vvDebugMsg::msg(2, "File not found: ", vd->getFilename());
       msgString = "File Not Found:   ";
       msgString += vd->getFilename();
-      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", msgString.text());
+      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", "%s", msgString.text());
       delete vd;
       break;
     default:
       vvDebugMsg::msg(2, "Cannot merge file: ", vd->getFilename());
       msgString = "Cannot merge file:   ";
       msgString += vd->getFilename();
-      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", msgString.text());
+      FXMessageBox::error((FXWindow*)this, MBOX_OK, "Error", "%s", msgString.text());
       delete vd;
       break;
   }
@@ -1008,7 +1008,7 @@ long VVShell::onCmdAbout(FXObject*,FXSelector,void*)
     "the LGPL license. See the file 'license.txt' in the program directory.\n\n" \
     "http://www.calit2.net/~jschulze/projects/vox/";
 
-  FXMessageBox::information((FXWindow*)this, MBOX_OK, "About DeskVOX", info.text());
+  FXMessageBox::information((FXWindow*)this, MBOX_OK, "About DeskVOX", "%s", info.text());
 
   return 1;
 }
@@ -1036,7 +1036,7 @@ long VVShell::onCmdKeys(FXObject*,FXSelector,void*)
     "t: #Texture display on/off\n" \
     "x: Maximum intensity projection on/off\n" \
     "z: Maximize window on/off";
-  FXMessageBox::information((FXWindow*)this, MBOX_OK, "DeskVOX Keyboard Commands", info.text());
+  FXMessageBox::information((FXWindow*)this, MBOX_OK, "DeskVOX Keyboard Commands", "%s", info.text());
 
   return 1;
 }

@@ -197,7 +197,7 @@ long VVVolumeDialog::onChannels(FXObject*, FXSelector, void*)
     info += "\n";
   }
 
-  FXMessageBox::information((FXWindow*)this, MBOX_OK, "Channel Names", info.text());
+  FXMessageBox::information((FXWindow*)this, MBOX_OK, "Channel Names", "%s", info.text());
 
   return 1;
 }
@@ -1099,7 +1099,7 @@ long VVMergeDialog::onCmdHelp(FXObject*, FXSelector, void*)
     "The naming scheme '*_zXXX_chXX.*' is recognized for image\n" \
     "files at a given depth (_z) and for a given channel (_ch).\n" \
     "Example: 'image_z010_ch02.tif'";
-  FXMessageBox::information((FXWindow*)this, MBOX_OK, "File Format", info);
+  FXMessageBox::information((FXWindow*)this, MBOX_OK, "File Format", "%s", info);
   return 1;
 }
 
@@ -1664,7 +1664,7 @@ long VVMovieDialog::onCmdHelp(FXObject*,FXSelector,void*)
     "trans AXIS DIST\n\n" \
     "For a detailed description of the movie script file format\n" \
     "please refer to the section 'Movie Scripts' in the file readme.txt.";
-  FXMessageBox::information((FXWindow*)this, MBOX_OK, "File Format", info);
+  FXMessageBox::information((FXWindow*)this, MBOX_OK, "File Format", "%s", info);
   return 1;
 }
 
