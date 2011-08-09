@@ -35,6 +35,7 @@ SET(VIRVO_HEADERS
   vvbsptree.h
   vvbsptreevisitors.h
   vvcg.h
+  vvcgprogram.h
   vvclusterclient.h
   vvclusterserver.h
   vvcolor.h
@@ -50,6 +51,7 @@ SET(VIRVO_HEADERS
   vvfileio.h
   vvglew.h
   vvglsl.h
+  vvglslprogram.h
   vvgltools.h
   vvibrclient.h
   vvibrserver.h
@@ -68,7 +70,9 @@ SET(VIRVO_HEADERS
   vvrendertarget.h
   vvrendervp.h
   vvshaderfactory.h
+  vvshaderfactory2.h
   vvshadermanager.h
+  vvshaderprogram.h
   vvsllist.h
   vvsocket.h
   vvsocketio.h
@@ -101,6 +105,7 @@ SET(VIRVO_SOURCES
   vvbsptree.cpp
   vvbsptreevisitors.cpp
   vvcg.cpp
+  vvcgprogram.cpp
   vvclusterclient.cpp
   vvclusterserver.cpp
   vvcolor.cpp
@@ -111,6 +116,7 @@ SET(VIRVO_SOURCES
   vvdynlib.cpp
   vvfileio.cpp
   vvglsl.cpp
+  vvglslprogram.cpp
   vvgltools.cpp
   vvibrclient.cpp
   vvibrserver.cpp
@@ -125,7 +131,9 @@ SET(VIRVO_SOURCES
   vvrenderer.cpp
   vvrendertarget.cpp
   vvshaderfactory.cpp
+  vvshaderfactory2.cpp
   vvshadermanager.cpp
+  vvshaderprogram.cpp
   vvsocket.cpp
   vvsocketio.cpp
   vvsocketmonitor.cpp
