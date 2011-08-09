@@ -261,7 +261,7 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
   glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
   mv.set(matrixGL);
 
-  for (int s=0; s<_sockets.size(); ++s)
+  for (int s=0; s<int(_sockets.size()); ++s)
   {
     if(_sockets[s]->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
