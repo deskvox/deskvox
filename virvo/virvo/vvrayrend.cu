@@ -1075,8 +1075,8 @@ void vvRayRend::compositeVolume(int w, int h)
   int numSlices = max(1, static_cast<int>(_quality * diagonalVoxels));
 
   vvMatrix Mv, MvPr;
-  getModelviewMatrix(&Mv);
-  getProjectionMatrix(&MvPr);
+  vvGLTools::getModelviewMatrix(&Mv);
+  vvGLTools::getProjectionMatrix(&MvPr);
   MvPr.multiplyPre(&Mv);
 
   float* mvprM = new float[16];
@@ -1088,10 +1088,10 @@ void vvRayRend::compositeVolume(int w, int h)
   invMv.invert();
 
   vvMatrix pr;
-  getProjectionMatrix(&pr);
+  vvGLTools::getProjectionMatrix(&pr);
 
   vvMatrix invMvpr;
-  getModelviewMatrix(&invMvpr);
+  vvGLTools::getModelviewMatrix(&invMvpr);
   invMvpr.multiplyPost(&pr);
   invMvpr.invert();
 

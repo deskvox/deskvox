@@ -163,7 +163,7 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 
 
   // Get projection matrix:
-  _rendererList[0]->getProjectionMatrix(&pm);
+  vvGLTools::getProjectionMatrix(&pm);
 
   // Compute normal vector of view planes
   vvVector3 planeNormal(0.0f, 0.0f, -1.0f);                 // (0|0|1) is normal on projection plane

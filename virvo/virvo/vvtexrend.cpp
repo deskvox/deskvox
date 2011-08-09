@@ -2981,7 +2981,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   }
 
   // Get projection matrix:
-  getProjectionMatrix(&pm);
+  vvGLTools::getProjectionMatrix(&pm);
   bool isOrtho = pm.isProjOrtho();
 
   getObjNormal(normal, origin, eye, invMV, isOrtho);
@@ -3243,7 +3243,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   vvDebugMsg::msg(3, "Number of texture slices rendered: ", numSlices);
 
   // Get projection matrix:
-  getProjectionMatrix(&pm);
+  vvGLTools::getProjectionMatrix(&pm);
   const bool isOrtho = pm.isProjOrtho();
 
   getObjNormal(normal, origin, eye, invMV, isOrtho);
@@ -4575,7 +4575,7 @@ void vvTexRend::renderVolumeGL()
   }
 
   // Get OpenGL modelview matrix:
-  getModelviewMatrix(&mv);
+  vvGLTools::getModelviewMatrix(&mv);
 
   if (_usedThreads == 0)
   {

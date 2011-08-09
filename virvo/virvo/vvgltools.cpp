@@ -274,6 +274,61 @@ vvVector4 vvGLTools::queryClearColor()
   return result;
 }
 
+//----------------------------------------------------------------------------
+/** Get the current modelview matrix.
+  @param a matrix which will be set to the current modelview matrix
+*/
+void vvGLTools::getModelviewMatrix(vvMatrix* mv)
+{
+  GLfloat glmatrix[16];                           // OpenGL compatible matrix
+
+  vvDebugMsg::msg(3, "vvRenderer::getModelviewMatrix()");
+  glGetFloatv(GL_MODELVIEW_MATRIX, glmatrix);
+  mv->getGL((float*)glmatrix);
+}
+
+//----------------------------------------------------------------------------
+/** Get the current projection matrix.
+  @param a matrix which will be set to the current projection matrix
+*/
+void vvGLTools::getProjectionMatrix(vvMatrix* pm)
+{
+  vvDebugMsg::msg(3, "vvRenderer::getProjectionMatrix()");
+
+  GLfloat glmatrix[16];                           // OpenGL compatible matrix
+  glGetFloatv(GL_PROJECTION_MATRIX, glmatrix);
+  pm->getGL((float*)glmatrix);
+}
+
+//----------------------------------------------------------------------------
+/** Set the OpenGL modelview matrix.
+  @param new OpenGL modelview matrix
+*/
+void vvGLTools::setModelviewMatrix(const vvMatrix* mv)
+{
+  vvDebugMsg::msg(3, "vvRenderer::setModelviewMatrix()");
+
+  GLfloat glmatrix[16];                           // OpenGL compatible matrix
+  mv->makeGL((float*)glmatrix);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadMatrixf(glmatrix);
+}
+
+//----------------------------------------------------------------------------
+/** Set the OpenGL projection matrix.
+  @param new OpenGL projection matrix
+*/
+void vvGLTools::setProjectionMatrix(const vvMatrix* pm)
+{
+  vvDebugMsg::msg(3, "vvRenderer::setProjectionMatrix()");
+
+  GLfloat glmatrix[16];                           // OpenGL compatible matrix
+  pm->makeGL((float*)glmatrix);
+  glMatrixMode(GL_PROJECTION);
+  glLoadMatrixf(glmatrix);
+  glMatrixMode(GL_MODELVIEW);
+}
+
 //============================================================================
 // End of File
 //============================================================================

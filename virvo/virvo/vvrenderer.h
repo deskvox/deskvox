@@ -250,10 +250,6 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual void  getProbePosition(vvVector3*) const;
     virtual void  setProbeSize(const vvVector3*);
     virtual void  getProbeSize(vvVector3*) const;
-    virtual void  getModelviewMatrix(vvMatrix*) const;
-    virtual void  getProjectionMatrix(vvMatrix*) const;
-    virtual void  setModelviewMatrix(const vvMatrix*);
-    virtual void  setProjectionMatrix(const vvMatrix*);
     virtual void  getEyePosition(vvVector3*) const;
     virtual bool  isInVolume(const vvVector3*) const;
     virtual float getAlphaValue(float, float, float);

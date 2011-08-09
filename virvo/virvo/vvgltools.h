@@ -81,6 +81,10 @@ class VIRVOEXPORT vvGLTools
                                     const float x2 =  1.0f, const float y2 =  1.0f);
     static Viewport getViewport();
     static vvVector4 queryClearColor();
+    static void  getModelviewMatrix(vvMatrix*);
+    static void  getProjectionMatrix(vvMatrix*);
+    static void  setModelviewMatrix(const vvMatrix*);
+    static void  setProjectionMatrix(const vvMatrix*);
 };
 #endif
 

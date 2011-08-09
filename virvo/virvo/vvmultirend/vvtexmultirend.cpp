@@ -568,7 +568,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   }
 
   // Get projection matrix:
-  getProjectionMatrix(&pm);
+  vvGLTools::getProjectionMatrix(&pm);
   bool isOrtho = pm.isProjOrtho();
 
   // Compute normal vector of textures using the following strategy:
@@ -814,7 +814,7 @@ void vvTexMultiRend::renderVolumeGL()
   // Find principle viewing direction:
 
   // Get OpenGL modelview matrix:
-  getModelviewMatrix(&mv);
+  vvGLTools::getModelviewMatrix(&mv);
 
   // Transform 4 point vectors with the modelview matrix:
   origin.multiply(&mv);
@@ -1283,7 +1283,7 @@ void vvTexMultiRend::preRendering()
   
 
   // Get projection matrix:
-  getProjectionMatrix(&pm);
+  vvGLTools::getProjectionMatrix(&pm);
 
   // Compute normal vector of view planes
   vvVector3 planeNormal(0.0f, 0.0f, -1.0f);                 // (0|0|1) is normal on projection plane
@@ -1292,7 +1292,7 @@ void vvTexMultiRend::preRendering()
   planeNormal.multiply(&invPM);
 
   // Get OpenGL modelview matrix:
-  getModelviewMatrix(&tr.mv);
+  vvGLTools::getModelviewMatrix(&tr.mv);
   tr.mv.translate(&translation);
   tr.mv.multiplyPre(&rotation);
   tr.mv.makeGL(tr.glMV);

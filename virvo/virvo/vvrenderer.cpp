@@ -796,7 +796,7 @@ void vvRenderer::renderCoordinates()
   glPushMatrix();
 
   // Compute modelview matrix:
-  getModelviewMatrix(&mv);
+  vvGLTools::getModelviewMatrix(&mv);
   mv.killTrans();
   for (i=0; i<3; ++i)                             // normalize base vectors to remove scaling
   {
@@ -806,7 +806,7 @@ void vvRenderer::renderCoordinates()
   }
   mv.translate(0.8f * half[0], -0.8f * half[1], 0.0f);
   mv.scale(0.2f, 0.2f, 0.2f);
-  setModelviewMatrix(&mv);
+  vvGLTools::setModelviewMatrix(&mv);
 
   // Draw axis cross:
   glBegin(GL_LINES);
@@ -1222,61 +1222,6 @@ void vvRenderer::getProbeSize(vvVector3* size) const
 }
 
 //----------------------------------------------------------------------------
-/** Get the current modelview matrix.
-  @param a matrix which will be set to the current modelview matrix
-*/
-void vvRenderer::getModelviewMatrix(vvMatrix* mv) const
-{
-  GLfloat glmatrix[16];                           // OpenGL compatible matrix
-
-  vvDebugMsg::msg(3, "vvRenderer::getModelviewMatrix()");
-  glGetFloatv(GL_MODELVIEW_MATRIX, glmatrix);
-  mv->getGL((float*)glmatrix);
-}
-
-//----------------------------------------------------------------------------
-/** Get the current projection matrix.
-  @param a matrix which will be set to the current projection matrix
-*/
-void vvRenderer::getProjectionMatrix(vvMatrix* pm) const
-{
-  vvDebugMsg::msg(3, "vvRenderer::getProjectionMatrix()");
-
-  GLfloat glmatrix[16];                           // OpenGL compatible matrix
-  glGetFloatv(GL_PROJECTION_MATRIX, glmatrix);
-  pm->getGL((float*)glmatrix);
-}
-
-//----------------------------------------------------------------------------
-/** Set the OpenGL modelview matrix.
-  @param new OpenGL modelview matrix
-*/
-void vvRenderer::setModelviewMatrix(const vvMatrix* mv)
-{
-  vvDebugMsg::msg(3, "vvRenderer::setModelviewMatrix()");
-
-  GLfloat glmatrix[16];                           // OpenGL compatible matrix
-  mv->makeGL((float*)glmatrix);
-  glMatrixMode(GL_MODELVIEW);
-  glLoadMatrixf(glmatrix);
-}
-
-//----------------------------------------------------------------------------
-/** Set the OpenGL projection matrix.
-  @param new OpenGL projection matrix
-*/
-void vvRenderer::setProjectionMatrix(const vvMatrix* pm)
-{
-  vvDebugMsg::msg(3, "vvRenderer::setProjectionMatrix()");
-
-  GLfloat glmatrix[16];                           // OpenGL compatible matrix
-  pm->makeGL((float*)glmatrix);
-  glMatrixMode(GL_PROJECTION);
-  glLoadMatrixf(glmatrix);
-  glMatrixMode(GL_MODELVIEW);
-}
-
-//----------------------------------------------------------------------------
 /** Compute user's eye position.
   @param eye  vector to receive eye position [world space]
 */
@@ -1287,7 +1232,7 @@ void vvRenderer::getEyePosition(vvVector3* eye) const
 
   vvDebugMsg::msg(3, "vvRenderer::getEyePosition()");
 
-  getProjectionMatrix(&invPM);
+  vvGLTools::getProjectionMatrix(&invPM);
   invPM.invert();
   projEye.set(0.0f, 0.0f, -1.0f, 0.0f);
   projEye.multiply(&invPM);

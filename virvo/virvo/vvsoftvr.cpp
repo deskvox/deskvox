@@ -38,6 +38,7 @@ using std::endl;
 #include "vvsoftvr.h"
 #include "vvstopwatch.h"
 #include "vvimage.h"
+#include "vvgltools.h"
 
 //----------------------------------------------------------------------------
 /// Constructor.
@@ -615,8 +616,8 @@ void vvSoftVR::findViewMatrix()
 
    vvDebugMsg::msg(3, "vvSoftVR::findViewMatrix()");
 
-   getModelviewMatrix(&mv);
-   getProjectionMatrix(&pm);
+   vvGLTools::getModelviewMatrix(&mv);
+   vvGLTools::getProjectionMatrix(&pm);
 
    // Compute view matrix:
    owView.copy(&mv);
@@ -963,12 +964,12 @@ bool vvSoftVR::prepareRendering()
    // Translate object by its position:
    trans.identity();
    trans.translate(vd->pos[0], vd->pos[1], vd->pos[2]);
-   getModelviewMatrix(&mv);
+   vvGLTools::getModelviewMatrix(&mv);
    mv.multiplyPre(&trans);
-   setModelviewMatrix(&mv);
+   vvGLTools::setModelviewMatrix(&mv);
 
    // Make sure a parallel projection matrix is used:
-   getProjectionMatrix(&pm);
+   vvGLTools::getProjectionMatrix(&pm);
    if ((rendererType==SOFTPAR || rendererType==CUDAPAR) && !pm.isProjOrtho())
    {
       vvDebugMsg::msg(1, "Parallel projection matrix expected! Rendering aborted.");
@@ -1042,7 +1043,7 @@ int vvSoftVR::getCullingStatus(float nearPlaneZ)
    radius = _size.length() / 2.0f;
 
    // Find volume midpoint location:
-   getModelviewMatrix(&mv);
+   vvGLTools::getModelviewMatrix(&mv);
    volPos.zero();
    volPos.multiply(&mv);
 
