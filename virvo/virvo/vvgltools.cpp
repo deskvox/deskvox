@@ -302,6 +302,7 @@ void vvGLTools::getProjectionMatrix(vvMatrix* pm)
 
 //----------------------------------------------------------------------------
 /** Set the OpenGL modelview matrix.
+    Adjusts the opengl matrix mode to GL_MODELVIEW.
   @param new OpenGL modelview matrix
 */
 void vvGLTools::setModelviewMatrix(const vvMatrix* mv)
@@ -316,6 +317,7 @@ void vvGLTools::setModelviewMatrix(const vvMatrix* mv)
 
 //----------------------------------------------------------------------------
 /** Set the OpenGL projection matrix.
+    Adjusts the opengl matrix mode to GL_PROJECTION.
   @param new OpenGL projection matrix
 */
 void vvGLTools::setProjectionMatrix(const vvMatrix* pm)
@@ -326,7 +328,6 @@ void vvGLTools::setProjectionMatrix(const vvMatrix* pm)
   pm->makeGL((float*)glmatrix);
   glMatrixMode(GL_PROJECTION);
   glLoadMatrixf(glmatrix);
-  glMatrixMode(GL_MODELVIEW);
 }
 
 //============================================================================
