@@ -111,43 +111,42 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   }
 
   rayRend->setDepthPrecision(_depthPrecision);
-  rayRend->compositeVolume(screenRect->width, screenRect->height);
-
-  glFlush();
+  rayRend->compositeVolume();
 
   // Fetch rendered image
-  uchar* pixels = new uchar[screenRect->width*screenRect->height*4];
-  cudaMemcpy(pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDImg(), screenRect->width * screenRect->height*4, cudaMemcpyDeviceToHost);
+  vvGLTools::Viewport vp = vvGLTools::getViewport();
+  uchar* pixels = new uchar[vp[2]*vp[3]*4];
+  cudaMemcpy(pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDImg(), vp[2]*vp[3]*4, cudaMemcpyDeviceToHost);
 
   vvImage2_5d* im2;
   switch(_depthPrecision)
   {
   case vvImage2_5d::VV_UCHAR:
     {
-      im2 = new vvImage2_5d(screenRect->height, screenRect->width, (unsigned char*)pixels, vvImage2_5d::VV_UCHAR);
+      im2 = new vvImage2_5d(vp[3], vp[2], (unsigned char*)pixels, vvImage2_5d::VV_UCHAR);
       im2->setDepthPrecision(_depthPrecision);
       im2->alloc_pd();
       uchar* depthUchar = im2->getpixeldepthUchar();
-      cudaMemcpy(depthUchar, rayRend->_depthUchar, screenRect->width * screenRect->height *sizeof(uchar), cudaMemcpyDeviceToHost);
+      cudaMemcpy(depthUchar, rayRend->_depthUchar, vp[2]*vp[3]*sizeof(uchar), cudaMemcpyDeviceToHost);
       cudaFree(rayRend->_depthUchar);
     }
     break;
   case vvImage2_5d::VV_USHORT:
     {
-      im2 = new vvImage2_5d(screenRect->height, screenRect->width, (unsigned char*)pixels, vvImage2_5d::VV_USHORT);
+      im2 = new vvImage2_5d(vp[3], vp[2], (unsigned char*)pixels, vvImage2_5d::VV_USHORT);
       im2->setDepthPrecision(_depthPrecision);
       im2->alloc_pd();
       ushort* depthUshort = im2->getpixeldepthUshort();
-      cudaMemcpy(depthUshort, rayRend->_depthUshort, screenRect->width * screenRect->height *sizeof(ushort), cudaMemcpyDeviceToHost);
+      cudaMemcpy(depthUshort, rayRend->_depthUshort, vp[2]*vp[3]*sizeof(ushort), cudaMemcpyDeviceToHost);
       cudaFree(rayRend->_depthUshort);
     }
     break;
   case vvImage2_5d::VV_UINT:
     {
-      im2 = new vvImage2_5d(screenRect->height, screenRect->width, (unsigned char*)pixels, vvImage2_5d::VV_UINT);
+      im2 = new vvImage2_5d(vp[3], vp[2], (unsigned char*)pixels, vvImage2_5d::VV_UINT);
       im2->alloc_pd();
       uint* depthUint = im2->getpixeldepthUint();
-      cudaMemcpy(depthUint, rayRend->_depthUint, screenRect->width * screenRect->height *sizeof(uint), cudaMemcpyDeviceToHost);
+      cudaMemcpy(depthUint, rayRend->_depthUint, vp[2]*vp[3]*sizeof(uint), cudaMemcpyDeviceToHost);
       cudaFree(rayRend->_depthUint);
     }
     break;

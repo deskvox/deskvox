@@ -135,7 +135,7 @@ void vvRemoteClient::resize(const int w, const int h)
   }
 }
 
-void vvRemoteClient::setCurrentFrame(const int index)
+void vvRemoteClient:: setCurrentFrame(const int index)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setCurrentFrame()");
 

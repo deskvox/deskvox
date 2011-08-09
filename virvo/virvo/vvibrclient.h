@@ -51,7 +51,8 @@ public:
   void exit();                                            ///< check out from servers
 
   void setDepthPrecision(vvImage2_5d::DepthPrecision dp); ///< set depth-value precision (1,2 or 4 bytes)
-
+  void setParameter(vvRenderer::ParameterType param, float newValue);
+  void updateTransferFunction(vvTransFunc& tf);
 private:
   //! thread-data
   struct ThreadArgs
@@ -67,13 +68,19 @@ private:
   pthread_mutex_t _slaveMutex;            ///< mutex for thread synchronization
   bool   _slaveRdy;                       ///< flag to indicate that all servers are ready
   int    _slaveCnt;                       ///< counter for servers
+  bool   _changes;                        ///< flag indicating changes that need a rendering-refresh
+  bool   _newFrame;                       ///< flag indicating a new ibr-frame waiting to be rendered
+  bool   _firstFrame;                     ///< flag indicating that the very first frame is drawn
   GLuint _pointVBO;                       ///< Vertex Buffer Object id for point-pixels
   GLuint _colorVBO;                       ///< Vertex Buffer Object id for pixel-colors
+
+  GLuint _ibrTex[3];                      ///< Texture names for ibr-textures
 
   vvRect*             _isaRect[2];        ///< array for memorizing and flipping old and new screenrects
   vvGLTools::Viewport _vp[2];             ///< array for memorizing and flipping old and new viewport
   GLdouble            _modelMatrix[32];   ///< array for memorizing and flipping old and new modelview-matrix
   GLdouble            _projMatrix[32];    ///< array for memorizing and flipping old and new projection-matrix
+  vvRemoteClient::ErrorType requestIbrFrame();  ///< remember envoironment and send image-request to server
   void initIbrFrame();                    ///< initialize pixel-points in object space
 
   vvImage2_5d::DepthPrecision _depthPrecision;        ///< deph-value precision

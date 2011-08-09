@@ -1024,26 +1024,22 @@ void vvRayRend::compositeVolume(int w, int h)
 
   vvGLTools::Viewport vp = vvGLTools::getViewport();
 
-  if ((w > 0) && (h > 0))
-  {
-    vp[2]=w; vp[3]=h;
-    intImg->setSize(w, h);
+  intImg->setSize(vp[2], vp[3]);
 
-    switch(_depthPrecision)
-    {
-    case vvImage2_5d::VV_UCHAR:
-      cudaMalloc(&_depthUchar, w*h*sizeof(unsigned char));
-      cudaMemset(_depthUchar, 0, w*h*sizeof(unsigned char));
-      break;
-    case vvImage2_5d::VV_USHORT:
-      cudaMalloc(&_depthUshort, w*h*sizeof(unsigned short));
-      cudaMemset(_depthUshort, 0, w*h*sizeof(unsigned short));
-      break;
-    case vvImage2_5d::VV_UINT:
-      cudaMalloc(&_depthUint, w*h*sizeof(unsigned int));
-      cudaMemset(_depthUint, 0, w*h*sizeof(unsigned int));
-      break;
-    }
+  switch(_depthPrecision)
+  {
+  case vvImage2_5d::VV_UCHAR:
+    cudaMalloc(&_depthUchar, vp[2]*vp[3]*sizeof(unsigned char));
+    cudaMemset(_depthUchar, 0, vp[2]*vp[3]*sizeof(unsigned char));
+    break;
+  case vvImage2_5d::VV_USHORT:
+    cudaMalloc(&_depthUshort, vp[2]*vp[3]*sizeof(unsigned short));
+    cudaMemset(_depthUshort, 0, vp[2]*vp[3]*sizeof(unsigned short));
+    break;
+  case vvImage2_5d::VV_UINT:
+    cudaMalloc(&_depthUint, vp[2]*vp[2]*sizeof(unsigned int));
+    cudaMemset(_depthUint, 0, vp[2]*vp[2]*sizeof(unsigned int));
+    break;
   }
 
   dynamic_cast<vvCudaImg*>(intImg)->map();
@@ -1195,9 +1191,6 @@ void vvRayRend::compositeVolume(int w, int h)
       break;
     case vvImage2_5d::VV_USHORT:
       {
-      std::cout << "start kernel with ibrPlanes: " << _ibrPlanes[0] << " and " << _ibrPlanes[1] << std::endl;
-      float2 test = make_float2(_ibrPlanes[0], _ibrPlanes[1]);
-      std::cout << test << std::endl;
       (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
                                         backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                                         volPos, volSize * 0.5f,
@@ -1205,7 +1198,7 @@ void vvRayRend::compositeVolume(int w, int h)
                                         L, H,
                                         center, radius * radius,
                                         pnormal, pdist, _depthUshort, _depthPrecision,
-                                        test);
+                                        make_float2(_ibrPlanes[0], _ibrPlanes[1]));
       }
       break;
     case vvImage2_5d::VV_UINT:
