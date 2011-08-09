@@ -20,6 +20,7 @@
 #include "vvcgprogram.h"
 #include "vvgltools.h"
 #include "vvopengl.h"
+#include "vvdebugmsg.h"
 
 #include <iostream>
 
@@ -35,9 +36,10 @@ vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& f
   for(int i=0; i<3;i++)
     _shaderId[i] = 0;
 
-  if(!loadShaders())
+  _shadersLoaded = loadShaders();
+  if(_shadersLoaded)
   {
-    vvGLTools::printGLError("vvCgProgram::vvCgProgram() Loading Shaders failed!");
+     vvDebugMsg::msg(1, "vvCgProgram::vvCgProgram() Loading Shaders failed!");
   }
 }
 

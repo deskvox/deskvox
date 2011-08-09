@@ -51,6 +51,8 @@ public:
   vvShaderProgram(const string& vert, const string& geom, const string& frag);
   virtual ~vvShaderProgram();
 
+  virtual bool isValid() const;
+
   virtual void enableProgram() = 0;
   virtual void disableProgram() = 0;
 

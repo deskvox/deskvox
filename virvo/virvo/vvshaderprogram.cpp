@@ -15,3 +15,8 @@ vvShaderProgram::vvShaderProgram(const string& vert, const string& geom, const s
 vvShaderProgram::~vvShaderProgram()
 {
 }
+
+bool vvShaderProgram::isValid() const
+{
+  return _shadersLoaded;
+}

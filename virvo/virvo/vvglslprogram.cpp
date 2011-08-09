@@ -18,7 +18,7 @@
 
 #include "vvgltools.h"
 #include "vvglew.h"
-//#include "vvdebugmsg.h"
+#include "vvdebugmsg.h"
 //#include <iostream>
 
 //#include "vvdynlib.h"
@@ -36,9 +36,10 @@ vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const strin
   for(int i=0; i<3;i++)
     _shaderId[i] = 0;
 
-  if(!loadShaders())
+  _shadersLoaded = loadShaders();
+  if(!_shadersLoaded)
   {
-    vvGLTools::printGLError("vvGLSLProgram::vvGLSLProgram() Loading Shaders failed!");
+    vvDebugMsg::msg(1, "vvGLSLProgram::vvGLSLProgram() Loading Shaders failed!");
   }
 }
 
