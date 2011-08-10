@@ -5507,7 +5507,7 @@ void vvTexRend::initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const
   glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_2D]);
   glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
     GL_PROGRAM_FORMAT_ASCII_ARB,
-    strlen(fragProgString2D),
+    (GLsizei)strlen(fragProgString2D),
     fragProgString2D);
 
   const char fragProgString3D[] = "!!ARBfp1.0\n"
@@ -5518,7 +5518,7 @@ void vvTexRend::initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const
   glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_3D]);
   glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
     GL_PROGRAM_FORMAT_ASCII_ARB,
-    strlen(fragProgString3D),
+    (GLsizei)strlen(fragProgString3D),
     fragProgString3D);
 
   const char fragProgStringPreint[] = "!!ARBfp1.0\n"
@@ -5530,7 +5530,7 @@ void vvTexRend::initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const
   glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_PREINT]);
   glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
     GL_PROGRAM_FORMAT_ASCII_ARB,
-    strlen(fragProgStringPreint),
+    (GLsizei)strlen(fragProgStringPreint),
     fragProgStringPreint);
 }
 
@@ -5960,7 +5960,7 @@ std::vector<BrickList>** vvTexRend::getBrickListsToDistribute()
 
 int vvTexRend::getNumBrickListsToDistribute() const
 {
-  return _bspTree->getLeafs()->size();
+  return (int)_bspTree->getLeafs()->size();
 }
 
 void vvTexRend::calcProjectedScreenRects()

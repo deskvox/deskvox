@@ -189,7 +189,7 @@ public:
   void disableMultiTexture2D();
   void disableMultiTexture3D();
 
-  int getProgramCount() { return programArray.size(); }
+  int getProgramCount() { return (int)programArray.size(); }
 
   /* OBSOLETE
   void loadShader();

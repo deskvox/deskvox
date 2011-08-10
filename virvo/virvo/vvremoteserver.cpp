@@ -193,7 +193,7 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
       case vvSocketIO::VV_MIPMODE:
         if ((_socket->getInt32(mipMode)) == vvSocket::VV_OK)
         {
-          renderer->setParameter(vvRenderState::VV_MIP_MODE, mipMode);
+          renderer->setParameter(vvRenderState::VV_MIP_MODE, (float)mipMode);
         }
         break;
       case vvSocketIO::VV_OBJECT_DIRECTION:

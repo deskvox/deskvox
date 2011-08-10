@@ -225,9 +225,9 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
 	void getTranslation(float* v1, float* v2, float* v3) { translation.get(v1, v2, v3); }
 	vvMatrix* getRotation() { return &rotation; }
 	void getRotation(float rot[16]) { rotation.makeGL(rot); }
-	float getTexMax(int idx) { assert(idx<3 && idx>=0); return texMax[idx]; }
-	float getTexMin(int idx) { assert(idx<3 && idx>=0); return texMin[idx]; }
-	float getTexels(int idx) { assert(idx<3 && idx>=0); return texels[idx]; }
+	float getTexMax(int idx) { assert(idx<3 && idx>=0); return (float)texMax[idx]; }
+	float getTexMin(int idx) { assert(idx<3 && idx>=0); return (float)texMin[idx]; }
+	float getTexels(int idx) { assert(idx<3 && idx>=0); return (float)texels[idx]; }
 	int getNumSlices() { return numSlices; }
 	int decreaseNumSlices() { return --numSlices; }
 	int& getTFMode() { return tfmode; }

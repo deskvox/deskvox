@@ -59,7 +59,7 @@ vvRemoteClient::ErrorType vvClusterClient::setRenderer(vvRenderer* renderer)
   }
 
   // This will build up the bsp tree of the master node.
-  texRend->prepareDistributedRendering(_slaveNames.size());
+  texRend->prepareDistributedRendering((int)_slaveNames.size());
 
   // Store a pointer to the bsp tree and set its visitor.
   _bspTree = texRend->getBspTree();
@@ -189,13 +189,13 @@ void vvClusterClient::createThreads()
 {
   vvDebugMsg::msg(1, "vvClusterClient::createThreads()");
 
-  _visitor->generateTextureIds(_sockets.size());
+  _visitor->generateTextureIds((int)_sockets.size());
   _threadData = new ThreadArgs[_sockets.size()];
   _threads = new pthread_t[_sockets.size()];
-  pthread_barrier_init(&_barrier, NULL, _sockets.size() + 1);
+  pthread_barrier_init(&_barrier, NULL, (int)_sockets.size() + 1);
   for (size_t s=0; s<_sockets.size(); ++s)
   {
-    _threadData[s].threadId = s;
+    _threadData[s].threadId = (int)s;
     _threadData[s].clusterClient = this;
     _threadData[s].images = _images;
     pthread_create(&_threads[s], NULL, getImageFromSocket, (void*)&_threadData[s]);

@@ -232,7 +232,7 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
     vvVector3 min(min4.e[0], min4.e[1], min4.e[2]);
     vvVector3 max(max4.e[0], max4.e[1], max4.e[2]);
 
-    float radius = (max-min).length() * 0.5;
+    float radius = (max-min).length() * 0.5f;
 
     // Depth buffer of ibrPlanes
     vvVector3 scal(center);
@@ -272,7 +272,7 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
     if(_sockets[s]->putMatrix(&mv) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
   }
-  _slaveCnt = _sockets.size();
+  _slaveCnt = (int)_sockets.size();
 
   return vvRemoteClient::VV_OK;
 }
@@ -372,9 +372,9 @@ void vvIbrClient::initIbrFrame()
                      _modelMatrix, _projMatrix, _vp[0].values,
                      &winPoint[0],&winPoint[1],&winPoint[2]);
       }
-      points[y*w*3+x*3]   = winPoint[0];
-      points[y*w*3+x*3+1] = winPoint[1];
-      points[y*w*3+x*3+2] = winPoint[2];
+      points[y*w*3+x*3]   = (float)winPoint[0];
+      points[y*w*3+x*3+1] = (float)winPoint[1];
+      points[y*w*3+x*3+2] = (float)winPoint[2];
     }
   }
 
@@ -394,7 +394,7 @@ void vvIbrClient::initIbrFrame()
   glPointSize(5.);
   glBegin(GL_POINTS);
   glColor3f(1.0,0.,0.);
-  glVertex3f(winBc[0], winBc[1], winBc[2]);
+  glVertex3f((GLfloat)winBc[0], (GLfloat)winBc[1], (GLfloat)winBc[2]);
   glEnd();
   glPointSize(1.);
 
@@ -426,7 +426,7 @@ void vvIbrClient::createThreads()
   _threads = new pthread_t[_sockets.size()];
   for (size_t s=0; s<_sockets.size(); ++s)
   {
-    _threadData[s].threadId = s;
+    _threadData[s].threadId = (int)s;
     _threadData[s].renderMaster = this;
     _threadData[s].images = _images;
     pthread_create(&_threads[s], NULL, getImageFromSocket, (void*)&_threadData[s]);

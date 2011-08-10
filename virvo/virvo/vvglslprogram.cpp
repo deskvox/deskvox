@@ -75,7 +75,7 @@ cerr << "GLSL-SOURCECODE "<<i<<": "<< _fileStrings[i]<<endl;
       break;
     }
 
-    GLint size = _fileStrings[i].size();
+    GLint size = (GLint)_fileStrings[i].size();
     const char* code = _fileStrings[i].c_str();
     glShaderSource(_shaderId[i], 1, (const GLchar**)&code, &size);
     glCompileShader(_shaderId[i]);

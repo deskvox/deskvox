@@ -17,7 +17,9 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <cmath>
 #include <set>
 
@@ -356,7 +358,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
     {
       vals.insert((*it)->getAABB().getCenter()[i]);
     }
-    cnt[i] = vals.size();
+    cnt[i] = (int)vals.size();
   }
 
   // Reconstruct the 3D grid. This is done since generally the assumption isn't

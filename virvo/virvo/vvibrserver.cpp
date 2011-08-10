@@ -90,7 +90,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
     vvVector3 min(min4.e[0], min4.e[1], min4.e[2]);
     vvVector3 max(max4.e[0], max4.e[1], max4.e[2]);
 
-    float radius = (max-min).length() * 0.5;
+    float radius = (max-min).length() * 0.5f;
 
     // Depth buffer of ibrPlanes
     vvVector3 scal(center);

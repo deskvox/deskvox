@@ -97,7 +97,7 @@ public:
   virtual void setParameterV3(ParameterType param, const vvVector3& newValue);
   virtual void setParameterV4(ParameterType param, const vvVector4& newValue);
 
-  virtual float getParameter(ParameterType) const;
+  virtual float getParameter(const ParameterType) const;
   virtual vvVector3 getParameterV3(ParameterType param) const;
   virtual vvVector4 getParameterV4(ParameterType param) const;
 protected:
@@ -254,7 +254,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual bool  isInVolume(const vvVector3*) const;
     virtual float getAlphaValue(float, float, float);
     virtual void  setParameter(ParameterType param, float newValue);
-    virtual float getParameter(ParameterType param) const;
+    virtual float getParameter(const ParameterType param) const;
     virtual void  profileStart();
     virtual void  profileStop();
     virtual void  setGamma(BasicColorType, float);
