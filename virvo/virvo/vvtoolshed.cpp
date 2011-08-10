@@ -2787,6 +2787,27 @@ char* vvToolshed::stripPort(const char* url)
   return result;
 }
 
+void vvToolshed::printBacktrace()
+{
+#ifndef _WIN32
+  const int MaxFrames = 16;
+
+  void* buffer[MaxFrames] = { 0 };
+  const int count = backtrace(buffer, MaxFrames);
+
+  char** symbols = backtrace_symbols(buffer, count);
+
+  if (symbols)
+  {
+    for (int n=0; n<count; ++n)
+    {
+      fprintf(stderr, "%s\n", symbols[n]);
+    }
+    free(symbols);
+  }
+#endif
+}
+
 //----------------------------------------------------------------------------
 /// Main function for standalone test mode.
 #ifdef VV_STANDALONE

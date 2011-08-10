@@ -199,7 +199,6 @@ class vvView
     void setAnimationFrame(int);
     void initGraphics(int argc, char *argv[]);
     void initARBDebugOutput();
-    void printBacktrace() const;
     void createMenus();
     void setRendererType(vvRenderer::RendererType type);
     void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST,

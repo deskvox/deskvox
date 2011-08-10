@@ -48,10 +48,6 @@ using std::ios;
 #include <sys/stat.h>
 #endif
 
-#ifndef _WIN32
-#include <execinfo.h>
-#endif
-
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -2050,7 +2046,7 @@ void vvView::debugCallbackARB(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/,
   cerr << "=======================================================" << endl;
   if (ds->showBt)
   {
-    ds->printBacktrace();
+    vvToolshed::printBacktrace();
   }
   exit(EXIT_FAILURE);
 }
@@ -2581,27 +2577,6 @@ void vvView::initARBDebugOutput()
   dbgOutputExtSet = true;
 }
 
-
-void vvView::printBacktrace() const
-{
-#ifndef _WIN32
-  const int MaxFrames = 16;
-
-  void* buffer[MaxFrames] = { 0 };
-  const int count = backtrace(buffer, MaxFrames);
-
-  char** symbols = backtrace_symbols(buffer, count);
-
-  if (symbols)
-  {
-    for (int n=0; n<count; ++n)
-    {
-      fprintf(stderr, "%s\n", symbols[n]);
-    }
-    free(symbols);
-  }
-#endif
-}
 
 //----------------------------------------------------------------------------
 /** Set projection mode to perspective or parallel.
