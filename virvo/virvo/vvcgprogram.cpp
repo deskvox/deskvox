@@ -34,7 +34,10 @@ vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& f
 : vvShaderProgram(vert, geom, frag)
 {
   for(int i=0; i<3;i++)
+  {
     _shaderId[i] = 0;
+    _profile[i] = CGprofile(0);
+  }
 
   _shadersLoaded = loadShaders();
   if(_shadersLoaded)
@@ -84,7 +87,7 @@ void vvCgProgram::enableProgram()
 {
   for(int i=0;i<3;i++)
   {
-    if(_shaderId[i] == NULL)
+    if(_shaderId[i] == 0)
       continue;
 
     cgGLLoadProgram(_shaderId[i]);
@@ -97,7 +100,7 @@ void vvCgProgram::disableProgram()
 {
   for(int i=0;i<3;i++)
   {
-    if(_profile[i] == NULL)
+    if(_profile[i] == 0)
       continue;
 
     cgGLDisableProfile(_profile[i]);
