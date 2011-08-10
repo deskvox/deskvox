@@ -1,5 +1,5 @@
 // Virvo - Virtual Reality Volume Rendering
-// Contact: Chih Liang, cliang@cs.ucsd.edu
+// Contact: Stefan Zellmann, zellmans@uni-koeln.de
 //
 // This file is part of Virvo.
 //
@@ -19,10 +19,6 @@
 #include "vvgltools.h"
 #include "vvglew.h"
 #include "vvdebugmsg.h"
-//#include <iostream>
-
-//#include "vvdynlib.h"
-//#include <assert.h>
 
 using std::cerr;
 using std::endl;
@@ -31,8 +27,6 @@ using std::string;
 vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const string& frag)
 : vvShaderProgram(vert, geom, frag)
 {
-  cerr << "asdsad" << vert << endl;
-  cerr << "asdsad" << _fileStrings[0] << endl;
   for(int i=0; i<3;i++)
     _shaderId[i] = 0;
 
@@ -128,7 +122,6 @@ void vvGLSLProgram::enableProgram()
     glUseProgramObjectARB(_programId);
   else
     cerr << "vvGLSLProgram::enableProgram() Can't enable Programm: shaders not successfully loaded!" << endl;
-  _nTexture = 0; //???
 
   vvGLTools::printGLError("Leaving vvGLSLProgram::enableProgram()");
 }
@@ -138,7 +131,6 @@ void vvGLSLProgram::disableProgram()
   vvGLTools::printGLError("Enter vvGLSLProgram::disableProgram()");
 
   glUseProgramObjectARB(0);
-  _nTexture = 0;
 
   vvGLTools::printGLError("Leaving vvGLSLProgram::disableProgram()");
 }
@@ -218,89 +210,3 @@ void vvGLSLProgram::setMatrix4f(const string& parameterName, const float* mat)
   }
   glUniformMatrix4fv(uniform, 1, false, mat);
 }
-
-//void vvGLSLProgram::setValue(const char* name, int length, float* value)
-//{
-//  GLuint loc = glGetUniformLocation(_programId, name);
-//  if(loc == -1)
-//  {
-//  std::cerr << "vvGLSLProgram::setValue(): the name does not correspond to a uniform variable in the shader program: " << name << std::endl;
-//  }
-
-//  switch(length)
-//  {
-//	case 1:
-//	  glUniform1f(loc, *value);
-//	  break;
-//	case 2:
-//	  glUniform2f(loc, value[0], value[1]);
-//	  break;
-//	case 3:
-//	  glUniform3f(loc, value[0], value[1], value[2]);
-//	  break;
-//	case 4:
-//	  glUniform4f(loc, value[0], value[1], value[2], value[3]);
-//	  break;
-//	default:
-//    std::cerr << "vvGLSLProgram::setVector the length of a vector has to be less than or equal to 4" << std::endl;
-//	  break;
-//  }
-//}
-
-//void vvGLSLProgram::initializeMultiTexture1D(const char* varName, GLuint texName)
-//{
-//  GLuint loc = glGetUniformLocation(_programId, varName);
-//  glActiveTexture(GL_TEXTURE0+_nTexture);
-//  glUniform1i(loc, _nTexture++);
-//  glEnable(GL_TEXTURE_1D);
-//  glBindTexture(GL_TEXTURE_1D, texName);
-//}
-
-//void vvGLSLProgram::initializeMultiTexture2D(const char* varName, GLuint texName)
-//{
-//  GLuint loc = glGetUniformLocation(_programId, varName);
-//  glActiveTexture(GL_TEXTURE0+_nTexture);
-//  //std::cerr << "activate texture #" << nTexture << ", " << texName << endl;
-//  glUniform1i(loc, _nTexture++);
-//  glEnable(GL_TEXTURE_2D);
-//  glBindTexture(GL_TEXTURE_2D, texName);
-//}
-
-//void vvGLSLProgram::initializeMultiTexture3D(const char* varName, GLuint texName)
-//{
-//  GLuint loc = glGetUniformLocation(_programId, varName);
-//  glActiveTexture(GL_TEXTURE0+_nTexture);
-//  glUniform1i(loc, _nTexture++);
-//  glEnable(GL_TEXTURE_3D_EXT);
-//  glBindTexture(GL_TEXTURE_3D_EXT, texName);
-//}
-
-//void vvGLSLProgram::disableMultiTexture1D()
-//{
-//  for(int i = _nTexture - 1; i >= 0; i--)
-//  {
-//	glActiveTexture(GL_TEXTURE0+i);
-//	glDisable(GL_TEXTURE_1D);
-//  }
-//  _nTexture = 0;
-//}
-
-//void vvGLSLProgram::disableMultiTexture2D()
-//{
-//  for(int i = _nTexture - 1; i >= 0; i--)
-//  {
-//	glActiveTexture(GL_TEXTURE0+i);
-//	glDisable(GL_TEXTURE_2D);
-//  }
-//  _nTexture = 0;
-//}
-
-//void vvGLSLProgram::disableMultiTexture3D()
-//{
-//  for(int i = _nTexture - 1; i >= 0; i--)
-//  {
-//	glActiveTexture(GL_TEXTURE0+i);
-//	glDisable(GL_TEXTURE_3D_EXT);
-//  }
-//  _nTexture = 0;
-//}

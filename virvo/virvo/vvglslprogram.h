@@ -1,5 +1,5 @@
 // Virvo - Virtual Reality Volume Rendering
-// Contact: Stavros Delisavas, stavros.delisavas@uni-koeln.de
+// Contact: Stefan Zellmann, zellmans@uni-koeln.de
 //
 // This file is part of Virvo.
 //
