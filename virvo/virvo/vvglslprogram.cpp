@@ -138,6 +138,11 @@ void vvGLSLProgram::disableProgram()
 void vvGLSLProgram::setParameter1f(const string& parameterName, const float& f1)
 {
   const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
+  if(uniform == -1)
+  {
+    cerr << "setParameter1f("<<parameterName
+         <<") does not correspond to an active uniform variable in program"<< endl;
+  }
   glUniform1f(uniform, f1);
 }
 
@@ -146,58 +151,78 @@ void vvGLSLProgram::setParameter1i(const string& parameterName, const int& i1)
   const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
   if(uniform == -1)
   {
-    cerr << "uniform1i("<<parameterName
+    cerr << "setParameter1i("<<parameterName
          <<") does not correspond to an active uniform variable in program"<< endl;
   }
   glUniform1i(uniform, i1);
+}
+
+void vvGLSLProgram::setParameter3f(const string& parameterName, const float* array)
+{
+  const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
+  if(uniform == -1)
+  {
+    cerr << "setParameter3f("<<parameterName
+         <<") does not correspond to an active uniform variable in program"<< endl;
+  }
+  glUniform3fv(uniform, 3, array);
 }
 
 void vvGLSLProgram::setParameter3f(const string& parameterName,
                             const float& f1, const float& f2, const float& f3)
 {
   const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
+  if(uniform == -1)
+  {
+    cerr << "setParameter3f("<<parameterName
+         <<") does not correspond to an active uniform variable in program"<< endl;
+  }
   glUniform3f(uniform, f1, f2, f3);
 }
 
+void vvGLSLProgram::setParameter4f(const string& parameterName, const float* array)
+{
+  const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
+  if(uniform == -1)
+  {
+    cerr << "setParameter4f("<<parameterName
+         <<") does not correspond to an active uniform variable in program"<< endl;
+  }
+  glUniform4fv(uniform, 4, array);
+}
 
 void vvGLSLProgram::setParameter4f(const string& parameterName,
                             const float& f1, const float& f2, const float& f3, const float& f4)
 {
   const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
+  if(uniform == -1)
+  {
+    cerr << "setParameter4f("<<parameterName
+         <<") does not correspond to an active uniform variable in program"<< endl;
+  }
   glUniform4f(uniform, f1, f2, f3, f4);
 }
 
-void vvGLSLProgram::setParameterArray3f(const string& parameterName, const float* array)
+void vvGLSLProgram::setParameterArray1i(const string& parameterName, const int* array, const int& count)
 {
   const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
   if(uniform == -1)
   {
-    cerr << "uniformArray3f("<<parameterName
-         <<") does not correspond to an active uniform variable in program"<< endl;
-  }
-  glUniform3fv(uniform, 3, array);
-}
-
-void vvGLSLProgram::setParameterArrayf(const string& parameterName, const float* array, const int& count)
-{
-  const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
-  if(uniform == -1)
-  {
-    cerr << "uniformArrayf("<<parameterName
-         <<") does not correspond to an active uniform variable in program"<< endl;
-  }
-  glUniform1fv(uniform, count, array);
-}
-
-void vvGLSLProgram::setParameterArrayi(const string& parameterName, const int* array, const int& count)
-{
-  const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
-  if(uniform == -1)
-  {
-    cerr << "uniformArrayi("<<parameterName
+    cerr << "setParameterArray1i("<<parameterName
          <<") does not correspond to an active uniform variable in program"<< endl;
   }
   glUniform1iv(uniform, count, array);
+}
+
+void vvGLSLProgram::setParameterArray3f(const string& parameterName, const float* array, const int& count)
+{
+  const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
+  if(uniform == -1)
+  {
+    cerr << "setParameterArray3f("<<parameterName
+         <<") does not correspond to an active uniform variable in program"<< endl;
+  }
+  glUniform3fv(uniform, 3*count, array);
 }
 
 void vvGLSLProgram::setMatrix4f(const string& parameterName, const float* mat)
@@ -205,8 +230,12 @@ void vvGLSLProgram::setMatrix4f(const string& parameterName, const float* mat)
   const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
   if(uniform == -1)
   {
-    cerr << "mat("<<parameterName
+    cerr << "setMatrix4f("<<parameterName
          <<") does not correspond to an active uniform variable in program"<< endl;
   }
   glUniformMatrix4fv(uniform, 1, false, mat);
 }
+
+//============================================================================
+// End of File
+//============================================================================

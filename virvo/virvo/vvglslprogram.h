@@ -55,14 +55,17 @@ public:
   void setParameter1f(const string& parameterName, const float& f1);
   void setParameter1i(const string& parameterName, const int& i1);
 
+  void setParameter3f(const string& parameterName, const float* array);
   void setParameter3f(const string& parameterName,
                               const float& f1, const float& f2, const float& f3);
+
+  void setParameter4f(const string& parameterName, const float* array);
   void setParameter4f(const string& parameterName,
                               const float& f1, const float& f2, const float& f3, const float& f4);
 
-  void setParameterArray3f(const string& parameterName, const float* array);
-  void setParameterArrayf(const string& parameterName, const float* array, const int& count);
-  void setParameterArrayi(const string& parameterName, const int* array, const int& count);
+  void setParameterArray1i(const string& parameterName, const int* array, const int& count);
+
+  void setParameterArray3f(const string& parameterName, const float* array, const int& count);
 
   void setMatrix4f(const string& parameterName, const float* mat);
 
