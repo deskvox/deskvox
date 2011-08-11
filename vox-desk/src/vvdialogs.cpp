@@ -24,11 +24,8 @@
 #pragma warning(disable: 4512)    // disable warning: assignment operator could not be generated
 #endif
 
-#ifdef __APPLE__
-  #include <OpenGL/glu.h>
-#else
-  #include <GL/glu.h>
-#endif
+#include <vvglew.h>
+#include <vvopengl.h>
 
 // Virvo:
 #include <vvvirvo.h>

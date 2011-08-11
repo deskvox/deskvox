@@ -21,16 +21,12 @@
 #ifdef WIN32
   #include <winsock2.h>
   #include <windows.h>
-#elif __APPLE__
-  #include <unistd.h>
-  #include <OpenGL/gl.h>
-  #include <OpenGL/glu.h>
 #else
-  #include <GL/gl.h>
-  #include <GL/glu.h>
-  #include <GL/glx.h>
   #include <unistd.h>
 #endif
+#include <vvglew.h>
+#include <vvopengl.h>
+
 #include <assert.h>
 
 // Virvo:
