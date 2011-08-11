@@ -38,5 +38,6 @@ void main()
   gl_Position = gl_ModelViewProjectionMatrix * vec4(pos, 1.0);
   gl_TexCoord[0].xyz = (pos - brickMin.xyz) * brickDimInv.xyz;
   gl_TexCoord[0].xyz = gl_TexCoord[0].xyz * texRange + texMin;
+  gl_FrontColor = vec4(1, 1, 1, 1);
 }
 
