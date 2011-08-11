@@ -32,6 +32,10 @@
 #include <math.h>
 #include <assert.h>
 
+#ifndef _WIN32
+#include <execinfo.h>
+#endif
+
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)

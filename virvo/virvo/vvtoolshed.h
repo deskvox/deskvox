@@ -51,10 +51,6 @@ typedef unsigned long long uint64_t;
 #include <inttypes.h>
 #endif
 
-#ifndef _WIN32
-#include <execinfo.h>
-#endif
-
 #include "vvexport.h"
 #include "vvarray.h"
 
