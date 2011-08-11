@@ -88,8 +88,12 @@ public:
   void disableTexture(const string& parameterName);
 
 private:
+  typedef std::map<string, CGparameter> ParameterMap;
+  typedef ParameterMap::iterator ParameterIterator;
+
   bool loadShaders();                               /// Creates CgProgram and loads shaders into it.
-  bool initParameter(const string& parameterName);  /// Looks for a parameter and connects it with all other active shaders
+  //! Looks for a parameter and connects it with all other active shaders
+  ParameterIterator initParameter(const string& parameterName);
 
   static void cgErrorHandler(CGcontext context, CGerror error, void*);
   CGGLenum toCgEnum(const int i) const;
@@ -99,7 +103,7 @@ private:
   CGprofile _profile[3];  /// Cg-specific profile-ids
   CGprogram _shaderId[3]; /// Shader-ids
 
-  std::map<string, CGparameter> _cgParameterNameMaps;  /// Parameter name-id maps
+  ParameterMap _cgParameterNameMaps;  /// Parameter name-id maps
 };
 
 #endif // HAVE_CG

@@ -149,12 +149,12 @@ CGGLenum vvCgProgram::toCgEnum(const int i) const
   return result;
 }
 
-
-bool vvCgProgram::initParameter(const string& parameterName)
+vvCgProgram::ParameterIterator vvCgProgram::initParameter(const string& parameterName)
 {
   // check if already initialized
-  if(_cgParameterNameMaps.find(parameterName) != _cgParameterNameMaps.end())
-    return true;
+  ParameterIterator paraIterator = _cgParameterNameMaps.find(parameterName);
+  if(paraIterator != _cgParameterNameMaps.end())
+    return paraIterator;
 
   CGparameter paraFirst = 0;
   for(int i=0;i<3;i++)
@@ -177,56 +177,63 @@ bool vvCgProgram::initParameter(const string& parameterName)
   if(paraFirst == 0)
   {
     cerr << "cgParameter ("<<parameterName<<")not found!"<<endl;
-    return false;
+    return _cgParameterNameMaps.end();
   }
   else
   {
     _cgParameterNameMaps[parameterName] = paraFirst;
-    return true;
+    return _cgParameterNameMaps.find(parameterName);
   }
 }
 
 void vvCgProgram::setParameter1f(const string& parameterName, const float& f1)
 {
-  if(initParameter(parameterName))
-    cgSetParameter1f(_cgParameterNameMaps[parameterName], f1);
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
+    cgSetParameter1f(it->second, f1);
 }
 
 void vvCgProgram::setParameter1i(const string& parameterName, const int& i1)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
     cgSetParameter1i(_cgParameterNameMaps[parameterName], i1);
 }
 
 void vvCgProgram::setParameter3f(const string& parameterName, const float* array)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
     cgSetParameter3fv(_cgParameterNameMaps[parameterName], array);
 }
 
 void vvCgProgram::setParameter3f(const string& parameterName,
                           const float& f1, const float& f2, const float& f3)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
     cgSetParameter3f(_cgParameterNameMaps[parameterName], f1, f2, f3);
 }
 
 void vvCgProgram::setParameter4f(const string& parameterName, const float* array)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
     cgSetParameter4fv(_cgParameterNameMaps[parameterName], array);
 }
 
 void vvCgProgram::setParameter4f(const string& parameterName,
                           const float& f1, const float& f2, const float& f3, const float& f4)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
     cgSetParameter4f(_cgParameterNameMaps[parameterName], f1, f2, f3, f4);
 }
 
 void vvCgProgram::setParameterArray1i(const string& parameterName, const int* array, const int& count)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
   {
     // transform integers to floats because CG doesn't support uniform integers
     float floats[count];
@@ -238,37 +245,43 @@ void vvCgProgram::setParameterArray1i(const string& parameterName, const int* ar
 
 void vvCgProgram::setParameterArray3f(const string& parameterName, const float* array, const int& count)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
     cgGLSetParameterArray3f(_cgParameterNameMaps[parameterName], 0, 3*count, array);
 }
 
 void vvCgProgram::setMatrix4f(const string& parameterName, const float* mat)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
     cgSetMatrixParameterfr(_cgParameterNameMaps[parameterName], mat);
 }
 
 void vvCgProgram::setParameterTexId(const string& parameterName, const unsigned int& ui1)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
     cgGLSetTextureParameter(_cgParameterNameMaps[parameterName], ui1);
 }
 
 void vvCgProgram::setTextureId(const string& parameterName, const unsigned int& ui1)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
    cgGLSetTextureParameter(_cgParameterNameMaps[parameterName], ui1);
 }
 
 void vvCgProgram::enableTexture(const string& parameterName)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
    cgGLEnableTextureParameter(_cgParameterNameMaps[parameterName]);
 }
 
 void vvCgProgram::disableTexture(const string& parameterName)
 {
-  if(initParameter(parameterName))
+  ParameterIterator it = initParameter(parameterName);
+  if(it != _cgParameterNameMaps.end())
     cgGLDisableTextureParameter(_cgParameterNameMaps[parameterName]);
 }
 
