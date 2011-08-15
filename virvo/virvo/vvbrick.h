@@ -21,14 +21,14 @@
 #ifndef _VVBRICK_H_
 #define _VVBRICK_H_
 
-#include "vvbsptree.h"
+#include "vvaabb.h"
 #include "vvexport.h"
 #include "vvopengl.h"
-#include "vvshadermanager.h"
 #include "vvtoolshed.h"
 
 #include <limits.h>
 
+class vvShaderManager;
 class vvTexRend;
 
 class VIRVOEXPORT vvBrick

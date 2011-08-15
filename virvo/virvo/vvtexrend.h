@@ -24,18 +24,18 @@
 #include <vector>
 
 // Virvo:
-#include "vvbrick.h"
 #include "vvexport.h"
 #include "vvvoldesc.h"
 #include "vvrenderer.h"
 #include "vvtransfunc.h"
 #include "vvbsptree.h"
-#include "vvshadermanager.h"
-#include "vvoffscreenbuffer.h"
 #include "vvopengl.h"
 #include "vvpthread.h"
 
 struct ThreadArgs;
+class vvBrick;
+class vvOffscreenBuffer;
+class vvShaderManager;
 class vvThreadVisitor;
 
 /*!

@@ -21,6 +21,7 @@
 #include "vvglew.h"
 
 #include "vvbrick.h"
+#include "vvshadermanager.h"
 #include "vvtexrend.h"
 
 #include <algorithm>

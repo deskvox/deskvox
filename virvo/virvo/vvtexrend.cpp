@@ -39,6 +39,7 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+#include "vvbrick.h"
 #include "vvbsptreevisitors.h"
 #include "vvvecmath.h"
 #include "vvdebugmsg.h"
