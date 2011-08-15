@@ -22,8 +22,6 @@
 
 #include <vector>
 
-using std::string;
-
 /** Wrapper Class for OpenGL Shading Language
   This class loads a combination of up to three shaders
   (vertex-, geometry- and fragment-shaders) and
@@ -40,7 +38,7 @@ public:
     @param geom Filestring of desired geometry-shader or emtpy/NULL.
     @param frag Filestring of desired fragment-shader or emtpy/NULL.
    */
-  vvGLSLProgram(const string& vert, const string& geom, const string& frag);
+  vvGLSLProgram(const std::string& vert, const std::string& geom, const std::string& frag);
 
   /// Deactivates and deletes shader program that was generated in this class
   ~vvGLSLProgram();
@@ -52,26 +50,26 @@ public:
     Set uniform parameter functions. Use parameters' names only.
     Parameters' ids are checked and connected between programs automatically.
    */
-  void setParameter1f(const string& parameterName, const float& f1);
-  void setParameter1i(const string& parameterName, const int& i1);
+  void setParameter1f(const std::string& parameterName, const float& f1);
+  void setParameter1i(const std::string& parameterName, const int& i1);
 
-  void setParameter3f(const string& parameterName, const float* array);
-  void setParameter3f(const string& parameterName,
+  void setParameter3f(const std::string& parameterName, const float* array);
+  void setParameter3f(const std::string& parameterName,
                               const float& f1, const float& f2, const float& f3);
 
-  void setParameter4f(const string& parameterName, const float* array);
-  void setParameter4f(const string& parameterName,
+  void setParameter4f(const std::string& parameterName, const float* array);
+  void setParameter4f(const std::string& parameterName,
                               const float& f1, const float& f2, const float& f3, const float& f4);
 
-  void setParameterArray1i(const string& parameterName, const int* array, const int& count);
+  void setParameterArray1i(const std::string& parameterName, const int* array, const int& count);
 
-  void setParameterArray3f(const string& parameterName, const float* array, const int& count);
+  void setParameterArray3f(const std::string& parameterName, const float* array, const int& count);
 
-  void setMatrix4f(const string& parameterName, const float* mat);
+  void setMatrix4f(const std::string& parameterName, const float* mat);
 
-  void setTextureId(const string& parameterName, const unsigned int& ui1) {};
-  void enableTexture(const string& parameterName) {};
-  void disableTexture(const string& parameterName) {};
+  void setTextureId(const std::string& parameterName, const unsigned int& ui1) {};
+  void enableTexture(const std::string& parameterName) {};
+  void disableTexture(const std::string& parameterName) {};
 
 private:
   bool loadShaders();     /// Initializes, compiles, and links a shader program

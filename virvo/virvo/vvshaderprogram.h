@@ -20,8 +20,6 @@
 
 #include <string>
 
-using std::string;
-
 enum ShaderType
 {
   VV_VERT_SHD = 0,
@@ -51,7 +49,7 @@ public:
   /*!
     Create a program with combination of non-empty provided shader codes
   */
-  vvShaderProgram(const string& vert, const string& geom, const string& frag);
+  vvShaderProgram(const std::string& vert, const std::string& geom, const std::string& frag);
   virtual ~vvShaderProgram();
 
   virtual bool isValid() const;
@@ -59,37 +57,37 @@ public:
   virtual void enableProgram() = 0;
   virtual void disableProgram() = 0;
 
-  virtual void setParameter1f(const string& parameterName, const float& f1) = 0;        ///< Set uniform floating variable
-  virtual void setParameter1i(const string& parameterName, const int& i1) = 0;          ///< Set uniform integer variable
+  virtual void setParameter1f(const std::string& parameterName, const float& f1) = 0;        ///< Set uniform floating variable
+  virtual void setParameter1i(const std::string& parameterName, const int& i1) = 0;          ///< Set uniform integer variable
 
-  virtual void setParameter3f(const string& parameterName, const float* array) = 0;     ///< Set uniform float-3D-vector stored in array
-  virtual void setParameter3f(const string& parameterName,                              ///< Set uniform float-3D-vector
+  virtual void setParameter3f(const std::string& parameterName, const float* array) = 0;     ///< Set uniform float-3D-vector stored in array
+  virtual void setParameter3f(const std::string& parameterName,                              ///< Set uniform float-3D-vector
                               const float& f1, const float& f2, const float& f3) = 0;
 
-  virtual void setParameter4f(const string& parameterName, const float* array) = 0;     ///< Set uniform float-4D-vector stored in array
-  virtual void setParameter4f(const string& parameterName,                              ///< Set uniform float-4D-vector
+  virtual void setParameter4f(const std::string& parameterName, const float* array) = 0;     ///< Set uniform float-4D-vector stored in array
+  virtual void setParameter4f(const std::string& parameterName,                              ///< Set uniform float-4D-vector
                               const float& f1, const float& f2, const float& f3, const float& f4) = 0;
 
   /*!
     \brief Set uniform integer-array
     \param count number of intergers in array
   */
-  virtual void setParameterArray1i(const string& parameterName, const int* array, const int& count) = 0;
+  virtual void setParameterArray1i(const std::string& parameterName, const int* array, const int& count) = 0;
 
   /*!
     \brief Set uniform float-array of 3D-vectors
     \param count number of vectors in array
   */
-  virtual void setParameterArray3f(const string& parameterName, const float* array, const int& count) = 0;
+  virtual void setParameterArray3f(const std::string& parameterName, const float* array, const int& count) = 0;
 
-  virtual void setMatrix4f(const string& parameterName, const float* mat) = 0;          ///< set uniform 4x4-matrix
+  virtual void setMatrix4f(const std::string& parameterName, const float* mat) = 0;          ///< set uniform 4x4-matrix
 
-  virtual void setTextureId(const string& parameterName, const unsigned int& ui1) = 0;
-  virtual void enableTexture(const string& programIndex) = 0;
-  virtual void disableTexture(const string& programIndex) = 0;
+  virtual void setTextureId(const std::string& parameterName, const unsigned int& ui1) = 0;
+  virtual void enableTexture(const std::string& programIndex) = 0;
+  virtual void disableTexture(const std::string& programIndex) = 0;
 protected:
   bool _shadersLoaded;
-  string _fileStrings[3];
+  std::string _fileStrings[3];
 };
 
 #endif // _VV_SHADERPROGRAM_H_

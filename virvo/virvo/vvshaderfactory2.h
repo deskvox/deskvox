@@ -22,8 +22,6 @@
 
 #include <iostream>
 
-using std::string;
-
 class VIRVOEXPORT vvShaderFactory2
 {
 public:
@@ -37,13 +35,13 @@ public:
   static bool glslSupport();
 
 private:
-  static const string getShaderDir();
+  static const std::string getShaderDir();
   static bool loadFileStrings();
 
   static bool _cgSupport;
-  static string _shaderName[3];
-  static string _fileString[3];
-  static string _shaderDir;
+  static std::string _shaderName[3];
+  static std::string _fileString[3];
+  static std::string _shaderDir;
 };
 
 #endif // _VV_SHADERFACTORY2_H_
