@@ -274,10 +274,10 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
     void disableLUTMode(vvShaderManager* pixelShader) const;
 
-    bool initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL) const;
+    bool initIntersectionShader(vvShaderManager* isectShader) const;
     void setupIntersectionParameters(vvShaderManager* isectShader) const;
-    void enableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL) const;
-    void disableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader = NULL) const;
+    void enableIntersectionShader(vvShaderManager* isectShader) const;
+    void disableIntersectionShader(vvShaderManager* isectShader) const;
 
     ErrorType makeTextures3D();
     void removeTextures(GLuint*& privateTexNames, int* numTextures) const;

@@ -436,18 +436,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   if (_proxyGeometryOnGpu && (_usedThreads == 0))
   {
-    // Remember that if you bypass the fixed function pipeline, you have to
-    // supply matrix state, normals, colors etc. on your own. So if a vertex
-    // shader for isect tests is bound, at least a simple frag program is
-    // necessary that passes the color through.
-    if (voxelType == VV_RGBA)
-    {
-      _proxyGeometryOnGpuSupported = initIntersectionShader(_isectShader, _pixelShader);
-    }
-    else
-    {
-      _proxyGeometryOnGpuSupported = initIntersectionShader(_isectShader);
-    }
+    _proxyGeometryOnGpuSupported = initIntersectionShader(_isectShader);
     if (_proxyGeometryOnGpuSupported)
       setupIntersectionParameters(_isectShader);
     else
@@ -3528,14 +3517,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     if(data->renderer->_proxyGeometryOnGpu)
     {
-      if (data->renderer->voxelType != VV_RGBA)
-      {
-        data->renderer->initIntersectionShader(isectShader);
-      }
-      else
-      {
-        data->renderer->initIntersectionShader(isectShader, pixelShader);
-      }
+      data->renderer->initIntersectionShader(isectShader);
       data->renderer->setupIntersectionParameters(isectShader);
       data->renderer->enableIntersectionShader(isectShader);
     }
@@ -3717,14 +3699,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       if (data->renderer->_proxyGeometryOnGpu)
       {
-        if (data->renderer->voxelType != VV_RGBA)
-        {
-          data->renderer->disableIntersectionShader(isectShader);
-        }
-        else
-        {
-          data->renderer->disableIntersectionShader(isectShader, pixelShader);
-        }
+        data->renderer->disableIntersectionShader(isectShader);
       }
     }
 
@@ -4555,15 +4530,7 @@ void vvTexRend::renderVolumeGL()
   {
     if ((geomType == VV_BRICKS) && !_showBricks && _proxyGeometryOnGpu)
     {
-      if (voxelType == VV_RGBA)
-      {
-        // Activate passthrough pixel shader as well.
-        enableIntersectionShader(_isectShader, _pixelShader);
-      }
-      else
-      {
-        enableIntersectionShader(_isectShader);
-      }
+      enableIntersectionShader(_isectShader);
     }
   }
 
@@ -4608,14 +4575,7 @@ void vvTexRend::renderVolumeGL()
   {
     disableLUTMode(_pixelShader);
     unsetGLenvironment();
-    if (voxelType == VV_RGBA)
-    {
-      disableIntersectionShader(_isectShader, _pixelShader);
-    }
-    else
-    {
-      disableIntersectionShader(_isectShader);
-    }
+    disableIntersectionShader(_isectShader);
   }
   else
   {
@@ -5449,34 +5409,24 @@ void vvTexRend::disablePixelShaders(vvShaderManager* pixelShader) const
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader) const
+void vvTexRend::enableIntersectionShader(vvShaderManager* isectShader) const
 {
   vvGLTools::printGLError("Enter vvTexRend::enableIntersectionShaders()");
 
   if (_proxyGeometryOnGpu)
   {
     isectShader->enableShader(0);
-    if (pixelShader != NULL)
-    {
-      // Activate passthrough shader.
-      pixelShader->enableShader(0);
-    }
   }
 
   vvGLTools::printGLError("Leaving vvTexRend::enableIntersectionShaders()");
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader) const
+void vvTexRend::disableIntersectionShader(vvShaderManager* isectShader) const
 {
   if (_proxyGeometryOnGpu)
   {
     isectShader->disableShader(0);
-    if (pixelShader != NULL)
-    {
-      // Deactivate the passthrough shader.
-      pixelShader->disableShader(0);
-    }
   }
 }
 
@@ -5590,7 +5540,7 @@ bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader) const
 //----------------------------------------------------------------------------
 /** @return true if initialization successful
  */
-bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderManager* pixelShader) const
+bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader) const
 {
   vvGLTools::printGLError("Enter vvTexRend::initIntersectionShader()");
 
@@ -5644,19 +5594,6 @@ bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader, vvShaderMan
   else
   {
     cerr << "An error occurred when trying to load: " << shaderPath << endl;
-  }
-
-  if (ok && pixelShader != NULL)
-  {
-    const char* passthroughFile = "vv_passthrough_frag_shader.cg";
-    char* passthroughShader = new char[strlen(unixShaderDir) + 1 + strlen(passthroughFile) + 1];
-#ifdef _WIN32
-    sprintf(passthroughShader, "%s\\%s", unixShaderDir, passthroughFile);
-#else
-    sprintf(passthroughShader, "%s/%s", unixShaderDir, passthroughFile);
-#endif
-    ok &= pixelShader->loadShader(passthroughShader, vvShaderManager::VV_FRAG_SHD);
-    delete[] passthroughShader;
   }
 
   delete[] shaderFile;
