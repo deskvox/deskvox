@@ -97,8 +97,7 @@ struct ThreadArgs
   GLfloat* projection;                        ///< the current GL_PROJECTION matrix
   vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
   GLfloat* pixels;                            ///< after rendering each thread will read back its data to this array
-  int width;                                  ///< viewport width to init the offscreen buffer with
-  int height;                                 ///< viewport height to init the offscreen buffer with
+  vvGLTools::Viewport viewport;               ///< the current OpenGL viewport
   float lastRenderTime;                       ///< measured for dynamic load balancing
   float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
   bool brickDataChanged;
@@ -1492,7 +1491,6 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
 {
   ErrorType err = OK;
 
-  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
   for (unsigned int i = 0; i < _numThreads; ++i)
   {
     if (_threadData[i].active)
@@ -1502,8 +1500,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
       // Start solution for load balancing: every thread renders 1/n of the volume.
       // During load balancing, the share will (probably) be adjusted.
       _threadData[i].share = 1.0f / static_cast<float>(_usedThreads);
-      _threadData[i].width = viewport[2];
-      _threadData[i].height = viewport[3];
+      _threadData[i].viewport = vvGLTools::getViewport();
       _threadData[i].pixels = new GLfloat[MAX_VIEWPORT_WIDTH * MAX_VIEWPORT_HEIGHT * 4];
       _threadData[i].brickDataChanged = false;
       _threadData[i].transferFunctionChanged = false;
@@ -3320,8 +3317,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     GLfloat projection[16];
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
 
-    const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-
     pthread_barrier_init(&_compositingBarrier, NULL, _usedThreads + 1);
 
     int leaf = 0;
@@ -3348,8 +3343,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
         _threadData[i].modelview = modelview;
         _threadData[i].projection = projection;
-        _threadData[i].width = viewport[2];
-        _threadData[i].height = viewport[3];
+        _threadData[i].viewport = vvGLTools::getViewport();
 
         ++leaf;
       }
@@ -3570,7 +3564,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         break;
       }
 
-      data->renderer->_offscreenBuffers[data->threadId]->resize(data->width, data->height);
+      data->renderer->_offscreenBuffers[data->threadId]->resize(data->viewport[2], data->viewport[3]);
       data->renderer->enableLUTMode(pixelShader, pixLUTName, fragProgName);
       data->renderer->evaluateLocalIllumination(pixelShader, data->normal);
 
@@ -3607,7 +3601,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       data->renderer->setGLenvironment();
 
       glPushAttrib(GL_VIEWPORT_BIT);
-      glViewport(0, 0, data->width, data->height);
+      glViewport(data->viewport[0], data->viewport[1], data->viewport[2], data->viewport[3]);
 
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
@@ -3689,7 +3683,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // Output to screen in debug mode.
       if (vvDebugMsg::getDebugLevel() > 0)
       {
-        data->renderer->_offscreenBuffers[data->threadId]->writeBack(data->width, data->height);
+        data->renderer->_offscreenBuffers[data->threadId]->writeBack(data->viewport[2], data->viewport[3]);
         glFlush();
       }
 
