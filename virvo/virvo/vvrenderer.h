@@ -34,6 +34,14 @@
 class VIRVOEXPORT vvRenderState
 {
 public:
+  enum IbrMode
+  {
+    VV_MAX_GRADIENT,
+    VV_MIDDLE,
+    VV_SURFACE,
+    VV_NONE
+  };
+
   enum ParameterType                            ///  Names for rendering parameters
   {
     VV_QUALITY = 0,
@@ -74,6 +82,7 @@ public:
     VV_SHOW_TEXTURE,
     VV_OPAQUE_GEOMETRY_PRESENT,
     VV_USE_IBR,
+    VV_IBR_MODE,
 
     VV_OPCORR,                                  ///< opacity correction on/off
     VV_SLICEINT,                                ///< interpolation within slice
@@ -142,6 +151,7 @@ protected:
   bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
   bool _opaqueGeometryPresent;                  ///< true = opaque geometry was rendered before the volume
   bool _useIbr;                                 ///< use ibr in rayrenderer
+  IbrMode _ibrMode;
 public:
   vvRenderState();
 };

@@ -145,7 +145,7 @@ class vvView
     int  rrMode;                                ///< memory remote rendering mode
     vvImage2_5d::DepthPrecision ibrPrecision;   ///< Precision of depth buffer in image based (remote-)rendering mode
     vvImage2_5d::IbrDepthScale    ibrScale;       ///< Scaling type of depthbuffer between near and far clipping planes
-    vvRayRend::IbrMode          ibrMode;        ///< interruption mode for depth-calculation
+    vvRenderState::IbrMode          ibrMode;    ///< interruption mode for depth-calculation
     vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
     GLfloat* framebufferDump;
     std::vector<const char*> slaveNames;

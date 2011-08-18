@@ -47,13 +47,6 @@
 class VIRVOEXPORT vvRayRend : public vvSoftVR
 {
 public:
-  enum IbrMode
-  {
-    VV_MAX_GRADIENT,
-    VV_MIDDLE,
-    VV_SURFACE
-  };
-
 #ifdef HAVE_CUDA
   vvRayRend(vvVolDesc* vd, vvRenderState renderState);
   ~vvRayRend();

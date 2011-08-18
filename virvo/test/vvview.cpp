@@ -942,6 +942,7 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case ']': ds->roiMenuCallback(99); break;
   case '{': ds->optionsMenuCallback(11); break;
   case '}': ds->optionsMenuCallback(10); break;
+  case '#': ds->optionsMenuCallback(17); break;
   case ' ': ds->optionsMenuCallback(8); break;
   default: cerr << "key '" << char(key) << "' has no function'" << endl; break;
   }
@@ -1599,6 +1600,19 @@ void vvView::optionsMenuCallback(int item)
     ds->warpInterpolMode = !ds->warpInterpolMode;
     ds->renderer->setParameter(vvRenderer::VV_WARPINT, ds->warpInterpolMode);
     cerr << "Warp interpolation set to " << int(ds->warpInterpolMode) << endl;
+    break;
+  case 17:
+    {
+      int tmp = ds->ibrMode;
+      ++tmp;
+      ds->ibrMode = static_cast<vvRenderState::IbrMode>(tmp);
+      if (ds->ibrMode == vvRenderState::VV_NONE)
+      {
+        ds->ibrMode = static_cast<vvRenderState::IbrMode>(0);
+      }
+      ds->renderer->setParameter(vvRenderer::VV_IBR_MODE, ds->ibrMode);
+      cerr << "Warp interpolation set to " << int(ds->warpInterpolMode) << endl;
+    }
     break;
   default: break;
   }
@@ -2371,6 +2385,7 @@ void vvView::createMenus()
     glutAddMenuEntry("Bricks - generate proxy geometry on GPU [g]", 13);
   if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD))
     glutAddMenuEntry("Cycle shader [C]", 14);
+  glutAddMenuEntry("Inc ibr mode [#]", 17);
 
   // Transfer function menu:
   transferMenu = glutCreateMenu(transferMenuCallback);

@@ -92,6 +92,7 @@ vvRenderState::vvRenderState()
   _showTexture = true;	// added by Han, Feb 2008
   _opaqueGeometryPresent = false;
   _useIbr = false;
+  _ibrMode = VV_MAX_GRADIENT;
 }
 
 void vvRenderState::setParameter(const ParameterType param, const float newValue)
@@ -190,6 +191,9 @@ void vvRenderState::setParameter(const ParameterType param, const float newValue
     break;
   case VV_USE_IBR:
     _useIbr = (newValue != 0.0f);
+    break;
+  case VV_IBR_MODE:
+    _ibrMode = (vvRenderState::IbrMode)newValue;
     break;
   default:
     break;
@@ -315,6 +319,8 @@ float vvRenderState::getParameter(const ParameterType param) const
     return _opaqueGeometryPresent;
   case VV_USE_IBR:
     return _useIbr;
+  case VV_IBR_MODE:
+    return _ibrMode;
   default:
     return -VV_FLT_MAX;
     break;
