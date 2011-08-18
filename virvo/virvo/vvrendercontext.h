@@ -16,17 +16,17 @@
 #ifndef _VV_RENDERCONTEXT_H_
 #define _VV_RENDERCONTEXT_H_
 
-#include "vvrendertarget.h"
+#include "vvexport.h"
 
 /*! Has to be defined in .cpp
  *  contains architecture specific variables
  */
 struct ContextArchData;
 
-class VIRVOEXPORT vvRenderContext : public vvRenderTarget
+class VIRVOEXPORT vvRenderContext
 {
 public:
-  vvRenderContext(const char* displayName = NULL);
+  vvRenderContext(const char* displayName = 0);
   ~vvRenderContext();
 
   bool makeCurrent() const;

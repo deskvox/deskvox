@@ -32,7 +32,6 @@ struct ContextArchData
 };
 
 vvRenderContext::vvRenderContext(const char* displayName)
-  : vvRenderTarget()
 {
   _archData = new ContextArchData;
   _initialized = false;
