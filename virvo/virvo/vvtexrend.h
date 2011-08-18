@@ -106,10 +106,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     
     pthread_t* _threads;                          ///< worker threads
     ThreadArgs* _threadData;                      ///< args for each thread
-    pthread_barrier_t _madeEmptyBricksBarrier;    ///< Workers: don't load up textures, before brick outlines are generated
-    pthread_barrier_t _distributedBricksBarrier;  ///< barrier is passed when bricks are distributed eventually
-    pthread_barrier_t _renderStartBarrier;        ///< barrier assures that the render loop doesn't resume until proper data is supplied
-    pthread_barrier_t _compositingBarrier;        ///< barrier assures synchronization for compositing
+    pthread_barrier_t _barrier;
     bool _terminateThreads;
 
     std::vector<GLint> _vertArray;
@@ -250,7 +247,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void makeLUTTexture(const GLuint& lutName, uchar* lutData) const;
     ErrorType makeTextures2D(int axes);
 
-    ErrorType setDisplayNames(const char** displayNames, const unsigned int numNames);
+    ErrorType setDisplayNames(const char** displayNames, unsigned int numNames);
     ErrorType dispatchThreadedWGLContexts(); 
     ErrorType dispatchThreadedGLXContexts();
     ErrorType dispatchThreads();
@@ -281,8 +278,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     ErrorType makeTextures3D();
     void removeTextures(GLuint*& privateTexNames, int* numTextures) const;
-    ErrorType updateTextures3D(const int, const int, const int, const int, const int, const int, const bool);
-    ErrorType updateTextures2D(const int, const int, const int, const int, const int, const int, const int);
+    ErrorType updateTextures3D(int, int, int, int, int, int, bool);
+    ErrorType updateTextures2D(int, int, int, int, int, int, int);
     ErrorType updateTextureBricks(int, int, int, int, int, int);
     void beforeSetGLenvironment() const;
     void setGLenvironment() const;
@@ -294,7 +291,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void renderTex2DCubic(AxisType, float, float, float);
     void generateDebugColors();
     VoxelType findBestVoxelType(VoxelType) const;
-    GeometryType findBestGeometry(GeometryType, const VoxelType) const;
+    GeometryType findBestGeometry(GeometryType, VoxelType) const;
     void updateLUT(float, GLuint& lutName, uchar*& lutData, float& lutDistance);
     int  getLUTSize(int*) const;
     int  getPreintTableSize() const;
@@ -312,7 +309,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void updateFrustum();
     void calcAABBMask();
     void getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
-                          const vvVector3, const vvVector3, bool& roiChanged, int threadId = -1); ///< threadId = -1 ==> main thread
+                          vvVector3, const vvVector3, bool& roiChanged, int threadId = -1); ///< threadId = -1 ==> main thread
     void computeBrickSize();
     void calcNumTexels();
     void calcNumBricks();
@@ -339,7 +336,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void  setViewingDirection(const vvVector3*);
     void  setObjectDirection(const vvVector3*);
     void  setParameter(ParameterType param, float newValue);
-    float getParameter(const ParameterType param) const;
+    float getParameter(ParameterType param) const;
     static bool isSupported(GeometryType);
     static bool isSupported(VoxelType);
     bool isSupported(FeatureType) const;
@@ -359,7 +356,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void setAABBMask(vvAABB* aabbMask);
     vvAABB* getAABBMask() const;
     vvAABB getProbedMask() const;
-    void setIsSlave(const bool isSlave);
+    void setIsSlave(bool isSlave);
     unsigned char* getHeightFieldData(float[4][3], int&, int&);
     float getManhattenDist(float[3], float[3]) const;
     void prepareDistributedRendering(int numSlaveNodes);

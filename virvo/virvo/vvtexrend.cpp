@@ -423,7 +423,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
       makeEmptyBricks();
     }
 
-    pthread_barrier_wait(&_madeEmptyBricksBarrier);
+    pthread_barrier_wait(&_barrier);
 
     // Build global transfer function once in order to build up _nonemptyList.
     updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
@@ -431,7 +431,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _isROIChanged);
     distributeBricks();
 
-    pthread_barrier_wait(&_distributedBricksBarrier);
+    pthread_barrier_wait(&_barrier);
   }
 
   if (_proxyGeometryOnGpu && (_usedThreads == 0))
@@ -492,7 +492,7 @@ vvTexRend::~vvTexRend()
   {
     // Finally join the threads.
     _terminateThreads = true;
-    pthread_barrier_wait(&_renderStartBarrier);
+    pthread_barrier_wait(&_barrier);
     for (unsigned int i = 0; i < _usedThreads; ++i)
     {
       void* exitStatus;
@@ -504,10 +504,7 @@ vvTexRend::~vvTexRend()
       delete[] _threadData[i].pixels;
     }
 
-    // Cleanup locking specific stuff.
-    pthread_barrier_destroy(&_madeEmptyBricksBarrier);
-    pthread_barrier_destroy(&_distributedBricksBarrier);
-    pthread_barrier_destroy(&_renderStartBarrier);
+    pthread_barrier_destroy(&_barrier);
 
     // Clean up arrays.
     delete[] _threads;
@@ -1524,12 +1521,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
   // Obviously, initially something changed.
   _somethingChanged = true;
 
-  pthread_barrier_init(&_madeEmptyBricksBarrier, NULL, _usedThreads + 1);
-  pthread_barrier_init(&_distributedBricksBarrier, NULL, _usedThreads + 1);
-
-  // This barrier will be waited for by every worker thread and additionally once by the main
-  // thread for every frame.
-  pthread_barrier_init(&_renderStartBarrier, NULL, _usedThreads + 1);
+  pthread_barrier_init(&_barrier, NULL, _usedThreads + 1);
 
   // Container for offscreen buffers. The threads will initialize
   // their buffers themselves when their respective gl context is
@@ -3317,8 +3309,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     GLfloat projection[16];
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
 
-    pthread_barrier_init(&_compositingBarrier, NULL, _usedThreads + 1);
-
     int leaf = 0;
     for (unsigned int i = 0; i < _numThreads; ++i)
     {
@@ -3352,10 +3342,10 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     // The sorted brick lists are distributed among the threads. All other data specific
     // to the workers is assigned either. Now broadcast a signal telling the worker threads'
     // rendering loops to resume.
-    pthread_barrier_wait(&_renderStartBarrier);
+    pthread_barrier_wait(&_barrier);
 
     // Do compositing.
-    pthread_barrier_wait(&_compositingBarrier);
+    pthread_barrier_wait(&_barrier);
 
     // Blend the images from the worker threads onto a 2D-texture.
 
@@ -3388,8 +3378,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
-
-    pthread_barrier_destroy(&_compositingBarrier);
   }
   else
   {
@@ -3485,10 +3473,10 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     data->renderer->initPostClassificationStage(pixelShader, fragProgName);
 
-    pthread_barrier_wait(&data->renderer->_madeEmptyBricksBarrier);
+    pthread_barrier_wait(&data->renderer->_barrier);
 
     // For the main thread, this will take some time... .
-    pthread_barrier_wait(&data->renderer->_distributedBricksBarrier);
+    pthread_barrier_wait(&data->renderer->_barrier);
 
     uchar* rgbaLUT = new uchar[256 * 256 * 4];
     GLuint* texNames = NULL;
@@ -3555,7 +3543,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
 
       // Start rendering.
-      pthread_barrier_wait(&data->renderer->_renderStartBarrier);
+      pthread_barrier_wait(&data->renderer->_barrier);
 
       // Break out of loop if dtor was called.
       if (data->renderer->_terminateThreads)
@@ -3690,7 +3678,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // Store the time to render. Based upon this, dynamic load balancing will be performed.
       data->lastRenderTime = stopwatch->getTime();
 
-      pthread_barrier_wait(&data->renderer->_compositingBarrier);
+      pthread_barrier_wait(&data->renderer->_barrier);
 
       if (data->renderer->_proxyGeometryOnGpu)
       {
