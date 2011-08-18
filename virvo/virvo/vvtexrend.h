@@ -255,7 +255,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void notifyThreads(bool brickDataChanged, bool transferFunctionChanged);
     static void* threadFuncTexBricks(void* threadargs);
     void sortBrickList(std::vector<vvBrick*>& list, const vvVector3&, const vvVector3&, const bool);
-    void performLoadBalancing();
 
     ErrorType makeTextures(const GLuint& lutName, uchar*& lutData);
     ErrorType makeEmptyBricks();

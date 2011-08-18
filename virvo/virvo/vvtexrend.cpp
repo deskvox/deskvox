@@ -52,18 +52,6 @@
 #include "vvprintgl.h"
 #include "vvshaderfactory.h"
 
-// The following values will have to be approved empirically yet... .
-
-// TODO: reasonable determination of these values.
-
-// Redistribute bricks if rendering time deviation > MAX_DEVIATION %
-const float MAX_DEVIATION = 10.0f;
-// Don't redistribute bricks for peaks, but rather for constant deviation.
-const int LIMIT = 10;
-// Maximum individual deviation (otherwise the share will be adjusted).
-const float MAX_IND_DEVIATION = 0.001f;
-const float INC = 0.05f;
-
 const int MAX_VIEWPORT_WIDTH = 4800;
 const int MAX_VIEWPORT_HEIGHT = 1200;
 
@@ -1517,10 +1505,6 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
   // Only set to true by destructor to join threads.
   _terminateThreads = false;
 
-  // If smth changed, the bricks will be distributed among the threads before rendering.
-  // Obviously, initially something changed.
-  _somethingChanged = true;
-
   pthread_barrier_init(&_barrier, NULL, _usedThreads + 1);
 
   // Container for offscreen buffers. The threads will initialize
@@ -1624,8 +1608,6 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
     ++i;
     if (i >= _numThreads) break;
   }
-
-  _somethingChanged = false;
 
   return err;
 }
@@ -3298,11 +3280,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   if (_usedThreads > 0)
   {
-    if (_somethingChanged)
-    {
-      distributeBricks();
-    }
-
     GLfloat modelview[16];
     glGetFloatv(GL_MODELVIEW_MATRIX , modelview);
 
@@ -3967,98 +3944,6 @@ void vvTexRend::sortBrickList(std::vector<vvBrick*>& list, const vvVector3& eye,
     }
   }
   std::sort(list.begin(), list.end(), vvBrick::Compare());
-}
-
-void vvTexRend::performLoadBalancing()
-{
-  // Only redistribute if the deviation of the rendering times
-  // exceeds a certain limit.
-  float expectedValue = 0;
-  for (unsigned int i = 0; i < _numThreads; ++i)
-  {
-    if (_threadData[i].active)
-    {
-      expectedValue += _threadData[i].lastRenderTime;
-    }
-  }
-  expectedValue /= static_cast<float>(_numThreads);
-
-  // An ideal distribution is one where each rendering time for each thread
-  // equals the expected value exactly.
-  float* idealDistribution = new float[_numThreads];
-
-  // This is (not necessarily) true in reality... .
-  float* actualDistribution = new float[_numThreads];
-
-  // Build both arrays.
-  for (unsigned int i = 0; i < _numThreads; ++i)
-  {
-    if (_threadData[i].active)
-    {
-      idealDistribution[i] = expectedValue;
-      actualDistribution[i] = _threadData[i].lastRenderTime;
-    }
-  }
-
-  // Normalized deviation (percent).
-  const float deviation = (vvToolshed::meanAbsError(idealDistribution, actualDistribution, _numThreads) * 100.0f)
-                          / expectedValue;
-
-  // Only reorder if
-  // a) a given deviation was exceeded
-  // b) this happened at least x times
-  float tmp;
-  if (deviation > MAX_DEVIATION)
-  {
-    if (_deviationExceedCnt > LIMIT)
-    {
-      tmp = 0.0f;
-
-      // Rearrange the share for each thread.
-      for (unsigned int i = 0; i < _numThreads; ++i)
-      {
-        if (_threadData[i].active)
-          {
-          float cmp = _threadData[i].lastRenderTime - expectedValue;
-          if (cmp < MAX_IND_DEVIATION)
-          {
-            if ((_threadData[i].share + INC) <= 1.0f)
-            {
-              _threadData[i].share += INC;
-            }
-          }
-
-          if (cmp > MAX_IND_DEVIATION)
-          {
-            if ((_threadData[i].share + INC) >= 0.0f)
-            {
-              _threadData[i].share -= INC;
-            }
-          }
-          tmp += _threadData[i].share;
-        }
-      }
-
-      // Normalize partitioning.
-      for (unsigned int i = 0; i < _numThreads; ++i)
-      {
-        if (_threadData[i].active)
-        {
-          _threadData[i].share /= tmp;
-        }
-      }
-
-      // Something changed ==> before rendering the next time,
-      // the bricks will be redistributed.
-      _somethingChanged = true;
-    }
-    else
-    {
-      ++_deviationExceedCnt;
-    }
-  }
-  delete[] idealDistribution;
-  delete[] actualDistribution;
 }
 
 //----------------------------------------------------------------------------
