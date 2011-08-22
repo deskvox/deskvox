@@ -1,0 +1,17 @@
+// Shader for 2D transfer functions.
+//
+// Author of cg-version: 
+//  Jurgen Schulze <schulze@cs.brown.edu>
+//
+// Converted by:
+//   Stavros Delisavas <stavros.delisavas@uni-koeln.de>
+
+uniform sampler3D pix3dtex;
+uniform sampler2D pixLUT;
+
+void main()
+{
+  vec4 origColor = texture3D(pix3dtex, gl_TexCoord[0].xyz);
+  vec4 OUT = texture2D(pixLUT, vec2(origColor.x, origColor.y));
+  gl_FragColor = OUT;
+}
