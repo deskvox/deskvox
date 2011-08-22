@@ -30,6 +30,7 @@ public:
     @param name The filename of shader-tuple without suffix and file-extension
    */
   static vvShaderProgram* createProgram(const std::string& name);
+  static vvShaderProgram* createProgram(const std::string& vert, const std::string& geom, const std::string& frag);
   static bool cgSupport();
 
   static bool glslSupport();

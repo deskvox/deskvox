@@ -105,6 +105,9 @@ void vvCgProgram::disableProgram()
 
     cgGLDisableProfile(_profile[i]);
   }
+  //  ParameterIterator it = initParameter(parameterName);
+  //  if(it != _cgParameterNameMaps.end())
+  //    cgGLDisableTextureParameter(_cgParameterNameMaps[parameterName]);
 }
 
 void vvCgProgram::cgErrorHandler(CGcontext context, CGerror error, void*)
@@ -202,6 +205,7 @@ void vvCgProgram::setParameter1i(const string& parameterName, const int& i1)
 
 void vvCgProgram::setParameter3f(const string& parameterName, const float* array)
 {
+  cerr << "wrooooog blasdasdas " << endl;
   ParameterIterator it = initParameter(parameterName);
   if(it != _cgParameterNameMaps.end())
     cgSetParameter3fv(_cgParameterNameMaps[parameterName], array);
@@ -250,39 +254,31 @@ void vvCgProgram::setParameterArray3f(const string& parameterName, const float* 
     cgGLSetParameterArray3f(_cgParameterNameMaps[parameterName], 0, 3*count, array);
 }
 
-void vvCgProgram::setMatrix4f(const string& parameterName, const float* mat)
+void vvCgProgram::setParameterMatrix4f(const string& parameterName, const float* mat)
 {
   ParameterIterator it = initParameter(parameterName);
   if(it != _cgParameterNameMaps.end())
     cgSetMatrixParameterfr(_cgParameterNameMaps[parameterName], mat);
 }
 
-void vvCgProgram::setParameterTexId(const string& parameterName, const unsigned int& ui1)
+void vvCgProgram::setParameterTex1D(const string& parameterName, const unsigned int& ui)
 {
   ParameterIterator it = initParameter(parameterName);
   if(it != _cgParameterNameMaps.end())
-    cgGLSetTextureParameter(_cgParameterNameMaps[parameterName], ui1);
+  {
+    cgGLSetTextureParameter(_cgParameterNameMaps[parameterName], ui);
+    cgGLEnableTextureParameter(_cgParameterNameMaps[parameterName]);
+  }
 }
 
-void vvCgProgram::setTextureId(const string& parameterName, const unsigned int& ui1)
+void vvCgProgram::setParameterTex2D(const string& parameterName, const unsigned int& ui)
 {
-  ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
-   cgGLSetTextureParameter(_cgParameterNameMaps[parameterName], ui1);
+  setParameterTex1D(parameterName, ui);
 }
 
-void vvCgProgram::enableTexture(const string& parameterName)
+void vvCgProgram::setParameterTex3D(const string& parameterName, const unsigned int& ui)
 {
-  ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
-   cgGLEnableTextureParameter(_cgParameterNameMaps[parameterName]);
-}
-
-void vvCgProgram::disableTexture(const string& parameterName)
-{
-  ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
-    cgGLDisableTextureParameter(_cgParameterNameMaps[parameterName]);
+  setParameterTex1D(parameterName, ui);
 }
 
 #endif // ifdef HAVE_CG

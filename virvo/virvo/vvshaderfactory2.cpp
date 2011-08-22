@@ -35,6 +35,11 @@ string vvShaderFactory2::_fileString[3] = { string(), string(), string() };
 
 vvShaderProgram* vvShaderFactory2::createProgram(const std::string& name)
 {
+  return createProgram(name, name, name);
+}
+
+vvShaderProgram* vvShaderFactory2::createProgram(const std::string& vert, const std::string& geom, const std::string& frag)
+{
   if(_shaderDir == "")
     _shaderDir = getShaderDir();
 
@@ -44,27 +49,28 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& name)
   {
     vvDebugMsg::msg(0, "vvShaderFactory2::createProgram: no GLSL support!");
   }
-
-  _shaderName[0] = "vv_" + name + ".vsh";
-  _shaderName[1] = "vv_" + name + ".gsh";
-  _shaderName[2] = "vv_" + name + ".fsh";
-  bool loaded = loadFileStrings();
-
-  if(loaded && glslSupport())
+  else
   {
-    cerr << "GLSL-shaders found:" << endl;
+    _shaderName[0] = "vv_" + vert + ".vsh";
+    _shaderName[1] = "vv_" + geom + ".gsh";
+    _shaderName[2] = "vv_" + frag + ".fsh";
+    bool loaded = loadFileStrings();
 
-    for(int i=0;i<3;i++)
+    if(loaded)
     {
-      cerr << "try " << _shaderName[i] << endl;
-      if(_fileString[i].length() > 0)
-        cerr << _shaderName[i] << endl;
-    }
-    program = new vvGLSLProgram(_fileString[0], _fileString[1], _fileString[2]);
-    if(!program->isValid())
-    {
-      delete program;
-      program = NULL;
+      cerr << "GLSL-shaders found: ";
+
+      for(int i=0;i<3;i++)
+        if(_fileString[i].length() > 0)
+          cerr << _shaderName[i] << " ";
+      cerr << endl;
+
+      program = new vvGLSLProgram(_fileString[0], _fileString[1], _fileString[2]);
+      if(!program->isValid())
+      {
+        delete program;
+        program = NULL;
+      }
     }
   }
 #ifdef HAVE_CG
@@ -74,28 +80,29 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& name)
     {
       vvDebugMsg::msg(0, "vvShaderFactory2::createProgram: no CG support!");
     }
-
-    _shaderName[0] = "vv_" + name + ".vert.cg";
-    _shaderName[1] = "vv_" + name + ".geom.cg";
-    _shaderName[2] = "vv_" + name + ".frag.cg";
-
-    loaded = loadFileStrings();
-
-    if(loaded && cgSupport())
+    else
     {
-      cerr << "CG-shaders found:" << endl;
+      _shaderName[0] = "vv_" + vert + ".vert.cg";
+      _shaderName[1] = "vv_" + geom + ".geom.cg";
+      _shaderName[2] = "vv_" + frag + ".frag.cg";
 
-      for(int i=0;i<3;i++)
+      bool loaded = loadFileStrings();
+
+      if(loaded)
       {
-        cerr << "try " << _shaderName[i] << endl;
-        if(_fileString[i].length() > 0)
-          cerr << _shaderName[i] << endl;
-      }
-      program = new vvCgProgram(_fileString[0], _fileString[1], _fileString[2]);
-      if(!program->isValid())
-      {
-        delete program;
-        program = NULL;
+        cerr << "CG-shaders found: ";
+
+        for(int i=0;i<3;i++)
+          if(_fileString[i].length() > 0)
+            cerr << _shaderName[i] << " ";
+        cerr << endl;
+
+        program = new vvCgProgram(_fileString[0], _fileString[1], _fileString[2]);
+        if(!program->isValid())
+        {
+          delete program;
+          program = NULL;
+        }
       }
     }
   }
@@ -103,7 +110,7 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& name)
 
   if(!program)
   {
-    cerr << "No supported shaders with name " << name << " found!" << endl;
+    cerr << "No supported shaders with name " << vert << " " << geom << " or " << frag << " found!" << endl;
   }
 
   return program;
@@ -118,7 +125,6 @@ bool vvShaderFactory2::loadFileStrings()
       continue;
 
     std::string filePath = _shaderDir+_shaderName[i];
-    cerr << "looking for shader: " << filePath << endl;
     char* tempString = vvToolshed::file2string(filePath.c_str());
     std::string fileString;
     if(tempString)

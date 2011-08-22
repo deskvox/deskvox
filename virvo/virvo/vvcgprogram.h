@@ -78,12 +78,11 @@ public:
 
   void setParameterArray3f(const std::string& parameterName, const float* array, const int& count);
 
-  void setMatrix4f(const std::string& parameterName, const float* mat);
+  void setParameterMatrix4f(const std::string& parameterName, const float* mat);
 
-  void setParameterTexId(const std::string& parameterName, const unsigned int& ui1);
-  void setTextureId(const std::string& parameterName, const unsigned int& ui1);
-  void enableTexture(const std::string& parameterName);
-  void disableTexture(const std::string& parameterName);
+  void setParameterTex1D(const std::string& parameterName, const unsigned int& ui);
+  void setParameterTex2D(const std::string& parameterName, const unsigned int& ui);
+  void setParameterTex3D(const std::string& parameterName, const unsigned int& ui);
 
 private:
   typedef std::map<std::string, CGparameter> ParameterMap;

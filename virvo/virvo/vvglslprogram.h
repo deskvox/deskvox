@@ -21,6 +21,7 @@
 #include "vvglew.h"
 
 #include <vector>
+#include <map>
 
 /** Wrapper Class for OpenGL Shading Language
   This class loads a combination of up to three shaders
@@ -32,7 +33,6 @@
 class VIRVOEXPORT vvGLSLProgram : public vvShaderProgram
 {
 public:
-
   /** Creates a vvGLSLProgram and tries to attach the given shaders source code.
     @param vert Filestring of desired vertex-shader or emtpy/NULL.
     @param geom Filestring of desired geometry-shader or emtpy/NULL.
@@ -65,21 +65,45 @@ public:
 
   void setParameterArray3f(const std::string& parameterName, const float* array, const int& count);
 
-  void setMatrix4f(const std::string& parameterName, const float* mat);
+  void setParameterMatrix4f(const std::string& parameterName, const float* mat);
 
-  void setTextureId(const std::string& parameterName, const unsigned int& ui1) {};
-  void enableTexture(const std::string& parameterName) {};
-  void disableTexture(const std::string& parameterName) {};
+  void setParameterTex1D(const std::string& parameterName, const unsigned int& ui);
+  void setParameterTex2D(const std::string& parameterName, const unsigned int& ui);
+  void setParameterTex3D(const std::string& parameterName, const unsigned int& ui);
+
+  void disableTexture1D(const std::string& parameterName = NULL);
+  void disableTexture2D(const std::string& parameterName = NULL);
+  void disableTexture3D(const std::string& parameterName = NULL);
 
 private:
+  enum TextureType
+  {
+    TEXTURE_1D = 0,
+    TEXTURE_2D,
+    TEXTURE_3D
+  };
+
+  struct vvGLSLTexture
+  {
+    GLint       _id;
+    GLint       _unit;
+    TextureType _type;
+    GLint       _uniform;
+  };
+
+  typedef std::map<std::string, vvGLSLTexture*> TextureMap;
+  typedef TextureMap::iterator TextureIterator;
+
+  vvGLSLTexture* getTexture(const std::string& textureName);
+
   bool loadShaders();     /// Initializes, compiles, and links a shader program
   void deleteProgram();   /// deletes program with all shaders and frees memory
 
-  GLuint _programId;
-  GLuint _shaderId[3];
-  int  _nTexture;         ///< the number of texture activated
-  bool _isSupported;      ///< true if there is GLSL support
-
+  GLuint      _programId;
+  GLuint      _shaderId[3];
+  TextureMap  _textureNameMaps; ///< maps of texturename on texture unit
+  GLuint      _nTexture;        ///< counter for texture units
+  bool        _isSupported;     ///< true if there is GLSL support
 };
 #endif // _VV_GLSLPROGRAM_H_
 
