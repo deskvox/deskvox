@@ -5,17 +5,17 @@
 
 struct PixelIn 
 {
-	float3 tc0 : TEXCOORD0;
-	float3 tc1 : TEXCOORD1;
+  float3 tc0 : TEXCOORD0;
+  float3 tc1 : TEXCOORD1;
 };
 
 float4 main(
- 	const sampler3D  in uniform pix3dtex : TEXTURE0,
-	const sampler2D  in uniform pixLUT,
-	      PixelIn    in         IN) : COLOR0
+  const sampler3D  in uniform pix3dtex : TEXTURE0,
+  const sampler2D  in uniform pixLUT,
+        PixelIn    in         IN) : COLOR0
 {
-	float x = tex3D(pix3dtex, IN.tc0).r;
-	float y = tex3D(pix3dtex, IN.tc1).r;
-	float4 OUT = tex2D(pixLUT, float2(x, y));
-        return OUT;
+  float x = tex3D(pix3dtex, IN.tc0).r;
+  float y = tex3D(pix3dtex, IN.tc1).r;
+  float4 OUT = tex2D(pixLUT, float2(x, y));
+  return OUT;
 }

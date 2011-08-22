@@ -4,15 +4,15 @@
 
 struct PixelIn 
 {
-   float3 coord3d : TEXCOORD0;
+  float3 coord3d : TEXCOORD0;
 };
 
 float4 main(
-   const sampler3D  in uniform pix3dtex : TEXTURE0,
-   const sampler2D  in uniform pixLUT,
-         PixelIn    in         IN) : COLOR0
+  const sampler3D  in uniform pix3dtex : TEXTURE0,
+  const sampler2D  in uniform pixLUT,
+        PixelIn    in         IN) : COLOR0
 {
-   float4 origColor = tex3D(pix3dtex, IN.coord3d);
-   float4 OUT = tex2D(pixLUT, float2(origColor.r, 0));
-        return OUT;
+  float4 origColor = tex3D(pix3dtex, IN.coord3d);
+  float4 OUT = tex2D(pixLUT, float2(origColor.r, 0));
+  return OUT;
 }

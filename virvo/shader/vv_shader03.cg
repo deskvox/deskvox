@@ -6,7 +6,7 @@
 
 struct PixelIn 
 {
-	float3 coord3d : TEXCOORD0;
+  float3 coord3d : TEXCOORD0;
 };
 
 float4 main(
@@ -14,11 +14,11 @@ float4 main(
   const sampler2D  in uniform pixLUT,
   PixelIn    in IN) : COLOR0
 {
-	float4 origColor = tex3D(pix3dtex, IN.coord3d);
-	float4 OUT;
-	OUT.r = tex2D(pixLUT, float2(origColor.r, 0)).r;
-	OUT.g = tex2D(pixLUT, float2(origColor.g, 0)).g;
-	OUT.b = tex2D(pixLUT, float2(origColor.b, 0)).b;
-	OUT.a = max(OUT.r, max(OUT.g, OUT.b));
-	return OUT;
+  float4 origColor = tex3D(pix3dtex, IN.coord3d);
+  float4 OUT;
+  OUT.r = tex2D(pixLUT, float2(origColor.r, 0)).r;
+  OUT.g = tex2D(pixLUT, float2(origColor.g, 0)).g;
+  OUT.b = tex2D(pixLUT, float2(origColor.b, 0)).b;
+  OUT.a = max(OUT.r, max(OUT.g, OUT.b));
+  return OUT;
 }
