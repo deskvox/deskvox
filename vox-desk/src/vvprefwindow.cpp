@@ -502,12 +502,9 @@ void VVPreferenceWindow::updateValues()
 
     if (texrend)
     {
-      if (texrend->isSupported(vvTexRend::VV_VIEWPORT))
-      {
-        _gtCombo->appendItem("3D textures (viewport aligned)");
-        _gtCombo->appendItem("3D textures (bricked)");
-      }
+      if (texrend->isSupported(vvTexRend::VV_VIEWPORT)) _gtCombo->appendItem("3D textures (viewport aligned)");
       if (texrend->isSupported(vvTexRend::VV_SPHERICAL)) _gtCombo->appendItem("3D textures (spherical)");
+      if (texrend->isSupported(vvTexRend::VV_VIEWPORT)) _gtCombo->appendItem("3D textures (bricked)");
     }
     _gtCombo->setNumVisible(_gtCombo->getNumItems());
     if (texrend)
