@@ -1,4 +1,6 @@
-
+IF(NOT GLUT_FOUND)
+  RETURN()
+ENDIF(NOT GLUT_FOUND)
 
 SET(VVIEW_INC
   vvobjview.h
