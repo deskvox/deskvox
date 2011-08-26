@@ -10,7 +10,7 @@ uniform sampler2D pixLUT;
 
 void main()
 {
-  vec4 origColor = texture2D(pix2dtex, gl_TexCoord[0].xyz);
+  vec4 origColor = texture2D(pix2dtex, gl_TexCoord[0].xy);
   vec4 OUT = texture2D(pixLUT, vec2(origColor.x, 0.0));
   gl_FragColor = OUT;
 }
