@@ -348,18 +348,31 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   switch(voxelType)
   {
-    case VV_FRG_PRG:
-      texelsize=1;
-      internalTexFormat = GL_LUMINANCE;
-      texFormat = GL_LUMINANCE;
-      break;
     case VV_PAL_TEX:
       texelsize=1;
       internalTexFormat = GL_COLOR_INDEX8_EXT;
       texFormat = GL_COLOR_INDEX;
       break;
-    case VV_TEX_SHD:
+    case VV_FRG_PRG:
+      texelsize=1;
+      internalTexFormat = GL_LUMINANCE;
+      texFormat = GL_LUMINANCE;
+      break;
     case VV_PIX_SHD:
+      if(vd->chan == 1)
+      {
+        texelsize=1;
+        internalTexFormat = GL_LUMINANCE;
+        texFormat = GL_LUMINANCE;
+      }
+      else
+      {
+        texelsize=4;
+        internalTexFormat = GL_RGBA;
+        texFormat = GL_RGBA;
+      }
+      break;
+    case VV_TEX_SHD:
       texelsize=4;
       internalTexFormat = GL_RGBA;
       texFormat = GL_RGBA;
@@ -781,14 +794,17 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(const int axes)
                 case VV_FRG_PRG:
                   rgbaSlice[i][texSliceIndex] = (uchar)rawVal[0];
                   break;
+                case VV_PIX_SHD:
+                  for (int c=0; c<ts_min(4, vd->chan); ++c)
+                  {
+                    rgbaSlice[i][texSliceIndex + c]   = (uchar)rawVal[0];
+                  }
+                  break;
                 case VV_TEX_SHD:
                   for (int c=0; c<4; ++c)
                   {
                     rgbaSlice[i][texSliceIndex + c]   = (uchar)rawVal[0];
                   }
-                  break;
-                case VV_PIX_SHD:
-                  rgbaSlice[i][texSliceIndex] = (uchar)rawVal[0];
                   break;
                 case VV_RGBA:
                   for (int c=0; c<4; ++c)
@@ -1103,16 +1119,14 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                   break;
                 case VV_PAL_TEX:
                 case VV_FRG_PRG:
-                  texData[texOffset] = (uchar) rawVal[0];
+                case VV_PIX_SHD:
+                  texData[texelsize * texOffset] = (uchar) rawVal[0];
                   break;
                 case VV_TEX_SHD:
                   for (int c = 0; c < 4; c++)
                   {
                     texData[4 * texOffset + c] = (uchar) rawVal[0];
                   }
-                  break;
-                case VV_PIX_SHD:
-                  texData[4 * texOffset] = (uchar) rawVal[0];
                   break;
                 case VV_RGBA:
                   for (int c = 0; c < 4; c++)
@@ -2090,16 +2104,14 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int of
                 break;
               case VV_PAL_TEX:
               case VV_FRG_PRG:
-                texData[texOffset] = (uchar) rawVal[0];
+              case VV_PIX_SHD:
+                texData[texelsize * texOffset] = (uchar) rawVal[0];
                 break;
               case VV_TEX_SHD:
                 for (int c = 0; c < 4; c++)
                 {
                   texData[4 * texOffset + c] = (uchar) rawVal[0];
                 }
-                break;
-              case VV_PIX_SHD:
-                texData[4 * texOffset] = (uchar) rawVal[0];
                 break;
               case VV_RGBA:
                 for (int c = 0; c < 4; c++)
@@ -2608,14 +2620,11 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(int offsetX, int offsetY, in
                   break;
                 case VV_PAL_TEX:
                 case VV_FRG_PRG:
-                  texData[texOffset] = (uchar) rawVal[0];
+                  texData[texelsize * texOffset] = (uchar) rawVal[0];
                   break;
                 case VV_TEX_SHD:
                   for (c = 0; c < 4; c++)
                     texData[4 * texOffset + c] = (uchar) rawVal[0];
-                  break;
-                case VV_PIX_SHD:
-                  texData[4 * texOffset] = (uchar) rawVal[0];
                   break;
                 case VV_RGBA:
                   for (c = 0; c < 4; c++)
@@ -5652,11 +5661,9 @@ unsigned char* vvTexRend::getHeightFieldData(float points[4][3], int& width, int
           break;
         case VV_PAL_TEX:
         case VV_FRG_PRG:
-          result[index] = data[index];
-          break;
         case VV_TEX_SHD:
         case VV_PIX_SHD:
-          result[index] = data[4*index];
+          result[index] = data[texelsize*index];
           break;
         case VV_RGBA:
           assert(0);
