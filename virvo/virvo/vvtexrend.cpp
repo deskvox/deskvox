@@ -25,6 +25,8 @@
 #include "vvglew.h"
 
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <algorithm>
 #include <limits.h>
 #include <math.h>
@@ -50,7 +52,8 @@
 #include "vvstopwatch.h"
 #include "vvoffscreenbuffer.h"
 #include "vvprintgl.h"
-#include "vvshaderfactory.h"
+#include "vvshaderfactory2.h"
+#include "vvshaderprogram.h"
 
 const int MAX_VIEWPORT_WIDTH = 4800;
 const int MAX_VIEWPORT_HEIGHT = 1200;
@@ -219,16 +222,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     _renderTarget = new vvRenderTarget();
   }
 
-  if (vvShaderFactory::isSupported(VV_CG_MANAGER))
-  {
-    _currentShader = vd->chan - 1;
-    _previousShader = _currentShader;
-  }
-  else
-  {
-    _currentShader = 0;
-    _previousShader = 0;
-  }
+  _currentShader = vd->chan - 1;
+  _previousShader = _currentShader;
+
   _useOnlyOneBrick = false;
   if (bricks != NULL)
   {
@@ -249,12 +245,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   extTex3d  = vvGLTools::isGLextensionSupported("GL_EXT_texture3D") || vvGLTools::isGLVersionSupported(1,2,1);
   arbMltTex = vvGLTools::isGLextensionSupported("GL_ARB_multitexture") || vvGLTools::isGLVersionSupported(1,3,0);
 
-  vvGLTools::printGLError("Before creating shader managers");
-
-  _isectShader = vvShaderFactory::provideShaderManager(VV_GLSL_MANAGER);
-  _pixelShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
-
-  vvGLTools::printGLError("After creating shader managers");
+  _shader = NULL;
 
   extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax") || vvGLTools::isGLVersionSupported(1,4,0);
   extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation") || vvGLTools::isGLVersionSupported(1,1,0);
@@ -264,14 +255,15 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   extPixShd  = isSupported(VV_PIX_SHD);
   arbFrgPrg  = isSupported(VV_FRG_PRG);
   extGlslShd = isSupported(VV_GLSL_SHD);
-  _proxyGeometryOnGpuSupported = extGlslShd && arbFrgPrg && _isectShader;
-  _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported;
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two") || vvGLTools::isGLVersionSupported(2,0,0);
 
   // Determine best rendering algorithm for current hardware:
   voxelType = findBestVoxelType(vox);
   geomType  = findBestGeometry(geom, voxelType);
+
+  _proxyGeometryOnGpuSupported = extGlslShd && arbFrgPrg;
+  _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported && geomType==VV_BRICKS;
 
   cerr << "Rendering algorithm: ";
   switch(geomType)
@@ -320,12 +312,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     dispatchThreadedWGLContexts();
   }
 
-  if (vvShaderFactory::isSupported(VV_CG_MANAGER))
+  if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
   {
-    if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
-    {
-      _currentShader = get2DTextureShader();
-    }
+    cerr << "get2DTextureShader()" << endl;
+    _currentShader = get2DTextureShader();
+    cerr << "_currentShader: "<< _currentShader << endl;
   }
 
   if (geomType == VV_BRICKS)
@@ -341,7 +332,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   if (_usedThreads == 0)
   {
-    initPostClassificationStage(_pixelShader, fragProgName);
+    initPostClassificationStage(_shader, fragProgName);
   }
 
   textures = 0;
@@ -435,11 +426,13 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     pthread_barrier_wait(&_barrier);
   }
 
-  if (_proxyGeometryOnGpu && (_usedThreads == 0))
+  if (_usedThreads == 0)
   {
-    _proxyGeometryOnGpuSupported = initIntersectionShader(_isectShader);
+    _shader = initShader();
+    if(_shader) _proxyGeometryOnGpuSupported = true;
+
     if (_proxyGeometryOnGpuSupported)
-      setupIntersectionParameters(_isectShader);
+      setupIntersectionParameters(_shader);
     else
       _proxyGeometryOnGpu = false;
   }
@@ -469,13 +462,12 @@ vvTexRend::~vvTexRend()
 
   delete[] rgbaTF;
   delete[] rgbaLUT;
-
   if (_proxyGeometryOnGpu)
   {
     glDisableClientState(GL_VERTEX_ARRAY);
   }
-  delete _isectShader;
-  delete _pixelShader;
+  delete _shader;
+  _shader = NULL;
 
   delete[] preintTable;
 
@@ -2794,7 +2786,7 @@ void vvTexRend::unsetGLenvironment() const
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName,
+void vvTexRend::enableLUTMode(vvShaderProgram* shader, GLuint& lutName,
                               GLuint progName[VV_FRAG_PROG_MAX])
 {
   switch(voxelType)
@@ -2806,7 +2798,7 @@ void vvTexRend::enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName,
       enableNVShaders();
       break;
     case VV_PIX_SHD:
-      enablePixelShaders(pixelShader, lutName);
+      enableShader(shader, lutName);
       break;
     case VV_SGI_LUT:
       glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -2821,7 +2813,7 @@ void vvTexRend::enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName,
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableLUTMode(vvShaderManager* pixelShader) const
+void vvTexRend::disableLUTMode(vvShaderProgram* shader)
 {
   switch(voxelType)
   {
@@ -2832,7 +2824,7 @@ void vvTexRend::disableLUTMode(vvShaderManager* pixelShader) const
       disableNVShaders();
       break;
     case VV_PIX_SHD:
-      disablePixelShaders(pixelShader);
+      disableShader(shader);
       break;
     case VV_SGI_LUT:
       if (glsTexColTable==(uchar)true) glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -2955,7 +2947,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   bool isOrtho = pm.isProjOrtho();
 
   getObjNormal(normal, origin, eye, invMV, isOrtho);
-  evaluateLocalIllumination(_pixelShader, normal);
+  evaluateLocalIllumination(_shader, normal);
 
   // compute number of slices to draw
   float depth = fabs(normal[0]*probeSizeObj[0]) + fabs(normal[1]*probeSizeObj[1]) + fabs(normal[2]*probeSizeObj[2]);
@@ -3053,8 +3045,16 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   releye.sub(&pos);
 
   // Volume render a 3D texture:
-  enableTexture(GL_TEXTURE_3D_EXT);
-  glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
+
+  if(voxelType == VV_PIX_SHD && _shader)
+  {
+    _shader->setParameterTex3D("pix3dtex", texNames[vd->getCurrentFrame()]);
+  }
+  else
+  {
+    enableTexture(GL_TEXTURE_3D_EXT);
+    glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
+  }
   texPoint.copy(&farthest);
   for (i=0; i<numSlices; ++i)                     // loop thru all drawn textures
   {
@@ -3156,6 +3156,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
 
 void vvTexRend::renderTexBricks(const vvMatrix* mv)
 {
+  vvGLTools::printGLError("Enter vvTexRend::renderTexBricks(const vvMatrix* mv)");
   vvMatrix pm;                                    // OpenGL projection matrix
   vvVector3 farthest;                             // volume vertex farthest from the viewer
   vvVector3 delta;                                // distance vector between textures [object space]
@@ -3219,7 +3220,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   getObjNormal(normal, origin, eye, invMV, isOrtho);
   if (_usedThreads == 0)
   {
-    evaluateLocalIllumination(_pixelShader, normal);
+    evaluateLocalIllumination(_shader, normal);
 
     // Use alpha correction in indexed mode: adapt alpha values to number of textures:
     if (instantClassification())
@@ -3377,7 +3378,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       // lighting and texturing.
       glDisable(GL_TEXTURE_3D_EXT);
       glDisable(GL_LIGHTING);
-      disablePixelShaders(_pixelShader);
+      disableShader(_shader);
       disableFragProg();
       for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
       {
@@ -3388,8 +3389,8 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     {
       if (_proxyGeometryOnGpu)
       {
-        _isectShader->setParameter1f(0, ISECT_SHADER_DELTA, delta.length());
-        _isectShader->setParameter3f(0, ISECT_SHADER_PLANENORMAL, normal[0], normal[1], normal[2]);
+        _shader->setParameter1f("delta", delta.length());
+        _shader->setParameter3f("planeNormal", normal[0], normal[1], normal[2]);
 
         glEnableClientState(GL_VERTEX_ARRAY);
 #ifdef ISECT_GLSL_INST
@@ -3413,7 +3414,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       {
         (*it)->render(this, normal, farthest, delta, probeMin, probeMax,
                      texNames,
-                     _isectShader);
+                     _shader);
       }
       if (_proxyGeometryOnGpu)
       {
@@ -3450,14 +3451,14 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
   {
     vvGLTools::printGLError("enter vvTexRend::threadFuncTexBricks()");
 
-    vvShaderManager* pixelShader = vvShaderFactory::provideShaderManager(VV_CG_MANAGER);
+    vvShaderProgram* shader = NULL;
     GLuint fragProgName[VV_FRAG_PROG_MAX];
 
     vvStopwatch* stopwatch;
 
     glewInit();
 
-    data->renderer->initPostClassificationStage(pixelShader, fragProgName);
+    data->renderer->initPostClassificationStage(shader, fragProgName);
 
     pthread_barrier_wait(&data->renderer->_barrier);
 
@@ -3482,13 +3483,11 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     data->renderer->setGLenvironment();
 
-    vvShaderManager* isectShader = vvShaderFactory::provideShaderManager(VV_GLSL_MANAGER);
-
     if(data->renderer->_proxyGeometryOnGpu)
     {
-      data->renderer->initIntersectionShader(isectShader);
-      data->renderer->setupIntersectionParameters(isectShader);
-      data->renderer->enableIntersectionShader(isectShader);
+      shader = data->renderer->initShader();
+      data->renderer->setupIntersectionParameters(shader);
+      data->renderer->enableShader(shader, pixLUTName);
     }
 
     data->renderer->_offscreenBuffers[data->threadId] = new vvOffscreenBuffer(1.0f, data->renderer->_multiGpuBufferPrecision);
@@ -3539,8 +3538,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       }
 
       data->renderer->_offscreenBuffers[data->threadId]->resize(data->viewport[2], data->viewport[3]);
-      data->renderer->enableLUTMode(pixelShader, pixLUTName, fragProgName);
-      data->renderer->evaluateLocalIllumination(pixelShader, data->normal);
+      data->renderer->enableLUTMode(shader, pixLUTName, fragProgName);
+      data->renderer->evaluateLocalIllumination(shader, data->normal);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
       if (data->renderer->instantClassification())
@@ -3588,11 +3587,12 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       if(data->renderer->_proxyGeometryOnGpu)
       {
-        data->renderer->enableIntersectionShader(isectShader);
+        //data->renderer->enableIntersectionShader(shader);
+        data->renderer->enableShader(shader, pixLUTName);
 
         // Per frame parameters.
-        isectShader->setParameter1f(0, "delta", data->delta.length());
-        isectShader->setParameter3f(0, "planeNormal", data->normal[0], data->normal[1], data->normal[2]);
+        shader->setParameter1f("delta", data->delta.length());
+        shader->setParameter3f("planeNormal", data->normal[0], data->normal[1], data->normal[2]);
       }
 
       data->renderer->getBricksInProbe(data->nonemptyList, data->insideList, data->sortedList,
@@ -3605,8 +3605,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
         // lighting and texturing.
         glDisable(GL_TEXTURE_3D_EXT);
         glDisable(GL_LIGHTING);
-        data->renderer->disableIntersectionShader(isectShader);
-        data->renderer->disablePixelShaders(pixelShader);
+        data->renderer->disableShader(shader);
         data->renderer->disableFragProg();
         for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
         {
@@ -3625,7 +3624,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
           tmp->render(data->renderer, data->normal,
                       data->farthest, data->delta,
                       data->probeMin, data->probeMax,
-                      texNames, isectShader);
+                      texNames, shader);
         }
         if (data->renderer->_proxyGeometryOnGpu)
         {
@@ -3638,7 +3637,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                                        - data->sortedList.size()));
 
       glDisable(GL_TEXTURE_3D_EXT);
-      data->renderer->disableLUTMode(pixelShader);
+      data->renderer->disableLUTMode(shader);
 
       // Blend the images to one single image.
 
@@ -3668,7 +3667,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       if (data->renderer->_proxyGeometryOnGpu)
       {
-        data->renderer->disableIntersectionShader(isectShader);
+        data->renderer->disableShader(shader);
       }
     }
 
@@ -3679,8 +3678,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     }
 
     data->renderer->removeTextures(texNames, &numTextures);
-    delete isectShader;
-    delete pixelShader;
+    delete shader;
+
     glDeleteTextures(1, &pixLUTName);
     delete[] rgbaLUT;
     delete stopwatch;
@@ -4058,8 +4057,15 @@ void vvTexRend::renderTex3DSpherical(vvMatrix* view)
   glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
 
   // Volume render a 3D texture:
-  enableTexture(GL_TEXTURE_3D_EXT);
-  glBindTexture(GL_TEXTURE_3D_EXT, texNames[0]);
+  if(voxelType == VV_PIX_SHD && _shader)
+  {
+    _shader->setParameterTex3D("pix3dtex", texNames[vd->getCurrentFrame()]);
+  }
+  else
+  {
+    enableTexture(GL_TEXTURE_3D_EXT);
+    glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
+  }
 
   // Enable clipping plane if appropriate:
   if (_clipMode) activateClippingPlane();
@@ -4151,7 +4157,15 @@ void vvTexRend::renderTex2DSlices(float zz)
 
   for (int i=0; i<numTextures; ++i)
   {
-    glBindTexture(GL_TEXTURE_2D, texNames[vvToolshed::round(texIndex)]);
+    if(voxelType == VV_PIX_SHD && _shader)
+    {
+      _shader->setParameterTex2D("pix2dtex", texNames[vvToolshed::round(texIndex)]);
+    }
+    else
+    {
+      glBindTexture(GL_TEXTURE_2D, texNames[vvToolshed::round(texIndex)]);
+    }
+
 
     if(voxelType==VV_PAL_TEX)
     {
@@ -4328,7 +4342,14 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
   enableTexture(GL_TEXTURE_2D);
   for (i=0; i<numTextures; ++i)
   {
-    glBindTexture(GL_TEXTURE_2D, texNames[vvToolshed::round(texIndex)]);
+    if(voxelType == VV_PIX_SHD && _shader)
+    {
+      _shader->setParameterTex2D("pix2dtex", texNames[vvToolshed::round(texIndex)]);
+    }
+    else
+    {
+      glBindTexture(GL_TEXTURE_2D, texNames[vvToolshed::round(texIndex)]);
+    }
 
     if(voxelType==VV_PAL_TEX)
     {
@@ -4407,7 +4428,7 @@ void vvTexRend::renderVolumeGL()
   {
     if ((geomType == VV_BRICKS) && !_showBricks && _proxyGeometryOnGpu)
     {
-      enableIntersectionShader(_isectShader);
+      enableShader(_shader, pixLUTName);
     }
   }
 
@@ -4425,7 +4446,7 @@ void vvTexRend::renderVolumeGL()
   {
     if (geomType != VV_BRICKS || !_showBricks)
     {
-      enableLUTMode(_pixelShader, pixLUTName, fragProgName);
+      enableLUTMode(_shader, pixLUTName, fragProgName);
     }
   }
 
@@ -4450,9 +4471,9 @@ void vvTexRend::renderVolumeGL()
 
   if (_usedThreads == 0)
   {
-    disableLUTMode(_pixelShader);
+    disableLUTMode(_shader);
     unsetGLenvironment();
-    disableIntersectionShader(_isectShader);
+    disableShader(_shader);
   }
   else
   {
@@ -4577,8 +4598,7 @@ int vvTexRend::getLUTSize(int* size) const
     x = 4096;
     y = z = 1;
   }
-  else if (vvShaderFactory::isSupported(VV_CG_MANAGER)
-    && _currentShader==8 && voxelType==VV_PIX_SHD)
+  else if (_currentShader==8 && voxelType==VV_PIX_SHD)
   {
     x = y = getPreintTableSize();
     z = 1;
@@ -4785,8 +4805,11 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
       }
       else
       {
-        _proxyGeometryOnGpu = _isectShader && _proxyGeometryOnGpuSupported;
+        _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported && geomType==VV_BRICKS;
       }
+      disableShader(_shader);
+      delete _shader;
+      _shader = initShader();
       break;
     case vvRenderer::VV_LEAPEMPTY:
       _emptySpaceLeaping = (newValue == 0.0f) ? false : true;
@@ -4874,14 +4897,23 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
       }
       break;
     case vvRenderer::VV_LIGHTING:
-      if (newValue != 0.0f)
+      if(geomType != VV_SLICES && geomType != VV_CUBIC2D)
       {
-        _previousShader = _currentShader;
-        _currentShader = getLocalIlluminationShader();
-      }
-      else
-      {
-        _currentShader = _previousShader;
+        if (newValue != 0.0f)
+        {
+          _previousShader = _currentShader;
+          _currentShader = getLocalIlluminationShader();
+          disableShader(_shader);
+          delete _shader;
+          _shader = initShader();
+        }
+        else
+        {
+          _currentShader = _previousShader;
+          disableShader(_shader);
+          delete _shader;
+          _shader = initShader();
+        }
       }
       break;
     case vvRenderer::VV_MEASURETIME:
@@ -4973,18 +5005,11 @@ bool vvTexRend::isSupported(const VoxelType voxel)
         vvGLTools::isGLextensionSupported("GL_NV_register_combiners") &&
         vvGLTools::isGLextensionSupported("GL_NV_register_combiners2");
     case VV_PIX_SHD:
-      if (vvShaderFactory::isSupported(VV_CG_MANAGER))
-      {
-        return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
-      }
-      else
-      {
-        return false;
-      }
+      return (vvShaderFactory2::cgSupport() || vvShaderFactory2::glslSupport());
     case VV_FRG_PRG:
       return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
     case VV_GLSL_SHD:
-      return vvShaderFactory::isSupported(VV_GLSL_MANAGER);
+      return vvShaderFactory2::glslSupport();
     default: return false;
   }
 }
@@ -5041,10 +5066,15 @@ void vvTexRend::setCurrentShader(const int shader)
   if(shader >= NUM_PIXEL_SHADERS || shader < 0)
   {
     _currentShader = 0;
+    disableShader(_shader);
+    delete _shader;
+    _shader = initShader();
   }
   else
   {
     _currentShader = shader;
+    delete _shader;
+    _shader = initShader();
   }
 }
 
@@ -5164,150 +5194,42 @@ void vvTexRend::disableFragProg() const
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName)
+void vvTexRend::enableShader(vvShaderProgram* shader, GLuint lutName)
 {
   vvGLTools::printGLError("Enter vvTexRend::enablePixelShaders()");
 
+  if(!shader)
+    return;
+
+  shader->enableProgram();
+
   if(VV_PIX_SHD == voxelType)
   {
-    // Load, enable, and bind fragment shader:
-    pixelShader->enableShader(_currentShader);
+    shader->setParameterTex2D("pixLUT", lutName);
 
-    const int MAX_PARAMETERS = 5;
-    const char* parameterNames[MAX_PARAMETERS];
-    vvShaderParameterType parameterTypes[MAX_PARAMETERS];
-    void* values[MAX_PARAMETERS];
-
-    int parameterCount = 0;
-
-    // Set fragment program parameters:
-    if (_currentShader != 4)                          // pixLUT, doesn't work with grayscale shader
+    if (_channel4Color != NULL)
     {
-      glBindTexture(GL_TEXTURE_2D, lutName);
-
-      // TODO: cgGLEnableTextureParameter.
-      parameterNames[parameterCount] = "pixLUT";
-      parameterTypes[parameterCount] = VV_SHD_TEXTURE_ID;
-      values[parameterCount] = reinterpret_cast<void*>(lutName);
-      parameterCount++;
+      shader->setParameter3f("chan4color", _channel4Color[0], _channel4Color[1], _channel4Color[2]);
     }
-
-    if (_currentShader == 3 || _currentShader == 7)   // chan4color
+    if (_opacityWeights != NULL)
     {
-      parameterNames[parameterCount] = "chan4color";
-      parameterTypes[parameterCount] = VV_SHD_VEC3;
-      values[parameterCount] = _channel4Color;
-      parameterCount++;
+      shader->setParameter4f("opWeights", _opacityWeights[0], _opacityWeights[1], _opacityWeights[2], _opacityWeights[3]);
     }
-
-    if (_currentShader > 4 && _currentShader < 8)     // opWeights
-    {
-      parameterNames[parameterCount] = "opWeights";
-      parameterTypes[parameterCount] = VV_SHD_VEC4;
-      values[parameterCount] = _opacityWeights;
-      parameterCount++;
-    }
-
-    if (_currentShader == 12)                         // L and H vectors for local illumination
-    {
-      parameterNames[parameterCount] = "L";
-      parameterTypes[parameterCount] = VV_SHD_VEC3;
-      values[parameterCount] = NULL;
-      parameterCount++;
-
-      parameterNames[parameterCount] = "H";
-      parameterTypes[parameterCount] = VV_SHD_VEC3;
-      values[parameterCount] = NULL;
-      parameterCount++;
-    }
-
-    // Copy data to arrays on heap.
-    const char** names = new const char*[parameterCount];
-    vvShaderParameterType* types = new vvShaderParameterType[parameterCount];
-
-    for (int i = 0; i < parameterCount; ++i)
-    {
-      names[i] = parameterNames[i];
-      types[i] = parameterTypes[i];
-    }
-
-    pixelShader->initParameters(_currentShader, names, types, parameterCount);
-
-    // Set the values.
-    GLuint tmpGLuint;
-    float* tmp3;
-    float* tmp4;
-    for (int i = 0; i < parameterCount; ++i)
-    {
-      switch (types[i])
-      {
-      case VV_SHD_TEXTURE_ID:
-        tmpGLuint = (unsigned long)values[i];
-        pixelShader->setParameterTexId(_currentShader, names[i], tmpGLuint);
-        pixelShader->enableTexture(_currentShader, names[i]);
-        break;
-      case VV_SHD_VEC3:
-        tmp3 = (float*)values[i];
-        if (tmp3 != NULL)
-        {
-          pixelShader->setParameter3f(_currentShader, names[i], tmp3[0], tmp3[1], tmp3[2]);
-        }
-        break;
-      case VV_SHD_VEC4:
-        tmp4 = (float*)values[i];
-        if (tmp4 != NULL)
-        {
-          pixelShader->setParameter4f(_currentShader, names[i], tmp4[0], tmp4[1], tmp4[2], tmp4[3]);
-        }
-        break;
-      default:
-        break;
-      }
-    }
-
-    delete[] names;
-    delete[] types;
   }
 
   vvGLTools::printGLError("Leaving vvTexRend::enablePixelShaders()");
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disablePixelShaders(vvShaderManager* pixelShader) const
+void vvTexRend::disableShader(vvShaderProgram* shader) const
 {
-  if (voxelType == VV_PIX_SHD)
+  if (shader)
   {
-    if ((_currentShader != 4) && (pixelShader->parametersInitialized(_currentShader)))
-    {
-      pixelShader->disableTexture(_currentShader, "pixLUT");
-    }
-    pixelShader->disableShader(_currentShader);
+    shader->disableProgram();
   }
 }
 
-//----------------------------------------------------------------------------
-void vvTexRend::enableIntersectionShader(vvShaderManager* isectShader) const
-{
-  vvGLTools::printGLError("Enter vvTexRend::enableIntersectionShaders()");
-
-  if (_proxyGeometryOnGpu)
-  {
-    isectShader->enableShader(0);
-  }
-
-  vvGLTools::printGLError("Leaving vvTexRend::enableIntersectionShaders()");
-}
-
-//----------------------------------------------------------------------------
-void vvTexRend::disableIntersectionShader(vvShaderManager* isectShader) const
-{
-  if (_proxyGeometryOnGpu)
-  {
-    isectShader->disableShader(0);
-  }
-}
-
-void vvTexRend::initPostClassificationStage(vvShaderManager* pixelShader, GLuint progName[VV_FRAG_PROG_MAX])
+void vvTexRend::initPostClassificationStage(vvShaderProgram* shader, GLuint progName[VV_FRAG_PROG_MAX])
 {
   if (voxelType == VV_FRG_PRG)
   {
@@ -5315,7 +5237,8 @@ void vvTexRend::initPostClassificationStage(vvShaderManager* pixelShader, GLuint
   }
   else if (voxelType==VV_PIX_SHD)
   {
-    if (!initPixelShaders(pixelShader))
+    shader = initShader();
+    if (!shader)
     {
       voxelType = VV_RGBA;
     }
@@ -5362,158 +5285,71 @@ void vvTexRend::initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const
 }
 
 //----------------------------------------------------------------------------
-/** @return true if initialization successful
+/** @return Pointer of initialized ShaderProgram or NULL
  */
-bool vvTexRend::initPixelShaders(vvShaderManager* pixelShader) const
+vvShaderProgram* vvTexRend::initShader()
 {
-  const char* shaderFileName = "vv_shader";
-  const char* shaderExt = ".cg";
-  const char* unixShaderDir = NULL;
-  char* shaderFile = NULL;
-  char* shaderPath = NULL;
+  vvGLTools::printGLError("Enter vvTexRend::initShaderIntersectionOnGpu()");
 
-  cerr << "enable PIX called"<< endl;
-
-  pixelShader->printCompatibilityInfo();
-
-  // Specify shader path:
-  cerr << "Searching for shader files..." << endl;
-
-  unixShaderDir = pixelShader->getShaderDir();
-  cerr << "Using shader path: " << unixShaderDir << endl;
-
-  bool ok = true;
-  // Load shader files:
-  for (int i=0; i<NUM_PIXEL_SHADERS; ++i)
+  std::ostringstream vertName;
+  if(_proxyGeometryOnGpu)
   {
-    shaderFile = new char[strlen(shaderFileName) + 2 + strlen(shaderExt) + 1];
-    sprintf(shaderFile, "%s%02d%s", shaderFileName, i+1, shaderExt);
+  #ifdef ISECT_GLSL_GEO
+    const char* vertFileName = "intersection_geo";
+  #else
+    const char* vertFileName = "intersection";
+  #endif
 
-    // Load Vertex Shader From File:
-    // FIXME: why don't relative paths work under Linux?
-    shaderPath = new char[strlen(unixShaderDir) + 1 + strlen(shaderFile) + 1];
-#ifdef _WIN32
-    sprintf(shaderPath, "%s\\%s", unixShaderDir, shaderFile);
-#else
-    sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
-#endif
+  #ifdef ISECT_GLSL_INST
+    const char* instStr = "_inst";
+  #else
+    const char* instStr = "";
+  #endif
+    std::ostringstream vertNameT;
+    vertNameT << vertFileName << instStr;
 
-    cerr << "Loading shader file: " << shaderPath << endl;
-
-    ok &= pixelShader->loadShader(shaderPath, vvShaderManager::VV_FRAG_SHD);
-
-    delete[] shaderFile;
-    delete[] shaderPath;
-
-    if (!ok)
-      break;
+  #ifdef ISECT_GLSL_GEO
+    const char* vertexFileName = "intersection_ver";
+    vertName << vertexFileName << instStr;
+  #else
+    vertName << vertNameT.str();
+  #endif
   }
 
-  cerr << "Fragment programs ready." << endl;
+  std::ostringstream fragName;
+  if(voxelType == VV_PIX_SHD)
+  {
+    fragName << "shader" << std::setw(2) << std::setfill('0') << (_currentShader+1);
+  }
 
-  return ok;
+  vvShaderProgram* shader = vvShaderFactory2::createProgram(vertName.str(), "", fragName.str());
+  if(!shader)
+    shader = vvShaderFactory2::createProgram("", "", fragName.str());
+
+  if(shader)
+  {
+    setupIntersectionParameters(shader);
+  }
+
+  vvGLTools::printGLError("Leave vvTexRend::initShaderIntersectionOnGpu()");
+
+  return shader;
 }
 
-//----------------------------------------------------------------------------
-/** @return true if initialization successful
- */
-bool vvTexRend::initIntersectionShader(vvShaderManager* isectShader) const
-{
-  vvGLTools::printGLError("Enter vvTexRend::initIntersectionShader()");
-
-#ifdef ISECT_GLSL_GEO
-  const char* shaderFileName = "vv_intersection_geo";
-#else
-  const char* shaderFileName = "vv_intersection";
-#endif
-
-#ifdef ISECT_GLSL_INST
-  const char* instStr = "_inst";
-#else
-  const char* instStr = "";
-#endif
-  const char* shaderExt = ".glsl";
-  const char* unixShaderDir = NULL;
-  char* shaderFile = NULL;
-  char* shaderPath = NULL;
-
-  shaderFile = new char[strlen(shaderFileName) + 2 + strlen(instStr) + strlen(shaderExt) + 1];
-  sprintf(shaderFile, "%s%s%s", shaderFileName, instStr, shaderExt);
-
-  unixShaderDir = isectShader->getShaderDir();
-
-  shaderPath = new char[strlen(unixShaderDir) + 1 + strlen(shaderFile) + 1];
-#ifdef _WIN32
-  sprintf(shaderPath, "%s\\%s", unixShaderDir, shaderFile);
-#else
-  sprintf(shaderPath, "%s/%s", unixShaderDir, shaderFile);
-#endif
-
-#ifdef ISECT_GLSL_GEO
-  const char* vertexFileName = "vv_intersection_ver";
-  char* vertexFile = new char[strlen(vertexFileName) + strlen(instStr) + strlen(shaderExt) + 1];
-  sprintf(vertexFile, "%s%s%s", vertexFileName, instStr, shaderExt);
-  char* vertexPath = new char[strlen(unixShaderDir) + 2 + strlen(vertexFileName) + 1];
-#ifdef _WIN32
-  sprintf(vertexPath, "%s\\%s", unixShaderDir, vertexFile);
-#else
-  sprintf(vertexPath, "%s/%s", unixShaderDir, vertexFile);
-#endif
-  bool ok = isectShader->loadGeomShader(vertexPath, shaderPath);
-#else
-  bool ok = isectShader->loadShader(shaderPath, vvShaderManager::VV_VERT_SHD);
-#endif
-
-  if (ok)
-  {
-    cerr << "Using intersection shader from: " << shaderPath << endl;
-  }
-  else
-  {
-    cerr << "An error occurred when trying to load: " << shaderPath << endl;
-  }
-
-  delete[] shaderFile;
-  delete[] shaderPath;
-
-  if (ok)
-    setupIntersectionParameters(isectShader);
-
-  vvGLTools::printGLError("Leaving vvTexRend::initIntersectionShader()");
-
-  return ok;
-}
-
-void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
+void vvTexRend::setupIntersectionParameters(vvShaderProgram* shader)
 {
   vvGLTools::printGLError("Enter vvTexRend::setupIntersectionParameters()");
 
   const int parameterCount = 15;
-
-  const char** parameterNames = new const char*[parameterCount];
-  vvShaderParameterType* parameterTypes = new vvShaderParameterType[parameterCount];
-  parameterNames[ISECT_SHADER_SEQUENCE] = "sequence";            parameterTypes[ISECT_SHADER_SEQUENCE] = VV_SHD_ARRAY;
-  parameterNames[ISECT_SHADER_V1] = "v1";                        parameterTypes[ISECT_SHADER_V1] = VV_SHD_ARRAY;
-  parameterNames[ISECT_SHADER_V2] = "v2";                        parameterTypes[ISECT_SHADER_V2] = VV_SHD_ARRAY;
-
-  parameterNames[ISECT_SHADER_BRICKMIN] = "brickMin";            parameterTypes[ISECT_SHADER_BRICKMIN] = VV_SHD_VEC4;
-  parameterNames[ISECT_SHADER_BRICKDIMINV] = "brickDimInv";      parameterTypes[ISECT_SHADER_BRICKDIMINV] = VV_SHD_VEC3;
-  parameterNames[ISECT_SHADER_TEXRANGE] = "texRange";            parameterTypes[ISECT_SHADER_TEXRANGE] = VV_SHD_VEC3;
-  parameterNames[ISECT_SHADER_TEXMIN] = "texMin";                parameterTypes[ISECT_SHADER_TEXMIN] = VV_SHD_VEC3;
-  parameterNames[ISECT_SHADER_MODELVIEWPROJ] = "modelViewProj";  parameterTypes[ISECT_SHADER_MODELVIEWPROJ] = VV_SHD_ARRAY;
-  parameterNames[ISECT_SHADER_DELTA] = "delta";                  parameterTypes[ISECT_SHADER_DELTA] = VV_SHD_SCALAR;
-  parameterNames[ISECT_SHADER_PLANENORMAL] = "planeNormal";      parameterTypes[ISECT_SHADER_PLANENORMAL] = VV_SHD_VEC3;
-  parameterNames[ISECT_SHADER_FRONTINDEX] = "frontIndex";        parameterTypes[ISECT_SHADER_FRONTINDEX] = VV_SHD_SCALAR;
-  parameterNames[ISECT_SHADER_VERTICES] = "vertices";            parameterTypes[ISECT_SHADER_VERTICES] = VV_SHD_ARRAY;
-  parameterNames[ISECT_SHADER_V1_MAYBE] = "v1Maybe";             parameterTypes[ISECT_SHADER_V1_MAYBE] = VV_SHD_ARRAY;
-  parameterNames[ISECT_SHADER_V2_MAYBE] = "v2Maybe";             parameterTypes[ISECT_SHADER_V2_MAYBE] = VV_SHD_ARRAY;
-  parameterNames[ISECT_SHADER_FIRSTPLANE] = "firstPlane";        parameterTypes[ISECT_SHADER_FIRSTPLANE] = VV_SHD_SCALAR;
-
-  isectShader->enableShader(0);
-  isectShader->initParameters(0, parameterNames, parameterTypes, parameterCount);
-
-  delete[] parameterNames;
-  delete[] parameterTypes;
+  if(shader)
+  {
+    shader->enableProgram();
+  }
+  else
+  {
+    cerr << "invalid isectShader!!" << endl;
+    return;
+  }
 
   // Global scope, values will never be changed.
 
@@ -5526,8 +5362,8 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
                 5, 4, 7,
                 3, 6, 7 };
 
-  isectShader->setArray1i(0, ISECT_SHADER_V1, v1, 9);
-  isectShader->setArray1i(0, ISECT_SHADER_V2, v2, 9);
+  shader->setParameterArray1i("v1", v1, 9);
+  shader->setParameterArray1i("v2", v2, 9);
 #else
   int v1[24] = { 0, 1, 2, 7,
                  0, 1, 4, 7,
@@ -5535,10 +5371,9 @@ void vvTexRend::setupIntersectionParameters(vvShaderManager* isectShader) const
                  0, 5, 6, 7,
                  0, 3, 6, 7,
                  0, 3, 2, 7 };
-  isectShader->setArray1i(0, ISECT_SHADER_V1, v1, 24);
+  shader->setParameterArray1i("v1", v1, 24);
 #endif
-
-  isectShader->disableShader(0);
+  shader->disableProgram();
 
   vvGLTools::printGLError("Leaving vvTexRend::setupIntersectionParameters()");
 }
@@ -5881,7 +5716,7 @@ void vvTexRend::validateEmptySpaceLeaping()
   }
 }
 
-void vvTexRend::evaluateLocalIllumination(vvShaderManager*& pixelShader, const vvVector3& normal)
+void vvTexRend::evaluateLocalIllumination(vvShaderProgram* shader, const vvVector3& normal)
 {
   // Local illumination based on blinn-phong shading.
   if (voxelType == VV_PIX_SHD && _currentShader == 12)
@@ -5895,8 +5730,8 @@ void vvTexRend::evaluateLocalIllumination(vvShaderManager*& pixelShader, const v
     // Half way vector.
     vvVector3 H(L + V);
     H.normalize();
-    pixelShader->setParameter3f(_currentShader, "L", L[0], L[1], L[2]);
-    pixelShader->setParameter3f(_currentShader, "H", H[0], H[1], H[2]);
+    shader->setParameter3f("L", L[0], L[1], L[2]);
+    shader->setParameter3f("H", H[0], H[1], H[2]);
   }
 }
 

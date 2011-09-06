@@ -21,6 +21,7 @@
 #include "vvglew.h"
 
 #include "vvbrick.h"
+#include "vvgltools.h"
 #include "vvshadermanager.h"
 #include "vvtexrend.h"
 
@@ -33,7 +34,7 @@ using std::endl;
 void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
                      const vvVector3& farthest, const vvVector3& delta,
                      const vvVector3& probeMin, const vvVector3& probeMax,
-                     GLuint*& texNames, vvShaderManager* const isectShader) const
+                     GLuint*& texNames, vvShaderProgram* shader) const
 {
   const vvVector3 dist = max - min;
 
@@ -72,7 +73,14 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   const int startSlices = static_cast<const int>(ceilf(minDot * deltaInv));
   const int endSlices = static_cast<const int>(floorf(maxDot * deltaInv));
 
-  glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
+  if(shader && renderer->voxelType == vvTexRend::VV_PIX_SHD )
+  {
+    shader->setParameterTex3D("pix3dtex", texNames[index]);
+  }
+  else
+  {
+    glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
+  }
   if (renderer->_proxyGeometryOnGpu)
   {
     const int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
@@ -89,19 +97,17 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     {
       edges[i * 3] = verts[sequence[idx * 8 + i]][0];
       edges[i * 3 + 1] = verts[sequence[idx * 8 + i]][1];
-      edges[i * 3 + 2] =  verts[sequence[idx * 8 + i]][2];
+      edges[i * 3 + 2] = verts[sequence[idx * 8 + i]][2];
     }
-    isectShader->setArray3f(0, ISECT_SHADER_VERTICES, edges, 8 * 3);
-
+    shader->setParameterArray3f("vertices", edges, 8);
     // Pass planeStart along with brickMin and spare one setParameter call.
-    isectShader->setParameter4f(0, ISECT_SHADER_BRICKMIN, min[0], min[1], min[2], -farthest.length());
+    shader->setParameter4f("brickMin", min[0], min[1], min[2], -farthest.length());
     // Pass front index along with brickDimInv and spare one setParameter call.
-    isectShader->setParameter3f(0, ISECT_SHADER_BRICKDIMINV, 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
+    shader->setParameter3f("brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
     // Mind that textures overlap a little bit for correct interpolation at the borders.
     // Thus add that little difference.
-    isectShader->setParameter3f(0, ISECT_SHADER_TEXRANGE, texRange[0], texRange[1], texRange[2]);
-    isectShader->setParameter3f(0, ISECT_SHADER_TEXMIN, texMin[0], texMin[1], texMin[2]);
-
+    shader->setParameter3f("texRange", texRange[0], texRange[1], texRange[2]);
+    shader->setParameter3f("texMin", texMin[0], texMin[1], texMin[2]);
     const int primCount = (endSlices - startSlices) + 1;
 
 #ifndef ISECT_GLSL_INST
@@ -110,7 +116,9 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     glMultiDrawElements(GL_TRIANGLES, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
 #else
     glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
+    //renderer->disableShader(shader);
     glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
+    //renderer->enableShader(shader, 0);
 #endif
 
 #else
@@ -130,15 +138,12 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   else // render proxy geometry on gpu? else then:
   {
     vvVector3 startPoint = farthest + delta * static_cast<float>(startSlices);
-
     for (int i = startSlices; i <= endSlices; ++i)
     {
       vvVector3 isect[6];
       const int isectCnt = isect->isectPlaneCuboid(&normal, &startPoint, &minClipped, &maxClipped);
       startPoint.add(&delta);
-
       if (isectCnt < 3) continue;                 // at least 3 intersections needed for drawing
-
       // Check volume section mode:
       if (renderer->minSlice != -1 && i < renderer->minSlice) continue;
       if (renderer->maxSlice != -1 && i > renderer->maxSlice) continue;

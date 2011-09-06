@@ -2353,7 +2353,7 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_SGI_LUT)) glutAddMenuEntry("SGI look-up table", 2);
   if (vvTexRend::isSupported(vvTexRend::VV_PAL_TEX)) glutAddMenuEntry("Paletted textures", 3);
   if (vvTexRend::isSupported(vvTexRend::VV_TEX_SHD)) glutAddMenuEntry("Texture shader", 4);
-  if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD)) glutAddMenuEntry("Cg pixel shader", 5);
+  if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD)) glutAddMenuEntry("Fragment shader", 5);
   if (vvTexRend::isSupported(vvTexRend::VV_FRG_PRG)) glutAddMenuEntry("ARB fragment program", 6);
 
   // Renderer options menu:

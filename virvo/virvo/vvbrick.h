@@ -25,6 +25,7 @@
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvtoolshed.h"
+#include "vvshaderprogram.h"
 
 #include <limits.h>
 
@@ -69,7 +70,7 @@ public:
   void render(vvTexRend* const renderer, const vvVector3& normal,
               const vvVector3& farthest, const vvVector3& delta,
               const vvVector3& probeMin, const vvVector3& probeMax,
-              GLuint*& texNames, vvShaderManager* const isectShader) const;
+              GLuint*& texNames, vvShaderProgram* shader) const;
 
   void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const;
   bool upload3DTexture(const GLuint& texName, const uchar* texData,

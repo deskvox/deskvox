@@ -31,6 +31,7 @@
 #include "vvbsptree.h"
 #include "vvopengl.h"
 #include "vvpthread.h"
+#include "vvshaderprogram.h"
 
 struct ThreadArgs;
 class vvBrick;
@@ -230,8 +231,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     vvRenderTarget* _renderTarget;                ///< can e.g. be an offscreen buffer to use with image downscaling
                                                   ///< or an image creator making a screenshot
 
-    vvShaderManager* _isectShader;                ///< shader performing intersection test on gpu
-    vvShaderManager* _pixelShader;                ///< shader for applying transfer function on gpu
+    vvShaderProgram* _shader;                     ///< shader performing intersection test on gpu
 
     int _currentShader;                           ///< ID of currently used fragment shader
     int _previousShader;                          ///< ID of previous shader
@@ -261,19 +261,16 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
                                 std::vector<BrickList>& bricks, bool& areBricksCreated) const;
 
-    void initPostClassificationStage(vvShaderManager* pixelShader, GLuint progName[VV_FRAG_PROG_MAX]);
+    void initPostClassificationStage(vvShaderProgram* shader, GLuint progName[VV_FRAG_PROG_MAX]);
     void initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const;
-    bool initPixelShaders(vvShaderManager* pixelShader) const;
-    void enablePixelShaders(vvShaderManager* pixelShader, GLuint& lutName);
-    void disablePixelShaders(vvShaderManager* pixelShader) const;
+    void enableShader (vvShaderProgram* shader, GLuint lutName);
+    void disableShader(vvShaderProgram* shader) const;
 
-    void enableLUTMode(vvShaderManager* pixelShader, GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
-    void disableLUTMode(vvShaderManager* pixelShader) const;
+    void enableLUTMode(vvShaderProgram* shader, GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
+    void disableLUTMode(vvShaderProgram* shader);
 
-    bool initIntersectionShader(vvShaderManager* isectShader) const;
-    void setupIntersectionParameters(vvShaderManager* isectShader) const;
-    void enableIntersectionShader(vvShaderManager* isectShader) const;
-    void disableIntersectionShader(vvShaderManager* isectShader) const;
+    vvShaderProgram* initShader();
+    void setupIntersectionParameters(vvShaderProgram* isectShader);
 
     ErrorType makeTextures3D();
     void removeTextures(GLuint*& privateTexNames, int* numTextures) const;
@@ -314,7 +311,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void calcNumBricks();
     void initVertArray(int numSlices);
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
-    void evaluateLocalIllumination(vvShaderManager*& pixelShader, const vvVector3& normal);
+    void evaluateLocalIllumination(vvShaderProgram* pixelShader, const vvVector3& normal);
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST,
               std::vector<BrickList>* bricks = 0,
