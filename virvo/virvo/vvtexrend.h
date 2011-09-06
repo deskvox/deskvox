@@ -131,9 +131,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       VV_SGI_LUT,                                 ///< SGI color look-up table
       VV_PAL_TEX,                                 ///< OpenGL paletted textures
       VV_TEX_SHD,                                 ///< Nvidia texture shader
-      VV_PIX_SHD,                                 ///< Nvidia pixel shader
-      VV_FRG_PRG,                                 ///< ARB fragment program
-      VV_GLSL_SHD                                 ///< Glsl programs
+      VV_PIX_SHD,                                 ///< Fragment program (Cg or GLSL)
+      VV_FRG_PRG                                  ///< ARB fragment program
     };
     enum FeatureType                              /// Rendering features
     {

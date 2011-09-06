@@ -254,7 +254,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   extTexShd  = isSupported(VV_TEX_SHD);
   extPixShd  = isSupported(VV_PIX_SHD);
   arbFrgPrg  = isSupported(VV_FRG_PRG);
-  extGlslShd = isSupported(VV_GLSL_SHD);
 
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two") || vvGLTools::isGLVersionSupported(2,0,0);
 
@@ -4975,8 +4974,6 @@ bool vvTexRend::isSupported(const VoxelType voxel)
       return (vvShaderFactory2::cgSupport() || vvShaderFactory2::glslSupport());
     case VV_FRG_PRG:
       return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
-    case VV_GLSL_SHD:
-      return vvShaderFactory2::glslSupport();
     default: return false;
   }
 }

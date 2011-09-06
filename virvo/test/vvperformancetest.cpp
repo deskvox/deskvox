@@ -601,10 +601,6 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const char* head
     {
       test->setVoxelType(vvTexRend::VV_FRG_PRG);
     }
-    else if (strcmp(str, "VV_GLSL_SHD") == 0)
-    {
-      test->setVoxelType(vvTexRend::VV_GLSL_SHD);
-    }
   }
   else if (strcmp(headerName, "FRAMES") == 0)
   {
@@ -755,9 +751,6 @@ void vvTestSuite::initFromPreviousValue(vvPerformanceTest* test, const char* hea
       break;
     case vvTexRend::VV_FRG_PRG:
       sprintf(str, "%s", "VV_FRG_PRG");
-      break;
-    case vvTexRend::VV_GLSL_SHD:
-      sprintf(str, "%s", "VV_GLSL_SHD");
       break;
     default:
       sprintf(str, "%s", "VV_BEST");
