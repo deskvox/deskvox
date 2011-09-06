@@ -22,7 +22,6 @@
 
 #include "vvbrick.h"
 #include "vvgltools.h"
-#include "vvshadermanager.h"
 #include "vvtexrend.h"
 
 #include <algorithm>
