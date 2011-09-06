@@ -261,7 +261,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   voxelType = findBestVoxelType(vox);
   geomType  = findBestGeometry(geom, voxelType);
 
-  _proxyGeometryOnGpuSupported = extGlslShd && arbFrgPrg;
+  _proxyGeometryOnGpuSupported = vvGLTools::isGLVersionSupported(2,0,0);
   _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported && geomType==VV_BRICKS;
 
   cerr << "Rendering algorithm: ";
