@@ -258,11 +258,44 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   extNonPower2 = vvGLTools::isGLextensionSupported("GL_ARB_texture_non_power_of_two") || vvGLTools::isGLVersionSupported(2,0,0);
 
   // Determine best rendering algorithm for current hardware:
-  voxelType = findBestVoxelType(vox);
+  setVoxelType(findBestVoxelType(vox));
   geomType  = findBestGeometry(geom, voxelType);
 
   _proxyGeometryOnGpuSupported = vvGLTools::isGLVersionSupported(2,0,0);
   _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported && geomType==VV_BRICKS;
+
+  if ((_numThreads > 0) && (geomType != VV_BRICKS))
+  {
+    cerr << "No multi-gpu support for the chosen render algorithm. Falling back to single-gpu mode" << endl;
+    _numThreads = 0;
+  }
+
+  if (_numThreads > 0)
+  {
+    dispatchThreadedGLXContexts();
+    dispatchThreadedWGLContexts();
+  }
+
+  if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
+  {
+    cerr << "get2DTextureShader()" << endl;
+    _currentShader = get2DTextureShader();
+    cerr << "_currentShader: "<< _currentShader << endl;
+  }
+
+  if (geomType == VV_BRICKS)
+  {
+    validateEmptySpaceLeaping();
+  }
+
+  pixLUTName = 0;
+  if (_usedThreads == 0)
+  {
+    _shader = initShader();
+    if(voxelType == VV_PIX_SHD && !_shader)
+      setVoxelType(VV_RGBA);
+    initClassificationStage(&pixLUTName, fragProgName);
+  }
 
   cerr << "Rendering algorithm: ";
   switch(geomType)
@@ -299,83 +332,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   }
   cerr << endl;
 
-  if ((_numThreads > 0) && (geomType != VV_BRICKS))
-  {
-    cerr << "No multi-gpu support for the chosen render algorithm. Falling back to single-gpu mode" << endl;
-    _numThreads = 0;
-  }
-
-  if (_numThreads > 0)
-  {
-    dispatchThreadedGLXContexts();
-    dispatchThreadedWGLContexts();
-  }
-
-  if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
-  {
-    cerr << "get2DTextureShader()" << endl;
-    _currentShader = get2DTextureShader();
-    cerr << "_currentShader: "<< _currentShader << endl;
-  }
-
-  if (geomType == VV_BRICKS)
-  {
-    validateEmptySpaceLeaping();
-  }
-
-  pixLUTName = 0;
-  if (_usedThreads == 0)
-  {
-    initClassificationStage(&pixLUTName, fragProgName);
-  }
-
   textures = 0;
-
-  switch(voxelType)
-  {
-    case VV_PAL_TEX:
-      texelsize=1;
-      internalTexFormat = GL_COLOR_INDEX8_EXT;
-      texFormat = GL_COLOR_INDEX;
-      break;
-    case VV_FRG_PRG:
-      texelsize=1;
-      internalTexFormat = GL_LUMINANCE;
-      texFormat = GL_LUMINANCE;
-      break;
-    case VV_PIX_SHD:
-      if(vd->chan == 1)
-      {
-        texelsize=1;
-        internalTexFormat = GL_LUMINANCE;
-        texFormat = GL_LUMINANCE;
-      }
-      else
-      {
-        texelsize=4;
-        internalTexFormat = GL_RGBA;
-        texFormat = GL_RGBA;
-      }
-      break;
-    case VV_TEX_SHD:
-      texelsize=4;
-      internalTexFormat = GL_RGBA;
-      texFormat = GL_RGBA;
-      break;
-    case VV_SGI_LUT:
-      texelsize=2;
-      internalTexFormat = GL_LUMINANCE_ALPHA;
-      texFormat = GL_LUMINANCE_ALPHA;
-      break;
-    case VV_RGBA:
-      internalTexFormat = GL_RGBA;
-      texFormat = GL_RGBA;
-      texelsize=4;
-      break;
-    default:
-      assert(0);
-      break;
-  }
 
   if ((geomType == VV_BRICKS) && _computeBrickSize)
   {
@@ -485,6 +442,60 @@ vvTexRend::~vvTexRend()
 
     delete _visitor;
     delete _bspTree;
+  }
+}
+
+//------------------------------------------------
+/** Initialize texture parameters for a voxel type
+  @param vt voxeltype
+*/
+void vvTexRend::setVoxelType(vvTexRend::VoxelType vt)
+{
+  voxelType = vt;
+  switch(voxelType)
+  {
+    case VV_PAL_TEX:
+      texelsize=1;
+      internalTexFormat = GL_COLOR_INDEX8_EXT;
+      texFormat = GL_COLOR_INDEX;
+      break;
+    case VV_FRG_PRG:
+      texelsize=1;
+      internalTexFormat = GL_LUMINANCE;
+      texFormat = GL_LUMINANCE;
+      break;
+    case VV_PIX_SHD:
+      if(vd->chan == 1)
+      {
+        texelsize=1;
+        internalTexFormat = GL_LUMINANCE;
+        texFormat = GL_LUMINANCE;
+      }
+      else
+      {
+        texelsize=4;
+        internalTexFormat = GL_RGBA;
+        texFormat = GL_RGBA;
+      }
+      break;
+    case VV_TEX_SHD:
+      texelsize=4;
+      internalTexFormat = GL_RGBA;
+      texFormat = GL_RGBA;
+      break;
+    case VV_SGI_LUT:
+      texelsize=2;
+      internalTexFormat = GL_LUMINANCE_ALPHA;
+      texFormat = GL_LUMINANCE_ALPHA;
+      break;
+    case VV_RGBA:
+      internalTexFormat = GL_RGBA;
+      texFormat = GL_RGBA;
+      texelsize=4;
+      break;
+    default:
+      assert(0);
+      break;
   }
 }
 
@@ -5275,9 +5286,6 @@ vvShaderProgram* vvTexRend::initShader()
     shader = vvShaderFactory2::createProgram("", "", fragName.str());
   }
 
-  if(voxelType == VV_PIX_SHD && !shader)
-	voxelType = VV_RGBA;
-	
   if(shader)
   {
     setupIntersectionParameters(shader);

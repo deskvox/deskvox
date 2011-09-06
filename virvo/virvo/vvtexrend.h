@@ -226,6 +226,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLboolean glsTexColTable;                     ///< stores GL_TEXTURE_COLOR_TABLE_SGI
     GLboolean glsSharedTexPal;                    ///< stores GL_SHARED_TEXTURE_PALETTE_EXT
 
+    void setVoxelType(VoxelType vt);
     void makeLUTTexture(const GLuint& lutName, uchar* lutData) const;
     ErrorType makeTextures2D(int axes);
 
