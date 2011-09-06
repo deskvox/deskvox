@@ -2777,8 +2777,7 @@ void vvTexRend::unsetGLenvironment() const
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::enableLUTMode(vvShaderProgram* shader, GLuint& lutName,
-                              GLuint progName[VV_FRAG_PROG_MAX])
+void vvTexRend::enableLUTMode(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX])
 {
   switch(voxelType)
   {
@@ -2787,9 +2786,6 @@ void vvTexRend::enableLUTMode(vvShaderProgram* shader, GLuint& lutName,
       break;
     case VV_TEX_SHD:
       enableNVShaders();
-      break;
-    case VV_PIX_SHD:
-      enableShader(shader, lutName);
       break;
     case VV_SGI_LUT:
       glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -2804,7 +2800,7 @@ void vvTexRend::enableLUTMode(vvShaderProgram* shader, GLuint& lutName,
 }
 
 //----------------------------------------------------------------------------
-void vvTexRend::disableLUTMode(vvShaderProgram* shader)
+void vvTexRend::disableLUTMode()
 {
   switch(voxelType)
   {
@@ -2813,9 +2809,6 @@ void vvTexRend::disableLUTMode(vvShaderProgram* shader)
       break;
     case VV_TEX_SHD:
       disableNVShaders();
-      break;
-    case VV_PIX_SHD:
-      disableShader(shader);
       break;
     case VV_SGI_LUT:
       if (glsTexColTable==(uchar)true) glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
@@ -3475,7 +3468,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     data->renderer->setGLenvironment();
 
     shader = data->renderer->initShader();
-    data->renderer->enableShader(shader, pixLUTName);
 
     data->renderer->_offscreenBuffers[data->threadId] = new vvOffscreenBuffer(1.0f, data->renderer->_multiGpuBufferPrecision);
 
@@ -3525,7 +3517,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       }
 
       data->renderer->_offscreenBuffers[data->threadId]->resize(data->viewport[2], data->viewport[3]);
-      data->renderer->enableLUTMode(shader, pixLUTName, fragProgName);
+      data->renderer->enableLUTMode(pixLUTName, fragProgName);
       data->renderer->evaluateLocalIllumination(shader, data->normal);
 
       // Use alpha correction in indexed mode: adapt alpha values to number of textures:
@@ -3623,7 +3615,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                                        - data->sortedList.size()));
 
       glDisable(GL_TEXTURE_3D_EXT);
-      data->renderer->disableLUTMode(shader);
+      data->renderer->disableLUTMode();
+      data->renderer->disableShader(shader);
 
       // Blend the images to one single image.
 
@@ -3650,11 +3643,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       data->lastRenderTime = stopwatch->getTime();
 
       pthread_barrier_wait(&data->renderer->_barrier);
-
-      if (shader)
-      {
-        data->renderer->disableShader(shader);
-      }
     }
 
     // Exited render loop - perform cleanup.
@@ -4410,14 +4398,6 @@ void vvTexRend::renderVolumeGL()
   // cleanup the content from the last rendering step.
   _renderTarget->clearBuffer();
 
-  if (_usedThreads == 0)
-  {
-    if ((geomType == VV_BRICKS) && !_showBricks && _proxyGeometryOnGpu)
-    {
-      enableShader(_shader, pixLUTName);
-    }
-  }
-
   // Determine texture object extensions:
   for (int i = 0; i < 3; ++i)
   {
@@ -4432,7 +4412,8 @@ void vvTexRend::renderVolumeGL()
   {
     if (geomType != VV_BRICKS || !_showBricks)
     {
-      enableLUTMode(_shader, pixLUTName, fragProgName);
+	  enableShader(_shader, pixLUTName);
+      enableLUTMode(pixLUTName, fragProgName);
     }
   }
 
@@ -4457,7 +4438,7 @@ void vvTexRend::renderVolumeGL()
 
   if (_usedThreads == 0)
   {
-    disableLUTMode(_shader);
+    disableLUTMode();
     unsetGLenvironment();
     disableShader(_shader);
   }

@@ -250,8 +250,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void enableShader (vvShaderProgram* shader, GLuint lutName);
     void disableShader(vvShaderProgram* shader) const;
 
-    void enableLUTMode(vvShaderProgram* shader, GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
-    void disableLUTMode(vvShaderProgram* shader);
+    void enableLUTMode(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]);
+    void disableLUTMode();
 
     vvShaderProgram* initShader();
     void setupIntersectionParameters(vvShaderProgram* isectShader);
