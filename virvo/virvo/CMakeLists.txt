@@ -67,7 +67,7 @@ SET(VIRVO_HEADERS
   vvrenderer.h
   vvrendertarget.h
   vvrendervp.h
-  vvshaderfactory2.h
+  vvshaderfactory.h
   vvshaderprogram.h
   vvsllist.h
   vvsocket.h
@@ -124,7 +124,7 @@ SET(VIRVO_SOURCES
   vvrendercontext.cpp
   vvrenderer.cpp
   vvrendertarget.cpp
-  vvshaderfactory2.cpp
+  vvshaderfactory.cpp
   vvshaderprogram.cpp
   vvsocket.cpp
   vvsocketio.cpp

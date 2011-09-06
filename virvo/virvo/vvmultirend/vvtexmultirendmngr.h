@@ -67,6 +67,7 @@ class VIRVOEXPORT vvTexMultiRendMngr
 	int _numVolume;
 	int _currentVolume;
 
+  vvShaderFactory* _shaderFactory;
   std::vector<vvShaderProgram*> glslShader;
 	GLuint* shaderProgram;
 

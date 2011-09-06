@@ -16,7 +16,7 @@
 #include "vvcgprogram.h"
 #include "vvdebugmsg.h"
 #include "vvglslprogram.h"
-#include "vvshaderfactory2.h"
+#include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
 #include "vvtoolshed.h"
 
@@ -30,16 +30,22 @@ using std::string;
 using std::cerr;
 using std::endl;
 
-string vvShaderFactory2::_shaderDir = string();
-string vvShaderFactory2::_shaderName[3] = { string(), string(), string() };
-string vvShaderFactory2::_fileString[3] = { string(), string(), string() };
+vvShaderFactory::vvShaderFactory()
+{
+  _shaderDir = string();
+  for(int i=0;i<3;i++)
+  {
+    _shaderName[i] = string();
+    _fileString[i] = string();
+  }
+}
 
-vvShaderProgram* vvShaderFactory2::createProgram(const std::string& name)
+vvShaderProgram* vvShaderFactory::createProgram(const std::string& name)
 {
   return createProgram(name, name, name);
 }
 
-vvShaderProgram* vvShaderFactory2::createProgram(const std::string& vert, const std::string& geom, const std::string& frag)
+vvShaderProgram* vvShaderFactory::createProgram(const std::string& vert, const std::string& geom, const std::string& frag)
 {
   if(vert.empty() && geom.empty() && frag.empty())
     return NULL;
@@ -55,7 +61,7 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& vert, const 
 
   if(!glslSupport())
   {
-    vvDebugMsg::msg(0, "vvShaderFactory2::createProgram: no GLSL support!");
+    vvDebugMsg::msg(0, "vvShaderFactory::createProgram: no GLSL support!");
   }
   else
   {
@@ -85,7 +91,7 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& vert, const 
   {
     if(!cgSupport())
     {
-      vvDebugMsg::msg(0, "vvShaderFactory2::createProgram: no CG support!");
+      vvDebugMsg::msg(0, "vvShaderFactory::createProgram: no CG support!");
     }
     else
     {
@@ -124,7 +130,7 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& vert, const 
   return program;
 }
 
-bool vvShaderFactory2::loadFileStrings()
+bool vvShaderFactory::loadFileStrings()
 {
   bool hit = true;
   for(int i=0;i<3;i++)
@@ -144,7 +150,7 @@ bool vvShaderFactory2::loadFileStrings()
   return hit;
 }
 
-const string vvShaderFactory2::getShaderDir()
+const string vvShaderFactory::getShaderDir()
 {
   string result;
 
@@ -189,7 +195,7 @@ const string vvShaderFactory2::getShaderDir()
   return result;
 }
 
-bool vvShaderFactory2::cgSupport()
+bool vvShaderFactory::cgSupport()
 {
   #ifdef HAVE_CG
     return true;
@@ -198,7 +204,7 @@ bool vvShaderFactory2::cgSupport()
   #endif
 }
 
-bool vvShaderFactory2::glslSupport()
+bool vvShaderFactory::glslSupport()
 {
   #if defined GL_VERSION_1_1 || defined GL_VERSION_1_2 \
     || defined GL_VERSION_1_3 || defined GL_VERSION_1_4 \

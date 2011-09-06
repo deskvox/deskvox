@@ -31,6 +31,7 @@
 #include "vvbsptree.h"
 #include "vvopengl.h"
 #include "vvpthread.h"
+#include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
 
 struct ThreadArgs;
@@ -213,6 +214,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     vvRenderTarget* _renderTarget;                ///< can e.g. be an offscreen buffer to use with image downscaling
                                                   ///< or an image creator making a screenshot
 
+    vvShaderFactory* _shaderFactory;              ///< Factory for shader-creation
     vvShaderProgram* _shader;                     ///< shader performing intersection test on gpu
 
     int _currentShader;                           ///< ID of currently used fragment shader

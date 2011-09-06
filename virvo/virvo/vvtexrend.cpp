@@ -52,7 +52,7 @@
 #include "vvstopwatch.h"
 #include "vvoffscreenbuffer.h"
 #include "vvprintgl.h"
-#include "vvshaderfactory2.h"
+#include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
 
 const int MAX_VIEWPORT_WIDTH = 4800;
@@ -188,6 +188,8 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #endif
     cerr << endl;
   }
+
+  _shaderFactory = new vvShaderFactory();
 
   rendererType = TEXREND;
   texNames = NULL;
@@ -442,6 +444,7 @@ vvTexRend::~vvTexRend()
 
     delete _visitor;
     delete _bspTree;
+    delete _shaderFactory;
   }
 }
 
@@ -4964,7 +4967,10 @@ bool vvTexRend::isSupported(const VoxelType voxel)
         vvGLTools::isGLextensionSupported("GL_NV_register_combiners") &&
         vvGLTools::isGLextensionSupported("GL_NV_register_combiners2");
     case VV_PIX_SHD:
-      return (vvShaderFactory2::cgSupport() || vvShaderFactory2::glslSupport());
+      {
+        vvShaderFactory shaderFactory;
+        return (shaderFactory.cgSupport() || shaderFactory.glslSupport());
+      }
     case VV_FRG_PRG:
       return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");
     default: return false;
@@ -5279,11 +5285,11 @@ vvShaderProgram* vvTexRend::initShader()
     fragName << "shader" << std::setw(2) << std::setfill('0') << (_currentShader+1);
   }
 
-  vvShaderProgram* shader = vvShaderFactory2::createProgram(vertName.str(), "", fragName.str());
+  vvShaderProgram* shader = _shaderFactory->createProgram(vertName.str(), "", fragName.str());
   if(!shader)
   {
     _proxyGeometryOnGpu = false;
-    shader = vvShaderFactory2::createProgram("", "", fragName.str());
+    shader = _shaderFactory->createProgram("", "", fragName.str());
   }
 
   if(shader)

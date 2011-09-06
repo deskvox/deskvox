@@ -53,7 +53,7 @@
 #include "../vvdebugmsg.h"
 #include "../vvtoolshed.h"
 #include "../vvgltools.h"
-#include "../vvshaderfactory2.h"
+#include "../vvshaderfactory.h"
 #include "../vvsphere.h"
 #include "../vvstopwatch.h"
 #include "../vvprintgl.h"
@@ -115,11 +115,18 @@ vvTexMultiRendMngr::vvTexMultiRendMngr()
   if (extBlendEquation) glBlendEquationVV = (glBlendEquationEXT_type*)vvDynLib::glSym("glBlendEquationEXT");
   else glBlendEquationVV = (glBlendEquationEXT_type*)vvDynLib::glSym("glBlendEquation");
 
+  _shaderFactory = new vvShaderFactory();
+
   // TODO: needs to be parameterized
-  glslShader.push_back(vvShaderFactory2::createProgram("", "", "glsl_1chan.frag"));
-  glslShader.push_back(vvShaderFactory2::createProgram("", "", "glsl_2chan.frag"));
-  glslShader.push_back(vvShaderFactory2::createProgram("", "", "glsl_3chan.frag"));
-  glslShader.push_back(vvShaderFactory2::createProgram("", "", "glsl_multichan.frag"));
+  glslShader.push_back(_shaderFactory->createProgram("", "", "glsl_1chan.frag"));
+  glslShader.push_back(_shaderFactory->createProgram("", "", "glsl_2chan.frag"));
+  glslShader.push_back(_shaderFactory->createProgram("", "", "glsl_3chan.frag"));
+  glslShader.push_back(_shaderFactory->createProgram("", "", "glsl_multichan.frag"));
+}
+
+vvTexMultiRendMngr::~vvTexMultiRendMngr()
+{
+  delete _shaderFactory;
 }
 
 void vvTexMultiRendMngr::init()
