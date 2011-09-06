@@ -53,6 +53,7 @@
 #include "../vvdebugmsg.h"
 #include "../vvtoolshed.h"
 #include "../vvgltools.h"
+#include "../vvshaderfactory2.h"
 #include "../vvsphere.h"
 #include "../vvstopwatch.h"
 #include "../vvprintgl.h"
@@ -114,20 +115,11 @@ vvTexMultiRendMngr::vvTexMultiRendMngr()
   if (extBlendEquation) glBlendEquationVV = (glBlendEquationEXT_type*)vvDynLib::glSym("glBlendEquationEXT");
   else glBlendEquationVV = (glBlendEquationEXT_type*)vvDynLib::glSym("glBlendEquation");
 
-  glslShader = new vvGLSL();
-
   // TODO: needs to be parameterized
-  shaderProgram = new GLuint[4];
-  glslShader->loadShader("glsl_1chan.frag", vvShaderManager::VV_FRAG_SHD);
-  glslShader->loadShader("glsl_2chan.frag", vvShaderManager::VV_FRAG_SHD);
-  glslShader->loadShader("glsl_3chan.frag", vvShaderManager::VV_FRAG_SHD);
-  glslShader->loadShader("glsl_multichan.frag", vvShaderManager::VV_FRAG_SHD);
-
-  for (int i = 0; i < 4; ++i)
-  {
-    shaderProgram[i] = glslShader->getFragProgramHandle(i);
-  }
-  //glslShader.loadShader();
+  glslShader.push_back(vvShaderFactory2::createProgram("", "", "glsl_1chan.frag"));
+  glslShader.push_back(vvShaderFactory2::createProgram("", "", "glsl_2chan.frag"));
+  glslShader.push_back(vvShaderFactory2::createProgram("", "", "glsl_3chan.frag"));
+  glslShader.push_back(vvShaderFactory2::createProgram("", "", "glsl_multichan.frag"));
 }
 
 void vvTexMultiRendMngr::init()
@@ -344,8 +336,8 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 
 	if(oldVol != vol)
 	{
-	  int n = (vd->chan < glslShader->getProgramCount()) ? vd->chan - 1 : glslShader->getProgramCount() - 1;
-	  aRenderer->enableLUTMode(glslShader, shaderProgram[n]);
+    int n = (vd->chan < glslShader.size()) ? vd->chan - 1 : glslShader.size() - 1;
+    aRenderer->enableLUTMode(glslShader[n]);
 	  oldVol = vol;
 	}
 
@@ -365,7 +357,8 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 	//_lastGLdrawTime += swGL.getTime();
   }
 
-  glslShader->disable();
+  for(int i=0;i<glslShader.size();i++)
+    glslShader[i]->disable();
 
   //_rendererList[0]->unsetGLenvironment();
   unsetGLenvironment();

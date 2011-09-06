@@ -973,18 +973,16 @@ void vvTexMultiRend::updateLUT(float dist)
   }
 }
 
-void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
+void vvTexMultiRend::enableLUTMode(vvShaderProgram* glslShader)
 {
-  glslShader->useProgram(program);
-
-  glslShader->resetTextureCount();
+  glslShader->enable();
 
   // initialize transfer function
   if(vd->chan == 1)
-	glslShader->initializeMultiTexture2D(program, "tfTex0", pixLUTName[0]);
+    glslShader->setParameterTex2D("tfTex0", pixLUTName[0]);
   else
   {
-	glslShader->initializeMultiTexture1D(program, "tfTex[0]", pixLUTName[vd->chan]);
+    glslShader->setParameterTex1D("tfTex[0]", pixLUTName[vd->chan]);
 
 	for(int c = 0; c < vd->chan; c++)
 	{
@@ -994,8 +992,8 @@ void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
 #else
 	  snprintf(varName, sizeof(varName), "tfTex[%i]", c+1);
 #endif
-	  glslShader->initializeMultiTexture1D(program, varName, pixLUTName[c]);
-	}
+    glslShader->setParameterTex1D(varName, pixLUTName[c]);
+  }
   }
 
   // initialize 3D channel texture
@@ -1007,17 +1005,8 @@ void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
 #else
 	snprintf(varName, sizeof(varName), "gl3dTex%i", c);
 #endif
-	glslShader->initializeMultiTexture3D(program, varName, texNames[c]);
+  glslShader->setParameterTex3D(varName, texNames[c]);
   }
-
-  // hardware problem with uninitialized TU
-  if (vd->chan >= glslShader->getProgramCount())
-	for (int c = vd->chan; c < 7; c++)
-	{
-	  char varName[20];
-	  sprintf(varName, "gl3dTex%i", c);
-	  glslShader->initializeMultiTexture3D(program, varName, 0);
-	}
 
   // copy parameters
   float weight[10];
@@ -1032,7 +1021,7 @@ void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
 	sumWeight += weight[c];
   }
 
-  glslShader->setValue(program, "weight", 1, vd->chan, weight);
+  glslShader->setParameter1f("weight", weight[vd->chan]);
 
   for(int c = 0; c < vd->chan; c++)
   {
@@ -1043,12 +1032,13 @@ void vvTexMultiRend::enableLUTMode(vvGLSL* glslShader, GLuint program)
 	snprintf(varName, sizeof(varName), "color[%d]", c);
 #endif
         float e[3] = { color[c][0], color[c][1], color[c][2] };
-        glslShader->setValue(program, varName, 3, 1, e);
+        glslShader->setParameter3f(varName, e);
   }
 
   //glslShader->setValue(program, "numChan", 1, &(vd->chan));
-  glslShader->setValue(program, "normAlpha", 1, _alphaMode == 0 ? &maxWeight : &sumWeight);
-  glslShader->setValue(program, "alphaMode", 1, &_alphaMode);
+  _alphaMode == 0 ? &maxWeight : &sumWeight;
+  glslShader->setParameter1f("normAlpha", _alphaMode);
+  glslShader->setParameter1f("alphaMode", _alphaMode);
 }
 
 

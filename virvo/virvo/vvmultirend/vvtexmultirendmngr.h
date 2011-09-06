@@ -27,7 +27,7 @@
 #include "../vvdebugmsg.h"
 #include "../vvvoldesc.h"
 #include "../vvrenderer.h"
-#include "../vvglsl.h"
+#include "../vvshaderprogram.h"
 #include "vvtexmultirend.h"
 
 //============================================================================
@@ -67,7 +67,7 @@ class VIRVOEXPORT vvTexMultiRendMngr
 	int _numVolume;
 	int _currentVolume;
 
-    vvGLSL* glslShader;
+  std::vector<vvShaderProgram*> glslShader;
 	GLuint* shaderProgram;
 
     float _lastRenderTime;                   ///< time it took to render the previous frame (seconds)

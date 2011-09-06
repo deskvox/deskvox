@@ -39,7 +39,7 @@
 #include "../vvrenderer.h"
 #include "../vvtransfunc.h"
 #include "../vvsllist.h"
-#include "../vvglsl.h"
+#include "../vvshaderprogram.h"
 
 
 
@@ -210,7 +210,7 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     void printLUT();
 	void updateChannelHistCDF(int, int, uchar*);	// from Chih's vvVolDesc
     void updateLUT(float);
-	void enableLUTMode(vvGLSL* _glslShader, GLuint program);
+  void enableLUTMode(vvShaderProgram* _glslShader);
 
 	float getLUTDistance() { return lutDistance; }
 	GLuint* getPixLUTName() { return pixLUTName; }
