@@ -5340,7 +5340,6 @@ void vvTexRend::setupIntersectionParameters(vvShaderProgram* shader)
 {
   vvGLTools::printGLError("Enter vvTexRend::setupIntersectionParameters()");
 
-  const int parameterCount = 15;
   if(shader)
   {
     shader->enable();
