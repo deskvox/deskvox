@@ -127,6 +127,8 @@ vvTexMultiRendMngr::vvTexMultiRendMngr()
 vvTexMultiRendMngr::~vvTexMultiRendMngr()
 {
   delete _shaderFactory;
+  for(int i=0; i<_rendererList.size();i++)
+    delete _rendererList[i];
 }
 
 void vvTexMultiRendMngr::init()
