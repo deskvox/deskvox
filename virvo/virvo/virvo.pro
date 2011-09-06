@@ -21,6 +21,7 @@ SOURCES = vvaabb.cpp \
     vvbrick.cpp \
     vvcolor.cpp \
     vvdebugmsg.cpp \
+    vvcgprogram.cpp \
     vvclusterclient.cpp \
     vvclusterserver.cpp \
     vvcuda.cpp \
@@ -28,6 +29,7 @@ SOURCES = vvaabb.cpp \
     vvdicom.cpp \
     vvdynlib.cpp \
     vvfileio.cpp \
+    vvglslprogram.cpp \
     vvgltools.cpp \
     vvideo.cpp \
     vvimage.cpp \
@@ -55,9 +57,7 @@ SOURCES = vvaabb.cpp \
     vvvirvo.cpp \
     vvvoldesc.cpp \
     vvshaderfactory.cpp \
-    vvshadermanager.cpp \
-    vvcg.cpp \
-    vvglsl.cpp \
+    vvshaderprogram.cpp \
     vvbsptree.cpp \
     vvbsptreevisitors.cpp \
     vvsoftimg.cpp \
@@ -76,6 +76,7 @@ SOURCES = vvaabb.cpp \
 HEADERS = vvaabb.h \
     vvarray.h \
     vvbrick.h \
+    vvcgprogram.h \
     vvclusterclient.h \
     vvclusterserver.h \
     vvcolor.h \
@@ -88,6 +89,7 @@ HEADERS = vvaabb.h \
     vvdynlib.h \
     vvexport.h \
     vvfileio.h \
+    vvglslprogram.h \
     vvgltools.h \
     vvideo.h \
     vvimage.h \
@@ -119,9 +121,7 @@ HEADERS = vvaabb.h \
     vvvisitor.h \
     vvvoldesc.h \
     vvshaderfactory.h \
-    vvshadermanager.h \
-    vvcg.h \
-    vvglsl.h \
+    vvshaderprogram.h \
     vvbsptree.h \
     vvx11.h \
     vvbsptreevisitors.h \
