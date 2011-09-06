@@ -43,8 +43,8 @@ public:
   /// Deactivates and deletes shader program that was generated in this class
   ~vvGLSLProgram();
 
-  void enableProgram();   /// enables program with loaded shaders
-  void disableProgram();  /// disables program with its shaders
+  void enable();   /// enables program with loaded shaders
+  void disable();  /// disables program with its shaders
 
   /**
     Set uniform parameter functions. Use parameters' names only.

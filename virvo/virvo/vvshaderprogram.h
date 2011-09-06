@@ -54,8 +54,8 @@ public:
 
   virtual bool isValid() const;
 
-  virtual void enableProgram() = 0;
-  virtual void disableProgram() = 0;
+  virtual void enable() = 0;
+  virtual void disable() = 0;
 
   virtual void setParameter1f(const std::string& parameterName, const float& f1) = 0;        ///< Set uniform floating variable
   virtual void setParameter1i(const std::string& parameterName, const int& i1) = 0;          ///< Set uniform integer variable

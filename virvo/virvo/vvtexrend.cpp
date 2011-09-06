@@ -5201,7 +5201,7 @@ void vvTexRend::enableShader(vvShaderProgram* shader, GLuint lutName)
   if(!shader)
     return;
 
-  shader->enableProgram();
+  shader->enable();
 
   if(VV_PIX_SHD == voxelType)
   {
@@ -5225,7 +5225,7 @@ void vvTexRend::disableShader(vvShaderProgram* shader) const
 {
   if (shader)
   {
-    shader->disableProgram();
+    shader->disable();
   }
 }
 
@@ -5343,7 +5343,7 @@ void vvTexRend::setupIntersectionParameters(vvShaderProgram* shader)
   const int parameterCount = 15;
   if(shader)
   {
-    shader->enableProgram();
+    shader->enable();
   }
   else
   {
@@ -5373,7 +5373,7 @@ void vvTexRend::setupIntersectionParameters(vvShaderProgram* shader)
                  0, 3, 2, 7 };
   shader->setParameterArray1i("v1", v1, 24);
 #endif
-  shader->disableProgram();
+  shader->disable();
 
   vvGLTools::printGLError("Leaving vvTexRend::setupIntersectionParameters()");
 }

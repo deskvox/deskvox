@@ -41,7 +41,7 @@ vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const strin
 
 vvGLSLProgram::~vvGLSLProgram()
 {
-  disableProgram();
+  disable();
   if(_programId)
   {
     glDeleteProgram(_programId);
@@ -107,14 +107,14 @@ bool vvGLSLProgram::loadShaders()
   }
 
   _shadersLoaded = true;
-  enableProgram();
+  enable();
 
   vvGLTools::printGLError("Leaving vvGLSLProgram::loadShaders()");
 
   return true;
 }
 
-void vvGLSLProgram::enableProgram()
+void vvGLSLProgram::enable()
 {
   vvGLTools::printGLError("Enter vvGLSLProgram::enableProgram()");
 
@@ -160,7 +160,7 @@ void vvGLSLProgram::enableProgram()
   vvGLTools::printGLError("Leaving vvGLSLProgram::enableProgram()");
 }
 
-void vvGLSLProgram::disableProgram()
+void vvGLSLProgram::disable()
 {
   vvGLTools::printGLError("Enter vvGLSLProgram::disableProgram()");
 

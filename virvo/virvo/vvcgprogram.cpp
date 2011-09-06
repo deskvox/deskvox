@@ -48,7 +48,7 @@ vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& f
 
 vvCgProgram::~vvCgProgram()
 {
-  disableProgram();
+  disable();
   if (_program)
   {
     cgDestroyContext(_program);
@@ -83,7 +83,7 @@ bool vvCgProgram::loadShaders()
   return true;
 }
 
-void vvCgProgram::enableProgram()
+void vvCgProgram::enable()
 {
   for(int i=0;i<3;i++)
   {
@@ -96,7 +96,7 @@ void vvCgProgram::enableProgram()
   }
 }
 
-void vvCgProgram::disableProgram()
+void vvCgProgram::disable()
 {
   for(int i=0;i<3;i++)
   {
