@@ -324,14 +324,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   }
 
   pixLUTName = 0;
-  if ((_usedThreads == 0) && (voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG))
-  {
-    glGenTextures(1, &pixLUTName);
-  }
-
   if (_usedThreads == 0)
   {
-    initPostClassificationStage(fragProgName);
+    initClassificationStage(&pixLUTName, fragProgName);
   }
 
   textures = 0;
@@ -439,18 +434,11 @@ vvTexRend::~vvTexRend()
   vvDebugMsg::msg(1, "vvTexRend::~vvTexRend()");
 
   delete _renderTarget;
-
-  if (voxelType==VV_FRG_PRG)
-  {
-    glDeleteProgramsARB(3, fragProgName);
-  }
-  if (voxelType==VV_FRG_PRG || voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD)
-  {
-    glDeleteTextures(1, &pixLUTName);
-  }
+  
 
   if (_usedThreads == 0)
   {
+    freeClassificationStage(pixLUTName, fragProgName);
     removeTextures(texNames, &textures);
   }
 
@@ -3441,8 +3429,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     glewInit();
 
-    data->renderer->initPostClassificationStage(fragProgName);
-
     pthread_barrier_wait(&data->renderer->_barrier);
 
     // For the main thread, this will take some time... .
@@ -3454,13 +3440,13 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     bool areBricksCreated;
     data->renderer->makeTextureBricks(texNames, &numTextures, rgbaLUT, data->brickList, areBricksCreated);
 
-    float lutDistance = -1.0f;
     GLuint pixLUTName = 0;
+    data->renderer->initClassificationStage(&pixLUTName, fragProgName);
+    float lutDistance = -1.0f;
     if (data->renderer->voxelType==VV_PIX_SHD
      || data->renderer->voxelType==VV_FRG_PRG
      || data->renderer->voxelType==VV_TEX_SHD)
     {
-      glGenTextures(1, &pixLUTName);
       data->renderer->makeLUTTexture(pixLUTName, rgbaLUT);
     }
 
@@ -3645,15 +3631,11 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
     }
 
     // Exited render loop - perform cleanup.
-    if (data->renderer->voxelType==VV_FRG_PRG)
-    {
-      glDeleteProgramsARB(3, fragProgName);
-    }
+    data->renderer->freeClassificationStage(pixLUTName, fragProgName);
 
     data->renderer->removeTextures(texNames, &numTextures);
     delete shader;
 
-    glDeleteTextures(1, &pixLUTName);
     delete[] rgbaLUT;
     delete stopwatch;
 #ifdef HAVE_X11
@@ -5193,52 +5175,65 @@ void vvTexRend::disableShader(vvShaderProgram* shader) const
   }
 }
 
-void vvTexRend::initPostClassificationStage(GLuint progName[VV_FRAG_PROG_MAX])
+void vvTexRend::initClassificationStage(GLuint *pixLUTName, GLuint progName[VV_FRAG_PROG_MAX]) const
 {
+  if(voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG)
+  {
+    glGenTextures(1, pixLUTName);
+  }
+
   if (voxelType == VV_FRG_PRG)
   {
-    initArbFragmentProgram(progName);
+    glGenProgramsARB(VV_FRAG_PROG_MAX, progName);
+
+    const char fragProgString2D[] = "!!ARBfp1.0\n"
+      "TEMP temp;\n"
+      "TEX  temp, fragment.texcoord[0], texture[0], 2D;\n"
+      "TEX  result.color, temp, texture[1], 2D;\n"
+      "END\n";
+    glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_2D]);
+    glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
+      GL_PROGRAM_FORMAT_ASCII_ARB,
+      (GLsizei)strlen(fragProgString2D),
+      fragProgString2D);
+
+    const char fragProgString3D[] = "!!ARBfp1.0\n"
+      "TEMP temp;\n"
+      "TEX  temp, fragment.texcoord[0], texture[0], 3D;\n"
+      "TEX  result.color, temp, texture[1], 2D;\n"
+      "END\n";
+    glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_3D]);
+    glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
+      GL_PROGRAM_FORMAT_ASCII_ARB,
+      (GLsizei)strlen(fragProgString3D),
+      fragProgString3D);
+
+    const char fragProgStringPreint[] = "!!ARBfp1.0\n"
+      "TEMP temp;\n"
+      "TEX  temp.x, fragment.texcoord[0], texture[0], 3D;\n"
+      "TEX  temp.y, fragment.texcoord[1], texture[0], 3D;\n"
+      "TEX  result.color, temp, texture[1], 2D;\n"
+      "END\n";
+    glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_PREINT]);
+    glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
+      GL_PROGRAM_FORMAT_ASCII_ARB,
+      (GLsizei)strlen(fragProgStringPreint),
+      fragProgStringPreint);
   }
 }
 
-void vvTexRend::initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const
+void vvTexRend::freeClassificationStage(GLuint pixLUTName, GLuint progname[VV_FRAG_PROG_MAX]) const
 {
-  glGenProgramsARB(VV_FRAG_PROG_MAX, progName);
-
-  const char fragProgString2D[] = "!!ARBfp1.0\n"
-    "TEMP temp;\n"
-    "TEX  temp, fragment.texcoord[0], texture[0], 2D;\n"
-    "TEX  result.color, temp, texture[1], 2D;\n"
-    "END\n";
-  glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_2D]);
-  glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
-    GL_PROGRAM_FORMAT_ASCII_ARB,
-    (GLsizei)strlen(fragProgString2D),
-    fragProgString2D);
-
-  const char fragProgString3D[] = "!!ARBfp1.0\n"
-    "TEMP temp;\n"
-    "TEX  temp, fragment.texcoord[0], texture[0], 3D;\n"
-    "TEX  result.color, temp, texture[1], 2D;\n"
-    "END\n";
-  glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_3D]);
-  glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
-    GL_PROGRAM_FORMAT_ASCII_ARB,
-    (GLsizei)strlen(fragProgString3D),
-    fragProgString3D);
-
-  const char fragProgStringPreint[] = "!!ARBfp1.0\n"
-    "TEMP temp;\n"
-    "TEX  temp.x, fragment.texcoord[0], texture[0], 3D;\n"
-    "TEX  temp.y, fragment.texcoord[1], texture[0], 3D;\n"
-    "TEX  result.color, temp, texture[1], 2D;\n"
-    "END\n";
-  glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, progName[VV_FRAG_PROG_PREINT]);
-  glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB,
-    GL_PROGRAM_FORMAT_ASCII_ARB,
-    (GLsizei)strlen(fragProgStringPreint),
-    fragProgStringPreint);
+  if (voxelType==VV_FRG_PRG)
+  {
+    glDeleteProgramsARB(VV_FRAG_PROG_MAX, fragProgName);
+  }
+  if (voxelType==VV_FRG_PRG || voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD)
+  {
+    glDeleteTextures(1, &pixLUTName);
+  }
 }
+
 
 //----------------------------------------------------------------------------
 /** @return Pointer of initialized ShaderProgram or NULL
