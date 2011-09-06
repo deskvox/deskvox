@@ -5324,7 +5324,10 @@ vvShaderProgram* vvTexRend::initShader()
 
   vvShaderProgram* shader = vvShaderFactory2::createProgram(vertName.str(), "", fragName.str());
   if(!shader)
+  {
+    _proxyGeometryOnGpu = false;
     shader = vvShaderFactory2::createProgram("", "", fragName.str());
+  }
 
   if(shader)
   {
