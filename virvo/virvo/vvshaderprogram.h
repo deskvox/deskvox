@@ -27,15 +27,6 @@ enum ShaderType
   VV_FRAG_SHD
 };
 
-enum vvShaderParameterType2
-{
-  VV_SHD_TEXTURE_ID2 = 0,
-  VV_SHD_VEC32,
-  VV_SHD_VEC42,
-  VV_SHD_SCALAR2,
-  VV_SHD_ARRAY2
-};
-
 /** Parent Class for ShaderPrograms
   This class' pointers can be used to load shader programs
   from vvShaderFactory without taking care about the
