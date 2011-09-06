@@ -3574,7 +3574,6 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       if(shader)
       {
-        //data->renderer->enableIntersectionShader(shader);
         data->renderer->enableShader(shader, pixLUTName);
 
         // Per frame parameters.
@@ -5268,7 +5267,7 @@ void vvTexRend::initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const
  */
 vvShaderProgram* vvTexRend::initShader()
 {
-  vvGLTools::printGLError("Enter vvTexRend::initShaderIntersectionOnGpu()");
+  vvGLTools::printGLError("Enter vvTexRend::initShader()");
 
   std::ostringstream vertName;
   if(_proxyGeometryOnGpu)
@@ -5316,7 +5315,7 @@ vvShaderProgram* vvTexRend::initShader()
     setupIntersectionParameters(shader);
   }
 
-  vvGLTools::printGLError("Leave vvTexRend::initShaderIntersectionOnGpu()");
+  vvGLTools::printGLError("Leave vvTexRend::initShader()");
 
   return shader;
 }
