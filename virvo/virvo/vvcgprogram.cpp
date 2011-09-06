@@ -42,7 +42,7 @@ vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& f
   _shadersLoaded = loadShaders();
   if(_shadersLoaded)
   {
-     vvDebugMsg::msg(1, "vvCgProgram::vvCgProgram() Loading Shaders failed!");
+     vvDebugMsg::msg(0, "vvCgProgram::vvCgProgram() Loading Shaders failed!");
   }
 }
 
@@ -62,7 +62,7 @@ bool vvCgProgram::loadShaders()
 
   if (_program == NULL)
   {
-    cerr << "Can't create Cg context" << endl;
+    vvDebugMsg::msg(0, "Can't create Cg context");
   }
 
   for(int i=0;i<3;i++)
@@ -76,7 +76,7 @@ bool vvCgProgram::loadShaders()
 
     if (_shaderId[i] == NULL)
     {
-      cerr << "Couldn't load cg-shader!" << endl;
+      vvDebugMsg::msg(0, "Couldn't load cg-shader!");
       return false;
     }
   }
@@ -105,15 +105,12 @@ void vvCgProgram::disableProgram()
 
     cgGLDisableProfile(_profile[i]);
   }
-  //  ParameterIterator it = initParameter(parameterName);
-  //  if(it != _cgParameterNameMaps.end())
-  //    cgGLDisableTextureParameter(_cgParameterNameMaps[parameterName]);
 }
 
 void vvCgProgram::cgErrorHandler(CGcontext context, CGerror error, void*)
 {
   if(error != CG_NO_ERROR)
-    cerr << cgGetErrorString(error) << "(" << static_cast<int>(error) << ")" << endl;
+    cerr << cgGetErrorString(error) << " (" << static_cast<int>(error) << ")" << endl;
   for(GLint glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
   {
     cerr << "GL error: " << gluErrorString(glerr) << endl;
@@ -145,7 +142,7 @@ CGGLenum vvCgProgram::toCgEnum(const int i) const
     result = CG_GL_FRAGMENT;
     break;
   default:
-    cerr << "toCgEnum() unknown ShaderType!" << endl;
+    vvDebugMsg::msg(0, "toCgEnum() unknown ShaderType!");
     result = CG_GL_FRAGMENT;
     break;
   }
@@ -177,97 +174,96 @@ vvCgProgram::ParameterIterator vvCgProgram::initParameter(const string& paramete
     }
   }
 
+  _cgParameterNameMaps[parameterName] = paraFirst;
+
   if(paraFirst == 0)
   {
-    cerr << "cgParameter ("<<parameterName<<")not found!"<<endl;
+    string errmsg = "cgParameter (" + parameterName + ")not found!";
+    vvDebugMsg::msg(2, errmsg.c_str());
     return _cgParameterNameMaps.end();
   }
-  else
-  {
-    _cgParameterNameMaps[parameterName] = paraFirst;
-    return _cgParameterNameMaps.find(parameterName);
-  }
+
+  return _cgParameterNameMaps.find(parameterName);
 }
 
 void vvCgProgram::setParameter1f(const string& parameterName, const float& f1)
 {
   ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
+  if(it->second != 0)
     cgSetParameter1f(it->second, f1);
 }
 
 void vvCgProgram::setParameter1i(const string& parameterName, const int& i1)
 {
   ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
-    cgSetParameter1i(_cgParameterNameMaps[parameterName], i1);
+  if(it->second != 0)
+    cgSetParameter1i(it->second, i1);
 }
 
 void vvCgProgram::setParameter3f(const string& parameterName, const float* array)
 {
-  cerr << "wrooooog blasdasdas " << endl;
   ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
-    cgSetParameter3fv(_cgParameterNameMaps[parameterName], array);
+  if(it->second != 0)
+    cgSetParameter3fv(it->second, array);
 }
 
 void vvCgProgram::setParameter3f(const string& parameterName,
                           const float& f1, const float& f2, const float& f3)
 {
   ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
-    cgSetParameter3f(_cgParameterNameMaps[parameterName], f1, f2, f3);
+  if(it->second != 0)
+    cgSetParameter3f(it->second, f1, f2, f3);
 }
 
 void vvCgProgram::setParameter4f(const string& parameterName, const float* array)
 {
   ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
-    cgSetParameter4fv(_cgParameterNameMaps[parameterName], array);
+  if(it->second != 0)
+    cgSetParameter4fv(it->second, array);
 }
 
 void vvCgProgram::setParameter4f(const string& parameterName,
                           const float& f1, const float& f2, const float& f3, const float& f4)
 {
   ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
-    cgSetParameter4f(_cgParameterNameMaps[parameterName], f1, f2, f3, f4);
+  if(it->second != 0)
+    cgSetParameter4f(it->second, f1, f2, f3, f4);
 }
 
 void vvCgProgram::setParameterArray1i(const string& parameterName, const int* array, const int& count)
 {
   ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
+  if(it->second != 0)
   {
     // transform integers to floats because CG doesn't support uniform integers
     float floats[count];
     for(int i=0;i<count;i++)
       floats[i] = float(array[i]);
-    cgGLSetParameterArray1f(_cgParameterNameMaps[parameterName], 0, count, floats);
+    cgGLSetParameterArray1f(it->second, 0, count, floats);
   }
 }
 
 void vvCgProgram::setParameterArray3f(const string& parameterName, const float* array, const int& count)
 {
   ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
-    cgGLSetParameterArray3f(_cgParameterNameMaps[parameterName], 0, 3*count, array);
+  if(it->second != 0)
+    cgGLSetParameterArray3f(it->second, 0, 3*count, array);
 }
 
 void vvCgProgram::setParameterMatrix4f(const string& parameterName, const float* mat)
 {
   ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
-    cgSetMatrixParameterfr(_cgParameterNameMaps[parameterName], mat);
+  if(it->second != 0)
+    cgSetMatrixParameterfr(it->second, mat);
 }
 
 void vvCgProgram::setParameterTex1D(const string& parameterName, const unsigned int& ui)
 {
   ParameterIterator it = initParameter(parameterName);
-  if(it != _cgParameterNameMaps.end())
+  if(it->second != 0)
   {
-    cgGLSetTextureParameter(_cgParameterNameMaps[parameterName], ui);
-    cgGLEnableTextureParameter(_cgParameterNameMaps[parameterName]);
+    cgGLSetTextureParameter(it->second, ui);
+    cgGLEnableTextureParameter(it->second);
   }
 }
 

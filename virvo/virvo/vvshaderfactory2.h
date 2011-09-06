@@ -20,8 +20,6 @@
 #include "vvexport.h"
 #include "vvdebugmsg.h"
 
-#include <iostream>
-
 class VIRVOEXPORT vvShaderFactory2
 {
 public:
@@ -46,3 +44,7 @@ private:
 };
 
 #endif // _VV_SHADERFACTORY2_H_
+
+//============================================================================
+// End of File
+//============================================================================

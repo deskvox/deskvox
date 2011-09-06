@@ -13,10 +13,11 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
+#include "vvcgprogram.h"
+#include "vvdebugmsg.h"
+#include "vvglslprogram.h"
 #include "vvshaderfactory2.h"
 #include "vvshaderprogram.h"
-#include "vvglslprogram.h"
-#include "vvcgprogram.h"
 #include "vvtoolshed.h"
 
 #include <cstdlib>
@@ -40,7 +41,14 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& name)
 
 vvShaderProgram* vvShaderFactory2::createProgram(const std::string& vert, const std::string& geom, const std::string& frag)
 {
-  if(_shaderDir == "")
+  if(vert.empty() && geom.empty() && frag.empty())
+    return NULL;
+
+  _shaderName[0].clear();
+  _shaderName[1].clear();
+  _shaderName[2].clear();
+
+  if(_shaderDir.empty())
     _shaderDir = getShaderDir();
 
   vvShaderProgram *program = NULL;
@@ -51,19 +59,18 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& vert, const 
   }
   else
   {
-    _shaderName[0] = "vv_" + vert + ".vsh";
-    _shaderName[1] = "vv_" + geom + ".gsh";
-    _shaderName[2] = "vv_" + frag + ".fsh";
+    if(!vert.empty()) _shaderName[0] = "vv_" + vert + ".vsh";
+    if(!geom.empty()) _shaderName[1] = "vv_" + geom + ".gsh";
+    if(!frag.empty()) _shaderName[2] = "vv_" + frag + ".fsh";
     bool loaded = loadFileStrings();
 
     if(loaded)
     {
-      cerr << "GLSL-shaders found: ";
+      vvDebugMsg::msg(2, "GLSL-shaders found:");
 
       for(int i=0;i<3;i++)
         if(_fileString[i].length() > 0)
-          cerr << _shaderName[i] << " ";
-      cerr << endl;
+          vvDebugMsg::msg(2, _shaderName[i].c_str());
 
       program = new vvGLSLProgram(_fileString[0], _fileString[1], _fileString[2]);
       if(!program->isValid())
@@ -82,9 +89,9 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& vert, const 
     }
     else
     {
-      _shaderName[0] = "vv_" + vert + ".vert.cg";
-      _shaderName[1] = "vv_" + geom + ".geom.cg";
-      _shaderName[2] = "vv_" + frag + ".frag.cg";
+      if(!vert.empty()) _shaderName[0] = "vv_" + vert + ".vert.cg";
+      if(!geom.empty()) _shaderName[1] = "vv_" + geom + ".geom.cg";
+      if(!frag.empty()) _shaderName[2] = "vv_" + frag + ".frag.cg";
 
       bool loaded = loadFileStrings();
 
@@ -110,7 +117,8 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& vert, const 
 
   if(!program)
   {
-    cerr << "No supported shaders with name " << vert << " " << geom << " or " << frag << " found!" << endl;
+    string errmsg = "No supported shaders with name " + vert + " " + geom + " or " + frag + " found!";
+    vvDebugMsg::msg(0, errmsg.c_str());
   }
 
   return program;
@@ -118,24 +126,20 @@ vvShaderProgram* vvShaderFactory2::createProgram(const std::string& vert, const 
 
 bool vvShaderFactory2::loadFileStrings()
 {
-  bool hit = false;
+  bool hit = true;
   for(int i=0;i<3;i++)
   {
-    if(_shaderName[i].length() == 0)
+    _fileString[i].clear();;
+
+    if(_shaderName[i].empty())
       continue;
 
     std::string filePath = _shaderDir+_shaderName[i];
     char* tempString = vvToolshed::file2string(filePath.c_str());
-    std::string fileString;
     if(tempString)
-    {
       _fileString[i] = tempString;
-      hit = true;
-    }
     else
-    {
-      _fileString[i] = "";
-    }
+      hit = false;
   }
   return hit;
 }
@@ -207,3 +211,7 @@ bool vvShaderFactory2::glslSupport()
     return false;
   #endif
 }
+
+//============================================================================
+// End of File
+//============================================================================

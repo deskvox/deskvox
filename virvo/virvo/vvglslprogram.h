@@ -16,9 +16,9 @@
 #ifndef _VV_GLSLPROGRAM_H_
 #define _VV_GLSLPROGRAM_H_
 
-#include "vvvecmath.h"
 #include "vvshaderprogram.h"
-#include "vvglew.h"
+#include "vvvecmath.h"
+#include "vvopengl.h"
 
 #include <vector>
 #include <map>
@@ -91,16 +91,19 @@ private:
     GLint       _uniform;
   };
 
+  typedef std::map<std::string, GLint> ParaMap;
   typedef std::map<std::string, vvGLSLTexture*> TextureMap;
   typedef TextureMap::iterator TextureIterator;
 
-  vvGLSLTexture* getTexture(const std::string& textureName);
+  GLint getUniform(const std::string& parameterName, const std::string& parameterType);
+  vvGLSLTexture* getTexture(const std::string& textureName, const std::string& parameterType);
 
   bool loadShaders();     /// Initializes, compiles, and links a shader program
   void deleteProgram();   /// deletes program with all shaders and frees memory
 
   GLuint      _programId;
   GLuint      _shaderId[3];
+  ParaMap     _parameterMaps;
   TextureMap  _textureNameMaps; ///< maps of texturename on texture unit
   GLuint      _nTexture;        ///< counter for texture units
   bool        _isSupported;     ///< true if there is GLSL support
