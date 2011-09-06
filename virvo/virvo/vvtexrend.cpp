@@ -4740,6 +4740,9 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
     case vvRenderer::VV_PREINT:
       preIntegration = (newValue == 0.0f) ? false : true;
       updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
+      disableShader(_shader);
+      delete _shader;
+      _shader = initShader();
       break;
     case vvRenderer::VV_BINNING:
       if (newValue==0.0f) vd->_binning = vvVolDesc::LINEAR;
@@ -4851,17 +4854,14 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
         {
           _previousShader = _currentShader;
           _currentShader = getLocalIlluminationShader();
-          disableShader(_shader);
-          delete _shader;
-          _shader = initShader();
         }
         else
         {
           _currentShader = _previousShader;
-          disableShader(_shader);
-          delete _shader;
-          _shader = initShader();
         }
+        disableShader(_shader);
+        delete _shader;
+        _shader = initShader();
       }
       break;
     case vvRenderer::VV_MEASURETIME:
@@ -5010,18 +5010,13 @@ void vvTexRend::setCurrentShader(const int shader)
 {
   vvDebugMsg::msg(3, "vvTexRend::setCurrentShader()");
   if(shader >= NUM_PIXEL_SHADERS || shader < 0)
-  {
     _currentShader = 0;
-    disableShader(_shader);
-    delete _shader;
-    _shader = initShader();
-  }
   else
-  {
     _currentShader = shader;
-    delete _shader;
-    _shader = initShader();
-  }
+
+  disableShader(_shader);
+  delete _shader;
+  _shader = initShader();
 }
 
 //----------------------------------------------------------------------------
