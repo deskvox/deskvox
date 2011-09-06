@@ -332,7 +332,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   if (_usedThreads == 0)
   {
-    initPostClassificationStage(_shader, fragProgName);
+    initPostClassificationStage(fragProgName);
   }
 
   textures = 0;
@@ -430,11 +430,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   {
     _shader = initShader();
     if(_shader) _proxyGeometryOnGpuSupported = true;
-
-    if (_proxyGeometryOnGpuSupported)
-      setupIntersectionParameters(_shader);
-    else
-      _proxyGeometryOnGpu = false;
   }
 }
 
@@ -3458,7 +3453,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     glewInit();
 
-    data->renderer->initPostClassificationStage(shader, fragProgName);
+    data->renderer->initPostClassificationStage(fragProgName);
 
     pthread_barrier_wait(&data->renderer->_barrier);
 
@@ -3483,12 +3478,8 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
     data->renderer->setGLenvironment();
 
-    if(data->renderer->_proxyGeometryOnGpu)
-    {
-      shader = data->renderer->initShader();
-      data->renderer->setupIntersectionParameters(shader);
-      data->renderer->enableShader(shader, pixLUTName);
-    }
+    shader = data->renderer->initShader();
+    data->renderer->enableShader(shader, pixLUTName);
 
     data->renderer->_offscreenBuffers[data->threadId] = new vvOffscreenBuffer(1.0f, data->renderer->_multiGpuBufferPrecision);
 
@@ -3585,7 +3576,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       stopwatch->start();
 
-      if(data->renderer->_proxyGeometryOnGpu)
+      if(shader)
       {
         //data->renderer->enableIntersectionShader(shader);
         data->renderer->enableShader(shader, pixLUTName);
@@ -3665,7 +3656,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
 
       pthread_barrier_wait(&data->renderer->_barrier);
 
-      if (data->renderer->_proxyGeometryOnGpu)
+      if (shader)
       {
         data->renderer->disableShader(shader);
       }
@@ -5229,19 +5220,11 @@ void vvTexRend::disableShader(vvShaderProgram* shader) const
   }
 }
 
-void vvTexRend::initPostClassificationStage(vvShaderProgram* shader, GLuint progName[VV_FRAG_PROG_MAX])
+void vvTexRend::initPostClassificationStage(GLuint progName[VV_FRAG_PROG_MAX])
 {
   if (voxelType == VV_FRG_PRG)
   {
     initArbFragmentProgram(progName);
-  }
-  else if (voxelType==VV_PIX_SHD)
-  {
-    shader = initShader();
-    if (!shader)
-    {
-      voxelType = VV_RGBA;
-    }
   }
 }
 
@@ -5329,6 +5312,9 @@ vvShaderProgram* vvTexRend::initShader()
     shader = vvShaderFactory2::createProgram("", "", fragName.str());
   }
 
+  if(voxelType == VV_PIX_SHD && !shader)
+	voxelType = VV_RGBA;
+	
   if(shader)
   {
     setupIntersectionParameters(shader);

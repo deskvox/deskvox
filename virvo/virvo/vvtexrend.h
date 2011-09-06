@@ -245,7 +245,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
                                 std::vector<BrickList>& bricks, bool& areBricksCreated) const;
 
-    void initPostClassificationStage(vvShaderProgram* shader, GLuint progName[VV_FRAG_PROG_MAX]);
+    void initPostClassificationStage(GLuint progName[VV_FRAG_PROG_MAX]);
     void initArbFragmentProgram(GLuint progName[VV_FRAG_PROG_MAX]) const;
     void enableShader (vvShaderProgram* shader, GLuint lutName);
     void disableShader(vvShaderProgram* shader) const;
