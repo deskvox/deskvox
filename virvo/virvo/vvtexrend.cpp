@@ -457,10 +457,6 @@ vvTexRend::~vvTexRend()
 
   delete[] rgbaTF;
   delete[] rgbaLUT;
-  if (_proxyGeometryOnGpu)
-  {
-    glDisableClientState(GL_VERTEX_ARRAY);
-  }
   delete _shader;
   _shader = NULL;
 
