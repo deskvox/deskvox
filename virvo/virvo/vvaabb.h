@@ -36,8 +36,6 @@ public:
   int y;
   int width;
   int height;
-
-  void print() const;
 };
 
 /*!
@@ -144,13 +142,6 @@ public:
    *                commands.
    */
   void render() const;
-  /*!
-   * \brief         Print the box extents to stdout.
-   *
-   *                Print the bottom/left/back corner and the
-   *                top/right/front corner in that order.
-   */
-  void print() const;
 private:
   vvVector3 _min;
   vvVector3 _max;
@@ -165,5 +156,17 @@ private:
    */
   void calcVertices();
 };
+
+inline std::ostream& operator<<(std::ostream& out, const vvRect& r)
+{
+  out << "x: " << r.x << ", y: " << r.y << ", width: " << r.width << ", height: " << r.height;
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const vvAABB& aabb)
+{
+  out << aabb.min() << "\n" << aabb.max();
+  return out;
+}
 
 #endif // VV_AABB_H

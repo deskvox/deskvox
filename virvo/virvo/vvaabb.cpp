@@ -29,15 +29,6 @@ using std::cerr;
 using std::endl;
 
 //============================================================================
-// vvRect Metho Definitions
-//============================================================================
-
-void vvRect::print() const
-{
-  cerr << "x: " << x << ", y: " << y << ", width: " << width << ", height: " << height << endl;
-}
-
-//============================================================================
 // vvAABB Method Definitions
 //============================================================================
 
@@ -199,12 +190,6 @@ void vvAABB::render() const
     glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
   glEnd();
   glEnable(GL_LIGHTING);
-}
-
-void vvAABB::print() const
-{
-  _min.print();
-  _max.print();
 }
 
 void vvAABB::calcVertices()
