@@ -94,18 +94,15 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
     delete[] fn;
     fn = NULL;
 
-    vvFileIO* fio = new vvFileIO();
-    if (fio->loadVolumeData(vd) != vvFileIO::OK)
+    vvFileIO fio;
+    if (fio.loadVolumeData(vd) != vvFileIO::OK)
     {
       cerr << "Error loading volume file" << endl;
-      delete vd;
-      delete fio;
       return VV_FILEIO_ERROR;
     }
     else
     {
       vd->printInfoLine();
-      delete fio;
     }
   }
   else
