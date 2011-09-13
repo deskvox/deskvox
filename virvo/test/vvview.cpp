@@ -216,6 +216,11 @@ void vvView::mainLoop(int argc, char *argv[])
 
   if (serverMode)
   {
+    initGraphics(argc, argv);
+#ifdef HAVE_CUDA
+    vvCuda::initGlInterop();
+#endif
+
     while (1)
     {
       vvRemoteServer* server = NULL;
@@ -303,19 +308,16 @@ void vvView::mainLoop(int argc, char *argv[])
         delete renderer;
         renderer = NULL;
 
-        if (server->initRenderContext() == vvRemoteServer::VV_OK)
-        {
-          ov = new vvObjView();
-          setProjectionMode(perspectiveMode);
-          setRenderer(currentGeom, currentVoxels, frames);
-          srand(time(NULL));
+        ov = new vvObjView();
+        setProjectionMode(perspectiveMode);
+        setRenderer(currentGeom, currentVoxels, frames);
+        srand(time(NULL));
 
-          server->renderLoop(renderer);
-          cerr << "Exiting..." << endl;
+        server->renderLoop(renderer);
+        cerr << "Exiting..." << endl;
 
-          delete ov;
-          ov = NULL;
-        }
+        delete ov;
+        ov = NULL;
 
         delete vd;
         vd = NULL;
