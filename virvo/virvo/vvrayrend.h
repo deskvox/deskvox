@@ -24,7 +24,6 @@
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvsoftvr.h"
-#include "vvtransfunc.h"
 #include "vvvoldesc.h"
 #include "vvimage.h"
 

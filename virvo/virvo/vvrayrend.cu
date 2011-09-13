@@ -33,8 +33,6 @@
 #include "vvgltools.h"
 #include "vvrayrend.h"
 
-#include <cuda_gl_interop.h>
-#include <ctime>
 #include <iostream>
 #include <limits>
 
