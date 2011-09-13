@@ -246,7 +246,9 @@ void vvView::mainLoop(int argc, char *argv[])
 
       if (server->initData(vd) != vvRemoteServer::VV_OK)
       {
-        cerr << "Exiting..." << endl;
+        delete vd;
+        vd = NULL;
+        cerr << "Continuing with next client..." << endl;
         return;
       }
 
