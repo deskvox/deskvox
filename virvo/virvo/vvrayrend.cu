@@ -982,6 +982,11 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 {
   glewInit();
 
+  bool ok;
+
+  // Free "cuda error cache".
+  vvCuda::checkError(&ok, cudaGetLastError(), "vvRayRend::vvRayRend() - free cuda error cache");
+
   _volumeCopyToGpuOk = true;
 
   _earlyRayTermination = true;
@@ -1013,8 +1018,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   }
 
   factorViewMatrix();
-  bool ignoreMe;
-  vvCuda::checkError(&ignoreMe, cudaGetLastError(), "rayRend-constructor");
+
   d_randArray = 0;
   initRandTexture();
 
@@ -1089,6 +1093,8 @@ void vvRayRend::updateTransferFunction()
 
 void vvRayRend::compositeVolume(int w, int h)
 {
+  bool ok;
+
   if(!_volumeCopyToGpuOk)
   {
     std::cerr << "vvRayRend::compositeVolume() aborted because of previous CUDA-Error" << std::endl;
@@ -1103,16 +1109,22 @@ void vvRayRend::compositeVolume(int w, int h)
   switch(_depthPrecision)
   {
   case vvImage2_5d::VV_UCHAR:
-    cudaMalloc(&_depthUchar, vp[2]*vp[3]*sizeof(unsigned char));
-    cudaMemset(_depthUchar, 0, vp[2]*vp[3]*sizeof(unsigned char));
+    vvCuda::checkError(&ok, cudaMalloc(&_depthUchar, vp[2]*vp[3]*sizeof(unsigned char)),
+                       "vvRayRend::compositeVolume() - malloc uchar");
+    vvCuda::checkError(&ok, cudaMemset(_depthUchar, 0, vp[2]*vp[3]*sizeof(unsigned char)),
+                       "vvRayRend::compositeVolume() - memset uchar");
     break;
   case vvImage2_5d::VV_USHORT:
-    cudaMalloc(&_depthUshort, vp[2]*vp[3]*sizeof(unsigned short));
-    cudaMemset(_depthUshort, 0, vp[2]*vp[3]*sizeof(unsigned short));
+    vvCuda::checkError(&ok, cudaMalloc(&_depthUshort, vp[2]*vp[3]*sizeof(unsigned short)),
+                       "vvRayRend::compositeVolume() - malloc ushort");
+    vvCuda::checkError(&ok, cudaMemset(_depthUshort, 0, vp[2]*vp[3]*sizeof(unsigned short)),
+                       "vvRayRend::compositeVolume() - memset ushort");
     break;
   case vvImage2_5d::VV_UINT:
-    cudaMalloc(&_depthUint, vp[2]*vp[2]*sizeof(unsigned int));
-    cudaMemset(_depthUint, 0, vp[2]*vp[2]*sizeof(unsigned int));
+    vvCuda::checkError(&ok, cudaMalloc(&_depthUint, vp[2]*vp[2]*sizeof(unsigned int)),
+                       "vvRayRend::compositeVolume() - malloc uint");
+    vvCuda::checkError(&ok, cudaMemset(_depthUint, 0, vp[2]*vp[2]*sizeof(unsigned int)),
+                       "vvRayRend::compositeVolume() - memset uint");
     break;
   }
 
@@ -1434,9 +1446,6 @@ void vvRayRend::initVolumeTexture()
     _channelDesc = cudaCreateChannelDesc<ushort>();
   }
   d_volumeArrays.resize(vd->frames);
-
-  // Free "cuda error cache".
-  vvCuda::checkError(&ok, cudaGetLastError(), "vvRayRend::initVolumeTexture() - free cuda error cache");
 
   int outOfMemFrame = -1;
   for (int f=0; f<vd->frames; ++f)
