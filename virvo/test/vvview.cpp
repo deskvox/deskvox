@@ -223,6 +223,9 @@ void vvView::mainLoop(int argc, char *argv[])
       {
 #ifdef HAVE_CUDA
         server = new vvIbrServer(ibrPrecision, ibrScale, ibrMode);
+#else
+        std::cerr << "Image based remote rendering requires CUDA." << std::endl;
+        break;
 #endif
       }
       else if(rrMode == RR_CLUSTER)
@@ -239,17 +242,18 @@ void vvView::mainLoop(int argc, char *argv[])
       if (server->initSocket(slavePort, vvSocket::VV_TCP) != vvRemoteServer::VV_OK)
       {
         // TODO: Evaluate the error type, maybe don't even return but try again.
-        cerr << "Couldn't initialize the socket connection" << endl;
+        cerr << "Could not initialize the socket connection" << endl;
         cerr << "Exiting..." << endl;
-        return;
+        break;
       }
 
       if (server->initData(vd) != vvRemoteServer::VV_OK)
       {
         delete vd;
         vd = NULL;
+        cerr << "Could not initialize volume data" << endl;
         cerr << "Continuing with next client..." << endl;
-        return;
+        continue;
       }
 
       // Get bricks to render
@@ -259,16 +263,26 @@ void vvView::mainLoop(int argc, char *argv[])
         vvClusterServer* clusterServer = dynamic_cast<vvClusterServer*>(server);
         assert(clusterServer != NULL);
 
+        bool ok = true;
         for (int f=0; f<vd->frames; ++f)
         {
           BrickList bricks;
           if (clusterServer->initBricks(bricks) != vvClusterServer::VV_OK)
           {
+            ok = false;
             delete frames;
-            cerr << "Exiting..." << endl;
-            return;
+            cerr << "Could not initialize brick structure" << endl;
+            cerr << "Continuing with next client..." << endl;
+            break;
           }
           frames->push_back(bricks);
+        }
+
+        if(!ok)
+        {
+          delete vd;
+          vd = NULL;
+          continue;
         }
       }
 
