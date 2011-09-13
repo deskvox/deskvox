@@ -42,7 +42,6 @@ using std::endl;
 texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture8;
 texture<ushort, 3, cudaReadModeNormalizedFloat> volTexture16;
 texture<float4, 1, cudaReadModeElementType> tfTexture;
-texture<float, 3, cudaReadModeElementType> spaceSkippingTexture;
 texture<float4, 1, cudaReadModeElementType> randTexture;
 
 const int NUM_RAND_VECS = 8192;
@@ -285,8 +284,6 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
 
 template<
          bool t_earlyRayTermination,
-         bool t_spaceSkipping,
-         bool t_frontToBack,
          int t_bpc,
          int t_mipMode,
          bool t_lighting,
@@ -452,21 +449,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     const float3 texCoord = calcTexCoord(pos, volPos, volSizeHalf);
 
-    // Skip over homogeneous space.
-    if (t_spaceSkipping)
-    {
-      if (skipSpace(texCoord))
-      {
-        t += dist;
-        if (t > tfar)
-        {
-          break;
-        }
-        pos += step;
-        continue;
-      }
-    }
-
     const float sample = volume<t_bpc>(texCoord);
 
     // Post-classification transfer-function lookup.
@@ -526,13 +508,9 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       src.z *= src.w;
     }
 
-    if (t_frontToBack && (t_mipMode == 0))
+    if (t_mipMode == 0)
     {
       dst = dst + src * (1.0f - dst.w);
-    }
-    else if (!t_frontToBack && (t_mipMode == 0))
-    {
-      //dst = dst * src.w + src * (1.0f - src.w);
     }
 
     if (t_earlyRayTermination && (dst.w > opacityThreshold))
@@ -612,8 +590,6 @@ template<
 renderKernel getKernel(vvRayRend*)
 {
   return &render<t_earlyRayTermination, // Early ray termination.
-                 true, // Space skipping.
-                 true, // Front to back.
                  t_bpc, // Bytes per channel.
                  t_mipMode, // Mip mode.
                  false, // Local illumination.
@@ -640,11 +616,9 @@ template<
         bool t_useIbr,
         vvRayRend::IbrMode t_ibrMode
        >
-renderKernel getKernelWithIbrMode(vvRayRend* rayRend)
+renderKernel getKernelWithIbrMode(vvRayRend*)
 {
   return &render<t_earlyRayTermination, // Early ray termination.
-                 true, // Space skipping.
-                 true, // Front to back.
                  t_bpc, // Bytes per channel.
                  t_mipMode, // Mip mode.
                  t_illumination, // Local illumination.
@@ -991,21 +965,11 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _illumination = false;
   _interpolation = true;
   _opacityCorrection = true;
-  _spaceSkipping = false;
-  h_spaceSkippingArray = NULL;
-  h_cellMinValues = NULL;
-  h_cellMaxValues = NULL;
 
   _ibrPlanes[0] = 0.0f;
   _ibrPlanes[1] = 0.0f;
 
   _rgbaTF = NULL;
-
-#if 0
-  const int numCells[] = { 16, 16, 16 };
-  setNumSpaceSkippingCells(numCells);
-#endif
-  d_spaceSkippingArray = 0;
 
   intImg = new vvCudaImg(0, 0);
 
@@ -1039,12 +1003,7 @@ vvRayRend::~vvRayRend()
                      "vvRayRend::~vvRayRend() - free tf");
   vvCuda::checkError(&ok, cudaFreeArray(d_randArray),
                      "vvRayRend::~vvRayRend() - free rand array");
-  vvCuda::checkError(&ok, cudaFreeArray(d_spaceSkippingArray),
-                     "vvRayRend::~vvRayRend() - free space skipping array");
 
-  delete[] h_spaceSkippingArray;
-  delete[] h_cellMinValues;
-  delete[] h_cellMaxValues;
   delete[] _rgbaTF;
 }
 
@@ -1063,12 +1022,6 @@ void vvRayRend::updateTransferFunction()
   _rgbaTF = new float[4 * lutEntries];
 
   vd->computeTFTexture(lutEntries, 1, 1, _rgbaTF);
-
-  if (_spaceSkipping)
-  {
-    computeSpaceSkippingTexture();
-    initSpaceSkippingTexture();
-  }
 
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
 
@@ -1318,11 +1271,6 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue)
         _interpolation = newInterpol;
         initVolumeTexture();
         updateTransferFunction();
-
-        if (_spaceSkipping)
-        {
-          initSpaceSkippingTexture();
-        }
       }
     }
     break;
@@ -1339,15 +1287,6 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue)
     vvRenderer::setParameter(param, newValue);
     break;
   }
-}
-
-void vvRayRend::setNumSpaceSkippingCells(const int numSpaceSkippingCells[3])
-{
-  for (int d=0; d<3; ++d)
-  {
-    h_numCells[d] = numSpaceSkippingCells[d];
-  }
-  calcSpaceSkippingGrid();
 }
 
 bool vvRayRend::getEarlyRayTermination() const
@@ -1367,11 +1306,6 @@ bool vvRayRend::getInterpolation() const
 bool vvRayRend::getOpacityCorrection() const
 {
   return _opacityCorrection;
-}
-
-bool vvRayRend::getSpaceSkipping() const
-{
-  return _spaceSkipping;
 }
 
 void vvRayRend::initRandTexture()
@@ -1406,28 +1340,6 @@ void vvRayRend::initRandTexture()
                      "vvRayRend::initRandTexture()");
 
   delete[] randVecs;
-}
-
-void vvRayRend::initSpaceSkippingTexture()
-{
-  bool ok;
-
-  cudaExtent numBricks = make_cudaExtent(h_numCells[0], h_numCells[1], h_numCells[2]);
-
-  cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<bool>();
-
-  vvCuda::checkError(&ok, cudaFreeArray(d_spaceSkippingArray),
-                     "vvRayRend::initSpaceSkippingTexture()");
-  vvCuda::checkError(&ok, cudaMalloc3DArray(&d_spaceSkippingArray, &channelDesc, numBricks),
-                     "vvRayRend::initSpaceSkippingTexture()");
-
-  cudaMemcpy3DParms copyParams = { 0 };
-
-  copyParams.srcPtr = make_cudaPitchedPtr(h_spaceSkippingArray, numBricks.width*vd->bpc, numBricks.width, numBricks.height);
-  copyParams.dstArray = d_spaceSkippingArray;
-  copyParams.extent = numBricks;
-  copyParams.kind = cudaMemcpyHostToDevice;
-  vvCuda::checkError(&ok, cudaMemcpy3D(&copyParams), "vvRayRend::initSpaceSkippingTexture()");
 }
 
 void vvRayRend::initVolumeTexture()
@@ -1571,120 +1483,6 @@ void vvRayRend::factorViewMatrix()
 void vvRayRend::findAxisRepresentations()
 {
   // Overwrite default behavior.
-}
-
-void vvRayRend::calcSpaceSkippingGrid()
-{
-  delete[] h_cellMinValues;
-  delete[] h_cellMaxValues;
-  const int numCells = h_numCells[0] * h_numCells[1] * h_numCells[2];
-  h_cellMinValues = new int[numCells];
-  h_cellMaxValues = new int[numCells];
-
-  // Cells are uniformly sized. If vd->size[d] isn't a multiple of cellSize[d],
-  // the last cell will be larger than the other cells for that dimension.
-  const int cellSizeAll[] = {
-                              (int)vd->getSize()[0] / (h_numCells[0]),
-                              (int)vd->getSize()[1] / (h_numCells[1]),
-                              (int)vd->getSize()[2] / (h_numCells[2])
-                          };
-  const int lastCellSize[] = {
-                               cellSizeAll[0] + (int)vd->getSize()[0] % h_numCells[0],
-                               cellSizeAll[1] + (int)vd->getSize()[1] % h_numCells[1],
-                               cellSizeAll[2] + (int)vd->getSize()[2] % h_numCells[2]
-                              };
-  int cellSize[3];
-  int from[3];
-  int to[3];
-  const vvVector3 size = vd->getSize();
-  for (int z=0; z<h_numCells[2]; ++z)
-  {
-    cellSize[2] = (z == (h_numCells[2] - 1)) ? lastCellSize[2] : cellSizeAll[2];
-    from[2] = cellSizeAll[2] * z;
-    to[2] = from[2] + cellSize[2];
-
-    for (int y=0; y<h_numCells[1]; ++y)
-    {
-      cellSize[1] = (y == (h_numCells[1] - 1)) ? lastCellSize[1] : cellSizeAll[1];
-      from[1] = cellSizeAll[1] * y;
-      to[1] = from[1] + cellSize[1];
-
-      for (int x=0; x<h_numCells[2]; ++x)
-      {
-        cellSize[0] = (x == (h_numCells[0] - 1)) ? lastCellSize[0] : cellSizeAll[0];
-        from[0] = cellSizeAll[0] * x;
-        to[0] = from[0] + cellSize[0];
-
-        // Memorize the max and min scalar values in the volume. These are stored
-        // to perform space skipping later on.
-        int minValue = INT_MAX;
-        int maxValue = -INT_MAX;
-
-        for (int vz=from[2]; vz<to[2]; ++vz)
-        {
-          for (int vy=from[1]; vy<to[1]; ++vy)
-          {
-            for (int vx=from[0]; vx<to[0]; ++vx)
-            {
-              const uchar vox = vd->getRaw()[vz * (int)(size[0] * size[1]) + vy * (int)size[0] + vx];
-
-              // Store min and max for empty space leaping.
-              if (vox > maxValue)
-              {
-                maxValue = vox;
-              }
-              if (vox < minValue)
-              {
-                minValue = vox;
-              }
-            }
-          }
-        }
-        const int idx = x * h_numCells[1] * h_numCells[2] + y * h_numCells[2] + z;
-        h_cellMinValues[idx] = minValue;
-        h_cellMaxValues[idx] = maxValue;
-      }
-    }
-  }
-}
-
-void vvRayRend::computeSpaceSkippingTexture()
-{
-  if (vd->bpc == 1)
-  {
-    delete[] h_spaceSkippingArray;
-    const int numCells = h_numCells[0] * h_numCells[1] * h_numCells[2];
-    h_spaceSkippingArray = new bool[numCells];
-    int discarded = 0;
-    for (int i=0; i<numCells; ++i)
-    {
-      h_spaceSkippingArray[i] = true;
-      for (int j=h_cellMinValues[i]; j<=h_cellMaxValues[i]; ++j)
-      {
-        if(_rgbaTF[j * 4 + 3] > 0.0f)
-        {
-          h_spaceSkippingArray[i] = false;
-          break;
-        }
-      }
-      if (h_spaceSkippingArray[i])
-      {
-        ++discarded;
-      }
-    }
-    vvDebugMsg::msg(3, "Cells discarded: ", discarded);
-  }
-  else
-  {
-    // Only for bpc == 1 so far.
-    _spaceSkipping = false;
-    delete[] h_spaceSkippingArray;
-    h_spaceSkippingArray = NULL;
-    delete[] h_cellMinValues;
-    h_cellMinValues = NULL;
-    delete[] h_cellMaxValues;
-    h_cellMaxValues = NULL;
-  }
 }
 
 void vvRayRend::setDepthPrecision(vvImage2_5d::DepthPrecision dp)
