@@ -26,6 +26,8 @@
 #include "vvtexrend.h"
 #include "float.h"
 #include "vvrayrend.h"
+#include "vvshaderfactory.h"
+#include "vvshaderprogram.h"
 #include "vvtoolshed.h"
 
 using std::cerr;
@@ -40,6 +42,8 @@ vvIbrClient::vvIbrClient(vvRenderState renderState,
   : vvRemoteClient(renderState, slaveNames, slavePorts, slaveFileNames, fileName),
     _depthPrecision(dp), _depthScale(ds)
 {
+  vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
+
   _threads = NULL;
   _threadData = NULL;
 
@@ -57,17 +61,24 @@ vvIbrClient::vvIbrClient(vvRenderState renderState,
 
   _firstFrame = false;
 
+  _shaderFactory = new vvShaderFactory();
+  _shader = _shaderFactory->createProgram("ibr", "", "");
+
   pthread_mutex_init(&_slaveMutex, NULL);
 }
 
 vvIbrClient::~vvIbrClient()
 {
+  vvDebugMsg::msg(1, "vvIbrClient::~vvIbrClient()");
+
   destroyThreads();
   glDeleteBuffers(1, &_pointVBO);
   glDeleteBuffers(1, &_colorVBO);
   glDeleteTextures(3, _ibrTex);
   delete _isaRect[0];
   delete _isaRect[1];
+  delete _shaderFactory;
+  delete _shader;
 }
 
 vvRemoteClient::ErrorType vvIbrClient::setRenderer(vvRenderer* renderer)
@@ -84,6 +95,11 @@ vvRemoteClient::ErrorType vvIbrClient::setRenderer(vvRenderer* renderer)
 
 vvRemoteClient::ErrorType vvIbrClient::render()
 {
+  if (_shader == NULL)
+  {
+    return vvRemoteClient::VV_SHADER_ERROR;
+  }
+
   if (dynamic_cast<vvTexRend*>(_renderer) == NULL)
   {
     cerr << "Renderer is no texture based renderer" << endl;
@@ -91,11 +107,27 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   }
 
   // check _slaveCnt securely
-  pthread_mutex_lock( &_slaveMutex );
+  pthread_mutex_lock(&_slaveMutex);
   bool slavesFinished = (_slaveCnt == 0);
 
-  if(slavesFinished)
+  if (slavesFinished)
   {
+    vvMatrix mv;
+    vvMatrix pr;
+    vvGLTools::getModelviewMatrix(&mv);
+    vvGLTools::getProjectionMatrix(&pr);
+
+    mv.multiplyPost(&pr);
+    mv.invert();
+    mv.transpose();
+
+    float modelprojectinv[16];
+    mv.get(modelprojectinv);
+
+    _shader->enable();
+    _shader->setParameterMatrix4f("ModelProjectInv" , modelprojectinv);
+    _shader->disable();
+
     // don't request new ibr frame if nothing changed
     _changes = false;
     GLdouble tempMM[16];
@@ -156,7 +188,18 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   glColorPointer(4, GL_UNSIGNED_BYTE, 0, NULL);
   glEnableClientState(GL_COLOR_ARRAY);
 
+  _shader->enable();
+
+  float tempVP[4];
+  tempVP[0] = _vp[0].values[0];
+  tempVP[1] = _vp[0].values[1];
+  tempVP[2] = _vp[0].values[2];
+  tempVP[3] = _vp[0].values[3];
+  _shader->setParameter4f("vp", tempVP[0], tempVP[1], tempVP[2], tempVP[3]);
+
   glDrawArrays(GL_POINTS, 0, isaImg->getWidth()*isaImg->getHeight()*3);
+
+  _shader->disable();
 
   glDisableClientState(GL_VERTEX_ARRAY);
   glDisableClientState(GL_COLOR_ARRAY);
@@ -322,20 +365,15 @@ void vvIbrClient::initIbrFrame()
   std::vector<float> points(w*h*3);
   double winPoint[3];
 
-  // barycenter
-  float bc[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-
   for(int y = 0; y<h; y++)
   {
     for(int x = 0; x<w; x++)
     {
       int colorIndex = (y*w+x)*4;
 
-      //calc barycenter
-      bc[0] += float(dataRGBA[colorIndex+3])*x;
-      bc[1] += float(dataRGBA[colorIndex+3])*y;
-
-      bc[3] += float(dataRGBA[colorIndex+3]);
+      points[y*w*3+x*3]   = (float)winPoint[0];
+      points[y*w*3+x*3+1] = (float)winPoint[1];
+      points[y*w*3+x*3+2] = (float)winPoint[2];
 
       // save color
       colors[colorIndex]   = dataRGBA[colorIndex];
@@ -347,18 +385,15 @@ void vvIbrClient::initIbrFrame()
       else
         colors[colorIndex+3] = dataRGBA[colorIndex+3];
 
-      // save point-vertex
+      points[y*w*3+x*3]   = x;
+      points[y*w*3+x*3+1] = y;
+      if(depth[y*w+x] < 0.0 && depth[y*w+x] > 1.0) cerr << depth[y*w+x] << ",";
       if(_depthScale == vvImage2_5d::VV_FULL_DEPTH)
       {
-        gluUnProject(_isaRect[0]->x+x, _isaRect[0]->y+y, double(depth[y*w+x]),
-                     _modelMatrix, _projMatrix, _vp[0].values,
-                     &winPoint[0],&winPoint[1],&winPoint[2]);
-        bc[2] += float(dataRGBA[colorIndex+3])*depth[y*w+x];
+        points[y*w*3+x*3+2] = depth[y*w+x];
       }
       else if(_depthScale == vvImage2_5d::VV_SCALED_DEPTH)
       {
-        bc[2] += float(dataRGBA[colorIndex+3])*(depth[y*w+x]*(_ibrPlanes[1] - _ibrPlanes[0]) +_ibrPlanes[0]);
-        // push away clipped pixels
         if(depth[y*w+x] == 0.0f || depth[y*w+x] == 1.0f)
         {
           depth[y*w+x] = 1.0f;
@@ -367,35 +402,11 @@ void vvIbrClient::initIbrFrame()
         {
           depth[y*w+x] = depth[y*w+x]*(_ibrPlanes[1] - _ibrPlanes[0]) +_ibrPlanes[0];
         }
-
-        gluUnProject(x, y, double(depth[y*w+x]),
-                     _modelMatrix, _projMatrix, _vp[0].values,
-                     &winPoint[0],&winPoint[1],&winPoint[2]);
+        points[y*w*3+x*3+2] = depth[y*w+x];
       }
-      points[y*w*3+x*3]   = (float)winPoint[0];
-      points[y*w*3+x*3+1] = (float)winPoint[1];
-      points[y*w*3+x*3+2] = (float)winPoint[2];
     }
   }
 
-  //bc
-  bc[0] /= bc[3];
-  bc[1] /= bc[3];
-  bc[2] /= bc[3];
-
-  double winBc[3];
-
-  gluUnProject(bc[0], bc[1], bc[2],
-               _modelMatrix, _projMatrix, _vp[0].values,
-               &winBc[0],&winBc[1],&winBc[2]);
-
-  std::cerr << "barycenter: " << bc[0] <<" "<< bc[1] <<" ("<< bc[2] <<")"<< std::endl;
-
-  glPointSize(5.);
-  glBegin(GL_POINTS);
-  glColor3f(1.0,0.,0.);
-  glVertex3f((GLfloat)winBc[0], (GLfloat)winBc[1], (GLfloat)winBc[2]);
-  glEnd();
   glPointSize(1.);
 
   // VBO for points
@@ -483,7 +494,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
       break;
     }
-    //sleep(3);
+    sleep(1);
     // switch pointers securely
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
     delete data->images->at(data->threadId);

@@ -71,7 +71,7 @@ public:
   */
   virtual void setParameterArray3f(const std::string& parameterName, const float* array, const int& count) = 0;
 
-  virtual void setParameterMatrix4f(const std::string& parameterName, const float* mat) = 0;          ///< set uniform 4x4-matrix
+  virtual void setParameterMatrix4f(const std::string& parameterName, const float* mat) = 0;          ///< set uniform 4x4-matrix float
 
   virtual void setParameterTex1D(const std::string& parameterName, const unsigned int& ui) = 0;
   virtual void setParameterTex2D(const std::string& parameterName, const unsigned int& ui) = 0;

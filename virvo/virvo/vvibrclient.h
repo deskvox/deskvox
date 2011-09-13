@@ -27,6 +27,8 @@
 #include "vvremoteclient.h"
 #include "vvvoldesc.h"
 #include "vvpthread.h"
+#include "vvshaderfactory.h"
+#include "vvshaderprogram.h"
 #include "vvgltools.h"
 #include "vvrayrend.h"
 
@@ -86,6 +88,9 @@ private:
   vvImage2_5d::DepthPrecision _depthPrecision;        ///< deph-value precision
   vvImage2_5d::IbrDepthScale  _depthScale;
   float _ibrPlanes[4];
+
+  vvShaderFactory* _shaderFactory;
+  vvShaderProgram* _shader;
 
   void createThreads();                               ///< creates threads for every socket connection
   void destroyThreads();                              ///< quits threads
