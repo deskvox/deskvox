@@ -331,8 +331,6 @@ void vvView::mainLoop(int argc, char *argv[])
   }
   else
   {
-    vvFileIO* fio;
-
     if (filename!=NULL && strlen(filename)==0) filename = NULL;
     if (filename!=NULL)
     {
@@ -345,16 +343,15 @@ void vvView::mainLoop(int argc, char *argv[])
       cerr << "Using default volume" << endl;
     }
 
-    fio = new vvFileIO();
-    if (fio->loadVolumeData(vd) != vvFileIO::OK)
+    vvFileIO fio;
+    if (fio.loadVolumeData(vd) != vvFileIO::OK)
     {
       cerr << "Error loading volume file" << endl;
       delete vd;
-      delete fio;
+      vd = NULL;
       return;
     }
     else vd->printInfoLine();
-    delete fio;
 
     const vvVector3 size = vd->getSize();
     const float maxedge = ts_max(size[0], size[1], size[2]);
