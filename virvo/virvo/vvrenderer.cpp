@@ -193,7 +193,7 @@ void vvRenderState::setParameter(const ParameterType param, const float newValue
     _useIbr = (newValue != 0.0f);
     break;
   case VV_IBR_MODE:
-    _ibrMode = (vvRenderState::IbrMode)newValue;
+    _ibrMode = (vvRenderState::IbrMode)((int)newValue);
     break;
   default:
     break;
