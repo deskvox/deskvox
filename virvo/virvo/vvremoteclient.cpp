@@ -86,6 +86,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSockets(const int defaultPort, con
             _sockets[s]->putFileName(_fileName);
           }
         }
+        _sockets[s]->getVolumeAttributes(vd);
       }
       else
       {
