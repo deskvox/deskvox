@@ -102,33 +102,42 @@ bool vvSocketIO::sock_action()
 }
 
 //----------------------------------------------------------------------------
+/** Get volume attributes from socket.
+  @param vd  empty volume description which is to be filled with the volume attributes
+*/
+vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd)
+{
+  vvSocket::ErrorType retval;
+
+  int size = vd->serializeAttributes();
+  cerr<<size<<endl;
+  std::vector<uchar> buffer(size);
+  if ((retval = vvSocket::read_data(&buffer[0], size)) != vvSocket::VV_OK)
+  {
+    return retval;
+  }
+  if (vvDebugMsg::isActive(3))
+    cerr<<"Header received"<< endl;
+  vd->deserializeAttributes(&buffer[0]);
+
+  return vvSocket::VV_OK;
+}
+
+
+//----------------------------------------------------------------------------
 /** Get volume data from socket.
   @param vd  empty volume description which is to be filled with the volume data
 */
 vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd)
 {
-
-  int size;
-  uchar* buffer;
-  vvSocket::ErrorType retval;
-
-  size = vd->serializeAttributes();
-  cerr<<size<<endl;
-  buffer = new uchar[size];
-  if ((retval = vvSocket::read_data(buffer, size)) != vvSocket::VV_OK)
-  {
-    delete[] buffer;
+  vvSocket::ErrorType retval = getVolumeAttributes(vd);
+  if(retval != vvSocket::VV_OK)
     return retval;
-  }
-  if (vvDebugMsg::isActive(3))
-    cerr<<"Header received"<< endl;
-  vd->deserializeAttributes(buffer);
-  delete[] buffer;
 
-  size = vd->getFrameBytes();
+  int size = vd->getFrameBytes();
   for(int k =0; k< vd->frames; k++)
   {
-    buffer = new uchar[size];
+    uchar *buffer = new uchar[size];
     if (!buffer)
       return vvSocket::VV_ALLOC_ERROR;
     if ((retval = vvSocket::read_data(buffer, size)) != vvSocket::VV_OK)
@@ -144,34 +153,37 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd)
 }
 
 //----------------------------------------------------------------------------
+/** Write volume attributes to socket.
+  @param vd  volume description of volume to be send.
+*/
+vvSocket::ErrorType vvSocketIO::putVolumeAttributes(vvVolDesc* vd)
+{
+  int size = vd->serializeAttributes();
+  std::vector<uchar> buffer(size);
+  vd->serializeAttributes(&buffer[0]);
+  if (vvDebugMsg::isActive(3))
+    cerr <<"Sending header ..."<< endl;
+  return vvSocket::write_data(&buffer[0], size);
+}
+
+//----------------------------------------------------------------------------
 /** Write volume data to socket.
   @param vd  volume description of volume to be send.
 */
 vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
 {
-  int size, frames;
-  uchar* buffer;
-  vvSocket::ErrorType retval;
-
-  size = vd->serializeAttributes();
-  buffer = new uchar[size];
-  vd->serializeAttributes(buffer);
-  if (vvDebugMsg::isActive(3))
-    cerr <<"Sending header ..."<< endl;
-  if ((retval = vvSocket::write_data(buffer, size)) != vvSocket::VV_OK)
-  {
-    delete[] buffer;
+  vvSocket::ErrorType retval = putVolumeAttributes(vd);
+  if(retval != vvSocket::VV_OK)
     return retval;
-  }
-  delete[] buffer;
-  frames = vd->frames;
 
-  size = vd->getFrameBytes();
+  int frames = vd->frames;
+
+  int size = vd->getFrameBytes();
   if (vvDebugMsg::isActive(3))
     cerr <<"Sending data ..."<< endl;
   for(int k=0; k < frames; k++)
   {
-    buffer = vd->getRaw(k);
+    uchar *buffer = vd->getRaw(k);
     if ((retval = vvSocket::write_data(buffer, size)) != vvSocket::VV_OK)
     {
       return retval;

@@ -146,7 +146,9 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ~vvSocketIO();
     ErrorType init();
     bool sock_action();
+    ErrorType getVolumeAttributes(vvVolDesc* vd);
     ErrorType getVolume(vvVolDesc*);
+    ErrorType putVolumeAttributes(vvVolDesc*);
     ErrorType putVolume(vvVolDesc*);
     ErrorType getTransferFunction(vvTransFunc& tf);
     ErrorType putTransferFunction(vvTransFunc& tf);
