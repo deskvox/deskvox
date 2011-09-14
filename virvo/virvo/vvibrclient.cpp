@@ -494,7 +494,11 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
       break;
     }
+#ifdef _WIN32
+   Sleep(1000);
+#else
     sleep(1);
+#endif
     // switch pointers securely
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
     delete data->images->at(data->threadId);
