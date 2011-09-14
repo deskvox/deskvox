@@ -112,56 +112,19 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd)
   uchar* buffer;
   vvSocket::ErrorType retval;
 
-  buffer = new uchar[3];
-                                                  // get extension
-  if ((retval = vvSocket::read_data(buffer, 3)) != vvSocket::VV_OK)
+  size = vd->serializeAttributes();
+  cerr<<size<<endl;
+  buffer = new uchar[size];
+  if ((retval = vvSocket::read_data(buffer, size)) != vvSocket::VV_OK)
   {
     delete[] buffer;
     return retval;
   }
-  if ((char)buffer[0] == 'r' || (char)buffer[0] == 'R')
-  {
-    if (vvDebugMsg::isActive(3))
-      cerr <<"Data type: rvf"<< endl;
-    delete[] buffer;
-    buffer = new uchar[6];
-                                                  // get header
-    if ((retval = vvSocket::read_data(buffer, 6)) != vvSocket::VV_OK)
-    {
-      delete[] buffer;
-      return retval;
-    }
-    if (vvDebugMsg::isActive(3))
-      cerr<<"Header received"<< endl;
-    vd->vox[0] = vvToolshed::read16(&buffer[0]);
-    vd->vox[1] = vvToolshed::read16(&buffer[2]);
-    vd->vox[2] = vvToolshed::read16(&buffer[4]);
-    vd->bpc = 1;
-    vd->chan = 1;
-    vd->frames = 1;
-    vd->setFilename("default.rvf");
-    delete[] buffer;
+  if (vvDebugMsg::isActive(3))
+    cerr<<"Header received"<< endl;
+  vd->deserializeAttributes(buffer);
+  delete[] buffer;
 
-  }
-  else
-  {
-    if (vvDebugMsg::isActive(3))
-      cerr <<"Data type: xvf"<< endl;
-    delete[] buffer;
-    size = vd->serializeAttributes();
-    cerr<<size<<endl;
-    buffer = new uchar[size];
-    if ((retval = vvSocket::read_data(buffer, size)) != vvSocket::VV_OK)
-    {
-      delete[] buffer;
-      return retval;
-    }
-    if (vvDebugMsg::isActive(3))
-      cerr<<"Header received"<< endl;
-    vd->deserializeAttributes(buffer);
-    delete[] buffer;
-
-  }
   size = vd->getFrameBytes();
   for(int k =0; k< vd->frames; k++)
   {
@@ -186,59 +149,22 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd)
 */
 vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
 {
-  const char* filename;
-  char ext[16];
   int size, frames;
   uchar* buffer;
   vvSocket::ErrorType retval;
 
-  filename = vd->getFilename();
-  vvToolshed::extractExtension(ext, filename);
-
-  buffer = new uchar[3];
-  for (int i=0; i<3; i++)
-    buffer[i] = (uchar)ext[i];
+  size = vd->serializeAttributes();
+  buffer = new uchar[size];
+  vd->serializeAttributes(buffer);
   if (vvDebugMsg::isActive(3))
-    cerr<<"Sending extension ..."<<endl;
-  if ((retval = vvSocket::write_data(buffer, 3)) != vvSocket::VV_OK)
+    cerr <<"Sending header ..."<< endl;
+  if ((retval = vvSocket::write_data(buffer, size)) != vvSocket::VV_OK)
   {
     delete[] buffer;
     return retval;
   }
-
   delete[] buffer;
-
-  if (ext[0] == 'r' || ext[0] == 'R')
-  {
-    buffer = new uchar[6];
-    vvToolshed::write16(&buffer[0], (short)vd->vox[0]);
-    vvToolshed::write16(&buffer[2], (short)vd->vox[1]);
-    vvToolshed::write16(&buffer[4], (short)vd->vox[2]);
-    if (vvDebugMsg::isActive(3))
-      cerr <<"Sending header ..."<< endl;
-    if ((retval = vvSocket::write_data(buffer, 6)) != vvSocket::VV_OK)
-    {
-      delete[] buffer;
-      return retval;
-    }
-    delete[] buffer;
-    frames=1;
-  }
-  else
-  {
-    size = vd->serializeAttributes();
-    buffer = new uchar[size];
-    vd->serializeAttributes(buffer);
-    if (vvDebugMsg::isActive(3))
-      cerr <<"Sending header ..."<< endl;
-    if ((retval = vvSocket::write_data(buffer, size)) != vvSocket::VV_OK)
-    {
-      delete[] buffer;
-      return retval;
-    }
-    delete[] buffer;
-    frames = vd->frames;
-  }
+  frames = vd->frames;
 
   size = vd->getFrameBytes();
   if (vvDebugMsg::isActive(3))
