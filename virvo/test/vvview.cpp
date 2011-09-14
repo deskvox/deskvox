@@ -162,7 +162,6 @@ vvView::vvView()
   rrMode                = RR_NONE;
   clipBuffer            = NULL;
   framebufferDump       = NULL;
-  redistributeVolData   = false;
   _remoteClient         = NULL;
   benchmark             = false;
   testSuiteFileName     = NULL;
@@ -407,7 +406,7 @@ void vvView::mainLoop(int argc, char *argv[])
     if (_remoteClient != NULL)
     {
       remoteRendering = (_remoteClient->initSockets(vvView::DEFAULT_PORT,
-                                                    redistributeVolData, vd) == vvRemoteClient::VV_OK);
+                                                    slaveFileNames.empty(), vd) == vvRemoteClient::VV_OK);
     }
     else
     {
@@ -2804,9 +2803,6 @@ void vvView::displayHelpInfo()
   cerr << "  Path to a file where the server can find its volume data" << endl;
   cerr << "  If this entry is -serverfilename n, the n'th server will try to load this file" << endl;
   cerr << endl;
-  cerr << "-redistributevoldata" << endl;
-  cerr << "  Don't load slave volume data from file, it will be redistributed by the master to all slaves" << endl;
-  cerr << endl;
   cerr << "-lighting" << endl;
   cerr << " Use headlight for local illumination" << endl;
   cerr << endl;
@@ -3112,10 +3108,6 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cerr << "Test suite file name unspecified" << endl;
       }
       testSuiteFileName = argv[arg];
-    }
-    else if (vvToolshed::strCompare(argv[arg], "-redistributevoldata")==0)
-    {
-      redistributeVolData = true;
     }
     else if (vvToolshed::strCompare(argv[arg], "-benchmark")==0)
     {
