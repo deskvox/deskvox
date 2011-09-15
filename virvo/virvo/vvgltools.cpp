@@ -330,6 +330,48 @@ void vvGLTools::setProjectionMatrix(const vvMatrix* pm)
   glLoadMatrixf(glmatrix);
 }
 
+//----------------------------------------------------------------------------
+/** Return a projected vertex (gluProject).
+  @param obj coordinate
+*/
+vvVector3 vvGLTools::project(const vvVector3& obj)
+{
+  double modelview[16];
+  double projection[16];
+  glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+  glGetDoublev(GL_PROJECTION_MATRIX, projection);
+  vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  double winX;
+  double winY;
+  double winZ;
+
+  gluProject(obj[0], obj[1], obj[2],
+             modelview, projection, viewport.values,
+             &winX, &winY, &winZ);
+  return vvVector3(winX, winY, winZ);
+}
+
+//----------------------------------------------------------------------------
+/** Return an un-projected vertex (gluUnProject).
+  @param win coordinate
+*/
+vvVector3 vvGLTools::unProject(const vvVector3& win)
+{
+  double modelview[16];
+  double projection[16];
+  glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+  glGetDoublev(GL_PROJECTION_MATRIX, projection);
+  vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  double objX;
+  double objY;
+  double objZ;
+
+  gluProject(win[0], win[1], win[2],
+             modelview, projection, viewport.values,
+             &objX, &objY, &objZ);
+  return vvVector3(objX, objY, objZ);
+}
+
 //============================================================================
 // End of File
 //============================================================================
