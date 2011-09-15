@@ -113,17 +113,17 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
     // don't request new ibr frame if nothing changed
     _changes = false;
-    GLdouble tempMM[16];
-    GLdouble tempPM[16];
-    glGetDoublev(GL_MODELVIEW_MATRIX,&tempMM[0]);
-    glGetDoublev(GL_PROJECTION_MATRIX,&tempPM[0]);
-    for(int i=0;i<16;i++)
+
+    vvMatrix tmpPr;
+    vvMatrix tmpMv;
+    vvGLTools::getProjectionMatrix(&tmpPr);
+    vvGLTools::getModelviewMatrix(&tmpMv);
+    tmpPr.transpose();
+    tmpMv.transpose();
+
+    if (!_currentPr.equal(&tmpPr) || !_currentMv.equal(&tmpMv) || _changes)
     {
-      if(tempMM[i] != _modelMatrix[i] || tempPM[i] != _projMatrix[i] || _changes)
-      {
-        _changes = true;
-        break;
-      }
+      _changes = true;
     }
 
     if(_changes)
@@ -180,6 +180,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   tempVP[3] = _vp[0].values[3];
   _shader->setParameter4f("vp", tempVP[0], tempVP[1], tempVP[2], tempVP[3]);
 
+  glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
   glDrawArrays(GL_POINTS, 0, isaImg->getWidth()*isaImg->getHeight()*3);
 
   _shader->disable();
@@ -218,13 +219,11 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
   _vp[1] = vvGLTools::getViewport();
 
   // remember MV and PR matrix
-  for(int i=0; i<16;i++)
-  {
-    _modelMatrix[i] = _modelMatrix[i+16];
-    _projMatrix[i]  = _projMatrix[i+16];
-  }
-  glGetDoublev(GL_MODELVIEW_MATRIX,&_modelMatrix[16]);
-  glGetDoublev(GL_PROJECTION_MATRIX,&_projMatrix[16]);
+  _oldPr.copy(&_currentPr);
+  _oldMv.copy(&_currentMv);
+
+  vvGLTools::getProjectionMatrix(&_currentPr);
+  vvGLTools::getModelviewMatrix(&_currentMv);
 
   _ibrPlanes[0] = _ibrPlanes[2];
   _ibrPlanes[1] = _ibrPlanes[3];
@@ -236,17 +235,11 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
     vvVector4 min4(bbox.min()[0], bbox.min()[1], bbox.min()[2], 1.0f);
     vvVector4 max4(bbox.max()[0], bbox.max()[1], bbox.max()[2], 1.0f);
 
-    float matrixGL[16];
     vvMatrix pr;
-    glGetFloatv(GL_PROJECTION_MATRIX, matrixGL);
-    pr.set(matrixGL);
+    vvGLTools::getProjectionMatrix(&pr);
 
     vvMatrix mv;
-    glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
-    mv.set(matrixGL);
-
-    mv.transpose();
-    pr.transpose();
+    vvGLTools::getModelviewMatrix(&mv);
 
     center4.multiply(&mv);
     min4.multiply(&mv);
@@ -368,7 +361,7 @@ void vvIbrClient::initIbrFrame()
 
       points[y*w*3+x*3]   = x;
       points[y*w*3+x*3+1] = y;
-      if(depth[y*w+x] < 0.0 && depth[y*w+x] > 1.0) cerr << depth[y*w+x] << ",";
+
       if(_depthScale == vvImage2_5d::VV_FULL_DEPTH)
       {
         points[y*w*3+x*3+2] = depth[y*w+x];
@@ -387,8 +380,6 @@ void vvIbrClient::initIbrFrame()
       }
     }
   }
-
-  glPointSize(1.);
 
   // VBO for points
   glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
@@ -427,7 +418,7 @@ void vvIbrClient::createThreads()
   if(_sockets.size()>1)
   {
     // current implementaion only
-    std::cerr << "Immagespace-approximation works with one slave only." << std::endl;
+    std::cerr << "Image-based Remote Rendering works with one slave only." << std::endl;
   }
 }
 

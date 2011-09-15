@@ -78,8 +78,10 @@ private:
 
   vvRect*             _isaRect[2];        ///< array for memorizing and flipping old and new screenrects
   vvGLTools::Viewport _vp[2];             ///< array for memorizing and flipping old and new viewport
-  GLdouble            _modelMatrix[32];   ///< array for memorizing and flipping old and new modelview-matrix
-  GLdouble            _projMatrix[32];    ///< array for memorizing and flipping old and new projection-matrix
+  vvMatrix _currentMv;                    ///< Current modelview matrix
+  vvMatrix _oldMv;                        ///< Old modelview matrix
+  vvMatrix _currentPr;                    ///< Current projection matrix
+  vvMatrix _oldPr;                        ///< Old projection matrix
   vvRemoteClient::ErrorType requestIbrFrame();  ///< remember envoironment and send image-request to server
   void initIbrFrame();                    ///< initialize pixel-points in object space
 
