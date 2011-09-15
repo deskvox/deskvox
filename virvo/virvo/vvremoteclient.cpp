@@ -24,12 +24,11 @@
 using std::cerr;
 using std::endl;
 
-vvRemoteClient::vvRemoteClient(vvRenderState renderState,
+vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
                                std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
-                               std::vector<const char*>& slaveFileNames,
-                               const char* fileName)
-   : vvRenderState(renderState),
-    _fileName(fileName), _slaveNames(slaveNames),
+                               std::vector<const char*>& slaveFileNames)
+   : vvRenderer(vd, renderState),
+    _slaveNames(slaveNames),
     _slavePorts(slavePorts),
     _slaveFileNames(slaveFileNames)
 {
@@ -69,23 +68,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSockets(const int defaultPort, con
 
       if (loadVolumeFromFile)
       {
-        const bool allFileNamesAreEqual = (_slaveFileNames.size() == 0);
-        if (allFileNamesAreEqual)
-        {
-          _sockets[s]->putFileName(_fileName);
-        }
-        else
-        {
-          if (_slaveFileNames.size() > s)
-          {
-            _sockets[s]->putFileName(_slaveFileNames[s]);
-          }
-          else
-          {
-            // Not enough file names specified, try this one.
-            _sockets[s]->putFileName(_fileName);
-          }
-        }
+        _sockets[s]->putFileName(_slaveFileNames[s]);
         _sockets[s]->getVolumeAttributes(vd);
       }
       else

@@ -40,15 +40,13 @@ class vvSlaveVisitor;
 class VIRVOEXPORT vvIbrClient : public vvRemoteClient
 {
 public:
-  vvIbrClient(vvRenderState renderState,
+  vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
               std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
               std::vector<const char*>& slaveFileNames,
-              const char* fileName,
               vvImage2_5d::DepthPrecision dp = vvImage2_5d::VV_USHORT,
               vvImage2_5d::IbrDepthScale ds = vvImage2_5d::VV_FULL_DEPTH);
   ~vvIbrClient();
 
-  ErrorType setRenderer(vvRenderer* renderer);            ///< sets renderer
   ErrorType render();                                     ///< render image with depth-values
   void exit();                                            ///< check out from servers
 

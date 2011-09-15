@@ -27,7 +27,7 @@
 #include "vvtransfunc.h"
 #include "vvvecmath.h"
 
-class VIRVOEXPORT vvRemoteClient : public vvRenderState
+class VIRVOEXPORT vvRemoteClient : public vvRenderer
 {
 public:
   enum ErrorType
@@ -40,19 +40,13 @@ public:
     VV_BAD_IMAGE
   };
 
-  vvRemoteClient(vvRenderState renderState,
+  vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
                  std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
-                 std::vector<const char*>& slaveFileNames,
-                 const char* fileName);
+                 std::vector<const char*>& slaveFileNames);
   virtual ~vvRemoteClient();
 
   ErrorType initSockets(const int port, const bool redistributeVolData,
                         vvVolDesc*& vd);
-
-  virtual ErrorType setRenderer(vvRenderer*)
-  {
-    throw "vvRemoteClient::setRenderer(): Not implemented by inherited class\n";
-  }
 
   virtual ErrorType render() = 0;
   virtual void setBackgroundColor(const vvVector3& bgColor);
@@ -71,15 +65,11 @@ public:
   virtual void setParameter(vvRenderer::ParameterType param, float newValue);
 
 protected:
-  const char* _fileName;
-
   std::vector<const char*> _slaveNames;
   std::vector<int> _slavePorts;
   std::vector<const char*> _slaveFileNames;
   std::vector<vvSocketIO*> _sockets;
   std::vector<vvImage*>* _images;
-
-  vvRenderer* _renderer;
 
   vvVector3 _bgColor;
 

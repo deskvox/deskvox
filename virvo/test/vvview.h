@@ -141,7 +141,6 @@ class vvView
     bool useOffscreenBuffer;                    ///< render to an offscreen buffer. Mandatory for setting buffer precision
     bool useHeadLight;                          ///< toggle head light
     int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
-    bool remoteRendering;                       ///< memorize if remote rendering is possible
     int  rrMode;                                ///< memory remote rendering mode
     vvImage2_5d::DepthPrecision ibrPrecision;   ///< Precision of depth buffer in image based (remote-)rendering mode
     vvImage2_5d::IbrDepthScale    ibrScale;       ///< Scaling type of depthbuffer between near and far clipping planes
@@ -153,7 +152,6 @@ class vvView
     bool redistributeVolData;                   ///< don't load slave volume data from file, but let master send it through socket
     bool benchmark;                             ///< don't run interactively, just perform timed rendering and exit
     std::vector<const char*> slaveFileNames;    ///< a list with file names where slaves can find the appropriate volume data
-    vvRemoteClient* _remoteClient;
     const char* testSuiteFileName;
     bool showBricks;                            ///< show brick outlines when brick renderer is used
     bool roiEnabled;                            ///< mode where probe is shown and can be moved via arrow keys

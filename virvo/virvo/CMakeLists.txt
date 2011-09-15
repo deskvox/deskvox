@@ -35,8 +35,8 @@ SET(VIRVO_HEADERS
   vvbsptree.h
   vvbsptreevisitors.h
   vvcgprogram.h
-  vvclusterclient.h
-  vvclusterserver.h
+  #vvclusterclient.h
+  #vvclusterserver.h
   vvcolor.h
   vvcuda.h
   vvcudaimg.h
@@ -101,8 +101,8 @@ SET(VIRVO_SOURCES
   vvbsptree.cpp
   vvbsptreevisitors.cpp
   vvcgprogram.cpp
-  vvclusterclient.cpp
-  vvclusterserver.cpp
+  #vvclusterclient.cpp
+  #vvclusterserver.cpp
   vvcolor.cpp
   vvcuda.cpp
   vvcudaimg.cpp

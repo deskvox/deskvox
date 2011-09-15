@@ -33,16 +33,17 @@
 using std::cerr;
 using std::endl;
 
-vvIbrClient::vvIbrClient(vvRenderState renderState,
+vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
                          std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
                          std::vector<const char*>& slaveFileNames,
-                         const char* fileName,
                          const vvImage2_5d::DepthPrecision dp,
                          vvImage2_5d::IbrDepthScale ds)
-  : vvRemoteClient(renderState, slaveNames, slavePorts, slaveFileNames, fileName),
+  : vvRemoteClient(vd, renderState, slaveNames, slavePorts, slaveFileNames),
     _depthPrecision(dp), _depthScale(ds)
 {
   vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
+
+  rendererType = REMOTE_IBR;
 
   _threads = NULL;
   _threadData = NULL;
@@ -81,29 +82,11 @@ vvIbrClient::~vvIbrClient()
   delete _shader;
 }
 
-vvRemoteClient::ErrorType vvIbrClient::setRenderer(vvRenderer* renderer)
-{
-  vvTexRend* texRend = dynamic_cast<vvTexRend*>(renderer);
-  if (texRend == NULL)
-  {
-    cerr << "vvRenderMaster::setRenderer(): Renderer is no texture based renderer" << endl;
-    return vvRemoteClient::VV_WRONG_RENDERER;
-  }
-  _renderer = texRend;
-  return VV_OK;
-}
-
 vvRemoteClient::ErrorType vvIbrClient::render()
 {
   if (_shader == NULL)
   {
     return vvRemoteClient::VV_SHADER_ERROR;
-  }
-
-  if (dynamic_cast<vvTexRend*>(_renderer) == NULL)
-  {
-    cerr << "Renderer is no texture based renderer" << endl;
-    return vvRemoteClient::VV_WRONG_RENDERER;
   }
 
   // check _slaveCnt securely
@@ -215,8 +198,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
 vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
 {
-  vvTexRend* renderer = dynamic_cast<vvTexRend*>(_renderer);
-
   // switch to current screen-rect and viewport
   _isaRect[0]->x = _isaRect[1]->x;
   _isaRect[0]->y = _isaRect[1]->y;
@@ -228,10 +209,10 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
   _vp[0][3] = _vp[1][3];
 
   // save screenrect for later frames
-  _isaRect[1]->x = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->x;
-  _isaRect[1]->y = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->y;
-  _isaRect[1]->height = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->height;
-  _isaRect[1]->width = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect()->width;
+  _isaRect[1]->x = getVolDesc()->getBoundingBox().getProjectedScreenRect()->x;
+  _isaRect[1]->y = getVolDesc()->getBoundingBox().getProjectedScreenRect()->y;
+  _isaRect[1]->height = getVolDesc()->getBoundingBox().getProjectedScreenRect()->height;
+  _isaRect[1]->width = getVolDesc()->getBoundingBox().getProjectedScreenRect()->width;
 
   // save Viewport for later frames
   _vp[1] = vvGLTools::getViewport();
@@ -250,7 +231,7 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
   if(_depthScale == vvImage2_5d::VV_SCALED_DEPTH)
   {
     // calculate bounding sphere
-    vvAABB bbox(renderer->getVolDesc()->getBoundingBox().min(), renderer->getVolDesc()->getBoundingBox().max());
+    vvAABB bbox(getVolDesc()->getBoundingBox().min(), getVolDesc()->getBoundingBox().max());
     vvVector4 center4(bbox.getCenter()[0], bbox.getCenter()[1], bbox.getCenter()[2], 1.0f);
     vvVector4 min4(bbox.min()[0], bbox.min()[1], bbox.min()[2], 1.0f);
     vvVector4 max4(bbox.max()[0], bbox.max()[1], bbox.max()[2], 1.0f);

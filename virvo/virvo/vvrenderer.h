@@ -178,8 +178,10 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
       SIMIAN,                                     ///< Joe Kniss's Simian renderer
       IMGREND,                                    ///< 2D image renderer
       UNKNOWN,                                    ///< unknown renderer
-      STINGRAY,                                    ///< Imedia's Stingray renderer
-	  VIRTEXREND								  ///< virtualized texture memory using bricking + out-of-core
+      STINGRAY,                                   ///< Imedia's Stingray renderer
+	  VIRTEXREND,      							  ///< virtualized texture memory using bricking + out-of-core
+      REMOTE_IBR,                                 ///< image based remote renderer
+      NUM_RENDERERS                               ///< keep last
     };
 
     enum BasicColorType                           /// basic colors
