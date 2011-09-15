@@ -316,12 +316,9 @@ vvVolDesc::~vvVolDesc()
 void vvVolDesc::initialize()
 {
   vvDebugMsg::msg(2, "vvVolDesc::initialize()");
-  filename = NULL;
-  iconData = NULL;
   setDefaults();
   removeSequence();
   currentFrame = 0;
-  delete[] filename;
   filename = NULL;
   _mask = NULL;
   _radius = 0;
@@ -331,11 +328,7 @@ void vvVolDesc::initialize()
   _hdrBinLimits = new float[NUM_HDR_BINS];
   _binning = LINEAR;
   _transOp = false;
-  if (iconData!=NULL)
-  {
-    delete[] iconData;
-    iconData = NULL;
-  }
+  iconData = NULL;
 }
 
 //----------------------------------------------------------------------------
