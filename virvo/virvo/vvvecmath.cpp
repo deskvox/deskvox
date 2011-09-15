@@ -428,13 +428,16 @@ void vvMatrix::killRot()
 /// Compares two matrices. Returns true if equal, otherwise false
 bool vvMatrix::equal(const vvMatrix* m) const
 {
-  bool result = true;
   int row, col;
 
   for (row=0; row<4; ++row)
     for (col=0; col<4; ++col)
-      if (e[row][col] != m->e[row][col]) result = false;
-  return result;
+      if (e[row][col] != m->e[row][col])
+      {
+        return false;
+      }
+
+  return true;
 }
 
 //----------------------------------------------------------------------------
