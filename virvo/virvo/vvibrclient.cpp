@@ -61,7 +61,7 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
   _isaRect[0] = new vvRect();
   _isaRect[1] = new vvRect();
 
-  _firstFrame = false;
+  _haveFrame = false;
 
   _shaderFactory = new vvShaderFactory();
   _shader = _shaderFactory->createProgram("ibr", "", "");
@@ -104,6 +104,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   // check _slaveCnt securely
   pthread_mutex_lock(&_slaveMutex);
   bool slavesFinished = (_slaveCnt == 0);
+  pthread_mutex_unlock(&_slaveMutex);
 
   if (slavesFinished)
   {
@@ -140,30 +141,31 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
     if(_changes)
     {
+      pthread_mutex_lock(&_slaveMutex);
       vvRemoteClient::ErrorType err = requestIbrFrame();
+      pthread_mutex_unlock(&_slaveMutex);
       if(err != vvRemoteClient::VV_OK)
         std::cerr << "vvibrClient::requestIbrFrame() - error() " << err << std::endl;
     }
 
-    if(_newFrame)
-    {
-      initIbrFrame();
-      _newFrame = false;
-    }
   }
 
-  if(_firstFrame == false)
+  pthread_mutex_lock(&_slaveMutex);
+  if(!_haveFrame)
   {
-    // no frame ever rendered yet
-    pthread_mutex_unlock( &_slaveMutex );
+    // no frame was yet received
+    pthread_mutex_unlock(&_slaveMutex);
     return VV_OK;
   }
+  pthread_mutex_unlock(&_slaveMutex);
 
-  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
-  if(!ibrImg)
+  pthread_mutex_lock(&_slaveMutex);
+  if(_newFrame)
   {
-    return vvRemoteClient::VV_BAD_IMAGE;
+    initIbrFrame();
+    _newFrame = false;
   }
+  pthread_mutex_unlock(&_slaveMutex);
 
   // TODO: don't do this each time... .
   initIndexArrays();
@@ -198,7 +200,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   _shader->setParameter4f("vp", tempVP[0], tempVP[1], tempVP[2], tempVP[3]);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-  glDrawElements(GL_POINTS, ibrImg->getWidth()*ibrImg->getHeight(), GL_UNSIGNED_INT, NULL);
+  glDrawElements(GL_POINTS, 0, _width*_height*3, GL_UNSIGNED_INT, NULL);
 
   _shader->disable();
 
@@ -314,8 +316,15 @@ void vvIbrClient::initIbrFrame()
   if(!ibrImg)
     return;
 
+<<<<<<< HEAD
   int h = ibrImg->getHeight();
   int w = ibrImg->getWidth();
+=======
+  int h = isaImg->getHeight();
+  int w = isaImg->getWidth();
+  _width = w;
+  _height = h;
+>>>>>>> more fine-grained locking
 
   // get pixel and depth-data
   uchar* dataRGBA = ibrImg->getCodedImage();
@@ -555,7 +564,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
     std::swap(data->images->at(0), data->images->at(1));
     data->renderMaster->_slaveCnt--;
     data->renderMaster->_newFrame = true;
-    if(!data->renderMaster->_firstFrame) data->renderMaster->_firstFrame = true;
+    data->renderMaster->_haveFrame = true;
     pthread_mutex_unlock( &data->renderMaster->_slaveMutex );
   }
   pthread_exit(NULL);

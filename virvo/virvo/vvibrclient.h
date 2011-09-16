@@ -78,7 +78,7 @@ private:
   int    _slaveCnt;                       ///< counter for servers
   bool   _changes;                        ///< flag indicating changes that need a rendering-refresh
   bool   _newFrame;                       ///< flag indicating a new ibr-frame waiting to be rendered
-  bool   _firstFrame;                     ///< flag indicating that the very first frame is drawn
+  bool   _haveFrame;                      ///< flag indicating that at least one frame has been received
   GLuint _pointVBO;                       ///< Vertex Buffer Object id for point-pixels
   GLuint _indexBO;                        ///< Buffer Object id for indices into points
   GLuint _colorVBO;                       ///< Vertex Buffer Object id for pixel-colors
@@ -99,6 +99,7 @@ private:
   vvImage2_5d::DepthPrecision _depthPrecision;        ///< deph-value precision
   vvImage2_5d::IbrDepthScale  _depthScale;
   float _ibrPlanes[4];
+  int _width, _height;                    ///< dimensions of ibr image
 
   vvShaderFactory* _shaderFactory;
   vvShaderProgram* _shader;
