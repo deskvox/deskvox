@@ -62,6 +62,7 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
   _isaRect[1] = new vvRect();
 
   _haveFrame = false;
+  _changes = true;
 
   _shaderFactory = new vvShaderFactory();
   _shader = _shaderFactory->createProgram("ibr", "", "");
@@ -124,9 +125,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     _shader->setParameterMatrix4f("ModelProjectInv" , modelprojectinv);
     _shader->disable();
 
-    // don't request new ibr frame if nothing changed
-    _changes = false;
-
+    // request new ibr frame if anything changed
     vvMatrix tmpPr;
     vvMatrix tmpMv;
     vvGLTools::getProjectionMatrix(&tmpPr);
@@ -134,7 +133,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     tmpPr.transpose();
     tmpMv.transpose();
 
-    if (!_currentPr.equal(&tmpPr) || !_currentMv.equal(&tmpMv) || _changes)
+    if (!_currentPr.equal(&tmpPr) || !_currentMv.equal(&tmpMv))
     {
       _changes = true;
     }
@@ -144,6 +143,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       pthread_mutex_lock(&_slaveMutex);
       vvRemoteClient::ErrorType err = requestIbrFrame();
       pthread_mutex_unlock(&_slaveMutex);
+      _changes = false;
       if(err != vvRemoteClient::VV_OK)
         std::cerr << "vvibrClient::requestIbrFrame() - error() " << err << std::endl;
     }
