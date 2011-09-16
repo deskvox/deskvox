@@ -70,6 +70,7 @@ protected:
   void setInterpolation(bool interpolation);
 
   void clearImages();
+  bool _changes; ///< indicate if a new rendering is required
 private:
   virtual void destroyThreads() { }
 

@@ -51,8 +51,6 @@ public:
   void exit();                                            ///< check out from servers
 
   void setDepthPrecision(vvImage2_5d::DepthPrecision dp); ///< set depth-value precision (1,2 or 4 bytes)
-  void setParameter(vvRenderer::ParameterType param, float newValue);
-  void updateTransferFunction(vvTransFunc& tf);
 private:
   enum Corner
   {
@@ -74,7 +72,6 @@ private:
   ThreadArgs* _threadData;                ///< list for thread data
 
   pthread_mutex_t _slaveMutex;            ///< mutex for thread synchronization
-  bool   _changes;                        ///< flag indicating changes that need a rendering-refresh
   bool   _newFrame;                       ///< flag indicating a new ibr-frame waiting to be rendered
   bool   _haveFrame;                      ///< flag indicating that at least one frame has been received
   GLuint _pointVBO;                       ///< Vertex Buffer Object id for point-pixels

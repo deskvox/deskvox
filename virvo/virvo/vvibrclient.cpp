@@ -61,7 +61,6 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
 
   _haveFrame = false; // no rendered frame available
   _newFrame = true; // request a new frame
-  _changes = true;
 
   _shaderFactory = new vvShaderFactory();
   _shader = _shaderFactory->createProgram("ibr", "", "");
@@ -520,18 +519,6 @@ void vvIbrClient::destroyThreads()
 void vvIbrClient::setDepthPrecision(vvImage2_5d::DepthPrecision dp)
 {
   _depthPrecision = dp;
-}
-
-void vvIbrClient::setParameter(vvRenderer::ParameterType param, float newValue)
-{
-  vvRemoteClient::setParameter(param, newValue);
-  _changes = true;
-}
-
-void vvIbrClient::updateTransferFunction(vvTransFunc& tf)
-{
-  vvRemoteClient::updateTransferFunction(tf);
-  _changes = true;
 }
 
 void* vvIbrClient::getImageFromSocket(void* threadargs)

@@ -30,7 +30,8 @@ vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
    : vvRenderer(vd, renderState),
     _slaveName(slaveName),
     _slavePort(slavePort),
-    _slaveFileName(slaveFileName)
+    _slaveFileName(slaveFileName),
+    _changes(true)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::vvRemoteClient()");
 
@@ -88,6 +89,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 void vvRemoteClient::resize(const int w, const int h)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::resize()");
+  _changes = true;
 
   if (_socket->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
   {
@@ -98,6 +100,7 @@ void vvRemoteClient::resize(const int w, const int h)
 void vvRemoteClient:: setCurrentFrame(const int index)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setCurrentFrame()");
+  _changes = true;
 
   if (_socket->putCommReason(vvSocketIO::VV_CURRENT_FRAME) == vvSocket::VV_OK)
   {
@@ -108,6 +111,7 @@ void vvRemoteClient:: setCurrentFrame(const int index)
 void vvRemoteClient::setMipMode(const int mipMode)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setMipMode()");
+  _changes = true;
 
   if (_socket->putCommReason(vvSocketIO::VV_MIPMODE) == vvSocket::VV_OK)
   {
@@ -118,6 +122,8 @@ void vvRemoteClient::setMipMode(const int mipMode)
 void vvRemoteClient::setObjectDirection(const vvVector3* od)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setObjectDirection()");
+  _changes = true;
+
   if (_socket->putCommReason(vvSocketIO::VV_OBJECT_DIRECTION) == vvSocket::VV_OK)
   {
     _socket->putVector3(*od);
@@ -127,6 +133,8 @@ void vvRemoteClient::setObjectDirection(const vvVector3* od)
 void vvRemoteClient::setViewingDirection(const vvVector3* vd)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setViewingDirection()");
+  _changes = true;
+
   if (_socket->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
   {
     _socket->putVector3(*vd);
@@ -136,6 +144,8 @@ void vvRemoteClient::setViewingDirection(const vvVector3* vd)
 void vvRemoteClient::setPosition(const vvVector3* p)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setPosition()");
+  _changes = true;
+
   if (_socket->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
   {
     _socket->putVector3(*p);
@@ -145,6 +155,8 @@ void vvRemoteClient::setPosition(const vvVector3* p)
 void vvRemoteClient::setROIEnable(const bool roiEnabled)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::setROIEnable()");
+  _changes = true;
+
   if (_socket->putCommReason(vvSocketIO::VV_TOGGLE_ROI) == vvSocket::VV_OK)
   {
     _socket->putBool(roiEnabled);
@@ -154,6 +166,8 @@ void vvRemoteClient::setROIEnable(const bool roiEnabled)
 void vvRemoteClient::setProbePosition(const vvVector3* pos)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::setProbePosition()");
+  _changes = true;
+
   if (_socket->putCommReason(vvSocketIO::VV_ROI_POSITION) == vvSocket::VV_OK)
   {
     _socket->putVector3(*pos);
@@ -163,6 +177,8 @@ void vvRemoteClient::setProbePosition(const vvVector3* pos)
 void vvRemoteClient::setProbeSize(const vvVector3* newSize)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::setProbeSize()");
+  _changes = true;
+
   if (_socket->putCommReason(vvSocketIO::VV_ROI_SIZE) == vvSocket::VV_OK)
   {
     _socket->putVector3(*newSize);
@@ -172,6 +188,8 @@ void vvRemoteClient::setProbeSize(const vvVector3* newSize)
 void vvRemoteClient::updateTransferFunction(vvTransFunc& tf)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::updateTransferFunction()");
+  _changes = true;
+
   if (_socket->putCommReason(vvSocketIO::VV_TRANSFER_FUNCTION) == vvSocket::VV_OK)
   {
     _socket->putTransferFunction(tf);
@@ -181,6 +199,7 @@ void vvRemoteClient::updateTransferFunction(vvTransFunc& tf)
 void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const float newValue)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
+  _changes = true;
   switch (param)
   {
   case vvRenderer::VV_QUALITY:
@@ -190,7 +209,7 @@ void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const f
     setInterpolation((newValue != 0.0f));
     break;
   default:
-    vvRenderState::setParameter(param, newValue);
+    vvRenderer::setParameter(param, newValue);
     break;
   }
 }
