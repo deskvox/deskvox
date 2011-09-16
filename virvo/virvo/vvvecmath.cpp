@@ -101,10 +101,44 @@ vvMatrix::vvMatrix(const vvMatrix* m)
       e[row][col] = m->e[row][col];
 }
 
+
 //----------------------------------------------------------------------------
 /** Multiplication. Operands will be multiplied from left to right.
  */
-vvMatrix vvMatrix::operator*(const vvMatrix operand) const
+vvMatrix vvMatrix::operator+(const vvMatrix& operand) const
+{
+  vvMatrix result = this;
+  for (int i = 0; i < 4; ++i)
+  {
+    for (int j = 0; j < 4; ++j)
+    {
+      result.e[i][j] += operand.e[i][j];
+    }
+  }
+  return result;
+}
+
+
+//----------------------------------------------------------------------------
+/** Multiplication. Operands will be multiplied from left to right.
+ */
+vvMatrix vvMatrix::operator-(const vvMatrix& operand) const
+{
+  vvMatrix result = this;
+  for (int i = 0; i < 4; ++i)
+  {
+    for (int j = 0; j < 4; ++j)
+    {
+      result.e[i][j] -= operand.e[i][j];
+    }
+  }
+  return result;
+}
+
+//----------------------------------------------------------------------------
+/** Multiplication. Operands will be multiplied from left to right.
+ */
+vvMatrix vvMatrix::operator*(const vvMatrix& operand) const
 {
   vvMatrix tmp;
   tmp = this;

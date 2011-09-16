@@ -50,6 +50,7 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
 
   glewInit();
   glGenBuffers(1, &_pointVBO);
+  glGenBuffers(1, &_indexBO);
   glGenBuffers(1, &_colorVBO);
 
   glEnable(GL_TEXTURE_2D);
@@ -74,6 +75,7 @@ vvIbrClient::~vvIbrClient()
 
   destroyThreads();
   glDeleteBuffers(1, &_pointVBO);
+  glDeleteBuffers(1, &_indexBO);
   glDeleteBuffers(1, &_colorVBO);
   glDeleteTextures(3, _ibrTex);
   delete _isaRect[0];
@@ -152,15 +154,23 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     return vvRemoteClient::VV_BAD_IMAGE;
   }
 
-  vvImage2_5d* isaImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
-  if(!isaImg)
+  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
+  if(!ibrImg)
   {
     return vvRemoteClient::VV_BAD_IMAGE;
   }
 
+  // TODO: don't do this each time... .
+  initIndexArrays();
+
+  // Index Buffer Object for points
+  const Corner c = getNearestCorner();
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indexArray[c].size() * sizeof(GLuint), &(_indexArray[c])[0], GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  //glBlendEquation(GL_MAX);
 
   // prepare VBOs
   glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
@@ -171,17 +181,19 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   glColorPointer(4, GL_UNSIGNED_BYTE, 0, NULL);
   glEnableClientState(GL_COLOR_ARRAY);
 
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBO);
+
   _shader->enable();
 
-  float tempVP[4];
-  tempVP[0] = _vp[0].values[0];
-  tempVP[1] = _vp[0].values[1];
-  tempVP[2] = _vp[0].values[2];
-  tempVP[3] = _vp[0].values[3];
+  vvGLTools::Viewport tempVP;
+  tempVP[0] = _vp[0][0];
+  tempVP[1] = _vp[0][1];
+  tempVP[2] = _vp[0][2];
+  tempVP[3] = _vp[0][3];
   _shader->setParameter4f("vp", tempVP[0], tempVP[1], tempVP[2], tempVP[3]);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-  glDrawArrays(GL_POINTS, 0, isaImg->getWidth()*isaImg->getHeight()*3);
+  glDrawElements(GL_POINTS, ibrImg->getWidth()*ibrImg->getHeight(), GL_UNSIGNED_INT, NULL);
 
   _shader->disable();
 
@@ -296,21 +308,21 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
 
 void vvIbrClient::initIbrFrame()
 {
-  vvImage2_5d* isaImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
-  if(!isaImg)
+  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
+  if(!ibrImg)
     return;
 
-  int h = isaImg->getHeight();
-  int w = isaImg->getWidth();
+  int h = ibrImg->getHeight();
+  int w = ibrImg->getWidth();
 
   // get pixel and depth-data
-  uchar* dataRGBA = isaImg->getCodedImage();
+  uchar* dataRGBA = ibrImg->getCodedImage();
   std::vector<float> depth(w*h);
   switch(_depthPrecision)
   {
   case vvImage2_5d::VV_UCHAR:
     {
-      uchar* d_uchar = isaImg->getpixeldepthUchar();
+      uchar* d_uchar = ibrImg->getpixeldepthUchar();
       for(int y = 0; y<h; y++)
         for(int x = 0; x<w; x++)
           depth[y*w+x] = float(d_uchar[y*w+x]) / float(UCHAR_MAX);
@@ -318,7 +330,7 @@ void vvIbrClient::initIbrFrame()
     break;
   case vvImage2_5d::VV_USHORT:
     {
-      ushort* d_ushort = isaImg->getpixeldepthUshort();
+      ushort* d_ushort = ibrImg->getpixeldepthUshort();
       for(int y = 0; y<h; y++)
         for(int x = 0; x<w; x++)
           depth[y*w+x] = float(d_ushort[y*w+x]) / float(USHRT_MAX);
@@ -326,7 +338,7 @@ void vvIbrClient::initIbrFrame()
     break;
   case vvImage2_5d::VV_UINT:
     {
-      uint* d_uint = isaImg->getpixeldepthUint();
+      uint* d_uint = ibrImg->getpixeldepthUint();
       for(int y = 0; y<h; y++)
         for(int x = 0; x<w; x++)
           depth[y*w+x] = float(d_uint[y*w+x]) / float(UINT_MAX);
@@ -334,20 +346,14 @@ void vvIbrClient::initIbrFrame()
     break;
   }
 
-//  vvToolshed::pixels2Ppm(&depth[0], w, h, "tiefenwerte.ppm", vvToolshed::VV_LUMINANCE);
-  std::vector<uchar> colors(w*h*4);
-  std::vector<float> points(w*h*3);
-  double winPoint[3];
+  std::vector<GLubyte> colors(w*h*4);
+  std::vector<GLfloat> points(w*h*3);
 
   for(int y = 0; y<h; y++)
   {
     for(int x = 0; x<w; x++)
     {
       int colorIndex = (y*w+x)*4;
-
-      points[y*w*3+x*3]   = (float)winPoint[0];
-      points[y*w*3+x*3+1] = (float)winPoint[1];
-      points[y*w*3+x*3+2] = (float)winPoint[2];
 
       // save color
       colors[colorIndex]   = dataRGBA[colorIndex];
@@ -357,7 +363,7 @@ void vvIbrClient::initIbrFrame()
       if(depth[y*w+x] <= 0.0f || depth[y*w+x] >= 1.0f)
         colors[colorIndex+3] = 0;
       else
-        colors[colorIndex+3] = dataRGBA[colorIndex+3];
+        colors[colorIndex+3] = static_cast<GLubyte>(dataRGBA[colorIndex+3]);
 
       points[y*w*3+x*3]   = x;
       points[y*w*3+x*3+1] = y;
@@ -383,12 +389,12 @@ void vvIbrClient::initIbrFrame()
 
   // VBO for points
   glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
-  glBufferData(GL_ARRAY_BUFFER, w*h*3*sizeof(float), &points[0], GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(GLfloat), &points[0], GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   // VBO for colors
   glBindBuffer(GL_ARRAY_BUFFER, _colorVBO);
-  glBufferData(GL_ARRAY_BUFFER, w*h*4*sizeof(uchar), &colors[0], GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLubyte), &colors[0], GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -401,6 +407,90 @@ void vvIbrClient::exit()
     _sockets[s]->putCommReason(vvSocketIO::VV_EXIT);
     delete _sockets[s];
   }
+}
+
+void vvIbrClient::initIndexArrays()
+{
+  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
+  if(!ibrImg)
+    return;
+
+  const int width = ibrImg->getWidth();
+  const int height = ibrImg->getHeight();
+
+  for (int i = 0; i < 4; ++i)
+  {
+    _indexArray[i].clear();
+  }
+
+  // Top-left to bottom-right.
+  for (int y = 0; y < height; ++y)
+  {
+    for (int x = 0; x < width; ++x)
+    {
+      _indexArray[VV_TOP_LEFT].push_back(y * width + x);
+    }
+  }
+
+  // Top-right to bottom-left.
+  for (int y = 0; y < height; ++y)
+  {
+    for (int x = width - 1; x >= 0; --x)
+    {
+      _indexArray[VV_TOP_RIGHT].push_back(y * width + x);
+    }
+  }
+
+  // Bottom-right to top-left.
+  for (int y = height - 1; y >= 0; --y)
+  {
+    for (int x = width - 1; x >= 0; --x)
+    {
+      _indexArray[VV_BOTTOM_RIGHT].push_back(y * width + x);
+    }
+  }
+
+  // Bottom-left to top-right.
+  for (int y = height - 1; y >= 0; --y)
+  {
+    for (int x = 0; x < width; ++x)
+    {
+      _indexArray[VV_BOTTOM_LEFT].push_back(y * width + x);
+    }
+  }
+}
+
+vvIbrClient::Corner vvIbrClient::getNearestCorner() const
+{
+  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
+  if(!ibrImg)
+    return VV_NONE;
+
+  vvVector4 screenNormal = vvVector4(0.0f, 0.0f, 1.0f, 1.0f);
+
+  vvMatrix inv = _currentMv;
+  inv.invert();
+  const vvMatrix m = _oldMv - inv;
+  vvVector4 normal = screenNormal;
+  normal.multiply(&m);
+
+  if ((normal[0] < normal[1]) && (normal[0] < 0.0f))
+  {
+    return VV_TOP_LEFT;
+  }
+  else if ((normal[0] >= normal[1]) && (normal[0] >= 0.0f))
+  {
+    return VV_TOP_RIGHT;
+  }
+  else if ((normal[1] < normal[0]) && (normal[1] < 0.0f))
+  {
+    return VV_BOTTOM_RIGHT;
+  }
+  else if ((normal[1] >= normal[0]) && (normal[1] >= 0.0f))
+  {
+    return VV_BOTTOM_LEFT;
+  }
+  return VV_NONE;
 }
 
 void vvIbrClient::createThreads()

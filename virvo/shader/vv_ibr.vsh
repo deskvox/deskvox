@@ -12,9 +12,9 @@ void main(void)
 
   pos.w = 1.0;
 
-
   vec4 obj = ModelProjectInv * pos;
   gl_Position = gl_ModelViewProjectionMatrix * obj;
   gl_FrontColor = gl_Color;
+  gl_PointSize = 3.0 * pos.z;
 }
 

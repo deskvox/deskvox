@@ -54,6 +54,15 @@ public:
   void setParameter(vvRenderer::ParameterType param, float newValue);
   void updateTransferFunction(vvTransFunc& tf);
 private:
+  enum Corner
+  {
+    VV_TOP_LEFT = 0,
+    VV_TOP_RIGHT,
+    VV_BOTTOM_RIGHT,
+    VV_BOTTOM_LEFT,
+    VV_NONE
+  };
+
   //! thread-data
   struct ThreadArgs
   {
@@ -72,9 +81,12 @@ private:
   bool   _newFrame;                       ///< flag indicating a new ibr-frame waiting to be rendered
   bool   _firstFrame;                     ///< flag indicating that the very first frame is drawn
   GLuint _pointVBO;                       ///< Vertex Buffer Object id for point-pixels
+  GLuint _indexBO;                        ///< Buffer Object id for indices into points
   GLuint _colorVBO;                       ///< Vertex Buffer Object id for pixel-colors
 
   GLuint _ibrTex[3];                      ///< Texture names for ibr-textures
+
+  std::vector<GLuint> _indexArray[4];     ///< four possible traversal directions for drawing the vertices
 
   vvRect*             _isaRect[2];        ///< array for memorizing and flipping old and new screenrects
   vvGLTools::Viewport _vp[2];             ///< array for memorizing and flipping old and new viewport
@@ -91,6 +103,9 @@ private:
 
   vvShaderFactory* _shaderFactory;
   vvShaderProgram* _shader;
+
+  void initIndexArrays();                             ///< initialize four index arrays for back to front traversal
+  Corner getNearestCorner() const;                    ///< find the ibr-img corner with the shortest dist to the viewer
 
   void createThreads();                               ///< creates threads for every socket connection
   void destroyThreads();                              ///< quits threads

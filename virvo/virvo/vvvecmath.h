@@ -68,7 +68,9 @@ class VIRVOEXPORT vvMatrix
     vvMatrix();
     vvMatrix(const vvMatrix*);
     vvMatrix(float* glf);
-    vvMatrix operator*(const vvMatrix) const;
+    vvMatrix operator+(const vvMatrix& operand) const;
+    vvMatrix operator-(const vvMatrix& operand) const;
+    vvMatrix operator*(const vvMatrix& operand) const;
     void print(const char*) const;
     void identity();
     void zero();
