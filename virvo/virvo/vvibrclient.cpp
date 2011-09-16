@@ -503,6 +503,7 @@ void vvIbrClient::createThreads()
 
 void vvIbrClient::destroyThreads()
 {
+  pthread_cancel(*_thread);
   pthread_join(*_thread, NULL);
   delete _thread;
   delete _threadData;
