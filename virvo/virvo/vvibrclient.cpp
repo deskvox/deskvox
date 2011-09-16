@@ -532,7 +532,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
 {
   std::cerr << "Image thread start" << std::endl;
 
-  ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
+  ThreadArgs* data = static_cast<ThreadArgs*>(threadargs);
 
   while (1)
   {
