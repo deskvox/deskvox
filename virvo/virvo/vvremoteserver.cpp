@@ -259,6 +259,36 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
           renderer->setViewingDirection(&viewDir);
         }
         break;
+      case vvSocketIO::VV_PARAMETER_1:
+        {
+          int32_t param;
+          float value = 0.f;
+          if (_socket->getInt32(param) == vvSocket::VV_OK && _socket->getFloat(value) == vvSocket::VV_OK)
+          {
+            renderer->setParameter((vvRenderState::ParameterType)param, value);
+          }
+        }
+        break;
+      case vvSocketIO::VV_PARAMETER_3:
+        {
+          int32_t param;
+          vvVector3 value;
+          if (_socket->getInt32(param) == vvSocket::VV_OK && _socket->getVector3(value) == vvSocket::VV_OK)
+          {
+            renderer->setParameterV3((vvRenderState::ParameterType)param, value);
+          }
+        }
+        break;
+      case vvSocketIO::VV_PARAMETER_4:
+        {
+          int32_t param;
+          vvVector4 value;
+          if (_socket->getInt32(param) == vvSocket::VV_OK && _socket->getVector4(value) == vvSocket::VV_OK)
+          {
+            renderer->setParameterV4((vvRenderState::ParameterType)param, value);
+          }
+        }
+        break;
       default:
         break;
       }

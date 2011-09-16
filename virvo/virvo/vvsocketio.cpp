@@ -1083,6 +1083,41 @@ vvSocket::ErrorType vvSocketIO::getVector3(vvVector3& val)
 }
 
 //----------------------------------------------------------------------------
+/** Writes a vvVector4 to the socket.
+ @param val  the vvVector4.
+*/
+vvSocket::ErrorType vvSocketIO::putVector4(const vvVector4& val)
+{
+  uchar buffer[16];
+  vvToolshed::writeFloat(&buffer[0], val[0]);
+  vvToolshed::writeFloat(&buffer[4], val[1]);
+  vvToolshed::writeFloat(&buffer[8], val[2]);
+  vvToolshed::writeFloat(&buffer[12], val[3]);
+  return vvSocket::write_data(&buffer[0], 16);
+}
+
+//----------------------------------------------------------------------------
+/** Reads a vvVector4 from the socket.
+ @param val  the vvVector4.
+*/
+vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val)
+{
+  uchar buffer[16];
+  vvSocket::ErrorType retval;
+
+  if ((retval = vvSocket::read_data(&buffer[0], 16)) != vvSocket::VV_OK)
+  {
+    return retval;
+  }
+
+  val[0] = vvToolshed::readFloat(&buffer[0]);
+  val[1] = vvToolshed::readFloat(&buffer[4]);
+  val[2] = vvToolshed::readFloat(&buffer[8]);
+  val[3] = vvToolshed::readFloat(&buffer[12]);
+  return retval;
+}
+
+//----------------------------------------------------------------------------
 /** Writes a comm reason to the socket.
  @param val  the comm reason.
 */

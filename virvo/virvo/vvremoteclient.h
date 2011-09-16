@@ -58,6 +58,8 @@ public:
   void setProbeSize(const vvVector3* roiSize);
   virtual void updateTransferFunction(vvTransFunc& tf);
   virtual void setParameter(vvRenderer::ParameterType param, float newValue);
+  virtual void setParameterV3(vvRenderer::ParameterType param, const vvVector3 &newValue);
+  virtual void setParameterV4(vvRenderer::ParameterType param, const vvVector4 &newValue);
 
 protected:
   const char* _slaveName;

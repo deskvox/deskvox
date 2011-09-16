@@ -200,17 +200,35 @@ void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const f
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
   _changes = true;
-  switch (param)
+  vvRenderer::setParameter(param, newValue);
+  if (_socket->putCommReason(vvSocketIO::VV_PARAMETER_1) == vvSocket::VV_OK)
   {
-  case vvRenderer::VV_QUALITY:
-    adjustQuality(newValue);
-    break;
-  case vvRenderer::VV_SLICEINT:
-    setInterpolation((newValue != 0.0f));
-    break;
-  default:
-    vvRenderer::setParameter(param, newValue);
-    break;
+    _socket->putInt32((int32_t)param);
+    _socket->putFloat(newValue);
+  }
+}
+
+void vvRemoteClient::setParameterV3(const vvRenderer::ParameterType param, const vvVector3 &newValue)
+{
+  vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
+  _changes = true;
+  vvRenderer::setParameterV3(param, newValue);
+  if (_socket->putCommReason(vvSocketIO::VV_PARAMETER_3) == vvSocket::VV_OK)
+  {
+    _socket->putInt32((int32_t)param);
+    _socket->putVector3(newValue);
+  }
+}
+
+void vvRemoteClient::setParameterV4(const vvRenderer::ParameterType param, const vvVector4 &newValue)
+{
+  vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
+  _changes = true;
+  vvRenderer::setParameterV4(param, newValue);
+  if (_socket->putCommReason(vvSocketIO::VV_PARAMETER_3) == vvSocket::VV_OK)
+  {
+    _socket->putInt32((int32_t)param);
+    _socket->putVector4(newValue);
   }
 }
 

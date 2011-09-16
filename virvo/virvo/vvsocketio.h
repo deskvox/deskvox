@@ -139,6 +139,9 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_INTERPOLATION,
       VV_VIEWING_DIRECTION,
       VV_VOLUME,
+      VV_PARAMETER_1,
+      VV_PARAMETER_3,
+      VV_PARAMETER_4,
     };
 
     vvSocketIO(const short, const char*, vvSocket::SocketType, int clminport=0, int clmaxport=0);
@@ -174,6 +177,8 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType putFloat(const float val);
     ErrorType getVector3(vvVector3& val);
     ErrorType putVector3(const vvVector3& val);
+    ErrorType getVector4(vvVector4& val);
+    ErrorType putVector4(const vvVector4& val);
     ErrorType getCommReason(CommReason& val);
     ErrorType putCommReason(const CommReason val);
     ErrorType getWinDims(int& w, int& h);
