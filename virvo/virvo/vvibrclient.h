@@ -41,8 +41,8 @@ class VIRVOEXPORT vvIbrClient : public vvRemoteClient
 {
 public:
   vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
-              std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
-              std::vector<const char*>& slaveFileNames,
+              const char* slaveNames, int slavePorts,
+              const char* slaveFileNames,
               vvImage2_5d::DepthPrecision dp = vvImage2_5d::VV_USHORT,
               vvImage2_5d::IbrDepthScale ds = vvImage2_5d::VV_FULL_DEPTH);
   ~vvIbrClient();
@@ -66,12 +66,11 @@ private:
   //! thread-data
   struct ThreadArgs
   {
-    int threadId;
     vvIbrClient* renderMaster;
-    std::vector<vvImage*>* images;
+    std::vector<vvImage*> *images;
   };
 
-  pthread_t*  _threads;                   ///< list for threads of each server connection
+  pthread_t*  _thread;                   ///< list for threads of each server connection
   ThreadArgs* _threadData;                ///< list for thread data
 
   pthread_mutex_t _slaveMutex;            ///< mutex for thread synchronization
@@ -106,7 +105,7 @@ private:
 
   void initIndexArrays();                             ///< initialize four index arrays for back to front traversal
   Corner getNearestCorner() const;                    ///< find the ibr-img corner with the shortest dist to the viewer
-
+  void createImages();                                ///< create an image to be read from, another to be written to
   void createThreads();                               ///< creates threads for every socket connection
   void destroyThreads();                              ///< quits threads
   static void* getImageFromSocket(void* threadargs);  ///< get image from socket connection and wait for next

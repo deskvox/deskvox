@@ -25,14 +25,16 @@ using std::cerr;
 using std::endl;
 
 vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
-                               std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
-                               std::vector<const char*>& slaveFileNames)
+                               const char *slaveName, int slavePort,
+                               const char *slaveFileName)
    : vvRenderer(vd, renderState),
-    _slaveNames(slaveNames),
-    _slavePorts(slavePorts),
-    _slaveFileNames(slaveFileNames)
+    _slaveName(slaveName),
+    _slavePort(slavePort),
+    _slaveFileName(slaveFileName)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::vvRemoteClient()");
+
+  initSocket(vd);
 }
 
 vvRemoteClient::~vvRemoteClient()
@@ -40,41 +42,29 @@ vvRemoteClient::~vvRemoteClient()
   vvDebugMsg::msg(1, "vvRemoteClient::~vvRemoteClient()");
 
   clearImages();
-  delete _images;
 }
 
-vvRemoteClient::ErrorType vvRemoteClient::initSockets(const int defaultPort, const bool redistributeVolData,
-                                                      vvVolDesc*& vd)
+vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 {
-  vvDebugMsg::msg(1, "vvRemoteClient::initSockets()");
+  vvDebugMsg::msg(1, "vvRemoteClient::initSocket()");
 
-  const bool loadVolumeFromFile = !redistributeVolData;
-  for (size_t s=0; s<_slaveNames.size(); ++s)
+  _socket = new vvSocketIO(_slavePort, _slaveName, vvSocket::VV_TCP);
+  _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
+
+  if (_socket->init() == vvSocket::VV_OK)
   {
-    if (_slavePorts[s] == -1)
+    _socket->no_nagle();
+    _socket->putBool(_slaveFileName!=NULL);
+
+    if (_slaveFileName)
     {
-        _sockets.push_back(new vvSocketIO(defaultPort, _slaveNames[s], vvSocket::VV_TCP));
+      _socket->putFileName(_slaveFileName);
+      _socket->getVolumeAttributes(vd);
     }
     else
     {
-      _sockets.push_back(new vvSocketIO(_slavePorts[s], _slaveNames[s], vvSocket::VV_TCP));
-    }
-    _sockets[s]->set_debuglevel(vvDebugMsg::getDebugLevel());
-
-    if (_sockets[s]->init() == vvSocket::VV_OK)
-    {
-      _sockets[s]->no_nagle();
-      _sockets[s]->putBool(loadVolumeFromFile);
-
-      if (loadVolumeFromFile)
+      switch (_socket->putVolume(vd))
       {
-        _sockets[s]->putFileName(_slaveFileNames[s]);
-        _sockets[s]->getVolumeAttributes(vd);
-      }
-      else
-      {
-        switch (_sockets[s]->putVolume(vd))
-        {
         case vvSocket::VV_OK:
           cerr << "Volume transferred successfully" << endl;
           break;
@@ -84,38 +74,24 @@ vvRemoteClient::ErrorType vvRemoteClient::initSockets(const int defaultPort, con
         default:
           cerr << "Cannot write volume to socket" << endl;
           return VV_SOCKET_ERROR;
-        }
       }
     }
-    else
-    {
-      cerr << "No connection to remote rendering server established at: " << _slaveNames[s] << endl;
-      cerr << "Falling back to local rendering" << endl;
-      return VV_SOCKET_ERROR;
-    }
   }
-  createImageVector();
-  createThreads();
+  else
+  {
+    cerr << "No connection to remote rendering server established at: " << _slaveName << endl;
+    return VV_SOCKET_ERROR;
+  }
   return VV_OK;
-}
-
-void vvRemoteClient::setBackgroundColor(const vvVector3& bgColor)
-{
-  vvDebugMsg::msg(1, "vvRemoteClient::setBackgroundColor");
-
-  _bgColor = bgColor;
 }
 
 void vvRemoteClient::resize(const int w, const int h)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::resize()");
 
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putWinDims(w, h);
-    }
+    _socket->putWinDims(w, h);
   }
 }
 
@@ -123,12 +99,9 @@ void vvRemoteClient:: setCurrentFrame(const int index)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setCurrentFrame()");
 
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_CURRENT_FRAME) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_CURRENT_FRAME) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putInt32(index);
-    }
+    _socket->putInt32(index);
   }
 }
 
@@ -136,105 +109,72 @@ void vvRemoteClient::setMipMode(const int mipMode)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setMipMode()");
 
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_MIPMODE) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_MIPMODE) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putInt32(mipMode);
-    }
+    _socket->putInt32(mipMode);
   }
 }
 
 void vvRemoteClient::setObjectDirection(const vvVector3* od)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setObjectDirection()");
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_OBJECT_DIRECTION) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_OBJECT_DIRECTION) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putVector3(*od);
-    }
+    _socket->putVector3(*od);
   }
 }
 
 void vvRemoteClient::setViewingDirection(const vvVector3* vd)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setViewingDirection()");
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putVector3(*vd);
-    }
+    _socket->putVector3(*vd);
   }
 }
 
 void vvRemoteClient::setPosition(const vvVector3* p)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setPosition()");
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putVector3(*p);
-    }
+    _socket->putVector3(*p);
   }
 }
 
 void vvRemoteClient::setROIEnable(const bool roiEnabled)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::setROIEnable()");
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_TOGGLE_ROI) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_ROI) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putBool(roiEnabled);
-    }
+    _socket->putBool(roiEnabled);
   }
 }
 
 void vvRemoteClient::setProbePosition(const vvVector3* pos)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::setProbePosition()");
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_ROI_POSITION) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_ROI_POSITION) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putVector3(*pos);
-    }
+    _socket->putVector3(*pos);
   }
 }
 
 void vvRemoteClient::setProbeSize(const vvVector3* newSize)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::setProbeSize()");
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_ROI_SIZE) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_ROI_SIZE) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putVector3(*newSize);
-    }
-  }
-}
-
-void vvRemoteClient::toggleBoundingBox()
-{
-  vvDebugMsg::msg(3, "vvRemoteClient::toggleBoundingBox()");
-  for (size_t s=0; s<_sockets.size(); ++s)
-  {
-    _sockets[s]->putCommReason(vvSocketIO::VV_TOGGLE_BOUNDINGBOX);
+    _socket->putVector3(*newSize);
   }
 }
 
 void vvRemoteClient::updateTransferFunction(vvTransFunc& tf)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::updateTransferFunction()");
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_TRANSFER_FUNCTION) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_TRANSFER_FUNCTION) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putTransferFunction(tf);
-    }
+    _socket->putTransferFunction(tf);
   }
 }
 
@@ -258,40 +198,29 @@ void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const f
 void vvRemoteClient::adjustQuality(const float quality)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::adjustQuality()");
-  for (size_t s=0; s<_sockets.size(); ++s)
+  if (_socket->putCommReason(vvSocketIO::VV_QUALITY) == vvSocket::VV_OK)
   {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_QUALITY) == vvSocket::VV_OK)
-    {
-      _sockets[s]->putFloat(quality);
-    }
+    _socket->putFloat(quality);
   }
 }
 
 void vvRemoteClient::setInterpolation(const bool interpolation)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setInterpolation()");
-  for (size_t s=0; s<_sockets.size(); ++s)
-  {
-    if (_sockets[s]->putCommReason(vvSocketIO::VV_INTERPOLATION) == vvSocket::VV_OK)
+    if (_socket->putCommReason(vvSocketIO::VV_INTERPOLATION) == vvSocket::VV_OK)
     {
-      _sockets[s]->putBool(interpolation);
+      _socket->putBool(interpolation);
     }
-  }
 }
 
 void vvRemoteClient::clearImages()
 {
   vvDebugMsg::msg(3, "vvRemoteClient::clearImages()");
-  for (std::vector<vvImage*>::const_iterator it = _images->begin(); it != _images->end();
-       ++it)
+  for (std::vector<vvImage*>::const_iterator it = _images.begin();
+      it != _images.end();
+      ++it)
   {
     delete (*it);
   }
-}
-
-void vvRemoteClient::createImageVector()
-{
-  vvDebugMsg::msg(1, "vvRemoteClient::createImageVector()");
-
-  _images = new std::vector<vvImage*>(_sockets.size());
+  _images.clear();
 }

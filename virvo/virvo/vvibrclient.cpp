@@ -34,18 +34,18 @@ using std::cerr;
 using std::endl;
 
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
-                         std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
-                         std::vector<const char*>& slaveFileNames,
+                         const char* slaveName, int slavePort,
+                         const char* slaveFileName,
                          const vvImage2_5d::DepthPrecision dp,
                          vvImage2_5d::IbrDepthScale ds)
-  : vvRemoteClient(vd, renderState, slaveNames, slavePorts, slaveFileNames),
+  : vvRemoteClient(vd, renderState, slaveName, slavePort, slaveFileName),
     _depthPrecision(dp), _depthScale(ds)
 {
   vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
 
   rendererType = REMOTE_IBR;
 
-  _threads = NULL;
+  _thread = NULL;
   _threadData = NULL;
 
   glewInit();
@@ -67,6 +67,9 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
   _shader = _shaderFactory->createProgram("ibr", "", "");
 
   pthread_mutex_init(&_slaveMutex, NULL);
+
+  createImages();
+  createThreads();
 }
 
 vvIbrClient::~vvIbrClient()
@@ -154,11 +157,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     // no frame ever rendered yet
     pthread_mutex_unlock( &_slaveMutex );
     return VV_OK;
-  }
-
-  if(_threadData[0].images->at(0) == NULL)
-  {
-    return vvRemoteClient::VV_BAD_IMAGE;
   }
 
   vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
@@ -297,25 +295,22 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
   glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
   mv.set(matrixGL);
 
-  for (int s=0; s<int(_sockets.size()); ++s)
-  {
-    if(_sockets[s]->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
+  if(_socket->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
 
-    if(_sockets[s]->putMatrix(&pr) != vvSocket::VV_OK)
+  if(_socket->putMatrix(&pr) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
 
-    if(_sockets[s]->putMatrix(&mv) != vvSocket::VV_OK)
+  if(_socket->putMatrix(&mv) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
-  }
-  _slaveCnt = (int)_sockets.size();
+  _slaveCnt = 1;
 
   return vvRemoteClient::VV_OK;
 }
 
 void vvIbrClient::initIbrFrame()
 {
-  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
+  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData->images->at(0));
   if(!ibrImg)
     return;
 
@@ -409,16 +404,13 @@ void vvIbrClient::initIbrFrame()
 
 void vvIbrClient::exit()
 {
-  for (size_t s=0; s<_sockets.size(); ++s)
-  {
-    _sockets[s]->putCommReason(vvSocketIO::VV_EXIT);
-    delete _sockets[s];
-  }
+  _socket->putCommReason(vvSocketIO::VV_EXIT);
+  delete _socket;
 }
 
 void vvIbrClient::initIndexArrays()
 {
-  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
+  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData->images->at(0));
   if(!ibrImg)
     return;
 
@@ -502,32 +494,19 @@ vvIbrClient::Corner vvIbrClient::getNearestCorner() const
 
 void vvIbrClient::createThreads()
 {
-  _threadData = new ThreadArgs[_sockets.size()];
-  _threads = new pthread_t[_sockets.size()];
-  for (size_t s=0; s<_sockets.size(); ++s)
-  {
-    _threadData[s].threadId = (int)s;
-    _threadData[s].renderMaster = this;
-    _threadData[s].images = _images;
-    pthread_create(&_threads[s], NULL, getImageFromSocket, (void*)&_threadData[s]);
-  }
-
-  if(_sockets.size()>1)
-  {
-    // current implementaion only
-    std::cerr << "Image-based Remote Rendering works with one slave only." << std::endl;
-  }
+  _threadData = new ThreadArgs;
+  _thread = new pthread_t;
+  _threadData->renderMaster = this;
+  _threadData->images = &_images;
+  pthread_create(_thread, NULL, getImageFromSocket, _threadData);
 }
 
 void vvIbrClient::destroyThreads()
 {
-  for (size_t s=0; s<_sockets.size(); ++s)
-  {
-    pthread_join(_threads[s], NULL);
-  }
-  delete[] _threads;
-  delete[] _threadData;
-  _threads = NULL;
+  pthread_join(*_thread, NULL);
+  delete _thread;
+  delete _threadData;
+  _thread = NULL;
   _threadData = NULL;
 }
 
@@ -550,14 +529,16 @@ void vvIbrClient::updateTransferFunction(vvTransFunc& tf)
 
 void* vvIbrClient::getImageFromSocket(void* threadargs)
 {
+  std::cerr << "Image thread start" << std::endl;
+
   ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
 
   while (1)
   {
-    vvImage2_5d* img = new vvImage2_5d();
+    vvImage2_5d* img = static_cast<vvImage2_5d *>(data->images->at(1));
     img->setDepthPrecision(data->renderMaster->_depthPrecision);
 
-    vvSocketIO::ErrorType err = data->renderMaster->_sockets.at(data->threadId)->getImage2_5d(img);
+    vvSocketIO::ErrorType err = data->renderMaster->_socket->getImage2_5d(img);
     if(err != vvSocketIO::VV_OK)
     {
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
@@ -570,8 +551,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
 #endif
     // switch pointers securely
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
-    delete data->images->at(data->threadId);
-    data->images->at(data->threadId) = img;
+    std::swap(data->images->at(0), data->images->at(1));
     data->renderMaster->_slaveCnt--;
     data->renderMaster->_newFrame = true;
     if(!data->renderMaster->_firstFrame) data->renderMaster->_firstFrame = true;
@@ -581,4 +561,12 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
 #ifdef _WIN32
   return NULL;
 #endif
+}
+
+
+void vvIbrClient::createImages()
+{
+  vvDebugMsg::msg(3, "vvIbrClient::createImages()");
+  for(int i=0; i<2; ++i)
+    _images.push_back(new vvImage2_5d);
 }

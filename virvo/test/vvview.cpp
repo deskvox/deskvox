@@ -393,15 +393,17 @@ void vvView::mainLoop(int argc, char *argv[])
 
     setRenderer(currentGeom, currentVoxels);
 
+#if 0
     if (rrMode == RR_IBR)
     {
-      if (static_cast<vvIbrClient *>(ds->renderer)->initSockets(vvView::DEFAULT_PORT, slaveFileNames.empty(), vd)
+      if (static_cast<vvIbrClient *>(ds->renderer)->initSocket(vvView::DEFAULT_PORT, slaveFileNames.empty(), vd)
               != vvRemoteClient::VV_OK)
       {
         std::cerr << "network communication failed" << std::endl;
         exit(1);
       }
     }
+#endif
 
     const vvVector3 size = vd->getSize();
     const float maxedge = ts_max(size[0], size[1], size[2]);
@@ -821,7 +823,8 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
 #endif
     case vvRenderer::REMOTE_IBR:
       //renderer = new vvIbrClient(vd, renderState, );
-      renderer = new vvIbrClient(vd, renderState, slaveNames, slavePorts, slaveFileNames, ibrPrecision, ibrScale);
+      renderer = new vvIbrClient(vd, renderState, slaveNames[0], slavePorts[0]==-1 ? vvView::DEFAULT_PORT : slavePorts[0],
+              slaveFileNames.empty() ? NULL : slaveFileNames[0], ibrPrecision, ibrScale);
       break;
     default:
       if (numDisplays > 0)

@@ -41,15 +41,11 @@ public:
   };
 
   vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
-                 std::vector<const char*>& slaveNames, std::vector<int>& slavePorts,
-                 std::vector<const char*>& slaveFileNames);
+                 const char* slaveName, int slavePort,
+                 const char* slaveFileName);
   virtual ~vvRemoteClient();
 
-  ErrorType initSockets(const int port, const bool redistributeVolData,
-                        vvVolDesc*& vd);
-
   virtual ErrorType render() = 0;
-  virtual void setBackgroundColor(const vvVector3& bgColor);
 
   void resize(int w, int h);
   void setCurrentFrame(int index);
@@ -60,27 +56,24 @@ public:
   void setROIEnable(bool roiEnabled);
   void setProbePosition(const vvVector3* pos);
   void setProbeSize(const vvVector3* roiSize);
-  void toggleBoundingBox();
   virtual void updateTransferFunction(vvTransFunc& tf);
   virtual void setParameter(vvRenderer::ParameterType param, float newValue);
 
 protected:
-  std::vector<const char*> _slaveNames;
-  std::vector<int> _slavePorts;
-  std::vector<const char*> _slaveFileNames;
-  std::vector<vvSocketIO*> _sockets;
-  std::vector<vvImage*>* _images;
-
-  vvVector3 _bgColor;
+  const char* _slaveName;
+  int _slavePort;
+  const char* _slaveFileName;
+  vvSocketIO* _socket;
+  std::vector<vvImage*> _images;
 
   void adjustQuality(float quality);
   void setInterpolation(bool interpolation);
 
   void clearImages();
-  void createImageVector();
 private:
-  virtual void createThreads() { }
   virtual void destroyThreads() { }
+
+  ErrorType initSocket(vvVolDesc*& vd);
 };
 
 #endif
