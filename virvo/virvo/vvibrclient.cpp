@@ -187,7 +187,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   _shader->setParameter4f("vp", tempVP[0], tempVP[1], tempVP[2], tempVP[3]);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-  glDrawElements(GL_POINTS, _width*_height*3, GL_UNSIGNED_INT, NULL);
+  glDrawElements(GL_POINTS, _width*_height, GL_UNSIGNED_INT, NULL);
 
   _shader->disable();
 
