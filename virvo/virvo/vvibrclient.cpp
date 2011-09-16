@@ -144,7 +144,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   }
 
   // TODO: don't do this each time... .
-  initIndexArrays();
 
   // Index Buffer Object for points
   const Corner c = getNearestCorner();
@@ -188,7 +187,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   _shader->setParameter4f("vp", tempVP[0], tempVP[1], tempVP[2], tempVP[3]);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-  glDrawElements(GL_POINTS, 0, _width*_height*3, GL_UNSIGNED_INT, NULL);
+  glDrawElements(GL_POINTS, _width*_height*3, GL_UNSIGNED_INT, NULL);
 
   _shader->disable();
 
@@ -383,6 +382,8 @@ void vvIbrClient::initIbrFrame()
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  initIndexArrays();
 }
 
 void vvIbrClient::exit()
@@ -393,12 +394,8 @@ void vvIbrClient::exit()
 
 void vvIbrClient::initIndexArrays()
 {
-  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData->images->at(0));
-  if(!ibrImg)
-    return;
-
-  const int width = ibrImg->getWidth();
-  const int height = ibrImg->getHeight();
+  const int width = _width;
+  const int height = _height;
 
   for (int i = 0; i < 4; ++i)
   {
@@ -444,15 +441,11 @@ void vvIbrClient::initIndexArrays()
 
 vvIbrClient::Corner vvIbrClient::getNearestCorner() const
 {
-  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData[0].images->at(0));
-  if(!ibrImg)
-    return VV_NONE;
-
   vvVector4 screenNormal = vvVector4(0.0f, 0.0f, 1.0f, 1.0f);
 
   vvMatrix inv = _currentMv;
   inv.invert();
-  const vvMatrix m = _oldMv - inv;
+  const vvMatrix m = _imageMv - inv;
   vvVector4 normal = screenNormal;
   normal.multiply(&m);
 
