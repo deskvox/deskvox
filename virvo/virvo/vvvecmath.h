@@ -95,8 +95,8 @@ class VIRVOEXPORT vvMatrix
     void killRot();
     bool equal(const vvMatrix*) const;
     void makeGL(float*) const;
-    void getGL(const float*);
-    void getGL(double*);
+    void setGL(const float*);
+    void setGL(const double*);
     void get(float*);
     void set(const float*);
     void get(double*);

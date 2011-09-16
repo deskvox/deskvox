@@ -284,7 +284,7 @@ void vvGLTools::getModelviewMatrix(vvMatrix* mv)
 
   vvDebugMsg::msg(3, "vvRenderer::getModelviewMatrix()");
   glGetFloatv(GL_MODELVIEW_MATRIX, glmatrix);
-  mv->getGL((float*)glmatrix);
+  mv->setGL((float*)glmatrix);
 }
 
 //----------------------------------------------------------------------------
@@ -297,7 +297,7 @@ void vvGLTools::getProjectionMatrix(vvMatrix* pm)
 
   GLfloat glmatrix[16];                           // OpenGL compatible matrix
   glGetFloatv(GL_PROJECTION_MATRIX, glmatrix);
-  pm->getGL((float*)glmatrix);
+  pm->setGL((float*)glmatrix);
 }
 
 //----------------------------------------------------------------------------

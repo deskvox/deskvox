@@ -502,7 +502,7 @@ void vvMatrix::makeGL(float* array) const
 /** Converts an OpenGL matrix to the vecmath matrix format
   @see makeGL
 */
-void vvMatrix::getGL(const float* glmatrix)
+void vvMatrix::setGL(const float* glmatrix)
 {
   int row, col, i=0;
 
@@ -514,7 +514,7 @@ void vvMatrix::getGL(const float* glmatrix)
 //----------------------------------------------------------------------------
 /** @see getGL
  */
-void vvMatrix::getGL(double* glmatrix)
+void vvMatrix::setGL(const double* glmatrix)
 {
   float mat[16];
 
@@ -522,7 +522,7 @@ void vvMatrix::getGL(double* glmatrix)
   {
     mat[i] = float(glmatrix[i]);
   }
-  getGL(mat);
+  setGL(mat);
 }
 
 //----------------------------------------------------------------------------

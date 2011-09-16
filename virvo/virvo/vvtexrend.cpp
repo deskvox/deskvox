@@ -3671,11 +3671,11 @@ void vvTexRend::updateFrustum()
 
   // Get the current projection matrix from OpenGL
   glGetFloatv(GL_PROJECTION_MATRIX, pm);
-  proj.getGL(pm);
+  proj.setGL(pm);
 
   // Get the current modelview matrix from OpenGL
   glGetFloatv(GL_MODELVIEW_MATRIX, mvm);
-  modelview.getGL(mvm);
+  modelview.setGL(mvm);
 
   clip = proj;
   clip.multiplyPre(&modelview);

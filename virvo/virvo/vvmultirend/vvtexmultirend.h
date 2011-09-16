@@ -240,7 +240,7 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
 	void setTranslation(float _translation[3]) { translation.set(_translation[0], _translation[1], _translation[2]); }
 	void addTranslation(float x, float y, float z) { translation.add(x, y, z); }
 	void setRotation(vvMatrix _rotation) { rotation = _rotation; }
-	void setRotation(float rot[16]) { rotation.getGL(rot); }
+	void setRotation(float rot[16]) { rotation.setGL(rot); }
 	void setNumSlices(int _numSlices) { numSlices = _numSlices; }
 	void setTexMax(int idx, float val) { assert(idx<3 && idx>=0); texMax[idx]=val;} 
 	void setTexMin(int idx, float val) { assert(idx<3 && idx>=0); texMin[idx]=val;} 
