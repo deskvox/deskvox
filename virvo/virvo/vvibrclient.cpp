@@ -101,36 +101,18 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   }
 
   pthread_mutex_lock(&_slaveMutex);
+  bool haveFrame = _haveFrame;
+  bool newFrame = newFrame;
   bool remoteRunning = !_newFrame;
   pthread_mutex_unlock(&_slaveMutex);
 
+  vvGLTools::getModelviewMatrix(&_currentMv);
+  vvGLTools::getProjectionMatrix(&_currentPr);
+
   if (!remoteRunning)
   {
-    vvMatrix mv;
-    vvMatrix pr;
-    vvGLTools::getModelviewMatrix(&mv);
-    vvGLTools::getProjectionMatrix(&pr);
-
-    mv.multiplyPost(&pr);
-    mv.invert();
-    mv.transpose();
-
-    float modelprojectinv[16];
-    mv.get(modelprojectinv);
-
-    _shader->enable();
-    _shader->setParameterMatrix4f("ModelProjectInv" , modelprojectinv);
-    _shader->disable();
-
     // request new ibr frame if anything changed
-    vvMatrix tmpPr;
-    vvMatrix tmpMv;
-    vvGLTools::getProjectionMatrix(&tmpPr);
-    vvGLTools::getModelviewMatrix(&tmpMv);
-    tmpPr.transpose();
-    tmpMv.transpose();
-
-    if (!_currentPr.equal(&tmpPr) || !_currentMv.equal(&tmpMv))
+    if (!_currentPr.equal(&_imagePr) || !_currentMv.equal(&_imageMv))
     {
       _changes = true;
     }
@@ -147,22 +129,21 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   }
 
-  pthread_mutex_lock(&_slaveMutex);
-  if(!_haveFrame)
+  if(!haveFrame)
   {
     // no frame was yet received
-    pthread_mutex_unlock(&_slaveMutex);
     return VV_OK;
   }
-  pthread_mutex_unlock(&_slaveMutex);
 
-  pthread_mutex_lock(&_slaveMutex);
   if(_newFrame)
   {
+    pthread_mutex_lock(&_slaveMutex);
+    _imageMv.copy(&_requestedMv);
+    _imagePr.copy(&_requestedPr);
     initIbrFrame();
     _newFrame = false;
+    pthread_mutex_unlock(&_slaveMutex);
   }
-  pthread_mutex_unlock(&_slaveMutex);
 
   // TODO: don't do this each time... .
   initIndexArrays();
@@ -189,6 +170,18 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   _shader->enable();
 
+  vvMatrix mv;
+  mv.copy(&_imageMv);
+  vvMatrix pr;
+  pr.copy(&_imagePr);
+
+  mv.multiplyPost(&pr);
+  mv.invert();
+  mv.transpose();
+  float modelprojectinv[16];
+  mv.get(modelprojectinv);
+  _shader->setParameterMatrix4f("ModelProjectInv" , modelprojectinv);
+
   vvGLTools::Viewport tempVP;
   tempVP[0] = _vp[0][0];
   tempVP[1] = _vp[0][1];
@@ -205,8 +198,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   glDisableClientState(GL_COLOR_ARRAY);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  pthread_mutex_unlock( &_slaveMutex );
 
   glFlush();
 
@@ -235,11 +226,8 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
   _vp[1] = vvGLTools::getViewport();
 
   // remember MV and PR matrix
-  _oldPr.copy(&_currentPr);
-  _oldMv.copy(&_currentMv);
-
-  vvGLTools::getProjectionMatrix(&_currentPr);
-  vvGLTools::getModelviewMatrix(&_currentMv);
+  _requestedPr.copy(&_currentPr);
+  _requestedMv.copy(&_currentMv);
 
   _ibrPlanes[0] = _ibrPlanes[2];
   _ibrPlanes[1] = _ibrPlanes[3];
@@ -251,11 +239,8 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
     vvVector4 min4(bbox.min()[0], bbox.min()[1], bbox.min()[2], 1.0f);
     vvVector4 max4(bbox.max()[0], bbox.max()[1], bbox.max()[2], 1.0f);
 
-    vvMatrix pr;
-    vvGLTools::getProjectionMatrix(&pr);
-
-    vvMatrix mv;
-    vvGLTools::getModelviewMatrix(&mv);
+    const vvMatrix &pr = _requestedPr;
+    const vvMatrix &mv = _requestedMv;
 
     center4.multiply(&mv);
     min4.multiply(&mv);
@@ -312,15 +297,10 @@ void vvIbrClient::initIbrFrame()
   if(!ibrImg)
     return;
 
-<<<<<<< HEAD
   int h = ibrImg->getHeight();
   int w = ibrImg->getWidth();
-=======
-  int h = isaImg->getHeight();
-  int w = isaImg->getWidth();
   _width = w;
   _height = h;
->>>>>>> more fine-grained locking
 
   // get pixel and depth-data
   uchar* dataRGBA = ibrImg->getCodedImage();
@@ -538,10 +518,12 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
       break;
     }
+#if 0
 #ifdef _WIN32
    Sleep(1000);
 #else
     sleep(1);
+#endif
 #endif
     // switch pointers securely
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
