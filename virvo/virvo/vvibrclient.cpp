@@ -177,12 +177,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   mv.get(modelprojectinv);
   _shader->setParameterMatrix4f("ModelProjectInv" , modelprojectinv);
 
-  vvGLTools::Viewport tempVP;
-  tempVP[0] = _vp[0][0];
-  tempVP[1] = _vp[0][1];
-  tempVP[2] = _vp[0][2];
-  tempVP[3] = _vp[0][3];
-  _shader->setParameter4f("vp", tempVP[0], tempVP[1], tempVP[2], tempVP[3]);
+  _shader->setParameter4f("vp", _vp[0][0], _vp[0][1], _vp[0][2], _vp[0][3]);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
   glDrawElements(GL_POINTS, _width*_height, GL_UNSIGNED_INT, NULL);
