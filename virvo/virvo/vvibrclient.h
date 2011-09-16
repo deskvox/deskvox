@@ -74,8 +74,6 @@ private:
   ThreadArgs* _threadData;                ///< list for thread data
 
   pthread_mutex_t _slaveMutex;            ///< mutex for thread synchronization
-  bool   _slaveRdy;                       ///< flag to indicate that all servers are ready
-  int    _slaveCnt;                       ///< counter for servers
   bool   _changes;                        ///< flag indicating changes that need a rendering-refresh
   bool   _newFrame;                       ///< flag indicating a new ibr-frame waiting to be rendered
   bool   _haveFrame;                      ///< flag indicating that at least one frame has been received

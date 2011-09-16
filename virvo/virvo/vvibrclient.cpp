@@ -56,12 +56,11 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
   glEnable(GL_TEXTURE_2D);
   glGenTextures(3, _ibrTex);
 
-  _slaveCnt = 0;
-  _slaveRdy = 0;
   _isaRect[0] = new vvRect();
   _isaRect[1] = new vvRect();
 
-  _haveFrame = false;
+  _haveFrame = false; // no rendered frame available
+  _newFrame = true; // request a new frame
   _changes = true;
 
   _shaderFactory = new vvShaderFactory();
@@ -102,12 +101,11 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     return vvRemoteClient::VV_SHADER_ERROR;
   }
 
-  // check _slaveCnt securely
   pthread_mutex_lock(&_slaveMutex);
-  bool slavesFinished = (_slaveCnt == 0);
+  bool remoteRunning = !_newFrame;
   pthread_mutex_unlock(&_slaveMutex);
 
-  if (slavesFinished)
+  if (!remoteRunning)
   {
     vvMatrix mv;
     vvMatrix pr;
@@ -305,7 +303,6 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
 
   if(_socket->putMatrix(&mv) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
-  _slaveCnt = 1;
 
   return vvRemoteClient::VV_OK;
 }
@@ -562,7 +559,6 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
     // switch pointers securely
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
     std::swap(data->images->at(0), data->images->at(1));
-    data->renderMaster->_slaveCnt--;
     data->renderMaster->_newFrame = true;
     data->renderMaster->_haveFrame = true;
     pthread_mutex_unlock( &data->renderMaster->_slaveMutex );
