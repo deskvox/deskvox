@@ -260,22 +260,13 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
     _ibrPlanes[3] = (max4[2]+1.f)/2.f;
   }
 
-  float matrixGL[16];
-  vvMatrix pr;
-  glGetFloatv(GL_PROJECTION_MATRIX, matrixGL);
-  pr.set(matrixGL);
-
-  vvMatrix mv;
-  glGetFloatv(GL_MODELVIEW_MATRIX, matrixGL);
-  mv.set(matrixGL);
-
   if(_socket->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
 
-  if(_socket->putMatrix(&pr) != vvSocket::VV_OK)
+  if(_socket->putMatrix(&_currentPr) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
 
-  if(_socket->putMatrix(&mv) != vvSocket::VV_OK)
+  if(_socket->putMatrix(&_currentMv) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
 
   return vvRemoteClient::VV_OK;

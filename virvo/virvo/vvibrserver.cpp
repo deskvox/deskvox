@@ -59,11 +59,11 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   float matrixGL[16];
 
   glMatrixMode(GL_PROJECTION);
-  pr.get(matrixGL);
+  pr.makeGL(matrixGL);
   glLoadMatrixf(matrixGL);
 
   glMatrixMode(GL_MODELVIEW);
-  mv.get(matrixGL);
+  mv.makeGL(matrixGL);
   glLoadMatrixf(matrixGL);
 
   vvRect* screenRect = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect();
@@ -78,9 +78,6 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
     vvVector4 center4(bbox.getCenter()[0], bbox.getCenter()[1], bbox.getCenter()[2], 1.0f);
     vvVector4 min4(bbox.min()[0], bbox.min()[1], bbox.min()[2], 1.0f);
     vvVector4 max4(bbox.max()[0], bbox.max()[1], bbox.max()[2], 1.0f);
-
-    mv.transpose();
-    pr.transpose();
 
     center4.multiply(&mv);
     min4.multiply(&mv);
