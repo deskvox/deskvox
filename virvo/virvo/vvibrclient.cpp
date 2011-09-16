@@ -86,6 +86,13 @@ vvIbrClient::~vvIbrClient()
 
 vvRemoteClient::ErrorType vvIbrClient::render()
 {
+  // Draw boundary lines
+  if (_boundaries)
+  {
+    const vvVector3 size(vd->getSize()); // volume size [world coordinates]
+    drawBoundingBox(&size, &vd->pos, &_boundColor);
+  }
+
   if (_shader == NULL)
   {
     return vvRemoteClient::VV_SHADER_ERROR;
