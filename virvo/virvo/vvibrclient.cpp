@@ -143,8 +143,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     return VV_OK;
   }
 
-  // TODO: don't do this each time... .
-
   // Index Buffer Object for points
   const Corner c = getNearestCorner();
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBO);
@@ -479,6 +477,7 @@ void vvIbrClient::createThreads()
 
 void vvIbrClient::destroyThreads()
 {
+  exit();
   pthread_cancel(*_thread);
   pthread_join(*_thread, NULL);
   delete _thread;
