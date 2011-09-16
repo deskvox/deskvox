@@ -102,14 +102,23 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   pthread_mutex_lock(&_slaveMutex);
   bool haveFrame = _haveFrame;
-  bool newFrame = newFrame;
-  bool remoteRunning = !_newFrame;
+  bool newFrame = _newFrame;
   pthread_mutex_unlock(&_slaveMutex);
 
   vvGLTools::getModelviewMatrix(&_currentMv);
   vvGLTools::getProjectionMatrix(&_currentPr);
 
-  if (!remoteRunning)
+  if(newFrame && haveFrame)
+  {
+    pthread_mutex_lock(&_slaveMutex);
+    _imageMv.copy(&_requestedMv);
+    _imagePr.copy(&_requestedPr);
+    initIbrFrame();
+    _newFrame = false;
+    pthread_mutex_unlock(&_slaveMutex);
+  }
+
+  if (newFrame) // no frame pending
   {
     // request new ibr frame if anything changed
     if (!_currentPr.equal(&_imagePr) || !_currentMv.equal(&_imageMv))
@@ -126,23 +135,12 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       if(err != vvRemoteClient::VV_OK)
         std::cerr << "vvibrClient::requestIbrFrame() - error() " << err << std::endl;
     }
-
   }
 
   if(!haveFrame)
   {
     // no frame was yet received
     return VV_OK;
-  }
-
-  if(_newFrame)
-  {
-    pthread_mutex_lock(&_slaveMutex);
-    _imageMv.copy(&_requestedMv);
-    _imagePr.copy(&_requestedPr);
-    initIbrFrame();
-    _newFrame = false;
-    pthread_mutex_unlock(&_slaveMutex);
   }
 
   // TODO: don't do this each time... .
@@ -518,12 +516,10 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
       break;
     }
-#if 0
 #ifdef _WIN32
    Sleep(1000);
 #else
     sleep(1);
-#endif
 #endif
     // switch pointers securely
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
