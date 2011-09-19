@@ -116,7 +116,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     _imageMv.copy(&_requestedMv);
     _imagePr.copy(&_requestedPr);
     initIbrFrame();
-    _newFrame = false;
     pthread_mutex_unlock(&_slaveMutex);
   }
 
@@ -132,6 +131,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     {
       pthread_mutex_lock(&_slaveMutex);
       vvRemoteClient::ErrorType err = requestIbrFrame();
+      _newFrame = false;
       pthread_mutex_unlock(&_slaveMutex);
       _changes = false;
       if(err != vvRemoteClient::VV_OK)
