@@ -88,6 +88,8 @@ vvIbrClient::~vvIbrClient()
 
 vvRemoteClient::ErrorType vvIbrClient::render()
 {
+  vvDebugMsg::msg(1, "vvIbrClient::render()");
+
   // Draw boundary lines
   if (_boundaries)
   {
@@ -196,6 +198,8 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
 vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
 {
+  vvDebugMsg::msg(1, "vvIbrClient::requestIbrFrame()");
+
   // switch to current screen-rect and viewport
   _isaRect[0]->x = _isaRect[1]->x;
   _isaRect[0]->y = _isaRect[1]->y;
@@ -274,6 +278,8 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
 
 void vvIbrClient::initIbrFrame()
 {
+  vvDebugMsg::msg(1, "vvIbrClient::initIbrFrame()");
+
   vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData->images->at(0));
   if(!ibrImg)
     return;
@@ -372,12 +378,16 @@ void vvIbrClient::initIbrFrame()
 
 void vvIbrClient::exit()
 {
+  vvDebugMsg::msg(1, "vvIbrClient::exit()");
+
   _socket->putCommReason(vvSocketIO::VV_EXIT);
   delete _socket;
 }
 
 void vvIbrClient::initIndexArrays()
 {
+  vvDebugMsg::msg(3, "vvIbrClient::initIndexArray()");
+
   const int width = _width;
   const int height = _height;
 
@@ -425,13 +435,24 @@ void vvIbrClient::initIndexArrays()
 
 vvIbrClient::Corner vvIbrClient::getNearestCorner() const
 {
-  vvVector4 screenNormal = vvVector4(0.0f, 0.0f, 1.0f, 1.0f);
+  vvDebugMsg::msg(3, "vvIbrClient::getNearestCorner()");
 
-  vvMatrix inv = _currentMv;
-  inv.invert();
-  const vvMatrix m = _imageMv - inv;
-  vvVector4 normal = screenNormal;
-  normal.multiply(&m);
+  vvVector4 normal = vvVector4(0.0f, 0.0f, 1.0f, 1.0f);
+
+  // Cancel out old matrix from normal.
+  vvMatrix oldMatrix = _imageMv * _imagePr;
+  // The operations below cancel each other out.
+  // Left the code this way for higher legibility.
+  // Vectors are transformed.
+  oldMatrix.invert();
+  oldMatrix.transpose();
+  oldMatrix.invert();
+  normal.multiply(&oldMatrix);
+
+  vvMatrix newMatrix = _currentMv * _currentPr;
+  newMatrix.transpose();
+  newMatrix.invert();
+  normal.multiply(&newMatrix);
 
   if ((normal[0] < normal[1]) && (normal[0] < 0.0f))
   {
@@ -454,6 +475,8 @@ vvIbrClient::Corner vvIbrClient::getNearestCorner() const
 
 void vvIbrClient::createThreads()
 {
+  vvDebugMsg::msg(1, "vvIbrClient::createThreads()");
+
   _threadData = new ThreadArgs;
   _thread = new pthread_t;
   _threadData->renderMaster = this;
@@ -463,6 +486,8 @@ void vvIbrClient::createThreads()
 
 void vvIbrClient::destroyThreads()
 {
+  vvDebugMsg::msg(1, "vvIbrClient::destroyThreads()");
+
   exit();
   pthread_cancel(*_thread);
   pthread_join(*_thread, NULL);
@@ -474,11 +499,15 @@ void vvIbrClient::destroyThreads()
 
 void vvIbrClient::setDepthPrecision(vvImage2_5d::DepthPrecision dp)
 {
+  vvDebugMsg::msg(3, "vvIbrClient::setDepthPrecision()");
+
   _depthPrecision = dp;
 }
 
 void* vvIbrClient::getImageFromSocket(void* threadargs)
 {
+  vvDebugMsg::msg(1, "vvIbrClient::getImageFromSocket()");
+
   std::cerr << "Image thread start" << std::endl;
 
   ThreadArgs* data = static_cast<ThreadArgs*>(threadargs);
