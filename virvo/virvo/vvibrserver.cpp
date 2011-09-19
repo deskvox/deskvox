@@ -113,7 +113,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   // Fetch rendered image
   vvGLTools::Viewport vp = vvGLTools::getViewport();
   uchar* pixels = new uchar[vp[2]*vp[3]*4];
-  cudaMemcpy(pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDImg(), vp[2]*vp[3]*4, cudaMemcpyDeviceToHost);
+  cudaMemcpy(pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDeviceImg(), vp[2]*vp[3]*4, cudaMemcpyDeviceToHost);
 
   vvImage2_5d* im2;
   switch(_depthPrecision)

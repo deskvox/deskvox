@@ -1604,7 +1604,7 @@ bool vvCudaSW<Base>::compositeNearest(int fromY, int toY, int firstSlice, int la
 {
     bool ok = true;
 
-   uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDImg();
+   uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDeviceImg();
    // compute data for determining upper left image corner of each slice and copy it to device
    vvVector4 start, end;
    Base::findSlicePosition(firstSlice, &start, &end);
@@ -1667,7 +1667,7 @@ bool vvCudaSW<Base>::compositeBilinear(int fromY, int toY, int firstSlice, int l
 {
     bool ok = true;
 
-    uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDImg();
+    uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDeviceImg();
     dim3 grid((Base::intImg->width+Patch.x-1)/Patch.x, (toY-fromY+Patch.y-1)/Patch.y);
     dim3 block = Patch;
     clearImage <<<grid, Patch>>>(d_img, Base::intImg->width, Base::intImg->height, fromY, toY);
@@ -1808,7 +1808,7 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 {
     bool ok = true;
 
-    uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDImg();
+    uchar4 *d_img = static_cast<vvCudaImg*>(Base::intImg)->getDeviceImg();
     dim3 grid((Base::intImg->width+Patch.x-1)/Patch.x, (toY-fromY+Patch.y-1)/Patch.y);
 
     cudaChannelFormatDesc minmaxDesc = cudaCreateChannelDesc<uchar>();

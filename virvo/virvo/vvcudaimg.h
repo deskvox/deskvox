@@ -59,9 +59,9 @@ public:
   void unmap();
 
 #ifdef HAVE_CUDA
-  uchar4* getDImg() const;
+  uchar4* getDeviceImg() const;
 #endif
-  uchar* getHImg() const;
+  uchar* getHostImg() const;
 private:
   bool _mapped;
   Mode _mode;

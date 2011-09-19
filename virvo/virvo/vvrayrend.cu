@@ -1217,7 +1217,7 @@ void vvRayRend::compositeVolume(int w, int h)
     switch(_depthPrecision)
     {
     case vvImage2_5d::VV_UCHAR:
-      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
+      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
                                         backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                                         volPos, volSize * 0.5f,
                                         probePos, probeSize * 0.5f,
@@ -1228,7 +1228,7 @@ void vvRayRend::compositeVolume(int w, int h)
       break;
     case vvImage2_5d::VV_USHORT:
       {
-      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
+      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
                                         backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                                         volPos, volSize * 0.5f,
                                         probePos, probeSize * 0.5f,
@@ -1239,7 +1239,7 @@ void vvRayRend::compositeVolume(int w, int h)
       }
       break;
     case vvImage2_5d::VV_UINT:
-      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDImg(), vp[2], vp[3],
+      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
                                         backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                                         volPos, volSize * 0.5f,
                                         probePos, probeSize * 0.5f,

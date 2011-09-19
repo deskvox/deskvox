@@ -160,13 +160,13 @@ void vvCudaImg::unmap()
 }
 
 #ifdef HAVE_CUDA
-uchar4* vvCudaImg::getDImg() const
+uchar4* vvCudaImg::getDeviceImg() const
 {
   return d_img;
 }
 #endif
 
-uchar* vvCudaImg::getHImg() const
+uchar* vvCudaImg::getHostImg() const
 {
   return h_img;
 }
