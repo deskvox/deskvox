@@ -104,6 +104,12 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
     {
       vd->printInfoLine();
     }
+    // Set default color scheme if no TF present:
+    if (vd->tf.isEmpty())
+    {
+      vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+      vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+    }
     _socket->putVolumeAttributes(vd);
     _socket->putTransferFunction(vd->tf);
   }
