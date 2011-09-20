@@ -141,7 +141,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
       VV_VOLUME,
       VV_PARAMETER_1,
       VV_PARAMETER_3,
-      VV_PARAMETER_4,
+      VV_PARAMETER_4
     };
 
     vvSocketIO(const short, const char*, vvSocket::SocketType, int clminport=0, int clmaxport=0);
