@@ -191,14 +191,14 @@ void vvRemoteClient::setProbeSize(const vvVector3* newSize)
   }
 }
 
-void vvRemoteClient::updateTransferFunction(vvTransFunc& tf)
+void vvRemoteClient::updateTransferFunction()
 {
   vvDebugMsg::msg(1, "vvRemoteClient::updateTransferFunction()");
   _changes = true;
 
   if (_socket->putCommReason(vvSocketIO::VV_TRANSFER_FUNCTION) == vvSocket::VV_OK)
   {
-    _socket->putTransferFunction(tf);
+    _socket->putTransferFunction(vd->tf);
   }
 }
 

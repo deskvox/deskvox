@@ -56,7 +56,7 @@ public:
   void setROIEnable(bool roiEnabled);
   void setProbePosition(const vvVector3* pos);
   void setProbeSize(const vvVector3* roiSize);
-  virtual void updateTransferFunction(vvTransFunc& tf);
+  virtual void updateTransferFunction();
   virtual void setParameter(vvRenderer::ParameterType param, float newValue);
   virtual void setParameterV3(vvRenderer::ParameterType param, const vvVector3 &newValue);
   virtual void setParameterV4(vvRenderer::ParameterType param, const vvVector4 &newValue);
