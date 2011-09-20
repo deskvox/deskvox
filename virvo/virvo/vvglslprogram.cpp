@@ -13,6 +13,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
+#include <cassert>
 #include "vvdebugmsg.h"
 #include "vvglew.h"
 #include "vvglslprogram.h"
@@ -123,6 +124,7 @@ void vvGLSLProgram::enable()
     for(TextureMap::iterator i = _textureNameMaps.begin(); i != _textureNameMaps.end(); i++)
     {
       vvGLSLTexture* tex = i->second;
+
       glActiveTexture(GL_TEXTURE0+tex->_unit);
       switch(tex->_type)
       {
@@ -145,7 +147,7 @@ void vvGLSLProgram::enable()
         glBindTexture(GL_TEXTURE_3D, tex->_id);
         break;
       default:
-        // do nothing
+        assert("invalid texture type" == NULL);
         break;
       }
     }
@@ -180,7 +182,7 @@ void vvGLSLProgram::disable()
       glDisable(GL_TEXTURE_3D);
       break;
     default:
-      // do nothing
+      assert("invalid texture type" == NULL);
       break;
     }
   }
@@ -252,7 +254,7 @@ void vvGLSLProgram::setParameterMatrix4f(const string& parameterName, const floa
 {
   const GLint uniform = getUniform(parameterName, "setParameterMatrix4f");
   if(uniform != -1)
-    glUniformMatrix4fv(uniform, 1, false, mat);
+    glUniformMatrix4fv(uniform, 1, GL_FALSE, mat);
 }
 
 GLint vvGLSLProgram::getUniform(const string& parameterName, const string& parameterType)
@@ -287,7 +289,6 @@ vvGLSLProgram::vvGLSLTexture* vvGLSLProgram::getTexture(const string& parameterN
   else
   {
     vvGLSLTexture* newTex = new vvGLSLTexture;
-    newTex->_unit = _nTexture++;
     newTex->_uniform = glGetUniformLocation(_programId, parameterName.c_str());
     if(newTex->_uniform == -1)
     {
@@ -295,6 +296,10 @@ vvGLSLProgram::vvGLSLTexture* vvGLSLProgram::getTexture(const string& parameterN
       errmsg = parameterType + "(" + parameterName
                + ") does not correspond to an active uniform variable in program";
       vvDebugMsg::msg(1, errmsg.c_str());
+    }
+    else
+    {
+      newTex->_unit = _nTexture++;
     }
     _textureNameMaps[parameterName] = newTex;
     return newTex;
@@ -306,6 +311,8 @@ void vvGLSLProgram::setParameterTex1D(const string& parameterName, const unsigne
   vvGLSLTexture* tex = getTexture(parameterName, "setParameterTex1D");
   if(tex->_uniform != -1)
   {
+    tex->_type = TEXTURE_1D;
+    tex->_id = ui;
     glUniform1i(tex->_uniform, tex->_unit);
     glActiveTexture(GL_TEXTURE0+tex->_unit);
     glEnable (GL_TEXTURE_1D);
@@ -321,6 +328,8 @@ void vvGLSLProgram::setParameterTex2D(const string& parameterName, const unsigne
   vvGLSLTexture* tex = getTexture(parameterName, "setParameterTex2D");
   if(tex->_uniform != -1)
   {
+    tex->_type = TEXTURE_2D;
+    tex->_id = ui;
     glUniform1i(tex->_uniform, tex->_unit);
     glActiveTexture(GL_TEXTURE0+tex->_unit);
     glDisable(GL_TEXTURE_1D);
@@ -336,6 +345,8 @@ void vvGLSLProgram::setParameterTex3D(const string& parameterName, const unsigne
   vvGLSLTexture* tex = getTexture(parameterName, "setParameterTex3D");
   if(tex->_uniform != -1)
   {
+    tex->_type = TEXTURE_3D;
+    tex->_id = ui;
     glUniform1i(tex->_uniform, tex->_unit);
     glActiveTexture(GL_TEXTURE0+tex->_unit);
     glDisable(GL_TEXTURE_1D);

@@ -89,6 +89,7 @@ private:
     GLint       _unit;
     TextureType _type;
     GLint       _uniform;
+    vvGLSLTexture() : _id(-1), _unit(-1), _type(TEXTURE_1D), _uniform(-1) {}
   };
 
   typedef std::map<std::string, GLint> ParaMap;
