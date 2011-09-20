@@ -124,6 +124,16 @@ void vvGLSLProgram::enable()
     for(TextureMap::iterator i = _textureNameMaps.begin(); i != _textureNameMaps.end(); i++)
     {
       vvGLSLTexture* tex = i->second;
+      if(tex->_unit == -1)
+      {
+        vvDebugMsg::msg(2, "texture unit invalid for ", i->first.c_str());
+        continue;
+      }
+      if(tex->_id == -1)
+      {
+        vvDebugMsg::msg(2, "texture name invalid for ", i->first.c_str());
+        continue;
+      }
 
       glActiveTexture(GL_TEXTURE0+tex->_unit);
       switch(tex->_type)
