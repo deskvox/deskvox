@@ -60,11 +60,7 @@ public:
   bool getInterpolation() const;
   bool getOpacityCorrection() const;
 
-  float* getIbrPlanes() const;
-
-  uchar*  _depthUchar;
-  ushort* _depthUshort;
-  uint*   _depthUint;
+  void* d_depth;
 
   float _ibrPlanes[2];                         ///< ibr clipping planes, updated every frame
 

@@ -558,13 +558,13 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     switch(dp)
     {
     case vvIbrImage::VV_UCHAR:
-      ((unsigned char*)(d_depth))[y * texwidth + x] = (unsigned char)(depth.z*float(UCHAR_MAX));
+      ((uchar*)(d_depth))[y * texwidth + x] = (uchar)(depth.z*float(UCHAR_MAX));
       break;
     case vvIbrImage::VV_USHORT:
-      ((unsigned short*)(d_depth))[y * texwidth + x] = (unsigned short)(depth.z*float(USHRT_MAX));
+      ((ushort*)(d_depth))[y * texwidth + x] = (ushort)(depth.z*float(USHRT_MAX));
       break;
     case vvIbrImage::VV_UINT:
-      ((unsigned int*)(d_depth))[y * texwidth + x] = (unsigned int)(depth.z*float(UINT_MAX));
+      ((uint*)(d_depth))[y * texwidth + x] = (uint)(depth.z*float(UINT_MAX));
       break;
     }
   }
@@ -1060,21 +1060,21 @@ void vvRayRend::compositeVolume(int w, int h)
   switch(_depthPrecision)
   {
   case vvIbrImage::VV_UCHAR:
-    vvCuda::checkError(&ok, cudaMalloc(&_depthUchar, vp[2]*vp[3]*sizeof(unsigned char)),
+    vvCuda::checkError(&ok, cudaMalloc(&d_depth, vp[2]*vp[3]*sizeof(uchar)),
                        "vvRayRend::compositeVolume() - malloc uchar");
-    vvCuda::checkError(&ok, cudaMemset(_depthUchar, 0, vp[2]*vp[3]*sizeof(unsigned char)),
+    vvCuda::checkError(&ok, cudaMemset(d_depth, 0, vp[2]*vp[3]*sizeof(uchar)),
                        "vvRayRend::compositeVolume() - memset uchar");
     break;
   case vvIbrImage::VV_USHORT:
-    vvCuda::checkError(&ok, cudaMalloc(&_depthUshort, vp[2]*vp[3]*sizeof(unsigned short)),
+    vvCuda::checkError(&ok, cudaMalloc(&d_depth, vp[2]*vp[3]*sizeof(ushort)),
                        "vvRayRend::compositeVolume() - malloc ushort");
-    vvCuda::checkError(&ok, cudaMemset(_depthUshort, 0, vp[2]*vp[3]*sizeof(unsigned short)),
+    vvCuda::checkError(&ok, cudaMemset(d_depth, 0, vp[2]*vp[3]*sizeof(ushort)),
                        "vvRayRend::compositeVolume() - memset ushort");
     break;
   case vvIbrImage::VV_UINT:
-    vvCuda::checkError(&ok, cudaMalloc(&_depthUint, vp[2]*vp[2]*sizeof(unsigned int)),
+    vvCuda::checkError(&ok, cudaMalloc(&d_depth, vp[2]*vp[2]*sizeof(uint)),
                        "vvRayRend::compositeVolume() - malloc uint");
-    vvCuda::checkError(&ok, cudaMemset(_depthUint, 0, vp[2]*vp[2]*sizeof(unsigned int)),
+    vvCuda::checkError(&ok, cudaMemset(d_depth, 0, vp[2]*vp[2]*sizeof(uint)),
                        "vvRayRend::compositeVolume() - memset uint");
     break;
   }
@@ -1214,43 +1214,17 @@ void vvRayRend::compositeVolume(int w, int h)
     {
       cudaBindTextureToArray(volTexture16, d_volumeArrays[vd->getCurrentFrame()], _channelDesc);
     }
-    switch(_depthPrecision)
-    {
-    case vvIbrImage::VV_UCHAR:
-      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
-                                        backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
-                                        volPos, volSize * 0.5f,
-                                        probePos, probeSize * 0.5f,
-                                        L, H,
-                                        center, radius * radius,
-                                        pnormal, pdist, _depthUchar, _depthPrecision,
-                                        make_float2(_ibrPlanes[0], _ibrPlanes[1]));
-      break;
-    case vvIbrImage::VV_USHORT:
-      {
-      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
-                                        backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
-                                        volPos, volSize * 0.5f,
-                                        probePos, probeSize * 0.5f,
-                                        L, H,
-                                        center, radius * radius,
-                                        pnormal, pdist, _depthUshort, _depthPrecision,
-                                        make_float2(_ibrPlanes[0], _ibrPlanes[1]));
-      }
-      break;
-    case vvIbrImage::VV_UINT:
-      (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
-                                        backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
-                                        volPos, volSize * 0.5f,
-                                        probePos, probeSize * 0.5f,
-                                        L, H,
-                                        center, radius * radius,
-                                        pnormal, pdist, _depthUint, _depthPrecision,
-                                        make_float2(_ibrPlanes[0], _ibrPlanes[1]));
-      break;
-    }
+
+    (kernel)<<<gridSize, blockSize>>>(static_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
+                                      backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
+                                      volPos, volSize * 0.5f,
+                                      probePos, probeSize * 0.5f,
+                                      L, H,
+                                      center, radius * radius,
+                                      pnormal, pdist, d_depth, _depthPrecision,
+                                      make_float2(_ibrPlanes[0], _ibrPlanes[1]));
   }
-  dynamic_cast<vvCudaImg*>(intImg)->unmap();
+  static_cast<vvCudaImg*>(intImg)->unmap();
 
   // For bounding box, tf palette display, etc.
   vvRenderer::renderVolumeGL();

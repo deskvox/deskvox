@@ -111,36 +111,36 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   uchar* pixels = new uchar[vp[2]*vp[3]*4];
   cudaMemcpy(pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDeviceImg(), vp[2]*vp[3]*4, cudaMemcpyDeviceToHost);
 
-  vvIbrImage* im2;
+  vvIbrImage* img;
   switch(_depthPrecision)
   {
   case vvIbrImage::VV_UCHAR:
     {
-      im2 = new vvIbrImage(vp[3], vp[2], (unsigned char*)pixels, vvIbrImage::VV_UCHAR);
-      im2->setDepthPrecision(_depthPrecision);
-      im2->alloc_pd();
-      uchar* depthUchar = im2->getpixeldepthUchar();
-      cudaMemcpy(depthUchar, rayRend->_depthUchar, vp[2]*vp[3]*sizeof(uchar), cudaMemcpyDeviceToHost);
-      cudaFree(rayRend->_depthUchar);
+      img = new vvIbrImage(vp[3], vp[2], (uchar*)pixels, vvIbrImage::VV_UCHAR);
+      img->setDepthPrecision(_depthPrecision);
+      img->alloc_pd();
+      uchar* depthUchar = img->getpixeldepthUchar();
+      cudaMemcpy(depthUchar, rayRend->d_depth, vp[2]*vp[3]*sizeof(uchar), cudaMemcpyDeviceToHost);
+      cudaFree(rayRend->d_depth);
     }
     break;
   case vvIbrImage::VV_USHORT:
     {
-      im2 = new vvIbrImage(vp[3], vp[2], (unsigned char*)pixels, vvIbrImage::VV_USHORT);
-      im2->setDepthPrecision(_depthPrecision);
-      im2->alloc_pd();
-      ushort* depthUshort = im2->getpixeldepthUshort();
-      cudaMemcpy(depthUshort, rayRend->_depthUshort, vp[2]*vp[3]*sizeof(ushort), cudaMemcpyDeviceToHost);
-      cudaFree(rayRend->_depthUshort);
+      img = new vvIbrImage(vp[3], vp[2], (uchar*)pixels, vvIbrImage::VV_USHORT);
+      img->setDepthPrecision(_depthPrecision);
+      img->alloc_pd();
+      ushort* depthUshort = img->getpixeldepthUshort();
+      cudaMemcpy(depthUshort, rayRend->d_depth, vp[2]*vp[3]*sizeof(ushort), cudaMemcpyDeviceToHost);
+      cudaFree(rayRend->d_depth);
     }
     break;
   case vvIbrImage::VV_UINT:
     {
-      im2 = new vvIbrImage(vp[3], vp[2], (unsigned char*)pixels, vvIbrImage::VV_UINT);
-      im2->alloc_pd();
-      uint* depthUint = im2->getpixeldepthUint();
-      cudaMemcpy(depthUint, rayRend->_depthUint, vp[2]*vp[3]*sizeof(uint), cudaMemcpyDeviceToHost);
-      cudaFree(rayRend->_depthUint);
+      img = new vvIbrImage(vp[3], vp[2], (uchar*)pixels, vvIbrImage::VV_UINT);
+      img->alloc_pd();
+      uint* depthUint = img->getpixeldepthUint();
+      cudaMemcpy(depthUint, rayRend->d_depth, vp[2]*vp[3]*sizeof(uint), cudaMemcpyDeviceToHost);
+      cudaFree(rayRend->d_depth);
     }
     break;
   }
@@ -161,11 +161,11 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   depthScaleMatrix.scale(1.0f, 1.0f, (rayRend->_ibrPlanes[1] - rayRend->_ibrPlanes[0]));
   depthScaleMatrix.translate(0.0f, 0.0f, rayRend->_ibrPlanes[0]);
 
-  im2->setReprojectionMatrix(depthScaleMatrix * vpMatrix * invModelviewProjection);
-  _socket->putIbrImage(im2);
+  img->setReprojectionMatrix(depthScaleMatrix * vpMatrix * invModelviewProjection);
+  _socket->putIbrImage(img);
 
   delete[] pixels;
-  delete im2;
+  delete img;
 }
 
 void vvIbrServer::resize(const int w, const int h)
