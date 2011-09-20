@@ -74,9 +74,9 @@ private:
   bool   _haveFrame;                                      ///< flag indicating that at least one frame has been received
   GLuint _pointVBO;                                       ///< Vertex Buffer Object id for point-pixels
   GLuint _indexBO;                                        ///< Buffer Object id for indices into points
-  GLuint _colorVBO;                                       ///< Vertex Buffer Object id for pixel-colors
 
-  GLuint _ibrTex[3];                                      ///< Texture names for ibr-textures
+  GLuint _rgbaTex;                                        ///< Texture names for RGBA image
+  GLuint _depthTex;                                       ///< Texture names for depth image
 
   std::vector<GLuint> _indexArray[4];                     ///< four possible traversal directions for drawing the vertices
 

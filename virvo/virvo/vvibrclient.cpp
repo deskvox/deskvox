@@ -50,10 +50,9 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
   glewInit();
   glGenBuffers(1, &_pointVBO);
   glGenBuffers(1, &_indexBO);
-  glGenBuffers(1, &_colorVBO);
 
-  glEnable(GL_TEXTURE_2D);
-  glGenTextures(3, _ibrTex);
+  glGenTextures(1, &_rgbaTex);
+  glGenTextures(1, &_depthTex);
 
   _haveFrame = false; // no rendered frame available
   _newFrame = true; // request a new frame
@@ -74,8 +73,8 @@ vvIbrClient::~vvIbrClient()
   destroyThreads();
   glDeleteBuffers(1, &_pointVBO);
   glDeleteBuffers(1, &_indexBO);
-  glDeleteBuffers(1, &_colorVBO);
-  glDeleteTextures(3, _ibrTex);
+  glDeleteTextures(1, &_rgbaTex);
+  glDeleteTextures(1, &_depthTex);
   delete _shaderFactory;
   delete _shader;
 }
@@ -158,13 +157,12 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   glVertexPointer(3, GL_FLOAT, 0, NULL);
   glEnableClientState(GL_VERTEX_ARRAY);
 
-  glBindBuffer(GL_ARRAY_BUFFER, _colorVBO);
-  glColorPointer(4, GL_UNSIGNED_BYTE, 0, NULL);
-  glEnableClientState(GL_COLOR_ARRAY);
-
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBO);
 
   _shader->enable();
+
+  _shader->setParameterTex2D("rgbaTex", _rgbaTex);
+  _shader->setParameterTex2D("depthTex", _depthTex);
 
   vvMatrix imgMatrix = _ibrImg->getReprojectionMatrix();
   vvMatrix invImgMatrix;
@@ -176,6 +174,8 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   float reprojectionMatrixGL[16];
   reprojectionMatrix.get(reprojectionMatrixGL);
+  _shader->setParameter1f("width", _ibrImg->getWidth());
+  _shader->setParameter1f("height", _ibrImg->getHeight());
   _shader->setParameterMatrix4f("reprojectionMatrix" , reprojectionMatrixGL);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
@@ -219,75 +219,66 @@ void vvIbrClient::initIbrFrame()
 
   const int h = _ibrImg->getHeight();
   const int w = _ibrImg->getWidth();
-  _width = w;
-  _height = h;
 
   // get pixel and depth-data
+  glBindTexture(GL_TEXTURE_2D, _rgbaTex);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   uchar* dataRGBA = _ibrImg->getImagePtr();
-  std::vector<float> depth(w*h);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, _ibrImg->getImagePtr());
+
+  glBindTexture(GL_TEXTURE_2D, _depthTex);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   switch(_depthPrecision)
   {
   case vvIbrImage::VV_UCHAR:
     {
       uchar* d_uchar = _ibrImg->getpixeldepthUchar();
-      for(int y = 0; y<h; y++)
-        for(int x = 0; x<w; x++)
-          depth[y*w+x] = float(d_uchar[y*w+x]) / float(UCHAR_MAX);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, d_uchar);
     }
     break;
   case vvIbrImage::VV_USHORT:
     {
       ushort* d_ushort = _ibrImg->getpixeldepthUshort();
-      for(int y = 0; y<h; y++)
-        for(int x = 0; x<w; x++)
-          depth[y*w+x] = float(d_ushort[y*w+x]) / float(USHRT_MAX);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_SHORT, d_ushort);
     }
     break;
   case vvIbrImage::VV_UINT:
     {
       uint* d_uint = _ibrImg->getpixeldepthUint();
-      for(int y = 0; y<h; y++)
-        for(int x = 0; x<w; x++)
-          depth[y*w+x] = float(d_uint[y*w+x]) / float(UINT_MAX);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_INT, d_uint);
     }
     break;
   }
 
-  std::vector<GLubyte> colors(w*h*4);
+  if(_width == w && _height == h)
+      return;
+
+  _width = w;
+  _height = h;
+
   std::vector<GLfloat> points(w*h*3);
 
   for(int y = 0; y<h; y++)
   {
     for(int x = 0; x<w; x++)
     {
-      int colorIndex = (y*w+x)*4;
-
-      // save color
-      colors[colorIndex]   = dataRGBA[colorIndex];
-      colors[colorIndex+1] = dataRGBA[colorIndex+1];
-      colors[colorIndex+2] = dataRGBA[colorIndex+2];
-
-      if(depth[y*w+x] <= 0.0f || depth[y*w+x] >= 1.0f)
-        colors[colorIndex+3] = 0;
-      else
-        colors[colorIndex+3] = static_cast<GLubyte>(dataRGBA[colorIndex+3]);
-
       points[y*w*3+x*3]   = x;
       points[y*w*3+x*3+1] = y;
-      points[y*w*3+x*3+2] = (depth[y*w+x] <= 0.0f) ? 1.0f : depth[y*w+x];
+      points[y*w*3+x*3+2] = 0.f;
     }
   }
 
   // VBO for points
   glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
   glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(GLfloat), &points[0], GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  // VBO for colors
-  glBindBuffer(GL_ARRAY_BUFFER, _colorVBO);
-  glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLubyte), &colors[0], GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   initIndexArrays();
@@ -445,10 +436,12 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
       break;
     }
+#if 0
 #ifdef _WIN32
     Sleep(1000);
 #else
     usleep(1000000);
+#endif
 #endif
     // switch pointers securely
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
