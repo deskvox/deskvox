@@ -73,7 +73,7 @@ private:
   bool   _newFrame;                                       ///< flag indicating a new ibr-frame waiting to be rendered
   bool   _haveFrame;                                      ///< flag indicating that at least one frame has been received
   GLuint _pointVBO;                                       ///< Vertex Buffer Object id for point-pixels
-  GLuint _indexBO;                                        ///< Buffer Object id for indices into points
+  GLuint _indexBO[4];                                     ///< Buffer Object ids for indices into points
 
   GLuint _rgbaTex;                                        ///< Texture names for RGBA image
   GLuint _depthTex;                                       ///< Texture names for depth image

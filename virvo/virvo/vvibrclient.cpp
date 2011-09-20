@@ -49,7 +49,7 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
 
   glewInit();
   glGenBuffers(1, &_pointVBO);
-  glGenBuffers(1, &_indexBO);
+  glGenBuffers(4, _indexBO);
 
   glGenTextures(1, &_rgbaTex);
   glGenTextures(1, &_depthTex);
@@ -72,7 +72,7 @@ vvIbrClient::~vvIbrClient()
 
   destroyThreads();
   glDeleteBuffers(1, &_pointVBO);
-  glDeleteBuffers(1, &_indexBO);
+  glDeleteBuffers(4, _indexBO);
   glDeleteTextures(1, &_rgbaTex);
   glDeleteTextures(1, &_depthTex);
   delete _shaderFactory;
@@ -143,12 +143,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     return VV_OK;
   }
 
-  // Index Buffer Object for points
-  const Corner c = getNearestCorner();
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indexArray[c].size() * sizeof(GLuint), &(_indexArray[c])[0], GL_STATIC_DRAW);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -157,7 +151,9 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   glVertexPointer(3, GL_FLOAT, 0, NULL);
   glEnableClientState(GL_VERTEX_ARRAY);
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBO);
+  // Index Buffer Object for points
+  const Corner c = getNearestCorner();
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBO[c]);
 
   _shader->enable();
 
@@ -187,8 +183,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   glDisableClientState(GL_COLOR_ARRAY);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  glFlush();
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
   return VV_OK;
 }
@@ -302,6 +297,7 @@ void vvIbrClient::initIndexArrays()
   for (int i = 0; i < 4; ++i)
   {
     _indexArray[i].clear();
+    _indexArray[i].reserve(width*height);
   }
 
   // Top-left to bottom-right.
@@ -339,6 +335,13 @@ void vvIbrClient::initIndexArrays()
       _indexArray[VV_BOTTOM_LEFT].push_back(y * width + x);
     }
   }
+
+  for(int i=0; i<4; ++i)
+  {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBO[i]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indexArray[i].size() * sizeof(GLuint), &(_indexArray[i])[0], GL_STATIC_DRAW);
+  }
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 vvIbrClient::Corner vvIbrClient::getNearestCorner() const
