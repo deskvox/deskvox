@@ -44,7 +44,7 @@ public:
 
 private:
   vvIbrImage::DepthPrecision _depthPrecision;  ///< precision of depth buffer for image based rendering
-  vvRayRend::IbrMode          _ibrMode;
+  vvRayRend::IbrMode         _ibrMode;
 
   void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);
   void resize(int w, int h);

@@ -49,7 +49,7 @@ public:
   ErrorType render();                                     ///< render image with depth-values
   void exit();                                            ///< check out from servers
 
-  void setDepthPrecision(vvIbrImage::DepthPrecision dp); ///< set depth-value precision (1,2 or 4 bytes)
+  void setDepthPrecision(vvIbrImage::DepthPrecision dp);  ///< set depth-value precision (1,2 or 4 bytes)
 private:
   enum Corner
   {
@@ -66,38 +66,38 @@ private:
     std::vector<vvImage*> *images;
   };
 
-  pthread_t*  _thread;                    ///< list for threads of each server connection
-  ThreadArgs* _threadData;                ///< list for thread data
+  pthread_t*  _thread;                                    ///< list for threads of each server connection
+  ThreadArgs* _threadData;                                ///< list for thread data
 
-  pthread_mutex_t _slaveMutex;            ///< mutex for thread synchronization
-  bool   _newFrame;                       ///< flag indicating a new ibr-frame waiting to be rendered
-  bool   _haveFrame;                      ///< flag indicating that at least one frame has been received
-  GLuint _pointVBO;                       ///< Vertex Buffer Object id for point-pixels
-  GLuint _indexBO;                        ///< Buffer Object id for indices into points
-  GLuint _colorVBO;                       ///< Vertex Buffer Object id for pixel-colors
+  pthread_mutex_t _slaveMutex;                            ///< mutex for thread synchronization
+  bool   _newFrame;                                       ///< flag indicating a new ibr-frame waiting to be rendered
+  bool   _haveFrame;                                      ///< flag indicating that at least one frame has been received
+  GLuint _pointVBO;                                       ///< Vertex Buffer Object id for point-pixels
+  GLuint _indexBO;                                        ///< Buffer Object id for indices into points
+  GLuint _colorVBO;                                       ///< Vertex Buffer Object id for pixel-colors
 
-  GLuint _ibrTex[3];                      ///< Texture names for ibr-textures
+  GLuint _ibrTex[3];                                      ///< Texture names for ibr-textures
 
-  std::vector<GLuint> _indexArray[4];     ///< four possible traversal directions for drawing the vertices
+  std::vector<GLuint> _indexArray[4];                     ///< four possible traversal directions for drawing the vertices
 
-  vvMatrix _currentMv;                    ///< Current modelview matrix
-  vvMatrix _currentPr;                    ///< Current projection matrix
-  vvIbrImage* _ibrImg;                    ///< Img retrieved from server
-  vvRemoteClient::ErrorType requestIbrFrame();  ///< remember envoironment and send image-request to server
-  void initIbrFrame();                    ///< initialize pixel-points in object space
+  vvMatrix _currentMv;                                    ///< Current modelview matrix
+  vvMatrix _currentPr;                                    ///< Current projection matrix
+  vvIbrImage* _ibrImg;                                    ///< Img retrieved from server
+  vvRemoteClient::ErrorType requestIbrFrame();            ///< remember envoironment and send image-request to server
+  void initIbrFrame();                                    ///< initialize pixel-points in object space
 
-  vvIbrImage::DepthPrecision _depthPrecision;        ///< deph-value precision
-  int _width, _height;                    ///< dimensions of ibr image
+  vvIbrImage::DepthPrecision _depthPrecision;             ///< deph-value precision
+  int _width, _height;                                    ///< dimensions of ibr image
 
   vvShaderFactory* _shaderFactory;
   vvShaderProgram* _shader;
 
-  void initIndexArrays();                             ///< initialize four index arrays for back to front traversal
-  Corner getNearestCorner() const;                    ///< find the ibr-img corner with the shortest dist to the viewer
-  void createImages();                                ///< create an image to be read from, another to be written to
-  void createThreads();                               ///< creates threads for every socket connection
-  void destroyThreads();                              ///< quits threads
-  static void* getImageFromSocket(void* threadargs);  ///< get image from socket connection and wait for next
+  void initIndexArrays();                                 ///< initialize four index arrays for back to front traversal
+  Corner getNearestCorner() const;                        ///< find the ibr-img corner with the shortest dist to the viewer
+  void createImages();                                    ///< create an image to be read from, another to be written to
+  void createThreads();                                   ///< creates threads for every socket connection
+  void destroyThreads();                                  ///< quits threads
+  static void* getImageFromSocket(void* threadargs);      ///< get image from socket connection and wait for next
 };
 
 #endif

@@ -142,7 +142,7 @@ class vvView
     bool useHeadLight;                          ///< toggle head light
     int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
     int  rrMode;                                ///< memory remote rendering mode
-    vvIbrImage::DepthPrecision ibrPrecision;   ///< Precision of depth buffer in image based (remote-)rendering mode
+    vvIbrImage::DepthPrecision ibrPrecision;    ///< Precision of depth buffer in image based (remote-)rendering mode
     vvRenderState::IbrMode          ibrMode;    ///< interruption mode for depth-calculation
     vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
     GLfloat* framebufferDump;
