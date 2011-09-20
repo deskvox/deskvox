@@ -22,10 +22,10 @@
 #define _VV_RAYREND_H_
 
 #include "vvexport.h"
+#include "vvibrimage.h"
 #include "vvopengl.h"
 #include "vvsoftvr.h"
 #include "vvvoldesc.h"
-#include "vvimage.h"
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
@@ -53,7 +53,7 @@ public:
   void updateTransferFunction();
   void compositeVolume(int w = -1, int h = -1);
   void setParameter(ParameterType param, float newValue);
-  void setDepthPrecision(const vvImage2_5d::DepthPrecision dp);
+  void setDepthPrecision(const vvIbrImage::DepthPrecision dp);
 
   bool getEarlyRayTermination() const;
   bool getIllumination() const;
@@ -82,7 +82,7 @@ private:
   bool _opacityCorrection;          ///< true = opacity correction on
   bool _volumeCopyToGpuOk;          ///< must be true for memCopy to be run
 
-  vvImage2_5d::DepthPrecision _depthPrecision; ///< enum indicating precision of depth buffer for image based rendering
+  vvIbrImage::DepthPrecision _depthPrecision; ///< enum indicating precision of depth buffer for image based rendering
 
   void initRandTexture();
   void initVolumeTexture();

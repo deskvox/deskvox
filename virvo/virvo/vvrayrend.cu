@@ -303,7 +303,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist,
-                       void* d_depth, vvImage2_5d::DepthPrecision dp,
+                       void* d_depth, vvIbrImage::DepthPrecision dp,
                        const float2 ibrPlanes)
 {
   const float opacityThreshold = 0.95f;
@@ -344,13 +344,13 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     {
       switch(dp)
       {
-      case vvImage2_5d::VV_UCHAR:
+      case vvIbrImage::VV_UCHAR:
         ((unsigned char*)(d_depth))[y * texwidth + x] = 0;
         break;
-      case vvImage2_5d::VV_USHORT:
+      case vvIbrImage::VV_USHORT:
         ((unsigned short*)(d_depth))[y * texwidth + x] = 0;
         break;
-      case vvImage2_5d::VV_UINT:
+      case vvIbrImage::VV_UINT:
         ((unsigned int*)(d_depth))[y * texwidth + x] = 0;
         break;
       }
@@ -557,13 +557,13 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     switch(dp)
     {
-    case vvImage2_5d::VV_UCHAR:
+    case vvIbrImage::VV_UCHAR:
       ((unsigned char*)(d_depth))[y * texwidth + x] = (unsigned char)(depth.z*float(UCHAR_MAX));
       break;
-    case vvImage2_5d::VV_USHORT:
+    case vvIbrImage::VV_USHORT:
       ((unsigned short*)(d_depth))[y * texwidth + x] = (unsigned short)(depth.z*float(USHRT_MAX));
       break;
-    case vvImage2_5d::VV_UINT:
+    case vvIbrImage::VV_UINT:
       ((unsigned int*)(d_depth))[y * texwidth + x] = (unsigned int)(depth.z*float(UINT_MAX));
       break;
     }
@@ -574,7 +574,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 typedef void(*renderKernel)(uchar4*, const uint, const uint, const float4,
                             const uint, const float, const float3, const float3,
                             const float3, const float3, const float3, const float3, const float3,
-                            const float, const float3, const float, void*, vvImage2_5d::DepthPrecision, const float2);
+                            const float, const float3, const float, void*, vvIbrImage::DepthPrecision, const float2);
 
 #ifdef FAST_COMPILE
 template<
@@ -1059,19 +1059,19 @@ void vvRayRend::compositeVolume(int w, int h)
 
   switch(_depthPrecision)
   {
-  case vvImage2_5d::VV_UCHAR:
+  case vvIbrImage::VV_UCHAR:
     vvCuda::checkError(&ok, cudaMalloc(&_depthUchar, vp[2]*vp[3]*sizeof(unsigned char)),
                        "vvRayRend::compositeVolume() - malloc uchar");
     vvCuda::checkError(&ok, cudaMemset(_depthUchar, 0, vp[2]*vp[3]*sizeof(unsigned char)),
                        "vvRayRend::compositeVolume() - memset uchar");
     break;
-  case vvImage2_5d::VV_USHORT:
+  case vvIbrImage::VV_USHORT:
     vvCuda::checkError(&ok, cudaMalloc(&_depthUshort, vp[2]*vp[3]*sizeof(unsigned short)),
                        "vvRayRend::compositeVolume() - malloc ushort");
     vvCuda::checkError(&ok, cudaMemset(_depthUshort, 0, vp[2]*vp[3]*sizeof(unsigned short)),
                        "vvRayRend::compositeVolume() - memset ushort");
     break;
-  case vvImage2_5d::VV_UINT:
+  case vvIbrImage::VV_UINT:
     vvCuda::checkError(&ok, cudaMalloc(&_depthUint, vp[2]*vp[2]*sizeof(unsigned int)),
                        "vvRayRend::compositeVolume() - malloc uint");
     vvCuda::checkError(&ok, cudaMemset(_depthUint, 0, vp[2]*vp[2]*sizeof(unsigned int)),
@@ -1216,7 +1216,7 @@ void vvRayRend::compositeVolume(int w, int h)
     }
     switch(_depthPrecision)
     {
-    case vvImage2_5d::VV_UCHAR:
+    case vvIbrImage::VV_UCHAR:
       (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
                                         backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                                         volPos, volSize * 0.5f,
@@ -1226,7 +1226,7 @@ void vvRayRend::compositeVolume(int w, int h)
                                         pnormal, pdist, _depthUchar, _depthPrecision,
                                         make_float2(_ibrPlanes[0], _ibrPlanes[1]));
       break;
-    case vvImage2_5d::VV_USHORT:
+    case vvIbrImage::VV_USHORT:
       {
       (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
                                         backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
@@ -1238,7 +1238,7 @@ void vvRayRend::compositeVolume(int w, int h)
                                         make_float2(_ibrPlanes[0], _ibrPlanes[1]));
       }
       break;
-    case vvImage2_5d::VV_UINT:
+    case vvIbrImage::VV_UINT:
       (kernel)<<<gridSize, blockSize>>>(dynamic_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
                                         backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                                         volPos, volSize * 0.5f,
@@ -1485,7 +1485,7 @@ void vvRayRend::findAxisRepresentations()
   // Overwrite default behavior.
 }
 
-void vvRayRend::setDepthPrecision(vvImage2_5d::DepthPrecision dp)
+void vvRayRend::setDepthPrecision(vvIbrImage::DepthPrecision dp)
 {
   _depthPrecision = dp;
 }

@@ -136,38 +136,4 @@ protected:
     short width;
 };
 
-class VIRVOEXPORT vvImage2_5d : public vvImage
-{
-  public:
-    enum DepthPrecision
-    {
-      VV_UCHAR,
-      VV_USHORT,
-      VV_UINT
-    };
-
-    enum IbrDepthScale
-    {
-      VV_FULL_DEPTH,
-      VV_SCALED_DEPTH
-    };
-
-    vvImage2_5d(short, short, uchar*, DepthPrecision);
-    vvImage2_5d();
-    virtual ~vvImage2_5d();
-
-    uchar*  getpixeldepthUchar();
-    ushort* getpixeldepthUshort();
-    uint*   getpixeldepthUint();
-    void    alloc_pd();
-
-    void setDepthPrecision(DepthPrecision dp);
-    DepthPrecision getDepthPrecision();
-  private:
-    DepthPrecision  _depthPrecision;
-    uchar*          _pixeldepthUchar;
-    ushort*         _pixeldepthUshort;
-    uint*           _pixeldepthUint;
-};
-
 #endif

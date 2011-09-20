@@ -18,38 +18,44 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_IBRSERVER_H_
-#define _VV_IBRSERVER_H_
+#ifndef _VVIBRIMAGE_H_
+#define _VVIBRIMAGE_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
+#include "vvimage.h"
+#include "vvgltools.h"
+#include "vvvecmath.h"
 
-#ifdef HAVE_CUDA
-
-#include "vvexport.h"
-#include "vvoffscreenbuffer.h"
-#include "vvrayrend.h"
-#include "vvsocketio.h"
-#include "vvremoteserver.h"
-
-class VIRVOEXPORT vvIbrServer : public vvRemoteServer
+class VIRVOEXPORT vvIbrImage : public vvImage
 {
-public:
-  vvIbrServer(const vvIbrImage::DepthPrecision dp = vvIbrImage::VV_USHORT,
-              const vvRayRend::IbrMode mode = vvRayRend::VV_MAX_GRADIENT);
-  ~vvIbrServer();
+  public:
+    enum DepthPrecision
+    {
+      VV_UCHAR,
+      VV_USHORT,
+      VV_UINT
+    };
 
-  void setDepthPrecision(const vvIbrImage::DepthPrecision dp);
+    vvIbrImage(short, short, uchar*, DepthPrecision);
+    vvIbrImage();
+    virtual ~vvIbrImage();
 
-private:
-  vvIbrImage::DepthPrecision _depthPrecision;  ///< precision of depth buffer for image based rendering
-  vvRayRend::IbrMode          _ibrMode;
+    uchar*  getpixeldepthUchar();
+    ushort* getpixeldepthUshort();
+    uint*   getpixeldepthUint();
+    void    alloc_pd();
 
-  void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);
-  void resize(int w, int h);
+    void setDepthPrecision(DepthPrecision dp);
+    DepthPrecision getDepthPrecision();
+
+    void setReprojectionMatrix(const vvMatrix& preprojectionMatrix);
+    vvMatrix getReprojectionMatrix() const;
+  private:
+    DepthPrecision  _depthPrecision;
+    uchar*          _pixeldepthUchar;
+    ushort*         _pixeldepthUshort;
+    uint*           _pixeldepthUint;
+
+    vvMatrix        _preprojectionMatrix;       ///< undo the camera transform this frame was rendered for
 };
-
-#endif
 
 #endif

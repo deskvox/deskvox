@@ -583,28 +583,44 @@ vvSocket::ErrorType vvSocketIO::putImage(vvImage* im)
 /** Get an 2.5d-image from the socket.
  @param im  pointer to a vvImage2_5d object.
 */
-vvSocket::ErrorType vvSocketIO::getImage2_5d(vvImage2_5d* im)
+vvSocket::ErrorType vvSocketIO::getImage2_5d(vvIbrImage* im)
 {
   vvSocket::ErrorType err;
+
+  vvMatrix matrix;
+
+  // Get modelview / projection matrix for the current frame
+  if ((err = getMatrix(&matrix)) != vvSocket::VV_OK)
+  {
+    return err;
+  }
+  im->setReprojectionMatrix(matrix);
 
   // get regular image-data
   if((err = getImage(im)) != vvSocket::VV_OK)
     return err;
+
+  int dp;
+  if ((err = getInt32(dp)) != vvSocket::VV_OK)
+  {
+    return err;
+  }
+  im->setDepthPrecision(static_cast<vvIbrImage::DepthPrecision>(dp));
 
   im->alloc_pd();
 
   // get extended 2.5D-data
   switch(im->getDepthPrecision())
   {
-  case vvImage2_5d::VV_UCHAR:
+  case vvIbrImage::VV_UCHAR:
     if((err = getData(im->getpixeldepthUchar(), im->getWidth()*im->getHeight(), vvSocketIO::VV_UCHAR)) != vvSocket::VV_OK)
       return err;
     break;
-  case vvImage2_5d::VV_USHORT:
+  case vvIbrImage::VV_USHORT:
     if((err = getData(im->getpixeldepthUshort(), im->getWidth()*im->getHeight(), vvSocketIO::VV_USHORT)) != vvSocket::VV_OK)
       return err;
     break;
-  case vvImage2_5d::VV_UINT:
+  case vvIbrImage::VV_UINT:
     if((err = getData(im->getpixeldepthUint(), im->getWidth()*im->getHeight(), vvSocketIO::VV_INT)) != vvSocket::VV_OK)
       return err;
     break;
@@ -619,24 +635,42 @@ vvSocket::ErrorType vvSocketIO::getImage2_5d(vvImage2_5d* im)
 /** Write an 2.5d-image to the socket.
  @param im  pointer to an vvImage2_5d object.
 */
-vvSocket::ErrorType vvSocketIO::putImage2_5d(vvImage2_5d* im)
+vvSocket::ErrorType vvSocketIO::putImage2_5d(vvIbrImage* im)
 {
-  vvSocket::ErrorType err = putImage(im);
+  vvMatrix matrix = im->getReprojectionMatrix();
+  vvSocket::ErrorType err = putMatrix(&matrix);
 
-  if(err != vvSocket::VV_OK)
+  if (err != vvSocket::VV_OK)
+  {
     return err;
+  }
+
+  err = putImage(im);
+
+  if (err != vvSocket::VV_OK)
+  {
+    return err;
+  }
+
+  err = putInt32(im->getDepthPrecision());
+
+  if (err != vvSocket::VV_OK)
+  {
+    return err;
+  }
+
   // additional 2.5d-data
   switch(im->getDepthPrecision())
   {
-  case vvImage2_5d::VV_UCHAR:
+  case vvIbrImage::VV_UCHAR:
     if((err = putData(im->getpixeldepthUchar(), im->getWidth()*im->getHeight(), vvSocketIO::VV_UCHAR)) != vvSocket::VV_OK)
       return err;
     break;
-  case vvImage2_5d::VV_USHORT:
+  case vvIbrImage::VV_USHORT:
     if((err = putData(im->getpixeldepthUshort(), im->getWidth()*im->getHeight(), vvSocketIO::VV_USHORT)) != vvSocket::VV_OK)
       return err;
     break;
-  case vvImage2_5d::VV_UINT:
+  case vvIbrImage::VV_UINT:
     if((err = putData(im->getpixeldepthUint(), im->getWidth()*im->getHeight(), vvSocketIO::VV_INT)) != vvSocket::VV_OK)
       return err;
     break;

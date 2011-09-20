@@ -36,10 +36,9 @@ using std::endl;
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
                          const char* slaveName, int slavePort,
                          const char* slaveFileName,
-                         const vvImage2_5d::DepthPrecision dp,
-                         vvImage2_5d::IbrDepthScale ds)
+                         const vvIbrImage::DepthPrecision dp)
   : vvRemoteClient(vd, renderState, slaveName, slavePort, slaveFileName),
-    _depthPrecision(dp), _depthScale(ds)
+    _depthPrecision(dp)
 {
   vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
 
@@ -55,9 +54,6 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
 
   glEnable(GL_TEXTURE_2D);
   glGenTextures(3, _ibrTex);
-
-  _isaRect[0] = new vvRect();
-  _isaRect[1] = new vvRect();
 
   _haveFrame = false; // no rendered frame available
   _newFrame = true; // request a new frame
@@ -80,8 +76,6 @@ vvIbrClient::~vvIbrClient()
   glDeleteBuffers(1, &_indexBO);
   glDeleteBuffers(1, &_colorVBO);
   glDeleteTextures(3, _ibrTex);
-  delete _isaRect[0];
-  delete _isaRect[1];
   delete _shaderFactory;
   delete _shader;
 }
@@ -109,12 +103,11 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   vvGLTools::getModelviewMatrix(&_currentMv);
   vvGLTools::getProjectionMatrix(&_currentPr);
+  vvMatrix currentMatrix = _currentMv * _currentPr;
 
   if(newFrame && haveFrame)
   {
     pthread_mutex_lock(&_slaveMutex);
-    _imageMv.copy(&_requestedMv);
-    _imagePr.copy(&_requestedPr);
     initIbrFrame();
     pthread_mutex_unlock(&_slaveMutex);
   }
@@ -122,7 +115,13 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   if (newFrame) // no frame pending
   {
     // request new ibr frame if anything changed
-    if (!_currentPr.equal(&_imagePr) || !_currentMv.equal(&_imageMv))
+    vvMatrix imgMatrix;
+    if (_ibrImg != NULL)
+    {
+      imgMatrix = _ibrImg->getReprojectionMatrix();
+    }
+
+    if (!currentMatrix.equal(&imgMatrix))
     {
       _changes = true;
     }
@@ -167,19 +166,17 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   _shader->enable();
 
-  vvMatrix mv;
-  mv.copy(&_imageMv);
-  vvMatrix pr;
-  pr.copy(&_imagePr);
+  vvMatrix imgMatrix = _ibrImg->getReprojectionMatrix();
+  vvMatrix invImgMatrix;
+  invImgMatrix.copy(&imgMatrix);
 
-  mv.multiplyPost(&pr);
-  mv.invert();
-  mv.transpose();
-  float modelprojectinv[16];
-  mv.get(modelprojectinv);
-  _shader->setParameterMatrix4f("ModelProjectInv" , modelprojectinv);
+  vvMatrix reprojectionMatrix = _ibrImg->getReprojectionMatrix() * currentMatrix;
 
-  _shader->setParameter4f("vp", _vp[0][0], _vp[0][1], _vp[0][2], _vp[0][3]);
+  reprojectionMatrix.transpose();
+
+  float reprojectionMatrixGL[16];
+  reprojectionMatrix.get(reprojectionMatrixGL);
+  _shader->setParameterMatrix4f("reprojectionMatrix" , reprojectionMatrixGL);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
   glDrawElements(GL_POINTS, _width*_height, GL_UNSIGNED_INT, NULL);
@@ -200,70 +197,6 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
 {
   vvDebugMsg::msg(1, "vvIbrClient::requestIbrFrame()");
 
-  // switch to current screen-rect and viewport
-  _isaRect[0]->x = _isaRect[1]->x;
-  _isaRect[0]->y = _isaRect[1]->y;
-  _isaRect[0]->height = _isaRect[1]->height;
-  _isaRect[0]->width  = _isaRect[1]->width;
-  _vp[0][0] = _vp[1][0];
-  _vp[0][1] = _vp[1][1];
-  _vp[0][2] = _vp[1][2];
-  _vp[0][3] = _vp[1][3];
-
-  // save screenrect for later frames
-  _isaRect[1]->x = getVolDesc()->getBoundingBox().getProjectedScreenRect()->x;
-  _isaRect[1]->y = getVolDesc()->getBoundingBox().getProjectedScreenRect()->y;
-  _isaRect[1]->height = getVolDesc()->getBoundingBox().getProjectedScreenRect()->height;
-  _isaRect[1]->width = getVolDesc()->getBoundingBox().getProjectedScreenRect()->width;
-
-  // save Viewport for later frames
-  _vp[1] = vvGLTools::getViewport();
-
-  // remember MV and PR matrix
-  _requestedPr.copy(&_currentPr);
-  _requestedMv.copy(&_currentMv);
-
-  _ibrPlanes[0] = _ibrPlanes[2];
-  _ibrPlanes[1] = _ibrPlanes[3];
-  if(_depthScale == vvImage2_5d::VV_SCALED_DEPTH)
-  {
-    // calculate bounding sphere
-    vvAABB bbox(getVolDesc()->getBoundingBox().min(), getVolDesc()->getBoundingBox().max());
-    vvVector4 center4(bbox.getCenter()[0], bbox.getCenter()[1], bbox.getCenter()[2], 1.0f);
-    vvVector4 min4(bbox.min()[0], bbox.min()[1], bbox.min()[2], 1.0f);
-    vvVector4 max4(bbox.max()[0], bbox.max()[1], bbox.max()[2], 1.0f);
-
-    const vvMatrix &pr = _requestedPr;
-    const vvMatrix &mv = _requestedMv;
-
-    center4.multiply(&mv);
-    min4.multiply(&mv);
-    max4.multiply(&mv);
-
-    vvVector3 center(center4[0], center4[1], center4[2]);
-    vvVector3 min(min4.e[0], min4.e[1], min4.e[2]);
-    vvVector3 max(max4.e[0], max4.e[1], max4.e[2]);
-
-    float radius = (max-min).length() * 0.5f;
-
-    // Depth buffer of ibrPlanes
-    vvVector3 scal(center);
-    scal.normalize();
-    scal.scale(radius);
-    min = center - scal;
-    max = center + scal;
-
-    min4 = vvVector4(&min, 1.f);
-    max4 = vvVector4(&max, 1.f);
-    min4.multiply(&pr);
-    max4.multiply(&pr);
-    min4.perspectiveDivide();
-    max4.perspectiveDivide();
-
-    _ibrPlanes[2] = (min4[2]+1.f)/2.f;
-    _ibrPlanes[3] = (max4[2]+1.f)/2.f;
-  }
-
   if(_socket->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
 
@@ -280,39 +213,39 @@ void vvIbrClient::initIbrFrame()
 {
   vvDebugMsg::msg(1, "vvIbrClient::initIbrFrame()");
 
-  vvImage2_5d* ibrImg = dynamic_cast<vvImage2_5d*>(_threadData->images->at(0));
-  if(!ibrImg)
+  _ibrImg = dynamic_cast<vvIbrImage*>(_threadData->images->at(0));
+  if(!_ibrImg)
     return;
 
-  int h = ibrImg->getHeight();
-  int w = ibrImg->getWidth();
+  const int h = _ibrImg->getHeight();
+  const int w = _ibrImg->getWidth();
   _width = w;
   _height = h;
 
   // get pixel and depth-data
-  uchar* dataRGBA = ibrImg->getCodedImage();
+  uchar* dataRGBA = _ibrImg->getCodedImage();
   std::vector<float> depth(w*h);
   switch(_depthPrecision)
   {
-  case vvImage2_5d::VV_UCHAR:
+  case vvIbrImage::VV_UCHAR:
     {
-      uchar* d_uchar = ibrImg->getpixeldepthUchar();
+      uchar* d_uchar = _ibrImg->getpixeldepthUchar();
       for(int y = 0; y<h; y++)
         for(int x = 0; x<w; x++)
           depth[y*w+x] = float(d_uchar[y*w+x]) / float(UCHAR_MAX);
     }
     break;
-  case vvImage2_5d::VV_USHORT:
+  case vvIbrImage::VV_USHORT:
     {
-      ushort* d_ushort = ibrImg->getpixeldepthUshort();
+      ushort* d_ushort = _ibrImg->getpixeldepthUshort();
       for(int y = 0; y<h; y++)
         for(int x = 0; x<w; x++)
           depth[y*w+x] = float(d_ushort[y*w+x]) / float(USHRT_MAX);
     }
     break;
-  case vvImage2_5d::VV_UINT:
+  case vvIbrImage::VV_UINT:
     {
-      uint* d_uint = ibrImg->getpixeldepthUint();
+      uint* d_uint = _ibrImg->getpixeldepthUint();
       for(int y = 0; y<h; y++)
         for(int x = 0; x<w; x++)
           depth[y*w+x] = float(d_uint[y*w+x]) / float(UINT_MAX);
@@ -341,23 +274,7 @@ void vvIbrClient::initIbrFrame()
 
       points[y*w*3+x*3]   = x;
       points[y*w*3+x*3+1] = y;
-
-      if(_depthScale == vvImage2_5d::VV_FULL_DEPTH)
-      {
-        points[y*w*3+x*3+2] = depth[y*w+x];
-      }
-      else if(_depthScale == vvImage2_5d::VV_SCALED_DEPTH)
-      {
-        if(depth[y*w+x] == 0.0f || depth[y*w+x] == 1.0f)
-        {
-          depth[y*w+x] = 1.0f;
-        }
-        else
-        {
-          depth[y*w+x] = depth[y*w+x]*(_ibrPlanes[1] - _ibrPlanes[0]) +_ibrPlanes[0];
-        }
-        points[y*w*3+x*3+2] = depth[y*w+x];
-      }
+      points[y*w*3+x*3+2] = (depth[y*w+x] <= 0.0f) ? 1.0f : depth[y*w+x];
     }
   }
 
@@ -440,7 +357,7 @@ vvIbrClient::Corner vvIbrClient::getNearestCorner() const
   vvVector4 normal = vvVector4(0.0f, 0.0f, 1.0f, 1.0f);
 
   // Cancel out old matrix from normal.
-  vvMatrix oldMatrix = _imageMv * _imagePr;
+  vvMatrix oldMatrix = _ibrImg->getReprojectionMatrix();
   // The operations below cancel each other out.
   // Left the code this way for higher legibility.
   // Vectors are transformed.
@@ -470,7 +387,11 @@ vvIbrClient::Corner vvIbrClient::getNearestCorner() const
   {
     return VV_BOTTOM_LEFT;
   }
-  return VV_NONE;
+  else
+  {
+    // Arbitrary default.
+    return VV_TOP_LEFT;
+  }
 }
 
 void vvIbrClient::createThreads()
@@ -497,7 +418,7 @@ void vvIbrClient::destroyThreads()
   _threadData = NULL;
 }
 
-void vvIbrClient::setDepthPrecision(vvImage2_5d::DepthPrecision dp)
+void vvIbrClient::setDepthPrecision(vvIbrImage::DepthPrecision dp)
 {
   vvDebugMsg::msg(3, "vvIbrClient::setDepthPrecision()");
 
@@ -514,7 +435,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
 
   while (1)
   {
-    vvImage2_5d* img = static_cast<vvImage2_5d *>(data->images->at(1));
+    vvIbrImage* img = static_cast<vvIbrImage *>(data->images->at(1));
     img->setDepthPrecision(data->renderMaster->_depthPrecision);
 
     vvSocketIO::ErrorType err = data->renderMaster->_socket->getImage2_5d(img);
@@ -524,9 +445,9 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
       break;
     }
 #ifdef _WIN32
-   Sleep(1000);
+    Sleep(1000);
 #else
-    sleep(1);
+    usleep(1000000);
 #endif
     // switch pointers securely
     pthread_mutex_lock( &data->renderMaster->_slaveMutex );
@@ -546,5 +467,5 @@ void vvIbrClient::createImages()
 {
   vvDebugMsg::msg(3, "vvIbrClient::createImages()");
   for(int i=0; i<2; ++i)
-    _images.push_back(new vvImage2_5d);
+    _images.push_back(new vvIbrImage);
 }

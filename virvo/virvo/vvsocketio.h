@@ -26,7 +26,7 @@
 #include "vvsocket.h"
 #include "vvvoldesc.h"
 #include "vvtoolshed.h"
-#include "vvimage.h"
+#include "vvibrimage.h"
 #include "vvvecmath.h"
 #include "vvdebugmsg.h"
 
@@ -161,8 +161,8 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType putBricks(std::vector<vvBrick*>& bricks);
     ErrorType getImage(vvImage*);
     ErrorType putImage(vvImage*);
-    ErrorType getImage2_5d(vvImage2_5d*);
-    ErrorType putImage2_5d(vvImage2_5d*);
+    ErrorType getImage2_5d(vvIbrImage*);
+    ErrorType putImage2_5d(vvIbrImage*);
     ErrorType getFileName(char*& fn);
     ErrorType putFileName(const char* fn);
     ErrorType allocateAndGetData(uchar**, int&);             //  unknown number and type

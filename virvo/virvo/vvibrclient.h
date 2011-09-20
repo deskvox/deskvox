@@ -43,22 +43,20 @@ public:
   vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
               const char* slaveNames, int slavePorts,
               const char* slaveFileNames,
-              vvImage2_5d::DepthPrecision dp = vvImage2_5d::VV_USHORT,
-              vvImage2_5d::IbrDepthScale ds = vvImage2_5d::VV_FULL_DEPTH);
+              vvIbrImage::DepthPrecision dp = vvIbrImage::VV_USHORT);
   ~vvIbrClient();
 
   ErrorType render();                                     ///< render image with depth-values
   void exit();                                            ///< check out from servers
 
-  void setDepthPrecision(vvImage2_5d::DepthPrecision dp); ///< set depth-value precision (1,2 or 4 bytes)
+  void setDepthPrecision(vvIbrImage::DepthPrecision dp); ///< set depth-value precision (1,2 or 4 bytes)
 private:
   enum Corner
   {
     VV_TOP_LEFT = 0,
     VV_TOP_RIGHT,
     VV_BOTTOM_RIGHT,
-    VV_BOTTOM_LEFT,
-    VV_NONE
+    VV_BOTTOM_LEFT
   };
 
   //! thread-data
@@ -68,7 +66,7 @@ private:
     std::vector<vvImage*> *images;
   };
 
-  pthread_t*  _thread;                   ///< list for threads of each server connection
+  pthread_t*  _thread;                    ///< list for threads of each server connection
   ThreadArgs* _threadData;                ///< list for thread data
 
   pthread_mutex_t _slaveMutex;            ///< mutex for thread synchronization
@@ -82,20 +80,13 @@ private:
 
   std::vector<GLuint> _indexArray[4];     ///< four possible traversal directions for drawing the vertices
 
-  vvRect*             _isaRect[2];        ///< array for memorizing and flipping old and new screenrects
-  vvGLTools::Viewport _vp[2];             ///< array for memorizing and flipping old and new viewport
   vvMatrix _currentMv;                    ///< Current modelview matrix
-  vvMatrix _imageMv;                      ///< Model-view matrix for last received image
-  vvMatrix _requestedMv;                  ///< Model-view matrix of pending request
   vvMatrix _currentPr;                    ///< Current projection matrix
-  vvMatrix _imagePr;                      ///< Projection matrix for last received image
-  vvMatrix _requestedPr;                  ///< Projection matrix of pending request
+  vvIbrImage* _ibrImg;                    ///< Img retrieved from server
   vvRemoteClient::ErrorType requestIbrFrame();  ///< remember envoironment and send image-request to server
   void initIbrFrame();                    ///< initialize pixel-points in object space
 
-  vvImage2_5d::DepthPrecision _depthPrecision;        ///< deph-value precision
-  vvImage2_5d::IbrDepthScale  _depthScale;
-  float _ibrPlanes[4];
+  vvIbrImage::DepthPrecision _depthPrecision;        ///< deph-value precision
   int _width, _height;                    ///< dimensions of ibr image
 
   vvShaderFactory* _shaderFactory;

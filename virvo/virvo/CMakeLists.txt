@@ -52,6 +52,7 @@ SET(VIRVO_HEADERS
   vvglslprogram.h
   vvgltools.h
   vvibrclient.h
+  vvibrimage.h
   vvibrserver.h
   vvideo.h
   vvimage.h
@@ -113,6 +114,7 @@ SET(VIRVO_SOURCES
   vvglslprogram.cpp
   vvgltools.cpp
   vvibrclient.cpp
+  vvibrimage.cpp
   vvibrserver.cpp
   vvideo.cpp
   vvimage.cpp
