@@ -355,6 +355,13 @@ void vvView::mainLoop(int argc, char *argv[])
     }
     else vd->printInfoLine();
 
+    // Set default color scheme if no TF present:
+    if (vd->tf.isEmpty())
+    {
+      vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+      vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+    }
+
     if (slaveNames.size() == 0)
     {
 #ifdef HAVE_BONJOUR
@@ -409,13 +416,6 @@ void vvView::mainLoop(int argc, char *argv[])
 
     mvScale = 1.0f / maxedge;
     cerr << "Scale modelview matrix by " << mvScale << endl;
-
-    // Set default color scheme if no TF present:
-    if (vd->tf.isEmpty())
-    {
-      vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-      vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
-    }
 
     animSpeed = vd->dt;
     createMenus();
