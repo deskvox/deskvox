@@ -304,7 +304,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist,
                        void* d_depth, vvIbrImage::DepthPrecision dp,
-                       const float2 ibrPlanes)
+                       const float2 ibrPlanes, const bool gatherPass,
+                       const bool alphaPassIbr, float* d_gatheredAlpha)
 {
   const float opacityThreshold = 0.95f;
 
@@ -569,12 +570,19 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     }
   }
   d_output[y * texwidth + x] = rgbaFloatToInt(dst);
+
+  if (alphaPassIbr && gatherPass)
+  {
+    d_gatheredAlpha[y * texwidth + x] = dst.w;
+  }
 }
 
 typedef void(*renderKernel)(uchar4*, const uint, const uint, const float4,
                             const uint, const float, const float3, const float3,
                             const float3, const float3, const float3, const float3, const float3,
-                            const float, const float3, const float, void*, vvIbrImage::DepthPrecision, const float2);
+                            const float, const float3, const float, void*, vvIbrImage::DepthPrecision,
+                            const float2, const bool alphaPassIbr, const bool gatherPass,
+                            float* d_gatheredAlpha);
 
 #ifdef FAST_COMPILE
 template<
@@ -965,6 +973,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _illumination = false;
   _interpolation = true;
   _opacityCorrection = true;
+  _gatherAlphaForIbr = false;
 
   _ibrPlanes[0] = 0.0f;
   _ibrPlanes[1] = 0.0f;
@@ -1215,6 +1224,26 @@ void vvRayRend::compositeVolume(int w, int h)
       cudaBindTextureToArray(volTexture16, d_volumeArrays[vd->getCurrentFrame()], _channelDesc);
     }
 
+    float* d_gatheredAlpha = NULL;
+    if (_gatherAlphaForIbr)
+    {
+      const size_t size = vp[2] * vp[2] * sizeof(float);
+      vvCuda::checkError(&ok, cudaMalloc(&d_gatheredAlpha, size),
+                         "vvRayRend::compositeVolume() - malloc gathered alpha");
+      vvCuda::checkError(&ok, cudaMemset(d_gatheredAlpha, 0, size),
+                         "vvRayRend::compositeVolume() - memset gathered alpha");
+
+      (kernel)<<<gridSize, blockSize>>>(static_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
+                                        backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
+                                        volPos, volSize * 0.5f,
+                                        probePos, probeSize * 0.5f,
+                                        L, H,
+                                        center, radius * radius,
+                                        pnormal, pdist, d_depth, _depthPrecision,
+                                        make_float2(_ibrPlanes[0], _ibrPlanes[1]),
+                                        true, true, d_gatheredAlpha);
+    }
+    const bool twoPassIbr = _gatherAlphaForIbr;
     (kernel)<<<gridSize, blockSize>>>(static_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
                                       backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                                       volPos, volSize * 0.5f,
@@ -1222,7 +1251,9 @@ void vvRayRend::compositeVolume(int w, int h)
                                       L, H,
                                       center, radius * radius,
                                       pnormal, pdist, d_depth, _depthPrecision,
-                                      make_float2(_ibrPlanes[0], _ibrPlanes[1]));
+                                      make_float2(_ibrPlanes[0], _ibrPlanes[1]),
+                                      twoPassIbr, false, d_gatheredAlpha);
+    cudaFree(d_gatheredAlpha);
   }
   static_cast<vvCudaImg*>(intImg)->unmap();
 
