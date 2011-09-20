@@ -61,6 +61,12 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
     {
       _socket->putFileName(_slaveFileName);
       _socket->getVolumeAttributes(vd);
+      vvTransFunc tf;
+      tf._widgets.removeAll();
+      if ((_socket->getTransferFunction(tf)) == vvSocket::VV_OK)
+      {
+        vd->tf = tf;
+      }
     }
     else
     {

@@ -105,6 +105,7 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
       vd->printInfoLine();
     }
     _socket->putVolumeAttributes(vd);
+    _socket->putTransferFunction(vd->tf);
   }
   else
   {
