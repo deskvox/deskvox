@@ -139,21 +139,12 @@ void vvGLSLProgram::enable()
       switch(tex->_type)
       {
       case TEXTURE_1D:
-        glEnable (GL_TEXTURE_1D);
-        glDisable(GL_TEXTURE_2D);
-        glDisable(GL_TEXTURE_3D);
         glBindTexture(GL_TEXTURE_1D, tex->_id);
         break;
       case TEXTURE_2D:
-        glDisable(GL_TEXTURE_1D);
-        glEnable (GL_TEXTURE_2D);
-        glDisable(GL_TEXTURE_3D);
         glBindTexture(GL_TEXTURE_2D, tex->_id);
         break;
       case TEXTURE_3D:
-        glDisable(GL_TEXTURE_1D);
-        glDisable(GL_TEXTURE_2D);
-        glEnable (GL_TEXTURE_3D);
         glBindTexture(GL_TEXTURE_3D, tex->_id);
         break;
       default:
@@ -176,28 +167,7 @@ void vvGLSLProgram::disable()
 {
   vvGLTools::printGLError("Enter vvGLSLProgram::disableProgram()");
 
-  for(TextureMap::iterator i = _textureNameMaps.begin(); i != _textureNameMaps.end(); i++)
-  {
-    vvGLSLTexture* tex = i->second;
-    glActiveTexture(GL_TEXTURE0+tex->_unit);
-    switch(tex->_type)
-    {
-    case TEXTURE_1D:
-      glDisable(GL_TEXTURE_1D);
-      break;
-    case TEXTURE_2D:
-      glDisable(GL_TEXTURE_2D);
-      break;
-    case TEXTURE_3D:
-      glDisable(GL_TEXTURE_3D);
-      break;
-    default:
-      assert("invalid texture type" == NULL);
-      break;
-    }
-  }
   glUseProgramObjectARB(0);
-  glActiveTexture(GL_TEXTURE0);
 
   vvGLTools::printGLError("Leaving vvGLSLProgram::disableProgram()");
 }
@@ -325,9 +295,6 @@ void vvGLSLProgram::setParameterTex1D(const string& parameterName, const unsigne
     tex->_id = ui;
     glUniform1i(tex->_uniform, tex->_unit);
     glActiveTexture(GL_TEXTURE0+tex->_unit);
-    glEnable (GL_TEXTURE_1D);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_3D);
     glBindTexture(GL_TEXTURE_1D, ui);
     glActiveTexture(GL_TEXTURE0);
   }
@@ -342,9 +309,6 @@ void vvGLSLProgram::setParameterTex2D(const string& parameterName, const unsigne
     tex->_id = ui;
     glUniform1i(tex->_uniform, tex->_unit);
     glActiveTexture(GL_TEXTURE0+tex->_unit);
-    glDisable(GL_TEXTURE_1D);
-    glEnable (GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_3D);
     glBindTexture(GL_TEXTURE_2D, ui);
     glActiveTexture(GL_TEXTURE0);
   }
@@ -359,9 +323,6 @@ void vvGLSLProgram::setParameterTex3D(const string& parameterName, const unsigne
     tex->_id = ui;
     glUniform1i(tex->_uniform, tex->_unit);
     glActiveTexture(GL_TEXTURE0+tex->_unit);
-    glDisable(GL_TEXTURE_1D);
-    glDisable(GL_TEXTURE_2D);
-    glEnable (GL_TEXTURE_3D);
     glBindTexture(GL_TEXTURE_3D, ui);
     glActiveTexture(GL_TEXTURE0);
   }
