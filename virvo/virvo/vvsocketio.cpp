@@ -583,7 +583,7 @@ vvSocket::ErrorType vvSocketIO::putImage(vvImage* im)
 /** Get an 2.5d-image from the socket.
  @param im  pointer to a vvImage2_5d object.
 */
-vvSocket::ErrorType vvSocketIO::getImage2_5d(vvIbrImage* im)
+vvSocket::ErrorType vvSocketIO::getIbrImage(vvIbrImage* im)
 {
   vvSocket::ErrorType err;
 
@@ -635,7 +635,7 @@ vvSocket::ErrorType vvSocketIO::getImage2_5d(vvIbrImage* im)
 /** Write an 2.5d-image to the socket.
  @param im  pointer to an vvImage2_5d object.
 */
-vvSocket::ErrorType vvSocketIO::putImage2_5d(vvIbrImage* im)
+vvSocket::ErrorType vvSocketIO::putIbrImage(vvIbrImage* im)
 {
   vvMatrix matrix = im->getReprojectionMatrix();
   vvSocket::ErrorType err = putMatrix(&matrix);

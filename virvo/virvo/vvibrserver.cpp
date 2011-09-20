@@ -162,7 +162,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   depthScaleMatrix.translate(0.0f, 0.0f, rayRend->_ibrPlanes[0]);
 
   im2->setReprojectionMatrix(depthScaleMatrix * vpMatrix * invModelviewProjection);
-  _socket->putImage2_5d(im2);
+  _socket->putIbrImage(im2);
 
   delete[] pixels;
   delete im2;

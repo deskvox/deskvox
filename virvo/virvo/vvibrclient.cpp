@@ -438,7 +438,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
     vvIbrImage* img = static_cast<vvIbrImage *>(data->images->at(1));
     img->setDepthPrecision(data->renderMaster->_depthPrecision);
 
-    vvSocketIO::ErrorType err = data->renderMaster->_socket->getImage2_5d(img);
+    vvSocketIO::ErrorType err = data->renderMaster->_socket->getIbrImage(img);
     if(err != vvSocketIO::VV_OK)
     {
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
