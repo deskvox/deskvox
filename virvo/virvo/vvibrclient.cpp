@@ -223,7 +223,7 @@ void vvIbrClient::initIbrFrame()
   _height = h;
 
   // get pixel and depth-data
-  uchar* dataRGBA = _ibrImg->getCodedImage();
+  uchar* dataRGBA = _ibrImg->getImagePtr();
   std::vector<float> depth(w*h);
   switch(_depthPrecision)
   {
@@ -439,6 +439,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
     img->setDepthPrecision(data->renderMaster->_depthPrecision);
 
     vvSocketIO::ErrorType err = data->renderMaster->_socket->getIbrImage(img);
+    img->decode();
     if(err != vvSocketIO::VV_OK)
     {
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
