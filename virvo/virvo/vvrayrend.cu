@@ -46,6 +46,10 @@ texture<float4, 1, cudaReadModeElementType> randTexture;
 
 const int NUM_RAND_VECS = 8192;
 
+#ifndef ALPHA_PASS_IBR
+#define ALPHA_PASS_IBR 1
+#endif
+
 int iDivUp(const int a, const int b)
 {
   return (a + b - 1) / b;
@@ -304,8 +308,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist,
                        void* d_depth, vvIbrImage::DepthPrecision dp,
-                       const float2 ibrPlanes, const bool gatherPass,
-                       const bool alphaPassIbr, float* d_gatheredAlpha)
+                       const float2 ibrPlanes, const bool alphaPassIbr,
+                       const bool gatherPass, float* d_gatheredAlpha)
 {
   const float opacityThreshold = 0.95f;
 
@@ -417,9 +421,11 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   bool justClippedPlane = false;
   bool justClippedSphere = false;
 
-  float3 maxDiffDepth = make_float3(0.0f, 0.0f, 0.0f);
-  float maxDiff     = 0.0f;
-  float lastAlpha   = 0.0f;
+  float3 ibrDepth    = make_float3(0.0f, 0.0f, 0.0f);
+  bool ibrDepthFound = false;
+  float ibrOpacityWeight = 0.8f;
+  float maxDiff      = 0.0f;
+  float lastAlpha    = 0.0f;
 
   // Ensure that dist is big enough
   bool infinite = false;
@@ -529,12 +535,23 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     if(t_useIbr)
     {
+#if !ALPHA_PASS_IBR
       if(dst.w - lastAlpha > maxDiff)
       {
-        maxDiff = dst.w - lastAlpha;
-        maxDiffDepth = pos;
+        maxDiff  = dst.w - lastAlpha;
+        ibrDepth = pos;
       }
       lastAlpha = dst.w;
+#else
+      if (alphaPassIbr && !gatherPass && !ibrDepthFound)
+      {
+        if (dst.w > (d_gatheredAlpha[y * texwidth + x] * ibrOpacityWeight))
+        {
+          ibrDepth = pos;
+          ibrDepthFound = true;
+        }
+      }
+#endif
     }
   }
 
@@ -542,7 +559,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   {
     float3 depth = make_float3(0.0f, 0.0f, 0.0f);
     // convert position to window-coordinates
-    const float4 depthWin = mulPost(c_MvPrMatrix, make_float4(maxDiffDepth.x, maxDiffDepth.y, maxDiffDepth.z, 1.0f));
+    const float4 depthWin = mulPost(c_MvPrMatrix, make_float4(ibrDepth  .x, ibrDepth  .y, ibrDepth  .z, 1.0f));
     depth = perspectiveDivide(depthWin);
 
     depth.z++;
@@ -973,7 +990,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _illumination = false;
   _interpolation = true;
   _opacityCorrection = true;
-  _gatherAlphaForIbr = false;
+  _gatherAlphaForIbr = ALPHA_PASS_IBR;
 
   _ibrPlanes[0] = 0.0f;
   _ibrPlanes[1] = 0.0f;
