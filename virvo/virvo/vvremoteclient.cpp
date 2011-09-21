@@ -45,6 +45,15 @@ vvRemoteClient::~vvRemoteClient()
   clearImages();
 }
 
+void vvRemoteClient::renderVolumeGL()
+{
+  if (render() != vvRemoteClient::VV_OK)
+  {
+    vvDebugMsg::msg(0, "vvRemoteClient::renderVolumeGL(): remote rendering error");
+  }
+  vvRenderer::renderVolumeGL();
+}
+
 vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::initSocket()");

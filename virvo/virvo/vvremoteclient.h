@@ -46,6 +46,7 @@ public:
   virtual ~vvRemoteClient();
 
   virtual ErrorType render() = 0;
+  void renderVolumeGL();
 
   void resize(int w, int h);
   void setCurrentFrame(int index);

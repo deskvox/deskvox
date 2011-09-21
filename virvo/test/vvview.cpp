@@ -508,20 +508,6 @@ void vvView::displayCallback(void)
   glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (vvRemoteClient *rc = dynamic_cast<vvRemoteClient *>(ds->renderer))
-  {
-    ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
-
-    if (rc->render() != vvRemoteClient::VV_OK)
-    {
-      cerr << "Remote rendering error" << endl;
-      exit(1);
-    }
-
-    glutSwapBuffers();
-  }
-  else
-  {
     ds->renderer->setParameter(vvRenderState::VV_QUALITY, ((ds->hqMode) ? ds->highQuality : ds->draftQuality));
 
     ds->renderer->setParameter(vvRenderer::VV_MEASURETIME, (float)ds->fpsMode);
@@ -613,7 +599,6 @@ void vvView::displayCallback(void)
     }
 
     glutSwapBuffers();
-  }
 
   vvGLTools::printGLError("leave vvView::displayCallback()");
 }
