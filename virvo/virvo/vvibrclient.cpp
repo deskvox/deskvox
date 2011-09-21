@@ -35,10 +35,8 @@ using std::endl;
 
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
                          const char* slaveName, int slavePort,
-                         const char* slaveFileName,
-                         const vvIbrImage::DepthPrecision dp)
-  : vvRemoteClient(vd, renderState, slaveName, slavePort, slaveFileName),
-    _depthPrecision(dp)
+                         const char* slaveFileName)
+  : vvRemoteClient(vd, renderState, slaveName, slavePort, slaveFileName)
 {
   vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
 
@@ -220,26 +218,18 @@ void vvIbrClient::initIbrFrame()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  switch(_depthPrecision)
+  uchar* depth = _ibrImg->getPixelDepth();
+  switch(_ibrImg->getDepthPrecision())
   {
-  case vvIbrImage::VV_UCHAR:
-    {
-      uchar* d_uchar = _ibrImg->getpixeldepthUchar();
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, d_uchar);
-    }
-    break;
-  case vvIbrImage::VV_USHORT:
-    {
-      ushort* d_ushort = _ibrImg->getpixeldepthUshort();
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_SHORT, d_ushort);
-    }
-    break;
-  case vvIbrImage::VV_UINT:
-    {
-      uint* d_uint = _ibrImg->getpixeldepthUint();
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_INT, d_uint);
-    }
-    break;
+    case 8:
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth);
+      break;
+    case 16:
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE16, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_SHORT, depth);
+      break;
+    case 32:
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, w, h, 0, GL_LUMINANCE, GL_FLOAT, depth);
+      break;
   }
 
   if(_width == w && _height == h)
@@ -401,13 +391,6 @@ void vvIbrClient::destroyThreads()
   _threadData = NULL;
 }
 
-void vvIbrClient::setDepthPrecision(vvIbrImage::DepthPrecision dp)
-{
-  vvDebugMsg::msg(3, "vvIbrClient::setDepthPrecision()");
-
-  _depthPrecision = dp;
-}
-
 void* vvIbrClient::getImageFromSocket(void* threadargs)
 {
   vvDebugMsg::msg(1, "vvIbrClient::getImageFromSocket()");
@@ -419,8 +402,6 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
   while (1)
   {
     vvIbrImage* img = static_cast<vvIbrImage *>(data->images->at(1));
-    img->setDepthPrecision(data->renderMaster->_depthPrecision);
-
     vvSocketIO::ErrorType err = data->renderMaster->_socket->getIbrImage(img);
     img->decode();
     if(err != vvSocketIO::VV_OK)

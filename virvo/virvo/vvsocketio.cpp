@@ -605,23 +605,23 @@ vvSocket::ErrorType vvSocketIO::getIbrImage(vvIbrImage* im)
   {
     return err;
   }
-  im->setDepthPrecision(static_cast<vvIbrImage::DepthPrecision>(dp));
+  im->setDepthPrecision(dp);
 
   im->alloc_pd();
 
   // get extended 2.5D-data
   switch(im->getDepthPrecision())
   {
-  case vvIbrImage::VV_UCHAR:
-    if((err = getData(im->getpixeldepthUchar(), im->getWidth()*im->getHeight(), vvSocketIO::VV_UCHAR)) != vvSocket::VV_OK)
+  case 8:
+    if((err = getData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_UCHAR)) != vvSocket::VV_OK)
       return err;
     break;
-  case vvIbrImage::VV_USHORT:
-    if((err = getData(im->getpixeldepthUshort(), im->getWidth()*im->getHeight(), vvSocketIO::VV_USHORT)) != vvSocket::VV_OK)
+  case 16:
+    if((err = getData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_USHORT)) != vvSocket::VV_OK)
       return err;
     break;
-  case vvIbrImage::VV_UINT:
-    if((err = getData(im->getpixeldepthUint(), im->getWidth()*im->getHeight(), vvSocketIO::VV_INT)) != vvSocket::VV_OK)
+  case 32:
+    if((err = getData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_FLOAT)) != vvSocket::VV_OK)
       return err;
     break;
   default:
@@ -662,16 +662,16 @@ vvSocket::ErrorType vvSocketIO::putIbrImage(vvIbrImage* im)
   // additional 2.5d-data
   switch(im->getDepthPrecision())
   {
-  case vvIbrImage::VV_UCHAR:
-    if((err = putData(im->getpixeldepthUchar(), im->getWidth()*im->getHeight(), vvSocketIO::VV_UCHAR)) != vvSocket::VV_OK)
+  case 8:
+    if((err = putData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_UCHAR)) != vvSocket::VV_OK)
       return err;
     break;
-  case vvIbrImage::VV_USHORT:
-    if((err = putData(im->getpixeldepthUshort(), im->getWidth()*im->getHeight(), vvSocketIO::VV_USHORT)) != vvSocket::VV_OK)
+  case 16:
+    if((err = putData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_USHORT)) != vvSocket::VV_OK)
       return err;
     break;
-  case vvIbrImage::VV_UINT:
-    if((err = putData(im->getpixeldepthUint(), im->getWidth()*im->getHeight(), vvSocketIO::VV_INT)) != vvSocket::VV_OK)
+  case 32:
+    if((err = putData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_FLOAT)) != vvSocket::VV_OK)
       return err;
     break;
   }

@@ -42,14 +42,12 @@ class VIRVOEXPORT vvIbrClient : public vvRemoteClient
 public:
   vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
               const char* slaveNames, int slavePorts,
-              const char* slaveFileNames,
-              vvIbrImage::DepthPrecision dp = vvIbrImage::VV_USHORT);
+              const char* slaveFileNames);
   ~vvIbrClient();
 
   ErrorType render();                                     ///< render image with depth-values
   void exit();                                            ///< check out from servers
 
-  void setDepthPrecision(vvIbrImage::DepthPrecision dp);  ///< set depth-value precision (1,2 or 4 bytes)
 private:
   enum Corner
   {
@@ -87,7 +85,6 @@ private:
   vvRemoteClient::ErrorType requestIbrFrame();            ///< remember envoironment and send image-request to server
   void initIbrFrame();                                    ///< initialize pixel-points in object space
 
-  vvIbrImage::DepthPrecision _depthPrecision;             ///< deph-value precision
   int _width, _height;                                    ///< dimensions of ibr image
 
   vvShaderFactory* _shaderFactory;

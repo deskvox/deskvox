@@ -36,14 +36,10 @@
 class VIRVOEXPORT vvIbrServer : public vvRemoteServer
 {
 public:
-  vvIbrServer(const vvIbrImage::DepthPrecision dp = vvIbrImage::VV_USHORT,
-              const vvRayRend::IbrMode mode = vvRayRend::VV_MAX_GRADIENT);
+  vvIbrServer(const vvRayRend::IbrMode mode = vvRayRend::VV_MAX_GRADIENT);
   ~vvIbrServer();
 
-  void setDepthPrecision(const vvIbrImage::DepthPrecision dp);
-
 private:
-  vvIbrImage::DepthPrecision _depthPrecision;  ///< precision of depth buffer for image based rendering
   vvRayRend::IbrMode         _ibrMode;
 
   void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);

@@ -53,7 +53,7 @@ public:
   void updateTransferFunction();
   void compositeVolume(int w = -1, int h = -1);
   void setParameter(ParameterType param, float newValue);
-  void setDepthPrecision(const vvIbrImage::DepthPrecision dp);
+  float getParameter(ParameterType param) const;
 
   bool getEarlyRayTermination() const;
   bool getIllumination() const;
@@ -79,7 +79,7 @@ private:
   bool _volumeCopyToGpuOk;          ///< must be true for memCopy to be run
   bool _gatherAlphaForIbr;          ///< Perform an alpha-gathering pass before the actual render pass
 
-  vvIbrImage::DepthPrecision _depthPrecision; ///< enum indicating precision of depth buffer for image based rendering
+  int _depthPrecision;              ///< number of bits in depth buffer for image based rendering
 
   void initRandTexture();
   void initVolumeTexture();

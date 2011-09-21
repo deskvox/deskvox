@@ -155,7 +155,7 @@ vvView::vvView()
   clientMode            = false;
   serverMode            = false;
   slavePort             = vvView::DEFAULT_PORT;
-  ibrPrecision          = vvIbrImage::VV_UCHAR;
+  ibrPrecision          = 8;
   ibrMode               = vvRayRend::VV_MAX_GRADIENT;
   rrMode                = RR_NONE;
   clipBuffer            = NULL;
@@ -223,7 +223,7 @@ void vvView::mainLoop(int argc, char *argv[])
       if((rrMode == RR_IBR) && (rendererType == vvRenderer::RAYREND))
       {
 #ifdef HAVE_CUDA
-        server = new vvIbrServer(ibrPrecision, ibrMode);
+        server = new vvIbrServer(ibrMode);
 #else
         std::cerr << "Image based remote rendering requires CUDA." << std::endl;
         break;
@@ -808,7 +808,8 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
     case vvRenderer::REMOTE_IBR:
       //renderer = new vvIbrClient(vd, renderState, );
       renderer = new vvIbrClient(vd, renderState, slaveNames[0], slavePorts[0]==-1 ? vvView::DEFAULT_PORT : slavePorts[0],
-              slaveFileNames.empty() ? NULL : slaveFileNames[0], ibrPrecision);
+              slaveFileNames.empty() ? NULL : slaveFileNames[0]);
+      renderer->setParameter(vvRenderer::VV_IBR_DEPTH_PREC, ibrPrecision);
       break;
     default:
       if (numDisplays > 0)

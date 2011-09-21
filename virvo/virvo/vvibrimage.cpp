@@ -20,45 +20,29 @@
 
 #include "vvibrimage.h"
 
-vvIbrImage::vvIbrImage(short h, short w, uchar* image, DepthPrecision dp)
+vvIbrImage::vvIbrImage(short h, short w, uchar* image, int dp)
 : vvImage(h, w, image)
 {
   _depthPrecision = dp;
-  _pixeldepthUchar  = 0;
-  _pixeldepthUshort = 0;
-  _pixeldepthUint   = 0;
+  _pixeldepth = NULL;
   _preprojectionMatrix.identity();
 }
 
 vvIbrImage::vvIbrImage()
 : vvImage()
 {
-  _pixeldepthUchar  = 0;
-  _pixeldepthUshort = 0;
-  _pixeldepthUint   = 0;
+  _pixeldepth = NULL;
   _preprojectionMatrix.identity();
 }
 
 vvIbrImage::~vvIbrImage()
 {
-  delete[] _pixeldepthUchar;
-  delete[] _pixeldepthUshort;
-  delete[] _pixeldepthUint;
+  delete[] _pixeldepth;
 }
 
-uchar* vvIbrImage::getpixeldepthUchar()
+uchar* vvIbrImage::getPixelDepth()
 {
-  return _pixeldepthUchar;
-}
-
-ushort* vvIbrImage::getpixeldepthUshort()
-{
-  return _pixeldepthUshort;
-}
-
-uint* vvIbrImage::getpixeldepthUint()
-{
-  return _pixeldepthUint;
+  return _pixeldepth;
 }
 
 //----------------------------------------------------------------------------
@@ -66,35 +50,22 @@ uint* vvIbrImage::getpixeldepthUint()
  */
 void vvIbrImage::alloc_pd()
 {
-  delete[] _pixeldepthUchar;
-  delete[] _pixeldepthUshort;
-  delete[] _pixeldepthUint;
+  delete[] _pixeldepth;
 
-  _pixeldepthUchar  = NULL;
-  _pixeldepthUshort = NULL;
-  _pixeldepthUint   = NULL;
-  switch(_depthPrecision)
-  {
-  case VV_UCHAR:
-    _pixeldepthUchar = new uchar[width*height];
-    break;
-  case VV_USHORT:
-    _pixeldepthUshort = new ushort[width*height];
-    break;
-  case VV_UINT:
-    _pixeldepthUint = new uint[width*height];
-    break;
-  }
+  _pixeldepth = new uchar[width*height*_depthPrecision/8];
 }
 
-vvIbrImage::DepthPrecision vvIbrImage::getDepthPrecision()
+int vvIbrImage::getDepthPrecision() const
 {
   return _depthPrecision;
 }
 
-void vvIbrImage::setDepthPrecision(DepthPrecision dp)
+void vvIbrImage::setDepthPrecision(int dp)
 {
+  assert(dp==8 || dp==16 || dp==32);
   _depthPrecision = dp;
+  delete[] _pixeldepth;
+  _pixeldepth = NULL;
 }
 
 void vvIbrImage::setReprojectionMatrix(const vvMatrix& reprojectionMatrix)

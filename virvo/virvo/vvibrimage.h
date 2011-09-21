@@ -28,32 +28,21 @@
 class VIRVOEXPORT vvIbrImage : public vvImage
 {
   public:
-    enum DepthPrecision
-    {
-      VV_UCHAR,
-      VV_USHORT,
-      VV_UINT
-    };
-
-    vvIbrImage(short, short, uchar*, DepthPrecision);
+    vvIbrImage(short w, short h, uchar *data, int depthPrecision);
     vvIbrImage();
     virtual ~vvIbrImage();
 
-    uchar*  getpixeldepthUchar();
-    ushort* getpixeldepthUshort();
-    uint*   getpixeldepthUint();
+    uchar*  getPixelDepth();
     void    alloc_pd();
 
-    void setDepthPrecision(DepthPrecision dp);
-    DepthPrecision getDepthPrecision();
+    void setDepthPrecision(int dp);
+    int getDepthPrecision() const;
 
     void setReprojectionMatrix(const vvMatrix& preprojectionMatrix);
     vvMatrix getReprojectionMatrix() const;
   private:
-    DepthPrecision  _depthPrecision;
-    uchar*          _pixeldepthUchar;
-    ushort*         _pixeldepthUshort;
-    uint*           _pixeldepthUint;
+    int  _depthPrecision; // 8: 8 bit int, 16: 16 bit int, 32: 32 bit float
+    uchar*          _pixeldepth;
 
     vvMatrix        _preprojectionMatrix;       ///< undo the camera transform this frame was rendered for
 };

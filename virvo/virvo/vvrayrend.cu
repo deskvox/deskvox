@@ -307,7 +307,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 L, const float3 H,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist,
-                       void* d_depth, vvIbrImage::DepthPrecision dp,
+                       void* d_depth, int dp,
                        const float2 ibrPlanes, const bool alphaPassIbr,
                        const bool gatherPass, float* d_gatheredAlpha)
 {
@@ -349,14 +349,14 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     {
       switch(dp)
       {
-      case vvIbrImage::VV_UCHAR:
+      case 8:
         ((unsigned char*)(d_depth))[y * texwidth + x] = 0;
         break;
-      case vvIbrImage::VV_USHORT:
+      case 16:
         ((unsigned short*)(d_depth))[y * texwidth + x] = 0;
         break;
-      case vvIbrImage::VV_UINT:
-        ((unsigned int*)(d_depth))[y * texwidth + x] = 0;
+      case 32:
+        ((float*)(d_depth))[y * texwidth + x] = 0.f;
         break;
       }
     }
@@ -580,14 +580,14 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     switch(dp)
     {
-    case vvIbrImage::VV_UCHAR:
+    case 8:
       ((uchar*)(d_depth))[y * texwidth + x] = (uchar)(depth.z*float(UCHAR_MAX));
       break;
-    case vvIbrImage::VV_USHORT:
+    case 16:
       ((ushort*)(d_depth))[y * texwidth + x] = (ushort)(depth.z*float(USHRT_MAX));
       break;
-    case vvIbrImage::VV_UINT:
-      ((uint*)(d_depth))[y * texwidth + x] = (uint)(depth.z*float(UINT_MAX));
+    case 32:
+      ((float*)(d_depth))[y * texwidth + x] = depth.z;
       break;
     }
   }
@@ -602,7 +602,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 typedef void(*renderKernel)(uchar4*, const uint, const uint, const float4,
                             const uint, const float, const float3, const float3,
                             const float3, const float3, const float3, const float3, const float3,
-                            const float, const float3, const float, void*, vvIbrImage::DepthPrecision,
+                            const float, const float3, const float, void*, int dp,
                             const float2, const bool alphaPassIbr, const bool gatherPass,
                             float* d_gatheredAlpha);
 
@@ -1088,27 +1088,10 @@ void vvRayRend::compositeVolume(int w, int h)
 
   intImg->setSize(vp[2], vp[3]);
 
-  switch(_depthPrecision)
-  {
-  case vvIbrImage::VV_UCHAR:
-    vvCuda::checkError(&ok, cudaMalloc(&d_depth, vp[2]*vp[3]*sizeof(uchar)),
-                       "vvRayRend::compositeVolume() - malloc uchar");
-    vvCuda::checkError(&ok, cudaMemset(d_depth, 0, vp[2]*vp[3]*sizeof(uchar)),
-                       "vvRayRend::compositeVolume() - memset uchar");
-    break;
-  case vvIbrImage::VV_USHORT:
-    vvCuda::checkError(&ok, cudaMalloc(&d_depth, vp[2]*vp[3]*sizeof(ushort)),
-                       "vvRayRend::compositeVolume() - malloc ushort");
-    vvCuda::checkError(&ok, cudaMemset(d_depth, 0, vp[2]*vp[3]*sizeof(ushort)),
-                       "vvRayRend::compositeVolume() - memset ushort");
-    break;
-  case vvIbrImage::VV_UINT:
-    vvCuda::checkError(&ok, cudaMalloc(&d_depth, vp[2]*vp[2]*sizeof(uint)),
-                       "vvRayRend::compositeVolume() - malloc uint");
-    vvCuda::checkError(&ok, cudaMemset(d_depth, 0, vp[2]*vp[2]*sizeof(uint)),
-                       "vvRayRend::compositeVolume() - memset uint");
-    break;
-  }
+  vvCuda::checkError(&ok, cudaMalloc(&d_depth, vp[2]*vp[3]*_depthPrecision/8),
+          "vvRayRend::compositeVolume() - malloc d_depth");
+  vvCuda::checkError(&ok, cudaMemset(d_depth, 0, vp[2]*vp[3]*_depthPrecision/8),
+          "vvRayRend::compositeVolume() - memset d_depth");
 
   dynamic_cast<vvCudaImg*>(intImg)->map();
 
@@ -1310,9 +1293,35 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue)
   case vvRenderer::VV_TERMINATEEARLY:
     _earlyRayTermination = (newValue!=0.0);
     break;
+  case vvRenderer::VV_IBR_DEPTH_PREC:
+    _depthPrecision = (int)newValue;
+    break;
   default:
     vvRenderer::setParameter(param, newValue);
     break;
+  }
+}
+
+//----------------------------------------------------------------------------
+// see parent
+float vvRayRend::getParameter(const ParameterType param) const
+{
+  vvDebugMsg::msg(3, "vvTexRend::getParameter()");
+
+  switch (param)
+  {
+  case vvRenderer::VV_SLICEINT:
+    return _interpolation ? 1.f : 0.f;
+  case vvRenderer::VV_LIGHTING:
+    return _illumination ? 1.f : 0.f;
+  case vvRenderer::VV_OPCORR:
+    return _opacityCorrection ? 1.f : 0.f;
+  case vvRenderer::VV_TERMINATEEARLY:
+    return _earlyRayTermination ? 1.f : 0.f;
+  case vvRenderer::VV_IBR_DEPTH_PREC:
+    return _depthPrecision;
+  default:
+    return vvRenderer::getParameter(param);
   }
 }
 
@@ -1510,11 +1519,6 @@ void vvRayRend::factorViewMatrix()
 void vvRayRend::findAxisRepresentations()
 {
   // Overwrite default behavior.
-}
-
-void vvRayRend::setDepthPrecision(vvIbrImage::DepthPrecision dp)
-{
-  _depthPrecision = dp;
 }
 
 #endif
