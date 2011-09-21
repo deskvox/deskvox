@@ -108,7 +108,6 @@ bool vvGLSLProgram::loadShaders()
   }
 
   _shadersLoaded = true;
-  enable();
 
   vvGLTools::printGLError("Leaving vvGLSLProgram::loadShaders()");
 
