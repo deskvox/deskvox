@@ -555,6 +555,11 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     }
   }
 
+#if ALPHA_PASS_IBR
+  if(!ibrDepthFound)
+    ibrDepth = pos;
+#endif
+
   if(t_useIbr)
   {
     float3 depth = make_float3(0.0f, 0.0f, 0.0f);
