@@ -95,9 +95,12 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     return vvRemoteClient::VV_SHADER_ERROR;
   }
 
+  vvMatrix imgMatrix;
   pthread_mutex_lock(&_slaveMutex);
   bool haveFrame = _haveFrame;
   bool newFrame = _newFrame;
+  if(_ibrImg)
+    imgMatrix = _ibrImg->getReprojectionMatrix();
   pthread_mutex_unlock(&_slaveMutex);
 
   vvGLTools::getModelviewMatrix(&_currentMv);
@@ -114,12 +117,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   if (newFrame) // no frame pending
   {
     // request new ibr frame if anything changed
-    vvMatrix imgMatrix;
-    if (_ibrImg != NULL)
-    {
-      imgMatrix = _ibrImg->getReprojectionMatrix();
-    }
-
     if (!currentMatrix.equal(&imgMatrix))
     {
       _changes = true;
@@ -160,7 +157,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   _shader->setParameterTex2D("rgbaTex", _rgbaTex);
   _shader->setParameterTex2D("depthTex", _depthTex);
 
-  vvMatrix imgMatrix = _ibrImg->getReprojectionMatrix();
   vvMatrix invImgMatrix;
   invImgMatrix.copy(&imgMatrix);
 
