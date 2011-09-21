@@ -83,8 +83,13 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 {
   vvDebugMsg::msg(1, "vvIbrClient::render()");
 
+  pthread_mutex_lock(&_slaveMutex);
+  bool haveFrame = _haveFrame;
+  bool newFrame = _newFrame;
+  pthread_mutex_unlock(&_slaveMutex);
+
   // Draw boundary lines
-  if (_boundaries)
+  if (_boundaries || !haveFrame)
   {
     const vvVector3 size(vd->getSize()); // volume size [world coordinates]
     drawBoundingBox(&size, &vd->pos, &_boundColor);
@@ -94,11 +99,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   {
     return vvRemoteClient::VV_SHADER_ERROR;
   }
-
-  pthread_mutex_lock(&_slaveMutex);
-  bool haveFrame = _haveFrame;
-  bool newFrame = _newFrame;
-  pthread_mutex_unlock(&_slaveMutex);
 
   vvGLTools::getModelviewMatrix(&_currentMv);
   vvGLTools::getProjectionMatrix(&_currentPr);
