@@ -508,97 +508,97 @@ void vvView::displayCallback(void)
   glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    ds->renderer->setParameter(vvRenderState::VV_QUALITY, ((ds->hqMode) ? ds->highQuality : ds->draftQuality));
+  ds->renderer->setParameter(vvRenderState::VV_QUALITY, ((ds->hqMode) ? ds->highQuality : ds->draftQuality));
 
-    ds->renderer->setParameter(vvRenderer::VV_MEASURETIME, (float)ds->fpsMode);
+  ds->renderer->setParameter(vvRenderer::VV_MEASURETIME, (float)ds->fpsMode);
 
-    // Draw volume:
-    glMatrixMode(GL_MODELVIEW);
-    if (ds->stereoMode>0)                          // stereo mode?
+  // Draw volume:
+  glMatrixMode(GL_MODELVIEW);
+  if (ds->stereoMode>0)                          // stereo mode?
+  {
+    if (ds->stereoMode==1)                      // active stereo?
     {
-      if (ds->stereoMode==1)                      // active stereo?
-      {
-        // Draw right image:
-        glDrawBuffer(GL_BACK_RIGHT);
-        ds->ov->updateModelviewMatrix(vvObjView::RIGHT_EYE);
-        ds->renderer->renderVolumeGL();
+      // Draw right image:
+      glDrawBuffer(GL_BACK_RIGHT);
+      ds->ov->updateModelviewMatrix(vvObjView::RIGHT_EYE);
+      ds->renderer->renderVolumeGL();
 
-        // Draw left image:
-        glDrawBuffer(GL_BACK_LEFT);
-        ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
-        ds->renderer->renderVolumeGL();
-      }
-                                                     // passive stereo?
-      else if (ds->stereoMode==2 || ds->stereoMode==3)
-      {
-        ds->ov->setAspectRatio((float)ds->winWidth / 2 / (float)ds->winHeight);
-        for (int i=0; i<2; ++i)
-        {
-          // Specify eye to draw:
-          if (i==0) ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
-          else      ds->ov->updateModelviewMatrix(vvObjView::RIGHT_EYE);
-
-          // Specify where to draw it:
-          if ((ds->stereoMode==2 && i==0) || (ds->stereoMode==3 && i==1))
-          {
-                                        // right
-            glViewport(ds->winWidth / 2, 0, ds->winWidth / 2, ds->winHeight);
-          }
-          else
-          {
-                                        // left
-            glViewport(0, 0, ds->winWidth / 2, ds->winHeight);
-          }
-          ds->renderer->renderVolumeGL();
-        }
-
-        // Reset viewport and aspect ratio:
-        glViewport(0, 0, ds->winWidth, ds->winHeight);
-        ds->ov->setAspectRatio((float)ds->winWidth / (float)ds->winHeight);
-      }
-    }
-    else                                           // mono mode
-    {
-      glDrawBuffer(GL_BACK);
+      // Draw left image:
+      glDrawBuffer(GL_BACK_LEFT);
       ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
+      ds->renderer->renderVolumeGL();
+    }
+    // passive stereo?
+    else if (ds->stereoMode==2 || ds->stereoMode==3)
+    {
+      ds->ov->setAspectRatio((float)ds->winWidth / 2 / (float)ds->winHeight);
+      for (int i=0; i<2; ++i)
+      {
+        // Specify eye to draw:
+        if (i==0) ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
+        else      ds->ov->updateModelviewMatrix(vvObjView::RIGHT_EYE);
+
+        // Specify where to draw it:
+        if ((ds->stereoMode==2 && i==0) || (ds->stereoMode==3 && i==1))
+        {
+          // right
+          glViewport(ds->winWidth / 2, 0, ds->winWidth / 2, ds->winHeight);
+        }
+        else
+        {
+          // left
+          glViewport(0, 0, ds->winWidth / 2, ds->winHeight);
+        }
+        ds->renderer->renderVolumeGL();
+      }
+
+      // Reset viewport and aspect ratio:
+      glViewport(0, 0, ds->winWidth, ds->winHeight);
+      ds->ov->setAspectRatio((float)ds->winWidth / (float)ds->winHeight);
+    }
+  }
+  else                                           // mono mode
+  {
+    glDrawBuffer(GL_BACK);
+    ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
 #ifdef CLIPPING_TEST
-      ds->renderClipObject();
-      ds->renderQuad();
+    ds->renderClipObject();
+    ds->renderQuad();
 #endif
 
 #ifdef FBO_WITH_GEOMETRY_TEST
-      ds->renderCube();
-      ds->renderer->_renderState._opaqueGeometryPresent = true;
+    ds->renderCube();
+    ds->renderer->_renderState._opaqueGeometryPresent = true;
 #endif
-      ds->renderer->renderVolumeGL();
-      //ds->renderCube();
-    }
+    ds->renderer->renderVolumeGL();
+    //ds->renderCube();
+  }
 
-    if (ds->iconMode)
+  if (ds->iconMode)
+  {
+    if (ds->vd->iconSize>0)
     {
-      if (ds->vd->iconSize>0)
-      {
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadIdentity();
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-        glRasterPos2f(-1.0f, -0.0f);
-        glPixelZoom(1.0f, -1.0f);
-        glDrawPixels(ds->vd->iconSize, ds->vd->iconSize, GL_RGBA, GL_UNSIGNED_BYTE, ds->vd->iconData);
-        glPopMatrix();
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-      }
-      else
-      {
-        cerr << "No icon stored" << endl;
-      }
+      glMatrixMode(GL_PROJECTION);
+      glPushMatrix();
+      glLoadIdentity();
+      glMatrixMode(GL_MODELVIEW);
+      glPushMatrix();
+      glLoadIdentity();
+      glRasterPos2f(-1.0f, -0.0f);
+      glPixelZoom(1.0f, -1.0f);
+      glDrawPixels(ds->vd->iconSize, ds->vd->iconSize, GL_RGBA, GL_UNSIGNED_BYTE, ds->vd->iconData);
+      glPopMatrix();
+      glMatrixMode(GL_PROJECTION);
+      glPopMatrix();
+      glMatrixMode(GL_MODELVIEW);
     }
+    else
+    {
+      cerr << "No icon stored" << endl;
+    }
+  }
 
-    glutSwapBuffers();
+  glutSwapBuffers();
 
   vvGLTools::printGLError("leave vvView::displayCallback()");
 }
