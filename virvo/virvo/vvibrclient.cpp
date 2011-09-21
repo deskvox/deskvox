@@ -95,12 +95,9 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     return vvRemoteClient::VV_SHADER_ERROR;
   }
 
-  vvMatrix imgMatrix;
   pthread_mutex_lock(&_slaveMutex);
   bool haveFrame = _haveFrame;
   bool newFrame = _newFrame;
-  if(_ibrImg)
-    imgMatrix = _ibrImg->getReprojectionMatrix();
   pthread_mutex_unlock(&_slaveMutex);
 
   vvGLTools::getModelviewMatrix(&_currentMv);
@@ -117,7 +114,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   if (newFrame) // no frame pending
   {
     // request new ibr frame if anything changed
-    if (!currentMatrix.equal(&imgMatrix))
+    if (!currentMatrix.equal(&_imgMatrix))
     {
       _changes = true;
     }
@@ -154,20 +151,15 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   _shader->enable();
 
+  _shader->setParameter1f("width", _width);
+  _shader->setParameter1f("height", _height);
   _shader->setParameterTex2D("rgbaTex", _rgbaTex);
   _shader->setParameterTex2D("depthTex", _depthTex);
 
-  vvMatrix invImgMatrix;
-  invImgMatrix.copy(&imgMatrix);
-
-  vvMatrix reprojectionMatrix = _ibrImg->getReprojectionMatrix() * currentMatrix;
-
+  vvMatrix reprojectionMatrix = _imgMatrix * currentMatrix;
   reprojectionMatrix.transpose();
-
   float reprojectionMatrixGL[16];
   reprojectionMatrix.get(reprojectionMatrixGL);
-  _shader->setParameter1f("width", _ibrImg->getWidth());
-  _shader->setParameter1f("height", _ibrImg->getHeight());
   _shader->setParameterMatrix4f("reprojectionMatrix" , reprojectionMatrixGL);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
@@ -210,6 +202,7 @@ void vvIbrClient::initIbrFrame()
 
   const int h = _ibrImg->getHeight();
   const int w = _ibrImg->getWidth();
+  _imgMatrix = _ibrImg->getReprojectionMatrix();
 
   // get pixel and depth-data
   glBindTexture(GL_TEXTURE_2D, _rgbaTex);

@@ -82,6 +82,7 @@ private:
 
   vvMatrix _currentMv;                                    ///< Current modelview matrix
   vvMatrix _currentPr;                                    ///< Current projection matrix
+  vvMatrix _imgMatrix;                                    ///< Reprojection matrix of _ibrImg
   vvIbrImage* _ibrImg;                                    ///< Img retrieved from server
   vvRemoteClient::ErrorType requestIbrFrame();            ///< remember envoironment and send image-request to server
   void initIbrFrame();                                    ///< initialize pixel-points in object space
