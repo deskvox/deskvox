@@ -1,4 +1,4 @@
-/ Virvo - Virtual Reality Volume Rendering
+// Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
 // Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
@@ -108,7 +108,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   img->setDepthPrecision(dp);
   img->alloc_pd();
   uchar* depth = img->getPixelDepth();
-  cudaMemcpy(depth, rayRend->d_depth, vp[2]*vp[3]*dp/8, cudaMemcpyDeviceToHost);
+  cudaMemcpy(depth, rayRend->getDeviceDepth(), vp[2]*vp[3]*dp/8, cudaMemcpyDeviceToHost);
 
   vvMatrix vpMatrix;
   vpMatrix.identity();

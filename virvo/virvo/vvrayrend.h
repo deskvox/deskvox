@@ -80,6 +80,8 @@ private:
   bool _gatherAlphaForIbr;          ///< Perform an alpha-gathering pass before the actual render pass
 
   int _depthPrecision;              ///< number of bits in depth buffer for image based rendering
+  void* d_depth;
+  float _depthRange[2];
 
   void initRandTexture();
   void initVolumeTexture();

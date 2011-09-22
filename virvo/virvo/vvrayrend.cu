@@ -1010,7 +1010,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _depthRange[0] = 0.0f;
   _depthRange[1] = 0.0f;
 
-  _depthPrecision = vvIbrImage::VV_UCHAR;
+  _depthPrecision = 8;
 
   _rgbaTF = NULL;
 
@@ -1107,14 +1107,6 @@ void vvRayRend::compositeVolume(int, int)
   allocIbrDepth(vp[2], vp[3]);
   intImg->setSize(vp[2], vp[3]);
 
-<<<<<<< HEAD
-  vvCuda::checkError(&ok, cudaMalloc(&d_depth, vp[2]*vp[3]*_depthPrecision/8),
-          "vvRayRend::compositeVolume() - malloc d_depth");
-  vvCuda::checkError(&ok, cudaMemset(d_depth, 0, vp[2]*vp[3]*_depthPrecision/8),
-          "vvRayRend::compositeVolume() - memset d_depth");
-
-=======
->>>>>>> Make ibr specific variables in rayrend private
   dynamic_cast<vvCudaImg*>(intImg)->map();
 
   dim3 blockSize(16, 16);
@@ -1560,6 +1552,16 @@ void vvRayRend::factorViewMatrix()
 void vvRayRend::findAxisRepresentations()
 {
   // Overwrite default behavior.
+}
+
+bool vvRayRend::allocIbrDepth(const int w, const int h)
+{
+  bool ok;
+  vvCuda::checkError(&ok, cudaMalloc(&d_depth, w * h * _depthPrecision/8),
+                     "vvRayRend::compositeVolume() - malloc d_depth");
+  vvCuda::checkError(&ok, cudaMemset(d_depth, 0, w * h * _depthPrecision/8),
+                     "vvRayRend::compositeVolume() - memset d_depth");
+  return ok;
 }
 
 #endif
