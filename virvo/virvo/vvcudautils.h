@@ -298,15 +298,7 @@ inline __device__ __host__ float dot(const float4& v1, const float4& v2)
 
 inline __device__ __host__ float norm(const float3& v)
 {
-  const float f = v.x * v.x + v.y * v.y + v.z * v.z;
-  if (fabs(f - 1.0f) < (1e-4 * 1e-4))
-  {
-    return 1.0f;
-  }
-  else
-  {
-    return sqrtf(f);
-  }
+  return sqrtf(dot(v, v));
 }
 
 inline __device__ __host__ float3 normalize(const float3& v)
