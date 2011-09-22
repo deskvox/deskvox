@@ -789,7 +789,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
 #endif
     case vvRenderer::REMOTE_IBR:
       //renderer = new vvIbrClient(vd, renderState, );
-      renderer = new vvIbrClient(vd, renderState, slaveNames[0], slavePorts[0]==-1 ? vvView::DEFAULT_PORT : slavePorts[0],
+      renderer = new vvIbrClient(vd, renderState, slaveNames[0], slavePorts[0]==-1 ? slavePort : slavePorts[0],
               slaveFileNames.empty() ? NULL : slaveFileNames[0]);
       renderer->setParameter(vvRenderer::VV_IBR_DEPTH_PREC, ibrPrecision);
       break;
