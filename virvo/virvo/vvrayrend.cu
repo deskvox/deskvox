@@ -424,8 +424,10 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   float3 ibrDepth    = make_float3(0.0f, 0.0f, 0.0f);
   bool ibrDepthFound = false;
   float ibrOpacityWeight = 0.8f;
+#if !ALPHA_PASS_IBR
   float maxDiff      = 0.0f;
   float lastAlpha    = 0.0f;
+#endif
 
   // Ensure that dist is big enough
   bool infinite = false;
