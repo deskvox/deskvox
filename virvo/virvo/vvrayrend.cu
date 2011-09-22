@@ -992,6 +992,8 @@ renderKernel getKernel(vvRayRend* rayRend)
 vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvSoftVR(vd, renderState)
 {
+  vvDebugMsg::msg(1, "vvRayRend::vvRayRend()");
+
   glewInit();
 
   bool ok;
@@ -1037,6 +1039,8 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
 vvRayRend::~vvRayRend()
 {
+  vvDebugMsg::msg(1, "vvRayRend::~vvRayRend()");
+
   bool ok;
   for (int f=0; f<d_volumeArrays.size(); ++f)
   {
@@ -1062,6 +1066,8 @@ int vvRayRend::getLUTSize() const
 
 void vvRayRend::updateTransferFunction()
 {
+  vvDebugMsg::msg(3, "vvRayRend::updateTransferFunction()");
+
   bool ok;
 
   int lutEntries = getLUTSize();
@@ -1091,7 +1097,7 @@ void vvRayRend::updateTransferFunction()
 
 void vvRayRend::compositeVolume(int, int)
 {
-  vvDebugMsg::msg(1, "vvRayRend::compositeVolume()");
+  vvDebugMsg::msg(3, "vvRayRend::compositeVolume()");
 
   bool ok;
 
@@ -1341,41 +1347,56 @@ float vvRayRend::getParameter(const ParameterType param) const
 
 bool vvRayRend::getEarlyRayTermination() const
 {
+  vvDebugMsg::msg(3, "vvRayRend::getEarlyRayTermination()");
+
   return _earlyRayTermination;
 }
 bool vvRayRend::getIllumination() const
 {
+  vvDebugMsg::msg(3, "vvRayRend::getIllumination()");
+
   return _illumination;
 }
 
 bool vvRayRend::getInterpolation() const
 {
+  vvDebugMsg::msg(3, "vvRayRend::getInterpolation()");
+
   return _interpolation;
 }
 
 bool vvRayRend::getOpacityCorrection() const
 {
+  vvDebugMsg::msg(3, "vvRayRend::getOpacityCorrection()");
+
   return _opacityCorrection;
 }
 
 void* vvRayRend::getDeviceDepth() const
 {
+  vvDebugMsg::msg(3, "vvRayRend::getDeviceDepth()");
+
   return d_depth;
 }
 
 void vvRayRend::setDepthRange(const float min, const float max)
 {
+  vvDebugMsg::msg(3, "vvRayRend::setDepthRange()");
+
   _depthRange[0] = min;
   _depthRange[1] = max;
 }
 
 const float* vvRayRend::getDepthRange() const
 {
+  vvDebugMsg::msg(3, "vvRayRend::getDepthRange()");
   return _depthRange;
 }
 
 void vvRayRend::initRandTexture()
 {
+  vvDebugMsg::msg(3, "vvRayRend::initRandTexture()");
+
   bool ok;
 
   const float scale = 2.0f;
@@ -1410,6 +1431,8 @@ void vvRayRend::initRandTexture()
 
 void vvRayRend::initVolumeTexture()
 {
+  vvDebugMsg::msg(3, "vvRayRend::initVolumeTexture()");
+
   bool ok;
 
   cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
@@ -1532,7 +1555,7 @@ void vvRayRend::initVolumeTexture()
 
 void vvRayRend::factorViewMatrix()
 {
-  vvDebugMsg::msg(1, "vvRayRend::factorViewMatrix()");
+  vvDebugMsg::msg(3, "vvRayRend::factorViewMatrix()");
 
   vvGLTools::Viewport vp = vvGLTools::getViewport();
   const int w = vvToolshed::getTextureSize(vp[2]);
@@ -1556,6 +1579,8 @@ void vvRayRend::findAxisRepresentations()
 
 bool vvRayRend::allocIbrDepth(const int w, const int h)
 {
+  vvDebugMsg::msg(3, "vvRayRend::allocIbrDepth()");
+
   bool ok = true;
   vvCuda::checkError(&ok, cudaMalloc(&d_depth, w * h * _depthPrecision/8),
                      "vvRayRend::compositeVolume() - malloc d_depth");
