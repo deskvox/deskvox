@@ -390,7 +390,6 @@ void vvView::mainLoop(int argc, char *argv[])
     if (rrMode == RR_IBR)
     {
       setRendererType(vvRenderer::REMOTE_IBR);
-      //_remoteClient = new vvIbrClient(vd, ds->renderState, slaveNames, slavePorts, slaveFileNames, ibrPrecision, ibrScale);
     }
     else if(rrMode == RR_CLUSTER)
     {
@@ -398,18 +397,6 @@ void vvView::mainLoop(int argc, char *argv[])
     }
 
     setRenderer(currentGeom, currentVoxels);
-
-#if 0
-    if (rrMode == RR_IBR)
-    {
-      if (static_cast<vvIbrClient *>(ds->renderer)->initSocket(vvView::DEFAULT_PORT, slaveFileNames.empty(), vd)
-              != vvRemoteClient::VV_OK)
-      {
-        std::cerr << "network communication failed" << std::endl;
-        exit(1);
-      }
-    }
-#endif
 
     const vvVector3 size = vd->getSize();
     const float maxedge = ts_max(size[0], size[1], size[2]);
@@ -488,11 +475,6 @@ void vvView::reshapeCallback(int w, int h)
   glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
                                                  // clear window
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  if (vvRemoteClient *rc = dynamic_cast<vvRemoteClient *>(ds->renderer))
-  {
-    rc->resize(w, h);
-  }
 }
 
 

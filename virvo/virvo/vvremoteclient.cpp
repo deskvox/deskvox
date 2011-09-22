@@ -31,7 +31,9 @@ vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
     _slaveName(slaveName),
     _slavePort(slavePort),
     _slaveFileName(slaveFileName),
-    _changes(true)
+    _changes(true),
+    _viewportWidth(-1),
+    _viewportHeight(-1)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::vvRemoteClient()");
 
@@ -47,6 +49,13 @@ vvRemoteClient::~vvRemoteClient()
 
 void vvRemoteClient::renderVolumeGL()
 {
+  GLint vp[4];
+  glGetIntegerv(GL_VIEWPORT, vp);
+  if(vp[0] != _viewportWidth || vp[1] != _viewportHeight)
+  {
+    resize(vp[2], vp[3]);
+  }
+
   if (render() != vvRemoteClient::VV_OK)
   {
     vvDebugMsg::msg(0, "vvRemoteClient::renderVolumeGL(): remote rendering error");
@@ -105,6 +114,8 @@ void vvRemoteClient::resize(const int w, const int h)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::resize()");
   _changes = true;
+  _viewportWidth = w;
+  _viewportHeight = h;
 
   if (_socket->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
   {

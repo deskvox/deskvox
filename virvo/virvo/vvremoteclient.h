@@ -48,7 +48,6 @@ public:
   virtual ErrorType render() = 0;
   void renderVolumeGL();
 
-  void resize(int w, int h);
   void setCurrentFrame(int index);
   void setMipMode(int mipMode);
   void setObjectDirection(const vvVector3* od);
@@ -74,7 +73,9 @@ protected:
 
   void clearImages();
   bool _changes; ///< indicate if a new rendering is required
+  int _viewportWidth, _viewportHeight;
 private:
+  void resize(int w, int h);
   virtual void destroyThreads() { }
 
   ErrorType initSocket(vvVolDesc*& vd);
