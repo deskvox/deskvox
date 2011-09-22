@@ -436,3 +436,4 @@ void vvIbrClient::createImages()
   for(int i=0; i<2; ++i)
     _images.push_back(new vvIbrImage);
 }
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

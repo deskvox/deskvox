@@ -5297,3 +5297,4 @@ void vvVolDesc::computeMinMaxArrays(uchar *minArray, uchar *maxArray, int downsa
 }
 
 ///// EOF /////
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

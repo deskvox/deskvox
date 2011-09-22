@@ -209,3 +209,4 @@ class VIRVOEXPORT vvvffile
     void    setValues(int vers_numb, int head_size, int temp_numb, char* temp_file);
 };
 #endif
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

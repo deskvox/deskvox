@@ -421,3 +421,4 @@ void vvSphere::initDodecaeder()
 
   copyVerticesWorld();
 }
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

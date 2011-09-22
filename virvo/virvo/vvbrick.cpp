@@ -344,3 +344,4 @@ void vvBrick::sortByCenter(std::vector<vvBrick*>& bricks, const vvVector3& axis)
   }
   std::sort(bricks.begin(), bricks.end(), vvBrick::Compare());
 }
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

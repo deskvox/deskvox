@@ -891,3 +891,4 @@ int vvImage::gen_RLC_decode(uchar* in, uchar* out, int size, int symbol_size, in
 }
 
 //----------------------------------------------------------------------------
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -83,3 +83,4 @@ void vvColor::getHSB(float& h, float& s, float& b)
 {
   vvToolshed::RGBtoHSB(e[0], e[1], e[2], &h, &s, &b);
 }
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

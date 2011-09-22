@@ -3428,3 +3428,4 @@ void vvvffile::getResolution(int* x, int* y, int* z, int* b)
   *b = bytes_per_voxel;
   return;
 }
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
