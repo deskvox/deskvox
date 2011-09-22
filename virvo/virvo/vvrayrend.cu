@@ -1556,7 +1556,7 @@ void vvRayRend::findAxisRepresentations()
 
 bool vvRayRend::allocIbrDepth(const int w, const int h)
 {
-  bool ok;
+  bool ok = true;
   vvCuda::checkError(&ok, cudaMalloc(&d_depth, w * h * _depthPrecision/8),
                      "vvRayRend::compositeVolume() - malloc d_depth");
   vvCuda::checkError(&ok, cudaMemset(d_depth, 0, w * h * _depthPrecision/8),
