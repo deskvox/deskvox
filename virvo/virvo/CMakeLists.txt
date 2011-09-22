@@ -113,9 +113,9 @@ SET(VIRVO_SOURCES
   vvfileio.cpp
   vvglslprogram.cpp
   vvgltools.cpp
-  vvibrclient.cpp
+  #vvibrclient.cpp
   vvibrimage.cpp
-  vvibrserver.cpp
+  #vvibrserver.cpp
   vvideo.cpp
   vvimage.cpp
   vvoffscreenbuffer.cpp
