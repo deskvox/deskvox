@@ -4,7 +4,15 @@
 // Institution:       University of Stuttgart, Supercomputing Center
 // History:           19-12-2002  Creation date
 //****************************************************************************
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+#ifdef HAVE_FFMPEG
+#define VV_FFMPEG
+#else
 #undef VV_FFMPEG
+#endif
 
 #include "vvideo.h"
 #include "vvdebugmsg.h"
@@ -22,7 +30,8 @@
 #include <string.h>
 
 #ifdef VV_FFMPEG
-#include <ffmpeg/avcodec.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 
 bool vvideo::global_avcodec_init_done = false;
 #elif defined(VV_XVID)
@@ -91,8 +100,8 @@ enc_handle(NULL), dec_handle(NULL)
     global_avcodec_init_done = true;
   }
   codec_id = (int)CODEC_ID_MPEG1VIDEO;
-  codec_id = (int)CODEC_ID_RAWVIDEO;
   codec_id = (int)CODEC_ID_MJPEG;
+  codec_id = (int)CODEC_ID_RAWVIDEO;
 #endif
 }
 
@@ -132,16 +141,6 @@ int vvideo::create_enc(int w, int h)
   enc_context->bit_rate = bitrate;
   enc_context->width = w;
   enc_context->height = h;
-  if(fabs(framerate - (int)framerate) < 0.001)
-  {
-    enc_context->frame_rate = (int)framerate;
-    enc_context->frame_rate_base = 1;
-  }
-  else
-  {
-    enc_context->frame_rate = (int)(framerate*1000.0);
-    enc_context->frame_rate_base = 1000;
-  }
   enc_context->gop_size = max_key_interval;
   enc_context->max_b_frames = 0;                  // XXX: wie viele? style-abhaengig?
   enc_context->pix_fmt = PIX_FMT_RGB24;
@@ -426,20 +425,24 @@ int vvideo::enc_frame(const unsigned char* src, unsigned char* dst, int* enc_siz
 int vvideo::dec_frame(const unsigned char* src, unsigned char* dst, int src_size, int* dst_size)
 {
 #if defined(VV_FFMPEG)
-  int got_picture;
-#if 0
-  *dst_size = avcodec_decode_video(dec_context, dec_picture, &got_picture, (unsigned char *)src, src_size);
+  int got_picture = 0;
+#if LIBAVCODEC_VERSION_MAJOR > 52
+  AVPacket pkt;
+  av_init_packet(&pkt);
+  pkt.data = (uint8_t*)src;
+  pkt.size = src_size;
+  *dst_size = avcodec_decode_video2(dec_context, dec_picture, &got_picture, &pkt);
 #else
-  *dst_size = avcodec_decode_video(dec_context, dec_picture, &got_picture, (unsigned char *)src, src_size);
-  memcpy(dst, dec_picture->data[0], dec_context->width*dec_context->height*3);
+  *dst_size = avcodec_decode_video(dec_context, dec_picture, &got_picture, src, src_size);
 #endif
+  memcpy(dst, dec_picture->data[0], dec_context->width*dec_context->height*3);
   if(*dst_size != src_size)
     fprintf(stderr, "src_size=%d, dst_size=%d\n", src_size, *dst_size);
   *dst_size = dec_context->width * dec_context->height * 3;
 
   if(!got_picture)
   {
-    fprintf(stderr, "no picture: src_size=%d\n");
+    fprintf(stderr, "no picture: src_size=%d\n", src_size);
     return -1;
   }
 #if 0
