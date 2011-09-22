@@ -30,6 +30,8 @@
 #include <string.h>
 
 #ifdef VV_FFMPEG
+#define __STDC_CONSTANT_MACROS
+#include <stdint.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
