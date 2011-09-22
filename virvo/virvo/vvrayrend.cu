@@ -347,8 +347,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   ray.d = ray.d - ray.o;
   ray.d = normalize(ray.d);
 
-  float tnear;
-  float tfar;
+  float tnear = 0.0f;
+  float tfar = 0.0f;
   const bool hit = intersectBox(ray, probePos - probeSizeHalf, probePos + probeSizeHalf, &tnear, &tfar);
   if (!hit)
   {
@@ -358,10 +358,10 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       switch(dp)
       {
       case 8:
-        ((unsigned char*)(d_depth))[y * texwidth + x] = 0;
+        ((uchar*)(d_depth))[y * texwidth + x] = 0;
         break;
       case 16:
-        ((unsigned short*)(d_depth))[y * texwidth + x] = 0;
+        ((ushort*)(d_depth))[y * texwidth + x] = 0;
         break;
       case 32:
         ((float*)(d_depth))[y * texwidth + x] = 0.f;
@@ -383,8 +383,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   }
 
   // Calc hits with clip sphere.
-  float tsnear;
-  float tsfar;
+  float tsnear = 0.0f;
+  float tsfar = 0.0f;
   if (t_clipSphere)
   {
     // In probe mode, rays that don't hit the sphere simply aren't rendered.
@@ -397,14 +397,14 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   }
 
   // Calc hits with clip plane.
-  float tpnear;
-  float nddot;
+  float tpnear = 0.0f;
+  float nddot = 0.0f;
   if (t_clipPlane)
   {
     intersectPlane(ray, planeNormal, planeDist, &nddot, &tpnear);
   }
 
-  float4 dst;
+  float4 dst = make_float4(0.0f);
 
   if (t_mipMode > 0)
   {
@@ -438,9 +438,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 #endif
 
   // Ensure that dist is big enough
-  bool infinite = false;
-  if(tnear+dist != tnear && tfar+dist != tfar)
-    infinite = true;
+  const bool infinite = (tnear+dist != tnear && tfar+dist != tfar);
 
   while(infinite)
   {
@@ -574,19 +572,15 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   {
     float3 depth = make_float3(0.0f, 0.0f, 0.0f);
     // convert position to window-coordinates
-    const float4 depthWin = mulPost(c_MvPrMatrix, make_float4(ibrDepth  .x, ibrDepth  .y, ibrDepth  .z, 1.0f));
+    const float4 depthWin = mulPost(c_MvPrMatrix, make_float4(ibrDepth.x, ibrDepth.y, ibrDepth.z, 1.0f));
     depth = perspectiveDivide(depthWin);
 
-    depth.z++;
-    depth.z = depth.z/2.0f;
+    // Scale to 0.0 - 1.0
+    depth.z += 1.0f;
+    depth.z *= 0.5f;
 
-    if(ibrPlanes.x != 0.0f && ibrPlanes.y != 0.0f) // SCALED depth mode
-    {
-      depth.z = (depth.z - ibrPlanes.x) / (ibrPlanes.y - ibrPlanes.x);
-    }
-
-    if     (depth.z > 1.0f) depth.z = 1.0f;
-    else if(depth.z < 0.0f) depth.z = 0.0f;
+    depth.z = (depth.z - ibrPlanes.x) / (ibrPlanes.y - ibrPlanes.x);
+    clamp(depth.z);
 
     switch(dp)
     {
