@@ -1254,7 +1254,7 @@ void vvRayRend::compositeVolume(int, int)
     float* d_gatheredAlpha = NULL;
     if (_gatherAlphaForIbr)
     {
-      const size_t size = vp[2] * vp[2] * sizeof(float);
+      const size_t size = vp[2] * vp[3] * sizeof(float);
       vvCuda::checkError(&ok, cudaMalloc(&d_gatheredAlpha, size),
                          "vvRayRend::compositeVolume() - malloc gathered alpha");
       vvCuda::checkError(&ok, cudaMemset(d_gatheredAlpha, 0, size),
