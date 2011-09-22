@@ -1,4 +1,4 @@
-// Virvo - Virtual Reality Volume Rendering
+/ Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
 // Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
@@ -94,8 +94,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   min4.perspectiveDivide();
   max4.perspectiveDivide();
 
-  rayRend->_ibrPlanes[0] = (min4[2]+1.f)/2.f;
-  rayRend->_ibrPlanes[1] = (max4[2]+1.f)/2.f;
+  rayRend->setDepthRange((min4[2]+1.f)/2.f, (max4[2]+1.f)/2.f);
 
   int dp = rayRend->getParameter(vvRenderer::VV_IBR_DEPTH_PREC);
   rayRend->compositeVolume();
@@ -125,8 +124,8 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 
   vvMatrix depthScaleMatrix;
   depthScaleMatrix.identity();
-  depthScaleMatrix.scale(1.0f, 1.0f, (rayRend->_ibrPlanes[1] - rayRend->_ibrPlanes[0]));
-  depthScaleMatrix.translate(0.0f, 0.0f, rayRend->_ibrPlanes[0]);
+  depthScaleMatrix.scale(1.0f, 1.0f, (rayRend->getDepthRange()[1] - rayRend->getDepthRange()[0]));
+  depthScaleMatrix.translate(0.0f, 0.0f, rayRend->getDepthRange()[0]);
 
   img->setReprojectionMatrix(depthScaleMatrix * vpMatrix * invModelviewProjection);
   _socket->putIbrImage(img);

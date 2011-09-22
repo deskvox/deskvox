@@ -60,9 +60,9 @@ public:
   bool getInterpolation() const;
   bool getOpacityCorrection() const;
 
-  void* d_depth;
-
-  float _ibrPlanes[2];                         ///< ibr clipping planes, updated every frame
+  void* getDeviceDepth() const;
+  void setDepthRange(float min, float max);
+  const float* getDepthRange() const;
 
 private:
   cudaChannelFormatDesc _channelDesc;
@@ -85,6 +85,7 @@ private:
   void initVolumeTexture();
   void factorViewMatrix();
   void findAxisRepresentations();
+  bool allocIbrDepth(int w, int h);
 };
 
 #endif // HAVE_CUDA

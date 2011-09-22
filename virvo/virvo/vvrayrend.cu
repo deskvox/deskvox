@@ -50,6 +50,14 @@ const int NUM_RAND_VECS = 8192;
 #define ALPHA_PASS_IBR 1
 #endif
 
+#ifndef ENTRANCE_IBR
+#define ENTRANCE_IBR 0
+#endif
+
+#ifndef EXIT_IBR
+#define EXIT_IBR 0
+#endif
+
 int iDivUp(const int a, const int b)
 {
   return (a + b - 1) / b;
@@ -999,12 +1007,16 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _opacityCorrection = true;
   _gatherAlphaForIbr = ALPHA_PASS_IBR;
 
-  _ibrPlanes[0] = 0.0f;
-  _ibrPlanes[1] = 0.0f;
+  _depthRange[0] = 0.0f;
+  _depthRange[1] = 0.0f;
+
+  _depthPrecision = vvIbrImage::VV_UCHAR;
 
   _rgbaTF = NULL;
 
+  d_depth = NULL;
   intImg = new vvCudaImg(0, 0);
+  allocIbrDepth(0, 0);
 
   const vvCudaImg::Mode mode = dynamic_cast<vvCudaImg*>(intImg)->getMode();
   if (mode == vvCudaImg::TEXTURE)
@@ -1014,12 +1026,12 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
   factorViewMatrix();
 
-  d_randArray = 0;
+  d_randArray = NULL;
   initRandTexture();
 
   initVolumeTexture();
 
-  d_transferFuncArray = 0;
+  d_transferFuncArray = NULL;
   updateTransferFunction();
 }
 
@@ -1036,6 +1048,8 @@ vvRayRend::~vvRayRend()
                      "vvRayRend::~vvRayRend() - free tf");
   vvCuda::checkError(&ok, cudaFreeArray(d_randArray),
                      "vvRayRend::~vvRayRend() - free rand array");
+  vvCuda::checkError(&ok, cudaFree(d_depth),
+                     "vvRayRend::~vvRayRend() - free depth");
 
   delete[] _rgbaTF;
 }
@@ -1075,8 +1089,10 @@ void vvRayRend::updateTransferFunction()
                      "vvRayRend::updateTransferFunction() - bind tf texture");
 }
 
-void vvRayRend::compositeVolume(int w, int h)
+void vvRayRend::compositeVolume(int, int)
 {
+  vvDebugMsg::msg(1, "vvRayRend::compositeVolume()");
+
   bool ok;
 
   if(!_volumeCopyToGpuOk)
@@ -1086,15 +1102,19 @@ void vvRayRend::compositeVolume(int w, int h)
   }
   vvDebugMsg::msg(1, "vvRayRend::compositeVolume()");
 
-  vvGLTools::Viewport vp = vvGLTools::getViewport();
+  const vvGLTools::Viewport vp = vvGLTools::getViewport();
 
+  allocIbrDepth(vp[2], vp[3]);
   intImg->setSize(vp[2], vp[3]);
 
+<<<<<<< HEAD
   vvCuda::checkError(&ok, cudaMalloc(&d_depth, vp[2]*vp[3]*_depthPrecision/8),
           "vvRayRend::compositeVolume() - malloc d_depth");
   vvCuda::checkError(&ok, cudaMemset(d_depth, 0, vp[2]*vp[3]*_depthPrecision/8),
           "vvRayRend::compositeVolume() - memset d_depth");
 
+=======
+>>>>>>> Make ibr specific variables in rayrend private
   dynamic_cast<vvCudaImg*>(intImg)->map();
 
   dim3 blockSize(16, 16);
@@ -1247,7 +1267,7 @@ void vvRayRend::compositeVolume(int w, int h)
                                         L, H,
                                         center, radius * radius,
                                         pnormal, pdist, d_depth, _depthPrecision,
-                                        make_float2(_ibrPlanes[0], _ibrPlanes[1]),
+                                        make_float2(_depthRange[0], _depthRange[1]),
                                         true, true, d_gatheredAlpha);
     }
     const bool twoPassIbr = _gatherAlphaForIbr;
@@ -1258,7 +1278,7 @@ void vvRayRend::compositeVolume(int w, int h)
                                       L, H,
                                       center, radius * radius,
                                       pnormal, pdist, d_depth, _depthPrecision,
-                                      make_float2(_ibrPlanes[0], _ibrPlanes[1]),
+                                      make_float2(_depthRange[0], _depthRange[1]),
                                       twoPassIbr, false, d_gatheredAlpha);
     cudaFree(d_gatheredAlpha);
   }
@@ -1344,6 +1364,22 @@ bool vvRayRend::getInterpolation() const
 bool vvRayRend::getOpacityCorrection() const
 {
   return _opacityCorrection;
+}
+
+void* vvRayRend::getDeviceDepth() const
+{
+  return d_depth;
+}
+
+void vvRayRend::setDepthRange(const float min, const float max)
+{
+  _depthRange[0] = min;
+  _depthRange[1] = max;
+}
+
+const float* vvRayRend::getDepthRange() const
+{
+  return _depthRange;
 }
 
 void vvRayRend::initRandTexture()
@@ -1504,6 +1540,8 @@ void vvRayRend::initVolumeTexture()
 
 void vvRayRend::factorViewMatrix()
 {
+  vvDebugMsg::msg(1, "vvRayRend::factorViewMatrix()");
+
   vvGLTools::Viewport vp = vvGLTools::getViewport();
   const int w = vvToolshed::getTextureSize(vp[2]);
   const int h = vvToolshed::getTextureSize(vp[3]);
@@ -1511,6 +1549,7 @@ void vvRayRend::factorViewMatrix()
   if ((intImg->width != w) || (intImg->height != h))
   {
     intImg->setSize(w, h);
+    allocIbrDepth(w, h);
   }
 
   iwWarp.identity();
