@@ -110,7 +110,7 @@ vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd)
   vvSocket::ErrorType retval;
 
   int size = vd->serializeAttributes();
-  cerr<<size<<endl;
+
   std::vector<uchar> buffer(size);
   if ((retval = vvSocket::read_data(&buffer[0], size)) != vvSocket::VV_OK)
   {
