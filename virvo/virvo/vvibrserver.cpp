@@ -21,6 +21,7 @@
 #include <cmath>
 
 #include "vvgltools.h"
+#include "vvibr.h"
 #include "vvibrserver.h"
 #include "vvrayrend.h"
 #include "vvcudaimg.h"
@@ -64,37 +65,11 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   vvRayRend* rayRend = dynamic_cast<vvRayRend*>(renderer);
   assert(rayRend != NULL);
 
-  // calculate bounding sphere
-  vvAABB bbox(renderer->getVolDesc()->getBoundingBox().min(), renderer->getVolDesc()->getBoundingBox().max());
-  vvVector4 center4(bbox.getCenter()[0], bbox.getCenter()[1], bbox.getCenter()[2], 1.0f);
-  vvVector4 min4(bbox.min()[0], bbox.min()[1], bbox.min()[2], 1.0f);
-  vvVector4 max4(bbox.max()[0], bbox.max()[1], bbox.max()[2], 1.0f);
+  float drMin = 0.0f;
+  float drMax = 0.0f;
+  vvIbr::calcDepthRange(pr, mv, renderer->getVolDesc()->getBoundingBox(), drMin, drMax);
 
-  center4.multiply(&mv);
-  min4.multiply(&mv);
-  max4.multiply(&mv);
-
-  vvVector3 center(center4[0], center4[1], center4[2]);
-  vvVector3 min(min4.e[0], min4.e[1], min4.e[2]);
-  vvVector3 max(max4.e[0], max4.e[1], max4.e[2]);
-
-  float radius = (max-min).length() * 0.5f;
-
-  // Depth buffer of ibrPlanes
-  vvVector3 scal(center);
-  scal.normalize();
-  scal.scale(radius);
-  min = center - scal;
-  max = center + scal;
-
-  min4 = vvVector4(&min, 1.f);
-  max4 = vvVector4(&max, 1.f);
-  min4.multiply(&pr);
-  max4.multiply(&pr);
-  min4.perspectiveDivide();
-  max4.perspectiveDivide();
-
-  rayRend->setDepthRange((min4[2]+1.f)/2.f, (max4[2]+1.f)/2.f);
+  rayRend->setDepthRange(drMin, drMax);
 
   int dp = rayRend->getParameter(vvRenderer::VV_IBR_DEPTH_PREC);
   rayRend->compositeVolume();
@@ -110,24 +85,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   uchar* depth = img->getPixelDepth();
   cudaMemcpy(depth, rayRend->getDeviceDepth(), vp[2]*vp[3]*dp/8, cudaMemcpyDeviceToHost);
 
-  vvMatrix vpMatrix;
-  vpMatrix.identity();
-  vpMatrix.scale(1.0f / (0.5f * vp[2]),
-                 1.0f / (0.5f * vp[3]),
-                 2.0f);
-  vpMatrix.translate((vp[0] / (0.5f * vp[2])) - 1.0f,
-                     (vp[1] / (0.5f * vp[3])) - 1.0f,
-                     -1.0f);
-
-  vvMatrix invModelviewProjection = mv * pr;
-  invModelviewProjection.invert();
-
-  vvMatrix depthScaleMatrix;
-  depthScaleMatrix.identity();
-  depthScaleMatrix.scale(1.0f, 1.0f, (rayRend->getDepthRange()[1] - rayRend->getDepthRange()[0]));
-  depthScaleMatrix.translate(0.0f, 0.0f, rayRend->getDepthRange()[0]);
-
-  img->setReprojectionMatrix(depthScaleMatrix * vpMatrix * invModelviewProjection);
+  img->setReprojectionMatrix(vvIbr::calcImgMatrix(pr, mv, vp, drMin, drMax));
   _socket->putIbrImage(img);
 
   delete[] pixels;

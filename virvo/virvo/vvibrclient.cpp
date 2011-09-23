@@ -21,6 +21,7 @@
 #include <limits>
 
 #include "vvglew.h"
+#include "vvibr.h"
 #include "vvibrclient.h"
 #include "vvgltools.h"
 #include "vvtexrend.h"
@@ -112,7 +113,15 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   if (newFrame) // no frame pending
   {
     // request new ibr frame if anything changed
-    if (!currentMatrix.equal(&_imgMatrix))
+    float drMin = 0.0f;
+    float drMax = 0.0f;
+    vvIbr::calcDepthRange(_currentPr, _currentMv,
+                          vd->getBoundingBox(),
+                          drMin, drMax);
+    vvMatrix currentImgMatrix = vvIbr::calcImgMatrix(_currentPr, _currentMv,
+                                                     vvGLTools::getViewport(),
+                                                     drMin, drMax);
+    if (!currentImgMatrix.equal(&_imgMatrix))
     {
       _changes = true;
     }
@@ -367,6 +376,13 @@ vvIbrClient::Corner vvIbrClient::getNearestCorner() const
   }
 }
 
+void vvIbrClient::createImages()
+{
+  vvDebugMsg::msg(3, "vvIbrClient::createImages()");
+  for(int i=0; i<2; ++i)
+    _images.push_back(new vvIbrImage);
+}
+
 void vvIbrClient::createThreads()
 {
   vvDebugMsg::msg(1, "vvIbrClient::createThreads()");
@@ -422,13 +438,5 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
 #ifdef _WIN32
   return NULL;
 #endif
-}
-
-
-void vvIbrClient::createImages()
-{
-  vvDebugMsg::msg(3, "vvIbrClient::createImages()");
-  for(int i=0; i<2; ++i)
-    _images.push_back(new vvIbrImage);
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

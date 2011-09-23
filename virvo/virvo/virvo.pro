@@ -70,6 +70,7 @@ SOURCES = vvaabb.cpp \
     vvbonjour/vvbonjourresolver.cpp \
     vvmultirend/vvtexmultirend.cpp \
     vvmultirend/vvtexmultirendmngr.cpp \
+    vvibr.cpp \
     vvibrclient.cpp \
     vvibrserver.cpp \
     vvremoteserver.cpp
@@ -135,6 +136,7 @@ HEADERS = vvaabb.h \
     vvbonjour/vvbonjourresolver.h \
     vvmultirend/vvtexmultirend.h \
     vvmultirend/vvtexmultirendmngr.h \
+    vvibr.h \
     vvibrclient.h \
     vvibrserver.h \
     vvremoteserver.h
