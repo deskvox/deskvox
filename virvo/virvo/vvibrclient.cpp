@@ -203,13 +203,13 @@ void vvIbrClient::initIbrFrame()
 {
   vvDebugMsg::msg(1, "vvIbrClient::initIbrFrame()");
 
-  _ibrImg = dynamic_cast<vvIbrImage*>(_threadData->images->at(0));
-  if(!_ibrImg)
+  vvIbrImage* ibrImg = dynamic_cast<vvIbrImage*>(_threadData->images->at(0));
+  if(!ibrImg)
     return;
 
-  const int h = _ibrImg->getHeight();
-  const int w = _ibrImg->getWidth();
-  _imgMatrix = _ibrImg->getReprojectionMatrix();
+  const int h = ibrImg->getHeight();
+  const int w = ibrImg->getWidth();
+  _imgMatrix = ibrImg->getReprojectionMatrix();
 
   // get pixel and depth-data
   glBindTexture(GL_TEXTURE_2D, _rgbaTex);
@@ -218,8 +218,8 @@ void vvIbrClient::initIbrFrame()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  uchar* dataRGBA = _ibrImg->getImagePtr();
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, _ibrImg->getImagePtr());
+  uchar* dataRGBA = ibrImg->getImagePtr();
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, ibrImg->getImagePtr());
 
   glBindTexture(GL_TEXTURE_2D, _depthTex);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -227,8 +227,8 @@ void vvIbrClient::initIbrFrame()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  uchar* depth = _ibrImg->getPixelDepth();
-  switch(_ibrImg->getDepthPrecision())
+  uchar* depth = ibrImg->getPixelDepth();
+  switch(ibrImg->getDepthPrecision())
   {
     case 8:
       glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth);
@@ -339,7 +339,7 @@ vvIbrClient::Corner vvIbrClient::getNearestCorner() const
   vvVector4 normal = vvVector4(0.0f, 0.0f, 1.0f, 1.0f);
 
   // Cancel out old matrix from normal.
-  vvMatrix oldMatrix = _ibrImg->getReprojectionMatrix();
+  vvMatrix oldMatrix = _imgMatrix;
   // The operations below cancel each other out.
   // Left the code this way for higher legibility.
   // Vectors are transformed.
