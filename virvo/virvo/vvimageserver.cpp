@@ -73,7 +73,7 @@ void vvImageServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer
   const int h = vp[3];
   if(!_image || _image->getWidth() != w || _image->getHeight() != h)
   {
-    delete _pixels;
+    delete[] _pixels;
     _pixels = new uchar[w*h*4];
     if(_image)
       _image->setNewImage(h, w, _pixels);
