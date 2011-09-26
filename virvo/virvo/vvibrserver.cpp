@@ -32,13 +32,19 @@
 
 #ifdef HAVE_CUDA
 vvIbrServer::vvIbrServer(const vvRayRend::IbrMode mode)
-  : vvRemoteServer(), _ibrMode(mode)
+: vvRemoteServer()
+, _ibrMode(mode)
+, _image(NULL)
+, _pixels(NULL)
+, _depth(NULL)
 {
 }
 
 vvIbrServer::~vvIbrServer()
 {
-
+  delete _image;
+  delete[] _pixels;
+  delete[] _depth;
 }
 
 //----------------------------------------------------------------------------
@@ -60,8 +66,6 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   mv.makeGL(matrixGL);
   glLoadMatrixf(matrixGL);
 
-  vvRect* screenRect = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect();
-
   vvRayRend* rayRend = dynamic_cast<vvRayRend*>(renderer);
   assert(rayRend != NULL);
 
@@ -76,23 +80,37 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 
   // Fetch rendered image
   vvGLTools::Viewport vp = vvGLTools::getViewport();
-  uchar* pixels = new uchar[vp[2]*vp[3]*4];
-  cudaMemcpy(pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDeviceImg(), vp[2]*vp[3]*4, cudaMemcpyDeviceToHost);
+  const int w = vp[2];
+  const int h = vp[2];
+  if(!_image || _image->getWidth() != w || _image->getHeight() != h || _image->getDepthPrecision() != dp)
+  {
+    delete[] _pixels;
+    delete[] _depth;
+    _pixels = new uchar[w*h*4];
+    _depth = new uchar[w*h*(dp/8)];
+    if(_image)
+    {
+      _image->setDepthPrecision(dp);
+      _image->setNewImage(h, w, _pixels);
+    }
+    else
+    {
+      _image = new vvIbrImage(h, w, _pixels, dp);
+    }
+    _image->alloc_pd();
+  }
+  else
+  {
+    _image->setNewImagePtr(_pixels);
+  }
+  _image->setNewDepthPtr(_depth);
 
-  vvIbrImage* img = new vvIbrImage(vp[3], vp[2], (uchar*)pixels, 8);
-  img->setDepthPrecision(dp);
-  uchar *depth = new uchar[vp[2]*vp[3]*dp/8];
-  img->alloc_pd();
-  cudaMemcpy(depth, rayRend->getDeviceDepth(), vp[2]*vp[3]*dp/8, cudaMemcpyDeviceToHost);
-  img->setNewDepthPtr(depth);
+  cudaMemcpy(_pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDeviceImg(), w*h*4, cudaMemcpyDeviceToHost);
+  cudaMemcpy(_depth, rayRend->getDeviceDepth(), w*h*(dp/8), cudaMemcpyDeviceToHost);
 
-  img->setReprojectionMatrix(vvIbr::calcImgMatrix(pr, mv, vp, drMin, drMax));
-  img->encode(_codetype, 0, vp[2]-1, 0, vp[3]-1);
-  _socket->putIbrImage(img);
-
-  delete[] pixels;
-  delete[] depth;
-  delete img;
+  _image->setReprojectionMatrix(vvIbr::calcImgMatrix(pr, mv, vp, drMin, drMax));
+  _image->encode(_codetype, 0, h-1, 0, w-1);
+  _socket->putIbrImage(_image);
 }
 
 void vvIbrServer::resize(const int w, const int h)

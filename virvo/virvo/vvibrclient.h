@@ -33,6 +33,7 @@ class vvSlaveVisitor;
 class vvVolDesc;
 class vvShaderFactory;
 class vvShaderProgram;
+class vvIbrImage;
 
 class VIRVOEXPORT vvIbrClient : public vvRemoteClient
 {
@@ -54,19 +55,14 @@ private:
     VV_BOTTOM_LEFT
   };
 
-  //! thread-data
-  struct ThreadArgs
-  {
-    vvIbrClient* renderMaster;
-    std::vector<vvImage*> *images;
-  };
-
   pthread_t*  _thread;                                    ///< list for threads of each server connection
-  ThreadArgs* _threadData;                                ///< list for thread data
 
-  pthread_mutex_t _slaveMutex;                            ///< mutex for thread synchronization
+  pthread_mutex_t _signalMutex;                           ///< mutex for thread synchronization
+  pthread_mutex_t _imageMutex;                            ///< mutex for access to _image
+  pthread_cond_t _imageCond;                              ///< condition variable for access to _image
   bool   _newFrame;                                       ///< flag indicating a new ibr-frame waiting to be rendered
   bool   _haveFrame;                                      ///< flag indicating that at least one frame has been received
+  vvIbrImage *_image;                                     ///< image, protected by _imageMutex
   GLuint _pointVBO;                                       ///< Vertex Buffer Object id for point-pixels
   GLuint _indexBO[4];                                     ///< Buffer Object ids for indices into points
 
@@ -88,7 +84,6 @@ private:
 
   void initIndexArrays();                                 ///< initialize four index arrays for back to front traversal
   Corner getNearestCorner() const;                        ///< find the ibr-img corner with the shortest dist to the viewer
-  void createImages();                                    ///< create an image to be read from, another to be written to
   void createThreads();                                   ///< creates threads for every socket connection
   void destroyThreads();                                  ///< quits threads
   static void* getImageFromSocket(void* threadargs);      ///< get image from socket connection and wait for next

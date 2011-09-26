@@ -48,7 +48,6 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
   rendererType = REMOTE_IBR;
 
   _thread = NULL;
-  _threadData = NULL;
 
   glewInit();
   glGenBuffers(1, &_pointVBO);
@@ -59,13 +58,15 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
 
   _haveFrame = false; // no rendered frame available
   _newFrame = true; // request a new frame
+  _image = new vvIbrImage;
 
   _shaderFactory = new vvShaderFactory();
   _shader = _shaderFactory->createProgram("ibr", "", "");
 
-  pthread_mutex_init(&_slaveMutex, NULL);
+  pthread_mutex_init(&_imageMutex, NULL);
+  pthread_mutex_init(&_signalMutex, NULL);
+  pthread_cond_init(&_imageCond, NULL);
 
-  createImages();
   createThreads();
 }
 
@@ -74,22 +75,26 @@ vvIbrClient::~vvIbrClient()
   vvDebugMsg::msg(1, "vvIbrClient::~vvIbrClient()");
 
   destroyThreads();
+  pthread_mutex_destroy(&_imageMutex);
+  pthread_mutex_destroy(&_signalMutex);
+  pthread_cond_destroy(&_imageCond);
   glDeleteBuffers(1, &_pointVBO);
   glDeleteBuffers(4, _indexBO);
   glDeleteTextures(1, &_rgbaTex);
   glDeleteTextures(1, &_depthTex);
   delete _shaderFactory;
   delete _shader;
+  delete _image;
 }
 
 vvRemoteClient::ErrorType vvIbrClient::render()
 {
   vvDebugMsg::msg(1, "vvIbrClient::render()");
 
-  pthread_mutex_lock(&_slaveMutex);
+  pthread_mutex_lock(&_signalMutex);
   bool haveFrame = _haveFrame;
   bool newFrame = _newFrame;
-  pthread_mutex_unlock(&_slaveMutex);
+  pthread_mutex_unlock(&_signalMutex);
 
   // Draw boundary lines
   if (_boundaries || !haveFrame)
@@ -109,9 +114,9 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   if(newFrame && haveFrame)
   {
-    pthread_mutex_lock(&_slaveMutex);
+    pthread_mutex_lock(&_imageMutex);
     initIbrFrame();
-    pthread_mutex_unlock(&_slaveMutex);
+    pthread_mutex_unlock(&_imageMutex);
   }
 
   if (newFrame) // no frame pending
@@ -132,10 +137,11 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
     if(_changes)
     {
-      pthread_mutex_lock(&_slaveMutex);
+      pthread_mutex_lock(&_signalMutex);
       vvRemoteClient::ErrorType err = requestIbrFrame();
+      pthread_cond_signal(&_imageCond);
       _newFrame = false;
-      pthread_mutex_unlock(&_slaveMutex);
+      pthread_mutex_unlock(&_signalMutex);
       _changes = false;
       if(err != vvRemoteClient::VV_OK)
         std::cerr << "vvibrClient::requestIbrFrame() - error() " << err << std::endl;
@@ -207,13 +213,9 @@ void vvIbrClient::initIbrFrame()
 {
   vvDebugMsg::msg(1, "vvIbrClient::initIbrFrame()");
 
-  vvIbrImage* ibrImg = dynamic_cast<vvIbrImage*>(_threadData->images->at(0));
-  if(!ibrImg)
-    return;
-
-  const int h = ibrImg->getHeight();
-  const int w = ibrImg->getWidth();
-  _imgMatrix = ibrImg->getReprojectionMatrix();
+  const int h = _image->getHeight();
+  const int w = _image->getWidth();
+  _imgMatrix = _image->getReprojectionMatrix();
 
   // get pixel and depth-data
   glBindTexture(GL_TEXTURE_2D, _rgbaTex);
@@ -222,8 +224,8 @@ void vvIbrClient::initIbrFrame()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  uchar* dataRGBA = ibrImg->getImagePtr();
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, ibrImg->getImagePtr());
+  uchar* dataRGBA = _image->getImagePtr();
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, _image->getImagePtr());
 
   glBindTexture(GL_TEXTURE_2D, _depthTex);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -231,8 +233,8 @@ void vvIbrClient::initIbrFrame()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  uchar* depth = ibrImg->getPixelDepth();
-  switch(ibrImg->getDepthPrecision())
+  uchar* depth = _image->getPixelDepth();
+  switch(_image->getDepthPrecision())
   {
     case 8:
       glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth);
@@ -380,22 +382,12 @@ vvIbrClient::Corner vvIbrClient::getNearestCorner() const
   }
 }
 
-void vvIbrClient::createImages()
-{
-  vvDebugMsg::msg(3, "vvIbrClient::createImages()");
-  for(int i=0; i<2; ++i)
-    _images.push_back(new vvIbrImage);
-}
-
 void vvIbrClient::createThreads()
 {
   vvDebugMsg::msg(1, "vvIbrClient::createThreads()");
 
-  _threadData = new ThreadArgs;
   _thread = new pthread_t;
-  _threadData->renderMaster = this;
-  _threadData->images = &_images;
-  pthread_create(_thread, NULL, getImageFromSocket, _threadData);
+  pthread_create(_thread, NULL, getImageFromSocket, this);
 }
 
 void vvIbrClient::destroyThreads()
@@ -406,9 +398,7 @@ void vvIbrClient::destroyThreads()
   pthread_cancel(*_thread);
   pthread_join(*_thread, NULL);
   delete _thread;
-  delete _threadData;
   _thread = NULL;
-  _threadData = NULL;
 }
 
 void* vvIbrClient::getImageFromSocket(void* threadargs)
@@ -417,26 +407,28 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
 
   std::cerr << "Image thread start" << std::endl;
 
-  ThreadArgs* data = static_cast<ThreadArgs*>(threadargs);
+  vvIbrClient *ibr = static_cast<vvIbrClient*>(threadargs);
+  vvIbrImage* img = ibr->_image;
 
   while (1)
   {
-    vvIbrImage* img = static_cast<vvIbrImage *>(data->images->at(1));
-    vvSocketIO::ErrorType err = data->renderMaster->_socket->getIbrImage(img);
+    pthread_mutex_lock( &ibr->_imageMutex );
+    pthread_cond_wait(&ibr->_imageCond, &ibr->_imageMutex);
+    vvSocketIO::ErrorType err = ibr->_socket->getIbrImage(img);
     img->decode();
     if(err != vvSocketIO::VV_OK)
     {
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
+      pthread_mutex_unlock( &ibr->_imageMutex );
       break;
     }
+    pthread_mutex_unlock( &ibr->_imageMutex );
     //vvToolshed::sleep(1000);
 
-    // switch pointers securely
-    pthread_mutex_lock( &data->renderMaster->_slaveMutex );
-    std::swap(data->images->at(0), data->images->at(1));
-    data->renderMaster->_newFrame = true;
-    data->renderMaster->_haveFrame = true;
-    pthread_mutex_unlock( &data->renderMaster->_slaveMutex );
+    pthread_mutex_lock( &ibr->_signalMutex );
+    ibr->_newFrame = true;
+    ibr->_haveFrame = true;
+    pthread_mutex_unlock( &ibr->_signalMutex );
   }
   pthread_exit(NULL);
 #ifdef _WIN32
