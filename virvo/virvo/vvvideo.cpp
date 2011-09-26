@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <cassert>
 
 #ifdef VV_FFMPEG
 #define __STDC_CONSTANT_MACROS
@@ -155,6 +156,49 @@ vvVideo::Codec vvVideo::getCodec() const
   return VV_RAW;
 }
 
+void vvVideo::setColorFormat(vvVideo::ColorFormat fmt)
+{
+#if defined(VV_FFMPEG)
+  switch(fmt)
+  {
+  case VV_RGB24:
+    pixel_fmt = PIX_FMT_RGB24;
+    break;
+  case VV_YUV420P:
+    pixel_fmt = PIX_FMT_YUV420P;
+    break;
+  case VV_YUVJ420P:
+    pixel_fmt = PIX_FMT_YUVJ420P;
+    break;
+  default:
+    vvDebugMsg::msg(0, "vvVideo::setColorFormat: unknown vvVideo color format ", fmt);
+    assert("Missing support for vvVideo color format" == NULL);
+    break;
+  }
+#endif
+}
+
+vvVideo::ColorFormat vvVideo::getColorFormat() const
+{
+#if defined(VV_FFMPEG)
+  switch(pixel_fmt)
+  {
+  case PIX_FMT_RGB24:
+    return VV_RGB24;
+  case PIX_FMT_YUV420P:
+    return VV_YUV420P;
+  case PIX_FMT_YUVJ420P:
+    return VV_YUVJ420P;
+  default:
+    vvDebugMsg::msg(0, "vvVideo::getColorFormat: unknown avcodec pixel format ", pixel_fmt);
+    assert("Missing support for avcodec pixel format" == NULL);
+    break;
+  }
+#endif
+
+  return VV_RGB24;
+}
+
 //----------------------------------------------------------------------------
 /** Creates an XviD encoder
 @param w  width of frames
@@ -236,6 +280,8 @@ int vvVideo::createEncoder(int w, int h)
     return -1;
   }
   avpicture_alloc((AVPicture *)enc_picture, enc_ctx->pix_fmt, w, h);
+
+  pixel_fmt = enc_ctx->pix_fmt;
 
   enc_imgconv_ctx = sws_getContext(w, h,
       PIX_FMT_RGB24,
@@ -396,10 +442,10 @@ int vvVideo::encodeFrame(const unsigned char* src, unsigned char* dst, int* enc_
     vvDebugMsg::msg(2, "vvVideo::encodeFrame: changed codec id to ", codec_id);
     createEncoder(enc_ctx->width, enc_ctx->height);
   }
-  *(uint32_t *)dst = enc_ctx->codec_id;
-  dst += 4;
-  *(uint32_t *)dst = enc_ctx->pix_fmt;
-  dst += 4;
+  *(uint8_t *)dst = getCodec();
+  dst++;
+  *(uint8_t *)dst = getColorFormat();
+  dst++;
   AVPicture src_picture;
   avpicture_fill(&src_picture, (uint8_t *)src, PIX_FMT_RGB24, enc_ctx->width, enc_ctx->height);
 
@@ -407,7 +453,7 @@ int vvVideo::encodeFrame(const unsigned char* src, unsigned char* dst, int* enc_
       enc_ctx->height, enc_picture->data, enc_picture->linesize);
 
   *enc_size = avcodec_encode_video(enc_ctx, dst, *enc_size, enc_picture);
-  *enc_size += 8;
+  *enc_size += 2;
 
   vvDebugMsg::msg(3, "vvVideo::encodeFrame, encoded size is ", *enc_size);
 
@@ -434,12 +480,12 @@ int vvVideo::decodeFrame(const unsigned char* src, unsigned char* dst, int src_s
   vvDebugMsg::msg(3, "vvVideo::decodeFrame, encoded size is ", src_size);
 #if defined(VV_FFMPEG)
   int got_picture = 0;
-  codec_id = *(uint32_t *)src;
-  src += 4;
-  src_size -= 4;
-  pixel_fmt = *(uint32_t *)src;
-  src += 4;
-  src_size -= 4;
+  setCodec((Codec)*(uint8_t *)src);
+  src++;
+  src_size--;
+  setColorFormat((ColorFormat)*(uint8_t *)src);
+  src++;
+  src_size--;
   if(codec_id != dec_ctx->codec_id || pixel_fmt != dec_ctx->pix_fmt)
   {
     vvDebugMsg::msg(2, "vvVideo::decodeFrame: changed codec id to ", codec_id);

@@ -35,11 +35,20 @@ public:
     VV_FLV1,
     VV_NUM_CODECS
   };
+  enum ColorFormat
+  {
+    VV_RGB24 = 0,
+    VV_YUV420P,
+    VV_YUVJ420P,
+    VV_NUM_COLOR_FORMATS
+  };
   vvVideo();
   ~vvVideo();
   void setSize(short w, short h);
   void setCodec(Codec codec);
   Codec getCodec() const;
+  void setColorFormat(ColorFormat format);
+  ColorFormat getColorFormat() const;
   void setFramerate(float fr);
   void setQuantizer(int min_q, int max_q);
   void setBitrate(int br);
