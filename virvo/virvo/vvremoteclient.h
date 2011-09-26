@@ -67,7 +67,6 @@ protected:
   int _slavePort;
   const char* _slaveFileName;
   vvSocketIO* _socket;
-  std::vector<vvImage*> _images;
 
   void adjustQuality(float quality);
   void setInterpolation(bool interpolation);

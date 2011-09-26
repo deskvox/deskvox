@@ -47,8 +47,6 @@ vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
 vvRemoteClient::~vvRemoteClient()
 {
   vvDebugMsg::msg(1, "vvRemoteClient::~vvRemoteClient()");
-
-  clearImages();
 }
 
 void vvRemoteClient::renderVolumeGL()
@@ -278,17 +276,5 @@ void vvRemoteClient::setInterpolation(const bool interpolation)
     {
       _socket->putBool(interpolation);
     }
-}
-
-void vvRemoteClient::clearImages()
-{
-  vvDebugMsg::msg(3, "vvRemoteClient::clearImages()");
-  for (std::vector<vvImage*>::const_iterator it = _images.begin();
-      it != _images.end();
-      ++it)
-  {
-    delete (*it);
-  }
-  _images.clear();
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
