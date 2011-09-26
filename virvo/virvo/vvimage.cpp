@@ -407,7 +407,7 @@ void vvImage::setVideoQuant(int q)
 //----------------------------------------------------------------------------
 /**Returns the image height
  */
-short vvImage::getHeight()
+short vvImage::getHeight() const
 {
   return height;
 }
@@ -415,7 +415,7 @@ short vvImage::getHeight()
 //----------------------------------------------------------------------------
 /** Returns the image width
  */
-short vvImage::getWidth()
+short vvImage::getWidth() const
 {
   return width;
 }
@@ -423,7 +423,7 @@ short vvImage::getWidth()
 //----------------------------------------------------------------------------
 /** Returns the code type
  */
-short vvImage::getCodeType()
+short vvImage::getCodeType() const
 {
   return codetype;
 }
@@ -431,7 +431,7 @@ short vvImage::getCodeType()
 //----------------------------------------------------------------------------
 /** Returns the image size in bytes
  */
-int vvImage::getSize()
+int vvImage::getSize() const
 {
   return size;
 }
@@ -439,7 +439,7 @@ int vvImage::getSize()
 //----------------------------------------------------------------------------
 /** Returns the video image size in bytes
  */
-int vvImage::getVideoSize()
+int vvImage::getVideoSize() const
 {
   return videosize;
 }
@@ -447,7 +447,7 @@ int vvImage::getVideoSize()
 //----------------------------------------------------------------------------
 /** Returns the pointer to the image
  */
-uchar* vvImage::getImagePtr()
+uchar* vvImage::getImagePtr() const
 {
   return imageptr;
 }
@@ -455,7 +455,7 @@ uchar* vvImage::getImagePtr()
 //----------------------------------------------------------------------------
 /** Returns the pointer to the encoded image
  */
-uchar* vvImage::getCodedImage()
+uchar* vvImage::getCodedImage() const
 {
   return codedimage;
 }
@@ -463,7 +463,7 @@ uchar* vvImage::getCodedImage()
 //----------------------------------------------------------------------------
 /** Returns the pointer to the encoded video image
  */
-uchar* vvImage::getVideoCodedImage()
+uchar* vvImage::getVideoCodedImage() const
 {
   return videocodedimage;
 }

@@ -542,7 +542,7 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
 /** Write an image to the socket.
  @param im  pointer to an vvImage object.
 */
-vvSocket::ErrorType vvSocketIO::putImage(vvImage* im)
+vvSocket::ErrorType vvSocketIO::putImage(const vvImage* im)
 {
   const int BUFSIZE = 13;
   uchar buffer[BUFSIZE];
@@ -589,48 +589,40 @@ vvSocket::ErrorType vvSocketIO::putImage(vvImage* im)
 */
 vvSocket::ErrorType vvSocketIO::getIbrImage(vvIbrImage* im)
 {
-  vvSocket::ErrorType err;
-
-  vvMatrix matrix;
+  vvSocket::ErrorType err = getImage(im);
+  if(err != vvSocket::VV_OK)
+    return err;
 
   // Get modelview / projection matrix for the current frame
-  if ((err = getMatrix(&matrix)) != vvSocket::VV_OK)
-  {
+  vvMatrix matrix;
+  err = getMatrix(&matrix);
+  if(err != vvSocket::VV_OK)
     return err;
-  }
   im->setReprojectionMatrix(matrix);
 
-  // get regular image-data
-  if((err = getImage(im)) != vvSocket::VV_OK)
-    return err;
-
   int dp;
-  if ((err = getInt32(dp)) != vvSocket::VV_OK)
-  {
+  err = getInt32(dp);
+  if(err != vvSocket::VV_OK)
     return err;
-  }
   im->setDepthPrecision(dp);
+
+  int ct;
+  err = getInt32(ct);
+  if(err != vvSocket::VV_OK)
+    return err;
+  im->setDepthCodetype(ct);
 
   im->alloc_pd();
 
-  // get extended 2.5D-data
-  switch(im->getDepthPrecision())
-  {
-  case 8:
-    if((err = getData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_UCHAR)) != vvSocket::VV_OK)
-      return err;
-    break;
-  case 16:
-    if((err = getData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_USHORT)) != vvSocket::VV_OK)
-      return err;
-    break;
-  case 32:
-    if((err = getData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_FLOAT)) != vvSocket::VV_OK)
-      return err;
-    break;
-  default:
-    std::cerr << "wrong depth precision type" << std::endl;
-  }
+  int size;
+  err = getInt32(size);
+  if(err != vvSocket::VV_OK)
+    return err;
+  im->setDepthSize(size);
+
+  err = getData(im->getCodedDepth(), size, vvSocketIO::VV_UCHAR);
+  if(err != vvSocket::VV_OK)
+    return err;
 
   return vvSocket::VV_OK;
 }
@@ -639,45 +631,43 @@ vvSocket::ErrorType vvSocketIO::getIbrImage(vvIbrImage* im)
 /** Write an 2.5d-image to the socket.
  @param im  pointer to an vvImage2_5d object.
 */
-vvSocket::ErrorType vvSocketIO::putIbrImage(vvIbrImage* im)
+vvSocket::ErrorType vvSocketIO::putIbrImage(const vvIbrImage* im)
 {
-  vvMatrix matrix = im->getReprojectionMatrix();
-  vvSocket::ErrorType err = putMatrix(&matrix);
-
+  vvSocket::ErrorType err = putImage(im);
   if (err != vvSocket::VV_OK)
   {
     return err;
   }
 
-  err = putImage(im);
-
+  vvMatrix matrix = im->getReprojectionMatrix();
+  err = putMatrix(&matrix);
   if (err != vvSocket::VV_OK)
   {
     return err;
   }
 
   err = putInt32(im->getDepthPrecision());
-
   if (err != vvSocket::VV_OK)
   {
     return err;
   }
 
-  // additional 2.5d-data
-  switch(im->getDepthPrecision())
+  err = putInt32(im->getDepthCodetype());
+  if (err != vvSocket::VV_OK)
   {
-  case 8:
-    if((err = putData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_UCHAR)) != vvSocket::VV_OK)
-      return err;
-    break;
-  case 16:
-    if((err = putData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_USHORT)) != vvSocket::VV_OK)
-      return err;
-    break;
-  case 32:
-    if((err = putData(im->getPixelDepth(), im->getWidth()*im->getHeight(), vvSocketIO::VV_FLOAT)) != vvSocket::VV_OK)
-      return err;
-    break;
+    return err;
+  }
+
+  err = putInt32(im->getDepthSize());
+  if (err != vvSocket::VV_OK)
+  {
+    return err;
+  }
+
+  err = putData(im->getCodedDepth(), im->getDepthSize(), vvSocketIO::VV_UCHAR);
+  if (err != vvSocket::VV_OK)
+  {
+    return err;
   }
 
   return vvSocket::VV_OK;

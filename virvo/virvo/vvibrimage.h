@@ -31,17 +31,29 @@ class VIRVOEXPORT vvIbrImage : public vvImage
     vvIbrImage();
     virtual ~vvIbrImage();
 
-    uchar*  getPixelDepth();
+    virtual int encode(short ct, short sh=-1, short eh=-1, short sw=-1, short ew=-1);
+    virtual int decode();
+
+    uchar *getPixelDepth() const;
+    uchar *getCodedDepth() const;
+    int  getDepthSize() const;
+    void  setDepthSize(int size);
     void    alloc_pd();
+    void setNewDepthPtr(uchar *depth);
 
     void setDepthPrecision(int dp);
     int getDepthPrecision() const;
+    int getDepthCodetype() const;
+    void setDepthCodetype(int ct);
 
     void setReprojectionMatrix(const vvMatrix& preprojectionMatrix);
     vvMatrix getReprojectionMatrix() const;
   private:
     int  _depthPrecision; // 8: 8 bit int, 16: 16 bit int, 32: 32 bit float
+    int  _depthCodeType;
+    int _codedDepthSize;
     uchar*          _pixeldepth;
+    uchar*          _codeddepth;
 
     vvMatrix        _preprojectionMatrix;       ///< undo the camera transform this frame was rendered for
 };

@@ -81,15 +81,17 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 
   vvIbrImage* img = new vvIbrImage(vp[3], vp[2], (uchar*)pixels, 8);
   img->setDepthPrecision(dp);
+  uchar *depth = new uchar[vp[2]*vp[3]*dp/8];
   img->alloc_pd();
-  uchar* depth = img->getPixelDepth();
   cudaMemcpy(depth, rayRend->getDeviceDepth(), vp[2]*vp[3]*dp/8, cudaMemcpyDeviceToHost);
+  img->setNewDepthPtr(depth);
 
   img->setReprojectionMatrix(vvIbr::calcImgMatrix(pr, mv, vp, drMin, drMax));
   img->encode(_codetype, 0, vp[2]-1, 0, vp[3]-1);
   _socket->putIbrImage(img);
 
   delete[] pixels;
+  delete[] depth;
   delete img;
 }
 

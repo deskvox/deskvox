@@ -69,11 +69,11 @@ class VIRVOEXPORT vvImage
 {
   public:
 
-    vvImage(short, short, uchar*);
+    vvImage(short height, short width, uchar *pixels);
     vvImage();
     virtual ~vvImage();
-    int encode(short, short sh=-1, short eh=-1, short sw=-1, short ew=-1);
-    int decode();
+    virtual int encode(short, short sh=-1, short eh=-1, short sw=-1, short ew=-1);
+    virtual int decode();
     void setNewImage(short, short, uchar*);
     void setHeight(short);
     void setWidth(short);
@@ -84,25 +84,18 @@ class VIRVOEXPORT vvImage
     void setNewImagePtr(uchar*);
     void setVideoStyle(int);
     void setVideoQuant(int);
-    short getCodeType();
-    short getHeight();
-    short getWidth();
-    int getSize();
-    int getVideoSize();
-    uchar* getImagePtr();
-    uchar* getCodedImage();
-    uchar* getVideoCodedImage();
+    short getCodeType() const;
+    short getHeight() const;
+    short getWidth() const;
+    int getSize() const;
+    int getVideoSize() const;
+    uchar* getImagePtr() const;
+    uchar* getCodedImage() const;
+    uchar* getVideoCodedImage() const;
     int alloc_mem();
 
   private:
 
-    enum Type
-    {
-      VV_SERVER,
-      VV_CLIENT
-    };
-
-    Type t;
     short codetype;
     int size;
     int videosize;
@@ -118,16 +111,23 @@ class VIRVOEXPORT vvImage
 
     int spec_RLC_encode(int, short, short, int dest=0);
     int spec_RLC_decode(int, short, int src=0);
-    int gen_RLC_encode(uchar*, uchar*, int, int, int);
-    int gen_RLC_decode(uchar*, uchar*, int, int, int);
     void put_diff(short&, int&);
     void put_same(short&, int&);
     int videoEncode();
     int videoDecode();
 
 protected:
+    enum Type
+    {
+      VV_SERVER,
+      VV_CLIENT
+    };
+
+    Type t;
     short height;
     short width;
+    static int gen_RLC_encode(uchar*, uchar*, int, int, int);
+    static int gen_RLC_decode(uchar*, uchar*, int, int, int);
     int createCodecs();
     int destroyCodecs();
 };
