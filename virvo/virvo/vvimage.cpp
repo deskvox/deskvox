@@ -27,9 +27,7 @@
 #include "vvvirvo.h"
 #include "vvimage.h"
 #include "vvdebugmsg.h"
-#if defined(VV_FFMPEG) || defined(VV_XVID)
-#include "vvideo.h"
-#endif
+#include "vvvideo.h"
 
 using namespace std;
 
@@ -43,6 +41,8 @@ vvImage::vvImage(short h, short w, uchar* image)
 : imageptr(image)
 , height(h)
 , width(w)
+, videoEncoder(NULL)
+, videoDecoder(NULL)
 {
   vvDebugMsg::msg(3, "vvImage::vvImage(): ", w, h);
   videosize = 0;
@@ -50,33 +50,22 @@ vvImage::vvImage(short h, short w, uchar* image)
   codetype = 0;
   codedimage = new uchar[size];
   videoimageptr = new uchar[width*height*6];
-  videocodedimage = new uchar[width*height*6];
+  videocodedimage = new uchar[width*height*6+8];
   tmpimage = new uchar[width*height];
   t = VV_SERVER;
   videostyle = 0;
   videoquant = 1;
-#if defined(VV_FFMPEG) || defined(VV_XVID)
-  videoEncoder = new vvideo();
-  if(videoEncoder->create_enc(w, h) == -1)
-  {
-    cerr << "vvImage::vvImage(): failed to create video encoder" << endl;
-    delete videoEncoder;
-    videoEncoder = NULL;
-  }
-  videoDecoder = new vvideo();
-  if(videoDecoder->create_dec(w, h) == -1)
-  {
-    cerr << "vvImage::vvImage(): failed to create video decoder" << endl;
-    delete videoDecoder;
-    videoDecoder = NULL;
-  }
-#endif
 }
 
 //----------------------------------------------------------------------------
 /** Constructor for an empty image
  */
 vvImage::vvImage()
+: imageptr(0)
+, height(0)
+, width(0)
+, videoEncoder(NULL)
+, videoDecoder(NULL)
 {
   height = 0;
   width = 0;
@@ -91,10 +80,6 @@ vvImage::vvImage()
   t = VV_CLIENT;
   videostyle = 0;
   videoquant = 1;
-#if defined(VV_FFMPEG) || defined(VV_XVID)
-  videoEncoder = new vvideo();
-  videoDecoder = new vvideo();
-#endif
 }
 
 //----------------------------------------------------------------------------
@@ -125,12 +110,10 @@ vvImage::~vvImage()
     delete[] videocodedimage;
   if (tmpimage != 0)
     delete[] tmpimage;
-#if defined(VV_FFMPEG) || defined(VV_XVID)
   if (videoEncoder != 0)
     delete videoEncoder;
   if (videoDecoder != 0)
     delete videoDecoder;
-#endif
 }
 
 //----------------------------------------------------------------------------
@@ -142,25 +125,12 @@ vvImage::~vvImage()
 void vvImage::setNewImage(short h, short w, uchar* image)
 {
   vvDebugMsg::msg(3, "vvImage::setNewImage(): ", w, h);
-#if defined(VV_FFMPEG) || defined(VV_XVID)
+
   if (width != w || height != h)
   {
-    if(videoEncoder->create_enc(w, h) == -1)
-    {
-      cerr << "vvImage::vvImage(): failed to create video encoder" << endl;
-      delete videoEncoder;
-      videoEncoder = NULL;
-      return;
-    }
-    if(videoDecoder->create_dec(w, h) == -1)
-    {
-      cerr << "vvImage::vvImage(): failed to create video decoder" << endl;
-      delete videoDecoder;
-      videoDecoder = NULL;
-      return;
-    }
+    destroyCodecs();
   }
-#endif
+
   height =h;
   width = w;
   imageptr = image;
@@ -171,12 +141,12 @@ void vvImage::setNewImage(short h, short w, uchar* image)
   codedimage = new uchar[size];
   if (videoimageptr !=0)
     delete [] videoimageptr;
+  videoimageptr = new uchar[width*height*6];
   if (videocodedimage != 0)
     delete [] videocodedimage;
+  videocodedimage = new uchar[width*height*6+8];
   if (tmpimage != 0)
     delete [] tmpimage;
-  videoimageptr = new uchar[width*height*6];
-  videocodedimage = new uchar[width*height*6];
   tmpimage = new uchar[width*height];
 }
 
@@ -212,15 +182,20 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
     vvDebugMsg::msg(1, "Illegal image parameters ");
     return -1;
   }
-  unsigned sum=0;
-  for(int i=0; i<height; i++)
+  if(vvDebugMsg::isActive(3))
   {
-    for(int j=0; j<width; j++)
+    unsigned sum=0;
+    for(int i=0; i<height; i++)
     {
-      sum += imageptr[(i*width+j)*4]+ imageptr[(i*width+j)*4+1]+ imageptr[(i*width+j)*4+2]+ imageptr[(i*width+j)*4+3];
+      for(int j=0; j<width; j++)
+      {
+        sum += imageptr[(i*width+j)*4]+ imageptr[(i*width+j)*4+1]+ imageptr[(i*width+j)*4+2]+ imageptr[(i*width+j)*4+3];
+      }
     }
+    char buf[100];
+    sprintf(buf, "check sum: 0x%08x", sum);
+    vvDebugMsg::msg(3, buf);
   }
-  fprintf(stderr, "csum=0x%08x\n", sum);
   switch(ct)
   {
     case 0:cr=1;break;
@@ -255,7 +230,6 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
       }
       cr = (float)size / (height*width*4);
     }break;
-#if defined(VV_FFMPEG) || defined(VV_XVID)
     case 3:
     {
       int i;
@@ -264,14 +238,13 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
         memcpy(&videoimageptr[i * 3], &imageptr[i * 4], 3);
       for (i=0; i<width*height; ++i)
         memcpy(&tmpimage[i], &imageptr[i * 4 +3], 1);
-      imageptr = tmpimage;
       //memset(imageptr, 0xff, width*height*1);
       if (videoEncode())
       {
         vvDebugMsg::msg(1,"Error: videoEncode()");
         return -1;
       }
-      if ( (size = gen_RLC_encode(imageptr, codedimage, width*height, 1, width*height*4)) < 0)
+      if ( (size = gen_RLC_encode(tmpimage, codedimage, width*height, 1, width*height*4)) < 0)
       {
         vvDebugMsg::msg(1,"Error: gen_RLC_encode()");
         return -1;
@@ -279,7 +252,6 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
       imageptr = codedimage;
       cr = (float)(size+videosize) / (height*width*4);
     }break;
-#endif
     default:
       vvDebugMsg::msg(1,"Unknown encoding type ", ct );
       return -1;
@@ -311,7 +283,6 @@ int vvImage::decode()
       realwidth = vvToolshed::read16(&codedimage[4]);
       spec_RLC_decode(start, realwidth, 6);
     }break;
-#if defined(VV_FFMPEG) || defined(VV_XVID)
     case 3:
     {
       int i;
@@ -331,7 +302,6 @@ int vvImage::decode()
         memcpy(&imageptr[i * 4 + 3], &tmpimage[i], 1);
       size = width*height*4;
     }break;
-#endif
     default:
       vvDebugMsg::msg(1,"No encoding type with that identifier");
       return -1;
@@ -346,7 +316,11 @@ int vvImage::decode()
  */
 void vvImage::setHeight(short h)
 {
-  height = h;
+  if(h != height)
+  {
+    height = h;
+    destroyCodecs();
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -354,7 +328,11 @@ void vvImage::setHeight(short h)
  */
 void vvImage::setWidth(short w)
 {
-  width = w;
+  if(w != width)
+  {
+    width = w;
+    destroyCodecs();
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -639,40 +617,30 @@ int vvImage::alloc_mem()
 {
   vvDebugMsg::msg(3, "vvImage::alloc_mem(): ", width, height);
 
-#if defined(VV_FFMPEG) || defined(VV_XVID)
-  if(videoEncoder->create_enc(width, height) == -1)
-  {
-    cerr << "vvImage::vvImage(): failed to create video encoder" << endl;
-    delete videoEncoder;
-    videoEncoder = NULL;
-    return -1;
-  }
-  if(videoDecoder->create_dec(width, height) == -1)
-  {
-    cerr << "vvImage::vvImage(): failed to create video decoder" << endl;
-    delete videoDecoder;
-    videoDecoder = NULL;
-    return -1;
-  }
-#endif
   if (imageptr == codedimage)
   {
     if (imageptr != 0)
       delete[] imageptr;
+    imageptr = NULL;
   }
   else
   {
     if (imageptr != 0)
       delete[] imageptr;
+    imageptr = NULL;
     if (codedimage != 0)
       delete[] codedimage;
+    codedimage = NULL;
   }
   if (videoimageptr !=0)
     delete [] videoimageptr;
+  videoimageptr = NULL;
   if (videocodedimage != 0)
     delete [] videocodedimage;
+  videocodedimage = NULL;
   if (tmpimage != 0)
     delete [] tmpimage;
+  tmpimage = NULL;
   if (codetype != 0)
   {
     imageptr = new uchar[height*width*4];
@@ -684,7 +652,7 @@ int vvImage::alloc_mem()
     videoimageptr = new uchar[height*width*6];
     if (!videoimageptr)
       return -1;
-    videocodedimage = new uchar[height*width*6];
+    videocodedimage = new uchar[height*width*6+8];
     if (!videocodedimage)
       return -1;
     tmpimage = new uchar[height*width];
@@ -703,19 +671,19 @@ int vvImage::alloc_mem()
  */
 int vvImage::videoEncode()
 {
-#if defined(VV_FFMPEG) || defined(VV_XVID)
-  assert(videoEncoder);
-  videosize = width * height * 6;
-  fprintf(stderr, "calling videoEncoder->enc_frame\n");
-  if (videoEncoder->enc_frame(videoimageptr, videocodedimage, &videosize, &keyframe))
+  if(!videoEncoder)
+    createCodecs();
+  if(!videoEncoder)
+    return -1;
+
+  videosize = width * height * 6 + 8;
+  if (videoEncoder->encodeFrame(videoimageptr, videocodedimage, &videosize))
   {
     vvDebugMsg::msg(1,"Error videoEncode()");
     return -1;
   }
   vvDebugMsg::msg(3, "encoded video image size: ", videosize);
-#else
-  vvDebugMsg::msg(1, "vvImage::videoEncode(): doing nothing");
-#endif
+
   return 0;
 }
 
@@ -724,18 +692,19 @@ int vvImage::videoEncode()
  */
 int vvImage::videoDecode()
 {
-#if defined(VV_FFMPEG) || defined(VV_XVID)
   int newsize = width * height * 6;
 
-  assert(videoDecoder);
-  if (videoDecoder->dec_frame(videocodedimage, videoimageptr, videosize, &newsize))
+  if(!videoDecoder)
+    createCodecs();
+  if(!videoDecoder)
+    return -1;
+
+  if (videoDecoder->decodeFrame(videocodedimage, videoimageptr, videosize, &newsize))
   {
     vvDebugMsg::msg(1,"Error videoDecode()");
     return -1;
   }
-#else
-  vvDebugMsg::msg(1, "vvImage::videoDecode(): doing nothing");
-#endif
+
   return 0;
 }
 
@@ -886,6 +855,44 @@ int vvImage::gen_RLC_decode(uchar* in, uchar* out, int size, int symbol_size, in
       dest += length*symbol_size;
       src += 1+symbol_size*length;
     }
+  }
+  return 0;
+}
+
+int vvImage::destroyCodecs()
+{
+  delete videoEncoder;
+  videoEncoder = NULL;
+  delete videoDecoder;
+  videoDecoder = NULL;
+
+  return 0;
+}
+
+int vvImage::createCodecs()
+{
+  if(width <= 0 || height <= 0)
+    return -1;
+
+  if(!videoEncoder)
+    videoEncoder = new vvVideo();
+  if(!videoDecoder)
+    videoDecoder = new vvVideo();
+  if(videoEncoder->createEncoder(width, height) == -1)
+  {
+    cerr << "vvImage::vvImage(): failed to create video encoder" << endl;
+    delete videoEncoder;
+    videoEncoder = NULL;
+    delete videoDecoder;
+    videoDecoder = NULL;
+    return -1;
+  }
+  if(videoDecoder->createDecoder(width, height) == -1)
+  {
+    cerr << "vvImage::vvImage(): failed to create video decoder" << endl;
+    delete videoDecoder;
+    videoDecoder = NULL;
+    return -1;
   }
   return 0;
 }

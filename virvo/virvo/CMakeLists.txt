@@ -55,7 +55,7 @@ SET(VIRVO_HEADERS
   vvibrclient.h
   vvibrimage.h
   vvibrserver.h
-  vvideo.h
+  vvvideo.h
   vvimage.h
   vvoffscreenbuffer.h
   vvopengl.h
@@ -118,7 +118,7 @@ SET(VIRVO_SOURCES
   vvibrclient.cpp
   vvibrimage.cpp
   vvibrserver.cpp
-  vvideo.cpp
+  vvvideo.cpp
   vvimage.cpp
   vvoffscreenbuffer.cpp
   vvprintgl.cpp

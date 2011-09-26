@@ -502,7 +502,6 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
   h = vvToolshed::read16(&buffer[0]);
 
   ct = (short)vvToolshed::read8(&buffer[4]);
-  im->setCodeType(ct);
   if (h != im->getHeight() || w  != im->getWidth() || ct != im->getCodeType() )
   {
     im->setCodeType(ct);

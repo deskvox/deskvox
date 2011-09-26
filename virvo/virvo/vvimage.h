@@ -27,7 +27,7 @@
 #include "vvexport.h"
 #include "vvtoolshed.h"
 
-class vvideo;
+class vvVideo;
 
 //----------------------------------------------------------------------------
 /**This class provides different encoding and decoding types for RGB images. <BR>
@@ -116,10 +116,8 @@ class VIRVOEXPORT vvImage
     uchar* tmpimage;
     int videostyle;
     int videoquant;
-#if defined(VV_FFMPEG) || defined(VV_XVID)
-    vvideo* videoEncoder;
-    vvideo* videoDecoder;
-#endif
+    vvVideo* videoEncoder;
+    vvVideo* videoDecoder;
 
     int spec_RLC_encode(int, short, short, int dest=0);
     int spec_RLC_decode(int, short, int src=0);
@@ -133,6 +131,8 @@ class VIRVOEXPORT vvImage
 protected:
     short height;
     short width;
+    int createCodecs();
+    int destroyCodecs();
 };
 
 #endif
