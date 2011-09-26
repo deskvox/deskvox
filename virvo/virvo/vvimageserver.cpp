@@ -39,7 +39,7 @@ vvImageServer::vvImageServer()
 vvImageServer::~vvImageServer()
 {
   delete _image;
-  delete _pixels;
+  delete[] _pixels;
 }
 
 //----------------------------------------------------------------------------
