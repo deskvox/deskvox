@@ -24,7 +24,6 @@
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvrenderer.h"
-#include "vvsoftimg.h"
 
 /** Description of pixel image.
   This class was written for the software implementation of the

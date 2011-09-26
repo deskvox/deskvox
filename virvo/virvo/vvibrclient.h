@@ -30,7 +30,6 @@
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
 #include "vvgltools.h"
-#include "vvrayrend.h"
 
 #include <vector>
 

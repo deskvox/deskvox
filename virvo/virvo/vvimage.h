@@ -26,9 +26,8 @@
 
 #include "vvexport.h"
 #include "vvtoolshed.h"
-#if defined(VV_FFMPEG) || defined(VV_XVID)
-#include "vvideo.h"
-#endif
+
+class vvideo;
 
 //----------------------------------------------------------------------------
 /**This class provides different encoding and decoding types for RGB images. <BR>
