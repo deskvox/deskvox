@@ -159,6 +159,7 @@ vvView::vvView()
   slavePort             = vvView::DEFAULT_PORT;
   ibrPrecision          = 8;
   ibrMode               = vvRenderer::VV_MAX_GRADIENT;
+  codec                 = 4;
   rrMode                = RR_NONE;
   clipBuffer            = NULL;
   framebufferDump       = NULL;
@@ -743,6 +744,7 @@ void vvView::applyRendererParameters()
   renderer->setParameter(vvRenderer::VV_OFFSCREENBUFFER, useOffscreenBuffer);
   renderer->setParameter(vvRenderer::VV_IMG_PRECISION, bufferPrecision);
   renderer->setParameter(vvRenderState::VV_SHOW_BRICKS, showBricks);
+  renderer->setParameter(vvRenderState::VV_CODEC, codec);
 }
 
 
@@ -877,10 +879,11 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case '+':
   case '=': ds->rendererMenuCallback(99); break;
   case 'a': ds->animMenuCallback(2);  break;
+  case 'A': ds->optionsMenuCallback(14); break;
   case 'B': ds->optionsMenuCallback(12); break;
   case 'b': ds->viewMenuCallback(0);  break;
   case 'c': ds->viewMenuCallback(10); break;
-  case 'C': ds->optionsMenuCallback(14); break;
+  case 'C': ds->optionsMenuCallback(18);  break;
   case 'd': ds->mainMenuCallback(5);  break;
   case 'D': ds->mainMenuCallback(13);  break;
   case 'e': ds->mainMenuCallback(4);  break;
@@ -1601,6 +1604,13 @@ void vvView::optionsMenuCallback(int item)
       ds->renderer->setParameter(vvRenderer::VV_IBR_MODE, ds->ibrMode);
       cerr << "Warp interpolation set to " << int(ds->warpInterpolMode) << endl;
     }
+    break;
+  case 18:
+    ++ds->codec;
+    if(ds->codec > 10)
+      ds->codec = 0;
+    cerr << "Codec set to " << ds->codec << endl;
+    ds->renderer->setParameter(vvRenderer::VV_CODEC, ds->codec);
     break;
   default: break;
   }
@@ -2341,8 +2351,9 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))
     glutAddMenuEntry("Bricks - generate proxy geometry on GPU [g]", 13);
   if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD))
-    glutAddMenuEntry("Cycle shader [C]", 14);
+    glutAddMenuEntry("Cycle shader [A]", 14);
   glutAddMenuEntry("Inc ibr mode [#]", 17);
+  glutAddMenuEntry("Cycle codec [C]", 18);
 
   // Transfer function menu:
   transferMenu = glutCreateMenu(transferMenuCallback);

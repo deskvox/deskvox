@@ -230,8 +230,17 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
       }
       cr = (float)size / (height*width*4);
     }break;
-    case 3:
+    default:
     {
+      int codec = ct - 3;
+      if(!videoEncoder)
+        createCodecs();
+      if(!videoEncoder)
+        return -1;
+      if(videoEncoder->getCodec() != codec)
+      {
+        videoEncoder->setCodec((vvVideo::Codec)codec);
+      }
       int i;
       codetype = 3;
       for (i=0; i<width*height; ++i)
@@ -252,9 +261,6 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
       imageptr = codedimage;
       cr = (float)(size+videosize) / (height*width*4);
     }break;
-    default:
-      vvDebugMsg::msg(1,"Unknown encoding type ", ct );
-      return -1;
   }
   vvDebugMsg::msg(2, "compression rate: ", cr);
   vvDebugMsg::msg(3, "image encoding succeeded");

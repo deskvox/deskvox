@@ -110,6 +110,9 @@ void vvVideo::setCodec(vvVideo::Codec codec)
   case VV_FLV1:
     codec_id = CODEC_ID_FLV1;
     break;
+  default:
+    codec_id = CODEC_ID_RAWVIDEO;
+    break;
   }
 
   /* these did not work:
@@ -125,6 +128,31 @@ void vvVideo::setCodec(vvVideo::Codec codec)
      codec_id = CODEC_ID_ROQ;
    */
 #endif
+}
+
+vvVideo::Codec vvVideo::getCodec() const
+{
+#if defined(VV_FFMPEG)
+  switch(codec_id)
+  {
+  case CODEC_ID_RAWVIDEO:
+    return VV_RAW;
+  case CODEC_ID_FFV1:
+    return VV_FFV1;
+  case CODEC_ID_JPEGLS:
+    return VV_JPEGLS;
+  case CODEC_ID_MJPEG:
+    return VV_MJPEG;
+  case CODEC_ID_MPEG2VIDEO:
+    return VV_MPEG2;
+  case CODEC_ID_MPEG4:
+    return VV_MPEG4;
+  case CODEC_ID_FLV1:
+    return VV_FLV1;
+  }
+#endif
+
+  return VV_RAW;
 }
 
 //----------------------------------------------------------------------------
@@ -146,13 +174,17 @@ int vvVideo::createEncoder(int w, int h)
     return -1;
   }
 
-  PixelFormat fmt = PIX_FMT_RGB24;
+  PixelFormat fmt = PIX_FMT_YUV420P;
   const PixelFormat *pix = encoder->pix_fmts;
+  if(pix)
+    fmt = *pix;
   while(pix && *pix != -1)
   {
-    fmt = *pix;
-    if(fmt == PIX_FMT_RGB24)
+    if(*pix == PIX_FMT_RGB24)
+    {
+      fmt = *pix;
       break;
+    }
     ++pix;
   }
 
@@ -359,6 +391,11 @@ int vvVideo::encodeFrame(const unsigned char* src, unsigned char* dst, int* enc_
 {
   vvDebugMsg::msg(3, "vvVideo::encodeFrame");
 #if defined(VV_FFMPEG)
+  if(codec_id != enc_ctx->codec_id)
+  {
+    vvDebugMsg::msg(2, "vvVideo::encodeFrame: changed codec id to ", codec_id);
+    createEncoder(enc_ctx->width, enc_ctx->height);
+  }
   *(uint32_t *)dst = enc_ctx->codec_id;
   dst += 4;
   *(uint32_t *)dst = enc_ctx->pix_fmt;

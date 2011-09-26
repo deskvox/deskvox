@@ -55,6 +55,7 @@ protected:
   vvRenderContext* _renderContext;
 
   bool _loadVolumeFromFile;
+  int _codetype;
 
   virtual void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer) = 0;
   virtual void resize(int w, int h) = 0;

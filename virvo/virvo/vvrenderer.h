@@ -84,6 +84,7 @@ public:
     VV_USE_IBR,
     VV_IBR_MODE,
     VV_IBR_DEPTH_PREC,                          ///< precision of generated pixel depth values (8, 16 or 32 bit)
+    VV_CODEC,                                   ///< id of image/video codec for remote rendering
 
     VV_OPCORR,                                  ///< opacity correction on/off
     VV_SLICEINT,                                ///< interpolation within slice

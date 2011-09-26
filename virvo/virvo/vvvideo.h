@@ -39,6 +39,7 @@ public:
   ~vvVideo();
   void setSize(short w, short h);
   void setCodec(Codec codec);
+  Codec getCodec() const;
   void setFramerate(float fr);
   void setQuantizer(int min_q, int max_q);
   void setBitrate(int br);

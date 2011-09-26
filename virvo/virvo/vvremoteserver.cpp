@@ -272,7 +272,15 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
           float value = 0.f;
           if (_socket->getInt32(param) == vvSocket::VV_OK && _socket->getFloat(value) == vvSocket::VV_OK)
           {
-            renderer->setParameter((vvRenderState::ParameterType)param, value);
+            switch(param)
+            {
+            case vvRenderer::VV_CODEC:
+              _codetype = (int)value;
+              break;
+            default:
+              renderer->setParameter((vvRenderState::ParameterType)param, value);
+              break;
+            }
           }
         }
         break;
