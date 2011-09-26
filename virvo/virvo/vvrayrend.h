@@ -35,8 +35,6 @@
 
 #include "vvcuda.h"
 
-#endif
-
 /** Ray casting renderer. Based on the volume
   rendering implementation from the NVIDIA CUDA SDK,
   as of November 25th, 2010 could be downloaded from
@@ -91,4 +89,5 @@ private:
 };
 
 #endif // HAVE_CUDA
+#endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
