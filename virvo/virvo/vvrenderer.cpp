@@ -24,6 +24,7 @@
 #include "vvplatform.h"
 #include "vvgltools.h"
 #include "vvopengl.h"
+#include "vvvoldesc.h"
 #include <string.h>
 #include <math.h>
 #include <assert.h>

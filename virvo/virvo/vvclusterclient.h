@@ -21,17 +21,15 @@
 #ifndef _VV_CLUSTERCLIENT_H_
 #define _VV_CLUSTERCLIENT_H_
 
-#include "vvbsptree.h"
 #include "vvexport.h"
-#include "vvopengl.h"
 #include "vvremoteclient.h"
-#include "vvvoldesc.h"
 #include "vvpthread.h"
 
 #include <vector>
 
 class vvRenderer;
 class vvSlaveVisitor;
+class vvBsbTree;
 
 class VIRVOEXPORT vvClusterClient : public vvRemoteClient
 {

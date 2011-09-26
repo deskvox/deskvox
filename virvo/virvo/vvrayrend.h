@@ -22,10 +22,7 @@
 #define _VV_RAYREND_H_
 
 #include "vvexport.h"
-#include "vvibrimage.h"
-#include "vvopengl.h"
 #include "vvsoftvr.h"
-#include "vvvoldesc.h"
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
@@ -34,6 +31,8 @@
 #ifdef HAVE_CUDA
 
 #include "vvcuda.h"
+
+class vvVolDesc;
 
 /** Ray casting renderer. Based on the volume
   rendering implementation from the NVIDIA CUDA SDK,

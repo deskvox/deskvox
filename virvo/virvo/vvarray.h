@@ -22,7 +22,6 @@
 #define VV_ARRAY_H
 
 #include <iostream>
-#include <string.h>
 #include "vvexport.h"
 
 /** Templated dynamic array class.<P>

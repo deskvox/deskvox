@@ -23,7 +23,6 @@
 
 #include "vvexport.h"
 #include "vvrenderer.h"
-#include "vvsoftimg.h"
 #include "vvsoftvr.h"
 
 /** This class is the implementation of a new volume rendering algorithm

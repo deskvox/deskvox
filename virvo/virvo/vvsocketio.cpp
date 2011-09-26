@@ -19,6 +19,10 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvsocketio.h"
+#include "vvibrimage.h"
+#include "vvvoldesc.h"
+#include "vvdebugmsg.h"
+#include "vvbrick.h"
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>

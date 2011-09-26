@@ -24,6 +24,7 @@
 #endif
 
 #include <iostream>
+#include <cstring>
 #include "vvvirvo.h"
 #include "vvimage.h"
 #include "vvdebugmsg.h"

@@ -27,15 +27,13 @@
 
 // Cg:
 #ifdef HAVE_CG
-  #if defined(WIN32) || defined(__linux) || defined(LINUX)
-    #include <Cg/cg.h>
-    #include <Cg/cgGL.h>
-  #endif
+#include <Cg/cg.h>
+#include <Cg/cgGL.h>
 #endif
 
 // Stingray:
 #ifdef USE_STINGRAY
-  #include <StingRayCaveRenderer.hpp>
+#include <StingRayCaveRenderer.hpp>
 #endif
 
 // Virvo:

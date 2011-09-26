@@ -21,7 +21,7 @@
 #ifndef _VVFILEIO_H_
 #define _VVFILEIO_H_
 
-#include <assert.h>
+#include <cassert>
 #include "vvexport.h"
 #include "vvvoldesc.h"
 

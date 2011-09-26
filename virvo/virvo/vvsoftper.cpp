@@ -29,7 +29,9 @@ using std::endl;
 #include "vvdebugmsg.h"
 #include "vvvecmath.h"
 #include "vvsoftper.h"
+#include "vvsoftimg.h"
 #include "vvstopwatch.h"
+#include "vvvoldesc.h"
 
 //----------------------------------------------------------------------------
 /// Constructor.

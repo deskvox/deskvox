@@ -28,7 +28,6 @@
 // Virvo:
 #include "vvcolor.h"
 #include "vvexport.h"
-#include "vvsllist.h"
 #include "vvtoolshed.h"
 
 /** Specifies a 3D point with an opacity. 

@@ -18,7 +18,6 @@
 
 #include "vvshaderprogram.h"
 #include "vvexport.h"
-#include "vvdebugmsg.h"
 
 class VIRVOEXPORT vvShaderFactory
 {

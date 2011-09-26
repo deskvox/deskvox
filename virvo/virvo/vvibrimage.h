@@ -22,7 +22,6 @@
 #define _VVIBRIMAGE_H_
 
 #include "vvimage.h"
-#include "vvgltools.h"
 #include "vvvecmath.h"
 
 class VIRVOEXPORT vvIbrImage : public vvImage

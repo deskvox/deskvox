@@ -27,6 +27,7 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <cstdlib>
 #include <ctime>
 #include <float.h>
 

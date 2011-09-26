@@ -23,9 +23,9 @@
 
 #include "vvexport.h"
 #include "vvrenderer.h"
-#include "vvsoftimg.h"
 
 class vvImage;
+class vvSoftImg;
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"

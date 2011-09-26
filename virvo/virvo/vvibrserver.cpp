@@ -25,10 +25,10 @@
 #include "vvibrserver.h"
 #include "vvrayrend.h"
 #include "vvcudaimg.h"
-
-#ifdef HAVE_BONJOUR
-#include "vvbonjour/vvbonjourregistrar.h"
-#endif
+#include "vvdebugmsg.h"
+#include "vvvoldesc.h"
+#include "vvibrimage.h"
+#include "vvsocketio.h"
 
 #ifdef HAVE_CUDA
 vvIbrServer::vvIbrServer(const vvRayRend::IbrMode mode)

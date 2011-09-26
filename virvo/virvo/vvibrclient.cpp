@@ -30,6 +30,10 @@
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
 #include "vvtoolshed.h"
+#include "vvsocketio.h"
+#include "vvdebugmsg.h"
+#include "vvvoldesc.h"
+#include "vvibrimage.h"
 
 using std::cerr;
 using std::endl;

@@ -20,6 +20,10 @@
 
 #include "vvdebugmsg.h"
 #include "vvremoteclient.h"
+#include "vvsocketio.h"
+#include "vvopengl.h"
+#include "vvvoldesc.h"
+#include "vvimage.h"
 
 using std::cerr;
 using std::endl;

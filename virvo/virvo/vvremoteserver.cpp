@@ -23,6 +23,11 @@
 #include "vvrendercontext.h"
 #include "vvrenderer.h"
 #include "vvremoteserver.h"
+#include "vvdebugmsg.h"
+#include "vvsocketio.h"
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
 
 using std::cerr;
 using std::endl;

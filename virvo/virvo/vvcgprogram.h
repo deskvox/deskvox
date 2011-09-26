@@ -24,8 +24,6 @@
 #include "vvshaderprogram.h"
 
 #include <map>
-#include <vector>
-#include <iostream>
 
 #ifdef HAVE_CG
 

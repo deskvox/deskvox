@@ -21,9 +21,6 @@
 #ifndef _VVIMAGE_H_
 #define _VVIMAGE_H_
 
-#include <string.h>
-#include <assert.h>
-
 #include "vvexport.h"
 #include "vvtoolshed.h"
 

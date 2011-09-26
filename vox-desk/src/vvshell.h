@@ -31,6 +31,7 @@
 
 // Virvo:
 #include <vvtexrend.h>
+#include <vvvoldesc.h>
 
 // Local:
 #include "vvcanvas.h"

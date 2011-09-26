@@ -23,9 +23,11 @@
 
 #include "vvexport.h"
 #include "vvvecmath.h"
-#include "vvvoldesc.h"
-#include "vvrenderer.h"
+#include "vvcolor.h"
 #include "vvrendertarget.h"
+#include "vvtoolshed.h"
+
+class vvVolDesc;
 
 //============================================================================
 // Class Definition

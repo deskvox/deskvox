@@ -22,7 +22,6 @@
 #define _VVSOFTPAR_H_
 
 #include "vvrenderer.h"
-#include "vvsoftimg.h"
 #include "vvsoftvr.h"
 #include "vvexport.h"
 

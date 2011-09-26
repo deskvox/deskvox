@@ -23,9 +23,10 @@
 
 #include "vvexport.h"
 #include "vvrenderer.h"
-#include "vvsocketio.h"
-#include "vvtransfunc.h"
 #include "vvvecmath.h"
+
+class vvSocketIO;
+class vvImage;
 
 class VIRVOEXPORT vvRemoteClient : public vvRenderer
 {

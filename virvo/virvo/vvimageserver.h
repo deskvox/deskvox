@@ -21,14 +21,11 @@
 #ifndef _VV_IMAGESERVER_H_
 #define _VV_IMAGESERVER_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
 #include "vvexport.h"
 #include "vvremoteserver.h"
 
 class vvRenderer;
+class vvImage;
 
 class VIRVOEXPORT vvImageServer : public vvRemoteServer
 {

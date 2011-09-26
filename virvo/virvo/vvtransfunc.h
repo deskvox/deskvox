@@ -24,6 +24,7 @@
 #include "vvexport.h"
 #include "vvtoolshed.h"
 #include "vvtfwidget.h"
+#include "vvsllist.h"
 
 /** Description of a transfer function.
   @author Jurgen P. Schulze (jschulze@ucsd.edu)

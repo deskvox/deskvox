@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <limits.h>
 #include <math.h>
+#include <cstring>
 
 #include "vvopengl.h"
 #include "vvdynlib.h"
@@ -54,6 +55,8 @@
 #include "vvprintgl.h"
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
+#include "vvbsptree.h"
+#include "vvvoldesc.h"
 
 const int MAX_VIEWPORT_WIDTH = 4800;
 const int MAX_VIEWPORT_HEIGHT = 1200;

@@ -22,6 +22,8 @@
 #include <math.h>
 #include "vvtfwidget.h"
 #include "vvtoolshed.h"
+#include <cassert>
+#include <cstring>
 
 using std::cerr;
 using std::endl;

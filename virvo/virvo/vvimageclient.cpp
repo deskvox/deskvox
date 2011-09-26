@@ -29,6 +29,9 @@
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
 #include "vvtoolshed.h"
+#include "vvsocketio.h"
+#include "vvdebugmsg.h"
+#include "vvimage.h"
 
 using std::cerr;
 using std::endl;

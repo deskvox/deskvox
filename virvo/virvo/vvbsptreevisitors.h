@@ -21,10 +21,11 @@
 #ifndef _VV_BSPTREEVISITORS_H_
 #define _VV_BSPTREEVISITORS_H_
 
-#include "vvoffscreenbuffer.h"
 #include "vvopengl.h"
 #include "vvvisitor.h"
-#include "vvimage.h"
+
+class vvImage;
+class vvOffscreenBuffer;
 
 #include <vector>
 

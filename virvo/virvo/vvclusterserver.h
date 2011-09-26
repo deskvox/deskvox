@@ -24,7 +24,6 @@
 #include "vvexport.h"
 #include "vvoffscreenbuffer.h"
 #include "vvremoteserver.h"
-#include "vvsocketio.h"
 
 class VIRVOEXPORT vvClusterServer : public vvRemoteServer
 {

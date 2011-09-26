@@ -45,6 +45,7 @@
 #include <math.h>
 #include <limits.h>
 #include <ctype.h>
+#include <cstring>
 
 #include "vvvirvo.h"
 #include "vvfileio.h"

@@ -31,6 +31,7 @@
 #include "vvcuda.h"
 #include "vvcudaimg.h"
 #include "vvcudasw.h"
+#include "vvvoldesc.h"
 
 const int MAX_SLICES = 1600;
 const int SliceStack = 32;

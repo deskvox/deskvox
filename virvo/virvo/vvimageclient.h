@@ -21,21 +21,15 @@
 #ifndef _VV_IMAGECLIENT_H_
 #define _VV_IMAGECLIENT_H_
 
-#include "vvbsptree.h"
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvremoteclient.h"
-#include "vvvoldesc.h"
-#include "vvpthread.h"
-#include "vvshaderfactory.h"
-#include "vvshaderprogram.h"
-#include "vvgltools.h"
-#include "vvrayrend.h"
 
 #include <vector>
 
 class vvRenderer;
 class vvSlaveVisitor;
+class vvVolDesc;
 
 class VIRVOEXPORT vvImageClient : public vvRemoteClient
 {

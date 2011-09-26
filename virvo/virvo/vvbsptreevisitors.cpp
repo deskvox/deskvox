@@ -22,6 +22,9 @@
 #include "vvbsptree.h"
 #include "vvbsptreevisitors.h"
 #include "vvgltools.h"
+#include "vvoffscreenbuffer.h"
+#include "vvaabb.h"
+#include "vvimage.h"
 
 vvThreadVisitor::vvThreadVisitor()
   : vvVisitor()

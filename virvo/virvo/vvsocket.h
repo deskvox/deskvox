@@ -40,7 +40,6 @@
 #endif
 #include <string.h>
 #include <signal.h>
-#include <assert.h>
 #include <stdlib.h>
 #ifdef __sun
 #include <sys/filio.h>

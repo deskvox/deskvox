@@ -22,12 +22,11 @@
 
 #include "vvgltools.h"
 #include "vvimageserver.h"
-#include "vvtexrend.h"
-#include "vvcudaimg.h"
-
-#ifdef HAVE_BONJOUR
-#include "vvbonjour/vvbonjourregistrar.h"
-#endif
+#include "vvrenderer.h"
+#include "vvsocketio.h"
+#include "vvopengl.h"
+#include "vvdebugmsg.h"
+#include "vvimage.h"
 
 vvImageServer::vvImageServer()
   : vvRemoteServer()
@@ -64,7 +63,6 @@ void vvImageServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer
   glClearColor(0., 0., 0., 0.);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  vvRect* screenRect = renderer->getVolDesc()->getBoundingBox().getProjectedScreenRect();
   renderer->renderVolumeGL();
 
   // Fetch rendered image

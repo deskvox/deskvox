@@ -25,20 +25,19 @@
 
 // Virvo:
 #include "vvexport.h"
-#include "vvvoldesc.h"
 #include "vvrenderer.h"
-#include "vvtransfunc.h"
-#include "vvbsptree.h"
 #include "vvopengl.h"
 #include "vvpthread.h"
-#include "vvshaderfactory.h"
-#include "vvshaderprogram.h"
+#include "vvsllist.h"
+#include "vvbrick.h"
 
 struct ThreadArgs;
-class vvBrick;
 class vvOffscreenBuffer;
-class vvShaderManager;
+class vvShaderFactory;
+class vvShaderProgram;
 class vvThreadVisitor;
+class vvVolDesc;
+class vvBspTree;
 
 /*!
  * Generate more colors by adjusting this literal and \ref generateDebugColors()

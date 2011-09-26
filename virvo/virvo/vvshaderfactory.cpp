@@ -21,6 +21,7 @@
 #include "vvtoolshed.h"
 
 #include <cstdlib>
+#include <cstring>
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"

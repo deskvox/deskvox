@@ -21,14 +21,16 @@
 #ifndef _VVSOCKETIO_H_
 #define _VVSOCKETIO_H_
 
-#include "vvbrick.h"
 #include "vvexport.h"
 #include "vvsocket.h"
-#include "vvvoldesc.h"
 #include "vvtoolshed.h"
-#include "vvibrimage.h"
 #include "vvvecmath.h"
-#include "vvdebugmsg.h"
+#include "vvtransfunc.h"
+
+class vvBrick;
+class vvImage;
+class vvIbrImage;
+class vvVolDesc;
 
 /** This class provides specific data transfer through sockets.
   It requires the class vvSocket.<BR>

@@ -23,6 +23,8 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+#include <cassert>
+
 #include "vvsocket.h"
 
 #ifndef _WIN32

@@ -22,7 +22,6 @@
 #define VV_CUDASW_H
 
 #include "vvrenderer.h"
-#include "vvsoftimg.h"
 #include "vvsoftpar.h"
 #include "vvsoftper.h"
 #include "vvexport.h"

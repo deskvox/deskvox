@@ -22,11 +22,12 @@
 #define VVREMOTESERVER_H
 
 #include "vvexport.h"
-#include "vvoffscreenbuffer.h"
-#include "vvsocketio.h"
+#include "vvsocket.h"
 
 class vvRenderContext;
 class vvRenderer;
+class vvSocketIO;
+class vvVolDesc;
 
 class VIRVOEXPORT vvRemoteServer
 {

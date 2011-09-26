@@ -17,7 +17,6 @@
 #define _VV_RENDERTARGET_H_
 
 #include "vvexport.h"
-#include "vvopengl.h"
 
 enum BufferPrecision
 {

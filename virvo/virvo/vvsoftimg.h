@@ -23,7 +23,9 @@
 
 #include "vvexport.h"
 #include "vvopengl.h"
-#include "vvrenderer.h"
+#include "vvtoolshed.h"
+
+class vvMatrix;
 
 /** Description of pixel image.
   This class was written for the software implementation of the

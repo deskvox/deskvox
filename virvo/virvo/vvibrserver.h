@@ -28,19 +28,17 @@
 #ifdef HAVE_CUDA
 
 #include "vvexport.h"
-#include "vvoffscreenbuffer.h"
-#include "vvrayrend.h"
-#include "vvsocketio.h"
+#include "vvrenderer.h"
 #include "vvremoteserver.h"
 
 class VIRVOEXPORT vvIbrServer : public vvRemoteServer
 {
 public:
-  vvIbrServer(const vvRayRend::IbrMode mode = vvRayRend::VV_MAX_GRADIENT);
+  vvIbrServer(const vvRenderer::IbrMode mode = vvRenderer::VV_MAX_GRADIENT);
   ~vvIbrServer();
 
 private:
-  vvRayRend::IbrMode         _ibrMode;
+  vvRenderer::IbrMode         _ibrMode;
 
   void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);
   void resize(int w, int h);

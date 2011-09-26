@@ -29,6 +29,8 @@ using std::endl;
 #include "vvdebugmsg.h"
 #include "vvvecmath.h"
 #include "vvstopwatch.h"
+#include "vvsoftimg.h"
+#include "vvvoldesc.h"
 #include "vvsoftpar.h"
 
 //----------------------------------------------------------------------------

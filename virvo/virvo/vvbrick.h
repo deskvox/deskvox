@@ -23,14 +23,13 @@
 
 #include "vvaabb.h"
 #include "vvexport.h"
-#include "vvopengl.h"
 #include "vvtoolshed.h"
-#include "vvshaderprogram.h"
+#include "vvopengl.h"
 
 #include <limits.h>
 
-class vvShaderManager;
 class vvTexRend;
+class vvShaderProgram;
 
 class VIRVOEXPORT vvBrick
 {
