@@ -86,6 +86,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   cudaMemcpy(depth, rayRend->getDeviceDepth(), vp[2]*vp[3]*dp/8, cudaMemcpyDeviceToHost);
 
   img->setReprojectionMatrix(vvIbr::calcImgMatrix(pr, mv, vp, drMin, drMax));
+  img->encode(2, 0, vp[2]-1, 0, vp[3]-1);
   _socket->putIbrImage(img);
 
   delete[] pixels;
