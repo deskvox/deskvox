@@ -120,6 +120,8 @@ SET(VIRVO_SOURCES
   vvibrserver.cpp
   vvvideo.cpp
   vvimage.cpp
+  vvimageclient.cpp
+  vvimageserver.cpp
   vvoffscreenbuffer.cpp
   vvprintgl.cpp
   vvpthread.cpp

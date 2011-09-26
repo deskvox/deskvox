@@ -182,6 +182,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
       STINGRAY,                                   ///< Imedia's Stingray renderer
 	  VIRTEXREND,      							  ///< virtualized texture memory using bricking + out-of-core
       REMOTE_IBR,                                 ///< image based remote renderer
+      REMOTE_IMAGE,                               ///< image based remote renderer
       NUM_RENDERERS                               ///< keep last
     };
 

@@ -63,6 +63,8 @@ using std::ios;
 //#include <virvo/vvclusterserver.h>
 #include <virvo/vvibrclient.h>
 #include <virvo/vvibrserver.h>
+#include <virvo/vvimageclient.h>
+#include <virvo/vvimageserver.h>
 #include <virvo/vvimage.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvrenderer.h>
@@ -156,7 +158,7 @@ vvView::vvView()
   serverMode            = false;
   slavePort             = vvView::DEFAULT_PORT;
   ibrPrecision          = 8;
-  ibrMode               = vvRayRend::VV_MAX_GRADIENT;
+  ibrMode               = vvRenderer::VV_MAX_GRADIENT;
   rrMode                = RR_NONE;
   clipBuffer            = NULL;
   framebufferDump       = NULL;
@@ -186,6 +188,7 @@ vvView::vvView()
   rendererName.push_back("Stingray");
   rendererName.push_back("Out of core texture renderer");
   rendererName.push_back("Image based remote rendering");
+  rendererName.push_back("Remote rendering");
   assert(rendererName.size() == vvRenderer::NUM_RENDERERS);
   rayRenderer           = false;
 
@@ -228,6 +231,10 @@ void vvView::mainLoop(int argc, char *argv[])
         std::cerr << "Image based remote rendering requires CUDA." << std::endl;
         break;
 #endif
+      }
+      else if(rrMode == RR_IMAGE)
+      {
+        server = new vvImageServer();
       }
 #if 0
       else if(rrMode == RR_CLUSTER)
@@ -390,6 +397,10 @@ void vvView::mainLoop(int argc, char *argv[])
     if (rrMode == RR_IBR)
     {
       setRendererType(vvRenderer::REMOTE_IBR);
+    }
+    else if(rrMode == RR_IMAGE)
+    {
+      setRendererType(vvRenderer::REMOTE_IMAGE);
     }
     else if(rrMode == RR_CLUSTER)
     {
@@ -750,6 +761,9 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   currentGeom = gt;
   currentVoxels = vt;
 
+  if(serverMode)
+    currentGeom = vvTexRend::VV_VIEWPORT;
+
   if(renderer)
   renderState = *renderer;
   delete renderer;
@@ -787,8 +801,11 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       renderer = new vvRenderVP(vd, renderState);
       break;
 #endif
+    case vvRenderer::REMOTE_IMAGE:
+      renderer = new vvImageClient(vd, renderState, slaveNames[0], slavePorts[0]==-1 ? slavePort : slavePorts[0],
+              slaveFileNames.empty() ? NULL : slaveFileNames[0]);
+      break;
     case vvRenderer::REMOTE_IBR:
-      //renderer = new vvIbrClient(vd, renderState, );
       renderer = new vvIbrClient(vd, renderState, slaveNames[0], slavePorts[0]==-1 ? slavePort : slavePorts[0],
               slaveFileNames.empty() ? NULL : slaveFileNames[0]);
       renderer->setParameter(vvRenderer::VV_IBR_DEPTH_PREC, ibrPrecision);
@@ -2681,12 +2698,14 @@ void vvView::displayHelpInfo()
   cerr << " Modes:" << endl;
   cerr << " cluster = cluster rendering (default)" << endl;
   cerr << " ibr     = image based rendering" << endl;
+  cerr << " image   = remote rendering" << endl;
   cerr << endl;
   cerr << "-clientmode <mode> (-c)" << endl;
   cerr << " Renderer is a client in mode <mode> and connects to server(s) given with -server" << endl;
   cerr << " Modes:" << endl;
   cerr << " cluster = cluster rendering (default)" << endl;
   cerr << " ibr     = image based rendering" << endl;
+  cerr << " image   = remote rendering" << endl;
   cerr << endl;
   cerr << "-port" << endl;
   cerr << " Renderer is a render slave. Don't use the default port (31050), but the specified one" << endl;
@@ -2827,6 +2846,12 @@ bool vvView::parseCommandLine(int argc, char** argv)
         setRendererType(vvRenderer::RAYREND);
         arg++;
       }
+      else if(val == "image")
+      {
+        rrMode = RR_IMAGE;
+        setRendererType(vvRenderer::TEXREND);
+        arg++;
+      }
       else
       {
         cerr << "Set default server mode: image based rendering" << endl;
@@ -2852,6 +2877,12 @@ bool vvView::parseCommandLine(int argc, char** argv)
       {
         rrMode = RR_IBR;
         setRendererType(vvRenderer::REMOTE_IBR);
+        arg++;
+      }
+      else if(val == "image")
+      {
+        rrMode = RR_IMAGE;
+        setRendererType(vvRenderer::REMOTE_IMAGE);
         arg++;
       }
       else

@@ -74,6 +74,7 @@ class vvView
     {
       RR_NONE = 0,
       RR_CLUSTER,
+      RR_IMAGE,
       RR_IBR
     };
     static const int ROT_TIMER_DELAY;           ///< rotation timer delay in milliseconds
