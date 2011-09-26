@@ -51,7 +51,7 @@ void vvRemoteClient::renderVolumeGL()
 {
   GLint vp[4];
   glGetIntegerv(GL_VIEWPORT, vp);
-  if(vp[0] != _viewportWidth || vp[1] != _viewportHeight)
+  if(vp[2] != _viewportWidth || vp[3] != _viewportHeight)
   {
     resize(vp[2], vp[3]);
   }
