@@ -435,7 +435,7 @@ void vvTFPyramid::fromString(const std::string& str)
   assert(tokens.size() == 16);
   assert(tokens[0].compare("TF_PYRAMID") == 0);
 
-  _name = new char[tokens[1].length()];
+  _name = new char[tokens[1].length()+1];
   strcpy(_name, tokens[1].c_str());
 
   _pos[0] = atof(tokens[2].c_str());
@@ -683,7 +683,7 @@ void vvTFColor::fromString(const std::string& str)
   assert(tokens.size() == 8);
   assert(tokens[0].compare("TF_COLOR") == 0);
 
-  _name = new char[tokens[1].length()];
+  _name = new char[tokens[1].length()+1];
   strcpy(_name, tokens[1].c_str());
 
   _pos[0] = atof(tokens[2].c_str());
@@ -756,7 +756,7 @@ void vvTFSkip::fromString(const std::string& str)
   assert(tokens.size() == 8);
   assert(tokens[0].compare("TF_SKIP") == 0);
 
-  _name = new char[tokens[1].length()];
+  _name = new char[tokens[1].length()+1];
   strcpy(_name, tokens[1].c_str());
 }
 
@@ -902,7 +902,7 @@ void vvTFCustom::fromString(const std::string& str)
   assert(tokens.size() >= 6);
   assert(tokens[0].compare("TF_CUSTOM") == 0);
 
-  _name = new char[tokens[1].length()];
+  _name = new char[tokens[1].length()+1];
   strcpy(_name, tokens[1].c_str());
 }
 

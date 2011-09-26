@@ -208,12 +208,13 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
     return retval;
   }
 
-  buffer = new uchar[len];
+  buffer = new uchar[len+1];
   if ((retval = vvSocket::read_data(buffer, len)) != vvSocket::VV_OK)
   {
     delete[] buffer;
     return retval;
   }
+  buffer[len] = '\0';
 
   std::istringstream in;
   in.str((const char*)buffer);
@@ -274,7 +275,7 @@ vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
   }
 
   const size_t len = strlen(out.str().c_str());
-  buffer = new uchar[len];
+  buffer = new uchar[len+1];
   strcpy((char*)buffer, out.str().c_str());
 
   putInt32((int)len);
