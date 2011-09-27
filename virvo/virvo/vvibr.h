@@ -34,7 +34,8 @@ void calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
 vvMatrix calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
                        const vvGLTools::Viewport& vp,
                        float depthRangeMin, float depthRangeMax);
-
+vvMatrix calcViewportMatrix(const vvGLTools::Viewport& vp);
+vvMatrix calcDepthScaleMatrix(float depthRangeMin, float depthRangeMax);
 }
 
 

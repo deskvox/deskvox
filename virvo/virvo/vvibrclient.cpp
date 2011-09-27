@@ -121,21 +121,18 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     pthread_mutex_unlock(&_imageMutex);
   }
 
+  float drMin = 0.0f;
+  float drMax = 0.0f;
+  vvIbr::calcDepthRange(_currentPr, _currentMv,
+                        vd->getBoundingBox(),
+                        drMin, drMax);
+  const vvGLTools::Viewport vp = vvGLTools::getViewport();
+  vvMatrix currentImgMatrix = vvIbr::calcImgMatrix(_currentPr, _currentMv, vp, drMin, drMax);
+  const bool matrixChanged = (!currentImgMatrix.equal(&_imgMatrix));
+
   if (newFrame) // no frame pending
   {
-    // request new ibr frame if anything changed
-    float drMin = 0.0f;
-    float drMax = 0.0f;
-    vvIbr::calcDepthRange(_currentPr, _currentMv,
-                          vd->getBoundingBox(),
-                          drMin, drMax);
-    vvMatrix currentImgMatrix = vvIbr::calcImgMatrix(_currentPr, _currentMv,
-                                                     vvGLTools::getViewport(),
-                                                     drMin, drMax);
-    if (!currentImgMatrix.equal(&_imgMatrix))
-    {
-      _changes = true;
-    }
+    _changes = matrixChanged;
 
     if(_changes)
     {
@@ -175,7 +172,15 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   _shader->setParameterTex2D("rgbaTex", _rgbaTex);
   _shader->setParameterTex2D("depthTex", _depthTex);
 
-  vvMatrix reprojectionMatrix = _imgMatrix * currentMatrix;
+  vvMatrix reprojectionMatrix;
+  if (!matrixChanged)
+  {
+    reprojectionMatrix = vvIbr::calcDepthScaleMatrix(drMin, drMax) * vvIbr::calcViewportMatrix(vp);
+  }
+  else
+  {
+    reprojectionMatrix = _imgMatrix * currentMatrix;
+  }
   reprojectionMatrix.transpose();
   float reprojectionMatrixGL[16];
   reprojectionMatrix.get(reprojectionMatrixGL);

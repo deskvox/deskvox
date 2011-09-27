@@ -571,10 +571,9 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
   if(t_useIbr)
   {
-    float3 depth = make_float3(0.0f, 0.0f, 0.0f);
     // convert position to window-coordinates
     const float4 depthWin = mulPost(c_MvPrMatrix, make_float4(ibrDepth.x, ibrDepth.y, ibrDepth.z, 1.0f));
-    depth = perspectiveDivide(depthWin);
+    float3 depth = perspectiveDivide(depthWin);
 
     // Scale to 0.0 - 1.0
     depth.z += 1.0f;

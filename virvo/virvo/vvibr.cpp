@@ -59,22 +59,30 @@ vvMatrix vvIbr::calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
                               const vvGLTools::Viewport& vp,
                               const float depthRangeMin, const float depthRangeMax)
 {
-  vvMatrix vpMatrix;
-  vpMatrix.identity();
-  vpMatrix.scale(1.0f / (0.5f * vp[2]),
-                 1.0f / (0.5f * vp[3]),
-                 2.0f);
-  vpMatrix.translate((vp[0] / (0.5f * vp[2])) - 1.0f,
-                     (vp[1] / (0.5f * vp[3])) - 1.0f,
-                     -1.0f);
-
   vvMatrix invModelviewProjection = mv * pr;
   invModelviewProjection.invert();
 
-  vvMatrix depthScaleMatrix;
-  depthScaleMatrix.identity();
-  depthScaleMatrix.scale(1.0f, 1.0f, (depthRangeMax - depthRangeMin));
-  depthScaleMatrix.translate(0.0f, 0.0f, depthRangeMin);
+  return calcDepthScaleMatrix(depthRangeMin, depthRangeMax) * calcViewportMatrix(vp) * invModelviewProjection;
+}
 
-  return depthScaleMatrix * vpMatrix * invModelviewProjection;
+vvMatrix vvIbr::calcViewportMatrix(const vvGLTools::Viewport& vp)
+{
+  vvMatrix result;
+  result.identity();
+  result.scale(1.0f / (0.5f * vp[2]),
+               1.0f / (0.5f * vp[3]),
+               2.0f);
+  result.translate((vp[0] / (0.5f * vp[2])) - 1.0f,
+                   (vp[1] / (0.5f * vp[3])) - 1.0f,
+                   -1.0f);
+  return result;
+}
+
+vvMatrix vvIbr::calcDepthScaleMatrix(const float depthRangeMin, const float depthRangeMax)
+{
+  vvMatrix result;
+  result.identity();
+  result.scale(1.0f, 1.0f, (depthRangeMax - depthRangeMin));
+  result.translate(0.0f, 0.0f, depthRangeMin);
+  return result;
 }
