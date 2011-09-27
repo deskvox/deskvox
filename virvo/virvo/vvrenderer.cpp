@@ -140,12 +140,11 @@ void vvRenderState::setParameter(const ParameterType param, const float newValue
     break;
   case VV_IS_ROI_USED:
     _isROIUsed = (newValue != 0.0f);
-    break;
-  case VV_IS_ROI_CHANGED:
-    _isROIChanged = (newValue != 0.0f);
+    _isROIChanged = true;
     break;
   case VV_SPHERICAL_ROI:
     _sphericalROI = (newValue != 0.0f);
+    _isROIChanged = true;
     break;
   case VV_BRICK_TEXEL_OVERLAP:
     _brickTexelOverlap = (int)newValue;
@@ -219,9 +218,11 @@ void vvRenderState::setParameterV3(const ParameterType param, const vvVector3& n
     break;
   case VV_ROI_POS:
     _roiPos = newValue;
+    _isROIChanged = true;
     break;
   case VV_ROI_SIZE:
     _roiSize = newValue;
+    _isROIChanged = true;
     break;
   case VV_BRICK_SIZE:
     {
@@ -292,8 +293,6 @@ float vvRenderState::getParameter(const ParameterType param) const
     return _clipSingleSlice;
   case VV_CLIP_OPAQUE:
     return _clipOpaque;
-  case VV_IS_ROI_CHANGED:
-    return _isROIChanged;
   case VV_IS_ROI_USED:
     return _isROIUsed;
   case VV_SPHERICAL_ROI:
@@ -1171,8 +1170,7 @@ void vvRenderer::setObjectDirection(const vvVector3*)
 void vvRenderer::setROIEnable(const bool flag)
 {
   vvDebugMsg::msg(1, "vvRenderer::setROIEnable()");
-  _isROIChanged = true;
-  _isROIUsed = flag;
+  setParameter(VV_IS_ROI_USED, flag ? 1.f : 0.f);
 }
 
 void vvRenderer::setSphericalROI(const bool sphericalROI)
@@ -1183,7 +1181,7 @@ void vvRenderer::setSphericalROI(const bool sphericalROI)
 
 bool vvRenderer::isROIEnabled() const
 {
-  return _isROIUsed;
+  return getParameter(VV_IS_ROI_USED)==0.f ? false : true;
 }
 
 //----------------------------------------------------------------------------
@@ -1193,8 +1191,7 @@ bool vvRenderer::isROIEnabled() const
 void vvRenderer::setProbePosition(const vvVector3* pos)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProbePosition()");
-  _isROIChanged = true;
-  _roiPos.copy(pos);
+  setParameterV3(VV_ROI_POS, pos);
 }
 
 //----------------------------------------------------------------------------
@@ -1204,7 +1201,7 @@ void vvRenderer::setProbePosition(const vvVector3* pos)
 void vvRenderer::getProbePosition(vvVector3* pos) const
 {
   vvDebugMsg::msg(3, "vvRenderer::getProbePosition()");
-  pos->copy(&_roiPos);
+  *pos = getParameterV3(VV_ROI_POS);
 }
 
 //----------------------------------------------------------------------------
@@ -1214,8 +1211,7 @@ void vvRenderer::getProbePosition(vvVector3* pos) const
 void vvRenderer::setProbeSize(const vvVector3* newSize)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProbeSize()");
-  _isROIChanged = true;
-  _roiSize.copy(newSize);
+  setParameterV3(VV_ROI_SIZE, newSize);
 }
 
 //----------------------------------------------------------------------------
@@ -1225,7 +1221,7 @@ void vvRenderer::setProbeSize(const vvVector3* newSize)
 void vvRenderer::getProbeSize(vvVector3* size) const
 {
   vvDebugMsg::msg(3, "vvRenderer::getProbeSize()");
-  size->copy(&_roiSize);
+  *size = getParameterV3(VV_ROI_SIZE);
 }
 
 //----------------------------------------------------------------------------

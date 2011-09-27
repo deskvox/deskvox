@@ -50,13 +50,9 @@ public:
   void renderVolumeGL();
 
   void setCurrentFrame(int index);
-  void setMipMode(int mipMode);
   void setObjectDirection(const vvVector3* od);
   void setViewingDirection(const vvVector3* vd);
   void setPosition(const vvVector3* p);
-  void setROIEnable(bool roiEnabled);
-  void setProbePosition(const vvVector3* pos);
-  void setProbeSize(const vvVector3* roiSize);
   virtual void updateTransferFunction();
   virtual void setParameter(vvRenderer::ParameterType param, float newValue);
   virtual void setParameterV3(vvRenderer::ParameterType param, const vvVector3 &newValue);
@@ -67,9 +63,6 @@ protected:
   int _slavePort;
   const char* _slaveFileName;
   vvSocketIO* _socket;
-
-  void adjustQuality(float quality);
-  void setInterpolation(bool interpolation);
 
   void clearImages();
   bool _changes; ///< indicate if a new rendering is required

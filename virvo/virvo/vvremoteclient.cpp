@@ -136,17 +136,6 @@ void vvRemoteClient:: setCurrentFrame(const int index)
   }
 }
 
-void vvRemoteClient::setMipMode(const int mipMode)
-{
-  vvDebugMsg::msg(3, "vvRemoteClient::setMipMode()");
-  _changes = true;
-
-  if (_socket->putCommReason(vvSocketIO::VV_MIPMODE) == vvSocket::VV_OK)
-  {
-    _socket->putInt32(mipMode);
-  }
-}
-
 void vvRemoteClient::setObjectDirection(const vvVector3* od)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setObjectDirection()");
@@ -177,39 +166,6 @@ void vvRemoteClient::setPosition(const vvVector3* p)
   if (_socket->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
   {
     _socket->putVector3(*p);
-  }
-}
-
-void vvRemoteClient::setROIEnable(const bool roiEnabled)
-{
-  vvDebugMsg::msg(1, "vvRemoteClient::setROIEnable()");
-  _changes = true;
-
-  if (_socket->putCommReason(vvSocketIO::VV_TOGGLE_ROI) == vvSocket::VV_OK)
-  {
-    _socket->putBool(roiEnabled);
-  }
-}
-
-void vvRemoteClient::setProbePosition(const vvVector3* pos)
-{
-  vvDebugMsg::msg(1, "vvRemoteClient::setProbePosition()");
-  _changes = true;
-
-  if (_socket->putCommReason(vvSocketIO::VV_ROI_POSITION) == vvSocket::VV_OK)
-  {
-    _socket->putVector3(*pos);
-  }
-}
-
-void vvRemoteClient::setProbeSize(const vvVector3* newSize)
-{
-  vvDebugMsg::msg(1, "vvRemoteClient::setProbeSize()");
-  _changes = true;
-
-  if (_socket->putCommReason(vvSocketIO::VV_ROI_SIZE) == vvSocket::VV_OK)
-  {
-    _socket->putVector3(*newSize);
   }
 }
 
@@ -258,23 +214,5 @@ void vvRemoteClient::setParameterV4(const vvRenderer::ParameterType param, const
     _socket->putInt32((int32_t)param);
     _socket->putVector4(newValue);
   }
-}
-
-void vvRemoteClient::adjustQuality(const float quality)
-{
-  vvDebugMsg::msg(3, "vvRemoteClient::adjustQuality()");
-  if (_socket->putCommReason(vvSocketIO::VV_QUALITY) == vvSocket::VV_OK)
-  {
-    _socket->putFloat(quality);
-  }
-}
-
-void vvRemoteClient::setInterpolation(const bool interpolation)
-{
-  vvDebugMsg::msg(3, "vvRemoteClient::setInterpolation()");
-    if (_socket->putCommReason(vvSocketIO::VV_INTERPOLATION) == vvSocket::VV_OK)
-    {
-      _socket->putBool(interpolation);
-    }
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -185,12 +185,6 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
     {
       switch (commReason)
       {
-      case vvSocketIO::VV_CURRENT_FRAME:
-        if ((_socket->getInt32(currentFrame)) == vvSocket::VV_OK)
-        {
-          renderer->setCurrentFrame(currentFrame);
-        }
-        break;
       case vvSocketIO::VV_EXIT:
         return;
       case vvSocketIO::VV_MATRIX:
@@ -200,10 +194,10 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
           renderImage(pr, mv, renderer);
         }
         break;
-      case vvSocketIO::VV_MIPMODE:
-        if ((_socket->getInt32(mipMode)) == vvSocket::VV_OK)
+      case vvSocketIO::VV_CURRENT_FRAME:
+        if ((_socket->getInt32(currentFrame)) == vvSocket::VV_OK)
         {
-          renderer->setParameter(vvRenderState::VV_MIP_MODE, (float)mipMode);
+          renderer->setCurrentFrame(currentFrame);
         }
         break;
       case vvSocketIO::VV_OBJECT_DIRECTION:
@@ -212,10 +206,10 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
           renderer->setObjectDirection(&objDir);
         }
         break;
-      case vvSocketIO::VV_QUALITY:
-        if ((_socket->getFloat(quality)) == vvSocket::VV_OK)
+      case vvSocketIO::VV_VIEWING_DIRECTION:
+        if ((_socket->getVector3(viewDir)) == vvSocket::VV_OK)
         {
-          renderer->setParameter(vvRenderState::VV_QUALITY, quality);
+          renderer->setViewingDirection(&viewDir);
         }
         break;
       case vvSocketIO::VV_POSITION:
@@ -230,45 +224,12 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
           resize(w, h);
         }
         break;
-      case vvSocketIO::VV_INTERPOLATION:
-        if ((_socket->getBool(interpolation)) == vvSocket::VV_OK)
-        {
-          renderer->setParameter(vvRenderer::VV_SLICEINT, interpolation ? 1.0f : 0.0f);
-        }
-        break;
-      case vvSocketIO::VV_TOGGLE_BOUNDINGBOX:
-        renderer->setParameter(vvRenderState::VV_BOUNDARIES, !(renderer->getParameter(vvRenderState::VV_BOUNDARIES) != 0.0f));
-        break;
-      case vvSocketIO::VV_TOGGLE_ROI:
-        if ((_socket->getBool(roiEnabled)) == vvSocket::VV_OK)
-        {
-          renderer->setROIEnable(roiEnabled);
-        }
-        break;
-      case vvSocketIO::VV_ROI_POSITION:
-        if ((_socket->getVector3(roiPos)) == vvSocket::VV_OK)
-        {
-          renderer->setParameterV3(vvRenderState::VV_ROI_POS, roiPos);
-        }
-        break;
-      case vvSocketIO::VV_ROI_SIZE:
-        if ((_socket->getVector3(roiSize)) == vvSocket::VV_OK)
-        {
-          renderer->setParameterV3(vvRenderState::VV_ROI_SIZE, roiSize);
-        }
-        break;
       case vvSocketIO::VV_TRANSFER_FUNCTION:
         tf._widgets.removeAll();
         if ((_socket->getTransferFunction(tf)) == vvSocket::VV_OK)
         {
           renderer->getVolDesc()->tf = tf;
           renderer->updateTransferFunction();
-        }
-        break;
-      case vvSocketIO::VV_VIEWING_DIRECTION:
-        if ((_socket->getVector3(viewDir)) == vvSocket::VV_OK)
-        {
-          renderer->setViewingDirection(&viewDir);
         }
         break;
       case vvSocketIO::VV_PARAMETER_1:
@@ -310,13 +271,12 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
         }
         break;
       default:
-        break;
+        vvDebugMsg::msg(0, "vvRemoteServer::mainLoop: comm reason not implemented: ", (int)commReason);
+        return;
       }
     }
     else if (err == vvSocket::VV_PEER_SHUTDOWN)
     {
-      delete _socket;
-      _socket = NULL;
       return;
     }
 
