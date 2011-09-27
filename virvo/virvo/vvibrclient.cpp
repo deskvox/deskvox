@@ -62,6 +62,8 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
 
   _shaderFactory = new vvShaderFactory();
   _shader = _shaderFactory->createProgram("ibr", "", "");
+  if(!_shader)
+    vvDebugMsg::msg(0, "vvIbrClient::vvIbrClient: could not find ibr shader");
 
   pthread_mutex_init(&_imageMutex, NULL);
   pthread_mutex_init(&_signalMutex, NULL);
