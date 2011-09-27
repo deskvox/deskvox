@@ -267,9 +267,9 @@ void vvView::mainLoop(int argc, char *argv[])
         continue;
       }
 
+#if 0
       // Get bricks to render
       std::vector<BrickList>* frames = new std::vector<BrickList>();
-#if 0
       if (rrMode == RR_CLUSTER)
       {
         vvClusterServer* clusterServer = dynamic_cast<vvClusterServer*>(server);
@@ -297,6 +297,7 @@ void vvView::mainLoop(int argc, char *argv[])
           continue;
         }
       }
+      setRenderer(currentGeom, currentVoxels, frames);
 #endif
 
       if (vd != NULL)
@@ -318,7 +319,7 @@ void vvView::mainLoop(int argc, char *argv[])
 
         ov = new vvObjView();
         setProjectionMode(perspectiveMode);
-        setRenderer(currentGeom, currentVoxels, frames);
+        setRenderer(currentGeom, currentVoxels);
         srand(time(NULL));
 
         server->renderLoop(renderer);
@@ -762,9 +763,6 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
 
   currentGeom = gt;
   currentVoxels = vt;
-
-  if(serverMode)
-    currentGeom = vvTexRend::VV_VIEWPORT;
 
   if(renderer)
   renderState = *renderer;
