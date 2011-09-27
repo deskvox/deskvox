@@ -41,7 +41,7 @@ using std::endl;
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
                          const char* slaveName, int slavePort,
                          const char* slaveFileName)
-  : vvRemoteClient(vd, renderState, slaveName, slavePort, slaveFileName)
+  : vvRemoteClient(vd, renderState, vvRenderer::REMOTE_IBR, slaveName, slavePort, slaveFileName)
 {
   vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
 

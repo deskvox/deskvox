@@ -32,10 +32,11 @@
 using std::cerr;
 using std::endl;
 
-vvRemoteServer::vvRemoteServer()
-  : _socket(NULL), _renderContext(NULL)
+vvRemoteServer::vvRemoteServer(vvSocketIO *socket)
+  : _socket(socket), _renderContext(NULL)
 {
   vvDebugMsg::msg(1, "vvRemoteServer::vvRemoteServer()");
+  initSocket();
 }
 
 vvRemoteServer::~vvRemoteServer()
@@ -53,35 +54,15 @@ bool vvRemoteServer::getLoadVolumeFromFile() const
   return _loadVolumeFromFile;
 }
 
-vvRemoteServer::ErrorType vvRemoteServer::initSocket(const int port, const vvSocket::SocketType st)
+vvRemoteServer::ErrorType vvRemoteServer::initSocket()
 {
   vvDebugMsg::msg(1, "vvRemoteServer::initSocket()");
 
-  delete _socket;
-  _socket = new vvSocketIO(port, st);
   _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
 
-#ifdef HAVE_BONJOUR
-  // Register the bonjour service for the slave.
-  vvBonjourRegistrar* registrar = new vvBonjourRegistrar();
-  const vvBonjourEntry entry = vvBonjourEntry("Virvo render slave",
-                                              "_distrendering._tcp", "");
-  registrar->registerService(entry, port);
-#endif
-
-  cerr << "Listening on port " << port << endl;
-
-  const vvSocket::ErrorType err = _socket->init();
   _socket->no_nagle();
 
-  if (err != vvSocket::VV_OK)
-  {
-    return VV_SOCKET_ERROR;
-  }
-  else
-  {
-    return VV_OK;
-  }
+  return VV_OK;
 }
 
 vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)

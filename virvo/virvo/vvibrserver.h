@@ -36,7 +36,7 @@ class vvIbrImage;
 class VIRVOEXPORT vvIbrServer : public vvRemoteServer
 {
 public:
-  vvIbrServer(const vvRenderer::IbrMode mode = vvRenderer::VV_MAX_GRADIENT);
+  vvIbrServer(vvSocketIO *socket);
   ~vvIbrServer();
 
 private:

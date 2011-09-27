@@ -31,9 +31,9 @@
 #include "vvsocketio.h"
 
 #ifdef HAVE_CUDA
-vvIbrServer::vvIbrServer(const vvRayRend::IbrMode mode)
-: vvRemoteServer()
-, _ibrMode(mode)
+vvIbrServer::vvIbrServer(vvSocketIO *socket)
+: vvRemoteServer(socket)
+, _ibrMode(vvRenderer::VV_MAX_GRADIENT)
 , _image(NULL)
 , _pixels(NULL)
 , _depth(NULL)

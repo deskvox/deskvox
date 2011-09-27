@@ -28,10 +28,11 @@
 using std::cerr;
 using std::endl;
 
-vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
+vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_t type,
                                const char *slaveName, int slavePort,
                                const char *slaveFileName)
    : vvRenderer(vd, renderState),
+    _type(type),
     _slaveName(slaveName),
     _slavePort(slavePort),
     _slaveFileName(slaveFileName),
@@ -75,6 +76,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   if (_socket->init() == vvSocket::VV_OK)
   {
     _socket->no_nagle();
+    _socket->putInt32(_type);
     _socket->putBool(_slaveFileName!=NULL);
 
     if (_slaveFileName)

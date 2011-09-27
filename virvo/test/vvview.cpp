@@ -223,38 +223,52 @@ void vvView::mainLoop(int argc, char *argv[])
 
     while (1)
     {
-      vvRemoteServer* server = NULL;
-      if((rrMode == RR_IBR) && (rendererType == vvRenderer::RAYREND))
+      cerr << "Listening on port " << slavePort << endl;
+
+      vvSocketIO *sock = new vvSocketIO(slavePort, vvSocket::VV_TCP);
+      sock->set_debuglevel(vvDebugMsg::getDebugLevel());
+      if(sock->init() != vvSocket::VV_OK)
       {
-#ifdef HAVE_CUDA
-        server = new vvIbrServer(ibrMode);
-#else
-        std::cerr << "Image based remote rendering requires CUDA." << std::endl;
-        break;
-#endif
-      }
-      else if(rrMode == RR_IMAGE)
-      {
-        server = new vvImageServer();
-      }
-#if 0
-      else if(rrMode == RR_CLUSTER)
-      {
-        server = new vvClusterServer();
-      }
-#endif
-      else
-      {
-        if((rrMode == RR_IBR) && (rendererType != vvRenderer::RAYREND))
-          std::cerr << "Image based remote rendering works with rayrend only." << std::endl;
+        std::cerr << "Failed to initialize server socket on port " << slavePort << std::endl;
+        delete sock;
         break;
       }
 
-      if (server->initSocket(slavePort, vvSocket::VV_TCP) != vvRemoteServer::VV_OK)
+#ifdef HAVE_BONJOUR
+      // Register the bonjour service for the slave.
+      vvBonjourRegistrar* registrar = new vvBonjourRegistrar();
+      const vvBonjourEntry entry = vvBonjourEntry("Virvo render slave",
+                                              "_distrendering._tcp", "");
+      registrar->registerService(entry, slavePort);
+#endif
+
+      vvRemoteServer* server = NULL;
+      int type;
+      sock->getInt32(type);
+      switch(type)
       {
-        // TODO: Evaluate the error type, maybe don't even return but try again.
-        cerr << "Could not initialize the socket connection" << endl;
-        cerr << "Exiting..." << endl;
+        case vvRenderer::REMOTE_IMAGE:
+          rrMode = RR_IMAGE;
+          //setRendererType(vvRenderer::TEXREND);
+          server = new vvImageServer(sock);
+          break;
+        case vvRenderer::REMOTE_IBR:
+#ifdef HAVE_CUDA
+          rrMode = RR_IBR;
+          setRendererType(vvRenderer::RAYREND);
+          server = new vvIbrServer(sock);
+#else
+          std::cerr << "Image based remote rendering requires CUDA." << std::endl;
+#endif
+          break;
+        default:
+          std::cerr << "Unknown remote rendering type " << type << std::endl;
+          break;
+      }
+
+      if(!server)
+      {
+        delete sock;
         break;
       }
 
@@ -826,21 +840,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       }
   }
 
-  if(serverMode)
-  {
-#if 0
-    if((rrMode == RR_IBR))
-      remoteRendering &= (rendererType == vvRenderer::RAYREND);
-    else if (rrMode == RR_CLUSTER)
-      remoteRendering &= ((rendererType == vvRenderer::TEXREND)
-                           && (dynamic_cast<vvTexRend*>(renderer)->getGeomType() == vvTexRend::VV_BRICKS));
-    else
-    {
-      remoteRendering = false;
-    }
-#endif
-  }
-  else
+  if(!serverMode)
   {
     renderer->setROIEnable(roiEnabled);
     printROIMessage();
@@ -1600,7 +1600,7 @@ void vvView::optionsMenuCallback(int item)
         ds->ibrMode = static_cast<vvRenderState::IbrMode>(0);
       }
       ds->renderer->setParameter(vvRenderer::VV_IBR_MODE, ds->ibrMode);
-      cerr << "Warp interpolation set to " << int(ds->warpInterpolMode) << endl;
+      cerr << "Set IBR mode to " << int(ds->ibrMode) << endl;
     }
     break;
   case 18:
@@ -2702,12 +2702,8 @@ void vvView::displayHelpInfo()
   cerr << endl;
   cerr << "Available options:" << endl;
   cerr << endl;
-  cerr << "-servermode <mode> (-s)" << endl;
+  cerr << "-servermode (-s)" << endl;
   cerr << " Renderer is a server in mode <mode> and accepts assignments from a client" << endl;
-  cerr << " Modes:" << endl;
-  cerr << " cluster = cluster rendering (default)" << endl;
-  cerr << " ibr     = image based rendering" << endl;
-  cerr << " image   = remote rendering" << endl;
   cerr << endl;
   cerr << "-clientmode <mode> (-c)" << endl;
   cerr << " Renderer is a client in mode <mode> and connects to server(s) given with -server" << endl;
@@ -2838,35 +2834,6 @@ bool vvView::parseCommandLine(int argc, char** argv)
              vvToolshed::strCompare(argv[arg], "-servermode")==0)
     {
       serverMode = true;
-
-      std::string val;
-      if(argv[arg+1])
-        val = argv[arg+1];
-
-      if(val == "cluster")
-      {
-        rrMode = RR_CLUSTER;
-        setRendererType(vvRenderer::TEXREND);
-        arg++;
-      }
-      else if(val == "ibr")
-      {
-        rrMode = RR_IBR;
-        setRendererType(vvRenderer::RAYREND);
-        arg++;
-      }
-      else if(val == "image")
-      {
-        rrMode = RR_IMAGE;
-        setRendererType(vvRenderer::TEXREND);
-        arg++;
-      }
-      else
-      {
-        cerr << "Set default server mode: image based rendering" << endl;
-        rrMode = RR_IBR;
-        setRendererType(vvRenderer::RAYREND);
-      }
     }
     else if (vvToolshed::strCompare(argv[arg], "-c")==0 ||
              vvToolshed::strCompare(argv[arg], "-clientmode")==0)

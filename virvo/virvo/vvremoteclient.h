@@ -41,7 +41,7 @@ public:
     VV_BAD_IMAGE
   };
 
-  vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
+  vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_t type,
                  const char* slaveName, int slavePort,
                  const char* slaveFileName);
   virtual ~vvRemoteClient();
@@ -59,6 +59,7 @@ public:
   virtual void setParameterV4(vvRenderer::ParameterType param, const vvVector4 &newValue);
 
 protected:
+  uint32_t _type;
   const char* _slaveName;
   int _slavePort;
   const char* _slaveFileName;

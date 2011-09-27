@@ -39,7 +39,7 @@ using std::endl;
 vvImageClient::vvImageClient(vvVolDesc *vd, vvRenderState renderState,
                          const char* slaveName, int slavePort,
                          const char* slaveFileName)
-  : vvRemoteClient(vd, renderState, slaveName, slavePort, slaveFileName)
+  : vvRemoteClient(vd, renderState, vvRenderer::REMOTE_IMAGE, slaveName, slavePort, slaveFileName)
   , _image(NULL)
 {
   vvDebugMsg::msg(1, "vvImageClient::vvImageClient()");

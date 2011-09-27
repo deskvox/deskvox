@@ -40,12 +40,11 @@ public:
     VV_RENDERCONTEXT_ERROR
   };
 
-  vvRemoteServer();
+  vvRemoteServer(vvSocketIO *socket);
   virtual ~vvRemoteServer();
 
   bool getLoadVolumeFromFile() const;
 
-  vvRemoteServer::ErrorType initSocket(int port, vvSocket::SocketType st);
   vvRemoteServer::ErrorType initData(vvVolDesc*& vd);
   vvRemoteServer::ErrorType initRenderContext();
 
@@ -60,6 +59,9 @@ protected:
 
   virtual void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer) = 0;
   virtual void resize(int w, int h) = 0;
+
+private:
+  vvRemoteServer::ErrorType initSocket();
 };
 
 #endif // VVREMOTESERVER_H
