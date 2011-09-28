@@ -299,9 +299,7 @@ template<
          int t_mipMode,
          bool t_lighting,
          bool t_opacityCorrection,
-         bool t_clipPlane,
-         bool t_clipSphere,
-         bool t_useSphereAsProbe,
+         bool t_clipping,
          bool t_useIbr,
          int t_ibrMode
         >
@@ -311,6 +309,9 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 volPos, const float3 volSizeHalf,
                        const float3 probePos, const float3 probeSizeHalf,
                        const float3 L, const float3 H,
+                       const bool clipPlane,
+                       const bool clipSphere,
+                       const bool useSphereAsProbe,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist,
                        void* d_depth, int dp,
@@ -383,11 +384,11 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   // Calc hits with clip sphere.
   float tsnear = 0.0f;
   float tsfar = 0.0f;
-  if (t_clipSphere)
+  if (t_clipping && clipSphere)
   {
     // In probe mode, rays that don't hit the sphere simply aren't rendered.
     // In ordinary sphere mode, the intersection data is memorized.
-    if (!intersectSphere(ray, sphereCenter, sphereRadius, &tsnear, &tsfar) && t_useSphereAsProbe)
+    if (!intersectSphere(ray, sphereCenter, sphereRadius, &tsnear, &tsfar) && useSphereAsProbe)
     {
       d_output[y * texwidth + x] = make_uchar4(0);
       return;
@@ -397,7 +398,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   // Calc hits with clip plane.
   float tpnear = 0.0f;
   float nddot = 0.0f;
-  if (t_clipPlane)
+  if (t_clipping && clipPlane)
   {
     intersectPlane(ray, planeNormal, planeDist, &nddot, &tpnear);
   }
@@ -434,24 +435,27 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
   while(infinite)
   {
-    // Test for clipping.
-    const bool clippedPlane = (t_clipPlane && (((t <= tpnear) && (nddot >= 0.0f))
-                                            || ((t >= tpnear) && (nddot < 0.0f))));
-    const bool clippedSphere = t_useSphereAsProbe ? (t_clipSphere && ((t < tsnear) || (t > tsfar)))
-                                                  : (t_clipSphere && (t >= tsnear) && (t <= tsfar));
-
-    if (clippedPlane || clippedSphere)
+    if (t_clipping)
     {
-      justClippedPlane = clippedPlane;
-      justClippedSphere = clippedSphere;
+      // Test for clipping.
+      const bool clippedPlane = (clipPlane && (((t <= tpnear) && (nddot >= 0.0f))
+                                              || ((t >= tpnear) && (nddot < 0.0f))));
+      const bool clippedSphere = useSphereAsProbe ? (clipSphere && ((t < tsnear) || (t > tsfar)))
+                                                  : (clipSphere && (t >= tsnear) && (t <= tsfar));
 
-      t += dist;
-      if (t > tfar)
+      if (clippedPlane || clippedSphere)
       {
-        break;
+        justClippedPlane = clippedPlane;
+        justClippedSphere = clippedSphere;
+
+        t += dist;
+        if (t > tfar)
+        {
+          break;
+        }
+        pos += step;
+        continue;
       }
-      pos += step;
-      continue;
     }
 
     const float3 texCoord = calcTexCoord(pos, volPos, volSizeHalf);
@@ -594,12 +598,21 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   }
 }
 
-typedef void(*renderKernel)(uchar4*, const uint, const uint, const float4,
-                            const uint, const float, const float3, const float3,
-                            const float3, const float3, const float3, const float3, const float3,
-                            const float, const float3, const float, void*, int dp,
-                            const float2, const bool alphaPassIbr, const bool gatherPass,
-                            float* d_gatheredAlpha);
+typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint height,
+                            const float4 backgroundColor,
+                            const uint texwidth, const float dist,
+                            const float3 volPos, const float3 volSizeHalf,
+                            const float3 probePos, const float3 probeSizeHalf,
+                            const float3 L, const float3 H,
+                            const bool clipPlane,
+                            const bool clipSphere,
+                            const bool useSphereAsProbe,
+                            const float3 sphereCenter,
+                            const float sphereRadius,
+                            const float3 planeNormal, const float planeDist,
+                            void* d_depth, int dp,
+                            const float2 ibrPlanes, const bool alphaPassIbr,
+                            const bool gatherPass, float* d_gatheredAlpha);
 
 #ifdef FAST_COMPILE
 template<
@@ -619,9 +632,7 @@ renderKernel getKernel(vvRayRend*)
                  t_mipMode, // Mip mode.
                  false, // Local illumination.
                  t_opacityCorrection, // Opacity correction.
-                 t_clipPlane, // Clip plane.
-                 t_clipSphere, // Clip sphere.
-                 t_useSphereAsProbe, // Show what's inside the clip sphere.
+                 false, // Clipping.
                  true, // image based rendering,
                  vvRenderState::VV_MAX_GRADIENT
                 >;
@@ -633,9 +644,7 @@ template<
         bool t_illumination,
         bool t_opacityCorrection,
         bool t_earlyRayTermination,
-        bool t_clipPlane,
-        bool t_clipSphere,
-        bool t_useSphereAsProbe,
+        bool t_clipping,
         int t_mipMode,
         bool t_useIbr,
         vvRayRend::IbrMode t_ibrMode
@@ -647,9 +656,7 @@ renderKernel getKernelWithIbrMode(vvRayRend*)
                  t_mipMode, // Mip mode.
                  t_illumination, // Local illumination.
                  t_opacityCorrection, // Opacity correction.
-                 t_clipPlane, // Clip plane.
-                 t_clipSphere, // Clip sphere.
-                 t_useSphereAsProbe, // Show what's inside the clip sphere.
+                 t_clipping,
                  t_useIbr, // image based rendering
                  t_ibrMode
                 >;
@@ -660,9 +667,7 @@ template<
          bool t_illumination,
          bool t_opacityCorrection,
          bool t_earlyRayTermination,
-         bool t_clipPlane,
-         bool t_clipSphere,
-         bool t_useSphereAsProbe,
+         bool t_clipping,
          int t_mipMode,
          bool t_useIbr
         >
@@ -676,9 +681,7 @@ renderKernel getKernelWithIbr(vvRayRend* rayRend)
                                 t_illumination,
                                 t_opacityCorrection,
                                 t_earlyRayTermination,
-                                t_clipPlane,
-                                t_clipSphere,
-                                t_useSphereAsProbe,
+                                t_clipping,
                                 t_mipMode,
                                 t_useIbr,
                                 vvRenderState::VV_MAX_GRADIENT
@@ -689,9 +692,7 @@ renderKernel getKernelWithIbr(vvRayRend* rayRend)
                                 t_illumination,
                                 t_opacityCorrection,
                                 t_earlyRayTermination,
-                                t_clipPlane,
-                                t_clipSphere,
-                                t_useSphereAsProbe,
+                                t_clipping,
                                 t_mipMode,
                                 t_useIbr,
                                 vvRenderState::VV_MIDDLE
@@ -702,9 +703,7 @@ renderKernel getKernelWithIbr(vvRayRend* rayRend)
                                 t_illumination,
                                 t_opacityCorrection,
                                 t_earlyRayTermination,
-                                t_clipPlane,
-                                t_clipSphere,
-                                t_useSphereAsProbe,
+                                t_clipping,
                                 t_mipMode,
                                 t_useIbr,
                                 vvRenderState::VV_SURFACE
@@ -715,9 +714,7 @@ renderKernel getKernelWithIbr(vvRayRend* rayRend)
                                 t_illumination,
                                 t_opacityCorrection,
                                 t_earlyRayTermination,
-                                t_clipPlane,
-                                t_clipSphere,
-                                t_useSphereAsProbe,
+                                t_clipping,
                                 t_mipMode,
                                 t_useIbr,
                                 vvRenderState::VV_MAX_GRADIENT
@@ -731,9 +728,7 @@ template<
          bool t_illumination,
          bool t_opacityCorrection,
          bool t_earlyRayTermination,
-         bool t_clipPlane,
-         bool t_clipSphere,
-         bool t_useSphereAsProbe,
+         bool t_clipping,
          int t_mipMode
         >
 renderKernel getKernelWithMip(vvRayRend* rayRend)
@@ -745,9 +740,7 @@ renderKernel getKernelWithMip(vvRayRend* rayRend)
                             t_illumination,
                             t_opacityCorrection,
                             t_earlyRayTermination,
-                            t_clipPlane,
-                            t_clipSphere,
-                            t_useSphereAsProbe,
+                            t_clipping,
                             t_mipMode,
                             true
                            >(rayRend);
@@ -759,72 +752,9 @@ renderKernel getKernelWithMip(vvRayRend* rayRend)
                             t_illumination,
                             t_opacityCorrection,
                             t_earlyRayTermination,
-                            t_clipPlane,
-                            t_clipSphere,
-                            t_useSphereAsProbe,
+                            t_clipping,
                             t_mipMode,
                             false
-                           >(rayRend);
-  }
-}
-template<
-         int t_bpc,
-         bool t_illumination,
-         bool t_opacityCorrection,
-         bool t_earlyRayTermination,
-         bool t_clipPlane,
-         bool t_clipSphere,
-         bool t_useSphereAsProbe
-        >
-renderKernel getKernelWithSphereAsProbe(vvRayRend* rayRend)
-{
-  switch ((int)rayRend->getParameter(vvRenderState::VV_MIP_MODE))
-  {
-  case 0:
-    return getKernelWithMip<
-                            t_bpc,
-                            t_illumination,
-                            t_opacityCorrection,
-                            t_earlyRayTermination,
-                            t_clipPlane,
-                            t_clipSphere,
-                            t_useSphereAsProbe,
-                            0
-                           >(rayRend);
-  case 1:
-    // No early ray termination possible with max intensity projection.
-    return getKernelWithMip<
-                            t_bpc,
-                            t_illumination,
-                            t_opacityCorrection,
-                            false,
-                            t_clipPlane,
-                            t_clipSphere,
-                            t_useSphereAsProbe,
-                            1
-                           >(rayRend);
-  case 2:
-    // No early ray termination possible with min intensity projection.
-    return getKernelWithMip<
-                            t_bpc,
-                            t_illumination,
-                            t_opacityCorrection,
-                            false,
-                            t_clipPlane,
-                            t_clipSphere,
-                            t_useSphereAsProbe,
-                            2
-                           >(rayRend);
-  default:
-    return getKernelWithMip<
-                            t_bpc,
-                            t_illumination,
-                            t_opacityCorrection,
-                            t_earlyRayTermination,
-                            t_clipPlane,
-                            t_clipSphere,
-                            t_useSphereAsProbe,
-                            0
                            >(rayRend);
   }
 }
@@ -834,34 +764,51 @@ template<
          bool t_illumination,
          bool t_opacityCorrection,
          bool t_earlyRayTermination,
-         bool t_clipPlane
+         bool t_clipping
         >
-renderKernel getKernelWithClipPlane(vvRayRend* rayRend)
+renderKernel getKernelWithClipping(vvRayRend* rayRend)
 {
-  if (((rayRend->getParameter(vvRenderState::VV_IS_ROI_USED)!=0.0)
-     && (rayRend->getParameter(vvRenderState::VV_SPHERICAL_ROI)!=0.0)))
+
+  switch ((int)rayRend->getParameter(vvRenderState::VV_MIP_MODE))
   {
-    return getKernelWithSphereAsProbe<
-                                      t_bpc,
-                                      t_illumination,
-                                      t_opacityCorrection,
-                                      t_earlyRayTermination,
-                                      t_clipPlane,
-                                      true,
-                                      true
-                                     >(rayRend);
-  }
-  else
-  {
-    return getKernelWithSphereAsProbe<
-                                      t_bpc,
-                                      t_illumination,
-                                      t_opacityCorrection,
-                                      t_earlyRayTermination,
-                                      t_clipPlane,
-                                      false,
-                                      false
-                                     >(rayRend);
+  case 0:
+    return getKernelWithMip<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            t_earlyRayTermination,
+                            t_clipping,
+                            0
+                           >(rayRend);
+  case 1:
+    // No early ray termination possible with max intensity projection.
+    return getKernelWithMip<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            false,
+                            t_clipping,
+                            1
+                           >(rayRend);
+  case 2:
+    // No early ray termination possible with min intensity projection.
+    return getKernelWithMip<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            false,
+                            t_clipping,
+                            2
+                           >(rayRend);
+  default:
+    return getKernelWithMip<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            t_earlyRayTermination,
+                            t_clipping,
+                            0
+                           >(rayRend);
   }
 }
 
@@ -875,7 +822,7 @@ renderKernel getKernelWithEarlyRayTermination(vvRayRend* rayRend)
 {
   if (rayRend->getParameter(vvRenderState::VV_CLIP_MODE))
   {
-    return getKernelWithClipPlane<
+    return getKernelWithClipping<
                                   t_bpc,
                                   t_illumination,
                                   t_opacityCorrection,
@@ -886,7 +833,7 @@ renderKernel getKernelWithEarlyRayTermination(vvRayRend* rayRend)
   else
   {
     {
-      return getKernelWithClipPlane<
+      return getKernelWithClipping<
                                     t_bpc,
                                     t_illumination,
                                     t_opacityCorrection,
@@ -1241,6 +1188,7 @@ void vvRayRend::compositeVolume(int, int)
                                         volPos, volSize * 0.5f,
                                         probePos, probeSize * 0.5f,
                                         L, H,
+                                        false, false, false,
                                         center, radius * radius,
                                         pnormal, pdist, d_depth, _depthPrecision,
                                         make_float2(_depthRange[0], _depthRange[1]),
@@ -1252,6 +1200,7 @@ void vvRayRend::compositeVolume(int, int)
                                       volPos, volSize * 0.5f,
                                       probePos, probeSize * 0.5f,
                                       L, H,
+                                      false, false, false,
                                       center, radius * radius,
                                       pnormal, pdist, d_depth, _depthPrecision,
                                       make_float2(_depthRange[0], _depthRange[1]),
