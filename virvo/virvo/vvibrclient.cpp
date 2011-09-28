@@ -167,8 +167,10 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   _shader->enable();
 
-  _shader->setParameter1f("width", _width);
-  _shader->setParameter1f("height", _height);
+  _shader->setParameter1f("vpWidth", _viewportWidth);
+  _shader->setParameter1f("vpHeight", _viewportHeight);
+  _shader->setParameter1f("imageWidth", _width);
+  _shader->setParameter1f("imageHeight", _height);
   _shader->setParameterTex2D("rgbaTex", _rgbaTex);
   _shader->setParameterTex2D("depthTex", _depthTex);
 
