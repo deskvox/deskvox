@@ -57,6 +57,8 @@ SET(VIRVO_HEADERS
   vvibrserver.h
   vvvideo.h
   vvimage.h
+  vvimageclient.h
+  vvimageserver.h
   vvoffscreenbuffer.h
   vvopengl.h
   vvplatform.h
