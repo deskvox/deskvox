@@ -366,26 +366,20 @@ vvIbrClient::Corner vvIbrClient::getNearestCorner() const
   newMatrix.invert();
   normal.multiply(&newMatrix);
 
-  if ((normal[0] < normal[1]) && (normal[0] < 0.0f))
+  const float x = normal[0]/normal[3], y = normal[1]/normal[3];
+  if(y < 0.f)
   {
-    return VV_TOP_LEFT;
-  }
-  else if ((normal[0] >= normal[1]) && (normal[0] >= 0.0f))
-  {
-    return VV_TOP_RIGHT;
-  }
-  else if ((normal[1] < normal[0]) && (normal[1] < 0.0f))
-  {
-    return VV_BOTTOM_RIGHT;
-  }
-  else if ((normal[1] >= normal[0]) && (normal[1] >= 0.0f))
-  {
-    return VV_BOTTOM_LEFT;
+    if(x < 0.f)
+      return VV_TOP_LEFT;
+    else
+      return VV_TOP_RIGHT;
   }
   else
   {
-    // Arbitrary default.
-    return VV_TOP_LEFT;
+    if(x < 0.f)
+      return VV_BOTTOM_LEFT;
+    else
+      return VV_BOTTOM_RIGHT;
   }
 }
 
