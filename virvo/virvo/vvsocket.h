@@ -64,7 +64,6 @@ typedef _W64 int ssize_t;
 /* end copy */
 #endif
 
-typedef void Sigfunc(int);
 typedef unsigned char   uchar;                    ///< abbreviation for unsigned char
 typedef unsigned short  ushort;                   ///< abbreviation for unsigned short
 typedef unsigned int    uint;                     ///< abbreviation for unsigned int
@@ -90,6 +89,8 @@ class VIRVOEXPORT vvSocket
 {
 
   public:
+    typedef void Sigfunc(int);
+
     enum ErrorType                                /// Error Codes
     {
       VV_OK,                                      ///< no error

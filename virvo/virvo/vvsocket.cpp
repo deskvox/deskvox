@@ -1366,7 +1366,7 @@ vvSocket::~vvSocket()
  @param signo
  @param func
 */
-Sigfunc *vvSocket::signal(int signo, Sigfunc *func)
+vvSocket::Sigfunc *vvSocket::signal(int signo, vvSocket::Sigfunc *func)
 {
 #ifdef _WIN32
   signo = 0;
@@ -1401,7 +1401,7 @@ Sigfunc *vvSocket::signal(int signo, Sigfunc *func)
  @param func
 */
                                                   /* for signal() function */
-Sigfunc *vvSocket::Signal(int signo, Sigfunc *func)
+vvSocket::Sigfunc *vvSocket::Signal(int signo, vvSocket::Sigfunc *func)
 {
   Sigfunc *sigfunc;
 
