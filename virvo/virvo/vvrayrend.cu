@@ -300,8 +300,7 @@ template<
          bool t_lighting,
          bool t_opacityCorrection,
          bool t_clipping,
-         bool t_useIbr,
-         int t_ibrMode
+         bool t_useIbr
         >
 __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float4 backgroundColor,
@@ -633,34 +632,10 @@ renderKernel getKernel(vvRayRend*)
                  false, // Local illumination.
                  t_opacityCorrection, // Opacity correction.
                  false, // Clipping.
-                 true, // image based rendering,
-                 vvRenderState::VV_MAX_GRADIENT
+                 true // image based rendering
                 >;
 }
 #else
-
-template<
-        int t_bpc,
-        bool t_illumination,
-        bool t_opacityCorrection,
-        bool t_earlyRayTermination,
-        bool t_clipping,
-        int t_mipMode,
-        bool t_useIbr,
-        vvRayRend::IbrMode t_ibrMode
-       >
-renderKernel getKernelWithIbrMode(vvRayRend*)
-{
-  return &render<t_earlyRayTermination, // Early ray termination.
-                 t_bpc, // Bytes per channel.
-                 t_mipMode, // Mip mode.
-                 t_illumination, // Local illumination.
-                 t_opacityCorrection, // Opacity correction.
-                 t_clipping,
-                 t_useIbr, // image based rendering
-                 t_ibrMode
-                >;
-}
 
 template<
          int t_bpc,
@@ -671,56 +646,16 @@ template<
          int t_mipMode,
          bool t_useIbr
         >
-renderKernel getKernelWithIbr(vvRayRend* rayRend)
+renderKernel getKernelWithIbr(vvRayRend*)
 {
-  switch ((int)rayRend->getParameter(vvRenderState::VV_IBR_MODE))
-  {
-  case vvRenderState::VV_MAX_GRADIENT:
-    return getKernelWithIbrMode<
-                                t_bpc,
-                                t_illumination,
-                                t_opacityCorrection,
-                                t_earlyRayTermination,
-                                t_clipping,
-                                t_mipMode,
-                                t_useIbr,
-                                vvRenderState::VV_MAX_GRADIENT
-                               >(rayRend);
-  case vvRenderState::VV_MIDDLE:
-    return getKernelWithIbrMode<
-                                t_bpc,
-                                t_illumination,
-                                t_opacityCorrection,
-                                t_earlyRayTermination,
-                                t_clipping,
-                                t_mipMode,
-                                t_useIbr,
-                                vvRenderState::VV_MIDDLE
-                               >(rayRend);
-  case vvRenderState::VV_SURFACE:
-    return getKernelWithIbrMode<
-                                t_bpc,
-                                t_illumination,
-                                t_opacityCorrection,
-                                t_earlyRayTermination,
-                                t_clipping,
-                                t_mipMode,
-                                t_useIbr,
-                                vvRenderState::VV_SURFACE
-                               >(rayRend);
-  default:
-    return getKernelWithIbrMode<
-                                t_bpc,
-                                t_illumination,
-                                t_opacityCorrection,
-                                t_earlyRayTermination,
-                                t_clipping,
-                                t_mipMode,
-                                t_useIbr,
-                                vvRenderState::VV_MAX_GRADIENT
-                               >(rayRend);
-
-  }
+  return &render<t_earlyRayTermination, // Early ray termination.
+                 t_bpc, // Bytes per channel.
+                 t_mipMode, // Mip mode.
+                 t_illumination, // Local illumination.
+                 t_opacityCorrection, // Opacity correction.
+                 t_clipping,
+                 t_useIbr // image based rendering
+                >;
 }
 
 template<
