@@ -32,7 +32,7 @@
 class VIRVOEXPORT vvVertex
 {
   public:
-    vvVertex() {}
+    vvVertex() : x(0.f), y(0.f), z(0.f), th(0.f), ph(0.f) {}
 
     vvVertex(const vvVertex&);
     const vvVertex & operator=(const vvVertex &);
@@ -52,7 +52,7 @@ class VIRVOEXPORT vvVertex
 class vvTexCoord
 {
   public:
-    vvTexCoord() {}
+    vvTexCoord() { t[0] = t[1] = t[2] = 0.f; }
     float t[3];
 };
 

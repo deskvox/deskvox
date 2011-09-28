@@ -1603,6 +1603,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
               {
                 cerr << "Error parsing frame " << f << ", slice " << z << ", line " << y << ", voxel " << x << ", channel " << c << ":" << endl;
                 cerr << "Number expected in line " << tokenizer->getLineNumber() << endl;
+                delete[] raw;
                 delete tokenizer;
                 fclose(fp);
                 return DATA_ERROR;
@@ -1618,6 +1619,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
                 if (ival < 0 || (vd->bpc==1 && ival>255) || (vd->bpc==2 && ival>65535))
                 {
                   cerr << "Integer out of range in line " << tokenizer->getLineNumber() << endl;
+                  delete[] raw;
                   delete tokenizer;
                   fclose(fp);
                   return DATA_ERROR;
@@ -2401,6 +2403,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
         {
           cerr << "Error: TIFF file too short for volume size." << endl;
           fclose(fp);
+          delete[] tilePos;
           delete[] raw;
           delete[] stripOffsets;
           delete[] stripByteCounts;

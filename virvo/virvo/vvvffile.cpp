@@ -27,6 +27,7 @@ using namespace std;
 
 vvvffile::vvvffile(char* fName)
 {
+  errnmb = 0;
   FILEREAD = 0;
   channel_array_length = 1;
   icontype = 0;
@@ -817,12 +818,14 @@ int vvvffile::writeFile(void)
     if (retval!=k-j)
     {
       std::cerr<<"vvvffile::writeFile: fread failed"<<std::endl;
+      delete[] iopuffer;
       return 1;
     }
     retval=fwrite(iopuffer, 1, (k - j), dz);
     if (retval!=k-j)
     {
       std::cerr<<"vvvffile::writeFile: fwrite failed"<<std::endl;
+      delete[] iopuffer;
       return 1;
     }
     if (vvDebugMsg::isActive(3))
@@ -2651,6 +2654,7 @@ int vvvffile::readDataArray(unsigned char ** daten, int array_number)
     if (retval!=laengens)
     {
       std::cerr<<"vvvffile::readDataArray: fread failed"<<std::endl;
+      delete[] blubbs;
       return 1;
     }
 
@@ -3073,6 +3077,7 @@ int vvvffile::readHeaderNtBoxBox(void)
   {
     cerr << "## Error 101: Unable to open file for reading		[ FAILED ]" << endl;
     errnmb = 101;                                 // Datei nicht vorhanden oder fehlerhaft
+    return errnmb;
   }
 
   // Count frames
@@ -3120,6 +3125,7 @@ int vvvffile::readDataxyzvxvyvzrnc(unsigned char* data, int c)
   {
     cerr << "## Error 101: Unable to open file for reading		[ FAILED ]" << endl;
     errnmb = 101;                                 // Datei nicht vorhanden oder fehlerhaft
+    return errnmb;
   }
 
   // initialise data array
@@ -3292,6 +3298,7 @@ int vvvffile::readXYZunsupp(void)
   {
     cerr << "## Error 101: Unable to open file for reading		[ FAILED ]" << endl;
     errnmb = 101;                                 // Datei nicht vorhanden oder fehlerhaft
+    return errnmb;
   }
 
   // resolve volume dimensions X
@@ -3362,6 +3369,7 @@ int vvvffile::readDATAunsupp(unsigned char* data)
   {
     cerr << "## Error 101: Unable to open file for reading		[ FAILED ]" << endl;
     errnmb = 101;                                 // Datei nicht vorhanden oder fehlerhaft
+    return errnmb;
   }
 
   // jump over x, y, z

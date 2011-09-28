@@ -204,10 +204,7 @@ bool vvConv::readVolumeData()
 
 
     
-    FILE *fp;
-    if ((fp = fopen(seriesname, "rb")) == NULL)
-       cerr << "Error: Cannot open " << seriesname << " file.";
-    else
+    if (FILE *fp = fopen(seriesname, "rb"))
     {
       // File found.  Now to determine values
       cerr << "Opened: " << seriesname << endl;
@@ -510,9 +507,10 @@ bool vvConv::readVolumeData()
           done = true;
       }
       delete tok;
-
+      fclose(fp);
     }
-    delete fp;
+    else
+       cerr << "Error: Cannot open " << seriesname << " file.";
     
     if (vd->chan == 1)
     {
@@ -2519,6 +2517,8 @@ int vvConv::run(int argc, char** argv)
     {
       cerr << "Cannot load file to read icon." << endl;
       error = 1;
+      delete[] iconFile;
+      delete[] basePath;
       delete tmpVD;
       delete fio;     
       return error;
@@ -2664,7 +2664,7 @@ int vvConv::renameDicomFiles()
     vd = NULL;
   }
   delete fio;
-  delete oldName;
+  delete[] oldName;
   return error;    
 }
 

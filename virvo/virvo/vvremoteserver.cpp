@@ -33,7 +33,7 @@ using std::cerr;
 using std::endl;
 
 vvRemoteServer::vvRemoteServer(vvSocketIO *socket)
-  : _socket(socket), _renderContext(NULL)
+  : _socket(socket), _renderContext(NULL), _loadVolumeFromFile(false), _codetype(0)
 {
   vvDebugMsg::msg(1, "vvRemoteServer::vvRemoteServer()");
   initSocket();
@@ -143,17 +143,11 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
   vvSocketIO::CommReason commReason;
   vvMatrix pr;
   vvMatrix mv;
-  float quality;
-  int mipMode;
   vvVector3 position;
   vvVector3 viewDir;
   vvVector3 objDir;
   int w;
   int h;
-  bool interpolation;
-  bool roiEnabled;
-  vvVector3 roiPos;
-  vvVector3 roiSize;
   int currentFrame;
   vvTransFunc tf;
 

@@ -120,7 +120,7 @@ void vvGLSLProgram::enable()
 
   if(_shadersLoaded)
   {
-    for(TextureMap::iterator i = _textureNameMaps.begin(); i != _textureNameMaps.end(); i++)
+    for(TextureMap::iterator i = _textureNameMaps.begin(); i != _textureNameMaps.end(); ++i)
     {
       vvGLSLTexture* tex = i->second;
       if(tex->_unit == -1)

@@ -62,6 +62,8 @@ vvVideo::vvVideo()
 , dec_picture(NULL)
 , enc_imgconv_ctx(NULL)
 , dec_imgconv_ctx(NULL)
+, codec_id(-1)
+, pixel_fmt(-1)
 {
   if(!global_init_done)
   {

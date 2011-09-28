@@ -66,6 +66,8 @@ vvRemoteClient::ErrorType vvImageClient::render()
   vvGLTools::getModelviewMatrix(&_currentMv);
   vvGLTools::getProjectionMatrix(&_currentPr);
   vvRemoteClient::ErrorType err = requestFrame();
+  if(err != vvRemoteClient::VV_OK)
+    return err;
 
   vvSocketIO::ErrorType sockerr = _socket->getImage(_image);
   if(sockerr != vvSocketIO::VV_OK)

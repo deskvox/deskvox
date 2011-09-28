@@ -36,9 +36,15 @@ class VIRVOEXPORT vvBrick
 {
 public:
   vvBrick()                                     ///< dflt. constructor (needed for C++ templates)
+  : minValue(INT_MAX)
+  , maxValue(INT_MIN)
+  , visible(true)
+  , insideProbe(true)
+  , index(-1)
+  , dist(-1.f)
   {
-    minValue = INT_MAX;
-    maxValue = INT_MIN;
+    startOffset[0] = startOffset[1] = startOffset[2] = 0;
+    texels[0] = texels[1] = texels[2] = 0;
   }
 
   vvBrick(const vvBrick* rhs)                   ///< copy constructor (from ptr)
