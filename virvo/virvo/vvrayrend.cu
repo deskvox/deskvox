@@ -44,9 +44,6 @@ using std::endl;
 texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture8;
 texture<ushort, 3, cudaReadModeNormalizedFloat> volTexture16;
 texture<float4, 1, cudaReadModeElementType> tfTexture;
-texture<float4, 1, cudaReadModeElementType> randTexture;
-
-const int NUM_RAND_VECS = 8192;
 
 #ifndef ALPHA_PASS_IBR
 #define ALPHA_PASS_IBR 1
@@ -302,7 +299,6 @@ template<
          int t_mipMode,
          bool t_lighting,
          bool t_opacityCorrection,
-         bool t_jittering,
          bool t_clipPlane,
          bool t_clipSphere,
          bool t_useSphereAsProbe,
@@ -419,12 +415,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
   float t = tnear;
   float3 pos = ray.o + ray.d * tnear;
-
-  if (t_jittering)
-  {
-    const float4 randOffset = tex1D(randTexture, (y * width + x) % NUM_RAND_VECS);
-    pos += make_float3(randOffset);
-  }
   const float3 step = ray.d * dist;
 
   // If just clipped, shade with the normal of the clipping surface.
@@ -629,7 +619,6 @@ renderKernel getKernel(vvRayRend*)
                  t_mipMode, // Mip mode.
                  false, // Local illumination.
                  t_opacityCorrection, // Opacity correction.
-                 false, // Jittering.
                  t_clipPlane, // Clip plane.
                  t_clipSphere, // Clip sphere.
                  t_useSphereAsProbe, // Show what's inside the clip sphere.
@@ -658,7 +647,6 @@ renderKernel getKernelWithIbrMode(vvRayRend*)
                  t_mipMode, // Mip mode.
                  t_illumination, // Local illumination.
                  t_opacityCorrection, // Opacity correction.
-                 false, // Jittering.
                  t_clipPlane, // Clip plane.
                  t_clipSphere, // Clip sphere.
                  t_useSphereAsProbe, // Show what's inside the clip sphere.
@@ -1023,9 +1011,6 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
   factorViewMatrix();
 
-  d_randArray = NULL;
-  initRandTexture();
-
   initVolumeTexture();
 
   d_transferFuncArray = NULL;
@@ -1045,8 +1030,6 @@ vvRayRend::~vvRayRend()
 
   vvCuda::checkError(&ok, cudaFreeArray(d_transferFuncArray),
                      "vvRayRend::~vvRayRend() - free tf");
-  vvCuda::checkError(&ok, cudaFreeArray(d_randArray),
-                     "vvRayRend::~vvRayRend() - free rand array");
   vvCuda::checkError(&ok, cudaFree(d_depth),
                      "vvRayRend::~vvRayRend() - free depth");
 
@@ -1386,42 +1369,6 @@ const float* vvRayRend::getDepthRange() const
 {
   vvDebugMsg::msg(3, "vvRayRend::getDepthRange()");
   return _depthRange;
-}
-
-void vvRayRend::initRandTexture()
-{
-  vvDebugMsg::msg(3, "vvRayRend::initRandTexture()");
-
-  bool ok;
-
-  const float scale = 2.0f;
-
-  //srand(time(NULL));
-
-  float4* randVecs = new float4[NUM_RAND_VECS];
-  for (int i=0; i<NUM_RAND_VECS; ++i)
-  {
-    randVecs[i].x = (static_cast<float>(rand()) / static_cast<float>(INT_MAX)) * scale;
-    randVecs[i].y = (static_cast<float>(rand()) / static_cast<float>(INT_MAX)) * scale;
-    randVecs[i].z = (static_cast<float>(rand()) / static_cast<float>(INT_MAX)) * scale;
-  }
-
-  cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
-
-  vvCuda::checkError(&ok, cudaFreeArray(d_randArray),
-                     "vvRayRend::initRandTexture()");
-  vvCuda::checkError(&ok, cudaMallocArray(&d_randArray, &channelDesc, NUM_RAND_VECS, 1),
-                     "vvRayRend::initRandTexture()");
-  vvCuda::checkError(&ok, cudaMemcpyToArray(d_randArray, 0, 0, randVecs, NUM_RAND_VECS * sizeof(float4),
-                                            cudaMemcpyHostToDevice), "vvRayRend::initRandTexture()");
-
-  randTexture.filterMode = cudaFilterModeLinear;
-  randTexture.addressMode[0] = cudaAddressModeClamp;
-
-  vvCuda::checkError(&ok, cudaBindTextureToArray(randTexture, d_randArray, channelDesc),
-                     "vvRayRend::initRandTexture()");
-
-  delete[] randVecs;
 }
 
 void vvRayRend::initVolumeTexture()

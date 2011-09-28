@@ -65,7 +65,6 @@ private:
   cudaChannelFormatDesc _channelDesc;
   std::vector<cudaArray*> d_volumeArrays;
   cudaArray* d_transferFuncArray;
-  cudaArray* d_randArray;
 
   float* _rgbaTF;
 
@@ -80,7 +79,6 @@ private:
   void* d_depth;
   float _depthRange[2];
 
-  void initRandTexture();
   void initVolumeTexture();
   void factorViewMatrix();
   void findAxisRepresentations();
