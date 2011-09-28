@@ -22,7 +22,7 @@
 #define _VVIMAGE_H_
 
 #include "vvexport.h"
-#include "vvtoolshed.h"
+#include "vvinttypes.h"
 
 class vvVideo;
 

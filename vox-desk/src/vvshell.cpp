@@ -27,6 +27,7 @@
 #include <vvgltools.h>
 #include <vvdebugmsg.h>
 #include <vvvirvo.h>
+#include <vvtoolshed.h>
 
 // Local:
 #include "vvshell.h"

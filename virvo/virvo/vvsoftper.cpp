@@ -32,6 +32,7 @@ using std::endl;
 #include "vvsoftimg.h"
 #include "vvstopwatch.h"
 #include "vvvoldesc.h"
+#include "vvtoolshed.h"
 
 //----------------------------------------------------------------------------
 /// Constructor.

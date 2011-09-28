@@ -24,6 +24,7 @@
 
 // Virvo:
 #include <vvdebugmsg.h>
+#include <vvtoolshed.h>
 
 // Local:
 #include "vvsliceviewer.h"

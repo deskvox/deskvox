@@ -24,12 +24,12 @@
 #pragma warning(disable: 4512)    // disable warning: assignment operator could not be generated
 #endif
 
+// Virvo:
 #include <vvglew.h>
 #include <vvopengl.h>
-
-// Virvo:
 #include <vvvirvo.h>
 #include <vvdebugmsg.h>
+#include <vvtoolshed.h>
 
 // Local:
 #include "vvdialogs.h"

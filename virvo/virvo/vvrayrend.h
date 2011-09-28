@@ -21,16 +21,16 @@
 #ifndef _VV_RAYREND_H_
 #define _VV_RAYREND_H_
 
-#include "vvexport.h"
-#include "vvsoftvr.h"
-
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
 #endif
 
 #ifdef HAVE_CUDA
 
+#include "vvexport.h"
+#include "vvsoftvr.h"
 #include "vvcuda.h"
+#include <vector>
 
 class vvVolDesc;
 

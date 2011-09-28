@@ -21,9 +21,11 @@
 #ifndef _VVSOCKETIO_H_
 #define _VVSOCKETIO_H_
 
+#include <vector>
+
 #include "vvexport.h"
 #include "vvsocket.h"
-#include "vvtoolshed.h"
+#include "vvinttypes.h"
 #include "vvvecmath.h"
 #include "vvtransfunc.h"
 

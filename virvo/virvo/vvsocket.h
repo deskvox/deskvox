@@ -46,28 +46,7 @@
 #endif
 
 #include "vvexport.h"
-
-//============================================================================
-// Type Declarations
-//============================================================================
-
-#ifdef _WIN32
-/* code copied from Python's pyconfig.h,
- * to avoid different definition of  ssize_t */
-#ifdef _WIN64
-typedef __int64 ssize_t;
-#else
-#if !defined(_WIN32_WCE) && !defined(__MINGW32__) 
-typedef _W64 int ssize_t;
-#endif
-#endif
-/* end copy */
-#endif
-
-typedef unsigned char   uchar;                    ///< abbreviation for unsigned char
-typedef unsigned short  ushort;                   ///< abbreviation for unsigned short
-typedef unsigned int    uint;                     ///< abbreviation for unsigned int
-typedef unsigned long   ulong;                    ///< abbreviation for unsigned long
+#include "vvinttypes.h"
 
 #define VV_TRACE( DBG_LVL, ACT_LVL, STRING) \
   { \

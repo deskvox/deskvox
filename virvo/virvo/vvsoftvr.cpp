@@ -40,6 +40,7 @@ using std::endl;
 #include "vvimage.h"
 #include "vvgltools.h"
 #include "vvvoldesc.h"
+#include "vvtoolshed.h"
 
 //----------------------------------------------------------------------------
 /// Constructor.

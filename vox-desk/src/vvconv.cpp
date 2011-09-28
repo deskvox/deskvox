@@ -30,6 +30,7 @@
 #include "vvfileio.h"
 #include "vvdebugmsg.h"
 #include "vvtokenizer.h"
+#include "vvtoolshed.h"
 #include <sstream>
 
 using namespace std;

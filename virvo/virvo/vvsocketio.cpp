@@ -23,6 +23,7 @@
 #include "vvvoldesc.h"
 #include "vvdebugmsg.h"
 #include "vvbrick.h"
+#include "vvtoolshed.h"
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>

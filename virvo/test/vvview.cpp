@@ -55,6 +55,7 @@ using std::ios;
 
 #include <virvo/vvvirvo.h>
 #include <virvo/vvgltools.h>
+#include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>
 #include <virvo/vvprintgl.h>
 #include <virvo/vvstopwatch.h>

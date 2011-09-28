@@ -34,6 +34,7 @@ using std::endl;
 #include "vvvecmath.h"
 #include "vvsoftimg.h"
 #include "vvgltools.h"
+#include "vvtoolshed.h"
 
 const int vvSoftImg::PIXEL_SIZE = 4;
 

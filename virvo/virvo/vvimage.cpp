@@ -29,6 +29,7 @@
 #include "vvimage.h"
 #include "vvdebugmsg.h"
 #include "vvvideo.h"
+#include "vvtoolshed.h"
 
 using namespace std;
 

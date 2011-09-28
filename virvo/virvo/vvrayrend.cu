@@ -32,6 +32,7 @@
 #include "vvdebugmsg.h"
 #include "vvgltools.h"
 #include "vvvoldesc.h"
+#include "vvtoolshed.h"
 #include "vvrayrend.h"
 
 #include <iostream>

@@ -26,33 +26,10 @@
 #include <vector>
 
 #include <stdio.h>
-#ifndef __sgi
-#ifndef _MSC_VER
-#include <stdint.h>
-#else
-#ifdef HAVE_GDCM
-#include "stdint.h"
-#else
-#if (_MSC_VER >= 1600)  /* VisualStudio 2010 comes with stdint.h */
-#include <stdint.h>
-#else
-typedef char int8_t;
-typedef unsigned char uint8_t;
-typedef short int16_t;
-typedef unsigned short uint16_t;
-typedef int int32_t;
-typedef unsigned int uint32_t;
-typedef long long int64_t;
-typedef unsigned long long uint64_t;
-#endif
-#endif
-#endif
-#else
-#include <inttypes.h>
-#endif
 
 #include "vvexport.h"
 #include "vvarray.h"
+#include "vvinttypes.h"
 
 //============================================================================
 // Constant Definitions
@@ -60,19 +37,6 @@ typedef unsigned long long uint64_t;
 
                                                   ///< compiler independent definition for pi
 const float TS_PI = 3.1415926535897932384626433832795028841971693993751058f;
-
-//============================================================================
-// Type Declarations
-//============================================================================
-
-typedef unsigned char   uchar;                    ///< abbreviation for unsigned char
-typedef unsigned short  ushort;                   ///< abbreviation for unsigned short
-typedef unsigned int    uint;                     ///< abbreviation for unsigned int
-typedef unsigned long   ulong;                    ///< abbreviation for unsigned long
-typedef signed   char   schar;                    ///< abbreviation for signed char
-typedef signed   short  sshort;                   ///< abbreviation for signed short
-typedef signed   int    sint;                     ///< abbreviation for signed int
-typedef signed   long   slong;                    ///< abbreviation for signed long
 
 //============================================================================
 // Function Templates

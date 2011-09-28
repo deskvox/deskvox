@@ -25,10 +25,11 @@
 
 #include "vvaabb.h"
 #include "vvexport.h"
-#include "vvtoolshed.h"
+#include "vvinttypes.h"
 #include "vvvecmath.h"
 #include "vvtransfunc.h"
 #include "vvsllist.h"
+#include "vvarray.h"
 
 //============================================================================
 // Class Definition

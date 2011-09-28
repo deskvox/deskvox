@@ -23,10 +23,11 @@
 
 #include "vvaabb.h"
 #include "vvexport.h"
-#include "vvtoolshed.h"
+#include "vvinttypes.h"
 #include "vvopengl.h"
 
 #include <limits.h>
+#include <vector>
 
 class vvTexRend;
 class vvShaderProgram;

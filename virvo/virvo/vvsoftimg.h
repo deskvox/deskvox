@@ -23,7 +23,7 @@
 
 #include "vvexport.h"
 #include "vvopengl.h"
-#include "vvtoolshed.h"
+#include "vvinttypes.h"
 
 class vvMatrix;
 

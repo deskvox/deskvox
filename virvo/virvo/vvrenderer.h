@@ -25,7 +25,7 @@
 #include "vvvecmath.h"
 #include "vvcolor.h"
 #include "vvrendertarget.h"
-#include "vvtoolshed.h"
+#include "vvinttypes.h"
 
 class vvVolDesc;
 

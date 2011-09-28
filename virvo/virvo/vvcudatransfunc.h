@@ -30,7 +30,7 @@
 #ifdef HAVE_CUDA
 #include <cuda_runtime.h>
 
-#include "vvtoolshed.h"
+#include "vvinttypes.h"
 
 bool makePreintLUTCorrectCuda(int width, uchar *preIntTable, float thickness, float min, float max, const float *rgba);
 #endif

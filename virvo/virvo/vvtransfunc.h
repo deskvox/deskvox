@@ -22,7 +22,7 @@
 #define _VVTRANSFUNC_H_
 
 #include "vvexport.h"
-#include "vvtoolshed.h"
+#include "vvinttypes.h"
 #include "vvtfwidget.h"
 #include "vvsllist.h"
 

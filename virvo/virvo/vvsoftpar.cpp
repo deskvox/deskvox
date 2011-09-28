@@ -23,6 +23,7 @@ using std::cerr;
 using std::endl;
 
 #include "vvplatform.h"
+#include "vvtoolshed.h"
 
 #include <math.h>
 #include <assert.h>

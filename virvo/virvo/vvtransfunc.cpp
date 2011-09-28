@@ -34,6 +34,7 @@
 #include "vvtransfunc.h"
 #include "vvcudatransfunc.h"
 #include "vvvoldesc.h"
+#include "vvtoolshed.h"
 
 using std::cerr;
 using std::endl;

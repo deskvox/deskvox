@@ -22,12 +22,12 @@
 #pragma warning(disable: 4512)    // disable warning: assignment operator could not be generated
 #pragma warning(disable: 4800)    // disable warning about forcing value to bool
 
+// Virvo:
 #include <vvglew.h>
 #include <vvopengl.h>
-
-// Virvo:
 #include <vvdebugmsg.h>
 #include <vvfileio.h>
+#include <vvtoolshed.h>
 
 // Local:
 #include "vvdialogs.h"

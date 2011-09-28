@@ -22,7 +22,7 @@
 #define _VVDICOM_H_
 
 #include "vvexport.h"
-#include "vvtoolshed.h"
+#include "vvinttypes.h"
 
 /** Dicom properties.
   This is a storage class for value read from a DICOM file.
