@@ -238,8 +238,8 @@ class vvPlane
     vvVector3 _point;
     vvVector3 _normal;
 
-    vvPlane(const vvVector3&, const vvVector3&);
-    vvPlane(const vvVector3&, const vvVector3&, const vvVector3&);
+    vvPlane(const vvVector3& p, const vvVector3& n);
+    vvPlane(const vvVector3& p, const vvVector3& dir1, const vvVector3& dir2);
     bool isSameSide(const vvVector3&, const vvVector3&) const;
     float dist(const vvVector3&) const;
 };
