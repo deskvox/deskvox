@@ -1,3 +1,7 @@
+IF(NOT FOX_FOUND)
+  RETURN()
+ENDIF(NOT FOX_FOUND)
+
 SET(VOXDESK_INC
   vvartracking.h
   vvcanvas.h
