@@ -59,7 +59,7 @@ sail sageInf; // sail object
   Unhandled events:
     SEL_MAP: sent when the window is mapped to the screen; the message data is an FXEvent instance.  
     SEL_UNMAP: sent when the window is unmapped; the message data is an FXEvent instance.  
-    SEL_CONFIGURE: sent when the window’s size changes; the message data is an FXEvent instance.  
+    SEL_CONFIGURE: sent when the window's size changes; the message data is an FXEvent instance.  
     SEL_ENTER: sent when the mouse cursor enters this window  
     SEL_LEAVE: sent when the mouse cursor leaves this window  
     SEL_FOCUSIN: sent when this window gains the focus  
@@ -1000,7 +1000,7 @@ long VVShell::onCmdAbout(FXObject*,FXSelector,void*)
   FXString name = "DeskVOX - Desktop VOlume eXplorer\n";
   FXString version = FXString("Version ") + FXString(virvo::getVersionMajor()) + FXString(".") + FXString(virvo::getReleaseCounter()) + FXString("\n\n");
   FXString info = name + version +
-    "(c) Jürgen P. Schulze (jschulze@ucsd.edu)\n\n" \
+    "(c) Jurgen P. Schulze (jschulze@ucsd.edu)\n\n" \
     "Team: Alexander C. Rice, Chih Liang, Han Kim, Nancy Hsu\n\n" \
     "Written at Brown University (2004-2005) and\n" \
     "the University of California San Diego (2005-2008)\n\n" \

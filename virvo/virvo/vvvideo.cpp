@@ -432,7 +432,7 @@ int vvVideo::destroyDecoder()
 @param enc_size  IN, available space for encoded frame
 @param enc_size  OUT, size of encoded frame
 @param style  style of encoding [0 .. 6]
-@param quant  quantizer value to use for that frame [1 .. 31]
+@param quantÂ  quantizer value to use for that frame [1 .. 31]
 @return   0 for success, != 0 for error
 */
 int vvVideo::encodeFrame(const unsigned char* src, unsigned char* dst, int* enc_size)
