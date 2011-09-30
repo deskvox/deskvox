@@ -195,7 +195,7 @@ int vvIbrImage::encode(short ct, short sh, short eh, short sw, short ew)
     _depthCodeType = 0;
     break;
   default:
-    _codedDepthSize = gen_RLC_encode(_pixeldepth, _codeddepth, width*height, _depthPrecision/8, width*height*(_depthPrecision/8));
+    _codedDepthSize = gen_RLC_encode(_pixeldepth, _codeddepth, width*height*(_depthPrecision/8), _depthPrecision/8, width*height*(_depthPrecision/8));
     if(_codedDepthSize < 0)
     {
       cr = 1.f;
