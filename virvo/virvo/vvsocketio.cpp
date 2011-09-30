@@ -701,12 +701,6 @@ vvSocket::ErrorType vvSocketIO::putIbrImage(const vvIbrImage* im)
     return err;
   }
 
-  err = putInt32(im->getDepthPrecision());
-  if (err != vvSocket::VV_OK)
-  {
-    return err;
-  }
-
   err = putInt32(im->getDepthCodetype());
   if (err != vvSocket::VV_OK)
   {
