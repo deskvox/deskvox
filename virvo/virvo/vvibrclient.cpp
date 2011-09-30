@@ -355,7 +355,7 @@ vvIbrClient::Corner vvIbrClient::getNearestCorner() const
   vvVector4 normal = vvVector4(0.0f, 0.0f, 1.0f, 1.0f);
 
   // Cancel out old matrix from normal.
-  vvMatrix oldMatrix = _imgMatrix;
+  vvMatrix oldMatrix = _imgMv * _imgPr;
   // The operations below cancel each other out.
   // Left the code this way for higher legibility.
   // Vectors are transformed.
