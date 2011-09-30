@@ -127,7 +127,7 @@ vvTexMultiRendMngr::vvTexMultiRendMngr()
 vvTexMultiRendMngr::~vvTexMultiRendMngr()
 {
   delete _shaderFactory;
-  for(int i=0; i<_rendererList.size();i++)
+  for(size_t i=0; i<_rendererList.size();i++)
     delete _rendererList[i];
 }
 
@@ -345,7 +345,7 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 
 	if(oldVol != vol)
 	{
-    int n = (vd->chan < glslShader.size()) ? vd->chan - 1 : glslShader.size() - 1;
+    int n = (static_cast<size_t>(vd->chan) < glslShader.size()) ? vd->chan - 1 : glslShader.size() - 1;
     aRenderer->enableLUTMode(glslShader[n]);
 	  oldVol = vol;
 	}
@@ -366,7 +366,7 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 	//_lastGLdrawTime += swGL.getTime();
   }
 
-  for(int i=0;i<glslShader.size();i++)
+  for(size_t i=0;i<glslShader.size();i++)
     glslShader[i]->disable();
 
   //_rendererList[0]->unsetGLenvironment();

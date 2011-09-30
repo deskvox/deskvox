@@ -125,7 +125,7 @@ void vvCudaImg::map()
     size_t size;
     vvCuda::checkError(&ok, cudaGraphicsResourceGetMappedPointer((void**)&d_img, &size, _imgRes),
                        "vvCudaImg::map() - get PBO mapping");
-    assert(size == width*height*vvSoftImg::PIXEL_SIZE);
+    assert(size == static_cast<size_t>(width*height*vvSoftImg::PIXEL_SIZE));
   }
   else
   {

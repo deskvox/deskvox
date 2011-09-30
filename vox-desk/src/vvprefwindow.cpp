@@ -18,9 +18,6 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#pragma warning(disable: 4244)                    // disable warning about conversion from int to short
-#pragma warning(disable: 4512)                    // disable warning: assignment operator could not be generated
-
 #ifdef WIN32
 #include <typeinfo.h>
 #endif

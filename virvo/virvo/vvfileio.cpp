@@ -902,7 +902,6 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
   uchar* encoded = NULL;                          // encoded volume data
   bool done;
   int encodedSize;                                // size of encoded data array
-  vvToolshed::EndianType endian;
 
   vvDebugMsg::msg(1, "vvFileIO::loadXVFFile()");
 
@@ -998,8 +997,6 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       {
         ttype = tok->nextToken();
         assert(ttype == vvTokenizer::VV_WORD);
-        if (strcmp(tok->sval, "LITTLE")==0) endian = vvToolshed::VV_LITTLE_END;
-        else endian = vvToolshed::VV_BIG_END;
       }
       else if (strcmp(tok->sval, "DTIME")==0)
       {
@@ -4329,6 +4326,15 @@ vvFileIO::ErrorType vvFileIO::loadDDSFile(vvVolDesc* vd)
   ddsCaps = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
   dwReserved2 = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
 
+  // Avoid -Wunused-but-set-variable.
+  (void)dwFlags;
+  (void)dwMipMapCount;
+  (void)dwReserved1;
+  (void)dwReserved2;
+  (void)dwReserved1;
+  (void)ddpfPixelFormat;
+  (void)ddsCaps;
+
   // Jump to data area:
   fseek(fp, STRUCTURE_SIZE + 4, SEEK_SET);
 
@@ -4454,7 +4460,7 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
   FILE* fp;
   vvTokenizer* tok;
   uchar* rawData;
-  int i, x, y, z, voxPerChan, index;
+  int i, x, y, z, index;
 
   vvDebugMsg::msg(1, "vvFileIO::loadSynthFile()");
   if ( (fp=fopen(vd->getFilename(), "rb")) == NULL)
@@ -4493,7 +4499,6 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
   rawData = new uchar[vd->getFrameBytes()];
 
   // Read volume data:
-  voxPerChan = vd->vox[0] * vd->vox[1] * vd->vox[2];
   for (i=0; i<NUM_CHANNELS; ++i)
   {
     for (z=0; z<vd->vox[2]; ++z)

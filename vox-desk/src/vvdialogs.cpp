@@ -605,7 +605,6 @@ void VVClippingDialog::updateClipParameters()
 
 void VVClippingDialog::updateValues()
 {
-  vvVector3 point = _canvas->_renderer->getParameterV3(vvRenderState::VV_CLIP_POINT);
   vvVector3 normal = _canvas->_renderer->getParameterV3(vvRenderState::VV_CLIP_NORMAL);
   normal.normalize();
 
@@ -1960,7 +1959,7 @@ FXIMPLEMENT(VVHistWindow,FXDialogBox,VVHistWindowMap,ARRAYNUMBER(VVHistWindowMap
 
 // Construct a dialog box
 VVHistWindow::VVHistWindow(FXWindow* owner):FXDialogBox(owner, "Histogram",
-  DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 100, 100), _valArray(), _colorArray()
+  DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 100, 100), _colorArray(), _valArray()
 {
   _channels = 0;
 

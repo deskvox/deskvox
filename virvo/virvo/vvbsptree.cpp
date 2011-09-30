@@ -266,7 +266,6 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
   float tmpf;
   int cnt[3];
   int ratio[3][2];
-  int bestRatio[3][2];
   float bestWorkLoad[3][2];                       // stored for convenience
   float meanSqrErrorRatio[3];
   int splitAxis;
@@ -420,8 +419,6 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
     // Start solution.
     ratio[i][0] = cnt[i];
     ratio[i][1] = 0;
-    bestRatio[i][0] = cnt[i];
-    bestRatio[i][1] = 0;
 
     // Iterate over all possible ratios by swapping the
     // greatest share from the left to the right side.
@@ -480,8 +477,6 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
       const float err = vvToolshed::meanAbsError(idealWorkLoad, workLoad, 2);
       if (err < meanSqrErrorRatio[i])
       {
-        bestRatio[i][0] = ratio[i][0];
-        bestRatio[i][1] = ratio[i][1];
         bestWorkLoad[i][0] = workLoad[0];
         bestWorkLoad[i][1] = workLoad[1];
         meanSqrErrorRatio[i] = err;

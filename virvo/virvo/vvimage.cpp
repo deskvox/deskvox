@@ -41,10 +41,10 @@ using namespace std;
 */
 vvImage::vvImage(short h, short w, uchar* image)
 : imageptr(image)
-, height(h)
-, width(w)
 , videoEncoder(NULL)
 , videoDecoder(NULL)
+, height(h)
+, width(w)
 {
   vvDebugMsg::msg(3, "vvImage::vvImage(): ", w, h);
   videosize = 0;
@@ -64,10 +64,10 @@ vvImage::vvImage(short h, short w, uchar* image)
  */
 vvImage::vvImage()
 : imageptr(0)
-, height(0)
-, width(0)
 , videoEncoder(NULL)
 , videoDecoder(NULL)
+, height(0)
+, width(0)
 {
   height = 0;
   width = 0;

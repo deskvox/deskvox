@@ -24,8 +24,6 @@
 // Local:
 #include "vvclient.h"
 
-#pragma warning(disable: 4100)    // disable warning about unreferenced formal parameter
-
 using namespace vox;
 using namespace std;
 #ifdef WIN32

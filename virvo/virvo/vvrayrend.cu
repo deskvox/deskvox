@@ -904,7 +904,7 @@ vvRayRend::~vvRayRend()
   vvDebugMsg::msg(1, "vvRayRend::~vvRayRend()");
 
   bool ok;
-  for (int f=0; f<d_volumeArrays.size(); ++f)
+  for (size_t f=0; f<d_volumeArrays.size(); ++f)
   {
     vvCuda::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
                        "vvRayRend::~vvRayRend() - free volume frame");

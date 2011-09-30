@@ -39,8 +39,6 @@
 #include "vvdebugmsg.h"
 #include "vvprintgl.h"
 
-/*ARGSUSED*/
-#pragma warning(disable: 4251)
 //----------------------------------------------------------------------------
 vvRenderState::vvRenderState()
 {

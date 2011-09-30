@@ -126,7 +126,7 @@ std::vector<std::string> vvToolshed::split(const std::string& str, const std::st
   std::vector<std::string> result;
 
   std::string strCopy(str);
-  int pos = strCopy.find_first_of(delim);
+  size_t pos = strCopy.find_first_of(delim);
   while (pos != std::string::npos)
   {
     if (pos > 0)

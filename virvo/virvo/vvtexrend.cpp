@@ -1378,9 +1378,9 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
     slaveWindowWidth = 512;
     slaveWindowHeight = 512;
   }
-  int unresolvedDisplays = 0;
+  uint unresolvedDisplays = 0;
 
-  for (int i = 0; i < _numThreads; ++i)
+  for (uint i = 0; i < _numThreads; ++i)
   {
     _threadData[i].display = XOpenDisplay(_displayNames[i]);
 
@@ -2017,7 +2017,7 @@ void vvTexRend::fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vect
 vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int offsetY, const int offsetZ,
                                                  const int sizeX, const int sizeY, const int sizeZ, const bool newTex)
 {
-  ErrorType err;
+  ErrorType err = OK;
   int srcIndex;
   int texOffset=0;
   int rawVal[4];
@@ -2224,7 +2224,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int of
   }
 
   delete[] texData;
-  return OK;
+  return err;
 }
 
 vvTexRend::ErrorType vvTexRend::updateTextures2D(const int axes,

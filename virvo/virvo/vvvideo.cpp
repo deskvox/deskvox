@@ -432,7 +432,7 @@ int vvVideo::destroyDecoder()
 @param enc_size  IN, available space for encoded frame
 @param enc_size  OUT, size of encoded frame
 @param style  style of encoding [0 .. 6]
-@param quant  quantizer value to use for that frame [1 .. 31]
+@param quant  quantizer value to use for that frame [1 .. 31]
 @return   0 for success, != 0 for error
 */
 int vvVideo::encodeFrame(const unsigned char* src, unsigned char* dst, int* enc_size)
@@ -453,6 +453,7 @@ int vvVideo::encodeFrame(const unsigned char* src, unsigned char* dst, int* enc_
 
   int ret = sws_scale(enc_imgconv_ctx, src_picture.data, src_picture.linesize, 0, 
       enc_ctx->height, enc_picture->data, enc_picture->linesize);
+  (void)ret;
 
   *enc_size = avcodec_encode_video(enc_ctx, dst, *enc_size, enc_picture);
   *enc_size += 2;
@@ -513,6 +514,7 @@ int vvVideo::decodeFrame(const unsigned char* src, unsigned char* dst, int src_s
   avpicture_fill(&dst_picture, dst, PIX_FMT_RGB24, dec_ctx->width, dec_ctx->height);
   int ret = sws_scale(dec_imgconv_ctx, dec_picture->data, dec_picture->linesize, 0, 
       dec_ctx->height, dst_picture.data, dst_picture.linesize);
+  (void)ret;
 
   *dst_size = dec_ctx->width * dec_ctx->height * 3;
 

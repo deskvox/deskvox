@@ -162,7 +162,6 @@ void vvTexMultiRend::removeTextures()
 /// Generate textures for all rendering modes.
 vvTexMultiRend::ErrorType vvTexMultiRend::makeTextures()
 {
-  static bool first = true;
   ErrorType err = OK;
   vvDebugMsg::msg(2, "vvTexMultiRend::makeTextures()");
 
@@ -174,7 +173,6 @@ vvTexMultiRend::ErrorType vvTexMultiRend::makeTextures()
   updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); 
 
   makeLUTTexture(); // FIXME: works only once, then generates OpenGL error
-  first = false;
 
   vvGLTools::printGLError("vvTexMultiRend::makeTextures");
   return err;
@@ -278,7 +276,7 @@ void vvTexMultiRend::updateVolumeData(int offsetX, int offsetY, int offsetZ,
 vvTexMultiRend::ErrorType vvTexMultiRend::updateTextures3D(int offsetX, int offsetY, int offsetZ,
 int sizeX, int sizeY, int sizeZ, bool newTex)
 {
-  ErrorType err;
+  ErrorType err = OK;
   int frames;
   int texSize;
   int sliceSize;
@@ -462,7 +460,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
   }
 
   delete[] texData;
-  return OK;
+  return err;
 }
 
 //----------------------------------------------------------------------------
@@ -770,7 +768,6 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
 void vvTexMultiRend::renderVolumeGL()
 {
   static vvStopwatch sw;                          // stop watch for performance measurements
-  AxisType principal;                             // principal viewing direction
   vvMatrix mv;                                    // current modelview matrix
   vvVector3 origin(0.0f, 0.0f, 0.0f);             // zero vector
   vvVector3 xAxis(1.0f, 0.0f, 0.0f);              // vector in x axis direction
@@ -778,7 +775,6 @@ void vvTexMultiRend::renderVolumeGL()
   vvVector3 zAxis(0.0f, 0.0f, 1.0f);              // vector in z axis direction
   vvVector3 probeSizeObj;                         // probe size [object space]
   vvVector3 size;                                 // volume size [world coordinates]
-  float zx, zy, zz;                               // base vector z coordinates
   int i;
 
   vvDebugMsg::msg(3, "vvTexMultiRend::renderVolumeGL()");
@@ -830,22 +826,6 @@ void vvTexMultiRend::renderVolumeGL()
   xAxis.normalize();
   yAxis.normalize();
   zAxis.normalize();
-
-  // Only z component of base vectors is needed:
-  zx = xAxis[2];
-  zy = yAxis[2];
-  zz = zAxis[2];
-
-  if (fabs(zx) > fabs(zy))
-  {
-    if (fabs(zx) > fabs(zz)) principal = X_AXIS;
-    else principal = Z_AXIS;
-  }
-  else
-  {
-    if (fabs(zy) > fabs(zz)) principal = Y_AXIS;
-    else principal = Z_AXIS;
-  }
 
   renderTex3DPlanar(&mv); 
   vvRenderer::renderVolumeGL();
@@ -1036,7 +1016,7 @@ void vvTexMultiRend::enableLUTMode(vvShaderProgram* glslShader)
   }
 
   //glslShader->setValue(program, "numChan", 1, &(vd->chan));
-  _alphaMode == 0 ? &maxWeight : &sumWeight;
+  //_alphaMode == 0 ? &maxWeight : &sumWeight;
   glslShader->setParameter1f("normAlpha", _alphaMode);
   glslShader->setParameter1f("alphaMode", _alphaMode);
 }

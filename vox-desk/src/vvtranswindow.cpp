@@ -18,10 +18,6 @@
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#pragma warning(disable: 4244)    // disable warning about conversion from int to short
-#pragma warning(disable: 4512)    // disable warning: assignment operator could not be generated
-#pragma warning(disable: 4800)    // disable warning about forcing value to bool
-
 // Virvo:
 #include <vvglew.h>
 #include <vvopengl.h>
@@ -119,7 +115,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _tfBook = new FXTabBook(master,this,ID_TF_BOOK,PACK_UNIFORM_WIDTH|PACK_UNIFORM_HEIGHT|LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_RIGHT);
   
   // Tab page 1:
-  FXTabItem* tab1=new FXTabItem(_tfBook,"&1D Transfer Function",NULL);
+  //FXTabItem* tab1=new FXTabItem(_tfBook,"&1D Transfer Function",NULL);
   FXVerticalFrame* page1 = new FXVerticalFrame(_tfBook,FRAME_THICK|FRAME_RAISED|LAYOUT_FILL_X|LAYOUT_FILL_Y);
 
   FXVerticalFrame* glpanel = new FXVerticalFrame(page1, FRAME_SUNKEN|LAYOUT_SIDE_LEFT|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT, 0,0,TF_WIDTH,TF_HEIGHT);
@@ -137,7 +133,7 @@ VVTransferWindow::VVTransferWindow(FXWindow* owner, vvCanvas* c) :
   _zoomMaxButton = new FXButton(zoomFrame, "", NULL, this, ID_MAX, FRAME_RAISED | FRAME_THICK | LAYOUT_RIGHT,0,0,0,0,20,20);
   
   // Tab page 2:
-  FXTabItem* tab2=new FXTabItem(_tfBook,"&2D Transfer Function",NULL);
+  //FXTabItem* tab2=new FXTabItem(_tfBook,"&2D Transfer Function",NULL);
   FXVerticalFrame* page2 = new FXVerticalFrame(_tfBook,FRAME_THICK|FRAME_RAISED|LAYOUT_FILL_X|LAYOUT_FILL_Y);
   _glVisual2D = new FXGLVisual(getApp(), VISUAL_DOUBLEBUFFER);
   _glCanvas2D = new FXGLCanvas(page2, _glVisual2D, this, ID_TF_CANVAS_2D, FRAME_SUNKEN | LAYOUT_FIX_HEIGHT | LAYOUT_FIX_WIDTH, 0, 0, TF_WIDTH,TF_HEIGHT);

@@ -86,8 +86,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
         return (dist < rhs.dist);
       }
     };
-    unsigned int _numThreads;                     ///< thread count
-    unsigned int _usedThreads;                    ///< actually used threads, some maybe can't be used because of errors
+    uint _numThreads;                             ///< thread count
+    uint _usedThreads;                            ///< actually used threads, some maybe can't be used because of errors
     
     pthread_t* _threads;                          ///< worker threads
     ThreadArgs* _threadData;                      ///< args for each thread

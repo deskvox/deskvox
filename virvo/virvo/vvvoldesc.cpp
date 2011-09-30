@@ -1927,7 +1927,7 @@ void vvVolDesc::toggleEndianness(int frame)
     <LI>bpv=4: negate floating point value</LI>
   </UL>
 */
-void vvVolDesc::toggleSign(int frame)
+void vvVolDesc::toggleSign(int /* frame */)
 {
   uchar* rd;
   int    frameVoxels;
@@ -1938,13 +1938,6 @@ void vvVolDesc::toggleSign(int frame)
 
   frameVoxels = getFrameVoxels();
   raw.first();
-  int startFrame=0;
-  int endFrame=frames;
-  if(frame != -1)
-  {
-    startFrame = frame;
-    endFrame = frame+1;
-  }
   for (f=0; f<frames; ++f)
   {
     rd = raw.getData();
@@ -4602,7 +4595,6 @@ bool vvVolDesc::makeHeightField(int slices, int mode, bool verbose)
   uchar* newRaw;                                  // raw data of current destination frame
   uchar *src, *dst;                               // source and destination volume data
   int newFrameSize;                               // new volume's frame size [voxels]
-  int sliceVoxels;                                // number of voxels per slice in source volume
   int f, x, y, z;                                 // loop counters
   int zPos;
 
@@ -4620,7 +4612,6 @@ bool vvVolDesc::makeHeightField(int slices, int mode, bool verbose)
   }
 
   newFrameSize = vox[0] * vox[1] * slices * bpc;
-  sliceVoxels = vox[0] * vox[1];
   if (verbose) vvToolshed::initProgress(slices * frames);
   raw.first();
   for (f=0; f<frames; ++f)
@@ -4881,8 +4872,6 @@ void vvVolDesc::addVariance(int srcChan)
   float mean;                                     // mean data value in a frame
   float variance;
   int iVar;                                       // variance as integer
-  int sliceBytes;                                 // number of bytes per slice
-  int lineBytes;                                  // number of bytes per volume line
   int bpv;                                        // bytes per voxel
   int voxelOffset;                                // offset from source channel to destination channel [bytes]
   int f, x, y, z;
@@ -4892,8 +4881,6 @@ void vvVolDesc::addVariance(int srcChan)
   setChannelName(chan-1, VARIANCE_CHANNEL_NAME);
 
   bpv = bpc * chan;
-  lineBytes = bpv * vox[0];
-  sliceBytes = lineBytes * vox[1];
   voxelOffset = bpc * (chan - srcChan - 1);
 
   // Add variance to every frame:

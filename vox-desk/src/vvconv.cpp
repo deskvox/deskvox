@@ -211,7 +211,6 @@ bool vvConv::readVolumeData()
 
       vvTokenizer* tok = new vvTokenizer(fp);
       tok->setParseNumbers(true);
-      vvTokenizer::TokenType ttype;
       
       laser = new int[vd->chan];
       intensity = new int[vd->chan];
@@ -228,13 +227,10 @@ bool vvConv::readVolumeData()
       
       bool done = false;
       while(!done) {
-        ttype = tok->nextToken();
         if (strcmp(tok->sval, "SCANNER") == 0)
         {
-          ttype = tok->nextToken();                  
           if (strcmp(tok->sval, "INFORMATION") ==0)
           {
-            ttype = tok->nextToken();
             if (strcmp(tok->sval, "#0") == 0)
              done = true;
           }
