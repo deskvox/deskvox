@@ -74,10 +74,12 @@ private:
   vvMatrix _currentMv;                                    ///< Current modelview matrix
   vvMatrix _currentPr;                                    ///< Current projection matrix
   vvMatrix _imgMatrix;                                    ///< Reprojection matrix of _ibrImg
+  vvMatrix _imgMv;                                        ///< model-view matrix of _ibrImg
+  vvMatrix _imgPr;                                        ///< Projection matrix of _ibrImg
+  vvGLTools::Viewport _imgVp;                             ///< Viewport of _ibrImg
+  float _imgDepthRange[2];                                ///< Depth range of _ibrImg
   vvRemoteClient::ErrorType requestIbrFrame();            ///< remember envoironment and send image-request to server
   void initIbrFrame();                                    ///< initialize pixel-points in object space
-
-  int _width, _height;                                    ///< dimensions of ibr image
 
   vvShaderFactory* _shaderFactory;
   vvShaderProgram* _shader;

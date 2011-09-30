@@ -23,6 +23,7 @@
 
 #include "vvimage.h"
 #include "vvvecmath.h"
+#include "vvgltools.h"
 
 class VIRVOEXPORT vvIbrImage : public vvImage
 {
@@ -46,8 +47,17 @@ class VIRVOEXPORT vvIbrImage : public vvImage
     int getDepthCodetype() const;
     void setDepthCodetype(int ct);
 
-    void setReprojectionMatrix(const vvMatrix& preprojectionMatrix);
+    void setModelViewMatrix(const vvMatrix &mv);
+    vvMatrix getModelViewMatrix() const;
+    void setProjectionMatrix(const vvMatrix &pm);
+    vvMatrix getProjectionMatrix() const;
+    void setViewport(const vvGLTools::Viewport &vp);
+    vvGLTools::Viewport getViewport() const;
+    void setDepthRange(float depthMin, float depthMax);
+    void getDepthRange(float *depthMin, float *depthMax) const;
+
     vvMatrix getReprojectionMatrix() const;
+
   private:
     int  _depthPrecision; // 8: 8 bit int, 16: 16 bit int, 32: 32 bit float
     int  _depthCodeType;
@@ -55,7 +65,11 @@ class VIRVOEXPORT vvIbrImage : public vvImage
     uchar*          _pixeldepth;
     uchar*          _codeddepth;
 
-    vvMatrix        _preprojectionMatrix;       ///< undo the camera transform this frame was rendered for
+    vvMatrix        _modelViewMatrix;
+    vvMatrix        _projectionMatrix;
+    vvGLTools::Viewport _viewport;
+    float           _depthMin;
+    float           _depthMax;
 };
 
 #endif

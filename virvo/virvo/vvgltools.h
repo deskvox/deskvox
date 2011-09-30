@@ -44,6 +44,8 @@ class VIRVOEXPORT vvGLTools
     };
     struct Viewport                               /// for convenience
     {
+      Viewport() { for(int i=0; i<4; ++i) values[i]=0; }
+      Viewport(int x, int y, int w, int h) { values[0]=x; values[1]=y; values[2]=w; values[3]=h; }
       int values[4];
 
       inline int &operator[](const unsigned int i)

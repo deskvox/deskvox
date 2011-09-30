@@ -169,8 +169,8 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   _shader->setParameter1f("vpWidth", _viewportWidth);
   _shader->setParameter1f("vpHeight", _viewportHeight);
-  _shader->setParameter1f("imageWidth", _width);
-  _shader->setParameter1f("imageHeight", _height);
+  _shader->setParameter1f("imageWidth", _imgVp[2]);
+  _shader->setParameter1f("imageHeight", _imgVp[3]);
   _shader->setParameterTex2D("rgbaTex", _rgbaTex);
   _shader->setParameterTex2D("depthTex", _depthTex);
 
@@ -189,7 +189,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   _shader->setParameterMatrix4f("reprojectionMatrix" , reprojectionMatrixGL);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-  glDrawElements(GL_POINTS, _width*_height, GL_UNSIGNED_INT, NULL);
+  glDrawElements(GL_POINTS, _imgVp[2]*_imgVp[3], GL_UNSIGNED_INT, NULL);
 
   _shader->disable();
 
@@ -225,6 +225,9 @@ void vvIbrClient::initIbrFrame()
   const int h = _image->getHeight();
   const int w = _image->getWidth();
   _imgMatrix = _image->getReprojectionMatrix();
+  _imgPr = _image->getProjectionMatrix();
+  _imgMv = _image->getModelViewMatrix();
+  _image->getDepthRange(&_imgDepthRange[0], &_imgDepthRange[1]);
 
   // get pixel and depth-data
   glBindTexture(GL_TEXTURE_2D, _rgbaTex);
@@ -255,11 +258,10 @@ void vvIbrClient::initIbrFrame()
       break;
   }
 
-  if(_width == w && _height == h)
+  if(_imgVp[2] == w && _imgVp[3] == h)
       return;
 
-  _width = w;
-  _height = h;
+  _imgVp = _image->getViewport();
 
   std::vector<GLfloat> points(w*h*3);
 
@@ -293,8 +295,8 @@ void vvIbrClient::initIndexArrays()
 {
   vvDebugMsg::msg(3, "vvIbrClient::initIndexArray()");
 
-  const int width = _width;
-  const int height = _height;
+  const int width = _imgVp[2];
+  const int height = _imgVp[3];
 
   for (int i = 0; i < 4; ++i)
   {

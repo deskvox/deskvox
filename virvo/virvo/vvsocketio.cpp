@@ -595,11 +595,32 @@ vvSocket::ErrorType vvSocketIO::getIbrImage(vvIbrImage* im)
     return err;
 
   // Get modelview / projection matrix for the current frame
-  vvMatrix matrix;
-  err = getMatrix(&matrix);
+  vvMatrix pm;
+  err = getMatrix(&pm);
   if(err != vvSocket::VV_OK)
     return err;
-  im->setReprojectionMatrix(matrix);
+  im->setProjectionMatrix(pm);
+
+  vvMatrix mv;
+  err = getMatrix(&mv);
+  if(err != vvSocket::VV_OK)
+    return err;
+  im->setModelViewMatrix(mv);
+
+  vvGLTools::Viewport vp;
+  err = getViewport(vp);
+  if(err != vvSocket::VV_OK)
+    return err;
+  im->setViewport(vp);
+
+  float drMin = 0.f, drMax = 0.f;
+  err = getFloat(drMin);
+  if(err != vvSocket::VV_OK)
+    return err;
+  err = getFloat(drMax);
+  if(err != vvSocket::VV_OK)
+    return err;
+  im->setDepthRange(drMin, drMax);
 
   int dp;
   err = getInt32(dp);
@@ -640,8 +661,41 @@ vvSocket::ErrorType vvSocketIO::putIbrImage(const vvIbrImage* im)
     return err;
   }
 
-  vvMatrix matrix = im->getReprojectionMatrix();
-  err = putMatrix(&matrix);
+  vvMatrix pm = im->getProjectionMatrix();
+  err = putMatrix(&pm);
+  if (err != vvSocket::VV_OK)
+  {
+    return err;
+  }
+
+  vvMatrix mv = im->getModelViewMatrix();
+  err = putMatrix(&mv);
+  if (err != vvSocket::VV_OK)
+  {
+    return err;
+  }
+
+  vvGLTools::Viewport vp = im->getViewport();
+  err = putViewport(vp);
+  if (err != vvSocket::VV_OK)
+  {
+    return err;
+  }
+
+  float drMin = 0.f, drMax = 0.f;
+  im->getDepthRange(&drMin, &drMax);
+  err = putFloat(drMin);
+  if (err != vvSocket::VV_OK)
+  {
+    return err;
+  }
+  err = putFloat(drMax);
+  if (err != vvSocket::VV_OK)
+  {
+    return err;
+  }
+
+  err = putInt32(im->getDepthPrecision());
   if (err != vvSocket::VV_OK)
   {
     return err;
@@ -1143,6 +1197,41 @@ vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val)
   val[1] = vvToolshed::readFloat(&buffer[4]);
   val[2] = vvToolshed::readFloat(&buffer[8]);
   val[3] = vvToolshed::readFloat(&buffer[12]);
+  return retval;
+}
+
+//----------------------------------------------------------------------------
+/** Writes a vvGLTools::Viewport to the socket.
+ @param val  the vvGLTools::Viewport.
+*/
+vvSocket::ErrorType vvSocketIO::putViewport(const vvGLTools::Viewport &val)
+{
+  uchar buffer[16];
+  vvToolshed::write32(&buffer[0], val[0]);
+  vvToolshed::write32(&buffer[4], val[1]);
+  vvToolshed::write32(&buffer[8], val[2]);
+  vvToolshed::write32(&buffer[12], val[3]);
+  return vvSocket::write_data(&buffer[0], 16);
+}
+
+//----------------------------------------------------------------------------
+/** Reads a vvGLTools::Viewport from the socket.
+ @param val  the vvGLTools::Viewport.
+*/
+vvSocket::ErrorType vvSocketIO::getViewport(vvGLTools::Viewport &val)
+{
+  uchar buffer[16];
+  vvSocket::ErrorType retval;
+
+  if ((retval = vvSocket::read_data(&buffer[0], 16)) != vvSocket::VV_OK)
+  {
+    return retval;
+  }
+
+  val[0] = vvToolshed::read32(&buffer[0]);
+  val[1] = vvToolshed::read32(&buffer[4]);
+  val[2] = vvToolshed::read32(&buffer[8]);
+  val[3] = vvToolshed::read32(&buffer[12]);
   return retval;
 }
 

@@ -28,6 +28,7 @@
 #include "vvinttypes.h"
 #include "vvvecmath.h"
 #include "vvtransfunc.h"
+#include "vvgltools.h"
 
 class vvBrick;
 class vvImage;
@@ -176,6 +177,8 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType putVector3(const vvVector3& val);
     ErrorType getVector4(vvVector4& val);
     ErrorType putVector4(const vvVector4& val);
+    ErrorType getViewport(vvGLTools::Viewport &val);
+    ErrorType putViewport(const vvGLTools::Viewport &val);
     ErrorType getCommReason(CommReason& val);
     ErrorType putCommReason(const CommReason val);
     ErrorType getWinDims(int& w, int& h);

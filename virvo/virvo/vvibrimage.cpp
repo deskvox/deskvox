@@ -19,8 +19,9 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <cassert>
-#include <vvdebugmsg.h>
+#include "vvdebugmsg.h"
 #include "vvibrimage.h"
+#include "vvibr.h"
 
 vvIbrImage::vvIbrImage(short h, short w, uchar* image, int dp)
 : vvImage(h, w, image)
@@ -29,8 +30,11 @@ vvIbrImage::vvIbrImage(short h, short w, uchar* image, int dp)
 , _codedDepthSize(0)
 , _pixeldepth(NULL)
 , _codeddepth(NULL)
+, _viewport(0, 0, w, h)
 {
-  _preprojectionMatrix.identity();
+  _projectionMatrix.identity();
+  _modelViewMatrix.identity();
+  _depthMin = _depthMax = 0.f;
 }
 
 vvIbrImage::vvIbrImage()
@@ -40,8 +44,11 @@ vvIbrImage::vvIbrImage()
 , _codedDepthSize(0)
 , _pixeldepth(NULL)
 , _codeddepth(NULL)
+, _viewport(0, 0, 0, 0)
 {
-  _preprojectionMatrix.identity();
+  _projectionMatrix.identity();
+  _modelViewMatrix.identity();
+  _depthMin = _depthMax = 0.f;
 }
 
 vvIbrImage::~vvIbrImage()
@@ -128,14 +135,51 @@ void vvIbrImage::setDepthSize(int size)
   _codedDepthSize = size;
 }
 
-void vvIbrImage::setReprojectionMatrix(const vvMatrix& reprojectionMatrix)
+void vvIbrImage::setModelViewMatrix(const vvMatrix &mv)
 {
-  _preprojectionMatrix = reprojectionMatrix;
+  _modelViewMatrix = mv;
+}
+
+vvMatrix vvIbrImage::getModelViewMatrix() const
+{
+  return _modelViewMatrix;
+}
+
+void vvIbrImage::setProjectionMatrix(const vvMatrix &pm)
+{
+  _projectionMatrix = pm;
+}
+
+vvMatrix vvIbrImage::getProjectionMatrix() const
+{
+  return _projectionMatrix;
+}
+
+void vvIbrImage::setDepthRange(const float dmin, const float dmax)
+{
+  _depthMin = dmin;
+  _depthMax = dmax;
+}
+
+void vvIbrImage::getDepthRange(float *dmin, float *dmax) const
+{
+  *dmin = _depthMin;
+  *dmax = _depthMax;
+}
+
+void vvIbrImage::setViewport(const vvGLTools::Viewport &vp)
+{
+  _viewport = vp;
+}
+
+vvGLTools::Viewport vvIbrImage::getViewport() const
+{
+  return _viewport;
 }
 
 vvMatrix vvIbrImage::getReprojectionMatrix() const
 {
-  return _preprojectionMatrix;
+  return vvIbr::calcImgMatrix(_projectionMatrix, _modelViewMatrix, _viewport, _depthMin, _depthMax);
 }
 
 int vvIbrImage::encode(short ct, short sh, short eh, short sw, short ew)

@@ -108,7 +108,10 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   cudaMemcpy(_pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDeviceImg(), w*h*4, cudaMemcpyDeviceToHost);
   cudaMemcpy(_depth, rayRend->getDeviceDepth(), w*h*(dp/8), cudaMemcpyDeviceToHost);
 
-  _image->setReprojectionMatrix(vvIbr::calcImgMatrix(pr, mv, vp, drMin, drMax));
+  _image->setModelViewMatrix(mv);
+  _image->setProjectionMatrix(pr);
+  _image->setViewport(vp);
+  _image->setDepthRange(drMin, drMax);
   _image->encode(_codetype, 0, h-1, 0, w-1);
   _socket->putIbrImage(_image);
 }
