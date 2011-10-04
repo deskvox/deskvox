@@ -206,6 +206,141 @@ vvView::~vvView()
   delete vd;
 }
 
+void vvView::serverLoop()
+{
+  while (1)
+  {
+    cerr << "Listening on port " << slavePort << endl;
+
+    vvSocketIO *sock = new vvSocketIO(slavePort, vvSocket::VV_TCP);
+    sock->set_debuglevel(vvDebugMsg::getDebugLevel());
+    if(sock->init() != vvSocket::VV_OK)
+    {
+      std::cerr << "Failed to initialize server socket on port " << slavePort << std::endl;
+      delete sock;
+      break;
+    }
+
+#ifdef HAVE_BONJOUR
+    // Register the bonjour service for the slave.
+    vvBonjourRegistrar* registrar = new vvBonjourRegistrar();
+    const vvBonjourEntry entry = vvBonjourEntry("Virvo render slave",
+        "_distrendering._tcp", "");
+    registrar->registerService(entry, slavePort);
+#endif
+
+    vvRemoteServer* server = NULL;
+    int type;
+    sock->getInt32(type);
+    switch(type)
+    {
+      case vvRenderer::REMOTE_IMAGE:
+        rrMode = RR_IMAGE;
+        //setRendererType(vvRenderer::TEXREND);
+        server = new vvImageServer(sock);
+        break;
+      case vvRenderer::REMOTE_IBR:
+#ifdef HAVE_CUDA
+        rrMode = RR_IBR;
+        setRendererType(vvRenderer::RAYREND);
+        server = new vvIbrServer(sock);
+#else
+        std::cerr << "Image based remote rendering requires CUDA." << std::endl;
+#endif
+        break;
+      default:
+        std::cerr << "Unknown remote rendering type " << type << std::endl;
+        break;
+    }
+
+    if(!server)
+    {
+      delete sock;
+      break;
+    }
+
+    if (server->initData(vd) != vvRemoteServer::VV_OK)
+    {
+      delete vd;
+      vd = NULL;
+      cerr << "Could not initialize volume data" << endl;
+      cerr << "Continuing with next client..." << endl;
+      continue;
+    }
+
+#if 0
+    // Get bricks to render
+    std::vector<BrickList>* frames = new std::vector<BrickList>();
+    if (rrMode == RR_CLUSTER)
+    {
+      vvClusterServer* clusterServer = dynamic_cast<vvClusterServer*>(server);
+      assert(clusterServer != NULL);
+
+      bool ok = true;
+      for (int f=0; f<vd->frames; ++f)
+      {
+        BrickList bricks;
+        if (clusterServer->initBricks(bricks) != vvClusterServer::VV_OK)
+        {
+          ok = false;
+          delete frames;
+          cerr << "Could not initialize brick structure" << endl;
+          cerr << "Continuing with next client..." << endl;
+          break;
+        }
+        frames->push_back(bricks);
+      }
+
+      if(!ok)
+      {
+        delete vd;
+        vd = NULL;
+        continue;
+      }
+    }
+    setRenderer(currentGeom, currentVoxels, frames);
+#endif
+
+    if (vd != NULL)
+    {
+      if (server->getLoadVolumeFromFile())
+      {
+        vd->printInfoLine();
+      }
+
+      // Set default color scheme if no TF present:
+      if (vd->tf.isEmpty())
+      {
+        vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+        vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+      }
+
+      delete renderer;
+      renderer = NULL;
+
+      ov = new vvObjView();
+      setProjectionMode(perspectiveMode);
+      setRenderer(currentGeom, currentVoxels);
+      srand(time(NULL));
+
+      server->renderLoop(renderer);
+      cerr << "Exiting..." << endl;
+
+      delete ov;
+      ov = NULL;
+
+      delete vd;
+      vd = NULL;
+    }
+
+    // Frames vector with bricks is deleted along with the renderer.
+    // Don't free them here.
+    // see setRenderer().
+
+    delete server;
+    server = NULL;
+  }
+}
 
 //----------------------------------------------------------------------------
 /** VView main loop.
@@ -222,138 +357,14 @@ void vvView::mainLoop(int argc, char *argv[])
     vvCuda::initGlInterop();
 #endif
 
-    while (1)
-    {
-      cerr << "Listening on port " << slavePort << endl;
+    // Set window title:
+    char title[1024];
+    sprintf(title, "vvView Server: %d", slavePort);
+    glutSetWindowTitle(title);
 
-      vvSocketIO *sock = new vvSocketIO(slavePort, vvSocket::VV_TCP);
-      sock->set_debuglevel(vvDebugMsg::getDebugLevel());
-      if(sock->init() != vvSocket::VV_OK)
-      {
-        std::cerr << "Failed to initialize server socket on port " << slavePort << std::endl;
-        delete sock;
-        break;
-      }
+    glutTimerFunc(1, timerCallback, SERVER_TIMER);
 
-#ifdef HAVE_BONJOUR
-      // Register the bonjour service for the slave.
-      vvBonjourRegistrar* registrar = new vvBonjourRegistrar();
-      const vvBonjourEntry entry = vvBonjourEntry("Virvo render slave",
-                                              "_distrendering._tcp", "");
-      registrar->registerService(entry, slavePort);
-#endif
-
-      vvRemoteServer* server = NULL;
-      int type;
-      sock->getInt32(type);
-      switch(type)
-      {
-        case vvRenderer::REMOTE_IMAGE:
-          rrMode = RR_IMAGE;
-          //setRendererType(vvRenderer::TEXREND);
-          server = new vvImageServer(sock);
-          break;
-        case vvRenderer::REMOTE_IBR:
-#ifdef HAVE_CUDA
-          rrMode = RR_IBR;
-          setRendererType(vvRenderer::RAYREND);
-          server = new vvIbrServer(sock);
-#else
-          std::cerr << "Image based remote rendering requires CUDA." << std::endl;
-#endif
-          break;
-        default:
-          std::cerr << "Unknown remote rendering type " << type << std::endl;
-          break;
-      }
-
-      if(!server)
-      {
-        delete sock;
-        break;
-      }
-
-      if (server->initData(vd) != vvRemoteServer::VV_OK)
-      {
-        delete vd;
-        vd = NULL;
-        cerr << "Could not initialize volume data" << endl;
-        cerr << "Continuing with next client..." << endl;
-        continue;
-      }
-
-#if 0
-      // Get bricks to render
-      std::vector<BrickList>* frames = new std::vector<BrickList>();
-      if (rrMode == RR_CLUSTER)
-      {
-        vvClusterServer* clusterServer = dynamic_cast<vvClusterServer*>(server);
-        assert(clusterServer != NULL);
-
-        bool ok = true;
-        for (int f=0; f<vd->frames; ++f)
-        {
-          BrickList bricks;
-          if (clusterServer->initBricks(bricks) != vvClusterServer::VV_OK)
-          {
-            ok = false;
-            delete frames;
-            cerr << "Could not initialize brick structure" << endl;
-            cerr << "Continuing with next client..." << endl;
-            break;
-          }
-          frames->push_back(bricks);
-        }
-
-        if(!ok)
-        {
-          delete vd;
-          vd = NULL;
-          continue;
-        }
-      }
-      setRenderer(currentGeom, currentVoxels, frames);
-#endif
-
-      if (vd != NULL)
-      {
-        if (server->getLoadVolumeFromFile())
-        {
-          vd->printInfoLine();
-        }
-
-        // Set default color scheme if no TF present:
-        if (vd->tf.isEmpty())
-        {
-          vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-          vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
-        }
-
-        delete renderer;
-        renderer = NULL;
-
-        ov = new vvObjView();
-        setProjectionMode(perspectiveMode);
-        setRenderer(currentGeom, currentVoxels);
-        srand(time(NULL));
-
-        server->renderLoop(renderer);
-        cerr << "Exiting..." << endl;
-
-        delete ov;
-        ov = NULL;
-
-        delete vd;
-        vd = NULL;
-      }
-
-      // Frames vector with bricks is deleted along with the renderer.
-      // Don't free them here.
-      // see setRenderer().
-
-      delete server;
-      server = NULL;
-    }
+    glutMainLoop();
   }
   else
   {
@@ -1170,6 +1181,10 @@ void vvView::timerCallback(int id)
 #endif
         runTest();
     }
+    exit(0);
+    break;
+  case SERVER_TIMER:
+    ds->serverLoop();
     exit(0);
     break;
   default:

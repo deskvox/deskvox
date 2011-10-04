@@ -58,7 +58,8 @@ class vvView
     {
       ANIMATION_TIMER = 0,                     ///< volume animation timer callback
       ROTATION_TIMER  = 1,                     ///< rotation animation timer callback
-      BENCHMARK_TIMER  = 2                     ///< benchmark timer callback
+      BENCHMARK_TIMER  = 2,                    ///< benchmark timer callback
+      SERVER_TIMER  = 3                        ///< server mode timer callback
     };
     /// Clipping edit mode
     enum
@@ -214,5 +215,6 @@ class vvView
     bool parseCommandLine(int argc, char *argv[]);
     void addDisplay(const char* name);
     void mainLoop(int argc, char *argv[]);
+    void serverLoop();
 };
 #endif
