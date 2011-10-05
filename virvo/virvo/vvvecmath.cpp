@@ -2391,6 +2391,14 @@ vvVector4 vvVector4::operator * ( const vvVector4 &other ) const
 }
 
 //----------------------------------------------------------------------------
+/// Default constructor.
+vvPlane::vvPlane()
+{
+  _point = vvVector3(0.0f, 0.0f, 0.0f);
+  _normal = vvVector3(0.0f, 0.0f, 1.0f);
+}
+
+//----------------------------------------------------------------------------
 /// Constructor for point-normal format.
 vvPlane::vvPlane(const vvVector3& p, const vvVector3& n)
 {
