@@ -339,15 +339,18 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   const float4 o = mulPost(c_invViewMatrix, make_float4(u, v, -1.0f, 1.0f));
   const float4 d = mulPost(c_invViewMatrix, make_float4(u, v, 1.0f, 1.0f));
 
+  // Dist to far-clipping plane from opengl.
+  const float tfar = norm(perspectiveDivide(d) - perspectiveDivide(o));
+
   Ray ray;
   ray.o = perspectiveDivide(o);
   ray.d = perspectiveDivide(d);
   ray.d = ray.d - ray.o;
   ray.d = normalize(ray.d);
 
-  float tnear = 0.0f;
-  float tfar = 0.0f;
-  const bool hit = intersectBox(ray, probePos - probeSizeHalf, probePos + probeSizeHalf, &tnear, &tfar);
+  float tbnear = 0.0f;
+  float tbfar = 0.0f;
+  const bool hit = intersectBox(ray, probePos - probeSizeHalf, probePos + probeSizeHalf, &tbnear, &tbfar);
   if (!hit)
   {
     d_output[y * texwidth + x] = make_uchar4(0);
@@ -369,15 +372,20 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     return;
   }
 
-  if (fmodf(tnear, dist) != 0.0f)
+  if (fmodf(tbnear, dist) != 0.0f)
   {
-    int tmp = (tnear / dist);
-    tnear = dist * tmp;
+    int tmp = (tbnear / dist);
+    tbnear = dist * tmp;
   }
 
-  if (tnear < 0.0f)
+  if (tbnear < 0.0f)
   {
-    tnear = 0.0f;
+    tbnear = 0.0f;
+  }
+
+  if (tbfar > tfar)
+  {
+    tbfar = tfar;
   }
 
   // Calc hits with clip sphere.
@@ -413,8 +421,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     dst = make_float4(0.0f);
   }
 
-  float t = tnear;
-  float3 pos = ray.o + ray.d * tnear;
+  float t = tbnear;
+  float3 pos = ray.o + ray.d * tbnear;
   const float3 step = ray.d * dist;
 
   // If just clipped, shade with the normal of the clipping surface.
@@ -430,7 +438,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 #endif
 
   // Ensure that dist is big enough
-  const bool infinite = (tnear+dist != tnear && tfar+dist != tfar);
+  const bool infinite = (tbnear+dist != tbnear && tbfar+dist != tbfar);
 
   while(infinite)
   {
@@ -448,7 +456,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
         justClippedSphere = clippedSphere;
 
         t += dist;
-        if (t > tfar)
+        if (t > tbfar)
         {
           break;
         }
@@ -529,7 +537,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     }
 
     t += dist;
-    if (t > tfar)
+    if (t > tbfar)
     {
       break;
     }
