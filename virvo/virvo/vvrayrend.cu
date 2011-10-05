@@ -45,18 +45,6 @@ texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture8;
 texture<ushort, 3, cudaReadModeNormalizedFloat> volTexture16;
 texture<float4, 1, cudaReadModeElementType> tfTexture;
 
-#ifndef ALPHA_PASS_IBR
-#define ALPHA_PASS_IBR 1
-#endif
-
-#ifndef ENTRANCE_IBR
-#define ENTRANCE_IBR 0
-#endif
-
-#ifndef EXIT_IBR
-#define EXIT_IBR 0
-#endif
-
 int iDivUp(const int a, const int b)
 {
   return (a + b - 1) / b;
@@ -293,6 +281,14 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
   return make_float4(tmp.x, tmp.y, tmp.z, classification.w);
 }
 
+enum IbrMode
+{
+  VV_ALPHA_PASS,
+  VV_ENTRANCE,
+  VV_EXIT,
+  VV_GRADIENT
+};
+
 template<
          bool t_earlyRayTermination,
          int t_bpc,
@@ -314,7 +310,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist,
                        void* d_depth, int dp,
-                       const float2 ibrPlanes, const bool alphaPassIbr,
+                       const float2 ibrPlanes, const IbrMode ibrMode,
                        const bool gatherPass, float* d_gatheredAlpha)
 {
   const float opacityThreshold = 0.95f;
@@ -432,10 +428,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   float3 ibrDepth    = make_float3(0.0f, 0.0f, 0.0f);
   bool ibrDepthFound = false;
   float ibrOpacityWeight = 0.8f;
-#if !ALPHA_PASS_IBR
   float maxDiff      = 0.0f;
   float lastAlpha    = 0.0f;
-#endif
 
   // Ensure that dist is big enough
   const bool infinite = (tbnear+dist != tbnear && tbfar+dist != tbfar);
@@ -520,7 +514,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     if (t_mipMode == 0)
     {
-      // pre-multiply alpha
+      // pre-multiply alphalastAlpha
       src.x *= src.w;
       src.y *= src.w;
       src.z *= src.w;
@@ -546,33 +540,36 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     if(t_useIbr)
     {
-#if !ALPHA_PASS_IBR
-      if(dst.w - lastAlpha > maxDiff)
+      if (ibrMode != VV_ALPHA_PASS)
       {
-        maxDiff  = dst.w - lastAlpha;
-        ibrDepth = pos;
-      }
-      lastAlpha = dst.w;
-#else
-      if (alphaPassIbr && !gatherPass && !ibrDepthFound)
-      {
-        if (dst.w > (d_gatheredAlpha[y * texwidth + x] * ibrOpacityWeight))
+        if(dst.w - lastAlpha > maxDiff)
         {
+          maxDiff  = dst.w - lastAlpha;
           ibrDepth = pos;
-          ibrDepthFound = true;
+        }
+        lastAlpha = dst.w;
+      }
+      else
+      {
+        if (!gatherPass && !ibrDepthFound)
+        {
+          if (dst.w > (d_gatheredAlpha[y * texwidth + x] * ibrOpacityWeight))
+          {
+            ibrDepth = pos;
+            ibrDepthFound = true;
+          }
         }
       }
-#endif
     }
   }
 
-#if ALPHA_PASS_IBR
-  if(!ibrDepthFound)
-    ibrDepth = pos;
-#endif
-
-  if(t_useIbr)
+  if (t_useIbr)
   {
+    if ((ibrMode == VV_ALPHA_PASS) && !ibrDepthFound)
+    {
+      ibrDepth = pos;
+    }
+
     // convert position to window-coordinates
     const float4 depthWin = mulPost(c_MvPrMatrix, make_float4(ibrDepth.x, ibrDepth.y, ibrDepth.z, 1.0f));
     float3 depth = perspectiveDivide(depthWin);
@@ -596,13 +593,13 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       ((float*)(d_depth))[y * texwidth + x] = depth.z;
       break;
     }
+
+    if ((ibrMode == VV_ALPHA_PASS) && gatherPass)
+    {
+      d_gatheredAlpha[y * texwidth + x] = dst.w;
+    }
   }
   d_output[y * texwidth + x] = rgbaFloatToInt(dst);
-
-  if (alphaPassIbr && gatherPass)
-  {
-    d_gatheredAlpha[y * texwidth + x] = dst.w;
-  }
 }
 
 typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint height,
@@ -618,7 +615,7 @@ typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint heigh
                             const float sphereRadius,
                             const float3 planeNormal, const float planeDist,
                             void* d_depth, int dp,
-                            const float2 ibrPlanes, const bool alphaPassIbr,
+                            const float2 ibrPlanes, const IbrMode ibrMode,
                             const bool gatherPass, float* d_gatheredAlpha);
 
 #ifdef FAST_COMPILE
@@ -880,7 +877,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _illumination = false;
   _interpolation = true;
   _opacityCorrection = true;
-  _gatherAlphaForIbr = ALPHA_PASS_IBR;
+  _twoPassIbr = true;
 
   _depthRange[0] = 0.0f;
   _depthRange[1] = 0.0f;
@@ -1118,7 +1115,7 @@ void vvRayRend::compositeVolume(int, int)
     }
 
     float* d_gatheredAlpha = NULL;
-    if (_gatherAlphaForIbr)
+    if (_twoPassIbr)
     {
       const size_t size = vp[2] * vp[3] * sizeof(float);
       vvCuda::checkError(&ok, cudaMalloc(&d_gatheredAlpha, size),
@@ -1135,9 +1132,8 @@ void vvRayRend::compositeVolume(int, int)
                                         center, radius * radius,
                                         pnormal, pdist, d_depth, _depthPrecision,
                                         make_float2(_depthRange[0], _depthRange[1]),
-                                        true, true, d_gatheredAlpha);
+                                        VV_ALPHA_PASS, true, d_gatheredAlpha);
     }
-    const bool twoPassIbr = _gatherAlphaForIbr;
     (kernel)<<<gridSize, blockSize>>>(static_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
                                       backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                                       volPos, volSize * 0.5f,
@@ -1147,7 +1143,7 @@ void vvRayRend::compositeVolume(int, int)
                                       center, radius * radius,
                                       pnormal, pdist, d_depth, _depthPrecision,
                                       make_float2(_depthRange[0], _depthRange[1]),
-                                      twoPassIbr, false, d_gatheredAlpha);
+                                      VV_ALPHA_PASS, false, d_gatheredAlpha);
     cudaFree(d_gatheredAlpha);
   }
   static_cast<vvCudaImg*>(intImg)->unmap();

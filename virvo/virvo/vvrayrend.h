@@ -73,7 +73,7 @@ private:
   bool _interpolation;              ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
   bool _opacityCorrection;          ///< true = opacity correction on
   bool _volumeCopyToGpuOk;          ///< must be true for memCopy to be run
-  bool _gatherAlphaForIbr;          ///< Perform an alpha-gathering pass before the actual render pass
+  bool _twoPassIbr;                 ///< Perform an alpha-gathering pass before the actual render pass
 
   int _depthPrecision;              ///< number of bits in depth buffer for image based rendering
   void* d_depth;
