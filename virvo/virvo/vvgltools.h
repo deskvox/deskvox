@@ -87,6 +87,7 @@ class VIRVOEXPORT vvGLTools
     static void  getProjectionMatrix(vvMatrix*);
     static void  setModelviewMatrix(const vvMatrix*);
     static void  setProjectionMatrix(const vvMatrix*);
+    static void  getClippingPlanes(vvPlane& znear, vvPlane& zfar);
     static vvVector3 project(const vvVector3& obj);
     static vvVector3 unProject(const vvVector3& win);
 };

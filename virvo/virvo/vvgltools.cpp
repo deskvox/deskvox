@@ -331,6 +331,37 @@ void vvGLTools::setProjectionMatrix(const vvMatrix* pm)
 }
 
 //----------------------------------------------------------------------------
+/** Calc near- and far clipping in eye coordinates
+  @param znear Near-clipping plane
+  @param zfar  Far-clipping plane
+*/
+void vvGLTools::getClippingPlanes(vvPlane& znear, vvPlane& zfar)
+{
+  // Normalized device coordinates.
+  znear = vvPlane(vvVector3(0.0f, 0.0f, -1.0f), vvVector3(0.0f, 0.0f, 1.0f));
+  zfar = vvPlane(vvVector3(0.0f, 0.0f, 1.0f), vvVector3(0.0f, 0.0f, 1.0f));
+
+  vvMatrix invPr;
+  vvGLTools::getProjectionMatrix(&invPr);
+  invPr.invert();
+
+  // Matrix to transform normal.
+  vvMatrix trPr;
+  vvGLTools::getProjectionMatrix(&trPr);
+  //trPr.invert();
+  trPr.transpose();
+  //trPr.invert();
+
+  // Transform to eye coordinates.
+  znear._point.multiply(&invPr);
+  zfar._point.multiply(&invPr);
+  znear._normal.multiply(&trPr);
+  zfar._normal.multiply(&trPr);
+  znear._normal.normalize();
+  zfar._normal.normalize();
+}
+
+//----------------------------------------------------------------------------
 /** Return a projected vertex (gluProject).
   @param obj coordinate
 */
