@@ -57,6 +57,7 @@ public:
   bool getInterpolation() const;
   bool getOpacityCorrection() const;
 
+  uchar4* getDeviceImg() const;
   void* getDeviceDepth() const;
   void* getDeviceUncertainty() const;
   void setDepthRange(float min, float max);

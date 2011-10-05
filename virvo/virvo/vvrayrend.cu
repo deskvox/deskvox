@@ -1281,6 +1281,13 @@ bool vvRayRend::getOpacityCorrection() const
   return _opacityCorrection;
 }
 
+uchar4* vvRayRend::getDeviceImg() const
+{
+  vvDebugMsg::msg(3, "vvRayRend::getDeviceImg()");
+
+  return static_cast<vvCudaImg*>(intImg)->getDeviceImg();
+}
+
 void* vvRayRend::getDeviceDepth() const
 {
   vvDebugMsg::msg(3, "vvRayRend::getDeviceDepth()");

@@ -118,7 +118,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   _image->setNewUncertaintyPtr(_uncertainty);
 
 #ifdef HAVE_CUDA
-  cudaMemcpy(_pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDeviceImg(), w*h*4, cudaMemcpyDeviceToHost);
+  cudaMemcpy(_pixels, rayRend->getDeviceImg(), w*h*4, cudaMemcpyDeviceToHost);
   cudaMemcpy(_depth, rayRend->getDeviceDepth(), w*h*(dp/8), cudaMemcpyDeviceToHost);
   cudaMemcpy(_uncertainty, rayRend->getDeviceUncertainty(), w*h*(up/8), cudaMemcpyDeviceToHost);
 #endif
