@@ -47,14 +47,6 @@ public:
   void exit();                                            ///< check out from servers
 
 private:
-  enum Corner
-  {
-    VV_TOP_LEFT = 0,
-    VV_TOP_RIGHT,
-    VV_BOTTOM_RIGHT,
-    VV_BOTTOM_LEFT
-  };
-
   pthread_t*  _thread;                                    ///< list for threads of each server connection
 
   pthread_mutex_t _signalMutex;                           ///< mutex for thread synchronization
@@ -64,7 +56,6 @@ private:
   bool   _haveFrame;                                      ///< flag indicating that at least one frame has been received
   vvIbrImage *_image;                                     ///< image, protected by _imageMutex
   GLuint _pointVBO;                                       ///< Vertex Buffer Object id for point-pixels
-  GLuint _indexBO[4];                                     ///< Buffer Object ids for indices into points
 
   GLuint _rgbaTex;                                        ///< Texture names for RGBA image
   GLuint _depthTex;                                       ///< Texture names for depth image
@@ -84,8 +75,6 @@ private:
   vvShaderFactory* _shaderFactory;
   vvShaderProgram* _shader;
 
-  void initIndexArrays();                                 ///< initialize four index arrays for back to front traversal
-  Corner getNearestCorner() const;                        ///< find the ibr-img corner with the shortest dist to the viewer
   void createThreads();                                   ///< creates threads for every socket connection
   void destroyThreads();                                  ///< quits threads
   static void* getImageFromSocket(void* threadargs);      ///< get image from socket connection and wait for next

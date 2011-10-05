@@ -18,22 +18,17 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include <limits>
-
 #include "vvglew.h"
 #include "vvibr.h"
 #include "vvibrclient.h"
+#include "vvibrimage.h"
 #include "vvgltools.h"
-#include "vvtexrend.h"
-#include "float.h"
-#include "vvrayrend.h"
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
 #include "vvtoolshed.h"
 #include "vvsocketio.h"
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
-#include "vvibrimage.h"
 
 using std::cerr;
 using std::endl;
@@ -51,7 +46,6 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
 
   glewInit();
   glGenBuffers(1, &_pointVBO);
-  glGenBuffers(4, _indexBO);
 
   glGenTextures(1, &_rgbaTex);
   glGenTextures(1, &_depthTex);
@@ -81,7 +75,6 @@ vvIbrClient::~vvIbrClient()
   pthread_mutex_destroy(&_signalMutex);
   pthread_cond_destroy(&_imageCond);
   glDeleteBuffers(1, &_pointVBO);
-  glDeleteBuffers(4, _indexBO);
   glDeleteTextures(1, &_rgbaTex);
   glDeleteTextures(1, &_depthTex);
   delete _shaderFactory;
@@ -161,9 +154,31 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   glVertexPointer(3, GL_FLOAT, 0, NULL);
   glEnableClientState(GL_VERTEX_ARRAY);
 
-  // Index Buffer Object for points
-  const Corner c = getNearestCorner();
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBO[c]);
+  vvMatrix reprojectionMatrix;
+  if (!matrixChanged)
+  {
+    reprojectionMatrix.identity();
+  }
+  else
+  {
+    vvMatrix invOld;
+    invOld = _imgMv * _imgPr;
+    invOld.invert();
+    reprojectionMatrix = invOld * currentMatrix;
+  }
+  vvMatrix invMv = _currentMv;
+  invMv.invert();
+  vvVector4 viewerObj(0.f, 0.f, 0.f, 1.f);
+  viewerObj.multiply(&invMv);
+  viewerObj.multiply(&_imgMv);
+  bool closer = viewerObj[2] > 0.f; // inverse render order if viewer has moved closer
+
+  // project current viewer onto original image along its normal
+  viewerObj.multiply(&_imgPr);
+  float splitX = (viewerObj[0]/viewerObj[3]+1.f)*_imgVp[2]*0.5f;
+  float splitY = (viewerObj[1]/viewerObj[3]+1.f)*_imgVp[3]*0.5f;
+  splitX = ts_clamp(splitX, 0.f, float(_imgVp[2]-1));
+  splitY = ts_clamp(splitY, 0.f, float(_imgVp[3]-1));
 
   _shader->enable();
 
@@ -173,31 +188,24 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   _shader->setParameter1f("imageHeight", _imgVp[3]);
   _shader->setParameterTex2D("rgbaTex", _rgbaTex);
   _shader->setParameterTex2D("depthTex", _depthTex);
+  _shader->setParameter1f("splitX", splitX);
+  _shader->setParameter1f("splitY", splitY);
+  _shader->setParameter1f("depthMin", _imgDepthRange[0]);
+  _shader->setParameter1f("depthRange", _imgDepthRange[1]-_imgDepthRange[0]);
+  _shader->setParameter1i("closer", closer);
 
-  vvMatrix reprojectionMatrix;
-  if (!matrixChanged)
-  {
-    reprojectionMatrix = vvIbr::calcDepthScaleMatrix(drMin, drMax) * vvIbr::calcViewportMatrix(vp);
-  }
-  else
-  {
-    reprojectionMatrix = _imgMatrix * currentMatrix;
-  }
   reprojectionMatrix.transpose();
   float reprojectionMatrixGL[16];
   reprojectionMatrix.get(reprojectionMatrixGL);
   _shader->setParameterMatrix4f("reprojectionMatrix" , reprojectionMatrixGL);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-  glDrawElements(GL_POINTS, _imgVp[2]*_imgVp[3], GL_UNSIGNED_INT, NULL);
+  glDrawArrays(GL_POINTS, 0, _imgVp[2]*_imgVp[3]);
 
   _shader->disable();
 
   glDisableClientState(GL_VERTEX_ARRAY);
-  glDisableClientState(GL_COLOR_ARRAY);
-
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
   return VV_OK;
 }
@@ -279,8 +287,6 @@ void vvIbrClient::initIbrFrame()
   glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
   glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(GLfloat), &points[0], GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  initIndexArrays();
 }
 
 void vvIbrClient::exit()
@@ -289,101 +295,6 @@ void vvIbrClient::exit()
 
   _socket->putCommReason(vvSocketIO::VV_EXIT);
   delete _socket;
-}
-
-void vvIbrClient::initIndexArrays()
-{
-  vvDebugMsg::msg(3, "vvIbrClient::initIndexArray()");
-
-  const int width = _imgVp[2];
-  const int height = _imgVp[3];
-
-  for (int i = 0; i < 4; ++i)
-  {
-    _indexArray[i].clear();
-    _indexArray[i].reserve(width*height);
-  }
-
-  // Top-left to bottom-right.
-  for (int y = 0; y < height; ++y)
-  {
-    for (int x = 0; x < width; ++x)
-    {
-      _indexArray[VV_TOP_LEFT].push_back(y * width + x);
-    }
-  }
-
-  // Top-right to bottom-left.
-  for (int y = 0; y < height; ++y)
-  {
-    for (int x = width - 1; x >= 0; --x)
-    {
-      _indexArray[VV_TOP_RIGHT].push_back(y * width + x);
-    }
-  }
-
-  // Bottom-right to top-left.
-  for (int y = height - 1; y >= 0; --y)
-  {
-    for (int x = width - 1; x >= 0; --x)
-    {
-      _indexArray[VV_BOTTOM_RIGHT].push_back(y * width + x);
-    }
-  }
-
-  // Bottom-left to top-right.
-  for (int y = height - 1; y >= 0; --y)
-  {
-    for (int x = 0; x < width; ++x)
-    {
-      _indexArray[VV_BOTTOM_LEFT].push_back(y * width + x);
-    }
-  }
-
-  for(int i=0; i<4; ++i)
-  {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBO[i]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indexArray[i].size() * sizeof(GLuint), &(_indexArray[i])[0], GL_STATIC_DRAW);
-  }
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
-
-vvIbrClient::Corner vvIbrClient::getNearestCorner() const
-{
-  vvDebugMsg::msg(3, "vvIbrClient::getNearestCorner()");
-
-  vvVector4 normal = vvVector4(0.0f, 0.0f, 1.0f, 1.0f);
-
-  // Cancel out old matrix from normal.
-  vvMatrix oldMatrix = _imgMv * _imgPr;
-  // The operations below cancel each other out.
-  // Left the code this way for higher legibility.
-  // Vectors are transformed.
-  oldMatrix.invert();
-  oldMatrix.transpose();
-  oldMatrix.invert();
-  normal.multiply(&oldMatrix);
-
-  vvMatrix newMatrix = _currentMv * _currentPr;
-  newMatrix.transpose();
-  newMatrix.invert();
-  normal.multiply(&newMatrix);
-
-  const float x = normal[0]/normal[3], y = normal[1]/normal[3];
-  if(y < 0.f)
-  {
-    if(x < 0.f)
-      return VV_TOP_LEFT;
-    else
-      return VV_TOP_RIGHT;
-  }
-  else
-  {
-    if(x < 0.f)
-      return VV_BOTTOM_LEFT;
-    else
-      return VV_BOTTOM_RIGHT;
-  }
 }
 
 void vvIbrClient::createThreads()
