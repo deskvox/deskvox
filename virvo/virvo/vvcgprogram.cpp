@@ -257,6 +257,13 @@ void vvCgProgram::setParameterMatrix4f(const string& parameterName, const float*
     cgSetMatrixParameterfr(it->second, mat);
 }
 
+void vvCgProgram::setParameterMatrix4f(const string& parameterName, const vvMatrix &mat)
+{
+  float m[16];
+  mat.getGL(m);
+  setParameterMatrix4f(parameterName, m);
+}
+
 void vvCgProgram::setParameterTex1D(const string& parameterName, const unsigned int& ui)
 {
   ParameterIterator it = initParameter(parameterName);

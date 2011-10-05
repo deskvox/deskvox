@@ -193,11 +193,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   _shader->setParameter1f("depthMin", _imgDepthRange[0]);
   _shader->setParameter1f("depthRange", _imgDepthRange[1]-_imgDepthRange[0]);
   _shader->setParameter1i("closer", closer);
-
-  reprojectionMatrix.transpose();
-  float reprojectionMatrixGL[16];
-  reprojectionMatrix.get(reprojectionMatrixGL);
-  _shader->setParameterMatrix4f("reprojectionMatrix" , reprojectionMatrixGL);
+  _shader->setParameterMatrix4f("reprojectionMatrix" , reprojectionMatrix);
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
   glDrawArrays(GL_POINTS, 0, _imgVp[2]*_imgVp[3]);

@@ -236,6 +236,15 @@ void vvGLSLProgram::setParameterMatrix4f(const string& parameterName, const floa
     glUniformMatrix4fv(uniform, 1, GL_FALSE, mat);
 }
 
+void vvGLSLProgram::setParameterMatrix4f(const string& parameterName, const vvMatrix &mat)
+{
+  float m[16];
+  mat.get(m);
+  const GLint uniform = getUniform(parameterName, "setParameterMatrix4f");
+  if(uniform != -1)
+    glUniformMatrix4fv(uniform, 1, GL_TRUE, m);
+}
+
 GLint vvGLSLProgram::getUniform(const string& parameterName, const string& parameterType)
 {
   if(_parameterMaps.find(parameterName.c_str()) != _parameterMaps.end())
