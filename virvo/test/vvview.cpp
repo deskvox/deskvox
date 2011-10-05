@@ -835,6 +835,7 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       renderer = new vvIbrClient(vd, renderState, slaveNames[0], slavePorts[0]==-1 ? slavePort : slavePorts[0],
               slaveFileNames.empty() ? NULL : slaveFileNames[0]);
       renderer->setParameter(vvRenderer::VV_IBR_DEPTH_PREC, ibrPrecision);
+      renderer->setParameter(vvRenderer::VV_IBR_UNCERTAINTY_PREC, ibrPrecision); // both precisions the same for now
       break;
     default:
       if (numDisplays > 0)

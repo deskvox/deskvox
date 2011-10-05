@@ -310,7 +310,9 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 sphereCenter, const float sphereRadius,
                        const float3 planeNormal, const float planeDist,
                        void* d_depth, int dp,
-                       const float2 ibrPlanes, const IbrMode ibrMode,
+                       const float2 ibrPlanes,
+                       void* d_uncertainty, int up,
+                       const IbrMode ibrMode,
                        const bool gatherPass, float* d_gatheredAlpha)
 {
   const float opacityThreshold = 0.95f;
@@ -362,6 +364,19 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
         break;
       case 32:
         ((float*)(d_depth))[y * texwidth + x] = 0.f;
+        break;
+      }
+
+      switch(up)
+      {
+      case 8:
+        ((uchar*)(d_uncertainty))[y * texwidth + x] = 0;
+        break;
+      case 16:
+        ((ushort*)(d_uncertainty))[y * texwidth + x] = 0;
+        break;
+      case 32:
+        ((float*)(d_uncertainty))[y * texwidth + x] = 0.f;
         break;
       }
     }
@@ -594,6 +609,21 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       break;
     }
 
+    // TODO: useful evaluation of uncertainty
+    const float uncertainty = 1.0f;
+    switch(up)
+    {
+    case 8:
+      ((uchar*)(d_uncertainty))[y * texwidth + x] = (uchar)(uncertainty*float(UCHAR_MAX));
+      break;
+    case 16:
+      ((ushort*)(d_uncertainty))[y * texwidth + x] = (ushort)(uncertainty*float(USHRT_MAX));
+      break;
+    case 32:
+      ((float*)(d_uncertainty))[y * texwidth + x] = uncertainty;
+      break;
+    }
+
     if ((ibrMode == VV_ALPHA_PASS) && gatherPass)
     {
       d_gatheredAlpha[y * texwidth + x] = dst.w;
@@ -615,7 +645,9 @@ typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint heigh
                             const float sphereRadius,
                             const float3 planeNormal, const float planeDist,
                             void* d_depth, int dp,
-                            const float2 ibrPlanes, const IbrMode ibrMode,
+                            const float2 ibrPlanes,
+                            void* d_uncertainty, int up,
+                            const IbrMode ibrMode,
                             const bool gatherPass, float* d_gatheredAlpha);
 
 #ifdef FAST_COMPILE
@@ -883,12 +915,14 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _depthRange[1] = 0.0f;
 
   _depthPrecision = 8;
+  _uncertaintyPrecision = 8;
 
   _rgbaTF = NULL;
 
   d_depth = NULL;
+  d_uncertainty = NULL;
   intImg = new vvCudaImg(0, 0);
-  allocIbrDepth(0, 0);
+  allocIbrArrays(0, 0);
 
   const vvCudaImg::Mode mode = dynamic_cast<vvCudaImg*>(intImg)->getMode();
   if (mode == vvCudaImg::TEXTURE)
@@ -919,6 +953,8 @@ vvRayRend::~vvRayRend()
                      "vvRayRend::~vvRayRend() - free tf");
   vvCuda::checkError(&ok, cudaFree(d_depth),
                      "vvRayRend::~vvRayRend() - free depth");
+  vvCuda::checkError(&ok, cudaFree(d_uncertainty),
+                     "vvRayRend::~vvRayRend() - free uncertainty");
 
   delete[] _rgbaTF;
 }
@@ -975,7 +1011,7 @@ void vvRayRend::compositeVolume(int, int)
 
   const vvGLTools::Viewport vp = vvGLTools::getViewport();
 
-  allocIbrDepth(vp[2], vp[3]);
+  allocIbrArrays(vp[2], vp[3]);
   intImg->setSize(vp[2], vp[3]);
 
   dynamic_cast<vvCudaImg*>(intImg)->map();
@@ -1132,6 +1168,7 @@ void vvRayRend::compositeVolume(int, int)
                                         center, radius * radius,
                                         pnormal, pdist, d_depth, _depthPrecision,
                                         make_float2(_depthRange[0], _depthRange[1]),
+                                        d_uncertainty, _uncertaintyPrecision,
                                         VV_ALPHA_PASS, true, d_gatheredAlpha);
     }
     (kernel)<<<gridSize, blockSize>>>(static_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
@@ -1143,6 +1180,7 @@ void vvRayRend::compositeVolume(int, int)
                                       center, radius * radius,
                                       pnormal, pdist, d_depth, _depthPrecision,
                                       make_float2(_depthRange[0], _depthRange[1]),
+                                      d_uncertainty, _uncertaintyPrecision,
                                       VV_ALPHA_PASS, false, d_gatheredAlpha);
     cudaFree(d_gatheredAlpha);
   }
@@ -1182,6 +1220,9 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue)
   case vvRenderer::VV_IBR_DEPTH_PREC:
     _depthPrecision = (int)newValue;
     break;
+  case vvRenderer::VV_IBR_UNCERTAINTY_PREC:
+    _uncertaintyPrecision = (int)newValue;
+    break;
   default:
     vvRenderer::setParameter(param, newValue);
     break;
@@ -1206,6 +1247,8 @@ float vvRayRend::getParameter(const ParameterType param) const
     return _earlyRayTermination ? 1.f : 0.f;
   case vvRenderer::VV_IBR_DEPTH_PREC:
     return _depthPrecision;
+  case vvRenderer::VV_IBR_UNCERTAINTY_PREC:
+    return _uncertaintyPrecision;
   default:
     return vvRenderer::getParameter(param);
   }
@@ -1243,6 +1286,13 @@ void* vvRayRend::getDeviceDepth() const
   vvDebugMsg::msg(3, "vvRayRend::getDeviceDepth()");
 
   return d_depth;
+}
+
+void* vvRayRend::getDeviceUncertainty() const
+{
+  vvDebugMsg::msg(3, "vvRayRend::getDeviceUncertainty()");
+
+  return d_uncertainty;
 }
 
 void vvRayRend::setDepthRange(const float min, const float max)
@@ -1394,7 +1444,7 @@ void vvRayRend::factorViewMatrix()
   if ((intImg->width != w) || (intImg->height != h))
   {
     intImg->setSize(w, h);
-    allocIbrDepth(w, h);
+    allocIbrArrays(w, h);
   }
 
   iwWarp.identity();
@@ -1407,15 +1457,19 @@ void vvRayRend::findAxisRepresentations()
   // Overwrite default behavior.
 }
 
-bool vvRayRend::allocIbrDepth(const int w, const int h)
+bool vvRayRend::allocIbrArrays(const int w, const int h)
 {
-  vvDebugMsg::msg(3, "vvRayRend::allocIbrDepth()");
+  vvDebugMsg::msg(3, "vvRayRend::allocIbrArrays()");
 
   bool ok = true;
   vvCuda::checkError(&ok, cudaMalloc(&d_depth, w * h * _depthPrecision/8),
                      "vvRayRend::compositeVolume() - malloc d_depth");
   vvCuda::checkError(&ok, cudaMemset(d_depth, 0, w * h * _depthPrecision/8),
                      "vvRayRend::compositeVolume() - memset d_depth");
+  vvCuda::checkError(&ok, cudaMalloc(&d_uncertainty, w * h * _uncertaintyPrecision/8),
+                     "vvRayRend::compositeVolume() - malloc d_uncertainty");
+  vvCuda::checkError(&ok, cudaMemset(d_uncertainty, 0, w * h * _uncertaintyPrecision/8),
+                     "vvRayRend::compositeVolume() - memset d_uncertainty");
   return ok;
 }
 

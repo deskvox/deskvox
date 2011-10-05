@@ -47,6 +47,7 @@ private:
   vvIbrImage *_image;
   uchar *_pixels;
   uchar *_depth;
+  uchar *_uncertainty;
 };
 
 #endif

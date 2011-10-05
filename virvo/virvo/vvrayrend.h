@@ -58,6 +58,7 @@ public:
   bool getOpacityCorrection() const;
 
   void* getDeviceDepth() const;
+  void* getDeviceUncertainty() const;
   void setDepthRange(float min, float max);
   const float* getDepthRange() const;
 
@@ -76,13 +77,15 @@ private:
   bool _twoPassIbr;                 ///< Perform an alpha-gathering pass before the actual render pass
 
   int _depthPrecision;              ///< number of bits in depth buffer for image based rendering
+  int _uncertaintyPrecision;        ///< number of bits in uncertainty array for image based rendering
   void* d_depth;
+  void* d_uncertainty;
   float _depthRange[2];
 
   void initVolumeTexture();
   void factorViewMatrix();
   void findAxisRepresentations();
-  bool allocIbrDepth(int w, int h);
+  bool allocIbrArrays(int w, int h);
 };
 
 #endif // HAVE_CUDA

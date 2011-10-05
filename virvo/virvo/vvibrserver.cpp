@@ -29,6 +29,7 @@
 #include "vvvoldesc.h"
 #include "vvibrimage.h"
 #include "vvsocketio.h"
+#include "vvtoolshed.h"
 
 #ifdef HAVE_CUDA
 vvIbrServer::vvIbrServer(vvSocketIO *socket)
@@ -37,6 +38,7 @@ vvIbrServer::vvIbrServer(vvSocketIO *socket)
 , _image(NULL)
 , _pixels(NULL)
 , _depth(NULL)
+, _uncertainty(NULL)
 {
 }
 
@@ -45,6 +47,7 @@ vvIbrServer::~vvIbrServer()
   delete _image;
   delete[] _pixels;
   delete[] _depth;
+  delete[] _uncertainty;
 }
 
 //----------------------------------------------------------------------------
@@ -76,6 +79,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   rayRend->setDepthRange(drMin, drMax);
 
   int dp = rayRend->getParameter(vvRenderer::VV_IBR_DEPTH_PREC);
+  int up = rayRend->getParameter(vvRenderer::VV_IBR_UNCERTAINTY_PREC);
   rayRend->compositeVolume();
 
   // Fetch rendered image
@@ -86,8 +90,10 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   {
     delete[] _pixels;
     delete[] _depth;
+    delete[] _uncertainty;
     _pixels = new uchar[w*h*4];
     _depth = new uchar[w*h*(dp/8)];
+    _uncertainty = new uchar[w*h*(up/8)];
     if(_image)
     {
       _image->setDepthPrecision(dp);
@@ -95,7 +101,9 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
     }
     else
     {
-      _image = new vvIbrImage(h, w, _pixels, dp);
+      // for now uncertainty precision same as depth precision
+      const int up = dp;
+      _image = new vvIbrImage(h, w, _pixels, dp, up);
     }
     _image->alloc_pd();
   }
@@ -104,9 +112,11 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
     _image->setNewImagePtr(_pixels);
   }
   _image->setNewDepthPtr(_depth);
+  _image->setNewUncertaintyPtr(_uncertainty);
 
   cudaMemcpy(_pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDeviceImg(), w*h*4, cudaMemcpyDeviceToHost);
   cudaMemcpy(_depth, rayRend->getDeviceDepth(), w*h*(dp/8), cudaMemcpyDeviceToHost);
+  cudaMemcpy(_uncertainty, rayRend->getDeviceUncertainty(), w*h*(up/8), cudaMemcpyDeviceToHost);
 
   _image->setModelViewMatrix(mv);
   _image->setProjectionMatrix(pr);
