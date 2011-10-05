@@ -59,6 +59,7 @@ vvIbrServer::~vvIbrServer()
 */
 void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 {
+#ifdef HAVE_CUDA
   vvDebugMsg::msg(3, "vvIsaServer::renderImage()");
 
   // Render volume:
@@ -117,11 +118,9 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   _image->setNewDepthPtr(_depth);
   _image->setNewUncertaintyPtr(_uncertainty);
 
-#ifdef HAVE_CUDA
   cudaMemcpy(_pixels, rayRend->getDeviceImg(), w*h*4, cudaMemcpyDeviceToHost);
   cudaMemcpy(_depth, rayRend->getDeviceDepth(), w*h*(dp/8), cudaMemcpyDeviceToHost);
   cudaMemcpy(_uncertainty, rayRend->getDeviceUncertainty(), w*h*(up/8), cudaMemcpyDeviceToHost);
-#endif
 
   _image->setModelViewMatrix(mv);
   _image->setProjectionMatrix(pr);
@@ -129,6 +128,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   _image->setDepthRange(drMin, drMax);
   _image->encode(_codetype, 0, h-1, 0, w-1);
   _socket->putIbrImage(_image);
+#endif
 }
 
 void vvIbrServer::resize(const int w, const int h)
