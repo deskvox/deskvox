@@ -498,7 +498,7 @@ void vvSoftImg::warpTex(vvMatrix* w)
 
    // Modelview matrix becomes warp matrix:
    glMatrixMode(GL_MODELVIEW);
-   w->makeGL(glmatrix);
+   w->getGL(glmatrix);
    glLoadMatrixf(glmatrix);
 
    // Projection matrix is identity matrix:

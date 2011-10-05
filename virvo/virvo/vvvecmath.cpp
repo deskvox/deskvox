@@ -489,7 +489,7 @@ bool vvMatrix::equal(const vvMatrix* m) const
 format used e.g. in the glLoadMatrixf() command.
 @see getGL
 */
-void vvMatrix::makeGL(float* array) const
+void vvMatrix::getGL(float* array) const
 {
   int row, col, i=0;
 
@@ -500,7 +500,7 @@ void vvMatrix::makeGL(float* array) const
 
 //----------------------------------------------------------------------------
 /** Converts an OpenGL matrix to the vecmath matrix format
-  @see makeGL
+  @see getGL
 */
 void vvMatrix::setGL(const float* glmatrix)
 {
@@ -2476,8 +2476,8 @@ void testMatrix()
   m1.print("m1.multiply(&m2)");
   m2.random(1.0f, 10.0f);
   m2.print("m2.random(1.0, 10.0)=");
-  m1.makeGL((float*)m2.e);
-  m2.print("m1.makeGL((float*)m2.e)=");
+  m1.getGL((float*)m2.e);
+  m2.print("m1.getGL((float*)m2.e)=");
   m2.getGL(glmatrix);
   m2.print("m2.getGL(glmatrix)=");
   m2.transpose();

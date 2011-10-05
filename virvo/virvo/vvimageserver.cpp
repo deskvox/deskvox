@@ -53,11 +53,11 @@ void vvImageServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer
   float matrixGL[16];
 
   glMatrixMode(GL_PROJECTION);
-  pr.makeGL(matrixGL);
+  pr.getGL(matrixGL);
   glLoadMatrixf(matrixGL);
 
   glMatrixMode(GL_MODELVIEW);
-  mv.makeGL(matrixGL);
+  mv.getGL(matrixGL);
   glLoadMatrixf(matrixGL);
 
   glClearColor(0., 0., 0., 0.);

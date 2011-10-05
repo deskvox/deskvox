@@ -59,11 +59,11 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   float matrixGL[16];
 
   glMatrixMode(GL_PROJECTION);
-  pr.makeGL(matrixGL);
+  pr.getGL(matrixGL);
   glLoadMatrixf(matrixGL);
 
   glMatrixMode(GL_MODELVIEW);
-  mv.makeGL(matrixGL);
+  mv.getGL(matrixGL);
   glLoadMatrixf(matrixGL);
 
   vvRayRend* rayRend = dynamic_cast<vvRayRend*>(renderer);

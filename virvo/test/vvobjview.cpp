@@ -278,7 +278,7 @@ void vvObjView::updateModelviewMatrix(EyeType eye)
 
   if (eye!=RIGHT_EYE)                             // use stored matrix for left eye
   {
-    mv.makeGL(flat);
+    mv.getGL(flat);
   }
   else                                           // convert for right eye
   {
@@ -292,7 +292,7 @@ void vvObjView::updateModelviewMatrix(EyeType eye)
 
     mvRight.rotate(rotAngle * (float)VV_PI / 180.0f, v[0], v[1], v[2]);
     mvRight.translate(eyeDist, 0.0f, 0.0f);
-    mvRight.makeGL(flat);
+    mvRight.getGL(flat);
   }
 
   // Load matrix to OpenGL:

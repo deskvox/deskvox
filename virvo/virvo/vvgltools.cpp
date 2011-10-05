@@ -310,7 +310,7 @@ void vvGLTools::setModelviewMatrix(const vvMatrix* mv)
   vvDebugMsg::msg(3, "vvRenderer::setModelviewMatrix()");
 
   GLfloat glmatrix[16];                           // OpenGL compatible matrix
-  mv->makeGL((float*)glmatrix);
+  mv->getGL((float*)glmatrix);
   glMatrixMode(GL_MODELVIEW);
   glLoadMatrixf(glmatrix);
 }
@@ -325,7 +325,7 @@ void vvGLTools::setProjectionMatrix(const vvMatrix* pm)
   vvDebugMsg::msg(3, "vvRenderer::setProjectionMatrix()");
 
   GLfloat glmatrix[16];                           // OpenGL compatible matrix
-  pm->makeGL((float*)glmatrix);
+  pm->getGL((float*)glmatrix);
   glMatrixMode(GL_PROJECTION);
   glLoadMatrixf(glmatrix);
 }
