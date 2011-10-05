@@ -529,7 +529,7 @@ void vvMatrix::setGL(const double* glmatrix)
 /** Returns the matrix in float format.
  A float array with space for 16 float elements must be given!
 */
-void vvMatrix::get(float* elements)
+void vvMatrix::get(float* elements) const
 {
   int col, row, i=0;
 
@@ -561,7 +561,7 @@ void vvMatrix::set(const float* elements)
 /** Returns the matrix in double format.
  A double array with space for 16 double elements must be given!
 */
-void vvMatrix::get(double* elements)
+void vvMatrix::get(double* elements) const
 {
   int col, row, i=0;
 

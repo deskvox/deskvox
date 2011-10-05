@@ -97,9 +97,9 @@ class VIRVOEXPORT vvMatrix
     void makeGL(float*) const;
     void setGL(const float*);
     void setGL(const double*);
-    void get(float*);
+    void get(float*) const;
     void set(const float*);
-    void get(double*);
+    void get(double*) const;
     void set(const double*);
     void setRow(int, float, float, float, float);
     void setRow(int, vvVector3*);
