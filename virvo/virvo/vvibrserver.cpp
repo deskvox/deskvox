@@ -31,7 +31,10 @@
 #include "vvsocketio.h"
 #include "vvtoolshed.h"
 
-#ifdef HAVE_CUDA
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 vvIbrServer::vvIbrServer(vvSocketIO *socket)
 : vvRemoteServer(socket)
 , _ibrMode(vvRenderer::VV_MAX_GRADIENT)
@@ -114,9 +117,11 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   _image->setNewDepthPtr(_depth);
   _image->setNewUncertaintyPtr(_uncertainty);
 
+#ifdef HAVE_CUDA
   cudaMemcpy(_pixels, dynamic_cast<vvCudaImg*>(rayRend->intImg)->getDeviceImg(), w*h*4, cudaMemcpyDeviceToHost);
   cudaMemcpy(_depth, rayRend->getDeviceDepth(), w*h*(dp/8), cudaMemcpyDeviceToHost);
   cudaMemcpy(_uncertainty, rayRend->getDeviceUncertainty(), w*h*(up/8), cudaMemcpyDeviceToHost);
+#endif
 
   _image->setModelViewMatrix(mv);
   _image->setProjectionMatrix(pr);
@@ -130,6 +135,4 @@ void vvIbrServer::resize(const int w, const int h)
 {
   glViewport(0, 0, w, h);
 }
-
-#endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

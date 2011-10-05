@@ -21,12 +21,6 @@
 #ifndef _VV_IBRSERVER_H_
 #define _VV_IBRSERVER_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_CUDA
-
 #include "vvexport.h"
 #include "vvrenderer.h"
 #include "vvremoteserver.h"
@@ -49,8 +43,6 @@ private:
   uchar *_depth;
   uchar *_uncertainty;
 };
-
-#endif
 
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
