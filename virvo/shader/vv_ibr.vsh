@@ -16,6 +16,7 @@ void main(void)
   float y = gl_Vertex.y;
   if(closer)
   {
+    // start at projection center
     if(gl_Vertex.x < splitX)
       x = floor(splitX)-gl_Vertex.x;
     if(gl_Vertex.y < splitY)
@@ -23,6 +24,7 @@ void main(void)
   }
   else
   {
+    // proceed outside-in
     if(gl_Vertex.x > splitX)
       x = imageWidth+floor(splitX)-gl_Vertex.x;
     if(gl_Vertex.y > splitY)
@@ -32,11 +34,10 @@ void main(void)
   gl_FrontColor = texture2D(rgbaTex, tc);
   vec4 c = gl_FrontColor;
   float d = texture2D(depthTex, tc).r;
-  //d *= depthRange;
-  //d += depthMin;
-  tc *= 2.;
-  tc -= vec2(1., 1.);
-  vec4 p = vec4(tc.x, tc.y, (depthMin+d*depthRange)*2.-1., 1.);
+  // p will be in normalized device coordinates
+  vec4 p = vec4(tc.x, tc.y, depthMin+d*depthRange, 1.);
+  p.xyz *= 2.;
+  p.xyz -= vec3(1., 1., 1.);
   gl_Position = reprojectionMatrix * p;
   if(d <= 0.)
   {
