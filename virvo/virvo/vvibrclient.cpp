@@ -36,16 +36,29 @@ using std::endl;
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
                          const char* slaveName, int slavePort,
                          const char* slaveFileName)
-  : vvRemoteClient(vd, renderState, vvRenderer::REMOTE_IBR, slaveName, slavePort, slaveFileName)
+: vvRemoteClient(vd, renderState, vvRenderer::REMOTE_IBR, slaveName, slavePort, slaveFileName)
+, _thread(NULL)
+, _newFrame(true)
+, _haveFrame(false)
+, _image(NULL)
+, _shaderFactory(NULL)
+, _shader(NULL)
 {
   vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
 
   rendererType = REMOTE_IBR;
 
-  _thread = NULL;
-
   glewInit();
-  glGenBuffers(1, &_pointVBO);
+
+  if(glGenBuffers)
+  {
+    glGenBuffers(1, &_pointVBO);
+  }
+  else
+  {
+    vvDebugMsg::msg(0, "vvIbrClient::vvIbrClient: no support for buffer objects");
+  }
+
 
   glGenTextures(1, &_rgbaTex);
   glGenTextures(1, &_depthTex);
@@ -68,7 +81,8 @@ vvIbrClient::~vvIbrClient()
 
   destroyThreads();
 
-  glDeleteBuffers(1, &_pointVBO);
+  if(glDeleteBuffers)
+    glDeleteBuffers(1, &_pointVBO);
   glDeleteTextures(1, &_rgbaTex);
   glDeleteTextures(1, &_depthTex);
   delete _shaderFactory;
@@ -86,7 +100,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   pthread_mutex_unlock(&_signalMutex);
 
   // Draw boundary lines
-  if (_boundaries || !haveFrame)
+  if (_boundaries || !haveFrame || !glGenBuffers)
   {
     const vvVector3 size(vd->getSize()); // volume size [world coordinates]
     drawBoundingBox(&size, &vd->pos, &_boundColor);
@@ -138,6 +152,12 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   {
     // no frame was yet received
     return VV_OK;
+  }
+
+  if(!glGenBuffers)
+  {
+    // rendering requires vertex buffer objects
+    return VV_GL_ERROR;
   }
 
   glEnable(GL_BLEND);

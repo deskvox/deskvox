@@ -38,6 +38,7 @@ public:
     VV_SOCKET_ERROR,
     VV_MUTEX_ERROR,
     VV_SHADER_ERROR,
+    VV_GL_ERROR,
     VV_BAD_IMAGE
   };
 

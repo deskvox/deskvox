@@ -27,6 +27,9 @@ using std::string;
 
 vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const string& frag)
 : vvShaderProgram(vert, geom, frag)
+, _programId(0)
+, _nTexture(0)
+, _isSupported(false)
 {
   for(int i=0; i<3;i++)
     _shaderId[i] = 0;
@@ -36,8 +39,6 @@ vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const strin
   {
     vvDebugMsg::msg(1, "vvGLSLProgram::vvGLSLProgram() Loading Shaders failed!");
   }
-
-  _nTexture = 0;
 }
 
 vvGLSLProgram::~vvGLSLProgram()

@@ -13,6 +13,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
+#include "vvglew.h"
 #include "vvcgprogram.h"
 #include "vvdebugmsg.h"
 #include "vvglslprogram.h"
@@ -39,6 +40,8 @@ vvShaderFactory::vvShaderFactory()
     _shaderName[i] = string();
     _fileString[i] = string();
   }
+
+  glewInit();
 }
 
 vvShaderProgram* vvShaderFactory::createProgram(const std::string& name)
@@ -213,7 +216,7 @@ bool vvShaderFactory::glslSupport()
     || defined GL_VERSION_3_0
     // Assume that even compilers that support higher gl versions
     // will know at least one of those listed here.
-    return true;
+    return glCreateProgram && glDeleteProgram && glUniform1f;
   #else
     return false;
   #endif
