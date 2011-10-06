@@ -123,9 +123,8 @@ class vvView
     bool  rotating;                             ///< true = rotation mode on
     bool  rotationMode;                         ///< true = auto-rotation possible
     int   frame;                                ///< current animation frame
-    vvTexRend::GeometryType currentGeom;        ///< current rendering geometry
-    vvTexRend::VoxelType currentVoxels;         ///< current voxel type
-    int   rendererType;                         ///< current renderer type
+    std::string currentRenderer;                ///< current renderer/rendering geometry
+    std::string currentOptions;                 ///< current options/voxel type
     vvVector3 bgColor;                          ///< background color (R,G,B in [0..1])
     float draftQuality;                         ///< current draft mode rendering quality (>0)
     float highQuality;                          ///< current high quality mode rendering quality (>0)
@@ -204,9 +203,9 @@ class vvView
     void initGraphics(int argc, char *argv[]);
     void initARBDebugOutput();
     void createMenus();
-    void setRendererType(vvRenderer::RendererType type);
-    void setRenderer(vvTexRend::GeometryType=vvTexRend::VV_AUTO, vvTexRend::VoxelType=vvTexRend::VV_BEST,
-                     std::vector<BrickList>* bricks = 0, const int maxBrickSizeX = 64,
+    void createRenderer(std::string renderertype, std::string options,
+                     std::vector<std::vector<vvBrick*> > *bricks = NULL,
+                     const int maxBrickSizeX = 64,
                      const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);
     void applyRendererParameters();
     void setProjectionMode(bool);

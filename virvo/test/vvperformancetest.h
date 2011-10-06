@@ -91,8 +91,8 @@ class vvPerformanceTest
     void setBrickDimX(const float brickDimX);
     void setBrickDimY(const float brickDimY);
     void setBrickDimZ(const float brickDimZ);
-    void setGeomType(const vvTexRend::GeometryType geomType);
-    void setVoxelType(const vvTexRend::VoxelType voxelType);
+    void setGeomType(const std::string &geomType);
+    void setVoxelType(const std::string &voxelType);
     void setFrames(const int frames);
     void setTestAnimation(const TestAnimation testAnimation);
     void setProjectionType(const vvObjView::ProjectionType projectionType);
@@ -104,8 +104,8 @@ class vvPerformanceTest
     bool getVerbose() const;
     float getQuality() const;
     vvVector3 getBrickDims() const;
-    vvTexRend::GeometryType getGeomType() const;
-    vvTexRend::VoxelType getVoxelType() const;
+    std::string getGeomType() const;
+    std::string getVoxelType() const;
     int getFrames() const;
     TestAnimation getTestAnimation() const;
     vvObjView::ProjectionType getProjectionType() const;
@@ -118,8 +118,8 @@ class vvPerformanceTest
     bool _verbose;
     float _quality;
     vvVector3 _brickDims;
-    vvTexRend::GeometryType _geomType;
-    vvTexRend::VoxelType _voxelType;
+    std::string _geomType;
+    std::string _voxelType;
     int _frames;
     TestAnimation _testAnimation;
     vvObjView::ProjectionType _projectionType;

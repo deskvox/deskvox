@@ -307,12 +307,12 @@ void vvPerformanceTest::setBrickDimZ(const float brickDimZ)
   _brickDims[2] = brickDimZ;
 }
 
-void vvPerformanceTest::setGeomType(const vvTexRend::GeometryType geomType)
+void vvPerformanceTest::setGeomType(const std::string &geomType)
 {
   _geomType = geomType;
 }
 
-void vvPerformanceTest::setVoxelType(const vvTexRend::VoxelType voxelType)
+void vvPerformanceTest::setVoxelType(const std::string &voxelType)
 {
   _voxelType = voxelType;
 }
@@ -367,12 +367,12 @@ vvVector3 vvPerformanceTest::getBrickDims() const
   return _brickDims;
 }
 
-vvTexRend::GeometryType vvPerformanceTest::getGeomType() const
+std::string vvPerformanceTest::getGeomType() const
 {
   return _geomType;
 }
 
-vvTexRend::VoxelType vvPerformanceTest::getVoxelType() const
+std::string vvPerformanceTest::getVoxelType() const
 {
   return _voxelType;
 }
@@ -549,58 +549,58 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const char* head
   {
     if (strcmp(str, "VV_AUTO") == 0)
     {
-      test->setGeomType(vvTexRend::VV_AUTO);
+      test->setGeomType("default");
     }
     else if (strcmp(str, "VV_SLICES") == 0)
     {
-      test->setGeomType(vvTexRend::VV_SLICES);
+      test->setGeomType("slices");
     }
     else if (strcmp(str, "VV_CUBIC2D") == 0)
     {
-      test->setGeomType(vvTexRend::VV_CUBIC2D);
+      test->setGeomType("cubic2d");
     }
     else if (strcmp(str, "VV_VIEWPORT") == 0)
     {
-      test->setGeomType(vvTexRend::VV_VIEWPORT);
+      test->setGeomType("planar");
     }
     else if (strcmp(str, "VV_BRICKS") == 0)
     {
-      test->setGeomType(vvTexRend::VV_BRICKS);
+      test->setGeomType("bricks");
     }
     else if (strcmp(str, "VV_SPHERICAL") == 0)
     {
-      test->setGeomType(vvTexRend::VV_SPHERICAL);
+      test->setGeomType("spherical");
     }
   }
   else if (strcmp(headerName, "VOXELTYPE") == 0)
   {
     if (strcmp(str, "VV_BEST") == 0)
     {
-      test->setVoxelType(vvTexRend::VV_BEST);
+      test->setVoxelType("default");
     }
     else if (strcmp(str, "VV_RGBA") == 0)
     {
-      test->setVoxelType(vvTexRend::VV_RGBA);
+      test->setVoxelType("rgba");
     }
     else if (strcmp(str, "VV_SGI_LUT") == 0)
     {
-      test->setVoxelType(vvTexRend::VV_SGI_LUT);
+      test->setVoxelType("sgilut");
     }
     else if (strcmp(str, "VV_PAL_TEX") == 0)
     {
-      test->setVoxelType(vvTexRend::VV_PAL_TEX);
+      test->setVoxelType("paltex");
     }
     else if (strcmp(str, "VV_TEX_SHD") == 0)
     {
-      test->setVoxelType(vvTexRend::VV_TEX_SHD);
+      test->setVoxelType("regcomb");
     }
     else if (strcmp(str, "VV_PIX_SHD") == 0)
     {
-      test->setVoxelType(vvTexRend::VV_PIX_SHD);
+      test->setVoxelType("shader");
     }
     else if (strcmp(str, "VV_FRG_PRG") == 0)
     {
-      test->setVoxelType(vvTexRend::VV_FRG_PRG);
+      test->setVoxelType("arb");
     }
   }
   else if (strcmp(headerName, "FRAMES") == 0)
@@ -703,60 +703,41 @@ void vvTestSuite::initFromPreviousValue(vvPerformanceTest* test, const char* hea
   }
   else if (strcmp(headerName, "GEOMTYPE") == 0)
   {
-    switch (previousTest->getGeomType())
-    {
-    case vvTexRend::VV_AUTO:
+    std::string g = previousTest->getGeomType();
+    if(g == "default")
       sprintf(str, "%s", "VV_AUTO");
-      break;
-    case vvTexRend::VV_SLICES:
+    else if(g == "slices")
       sprintf(str, "%s", "VV_SLICES");
-      break;
-    case vvTexRend::VV_CUBIC2D:
+    else if(g == "cubic2d")
       sprintf(str, "%s", "VV_CUBIC2D");
-      break;
-    case vvTexRend::VV_VIEWPORT:
+    else if(g == "planar")
       sprintf(str, "%s", "VV_VIEWPORT");
-      break;
-    case vvTexRend::VV_BRICKS:
+    else if(g == "bricks")
       sprintf(str, "%s", "VV_BRICKS");
-      break;
-    case vvTexRend::VV_SPHERICAL:
+    else if(g == "spherical")
       sprintf(str, "%s", "VV_SPHERICAL");
-      break;
-    default:
+    else
       sprintf(str, "%s", "VV_AUTO");
-      break;
-    }
   }
   else if (strcmp(headerName, "VOXELTYPE") == 0)
   {
-    switch (previousTest->getVoxelType())
-    {
-    case vvTexRend::VV_BEST:
+    std::string v = previousTest->getVoxelType();
+    if(v == "default")
       sprintf(str, "%s", "VV_BEST");
-      break;
-    case vvTexRend::VV_RGBA:
+    else if(v == "rgba")
       sprintf(str, "%s", "VV_RGBA");
-      break;
-    case vvTexRend::VV_SGI_LUT:
+    else if(v == "sgilut")
       sprintf(str, "%s", "VV_SGI_LUT");
-      break;
-    case vvTexRend::VV_PAL_TEX:
+    else if(v == "paltex")
       sprintf(str, "%s", "VV_PAL_TEX");
-      break;
-    case vvTexRend::VV_TEX_SHD:
+    else if(v == "regcomb")
       sprintf(str, "%s", "VV_TEX_SHD");
-      break;
-    case vvTexRend::VV_PIX_SHD:
+    else if(v == "shader")
       sprintf(str, "%s", "VV_PIX_SHD");
-      break;
-    case vvTexRend::VV_FRG_PRG:
+    else if(v == "arb")
       sprintf(str, "%s", "VV_FRG_PRG");
-      break;
-    default:
+    else
       sprintf(str, "%s", "VV_BEST");
-      break;
-    }
   }
   else if (strcmp(headerName, "FRAMES") == 0)
   {

@@ -68,7 +68,7 @@ using std::ios;
 #include <virvo/vvimageserver.h>
 #include <virvo/vvimage.h>
 #include <virvo/vvremoteserver.h>
-#include <virvo/vvrenderer.h>
+#include <virvo/vvrendererfactory.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
@@ -112,9 +112,8 @@ vvView::vvView()
   renderer = NULL;
   vd = NULL;
   ov = NULL;
-  currentGeom = vvTexRend::VV_AUTO;              // vvTexRend::VV_SLICES;
-  currentVoxels = vvTexRend::VV_BEST;            // vvTexRend::VV_RGBA;
-  rendererType = vvRenderer::TEXREND;
+  currentRenderer = "default";
+  currentOptions = "default";
   bgColor[0] = bgColor[1] = bgColor[2] = 0.0f;
   frame = 0;
   filename = NULL;
@@ -243,13 +242,13 @@ void vvView::serverLoop()
     {
       case vvRenderer::REMOTE_IMAGE:
         rrMode = RR_IMAGE;
-        //setRendererType(vvRenderer::TEXREND);
+        //currentRenderer = "planar";
         server = new vvImageServer(sock);
         break;
       case vvRenderer::REMOTE_IBR:
 #ifdef HAVE_CUDA
         rrMode = RR_IBR;
-        setRendererType(vvRenderer::RAYREND);
+        currentRenderer = "rayrend";
         server = new vvIbrServer(sock);
 #else
         std::cerr << "Image based remote rendering requires CUDA." << std::endl;
@@ -327,7 +326,7 @@ void vvView::serverLoop()
 
       ov = new vvObjView();
       setProjectionMode(perspectiveMode);
-      setRenderer(currentGeom, currentVoxels);
+      createRenderer(currentRenderer, currentOptions);
       srand(time(NULL));
 
       server->renderLoop(renderer);
@@ -431,18 +430,18 @@ void vvView::mainLoop(int argc, char *argv[])
 
     if (rrMode == RR_IBR)
     {
-      setRendererType(vvRenderer::REMOTE_IBR);
+      currentRenderer = "ibr";
     }
     else if(rrMode == RR_IMAGE)
     {
-      setRendererType(vvRenderer::REMOTE_IMAGE);
+      currentRenderer = "image";
     }
     else if(rrMode == RR_CLUSTER)
     {
       //_remoteClient = new vvClusterClient(ds->renderState, slaveNames, slavePorts, slaveFileNames, filename);
     }
 
-    setRenderer(currentGeom, currentVoxels);
+    createRenderer(currentRenderer, currentOptions);
 
     const vvVector3 size = vd->getSize();
     const float maxedge = ts_max(size[0], size[1], size[2]);
@@ -771,14 +770,6 @@ void vvView::motionCallback(int x, int y)
 }
 
 
-//----------------------------------------------------------------------------
-/** Set software renderering flag.
- */
-void vvView::setRendererType(enum vvRenderer::RendererType type)
-{
-  rendererType = type;
-}
-
 void vvView::applyRendererParameters()
 {
   renderer->setParameter(vvRenderState::VV_BOUNDARIES, boundariesMode);
@@ -796,13 +787,24 @@ void vvView::applyRendererParameters()
   renderer->setParameter(vvRenderer::VV_IMG_PRECISION, bufferPrecision);
   renderer->setParameter(vvRenderState::VV_SHOW_BRICKS, showBricks);
   renderer->setParameter(vvRenderState::VV_CODEC, codec);
+
+  renderer->setParameter(vvRenderer::VV_IBR_DEPTH_PREC, ibrPrecision);
+  renderer->setParameter(vvRenderer::VV_IBR_UNCERTAINTY_PREC, ibrPrecision); // both precisions the same for now
+  if(rrMode == RR_IBR)
+    renderer->setParameter(vvRenderer::VV_USE_IBR, 1.);
+
+  if(!serverMode)
+  {
+    renderer->setROIEnable(roiEnabled);
+    printROIMessage();
+  }
 }
 
 
 //----------------------------------------------------------------------------
 /** Set active rendering algorithm.
  */
-void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
+void vvView::createRenderer(std::string type, std::string options,
                          std::vector<BrickList>* bricks, const int maxBrickSizeX,
                          const int maxBrickSizeY, const int maxBrickSizeZ)
 {
@@ -811,8 +813,8 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   glewInit();
   ds->initARBDebugOutput();
 
-  currentGeom = gt;
-  currentVoxels = vt;
+  ds->currentRenderer = type;
+  ds->currentOptions = options;
 
   if(renderer)
   renderState = *renderer;
@@ -821,66 +823,22 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
   vvVector3 maxBrickSize(maxBrickSizeX, maxBrickSizeY, maxBrickSizeZ);
   renderState.setParameterV3(vvRenderState::VV_MAX_BRICK_SIZE, maxBrickSize);
 
-  switch(rendererType)
+  if (numDisplays > 0)
   {
-    case vvRenderer::SOFTPAR:
-    case vvRenderer::SOFTPER:
-      if(perspectiveMode)
-        renderer = new vvSoftPer(vd, renderState);
-      else
-        renderer = new vvSoftPar(vd, renderState);
-      break;
-    case vvRenderer::CUDAPAR:
-    case vvRenderer::CUDAPER:
-#ifdef HAVE_CUDA
-      if(perspectiveMode)
-        renderer = new vvCudaPer(vd, renderState);
-      else
-        renderer = new vvCudaPar(vd, renderState);
-#endif
-      break;
-    case vvRenderer::RAYREND:
-#ifdef HAVE_CUDA
-      if(rrMode == RR_IBR)
-        renderState.setParameter(vvRenderer::VV_USE_IBR, 1.);
-      renderer = new vvRayRend(vd, renderState);
-#endif
-      break;
-#ifdef HAVE_VOLPACK
-    case vvRenderer::VOLPACK:
-      renderer = new vvRenderVP(vd, renderState);
-      break;
-#endif
-    case vvRenderer::REMOTE_IMAGE:
-      renderer = new vvImageClient(vd, renderState, slaveNames.empty() ? NULL : slaveNames[0], slavePorts.empty() ? slavePort : slavePorts[0],
-              slaveFileNames.empty() ? NULL : slaveFileNames[0]);
-      break;
-    case vvRenderer::REMOTE_IBR:
-      renderer = new vvIbrClient(vd, renderState, slaveNames.empty() ? NULL : slaveNames[0], slavePorts.empty() ? slavePort : slavePorts[0],
-              slaveFileNames.empty() ? NULL : slaveFileNames[0]);
-      renderer->setParameter(vvRenderer::VV_IBR_DEPTH_PREC, ibrPrecision);
-      renderer->setParameter(vvRenderer::VV_IBR_UNCERTAINTY_PREC, ibrPrecision); // both precisions the same for now
-      break;
-    default:
-      if (numDisplays > 0)
-      {
-        cerr << "Running in threaded mode using the following displays:" << endl;
-        for (unsigned int i=0; i<numDisplays; ++i)
-        {
-          cerr << displayNames[i] << endl;
-        }
-        renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks, displayNames, numDisplays);
-      }
-      else
-      {
-        renderer = new vvTexRend(vd, renderState, currentGeom, currentVoxels, bricks);
-      }
+    cerr << "Running in threaded mode using the following displays:" << endl;
+    for (unsigned int i=0; i<numDisplays; ++i)
+    {
+      cerr << displayNames[i] << endl;
+    }
+    renderer = new vvTexRend(vd, renderState, vvTexRend::VV_BRICKS, vvTexRend::VV_PIX_SHD, bricks, displayNames, numDisplays);
   }
-
-  if(!serverMode)
+  else if(bricks)
   {
-    renderer->setROIEnable(roiEnabled);
-    printROIMessage();
+    renderer = new vvTexRend(vd, renderState, vvTexRend::VV_BRICKS, vvTexRend::VV_PIX_SHD, bricks);
+  }
+  else
+  {
+    renderer = vvRendererFactory::create(vd, renderState, type.c_str(), options.c_str());
   }
 
   //static_cast<vvTexRend *>(renderer)->setTexMemorySize( 4 );
@@ -1129,8 +1087,7 @@ void vvView::timerCallback(int id)
         ds->bufferPrecision = 8;
 
         // CUDA SW
-        ds->setRendererType(vvRenderer::CUDAPAR);
-        ds->setRenderer();
+        ds->createRenderer("cudasw");
         runTest();
 
         ds->preintMode = true;
@@ -1162,8 +1119,7 @@ void vvView::timerCallback(int id)
         ds->emptySpaceLeapingMode = false;
 
         // RAYCAST
-        ds->setRendererType(vvRenderer::RAYREND);
-        ds->setRenderer();
+        ds->createRenderer("rayrend");
         runTest();
 
         ds->earlyRayTermination = true;
@@ -1173,8 +1129,7 @@ void vvView::timerCallback(int id)
         // TEX2D
         ds->useOffscreenBuffer = false;
         ds->bufferPrecision = 8;
-        ds->setRendererType(vvRenderer::TEXREND);
-        ds->setRenderer(vvTexRend::VV_CUBIC2D);
+        ds->createRenderer("slices");
         runTest();
 
         ds->useOffscreenBuffer = true;
@@ -1184,8 +1139,7 @@ void vvView::timerCallback(int id)
         // TEX3D
         ds->useOffscreenBuffer = false;
         ds->bufferPrecision = 8;
-        ds->setRendererType(vvRenderer::TEXREND);
-        ds->setRenderer(vvTexRend::VV_VIEWPORT);
+        ds->createRenderer("planar");
         runTest();
 
         ds->preintMode = true;
@@ -1201,8 +1155,7 @@ void vvView::timerCallback(int id)
         ds->preintMode = false;
 
         // VOLPACK
-        ds->setRendererType(vvRenderer::VOLPACK);
-        ds->setRenderer();
+        ds->createRenderer("volpack");
 #endif
         runTest();
     }
@@ -1230,31 +1183,6 @@ void vvView::mainMenuCallback(int item)
   {
   case 0:                                     // projection mode
     ds->setProjectionMode(!ds->perspectiveMode);
-    switch(ds->rendererType)
-    {
-      case vvRenderer::SOFTPAR:
-      case vvRenderer::SOFTPER:
-        delete ds->renderer;
-        ds->renderer = NULL;
-        if (ds->perspectiveMode)
-          ds->renderer = new vvSoftPer(ds->vd, ds->renderState);
-        else
-          ds->renderer = new vvSoftPar(ds->vd, ds->renderState);
-        break;
-      case vvRenderer::CUDAPAR:
-      case vvRenderer::CUDAPER:
-#ifdef HAVE_CUDA
-        delete ds->renderer;
-        ds->renderer = NULL;
-        if (ds->perspectiveMode)
-          ds->renderer = new vvCudaPer(ds->vd, ds->renderState);
-        else
-          ds->renderer = new vvCudaPar(ds->vd, ds->renderState);
-#endif
-        break;
-      default:
-        break;
-    }
     break;
   case 4:                                     // refinement mode
     if (ds->refinement) ds->refinement = false;
@@ -1326,71 +1254,13 @@ void vvView::rendererMenuCallback(int item)
     "Draft", "High"
   };
 
-  if (item>=0 && item<=5)
+  if (item>=0 && item<=9)
   {
-    ds->setRendererType(vvRenderer::TEXREND);
-  }
+    char type[100];
+    sprintf(type, "%d", item);
 
-  if (item==0)
-  {
-    ds->setRenderer(vvTexRend::VV_AUTO, ds->currentVoxels);
+    ds->createRenderer(type, ds->currentOptions);
   }
-  else if (item==1)
-  {
-    ds->setRenderer(vvTexRend::VV_SLICES, ds->currentVoxels);
-  }
-  else if (item==2)
-  {
-    ds->setRenderer(vvTexRend::VV_CUBIC2D, ds->currentVoxels);
-  }
-  else if (item==3)
-  {
-    ds->setRenderer(vvTexRend::VV_VIEWPORT, ds->currentVoxels);
-  }
-  else if (item==4)
-  {
-    ds->setRenderer(vvTexRend::VV_SPHERICAL, ds->currentVoxels);
-  }
-  else if (item==5)
-  {
-    ds->setRenderer(vvTexRend::VV_BRICKS, ds->currentVoxels);
-  }
-  else if (item==6)
-  {
-    cerr << "Switched to software shear-warp renderer" << endl;
-    if(ds->perspectiveMode)
-      ds->setRendererType(vvRenderer::SOFTPAR);
-    else
-      ds->setRendererType(vvRenderer::SOFTPER);
-    ds->setRenderer();
-  }
-#ifdef HAVE_CUDA
-  else if (item==7)
-  {
-    cerr << "Switched to CUDA shear-warp renderer" << endl;
-    if(ds->perspectiveMode)
-      ds->setRendererType(vvRenderer::CUDAPAR);
-    else
-      ds->setRendererType(vvRenderer::CUDAPER);
-    ds->setRenderer();
-  }
-#endif
-#ifdef HAVE_CUDA
-  else if (item == 8)
-  {
-    cerr << "Switched to CUDA ray casting renderer" << endl;
-    ds->setRendererType(vvRenderer::RAYREND);
-    ds->setRenderer();
-  }
-#endif
-#ifdef HAVE_VOLPACK
-  else if (item == 9)
-  {
-    cerr << "Switched to VolPack shear-warp renderer" << endl;
-    ds->setRendererType(vvRenderer::VOLPACK);
-    ds->setRenderer();
-  }
-#endif
   else if (item==98 || item==99)
   {
     if (item==98)
@@ -1417,7 +1287,33 @@ void vvView::voxelMenuCallback(int item)
 {
   vvDebugMsg::msg(1, "vvView::voxelMenuCallback()");
 
-  ds->setRenderer(ds->currentGeom, (vvTexRend::VoxelType)item);
+  switch(item)
+  {
+  case 1:
+    ds->currentOptions = "rgba";
+    break;
+  case 2:
+    ds->currentOptions = "sgilut";
+    break;
+  case 3:
+    ds->currentOptions = "paltex";
+    break;
+  case 4:
+    ds->currentOptions = "regcomb";
+    break;
+  case 5:
+    ds->currentOptions = "arb";
+    break;
+  case 6:
+    ds->currentOptions = "shader";
+    break;
+  case 0:
+  default:
+    ds->currentOptions = "default";
+    break;
+  }
+
+  ds->createRenderer(ds->currentRenderer, ds->currentOptions);
 
   glutPostRedisplay();
 }
@@ -1493,94 +1389,36 @@ void vvView::optionsMenuCallback(int item)
     cerr << "Z size set to " << size[2] << endl;
     break;
   case 10:                                     // increase precision of visual
-    switch(ds->rendererType)
+    if (ds->bufferPrecision == 8)
     {
-      case vvRenderer::SOFTPAR:
-      case vvRenderer::SOFTPER:
-      case vvRenderer::CUDAPAR:
-      case vvRenderer::CUDAPER:
-      case vvRenderer::RAYREND:
-        if (ds->bufferPrecision < 32)
-        {
-          ds->bufferPrecision = 32;
-          cerr << "Buffer precision set to 32 bit floating point" << endl;
-        }
-        else
-        {
-          cerr << "Highest precision reached" << endl;
-        }
-        break;
-      case vvRenderer::TEXREND:
-        if (ds->useOffscreenBuffer)
-        {
-          if (ds->bufferPrecision == 8)
-          {
-            ds->bufferPrecision = 16;
-            cerr << "Buffer precision set to 16bit" << endl;
-          }
-          else if (ds->bufferPrecision == 16)
-          {
-            ds->bufferPrecision = 32;
-            cerr << "Buffer precision set to 32bit" << endl;
-          }
-          else
-          {
-            cerr << "Highest precision reached" << endl;
-          }
-        }
-        else
-        {
-        cerr << "Enable offscreen buffering to change visual precision" << endl;
-        }
-        break;
-      default:
-        break;
+      ds->bufferPrecision = 16;
+      cerr << "Buffer precision set to 16bit" << endl;
+    }
+    else if (ds->bufferPrecision == 16)
+    {
+      ds->bufferPrecision = 32;
+      cerr << "Buffer precision set to 32bit" << endl;
+    }
+    else
+    {
+      cerr << "Highest precision reached" << endl;
     }
     ds->renderer->setParameter(vvRenderer::VV_IMG_PRECISION, ds->bufferPrecision);
     break;
   case 11:                                    // decrease precision of visual
-    switch(ds->rendererType)
+    if (ds->bufferPrecision == 32)
     {
-      case vvRenderer::SOFTPAR:
-      case vvRenderer::SOFTPER:
-      case vvRenderer::CUDAPAR:
-      case vvRenderer::CUDAPER:
-      case vvRenderer::RAYREND:
-        if (ds->bufferPrecision == 32)
-        {
-          ds->bufferPrecision = 8;
-          cerr << "Buffer precision set to 8 bit fixed point" << endl;
-        }
-        else
-        {
-          cerr << "Lowest precision reached" << endl;
-        }
-        break;
-      case vvRenderer::TEXREND:
-        if (ds->useOffscreenBuffer)
-        {
-          if (ds->bufferPrecision == 32)
-          {
-            ds->bufferPrecision = 16;
-            cerr << "Buffer precision set to 16bit" << endl;
-          }
-          else if (ds->bufferPrecision == 16)
-          {
-            ds->bufferPrecision = 8;
-            cerr << "Buffer precision set to 8bit" << endl;
-          }
-          else
-          {
-            cerr << "Lowest precision reached" << endl;
-          }
-        }
-        else
-        {
-          cerr << "Enable offscreen buffering to change visual precision" << endl;
-        }
-        break;
-      default:
-        break;
+      ds->bufferPrecision = 16;
+      cerr << "Buffer precision set to 16bit" << endl;
+    }
+    else if (ds->bufferPrecision == 16)
+    {
+      ds->bufferPrecision = 8;
+      cerr << "Buffer precision set to 8bit" << endl;
+    }
+    else
+    {
+      cerr << "Lowest precision reached" << endl;
     }
     ds->renderer->setParameter(vvRenderer::VV_IMG_PRECISION, ds->bufferPrecision);
     break;
@@ -2114,7 +1952,7 @@ double vvView::performanceTest()
       totalTime->start();
 
       int framesRendered = 0;
-      ds->setRenderer(test->getGeomType(), test->getVoxelType(), 0,
+      ds->createRenderer(test->getGeomType(), test->getVoxelType(), 0,
                       (int) test->getBrickDims()[0],
                       (int) test->getBrickDims()[1],
                       (int) test->getBrickDims()[2]);
@@ -2267,9 +2105,8 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   cerr << "*******************************************************************************" << endl;
   cerr << "Test (" << testNr << "/" << testCnt << ")" << endl;
   cerr << "Local host........................................" << localHost << endl;
-  cerr << "Renderer.........................................." << ds->rendererName[ds->rendererType] << endl;
-  cerr << "Renderer geometry................................." << ds->currentGeom << endl;
-  cerr << "Voxel type........................................" << ds->currentVoxels << endl;
+  cerr << "Renderer/geometry................................." << ds->currentRenderer << endl;
+  cerr << "Renderer options/voxel type......................." << ds->currentOptions << endl;
   cerr << "Volume file name.................................." << ds->vd->getFilename() << endl;
   cerr << "Volume size [voxels].............................." << ds->vd->vox[0] << " x " << ds->vd->vox[1] << " x " << ds->vd->vox[2] << endl;
   cerr << "Output image size [pixels]........................" << viewport[2] << " x " << viewport[3] << endl;
@@ -2916,26 +2753,26 @@ bool vvView::parseCommandLine(int argc, char** argv)
       if(val == "cluster")
       {
         rrMode = RR_CLUSTER;
-        setRendererType(vvRenderer::TEXREND);
+        ds->currentRenderer = "cluster";
         arg++;
       }
       else if(val == "ibr")
       {
         rrMode = RR_IBR;
-        setRendererType(vvRenderer::REMOTE_IBR);
+        ds->currentRenderer = "ibr";
         arg++;
       }
       else if(val == "image")
       {
         rrMode = RR_IMAGE;
-        setRendererType(vvRenderer::REMOTE_IMAGE);
+        ds->currentRenderer = "image";
         arg++;
       }
       else
       {
         cerr << "Set default client mode: image based rendering" << endl;
         rrMode = RR_IBR;
-        setRendererType(vvRenderer::REMOTE_IBR);
+        ds->currentRenderer = "ibr";
       }
     }
     else if (vvToolshed::strCompare(argv[arg], "-nobt")==0)
@@ -2967,55 +2804,18 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cerr << "Renderer ID missing." << endl;
         return false;
       }
-      int val = atoi(argv[arg]);
-      if(val >= 0 && val <= 5)
-      {
-        currentGeom = (vvTexRend::GeometryType)val;
-        setRendererType(vvRenderer::TEXREND);
-      }
-      else if(val == 6)
-      {
-        if(perspectiveMode)
-          setRendererType(vvRenderer::SOFTPAR);
-        else
-          setRendererType(vvRenderer::SOFTPER);
-      }
-      else if(val == 7)
-      {
-        if(perspectiveMode)
-          setRendererType(vvRenderer::CUDAPAR);
-        else
-          setRendererType(vvRenderer::CUDAPER);
-      }
-      else if(val == 8)
-      {
-        setRendererType(vvRenderer::RAYREND);
-      }
-#ifdef HAVE_VOLPACK
-      else if(val == 9)
-      {
-        setRendererType(vvRenderer::VOLPACK);
-      }
-#endif
-      else
-      {
-        cerr << "Invalid geometry type." << endl;
-        return false;
-      }
+
+      ds->currentRenderer = argv[arg];
     }
-    else if (vvToolshed::strCompare(argv[arg], "-voxeltype")==0)
+    else if (vvToolshed::strCompare(argv[arg], "-voxeltype")==0
+        || vvToolshed::strCompare(argv[arg], "-options")==0)
     {
       if ((++arg)>=argc)
       {
-        cerr << "Voxel type missing." << endl;
+        cerr << "Option string/voxel type missing." << endl;
         return false;
       }
-      currentVoxels = (vvTexRend::VoxelType)atoi(argv[arg]);
-      if (currentVoxels<0 || currentVoxels>6)
-      {
-        cerr << "Invalid voxel type." << endl;
-        return false;
-      }
+      ds->currentOptions = argv[arg];
     }
     else if (vvToolshed::strCompare(argv[arg], "-size")==0)
     {
@@ -3072,7 +2872,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
       {
         clientMode = true;
         rrMode = RR_IBR;
-        setRendererType(vvRenderer::REMOTE_IBR);
+        ds->currentRenderer = "ibr";
       }
 
       const int port = vvToolshed::parsePort(argv[arg]);
@@ -3294,3 +3094,5 @@ int main(int argc, char** argv)
 //============================================================================
 // End of File
 //============================================================================
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
+
