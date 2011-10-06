@@ -60,6 +60,9 @@ void vvRemoteClient::renderVolumeGL()
     resize(vp[2], vp[3]);
   }
 
+  vvGLTools::getModelviewMatrix(&_currentMv);
+  vvGLTools::getProjectionMatrix(&_currentPr);
+
   if (render() != vvRemoteClient::VV_OK)
   {
     vvDebugMsg::msg(0, "vvRemoteClient::renderVolumeGL(): remote rendering error");
@@ -274,4 +277,34 @@ void vvRemoteClient::setParameterV4(const vvRenderer::ParameterType param, const
     _socket->putVector4(newValue);
   }
 }
+
+vvRemoteClient::ErrorType vvRemoteClient::requestFrame() const
+{
+  vvDebugMsg::msg(1, "vvRemoteClient::requestFrame()");
+
+  if(!_socket)
+    return vvRemoteClient::VV_SOCKET_ERROR;
+
+  if(_socket->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
+      return vvRemoteClient::VV_SOCKET_ERROR;
+
+  if(_socket->putMatrix(&_currentPr) != vvSocket::VV_OK)
+      return vvRemoteClient::VV_SOCKET_ERROR;
+
+  if(_socket->putMatrix(&_currentMv) != vvSocket::VV_OK)
+      return vvRemoteClient::VV_SOCKET_ERROR;
+
+  return vvRemoteClient::VV_OK;
+}
+
+void vvRemoteClient::exit()
+{
+  vvDebugMsg::msg(1, "vvRemoteClient::exit()");
+
+  if(_socket)
+    _socket->putCommReason(vvSocketIO::VV_EXIT);
+  delete _socket;
+  _socket = NULL;
+}
+
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

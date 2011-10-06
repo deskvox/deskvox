@@ -40,14 +40,12 @@ public:
   ~vvImageClient();
 
   ErrorType render();                                     ///< render image with depth-values
-  void exit();                                            ///< check out from servers
 
 private:
   GLuint _rgbaTex;                                        ///< Texture names for RGBA image
 
   vvMatrix _currentMv;                                    ///< Current modelview matrix
   vvMatrix _currentPr;                                    ///< Current projection matrix
-  vvRemoteClient::ErrorType requestFrame();               ///< remember envoironment and send image-request to server
   vvImage *_image;
 };
 

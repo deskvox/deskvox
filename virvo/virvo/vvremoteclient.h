@@ -58,17 +58,21 @@ public:
   virtual void setParameter(vvRenderer::ParameterType param, float newValue);
   virtual void setParameterV3(vvRenderer::ParameterType param, const vvVector3 &newValue);
   virtual void setParameterV4(vvRenderer::ParameterType param, const vvVector4 &newValue);
+  virtual ErrorType requestFrame() const;
 
 protected:
+  virtual void exit();
+
   uint32_t _type;
   const char* _slaveName;
   int _slavePort;
   const char* _slaveFileName;
   vvSocketIO* _socket;
 
-  void clearImages();
   bool _changes; ///< indicate if a new rendering is required
   int _viewportWidth, _viewportHeight;
+  vvMatrix _currentMv;                                    ///< Current modelview matrix
+  vvMatrix _currentPr;                                    ///< Current projection matrix
 private:
   void resize(int w, int h);
   virtual void destroyThreads() { }

@@ -44,7 +44,6 @@ public:
   ~vvIbrClient();
 
   ErrorType render();                                     ///< render image with depth-values
-  void exit();                                            ///< check out from servers
 
 private:
   pthread_t*  _thread;                                    ///< list for threads of each server connection
@@ -62,14 +61,11 @@ private:
 
   std::vector<GLuint> _indexArray[4];                     ///< four possible traversal directions for drawing the vertices
 
-  vvMatrix _currentMv;                                    ///< Current modelview matrix
-  vvMatrix _currentPr;                                    ///< Current projection matrix
   vvMatrix _imgMatrix;                                    ///< Reprojection matrix of _ibrImg
   vvMatrix _imgMv;                                        ///< model-view matrix of _ibrImg
   vvMatrix _imgPr;                                        ///< Projection matrix of _ibrImg
   vvGLTools::Viewport _imgVp;                             ///< Viewport of _ibrImg
   float _imgDepthRange[2];                                ///< Depth range of _ibrImg
-  vvRemoteClient::ErrorType requestIbrFrame();            ///< remember envoironment and send image-request to server
   void initIbrFrame();                                    ///< initialize pixel-points in object space
 
   vvShaderFactory* _shaderFactory;

@@ -127,32 +127,4 @@ vvRemoteClient::ErrorType vvImageClient::render()
   return VV_OK;
 }
 
-vvRemoteClient::ErrorType vvImageClient::requestFrame()
-{
-  vvDebugMsg::msg(1, "vvImageClient::requestFrame()");
-
-  if(!_socket)
-    return vvRemoteClient::VV_SOCKET_ERROR;
-
-  if(_socket->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
-      return vvRemoteClient::VV_SOCKET_ERROR;
-
-  if(_socket->putMatrix(&_currentPr) != vvSocket::VV_OK)
-      return vvRemoteClient::VV_SOCKET_ERROR;
-
-  if(_socket->putMatrix(&_currentMv) != vvSocket::VV_OK)
-      return vvRemoteClient::VV_SOCKET_ERROR;
-
-  return vvRemoteClient::VV_OK;
-}
-
-void vvImageClient::exit()
-{
-  vvDebugMsg::msg(1, "vvImageClient::exit()");
-
-  if(_socket)
-    _socket->putCommReason(vvSocketIO::VV_EXIT);
-  delete _socket;
-}
-
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

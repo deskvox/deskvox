@@ -111,8 +111,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     return vvRemoteClient::VV_SHADER_ERROR;
   }
 
-  vvGLTools::getModelviewMatrix(&_currentMv);
-  vvGLTools::getProjectionMatrix(&_currentPr);
   vvMatrix currentMatrix = _currentMv * _currentPr;
 
   if(newFrame && haveFrame)
@@ -138,13 +136,13 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     if(_changes)
     {
       pthread_mutex_lock(&_signalMutex);
-      vvRemoteClient::ErrorType err = requestIbrFrame();
+      vvRemoteClient::ErrorType err = requestFrame();
       pthread_cond_signal(&_imageCond);
       _newFrame = false;
       pthread_mutex_unlock(&_signalMutex);
       _changes = false;
       if(err != vvRemoteClient::VV_OK)
-        std::cerr << "vvibrClient::requestIbrFrame() - error() " << err << std::endl;
+        std::cerr << "vvibrClient::requestFrame() - error() " << err << std::endl;
     }
   }
 
@@ -220,25 +218,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   return VV_OK;
 }
 
-vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
-{
-  vvDebugMsg::msg(1, "vvIbrClient::requestIbrFrame()");
-
-  if(!_socket)
-    return vvRemoteClient::VV_SOCKET_ERROR;
-
-  if(_socket->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
-      return vvRemoteClient::VV_SOCKET_ERROR;
-
-  if(_socket->putMatrix(&_currentPr) != vvSocket::VV_OK)
-      return vvRemoteClient::VV_SOCKET_ERROR;
-
-  if(_socket->putMatrix(&_currentMv) != vvSocket::VV_OK)
-      return vvRemoteClient::VV_SOCKET_ERROR;
-
-  return vvRemoteClient::VV_OK;
-}
-
 void vvIbrClient::initIbrFrame()
 {
   vvDebugMsg::msg(1, "vvIbrClient::initIbrFrame()");
@@ -300,15 +279,6 @@ void vvIbrClient::initIbrFrame()
   glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
   glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(GLfloat), &points[0], GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void vvIbrClient::exit()
-{
-  vvDebugMsg::msg(1, "vvIbrClient::exit()");
-
-  if(_socket)
-    _socket->putCommReason(vvSocketIO::VV_EXIT);
-  delete _socket;
 }
 
 void vvIbrClient::createThreads()
