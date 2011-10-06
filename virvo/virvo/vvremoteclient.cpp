@@ -24,6 +24,7 @@
 #include "vvopengl.h"
 #include "vvvoldesc.h"
 #include "vvimage.h"
+#include "vvtoolshed.h"
 
 using std::cerr;
 using std::endl;
@@ -68,13 +69,38 @@ void vvRemoteClient::renderVolumeGL()
 
 vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 {
-  vvDebugMsg::msg(1, "vvRemoteClient::initSocket()");
+  vvDebugMsg::msg(3, "vvRemoteClient::initSocket()");
 
-  _socket = new vvSocketIO(_slavePort, _slaveName, vvSocket::VV_TCP);
+  int port = _slavePort;
+  if(port == -1)
+    port = 31050;
+  char *serverName = NULL;
+
+  if(!_slaveName)
+  {
+    if(const char *s = getenv("VV_SERVER"))
+    {
+      vvDebugMsg::msg(1, "remote rendering server from environment: ", s);
+      serverName = vvToolshed::stripPort(s);
+      if(serverName)
+        port = vvToolshed::parsePort(s);
+      else
+        _slaveName = s;
+    }
+  }
+
+  if(!_slaveName && !serverName)
+  {
+    vvDebugMsg::msg(1, "no server specified");
+    return VV_SOCKET_ERROR;
+  }
+
+  _socket = new vvSocketIO(port, serverName ? serverName : _slaveName, vvSocket::VV_TCP);
   _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
 
   if (_socket->init() == vvSocket::VV_OK)
   {
+    delete serverName;
     _socket->no_nagle();
     _socket->putInt32(_type);
     _socket->putBool(_slaveFileName!=NULL);
@@ -108,6 +134,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   }
   else
   {
+    delete serverName;
     cerr << "No connection to remote rendering server established at: " << _slaveName << endl;
     return VV_SOCKET_ERROR;
   }

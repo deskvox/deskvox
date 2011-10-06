@@ -852,11 +852,11 @@ void vvView::setRenderer(vvTexRend::GeometryType gt, vvTexRend::VoxelType vt,
       break;
 #endif
     case vvRenderer::REMOTE_IMAGE:
-      renderer = new vvImageClient(vd, renderState, slaveNames[0], slavePorts[0]==-1 ? slavePort : slavePorts[0],
+      renderer = new vvImageClient(vd, renderState, slaveNames.empty() ? NULL : slaveNames[0], slavePorts.empty() ? slavePort : slavePorts[0],
               slaveFileNames.empty() ? NULL : slaveFileNames[0]);
       break;
     case vvRenderer::REMOTE_IBR:
-      renderer = new vvIbrClient(vd, renderState, slaveNames[0], slavePorts[0]==-1 ? slavePort : slavePorts[0],
+      renderer = new vvIbrClient(vd, renderState, slaveNames.empty() ? NULL : slaveNames[0], slavePorts.empty() ? slavePort : slavePorts[0],
               slaveFileNames.empty() ? NULL : slaveFileNames[0]);
       renderer->setParameter(vvRenderer::VV_IBR_DEPTH_PREC, ibrPrecision);
       renderer->setParameter(vvRenderer::VV_IBR_UNCERTAINTY_PREC, ibrPrecision); // both precisions the same for now
