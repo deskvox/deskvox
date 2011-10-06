@@ -59,10 +59,6 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
   if(!_shader)
     vvDebugMsg::msg(0, "vvIbrClient::vvIbrClient: could not find ibr shader");
 
-  pthread_mutex_init(&_imageMutex, NULL);
-  pthread_mutex_init(&_signalMutex, NULL);
-  pthread_cond_init(&_imageCond, NULL);
-
   createThreads();
 }
 
@@ -71,9 +67,7 @@ vvIbrClient::~vvIbrClient()
   vvDebugMsg::msg(1, "vvIbrClient::~vvIbrClient()");
 
   destroyThreads();
-  pthread_mutex_destroy(&_imageMutex);
-  pthread_mutex_destroy(&_signalMutex);
-  pthread_cond_destroy(&_imageCond);
+
   glDeleteBuffers(1, &_pointVBO);
   glDeleteTextures(1, &_rgbaTex);
   glDeleteTextures(1, &_depthTex);
@@ -297,6 +291,10 @@ void vvIbrClient::createThreads()
 {
   vvDebugMsg::msg(1, "vvIbrClient::createThreads()");
 
+  pthread_mutex_init(&_imageMutex, NULL);
+  pthread_mutex_init(&_signalMutex, NULL);
+  pthread_cond_init(&_imageCond, NULL);
+
   _thread = new pthread_t;
   pthread_create(_thread, NULL, getImageFromSocket, this);
 }
@@ -306,10 +304,15 @@ void vvIbrClient::destroyThreads()
   vvDebugMsg::msg(1, "vvIbrClient::destroyThreads()");
 
   exit();
+
   pthread_cancel(*_thread);
   pthread_join(*_thread, NULL);
   delete _thread;
   _thread = NULL;
+
+  pthread_mutex_destroy(&_imageMutex);
+  pthread_mutex_destroy(&_signalMutex);
+  pthread_cond_destroy(&_imageCond);
 }
 
 void* vvIbrClient::getImageFromSocket(void* threadargs)
