@@ -14,3 +14,4 @@ void main()
   vec4 OUT = texture2D(pixLUT, vec2(origColor.x, 0.0));
   gl_FragColor = OUT;
 }
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

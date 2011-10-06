@@ -29,3 +29,4 @@ void main()
   OUT.w = max(intColor.x, max(intColor.y, max(intColor.z, intColor.w)));
   gl_FragColor = OUT;
 }
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

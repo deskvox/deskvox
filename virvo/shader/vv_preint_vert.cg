@@ -37,3 +37,4 @@ v2f main(
   OUT.HPosition = mul(ModelViewProj, IN.Position);
   return OUT;
 }
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

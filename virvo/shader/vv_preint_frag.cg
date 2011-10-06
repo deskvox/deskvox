@@ -16,3 +16,4 @@ float4 main(
 
   return tex2D(PreIntegrationTable, lookup.xy);
 }
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
