@@ -466,9 +466,17 @@ void vvView::mainLoop(int argc, char *argv[])
       glutTimerFunc(1, timerCallback, BENCHMARK_TIMER);
     }
 
-    glutMainLoop();
+    if (playMode)
+    {
+      renderMotion();
+    }
+    else
+    {
+      glutMainLoop();
+    }
 
     delete vd;
+    vd = NULL;
   }
 }
 
@@ -2677,6 +2685,27 @@ void vvView::renderQuad() const
 }
 
 
+void vvView::renderMotion() const
+{
+  FILE* fp;
+  fp = fopen("motion.txt", "rb");
+
+  while (ds->ov->loadMV(fp))
+  {
+    glDrawBuffer(GL_BACK);
+    glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
+
+    ds->renderer->renderVolumeGL();
+    glutSwapBuffers();
+  }
+
+  fclose(fp);
+}
+
+
 void vvView::editClipPlane(const int command, const float val)
 {
   vvVector3 clipNormal = ds->renderer->getParameterV3(vvRenderState::VV_CLIP_NORMAL);
@@ -2835,6 +2864,9 @@ void vvView::displayHelpInfo()
   cerr << endl;
   cerr << "-rec" << endl;
   cerr << " Record camera motion to file" << endl;
+  cerr << endl;
+  cerr << "-play" << endl;
+  cerr << " Play camera motion from file" << endl;
   cerr << endl;
   #ifndef WIN32
   cerr << endl;
@@ -3159,6 +3191,10 @@ bool vvView::parseCommandLine(int argc, char** argv)
       recordMode = true;
       stopWatch.start();
       matrixFile = fopen("motion.txt", "wab");
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-play")==0)
+    {
+      playMode = true;
     }
     else
     {

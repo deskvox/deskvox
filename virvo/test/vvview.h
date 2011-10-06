@@ -157,6 +157,7 @@ class vvView
     const char* testSuiteFileName;
     bool showBricks;                            ///< show brick outlines when brick renderer is used
     bool recordMode;                            ///< mode where camera motion is saved to file
+    bool playMode;                              ///< mode where camera motion is played from file
     FILE* matrixFile;                           ///< Modelview matrices recorded in record mode
     vvStopwatch stopWatch;                      ///< used in record mode to store time along with each frame
     bool roiEnabled;                            ///< mode where probe is shown and can be moved via arrow keys
@@ -213,6 +214,7 @@ class vvView
     void renderClipObject();
     void renderCube() const;
     void renderQuad() const;
+    void renderMotion() const;
     void editClipPlane(int command, float val);
     void displayHelpInfo();
     bool parseCommandLine(int argc, char *argv[]);

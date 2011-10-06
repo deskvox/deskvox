@@ -49,6 +49,7 @@ class vvObjView
     bool  saveMV(const char*);
     bool  saveMV(FILE* fp);
     bool  loadMV(const char*);
+    bool  loadMV(FILE* fp);
     void  setProjection(ProjectionType, float, float, float);
     void  setAspectRatio(float);
     void  setDepthRange(float, float);

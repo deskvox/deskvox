@@ -123,14 +123,25 @@ bool vvObjView::saveMV(FILE* fp)
 bool vvObjView::loadMV(const char* filename)
 {
   FILE* fp;
-  int i,j;
   bool retval = false;
-  vvMatrix camera;
 
   vvDebugMsg::msg(1, "vvObjView::loadMV()");
 
   fp = fopen(filename, "rb");
   if (fp==NULL) return false;
+
+  retval = loadMV(fp);
+
+  fclose(fp);
+  return retval;
+}
+
+
+bool vvObjView::loadMV(FILE* fp)
+{
+  bool retval = false;
+
+  vvMatrix camera;
 
   // Initialize tokenizer:
   vvTokenizer::TokenType ttype;
@@ -144,8 +155,8 @@ bool vvObjView::loadMV(const char* filename)
   ttype = tokenizer->nextToken();
   if (ttype!=vvTokenizer::VV_WORD) goto done;
   if (strcmp(tokenizer->sval, cameraString) != 0) goto done;
-  for (i=0; i<4; ++i)
-    for (j=0; j<4; ++j)
+  for (int i=0; i<4; ++i)
+    for (int j=0; j<4; ++j)
   {
     ttype = tokenizer->nextToken();
     if (ttype != vvTokenizer::VV_NUMBER) goto done;
@@ -156,7 +167,7 @@ bool vvObjView::loadMV(const char* filename)
 
   done:
   delete tokenizer;
-  fclose(fp);
+
   return retval;
 }
 
