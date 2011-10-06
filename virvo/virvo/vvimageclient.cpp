@@ -63,8 +63,6 @@ vvRemoteClient::ErrorType vvImageClient::render()
 {
   vvDebugMsg::msg(1, "vvImageClient::render()");
 
-  vvGLTools::getModelviewMatrix(&_currentMv);
-  vvGLTools::getProjectionMatrix(&_currentPr);
   vvRemoteClient::ErrorType err = requestFrame();
   if(err != vvRemoteClient::VV_OK)
     return err;
