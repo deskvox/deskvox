@@ -119,7 +119,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   if (newFrame) // no frame pending
   {
-    _changes = matrixChanged;
+    _changes |= matrixChanged;
 
     if(_changes)
     {
