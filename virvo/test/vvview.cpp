@@ -507,7 +507,7 @@ void vvView::reshapeCallback(int w, int h)
   glViewport(0, 0, ds->winWidth, ds->winHeight);
 
   // Set new aspect ratio:
-  if (ds->winHeight > 0) ds->ov->setAspectRatio((float)ds->winWidth / (float)ds->winHeight);
+  if (ds->winHeight > 0 && ds->ov) ds->ov->setAspectRatio((float)ds->winWidth / (float)ds->winHeight);
 
   glDrawBuffer(GL_FRONT_AND_BACK);               // select all buffers
                                                  // set clear color
@@ -528,6 +528,9 @@ void vvView::displayCallback(void)
   glDrawBuffer(GL_BACK);
   glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  if(!ds->renderer)
+    return;
 
   ds->renderer->setParameter(vvRenderState::VV_QUALITY, ((ds->hqMode) ? ds->highQuality : ds->draftQuality));
 
