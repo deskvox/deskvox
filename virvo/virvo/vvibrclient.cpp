@@ -329,13 +329,13 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
     pthread_mutex_lock( &ibr->_imageMutex );
     pthread_cond_wait(&ibr->_imageCond, &ibr->_imageMutex);
     vvSocketIO::ErrorType err = ibr->_socket->getIbrImage(img);
-    img->decode();
     if(err != vvSocketIO::VV_OK)
     {
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
       pthread_mutex_unlock( &ibr->_imageMutex );
       break;
     }
+    img->decode();
     pthread_mutex_unlock( &ibr->_imageMutex );
     //vvToolshed::sleep(1000);
 
