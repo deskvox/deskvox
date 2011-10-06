@@ -383,6 +383,7 @@ vvRenderer::vvRenderer(vvVolDesc* voldesc, vvRenderState renderState)
 {
   vvDebugMsg::msg(1, "vvRenderer::vvRenderer()");
   assert(voldesc!=NULL);
+  rendererType = GENERIC;
   vd = voldesc;
   init();
 }

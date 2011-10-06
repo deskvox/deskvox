@@ -28,6 +28,10 @@
 #include "vvcanvas.h"
 #include "vvshell.h"
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 using namespace vox;
 
 /*******************************************************************************/
@@ -40,6 +44,7 @@ FXDEFMAP(VVPreferenceWindow) VVPreferenceWindowMap[]=
   FXMAPFUNC(SEL_CHANGED,     VVPreferenceWindow::ID_QUALITY_STILL,  VVPreferenceWindow::onQualitySChanging),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY_MOVING, VVPreferenceWindow::onQualityMChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_QUALITY_STILL,  VVPreferenceWindow::onQualitySChange),
+  FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_RENDERERTYPE,   VVPreferenceWindow::onRTChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_VOXELTYPE,      VVPreferenceWindow::onVTChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_GEOMTYPE,       VVPreferenceWindow::onGTChange),
   FXMAPFUNC(SEL_COMMAND,     VVPreferenceWindow::ID_PIXEL_SHADER,   VVPreferenceWindow::onPSChange),
@@ -69,6 +74,9 @@ FXDialogBox(owner,"Preferences", DECOR_TITLE | DECOR_BORDER | DECOR_CLOSE, 50, 5
 
   FXGroupBox* algoGroup = new FXGroupBox(master,"Rendering algorithm", FRAME_GROOVE | LAYOUT_FILL_X);
   FXMatrix* algoMatrix = new FXMatrix(algoGroup, 2, MATRIX_BY_COLUMNS | LAYOUT_FILL_X);
+
+  new FXLabel(algoMatrix, "Renderer:", NULL,LABEL_NORMAL);
+  _rtCombo=new FXComboBox(algoMatrix,1,this,ID_RENDERERTYPE, COMBOBOX_INSERT_LAST | COMBOBOX_STATIC | FRAME_SUNKEN | FRAME_THICK | LAYOUT_FILL_X);
 
   new FXLabel(algoMatrix, "Geometry:", NULL,LABEL_NORMAL);
   _gtCombo=new FXComboBox(algoMatrix,1,this,ID_GEOMTYPE, COMBOBOX_INSERT_LAST | COMBOBOX_STATIC | FRAME_SUNKEN | FRAME_THICK | LAYOUT_FILL_X);
@@ -164,6 +172,7 @@ VVPreferenceWindow::~VVPreferenceWindow()
 {
   delete _eyeSlider;
   delete _eyeTField;
+  delete _rtCombo;
   delete _gtCombo;
   delete _vtCombo;
   delete _psCombo;
@@ -219,9 +228,58 @@ long VVPreferenceWindow::onARToolkitChange(FXObject*,FXSelector,void* ptr)
   return 1;
 }
 
+int VVPreferenceWindow::getRenderer() const
+{
+  switch(_canvas->getRenderer())
+  {
+    case vvRenderer::TEXREND:
+      return 0;
+    case vvRenderer::REMOTE_IMAGE:
+      return 1;
+    case vvRenderer::REMOTE_IBR:
+      return 2;
+    case vvRenderer::SOFTPER:
+      return 3;
+#ifdef HAVE_CUDA
+    case vvRenderer::CUDAPER:
+      return 4;
+    case vvRenderer::RAYREND:
+      return 5;
+    case vvRenderer::VOLPACK:
+      return 6;
+#else
+    case vvRenderer::VOLPACK:
+      return 4;
+#endif
+  }
+
+  return 0;
+}
+
+long VVPreferenceWindow::onRTChange(FXObject*,FXSelector,void*)
+{
+  vvRenderer::RendererType alg = vvRenderer::INVALID;
+  switch(_rtCombo->getCurrentItem())
+  {
+  case 0: alg = vvRenderer::TEXREND; break;
+  case 1: alg = vvRenderer::REMOTE_IMAGE; break;
+  case 2: alg = vvRenderer::REMOTE_IBR; break;
+  case 3: alg = vvRenderer::SOFTPER; break;
+#ifdef HAVE_CUDA
+  case 4: alg = vvRenderer::CUDAPER; break;
+  case 5: alg = vvRenderer::RAYREND; break;
+  case 6: alg = vvRenderer::VOLPACK; break;
+#else
+  case 4: alg = vvRenderer::VOLPACK; break;
+#endif
+  }
+  _shell->setCanvasRenderer(NULL, alg, vvTexRend::GeometryType(_gtCombo->getCurrentItem()), _canvas->_currentVoxels);
+  return 1;
+}
+
 long VVPreferenceWindow::onGTChange(FXObject*,FXSelector,void*)
 {
-  _shell->setCanvasRenderer(NULL, 0, vvTexRend::GeometryType(_gtCombo->getCurrentItem()), _canvas->_currentVoxels);
+  _shell->setCanvasRenderer(NULL, vvRenderer::INVALID, vvTexRend::GeometryType(_gtCombo->getCurrentItem()), _canvas->_currentVoxels);
   return 1;
 }
 
@@ -233,7 +291,7 @@ long VVPreferenceWindow::onDefaultVolume(FXObject*,FXSelector,void*)
 
 long VVPreferenceWindow::onVTChange(FXObject*,FXSelector,void*)
 {
-  _shell->setCanvasRenderer(NULL, 0, _canvas->_currentGeom, vvTexRend::VoxelType(_vtCombo->getCurrentItem()));
+  _shell->setCanvasRenderer(NULL, vvRenderer::INVALID, _canvas->_currentGeom, vvTexRend::VoxelType(_vtCombo->getCurrentItem()));
   return 1;
 }
 
@@ -440,8 +498,8 @@ void VVPreferenceWindow::setBSCombo(int size)
 
 long VVPreferenceWindow::onSuppressRendering(FXObject*,FXSelector,void* ptr)
 {
-  if (ptr != NULL) _shell->setCanvasRenderer(NULL, -1);
-  else _shell->setCanvasRenderer(NULL, 1, _canvas->_currentGeom, _canvas->_currentVoxels);
+  if (ptr != NULL) _shell->setCanvasRenderer(NULL, vvRenderer::GENERIC);
+  else _shell->setCanvasRenderer(NULL, vvRenderer::TEXREND, _canvas->_currentGeom, _canvas->_currentVoxels);
   return 1;
 }
 
@@ -489,6 +547,22 @@ void VVPreferenceWindow::updateValues()
 
   if (_shell->_glcanvas->makeCurrent())
   {
+    // Renderer
+    _rtCombo->clearItems();
+    _rtCombo->appendItem("OpenGL textures");
+    _rtCombo->appendItem("Remote");
+    _rtCombo->appendItem("Image-based remote");
+    _rtCombo->appendItem("CPU shear-warp");
+#ifdef HAVE_CUDA
+    _rtCombo->appendItem("GPU shear-warp");
+    _rtCombo->appendItem("GPU ray casting");
+#endif
+#ifdef HAVE_VOLPACK
+    _rtCombo->appendItem("Volpack");
+#endif
+    _rtCombo->setNumVisible(_rtCombo->getNumItems());
+    _rtCombo->setCurrentItem(getRenderer());
+
     // Rendering geometry:
     _gtCombo->clearItems();
     _gtCombo->appendItem("Autoselect");

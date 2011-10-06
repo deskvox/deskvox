@@ -172,6 +172,8 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
   public:
     enum RendererType                             /// Current renderer
     {
+      INVALID = -2,                               ///< no renderer
+      GENERIC = -1,                               ///< generic renderer (does nothing)
       TEXREND = 0,                                ///< texture based renderer
       SOFTPAR,                                    ///< software based renderer for parallel projection
       SOFTPER,                                    ///< software based renderer for perspective projection

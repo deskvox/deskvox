@@ -48,6 +48,7 @@ class VVPreferenceWindow : public FXDialogBox
       ID_QUALITY_S_TEXT,
       ID_STEREO,
       ID_ARTOOLKIT,
+      ID_RENDERERTYPE,
       ID_VOXELTYPE,
       ID_GEOMTYPE,
       ID_PIXEL_SHADER,
@@ -74,6 +75,7 @@ class VVPreferenceWindow : public FXDialogBox
     FXTextField* _eyeTField;
     FXTextField* _qualityMTField;
     FXTextField* _qualitySTField;
+    FXComboBox* _rtCombo;                         ///< renderer type
     FXComboBox* _vtCombo;                         ///< voxel type
     FXComboBox* _gtCombo;                         ///< geometry type
     FXComboBox* _psCombo;                         ///< pixel shader
@@ -111,6 +113,7 @@ class VVPreferenceWindow : public FXDialogBox
     long onQualitySChanging(FXObject*,FXSelector,void*);
     long onStereoChange(FXObject*,FXSelector,void*);
     long onARToolkitChange(FXObject*,FXSelector,void*);
+    long onRTChange(FXObject*,FXSelector,void*);
     long onGTChange(FXObject*,FXSelector,void*);
     long onVTChange(FXObject*,FXSelector,void*);
     long onPSChange(FXObject*,FXSelector,void*);
@@ -125,6 +128,7 @@ class VVPreferenceWindow : public FXDialogBox
     long onDefaultVolume(FXObject*,FXSelector,void*);
     long onSuppressRendering(FXObject*,FXSelector,void*);
     long onSwapEyes(FXObject*,FXSelector,void*);
+    int  getRenderer() const;
 };
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

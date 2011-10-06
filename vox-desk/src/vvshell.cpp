@@ -617,7 +617,7 @@ void VVShell::loadDefaultVolume(int algorithm, int w, int h, int s)
     vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0], vd->real[1]);
   }
   if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
-  setCanvasRenderer(vd, 0, _canvas->_currentGeom);
+  setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentGeom);
   _transWindow->setDirtyHistogram();
   _transWindow->zoomLUT();
   cerr << "default" << vd->frames << endl;
@@ -659,7 +659,7 @@ void VVShell::loadVolumeFile(const char* filename)
         vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0], vd->real[1]);
       }
       if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
-      setCanvasRenderer(vd, 0, _canvas->_currentGeom);
+      setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentGeom);
       _transWindow->setDirtyHistogram();
       _transWindow->zoomLUT();
       vd->printInfoLine();
@@ -735,7 +735,7 @@ long VVShell::onCmdReloadVolume(FXObject*,FXSelector,void*)
       vvDebugMsg::msg(2, "Loaded file: ", vd->getFilename());
       // Use previous pin list if loaded dataset has no pins:
       if (vd->tf.isEmpty()) vd->tf.copy(&vd->tf._widgets, &_canvas->_vd->tf._widgets);
-      setCanvasRenderer(vd, 0, _canvas->_currentGeom, _canvas->_currentVoxels);
+      setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentGeom, _canvas->_currentVoxels);
       _transWindow->setDirtyHistogram();
       _transWindow->zoomLUT();
       break;
@@ -828,7 +828,7 @@ void VVShell::mergeFiles(const char* firstFile, int num, int increment, vvVolDes
         vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, vd->real[0], vd->real[1]);
       }
       if (vd->bpc==4 && vd->real[0]==0.0f && vd->real[1]==1.0f) vd->setDefaultRealMinMax();
-      setCanvasRenderer(vd, 0, _canvas->_currentGeom, _canvas->_currentVoxels);
+      setCanvasRenderer(vd, vvRenderer::INVALID, _canvas->_currentGeom, _canvas->_currentVoxels);
       _transWindow->setDirtyHistogram();
       _transWindow->zoomLUT();
       break;
@@ -1375,7 +1375,7 @@ long VVShell::onAllUpdate(FXObject*,FXSelector,void*)
   @param vd new volume, NULL if no change to volume data
   @param algorithm 0=no change, 1=textures, 2=Stingray, -1=suppress rendering
 */
-void VVShell::setCanvasRenderer(vvVolDesc* vd, int algorithm, vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
+void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorithm, vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
 {
   char string[256];
 

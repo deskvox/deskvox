@@ -27,6 +27,10 @@
 #include <vvglew.h>
 #include <vvopengl.h>
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #include <assert.h>
 
 // Virvo:
@@ -37,6 +41,15 @@
 #include <vvstopwatch.h>
 #include <vvfileio.h>
 #include <vvstingray.h>
+#include <vvsoftper.h>
+#include <vvsoftpar.h>
+#include <vvcudasw.h>
+#include <vvrayrend.h>
+#include <vvimageclient.h>
+#include <vvibrclient.h>
+#ifdef HAVE_VOLPACK
+#include <vvrendervp.h>
+#endif
 
 // Local:
 #include "vvcanvas.h"
@@ -72,6 +85,7 @@ vvCanvas::vvCanvas()
   _artoolkit = false;
   _width = _height = 0;
   _vd = NULL;
+  _currentAlgorithm = vvRenderer::TEXREND;
   _currentGeom   = vvTexRend::VV_AUTO;
   _currentVoxels = vvTexRend::VV_BEST;
 
@@ -119,9 +133,9 @@ void vvCanvas::initCanvas()
   }
 
  #ifdef USE_STINGRAY
-   setRenderer(2);
+   setRenderer(vvRenderer::STINGRAY);
  #else
-   setRenderer(1);
+   setRenderer(vvRenderer::TEXREND);
  #endif
 
   vvGLTools::printGLError("vvCanvas::initCanvas");// check for errors during GL initialization
@@ -445,9 +459,8 @@ void vvCanvas::transformObject(vvMatrix* m)
   @param r  index of renderer
   @param v  volume description
 */
-void vvCanvas::setRenderer(int alg, vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
+void vvCanvas::setRenderer(vvRenderer::RendererType alg, vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
 {
-  static int currentAlgorithm = 1;
   vvRenderState renderState;
   vvVector3 size;
 
@@ -462,23 +475,61 @@ void vvCanvas::setRenderer(int alg, vvTexRend::GeometryType gt, vvTexRend::Voxel
     delete _renderer;
   }
 
-  if (alg==0) alg = currentAlgorithm;
+  if (alg==vvRenderer::INVALID) alg = _currentAlgorithm;
 
   _vd->resizeEdgeMax(_ov.getViewportWidth() * DEFAULT_OBJ_SIZE);
 
   switch(alg)
   {
-    case -1: _renderer = new vvRenderer(_vd, renderState); break;
-    case  1: _renderer = new vvTexRend(_vd, renderState, _currentGeom, _currentVoxels); break;
-#ifdef USE_STINGRAY
-    case  2: _renderer = new vvStingray(_vd, renderState); break;
+  case vvRenderer::GENERIC:
+    _renderer = new vvRenderer(_vd, renderState);
+    break;
+  case vvRenderer::TEXREND:
+    _renderer = new vvTexRend(_vd, renderState, _currentGeom, _currentVoxels);
+    break;
+  case vvRenderer::REMOTE_IMAGE:
+    _renderer = new vvImageClient(_vd, renderState);
+    break;
+  case vvRenderer::REMOTE_IBR:
+    _renderer = new vvIbrClient(_vd, renderState);
+    break;
+  case vvRenderer::SOFTPER:
+    _renderer = new vvSoftPer(_vd, renderState);
+    break;
+#ifdef HAVE_CUDA
+  case vvRenderer::CUDAPER:
+    _renderer = new vvCudaPer(_vd, renderState);
+    break;
+  case vvRenderer::RAYREND:
+    _renderer = new vvRayRend(_vd, renderState);
+    break;
 #endif
-    default: assert(0); break;
+#ifdef HAVE_VOLPACK
+  case vvRenderer::RENDERVP:
+    _renderer = new vvRenderVP(_vd, renderState);
+    break;
+#endif
+#ifdef USE_STINGRAY
+  case  vvRenderer::STINGRAY:
+    _renderer = new vvStingray(_vd, renderState);
+    break;
+#endif
+  default:
+    assert(0);
+    break;
   }
 
   draw();
 
-  currentAlgorithm = alg;
+  _currentAlgorithm = alg;
+}
+
+//----------------------------------------------------------------------------
+/** Get current renderer
+*/
+int vvCanvas::getRenderer() const
+{
+  return _currentAlgorithm;
 }
 
 //----------------------------------------------------------------------------
