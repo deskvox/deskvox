@@ -516,7 +516,7 @@ void VVPreferenceWindow::updateValues()
     _vtCombo->appendItem("SGI LUT");
     _vtCombo->appendItem("OpenGL paletted textures");
     _vtCombo->appendItem("Nvidia register combiners");
-    _vtCombo->appendItem("Nvidia Cg pixel shader");
+    _vtCombo->appendItem("OpenGL/Cg fragment shader");
     if (texrend)
     {
       if (texrend->isSupported(vvTexRend::VV_FRG_PRG)) _vtCombo->appendItem("ARB fragment program");
