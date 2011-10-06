@@ -43,20 +43,18 @@ void main(void)
   {
     gl_Position.z = gl_Position.w * 1.1; // clip vertex
   }
-#if 0
   else
   {
-    p += vec4(1./imageWidth, 1./imageHeight, 0., 0.);
+    p += vec4(2./imageWidth, 2./imageHeight, 0., 0.);
     vec4 s1 = gl_Position;
     vec4 s2 = reprojectionMatrix * p;
     s1 /= s1.w;
     s1 *= vpWidth/imageWidth;
     s2 /= s2.w;
     s2 *= vpHeight/imageHeight;
-    vec2 d = vec2((s1.x-s2.x), (s1.y-s2.y));
-    gl_PointSize = vpWidth * length(d) * 0.7; // 0.7 = 1/sqrt(2)
+    vec2 d = vec2((s1.x-s2.x)*vpWidth, (s1.y-s2.y)*vpHeight);
+    gl_PointSize = length(d) * 0.7; // 0.7 = 1/sqrt(2)
   }
-#endif
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
