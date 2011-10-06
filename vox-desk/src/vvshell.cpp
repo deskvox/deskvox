@@ -1741,7 +1741,8 @@ int checkSystemAssumptions()
 //----------------------------------------------------------------------------
 int main(int argc,char *argv[])
 {
-  vvDebugMsg::setDebugLevel(0); // set global debug level here
+  if(!getenv("VV_DEBUG"))
+    vvDebugMsg::setDebugLevel(0); // set global debug level here
   vvDebugMsg::msg(1, "main()");
 
   if (checkSystemAssumptions()) return 1;
