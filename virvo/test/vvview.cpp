@@ -210,6 +210,7 @@ vvView::~vvView()
   delete renderer;
   delete ov;
   delete vd;
+  ds = NULL;
 }
 
 void vvView::serverLoop()
@@ -1234,6 +1235,7 @@ void vvView::mainMenuCallback(int item)
       case vvRenderer::SOFTPAR:
       case vvRenderer::SOFTPER:
         delete ds->renderer;
+        ds->renderer = NULL;
         if (ds->perspectiveMode)
           ds->renderer = new vvSoftPer(ds->vd, ds->renderState);
         else
@@ -1243,6 +1245,7 @@ void vvView::mainMenuCallback(int item)
       case vvRenderer::CUDAPER:
 #ifdef HAVE_CUDA
         delete ds->renderer;
+        ds->renderer = NULL;
         if (ds->perspectiveMode)
           ds->renderer = new vvCudaPer(ds->vd, ds->renderState);
         else
@@ -3247,13 +3250,6 @@ int vvView::run(int argc, char** argv)
 }
 
 
-vvView* vview = NULL;
-void exitFunc()
-{
-  delete vview;
-}
-
-
 //----------------------------------------------------------------------------
 /// Main entry point.
 int main(int argc, char** argv)
@@ -3285,11 +3281,8 @@ int main(int argc, char** argv)
   _CrtCheckMemory();
 #endif
 
-  atexit(exitFunc);
-
-  vview = new vvView();
   //vvDebugMsg::setDebugLevel(vvDebugMsg::NO_MESSAGES);
-  int error = vview->run(argc, argv);
+  int error = (new vvView())->run(argc, argv);
 
 #ifdef VV_DEBUG_MEMORY
   _CrtDumpMemoryLeaks();                         // display memory leaks, if any
