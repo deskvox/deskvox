@@ -174,6 +174,7 @@ class vvView
     vvView();
     ~vvView();
     int run(int, char**);
+    static void cleanup();
 
   private:
     static void reshapeCallback(int, int);

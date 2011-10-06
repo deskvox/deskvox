@@ -3049,6 +3049,12 @@ int vvView::run(int argc, char** argv)
   return 0;
 }
 
+void vvView::cleanup()
+{
+  delete ds;
+  ds = NULL;
+}
+
 
 //----------------------------------------------------------------------------
 /// Main entry point.
@@ -3080,6 +3086,8 @@ int main(int argc, char** argv)
 #ifdef VV_DEBUG_MEMORY
   _CrtCheckMemory();
 #endif
+
+  atexit(vvView::cleanup);
 
   //vvDebugMsg::setDebugLevel(vvDebugMsg::NO_MESSAGES);
   int error = (new vvView())->run(argc, argv);
