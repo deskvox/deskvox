@@ -92,19 +92,25 @@ void vvObjView::resetMV()
 bool vvObjView::saveMV(const char* filename)
 {
   FILE* fp;
-  int i;
 
   vvDebugMsg::msg(1, "vvObjView::saveMV()");
 
   fp = fopen(filename, "wb");
   if (fp==NULL) return false;
+  saveMV(fp);
+  fclose(fp);
+  return true;
+}
+
+
+bool vvObjView::saveMV(FILE* fp)
+{
   fputs(cameraString, fp);
   fputc('\n', fp);
-  for (i=0; i<4; ++i)
+  for (int i=0; i<4; ++i)
   {
     fprintf(fp, "%f %f %f %f\n", mv.e[i][0], mv.e[i][1], mv.e[i][2], mv.e[i][3]);
   }
-  fclose(fp);
   return true;
 }
 

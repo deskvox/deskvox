@@ -47,6 +47,7 @@ class vvObjView
     void  reset();
     void  resetMV();
     bool  saveMV(const char*);
+    bool  saveMV(FILE* fp);
     bool  loadMV(const char*);
     void  setProjection(ProjectionType, float, float, float);
     void  setAspectRatio(float);

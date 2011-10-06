@@ -156,6 +156,9 @@ class vvView
     std::vector<const char*> slaveFileNames;    ///< a list with file names where slaves can find the appropriate volume data
     const char* testSuiteFileName;
     bool showBricks;                            ///< show brick outlines when brick renderer is used
+    bool recordMode;                            ///< mode where camera motion is saved to file
+    FILE* matrixFile;                           ///< Modelview matrices recorded in record mode
+    vvStopwatch stopWatch;                      ///< used in record mode to store time along with each frame
     bool roiEnabled;                            ///< mode where probe is shown and can be moved via arrow keys
     bool sphericalROI;                          ///< use sphere instead of cube
     bool clipPlane;                             ///< use clip plane

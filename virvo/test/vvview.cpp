@@ -167,6 +167,8 @@ vvView::vvView()
   benchmark             = false;
   testSuiteFileName     = NULL;
   showBricks            = false;
+  recordMode            = false;
+  matrixFile            = NULL;
   roiEnabled            = false;
   sphericalROI          = false;
   clipPlane             = false;
@@ -201,6 +203,10 @@ vvView::vvView()
 /// Destructor.
 vvView::~vvView()
 {
+  if (recordMode && matrixFile)
+  {
+    fclose(matrixFile);
+  }
   delete renderer;
   delete ov;
   delete vd;
@@ -622,6 +628,12 @@ void vvView::displayCallback(void)
     }
   }
 
+  if (ds->recordMode)
+  {
+    ds->ov->saveMV(ds->matrixFile);
+    // store time since program start
+    fprintf(ds->matrixFile, "# %f\n", ds->stopWatch.getTime());
+  }
   glutSwapBuffers();
 
   vvGLTools::printGLError("leave vvView::displayCallback()");
@@ -2821,6 +2833,9 @@ void vvView::displayHelpInfo()
   cerr << "-showbricks" << endl;
   cerr << " Show the brick outlines \\wo volume when brick renderer is used" << endl;
   cerr << endl;
+  cerr << "-rec" << endl;
+  cerr << " Record camera motion to file" << endl;
+  cerr << endl;
   #ifndef WIN32
   cerr << endl;
   #endif
@@ -3139,6 +3154,12 @@ bool vvView::parseCommandLine(int argc, char** argv)
     {
       showBricks = true;
     }
+    else if (vvToolshed::strCompare(argv[arg], "-rec")==0)
+    {
+      recordMode = true;
+      stopWatch.start();
+      matrixFile = fopen("motion.txt", "wab");
+    }
     else
     {
       filename = argv[arg];
@@ -3190,6 +3211,13 @@ int vvView::run(int argc, char** argv)
 }
 
 
+vvView* vview = NULL;
+void exitFunc()
+{
+  delete vview;
+}
+
+
 //----------------------------------------------------------------------------
 /// Main entry point.
 int main(int argc, char** argv)
@@ -3221,10 +3249,11 @@ int main(int argc, char** argv)
   _CrtCheckMemory();
 #endif
 
-  vvView* vview = new vvView();
+  atexit(exitFunc);
+
+  vview = new vvView();
   //vvDebugMsg::setDebugLevel(vvDebugMsg::NO_MESSAGES);
   int error = vview->run(argc, argv);
-  delete vview;
 
 #ifdef VV_DEBUG_MEMORY
   _CrtDumpMemoryLeaks();                         // display memory leaks, if any
@@ -3232,7 +3261,6 @@ int main(int argc, char** argv)
 
   return error;
 }
-
 
 //============================================================================
 // End of File
