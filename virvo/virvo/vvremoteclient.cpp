@@ -74,9 +74,8 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::initSocket()");
 
+  const int defaultPort = 31050;
   int port = _slavePort;
-  if(port == -1)
-    port = 31050;
   char *serverName = NULL;
 
   if(!_slaveName)
@@ -84,13 +83,16 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
     if(const char *s = getenv("VV_SERVER"))
     {
       vvDebugMsg::msg(1, "remote rendering server from environment: ", s);
-      serverName = vvToolshed::stripPort(s);
-      if(serverName)
-        port = vvToolshed::parsePort(s);
-      else
+      port = vvToolshed::parsePort(s);
+      if(port == -1)
         _slaveName = s;
+      else
+        serverName = vvToolshed::stripPort(s);
     }
   }
+
+  if(port == -1)
+    port = defaultPort;
 
   if(!_slaveName && !serverName)
   {
