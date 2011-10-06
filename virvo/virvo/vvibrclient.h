@@ -25,6 +25,7 @@
 #include "vvopengl.h"
 #include "vvremoteclient.h"
 #include "vvpthread.h"
+#include "vvgltools.h"
 
 #include <vector>
 
