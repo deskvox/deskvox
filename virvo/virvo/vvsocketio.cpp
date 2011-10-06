@@ -161,7 +161,7 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd)
 /** Write volume attributes to socket.
   @param vd  volume description of volume to be send.
 */
-vvSocket::ErrorType vvSocketIO::putVolumeAttributes(vvVolDesc* vd)
+vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd)
 {
   int size = vd->serializeAttributes();
   std::vector<uchar> buffer(size);
@@ -175,7 +175,7 @@ vvSocket::ErrorType vvSocketIO::putVolumeAttributes(vvVolDesc* vd)
 /** Write volume data to socket.
   @param vd  volume description of volume to be send.
 */
-vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
+vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd)
 {
   vvSocket::ErrorType retval = putVolumeAttributes(vd);
   if(retval != vvSocket::VV_OK)
@@ -188,7 +188,7 @@ vvSocket::ErrorType vvSocketIO::putVolume(vvVolDesc* vd)
     cerr <<"Sending data ..."<< endl;
   for(int k=0; k < frames; k++)
   {
-    uchar *buffer = vd->getRaw(k);
+    const uchar *buffer = vd->getRaw(k);
     if ((retval = vvSocket::write_data(buffer, size)) != vvSocket::VV_OK)
     {
       return retval;
@@ -360,7 +360,7 @@ vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick)
 /** Write a single brick to the socket.
   @param brick  pointer to a vvBrick.
 */
-vvSocket::ErrorType vvSocketIO::putBrick(vvBrick* brick)
+vvSocket::ErrorType vvSocketIO::putBrick(const vvBrick* brick)
 {
   uchar* buffer;
   vvSocket::ErrorType retval;
@@ -454,7 +454,7 @@ vvSocket::ErrorType vvSocketIO::getBricks(std::vector<vvBrick*>& bricks)
 /** Write brick list to the socket. Bricks contain no volume data.
   @param bricks  std::vector with pointers to bricks.
 */
-vvSocket::ErrorType vvSocketIO::putBricks(std::vector<vvBrick*>& bricks)
+vvSocket::ErrorType vvSocketIO::putBricks(const std::vector<vvBrick*>& bricks)
 {
   uchar* buffer;
   vvSocket::ErrorType retval;
@@ -473,7 +473,7 @@ vvSocket::ErrorType vvSocketIO::putBricks(std::vector<vvBrick*>& bricks)
   }
   delete[] buffer;
 
-  for(std::vector<vvBrick*>::iterator it = bricks.begin(); it != bricks.end(); ++it)
+  for(std::vector<vvBrick*>::const_iterator it = bricks.begin(); it != bricks.end(); ++it)
   {
     vvBrick* brick = (*it);
     if ((retval = putBrick(brick)) != vvSocket::VV_OK)
@@ -1286,7 +1286,7 @@ vvSocket::ErrorType vvSocketIO::getWinDims(int& w, int& h)
 /** Writes a Matrix to the socket.
  @param m  pointer to the matrix to write, has to be an object of vvMatrix.
 */
-vvSocket::ErrorType vvSocketIO::putMatrix(vvMatrix* m)
+vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m)
 {
   uchar buffer[64];
 

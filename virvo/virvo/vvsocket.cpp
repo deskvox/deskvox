@@ -1666,7 +1666,7 @@ vvSocket::ErrorType vvSocket::write_data(const uchar* dataptr, size_t size)
 //----------------------------------------------------------------------------
 /** Returns the number of bytes currently in the socket receive buffer.
  */
-int vvSocket::is_data_waiting()
+int vvSocket::is_data_waiting() const
 {
 #ifdef _WIN32
   unsigned long nbytes;
@@ -1860,7 +1860,7 @@ float vvSocket::getTime(int timer)
 /** Prints an error message.
  @param prefix  prefix for identifying the error place.
 */
-void vvSocket::printErrorMessage(const char* prefix)
+void vvSocket::printErrorMessage(const char* prefix) const
 {
   if (prefix==NULL)
     cerr << "Socket error: ";

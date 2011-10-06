@@ -149,14 +149,14 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     bool sock_action();
     ErrorType getVolumeAttributes(vvVolDesc* vd);
     ErrorType getVolume(vvVolDesc*);
-    ErrorType putVolumeAttributes(vvVolDesc*);
-    ErrorType putVolume(vvVolDesc*);
+    ErrorType putVolumeAttributes(const vvVolDesc*);
+    ErrorType putVolume(const vvVolDesc*);
     ErrorType getTransferFunction(vvTransFunc& tf);
     ErrorType putTransferFunction(vvTransFunc& tf);
     ErrorType getBrick(vvBrick* brick);
-    ErrorType putBrick(vvBrick* brick);
+    ErrorType putBrick(const vvBrick* brick);
     ErrorType getBricks(std::vector<vvBrick*>& bricks);
-    ErrorType putBricks(std::vector<vvBrick*>& bricks);
+    ErrorType putBricks(const std::vector<vvBrick*>& bricks);
     ErrorType getImage(vvImage*);
     ErrorType putImage(const vvImage*);
     ErrorType getIbrImage(vvIbrImage*);
@@ -166,7 +166,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType allocateAndGetData(uchar**, int&);             //  unknown number and type
     ErrorType putData(uchar*, int);
     ErrorType getMatrix(vvMatrix*);
-    ErrorType putMatrix(vvMatrix*);
+    ErrorType putMatrix(const vvMatrix*);
     ErrorType getBool(bool& val);
     ErrorType putBool(const bool val);
     ErrorType getInt32(int& val);

@@ -160,8 +160,8 @@ class VIRVOEXPORT vvVolDesc
     int    getFrameVoxels() const;
     int    getMovieVoxels() const;
     vvAABB getBoundingBox() const;
-    uchar* getRaw(const int);
-    uchar* getRaw();
+    uchar* getRaw(int) const;
+    uchar* getRaw() const;
     const char* getFilename() const;
     void   setFilename(const char*);
     void   setCurrentFrame(int);
@@ -227,7 +227,7 @@ class VIRVOEXPORT vvVolDesc
     void   drawSphere(int, int, int, int, int, uchar*);
     void   drawLine(int, int, int, int, int, int, uchar*);
     void   drawBoundaries(uchar*, int=-1);
-    int    serializeAttributes(uchar* = NULL);
+    int    serializeAttributes(uchar* = NULL) const;
     void   deserializeAttributes(uchar*, const int=SERIAL_ATTRIB_SIZE);
     void   setSliceData(uchar*, int=0, int=0);
     void   extractSliceData(int, AxisType, int, uchar*);
@@ -265,7 +265,7 @@ class VIRVOEXPORT vvVolDesc
   private:
     char*  filename;                              ///< name of volume data file, including extension, excluding path ("" if undefined)
     int    currentFrame;                          ///< current animation frame
-    vvSLList<uchar*> raw;                         ///< pointer list to raw volume data
+    mutable vvSLList<uchar*> raw;                 ///< pointer list to raw volume data - mutable because of Java style iterators
     vvArray<char*> channelNames;                  ///< names of data channels
 
     void initialize();

@@ -113,7 +113,7 @@ class VIRVOEXPORT vvSocket
     void set_debuglevel(int);
     void set_sock_buffsize(int);
     void set_timer(float, float);
-    int is_data_waiting();
+    int is_data_waiting() const;
     ErrorType read_string(char* , int);
     ErrorType write_string(const char*);
     int get_sockfd() const;
@@ -168,7 +168,7 @@ class VIRVOEXPORT vvSocket
     ErrorType write_timeo(const uchar*, size_t);
     ErrorType read_nontimeo(uchar*, size_t);
     ErrorType write_nontimeo(const uchar*, size_t);
-    void printErrorMessage(const char* = NULL);
+    void printErrorMessage(const char* = NULL) const;
     bool do_a_retry();
     void startTime(int);
     float getTime(int);

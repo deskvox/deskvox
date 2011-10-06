@@ -618,7 +618,7 @@ vvVolDesc::ErrorType vvVolDesc::mergeFrames()
   @param frame  index of desired frame (0 for first frame) if frame does not
                 exist, NULL will be returned; -1 for current frame
 */
-uchar* vvVolDesc::getRaw(const int frame)
+uchar* vvVolDesc::getRaw(const int frame) const
 {
   if (frame<-1 || frame>=frames) return NULL;     // frame does not exist
   if (frame > -1) raw.makeCurrent(frame);
@@ -627,7 +627,7 @@ uchar* vvVolDesc::getRaw(const int frame)
 
 //----------------------------------------------------------------------------
 /// Return the pointer to the raw data of the current frame.
-uchar* vvVolDesc::getRaw()
+uchar* vvVolDesc::getRaw() const
 {
   return getRaw(currentFrame);
 }
@@ -3226,7 +3226,7 @@ Length          Data Type        VolDesc Attribute
 @param buffer pointer to _allocated_ memory for serialized attributes
 @return number of bytes required for serialization buffer
 */
-int vvVolDesc::serializeAttributes(uchar* buffer)
+int vvVolDesc::serializeAttributes(uchar* buffer) const
 {
   uchar* ptr;                                     // pointer to current serialization buffer element
 
