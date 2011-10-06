@@ -121,6 +121,9 @@ void vvRemoteClient::resize(const int w, const int h)
   _viewportWidth = w;
   _viewportHeight = h;
 
+  if(!_socket)
+    return;
+
   if (_socket->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
   {
     _socket->putWinDims(w, h);
@@ -131,6 +134,9 @@ void vvRemoteClient:: setCurrentFrame(const int index)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setCurrentFrame()");
   _changes = true;
+
+  if(!_socket)
+    return;
 
   if (_socket->putCommReason(vvSocketIO::VV_CURRENT_FRAME) == vvSocket::VV_OK)
   {
@@ -143,6 +149,9 @@ void vvRemoteClient::setObjectDirection(const vvVector3* od)
   vvDebugMsg::msg(3, "vvRemoteClient::setObjectDirection()");
   _changes = true;
 
+  if(!_socket)
+    return;
+
   if (_socket->putCommReason(vvSocketIO::VV_OBJECT_DIRECTION) == vvSocket::VV_OK)
   {
     _socket->putVector3(*od);
@@ -153,6 +162,9 @@ void vvRemoteClient::setViewingDirection(const vvVector3* vd)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setViewingDirection()");
   _changes = true;
+
+  if(!_socket)
+    return;
 
   if (_socket->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
   {
@@ -165,6 +177,9 @@ void vvRemoteClient::setPosition(const vvVector3* p)
   vvDebugMsg::msg(3, "vvRemoteClient::setPosition()");
   _changes = true;
 
+  if(!_socket)
+    return;
+
   if (_socket->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
   {
     _socket->putVector3(*p);
@@ -175,6 +190,9 @@ void vvRemoteClient::updateTransferFunction()
 {
   vvDebugMsg::msg(1, "vvRemoteClient::updateTransferFunction()");
   _changes = true;
+
+  if(!_socket)
+    return;
 
   if (_socket->putCommReason(vvSocketIO::VV_TRANSFER_FUNCTION) == vvSocket::VV_OK)
   {
@@ -187,6 +205,10 @@ void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const f
   vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
   _changes = true;
   vvRenderer::setParameter(param, newValue);
+
+  if(!_socket)
+    return;
+
   if (_socket->putCommReason(vvSocketIO::VV_PARAMETER_1) == vvSocket::VV_OK)
   {
     _socket->putInt32((int32_t)param);
@@ -199,6 +221,10 @@ void vvRemoteClient::setParameterV3(const vvRenderer::ParameterType param, const
   vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
   _changes = true;
   vvRenderer::setParameterV3(param, newValue);
+
+  if(!_socket)
+    return;
+
   if (_socket->putCommReason(vvSocketIO::VV_PARAMETER_3) == vvSocket::VV_OK)
   {
     _socket->putInt32((int32_t)param);
@@ -210,6 +236,10 @@ void vvRemoteClient::setParameterV4(const vvRenderer::ParameterType param, const
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
   _changes = true;
+
+  if(!_socket)
+    return;
+
   vvRenderer::setParameterV4(param, newValue);
   if (_socket->putCommReason(vvSocketIO::VV_PARAMETER_3) == vvSocket::VV_OK)
   {

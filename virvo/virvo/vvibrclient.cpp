@@ -224,6 +224,9 @@ vvRemoteClient::ErrorType vvIbrClient::requestIbrFrame()
 {
   vvDebugMsg::msg(1, "vvIbrClient::requestIbrFrame()");
 
+  if(!_socket)
+    return vvRemoteClient::VV_SOCKET_ERROR;
+
   if(_socket->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
 
@@ -303,7 +306,8 @@ void vvIbrClient::exit()
 {
   vvDebugMsg::msg(1, "vvIbrClient::exit()");
 
-  _socket->putCommReason(vvSocketIO::VV_EXIT);
+  if(_socket)
+    _socket->putCommReason(vvSocketIO::VV_EXIT);
   delete _socket;
 }
 
@@ -337,14 +341,12 @@ void vvIbrClient::destroyThreads()
 
 void* vvIbrClient::getImageFromSocket(void* threadargs)
 {
-  vvDebugMsg::msg(1, "vvIbrClient::getImageFromSocket()");
-
-  std::cerr << "Image thread start" << std::endl;
+  vvDebugMsg::msg(1, "vvIbrClient::getImageFromSocket(): thread started");
 
   vvIbrClient *ibr = static_cast<vvIbrClient*>(threadargs);
   vvIbrImage* img = ibr->_image;
 
-  while (1)
+  while (ibr->_socket)
   {
     pthread_mutex_lock( &ibr->_imageMutex );
     pthread_cond_wait(&ibr->_imageCond, &ibr->_imageMutex);
@@ -365,6 +367,8 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
     pthread_mutex_unlock( &ibr->_signalMutex );
   }
   pthread_exit(NULL);
+
+  vvDebugMsg::msg(1, "vvIbrClient::getImageFromSocket(): thread terminated");
 #ifdef _WIN32
   return NULL;
 #endif

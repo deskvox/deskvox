@@ -69,6 +69,9 @@ vvRemoteClient::ErrorType vvImageClient::render()
   if(err != vvRemoteClient::VV_OK)
     return err;
 
+  if(!_socket)
+    return vvRemoteClient::VV_SOCKET_ERROR;
+
   vvSocketIO::ErrorType sockerr = _socket->getImage(_image);
   if(sockerr != vvSocketIO::VV_OK)
   {
@@ -128,6 +131,9 @@ vvRemoteClient::ErrorType vvImageClient::requestFrame()
 {
   vvDebugMsg::msg(1, "vvImageClient::requestFrame()");
 
+  if(!_socket)
+    return vvRemoteClient::VV_SOCKET_ERROR;
+
   if(_socket->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
       return vvRemoteClient::VV_SOCKET_ERROR;
 
@@ -144,7 +150,8 @@ void vvImageClient::exit()
 {
   vvDebugMsg::msg(1, "vvImageClient::exit()");
 
-  _socket->putCommReason(vvSocketIO::VV_EXIT);
+  if(_socket)
+    _socket->putCommReason(vvSocketIO::VV_EXIT);
   delete _socket;
 }
 
