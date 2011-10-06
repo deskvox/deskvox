@@ -69,6 +69,7 @@ SET(VIRVO_HEADERS
   vvremoteserver.h
   vvrendercontext.h
   vvrenderer.h
+  vvrendererfactory.h
   vvrendertarget.h
   vvrendervp.h
   vvshaderfactory.h
@@ -131,6 +132,7 @@ SET(VIRVO_SOURCES
   vvremoteserver.cpp
   vvrendercontext.cpp
   vvrenderer.cpp
+  vvrendererfactory.cpp
   vvrendertarget.cpp
   vvshaderfactory.cpp
   vvshaderprogram.cpp

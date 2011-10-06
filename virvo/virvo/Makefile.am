@@ -63,6 +63,7 @@ libvirvo_a_headers = \
         vvoffscreenbuffer.h \
         vvx11.h \
 	vvrendervp.h \
+	vvrendererfactory.h \
 	vvsoftimg.h \
 	vvsoftpar.h \
 	vvsoftper.h \
@@ -122,6 +123,7 @@ libvirvo_a_SOURCES = \
         vvshaderfactory.cpp \
         vvrendertarget.cpp \
         vvrendercontext.cpp \
+	vvrendererfactory.cpp \
         vvoffscreenbuffer.cpp \
 	vvsoftimg.cpp \
 	vvsoftpar.cpp \
