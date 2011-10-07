@@ -25,13 +25,13 @@ IF (WIN32)
     PATHS  
     $ENV{EXTERNLIBS}/glut/include
     ${GLUT_ROOT_PATH}/include )
-  FIND_LIBRARY( GLUT_LIBRARY_DEBUG NAMES glutD glut32D freeglutD
+  FIND_LIBRARY( GLUT_LIBRARY_DEBUG NAMES glut32D glutD freeglutD
     PATHS
     $ENV{EXTERNLIBS}/glut/lib
     ${OPENGL_LIBRARY_DIR}
     ${GLUT_ROOT_PATH}/Debug
     )
-    FIND_LIBRARY( GLUT_LIBRARY_RELEASE NAMES glut glut32 freeglut
+    FIND_LIBRARY( GLUT_LIBRARY_RELEASE NAMES glut32 glut freeglut
     PATHS
     ${OPENGL_LIBRARY_DIR}
     $ENV{EXTERNLIBS}/glut/lib
