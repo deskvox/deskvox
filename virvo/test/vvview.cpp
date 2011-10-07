@@ -1246,7 +1246,7 @@ void vvView::rendererMenuCallback(int item)
     "Draft", "High"
   };
 
-  if (item>=0 && item<=9)
+  if (item>=0 && item<=11)
   {
     char type[100];
     sprintf(type, "%d", item);
@@ -2180,6 +2180,11 @@ void vvView::createMenus()
   glutAddMenuEntry("GPU Shear-warp [7]", 7);
   glutAddMenuEntry("GPU Ray casting [8]", 8);
 #endif
+#ifdef HAVE_VOLPACK
+  glutAddMenuEntry("VolPack [9]", 9);
+#endif
+  glutAddMenuEntry("Image-based remote rendering", 10);
+  glutAddMenuEntry("Remote rendering", 11);
   glutAddMenuEntry("Decrease quality [-]", 98);
   glutAddMenuEntry("Increase quality [+]", 99);
 
@@ -2617,8 +2622,10 @@ void vvView::displayHelpInfo()
   cerr << " 4  = 3D Textures - Bricks" << endl;
   cerr << " 5  = 3D Textures - Spherical" << endl;
   cerr << " 6  = Shear-warp (CPU)" << endl;
+#ifdef HAVE_CUDA
   cerr << " 7  = Shear-warp (GPU)" << endl;
   cerr << " 8  = Ray casting (GPU)" << endl;
+#endif
 #ifdef HAVE_VOLPACK
   cerr << " 9  = VolPack (CPU)" << endl;
 #endif

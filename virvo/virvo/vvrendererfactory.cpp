@@ -71,6 +71,8 @@ void init()
   rendererAliasMap["7"] = "cudasw";
   rendererAliasMap["8"] = "rayrend";
   rendererAliasMap["9"] = "volpack";
+  rendererAliasMap["10"] = "ibr";
+  rendererAliasMap["11"] = "image";
   // used in COVER and Inventor renderer
   rendererAliasMap["tex2d"] = "slices";
   rendererAliasMap["slices2d"] = "slices";
