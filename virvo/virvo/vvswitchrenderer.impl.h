@@ -70,6 +70,16 @@ void vvSwitchRenderer<Orthographic, Perspective>::setParameterV4(ParameterType p
 }
 
 template<class Orthographic, class Perspective>
+void vvSwitchRenderer<Orthographic, Perspective>::updateTransferFunction()
+{
+  vvRenderer::updateTransferFunction();
+  if(_ortho)
+    _ortho->updateTransferFunction();
+  if(_persp)
+    _persp->updateTransferFunction();
+}
+
+template<class Orthographic, class Perspective>
 void vvSwitchRenderer<Orthographic, Perspective>::renderVolumeGL()
 {
   vvDebugMsg::msg(3, "vvSwitchRenderer::renderVolumeGL()");

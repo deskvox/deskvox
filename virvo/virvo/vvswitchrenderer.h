@@ -37,6 +37,7 @@ public:
   virtual void setParameter(ParameterType param, float newValue);
   virtual void setParameterV3(ParameterType param, const vvVector3& newValue);
   virtual void setParameterV4(ParameterType param, const vvVector4& newValue);
+  virtual void updateTransferFunction();
 
   virtual void renderVolumeGL();
 protected:
