@@ -85,7 +85,7 @@ class VIRVOEXPORT vvVolDesc
     };
     enum                                          /// size of serialization buffer for attributes [bytes]
     {                                             // 54
-      SERIAL_ATTRIB_SIZE = 3*4 + 4 + 1 + 3*4 + 4 + 4 + 2*4 + 3*4 + 1
+      SERIAL_ATTRIB_SIZE = 3*4 + 4 + 1 + 3*4 + 4 + 2*4 + 3*4 + 1
     };
     enum                                          /// icon: bits per pixel (4=RGBA)
     { ICON_BPP = 4};

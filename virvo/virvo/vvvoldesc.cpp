@@ -3243,7 +3243,6 @@ int vvVolDesc::serializeAttributes(uchar* buffer) const
     ptr += vvToolshed::writeFloat(ptr, dist[0]);
     ptr += vvToolshed::writeFloat(ptr, dist[1]);
     ptr += vvToolshed::writeFloat(ptr, dist[2]);
-    ptr += vvToolshed::writeFloat(ptr, _scale);
     ptr += vvToolshed::writeFloat(ptr, dt);
     ptr += vvToolshed::writeFloat(ptr, real[0]);
     ptr += vvToolshed::writeFloat(ptr, real[1]);
@@ -3304,10 +3303,6 @@ void vvVolDesc::deserializeAttributes(uchar* buffer, const int bufSize)
   ptr += 4;
   if (ptr+4 - buffer <= bufSize)
     dist[2] = vvToolshed::readFloat(ptr);
-  else return;
-  ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
-    _scale = vvToolshed::readFloat(ptr);
   else return;
   ptr += 4;
   if (ptr+4 - buffer <= bufSize)
