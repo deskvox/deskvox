@@ -238,10 +238,10 @@ int VVPreferenceWindow::getRenderer() const
       return 1;
     case vvRenderer::REMOTE_IBR:
       return 2;
-    case vvRenderer::SOFTPER:
+    case vvRenderer::SOFTSW:
       return 3;
 #ifdef HAVE_CUDA
-    case vvRenderer::CUDAPER:
+    case vvRenderer::CUDASW:
       return 4;
     case vvRenderer::RAYREND:
       return 5;
@@ -264,9 +264,9 @@ long VVPreferenceWindow::onRTChange(FXObject*,FXSelector,void*)
   case 0: alg = vvRenderer::TEXREND; break;
   case 1: alg = vvRenderer::REMOTE_IMAGE; break;
   case 2: alg = vvRenderer::REMOTE_IBR; break;
-  case 3: alg = vvRenderer::SOFTPER; break;
+  case 3: alg = vvRenderer::SOFTSW; break;
 #ifdef HAVE_CUDA
-  case 4: alg = vvRenderer::CUDAPER; break;
+  case 4: alg = vvRenderer::CUDASW; break;
   case 5: alg = vvRenderer::RAYREND; break;
   case 6: alg = vvRenderer::VOLPACK; break;
 #else

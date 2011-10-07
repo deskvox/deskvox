@@ -82,6 +82,8 @@ SET(VIRVO_HEADERS
   vvrendervp.h
   vvshaderfactory.h
   vvshaderprogram.h
+  vvswitchrenderer.h
+  vvswitchrenderer.impl.h
   vvsllist.h
   vvsocket.h
   vvsocketio.h
@@ -90,6 +92,7 @@ SET(VIRVO_HEADERS
   vvsoftpar.h
   vvsoftper.h
   vvsoftvr.h
+  vvsoftsw.h
   vvsphere.h
   vvstingray.h
   vvstopwatch.h
@@ -151,6 +154,7 @@ SET(VIRVO_SOURCES
   vvsoftpar.cpp
   vvsoftper.cpp
   vvsoftvr.cpp
+  vvsoftsw.cpp
   vvsphere.cpp
   vvstingray.cpp
   vvstopwatch.cpp

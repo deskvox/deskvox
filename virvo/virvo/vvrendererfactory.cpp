@@ -28,6 +28,7 @@
 #include "vvvoldesc.h"
 #include "vvtexrend.h"
 #include "vvcudasw.h"
+#include "vvsoftsw.h"
 #include "vvrayrend.h"
 #include "vvibrclient.h"
 #include "vvimageclient.h"
@@ -108,8 +109,8 @@ void init()
 
   // other renderers
   rendererTypeMap["generic"] = vvRenderer::GENERIC;
-  rendererTypeMap["soft"] = vvRenderer::SOFTPER;
-  rendererTypeMap["cudasw"] = vvRenderer::CUDAPER;
+  rendererTypeMap["soft"] = vvRenderer::SOFTSW;
+  rendererTypeMap["cudasw"] = vvRenderer::CUDASW;
   rendererTypeMap["rayrend"] = vvRenderer::RAYREND;
   rendererTypeMap["volpack"] = vvRenderer::VOLPACK;
   rendererTypeMap["image"] = vvRenderer::REMOTE_IMAGE;
@@ -166,8 +167,8 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, co
     return new vvImageClient(vd, rs);
   case vvRenderer::REMOTE_IBR:
     return new vvIbrClient(vd, rs);
-  case vvRenderer::SOFTPER:
-    return new vvSoftPer(vd, rs);
+  case vvRenderer::SOFTSW:
+    return new vvSoftShearWarp(vd, rs);
 #ifdef HAVE_VOLPACK
   case vvRenderer::VOLPACK:
     break;
@@ -175,8 +176,8 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, co
 #ifdef HAVE_CUDA
   case vvRenderer::RAYREND:
     return new vvRayRend(vd, rs);
-  case vvRenderer::CUDAPER:
-    return new vvCudaPer(vd, rs);
+  case vvRenderer::CUDASW:
+    return new vvCudaShearWarp(vd, rs);
 #endif
   case vvRenderer::TEXREND:
   default:

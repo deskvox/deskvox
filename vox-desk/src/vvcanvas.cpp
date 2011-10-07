@@ -41,8 +41,7 @@
 #include <vvstopwatch.h>
 #include <vvfileio.h>
 #include <vvstingray.h>
-#include <vvsoftper.h>
-#include <vvsoftpar.h>
+#include <vvsoftsw.h>
 #include <vvcudasw.h>
 #include <vvrayrend.h>
 #include <vvimageclient.h>
@@ -493,12 +492,12 @@ void vvCanvas::setRenderer(vvRenderer::RendererType alg, vvTexRend::GeometryType
   case vvRenderer::REMOTE_IBR:
     _renderer = new vvIbrClient(_vd, renderState);
     break;
-  case vvRenderer::SOFTPER:
-    _renderer = new vvSoftPer(_vd, renderState);
+  case vvRenderer::SOFTSW:
+    _renderer = new vvSoftShearWarp(_vd, renderState);
     break;
 #ifdef HAVE_CUDA
-  case vvRenderer::CUDAPER:
-    _renderer = new vvCudaPer(_vd, renderState);
+  case vvRenderer::CUDASW:
+    _renderer = new vvCudaShearWarp(_vd, renderState);
     break;
   case vvRenderer::RAYREND:
     _renderer = new vvRayRend(_vd, renderState);

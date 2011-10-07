@@ -62,9 +62,7 @@ using std::ios;
 #include <virvo/vvrendercontext.h>
 //#include <virvo/vvclusterclient.h>
 //#include <virvo/vvclusterserver.h>
-#include <virvo/vvibrclient.h>
 #include <virvo/vvibrserver.h>
-#include <virvo/vvimageclient.h>
 #include <virvo/vvimageserver.h>
 #include <virvo/vvimage.h>
 #include <virvo/vvremoteserver.h>
@@ -73,9 +71,6 @@ using std::ios;
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtexrend.h>
-#include <virvo/vvsoftpar.h>
-#include <virvo/vvsoftper.h>
-#include <virvo/vvcudasw.h>
 #include <virvo/vvcuda.h>
 
 #ifdef HAVE_CUDA
@@ -181,8 +176,10 @@ vvView::vvView()
   rendererName.push_back("TexRend");
   rendererName.push_back("Parallel software shear-warp");
   rendererName.push_back("Perspective software shear-warp");
+  rendererName.push_back("Software shear-warp");
   rendererName.push_back("Parallel GPU shear-warp");
   rendererName.push_back("Perspective GPU shear-warp");
+  rendererName.push_back("GPU shear-warp");
   rendererName.push_back("CUDA ray caster");
   rendererName.push_back("VolPack");
   rendererName.push_back("Simian");

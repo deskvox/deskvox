@@ -25,6 +25,7 @@
 #include "vvsoftpar.h"
 #include "vvsoftper.h"
 #include "vvexport.h"
+#include "vvswitchrenderer.h"
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
@@ -134,6 +135,12 @@ class VIRVOEXPORT vvCudaPar: public vvCudaSW<vvSoftPar>
 {
     public:
     vvCudaPar(vvVolDesc *vd, vvRenderState rs);
+};
+
+class VIRVOEXPORT vvCudaShearWarp: public vvSwitchRenderer<vvCudaPar, vvCudaPer>
+{
+public:
+  vvCudaShearWarp(vvVolDesc *vd, vvRenderState rs);
 };
 #endif /* HAVE_CUDA */
 #endif

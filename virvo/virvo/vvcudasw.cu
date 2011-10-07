@@ -33,6 +33,7 @@
 #include "vvcudasw.h"
 #include "vvvoldesc.h"
 #include "vvtoolshed.h"
+#include "vvswitchrenderer.impl.h"
 
 const int MAX_SLICES = 1600;
 const int SliceStack = 32;
@@ -2120,6 +2121,11 @@ vvCudaPer::vvCudaPer(vvVolDesc *vd, vvRenderState rs)
 {
 }
 
+vvCudaShearWarp::vvCudaShearWarp(vvVolDesc *vd, vvRenderState rs)
+  : vvSwitchRenderer<vvCudaPar, vvCudaPer>(vd, rs)
+{
+  rendererType = CUDASW;
+}
 //============================================================================
 // End of File
 //============================================================================
