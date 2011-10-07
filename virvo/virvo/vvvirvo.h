@@ -48,10 +48,10 @@ and vvMatrix are components of vvVecmath, a useful library for linear algebra.
 
 namespace virvo
 {
-  VIRVOEXPORT extern "C" const char* getSvnRevision();
-  VIRVOEXPORT extern "C" const char* getVersionMajor();
-  VIRVOEXPORT extern "C" const char* getReleaseCounter();
-  VIRVOEXPORT extern "C" int getYearOfRelease();
+  VIRVOEXPORT const char* getSvnRevision();
+  VIRVOEXPORT const char* getVersionMajor();
+  VIRVOEXPORT const char* getReleaseCounter();
+  VIRVOEXPORT int getYearOfRelease();
 }
 
 #endif
