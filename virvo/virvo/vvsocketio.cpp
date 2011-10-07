@@ -116,14 +116,15 @@ vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd)
 
   int size = vd->serializeAttributes();
 
-  std::vector<uchar> buffer(size);
-  if ((retval = vvSocket::read_data(&buffer[0], size)) != vvSocket::VV_OK)
+  std::vector<uchar> buffer(size+4);
+  if ((retval = vvSocket::read_data(&buffer[0], size+4)) != vvSocket::VV_OK)
   {
     return retval;
   }
   if (vvDebugMsg::isActive(3))
     cerr<<"Header received"<< endl;
   vd->deserializeAttributes(&buffer[0]);
+  vd->_scale = vvToolshed::readFloat(&buffer[size]);
 
   return vvSocket::VV_OK;
 }
@@ -164,11 +165,12 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd)
 vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd)
 {
   int size = vd->serializeAttributes();
-  std::vector<uchar> buffer(size);
+  std::vector<uchar> buffer(size+4);
   vd->serializeAttributes(&buffer[0]);
+  vvToolshed::writeFloat(&buffer[size], vd->_scale);
   if (vvDebugMsg::isActive(3))
     cerr <<"Sending header ..."<< endl;
-  return vvSocket::write_data(&buffer[0], size);
+  return vvSocket::write_data(&buffer[0], size+4);
 }
 
 //----------------------------------------------------------------------------
