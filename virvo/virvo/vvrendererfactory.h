@@ -25,7 +25,7 @@
 
 /** Create vvRenderers from textual description
  */
-class vvRendererFactory
+class VIRVOEXPORT vvRendererFactory
 {
   public:
     static vvRenderer *create(vvVolDesc *vd,
