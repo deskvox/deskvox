@@ -8,6 +8,12 @@
 #ifndef _VVRENDERVP_H_
 #define _VVRENDERVP_H_
 
+#ifdef HAVE_CONFIG_H
+#include <vvconfig.h>
+#endif
+
+#ifdef HAVE_VOLPACK
+
 #include <iostream>
 
 #include <stdio.h>
@@ -15,6 +21,7 @@
 #include <volpack.h>
 #include "vvvecmath.h"
 #include "vvrenderer.h"
+#include "vvswitchrenderer.h"
 
 //============================================================================
 // Macro Definitions
@@ -94,6 +101,13 @@ class vvRenderVP : public vvRenderer
     void     setCurrentFrame(int);
     void     setLights(int, bool);
 };
+
+class VIRVOEXPORT vvVolPack: public vvSwitchRenderer<vvRenderVP, vvRenderer>
+{
+public:
+  vvVolPack(vvVolDesc *vd, vvRenderState rs);
+};
+#endif // HAVE_VOLPACK
 
 #endif
 

@@ -171,7 +171,7 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, co
     return new vvSoftShearWarp(vd, rs);
 #ifdef HAVE_VOLPACK
   case vvRenderer::VOLPACK:
-    break;
+    return new vvVolPack(vd, rs);
 #endif
 #ifdef HAVE_CUDA
   case vvRenderer::RAYREND:

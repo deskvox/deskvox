@@ -73,12 +73,6 @@ using std::ios;
 #include <virvo/vvtexrend.h>
 #include <virvo/vvcuda.h>
 
-#ifdef HAVE_CUDA
-#include <virvo/vvrayrend.h>
-#endif
-#ifdef HAVE_VOLPACK
-#include <virvo/vvrendervp.h>
-#endif
 #include <virvo/vvbonjour/vvbonjourbrowser.h>
 #include <virvo/vvbonjour/vvbonjourresolver.h>
 
@@ -181,6 +175,7 @@ vvView::vvView()
   rendererName.push_back("Perspective GPU shear-warp");
   rendererName.push_back("GPU shear-warp");
   rendererName.push_back("CUDA ray caster");
+  rendererName.push_back("VolPack");
   rendererName.push_back("VolPack");
   rendererName.push_back("Simian");
   rendererName.push_back("Imgrend");

@@ -504,8 +504,8 @@ void vvCanvas::setRenderer(vvRenderer::RendererType alg, vvTexRend::GeometryType
     break;
 #endif
 #ifdef HAVE_VOLPACK
-  case vvRenderer::RENDERVP:
-    _renderer = new vvRenderVP(_vd, renderState);
+  case vvRenderer::VOLPACK:
+    _renderer = new vvVolPack(_vd, renderState);
     break;
 #endif
 #ifdef USE_STINGRAY

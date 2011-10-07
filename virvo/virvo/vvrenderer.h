@@ -182,7 +182,8 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
       CUDAPER,                                    ///< CUDA based renderer for perspective projection
       CUDASW,                                     ///< CUDA based shear-warp renderer
       RAYREND,                                    ///< CUDA based ray casting renderer
-      VOLPACK,                                    ///< Phil Lacroute's VolPack renderer
+      RENDERVP,                                   ///< Phil Lacroute's VolPack renderer
+      VOLPACK,                                    ///< Phil Lacroute's VolPack renderer or no rendering for perspective projection
       SIMIAN,                                     ///< Joe Kniss's Simian renderer
       IMGREND,                                    ///< 2D image renderer
       UNKNOWN,                                    ///< unknown renderer

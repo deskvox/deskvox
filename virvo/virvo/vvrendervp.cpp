@@ -19,6 +19,11 @@ using std::setprecision;
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
 #include "vvstopwatch.h"
+#include "vvvoldesc.h"
+#include "vvgltools.h"
+#include "vvswitchrenderer.impl.h"
+
+#ifdef HAVE_VOLPACK
 
 //============================================================================
 // Class Definitions
@@ -32,7 +37,7 @@ vvRenderVP::vvRenderVP(vvVolDesc* vd, vvRenderState st) : vvRenderer(vd, st)
 
   vvDebugMsg::msg(1, "vvRenderVP::vvRenderVP()");
 
-  rendererType = VOLPACK;
+  rendererType = RENDERVP;
   vox = NULL;
   vpc = NULL;
   image = NULL;
@@ -236,7 +241,7 @@ void vvRenderVP::updateModelviewMatrix()
   vvDebugMsg::msg(3, "vvRenderVP::updateModelviewMatrix()");
 
   // Get modelview matrix from OpenGL:
-  getModelviewMatrix(&mv);
+  vvGLTools::getModelviewMatrix(&mv);
 
   // Set view matrix:
   vpCurrentMatrix(vpc, VP_VIEW);
@@ -267,7 +272,7 @@ void vvRenderVP::updateProjectionMatrix()
 
   vvDebugMsg::msg(3, "vvRenderVP::updateProjectionMatrix()");
 
-  getProjectionMatrix(&pm);
+  vvGLTools::getProjectionMatrix(&pm);
 
   if (pm.isProjOrtho()) // VolPack can only do parallel projections
   {
@@ -334,7 +339,7 @@ void vvRenderVP::renderVolumeGL()
   pos.copy(&vd->pos);
 
   // Check for projection type:
-  getProjectionMatrix(&pm);
+  vvGLTools::getProjectionMatrix(&pm);
   if (pm.isProjOrtho())  // VolPack can only do parallel projections
   {
     if (timing)
@@ -501,6 +506,14 @@ void vvRenderVP::setLights(int numLights, bool sticky)
 
   vpShadeTable(vpc);    // activate new illumination settings
 }
+
+vvVolPack::vvVolPack(vvVolDesc *vd, vvRenderState rs)
+  : vvSwitchRenderer<vvRenderVP, vvRenderer>(vd, rs)
+{
+  rendererType = VOLPACK;
+}
+
+#endif // HAVE_VOLPACK
 
 //============================================================================
 // End of File
