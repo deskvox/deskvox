@@ -137,8 +137,8 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     {
       pthread_mutex_lock(&_signalMutex);
       vvRemoteClient::ErrorType err = requestFrame();
-      pthread_cond_signal(&_imageCond);
       _newFrame = false;
+      pthread_cond_signal(&_imageCond);
       pthread_mutex_unlock(&_signalMutex);
       _changes = false;
       if(err != vvRemoteClient::VV_OK)
@@ -288,9 +288,14 @@ void vvIbrClient::createThreads()
   pthread_mutex_init(&_imageMutex, NULL);
   pthread_mutex_init(&_signalMutex, NULL);
   pthread_cond_init(&_imageCond, NULL);
+  pthread_cond_init(&_startCond, NULL);
 
   _thread = new pthread_t;
   pthread_create(_thread, NULL, getImageFromSocket, this);
+
+  pthread_mutex_lock(&_signalMutex);
+  pthread_cond_wait(&_startCond, &_signalMutex);
+  pthread_mutex_unlock(&_signalMutex);
 }
 
 void vvIbrClient::destroyThreads()
@@ -307,6 +312,7 @@ void vvIbrClient::destroyThreads()
   pthread_mutex_destroy(&_imageMutex);
   pthread_mutex_destroy(&_signalMutex);
   pthread_cond_destroy(&_imageCond);
+  pthread_cond_destroy(&_startCond);
 }
 
 void* vvIbrClient::getImageFromSocket(void* threadargs)
@@ -315,6 +321,8 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
 
   vvIbrClient *ibr = static_cast<vvIbrClient*>(threadargs);
   vvIbrImage* img = ibr->_image;
+
+  pthread_cond_signal(&ibr->_startCond);
 
   while (ibr->_socket)
   {
