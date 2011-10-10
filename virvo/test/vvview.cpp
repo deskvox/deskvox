@@ -148,7 +148,7 @@ vvView::vvView()
   slavePort             = vvView::DEFAULT_PORT;
   ibrPrecision          = 8;
   ibrMode               = vvRenderer::VV_MAX_GRADIENT;
-  codec                 = 4;
+  codec                 = vvImage::VV_RLE;
   rrMode                = RR_NONE;
   clipBuffer            = NULL;
   framebufferDump       = NULL;
