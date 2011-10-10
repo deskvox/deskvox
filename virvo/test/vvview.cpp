@@ -259,11 +259,9 @@ void vvView::serverLoop()
 
     if (server->initData(vd) != vvRemoteServer::VV_OK)
     {
-      delete vd;
-      vd = NULL;
       cerr << "Could not initialize volume data" << endl;
       cerr << "Continuing with next client..." << endl;
-      continue;
+      goto cleanup;
     }
 
 #if 0
@@ -326,17 +324,18 @@ void vvView::serverLoop()
 
       delete ov;
       ov = NULL;
-
-      delete vd;
-      vd = NULL;
     }
 
     // Frames vector with bricks is deleted along with the renderer.
     // Don't free them here.
     // see setRenderer().
 
+cleanup:
     delete server;
     server = NULL;
+
+    delete vd;
+    vd = NULL;
   }
 }
 
