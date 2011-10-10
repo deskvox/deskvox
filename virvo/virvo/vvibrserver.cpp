@@ -90,7 +90,8 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   vvGLTools::Viewport vp = vvGLTools::getViewport();
   const int w = vp[2];
   const int h = vp[3];
-  if(!_image || _image->getWidth() != w || _image->getHeight() != h || _image->getDepthPrecision() != dp)
+  if(!_image || _image->getWidth() != w || _image->getHeight() != h
+      || _image->getDepthPrecision() != dp || _image->getUncertaintyPrecision() != up)
   {
     delete[] _pixels;
     delete[] _depth;
@@ -105,8 +106,6 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
     }
     else
     {
-      // for now uncertainty precision same as depth precision
-      const int up = dp;
       _image = new vvIbrImage(h, w, _pixels, dp, up);
     }
     _image->alloc_pd();
