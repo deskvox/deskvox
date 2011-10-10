@@ -20,6 +20,12 @@
 
 #ifdef USE_STINGRAY
 
+// Cg:
+#ifdef HAVE_CG
+#include <Cg/cg.h>
+#include <Cg/cgGL.h>
+#endif
+
 // StingRay:
 #include <StingRayCaveRenderer.hpp>
 

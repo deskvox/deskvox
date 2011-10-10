@@ -25,12 +25,6 @@
 #include "vvconfig.h"
 #endif
 
-// Cg:
-#ifdef HAVE_CG
-#include <Cg/cg.h>
-#include <Cg/cgGL.h>
-#endif
-
 // Stingray:
 #ifdef USE_STINGRAY
 #include <StingRayCaveRenderer.hpp>

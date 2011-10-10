@@ -197,6 +197,7 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, co
     }
     break;
   }
+  return NULL; // fix warning
 }
 
 //============================================================================

@@ -98,6 +98,9 @@ void vvIbrClient::setParameter(vvRenderer::ParameterType param, float newValue)
   case VV_IBR_SYNC:
     _synchronous = newValue != 0.f;
     break;
+  default:
+    // intentionally do nothing
+    break;
   }
   vvRemoteClient::setParameter(param, newValue);
 }
