@@ -30,10 +30,10 @@ using std::endl;
 vvIbrImage::vvIbrImage(short h, short w, uchar* image, int dp, int up)
 : vvImage(h, w, image)
 , _depthPrecision(dp)
-, _depthCodeType(0)
+, _depthCodeType(VV_RAW)
 , _codedDepthSize(0)
 , _uncertaintyPrecision(up)
-, _uncertaintyCodeType(0)
+, _uncertaintyCodeType(VV_RAW)
 , _codedUncertaintySize(0)
 , _pixeldepth(NULL)
 , _codeddepth(NULL)
@@ -49,10 +49,10 @@ vvIbrImage::vvIbrImage(short h, short w, uchar* image, int dp, int up)
 vvIbrImage::vvIbrImage()
 : vvImage()
 , _depthPrecision(0)
-, _depthCodeType(0)
+, _depthCodeType(VV_RAW)
 , _codedDepthSize(0)
 , _uncertaintyPrecision(0)
-, _uncertaintyCodeType(0)
+, _uncertaintyCodeType(VV_RAW)
 , _codedUncertaintySize(0)
 , _pixeldepth(NULL)
 , _codeddepth(NULL)
@@ -88,7 +88,7 @@ uchar* vvIbrImage::getUncertainty() const
 
 uchar *vvIbrImage::getCodedUncertainty() const
 {
-  if(_uncertaintyCodeType == 0)
+  if(_uncertaintyCodeType == VV_RAW)
     return _uncertainty;
   else
     return _codeduncertainty;
@@ -96,28 +96,28 @@ uchar *vvIbrImage::getCodedUncertainty() const
 
 uchar *vvIbrImage::getCodedDepth() const
 {
-  if(_depthCodeType == 0)
+  if(_depthCodeType == VV_RAW)
     return _pixeldepth;
   else
     return _codeddepth;
 }
 
-int vvIbrImage::getDepthCodetype() const
+vvImage::CodeType vvIbrImage::getDepthCodetype() const
 {
   return _depthCodeType;
 }
 
-void vvIbrImage::setDepthCodetype(int ct)
+void vvIbrImage::setDepthCodetype(vvImage::CodeType ct)
 {
   _depthCodeType = ct;
 }
 
-int vvIbrImage::getUncertaintyCodetype() const
+vvImage::CodeType vvIbrImage::getUncertaintyCodetype() const
 {
   return _uncertaintyCodeType;
 }
 
-void vvIbrImage::setUncertaintyCodetype(int ct)
+void vvIbrImage::setUncertaintyCodetype(vvImage::CodeType ct)
 {
   _uncertaintyCodeType = ct;
 }
@@ -198,14 +198,14 @@ int vvIbrImage::getUncertaintySize() const
 void vvIbrImage::setNewDepthPtr(uchar *depth)
 {
   _pixeldepth = depth;
-  _depthCodeType = 0;
+  _depthCodeType = VV_RAW;
   _codedDepthSize = 0;
 }
 
 void vvIbrImage::setNewUncertaintyPtr(uchar *uncertainty)
 {
   _uncertainty = uncertainty;
-  _uncertaintyCodeType = 0;
+  _uncertaintyCodeType = VV_RAW;
   _codedUncertaintySize = 0;
 }
 
@@ -276,8 +276,8 @@ int vvIbrImage::encode(short ct, short sh, short eh, short sw, short ew)
   {
   case 0:
     cr=1.f;
-    _depthCodeType = 0;
-    _uncertaintyCodeType = 0;
+    _depthCodeType = VV_RAW;
+    _uncertaintyCodeType = VV_RAW;
     break;
   default:
     _codedDepthSize = gen_RLC_encode(_pixeldepth, _codeddepth, width*height*(_depthPrecision/8), _depthPrecision/8, width*height*(_depthPrecision/8));
@@ -286,23 +286,23 @@ int vvIbrImage::encode(short ct, short sh, short eh, short sw, short ew)
     if(_codedDepthSize < 0)
     {
       cr = 1.f;
-      _depthCodeType = 0;
+      _depthCodeType = VV_RAW;
     }
     else
     {
       cr = (float)_codedDepthSize/width/height/(_depthPrecision/8);
-      _depthCodeType = 1;
+      _depthCodeType = VV_RLE;
     }
 
     if(_codedUncertaintySize < 0)
     {
       cr = 1.f;
-      _uncertaintyCodeType = 0;
+      _uncertaintyCodeType = VV_RAW;
     }
     else
     {
       cr = (float)_codedUncertaintySize/width/height/(_uncertaintyPrecision/8);
-      _uncertaintyCodeType = 1;
+      _uncertaintyCodeType = VV_RLE;
     }
     break;
   }
@@ -321,14 +321,14 @@ int vvIbrImage::decode()
 
   switch(_depthCodeType)
   {
-  case 0:
+  case VV_RAW:
     break;
   default:
     err = gen_RLC_decode(_codeddepth, _pixeldepth, _codedDepthSize, _depthPrecision/8, width*height*(_depthPrecision/8));
     if(!err)
     {
       vvDebugMsg::msg(3, "vvIbrImage::decode: success, compressed size for depth was ", _codedDepthSize);
-      _depthCodeType = 0;
+      _depthCodeType = VV_RAW;
       _codedDepthSize = 0;
     }
     else
@@ -340,14 +340,14 @@ int vvIbrImage::decode()
 
   switch(_uncertaintyCodeType)
   {
-  case 0:
+  case VV_RAW:
     break;
   default:
     err = gen_RLC_decode(_codeduncertainty, _uncertainty, _codedUncertaintySize, _uncertaintyPrecision/8, width*height*(_uncertaintyPrecision/8));
     if(!err)
     {
       vvDebugMsg::msg(3, "vvIbrImage::decode: success, compressed size for uncertainty was ", _codedUncertaintySize);
-      _uncertaintyCodeType = 0;
+      _uncertaintyCodeType = VV_RAW;
       _codedUncertaintySize = 0;
     }
     else

@@ -49,7 +49,7 @@ vvImage::vvImage(short h, short w, uchar* image)
   vvDebugMsg::msg(3, "vvImage::vvImage(): ", w, h);
   videosize = 0;
   size = height*width*4;
-  codetype = 0;
+  codetype = VV_RAW;
   codedimage = new uchar[size];
   videoimageptr = new uchar[width*height*6];
   videocodedimage = new uchar[width*height*6+8];
@@ -78,7 +78,7 @@ vvImage::vvImage()
   videoimageptr = 0;
   videocodedimage = 0;
   tmpimage = 0;
-  codetype = 0;
+  codetype = VV_RAW;
   t = VV_CLIENT;
   videostyle = 0;
   videoquant = 1;
@@ -137,7 +137,7 @@ void vvImage::setNewImage(short h, short w, uchar* image)
   width = w;
   imageptr = image;
   size = height*width*4;
-  codetype = 0;
+  codetype = VV_RAW;
   if (codedimage != 0)
     delete[] codedimage;
   codedimage = new uchar[size];
@@ -161,12 +161,13 @@ void vvImage::setNewImagePtr(uchar* image)
 {
   imageptr = image;
   size = height*width*4;
-  codetype = 0;
+  codetype = VV_RAW;
 }
 
 //----------------------------------------------------------------------------
 /**Encodes an image
-@param ct   codetype to use (see detailed description of the class)
+@param ct   codetype to use (see detailed description of the class and CodeType,
+            values starting from VV_VIDEO are used for the different video codecs)
 @param sw   start pixel relating to width
 @param ew   end pixel relating to width
 @param sh   start pixel relating to height
@@ -200,21 +201,21 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
   }
   switch(ct)
   {
-    case 0:cr=1;break;
-    case 1:
+    case VV_RAW:cr=1;break;
+    case VV_RLE:
     {
       if (spec_RLC_encode(0, height, width))
       {
         vvDebugMsg::msg(1, "No compression possible");
-        codetype = 0;
+        codetype = VV_RAW;
       }
       else
-        codetype = 1;
+        codetype = VV_RLE;
       cr = (float)size / (height*width*4);
     }break;
-    case 2:
+    case VV_RLE_RECT:
     {
-      codetype = 2;
+      codetype = VV_RLE_RECT;
       if(sh<0 || eh<0  || sw<0 || ew<0 ||
         (realheight=short(eh-sh+1))<=0 || (realwidth=short(ew-sw+1))<=0 ||
         eh > height-1 || ew > width-1)
@@ -228,13 +229,13 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
       if (spec_RLC_encode(start, realheight, realwidth, 6))
       {
         vvDebugMsg::msg(1,"No compression possible");
-        codetype = 0;
+        codetype = VV_RAW;
       }
       cr = (float)size / (height*width*4);
     }break;
     default:
     {
-      int codec = ct - 3;
+      int codec = ct - VV_VIDEO;
       if(!videoEncoder)
         createCodecs();
       if(!videoEncoder)
@@ -244,7 +245,7 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
         videoEncoder->setCodec((vvVideo::Codec)codec);
       }
       int i;
-      codetype = 3;
+      codetype = VV_VIDEO;
       for (i=0; i<width*height; ++i)
         memcpy(&videoimageptr[i * 3], &imageptr[i * 4], 3);
       for (i=0; i<width*height; ++i)
@@ -279,19 +280,19 @@ int vvImage::decode()
 
   switch(codetype)
   {
-    case 0: imageptr = codedimage;break;
-    case 1:
+    case VV_RAW: imageptr = codedimage;break;
+    case VV_RLE:
     {
       spec_RLC_decode(0, width);
     }break;
-    case 2:
+    case VV_RLE_RECT:
     {
       memset(imageptr, 0, height*width*4);
       start = (int)vvToolshed::read32(&codedimage[0]);
       realwidth = vvToolshed::read16(&codedimage[4]);
       spec_RLC_decode(start, realwidth, 6);
     }break;
-    case 3:
+    case VV_VIDEO:
     {
       int i;
       if (videoDecode())
@@ -314,7 +315,7 @@ int vvImage::decode()
       vvDebugMsg::msg(1,"No encoding type with that identifier");
       return -1;
   }
-  codetype = 0;
+  codetype = VV_RAW;
   vvDebugMsg::msg(3, "image decoding succeeded");
   return 0;
 }
@@ -346,7 +347,7 @@ void vvImage::setWidth(short w)
 //----------------------------------------------------------------------------
 /** Sets the code type.
  */
-void vvImage::setCodeType(short ct)
+void vvImage::setCodeType(CodeType ct)
 {
   codetype = ct;
 }
@@ -424,7 +425,7 @@ short vvImage::getWidth() const
 //----------------------------------------------------------------------------
 /** Returns the code type
  */
-short vvImage::getCodeType() const
+vvImage::CodeType vvImage::getCodeType() const
 {
   return codetype;
 }
@@ -649,13 +650,13 @@ int vvImage::alloc_mem()
   if (tmpimage != 0)
     delete [] tmpimage;
   tmpimage = NULL;
-  if (codetype != 0)
+  if (codetype != VV_RAW)
   {
     imageptr = new uchar[height*width*4];
     if (!imageptr)
       return -1;
   }
-  if (codetype == 3)
+  if (codetype == VV_VIDEO)
   {
     videoimageptr = new uchar[height*width*6];
     if (!videoimageptr)

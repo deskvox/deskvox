@@ -495,7 +495,7 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
   const int BUFSIZE = 13;
   uchar buffer[BUFSIZE];
   vvSocket::ErrorType retval;
-  short w, h, ct;
+  short w, h;
   int imagesize;
   int videosize;
 
@@ -508,7 +508,7 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
   w = vvToolshed::read16(&buffer[2]);
   h = vvToolshed::read16(&buffer[0]);
 
-  ct = (short)vvToolshed::read8(&buffer[4]);
+  vvImage::CodeType ct = (vvImage::CodeType)vvToolshed::read8(&buffer[4]);
   if (h != im->getHeight() || w  != im->getWidth() || ct != im->getCodeType() )
   {
     im->setCodeType(ct);
@@ -529,7 +529,7 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
   }
   if (vvDebugMsg::isActive(3))
     cerr<<"Image data received"<<endl;
-  if (ct == 3)
+  if (ct == vvImage::VV_VIDEO)
   {
     if ((retval = vvSocket::read_data(im->getVideoCodedImage(), videosize)) != vvSocket::VV_OK)
     {
@@ -574,7 +574,7 @@ vvSocket::ErrorType vvSocketIO::putImage(const vvImage* im)
   {
     return retval;
   }
-  if (ct == 3)
+  if (ct == vvImage::VV_VIDEO)
   {
     if (vvDebugMsg::isActive(3))
       cerr <<"Sending video image data ..."<< endl;
@@ -634,7 +634,7 @@ vvSocket::ErrorType vvSocketIO::getIbrImage(vvIbrImage* im)
   err = getInt32(ct);
   if(err != vvSocket::VV_OK)
     return err;
-  im->setDepthCodetype(ct);
+  im->setDepthCodetype((vvImage::CodeType)ct);
 
   im->alloc_pd();
 

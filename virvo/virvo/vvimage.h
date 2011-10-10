@@ -30,13 +30,13 @@ class vvVideo;
 /**This class provides different encoding and decoding types for RGB images. <BR>
 
 Supported code types:
-- no encoding (code type 0)
-- Run Length Encoding over the whole image (code type 1)
-- Run Length Encoding over a quadratic part of the image (code type 2).
+- no encoding (code type VV_RAW)
+- Run Length Encoding over the whole image (code type VV_RLE)
+- Run Length Encoding over a quadratic part of the image (code type VV_RLE_RECT).
   Therefore start and end pixels for width an height must be specified.
   The rest of the image is interpreted as background and the pixels get the
   value 0,0,0,0. (picture width from 0 - width-1, picture height from 0 - height-1)
-- Video Encoding (code type 3). For this type the VV_FFMPEG/VV_XVID Flag must be set.<BR>
+- Video Encoding (code type VV_VIDEO). For this type the VV_FFMPEG/VV_XVID Flag must be set.<BR>
 
 Here is an example code fragment for encoding and decoding an image with
 800 x 600 pixels :<BR>
@@ -68,23 +68,30 @@ delete im;
 class VIRVOEXPORT vvImage
 {
   public:
+  enum CodeType
+  {
+    VV_RAW,
+    VV_RLE,
+    VV_RLE_RECT,
+    VV_VIDEO // keep last, actual video codec value will be added to this
+  };
 
     vvImage(short height, short width, uchar *pixels);
     vvImage();
     virtual ~vvImage();
-    virtual int encode(short, short sh=-1, short eh=-1, short sw=-1, short ew=-1);
+    virtual int encode(short codetype, short sh=-1, short eh=-1, short sw=-1, short ew=-1);
     virtual int decode();
     void setNewImage(short, short, uchar*);
     void setHeight(short);
     void setWidth(short);
-    void setCodeType(short);
+    void setCodeType(CodeType ct);
     void setSize(int);
     void setVideoSize(int);
     void setImagePtr(uchar*);
     void setNewImagePtr(uchar*);
     void setVideoStyle(int);
     void setVideoQuant(int);
-    short getCodeType() const;
+    CodeType getCodeType() const;
     short getHeight() const;
     short getWidth() const;
     int getSize() const;
@@ -96,7 +103,7 @@ class VIRVOEXPORT vvImage
 
   private:
 
-    short codetype;
+    CodeType codetype;
     int size;
     int videosize;
     uchar* imageptr;
