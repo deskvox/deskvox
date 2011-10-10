@@ -264,7 +264,6 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
         videoEncoder->setCodec((vvVideo::Codec)codec);
       }
       int i;
-      codetype = VV_VIDEO;
       for (i=0; i<width*height; ++i)
         memcpy(&videoimageptr[i * 3], &imageptr[i * 4], 3);
       for (i=0; i<width*height; ++i)
@@ -280,6 +279,7 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
         vvDebugMsg::msg(1,"Error: gen_RLC_encode()");
         return -1;
       }
+      codetype = VV_VIDEO;
       imageptr = codedimage;
       cr = (float)(size+videosize) / (height*width*4);
     }break;
