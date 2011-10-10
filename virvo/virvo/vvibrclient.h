@@ -53,7 +53,7 @@ private:
   pthread_mutex_t _signalMutex;                           ///< mutex for thread synchronization
   pthread_mutex_t _imageMutex;                            ///< mutex for access to _image
   pthread_cond_t _imageCond;                              ///< condition variable for access to _image
-  pthread_cond_t _startCond;                              ///< signal when network thread has started
+  pthread_barrier_t _startBarrier;                        ///< signal when network thread has started
   pthread_cond_t _readyCond;                              ///< signal when image has been received
   bool   _newFrame;                                       ///< flag indicating a new ibr-frame waiting to be rendered
   bool   _haveFrame;                                      ///< flag indicating that at least one frame has been received

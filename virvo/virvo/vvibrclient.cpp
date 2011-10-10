@@ -316,15 +316,13 @@ void vvIbrClient::createThreads()
   pthread_mutex_init(&_imageMutex, NULL);
   pthread_mutex_init(&_signalMutex, NULL);
   pthread_cond_init(&_imageCond, NULL);
-  pthread_cond_init(&_startCond, NULL);
+  pthread_barrier_init(&_startBarrier, NULL, 2);
   pthread_cond_init(&_readyCond, NULL);
 
   _thread = new pthread_t;
   pthread_create(_thread, NULL, getImageFromSocket, this);
 
-  pthread_mutex_lock(&_signalMutex);
-  pthread_cond_wait(&_startCond, &_signalMutex);
-  pthread_mutex_unlock(&_signalMutex);
+  pthread_barrier_wait(&_startBarrier);
 }
 
 void vvIbrClient::destroyThreads()
@@ -341,7 +339,8 @@ void vvIbrClient::destroyThreads()
   pthread_mutex_destroy(&_imageMutex);
   pthread_mutex_destroy(&_signalMutex);
   pthread_cond_destroy(&_imageCond);
-  pthread_cond_destroy(&_startCond);
+  pthread_barrier_destroy(&_startBarrier);
+  pthread_cond_destroy(&_readyCond);
 }
 
 void* vvIbrClient::getImageFromSocket(void* threadargs)
@@ -351,7 +350,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
   vvIbrClient *ibr = static_cast<vvIbrClient*>(threadargs);
   vvIbrImage* img = ibr->_image;
 
-  pthread_cond_signal(&ibr->_startCond);
+  pthread_barrier_wait(&ibr->_startBarrier);
 
   while (ibr->_socket)
   {
