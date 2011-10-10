@@ -40,6 +40,7 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
 , _thread(NULL)
 , _newFrame(true)
 , _haveFrame(false)
+, _synchronous(false)
 , _image(NULL)
 , _shaderFactory(NULL)
 , _shader(NULL)
@@ -90,6 +91,18 @@ vvIbrClient::~vvIbrClient()
   delete _image;
 }
 
+void vvIbrClient::setParameter(vvRenderer::ParameterType param, float newValue)
+{
+  switch(param)
+  {
+  case VV_IBR_SYNC:
+    _synchronous = newValue != 0.f;
+    break;
+  }
+  vvRemoteClient::setParameter(param, newValue);
+}
+
+
 vvRemoteClient::ErrorType vvIbrClient::render()
 {
   vvDebugMsg::msg(1, "vvIbrClient::render()");
@@ -127,7 +140,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
                         drMin, drMax);
   const vvGLTools::Viewport vp = vvGLTools::getViewport();
   vvMatrix currentImgMatrix = vvIbr::calcImgMatrix(_currentPr, _currentMv, vp, drMin, drMax);
-  const bool matrixChanged = (!currentImgMatrix.equal(&_imgMatrix));
+  bool matrixChanged = (!currentImgMatrix.equal(&_imgMatrix));
 
   if (newFrame) // no frame pending
   {
@@ -143,6 +156,21 @@ vvRemoteClient::ErrorType vvIbrClient::render()
       _changes = false;
       if(err != vvRemoteClient::VV_OK)
         std::cerr << "vvibrClient::requestFrame() - error() " << err << std::endl;
+      else if(_synchronous)
+      {
+        pthread_mutex_lock(&_signalMutex);
+        pthread_cond_wait(&_readyCond, &_signalMutex);
+        haveFrame = _haveFrame;
+        newFrame = _newFrame;
+        matrixChanged = false;
+        pthread_mutex_unlock(&_signalMutex);
+        if(newFrame && haveFrame)
+        {
+          pthread_mutex_lock(&_imageMutex);
+          initIbrFrame();
+          pthread_mutex_unlock(&_imageMutex);
+        }
+      }
     }
   }
 
@@ -289,6 +317,7 @@ void vvIbrClient::createThreads()
   pthread_mutex_init(&_signalMutex, NULL);
   pthread_cond_init(&_imageCond, NULL);
   pthread_cond_init(&_startCond, NULL);
+  pthread_cond_init(&_readyCond, NULL);
 
   _thread = new pthread_t;
   pthread_create(_thread, NULL, getImageFromSocket, this);
@@ -342,6 +371,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
     pthread_mutex_lock( &ibr->_signalMutex );
     ibr->_newFrame = true;
     ibr->_haveFrame = true;
+    pthread_cond_signal(&ibr->_readyCond);
     pthread_mutex_unlock( &ibr->_signalMutex );
   }
   pthread_exit(NULL);

@@ -45,6 +45,7 @@ public:
   ~vvIbrClient();
 
   ErrorType render();                                     ///< render image with depth-values
+  virtual void setParameter(vvRenderer::ParameterType param, float newValue);
 
 private:
   pthread_t*  _thread;                                    ///< list for threads of each server connection
@@ -53,8 +54,10 @@ private:
   pthread_mutex_t _imageMutex;                            ///< mutex for access to _image
   pthread_cond_t _imageCond;                              ///< condition variable for access to _image
   pthread_cond_t _startCond;                              ///< signal when network thread has started
+  pthread_cond_t _readyCond;                              ///< signal when image has been received
   bool   _newFrame;                                       ///< flag indicating a new ibr-frame waiting to be rendered
   bool   _haveFrame;                                      ///< flag indicating that at least one frame has been received
+  bool   _synchronous;                                    ///< display what was received w/y delay
   vvIbrImage *_image;                                     ///< image, protected by _imageMutex
   GLuint _pointVBO;                                       ///< Vertex Buffer Object id for point-pixels
 

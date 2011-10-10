@@ -148,6 +148,7 @@ vvView::vvView()
   slavePort             = vvView::DEFAULT_PORT;
   ibrPrecision          = 8;
   ibrMode               = vvRenderer::VV_MAX_GRADIENT;
+  sync                  = false;
   codec                 = vvImage::VV_RLE;
   rrMode                = RR_NONE;
   clipBuffer            = NULL;
@@ -779,6 +780,7 @@ void vvView::applyRendererParameters()
   renderer->setParameter(vvRenderState::VV_SHOW_BRICKS, showBricks);
   renderer->setParameter(vvRenderState::VV_CODEC, codec);
 
+  renderer->setParameter(vvRenderState::VV_IBR_SYNC, sync ? 1.f : 0.f);
   renderer->setParameter(vvRenderer::VV_IBR_DEPTH_PREC, ibrPrecision);
   renderer->setParameter(vvRenderer::VV_IBR_UNCERTAINTY_PREC, ibrPrecision); // both precisions the same for now
   if(rrMode == RR_IBR)
@@ -897,6 +899,7 @@ void vvView::keyboardCallback(unsigned char key, int, int)
   case 's': ds->animMenuCallback(4);  break;
   case 'S': ds->animMenuCallback(5);  break;
   case 't': ds->mainMenuCallback(11); break;
+  case 'T': ds->optionsMenuCallback(19); break;
   case 'u': ds->viewMenuCallback(8);  break;
   case 'v': ds->viewMenuCallback(9);  break;
   case 'w': ds->viewMenuCallback(6);  break;
@@ -1481,6 +1484,10 @@ void vvView::optionsMenuCallback(int item)
       ds->codec = 0;
     cerr << "Codec set to " << ds->codec << endl;
     ds->renderer->setParameter(vvRenderer::VV_CODEC, ds->codec);
+    break;
+  case 19:
+    ds->sync = !ds->sync;
+    ds->renderer->setParameter(vvRenderer::VV_IBR_SYNC, ds->sync ? 1.f : 0.f);
     break;
   default: break;
   }
@@ -2227,6 +2234,7 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD))
     glutAddMenuEntry("Cycle shader [A]", 14);
   glutAddMenuEntry("Inc ibr mode [#]", 17);
+  glutAddMenuEntry("Toggle synchronous ibr mode [T]", 19);
   glutAddMenuEntry("Cycle codec [C]", 18);
 
   // Transfer function menu:

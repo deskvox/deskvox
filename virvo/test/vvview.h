@@ -145,6 +145,7 @@ class vvView
     int  rrMode;                                ///< memory remote rendering mode
     int ibrPrecision;                           ///< Precision of depth buffer in image based (remote-)rendering mode
     vvRenderState::IbrMode          ibrMode;    ///< interruption mode for depth-calculation
+    bool sync;                                  ///< synchronous ibr mode
     int codec;                                  ///< code type/codec for images sent over the network
     vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
     GLfloat* framebufferDump;

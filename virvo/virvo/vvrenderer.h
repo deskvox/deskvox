@@ -87,6 +87,7 @@ public:
     VV_IBR_DEPTH_PREC,                          ///< precision of generated pixel depth values (8, 16 or 32 bit)
     VV_IBR_UNCERTAINTY_PREC,                    ///< precision of uncertainty for pixel depth (8, 16 or 32 bit)
     VV_CODEC,                                   ///< id of image/video codec for remote rendering
+    VV_IBR_SYNC,                                ///< display each image as it is sent
 
     VV_OPCORR,                                  ///< opacity correction on/off
     VV_SLICEINT,                                ///< interpolation within slice
