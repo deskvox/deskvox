@@ -40,6 +40,8 @@
 #include <string>
 #include <cstring>
 #include <algorithm>
+#include <vector>
+#include <sstream>
 
 namespace {
 
@@ -119,13 +121,84 @@ void init()
   rendererTypeMap["ibr"] = vvRenderer::REMOTE_IBR;
 }
 
+std::vector<std::string> split(const std::string &s, char delim)
+{
+  std::vector<std::string> elems;
+  std::stringstream ss(s);
+  std::string item;
+  while(std::getline(ss, item, delim)) {
+    elems.push_back(item);
+  }
+  return elems;
+}
+
+struct Options
+{
+  std::string voxeltype;
+  std::string server;
+  int port;
+
+  Options() : voxeltype("default"), port(-1) {}
+};
+
+bool parseOptions(std::string str, Options *opt)
+{
+  bool ok = true;
+
+  std::vector<std::string> optlist = split(str, ',');
+  for(std::vector<std::string>::iterator it = optlist.begin();
+      it != optlist.end();
+      ++it)
+  {
+    std::vector<std::string> list = split(*it, '=');
+    if(list.empty())
+      continue;
+
+    std::string &option = list[0];
+    std::transform(option.begin(), option.end(), option.begin(), ::tolower);
+    switch(list.size())
+    {
+    case 1:
+      opt->voxeltype = option;
+      break;
+    case 2:
+      {
+        std::string &value = list[1];
+
+        if(option == "server")
+        {
+          opt->server = value;
+        }
+        else if(option == "port")
+        {
+          opt->port = atoi(value.c_str());
+        }
+        else
+        {
+          vvDebugMsg::msg(1, "option not handled: ", option.c_str());
+          ok = false;
+        }
+      }
+      break;
+    default:
+      {
+        std::string &option = list[0];
+        vvDebugMsg::msg(1, "option value not handled for: ", option.c_str());
+        ok = false;
+      }
+      break;
+    }
+  }
+  return ok;
+}
+
 } // namespace
 
 /**
- * \param vd volume description
- * \param rs renderer state
- * \param t renderer type or vvTexRend's geometry type
- * \param o options for renderer or vvTexRend's voxel type
+ * @param vd volume description
+ * @param rs renderer state
+ * @param t renderer type or vvTexRend's geometry type
+ * @param o options for renderer or vvTexRend's voxel type, specify in this format: option1=value1,option2=value2
  */
 vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const char *o)
 {
@@ -146,8 +219,8 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, co
   if(!o)
     o = "default";
 
-  std::string options(o);
-  std::transform(options.begin(), options.end(), options.begin(), ::tolower);
+  Options options;
+  parseOptions(o, &options);
 
   RendererAliasMap::iterator ait = rendererAliasMap.find(type);
   if(ait != rendererAliasMap.end())
@@ -166,9 +239,9 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, co
   case vvRenderer::GENERIC:
     return new vvRenderer(vd, rs);
   case vvRenderer::REMOTE_IMAGE:
-    return new vvImageClient(vd, rs);
+    return new vvImageClient(vd, rs, options.server.c_str(), options.port);
   case vvRenderer::REMOTE_IBR:
-    return new vvIbrClient(vd, rs);
+    return new vvIbrClient(vd, rs, options.server.c_str(), options.port);
   case vvRenderer::SOFTSW:
     return new vvSoftShearWarp(vd, rs);
 #ifdef HAVE_VOLPACK
@@ -186,7 +259,7 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, co
     {
       vvTexRend::VoxelType vox= vd->getBPV()<3 ? vvTexRend::VV_BEST : vvTexRend::VV_RGBA;
 
-      VoxelTypeMap::iterator vit = voxelTypeMap.find(options);
+      VoxelTypeMap::iterator vit = voxelTypeMap.find(options.voxeltype);
       if(vit != voxelTypeMap.end())
         vox = vit->second;
       vvTexRend::GeometryType geo = vvTexRend::VV_AUTO;

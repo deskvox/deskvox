@@ -37,6 +37,7 @@ vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_
     _slaveName(slaveName),
     _slavePort(slavePort),
     _slaveFileName(slaveFileName),
+    _socket(NULL),
     _changes(true),
     _viewportWidth(-1),
     _viewportHeight(-1)
@@ -75,30 +76,33 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   vvDebugMsg::msg(3, "vvRemoteClient::initSocket()");
 
   const int defaultPort = 31050;
-  int port = _slavePort;
-  char *serverName = NULL;
 
-  if(!_slaveName)
+  if(!_slaveName || !_slaveName[0])
   {
     if(const char *s = getenv("VV_SERVER"))
     {
       vvDebugMsg::msg(1, "remote rendering server from environment: ", s);
-      port = vvToolshed::parsePort(s);
-      if(port == -1)
-        _slaveName = s;
-      else
-        serverName = vvToolshed::stripPort(s);
+      _slaveName = s;
     }
   }
 
-  if(port == -1)
-    port = defaultPort;
-
-  if(!_slaveName && !serverName)
+  if(!_slaveName || !_slaveName[0])
   {
-    vvDebugMsg::msg(1, "no server specified");
+    vvDebugMsg::msg(0, "no server specified");
     return VV_SOCKET_ERROR;
   }
+
+  char *serverName = NULL;
+  int port = vvToolshed::parsePort(_slaveName);
+  if(port != -1)
+  {
+    serverName = vvToolshed::stripPort(_slaveName);
+  }
+
+  if(_slavePort != -1)
+    port = _slavePort;
+  if(port == -1)
+    port = defaultPort;
 
   _socket = new vvSocketIO(port, serverName ? serverName : _slaveName, vvSocket::VV_TCP);
   _socket->set_debuglevel(vvDebugMsg::getDebugLevel());

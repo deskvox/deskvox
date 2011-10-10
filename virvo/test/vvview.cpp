@@ -16,6 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include <istream>
+#include <sstream>
 #include <string>
 #include <iomanip>
 using std::cerr;
@@ -808,6 +809,20 @@ void vvView::createRenderer(std::string type, std::string options,
 
   ds->currentRenderer = type;
   ds->currentOptions = options;
+
+  if(!slaveNames.empty())
+  {
+    options += ",server=";
+    options += slaveNames[0];
+  }
+
+  if(!slavePorts.empty())
+  {
+    options += ",port=";
+    std::stringstream port;
+    port << slavePorts[0];
+    options += port.str();
+  }
 
   if(renderer)
   renderState = *renderer;
