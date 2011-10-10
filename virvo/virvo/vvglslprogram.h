@@ -43,8 +43,8 @@ public:
   /// Deactivates and deletes shader program that was generated in this class
   ~vvGLSLProgram();
 
-  void enable();   /// enables program with loaded shaders
-  void disable();  /// disables program with its shaders
+  void enable();   ///< enables program with loaded shaders
+  void disable();  ///< disables program with its shaders
 
   /**
     Set uniform parameter functions. Use parameters' names only.
@@ -100,8 +100,8 @@ private:
   GLint getUniform(const std::string& parameterName, const std::string& parameterType);
   vvGLSLTexture* getTexture(const std::string& textureName, const std::string& parameterType);
 
-  bool loadShaders();     /// Initializes, compiles, and links a shader program
-  void deleteProgram();   /// deletes program with all shaders and frees memory
+  bool loadShaders();     ///< Initializes, compiles, and links a shader program
+  void deleteProgram();   ///< deletes program with all shaders and frees memory
 
   GLuint      _programId;
   GLuint      _shaderId[3];

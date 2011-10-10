@@ -54,12 +54,13 @@ public:
   virtual void setParameter1i(const std::string& parameterName, const int& i1) = 0;          ///< Set uniform integer variable
 
   virtual void setParameter3f(const std::string& parameterName, const float* array) = 0;     ///< Set uniform float-3D-vector stored in array
-  virtual void setParameter3f(const std::string& parameterName,                              ///< Set uniform float-3D-vector
-                              const float& f1, const float& f2, const float& f3) = 0;
+  virtual void setParameter3f(const std::string& parameterName,
+                              const float& f1, const float& f2, const float& f3) = 0;        ///< Set uniform float-3D-vector
 
   virtual void setParameter4f(const std::string& parameterName, const float* array) = 0;     ///< Set uniform float-4D-vector stored in array
-  virtual void setParameter4f(const std::string& parameterName,                              ///< Set uniform float-4D-vector
-                              const float& f1, const float& f2, const float& f3, const float& f4) = 0;
+  virtual void setParameter4f(const std::string& parameterName,
+                              const float& f1, const float& f2, const float& f3,
+                              const float& f4) = 0;                                          ///< Set uniform float-4D-vector
 
   /*!
     \brief Set uniform integer-array

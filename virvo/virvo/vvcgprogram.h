@@ -41,7 +41,7 @@
 class VIRVOEXPORT vvCgProgram : public vvShaderProgram
 {
 public:
-  vvCgProgram();  /// trivial constructor
+  vvCgProgram();  ///< trivial constructor
 
   /**
     Creates a vvCgProgram and tries to attach the given shaders source codes.
@@ -54,8 +54,8 @@ public:
   /// Deactivates and deletes shader program that was generated in this class
   ~vvCgProgram();
 
-  void enable();   /// enables program with loaded shaders
-  void disable();  /// disables program with its shaders
+  void enable();
+  void disable();
 
   /**
     Set uniform parameter functions. Use parameters' names only.
@@ -87,7 +87,7 @@ private:
   typedef std::map<std::string, CGparameter> ParameterMap;
   typedef ParameterMap::iterator ParameterIterator;
 
-  bool loadShaders();                               /// Creates CgProgram and loads shaders into it.
+  bool loadShaders();                               ///< Creates CgProgram and loads shaders into it.
   //! Looks for a parameter and connects it with all other active shaders
   ParameterIterator initParameter(const std::string& parameterName);
 
@@ -95,11 +95,11 @@ private:
   CGGLenum toCgEnum(const int i) const;
 
   // CG data
-  CGcontext _program;     /// Id of the CgProgram (in Cg: context)
-  CGprofile _profile[3];  /// Cg-specific profile-ids
-  CGprogram _shaderId[3]; /// Shader-ids
+  CGcontext _program;     ///< Id of the CgProgram (in Cg: context)
+  CGprofile _profile[3];  ///< Cg-specific profile-ids
+  CGprogram _shaderId[3]; ///< Shader-ids
 
-  ParameterMap _cgParameterNameMaps;  /// Parameter name-id maps
+  ParameterMap _cgParameterNameMaps;  ///< Parameter name-id maps
 };
 
 #endif // HAVE_CG

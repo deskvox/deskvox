@@ -45,8 +45,8 @@ public:
   vvMulticast(const char* addr, const ushort port, const MulticastType type);
   ~vvMulticast();
 
-  bool write(const uchar* bytes, const uint size, const double timeout = -1.0);  // send bytes to multicast-adress
-  int read(const uint size, uchar*& data, const double timeout = -1.0);          // read until "size" bytes or timeout is reached. Return number of read bytes.
+  bool write(const uchar* bytes, const uint size, const double timeout = -1.0);  ///< send bytes to multicast-adress
+  int read(const uint size, uchar*& data, const double timeout = -1.0);          ///< read until "size" bytes or timeout is reached. Return number of read bytes.
 
 private:
   MulticastType      _type;
