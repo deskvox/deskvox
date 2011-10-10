@@ -280,9 +280,9 @@ int vvIbrImage::encode(short ct, short sh, short eh, short sw, short ew)
     _uncertaintyCodeType = VV_RAW;
     break;
   default:
-    _codedDepthSize = gen_RLC_encode(_pixeldepth, _codeddepth, width*height*(_depthPrecision/8), _depthPrecision/8, width*height*(_depthPrecision/8));
+    _codedDepthSize = gen_RLC_encode(_pixeldepth, _codeddepth, width*height*(_depthPrecision/8), width*height*(_depthPrecision/8), _depthPrecision/8);
     _codedUncertaintySize = gen_RLC_encode(_uncertainty, _codeduncertainty, width*height*(_uncertaintyPrecision/8),
-                                           _uncertaintyPrecision/8, width*height*(_uncertaintyPrecision/8));
+                                           width*height*(_uncertaintyPrecision/8), _uncertaintyPrecision/8);
     if(_codedDepthSize < 0)
     {
       cr = 1.f;
@@ -324,7 +324,7 @@ int vvIbrImage::decode()
   case VV_RAW:
     break;
   default:
-    err = gen_RLC_decode(_codeddepth, _pixeldepth, _codedDepthSize, _depthPrecision/8, width*height*(_depthPrecision/8));
+    err = gen_RLC_decode(_codeddepth, _pixeldepth, _codedDepthSize, width*height*(_depthPrecision/8), _depthPrecision/8);
     if(!err)
     {
       vvDebugMsg::msg(3, "vvIbrImage::decode: success, compressed size for depth was ", _codedDepthSize);
@@ -343,7 +343,7 @@ int vvIbrImage::decode()
   case VV_RAW:
     break;
   default:
-    err = gen_RLC_decode(_codeduncertainty, _uncertainty, _codedUncertaintySize, _uncertaintyPrecision/8, width*height*(_uncertaintyPrecision/8));
+    err = gen_RLC_decode(_codeduncertainty, _uncertainty, _codedUncertaintySize, width*height*(_uncertaintyPrecision/8), _uncertaintyPrecision/8);
     if(!err)
     {
       vvDebugMsg::msg(3, "vvIbrImage::decode: success, compressed size for uncertainty was ", _codedUncertaintySize);

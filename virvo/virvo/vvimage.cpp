@@ -256,7 +256,7 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
         vvDebugMsg::msg(1,"Error: videoEncode()");
         return -1;
       }
-      if ( (size = gen_RLC_encode(tmpimage, codedimage, width*height, 1, width*height*4)) < 0)
+      if ( (size = gen_RLC_encode(tmpimage, codedimage, width*height, width*height*4)) < 0)
       {
         vvDebugMsg::msg(1,"Error: gen_RLC_encode()");
         return -1;
@@ -302,7 +302,7 @@ int vvImage::decode()
       }
       for (i=0; i<width*height; ++i)
         memcpy(&imageptr[i * 4], &videoimageptr[i * 3], 3);
-      if (gen_RLC_decode(codedimage, tmpimage, size, 1, width*height))
+      if (gen_RLC_decode(codedimage, tmpimage, size, width*height))
       {
         vvDebugMsg::msg(1,"Error: gen_RLC_decode()");
         return -1;
@@ -721,7 +721,7 @@ int vvImage::videoDecode()
 /** general function for the RLC encoding
  */
                                                   // size=total size in byte
-int vvImage::gen_RLC_encode(uchar* in, uchar* out, int size, int symbol_size, int space)
+int vvImage::gen_RLC_encode(const uchar* in, uchar* out, int size, int space, int symbol_size)
 {
   int same_symbol=1;
   int diff_symbol=0;
@@ -829,7 +829,7 @@ int vvImage::gen_RLC_encode(uchar* in, uchar* out, int size, int symbol_size, in
 //----------------------------------------------------------------------------
 /** general function for the RLC decoding
  */
-int vvImage::gen_RLC_decode(uchar* in, uchar* out, int size, int symbol_size, int space)
+int vvImage::gen_RLC_decode(const uchar* in, uchar* out, int size, int space, int symbol_size)
 {
   int src=0;
   int dest=0;

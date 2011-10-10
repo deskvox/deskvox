@@ -133,8 +133,8 @@ protected:
     Type t;
     short height;
     short width;
-    static int gen_RLC_encode(uchar*, uchar*, int, int, int);
-    static int gen_RLC_decode(uchar*, uchar*, int, int, int);
+    static int gen_RLC_encode(const uchar *in, uchar *out, int size, int space, int symbol_size=1);
+    static int gen_RLC_decode(const uchar *in, uchar *out, int size, int space, int symbol_size=1);
     int createCodecs();
     int destroyCodecs();
 };
