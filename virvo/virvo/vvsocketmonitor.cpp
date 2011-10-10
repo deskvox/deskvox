@@ -29,41 +29,145 @@
 using std::cerr;
 using std::endl;
 
-vvSocketMonitor::vvSocketMonitor(std::vector<vvSocket*>& sockets)
-  : _sockets(sockets)
+vvSocketMonitor::vvSocketMonitor()
 {
+  FD_ZERO(&_readsockfds);
+  FD_ZERO(&_writesockfds);
+  FD_ZERO(&_errorsockfds);
 
+  _highestSocketNum = -1;
 }
 
-vvSocket* vvSocketMonitor::wait()
+vvSocketMonitor::~vvSocketMonitor()
+{
+  clear();
+}
+
+void vvSocketMonitor::addReadFds(const std::vector<vvSocket*>& readfds)
+{
+  vvDebugMsg::msg(3, "vvSocketMonitor::addReadFds()");
+
+  _readSockets = readfds;
+
+  for (std::vector<vvSocket*>::const_iterator it = _readSockets.begin(); it != _readSockets.end(); ++it)
+  {
+    vvSocket* socket = (*it);
+    FD_SET(socket->get_sockfd(), &_readsockfds);
+
+    if (socket->get_sockfd() > _highestSocketNum)
+    {
+      _highestSocketNum = socket->get_sockfd();
+    }
+  }
+}
+
+void vvSocketMonitor::addWriteFds(const std::vector<vvSocket*>& writefds)
+{
+  vvDebugMsg::msg(3, "vvSocketMonitor::addWriteFds()");
+
+  _writeSockets = writefds;
+
+  for (std::vector<vvSocket*>::const_iterator it = _writeSockets.begin(); it != _writeSockets.end(); ++it)
+  {
+    vvSocket* socket = (*it);
+    FD_SET(socket->get_sockfd(), &_writesockfds);
+
+    if (socket->get_sockfd() > _highestSocketNum)
+    {
+      _highestSocketNum = socket->get_sockfd();
+    }
+  }
+}
+
+void vvSocketMonitor::addErrorFds(const std::vector<vvSocket*>& errorfds)
+{
+  vvDebugMsg::msg(3, "vvSocketMonitor::addErrorFds()");
+
+  _errorSockets = errorfds;
+
+  for (std::vector<vvSocket*>::const_iterator it = _errorSockets.begin(); it != _errorSockets.end(); ++it)
+  {
+    vvSocket* socket = (*it);
+    FD_SET(socket->get_sockfd(), &_errorsockfds);
+
+    if (socket->get_sockfd() > _highestSocketNum)
+    {
+      _highestSocketNum = socket->get_sockfd();
+    }
+  }
+}
+
+vvSocket* vvSocketMonitor::wait(const double timeout)
 {
   vvDebugMsg::msg(3, "vvSocketMonitor::wait()");
 
-  fd_set sockfds;
-
-  FD_ZERO(&sockfds);
-
-  int highestSocketNum = -1;
-  for (std::vector<vvSocket*>::const_iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+  timeval* tout;
+  if(timeout >= 0.0)
   {
-    vvSocket* socket = (*it);
-    FD_SET(socket->get_sockfd(), &sockfds);
-
-    if (socket->get_sockfd() > highestSocketNum)
-    {
-      highestSocketNum = socket->get_sockfd();
-    }
+    tout = new timeval;
+    tout->tv_sec  = static_cast<int>(timeout);
+    tout->tv_usec = (timeout - static_cast<int>(timeout)) * 1000000.0;
+  }
+  else
+  {
+    tout = NULL;
   }
 
-  if (select(highestSocketNum + 1, &sockfds, 0, 0, 0) > 0)
+  int done = select(_highestSocketNum + 1, &_readsockfds, &_writesockfds, &_errorsockfds, tout);
+  if (done > 0)
   {
-    for (std::vector<vvSocket*>::const_iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+    for (std::vector<vvSocket*>::const_iterator it = _readSockets.begin(); it != _readSockets.end(); ++it)
     {
       vvSocket* socket = (*it);
-      if (FD_ISSET(socket->get_sockfd(), &sockfds))
+      if (FD_ISSET(socket->get_sockfd(), &_readsockfds))
       {
         return socket;
       }
+    }
+
+    for (std::vector<vvSocket*>::const_iterator it = _writeSockets.begin(); it != _writeSockets.end(); ++it)
+    {
+      vvSocket* socket = (*it);
+      if (FD_ISSET(socket->get_sockfd(), &_writesockfds))
+      {
+        return socket;
+      }
+    }
+
+    for (std::vector<vvSocket*>::const_iterator it = _errorSockets.begin(); it != _errorSockets.end(); ++it)
+    {
+      vvSocket* socket = (*it);
+      if (FD_ISSET(socket->get_sockfd(), &_errorsockfds))
+      {
+        return socket;
+      }
+    }
+  }
+  else if(done == 0)
+  {
+    vvDebugMsg::msg(3, "vvSocketMonitor::wait() timelimit reached.");
+    return NULL;
+  }
+  else if(done == -1)
+  {
+    vvDebugMsg::msg(2, "vvSocketMonitor::wait() error by select() returned!");
+    switch(errno)
+    {
+    case EAGAIN:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() The kernel was (perhaps temporarily) unable to allocate the requested number of file descriptors.");
+      break;
+    case EBADF:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() One of the descriptor sets specified an invalid descriptor.");
+      break;
+    case EINTR:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() A signal was delivered before the time limit expired and before any of the selected events occurred..");
+      break;
+    case EINVAL:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() The specified time limit is invalid. One of its components is negative or too large. \n OR: ndfs is greater than FD_SETSIZE and _DARWIN_UNLIMITED_SELECT is not defined.");
+      break;
+    default:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() unknown erro occurred.");
+      break;
     }
   }
 
@@ -72,10 +176,23 @@ vvSocket* vvSocketMonitor::wait()
 
 void vvSocketMonitor::clear()
 {
-  for (std::vector<vvSocket*>::const_iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+  vvDebugMsg::msg(3, "vvSocketMonitor::clear()");
+  for (std::vector<vvSocket*>::const_iterator it = _readSockets.begin(); it != _readSockets.end(); ++it)
   {
     delete (*it);
   }
+  for (std::vector<vvSocket*>::const_iterator it = _writeSockets.begin(); it != _writeSockets.end(); ++it)
+  {
+    delete (*it);
+  }
+  for (std::vector<vvSocket*>::const_iterator it = _errorSockets.begin(); it != _errorSockets.end(); ++it)
+  {
+    delete (*it);
+  }
+
+  FD_ZERO(&_readsockfds);
+  FD_ZERO(&_writesockfds);
+  FD_ZERO(&_errorsockfds);
 }
 
 #endif

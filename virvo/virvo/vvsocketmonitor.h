@@ -30,12 +30,25 @@
 class vvSocketMonitor
 {
 public:
-  vvSocketMonitor(std::vector<vvSocket*>& sockets);
+  vvSocketMonitor();
+  ~vvSocketMonitor();
 
-  vvSocket* wait();
+  void addReadFds (const std::vector<vvSocket*>& readfds);
+  void addWriteFds(const std::vector<vvSocket*>& writefds);
+  void addErrorFds(const std::vector<vvSocket*>& errorfds);
+
+  vvSocket* wait(const double timeout = 0);
   void clear();
 private:
-  std::vector<vvSocket*> _sockets;
+  fd_set _readsockfds;
+  fd_set _writesockfds;
+  fd_set _errorsockfds;
+
+  std::vector<vvSocket*> _readSockets;
+  std::vector<vvSocket*> _writeSockets;
+  std::vector<vvSocket*> _errorSockets;
+
+  int _highestSocketNum;
 };
 
 #endif
