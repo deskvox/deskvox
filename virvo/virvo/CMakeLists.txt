@@ -35,6 +35,10 @@ IF(CG_FOUND)
   INCLUDE_DIRECTORIES(${CG_INCLUDE_PATH})
 ENDIF(CG_FOUND)
 
+IF(NORM_FOUND)
+  INCLUDE_DIRECTORIES(${NORM_INCLUDE_DIR})
+ENDIF(NORM_FOUND)
+
 SET(VIRVO_HEADERS
   vvmultirend/vvtexmultirend.h
   vvmultirend/vvtexmultirendmngr.h
@@ -68,6 +72,7 @@ SET(VIRVO_HEADERS
   vvimageclient.h
   vvimageserver.h
   vvinttypes.h
+  vvmulticast.h
   vvoffscreenbuffer.h
   vvopengl.h
   vvplatform.h
@@ -137,6 +142,7 @@ SET(VIRVO_SOURCES
   vvimage.cpp
   vvimageclient.cpp
   vvimageserver.cpp
+  vvmulticast.cpp
   vvoffscreenbuffer.cpp
   vvprintgl.cpp
   vvpthread.cpp
@@ -208,6 +214,10 @@ ENDIF(CUDA_FOUND)
 IF(CG_FOUND)
   SET(EXTRA_LIBS ${EXTRA_LIBS} ${CG_LIBRARY} ${CG_GL_LIBRARY})
 ENDIF(CG_FOUND)
+
+IF(NORM_FOUND)
+  SET(EXTRA_LIBS ${EXTRA_LIBS} ${NORM_LIBRARIES} ${PROTOKIT_LIBRARIES})
+ENDIF(NORM_FOUND)
 
 IF(X11_FOUND)
   SET(EXTRA_LIBS ${EXTRA_LIBS} ${X11_LIBRARIES})
