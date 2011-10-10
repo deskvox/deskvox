@@ -31,6 +31,14 @@
 #include "vvvideo.h"
 #include "vvtoolshed.h"
 
+#ifdef HAVE_CONFIG_H
+#include <vvconfig.h>
+#endif
+
+#ifdef HAVE_SNAPPY
+#include <snappy.h>
+#endif
+
 using namespace std;
 
 //----------------------------------------------------------------------------
@@ -233,6 +241,17 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
       }
       cr = (float)size / (height*width*4);
     }break;
+    case VV_SNAPPY:
+    {
+      if ( (size = snappyEncode(imageptr, codedimage, width*height*4, width*height*4*2, 4)) < 0)
+      {
+        vvDebugMsg::msg(1,"Error: snappyEncode()");
+        return -1;
+      }
+      codetype = VV_SNAPPY;
+      imageptr = codedimage;
+      cr = (float)size / (height*width*4);
+    }break;
     default:
     {
       int codec = ct - VV_VIDEO;
@@ -291,6 +310,14 @@ int vvImage::decode()
       start = (int)vvToolshed::read32(&codedimage[0]);
       realwidth = vvToolshed::read16(&codedimage[4]);
       spec_RLC_decode(start, realwidth, 6);
+    }break;
+    case VV_SNAPPY:
+    {
+      if (snappyDecode(codedimage, imageptr, size, width*height*4, 4))
+      {
+        vvDebugMsg::msg(1,"Error: snappyDecode()");
+        return -1;
+      }
     }break;
     case VV_VIDEO:
     {
@@ -668,7 +695,7 @@ int vvImage::alloc_mem()
     if (!tmpimage)
       return -1;
   }
-  codedimage = new uchar[height*width*4];
+  codedimage = new uchar[height*width*4*2];
   if (!codedimage)
     return -1;
 
@@ -906,5 +933,35 @@ int vvImage::createCodecs()
   return 0;
 }
 
+//----------------------------------------------------------------------------
+/** general function for encoding with snappy
+ */
+                                                  // size=total size in byte
+int vvImage::snappyEncode(const uchar* in, uchar* out, int size, int space, int symbol_size)
+{
+#ifdef HAVE_SNAPPY
+  if(snappy::MaxCompressedLength(size) > space)
+    return -1;
+  size_t compressed = 0;
+  snappy::RawCompress((const char *)in, size, (char *)out, &compressed);
+  return compressed;
+#else
+  return -1;
+#endif
+}
+
+//----------------------------------------------------------------------------
+/** general function for decoding with snappy
+ */
+int vvImage::snappyDecode(const uchar* in, uchar* out, int size, int space, int symbol_size)
+{
+#ifdef HAVE_SNAPPY
+  if(!snappy::RawUncompress((const char *)in, size, (char *)out))
+    return -1;
+  return 0;
+#else
+  return -1;
+#endif
+}
 //----------------------------------------------------------------------------
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

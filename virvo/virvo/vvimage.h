@@ -73,6 +73,7 @@ class VIRVOEXPORT vvImage
     VV_RAW,
     VV_RLE,
     VV_RLE_RECT,
+    VV_SNAPPY,
     VV_VIDEO // keep last, actual video codec value will be added to this
   };
 
@@ -133,10 +134,14 @@ protected:
     Type t;
     short height;
     short width;
-    static int gen_RLC_encode(const uchar *in, uchar *out, int size, int space, int symbol_size=1);
-    static int gen_RLC_decode(const uchar *in, uchar *out, int size, int space, int symbol_size=1);
     int createCodecs();
     int destroyCodecs();
+
+    typedef int (*CodecFunc)(const uchar *, uchar *, int, int, int);
+    static int gen_RLC_encode(const uchar *in, uchar *out, int size, int space, int symbol_size=1);
+    static int gen_RLC_decode(const uchar *in, uchar *out, int size, int space, int symbol_size=1);
+    static int snappyEncode(const uchar *in, uchar *out, int size, int space, int symbol_size=1);
+    static int snappyDecode(const uchar *in, uchar *out, int size, int space, int symbol_size=1);
 };
 
 #endif

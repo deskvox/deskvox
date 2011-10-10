@@ -136,9 +136,9 @@ void vvIbrImage::alloc_pd()
   }
 
   delete[] _codeddepth;
-  _codeddepth = new uchar[width*height*_depthPrecision/8];
+  _codeddepth = new uchar[width*height*_depthPrecision/8*2];
   delete[] _codeduncertainty;
-  _codeduncertainty = new uchar[width*height*_uncertaintyPrecision/8];
+  _codeduncertainty = new uchar[width*height*_uncertaintyPrecision/8*2];
 }
 
 int vvIbrImage::getDepthPrecision() const
@@ -280,29 +280,39 @@ int vvIbrImage::encode(short ct, short sh, short eh, short sw, short ew)
     _uncertaintyCodeType = VV_RAW;
     break;
   default:
-    _codedDepthSize = gen_RLC_encode(_pixeldepth, _codeddepth, width*height*(_depthPrecision/8), width*height*(_depthPrecision/8), _depthPrecision/8);
-    _codedUncertaintySize = gen_RLC_encode(_uncertainty, _codeduncertainty, width*height*(_uncertaintyPrecision/8),
-                                           width*height*(_uncertaintyPrecision/8), _uncertaintyPrecision/8);
-    if(_codedDepthSize < 0)
     {
-      cr = 1.f;
-      _depthCodeType = VV_RAW;
-    }
-    else
-    {
-      cr = (float)_codedDepthSize/width/height/(_depthPrecision/8);
-      _depthCodeType = VV_RLE;
-    }
+      CodecFunc enc = gen_RLC_encode;
+      CodeType ctused = VV_RLE;
+      if(ct == VV_SNAPPY)
+      {
+        enc = snappyEncode;
+        ctused = VV_SNAPPY;
+      }
 
-    if(_codedUncertaintySize < 0)
-    {
-      cr = 1.f;
-      _uncertaintyCodeType = VV_RAW;
-    }
-    else
-    {
-      cr = (float)_codedUncertaintySize/width/height/(_uncertaintyPrecision/8);
-      _uncertaintyCodeType = VV_RLE;
+      _codedDepthSize = enc(_pixeldepth, _codeddepth, width*height*(_depthPrecision/8), width*height*(_depthPrecision/8)*2, _depthPrecision/8);
+      _codedUncertaintySize = enc(_uncertainty, _codeduncertainty, width*height*(_uncertaintyPrecision/8),
+          width*height*(_uncertaintyPrecision/8)*2, _uncertaintyPrecision/8);
+      if(_codedDepthSize < 0)
+      {
+        cr = 1.f;
+        _depthCodeType = VV_RAW;
+      }
+      else
+      {
+        cr = (float)_codedDepthSize/width/height/(_depthPrecision/8);
+        _depthCodeType = ctused;
+      }
+
+      if(_codedUncertaintySize < 0)
+      {
+        cr = 1.f;
+        _uncertaintyCodeType = VV_RAW;
+      }
+      else
+      {
+        cr = (float)_codedUncertaintySize/width/height/(_uncertaintyPrecision/8);
+        _uncertaintyCodeType = ctused;
+      }
     }
     break;
   }
@@ -324,16 +334,22 @@ int vvIbrImage::decode()
   case VV_RAW:
     break;
   default:
-    err = gen_RLC_decode(_codeddepth, _pixeldepth, _codedDepthSize, width*height*(_depthPrecision/8), _depthPrecision/8);
-    if(!err)
     {
-      vvDebugMsg::msg(3, "vvIbrImage::decode: success, compressed size for depth was ", _codedDepthSize);
-      _depthCodeType = VV_RAW;
-      _codedDepthSize = 0;
-    }
-    else
-    {
-      vvDebugMsg::msg(1, "vvIbrImage::decode: failed to decode depth");
+      CodecFunc dec = gen_RLC_decode;
+      if(_depthCodeType == VV_SNAPPY)
+        dec = snappyDecode;
+
+      err = dec(_codeddepth, _pixeldepth, _codedDepthSize, width*height*(_depthPrecision/8), _depthPrecision/8);
+      if(!err)
+      {
+        vvDebugMsg::msg(3, "vvIbrImage::decode: success, compressed size for depth was ", _codedDepthSize);
+        _depthCodeType = VV_RAW;
+        _codedDepthSize = 0;
+      }
+      else
+      {
+        vvDebugMsg::msg(1, "vvIbrImage::decode: failed to decode depth");
+      }
     }
     break;
   }
@@ -343,16 +359,22 @@ int vvIbrImage::decode()
   case VV_RAW:
     break;
   default:
-    err = gen_RLC_decode(_codeduncertainty, _uncertainty, _codedUncertaintySize, width*height*(_uncertaintyPrecision/8), _uncertaintyPrecision/8);
-    if(!err)
     {
-      vvDebugMsg::msg(3, "vvIbrImage::decode: success, compressed size for uncertainty was ", _codedUncertaintySize);
-      _uncertaintyCodeType = VV_RAW;
-      _codedUncertaintySize = 0;
-    }
-    else
-    {
-      vvDebugMsg::msg(1, "vvIbrImage::decode: failed to decode uncertainty");
+      CodecFunc dec = gen_RLC_decode;
+      if(_uncertaintyCodeType == VV_SNAPPY)
+        dec = snappyDecode;
+
+      err = dec(_codeduncertainty, _uncertainty, _codedUncertaintySize, width*height*(_uncertaintyPrecision/8), _uncertaintyPrecision/8);
+      if(!err)
+      {
+        vvDebugMsg::msg(3, "vvIbrImage::decode: success, compressed size for uncertainty was ", _codedUncertaintySize);
+        _uncertaintyCodeType = VV_RAW;
+        _codedUncertaintySize = 0;
+      }
+      else
+      {
+        vvDebugMsg::msg(1, "vvIbrImage::decode: failed to decode uncertainty");
+      }
     }
     break;
   }

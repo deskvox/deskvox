@@ -10,4 +10,5 @@
 #cmakedefine HAVE_VOLPACK 1
 #cmakedefine HAVE_X11_X_H 1
 #cmakedefine HAVE_FFMPEG 1
+#cmakedefine HAVE_SNAPPY 1
 #cmakedefine HAVE_VOLPACK 1
