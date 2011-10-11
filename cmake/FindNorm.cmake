@@ -1,27 +1,23 @@
 # no default install path exists for norm, so no standard paths given in here
 
-FIND_PATH(NORM_INCLUDE_DIR normApi.h
-  DOC "The directory where normApi.h resides"
-)
+if (NORM_INCLUDE_DIR AND NORM_LIBRARIES)
 
-FIND_LIBRARY(NORM_LIBRARIES NORM-1.4b3
-  DOC "The norm-1.4b3 library"
-)
+	# Already in cache
+	set (NORM_FOUND TRUE)
 
-IF(NORM_INCLUDE_DIR AND NORM_LIBRARIES)
-  SET(NORM_FOUND 1 CACHE STRING "Set to 1 if norm-1.4b3 is found, 0 otherwise")
-ELSE(NORM_INCLUDE_DIR AND NORM_LIBRARIES)
-  SET(NORM_FOUND 0 CACHE STRING "Set to 1 if norm-1.4b3 is found, 0 otherwise")
+else (NORM_INCLUDE_DIR AND NORM_LIBRARIES)
 
-  IF(NOT NORM_INCLUDE_DIR)
-    MESSAGE("ERROR: Couldn't find norm-1.4b3 include directory")
-  ENDIF(NOT NORM_INCLUDE_DIR)
+	FIND_PATH(NORM_INCLUDE_DIR normApi.h
+		DOC "The directory where normApi.h resides"
+		)
 
-  IF(NOT NORM_LIBRARIES)
-    MESSAGE("ERROR: Couldn't find norm-1.4b3 library")
-  ENDIF(NOT NORM_LIBRARIES)
+	FIND_LIBRARY(NORM_LIBRARIES NORM-1.4b3
 
-ENDIF(NORM_INCLUDE_DIR AND NORM_LIBRARIES)
+		DOC "The norm-1.4b3 library"
+		)
 
-MARK_AS_ADVANCED(NORM_FOUND)
+	include(FindPackageHandleStandardArgs)
+	find_package_handle_standard_args(NORM DEFAULT_MSG NORM_LIBRARIES NORM_INCLUDE_DIR)
+
+endif (NORM_INCLUDE_DIR AND NORM_LIBRARIES)
 
