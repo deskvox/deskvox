@@ -451,11 +451,15 @@ int vvVideo::encodeFrame(const unsigned char* src, unsigned char* dst, int* enc_
   AVPicture src_picture;
   avpicture_fill(&src_picture, (uint8_t *)src, PIX_FMT_RGB24, enc_ctx->width, enc_ctx->height);
 
-  int ret = sws_scale(enc_imgconv_ctx, src_picture.data, src_picture.linesize, 0, 
+  sws_scale(enc_imgconv_ctx, src_picture.data, src_picture.linesize, 0,
       enc_ctx->height, enc_picture->data, enc_picture->linesize);
-  (void)ret;
 
   *enc_size = avcodec_encode_video(enc_ctx, dst, *enc_size, enc_picture);
+  if(*enc_size == -1)
+  {
+    vvDebugMsg::msg(1, "vvVideo::encodeFrame: encoding failed");
+    return -1;
+  }
   *enc_size += 2;
 
   vvDebugMsg::msg(3, "vvVideo::encodeFrame, encoded size is ", *enc_size);
