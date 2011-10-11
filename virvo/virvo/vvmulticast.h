@@ -33,6 +33,11 @@
 #include <string>
 #include <normApi.h>
 
+/** Wrapper class for NormAPI.
+  This class can be used for lossless multicast communication.
+
+  @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
+ */
 class VIRVOEXPORT vvMulticast
 {
 public:
@@ -42,11 +47,31 @@ public:
     VV_RECEIVER
   };
 
+  /** Constructor creating a sending or receiving multicast-unit
+
+    \param addr Must be an adress within the range of 224.0.0.0 to 239.255.255.255.
+    \note Some addresses are reserved! (See IPv4-documentation for further informations.)
+    \param port Desired port number
+    \param type Defined by VV_SENDER or VV_RECEIVER
+    */
   vvMulticast(const char* addr, const ushort port, const MulticastType type);
   ~vvMulticast();
 
-  bool write(const uchar* bytes, const uint size, const double timeout = -1.0);  ///< send bytes to multicast-adress
-  int read(const uint size, uchar*& data, const double timeout = -1.0);          ///< read until "size" bytes or timeout is reached. Return number of read bytes.
+  /**
+    send bytes to multicast-adress
+    \param bytes pointer to stored data
+    \param size size of data in bytes
+    \param timeout timeout in seconds or negative for no timeout
+    */
+  bool write(const uchar* bytes, const uint size, const double timeout = -1.0);
+  /**
+    read until "size" bytes or timeout is reached
+    \param size expected size of data in bytes
+    \param bytes pointer for data to be written to
+    \param timeout timeout in seconds or negative for no timeout
+    \return number of bytes actually read
+    */
+  int read(const uint size, uchar*& data, const double timeout = -1.0);
 
 private:
   MulticastType      _type;

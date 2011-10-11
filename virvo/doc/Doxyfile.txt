@@ -1300,6 +1300,7 @@ PREDEFINED             = \
                          HAVE_CUDA \
                          HAVE_FFMPEG \
                          HAVE_CG \
+                         HAVE_NORM \
                          HAVE_VOLPACK \
                          HAVE_X11 \
                          HAVE_BONJOUR \
