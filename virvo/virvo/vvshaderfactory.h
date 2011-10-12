@@ -24,19 +24,31 @@
 #include "vvshaderprogram.h"
 #include "vvexport.h"
 
+/** Class to create complete shader programs with all related shaders
+
+  @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
+ */
 class VIRVOEXPORT vvShaderFactory
 {
 public:
-  /** Creates a shader-program and tries to attach shaders with given name.
-    GLSL-shaders will be prefered if both types (GLSL and CG) are available.
-    @param name The filename of shader-tuple without suffix and file-extension
-   */
-
+  /// Constructor initiating factory and call glewInit()
   vvShaderFactory();
+
+  /** Create Program and try to attach shaders with given name
+    \param name name contained in all shaders names with standard pattern
+    \note the prefix, suffix, extensions etc are added to the names internally
+    */
   vvShaderProgram* createProgram(const std::string& name);
+    /** Create Program and try to attach shaders with givens names
+    \param vert name of vertex shader
+    \param geom name of geometry shader
+    \param frag name of fragment shader
+    \note the prefix, suffix, extensions etc are added to the names internally
+    */
   vvShaderProgram* createProgram(const std::string& vert, const std::string& geom, const std::string& frag);
-  bool cgSupport();
-  bool glslSupport();
+
+  bool cgSupport();     ///< returns if CG is supported
+  bool glslSupport();   ///< returns if GLSL is supported
 
 private:
   const std::string getShaderDir();
