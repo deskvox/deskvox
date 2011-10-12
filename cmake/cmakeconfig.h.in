@@ -4,7 +4,6 @@
 #cmakedefine HAVE_CUDA_H 1
 #cmakedefine HAVE_GL 1
 #cmakedefine HAVE_GL_FRAMEWORK 1
-#cmakedefine HAVE_GLEW 1
 #cmakedefine HAVE_GLU 1
 #cmakedefine HAVE_GLUT 1
 #cmakedefine HAVE_NORM 1
