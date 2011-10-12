@@ -1,5 +1,6 @@
 // Virvo - Virtual Reality Volume Rendering
-// Contact: Stefan Zellmann, zellmans@uni-koeln.de
+// Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
 //
@@ -12,6 +13,10 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library (see license.txt); if not, write to the
+// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvrendertarget.h"
 
