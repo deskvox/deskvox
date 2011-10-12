@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <cassert>
 #include "vvvirvo.h"
 #include "vvimage.h"
 #include "vvdebugmsg.h"
@@ -172,6 +173,21 @@ void vvImage::setNewImagePtr(uchar* image)
   codetype = VV_RAW;
 }
 
+static void checksum(const uchar *img, short height, short width)
+{
+  unsigned sum=0;
+  for(int i=0; i<height; i++)
+  {
+    for(int j=0; j<width; j++)
+    {
+      sum += img[(i*width+j)*4] + img[(i*width+j)*4+1] + img[(i*width+j)*4+2] + img[(i*width+j)*4+3];
+    }
+  }
+  char buf[100];
+  sprintf(buf, "check sum: 0x%08x, last: 0x%08x", sum, *(uint32_t*)&img[width*height-4]);
+  vvDebugMsg::msg(0, buf);
+}
+
 //----------------------------------------------------------------------------
 /**Encodes an image
 @param ct   codetype to use (see detailed description of the class and CodeType,
@@ -195,17 +211,7 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
   }
   if(vvDebugMsg::isActive(3))
   {
-    unsigned sum=0;
-    for(int i=0; i<height; i++)
-    {
-      for(int j=0; j<width; j++)
-      {
-        sum += imageptr[(i*width+j)*4]+ imageptr[(i*width+j)*4+1]+ imageptr[(i*width+j)*4+2]+ imageptr[(i*width+j)*4+3];
-      }
-    }
-    char buf[100];
-    sprintf(buf, "check sum: 0x%08x", sum);
-    vvDebugMsg::msg(3, buf);
+    checksum(imageptr, height, width);
   }
   switch(ct)
   {
@@ -343,6 +349,10 @@ int vvImage::decode()
       return -1;
   }
   codetype = VV_RAW;
+  if(vvDebugMsg::isActive(3))
+  {
+    checksum(imageptr, height, width);
+  }
   vvDebugMsg::msg(3, "image decoding succeeded");
   return 0;
 }
@@ -498,49 +508,67 @@ uchar* vvImage::getVideoCodedImage() const
 }
 
 //----------------------------------------------------------------------------
+/** Writes a RLE encoded set of same pixels.
+@param sP   number of same pixels
+@param d   destination in coded image where to write
+*/
+void vvImage::put_same(short& sP, int& d)
+{
+  codedimage[d] = (uchar)(126+sP);
+  d += 5;
+  sP = 1;
+}
+
+//----------------------------------------------------------------------------
+/** Writes a RLE encoded set of different pixels.
+@param dP   number of different pixels
+@param d   destination in coded image where to write
+*/
+void vvImage::put_diff(short& dP, int& d)
+{
+  codedimage[d] = (uchar)(dP-1);
+  d += 1+4*dP;
+  dP=0;
+}
+
+//----------------------------------------------------------------------------
 /**Does the Run Length Encoding for a defined cutout of an image.
 @param start   start pixel for RLE encoding
 @param h   height of pixel square to encode
 @param w   width of pixel square to encode
 @param dest   start writing in coded image at position dest
+ * runs of pixels are introduced by a single byte l,
+ * l < 128 introduces a run of l+1 pixels of differing colors, (l+1)*4 color bytes follow,
+ * l >= 128 introduces a run of l-127 pixels of the same color, 4 color bytes follow
 */
 int vvImage::spec_RLC_encode(int start, short h, short w, int dest)
 {
-  short samePixel=1;
+  short samePixel=1; // we include the leading pixel in the count
   short diffPixel=0;
-  int src;
-  int l,m;
 
   for ( int i=0; i < h; i++)
   {
-    src = start + i*width*4;
+    int src = start + i*width*4;
     for ( int j=0; j < w; j++)
     {
-      if (j == (w-1))
+      int next = src + 4;
+      if(j == w-1)
       {
-        l=1;
-        if (i == (h-1))
-          m=0;
-        else
-          m =1;
+        // skip to next line
+        next = src + (width-w)*4 + 4;
+        if(i == h-1)
+          // but not if we are on the last line
+          next = -1;
       }
-      else
-      {
-        m=1;
-        l=0;
-      }
-      if (imageptr[src] == imageptr[m*(src+4+l*(width-w)*4)] &&
-        imageptr[src+1] == imageptr[m*(src+5+l*(width-w)*4)] &&
-        imageptr[src+2] == imageptr[m*(src+6+l*(width-w)*4)] &&
-        imageptr[src+3] == imageptr[m*(src+7+l*(width-w)*4)] )
+      if (next>0 && memcmp(&imageptr[src], &imageptr[next], 4)==0)
       {
         if(samePixel == 129)
           put_same(samePixel, dest);
         else
         {
-          samePixel++;
           if(diffPixel > 0 )
             put_diff(diffPixel, dest);
+          samePixel++;
           if(samePixel == 2)
           {
             if ((dest+5) > size)
@@ -566,6 +594,7 @@ int vvImage::spec_RLC_encode(int start, short h, short w, int dest)
       src += 4;
     }
   }
+  // if we have a final run, finish it
   if (samePixel > 1)
   {
     samePixel--;
@@ -573,6 +602,7 @@ int vvImage::spec_RLC_encode(int start, short h, short w, int dest)
   }
   else if (diffPixel > 0)
     put_diff(diffPixel, dest);
+
   imageptr = codedimage;
   size = dest;
   return 0;
@@ -587,19 +617,19 @@ written
 */
 int vvImage::spec_RLC_decode(int start, short w, int src)
 {
-  int dest;
-  int length;
-
-  dest = start;
+  int dest = start;
+  int end = height*width*4;
   while (src < size)
   {
-    length = (int)codedimage[src];
+    int length = (int)codedimage[src];
     if (length > 127)
     {
       for(int i=0; i<(length - 126); i++)
       {
         if (((dest-start-4*w)% (4*width)) == 0 && dest != start)
           dest += (width-w)*4;
+		assert(dest <= end-4);
+		assert(src+1 <= size-4);
         memcpy(&imageptr[dest], &codedimage[src+1], 4);
         dest += 4;
       }
@@ -612,6 +642,8 @@ int vvImage::spec_RLC_decode(int start, short w, int src)
       {
         if (((dest-start-4*w)% (4*width)) == 0 && dest != start)
           dest += (width-w)*4;
+		assert(dest <= end-4);
+		assert(src+1+i*4 <= size-4);
         memcpy(&imageptr[dest], &codedimage[src+1+i*4], 4);
         dest +=4;
       }
@@ -620,30 +652,6 @@ int vvImage::spec_RLC_decode(int start, short w, int src)
   }
   size = height*width*4;
   return 0;
-}
-
-//----------------------------------------------------------------------------
-/** Writes a RLE encoded set of same pixels.
-@param sP   number of same pixels
-@param d   destination in coded image where to write
-*/
-void vvImage::put_same(short& sP, int& d)
-{
-  codedimage[d] = (uchar)(126+sP);
-  d += 5;
-  sP = 1;
-}
-
-//----------------------------------------------------------------------------
-/** Writes a RLE encoded set of different pixels.
-@param dP   number of different pixels
-@param d   destination in coded image where to write
-*/
-void vvImage::put_diff(short& dP, int& d)
-{
-  codedimage[d] = (uchar)(dP-1);
-  d += 1+4*dP;
-  dP=0;
 }
 
 //----------------------------------------------------------------------------
