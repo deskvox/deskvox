@@ -243,10 +243,9 @@ vvMatrix vvMatrix::rotate(float a, float x, float y, float z)
 {
   vvMatrix rot;                                   // rotation matrix
   float cosfa, sinfa;                             // shortcuts
-  float d;                                        // divisor
 
   // normalize vector:
-  d = (float)(sqrt(x * x + y * y + z * z));
+  float d = sqrtf(x * x + y * y + z * z);         // divisor
   if (d == 0.0) 
   {
     cerr << "vvMatrix::rotate: invalid rotation vector" << endl;
