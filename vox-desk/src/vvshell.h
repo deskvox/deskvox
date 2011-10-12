@@ -21,6 +21,8 @@
 #ifndef _VV_SHELL_H_
 #define _VV_SHELL_H_
 
+#include <vvplatform.h>
+
 // FX Toolkit:
 #include <fx.h>
 #include <fx3d.h>

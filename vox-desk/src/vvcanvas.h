@@ -22,11 +22,6 @@
 #define _VV_CANVAS_H_
 
 #include <stdlib.h>
-#ifdef WIN32
-  #include <windows.h>
-#else
-  #include <unistd.h>
-#endif
 
 // Virvo:
 #include <vvrenderer.h>

@@ -21,6 +21,7 @@
 #ifndef _VV_PREFWINDOW_H_
 #define _VV_PREFWINDOW_H_
 
+#include <vvplatform.h>
 #include <fx.h>
 
 #include <iostream>

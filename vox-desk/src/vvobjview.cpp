@@ -18,10 +18,6 @@
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifdef WIN32
-  #include <windows.h>
-#endif
-
 // OS:
 #include <iostream>
 #include <math.h>

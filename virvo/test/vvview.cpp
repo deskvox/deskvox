@@ -38,12 +38,9 @@ using std::ios;
 #include <assert.h>
 #include <math.h>
 
-#ifdef WIN32
-#ifndef HLRS
-#include <winsock2.h>
-#endif
-#include <windows.h>
-#else
+#include <virvo/vvplatform.h>
+
+#ifndef _WIN32
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>

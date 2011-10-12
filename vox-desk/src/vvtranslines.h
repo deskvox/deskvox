@@ -21,6 +21,7 @@
 #ifndef vvtranslinesFX_INCLUDED
 #define vvtranslinesFX_INCLUDED
 
+#include <vvplatform.h>
 #include <fx.h>
 
 #include <iostream>

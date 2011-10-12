@@ -21,6 +21,8 @@
 #ifndef _VV_DIALOGS_H_
 #define _VV_DIALOGS_H_
 
+#include <vvplatform.h>
+
 #include <fx.h>
 
 #include <iostream>

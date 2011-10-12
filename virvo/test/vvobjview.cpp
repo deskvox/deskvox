@@ -5,11 +5,6 @@
 // Affiliation:     Brown University, Department of Computer Science
 //****************************************************************************
 
-#ifdef _WIN32
-#include <winsock2.h>
-#include <windows.h>
-#endif
-
 #include <math.h>
 #include <string.h>
 

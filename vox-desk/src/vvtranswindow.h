@@ -21,6 +21,8 @@
 #ifndef _VV_TRANSWINDOW_H_
 #define _VV_TRANSWINDOW_H_
 
+#include <vvplatform.h>
+
 // FOX:
 #include <fx.h>
 

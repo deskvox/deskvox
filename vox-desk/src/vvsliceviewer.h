@@ -21,6 +21,8 @@
 #ifndef _VV_SLICEVIEWER_H_
 #define _VV_SLICEVIEWER_H_
 
+#include <vvplatform.h>
+
 // FOX:
 #include <fx.h>
 
