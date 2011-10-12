@@ -28,7 +28,6 @@
 #include <string.h>
 
 // OpenGL:
-#include <vvglew.h>
 #include <vvopengl.h>
 
 // Virvo:

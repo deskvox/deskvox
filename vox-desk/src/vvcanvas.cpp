@@ -24,7 +24,6 @@
 #else
   #include <unistd.h>
 #endif
-#include <vvglew.h>
 #include <vvopengl.h>
 
 #ifdef HAVE_CONFIG_H

@@ -25,7 +25,6 @@
 #endif
 
 // Virvo:
-#include <vvglew.h>
 #include <vvopengl.h>
 #include <vvvirvo.h>
 #include <vvdebugmsg.h>
