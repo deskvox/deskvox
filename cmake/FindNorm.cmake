@@ -1,23 +1,30 @@
-# no default install path exists for norm, so no standard paths given in here
+# no default install path exists for NORM, so no standard paths given in here
+# NORM needs Protokit libraries, so FindModule for Protokit is called here
 
-if (NORM_INCLUDE_DIR AND NORM_LIBRARIES)
+IF(NORM_INCLUDE_DIRS AND NORM_LIBRARIES)
 
-	# Already in cache
-	set (NORM_FOUND TRUE)
+  # Already in cache
+  set (NORM_FOUND TRUE)
 
-else (NORM_INCLUDE_DIR AND NORM_LIBRARIES)
+ELSE(NORM_INCLUDE_DIRS AND NORM_LIBRARIES)
 
-	FIND_PATH(NORM_INCLUDE_DIR normApi.h
-		DOC "The directory where normApi.h resides"
-		)
+  FIND_PACKAGE(Protokit)
 
-	FIND_LIBRARY(NORM_LIBRARIES NORM-1.4b3
+  FIND_PATH(NORM_INCLUDE_DIR normApi.h
+    DOC "The directory where normApi.h resides"
+    )
 
-		DOC "The norm-1.4b3 library"
-		)
+  FIND_LIBRARY(NORM_LIBRARY NORM-1.4b3
+    DOC "The norm-1.4b3 library" 
+    )
 
-	include(FindPackageHandleStandardArgs)
-	find_package_handle_standard_args(NORM DEFAULT_MSG NORM_LIBRARIES NORM_INCLUDE_DIR)
+  INCLUDE(FindPackageHandleStandardArgs)
+  FIND_PACKAGE_HANDLE_STANDARD_ARGS(NORM DEFAULT_MSG NORM_LIBRARY NORM_INCLUDE_DIR PROTOKIT_LIBRARY PROTOKIT_INCLUDE_DIR)
+	
+  IF(NORM_FOUND)
+    SET(NORM_LIBRARIES ${NORM_LIBRARY} ${PROTOKIT_LIBRARY} CACHE STRING "NORM and Protokit libraries")
+    SET(NORM_INCLUDE_DIRS ${NORM_INCLUDE_DIR} ${PROTOKIT_INCLUDE_DIR} CACHE STRING "NORM and Protokit include directories")
+  ENDIF(NORM_FOUND)
 
-endif (NORM_INCLUDE_DIR AND NORM_LIBRARIES)
+ENDIF(NORM_INCLUDE_DIRS AND NORM_LIBRARIES)
 

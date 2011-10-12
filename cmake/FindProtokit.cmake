@@ -1,21 +1,21 @@
 # no default install path exists for protokit, so no standard paths given in here
 
-if (PROTOKIT_INCLUDE_DIR AND PROTOKIT_LIBRARIES)
+IF(PROTOKIT_INCLUDE_DIR AND PROTOKIT_LIBRARY)
 
   # Already in cache
   set (PROTOKIT_FOUND TRUE)
 
-else (PROTOKIT_INCLUDE_DIR AND PROTOKIT_LIBRARIES)
+ELSE(PROTOKIT_INCLUDE_DIR AND PROTOKIT_LIBRARY)
 
   FIND_PATH(PROTOKIT_INCLUDE_DIR protoApp.h
-	DOC "The directory where protokit.h resides"
-	)
+    DOC "The directory where protokit.h resides"
+    )
 
-  FIND_LIBRARY(PROTOKIT_LIBRARIES Protokit
-	DOC "The Protokit library"
-	)
+  FIND_LIBRARY(PROTOKIT_LIBRARY Protokit
+    DOC "The Protokit library"
+    )
 
-  include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(PROTOKIT DEFAULT_MSG PROTOKIT_LIBRARIES PROTOKIT_INCLUDE_DIR)
+  INCLUDE(FindPackageHandleStandardArgs)
+  FIND_PACKAGE_HANDLE_STANDARD_ARGS(PROTOKIT DEFAULT_MSG PROTOKIT_LIBRARY PROTOKIT_INCLUDE_DIR)
 
-endif (PROTOKIT_INCLUDE_DIR AND PROTOKIT_LIBRARIES)
+ENDIF(PROTOKIT_INCLUDE_DIR AND PROTOKIT_LIBRARY)
