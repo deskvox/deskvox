@@ -80,7 +80,7 @@ class VIRVOEXPORT vvStingray : public vvRenderer
     virtual ~vvStingray();
     void  renderVolumeGL();
     void  updateTransferFunction();
-    bool  instantClassification();
+    bool  instantClassification() const;
 };
 #endif
 

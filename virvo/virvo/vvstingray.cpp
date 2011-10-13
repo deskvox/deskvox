@@ -260,7 +260,7 @@ void vvStingray::renderVolumeGL()
 
 //----------------------------------------------------------------------------
 /// @return true if classification is done in no time
-bool vvStingray::instantClassification()
+bool vvStingray::instantClassification() const
 {
   vvDebugMsg::msg(3, "vvStingray::instantClassification()");
   return true;

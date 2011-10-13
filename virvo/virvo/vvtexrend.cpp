@@ -1295,7 +1295,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreadedWGLContexts()
 
   for (unsigned int i = 0; i < _numThreads; ++i)
   {
-    if (EnumDisplayDevices(NULL, i, &dispDev, NULL))
+    if (EnumDisplayDevices(NULL, i, &dispDev, 0))
     {
       EnumDisplaySettings(dispDev.DeviceName, ENUM_CURRENT_SETTINGS, &devMode);
     }
@@ -5241,7 +5241,7 @@ void vvTexRend::freeClassificationStage(GLuint pixLUTName, GLuint progname[VV_FR
 {
   if (voxelType==VV_FRG_PRG)
   {
-    glDeleteProgramsARB(VV_FRAG_PROG_MAX, fragProgName);
+    glDeleteProgramsARB(VV_FRAG_PROG_MAX, progname);
   }
   if (voxelType==VV_FRG_PRG || voxelType==VV_TEX_SHD || voxelType==VV_PIX_SHD)
   {

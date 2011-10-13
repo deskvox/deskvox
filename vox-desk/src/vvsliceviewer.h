@@ -39,7 +39,6 @@ class VVSliceViewer : public FXDialogBox
   
   protected:
     VVSliceViewer(){}
-    VVSliceViewer(const VVSliceViewer&){};
   
   public:
     const static int SLICE_WIDTH;
@@ -88,6 +87,9 @@ class VVSliceViewer : public FXDialogBox
     void selectSlice(int);
     void showSlice(int);
     void updateValues();
+
+  private:
+    VVSliceViewer(const VVSliceViewer&);
 };
 
 #endif

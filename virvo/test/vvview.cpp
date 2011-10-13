@@ -2437,12 +2437,14 @@ void vvView::initARBDebugOutput()
 // those checks!
 #ifdef FREEGLUT
 #ifdef GL_ARB_debug_output
+#if !defined(__GNUC__) || !defined(_WIN32)
   if (glDebugMessageCallbackARB != NULL)
   {
     cerr << "Init callback function for GL_ARB_debug_output extension" << endl;
     glDebugMessageCallbackARB(debugCallbackARB, NULL);
   }
   else
+#endif
   {
     cerr << "glDebugMessageCallbackARB not available" << endl;
   }

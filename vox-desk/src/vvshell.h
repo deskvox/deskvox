@@ -102,7 +102,6 @@ class VVShell : public FXMainWindow
     void    initDialogs();
 
     VVShell(){}
-    VVShell(const VVShell&){};
 
   public:
     FXGLVisual*           _glvisual;        // OpenGL visual
@@ -294,6 +293,8 @@ class VVShell : public FXMainWindow
 
     // VVShell destructor
     virtual ~VVShell();
+  private:
+    VVShell(const VVShell&);
 };
 
 #endif

@@ -703,6 +703,7 @@ long VVTransferWindow::onMouseMove2D(FXObject*, FXSelector, void* ptr)
 */
 long VVTransferWindow::onMouseWheel1D(FXObject*, FXSelector sel, void* ptr)
 {
+  (void)sel;
   const float ZOOM_PER_CLICK = 0.1f;
   float diff;
   float mousePos;
@@ -1213,6 +1214,7 @@ void VVTransferWindow::drawControlPoints(vvTFCustom* cuw)
 
 void VVTransferWindow::drawSphere(float x, float y, float radius, bool isHighlighted)
 {
+  (void)isHighlighted;
   GLUquadricObj* sphereObj;
 
   glEnable(GL_LIGHT0);
@@ -1374,6 +1376,7 @@ void VVTransferWindow::drawPinLine(vvTFWidget* w)
 */
 vvTFWidget* VVTransferWindow::closestWidget(float x, float y, float z)
 {
+  (void)z;
   vvTFWidget* w = NULL;
   vvTFWidget* temp = NULL;
   float dist, xDist, yDist;     // [TF space]

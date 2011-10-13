@@ -130,6 +130,8 @@ void vvVideo::setCodec(vvVideo::Codec codec)
      codec_id = CODEC_ID_H264;
      codec_id = CODEC_ID_ROQ;
    */
+#else
+  (void)codec;
 #endif
 }
 
@@ -177,6 +179,8 @@ void vvVideo::setColorFormat(vvVideo::ColorFormat fmt)
     assert("Missing support for vvVideo color format" == NULL);
     break;
   }
+#else
+  (void)fmt;
 #endif
 }
 
@@ -498,7 +502,7 @@ int vvVideo::decodeFrame(const unsigned char* src, unsigned char* dst, int src_s
     vvDebugMsg::msg(2, "vvVideo::decodeFrame: changed codec id to ", codec_id);
     createDecoder(dec_ctx->width, dec_ctx->height);
   }
-#if LIBAVCODEC_VERSION_MAJOR > 52
+#if LIBAVCODEC_VERSION_MAJOR > 52 || (LIBAVCODEC_VERSION_MAJOR==52 && LIBAVCODEC_VERSION_MINOR>120)
   AVPacket pkt;
   av_init_packet(&pkt);
   pkt.data = (uint8_t*)src;

@@ -613,7 +613,7 @@ void vvSoftPer::findPrincipalAxis()
    int   count[3];                                // occurrences of coordinate axes as principal viewing axis (0=x-axis etc)
    int   maxCount;                                // maximum counter value
    int   i;                                       // counter
-   bool  stack[3];                                // stacking order for coordinate axes
+   bool  stack[3] = {true, true, true };          // stacking order for coordinate axes
    const vvVector3 size = vd->getSize();
 
    vvDebugMsg::msg(3, "vvSoftPer::findPrincipalAxis()");

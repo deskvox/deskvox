@@ -127,6 +127,10 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   _image->setDepthRange(drMin, drMax);
   _image->encode(_codetype, 0, h-1, 0, w-1);
   _socket->putIbrImage(_image);
+#else
+  (void)pr;
+  (void)mv;
+  (void)renderer;
 #endif
 }
 

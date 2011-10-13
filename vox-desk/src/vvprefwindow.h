@@ -93,7 +93,6 @@ class VVPreferenceWindow : public FXDialogBox
     FXTextField* _texMemoryField;
 
     VVPreferenceWindow(FXWindow*, vox::vvCanvas*);
-    VVPreferenceWindow(const VVPreferenceWindow&){};
     virtual ~VVPreferenceWindow();
     void updateValues();
     void toggleMIP();
@@ -130,6 +129,8 @@ class VVPreferenceWindow : public FXDialogBox
     long onSuppressRendering(FXObject*,FXSelector,void*);
     long onSwapEyes(FXObject*,FXSelector,void*);
     int  getRenderer() const;
+  private:
+    VVPreferenceWindow(const VVPreferenceWindow&);
 };
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

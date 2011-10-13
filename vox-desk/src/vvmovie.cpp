@@ -133,6 +133,9 @@ vvMovie::ErrorType vvMovie::parseCommand(vvTokenizer* tokenizer, vvSLList<vvMovi
   int i,j;
   vvSLList<vvMovieStep*>* rep = NULL;
 
+  for (i=0; i<vvMovieStep::MAX_NUM_PARAM; ++i)
+    par[i] = 0.f;
+
   if (tokenizer->nextToken() == vvTokenizer::VV_EOF) return VV_EOF;
 
   if (strcmp(tokenizer->sval, "trans") == 0)
@@ -327,7 +330,7 @@ bool vvMovie::setStep(int step)
   int timestep = 0;                               // volume dataset index
   int i;
   bool done;
-  float peak[2];                                  // peak position and width
+  float peak[2] = {0.f, 0.f};                     // peak position and width
   bool tfChanged = false;
 
   if (steps==NULL || step<0 || steps->count()==0) return false;

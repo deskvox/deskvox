@@ -1433,7 +1433,6 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
   int f;                                          // counter for frames
   int i, x, y, z, c;                              // counters
   int frameSize;                                  // size of a frame in bytes
-  int identifier;                                 // ID of string identifier in file header
   bool done;
   bool error;
   bool oldformat = false;
@@ -1464,6 +1463,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
   done = error = false;
   while (!done)
   {
+    int identifier = -1; // ID of string identifier in file header
     // Read identifier:
     ttype = tokenizer->nextToken();
     if (ttype != vvTokenizer::VV_WORD)
@@ -1555,7 +1555,11 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
         case 12: vd->pos[0]  = tokenizer->nval; break;
         case 13: vd->pos[1]  = tokenizer->nval; break;
         case 14: vd->pos[2]  = tokenizer->nval; break;
-        default: break;
+        case -1:
+        default:
+          cerr << "No identifier for number" << endl;
+          error = done = true;
+          break;
       }
     }
     else error = done = true;

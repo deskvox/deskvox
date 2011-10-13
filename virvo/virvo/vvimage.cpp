@@ -948,12 +948,18 @@ int vvImage::createCodecs()
 int vvImage::snappyEncode(const uchar* in, uchar* out, int size, int space, int symbol_size)
 {
 #ifdef HAVE_SNAPPY
+  (void)symbol_size;
   if(snappy::MaxCompressedLength(size) > space)
     return -1;
   size_t compressed = 0;
   snappy::RawCompress((const char *)in, size, (char *)out, &compressed);
   return compressed;
 #else
+  (void)in;
+  (void)out;
+  (void)size;
+  (void)space;
+  (void)symbol_size;
   return -1;
 #endif
 }
@@ -964,10 +970,17 @@ int vvImage::snappyEncode(const uchar* in, uchar* out, int size, int space, int 
 int vvImage::snappyDecode(const uchar* in, uchar* out, int size, int space, int symbol_size)
 {
 #ifdef HAVE_SNAPPY
+  (void)space;
+  (void)symbol_size;
   if(!snappy::RawUncompress((const char *)in, size, (char *)out))
     return -1;
   return 0;
 #else
+  (void)in;
+  (void)out;
+  (void)size;
+  (void)space;
+  (void)symbol_size;
   return -1;
 #endif
 }

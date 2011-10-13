@@ -136,6 +136,8 @@ void vvRenderContext::init(const char* displayName)
     cerr << "Couldn't open X display" << endl;
     _initialized = false;
   }
+#else
+  (void)displayName;
 #endif
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

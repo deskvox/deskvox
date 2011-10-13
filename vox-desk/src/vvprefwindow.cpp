@@ -189,7 +189,7 @@ long VVPreferenceWindow::onEyeChange(FXObject*,FXSelector,void*)
   return 1;
 }
 
-long VVPreferenceWindow::onStereoChange(FXObject*,FXSelector,void* ptr)
+long VVPreferenceWindow::onStereoChange(FXObject*,FXSelector,void*)
 {
   vvCanvas::StereoType mode = vvCanvas::MONO;
 
@@ -416,7 +416,7 @@ long VVPreferenceWindow::onInterpolationSelect(FXObject*,FXSelector,void* ptr)
   return 1;
 }
 
-long VVPreferenceWindow::onShowBricksSelect(FXObject*, FXSelector, void* ptr)
+long VVPreferenceWindow::onShowBricksSelect(FXObject*, FXSelector, void*)
 {
   vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
 
@@ -429,7 +429,7 @@ long VVPreferenceWindow::onShowBricksSelect(FXObject*, FXSelector, void* ptr)
   return 1;
 }
 
-long VVPreferenceWindow::onComputeBricksizeSelect(FXObject*, FXSelector, void* ptr)
+long VVPreferenceWindow::onComputeBricksizeSelect(FXObject*, FXSelector, void*)
 {
   vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
 

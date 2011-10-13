@@ -286,6 +286,15 @@ unsigned char* vvClient::getRegionHighLevel(int lod, int x0, int y0, int x1, int
 
   CoUninitialize();
 #endif
+#else
+  (void)lod;
+  (void)x0;
+  (void)y0;
+  (void)x1;
+  (void)y1;
+  (void)startSlice;
+  (void)endSlice;
+  (void)id;
 #endif
   
   return ptr;
@@ -457,6 +466,17 @@ unsigned char* vvClient::getRegionLowLevel(int lod, int x0, int y0, int x1, int 
 
   CoUninitialize();
 #endif
+#else
+  (void)lod;
+  (void)x0;
+  (void)y0;
+  (void)x1;
+  (void)y1;
+  (void)slice0;
+  (void)slice1;
+  (void)dataset_id;
+  (void)server;
+  (void)ns;
 #endif
 
   return ptr;

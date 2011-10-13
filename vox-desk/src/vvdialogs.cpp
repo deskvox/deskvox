@@ -1607,6 +1607,7 @@ void VVMovieDialog::setMovieStep(int s)
 
 long VVMovieDialog::onCmdSize(FXObject*,FXSelector,void *ptr)
 {
+  (void)ptr;
   updateValues();
   return 1;
 }

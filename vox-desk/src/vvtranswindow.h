@@ -225,7 +225,6 @@ class VVTransferWindow : public FXDialogBox
     bool _isHistogramDirty; ///< true if histogram needs to be recomputed
 
     VVTransferWindow(){}
-    VVTransferWindow(const VVTransferWindow&){};
     void initGL();
     void updateLabels();
     void computeHistogram();
@@ -259,6 +258,8 @@ class VVTransferWindow : public FXDialogBox
     float realbin2hdr(float);
     void makeColorBar(int, uchar*);
     void makeAlphaTexture(int, int, uchar*);
+  private:
+    VVTransferWindow(const VVTransferWindow&);
 };
     
 #endif
