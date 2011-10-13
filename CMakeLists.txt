@@ -16,6 +16,10 @@ IF(NOT DESKVOX_CONFIGURED_ONCE)
   # Defaults adapted on the first configure run, avoid adapting values again
   SET(DESKVOX_CONFIGURED_ONCE 1 CACHE INTERNAL "DeskVOX was configured at least once.")
 
+  IF(WIN32)
+    SET(HOST_WIN32 ${WIN32} CACHE BOOL "Whether uild system is a Windows system." FORCE)
+  ENDIF(WIN32)
+
   IF(CMAKE_COMPILER_IS_GNUCXX)
     SET(WARN_FLAGS "${WARN_FLAGS} -Wall -Wextra -Wno-sign-compare")
     IF(NOT APPLE)
