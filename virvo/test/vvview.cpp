@@ -155,6 +155,7 @@ vvView::vvView()
   testSuiteFileName     = NULL;
   showBricks            = false;
   recordMode            = false;
+  playMode              = false;
   matrixFile            = NULL;
   roiEnabled            = false;
   sphericalROI          = false;
@@ -2545,8 +2546,12 @@ void vvView::renderQuad() const
 
 void vvView::renderMotion() const
 {
-  FILE* fp;
-  fp = fopen("motion.txt", "rb");
+  FILE* fp = fopen("motion.txt", "rb");
+  if(!fp)
+  {
+    std::cerr << "Could not open \"motion.txt\" for reading" << std::endl;
+	return;
+  }
 
   while (ds->ov->loadMV(fp))
   {
