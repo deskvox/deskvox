@@ -814,6 +814,12 @@ void vvView::createRenderer(std::string type, std::string options,
     options += slaveNames[0];
   }
 
+  if(!slaveFileNames.empty())
+  {
+    options += ",filename=";
+    options += slaveFileNames[0];
+  }
+
   if(!slavePorts.empty())
   {
     options += ",port=";

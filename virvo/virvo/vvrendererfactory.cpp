@@ -137,6 +137,7 @@ struct Options
   std::string voxeltype;
   std::string server;
   int port;
+  std::string filename;
 
   Options() : voxeltype("default"), port(-1) {}
 };
@@ -172,6 +173,10 @@ bool parseOptions(std::string str, Options *opt)
         else if(option == "port")
         {
           opt->port = atoi(value.c_str());
+        }
+        else if(option == "filename")
+        {
+          opt->filename = value;
         }
         else
         {
@@ -239,9 +244,9 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, co
   case vvRenderer::GENERIC:
     return new vvRenderer(vd, rs);
   case vvRenderer::REMOTE_IMAGE:
-    return new vvImageClient(vd, rs, options.server.c_str(), options.port);
+    return new vvImageClient(vd, rs, options.server.c_str(), options.port, options.filename.c_str());
   case vvRenderer::REMOTE_IBR:
-    return new vvIbrClient(vd, rs, options.server.c_str(), options.port);
+    return new vvIbrClient(vd, rs, options.server.c_str(), options.port, options.filename.c_str());
   case vvRenderer::SOFTSW:
     return new vvSoftShearWarp(vd, rs);
 #ifdef HAVE_VOLPACK
