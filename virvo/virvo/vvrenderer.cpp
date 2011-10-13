@@ -319,7 +319,7 @@ float vvRenderState::getParameter(const ParameterType param) const
   case VV_USE_IBR:
     return _useIbr;
   case VV_IBR_MODE:
-    return _ibrMode;
+    return static_cast<float>(_ibrMode);
   default:
     return -VV_FLT_MAX;
     break;

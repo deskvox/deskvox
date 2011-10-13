@@ -202,7 +202,7 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     void  setViewingDirection(const vvVector3*);
     void  setObjectDirection(const vvVector3*);
     void  setParameter(ParameterType, float);
-    float getParameter(const ParameterType) const;
+    float getParameter(ParameterType) const;
     static bool isSupported(GeometryType);
     GeometryType getGeomType();
     VoxelType getVoxelType();

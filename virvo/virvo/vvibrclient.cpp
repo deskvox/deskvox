@@ -225,10 +225,10 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   _shader->enable();
 
-  _shader->setParameter1f("vpWidth", _viewportWidth);
-  _shader->setParameter1f("vpHeight", _viewportHeight);
-  _shader->setParameter1f("imageWidth", _imgVp[2]);
-  _shader->setParameter1f("imageHeight", _imgVp[3]);
+  _shader->setParameter1f("vpWidth", static_cast<float>(_viewportWidth));
+  _shader->setParameter1f("vpHeight", static_cast<float>(_viewportHeight));
+  _shader->setParameter1f("imageWidth", static_cast<float>(_imgVp[2]));
+  _shader->setParameter1f("imageHeight", static_cast<float>(_imgVp[3]));
   _shader->setParameterTex2D("rgbaTex", _rgbaTex);
   _shader->setParameterTex2D("depthTex", _depthTex);
   _shader->setParameter1f("splitX", splitX);
@@ -300,8 +300,8 @@ void vvIbrClient::initIbrFrame()
   {
     for(int x = 0; x<w; x++)
     {
-      points[y*w*3+x*3]   = x;
-      points[y*w*3+x*3+1] = y;
+      points[y*w*3+x*3]   = static_cast<float>(x);
+      points[y*w*3+x*3+1] = static_cast<float>(y);
       points[y*w*3+x*3+2] = 0.f;
     }
   }

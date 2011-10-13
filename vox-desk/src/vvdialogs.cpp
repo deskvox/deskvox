@@ -2220,7 +2220,7 @@ void VVGammaDialog::updateValues()
 
   if (_canvas->_renderer) 
   { 
-    bool gamma = _canvas->_renderer->getParameter(vvRenderState::VV_GAMMA_CORRECTION);
+    bool gamma = _canvas->_renderer->getParameter(vvRenderState::VV_GAMMA_CORRECTION) != 0.f;
     handle(this, FXSEL(SEL_COMMAND, ID_GAMMA), (void*)gamma);
   }
 }
@@ -2500,7 +2500,7 @@ void VVOpacityDialog::updateValues()
     b  = _canvas->_renderer->getOpacityWeight(vvRenderer::VV_BLUE);
     a  = _canvas->_renderer->getOpacityWeight(vvRenderer::VV_ALPHA);
 
-    bool enabled = _canvas->_renderer->getParameter(vvRenderState::VV_OPACITY_WEIGHTS);
+    bool enabled = _canvas->_renderer->getParameter(vvRenderState::VV_OPACITY_WEIGHTS) != 0.f;
     handle(this, FXSEL(SEL_COMMAND, ID_ENABLE), (void*)enabled);
   }
 
