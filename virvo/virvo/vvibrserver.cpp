@@ -82,8 +82,8 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 
   rayRend->setDepthRange(drMin, drMax);
 
-  int dp = rayRend->getParameter(vvRenderer::VV_IBR_DEPTH_PREC);
-  int up = rayRend->getParameter(vvRenderer::VV_IBR_UNCERTAINTY_PREC);
+  int dp = static_cast<int>(rayRend->getParameter(vvRenderer::VV_IBR_DEPTH_PREC));
+  int up = static_cast<int>(rayRend->getParameter(vvRenderer::VV_IBR_UNCERTAINTY_PREC));
   rayRend->compositeVolume();
 
   // Fetch rendered image

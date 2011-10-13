@@ -1246,9 +1246,9 @@ float vvRayRend::getParameter(const ParameterType param) const
   case vvRenderer::VV_TERMINATEEARLY:
     return _earlyRayTermination ? 1.f : 0.f;
   case vvRenderer::VV_IBR_DEPTH_PREC:
-    return _depthPrecision;
+    return static_cast<float>(_depthPrecision);
   case vvRenderer::VV_IBR_UNCERTAINTY_PREC:
-    return _uncertaintyPrecision;
+    return static_cast<float>(_uncertaintyPrecision);
   default:
     return vvRenderer::getParameter(param);
   }

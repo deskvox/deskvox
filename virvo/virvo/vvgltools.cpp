@@ -379,7 +379,9 @@ vvVector3 vvGLTools::project(const vvVector3& obj)
   gluProject(obj[0], obj[1], obj[2],
              modelview, projection, viewport.values,
              &winX, &winY, &winZ);
-  return vvVector3(winX, winY, winZ);
+  return vvVector3(static_cast<float>(winX),
+                   static_cast<float>(winY),
+                   static_cast<float>(winZ));
 }
 
 //----------------------------------------------------------------------------
@@ -400,7 +402,9 @@ vvVector3 vvGLTools::unProject(const vvVector3& win)
   gluProject(win[0], win[1], win[2],
              modelview, projection, viewport.values,
              &objX, &objY, &objZ);
-  return vvVector3(objX, objY, objZ);
+  return vvVector3(static_cast<float>(objX),
+                   static_cast<float>(objY),
+                   static_cast<float>(objZ));
 }
 
 //============================================================================

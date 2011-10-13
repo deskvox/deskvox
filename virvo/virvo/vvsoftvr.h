@@ -42,17 +42,17 @@ class vvSoftImg;
   <PRE>
   Principal Axis    Coordinate System    Permutation Matrix
   ----------------------------------------------------------
-z                / 0 1 0 0 \ 
+z                / 0 1 0 0 \
 |               |  0 0 1 0  |
 X Axis              |___y           |  1 0 0 0  |
 /                 \ 0 0 0 1 /
 x
-x                / 0 0 1 0 \ 
+x                / 0 0 1 0 \
 |               |  1 0 0 0  |
 Y Axis              |___z           |  0 1 0 0  |
 /                 \ 0 0 0 1 /
 y
-y                / 1 0 0 0 \ 
+y                / 1 0 0 0 \
 |               |  0 1 0 0  |
 Z Axis              |___x           |  0 0 1 0  |
 /                 \ 0 0 0 1 /

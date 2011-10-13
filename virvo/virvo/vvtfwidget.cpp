@@ -440,6 +440,7 @@ void vvTFPyramid::fromString(const std::string& str)
   _name = new char[tokens[1].length()+1];
   strcpy(_name, tokens[1].c_str());
 
+#define atof(x) static_cast<float>(atof(x))
   _pos[0] = atof(tokens[2].c_str());
   _pos[1] = atof(tokens[3].c_str());
   _pos[2] = atof(tokens[4].c_str());
@@ -459,6 +460,7 @@ void vvTFPyramid::fromString(const std::string& str)
   _ownColor = (tokens[14].compare("1") == 0);
 
   _opacity = atof(tokens[15].c_str());
+#undef atof
 }
 
 float vvTFPyramid::getOpacity(float x, float y, float z)
@@ -688,6 +690,7 @@ void vvTFColor::fromString(const std::string& str)
   _name = new char[tokens[1].length()+1];
   strcpy(_name, tokens[1].c_str());
 
+#define atof(x) static_cast<float>(atof(x))
   _pos[0] = atof(tokens[2].c_str());
   _pos[1] = atof(tokens[3].c_str());
   _pos[2] = atof(tokens[4].c_str());
@@ -695,6 +698,7 @@ void vvTFColor::fromString(const std::string& str)
   _col[0] = atof(tokens[5].c_str());
   _col[1] = atof(tokens[6].c_str());
   _col[2] = atof(tokens[7].c_str());
+#undef atof
 }
 
 //============================================================================

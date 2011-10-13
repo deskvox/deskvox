@@ -1017,8 +1017,8 @@ void vvTexMultiRend::enableLUTMode(vvShaderProgram* glslShader)
 
   //glslShader->setValue(program, "numChan", 1, &(vd->chan));
   //_alphaMode == 0 ? &maxWeight : &sumWeight;
-  glslShader->setParameter1f("normAlpha", _alphaMode);
-  glslShader->setParameter1f("alphaMode", _alphaMode);
+  glslShader->setParameter1i("normAlpha", _alphaMode);
+  glslShader->setParameter1i("alphaMode", _alphaMode);
 }
 
 

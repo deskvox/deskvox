@@ -525,17 +525,18 @@ void vvTestSuite::initHeader(char* str, const int col)
 
 void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const char* headerName)
 {
+#define atof(x) static_cast<float>(atof(x))
   if (strcmp(headerName, "BRICKSIZE_X") == 0)
   {
-    test->setBrickDimX(atoi(str));
+    test->setBrickDimX(atof(str));
   }
   else if (strcmp(headerName, "BRICKSIZE_Y") == 0)
   {
-    test->setBrickDimY(atoi(str));
+    test->setBrickDimY(atof(str));
   }
   else if (strcmp(headerName, "BRICKSIZE_Z") == 0)
   {
-    test->setBrickDimZ(atoi(str));
+    test->setBrickDimZ(atof(str));
   }
   else if (strcmp(headerName, "ITERATIONS") == 0)
   {
@@ -544,6 +545,7 @@ void vvTestSuite::initValue(vvPerformanceTest* test, char* str, const char* head
   else if (strcmp(headerName, "QUALITY") == 0)
   {
     test->setQuality(atof(str));
+#undef atof
   }
   else if (strcmp(headerName, "GEOMTYPE") == 0)
   {
