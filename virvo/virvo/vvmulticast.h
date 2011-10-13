@@ -31,7 +31,10 @@
 #include "vvinttypes.h"
 
 #include <string>
-#include <normApi.h>
+
+typedef const void* NormInstanceHandle;
+typedef const void* NormSessionHandle;
+typedef const void* NormObjectHandle;
 
 /** Wrapper class for NormAPI.
   This class can be used for lossless multicast communication.

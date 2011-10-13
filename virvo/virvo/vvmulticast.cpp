@@ -29,6 +29,7 @@
 #include "vvmulticast.h"
 #include "vvsocketmonitor.h"
 
+#include <normApi.h>
 #include <stdlib.h>
 #include <sys/select.h>
 
@@ -167,6 +168,7 @@ int vvMulticast::read(const uint size, uchar*& data, const double timeout)
         }
       }
     }
+    if(bytesReceived >= size) keepGoing = false;
   }
   delete monitor;
   data = (uchar*)NormDataDetachData(theEvent.object);
