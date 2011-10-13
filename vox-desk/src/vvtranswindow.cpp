@@ -475,8 +475,6 @@ long VVTransferWindow::onChngPickerColor(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onChngPyramid(FXObject*,FXSelector,void*)
 {
-  vvTFPyramid* pw;
-
   if(!_currentWidget)
   {
     _pTopXLabel->setText(FXStringFormat("%.5g", _pTopXSlider->getValue()));
@@ -484,7 +482,8 @@ long VVTransferWindow::onChngPyramid(FXObject*,FXSelector,void*)
     _pMaxLabel->setText(FXStringFormat("%.5g",_pMaxSlider->getValue()));
     return 1;
   }
-  assert((pw=dynamic_cast<vvTFPyramid*>(_currentWidget))!=NULL);
+  vvTFPyramid *pw=dynamic_cast<vvTFPyramid*>(_currentWidget);
+  assert(pw);
   pw->_top[0] = normd2datad(_pTopXSlider->getValue());
   pw->_bottom[0] = normd2datad(_pBottomXSlider->getValue());
   pw->_opacity = _pMaxSlider->getValue();
@@ -498,15 +497,14 @@ long VVTransferWindow::onChngPyramid(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onChngBell(FXObject*,FXSelector,void*)
 {
-  vvTFBell* bw;
-
   if(!_currentWidget)
   {
     _bWidthLabel->setText(FXStringFormat("%.5g", _bWidthSlider->getValue()));
     _bMaxLabel->setText(FXStringFormat("%.5g", _bMaxSlider->getValue()));
     return 1;
   }
-  assert((bw=dynamic_cast<vvTFBell*>(_currentWidget))!=NULL);
+  vvTFBell *bw=dynamic_cast<vvTFBell*>(_currentWidget);
+  assert(bw);
   bw->_size[0] = _bWidthSlider->getValue();
   bw->_opacity = _bMaxSlider->getValue();
   _bWidthLabel->setText(FXStringFormat("%.5g", bw->_size[0]));
@@ -518,14 +516,13 @@ long VVTransferWindow::onChngBell(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onChngSkip(FXObject*,FXSelector,void*)
 {
-  vvTFSkip* sw;
-
   if(!_currentWidget) 
   {
     _sWidthLabel->setText(FXStringFormat("%.2g", _sWidthSlider->getValue()));
     return 1;
   }
-  assert((sw=dynamic_cast<vvTFSkip*>(_currentWidget))!=NULL);
+  vvTFSkip *sw=dynamic_cast<vvTFSkip*>(_currentWidget);
+  assert(sw);
   sw->_size[0] = normd2datad(_sWidthSlider->getValue());
   _sWidthLabel->setText(FXStringFormat("%.5g", sw->_size[0]));
   drawTF();
@@ -535,14 +532,13 @@ long VVTransferWindow::onChngSkip(FXObject*,FXSelector,void*)
 
 long VVTransferWindow::onChngCustomWidth(FXObject*,FXSelector,void*)
 {
-  vvTFCustom* cuw;
-
   if(!_currentWidget) 
   {
     _cWidthLabel->setText(FXStringFormat("%.2g", _cWidthSlider->getValue()));
     return 1;
   }
-  assert((cuw=dynamic_cast<vvTFCustom*>(_currentWidget))!=NULL);
+  vvTFCustom *cuw=dynamic_cast<vvTFCustom*>(_currentWidget);
+  assert(cuw);
   cuw->setSize(normd2datad(_cWidthSlider->getValue()));
   _cWidthLabel->setText(FXStringFormat("%.2g", cuw->_size[0]));
   drawTF();
