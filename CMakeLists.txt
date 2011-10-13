@@ -12,6 +12,23 @@ IF(MSVC)
   ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 ENDIF(MSVC)
 
+IF(NOT DESKVOX_CONFIGURED_ONCE)
+  # Defaults adapted on the first configure run, avoid adapting values again
+  SET(DESKVOX_CONFIGURED_ONCE 1 CACHE INTERNAL "DeskVOX was configured at least once.")
+
+  IF(CMAKE_COMPILER_IS_GNUCXX)
+    SET(WARN_FLAGS "${WARN_FLAGS} -Wall -Wextra -Wno-sign-compare")
+    IF(NOT APPLE)
+      SET(WARN_FLAGS "${WARN_FLAGS} -Woverloaded-virtual")
+    ENDIF(NOT APPLE)
+    SET(WARN_FLAGS "${WARN_FLAGS} -Werror -Wno-error=overloaded-virtual -Wno-error=missing-field-initializers")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARN_FLAGS}"
+        CACHE STRING "Flags used by the compiler during all build types." FORCE
+        )
+  ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+ENDIF(NOT DESKVOX_CONFIGURED_ONCE)
+
+
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 SET(VIRVO_DIR ${PROJECT_SOURCE_DIR}/virvo)
