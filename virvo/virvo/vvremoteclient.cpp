@@ -112,10 +112,10 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
     delete serverName;
     _socket->no_nagle();
     _socket->putInt32(_type);
-    _socket->putBool(_slaveFileName!=NULL);
 
-    if (_slaveFileName)
+    if (_slaveFileName && _slaveFileName[0])
     {
+      _socket->putBool(true);
       _socket->putFileName(_slaveFileName);
       _socket->getVolumeAttributes(vd);
       vvTransFunc tf;
@@ -127,6 +127,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
     }
     else
     {
+      _socket->putBool(false);
       switch (_socket->putVolume(vd))
       {
         case vvSocket::VV_OK:
