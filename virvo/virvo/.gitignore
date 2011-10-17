@@ -1,7 +1,0 @@
-.deps
-vvconfig.h.in
-vvconfig.h
-stamp-h1
-*.o
-*.lo
-libvirvo.a
