@@ -5,7 +5,6 @@
 // Affiliation:     Brown University, Department of Computer Science
 //****************************************************************************
 
-#define IMAGESPACE_APPROX
 #ifndef HLRS
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
