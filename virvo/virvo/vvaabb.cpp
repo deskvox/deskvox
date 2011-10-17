@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 #include "vvaabb.h"
 #include "vvglew.h"

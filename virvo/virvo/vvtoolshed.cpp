@@ -32,7 +32,7 @@
 #include <math.h>
 #include <assert.h>
 
-#ifndef _WIN32
+#if defined(__linux__) || defined(__APPLE__)
 #include <execinfo.h>
 #endif
 
@@ -2793,7 +2793,7 @@ char* vvToolshed::stripPort(const char* url)
 
 void vvToolshed::printBacktrace()
 {
-#ifndef _WIN32
+#if defined(__linux__) || defined(__APPLE__)
   const int MaxFrames = 16;
 
   void* buffer[MaxFrames] = { 0 };
