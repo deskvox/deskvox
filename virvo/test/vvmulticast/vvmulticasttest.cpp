@@ -46,6 +46,11 @@ int main(int argc, char** argv)
     cout << "Sender-Mode" << endl;
     vvMulticast* foo = new vvMulticast("224.1.2.3", 50096, vvMulticast::VV_SENDER);
 
+    if(NULL == argv[2])
+    {
+      cout << "Please type in a text to send and try again!" << endl;
+      return 1;
+    }
     string footext = string(argv[2]);
     footext.resize(200, ' ');
 
