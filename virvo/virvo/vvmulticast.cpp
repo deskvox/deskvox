@@ -67,7 +67,7 @@ vvMulticast::~vvMulticast()
   NormDestroyInstance(_instance);
 }
 
-bool vvMulticast::write(const uchar* bytes, const uint size, const double timeout)
+ssize_t vvMulticast::write(const uchar* bytes, const uint size, const double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::write()");
   _object = NormDataEnqueue(_session, (char*)bytes, size);
@@ -108,7 +108,7 @@ bool vvMulticast::write(const uchar* bytes, const uint size, const double timeou
       case NORM_LOCAL_SENDER_CLOSED:
       case NORM_TX_OBJECT_SENT:
         vvDebugMsg::msg(3, "vvMulticast::write() NORM_TX_FLUSH_COMPLETED: transfer completed.");
-        return true;
+        return NormObjectGetSize(theEvent.object) - NormObjectGetBytesPending(theEvent.object);
         break;
       default:
         {
@@ -122,7 +122,7 @@ bool vvMulticast::write(const uchar* bytes, const uint size, const double timeou
   }
 }
 
-int vvMulticast::read(const uint size, uchar*& data, const double timeout)
+ssize_t vvMulticast::read(const uint size, uchar*& data, const double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::read()");
   NormDescriptor normDesc = NormGetDescriptor(_instance);
