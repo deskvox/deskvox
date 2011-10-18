@@ -55,7 +55,7 @@ using std::ios;
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>
 #include <virvo/vvprintgl.h>
-#include <virvo/vvstopwatch.h>
+#include <virvo/vvclock.h>
 #include <virvo/vvrendercontext.h>
 //#include <virvo/vvclusterclient.h>
 //#include <virvo/vvclusterserver.h>

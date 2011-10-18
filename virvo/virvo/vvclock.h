@@ -18,12 +18,33 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_STOPWATCH_H_
-#define _VV_STOPWATCH_H_
+#ifndef _VV_CLOCK_H_
+#define _VV_CLOCK_H_
 
 #include "vvplatform.h"
 
 #include "vvexport.h"
+
+/** static clock function returning current time in seconds
+  @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
+  */
+class VIRVOEXPORT vvClock
+{
+public:
+  static double getTime();
+
+private:
+  static void initClock();
+
+  static bool initialized;
+#ifdef WIN32
+  static clock_t baseTime;                             ///< system time
+  static bool useQueryPerformance;                     ///< true=use QueryPerformance API
+  static LARGE_INTEGER baseTimeQP;                     ///< system time when using QueryPerformance API
+#else
+  static timeval baseTime;                             ///< system time when stop watch was triggered last
+#endif
+};
 
 /** System independent implementation of a stop watch.
   The stop watch can be started, stopped, reset, and its time
@@ -51,14 +72,7 @@ class VIRVOEXPORT vvStopwatch
 {
   private:
 
-#ifdef WIN32
-    clock_t baseTime;                             ///< system time when stop watch was triggered last
-    bool useQueryPerformance;                     ///< true=use QueryPerformance API
-    LARGE_INTEGER baseTimeQP;                     ///< base time when using QueryPerformance API
-    LARGE_INTEGER freq;                           ///< frequency if QueryPerformance API is used
-#else
-    timeval baseTime;                             ///< system time when stop watch was triggered last
-#endif
+    float baseTime;
     float lastTime;
 
   public:

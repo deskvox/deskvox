@@ -30,7 +30,7 @@ using std::endl;
 #include "vvvecmath.h"
 #include "vvsoftper.h"
 #include "vvsoftimg.h"
-#include "vvstopwatch.h"
+#include "vvclock.h"
 #include "vvvoldesc.h"
 #include "vvtoolshed.h"
 

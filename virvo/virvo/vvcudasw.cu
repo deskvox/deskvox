@@ -27,7 +27,7 @@
 #include <cuda_gl_interop.h>
 #include "vvdebugmsg.h"
 #include "vvvecmath.h"
-#include "vvstopwatch.h"
+#include "vvclock.h"
 #include "vvcuda.h"
 #include "vvcudaimg.h"
 #include "vvcudasw.h"

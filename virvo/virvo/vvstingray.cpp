@@ -31,7 +31,7 @@
 
 // Virvo:
 #include "vvdebugmsg.h"
-#include "vvstopwatch.h"
+#include "vvclock.h"
 #include "vvstingray.h"
 
 //----------------------------------------------------------------------------

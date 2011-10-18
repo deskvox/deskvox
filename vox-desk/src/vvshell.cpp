@@ -34,7 +34,7 @@
 #include "vvcanvas.h"
 #include "vvmovie.h"
 #include "vvfileio.h"
-#include "vvstopwatch.h"
+#include "vvclock.h"
 #ifdef HAVE_SPACE_TRAVELER
   #include "vvtraveler.h"
 #endif

@@ -55,7 +55,7 @@
 #include "../vvgltools.h"
 #include "../vvshaderfactory.h"
 #include "../vvsphere.h"
-#include "../vvstopwatch.h"
+#include "../vvclock.h"
 #include "../vvprintgl.h"
 #include "vvtexmultirendmngr.h"
 

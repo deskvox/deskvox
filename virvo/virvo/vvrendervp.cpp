@@ -18,7 +18,7 @@ using std::setprecision;
 #include "vvrendervp.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
-#include "vvstopwatch.h"
+#include "vvclock.h"
 #include "vvvoldesc.h"
 #include "vvgltools.h"
 #include "vvswitchrenderer.impl.h"

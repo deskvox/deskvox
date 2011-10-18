@@ -38,7 +38,7 @@
 #include "vvtoolshed.h"
 #include "vvvecmath.h"
 #include "vvsllist.h"
-#include "vvstopwatch.h"
+#include "vvclock.h"
 #include "vvvoldesc.h"
 
 #ifdef __sun

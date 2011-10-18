@@ -32,7 +32,7 @@
 #include <vvtoolshed.h>
 #include <vvgltools.h>
 #include <vvtexrend.h>
-#include <vvstopwatch.h>
+#include <vvclock.h>
 #include <vvfileio.h>
 #include <vvstingray.h>
 #include <vvsoftsw.h>

@@ -29,7 +29,7 @@ using std::endl;
 #include <assert.h>
 #include "vvdebugmsg.h"
 #include "vvvecmath.h"
-#include "vvstopwatch.h"
+#include "vvclock.h"
 #include "vvsoftimg.h"
 #include "vvvoldesc.h"
 #include "vvsoftpar.h"

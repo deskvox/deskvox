@@ -36,7 +36,7 @@ using std::endl;
 #include "vvvecmath.h"
 #include "vvsoftimg.h"
 #include "vvsoftvr.h"
-#include "vvstopwatch.h"
+#include "vvclock.h"
 #include "vvimage.h"
 #include "vvgltools.h"
 #include "vvvoldesc.h"

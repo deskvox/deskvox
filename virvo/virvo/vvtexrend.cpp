@@ -50,7 +50,7 @@
 #include "vvgltools.h"
 #include "vvsphere.h"
 #include "vvtexrend.h"
-#include "vvstopwatch.h"
+#include "vvclock.h"
 #include "vvoffscreenbuffer.h"
 #include "vvprintgl.h"
 #include "vvshaderfactory.h"

@@ -26,7 +26,7 @@
 #include <cuda_runtime_api.h>
 #include "vvdebugmsg.h"
 #include "vvvecmath.h"
-#include "vvstopwatch.h"
+#include "vvclock.h"
 #include "vvcuda.h"
 #include "vvcudautils.h"
 #include "vvcudatransfunc.h"

@@ -49,6 +49,7 @@ SET(VIRVO_HEADERS
   vvcgprogram.h
   #vvclusterclient.h
   #vvclusterserver.h
+  vvclock.h
   vvcolor.h
   vvcuda.h
   vvcudaimg.h
@@ -101,7 +102,6 @@ SET(VIRVO_HEADERS
   vvsoftsw.h
   vvsphere.h
   vvstingray.h
-  vvstopwatch.h
   vvtexrend.h
   vvtfwidget.h
   vvtokenizer.h
@@ -125,6 +125,7 @@ SET(VIRVO_SOURCES
   vvcgprogram.cpp
   #vvclusterclient.cpp
   #vvclusterserver.cpp
+  vvclock.cpp
   vvcolor.cpp
   vvcuda.cpp
   vvcudaimg.cpp
@@ -165,7 +166,6 @@ SET(VIRVO_SOURCES
   vvsoftsw.cpp
   vvsphere.cpp
   vvstingray.cpp
-  vvstopwatch.cpp
   vvtexrend.cpp
   vvtfwidget.cpp
   vvtokenizer.cpp
