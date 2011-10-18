@@ -59,7 +59,7 @@ vvImage::vvImage(short h, short w, uchar* image)
   videosize = 0;
   size = height*width*4;
   codetype = VV_RAW;
-  codedimage = new uchar[size];
+  codedimage = new uchar[size*2];
   videoimageptr = new uchar[width*height*6];
   videocodedimage = new uchar[width*height*6+8];
   tmpimage = new uchar[width*height];
@@ -134,17 +134,13 @@ void vvImage::setNewImage(short h, short w, uchar* image)
   imageptr = image;
   size = height*width*4;
   codetype = VV_RAW;
-  if (codedimage != 0)
-    delete[] codedimage;
-  codedimage = new uchar[size];
-  if (videoimageptr !=0)
-    delete [] videoimageptr;
+  delete[] codedimage;
+  codedimage = new uchar[size*2];
+  delete [] videoimageptr;
   videoimageptr = new uchar[width*height*6];
-  if (videocodedimage != 0)
-    delete [] videocodedimage;
+  delete [] videocodedimage;
   videocodedimage = new uchar[width*height*6+8];
-  if (tmpimage != 0)
-    delete [] tmpimage;
+  delete [] tmpimage;
   tmpimage = new uchar[width*height];
 }
 
