@@ -88,7 +88,6 @@ class VIRVOEXPORT vvImage
     void setCodeType(CodeType ct);
     void setSize(int);
     void setVideoSize(int);
-    void setImagePtr(uchar*);
     void setNewImagePtr(uchar*);
     void setVideoStyle(int);
     void setVideoQuant(int);

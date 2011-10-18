@@ -100,31 +100,18 @@ vvImage::~vvImage()
 {
   if (t == VV_CLIENT)
   {
-    if (imageptr == codedimage)
+    if (imageptr != codedimage)
     {
-      if (imageptr != 0)
-        delete[] imageptr;
-    }
-    else
-    {
-      if (imageptr != 0)
-        delete[] imageptr;
-      if (codedimage != 0)
-        delete[] codedimage;
+      delete[] imageptr;
     }
   }
-  else
-    delete[] codedimage;
-  if (videoimageptr !=0)
-    delete[] videoimageptr;
-  if (videocodedimage != 0)
-    delete[] videocodedimage;
-  if (tmpimage != 0)
-    delete[] tmpimage;
-  if (videoEncoder != 0)
-    delete videoEncoder;
-  if (videoDecoder != 0)
-    delete videoDecoder;
+  delete[] codedimage;
+
+  delete[] videoimageptr;
+  delete[] videocodedimage;
+  delete[] tmpimage;
+  delete videoEncoder;
+  delete videoDecoder;
 }
 
 //----------------------------------------------------------------------------
@@ -408,14 +395,6 @@ void vvImage::setVideoSize(int s)
 }
 
 //----------------------------------------------------------------------------
-/** Sets the image pointer.
- */
-void vvImage::setImagePtr(uchar* image)
-{
-  imageptr = image;
-}
-
-//----------------------------------------------------------------------------
 /** Sets the style of video encoding
  */
 void vvImage::setVideoStyle(int s)
@@ -661,30 +640,20 @@ int vvImage::alloc_mem()
 {
   vvDebugMsg::msg(3, "vvImage::alloc_mem(): ", width, height);
 
-  if (imageptr == codedimage)
+  if (codedimage != imageptr)
   {
-    if (imageptr != 0)
-      delete[] imageptr;
-    imageptr = NULL;
-  }
-  else
-  {
-    if (imageptr != 0)
-      delete[] imageptr;
-    imageptr = NULL;
-    if (codedimage != 0)
-      delete[] codedimage;
+    delete[] codedimage;
     codedimage = NULL;
   }
-  if (videoimageptr !=0)
-    delete [] videoimageptr;
+  delete[] imageptr;
+  imageptr = NULL;
+  delete [] videoimageptr;
   videoimageptr = NULL;
-  if (videocodedimage != 0)
-    delete [] videocodedimage;
+  delete [] videocodedimage;
   videocodedimage = NULL;
-  if (tmpimage != 0)
-    delete [] tmpimage;
+  delete [] tmpimage;
   tmpimage = NULL;
+
   if (codetype != VV_RAW)
   {
     imageptr = new uchar[height*width*4];
