@@ -184,7 +184,6 @@ vvView::vvView()
   rendererName.push_back("Image based remote rendering");
   rendererName.push_back("Remote rendering");
   assert(rendererName.size() == vvRenderer::NUM_RENDERERS);
-  rayRenderer           = false;
 
 }
 
