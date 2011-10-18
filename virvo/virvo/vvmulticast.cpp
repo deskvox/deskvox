@@ -159,6 +159,11 @@ int vvMulticast::read(const uint size, uchar*& data, const double timeout)
         bytesReceived = NormObjectGetSize(theEvent.object) - NormObjectGetBytesPending(theEvent.object);
         keepGoing = false;
         break;
+      case NORM_RX_OBJECT_ABORTED:
+        vvDebugMsg::msg(2, "vvMulticast::read() NORM_RX_OBJECT_ABORTED: transfer incomplete!");
+        bytesReceived = NormObjectGetSize(theEvent.object) - NormObjectGetBytesPending(theEvent.object);
+        keepGoing = false;
+        break;
       default:
         {
           std::string eventmsg = std::string("vvMulticast::read() Norm-Event: ");
