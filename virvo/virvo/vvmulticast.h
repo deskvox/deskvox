@@ -66,7 +66,7 @@ public:
     \param size size of data in bytes
     \param timeout timeout in seconds or negative for no timeout
     */
-  ssize_t write(const uchar* bytes, const uint size, const double timeout = -1.0);
+  ssize_t write(const uchar* bytes, const uint size, double timeout = -1.0);
   /**
     read until "size" bytes or timeout is reached
     \param size expected size of data in bytes
@@ -74,7 +74,7 @@ public:
     \param timeout timeout in seconds or negative for no timeout
     \return number of bytes actually read
     */
-  ssize_t read(const uint size, uchar*& data, const double timeout = -1.0);
+  ssize_t read(const uint size, uchar*& data, double timeout = -1.0);
 
 private:
   MulticastType      _type;

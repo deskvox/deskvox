@@ -67,7 +67,7 @@ vvMulticast::~vvMulticast()
   NormDestroyInstance(_instance);
 }
 
-ssize_t vvMulticast::write(const uchar* bytes, const uint size, const double timeout)
+ssize_t vvMulticast::write(const uchar* bytes, const uint size, double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::write()");
   _object = NormDataEnqueue(_session, (char*)bytes, size);
@@ -90,7 +90,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const uint size, const double tim
   NormEvent theEvent;
   while(true)
   {
-    ready = monitor->wait(timeout);
+    ready = monitor->wait(&timeout);
     if(NULL == ready)
     {
       vvDebugMsg::msg(2, "vvMulticast::write() error or timeout reached!");
@@ -122,7 +122,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const uint size, const double tim
   }
 }
 
-ssize_t vvMulticast::read(const uint size, uchar*& data, const double timeout)
+ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::read()");
   NormDescriptor normDesc = NormGetDescriptor(_instance);
@@ -133,13 +133,12 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, const double timeout)
   sock.push_back(new vvSocket(normDesc, vvSocket::VV_UDP));
   monitor->setReadFds(sock);
 
-  vvSocket* ready;
   NormEvent theEvent;
   uint bytesReceived;
   bool keepGoing = true;
-  while(keepGoing)
+  do
   {
-    ready = monitor->wait(timeout);
+    vvSocket* ready = monitor->wait(&timeout);
     if(NULL == ready)
     {
       vvDebugMsg::msg(2, "vvMulticast::read() error or timeout reached!");
@@ -175,6 +174,8 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, const double timeout)
     }
     if(bytesReceived >= size) keepGoing = false;
   }
+  while (0.0 < timeout || -1.0 == timeout);
+
   delete monitor;
   data = (uchar*)NormDataDetachData(theEvent.object);
   return bytesReceived;

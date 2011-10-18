@@ -20,6 +20,7 @@
 
 #ifndef _WIN32
 
+#include "vvclock.h"
 #include "vvdebugmsg.h"
 #include "vvsocketmonitor.h"
 
@@ -97,23 +98,37 @@ void vvSocketMonitor::setErrorFds(const std::vector<vvSocket*>& errorfds)
   }
 }
 
-vvSocket* vvSocketMonitor::wait(const double timeout)
+vvSocket* vvSocketMonitor::wait(double* timeout)
 {
   vvDebugMsg::msg(3, "vvSocketMonitor::wait()");
 
   timeval* tout;
-  if(timeout >= 0.0)
+  if(NULL != timeout)
   {
-    tout = new timeval;
-    tout->tv_sec  = static_cast<int>(timeout);
-    tout->tv_usec = (timeout - static_cast<int>(timeout)) * 1000000.0;
+    if(*timeout >= 0.0)
+    {
+      tout = new timeval;
+      tout->tv_sec  = static_cast<int>(*timeout);
+      tout->tv_usec = (*timeout - static_cast<int>(*timeout)) * 1000000.0;
+    }
+    else
+    {
+      tout = NULL;
+    }
   }
   else
   {
-    tout = NULL;
+    tout = new timeval;
+    tout->tv_sec  = 0;
+    tout->tv_usec = 0;
   }
 
+  double startTime = vvClock::getTime();
+
   int done = select(_highestSocketNum + 1, &_readsockfds, &_writesockfds, &_errorsockfds, tout);
+
+  if(*timeout > 0.0) *timeout -= (vvClock::getTime()-startTime);
+
   if (done > 0)
   {
     for (std::vector<vvSocket*>::const_iterator it = _readSockets.begin(); it != _readSockets.end(); ++it)

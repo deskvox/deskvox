@@ -37,7 +37,7 @@ public:
   void setWriteFds(const std::vector<vvSocket*>& writefds);
   void setErrorFds(const std::vector<vvSocket*>& errorfds);
 
-  vvSocket* wait(const double timeout = 0);
+  vvSocket* wait(double* timeout = NULL);
   void clear();
 private:
   fd_set _readsockfds;
