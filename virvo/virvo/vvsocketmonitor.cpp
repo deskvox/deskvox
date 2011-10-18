@@ -43,7 +43,7 @@ vvSocketMonitor::~vvSocketMonitor()
   clear();
 }
 
-void vvSocketMonitor::addReadFds(const std::vector<vvSocket*>& readfds)
+void vvSocketMonitor::setReadFds(const std::vector<vvSocket*>& readfds)
 {
   vvDebugMsg::msg(3, "vvSocketMonitor::addReadFds()");
 
@@ -61,7 +61,7 @@ void vvSocketMonitor::addReadFds(const std::vector<vvSocket*>& readfds)
   }
 }
 
-void vvSocketMonitor::addWriteFds(const std::vector<vvSocket*>& writefds)
+void vvSocketMonitor::setWriteFds(const std::vector<vvSocket*>& writefds)
 {
   vvDebugMsg::msg(3, "vvSocketMonitor::addWriteFds()");
 
@@ -79,7 +79,7 @@ void vvSocketMonitor::addWriteFds(const std::vector<vvSocket*>& writefds)
   }
 }
 
-void vvSocketMonitor::addErrorFds(const std::vector<vvSocket*>& errorfds)
+void vvSocketMonitor::setErrorFds(const std::vector<vvSocket*>& errorfds)
 {
   vvDebugMsg::msg(3, "vvSocketMonitor::addErrorFds()");
 

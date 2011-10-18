@@ -84,7 +84,7 @@ bool vvMulticast::write(const uchar* bytes, const uint size, const double timeou
 
   std::vector<vvSocket*> sock;
   sock.push_back(new vvSocket(normDesc, vvSocket::VV_UDP));
-  monitor->addReadFds(sock);
+  monitor->setReadFds(sock);
 
   vvSocket* ready;
   NormEvent theEvent;
@@ -131,7 +131,7 @@ int vvMulticast::read(const uint size, uchar*& data, const double timeout)
 
   std::vector<vvSocket*> sock;
   sock.push_back(new vvSocket(normDesc, vvSocket::VV_UDP));
-  monitor->addReadFds(sock);
+  monitor->setReadFds(sock);
 
   vvSocket* ready;
   NormEvent theEvent;

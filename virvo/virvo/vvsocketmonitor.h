@@ -33,9 +33,9 @@ public:
   vvSocketMonitor();
   ~vvSocketMonitor();
 
-  void addReadFds (const std::vector<vvSocket*>& readfds);
-  void addWriteFds(const std::vector<vvSocket*>& writefds);
-  void addErrorFds(const std::vector<vvSocket*>& errorfds);
+  void setReadFds (const std::vector<vvSocket*>& readfds);
+  void setWriteFds(const std::vector<vvSocket*>& writefds);
+  void setErrorFds(const std::vector<vvSocket*>& errorfds);
 
   vvSocket* wait(const double timeout = 0);
   void clear();
