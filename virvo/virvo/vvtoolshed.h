@@ -250,7 +250,7 @@ class VIRVOEXPORT vvToolshed
     static float   meanSqrError(float*, float*, const int);
     static char*   file2string(const char* filename);
     static int     string2Int(const char* str);
-    static void    pixels2Ppm(unsigned char* pixels, const int width, const int height,
+    static void    pixels2Ppm(uchar* pixels, const int width, const int height,
                               const char* fileName, const Format format = VV_RGBA);
     static void    pixels2Ppm(float* pixels, const int width, const int height,
                               const char* fileName, const Format format = VV_RGBA);

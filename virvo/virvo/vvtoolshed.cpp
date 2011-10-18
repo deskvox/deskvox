@@ -2605,7 +2605,7 @@ int vvToolshed::string2Int(const char* str)
 /** Write pixels (texture, framebuffer content, etc.) to a ppm file
     for debugging purposes.
 */
-void vvToolshed::pixels2Ppm(unsigned char* pixels, const int width, const int height,
+void vvToolshed::pixels2Ppm(uchar* pixels, const int width, const int height,
                             const char* fileName, const vvToolshed::Format format)
 {
   std::ofstream ppm;
@@ -2690,14 +2690,14 @@ void vvToolshed::pixels2Ppm(float* pixels, const int width, const int height,
     break;
   }
 
-  unsigned char* tmp = new unsigned char[size];
+  uchar* tmp = new uchar[size];
 
   float max = 0.0f;
   float min = 255.0f;
 
   for (int i = 0; i < size; ++i)
   {
-    tmp[i] = static_cast<unsigned char>(pixels[i] * 255.0f);
+    tmp[i] = static_cast<uchar>(pixels[i] * 255.0f);
 
     if ((int)tmp[i] < min)
     {
@@ -2717,7 +2717,7 @@ void vvToolshed::pixels2Ppm(float* pixels, const int width, const int height,
     for (int i = 0; i < size; ++i)
     {
       float f = static_cast<float>(tmp[i]) - min;
-      tmp[i] = static_cast<unsigned char>(f * diffInv * max);
+      tmp[i] = static_cast<uchar>(f * diffInv * max);
     }
   }
 
