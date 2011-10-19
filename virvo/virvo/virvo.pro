@@ -29,7 +29,7 @@ SOURCES = vvaabb.cpp \
     vvfileio.cpp \
     vvglslprogram.cpp \
     vvgltools.cpp \
-    vvideo.cpp \
+    vvvideo.cpp \
     vvimage.cpp \
     vvoffscreenbuffer.cpp \
     vvprintgl.cpp \
@@ -88,7 +88,7 @@ HEADERS = vvaabb.h \
     vvfileio.h \
     vvglslprogram.h \
     vvgltools.h \
-    vvideo.h \
+    vvvideo.h \
     vvimage.h \
     vvoffscreenbuffer.h \
     vvopengl.h \
