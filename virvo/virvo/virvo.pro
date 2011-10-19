@@ -31,6 +31,7 @@ SOURCES = vvaabb.cpp \
     vvgltools.cpp \
     vvvideo.cpp \
     vvimage.cpp \
+    vvibrimage.cpp \
     vvoffscreenbuffer.cpp \
     vvprintgl.cpp \
     vvpthread.cpp \
@@ -43,7 +44,7 @@ SOURCES = vvaabb.cpp \
     vvsocketmonitor.cpp \
     vvsphere.cpp \
     vvstingray.cpp \
-    vvstopwatch.cpp \
+    vvclock.cpp \
     vvtexrend.cpp \
     vvtfwidget.cpp \
     vvtokenizer.cpp \
@@ -90,6 +91,7 @@ HEADERS = vvaabb.h \
     vvgltools.h \
     vvvideo.h \
     vvimage.h \
+    vvibrimage.h \
     vvoffscreenbuffer.h \
     vvopengl.h \
     vvglew.h \
@@ -106,7 +108,7 @@ HEADERS = vvaabb.h \
     vvsocketmonitor.h \
     vvsphere.h \
     vvstingray.h \
-    vvstopwatch.h \
+    vvclock.h \
     vvtexrend.h \
     vvtfwidget.h \
     vvtokenizer.h \
