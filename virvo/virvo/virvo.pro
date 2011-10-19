@@ -22,8 +22,6 @@ SOURCES = vvaabb.cpp \
     vvcolor.cpp \
     vvdebugmsg.cpp \
     vvcgprogram.cpp \
-    vvclusterclient.cpp \
-    vvclusterserver.cpp \
     vvcuda.cpp \
     vvcudaimg.cpp \
     vvdicom.cpp \
@@ -78,8 +76,6 @@ HEADERS = vvaabb.h \
     vvarray.h \
     vvbrick.h \
     vvcgprogram.h \
-    vvclusterclient.h \
-    vvclusterserver.h \
     vvcolor.h \
     vvcudatransfunc.h \
     vvdebugmsg.h \
