@@ -2605,6 +2605,36 @@ bool vvView::parseCommandLine(int argc, char** argv)
     {
       useHeadLight = true;
     }
+    else if (vvToolshed::strCompare(argv[arg], "-server")==0
+        || vvToolshed::strCompare(argv[arg], "-s")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Server unspecified." << endl;
+        return false;
+      }
+
+      if (!clientMode)
+      {
+        clientMode = true;
+        rrMode = RR_IBR;
+        ds->currentRenderer = "ibr";
+      }
+
+      const int port = vvToolshed::parsePort(argv[arg]);
+      slavePorts.push_back(port);
+
+      char* sname;
+      if (port != -1)
+      {
+        sname = vvToolshed::stripPort(argv[arg]);
+      }
+      else
+      {
+        sname = argv[arg];
+      }
+      slaveNames.push_back(sname);
+    }
     else if (vvToolshed::strCompare(argv[arg], "-serverfilename")==0)
     {
       if ((++arg)>=argc)
