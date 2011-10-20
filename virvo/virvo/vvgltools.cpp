@@ -21,49 +21,74 @@
 #include <iostream>
 
 #include <string.h>
+#include <cstdlib>
+#include "vvglew.h"
 #include "vvopengl.h"
 #include "vvdebugmsg.h"
+#include "vvtoolshed.h"
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
-#ifdef FREEGLUT
-// For glutInitContextFlags(GLUT_DEBUG), needed for GL_ARB_debug_output
-#include <GL/freeglut.h>
-#endif
-
 #include "vvgltools.h"
 
 using namespace std;
+
+namespace
+{
+  bool debugAbortOnGLError = false;
+  bool debugPrintBacktrace = false;
+
+  /** Callback function for gl errors.
+    If the extension GL_ARB_debug_output is available, this callback
+    function will be called automatically if a GL error is generated
+    */
+  void debugCallback(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum /*severity*/,
+      GLsizei /*length*/, GLchar const* message, GLvoid* /*userParam*/)
+  {
+    std::cerr << "GL error: " << message << std::endl;
+    if(debugPrintBacktrace)
+      vvToolshed::printBacktrace();
+
+    if(debugAbortOnGLError)
+      abort();
+  }
+}
 
 //============================================================================
 // Method Definitions
 //============================================================================
 
-void vvGLTools::initARBDebugOutput()
+bool vvGLTools::enableGLErrorBacktrace(bool printBacktrace, bool abortOnError)
 {
 // As of January 2011, only freeglut supports glutInitContextFlags
 // with GLUT_DEBUG. This may be outdated in the meantime as may be
 // those checks!
-#ifdef FREEGLUT
+
+  debugPrintBacktrace = printBacktrace;
+  debugAbortOnGLError = abortOnError;
+
 #ifdef GL_ARB_debug_output
 #if !defined(__GNUC__) || !defined(_WIN32)
+  glewInit();
   if (glDebugMessageCallbackARB != NULL)
   {
     cerr << "Init callback function for GL_ARB_debug_output extension" << endl;
-    glDebugMessageCallbackARB(debugCallbackARB, NULL);
+    glDebugMessageCallbackARB(debugCallback, NULL);
+    return true;
   }
   else
 #endif
   {
     cerr << "glDebugMessageCallbackARB not available" << endl;
+    return false;
   }
 #else
   cerr << "Consider installing GLEW >= 1.5.7 for extension GL_ARB_debug_output" << endl;
+  return false;
 #endif // GL_ARB_debug_output
-#endif // FREEGLUT
 }
 
 //----------------------------------------------------------------------------

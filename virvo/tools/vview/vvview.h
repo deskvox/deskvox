@@ -164,8 +164,7 @@ class vvView
     bool clipEditMode;                          ///< edit clip plane using keyboard
     float mvScale;                              ///< scale factor for the mv matrix to view the whole volume
     vvVector3 planeRot;                         ///< rotation of clipping plane normal
-    bool dbgOutputExtSet;                       ///< callback func for gl debug output was registered or can't be registered
-    bool showBt;                                ///< Show backtrace if execution stopped due to OpenGL errors
+    bool showBt;                                ///< Show backtrace if execution stopped due to OpenGL error
 
   public:
     vvView();
@@ -190,8 +189,6 @@ class vvView
     static void roiMenuCallback(int);
     static void clipMenuCallback(int);
     static void viewMenuCallback(int);
-    static void debugCallbackARB(GLenum source, GLenum type, GLuint id, GLenum severity,
-                                 GLsizei length, GLchar const* message, GLvoid* userParam);
     static void runTest();
     static double performanceTest();
     static void printProfilingInfo(const int testNr = 1, const int testCnt = 1);

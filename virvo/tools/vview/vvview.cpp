@@ -147,7 +147,6 @@ vvView::vvView()
   clipPlane             = false;
   clipPerimeter         = false;
   mvScale               = 1.0f;
-  dbgOutputExtSet       = false;
   showBt                = true;
 }
 
@@ -605,9 +604,7 @@ void vvView::createRenderer(std::string type, std::string options,
 {
   vvDebugMsg::msg(3, "vvView::setRenderer()");
 
-  glewInit();
-  if(!dbgOutputExtSet)
-    vvGLTools::initARBDebugOutput();
+  vvGLTools::enableGLErrorBacktrace(ds->showBt);
 
   ds->currentRenderer = type;
   ds->currentOptions = options;
@@ -1703,29 +1700,6 @@ break;
     break;
   }
   glutPostRedisplay();
-}
-
-/** Callback function for gl errors.
-  If the extension GL_ARB_debug_output is available, this callback
-  function will be called automatically if an opengl error is
-  generated
-*/
-void vvView::debugCallbackARB(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum /*severity*/,
-                      GLsizei /*length*/, GLchar const* message, GLvoid* /*userParam*/)
-{
-  cerr << "=======================================================" << endl;
-  cerr << "Execution stopped because an OpenGL error was detected." << endl;
-  cerr << "Message: " << message << endl;
-  if (ds->showBt)
-  {
-    cerr << "Backtrace is following" << endl;
-  }
-  cerr << "=======================================================" << endl;
-  if (ds->showBt)
-  {
-    vvToolshed::printBacktrace();
-  }
-  exit(EXIT_FAILURE);
 }
 
 //----------------------------------------------------------------------------

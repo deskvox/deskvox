@@ -22,7 +22,6 @@
 #include "vvconfig.h"
 #endif
 
-#include <virvo/vvglew.h>
 #include <iostream>
 
 using std::cerr;
@@ -101,8 +100,6 @@ class vvServer
     vvVector3 pos;                              ///< volume position in object space
     int  rrMode;                                ///< memory remote rendering mode
     int codec;                                  ///< code type/codec for images sent over the network
-    bool dbgOutputExtSet;                       ///< callback func for gl debug output was registered or can't be registered
-    bool showBt;                                ///< Show backtrace if execution stopped due to OpenGL errors
     int port;                                   ///< port the server renderer uses to listen for incoming connections
   public:
     vvServer();
@@ -148,8 +145,6 @@ vvServer::vvServer()
   pos.zero();
   codec                 = vvImage::VV_RLE;
   rrMode                = RR_NONE;
-  dbgOutputExtSet       = false;
-  showBt                = true;
   port                  = vvServer::DEFAULT_PORT;
 }
 
@@ -352,8 +347,7 @@ void vvServer::createRenderer(std::string type, std::string options,
 {
   vvDebugMsg::msg(3, "vvView::setRenderer()");
 
-  glewInit();
-  ds->initARBDebugOutput();
+  vvGLTools::enableGLErrorBacktrace();
 
   ds->currentRenderer = type;
   ds->currentOptions = options;
@@ -379,9 +373,8 @@ void vvServer::createRenderer(std::string type, std::string options,
 
 //----------------------------------------------------------------------------
 /** Timer callback method, triggered by glutTimerFunc().
-  @param id  timer ID: 0=animation, 1=rotation
 */
-void vvServer::timerCallback(int id)
+void vvServer::timerCallback(int)
 {
   vvDebugMsg::msg(3, "vvView::timerCallback()");
 
@@ -394,29 +387,6 @@ void vvServer::timerCallback(int id)
   default:
     break;
     }
-}
-
-/** Callback function for gl errors.
-  If the extension GL_ARB_debug_output is available, this callback
-  function will be called automatically if an opengl error is
-  generated
-*/
-void vvServer::debugCallbackARB(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum /*severity*/,
-                      GLsizei /*length*/, GLchar const* message, GLvoid* /*userParam*/)
-{
-  cerr << "=======================================================" << endl;
-  cerr << "Execution stopped because an OpenGL error was detected." << endl;
-  cerr << "Message: " << message << endl;
-  if (ds->showBt)
-  {
-    cerr << "Backtrace is following" << endl;
-  }
-  cerr << "=======================================================" << endl;
-  if (ds->showBt)
-  {
-    vvToolshed::printBacktrace();
-  }
-  exit(EXIT_FAILURE);
 }
 
 //----------------------------------------------------------------------------
@@ -472,38 +442,6 @@ void vvServer::initGraphics(int argc, char *argv[])
     cerr << "\nSupported OpenGL extensions:" << endl;
     vvGLTools::displayOpenGLextensions(vvGLTools::ONE_BY_ONE);
   }
-}
-
-
-void vvServer::initARBDebugOutput()
-{
-  if (dbgOutputExtSet)
-  {
-    return;
-  }
-
-// As of January 2011, only freeglut supports glutInitContextFlags
-// with GLUT_DEBUG. This may be outdated in the meantime as may be
-// those checks!
-#ifdef FREEGLUT
-#ifdef GL_ARB_debug_output
-#if !defined(__GNUC__) || !defined(_WIN32)
-  if (glDebugMessageCallbackARB != NULL)
-  {
-    cerr << "Init callback function for GL_ARB_debug_output extension" << endl;
-    glDebugMessageCallbackARB(debugCallbackARB, NULL);
-  }
-  else
-#endif
-  {
-    cerr << "glDebugMessageCallbackARB not available" << endl;
-  }
-#else
-  cerr << "Consider installing GLEW >= 1.5.7 for extension GL_ARB_debug_output" << endl;
-#endif // GL_ARB_debug_output
-#endif // FREEGLUT
-
-  dbgOutputExtSet = true;
 }
 
 //----------------------------------------------------------------------------
