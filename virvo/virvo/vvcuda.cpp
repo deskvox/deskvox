@@ -29,7 +29,11 @@
 
 #include <string>
 #include <cstring>
+#include <iostream>
+
+#ifdef HAVE_CUDA
 #include <cuda_gl_interop.h>
+#endif
 
 #include "vvdebugmsg.h"
 
@@ -49,6 +53,7 @@ bool vvCuda::init()
 
 bool vvCuda::initGlInterop()
 {
+#ifdef HAVE_CUDA
   static bool done = false;
   if (done)
     return true;
@@ -79,6 +84,9 @@ bool vvCuda::initGlInterop()
 
   done = true;
   return true;
+#else
+  return false;
+#endif
 }
 
 //============================================================================

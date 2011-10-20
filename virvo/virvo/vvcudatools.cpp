@@ -23,6 +23,7 @@
 #include "vvcudatools.h"
 #include "vvdebugmsg.h"
 
+#ifdef HAVE_CUDA
 bool vvCudaTools::checkError(bool *success, cudaError_t err, const char *msg, bool syncIfDebug)
 {
   if (err == cudaSuccess)
@@ -59,6 +60,7 @@ bool vvCudaTools::checkError(bool *success, cudaError_t err, const char *msg, bo
 
   return false;
 }
+#endif
 
 //============================================================================
 // End of File

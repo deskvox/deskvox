@@ -56,6 +56,7 @@ using std::ios;
 #include <virvo/vvfileio.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
+#include <virvo/vvcuda.h>
 
 //#include <virvo/vvbonjour/vvbonjourbrowser.h>
 //#include <virvo/vvbonjour/vvbonjourresolver.h>
