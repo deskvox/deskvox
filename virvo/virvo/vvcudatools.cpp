@@ -25,39 +25,39 @@
 
 bool vvCudaTools::checkError(bool *success, cudaError_t err, const char *msg, bool syncIfDebug)
 {
-    if (err == cudaSuccess)
+  if (err == cudaSuccess)
+  {
+    if (!vvDebugMsg::isActive(2) || !syncIfDebug)
+      return (success ? *success : true);
+
+    if (syncIfDebug)
     {
-        if (!vvDebugMsg::isActive(2) || !syncIfDebug)
-            return (success ? *success : true);
-
-        if (syncIfDebug)
-        {
-           cudaThreadSynchronize();
-           err = cudaGetLastError();
-        }
+     cudaThreadSynchronize();
+     err = cudaGetLastError();
     }
+  }
 
-    if (!msg)
-        msg = "vvCudaTools";
+  if (!msg)
+    msg = "vvCudaTools";
 
-    if (err == cudaSuccess)
-    {
-        vvDebugMsg::msg(3, msg, ": ok");
-        return (success ? *success : true);
-    }
+  if (err == cudaSuccess)
+  {
+    vvDebugMsg::msg(3, msg, ": ok");
+    return (success ? *success : true);
+  }
 
-    std::string s(msg);
-    s += ": ";
-    s += cudaGetErrorString(err);
-    vvDebugMsg::msg(0, s.c_str());
+  std::string s(msg);
+  s += ": ";
+  s += cudaGetErrorString(err);
+  vvDebugMsg::msg(0, s.c_str());
 
-    if (success)
-    {
-        *success = false;
-        return *success;
-    }
+  if (success)
+  {
+    *success = false;
+    return *success;
+  }
 
-    return false;
+  return false;
 }
 
 //============================================================================

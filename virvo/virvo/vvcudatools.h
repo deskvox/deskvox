@@ -33,8 +33,8 @@
 
 class VIRVOEXPORT vvCudaTools
 {
-    public:
-    static bool checkError(bool *success, cudaError_t err, const char *msg = NULL, bool syncIfDebug = true);
+  public:
+  static bool checkError(bool *success, cudaError_t err, const char *msg = NULL, bool syncIfDebug = true);
 };
 
 #endif

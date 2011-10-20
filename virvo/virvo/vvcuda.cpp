@@ -36,49 +36,49 @@
 bool vvCuda::init()
 {
 #ifdef HAVE_CUDA
-    bool ok = true;
-    if(!vvCudaTools::checkError(&ok, cudaSetDeviceFlags(cudaDeviceMapHost), "vvCuda::init (set device flags)", false))
-        return false;
-
-    return true;
-#else
-    std::cerr << "Cuda not found!" << std::endl;
+  bool ok = true;
+  if(!vvCudaTools::checkError(&ok, cudaSetDeviceFlags(cudaDeviceMapHost), "vvCuda::init (set device flags)", false))
     return false;
+
+  return true;
+#else
+  std::cerr << "Cuda not found!" << std::endl;
+  return false;
 #endif
 }
 
 bool vvCuda::initGlInterop()
 {
-    static bool done = false;
-    if (done)
-       return true;
+  static bool done = false;
+  if (done)
+    return true;
 
 #ifdef HAVE_X11
-    GLXContext ctx = glXGetCurrentContext();
-    Display *dsp = XOpenDisplay(NULL);
-    if(dsp)
-        XSynchronize(dsp, True);
-    if(!dsp || !glXIsDirect(dsp, ctx))
-    {
-        vvDebugMsg::msg(1, "no CUDA/GL interop possible");
-        return false;
-    }
+  GLXContext ctx = glXGetCurrentContext();
+  Display *dsp = XOpenDisplay(NULL);
+  if(dsp)
+    XSynchronize(dsp, True);
+  if(!dsp || !glXIsDirect(dsp, ctx))
+  {
+    vvDebugMsg::msg(1, "no CUDA/GL interop possible");
+    return false;
+  }
 #endif
 
-    cudaDeviceProp prop;
-    memset(&prop, 0, sizeof(prop));
-    prop.major = 1;
-    prop.minor = 0;
+  cudaDeviceProp prop;
+  memset(&prop, 0, sizeof(prop));
+  prop.major = 1;
+  prop.minor = 0;
 
-    int dev;
-    bool ok = true;
-    if(!vvCudaTools::checkError(&ok, cudaChooseDevice(&dev, &prop), "vvCuda::initGlInterop (choose device)", false))
-        return false;
-    if(!vvCudaTools::checkError(&ok, cudaGLSetGLDevice(dev), "vvCuda::initGlInterop (set device)", false))
-        return false;
+  int dev;
+  bool ok = true;
+  if(!vvCudaTools::checkError(&ok, cudaChooseDevice(&dev, &prop), "vvCuda::initGlInterop (choose device)", false))
+    return false;
+  if(!vvCudaTools::checkError(&ok, cudaGLSetGLDevice(dev), "vvCuda::initGlInterop (set device)", false))
+    return false;
 
-    done = true;
-    return true;
+  done = true;
+  return true;
 }
 
 //============================================================================

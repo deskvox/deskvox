@@ -27,11 +27,11 @@
 
 class VIRVOEXPORT vvCuda
 {
-    public:
-    static bool init();
-    static bool initGlInterop();
-    private:
-    bool s_useGlInterop();
+public:
+  static bool init();
+  static bool initGlInterop();
+  private:
+  bool s_useGlInterop();
 };
 
 #endif // VV_CUDA_H
