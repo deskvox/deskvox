@@ -379,7 +379,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
   pthread_exit(NULL);
 
   vvDebugMsg::msg(1, "vvIbrClient::getImageFromSocket(): thread terminated");
-#ifndef __GNUC__
+#if !defined(__GNUC__) || defined(__MINGW32__)
   return NULL;
 #endif
 }
