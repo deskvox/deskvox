@@ -22,20 +22,21 @@
 #include "vvconfig.h"
 #endif
 
-#ifdef HAVE_NORM
-
 #include "vvdebugmsg.h"
 #include "vvinttypes.h"
 #include "vvmulticast.h"
 #include "vvsocketmonitor.h"
 
+#ifdef HAVE_NORM
 #include <normApi.h>
 #include <stdlib.h>
 #include <sys/select.h>
+#endif
 
 vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastType type)
+: _type(type)
 {
-  _type = type;
+#ifdef HAVE_NORM
   _instance = NormCreateInstance();
   _session = NormCreateSession(_instance, addr, port, NORM_NODE_ANY);
 
@@ -51,10 +52,15 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
   {
     NormStartReceiver(_session, 1024*1024);
   }
-};
+#else
+  (void)addr;
+  (void)port;
+#endif
+}
 
 vvMulticast::~vvMulticast()
 {
+#ifdef HAVE_NORM
   if(VV_SENDER == _type)
   {
     NormStopSender(_session);
@@ -65,11 +71,13 @@ vvMulticast::~vvMulticast()
   }
   NormDestroySession(_session);
   NormDestroyInstance(_instance);
+#endif
 }
 
 ssize_t vvMulticast::write(const uchar* bytes, const uint size, double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::write()");
+#ifdef HAVE_NORM
   _object = NormDataEnqueue(_session, (char*)bytes, size);
 
   if(NORM_OBJECT_INVALID ==_object)
@@ -120,11 +128,18 @@ ssize_t vvMulticast::write(const uchar* bytes, const uint size, double timeout)
       }
     }
   }
+#else
+  (void)bytes;
+  (void)size;
+  (void)timeout;
+  return -1;
+#endif
 }
 
 ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::read()");
+#ifdef HAVE_NORM
   NormDescriptor normDesc = NormGetDescriptor(_instance);
 
   vvSocketMonitor* monitor = new vvSocketMonitor;
@@ -179,8 +194,12 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
   delete monitor;
   data = (uchar*)NormDataDetachData(theEvent.object);
   return bytesReceived;
-}
-
+#else
+  (void)size;
+  (void)data;
+  (void)timeout;
+  return -1;
 #endif
+}
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -21,12 +21,6 @@
 #ifndef _VV_MULTICAST_H_
 #define _VV_MULTICAST_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_NORM
-
 #include "vvexport.h"
 #include "vvinttypes.h"
 
@@ -82,8 +76,6 @@ private:
   NormSessionHandle  _session;
   NormObjectHandle   _object;
 };
-
-#endif
 
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
