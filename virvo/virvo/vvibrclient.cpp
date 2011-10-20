@@ -254,6 +254,13 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   splitX = ts_clamp(splitX, 0.f, float(_imgVp[2]-1));
   splitY = ts_clamp(splitY, 0.f, float(_imgVp[3]-1));
 
+  GLboolean depthMask = GL_TRUE;
+  glGetBooleanv(GL_DEPTH_WRITEMASK, &depthMask);
+  glDepthMask(GL_FALSE);
+  GLboolean pointSmooth = GL_FALSE;
+  glGetBooleanv(GL_POINT_SMOOTH, &pointSmooth);
+  glEnable(GL_POINT_SMOOTH);
+
   _shader->enable();
 
   _shader->setParameter1f("vpWidth", static_cast<float>(_viewportWidth));
@@ -273,6 +280,11 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   glDrawArrays(GL_POINTS, 0, _imgVp[2]*_imgVp[3]);
 
   _shader->disable();
+
+  if(depthMask)
+    glDepthMask(GL_TRUE);
+  if(!pointSmooth)
+    glDisable(GL_POINT_SMOOTH);
 
   glDisableClientState(GL_VERTEX_ARRAY);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
