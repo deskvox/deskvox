@@ -40,6 +40,10 @@ IF(NORM_FOUND)
 ENDIF(NORM_FOUND)
 
 SET(VIRVO_HEADERS
+  vvbonjour/vvbonjourbrowser.h
+  vvbonjour/vvbonjourentry.h
+  vvbonjour/vvbonjourregistrar.h
+  vvbonjour/vvbonjourresolver.h
   vvmultirend/vvtexmultirend.h
   vvmultirend/vvtexmultirendmngr.h
   vvaabb.h
@@ -117,6 +121,10 @@ SET(VIRVO_HEADERS
 )
 
 SET(VIRVO_SOURCES
+  vvbonjour/vvbonjourbrowser.cpp
+  vvbonjour/vvbonjourentry.cpp
+  vvbonjour/vvbonjourregistrar.cpp
+  vvbonjour/vvbonjourresolver.cpp
   vvmultirend/vvtexmultirend.cpp
   vvmultirend/vvtexmultirendmngr.cpp
   vvaabb.cpp
