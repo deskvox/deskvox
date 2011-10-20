@@ -295,6 +295,14 @@ void vvServer::initGraphics(int argc, char *argv[])
   glutInitContextFlags(GLUT_DEBUG);
 #endif // FREEGLUT
 
+  // create double buffering context
+  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+  if (!glutGet(GLUT_DISPLAY_MODE_POSSIBLE))
+  {
+    cerr << "Error: Virvo server needs a double buffering OpenGL context with alpha channel." << endl;
+    exit(1);
+  }
+
   glutInitWindowSize(winWidth, winHeight);       // set initial window size
 
   // Create window title.
