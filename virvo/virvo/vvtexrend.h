@@ -27,7 +27,6 @@
 #include "vvexport.h"
 #include "vvrenderer.h"
 #include "vvopengl.h"
-#include "vvpthread.h"
 #include "vvsllist.h"
 #include "vvbrick.h"
 
@@ -86,12 +85,14 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
         return (dist < rhs.dist);
       }
     };
+
+    struct Threads;
+
     uint _numThreads;                             ///< thread count
     uint _usedThreads;                            ///< actually used threads, some maybe can't be used because of errors
     
-    pthread_t* _threads;                          ///< worker threads
+    Threads *_threads;
     ThreadArgs* _threadData;                      ///< args for each thread
-    pthread_barrier_t _barrier;
     bool _terminateThreads;
 
     std::vector<GLint> _vertArray;

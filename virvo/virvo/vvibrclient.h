@@ -24,7 +24,6 @@
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvremoteclient.h"
-#include "vvpthread.h"
 #include "vvgltools.h"
 
 #include <vector>
@@ -48,13 +47,8 @@ public:
   virtual void setParameter(vvRenderer::ParameterType param, float newValue);
 
 private:
-  pthread_t*  _thread;                                    ///< list for threads of each server connection
-
-  pthread_mutex_t _signalMutex;                           ///< mutex for thread synchronization
-  pthread_mutex_t _imageMutex;                            ///< mutex for access to _image
-  pthread_cond_t _imageCond;                              ///< condition variable for access to _image
-  pthread_barrier_t _startBarrier;                        ///< signal when network thread has started
-  pthread_cond_t _readyCond;                              ///< signal when image has been received
+  struct Thread;
+  Thread *_thread;                                        ///< threads, mutexes, barriers, ...
   bool   _newFrame;                                       ///< flag indicating a new ibr-frame waiting to be rendered
   bool   _haveFrame;                                      ///< flag indicating that at least one frame has been received
   bool   _synchronous;                                    ///< display what was received w/y delay

@@ -29,9 +29,40 @@
 #include "vvsocketio.h"
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
+#include "vvpthread.h"
 
 using std::cerr;
 using std::endl;
+
+struct vvIbrClient::Thread
+{
+  pthread_t thread;               ///< list for threads of each server connection
+  pthread_barrier_t startBarrier; ///< signal when network thread has started
+  pthread_mutex_t signalMutex;    ///< mutex for thread synchronization
+  pthread_mutex_t imageMutex;     ///< mutex for access to _image
+  pthread_cond_t imageCond;       ///< condition variable for access to _image
+  pthread_cond_t readyCond;       ///< signal when image has been received
+
+  Thread(int numThreads)
+  {
+    pthread_barrier_init(&startBarrier, NULL, numThreads);
+
+    pthread_mutex_init(&imageMutex, NULL);
+    pthread_mutex_init(&signalMutex, NULL);
+
+    pthread_cond_init(&imageCond, NULL);
+    pthread_cond_init(&readyCond, NULL);
+  }
+
+  ~Thread()
+  {
+    pthread_mutex_destroy(&imageMutex);
+    pthread_mutex_destroy(&signalMutex);
+    pthread_cond_destroy(&imageCond);
+    pthread_barrier_destroy(&startBarrier);
+    pthread_cond_destroy(&readyCond);
+  }
+};
 
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
                          const char* slaveName, int slavePort,
@@ -110,10 +141,10 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 {
   vvDebugMsg::msg(1, "vvIbrClient::render()");
 
-  pthread_mutex_lock(&_signalMutex);
+  pthread_mutex_lock(&_thread->signalMutex);
   bool haveFrame = _haveFrame;
   bool newFrame = _newFrame;
-  pthread_mutex_unlock(&_signalMutex);
+  pthread_mutex_unlock(&_thread->signalMutex);
 
   // Draw boundary lines
   if (_boundaries || !haveFrame || !glGenBuffers)
@@ -131,9 +162,9 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   if(newFrame && haveFrame)
   {
-    pthread_mutex_lock(&_imageMutex);
+    pthread_mutex_lock(&_thread->imageMutex);
     initIbrFrame();
-    pthread_mutex_unlock(&_imageMutex);
+    pthread_mutex_unlock(&_thread->imageMutex);
   }
 
   float drMin = 0.0f;
@@ -151,27 +182,27 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
     if(_changes)
     {
-      pthread_mutex_lock(&_signalMutex);
+      pthread_mutex_lock(&_thread->signalMutex);
       vvRemoteClient::ErrorType err = requestFrame();
       _newFrame = false;
-      pthread_cond_signal(&_imageCond);
-      pthread_mutex_unlock(&_signalMutex);
+      pthread_cond_signal(&_thread->imageCond);
+      pthread_mutex_unlock(&_thread->signalMutex);
       _changes = false;
       if(err != vvRemoteClient::VV_OK)
         std::cerr << "vvibrClient::requestFrame() - error() " << err << std::endl;
       else if(_synchronous)
       {
-        pthread_mutex_lock(&_signalMutex);
-        pthread_cond_wait(&_readyCond, &_signalMutex);
+        pthread_mutex_lock(&_thread->signalMutex);
+        pthread_cond_wait(&_thread->readyCond, &_thread->signalMutex);
         haveFrame = _haveFrame;
         newFrame = _newFrame;
         matrixChanged = false;
-        pthread_mutex_unlock(&_signalMutex);
+        pthread_mutex_unlock(&_thread->signalMutex);
         if(newFrame && haveFrame)
         {
-          pthread_mutex_lock(&_imageMutex);
+          pthread_mutex_lock(&_thread->imageMutex);
           initIbrFrame();
-          pthread_mutex_unlock(&_imageMutex);
+          pthread_mutex_unlock(&_thread->imageMutex);
         }
       }
     }
@@ -316,16 +347,11 @@ void vvIbrClient::createThreads()
 {
   vvDebugMsg::msg(1, "vvIbrClient::createThreads()");
 
-  pthread_mutex_init(&_imageMutex, NULL);
-  pthread_mutex_init(&_signalMutex, NULL);
-  pthread_cond_init(&_imageCond, NULL);
-  pthread_barrier_init(&_startBarrier, NULL, 2);
-  pthread_cond_init(&_readyCond, NULL);
+  _thread = new Thread(2);
 
-  _thread = new pthread_t;
-  pthread_create(_thread, NULL, getImageFromSocket, this);
+  pthread_create(&_thread->thread, NULL, getImageFromSocket, this);
 
-  pthread_barrier_wait(&_startBarrier);
+  pthread_barrier_wait(&_thread->startBarrier);
 }
 
 void vvIbrClient::destroyThreads()
@@ -334,16 +360,10 @@ void vvIbrClient::destroyThreads()
 
   exit();
 
-  pthread_cancel(*_thread);
-  pthread_join(*_thread, NULL);
-  delete _thread;
-  _thread = NULL;
+  pthread_cancel(_thread->thread);
+  pthread_join(_thread->thread, NULL);
 
-  pthread_mutex_destroy(&_imageMutex);
-  pthread_mutex_destroy(&_signalMutex);
-  pthread_cond_destroy(&_imageCond);
-  pthread_barrier_destroy(&_startBarrier);
-  pthread_cond_destroy(&_readyCond);
+  delete _thread;
 }
 
 void* vvIbrClient::getImageFromSocket(void* threadargs)
@@ -353,28 +373,28 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
   vvIbrClient *ibr = static_cast<vvIbrClient*>(threadargs);
   vvIbrImage* img = ibr->_image;
 
-  pthread_barrier_wait(&ibr->_startBarrier);
+  pthread_barrier_wait(&ibr->_thread->startBarrier);
 
   while (ibr->_socket)
   {
-    pthread_mutex_lock( &ibr->_imageMutex );
-    pthread_cond_wait(&ibr->_imageCond, &ibr->_imageMutex);
+    pthread_mutex_lock( &ibr->_thread->imageMutex );
+    pthread_cond_wait(&ibr->_thread->imageCond, &ibr->_thread->imageMutex);
     vvSocketIO::ErrorType err = ibr->_socket->getIbrImage(img);
     if(err != vvSocketIO::VV_OK)
     {
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
-      pthread_mutex_unlock( &ibr->_imageMutex );
+      pthread_mutex_unlock( &ibr->_thread->imageMutex );
       break;
     }
     img->decode();
-    pthread_mutex_unlock( &ibr->_imageMutex );
+    pthread_mutex_unlock( &ibr->_thread->imageMutex );
     //vvToolshed::sleep(1000);
 
-    pthread_mutex_lock( &ibr->_signalMutex );
+    pthread_mutex_lock( &ibr->_thread->signalMutex );
     ibr->_newFrame = true;
     ibr->_haveFrame = true;
-    pthread_cond_signal(&ibr->_readyCond);
-    pthread_mutex_unlock( &ibr->_signalMutex );
+    pthread_cond_signal(&ibr->_thread->readyCond);
+    pthread_mutex_unlock( &ibr->_thread->signalMutex );
   }
   pthread_exit(NULL);
 
