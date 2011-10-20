@@ -43,10 +43,13 @@ vvIbrServer::vvIbrServer(vvSocketIO *socket)
 , _depth(NULL)
 , _uncertainty(NULL)
 {
+  vvDebugMsg::msg(1, "vvIbrServer::vvIbrServer()");
 }
 
 vvIbrServer::~vvIbrServer()
 {
+  vvDebugMsg::msg(1, "vvIbrServer::~vvIbrServer()");
+
   delete _image;
   delete[] _pixels;
   delete[] _depth;
@@ -59,9 +62,9 @@ vvIbrServer::~vvIbrServer()
 */
 void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 {
-#ifdef HAVE_CUDA
-  vvDebugMsg::msg(3, "vvIsaServer::renderImage()");
+  vvDebugMsg::msg(3, "vvIbrServer::renderImage()");
 
+#ifdef HAVE_CUDA
   // Render volume:
   float matrixGL[16];
 

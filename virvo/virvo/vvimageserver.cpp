@@ -33,10 +33,13 @@ vvImageServer::vvImageServer(vvSocketIO *socket)
   , _image(NULL)
   , _pixels(NULL)
 {
+  vvDebugMsg::msg(1, "vvImageServer::vvImageServer()");
 }
 
 vvImageServer::~vvImageServer()
 {
+  vvDebugMsg::msg(1, "vvImageServer::~vvImageServer()");
+
   delete _image;
   delete[] _pixels;
 }
@@ -47,18 +50,11 @@ vvImageServer::~vvImageServer()
 */
 void vvImageServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 {
-  vvDebugMsg::msg(3, "vvIsaServer::renderImage()");
+  vvDebugMsg::msg(3, "vvImageServer::renderImage()");
 
   // Render volume:
-  float matrixGL[16];
-
-  glMatrixMode(GL_PROJECTION);
-  pr.getGL(matrixGL);
-  glLoadMatrixf(matrixGL);
-
-  glMatrixMode(GL_MODELVIEW);
-  mv.getGL(matrixGL);
-  glLoadMatrixf(matrixGL);
+  vvGLTools::setProjectionMatrix(&pr);
+  vvGLTools::setModelviewMatrix(&mv);
 
   glClearColor(0., 0., 0., 0.);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

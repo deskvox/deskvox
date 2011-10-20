@@ -93,10 +93,6 @@ vvRemoteClient::ErrorType vvImageClient::render()
   glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT
                | GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_TRANSFORM_BIT);
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  glDisable(GL_CULL_FACE);
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
