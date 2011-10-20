@@ -76,7 +76,7 @@ class vvServer
     };
     static const int DEFAULTSIZE;               ///< default window size (width and height) in pixels
     static const int DEFAULT_PORT;              ///< default port for socket connections
-    static vvServer* ds;                        ///< one instance of VView is always present
+    static vvServer* ds;                        ///< one instance of vvServer is always present
     int   winWidth, winHeight;                  ///< window size in pixels
     int  rrMode;                                ///< memory remote rendering mode
     int port;                                   ///< port the server renderer uses to listen for incoming connections
@@ -208,7 +208,7 @@ cleanup:
 }
 
 //----------------------------------------------------------------------------
-/** VView main loop.
+/** Virvo server main loop.
   @param filename  volume file to display
 */
 void vvServer::mainLoop(int argc, char *argv[])
@@ -247,7 +247,7 @@ void vvServer::reshapeCallback(int w, int h)
 
 //----------------------------------------------------------------------------
 /// Callback method for window redraws.
-void vvServer::displayCallback(void)
+void vvServer::displayCallback()
 {
   vvDebugMsg::msg(3, "vvServer::displayCallback()");
 
@@ -319,7 +319,7 @@ void vvServer::initGraphics(int argc, char *argv[])
   cerr << "Found OpenGL version: " << version << endl;
   if (strncmp(version,"1.0",3)==0)
   {
-    cerr << "VView requires OpenGL version 1.1 or greater." << endl;
+    cerr << "Virvo server requires OpenGL version 1.1 or greater." << endl;
   }
 
   vvGLTools::checkOpenGLextensions();
@@ -361,12 +361,8 @@ bool vvServer::parseCommandLine(int argc, char** argv)
 {
   vvDebugMsg::msg(1, "vvServer::parseCommandLine()");
 
-  int arg;                                       // index of currently processed command line argument
-
-  arg = 0;
-  for (;;)
+  for (int arg=1; arg<argc; ++arg)
   {
-    if ((++arg)>=argc) return true;
     if (vvToolshed::strCompare(argv[arg], "-help")==0 ||
         vvToolshed::strCompare(argv[arg], "-h")==0 ||
         vvToolshed::strCompare(argv[arg], "-?")==0 ||
@@ -429,14 +425,16 @@ bool vvServer::parseCommandLine(int argc, char** argv)
     }
     else
     {
-      cerr << "Unknown option/parameter:" << argv[arg] << endl;
+      cerr << "Unknown option/parameter: \"" << argv[arg] << "\", use -help for instructions" << endl;
       return false;
     }
   }
+
+  return true;
 }
 
 //----------------------------------------------------------------------------
-/** Main VView routine.
+/** Main Virvo server routine.
   @param argc,argv command line arguments
   @return 0 if the program finished ok, 1 if an error occurred
 */
@@ -444,24 +442,12 @@ int vvServer::run(int argc, char** argv)
 {
   vvDebugMsg::msg(1, "vvServer::run()");
 
-  cerr << "VView " << virvo::getVersionMajor() << "." << virvo::getReleaseCounter() << endl;
+  cerr << "Virvo server " << virvo::getVersionMajor() << "." << virvo::getReleaseCounter() << endl;
   cerr << "(c) " << virvo::getYearOfRelease() << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
   cerr << "Brown University" << endl << endl;
 
-  if (argc<2)
-  {
-    cerr << "VView (=Virvo View) is a utility to display volume files." << endl;
-    cerr << "The Virvo volume rendering system was developed at the University of Stuttgart." << endl;
-    cerr << "Please find more information at http://www.cs.brown.edu/people/schulze/virvo/." << endl;
-    cerr << endl;
-    cerr << "Syntax:" << endl;
-    cerr << "  vview [<volume_file.xxx>] [options]" << endl;
-    cerr << endl;
-    cerr << "For a list of options type:" << endl;
-    cerr << "  vview -help" << endl;
-    cerr << endl;
-  }
-  else if (parseCommandLine(argc, argv) == false) return 1;
+  if (parseCommandLine(argc, argv) == false)
+    return 1;
 
   mainLoop(argc, argv);
   return 0;
