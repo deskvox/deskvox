@@ -28,6 +28,7 @@
 #include "vvvecmath.h"
 #include "vvclock.h"
 #include "vvcuda.h"
+#include "vvcudatools.h"
 #include "vvcudautils.h"
 #include "vvcudatransfunc.h"
 
@@ -82,20 +83,20 @@ bool makePreintLUTCorrectCuda(int width, uchar *preIntTable, float thickness, fl
     uchar4 *d_preIntTable = NULL;
 
     bool ok = true;
-    vvCuda::checkError(&ok, cudaMalloc(&d_rgba, sizeof(float4)*(width+1)), "cudaMalloc d_rgba");
+        vvCudaTools::checkError(&ok, cudaMalloc(&d_rgba, sizeof(float4)*(width+1)), "cudaMalloc d_rgba");
     if(ok)
-        vvCuda::checkError(&ok, cudaMalloc(&d_preIntTable, sizeof(uchar4)*width*width), "cudaMalloc d_preIntTable");
+        vvCudaTools::checkError(&ok, cudaMalloc(&d_preIntTable, sizeof(uchar4)*width*width), "cudaMalloc d_preIntTable");
     if(ok)
-        vvCuda::checkError(&ok, cudaMemcpy(d_rgba, rgba, sizeof(float4)*(width+1), cudaMemcpyHostToDevice), "cudaMemcpy rgba");
+        vvCudaTools::checkError(&ok, cudaMemcpy(d_rgba, rgba, sizeof(float4)*(width+1), cudaMemcpyHostToDevice), "cudaMemcpy rgba");
 
     if(ok)
         makePreintLUTCorrectKernel<<<width, width>>>(width, d_preIntTable, thickness, min, max, d_rgba);
 
     if(ok)
-        vvCuda::checkError(&ok, cudaMemcpy(preIntTable, d_preIntTable, sizeof(uchar4)*width*width, cudaMemcpyDeviceToHost), "cudaMemcpy preIntTable");
+        vvCudaTools::checkError(&ok, cudaMemcpy(preIntTable, d_preIntTable, sizeof(uchar4)*width*width, cudaMemcpyDeviceToHost), "cudaMemcpy preIntTable");
 
-    vvCuda::checkError(&ok, cudaFree(d_rgba), "cudaFree d_rgba");
-    vvCuda::checkError(&ok, cudaFree(d_preIntTable), "cudaFree d_preIntTable");
+    vvCudaTools::checkError(&ok, cudaFree(d_rgba), "cudaFree d_rgba");
+    vvCudaTools::checkError(&ok, cudaFree(d_preIntTable), "cudaFree d_preIntTable");
 
     return ok;
 }

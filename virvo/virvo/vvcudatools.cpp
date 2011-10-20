@@ -15,26 +15,50 @@
 // Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public
-// License along with this library (see license.txt); if not, write to the 
+// License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_CUDA_H
-#define VV_CUDA_H
+#include <string>
 
-#include "vvexport.h"
-#include "vvplatform.h"
-#include <cstdlib>
+#include "vvcudatools.h"
+#include "vvdebugmsg.h"
 
-class VIRVOEXPORT vvCuda
+bool vvCudaTools::checkError(bool *success, cudaError_t err, const char *msg, bool syncIfDebug)
 {
-    public:
-    static bool init();
-    static bool initGlInterop();
-    private:
-    bool s_useGlInterop();
-};
+    if (err == cudaSuccess)
+    {
+        if (!vvDebugMsg::isActive(2) || !syncIfDebug)
+            return (success ? *success : true);
 
-#endif // VV_CUDA_H
+        if (syncIfDebug)
+        {
+           cudaThreadSynchronize();
+           err = cudaGetLastError();
+        }
+    }
+
+    if (!msg)
+        msg = "vvCudaTools";
+
+    if (err == cudaSuccess)
+    {
+        vvDebugMsg::msg(3, msg, ": ok");
+        return (success ? *success : true);
+    }
+
+    std::string s(msg);
+    s += ": ";
+    s += cudaGetErrorString(err);
+    vvDebugMsg::msg(0, s.c_str());
+
+    if (success)
+    {
+        *success = false;
+        return *success;
+    }
+
+    return false;
+}
 
 //============================================================================
 // End of File

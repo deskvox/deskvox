@@ -54,6 +54,7 @@ SET(VIRVO_HEADERS
   vvcuda.h
   vvcudaimg.h
   vvcudasw.h
+  vvcudatools.h
   vvcudatransfunc.h
   vvcudautils.h
   vvdebugmsg.h
@@ -129,6 +130,7 @@ SET(VIRVO_SOURCES
   vvcolor.cpp
   vvcuda.cpp
   vvcudaimg.cpp
+  vvcudatools.cpp
   vvdebugmsg.cpp
   vvdicom.cpp
   vvdynlib.cpp

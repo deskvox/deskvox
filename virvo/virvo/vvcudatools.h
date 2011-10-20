@@ -15,26 +15,31 @@
 // Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public
-// License along with this library (see license.txt); if not, write to the 
+// License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_CUDA_H
-#define VV_CUDA_H
+#ifndef VV_CUDATOOLS_H
+#define VV_CUDATOOLS_H
+
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
 
 #include "vvexport.h"
-#include "vvplatform.h"
-#include <cstdlib>
 
-class VIRVOEXPORT vvCuda
+#ifdef HAVE_CUDA
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+
+class VIRVOEXPORT vvCudaTools
 {
     public:
-    static bool init();
-    static bool initGlInterop();
-    private:
-    bool s_useGlInterop();
+    static bool checkError(bool *success, cudaError_t err, const char *msg = NULL, bool syncIfDebug = true);
 };
 
-#endif // VV_CUDA_H
+#endif
+
+#endif
 
 //============================================================================
 // End of File

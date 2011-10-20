@@ -224,9 +224,7 @@ void vvView::mainLoop(int argc, char *argv[])
   }
 
   initGraphics(argc, argv);
-#ifdef HAVE_CUDA
   vvCuda::initGlInterop();
-#endif
 
   if (rrMode == RR_IBR)
   {
@@ -2003,13 +2001,9 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_SPHERICAL)) glutAddMenuEntry("3D textures - spherical [4]", 4);
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("3D textures - bricked [5]", 5);
   glutAddMenuEntry("CPU Shear-warp [6]", 6);
-#if defined(HAVE_CUDA)
   glutAddMenuEntry("GPU Shear-warp [7]", 7);
   glutAddMenuEntry("GPU Ray casting [8]", 8);
-#endif
-#ifdef HAVE_VOLPACK
   glutAddMenuEntry("VolPack [9]", 9);
-#endif
   glutAddMenuEntry("Image-based remote rendering", 10);
   glutAddMenuEntry("Remote rendering", 11);
   glutAddMenuEntry("Decrease quality [-]", 98);
@@ -2420,13 +2414,9 @@ void vvView::displayHelpInfo()
   cerr << " 4  = 3D Textures - Bricks" << endl;
   cerr << " 5  = 3D Textures - Spherical" << endl;
   cerr << " 6  = Shear-warp (CPU)" << endl;
-#ifdef HAVE_CUDA
   cerr << " 7  = Shear-warp (GPU)" << endl;
   cerr << " 8  = Ray casting (GPU)" << endl;
-#endif
-#ifdef HAVE_VOLPACK
   cerr << " 9  = VolPack (CPU)" << endl;
-#endif
   cerr << endl;
   cerr << "-voxeltype <num>" << endl;
   cerr << " Select the default voxel type:" << endl;

@@ -31,6 +31,9 @@
 #include "vvsoftvr.h"
 #include "vvcuda.h"
 #include <vector>
+#include <cuda.h>
+#include <cuda_gl_interop.h>
+
 
 class vvVolDesc;
 

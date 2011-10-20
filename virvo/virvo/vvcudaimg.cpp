@@ -21,6 +21,7 @@
 #include <cassert>
 #include "vvdebugmsg.h"
 #include "vvcudaimg.h"
+#include "vvcudatools.h"
 
 vvCudaImg::vvCudaImg(const int w, const int h, const Mode mode)
   : vvSoftImg(w, h)
@@ -65,21 +66,21 @@ void vvCudaImg::allocate()
   {
     if ((width > 0) && (height > 0))
     {
-      vvCuda::checkError(&ok, cudaGraphicsGLRegisterBuffer(&_imgRes, getPboName(), cudaGraphicsMapFlagsWriteDiscard),
+      vvCudaTools::checkError(&ok, cudaGraphicsGLRegisterBuffer(&_imgRes, getPboName(), cudaGraphicsMapFlagsWriteDiscard),
                          "vvCudaImg::allocate() - map PBO to CUDA");
     }
   }
   else if (_mapped)
   {
-    vvCuda::checkError(&ok, cudaHostAlloc(&h_img, width*height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped),
+    vvCudaTools::checkError(&ok, cudaHostAlloc(&h_img, width*height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped),
                        "vvCudaImg::allocate() - img alloc");
     setBuffer(h_img);
     setSize(width, height);
-    vvCuda::checkError(&ok, cudaHostGetDevicePointer(&d_img, h_img, 0), "get dev ptr img");
+    vvCudaTools::checkError(&ok, cudaHostGetDevicePointer(&d_img, h_img, 0), "get dev ptr img");
   }
   else
   {
-    vvCuda::checkError(&ok, cudaMalloc(&d_img, width*height*vvSoftImg::PIXEL_SIZE),
+    vvCudaTools::checkError(&ok, cudaMalloc(&d_img, width*height*vvSoftImg::PIXEL_SIZE),
                        "vvCudaImg::allocate() - cudaMalloc img");
   }
 #else
@@ -95,18 +96,18 @@ void vvCudaImg::deallocate()
   {
     if (_imgRes != NULL)
     {
-      vvCuda::checkError(&ok, cudaGraphicsUnregisterResource(_imgRes),
+      vvCudaTools::checkError(&ok, cudaGraphicsUnregisterResource(_imgRes),
                          "vvCudaImg::deallocate() - cudaGraphicsUnregisterResource");
     }
   }
   else if (_mapped)
   {
-    vvCuda::checkError(&ok, cudaFreeHost(h_img),
+    vvCudaTools::checkError(&ok, cudaFreeHost(h_img),
                        "vvCudaImg::deallocate() - cudaFreeHost");
   }
   else
   {
-    vvCuda::checkError(&ok, cudaFree(d_img),
+    vvCudaTools::checkError(&ok, cudaFree(d_img),
                        "vvCudaImg::deallocate() - cudaFree");
   }
 #else
@@ -120,10 +121,10 @@ void vvCudaImg::map()
   bool ok = true;
   if (_mode==TEXTURE)
   {
-    vvCuda::checkError(&ok, cudaGraphicsMapResources(1, &_imgRes, NULL),
+    vvCudaTools::checkError(&ok, cudaGraphicsMapResources(1, &_imgRes, NULL),
                        "vvCudaImg::map() - map CUDA resource");
     size_t size;
-    vvCuda::checkError(&ok, cudaGraphicsResourceGetMappedPointer((void**)&d_img, &size, _imgRes),
+    vvCudaTools::checkError(&ok, cudaGraphicsResourceGetMappedPointer((void**)&d_img, &size, _imgRes),
                        "vvCudaImg::map() - get PBO mapping");
     assert(size == static_cast<size_t>(width*height*vvSoftImg::PIXEL_SIZE));
   }
@@ -142,17 +143,17 @@ void vvCudaImg::unmap()
   bool ok = true;
   if (_mode==TEXTURE)
   {
-    vvCuda::checkError(&ok, cudaGraphicsUnmapResources(1, &_imgRes, NULL),
+    vvCudaTools::checkError(&ok, cudaGraphicsUnmapResources(1, &_imgRes, NULL),
                        "vvCudaImg::unmap() - unmap CUDA resource");
   }
   else if (_mapped)
   {
-    vvCuda::checkError(&ok, cudaThreadSynchronize(),
+    vvCudaTools::checkError(&ok, cudaThreadSynchronize(),
                        "vvCudaImg::unmap() - cudaThreadSynchronize");
   }
   else
   {
-    vvCuda::checkError(&ok, cudaMemcpy(data, d_img, width*height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost),
+    vvCudaTools::checkError(&ok, cudaMemcpy(data, d_img, width*height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost),
                        "vvCudaImg::unmap() - cpy to host");
   }
 #else

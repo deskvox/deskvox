@@ -24,65 +24,28 @@
 #include "vvconfig.h"
 #endif
 
-#ifdef HAVE_CUDA
-
 #include "vvx11.h"
+#include "vvcudatools.h"
 
 #include <string>
 #include <cstring>
-
 #include <cuda_gl_interop.h>
 
 #include "vvdebugmsg.h"
 
-
-bool vvCuda::checkError(bool *success, cudaError_t err, const char *msg, bool syncIfDebug)
-{
-    if (err == cudaSuccess)
-    {
-        if (!vvDebugMsg::isActive(2) || !syncIfDebug)
-            return (success ? *success : true);
-
-        if (syncIfDebug)
-        {
-           cudaThreadSynchronize();
-           err = cudaGetLastError();
-        }
-    }
-
-    if (!msg)
-        msg = "vvCuda";
-
-    if (err == cudaSuccess)
-    {
-        vvDebugMsg::msg(3, msg, ": ok");
-        return (success ? *success : true);
-    }
-
-    std::string s(msg);
-    s += ": ";
-    s += cudaGetErrorString(err);
-    vvDebugMsg::msg(0, s.c_str());
-
-    if (success)
-    {
-        *success = false;
-        return *success;
-    }
-
-    return false;
-}
-
-
 bool vvCuda::init()
 {
+#ifdef HAVE_CUDA
     bool ok = true;
-    if(!checkError(&ok, cudaSetDeviceFlags(cudaDeviceMapHost), "vvCuda::init (set device flags)", false))
+    if(!vvCudaTools::checkError(&ok, cudaSetDeviceFlags(cudaDeviceMapHost), "vvCuda::init (set device flags)", false))
         return false;
 
     return true;
+#else
+    std::cerr << "Cuda not found!" << std::endl;
+    return false;
+#endif
 }
-
 
 bool vvCuda::initGlInterop()
 {
@@ -109,16 +72,14 @@ bool vvCuda::initGlInterop()
 
     int dev;
     bool ok = true;
-    if(!checkError(&ok, cudaChooseDevice(&dev, &prop), "vvCuda::initGlInterop (choose device)", false))
+    if(!vvCudaTools::checkError(&ok, cudaChooseDevice(&dev, &prop), "vvCuda::initGlInterop (choose device)", false))
         return false;
-    if(!checkError(&ok, cudaGLSetGLDevice(dev), "vvCuda::initGlInterop (set device)", false))
+    if(!vvCudaTools::checkError(&ok, cudaGLSetGLDevice(dev), "vvCuda::initGlInterop (set device)", false))
         return false;
 
     done = true;
     return true;
 }
-
-#endif
 
 //============================================================================
 // End of File

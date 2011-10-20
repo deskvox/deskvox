@@ -27,6 +27,7 @@
 #include "vvglew.h"
 
 #include "vvcuda.h"
+#include "vvcudatools.h"
 #include "vvcudaimg.h"
 #include "vvcudautils.h"
 #include "vvdebugmsg.h"
@@ -901,7 +902,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   bool ok;
 
   // Free "cuda error cache".
-  vvCuda::checkError(&ok, cudaGetLastError(), "vvRayRend::vvRayRend() - free cuda error cache");
+  vvCudaTools::checkError(&ok, cudaGetLastError(), "vvRayRend::vvRayRend() - free cuda error cache");
 
   _volumeCopyToGpuOk = true;
 
@@ -945,15 +946,15 @@ vvRayRend::~vvRayRend()
   bool ok;
   for (size_t f=0; f<d_volumeArrays.size(); ++f)
   {
-    vvCuda::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
+    vvCudaTools::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
                        "vvRayRend::~vvRayRend() - free volume frame");
   }
 
-  vvCuda::checkError(&ok, cudaFreeArray(d_transferFuncArray),
+  vvCudaTools::checkError(&ok, cudaFreeArray(d_transferFuncArray),
                      "vvRayRend::~vvRayRend() - free tf");
-  vvCuda::checkError(&ok, cudaFree(d_depth),
+  vvCudaTools::checkError(&ok, cudaFree(d_depth),
                      "vvRayRend::~vvRayRend() - free depth");
-  vvCuda::checkError(&ok, cudaFree(d_uncertainty),
+  vvCudaTools::checkError(&ok, cudaFree(d_uncertainty),
                      "vvRayRend::~vvRayRend() - free uncertainty");
 
   delete[] _rgbaTF;
@@ -979,11 +980,11 @@ void vvRayRend::updateTransferFunction()
 
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
 
-  vvCuda::checkError(&ok, cudaFreeArray(d_transferFuncArray),
+  vvCudaTools::checkError(&ok, cudaFreeArray(d_transferFuncArray),
                      "vvRayRend::updateTransferFunction() - free tf texture");
-  vvCuda::checkError(&ok, cudaMallocArray(&d_transferFuncArray, &channelDesc, lutEntries, 1),
+  vvCudaTools::checkError(&ok, cudaMallocArray(&d_transferFuncArray, &channelDesc, lutEntries, 1),
                      "vvRayRend::updateTransferFunction() - malloc tf texture");
-  vvCuda::checkError(&ok, cudaMemcpyToArray(d_transferFuncArray, 0, 0, _rgbaTF, lutEntries * 4 * sizeof(float),
+  vvCudaTools::checkError(&ok, cudaMemcpyToArray(d_transferFuncArray, 0, 0, _rgbaTF, lutEntries * 4 * sizeof(float),
                                             cudaMemcpyHostToDevice),
                      "vvRayRend::updateTransferFunction() - copy tf texture to device");
 
@@ -992,7 +993,7 @@ void vvRayRend::updateTransferFunction()
   tfTexture.normalized = true;    // access with normalized texture coordinates
   tfTexture.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
 
-  vvCuda::checkError(&ok, cudaBindTextureToArray(tfTexture, d_transferFuncArray, channelDesc),
+  vvCudaTools::checkError(&ok, cudaBindTextureToArray(tfTexture, d_transferFuncArray, channelDesc),
                      "vvRayRend::updateTransferFunction() - bind tf texture");
 }
 
@@ -1154,9 +1155,9 @@ void vvRayRend::compositeVolume(int, int)
     if (_twoPassIbr)
     {
       const size_t size = vp[2] * vp[3] * sizeof(float);
-      vvCuda::checkError(&ok, cudaMalloc(&d_gatheredAlpha, size),
+      vvCudaTools::checkError(&ok, cudaMalloc(&d_gatheredAlpha, size),
                          "vvRayRend::compositeVolume() - malloc gathered alpha");
-      vvCuda::checkError(&ok, cudaMemset(d_gatheredAlpha, 0, size),
+      vvCudaTools::checkError(&ok, cudaMemset(d_gatheredAlpha, 0, size),
                          "vvRayRend::compositeVolume() - memset gathered alpha");
 
       (kernel)<<<gridSize, blockSize>>>(static_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
@@ -1336,13 +1337,13 @@ void vvRayRend::initVolumeTexture()
   int outOfMemFrame = -1;
   for (int f=0; f<vd->frames; ++f)
   {
-    vvCuda::checkError(&_volumeCopyToGpuOk, cudaMalloc3DArray(&d_volumeArrays[f],
+    vvCudaTools::checkError(&_volumeCopyToGpuOk, cudaMalloc3DArray(&d_volumeArrays[f],
                                             &_channelDesc,
                                             volumeSize),
                        "vvRayRend::initVolumeTexture() - try to alloc 3D array");
     size_t availableMem;
     size_t totalMem;
-    vvCuda::checkError(&ok, cudaMemGetInfo(&availableMem, &totalMem),
+    vvCudaTools::checkError(&ok, cudaMemGetInfo(&availableMem, &totalMem),
                        "vvRayRend::initVolumeTexture() - get mem info from device");
 
     if(!_volumeCopyToGpuOk)
@@ -1378,7 +1379,7 @@ void vvRayRend::initVolumeTexture()
     copyParams.dstArray = d_volumeArrays[f];
     copyParams.extent = volumeSize;
     copyParams.kind = cudaMemcpyHostToDevice;
-    vvCuda::checkError(&ok, cudaMemcpy3D(&copyParams),
+    vvCudaTools::checkError(&ok, cudaMemcpy3D(&copyParams),
                        "vvRayRend::initVolumeTexture() - copy volume frame to 3D array");
   }
 
@@ -1387,7 +1388,7 @@ void vvRayRend::initVolumeTexture()
     cerr << "Couldn't accomodate the volume" << endl;
     for (int f=0; f<=outOfMemFrame; ++f)
     {
-      vvCuda::checkError(&ok, cudaFree(d_volumeArrays[f]),
+      vvCudaTools::checkError(&ok, cudaFree(d_volumeArrays[f]),
                          "vvRayRend::initVolumeTexture() - free memory after failure");
       d_volumeArrays[f] = NULL;
     }
@@ -1397,7 +1398,7 @@ void vvRayRend::initVolumeTexture()
   {
     for (int f=0; f<outOfMemFrame; ++f)
     {
-      vvCuda::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
+      vvCudaTools::checkError(&ok, cudaFreeArray(d_volumeArrays[f]),
                          "vvRayRend::initVolumeTexture() - why do we do this right here?");
       d_volumeArrays[f] = NULL;
     }
@@ -1418,7 +1419,7 @@ void vvRayRend::initVolumeTexture()
         }
         volTexture8.addressMode[0] = cudaAddressModeClamp;
         volTexture8.addressMode[1] = cudaAddressModeClamp;
-        vvCuda::checkError(&ok, cudaBindTextureToArray(volTexture8, d_volumeArrays[0], _channelDesc),
+        vvCudaTools::checkError(&ok, cudaBindTextureToArray(volTexture8, d_volumeArrays[0], _channelDesc),
                            "vvRayRend::initVolumeTexture() - bind volume texture (bpc == 1)");
     }
     else if (vd->bpc == 2)
@@ -1434,7 +1435,7 @@ void vvRayRend::initVolumeTexture()
         }
         volTexture16.addressMode[0] = cudaAddressModeClamp;
         volTexture16.addressMode[1] = cudaAddressModeClamp;
-        vvCuda::checkError(&ok, cudaBindTextureToArray(volTexture16, d_volumeArrays[0], _channelDesc),
+        vvCudaTools::checkError(&ok, cudaBindTextureToArray(volTexture16, d_volumeArrays[0], _channelDesc),
                            "vvRayRend::initVolumeTexture() - bind volume texture (bpc == 2)");
     }
   }
@@ -1469,13 +1470,13 @@ bool vvRayRend::allocIbrArrays(const int w, const int h)
   vvDebugMsg::msg(3, "vvRayRend::allocIbrArrays()");
 
   bool ok = true;
-  vvCuda::checkError(&ok, cudaMalloc(&d_depth, w * h * _depthPrecision/8),
+  vvCudaTools::checkError(&ok, cudaMalloc(&d_depth, w * h * _depthPrecision/8),
                      "vvRayRend::compositeVolume() - malloc d_depth");
-  vvCuda::checkError(&ok, cudaMemset(d_depth, 0, w * h * _depthPrecision/8),
+  vvCudaTools::checkError(&ok, cudaMemset(d_depth, 0, w * h * _depthPrecision/8),
                      "vvRayRend::compositeVolume() - memset d_depth");
-  vvCuda::checkError(&ok, cudaMalloc(&d_uncertainty, w * h * _uncertaintyPrecision/8),
+  vvCudaTools::checkError(&ok, cudaMalloc(&d_uncertainty, w * h * _uncertaintyPrecision/8),
                      "vvRayRend::compositeVolume() - malloc d_uncertainty");
-  vvCuda::checkError(&ok, cudaMemset(d_uncertainty, 0, w * h * _uncertaintyPrecision/8),
+  vvCudaTools::checkError(&ok, cudaMemset(d_uncertainty, 0, w * h * _uncertaintyPrecision/8),
                      "vvRayRend::compositeVolume() - memset d_uncertainty");
   return ok;
 }

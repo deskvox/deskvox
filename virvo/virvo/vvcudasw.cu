@@ -31,6 +31,7 @@
 #include "vvcuda.h"
 #include "vvcudaimg.h"
 #include "vvcudasw.h"
+#include "vvcudatools.h"
 #include "vvvoldesc.h"
 #include "vvtoolshed.h"
 #include "vvswitchrenderer.impl.h"
@@ -1076,7 +1077,7 @@ vvCudaSW<Base>::vvCudaSW(vvVolDesc* vd, vvRenderState rs) : Base(vd, rs)
    int h_vox[5];
    for (int i=0; i<5; ++i)
        h_vox[i] = vd->vox[(i+1)%3];
-   vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_vox, h_vox, sizeof(int)*5), "cudaMemcpy vox");
+   vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_vox, h_vox, sizeof(int)*5), "cudaMemcpy vox");
 
    Base::updateTransferFunction();
 }
@@ -1106,16 +1107,16 @@ bool vvCudaSW<Base>::initVolData()
 {
     bool ok = true;
     // alloc memory for voxel arrays (for each principal viewing direction)
-    vvCuda::checkError(&ok, cudaMalloc(&d_voxels,
+    vvCudaTools::checkError(&ok, cudaMalloc(&d_voxels,
                 sizeof(Scalar)*Base::vd->vox[0]*Base::vd->vox[1]*Base::vd->vox[2]*3), "cudaMalloc vox");
     for (int i=0; i<3; ++i)
     {
 #ifdef FLOATDATA
-        if (!vvCuda::checkError(&ok, cudaMemcpy(d_voxels+i*sizeof(Scalar)*Base::vd->vox[0]*Base::vd->vox[1]*Base::vd->vox[2],
+        if (!vvCudaTools::checkError(&ok, cudaMemcpy(d_voxels+i*sizeof(Scalar)*Base::vd->vox[0]*Base::vd->vox[1]*Base::vd->vox[2],
                         fraw[i], sizeof(Scalar)*vd->getFrameBytes(), cudaMemcpyHostToDevice), "cudaMemcpy vox"))
             break;
 #else
-        if (!vvCuda::checkError(&ok, cudaMemcpy(d_voxels+i*sizeof(Scalar)*Base::vd->vox[0]*Base::vd->vox[1]*Base::vd->vox[2],
+        if (!vvCudaTools::checkError(&ok, cudaMemcpy(d_voxels+i*sizeof(Scalar)*Base::vd->vox[0]*Base::vd->vox[1]*Base::vd->vox[2],
                         Base::raw[i], Base::vd->getFrameBytes(), cudaMemcpyHostToDevice), "cudaMemcpy vox"))
             break;
 #endif
@@ -1136,7 +1137,7 @@ bool vvCudaSW<Base>::initVolDataPitched()
     for (int i=0; i<3; ++i)
     {
         cudaExtent extent = make_cudaExtent(Base::vd->vox[(i+1)%3]*sizeof(Scalar), Base::vd->vox[(i+2)%3], Base::vd->vox[(i+3)%3]);
-        if(!vvCuda::checkError(&ok, cudaMalloc3D(&d_voxptr[i], extent), "cudaMalloc3D vox"))
+        if(!vvCudaTools::checkError(&ok, cudaMalloc3D(&d_voxptr[i], extent), "cudaMalloc3D vox"))
             break;
         cudaMemcpy3DParms parms = {0};
 #ifdef FLOATDATA
@@ -1148,7 +1149,7 @@ bool vvCudaSW<Base>::initVolDataPitched()
         parms.dstPtr = d_voxptr[i];
         parms.extent = make_cudaExtent(Base::vd->vox[(i+1)%3]*sizeof(Scalar), Base::vd->vox[(i+2)%3], Base::vd->vox[(i+3)%3]);
         parms.kind = cudaMemcpyHostToDevice;
-        if(!vvCuda::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D vox"))
+        if(!vvCudaTools::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D vox"))
             break;
     }
     return ok;
@@ -1180,7 +1181,7 @@ bool vvCudaSW<Base>::initVolTex()
         else
             extent = make_cudaExtent(Base::vd->vox[(i+1)%3], Base::vd->vox[(i+2)%3], Base::vd->vox[(i+3)%3]);
         cudaChannelFormatDesc desc = cudaCreateChannelDesc<Scalar>();
-        if(!vvCuda::checkError(&ok, cudaMalloc3DArray(&d_voxarr[i], &desc, extent), "cudaMalloc3DArray vox"))
+        if(!vvCudaTools::checkError(&ok, cudaMalloc3DArray(&d_voxarr[i], &desc, extent), "cudaMalloc3DArray vox"))
             break;
         cudaMemcpy3DParms parms = {0};
         if(ntex==1)
@@ -1210,7 +1211,7 @@ bool vvCudaSW<Base>::initVolTex()
             parms.extent = make_cudaExtent(Base::vd->vox[(i+1)%3], Base::vd->vox[(i+2)%3], Base::vd->vox[(i+3)%3]);
         }
         parms.kind = cudaMemcpyHostToDevice;
-        if(!vvCuda::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D vox"))
+        if(!vvCudaTools::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D vox"))
             break;
     }
 
@@ -1236,8 +1237,8 @@ bool vvCudaSW<Base>::initTF()
 {
     bool ok = true;
     // transfer function is stored as a texture
-    vvCuda::checkError(&ok, cudaMalloc(&d_tf, Base::getLUTSize()*sizeof(LutEntry)), "cudaMalloc tf");
-    vvCuda::checkError(&ok, cudaBindTexture(NULL, tex_tf, d_tf, Base::getLUTSize()*sizeof(LutEntry)), "bind tf tex");
+    vvCudaTools::checkError(&ok, cudaMalloc(&d_tf, Base::getLUTSize()*sizeof(LutEntry)), "cudaMalloc tf");
+    vvCudaTools::checkError(&ok, cudaBindTexture(NULL, tex_tf, d_tf, Base::getLUTSize()*sizeof(LutEntry)), "bind tf tex");
     return ok;
 }
 
@@ -1254,12 +1255,12 @@ bool vvCudaSW<Base>::initPreInt()
    bool ok = true;
    // pre-integration table
    cudaChannelFormatDesc desc = cudaCreateChannelDesc<LutEntry>();
-   vvCuda::checkError(&ok, cudaMallocArray(&d_preint, &desc, Base::PRE_INT_TABLE_SIZE, Base::PRE_INT_TABLE_SIZE), "cudaMalloc preint");
+   vvCudaTools::checkError(&ok, cudaMallocArray(&d_preint, &desc, Base::PRE_INT_TABLE_SIZE, Base::PRE_INT_TABLE_SIZE), "cudaMalloc preint");
    tex_preint.normalized = true;
    tex_preint.filterMode = Base::bilinLookup ? cudaFilterModeLinear : cudaFilterModePoint;
    tex_preint.addressMode[0] = cudaAddressModeClamp;
    tex_preint.addressMode[1] = cudaAddressModeClamp;
-   vvCuda::checkError(&ok, cudaBindTextureToArray(tex_preint, d_preint, desc), "bind preint tex");
+   vvCudaTools::checkError(&ok, cudaBindTextureToArray(tex_preint, d_preint, desc), "bind preint tex");
    return ok;
 }
 
@@ -1290,40 +1291,40 @@ bool vvCudaSW<Base>::initMinMax()
        Base::vd->computeMinMaxArrays(h_minarr, h_maxarr, ds);
        cudaExtent extent = make_cudaExtent(vox[0], vox[1], vox[2]);
        cudaChannelFormatDesc desc = cudaCreateChannelDesc<uchar>();
-       vvCuda::checkError(&ok,
+       vvCudaTools::checkError(&ok,
                cudaMalloc3DArray(&d_minarr, &desc, extent), "cudaMalloc3DArray min");
-       vvCuda::checkError(&ok,
+       vvCudaTools::checkError(&ok,
                cudaMalloc3DArray(&d_maxarr, &desc, extent), "cudaMalloc3DArray max");
-       vvCuda::checkError(&ok,
+       vvCudaTools::checkError(&ok,
                cudaMalloc3DArray(&d_oparr, &desc, extent), "cudaMalloc3DArray opacity");
        cudaMemcpy3DParms parms = {0};
        parms.kind = cudaMemcpyHostToDevice;
        parms.extent = make_cudaExtent(vox[0], vox[1], vox[2]);
        parms.srcPtr = make_cudaPitchedPtr(h_minarr, vox[0], vox[0], vox[1]);
        parms.dstArray = d_minarr;
-       vvCuda::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D min");
+       vvCudaTools::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D min");
        parms.srcPtr = make_cudaPitchedPtr(h_maxarr, vox[0], vox[0], vox[1]);
        parms.dstArray = d_maxarr;
-       vvCuda::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D max");
+       vvCudaTools::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D max");
    }
 
    // min-max-table
    cudaChannelFormatDesc descMinMaxTable = cudaCreateChannelDesc<uchar>();
-   vvCuda::checkError(&ok, cudaMallocArray(&d_minmaxTable, &descMinMaxTable, Base::getLUTSize(), Base::getLUTSize()), "cudaMalloc minmax");
+   vvCudaTools::checkError(&ok, cudaMallocArray(&d_minmaxTable, &descMinMaxTable, Base::getLUTSize(), Base::getLUTSize()), "cudaMalloc minmax");
    tex_minmaxTable.normalized = true;
    tex_minmaxTable.filterMode = cudaFilterModePoint;
    tex_minmaxTable.addressMode[0] = cudaAddressModeClamp;
    tex_minmaxTable.addressMode[1] = cudaAddressModeClamp;
-   vvCuda::checkError(&ok, cudaBindTextureToArray(tex_minmaxTable, d_minmaxTable, descMinMaxTable), "bind minmax tex");
+   vvCudaTools::checkError(&ok, cudaBindTextureToArray(tex_minmaxTable, d_minmaxTable, descMinMaxTable), "bind minmax tex");
 
    // opacity texture
    cudaChannelFormatDesc descOpacityTable = cudaCreateChannelDesc<uchar>();
-   vvCuda::checkError(&ok, cudaMallocArray(&d_minmaxTable, &descOpacityTable, Base::getLUTSize(), Base::getLUTSize()), "cudaMalloc minmax");
+   vvCudaTools::checkError(&ok, cudaMallocArray(&d_minmaxTable, &descOpacityTable, Base::getLUTSize(), Base::getLUTSize()), "cudaMalloc minmax");
    tex_minmaxTable.normalized = true;
    tex_minmaxTable.filterMode = cudaFilterModePoint;
    tex_minmaxTable.addressMode[0] = cudaAddressModeClamp;
    tex_minmaxTable.addressMode[1] = cudaAddressModeClamp;
-   vvCuda::checkError(&ok, cudaBindTextureToArray(tex_minmaxTable, d_minmaxTable, descMinMaxTable), "bind minmax tex");
+   vvCudaTools::checkError(&ok, cudaBindTextureToArray(tex_minmaxTable, d_minmaxTable, descMinMaxTable), "bind minmax tex");
 
    return ok;
 }
@@ -1420,7 +1421,7 @@ void vvCudaSW<Base>::updateLUT(float dist)
 
     // update min-max-table
     Base::vd->tf.makeMinMaxTable(lutEntries, h_minmaxTable);
-    vvCuda::checkError(NULL, cudaMemcpyToArray(d_minmaxTable, 0, 0, h_minmaxTable,
+    vvCudaTools::checkError(NULL, cudaMemcpyToArray(d_minmaxTable, 0, 0, h_minmaxTable,
                 lutEntries*lutEntries, cudaMemcpyHostToDevice), "cudaMemcpy minmax");
 
     updateOpacityMap();
@@ -1432,10 +1433,10 @@ void vvCudaSW<Base>::updateLUT(float dist)
         Base::makeLookupTextureCorrect(dist);   // use this line for slow but more correct pre-integration LUT
     }
 
-    vvCuda::checkError(NULL, cudaMemcpy(d_tf, Base::rgbaConv, Base::getLUTSize()*sizeof(LutEntry), cudaMemcpyHostToDevice), "cudaMemcpy tf");
+    vvCudaTools::checkError(NULL, cudaMemcpy(d_tf, Base::rgbaConv, Base::getLUTSize()*sizeof(LutEntry), cudaMemcpyHostToDevice), "cudaMemcpy tf");
     if(Base::preIntegration)
     {
-        vvCuda::checkError(NULL, cudaMemcpyToArray(d_preint, 0, 0, &Base::preIntTable[0][0][0],
+        vvCudaTools::checkError(NULL, cudaMemcpyToArray(d_preint, 0, 0, &Base::preIntTable[0][0][0],
                     Base::PRE_INT_TABLE_SIZE*Base::PRE_INT_TABLE_SIZE*sizeof(LutEntry), cudaMemcpyHostToDevice), "cudaMemcpy preint");
     }
 }
@@ -1462,7 +1463,7 @@ bool vvCudaSW<Base>::updateOpacityMap()
         cudaExtent extent = make_cudaExtent(vox[0], vox[1], vox[2]);
         cudaChannelFormatDesc desc = cudaCreateChannelDesc<uchar>();
 #if 0
-        vvCuda::checkError(&ok,
+        vvCudaTools::checkError(&ok,
                 cudaMalloc3DArray(&d_oparr, &desc, extent), "cudaMalloc3DArray opacity");
 #endif
         cudaMemcpy3DParms parms = {0};
@@ -1470,7 +1471,7 @@ bool vvCudaSW<Base>::updateOpacityMap()
         parms.extent = make_cudaExtent(vox[0], vox[1], vox[2]);
         parms.srcPtr = make_cudaPitchedPtr(oparr, vox[0], vox[0], vox[1]);
         parms.dstArray = d_oparr;
-        vvCuda::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D opacity");
+        vvCudaTools::checkError(&ok, cudaMemcpy3D(&parms), "cudaMemcpy3D opacity");
 
         delete[] oparr;
     }
@@ -1486,7 +1487,7 @@ bool vvCudaSW<Base>::updateOpacityMap()
     tex_opacity.addressMode[0] = cudaAddressModeClamp;
     tex_opacity.addressMode[1] = cudaAddressModeClamp;
     tex_opacity.addressMode[2] = cudaAddressModeClamp;
-    vvCuda::checkError(&ok, cudaBindTextureToArray(tex_opacity, d_oparr, descOpacityTable), "bind opacity tex");
+    vvCudaTools::checkError(&ok, cudaBindTextureToArray(tex_opacity, d_oparr, descOpacityTable), "bind opacity tex");
 
     return ok;
 }
@@ -1638,7 +1639,7 @@ bool vvCudaSW<Base>::compositeNearest(int fromY, int toY, int firstSlice, int la
 
    //fprintf(stderr, "p=%d: (%d,%d) - (%d,%d)\n", Base::principal, from.x, from.y, to.x, to.y);
 
-   vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
+   vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
 
    int shmsize = Base::intImg->width*imagePrecision/8*4;
 #ifdef SHMLOAD
@@ -1764,14 +1765,14 @@ bool vvCudaSW<Base>::compositeBilinear(int fromY, int toY, int firstSlice, int l
 
     //fprintf(stderr, "p=%d: (%d,%d) - (%d,%d)\n", Base::principal, from.x, from.y, to.x, to.y);
 
-    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
+    vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start)), "cudaMemcpy start");
 #ifdef VOLTEX3D
     if(Base::sliceInterpol)
     {
-        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_stop, h_stop, sizeof(h_stop)), "cudaMemcpy stop");
-        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStart, h_tcStart, sizeof(h_tcStart)), "cudaMemcpy tcStart");
-        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStep, h_tcStep, sizeof(h_tcStep)), "cudaMemcpy tcStep");
-        vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tc3, h_tc3, sizeof(h_tc3)), "cudaMemcpy tc3");
+        vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_stop, h_stop, sizeof(h_stop)), "cudaMemcpy stop");
+        vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_tcStart, h_tcStart, sizeof(h_tcStart)), "cudaMemcpy tcStart");
+        vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_tcStep, h_tcStep, sizeof(h_tcStep)), "cudaMemcpy tcStep");
+        vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_tc3, h_tc3, sizeof(h_tc3)), "cudaMemcpy tc3");
     }
 #endif
 
@@ -1936,10 +1937,10 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 
     //fprintf(stderr, "p=%d: (%d,%d) - (%d,%d)\n", Base::principal, from.x, from.y, to.x, to.y);
 
-    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start[0])*2), "cudaMemcpy start");
-    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_stop, h_stop, sizeof(h_stop[0])*2), "cudaMemcpy stop");
-    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStart, h_tcStart, sizeof(h_tcStart[0])*2), "cudaMemcpy tcStart");
-    vvCuda::checkError(&ok, cudaMemcpyToSymbol(c_tcStep, h_tcStep, sizeof(h_tcStep[0])*2), "cudaMemcpy tcStep");
+    vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_start, h_start, sizeof(h_start[0])*2), "cudaMemcpy start");
+    vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_stop, h_stop, sizeof(h_stop[0])*2), "cudaMemcpy stop");
+    vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_tcStart, h_tcStart, sizeof(h_tcStart[0])*2), "cudaMemcpy tcStart");
+    vvCudaTools::checkError(&ok, cudaMemcpyToSymbol(c_tcStep, h_tcStep, sizeof(h_tcStep[0])*2), "cudaMemcpy tcStep");
 
     CompositionFunction compose = selectCompositionWithPrecision(this, sliceStep);
     if(compose)
