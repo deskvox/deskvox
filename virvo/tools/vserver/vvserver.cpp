@@ -576,6 +576,23 @@ bool vvServer::parseCommandLine(int argc, char** argv)
         port = vvServer::DEFAULT_PORT;
         return false;
       }
+      else if (vvToolshed::strCompare(argv[arg], "-display")==0
+              || vvToolshed::strCompare(argv[arg], "-geometry")==0)
+      {
+        // handled by GLUT
+        if ((++arg)>=argc)
+        {
+          cerr << "Required argument unspecified" << endl;
+          return false;
+        }
+      }
+      else if (vvToolshed::strCompare(argv[arg], "-iconic")==0
+              || vvToolshed::strCompare(argv[arg], "-direct")==0
+              || vvToolshed::strCompare(argv[arg], "-indirect")==0
+              || vvToolshed::strCompare(argv[arg], "-gldebug")==0
+              || vvToolshed::strCompare(argv[arg], "-sync")==0)
+      {
+      }
       else
       {
         cerr << "test----------------------"<<endl;
