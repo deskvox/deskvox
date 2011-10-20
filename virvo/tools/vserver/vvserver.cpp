@@ -111,10 +111,7 @@ class vvServer
     static void reshapeCallback(int, int);
     static void displayCallback();
     static void timerCallback(int);
-    static void debugCallbackARB(GLenum source, GLenum type, GLuint id, GLenum severity,
-                                 GLsizei length, GLchar const* message, GLvoid* userParam);
     void initGraphics(int argc, char *argv[]);
-    void initARBDebugOutput();
     void createRenderer(std::string renderertype, std::string options,
                      std::vector<std::vector<vvBrick*> > *bricks = NULL,
                      const int maxBrickSizeX = 64,

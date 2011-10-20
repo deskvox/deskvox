@@ -8,7 +8,6 @@
 #include <math.h>
 #include <string.h>
 
-#include <virvo/vvglew.h>
 #include <virvo/vvopengl.h>
 
 #include <iostream>

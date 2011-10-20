@@ -41,11 +41,14 @@ namespace
   bool debugAbortOnGLError = false;
   bool debugPrintBacktrace = false;
 
-  /** Callback function for gl errors.
+  /** Callback function for GL errors.
     If the extension GL_ARB_debug_output is available, this callback
     function will be called automatically if a GL error is generated
     */
-  void debugCallback(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum /*severity*/,
+#ifndef WINAPI
+#define WINAPI
+#endif
+  void WINAPI debugCallback(GLenum /*source*/, GLenum /*type*/, GLuint /*id*/, GLenum /*severity*/,
       GLsizei /*length*/, GLchar const* message, GLvoid* /*userParam*/)
   {
     std::cerr << "GL error: " << message << std::endl;
