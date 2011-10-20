@@ -1233,19 +1233,9 @@ void vvView::optionsMenuCallback(int item)
     ds->renderer->setParameter(vvRenderer::VV_IMG_PRECISION, ds->bufferPrecision);
     break;
   case 12:                                     // toggle showing of bricks
-    {
-      vvTexRend *rend = dynamic_cast<vvTexRend *>(ds->renderer);
-      if (rend != NULL)
-      {
-        ds->showBricks = !ds->showBricks;
-        ds->renderer->setParameter(vvRenderState::VV_SHOW_BRICKS, ds->showBricks);
-        cerr << (!ds->showBricks?"not ":"") << "showing bricks" << endl;
-      }
-      else
-      {
-        cerr << "Option not available for this renderer" << endl;
-      }
-    }
+    ds->showBricks = !ds->showBricks;
+    ds->renderer->setParameter(vvRenderState::VV_SHOW_BRICKS, ds->showBricks);
+    cerr << (!ds->showBricks?"not ":"") << "showing bricks" << endl;
     break;
   case 13:
     ds->gpuproxygeo = !ds->gpuproxygeo;
