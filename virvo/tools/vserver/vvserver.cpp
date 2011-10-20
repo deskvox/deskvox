@@ -375,15 +375,8 @@ void vvServer::timerCallback(int)
 {
   vvDebugMsg::msg(3, "vvView::timerCallback()");
 
-  switch(id)
-  {
-  case SERVER_TIMER:
-    ds->serverLoop();
-    exit(0);
-    break;
-  default:
-    break;
-    }
+  ds->serverLoop();
+  exit(0);
 }
 
 //----------------------------------------------------------------------------
