@@ -10,7 +10,6 @@
 #include "vvconfig.h"
 #endif
 #endif
-#include <virvo/vvglew.h>
 
 #include <iostream>
 #include <fstream>
