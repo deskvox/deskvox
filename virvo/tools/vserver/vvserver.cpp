@@ -18,10 +18,6 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
 #include <iostream>
 
 using std::cerr;
@@ -70,13 +66,6 @@ using std::ios;
 class vvServer
 {
   private:
-    enum                                       ///  Timer callback types
-    {
-      ANIMATION_TIMER = 0,                     ///< volume animation timer callback
-      ROTATION_TIMER  = 1,                     ///< rotation animation timer callback
-      BENCHMARK_TIMER  = 2,                    ///< benchmark timer callback
-      SERVER_TIMER  = 3                        ///< server mode timer callback
-    };
     /// Remote rendering type
     enum
     {
@@ -86,20 +75,10 @@ class vvServer
       RR_IBR
     };
     static const int DEFAULTSIZE;               ///< default window size (width and height) in pixels
-    static const float OBJ_SIZE;                ///< default object size
     static const int DEFAULT_PORT;              ///< default port for socket connections
     static vvServer* ds;                        ///< one instance of VView is always present
-    vvRenderer* renderer;                       ///< rendering engine
-    vvRenderState renderState;                  ///< renderer state
-    vvVolDesc* vd;                              ///< volume description
-    int   window;                               ///< GLUT window handle
     int   winWidth, winHeight;                  ///< window size in pixels
-    std::string currentRenderer;                ///< current renderer/rendering geometry
-    std::string currentOptions;                 ///< current options/voxel type
-    vvVector3 bgColor;                          ///< background color (R,G,B in [0..1])
-    vvVector3 pos;                              ///< volume position in object space
     int  rrMode;                                ///< memory remote rendering mode
-    int codec;                                  ///< code type/codec for images sent over the network
     int port;                                   ///< port the server renderer uses to listen for incoming connections
   public:
     vvServer();
@@ -112,11 +91,6 @@ class vvServer
     static void displayCallback();
     static void timerCallback(int);
     void initGraphics(int argc, char *argv[]);
-    void createRenderer(std::string renderertype, std::string options,
-                     std::vector<std::vector<vvBrick*> > *bricks = NULL,
-                     const int maxBrickSizeX = 64,
-                     const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);
-    void applyRendererParameters();
     void displayHelpInfo();
     bool parseCommandLine(int argc, char *argv[]);
     void mainLoop(int argc, char *argv[]);
@@ -133,14 +107,6 @@ vvServer::vvServer()
 {
   winWidth = winHeight = DEFAULTSIZE;
   ds = this;
-  renderer = NULL;
-  vd = NULL;
-  currentRenderer = "default";
-  currentOptions = "default";
-  bgColor[0] = bgColor[1] = bgColor[2] = 0.0f;
-  window = 0;
-  pos.zero();
-  codec                 = vvImage::VV_RLE;
   rrMode                = RR_NONE;
   port                  = vvServer::DEFAULT_PORT;
 }
@@ -150,13 +116,13 @@ vvServer::vvServer()
 /// Destructor.
 vvServer::~vvServer()
 {
-  delete renderer;
-  delete vd;
   ds = NULL;
 }
 
 void vvServer::serverLoop()
 {
+  vvGLTools::enableGLErrorBacktrace();
+
   while (1)
   {
     cerr << "Listening on port " << port << endl;
@@ -177,29 +143,24 @@ void vvServer::serverLoop()
     {
       case vvRenderer::REMOTE_IMAGE:
         rrMode = RR_IMAGE;
-        //currentRenderer = "planar";
         server = new vvImageServer(sock);
         break;
       case vvRenderer::REMOTE_IBR:
-#ifdef HAVE_CUDA
         rrMode = RR_IBR;
-        currentRenderer = "rayrend";
         server = new vvIbrServer(sock);
-#else
-        std::cerr << "Image based remote rendering requires CUDA." << std::endl;
-#endif
         break;
       default:
         std::cerr << "Unknown remote rendering type " << type << std::endl;
+        delete sock;
         break;
     }
 
     if(!server)
     {
-      delete sock;
       break;
     }
 
+    vvVolDesc *vd = NULL;
     if (server->initData(vd) != vvRemoteServer::VV_OK)
     {
       cerr << "Could not initialize volume data" << endl;
@@ -221,15 +182,16 @@ void vvServer::serverLoop()
         vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
       }
 
-      delete renderer;
-      renderer = NULL;
-
-      createRenderer(currentRenderer, currentOptions);
-      srand(time(NULL));
+      vvRenderState rs;
+      vvRenderer *renderer = vvRendererFactory::create(vd,
+          rs,
+          rrMode==RR_IBR ? "rayrend" : "default",
+          "");
+      if(rrMode == RR_IBR)
+        renderer->setParameter(vvRenderer::VV_USE_IBR, 1.f);
 
       server->renderLoop(renderer);
-      cerr << "Exiting..." << endl;
-
+      delete renderer;
     }
 
     // Frames vector with bricks is deleted along with the renderer.
@@ -251,19 +213,12 @@ cleanup:
 */
 void vvServer::mainLoop(int argc, char *argv[])
 {
-  vvDebugMsg::msg(2, "vvView::mainLoop()");
+  vvDebugMsg::msg(2, "vvServer::mainLoop()");
 
   initGraphics(argc, argv);
-#ifdef HAVE_CUDA
   vvCuda::initGlInterop();
-#endif
 
-  // Set window title:
-  char title[1024];
-  sprintf(title, "vvView Server: %d", port);
-  glutSetWindowTitle(title);
-
-  glutTimerFunc(1, timerCallback, SERVER_TIMER);
+  glutTimerFunc(1, timerCallback, 0);
 
   glutMainLoop();
 }
@@ -274,7 +229,7 @@ void vvServer::mainLoop(int argc, char *argv[])
 */
 void vvServer::reshapeCallback(int w, int h)
 {
-  vvDebugMsg::msg(2, "vvView::reshapeCallback(): ", w, h);
+  vvDebugMsg::msg(2, "vvServer::reshapeCallback(): ", w, h);
 
   ds->winWidth  = w;
   ds->winHeight = h;
@@ -284,7 +239,7 @@ void vvServer::reshapeCallback(int w, int h)
 
   glDrawBuffer(GL_FRONT_AND_BACK);               // select all buffers
                                                  // set clear color
-  glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
+  glClearColor(0., 0., 0., 0.);
                                                  // clear window
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
@@ -294,78 +249,22 @@ void vvServer::reshapeCallback(int w, int h)
 /// Callback method for window redraws.
 void vvServer::displayCallback(void)
 {
-  vvDebugMsg::msg(3, "vvView::displayCallback()");
+  vvDebugMsg::msg(3, "vvServer::displayCallback()");
 
-  vvGLTools::printGLError("enter vvView::displayCallback()");
+  vvGLTools::printGLError("enter vvServer::displayCallback()");
 
   glDrawBuffer(GL_BACK);
-  glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
+  glClearColor(0., 0., 0., 0.);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  if(!ds->renderer)
-    return;
 
   // Draw volume:
   glMatrixMode(GL_MODELVIEW);
 
   glDrawBuffer(GL_BACK);
-#ifdef CLIPPING_TEST
-  ds->renderClipObject();
-  ds->renderQuad();
-#endif
-
-#ifdef FBO_WITH_GEOMETRY_TEST
-  ds->renderCube();
-  ds->renderer->_renderState._opaqueGeometryPresent = true;
-#endif
-  ds->renderer->renderVolumeGL();
 
   glutSwapBuffers();
 
-  vvGLTools::printGLError("leave vvView::displayCallback()");
-}
-
-void vvServer::applyRendererParameters()
-{
-  renderer->setPosition(&pos);
-  renderer->setParameter(vvRenderState::VV_CODEC, codec);
-
-  if(rrMode == RR_IBR)
-    renderer->setParameter(vvRenderer::VV_USE_IBR, 1.);
-}
-
-
-//----------------------------------------------------------------------------
-/** Set active rendering algorithm.
- */
-void vvServer::createRenderer(std::string type, std::string options,
-                         std::vector<BrickList>* bricks, const int maxBrickSizeX,
-                         const int maxBrickSizeY, const int maxBrickSizeZ)
-{
-  vvDebugMsg::msg(3, "vvView::setRenderer()");
-
-  vvGLTools::enableGLErrorBacktrace();
-
-  ds->currentRenderer = type;
-  ds->currentOptions = options;
-
-  if(renderer)
-  renderState = *renderer;
-  delete renderer;
-  renderer = NULL;
-  vvVector3 maxBrickSize(maxBrickSizeX, maxBrickSizeY, maxBrickSizeZ);
-  renderState.setParameterV3(vvRenderState::VV_MAX_BRICK_SIZE, maxBrickSize);
-
-  if(bricks)
-  {
-    renderer = new vvTexRend(vd, renderState, vvTexRend::VV_BRICKS, vvTexRend::VV_PIX_SHD, bricks);
-  }
-  else
-  {
-    renderer = vvRendererFactory::create(vd, renderState, type.c_str(), options.c_str());
-  }
-
-  applyRendererParameters();
+  vvGLTools::printGLError("leave vvServer::displayCallback()");
 }
 
 //----------------------------------------------------------------------------
@@ -373,7 +272,7 @@ void vvServer::createRenderer(std::string type, std::string options,
 */
 void vvServer::timerCallback(int)
 {
-  vvDebugMsg::msg(3, "vvView::timerCallback()");
+  vvDebugMsg::msg(3, "vvServer::timerCallback()");
 
   ds->serverLoop();
   exit(0);
@@ -383,10 +282,7 @@ void vvServer::timerCallback(int)
 /// Initialize the GLUT window and the OpenGL graphics context.
 void vvServer::initGraphics(int argc, char *argv[])
 {
-  vvDebugMsg::msg(1, "vvView::initGraphics()");
-
-  char* version;
-  char  title[128];                              // window title
+  vvDebugMsg::msg(1, "vvServer::initGraphics()");
 
   cerr << "Number of CPUs found: " << vvToolshed::getNumProcessors() << endl;
   cerr << "Initializing GLUT." << endl;
@@ -403,11 +299,12 @@ void vvServer::initGraphics(int argc, char *argv[])
 
   // Create window title.
   // Don't use sprintf, it won't work with macros on Irix!
-  strcpy(title, "Virvo File Viewer V");
-  strcat(title, virvo::getVersionMajor());
-  strcat(title, ".");
-  strcat(title, virvo::getReleaseCounter());
-  window = glutCreateWindow(title);              // open window and set window title
+  char  title[1024];                              // window title
+  sprintf(title, "Virvo Server V%s.%s (Port %d)",
+      virvo::getVersionMajor(), virvo::getReleaseCounter(), port);
+
+  glutCreateWindow(title);              // open window and set window title
+  glutSetWindowTitle(title);
 
   // Set GL state:
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -418,7 +315,7 @@ void vvServer::initGraphics(int argc, char *argv[])
   glutDisplayFunc(displayCallback);
   glutReshapeFunc(reshapeCallback);
 
-  version = (char*)glGetString(GL_VERSION);
+  const char *version = (const char *)glGetString(GL_VERSION);
   cerr << "Found OpenGL version: " << version << endl;
   if (strncmp(version,"1.0",3)==0)
   {
@@ -438,7 +335,7 @@ void vvServer::initGraphics(int argc, char *argv[])
 /// Display command usage help on the command line.
 void vvServer::displayHelpInfo()
 {
-  vvDebugMsg::msg(1, "vvView::displayHelpInfo()");
+  vvDebugMsg::msg(1, "vvServer::displayHelpInfo()");
 
   cerr << "Syntax:" << endl;
   cerr << endl;
@@ -447,8 +344,12 @@ void vvServer::displayHelpInfo()
   cerr << "Available options:" << endl;
   cerr << endl;
   cerr << "-port (-p)" << endl;
-  cerr << " Don't use the default port (31050), but the specified one" << endl;
+  cerr << " Don't use the default port (" << DEFAULT_PORT << "), but the specified one" << endl;
   cerr << endl;
+  cerr << "-size <width> <height>" << endl;
+  cerr << " Set the window size to <width> * <height> pixels." << endl;
+  cerr << " The default window size is " << DEFAULTSIZE << " * " << DEFAULTSIZE <<
+          " pixels" << endl;
 }
 
 //----------------------------------------------------------------------------
@@ -458,7 +359,7 @@ void vvServer::displayHelpInfo()
 */
 bool vvServer::parseCommandLine(int argc, char** argv)
 {
-  vvDebugMsg::msg(1, "vvView::parseCommandLine()");
+  vvDebugMsg::msg(1, "vvServer::parseCommandLine()");
 
   int arg;                                       // index of currently processed command line argument
 
@@ -474,6 +375,26 @@ bool vvServer::parseCommandLine(int argc, char** argv)
       displayHelpInfo();
       return false;
     }
+    else if (vvToolshed::strCompare(argv[arg], "-size")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Window width missing." << endl;
+        return false;
+      }
+      winWidth = atoi(argv[arg]);
+      if ((++arg)>=argc)
+      {
+        cerr << "Window height missing." << endl;
+        return false;
+      }
+      winHeight = atoi(argv[arg]);
+      if (winWidth<1 || winHeight<1)
+      {
+        cerr << "Invalid window size." << endl;
+        return false;
+      }
+    }
     else if (vvToolshed::strCompare(argv[arg], "-port")==0)
     {
       if ((++arg)>=argc)
@@ -482,28 +403,29 @@ bool vvServer::parseCommandLine(int argc, char** argv)
         port = vvServer::DEFAULT_PORT;
         return false;
       }
-      else if (vvToolshed::strCompare(argv[arg], "-display")==0
-              || vvToolshed::strCompare(argv[arg], "-geometry")==0)
-      {
-        // handled by GLUT
-        if ((++arg)>=argc)
-        {
-          cerr << "Required argument unspecified" << endl;
-          return false;
-        }
-      }
-      else if (vvToolshed::strCompare(argv[arg], "-iconic")==0
-              || vvToolshed::strCompare(argv[arg], "-direct")==0
-              || vvToolshed::strCompare(argv[arg], "-indirect")==0
-              || vvToolshed::strCompare(argv[arg], "-gldebug")==0
-              || vvToolshed::strCompare(argv[arg], "-sync")==0)
-      {
-      }
       else
       {
         cerr << "test----------------------"<<endl;
         port = atoi(argv[arg]);
       }
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-display")==0
+        || vvToolshed::strCompare(argv[arg], "-geometry")==0)
+    {
+      // handled by GLUT
+      if ((++arg)>=argc)
+      {
+        cerr << "Required argument unspecified" << endl;
+        return false;
+      }
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-iconic")==0
+        || vvToolshed::strCompare(argv[arg], "-direct")==0
+        || vvToolshed::strCompare(argv[arg], "-indirect")==0
+        || vvToolshed::strCompare(argv[arg], "-gldebug")==0
+        || vvToolshed::strCompare(argv[arg], "-sync")==0)
+    {
+      // handled by GLUT
     }
     else
     {
@@ -520,7 +442,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
 */
 int vvServer::run(int argc, char** argv)
 {
-  vvDebugMsg::msg(1, "vvView::run()");
+  vvDebugMsg::msg(1, "vvServer::run()");
 
   cerr << "VView " << virvo::getVersionMajor() << "." << virvo::getReleaseCounter() << endl;
   cerr << "(c) " << virvo::getYearOfRelease() << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
