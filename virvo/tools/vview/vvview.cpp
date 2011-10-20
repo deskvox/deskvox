@@ -28,10 +28,6 @@ using std::ios;
 #include <GLUT/glut.h>
 #else
 #include <GL/glut.h>
-#ifdef FREEGLUT
-// For glutInitContextFlags(GLUT_DEBUG), needed for GL_ARB_debug_output
-#include <GL/freeglut.h>
-#endif
 #endif
 #include <time.h>
 #include <assert.h>
@@ -634,7 +630,8 @@ void vvView::createRenderer(std::string type, std::string options,
   vvDebugMsg::msg(3, "vvView::setRenderer()");
 
   glewInit();
-  ds->initARBDebugOutput();
+  if(!dbgOutputExtSet)
+    vvGLTools::initARBDebugOutput();
 
   ds->currentRenderer = type;
   ds->currentOptions = options;
@@ -2257,39 +2254,6 @@ void vvView::initGraphics(int argc, char *argv[])
     vvGLTools::displayOpenGLextensions(vvGLTools::ONE_BY_ONE);
   }
 }
-
-
-void vvView::initARBDebugOutput()
-{
-  if (dbgOutputExtSet)
-  {
-    return;
-  }
-
-// As of January 2011, only freeglut supports glutInitContextFlags
-// with GLUT_DEBUG. This may be outdated in the meantime as may be
-// those checks!
-#ifdef FREEGLUT
-#ifdef GL_ARB_debug_output
-#if !defined(__GNUC__) || !defined(_WIN32)
-  if (glDebugMessageCallbackARB != NULL)
-  {
-    cerr << "Init callback function for GL_ARB_debug_output extension" << endl;
-    glDebugMessageCallbackARB(debugCallbackARB, NULL);
-  }
-  else
-#endif
-  {
-    cerr << "glDebugMessageCallbackARB not available" << endl;
-  }
-#else
-  cerr << "Consider installing GLEW >= 1.5.7 for extension GL_ARB_debug_output" << endl;
-#endif // GL_ARB_debug_output
-#endif // FREEGLUT
-
-  dbgOutputExtSet = true;
-}
-
 
 //----------------------------------------------------------------------------
 /** Set projection mode to perspective or parallel.

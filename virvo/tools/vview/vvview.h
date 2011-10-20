@@ -200,7 +200,6 @@ class vvView
     static void printROIMessage();
     void setAnimationFrame(int);
     void initGraphics(int argc, char *argv[]);
-    void initARBDebugOutput();
     void createMenus();
     void createRenderer(std::string renderertype, std::string options,
                      std::vector<std::vector<vvBrick*> > *bricks = NULL,

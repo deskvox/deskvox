@@ -73,6 +73,7 @@ class VIRVOEXPORT vvGLTools
       const char* version;
     };
 
+    static void initARBDebugOutput();
     static void printGLError(const char*);
     static GLInfo getGLInfo();
     static bool isGLVersionSupported(int major, int minor, int release);

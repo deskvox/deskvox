@@ -29,6 +29,11 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+#ifdef FREEGLUT
+// For glutInitContextFlags(GLUT_DEBUG), needed for GL_ARB_debug_output
+#include <GL/freeglut.h>
+#endif
+
 #include "vvgltools.h"
 
 using namespace std;
@@ -36,6 +41,30 @@ using namespace std;
 //============================================================================
 // Method Definitions
 //============================================================================
+
+void vvGLTools::initARBDebugOutput()
+{
+// As of January 2011, only freeglut supports glutInitContextFlags
+// with GLUT_DEBUG. This may be outdated in the meantime as may be
+// those checks!
+#ifdef FREEGLUT
+#ifdef GL_ARB_debug_output
+#if !defined(__GNUC__) || !defined(_WIN32)
+  if (glDebugMessageCallbackARB != NULL)
+  {
+    cerr << "Init callback function for GL_ARB_debug_output extension" << endl;
+    glDebugMessageCallbackARB(debugCallbackARB, NULL);
+  }
+  else
+#endif
+  {
+    cerr << "glDebugMessageCallbackARB not available" << endl;
+  }
+#else
+  cerr << "Consider installing GLEW >= 1.5.7 for extension GL_ARB_debug_output" << endl;
+#endif // GL_ARB_debug_output
+#endif // FREEGLUT
+}
 
 //----------------------------------------------------------------------------
 /** Check OpenGL for errors.
