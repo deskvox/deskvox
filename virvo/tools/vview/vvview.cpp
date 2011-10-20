@@ -2244,7 +2244,6 @@ void vvView::renderClipObject()
   delete[] framebufferDump;
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
   framebufferDump = new GLfloat[viewport[2] * viewport[3] * 4];
-  glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
   glReadPixels(viewport[0], viewport[1], viewport[2], viewport[3], GL_RGBA, GL_FLOAT, framebufferDump);
   clipBuffer->unbindFramebuffer();
 }
