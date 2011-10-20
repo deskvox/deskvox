@@ -59,7 +59,6 @@ class vvView
       ANIMATION_TIMER = 0,                     ///< volume animation timer callback
       ROTATION_TIMER  = 1,                     ///< rotation animation timer callback
       BENCHMARK_TIMER  = 2,                    ///< benchmark timer callback
-      SERVER_TIMER  = 3                        ///< server mode timer callback
     };
     /// Clipping edit mode
     enum
@@ -97,7 +96,6 @@ class vvView
     int   lastWidth, lastHeight;                ///< last window size
     int   lastPosX, lastPosY;                   ///< last window position
     bool  clientMode;                           ///< true = renderer started as client
-    bool  serverMode;                           ///< true = renderer started as server
     int   slavePort;                            ///< port the slave renderer uses to listen for incoming connections
     bool  emptySpaceLeapingMode;                ///< true = bricks invisible due to current transfer function aren't rendered
     bool  earlyRayTermination;                  ///< true = don't compute invisible fragments
@@ -220,7 +218,6 @@ class vvView
     bool parseCommandLine(int argc, char *argv[]);
     void addDisplay(const char* name);
     void mainLoop(int argc, char *argv[]);
-    void serverLoop();
 };
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

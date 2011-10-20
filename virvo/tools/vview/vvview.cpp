@@ -54,24 +54,15 @@ using std::ios;
 #include <virvo/vvgltools.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>
-#include <virvo/vvprintgl.h>
 #include <virvo/vvclock.h>
-#include <virvo/vvrendercontext.h>
-//#include <virvo/vvclusterclient.h>
-//#include <virvo/vvclusterserver.h>
-#include <virvo/vvibrserver.h>
-#include <virvo/vvimageserver.h>
 #include <virvo/vvimage.h>
-#include <virvo/vvremoteserver.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
-#include <virvo/vvtexrend.h>
-#include <virvo/vvcuda.h>
 
-#include <virvo/vvbonjour/vvbonjourbrowser.h>
-#include <virvo/vvbonjour/vvbonjourresolver.h>
+//#include <virvo/vvbonjour/vvbonjourbrowser.h>
+//#include <virvo/vvbonjour/vvbonjourresolver.h>
 
 #include "vvobjview.h"
 #include "vvperformancetest.h"
@@ -141,7 +132,6 @@ vvView::vvView()
   bufferPrecision       = 8;
   useHeadLight          = false;
   clientMode            = false;
-  serverMode            = false;
   slavePort             = vvView::DEFAULT_PORT;
   ibrPrecision          = 8;
   ibrMode               = vvRenderer::VV_MAX_GRADIENT;
@@ -202,141 +192,6 @@ vvView::~vvView()
   ds = NULL;
 }
 
-void vvView::serverLoop()
-{
-  while (1)
-  {
-    cerr << "Listening on port " << slavePort << endl;
-
-    vvSocketIO *sock = new vvSocketIO(slavePort, vvSocket::VV_TCP);
-    sock->set_debuglevel(vvDebugMsg::getDebugLevel());
-    if(sock->init() != vvSocket::VV_OK)
-    {
-      std::cerr << "Failed to initialize server socket on port " << slavePort << std::endl;
-      delete sock;
-      break;
-    }
-
-#ifdef HAVE_BONJOUR
-    // Register the bonjour service for the slave.
-    vvBonjourRegistrar* registrar = new vvBonjourRegistrar();
-    const vvBonjourEntry entry = vvBonjourEntry("Virvo render slave",
-        "_distrendering._tcp", "");
-    registrar->registerService(entry, slavePort);
-#endif
-
-    vvRemoteServer* server = NULL;
-    int type;
-    sock->getInt32(type);
-    switch(type)
-    {
-      case vvRenderer::REMOTE_IMAGE:
-        rrMode = RR_IMAGE;
-        //currentRenderer = "planar";
-        server = new vvImageServer(sock);
-        break;
-      case vvRenderer::REMOTE_IBR:
-#ifdef HAVE_CUDA
-        rrMode = RR_IBR;
-        currentRenderer = "rayrend";
-        server = new vvIbrServer(sock);
-#else
-        std::cerr << "Image based remote rendering requires CUDA." << std::endl;
-#endif
-        break;
-      default:
-        std::cerr << "Unknown remote rendering type " << type << std::endl;
-        break;
-    }
-
-    if(!server)
-    {
-      delete sock;
-      break;
-    }
-
-    if (server->initData(vd) != vvRemoteServer::VV_OK)
-    {
-      cerr << "Could not initialize volume data" << endl;
-      cerr << "Continuing with next client..." << endl;
-      goto cleanup;
-    }
-
-#if 0
-    // Get bricks to render
-    std::vector<BrickList>* frames = new std::vector<BrickList>();
-    if (rrMode == RR_CLUSTER)
-    {
-      vvClusterServer* clusterServer = dynamic_cast<vvClusterServer*>(server);
-      assert(clusterServer != NULL);
-
-      bool ok = true;
-      for (int f=0; f<vd->frames; ++f)
-      {
-        BrickList bricks;
-        if (clusterServer->initBricks(bricks) != vvClusterServer::VV_OK)
-        {
-          ok = false;
-          delete frames;
-          cerr << "Could not initialize brick structure" << endl;
-          cerr << "Continuing with next client..." << endl;
-          break;
-        }
-        frames->push_back(bricks);
-      }
-
-      if(!ok)
-      {
-        delete vd;
-        vd = NULL;
-        continue;
-      }
-    }
-    setRenderer(currentGeom, currentVoxels, frames);
-#endif
-
-    if (vd != NULL)
-    {
-      if (server->getLoadVolumeFromFile())
-      {
-        vd->printInfoLine();
-      }
-
-      // Set default color scheme if no TF present:
-      if (vd->tf.isEmpty())
-      {
-        vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-        vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
-      }
-
-      delete renderer;
-      renderer = NULL;
-
-      ov = new vvObjView();
-      setProjectionMode(perspectiveMode);
-      createRenderer(currentRenderer, currentOptions);
-      srand(time(NULL));
-
-      server->renderLoop(renderer);
-      cerr << "Exiting..." << endl;
-
-      delete ov;
-      ov = NULL;
-    }
-
-    // Frames vector with bricks is deleted along with the renderer.
-    // Don't free them here.
-    // see setRenderer().
-
-cleanup:
-    delete server;
-    server = NULL;
-
-    delete vd;
-    vd = NULL;
-  }
-}
-
 //----------------------------------------------------------------------------
 /** VView main loop.
   @param filename  volume file to display
@@ -345,128 +200,109 @@ void vvView::mainLoop(int argc, char *argv[])
 {
   vvDebugMsg::msg(2, "vvView::mainLoop()");
 
-  if (serverMode)
+  if (filename!=NULL && strlen(filename)==0) filename = NULL;
+  if (filename!=NULL)
   {
-    initGraphics(argc, argv);
-#ifdef HAVE_CUDA
-    vvCuda::initGlInterop();
-#endif
-
-    // Set window title:
-    char title[1024];
-    sprintf(title, "vvView Server: %d", slavePort);
-    glutSetWindowTitle(title);
-
-    glutTimerFunc(1, timerCallback, SERVER_TIMER);
-
-    glutMainLoop();
+    vd = new vvVolDesc(filename);
+    cerr << "Loading volume file: " << filename << endl;
   }
   else
   {
-    if (filename!=NULL && strlen(filename)==0) filename = NULL;
-    if (filename!=NULL)
-    {
-      vd = new vvVolDesc(filename);
-      cerr << "Loading volume file: " << filename << endl;
-    }
-    else
-    {
-      vd = new vvVolDesc();
-      cerr << "Using default volume" << endl;
-    }
+    vd = new vvVolDesc();
+    cerr << "Using default volume" << endl;
+  }
 
-    vvFileIO fio;
-    if (fio.loadVolumeData(vd) != vvFileIO::OK)
-    {
-      cerr << "Error loading volume file" << endl;
-      delete vd;
-      vd = NULL;
-      return;
-    }
-    else vd->printInfoLine();
-
-    // Set default color scheme if no TF present:
-    if (vd->tf.isEmpty())
-    {
-      vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-      vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
-    }
-
-    if (slaveNames.size() == 0)
-    {
-#ifdef HAVE_BONJOUR
-      vvBonjourBrowser* bonjourBrowser = new vvBonjourBrowser();
-      bonjourBrowser->browseForServiceType("_distrendering._tcp");
-      int timeout = 1000;
-      while (bonjourBrowser->expectingServices() && timeout > 0)
-      {
-        --timeout;
-        sleep(1);
-      }
-      std::vector<vvBonjourEntry> entries = bonjourBrowser->getBonjourEntries();
-      for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
-      {
-        vvBonjourResolver* bonjourResolver = new vvBonjourResolver();
-        bonjourResolver->resolveBonjourEntry((*it));
-      }
-#endif
-    }
-
-    initGraphics(argc, argv);
-#ifdef HAVE_CUDA
-    vvCuda::initGlInterop();
-#endif
-
-    if (rrMode == RR_IBR)
-    {
-      currentRenderer = "ibr";
-    }
-    else if(rrMode == RR_IMAGE)
-    {
-      currentRenderer = "image";
-    }
-    else if(rrMode == RR_CLUSTER)
-    {
-      //_remoteClient = new vvClusterClient(ds->renderState, slaveNames, slavePorts, slaveFileNames, filename);
-    }
-
-    createRenderer(currentRenderer, currentOptions);
-
-    const vvVector3 size = vd->getSize();
-    const float maxedge = ts_max(size[0], size[1], size[2]);
-
-    mvScale = 1.0f / maxedge;
-    cerr << "Scale modelview matrix by " << mvScale << endl;
-
-    animSpeed = vd->dt;
-    createMenus();
-
-    ov = new vvObjView();
-    ds->ov->mv.scale(mvScale);
-
-    setProjectionMode(perspectiveMode);
-
-    // Set window title:
-    if (filename!=NULL) glutSetWindowTitle(filename);
-
-    srand(time(NULL));
-    if(benchmark)
-    {
-      glutTimerFunc(1, timerCallback, BENCHMARK_TIMER);
-    }
-
-    if (playMode)
-    {
-      renderMotion();
-    }
-    else
-    {
-      glutMainLoop();
-    }
-
+  vvFileIO fio;
+  if (fio.loadVolumeData(vd) != vvFileIO::OK)
+  {
+    cerr << "Error loading volume file" << endl;
     delete vd;
     vd = NULL;
+    return;
   }
+  else vd->printInfoLine();
+
+  // Set default color scheme if no TF present:
+  if (vd->tf.isEmpty())
+  {
+    vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+    vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+  }
+
+  if (slaveNames.size() == 0)
+  {
+#ifdef HAVE_BONJOUR
+    vvBonjourBrowser* bonjourBrowser = new vvBonjourBrowser();
+    bonjourBrowser->browseForServiceType("_distrendering._tcp");
+    int timeout = 1000;
+    while (bonjourBrowser->expectingServices() && timeout > 0)
+    {
+      --timeout;
+      sleep(1);
+    }
+    std::vector<vvBonjourEntry> entries = bonjourBrowser->getBonjourEntries();
+    for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
+    {
+      vvBonjourResolver* bonjourResolver = new vvBonjourResolver();
+      bonjourResolver->resolveBonjourEntry((*it));
+    }
+#endif
+  }
+
+  initGraphics(argc, argv);
+#ifdef HAVE_CUDA
+  vvCuda::initGlInterop();
+#endif
+
+  if (rrMode == RR_IBR)
+  {
+    currentRenderer = "ibr";
+  }
+  else if(rrMode == RR_IMAGE)
+  {
+    currentRenderer = "image";
+  }
+  else if(rrMode == RR_CLUSTER)
+  {
+    //_remoteClient = new vvClusterClient(ds->renderState, slaveNames, slavePorts, slaveFileNames, filename);
+  }
+
+  createRenderer(currentRenderer, currentOptions);
+
+  const vvVector3 size = vd->getSize();
+  const float maxedge = ts_max(size[0], size[1], size[2]);
+
+  mvScale = 1.0f / maxedge;
+  cerr << "Scale modelview matrix by " << mvScale << endl;
+
+  animSpeed = vd->dt;
+  createMenus();
+
+  ov = new vvObjView();
+  ds->ov->mv.scale(mvScale);
+
+  setProjectionMode(perspectiveMode);
+
+  // Set window title:
+  if (filename!=NULL) glutSetWindowTitle(filename);
+
+  srand(time(NULL));
+  if(benchmark)
+  {
+    glutTimerFunc(1, timerCallback, BENCHMARK_TIMER);
+  }
+
+  if (playMode)
+  {
+    renderMotion();
+  }
+  else
+  {
+    glutMainLoop();
+  }
+
+  delete vd;
+  vd = NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -783,11 +619,8 @@ void vvView::applyRendererParameters()
   if(rrMode == RR_IBR)
     renderer->setParameter(vvRenderer::VV_USE_IBR, 1.);
 
-  if(!serverMode)
-  {
-    renderer->setROIEnable(roiEnabled);
-    printROIMessage();
-  }
+  renderer->setROIEnable(roiEnabled);
+  printROIMessage();
 }
 
 
@@ -1170,10 +1003,6 @@ void vvView::timerCallback(int id)
 #endif
         runTest();
     }
-    exit(0);
-    break;
-  case SERVER_TIMER:
-    ds->serverLoop();
     exit(0);
     break;
   default:
@@ -2630,9 +2459,6 @@ void vvView::displayHelpInfo()
   cerr << endl;
   cerr << "Available options:" << endl;
   cerr << endl;
-  cerr << "-servermode (-s)" << endl;
-  cerr << " Renderer is a server in mode <mode> and accepts assignments from a client" << endl;
-  cerr << endl;
   cerr << "-clientmode <mode> (-c)" << endl;
   cerr << " Renderer is a client in mode <mode> and connects to server(s) given with -server" << endl;
   cerr << " Modes:" << endl;
@@ -2766,11 +2592,6 @@ bool vvView::parseCommandLine(int argc, char** argv)
       displayHelpInfo();
       return false;
     }
-    else if (vvToolshed::strCompare(argv[arg], "-s")==0 ||
-             vvToolshed::strCompare(argv[arg], "-servermode")==0)
-    {
-      serverMode = true;
-    }
     else if (vvToolshed::strCompare(argv[arg], "-c")==0 ||
              vvToolshed::strCompare(argv[arg], "-clientmode")==0)
     {
@@ -2888,35 +2709,6 @@ bool vvView::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-lighting")==0)
     {
       useHeadLight = true;
-    }
-    else if (vvToolshed::strCompare(argv[arg], "-server")==0)
-    {
-      if ((++arg)>=argc)
-      {
-        cerr << "Server unspecified." << endl;
-        return false;
-      }
-
-      if (!clientMode)
-      {
-        clientMode = true;
-        rrMode = RR_IBR;
-        ds->currentRenderer = "ibr";
-      }
-
-      const int port = vvToolshed::parsePort(argv[arg]);
-      slavePorts.push_back(port);
-
-      char* sname;
-      if (port != -1)
-      {
-        sname = vvToolshed::stripPort(argv[arg]);
-      }
-      else
-      {
-       sname = argv[arg];
-      }
-      slaveNames.push_back(sname);
     }
     else if (vvToolshed::strCompare(argv[arg], "-serverfilename")==0)
     {
