@@ -40,7 +40,7 @@ private:
 #ifdef WIN32
   static clock_t baseTime;                             ///< system time
   static bool useQueryPerformance;                     ///< true=use QueryPerformance API
-  static LARGE_INTEGER baseTimeQP;                     ///< system time when using QueryPerformance API
+  static LARGE_INTEGER freq;                     ///< system time when using QueryPerformance API
 #else
   static timeval baseTime;                             ///< system time when stop watch was triggered last
 #endif

@@ -31,7 +31,7 @@
 
 #ifdef _WIN32
 clock_t vvClock::baseTime = 0;
-LARGE_INTEGER vvClock::baseTimeQP;
+LARGE_INTEGER vvClock::freq;
 bool vvClock::useQueryPerformance = false;
 #else
 timeval vvClock::baseTime = { 0, 0 };
@@ -42,7 +42,6 @@ void vvClock::initClock()
 {
 #ifdef _WIN32
   baseTime = clock();
-  baseTimeQP.QuadPart = 0;
   useQueryPerformance = (QueryPerformanceFrequency(&freq)) ? true : false;
 #else
   gettimeofday(&baseTime, NULL);
@@ -57,13 +56,15 @@ double vvClock::getTime()
 #ifdef _WIN32
   if (useQueryPerformance)
   {
-    QueryPerformanceCounter(&baseTimeQP);
-    return double(baseTimeQP / CLOCKS_PER_SEC)
+	LARGE_INTEGER currTimeQP;
+    QueryPerformanceCounter((LARGE_INTEGER*)&currTimeQP);
+	return double(currTimeQP.QuadPart) / double(freq.QuadPart);
   }
   else
   {
-    baseTime = clock();
-    return double(baseTime / CLOCKS_PER_SEC);
+    clock_t currTime;
+    currTime = clock();
+    return double(currTime - baseTime / CLOCKS_PER_SEC);
   }
 #else
   timeval currTime = {0,0};
@@ -84,7 +85,7 @@ vvStopwatch::vvStopwatch()
 /// Start or restart measurement but don't reset counter.
 void vvStopwatch::start()
 {
-  baseTime = vvClock::getTime();
+  baseTime = float(vvClock::getTime());
   lastTime = 0.0f;
 }
 
@@ -92,7 +93,7 @@ void vvStopwatch::start()
 /// Return the time passed since the last start command [seconds].
 float vvStopwatch::getTime()
 {
-  float dt = vvClock::getTime() - baseTime;
+  float dt = float(vvClock::getTime()) - baseTime;
   lastTime = dt;
   return dt;
 }
