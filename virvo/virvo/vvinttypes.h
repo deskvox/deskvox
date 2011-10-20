@@ -26,6 +26,8 @@
 //============================================================================
 
 #ifdef _WIN32
+#include "vvplatform.h"
+
 /* code copied from Python's pyconfig.h,
  * to avoid different definition of  ssize_t */
 #ifdef _WIN64
