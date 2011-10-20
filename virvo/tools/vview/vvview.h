@@ -129,7 +129,6 @@ class vvView
     bool  hqMode;                               ///< true = high quality mode on, false = draft quality
     bool  refinement;                           ///< true = use high/draft quality modes, false = always use draft mode
     const char* onOff[2];                       ///< strings for "on" and "off"
-    std::vector<std::string> rendererName;      ///< strings for renderer types
     float warpMatrix[16];                       ///< warp matrix for 2D image transfer
     vvVector3 pos;                              ///< volume position in object space
     float animSpeed;                            ///< time per animation frame

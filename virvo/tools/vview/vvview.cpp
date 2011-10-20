@@ -149,28 +149,6 @@ vvView::vvView()
   mvScale               = 1.0f;
   dbgOutputExtSet       = false;
   showBt                = true;
-
-
-  // keep in sync with vvrenderer.h
-  rendererName.push_back("TexRend");
-  rendererName.push_back("Parallel software shear-warp");
-  rendererName.push_back("Perspective software shear-warp");
-  rendererName.push_back("Software shear-warp");
-  rendererName.push_back("Parallel GPU shear-warp");
-  rendererName.push_back("Perspective GPU shear-warp");
-  rendererName.push_back("GPU shear-warp");
-  rendererName.push_back("CUDA ray caster");
-  rendererName.push_back("VolPack");
-  rendererName.push_back("VolPack");
-  rendererName.push_back("Simian");
-  rendererName.push_back("Imgrend");
-  rendererName.push_back("Unknown");
-  rendererName.push_back("Stingray");
-  rendererName.push_back("Out of core texture renderer");
-  rendererName.push_back("Image based remote rendering");
-  rendererName.push_back("Remote rendering");
-  assert(rendererName.size() == vvRenderer::NUM_RENDERERS);
-
 }
 
 
