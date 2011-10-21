@@ -34,14 +34,16 @@
  */
 
 class vvOffscreenBuffer;
-class vvRemoteClient;
-class vvSocketIO;
 class vvStopwatch;
+class vvObjView;
+class vvBrick;
 
 #include <vector>
 
+#include <virvo/vvvecmath.h>
 #include <virvo/vvimage.h>
-#include <virvo/vvrayrend.h>
+#include <virvo/vvclock.h>
+#include <virvo/vvrenderer.h>
 
 class vvView
 {
