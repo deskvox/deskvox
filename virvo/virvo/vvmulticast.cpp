@@ -182,6 +182,7 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
         {
           std::string eventmsg = std::string("vvMulticast::read() Norm-Event: ");
           eventmsg += theEvent.type;
+          std::cerr << theEvent.type << std::endl;
           vvDebugMsg::msg(3, eventmsg.c_str());
           break;
         }
