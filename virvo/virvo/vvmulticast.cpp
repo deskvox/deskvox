@@ -189,7 +189,7 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
     }
     if(bytesReceived >= size) keepGoing = false;
   }
-  while (0.0 < timeout || -1.0 == timeout);
+  while((0.0 < timeout || -1.0 == timeout) && keepGoing);
 
   data = (uchar*)NormDataDetachData(theEvent.object);
   return bytesReceived;
