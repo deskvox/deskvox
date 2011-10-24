@@ -23,6 +23,7 @@
 
 #include "vvexport.h"
 #include "vvinttypes.h"
+#include "vvsocket.h"
 
 #include <string>
 
@@ -75,6 +76,7 @@ private:
   NormInstanceHandle _instance;
   NormSessionHandle  _session;
   NormObjectHandle   _object;
+  vvSocket*           _normSocket;
 };
 
 #endif

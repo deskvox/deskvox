@@ -41,7 +41,6 @@ vvSocketMonitor::vvSocketMonitor()
 
 vvSocketMonitor::~vvSocketMonitor()
 {
-  clear();
 }
 
 void vvSocketMonitor::setReadFds(const std::vector<vvSocket*>& readfds)

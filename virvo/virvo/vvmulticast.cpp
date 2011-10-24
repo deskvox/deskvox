@@ -51,6 +51,8 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
   else if(VV_RECEIVER == type)
   {
     NormStartReceiver(_session, 1024*1024);
+    NormDescriptor normDesc = NormGetDescriptor(_instance);
+    _normSocket = new vvSocket(normDesc, vvSocket::VV_UDP);
   }
 #else
   (void)addr;
@@ -68,6 +70,7 @@ vvMulticast::~vvMulticast()
   else if(VV_RECEIVER == _type)
   {
     NormStopReceiver(_session);
+    delete _normSocket;
   }
   NormDestroySession(_session);
   NormDestroyInstance(_instance);
@@ -140,13 +143,10 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::read()");
 #ifdef HAVE_NORM
-  NormDescriptor normDesc = NormGetDescriptor(_instance);
-
   vvSocketMonitor monitor;
 
   std::vector<vvSocket*> sock;
-  vvSocket normSocket = vvSocket(normDesc, vvSocket::VV_UDP);
-  sock.push_back(&normSocket);
+  sock.push_back(_normSocket);
   monitor.setReadFds(sock);
 
   NormEvent theEvent;
