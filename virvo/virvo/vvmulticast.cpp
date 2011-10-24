@@ -142,18 +142,19 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
 #ifdef HAVE_NORM
   NormDescriptor normDesc = NormGetDescriptor(_instance);
 
-  vvSocketMonitor* monitor = new vvSocketMonitor;
+  vvSocketMonitor monitor;
 
   std::vector<vvSocket*> sock;
-  sock.push_back(new vvSocket(normDesc, vvSocket::VV_UDP));
-  monitor->setReadFds(sock);
+  vvSocket normSocket = vvSocket(normDesc, vvSocket::VV_UDP);
+  sock.push_back(&normSocket);
+  monitor.setReadFds(sock);
 
   NormEvent theEvent;
   uint bytesReceived;
   bool keepGoing = true;
   do
   {
-    vvSocket* ready = monitor->wait(&timeout);
+    vvSocket* ready = monitor.wait(&timeout);
     if(NULL == ready)
     {
       vvDebugMsg::msg(2, "vvMulticast::read() error or timeout reached!");
@@ -191,7 +192,6 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
   }
   while (0.0 < timeout || -1.0 == timeout);
 
-  delete monitor;
   data = (uchar*)NormDataDetachData(theEvent.object);
   return bytesReceived;
 #else
