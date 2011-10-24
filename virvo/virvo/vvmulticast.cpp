@@ -150,7 +150,7 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
   monitor.setReadFds(sock);
 
   NormEvent theEvent;
-  uint bytesReceived;
+  uint bytesReceived = 0;
   bool keepGoing = true;
   do
   {
@@ -176,8 +176,7 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
         break;
       case NORM_RX_OBJECT_ABORTED:
         vvDebugMsg::msg(2, "vvMulticast::read() NORM_RX_OBJECT_ABORTED: transfer incomplete!");
-        bytesReceived = NormObjectGetSize(theEvent.object) - NormObjectGetBytesPending(theEvent.object);
-        keepGoing = false;
+        return -1;
         break;
       default:
         {
