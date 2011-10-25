@@ -192,6 +192,7 @@ void vvServer::serverLoop()
 
       while (1)
       {
+        glDrawBuffer(GL_BACK);
         if (!server->processEvents(renderer))
         {
           break;
