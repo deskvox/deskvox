@@ -79,7 +79,7 @@ void vvImageServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer
     _image->setNewImagePtr(_pixels);
   }
 
-  glReadPixels(0, 0, w, h, GL_RGBA, GL_BYTE, _pixels);
+  glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
 
   _image->encode(_codetype, 0, h-1, 0, w-1);
   _socket->putImage(_image);
