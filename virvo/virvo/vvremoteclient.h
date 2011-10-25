@@ -43,7 +43,7 @@ public:
   };
 
   vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_t type,
-                 const char* slaveName, int slavePort,
+                 const char* slaveName, int port,
                  const char* slaveFileName);
   virtual ~vvRemoteClient();
 
@@ -65,7 +65,7 @@ protected:
 
   uint32_t _type;
   const char* _slaveName;
-  int _slavePort;
+  int _port;
   const char* _slaveFileName;
   vvSocketIO* _socket;
 

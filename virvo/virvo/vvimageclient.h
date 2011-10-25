@@ -35,8 +35,8 @@ class VIRVOEXPORT vvImageClient : public vvRemoteClient
 {
 public:
   vvImageClient(vvVolDesc *vd, vvRenderState renderState,
-              const char* slaveNames = NULL, int slavePorts = -1,
-              const char* slaveFileNames = NULL);
+              const char* slaveName = NULL, int port = -1,
+              const char* slaveFileName = NULL);
   ~vvImageClient();
 
   ErrorType render();                                     ///< render image with depth-values

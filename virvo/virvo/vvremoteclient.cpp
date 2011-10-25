@@ -30,12 +30,12 @@ using std::cerr;
 using std::endl;
 
 vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_t type,
-                               const char *slaveName, int slavePort,
+                               const char *slaveName, int port,
                                const char *slaveFileName)
    : vvRenderer(vd, renderState),
     _type(type),
     _slaveName(slaveName),
-    _slavePort(slavePort),
+    _port(port),
     _slaveFileName(slaveFileName),
     _socket(NULL),
     _changes(true),
@@ -99,8 +99,8 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
     serverName = vvToolshed::stripPort(_slaveName);
   }
 
-  if(_slavePort != -1)
-    port = _slavePort;
+  if(_port != -1)
+    port = _port;
   if(port == -1)
     port = defaultPort;
 
