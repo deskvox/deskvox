@@ -136,7 +136,7 @@ vvRemoteServer::ErrorType vvRemoteServer::initRenderContext()
   }
 }
 
-void vvRemoteServer::renderLoop(vvRenderer* renderer)
+bool vvRemoteServer::processEvents(vvRenderer* renderer)
 {
   vvDebugMsg::msg(1, "vvRemoteServer::renderLoop()");
 
@@ -151,7 +151,6 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
   int currentFrame;
   vvTransFunc tf;
 
-  while (1)
   {
     vvGLTools::printGLError("begin vvRemoteServer::renderLoop()");
 
@@ -161,7 +160,7 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
       switch (commReason)
       {
       case vvSocketIO::VV_EXIT:
-        return;
+        return false;
       case vvSocketIO::VV_MATRIX:
         if ((_socket->getMatrix(&pr) == vvSocket::VV_OK)
            && (_socket->getMatrix(&mv) == vvSocket::VV_OK))
@@ -247,15 +246,16 @@ void vvRemoteServer::renderLoop(vvRenderer* renderer)
         break;
       default:
         vvDebugMsg::msg(0, "vvRemoteServer::mainLoop: comm reason not implemented: ", (int)commReason);
-        return;
+        return true;
       }
     }
     else if (err == vvSocket::VV_PEER_SHUTDOWN)
     {
-      return;
+      return false;
     }
 
     vvGLTools::printGLError("end vvRemoteServer::renderLoop()");
   }
+  return true;
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -48,7 +48,7 @@ public:
   vvRemoteServer::ErrorType initData(vvVolDesc*& vd);
   vvRemoteServer::ErrorType initRenderContext();
 
-  virtual void renderLoop(vvRenderer* renderer);
+  virtual bool processEvents(vvRenderer* renderer);
 protected:
   vvSocketIO* _socket;                    ///< socket for remote rendering
 

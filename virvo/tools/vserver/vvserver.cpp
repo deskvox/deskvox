@@ -190,7 +190,13 @@ void vvServer::serverLoop()
       if(rrMode == RR_IBR)
         renderer->setParameter(vvRenderer::VV_USE_IBR, 1.f);
 
-      server->renderLoop(renderer);
+      while (1)
+      {
+        if (!server->processEvents(renderer))
+        {
+          break;
+        }
+      }
       delete renderer;
     }
 
