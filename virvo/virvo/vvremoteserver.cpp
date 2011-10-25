@@ -138,7 +138,7 @@ vvRemoteServer::ErrorType vvRemoteServer::initRenderContext()
 
 bool vvRemoteServer::processEvents(vvRenderer* renderer)
 {
-  vvDebugMsg::msg(1, "vvRemoteServer::renderLoop()");
+  vvDebugMsg::msg(3, "vvRemoteServer::renderLoop()");
 
   vvSocketIO::CommReason commReason;
   vvMatrix pr;
