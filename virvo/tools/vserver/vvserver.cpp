@@ -197,6 +197,11 @@ void vvServer::serverLoop()
         {
           break;
         }
+
+        if (vvDebugMsg::getDebugLevel() > 0)
+        {
+          glutSwapBuffers();
+        }
       }
       delete renderer;
     }
@@ -385,6 +390,22 @@ bool vvServer::parseCommandLine(int argc, char** argv)
     {
       displayHelpInfo();
       return false;
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-debug")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Debug level missing." << endl;
+        return false;
+      }
+      int level = atoi(argv[arg]);
+      if (level>=0 && level<=3)
+        vvDebugMsg::setDebugLevel(level);
+      else
+      {
+        cerr << "Invalid debug level." << endl;
+        return false;
+      }
     }
     else if (vvToolshed::strCompare(argv[arg], "-size")==0)
     {
