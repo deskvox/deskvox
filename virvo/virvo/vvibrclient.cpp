@@ -276,7 +276,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   _shader->setParameter1i("closer", closer);
   _shader->setParameterMatrix4f("reprojectionMatrix" , reprojectionMatrix);
 
-  glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+  //glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
   glDrawArrays(GL_POINTS, 0, _imgVp[2]*_imgVp[3]);
 
   _shader->disable();

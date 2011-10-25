@@ -148,6 +148,7 @@ vvView::vvView()
   clipPerimeter         = false;
   mvScale               = 1.0f;
   showBt                = true;
+  ibrValidation         = true;
 }
 
 
@@ -1064,7 +1065,7 @@ void vvView::rendererMenuCallback(int item)
     "Draft", "High"
   };
 
-  if (item>=0 && item<=11)
+  if (item>=0 && item<=12)
   {
     char type[100];
     sprintf(type, "%d", item);
@@ -1970,6 +1971,7 @@ void vvView::createMenus()
   glutAddMenuEntry("VolPack [9]", 9);
   glutAddMenuEntry("Image-based remote rendering", 10);
   glutAddMenuEntry("Remote rendering", 11);
+  glutAddMenuEntry("Comparison rendering", 12);
   glutAddMenuEntry("Decrease quality [-]", 98);
   glutAddMenuEntry("Increase quality [+]", 99);
 
@@ -2126,10 +2128,17 @@ void vvView::initGraphics(int argc, char *argv[])
   glutInitContextFlags(GLUT_DEBUG);
 #endif // FREEGLUT
 
+  uint glutDisplayFlags = GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH;
+  if (ibrValidation)
+  {
+    // Need a stencil buffer for this.
+    glutDisplayFlags |= GLUT_STENCIL;
+  }
+
   if (tryQuadBuffer)
   {
     // create stereo context
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_STEREO | GLUT_DEPTH);
+    glutInitDisplayMode(glutDisplayFlags | GLUT_STEREO);
     if (!glutGet(GLUT_DISPLAY_MODE_POSSIBLE))
     {
       cerr << "Stereo mode not supported by display driver." << endl;
@@ -2139,7 +2148,7 @@ void vvView::initGraphics(int argc, char *argv[])
   if (!tryQuadBuffer)
   {
     // create double buffering context
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitDisplayMode(glutDisplayFlags);
   }
   else
   {

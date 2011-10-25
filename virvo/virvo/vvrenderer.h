@@ -189,9 +189,10 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
       IMGREND,                                    ///< 2D image renderer
       UNKNOWN,                                    ///< unknown renderer
       STINGRAY,                                   ///< Imedia's Stingray renderer
-	  VIRTEXREND,      							  ///< virtualized texture memory using bricking + out-of-core
+      VIRTEXREND,                                 ///< virtualized texture memory using bricking + out-of-core
       REMOTE_IBR,                                 ///< image based remote renderer
       REMOTE_IMAGE,                               ///< image based remote renderer
+      COMPARISON,                                 ///< renderer to compare the output from two renderers
       NUM_RENDERERS                               ///< keep last
     };
 

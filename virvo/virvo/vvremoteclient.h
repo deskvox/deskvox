@@ -21,15 +21,18 @@
 #ifndef _VV_REMOTECLIENT_H_
 #define _VV_REMOTECLIENT_H_
 
+#include "vvcomparisonrend.h"
 #include "vvexport.h"
 #include "vvrenderer.h"
 #include "vvvecmath.h"
 
 class vvSocketIO;
 class vvImage;
+class vvIbrClient;
 
 class VIRVOEXPORT vvRemoteClient : public vvRenderer
 {
+  friend class vvComparisonRend<vvImageClient, vvIbrClient>;
 public:
   enum ErrorType
   {

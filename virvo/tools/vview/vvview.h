@@ -167,6 +167,7 @@ class vvView
     float mvScale;                              ///< scale factor for the mv matrix to view the whole volume
     vvVector3 planeRot;                         ///< rotation of clipping plane normal
     bool showBt;                                ///< Show backtrace if execution stopped due to OpenGL error
+    bool ibrValidation;
 
   public:
     vvView();

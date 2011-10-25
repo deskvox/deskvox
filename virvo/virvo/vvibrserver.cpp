@@ -128,8 +128,18 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   _image->setProjectionMatrix(pr);
   _image->setViewport(vp);
   _image->setDepthRange(drMin, drMax);
-  _image->encode(_codetype, 0, h-1, 0, w-1);
-  _socket->putIbrImage(_image);
+  const int size = _image->encode(_codetype, 0, h-1, 0, w-1);
+  if (size > 0)
+  {
+    if (_socket->putIbrImage(_image) != vvSocket::VV_OK)
+    {
+      vvDebugMsg::msg(1, "Error sending image over socket...");
+    }
+  }
+  else
+  {
+    vvDebugMsg::msg(1, "Error encoding image...");
+  }
 #else
   (void)pr;
   (void)mv;

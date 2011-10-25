@@ -24,6 +24,8 @@
 #include "vvconfig.h"
 #endif
 
+#include "vvcomparisonrend.h"
+#include "vvcomparisonrend.impl.h"
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
 #include "vvtexrend.h"
@@ -75,6 +77,7 @@ void init()
   rendererAliasMap["9"] = "volpack";
   rendererAliasMap["10"] = "ibr";
   rendererAliasMap["11"] = "image";
+  rendererAliasMap["12"] = "comparison";
   // used in COVER and Inventor renderer
   rendererAliasMap["tex2d"] = "slices";
   rendererAliasMap["slices2d"] = "slices";
@@ -117,6 +120,7 @@ void init()
   rendererTypeMap["cudasw"] = vvRenderer::CUDASW;
   rendererTypeMap["rayrend"] = vvRenderer::RAYREND;
   rendererTypeMap["volpack"] = vvRenderer::VOLPACK;
+  rendererTypeMap["comparison"] = vvRenderer::COMPARISON;
   rendererTypeMap["image"] = vvRenderer::REMOTE_IMAGE;
   rendererTypeMap["ibr"] = vvRenderer::REMOTE_IBR;
 }
@@ -241,6 +245,8 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, co
 
   switch(it->second)
   {
+  case vvRenderer::COMPARISON:
+    return new vvComparisonRend<vvImageClient, vvIbrClient>(vd, rs);
   case vvRenderer::GENERIC:
     return new vvRenderer(vd, rs);
   case vvRenderer::REMOTE_IMAGE:

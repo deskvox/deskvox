@@ -54,6 +54,8 @@ SET(VIRVO_HEADERS
   #vvclusterclient.h
   #vvclusterserver.h
   vvclock.h
+  vvcomparisonrend.h
+  vvcomparisonrend.impl.h
   vvcolor.h
   vvcuda.h
   vvcudaimg.h
