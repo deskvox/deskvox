@@ -1352,8 +1352,8 @@ void vvRayRend::initVolumeTexture()
       break;
     }
 
-    vvDebugMsg::msg(1, "Total CUDA memory:     ", (int)totalMem);
-    vvDebugMsg::msg(1, "Available CUDA memory: ", (int)availableMem);
+    vvDebugMsg::msg(1, "Total CUDA memory (MB):     ", (int)(totalMem/1024/1024));
+    vvDebugMsg::msg(1, "Available CUDA memory (MB): ", (int)(availableMem/1024/1024));
 
     cudaMemcpy3DParms copyParams = { 0 };
 
