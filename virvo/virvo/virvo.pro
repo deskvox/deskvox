@@ -38,6 +38,7 @@ SOURCES = vvaabb.cpp \
     vvremoteclient.cpp \
     vvrendercontext.cpp \
     vvrenderer.cpp \
+    vvrendererfactory.cpp \
     vvrendertarget.cpp \
     vvsocket.cpp \
     vvsocketio.cpp \
@@ -101,6 +102,7 @@ HEADERS = vvaabb.h \
     vvremoteclient.h \
     vvrendercontext.h \
     vvrenderer.h \
+    vvrendererfactory.h \
     vvrendertarget.h \
     vvsllist.h \
     vvsocket.h \
