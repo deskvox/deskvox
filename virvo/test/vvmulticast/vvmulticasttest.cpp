@@ -90,7 +90,7 @@ int main(int argc, char** argv)
     cout << "done!" << endl;
 
     if(sendBytes == -1.0)
-      cout << "Error occured! (No Norm found?)" << sendBytes << endl;
+      cout << "Error occured! (No NORM found?)" << sendBytes << endl;
     else
       cout << "Successfully sent " << sendBytes << " Bytes!" << endl;
 
@@ -173,11 +173,11 @@ Build-Notes:
 build with libraries: virvo, norm, Protokit
 
 Attention!
-If Protokit and Norm are build seperately, then use libProto.a instead of libProtokit.a! (both libs are build automatically)
+If Protokit and NORM are build seperately, then use libProto.a instead of libProtokit.a! (both libs are build automatically)
 If Protokit is build together with norm (included subdirectory) then use libProtokit.a (only this lib is build)
 (Same thing for windows and .dlls)
 The reason for this issue is, that norm-developers use an older/different version of Protokit and are too lazy to fix this.
-Norm is generally build with the old version instead.
+NORM is generally build with the old version instead.
 
 
 // g++ vvmulticasttest.cpp -I/raid/home/sdelisav/deskvox/virvo/virvo -I/raid/home/sdelisav/Desktop/norm-1.4b3/common -L /raid/home/sdelisav/Desktop/norm-1.4b3/unix/ -I /raid/home/sdelisav/deskvox/qtcreator-build/virvo/ -L /raid/home/sdelisav/deskvox/qtcreator-build/virvo/virvo/ -l virvo -l norm -L /raid/home/sdelisav/Desktop/norm-1.4b3/protolib/unix/ -l Protokit -pthread -DHAVE_NORM
