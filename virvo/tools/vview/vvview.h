@@ -44,6 +44,7 @@ class vvBrick;
 #include <virvo/vvimage.h>
 #include <virvo/vvclock.h>
 #include <virvo/vvrenderer.h>
+#include <virvo/vvrendererfactory.h>
 
 class vvView
 {
@@ -124,7 +125,7 @@ class vvView
     bool  rotationMode;                         ///< true = auto-rotation possible
     int   frame;                                ///< current animation frame
     std::string currentRenderer;                ///< current renderer/rendering geometry
-    std::string currentOptions;                 ///< current options/voxel type
+    vvRendererFactory::Options currentOptions;  ///< current options/voxel type
     vvVector3 bgColor;                          ///< background color (R,G,B in [0..1])
     float draftQuality;                         ///< current draft mode rendering quality (>0)
     float highQuality;                          ///< current high quality mode rendering quality (>0)
@@ -200,7 +201,7 @@ class vvView
     void setAnimationFrame(int);
     void initGraphics(int argc, char *argv[]);
     void createMenus();
-    void createRenderer(std::string renderertype, std::string options,
+    void createRenderer(std::string renderertype, const vvRendererFactory::Options &opt,
                      std::vector<std::vector<vvBrick*> > *bricks = NULL,
                      const int maxBrickSizeX = 64,
                      const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);

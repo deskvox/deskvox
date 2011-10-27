@@ -21,6 +21,9 @@
 #ifndef _VVRENDERERFACTORY_H_
 #define _VVRENDERERFACTORY_H_
 
+#include <map>
+#include <string>
+
 #include "vvrenderer.h"
 
 /** Create vvRenderers from textual description
@@ -28,10 +31,31 @@
 class VIRVOEXPORT vvRendererFactory
 {
   public:
+    typedef std::map<std::string, std::string> Options;
+
+    /**
+     * @param vd volume description
+     * @param rs renderer state
+     * @param t renderer type or vvTexRend's geometry type
+     * @param opt options for renderer or vvTexRend's voxel type
+ */
+    static vvRenderer *create(vvVolDesc *vd,
+        const vvRenderState &rs,
+        const char *type,
+        const Options &opt);
+
+    /**
+     * @param vd volume description
+     * @param rs renderer state
+     * @param t renderer type or vvTexRend's geometry type
+     * @param o options for renderer or vvTexRend's voxel type, specify in this format: option1=value1,option2=value2
+     * do not use if you want to specify a server side filename
+ */
     static vvRenderer *create(vvVolDesc *vd,
         const vvRenderState &rs,
         const char *type=NULL,
         const char *options=NULL);
+
 };
 #endif
 

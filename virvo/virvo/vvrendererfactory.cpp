@@ -136,105 +136,99 @@ std::vector<std::string> split(const std::string &s, char delim)
   return elems;
 }
 
-struct Options
+struct ParsedOptions
 {
   std::string voxeltype;
   std::string server;
   int port;
   std::string filename;
 
-  Options() : voxeltype("default"), port(-1) {}
-};
-
-bool parseOptions(std::string str, Options *opt)
-{
-  bool ok = true;
-
-  std::vector<std::string> optlist = split(str, ',');
-  for(std::vector<std::string>::iterator it = optlist.begin();
-      it != optlist.end();
-      ++it)
+  ParsedOptions() : voxeltype("default"), port(-1) {}
+  ParsedOptions(std::string str) : voxeltype("default"), port(-1)
   {
-    std::vector<std::string> list = split(*it, '=');
-    if(list.empty())
-      continue;
-
-    std::string &option = list[0];
-    std::transform(option.begin(), option.end(), option.begin(), ::tolower);
-    switch(list.size())
+    std::vector<std::string> optlist = split(str, ',');
+    for(std::vector<std::string>::iterator it = optlist.begin();
+        it != optlist.end();
+        ++it)
     {
-    case 1:
-      opt->voxeltype = option;
-      break;
-    case 2:
-      {
-        std::string &value = list[1];
+      std::vector<std::string> list = split(*it, '=');
+      if(list.empty())
+        continue;
 
-        if(option == "server")
-        {
-          opt->server = value;
-        }
-        else if(option == "port")
-        {
-          opt->port = atoi(value.c_str());
-        }
-        else if(option == "filename")
-        {
-          opt->filename = value;
-        }
-        else
-        {
-          vvDebugMsg::msg(1, "option not handled: ", option.c_str());
-          ok = false;
-        }
-      }
-      break;
-    default:
+      std::string &option = list[0];
+      std::transform(option.begin(), option.end(), option.begin(), ::tolower);
+      switch(list.size())
       {
-        std::string &option = list[0];
-        vvDebugMsg::msg(1, "option value not handled for: ", option.c_str());
-        ok = false;
+      case 1:
+        singleOption(list[0], "");
+        break;
+      case 2:
+        singleOption(list[0], list[1]);
+        break;
+      default:
+        vvDebugMsg::msg(1, "option value not handled for: ", list[0].c_str());
+        break;
       }
-      break;
     }
   }
-  return ok;
-}
 
-} // namespace
+  ParsedOptions(const vvRendererFactory::Options &options) : voxeltype("default"), port(-1)
+  {
+    for(std::map<std::string, std::string>::const_iterator it = options.begin();
+        it != options.end();
+        ++it)
+    {
+      singleOption(it->first, it->second);
+    }
+  }
 
-/**
- * @param vd volume description
- * @param rs renderer state
- * @param t renderer type or vvTexRend's geometry type
- * @param o options for renderer or vvTexRend's voxel type, specify in this format: option1=value1,option2=value2
- */
-vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const char *o)
+  bool singleOption(const std::string &opt, const std::string &val)
+  {
+    if(val.empty())
+    {
+      voxeltype = val;
+    }
+    else
+    {
+      if(opt == "voxeltype")
+      {
+        voxeltype = val;
+      }
+      else if(opt == "server")
+      {
+        server = val;
+      }
+      else if(opt== "port")
+      {
+        port = atoi(val.c_str());
+      }
+      else if(opt == "filename")
+      {
+        filename = val;
+      }
+      else
+      {
+        vvDebugMsg::msg(1, "option not handled: ", opt.c_str());
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
+vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const ParsedOptions &options)
 {
-  vvDebugMsg::msg(3, "vvRendererFactory::create: type=", t);
-  vvDebugMsg::msg(3, "vvRendererFactory::create: options=", o);
-
   init();
 
   if(!t || !strcmp(t, "default"))
     t = getenv("VV_RENDERER");
-
   if(!t)
     t = "default";
-
   std::string type(t);
   std::transform(type.begin(), type.end(), type.begin(), ::tolower);
-
-  if(!o)
-    o = "default";
-
-  Options options;
-  parseOptions(o, &options);
-
   RendererAliasMap::iterator ait = rendererAliasMap.find(type);
   if(ait != rendererAliasMap.end())
     type = ait->second.c_str();
-  
   RendererTypeMap::iterator it = rendererTypeMap.find(type);
   if(it == rendererTypeMap.end())
   {
@@ -282,6 +276,34 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, co
     break;
   }
   return NULL; // fix warning
+}
+
+} // namespace
+
+vvRenderer *vvRendererFactory::create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const char *o)
+{
+  vvDebugMsg::msg(3, "vvRendererFactory::create: type=", t);
+  vvDebugMsg::msg(3, "vvRendererFactory::create: options=", o);
+
+  if(!o)
+    o = "default";
+  ParsedOptions options(o);
+
+  return ::create(vd, rs, t, options);
+}
+
+
+
+vvRenderer *vvRendererFactory::create(vvVolDesc *vd,
+    const vvRenderState &rs,
+    const char *t,
+    const vvRendererFactory::Options &opts)
+{
+  vvDebugMsg::msg(3, "vvRendererFactory::create: type=", t);
+
+  ParsedOptions options(opts);
+
+  return ::create(vd, rs, t, options);
 }
 
 //============================================================================

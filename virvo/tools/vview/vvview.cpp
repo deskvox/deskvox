@@ -86,7 +86,6 @@ vvView::vvView()
   vd = NULL;
   ov = NULL;
   currentRenderer = "default";
-  currentOptions = "default";
   bgColor[0] = bgColor[1] = bgColor[2] = 0.0f;
   frame = 0;
   filename = NULL;
@@ -599,7 +598,7 @@ void vvView::applyRendererParameters()
 //----------------------------------------------------------------------------
 /** Set active rendering algorithm.
  */
-void vvView::createRenderer(std::string type, std::string options,
+void vvView::createRenderer(std::string type, const vvRendererFactory::Options &options,
                          std::vector<BrickList>* bricks, const int maxBrickSizeX,
                          const int maxBrickSizeY, const int maxBrickSizeZ)
 {
@@ -610,24 +609,23 @@ void vvView::createRenderer(std::string type, std::string options,
   ds->currentRenderer = type;
   ds->currentOptions = options;
 
+  vvRendererFactory::Options opt(options);
+
   if(!slaveNames.empty())
   {
-    options += ",server=";
-    options += slaveNames[0];
+    opt["server"] = slaveNames[0];
   }
 
   if(!slaveFileNames.empty())
   {
-    options += ",filename=";
-    options += slaveFileNames[0];
+    opt["filename"] = slaveFileNames[0];
   }
 
   if(!slavePorts.empty())
   {
-    options += ",port=";
     std::stringstream port;
     port << slavePorts[0];
-    options += port.str();
+    opt["port"] = port.str();
   }
 
   if(renderer)
@@ -652,7 +650,7 @@ void vvView::createRenderer(std::string type, std::string options,
   }
   else
   {
-    renderer = vvRendererFactory::create(vd, renderState, type.c_str(), options.c_str());
+    renderer = vvRendererFactory::create(vd, renderState, type.c_str(), opt);
   }
 
   //static_cast<vvTexRend *>(renderer)->setTexMemorySize( 4 );
@@ -1101,26 +1099,26 @@ void vvView::voxelMenuCallback(int item)
   switch(item)
   {
   case 1:
-    ds->currentOptions = "rgba";
+    ds->currentOptions["voxeltype"] = "rgba";
     break;
   case 2:
-    ds->currentOptions = "sgilut";
+    ds->currentOptions["voxeltype"] = "sgilut";
     break;
   case 3:
-    ds->currentOptions = "paltex";
+    ds->currentOptions["voxeltype"] = "paltex";
     break;
   case 4:
-    ds->currentOptions = "regcomb";
+    ds->currentOptions["voxeltype"] = "regcomb";
     break;
   case 5:
-    ds->currentOptions = "arb";
+    ds->currentOptions["voxeltype"] = "arb";
     break;
   case 6:
-    ds->currentOptions = "shader";
+    ds->currentOptions["voxeltype"] = "shader";
     break;
   case 0:
   default:
-    ds->currentOptions = "default";
+    ds->currentOptions["voxeltype"] = "default";
     break;
   }
 
@@ -1734,7 +1732,9 @@ double vvView::performanceTest()
       totalTime->start();
 
       int framesRendered = 0;
-      ds->createRenderer(test->getGeomType(), test->getVoxelType(), 0,
+      vvRendererFactory::Options opt;
+      opt["voxeltype"] = test->getVoxelType();
+      ds->createRenderer(test->getGeomType(), opt, 0,
                       (int) test->getBrickDims()[0],
                       (int) test->getBrickDims()[1],
                       (int) test->getBrickDims()[2]);
@@ -1888,7 +1888,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   cerr << "Test (" << testNr << "/" << testCnt << ")" << endl;
   cerr << "Local host........................................" << localHost << endl;
   cerr << "Renderer/geometry................................." << ds->currentRenderer << endl;
-  cerr << "Renderer options/voxel type......................." << ds->currentOptions << endl;
+  cerr << "Renderer options/voxel type......................." << ds->currentOptions["voxeltype"] << endl;
   cerr << "Volume file name.................................." << ds->vd->getFilename() << endl;
   cerr << "Volume size [voxels].............................." << ds->vd->vox[0] << " x " << ds->vd->vox[1] << " x " << ds->vd->vox[2] << endl;
   cerr << "Output image size [pixels]........................" << viewport[2] << " x " << viewport[3] << endl;
@@ -2569,7 +2569,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cerr << "Option string/voxel type missing." << endl;
         return false;
       }
-      ds->currentOptions = argv[arg];
+      ds->currentOptions["voxeltype"] = argv[arg];
     }
     else if (vvToolshed::strCompare(argv[arg], "-size")==0)
     {
