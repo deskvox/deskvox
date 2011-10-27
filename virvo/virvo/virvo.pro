@@ -64,6 +64,7 @@ SOURCES = vvaabb.cpp \
     vvsoftpar.cpp \
     vvsoftper.cpp \
     vvsoftvr.cpp \
+    vvsoftsw.cpp \
     vvbonjour/vvbonjourbrowser.cpp \
     vvbonjour/vvbonjourentry.cpp \
     vvbonjour/vvbonjourregistrar.cpp \
@@ -73,6 +74,8 @@ SOURCES = vvaabb.cpp \
     vvibr.cpp \
     vvibrclient.cpp \
     vvibrserver.cpp \
+    vvimageclient.cpp \
+    vvimageserver.cpp \
     vvremoteserver.cpp
 HEADERS = vvaabb.h \
     vvarray.h \
@@ -130,6 +133,7 @@ HEADERS = vvaabb.h \
     vvsoftpar.h \
     vvsoftper.h \
     vvsoftvr.h \
+    vvsoftsw.h \
     vvbonjour/vvbonjourbrowser.h \
     vvbonjour/vvbonjourentry.h \
     vvbonjour/vvbonjourregistrar.h \
@@ -139,6 +143,8 @@ HEADERS = vvaabb.h \
     vvibr.h \
     vvibrclient.h \
     vvibrserver.h \
+    vvimageclient.h \
+    vvimageserver.h \
     vvremoteserver.h
 TARGET = coVirvo
 DEVFILES = $$HEADERS
