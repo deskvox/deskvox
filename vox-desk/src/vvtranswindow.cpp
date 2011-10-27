@@ -1485,7 +1485,7 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
   {
     // Shift colors according to HDR bins:
     tmpBar = new uchar[vvVolDesc::NUM_HDR_BINS * RGBA * 3];
-    _canvas->_vd->tf.makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->real[0], _canvas->_vd->real[1], _invertCheck->getCheck());
+    _canvas->_vd->tf.makeColorBar(vvVolDesc::NUM_HDR_BINS, tmpBar, _canvas->_vd->real[0], _canvas->_vd->real[1], _invertCheck->getCheck()!=0);
     for (i=0; i<width; ++i)
     {
       fval = norm2data(float(i) / float(width));  // calculates pixel position in linear data space
@@ -1502,7 +1502,7 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
     if (!_shell->_floatRangeDialog->_opacityCheck->getCheck())
     {
       tmpBar = new uchar[width * RGBA * 3];
-      _canvas->_vd->tf.makeColorBar(width, tmpBar, _dataZoom[0], _dataZoom[1], _invertCheck->getCheck());
+      _canvas->_vd->tf.makeColorBar(width, tmpBar, _dataZoom[0], _dataZoom[1], _invertCheck->getCheck()!=0);
       memcpy(colorBar + RGBA * 2 * width, tmpBar + RGBA * 2 * width, RGBA * width); // copy linear opacity to color bar
       memcpy(colorBar + RGBA * width, colorBar, RGBA * width); // copy non-linear color to combined color/opacity bar
       for (i=0; i<width; ++i)
@@ -1514,7 +1514,7 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
   }
   else  // standard iso-range TF mode
   {
-    _canvas->_vd->tf.makeColorBar(width, colorBar, _dataZoom[0], _dataZoom[1], _invertCheck->getCheck());
+    _canvas->_vd->tf.makeColorBar(width, colorBar, _dataZoom[0], _dataZoom[1], _invertCheck->getCheck()!=0);
   }
 }
 

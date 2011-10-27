@@ -237,7 +237,7 @@ void VVSliceViewer::showSlice(int slice)
   delete sliceImage;
   sliceImage = new FXImage(_shell->getApp(), sliceBuffer, IMAGE_NEAREST | IMAGE_KEEP, width, height);
   sliceImage->create();
-  sliceImage->mirror(_mirrorX->getCheck(), _mirrorY->getCheck());
+  sliceImage->mirror(_mirrorX->getCheck()!=0, _mirrorY->getCheck()!=0);
   sliceImage->scale(_sliceCanvas->getWidth(), _sliceCanvas->getHeight());
   dc.drawImage(sliceImage, 0, 0);
 }
