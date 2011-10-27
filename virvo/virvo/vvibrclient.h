@@ -69,7 +69,6 @@ private:
   float _imgDepthRange[2];                                ///< Depth range of _ibrImg
   void initIbrFrame();                                    ///< initialize pixel-points in object space
 
-  vvShaderFactory* _shaderFactory;
   vvShaderProgram* _shader;
 
   void createThreads();                                   ///< creates threads for every socket connection

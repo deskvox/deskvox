@@ -73,7 +73,6 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
 , _haveFrame(false)
 , _synchronous(false)
 , _image(NULL)
-, _shaderFactory(NULL)
 , _shader(NULL)
 {
   vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
@@ -99,8 +98,7 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
   _newFrame = true; // request a new frame
   _image = new vvIbrImage;
 
-  _shaderFactory = new vvShaderFactory();
-  _shader = _shaderFactory->createProgram("ibr", "", "");
+  _shader = vvShaderFactory().createProgram("ibr", "", "");
   if(!_shader)
     vvDebugMsg::msg(0, "vvIbrClient::vvIbrClient: could not find ibr shader");
 
@@ -117,7 +115,6 @@ vvIbrClient::~vvIbrClient()
     glDeleteBuffers(1, &_pointVBO);
   glDeleteTextures(1, &_rgbaTex);
   glDeleteTextures(1, &_depthTex);
-  delete _shaderFactory;
   delete _shader;
   delete _image;
 }
