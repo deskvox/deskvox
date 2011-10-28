@@ -50,7 +50,6 @@ using std::ios;
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>
 #include <virvo/vvclock.h>
-#include <virvo/vvimage.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvdebugmsg.h>

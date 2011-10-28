@@ -43,13 +43,11 @@ using std::ios;
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
-#include <virvo/vvimage.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvvoldesc.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
-#include <virvo/vvtexrend.h>
 #include <virvo/vvcuda.h>
 
 /**
