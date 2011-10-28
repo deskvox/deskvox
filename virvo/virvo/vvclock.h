@@ -34,7 +34,7 @@ public:
   static double getTime();
 
 private:
-  static void initClock();
+  static void init();
 
   static bool initialized;
 #ifdef WIN32

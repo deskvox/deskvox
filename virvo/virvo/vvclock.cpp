@@ -38,7 +38,7 @@ timeval vvClock::baseTime = { 0, 0 };
 #endif
 bool vvClock::initialized = false;
 
-void vvClock::initClock()
+void vvClock::init()
 {
 #ifdef _WIN32
   baseTime = clock();
@@ -51,7 +51,7 @@ void vvClock::initClock()
 
 double vvClock::getTime()
 {
-  if(!initialized) initClock();
+  if(!initialized) init();
 
 #ifdef _WIN32
   if (useQueryPerformance)
