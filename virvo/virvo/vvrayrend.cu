@@ -1470,6 +1470,10 @@ bool vvRayRend::allocIbrArrays(const int w, const int h)
   vvDebugMsg::msg(3, "vvRayRend::allocIbrArrays()");
 
   bool ok = true;
+  vvCudaTools::checkError(&ok, cudaFree(d_depth),
+                          "vvRayRend::compositeVolume() - free d_depth");
+  vvCudaTools::checkError(&ok, cudaFree(d_uncertainty),
+                          "vvRayRend::compositeVolume() - free d_uncertainty");
   vvCudaTools::checkError(&ok, cudaMalloc(&d_depth, w * h * _depthPrecision/8),
                      "vvRayRend::compositeVolume() - malloc d_depth");
   vvCudaTools::checkError(&ok, cudaMemset(d_depth, 0, w * h * _depthPrecision/8),
