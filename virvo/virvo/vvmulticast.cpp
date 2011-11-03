@@ -45,12 +45,20 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
   {
     NormSessionId sessionId = (NormSessionId)rand();
     // TODO: Adjust these numbers depending on the used network topology
-    NormStartSender(_session, sessionId, 1024*1024, 1400, 64, 16);
-    NormSetTxSocketBuffer(_session, 512000);
+    NormSetTransmitRate(_session, 8e10);
+    NormSetTransmitCacheBounds(_session, 100000000, 1, 128);
+    NormSetBackoffFactor(_session, 0.0);
+//    NormSetTxRobustFactor(_session, 1);
+    NormSetGroupSize(_session, 10);
+//    NormSetAutoParity(_session, 1);
+//    NormSetGrttMax(_session, 1);
+    NormStartSender(_session, sessionId, 1024*1024, 1400, 64, 2);
+    NormSetTxSocketBuffer(_session, 1024*1024*32);
   }
   else if(VV_RECEIVER == type)
   {
     NormStartReceiver(_session, 1024*1024);
+    NormSetRxSocketBuffer(_session, 1024*1024*64);
     NormDescriptor normDesc = NormGetDescriptor(_instance);
     _normSocket = new vvSocket(normDesc, vvSocket::VV_UDP);
   }
