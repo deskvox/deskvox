@@ -133,7 +133,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
         case NORM_TX_FLUSH_COMPLETED:
         case NORM_LOCAL_SENDER_CLOSED:
         case NORM_TX_OBJECT_SENT:
-          vvDebugMsg::msg(3, "vvMulticast::write() NORM_TX_FLUSH_COMPLETED: tile-transfer completed.");
+          vvDebugMsg::msg(3, "vvMulticast::write() NORM_TX_FLUSH_COMPLETED: chunk-transfer completed.");
           bytesSent += NormObjectGetSize(theEvent.object);
           keepGoing = false;
           break;
@@ -168,7 +168,7 @@ ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
   monitor.setReadFds(sock);
 
   NormEvent theEvent;
-  size_t tile = 0;
+  size_t chunk = 0;
   size_t bytesReceived = 0;
   bool keepGoing = true;
   do
@@ -193,12 +193,11 @@ ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
           bytesReceived += NormObjectGetSize(theEvent.object);
           // copy data into array
           uchar *t_data = (uchar*)NormDataDetachData(theEvent.object);
-          std::cout << "TILE DONE!!! +++++++++++++++++++++++++" << std::endl;
           for(int i=0;i<NormObjectGetSize(theEvent.object);i++)
           {
-            data[i+tile*CHUNK_SIZE] = t_data[i];
+            data[i+chunk*CHUNK_SIZE] = t_data[i];
           }
-          tile++;
+          chunk++;
           break;
         }
       case NORM_RX_OBJECT_ABORTED:
