@@ -48,7 +48,7 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
     NormSessionId sessionId = (NormSessionId)rand();
     // TODO: Adjust these numbers depending on the used network topology
     NormSetTransmitRate(_session, 8e10);
-    NormSetTransmitCacheBounds(_session, TILE_SIZE, 1, 128);
+    NormSetTransmitCacheBounds(_session, CHUNK_SIZE, 1, 128);
     NormSetBackoffFactor(_session, 0.0);
 //    NormSetTxRobustFactor(_session, 1);
     NormSetGroupSize(_session, 10);
@@ -91,10 +91,10 @@ ssize_t vvMulticast::write(const uchar* bytes, const uint size, double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::write()");
 #ifdef HAVE_NORM
-  for(int i=0; i<size; i+=TILE_SIZE)
+  for(int i=0; i<size; i+=CHUNK_SIZE)
   {
-    uint frameSize = std::min(uint(TILE_SIZE), size);
-    _object = NormDataEnqueue(_session, (char*)&bytes[i*TILE_SIZE], frameSize);
+    uint frameSize = std::min(uint(CHUNK_SIZE), size);
+    _object = NormDataEnqueue(_session, (char*)&bytes[i*CHUNK_SIZE], frameSize);
 
     if(NORM_OBJECT_INVALID ==_object)
     {
@@ -196,7 +196,7 @@ ssize_t vvMulticast::read(uchar* data, const uint size, double timeout)
           std::cout << "TILE DONE!!! +++++++++++++++++++++++++" << std::endl;
           for(int i=0;i<NormObjectGetSize(theEvent.object);i++)
           {
-            data[i+tile*TILE_SIZE] = t_data[i];
+            data[i+tile*CHUNK_SIZE] = t_data[i];
           }
           tile++;
           break;
