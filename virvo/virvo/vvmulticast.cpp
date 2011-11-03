@@ -87,13 +87,13 @@ vvMulticast::~vvMulticast()
 #endif
 }
 
-ssize_t vvMulticast::write(const uchar* bytes, const uint size, double timeout)
+ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::write()");
 #ifdef HAVE_NORM
   for(int i=0; i<size; i+=CHUNK_SIZE)
   {
-    uint frameSize = std::min(uint(CHUNK_SIZE), size);
+    size_t frameSize = std::min(size_t(CHUNK_SIZE), size);
     _object = NormDataEnqueue(_session, (char*)&bytes[i*CHUNK_SIZE], frameSize);
 
     if(NORM_OBJECT_INVALID ==_object)
@@ -112,7 +112,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const uint size, double timeout)
 
     vvSocket* ready;
     NormEvent theEvent;
-    uint bytesSent = 0;
+    size_t bytesSent = 0;
     bool keepGoing = true;
     while(keepGoing)
     {
@@ -157,7 +157,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const uint size, double timeout)
 #endif
 }
 
-ssize_t vvMulticast::read(uchar* data, const uint size, double timeout)
+ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::read()");
 #ifdef HAVE_NORM
@@ -168,8 +168,8 @@ ssize_t vvMulticast::read(uchar* data, const uint size, double timeout)
   monitor.setReadFds(sock);
 
   NormEvent theEvent;
-  uint tile = 0;
-  uint bytesReceived = 0;
+  size_t tile = 0;
+  size_t bytesReceived = 0;
   bool keepGoing = true;
   do
   {
