@@ -39,6 +39,10 @@ typedef const void* NormObjectHandle;
 class VIRVOEXPORT vvMulticast
 {
 public:
+  enum
+  {
+    TILE_SIZE = 20*1024*1024
+  };
   enum MulticastType
   {
     VV_SENDER = 0,
@@ -69,7 +73,7 @@ public:
     \param timeout timeout in seconds or negative for no timeout
     \return number of bytes actually read
     */
-  ssize_t read(const uint size, uchar*& data, double timeout = -1.0);
+  ssize_t read(uchar* data, const uint size, double timeout = -1.0);
 
 private:
   MulticastType      _type;

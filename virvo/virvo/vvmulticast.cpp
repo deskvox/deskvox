@@ -27,6 +27,8 @@
 #include "vvmulticast.h"
 #include "vvsocketmonitor.h"
 
+#include <algorithm>
+
 #ifdef HAVE_NORM
 #include <normApi.h>
 #include <stdlib.h>
@@ -46,7 +48,7 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
     NormSessionId sessionId = (NormSessionId)rand();
     // TODO: Adjust these numbers depending on the used network topology
     NormSetTransmitRate(_session, 8e10);
-    NormSetTransmitCacheBounds(_session, 100000000, 1, 128);
+    NormSetTransmitCacheBounds(_session, TILE_SIZE, 1, 128);
     NormSetBackoffFactor(_session, 0.0);
 //    NormSetTxRobustFactor(_session, 1);
     NormSetGroupSize(_session, 10);
@@ -89,56 +91,64 @@ ssize_t vvMulticast::write(const uchar* bytes, const uint size, double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::write()");
 #ifdef HAVE_NORM
-  _object = NormDataEnqueue(_session, (char*)bytes, size);
-
-  if(NORM_OBJECT_INVALID ==_object)
+  for(int i=0; i<size; i+=TILE_SIZE)
   {
-    vvDebugMsg::msg(2, "vvMulticast::write(): Norm Object is invalid!");
-    return false;
-  }
+    uint frameSize = std::min(uint(TILE_SIZE), size);
+    _object = NormDataEnqueue(_session, (char*)&bytes[i*TILE_SIZE], frameSize);
 
-  NormDescriptor normDesc = NormGetDescriptor(_instance);
-
-  vvSocketMonitor* monitor = new vvSocketMonitor;
-
-  std::vector<vvSocket*> sock;
-  sock.push_back(new vvSocket(normDesc, vvSocket::VV_UDP));
-  monitor->setReadFds(sock);
-
-  vvSocket* ready;
-  NormEvent theEvent;
-  while(true)
-  {
-    ready = monitor->wait(&timeout);
-    if(NULL == ready)
+    if(NORM_OBJECT_INVALID ==_object)
     {
-      vvDebugMsg::msg(2, "vvMulticast::write() error or timeout reached!");
-      return 0;
+      vvDebugMsg::msg(2, "vvMulticast::write(): Norm Object is invalid!");
+      return -2;
     }
-    else
+
+    NormDescriptor normDesc = NormGetDescriptor(_instance);
+
+    vvSocketMonitor* monitor = new vvSocketMonitor;
+
+    std::vector<vvSocket*> sock;
+    sock.push_back(new vvSocket(normDesc, vvSocket::VV_UDP));
+    monitor->setReadFds(sock);
+
+    vvSocket* ready;
+    NormEvent theEvent;
+    uint bytesSent = 0;
+    bool keepGoing = true;
+    while(keepGoing)
     {
-      NormGetNextEvent(_instance, &theEvent);
-      switch(theEvent.type)
+      ready = monitor->wait(&timeout);
+      if(NULL == ready)
       {
-      case NORM_CC_ACTIVE:
-        vvDebugMsg::msg(3, "vvMulticast::write() NORM_CC_ACTIVE: transmission still active");
-        break;
-      case NORM_TX_FLUSH_COMPLETED:
-      case NORM_LOCAL_SENDER_CLOSED:
-      case NORM_TX_OBJECT_SENT:
-        vvDebugMsg::msg(3, "vvMulticast::write() NORM_TX_FLUSH_COMPLETED: transfer completed.");
-        return NormObjectGetSize(theEvent.object) - NormObjectGetBytesPending(theEvent.object);
-        break;
-      default:
+        vvDebugMsg::msg(2, "vvMulticast::write() error or timeout reached!");
+        return 0;
+      }
+      else
+      {
+        NormGetNextEvent(_instance, &theEvent);
+        switch(theEvent.type)
         {
-          std::string eventmsg = std::string("vvMulticast::write() Norm-Event: ");
-          eventmsg += theEvent.type;
-          vvDebugMsg::msg(3, eventmsg.c_str());
+        case NORM_CC_ACTIVE:
+          vvDebugMsg::msg(3, "vvMulticast::write() NORM_CC_ACTIVE: transmission still active");
           break;
+        case NORM_TX_FLUSH_COMPLETED:
+        case NORM_LOCAL_SENDER_CLOSED:
+        case NORM_TX_OBJECT_SENT:
+          vvDebugMsg::msg(3, "vvMulticast::write() NORM_TX_FLUSH_COMPLETED: tile-transfer completed.");
+          bytesSent += NormObjectGetSize(theEvent.object);
+          keepGoing = false;
+          break;
+        default:
+          {
+            std::string eventmsg = std::string("vvMulticast::write() Norm-Event: ");
+            eventmsg += theEvent.type;
+            vvDebugMsg::msg(3, eventmsg.c_str());
+            break;
+          }
         }
       }
     }
   }
+  return size;
 #else
   (void)bytes;
   (void)size;
@@ -147,7 +157,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const uint size, double timeout)
 #endif
 }
 
-ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
+ssize_t vvMulticast::read(uchar* data, const uint size, double timeout)
 {
   vvDebugMsg::msg(3, "vvMulticast::read()");
 #ifdef HAVE_NORM
@@ -158,6 +168,7 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
   monitor.setReadFds(sock);
 
   NormEvent theEvent;
+  uint tile = 0;
   uint bytesReceived = 0;
   bool keepGoing = true;
   do
@@ -175,13 +186,21 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
       {
       case NORM_RX_OBJECT_UPDATED:
         vvDebugMsg::msg(3, "vvMulticast::read() NORM_RX_OBJECT_UPDATED: the identified receive object has newly received data content.");
-        bytesReceived = NormObjectGetSize(theEvent.object) - NormObjectGetBytesPending(theEvent.object);
         break;
       case NORM_RX_OBJECT_COMPLETED:
-        vvDebugMsg::msg(3, "vvMulticast::read() NORM_RX_OBJECT_COMPLETED: transfer completed.");
-        bytesReceived = NormObjectGetSize(theEvent.object) - NormObjectGetBytesPending(theEvent.object);
-        keepGoing = false;
-        break;
+        {
+          vvDebugMsg::msg(3, "vvMulticast::read() NORM_RX_OBJECT_COMPLETED: transfer completed.");
+          bytesReceived += NormObjectGetSize(theEvent.object);
+          // copy data into array
+          uchar *t_data = (uchar*)NormDataDetachData(theEvent.object);
+          std::cout << "TILE DONE!!! +++++++++++++++++++++++++" << std::endl;
+          for(int i=0;i<NormObjectGetSize(theEvent.object);i++)
+          {
+            data[i+tile*TILE_SIZE] = t_data[i];
+          }
+          tile++;
+          break;
+        }
       case NORM_RX_OBJECT_ABORTED:
         vvDebugMsg::msg(2, "vvMulticast::read() NORM_RX_OBJECT_ABORTED: transfer incomplete!");
         return -1;
@@ -198,8 +217,6 @@ ssize_t vvMulticast::read(const uint size, uchar*& data, double timeout)
     if(bytesReceived >= size) keepGoing = false;
   }
   while((0.0 < timeout || -1.0 == timeout) && keepGoing);
-
-  data = (uchar*)NormDataDetachData(theEvent.object);
   return bytesReceived;
 #else
   (void)size;
