@@ -53,7 +53,7 @@ vvComparisonRend<ReferenceRend, TestRend>::~vvComparisonRend()
 template<typename ReferenceRend, typename TestRend>
 void vvComparisonRend<ReferenceRend, TestRend>::renderVolumeGL()
 {
-
+  vvDebugMsg::msg(3, "vvComparisonRend::renderVolumeGL()");
 }
 
 //----------------------------------------------------------------------------
@@ -124,48 +124,59 @@ void vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL()
 
   _test->renderVolumeGL();
 
+  const int chan = 4;
+
   // Depth complexity from ibr rendering.
-  uchar* ibrDepthCompl = new uchar[vp[2] * vp[3]];
-  glReadPixels(0, 0, vp[2], vp[3], GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, ibrDepthCompl);
+  const size_t size = static_cast<size_t>(vp[2] * vp[3]);
+  uchar* ibrDepthCompl = new uchar[size];
+  glReadPixels(vp[0], vp[1], vp[2], vp[3], GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, ibrDepthCompl);
+  uchar* ibrImg = new uchar[size * chan];
+  glReadPixels(vp[0], vp[1], vp[2], vp[3], GL_RGBA, GL_UNSIGNED_BYTE, ibrImg);
 
   // Compare images.
-  const size_t size = static_cast<size_t>(vp[2] * vp[3]);
-  float* noise = new float[size];
-  float* sigToNoiseRatio = new float[size];
-  float peak = 0.0f;
+  float* noise = new float[size * chan];
+  int nonHolePixels = 0;
+  float mseNonHoles = 0.0f; // mean squared error only for non-hole pixels
   for (size_t i = 0; i < size; ++i)
   {
     if (ibrDepthCompl[i] > 0)
     {
-      noise[i] = static_cast<float>(abs(refImg.getImagePtr()[i] - ibrDepthCompl[i]));
-      sigToNoiseRatio[i] = static_cast<float>(ibrDepthCompl[i])
-                             / (noise[i] != 0.0f) ? noise[i] : 1.0f;
-      if (sigToNoiseRatio[i] > peak)
+      for (int c = 0; c < chan; ++c)
       {
-        peak = sigToNoiseRatio[i];
+        const int idx = i * chan + c;
+#define POWF(x) ((static_cast<float>(x)) * (static_cast<float>(x)))
+        noise[idx] = POWF(refImg.getImagePtr()[idx] - ibrImg[idx]);
+#undef POWF
+
+        if (c < 3)
+        {
+          mseNonHoles += noise[idx];
+        }
       }
+      ++nonHolePixels;
     }
     else
     {
-      noise[i] = 0.0f;
-      sigToNoiseRatio[i] = 0.0f;
+      for (int c = 0; c < chan; ++c)
+      {
+        const int idx = i * chan + c;
+        noise[idx] = 0.0f;
+      }
     }
   }
 
-  glDrawPixels(vp[2], vp[3], GL_LUMINANCE, GL_UNSIGNED_BYTE, noise);
-
-  float meanSigToNoise = 0.0f;
-  for (size_t i = 0; i < size; ++i)
+  if (nonHolePixels > 0)
   {
-    meanSigToNoise += sigToNoiseRatio[i];
+    mseNonHoles /= (static_cast<float>(nonHolePixels) * 3.0f);
   }
-  meanSigToNoise /= static_cast<float>(size);
-  std::cerr << peak << std::endl;
-  std::cerr << log10(static_cast<double>(meanSigToNoise)) << std::endl;
+  const double MAX = 255.0;
+  const float psnr = mseNonHoles != 0.0f ? 10 * log10((MAX * MAX) / mseNonHoles) : 0.0f;
+  std::cout << "Drawn pixels: " << nonHolePixels << std::endl;
+  std::cout << "Peak signal-to-noise ratios: " << psnr << std::endl;
 
   delete[] noise;
-  delete[] sigToNoiseRatio;
   delete[] ibrDepthCompl;
+  delete[] ibrImg;
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
