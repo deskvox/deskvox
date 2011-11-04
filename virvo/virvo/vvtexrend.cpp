@@ -59,9 +59,6 @@
 #include "vvvoldesc.h"
 #include "vvpthread.h"
 
-const int MAX_VIEWPORT_WIDTH = 4800;
-const int MAX_VIEWPORT_HEIGHT = 1200;
-
 using namespace std;
 
 struct vvTexRend::Threads
@@ -97,7 +94,7 @@ struct ThreadArgs
   GLfloat* modelview;                         ///< the current GL_MODELVIEW matrix
   GLfloat* projection;                        ///< the current GL_PROJECTION matrix
   vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
-  GLfloat* pixels;                            ///< after rendering each thread will read back its data to this array
+  std::vector<GLfloat>* pixels;               ///< after rendering each thread will read back its data to this array
   vvGLTools::Viewport viewport;               ///< the current OpenGL viewport
   float lastRenderTime;                       ///< measured for dynamic load balancing
   float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
@@ -434,15 +431,15 @@ vvTexRend::~vvTexRend()
     // Finally join the threads.
     _terminateThreads = true;
     pthread_barrier_wait(&_threads->barrier);
-    for (unsigned int i = 0; i < _usedThreads; ++i)
+    for (uint i = 0; i < _usedThreads; ++i)
     {
       void* exitStatus;
       pthread_join(_threads->thread[i], &exitStatus);
     }
 
-    for (unsigned int i = 0; i < _usedThreads; ++i)
+    for (uint i = 0; i < _numThreads; ++i)
     {
-      delete[] _threadData[i].pixels;
+      delete _threadData[i].pixels;
     }
 
     pthread_barrier_destroy(&_threads->barrier);
@@ -1497,7 +1494,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
       // During load balancing, the share will (probably) be adjusted.
       _threadData[i].share = 1.0f / static_cast<float>(_usedThreads);
       _threadData[i].viewport = vvGLTools::getViewport();
-      _threadData[i].pixels = new GLfloat[MAX_VIEWPORT_WIDTH * MAX_VIEWPORT_HEIGHT * 4];
+      _threadData[i].pixels = new std::vector<GLfloat>;std::cerr << (_threadData[i].pixels) << std::endl;
       _threadData[i].brickDataChanged = false;
       _threadData[i].transferFunctionChanged = false;
       _threadData[i].lastFrame = -1;
@@ -1572,8 +1569,9 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
   _visitor->setOffscreenBuffers(_offscreenBuffers, _usedThreads);
 
   // Provide the visitor with the pixel data of each thread either.
-  GLfloat** pixels = new GLfloat*[_numThreads];
-  for (unsigned int i = 0; i < _numThreads; ++i)
+  std::vector< std::vector<GLfloat>* > pixels;
+  pixels.resize(_numThreads);
+  for (uint i = 0; i < _numThreads; ++i)
   {
     if (_threadData[i].active)
     {
@@ -3295,7 +3293,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     glGetFloatv(GL_PROJECTION_MATRIX, projection);
 
     int leaf = 0;
-    for (unsigned int i = 0; i < _numThreads; ++i)
+    for (uint i = 0; i < _numThreads; ++i)
     {
       if (_threadData[i].active)
       {
@@ -3638,8 +3636,9 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       vvRect* screenRect = data->halfSpace->getProjectedScreenRect(&data->probeMin, &data->probeMax, true);
 
       // This call switches the currently readable buffer to the fbo offscreen buffer.
+      data->pixels->resize(screenRect->width * screenRect->height * 4);
       glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-      glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_FLOAT, data->pixels);
+      glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_FLOAT, &(*data->pixels)[0]);
       glPopAttrib();
       data->renderer->unsetGLenvironment();
       data->renderer->_offscreenBuffers[data->threadId]->unbindFramebuffer();

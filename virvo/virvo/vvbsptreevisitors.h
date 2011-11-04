@@ -49,13 +49,13 @@ public:
 
   void setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
                            const int numOffscreenBuffers);
-  void setPixels(GLfloat**& pixels);
+  void setPixels(const std::vector< std::vector<GLfloat>* >& pixels);
   void setWidth(const int width);
   void setHeight(const int height);
 private:
   vvOffscreenBuffer** _offscreenBuffers;
   int _numOffscreenBuffers;
-  GLfloat** _pixels;
+  std::vector< std::vector<GLfloat>* > _pixels;
   int _width;
   int _height;
 

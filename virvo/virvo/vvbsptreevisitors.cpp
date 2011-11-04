@@ -61,9 +61,10 @@ void vvThreadVisitor::visit(vvVisitable* obj) const
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  std::vector<GLfloat>& data = *_pixels[hs->getId()];
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16,
                screenRect->width, screenRect->height,
-               0, GL_RGBA, GL_FLOAT, _pixels[hs->getId()]);
+               0, GL_RGBA, GL_FLOAT, &data[0]);
 
   // Fix the tex coords to a range of 0.0 to 1.0 and adjust
   // the size of the viewport aligned quad.
@@ -94,7 +95,7 @@ void vvThreadVisitor::setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
   _numOffscreenBuffers = numOffscreenBuffers;
 }
 
-void vvThreadVisitor::setPixels(GLfloat**& pixels)
+void vvThreadVisitor::setPixels(const std::vector< std::vector<GLfloat>* >& pixels)
 {
   _pixels = pixels;
 }
