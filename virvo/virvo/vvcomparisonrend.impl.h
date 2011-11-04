@@ -170,7 +170,7 @@ void vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL()
     mseNonHoles /= (static_cast<float>(nonHolePixels) * 3.0f);
   }
   const double MAX = 255.0;
-  const float psnr = mseNonHoles != 0.0f ? 10 * log10((MAX * MAX) / mseNonHoles) : 0.0f;
+  const float psnr = float(mseNonHoles != 0.0f ? 10 * log10((MAX * MAX) / mseNonHoles) : 0.0f);
   std::cout << "Drawn pixels: " << nonHolePixels << std::endl;
   std::cout << "Peak signal-to-noise ratios: " << psnr << std::endl;
 
