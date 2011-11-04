@@ -72,20 +72,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 {
   friend class vvBrick;
   public:
-    struct BrickSet
-    {
-      vvSLList<vvBrick*> bricks;
-      int parentThreadId;
-
-      vvVector3 center;
-      float dist;
-
-      inline bool operator<(const BrickSet& rhs) const      ///< compare bricks based upon dist to eye position
-      {
-        return (dist < rhs.dist);
-      }
-    };
-
     struct Threads;
 
     uint _numThreads;                             ///< thread count
@@ -100,10 +86,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     std::vector<GLuint> _vertIndicesAll;
     std::vector<GLuint *> _vertIndices;
     vvOffscreenBuffer** _offscreenBuffers;
-    bool _somethingChanged;                       ///< when smth changed (e.g. the transfer function, bricks will possibly be rearranged)
     vvBspTree* _bspTree;
     vvThreadVisitor* _visitor;
-    int _deviationExceedCnt;
 
     int _numBricks[3];                            ///< number of bricks for each dimension
     enum ErrorType                                /// Error Codes

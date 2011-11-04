@@ -1519,7 +1519,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
   // their buffers themselves when their respective gl context is
   // bound, thus the buffers are set to 0 initially.
   _offscreenBuffers = new vvOffscreenBuffer*[_numThreads];
-  for (unsigned int i = 0; i < _numThreads; ++i)
+  for (uint i = 0; i < _numThreads; ++i)
   {
     _offscreenBuffers[i] = NULL;
   }
@@ -1527,7 +1527,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
   // Dispatch the threads. This has to be done in a separate loop since the first operation
   // the callback function will perform is making its gl context current. This would most
   // probably interfer with the context creation performed in the loop above.
-  for (unsigned int i = 0; i < _numThreads; ++i)
+  for (uint i = 0; i < _numThreads; ++i)
   {
     if (_threadData[i].active)
     {
@@ -1545,12 +1545,9 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
 {
   ErrorType err = OK;
 
-  // A new game... .
-  _deviationExceedCnt = 0;
-
   float* part = new float[_usedThreads];
   int p = 0;
-  for (unsigned int i = 0; i < _numThreads; ++i)
+  for (uint i = 0; i < _numThreads; ++i)
   {
     if (_threadData[i].active)
     {
@@ -1623,7 +1620,7 @@ vvTexRend::ErrorType vvTexRend::distributeBricks()
 
 void vvTexRend::notifyThreads(const bool brickDataChanged, const bool transferFunctionChanged)
 {
-  for (unsigned int i = 0; i < _numThreads; ++i)
+  for (uint i = 0; i < _numThreads; ++i)
   {
     if (_threadData[i].active)
     {
