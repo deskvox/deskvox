@@ -32,7 +32,6 @@
 #ifdef HAVE_NORM
 #include <normApi.h>
 #include <stdlib.h>
-#include <sys/select.h>
 #endif
 
 vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastType type)
@@ -62,7 +61,7 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
     NormStartReceiver(_session, 1024*1024);
     NormSetRxSocketBuffer(_session, 1024*1024*64);
     NormDescriptor normDesc = NormGetDescriptor(_instance);
-    _normSocket = new vvSocket(normDesc, vvSocket::VV_UDP);
+    _normSocket = new vvSocket(int(normDesc), vvSocket::VV_UDP);
   }
 #else
   (void)addr;
@@ -91,7 +90,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
 {
   vvDebugMsg::msg(3, "vvMulticast::write()");
 #ifdef HAVE_NORM
-  for(int i=0; i<size; i+=CHUNK_SIZE)
+  for(unsigned int i=0; i<size; i+=CHUNK_SIZE)
   {
     size_t frameSize = std::min(size_t(CHUNK_SIZE), size);
     _object = NormDataEnqueue(_session, (char*)&bytes[i*CHUNK_SIZE], frameSize);
@@ -107,7 +106,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
     vvSocketMonitor* monitor = new vvSocketMonitor;
 
     std::vector<vvSocket*> sock;
-    sock.push_back(new vvSocket(normDesc, vvSocket::VV_UDP));
+    sock.push_back(new vvSocket(int(normDesc), vvSocket::VV_UDP));
     monitor->setReadFds(sock);
 
     vvSocket* ready;
@@ -133,8 +132,8 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
         case NORM_TX_FLUSH_COMPLETED:
         case NORM_LOCAL_SENDER_CLOSED:
         case NORM_TX_OBJECT_SENT:
-          vvDebugMsg::msg(3, "vvMulticast::write() NORM_TX_FLUSH_COMPLETED: chunk-transfer completed.");
-          bytesSent += NormObjectGetSize(theEvent.object);
+          vvDebugMsg::msg(3, "vvMulticast::write() NORM_TX_FLUSH_COMPLETED: tile-transfer completed.");
+          bytesSent += size_t(NormObjectGetSize(theEvent.object));
           keepGoing = false;
           break;
         default:
@@ -190,7 +189,7 @@ ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
       case NORM_RX_OBJECT_COMPLETED:
         {
           vvDebugMsg::msg(3, "vvMulticast::read() NORM_RX_OBJECT_COMPLETED: transfer completed.");
-          bytesReceived += NormObjectGetSize(theEvent.object);
+          bytesReceived += size_t(NormObjectGetSize(theEvent.object));
           // copy data into array
           uchar *t_data = (uchar*)NormDataDetachData(theEvent.object);
           for(int i=0;i<NormObjectGetSize(theEvent.object);i++)

@@ -23,10 +23,12 @@
 #include <cstdlib>
 #include <cstdio>
 #include <vector>
+#include <pthread.h>
 
 #include "vvmulticast.h"
 #include "vvsocketio.h"
 #include "vvclock.h"
+#include "vvtoolshed.h"
 
 using namespace std;
 
@@ -178,9 +180,10 @@ int main(int argc, char** argv)
     bool done = false;
     while(!done)
     {
-      usleep(100);
+      vvToolshed::sleep(100);
+
       done = true;
-      for(int i = 0;i<servers.size(); i++)
+      for(unsigned int i = 0;i<servers.size(); i++)
       {
         if(false == servers[i]->_done)
         {
@@ -206,7 +209,7 @@ int main(int argc, char** argv)
     int sendBytes = foo.write(reinterpret_cast<const unsigned char*>(bar), count, sendTimeout);
 cout << "sendBytes = " << sendBytes << endl;
 cout << "sendTimeout = " << sendTimeout << endl;
-    for(int i = 0;i<servers.size() && sendBytes>0; i++)
+    for(unsigned int i = 0;i<servers.size() && sendBytes>0; i++)
     {
       char *multidone = new char[5];
       servers[i]->_socket->read_string(multidone, 5);

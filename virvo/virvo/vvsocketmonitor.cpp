@@ -18,7 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _WIN32
+
 
 #include "vvclock.h"
 #include "vvdebugmsg.h"
@@ -108,7 +108,7 @@ vvSocket* vvSocketMonitor::wait(double* timeout)
     {
       tout = new timeval;
       tout->tv_sec  = static_cast<int>(*timeout);
-      tout->tv_usec = (*timeout - static_cast<int>(*timeout)) * 1000000.0;
+      tout->tv_usec = long((*timeout - static_cast<int>(*timeout)) * 1000000.0);
     }
     else
     {
@@ -165,7 +165,8 @@ vvSocket* vvSocketMonitor::wait(double* timeout)
   else if(done == -1)
   {
     vvDebugMsg::msg(2, "vvSocketMonitor::wait() error by select() returned!");
-    switch(errno)
+#ifndef _WIN32
+	switch(errno)
     {
     case EAGAIN:
       vvDebugMsg::msg(2, "vvSocketMonitor::wait() The kernel was (perhaps temporarily) unable to allocate the requested number of file descriptors.");
@@ -183,6 +184,35 @@ vvSocket* vvSocketMonitor::wait(double* timeout)
       vvDebugMsg::msg(2, "vvSocketMonitor::wait() unknown erro occurred.");
       break;
     }
+#else
+	  switch(errno)
+      {
+	  case WSANOTINITIALISED:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() A successful WSAStartup call must occur before using this function.");  	  
+		  break;
+    case WSAEFAULT:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() The Windows Sockets implementation was unable to allocate needed resources for its internal operations, or the readfds, writefds, exceptfds, or timeval parameters are not part of the user address space.");
+      break;
+    case WSAENETDOWN:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() The network subsystem has failed.");
+      break;
+    case WSAEINVAL:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() The time-out value is not valid, or all three descriptor parameters were null.");
+      break;
+    case WSAEINTR:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() A blocking Windows Socket 1.1 call was canceled through WSACancelBlockingCall.");
+      break;
+    case WSAEINPROGRESS:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
+      break;
+    case WSAENOTSOCK:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() One of the descriptor sets contains an entry that is not a socket.");
+      break;
+    default:
+      vvDebugMsg::msg(2, "vvSocketMonitor::wait() unknown error occurred.");
+      break;
+    }
+#endif
   }
 
   return NULL;
@@ -209,5 +239,4 @@ void vvSocketMonitor::clear()
   FD_ZERO(&_errorsockfds);
 }
 
-#endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

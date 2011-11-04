@@ -1,5 +1,6 @@
 SET(MULTICASTTEST_SRC vvmulticasttest.cpp)
 
 # vvMulticasttest
+INCLUDE_DIRECTORIES(${PTHREAD_INCLUDE_DIR})
 ADD_EXECUTABLE(vvmulticasttest ${MULTICASTTEST_SRC})
-TARGET_LINK_LIBRARIES(vvmulticasttest virvo)
+TARGET_LINK_LIBRARIES(vvmulticasttest virvo ${PTHREAD_LIBRARIES})

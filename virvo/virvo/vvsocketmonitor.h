@@ -21,8 +21,6 @@
 #ifndef _VV_SOCKETMONITOR_H_
 #define _VV_SOCKETMONITOR_H_
 
-#ifndef _WIN32
-
 #include "vvsocket.h"
 
 #include <vector>
@@ -50,8 +48,6 @@ private:
 
   int _highestSocketNum;
 };
-
-#endif
 
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
