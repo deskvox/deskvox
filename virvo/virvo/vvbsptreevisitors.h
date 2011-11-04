@@ -50,8 +50,8 @@ public:
   void setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
                            const int numOffscreenBuffers);
   void setPixels(const std::vector< std::vector<GLfloat>* >& pixels);
-  void setWidth(const int width);
-  void setHeight(const int height);
+  void setWidth(int width);
+  void setHeight(int height);
 private:
   vvOffscreenBuffer** _offscreenBuffers;
   int _numOffscreenBuffers;
@@ -69,7 +69,7 @@ public:
   ~vvSlaveVisitor();
   void visit(vvVisitable* obj) const;
 
-  void generateTextureIds(const int numImages);
+  void generateTextureIds(int numImages);
   void setImages(std::vector<vvImage*>* images);
   void clearImages();
 private:
