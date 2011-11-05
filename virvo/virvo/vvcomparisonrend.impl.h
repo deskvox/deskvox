@@ -141,9 +141,9 @@ void vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL()
   {
     if (ibrDepthCompl[i] > 0)
     {
-      for (int c = 0; c < chan; ++c)
+      for (size_t c = 0; c < chan; ++c)
       {
-        const int idx = i * chan + c;
+        const size_t idx = i * chan + c;
 #define POWF(x) ((static_cast<float>(x)) * (static_cast<float>(x)))
         noise[idx] = POWF(refImg.getImagePtr()[idx] - ibrImg[idx]);
 #undef POWF
@@ -157,9 +157,9 @@ void vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL()
     }
     else
     {
-      for (int c = 0; c < chan; ++c)
+      for (size_t c = 0; c < chan; ++c)
       {
-        const int idx = i * chan + c;
+        const size_t idx = i * chan + c;
         noise[idx] = 0.0f;
       }
     }
