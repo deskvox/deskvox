@@ -49,7 +49,7 @@ class VIRVOEXPORT vvDebugMsg
     static void setDebugLevel(const LevelType);
     static void setDebugLevel(const int);
     static LevelType getDebugLevel();
-    static void msg(const int, const char*);
+    static void msg(const int, const char*, const bool perr = false);
     static void msg(const int, const char*, const int);
     static void msg(const int, const char*, const int, const int);
     static void msg(const int, const char*, const int, const int, const int);

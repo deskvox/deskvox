@@ -20,6 +20,9 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -72,10 +75,18 @@ vvDebugMsg::LevelType vvDebugMsg::getDebugLevel()
 /// @param level level number of this message
 /// @param text  information string being printed if current debug level is lower or
 ///              equal to given one
-void vvDebugMsg::msg(const int level, const char* text)
+/// @param perr  additionally print current system error messages (developing platform and compiler specific)
+void vvDebugMsg::msg(const int level, const char* text, const bool perr)
 {
   if (level <= debugLevel)
-    cerr << DEBUG_TEXT << text << endl;
+  {
+    cerr << DEBUG_TEXT << text;
+    if(perr)
+    {
+      cerr << ": " << strerror(errno);
+    }
+    cerr << endl;
+  }
 }
 
 /// Print debug information and an integer.
