@@ -1,3 +1,4 @@
 build*
 qtcreator-build
 CMakeLists.txt.user
+virvo/doc/html/
