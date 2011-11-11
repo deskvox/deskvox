@@ -31,6 +31,7 @@
 
 #include "vvvirvo.h"
 #include "vvdebugmsg.h"
+#include "vvplatform.h"
 
 using namespace std;
 
@@ -83,7 +84,22 @@ void vvDebugMsg::msg(const int level, const char* text, const bool perr)
     cerr << DEBUG_TEXT << text;
     if(perr)
     {
-      cerr << ": " << strerror(errno);
+      cerr << ": ";
+#ifndef _WIN32
+      cerr << strerror(errno);
+#else
+      DWORD last_error = GetLastError();
+      TCHAR errmsg[512];
+
+      if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, last_error, 0, errmsg, 511, NULL))
+      {
+        std::string formaterr;
+        formaterr = "vvDebugMsg::msg() failed in FormatMessage() with errno: " + GetLastError();
+        msg(2, formaterr.c_str());
+        return;
+      }
+      cerr << errmsg;
+#endif
     }
     cerr << endl;
   }
