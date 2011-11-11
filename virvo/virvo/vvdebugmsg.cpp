@@ -89,9 +89,9 @@ void vvDebugMsg::msg(const int level, const char* text, const bool perr)
       cerr << strerror(errno);
 #else
       DWORD last_error = GetLastError();
-      TCHAR errmsg[512];
+      CHAR errmsg[512];
 
-      if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, last_error, 0, errmsg, 511, NULL))
+      if (!FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, 0, last_error, 0, errmsg, 511, NULL))
       {
         std::string formaterr;
         formaterr = "vvDebugMsg::msg() failed in FormatMessage() with errno: " + GetLastError();
