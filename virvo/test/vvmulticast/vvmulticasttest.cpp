@@ -221,8 +221,8 @@ int main(int argc, char** argv)
     cout << "Sending " << count << " Bytes of random numbers..." << flush;
     startTime = vvClock::getTime();
     int sendBytes = foo.write(reinterpret_cast<const unsigned char*>(bar), count, sendTimeout);
-cout << "sendBytes = " << sendBytes << endl;
-cout << "sendTimeout = " << sendTimeout << endl;
+    cout << "sendBytes = " << sendBytes << endl;
+    cout << "sendTimeout = " << sendTimeout << endl;
     for(unsigned int i = 0;i<servers.size() && sendBytes>0; i++)
     {
       char *multidone = new char[5];
@@ -348,9 +348,6 @@ If Protokit is build together with norm (included subdirectory) then use libProt
 (Same thing for windows and .dlls)
 The reason for this issue is, that norm-developers use an older/different version of Protokit and are too lazy to fix this.
 NORM is generally build with the old version instead.
-
-
-// g++ vvmulticasttest.cpp -I/raid/home/sdelisav/deskvox/virvo/virvo -I/raid/home/sdelisav/Desktop/norm-1.4b3/common -L /raid/home/sdelisav/Desktop/norm-1.4b3/unix/ -I /raid/home/sdelisav/deskvox/qtcreator-build/virvo/ -L /raid/home/sdelisav/deskvox/qtcreator-build/virvo/virvo/ -l virvo -l norm -L /raid/home/sdelisav/Desktop/norm-1.4b3/protolib/unix/ -l Protokit -pthread -DHAVE_NORM
 
 */
 

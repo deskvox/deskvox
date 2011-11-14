@@ -18,8 +18,6 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-
-
 #include "vvclock.h"
 #include "vvdebugmsg.h"
 #include "vvsocketmonitor.h"

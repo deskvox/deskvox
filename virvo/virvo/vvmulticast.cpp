@@ -48,7 +48,6 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
     // TODO: Adjust these numbers depending on the used network topology
     NormSetTransmitRate(_session, 8e10);
     NormSetTransmitCacheBounds(_session, CHUNK_SIZE, 1, 128);
-//    NormSetBackoffFactor(_session, 0.0);
 //    NormSetTxRobustFactor(_session, 1);
     NormSetGroupSize(_session, 10);
 //    NormSetAutoParity(_session, 1);
@@ -93,7 +92,6 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
 #ifdef HAVE_NORM
   for(std::vector<NormNodeId>::const_iterator it = _nodes.begin(); it != _nodes.end(); ++it)
   {
-    std::cout << "add acking node!" << *it << std::endl;
     NormAddAckingNode(_session, *it);
   }
 
@@ -144,7 +142,6 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
           vvDebugMsg::msg(3, "vvMulticast::write() NORM_CC_ACTIVE: transmission still active");
           break;
         case NORM_TX_FLUSH_COMPLETED:
-//        case NORM_TX_WATERMARK_COMPLETED:
         case NORM_LOCAL_SENDER_CLOSED:
         case NORM_TX_OBJECT_SENT:
           vvDebugMsg::msg(3, "vvMulticast::write() NORM_TX_FLUSH_COMPLETED: tile-transfer completed.");
