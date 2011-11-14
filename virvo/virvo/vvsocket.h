@@ -98,7 +98,7 @@ class VIRVOEXPORT vvSocket
     enum EndianType                               /// endianness
     {
       VV_LITTLE_END,                              ///< little endian: low-order byte is stored first
-      VV_BIG_END                                  ///< big endian: hight-order byte is stored first
+      VV_BIG_END                                  ///< big endian: high-order byte is stored first
     };
 
     vvSocket(const short portnumber, SocketType socktype = VV_TCP);
