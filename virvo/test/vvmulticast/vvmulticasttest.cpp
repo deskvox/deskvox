@@ -84,12 +84,21 @@ public:
     }
     else
     {
-      cout << "Error occured in transfer to " << obj->_addr << "!" << endl;
+      cout << "Error occured in transfer to " << obj->_addr << endl;
     }
+
+    int node;
+    node = obj->_socket->read32();
+    {
+      obj->_node = (NormNodeId)node;
+      cout << "Reading NodeId "<< node << endl;
+    }
+
     obj->_done = true;
     return NULL;
   }
 
+  NormNodeId _node;
   bool       _status;
   bool       _done;
   string     _addr;
@@ -204,6 +213,11 @@ int main(int argc, char** argv)
     // init Multicaster
     vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_SENDER);
 
+    for(unsigned int i = 0;i<servers.size(); i++)
+    {
+      foo._nodes.push_back(servers[i]->_node);
+    }
+
     cout << "Sending " << count << " Bytes of random numbers..." << flush;
     startTime = vvClock::getTime();
     int sendBytes = foo.write(reinterpret_cast<const unsigned char*>(bar), count, sendTimeout);
@@ -216,7 +230,7 @@ cout << "sendTimeout = " << sendTimeout << endl;
       if(strcmp("done!", multidone) == 0)
         continue;
       else
-        cout << "asdsadsdfsdfdsfd"<< endl;
+        cout << "Server did not finish!"<< endl;
 
       delete[] multidone;
     }
@@ -256,6 +270,8 @@ cout << "sendTimeout = " << sendTimeout << endl;
       receiveTimeout = -1.0;
     }
 
+    vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_RECEIVER);
+
     cout << "Waiting for incoming data on TCP..." << endl;
 
     vvSocketIO recSocket = vvSocketIO(31050, vvSocket::VV_TCP);
@@ -265,7 +281,8 @@ cout << "sendTimeout = " << sendTimeout << endl;
     uchar* bartcp = new uchar[tcpSize];
     if(vvSocket::VV_OK == recSocket.read_data(bartcp, tcpSize))
     {
-      cout << "Successfully received " << tcpSize << "Bytes!" << endl;
+      cout << "Successfully received " << tcpSize << "Bytes. (Node: " << foo._nodes[0] << ")" << endl;
+      recSocket.write32(foo._nodes[0]);
     }
     else
     {
@@ -276,7 +293,7 @@ cout << "sendTimeout = " << sendTimeout << endl;
     uchar* bar = generateData(tcpSize);
 
     cout << "Waiting for incoming data over Multicasting..." << endl;
-    vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_RECEIVER);
+
     uchar* bartext = new uchar[tcpSize];
     int receivedBytes = foo.read(bartext, tcpSize, receiveTimeout);
 

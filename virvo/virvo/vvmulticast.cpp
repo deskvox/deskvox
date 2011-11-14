@@ -48,13 +48,12 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
     // TODO: Adjust these numbers depending on the used network topology
     NormSetTransmitRate(_session, 8e10);
     NormSetTransmitCacheBounds(_session, CHUNK_SIZE, 1, 128);
-    NormSetBackoffFactor(_session, 0.0);
+//    NormSetBackoffFactor(_session, 0.0);
 //    NormSetTxRobustFactor(_session, 1);
     NormSetGroupSize(_session, 10);
 //    NormSetAutoParity(_session, 1);
 //    NormSetGrttMax(_session, 1);
     NormStartSender(_session, sessionId, 1024*1024, 1400, 64, 2);
-    NormAddAckingNode(_session, NORM_NODE_NONE);
     NormSetTxSocketBuffer(_session, 1024*1024*32);
   }
   else if(VV_RECEIVER == type)
@@ -62,6 +61,7 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
     NormStartReceiver(_session, 1024*1024);
     NormSetRxSocketBuffer(_session, 1024*1024*64);
     NormDescriptor normDesc = NormGetDescriptor(_instance);
+    _nodes.push_back(NormGetLocalNodeId(_session));
     _normSocket = new vvSocket(int(normDesc), vvSocket::VV_UDP);
   }
 #else
@@ -91,6 +91,12 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
 {
   vvDebugMsg::msg(3, "vvMulticast::write()");
 #ifdef HAVE_NORM
+  for(std::vector<NormNodeId>::const_iterator it = _nodes.begin(); it != _nodes.end(); ++it)
+  {
+    std::cout << "add acking node!" << *it << std::endl;
+    NormAddAckingNode(_session, *it);
+  }
+
   for(unsigned int i=0; i<size; i+=CHUNK_SIZE)
   {
     size_t frameSize = std::min(size_t(CHUNK_SIZE), size);

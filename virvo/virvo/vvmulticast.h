@@ -26,10 +26,12 @@
 #include "vvsocket.h"
 
 #include <string>
+#include <vector>
 
 typedef const void* NormInstanceHandle;
 typedef const void* NormSessionHandle;
 typedef const void* NormObjectHandle;
+typedef uint32_t    NormNodeId;
 
 /** Wrapper class for NormAPI.
   This class can be used for lossless multicast communication.
@@ -75,12 +77,14 @@ public:
     */
   ssize_t read(uchar* data, const size_t size, double timeout = -1.0);
 
+  std::vector<NormNodeId> _nodes;
+
 private:
   MulticastType      _type;
   NormInstanceHandle _instance;
   NormSessionHandle  _session;
   NormObjectHandle   _object;
-  vvSocket*           _normSocket;
+  vvSocket*          _normSocket;
 };
 
 #endif
