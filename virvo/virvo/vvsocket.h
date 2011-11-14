@@ -101,8 +101,8 @@ class VIRVOEXPORT vvSocket
       VV_BIG_END                                  ///< big endian: high-order byte is stored first
     };
 
-    vvSocket(const short portnumber, SocketType socktype = VV_TCP);
-    vvSocket(const short portnumber, const char*,
+    vvSocket(const unsigned short portnumber, SocketType socktype = VV_TCP);
+    vvSocket(const unsigned short portnumber, const char*,
              SocketType socktype = VV_TCP, int clminport = 0 , int clmaxport = 0);
     vvSocket(const int sockfd, const SocketType socktype = VV_TCP);
     virtual ~vvSocket();

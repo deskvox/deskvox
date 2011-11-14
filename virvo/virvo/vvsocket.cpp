@@ -1305,7 +1305,7 @@ ssize_t vvSocket::writen_udp(const char* buffer, size_t size)
  @param portnumber   port number
  @param st           socket type
 */
-vvSocket::vvSocket(const short portnumber, SocketType st)
+vvSocket::vvSocket(const unsigned short portnumber, SocketType st)
 :  port(portnumber),socktype(st)
 {
   hostname = 0;
@@ -1321,7 +1321,7 @@ vvSocket::vvSocket(const short portnumber, SocketType st)
  @param clminport    minimum outgoing port
  @param clmaxport    maximum outgoing port
 */
-vvSocket::vvSocket(const short portnumber, const char* servername,
+vvSocket::vvSocket(const unsigned short portnumber, const char* servername,
                    SocketType st, int clminport, int clmaxport)
 :  port(portnumber),   hostname(servername),socktype(st),cl_min_port(clminport),cl_max_port(clmaxport)
 {
