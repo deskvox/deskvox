@@ -25,6 +25,16 @@
 
 #include <vector>
 
+/** Class handling non-blocking file-describtors with select
+
+  For usage, use setters ((setReadFds(), setWriteFds(),
+  setErrorFds()) to fill the filedescribtor-sets and call wait(),
+  which will handle all sets at once and provide the first socket
+  with any events to handle.
+
+  @author Stefan Zellmann (zellmans@uni-koeln.de)
+  @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
+ */
 class vvSocketMonitor
 {
 public:
@@ -36,14 +46,35 @@ public:
     VV_ERROR
   };
 
+  /** Constructor creating a socketmonitor */
   vvSocketMonitor();
   ~vvSocketMonitor();
 
+  /** Add a List of filedescribtors for reading
+    \param readfds vector of vvSockets
+    */
   void setReadFds (const std::vector<vvSocket*>& readfds);
+  /** Add a List of filedescribtors for writing
+    \param writefds vector of vvSockets
+    */
   void setWriteFds(const std::vector<vvSocket*>& writefds);
+  /** Add a List of filedescribtors for errors
+    \param errorfds vector of vvSockets
+    */
   void setErrorFds(const std::vector<vvSocket*>& errorfds);
 
+  /** Wait until one of all filedescribtors throws an event
+
+    \param socket pointer set to the first socket ready or NULL if an error occured
+    \param timeout pointer to timeout, decreased while time goes by. NULL for no timeout.
+
+    \return VV_OK if select returned normally and socket is set
+    \return VV_TIMEOUT if timeout reached. socket is NULL and timeout (if given) is set to 0
+    \return VV_ERROR on any error.
+    */
   ErrorType wait(vvSocket** socket, double* timeout = NULL);
+  /** Delete all Sockets and emtpy the filedescribtor-sets
+    */
   void clear();
 private:
   fd_set _readsockfds;
