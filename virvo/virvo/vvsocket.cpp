@@ -1334,7 +1334,7 @@ vvSocket::vvSocket(const unsigned short portnumber, const char* servername,
  @param sockfd       socket file descriptor
  @param st           socket type
 */
-vvSocket::vvSocket(const int sockfd, const SocketType socktype)
+vvSocket::vvSocket(const SocketType socktype, const int sockfd)
   :socktype(socktype)
 {
   port = -1;

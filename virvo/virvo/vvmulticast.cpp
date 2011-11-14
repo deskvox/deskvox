@@ -61,7 +61,7 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
     NormSetRxSocketBuffer(_session, 1024*1024*64);
     NormDescriptor normDesc = NormGetDescriptor(_instance);
     _nodes.push_back(NormGetLocalNodeId(_session));
-    _normSocket = new vvSocket(int(normDesc), vvSocket::VV_UDP);
+    _normSocket = new vvSocket(vvSocket::VV_UDP, int(normDesc));
   }
 #else
   (void)addr;
@@ -112,7 +112,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
     vvSocketMonitor* monitor = new vvSocketMonitor;
 
     std::vector<vvSocket*> sock;
-    sock.push_back(new vvSocket(int(normDesc), vvSocket::VV_UDP));
+    sock.push_back(new vvSocket(vvSocket::VV_UDP, int(normDesc)));
     monitor->setReadFds(sock);
 
 

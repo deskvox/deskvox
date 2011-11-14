@@ -77,7 +77,7 @@ void vvBonjourBrowser::browseForServiceType(const string& serviceType)
     return;
   }
 
-  vvSocket* socket = new vvSocket(sockfd);
+  vvSocket* socket = new vvSocket(vvSocket::VV_TCP, sockfd);
   std::vector<vvSocket*> sockets;
   sockets.push_back(socket);
 
