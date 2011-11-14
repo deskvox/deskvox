@@ -28,6 +28,14 @@
 class vvSocketMonitor
 {
 public:
+
+  enum ErrorType
+  {
+    VV_OK,
+    VV_TIMEOUT,
+    VV_ERROR
+  };
+
   vvSocketMonitor();
   ~vvSocketMonitor();
 
@@ -35,7 +43,7 @@ public:
   void setWriteFds(const std::vector<vvSocket*>& writefds);
   void setErrorFds(const std::vector<vvSocket*>& errorfds);
 
-  vvSocket* wait(double* timeout = NULL);
+  ErrorType wait(vvSocket** socket, double* timeout = NULL);
   void clear();
 private:
   fd_set _readsockfds;

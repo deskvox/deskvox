@@ -41,7 +41,7 @@ class VIRVOEXPORT vvMulticast
 public:
   enum
   {
-    CHUNK_SIZE = 20*1024*1024
+    CHUNK_SIZE = 500*1024*1024
   };
   enum MulticastType
   {

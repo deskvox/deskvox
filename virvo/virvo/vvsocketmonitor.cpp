@@ -97,7 +97,7 @@ void vvSocketMonitor::setErrorFds(const std::vector<vvSocket*>& errorfds)
   }
 }
 
-vvSocket* vvSocketMonitor::wait(double* timeout)
+vvSocketMonitor::ErrorType vvSocketMonitor::wait(vvSocket** socket, double* timeout)
 {
   vvDebugMsg::msg(3, "vvSocketMonitor::wait()");
 
@@ -132,35 +132,35 @@ vvSocket* vvSocketMonitor::wait(double* timeout)
   {
     for (std::vector<vvSocket*>::const_iterator it = _readSockets.begin(); it != _readSockets.end(); ++it)
     {
-      vvSocket* socket = (*it);
-      if (FD_ISSET(socket->get_sockfd(), &_readsockfds))
+      *socket = (*it);
+      if (FD_ISSET((*socket)->get_sockfd(), &_readsockfds))
       {
-        return socket;
+        return VV_OK;
       }
     }
 
     for (std::vector<vvSocket*>::const_iterator it = _writeSockets.begin(); it != _writeSockets.end(); ++it)
     {
-      vvSocket* socket = (*it);
-      if (FD_ISSET(socket->get_sockfd(), &_writesockfds))
+      *socket = (*it);
+      if (FD_ISSET((*socket)->get_sockfd(), &_writesockfds))
       {
-        return socket;
+        return VV_OK;
       }
     }
 
     for (std::vector<vvSocket*>::const_iterator it = _errorSockets.begin(); it != _errorSockets.end(); ++it)
     {
-      vvSocket* socket = (*it);
-      if (FD_ISSET(socket->get_sockfd(), &_errorsockfds))
+      *socket = (*it);
+      if (FD_ISSET((*socket)->get_sockfd(), &_errorsockfds))
       {
-        return socket;
+        return VV_OK;
       }
     }
   }
   else if(done == 0)
   {
     vvDebugMsg::msg(3, "vvSocketMonitor::wait() timelimit reached.");
-    return NULL;
+    return VV_TIMEOUT;
   }
   else if(done == -1)
   {
@@ -215,7 +215,7 @@ vvSocket* vvSocketMonitor::wait(double* timeout)
 #endif
   }
 
-  return NULL;
+  return VV_ERROR;
 }
 
 void vvSocketMonitor::clear()

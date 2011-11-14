@@ -54,6 +54,7 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
 //    NormSetAutoParity(_session, 1);
 //    NormSetGrttMax(_session, 1);
     NormStartSender(_session, sessionId, 1024*1024, 1400, 64, 2);
+    NormAddAckingNode(_session, NORM_NODE_NONE);
     NormSetTxSocketBuffer(_session, 1024*1024*32);
   }
   else if(VV_RECEIVER == type)
@@ -94,6 +95,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
   {
     size_t frameSize = std::min(size_t(CHUNK_SIZE), size);
     _object = NormDataEnqueue(_session, (char*)&bytes[i*CHUNK_SIZE], frameSize);
+    NormSetWatermark(_session, _object);
 
     if(NORM_OBJECT_INVALID ==_object)
     {
@@ -109,17 +111,23 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
     sock.push_back(new vvSocket(int(normDesc), vvSocket::VV_UDP));
     monitor->setReadFds(sock);
 
-    vvSocket* ready;
+
     NormEvent theEvent;
     size_t bytesSent = 0;
     bool keepGoing = true;
     while(keepGoing)
     {
-      ready = monitor->wait(&timeout);
-      if(NULL == ready)
+      vvSocket* ready = NULL;
+      vvSocketMonitor::ErrorType err = monitor->wait(&ready, &timeout);
+      if(vvSocketMonitor::VV_TIMEOUT == err)
       {
-        vvDebugMsg::msg(2, "vvMulticast::write() error or timeout reached!");
-        return 0;
+        vvDebugMsg::msg(2, "vvMulticast::write() timeout reached.");
+        return bytesSent;
+      }
+      else if(vvSocketMonitor::VV_ERROR == err)
+      {
+        vvDebugMsg::msg(2, "vvMulticast::write() error.");
+        return -1;
       }
       else
       {
@@ -130,6 +138,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
           vvDebugMsg::msg(3, "vvMulticast::write() NORM_CC_ACTIVE: transmission still active");
           break;
         case NORM_TX_FLUSH_COMPLETED:
+//        case NORM_TX_WATERMARK_COMPLETED:
         case NORM_LOCAL_SENDER_CLOSED:
         case NORM_TX_OBJECT_SENT:
           vvDebugMsg::msg(3, "vvMulticast::write() NORM_TX_FLUSH_COMPLETED: tile-transfer completed.");
@@ -172,11 +181,17 @@ ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
   bool keepGoing = true;
   do
   {
-    vvSocket* ready = monitor.wait(&timeout);
-    if(NULL == ready)
+    vvSocket* ready = NULL;
+    vvSocketMonitor::ErrorType err = monitor.wait(&ready, &timeout);
+    if(vvSocketMonitor::VV_TIMEOUT == err)
     {
-      vvDebugMsg::msg(2, "vvMulticast::read() error or timeout reached!");
-      return 0;
+      vvDebugMsg::msg(2, "vvMulticast::read() timeout reached.");
+      return bytesReceived;
+    }
+    else if(vvSocketMonitor::VV_ERROR == err)
+    {
+      vvDebugMsg::msg(2, "vvMulticast::read() error.");
+      return -1;
     }
     else
     {
