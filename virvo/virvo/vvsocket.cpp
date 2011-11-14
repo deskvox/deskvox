@@ -24,8 +24,10 @@
 #endif
 
 #include <cassert>
+#include <sstream>
 
 #include "vvsocket.h"
+#include "vvdebugmsg.h"
 
 #ifndef _WIN32
 #include <signal.h>
@@ -54,7 +56,7 @@ vvSocket::ErrorType vvSocket::init_server_tcp()
 
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0 )) < 0)
   {
-    VV_ERRNO( 1, debuglevel, "Error: socket()");
+    vvDebugMsg::msg(1, "Error: socket()");
     return VV_SOCK_ERROR;
   }
   if (sock_buffsize == 0)
@@ -62,7 +64,7 @@ vvSocket::ErrorType vvSocket::init_server_tcp()
 #if !defined(_WIN32) && defined(VV_BDP)
     if(measure_BDP_server())
     {
-      VV_TRACE( 1, debuglevel, "Error: measure_BDP_server()");
+      vvDebugMsg::msg(1, "Error: measure_BDP_server()");
       return VV_SOCK_ERROR;
     }
 #else
@@ -71,7 +73,7 @@ vvSocket::ErrorType vvSocket::init_server_tcp()
   }
   if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,sizeof(optval)))
   {
-    VV_ERRNO( 1, debuglevel, "Error: setsockopt()");
+    vvDebugMsg::msg(1, "Error: setsockopt()");
     return VV_SOCK_ERROR;
   }
   if (sock_buffsize > 0)
@@ -79,13 +81,13 @@ vvSocket::ErrorType vvSocket::init_server_tcp()
     if (setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF,
       (char *) &sock_buffsize, sizeof(sock_buffsize)))
     {
-      VV_ERRNO( 1, debuglevel, "Error: setsockopt()");
+      vvDebugMsg::msg(1, "Error: setsockopt()");
       return VV_SOCK_ERROR;
     }
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
       (char *) &sock_buffsize, sizeof(sock_buffsize)))
     {
-      VV_ERRNO( 1, debuglevel, "Error: setsockopt()");
+      vvDebugMsg::msg(1, "Error: setsockopt()");
       return VV_SOCK_ERROR;
     }
   }
@@ -96,13 +98,13 @@ vvSocket::ErrorType vvSocket::init_server_tcp()
   host_addrlen = sizeof(host_addr);
   if  (bind(sockfd, (struct sockaddr *)&host_addr, host_addrlen))
   {
-    VV_ERRNO( 1, debuglevel, "Error: bind()");
+    vvDebugMsg::msg(1, "Error: bind()");
     return VV_SOCK_ERROR ;
   }
 
   if (listen(sockfd, 1))
   {
-    VV_ERRNO( 1, debuglevel, "Error: listen()");
+    vvDebugMsg::msg(1, "Error: listen()");
     return VV_SOCK_ERROR;
   }
   if (connect_timer > 0)
@@ -113,10 +115,15 @@ vvSocket::ErrorType vvSocket::init_server_tcp()
   }
   else
     retval=accept_nontimeo();
-  VV_TRACE( 2, debuglevel, "send_buffsize: "<<get_send_buffsize()<<
-    " bytes, recv_buffsize: "<<get_recv_buffsize()<<" bytes");
+  ostringstream errmsg;
+  errmsg << "send_buffsize: " << get_send_buffsize() << " bytes, recv_buffsize: " << get_recv_buffsize() << " bytes";
+  vvDebugMsg::msg(2, errmsg.str().c_str());
   if (retval == VV_OK)
-    VV_TRACE( 2, debuglevel, "Incoming connection from " << inet_ntoa(host_addr.sin_addr));
+  {
+    ostringstream errmsg;
+    errmsg << "Incoming connection from " << inet_ntoa(host_addr.sin_addr);
+    vvDebugMsg::msg(2, errmsg.str().c_str());
+  }
   return retval;
 }
 
@@ -138,10 +145,10 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
 
   sigfunc = Signal(SIGALRM, nonameserver);
   if (alarm(5) != 0)
-    VV_TRACE( 2, debuglevel,"init_client(): WARNING! previously set alarm was wiped out");
+    vvDebugMsg::msg(2, "init_client(): WARNING! previously set alarm was wiped out");
   if ((host= gethostbyname(hostname)) == 0)
   {
-    VV_ERRNO( 1, debuglevel,"Error: gethostbyname()");
+    vvDebugMsg::msg(1, "Error: gethostbyname()");
     alarm(0);
     signal(SIGALRM, sigfunc);
     return VV_HOST_ERROR;
@@ -151,7 +158,7 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
 #endif
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
   {
-    VV_ERRNO( 1, debuglevel,"Error: socket");
+    vvDebugMsg::msg(1, "Error: socket");
     return VV_SOCK_ERROR;
   }
   if (sock_buffsize == 0)
@@ -159,7 +166,7 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
 #if !defined(_WIN32) && defined(VV_BDP)
     if (measure_BDP_client())
     {
-      VV_TRACE( 1, debuglevel,"Error: measure_BDP_client()");
+      vvDebugMsg::msg(1, "Error: measure_BDP_client()");
       return VV_SOCK_ERROR;
     }
 #else
@@ -171,13 +178,13 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
     if (setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF,
       (char *) &sock_buffsize, sizeof(sock_buffsize)))
     {
-      VV_ERRNO( 1, debuglevel, "Error: setsockopt()");
+      vvDebugMsg::msg(1, "Error: setsockopt()");
       return VV_SOCK_ERROR;
     }
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
       (char *) &sock_buffsize, sizeof(sock_buffsize)))
     {
-      VV_ERRNO( 1, debuglevel, "Error: setsockopt()");
+      vvDebugMsg::msg(1, "Error: setsockopt()");
       return VV_SOCK_ERROR;
     }
   }
@@ -188,7 +195,7 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
   {
     if (cl_min_port > cl_max_port)
     {
-      VV_TRACE( 1, debuglevel,"Wrong port range");
+      vvDebugMsg::msg(1,"Wrong port range");
       return VV_SOCK_ERROR ;
     }
     host_addr.sin_addr.s_addr = INADDR_ANY;
@@ -207,13 +214,13 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
       }
       else
       {
-        VV_ERRNO( 1, debuglevel,"Error: bind()");
+        vvDebugMsg::msg(1, "Error: bind()");
         return VV_SOCK_ERROR ;
       }
     }
     if (cl_port > cl_max_port)
     {
-      VV_TRACE( 1, debuglevel,"No port free!");
+      vvDebugMsg::msg(1,"No port free!");
       return VV_SOCK_ERROR ;
     }
   }
@@ -227,8 +234,9 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
   }
   else
     retval = connect_nontimeo();
-  VV_TRACE( 2, debuglevel,"send_buffsize: "<<get_send_buffsize()<<
-    " bytes, recv_buffsize: "<<get_recv_buffsize()<<" bytes");
+  ostringstream errmsg;
+  errmsg << "send_buffsize: " << get_send_buffsize() << " bytes, recv_buffsize: " << get_recv_buffsize() << " bytes";
+  vvDebugMsg::msg(2, errmsg.str().c_str());
   return retval;
 }
 
@@ -266,13 +274,13 @@ vvSocket::ErrorType vvSocket::accept_timeo()
 
   sigfunc = Signal(SIGALRM, interrupter);
   if (alarm(connect_timer) != 0)
-    VV_TRACE( 2, debuglevel,"accept_timeo(): WARNING! previously set alarm was wiped out");
+    vvDebugMsg::msg(2, "accept_timeo(): WARNING! previously set alarm was wiped out");
   if ( (n = accept(sockfd, (struct sockaddr *)&host_addr, &host_addrlen)) < 0)
   {
     alarm(0);
     if (errno == EINTR)
     {
-      if (debuglevel>1)
+      if (vvDebugMsg::getDebugLevel()>1)
       {
         if (do_a_retry())
           return VV_RETRY;
@@ -282,7 +290,7 @@ vvSocket::ErrorType vvSocket::accept_timeo()
     }
     else
     {
-      VV_ERRNO( 1, debuglevel,"Error: accept()");
+      vvDebugMsg::msg(1, "Error: accept()");
       signal(SIGALRM, sigfunc);
       return VV_ACCEPT_ERROR;
     }
@@ -304,7 +312,7 @@ vvSocket::ErrorType vvSocket::accept_nontimeo()
 
   if ( (n = accept(sockfd, (struct sockaddr *)&host_addr, &host_addrlen)) < 0)
   {
-    VV_ERRNO( 1, debuglevel,"Error: accept()");
+    vvDebugMsg::msg(1, "Error: accept()");
     return VV_ACCEPT_ERROR;
   }
 
@@ -343,7 +351,7 @@ vvSocket::ErrorType vvSocket::connect_timeo()
     }
   }
 
-  VV_TRACE( 2, debuglevel,"connection established");
+  vvDebugMsg::msg(2, "connection established");
   cmd_option = 0;
   if (ioctlsocket(sockfd, FIONBIO, &cmd_option) == SOCKET_ERROR)
     return VV_CONNECT_ERROR;
@@ -353,13 +361,13 @@ vvSocket::ErrorType vvSocket::connect_timeo()
 
   sigfunc = Signal(SIGALRM, interrupter);
   if (alarm(connect_timer) != 0)
-    VV_TRACE( 2, debuglevel,"connect_timeo:WARNING! previously set alarm was wiped out");
+    vvDebugMsg::msg(2, "connect_timeo:WARNING! previously set alarm was wiped out");
   if (connect(sockfd, (struct sockaddr *)&host_addr, host_addrlen))
   {
     alarm(0);
     if (errno == EINTR)
     {
-      if (debuglevel>1)
+      if (vvDebugMsg::getDebugLevel()>1)
       {
         if (do_a_retry())
           return VV_RETRY;
@@ -369,7 +377,7 @@ vvSocket::ErrorType vvSocket::connect_timeo()
     }
     else
     {
-      VV_ERRNO( 1, debuglevel, "Error: connect()");
+      vvDebugMsg::msg(1, "Error: connect()");
       signal(SIGALRM, sigfunc);
       return VV_CONNECT_ERROR;
     }
@@ -387,7 +395,7 @@ vvSocket::ErrorType vvSocket::connect_nontimeo()
 {
   if (connect(sockfd, (struct sockaddr *)&host_addr, host_addrlen))
   {
-    VV_ERRNO( 1, debuglevel, "Error: connect()");
+    vvDebugMsg::msg(1, "Error: connect()");
     return VV_CONNECT_ERROR;
   }
   return VV_OK;
@@ -418,7 +426,7 @@ ssize_t vvSocket::readn_tcp(char* buffer, size_t size)
           nread = 0;                              // interrupted, call read again
       else
       {
-        VV_ERRNO( 1, debuglevel,"Error: recv()");
+        vvDebugMsg::msg(1, "Error: recv()");
         return (ssize_t)-1;
       }
     }
@@ -460,7 +468,7 @@ ssize_t vvSocket::writen_tcp(const char* buffer, size_t size)
           nwritten = 0;                           // interrupted, call write again
       else
       {
-        VV_ERRNO( 1, debuglevel,"Error: send()");
+        vvDebugMsg::msg(1, "Error: send()");
         return (ssize_t)-1;
       }
     }
@@ -492,11 +500,11 @@ int vvSocket::RTT_server(int payload)
     delete usock;
     if  (retval == vvSocket::VV_TIMEOUT_ERROR)
     {
-      VV_TRACE( 1, debuglevel,"Error: RTT_server(): Timeout UDP init_client()");
+      vvDebugMsg::msg(1, "Error: RTT_server(): Timeout UDP init_client()");
     }
     else
     {
-      VV_TRACE( 1, debuglevel,"Error: RTT_server(): Socket could not be opened");
+      vvDebugMsg::msg(1, "Error: RTT_server(): Socket could not be opened");
     }
     return -1;
   }
@@ -511,11 +519,11 @@ int vvSocket::RTT_server(int payload)
         delete usock;
         if  (retval == vvSocket::VV_TIMEOUT_ERROR)
         {
-          VV_TRACE( 1, debuglevel,"Error: RTT_server(): Timeout write");
+          vvDebugMsg::msg(1, "Error: RTT_server(): Timeout write");
         }
         else
         {
-          VV_TRACE( 1, debuglevel,"Error: RTT_server(): Writing data failed");
+          vvDebugMsg::msg(1, "Error: RTT_server(): Writing data failed");
         }
         delete[] frame;
         return -1;
@@ -524,7 +532,7 @@ int vvSocket::RTT_server(int payload)
     else if(retval != vvSocket::VV_TIMEOUT_ERROR)
     {
       delete usock;
-      VV_TRACE( 1, debuglevel,"Error: RTT_server(): Reading data failed");
+      vvDebugMsg::msg(1, "Error: RTT_server(): Reading data failed");
       delete[] frame;
       return -1;
     }
@@ -562,11 +570,11 @@ float vvSocket::RTT_client(int payload)
     delete usock;
     if  (retval == vvSocket::VV_TIMEOUT_ERROR)
     {
-      VV_TRACE( 1, debuglevel,"Error: RTT_client(): Timeout UDP init_client()");
+      vvDebugMsg::msg(1, "Error: RTT_client(): Timeout UDP init_client()");
     }
     else
     {
-      VV_TRACE( 1, debuglevel,"Error: RTT_client(): Socket could not be opened");
+      vvDebugMsg::msg(1, "Error: RTT_client(): Socket could not be opened");
     }
     return -1;
   }
@@ -580,11 +588,11 @@ float vvSocket::RTT_client(int payload)
       delete usock;
       if  (retval == vvSocket::VV_TIMEOUT_ERROR)
       {
-        VV_TRACE( 1, debuglevel,"Error: RTT_client(): Timeout write");
+        vvDebugMsg::msg(1, "Error: RTT_client(): Timeout write");
       }
       else
       {
-        VV_TRACE( 1, debuglevel,"Error: RTT_client(): Writing data failed");
+        vvDebugMsg::msg(1, "Error: RTT_client(): Writing data failed");
       }
       delete[] frame;
       return -1;
@@ -598,7 +606,7 @@ float vvSocket::RTT_client(int payload)
     else if (retval != vvSocket::VV_TIMEOUT_ERROR)
     {
       delete usock;
-      VV_TRACE( 1, debuglevel,"Error: RTT_client(): Reading data failed");
+      vvDebugMsg::msg(1, "Error: RTT_client(): Reading data failed");
       delete[] frame;
       return -1;
     }
@@ -611,7 +619,11 @@ float vvSocket::RTT_client(int payload)
   {
     rtt = sum/valid_measures;
     if (debuglevel>1)
-      VV_TRACE( 2, debuglevel,"average rtt: "<<rtt<<" ms");
+    {
+      ostringstream errmsg;
+      errmsg << "average rtt: "<<rtt<<" ms";
+      vvDebugMsg::msg(2, errmsg.str().c_str());
+    }
     return rtt;
   }
   else
@@ -635,12 +647,12 @@ int vvSocket::measure_BDP_server()
 
   if (pipe(pip) < 0)
   {
-    VV_TRACE( 1, debuglevel,"Error pipe()");
+    vvDebugMsg::msg(1, "Error pipe()");
     return -1;
   }
   if ((pid = fork()) < 0)
   {
-    VV_TRACE( 1, debuglevel,"Error fork()");
+    vvDebugMsg::msg(1, "Error fork()");
     return -1;
   }
   else if (pid == 0)
@@ -658,11 +670,11 @@ int vvSocket::measure_BDP_server()
       delete sock;
       if  (retval == vvSocket::VV_TIMEOUT_ERROR)
       {
-        VV_TRACE( 1, debuglevel,"Timeout connection establishment");
+        vvDebugMsg::msg(1, "Timeout connection establishment");
       }
       else
       {
-        VV_TRACE( 1, debuglevel,"Socket could not be opened");
+        vvDebugMsg::msg(1, "Socket could not be opened");
       }
       exit(-1);
     }
@@ -672,19 +684,21 @@ int vvSocket::measure_BDP_server()
       delete sock;
       if  (retval == vvSocket::VV_TIMEOUT_ERROR)
       {
-        VV_TRACE( 1, debuglevel,"Timeout read");
+        vvDebugMsg::msg(1, "Timeout read");
       }
       else
       {
-        VV_TRACE( 1, debuglevel,"Reading data failed");
+        vvDebugMsg::msg(1, "Reading data failed");
       }
       exit(-1);
     }
     mtu = ntohl(recvmtu);
-    VV_TRACE( 2, debuglevel,"Received MTU: "<<mtu<<" bytes");
+    ostringstream errmsg;
+    errmsg << "Received MTU: " << mtu << " bytes";
+    vvDebugMsg::msg(1, errmsg.str().c_str());
     if (RTT_server(mtu - 28))
     {
-      VV_TRACE( 1, debuglevel,"error RTT_server()");
+      vvDebugMsg::msg(1, "error RTT_server()");
       exit(-1);
     }
     buffer = new uchar[1000000];
@@ -696,11 +710,11 @@ int vvSocket::measure_BDP_server()
         delete sock;
         if  (retval == vvSocket::VV_TIMEOUT_ERROR)
         {
-          VV_TRACE( 1, debuglevel,"Timeout write");
+          vvDebugMsg::msg(1, "Timeout write");
         }
         else
         {
-          VV_TRACE( 1, debuglevel,"Writing data failed");
+          vvDebugMsg::msg(1, "Writing data failed");
         }
         exit(-1);
       }
@@ -712,16 +726,18 @@ int vvSocket::measure_BDP_server()
       delete sock;
       if  (retval == vvSocket::VV_TIMEOUT_ERROR)
       {
-        VV_TRACE( 1, debuglevel,"Timeout read");
+        vvDebugMsg::msg(1, "Timeout read");
       }
       else
       {
-        VV_TRACE( 1, debuglevel,"Reading data failed");
+        vvDebugMsg::msg(1, "Reading data failed");
       }
       exit(-1);
     }
     bdp = ntohl(recvbdp);
-    VV_TRACE( 2, debuglevel,"Received bandwidth-delay-product: "<<bdp<<" bytes");
+    ostringstream errmsg;
+    errmsg << "Received bandwidth-delay-product: " << bdp << " bytes";
+    vvDebugMsg::msg(1, errmsg.str().c_str();
     if (bdp < get_recv_buffsize())
       sock_buffsize = recv_buffsize;
     else
@@ -736,7 +752,7 @@ int vvSocket::measure_BDP_server()
   {
     if (waitpid(pid, &status, 0) != pid)
     {
-      VV_TRACE( 1, debuglevel,"error waitpid()");
+      vvDebugMsg::msg(1, "error waitpid()");
       return -1;
     }
     if (status)
@@ -772,11 +788,11 @@ int vvSocket::measure_BDP_client()
     delete sock;
     if  (retval == vvSocket::VV_TIMEOUT_ERROR)
     {
-      VV_TRACE( 1, debuglevel,"Timeout connect");
+      vvDebugMsg::msg(1, "Timeout connect");
     }
     else
     {
-      VV_TRACE( 1, debuglevel,"Socket could not be opened");
+      vvDebugMsg::msg(1, "Socket could not be opened");
     }
     return -1;
   }
@@ -787,18 +803,18 @@ int vvSocket::measure_BDP_client()
     delete sock;
     if  (retval == vvSocket::VV_TIMEOUT_ERROR)
     {
-      VV_TRACE( 1, debuglevel,"Timeout write");
+      vvDebugMsg::msg(1, "Timeout write");
     }
     else
     {
-      VV_TRACE( 1, debuglevel,"Writing data failed");
+      vvDebugMsg::msg(1, "Writing data failed");
     }
     return -1;
   }
   sleep(1);
   if ((rtt = RTT_client(mtu-28)) < 0)
   {
-    VV_TRACE( 1, debuglevel,"error get_RTT()");
+    vvDebugMsg::msg(1, "error get_RTT()");
     return -1;
   }
   buffer = new uchar[1000000];
@@ -811,11 +827,11 @@ int vvSocket::measure_BDP_client()
       delete sock;
       if  (retval == vvSocket::VV_TIMEOUT_ERROR)
       {
-        VV_TRACE( 1, debuglevel,"Timeout read");
+        vvDebugMsg::msg(1, "Timeout read");
       }
       else
       {
-        VV_TRACE( 1, debuglevel,"Reading data failed");
+        vvDebugMsg::msg(1, "Reading data failed");
       }
       return -1;
     }
@@ -824,12 +840,16 @@ int vvSocket::measure_BDP_client()
     {
       speed = (int)(8000000/time);
       sum += speed;
-      VV_TRACE( 3, debuglevel,"speed: "<<speed<<" Kbit/s");
+      ostringstream errmsg;
+      errmsg << "speed: "<<speed<<" Kbit/s";
+      vvDebugMsg::msg(3, errmsg.str().c_str();
     }
   }
   delete[] buffer;
   speed = sum/2;
-  VV_TRACE( 2, debuglevel,"average speed: "<<speed<<" Kbit/s");
+  ostringstream errmsg;
+  errmsg << "average speed: "<<speed<<" Kbit/s";
+  vvDebugMsg::msg(2, errmsg.str().c_str());
   if (speed > 100000)
     speed = 1000000;
   else if (speed > 10000)
@@ -837,18 +857,20 @@ int vvSocket::measure_BDP_client()
   else if (speed > 1000)
     speed = 10000;
   bdp = (int)(speed * rtt)/8;
-  VV_TRACE( 2, debuglevel,"bandwith-delay-product: "<<bdp<<" bytes");
+  errmsg.str("");
+  errmsg << "bandwith-delay-product: "<<bdp<<" bytes";
+  vvDebugMsg::msg(2, errmsg.str().c_str());
   sendbdp = htonl(bdp);
   if ((retval = sock->write_data((uchar *)&sendbdp, 4)) != vvSocket::VV_OK)
   {
     delete sock;
     if  (retval == vvSocket::VV_TIMEOUT_ERROR)
     {
-      VV_TRACE( 1, debuglevel,"Timeout write");
+      vvDebugMsg::msg(1, "Timeout write");
     }
     else
     {
-      VV_TRACE( 1, debuglevel,"Writing data failed");
+      vvDebugMsg::msg(1, "Writing data failed");
     }
     return -1;
   }
@@ -871,7 +893,7 @@ int vvSocket::get_MTU()
 {
 
 #ifndef TCP_MAXSEG
-  VV_TRACE( 2, debuglevel,"TCP_MAXSEG is not defined, use 576 bytes for MTU");
+  vvDebugMsg::msg(2, "TCP_MAXSEG is not defined, use 576 bytes for MTU");
   return 576;
 #else
   int rc;
@@ -880,32 +902,34 @@ int vvSocket::get_MTU()
   rc = getsockopt( sockfd, IPPROTO_TCP, TCP_MAXSEG, (char*) &theMSS, &len );
   if(rc == -1 || theMSS <= 0)
   {
-    VV_TRACE( 2, debuglevel,"OS doesn't support TCP_MAXSEG querry? use 576 bytes for MTU");
+    vvDebugMsg::msg(2, "OS doesn't support TCP_MAXSEG querry? use 576 bytes for MTU");
     return 576;
   }
   else if ( checkMSS_MTU( theMSS, 1500 ))
   {
-    VV_TRACE( 2, debuglevel,"ethernet, mtu=1500 bytes");
+    vvDebugMsg::msg(2, "ethernet, mtu=1500 bytes");
     return 1500;
   }
   else if ( checkMSS_MTU( theMSS, 4352 ))
   {
-    VV_TRACE( 2, debuglevel,"FDDI, mtu=4352 bytes");
+    vvDebugMsg::msg(2, "FDDI, mtu=4352 bytes");
     return 4352;
   }
   else if ( checkMSS_MTU( theMSS, 9180 ))
   {
-    VV_TRACE( 2, debuglevel,"ATM, mtu=9180 bytes");
+    vvDebugMsg::msg(2, "ATM, mtu=9180 bytes");
     return 9180;
   }
   else if ( checkMSS_MTU( theMSS, 65280 ))
   {
-    VV_TRACE( 2, debuglevel,"HIPPI, mtu=65280 bytes");
+    vvDebugMsg::msg(2, "HIPPI, mtu=65280 bytes");
     return 65280;
   }
   else
   {
-    VV_TRACE( 2, debuglevel,"unknown interface, mtu set to "<<theMSS+40<<" bytes");
+    ostringstream errmsg;
+    errmsg << "unknown interface, mtu set to " << theMSS+40 << " bytes";
+    vvDebugMsg::msg(2, errmsg.str().c_str());
     return  theMSS + 40;
   }
 #endif
@@ -934,7 +958,7 @@ int vvSocket::set_linger(int sec)
   ling.l_linger = (unsigned short)sec;
   if (setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (char*)&ling, sizeof(ling)))
   {
-    VV_ERRNO( 1, debuglevel,"Error: setsockopt()");
+    vvDebugMsg::msg(1, "Error: setsockopt()");
     return -1;
   }
   return 0;
@@ -948,7 +972,7 @@ int vvSocket::no_nagle()
   int on=1;
   if (setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY , (char*)&on, sizeof(on)))
   {
-    VV_ERRNO( 1, debuglevel,"Error: setsockopt()");
+    vvDebugMsg::msg(1, "Error: setsockopt()");
     return -1;
   }
   return 0;
@@ -968,12 +992,12 @@ vvSocket::ErrorType vvSocket::init_server_udp()
   float temp;
   if ((sockfd= socket(AF_INET, SOCK_DGRAM, 0)) <0)
   {
-    VV_ERRNO( 1, debuglevel,"Error: socket()");
+    vvDebugMsg::msg(1, "Error: socket()");
     return VV_SOCK_ERROR;
   }
   if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,sizeof(optval)))
   {
-    VV_ERRNO( 1, debuglevel,"Error: setsockopt()");
+    vvDebugMsg::msg(1, "Error: setsockopt()");
     return VV_SOCK_ERROR;
   }
   if (sock_buffsize > 0)
@@ -981,19 +1005,20 @@ vvSocket::ErrorType vvSocket::init_server_udp()
     if (setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF,
       (char *) &sock_buffsize, sizeof(sock_buffsize)))
     {
-      VV_ERRNO( 1, debuglevel,"Error: setsockopt()");
+      vvDebugMsg::msg(1, "Error: setsockopt()");
       return VV_SOCK_ERROR;
     }
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
       (char *) &sock_buffsize, sizeof(sock_buffsize)))
     {
-      VV_ERRNO( 1, debuglevel,"Error: setsockopt()");
+      vvDebugMsg::msg(1, "Error: setsockopt()");
       return VV_SOCK_ERROR;
     }
   }
   get_send_buffsize();
-  VV_TRACE( 2, debuglevel,"send_buffsize: "<<send_buffsize<<" bytes, recv_buffsize: "
-    <<get_recv_buffsize()<<" bytes");
+  ostringstream errmsg;
+  errmsg << "send_buffsize: " << send_buffsize << " bytes, recv_buffsize: " << get_recv_buffsize() << " bytes";
+  vvDebugMsg::msg(2, errmsg.str().c_str());
   if (send_buffsize < 65507)
     max_send_size = send_buffsize;
   else
@@ -1006,7 +1031,7 @@ vvSocket::ErrorType vvSocket::init_server_udp()
 
   if  (bind(sockfd, (struct sockaddr *)&host_addr, host_addrlen))
   {
-    VV_ERRNO( 1, debuglevel,"Error: bind()");
+    vvDebugMsg::msg(1, "Error: bind()");
     return VV_SOCK_ERROR ;
   }
   temp = transfer_timer;
@@ -1015,19 +1040,19 @@ vvSocket::ErrorType vvSocket::init_server_udp()
   {
     if  (retval == VV_TIMEOUT_ERROR)
     {
-      VV_TRACE( 1, debuglevel,"Timeout get_client_addr()");
+      vvDebugMsg::msg(1, "Timeout get_client_addr()");
       return VV_TIMEOUT_ERROR;
     }
     else
     {
-      VV_TRACE( 1, debuglevel,"Error: get_client_addr()");
+      vvDebugMsg::msg(1, "Error: get_client_addr()");
       return VV_READ_ERROR;
     }
   }
   transfer_timer = temp;
   if (connect(sockfd, (struct sockaddr *)&host_addr, host_addrlen))
   {
-    VV_ERRNO( 1, debuglevel,"Error: connect()");
+    vvDebugMsg::msg(1, "Error: connect()");
     return VV_CONNECT_ERROR;
   }
   return VV_OK;
@@ -1054,12 +1079,12 @@ vvSocket::ErrorType vvSocket::init_client_udp()
   sigfunc = Signal(SIGALRM, nonameserver);
   if (alarm(5) != 0)
   {
-    VV_TRACE( 2, debuglevel,"init_client():WARNING! previously set alarm was wiped out");
+    vvDebugMsg::msg(2, "init_client():WARNING! previously set alarm was wiped out");
   }
   if ((host= gethostbyname(hostname)) == 0)
   {
     alarm(0);
-    VV_ERRNO( 1, debuglevel,"Error gethostbyname()");
+    vvDebugMsg::msg(1, "Error: gethostbyname()");
     signal(SIGALRM, sigfunc);
     return VV_HOST_ERROR;
   }
@@ -1070,7 +1095,7 @@ vvSocket::ErrorType vvSocket::init_client_udp()
   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
   if (sockfd < 0)
   {
-    VV_ERRNO( 1, debuglevel,"Error: socket");
+    vvDebugMsg::msg(1, "Error: socket");
     return VV_SOCK_ERROR;
   }
   if (sock_buffsize > 0)
@@ -1078,19 +1103,20 @@ vvSocket::ErrorType vvSocket::init_client_udp()
     if (setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF,
       (char *) &sock_buffsize, sizeof(sock_buffsize)))
     {
-      VV_ERRNO( 1, debuglevel,"Error: setsockopt()");
+      vvDebugMsg::msg(1, "Error: setsockopt()");
       return VV_SOCK_ERROR;
     }
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
       (char *) &sock_buffsize, sizeof(sock_buffsize)))
     {
-      VV_ERRNO( 1, debuglevel,"Error: setsockopt()");
+      vvDebugMsg::msg(1, "Error: setsockopt()");
       return VV_SOCK_ERROR;
     }
   }
   get_send_buffsize();
-  VV_TRACE( 2, debuglevel,"send_buffsize: "<<send_buffsize<<"bytes,  recv_buffsize: "
-    <<get_recv_buffsize()<<"bytes");
+  ostringstream errmsg;
+  errmsg << "send_buffsize: " << send_buffsize << "bytes,  recv_buffsize: " << get_recv_buffsize() << "bytes";
+  vvDebugMsg::msg(1, errmsg.str().c_str());
   if (send_buffsize < 65507)
     max_send_size = send_buffsize;
   else
@@ -1102,7 +1128,7 @@ vvSocket::ErrorType vvSocket::init_client_udp()
   {
     if (cl_min_port > cl_max_port)
     {
-      VV_TRACE( 1, debuglevel,"Wrong port range");
+      vvDebugMsg::msg(1, "Wrong port range");
       return VV_SOCK_ERROR ;
     }
     host_addr.sin_addr.s_addr = INADDR_ANY;
@@ -1121,13 +1147,13 @@ vvSocket::ErrorType vvSocket::init_client_udp()
       }
       else
       {
-        VV_ERRNO( 1, debuglevel,"Error: bind()");
+        vvDebugMsg::msg(1, "Error: bind()");
         return VV_SOCK_ERROR ;
       }
     }
     if (cl_port > cl_max_port)
     {
-      VV_TRACE( 1, debuglevel,"No port free!");
+      vvDebugMsg::msg(1, "No port free!");
       return VV_SOCK_ERROR ;
     }
   }
@@ -1135,20 +1161,19 @@ vvSocket::ErrorType vvSocket::init_client_udp()
   host_addr.sin_port = htons((unsigned short)port);
   if (connect(sockfd, (struct sockaddr *)&host_addr, host_addrlen))
   {
-    VV_ERRNO( 1, debuglevel,"Error: connect()");
+    vvDebugMsg::msg(1, "Error: connect()");
     return VV_CONNECT_ERROR;
   }
   if ((retval = write_data(&buff, 1)) != VV_OK)
   {
     if  (retval == VV_TIMEOUT_ERROR)
     {
-      VV_TRACE( 1, debuglevel,"Timeout: write_data()");
+      vvDebugMsg::msg(1, "Timeout: write_data()");
       return VV_TIMEOUT_ERROR;
     }
     else
     {
-
-      VV_TRACE( 1, debuglevel,"Error: write_data()");
+      vvDebugMsg::msg(1, "Error: write_data()");
       return VV_WRITE_ERROR;
     }
   }
@@ -1184,19 +1209,19 @@ vvSocket::ErrorType vvSocket::recvfrom_timeo()
 {
   uchar buff;
 
-  VV_TRACE( 3, debuglevel,"waiting .....");
+  vvDebugMsg::msg(3, "waiting .....");
   if (readable_timeo())
   {
     if(recvfrom(sockfd, (char*)&buff, 1, 0,(struct sockaddr *)&host_addr, &host_addrlen) !=1)
     {
-      VV_ERRNO( 1, debuglevel,"Error: recvfrom()");
+      vvDebugMsg::msg(1, "Error: recvfrom()");
       return VV_READ_ERROR;
     }
-    VV_TRACE( 3, debuglevel,"Client Address received");
+    vvDebugMsg::msg(3, "Client Address received");
   }
   else
   {
-    if (debuglevel>1)
+    if (vvDebugMsg::getDebugLevel()>1)
       if (do_a_retry())
         return VV_RETRY;
     return VV_TIMEOUT_ERROR;
@@ -1214,10 +1239,10 @@ vvSocket::ErrorType vvSocket::recvfrom_nontimeo()
 
   if(recvfrom(sockfd, (char*)&buff, 1, 0,(struct sockaddr *)&host_addr, &host_addrlen) !=1)
   {
-    VV_ERRNO( 1, debuglevel,"Error: recvfrom()");
+    vvDebugMsg::msg(1, "Error: recvfrom()");
     return VV_READ_ERROR;
   }
-  VV_TRACE( 3, debuglevel,"Client Address received");
+  vvDebugMsg::msg(3, "Client Address received");
   return VV_OK;
 }
 
@@ -1246,13 +1271,15 @@ ssize_t vvSocket::readn_udp(char* buffer, size_t size)
           nread = 0;                              // interrupted, call read again
       else
       {
-        VV_ERRNO( 1, debuglevel,"Error: udp recv()");
+        vvDebugMsg::msg(1, "Error: udp recv()");
         return (ssize_t)-1;
       }
     }
     else if (nread == 0)
       break;
-    VV_TRACE( 3, debuglevel,nread<<" Bytes read");
+    ostringstream errmsg;
+    errmsg <<  nread << " Bytes read";
+    vvDebugMsg::msg(3, errmsg.str().c_str());
     nleft -= nread;
     buffer += nread;
   }
@@ -1289,11 +1316,13 @@ ssize_t vvSocket::writen_udp(const char* buffer, size_t size)
           nwritten = 0;                           // interrupted, call write again
       else
       {
-        VV_ERRNO( 1, debuglevel,"Error: udp send()");
+        vvDebugMsg::msg(1, "Error: udp send()");
         return (ssize_t)-1;
       }
     }
-    VV_TRACE( 3, debuglevel,nwritten<<" Bytes written");
+    ostringstream errmsg;
+    errmsg << nwritten << " Bytes written";
+    vvDebugMsg::msg(3, errmsg.str().c_str());
     nleft -= nwritten;
     buffer += nwritten;
   }
@@ -1351,13 +1380,13 @@ vvSocket::~vvSocket()
   if(sockfd >= 0)
     if(closesocket(sockfd))
       if (WSAGetLastError() ==  WSAEWOULDBLOCK)
-        VV_TRACE( 1, debuglevel,"Linger time expires");
+        vvDebugMsg::msg(1, "Linger time expires");
   WSACleanup();
 #else
   if(sockfd >= 0)
     if (close(sockfd))
       if (errno ==  EWOULDBLOCK)
-        VV_TRACE( 1, debuglevel,"Linger time expires");
+        vvDebugMsg::msg(1, "Linger time expires");
 #endif
 }
 
@@ -1406,7 +1435,7 @@ vvSocket::Sigfunc *vvSocket::Signal(int signo, vvSocket::Sigfunc *func)
   Sigfunc *sigfunc;
 
   if ( (sigfunc = signal(signo, func)) == SIG_ERR)
-    VV_TRACE( 1, debuglevel,"signal error");
+    vvDebugMsg::msg(1, "signal error");
   return(sigfunc);
 }
 
@@ -1478,7 +1507,7 @@ vvSocket::ErrorType vvSocket::read_timeo(uchar* dataptr, size_t size)
 
   if (size <= 0) return VV_OK;
 
-  VV_TRACE( 3, debuglevel,"waiting .....");
+  vvDebugMsg::msg(3, "waiting .....");
   if (readable_timeo())
   {
     if (socktype == VV_TCP)
@@ -1487,15 +1516,17 @@ vvSocket::ErrorType vvSocket::read_timeo(uchar* dataptr, size_t size)
       s = readn_udp((char*)dataptr, size);
     if (s == -1)
     {
-      VV_TRACE( 1, debuglevel,"Reading data failed, read_timeo()");
+      vvDebugMsg::msg(1, "Reading data failed, read_timeo()");
       return VV_READ_ERROR;
     }
-    VV_TRACE( 3, debuglevel,"Getting "<< s << " Bytes of Data");
+    ostringstream errmsg;
+    errmsg << "Getting " << s << " Bytes of Data";
+    vvDebugMsg::msg(3, errmsg.str().c_str());
     return VV_OK;
   }
   else
   {
-    if (debuglevel > 1)
+    if (vvDebugMsg::getDebugLevel() > 1)
       if (do_a_retry())
         return VV_RETRY;
     return VV_TIMEOUT_ERROR;
@@ -1514,22 +1545,24 @@ vvSocket::ErrorType vvSocket::read_nontimeo(uchar* dataptr, size_t size)
 
   if (size <= 0) return VV_OK;
 
-  VV_TRACE( 3, debuglevel,"waiting .....");
+  vvDebugMsg::msg(3, "waiting .....");
   if (socktype == VV_TCP)
     s = readn_tcp((char*)dataptr, size);
   else
     s = readn_udp((char*)dataptr, size);
   if (s == -1)
   {
-    VV_TRACE( 1, debuglevel,"Reading data failed, read_nontimeo()");
+    vvDebugMsg::msg(1, "Reading data failed, read_nontimeo()");
     return VV_READ_ERROR;
   }
   if (s == 0)
   {
-    VV_TRACE( 1, debuglevel,"Peer performed orderly shutdown");
+    vvDebugMsg::msg(1, "Peer performed orderly shutdown");
     return VV_PEER_SHUTDOWN;
   }
-  VV_TRACE( 3, debuglevel,"Getting "<< s << " Bytes of Data");
+  ostringstream errmsg;
+  errmsg << "Getting " << s << " Bytes of Data";
+  vvDebugMsg::msg(3, errmsg.str().c_str());
   return VV_OK;
 }
 
@@ -1551,15 +1584,17 @@ vvSocket::ErrorType vvSocket::write_timeo(const uchar* dataptr, size_t size)
       s = writen_udp((char*)dataptr, size);
     if (s == -1)
     {
-      VV_TRACE( 1, debuglevel,"Writing data failed, write_timeo()");
+      vvDebugMsg::msg(1, "Writing data failed, write_timeo()");
       return VV_WRITE_ERROR;
     }
-    VV_TRACE( 3, debuglevel,"Sending "<< s << " Bytes of Data");
+    ostringstream errmsg;
+    errmsg << "Sending " << s << " Bytes of Data";
+    vvDebugMsg::msg(3, errmsg.str().c_str());
     return VV_OK;
   }
   else
   {
-    if (debuglevel > 1)
+    if (vvDebugMsg::getDebugLevel() > 1)
       if (do_a_retry())
         return VV_RETRY;
     return VV_TIMEOUT_ERROR;
@@ -1582,10 +1617,12 @@ vvSocket::ErrorType vvSocket::write_nontimeo(const uchar* dataptr, size_t size)
     s = writen_udp((char*)dataptr, size);
   if (s == -1)
   {
-    VV_TRACE( 1, debuglevel,"Writing data failed, write_nontimeo()");
+    vvDebugMsg::msg(1, "Writing data failed, write_nontimeo()");
     return VV_WRITE_ERROR;
   }
-  VV_TRACE( 3, debuglevel,"Sending "<< s << " Bytes of Data");
+  ostringstream errmsg;
+  errmsg << "Sending " << s << " Bytes of Data";
+  vvDebugMsg::msg(3, errmsg.str().c_str());
   return VV_OK;
 
 }
@@ -1599,7 +1636,7 @@ vvSocket::ErrorType vvSocket::init()
 {
   if (sockfd != -1)
   {
-    VV_ERRNO(1, debuglevel, "Error: called init() on initialized socket");
+    vvDebugMsg::msg(1, "Error: called init() on initialized socket()");
     return VV_SOCKFD_ERROR;
   }
 
@@ -1683,20 +1720,11 @@ int vvSocket::is_data_waiting() const
 #else
   if(ioctl(sockfd, FIONREAD, &nbytes))
   {
-    VV_ERRNO( 1, debuglevel,"Error: ioctl()");
+    vvDebugMsg::msg(1, "Error: ioctl()");
     return -1;
   }
 #endif
   return nbytes;
-}
-
-//----------------------------------------------------------------------------
-/** Sets the debug level. Range from 0 (lowest level) to 3 (highest level)
- @param level  debug level to set to.
-*/
-void vvSocket::set_debuglevel(int level)
-{
-  debuglevel=level;
 }
 
 //----------------------------------------------------------------------------
@@ -1744,7 +1772,7 @@ int vvSocket::get_recv_buffsize()
 {
   if (getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recv_buffsize, &bufflen))
   {
-    VV_ERRNO( 1, debuglevel,"Error: getsockopt()");
+    vvDebugMsg::msg(1, "Error: getsockopt()");
     return -1;
   }
   return recv_buffsize;
@@ -1757,7 +1785,7 @@ int vvSocket::get_send_buffsize()
 {
   if (getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &send_buffsize, &bufflen))
   {
-    VV_ERRNO( 1, debuglevel,"Error: getsockopt()");
+    vvDebugMsg::msg(1, "Error: getsockopt()");
     return -1;
   }
   return send_buffsize;
@@ -1816,7 +1844,7 @@ bool vvSocket::do_a_retry()
 {
   char in[32];
 
-  VV_TRACE( 1, debuglevel,"Timeout. Retry? (y/n)");
+  vvDebugMsg::msg(1, "Timeout. Retry? (y/n)");
   cin >> in;
   if (in[0] == 'y' || in[0] ==  'Y')
     return true;
@@ -2039,7 +2067,6 @@ vvSocket::EndianType vvSocket::getEndianness()
  */
 void vvSocket::initVars()
 {
-  debuglevel = 1;
   sock_buffsize = -1;
   transfer_timer = 0.0;                           // No timeouts as default
   connect_timer = 0;
@@ -2047,7 +2074,7 @@ void vvSocket::initVars()
 #ifdef _WIN32
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2,0), &wsaData) != 0)
-    VV_TRACE( 1, debuglevel,"WSAStartup failed!");
+    vvDebugMsg::msg(1, "WSAStartup failed!");
 #endif
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

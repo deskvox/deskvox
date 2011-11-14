@@ -105,7 +105,6 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
     port = defaultPort;
 
   _socket = new vvSocketIO(port, serverName ? serverName : _slaveName, vvSocket::VV_TCP);
-  _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
 
   if (_socket->init() == vvSocket::VV_OK)
   {

@@ -58,8 +58,6 @@ vvRemoteServer::ErrorType vvRemoteServer::initSocket()
 {
   vvDebugMsg::msg(1, "vvRemoteServer::initSocket()");
 
-  _socket->set_debuglevel(vvDebugMsg::getDebugLevel());
-
   _socket->no_nagle();
 
   return VV_OK;

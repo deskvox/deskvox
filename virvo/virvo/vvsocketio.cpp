@@ -87,11 +87,10 @@ vvSocket::ErrorType vvSocketIO::init()
  size measurement if sock_buff=0.
  @param level  debuglevel. 0 for no messages, 3 for maximal debugging.
 */
-void vvSocketIO::set_sock_param(float c_timer, float t_timer, int sock_buff, int level)
+void vvSocketIO::set_sock_param(float c_timer, float t_timer, int sock_buff)
 {
   vvSocket::set_timer(c_timer, t_timer);
   vvSocket::set_sock_buffsize(sock_buff);
-  vvSocket::set_debuglevel(level);
 }
 
 //----------------------------------------------------------------------------

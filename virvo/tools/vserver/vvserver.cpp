@@ -126,7 +126,6 @@ void vvServer::serverLoop()
     cerr << "Listening on port " << port << endl;
 
     vvSocketIO *sock = new vvSocketIO(port, vvSocket::VV_TCP);
-    sock->set_debuglevel(vvDebugMsg::getDebugLevel());
     if(sock->init() != vvSocket::VV_OK)
     {
       std::cerr << "Failed to initialize server socket on port " << port << std::endl;

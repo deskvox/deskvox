@@ -48,18 +48,6 @@
 #include "vvexport.h"
 #include "vvinttypes.h"
 
-#define VV_TRACE( DBG_LVL, ACT_LVL, STRING) \
-  { \
-    if (ACT_LVL >= DBG_LVL) \
-      cerr<<STRING<<endl; \
-  }
-
-#define VV_ERRNO( DBG_LVL, ACT_LVL, STRING) \
-  { \
-    if (ACT_LVL >= DBG_LVL) \
-      printErrorMessage(STRING); \
-  }
-
 //----------------------------------------------------------------------------
 /** This class provides basic socket functionality. It is used for TCP and UDP
     sockets. For example code see documentation about vvSocket  <BR>
@@ -110,7 +98,6 @@ class VIRVOEXPORT vvSocket
     ErrorType init();
     ErrorType read_data(uchar*, size_t);
     ErrorType write_data(const uchar*, size_t);
-    void set_debuglevel(int);
     void set_sock_buffsize(int);
     void set_timer(float, float);
     int is_data_waiting() const;
@@ -141,7 +128,7 @@ class VIRVOEXPORT vvSocket
     const char* hostname;
     SocketType socktype;
     int cl_min_port, cl_max_port;
-    int debuglevel, sock_buffsize;
+    int sock_buffsize;
     float transfer_timer;
     int connect_timer;
     int recv_buffsize, send_buffsize;
@@ -213,7 +200,6 @@ class VIRVOEXPORT vvSocket
 - Linger time can be set<BR>
 
 Default values:
-- debuglevel=1 (0 lowest level and no messages, 1 only error messages, 2 some more messages, 3 highest level)
 - socket buffer size= system default
 - no timeouts<BR>
 
@@ -227,11 +213,10 @@ TCP-Server:
 vvSocket* sock = new vvSocket(17171, vvSocket::VV_TCP);
 
 // Parameters must be set before the init() call !!
-// e.g. debuglevel=3, socket buffer size= 65535 byte, \ 
+// e.g. socket buffer size= 65535 byte, \
 // timer for accept=3 sec., timer for write=1.5 sec.
 sock->set_timer(3.0f, 1.5f);
 sock->set_sock_buffsize(65535);
-sock->set_debuglevel(3);
 
 // Initialize the socket with the parameters and wait for a server
 if (sock->init() != vvSocket::VV_OK)
@@ -260,11 +245,10 @@ char* servername = "buxdehude";
 vvSocket* sock = new vvSocket(17171, servername, vvSocket::VV_TCP, 31000, 32000);
 
 // Parameters must be set before the init() call !!
-// e.g. debuglevel=3, socket buffer size= 65535 byte, \ 
+// e.g. socket buffer size= 65535 byte, \
 // timer for connect=3 sec., timer for read=1.5 sec.
 sock->set_timer(3.0f, 1.5f);
 sock->set_sock_buffsize(65535);
-sock->set_debuglevel(3);
 
 // Initialize the socket with the parameters and connect to the server.
 if (sock->init() != vvSocket::VV_OK)
@@ -295,7 +279,6 @@ delete sock; </PRE>
     - socket buffer sizes can be set be user<BR>
 
  default values:
-   - debuglevel=1 (0 lowest level, 3 highest level)
    - socket buffer size= system default
    - no timeouts<BR>
 
@@ -309,11 +292,10 @@ UDP-Server:
 vvSocket* sock = new vvSocket(17171, vvSocket::VV_UDP);
 
 // Parameters must be set before the init() call !!
-// e.g. debuglevel=3, socket buffer size= 65535 byte, \ 
+// e.g. socket buffer size= 65535 byte, \
 // timer for connect=3 sec., timer for write=1.5 sec.
 sock->set_timer(3.0f, 1.5f);
 sock->set_sock_buffsize(65535);
-sock->set_debuglevel(3);
 
 // Initialize the socket with the parameters and wait for a server
 if (sock->init() != vvSocket::VV_OK)
@@ -342,11 +324,10 @@ char* servername = "buxdehude";
 vvSocket* sock = new vvSocket(17171, servername, vvSocket::VV_UDP, 31000, 32000);
 
 // Parameters must be set before the init() call !!
-// e.g. debuglevel=3, socket buffer size= 65535 byte, \ 
+// e.g. socket buffer size= 65535 byte, \
 // timer for connect=3 sec., timer for read=1.5 sec.
 sock->set_timer(3.0f, 1.5f);
 sock->set_sock_buffsize(65535);
-sock->set_debuglevel(3);
 
 // Initialize the socket with the parameters and connect to the server.
 if (sock->init() != vvSocket::VV_OK)

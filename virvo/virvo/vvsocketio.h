@@ -185,7 +185,7 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType putWinDims(const int w, const int h);
     ErrorType getData(void*, int, DataType);      // known number and type
     ErrorType putData(void*, int, DataType);
-    void set_sock_param(float, float, int=65536, int=0);
+    void set_sock_param(float, float, int=65536);
 private:
     int sizeOfBrick() const;
 };
