@@ -137,7 +137,7 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
 #ifdef _WIN32
   if ((host= gethostbyname(hostname)) == 0)
   {
-    VV_ERRNO( 1, debuglevel,"Error: gethostbyname()");
+    vvDebugMsg::msg(1, "Error: gethostbyname()");
     return VV_HOST_ERROR;
   }
 #else
@@ -257,8 +257,7 @@ vvSocket::ErrorType vvSocket::accept_timeo()
     ar = accept(sockfd, (struct sockaddr *)&host_addr, &host_addrlen);
     if (ar == INVALID_SOCKET)
     {
-      if (debuglevel>2)
-        VV_ERRNO( 1, debuglevel,"Error: accept()");
+      vvDebugMsg::msg(2, "Error: accept()");
       if ((GetTickCount() - start) > transfer_timer*1000)
         return VV_TIMEOUT_ERROR;
     }
@@ -345,7 +344,7 @@ vvSocket::ErrorType vvSocket::connect_timeo()
       error = WSAGetLastError();
       if (error==WSAEISCONN) cr = 0;              // this is a weird Windows specific necessity!
       if (error!=WSAEALREADY && error!=WSAEWOULDBLOCK && error!=10022)
-        VV_ERRNO( 1, debuglevel,"Error: connect()");
+        vvDebugMsg::msg(1, "Error: connect()");
       if ((GetTickCount() - start) > transfer_timer*1000)
         return VV_TIMEOUT_ERROR;
     }
@@ -1070,7 +1069,7 @@ vvSocket::ErrorType vvSocket::init_client_udp()
   host= gethostbyname(hostname);
   if (host == 0)
   {
-    VV_ERRNO( 1, debuglevel,"Error gethostbyname()");
+    vvDebugMsg::msg(1, "Error gethostbyname()");
     return VV_HOST_ERROR;
   }
 #else
@@ -1714,7 +1713,7 @@ int vvSocket::is_data_waiting() const
 #ifdef _WIN32
   if(ioctlsocket(sockfd, FIONREAD, &nbytes))
   {
-    VV_ERRNO( 1, debuglevel,"Error: ioctlsocket()");
+    vvDebugMsg::msg(1, "Error: ioctlsocket()");
     return -1;
   }
 #else
