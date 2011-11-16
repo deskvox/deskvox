@@ -28,6 +28,7 @@
 # include <netdb.h>
 # include <unistd.h>
 # include <arpa/inet.h>
+# include <fcntl.h>
 # include <netinet/in.h>
 # include <netinet/tcp.h>
 # include <sys/time.h>
@@ -95,6 +96,7 @@ class VIRVOEXPORT vvSocket
     vvSocket(const SocketType socktype, const int sockfd);
     virtual ~vvSocket();
 
+    ErrorType set_nonblocking(bool on);
     ErrorType init();
     ErrorType read_data(uchar*, size_t);
     ErrorType write_data(const uchar*, size_t);

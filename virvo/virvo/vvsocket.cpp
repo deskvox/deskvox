@@ -1627,6 +1627,49 @@ vvSocket::ErrorType vvSocket::write_nontimeo(const uchar* dataptr, size_t size)
 }
 
 //----------------------------------------------------------------------------
+/** Turns blocking status of sockets on and off. (default: blocking on)
+*/
+vvSocket::ErrorType vvSocket::set_nonblocking(bool on)
+{
+//  fcntl(sockfd, F_)
+#ifndef _WIN32
+  int flags = fcntl(sockfd, F_GETFL, 0);
+  if(flags < 0)
+  {
+    vvDebugMsg::msg(2, "Getting flags of socket failed");
+    return VV_SOCK_ERROR;
+  }
+#endif
+  if (on)
+  {
+#ifdef _WIN32
+    unsigned long tru = 1;
+    ioctlsocket(sockfd, FIONBIO, &tru);
+#else
+    if(fcntl(sockfd, F_SETFL, flags|O_NONBLOCK))
+    {
+      vvDebugMsg::msg(2, "setting O_NONBLOCK on socket failed");
+      return VV_OK;
+    }
+#endif
+  }
+  else
+  {
+#ifdef _WIN32
+    unsigned long tru = 0;
+    ioctlsocket(sockfd, FIONBIO, &tru);
+#else
+    if(fcntl(sockfd, F_SETFL, flags & (~O_NONBLOCK)))
+    {
+      vvDebugMsg::msg(2, "removing O_NONBLOCK from socket failed.");
+      return VV_SOCK_ERROR;
+    }
+#endif
+  }
+  return VV_OK;
+}
+
+//----------------------------------------------------------------------------
 /** Initializes a socket. Has to be called after the creation
  of an socket class instance. Calls init_client() for client and init_server()
  for server if socket wasn't constructed from an already initialized sockfd.
