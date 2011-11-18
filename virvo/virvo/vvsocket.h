@@ -299,7 +299,7 @@ vvSocket* sock = new vvSocket(17171, vvSocket::VV_UDP);
 sock->set_timer(3.0f, 1.5f);
 sock->set_sock_buffsize(65535);
 
-// Initialize the socket with the parameters and wait for a server
+// Initialize the socket with the parameters and wait for a client
 if (sock->init() != vvSocket::VV_OK)
 {
 delete sock;
