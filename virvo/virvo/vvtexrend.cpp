@@ -893,8 +893,6 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
     return TEX_SIZE_UNKNOWN;
   }
 
-  const int frames = vd->frames;
-
   for(std::vector<BrickList>::iterator frame = _brickList.begin();
       frame != _brickList.end();
       ++frame)
@@ -925,8 +923,8 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
                              float(vd->vox[1] - 1) * 0.5f,
                              float(vd->vox[2] - 1) * 0.5f);
 
-  _brickList.resize(frames);
-  for (int f = 0; f < frames; f++)
+  _brickList.resize(vd->frames);
+  for (int f = 0; f < vd->frames; f++)
   {
     for (int bx = 0; bx < _numBricks[0]; bx++)
       for (int by = 0; by < _numBricks[1]; by++)
