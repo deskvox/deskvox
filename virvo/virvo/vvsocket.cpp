@@ -1683,18 +1683,34 @@ vvSocket::ErrorType vvSocket::init()
 
   if (hostname)
   {
-    if (socktype == VV_TCP)
+    switch(socktype)
+    {
+    case VV_TCP:
       return init_client_tcp();
-    else
+    case VV_UDP:
       return init_client_udp();
+    case VV_MC_SENDER:
+      return init_client_mc();
+    case VV_MC_RECEIVER:
+      return init_server_mc();
+    }
   }
   else
   {
-    if (socktype == VV_TCP)
+    switch(socktype)
+    {
+    case VV_TCP:
       return init_server_tcp();
-    else
+    case VV_UDP:
       return init_server_udp();
+    case VV_MC_SENDER:
+    case VV_MC_RECEIVER:
+      vvDebugMsg::msg(2, "Multicasting is not available without a host address");
+      return VV_SOCK_ERROR;
+    }
   }
+  // compiler thinks end of function is reachable
+  return VV_SOCK_ERROR;
 }
 
 //----------------------------------------------------------------------------
@@ -1706,6 +1722,24 @@ vvSocket::ErrorType vvSocket::init()
 */
 vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size)
 {
+  if(VV_MC_RECEIVER == socktype)
+  {
+    ssize_t got = read(sockfd, dataptr, size);
+    if(got == size)
+    {
+      return VV_OK;
+    }
+    else
+    {
+      vvDebugMsg::msg(2, "vvSocket::read_data()", true);
+      return VV_WRITE_ERROR;
+    }
+  }
+  else if(VV_MC_SENDER == socktype)
+  {
+    return VV_SOCKTYPE_ERROR;
+  }
+
   ErrorType retval;
 
   if (transfer_timer > 0)
@@ -1728,6 +1762,24 @@ vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size)
 */
 vvSocket::ErrorType vvSocket::write_data(const uchar* dataptr, size_t size)
 {
+  if(VV_MC_SENDER == socktype)
+  {
+    ssize_t written = sendto(sockfd, dataptr, size, 0, (struct sockaddr*)&groupSock, sizeof(groupSock));
+    if(written == size)
+    {
+      return VV_OK;
+    }
+    else
+    {
+      vvDebugMsg::msg(2, "vvSocket::write_data()", true);
+      return VV_WRITE_ERROR;
+    }
+  }
+  else if(VV_MC_RECEIVER == socktype)
+  {
+    return VV_SOCKTYPE_ERROR;
+  }
+
   ErrorType retval;
 
   if (transfer_timer > 0)
@@ -2118,4 +2170,123 @@ void vvSocket::initVars()
     vvDebugMsg::msg(1, "WSAStartup failed!");
 #endif
 }
+
+//----------------------------------------------------------------------------
+/// Initializes a multicast client (sender)
+vvSocket::ErrorType vvSocket::init_client_mc()
+{
+  vvDebugMsg::msg(0, "Enter vvSocket::init_client_mc()");
+
+  sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (sockfd < 0)
+  {
+    vvDebugMsg::msg(1, "Error: socket", true);
+    return VV_SOCK_ERROR;
+  }
+  if (sock_buffsize > 0)
+  {
+    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sock_buffsize, sizeof(sock_buffsize)) < 0)
+    {
+      vvDebugMsg::msg(1, "Error: setsockopt()");
+      return VV_SOCK_ERROR;
+    }
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &sock_buffsize, sizeof(sock_buffsize)) < 0)
+    {
+      vvDebugMsg::msg(1, "Error: setsockopt()");
+      return VV_SOCK_ERROR;
+    }
+  }
+  get_send_buffsize();
+  ostringstream errmsg;
+  errmsg << "send_buffsize: " << send_buffsize << "bytes,  recv_buffsize: " << get_recv_buffsize() << "bytes";
+  vvDebugMsg::msg(1, errmsg.str().c_str());
+  if (send_buffsize < 65507)
+    max_send_size = send_buffsize;
+  else
+    max_send_size = 65507;
+
+  memset((char *) &groupSock, 0, sizeof(groupSock));
+  groupSock.sin_family = AF_INET;
+  groupSock.sin_addr.s_addr = inet_addr(hostname);
+  groupSock.sin_port = htons(port);
+
+  char loopch = 0;
+  if(setsockopt(sockfd, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loopch, sizeof(loopch)) < 0)
+  {
+    vvDebugMsg::msg(2, "Setting IP_MULTICAST_LOOP error", true);
+    return VV_SOCK_ERROR;
+  }
+
+  localInterface.s_addr = INADDR_ANY;
+  if(setsockopt(sockfd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&localInterface, sizeof(localInterface)) < 0)
+  {
+    vvDebugMsg::msg(2, "Setting local interface error", true);
+    return VV_SOCK_ERROR;
+  }
+
+  return VV_OK;
+}
+
+//----------------------------------------------------------------------------
+/// Initializes a multicast server (receiver)
+vvSocket::ErrorType vvSocket::init_server_mc()
+{
+  vvDebugMsg::msg(0, "Enter vvSocket::init_server_mc()");
+
+  sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+  if(sockfd < 0)
+  {
+    vvDebugMsg::msg(1, "Error: socket()");
+    return VV_SOCK_ERROR;
+  }
+  int reuse = 1;
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse,sizeof(reuse)))
+  {
+    vvDebugMsg::msg(1, "Error: setsockopt()");
+    return VV_SOCK_ERROR;
+  }
+  if (sock_buffsize > 0)
+  {
+    if(setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sock_buffsize, sizeof(sock_buffsize)) < 0)
+    {
+      vvDebugMsg::msg(1, "Error: setsockopt()");
+      return VV_SOCK_ERROR;
+    }
+    if(setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &sock_buffsize, sizeof(sock_buffsize)) < 0)
+    {
+      vvDebugMsg::msg(1, "Error: setsockopt()");
+      return VV_SOCK_ERROR;
+    }
+  }
+  get_send_buffsize();
+  ostringstream errmsg;
+  errmsg << "send_buffsize: " << send_buffsize << " bytes, recv_buffsize: " << get_recv_buffsize() << " bytes";
+  vvDebugMsg::msg(2, errmsg.str().c_str());
+  if (send_buffsize < 65507)
+    max_send_size = send_buffsize;
+  else
+    max_send_size = 65507;
+
+  memset((char *) &localSock, 0, sizeof(localSock));
+  localSock.sin_family = AF_INET;
+  localSock.sin_port = htons(port);
+  localSock.sin_addr.s_addr = INADDR_ANY;
+
+  if(bind(sockfd, (struct sockaddr*)&localSock, sizeof(localSock)))
+  {
+    vvDebugMsg::msg(1, "Error: bind()");
+    return VV_SOCK_ERROR ;
+  }
+
+  group.imr_multiaddr.s_addr = inet_addr(hostname);
+  group.imr_interface.s_addr = INADDR_ANY;
+  if(setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) < 0)
+  {
+    vvDebugMsg::msg(2, "Adding multicast group error", true);
+    return VV_SOCK_ERROR;
+  }
+
+  return VV_OK;
+}
+
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

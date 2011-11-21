@@ -75,13 +75,16 @@ class VIRVOEXPORT vvSocket
       VV_HEADER_ERROR,                            ///< invalid header received
       VV_DATA_ERROR,                              ///< volume data format error: e.g., too many voxels received
       VV_PEER_SHUTDOWN,                           ///< the connection was closed by peer
-      VV_SOCKFD_ERROR
+      VV_SOCKFD_ERROR,
+      VV_SOCKTYPE_ERROR
     };
 
     enum SocketType
     {
       VV_TCP,
-      VV_UDP
+      VV_UDP,
+      VV_MC_SENDER,
+      VV_MC_RECEIVER
     };
 
     enum EndianType                               /// endianness
@@ -165,6 +168,8 @@ class VIRVOEXPORT vvSocket
     ErrorType init_client_tcp();
     ErrorType init_server_udp();
     ErrorType init_client_udp();
+    ErrorType init_server_mc();
+    ErrorType init_client_mc();
     ErrorType get_client_addr();
     ErrorType recvfrom_timeo();
     ErrorType recvfrom_nontimeo();
@@ -185,6 +190,11 @@ class VIRVOEXPORT vvSocket
     EndianType getEndianness();
   private:
     void initVars();
+
+    sockaddr_in localSock;
+    ip_mreq group;
+    sockaddr_in groupSock;
+    in_addr localInterface;
 };
 
 //----------------------------------------------------------------------------
