@@ -1631,7 +1631,6 @@ vvSocket::ErrorType vvSocket::write_nontimeo(const uchar* dataptr, size_t size)
 */
 vvSocket::ErrorType vvSocket::set_nonblocking(bool on)
 {
-//  fcntl(sockfd, F_)
 #ifndef _WIN32
   int flags = fcntl(sockfd, F_GETFL, 0);
   if(flags < 0)
