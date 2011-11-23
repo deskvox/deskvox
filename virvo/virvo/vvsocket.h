@@ -101,8 +101,8 @@ class VIRVOEXPORT vvSocket
 
     ErrorType set_nonblocking(bool on);
     ErrorType init();
-    ErrorType read_data(uchar*, size_t);
-    ErrorType write_data(const uchar*, size_t);
+    ErrorType read_data(uchar*, size_t, ssize_t *ret = NULL);
+    ErrorType write_data(const uchar*, size_t, ssize_t *ret = NULL);
     void set_sock_buffsize(int);
     void set_timer(float, float);
     int is_data_waiting() const;
@@ -138,6 +138,7 @@ class VIRVOEXPORT vvSocket
     int connect_timer;
     int recv_buffsize, send_buffsize;
     int max_send_size;
+    ssize_t ret_value;
 
 #if !defined(__linux__) && !defined(LINUX) && !(defined(__APPLE__) && defined(__GNUC__) && GNUC__ < 4)
 #define socklen_t int

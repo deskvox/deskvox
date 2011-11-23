@@ -415,6 +415,7 @@ ssize_t vvSocket::readn_tcp(char* buffer, size_t size)
   while(nleft > 0)
   {
     nread = recv(sockfd, buffer, nleft, 0);
+    ret_value = nread;
     if (nread < 0)
     {
 #ifdef _WIN32
@@ -457,6 +458,7 @@ ssize_t vvSocket::writen_tcp(const char* buffer, size_t size)
   while(nleft > 0)
   {
     nwritten = send(sockfd, buffer, nleft, 0);
+    ret_value = nwritten;
     if (nwritten < 0)
     {
 #ifdef _WIN32
@@ -1260,6 +1262,7 @@ ssize_t vvSocket::readn_udp(char* buffer, size_t size)
   while(nleft > 0)
   {
     nread = recv(sockfd, buffer, nleft, 0);
+    ret_value = nread;
     if (nread < 0)
     {
 #ifdef _WIN32
@@ -1305,6 +1308,7 @@ ssize_t vvSocket::writen_udp(const char* buffer, size_t size)
     else
       towrite = nleft;
     nwritten = send(sockfd, buffer, towrite, 0);
+    ret_value = nwritten;
     if (nwritten < 0)
     {
 #ifdef _WIN32
@@ -1720,11 +1724,12 @@ vvSocket::ErrorType vvSocket::init()
  @param dataptr  pointer to where the read data is written.
  @param size  number of bytes to read
 */
-vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size)
+vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size, ssize_t *ret)
 {
   if(VV_MC_RECEIVER == socktype)
   {
     ssize_t got = read(sockfd, dataptr, size);
+    *ret = got;
     if(got == size)
     {
       return VV_OK;
@@ -1750,6 +1755,7 @@ vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size)
   }
   else
     retval = read_nontimeo(dataptr, size);
+  *ret = ret_value;
   return retval;
 }
 
@@ -1760,11 +1766,12 @@ vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size)
  @param dataptr  pointer to the data to write.
  @param size  number of bytes to write.
 */
-vvSocket::ErrorType vvSocket::write_data(const uchar* dataptr, size_t size)
+vvSocket::ErrorType vvSocket::write_data(const uchar* dataptr, size_t size, ssize_t *ret)
 {
   if(VV_MC_SENDER == socktype)
   {
     ssize_t written = sendto(sockfd, dataptr, size, 0, (struct sockaddr*)&groupSock, sizeof(groupSock));
+    *ret = written;
     if(written == size)
     {
       return VV_OK;
@@ -1790,6 +1797,7 @@ vvSocket::ErrorType vvSocket::write_data(const uchar* dataptr, size_t size)
   }
   else
     retval = write_nontimeo(dataptr, size);
+  *ret = ret_value;
   return retval;
 }
 
