@@ -2175,7 +2175,7 @@ void vvSocket::initVars()
 /// Initializes a multicast client (sender)
 vvSocket::ErrorType vvSocket::init_client_mc()
 {
-  vvDebugMsg::msg(0, "Enter vvSocket::init_client_mc()");
+  vvDebugMsg::msg(3, "Enter vvSocket::init_client_mc()");
 
   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
   if (sockfd < 0)
@@ -2231,7 +2231,7 @@ vvSocket::ErrorType vvSocket::init_client_mc()
 /// Initializes a multicast server (receiver)
 vvSocket::ErrorType vvSocket::init_server_mc()
 {
-  vvDebugMsg::msg(0, "Enter vvSocket::init_server_mc()");
+  vvDebugMsg::msg(3, "Enter vvSocket::init_server_mc()");
 
   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
   if(sockfd < 0)
