@@ -1729,7 +1729,7 @@ vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size, ssize_t *re
   if(VV_MC_RECEIVER == socktype)
   {
     ssize_t got = read(sockfd, dataptr, size);
-    *ret = got;
+    if(ret) *ret = got;
     if(got == size)
     {
       return VV_OK;
@@ -1755,7 +1755,7 @@ vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size, ssize_t *re
   }
   else
     retval = read_nontimeo(dataptr, size);
-  *ret = ret_value;
+  if(ret) *ret = ret_value;
   return retval;
 }
 
@@ -1771,7 +1771,7 @@ vvSocket::ErrorType vvSocket::write_data(const uchar* dataptr, size_t size, ssiz
   if(VV_MC_SENDER == socktype)
   {
     ssize_t written = sendto(sockfd, dataptr, size, 0, (struct sockaddr*)&groupSock, sizeof(groupSock));
-    *ret = written;
+    if(ret) *ret = written;
     if(written == size)
     {
       return VV_OK;
@@ -1797,7 +1797,7 @@ vvSocket::ErrorType vvSocket::write_data(const uchar* dataptr, size_t size, ssiz
   }
   else
     retval = write_nontimeo(dataptr, size);
-  *ret = ret_value;
+  if(ret) *ret = ret_value;
   return retval;
 }
 
