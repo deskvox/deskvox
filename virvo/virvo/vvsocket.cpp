@@ -56,7 +56,7 @@ vvSocket::ErrorType vvSocket::init_server_tcp()
 
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0 )) < 0)
   {
-    vvDebugMsg::msg(1, "Error: socket()");
+    vvDebugMsg::msg(1, "Error: socket()", true);
     return VV_SOCK_ERROR;
   }
   if (sock_buffsize == 0)
@@ -158,7 +158,7 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
 #endif
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
   {
-    vvDebugMsg::msg(1, "Error: socket");
+    vvDebugMsg::msg(1, "Error: socket", true);
     return VV_SOCK_ERROR;
   }
   if (sock_buffsize == 0)
@@ -993,7 +993,7 @@ vvSocket::ErrorType vvSocket::init_server_udp()
   float temp;
   if ((sockfd= socket(AF_INET, SOCK_DGRAM, 0)) <0)
   {
-    vvDebugMsg::msg(1, "Error: socket()");
+    vvDebugMsg::msg(1, "Error: socket()", true);
     return VV_SOCK_ERROR;
   }
   if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,sizeof(optval)))
@@ -1096,7 +1096,7 @@ vvSocket::ErrorType vvSocket::init_client_udp()
   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
   if (sockfd < 0)
   {
-    vvDebugMsg::msg(1, "Error: socket");
+    vvDebugMsg::msg(1, "Error: socket", true);
     return VV_SOCK_ERROR;
   }
   if (sock_buffsize > 0)
@@ -2244,7 +2244,7 @@ vvSocket::ErrorType vvSocket::init_server_mc()
   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
   if(sockfd < 0)
   {
-    vvDebugMsg::msg(1, "Error: socket()");
+    vvDebugMsg::msg(1, "Error: socket()", true);
     return VV_SOCK_ERROR;
   }
   int reuse = 1;
