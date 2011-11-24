@@ -17,7 +17,7 @@
 #include "vvgltools.h"
 #include "vvoffscreenbuffer.h"
 
-vvOffscreenBuffer::vvOffscreenBuffer(const float scale = 1.0f, const BufferPrecision precision = VV_BYTE)
+vvOffscreenBuffer::vvOffscreenBuffer(const float scale, const BufferPrecision precision)
   : vvRenderTarget()
 {
   const vvGLTools::Viewport v = vvGLTools::getViewport();
