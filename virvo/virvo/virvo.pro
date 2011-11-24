@@ -23,6 +23,7 @@ SOURCES = vvaabb.cpp \
     vvdebugmsg.cpp \
     vvcgprogram.cpp \
     vvcuda.cpp \
+    vvcudatools.cpp \
     vvcudaimg.cpp \
     vvdicom.cpp \
     vvdynlib.cpp \
