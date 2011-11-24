@@ -140,7 +140,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   setDisplayNames(displayNames, numDisplays);
   _multiGpuBufferPrecision = multiGpuBufferPrecision;
 
-  if (vvDebugMsg::isActive(1))
+  if (vvDebugMsg::isActive(2))
   {
 #ifdef _WIN32
     cerr << "_WIN32 is defined" << endl;
@@ -193,6 +193,9 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 #endif
 #ifdef GL_VERSION_4_1
     cerr << ", 4.1";
+#endif
+#ifdef GL_VERSION_4_2
+    cerr << ", 4.2";
 #endif
     cerr << endl;
   }
