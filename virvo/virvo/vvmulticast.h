@@ -43,13 +43,22 @@ class VIRVOEXPORT vvMulticast
 public:
   enum
   {
-    CHUNK_SIZE = 500*1024*1024
+    CHUNK_SIZE = 500*1024*1024, ///< maximum size of Norm-Chunks
+    DGRAM_SIZE = 32 * 1024      ///< maximum size of datagrams used with vvSocket
   };
+
   enum MulticastType
   {
     VV_SENDER = 0,
     VV_RECEIVER
   };
+
+  enum MulticastApi
+  {
+    VV_NORM,
+    VV_VVSOCKET
+  };
+
 
   /** Constructor creating a sending or receiving multicast-unit
 
@@ -57,8 +66,9 @@ public:
     \note Some addresses are reserved! (See IPv4-documentation for further informations.)
     \param port Desired port number
     \param type Defined by VV_SENDER or VV_RECEIVER
+    \param api  Desired use of API, either VV_NORM or VV_VVSOCKET
     */
-  vvMulticast(const char* addr, const ushort port, const MulticastType type);
+  vvMulticast(const char* addr, const ushort port, const MulticastType type, const MulticastApi api);
   ~vvMulticast();
 
   /**
@@ -80,11 +90,19 @@ public:
   std::vector<NormNodeId> _nodes;
 
 private:
+  uchar* numberConsecutively(const uchar* data, const size_t size);
+
   MulticastType      _type;
+  MulticastApi       _api;
+
+  // Variables for multicasting with Norm
   NormInstanceHandle _instance;
   NormSessionHandle  _session;
   NormObjectHandle   _object;
   vvSocket*          _normSocket;
+
+  // Variables for multicasting with vvSocket
+  vvSocket* _socket;
 };
 
 #endif

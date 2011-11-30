@@ -27,8 +27,10 @@
 
 #include "vvsocket.h"
 #include "vvsocketio.h"
+#include "vvmulticast.h"
 #include "vvclock.h"
 #include "vvtoolshed.h"
+#include "vvdebugmsg.h"
 
 using namespace std;
 
@@ -181,7 +183,7 @@ int main(int argc, char** argv)
     bool done = false;
     while(!done)
     {
-      vvToolshed::sleep(100);
+      vvToolshed::sleep(1);
 
       done = true;
       for(unsigned int i = 0;i<servers.size(); i++)
@@ -203,13 +205,12 @@ int main(int argc, char** argv)
     cin >> tmp;
 
     // init Multicaster
-    vvSocket foo = vvSocket(50096, "224.1.2.3", vvSocket::VV_MC_SENDER);
-    foo.init();
+    vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_SENDER, vvMulticast::VV_VVSOCKET);
 
     cout << "Sending " << count << " Bytes of random numbers..." << flush;
     startTime = vvClock::getTime();
-    vvSocket::ErrorType err = foo.write_data(reinterpret_cast<const unsigned char*>(bar), count);
-    cout << "sendBytes = " << err << endl;
+    int written = foo.write(reinterpret_cast<const unsigned char*>(bar), count);
+    cout << "sendBytes = " << written << endl;
     cout << "sendTimeout = " << sendTimeout << endl;
     for(unsigned int i = 0;i<servers.size() && count>0; i++)
     {
@@ -224,8 +225,8 @@ int main(int argc, char** argv)
     }
     cout << "done!" << endl;
 
-    if(vvSocket::VV_OK != err)
-      cout << "Error occured! (No Norm found?) " << endl;
+    if(written < 0)
+      cout << "Error occured!" << endl;
     else
       cout << "Successfully sent " << count << " Bytes!" << endl;
 
@@ -258,8 +259,7 @@ int main(int argc, char** argv)
       receiveTimeout = -1.0;
     }
 
-    vvSocket foo = vvSocket(50096, "224.1.2.3", vvSocket::VV_MC_RECEIVER);
-    foo.init();
+    vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_RECEIVER, vvMulticast::VV_VVSOCKET);
 
     cout << "Waiting for incoming data on TCP..." << endl;
 
@@ -283,14 +283,14 @@ int main(int argc, char** argv)
     cout << "Waiting for incoming data over Multicasting..." << endl;
 
     uchar* bartext = new uchar[tcpSize];
-    vvSocket::ErrorType err = foo.read_data(bartext, tcpSize);
+    int read = foo.read(bartext, tcpSize);
 
     // Tell sender, that we are done
     recSocket.write_string("done!");
 
-    if(vvSocket::VV_OK == err)
+    if(read >= 0)
     {
-      cout << "Received: " << tcpSize << endl;
+      cout << "Received: " << read << endl;
       cout << "Check data for differences...    ";
       for(int i=0; i<tcpSize;i++)
       {
@@ -312,7 +312,7 @@ int main(int argc, char** argv)
       cout << endl;
     }
     else
-      cout << "Timeout reached and no data received!" << endl;
+      cout << "Timeout reached or no data received!" << endl;
     cout << endl;
 
     delete[] bar;

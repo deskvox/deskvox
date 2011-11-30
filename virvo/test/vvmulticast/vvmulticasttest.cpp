@@ -211,7 +211,7 @@ int main(int argc, char** argv)
     cin >> tmp;
 
     // init Multicaster
-    vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_SENDER);
+    vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_SENDER, vvMulticast::VV_NORM);
 
     for(unsigned int i = 0;i<servers.size(); i++)
     {
@@ -270,7 +270,7 @@ int main(int argc, char** argv)
       receiveTimeout = -1.0;
     }
 
-    vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_RECEIVER);
+    vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_RECEIVER, vvMulticast::VV_NORM);
 
     cout << "Waiting for incoming data on TCP..." << endl;
 
