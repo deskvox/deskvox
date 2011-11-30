@@ -1730,7 +1730,7 @@ vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size, ssize_t *re
   {
     ssize_t got = read(sockfd, dataptr, size);
     if(ret) *ret = got;
-    if(got == size)
+    if(got >= 0)
     {
       return VV_OK;
     }
