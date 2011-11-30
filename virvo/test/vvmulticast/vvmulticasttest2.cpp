@@ -80,11 +80,7 @@ public:
       return NULL;
     }
 
-    if(vvSocket::VV_OK == obj->_socket->write_data(obj->_data, obj->_size))
-    {
-      cout << "transfer to " << obj->_addr << " complete!" << endl;
-    }
-    else
+    if(vvSocket::VV_OK != obj->_socket->write_data(obj->_data, obj->_size))
     {
       cout << "Error occured in transfer to " << obj->_addr << endl;
     }
@@ -159,14 +155,13 @@ int main(int argc, char** argv)
     }
     else
     {
-      cout << "No timeout given. (Default: no timeout)" << endl;
       sendTimeout = -1.0;
     }
 
     double startTime = vvClock::getTime();
 
     // Send to all servers
-    cout << "Try sending to receivers via TCP-Connection!" << endl;
+    cout << "Sending to receivers via TCP...";
     std::vector<tcpConnection*> servers;
     for(int i=0; i<argc; i++)
     {
@@ -195,40 +190,37 @@ int main(int argc, char** argv)
         }
       }
     }
-    cout << "TCP-Transfers complete!" << endl << endl;
+    cout << "ok." << endl << endl;
     cout << "Time needed: " << vvClock::getTime() - startTime << endl;
 
-    cout << endl << endl;
+    cout << endl;
 
-    cout << "Receiver ready?" << endl;
+    cout << "Receivers ready?" << endl;
     string tmp;
     cin >> tmp;
 
     // init Multicaster
     vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_SENDER, vvMulticast::VV_VVSOCKET);
 
-    cout << "Sending " << count << " Bytes of random numbers..." << flush;
+    cout << "Sending to receivers via multicast..." << flush;
     startTime = vvClock::getTime();
     int written = foo.write(reinterpret_cast<const unsigned char*>(bar), count);
-    cout << "sendBytes = " << written << endl;
-    cout << "sendTimeout = " << sendTimeout << endl;
     for(unsigned int i = 0;i<servers.size() && count>0; i++)
     {
-      char *multidone = new char[5];
-      servers[i]->_socket->read_string(multidone, 5);
+      char *multidone = new char[6];
+      servers[i]->_socket->read_string(multidone, 6);
       if(strcmp("done!", multidone) == 0)
         continue;
       else
-        cout << "Server did not finish!"<< endl;
+        cout << "unexpected message from receiver" ;
 
       delete[] multidone;
     }
-    cout << "done!" << endl;
 
     if(written < 0)
-      cout << "Error occured!" << endl;
+      cout << "error!" << endl;
     else
-      cout << "Successfully sent " << count << " Bytes!" << endl;
+      cout << "ok." << endl;
 
     cout << "Time needed: " << vvClock::getTime() - startTime << endl;
     cout << endl;
@@ -252,10 +244,10 @@ int main(int argc, char** argv)
     if(NULL != argv[3] && 4 <= argc)
     {
       receiveTimeout = atof(argv[3]);
+      cout << "Timeout: " << receiveTimeout << endl << endl;
     }
     else
     {
-      cout << "No timeout given. (Default: no timeout)" << endl;
       receiveTimeout = -1.0;
     }
 
@@ -266,21 +258,17 @@ int main(int argc, char** argv)
     vvSocketIO recSocket = vvSocketIO(31050, vvSocket::VV_TCP);
     recSocket.init();
     uint tcpSize = recSocket.read32();
-    cout << "Expecting " << tcpSize << "Byes of data." << endl;
+    cout << "Expecting " << tcpSize << "Byes...";
     uchar* bartcp = new uchar[tcpSize];
     if(vvSocket::VV_OK == recSocket.read_data(bartcp, tcpSize))
-    {
-      cout << "Successfully received " << tcpSize << "Bytes." << endl;
-    }
+      cout << "ok." << endl;
     else
-    {
-      cout << "Error for TCP-transfer!" << endl;
-    }
+      cout << "error!" << endl;
     cout << endl;
 
     uchar* bar = generateData(tcpSize);
 
-    cout << "Waiting for incoming data over Multicasting..." << endl;
+    cout << "Waiting for incoming data over Multicasting...";
 
     uchar* bartext = new uchar[tcpSize];
     int read = foo.read(bartext, tcpSize);
@@ -290,17 +278,14 @@ int main(int argc, char** argv)
 
     if(read >= 0)
     {
-      cout << "Received: " << read << endl;
+      cout << "ok." << endl;
+      cout << endl;
       cout << "Check data for differences...    ";
       for(int i=0; i<tcpSize;i++)
       {
         if(bar[i] != bartext[i])
         {
-          cout << "Failed: Differences found!" << endl;
-          cout << "i:         " << i           << endl
-               << "checkdata: " << bar[i]      << endl
-               << "multicast: " << bartext[i]  << endl
-               << "tcpdata:   " << bartcp[i]   << endl;
+          cout << "Failed: Differences found on byte " << i << endl;
           break;
         }
         else if(i % 1024 == 0)
@@ -312,8 +297,7 @@ int main(int argc, char** argv)
       cout << endl;
     }
     else
-      cout << "Timeout reached or no data received!" << endl;
-    cout << endl;
+      cout << "error!" << endl;
 
     delete[] bar;
     delete[] bartext;
