@@ -52,10 +52,7 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
       // TODO: Adjust these numbers depending on the used network topology
       NormSetTransmitRate(_session, 8e10);
       NormSetTransmitCacheBounds(_session, CHUNK_SIZE, 1, 128);
-  //    NormSetTxRobustFactor(_session, 1);
-      NormSetGroupSize(_session, 10);
-  //    NormSetAutoParity(_session, 1);
-  //    NormSetGrttMax(_session, 1);
+      //NormSetGroupSize(_session, 10);
       NormStartSender(_session, sessionId, 1024*1024, 1400, 64, 2);
       NormSetTxSocketBuffer(_session, 1024*1024*32);
     }
@@ -137,11 +134,9 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
       NormDescriptor normDesc = NormGetDescriptor(_instance);
 
       vvSocketMonitor* monitor = new vvSocketMonitor;
-
       std::vector<vvSocket*> sock;
       sock.push_back(new vvSocket(vvSocket::VV_UDP, int(normDesc)));
       monitor->setReadFds(sock);
-
 
       NormEvent theEvent;
       size_t bytesSent = 0;
@@ -171,7 +166,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
           case NORM_TX_FLUSH_COMPLETED:
           case NORM_LOCAL_SENDER_CLOSED:
           case NORM_TX_OBJECT_SENT:
-            vvDebugMsg::msg(3, "vvMulticast::write() NORM_TX_FLUSH_COMPLETED: tile-transfer completed.");
+            vvDebugMsg::msg(3, "vvMulticast::write(): chunk-transfer completed.");
             bytesSent += size_t(NormObjectGetSize(theEvent.object));
             keepGoing = false;
             break;
