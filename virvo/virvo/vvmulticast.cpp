@@ -340,37 +340,27 @@ ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
 
 uchar* vvMulticast::numberConsecutively(const uchar* data, const size_t size)
 {
-  if(VV_NORM == _api)
-  {
-    vvDebugMsg::msg(1, "vvMulticast::numberConsecutively() is not available (nor necessary) for NormAPI");
-    (void) data;
-    (void) size;
-    return NULL;
-  }
-  else
-  {
-    uchar *numbered = new uchar[size_t(size+(ceil(float(size)/float((DGRAM_SIZE-4)))*4))];
+  uchar *numbered = new uchar[size_t(size+(ceil(float(size)/float((DGRAM_SIZE-4)))*4))];
 
-    size_t i = 0;
-    size_t n = 0;
-    uint32_t c = 0;
-    while(i < size)
-    {
-      numbered[n++] = data[i++];
-      if((n+4)%DGRAM_SIZE == 0)
-      {
-        *((uint32_t*)(&numbered[n])) = htonl(c);
-        n += 4;
-        c++;
-      }
-    }
-    // add last number if dgram not full
-    if(n % DGRAM_SIZE != 0)
+  size_t i = 0;
+  size_t n = 0;
+  uint32_t c = 0;
+  while(i < size)
+  {
+    numbered[n++] = data[i++];
+    if((n+4)%DGRAM_SIZE == 0)
     {
       *((uint32_t*)(&numbered[n])) = htonl(c);
+      n += 4;
+      c++;
     }
-    return numbered;
   }
+  // add last number if dgram not full
+  if(n % DGRAM_SIZE != 0)
+  {
+    *((uint32_t*)(&numbered[n])) = htonl(c);
+  }
+  return numbered;
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
