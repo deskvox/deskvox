@@ -18,19 +18,10 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include <iostream>
-#include <cstring>
-#include <cstdlib>
-#include <cstdio>
-#include <vector>
-#include <pthread.h>
-
-#include "vvsocket.h"
 #include "vvsocketio.h"
 #include "vvmulticast.h"
 #include "vvclock.h"
 #include "vvtoolshed.h"
-#include "vvdebugmsg.h"
 
 using namespace std;
 
