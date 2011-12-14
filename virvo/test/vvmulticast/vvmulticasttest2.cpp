@@ -259,7 +259,7 @@ int main(int argc, char** argv)
 
     uchar* bar = generateData(tcpSize);
 
-    cout << "Waiting for incoming data over Multicasting...";
+    cout << "Waiting for incoming data over Multicasting..." << flush;
 
     uchar* bartext = new uchar[tcpSize];
     int read = foo.read(bartext, tcpSize);

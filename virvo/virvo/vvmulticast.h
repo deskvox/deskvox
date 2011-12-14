@@ -97,6 +97,11 @@ private:
 
   // Variables for multicasting with vvSocket
   vvSocket* _socket;
+  union bytesToInt32
+  {
+    uchar    x[4];
+    uint32_t y;
+  };
 };
 
 #endif

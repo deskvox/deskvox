@@ -80,6 +80,7 @@ vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastTyp
       _socket = new vvSocket(port, addr, vvSocket::VV_MC_RECEIVER);
     }
     _socket->init();
+    _socket->set_nonblocking(true);
   }
 }
 
@@ -196,20 +197,42 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
     size_t nsize = size+(ceil(float(size)/float((DGRAM_SIZE-4)))*4);
 
     size_t nleft = nsize;
+
+    vvSocketMonitor monitor = vvSocketMonitor();
+    std::vector<vvSocket*> sock;
+    sock.push_back(new vvSocket(vvSocket::VV_UDP, _socket->get_sockfd()));
+    monitor.setWriteFds(sock);
+
     while(nleft > 0)
     {
-      size_t towrite = std::min(size_t(DGRAM_SIZE), nleft);
-      vvSocket::ErrorType err = _socket->write_data((uchar*)&ndata[nsize-nleft], towrite);
-      if(vvSocket::VV_OK != err)
+      vvSocket* ready = NULL;
+      vvSocketMonitor::ErrorType smErr = monitor.wait(&ready, &timeout);
+      if(vvSocketMonitor::VV_TIMEOUT == smErr)
       {
-        vvDebugMsg::msg(1, "vvMulticast::write() error", true);
+        vvDebugMsg::msg(2, "vvMulticast::write() timeout reached.");
+        return size-nleft;
+      }
+      else if(vvSocketMonitor::VV_ERROR == smErr)
+      {
+        vvDebugMsg::msg(2, "vvMulticast::write() error.");
         return -1;
       }
       else
       {
-        nleft -= towrite;
+        size_t towrite = std::min(size_t(DGRAM_SIZE), nleft);
+        vvSocket::ErrorType err = _socket->write_data((uchar*)&ndata[nsize-nleft], towrite);
+        if(vvSocket::VV_OK != err)
+        {
+          vvDebugMsg::msg(1, "vvMulticast::write() error", true);
+          return -1;
+        }
+        else
+        {
+          nleft -= towrite;
+        }
       }
     }
+    std::cerr << "fertig, size: " << size << std::endl;
     return size;
   }
 }
@@ -293,45 +316,57 @@ ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
   else
   {
     size_t nsize = size+(ceil(float(size)/float((DGRAM_SIZE-4)))*4);
-
     size_t nleft = nsize;
+
+    vvSocketMonitor monitor = vvSocketMonitor();
+    std::vector<vvSocket*> sock;
+    sock.push_back(_socket);
+    monitor.setReadFds(sock);
+
     while(nleft > 0)
     {
-      uchar dgram[DGRAM_SIZE];
-      dgram[0] = 1;
-      dgram[1] = 2;
-      dgram[3] = 3;
-      dgram[4] = 4;
-      dgram[5] = 5;
-
-      ssize_t ret;
-      vvSocket::ErrorType err = _socket->read_data(dgram, DGRAM_SIZE, &ret);
-      if(vvSocket::VV_OK != err)
+      vvSocket* ready = NULL;
+      vvSocketMonitor::ErrorType smErr = monitor.wait(&ready, &timeout);
+      if(vvSocketMonitor::VV_TIMEOUT == smErr)
       {
-        vvDebugMsg::msg(1, "vvMulticast::read() error", true);
+        vvDebugMsg::msg(2, "vvMulticast::read() timeout reached.");
+        return -1;
+      }
+      else if(vvSocketMonitor::VV_ERROR == smErr)
+      {
+        vvDebugMsg::msg(2, "vvMulticast::read() error.");
         return -1;
       }
       else
       {
-        union bytesToInt32
-        {
-          uchar    x[4];
-          uint32_t y;
-        };
-        bytesToInt32 t;
-        t.x[0] = dgram[ret-4];
-        t.x[1] = dgram[ret-3];
-        t.x[2] = dgram[ret-2];
-        t.x[3] = dgram[ret-1];
+        uchar dgram[DGRAM_SIZE];
+        ssize_t ret;
+        vvSocket::ErrorType err;
 
-        uint32_t c = ntohl(t.y);
-
-        size_t pos = c*(DGRAM_SIZE-4);
-        for(unsigned int i=0;i<ret-4;i++)
+        err = _socket->read_data(dgram, DGRAM_SIZE, &ret);
+        if(vvSocket::VV_OK != err)
         {
-          data[pos+i] = dgram[i];
+          std::cout << std::endl << ret << std::endl;
+          vvDebugMsg::msg(2, "vvMulticast::read() error", true);
+          return -1;
         }
-        nleft -= ret;
+        else
+        {
+          bytesToInt32 t;
+          t.x[0] = dgram[ret-4];
+          t.x[1] = dgram[ret-3];
+          t.x[2] = dgram[ret-2];
+          t.x[3] = dgram[ret-1];
+
+          uint32_t c = ntohl(t.y);
+
+          size_t pos = c*(DGRAM_SIZE-4);
+          for(unsigned int i=0;i<ret-4;i++)
+          {
+            data[pos+i] = dgram[i];
+          }
+          nleft -= ret;
+        }
       }
     }
     return size;

@@ -1737,7 +1737,7 @@ vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size, ssize_t *re
     else
     {
       vvDebugMsg::msg(2, "vvSocket::read_data()", true);
-      return VV_WRITE_ERROR;
+      return VV_READ_ERROR;
     }
   }
   else if(VV_MC_SENDER == socktype)
