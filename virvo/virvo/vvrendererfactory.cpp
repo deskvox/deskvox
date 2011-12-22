@@ -264,9 +264,12 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
     {
       vvTexRend::VoxelType vox= vd->getBPV()<3 ? vvTexRend::VV_BEST : vvTexRend::VV_RGBA;
 
-      VoxelTypeMap::iterator vit = voxelTypeMap.find(options.voxeltype);
-      if(vit != voxelTypeMap.end())
-        vox = vit->second;
+      if(vox == vvTexRend::VV_BEST)
+      {
+        VoxelTypeMap::iterator vit = voxelTypeMap.find(options.voxeltype);
+        if(vit != voxelTypeMap.end())
+          vox = vit->second;
+      }
       vvTexRend::GeometryType geo = vvTexRend::VV_AUTO;
       GeometryTypeMap::iterator git = geometryTypeMap.find(type);
       if(git != geometryTypeMap.end())
