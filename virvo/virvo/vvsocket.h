@@ -128,7 +128,11 @@ class VIRVOEXPORT vvSocket
     enum {NUM_TIMERS = 2};
     struct sockaddr_in host_addr;
     struct hostent *host;
+#ifdef _WIN32
+    SOCKET sockfd;
+#else
     int sockfd;
+#endif
     short port;
     const char* hostname;
     SocketType socktype;

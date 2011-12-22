@@ -775,7 +775,7 @@ vvSocket::ErrorType vvSocketIO::putFileName(const char* fn)
 
   const size_t len = fn ? strlen(fn) : 0;
   buffer = new uchar[4 + len];
-  vvToolshed::write32(&buffer[0], len);
+  vvToolshed::write32(&buffer[0], (uint32_t)len);
 
   for (size_t i=0; i<len; ++i)
   {

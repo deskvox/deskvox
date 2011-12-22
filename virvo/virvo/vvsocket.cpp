@@ -250,7 +250,7 @@ vvSocket::ErrorType vvSocket::accept_timeo()
 
   if (ioctlsocket(sockfd, FIONBIO, &cmd_option) == SOCKET_ERROR)
     return VV_ACCEPT_ERROR;
-  int ar = INVALID_SOCKET;
+  SOCKET ar = INVALID_SOCKET;
   DWORD start = GetTickCount();
   while (ar == INVALID_SOCKET)
   {
@@ -307,7 +307,11 @@ vvSocket::ErrorType vvSocket::accept_timeo()
  */
 vvSocket::ErrorType vvSocket::accept_nontimeo()
 {
+#ifdef _WIN32
+  SOCKET n;
+#else
   int n;
+#endif
 
   if ( (n = accept(sockfd, (struct sockaddr *)&host_addr, &host_addrlen)) < 0)
   {
@@ -414,7 +418,7 @@ ssize_t vvSocket::readn_tcp(char* buffer, size_t size)
   nleft = size;
   while(nleft > 0)
   {
-    nread = recv(sockfd, buffer, nleft, 0);
+    nread = recv(sockfd, buffer, (int)nleft, 0);
     ret_value = nread;
     if (nread < 0)
     {
@@ -457,7 +461,7 @@ ssize_t vvSocket::writen_tcp(const char* buffer, size_t size)
   nleft = size;
   while(nleft > 0)
   {
-    nwritten = send(sockfd, buffer, nleft, 0);
+    nwritten = send(sockfd, buffer, (int)nleft, 0);
     ret_value = nwritten;
     if (nwritten < 0)
     {
@@ -1261,7 +1265,7 @@ ssize_t vvSocket::readn_udp(char* buffer, size_t size)
   nleft = size;
   while(nleft > 0)
   {
-    nread = recv(sockfd, buffer, nleft, 0);
+    nread = recv(sockfd, buffer, (int)nleft, 0);
     ret_value = nread;
     if (nread < 0)
     {
@@ -1307,7 +1311,7 @@ ssize_t vvSocket::writen_udp(const char* buffer, size_t size)
       towrite = max_send_size;
     else
       towrite = nleft;
-    nwritten = send(sockfd, buffer, towrite, 0);
+    nwritten = send(sockfd, buffer, (int)towrite, 0);
     ret_value = nwritten;
     if (nwritten < 0)
     {
@@ -1728,7 +1732,11 @@ vvSocket::ErrorType vvSocket::read_data(uchar* dataptr, size_t size, ssize_t *re
 {
   if(VV_MC_RECEIVER == socktype)
   {
-    ssize_t got = read(sockfd, dataptr, size);
+#ifdef _WIN32
+    ssize_t got = recv(sockfd, (char *)dataptr, (int)size,0);
+#else
+    ssize_t got = recv(sockfd, dataptr, size,0);
+#endif
     if(ret) *ret = got;
     if(got >= 0)
     {
@@ -1770,7 +1778,11 @@ vvSocket::ErrorType vvSocket::write_data(const uchar* dataptr, size_t size, ssiz
 {
   if(VV_MC_SENDER == socktype)
   {
+#ifdef WIN32
+    ssize_t written = sendto(sockfd, (const char *)dataptr, (int)size, 0, (struct sockaddr*)&groupSock, sizeof(groupSock));
+#else
     ssize_t written = sendto(sockfd, dataptr, size, 0, (struct sockaddr*)&groupSock, sizeof(groupSock));
+#endif
     if(ret) *ret = written;
     if(written == size)
     {
@@ -1927,7 +1939,7 @@ vvSocket::ErrorType vvSocket::read_string(char* s, int maxLen)
 vvSocket::ErrorType vvSocket::write_string(const char* s)
 {
   ErrorType ret;
-  int len = strlen(s);
+  size_t len = strlen(s);
   char* stemp = new char[len + 1];
 
   strcpy(stemp, s);
@@ -2248,7 +2260,7 @@ vvSocket::ErrorType vvSocket::init_server_mc()
     return VV_SOCK_ERROR;
   }
   int reuse = 1;
-  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse,sizeof(reuse)))
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse,sizeof(reuse)))
   {
     vvDebugMsg::msg(1, "Error: setsockopt()");
     return VV_SOCK_ERROR;
