@@ -34,9 +34,6 @@
 #include <sstream>
 #include <string>
 
-using std::cerr;
-using std::endl;
-
 //----------------------------------------------------------------------------
 /** Constructor for client.
  @param port  server port to connect to .
@@ -121,8 +118,7 @@ vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd)
   {
     return retval;
   }
-  if (vvDebugMsg::isActive(3))
-    cerr<<"Header received"<< endl;
+  vvDebugMsg::msg(3, "Header received");
   vd->deserializeAttributes(&buffer[0]);
   vd->_scale = vvToolshed::readFloat(&buffer[size]);
 
@@ -180,8 +176,7 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd, vvMulticastParameters *
     }
     vd->addFrame(buffer, vvVolDesc::ARRAY_DELETE);
   }
-  if (vvDebugMsg::isActive(3))
-    cerr<<"Data received"<<endl;
+  vvDebugMsg::msg(3, "Data received");
   return vvSocket::VV_OK;
 }
 
@@ -195,8 +190,7 @@ vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd)
   std::vector<uchar> buffer(size+4);
   vd->serializeAttributes(&buffer[0]);
   vvToolshed::writeFloat(&buffer[size], vd->_scale);
-  if (vvDebugMsg::isActive(3))
-    cerr <<"Sending header ..."<< endl;
+  vvDebugMsg::msg(3, "Sending header ...");
   return vvSocket::write_data(&buffer[0], size+4);
 }
 
@@ -213,8 +207,7 @@ vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd, bool tryMC, bool 
   int frames = vd->frames;
 
   int size = vd->getFrameBytes();
-  if (vvDebugMsg::isActive(3))
-    cerr <<"Sending data ..."<< endl;
+  vvDebugMsg::msg(3, "Sending data ...");
 
   putBool(tryMC);
   if(tryMC)
@@ -528,8 +521,7 @@ vvSocket::ErrorType vvSocketIO::putBricks(const std::vector<vvBrick*>& bricks)
   buffer = new uchar[4];
   vvToolshed::write32(&buffer[0], numBricks);
 
-  if (vvDebugMsg::isActive(3))
-    cerr<<"Sending num bricks ..."<<endl;
+  vvDebugMsg::msg(3, "Sending num bricks ...");
   if ((retval = vvSocket::write_data(&buffer[0], 4)) != vvSocket::VV_OK)
   {
     delete[] buffer;
@@ -565,8 +557,7 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
   {
     return retval;
   }
-  if (vvDebugMsg::isActive(3))
-    cerr<<"Header received"<< endl;
+  vvDebugMsg::msg(3, "Header received");
   w = vvToolshed::read16(&buffer[2]);
   h = vvToolshed::read16(&buffer[0]);
 
@@ -589,16 +580,14 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
   {
     return retval;
   }
-  if (vvDebugMsg::isActive(3))
-    cerr<<"Image data received"<<endl;
+  vvDebugMsg::msg(3, "Image data received");
   if (ct == vvImage::VV_VIDEO)
   {
     if ((retval = vvSocket::read_data(im->getVideoCodedImage(), videosize)) != vvSocket::VV_OK)
     {
       return retval;
     }
-    if (vvDebugMsg::isActive(3))
-      cerr<<"Video Image data received"<<endl;
+    vvDebugMsg::msg(3, "Video Image data received");
   }
   return vvSocket::VV_OK;
 }
@@ -624,22 +613,19 @@ vvSocket::ErrorType vvSocketIO::putImage(const vvImage* im)
   vvToolshed::write32(&buffer[5], (ulong)imagesize);
   vvToolshed::write32(&buffer[9], (ulong)videosize);
 
-  if (vvDebugMsg::isActive(3))
-    cerr <<"Sending header ..."<< endl;
+  vvDebugMsg::msg(3, "Sending header ...");
   if ((retval = vvSocket::write_data(&buffer[0], BUFSIZE)) != vvSocket::VV_OK)
   {
     return retval;
   }
-  if (vvDebugMsg::isActive(3))
-    cerr <<"Sending image data ..."<< endl;
+  vvDebugMsg::msg(3, "Sending image data ...");
   if ((retval = vvSocket::write_data(im->getImagePtr(), imagesize)) != vvSocket::VV_OK)
   {
     return retval;
   }
   if (ct == vvImage::VV_VIDEO)
   {
-    if (vvDebugMsg::isActive(3))
-      cerr <<"Sending video image data ..."<< endl;
+    vvDebugMsg::msg(3, "Sending video image data ...");
     if ((retval = vvSocket::write_data(im->getVideoCodedImage(), videosize)) != vvSocket::VV_OK)
     {
       return retval;
@@ -873,16 +859,14 @@ vvSocket::ErrorType vvSocketIO::allocateAndGetData(uchar** data, int& size)
   {
     return retval;
   }
-  if (vvDebugMsg::isActive(3))
-    cerr<<"Header received"<< endl;
+  vvDebugMsg::msg(3, "Header received");
   size = (int)vvToolshed::read32(&buffer[0]);
   *data = new uchar[size];                        // delete buffer outside!!!
   if ((retval = vvSocket::read_data(*data, size)) != vvSocket::VV_OK)
   {
     return retval;
   }
-  if (vvDebugMsg::isActive(3))
-    cerr<<"Data received"<<endl;
+  vvDebugMsg::msg(3, "Data received");
   return vvSocket::VV_OK;
 }
 
@@ -897,14 +881,12 @@ vvSocket::ErrorType vvSocketIO::putData(uchar* data, int size)
   vvSocket::ErrorType retval;
 
   vvToolshed::write32(&buffer[0], (ulong)size);
-  if (vvDebugMsg::isActive(3))
-    cerr <<"Sending header ..."<< endl;
+  vvDebugMsg::msg(3, "Sending header ...");
   if ((retval = vvSocket::write_data(&buffer[0], 4)) != vvSocket::VV_OK)
   {
     return retval;
   }
-  if (vvDebugMsg::isActive(3))
-    cerr <<"Sending data ..."<< endl;
+  vvDebugMsg::msg(3, "Sending data ...");
   if ((retval = vvSocket::write_data(data, size)) != vvSocket::VV_OK)
   {
     return retval;
@@ -935,8 +917,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
       {
         return retval;
       }
-      if (vvDebugMsg::isActive(3))
-        cerr<<"uchar received"<<endl;
+      vvDebugMsg::msg(3, "uchar received");
     }break;
     case VV_USHORT:
     {
@@ -953,8 +934,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
         tmp = vvToolshed::read16(&buffer[i*2]);
         memcpy((uchar*)data+i*2, &tmp, 2);
       }
-      if (vvDebugMsg::isActive(3))
-        cerr<<"ushort received"<<endl;
+      vvDebugMsg::msg(3, "ushort received");
       delete[] buffer;
     }break;
     case VV_INT:
@@ -972,8 +952,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
         tmp = vvToolshed::read32(&buffer[i*4]);
         memcpy((uchar*)data+i*4, &tmp, 4);
       }
-      if (vvDebugMsg::isActive(3))
-        cerr<<"int received"<<endl;
+      vvDebugMsg::msg(3, "int received");
       delete[] buffer;
     }break;
     case VV_FLOAT:
@@ -991,12 +970,11 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
         tmp = vvToolshed::readFloat(&buffer[i*4]);
         memcpy((uchar*)data+i*4, &tmp, 4);
       }
-      if (vvDebugMsg::isActive(3))
-        cerr<<"float received"<<endl;
+      vvDebugMsg::msg(3, "float received");
       delete[] buffer;
     }break;
     default:
-      cerr<<"No supported data type"<<endl;
+      vvDebugMsg::msg(0, "No supported data type");
       return vvSocket::VV_DATA_ERROR;
   }
   return vvSocket::VV_OK;
@@ -1021,8 +999,7 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type)
     {
       size = number;
       buffer = (uchar*)data;
-      if (vvDebugMsg::isActive(3))
-        cerr <<"Sending uchar ..."<< endl;
+      vvDebugMsg::msg(3, "Sending uchar ...");
     }break;
     case (VV_USHORT):
     {
@@ -1035,8 +1012,7 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type)
         memcpy(&tmp, (uchar*)data+i*2 , 2);
         vvToolshed::write16(&buffer[i*2], (ushort)tmp);
       }
-      if (vvDebugMsg::isActive(3))
-        cerr <<"Sending ushort ..."<< endl;
+      vvDebugMsg::msg(3, "Sending ushort ...");
     }break;
     case (VV_INT):
     {
@@ -1049,8 +1025,7 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type)
         memcpy(&tmp, (uchar*)data+i*4 , 4);
         vvToolshed::write32(&buffer[i*4], (ulong)tmp);
       }
-      if (vvDebugMsg::isActive(3))
-        cerr <<"Sending integer ..."<< endl;
+      vvDebugMsg::msg(3, "Sending integer ...");
     }break;
     case VV_FLOAT:
     {
@@ -1062,12 +1037,10 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type)
         memcpy(&tmp, (uchar*)data+i*4 , 4);
         vvToolshed::writeFloat(&buffer[i*4], (float)tmp);
       }
-      if (vvDebugMsg::isActive(3))
-        cerr <<"Sending float ..."<< endl;
-
+      vvDebugMsg::msg(3, "Sending float ...");
     }break;
     default:
-      cerr<<"No supported data type"<<endl;
+      vvDebugMsg::msg(0, "No supported data type");
       return vvSocket::VV_DATA_ERROR;
   }
   if ((retval = vvSocket::write_data(buffer, size)) != vvSocket::VV_OK)
