@@ -23,6 +23,7 @@
 #include "vvvoldesc.h"
 #include "vvdebugmsg.h"
 #include "vvbrick.h"
+#include "vvmulticast.h"
 #include "vvtoolshed.h"
 
 #ifdef VV_DEBUG_MEMORY
@@ -133,13 +134,40 @@ vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd)
 /** Get volume data from socket.
   @param vd  empty volume description which is to be filled with the volume data
 */
-vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd)
+vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd, vvMulticastParameters *mcParam)
 {
   vvSocket::ErrorType retval = getVolumeAttributes(vd);
   if(retval != vvSocket::VV_OK)
     return retval;
 
   int size = vd->getFrameBytes();
+  bool tryMC;
+  getBool(tryMC);
+
+  if(tryMC)
+  {
+    vvMulticast mcSock = mcParam
+                       ? vvMulticast(vvMulticast::VV_SENDER, mcParam->api, mcParam->addr, mcParam->port)
+                       : vvMulticast(vvMulticast::VV_SENDER);
+    putBool(true);
+    for(int k =0; k< vd->frames; k++)
+    {
+      uchar *buffer = new uchar[size];
+      if (!buffer)
+        return vvSocket::VV_ALLOC_ERROR;
+      if (mcSock.read(buffer, size, 3.0) != size) // set timeout!
+      {
+        delete[] buffer;
+        putBool(false);
+        goto tcpTransfer;
+      }
+      vd->addFrame(buffer, vvVolDesc::ARRAY_DELETE);
+    }
+    putBool(true);
+    return vvSocket::VV_OK;
+  }
+
+  tcpTransfer:
   for(int k =0; k< vd->frames; k++)
   {
     uchar *buffer = new uchar[size];
@@ -176,7 +204,7 @@ vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd)
 /** Write volume data to socket.
   @param vd  volume description of volume to be send.
 */
-vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd)
+vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd, bool tryMC, bool mcMaster, vvMulticastParameters *mcParam)
 {
   vvSocket::ErrorType retval = putVolumeAttributes(vd);
   if(retval != vvSocket::VV_OK)
@@ -187,6 +215,41 @@ vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd)
   int size = vd->getFrameBytes();
   if (vvDebugMsg::isActive(3))
     cerr <<"Sending data ..."<< endl;
+
+  putBool(tryMC);
+  if(tryMC)
+  {
+    if(mcMaster)
+    {
+      for(int k=0; k < frames; k++)
+      {
+        vvMulticast mcSock = mcParam
+                             ? vvMulticast(vvMulticast::VV_SENDER, mcParam->api, mcParam->addr, mcParam->port)
+                             : vvMulticast(vvMulticast::VV_SENDER);
+
+        const uchar *buffer = vd->getRaw(k);
+        bool ready;
+        getBool(ready);
+        if(!ready) break; // unexpected answer
+
+        if (mcSock.write(buffer, size, 3.0) != size) // set timeout!
+        {
+          return VV_WRITE_ERROR;
+        }
+      }
+    }
+    bool mcAnswer;
+    getBool(mcAnswer);
+    if(mcAnswer)
+    {
+      return vvSocket::VV_OK;
+    }
+    else
+    {
+      vvDebugMsg::msg(3, "vvSocketIO::putVolume() Multicast-transfer failed. Fallback: sending via TCP...");
+    }
+  }
+
   for(int k=0; k < frames; k++)
   {
     const uchar *buffer = vd->getRaw(k);

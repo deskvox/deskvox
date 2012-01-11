@@ -30,6 +30,7 @@
 #include "vvtransfunc.h"
 #include "vvgltools.h"
 
+struct vvMulticastParameters;
 class vvBrick;
 class vvImage;
 class vvIbrImage;
@@ -148,9 +149,9 @@ class VIRVOEXPORT vvSocketIO : public vvSocket
     ErrorType init();
     bool sock_action();
     ErrorType getVolumeAttributes(vvVolDesc* vd);
-    ErrorType getVolume(vvVolDesc*);
+    ErrorType getVolume(vvVolDesc*, vvMulticastParameters *mcParam = NULL);
     ErrorType putVolumeAttributes(const vvVolDesc*);
-    ErrorType putVolume(const vvVolDesc*);
+    ErrorType putVolume(const vvVolDesc*, bool tryMC = true, bool mcMaster = true, vvMulticastParameters *mcParam = NULL);
     ErrorType getTransferFunction(vvTransFunc& tf);
     ErrorType putTransferFunction(vvTransFunc& tf);
     ErrorType getBrick(vvBrick* brick);
