@@ -232,7 +232,6 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
         }
       }
     }
-    std::cerr << "fertig, size: " << size << std::endl;
     return size;
   }
 }
@@ -346,7 +345,6 @@ ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
         err = _socket->read_data(dgram, DGRAM_SIZE, &ret);
         if(vvSocket::VV_OK != err)
         {
-          std::cout << std::endl << ret << std::endl;
           vvDebugMsg::msg(2, "vvMulticast::read() error", true);
           return -1;
         }
