@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #endif
 
-vvMulticast::vvMulticast(const char* addr, const ushort port, const MulticastType type, const MulticastApi api)
+vvMulticast::vvMulticast(const MulticastType type, const MulticastApi api, const char* addr, const ushort port)
 : _type(type), _api(api)
 {
   if(VV_NORM == _api)

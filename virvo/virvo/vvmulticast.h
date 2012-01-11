@@ -64,7 +64,7 @@ public:
     \param type Defined by VV_SENDER or VV_RECEIVER
     \param api  Desired use of API, either VV_NORM or VV_VVSOCKET
     */
-  vvMulticast(const char* addr, const ushort port, const MulticastType type, const MulticastApi api);
+  vvMulticast(const MulticastType type, const MulticastApi api = VV_VVSOCKET, const char* addr = "224.1.1.1", const ushort port = 50096);
   ~vvMulticast();
 
   /** send bytes to multicast-adress

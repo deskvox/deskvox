@@ -191,7 +191,7 @@ int main(int argc, char** argv)
     cin >> tmp;
 
     // init Multicaster
-    vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_SENDER, vvMulticast::VV_VVSOCKET);
+    vvMulticast foo = vvMulticast(vvMulticast::VV_SENDER, vvMulticast::VV_VVSOCKET, "224.1.2.3", 50096);
 
     cout << "Sending to receivers via multicast..." << flush;
     startTime = vvClock::getTime();
@@ -242,7 +242,7 @@ int main(int argc, char** argv)
       receiveTimeout = -1.0;
     }
 
-    vvMulticast foo = vvMulticast("224.1.2.3", 50096, vvMulticast::VV_RECEIVER, vvMulticast::VV_VVSOCKET);
+    vvMulticast foo = vvMulticast(vvMulticast::VV_RECEIVER, vvMulticast::VV_VVSOCKET, "224.1.2.3", 50096);
 
     cout << "Waiting for incoming data on TCP..." << endl;
 
