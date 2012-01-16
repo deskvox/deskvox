@@ -115,9 +115,7 @@ vvSocketMonitor::ErrorType vvSocketMonitor::wait(vvSocket** socket, double* time
   }
   else
   {
-    tout = new timeval;
-    tout->tv_sec  = 0;
-    tout->tv_usec = 0;
+    tout = NULL;
   }
 
   double startTime = vvClock::getTime();
