@@ -124,7 +124,7 @@ vvSocketMonitor::ErrorType vvSocketMonitor::wait(vvSocket** socket, double* time
 
   int done = select(_highestSocketNum + 1, &_readsockfds, &_writesockfds, &_errorsockfds, tout);
 
-  if(*timeout > 0.0) *timeout -= (vvClock::getTime()-startTime);
+  if(timeout != NULL) *timeout -= (vvClock::getTime()-startTime);
 
   if (done > 0)
   {
