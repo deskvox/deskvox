@@ -60,13 +60,17 @@ void vvComparisonRend<ReferenceRend, TestRend>::renderVolumeGL()
 /// Specialication for vvImageClient as reference renderer and IBR CLIENT as test renderer
 
 template<typename TestRend>
-vvComparisonRend<vvImageClient, TestRend>::vvComparisonRend(vvVolDesc *vd, vvRenderState renderState)
+vvComparisonRend<vvImageClient, TestRend>::vvComparisonRend(vvVolDesc *vd, vvRenderState renderState,
+                                                            const char* refHostName, int refPort,
+                                                            const char* refFileName,
+                                                            const char* testHostName, int testPort,
+                                                            const char* testFileName)
   : vvRenderer(vd, renderState)
 {
   vvDebugMsg::msg(1, "vvComparisonRend<vvImageClient, TestRend>::vvComparisonRend()");
 
-  _ref = new vvImageClient(vd, renderState, "localhost", 31050);
-  _test = new TestRend(vd, renderState, "localhost", 31051);
+  _ref = new vvImageClient(vd, renderState, refHostName, refPort, refFileName);
+  _test = new TestRend(vd, renderState, testHostName, testPort, testFileName);
 }
 
 template<typename TestRend>
@@ -102,7 +106,10 @@ void vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL()
   vvImage refImg;
   vvRemoteClient::ErrorType err = _ref->requestFrame();
   if(err != vvRemoteClient::VV_OK)
+  {
+    vvDebugMsg::msg(0, "vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL: remote client error in function _requestFrame()");
     return;// err;
+  }
 
   if(!_ref->_socket)
     return;// vvRemoteClient::VV_SOCKET_ERROR;
@@ -171,8 +178,8 @@ void vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL()
   }
   const double MAX = 255.0;
   const float psnr = float(mseNonHoles != 0.0f ? 10 * log10((MAX * MAX) / mseNonHoles) : 0.0f);
-  std::cout << "Drawn pixels: " << nonHolePixels << std::endl;
-  std::cout << "Peak signal-to-noise ratios: " << psnr << std::endl;
+  std::cerr << "Drawn pixels: " << nonHolePixels << std::endl;
+  std::cerr << "Peak signal-to-noise ratios: " << psnr << std::endl;
 
   delete[] noise;
   delete[] ibrDepthCompl;

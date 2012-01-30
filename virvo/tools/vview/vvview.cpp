@@ -224,7 +224,11 @@ void vvView::mainLoop(int argc, char *argv[])
   initGraphics(argc, argv);
   vvCuda::initGlInterop();
 
-  if (rrMode == RR_IBR)
+  if (rrMode == RR_COMPARISON)
+  {
+    currentRenderer = "comparison";
+  }
+  else if (rrMode == RR_IBR)
   {
     currentRenderer = "ibr";
   }
@@ -2507,6 +2511,12 @@ bool vvView::parseCommandLine(int argc, char** argv)
       {
         rrMode = RR_CLUSTER;
         ds->currentRenderer = "cluster";
+        arg++;
+      }
+      else if(val == "comparison")
+      {
+        rrMode = RR_COMPARISON;
+        ds->currentRenderer = "comparison";
         arg++;
       }
       else if(val == "ibr")

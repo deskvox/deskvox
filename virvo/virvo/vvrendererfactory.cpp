@@ -240,7 +240,10 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   switch(it->second)
   {
   case vvRenderer::COMPARISON:
-    return new vvComparisonRend<vvImageClient, vvIbrClient>(vd, rs);
+    return new vvComparisonRend<vvImageClient, vvIbrClient>(vd, rs, options.server.c_str(), options.port,
+                                                            options.filename.c_str(),
+                                                            options.server.c_str(), options.port + 1,
+                                                            options.filename.c_str());
   case vvRenderer::GENERIC:
     return new vvRenderer(vd, rs);
   case vvRenderer::REMOTE_IMAGE:

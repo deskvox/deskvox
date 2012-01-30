@@ -44,7 +44,11 @@ template<typename TestRend>
 class VIRVOEXPORT vvComparisonRend<vvImageClient, TestRend> : public vvRenderer
 {
 public:
-  vvComparisonRend(vvVolDesc* vd, vvRenderState renderState);
+  vvComparisonRend(vvVolDesc* vd, vvRenderState renderState,
+                   const char* refHostName, int refPort,
+                   const char* refFileName,
+                   const char* testHostName, int testPort,
+                   const char* testFileName);
   virtual ~vvComparisonRend();
 
   virtual void renderVolumeGL();
