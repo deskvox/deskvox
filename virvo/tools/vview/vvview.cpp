@@ -128,7 +128,7 @@ vvView::vvView()
   clientMode            = false;
   slavePort             = vvView::DEFAULT_PORT;
   ibrPrecision          = 8;
-  ibrMode               = vvRenderer::VV_MAX_GRADIENT;
+  ibrMode               = vvRenderer::VV_GRADIENT;
   sync                  = false;
   codec                 = vvImage::VV_RLE;
   rrMode                = RR_NONE;

@@ -37,7 +37,7 @@
 
 vvIbrServer::vvIbrServer(vvSocketIO *socket)
 : vvRemoteServer(socket)
-, _ibrMode(vvRenderer::VV_MAX_GRADIENT)
+, _ibrMode(vvRenderer::VV_GRADIENT)
 , _image(NULL)
 , _pixels(NULL)
 , _depth(NULL)

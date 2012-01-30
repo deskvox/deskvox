@@ -284,11 +284,42 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
 
 enum IbrMode
 {
-  VV_ALPHA_PASS,
-  VV_ENTRANCE,
+  VV_ENTRANCE = 0,
   VV_EXIT,
-  VV_GRADIENT
+  VV_MIDPOINT,
+  VV_THRESHOLD,
+  VV_PEAK,
+  VV_GRADIENT,
+
+  VV_REL_THRESHOLD,
+  VV_EN_EX_MEAN,
+  VV_NONE
 };
+
+IbrMode getIbrMode(vvRenderer::IbrMode mode)
+{
+  switch (mode)
+  {
+  case vvRenderer::VV_ENTRANCE:
+    return VV_ENTRANCE;
+  case vvRenderer::VV_EXIT:
+    return VV_EXIT;
+  case vvRenderer::VV_MIDPOINT:
+    return VV_MIDPOINT;
+  case vvRenderer::VV_THRESHOLD:
+    return VV_THRESHOLD;
+  case vvRenderer::VV_PEAK:
+    return VV_PEAK;
+  case vvRenderer::VV_GRADIENT:
+    return VV_GRADIENT;
+  case VV_REL_THRESHOLD:
+    return VV_REL_THRESHOLD;
+  case VV_EN_EX_MEAN:
+    return VV_EN_EX_MEAN;
+  default:
+    return VV_NONE;
+  }
+}
 
 template<
          bool t_earlyRayTermination,
@@ -314,7 +345,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float2 ibrPlanes,
                        void* d_uncertainty, int up,
                        const IbrMode ibrMode,
-                       const bool gatherPass, float* d_gatheredAlpha)
+                       const bool gatherPass, float* d_firstIbrPass)
 {
   const float opacityThreshold = 0.95f;
 
@@ -441,11 +472,18 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   bool justClippedPlane = false;
   bool justClippedSphere = false;
 
-  float3 ibrDepth    = make_float3(0.0f, 0.0f, 0.0f);
-  bool ibrDepthFound = false;
+  // ibr
+  float3 ibrDepth        = make_float3(0.0f, 0.0f, 0.0f);
+  bool ibrDepthFound     = false;
   float ibrOpacityWeight = 0.8f;
-  float maxDiff      = 0.0f;
-  float lastAlpha    = 0.0f;
+  float maxDiff          = 0.0f;
+  float maxAlpha         = 0.0f;
+  float lastAlpha        = 0.0f;
+  float3 ibrEntrance     = make_float3(0.0f, 0.0f, 0.0f);
+  float3 ibrExit         = make_float3(0.0f, 0.0f, 0.0f);
+  bool ibrEntranceFound  = false;
+  float entranceOpacity  = 0.0f;
+  float exitOpacity      = 0.0f;
 
   // Ensure that dist is big enough
   const bool infinite = (tbnear+dist != tbnear && tbfar+dist != tbfar);
@@ -530,7 +568,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     if (t_mipMode == 0)
     {
-      // pre-multiply alphalastAlpha
+      // pre-multiply alpha
       src.x *= src.w;
       src.y *= src.w;
       src.z *= src.w;
@@ -556,34 +594,113 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     if(t_useIbr)
     {
-      if (ibrMode != VV_ALPHA_PASS)
+      switch (ibrMode)
       {
+      // single-pass heuristics
+      case VV_ENTRANCE:
+        if (!ibrDepthFound && src.w > 0.0f)
+        {
+          ibrDepth = pos;
+          ibrDepthFound = true;
+        }
+        break;
+      case VV_EXIT:
+        if (src.w > 0.0f)
+        {
+          ibrDepth = pos;
+        }
+        break;
+      case VV_MIDPOINT:
+        if (!ibrEntranceFound && src.w > 0.0f)
+        {
+          ibrEntrance = pos;
+          ibrEntranceFound  = true;
+        }
+
+        if (src.w > 0.0f)
+        {
+          ibrExit = pos;
+        }
+        break;
+      case VV_THRESHOLD:
+        if (!ibrDepthFound && dst.w > ibrOpacityWeight)
+        {
+          ibrDepth = pos;
+          ibrDepthFound = true;
+        }
+        break;
+      case VV_PEAK:
+        if (src.w > maxAlpha)
+        {
+          maxAlpha = src.w;
+          ibrDepth = pos;
+        }
+        break;
+      case VV_GRADIENT:
         if(dst.w - lastAlpha > maxDiff)
         {
           maxDiff  = dst.w - lastAlpha;
           ibrDepth = pos;
         }
         lastAlpha = dst.w;
-      }
-      else
-      {
+        break;
+
+      // two-pass heuristics
+      case VV_REL_THRESHOLD:
         if (!gatherPass && !ibrDepthFound)
         {
-          if (dst.w > (d_gatheredAlpha[y * texwidth + x] * ibrOpacityWeight))
+          // second pass
+          if (dst.w > (d_firstIbrPass[y * texwidth + x] * ibrOpacityWeight))
           {
             ibrDepth = pos;
             ibrDepthFound = true;
           }
         }
+        break;
+      case VV_EN_EX_MEAN:
+        if (gatherPass)
+        {
+          // first pass
+          if (!ibrEntranceFound && src.w > 0.0f)
+          {
+            ibrEntrance = pos;
+            entranceOpacity = src.w;
+            ibrEntranceFound  = true;
+          }
+
+          if (src.w > 0.0f)
+          {
+            ibrExit = pos;
+            exitOpacity = src.w;
+          }
+        }
+        else
+        {
+          // second pass
+          if (!ibrDepthFound && dst.w > d_firstIbrPass[y * texwidth + x])
+          {
+            ibrDepth = pos;
+            ibrDepthFound = true;
+          }
+        }
+        break;
+      default:
+        break;
       }
     }
   }
 
   if (t_useIbr)
   {
-    if ((ibrMode == VV_ALPHA_PASS) && !ibrDepthFound)
+    const bool twoPassIbr = (ibrMode == VV_REL_THRESHOLD || ibrMode == VV_EN_EX_MEAN);
+    if (twoPassIbr && !ibrDepthFound)
     {
       ibrDepth = pos;
+    }
+
+    if (ibrMode == VV_MIDPOINT)
+    {
+      ibrDepth = (ibrExit - ibrEntrance) * 0.5f;
     }
 
     // convert position to window-coordinates
@@ -625,9 +742,13 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       break;
     }
 
-    if ((ibrMode == VV_ALPHA_PASS) && gatherPass)
+    if (ibrMode == VV_REL_THRESHOLD && gatherPass)
     {
-      d_gatheredAlpha[y * texwidth + x] = dst.w;
+      d_firstIbrPass[y * texwidth + x] = dst.w;
+    }
+    else if (ibrMode == VV_EN_EX_MEAN && gatherPass)
+    {
+      d_firstIbrPass[y * texwidth + x] = (entranceOpacity + exitOpacity) * 0.5f;
     }
   }
   d_output[y * texwidth + x] = rgbaFloatToInt(dst);
@@ -649,31 +770,7 @@ typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint heigh
                             const float2 ibrPlanes,
                             void* d_uncertainty, int up,
                             const IbrMode ibrMode,
-                            const bool gatherPass, float* d_gatheredAlpha);
-
-#ifdef FAST_COMPILE
-template<
-         int t_bpc,
-         bool t_illumination,
-         bool t_opacityCorrection,
-         bool t_earlyRayTermination,
-         bool t_clipPlane,
-         bool t_clipSphere,
-         bool t_useSphereAsProbe,
-         int t_mipMode
-        >
-renderKernel getKernel(vvRayRend*)
-{
-  return &render<t_earlyRayTermination, // Early ray termination.
-                 t_bpc, // Bytes per channel.
-                 t_mipMode, // Mip mode.
-                 false, // Local illumination.
-                 t_opacityCorrection, // Opacity correction.
-                 false, // Clipping.
-                 true // image based rendering
-                >;
-}
-#else
+                            const bool gatherPass, float* d_firstIbrPass);
 
 template<
          int t_bpc,
@@ -890,7 +987,6 @@ renderKernel getKernel(vvRayRend* rayRend)
     return getKernelWithBpc<1>(rayRend);
   }
 }
-#endif
 
 vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvSoftVR(vd, renderState)
@@ -910,7 +1006,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _illumination = false;
   _interpolation = true;
   _opacityCorrection = true;
-  _twoPassIbr = true;
+  _twoPassIbr = (_ibrMode == VV_REL_THRESHOLD || _ibrMode == VV_EN_EX_MEAN);
 
   _depthRange[0] = 0.0f;
   _depthRange[1] = 0.0f;
@@ -1125,20 +1221,7 @@ void vvRayRend::compositeVolume(int, int)
   glGetFloatv(GL_COLOR_CLEAR_VALUE, bgcolor);
   float4 backgroundColor = make_float4(bgcolor[0], bgcolor[1], bgcolor[2], bgcolor[3]);
 
-#ifdef FAST_COMPILE
-  renderKernel kernel = getKernel<
-                        1, // bpc.
-                        false, // Local illumination.
-                        true, // Opacity correction
-                        false, // Early ray termination.
-                        false, // Use clip plane.
-                        false, // Use clip sphere.
-                        false, // Use clip sphere as probe (inverted sphere).
-                        0 // Mip mode.
-                       >(this);
-#else
   renderKernel kernel = getKernel(this);
-#endif
 
   if (kernel != NULL)
   {
@@ -1151,14 +1234,14 @@ void vvRayRend::compositeVolume(int, int)
       cudaBindTextureToArray(volTexture16, d_volumeArrays[vd->getCurrentFrame()], _channelDesc);
     }
 
-    float* d_gatheredAlpha = NULL;
+    float* d_firstIbrPass = NULL;
     if (_twoPassIbr)
     {
       const size_t size = vp[2] * vp[3] * sizeof(float);
-      vvCudaTools::checkError(&ok, cudaMalloc(&d_gatheredAlpha, size),
-                         "vvRayRend::compositeVolume() - malloc gathered alpha");
-      vvCudaTools::checkError(&ok, cudaMemset(d_gatheredAlpha, 0, size),
-                         "vvRayRend::compositeVolume() - memset gathered alpha");
+      vvCudaTools::checkError(&ok, cudaMalloc(&d_firstIbrPass, size),
+                         "vvRayRend::compositeVolume() - malloc first ibr pass array");
+      vvCudaTools::checkError(&ok, cudaMemset(d_firstIbrPass, 0, size),
+                         "vvRayRend::compositeVolume() - memset first ibr pass array");
 
       (kernel)<<<gridSize, blockSize>>>(static_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
                                         backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
@@ -1170,7 +1253,7 @@ void vvRayRend::compositeVolume(int, int)
                                         pnormal, pdist, d_depth, _depthPrecision,
                                         make_float2(_depthRange[0], _depthRange[1]),
                                         d_uncertainty, _uncertaintyPrecision,
-                                        VV_ALPHA_PASS, true, d_gatheredAlpha);
+                                        getIbrMode(_ibrMode), true, d_firstIbrPass);
     }
     (kernel)<<<gridSize, blockSize>>>(static_cast<vvCudaImg*>(intImg)->getDeviceImg(), vp[2], vp[3],
                                       backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
@@ -1182,8 +1265,9 @@ void vvRayRend::compositeVolume(int, int)
                                       pnormal, pdist, d_depth, _depthPrecision,
                                       make_float2(_depthRange[0], _depthRange[1]),
                                       d_uncertainty, _uncertaintyPrecision,
-                                      VV_ALPHA_PASS, false, d_gatheredAlpha);
-    cudaFree(d_gatheredAlpha);
+                                      getIbrMode(_ibrMode), false, d_firstIbrPass);
+    vvCudaTools::checkError(&ok, cudaFree(d_firstIbrPass),
+                            "vvRayRend::compositeVolume() - free first ibr pass array");
   }
   static_cast<vvCudaImg*>(intImg)->unmap();
 
@@ -1471,17 +1555,17 @@ bool vvRayRend::allocIbrArrays(const int w, const int h)
 
   bool ok = true;
   vvCudaTools::checkError(&ok, cudaFree(d_depth),
-                          "vvRayRend::compositeVolume() - free d_depth");
+                          "vvRayRend::allocIbrArrays() - free d_depth");
   vvCudaTools::checkError(&ok, cudaFree(d_uncertainty),
-                          "vvRayRend::compositeVolume() - free d_uncertainty");
+                          "vvRayRend::allocIbrArrays() - free d_uncertainty");
   vvCudaTools::checkError(&ok, cudaMalloc(&d_depth, w * h * _depthPrecision/8),
-                     "vvRayRend::compositeVolume() - malloc d_depth");
+                          "vvRayRend::allocIbrArrays() - malloc d_depth");
   vvCudaTools::checkError(&ok, cudaMemset(d_depth, 0, w * h * _depthPrecision/8),
-                     "vvRayRend::compositeVolume() - memset d_depth");
+                          "vvRayRend::allocIbrArrays() - memset d_depth");
   vvCudaTools::checkError(&ok, cudaMalloc(&d_uncertainty, w * h * _uncertaintyPrecision/8),
-                     "vvRayRend::compositeVolume() - malloc d_uncertainty");
+                          "vvRayRend::allocIbrArrays() - malloc d_uncertainty");
   vvCudaTools::checkError(&ok, cudaMemset(d_uncertainty, 0, w * h * _uncertaintyPrecision/8),
-                     "vvRayRend::compositeVolume() - memset d_uncertainty");
+                          "vvRayRend::allocIbrArrays() - memset d_uncertainty");
   return ok;
 }
 

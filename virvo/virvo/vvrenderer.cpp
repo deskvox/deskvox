@@ -92,7 +92,7 @@ vvRenderState::vvRenderState()
   _showTexture = true;	// added by Han, Feb 2008
   _opaqueGeometryPresent = false;
   _useIbr = false;
-  _ibrMode = VV_MAX_GRADIENT;
+  _ibrMode = VV_REL_THRESHOLD;
 }
 
 void vvRenderState::setParameter(const ParameterType param, const float newValue)

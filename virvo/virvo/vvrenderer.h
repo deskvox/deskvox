@@ -36,15 +36,23 @@ class vvVolDesc;
 class VIRVOEXPORT vvRenderState
 {
 public:
-  enum IbrMode
+  enum IbrMode                                  ///< how to determine ibr depth per pixel values
   {
-    VV_MAX_GRADIENT,
-    VV_MIDDLE,
-    VV_SURFACE,
+    // single-pass
+    VV_ENTRANCE = 0,                            ///< first opaque voxel
+    VV_EXIT,                                    ///< last opaque voxel
+    VV_MIDPOINT,                                ///< midpoint of entrance and exit
+    VV_THRESHOLD,                               ///< accumulate up to some threshold
+    VV_PEAK,                                    ///< peak opacity
+    VV_GRADIENT,                                ///< max gradient
+
+    // two-pass
+    VV_REL_THRESHOLD,                           ///< some threshold, weighted by max opacity
+    VV_EN_EX_MEAN,                              ///< Mean of entrance and exit
     VV_NONE
   };
 
-  enum ParameterType                            ///  Names for rendering parameters
+  enum ParameterType                            ///<  Names for rendering parameters
   {
     VV_QUALITY = 0,
     VV_CLIP_POINT,
