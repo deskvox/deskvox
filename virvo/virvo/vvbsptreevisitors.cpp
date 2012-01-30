@@ -151,8 +151,16 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
 
   const vvRect* screenRect = hs->getProjectedScreenRect();
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-  if(screenRect == 0) std::cerr << "screenRect empty!" << std::endl;
-  if(img == 0) std::cerr << "img empty!" << std::endl;
+  if(!screenRect)
+  {
+    std::cerr << "screenRect empty!" << std::endl;
+    return;
+  }
+  if(!img)
+  {
+    std::cerr << "img empty!" << std::endl;
+    return;
+  }
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screenRect->width, screenRect->height,
                0, GL_RGBA, GL_UNSIGNED_BYTE, img->getCodedImage());
 
