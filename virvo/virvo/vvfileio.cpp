@@ -192,7 +192,8 @@ vvFileIO::ErrorType vvFileIO::loadWLFile(vvVolDesc* vd)
         }
       }
     }
-    raw[val[0] + val[1] * max[0] + val[2] * max[0] * max[1]] = uchar(col);
+    if(!done)
+      raw[val[0] + val[1] * max[0] + val[2] * max[0] * max[1]] = uchar(col);
     ++col;
     if (col > 255) col = 0;
   }
