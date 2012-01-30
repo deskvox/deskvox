@@ -81,7 +81,8 @@ void vvBonjourBrowser::browseForServiceType(const string& serviceType)
   std::vector<vvSocket*> sockets;
   sockets.push_back(socket);
 
-  _socketMonitor = new vvSocketMonitor(sockets);
+  _socketMonitor = new vvSocketMonitor();
+  _socketMonitor->setReadFds(sockets);
 
   _threadRunning = true;
   pthread_create(&_thread, NULL, waitSocketReadyRead, this);
@@ -155,10 +156,12 @@ void* vvBonjourBrowser::waitSocketReadyRead(void* threadargs)
   {
     while (1)
     {
-      instance->_socketMonitor->wait();
+      vvSocket *ready;
+      instance->_socketMonitor->wait(&ready);
       instance->bonjourSocketReadyRead();
     }
   }
+  return NULL; // no return value?!?
 }
 
 #endif

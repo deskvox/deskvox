@@ -56,8 +56,8 @@ using std::ios;
 #include <virvo/vvsocketio.h>
 #include <virvo/vvcuda.h>
 
-//#include <virvo/vvbonjour/vvbonjourbrowser.h>
-//#include <virvo/vvbonjour/vvbonjourresolver.h>
+#include <virvo/vvbonjour/vvbonjourbrowser.h>
+#include <virvo/vvbonjour/vvbonjourresolver.h>
 
 #include "vvobjview.h"
 #include "vvperformancetest.h"

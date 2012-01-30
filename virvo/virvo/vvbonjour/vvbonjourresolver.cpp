@@ -84,10 +84,12 @@ void vvBonjourResolver::resolveBonjourEntry(const vvBonjourEntry& entry)
   std::vector<vvSocket*> sockets;
   sockets.push_back(socket);
 
-  _socketMonitor = new vvSocketMonitor(sockets);
+  _socketMonitor = new vvSocketMonitor();
+  _socketMonitor->setReadFds(sockets);
 
   // No need to loop. Only one socket.
-  _socketMonitor->wait();
+  vvSocket *ready;
+  _socketMonitor->wait(&ready);
   bonjourSocketReadyRead();
 }
 
@@ -110,6 +112,8 @@ void vvBonjourResolver::bonjourResolveReply(DNSServiceRef, DNSServiceFlags, uint
 {
   vvDebugMsg::msg(3, "vvBonjourResolver::bonjourResolveReply");
   vvBonjourResolver* instance = reinterpret_cast<vvBonjourResolver*>(data);
+  (void)instance;
+  (void)data;
 
   if (errorCode != kDNSServiceErr_NoError)
   {

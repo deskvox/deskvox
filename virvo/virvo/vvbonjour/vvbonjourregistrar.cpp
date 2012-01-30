@@ -49,7 +49,7 @@ vvBonjourRegistrar::~vvBonjourRegistrar()
   delete _socketMonitor;
 }
 
-void vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const int port)
+void vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const ushort port)
 {
   vvDebugMsg::msg(3, "vvBonjourRegistrar::registerService()");
 
@@ -60,7 +60,7 @@ void vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const int 
   }
 
   // Convert port to big endian.
-  const ushort nwport = htons((ushort)port);
+  const ushort nwport = htons(port);
 
   DNSServiceErrorType error = DNSServiceRegister(&_dnsServiceRef, 0, 0, entry.getServiceName().c_str(),
                                                  entry.getRegisteredType().c_str(),
@@ -88,10 +88,11 @@ void vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const int 
   std::vector<vvSocket*> sockets;
   sockets.push_back(socket);
 
-  _socketMonitor = new vvSocketMonitor(sockets);
+  _socketMonitor = new vvSocketMonitor();
+  _socketMonitor->setReadFds(sockets);
 
-  // No need to loop. Only one socket.
-  _socketMonitor->wait();
+  vvSocket *ready;
+  _socketMonitor->wait(&ready);
   bonjourSocketReadyRead();
 }
 

@@ -21,6 +21,10 @@
 #ifndef _VV_BONJOURBROWSER_H_
 #define _VV_BONJOURBROWSER_H_
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #ifdef HAVE_BONJOUR
 
 #include "vvbonjourentry.h"

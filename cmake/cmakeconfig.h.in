@@ -1,3 +1,4 @@
+#cmakedefine HAVE_BONJOUR 1
 #cmakedefine HAVE_CG 1
 #cmakedefine HAVE_CG_CG_H 1
 #cmakedefine HAVE_CUDA 1

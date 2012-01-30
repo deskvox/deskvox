@@ -21,8 +21,13 @@
 #ifndef _VV_BONJOURENTRY_H_
 #define _VV_BONJOURENTRY_H_
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #ifdef HAVE_BONJOUR
 
+#include "vvexport.h"
 #include <string>
 
 using std::string;

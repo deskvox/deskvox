@@ -21,6 +21,10 @@
 #ifndef _VV_BONJOURREGISTRAR_H_
 #define _VV_BONJOURREGISTRAR_H_
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #ifdef HAVE_BONJOUR
 
 #include "vvbonjourentry.h"
@@ -34,7 +38,7 @@ public:
   vvBonjourRegistrar();
   ~vvBonjourRegistrar();
 
-  void registerService(const vvBonjourEntry& entry, const int port);
+  void registerService(const vvBonjourEntry& entry, const ushort port);
 
   vvBonjourEntry getRegisteredService() const;
 private:
