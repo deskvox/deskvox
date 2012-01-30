@@ -46,8 +46,6 @@ public:
 private:
   GLuint _rgbaTex;                                        ///< Texture names for RGBA image
 
-  vvMatrix _currentMv;                                    ///< Current modelview matrix
-  vvMatrix _currentPr;                                    ///< Current projection matrix
   vvImage *_image;
 };
 
