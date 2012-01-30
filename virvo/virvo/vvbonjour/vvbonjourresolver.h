@@ -28,6 +28,8 @@
 #ifdef HAVE_BONJOUR
 
 #include "vvbonjourentry.h"
+#include "vvbonjoureventloop.h"
+#include "vvsocket.h"
 #include "vvsocketmonitor.h"
 
 #include <dns_sd.h>
@@ -38,18 +40,18 @@ public:
   vvBonjourResolver();
   ~vvBonjourResolver();
 
-  void resolveBonjourEntry(const vvBonjourEntry& entry);
+  DNSServiceErrorType resolveBonjourEntry(const vvBonjourEntry& entry);
+  vvSocket* getBonjourSocket() const;
+
+  vvBonjourEventLoop *_eventLoop;
+  std::string _hostname;
+  ushort      _port;
 private:
-  DNSServiceRef _dnsServiceRef;
 
-  vvSocketMonitor* _socketMonitor;
-
-  void bonjourSocketReadyRead();
-
-  static void DNSSD_API bonjourResolveReply(DNSServiceRef, DNSServiceFlags, uint32_t,
+  static void DNSSD_API ResolveCallBack(DNSServiceRef, DNSServiceFlags, uint32_t,
                                             DNSServiceErrorType errorCode, const char*,
-                                            const char* hostTarget, uint16_t port, uint16_t,
-                                            const uchar*, void* data);
+                                            const char*, uint16_t, uint16_t,
+                                            const uchar*, void*);
 };
 
 #endif

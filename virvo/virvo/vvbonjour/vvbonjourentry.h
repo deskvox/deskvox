@@ -33,17 +33,18 @@
 using std::string;
 
 /*!
- * The bonjour implementation is strongly influenced by the Qt Quarterly titled
- * 'Zero-Configuration Networking in Qt' which could, as of October 14, 2010,
- * be found at this location: http://doc.trolltech.com/qq/qq23-bonjour.html .
+ * Class for saving bonjour entries. Each entry consists of a name a type and a domain.
+ * The name can be any human readable name
+ * The type must be in the form of _typename._protocol e.g. "_vvserver._tcp"
+ * The domain can be set to any desired reply domain, else default is set to .local
  */
 class VIRVOEXPORT vvBonjourEntry
 {
 public:
   vvBonjourEntry();
-  vvBonjourEntry(const string& serviceName,
-                 const string& registeredType,
-                 const string& replyDomain);
+  vvBonjourEntry(const string serviceName,
+                 const string registeredType,
+                 const string replyDomain);
 
   string getServiceName() const;
   string getRegisteredType() const;

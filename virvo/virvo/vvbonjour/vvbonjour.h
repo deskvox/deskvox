@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_BONJOURBROWSER_H_
-#define _VV_BONJOURBROWSER_H_
+#ifndef _VV_BONJOUR_H_
+#define _VV_BONJOUR_H_
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
@@ -27,36 +27,17 @@
 
 #ifdef HAVE_BONJOUR
 
-#include "vvbonjourentry.h"
-#include "vvbonjoureventloop.h"
-
-#include <dns_sd.h>
 #include <vector>
 
-/*!
- * Browser class for bonjour services.
- * Found entries have to be resolved by vvBonjourResolver in order to create sockets.
- */
-class VIRVOEXPORT vvBonjourBrowser
+#include "vvsocket.h"
+
+class VIRVOEXPORT vvBonjour
 {
 public:
-  vvBonjourBrowser();
-  ~vvBonjourBrowser();
+  vvBonjour();
+  ~vvBonjour();
 
-  DNSServiceErrorType browseForServiceType(const string serviceType, const string domain = "");
-
-  std::vector<vvBonjourEntry> getBonjourEntries() const;
-  vvBonjourEventLoop* _eventLoop;
-  std::vector<vvBonjourEntry> _bonjourEntries;
-
-private:
-  /*!
-   * \brief Callback function passed to bonjour.
-   */
-  static void DNSSD_API BrowseCallBack(DNSServiceRef, DNSServiceFlags flags, uint32_t interfaceIndex,
-                                           DNSServiceErrorType errorCode,
-                                           const char *name, const char *type, const char *domain,
-                                           void *context);
+  std::vector<vvSocket*> getSocketsFor(std::string serviceType, std::string domain = "");
 };
 
 #endif

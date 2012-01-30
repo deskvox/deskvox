@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_BONJOURBROWSER_H_
-#define _VV_BONJOURBROWSER_H_
+#ifndef _VV_BONJOUREVENTLOOP_H_
+#define _VV_BONJOUREVENTLOOP_H_
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
@@ -27,36 +27,36 @@
 
 #ifdef HAVE_BONJOUR
 
-#include "vvbonjourentry.h"
-#include "vvbonjoureventloop.h"
+#include "vvexport.h"
+#include "vvpthread.h"
 
 #include <dns_sd.h>
-#include <vector>
 
-/*!
- * Browser class for bonjour services.
- * Found entries have to be resolved by vvBonjourResolver in order to create sockets.
- */
-class VIRVOEXPORT vvBonjourBrowser
+class VIRVOEXPORT vvBonjourEventLoop
 {
 public:
-  vvBonjourBrowser();
-  ~vvBonjourBrowser();
+  vvBonjourEventLoop(DNSServiceRef service)
+  {
+    _dnsServiceRef = service;
+  }
 
-  DNSServiceErrorType browseForServiceType(const string serviceType, const string domain = "");
+  ~vvBonjourEventLoop()
+  {
+    if(_dnsServiceRef)
+      DNSServiceRefDeallocate(_dnsServiceRef);
+  }
 
-  std::vector<vvBonjourEntry> getBonjourEntries() const;
-  vvBonjourEventLoop* _eventLoop;
-  std::vector<vvBonjourEntry> _bonjourEntries;
+  void run(bool inThread = false, double timeout = 1.0);
+  static void * loop(void * attrib);
+  void stop();
+
+  double        _timeout;
+  bool          _run;
+  bool          _noMoreFlags;
+  DNSServiceRef _dnsServiceRef;
 
 private:
-  /*!
-   * \brief Callback function passed to bonjour.
-   */
-  static void DNSSD_API BrowseCallBack(DNSServiceRef, DNSServiceFlags flags, uint32_t interfaceIndex,
-                                           DNSServiceErrorType errorCode,
-                                           const char *name, const char *type, const char *domain,
-                                           void *context);
+  pthread_t  _thread;
 };
 
 #endif

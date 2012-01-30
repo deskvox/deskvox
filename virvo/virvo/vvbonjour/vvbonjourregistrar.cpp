@@ -19,114 +19,115 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvbonjourregistrar.h"
-#include "../vvdebugmsg.h"
-
-#include <iostream>
-
-using std::cerr;
-using std::endl;
 
 #ifdef HAVE_BONJOUR
 
-vvBonjourRegistrar::vvBonjourRegistrar()
-  : _dnsServiceRef(NULL), _socketMonitor(NULL)
-{
+#include "../vvdebugmsg.h"
+#include "../vvsocket.h"
 
+#include <iostream>
+#include <sstream>
+
+vvBonjourRegistrar::vvBonjourRegistrar()
+  : _serviceRef(NULL)
+{
 }
 
 vvBonjourRegistrar::~vvBonjourRegistrar()
 {
-  if (_dnsServiceRef != NULL)
-  {
-    DNSServiceRefDeallocate(_dnsServiceRef);
-    _dnsServiceRef = NULL;
-  }
-
-  if (_socketMonitor != NULL)
-  {
-    _socketMonitor->clear();
-  }
-  delete _socketMonitor;
+  if(_serviceRef)
+    unregisterService();
 }
 
-void vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const ushort port)
+DNSServiceErrorType vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const ushort port)
 {
-  vvDebugMsg::msg(3, "vvBonjourRegistrar::registerService()");
+  vvDebugMsg::msg(3, "vvBonjourRegistrar::registerService() Enter");
 
-  if (_dnsServiceRef != NULL)
+  DNSServiceErrorType error;
+
+  error = DNSServiceRegister(&_serviceRef,
+                0,                // no flags
+                0,                // all network interfaces
+                entry.getServiceName().c_str(),
+                entry.getRegisteredType().c_str(),
+                entry.getReplyDomain().c_str(),
+                NULL,             // use default host name
+                htons(port),      // port number
+                0,                // length of TXT record
+                NULL,             // no TXT record
+                RegisterCallBack, // call back function
+                this);            // no context
+
+  if (error == kDNSServiceErr_NoError)
   {
-    vvDebugMsg::msg(0, "vvBonjourRegistrar::registerService(): already registered a service");
+    _eventLoop = new vvBonjourEventLoop(_serviceRef);
+    _eventLoop->run(true, -1.0);
+    while(!_eventLoop->_noMoreFlags)
+    {
+      sleep(1);
+      //waiting...
+    }
+  }
+  else
+  {
+    vvDebugMsg::msg(2, "vvBonjourRegistrar::registerService(): DNSServiceResolve failed with error code ", error);
+  }
+
+  return error;
+}
+
+void vvBonjourRegistrar::unregisterService()
+{
+  if(!_serviceRef)
+  {
+    vvDebugMsg::msg(2, "vvBonjourRegistrar::unregisterService() no service registered");
     return;
   }
 
-  // Convert port to big endian.
-  const ushort nwport = htons(port);
+  DNSServiceRefDeallocate(_serviceRef);
+  _serviceRef = NULL;
 
-  DNSServiceErrorType error = DNSServiceRegister(&_dnsServiceRef, 0, 0, entry.getServiceName().c_str(),
-                                                 entry.getRegisteredType().c_str(),
-                                                 entry.getReplyDomain().empty() ? NULL : entry.getReplyDomain().c_str(),
-                                                 0, nwport, 0, 0, bonjourRegisterService, this);
-
-  if (error != kDNSServiceErr_NoError)
+  if(_eventLoop)
   {
-    vvDebugMsg::msg(0, "vvBonjourRegistrar::registerService(): DNSServiceRegister failed with error code ", error);
-    return;
-  }
-
-  vvDebugMsg::msg(3, "vvBonjourRegistrar::registerService(): DNSServiceRegister registered service: ",
-                  (entry.getServiceName() + ", protocol: " + entry.getRegisteredType()).c_str());
-
-  const int sockfd = DNSServiceRefSockFD(_dnsServiceRef);
-
-  if (sockfd == -1)
-  {
-    vvDebugMsg::msg(0, "vvBonjourRegistrar::registerService(): DNSServiceRefSockFD returned -1");
-    return;
-  }
-
-  vvSocket* socket = new vvSocket(vvSocket::VV_TCP, sockfd);
-  std::vector<vvSocket*> sockets;
-  sockets.push_back(socket);
-
-  _socketMonitor = new vvSocketMonitor();
-  _socketMonitor->setReadFds(sockets);
-
-  vvSocket *ready;
-  _socketMonitor->wait(&ready);
-  bonjourSocketReadyRead();
-}
-
-vvBonjourEntry vvBonjourRegistrar::getRegisteredService() const
-{
-  return _registeredService;
-}
-
-void vvBonjourRegistrar::bonjourSocketReadyRead()
-{
-  vvDebugMsg::msg(3, "vvBonjourRegistrar::bonjourSocketReadyRead()");
-
-  DNSServiceErrorType error = DNSServiceProcessResult(_dnsServiceRef);
-  if (error != kDNSServiceErr_NoError)
-  {
-    vvDebugMsg::msg(0, "vvBonjourRegistrar::bonjourSocketReadyRead(): DNSServiceProcessResult failed with error code ", error);
-    return;
+    delete _eventLoop;
+    _eventLoop = NULL;
   }
 }
 
-void vvBonjourRegistrar::bonjourRegisterService(DNSServiceRef, DNSServiceFlags, DNSServiceErrorType errorCode,
-                                                const char* serviceName, const char* registeredType,
-                                                const char* replyDomain, void* data)
+void vvBonjourRegistrar::RegisterCallBack(DNSServiceRef service,
+           DNSServiceFlags flags,
+           DNSServiceErrorType errorCode,
+           const char * name,
+           const char * type,
+           const char * domain,
+           void * context)
 {
-  vvDebugMsg::msg(3, "vvBonjourRegistrar::bonjourRegisterService()");
-  vvBonjourRegistrar* instance = reinterpret_cast<vvBonjourRegistrar*>(data);
+  vvDebugMsg::msg(3, "vvBonjourRegistrar::RegisterCallBack() Enter");
+  (void)service;
+  (void)flags;
+
+  vvBonjourRegistrar* instance = reinterpret_cast<vvBonjourRegistrar*>(context);
 
   if (errorCode != kDNSServiceErr_NoError)
   {
-    vvDebugMsg::msg(0, "vvBonjourRegistrar::bonjourRegisterService: an error occurred in the callback function");
-    return;
+    instance->_registeredService = vvBonjourEntry(name, type, domain);
+    vvDebugMsg::msg(3, "vvBonjourRegistrar::RegisterCallBack() error");
+  }
+  else
+  {
+    if(vvDebugMsg::getDebugLevel() >= 0)
+    {
+      std::ostringstream errmsg;
+      errmsg << "vvBonjourRegistrar::RegisterCallBack() Entry registered: " << name << "." << type << domain;
+      vvDebugMsg::msg(0, errmsg.str().c_str());
+    }
   }
 
-  instance->_registeredService = vvBonjourEntry(serviceName, registeredType, replyDomain);
+  if (!(flags & kDNSServiceFlagsMoreComing))
+  {
+    // registering done
+    instance->_eventLoop->_noMoreFlags = true;
+  }
 }
 
 #endif

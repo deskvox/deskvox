@@ -18,43 +18,35 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "vvbonjourentry.h"
-
 #ifdef HAVE_BONJOUR
 
-vvBonjourEntry::vvBonjourEntry()
+#include "vvbonjour.h"
+#include "vvbonjourbrowser.h"
+#include "vvbonjourresolver.h"
+
+
+std::vector<vvSocket*> vvBonjour::getSocketsFor(std::string serviceType, std::string domain)
 {
+  std::vector<vvSocket*> sockets;
 
-}
+  vvBonjourBrowser browser;
+  browser.browseForServiceType(serviceType, domain);
 
-vvBonjourEntry::vvBonjourEntry(const string serviceName,
-                               const string registeredType,
-                               const string replyDomain)
-  : _serviceName(serviceName), _registeredType(registeredType), _replyDomain(replyDomain)
-{
+  std::vector<vvBonjourEntry> entries = browser.getBonjourEntries();
 
-}
-
-string vvBonjourEntry::getServiceName() const
-{
-  return _serviceName;
-}
-
-string vvBonjourEntry::getRegisteredType() const
-{
-  return _registeredType;
-}
-
-string vvBonjourEntry::getReplyDomain() const
-{
-  return _replyDomain;
-}
-
-bool vvBonjourEntry::operator==(const vvBonjourEntry& rhs) const
-{
-  return ((_serviceName == rhs._serviceName)
-          && (_registeredType == rhs._registeredType)
-          && (_replyDomain == rhs._replyDomain));
+  for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
+  {
+    vvBonjourResolver resolver;
+    if(kDNSServiceErr_NoError == resolver.resolveBonjourEntry(*it))
+    {
+      vvSocket *socket = new vvSocket(resolver._port , resolver._hostname.c_str(), vvSocket::VV_TCP);
+      if(vvSocket::VV_OK == socket->init())
+      {
+        sockets.push_back(socket);
+      }
+    }
+  }
+  return sockets;
 }
 
 #endif

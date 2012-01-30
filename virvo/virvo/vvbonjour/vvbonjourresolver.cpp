@@ -19,111 +19,105 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvbonjourresolver.h"
+
+#ifdef HAVE_BONJOUR
+
 #include "../vvdebugmsg.h"
 #include "../vvsocket.h"
 
 #include <iostream>
+#include <sstream>
 #include <vector>
 
-using std::cerr;
-using std::endl;
-
-#ifdef HAVE_BONJOUR
-
 vvBonjourResolver::vvBonjourResolver()
-  : _dnsServiceRef(NULL), _socketMonitor(NULL)
+  : _eventLoop(NULL), _hostname(""), _port(0)
 {
-
 }
 
 vvBonjourResolver::~vvBonjourResolver()
 {
-  if (_dnsServiceRef != NULL)
-  {
-    DNSServiceRefDeallocate(_dnsServiceRef);
-    _dnsServiceRef = NULL;
-  }
-
-  if (_socketMonitor != NULL)
-  {
-    _socketMonitor->clear();
-  }
-  delete _socketMonitor;
+  if(_eventLoop) delete _eventLoop;
 }
 
-void vvBonjourResolver::resolveBonjourEntry(const vvBonjourEntry& entry)
+DNSServiceErrorType vvBonjourResolver::resolveBonjourEntry(const vvBonjourEntry& entry)
 {
   vvDebugMsg::msg(3, "vvBonjourResolver::resolveBonjourEntry()");
-  if (_dnsServiceRef != NULL)
+  DNSServiceErrorType error;
+  DNSServiceRef  serviceRef;
+
+  error = DNSServiceResolve(&serviceRef,
+                 0,                 // no flags
+                 0,                 // all network interfaces
+                 entry.getServiceName().c_str(),    //name
+                 entry.getRegisteredType().c_str(), // service type
+                 entry.getReplyDomain().c_str(),    //domain
+                 ResolveCallBack,
+                 this);             // no context
+
+  if (error == kDNSServiceErr_NoError)
   {
-    vvDebugMsg::msg(0, "vvBonjourResolver::resolveBonjourEntry(): resolve already in process");
-    return;
+    _eventLoop = new vvBonjourEventLoop(serviceRef);
+    _eventLoop->run();
+  }
+  else
+  {
+    vvDebugMsg::msg(2, "vvBonjourResolver::resolveBonjourEntry(): DNSServiceResolve failed with error code ", error);
   }
 
-  DNSServiceErrorType error = DNSServiceResolve(&_dnsServiceRef, 0, 0,
-                                                entry.getServiceName().c_str(),
-                                                entry.getRegisteredType().c_str(),
-                                                entry.getReplyDomain().c_str(),
-                                                bonjourResolveReply, this);
-
-  if (error != kDNSServiceErr_NoError)
-  {
-    vvDebugMsg::msg(0, "vvBonjourResolver::resolveBonjourEntry(): DNSServiceResolve failed with error code ", error);
-    return;
-  }
-
-  const int sockfd = DNSServiceRefSockFD(_dnsServiceRef);
-
-  if (sockfd == -1)
-  {
-    vvDebugMsg::msg(0, "vvBonjourResolver::resolveBonjourEntry(): DNSServiceRefSockFD returned -1");
-    return;
-  }
-
-  vvSocket* socket = new vvSocket(vvSocket::VV_TCP, sockfd);
-  std::vector<vvSocket*> sockets;
-  sockets.push_back(socket);
-
-  _socketMonitor = new vvSocketMonitor();
-  _socketMonitor->setReadFds(sockets);
-
-  // No need to loop. Only one socket.
-  vvSocket *ready;
-  _socketMonitor->wait(&ready);
-  bonjourSocketReadyRead();
+  return error;
 }
 
-void vvBonjourResolver::bonjourSocketReadyRead()
+vvSocket* vvBonjourResolver::getBonjourSocket() const
 {
-  vvDebugMsg::msg(3, "vvBonjourResolver::bonjourSocketReadyRead()");
+  vvDebugMsg::msg(3, "vvBonjourResolver::getBonjourSocket() enter");
 
-  DNSServiceErrorType error = DNSServiceProcessResult(_dnsServiceRef);
-  if (error != kDNSServiceErr_NoError)
+  if(_hostname.length() > 0 && 0 != _port)
   {
-    vvDebugMsg::msg(0, "vvBonjourResolver::bonjourSocketReadyRead(): DNSServiceProcessResult failed with error code ", error);
-    return;
+    return new vvSocket(_port, _hostname.c_str(), vvSocket::VV_TCP);
+  }
+  else
+  {
+    vvDebugMsg::msg(2, "vvBonjourResolver::getBonjourSocket() hostname and/or port not resolved");
+    return NULL;
   }
 }
 
-void vvBonjourResolver::bonjourResolveReply(DNSServiceRef, DNSServiceFlags, uint32_t,
-                                            DNSServiceErrorType errorCode, const char*,
-                                            const char* hostTarget, uint16_t port, uint16_t,
-                                            const uchar*, void* data)
+void vvBonjourResolver::ResolveCallBack(DNSServiceRef,
+          DNSServiceFlags flags,
+          uint32_t ,      // interface
+          DNSServiceErrorType errorCode,
+          const char *fullname,
+          const char *hosttarget,
+          uint16_t port,
+          uint16_t ,      // txt length
+          const uchar *,  // txt record
+          void *context)
 {
-  vvDebugMsg::msg(3, "vvBonjourResolver::bonjourResolveReply");
-  vvBonjourResolver* instance = reinterpret_cast<vvBonjourResolver*>(data);
-  (void)instance;
-  (void)data;
+  vvDebugMsg::msg(3, "vvBonjourBrowser::ResolveCallBack() Enter");
+
+  vvBonjourResolver *instance = reinterpret_cast<vvBonjourResolver*>(context);
 
   if (errorCode != kDNSServiceErr_NoError)
   {
-    vvDebugMsg::msg(0, "vvBonjourResolver::bonjourResolveReply: an error occurred in the callback function");
-    return;
+    vvDebugMsg::msg(3, "vvBonjourBrowser::ResolveCallBack() error");
+  }
+  else
+  {
+    if(vvDebugMsg::getDebugLevel() >= 0)
+    {
+      std::ostringstream errmsg;
+      errmsg << "vvBonjourResolver::ResolveCallBack() Entry resolved: " << fullname << " is at " << hosttarget << ":" << ntohs(port);
+      vvDebugMsg::msg(2, errmsg.str().c_str());
+    }
+
+    instance->_hostname = hosttarget;
+    instance->_port = ntohs(port);
   }
 
-  port = ntohs(port);
-  cerr << port << endl;
-  cerr << hostTarget << endl;
+  if (!(flags & kDNSServiceFlagsMoreComing))
+  {
+    instance->_eventLoop->stop();
+  }
 }
 
 #endif

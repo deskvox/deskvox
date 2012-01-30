@@ -1,0 +1,6 @@
+SET(BONJOURTEST_SRC vvbonjourtest.cpp)
+
+# vvBonjourtest
+#INCLUDE_DIRECTORIES(${PTHREAD_INCLUDE_DIR})
+ADD_EXECUTABLE(vvbonjourtest ${BONJOURTEST_SRC})
+TARGET_LINK_LIBRARIES(vvbonjourtest virvo)

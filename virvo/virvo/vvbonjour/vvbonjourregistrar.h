@@ -28,7 +28,8 @@
 #ifdef HAVE_BONJOUR
 
 #include "vvbonjourentry.h"
-#include "vvsocketmonitor.h"
+#include "vvbonjoureventloop.h"
+#include "vvinttypes.h"
 
 #include <dns_sd.h>
 
@@ -38,23 +39,19 @@ public:
   vvBonjourRegistrar();
   ~vvBonjourRegistrar();
 
-  void registerService(const vvBonjourEntry& entry, const ushort port);
+  DNSServiceErrorType registerService(const vvBonjourEntry& entry, const ushort port);
+  void unregisterService();
 
-  vvBonjourEntry getRegisteredService() const;
+  vvBonjourEventLoop *_eventLoop;
+  DNSServiceRef      _serviceRef;
+  vvBonjourEntry     _registeredService;
 private:
-  DNSServiceRef _dnsServiceRef;
-  vvBonjourEntry _registeredService;
-
-  vvSocketMonitor* _socketMonitor;
-
-  void bonjourSocketReadyRead();
 
   /*!
    * \brief           Callback function passed to bonjour.
    */
-  static void DNSSD_API bonjourRegisterService(DNSServiceRef, DNSServiceFlags, DNSServiceErrorType errorCode,
-                                               const char* serviceName, const char* registeredType,
-                                               const char* replyDomain, void* data);
+  static void DNSSD_API RegisterCallBack(DNSServiceRef, DNSServiceFlags, DNSServiceErrorType,
+                                               const char *, const char *, const char *, void *);
 };
 
 #endif
