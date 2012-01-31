@@ -56,8 +56,9 @@ using std::ios;
 #include <virvo/vvsocketio.h>
 #include <virvo/vvcuda.h>
 
-#include <virvo/vvbonjour/vvbonjourbrowser.h>
-#include <virvo/vvbonjour/vvbonjourresolver.h>
+#ifdef HAVE_BONJOUR
+#include <virvo/vvbonjour/vvbonjour.h>
+#endif
 
 #include "vvobjview.h"
 #include "vvperformancetest.h"
@@ -204,20 +205,8 @@ void vvView::mainLoop(int argc, char *argv[])
   if (slaveNames.size() == 0)
   {
 #ifdef HAVE_BONJOUR
-//    vvBonjourBrowser* bonjourBrowser = new vvBonjourBrowser();
-//    bonjourBrowser->browseForServiceType("_distrendering._tcp");
-//    int timeout = 1000;
-//    while (bonjourBrowser->expectingServices() && timeout > 0)
-//    {
-//      --timeout;
-//      sleep(1);
-//    }
-//    std::vector<vvBonjourEntry> entries = bonjourBrowser->getBonjourEntries();
-//    for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
-//    {
-//      vvBonjourResolver* bonjourResolver = new vvBonjourResolver();
-//      bonjourResolver->resolveBonjourEntry((*it));
-//    }
+    vvBonjour bonjour;
+    slaveNames = bonjour.getConnectionStringsFor("_distrendering._tcp");
 #endif
   }
 

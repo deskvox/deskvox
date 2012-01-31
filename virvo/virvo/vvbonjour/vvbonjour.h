@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "vvsocket.h"
+#include "vvbonjourentry.h"
 
 class VIRVOEXPORT vvBonjour
 {
@@ -37,7 +38,9 @@ public:
   vvBonjour();
   ~vvBonjour();
 
-  std::vector<vvSocket*> getSocketsFor(std::string serviceType, std::string domain = "");
+  std::vector<vvSocket*> getSocketsFor(std::string serviceType, std::string domain = "") const;
+  std::vector<vvBonjourEntry> getEntriesFor(std::string serviceType, std::string domain = "") const;
+  std::vector<std::string> getConnectionStringsFor(std::string serviceType, std::string domain = "") const;
 };
 
 #endif

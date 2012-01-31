@@ -150,7 +150,7 @@ class vvView
     int codec;                                  ///< code type/codec for images sent over the network
     vvOffscreenBuffer* clipBuffer;              ///< used for clipping test code
     GLfloat* framebufferDump;
-    std::vector<const char*> slaveNames;
+    std::vector<string> slaveNames;
     std::vector<int> slavePorts;
     bool redistributeVolData;                   ///< don't load slave volume data from file, but let master send it through socket
     bool benchmark;                             ///< don't run interactively, just perform timed rendering and exit

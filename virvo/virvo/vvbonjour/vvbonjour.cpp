@@ -18,21 +18,25 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include "vvbonjour.h"
+
 #ifdef HAVE_BONJOUR
 
-#include "vvbonjour.h"
 #include "vvbonjourbrowser.h"
 #include "vvbonjourresolver.h"
 
+#include <sstream>
 
-std::vector<vvSocket*> vvBonjour::getSocketsFor(std::string serviceType, std::string domain)
+vvBonjour::vvBonjour()
+{}
+
+vvBonjour::~vvBonjour()
+{}
+
+std::vector<vvSocket*> vvBonjour::getSocketsFor(std::string serviceType, std::string domain) const
 {
   std::vector<vvSocket*> sockets;
-
-  vvBonjourBrowser browser;
-  browser.browseForServiceType(serviceType, domain);
-
-  std::vector<vvBonjourEntry> entries = browser.getBonjourEntries();
+  std::vector<vvBonjourEntry> entries = getEntriesFor(serviceType, domain);
 
   for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
   {
@@ -47,6 +51,33 @@ std::vector<vvSocket*> vvBonjour::getSocketsFor(std::string serviceType, std::st
     }
   }
   return sockets;
+}
+
+std::vector<vvBonjourEntry> vvBonjour::getEntriesFor(std::string serviceType, std::string domain) const
+{
+  vvBonjourBrowser browser;
+  browser.browseForServiceType(serviceType, domain);
+
+  return browser.getBonjourEntries();
+}
+
+std::vector<std::string> vvBonjour::getConnectionStringsFor(std::string serviceType, std::string domain) const
+{
+  std::vector<vvBonjourEntry> entries = getEntriesFor(serviceType, domain);
+  std::vector<string> connectionStrings;
+
+  for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
+  {
+    vvBonjourResolver resolver;
+    if(kDNSServiceErr_NoError == resolver.resolveBonjourEntry(*it))
+    {
+      std::ostringstream hostAndPort;
+      hostAndPort << resolver._hostname << ":" << resolver._port;
+      connectionStrings.push_back(hostAndPort.str());
+    }
+  }
+
+  return connectionStrings;
 }
 
 #endif
