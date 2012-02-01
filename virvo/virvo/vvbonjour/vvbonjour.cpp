@@ -64,7 +64,7 @@ std::vector<vvBonjourEntry> vvBonjour::getEntriesFor(std::string serviceType, st
 std::vector<std::string> vvBonjour::getConnectionStringsFor(std::string serviceType, std::string domain) const
 {
   std::vector<vvBonjourEntry> entries = getEntriesFor(serviceType, domain);
-  std::vector<string> connectionStrings;
+  std::vector<std::string> connectionStrings;
 
   for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
   {

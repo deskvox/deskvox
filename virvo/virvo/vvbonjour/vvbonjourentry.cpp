@@ -27,25 +27,25 @@ vvBonjourEntry::vvBonjourEntry()
 
 }
 
-vvBonjourEntry::vvBonjourEntry(const string serviceName,
-                               const string registeredType,
-                               const string replyDomain)
+vvBonjourEntry::vvBonjourEntry(const std::string serviceName,
+                               const std::string registeredType,
+                               const std::string replyDomain)
   : _serviceName(serviceName), _registeredType(registeredType), _replyDomain(replyDomain)
 {
 
 }
 
-string vvBonjourEntry::getServiceName() const
+std::string vvBonjourEntry::getServiceName() const
 {
   return _serviceName;
 }
 
-string vvBonjourEntry::getRegisteredType() const
+std::string vvBonjourEntry::getRegisteredType() const
 {
   return _registeredType;
 }
 
-string vvBonjourEntry::getReplyDomain() const
+std::string vvBonjourEntry::getReplyDomain() const
 {
   return _replyDomain;
 }

@@ -43,7 +43,7 @@ public:
   vvBonjourBrowser();
   ~vvBonjourBrowser();
 
-  DNSServiceErrorType browseForServiceType(const string serviceType, const string domain = "");
+  DNSServiceErrorType browseForServiceType(const std::string serviceType, const std::string domain = "");
 
   std::vector<vvBonjourEntry> getBonjourEntries() const;
   vvBonjourEventLoop* _eventLoop;

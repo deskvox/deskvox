@@ -30,8 +30,6 @@
 #include "vvexport.h"
 #include <string>
 
-using std::string;
-
 /*!
  * Class for saving bonjour entries. Each entry consists of a name a type and a domain.
  * The name can be any human readable name
@@ -42,19 +40,19 @@ class VIRVOEXPORT vvBonjourEntry
 {
 public:
   vvBonjourEntry();
-  vvBonjourEntry(const string serviceName,
-                 const string registeredType,
-                 const string replyDomain);
+  vvBonjourEntry(const std::string serviceName,
+                 const std::string registeredType,
+                 const std::string replyDomain);
 
-  string getServiceName() const;
-  string getRegisteredType() const;
-  string getReplyDomain() const;
+  std::string getServiceName() const;
+  std::string getRegisteredType() const;
+  std::string getReplyDomain() const;
 
   bool operator==(const vvBonjourEntry& rhs) const;
 private:
-  string _serviceName;
-  string _registeredType;
-  string _replyDomain;
+  std::string _serviceName;
+  std::string _registeredType;
+  std::string _replyDomain;
 };
 
 #endif

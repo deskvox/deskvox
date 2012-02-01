@@ -37,7 +37,7 @@ vvBonjourBrowser::~vvBonjourBrowser()
   if(_eventLoop) delete _eventLoop;
 }
 
-DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const string serviceType, const string domain)
+DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string serviceType, const std::string domain)
 {
   DNSServiceErrorType error;
   DNSServiceRef  serviceRef = NULL;
@@ -79,8 +79,8 @@ void vvBonjourBrowser::BrowseCallBack(DNSServiceRef, DNSServiceFlags flags, uint
   {
     if(vvDebugMsg::getDebugLevel() >= 3)
     {
-      string addString  = (flags & kDNSServiceFlagsAdd) ? "ADD" : "REMOVE";
-      string moreString = (flags & kDNSServiceFlagsMoreComing) ? "MORE" : "    ";
+      std::string addString  = (flags & kDNSServiceFlagsAdd) ? "ADD" : "REMOVE";
+      std::string moreString = (flags & kDNSServiceFlagsMoreComing) ? "MORE" : "    ";
 
       std::ostringstream msg;
       msg << addString << " " << moreString << " " << interfaceIndex << " " << name << "." << type << domain;
