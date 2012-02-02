@@ -1264,6 +1264,16 @@ void vvView::optionsMenuCallback(int item)
     break;
   case 17:
     {
+      std::map<vvRenderer::IbrMode, std::string> ibrMap;
+      ibrMap[vvRenderer::VV_ENTRANCE] = "VV_ENTRANCE";
+      ibrMap[vvRenderer::VV_EXIT] = "VV_EXIT";
+      ibrMap[vvRenderer::VV_MIDPOINT] = "VV_MIDPOINT";
+      ibrMap[vvRenderer::VV_THRESHOLD] = "VV_THRESHOLD";
+      ibrMap[vvRenderer::VV_PEAK] = "VV_PEAK";
+      ibrMap[vvRenderer::VV_GRADIENT] = "VV_GRADIENT";
+      ibrMap[vvRenderer::VV_REL_THRESHOLD] = "VV_REL_THRESHOLD";
+      ibrMap[vvRenderer::VV_EN_EX_MEAN] = "VV_EN_EX_MEAN";
+
       int tmp = ds->ibrMode;
       ++tmp;
       ds->ibrMode = static_cast<vvRenderState::IbrMode>(tmp);
@@ -1272,7 +1282,8 @@ void vvView::optionsMenuCallback(int item)
         ds->ibrMode = static_cast<vvRenderState::IbrMode>(0);
       }
       ds->renderer->setParameter(vvRenderer::VV_IBR_MODE, ds->ibrMode);
-      cerr << "Set IBR mode to " << int(ds->ibrMode) << endl;
+      cerr << "Set IBR mode to " << ibrMap[ds->ibrMode]
+           << " (" << int(ds->ibrMode) << ")" << endl;
     }
     break;
   case 18:
