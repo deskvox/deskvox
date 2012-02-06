@@ -42,6 +42,8 @@ DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string ser
   DNSServiceErrorType error;
   DNSServiceRef  serviceRef = NULL;
 
+  _bonjourEntries.clear();
+
   error = DNSServiceBrowse(&serviceRef,
               0,                    // no flags
               0,                    // all network interfaces
