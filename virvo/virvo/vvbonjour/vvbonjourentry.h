@@ -35,6 +35,8 @@
  * The name can be any human readable name
  * The type must be in the form of _typename._protocol e.g. "_vvserver._tcp"
  * The domain can be set to any desired reply domain, else default is set to .local
+ *
+ * @author Stefan Zellmann (zellmans@uni-koeln.de)
  */
 class VIRVOEXPORT vvBonjourEntry
 {

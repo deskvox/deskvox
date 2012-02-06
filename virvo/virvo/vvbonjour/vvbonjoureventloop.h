@@ -32,6 +32,12 @@
 
 #include <dns_sd.h>
 
+/**
+  Class to handle Bonjourevents in a blocking or nonblocking/threaded loop.
+  In general this class is never needed directly and only used by the other Bonjour-classes.
+
+  @author Stavros Delisavas (stavros.delisavas@uni-koeln.de
+  */
 class VIRVOEXPORT vvBonjourEventLoop
 {
 public:
@@ -46,8 +52,19 @@ public:
       DNSServiceRefDeallocate(_dnsServiceRef);
   }
 
+  /**
+    Start the eventloop.
+    @param inThread indicates to use a pthread or block until all bonjourevents are handled.
+    @param timeout  maximum timeout in seconds.
+    */
   void run(bool inThread = false, double timeout = 1.0);
+  /**
+    Do not call. Use run() instead. Static function necessary for thread-creation only.
+    */
   static void * loop(void * attrib);
+  /**
+    Cut short the eventloop eventhough not done. E.g. if timeout not reached yet but already enough services handled anyway.
+    */
   void stop();
 
   double        _timeout;

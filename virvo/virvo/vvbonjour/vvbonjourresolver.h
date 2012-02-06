@@ -34,13 +34,25 @@
 
 #include <dns_sd.h>
 
+/**
+  Class for resolving bonjourentries and creating socket-connections to desired bonjour services.
+  */
 class VIRVOEXPORT vvBonjourResolver
 {
 public:
   vvBonjourResolver();
   ~vvBonjourResolver();
 
+  /**
+    Resolves given Bonjourentry
+    @param entry Entry of type vvBonjourEntry found by vvBonjourBrowser
+    @return Errorcode (0 == no error). See manpages of DNSSeriviceErrorType for further informations.
+    */
   DNSServiceErrorType resolveBonjourEntry(const vvBonjourEntry& entry);
+  /**
+    Create a socket connection of vvSocket (TCP) connected to the resolved bonjourentry
+    @return Pointer to ready to use vvSocket or NULL in case of error.
+    */
   vvSocket* getBonjourSocket() const;
 
   vvBonjourEventLoop *_eventLoop;
@@ -48,6 +60,9 @@ public:
   ushort      _port;
 private:
 
+  /*!
+   * \brief Callback function passed to bonjour.
+   */
   static void DNSSD_API ResolveCallBack(DNSServiceRef, DNSServiceFlags, uint32_t,
                                             DNSServiceErrorType errorCode, const char*,
                                             const char*, uint16_t, uint16_t,

@@ -33,9 +33,11 @@
 #include <dns_sd.h>
 #include <vector>
 
-/*!
- * Browser class for bonjour services.
- * Found entries have to be resolved by vvBonjourResolver in order to create sockets.
+/**
+  Browser class for bonjour services.
+  Found entries have to be resolved by vvBonjourResolver in order to create sockets and further useage.
+
+  @author Stavros Delisavas (stavros.delisavas@uni-koeln.de
  */
 class VIRVOEXPORT vvBonjourBrowser
 {
@@ -43,8 +45,18 @@ public:
   vvBonjourBrowser();
   ~vvBonjourBrowser();
 
+  /**
+    Initiated the bonjourbrowser to search for services. If no error occured, a list of entries will be saved.
+    @param serviceType String of desired service type.
+    @param domain      String of desired domain to search (optional). By default all local domains.
+    @return Errorcode (0 == no error). See manpages of DNSSeriviceErrorType for further informations.
+   */
   DNSServiceErrorType browseForServiceType(const std::string serviceType, const std::string domain = "");
 
+  /**
+    Returns list of found bonjourentries
+    @return Vectorlist of vvBonjourEntry, which have to be resolved with vvBonjourResolver for further usage.
+    */
   std::vector<vvBonjourEntry> getBonjourEntries() const;
   vvBonjourEventLoop* _eventLoop;
   std::vector<vvBonjourEntry> _bonjourEntries;

@@ -32,14 +32,42 @@
 #include "vvsocket.h"
 #include "vvbonjourentry.h"
 
+/** Wrapper Class for Bonjour
+  This class automatically resolves all desired servicies for a given service type
+  and returns a list of the demanded entries
+
+  For programming-examples see vvbonjourtest.cpp (compiletarget: vvbonjourtest)
+
+  @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
+ */
 class VIRVOEXPORT vvBonjour
 {
 public:
   vvBonjour();
   ~vvBonjour();
 
+  /**
+    Returns a vectorlist of ready to use connected sockets for all existing services.
+    @param serviceType String of desired service type.
+    @param domain      String of desired domain to search (optional). By default all local domains.
+    @return Vectorlist of connected tcp sockets of type vvSocket*
+   */
   std::vector<vvSocket*> getSocketsFor(std::string serviceType, std::string domain = "") const;
+
+  /**
+    Returns a vectorlist of BonjourEntries for all existing services.
+    @param serviceType String of desired service type.
+    @param domain      String of desired domain to search (optional). By default all local domains.
+    @return Vectorlist of all entries of type vvBonjourEntry, which have to be resolved for further use.
+   */
   std::vector<vvBonjourEntry> getEntriesFor(std::string serviceType, std::string domain = "") const;
+
+  /**
+    Returns a vectorlist of connectionstring for all existing services.
+    @param serviceType String of desired service type.
+    @param domain      String of desired domain to search (optional). By default all local domains.
+    @return Vectorlist of strings formatted as "hostname:port".
+   */
   std::vector<std::string> getConnectionStringsFor(std::string serviceType, std::string domain = "") const;
 };
 

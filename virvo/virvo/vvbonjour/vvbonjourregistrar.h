@@ -33,13 +33,29 @@
 
 #include <dns_sd.h>
 
+/**
+  Class for registering a Bonjourservice.
+  A listening socket should be prepared before the service is registered.
+  Also, the service should be unregistered as soon as a connection ocurred and the port is in use.
+
+  @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
+  */
 class VIRVOEXPORT vvBonjourRegistrar
 {
 public:
   vvBonjourRegistrar();
   ~vvBonjourRegistrar();
 
+  /**
+    Register a bonjourservice
+    @param entry vvBonjourEntry with desired registration data.
+    @param port Port on which the service provider is listening for incoming connections
+    @return Errorcode (0 == no error). See manpages of DNSSeriviceErrorType for further informations.
+    */
   DNSServiceErrorType registerService(const vvBonjourEntry& entry, const ushort port);
+  /**
+    Unregister the registered service
+    */
   void unregisterService();
 
   vvBonjourEventLoop *_eventLoop;
@@ -48,7 +64,7 @@ public:
 private:
 
   /*!
-   * \brief           Callback function passed to bonjour.
+   * \brief Callback function passed to bonjour.
    */
   static void DNSSD_API RegisterCallBack(DNSServiceRef, DNSServiceFlags, DNSServiceErrorType,
                                                const char *, const char *, const char *, void *);
