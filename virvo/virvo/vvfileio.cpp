@@ -3376,7 +3376,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
       break;
     default: assert(0); break;
   }
-  vd->addFrame(prop.raw, vvVolDesc::ARRAY_DELETE);
+  vd->addFrame(prop.raw, vvVolDesc::ARRAY_DELETE,prop.image);
   ++vd->frames;
 
   // Make big endian data:

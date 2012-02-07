@@ -22,6 +22,7 @@
 #define _VVVOLDESC_H_
 
 #include <stdlib.h>
+#include <vector>
 
 #include "vvaabb.h"
 #include "vvexport.h"
@@ -205,7 +206,7 @@ class VIRVOEXPORT vvVolDesc
     // Other routines:
     ErrorType merge(vvVolDesc*, vvVolDesc::MergeType);
     ErrorType mergeFrames();
-    void   addFrame(uchar*, DeleteType);
+    void   addFrame(uchar*, DeleteType, int fd=-1);
     void   copyFrame(uchar*);
     void   removeSequence();
     void   makeHistogram(int, int, int, int*, int*, float, float);
@@ -266,6 +267,7 @@ class VIRVOEXPORT vvVolDesc
     char*  filename;                              ///< name of volume data file, including extension, excluding path ("" if undefined)
     int    currentFrame;                          ///< current animation frame
     mutable vvSLList<uchar*> raw;                 ///< pointer list to raw volume data - mutable because of Java style iterators
+    std::vector<int> rawFrameNumber;              ///< frame numbers (if frames do not come in sequence)
     vvArray<char*> channelNames;                  ///< names of data channels
 
     void initialize();

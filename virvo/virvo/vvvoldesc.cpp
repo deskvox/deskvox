@@ -603,7 +603,15 @@ vvVolDesc::ErrorType vvVolDesc::mergeFrames()
   uchar *newRaw = new uchar[getFrameBytes() * frames];
   for (int f=0; f<frames; f++)
   {
-    memcpy(newRaw + getFrameBytes()*f, getRaw(f), getFrameBytes());
+    int fn = rawFrameNumber[f]-1;
+    if(fn<0)
+       fn = f;
+    if(fn >= frames)
+    {
+       fn = frames-1;
+       fprintf(stderr," please read all frames, not enough space for all frames\n");
+    }
+    memcpy(newRaw + getFrameBytes()*fn, getRaw(f), getFrameBytes());
   }
   removeSequence();
   addFrame(newRaw, ARRAY_DELETE);
@@ -653,7 +661,7 @@ the back slice.
 @param ptr          pointer to raw data
 @param deleteData   data deletion type: delete or don't delete when not used anymore
 */
-void vvVolDesc::addFrame(uchar* ptr, DeleteType deleteData)
+void vvVolDesc::addFrame(uchar* ptr, DeleteType deleteData,int fn)
 {
   switch(deleteData)
   {
@@ -662,6 +670,7 @@ void vvVolDesc::addFrame(uchar* ptr, DeleteType deleteData)
     case ARRAY_DELETE:  raw.append(ptr, vvSLNode<uchar*>::ARRAY_DELETE); break;
     default: assert(0); break;
   }
+  rawFrameNumber.push_back(fn);
 
   // Make sure channel names exist:
   if (channelNames.count() == 0)
