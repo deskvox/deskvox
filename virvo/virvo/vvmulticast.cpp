@@ -194,7 +194,7 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
   {
     // number datagrams
     uchar *ndata = numberConsecutively(bytes, size);
-    size_t nsize = size+(ceil(float(size)/float((DGRAM_SIZE-4)))*4);
+    size_t nsize = size+size_t(ceil(float(size)/float((DGRAM_SIZE-4)))*4.0);
 
     size_t nleft = nsize;
 
@@ -314,7 +314,7 @@ ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
   }
   else
   {
-    size_t nsize = size+(ceil(float(size)/float((DGRAM_SIZE-4)))*4);
+    size_t nsize = size+size_t(ceil(float(size)/float((DGRAM_SIZE-4)))*4.0);
     size_t nleft = nsize;
 
     vvSocketMonitor monitor = vvSocketMonitor();
@@ -359,7 +359,7 @@ ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
           uint32_t c = ntohl(t.y);
 
           size_t pos = c*(DGRAM_SIZE-4);
-          for(unsigned int i=0;i<ret-4;i++)
+          for(int i=0;i<ret-4;i++)
           {
             data[pos+i] = dgram[i];
           }
