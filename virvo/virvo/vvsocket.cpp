@@ -262,6 +262,7 @@ vvSocket::ErrorType vvSocket::accept_timeo()
         return VV_TIMEOUT_ERROR;
     }
   }
+  closesocket(sockfd);
   sockfd = ar;
   cmd_option = 0;
   if (ioctlsocket(sockfd, FIONBIO, &cmd_option) == SOCKET_ERROR)
