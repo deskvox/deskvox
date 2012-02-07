@@ -33,8 +33,6 @@
 #include <signal.h>
 #endif
 
-using namespace std;
-
 //----------------------------------------------------------------------------
 /** Interrupter
  */
@@ -115,12 +113,12 @@ vvSocket::ErrorType vvSocket::init_server_tcp()
   }
   else
     retval=accept_nontimeo();
-  ostringstream errmsg;
+  std::ostringstream errmsg;
   errmsg << "send_buffsize: " << get_send_buffsize() << " bytes, recv_buffsize: " << get_recv_buffsize() << " bytes";
   vvDebugMsg::msg(2, errmsg.str().c_str());
   if (retval == VV_OK)
   {
-    ostringstream errmsg;
+    std::ostringstream errmsg;
     errmsg << "Incoming connection from " << inet_ntoa(host_addr.sin_addr);
     vvDebugMsg::msg(2, errmsg.str().c_str());
   }
@@ -234,7 +232,7 @@ vvSocket::ErrorType vvSocket::init_client_tcp()
   }
   else
     retval = connect_nontimeo();
-  ostringstream errmsg;
+  std::ostringstream errmsg;
   errmsg << "send_buffsize: " << get_send_buffsize() << " bytes, recv_buffsize: " << get_recv_buffsize() << " bytes";
   vvDebugMsg::msg(2, errmsg.str().c_str());
   return retval;
@@ -933,7 +931,7 @@ int vvSocket::get_MTU()
   }
   else
   {
-    ostringstream errmsg;
+    std::ostringstream errmsg;
     errmsg << "unknown interface, mtu set to " << theMSS+40 << " bytes";
     vvDebugMsg::msg(2, errmsg.str().c_str());
     return  theMSS + 40;
@@ -1022,7 +1020,7 @@ vvSocket::ErrorType vvSocket::init_server_udp()
     }
   }
   get_send_buffsize();
-  ostringstream errmsg;
+  std::ostringstream errmsg;
   errmsg << "send_buffsize: " << send_buffsize << " bytes, recv_buffsize: " << get_recv_buffsize() << " bytes";
   vvDebugMsg::msg(2, errmsg.str().c_str());
   if (send_buffsize < 65507)
@@ -1120,7 +1118,7 @@ vvSocket::ErrorType vvSocket::init_client_udp()
     }
   }
   get_send_buffsize();
-  ostringstream errmsg;
+  std::ostringstream errmsg;
   errmsg << "send_buffsize: " << send_buffsize << "bytes,  recv_buffsize: " << get_recv_buffsize() << "bytes";
   vvDebugMsg::msg(1, errmsg.str().c_str());
   if (send_buffsize < 65507)
@@ -1284,7 +1282,7 @@ ssize_t vvSocket::readn_udp(char* buffer, size_t size)
     }
     else if (nread == 0)
       break;
-    ostringstream errmsg;
+    std::ostringstream errmsg;
     errmsg <<  nread << " Bytes read";
     vvDebugMsg::msg(3, errmsg.str().c_str());
     nleft -= nread;
@@ -1328,7 +1326,7 @@ ssize_t vvSocket::writen_udp(const char* buffer, size_t size)
         return (ssize_t)-1;
       }
     }
-    ostringstream errmsg;
+    std::ostringstream errmsg;
     errmsg << nwritten << " Bytes written";
     vvDebugMsg::msg(3, errmsg.str().c_str());
     nleft -= nwritten;
@@ -1452,7 +1450,7 @@ vvSocket::Sigfunc *vvSocket::Signal(int signo, vvSocket::Sigfunc *func)
  */
 void vvSocket::nonameserver(int)
 {
-  cerr<<"Nameserver not found. Contact your system administrator! Waiting for timeout..."<<endl;
+  vvDebugMsg::msg(0, "Nameserver not found. Contact your system administrator! Waiting for timeout...");
   return;
 }
 
@@ -1461,7 +1459,7 @@ void vvSocket::nonameserver(int)
  */
 void vvSocket::peerunreachable(int)
 {
-  cerr<<"Caught signal SIGPIPE. Peer unreachable."<<endl;
+  vvDebugMsg::msg(0, "Caught signal SIGPIPE. Peer unreachable.");
   return;
 }
 
@@ -1527,7 +1525,7 @@ vvSocket::ErrorType vvSocket::read_timeo(uchar* dataptr, size_t size)
       vvDebugMsg::msg(1, "Reading data failed, read_timeo()");
       return VV_READ_ERROR;
     }
-    ostringstream errmsg;
+    std::ostringstream errmsg;
     errmsg << "Getting " << s << " Bytes of Data";
     vvDebugMsg::msg(3, errmsg.str().c_str());
     return VV_OK;
@@ -1568,7 +1566,7 @@ vvSocket::ErrorType vvSocket::read_nontimeo(uchar* dataptr, size_t size)
     vvDebugMsg::msg(1, "Peer performed orderly shutdown");
     return VV_PEER_SHUTDOWN;
   }
-  ostringstream errmsg;
+  std::ostringstream errmsg;
   errmsg << "Getting " << s << " Bytes of Data";
   vvDebugMsg::msg(3, errmsg.str().c_str());
   return VV_OK;
@@ -1595,7 +1593,7 @@ vvSocket::ErrorType vvSocket::write_timeo(const uchar* dataptr, size_t size)
       vvDebugMsg::msg(1, "Writing data failed, write_timeo()");
       return VV_WRITE_ERROR;
     }
-    ostringstream errmsg;
+    std::ostringstream errmsg;
     errmsg << "Sending " << s << " Bytes of Data";
     vvDebugMsg::msg(3, errmsg.str().c_str());
     return VV_OK;
@@ -1628,7 +1626,7 @@ vvSocket::ErrorType vvSocket::write_nontimeo(const uchar* dataptr, size_t size)
     vvDebugMsg::msg(1, "Writing data failed, write_nontimeo()");
     return VV_WRITE_ERROR;
   }
-  ostringstream errmsg;
+  std::ostringstream errmsg;
   errmsg << "Sending " << s << " Bytes of Data";
   vvDebugMsg::msg(3, errmsg.str().c_str());
   return VV_OK;
@@ -1959,7 +1957,7 @@ bool vvSocket::do_a_retry()
   char in[32];
 
   vvDebugMsg::msg(1, "Timeout. Retry? (y/n)");
-  cin >> in;
+  std::cin >> in;
   if (in[0] == 'y' || in[0] ==  'Y')
     return true;
   else
@@ -2004,15 +2002,17 @@ float vvSocket::getTime(int timer)
 */
 void vvSocket::printErrorMessage(const char* prefix) const
 {
+  std::ostringstream errmsg;
   if (prefix==NULL)
-    cerr << "Socket error: ";
-  else cerr << prefix << ": ";
+    errmsg << "Socket error: ";
+  else errmsg << prefix << ": ";
 
 #ifdef _WIN32
   int errno;
   errno = WSAGetLastError();
 #endif
-  cerr << strerror(errno) << " (" << errno << ")" << endl;
+  errmsg << strerror(errno) << " (" << errno << ")";
+  vvDebugMsg::msg(0, errmsg.str().c_str());
 }
 
 //---------------------------------------------------------------------------
@@ -2218,7 +2218,7 @@ vvSocket::ErrorType vvSocket::init_client_mc()
     }
   }
   get_send_buffsize();
-  ostringstream errmsg;
+  std::ostringstream errmsg;
   errmsg << "send_buffsize: " << send_buffsize << "bytes,  recv_buffsize: " << get_recv_buffsize() << "bytes";
   vvDebugMsg::msg(1, errmsg.str().c_str());
   if (send_buffsize < 65507)
@@ -2280,7 +2280,7 @@ vvSocket::ErrorType vvSocket::init_server_mc()
     }
   }
   get_send_buffsize();
-  ostringstream errmsg;
+  std::ostringstream errmsg;
   errmsg << "send_buffsize: " << send_buffsize << " bytes, recv_buffsize: " << get_recv_buffsize() << " bytes";
   vvDebugMsg::msg(2, errmsg.str().c_str());
   if (send_buffsize < 65507)
