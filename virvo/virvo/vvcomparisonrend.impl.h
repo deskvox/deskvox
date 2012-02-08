@@ -111,10 +111,10 @@ void vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL()
     return;// err;
   }
 
-  if(!_ref->_socket)
+  if(!_ref->_socketIO)
     return;// vvRemoteClient::VV_SOCKET_ERROR;
-  vvSocketIO::ErrorType sockerr = _ref->_socket->getImage(&refImg);
-  if(sockerr != vvSocketIO::VV_OK)
+  vvSocket::ErrorType sockerr = _ref->_socketIO->getImage(&refImg);
+  if(sockerr != vvSocket::VV_OK)
   {
     std::cerr << "vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL: socket error ("
               << sockerr << ") - exiting..." << std::endl;

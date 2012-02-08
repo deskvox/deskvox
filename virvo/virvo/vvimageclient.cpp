@@ -67,11 +67,11 @@ vvRemoteClient::ErrorType vvImageClient::render()
   if(err != vvRemoteClient::VV_OK)
     return err;
 
-  if(!_socket)
+  if(!_socketIO)
     return vvRemoteClient::VV_SOCKET_ERROR;
 
-  vvSocketIO::ErrorType sockerr = _socket->getImage(_image);
-  if(sockerr != vvSocketIO::VV_OK)
+  vvSocket::ErrorType sockerr = _socketIO->getImage(_image);
+  if(sockerr != vvSocket::VV_OK)
   {
     std::cerr << "vvImageClient::render: socket error (" << sockerr << ") - exiting..." << std::endl;
     return vvRemoteClient::VV_SOCKET_ERROR;

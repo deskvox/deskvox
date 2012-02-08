@@ -60,7 +60,8 @@ int main(int argc, char **argv)
 
     while(true)
     {
-      vvSocketIO sock = vvSocketIO(port, vvSocket::VV_TCP);
+      vvSocket sock = vvSocket(port, vvSocket::VV_TCP);
+      vvSocketIO sockio = vvSocketIO(&sock);
 
       cerr << "Register service on port " << port << "..." << flush;
       vvBonjourEntry entr = vvBonjourEntry("vvBonjourServer", "_bonjourtest._tcp", "");
@@ -85,7 +86,7 @@ int main(int argc, char **argv)
       cerr << "done." << endl;
 
       bool bla = false;
-      sock.getBool(bla);
+      sockio.getBool(bla);
 
       cerr << "message read: " << bla << endl;
     }
@@ -113,12 +114,13 @@ int main(int argc, char **argv)
         cerr << "done." << endl;
 
         cerr << "Connecting with " << resol._hostname.c_str() << resol._port << "...";
-        vvSocketIO sock = vvSocketIO(resol._port , resol._hostname.c_str(), vvSocket::VV_TCP);
+        vvSocket sock = vvSocket(resol._port , resol._hostname.c_str(), vvSocket::VV_TCP);
+        vvSocketIO sockio = vvSocketIO(&sock);
         sock.init();
         cerr << "done." << endl;
 
         cerr << "Send bool 1...";
-        sock.putBool(true);
+        sockio.putBool(true);
         cerr << "done." << endl;
       }
       else

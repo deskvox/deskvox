@@ -384,12 +384,12 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
 
   pthread_barrier_wait(&ibr->_thread->startBarrier);
 
-  while (ibr->_socket)
+  while (ibr->_socketIO)
   {
     pthread_mutex_lock( &ibr->_thread->imageMutex );
     pthread_cond_wait(&ibr->_thread->imageCond, &ibr->_thread->imageMutex);
-    vvSocketIO::ErrorType err = ibr->_socket->getIbrImage(img);
-    if(err != vvSocketIO::VV_OK)
+    vvSocket::ErrorType err = ibr->_socketIO->getIbrImage(img);
+    if(err != vvSocket::VV_OK)
     {
       std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
       pthread_mutex_unlock( &ibr->_thread->imageMutex );

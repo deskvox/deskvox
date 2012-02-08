@@ -125,30 +125,33 @@ void vvServer::serverLoop()
   {
     cerr << "Listening on port " << port << endl;
 
-    vvSocketIO *sock = new vvSocketIO(port, vvSocket::VV_TCP);
-    if(sock->init() != vvSocket::VV_OK)
+    vvSocket *sock = new vvSocket(port, vvSocket::VV_TCP);
+    vvSocketIO *sockio = new vvSocketIO(sock);
+    if(sockio->init() != vvSocket::VV_OK)
     {
       std::cerr << "Failed to initialize server socket on port " << port << std::endl;
       delete sock;
+      delete sockio;
       break;
     }
 
     vvRemoteServer* server = NULL;
     int type;
-    sock->getInt32(type);
+    sockio->getInt32(type);
     switch(type)
     {
       case vvRenderer::REMOTE_IMAGE:
         rrMode = RR_IMAGE;
-        server = new vvImageServer(sock);
+        server = new vvImageServer(sockio);
         break;
       case vvRenderer::REMOTE_IBR:
         rrMode = RR_IBR;
-        server = new vvIbrServer(sock);
+        server = new vvIbrServer(sockio);
         break;
       default:
         std::cerr << "Unknown remote rendering type " << type << std::endl;
         delete sock;
+        delete sockio;
         break;
     }
 

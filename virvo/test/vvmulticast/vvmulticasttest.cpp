@@ -49,7 +49,7 @@ public:
     int delim = addr.find_first_of(":");
     string port = addr.substr(delim+1);
     addr = addr.substr(0, delim);
-    _socket = new vvSocketIO(atoi(port.c_str()), addr.c_str(), vvSocket::VV_TCP);
+    _socket = new vvSocket(atoi(port.c_str()), addr.c_str(), vvSocket::VV_TCP);
 
     if(vvSocket::VV_OK == _socket->init())
     {
@@ -106,7 +106,7 @@ public:
   uint       _size;
   int        _return;
   pthread_t  _thread;
-  vvSocketIO *_socket;
+  vvSocket   *_socket;
 };
 
 uchar* generateData(const int size)
@@ -274,7 +274,7 @@ int main(int argc, char** argv)
 
     cout << "Waiting for incoming data on TCP..." << endl;
 
-    vvSocketIO recSocket = vvSocketIO(31050, vvSocket::VV_TCP);
+    vvSocket recSocket = vvSocket(31050, vvSocket::VV_TCP);
     recSocket.init();
     uint tcpSize = recSocket.read32();
     cout << "Expecting " << tcpSize << "Byes of data." << endl;
