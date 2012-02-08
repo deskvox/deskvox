@@ -104,8 +104,7 @@ vvMulticast::~vvMulticast()
   }
   else if(VV_VVSOCKET == _api)
   {
-//    if(_socket)
-//      delete _socket;
+    delete _socket;
   }
 }
 
