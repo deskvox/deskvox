@@ -37,7 +37,7 @@
 #endif
 
 vvMulticast::vvMulticast(const MulticastType type, const MulticastApi api, const char* addr, const ushort port)
-: _type(type), _api(api)
+: _type(type), _api(api), _socket(NULL)
 {
   if(VV_NORM == _api)
   {
@@ -75,7 +75,7 @@ vvMulticast::vvMulticast(const MulticastType type, const MulticastApi api, const
     {
       _socket = new vvSocket(port, addr, vvSocket::VV_MC_SENDER);
     }
-    else if(VV_RECEIVER == _type)
+    else
     {
       _socket = new vvSocket(port, addr, vvSocket::VV_MC_RECEIVER);
     }
@@ -104,7 +104,8 @@ vvMulticast::~vvMulticast()
   }
   else if(VV_VVSOCKET == _api)
   {
-    delete _socket;
+//    if(_socket)
+//      delete _socket;
   }
 }
 

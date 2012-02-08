@@ -150,7 +150,7 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType getVolumeAttributes(vvVolDesc* vd);
     vvSocket::ErrorType getVolume(vvVolDesc*, vvMulticastParameters *mcParam = NULL);
     vvSocket::ErrorType putVolumeAttributes(const vvVolDesc*);
-    vvSocket::ErrorType putVolume(const vvVolDesc*, bool tryMC = true, bool mcMaster = true, vvMulticastParameters *mcParam = NULL);
+    vvSocket::ErrorType putVolume(const vvVolDesc*, bool tryMC = false, bool mcMaster = false, vvMulticastParameters *mcParam = NULL);
     vvSocket::ErrorType getTransferFunction(vvTransFunc& tf);
     vvSocket::ErrorType putTransferFunction(vvTransFunc& tf);
     vvSocket::ErrorType getBrick(vvBrick* brick);

@@ -153,8 +153,8 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd, vvMulticastParameters *
     if(tryMC)
     {
       vvMulticast mcSock = mcParam
-                         ? vvMulticast(vvMulticast::VV_SENDER, mcParam->api, mcParam->addr, mcParam->port)
-                         : vvMulticast(vvMulticast::VV_SENDER);
+                         ? vvMulticast(vvMulticast::VV_RECEIVER, mcParam->api, mcParam->addr, mcParam->port)
+                         : vvMulticast(vvMulticast::VV_RECEIVER);
       putBool(true);
       for(int k =0; k< vd->frames; k++)
       {
