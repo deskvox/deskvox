@@ -37,7 +37,7 @@ class vvIbrImage;
 class vvVolDesc;
 
 /** This class provides specific data transfer through sockets.
-  It requires the class vvSocket.<BR>
+  It requires a socket of type vvSocket.<BR>
   Here is an example code fragment for a TCP sever which reads
   a volume from a socket and a TCP client which writes a volume to the
   socket:<BR>
@@ -46,70 +46,77 @@ class vvVolDesc;
   Server:
 
   // Create a new TCP socket class instance, which is a server listening on port 17171
+  vvSocket* sock = new vvSocket(17171 , vvSocket::VV_TCP);
+  vvVolDesc* vd = new vvVolDesc();
 
-vvSocketIO* sio = new vvSocketIO(17171 , vvSocket::VV_TCP);
-vvVolDesc* vd = new vvVolDesc();
+  //Set the parameters of the socket( e.g. connection timer 3 sec, transfer
+  //timer 1.5 sec, socket buffer 65535 bytes, debuglevel 0)
+  sock->set_sock_param(3.0f, 1.5f, 65535 , 0);
 
-//Set the parameters of the socket( e.g. connection timer 3 sec, transfer
-//timer 1.5 sec, socket buffer 65535 bytes, debuglevel 0)
-sio->set_sock_param(3.0f, 1.5f, 65535 , 0);
+  // Initialize the socket with the parameters and wait for a server
+  if (sock->init() != vvSocket::VV_OK)
+  {
+    delete sock;
+    return -1;
+  }
 
-// Initialize the socket with the parameters and wait for a server
-if (sio->init() != vvSocket::VV_OK)
-{
-delete sio;
-return -1;
-}
+  // Assign the socket to socketIO which extens the socket with more functions
+  vvSocketIO* sio = new vvSocketIO(sock);
 
-// Get a volume
-switch (sio->getVolume(vd))
-{
-case vvSocket::VV_OK:
-cerr << "Volume transferred successfully" << endl;
-break;
-case vvSocket::VV_ALLOC_ERROR:
-cerr << "Not enough memory" << endl;
-break;
-default:
-cerr << "Cannot read volume from socket" << endl;
-break;
-}
-delete sio;
+  // Get a volume
+  switch (sio->getVolume(vd))
+  {
+  case vvSocket::VV_OK:
+    cerr << "Volume transferred successfully" << endl;
+    break;
+  case vvSocket::VV_ALLOC_ERROR:
+    cerr << "Not enough memory" << endl;
+    break;
+  default:
+    cerr << "Cannot read volume from socket" << endl;
+    break;
+  }
+  delete sock;
+  delete sio;
 
-Client:
+  Client:
 
-// Create a new TCP socket class instance, which is a client and connects
-// to a server listening on port 17171
+  // Create a new TCP socket class instance, which is a client and connects
+  // to a server listening on port 17171
 
-char* servername = "buxdehude";
-vvSocketIO* sio = new vvSocketIO(17171 , servername, vvSocket::VV_TCP);
-vvVolDesc* vd = new vvVolDesc();
+  char* servername = "buxdehude";
+  vvSocket* sock = new vvSocket(17171 , servername, vvSocket::VV_TCP);
+  vvVolDesc* vd = new vvVolDesc();
 
-//Set the parameters of the socket( e.g. connection timer 3 sec, transfer
-//timer 1.5 sec, socket buffer 65535 bytes, debuglevel 0)
-sio->set_sock_param(3.0f, 1.5f, 65535 , 0);
+  //Set the parameters of the socket( e.g. connection timer 3 sec, transfer
+  //timer 1.5 sec, socket buffer 65535 bytes, debuglevel 0)
+  sio->set_sock_param(3.0f, 1.5f, 65535 , 0);
 
-// Initialize the socket with the parameters and connect to the server.
-if (sio->init() != vvSocket::VV_OK)
-{
-delete sio;
-return -1;
-}
+  // Initialize the socket with the parameters and connect to the server.
+  if (sio->init() != vvSocket::VV_OK)
+  {
+    delete sock;
+    return -1;
+  }
 
-// Put a volume
-switch (sio->putVolume(vd))
-{
-case vvSocket::VV_OK:
-cerr << "Volume transferred successfully" << endl;
-break;
-case vvSocket::VV_ALLOC_ERROR:
-cerr << "Not enough memory" << endl;
-break;
-default:
-cerr << "Cannot write volume to socket" << endl;
-break;
-}
-delete sio;
+  // Assign the socket to socketIO
+  vvSocketIO* sio = new vvSocketIO(sock);
+
+  // Put a volume
+  switch (sio->putVolume(vd))
+  {
+  case vvSocket::VV_OK:
+    cerr << "Volume transferred successfully" << endl;
+    break;
+  case vvSocket::VV_ALLOC_ERROR:
+    cerr << "Not enough memory" << endl;
+    break;
+  default:
+    cerr << "Cannot write volume to socket" << endl;
+    break;
+  }
+  delete sock;
+  delete sio;
 
 </PRE>
 @see vvSocket
