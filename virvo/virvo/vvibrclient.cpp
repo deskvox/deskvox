@@ -98,7 +98,7 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
   _newFrame = true; // request a new frame
   _image = new vvIbrImage;
 
-  _shader = vvShaderFactory().createProgram("ibr", "", "");
+  _shader = vvShaderFactory().createProgram("ibr", "", "ibr");
   if(!_shader)
     vvDebugMsg::msg(0, "vvIbrClient::vvIbrClient: could not find ibr shader");
 
@@ -256,7 +256,10 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   glDepthMask(GL_FALSE);
   GLboolean pointSmooth = GL_FALSE;
   glGetBooleanv(GL_POINT_SMOOTH, &pointSmooth);
-  glEnable(GL_POINT_SMOOTH);
+  //glEnable(GL_POINT_SMOOTH);
+
+  glEnable(GL_POINT_SPRITE);
+  glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
 
   _shader->enable();
 
@@ -272,6 +275,22 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   _shader->setParameter1f("depthRange", _imgDepthRange[1]-_imgDepthRange[0]);
   _shader->setParameter1i("closer", closer);
   _shader->setParameterMatrix4f("reprojectionMatrix" , reprojectionMatrix);
+
+  //// begin ellipsoid test code - temporary
+
+  // hardwired parameters for now
+  float v_i[16] = { .70710678,  0.70710678, 0., 0.,
+                    -0.70710678, .70710678, 0., 0.,
+                    0., 0., 1., 0.,
+                      0., 0., 0., 1. };
+  vvMatrix V_i = vvMatrix(v_i);
+  V_i.invert();
+
+  _shader->setParameter1f("si", 10.0);
+  _shader->setParameter1f("sj", 10.0);
+  _shader->setParameter1f("sk", 10.0);
+  _shader->setParameterMatrix4f("V_i" , V_i);
+  //// end ellipsoid test code - temporary
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
   glDrawArrays(GL_POINTS, 0, _imgVp[2]*_imgVp[3]);
