@@ -202,7 +202,7 @@ void vvView::mainLoop(int argc, char *argv[])
     vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
   }
 
-  if (slaveNames.size() == 0)
+  if (slaveNames.size() == 0 && rrMode != RR_NONE)
   {
 #ifdef HAVE_BONJOUR
     vvBonjour bonjour;
