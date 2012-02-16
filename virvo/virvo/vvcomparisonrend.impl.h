@@ -186,4 +186,40 @@ void vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL()
   delete[] ibrImg;
 }
 
+template <typename TestRend>
+void vvComparisonRend<vvImageClient, TestRend>::setParameter(const ParameterType param, const float newValue)
+{
+  vvDebugMsg::msg(3, "vvComparisonRend<vvImageClient, TestRend>::setParameter()");
+
+  _ref->setParameter(param, newValue);
+  _test->setParameter(param, newValue);
+}
+
+template <typename TestRend>
+void vvComparisonRend<vvImageClient, TestRend>::setParameterV3(const ParameterType param, const vvVector3& newValue)
+{
+  vvDebugMsg::msg(3, "vvComparisonRend<vvImageClient, TestRend>::setParameterV3()");
+
+  _ref->setParameterV3(param, newValue);
+  _test->setParameterV3(param, newValue);
+}
+
+template <typename TestRend>
+void vvComparisonRend<vvImageClient, TestRend>::setParameterV4(const ParameterType param, const vvVector4& newValue)
+{
+  vvDebugMsg::msg(3, "vvComparisonRend<vvImageClient, TestRend>::setParameterV4()");
+
+  _ref->setParameterV4(param, newValue);
+  _test->setParameterV4(param, newValue);
+}
+
+template <typename TestRend>
+void vvComparisonRend<vvImageClient, TestRend>::updateTransferFunction()
+{
+  vvDebugMsg::msg(3, "vvComparisonRend<vvImageClient, TestRend>::updateTransferFunction()");
+
+  _ref->updateTransferFunction();
+  _test->updateTransferFunction();
+}
+
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -52,6 +52,11 @@ public:
   virtual ~vvComparisonRend();
 
   virtual void renderVolumeGL();
+
+  void setParameter(ParameterType param, float newValue);
+  void setParameterV3(ParameterType param, const vvVector3& newValue);
+  void setParameterV4(ParameterType param, const vvVector4& newValue);
+  void updateTransferFunction();
 private:
   vvImageClient* _ref;
   TestRend* _test;
