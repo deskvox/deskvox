@@ -49,10 +49,6 @@ class vvVolDesc;
   vvSocket* sock = new vvSocket(17171 , vvSocket::VV_TCP);
   vvVolDesc* vd = new vvVolDesc();
 
-  //Set the parameters of the socket( e.g. connection timer 3 sec, transfer
-  //timer 1.5 sec, socket buffer 65535 bytes, debuglevel 0)
-  sock->set_sock_param(3.0f, 1.5f, 65535 , 0);
-
   // Initialize the socket with the parameters and wait for a server
   if (sock->init() != vvSocket::VV_OK)
   {
@@ -191,7 +187,6 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putWinDims(const int w, const int h);
     vvSocket::ErrorType getData(void*, int, DataType);      // known number and type
     vvSocket::ErrorType putData(void*, int, DataType);
-    void set_sock_param(int=65536);
 
     vvSocket* getSocket() const;
 private:

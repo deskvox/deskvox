@@ -50,22 +50,6 @@ vvSocketIO::~vvSocketIO()
 }
 
 //----------------------------------------------------------------------------
-/** Sets the parameters for a socket. Has to be called before the init() call!!
- @param c_timer  timer for connection establishment.
- @param t_timer  timer for data transfer.
- @param sock_buff  size of socket buffers. For TCP automatic socket buffer
- size measurement if sock_buff=0.
- @param level  debuglevel. 0 for no messages, 3 for maximal debugging.
-*/
-void vvSocketIO::set_sock_param(int sock_buff)
-{
-  if(_socket)
-  {
-    _socket->setParameter(vvSocket::VV_BUFFSIZE, sock_buff);
-  }
-}
-
-//----------------------------------------------------------------------------
 /** Checks if there is data in the socket receive buffer.
  @return  true for data in the socket receive buffer, false for not.
 */
