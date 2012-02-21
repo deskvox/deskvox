@@ -87,6 +87,11 @@ vvTcpServer::~vvTcpServer()
 
 vvTcpSocket* vvTcpServer::nextConnection()
 {
+  if(!_ready)
+  {
+    vvDebugMsg::msg(2, "vvTcpServer::nextConnection() error: server not correctly initialized");
+  }
+
 #ifdef _WIN32
   SOCKET n;
 #else
