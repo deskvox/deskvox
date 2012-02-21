@@ -20,9 +20,11 @@
 
 #include <sstream>
 
+#include "vvdebugmsg.h"
+#include "vvsocketmonitor.h"
 #include "vvtcpserver.h"
 #include "vvtcpsocket.h"
-#include "vvdebugmsg.h"
+
 
 vvTcpServer::vvTcpServer(ushort port)
 {
@@ -85,7 +87,7 @@ vvTcpServer::~vvTcpServer()
 #endif
 }
 
-vvTcpSocket* vvTcpServer::nextConnection()
+vvTcpSocket* vvTcpServer::nextConnection(double to)
 {
   if(!_ready)
   {
@@ -97,6 +99,57 @@ vvTcpSocket* vvTcpServer::nextConnection()
 #else
   int n;
 #endif
+
+#ifndef _WIN32
+  int flags = fcntl(_sockfd, F_GETFL, 0);
+  if(flags < 0)
+  {
+    vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: Getting flags of server-socket failed");
+    return NULL;
+  }
+#endif
+
+  if (to < 0.0 ? false : true)
+  {
+#ifdef _WIN32
+    unsigned long tru = 1;
+    ioctlsocket(_sockfd, FIONBIO, &tru);
+#else
+    if(fcntl(_sockfd, F_SETFL, flags|O_NONBLOCK))
+    {
+      vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: setting O_NONBLOCK on server-socket failed");
+    }
+#endif
+    vvTcpSocket sock;
+    sock.setSockfd(_sockfd);
+
+    std::vector<vvSocket*> socks;
+    socks.push_back(&sock);
+
+    vvSocketMonitor sm;
+    sm.setReadFds(socks);
+
+    vvSocket* ready;
+    sm.wait(&ready, &to);
+
+    sock.setSockfd(0);
+
+    if(ready == NULL)
+      return NULL;
+  }
+  else
+  {
+#ifdef _WIN32
+    unsigned long tru = 0;
+    ioctlsocket(_sockfd, FIONBIO, &tru);
+#else
+    if(fcntl(_sockfd, F_SETFL, flags & (~O_NONBLOCK)))
+    {
+      vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: removing O_NONBLOCK from server-socket failed.");
+      return NULL;
+    }
+#endif
+  }
 
   if ( (n = accept(_sockfd, (struct sockaddr *)&_hostAddr, &_hostAddrlen)) < 0)
   {

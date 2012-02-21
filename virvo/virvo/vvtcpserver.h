@@ -45,7 +45,7 @@ public:
     one. This call will obviously block.
     @returns Pointer to an ready to use vvTcpSocket or NULL if errer occured
     */
-  vvTcpSocket* nextConnection();
+  vvTcpSocket* nextConnection(double to = -1.0);
 
 private:
 #ifdef _WIN32
