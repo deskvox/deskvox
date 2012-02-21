@@ -55,151 +55,111 @@
 */
 class VIRVOEXPORT vvSocket
 {
+public:
+  typedef void Sigfunc(int);
 
-  public:
-    typedef void Sigfunc(int);
+  enum ErrorType            /// Error Codes
+  {
+    VV_OK,                  ///< no error
+    VV_SOCK_ERROR,
+    VV_WRITE_ERROR,
+    VV_READ_ERROR,
+    VV_ACCEPT_ERROR,
+    VV_CONNECT_ERROR,
+    VV_HOST_ERROR,
+    VV_RETRY,
+    VV_ALLOC_ERROR,         ///< allocation error: not enough memory
+    VV_CREATE_ERROR,        ///< socket could not be opened
+    VV_HEADER_ERROR,        ///< invalid header received
+    VV_DATA_ERROR,          ///< volume data format error: e.g., too many voxels received
+    VV_PEER_SHUTDOWN,       ///< the connection was closed by peer
+    VV_SOCKFD_ERROR,
+    VV_SOCKOPT_ERROR
+  };
 
-    enum ErrorType                                /// Error Codes
-    {
-      VV_OK,                                      ///< no error
-      VV_TIMEOUT_ERROR,
-      VV_SOCK_ERROR,
-      VV_WRITE_ERROR,
-      VV_READ_ERROR,
-      VV_ACCEPT_ERROR,
-      VV_CONNECT_ERROR,
-      VV_HOST_ERROR,
-      VV_RETRY,
-      VV_ALLOC_ERROR,                             ///< allocation error: not enough memory
-      VV_CREATE_ERROR,                            ///< socket could not be opened
-      VV_HEADER_ERROR,                            ///< invalid header received
-      VV_DATA_ERROR,                              ///< volume data format error: e.g., too many voxels received
-      VV_PEER_SHUTDOWN,                           ///< the connection was closed by peer
-      VV_SOCKFD_ERROR,
-      VV_SOCKTYPE_ERROR
-    };
+  enum EndianType           /// endianness
+  {
+    VV_LITTLE_END,          ///< little endian: low-order byte is stored first
+    VV_BIG_END              ///< big endian: high-order byte is stored first
+  };
 
-    enum SocketType
-    {
-      VV_TCP,
-      VV_UDP,
-      VV_MC_SENDER,
-      VV_MC_RECEIVER
-    };
+  enum SocketOption
+  {
+    VV_NONBLOCKING,
+    VV_NO_NAGLE,
+    VV_LINGER,
+    VV_BUFFSIZE
+  };
 
-    enum EndianType                               /// endianness
-    {
-      VV_LITTLE_END,                              ///< little endian: low-order byte is stored first
-      VV_BIG_END                                  ///< big endian: high-order byte is stored first
-    };
+  vvSocket();
+  virtual ~vvSocket();
 
-    vvSocket(const unsigned short portnumber, SocketType socktype = VV_TCP);
-    vvSocket(const unsigned short portnumber, const char*,
-             SocketType socktype = VV_TCP, int clminport = 0 , int clmaxport = 0);
-    vvSocket(const SocketType socktype, const int sockfd);
-    virtual ~vvSocket();
+  virtual ErrorType setParameter(const SocketOption so, const float value);
 
-    ErrorType set_nonblocking(bool on);
-    ErrorType init();
-    ErrorType read_data(uchar*, size_t, ssize_t *ret = NULL);
-    ErrorType write_data(const uchar*, size_t, ssize_t *ret = NULL);
-    void set_sock_buffsize(int);
-    void set_timer(float, float);
-    int is_data_waiting() const;
-    ErrorType read_string(char* , int);
-    ErrorType write_string(const char*);
-    int get_sockfd() const;
-    void set_sockfd(int fd);
-    int get_recv_buffsize();
-    int get_send_buffsize();
-    uchar     read8();
-    ErrorType write8(uchar);
-    ushort    read16(EndianType = VV_BIG_END);
-    ErrorType write16(ushort, EndianType = VV_BIG_END);
-    uint      read32(EndianType = VV_BIG_END);
-    ErrorType write32(uint, EndianType = VV_BIG_END);
-    float     readFloat(EndianType = VV_BIG_END);
-    ErrorType writeFloat(float, EndianType = VV_BIG_END);
-    int no_nagle();
-    int set_linger(int);
-    int get_MTU();
+  ErrorType readString(char* , int);
+  ErrorType writeString(const char*);
+  uchar     read8();
+  ErrorType write8(uchar);
+  ushort    read16(EndianType = VV_BIG_END);
+  ErrorType write16(ushort, EndianType = VV_BIG_END);
+  uint      read32(EndianType = VV_BIG_END);
+  ErrorType write32(uint, EndianType = VV_BIG_END);
+  float     readFloat(EndianType = VV_BIG_END);
+  ErrorType writeFloat(float, EndianType = VV_BIG_END);
 
-  protected:
-    enum {NUM_TIMERS = 2};
-    struct sockaddr_in host_addr;
-    struct hostent *host;
+  virtual ErrorType readData (      uchar*, size_t, ssize_t *ret = NULL);
+  virtual ErrorType writeData(const uchar*, size_t, ssize_t *ret = NULL);
+
+  int isDataWaiting() const;
+  void setSockfd(int fd);
+  int  getSockfd() const;
+  int getRecvBuffsize();
+  int getSendBuffsize();
+  int getMTU();
+
+protected:
+  Sigfunc *signal(int, Sigfunc *);
+  Sigfunc *Signal(int, Sigfunc *);
+  static void noNameServer(int );
+  static void peerUnreachable(int );
+  static void interrupter(int );
+
+  void printErrorMessage(const char* = NULL) const;
+
+  ErrorType read(uchar*,        size_t);
+  ErrorType write(const uchar*, size_t);
+
+  virtual ssize_t readn (char*,       size_t) = 0;
+  virtual ssize_t writen(const char*, size_t) = 0;
+
+  int measureBdpServer();
+  int measureBdpClient();
+  int   RttServer(int);
+  float RttClient(int);
+  int checkMssMtu(int, int);
+  EndianType getEndianness();
+
 #ifdef _WIN32
-    SOCKET sockfd;
+  SOCKET _sockfd;
 #else
-    int sockfd;
+  int _sockfd;
 #endif
-    short port;
-    const char* hostname;
-    SocketType socktype;
-    int cl_min_port, cl_max_port;
-    int sock_buffsize;
-    float transfer_timer;
-    int connect_timer;
-    int recv_buffsize, send_buffsize;
-    int max_send_size;
-    ssize_t ret_value;
+  ushort              _port;
+  const char         *_hostname;
+  struct sockaddr_in  _hostAddr;
+  struct hostent     *_host;
+  int _clMinPort;
+  int _clMaxPort;
+
+  int _sockBuffsize;
+  int _recvBuffsize;
+  int _sendBuffsize;
 
 #if !defined(__linux__) && !defined(LINUX) && !(defined(__APPLE__) && defined(__GNUC__) && GNUC__ < 4)
 #define socklen_t int
 #endif
-    socklen_t host_addrlen, bufflen;
-
-#ifdef _WIN32
-    clock_t t_start[NUM_TIMERS];
-#else
-    timeval t_start[NUM_TIMERS];
-#endif
-
-    Sigfunc *signal(int, Sigfunc *);
-    Sigfunc *Signal(int, Sigfunc *);
-    static void nonameserver(int );
-    static void peerunreachable(int );
-    int writeable_timeo();
-    int readable_timeo();
-    ErrorType read_timeo(uchar*, size_t);
-    ErrorType write_timeo(const uchar*, size_t);
-    ErrorType read_nontimeo(uchar*, size_t);
-    ErrorType write_nontimeo(const uchar*, size_t);
-    void printErrorMessage(const char* = NULL) const;
-    bool do_a_retry();
-    void startTime(int);
-    float getTime(int);
-    ErrorType init_server_tcp();
-    ErrorType init_client_tcp();
-    ErrorType init_server_udp();
-    ErrorType init_client_udp();
-    ErrorType init_server_mc();
-    ErrorType init_client_mc();
-    ErrorType get_client_addr();
-    ErrorType recvfrom_timeo();
-    ErrorType recvfrom_nontimeo();
-    ssize_t readn_tcp(char*, size_t);
-    ssize_t writen_tcp(const char*, size_t);
-    ssize_t readn_udp(char*, size_t);
-    ssize_t writen_udp(const char*, size_t);
-    static void interrupter(int );
-    ErrorType accept_timeo();
-    ErrorType connect_timeo();
-    ErrorType accept_nontimeo();
-    ErrorType connect_nontimeo();
-    int measure_BDP_server();
-    int measure_BDP_client();
-    float RTT_client(int);
-    int RTT_server(int);
-    int checkMSS_MTU(int, int);
-    EndianType getEndianness();
-  private:
-    void initVars();
-
-    sockaddr_in localSock;
-    ip_mreq group;
-    sockaddr_in groupSock;
-    in_addr localInterface;
+  socklen_t _hostAddrLen;
+  socklen_t _bufflen;
 };
 
 //----------------------------------------------------------------------------

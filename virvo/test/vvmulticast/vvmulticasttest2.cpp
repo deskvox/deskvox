@@ -18,7 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "vvsocketio.h"
+#include "vvtcpserver.h"
+#include "vvtcpsocket.h"
 #include "vvmulticast.h"
 #include "vvclock.h"
 #include "vvtoolshed.h"
@@ -43,9 +44,9 @@ public:
     int delim = addr.find_first_of(":");
     string port = addr.substr(delim+1);
     addr = addr.substr(0, delim);
-    _socket = new vvSocket(atoi(port.c_str()), addr.c_str(), vvSocket::VV_TCP);
+    _socket = new vvTcpSocket();
 
-    if(vvSocket::VV_OK == _socket->init())
+    if(vvSocket::VV_OK == _socket->connectToHost(addr.c_str(), atoi(port.c_str())))
     {
       _status = true;
       _return = pthread_create( &_thread, NULL, threadMain, this);
@@ -72,7 +73,7 @@ public:
       return NULL;
     }
 
-    if(vvSocket::VV_OK != obj->_socket->write_data(obj->_data, obj->_size))
+    if(vvSocket::VV_OK != obj->_socket->writeData(obj->_data, obj->_size))
     {
       cout << "Error occured in transfer to " << obj->_addr << endl;
     }
@@ -81,14 +82,14 @@ public:
     return NULL;
   }
 
-  bool       _status;
-  bool       _done;
-  string     _addr;
-  uchar     *_data;
-  uint       _size;
-  int        _return;
-  pthread_t  _thread;
-  vvSocket  *_socket;
+  bool         _status;
+  bool         _done;
+  string       _addr;
+  uchar       *_data;
+  uint         _size;
+  int          _return;
+  pthread_t    _thread;
+  vvTcpSocket *_socket;
 };
 
 uchar* generateData(const int size)
@@ -196,11 +197,17 @@ int main(int argc, char** argv)
 
     cout << "Sending to receivers via multicast..." << flush;
     startTime = vvClock::getTime();
-    int written = foo.write(reinterpret_cast<const unsigned char*>(bar), count);
+    int written = foo.write(reinterpret_cast<const unsigned char*>(bar), count, sendTimeout);
+    if(written != count)
+      cout << "error!" << endl;
+    else
+      cout << "ok." << endl;
+
+    cout << "Wait for Collectors answers..." << flush;
     for(unsigned int i = 0;i<servers.size() && count>0; i++)
     {
       char *multidone = new char[6];
-      servers[i]->_socket->read_string(multidone, 6);
+      servers[i]->_socket->readString(multidone, 6);
       if(strcmp("done!", multidone) == 0)
         continue;
       else
@@ -208,11 +215,7 @@ int main(int argc, char** argv)
 
       delete[] multidone;
     }
-
-    if(written < 0)
-      cout << "error!" << endl;
-    else
-      cout << "ok." << endl;
+    cout << "done" << endl;
 
     cout << "Time needed: " << vvClock::getTime() - startTime << endl;
     cout << endl;
@@ -247,12 +250,13 @@ int main(int argc, char** argv)
 
     cout << "Waiting for incoming data on TCP..." << endl;
 
-    vvSocket recSocket = vvSocket(31050, vvSocket::VV_TCP);
-    recSocket.init();
-    uint tcpSize = recSocket.read32();
+    vvTcpServer server = vvTcpServer(31050);
+    vvTcpSocket *recSocket = server.nextConnection();
+
+    uint tcpSize = recSocket->read32();
     cout << "Expecting " << tcpSize << "Byes...";
     uchar* bartcp = new uchar[tcpSize];
-    if(vvSocket::VV_OK == recSocket.read_data(bartcp, tcpSize))
+    if(vvSocket::VV_OK == recSocket->readData(bartcp, tcpSize))
       cout << "ok." << endl;
     else
       cout << "error!" << endl;
@@ -266,7 +270,7 @@ int main(int argc, char** argv)
     int read = foo.read(bartext, tcpSize);
 
     // Tell sender, that we are done
-    recSocket.write_string("done!");
+    recSocket->writeString("done!");
 
     if(read >= 0)
     {
@@ -294,6 +298,7 @@ int main(int argc, char** argv)
     delete[] bar;
     delete[] bartext;
     delete[] bartcp;
+    delete recSocket;
     return 0;
   }
 

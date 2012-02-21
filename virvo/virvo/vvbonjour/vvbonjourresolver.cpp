@@ -67,13 +67,15 @@ DNSServiceErrorType vvBonjourResolver::resolveBonjourEntry(const vvBonjourEntry&
   return error;
 }
 
-vvSocket* vvBonjourResolver::getBonjourSocket() const
+vvTcpSocket* vvBonjourResolver::getBonjourSocket() const
 {
   vvDebugMsg::msg(3, "vvBonjourResolver::getBonjourSocket() enter");
 
   if(_hostname.length() > 0 && 0 != _port)
   {
-    return new vvSocket(_port, _hostname.c_str(), vvSocket::VV_TCP);
+    vvTcpSocket* sock = new vvTcpSocket;
+    sock->connectToHost(_hostname.c_str(), _port);
+    return sock;
   }
   else
   {

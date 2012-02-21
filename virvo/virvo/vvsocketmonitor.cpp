@@ -50,11 +50,11 @@ void vvSocketMonitor::setReadFds(const std::vector<vvSocket*>& readfds)
   for (std::vector<vvSocket*>::const_iterator it = _readSockets.begin(); it != _readSockets.end(); ++it)
   {
     vvSocket* socket = (*it);
-    FD_SET(socket->get_sockfd(), &_readsockfds);
+    FD_SET(socket->getSockfd(), &_readsockfds);
 
-    if (socket->get_sockfd() > _highestSocketNum)
+    if (socket->getSockfd() > _highestSocketNum)
     {
-      _highestSocketNum = socket->get_sockfd();
+      _highestSocketNum = socket->getSockfd();
     }
   }
 }
@@ -68,11 +68,11 @@ void vvSocketMonitor::setWriteFds(const std::vector<vvSocket*>& writefds)
   for (std::vector<vvSocket*>::const_iterator it = _writeSockets.begin(); it != _writeSockets.end(); ++it)
   {
     vvSocket* socket = (*it);
-    FD_SET(socket->get_sockfd(), &_writesockfds);
+    FD_SET(socket->getSockfd(), &_writesockfds);
 
-    if (socket->get_sockfd() > _highestSocketNum)
+    if (socket->getSockfd() > _highestSocketNum)
     {
-      _highestSocketNum = socket->get_sockfd();
+      _highestSocketNum = socket->getSockfd();
     }
   }
 }
@@ -86,11 +86,11 @@ void vvSocketMonitor::setErrorFds(const std::vector<vvSocket*>& errorfds)
   for (std::vector<vvSocket*>::const_iterator it = _errorSockets.begin(); it != _errorSockets.end(); ++it)
   {
     vvSocket* socket = (*it);
-    FD_SET(socket->get_sockfd(), &_errorsockfds);
+    FD_SET(socket->getSockfd(), &_errorsockfds);
 
-    if (socket->get_sockfd() > _highestSocketNum)
+    if (socket->getSockfd() > _highestSocketNum)
     {
-      _highestSocketNum = socket->get_sockfd();
+      _highestSocketNum = socket->getSockfd();
     }
   }
 }
@@ -129,7 +129,7 @@ vvSocketMonitor::ErrorType vvSocketMonitor::wait(vvSocket** socket, double* time
     for (std::vector<vvSocket*>::const_iterator it = _readSockets.begin(); it != _readSockets.end(); ++it)
     {
       *socket = (*it);
-      if (FD_ISSET((*socket)->get_sockfd(), &_readsockfds))
+      if (FD_ISSET((*socket)->getSockfd(), &_readsockfds))
       {
         return VV_OK;
       }
@@ -138,7 +138,7 @@ vvSocketMonitor::ErrorType vvSocketMonitor::wait(vvSocket** socket, double* time
     for (std::vector<vvSocket*>::const_iterator it = _writeSockets.begin(); it != _writeSockets.end(); ++it)
     {
       *socket = (*it);
-      if (FD_ISSET((*socket)->get_sockfd(), &_writesockfds))
+      if (FD_ISSET((*socket)->getSockfd(), &_writesockfds))
       {
         return VV_OK;
       }
@@ -147,7 +147,7 @@ vvSocketMonitor::ErrorType vvSocketMonitor::wait(vvSocket** socket, double* time
     for (std::vector<vvSocket*>::const_iterator it = _errorSockets.begin(); it != _errorSockets.end(); ++it)
     {
       *socket = (*it);
-      if (FD_ISSET((*socket)->get_sockfd(), &_errorsockfds))
+      if (FD_ISSET((*socket)->getSockfd(), &_errorsockfds))
       {
         return VV_OK;
       }

@@ -48,6 +48,7 @@ using std::ios;
 #include <virvo/vvvoldesc.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
+#include <virvo/vvtcpserver.h>
 #include <virvo/vvcuda.h>
 
 /**
@@ -125,15 +126,17 @@ void vvServer::serverLoop()
   {
     cerr << "Listening on port " << port << endl;
 
-    vvSocket *sock = new vvSocket(port, vvSocket::VV_TCP);
-    vvSocketIO *sockio = new vvSocketIO(sock);
-    if(sockio->init() != vvSocket::VV_OK)
+    vvTcpServer tcpServ = vvTcpServer(port);
+
+    vvSocket *sock = NULL;
+
+    if((sock = tcpServ.nextConnection()) == NULL)
     {
       std::cerr << "Failed to initialize server socket on port " << port << std::endl;
       delete sock;
-      delete sockio;
       break;
     }
+    vvSocketIO *sockio = new vvSocketIO(sock);
 
     vvRemoteServer* server = NULL;
     int type;

@@ -27,7 +27,7 @@
 #include "vvvecmath.h"
 
 class vvSocketIO;
-class vvSocket;
+class vvTcpSocket;
 class vvImage;
 class vvIbrClient;
 
@@ -71,8 +71,8 @@ protected:
   const char* _slaveName;
   int _port;
   const char* _slaveFileName;
-  vvSocket   *_socket;
-  vvSocketIO *_socketIO;
+  vvTcpSocket *_socket;
+  vvSocketIO  *_socketIO;
 
   bool _changes; ///< indicate if a new rendering is required
   int _viewportWidth, _viewportHeight;

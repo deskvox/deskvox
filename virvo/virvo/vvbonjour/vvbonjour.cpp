@@ -33,9 +33,9 @@ vvBonjour::vvBonjour()
 vvBonjour::~vvBonjour()
 {}
 
-std::vector<vvSocket*> vvBonjour::getSocketsFor(std::string serviceType, std::string domain) const
+std::vector<vvTcpSocket*> vvBonjour::getSocketsFor(std::string serviceType, std::string domain) const
 {
-  std::vector<vvSocket*> sockets;
+  std::vector<vvTcpSocket*> sockets;
   std::vector<vvBonjourEntry> entries = getEntriesFor(serviceType, domain);
 
   for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
@@ -43,10 +43,14 @@ std::vector<vvSocket*> vvBonjour::getSocketsFor(std::string serviceType, std::st
     vvBonjourResolver resolver;
     if(kDNSServiceErr_NoError == resolver.resolveBonjourEntry(*it))
     {
-      vvSocket *socket = new vvSocket(resolver._port , resolver._hostname.c_str(), vvSocket::VV_TCP);
-      if(vvSocket::VV_OK == socket->init())
+      vvTcpSocket *socket = new vvTcpSocket();
+      if(vvSocket::VV_OK == socket->connectToHost(resolver._hostname.c_str(), resolver._port))
       {
         sockets.push_back(socket);
+      }
+      else
+      {
+        delete socket;
       }
     }
   }

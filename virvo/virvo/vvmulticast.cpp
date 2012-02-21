@@ -62,7 +62,8 @@ vvMulticast::vvMulticast(const MulticastType type, const MulticastApi api, const
       NormSetRxSocketBuffer(_session, 1024*1024*64);
       NormDescriptor normDesc = NormGetDescriptor(_instance);
       _nodes.push_back(NormGetLocalNodeId(_session));
-      _normSocket = new vvSocket(vvSocket::VV_UDP, int(normDesc));
+      _normSocket = new vvUdpSocket();
+      _normSocket->setSockfd(int(normDesc));
     }
 #else
     (void)addr;
@@ -71,16 +72,25 @@ vvMulticast::vvMulticast(const MulticastType type, const MulticastApi api, const
   }
   else if(VV_VVSOCKET == _api)
   {
+    _socket = new vvUdpSocket();
+    vvSocket::ErrorType retVal;
     if(VV_SENDER == _type)
     {
-      _socket = new vvSocket(port, addr, vvSocket::VV_MC_SENDER);
+      retVal = _socket->multicast(addr, port, vvUdpSocket::VV_MC_SENDER);
     }
     else
     {
-      _socket = new vvSocket(port, addr, vvSocket::VV_MC_RECEIVER);
+      retVal = _socket->multicast(addr, port, vvUdpSocket::VV_MC_RECEIVER);
     }
-    _socket->init();
-    _socket->set_nonblocking(true);
+    if(retVal != vvSocket::VV_OK)
+    {
+      vvDebugMsg::msg(2, "vvMulticast() error creating multicast socket");
+      return;
+    }
+    if(_socket->setParameter(vvSocket::VV_NONBLOCKING, true) != vvSocket::VV_OK)
+    {
+      vvDebugMsg::msg(2, "vvMulticast() error while calling vvSocket::setParameter()");
+    }
   }
 }
 
@@ -136,7 +146,9 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
 
       vvSocketMonitor* monitor = new vvSocketMonitor;
       std::vector<vvSocket*> sock;
-      sock.push_back(new vvSocket(vvSocket::VV_UDP, int(normDesc)));
+      vvUdpSocket *udpSock = new vvUdpSocket();
+      udpSock->setSockfd(int(normDesc));
+      sock.push_back(reinterpret_cast<vvSocket*>(udpSock));
       monitor->setReadFds(sock);
 
       NormEvent theEvent;
@@ -200,7 +212,9 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
 
     vvSocketMonitor monitor = vvSocketMonitor();
     std::vector<vvSocket*> sock;
-    sock.push_back(new vvSocket(vvSocket::VV_UDP, _socket->get_sockfd()));
+    vvUdpSocket *udpSock = new vvUdpSocket;
+    udpSock->setSockfd(_socket->getSockfd());
+    sock.push_back(reinterpret_cast<vvSocket*>(udpSock));
     monitor.setWriteFds(sock);
 
     while(nleft > 0)
@@ -220,10 +234,10 @@ ssize_t vvMulticast::write(const uchar* bytes, const size_t size, double timeout
       else
       {
         size_t towrite = std::min(size_t(DGRAM_SIZE), nleft);
-        vvSocket::ErrorType err = _socket->write_data((uchar*)&ndata[nsize-nleft], towrite);
+        vvSocket::ErrorType err = _socket->writeData((uchar*)&ndata[nsize-nleft], towrite);
         if(vvSocket::VV_OK != err)
         {
-          vvDebugMsg::msg(1, "vvMulticast::write() error", true);
+          vvDebugMsg::msg(0, "vvMulticast::write() error", true);
           return -1;
         }
         else
@@ -342,7 +356,7 @@ ssize_t vvMulticast::read(uchar* data, const size_t size, double timeout)
         ssize_t ret;
         vvSocket::ErrorType err;
 
-        err = _socket->read_data(dgram, DGRAM_SIZE, &ret);
+        err = _socket->readData(dgram, DGRAM_SIZE, &ret);
         if(vvSocket::VV_OK != err)
         {
           vvDebugMsg::msg(2, "vvMulticast::read() error", true);

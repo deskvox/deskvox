@@ -152,7 +152,6 @@ class VIRVOEXPORT vvSocketIO
 
     vvSocketIO(vvSocket* sock);
     ~vvSocketIO();
-    vvSocket::ErrorType init();
     bool sock_action();
     vvSocket::ErrorType getVolumeAttributes(vvVolDesc* vd);
     vvSocket::ErrorType getVolume(vvVolDesc*, vvMulticastParameters *mcParam = NULL);
@@ -192,7 +191,7 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putWinDims(const int w, const int h);
     vvSocket::ErrorType getData(void*, int, DataType);      // known number and type
     vvSocket::ErrorType putData(void*, int, DataType);
-    void set_sock_param(float, float, int=65536);
+    void set_sock_param(int=65536);
 
     vvSocket* getSocket() const;
 private:

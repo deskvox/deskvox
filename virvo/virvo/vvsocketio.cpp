@@ -26,10 +26,10 @@
 #include "vvmulticast.h"
 #include "vvtoolshed.h"
 
-#ifdef VV_DEBUG_MEMORY
-#include <crtdbg.h>
-#define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
-#endif
+//#ifdef VV_DEBUG_MEMORY
+//#include <crtdbg.h>
+//#define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
+//#endif
 
 #include <sstream>
 #include <string>
@@ -50,27 +50,6 @@ vvSocketIO::~vvSocketIO()
 }
 
 //----------------------------------------------------------------------------
-/** Initializes a socket.
- */
-vvSocket::ErrorType vvSocketIO::init()
-{
-  if(_socket)
-  {
-    vvSocket::ErrorType retval;
-
-    if ((retval = _socket->init()) != vvSocket::VV_OK)
-    {
-      return retval;
-    }
-    return vvSocket::VV_OK;
-  }
-  else
-  {
-    return vvSocket::VV_SOCK_ERROR;
-  }
-}
-
-//----------------------------------------------------------------------------
 /** Sets the parameters for a socket. Has to be called before the init() call!!
  @param c_timer  timer for connection establishment.
  @param t_timer  timer for data transfer.
@@ -78,12 +57,11 @@ vvSocket::ErrorType vvSocketIO::init()
  size measurement if sock_buff=0.
  @param level  debuglevel. 0 for no messages, 3 for maximal debugging.
 */
-void vvSocketIO::set_sock_param(float c_timer, float t_timer, int sock_buff)
+void vvSocketIO::set_sock_param(int sock_buff)
 {
   if(_socket)
   {
-    _socket->set_timer(c_timer, t_timer);
-    _socket->set_sock_buffsize(sock_buff);
+    _socket->setParameter(vvSocket::VV_BUFFSIZE, sock_buff);
   }
 }
 
@@ -95,7 +73,7 @@ bool vvSocketIO::sock_action()
 {
   if(_socket)
   {
-    if (_socket->is_data_waiting() > 0)
+    if (_socket->isDataWaiting() > 0)
       return true;
     else
       return false;
@@ -117,7 +95,7 @@ vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd)
     int size = vd->serializeAttributes();
 
     std::vector<uchar> buffer(size+4);
-    if ((retval =_socket->read_data(&buffer[0], size+4)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], size+4)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -179,7 +157,7 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd, vvMulticastParameters *
       uchar *buffer = new uchar[size];
       if (!buffer)
         return vvSocket::VV_ALLOC_ERROR;
-      if ((retval =_socket->read_data(buffer, size)) != vvSocket::VV_OK)
+      if ((retval =_socket->readData(buffer, size)) != vvSocket::VV_OK)
       {
         delete[] buffer;
         return retval;
@@ -208,7 +186,7 @@ vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd)
     vd->serializeAttributes(&buffer[0]);
     vvToolshed::writeFloat(&buffer[size], vd->_scale);
     vvDebugMsg::msg(3, "Sending header ...");
-    return _socket->write_data(&buffer[0], size+4);
+    return _socket->writeData(&buffer[0], size+4);
   }
   else
   {
@@ -270,7 +248,7 @@ vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd, bool tryMC, bool 
     for(int k=0; k < frames; k++)
     {
       const uchar *buffer = vd->getRaw(k);
-      if ((retval =_socket->write_data(buffer, size)) != vvSocket::VV_OK)
+      if ((retval =_socket->writeData(buffer, size)) != vvSocket::VV_OK)
       {
         return retval;
       }
@@ -302,7 +280,7 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
     }
 
     buffer = new uchar[len+1];
-    if ((retval =_socket->read_data(buffer, len)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(buffer, len)) != vvSocket::VV_OK)
     {
       delete[] buffer;
       return retval;
@@ -380,7 +358,7 @@ vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
 
     putInt32((int)len);
 
-    if ((retval =_socket->write_data(buffer, len)) != vvSocket::VV_OK)
+    if ((retval =_socket->writeData(buffer, len)) != vvSocket::VV_OK)
     {
       delete[] buffer;
       return retval;
@@ -409,7 +387,7 @@ vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick)
     const int sob = sizeOfBrick();
     buffer = new uchar[sob];
 
-    if ((retval =_socket->read_data(buffer, sob)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(buffer, sob)) != vvSocket::VV_OK)
     {
       delete[] buffer;
       return retval;
@@ -515,7 +493,7 @@ vvSocket::ErrorType vvSocketIO::putBrick(const vvBrick* brick)
     vvToolshed::writeFloat(&buffer[96], brick->texMin[1]);
     vvToolshed::writeFloat(&buffer[100], brick->texMin[2]);
 
-    if ((retval =_socket->write_data(buffer, sob)) != vvSocket::VV_OK)
+    if ((retval =_socket->writeData(buffer, sob)) != vvSocket::VV_OK)
     {
       delete[] buffer;
       return retval;
@@ -544,7 +522,7 @@ vvSocket::ErrorType vvSocketIO::getBricks(std::vector<vvBrick*>& bricks)
 
     buffer = new uchar[4];
 
-    if ((retval =_socket->read_data(buffer, 4)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(buffer, 4)) != vvSocket::VV_OK)
     {
       delete[] buffer;
       return retval;
@@ -588,7 +566,7 @@ vvSocket::ErrorType vvSocketIO::putBricks(const std::vector<vvBrick*>& bricks)
     vvToolshed::write32(&buffer[0], numBricks);
 
     vvDebugMsg::msg(3, "Sending num bricks ...");
-    if ((retval =_socket->write_data(&buffer[0], 4)) != vvSocket::VV_OK)
+    if ((retval =_socket->writeData(&buffer[0], 4)) != vvSocket::VV_OK)
     {
       delete[] buffer;
       return retval;
@@ -626,7 +604,7 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
     int imagesize;
     int videosize;
 
-    if ((retval =_socket->read_data(&buffer[0], BUFSIZE)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], BUFSIZE)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -649,14 +627,14 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
     im->setVideoSize(videosize);
     if (vvDebugMsg::isActive(3))
       fprintf(stderr, "imgsize=%d, videosize=%d\n", imagesize, videosize);
-    if ((retval =_socket->read_data(im->getCodedImage(), imagesize)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(im->getCodedImage(), imagesize)) != vvSocket::VV_OK)
     {
       return retval;
     }
     vvDebugMsg::msg(3, "Image data received");
     if (ct == vvImage::VV_VIDEO)
     {
-      if ((retval =_socket->read_data(im->getVideoCodedImage(), videosize)) != vvSocket::VV_OK)
+      if ((retval =_socket->readData(im->getVideoCodedImage(), videosize)) != vvSocket::VV_OK)
       {
         return retval;
       }
@@ -694,19 +672,19 @@ vvSocket::ErrorType vvSocketIO::putImage(const vvImage* im)
     vvToolshed::write32(&buffer[9], (ulong)videosize);
 
     vvDebugMsg::msg(3, "Sending header ...");
-    if ((retval =_socket->write_data(&buffer[0], BUFSIZE)) != vvSocket::VV_OK)
+    if ((retval =_socket->writeData(&buffer[0], BUFSIZE)) != vvSocket::VV_OK)
     {
       return retval;
     }
     vvDebugMsg::msg(3, "Sending image data ...");
-    if ((retval =_socket->write_data(im->getImagePtr(), imagesize)) != vvSocket::VV_OK)
+    if ((retval =_socket->writeData(im->getImagePtr(), imagesize)) != vvSocket::VV_OK)
     {
       return retval;
     }
     if (ct == vvImage::VV_VIDEO)
     {
       vvDebugMsg::msg(3, "Sending video image data ...");
-      if ((retval =_socket->write_data(im->getVideoCodedImage(), videosize)) != vvSocket::VV_OK)
+      if ((retval =_socket->writeData(im->getVideoCodedImage(), videosize)) != vvSocket::VV_OK)
       {
         return retval;
       }
@@ -883,7 +861,7 @@ vvSocket::ErrorType vvSocketIO::getFileName(char*& fn)
     vvSocket::ErrorType retval;
 
     buffer = new uchar[4];
-    if ((retval =_socket->read_data(buffer, 4)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(buffer, 4)) != vvSocket::VV_OK)
     {
       delete[] buffer;
       return retval;
@@ -892,7 +870,7 @@ vvSocket::ErrorType vvSocketIO::getFileName(char*& fn)
     delete[] buffer;
 
     buffer = new uchar[len];
-    if ((retval =_socket->read_data(buffer, len)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(buffer, len)) != vvSocket::VV_OK)
     {
       delete[] buffer;
       return retval;
@@ -939,7 +917,7 @@ vvSocket::ErrorType vvSocketIO::putFileName(const char* fn)
       buffer[4 + i] = (uchar)fn[i];
     }
 
-    if ((retval =_socket->write_data(buffer, 4 + len)) != vvSocket::VV_OK)
+    if ((retval =_socket->writeData(buffer, 4 + len)) != vvSocket::VV_OK)
     {
       delete[] buffer;
       return retval;
@@ -970,14 +948,14 @@ vvSocket::ErrorType vvSocketIO::allocateAndGetData(uchar** data, int& size)
 
     *data = NULL; // make it safe to delete[] *data
 
-    if ((retval =_socket->read_data(&buffer[0], 4)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], 4)) != vvSocket::VV_OK)
     {
       return retval;
     }
     vvDebugMsg::msg(3, "Header received");
     size = (int)vvToolshed::read32(&buffer[0]);
     *data = new uchar[size];                        // delete buffer outside!!!
-    if ((retval =_socket->read_data(*data, size)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(*data, size)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -1004,12 +982,12 @@ vvSocket::ErrorType vvSocketIO::putData(uchar* data, int size)
 
     vvToolshed::write32(&buffer[0], (ulong)size);
     vvDebugMsg::msg(3, "Sending header ...");
-    if ((retval =_socket->write_data(&buffer[0], 4)) != vvSocket::VV_OK)
+    if ((retval =_socket->writeData(&buffer[0], 4)) != vvSocket::VV_OK)
     {
       return retval;
     }
     vvDebugMsg::msg(3, "Sending data ...");
-    if ((retval =_socket->write_data(data, size)) != vvSocket::VV_OK)
+    if ((retval =_socket->writeData(data, size)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -1042,7 +1020,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
       case VV_UCHAR:
       {
         size = number;
-        if ((retval =_socket->read_data((uchar*)data, size)) != vvSocket::VV_OK)
+        if ((retval =_socket->readData((uchar*)data, size)) != vvSocket::VV_OK)
         {
           return retval;
         }
@@ -1053,7 +1031,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
         int tmp;
         size = number*2;
         buffer = new uchar[size];
-        if ((retval =_socket->read_data(buffer, size)) != vvSocket::VV_OK)
+        if ((retval =_socket->readData(buffer, size)) != vvSocket::VV_OK)
         {
           delete[] buffer;
           return retval;
@@ -1071,7 +1049,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
         int tmp;
         size = number*4;
         buffer = new uchar[size];
-        if ((retval =_socket->read_data(buffer, size)) != vvSocket::VV_OK)
+        if ((retval =_socket->readData(buffer, size)) != vvSocket::VV_OK)
         {
           delete[] buffer;
           return retval;
@@ -1089,7 +1067,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
         float tmp;
         size = number*4;
         buffer = new uchar[size];
-        if ((retval =_socket->read_data(buffer, size)) != vvSocket::VV_OK)
+        if ((retval =_socket->readData(buffer, size)) != vvSocket::VV_OK)
         {
           delete[] buffer;
           return retval;
@@ -1179,7 +1157,7 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type)
         vvDebugMsg::msg(0, "No supported data type");
         return vvSocket::VV_DATA_ERROR;
     }
-    if ((retval =_socket->write_data(buffer, size)) != vvSocket::VV_OK)
+    if ((retval =_socket->writeData(buffer, size)) != vvSocket::VV_OK)
     {
       if (type != VV_UCHAR)
         delete[] buffer;
@@ -1210,7 +1188,6 @@ vvSocket::ErrorType vvSocketIO::getMatrix(vvMatrix* m)
     {
       case vvSocket::VV_OK: break;
       case vvSocket::VV_DATA_ERROR: delete[] buffer; return vvSocket::VV_DATA_ERROR; break;
-      case vvSocket::VV_TIMEOUT_ERROR: delete[] buffer; return vvSocket::VV_TIMEOUT_ERROR;break;
       default: delete[] buffer; return vvSocket::VV_DATA_ERROR;
     }
     for (int i=0; i<4; i++)
@@ -1234,7 +1211,7 @@ vvSocket::ErrorType vvSocketIO::putBool(const bool val)
   if(_socket)
   {
     uchar buffer[] = { (uchar)val };
-    return _socket->write_data(&buffer[0], 1);
+    return _socket->writeData(&buffer[0], 1);
   }
   else
   {
@@ -1253,7 +1230,7 @@ vvSocket::ErrorType vvSocketIO::getBool(bool& val)
     uchar buffer[1];
     vvSocket::ErrorType retval;
 
-    if ((retval =_socket->read_data(&buffer[0], 1)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], 1)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -1277,7 +1254,7 @@ vvSocket::ErrorType vvSocketIO::putInt32(const int val)
   {
     uchar buffer[4];
     vvToolshed::write32(&buffer[0], val);
-    return _socket->write_data(&buffer[0], 4);
+    return _socket->writeData(&buffer[0], 4);
   }
   else
   {
@@ -1296,7 +1273,7 @@ vvSocket::ErrorType vvSocketIO::getInt32(int& val)
     uchar buffer[4];
     vvSocket::ErrorType retval;
 
-    if ((retval =_socket->read_data(&buffer[0], 4)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], 4)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -1320,7 +1297,7 @@ vvSocket::ErrorType vvSocketIO::putFloat(const float val)
   {
     uchar buffer[4];
     vvToolshed::writeFloat(&buffer[0], val);
-    return _socket->write_data(&buffer[0], 4);
+    return _socket->writeData(&buffer[0], 4);
   }
   else
   {
@@ -1339,7 +1316,7 @@ vvSocket::ErrorType vvSocketIO::getFloat(float& val)
     uchar buffer[4];
     vvSocket::ErrorType retval;
 
-    if ((retval =_socket->read_data(&buffer[0], 4)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], 4)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -1365,7 +1342,7 @@ vvSocket::ErrorType vvSocketIO::putVector3(const vvVector3& val)
     vvToolshed::writeFloat(&buffer[0], val[0]);
     vvToolshed::writeFloat(&buffer[4], val[1]);
     vvToolshed::writeFloat(&buffer[8], val[2]);
-    return _socket->write_data(&buffer[0], 12);
+    return _socket->writeData(&buffer[0], 12);
   }
   else
   {
@@ -1384,7 +1361,7 @@ vvSocket::ErrorType vvSocketIO::getVector3(vvVector3& val)
     uchar buffer[12];
     vvSocket::ErrorType retval;
 
-    if ((retval =_socket->read_data(&buffer[0], 12)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], 12)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -1413,7 +1390,7 @@ vvSocket::ErrorType vvSocketIO::putVector4(const vvVector4& val)
     vvToolshed::writeFloat(&buffer[4], val[1]);
     vvToolshed::writeFloat(&buffer[8], val[2]);
     vvToolshed::writeFloat(&buffer[12], val[3]);
-    return _socket->write_data(&buffer[0], 16);
+    return _socket->writeData(&buffer[0], 16);
   }
   else
   {
@@ -1432,7 +1409,7 @@ vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val)
     uchar buffer[16];
     vvSocket::ErrorType retval;
 
-    if ((retval =_socket->read_data(&buffer[0], 16)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], 16)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -1462,7 +1439,7 @@ vvSocket::ErrorType vvSocketIO::putViewport(const vvGLTools::Viewport &val)
     vvToolshed::write32(&buffer[4], val[1]);
     vvToolshed::write32(&buffer[8], val[2]);
     vvToolshed::write32(&buffer[12], val[3]);
-    return _socket->write_data(&buffer[0], 16);
+    return _socket->writeData(&buffer[0], 16);
   }
   else
   {
@@ -1481,7 +1458,7 @@ vvSocket::ErrorType vvSocketIO::getViewport(vvGLTools::Viewport &val)
     uchar buffer[16];
     vvSocket::ErrorType retval;
 
-    if ((retval =_socket->read_data(&buffer[0], 16)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], 16)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -1507,7 +1484,7 @@ vvSocket::ErrorType vvSocketIO::putCommReason(const CommReason val)
   if(_socket)
   {
     uchar buffer[] = { (uchar)val };
-    return _socket->write_data(&buffer[0], 4);
+    return _socket->writeData(&buffer[0], 4);
   }
   else
   {
@@ -1526,7 +1503,7 @@ vvSocket::ErrorType vvSocketIO::getCommReason(CommReason& val)
     uchar buffer[4];
     vvSocket::ErrorType retval;
 
-    if ((retval =_socket->read_data(&buffer[0], 4)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], 4)) != vvSocket::VV_OK)
     {
       return retval;
     }
@@ -1549,7 +1526,7 @@ vvSocket::ErrorType vvSocketIO::putWinDims(const int w, const int h)
     vvToolshed::write32(&buffer[0], w);
     vvToolshed::write32(&buffer[4], h);
 
-    return _socket->write_data(&buffer[0], 8);
+    return _socket->writeData(&buffer[0], 8);
   }
   else
   {
@@ -1564,7 +1541,7 @@ vvSocket::ErrorType vvSocketIO::getWinDims(int& w, int& h)
     uchar buffer[8];
     vvSocket::ErrorType retval;
 
-    if ((retval =_socket->read_data(&buffer[0], 8)) != vvSocket::VV_OK)
+    if ((retval =_socket->readData(&buffer[0], 8)) != vvSocket::VV_OK)
     {
       return  retval;
     }

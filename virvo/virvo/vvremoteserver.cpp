@@ -25,6 +25,7 @@
 #include "vvremoteserver.h"
 #include "vvdebugmsg.h"
 #include "vvsocketio.h"
+#include "vvtcpsocket.h"
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
 #endif
@@ -58,7 +59,7 @@ vvRemoteServer::ErrorType vvRemoteServer::initSocket()
 {
   vvDebugMsg::msg(1, "vvRemoteServer::initSocket()");
 
-  _socket->getSocket()->no_nagle();
+  _socket->getSocket()->setParameter(vvSocket::VV_NO_NAGLE, true);
 
   return VV_OK;
 }

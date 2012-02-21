@@ -29,7 +29,7 @@
 
 #include "vvbonjourentry.h"
 #include "vvbonjoureventloop.h"
-#include "vvsocket.h"
+#include "vvtcpsocket.h"
 #include "vvsocketmonitor.h"
 
 #include <dns_sd.h>
@@ -53,7 +53,7 @@ public:
     Create a socket connection of vvSocket (TCP) connected to the resolved bonjourentry
     @return Pointer to ready to use vvSocket or NULL in case of error.
     */
-  vvSocket* getBonjourSocket() const;
+  vvTcpSocket* getBonjourSocket() const;
 
   vvBonjourEventLoop *_eventLoop;
   std::string _hostname;

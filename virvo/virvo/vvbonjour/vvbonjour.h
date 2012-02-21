@@ -29,7 +29,7 @@
 
 #include <vector>
 
-#include "vvsocket.h"
+#include "vvtcpsocket.h"
 #include "vvbonjourentry.h"
 
 /** Wrapper Class for Bonjour
@@ -52,7 +52,7 @@ public:
     @param domain      String of desired domain to search (optional). By default all local domains.
     @return Vectorlist of connected tcp sockets of type vvSocket*
    */
-  std::vector<vvSocket*> getSocketsFor(std::string serviceType, std::string domain = "") const;
+  std::vector<vvTcpSocket*> getSocketsFor(std::string serviceType, std::string domain = "") const;
 
   /**
     Returns a vectorlist of BonjourEntries for all existing services.

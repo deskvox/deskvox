@@ -114,11 +114,14 @@ SET(VIRVO_HEADERS
   vvsoftsw.h
   vvsphere.h
   vvstingray.h
+  vvtcpserver.h
+  vvtcpsocket.h
   vvtexrend.h
   vvtfwidget.h
   vvtokenizer.h
   vvtoolshed.h
   vvtransfunc.h
+  vvudpsocket.h
   vvvecmath.h
   vvvffile.h
   vvvirvo.h
@@ -185,11 +188,14 @@ SET(VIRVO_SOURCES
   vvsoftsw.cpp
   vvsphere.cpp
   vvstingray.cpp
+  vvtcpserver.cpp
+  vvtcpsocket.cpp
   vvtexrend.cpp
   vvtfwidget.cpp
   vvtokenizer.cpp
   vvtoolshed.cpp
   vvtransfunc.cpp
+  vvudpsocket.cpp
   vvvecmath.cpp
   vvvffile.cpp
   vvvirvo.cpp

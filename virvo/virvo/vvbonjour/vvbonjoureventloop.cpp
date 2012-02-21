@@ -24,6 +24,7 @@
 
 #include "vvdebugmsg.h"
 #include "vvsocketmonitor.h"
+#include "vvtcpsocket.h"
 
 void vvBonjourEventLoop::run(bool inThread, double timeout)
 {
@@ -48,7 +49,8 @@ void * vvBonjourEventLoop::loop(void * attrib)
   instance->_run = true;
   int dns_sd_fd = DNSServiceRefSockFD(instance->_dnsServiceRef);
 
-  vvSocket sock = vvSocket(vvSocket::VV_TCP, dns_sd_fd);
+  vvTcpSocket sock = vvTcpSocket();
+  sock.setSockfd(dns_sd_fd);
 
   std::vector<vvSocket*> sockets;
   sockets.push_back(&sock);

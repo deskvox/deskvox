@@ -26,7 +26,8 @@
 #include <pthread.h>
 
 #include "vvmulticast.h"
-#include "vvsocketio.h"
+#include "vvtcpserver.h"
+#include "vvtcpsocket.h"
 #include "vvclock.h"
 #include "vvtoolshed.h"
 
@@ -49,9 +50,9 @@ public:
     int delim = addr.find_first_of(":");
     string port = addr.substr(delim+1);
     addr = addr.substr(0, delim);
-    _socket = new vvSocket(atoi(port.c_str()), addr.c_str(), vvSocket::VV_TCP);
+    _socket = new vvTcpSocket();
 
-    if(vvSocket::VV_OK == _socket->init())
+    if(vvSocket::VV_OK == _socket->connectToHost(addr.c_str(), atoi(port.c_str())))
     {
       _status = true;
       _return = pthread_create( &_thread, NULL, threadMain, this);
@@ -78,7 +79,7 @@ public:
       return NULL;
     }
 
-    if(vvSocket::VV_OK == obj->_socket->write_data(obj->_data, obj->_size))
+    if(vvSocket::VV_OK == obj->_socket->writeData(obj->_data, obj->_size))
     {
       cout << "transfer to " << obj->_addr << " complete!" << endl;
     }
@@ -98,15 +99,15 @@ public:
     return NULL;
   }
 
-  NormNodeId _node;
-  bool       _status;
-  bool       _done;
-  string     _addr;
-  uchar     *_data;
-  uint       _size;
-  int        _return;
-  pthread_t  _thread;
-  vvSocket   *_socket;
+  NormNodeId   _node;
+  bool         _status;
+  bool         _done;
+  string       _addr;
+  uchar       *_data;
+  uint         _size;
+  int          _return;
+  pthread_t    _thread;
+  vvTcpSocket *_socket;
 };
 
 uchar* generateData(const int size)
@@ -226,7 +227,7 @@ int main(int argc, char** argv)
     for(unsigned int i = 0;i<servers.size() && sendBytes>0; i++)
     {
       char *multidone = new char[5];
-      servers[i]->_socket->read_string(multidone, 5);
+      servers[i]->_socket->readString(multidone, 5);
       if(strcmp("done!", multidone) == 0)
         continue;
       else
@@ -274,15 +275,16 @@ int main(int argc, char** argv)
 
     cout << "Waiting for incoming data on TCP..." << endl;
 
-    vvSocket recSocket = vvSocket(31050, vvSocket::VV_TCP);
-    recSocket.init();
-    uint tcpSize = recSocket.read32();
+    vvTcpServer server = vvTcpServer(31050);
+
+    vvSocket *recSocket = server.nextConnection();
+    uint tcpSize = recSocket->read32();
     cout << "Expecting " << tcpSize << "Byes of data." << endl;
     uchar* bartcp = new uchar[tcpSize];
-    if(vvSocket::VV_OK == recSocket.read_data(bartcp, tcpSize))
+    if(vvSocket::VV_OK == recSocket->readData(bartcp, tcpSize))
     {
       cout << "Successfully received " << tcpSize << "Bytes. (Node: " << foo._nodes[0] << ")" << endl;
-      recSocket.write32(foo._nodes[0]);
+      recSocket->write32(foo._nodes[0]);
     }
     else
     {
@@ -298,7 +300,7 @@ int main(int argc, char** argv)
     int receivedBytes = foo.read(bartext, tcpSize, receiveTimeout);
 
     // Tell sender, that we are done
-    recSocket.write_string("done!");
+    recSocket->writeString("done!");
 
     cout << "Received: " << receivedBytes << endl;
     if(0 == receivedBytes)
@@ -328,6 +330,7 @@ int main(int argc, char** argv)
     delete[] bar;
     delete[] bartext;
     delete[] bartcp;
+    delete recSocket;
     return 0;
   }
 

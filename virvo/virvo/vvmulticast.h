@@ -23,7 +23,7 @@
 
 #include "vvexport.h"
 #include "vvinttypes.h"
-#include "vvsocket.h"
+#include "vvudpsocket.h"
 
 #include <string>
 #include <vector>
@@ -93,10 +93,10 @@ private:
   NormInstanceHandle _instance;
   NormSessionHandle  _session;
   NormObjectHandle   _object;
-  vvSocket*          _normSocket;
+  vvUdpSocket*       _normSocket;
 
   // Variables for multicasting with vvSocket
-  vvSocket* _socket;
+  vvUdpSocket* _socket;
   union bytesToInt32
   {
     uchar    x[4];

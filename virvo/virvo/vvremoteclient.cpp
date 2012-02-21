@@ -21,6 +21,7 @@
 #include "vvdebugmsg.h"
 #include "vvremoteclient.h"
 #include "vvsocketio.h"
+#include "vvtcpsocket.h"
 #include "vvopengl.h"
 #include "vvvoldesc.h"
 #include "vvimage.h"
@@ -105,13 +106,13 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   if(port == -1)
     port = defaultPort;
 
-  _socket = new vvSocket(port, serverName ? serverName : _slaveName, vvSocket::VV_TCP);
+  _socket = new vvTcpSocket;
   _socketIO = new vvSocketIO(_socket);
 
-  if (_socketIO->init() == vvSocket::VV_OK)
+  if (_socket->connectToHost(serverName ? serverName : _slaveName, port) == vvSocket::VV_OK)
   {
     delete serverName;
-    _socket->no_nagle();
+    _socket->setParameter(vvSocket::VV_NO_NAGLE, true);
     _socketIO->putInt32(_type);
 
     if (_slaveFileName && _slaveFileName[0])
@@ -146,6 +147,10 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   else
   {
     delete serverName;
+    delete _socket;
+    delete _socketIO;
+    _socket = NULL;
+    _socketIO = NULL;
     cerr << "No connection to remote rendering server established at: " << _slaveName << endl;
     return VV_SOCKET_ERROR;
   }

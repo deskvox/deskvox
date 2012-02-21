@@ -29,6 +29,7 @@
 #include "vvbonjour/vvbonjourbrowser.h"
 #include "vvbonjour/vvbonjourresolver.h"
 #include "vvsocketio.h"
+#include "vvtcpserver.h"
 
 #include <sstream>
 
@@ -60,8 +61,9 @@ int main(int argc, char **argv)
 
     while(true)
     {
-      vvSocket sock = vvSocket(port, vvSocket::VV_TCP);
-      vvSocketIO sockio = vvSocketIO(&sock);
+      vvTcpServer tcpServer = vvTcpServer(port);
+      //vvSocket sock = vvSocket(port, vvSocket::VV_TCP);
+
 
       cerr << "Register service on port " << port << "..." << flush;
       vvBonjourEntry entr = vvBonjourEntry("vvBonjourServer", "_bonjourtest._tcp", "");
@@ -71,7 +73,8 @@ int main(int argc, char **argv)
 
 
       cerr << "Wait for connection on port " << port << "...";
-      if(vvSocket::VV_OK == sock.init())
+      vvTcpSocket* sock;
+      if((sock = tcpServer.nextConnection()) != NULL)
       {
         cerr << "done." << endl;
       }
@@ -85,6 +88,7 @@ int main(int argc, char **argv)
       registrar.unregisterService();
       cerr << "done." << endl;
 
+      vvSocketIO sockio = vvSocketIO(reinterpret_cast<vvSocket*>(sock));
       bool bla = false;
       sockio.getBool(bla);
 
@@ -114,12 +118,12 @@ int main(int argc, char **argv)
         cerr << "done." << endl;
 
         cerr << "Connecting with " << resol._hostname.c_str() << resol._port << "...";
-        vvSocket sock = vvSocket(resol._port , resol._hostname.c_str(), vvSocket::VV_TCP);
-        vvSocketIO sockio = vvSocketIO(&sock);
-        sock.init();
+        vvTcpSocket sock = vvTcpSocket();
+        sock.connectToHost(resol._hostname.c_str(), resol._port);
         cerr << "done." << endl;
 
         cerr << "Send bool 1...";
+        vvSocketIO sockio = vvSocketIO(reinterpret_cast<vvSocket*>(&sock));
         sockio.putBool(true);
         cerr << "done." << endl;
       }
