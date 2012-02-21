@@ -25,12 +25,26 @@
 #include "vvinttypes.h"
 #include "vvtcpsocket.h"
 
+/**
+  This class creates a tcp-server which can listen on a set port for
+  incoming connections and provides an appropriate vvTcpSocket object
+  for further socket communications
+  */
 class VIRVOEXPORT vvTcpServer
 {
 public:
+  /**
+    Creates a tcp-server for the given port
+    @param port the desired port to listen for incoming connections
+  */
   vvTcpServer(ushort port);
   ~vvTcpServer();
 
+  /**
+    Listen on socket for incomming connections and accept the first
+    one. This call will obviously block.
+    @returns Pointer to an ready to use vvTcpSocket or NULL if errer occured
+    */
   vvTcpSocket* nextConnection();
 
 private:
