@@ -50,8 +50,12 @@
 #include "vvinttypes.h"
 
 //----------------------------------------------------------------------------
-/** This class provides basic socket functionality. It is used for TCP and UDP
-    sockets. For example code see documentation about vvSocket  <BR>
+/** This abstract class provides basic socket functionality. It is used for
+    TCP and UDP sockets. For example code see documentation about vvSocket<BR>
+
+    For timeout-support set Socket to non-blocking with
+    setParameter(VV_NONBLOCKING, true) and use vvSocketMonitor (or select() by
+    hand) for event and timeout-handling
 */
 class VIRVOEXPORT vvSocket
 {
@@ -94,6 +98,10 @@ public:
   vvSocket();
   virtual ~vvSocket();
 
+  /** Sets socket options
+    \param so desired socket option to set
+    \param appropriate value of socket option, always casted to float
+    */
   virtual ErrorType setParameter(const SocketOption so, const float value);
 
   ErrorType readString(char* , int);
@@ -107,8 +115,8 @@ public:
   float     readFloat(EndianType = VV_BIG_END);
   ErrorType writeFloat(float, EndianType = VV_BIG_END);
 
-  virtual ErrorType readData (      uchar*, size_t, ssize_t *ret = NULL);
-  virtual ErrorType writeData(const uchar*, size_t, ssize_t *ret = NULL);
+  virtual ErrorType readData (      uchar *dataptr, size_t size, ssize_t *ret = NULL);
+  virtual ErrorType writeData(const uchar *dataptr, size_t size, ssize_t *ret = NULL);
 
   int isDataWaiting() const;
   void setSockfd(int fd);
@@ -163,10 +171,9 @@ protected:
 };
 
 //----------------------------------------------------------------------------
-/***TCP Sockets***.  <BR>
+/***Tcp-Sockets***<BR>
 
  Features:
-    - timeouts for connection establishment and data transfer
     - socket buffer sizes can be set be user
     - automatic bandwidth delay product discovery to set the socket buffers to the
       optimal values. Not supported under Windows and when VV_BDP Flag is not set.
@@ -174,90 +181,51 @@ protected:
       to be set to 0. Optimized for networks with more than 10 Mbits/sec. Please
       don't use if you have a lower speed (would take awhile).
     - Nagle algorithm can be disabled
-- Linger time can be set<BR>
+    - Linger time can be set<BR>
 
 Default values:
-- socket buffer size= system default
-- no timeouts<BR>
+  - socket buffer size= system default<BR>
 
-Here is an example code fragment to generate a TCP server which sends 10 bytes
-and a TCP-client which reads 10 bytes.<BR>
+Here is an example code fragment to generate a TCP-client which reads 10 bytes.<BR>
 <PRE>
-
-TCP-Server:
-
-// Create a new tcp socket class instance which shall listen on port 17171:
-vvSocket* sock = new vvSocket(17171, vvSocket::VV_TCP);
-
-// Parameters must be set before the init() call !!
-// e.g. socket buffer size= 65535 byte, \
-// timer for accept=3 sec., timer for write=1.5 sec.
-sock->set_timer(3.0f, 1.5f);
-sock->set_sock_buffsize(65535);
-
-// Initialize the socket with the parameters and wait for a client
-if (sock->init() != vvSocket::VV_OK)
-{
-delete sock;
-return -1;
-}
-
-// Send 10 bytes of data with write_data()
-uchar buffer[10];
-if (sock->write_data(buffer, 10) != vvSocket::VV_OK)
-{
-delete sock;
-return -1;
-}
-
-// Delete the socket object
-delete sock;
-
-TCP-Client:
 
 // Create a new tcp socket class instance which shall connect to a server
 // with name buxdehude on port 17171. The outgoing port shall be in the
 // range between 31000 and 32000:
 char* servername = "buxdehude";
-vvSocket* sock = new vvSocket(17171, servername, vvSocket::VV_TCP, 31000, 32000);
+vvTcpSocket* sock = new vvTcpSocket();
 
-// Parameters must be set before the init() call !!
+// Parameters must be set before the connectToHost() call !!
 // e.g. socket buffer size= 65535 byte, \
-// timer for connect=3 sec., timer for read=1.5 sec.
-sock->set_timer(3.0f, 1.5f);
-sock->set_sock_buffsize(65535);
+sock->setParameter(VV_BUFFSIZE, 65535);
 
 // Initialize the socket with the parameters and connect to the server.
-if (sock->init() != vvSocket::VV_OK)
+if (sock->connectToHost(servername, 17171, 31000, 32000);) != vvSocket::VV_OK)
 {
-delete sock;
-return -1;
+  delete sock;
+  return -1;
 }
 
 // Get 10 bytes of data with read_data()
 uchar buffer[10];
-if (sock->read_data(buffer, 10) != vvSocket::VV_OK)
+if (sock->readData(buffer, 10) != vvSocket::VV_OK)
 {
-delete sock;
-return -1;
+  delete sock;
+  return -1;
 }
 
 // Delete the socket object
 delete sock; </PRE>
-@author Michael Poehnl
 */
 
 //----------------------------------------------------------------------------
 /***For UDP Sockets***  <BR>
 
  features:
-    - timeouts for "connection establishment"(here connected UDP sockets
-    are used) and data transfer
     - socket buffer sizes can be set be user<BR>
 
  default values:
-   - socket buffer size= system default
-   - no timeouts<BR>
+   - socket buffer size= system default<BR>
 
 Here is an example code fragment to generate a UDP server which sends 10 bytes
 and a UDP client which reads 10 bytes.<BR>
@@ -266,27 +234,25 @@ and a UDP client which reads 10 bytes.<BR>
 UDP-Server:
 
 // Create a new UDP socket class instance which shall listen on port 17171:
-vvSocket* sock = new vvSocket(17171, vvSocket::VV_UDP);
+vvUdpSocket* sock = new vvUdpSocket();
 
-// Parameters must be set before the init() call !!
+// Parameters must be set before the bind() call !!
 // e.g. socket buffer size= 65535 byte, \
-// timer for connect=3 sec., timer for write=1.5 sec.
-sock->set_timer(3.0f, 1.5f);
-sock->set_sock_buffsize(65535);
+sock->setParameter(VV_BUFFSIZE, 65535);
 
 // Initialize the socket with the parameters and wait for a client
-if (sock->init() != vvSocket::VV_OK)
+if (sock->bind(17171) != vvSocket::VV_OK)
 {
-delete sock;
-return -1;
+  delete sock;
+  return -1;
 }
 
 // Send 10 bytes of data with write_data()
 uchar buffer[10];
-if (sock->write_data(&buffer, 10) != vvSocket::VV_OK)
+if (sock->writeData(&buffer, 10) != vvSocket::VV_OK)
 {
-delete sock;
-return -1;
+  delete sock;
+  return -1;
 }
 
 // Delete the socket object
@@ -298,27 +264,25 @@ UDP-Client:
 // with name buxdehude on port 17171. The outgoing port shall be in the
 // range between 31000 and 32000:
 char* servername = "buxdehude";
-vvSocket* sock = new vvSocket(17171, servername, vvSocket::VV_UDP, 31000, 32000);
+vvUdpSocket* sock = new vvUdpSocket();
 
-// Parameters must be set before the init() call !!
+// Parameters must be set before the bind() call !!
 // e.g. socket buffer size= 65535 byte, \
-// timer for connect=3 sec., timer for read=1.5 sec.
-sock->set_timer(3.0f, 1.5f);
-sock->set_sock_buffsize(65535);
+sock->setParameter(VV_BUFFSIZE, 65535);
 
 // Initialize the socket with the parameters and connect to the server.
-if (sock->init() != vvSocket::VV_OK)
+if (sock->bind(servername, 17171, 31000, 32000) != vvSocket::VV_OK)
 {
-delete sock;
-return -1;
+  delete sock;
+  return -1;
 }
 
 // Get 10 bytes of data with read_data()
 uchar buffer[10];
-if (sock->read_data(&buffer, 10) != vvSocket::VV_OK)
+if (sock->readData(&buffer, 10) != vvSocket::VV_OK)
 {
-delete sock;
-return -1;
+  delete sock;
+  return -1;
 }
 
 // Delete the socket object

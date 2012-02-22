@@ -41,13 +41,36 @@ public:
   vvUdpSocket();
   ~vvUdpSocket();
 
+  /** Binds to a host. If clminport and clmaxport are given and valid, an
+    outgoing port within this range is tryed to be established
+    \param host hostname or IPV4-address
+    \param port port
+    \param clminport lower limit port range
+    \param clminport upper limit port range
+    \returns VV_OK on success and appropriate error value of type vvSocket::ErrorType else
+    */
   ErrorType bind(const std::string hostname, const ushort port, const int clmin = 0, const int clmax = 0);
+  /** Binds to a local port for incoming udp connections
+    \param port port
+    \returns VV_OK on success and appropriate error value of type vvSocket::ErrorType else
+    */
   ErrorType bind(const ushort port);
+  /** Unbinds socket if connected, else does nothing
+    \returns VV_OK on success, VV_ERROR else
+    */
   ErrorType unbind();
 
+  /** Connect to multicast-address
+    \param hostname multicast address. Must be in range from 224.0.0.0 to 239.255.255.255. Watch out for reserved addresses. See IPv4-Specification for details
+    \param port port
+    \param type type of multicast participant. Must be either VV_MC_SENDER or VV_MC_RECEIVER.
+    \returns VV_OK on connection success, appropriate error value else
+    */
   ErrorType multicast(const std::string hostname, const ushort port, const MulticastType type);
 
+  /** Reimplementation of vvSocket::readData() */
   ErrorType readData (      uchar*, size_t, ssize_t *ret = NULL);
+  /** Reimplementation of vvSocket::writeData() */
   ErrorType writeData(const uchar*, size_t, ssize_t *ret = NULL);
 
 private:

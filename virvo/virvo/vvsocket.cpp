@@ -143,7 +143,7 @@ vvSocket::ErrorType vvSocket::setParameter(SocketOption so, float value)
  @param maxLen maximum length of string to read.
  Reads at most maxLen-1 characters from the socket,
  the last character is used for '\0' termination.
- Returns OK if maxLen characters were sufficient, otherwise RETRY.
+ @returns OK if maxLen characters were sufficient, otherwise RETRY.
 */
 vvSocket::ErrorType vvSocket::readString(char* s, int maxLen)
 {
@@ -327,11 +327,10 @@ vvSocket::ErrorType vvSocket::writeFloat(float value, vvSocket::EndianType end)
 
 //----------------------------------------------------------------------------
 /** Function to read data from the socket.
- Calls read_timeo() for reading with timeout and read_nontimeo() for
- reading without timeout.
- @param dataptr  pointer to where the read data is written.
- @param size  number of bytes to read
-*/
+ @param dataptr pointer to where the read data is written.
+ @param size number of bytes to read
+ @param ret pointer for return value of internal reading function (optional)
+  */
 vvSocket::ErrorType vvSocket::readData(uchar* dataptr, size_t size, ssize_t *ret)
 {
   ssize_t s;
@@ -363,11 +362,10 @@ vvSocket::ErrorType vvSocket::readData(uchar* dataptr, size_t size, ssize_t *ret
 
 //----------------------------------------------------------------------------
 /** Function to write data to the socket.
- Calls write_timeo() for writing with timeout and write_nontimeo() for
- writing without timeout.
  @param dataptr  pointer to the data to write.
  @param size  number of bytes to write.
-*/
+ @param ret pointer for return value of internal send function (optional)
+  */
 vvSocket::ErrorType vvSocket::writeData(const uchar* dataptr, size_t size, ssize_t *ret)
 {
   ssize_t s;
@@ -418,7 +416,7 @@ int vvSocket::isDataWaiting() const
 }
 
 //----------------------------------------------------------------------------
-/** Sets the socket file descriptor.
+/** Sets the socket file descriptor. Use with caution!
   */
 void vvSocket::setSockfd(int fd)
 {
@@ -461,7 +459,7 @@ int vvSocket::getSendBuffsize()
 }
 
 //----------------------------------------------------------------------------
-/**Tries to determine the MTU. Connection must be established for getting the
+/** Tries to determine the MTU. Connection must be established for getting the
 real value.
 */
 int vvSocket::getMTU()

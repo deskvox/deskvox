@@ -56,16 +56,27 @@
 */
 class VIRVOEXPORT vvTcpSocket : public vvSocket
 {
-  public:
-    vvTcpSocket();
-    ~vvTcpSocket();
+public:
+  vvTcpSocket();
+  ~vvTcpSocket();
 
-    ErrorType connectToHost(const std::string host, const ushort port, const int clminport = 0, const int clmaxport = 0);
-    ErrorType disconnectFromHost();
+  /** Connects to a host. If clminport and clmaxport are given and valid, an
+    outgoing port within this range is tryed to be established
+    \param host hostname or IPV4-address
+    \param port port
+    \param clminport lower limit port range
+    \param clminport upper limit port range
+    \returns VV_OK on success and appropriate error value of type vvSocket::ErrorType else
+    */
+  ErrorType connectToHost(const std::string host, const ushort port, const int clminport = 0, const int clmaxport = 0);
+  /** Disconnects socket if connected, else does nothing
+    \returns VV_OK on success, VV_ERROR else
+    */
+  ErrorType disconnectFromHost();
 
-  private:
-    ssize_t readn(char*, size_t);
-    ssize_t writen(const char*, size_t);
+private:
+  ssize_t readn(char*, size_t);
+  ssize_t writen(const char*, size_t);
 };
 
 #endif

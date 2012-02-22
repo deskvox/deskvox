@@ -87,7 +87,7 @@ vvTcpServer::~vvTcpServer()
 #endif
 }
 
-vvTcpSocket* vvTcpServer::nextConnection(double to)
+vvTcpSocket* vvTcpServer::nextConnection(double timeout)
 {
   if(!_ready)
   {
@@ -109,7 +109,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double to)
   }
 #endif
 
-  if (to < 0.0 ? false : true)
+  if (timeout < 0.0 ? false : true)
   {
 #ifdef _WIN32
     unsigned long tru = 1;
@@ -130,7 +130,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double to)
     sm.setReadFds(socks);
 
     vvSocket* ready;
-    sm.wait(&ready, &to);
+    sm.wait(&ready, &timeout);
 
     sock.setSockfd(0);
 

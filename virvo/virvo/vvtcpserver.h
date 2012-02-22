@@ -43,9 +43,10 @@ public:
   /**
     Listen on socket for incomming connections and accept the first
     one. This call will obviously block.
+    @param timeout maximum time to wait in seconds
     @returns Pointer to an ready to use vvTcpSocket or NULL if errer occured
     */
-  vvTcpSocket* nextConnection(double to = -1.0);
+  vvTcpSocket* nextConnection(double timeout = -1.0);
 
 private:
 #ifdef _WIN32

@@ -179,7 +179,7 @@ vvSocket::ErrorType vvTcpSocket::disconnectFromHost()
   }
   else
   {
-    vvDebugMsg::msg(1, "vvUdpSocket::unbind() error: called on unbound socket");
+    vvDebugMsg::msg(1, "vvTcpSocket::disconnectFromHost() error: called on unbound socket");
     return VV_SOCK_ERROR;
   }
   WSACleanup();
@@ -200,7 +200,7 @@ vvSocket::ErrorType vvTcpSocket::disconnectFromHost()
   }
   else
   {
-    vvDebugMsg::msg(1, "vvUdpSocket::unbind() error: called on unbound socket");
+    vvDebugMsg::msg(1, "vvTcpSocket::disconnectFromHost() error: called on unbound socket");
     return VV_SOCK_ERROR;
   }
 #endif
