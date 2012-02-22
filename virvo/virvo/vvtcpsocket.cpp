@@ -50,7 +50,7 @@ vvSocket::ErrorType vvTcpSocket::connectToHost(const std::string host, const ush
   int cl_port;
 
 #ifdef _WIN32
-  if ((host= gethostbyname(hostname)) == 0)
+  if ((_host= gethostbyname(_hostname)) == 0)
   {
     vvDebugMsg::msg(1, "Error: gethostbyname()");
     return VV_HOST_ERROR;

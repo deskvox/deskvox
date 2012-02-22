@@ -42,8 +42,8 @@ vvSocket::ErrorType vvUdpSocket::bind(std::string hostname, ushort port)
   uchar buff;
 
 #ifdef _WIN32
-  host= gethostbyname(hostname);
-  if (host == 0)
+  _host= gethostbyname(hostname.c_str());
+  if (_host == 0)
   {
     vvDebugMsg::msg(1, "Error gethostbyname()");
     return VV_HOST_ERROR;
@@ -421,7 +421,7 @@ vvSocket::ErrorType vvUdpSocket::writeData(const uchar* dataptr, size_t size, ss
   if(_mc)
   {
 #ifdef WIN32
-    ssize_t written = sendto(_sockfd, (const char *)dataptr, (int)size, 0, (struct sockaddr*)&groupSock, sizeof(groupSock));
+    ssize_t written = sendto(_sockfd, (const char *)dataptr, (int)size, 0, (struct sockaddr*)&_groupSock, sizeof(_groupSock));
 #else
     ssize_t written = sendto(_sockfd, dataptr, size, 0, (struct sockaddr*)&_groupSock, sizeof(_groupSock));
 #endif
