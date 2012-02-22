@@ -51,7 +51,7 @@ public:
     @param domain      String of desired domain to search (optional). By default all local domains.
     @return Errorcode (0 == no error). See manpages of DNSSeriviceErrorType for further informations.
    */
-  DNSServiceErrorType browseForServiceType(const std::string serviceType, const std::string domain = "");
+  DNSServiceErrorType browseForServiceType(const std::string& serviceType, const std::string domain = "");
 
   /**
     Returns list of found bonjourentries

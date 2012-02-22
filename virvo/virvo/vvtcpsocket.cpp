@@ -40,7 +40,7 @@ vvTcpSocket::~vvTcpSocket()
 
 
 
-vvSocket::ErrorType vvTcpSocket::connectToHost(const std::string host, const ushort port, const int clminport, const int clmaxport)
+vvSocket::ErrorType vvTcpSocket::connectToHost(const std::string& host, const ushort port, const int clminport, const int clmaxport)
 {
   _hostname = host.c_str();
   _port = port;

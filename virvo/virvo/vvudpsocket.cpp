@@ -33,7 +33,7 @@ vvUdpSocket::~vvUdpSocket()
 {
 }
 
-vvSocket::ErrorType vvUdpSocket::bind(const std::string hostname, const ushort port, const int clmin, const int clmax)
+vvSocket::ErrorType vvUdpSocket::bind(const std::string& hostname, const ushort port, const int clmin, const int clmax)
 {
   _hostname = hostname.c_str();
   _port = port;
@@ -267,7 +267,7 @@ vvSocket::ErrorType vvUdpSocket::unbind()
 #endif
 }
 
-vvSocket::ErrorType vvUdpSocket::multicast(const std::string hostname, const ushort port, const MulticastType type)
+vvSocket::ErrorType vvUdpSocket::multicast(const std::string& hostname, const ushort port, const MulticastType type)
 {
   _hostname = hostname.c_str();
   _port = port;

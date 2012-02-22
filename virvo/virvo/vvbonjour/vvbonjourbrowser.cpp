@@ -37,7 +37,7 @@ vvBonjourBrowser::~vvBonjourBrowser()
   if(_eventLoop) delete _eventLoop;
 }
 
-DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string serviceType, const std::string domain)
+DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string& serviceType, const std::string domain)
 {
   DNSServiceErrorType error;
   DNSServiceRef  serviceRef = NULL;

@@ -42,9 +42,9 @@ class VIRVOEXPORT vvBonjourEntry
 {
 public:
   vvBonjourEntry();
-  vvBonjourEntry(const std::string serviceName,
-                 const std::string registeredType,
-                 const std::string replyDomain);
+  vvBonjourEntry(const std::string& serviceName,
+                 const std::string& registeredType,
+                 const std::string& replyDomain);
 
   std::string getServiceName() const;
   std::string getRegisteredType() const;

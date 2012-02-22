@@ -48,7 +48,7 @@ public:
     \param clminport upper limit port range
     \returns VV_OK on success and appropriate error value of type vvSocket::ErrorType else
     */
-  ErrorType bind(std::string hostname, ushort port, int clmin = 0, int clmax = 0);
+  ErrorType bind(const std::string& hostname, ushort port, int clmin = 0, int clmax = 0);
   /** Binds to a local port for incoming udp connections
     \param port port
     \returns VV_OK on success and appropriate error value of type vvSocket::ErrorType else
@@ -65,7 +65,7 @@ public:
     \param type type of multicast participant. Must be either VV_MC_SENDER or VV_MC_RECEIVER.
     \returns VV_OK on connection success, appropriate error value else
     */
-  ErrorType multicast(std::string hostname, ushort port, MulticastType type);
+  ErrorType multicast(const std::string& hostname, ushort port, MulticastType type);
 
   /** Reimplementation of vvSocket::readData() */
   ErrorType readData (      uchar*, size_t, ssize_t *ret = NULL);

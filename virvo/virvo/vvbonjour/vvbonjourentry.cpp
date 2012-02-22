@@ -27,9 +27,9 @@ vvBonjourEntry::vvBonjourEntry()
 
 }
 
-vvBonjourEntry::vvBonjourEntry(const std::string serviceName,
-                               const std::string registeredType,
-                               const std::string replyDomain)
+vvBonjourEntry::vvBonjourEntry(const std::string& serviceName,
+                               const std::string& registeredType,
+                               const std::string& replyDomain)
   : _serviceName(serviceName), _registeredType(registeredType), _replyDomain(replyDomain)
 {
 

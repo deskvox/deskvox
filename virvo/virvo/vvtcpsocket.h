@@ -42,7 +42,7 @@ public:
     \param clminport upper limit port range
     \returns VV_OK on success and appropriate error value of type vvSocket::ErrorType else
     */
-  ErrorType connectToHost(std::string host, ushort port, int clminport = 0, int clmaxport = 0);
+  ErrorType connectToHost(const std::string& host, ushort port, int clminport = 0, int clmaxport = 0);
   /** Disconnects socket if connected, else does nothing
     \returns VV_OK on success, VV_ERROR else
     */
