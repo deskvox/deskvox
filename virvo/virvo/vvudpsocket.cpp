@@ -33,10 +33,12 @@ vvUdpSocket::~vvUdpSocket()
 {
 }
 
-vvSocket::ErrorType vvUdpSocket::bind(std::string hostname, ushort port)
+vvSocket::ErrorType vvUdpSocket::bind(std::string hostname, ushort port, int clmin, int clmax)
 {
   _hostname = hostname.c_str();
   _port = port;
+  _clMinPort = clmin;
+  _clMaxPort = clmax;
 
   int cl_port;
   uchar buff;

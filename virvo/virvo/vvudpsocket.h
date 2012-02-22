@@ -41,7 +41,7 @@ public:
   vvUdpSocket();
   ~vvUdpSocket();
 
-  ErrorType bind(const std::string hostname, const ushort port);
+  ErrorType bind(const std::string hostname, const ushort port, const int clmin = 0, const int clmax = 0);
   ErrorType bind(const ushort port);
   ErrorType unbind();
 
