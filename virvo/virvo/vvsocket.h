@@ -102,7 +102,7 @@ public:
     \param so desired socket option to set
     \param appropriate value of socket option, always casted to float
     */
-  virtual ErrorType setParameter(const SocketOption so, const float value);
+  virtual ErrorType setParameter(SocketOption so, float value);
 
   ErrorType readString(char* , int);
   ErrorType writeString(const char*);

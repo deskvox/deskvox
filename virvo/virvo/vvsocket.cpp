@@ -61,7 +61,7 @@ vvSocket::~vvSocket()
 //----------------------------------------------------------------------------
 /** ...........
 */
-vvSocket::ErrorType vvSocket::setParameter(SocketOption so, float value)
+vvSocket::ErrorType vvSocket::setParameter(const SocketOption so, const float value)
 {
   switch(so)
   {

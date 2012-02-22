@@ -26,7 +26,7 @@
 #include "vvtcpsocket.h"
 
 
-vvTcpServer::vvTcpServer(ushort port)
+vvTcpServer::vvTcpServer(const ushort port)
 {
 #ifdef _WIN32
   WSADATA wsaData;

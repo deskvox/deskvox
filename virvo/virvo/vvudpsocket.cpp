@@ -33,7 +33,7 @@ vvUdpSocket::~vvUdpSocket()
 {
 }
 
-vvSocket::ErrorType vvUdpSocket::bind(std::string hostname, ushort port, int clmin, int clmax)
+vvSocket::ErrorType vvUdpSocket::bind(const std::string hostname, const ushort port, const int clmin, const int clmax)
 {
   _hostname = hostname.c_str();
   _port = port;
@@ -152,7 +152,7 @@ vvSocket::ErrorType vvUdpSocket::bind(std::string hostname, ushort port, int clm
 
 //----------------------------------------------------------------------------
 /// Initialize a UDP server
-vvSocket::ErrorType vvUdpSocket::bind(ushort port)
+vvSocket::ErrorType vvUdpSocket::bind(const ushort port)
 {
   _port = port;
 
@@ -267,7 +267,7 @@ vvSocket::ErrorType vvUdpSocket::unbind()
 #endif
 }
 
-vvSocket::ErrorType vvUdpSocket::multicast(std::string hostname, ushort port, MulticastType type)
+vvSocket::ErrorType vvUdpSocket::multicast(const std::string hostname, const ushort port, const MulticastType type)
 {
   _hostname = hostname.c_str();
   _port = port;
