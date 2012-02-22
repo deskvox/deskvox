@@ -84,10 +84,6 @@ class vvVolDesc;
   vvSocket* sock = new vvSocket(17171 , servername, vvSocket::VV_TCP);
   vvVolDesc* vd = new vvVolDesc();
 
-  //Set the parameters of the socket( e.g. connection timer 3 sec, transfer
-  //timer 1.5 sec, socket buffer 65535 bytes, debuglevel 0)
-  sio->set_sock_param(3.0f, 1.5f, 65535 , 0);
-
   // Initialize the socket with the parameters and connect to the server.
   if (sio->init() != vvSocket::VV_OK)
   {
