@@ -25,8 +25,6 @@
 
 #include "vvx11.h"
 
-using namespace std;
-
 struct ContextArchData
 {
 #ifdef HAVE_X11
@@ -125,7 +123,7 @@ void vvRenderContext::init(const char* displayName)
     }
     else
     {
-      cerr << "Couldn't create OpenGL context" << endl;
+      std::cerr << "Couldn't create OpenGL context" << std::endl;
       _initialized = false;
     }
 
@@ -133,7 +131,7 @@ void vvRenderContext::init(const char* displayName)
   }
   else
   {
-    cerr << "Couldn't open X display" << endl;
+    std::cerr << "Couldn't open X display" << std::endl;
     _initialized = false;
   }
 #else
