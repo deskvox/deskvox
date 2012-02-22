@@ -21,33 +21,7 @@
 #ifndef _VVTCPSOCKET_H_
 #define _VVTCPSOCKET_H_
 
-#include <iostream>
-
-#include "vvplatform.h"
-#ifndef _WIN32
-# include <netdb.h>
-# include <unistd.h>
-# include <arpa/inet.h>
-# include <fcntl.h>
-# include <netinet/in.h>
-# include <netinet/tcp.h>
-# include <sys/time.h>
-# include <sys/errno.h>
-# include <sys/param.h>
-# include <sys/ioctl.h>
-# include <sys/socket.h>
-# include <sys/wait.h>
-# include <errno.h>
-#endif
-#include <string.h>
-#include <signal.h>
-#include <stdlib.h>
-#ifdef __sun
-#include <sys/filio.h>
-#endif
-
 #include "vvexport.h"
-#include "vvinttypes.h"
 #include "vvsocket.h"
 
 //----------------------------------------------------------------------------
