@@ -143,7 +143,7 @@ vvSocket::ErrorType vvSocket::setParameter(const SocketOption so, const float va
  @param maxLen maximum length of string to read.
  Reads at most maxLen-1 characters from the socket,
  the last character is used for '\0' termination.
- @returns OK if maxLen characters were sufficient, otherwise RETRY.
+ @return OK if maxLen characters were sufficient, otherwise RETRY.
 */
 vvSocket::ErrorType vvSocket::readString(char* s, int maxLen)
 {
