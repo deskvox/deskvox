@@ -95,6 +95,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
   if(_sockfd < 0)
   {
     vvDebugMsg::msg(2, "vvTcpServer::nextConnection() error: server not correctly initialized");
+    return NULL;
   }
 
 #ifdef _WIN32
