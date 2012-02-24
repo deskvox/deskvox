@@ -43,13 +43,15 @@ vvTcpServer::vvTcpServer(const ushort port)
   if ((_sockfd = socket(AF_INET, SOCK_STREAM, 0 )) < 0)
   {
     vvDebugMsg::msg(1, "Error: socket()", true);
-    _ready = false;
+    _sockfd = -1;
+    return;
   }
 
   if (setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,sizeof(optval)))
   {
     vvDebugMsg::msg(1, "Error: setsockopt()");
-    _ready = false;
+    _sockfd = -1;
+    return;
   }
 
   memset((char *) &_hostAddr, 0, sizeof(_hostAddr));
@@ -60,15 +62,16 @@ vvTcpServer::vvTcpServer(const ushort port)
   if  (bind(_sockfd, (struct sockaddr *)&_hostAddr, _hostAddrlen))
   {
     vvDebugMsg::msg(1, "Error: bind()");
-    _ready = false;
+    _sockfd = -1;
+    return;
   }
 
   if (listen(_sockfd, 1))
   {
     vvDebugMsg::msg(1, "Error: listen()");
-    _ready = false;
+    _sockfd = -1;
+    return;
   }
-  _ready = true;
 }
 
 vvTcpServer::~vvTcpServer()
@@ -89,7 +92,7 @@ vvTcpServer::~vvTcpServer()
 
 vvTcpSocket* vvTcpServer::nextConnection(double timeout)
 {
-  if(!_ready)
+  if(_sockfd < 0)
   {
     vvDebugMsg::msg(2, "vvTcpServer::nextConnection() error: server not correctly initialized");
   }

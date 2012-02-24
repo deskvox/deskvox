@@ -59,7 +59,6 @@ private:
 #define socklen_t int
 #endif
   socklen_t _hostAddrlen;
-  bool _ready;
 
 };
 
