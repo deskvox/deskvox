@@ -38,9 +38,35 @@ const float VV_FLT_MAX = FLT_MAX;                 ///< maximum float value
 // Forward Declarations
 //============================================================================
 
-class vvVector3;
-class vvVector4;
+template <typename T>
+class vvBaseVector3;
+template <typename T>
+class vvBaseVector4;
 class vvMatrix;
+
+//============================================================================
+// Common vector types
+//============================================================================
+
+typedef vvBaseVector3<int> vvVector3i;
+typedef vvBaseVector3<unsigned int> vvVector3ui;
+typedef vvBaseVector3<short> vvVector3s;
+typedef vvBaseVector3<unsigned short> vvVector3us;
+typedef vvBaseVector3<long> vvVector3l;
+typedef vvBaseVector3<unsigned long> vvVector3ul;
+typedef vvBaseVector3<float> vvVector3f;
+typedef vvBaseVector3<double> vvVector3d;
+typedef vvVector3f vvVector3;
+
+typedef vvBaseVector4<int> vvVector4i;
+typedef vvBaseVector4<unsigned int> vvVector4ui;
+typedef vvBaseVector4<short> vvVector4s;
+typedef vvBaseVector4<unsigned short> vvVector4us;
+typedef vvBaseVector4<long> vvVector4l;
+typedef vvBaseVector4<unsigned long> vvVector4ul;
+typedef vvBaseVector4<float> vvVector4f;
+typedef vvBaseVector4<double> vvVector4d;
+typedef vvVector4f vvVector4;
 
 //============================================================================
 // Class Definitions
@@ -129,104 +155,104 @@ class VIRVOEXPORT vvMatrix
 /** 3D vector primitive.
  @author Juergen Schulze-Doebold (schulze@hlrs.de)
 */
-class VIRVOEXPORT vvVector4
+template <typename T>
+class VIRVOEXPORT vvBaseVector4
 {
   public:
-    float e[4];                                   ///< vector elements (x|y|z|w)
+    T e[4];                                   ///< vector elements (x|y|z|w)
 
-    vvVector4();
-    vvVector4(const float val);
-    vvVector4(const float x, const float y, const float z, const float w);
-    vvVector4(const vvVector4*);
-    vvVector4(const vvVector3*, const float w);
-    float &operator[](const int);
-    float operator[](const int) const;
-    void set(float, float, float, float);
+    vvBaseVector4();
+    vvBaseVector4(T val);
+    vvBaseVector4(T x, T y, T z, T w);
+    vvBaseVector4(const vvBaseVector4*);
+    vvBaseVector4(const vvBaseVector3<T>*, const T w);
+    T &operator[](int);
+    T operator[](int) const;
+    void set(T x, T y, T z, T w);
     void multiply(const vvMatrix*);
-    void copy(const vvVector4*);
-    void add(const vvVector4*);
-    void sub(const vvVector4*);
+    void copy(const vvBaseVector4*);
+    void add(const vvBaseVector4*);
+    void sub(const vvBaseVector4*);
     void print(const char* text = 0) const;
     void perspectiveDivide();
 
-    vvVector4 operator + (const vvVector4 &other) const;
-    vvVector4 operator - (const vvVector4 &other) const;
-    vvVector4 operator * (const vvVector4 &other) const;
+    vvBaseVector4 operator + (const vvBaseVector4 &other) const;
+    vvBaseVector4 operator - (const vvBaseVector4 &other) const;
+    vvBaseVector4 operator * (const vvBaseVector4 &other) const;
 };
 
-/** 3D vector primitive, also used for points
+/** base vector primitive
  @author Jurgen P. Schulze (jschulze@ucsd.edu)
 */
-class VIRVOEXPORT vvVector3
+template <typename T>
+class VIRVOEXPORT vvBaseVector3
 {
   public:
-    float e[3];                                   ///< vector elements (x|y|z)
+    T e[3];                                   ///< vector elements (x|y|z)
 
-    vvVector3();
-    vvVector3(const float);
-    vvVector3(const float, const float, const float);
-    vvVector3(const vvVector3*);
-    vvVector3 operator^(const vvVector3) const;
-    float &operator[](const int);
-    float operator[](const int) const;
-    void  set(const float, const float, const float);
-    void  get(float*, float*, float*) const;
-    void  copy(const vvVector3*);
-    void  copy(const vvVector3&);
-    void  copy(const vvVector4*);
-    void  add(const vvVector3*);
-    void  add(const float);
-    void  add(const float, const float, const float);
-    void  sub(const vvVector3*);
-    void  sub(const float);
-    void  scale(const float);
-    void  scale(const vvVector3*);
-    void  scale(const float, const float, const float);
-    float dot(const vvVector3*) const;
-    float angle(const vvVector3*) const;
-    void  cross(const vvVector3*);
+    vvBaseVector3();
+    vvBaseVector3(T);
+    vvBaseVector3(T x, T y, T z);
+    vvBaseVector3(const vvBaseVector3*);
+    vvBaseVector3 operator^(const vvBaseVector3) const;
+    T &operator[](const int);
+    T operator[](const int) const;
+    void  set(T x, T y, T z);
+    void  get(T* x, T* y, T* z) const;
+    void  copy(const vvBaseVector3*);
+    void  copy(const vvBaseVector3&);
+    void  copy(const vvBaseVector4<T>*);
+    void  add(const vvBaseVector3*);
+    void  add(T val);
+    void  add(T x, T y, T z);
+    void  sub(const vvBaseVector3*);
+    void  sub(T val);
+    void  scale(T s);
+    void  scale(const vvBaseVector3*);
+    void  scale(T x, T y, T z);
+    T dot(const vvBaseVector3*) const;
+    T angle(const vvBaseVector3*) const;
+    void  cross(const vvBaseVector3*);
     void  multiply(const vvMatrix*);
-    float distance(const vvVector3*) const;
-    float length() const;
-    void  planeNormalPPV(const vvVector3*, const vvVector3*, const vvVector3*);
-    float distPointPlane(const vvVector3*, const vvVector3*) const;
+    T distance(const vvBaseVector3*) const;
+    T length() const;
+    void  planeNormalPPV(const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*);
+    T distPointPlane(const vvBaseVector3*, const vvBaseVector3*) const;
     void  normalize();
     void  negate();
-    bool  equal(const vvVector3*);
+    bool  equal(const vvBaseVector3*);
     void  random(int, int);
     void  random(float, float);
     void  random(double, double);
     void  print(const char* text = 0) const;
     void  getRow(const vvMatrix*, const int);
     void  getColumn(const vvMatrix*, const int);
-    void  swap(vvVector3*);
-    bool  isectPlaneLine(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*);
-    bool  isectPlaneRay(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*);
-    int   isectPlaneCuboid(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*);
-    int   isectRayCylinder(const vvVector3*, const vvVector3*, float, const vvVector3*, const vvVector3*);
-    bool  isectRayTriangle(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*);
-    float isectLineLine(const vvVector3&, const vvVector3&, const vvVector3&, const vvVector3&);
-    bool  isSameSideLine2D(const vvVector3*, const vvVector3*, const vvVector3*, const vvVector3*);
-    bool  isInTriangle(const vvVector3*, const vvVector3*, const vvVector3*);
-    void  cyclicSort(const int, const vvVector3*);
+    void  swap(vvBaseVector3<T>*);
+    bool  isectPlaneLine(const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*);
+    bool  isectPlaneRay(const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*);
+    int   isectPlaneCuboid(const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*);
+    int   isectRayCylinder(const vvBaseVector3*, const vvBaseVector3*, T, const vvBaseVector3*, const vvBaseVector3*);
+    bool  isectRayTriangle(const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*);
+    T isectLineLine(const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&);
+    bool  isSameSideLine2D(const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*);
+    bool  isInTriangle(const vvBaseVector3*, const vvBaseVector3*, const vvBaseVector3*);
+    void  cyclicSort(const int, const vvBaseVector3*);
     void  zero();
     bool  isZero() const;
-    void  getSpherical(float*, float*, float*);
-    void  directionCosines(const vvVector3*);
-    static float signum(float);
-    vvVector3 operator + (const vvVector3 &other) const;
-    vvVector3 operator - (const vvVector3 &other) const;
-    vvVector3 operator * (const vvVector3 &other) const;
+    void  getSpherical(T*, T*, T*);
+    void  directionCosines(const vvBaseVector3*);
+    vvBaseVector3 operator + (const vvBaseVector3 &other) const;
+    vvBaseVector3 operator - (const vvBaseVector3 &other) const;
+    vvBaseVector3 operator * (const vvBaseVector3 &other) const;
 
-    vvVector3 operator * (const float scalar) const;
-    friend vvVector3 operator * (const float scalar, const vvVector3 &other);
+    vvBaseVector3 operator * (const T scalar) const;
 
-    vvVector3& operator = (const vvVector3 &other);
-    vvVector3& operator += (const vvVector3 &other);
-    vvVector3& operator -= (const vvVector3 &other);
+    vvBaseVector3& operator = (const vvBaseVector3 &other);
+    vvBaseVector3& operator += (const vvBaseVector3 &other);
+    vvBaseVector3& operator -= (const vvBaseVector3 &other);
 
-    vvVector3 operator + (void) const;
-    vvVector3 operator - (void) const;
+    vvBaseVector3 operator + (void) const;
+    vvBaseVector3 operator - (void) const;
 };
 
 /** 3D plane primitive.
@@ -245,18 +271,6 @@ class vvPlane
     float dist(const vvVector3&) const;
 };
 
-inline std::ostream& operator<<(std::ostream& out, const vvVector3& v)
-{
-  out << v[0] << " " << v[1] << " " << v[2];
-  return out;
-}
-
-inline std::ostream& operator<<(std::ostream& out, const vvVector4& v)
-{
-  out << v[0] << " " << v[1] << " " << v[2] << " " << v[3];
-  return out;
-}
-
 inline std::ostream& operator<<(std::ostream& out, const vvMatrix& m)
 {
   for (int i = 0; i < 4; ++i)
@@ -269,6 +283,8 @@ inline std::ostream& operator<<(std::ostream& out, const vvMatrix& m)
   }
   return out;
 }
+
+#include "vvvecmath.impl.h"
 
 #endif
 
