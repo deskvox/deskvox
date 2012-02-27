@@ -83,27 +83,6 @@ public:
   float calcDepth() const;
 
   /*!
-   * \brief         Calc the minimum extent along the specified axis.
-   *
-   *                If you desire the x-value of the left side of the
-   *                box, pass vvVector3(1, 0, 0) as axis. Make sure that
-   *                the vector component depicting the desired component
-   *                equals 1.
-   * \param         axis A normalized vector representing the coord axis.
-   */
-  float calcMinExtent(const vvVector3& axis) const;
-  /*!
-   * \brief         Calc the maximum extent along the specified axis.
-   *
-   *                If you desire the x-value of the right side of the
-   *                box, pass vvVector3(1, 0, 0) as axis. Make sure that
-   *                the vector component depicting the desired component
-   *                equals 1.
-   * \param         axis A normalized vector representing the coord axis.
-   */
-  float calcMaxExtent(const vvVector3& axis) const;
-
-  /*!
    * \brief         Get the box vertices.
    *
    *                Returns the precalculated box corner vertices.

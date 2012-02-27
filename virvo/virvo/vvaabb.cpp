@@ -54,31 +54,17 @@ vvVector3 vvAABB::max() const
 
 float vvAABB::calcWidth() const
 {
-  return calcMaxExtent(vvVector3(1, 0, 0)) - calcMinExtent(vvVector3(1, 0, 0));
+  return _max[0] - _min[0];
 }
 
 float vvAABB::calcHeight() const
 {
-  return calcMaxExtent(vvVector3(0, 1, 0)) - calcMinExtent(vvVector3(0, 1, 0));
+  return _max[1] - _min[1];
 }
 
 float vvAABB::calcDepth() const
 {
-  return calcMaxExtent(vvVector3(0, 0, 1)) - calcMinExtent(vvVector3(0, 0, 1));
-}
-
-float vvAABB::calcMinExtent(const vvVector3& axis) const
-{
-  return _min[0] * axis[0]
-       + _min[1] * axis[1]
-       + _min[2] * axis[2];
-}
-
-float vvAABB::calcMaxExtent(const vvVector3& axis) const
-{
-  return _max[0] * axis[0]
-       + _max[1] * axis[1]
-       + _max[2] * axis[2];
+  return _max[2] - _min[2];
 }
 
 const vvBoxCorners& vvAABB::getVertices() const
