@@ -123,6 +123,7 @@ SET(VIRVO_HEADERS
   vvtransfunc.h
   vvudpsocket.h
   vvvecmath.h
+  vvvecmath.impl.h
   vvvffile.h
   vvvirvo.h
   vvvisitor.h
