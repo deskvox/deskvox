@@ -23,11 +23,6 @@
 #include <cstdlib>
 #include <iostream>
 
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::ios;
-
 template <typename T>
 T vvsqrt(const T val);
 
@@ -449,16 +444,16 @@ void vvBaseVector3<T>::random(double from, double to)
 template <typename T>
 void vvBaseVector3<T>::print(const char* text) const
 {
-  cerr.setf(ios::fixed, ios::floatfield);
-  cerr.precision(3);
+  std::cerr.setf(std::ios::fixed, std::ios::floatfield);
+  std::cerr.precision(3);
 
   if (text != 0)
   {
-    cerr << text << "\t" << e[0] << ", " << e[1] << ", " << e[2] << endl;
+    std::cerr << text << "\t" << e[0] << ", " << e[1] << ", " << e[2] << std::endl;
   }
   else
   {
-    cerr << e[0] << ", " << e[1] << ", " << e[2] << endl;
+    std::cerr << e[0] << ", " << e[1] << ", " << e[2] << std::endl;
   }
 }
 
@@ -1317,19 +1312,19 @@ void vvBaseVector4<T>::copy(const vvBaseVector4<T>* v)
 template <typename T>
 void vvBaseVector4<T>::print(const char* text) const
 {
-  cerr.setf(ios::fixed, ios::floatfield);
-  cerr.precision(3);
+  std::cerr.setf(std::ios::fixed, std::ios::floatfield);
+  std::cerr.precision(3);
 
   if (text == 0)
   {
-    cerr << e[0] << ", " << e[1] << ", " << e[2] << ", " << e[3] << endl;
+    std::cerr << e[0] << ", " << e[1] << ", " << e[2] << ", " << e[3] << std::endl;
   }
   else
   {
-    cerr << text << "\t" << e[0] << ", " << e[1] << ", " << e[2] << ", " << e[3] << endl;
+    std::cerr << text << "\t" << e[0] << ", " << e[1] << ", " << e[2] << ", " << e[3] << std::endl;
   }
-  cerr << "   Normalized: " << e[0]/e[3] << ", " << e[1]/e[3] << ", " <<
-    e[2]/e[3] << endl;
+  std::cerr << "   Normalized: " << e[0]/e[3] << ", " << e[1]/e[3] << ", " <<
+    e[2]/e[3] << std::endl;
 }
 
 //----------------------------------------------------------------------------
