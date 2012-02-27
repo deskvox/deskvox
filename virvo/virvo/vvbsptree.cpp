@@ -257,13 +257,13 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
 {
   vvHalfSpace* result = new vvHalfSpace[2];
 
-  vvBrick* tmp;
+  //vvBrick* tmp;
   vvVector3 n1, n2;
   vvVector3 pnt;
   float dim[3];
   float min[3];
   float max[3];
-  float tmpf;
+  //float tmpf;
   int cnt[3];
   int ratio[3][2];
   float bestWorkLoad[3][2];                       // stored for convenience
@@ -300,6 +300,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
       it != brickList[0].end();
       ++it)
   {
+#if 0
     tmp = *it;
     tmpf = tmp->getAABB().calcMaxExtent(vvVector3(1, 0, 0));
     if (tmpf > max[0])
@@ -339,6 +340,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
 
     tmpArray[i] = tmp;
     ++i;
+#endif
   }
 
   // Get w, h and d.
