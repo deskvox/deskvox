@@ -48,6 +48,12 @@ vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const strin
 
 vvGLSLProgram::~vvGLSLProgram()
 {
+  for (TextureIterator it = _textureNameMaps.begin();
+       it != _textureNameMaps.end(); ++it)
+  {
+    delete it->second;
+  }
+
   disable();
   if(_programId)
   {
