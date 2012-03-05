@@ -253,9 +253,9 @@ void vvGLSLProgram::setParameterMatrix4f(const string& parameterName, const vvMa
 
 GLint vvGLSLProgram::getUniform(const string& parameterName, const string& parameterType)
 {
-  if(_parameterMaps.find(parameterName.c_str()) != _parameterMaps.end())
+  if(_parameterMaps.find(parameterName) != _parameterMaps.end())
   {
-    return _parameterMaps[parameterName.c_str()];
+    return _parameterMaps[parameterName];
   }
   else
   {
@@ -268,7 +268,7 @@ GLint vvGLSLProgram::getUniform(const string& parameterName, const string& param
       vvDebugMsg::msg(1, errmsg.c_str());
     }
 
-    _parameterMaps[parameterName.c_str()] = uniform;
+    _parameterMaps[parameterName] = uniform;
     return uniform;
   }
 }
