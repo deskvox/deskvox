@@ -488,7 +488,9 @@ void vvBaseVector3<T>::getColumn(const vvMatrix* m, const int col)
 template <typename T>
 void vvBaseVector3<T>::swap(vvBaseVector3<T>* v)
 {
-  std::swap<vvBaseVector3<T> >(*v, *this);
+  std::swap(v->e[0], e[0]);
+  std::swap(v->e[1], e[1]);
+  std::swap(v->e[2], e[2]);
 }
 
 //----------------------------------------------------------------------------
