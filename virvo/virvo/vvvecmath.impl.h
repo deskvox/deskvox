@@ -317,7 +317,7 @@ void vvBaseVector3<T>::multiply(const vvMatrix* m)
 template <typename T>
 T vvBaseVector3<T>::distance(const vvBaseVector3<T>* v) const
 {
-  const vvBaseVector3<T> diff = v - this;
+  const vvBaseVector3<T> diff = *v - *this;
   return vvsqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
 }
 
