@@ -161,7 +161,7 @@ class VIRVOEXPORT vvBaseVector4
     T e[4];                                   ///< vector elements (x|y|z|w)
 
     vvBaseVector4();
-    vvBaseVector4(T val);
+    explicit vvBaseVector4(T val);
     vvBaseVector4(T x, T y, T z, T w);
     vvBaseVector4(const vvBaseVector4*);
     vvBaseVector4(const vvBaseVector3<T>*, const T w);
@@ -190,7 +190,7 @@ class VIRVOEXPORT vvBaseVector3
     T e[3];                                   ///< vector elements (x|y|z)
 
     vvBaseVector3();
-    vvBaseVector3(T);
+    explicit vvBaseVector3(T);
     vvBaseVector3(T x, T y, T z);
     vvBaseVector3(const vvBaseVector3*);
     vvBaseVector3 operator^(const vvBaseVector3) const;
