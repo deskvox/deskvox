@@ -632,17 +632,7 @@ void vvMatrix::setColumn(int col, float a, float b, float c, float d)
   @param col  column index
   @param vec  vector with new elements
 */
-void vvMatrix::setColumn(int col, vvVector3* vec)
-{
-  e[0][col] = (*vec)[0];
-  e[1][col] = (*vec)[1];
-  e[2][col] = (*vec)[2];
-}
-
-//----------------------------------------------------------------------------
-/** @see setColumn
- */
-void vvMatrix::setColumn(int col, vvVector3& vec)
+void vvMatrix::setColumn(int col, const vvVector3& vec)
 {
   e[0][col] = vec[0];
   e[1][col] = vec[1];
@@ -694,7 +684,7 @@ void vvMatrix::getColumn(int col, float* a, float* b, float* c, float* d)
   @param col  column index
   @param vec  vector to obtain matrix elements
 */
-void vvMatrix::getColumn(int col, vvVector3* vec)
+void vvMatrix::getColumn(int col, vvVector3& vec)
 {
   vec[0] = e[0][col];
   vec[1] = e[1][col];

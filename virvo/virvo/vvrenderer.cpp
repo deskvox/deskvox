@@ -806,9 +806,9 @@ void vvRenderer::renderCoordinates()
   mv.killTrans();
   for (i=0; i<3; ++i)                             // normalize base vectors to remove scaling
   {
-    mv.getColumn(i, &column);
+    mv.getColumn(i, column);
     column.normalize();
-    mv.setColumn(i, &column);
+    mv.setColumn(i, column);
   }
   mv.translate(0.8f * half[0], -0.8f * half[1], 0.0f);
   mv.scale(0.2f, 0.2f, 0.2f);

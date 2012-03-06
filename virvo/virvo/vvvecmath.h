@@ -130,12 +130,11 @@ class VIRVOEXPORT vvMatrix
     void setRow(int, float, float, float, float);
     void setRow(int, vvVector3*);
     void setColumn(int, float, float, float, float);
-    void setColumn(int, vvVector3*);
-    void setColumn(int, vvVector3&);
+    void setColumn(int, const vvVector3& vec);
     void getRow(int, float*, float*, float*, float*);
     void getRow(int, vvVector3*);
     void getColumn(int, float*, float*, float*, float*);
-    void getColumn(int, vvVector3*);
+    void getColumn(int, vvVector3& vec);
     void random(int, int);
     void random(float, float);
     void invert();
