@@ -43,28 +43,6 @@
 using namespace std;
 
 //============================================================================
-// vvsqrt specializations
-//============================================================================
-
-template <>
-double vvsqrt<double>(const double val)
-{
-  return sqrt(val);
-}
-
-template <>
-float vvsqrt<float>(const float val)
-{
-  return sqrtf(val);
-}
-
-template <>
-long double vvsqrt<long double>(const long double val)
-{
-  return sqrtl(val);
-}
-
-//============================================================================
 // vvVecmath Class Methods
 //============================================================================
 

@@ -23,9 +23,6 @@
 #include <cstdlib>
 #include <iostream>
 
-template <typename T>
-T vvsqrt(const T val);
-
 //============================================================================
 // vvBaseVector3 Template Methods
 //============================================================================
@@ -318,7 +315,7 @@ template <typename T>
 T vvBaseVector3<T>::distance(const vvBaseVector3<T>* v) const
 {
   const vvBaseVector3<T> diff = *v - *this;
-  return vvsqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
+  return std::sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
 }
 
 //----------------------------------------------------------------------------
@@ -326,7 +323,7 @@ T vvBaseVector3<T>::distance(const vvBaseVector3<T>* v) const
 template <typename T>
 T vvBaseVector3<T>::length() const
 {
-  return vvsqrt(dot(this));
+  return std::sqrt(dot(this));
 }
 
 //----------------------------------------------------------------------------
@@ -373,7 +370,7 @@ T vvBaseVector3<T>::distPointPlane(const vvBaseVector3<T>* n,
 template <typename T>
 void vvBaseVector3<T>::normalize()
 {
-  const T d = vvsqrt(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]);
+  const T d = std::sqrt(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]);
   if (d == 0.0) return;                           // division by zero error
   const T dInv = 1.0f / d;
   e[0] *= dInv;
@@ -721,7 +718,7 @@ int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>* cylBase,
   closest.add(rayBase);
 
   // Find intersections of ray-line and cylinder:
-  s = vvsqrt(cylRadius * cylRadius - dist * dist);
+  s = std::sqrt(cylRadius * cylRadius - dist * dist);
   i1 = t + s;                                     // closest intersection
   i2 = t - s;                                     // second intersection
 
