@@ -132,6 +132,8 @@ void vvGLSLProgram::enable()
 
   if(_shadersLoaded)
   {
+    GLint activeTexture = GL_TEXTURE0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
     for(TextureMap::iterator i = _textureNameMaps.begin(); i != _textureNameMaps.end(); ++i)
     {
       vvGLSLTexture* tex = i->second;
@@ -164,7 +166,7 @@ void vvGLSLProgram::enable()
       }
     }
     glUseProgramObjectARB(_programId);
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(activeTexture);
   }
   else
   {
@@ -314,9 +316,11 @@ void vvGLSLProgram::setParameterTex1D(const string& parameterName, const unsigne
     tex->_type = TEXTURE_1D;
     tex->_id = ui;
     glUniform1i(tex->_uniform, tex->_unit);
+    GLint activeTexture = GL_TEXTURE0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
     glActiveTexture(GL_TEXTURE0+tex->_unit);
     glBindTexture(GL_TEXTURE_1D, ui);
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(activeTexture);
   }
 }
 
@@ -328,9 +332,11 @@ void vvGLSLProgram::setParameterTex2D(const string& parameterName, const unsigne
     tex->_type = TEXTURE_2D;
     tex->_id = ui;
     glUniform1i(tex->_uniform, tex->_unit);
+    GLint activeTexture = GL_TEXTURE0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
     glActiveTexture(GL_TEXTURE0+tex->_unit);
     glBindTexture(GL_TEXTURE_2D, ui);
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(activeTexture);
   }
 }
 
@@ -342,9 +348,11 @@ void vvGLSLProgram::setParameterTex3D(const string& parameterName, const unsigne
     tex->_type = TEXTURE_3D;
     tex->_id = ui;
     glUniform1i(tex->_uniform, tex->_unit);
+    GLint activeTexture = GL_TEXTURE0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
     glActiveTexture(GL_TEXTURE0+tex->_unit);
     glBindTexture(GL_TEXTURE_3D, ui);
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(activeTexture);
   }
 }
 
