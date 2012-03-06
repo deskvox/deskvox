@@ -277,7 +277,7 @@ int main(int argc, char** argv)
       cout << "ok." << endl;
       cout << endl;
       cout << "Check data for differences...    ";
-      for(int i=0; i<tcpSize;i++)
+      for(uint i=0; i<tcpSize;i++)
       {
         if(bar[i] != bartext[i])
         {
