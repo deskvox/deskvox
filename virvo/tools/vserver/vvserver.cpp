@@ -22,18 +22,7 @@
 
 using std::cerr;
 using std::endl;
-using std::ios;
-/*
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#ifdef FREEGLUT
-// For glutInitContextFlags(GLUT_DEBUG), needed for GL_ARB_debug_output
-#include <GL/freeglut.h>
-#endif
-#endif
-*/
+
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -51,7 +40,6 @@ using std::ios;
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpserver.h>
 #include <virvo/vvcuda.h>
-
 #include <virvo/vvpthread.h>
 
 /**
@@ -84,34 +72,29 @@ class vvServer
     vvServer();
     ~vvServer();
     int run(int, char**);
-    static void cleanup();
 
   private:
     void displayHelpInfo();
     bool parseCommandLine(int argc, char *argv[]);
-    void mainLoop();
     void serverLoop();
     static void * handleClient(void * attribs);
 };
 
 const int vvServer::DEFAULTSIZE = 512;
 const int vvServer::DEFAULT_PORT = 31050;
-vvServer* vvServer::ds = NULL;
 
 //----------------------------------------------------------------------------
 /// Constructor
 vvServer::vvServer()
 {
   winWidth = winHeight = DEFAULTSIZE;
-  ds = this;
-  port                  = vvServer::DEFAULT_PORT;
+  port                 = vvServer::DEFAULT_PORT;
 }
 
 //----------------------------------------------------------------------------
 /// Destructor.
 vvServer::~vvServer()
 {
-  ds = NULL;
 }
 
 void vvServer::serverLoop()
@@ -255,17 +238,6 @@ cleanup:
 }
 
 //----------------------------------------------------------------------------
-/** Virvo server main loop.
-  @param filename  volume file to display
-*/
-void vvServer::mainLoop()
-{
-  vvDebugMsg::msg(2, "vvServer::mainLoop()");
-
-  ds->serverLoop();
-}
-
-//----------------------------------------------------------------------------
 /// Display command usage help on the command line.
 void vvServer::displayHelpInfo()
 {
@@ -277,13 +249,17 @@ void vvServer::displayHelpInfo()
   cerr << endl;
   cerr << "Available options:" << endl;
   cerr << endl;
-  cerr << "-port (-p)" << endl;
+  cerr << "-port" << endl;
   cerr << " Don't use the default port (" << DEFAULT_PORT << "), but the specified one" << endl;
   cerr << endl;
   cerr << "-size <width> <height>" << endl;
   cerr << " Set the window size to <width> * <height> pixels." << endl;
   cerr << " The default window size is " << DEFAULTSIZE << " * " << DEFAULTSIZE <<
           " pixels" << endl;
+  cerr << endl;
+  cerr << "-debug" << endl;
+  cerr << " Set debug level" << endl;
+  cerr << endl;
 }
 
 //----------------------------------------------------------------------------
@@ -298,8 +274,8 @@ bool vvServer::parseCommandLine(int argc, char** argv)
   for (int arg=1; arg<argc; ++arg)
   {
     if (vvToolshed::strCompare(argv[arg], "-help")==0 ||
-        vvToolshed::strCompare(argv[arg], "-h")==0 ||
-        vvToolshed::strCompare(argv[arg], "-?")==0 ||
+        vvToolshed::strCompare(argv[arg], "-h")==0    ||
+        vvToolshed::strCompare(argv[arg], "-?")==0    ||
         vvToolshed::strCompare(argv[arg], "/?")==0)
     {
       displayHelpInfo();
@@ -351,27 +327,8 @@ bool vvServer::parseCommandLine(int argc, char** argv)
       }
       else
       {
-        cerr << "test----------------------"<<endl;
         port = atoi(argv[arg]);
       }
-    }
-    else if (vvToolshed::strCompare(argv[arg], "-display")==0
-        || vvToolshed::strCompare(argv[arg], "-geometry")==0)
-    {
-      // handled by GLUT
-      if ((++arg)>=argc)
-      {
-        cerr << "Required argument unspecified" << endl;
-        return false;
-      }
-    }
-    else if (vvToolshed::strCompare(argv[arg], "-iconic")==0
-        || vvToolshed::strCompare(argv[arg], "-direct")==0
-        || vvToolshed::strCompare(argv[arg], "-indirect")==0
-        || vvToolshed::strCompare(argv[arg], "-gldebug")==0
-        || vvToolshed::strCompare(argv[arg], "-sync")==0)
-    {
-      // handled by GLUT
     }
     else
     {
@@ -379,7 +336,6 @@ bool vvServer::parseCommandLine(int argc, char** argv)
       return false;
     }
   }
-
   return true;
 }
 
@@ -399,16 +355,9 @@ int vvServer::run(int argc, char** argv)
   if (parseCommandLine(argc, argv) == false)
     return 1;
 
-  mainLoop();
+  serverLoop();
   return 0;
 }
-
-void vvServer::cleanup()
-{
-  delete ds;
-  ds = NULL;
-}
-
 
 //----------------------------------------------------------------------------
 /// Main entry point.
@@ -441,10 +390,9 @@ int main(int argc, char** argv)
   _CrtCheckMemory();
 #endif
 
-  atexit(vvServer::cleanup);
-
   //vvDebugMsg::setDebugLevel(vvDebugMsg::NO_MESSAGES);
-  int error = (new vvServer())->run(argc, argv);
+  vvServer vserver;
+  int error = vserver.run(argc, argv);
 
 #ifdef VV_DEBUG_MEMORY
   _CrtDumpMemoryLeaks();                         // display memory leaks, if any
