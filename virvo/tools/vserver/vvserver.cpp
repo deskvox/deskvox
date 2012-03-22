@@ -39,7 +39,6 @@ using std::endl;
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpserver.h>
-#include <virvo/vvcuda.h>
 #include <virvo/vvpthread.h>
 
 /**
@@ -142,8 +141,6 @@ void * vvServer::handleClient(void *attribs)
   contextOptions.type = vvRenderContext::VV_PBUFFER;
   vvRenderContext renderContext = vvRenderContext(&contextOptions);
   renderContext.makeCurrent();
-
-  vvCuda::initGlInterop();
 
   vvTcpSocket *sock = reinterpret_cast<vvTcpSocket*>(attribs);
   vvSocketIO *sockio = new vvSocketIO(sock);
