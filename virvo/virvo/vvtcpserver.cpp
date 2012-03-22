@@ -122,6 +122,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
     if(fcntl(_sockfd, F_SETFL, flags|O_NONBLOCK))
     {
       vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: setting O_NONBLOCK on server-socket failed");
+      return NULL;
     }
 #endif
     vvTcpSocket sock;
@@ -157,7 +158,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
 
   if ( (n = accept(_sockfd, (struct sockaddr *)&_hostAddr, &_hostAddrlen)) < 0)
   {
-    vvDebugMsg::msg(1, "Error: accept()");
+    vvDebugMsg::msg(1, "Error: accept()", true);
     return NULL;
   }
 
