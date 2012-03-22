@@ -31,6 +31,12 @@
  */
 struct ContextArchData;
 
+/**
+  Class handling render contexts
+
+  @author Stefan Zellmann (zellmans@uni-koeln.de)
+  @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
+  */
 class VIRVOEXPORT vvRenderContext
 {
 public:
@@ -48,17 +54,28 @@ public:
 
   struct ContextOptions
   {
-    vvRenderContext::ContextType type;
-    std::string displayName;
-    uint width;
-    uint height;
-    bool doubleBuffering;
+    vvRenderContext::ContextType type;  ///< context type
+    std::string displayName;            ///< name of display e.g. ":0" leave empty for default
+    uint width;                         ///< width of rendercontext (and windows if related)
+    uint height;                        ///< height of rendercontext (and windows if related)
+    bool doubleBuffering;               ///< flag indicating usage of double-buffering
   };
 
+  /**
+    Creates a render context with given context options.
+    Call makeCurrent() to enable context for rendering
+    */
   vvRenderContext(ContextOptions*);
   ~vvRenderContext();
 
+  /**
+    Make this rendercontext current (in according thread)
+    @return true on success, false on error
+    */
   bool makeCurrent() const;
+  /**
+    Swap buffers in case of double-buffering
+    */
   void swapBuffers() const;
 private:
   ContextArchData *_archData;
