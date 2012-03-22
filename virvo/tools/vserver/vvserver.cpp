@@ -143,7 +143,10 @@ void * vvServer::handleClient(void *attribs)
   if (!renderContext.makeCurrent())
   {
     std::cerr << "Couldn't make render context current" << std::endl;
+    pthread_exit(NULL);
+#ifdef _WIN32
     return NULL;
+#endif
   }
   vvTcpSocket *sock = reinterpret_cast<vvTcpSocket*>(attribs);
   vvSocketIO *sockio = new vvSocketIO(sock);
@@ -170,7 +173,10 @@ void * vvServer::handleClient(void *attribs)
 
   if(!server)
   {
+    pthread_exit(NULL);
+#ifdef _WIN32
     return NULL;
+#endif
   }
 
   vvVolDesc *vd = NULL;
@@ -233,7 +239,10 @@ cleanup:
   delete vd;
   vd = NULL;
 
+  pthread_exit(NULL);
+#ifdef _WIN32
   return NULL;
+#endif
 }
 
 //----------------------------------------------------------------------------
