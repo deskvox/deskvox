@@ -140,8 +140,11 @@ void * vvServer::handleClient(void *attribs)
   contextOptions.width = DEFAULTSIZE;
   contextOptions.type = vvRenderContext::VV_PBUFFER;
   vvRenderContext renderContext = vvRenderContext(&contextOptions);
-  renderContext.makeCurrent();
-
+  if (!renderContext.makeCurrent())
+  {
+    std::cerr << "Couldn't make render context current" << std::endl;
+    return NULL;
+  }
   vvTcpSocket *sock = reinterpret_cast<vvTcpSocket*>(attribs);
   vvSocketIO *sockio = new vvSocketIO(sock);
 
