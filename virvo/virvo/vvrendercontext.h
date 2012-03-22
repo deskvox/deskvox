@@ -22,6 +22,9 @@
 #define _VV_RENDERCONTEXT_H_
 
 #include "vvexport.h"
+#include "vvinttypes.h"
+
+#include <iostream>
 
 /*! Has to be defined in .cpp
  *  contains architecture specific variables
@@ -31,16 +34,39 @@ struct ContextArchData;
 class VIRVOEXPORT vvRenderContext
 {
 public:
-  vvRenderContext(const char* displayName = 0);
+  enum ContextType
+  {
+    VV_WINDOW,
+    VV_PBUFFER
+  };
+
+//  enum ContextWindow
+//  {
+//    VV_X11,
+//    VV_WINAPI
+//  };
+
+  struct ContextOptions
+  {
+    vvRenderContext::ContextType type;
+    std::string displayName;
+    uint width;
+    uint height;
+    bool doubleBuffering;
+  };
+
+  vvRenderContext(ContextOptions*);
   ~vvRenderContext();
 
   bool makeCurrent() const;
+  void swapBuffers() const;
 private:
-  ContextArchData* _archData;
+  ContextArchData *_archData;
+  ContextOptions  *_options;
 
   bool _initialized;
 
-  void init(const char* displayName);
+  void init();
 };
 
 #endif // _VV_RENDERCONTEXT_H_

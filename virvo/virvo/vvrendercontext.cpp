@@ -20,10 +20,9 @@
 
 #include "vvdebugmsg.h"
 #include "vvrendercontext.h"
-
-#include <iostream>
-
 #include "vvx11.h"
+
+#include <sstream>
 
 struct ContextArchData
 {
@@ -34,11 +33,12 @@ struct ContextArchData
 #endif
 };
 
-vvRenderContext::vvRenderContext(const char* displayName)
+vvRenderContext::vvRenderContext(ContextOptions * co)
 {
   _archData = new ContextArchData;
   _initialized = false;
-  init(displayName);
+  _options = co;
+  init();
 }
 
 vvRenderContext::~vvRenderContext()
@@ -66,76 +66,112 @@ bool vvRenderContext::makeCurrent() const
   return false;
 }
 
-void vvRenderContext::init(const char* displayName)
+void vvRenderContext::swapBuffers() const
+{
+  if (_initialized)
+  {
+#ifdef HAVE_X11
+    glXSwapBuffers(_archData->display, _archData->drawable);
+#endif
+  }
+}
+
+void vvRenderContext::init()
 {
 #ifdef HAVE_X11
-  _archData->display = XOpenDisplay(displayName);
+  _archData->display = XOpenDisplay(_options->displayName.c_str());
 
-  if (_archData->display != NULL)
+  if(_archData->display != NULL)
   {
-    const Drawable parent = RootWindow(_archData->display, DefaultScreen(_archData->display));
-
-    int attrList[] = { GLX_RGBA,
-                       GLX_RED_SIZE, 8,
-                       GLX_GREEN_SIZE, 8,
-                       GLX_BLUE_SIZE, 8,
-                       GLX_ALPHA_SIZE, 8,
-                       GLX_DEPTH_SIZE, 24,
-                       None};
-
-    XVisualInfo* vi = glXChooseVisual(_archData->display,
-                                      DefaultScreen(_archData->display),
-                                      attrList);
-
-    XSetWindowAttributes wa = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    wa.colormap = XCreateColormap(_archData->display, parent, vi->visual, AllocNone);
-    wa.background_pixmap = None;
-    wa.border_pixel = 0;
-
-    if (vvDebugMsg::getDebugLevel() == 0)
+    switch(_options->type)
     {
-      wa.override_redirect = true;
-    }
-    else
-    {
-      wa.override_redirect = false;
-    }
-
-    _archData->glxContext = glXCreateContext(_archData->display, vi, NULL, True);
-
-    if (_archData->glxContext != 0)
-    {
-
-      int windowWidth = 1;
-      int windowHeight = 1;
-      if (vvDebugMsg::getDebugLevel() > 0)
+    case VV_PBUFFER:
       {
-        windowWidth = 512;
-        windowHeight = 512;
+        int attrList[] = { GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8, None};
+
+        int nelements;
+        GLXFBConfig* configs = glXChooseFBConfig(_archData->display, DefaultScreen(_archData->display),
+                                                 attrList, &nelements);
+        if (configs && (nelements > 0))
+        {
+          // TODO: find the nicest fbconfig.
+          int pbAttrList[] = { GLX_PBUFFER_WIDTH, _options->width, GLX_PBUFFER_HEIGHT, _options->height, None };
+          GLXPbuffer pbuffer = glXCreatePbuffer(_archData->display, configs[0], pbAttrList);
+          _archData->glxContext = glXCreateNewContext(_archData->display, configs[0], GLX_RGBA_TYPE, 0, True);
+          _archData->drawable = pbuffer;
+          _initialized = true;
+          return;
+        }
       }
+      // purposely no break; here
+    case VV_WINDOW:
+    default:
+      {
+        const Drawable parent = RootWindow(_archData->display, DefaultScreen(_archData->display));
 
-      _archData->drawable = XCreateWindow(_archData->display, parent, 0, 0, windowWidth, windowHeight, 0,
-                                          vi->depth, InputOutput, vi->visual,
-                                          CWBackPixmap|CWBorderPixel|CWColormap|CWOverrideRedirect, &wa);
-      XMapWindow(_archData->display, _archData->drawable);
-      XFlush(_archData->display);
-      _initialized = true;
-    }
-    else
-    {
-      std::cerr << "Couldn't create OpenGL context" << std::endl;
-      _initialized = false;
-    }
+        int attrList[] = { GLX_RGBA,
+                           GLX_RED_SIZE, 8,
+                           GLX_GREEN_SIZE, 8,
+                           GLX_BLUE_SIZE, 8,
+                           GLX_ALPHA_SIZE, 8,
+                           GLX_DEPTH_SIZE, 24,
+                           None};
 
-    delete vi;
+        XVisualInfo* vi = glXChooseVisual(_archData->display,
+                                          DefaultScreen(_archData->display),
+                                          attrList);
+
+        XSetWindowAttributes wa = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        wa.colormap = XCreateColormap(_archData->display, parent, vi->visual, AllocNone);
+        wa.background_pixmap = None;
+        wa.border_pixel = 0;
+
+        if (vvDebugMsg::getDebugLevel() == 0)
+        {
+          wa.override_redirect = true;
+        }
+        else
+        {
+          wa.override_redirect = false;
+        }
+
+        _archData->glxContext = glXCreateContext(_archData->display, vi, NULL, True);
+
+        if (_archData->glxContext != 0)
+        {
+
+          int windowWidth = _options->width;
+          int windowHeight = _options->height;
+          if (vvDebugMsg::getDebugLevel() > 0)
+          {
+            windowWidth = 512;
+            windowHeight = 512;
+          }
+
+          _archData->drawable = XCreateWindow(_archData->display, parent, 0, 0, windowWidth, windowHeight, 0,
+                                              vi->depth, InputOutput, vi->visual,
+                                              CWBackPixmap|CWBorderPixel|CWColormap|CWOverrideRedirect, &wa);
+          XMapWindow(_archData->display, _archData->drawable);
+          XFlush(_archData->display);
+          _initialized = true;
+        }
+        else
+        {
+          vvDebugMsg::msg( 0, "Couldn't create OpenGL context");
+          _initialized = false;
+        }
+        _initialized = true;
+        delete vi;
+      }
+    }
   }
   else
   {
-    std::cerr << "Couldn't open X display" << std::endl;
     _initialized = false;
+    std::ostringstream errmsg;
+    errmsg << "vvRenderContext::init() error: Could not open display " << _options->displayName;
+    vvDebugMsg::msg(0, errmsg.str().c_str());
   }
-#else
-  (void)displayName;
 #endif
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
