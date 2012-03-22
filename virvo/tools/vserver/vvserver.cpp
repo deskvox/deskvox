@@ -99,7 +99,6 @@ vvServer::~vvServer()
 
 void vvServer::serverLoop()
 {
-  vvGLTools::enableGLErrorBacktrace();
   pthread_t thread;
 
   vvTcpServer tcpServ = vvTcpServer(port);
