@@ -131,7 +131,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
   const int size = _image->encode(_codetype, 0, h-1, 0, w-1);
   if (size > 0)
   {
-    if (_socket->putIbrImage(_image) != vvSocket::VV_OK)
+    if (_socketio->putIbrImage(_image) != vvSocket::VV_OK)
     {
       vvDebugMsg::msg(1, "Error sending image over socket...");
     }

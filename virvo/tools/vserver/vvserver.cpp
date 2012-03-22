@@ -23,7 +23,7 @@
 using std::cerr;
 using std::endl;
 using std::ios;
-
+/*
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -33,7 +33,7 @@ using std::ios;
 #include <GL/freeglut.h>
 #endif
 #endif
-
+*/
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -44,12 +44,15 @@ using std::ios;
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
 #include <virvo/vvremoteserver.h>
+#include <virvo/vvrendercontext.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvvoldesc.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpserver.h>
 #include <virvo/vvcuda.h>
+
+#include <virvo/vvpthread.h>
 
 /**
  * Virvo Server main class.
@@ -66,10 +69,9 @@ class vvServer
 {
   private:
     /// Remote rendering type
-    enum
+    enum RemoteRenderingType
     {
-      RR_NONE = 0,
-      RR_CLUSTER,
+      RR_NONE,
       RR_IMAGE,
       RR_IBR
     };
@@ -77,7 +79,6 @@ class vvServer
     static const int DEFAULT_PORT;              ///< default port for socket connections
     static vvServer* ds;                        ///< one instance of vvServer is always present
     int   winWidth, winHeight;                  ///< window size in pixels
-    int  rrMode;                                ///< memory remote rendering mode
     int port;                                   ///< port the server renderer uses to listen for incoming connections
   public:
     vvServer();
@@ -86,14 +87,11 @@ class vvServer
     static void cleanup();
 
   private:
-    static void reshapeCallback(int, int);
-    static void displayCallback();
-    static void timerCallback(int);
-    void initGraphics(int argc, char *argv[]);
     void displayHelpInfo();
     bool parseCommandLine(int argc, char *argv[]);
-    void mainLoop(int argc, char *argv[]);
+    void mainLoop();
     void serverLoop();
+    static void * handleClient(void * attribs);
 };
 
 const int vvServer::DEFAULTSIZE = 512;
@@ -106,10 +104,8 @@ vvServer::vvServer()
 {
   winWidth = winHeight = DEFAULTSIZE;
   ds = this;
-  rrMode                = RR_NONE;
   port                  = vvServer::DEFAULT_PORT;
 }
-
 
 //----------------------------------------------------------------------------
 /// Destructor.
@@ -121,237 +117,152 @@ vvServer::~vvServer()
 void vvServer::serverLoop()
 {
   vvGLTools::enableGLErrorBacktrace();
+  pthread_t thread;
+
+  vvTcpServer tcpServ = vvTcpServer(port);
+
+  if(!tcpServ.initStatus())
+  {
+    cerr << "Failed to initialize server-socket on port " << port << "." << endl;
+    return;
+  }
 
   while (1)
   {
     cerr << "Listening on port " << port << endl;
 
-    vvTcpServer tcpServ = vvTcpServer(port);
-
     vvSocket *sock = NULL;
 
-    if((sock = tcpServ.nextConnection()) == NULL)
+    while((sock = tcpServ.nextConnection()) == NULL)
     {
-      std::cerr << "Failed to initialize server socket on port " << port << std::endl;
+      // retry
+      cerr << "Socket blocked, retry..." << endl;
+    }
+    if(sock == NULL)
+    {
+      cerr << "Failed to initialize server socket on port " << port << endl;
       delete sock;
       break;
     }
-    vvSocketIO *sockio = new vvSocketIO(sock);
-
-    vvRemoteServer* server = NULL;
-    int type;
-    sockio->getInt32(type);
-    switch(type)
+    else
     {
-      case vvRenderer::REMOTE_IMAGE:
-        rrMode = RR_IMAGE;
-        server = new vvImageServer(sockio);
-        break;
-      case vvRenderer::REMOTE_IBR:
-        rrMode = RR_IBR;
-        server = new vvIbrServer(sockio);
-        break;
-      default:
-        std::cerr << "Unknown remote rendering type " << type << std::endl;
-        delete sock;
-        delete sockio;
-        break;
+      pthread_create(&thread, NULL, handleClient, sock);
     }
+  }
+}
 
-    if(!server)
-    {
+void * vvServer::handleClient(void *attribs)
+{
+  vvRenderContext::ContextOptions contextOptions;
+  contextOptions.displayName = "";
+  contextOptions.height = DEFAULTSIZE;
+  contextOptions.width = DEFAULTSIZE;
+  contextOptions.type = vvRenderContext::VV_PBUFFER;
+  vvRenderContext renderContext = vvRenderContext(&contextOptions);
+  renderContext.makeCurrent();
+
+  vvCuda::initGlInterop();
+
+  vvTcpSocket *sock = reinterpret_cast<vvTcpSocket*>(attribs);
+  vvSocketIO *sockio = new vvSocketIO(sock);
+
+  vvRemoteServer* server = NULL;
+  int getType;
+  sockio->getInt32(getType);
+  RemoteRenderingType remoteType = RR_NONE;
+  vvRenderer::RendererType rType = (vvRenderer::RendererType)getType;
+  switch(rType)
+  {
+    case vvRenderer::REMOTE_IMAGE:
+      server = new vvImageServer(sockio);
+      remoteType = RR_IMAGE;
       break;
-    }
+    case vvRenderer::REMOTE_IBR:
+      server = new vvIbrServer(sockio);
+      remoteType = RR_IBR;
+      break;
+    default:
+      std::cerr << "Unknown remote rendering type " << rType << std::endl;
+      break;
+  }
 
-    vvVolDesc *vd = NULL;
-    if (server->initData(vd) != vvRemoteServer::VV_OK)
+  if(!server)
+  {
+    return NULL;
+  }
+
+  vvVolDesc *vd = NULL;
+  if (server->initData(vd) != vvRemoteServer::VV_OK)
+  {
+    cerr << "Could not initialize volume data" << endl;
+    cerr << "Continuing with next client..." << endl;
+    goto cleanup;
+  }
+
+  if (vd != NULL)
+  {
+    if (server->getLoadVolumeFromFile())
     {
-      cerr << "Could not initialize volume data" << endl;
-      cerr << "Continuing with next client..." << endl;
-      goto cleanup;
+      vd->printInfoLine();
     }
 
-    if (vd != NULL)
+    // Set default color scheme if no TF present:
+    if (vd->tf.isEmpty())
     {
-      if (server->getLoadVolumeFromFile())
-      {
-        vd->printInfoLine();
-      }
-
-      // Set default color scheme if no TF present:
-      if (vd->tf.isEmpty())
-      {
-        vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-        vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
-      }
-
-      vvRenderState rs;
-      vvRenderer *renderer = vvRendererFactory::create(vd,
-          rs,
-          rrMode==RR_IBR ? "rayrend" : "default",
-          "");
-      if(rrMode == RR_IBR)
-        renderer->setParameter(vvRenderer::VV_USE_IBR, 1.f);
-
-      while (1)
-      {
-        glDrawBuffer(GL_BACK);
-        if (!server->processEvents(renderer))
-        {
-          break;
-        }
-
-        if (vvDebugMsg::getDebugLevel() > 0)
-        {
-          glutSwapBuffers();
-        }
-      }
-      delete renderer;
+      vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+      vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
     }
 
-    // Frames vector with bricks is deleted along with the renderer.
-    // Don't free them here.
-    // see setRenderer().
+    vvRenderState rs;
+    vvRenderer *renderer = vvRendererFactory::create(vd,
+        rs,
+        remoteType==RR_IBR ? "rayrend" : "default",
+        "");
+
+    if(remoteType == RR_IBR)
+      renderer->setParameter(vvRenderer::VV_USE_IBR, 1.f);
+
+    while (1)
+    {
+      if (!server->processEvents(renderer))
+      {
+        break;
+      }
+//      if (vvDebugMsg::getDebugLevel() > 0)
+//      {
+//        renderContext.swapBuffers();
+//      }
+    }
+    delete renderer;
+  }
+
+  // Frames vector with bricks is deleted along with the renderer.
+  // Don't free them here.
+  // see setRenderer().
 
 cleanup:
-    delete server;
-    server = NULL;
+  delete server;
+  server = NULL;
 
-    delete vd;
-    vd = NULL;
-  }
+  sock->disconnectFromHost();
+  delete sock;
+  sock = NULL;
+
+  delete vd;
+  vd = NULL;
+
+  return NULL;
 }
 
 //----------------------------------------------------------------------------
 /** Virvo server main loop.
   @param filename  volume file to display
 */
-void vvServer::mainLoop(int argc, char *argv[])
+void vvServer::mainLoop()
 {
   vvDebugMsg::msg(2, "vvServer::mainLoop()");
 
-  initGraphics(argc, argv);
-  vvCuda::initGlInterop();
-
-  glutTimerFunc(1, timerCallback, 0);
-
-  glutMainLoop();
-}
-
-//----------------------------------------------------------------------------
-/** Callback method for window resizes.
-    @param w,h new window width and height
-*/
-void vvServer::reshapeCallback(int w, int h)
-{
-  vvDebugMsg::msg(2, "vvServer::reshapeCallback(): ", w, h);
-
-  ds->winWidth  = w;
-  ds->winHeight = h;
-
-  // Resize OpenGL viewport:
-  glViewport(0, 0, ds->winWidth, ds->winHeight);
-
-  glDrawBuffer(GL_FRONT_AND_BACK);               // select all buffers
-                                                 // set clear color
-  glClearColor(0., 0., 0., 0.);
-                                                 // clear window
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-
-//----------------------------------------------------------------------------
-/// Callback method for window redraws.
-void vvServer::displayCallback()
-{
-  vvDebugMsg::msg(3, "vvServer::displayCallback()");
-
-  vvGLTools::printGLError("enter vvServer::displayCallback()");
-
-  glDrawBuffer(GL_BACK);
-  glClearColor(0., 0., 0., 0.);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  // Draw volume:
-  glMatrixMode(GL_MODELVIEW);
-
-  glDrawBuffer(GL_BACK);
-
-  glutSwapBuffers();
-
-  vvGLTools::printGLError("leave vvServer::displayCallback()");
-}
-
-//----------------------------------------------------------------------------
-/** Timer callback method, triggered by glutTimerFunc().
-*/
-void vvServer::timerCallback(int)
-{
-  vvDebugMsg::msg(3, "vvServer::timerCallback()");
-
   ds->serverLoop();
-  exit(0);
-}
-
-//----------------------------------------------------------------------------
-/// Initialize the GLUT window and the OpenGL graphics context.
-void vvServer::initGraphics(int argc, char *argv[])
-{
-  vvDebugMsg::msg(1, "vvServer::initGraphics()");
-
-  cerr << "Number of CPUs found: " << vvToolshed::getNumProcessors() << endl;
-  cerr << "Initializing GLUT." << endl;
-
-  glutInit(&argc, argv);                // initialize GLUT
-
-// Other glut versions than freeglut currently don't support
-// debug context flags.
-#if defined(FREEGLUT) && defined(GLUT_INIT_MAJOR_VERSION)
-  glutInitContextFlags(GLUT_DEBUG);
-#endif // FREEGLUT
-
-  // create double buffering context
-  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-  if (!glutGet(GLUT_DISPLAY_MODE_POSSIBLE))
-  {
-    cerr << "Error: Virvo server needs a double buffering OpenGL context with alpha channel." << endl;
-    exit(1);
-  }
-
-  glutInitWindowSize(winWidth, winHeight);       // set initial window size
-
-  // Create window title.
-  // Don't use sprintf, it won't work with macros on Irix!
-  char  title[1024];                              // window title
-  sprintf(title, "Virvo Server V%s.%s (Port %d)",
-      virvo::getVersionMajor(), virvo::getReleaseCounter(), port);
-
-  glutCreateWindow(title);              // open window and set window title
-  glutSetWindowTitle(title);
-
-  // Set GL state:
-  glPixelStorei(GL_PACK_ALIGNMENT, 1);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glEnable(GL_DEPTH_TEST);
-
-  // Set Glut callbacks:
-  glutDisplayFunc(displayCallback);
-  glutReshapeFunc(reshapeCallback);
-
-  const char *version = (const char *)glGetString(GL_VERSION);
-  cerr << "Found OpenGL version: " << version << endl;
-  if (strncmp(version,"1.0",3)==0)
-  {
-    cerr << "Virvo server requires OpenGL version 1.1 or greater." << endl;
-  }
-
-  vvGLTools::checkOpenGLextensions();
-
-  if (vvDebugMsg::isActive(2))
-  {
-    cerr << "\nSupported OpenGL extensions:" << endl;
-    vvGLTools::displayOpenGLextensions(vvGLTools::ONE_BY_ONE);
-  }
 }
 
 //----------------------------------------------------------------------------
@@ -488,7 +399,7 @@ int vvServer::run(int argc, char** argv)
   if (parseCommandLine(argc, argv) == false)
     return 1;
 
-  mainLoop(argc, argv);
+  mainLoop();
   return 0;
 }
 

@@ -90,6 +90,14 @@ vvTcpServer::~vvTcpServer()
 #endif
 }
 
+bool vvTcpServer::initStatus() const
+{
+  if(_sockfd < 0)
+    return false;
+  else
+    return true;
+}
+
 vvTcpSocket* vvTcpServer::nextConnection(double timeout)
 {
   if(_sockfd < 0)

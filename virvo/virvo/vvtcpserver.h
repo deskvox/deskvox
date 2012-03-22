@@ -41,10 +41,15 @@ public:
   ~vvTcpServer();
 
   /**
+    Get status of server.
+    @return true if socket is ready to use, false elsewise
+    */
+  bool initStatus() const;
+  /**
     Listen on socket for incomming connections and accept the first
     one. This call will obviously block.
     @param timeout maximum time to wait in seconds
-    @returns Pointer to an ready to use vvTcpSocket or NULL if errer occured
+    @return Pointer to an ready to use vvTcpSocket or NULL if errer occured
     */
   vvTcpSocket* nextConnection(double timeout = -1.0);
 

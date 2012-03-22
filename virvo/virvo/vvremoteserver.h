@@ -50,7 +50,7 @@ public:
 
   virtual bool processEvents(vvRenderer* renderer);
 protected:
-  vvSocketIO* _socket;                    ///< socket for remote rendering
+  vvSocketIO* _socketio;                    ///< socket for remote rendering
 
   vvRenderContext* _renderContext;
 
