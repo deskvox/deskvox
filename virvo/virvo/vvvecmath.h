@@ -39,10 +39,10 @@ const float VV_FLT_MAX = FLT_MAX;                 ///< maximum float value
 //============================================================================
 
 template <typename T>
-class vvBaseVector3;
+class VIRVOEXPORT vvBaseVector3;
 template <typename T>
-class vvBaseVector4;
-class vvMatrix;
+class VIRVOEXPORT vvBaseVector4;
+class VIRVOEXPORT vvMatrix;
 
 //============================================================================
 // Common vector types
