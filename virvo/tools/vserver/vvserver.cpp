@@ -68,7 +68,7 @@ class vvServer
     static const int DEFAULT_PORT;              ///< default port for socket connections
     static vvServer* ds;                        ///< one instance of vvServer is always present
     int   winWidth, winHeight;                  ///< window size in pixels
-    int port;                                   ///< port the server renderer uses to listen for incoming connections
+    unsigned short port;                        ///< port the server renderer uses to listen for incoming connections
   public:
     vvServer();
     ~vvServer();
@@ -350,7 +350,14 @@ bool vvServer::parseCommandLine(int argc, char** argv)
       }
       else
       {
-        port = atoi(argv[arg]);
+        int inport = atoi(argv[arg]);
+        if(inport > 65535 || inport <= 0)
+        {
+          cerr << "Specified port is out of range. Falling back to default: " << vvServer::DEFAULT_PORT << endl;
+          port = vvServer::DEFAULT_PORT;
+        }
+        else
+          port = inport;
       }
     }
     else
