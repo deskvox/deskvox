@@ -28,18 +28,18 @@ using std::endl;
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
-#include <virvo/vvvirvo.h>
-#include <virvo/vvtoolshed.h>
+#include <virvo/vvdebugmsg.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
+#include <virvo/vvpthread.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvrendercontext.h>
 #include <virvo/vvrendererfactory.h>
-#include <virvo/vvvoldesc.h>
-#include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpserver.h>
-#include <virvo/vvpthread.h>
+#include <virvo/vvtoolshed.h>
+#include <virvo/vvvirvo.h>
+#include <virvo/vvvoldesc.h>
 
 /**
  * Virvo Server main class.
