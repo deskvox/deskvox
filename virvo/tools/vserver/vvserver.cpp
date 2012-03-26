@@ -28,6 +28,8 @@ using std::endl;
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+#include <virvo/vvbonjour/vvbonjourentry.h>
+#include <virvo/vvbonjour/vvbonjourregistrar.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
@@ -108,6 +110,9 @@ void vvServer::serverLoop()
     return;
   }
 
+  vvBonjourRegistrar regist;
+  DNSServiceErrorType bonjErr = regist.registerService(*(new vvBonjourEntry("Virvo Server", "_vserver._tcp", "")), vvServer::DEFAULT_PORT);
+
   while (1)
   {
     cerr << "Listening on port " << port << endl;
@@ -135,6 +140,8 @@ void vvServer::serverLoop()
       }
     }
   }
+
+  if(kDNSServiceErr_NoError == bonjErr) regist.unregisterService();
 }
 
 void * vvServer::handleClient(void *attribs)
