@@ -128,8 +128,7 @@ void vvServer::serverLoop()
     else
     {
       pthread_create(&thread, NULL, handleClient, sock);
-      void *exitStatus;
-      int joined = pthread_join(thread, &exitStatus);
+      int joined = pthread_join(thread, NULL);
       if (joined != 0)
       {
         std::cerr << "Couldn't join thread" << std::endl;
