@@ -154,6 +154,9 @@ void * vvServer::handleClient(void *attribs)
     return NULL;
 #endif
   }
+
+  vvGLTools::enableGLErrorBacktrace();
+
   vvTcpSocket *sock = reinterpret_cast<vvTcpSocket*>(attribs);
   vvSocketIO *sockio = new vvSocketIO(sock);
 
