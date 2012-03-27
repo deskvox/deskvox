@@ -111,7 +111,7 @@ void vvServer::serverLoop()
   }
 
   vvBonjourRegistrar regist;
-  DNSServiceErrorType bonjErr = regist.registerService(*(new vvBonjourEntry("Virvo Server", "_vserver._tcp", "")), vvServer::DEFAULT_PORT);
+  DNSServiceErrorType bonjErr = regist.registerService(*(new vvBonjourEntry("Virvo Server", "_vserver._tcp", "")), port);
 
   while (1)
   {
