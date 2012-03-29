@@ -146,11 +146,11 @@ void vvServer::serverLoop()
 
 void * vvServer::handleClient(void *attribs)
 {
-  vvRenderContext::ContextOptions contextOptions;
+  vvContextOptions contextOptions;
   contextOptions.displayName = "";
   contextOptions.height = DEFAULTSIZE;
   contextOptions.width = DEFAULTSIZE;
-  contextOptions.type = vvRenderContext::VV_PBUFFER;
+  contextOptions.type = vvContextOptions::VV_PBUFFER;
   vvRenderContext renderContext = vvRenderContext(&contextOptions);
   if (!renderContext.makeCurrent())
   {

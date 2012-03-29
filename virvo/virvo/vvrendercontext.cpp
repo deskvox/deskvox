@@ -18,6 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include "vvcocoaglcontext.h"
 #include "vvdebugmsg.h"
 #include "vvrendercontext.h"
 #include "vvx11.h"
@@ -26,6 +27,10 @@
 
 struct ContextArchData
 {
+#ifdef USE_COCOA
+  vvCocoaGLContext* cocoaContext;
+#endif
+
 #ifdef HAVE_X11
   GLXContext glxContext;
   Display* display;
@@ -33,7 +38,7 @@ struct ContextArchData
 #endif
 };
 
-vvRenderContext::vvRenderContext(ContextOptions * co)
+vvRenderContext::vvRenderContext(vvContextOptions * co)
 {
   _archData = new ContextArchData;
   _initialized = false;
@@ -47,6 +52,10 @@ vvRenderContext::~vvRenderContext()
 
   if (_initialized)
   {
+#ifdef USE_COCOA
+    delete _archData->cocoaContext;
+#endif
+
 #ifdef HAVE_X11
     glXDestroyContext(_archData->display, _archData->glxContext);
     XCloseDisplay(_archData->display);
@@ -59,6 +68,10 @@ bool vvRenderContext::makeCurrent() const
 {
   if (_initialized)
   {
+#ifdef USE_COCOA
+    return _archData->cocoaContext->makeCurrent();
+#endif
+
 #ifdef HAVE_X11
     return glXMakeCurrent(_archData->display, _archData->drawable, _archData->glxContext);
 #endif
@@ -70,6 +83,10 @@ void vvRenderContext::swapBuffers() const
 {
   if (_initialized)
   {
+#ifdef USE_COCOA
+    _archData->cocoaContext->swapBuffers();
+#endif
+
 #ifdef HAVE_X11
     glXSwapBuffers(_archData->display, _archData->drawable);
 #endif
@@ -78,6 +95,11 @@ void vvRenderContext::swapBuffers() const
 
 void vvRenderContext::init()
 {
+#ifdef USE_COCOA
+  _archData->cocoaContext = new vvCocoaGLContext(_options);
+  _initialized = true;
+#endif
+
 #ifdef HAVE_X11
   _archData->display = XOpenDisplay(_options->displayName.c_str());
 

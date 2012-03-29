@@ -123,8 +123,8 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
 vvRemoteServer::ErrorType vvRemoteServer::initRenderContext()
 {
   delete _renderContext;
-  vvRenderContext::ContextOptions co;
-  co.type = vvRenderContext::VV_WINDOW;
+  vvContextOptions co;
+  co.type = vvContextOptions::VV_WINDOW;
   co.displayName = "0";
   _renderContext = new vvRenderContext(&co);
   if (_renderContext->makeCurrent())

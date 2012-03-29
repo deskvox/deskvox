@@ -31,6 +31,20 @@
  */
 struct ContextArchData;
 
+struct vvContextOptions
+{
+  enum ContextType
+  {
+    VV_WINDOW = 0,
+    VV_PBUFFER
+  };
+  ContextType type;  ///< context type
+  std::string displayName;            ///< name of display e.g. ":0" leave empty for default
+  uint width;                         ///< width of rendercontext (and windows if related)
+  uint height;                        ///< height of rendercontext (and windows if related)
+  bool doubleBuffering;               ///< flag indicating usage of double-buffering
+};
+
 /**
   Class handling render contexts
 
@@ -40,32 +54,17 @@ struct ContextArchData;
 class VIRVOEXPORT vvRenderContext
 {
 public:
-  enum ContextType
-  {
-    VV_WINDOW,
-    VV_PBUFFER
-  };
-
 //  enum ContextWindow
 //  {
 //    VV_X11,
 //    VV_WINAPI
 //  };
 
-  struct ContextOptions
-  {
-    vvRenderContext::ContextType type;  ///< context type
-    std::string displayName;            ///< name of display e.g. ":0" leave empty for default
-    uint width;                         ///< width of rendercontext (and windows if related)
-    uint height;                        ///< height of rendercontext (and windows if related)
-    bool doubleBuffering;               ///< flag indicating usage of double-buffering
-  };
-
   /**
     Creates a render context with given context options.
     Call makeCurrent() to enable context for rendering
     */
-  vvRenderContext(ContextOptions*);
+  vvRenderContext(vvContextOptions*);
   ~vvRenderContext();
 
   /**
@@ -79,7 +78,7 @@ public:
   void swapBuffers() const;
 private:
   ContextArchData *_archData;
-  ContextOptions  *_options;
+  vvContextOptions  *_options;
 
   bool _initialized;
 
