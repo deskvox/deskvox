@@ -107,7 +107,7 @@ void vvRenderContext::init()
   {
     switch(_options->type)
     {
-    case VV_PBUFFER:
+    case vvContextOptions::VV_PBUFFER:
       {
         int attrList[] = { GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8, None};
 
@@ -126,7 +126,7 @@ void vvRenderContext::init()
         }
       }
       // purposely no break; here
-    case VV_WINDOW:
+    case vvContextOptions::VV_WINDOW:
     default:
       {
         const Drawable parent = RootWindow(_archData->display, DefaultScreen(_archData->display));
