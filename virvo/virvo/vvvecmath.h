@@ -253,7 +253,7 @@ class vvBaseVector3
 /** 3D plane primitive.
  @author Jurgen Schulze (jschulze@ucsd.edu)
 */
-class vvPlane
+class VIRVOEXPORT vvPlane
 {
   public:
     vvVector3 _point;
@@ -279,7 +279,20 @@ inline std::ostream& operator<<(std::ostream& out, const vvMatrix& m)
   return out;
 }
 
-#include "vvvecmath.impl.h"
+template <typename T>
+inline std::ostream& operator<<(std::ostream& out, const vvBaseVector3<T>& v)
+{
+  out << v[0] << " " << v[1] << " " << v[2];
+  return out;
+}
+
+template <typename T>
+inline std::ostream& operator<<(std::ostream& out, const vvBaseVector4<T>& v)
+{
+  out << v[0] << " " << v[1] << " " << v[2] << " " << v[3];
+  return out;
+}
+
 
 #endif
 

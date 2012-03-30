@@ -1385,20 +1385,6 @@ vvBaseVector4<T> vvBaseVector4<T>::operator * ( const vvBaseVector4<T> &other ) 
 }
 
 template <typename T>
-inline std::ostream& operator<<(std::ostream& out, const vvBaseVector3<T>& v)
-{
-  out << v[0] << " " << v[1] << " " << v[2];
-  return out;
-}
-
-template <typename T>
-inline std::ostream& operator<<(std::ostream& out, const vvBaseVector4<T>& v)
-{
-  out << v[0] << " " << v[1] << " " << v[2] << " " << v[3];
-  return out;
-}
-
-template <typename T>
 vvBaseVector3<T> operator * ( const T scalar, const vvBaseVector3<T> &other )
 {
   vvBaseVector3<T> vResult;
