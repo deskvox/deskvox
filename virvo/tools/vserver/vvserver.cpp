@@ -247,6 +247,9 @@ cleanup:
   delete server;
   server = NULL;
 
+  delete sockio;
+  sockio = NULL;
+
   sock->disconnectFromHost();
   delete sock;
   sock = NULL;

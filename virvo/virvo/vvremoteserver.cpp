@@ -44,7 +44,6 @@ vvRemoteServer::~vvRemoteServer()
 {
   vvDebugMsg::msg(1, "vvRemoteServer::~vvRemoteServer()");
 
-  delete _socketio;
   delete _renderContext;
 }
 
