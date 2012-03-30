@@ -27,8 +27,8 @@
 #include "vvvecmath.h"
 
 #ifdef _WIN32
-template class __declspec(dllexport) vvBaseVector4<float>;
-template class __declspec(dllexport) vvBaseVector3<float>;
+template class VIRVOEXPORT vvBaseVector4<float>;
+template class VIRVOEXPORT vvBaseVector3<float>;
 #endif
 
 #ifdef __sun
