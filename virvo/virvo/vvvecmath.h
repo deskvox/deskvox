@@ -293,6 +293,7 @@ inline std::ostream& operator<<(std::ostream& out, const vvBaseVector4<T>& v)
   return out;
 }
 
+#include "vvvecmath.impl.h"
 
 #endif
 

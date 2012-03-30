@@ -25,7 +25,6 @@
 #include <math.h>
 #include "vvvirvo.h"
 #include "vvvecmath.h"
-#include "vvvecmath.impl.h"
 
 #ifdef _WIN32
 template class __declspec(dllexport) vvBaseVector4<float>;
