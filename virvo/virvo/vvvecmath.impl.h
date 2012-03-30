@@ -315,7 +315,7 @@ template <typename T>
 T vvBaseVector3<T>::distance(const vvBaseVector3<T>* v) const
 {
   const vvBaseVector3<T> diff = *v - *this;
-  return std::sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
+  return std::sqrt(static_cast<double>(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]));
 }
 
 //----------------------------------------------------------------------------
@@ -323,7 +323,7 @@ T vvBaseVector3<T>::distance(const vvBaseVector3<T>* v) const
 template <typename T>
 T vvBaseVector3<T>::length() const
 {
-  return std::sqrt(dot(this));
+  return std::sqrt(static_cast<double>(dot(this)));
 }
 
 //----------------------------------------------------------------------------
@@ -370,7 +370,7 @@ T vvBaseVector3<T>::distPointPlane(const vvBaseVector3<T>* n,
 template <typename T>
 void vvBaseVector3<T>::normalize()
 {
-  const T d = std::sqrt(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]);
+  const T d = std::sqrt(static_cast<double>(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]));
   if (d == 0.0) return;                           // division by zero error
   const T dInv = 1.0f / d;
   e[0] *= dInv;
@@ -702,7 +702,7 @@ int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>* cylBase,
   }
   diff.copy(rayBase);
   diff.sub(cylBase);
-  dist = (T)fabs(diff.dot(&ortho));
+  dist = (T)fabs(static_cast<double>(diff.dot(&ortho)));
   if (dist > cylRadius)                           // do the ray and the cylinder intersect at all?
   {
     this->zero();
@@ -718,7 +718,7 @@ int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>* cylBase,
   closest.add(rayBase);
 
   // Find intersections of ray-line and cylinder:
-  s = std::sqrt(cylRadius * cylRadius - dist * dist);
+  s = std::sqrt(static_cast<double>(cylRadius * cylRadius - dist * dist));
   i1 = t + s;                                     // closest intersection
   i2 = t - s;                                     // second intersection
 
@@ -848,12 +848,16 @@ T vvBaseVector3<T>::isectLineLine(const vvBaseVector3<T>& pt1,
   p43.e[0] = p4.e[0] - p3.e[0];
   p43.e[1] = p4.e[1] - p3.e[1];
   p43.e[2] = p4.e[2] - p3.e[2];
-  if (fabs(p43.e[0]) < EPS && fabs(p43.e[1])  < EPS && fabs(p43.e[2])  < EPS)
+  if (fabs(static_cast<double>(p43.e[0])) < EPS
+	  && fabs(static_cast<double>(p43.e[1])) < EPS
+	  && fabs(static_cast<double>(p43.e[2]))  < EPS)
     return(0.0f);
   p21.e[0] = p2.e[0] - p1.e[0];
   p21.e[1] = p2.e[1] - p1.e[1];
   p21.e[2] = p2.e[2] - p1.e[2];
-  if (fabs(p21.e[0])  < EPS && fabs(p21.e[1])  < EPS && fabs(p21.e[2])  < EPS)
+  if (fabs(static_cast<double>(p21.e[0]))  < EPS
+	  && fabs(static_cast<double>(p21.e[1]))  < EPS
+	  && fabs(static_cast<double>(p21.e[2]))  < EPS)
     return(0.0f);
 
   d1343 = p13.e[0] * p43.e[0] + p13.e[1] * p43.e[1] + p13.e[2] * p43.e[2];
@@ -863,7 +867,7 @@ T vvBaseVector3<T>::isectLineLine(const vvBaseVector3<T>& pt1,
   d2121 = p21.e[0] * p21.e[0] + p21.e[1] * p21.e[1] + p21.e[2] * p21.e[2];
 
   denom = d2121 * d4343 - d4321 * d4321;
-  if (fabs(denom) < EPS) return(0.0);
+  if (fabs(static_cast<double>(denom)) < EPS) return(0.0);
   numer = d1343 * d4321 - d1321 * d4343;
 
   mua = numer / denom;
@@ -1032,10 +1036,10 @@ void vvBaseVector3<T>::getSpherical(T* r, T* phi, T* theta)
   if (e[0] >= 0.0f)
   {
     if (e[2] >= 0.0f)
-      *phi = (T)atan(e[0] / e[2]);            // first quadrant
+      *phi = (T)atan(static_cast<double>(e[0] / e[2]));            // first quadrant
     else
     {
-      *phi = (T)atan(e[0] / -e[2]);           // second quadrant
+      *phi = (T)atan(static_cast<double>(e[0] / -e[2]));           // second quadrant
       *phi = VV_PI - *phi;
     }
   }
@@ -1043,12 +1047,12 @@ void vvBaseVector3<T>::getSpherical(T* r, T* phi, T* theta)
   {
     if (e[2] <= 0.0f)
     {
-      *phi = (T)atan(e[0] / e[2]);            // third quadrant
+      *phi = (T)atan(static_cast<double>(e[0] / e[2]));            // third quadrant
       *phi += VV_PI;
     }
     else
     {
-      *phi = (T)atan(-e[0] / e[2]);           // fourth quadrant
+      *phi = (T)atan(static_cast<double>(-e[0] / e[2]));           // fourth quadrant
       *phi = 2.0f * VV_PI - *phi;
     }
   }
@@ -1285,7 +1289,7 @@ template <typename T>
 void vvBaseVector4<T>::multiply(const vvMatrix* m)
 {
   int row, col;
-  vvVector4 bak(this);
+  vvVector4 bak((vvVector4*)this);
 
   for (row=0; row<4; ++row)
   {
@@ -1370,7 +1374,7 @@ vvBaseVector4<T> vvBaseVector4<T>::operator - ( const vvBaseVector4<T> &other ) 
 template <typename T>
 vvBaseVector4<T> vvBaseVector4<T>::operator * ( const vvBaseVector4<T> &other ) const
 {
-  vvVector4 vResult;
+  vvBaseVector4<T> vResult;
 
   vResult.e[0] = e[0] * other.e[0];
   vResult.e[1] = e[1] * other.e[1];
@@ -1406,3 +1410,25 @@ vvBaseVector3<T> operator * ( const T scalar, const vvBaseVector3<T> &other )
 
   return vResult;
 }
+
+#ifdef _WIN32
+
+template class VIRVOEXPORT vvBaseVector3<int>;
+template class VIRVOEXPORT vvBaseVector3<unsigned int>;
+template class VIRVOEXPORT vvBaseVector3<short>;
+template class VIRVOEXPORT vvBaseVector3<unsigned short>;
+template class VIRVOEXPORT vvBaseVector3<long>;
+template class VIRVOEXPORT vvBaseVector3<unsigned long>;
+template class VIRVOEXPORT vvBaseVector3<float>;
+template class VIRVOEXPORT vvBaseVector3<double>;
+
+template class VIRVOEXPORT vvBaseVector4<int>;
+template class VIRVOEXPORT vvBaseVector4<unsigned int>;
+template class VIRVOEXPORT vvBaseVector4<short>;
+template class VIRVOEXPORT vvBaseVector4<unsigned short>;
+template class VIRVOEXPORT vvBaseVector4<long>;
+template class VIRVOEXPORT vvBaseVector4<unsigned long>;
+template class VIRVOEXPORT vvBaseVector4<float>;
+template class VIRVOEXPORT vvBaseVector4<double>;
+
+#endif

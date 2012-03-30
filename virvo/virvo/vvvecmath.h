@@ -39,14 +39,10 @@ const float VV_FLT_MAX = FLT_MAX;                 ///< maximum float value
 //============================================================================
 
 template <typename T>
-class VIRVOEXPORT vvBaseVector3;
+class vvBaseVector3;
 template <typename T>
-class VIRVOEXPORT vvBaseVector4;
+class vvBaseVector4;
 class VIRVOEXPORT vvMatrix;
-
-//============================================================================
-// Common vector types
-//============================================================================
 
 typedef vvBaseVector3<int> vvVector3i;
 typedef vvBaseVector3<unsigned int> vvVector3ui;
@@ -155,7 +151,7 @@ class VIRVOEXPORT vvMatrix
  @author Juergen Schulze-Doebold (schulze@hlrs.de)
 */
 template <typename T>
-class VIRVOEXPORT vvBaseVector4
+class vvBaseVector4
 {
   public:
     T e[4];                                   ///< vector elements (x|y|z|w)
@@ -184,7 +180,7 @@ class VIRVOEXPORT vvBaseVector4
  @author Jurgen P. Schulze (jschulze@ucsd.edu)
 */
 template <typename T>
-class VIRVOEXPORT vvBaseVector3
+class vvBaseVector3
 {
   public:
     T e[3];                                   ///< vector elements (x|y|z)
