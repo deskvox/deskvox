@@ -20,12 +20,6 @@ ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 IF(WIN32)
   SET(HOST_WIN32 ${WIN32} CACHE BOOL "Whether build system is a Windows system." FORCE)
-ELSE(WIN32)
-  IF(APPLE)
-    SET(VIRVO_WINDOWING_SYSTEM "Cocoa" CACHE STRING "Available windowing systems for render contexts (Cocoa | X11)")
-  ELSE(APPLE)
-    SET(VIRVO_WINDOWING_SYSTEM "X11" CACHE STRING "Available windowing systems for render contexts (X11)")
-  ENDIF(APPLE)
 ENDIF(WIN32)
 
 IF(NOT DESKVOX_CONFIGURED_ONCE)
