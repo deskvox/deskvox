@@ -21,7 +21,7 @@
 #endif
 
 // xlib:
-#ifdef USE_X11
+#ifdef HAVE_X11
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 #endif
