@@ -87,6 +87,7 @@ void vvImageServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer
 
 void vvImageServer::resize(const int w, const int h)
 {
+  vvRemoteServer::resize(w, h);
   glViewport(0, 0, w, h);
 }
 

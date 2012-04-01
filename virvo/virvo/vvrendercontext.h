@@ -76,6 +76,7 @@ public:
     Swap buffers in case of double-buffering
     */
   void swapBuffers() const;
+  void resize(int w, int h);
 private:
   ContextArchData *_archData;
   vvContextOptions  *_options;

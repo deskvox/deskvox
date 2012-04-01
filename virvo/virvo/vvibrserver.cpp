@@ -149,6 +149,7 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 
 void vvIbrServer::resize(const int w, const int h)
 {
+  vvRemoteServer::resize(w, h);
   glViewport(0, 0, w, h);
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

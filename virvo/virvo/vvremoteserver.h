@@ -46,7 +46,7 @@ public:
   bool getLoadVolumeFromFile() const;
 
   vvRemoteServer::ErrorType initData(vvVolDesc*& vd);
-  vvRemoteServer::ErrorType initRenderContext();
+  vvRemoteServer::ErrorType initRenderContext(int w, int h);
 
   virtual bool processEvents(vvRenderer* renderer);
 protected:
@@ -58,7 +58,7 @@ protected:
   int _codetype;
 
   virtual void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer) = 0;
-  virtual void resize(int w, int h) = 0;
+  virtual void resize(int w, int h);
 
 private:
   vvRemoteServer::ErrorType initSocket();

@@ -146,23 +146,6 @@ void vvServer::serverLoop()
 
 void * vvServer::handleClient(void *attribs)
 {
-  vvContextOptions contextOptions;
-  contextOptions.displayName = "";
-  contextOptions.height = DEFAULTSIZE;
-  contextOptions.width = DEFAULTSIZE;
-  contextOptions.type = vvContextOptions::VV_PBUFFER;
-  vvRenderContext renderContext = vvRenderContext(&contextOptions);
-  if (!renderContext.makeCurrent())
-  {
-    std::cerr << "Couldn't make render context current" << std::endl;
-    pthread_exit(NULL);
-#ifdef _WIN32
-    return NULL;
-#endif
-  }
-
-  vvGLTools::enableGLErrorBacktrace();
-
   vvTcpSocket *sock = reinterpret_cast<vvTcpSocket*>(attribs);
   vvSocketIO *sockio = new vvSocketIO(sock);
 
@@ -194,6 +177,16 @@ void * vvServer::handleClient(void *attribs)
 #endif
   }
 
+  if (server->initRenderContext(DEFAULTSIZE, DEFAULTSIZE) != vvRemoteServer::VV_OK)
+  {
+    std::cerr << "Couldn't initialize render context" << std::endl;
+    pthread_exit(NULL);
+#ifdef _WIN32
+    return NULL;
+#endif
+  }
+
+  vvGLTools::enableGLErrorBacktrace();
   vvVolDesc *vd = NULL;
   if (server->initData(vd) != vvRemoteServer::VV_OK)
   {

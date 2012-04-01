@@ -93,6 +93,20 @@ void vvRenderContext::swapBuffers() const
   }
 }
 
+void vvRenderContext::resize(const int w, const int h)
+{
+  if (_initialized)
+  {
+#ifdef USE_COCOA
+    _archData->cocoaContext->resize(w, h);
+#endif
+
+#ifdef HAVE_X11
+    std::cerr << "Function not implemented yet: vvRenderContext::resize() with X11" << std::endl;
+#endif
+  }
+}
+
 void vvRenderContext::init()
 {
 #ifdef USE_COCOA

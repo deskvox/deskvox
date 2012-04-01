@@ -54,6 +54,14 @@ bool vvRemoteServer::getLoadVolumeFromFile() const
   return _loadVolumeFromFile;
 }
 
+void vvRemoteServer::resize(const int w, const int h)
+{
+  if (_renderContext != NULL)
+  {
+    _renderContext->resize(w, h);
+  }
+}
+
 vvRemoteServer::ErrorType vvRemoteServer::initSocket()
 {
   vvDebugMsg::msg(1, "vvRemoteServer::initSocket()");
@@ -119,11 +127,13 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
   return VV_OK;
 }
 
-vvRemoteServer::ErrorType vvRemoteServer::initRenderContext()
+vvRemoteServer::ErrorType vvRemoteServer::initRenderContext(const int w, const int h)
 {
   delete _renderContext;
   vvContextOptions co;
   co.type = vvContextOptions::VV_WINDOW;
+  co.width = w;
+  co.height = h;
   co.displayName = "0";
   _renderContext = new vvRenderContext(&co);
   if (_renderContext->makeCurrent())
