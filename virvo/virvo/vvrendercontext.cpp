@@ -31,7 +31,7 @@ struct ContextArchData
   vvCocoaGLContext* cocoaContext;
 #endif
 
-#ifdef HAVE_X11
+#ifdef USE_X11
   GLXContext glxContext;
   Display* display;
   Drawable drawable;
@@ -56,7 +56,7 @@ vvRenderContext::~vvRenderContext()
     delete _archData->cocoaContext;
 #endif
 
-#ifdef HAVE_X11
+#ifdef USE_X11
     glXDestroyContext(_archData->display, _archData->glxContext);
     XCloseDisplay(_archData->display);
 #endif
@@ -72,7 +72,7 @@ bool vvRenderContext::makeCurrent() const
     return _archData->cocoaContext->makeCurrent();
 #endif
 
-#ifdef HAVE_X11
+#if USE_X11
     return glXMakeCurrent(_archData->display, _archData->drawable, _archData->glxContext);
 #endif
   }
@@ -87,7 +87,7 @@ void vvRenderContext::swapBuffers() const
     _archData->cocoaContext->swapBuffers();
 #endif
 
-#ifdef HAVE_X11
+#ifdef USE_X11
     glXSwapBuffers(_archData->display, _archData->drawable);
 #endif
   }
@@ -101,7 +101,7 @@ void vvRenderContext::resize(const int w, const int h)
     _archData->cocoaContext->resize(w, h);
 #endif
 
-#ifdef HAVE_X11
+#ifdef USE_X11
     std::cerr << "Function not implemented yet: vvRenderContext::resize() with X11" << std::endl;
 #endif
   }
@@ -114,7 +114,7 @@ void vvRenderContext::init()
   _initialized = true;
 #endif
 
-#ifdef HAVE_X11
+#ifdef USE_X11
   _archData->display = XOpenDisplay(_options->displayName.c_str());
 
   if(_archData->display != NULL)
