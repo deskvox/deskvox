@@ -131,10 +131,10 @@ vvRemoteServer::ErrorType vvRemoteServer::initRenderContext(const int w, const i
 {
   delete _renderContext;
   vvContextOptions co;
-  co.type = vvContextOptions::VV_WINDOW;
+  co.type = vvContextOptions::VV_PBUFFER;
   co.width = w;
   co.height = h;
-  co.displayName = "0";
+  co.displayName = "";
   _renderContext = new vvRenderContext(&co);
   if (_renderContext->makeCurrent())
   {
