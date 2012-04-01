@@ -101,6 +101,7 @@ vvPrintGL::vvPrintGL()
 #else
   // Don't render to OpenGL window, but to console.
   _consoleOutput = true;
+  (void)_fontColor;
 #endif
 }
 
