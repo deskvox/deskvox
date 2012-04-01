@@ -102,6 +102,8 @@ void vvRenderContext::resize(const int w, const int h)
 #endif
 
 #ifdef USE_X11
+    (void)w;
+    (void)h;
     std::cerr << "Function not implemented yet: vvRenderContext::resize() with X11" << std::endl;
 #endif
   }
