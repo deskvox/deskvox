@@ -48,7 +48,7 @@ void vvCocoaGLContext::resize(const int w, const int h)
 }
 
 void vvCocoaGLContext::init()
-{std::cerr << _options->width << std::endl;
+{
   _autoreleasePool = [[NSAutoreleasePool alloc] init];
 
   (void)[NSApplication sharedApplication];
