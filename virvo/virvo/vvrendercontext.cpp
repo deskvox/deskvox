@@ -61,6 +61,17 @@ vvRenderContext::~vvRenderContext()
 
 #ifdef USE_X11
     glXDestroyContext(_archData->display, _archData->glxContext);
+    switch (_options->type)
+    {
+    case vvContextOptions::VV_PBUFFER:
+      glXDestroyPbuffer(_archData->display, _archData->drawable);
+      break;
+    case vvContextOptions::VV_WINDOW:
+      // fall through
+    default:
+      XDestroyWindow(_archData->display, _archData->drawable);
+      break;
+    }
     XCloseDisplay(_archData->display);
 #endif
   }
