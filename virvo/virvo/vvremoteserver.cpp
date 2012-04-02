@@ -36,6 +36,7 @@ using std::endl;
 vvRemoteServer::vvRemoteServer(vvSocketIO *socket)
   : _socketio(socket), _renderContext(NULL), _loadVolumeFromFile(false), _codetype(0)
 {
+  co = NULL;
   vvDebugMsg::msg(1, "vvRemoteServer::vvRemoteServer()");
   initSocket();
 }
@@ -45,6 +46,7 @@ vvRemoteServer::~vvRemoteServer()
   vvDebugMsg::msg(1, "vvRemoteServer::~vvRemoteServer()");
 
   delete _renderContext;
+  delete co;
 }
 
 bool vvRemoteServer::getLoadVolumeFromFile() const
@@ -130,12 +132,12 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
 vvRemoteServer::ErrorType vvRemoteServer::initRenderContext(const int w, const int h)
 {
   delete _renderContext;
-  vvContextOptions co;
-  co.type = vvContextOptions::VV_PBUFFER;
-  co.width = w;
-  co.height = h;
-  co.displayName = "";
-  _renderContext = new vvRenderContext(&co);
+  co = new vvContextOptions;
+  co->type = vvContextOptions::VV_PBUFFER;
+  co->width = w;
+  co->height = h;
+  co->displayName = "";
+  _renderContext = new vvRenderContext(co);
   if (_renderContext->makeCurrent())
   {
     return vvRemoteServer::VV_OK;

@@ -24,6 +24,7 @@
 #include "vvexport.h"
 #include "vvsocket.h"
 
+class vvContextOptions;
 class vvRenderContext;
 class vvRenderer;
 class vvSocketIO;
@@ -62,6 +63,7 @@ protected:
 
 private:
   vvRemoteServer::ErrorType initSocket();
+  vvContextOptions* co;
 };
 
 #endif // VVREMOTESERVER_H
