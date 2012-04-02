@@ -1,4 +1,4 @@
-// Virvo - Virtual Reality Volume Rendering
+// Virvo - Virtual Reality Volume RenderingVE
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
 // Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
@@ -32,7 +32,7 @@ struct ContextArchData
   vvCocoaGLContext* cocoaContext;
 #endif
 
-#ifdef USE_X11
+#if defined(HAVE_X11) and defined(USE_X11)
   GLXContext glxContext;
   Display* display;
   Drawable drawable;
@@ -59,7 +59,7 @@ vvRenderContext::~vvRenderContext()
     delete _archData->cocoaContext;
 #endif
 
-#ifdef USE_X11
+#if defined(HAVE_X11) and defined(USE_X11)
     glXDestroyContext(_archData->display, _archData->glxContext);
     switch (_options->type)
     {
@@ -86,7 +86,7 @@ bool vvRenderContext::makeCurrent() const
     return _archData->cocoaContext->makeCurrent();
 #endif
 
-#if USE_X11
+#if defined(HAVE_X11) and defined(USE_X11)
     return glXMakeCurrent(_archData->display, _archData->drawable, _archData->glxContext);
 #endif
   }
@@ -101,7 +101,7 @@ void vvRenderContext::swapBuffers() const
     _archData->cocoaContext->swapBuffers();
 #endif
 
-#ifdef USE_X11
+#if defined(HAVE_X11) and defined(USE_X11)
     glXSwapBuffers(_archData->display, _archData->drawable);
 #endif
   }
@@ -119,7 +119,7 @@ void vvRenderContext::resize(const int w, const int h)
       _archData->cocoaContext->resize(w, h);
 #endif
 
-#ifdef USE_X11
+#if defined(HAVE_X11) and defined(USE_X11)
       switch (_options->type)
       {
       case vvContextOptions::VV_PBUFFER:
@@ -150,7 +150,7 @@ void vvRenderContext::init()
   _initialized = true;
 #endif
 
-#ifdef USE_X11
+#if defined(HAVE_X11) and defined(USE_X11)
   _archData->display = XOpenDisplay(_options->displayName.c_str());
 
   _archData->attributes.push_back(GLX_RGBA);
@@ -249,7 +249,7 @@ void vvRenderContext::init()
 
 bool vvRenderContext::initPbuffer()
 {
-#ifdef USE_X11
+#if defined(HAVE_X11) and defined(USE_X11)
   int nelements;
   _archData->fbConfigs = glXChooseFBConfig(_archData->display, DefaultScreen(_archData->display),
                                            &(_archData->attributes)[1], &nelements); // first entry (GLX_RGBA) in attributes list confuses pbuffers
