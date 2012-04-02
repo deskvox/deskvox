@@ -24,6 +24,7 @@
 #include "vvx11.h"
 
 #include <sstream>
+#include <vector>
 
 struct ContextArchData
 {
@@ -35,14 +36,16 @@ struct ContextArchData
   GLXContext glxContext;
   Display* display;
   Drawable drawable;
+  std::vector<int> attributes;
+  GLXFBConfig* fbConfigs;
 #endif
 };
 
-vvRenderContext::vvRenderContext(vvContextOptions * co)
+vvRenderContext::vvRenderContext(vvContextOptions* co)
+  : _options(co)
 {
   _archData = new ContextArchData;
   _initialized = false;
-  _options = co;
   init();
 }
 
@@ -95,17 +98,37 @@ void vvRenderContext::swapBuffers() const
 
 void vvRenderContext::resize(const int w, const int h)
 {
-  if (_initialized)
+  if ((_options->width != w) || (_options->height != h))
   {
+    _options->width = w;
+    _options->height = h;
+    if (_initialized)
+    {
 #ifdef USE_COCOA
-    _archData->cocoaContext->resize(w, h);
+      _archData->cocoaContext->resize(w, h);
 #endif
 
 #ifdef USE_X11
-    (void)w;
-    (void)h;
-    std::cerr << "Function not implemented yet: vvRenderContext::resize() with X11" << std::endl;
+      switch (_options->type)
+      {
+      case vvContextOptions::VV_PBUFFER:
+      {
+        glXDestroyPbuffer(_archData->display, _archData->drawable);
+        initPbuffer();
+        makeCurrent();
+        break;
+      }
+      case vvContextOptions::VV_WINDOW:
+        // fall through
+      default:
+        XResizeWindow(_archData->display, _archData->drawable,
+                      static_cast<uint>(w),
+                      static_cast<uint>(h));
+        XSync(_archData->display, False);
+        break;
+      }
 #endif
+    }
   }
 }
 
@@ -119,45 +142,44 @@ void vvRenderContext::init()
 #ifdef USE_X11
   _archData->display = XOpenDisplay(_options->displayName.c_str());
 
+  _archData->attributes.push_back(GLX_RGBA);
+  _archData->attributes.push_back(GLX_RED_SIZE);
+  _archData->attributes.push_back(8);
+  _archData->attributes.push_back(GLX_GREEN_SIZE);
+  _archData->attributes.push_back(8);
+  _archData->attributes.push_back(GLX_BLUE_SIZE);
+  _archData->attributes.push_back(8);
+  _archData->attributes.push_back(GLX_ALPHA_SIZE);
+  _archData->attributes.push_back(8);
+  _archData->attributes.push_back(GLX_DEPTH_SIZE);
+  _archData->attributes.push_back(24);
+  _archData->attributes.push_back(None);
+
   if(_archData->display != NULL)
   {
     switch(_options->type)
     {
     case vvContextOptions::VV_PBUFFER:
+      if (initPbuffer())
       {
-        int attrList[] = { GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8, None};
-
-        int nelements;
-        GLXFBConfig* configs = glXChooseFBConfig(_archData->display, DefaultScreen(_archData->display),
-                                                 attrList, &nelements);
-        if (configs && (nelements > 0))
-        {
-          // TODO: find the nicest fbconfig.
-          int pbAttrList[] = { GLX_PBUFFER_WIDTH, _options->width, GLX_PBUFFER_HEIGHT, _options->height, None };
-          GLXPbuffer pbuffer = glXCreatePbuffer(_archData->display, configs[0], pbAttrList);
-          _archData->glxContext = glXCreateNewContext(_archData->display, configs[0], GLX_RGBA_TYPE, 0, True);
-          _archData->drawable = pbuffer;
-          _initialized = true;
-          return;
-        }
+         _archData->glxContext = glXCreateNewContext(_archData->display, _archData->fbConfigs[0], GLX_RGBA_TYPE, 0, True);
+        _initialized = true;
+        return;
       }
-      // purposely no break; here
+      else
+      {
+        _options->type = vvContextOptions::VV_WINDOW;
+      }
+      // no pbuffer created - fall through
     case vvContextOptions::VV_WINDOW:
+      // fall through
     default:
       {
         const Drawable parent = RootWindow(_archData->display, DefaultScreen(_archData->display));
 
-        int attrList[] = { GLX_RGBA,
-                           GLX_RED_SIZE, 8,
-                           GLX_GREEN_SIZE, 8,
-                           GLX_BLUE_SIZE, 8,
-                           GLX_ALPHA_SIZE, 8,
-                           GLX_DEPTH_SIZE, 24,
-                           None};
-
         XVisualInfo* vi = glXChooseVisual(_archData->display,
                                           DefaultScreen(_archData->display),
-                                          attrList);
+                                          &(_archData->attributes)[0]);
 
         XSetWindowAttributes wa = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         wa.colormap = XCreateColormap(_archData->display, parent, vi->visual, AllocNone);
@@ -200,6 +222,7 @@ void vvRenderContext::init()
         }
         _initialized = true;
         delete vi;
+        break;
       }
     }
   }
@@ -212,4 +235,27 @@ void vvRenderContext::init()
   }
 #endif
 }
+
+bool vvRenderContext::initPbuffer()
+{
+#ifdef USE_X11
+  int nelements;
+  _archData->fbConfigs = glXChooseFBConfig(_archData->display, DefaultScreen(_archData->display),
+                                           &(_archData->attributes)[1], &nelements); // first entry (GLX_RGBA) in attributes list confuses pbuffers
+  if ((_archData->fbConfigs != NULL) && (nelements > 0))
+  {
+    // TODO: find the nicest fbconfig.
+    int pbAttrList[] = { GLX_PBUFFER_WIDTH, _options->width, GLX_PBUFFER_HEIGHT, _options->height, None };
+    _archData->drawable = glXCreatePbuffer(_archData->display, _archData->fbConfigs[0], pbAttrList);
+    if (!_archData->drawable)
+    {
+      std::cerr << "No pbuffer created" << std::endl;
+      return false;
+    }
+    return true;
+  }
+#endif
+  return false;
+}
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
+
