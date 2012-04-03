@@ -29,8 +29,9 @@
 #include <sstream>
 
 vvBonjourRegistrar::vvBonjourRegistrar()
-  : _serviceRef(NULL)
 {
+  _serviceRef = NULL;
+  _eventLoop = NULL;
 }
 
 vvBonjourRegistrar::~vvBonjourRegistrar()
@@ -116,7 +117,7 @@ void vvBonjourRegistrar::RegisterCallBack(DNSServiceRef service,
   }
   else
   {
-    if(vvDebugMsg::getDebugLevel() >= 0)
+    if(vvDebugMsg::getDebugLevel() >= 3)
     {
       std::ostringstream errmsg;
       errmsg << "vvBonjourRegistrar::RegisterCallBack() Entry registered: " << name << "." << type << domain;

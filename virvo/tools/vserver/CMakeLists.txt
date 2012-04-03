@@ -1,10 +1,16 @@
-SET(VSERVER_SRC
+SET(VSERVER_HEADERS
+  vvresourcemanager.h
+  vvserver.h
+)
+
+SET(VSERVER_SOURCES
+  vvresourcemanager.cpp
   vvserver.cpp
 )
 
 INCLUDE_DIRECTORIES(../..)
 INCLUDE_DIRECTORIES(${PTHREAD_INCLUDE_DIR})
 
-ADD_EXECUTABLE(vserver ${VSERVER_SRC})
+ADD_EXECUTABLE(vserver ${VSERVER_HEADERS} ${VSERVER_SOURCES})
 
 TARGET_LINK_LIBRARIES(vserver virvo)

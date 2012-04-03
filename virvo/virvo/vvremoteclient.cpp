@@ -124,6 +124,21 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   if (socket->connectToHost(serverName ? serverName : _slaveName, port) == vvSocket::VV_OK)
   {
     delete serverName;
+
+    // block until server created its thread/remoteserver-object and is ready
+    bool serverRdy;
+    _socketIO->getBool(serverRdy);
+    if(!serverRdy)
+    {
+      // additional resource manager details requested
+      _socketIO->putInt32(10); // priority
+      _socketIO->putInt32(1);  // requirements
+
+      // block again to ensure remoteclient is int turn
+      _socketIO->getBool(serverRdy);
+    }
+
+
     socket->setParameter(vvSocket::VV_NO_NAGLE, true);
     _socketIO->putInt32(_type);
 

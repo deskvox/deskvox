@@ -22,198 +22,359 @@
 #include "vvconfig.h"
 #endif
 
-#include <iostream>
-
-using std::cerr;
-using std::endl;
-
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
-#ifdef HAVE_BONJOUR
-#include <virvo/vvbonjour/vvbonjourentry.h>
-#include <virvo/vvbonjour/vvbonjourregistrar.h>
-#endif
+#include "vvresourcemanager.h"
+#include "vvserver.h"
+
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
 #include <virvo/vvremoteserver.h>
-#include <virvo/vvrendercontext.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpserver.h>
+#include <virvo/vvtcpsocket.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvvirvo.h>
 #include <virvo/vvvoldesc.h>
 
+#include <iostream>
+#include <limits>
 #include <pthread.h>
 
-/**
- * Virvo Server main class.
- *
- * Server unit for remote rendering.
- *
- * Options -port: set port, else default will be used.
- *
- * @author Juergen Schulze (schulze@cs.brown.de)
- * @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
- */
-
-class vvServer
-{
-  private:
-    /// Remote rendering type
-    enum RemoteRenderingType
-    {
-      RR_NONE,
-      RR_IMAGE,
-      RR_IBR
-    };
-    static const int DEFAULTSIZE;               ///< default window size (width and height) in pixels
-    static const int DEFAULT_PORT;              ///< default port for socket connections
-    static vvServer* ds;                        ///< one instance of vvServer is always present
-    int   winWidth, winHeight;                  ///< window size in pixels
-    unsigned short port;                        ///< port the server renderer uses to listen for incoming connections
-  public:
-    vvServer();
-    ~vvServer();
-    int run(int, char**);
-
-  private:
-    void displayHelpInfo();
-    bool parseCommandLine(int argc, char *argv[]);
-    void serverLoop();
-    static void * handleClient(void * attribs);
-};
-
-const int vvServer::DEFAULTSIZE = 512;
+const int vvServer::DEFAULTSIZE  = 512;
 const int vvServer::DEFAULT_PORT = 31050;
 
-//----------------------------------------------------------------------------
-/// Constructor
+using std::cerr;
+using std::endl;
+
 vvServer::vvServer()
 {
-  winWidth = winHeight = DEFAULTSIZE;
-  port                 = vvServer::DEFAULT_PORT;
+  _port       = vvServer::DEFAULT_PORT;
+  _sm         = SERVER;
+  _useBonjour = false;
 }
 
-//----------------------------------------------------------------------------
-/// Destructor.
 vvServer::~vvServer()
 {
 }
 
-void vvServer::serverLoop()
+int vvServer::run(int argc, char** argv)
 {
-  pthread_t thread;
+  vvDebugMsg::msg(3, "vvServer::run()");
 
-  vvTcpServer tcpServ = vvTcpServer(port);
+  cerr << "Virvo server " << virvo::getVersionMajor() << "." << virvo::getReleaseCounter() << endl;
+  cerr << "(c) " << virvo::getYearOfRelease() << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
+  cerr << "Brown University" << endl << endl;
+
+  if(!parseCommandLine(argc, argv))
+    return 1;
+
+  if(serverLoop())
+    return 0;
+  else
+    return 1;
+}
+
+void vvServer::displayHelpInfo()
+{
+  vvDebugMsg::msg(3, "vvServer::displayHelpInfo()");
+
+  cerr << "Syntax:" << endl;
+  cerr << endl;
+  cerr << "  vserver [options]" << endl;
+  cerr << endl;
+  cerr << "Available options:" << endl;
+  cerr << endl;
+  cerr << "-port" << endl;
+  cerr << " Don't use the default port (" << DEFAULT_PORT << "), but the specified one" << endl;
+  cerr << endl;
+  cerr << "-mode" << endl;
+  cerr << " Start vvServer with one of the following modes:" << endl;
+  cerr << " s     single server (default)" << endl;
+  cerr << " rm    resource manager" << endl;
+  cerr << " rm+s  server and resource manager simultanously" << endl;
+  cerr << endl;
+#ifdef HAVE_BONJOUR
+  cerr << "-bonjour" << endl;
+  cerr << " use bonjour to broadcast this service. options:" << endl;
+  cerr << " on" << endl;
+  cerr << " off (default)" << endl;
+  cerr << endl;
+#endif
+  cerr << "-debug" << endl;
+  cerr << " Set debug level" << endl;
+  cerr << endl;
+}
+
+bool vvServer::parseCommandLine(int argc, char** argv)
+{
+  vvDebugMsg::msg(1, "vvServer::parseCommandLine()");
+
+  for (int arg=1; arg<argc; ++arg)
+  {
+    if (vvToolshed::strCompare(argv[arg], "-help")==0 ||
+        vvToolshed::strCompare(argv[arg], "-h")==0    ||
+        vvToolshed::strCompare(argv[arg], "-?")==0    ||
+        vvToolshed::strCompare(argv[arg], "/?")==0)
+    {
+      displayHelpInfo();
+      return false;
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-port")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "No port specified" << endl;
+        return false;
+      }
+      else
+      {
+        int inport = atoi(argv[arg]);
+        if(inport > std::numeric_limits<ushort>::max() || inport <= std::numeric_limits<ushort>::min())
+        {
+          cerr << "Specified port is out of range. Falling back to default: " << vvServer::DEFAULT_PORT << endl;
+          _port = vvServer::DEFAULT_PORT;
+        }
+        else
+          _port = inport;
+      }
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-mode")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Mode type missing." << endl;
+        return false;
+      }
+      if     (vvToolshed::strCompare(argv[arg], "s")==0)
+      {
+        _sm = SERVER;
+      }
+      else if(vvToolshed::strCompare(argv[arg], "rm")==0)
+      {
+        _sm = RM;
+      }
+      else if(vvToolshed::strCompare(argv[arg], "rm+s")==0)
+      {
+        _sm = RM_WITH_SERVER;
+      }
+      else
+      {
+        cerr << "Unknown mode type." << endl;
+        return false;
+      }
+    }
+#ifdef HAVE_BONJOUR
+    else if (vvToolshed::strCompare(argv[arg], "-bonjour")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Bonjour setting missing." << endl;
+        return false;
+      }
+      if     (vvToolshed::strCompare(argv[arg], "on")==0)
+      {
+        _useBonjour = true;
+      }
+      else if(vvToolshed::strCompare(argv[arg], "off")==0)
+      {
+        _useBonjour = false;
+      }
+      else
+      {
+        cerr << "Unknown bonjour setting." << endl;
+        return false;
+      }
+    }
+#endif
+    else if (vvToolshed::strCompare(argv[arg], "-debug")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Debug level missing." << endl;
+        return false;
+      }
+      int level = atoi(argv[arg]);
+      if (level>=0 && level<=3)
+        vvDebugMsg::setDebugLevel(level);
+      else
+      {
+        cerr << "Invalid debug level." << endl;
+        return false;
+      }
+    }
+    else
+    {
+      cerr << "Unknown option/parameter: \"" << argv[arg] << "\", use -help for instructions" << endl;
+      return false;
+    }
+  }
+  return true;
+}
+
+bool vvServer::serverLoop()
+{
+  vvTcpServer tcpServ = vvTcpServer(_port);
 
   if(!tcpServ.initStatus())
   {
-    cerr << "Failed to initialize server-socket on port " << port << "." << endl;
-    return;
+    cerr << "Failed to initialize server-socket on port " << _port << "." << endl;
+    return false;
+  }
+  else
+  {
+#ifdef HAVE_BONJOUR
+    if(_useBonjour) registerToBonjour();
+#endif
   }
 
-#ifdef HAVE_BONJOUR
-  vvBonjourRegistrar regist;
-  DNSServiceErrorType bonjErr = regist.registerService(*(new vvBonjourEntry("Virvo Server", "_vserver._tcp", "")), port);
-#endif
+  vvResourceManager *rm = NULL;
+
+  if(RM == _sm)
+  {
+    rm = new vvResourceManager();
+  }
+  else if(RM_WITH_SERVER == _sm)
+  {
+    rm = new vvResourceManager(this);
+  }
 
   while (1)
   {
-    cerr << "Listening on port " << port << endl;
+    cerr << "Listening on port " << _port << endl;
 
-    vvSocket *sock = NULL;
+    vvTcpSocket *sock = NULL;
 
     while((sock = tcpServ.nextConnection()) == NULL)
     {
-      // retry
-      cerr << "Socket blocked, retry..." << endl;
+      vvDebugMsg::msg(3, "vvServer::serverLoop() Listening socket blocked, retry...");
     }
+
     if(sock == NULL)
     {
-      cerr << "Failed to initialize server socket on port " << port << endl;
-      delete sock;
+      cerr << "vvServer::serverLoop() Failed to initialize server-socket on port " << _port << endl;
       break;
     }
     else
     {
-      pthread_create(&thread, NULL, handleClient, sock);
-      int joined = pthread_join(thread, NULL);
-      if (joined != 0)
+      cerr << "Incoming connection..." << endl;
+
+      if(RM == _sm || RM_WITH_SERVER == _sm)
       {
-        std::cerr << "Couldn't join thread" << std::endl;
+        rm->addJob(sock);
+      }
+      else
+      {
+        handleClient(sock);
       }
     }
   }
+
 #ifdef HAVE_BONJOUR
-  if(kDNSServiceErr_NoError == bonjErr) regist.unregisterService();
+  if(_useBonjour) unregisterFromBonjour();
 #endif
+
+  delete rm;
+
+  return true;
 }
 
-void * vvServer::handleClient(void *attribs)
+#ifdef HAVE_BONJOUR
+DNSServiceErrorType vvServer::registerToBonjour()
 {
-  vvTcpSocket *sock = reinterpret_cast<vvTcpSocket*>(attribs);
+  vvDebugMsg::msg(3, "vvServer::registerToBonjour()");
+  vvBonjourEntry entry = vvBonjourEntry("Virvo Server", "_vserver._tcp", "");
+  return _registrar.registerService(entry, _port);
+}
+
+void vvServer::unregisterFromBonjour()
+{
+  vvDebugMsg::msg(3, "vvServer::unregisterFromBonjour()");
+  _registrar.unregisterService();
+}
+#endif
+
+void vvServer::handleClient(vvTcpSocket *sock)
+{
+  vvServerThreadArgs *args = new vvServerThreadArgs;
+  args->_sock = sock;
+  args->_exitFunc = NULL;
+
+  pthread_t pthread;
+  pthread_create(&pthread,  NULL, handleClientThread, args);
+  pthread_detach(pthread);
+}
+
+void * vvServer::handleClientThread(void *param)
+{
+  vvServerThreadArgs *args = reinterpret_cast<vvServerThreadArgs*>(param);
+
+  if(args->_exitFunc == NULL)
+  {
+    args->_exitFunc = &vvServer::exitCallback;
+  }
+
+  pthread_cleanup_push(args->_exitFunc, NULL);
+
+  vvTcpSocket *sock = args->_sock;
+
   vvSocketIO *sockio = new vvSocketIO(sock);
 
   vvRemoteServer* server = NULL;
+
+  sockio->putBool(true);  // let client know we are ready
+
   int getType;
   sockio->getInt32(getType);
-  RemoteRenderingType remoteType = RR_NONE;
   vvRenderer::RendererType rType = (vvRenderer::RendererType)getType;
   switch(rType)
   {
     case vvRenderer::REMOTE_IMAGE:
       server = new vvImageServer(sockio);
-      remoteType = RR_IMAGE;
       break;
     case vvRenderer::REMOTE_IBR:
       server = new vvIbrServer(sockio);
-      remoteType = RR_IBR;
       break;
     default:
-      std::cerr << "Unknown remote rendering type " << rType << std::endl;
+      cerr << "Unknown remote rendering type " << rType << std::endl;
       break;
   }
-
   if(!server)
   {
     pthread_exit(NULL);
-#ifdef _WIN32
+  #ifdef _WIN32
     return NULL;
-#endif
+  #endif
   }
 
-  if (server->initRenderContext(DEFAULTSIZE, DEFAULTSIZE) != vvRemoteServer::VV_OK)
-  {
-    std::cerr << "Couldn't initialize render context" << std::endl;
-    pthread_exit(NULL);
-#ifdef _WIN32
-    return NULL;
-#endif
-  }
-
-  vvGLTools::enableGLErrorBacktrace();
   vvVolDesc *vd = NULL;
-  if (server->initData(vd) != vvRemoteServer::VV_OK)
+  if(server->initRenderContext(DEFAULTSIZE, DEFAULTSIZE) != vvRemoteServer::VV_OK)
+  {
+    cerr << "Couldn't initialize render context" << std::endl;
+    goto cleanup;
+  }
+  vvGLTools::enableGLErrorBacktrace();
+  if(server->initData(vd) != vvRemoteServer::VV_OK)
   {
     cerr << "Could not initialize volume data" << endl;
     cerr << "Continuing with next client..." << endl;
     goto cleanup;
   }
 
-  if (vd != NULL)
+  if(vd != NULL)
   {
-    if (server->getLoadVolumeFromFile())
+    if(server->getLoadVolumeFromFile())
     {
       vd->printInfoLine();
     }
 
     // Set default color scheme if no TF present:
-    if (vd->tf.isEmpty())
+    if(vd->tf.isEmpty())
     {
       vd->tf.setDefaultAlpha(0, 0.0, 1.0);
       vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
@@ -222,24 +383,21 @@ void * vvServer::handleClient(void *attribs)
     vvRenderState rs;
     vvRenderer *renderer = vvRendererFactory::create(vd,
         rs,
-        remoteType==RR_IBR ? "rayrend" : "default",
+        rType==vvRenderer::REMOTE_IBR ? "rayrend" : "default",
         "");
 
-    if(remoteType == RR_IBR)
+    if(rType == vvRenderer::REMOTE_IBR)
       renderer->setParameter(vvRenderer::VV_USE_IBR, 1.f);
 
-    while (1)
+    while(1)
     {
-      if (!server->processEvents(renderer))
+      if(!server->processEvents(renderer))
       {
+        delete renderer;
+        renderer = NULL;
         break;
       }
-//      if (vvDebugMsg::getDebugLevel() > 0)
-//      {
-//        renderContext.swapBuffers();
-//      }
     }
-    delete renderer;
   }
 
 cleanup:
@@ -263,144 +421,31 @@ cleanup:
   vd = NULL;
 
   pthread_exit(NULL);
+  pthread_cleanup_pop(0);
 #ifdef _WIN32
   return NULL;
 #endif
 }
 
-//----------------------------------------------------------------------------
-/// Display command usage help on the command line.
-void vvServer::displayHelpInfo()
+/*vvServer *s = NULL;
+
+void sigproc(int )
 {
-  vvDebugMsg::msg(1, "vvServer::displayHelpInfo()");
+  // NOTE some versions of UNIX will reset signal to default
+  // after each call. So for portability set signal each time
+  signal(SIGINT, sigproc);
 
-  cerr << "Syntax:" << endl;
-  cerr << endl;
-  cerr << "  vserver [options]" << endl;
-  cerr << endl;
-  cerr << "Available options:" << endl;
-  cerr << endl;
-  cerr << "-port" << endl;
-  cerr << " Don't use the default port (" << DEFAULT_PORT << "), but the specified one" << endl;
-  cerr << endl;
-  cerr << "-size <width> <height>" << endl;
-  cerr << " Set the window size to <width> * <height> pixels." << endl;
-  cerr << " The default window size is " << DEFAULTSIZE << " * " << DEFAULTSIZE <<
-          " pixels" << endl;
-  cerr << endl;
-  cerr << "-debug" << endl;
-  cerr << " Set debug level" << endl;
-  cerr << endl;
-}
+  cerr << "you have pressed ctrl-c" << endl;
 
-//----------------------------------------------------------------------------
-/** Parse command line arguments.
-  @param argc,argv command line arguments
-  @return true if parsing ok, false on error
-*/
-bool vvServer::parseCommandLine(int argc, char** argv)
-{
-  vvDebugMsg::msg(1, "vvServer::parseCommandLine()");
+  delete s;
+  s = NULL;
+}*/
 
-  for (int arg=1; arg<argc; ++arg)
-  {
-    if (vvToolshed::strCompare(argv[arg], "-help")==0 ||
-        vvToolshed::strCompare(argv[arg], "-h")==0    ||
-        vvToolshed::strCompare(argv[arg], "-?")==0    ||
-        vvToolshed::strCompare(argv[arg], "/?")==0)
-    {
-      displayHelpInfo();
-      return false;
-    }
-    else if (vvToolshed::strCompare(argv[arg], "-debug")==0)
-    {
-      if ((++arg)>=argc)
-      {
-        cerr << "Debug level missing." << endl;
-        return false;
-      }
-      int level = atoi(argv[arg]);
-      if (level>=0 && level<=3)
-        vvDebugMsg::setDebugLevel(level);
-      else
-      {
-        cerr << "Invalid debug level." << endl;
-        return false;
-      }
-    }
-    else if (vvToolshed::strCompare(argv[arg], "-size")==0)
-    {
-      if ((++arg)>=argc)
-      {
-        cerr << "Window width missing." << endl;
-        return false;
-      }
-      winWidth = atoi(argv[arg]);
-      if ((++arg)>=argc)
-      {
-        cerr << "Window height missing." << endl;
-        return false;
-      }
-      winHeight = atoi(argv[arg]);
-      if (winWidth<1 || winHeight<1)
-      {
-        cerr << "Invalid window size." << endl;
-        return false;
-      }
-    }
-    else if (vvToolshed::strCompare(argv[arg], "-port")==0)
-    {
-      if ((++arg)>=argc)
-      {
-        cerr << "No port specified, defaulting to: " << vvServer::DEFAULT_PORT << endl;
-        port = vvServer::DEFAULT_PORT;
-        return false;
-      }
-      else
-      {
-        int inport = atoi(argv[arg]);
-        if(inport > 65535 || inport <= 0)
-        {
-          cerr << "Specified port is out of range. Falling back to default: " << vvServer::DEFAULT_PORT << endl;
-          port = vvServer::DEFAULT_PORT;
-        }
-        else
-          port = inport;
-      }
-    }
-    else
-    {
-      cerr << "Unknown option/parameter: \"" << argv[arg] << "\", use -help for instructions" << endl;
-      return false;
-    }
-  }
-  return true;
-}
-
-//----------------------------------------------------------------------------
-/** Main Virvo server routine.
-  @param argc,argv command line arguments
-  @return 0 if the program finished ok, 1 if an error occurred
-*/
-int vvServer::run(int argc, char** argv)
-{
-  vvDebugMsg::msg(1, "vvServer::run()");
-
-  cerr << "Virvo server " << virvo::getVersionMajor() << "." << virvo::getReleaseCounter() << endl;
-  cerr << "(c) " << virvo::getYearOfRelease() << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
-  cerr << "Brown University" << endl << endl;
-
-  if (parseCommandLine(argc, argv) == false)
-    return 1;
-
-  serverLoop();
-  return 0;
-}
-
-//----------------------------------------------------------------------------
+//-------------------------------------------------------------------
 /// Main entry point.
 int main(int argc, char** argv)
 {
+//  signal(SIGINT, sigproc);
 #ifdef VV_DEBUG_MEMORY
   int flag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);// Get current flag
   flag |= _CRTDBG_LEAK_CHECK_DF;                 // Turn on leak-checking bit
@@ -439,7 +484,7 @@ int main(int argc, char** argv)
   return error;
 }
 
-//============================================================================
+//===================================================================
 // End of File
-//============================================================================
+//===================================================================
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
