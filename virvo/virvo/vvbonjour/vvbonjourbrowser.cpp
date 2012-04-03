@@ -40,7 +40,7 @@ vvBonjourBrowser::~vvBonjourBrowser()
 DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string& serviceType, const std::string domain)
 {
   DNSServiceErrorType error;
-  DNSServiceRef  serviceRef = NULL;
+  DNSServiceRef  serviceRef;
 
   _bonjourEntries.clear();
 
@@ -66,7 +66,7 @@ DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string& se
   return error;
 }
 
-void vvBonjourBrowser::BrowseCallBack(DNSServiceRef, DNSServiceFlags flags, uint32_t interfaceIndex,
+void vvBonjourBrowser::BrowseCallBack(DNSServiceRef serviceRef, DNSServiceFlags flags, uint32_t interfaceIndex,
                                       DNSServiceErrorType errorCode,
                                       const char * name, const char * type, const char * domain,
                                       void * context)
@@ -95,6 +95,7 @@ void vvBonjourBrowser::BrowseCallBack(DNSServiceRef, DNSServiceFlags flags, uint
   if (!(flags & kDNSServiceFlagsMoreComing))
   {
     instance->_eventLoop->stop();
+    DNSServiceRefDeallocate(serviceRef);
   }
 }
 
