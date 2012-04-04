@@ -125,12 +125,12 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
 #ifdef ISECT_GLSL_GEO
     const GLushort indexArray[3] = { 0, 1, 2 };
 
-    isectShader->setParameter1i(0, ISECT_SHADER_FIRSTPLANE, startSlices);
+    shader->setParameter1i("firstPlane", startSlices);
     glDrawElementsInstanced(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, indexArray, primCount);
 #else
     const GLushort indexArray[6] = { 0, 1, 2, 3, 4, 5 };
 
-    isectShader->setParameter1i(0, ISECT_SHADER_FIRSTPLANE, startSlices);
+    shader->setParameter1i("firstPlane", startSlices);
     glDrawElementsInstanced(GL_POLYGON, 6, GL_UNSIGNED_SHORT, indexArray, primCount);
 #endif
 #endif
