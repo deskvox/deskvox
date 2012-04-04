@@ -5264,29 +5264,23 @@ vvShaderProgram* vvTexRend::initShader()
 {
   vvGLTools::printGLError("Enter vvTexRend::initShader()");
 
-  std::ostringstream vertName;
+  std::string vertName;
+  std::string geoName;
   if(_proxyGeometryOnGpu)
   {
-  #ifdef ISECT_GLSL_GEO
-    const char* vertFileName = "intersection_geo";
-  #else
-    const char* vertFileName = "intersection";
-  #endif
-
-  #ifdef ISECT_GLSL_INST
-    const char* instStr = "_inst";
-  #else
-    const char* instStr = "";
-  #endif
-    std::ostringstream vertNameT;
-    vertNameT << vertFileName << instStr;
-
-  #ifdef ISECT_GLSL_GEO
-    const char* vertexFileName = "intersection_ver";
-    vertName << vertexFileName << instStr;
-  #else
-    vertName << vertNameT.str();
-  #endif
+#if defined(ISECT_GLSL_GEO) && defined(ISECT_GLSL_INST)
+    vertName = "intersection_geo_inst";
+    geoName = "intersection_geo_inst";
+#elif defined(ISECT_GLSL_GEO) && !defined(ISECT_GLSL_INST)
+    vertName = "intersection_geo";
+    geoName = "intersection_geo";
+#elif !defined(ISECT_GLSL_GEO) && defined(ISECT_GLSL_INST)
+    vertName = "intersection_inst";
+    geoName = "";
+#else // no defines
+    vertName = "intersection";
+    geoName = "";
+#endif
   }
 
   std::ostringstream fragName;
@@ -5295,7 +5289,7 @@ vvShaderProgram* vvTexRend::initShader()
     fragName << "shader" << std::setw(2) << std::setfill('0') << (_currentShader+1);
   }
 
-  vvShaderProgram* shader = _shaderFactory->createProgram(vertName.str(), "", fragName.str());
+  vvShaderProgram* shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str());
   if(!shader)
   {
     _proxyGeometryOnGpu = false;
