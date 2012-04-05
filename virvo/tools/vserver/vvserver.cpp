@@ -18,6 +18,10 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #include <iostream>
 
 using std::cerr;
@@ -28,8 +32,10 @@ using std::endl;
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+#ifdef HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjourentry.h>
 #include <virvo/vvbonjour/vvbonjourregistrar.h>
+#endif
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
@@ -110,8 +116,10 @@ void vvServer::serverLoop()
     return;
   }
 
+#ifdef HAVE_BONJOUR
   vvBonjourRegistrar regist;
   DNSServiceErrorType bonjErr = regist.registerService(*(new vvBonjourEntry("Virvo Server", "_vserver._tcp", "")), port);
+#endif
 
   while (1)
   {
@@ -140,8 +148,9 @@ void vvServer::serverLoop()
       }
     }
   }
-
+#ifdef HAVE_BONJOUR
   if(kDNSServiceErr_NoError == bonjErr) regist.unregisterService();
+#endif
 }
 
 void * vvServer::handleClient(void *attribs)
