@@ -24,7 +24,7 @@
 #include "vvexport.h"
 #include "vvsocket.h"
 
-class vvContextOptions;
+struct vvContextOptions;
 class vvRenderContext;
 class vvRenderer;
 class vvSocketIO;
