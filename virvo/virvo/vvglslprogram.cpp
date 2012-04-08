@@ -115,7 +115,12 @@ bool vvGLSLProgram::loadShaders()
   glGetProgramiv(_programId, GL_LINK_STATUS, &linked);
   if (!linked)
   {
-    cerr << "glLinkProgram failed" << endl;
+    GLint length;
+    std::vector<GLchar> linkLog;
+    glGetProgramiv(_programId, GL_INFO_LOG_LENGTH, &length);
+    linkLog.resize(length);
+    glGetProgramInfoLog(_programId, length, &length, &linkLog[0]);
+    vvDebugMsg::msg(0, "glLinkProgram failed: ", &linkLog[0]);
     return false;
   }
 
