@@ -44,6 +44,31 @@ enum ShaderType
 class VIRVOEXPORT vvShaderProgram
 {
 public:
+  enum GeoPrimType
+  {
+    VV_POINTS = 0,
+    VV_LINES,
+    VV_LINES_ADJACENCY,
+    VV_LINE_STRIP,
+    VV_TRIANGLES,
+    VV_TRIANGLES_ADJACENCY,
+    VV_TRIANGLE_STRIP
+  };
+
+  struct GeoShaderArgs
+  {
+    GeoShaderArgs()
+      : inputType(VV_TRIANGLES)
+      , outputType(VV_TRIANGLE_STRIP)
+      , numOutputVertices(-1) // negative value => linker will use the max possible value
+    {
+    }
+
+    GeoPrimType inputType;
+    GeoPrimType outputType;
+    int numOutputVertices;
+  };
+
   /*!
     Create a program with combination of non-empty provided shader codes
   */
@@ -86,9 +111,11 @@ public:
   virtual void setParameterTex2D(const std::string& parameterName, const unsigned int& ui) = 0;
   virtual void setParameterTex3D(const std::string& parameterName, const unsigned int& ui) = 0;
 
+  virtual void setGeoShaderArgs(const GeoShaderArgs& geoShaderArgs);
 protected:
   bool _shadersLoaded;
   std::string _fileStrings[3];
+  GeoShaderArgs _geoShaderArgs;
 };
 
 #endif // _VV_SHADERPROGRAM_H_

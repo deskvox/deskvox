@@ -41,6 +41,11 @@ bool vvShaderProgram::isValid() const
   return _shadersLoaded;
 }
 
+void vvShaderProgram::setGeoShaderArgs(const vvShaderProgram::GeoShaderArgs& geoShaderArgs)
+{
+  _geoShaderArgs = geoShaderArgs;
+}
+
 //============================================================================
 // End of File
 //============================================================================

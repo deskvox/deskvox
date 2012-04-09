@@ -79,9 +79,72 @@ bool vvGLSLProgram::loadShaders()
       vvDebugMsg::msg(2, "glCreateShader(GL_VERTEX_SHADER)");
       break;
     case 1:
+    {
       _shaderId[i] = glCreateShader(GL_GEOMETRY_SHADER_EXT);
+
+      GLenum inputType = VV_TRIANGLES;
+      switch (_geoShaderArgs.inputType)
+      {
+      case VV_POINTS:
+        inputType = GL_POINTS;
+        break;
+      case VV_LINES:
+        inputType = GL_LINES;
+        break;
+      case VV_LINES_ADJACENCY:
+        inputType = GL_LINES_ADJACENCY_EXT;
+        break;
+      case VV_TRIANGLES:
+        inputType = GL_TRIANGLES;
+        break;
+      case VV_TRIANGLES_ADJACENCY:
+        inputType = GL_TRIANGLES_ADJACENCY_EXT;
+        break;
+      default:
+        vvDebugMsg::msg(0, "Invalid input type for geometry shader. Supported: GL_POINTS, GL_LINES, GL_LINES_ADJACENCY_EXT, GL_TRIANGLES, GL_TRIANGLES_ADJACENCY_EXT");
+        break;
+      }
+
+      GLenum outputType = VV_TRIANGLE_STRIP;
+      switch (_geoShaderArgs.outputType)
+      {
+      case VV_POINTS:
+        outputType = GL_POINTS;
+        break;
+      case VV_LINE_STRIP:
+        outputType = GL_LINE_STRIP;
+        break;
+      case VV_TRIANGLE_STRIP:
+        outputType = GL_TRIANGLE_STRIP;
+        break;
+      default:
+        vvDebugMsg::msg(0, "Invalid output type for geometry shader. Supported: GL_POINTS, GL_LINE_STRIP, GL_TRIANGLE_STRIP");
+      }
+
+      glProgramParameteriEXT(_programId, GL_GEOMETRY_INPUT_TYPE_EXT, inputType);
+      glProgramParameteriEXT(_programId, GL_GEOMETRY_OUTPUT_TYPE_EXT, outputType);
+
+      int maxVertices = 0;
+      glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES_EXT, &maxVertices);
+
+      // negative value indicates that user desires the maximum
+      if (_geoShaderArgs.numOutputVertices < 0)
+      {
+        _geoShaderArgs.numOutputVertices = maxVertices;
+      }
+
+      if (_geoShaderArgs.numOutputVertices <= maxVertices)
+      {
+        glProgramParameteriEXT(_programId, GL_GEOMETRY_VERTICES_OUT_EXT, _geoShaderArgs.numOutputVertices);
+      }
+      else
+      {
+        vvDebugMsg::msg(0, "Invalid number of output vertices for geometry shader. Supported: ", maxVertices);
+      }
+
       vvDebugMsg::msg(2, "glCreateShader(GL_GEOMETRY_SHADER_EXT)");
       break;
+    }
     case 2:
       _shaderId[i] = glCreateShader(GL_FRAGMENT_SHADER);
       vvDebugMsg::msg(2, "glCreateShader(GL_FRAGMENT_SHADER)");
