@@ -28,9 +28,10 @@
 #ifdef HAVE_BONJOUR
 
 #include "vvexport.h"
-#include "vvpthread.h"
 
 #include <dns_sd.h>
+
+struct Thread;
 
 /**
   Class to handle Bonjourevents in a blocking or nonblocking/threaded loop.
@@ -41,16 +42,8 @@
 class VIRVOEXPORT vvBonjourEventLoop
 {
 public:
-  vvBonjourEventLoop(DNSServiceRef service)
-  {
-    _dnsServiceRef = service;
-  }
-
-  ~vvBonjourEventLoop()
-  {
-    if(_dnsServiceRef)
-      DNSServiceRefDeallocate(_dnsServiceRef);
-  }
+  vvBonjourEventLoop(DNSServiceRef service);
+  ~vvBonjourEventLoop();
 
   /**
     Start the eventloop.
@@ -73,7 +66,7 @@ public:
   DNSServiceRef _dnsServiceRef;
 
 private:
-  pthread_t  _thread;
+  Thread *_thread;
 };
 
 #endif

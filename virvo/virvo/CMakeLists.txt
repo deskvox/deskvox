@@ -204,6 +204,8 @@ SET(VIRVO_SOURCES
   vvvoldesc.cpp 
 )
 
+ADD_DEFINITIONS(-DVV_LIBRARY_BUILD)
+
 IF(APPLE) 
   SET(VIRVO_WINDOWING_SYSTEM "Cocoa" CACHE STRING "Available windowing systems for render contexts (Cocoa | X11)") 
 ELSEIF(WIN32)

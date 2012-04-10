@@ -13,6 +13,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
+#ifndef VV_LIBRARY_BUILD
+#error "vvpthread.h is meant for internal use only"
+#endif
+
 #ifndef _VV_PTHREAD_H_
 #define _VV_PTHREAD_H_
 

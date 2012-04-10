@@ -39,7 +39,7 @@ using std::endl;
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
-#include <virvo/vvpthread.h>
+#include <pthread.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvrendercontext.h>
 #include <virvo/vvrendererfactory.h>

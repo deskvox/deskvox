@@ -23,8 +23,27 @@
 #ifdef HAVE_BONJOUR
 
 #include "vvdebugmsg.h"
+#include "vvpthread.h"
 #include "vvsocketmonitor.h"
 #include "vvtcpsocket.h"
+
+struct Thread
+{
+  pthread_t _pthread;
+};
+
+vvBonjourEventLoop::vvBonjourEventLoop(DNSServiceRef service)
+{
+  _thread = new Thread;
+  _dnsServiceRef = service;
+}
+
+vvBonjourEventLoop::~vvBonjourEventLoop()
+{
+  if(_dnsServiceRef)
+    DNSServiceRefDeallocate(_dnsServiceRef);
+  delete _thread;
+}
 
 void vvBonjourEventLoop::run(bool inThread, double timeout)
 {
@@ -37,7 +56,7 @@ void vvBonjourEventLoop::run(bool inThread, double timeout)
   }
   else
   {
-    pthread_create(&_thread, NULL, loop, this);
+    pthread_create(&(_thread->_pthread), NULL, loop, this);
   }
 }
 

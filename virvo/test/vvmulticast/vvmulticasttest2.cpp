@@ -23,7 +23,8 @@
 #include "vvmulticast.h"
 #include "vvclock.h"
 #include "vvtoolshed.h"
-#include "vvpthread.h"
+
+#include <pthread.h>
 
 using namespace std;
 
