@@ -16,7 +16,7 @@ varying float planeDist;
 
 void main()
 {
-  planeDist = brickMin.w + (float(firstPlane) + float(gl_InstanceID)) * delta;
+  planeDist = brickMin.w + (float(firstPlane) + float(gl_InstanceIDARB)) * delta;
   vec3 pos;
   
   for (int i=0; i<3; ++i)
