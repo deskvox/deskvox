@@ -31,8 +31,9 @@
  */
 struct ContextArchData;
 
-struct vvContextOptions
+class vvContextOptions
 {
+public:
   enum ContextType
   {
     VV_WINDOW = 0,

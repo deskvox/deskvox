@@ -3,13 +3,16 @@
 
 #ifdef __APPLE__
 
-class vvRenderContext;
-struct vvContextOptions;
+#ifdef __OBJC__
+class vvContextOptions;
+#else
+class vvContextOptions;
 class NSAutoreleasePool;
 class NSOpenGLContext;
 class NSOpenGLPixelFormat;
 class NSView;
 class NSWindow;
+#endif
 
 class vvCocoaGLContext
 {
