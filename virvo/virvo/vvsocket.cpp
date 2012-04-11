@@ -973,7 +973,7 @@ int vvSocket::RttServer(int payload)
   delete usock;
   delete[] frame;
 #else
-  payload = payload;                              // prevent "unreferenced parameter"
+  (void)payload;
 #endif
   return 0;
 }
@@ -1060,7 +1060,7 @@ float vvSocket::RttClient(int payload)
   else
     return 0;
 #else
-  payload = payload;                              // prevent "unreferenced parameter"
+  (void)payload;
   return 0;
 #endif
 }

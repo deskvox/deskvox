@@ -4,7 +4,7 @@
 #ifdef __APPLE__
 
 class vvRenderContext;
-class vvContextOptions;
+struct vvContextOptions;
 class NSAutoreleasePool;
 class NSOpenGLContext;
 class NSOpenGLPixelFormat;

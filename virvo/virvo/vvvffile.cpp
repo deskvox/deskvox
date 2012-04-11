@@ -2778,7 +2778,6 @@ void vvvffile::float2octals(unsigned char* a1, unsigned char* a2, unsigned char*
     // Vorzeichen
     if (value > 0)
     {
-      value = value;
       *a1 = 0;
     }
     else
