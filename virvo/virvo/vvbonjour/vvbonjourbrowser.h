@@ -49,9 +49,10 @@ public:
     Initiated the bonjourbrowser to search for services. If no error occured, a list of entries will be saved.
     @param serviceType String of desired service type.
     @param domain      String of desired domain to search (optional). By default all local domains.
+    @param to          Timeout in seconds. If not set, default will be used.
     @return Errorcode (0 == no error). See manpages of DNSSeriviceErrorType for further informations.
    */
-  DNSServiceErrorType browseForServiceType(const std::string& serviceType, const std::string domain = "");
+  DNSServiceErrorType browseForServiceType(const std::string& serviceType, const std::string domain = "", const double to = 1.0);
 
   /**
     Returns list of found bonjourentries
@@ -61,6 +62,7 @@ public:
   vvBonjourEventLoop* _eventLoop;
   std::vector<vvBonjourEntry> _bonjourEntries;
 
+  double _timeout;
 private:
   /*!
    * \brief Callback function passed to bonjour.

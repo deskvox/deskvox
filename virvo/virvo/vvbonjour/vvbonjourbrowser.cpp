@@ -27,17 +27,20 @@
 #include <iostream>
 #include <sstream>
 #include <ostream>
+#include <algorithm>
 
 vvBonjourBrowser::vvBonjourBrowser()
   : _eventLoop(NULL)
-{}
+{
+  _timeout = 1.0;
+}
 
 vvBonjourBrowser::~vvBonjourBrowser()
 {
   if(_eventLoop) delete _eventLoop;
 }
 
-DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string& serviceType, const std::string domain)
+DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string& serviceType, const std::string domain, const double to)
 {
   DNSServiceErrorType error;
   DNSServiceRef  serviceRef;
@@ -53,8 +56,12 @@ DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string& se
               this);                // adress of pointer to eventloop
   if (error == kDNSServiceErr_NoError)
   {
+    _timeout = to;
     _eventLoop = new vvBonjourEventLoop(serviceRef);
-    _eventLoop->run();
+    if(to != -1.0)
+      _eventLoop->run(false, to);
+    else
+      _eventLoop->run(true, to);
   }
   else
   {
@@ -89,10 +96,19 @@ void vvBonjourBrowser::BrowseCallBack(DNSServiceRef serviceRef, DNSServiceFlags 
       vvDebugMsg::msg(0, msg.str().c_str());
     }
     vvBonjourEntry entry = vvBonjourEntry(name, type, domain);
-    instance->_bonjourEntries.push_back(entry);
+    if(flags & kDNSServiceFlagsAdd)
+    {
+      instance->_bonjourEntries.push_back(entry);
+    }
+    else
+    {
+      std::vector<vvBonjourEntry>::iterator it;
+      it = std::find(instance->_bonjourEntries.begin(), instance->_bonjourEntries.end(), entry);
+      instance->_bonjourEntries.erase(it);
+    }
   }
 
-  if (!(flags & kDNSServiceFlagsMoreComing))
+  if (!(flags & kDNSServiceFlagsMoreComing) && instance->_timeout!=-1.0)
   {
     instance->_eventLoop->stop();
     DNSServiceRefDeallocate(serviceRef);
