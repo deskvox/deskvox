@@ -35,13 +35,16 @@ struct Thread
 vvBonjourEventLoop::vvBonjourEventLoop(DNSServiceRef service)
 {
   _thread = new Thread;
+  _thread->_pthread = NULL;
   _dnsServiceRef = service;
 }
 
 vvBonjourEventLoop::~vvBonjourEventLoop()
 {
-  if(_dnsServiceRef)
-    DNSServiceRefDeallocate(_dnsServiceRef);
+  if(_thread->_pthread)
+  {
+    pthread_join(_thread->_pthread, NULL);
+  }
   delete _thread;
 }
 
