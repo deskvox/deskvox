@@ -84,14 +84,15 @@ void vvBonjourRegistrar::unregisterService()
     return;
   }
 
-  DNSServiceRefDeallocate(_serviceRef);
-  _serviceRef = NULL;
-
   if(_eventLoop)
   {
+    _eventLoop->stop();
     delete _eventLoop;
     _eventLoop = NULL;
   }
+
+  DNSServiceRefDeallocate(_serviceRef);
+  _serviceRef = NULL;
 }
 
 void vvBonjourRegistrar::RegisterCallBack(DNSServiceRef service,
@@ -127,6 +128,7 @@ void vvBonjourRegistrar::RegisterCallBack(DNSServiceRef service,
   {
     // registering done
     instance->_eventLoop->_noMoreFlags = true;
+    instance->_eventLoop->stop();
   }
 }
 
