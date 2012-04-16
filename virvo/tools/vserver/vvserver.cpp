@@ -39,7 +39,6 @@ using std::endl;
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
-#include <pthread.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvrendercontext.h>
 #include <virvo/vvrendererfactory.h>
@@ -48,6 +47,8 @@ using std::endl;
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvvirvo.h>
 #include <virvo/vvvoldesc.h>
+
+#include <pthread.h>
 
 /**
  * Virvo Server main class.
