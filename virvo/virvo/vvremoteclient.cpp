@@ -51,6 +51,12 @@ vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_
 vvRemoteClient::~vvRemoteClient()
 {
   vvDebugMsg::msg(1, "vvRemoteClient::~vvRemoteClient()");
+
+  if(_socketIO)
+  {
+    delete _socketIO->getSocket();
+    delete _socketIO;
+  }
 }
 
 void vvRemoteClient::renderVolumeGL()
@@ -104,6 +110,14 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
     port = _port;
   if(port == -1)
     port = defaultPort;
+
+  if(_socketIO)
+  {
+    _socketIO->putCommReason(vvSocketIO::VV_EXIT);
+    delete _socketIO->getSocket();
+    delete _socketIO;
+    _socketIO = NULL;
+  }
 
   vvTcpSocket *socket = new vvTcpSocket;
   _socketIO = new vvSocketIO(socket);
