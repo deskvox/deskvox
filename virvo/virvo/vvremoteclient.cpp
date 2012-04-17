@@ -38,7 +38,6 @@ vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_
     _slaveName(slaveName),
     _port(port),
     _slaveFileName(slaveFileName),
-    _socket(NULL),
     _socketIO(NULL),
     _changes(true),
     _viewportWidth(-1),
@@ -106,13 +105,13 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   if(port == -1)
     port = defaultPort;
 
-  _socket = new vvTcpSocket;
-  _socketIO = new vvSocketIO(_socket);
+  vvTcpSocket *socket = new vvTcpSocket;
+  _socketIO = new vvSocketIO(socket);
 
-  if (_socket->connectToHost(serverName ? serverName : _slaveName, port) == vvSocket::VV_OK)
+  if (socket->connectToHost(serverName ? serverName : _slaveName, port) == vvSocket::VV_OK)
   {
     delete serverName;
-    _socket->setParameter(vvSocket::VV_NO_NAGLE, true);
+    socket->setParameter(vvSocket::VV_NO_NAGLE, true);
     _socketIO->putInt32(_type);
 
     if (_slaveFileName && _slaveFileName[0])
@@ -147,9 +146,8 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   else
   {
     delete serverName;
-    delete _socket;
+    delete socket;
     delete _socketIO;
-    _socket = NULL;
     _socketIO = NULL;
     cerr << "No connection to remote rendering server established at: " << _slaveName << endl;
     return VV_SOCKET_ERROR;
@@ -315,11 +313,12 @@ void vvRemoteClient::exit()
   vvDebugMsg::msg(1, "vvRemoteClient::exit()");
 
   if(_socketIO)
+  {
     _socketIO->putCommReason(vvSocketIO::VV_EXIT);
-  delete _socket;
-  _socket = NULL;
-  delete _socketIO;
-  _socketIO = NULL;
+    delete _socketIO->getSocket();
+    delete _socketIO;
+    _socketIO = NULL;
+  }
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

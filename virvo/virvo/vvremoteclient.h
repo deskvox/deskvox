@@ -71,7 +71,6 @@ protected:
   const char* _slaveName;
   int _port;
   const char* _slaveFileName;
-  vvTcpSocket *_socket;
   vvSocketIO  *_socketIO;
 
   bool _changes; ///< indicate if a new rendering is required
