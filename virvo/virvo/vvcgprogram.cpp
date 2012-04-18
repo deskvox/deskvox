@@ -51,8 +51,8 @@ vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& f
   }
 }
 
-vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& frag)
-                         const vvShaderProgram& geoShaderArgs)
+vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& frag,
+                         const vvShaderProgram::GeoShaderArgs& geoShaderArgs)
 : vvShaderProgram(vert, geom, frag, geoShaderArgs)
 {
   for(int i=0; i<3;i++)
