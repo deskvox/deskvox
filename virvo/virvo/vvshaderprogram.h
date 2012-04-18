@@ -73,6 +73,9 @@ public:
     Create a program with combination of non-empty provided shader codes
   */
   vvShaderProgram(const std::string& vert, const std::string& geom, const std::string& frag);
+  vvShaderProgram(const std::string& vert, const std::string& geom, const std::string& frag,
+                  const GeoShaderArgs& geoShaderArgs);
+
   virtual ~vvShaderProgram();
 
   virtual bool isValid() const;
@@ -110,8 +113,6 @@ public:
   virtual void setParameterTex1D(const std::string& parameterName, const unsigned int& ui) = 0;
   virtual void setParameterTex2D(const std::string& parameterName, const unsigned int& ui) = 0;
   virtual void setParameterTex3D(const std::string& parameterName, const unsigned int& ui) = 0;
-
-  virtual void setGeoShaderArgs(const GeoShaderArgs& geoShaderArgs);
 protected:
   bool _shadersLoaded;
   std::string _fileStrings[3];

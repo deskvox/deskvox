@@ -56,6 +56,15 @@ public:
    */
   vvCgProgram(const std::string& vert, const std::string& geom, const std::string& frag);
 
+  /**
+    Creates a vvCgProgram and tries to attach the given shaders source codes.
+    @param vert Filestring of desired vertex-shader or emtpy/NULL.
+    @param geom Filestring of desired geometry-shader or emtpy/NULL.
+    @param frag Filestring of desired fragment-shader or emtpy/NULL.
+   */
+  vvCgProgram(const std::string& vert, const std::string& geom, const std::string& frag,
+              const vvShaderProgram::GeoShaderArgs& geoShaderArgs);
+
   /// Deactivates and deletes shader program that was generated in this class
   ~vvCgProgram();
 

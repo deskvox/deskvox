@@ -87,7 +87,7 @@ vvShaderProgram* vvShaderFactory::createProgram(const std::string& vert, const s
         if(_fileString[i].length() > 0)
           vvDebugMsg::msg(2, _shaderName[i].c_str());
 
-      program = new vvGLSLProgram(_fileString[0], _fileString[1], _fileString[2]);
+      program = new vvGLSLProgram(_fileString[0], _fileString[1], _fileString[2], _geoShaderArgs);
       if(!program->isValid())
       {
         delete program;
@@ -119,7 +119,7 @@ vvShaderProgram* vvShaderFactory::createProgram(const std::string& vert, const s
             cerr << _shaderName[i] << " ";
         cerr << endl;
 
-        program = new vvCgProgram(_fileString[0], _fileString[1], _fileString[2]);
+        program = new vvCgProgram(_fileString[0], _fileString[1], _fileString[2], _geoShaderArgs);
         if(!program->isValid())
         {
           delete program;
@@ -137,6 +137,17 @@ vvShaderProgram* vvShaderFactory::createProgram(const std::string& vert, const s
   }
 
   return program;
+}
+
+vvShaderProgram* vvShaderFactory::createProgram(const std::string& vert, const std::string& geom, const std::string& frag,
+                                                const vvShaderProgram::GeoShaderArgs& geoShaderArgs)
+{
+  if (geom.empty())
+  {
+    vvDebugMsg::msg(0, "vvShaderFactory::createProgram(): Geometry shader args specified but no geometry shader supplied");
+  }
+  _geoShaderArgs = geoShaderArgs;
+  return createProgram(vert, geom, frag);
 }
 
 bool vvShaderFactory::loadFileStrings()

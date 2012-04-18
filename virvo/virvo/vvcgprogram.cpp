@@ -51,6 +51,23 @@ vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& f
   }
 }
 
+vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& frag)
+                         const vvShaderProgram& geoShaderArgs)
+: vvShaderProgram(vert, geom, frag, geoShaderArgs)
+{
+  for(int i=0; i<3;i++)
+  {
+    _shaderId[i] = 0;
+    _profile[i] = CGprofile(0);
+  }
+
+  _shadersLoaded = loadShaders();
+  if(_shadersLoaded)
+  {
+     vvDebugMsg::msg(0, "vvCgProgram::vvCgProgram() Loading Shaders failed!");
+  }
+}
+
 vvCgProgram::~vvCgProgram()
 {
   disable();

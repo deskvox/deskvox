@@ -18,6 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include "vvdebugmsg.h"
 #include "vvshaderprogram.h"
 
 #include <string>
@@ -32,6 +33,20 @@ vvShaderProgram::vvShaderProgram(const string& vert, const string& geom, const s
   _fileStrings[2] = frag;
 }
 
+vvShaderProgram::vvShaderProgram(const string& vert, const string& geom, const string& frag,
+                                 const vvShaderProgram::GeoShaderArgs& geoShaderArgs)
+{
+  if (geom.empty())
+  {
+    vvDebugMsg::msg(0, "vvShaderProgram::createProgram(): Geometry shader args specified but no geometry shader supplied");
+  }
+  _shadersLoaded = false;
+  _fileStrings[0] = vert;
+  _fileStrings[1] = geom;
+  _fileStrings[2] = frag;
+  _geoShaderArgs = geoShaderArgs;
+}
+
 vvShaderProgram::~vvShaderProgram()
 {
 }
@@ -39,11 +54,6 @@ vvShaderProgram::~vvShaderProgram()
 bool vvShaderProgram::isValid() const
 {
   return _shadersLoaded;
-}
-
-void vvShaderProgram::setGeoShaderArgs(const vvShaderProgram::GeoShaderArgs& geoShaderArgs)
-{
-  _geoShaderArgs = geoShaderArgs;
 }
 
 //============================================================================

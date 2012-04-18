@@ -46,6 +46,23 @@ vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const strin
   }
 }
 
+vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const string& frag,
+                             const vvShaderProgram::GeoShaderArgs& geoShaderArgs)
+: vvShaderProgram(vert, geom, frag, geoShaderArgs)
+, _programId(0)
+, _nTexture(0)
+, _isSupported(false)
+{
+  for(int i=0; i<3;i++)
+    _shaderId[i] = 0;
+
+  _shadersLoaded = loadShaders();
+  if(!_shadersLoaded)
+  {
+    vvDebugMsg::msg(1, "vvGLSLProgram::vvGLSLProgram() Loading Shaders failed!");
+  }
+}
+
 vvGLSLProgram::~vvGLSLProgram()
 {
   for (TextureIterator it = _textureNameMaps.begin();

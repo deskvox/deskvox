@@ -39,13 +39,22 @@ public:
     \note the prefix, suffix, extensions etc are added to the names internally
     */
   vvShaderProgram* createProgram(const std::string& name);
-    /** Create Program and try to attach shaders with givens names
+  /** Create Program and try to attach shaders with givens names
     \param vert name of vertex shader
     \param geom name of geometry shader
     \param frag name of fragment shader
     \note the prefix, suffix, extensions etc are added to the names internally
     */
   vvShaderProgram* createProgram(const std::string& vert, const std::string& geom, const std::string& frag);
+  /** Create Program and try to attach shaders with givens names
+    \param vert name of vertex shader
+    \param geom name of geometry shader
+    \param frag name of fragment shader
+    \param geoShaderArgs parameters passed to the geometry shader
+    \note the prefix, suffix, extensions etc are added to the names internally
+    */
+  vvShaderProgram* createProgram(const std::string& vert, const std::string& geom, const std::string& frag,
+                                 const vvShaderProgram::GeoShaderArgs& geoShaderArgs);
 
   bool cgSupport();     ///< returns if CG is supported
   bool glslSupport();   ///< returns if GLSL is supported
@@ -55,6 +64,8 @@ private:
   bool loadFileStrings();
 
   bool _cgSupport;
+  vvShaderProgram::GeoShaderArgs _geoShaderArgs;
+
   std::string _shaderName[3];
   std::string _fileString[3];
   std::string _shaderDir;
