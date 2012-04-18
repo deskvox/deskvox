@@ -65,7 +65,7 @@ public:
   virtual ErrorType requestFrame() const;
 
 protected:
-  virtual void exit();
+  virtual void quit();
 
   uint32_t _type;
   const char* _slaveName;

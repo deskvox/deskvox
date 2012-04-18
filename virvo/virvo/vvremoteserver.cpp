@@ -171,7 +171,7 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
     {
       switch (commReason)
       {
-      case vvSocketIO::VV_EXIT:
+      case vvSocketIO::VV_QUIT:
         return false;
       case vvSocketIO::VV_MATRIX:
         if ((_socketio->getMatrix(&pr) == vvSocket::VV_OK)

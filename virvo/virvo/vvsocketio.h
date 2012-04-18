@@ -131,7 +131,7 @@ class VIRVOEXPORT vvSocketIO
 
     enum CommReason                               /// before sending data, let the recipient know what to expect
     {
-      VV_EXIT = 0,
+      VV_QUIT = 0,
       VV_MATRIX,
       VV_CURRENT_FRAME,
       VV_IMAGE,

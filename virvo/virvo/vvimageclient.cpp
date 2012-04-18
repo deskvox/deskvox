@@ -56,7 +56,7 @@ vvImageClient::~vvImageClient()
 {
   vvDebugMsg::msg(1, "vvImageClient::~vvImageClient()");
 
-  vvRemoteClient::exit();
+  quit();
 
   glDeleteTextures(1, &_rgbaTex);
 }

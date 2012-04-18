@@ -113,7 +113,6 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 
   if(_socketIO)
   {
-    _socketIO->putCommReason(vvSocketIO::VV_EXIT);
     delete _socketIO->getSocket();
     delete _socketIO;
     _socketIO = NULL;
@@ -322,13 +321,13 @@ vvRemoteClient::ErrorType vvRemoteClient::requestFrame() const
   return vvRemoteClient::VV_OK;
 }
 
-void vvRemoteClient::exit()
+void vvRemoteClient::quit()
 {
-  vvDebugMsg::msg(1, "vvRemoteClient::exit()");
+  vvDebugMsg::msg(1, "vvRemoteClient::quitCommunication()");
 
   if(_socketIO)
   {
-    _socketIO->putCommReason(vvSocketIO::VV_EXIT);
+    _socketIO->putCommReason(vvSocketIO::VV_QUIT);
     delete _socketIO->getSocket();
     delete _socketIO;
     _socketIO = NULL;
