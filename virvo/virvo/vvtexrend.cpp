@@ -5289,7 +5289,14 @@ vvShaderProgram* vvTexRend::initShader()
     fragName << "shader" << std::setw(2) << std::setfill('0') << (_currentShader+1);
   }
 
+#if defined(ISECT_GLSL_GEO)
+  vvShaderProgram::GeoShaderArgs args;
+  args.numOutputVertices = 6;
+  vvShaderProgram* shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str(), args);
+#else
   vvShaderProgram* shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str());
+#endif
+
   if(!shader)
   {
     _proxyGeometryOnGpu = false;
