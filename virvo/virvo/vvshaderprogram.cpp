@@ -36,10 +36,6 @@ vvShaderProgram::vvShaderProgram(const string& vert, const string& geom, const s
 vvShaderProgram::vvShaderProgram(const string& vert, const string& geom, const string& frag,
                                  const vvShaderProgram::GeoShaderArgs& geoShaderArgs)
 {
-  if (geom.empty())
-  {
-    vvDebugMsg::msg(0, "vvShaderProgram::createProgram(): Geometry shader args specified but no geometry shader supplied");
-  }
   _shadersLoaded = false;
   _fileStrings[0] = vert;
   _fileStrings[1] = geom;
