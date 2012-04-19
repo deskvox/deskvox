@@ -110,7 +110,6 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     shader->setParameter3f("texMin", texMin[0], texMin[1], texMin[2]);
     const int primCount = (endSlices - startSlices) + 1;
 
-#ifndef ISECT_GLSL_INST
 #ifdef ISECT_GLSL_GEO
     glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*6]);
     glMultiDrawElements(GL_TRIANGLES, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
@@ -119,20 +118,6 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     //renderer->disableShader(shader);
     glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
     //renderer->enableShader(shader, 0);
-#endif
-
-#else
-#ifdef ISECT_GLSL_GEO
-    const GLushort indexArray[3] = { 0, 1, 2 };
-
-    shader->setParameter1i("firstPlane", startSlices);
-    glDrawElementsInstanced(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, indexArray, primCount);
-#else
-    const GLushort indexArray[6] = { 0, 1, 2, 3, 4, 5 };
-
-    shader->setParameter1i("firstPlane", startSlices);
-    glDrawElementsInstanced(GL_POLYGON, 6, GL_UNSIGNED_SHORT, indexArray, primCount);
-#endif
 #endif
   }
   else // render proxy geometry on gpu? else then:

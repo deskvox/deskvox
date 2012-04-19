@@ -3271,9 +3271,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     }
   }
 
-#ifndef ISECT_GLSL_INST
   initVertArray(numSlices);
-#endif
 
   if (_usedThreads == 0)
   {
@@ -3387,22 +3385,6 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
         _shader->setParameter3f("planeNormal", normal[0], normal[1], normal[2]);
 
         glEnableClientState(GL_VERTEX_ARRAY);
-#ifdef ISECT_GLSL_INST
-#ifdef ISECT_GLSL_GEO
-        const GLint vertArray[6] = { 0, 0,
-                                     3, 0,
-                                     6, 0 };
-
-#else
-        const GLint vertArray[12] = { 0, 0,
-                                      4, 0,
-                                      8, 0,
-                                      12, 0,
-                                      16, 0,
-                                      20, 0 };
-#endif
-        glVertexPointer(2, GL_INT, 0, vertArray);
-#endif
       }
       for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
       {
@@ -5268,15 +5250,9 @@ vvShaderProgram* vvTexRend::initShader()
   std::string geoName;
   if(_proxyGeometryOnGpu)
   {
-#if defined(ISECT_GLSL_GEO) && defined(ISECT_GLSL_INST)
-    vertName = "intersection_geo_inst";
-    geoName = "intersection_geo_inst";
-#elif defined(ISECT_GLSL_GEO) && !defined(ISECT_GLSL_INST)
+#if defined(ISECT_GLSL_GEO)
     vertName = "intersection_geo";
     geoName = "intersection_geo";
-#elif !defined(ISECT_GLSL_GEO) && defined(ISECT_GLSL_INST)
-    vertName = "intersection_inst";
-    geoName = "";
 #else // no defines
     vertName = "intersection";
     geoName = "";
