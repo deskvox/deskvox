@@ -47,27 +47,6 @@ public:
     texels[0] = texels[1] = texels[2] = 0;
   }
 
-  vvBrick(const vvBrick* rhs)                   ///< copy constructor (from ptr)
-  {
-    pos = vvVector3(&rhs->pos);
-    min = vvVector3(&rhs->min);
-    max = vvVector3(&rhs->max);
-    texRange = vvVector3(&rhs->texRange);
-    texMin = vvVector3(&rhs->texMin);
-    minValue = rhs->minValue;
-    maxValue = rhs->maxValue;
-    visible = rhs->visible;
-    insideProbe = rhs->insideProbe;
-    index = rhs->index;
-    startOffset[0] = rhs->startOffset[0];
-    startOffset[1] = rhs->startOffset[1];
-    startOffset[2] = rhs->startOffset[2];
-    texels[0] = rhs->texels[0];
-    texels[1] = rhs->texels[1];
-    texels[2] = rhs->texels[2];
-    dist = rhs->dist;
-  }
-
   inline bool operator<(const vvBrick& rhs) const      ///< compare bricks based upon dist to eye position
   {
     return (dist < rhs.dist);

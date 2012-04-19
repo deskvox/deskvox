@@ -115,9 +115,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     glMultiDrawElements(GL_TRIANGLES, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
 #else
     glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
-    //renderer->disableShader(shader);
     glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
-    //renderer->enableShader(shader, 0);
 #endif
   }
   else // render proxy geometry on gpu? else then:
