@@ -5290,14 +5290,14 @@ vvShaderProgram* vvTexRend::initShader()
   std::string geoName;
   if (_isectType == VERT_SHADER_ONLY)
   {
-    vertName = "intersection";
+    vertName = "isect_vert_only";
     geoName = "";
     shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str());
   }
   else if (_isectType == GEOM_SHADER_ONLY)
   {
-    vertName = "intersection_geo2";
-    geoName = "intersection_geo2";
+    vertName = "isect_geom_only";
+    geoName = "isect_geom_only";
     vvShaderProgram::GeoShaderArgs args;
     args.inputType = vvShaderProgram::VV_POINTS;
     args.outputType = vvShaderProgram::VV_TRIANGLE_STRIP;
@@ -5306,8 +5306,8 @@ vvShaderProgram* vvTexRend::initShader()
   }
   else if(_isectType == VERT_GEOM_COMBINED)
   {
-    vertName = "intersection_geo";
-    geoName = "intersection_geo";
+    vertName = "isect_vert_geom_combined";
+    geoName = "isect_vert_geom_combined";
     vvShaderProgram::GeoShaderArgs args;
     args.inputType = vvShaderProgram::VV_TRIANGLES;
     args.outputType = vvShaderProgram::VV_TRIANGLE_STRIP;
