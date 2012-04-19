@@ -81,7 +81,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   {
     glBindTexture(GL_TEXTURE_3D_EXT, texNames[index]);
   }
-  if (renderer->_proxyGeometryOnGpu)
+  if (renderer->_isectType != vvTexRend::CPU)
   {
     const int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
                                1, 2, 3, 0, 7, 4, 5, 6,
@@ -110,13 +110,10 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     shader->setParameter3f("texMin", texMin[0], texMin[1], texMin[2]);
     const int primCount = (endSlices - startSlices) + 1;
 
-#ifdef ISECT_GLSL_GEO
-    glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*6]);
-    glMultiDrawElements(GL_TRIANGLES, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
-#else
-    glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[startSlices*12]);
-    glMultiDrawElements(GL_POLYGON, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
-#endif
+    const int vertArrayIdx = renderer->_isectType == vvTexRend::VERT_SHADER_ONLY ? startSlices * 12 : startSlices * 6;
+    glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[vertArrayIdx]);
+    glMultiDrawElements(renderer->_isectType == vvTexRend::VERT_SHADER_ONLY ? GL_POLYGON : GL_TRIANGLES, &renderer->_elemCounts[0],
+                        GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
   }
   else // render proxy geometry on gpu? else then:
   {

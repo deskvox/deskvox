@@ -122,7 +122,7 @@ vvView::vvView()
   hqMode                = false;
   animSpeed             = 1.0f;
   iconMode              = false;
-  gpuproxygeo           = true;
+  isectType             = 0;
   useOffscreenBuffer    = false;
   bufferPrecision       = 8;
   useHeadLight          = false;
@@ -570,7 +570,7 @@ void vvView::applyRendererParameters()
   renderer->setParameter(vvRenderer::VV_LEAPEMPTY, emptySpaceLeapingMode);
   renderer->setParameter(vvRenderer::VV_TERMINATEEARLY, earlyRayTermination);
   renderer->setParameter(vvRenderer::VV_LIGHTING, useHeadLight);
-  renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, gpuproxygeo);
+  renderer->setParameter(vvRenderer::VV_ISECT_TYPE, isectType);
   renderer->setParameter(vvRenderer::VV_OFFSCREENBUFFER, useOffscreenBuffer);
   renderer->setParameter(vvRenderer::VV_IMG_PRECISION, bufferPrecision);
   renderer->setParameter(vvRenderState::VV_SHOW_BRICKS, showBricks);
@@ -1229,16 +1229,31 @@ void vvView::optionsMenuCallback(int item)
     cerr << (!ds->showBricks?"not ":"") << "showing bricks" << endl;
     break;
   case 13:
-    ds->gpuproxygeo = !ds->gpuproxygeo;
-    ds->renderer->setParameter(vvRenderer::VV_GPUPROXYGEO, ds->gpuproxygeo);
-    cerr << "Switched to proxy geometry generation on the ";
-    if (ds->gpuproxygeo)
+    ++ds->isectType;
+    if (ds->isectType > 3)
     {
-      cerr << "GPU";
+      ds->isectType = 0;
     }
-    else
+
+    ds->renderer->setParameter(vvRenderer::VV_ISECT_TYPE, ds->isectType);
+
+    cerr << "Switched to proxy geometry generation ";
+    switch (ds->isectType)
     {
-      cerr << "CPU";
+    case 0:
+      cerr << "on the GPU, vertex shader";
+      break;
+    case 1:
+      cerr << "on the GPU, geometry shader";
+      break;
+    case 2:
+      cerr << "on the GPU, vertex shader and geometry shader";
+      break;
+    case 3:
+      // fall-through
+    default:
+      cerr << "on the CPU";
+      break;
     }
     cerr << endl;
     break;
@@ -1875,6 +1890,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   char  projectMode[2][16] = {"parallel","perspective"};
   char  interpolMode[2][32] = {"nearest neighbor","linear"};
   char  onOffMode[2][8] = {"off","on"};
+  char  pgMode[4][32] = { "vert shader", "geom shader", "vert and geom shader", "CPU" };
   const int HOST_NAME_LEN = 80;
   char  localHost[HOST_NAME_LEN];
   glGetIntegerv(GL_VIEWPORT, viewport);
@@ -1903,7 +1919,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   cerr << "Pre-integration..................................." << onOffMode[ds->preintMode] << endl;
   cerr << "Render to offscreen buffer........................" << onOffMode[ds->useOffscreenBuffer] << endl;
   cerr << "Precision of offscreen buffer....................." << ds->bufferPrecision << "bit" << endl;
-  cerr << "Generate proxy geometry on GPU...................." << onOffMode[ds->gpuproxygeo] << endl;
+  cerr << "Proxy geometry generator.........................." << pgMode[ds->isectType] << endl;
   cerr << "Opacity correction................................" << onOffMode[ds->opCorrMode] << endl;
   cerr << "Gamma correction.................................." << onOffMode[ds->gammaMode] << endl;
 }

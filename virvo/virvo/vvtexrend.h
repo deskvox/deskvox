@@ -113,6 +113,13 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       VV_PIX_SHD,                                 ///< Fragment program (Cg or GLSL)
       VV_FRG_PRG                                  ///< ARB fragment program
     };
+    enum IsectType
+    {
+      VERT_SHADER_ONLY = 0,
+      GEOM_SHADER_ONLY,
+      VERT_GEOM_COMBINED,
+      CPU
+    };
     enum FeatureType                              /// Rendering features
     {
       VV_MIP                                      ///< maximum intensity projection
@@ -177,7 +184,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool _useOnlyOneBrick;                        ///< true if whole data fits in texture memory
     vvVector4 _frustum[6];                        ///< current planes of view frustum
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
-    bool _proxyGeometryOnGpu;                     ///< indicate wether proxy geometry is to be computed on gpu
+    IsectType _isectType;
     bool _proxyGeometryOnGpuSupported;            ///< indicate wether proxy geometry computation on gpu would work
     int _lastFrame;                               ///< last frame rendered
     int _numDisplays;                             ///< # additional displays for multi-gpu rendering

@@ -106,7 +106,7 @@ public:
     VV_MAX_SLICE,                               ///< maximum slice index to render
     VV_BINNING,                                 ///< binning type (linear, iso-value, opacity)
     VV_SLICEORIENT,                             ///< slice orientation for planer 3d textures
-    VV_GPUPROXYGEO,                             ///< compute proxy geometry on GPU
+    VV_ISECT_TYPE,                              ///< proxy geometry using different shaders or the gpu
     VV_TERMINATEEARLY,                          ///< terminate rays early
     VV_OFFSCREENBUFFER,                         ///< offscreen buffer on/off
     VV_IMG_SCALE,                               ///< downsample img by reducing img resolution [0..1]

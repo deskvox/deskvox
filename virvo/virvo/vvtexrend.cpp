@@ -221,6 +221,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _numSlaveNodes = 0;
   _aabbMask = NULL;
   _isSlave = (bricks != NULL) && (bricks->size() > 0);
+  _isectType = VERT_SHADER_ONLY;
 
   if (_useOffscreenBuffer)
   {
@@ -275,7 +276,10 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   geomType  = findBestGeometry(geom, voxelType);
 
   _proxyGeometryOnGpuSupported = vvGLTools::isGLVersionSupported(2,0,0);
-  _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported && geomType==VV_BRICKS;
+  if (!_proxyGeometryOnGpuSupported || geomType != VV_BRICKS)
+  {
+    _isectType = CPU;
+  }
 
   if ((_numThreads > 0) && (geomType != VV_BRICKS))
   {
@@ -333,14 +337,23 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   }
   if (geomType == VV_BRICKS)
   {
-    cerr << ", proxy geometry is generated on the ";
-    if (_proxyGeometryOnGpu)
+    cerr << ", proxy geometry generation: ";
+    switch (_isectType)
     {
-      cerr << "GPU";
-    }
-    else
-    {
-      cerr << "CPU";
+    case VERT_SHADER_ONLY:
+      cerr << "on the GPU, vertex shader";
+      break;
+    case GEOM_SHADER_ONLY:
+      cerr << "on the GPU, geometry shader";
+      break;
+    case VERT_GEOM_COMBINED:
+      cerr << "on the GPU, vertex shader and geometry shader";
+      break;
+    case CPU:
+      // fall-through
+    default:
+      cerr << "on the CPU";
+      break;
     }
   }
   cerr << endl;
@@ -3379,7 +3392,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
     }
     else
     {
-      if (_proxyGeometryOnGpu)
+      if (_isectType != CPU)
       {
         _shader->setParameter1f("delta", delta.length());
         _shader->setParameter3f("planeNormal", normal[0], normal[1], normal[2]);
@@ -3392,7 +3405,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
                      texNames,
                      _shader);
       }
-      if (_proxyGeometryOnGpu)
+      if (_isectType != CPU)
       {
         glDisableClientState(GL_VERTEX_ARRAY);
       }
@@ -3582,7 +3595,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       }
       else
       {
-        if (data->renderer->_proxyGeometryOnGpu)
+        if (data->renderer->_isectType != CPU)
         {
           glEnableClientState(GL_VERTEX_ARRAY);
         }
@@ -3594,7 +3607,7 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
                       data->probeMin, data->probeMax,
                       texNames, shader);
         }
-        if (data->renderer->_proxyGeometryOnGpu)
+        if (data->renderer->_isectType != CPU)
         {
           glDisableClientState(GL_VERTEX_ARRAY);
         }
@@ -4755,15 +4768,35 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
       else if (newValue==1.0f) vd->_binning = vvVolDesc::ISO_DATA;
       else vd->_binning = vvVolDesc::OPACITY;
       break;
-    case vvRenderer::VV_GPUPROXYGEO:
-      if (newValue == 0.0f)
+    case vvRenderer::VV_ISECT_TYPE:
+      if (newValue < 3.0f && (!_proxyGeometryOnGpuSupported || geomType != VV_BRICKS))
       {
-        _proxyGeometryOnGpu = false;
+        cerr << "Cannot generate proxy geometry on GPU" << std::endl;
+        _isectType = CPU;
+      }
+      else if (newValue == 0.0f)
+      {
+        _isectType = VERT_SHADER_ONLY;
+      }
+      else if (newValue == 1.0f)
+      {
+        _isectType = GEOM_SHADER_ONLY;
+      }
+      else if (newValue == 2.0f)
+      {
+        _isectType = VERT_GEOM_COMBINED;
       }
       else
       {
-        _proxyGeometryOnGpu = _proxyGeometryOnGpuSupported && geomType==VV_BRICKS;
+        _isectType = CPU;
       }
+
+      // need to set these up anew
+      _elemCounts.clear();
+      _vertIndices.clear();
+      _vertIndicesAll.clear();
+      _vertArray.clear();
+
       disableShader(_shader);
       delete _shader;
       _shader = initShader();
@@ -5246,36 +5279,34 @@ vvShaderProgram* vvTexRend::initShader()
 {
   vvGLTools::printGLError("Enter vvTexRend::initShader()");
 
-  std::string vertName;
-  std::string geoName;
-  if(_proxyGeometryOnGpu)
-  {
-#if defined(ISECT_GLSL_GEO)
-    vertName = "intersection_geo";
-    geoName = "intersection_geo";
-#else // no defines
-    vertName = "intersection";
-    geoName = "";
-#endif
-  }
-
   std::ostringstream fragName;
   if(voxelType == VV_PIX_SHD)
   {
     fragName << "shader" << std::setw(2) << std::setfill('0') << (_currentShader+1);
   }
 
-#if defined(ISECT_GLSL_GEO)
-  vvShaderProgram::GeoShaderArgs args;
-  args.numOutputVertices = 6;
-  vvShaderProgram* shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str(), args);
-#else
-  vvShaderProgram* shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str());
-#endif
+  vvShaderProgram* shader = NULL;
+  std::string vertName;
+  std::string geoName;
+  if(_isectType == VERT_GEOM_COMBINED)
+  {
+    vertName = "intersection_geo";
+    geoName = "intersection_geo";
+    vvShaderProgram::GeoShaderArgs args;
+    args.numOutputVertices = 6;
+    shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str(), args);
+  }
+  else if (_isectType == VERT_SHADER_ONLY)
+  {
+    vertName = "intersection";
+    geoName = "";
+    shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str());
+  }
 
   if(!shader)
   {
-    _proxyGeometryOnGpu = false;
+    vvDebugMsg::msg(0, "Cannot load shader, falling back to CPU proxy geometry");
+    _isectType = CPU;
     shader = _shaderFactory->createProgram("", "", fragName.str());
   }
 
@@ -5305,26 +5336,29 @@ void vvTexRend::setupIntersectionParameters(vvShaderProgram* shader)
 
   // Global scope, values will never be changed.
 
-#ifdef ISECT_GLSL_GEO
-  int v1[9] = { 0, 1, 2,
-                0, 5, 4,
-                0, 3, 6 };
+  if (_isectType == VERT_GEOM_COMBINED)
+  {
+    int v1[9] = { 0, 1, 2,
+                  0, 5, 4,
+                  0, 3, 6 };
 
-  int v2[9] = { 1, 2, 7,
-                5, 4, 7,
-                3, 6, 7 };
+    int v2[9] = { 1, 2, 7,
+                  5, 4, 7,
+                  3, 6, 7 };
 
-  shader->setParameterArray1i("v1", v1, 9);
-  shader->setParameterArray1i("v2", v2, 9);
-#else
-  int v1[24] = { 0, 1, 2, 7,
-                 0, 1, 4, 7,
-                 0, 5, 4, 7,
-                 0, 5, 6, 7,
-                 0, 3, 6, 7,
-                 0, 3, 2, 7 };
-  shader->setParameterArray1i("v1", v1, 24);
-#endif
+    shader->setParameterArray1i("v1", v1, 9);
+    shader->setParameterArray1i("v2", v2, 9);
+  }
+  else if (_isectType == VERT_SHADER_ONLY)
+  {
+    int v1[24] = { 0, 1, 2, 7,
+                   0, 1, 4, 7,
+                   0, 5, 4, 7,
+                   0, 5, 6, 7,
+                   0, 3, 6, 7,
+                   0, 3, 2, 7 };
+    shader->setParameterArray1i("v1", v1, 24);
+  }
   shader->disable();
 
   vvGLTools::printGLError("Leaving vvTexRend::setupIntersectionParameters()");
@@ -5612,36 +5646,58 @@ int vvTexRend::getLocalIlluminationShader()
 
 void vvTexRend::initVertArray(const int numSlices)
 {
+  if (_isectType == CPU)
+  {
+    return;
+  }
+
   if(static_cast<int>(_elemCounts.size()) >= numSlices)
     return;
 
   _elemCounts.resize(numSlices);
   _vertIndices.resize(numSlices);
-#ifdef ISECT_GLSL_GEO
-  _vertIndicesAll.resize(numSlices*3);
-  _vertArray.resize(numSlices*6);
-#else
-  _vertIndicesAll.resize(numSlices*6);
-  _vertArray.resize(numSlices*12);
-#endif
+
+  if (_isectType == VERT_GEOM_COMBINED)
+  {
+    _vertIndicesAll.resize(numSlices*3);
+    _vertArray.resize(numSlices*6);
+  }
+  else if (_isectType == VERT_SHADER_ONLY)
+  {
+    _vertIndicesAll.resize(numSlices*6);
+    _vertArray.resize(numSlices*12);
+  }
+  else
+  {
+
+  }
 
   int idxIterator = 0;
   int vertIterator = 0;
 
   // Spare some instructions in shader:
-#ifdef ISECT_GLSL_GEO
-  int mul = 3; // ==> x-values: 0, 3, 6 instead of 0, 1, 2
-#else
   int mul = 4; // ==> x-values: 0, 4, 8, 12, 16, 20 instead of 0, 1, 2, 3, 4, 5
-#endif
+  if (_isectType == VERT_GEOM_COMBINED)
+  {
+    mul = 3; // ==> x-values: 0, 3, 6 instead of 0, 1, 2
+  }
+
   for (int i = 0; i < numSlices; ++i)
   {
-#ifdef ISECT_GLSL_GEO
-    _elemCounts[i] = 3;
-#else
+    if (_isectType == VERT_GEOM_COMBINED)
+    {
+      _elemCounts[i] = 3;
+    }
+    else if (_isectType == VERT_SHADER_ONLY)
+    {
       _elemCounts[i] = 6;
-#endif
-     _vertIndices[i] = &_vertIndicesAll[i*_elemCounts[i]];
+    }
+    else
+    {
+
+    }
+
+    _vertIndices[i] = &_vertIndicesAll[i*_elemCounts[i]];
     for (int j = 0; j < _elemCounts[i]; ++j)
     {
       _vertIndices[i][j] = idxIterator;
