@@ -110,10 +110,27 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     shader->setParameter3f("texMin", texMin[0], texMin[1], texMin[2]);
     const int primCount = (endSlices - startSlices) + 1;
 
-    const int vertArrayIdx = renderer->_isectType == vvTexRend::VERT_SHADER_ONLY ? startSlices * 12 : startSlices * 6;
+    int vertArrayIdx = startSlices * 12; // vert shader
+    if (renderer->_isectType == vvTexRend::GEOM_SHADER_ONLY)
+    {
+      vertArrayIdx = startSlices * 2;
+    }
+    else if (renderer->_isectType == vvTexRend::VERT_GEOM_COMBINED)
+    {
+      vertArrayIdx = startSlices * 6;
+    }
     glVertexPointer(2, GL_INT, 0, &renderer->_vertArray[vertArrayIdx]);
-    glMultiDrawElements(renderer->_isectType == vvTexRend::VERT_SHADER_ONLY ? GL_POLYGON : GL_TRIANGLES, &renderer->_elemCounts[0],
-                        GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
+
+    GLenum inputType = GL_POLYGON; // vert shader
+    if (renderer->_isectType == vvTexRend::GEOM_SHADER_ONLY)
+    {
+      inputType = GL_POINTS;
+    }
+    else if (renderer->_isectType == vvTexRend::VERT_GEOM_COMBINED)
+    {
+      inputType = GL_TRIANGLES;
+    }
+    glMultiDrawElements(inputType, &renderer->_elemCounts[0], GL_UNSIGNED_INT, (const GLvoid**)&renderer->_vertIndices[0], primCount);
   }
   else // render proxy geometry on gpu? else then:
   {

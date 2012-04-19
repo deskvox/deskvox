@@ -5288,21 +5288,33 @@ vvShaderProgram* vvTexRend::initShader()
   vvShaderProgram* shader = NULL;
   std::string vertName;
   std::string geoName;
-  if(_isectType == VERT_GEOM_COMBINED)
-  {
-    vertName = "intersection_geo";
-    geoName = "intersection_geo";
-    vvShaderProgram::GeoShaderArgs args;
-    args.numOutputVertices = 6;
-    shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str(), args);
-  }
-  else if (_isectType == VERT_SHADER_ONLY)
+  if (_isectType == VERT_SHADER_ONLY)
   {
     vertName = "intersection";
     geoName = "";
     shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str());
   }
-
+  else if (_isectType == GEOM_SHADER_ONLY)
+  {
+    vertName = "intersection_geo2";
+    geoName = "intersection_geo2";
+    vvShaderProgram::GeoShaderArgs args;
+    args.inputType = vvShaderProgram::VV_POINTS;
+    args.outputType = vvShaderProgram::VV_TRIANGLE_STRIP;
+    args.numOutputVertices = 6;
+    shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str(), args);
+  }
+  else if(_isectType == VERT_GEOM_COMBINED)
+  {
+    vertName = "intersection_geo";
+    geoName = "intersection_geo";
+    vvShaderProgram::GeoShaderArgs args;
+    args.inputType = vvShaderProgram::VV_TRIANGLES;
+    args.outputType = vvShaderProgram::VV_TRIANGLE_STRIP;
+    args.numOutputVertices = 6;
+    shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str(), args);
+  }
+  
   if(!shader)
   {
     vvDebugMsg::msg(0, "Cannot load shader, falling back to CPU proxy geometry");
@@ -5336,7 +5348,27 @@ void vvTexRend::setupIntersectionParameters(vvShaderProgram* shader)
 
   // Global scope, values will never be changed.
 
-  if (_isectType == VERT_GEOM_COMBINED)
+  if (_isectType == VERT_SHADER_ONLY)
+  {
+    int v1[24] = { 0, 1, 2, 7,
+                   0, 1, 4, 7,
+                   0, 5, 4, 7,
+                   0, 5, 6, 7,
+                   0, 3, 6, 7,
+                   0, 3, 2, 7 };
+    shader->setParameterArray1i("v1", v1, 24);
+  }
+  else if (_isectType == GEOM_SHADER_ONLY)
+  {
+    int v1[24] = { 0, 1, 4, 7,
+                   0, 1, 2, 7,
+                   0, 5, 4, 7,
+                   0, 3, 2, 7,
+                   0, 5, 6, 7,
+                   0, 3, 6, 7 };
+    shader->setParameterArray1i("v1", v1, 24);
+  }
+  else if (_isectType == VERT_GEOM_COMBINED)
   {
     int v1[9] = { 0, 1, 2,
                   0, 5, 4,
@@ -5348,16 +5380,6 @@ void vvTexRend::setupIntersectionParameters(vvShaderProgram* shader)
 
     shader->setParameterArray1i("v1", v1, 9);
     shader->setParameterArray1i("v2", v2, 9);
-  }
-  else if (_isectType == VERT_SHADER_ONLY)
-  {
-    int v1[24] = { 0, 1, 2, 7,
-                   0, 1, 4, 7,
-                   0, 5, 4, 7,
-                   0, 5, 6, 7,
-                   0, 3, 6, 7,
-                   0, 3, 2, 7 };
-    shader->setParameterArray1i("v1", v1, 24);
   }
   shader->disable();
 
@@ -5657,19 +5679,20 @@ void vvTexRend::initVertArray(const int numSlices)
   _elemCounts.resize(numSlices);
   _vertIndices.resize(numSlices);
 
-  if (_isectType == VERT_GEOM_COMBINED)
-  {
-    _vertIndicesAll.resize(numSlices*3);
-    _vertArray.resize(numSlices*6);
-  }
-  else if (_isectType == VERT_SHADER_ONLY)
+  if (_isectType == VERT_SHADER_ONLY)
   {
     _vertIndicesAll.resize(numSlices*6);
     _vertArray.resize(numSlices*12);
   }
-  else
+  else if (_isectType == GEOM_SHADER_ONLY)
   {
-
+    _vertIndicesAll.resize(numSlices);
+    _vertArray.resize(numSlices*2);
+  }
+  else if (_isectType == VERT_GEOM_COMBINED)
+  {
+    _vertIndicesAll.resize(numSlices*3);
+    _vertArray.resize(numSlices*6);
   }
 
   int idxIterator = 0;
@@ -5677,26 +5700,30 @@ void vvTexRend::initVertArray(const int numSlices)
 
   // Spare some instructions in shader:
   int mul = 4; // ==> x-values: 0, 4, 8, 12, 16, 20 instead of 0, 1, 2, 3, 4, 5
-  if (_isectType == VERT_GEOM_COMBINED)
+  if (_isectType == GEOM_SHADER_ONLY)
+  {
+    mul = 1;
+  }
+  else if (_isectType == VERT_GEOM_COMBINED)
   {
     mul = 3; // ==> x-values: 0, 3, 6 instead of 0, 1, 2
   }
 
   for (int i = 0; i < numSlices; ++i)
   {
-    if (_isectType == VERT_GEOM_COMBINED)
-    {
-      _elemCounts[i] = 3;
-    }
-    else if (_isectType == VERT_SHADER_ONLY)
+    if (_isectType == VERT_SHADER_ONLY)
     {
       _elemCounts[i] = 6;
     }
-    else
+    else if (_isectType == GEOM_SHADER_ONLY)
     {
-
+      _elemCounts[i] = 1;
     }
-
+    else if (_isectType == VERT_GEOM_COMBINED)
+    {
+      _elemCounts[i] = 3;
+    }
+    
     _vertIndices[i] = &_vertIndicesAll[i*_elemCounts[i]];
     for (int j = 0; j < _elemCounts[i]; ++j)
     {
