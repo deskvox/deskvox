@@ -840,14 +840,41 @@ void vvView::specialCallback(int key, int, int)
 void vvView::runTest()
 {
   double tmin = DBL_MAX;
+  double tmax = -DBL_MAX;
+  double tavg = 0.0;
+
   ds->applyRendererParameters();
-  for(int i=0; i<3; ++i)
+
+  // fill caches
+  double cacherun = performanceTest();
+
+  const int NUM_TESTS = 10;
+  std::vector<double> ts;
+  for(int i=0; i<NUM_TESTS; ++i)
   {
     double t = performanceTest();
     if(t < tmin)
       tmin = t;
+    if(t > tmax)
+      tmax = t;
+    tavg += t;
+    ts.push_back(t);
   }
-  printf("%f\n", tmin);
+  tavg /= (double)NUM_TESTS;
+
+  double dev;
+  for (std::vector<double>::iterator it = ts.begin(); it != ts.end(); ++it)
+  {
+    dev += (*it - tavg) * (*it - tavg);
+  }
+  dev = std::sqrt(dev);
+
+  std::cerr << "First run (ignored): " << cacherun << std::endl;
+  std::cerr << "Test runs: " << NUM_TESTS << std::endl;
+  std::cerr << "tmax: " << tmax << std::endl;
+  std::cerr << "tmin: " << tmin << std::endl;
+  std::cerr << "tavg: " << tavg << std::endl;
+  std::cerr << "std deviation: " << dev << std::endl;
 }
 
 
