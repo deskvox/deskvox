@@ -2465,6 +2465,13 @@ void vvView::displayHelpInfo()
   cerr << "-benchmark" << endl;
   cerr << " Time 3 half rotations and exit" << endl;
   cerr << endl;
+  cerr << endl;
+  cerr << "-isecttype <num>" << endl;
+  cerr << " Select proxy geometry generator:" << endl;
+  cerr << " 0 = Vertex shader" << endl;
+  cerr << " 1 = Geometry shader" << endl;
+  cerr << " 2 = Vertex shader and geometry shader combined" << endl;
+  cerr << " 3 = CPU" << endl;
   cerr << "-help (-h)" << endl;
   cerr << "Display this help information" << endl;
   cerr << endl;
@@ -2716,6 +2723,23 @@ bool vvView::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-benchmark")==0)
     {
       benchmark = true;
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-isecttype")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Proxy geometry generator missing." << endl;
+        return false;
+      }
+      int level = atoi(argv[arg]);
+      if (level>=0 && level<=3)
+        ds->isectType = level;
+      else
+      {
+        cerr << "Invalid proxy geometry generator." << endl;
+        return false;
+      }
+
     }
     else if (vvToolshed::strCompare(argv[arg], "-debug")==0)
     {
