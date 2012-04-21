@@ -869,12 +869,12 @@ void vvView::runTest()
   }
   dev = std::sqrt(dev);
 
-  std::cerr << "First run (ignored): " << cacherun << std::endl;
-  std::cerr << "Test runs: " << NUM_TESTS << std::endl;
-  std::cerr << "tmax: " << tmax << std::endl;
-  std::cerr << "tmin: " << tmin << std::endl;
-  std::cerr << "tavg: " << tavg << std::endl;
-  std::cerr << "std deviation: " << dev << std::endl;
+  fprintf(stdout, "%s: %f\n", "First run (ignored)", cacherun);
+  fprintf(stdout, "%s: %i\n", "Test runs", NUM_TESTS);
+  fprintf(stdout, "%s: %f\n", "tmax", tmax);
+  fprintf(stdout, "%s: %f\n", "tmin", tmin);
+  fprintf(stdout, "%s: %f\n", "tavg", tavg);
+  fprintf(stdout, "%s: %f\n", "std deviation", dev);
 }
 
 
