@@ -1257,7 +1257,7 @@ void vvView::optionsMenuCallback(int item)
     break;
   case 13:
     ++ds->isectType;
-    if (ds->isectType > 3)
+    if (ds->isectType > 4)
     {
       ds->isectType = 0;
     }
@@ -1275,6 +1275,9 @@ void vvView::optionsMenuCallback(int item)
       break;
     case 2:
       cerr << "on the GPU, vertex shader and geometry shader";
+      break;
+    case 4:
+      cerr << " on the GPU, vertex shader from rezk salama paper";
       break;
     case 3:
       // fall-through
@@ -1917,7 +1920,7 @@ void vvView::printProfilingInfo(const int testNr, const int testCnt)
   char  projectMode[2][16] = {"parallel","perspective"};
   char  interpolMode[2][32] = {"nearest neighbor","linear"};
   char  onOffMode[2][8] = {"off","on"};
-  char  pgMode[4][32] = { "vert shader", "geom shader", "vert and geom shader", "CPU" };
+  char  pgMode[5][32] = { "vert shader", "geom shader", "vert and geom shader", "CPU", "reference implementation" };
   const int HOST_NAME_LEN = 80;
   char  localHost[HOST_NAME_LEN];
   glGetIntegerv(GL_VIEWPORT, viewport);
@@ -2732,7 +2735,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
         return false;
       }
       int level = atoi(argv[arg]);
-      if (level>=0 && level<=3)
+      if (level>=0 && level<=4)
         ds->isectType = level;
       else
       {

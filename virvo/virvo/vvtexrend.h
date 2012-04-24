@@ -118,7 +118,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       VERT_SHADER_ONLY = 0,
       GEOM_SHADER_ONLY,
       VERT_GEOM_COMBINED,
-      CPU
+      CPU,
+      REFERENCE_IMPL
     };
     enum FeatureType                              /// Rendering features
     {

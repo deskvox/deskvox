@@ -83,27 +83,46 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   }
   if (renderer->_isectType != vvTexRend::CPU)
   {
-    const int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
-                               1, 2, 3, 0, 7, 4, 5, 6,
-                               2, 7, 6, 3, 4, 1, 0, 5,
-                               3, 6, 5, 0, 7, 2, 1, 4,
-                               4, 5, 6, 7, 0, 1, 2, 3,
-                               5, 0, 3, 6, 1, 4, 7, 2,
-                               6, 7, 4, 5, 2, 3, 0, 1,
-                               7, 6, 3, 2, 5, 4, 1, 0 };
-
     float edges[8 * 3];
-    for (int i = 0; i < 8; ++i)
+    if (renderer->_isectType == vvTexRend::REFERENCE_IMPL)
     {
-      edges[i * 3] = verts[sequence[idx * 8 + i]][0];
-      edges[i * 3 + 1] = verts[sequence[idx * 8 + i]][1];
-      edges[i * 3 + 2] = verts[sequence[idx * 8 + i]][2];
+      for (int i = 0; i < 8; ++i)
+      {
+        edges[i * 3] = verts[i].e[0];
+        edges[i * 3 + 1] = verts[i].e[1];
+        edges[i * 3 + 2] = verts[i].e[2];
+      }
+    }
+    else
+    {
+      const int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
+                                 1, 2, 3, 0, 7, 4, 5, 6,
+                                 2, 7, 6, 3, 4, 1, 0, 5,
+                                 3, 6, 5, 0, 7, 2, 1, 4,
+                                 4, 5, 6, 7, 0, 1, 2, 3,
+                                 5, 0, 3, 6, 1, 4, 7, 2,
+                                 6, 7, 4, 5, 2, 3, 0, 1,
+                                 7, 6, 3, 2, 5, 4, 1, 0 };
+
+      for (int i = 0; i < 8; ++i)
+      {
+        edges[i * 3] = verts[sequence[idx * 8 + i]][0];
+        edges[i * 3 + 1] = verts[sequence[idx * 8 + i]][1];
+        edges[i * 3 + 2] = verts[sequence[idx * 8 + i]][2];
+      }
     }
     shader->setParameterArray3f("vertices", edges, 8);
     // Pass planeStart along with brickMin and spare one setParameter call.
     shader->setParameter4f("brickMin", min[0], min[1], min[2], -farthest.length());
-    // Pass front index along with brickDimInv and spare one setParameter call.
-    shader->setParameter3f("brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
+    if (renderer->_isectType == vvTexRend::REFERENCE_IMPL)
+    {
+      // Pass front index along with brickDimInv and spare one setParameter call.
+      shader->setParameter4f("brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2], idx);
+    }
+    else
+    {
+      shader->setParameter3f("brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
+    }
     // Mind that textures overlap a little bit for correct interpolation at the borders.
     // Thus add that little difference.
     shader->setParameter3f("texRange", texRange[0], texRange[1], texRange[2]);
