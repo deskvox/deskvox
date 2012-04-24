@@ -349,9 +349,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     case VERT_GEOM_COMBINED:
       cerr << "on the GPU, vertex shader and geometry shader";
       break;
-    case REFERENCE_IMPL:
-      cerr << " on the GPU, vertex shader from rezk salama paper";
-      break;
     case CPU:
       // fall-through
     default:
@@ -4789,10 +4786,6 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
       {
         _isectType = VERT_GEOM_COMBINED;
       }
-      else if (newValue == 4.0f)
-      {
-        _isectType = REFERENCE_IMPL;
-      }
       else
       {
         _isectType = CPU;
@@ -5321,12 +5314,6 @@ vvShaderProgram* vvTexRend::initShader()
     args.numOutputVertices = 6;
     shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str(), args);
   }
-  else if (_isectType == REFERENCE_IMPL)
-  {
-    vertName = "isect_reference";
-    geoName = "";
-    shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str());
-  }
   
   if(!shader)
   {
@@ -5393,34 +5380,6 @@ void vvTexRend::setupIntersectionParameters(vvShaderProgram* shader)
 
     shader->setParameterArray1i("v1", v1, 9);
     shader->setParameterArray1i("v2", v2, 9);
-  }
-  else if (_isectType == REFERENCE_IMPL)
-  {
-    int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
-                         1, 2, 3, 0, 7, 4, 5, 6,
-                         2, 7, 6, 3, 4, 1, 0, 5,
-                         3, 6, 5, 0, 7, 2, 1, 4,
-                         4, 5, 6, 7, 0, 1, 2, 3,
-                         5, 0, 3, 6, 1, 4, 7, 2,
-                         6, 7, 4, 5, 2, 3, 0, 1,
-                         7, 6, 3, 2, 5, 4, 1, 0 };
-
-    int v1[24] = { 0, 1, 2, -1,
-                   1, 0, 1, 2,
-                   0, 5, 4, -1,
-                   5, 0, 5, 4,
-                   0, 3, 6, -1,
-                   3, 0, 3, 6 };
-
-    int v2[24] = { 1, 2, 7, -1,
-                   4, 1, 2, 7,
-                   5, 4, 7, -1,
-                   6, 5, 4, 7,
-                   3, 6, 7, -1,
-                   2, 3, 6, 7 };
-    shader->setParameterArray1i("sequence", sequence, 64);
-    shader->setParameterArray1i("v1", v1, 24);
-    shader->setParameterArray1i("v2", v2, 24);
   }
   shader->disable();
 
@@ -5735,11 +5694,6 @@ void vvTexRend::initVertArray(const int numSlices)
     _vertIndicesAll.resize(numSlices*3);
     _vertArray.resize(numSlices*6);
   }
-  else if (_isectType == REFERENCE_IMPL)
-  {
-    _vertIndicesAll.resize(numSlices*6);
-    _vertArray.resize(numSlices*12);
-  }
 
   int idxIterator = 0;
   int vertIterator = 0;
@@ -5753,10 +5707,6 @@ void vvTexRend::initVertArray(const int numSlices)
   else if (_isectType == VERT_GEOM_COMBINED)
   {
     mul = 3; // ==> x-values: 0, 3, 6 instead of 0, 1, 2
-  }
-  else if (_isectType == REFERENCE_IMPL)
-  {
-    mul = 1;
   }
 
   for (int i = 0; i < numSlices; ++i)
@@ -5772,10 +5722,6 @@ void vvTexRend::initVertArray(const int numSlices)
     else if (_isectType == VERT_GEOM_COMBINED)
     {
       _elemCounts[i] = 3;
-    }
-    else if (_isectType == REFERENCE_IMPL)
-    {
-      _elemCounts[i] = 6;
     }
     
     _vertIndices[i] = &_vertIndicesAll[i*_elemCounts[i]];
