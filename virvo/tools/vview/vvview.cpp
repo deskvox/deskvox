@@ -862,7 +862,7 @@ void vvView::runTest()
   }
   tavg /= (double)NUM_TESTS;
 
-  double dev;
+  double dev = 0.0;
   for (std::vector<double>::iterator it = ts.begin(); it != ts.end(); ++it)
   {
     dev += (*it - tavg) * (*it - tavg);
