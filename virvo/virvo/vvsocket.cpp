@@ -418,7 +418,7 @@ int vvSocket::isDataWaiting() const
 //----------------------------------------------------------------------------
 /** Sets the socket file descriptor. Use with caution!
   */
-void vvSocket::setSockfd(int fd)
+void vvSocket::setSockfd(vvsock_t fd)
 {
   _hostname = NULL;
   _sockfd = fd;
@@ -427,7 +427,7 @@ void vvSocket::setSockfd(int fd)
 //----------------------------------------------------------------------------
 /** Returns the socket file descriptor.
  */
-int vvSocket::getSockfd() const
+vvsock_t vvSocket::getSockfd() const
 {
   return _sockfd;
 }

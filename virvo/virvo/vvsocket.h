@@ -53,6 +53,12 @@
 #include "vvexport.h"
 #include "vvinttypes.h"
 
+#ifdef _WIN32
+typedef SOCKET vvsock_t;
+#else
+typedef int vvsock_t;
+#endif
+
 //----------------------------------------------------------------------------
 /** This abstract class provides basic socket functionality. It is used for
     TCP and UDP sockets. For example code see documentation about vvSocket<BR>
@@ -123,8 +129,8 @@ public:
   virtual ErrorType writeData(const uchar *dataptr, size_t size, ssize_t *ret = NULL);
 
   int isDataWaiting() const;
-  void setSockfd(int fd);
-  int  getSockfd() const;
+  void setSockfd(vvsock_t fd);
+  vvsock_t  getSockfd() const;
   int getRecvBuffsize();
   int getSendBuffsize();
   int getMTU();
@@ -151,11 +157,9 @@ protected:
   int checkMssMtu(int, int);
   EndianType getEndianness();
 
-#ifdef _WIN32
-  SOCKET _sockfd;
-#else
-  int _sockfd;
-#endif
+
+  vvsock_t _sockfd;
+
   ushort              _port;
   const char         *_hostname;
   struct sockaddr_in  _hostAddr;
