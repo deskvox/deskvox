@@ -253,7 +253,7 @@ class vvBaseVector3
 /** 3D plane primitive.
  @author Jurgen Schulze (jschulze@ucsd.edu)
 */
-class VIRVOEXPORT vvPlane
+class vvPlane
 {
   public:
     vvVector3 _point;
