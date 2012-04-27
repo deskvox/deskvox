@@ -34,6 +34,18 @@ struct ContextArchData;
 class vvContextOptions
 {
 public:
+  vvContextOptions()
+    : type(VV_PBUFFER)
+    , displayName("")
+    , left(-1)
+    , top(-1)
+    , width(512)
+    , height(512)
+    , doubleBuffering(false)
+  {
+
+  }
+
   enum ContextType
   {
     VV_WINDOW = 0,
@@ -41,8 +53,10 @@ public:
   };
   ContextType type;  ///< context type
   std::string displayName;            ///< name of display e.g. ":0" leave empty for default
-  uint width;                         ///< width of rendercontext (and windows if related)
-  uint height;                        ///< height of rendercontext (and windows if related)
+  int left;
+  int top;
+  int width;                          ///< width of rendercontext (and windows if related)
+  int height;                         ///< height of rendercontext (and windows if related)
   bool doubleBuffering;               ///< flag indicating usage of double-buffering
 };
 
