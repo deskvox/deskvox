@@ -26,11 +26,6 @@
 #include "vvvirvo.h"
 #include "vvvecmath.h"
 
-#ifdef _WIN32
-template class VIRVOEXPORT vvBaseVector4<float>;
-template class VIRVOEXPORT vvBaseVector3<float>;
-#endif
-
 #ifdef __sun
 #define sinf sin
 #define cosf cos

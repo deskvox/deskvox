@@ -338,7 +338,7 @@ vvVector3 vvRenderState::getParameterV3(const ParameterType param) const
   case VV_CLIP_NORMAL:
     return _clipNormal;
   case VV_CLIP_COLOR:
-    return _clipColor;
+    return vvVector3(_clipColor[0], _clipColor[1], _clipColor[2]);
   case VV_ROI_SIZE:
     return _roiSize;
   case VV_ROI_POS:
@@ -348,9 +348,9 @@ vvVector3 vvRenderState::getParameterV3(const ParameterType param) const
   case VV_MAX_BRICK_SIZE:
     return vvVector3((float)_maxBrickSize[0], (float)_maxBrickSize[1], (float)_maxBrickSize[2]);
   case VV_BOUND_COLOR:
-    return _boundColor;
+    return vvVector3(_boundColor[0], _boundColor[1], _boundColor[2]);;
   case VV_PROBE_COLOR:
-    return _probeColor;
+    return vvVector3(_probeColor[0], _probeColor[1], _probeColor[2]);;
   default:
     break;
   }

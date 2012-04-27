@@ -1396,25 +1396,3 @@ vvBaseVector3<T> operator * ( const T scalar, const vvBaseVector3<T> &other )
 
   return vResult;
 }
-
-#ifdef _WIN32
-
-template class VIRVOEXPORT vvBaseVector3<int>;
-template class VIRVOEXPORT vvBaseVector3<unsigned int>;
-template class VIRVOEXPORT vvBaseVector3<short>;
-template class VIRVOEXPORT vvBaseVector3<unsigned short>;
-template class VIRVOEXPORT vvBaseVector3<long>;
-template class VIRVOEXPORT vvBaseVector3<unsigned long>;
-template class VIRVOEXPORT vvBaseVector3<float>;
-template class VIRVOEXPORT vvBaseVector3<double>;
-
-template class VIRVOEXPORT vvBaseVector4<int>;
-template class VIRVOEXPORT vvBaseVector4<unsigned int>;
-template class VIRVOEXPORT vvBaseVector4<short>;
-template class VIRVOEXPORT vvBaseVector4<unsigned short>;
-template class VIRVOEXPORT vvBaseVector4<long>;
-template class VIRVOEXPORT vvBaseVector4<unsigned long>;
-template class VIRVOEXPORT vvBaseVector4<float>;
-template class VIRVOEXPORT vvBaseVector4<double>;
-
-#endif

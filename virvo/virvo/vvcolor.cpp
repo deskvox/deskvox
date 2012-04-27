@@ -22,17 +22,32 @@
 #include "vvcolor.h"
 
 vvColor::vvColor()
-  : vvVector3(1.0f, 1.0f, 1.0f) // default color is white to be visible on typically black screens
 {
-
+  // default color is white to be visible on typically black screens
+  e[0] = 1.0f;
+  e[1] = 1.0f;
+  e[2] = 1.0f;
 }
 
 /** @param r,g,b RGB color components [0..1]
 */
 vvColor::vvColor(const float r, const float g, const float b)
-  : vvVector3(r, g, b)
 {
+  e[0] = r;
+  e[1] = g;
+  e[2] = b;
+}
 
+/// Overload RHS subscription operator.
+float vvColor::operator[](const int index) const
+{
+  return e[index];
+}
+
+/// Overload LHS subscription operator.
+float& vvColor::operator[](const int index)
+{
+  return e[index];
 }
 
 /** Add two colors by using the maximum intensity of each channel.
