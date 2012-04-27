@@ -24,6 +24,7 @@
 // C++:
 #include <stdio.h>
 #include <list>
+#include <string>
 
 // Virvo:
 #include "vvcolor.h"
