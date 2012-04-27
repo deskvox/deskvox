@@ -230,6 +230,7 @@ void vvRenderContext::init()
         {
           vvDebugMsg::msg( 0, "Couldn't create OpenGL context");
           _initialized = false;
+          return;
         }
         _initialized = true;
         delete vi;
