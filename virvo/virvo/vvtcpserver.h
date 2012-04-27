@@ -54,7 +54,7 @@ public:
   vvTcpSocket* nextConnection(double timeout = -1.0);
 
 private:
-  vvsock_t _sockfd;
+  vvTcpSocket *_server;
   struct sockaddr_in _hostAddr;
 #if !defined(__linux__) && !defined(LINUX) && !(defined(__APPLE__) && defined(__GNUC__) && GNUC__ < 4)
 #define socklen_t int

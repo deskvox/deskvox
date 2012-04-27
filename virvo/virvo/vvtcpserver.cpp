@@ -23,11 +23,11 @@
 #include "vvdebugmsg.h"
 #include "vvsocketmonitor.h"
 #include "vvtcpserver.h"
-#include "vvtcpsocket.h"
-
 
 vvTcpServer::vvTcpServer(const ushort port)
 {
+  vvsock_t sockfd;
+
 #ifdef _WIN32
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2,0), &wsaData) != 0)
@@ -40,17 +40,17 @@ vvTcpServer::vvTcpServer(const ushort port)
   int optval=1;
 #endif
 
-  if ((_sockfd = socket(AF_INET, SOCK_STREAM, 0 )) < 0)
+  if((sockfd = socket(AF_INET, SOCK_STREAM, 0 )) < 0)
   {
     vvDebugMsg::msg(1, "Error: socket()", true);
-    _sockfd = -1;
+    _server = NULL;
     return;
   }
 
-  if (setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,sizeof(optval)))
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,sizeof(optval)))
   {
     vvDebugMsg::msg(1, "Error: setsockopt()");
-    _sockfd = -1;
+    _server = NULL;
     return;
   }
 
@@ -59,85 +59,61 @@ vvTcpServer::vvTcpServer(const ushort port)
   _hostAddr.sin_port = htons((unsigned short)port);
   _hostAddr.sin_addr.s_addr = INADDR_ANY;
   _hostAddrlen = sizeof(_hostAddr);
-  if  (bind(_sockfd, (struct sockaddr *)&_hostAddr, _hostAddrlen))
+  if(bind(sockfd, (struct sockaddr *)&_hostAddr, _hostAddrlen))
   {
     vvDebugMsg::msg(1, "Error: bind()");
-    _sockfd = -1;
+    _server = NULL;
     return;
   }
 
-  if (listen(_sockfd, 1))
+  if (listen(sockfd, 1))
   {
     vvDebugMsg::msg(1, "Error: listen()");
-    _sockfd = -1;
+    _server = NULL;
     return;
   }
+
+  _server = new vvTcpSocket();
+  _server->setSockfd(sockfd);
 }
 
 vvTcpServer::~vvTcpServer()
 {
-#ifdef _WIN32
-  if(_sockfd >= 0)
-    if(closesocket(_sockfd))
-      if (WSAGetLastError() ==  WSAEWOULDBLOCK)
-        vvDebugMsg::msg(1, "Linger time expires");
-  WSACleanup();
-#else
-  if(_sockfd >= 0)
-    if (close(_sockfd))
-      if (errno ==  EWOULDBLOCK)
-        vvDebugMsg::msg(1, "Linger time expires");
-#endif
+  if(_server)
+    delete _server;
 }
 
 bool vvTcpServer::initStatus() const
 {
-  if(_sockfd < 0)
-    return false;
+  if(_server)
+  {
+    if(_server->getSockfd() < 0)
+      return false;
+    else
+      return true;
+  }
   else
-    return true;
+    return false;
 }
 
 vvTcpSocket* vvTcpServer::nextConnection(double timeout)
 {
-  if(_sockfd < 0)
+  if(!initStatus())
   {
     vvDebugMsg::msg(2, "vvTcpServer::nextConnection() error: server not correctly initialized");
     return NULL;
   }
 
-#ifdef _WIN32
-  SOCKET n;
-#else
-  int n;
-#endif
-
-#ifndef _WIN32
-  int flags = fcntl(_sockfd, F_GETFL, 0);
-  if(flags < 0)
-  {
-    vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: Getting flags of server-socket failed");
-    return NULL;
-  }
-#endif
-
   if (timeout < 0.0 ? false : true)
   {
-#ifdef _WIN32
-    unsigned long tru = 1;
-    ioctlsocket(_sockfd, FIONBIO, &tru);
-#else
-    if(fcntl(_sockfd, F_SETFL, flags|O_NONBLOCK))
+    if(vvSocket::VV_OK != _server->setParameter(vvSocket::VV_NONBLOCKING, 1.f))
     {
       vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: setting O_NONBLOCK on server-socket failed");
       return NULL;
     }
-#endif
-    vvTcpSocket sock;
-    sock.setSockfd(_sockfd);
 
     std::vector<vvSocket*> socks;
-    socks.push_back(&sock);
+    socks.push_back(_server);
 
     vvSocketMonitor sm;
     sm.setReadFds(socks);
@@ -145,28 +121,22 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
     vvSocket* ready;
     sm.wait(&ready, &timeout);
 
-    sock.setSockfd(0);
-
     if(ready == NULL)
       return NULL;
   }
   else
   {
-#ifdef _WIN32
-    unsigned long tru = 0;
-    ioctlsocket(_sockfd, FIONBIO, &tru);
-#else
-    if(fcntl(_sockfd, F_SETFL, flags & (~O_NONBLOCK)))
+    if(vvSocket::VV_OK != _server->setParameter(vvSocket::VV_NONBLOCKING, 0.0f))
     {
       vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: removing O_NONBLOCK from server-socket failed.");
       return NULL;
     }
-#endif
   }
 
-  if ( (n = accept(_sockfd, (struct sockaddr *)&_hostAddr, &_hostAddrlen)) < 0)
+  vvsock_t n;
+  if ( (n = accept(_server->getSockfd(), (struct sockaddr *)&_hostAddr, &_hostAddrlen)) < 0)
   {
-    vvDebugMsg::msg(1, "Error: accept()", true);
+    vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: accept() failed", true);
     return NULL;
   }
 
