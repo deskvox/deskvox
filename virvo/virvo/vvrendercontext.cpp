@@ -39,6 +39,25 @@ struct ContextArchData
   std::vector<int> attributes;
   GLXFBConfig* fbConfigs;
 #endif
+
+#ifdef _WIN32
+  HGLRC wglContext;
+  HWND window;
+  HDC deviceContext;
+
+  static LRESULT CALLBACK func(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+  {
+    switch(Msg)
+    {
+    case WM_DESTROY:
+      PostQuitMessage(WM_QUIT);
+      break;
+    default:
+      return DefWindowProc(hWnd, Msg, wParam, lParam);
+    }
+    return 0;
+  }
+#endif
 };
 
 vvRenderContext::vvRenderContext(vvContextOptions* co)
@@ -74,6 +93,12 @@ vvRenderContext::~vvRenderContext()
     }
     XCloseDisplay(_archData->display);
 #endif
+
+#ifdef _WIN32
+    wglMakeCurrent(_archData->deviceContext, NULL);
+    wglDeleteContext(_archData->wglContext);
+    DestroyWindow(_archData->window);
+#endif
   }
   delete _archData;
 }
@@ -89,6 +114,10 @@ bool vvRenderContext::makeCurrent() const
 #if defined(HAVE_X11) && defined(USE_X11)
     return glXMakeCurrent(_archData->display, _archData->drawable, _archData->glxContext);
 #endif
+
+#ifdef _WIN32
+    return (wglMakeCurrent(_archData->deviceContext, _archData->wglContext) == TRUE);
+#endif
   }
   return false;
 }
@@ -103,6 +132,10 @@ void vvRenderContext::swapBuffers() const
 
 #if defined(HAVE_X11) && defined(USE_X11)
     glXSwapBuffers(_archData->display, _archData->drawable);
+#endif
+
+#ifdef _WIN32
+    SwapBuffers(_archData->deviceContext);
 #endif
   }
 }
@@ -246,6 +279,112 @@ void vvRenderContext::init()
     vvDebugMsg::msg(0, errmsg.str().c_str());
   }
 #endif
+
+#ifdef _WIN32
+  LPCTSTR dev = NULL; // TODO: configurable
+  DWORD devNum = 0; // TODO: configurable
+  DWORD dwFlags = 0;
+  DISPLAY_DEVICE dispDev;
+  DEVMODE devMode;
+  dispDev.cb = sizeof(DISPLAY_DEVICE);
+
+  if (EnumDisplayDevices(dev, devNum, &dispDev, dwFlags))
+  {
+    EnumDisplaySettings(dispDev.DeviceName, ENUM_CURRENT_SETTINGS, &devMode);
+  }
+  else
+  {
+    _initialized = false;
+    return;
+  }
+
+  switch (_options->type)
+  {
+  case vvContextOptions::VV_PBUFFER:
+    std::cerr << "WGL Pbuffers not implemented yet" << std::endl;
+    // fall through
+  case vvContextOptions::VV_WINDOW:
+    // fall through
+  default:
+    {
+      HINSTANCE hInstance = GetModuleHandle(0);
+      WNDCLASSEX WndClsEx;
+      ZeroMemory(&WndClsEx, sizeof(WNDCLASSEX));
+
+      LPCTSTR ClsName = TEXT("Virvo");
+      LPCTSTR WndName = TEXT("Render Context");
+
+      WndClsEx.cbSize        = sizeof(WNDCLASSEX);
+      WndClsEx.style         = CS_HREDRAW | CS_VREDRAW;
+      WndClsEx.lpfnWndProc   = ContextArchData::func;
+      WndClsEx.cbClsExtra    = 0;
+      WndClsEx.cbWndExtra    = 0;
+      WndClsEx.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
+      WndClsEx.hCursor       = LoadCursor(NULL, IDC_ARROW);
+      WndClsEx.lpszMenuName  = NULL;
+      WndClsEx.lpszClassName = ClsName;
+      WndClsEx.hInstance     = hInstance;
+      WndClsEx.hbrBackground = 0;
+      WndClsEx.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
+      RegisterClassEx(&WndClsEx);
+
+      PIXELFORMATDESCRIPTOR pfd;
+      ZeroMemory(&pfd, sizeof(PIXELFORMATDESCRIPTOR));
+      pfd.nSize = sizeof(pfd);
+      pfd.nVersion = 1;
+      pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
+      if (_options->doubleBuffering)
+      {
+        pfd.dwFlags |= PFD_DOUBLEBUFFER;
+      }
+      pfd.iPixelType = PFD_TYPE_RGBA; // TODO: configurable
+      pfd.cColorBits = 32; // TODO: configurable
+      pfd.cDepthBits = 16; // TODO: configurable
+      pfd.iLayerType = PFD_MAIN_PLANE;
+      HWND hWnd = CreateWindow(ClsName,
+                               WndName,
+                               WS_OVERLAPPEDWINDOW,
+                               _options->left < 0 ? CW_USEDEFAULT : _options->left,
+                               _options->top < 0 ? CW_USEDEFAULT : _options->top,
+                               _options->width,
+                               _options->height,
+                               NULL,      // handle of parent window
+                               NULL,      // handle of menu
+                               hInstance,
+                               NULL);     // for MDI client windows
+
+      if(!hWnd)
+      {
+        vvDebugMsg::msg(0, "vvRenderContext::init(): error CreateWindow()");
+        _initialized = false;
+        return;
+      }
+      else
+      {
+        _archData->window = hWnd;
+        _archData->deviceContext = GetDC(hWnd);
+        int pf = ChoosePixelFormat(_archData->deviceContext, &pfd);
+        if (pf != 0)
+        {
+          if (SetPixelFormat(_archData->deviceContext, pf, &pfd))
+          {
+            _archData->wglContext = wglCreateContext(_archData->deviceContext);
+          }
+          else
+          {
+            vvDebugMsg::msg(0, "vvRenderContext::init(): error SetPixelFormat()");
+            _initialized = false;
+            return;
+          }
+        }
+        ShowWindow(hWnd, SW_SHOWNORMAL);
+      }
+
+      _initialized = true;
+    }
+    break;
+  }
+#endif
 }
 
 bool vvRenderContext::initPbuffer()
@@ -270,4 +409,3 @@ bool vvRenderContext::initPbuffer()
   return false;
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
-
