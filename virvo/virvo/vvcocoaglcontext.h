@@ -33,6 +33,7 @@ private:
   NSView* _glView;
 
   void init();
+  void destroy();
   void createGLContext();
 };
 

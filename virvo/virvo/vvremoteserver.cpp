@@ -131,6 +131,8 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
 
 vvRemoteServer::ErrorType vvRemoteServer::initRenderContext(const int w, const int h)
 {
+  vvDebugMsg::msg(3, "vvRemoteServer::initRenderContext()");
+
   delete _renderContext;
   co = new vvContextOptions;
   co->type = vvContextOptions::VV_PBUFFER;
@@ -150,6 +152,8 @@ vvRemoteServer::ErrorType vvRemoteServer::initRenderContext(const int w, const i
 
 vvRemoteServer::ErrorType vvRemoteServer::destroyRenderContext()
 {
+  vvDebugMsg::msg(3, "vvRemoteServer::destroyRenderContext()");
+
   delete _renderContext;
   _renderContext = NULL;
   return vvRemoteServer::VV_OK;

@@ -12,8 +12,7 @@ vvCocoaGLContext::vvCocoaGLContext(vvContextOptions* options)
 
 vvCocoaGLContext::~vvCocoaGLContext()
 {
-  [_autoreleasePool release];
-  _autoreleasePool = 0;
+  destroy();
 }
 
 bool vvCocoaGLContext::makeCurrent() const
@@ -77,6 +76,22 @@ void vvCocoaGLContext::init()
   [_context setView:_glView];
   [_context update];
   makeCurrent();
+}
+
+void vvCocoaGLContext::destroy()
+{
+  [_context release];
+  _context = 0;
+
+  [_glView release];
+  _glView = 0;
+
+  [_win close];
+  [_win release];
+  _win = 0;
+
+  [_autoreleasePool release];
+  _autoreleasePool = 0;
 }
 
 void vvCocoaGLContext::createGLContext()
