@@ -148,6 +148,13 @@ vvRemoteServer::ErrorType vvRemoteServer::initRenderContext(const int w, const i
   }
 }
 
+vvRemoteServer::ErrorType vvRemoteServer::destroyRenderContext()
+{
+  delete _renderContext;
+  _renderContext = NULL;
+  return vvRemoteServer::VV_OK;
+}
+
 bool vvRemoteServer::processEvents(vvRenderer* renderer)
 {
   vvDebugMsg::msg(3, "vvRemoteServer::processEvents()");
