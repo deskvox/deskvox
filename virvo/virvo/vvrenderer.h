@@ -145,7 +145,7 @@ protected:
   bool  _sphericalROI;                          ///< true = use sphere rather than cube for roi
 
   vvVector3i _brickSize;                        ///< last bricksize in x/y/z
-  int   _maxBrickSize[3];                       ///< max allowed bricksize in x/y/z
+  vvVector3i _maxBrickSize;                     ///< max allowed bricksize in x/y/z
   int   _brickTexelOverlap;                     /*!  overlap needed for performing calculations at brick borders
                                                      max value: min(brickSize[d])/2-1 */
   bool  _showBricks;                            ///< true = show brick boundarys
