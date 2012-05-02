@@ -903,12 +903,6 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
 
   if (!extTex3d) return NO3DTEX;
 
-  if (_brickSize == 0)
-  {
-    vvDebugMsg::msg(1, "3D Texture brick size unknown");
-    return TEX_SIZE_UNKNOWN;
-  }
-
   for(std::vector<BrickList>::iterator frame = _brickList.begin();
       frame != _brickList.end();
       ++frame)
