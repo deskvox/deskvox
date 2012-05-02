@@ -242,13 +242,13 @@ void * vvServer::handleClient(void *attribs)
     delete renderer;
   }
 
+cleanup:
   server->destroyRenderContext();
 
   // Frames vector with bricks is deleted along with the renderer.
   // Don't free them here.
   // see setRenderer().
 
-cleanup:
   delete server;
   server = NULL;
 
