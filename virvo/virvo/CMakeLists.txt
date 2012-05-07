@@ -210,7 +210,7 @@ IF(APPLE)
   SET(VIRVO_WINDOWING_SYSTEM "Cocoa" CACHE STRING "Available windowing systems for render contexts (Cocoa | X11)") 
 ELSEIF(WIN32)
 # TOOD: implement render contexts with WGL
-#  SET(VIRVO_WINDOWING_SYSTEM "WGL" CACHE STRING "Available windowing systems for render contexts (WGL | X11")
+  SET(VIRVO_WINDOWING_SYSTEM "WGL" CACHE STRING "Available windowing systems for render contexts (WGL | X11")
 ELSE()
   SET(VIRVO_WINDOWING_SYSTEM "X11" CACHE STRING "Available windowing systems for render contexts (X11)") 
 ENDIF()
