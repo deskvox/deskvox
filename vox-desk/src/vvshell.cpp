@@ -316,13 +316,13 @@ bool VVShell::initViewMenu(FXMenuPane* viewmenu)
   vvDebugMsg::msg(1, "VVShell::initViewMenu()");
 
   _orientItem = new FXMenuCheck(viewmenu,   "Show Orientation", this, ID_ORIENTATION);
-  _orientItem->setCheck(dummyState.getParameter(vvRenderState::VV_ORIENTATION));
+  _orientItem->setCheck(dummyState.getParameter(vvRenderState::VV_ORIENTATION).asBool());
   _boundaryItem = new FXMenuCheck(viewmenu, "Show Boundaries", this, ID_BOUNDARIES);
-  _boundaryItem->setCheck(dummyState.getParameter(vvRenderState::VV_BOUNDARIES));
+  _boundaryItem->setCheck(dummyState.getParameter(vvRenderState::VV_BOUNDARIES).asBool());
   _paletteItem = new FXMenuCheck(viewmenu, "Show Palette", this, ID_PALETTE);
-  _paletteItem->setCheck(dummyState.getParameter(vvRenderState::VV_PALETTE));
+  _paletteItem->setCheck(dummyState.getParameter(vvRenderState::VV_PALETTE).asBool());
   _qualityItem = new FXMenuCheck(viewmenu, "Show #Textures", this, ID_QUALITY);
-  _qualityItem->setCheck(dummyState.getParameter(vvRenderState::VV_QUALITY_DISPLAY));
+  _qualityItem->setCheck(dummyState.getParameter(vvRenderState::VV_QUALITY_DISPLAY).asBool());
   _fpsItem = new FXMenuCheck(viewmenu, "Show Frame Rate", this, ID_FPS);
   _fpsItem->setCheck(false);
   _spinItem = new FXMenuCheck(viewmenu, "Auto rotation", this, ID_SPIN);
@@ -1399,8 +1399,8 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorith
 
     _canvas->setRenderer(algorithm, gt, vt);
 
-    if (vd->chan>1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE)==0) _prefWindow->toggleMIP();
-    else if (vd->chan==1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE) > 0) _prefWindow->toggleMIP();
+    if (vd->chan>1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==0) _prefWindow->toggleMIP();
+    else if (vd->chan==1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt() > 0) _prefWindow->toggleMIP();
     vd->makeInfoString(string);
     _statusBar->setText(string);
     _volumeDialog->updateValues();
@@ -1695,7 +1695,7 @@ void VVShell::benchmarkTest()
   cerr << "Volume file name.................................." << _canvas->_vd->getFilename() << endl;
   cerr << "Volume size [voxels].............................." << _canvas->_vd->vox[0] << " x " << _canvas->_vd->vox[1] << " x " << _canvas->_vd->vox[2] << endl;
   cerr << "Output image size [pixels]........................" << viewport[2] << " x " << viewport[3] << endl;
-  cerr << "Image quality....................................." << _canvas->_renderer->getParameter(vvRenderState::VV_QUALITY) << endl;
+  cerr << "Image quality....................................." << _canvas->_renderer->getParameter(vvRenderState::VV_QUALITY).asFloat() << endl;
   cerr << "Gamma correction.................................." << onOffMode[(int)_canvas->_renderer->getParameter(vvRenderState::VV_GAMMA_CORRECTION)] << endl;
 
   // Perform test:

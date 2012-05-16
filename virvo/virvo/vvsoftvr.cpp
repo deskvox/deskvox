@@ -1060,44 +1060,45 @@ int vvSoftVR::getCullingStatus(float nearPlaneZ)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvSoftVR::setParameter(ParameterType param, float newValue)
+void vvSoftVR::setParameter(ParameterType param, const vvParam& value)
 {
    vvDebugMsg::msg(3, "vvSoftVR::setParameter()");
    switch (param)
    {
       case vvRenderer::VV_SLICEINT:
-         sliceInterpol = (newValue == 0.0f) ? false : true;
+         sliceInterpol = value;
          setQuality(_quality);
          break;
       case vvRenderer::VV_WARPINT:
-         warpInterpol = (newValue == 0.0f) ? false : true;
+         warpInterpol = value;
          break;
 #if 0
       case vvRenderer::VV_COMPRESS:
-         compression = (newValue == 0.0f) ? false : true;
+         compression = value;
          break;
       case vvRenderer::VV_MULTIPROC:
-         multiprocessing = (newValue == 0.0f) ? false : true;
+         multiprocessing = value;
          break;
       case vvRenderer::VV_SLICEBUF:
-         sliceBuffer = (newValue == 0.0f) ? false : true;
+         sliceBuffer = value;
          cerr << "sliceBuffer set to " << int(sliceBuffer) << endl;
          break;
       case vvRenderer::VV_LOOKUP:
-         bilinLookup = (newValue == 0.0f) ? false : true;
+         bilinLookup = value;
          cerr << "bilinLookup set to " << int(bilinLookup) << endl;
          break;
  #endif
       case vvRenderer::VV_PREINT:
-         preIntegration = (newValue == 0.0f) ? false : true;
+         preIntegration = value;
          if (preIntegration) updateLUT(1.f);
          cerr << "preIntegration set to " << int(preIntegration) << endl;
          break;
      case vvRenderer::VV_OPCORR:
-         opCorr = (newValue == 0.0f) ? false : true;
+         opCorr = value;
          cerr << "opCorr set to " << int(opCorr) << endl;
          break;
-      default: vvRenderer::setParameter(param, newValue);
+      default:
+         vvRenderer::setParameter(param, value);
          break;
    }
 }
@@ -1105,31 +1106,32 @@ void vvSoftVR::setParameter(ParameterType param, float newValue)
 
 //----------------------------------------------------------------------------
 // see parent
-float vvSoftVR::getParameter(const ParameterType param) const
+vvParam vvSoftVR::getParameter(ParameterType param) const
 {
    vvDebugMsg::msg(3, "vvSoftVR::getParameter()");
 
    switch (param)
    {
       case vvRenderer::VV_SLICEINT:
-         return (sliceInterpol) ? 1.0f : 0.0f;
+         return sliceInterpol;
       case vvRenderer::VV_WARPINT:
-         return (warpInterpol) ? 1.0f : 0.0f;
+         return warpInterpol;
 #if 0
       case vvRenderer::VV_COMPRESS:
-         return (compression) ? 1.0f : 0.0f;
+         return compression;
       case vvRenderer::VV_MULTIPROC:
-         return (multiprocessing) ? 1.0f : 0.0f;
+         return multiprocessing;
       case vvRenderer::VV_SLICEBUF:
-         return (sliceBuffer) ? 1.0f : 0.0f;
+         return sliceBuffer;
       case vvRenderer::VV_LOOKUP:
-         return (bilinLookup) ? 1.0f : 0.0f;
+         return bilinLookup;
 #endif
       case vvRenderer::VV_OPCORR:
-         return (opCorr) ? 1.0f : 0.0f;
+         return opCorr;
       case vvRenderer::VV_PREINT:
-         return (preIntegration) ? 1.0f : 0.0f;
-      default: return vvRenderer::getParameter(param);
+         return preIntegration;
+      default:
+         return vvRenderer::getParameter(param);
    }
 }
 

@@ -100,8 +100,8 @@ class VIRVOEXPORT vvCudaSW : public Base
       vvCudaSW(vvVolDesc*, vvRenderState);
       virtual ~vvCudaSW();
       void compositeVolume(int = -1, int = -1);
-      virtual void setParameter(typename Base::ParameterType, float newValue);
-      virtual float getParameter(typename Base::ParameterType) const;
+      virtual void setParameter(typename Base::ParameterType param, const vvParam& newValue);
+      virtual vvParam getParameter(typename Base::ParameterType param) const;
       virtual void setQuality(float q);
 
       int getPrincipal() const { return Base::principal; }

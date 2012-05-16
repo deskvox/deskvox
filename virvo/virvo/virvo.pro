@@ -127,6 +127,7 @@ HEADERS = \
   vvmulticast.h \
   vvoffscreenbuffer.h \
   vvopengl.h \
+  vvparam.h \
   vvplatform.h \
   vvprintgl.h \
   vvpthread.h \

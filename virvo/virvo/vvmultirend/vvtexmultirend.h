@@ -201,8 +201,8 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     void  updateVolumeData(int, int, int, int, int, int);
     void  setViewingDirection(const vvVector3*);
     void  setObjectDirection(const vvVector3*);
-    void  setParameter(ParameterType, float);
-    float getParameter(ParameterType) const;
+    virtual void setParameter(ParameterType param, const vvParam& value);
+    virtual vvParam getParameter(ParameterType param) const;
     static bool isSupported(GeometryType);
     GeometryType getGeomType();
     VoxelType getVoxelType();

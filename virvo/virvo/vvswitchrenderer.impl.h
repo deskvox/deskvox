@@ -40,33 +40,13 @@ vvSwitchRenderer<Orthographic, Perspective>::~vvSwitchRenderer()
 }
 
 template<class Orthographic, class Perspective>
-void vvSwitchRenderer<Orthographic, Perspective>::setParameter(ParameterType param, float newValue)
+void vvSwitchRenderer<Orthographic, Perspective>::setParameter(ParameterType param, const vvParam& newValue)
 {
   vvRenderer::setParameter(param, newValue);
   if(_ortho)
     _ortho->setParameter(param, newValue);
   if(_persp)
     _persp->setParameter(param, newValue);
-}
-
-template<class Orthographic, class Perspective>
-void vvSwitchRenderer<Orthographic, Perspective>::setParameterV3(ParameterType param, const vvVector3& newValue)
-{
-  vvRenderer::setParameterV3(param, newValue);
-  if(_ortho)
-    _ortho->setParameterV3(param, newValue);
-  if(_persp)
-    _persp->setParameterV3(param, newValue);
-}
-
-template<class Orthographic, class Perspective>
-void vvSwitchRenderer<Orthographic, Perspective>::setParameterV4(ParameterType param, const vvVector4& newValue)
-{
-  vvRenderer::setParameterV4(param, newValue);
-  if(_ortho)
-    _ortho->setParameterV4(param, newValue);
-  if(_persp)
-    _persp->setParameterV4(param, newValue);
 }
 
 template<class Orthographic, class Perspective>

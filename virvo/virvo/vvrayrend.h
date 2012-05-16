@@ -52,8 +52,8 @@ public:
   int getLUTSize() const;
   void updateTransferFunction();
   void compositeVolume(int w = -1, int h = -1);
-  void setParameter(ParameterType param, float newValue);
-  float getParameter(ParameterType param) const;
+  virtual void setParameter(ParameterType param, const vvParam& newValue);
+  virtual vvParam getParameter(ParameterType param) const;
 
   bool getEarlyRayTermination() const;
   bool getIllumination() const;

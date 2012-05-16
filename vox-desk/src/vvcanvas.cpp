@@ -543,8 +543,8 @@ void vvCanvas::setBackgroundColor(float r, float g, float b)
   float bColor;
   if (_bgColor[0] + _bgColor[1] + _bgColor[2] > 1.5f) bColor = 0.0f;
   else bColor = 1.0f;
-  _renderer->setParameterV3(vvRenderState::VV_BOUND_COLOR, vvVector3(bColor, bColor, bColor));
-  _renderer->setParameterV3(vvRenderState::VV_CLIP_COLOR, vvVector3(bColor, bColor, bColor));
+  _renderer->setParameter(vvRenderState::VV_BOUND_COLOR, vvColor(bColor, bColor, bColor));
+  _renderer->setParameter(vvRenderState::VV_CLIP_COLOR, vvColor(bColor, bColor, bColor));
 }
 
 //----------------------------------------------------------------------------

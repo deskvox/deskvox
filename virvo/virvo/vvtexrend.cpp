@@ -4715,7 +4715,7 @@ void vvTexRend::setObjectDirection(const vvVector3* od)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvTexRend::setParameter(const ParameterType param, const float newValue)
+void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
 {
   bool newInterpol;
 
@@ -4723,7 +4723,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
   switch (param)
   {
     case vvRenderer::VV_SLICEINT:
-      newInterpol = (newValue == 0.0f) ? false : true;
+      newInterpol = newValue;
       if (interpolation!=newInterpol)
       {
         interpolation = newInterpol;
@@ -4739,49 +4739,32 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
       }
       break;
     case vvRenderer::VV_MIN_SLICE:
-      minSlice = int(newValue);
+      minSlice = newValue;
       break;
     case vvRenderer::VV_MAX_SLICE:
-      maxSlice = int(newValue);
+      maxSlice = newValue;
       break;
     case vvRenderer::VV_OPCORR:
-      opacityCorrection = (newValue==0.0f) ? false : true;
+      opacityCorrection = newValue;
       break;
     case vvRenderer::VV_SLICEORIENT:
-      _sliceOrientation = SliceOrientation(int(newValue));
+      _sliceOrientation = (SliceOrientation)newValue.asInt();
       break;
     case vvRenderer::VV_PREINT:
-      preIntegration = (newValue == 0.0f) ? false : true;
+      preIntegration = newValue;
       updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
       disableShader(_shader);
       delete _shader;
       _shader = initShader();
       break;
     case vvRenderer::VV_BINNING:
-      if (newValue==0.0f) vd->_binning = vvVolDesc::LINEAR;
-      else if (newValue==1.0f) vd->_binning = vvVolDesc::ISO_DATA;
-      else vd->_binning = vvVolDesc::OPACITY;
+      vd->_binning = (vvVolDesc::BinningType)newValue.asInt();
       break;
     case vvRenderer::VV_ISECT_TYPE:
-      if (newValue < 3.0f && (!_proxyGeometryOnGpuSupported || geomType != VV_BRICKS))
+      _isectType = (IsectType)newValue.asInt();
+      if ((_isectType != CPU) && (!_proxyGeometryOnGpuSupported || geomType != VV_BRICKS))
       {
         cerr << "Cannot generate proxy geometry on GPU" << std::endl;
-        _isectType = CPU;
-      }
-      else if (newValue == 0.0f)
-      {
-        _isectType = VERT_SHADER_ONLY;
-      }
-      else if (newValue == 1.0f)
-      {
-        _isectType = GEOM_SHADER_ONLY;
-      }
-      else if (newValue == 2.0f)
-      {
-        _isectType = VERT_GEOM_COMBINED;
-      }
-      else
-      {
         _isectType = CPU;
       }
 
@@ -4796,13 +4779,13 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
       _shader = initShader();
       break;
     case vvRenderer::VV_LEAPEMPTY:
-      _emptySpaceLeaping = (newValue == 0.0f) ? false : true;
+      _emptySpaceLeaping = newValue;
       // Maybe a tf type was chosen which is incompatible with empty space leaping.
       validateEmptySpaceLeaping();
       updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
       break;
     case vvRenderer::VV_OFFSCREENBUFFER:
-      _useOffscreenBuffer = (newValue == 0.0f) ? false : true;
+      _useOffscreenBuffer = newValue;
       if (_useOffscreenBuffer)
       {
         if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) == NULL)
@@ -4827,7 +4810,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
       {
         if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
         {
-          dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setScale(newValue);
+          dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setScale(_imageScale);
         }
         else
         {
@@ -4883,7 +4866,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
     case vvRenderer::VV_LIGHTING:
       if(geomType != VV_SLICES && geomType != VV_CUBIC2D)
       {
-        if (newValue != 0.0f)
+        if (newValue.asBool())
         {
           _previousShader = _currentShader;
           _currentShader = getLocalIlluminationShader();
@@ -4898,7 +4881,7 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
       }
       break;
     case vvRenderer::VV_MEASURETIME:
-      _measureRenderTime = (newValue != 0.0f);
+      _measureRenderTime = newValue;
       break;
     default:
       vvRenderer::setParameter(param, newValue);
@@ -4908,25 +4891,26 @@ void vvTexRend::setParameter(const ParameterType param, const float newValue)
 
 //----------------------------------------------------------------------------
 // see parent for comments
-float vvTexRend::getParameter(const ParameterType param) const
+vvParam vvTexRend::getParameter(ParameterType param) const
 {
   vvDebugMsg::msg(3, "vvTexRend::getParameter()");
 
   switch (param)
   {
     case vvRenderer::VV_SLICEINT:
-      return (interpolation) ? 1.0f : 0.0f;
+      return interpolation;
     case vvRenderer::VV_MIN_SLICE:
-      return float(minSlice);
+      return minSlice;
     case vvRenderer::VV_MAX_SLICE:
-      return float(maxSlice);
+      return maxSlice;
     case vvRenderer::VV_SLICEORIENT:
-      return float(_sliceOrientation);
+      return (int)_sliceOrientation;
     case vvRenderer::VV_PREINT:
-      return float(preIntegration);
+      return preIntegration;
     case vvRenderer::VV_BINNING:
-      return float(vd->_binning);
-    default: return vvRenderer::getParameter(param);
+      return (int)vd->_binning;
+    default:
+      return vvRenderer::getParameter(param);
   }
 }
 

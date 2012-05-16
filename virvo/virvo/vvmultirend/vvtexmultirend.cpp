@@ -1048,7 +1048,7 @@ void vvTexMultiRend::setObjectDirection(const vvVector3* vd)
 
 //----------------------------------------------------------------------------
 // see parent
-void vvTexMultiRend::setParameter(const ParameterType param, const float newValue)
+void vvTexMultiRend::setParameter(ParameterType param, const vvParam& newValue)
 {
   bool newInterpol;
 
@@ -1056,7 +1056,7 @@ void vvTexMultiRend::setParameter(const ParameterType param, const float newValu
   switch (param)
   {
 	case vvRenderer::VV_SLICEINT:
-	  newInterpol = (newValue == 0.0f) ? false : true;
+	  newInterpol = newValue;
 	  if (interpolation!=newInterpol)
 	  {
 	    interpolation = newInterpol;
@@ -1064,47 +1064,46 @@ void vvTexMultiRend::setParameter(const ParameterType param, const float newValu
 	  }
 	  break;
 	case vvRenderer::VV_MIN_SLICE:
-	  minSlice = int(newValue);
+	  minSlice = newValue;
 	  break;
 	case vvRenderer::VV_MAX_SLICE:
-	  maxSlice = int(newValue);
+	  maxSlice = newValue;
 	  break;
 	case vvRenderer::VV_OPCORR:
-	  //opacityCorrection = (newValue==0.0f) ? false : true;
+	  //opacityCorrection = newValue;;
 	  break;
 	case vvRenderer::VV_SLICEORIENT:
 	  _sliceOrientation = SliceOrientation(int(newValue));
 	  break;
 	case vvRenderer::VV_BINNING:
-	  if (newValue==0.0f) vd->_binning = vvVolDesc::LINEAR;
-	  else if (newValue==1.0f) vd->_binning = vvVolDesc::ISO_DATA;
-	  else vd->_binning = vvVolDesc::OPACITY;
+    vd->_binning = (vvVolDesc::BinningType)newValue.asInt();
 	  break;      
 	default:
-          vvRenderer::setParameter(param, newValue);
+    vvRenderer::setParameter(param, newValue);
 	  break;
   }
 }
 
 //----------------------------------------------------------------------------
 // see parent for comments
-float vvTexMultiRend::getParameter(const ParameterType param) const
+vvParam vvTexMultiRend::getParameter(ParameterType param) const
 {
   vvDebugMsg::msg(3, "vvTexMultiRend::getParameter()");
 
   switch (param)
   {
 	case vvRenderer::VV_SLICEINT:
-	  return (interpolation) ? 1.0f : 0.0f;
+	  return interpolation;
 	case vvRenderer::VV_MIN_SLICE:
-	  return float(minSlice);
+	  return minSlice;
 	case vvRenderer::VV_MAX_SLICE:
-	  return float(maxSlice);
+	  return maxSlice;
 	case vvRenderer::VV_SLICEORIENT:
-	  return float(_sliceOrientation);
+	  return (int)_sliceOrientation;
 	case vvRenderer::VV_BINNING:
-	  return float(vd->_binning);
-	default: return vvRenderer::getParameter(param);
+	  return (int)vd->_binning;
+  default:
+    return vvRenderer::getParameter(param);
   }
 }
 

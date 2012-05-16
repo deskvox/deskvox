@@ -1276,7 +1276,7 @@ void vvRayRend::compositeVolume(int, int)
 }
 //----------------------------------------------------------------------------
 // see parent
-void vvRayRend::setParameter(const ParameterType param, const float newValue)
+void vvRayRend::setParameter(ParameterType param, const vvParam& newValue)
 {
   vvDebugMsg::msg(3, "vvTexRend::setParameter()");
 
@@ -1284,7 +1284,7 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue)
   {
   case vvRenderer::VV_SLICEINT:
     {
-      const bool newInterpol = (newValue!=0.0);
+      const bool newInterpol = newValue;
       if (_interpolation != newInterpol)
       {
         _interpolation = newInterpol;
@@ -1294,19 +1294,19 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue)
     }
     break;
   case vvRenderer::VV_LIGHTING:
-    _illumination = (newValue!=0.0);
+    _illumination = newValue;
     break;
   case vvRenderer::VV_OPCORR:
-    _opacityCorrection = (newValue!=0.0);
+    _opacityCorrection = newValue;
     break;
   case vvRenderer::VV_TERMINATEEARLY:
-    _earlyRayTermination = (newValue!=0.0);
+    _earlyRayTermination = newValue;
     break;
   case vvRenderer::VV_IBR_DEPTH_PREC:
-    _depthPrecision = (int)newValue;
+    _depthPrecision = newValue;
     break;
   case vvRenderer::VV_IBR_UNCERTAINTY_PREC:
-    _uncertaintyPrecision = (int)newValue;
+    _uncertaintyPrecision = newValue;
     break;
   default:
     vvRenderer::setParameter(param, newValue);
@@ -1316,24 +1316,24 @@ void vvRayRend::setParameter(const ParameterType param, const float newValue)
 
 //----------------------------------------------------------------------------
 // see parent
-float vvRayRend::getParameter(const ParameterType param) const
+vvParam vvRayRend::getParameter(ParameterType param) const
 {
   vvDebugMsg::msg(3, "vvTexRend::getParameter()");
 
   switch (param)
   {
   case vvRenderer::VV_SLICEINT:
-    return _interpolation ? 1.f : 0.f;
+    return _interpolation;
   case vvRenderer::VV_LIGHTING:
-    return _illumination ? 1.f : 0.f;
+    return _illumination;
   case vvRenderer::VV_OPCORR:
-    return _opacityCorrection ? 1.f : 0.f;
+    return _opacityCorrection;
   case vvRenderer::VV_TERMINATEEARLY:
-    return _earlyRayTermination ? 1.f : 0.f;
+    return _earlyRayTermination;
   case vvRenderer::VV_IBR_DEPTH_PREC:
-    return static_cast<float>(_depthPrecision);
+    return _depthPrecision;
   case vvRenderer::VV_IBR_UNCERTAINTY_PREC:
-    return static_cast<float>(_uncertaintyPrecision);
+    return _uncertaintyPrecision;
   default:
     return vvRenderer::getParameter(param);
   }

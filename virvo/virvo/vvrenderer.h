@@ -21,9 +21,7 @@
 #ifndef _VVRENDERER_H_
 #define _VVRENDERER_H_
 
-#include "vvexport.h"
-#include "vvvecmath.h"
-#include "vvcolor.h"
+#include "vvparam.h"
 #include "vvrendertarget.h"
 #include "vvinttypes.h"
 
@@ -115,13 +113,9 @@ public:
     VV_MEASURETIME
   };
 
-  virtual void setParameter(ParameterType param, float newValue);
-  virtual void setParameterV3(ParameterType param, const vvVector3& newValue);
-  virtual void setParameterV4(ParameterType param, const vvVector4& newValue);
+  virtual void setParameter(ParameterType param, const vvParam& value);
+  virtual vvParam getParameter(ParameterType param) const;
 
-  virtual float getParameter(ParameterType) const;
-  virtual vvVector3 getParameterV3(ParameterType param) const;
-  virtual vvVector4 getParameterV4(ParameterType param) const;
 protected:
   float _quality;                               ///< rendering image quality (0=minimum, 1=sampling rate, >1=oversampling)
   vvVector3 _clipPoint;                         ///< point on clipping plane
@@ -285,8 +279,8 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual void  getEyePosition(vvVector3*) const;
     virtual bool  isInVolume(const vvVector3*) const;
     virtual float getAlphaValue(float, float, float);
-    virtual void  setParameter(ParameterType param, float newValue);
-    virtual float getParameter(ParameterType param) const;
+    virtual void  setParameter(ParameterType param, const vvParam& value);
+    virtual vvParam getParameter(ParameterType param) const;
     virtual void  profileStart();
     virtual void  profileStop();
     virtual void  setGamma(BasicColorType, float);

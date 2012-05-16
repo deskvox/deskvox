@@ -53,9 +53,8 @@ public:
 
   virtual void renderVolumeGL();
 
-  void setParameter(ParameterType param, float newValue);
-  void setParameterV3(ParameterType param, const vvVector3& newValue);
-  void setParameterV4(ParameterType param, const vvVector4& newValue);
+  virtual void setParameter(ParameterType param, const vvParam& value);
+
   void updateTransferFunction();
 private:
   vvImageClient* _ref;

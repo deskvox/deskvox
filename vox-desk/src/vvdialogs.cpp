@@ -598,19 +598,19 @@ void VVClippingDialog::updateClipParameters()
   normal.normalize();
   point.copy(&normal);
   point.scale(d);
-  _canvas->_renderer->setParameterV3(vvRenderState::VV_CLIP_POINT, point);
-  _canvas->_renderer->setParameterV3(vvRenderState::VV_CLIP_NORMAL, normal);
+  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_POINT, point);
+  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_NORMAL, normal);
 }
 
 void VVClippingDialog::updateValues()
 {
-  vvVector3 normal = _canvas->_renderer->getParameterV3(vvRenderState::VV_CLIP_NORMAL);
+  vvVector3 normal = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_NORMAL);
   normal.normalize();
 
-  _enableCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_MODE));
-  _singleCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_SINGLE_SLICE));
-  _opaqueCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_OPAQUE));
-  _perimeterCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PERIMETER));
+  _enableCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_MODE).asBool());
+  _singleCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_SINGLE_SLICE).asBool());
+  _opaqueCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_OPAQUE).asBool());
+  _perimeterCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PERIMETER).asBool());
 
   _xSlider->setValue(normal.e[0]);
   _ySlider->setValue(normal.e[1]);
@@ -2221,7 +2221,7 @@ void VVGammaDialog::updateValues()
 
   if (_canvas->_renderer) 
   { 
-    bool gamma = _canvas->_renderer->getParameter(vvRenderState::VV_GAMMA_CORRECTION) != 0.f;
+    bool gamma = _canvas->_renderer->getParameter(vvRenderState::VV_GAMMA_CORRECTION);
     handle(this, FXSEL(SEL_COMMAND, ID_GAMMA), (void*)gamma);
   }
 }
@@ -2501,7 +2501,7 @@ void VVOpacityDialog::updateValues()
     b  = _canvas->_renderer->getOpacityWeight(vvRenderer::VV_BLUE);
     a  = _canvas->_renderer->getOpacityWeight(vvRenderer::VV_ALPHA);
 
-    bool enabled = _canvas->_renderer->getParameter(vvRenderState::VV_OPACITY_WEIGHTS) != 0.f;
+    bool enabled = _canvas->_renderer->getParameter(vvRenderState::VV_OPACITY_WEIGHTS);
     handle(this, FXSEL(SEL_COMMAND, ID_ENABLE), (void*)enabled);
   }
 

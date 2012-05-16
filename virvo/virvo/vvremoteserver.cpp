@@ -253,7 +253,7 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
           vvVector3 value;
           if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getVector3(value) == vvSocket::VV_OK)
           {
-            renderer->setParameterV3((vvRenderState::ParameterType)param, value);
+            renderer->setParameter((vvRenderState::ParameterType)param, value);
           }
         }
         break;
@@ -263,7 +263,7 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
           vvVector4 value;
           if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getVector4(value) == vvSocket::VV_OK)
           {
-            renderer->setParameterV4((vvRenderState::ParameterType)param, value);
+            renderer->setParameter((vvRenderState::ParameterType)param, value);
           }
         }
         break;

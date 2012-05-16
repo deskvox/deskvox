@@ -254,52 +254,46 @@ void vvRemoteClient::updateTransferFunction()
   }
 }
 
-void vvRemoteClient::setParameter(const vvRenderer::ParameterType param, const float newValue)
+void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
   _changes = true;
-  vvRenderer::setParameter(param, newValue);
+  vvRenderer::setParameter(param, value);
 
   if(!_socketIO)
     return;
 
-  if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_1) == vvSocket::VV_OK)
+  if (value.isa(vvParam::VV_FLOAT))
   {
-    _socketIO->putInt32((int32_t)param);
-    _socketIO->putFloat(newValue);
-  }
-}
-
-void vvRemoteClient::setParameterV3(const vvRenderer::ParameterType param, const vvVector3 &newValue)
-{
-  vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
-  _changes = true;
-  vvRenderer::setParameterV3(param, newValue);
-
-  if(!_socketIO)
+    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_1) == vvSocket::VV_OK)
+    {
+      _socketIO->putInt32((int32_t)param);
+      _socketIO->putFloat(value);
+    }
     return;
-
-  if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_3) == vvSocket::VV_OK)
-  {
-    _socketIO->putInt32((int32_t)param);
-    _socketIO->putVector3(newValue);
   }
-}
 
-void vvRemoteClient::setParameterV4(const vvRenderer::ParameterType param, const vvVector4 &newValue)
-{
-  vvDebugMsg::msg(3, "vvRemoteClient::setParameter()");
-  _changes = true;
-
-  if(!_socketIO)
+  if (value.isa(vvParam::VV_VEC3))
+  {
+    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_3) == vvSocket::VV_OK)
+    {
+      _socketIO->putInt32((int32_t)param);
+      _socketIO->putVector3(value);
+    }
     return;
-
-  vvRenderer::setParameterV4(param, newValue);
-  if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_3) == vvSocket::VV_OK)
-  {
-    _socketIO->putInt32((int32_t)param);
-    _socketIO->putVector4(newValue);
   }
+
+  if (value.isa(vvParam::VV_VEC4))
+  {
+    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_4) == vvSocket::VV_OK)
+    {
+      _socketIO->putInt32((int32_t)param);
+      _socketIO->putVector4(value);
+    }
+    return;
+  }
+
+  assert( 0 && "Parameter not handled" );
 }
 
 vvRemoteClient::ErrorType vvRemoteClient::requestFrame() const

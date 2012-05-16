@@ -1840,7 +1840,7 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 
     float dist = sqrtf(1.0f + sinc.e[0] * sinc.e[0] + sinc.e[1] * sinc.e[1]);
 
-    float s = 1.f/(dist * Base::getParameter(vvRenderState::VV_QUALITY));
+    float s = 1.f/(dist * Base::getParameter(vvRenderState::VV_QUALITY).asFloat());
     int nslice = (int)(Base::len[2]/s);
 
     float zstep = -s / Base::vd->vox[Base::principal];
@@ -1865,7 +1865,7 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 
     cudaMemcpyToSymbol(c_zStep, &zstep, sizeof(float));
 
-    float lutDist = 1.f/Base::getParameter(vvRenderState::VV_QUALITY);
+    float lutDist = 1.f/Base::getParameter(vvRenderState::VV_QUALITY).asFloat();
     if(oldLutDist/lutDist < 0.9f || lutDist/oldLutDist < 0.9f)
     {
         updateLUT(lutDist);
@@ -2020,25 +2020,25 @@ void vvCudaSW<Base>::compositeVolume(int fromY, int toY)
 }
 
 template<class Base>
-void vvCudaSW<Base>::setParameter(typename Base::ParameterType param, float val)
+void vvCudaSW<Base>::setParameter(typename Base::ParameterType param, const vvParam& val)
 {
     vvDebugMsg::msg(3, "vvCudaSW::setParameter()");
     switch(param)
     {
         case Base::VV_IMG_PRECISION:
-            if(val == 8)
+            if(val.asInt() == 8)
                 imagePrecision = 8;
             else
                 imagePrecision = 32;
             break;
         case Base::VV_TERMINATEEARLY:
-            earlyRayTerm = (val != 0.f);
+            earlyRayTerm = val;
             break;
         case Base::VV_LEAPEMPTY:
-            emptySpaceSkip = (val != 0.f);
+            emptySpaceSkip = val;
             break;
         case Base::VV_INTERSLICEINT:
-            interSliceInt = (val != 0.f);
+            interSliceInt = val;
             break;
         default:
             Base::setParameter(param, val);
@@ -2047,19 +2047,19 @@ void vvCudaSW<Base>::setParameter(typename Base::ParameterType param, float val)
 }
 
 template<class Base>
-float vvCudaSW<Base>::getParameter(typename Base::ParameterType param) const
+vvParam vvCudaSW<Base>::getParameter(typename Base::ParameterType param) const
 {
     vvDebugMsg::msg(3, "vvCudaSW::getParameter()");
     switch(param)
     {
         case Base::VV_IMG_PRECISION:
-            return (float)imagePrecision;
+            return imagePrecision;
         case Base::VV_TERMINATEEARLY:
-            return (earlyRayTerm ? 1.f : 0.f);
+            return earlyRayTerm;
         case Base::VV_LEAPEMPTY:
-            return (emptySpaceSkip ? 1.f : 0.f);
+            return emptySpaceSkip;
         case Base::VV_INTERSLICEINT:
-            return (interSliceInt ? 1.f : 0.f);
+            return interSliceInt;
         default:
             return Base::getParameter(param);
     }

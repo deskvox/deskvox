@@ -187,30 +187,12 @@ void vvComparisonRend<vvImageClient, TestRend>::renderVolumeGL()
 }
 
 template <typename TestRend>
-void vvComparisonRend<vvImageClient, TestRend>::setParameter(const ParameterType param, const float newValue)
+void vvComparisonRend<vvImageClient, TestRend>::setParameter(ParameterType param, const vvParam& value)
 {
   vvDebugMsg::msg(3, "vvComparisonRend<vvImageClient, TestRend>::setParameter()");
 
-  _ref->setParameter(param, newValue);
-  _test->setParameter(param, newValue);
-}
-
-template <typename TestRend>
-void vvComparisonRend<vvImageClient, TestRend>::setParameterV3(const ParameterType param, const vvVector3& newValue)
-{
-  vvDebugMsg::msg(3, "vvComparisonRend<vvImageClient, TestRend>::setParameterV3()");
-
-  _ref->setParameterV3(param, newValue);
-  _test->setParameterV3(param, newValue);
-}
-
-template <typename TestRend>
-void vvComparisonRend<vvImageClient, TestRend>::setParameterV4(const ParameterType param, const vvVector4& newValue)
-{
-  vvDebugMsg::msg(3, "vvComparisonRend<vvImageClient, TestRend>::setParameterV4()");
-
-  _ref->setParameterV4(param, newValue);
-  _test->setParameterV4(param, newValue);
+  _ref->setParameter(param, value);
+  _test->setParameter(param, value);
 }
 
 template <typename TestRend>

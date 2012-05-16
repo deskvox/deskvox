@@ -59,9 +59,7 @@ public:
   void setViewingDirection(const vvVector3* vd);
   void setPosition(const vvVector3* p);
   virtual void updateTransferFunction();
-  virtual void setParameter(vvRenderer::ParameterType param, float newValue);
-  virtual void setParameterV3(vvRenderer::ParameterType param, const vvVector3 &newValue);
-  virtual void setParameterV4(vvRenderer::ParameterType param, const vvVector4 &newValue);
+  virtual void setParameter(ParameterType param, const vvParam& value);
   virtual ErrorType requestFrame() const;
 
 protected:

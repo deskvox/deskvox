@@ -541,8 +541,8 @@ void VVPreferenceWindow::updateValues()
   _eyeSlider->setValue(int(_canvas->_ov.getIOD()));
   _eyeTField->setText(FXStringFormat("%d",(FXint)_canvas->_ov.getIOD()));
 
-  _linterpButton->setCheck(_canvas->_renderer->getParameter(vvRenderer::VV_SLICEINT)==1.0f);
-  _mipButton->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE)==1.0f);
+  _linterpButton->setCheck(_canvas->_renderer->getParameter(vvRenderer::VV_SLICEINT).asBool());
+  _mipButton->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==1);
   _artoolkitButton->setCheck(_canvas->getARToolkit());
 
   if (_shell->_glcanvas->makeCurrent())
@@ -648,7 +648,7 @@ void VVPreferenceWindow::updateValues()
 
     if ((texrend) && (texrend->getGeomType() == vvTexRend::VV_BRICKS))
     {
-      _showBricksButton->setCheck(texrend->getParameter(vvRenderState::VV_SHOW_BRICKS));
+      _showBricksButton->setCheck(texrend->getParameter(vvRenderState::VV_SHOW_BRICKS).asBool());
       if (texrend->getParameter(vvRenderState::VV_COMPUTE_BRICK_SIZE))
       {
         _bsCombo->disable();

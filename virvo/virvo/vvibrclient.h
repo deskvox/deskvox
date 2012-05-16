@@ -46,7 +46,7 @@ public:
   ~vvIbrClient();
 
   ErrorType render();                                     ///< render image with depth-values
-  virtual void setParameter(vvRenderer::ParameterType param, float newValue);
+  virtual void setParameter(ParameterType param, const vvParam& newValue);
 
 private:
   struct Thread;

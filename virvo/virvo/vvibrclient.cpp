@@ -119,12 +119,12 @@ vvIbrClient::~vvIbrClient()
   delete _image;
 }
 
-void vvIbrClient::setParameter(vvRenderer::ParameterType param, float newValue)
+void vvIbrClient::setParameter(vvRenderer::ParameterType param, const vvParam& newValue)
 {
   switch(param)
   {
   case VV_IBR_SYNC:
-    _synchronous = newValue != 0.f;
+    _synchronous = newValue;
     break;
   default:
     // intentionally do nothing
