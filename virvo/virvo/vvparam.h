@@ -83,43 +83,43 @@ public:
 
   bool asBool() const
   {
-    assert( type == VV_BOOL && "Invalid operation" );
+    assert( type == VV_BOOL );
     return value.B;
   }
 
   int asInt() const
   {
-    assert( type == VV_INT && "Invalid operation" );
+    assert( type == VV_INT );
     return value.I;
   }
 
   float asFloat() const
   {
-    assert( type == VV_FLOAT && "Invalid operation" );
+    assert( type == VV_FLOAT );
     return value.F;
   }
 
   const vvVector3& asVec3() const
   {
-    assert( type == VV_VEC3 && "Invalid operation" );
+    assert( type == VV_VEC3 );
     return *value.Vec3;
   }
 
   const vvVector3i& asVec3i() const
   {
-    assert( type == VV_VEC3I && "Invalid operation" );
+    assert( type == VV_VEC3I );
     return *value.Vec3I;
   }
 
   const vvVector4& asVec4() const
   {
-    assert( type == VV_VEC4 && "Invalid operation" );
+    assert( type == VV_VEC4 );
     return *value.Vec4;
   }
 
   const vvColor& asColor() const
   {
-    assert( type == VV_COLOR && "Invalid operation" );
+    assert( type == VV_COLOR );
     return *value.Color;
   }
 
