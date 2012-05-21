@@ -21,6 +21,7 @@
 #include <cmath>
 #include <iostream>
 #include <algorithm>
+#include <limits>
 
 #include "vvaabb.h"
 #include "vvgltools.h"
@@ -97,10 +98,10 @@ vvRecti vvBaseAABB<T>::getProjectedScreenRect() const
 
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
 
-  float minX = VV_FLT_MAX;
-  float minY = VV_FLT_MAX;
-  float maxX = -VV_FLT_MAX;
-  float maxY = -VV_FLT_MAX;
+  float minX = std::numeric_limits<float>::max();
+  float minY = std::numeric_limits<float>::max();
+  float maxX = -std::numeric_limits<float>::max();
+  float maxY = -std::numeric_limits<float>::max();
 
   for (int i = 0; i < 8; ++i)
   {

@@ -26,7 +26,7 @@
 #include "vvinttypes.h"
 #include "vvopengl.h"
 
-#include <limits.h>
+#include <limits>
 #include <vector>
 
 class vvTexRend;
@@ -36,8 +36,8 @@ class VIRVOEXPORT vvBrick
 {
 public:
   vvBrick()                                     ///< dflt. constructor (needed for C++ templates)
-  : minValue(INT_MAX)
-  , maxValue(INT_MIN)
+  : minValue(std::numeric_limits<int>::max())
+  , maxValue(std::numeric_limits<int>::min())
   , visible(true)
   , insideProbe(true)
   , index(-1)
