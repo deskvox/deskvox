@@ -27,8 +27,6 @@
 #undef max
 #endif
 
-typedef vvVector3 vvBoxCorners[8];
-
 template <typename T>
 class vvBaseRect
 {
@@ -44,6 +42,14 @@ typedef vvBaseRect<float> vvRectf;
 typedef vvBaseRect<double> vvRectd;
 typedef vvRecti vvRect;
 
+template <typename T>
+class vvBaseAABB;
+
+typedef vvBaseAABB<int> vvAABBi;
+typedef vvBaseAABB<float> vvAABBf;
+typedef vvBaseAABB<double> vvAABBd;
+typedef vvAABBf vvAABB;
+
 /*!
  * \brief           Axis aligned bounding box (AABB).
  *
@@ -52,13 +58,16 @@ typedef vvRecti vvRect;
  *                  the precalculated values of the eight corner
  *                  vertices and the center vertex.
  */
-class vvAABB
+template <typename T>
+class vvBaseAABB
 {
 public:
-  vvAABB(const vvVector3& min, const vvVector3& max);
+  typedef vvBaseVector3<T> vvBoxCorners[8];
+ 
+  vvBaseAABB(const vvBaseVector3<T>& min, const vvBaseVector3<T>& max);
 
-  vvVector3 min() const;
-  vvVector3 max() const;
+  vvBaseVector3<T> min() const;
+  vvBaseVector3<T> max() const;
 
   /*!
    * \brief         Calc the width of the aabb.
@@ -68,7 +77,7 @@ public:
    *                this method in time critical situations.
    * \return        The calculated width.
    */
-  float calcWidth() const;
+  T calcWidth() const;
   /*!
    * \brief         Calc the height of the aabb.
    *
@@ -77,7 +86,7 @@ public:
    *                this method in time critical situations.
    * \return        The calculated height.
    */
-  float calcHeight() const;
+  T calcHeight() const;
   /*!
    * \brief         Calc the depth of the aabb.
    *
@@ -86,7 +95,7 @@ public:
    *                this method in time critical situations.
    * \return        The calculated depth.
    */
-  float calcDepth() const;
+  T calcDepth() const;
 
   /*!
    * \brief         Get the box vertices.
@@ -100,7 +109,7 @@ public:
    *
    *                Returns the stored center.
    */
-  vvVector3 getCenter() const;
+  vvBaseVector3<T> getCenter() const;
 
   /*!
    * \brief         Get a rectangle of the projected screen section.
@@ -109,16 +118,16 @@ public:
    *                the projected area do to the current camera transformations.
    * \return        The rectangle of the projected screen section.
    */
-  vvRect* getProjectedScreenRect() const;
+  vvRecti* getProjectedScreenRect() const;
 
   /*!
-   * \brief         Shring the box to the intersection with another one.
+   * \brief         Shrink the box to the intersection with another one.
    *
    *                Get the box resulting from intersecting this box with
    *                the one specified.
    * \param         rhs The box to intersect with.
    */
-  void intersect(vvAABB* rhs);
+  void intersect(vvBaseAABB<T>* rhs);
 
   /*!
    * \brief         Render the bounding box.
@@ -128,10 +137,10 @@ public:
    */
   void render() const;
 private:
-  vvVector3 _min;
-  vvVector3 _max;
-  vvVector3 _vertices[8];
-  vvVector3 _center;
+  vvBaseVector3<T> _min;
+  vvBaseVector3<T> _max;
+  vvBaseVector3<T> _vertices[8];
+  vvBaseVector3<T> _center;
 
   /*!
    * \brief         Calc the 8 corner vertices.
@@ -153,6 +162,8 @@ inline std::ostream& operator<<(std::ostream& out, const vvAABB& aabb)
   out << aabb.min() << "\n" << aabb.max();
   return out;
 }
+
+#include "vvaabb.impl.h"
 
 #endif // VV_AABB_H
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

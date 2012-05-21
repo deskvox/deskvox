@@ -23,61 +23,71 @@
 #include <algorithm>
 
 #include "vvaabb.h"
-#include "vvglew.h"
 #include "vvgltools.h"
+#include "vvopengl.h"
 
 using std::cerr;
 using std::endl;
 
 //============================================================================
-// vvAABB Method Definitions
+// vvBaseAABB<T> Method Definitions
 //============================================================================
 
-vvAABB::vvAABB(const vvVector3& min, const vvVector3& max)
-                 : _min(min), _max(max)
+template <typename T>
+vvBaseAABB<T>::vvBaseAABB(const vvBaseVector3<T>& min, const vvBaseVector3<T>& max)
+  : _min(min)
+  , _max(max)
 {
-  _center = vvVector3((_min[0] + _max[0]) * 0.5f,
-                      (_min[1] + _max[1]) * 0.5f,
-                      (_min[2] + _max[2]) * 0.5f);
+  _center = vvBaseVector3<T>((_min[0] + _max[0]) * 0.5f,
+                             (_min[1] + _max[1]) * 0.5f,
+                             (_min[2] + _max[2]) * 0.5f);
   calcVertices();
 }
 
-vvVector3 vvAABB::min() const
+template <typename T>
+vvBaseVector3<T> vvBaseAABB<T>::min() const
 {
   return _min;
 }
 
-vvVector3 vvAABB::max() const
+template <typename T>
+vvBaseVector3<T> vvBaseAABB<T>::max() const
 {
   return _max;
 }
 
-float vvAABB::calcWidth() const
+template <typename T>
+T vvBaseAABB<T>::calcWidth() const
 {
   return _max[0] - _min[0];
 }
 
-float vvAABB::calcHeight() const
+template <typename T>
+T vvBaseAABB<T>::calcHeight() const
 {
   return _max[1] - _min[1];
 }
 
-float vvAABB::calcDepth() const
+template <typename T>
+T vvBaseAABB<T>::calcDepth() const
 {
   return _max[2] - _min[2];
 }
 
-const vvBoxCorners& vvAABB::getVertices() const
+template <typename T>
+const typename vvBaseAABB<T>::vvBoxCorners& vvBaseAABB<T>::getVertices() const
 {
   return _vertices;
 }
 
-vvVector3 vvAABB::getCenter() const
+template <typename T>
+vvBaseVector3<T> vvBaseAABB<T>::getCenter() const
 {
   return _center;
 }
 
-vvRect* vvAABB::getProjectedScreenRect() const
+template <typename T>
+vvRecti* vvBaseAABB<T>::getProjectedScreenRect() const
 {
   GLdouble modelview[16];
   glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
@@ -118,7 +128,7 @@ vvRect* vvAABB::getProjectedScreenRect() const
     }
   }
 
-  vvRect* result = new vvRect;
+  vvRecti* result = new vvRecti;
   result->x = std::max(0, static_cast<int>(floorf(minX)));
   result->y = std::max(0, static_cast<int>(floorf(minY)));
   result->width = std::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2] - result->x);
@@ -127,7 +137,8 @@ vvRect* vvAABB::getProjectedScreenRect() const
   return result;
 }
 
-void vvAABB::intersect(vvAABB* rhs)
+template <typename T>
+void vvBaseAABB<T>::intersect(vvBaseAABB<T>* rhs)
 {
   for (int i = 0; i < 3; ++i)
   {
@@ -144,9 +155,10 @@ void vvAABB::intersect(vvAABB* rhs)
   calcVertices();
 }
 
-void vvAABB::render() const
+template <typename T>
+void vvBaseAABB<T>::render() const
 {
-  const vvVector3 (&vertices)[8] = getVertices();
+  const vvBaseVector3<T> (&vertices)[8] = getVertices();
   glDisable(GL_LIGHTING);
   glBegin(GL_LINES);
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -179,7 +191,8 @@ void vvAABB::render() const
   glEnable(GL_LIGHTING);
 }
 
-void vvAABB::calcVertices()
+template <typename T>
+void vvBaseAABB<T>::calcVertices()
 {
   for (int i=0; i<8; ++i)
   {

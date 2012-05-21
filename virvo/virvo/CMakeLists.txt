@@ -52,6 +52,7 @@ SET(VIRVO_HEADERS
   vvmultirend/vvtexmultirend.h
   vvmultirend/vvtexmultirendmngr.h
   vvaabb.h
+  vvaabb.impl.h
   vvbrick.h
   vvbsptree.h
   vvbsptreevisitors.h
@@ -141,7 +142,6 @@ SET(VIRVO_SOURCES
   vvbonjour/vvbonjourresolver.cpp
   vvmultirend/vvtexmultirend.cpp
   vvmultirend/vvtexmultirendmngr.cpp
-  vvaabb.cpp
   vvbrick.cpp
   vvbsptree.cpp
   vvbsptreevisitors.cpp
