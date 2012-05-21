@@ -29,14 +29,20 @@
 
 typedef vvVector3 vvBoxCorners[8];
 
-class vvRect
+template <typename T>
+class vvBaseRect
 {
 public:
-  int x;
-  int y;
-  int width;
-  int height;
+  T x;
+  T y;
+  T width;
+  T height;
 };
+
+typedef vvBaseRect<int> vvRecti;
+typedef vvBaseRect<float> vvRectf;
+typedef vvBaseRect<double> vvRectd;
+typedef vvRecti vvRect;
 
 /*!
  * \brief           Axis aligned bounding box (AABB).

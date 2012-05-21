@@ -21,15 +21,14 @@
 #ifndef VVBSPTREE_H
 #define VVBSPTREE_H
 
+#include "vvaabb.h"
 #include "vvvecmath.h"
 #include "vvvisitor.h"
 
 #include <vector>
 
-class vvAABB;
 class vvBrick;
 class vvVisitor;
-class vvRect;
 
 typedef std::vector<vvBrick*> BrickList;
 
