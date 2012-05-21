@@ -160,10 +160,10 @@ template <typename T>
 void vvBaseAABB<T>::render() const
 {
   const vvBaseVector3<T> (&vertices)[8] = getVertices();
-  glDisable(GL_LIGHTING);
   glBegin(GL_LINES);
     glColor3f(1.0f, 1.0f, 1.0f);
 
+    // front
     glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
     glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
 
@@ -176,7 +176,7 @@ void vvBaseAABB<T>::render() const
     glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
     glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
 
-
+    // back
     glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
     glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
 
@@ -188,8 +188,21 @@ void vvBaseAABB<T>::render() const
 
     glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
     glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
+
+    // left
+    glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
+    glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
+
+    glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
+    glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
+
+    // right
+    glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
+    glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
+
+    glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
+    glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
   glEnd();
-  glEnable(GL_LIGHTING);
 }
 
 template <typename T>
