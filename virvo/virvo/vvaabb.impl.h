@@ -76,12 +76,6 @@ T vvBaseAABB<T>::calcDepth() const
 }
 
 template <typename T>
-const typename vvBaseAABB<T>::vvBoxCorners& vvBaseAABB<T>::getVertices() const
-{
-  return _vertices;
-}
-
-template <typename T>
 const vvBaseVector3<T>& vvBaseAABB<T>::getCenter() const
 {
   return _center;

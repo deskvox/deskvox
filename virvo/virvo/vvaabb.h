@@ -98,7 +98,8 @@ public:
    *
    *                Returns the precalculated box corner vertices.
    */
-  const vvBoxCorners& getVertices() const;
+  // Note: VS2010 requires this function to be inlined
+  const vvBoxCorners& getVertices() const { return _vertices; }
 
   /*!
    * \brief         Get the center point.
