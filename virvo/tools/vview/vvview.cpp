@@ -1163,12 +1163,12 @@ void vvView::optionsMenuCallback(int item)
   {
   case 0:                                     // slice interpolation mode
     ds->interpolMode = !ds->interpolMode;
-    ds->renderer->setParameter(vvRenderer::VV_SLICEINT, (ds->interpolMode) ? 1.0f : 0.0f);
+    ds->renderer->setParameter(vvRenderer::VV_SLICEINT, ds->interpolMode);
     cerr << "Interpolation mode set to " << int(ds->interpolMode) << endl;
     break;
   case 1:
     ds->preintMode = !ds->preintMode;
-    ds->renderer->setParameter(vvRenderer::VV_PREINT, (ds->preintMode) ? 1.0f : 0.0f);
+    ds->renderer->setParameter(vvRenderer::VV_PREINT, ds->preintMode);
     cerr << "Pre-integration set to " << int(ds->preintMode) << endl;
     break;
   case 2:                                     // min/maximum intensity projection
@@ -1179,7 +1179,7 @@ void vvView::optionsMenuCallback(int item)
     break;
   case 3:                                     // opacity correction
     ds->opCorrMode = !ds->opCorrMode;
-    ds->renderer->setParameter(vvRenderer::VV_OPCORR, (ds->opCorrMode) ? 1.0f : 0.0f);
+    ds->renderer->setParameter(vvRenderer::VV_OPCORR, ds->opCorrMode);
     cerr << "Opacity correction set to " << int(ds->opCorrMode) << endl;
     break;
   case 4:                                     // gamma correction

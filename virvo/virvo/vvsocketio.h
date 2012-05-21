@@ -141,9 +141,13 @@ class VIRVOEXPORT vvSocketIO
       VV_TRANSFER_FUNCTION,
       VV_VIEWING_DIRECTION,
       VV_VOLUME,
-      VV_PARAMETER_1,
-      VV_PARAMETER_3,
-      VV_PARAMETER_4
+      VV_PARAMETER_1B,
+      VV_PARAMETER_1I,
+      VV_PARAMETER_1F,
+      VV_PARAMETER_3I,
+      VV_PARAMETER_3F,
+      VV_PARAMETER_4I,
+      VV_PARAMETER_4F
     };
 
     vvSocketIO(vvSocket* sock);

@@ -263,9 +263,29 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
   if(!_socketIO)
     return;
 
+  if (value.isa(vvParam::VV_BOOL))
+  {
+    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_1B) == vvSocket::VV_OK)
+    {
+      _socketIO->putInt32((int32_t)param);
+      _socketIO->putBool(value);
+    }
+    return;
+  }
+
+  if (value.isa(vvParam::VV_INT))
+  {
+    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_1I) == vvSocket::VV_OK)
+    {
+      _socketIO->putInt32((int32_t)param);
+      _socketIO->putInt32((int32_t)value);
+    }
+    return;
+  }
+
   if (value.isa(vvParam::VV_FLOAT))
   {
-    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_1) == vvSocket::VV_OK)
+    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_1F) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
       _socketIO->putFloat(value);
@@ -275,7 +295,7 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
 
   if (value.isa(vvParam::VV_VEC3))
   {
-    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_3) == vvSocket::VV_OK)
+    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_3F) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
       _socketIO->putVector3(value);
@@ -285,7 +305,7 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
 
   if (value.isa(vvParam::VV_VEC4))
   {
-    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_4) == vvSocket::VV_OK)
+    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_4F) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
       _socketIO->putVector4(value);

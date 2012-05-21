@@ -229,16 +229,26 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
           renderer->updateTransferFunction();
         }
         break;
-      case vvSocketIO::VV_PARAMETER_1:
+      case vvSocketIO::VV_PARAMETER_1B:
         {
           int32_t param;
-          float value = 0.f;
-          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getFloat(value) == vvSocket::VV_OK)
+          bool value = false;
+          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getBool(value) == vvSocket::VV_OK)
+          {
+            renderer->setParameter((vvRenderState::ParameterType)param, value);
+          }
+        }
+        break;
+      case vvSocketIO::VV_PARAMETER_1I:
+        {
+          int32_t param;
+          int value = 0;
+          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getInt32(value) == vvSocket::VV_OK)
           {
             switch(param)
             {
             case vvRenderer::VV_CODEC:
-              _codetype = (int)value;
+              _codetype = value;
               break;
             default:
               renderer->setParameter((vvRenderState::ParameterType)param, value);
@@ -247,7 +257,17 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
           }
         }
         break;
-      case vvSocketIO::VV_PARAMETER_3:
+      case vvSocketIO::VV_PARAMETER_1F:
+        {
+          int32_t param;
+          float value = 0.f;
+          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getFloat(value) == vvSocket::VV_OK)
+          {
+            renderer->setParameter((vvRenderState::ParameterType)param, value);
+          }
+        }
+        break;
+      case vvSocketIO::VV_PARAMETER_3F:
         {
           int32_t param;
           vvVector3 value;
@@ -257,7 +277,7 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
           }
         }
         break;
-      case vvSocketIO::VV_PARAMETER_4:
+      case vvSocketIO::VV_PARAMETER_4F:
         {
           int32_t param;
           vvVector4 value;
