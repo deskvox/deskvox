@@ -199,7 +199,7 @@ public:
    *                contained within this halfspace.
    * \return        The bounding box around the bricks.
    */
-  vvAABB* getBoundingBox() const;
+  const vvAABB& getBoundingBox() const;
   /*!
    * \brief         Calc the projected screen rect.
    *
@@ -216,8 +216,8 @@ public:
    * \param         recalculate If true, the member rect will be recalculated.
    * \return        A pointer to the screen rect.
    */
-  vvRect* getProjectedScreenRect(const vvVector3* probeMin = 0, const vvVector3* probeMax = 0,
-                                 bool recalculate = false);
+  const vvRecti& getProjectedScreenRect(const vvVector3* probeMin = 0, const vvVector3* probeMax = 0,
+                                        bool recalculate = false);
   /*!
    * \brief         Debug function. Calculate the contained volume.
    *
@@ -239,8 +239,8 @@ private:
   std::vector<BrickList> _brickList;
   float _percent;
   float _actualPercent;
-  vvAABB* _boundingBox;
-  vvRect* _projectedScreenRect;
+  vvAABB _boundingBox;
+  vvRecti _projectedScreenRect;
 };
 
 /*!

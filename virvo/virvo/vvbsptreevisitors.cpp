@@ -53,7 +53,7 @@ void vvThreadVisitor::visit(vvVisitable* obj) const
   // Make sure not to recalculate the screen rect, since the
   // modelview and perspective transformations currently applied
   // won't match the one's used for rendering.
-  const vvRect* screenRect = hs->getProjectedScreenRect(0, 0, false);
+  const vvRecti& screenRect = hs->getProjectedScreenRect(0, 0, false);
 
   glActiveTextureARB(GL_TEXTURE0_ARB);
   glEnable(GL_TEXTURE_2D);
@@ -63,7 +63,7 @@ void vvThreadVisitor::visit(vvVisitable* obj) const
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
   std::vector<GLfloat>& data = *_pixels[hs->getId()];
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16,
-               screenRect->width, screenRect->height,
+               screenRect.width, screenRect.height,
                0, GL_RGBA, GL_FLOAT, &data[0]);
 
   // Fix the tex coords to a range of 0.0 to 1.0 and adjust
@@ -71,16 +71,16 @@ void vvThreadVisitor::visit(vvVisitable* obj) const
 
   // Transform screen rect from viewport coordinate system to
   // coordinate system ranging from -1 to 1 in x and y direction.
-  const float x1 = (static_cast<float>(screenRect->x)
+  const float x1 = (static_cast<float>(screenRect.x)
                     / static_cast<float>(_offscreenBuffers[hs->getId()]->getBufferWidth()))
                    * 2.0f - 1.0f;
-  const float x2 = (static_cast<float>(screenRect->x + screenRect->width)
+  const float x2 = (static_cast<float>(screenRect.x + screenRect.width)
                     / static_cast<float>(_offscreenBuffers[hs->getId()]->getBufferWidth()))
                    * 2.0f - 1.0f;
-  const float y1 = (static_cast<float>(screenRect->y)
+  const float y1 = (static_cast<float>(screenRect.y)
                     / static_cast<float>(_offscreenBuffers[hs->getId()]->getBufferHeight()))
                    * 2.0f - 1.0f;
-  const float y2 = (static_cast<float>(screenRect->y + screenRect->height)
+  const float y2 = (static_cast<float>(screenRect.y + screenRect.height)
                     / static_cast<float>(_offscreenBuffers[hs->getId()]->getBufferHeight()))
                    * 2.0f - 1.0f;
 
@@ -149,9 +149,9 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-  const vvRect* screenRect = hs->getProjectedScreenRect();
+  const vvRecti& screenRect = hs->getProjectedScreenRect();
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-  if(!screenRect)
+  if(screenRect.width == 0 && screenRect.height == 0)
   {
     std::cerr << "screenRect empty!" << std::endl;
     return;
@@ -161,20 +161,20 @@ void vvSlaveVisitor::visit(vvVisitable* obj) const
     std::cerr << "img empty!" << std::endl;
     return;
   }
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screenRect->width, screenRect->height,
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screenRect.width, screenRect.height,
                0, GL_RGBA, GL_UNSIGNED_BYTE, img->getCodedImage());
 
   // See documentation for vvThreadVisitor::visit().
-  const float x1 = (static_cast<float>(screenRect->x)
+  const float x1 = (static_cast<float>(screenRect.x)
                     / static_cast<float>(viewport[2]))
                    * 2.0f - 1.0f;
-  const float x2 = (static_cast<float>(screenRect->x + screenRect->width)
+  const float x2 = (static_cast<float>(screenRect.x + screenRect.width)
                     / static_cast<float>(viewport[2]))
                    * 2.0f - 1.0f;
-  const float y1 = (static_cast<float>(screenRect->y)
+  const float y1 = (static_cast<float>(screenRect.y)
                     / static_cast<float>(viewport[3]))
                    * 2.0f - 1.0f;
-  const float y2 = (static_cast<float>(screenRect->y + screenRect->height)
+  const float y2 = (static_cast<float>(screenRect.y + screenRect.height)
                     / static_cast<float>(viewport[3]))
                    * 2.0f - 1.0f;
   vvGLTools::drawViewAlignedQuad(x1, y1, x2, y2);

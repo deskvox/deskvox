@@ -1780,7 +1780,7 @@ vvAABB vvTexRend::getProbedMask() const
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
   vvAABB probeBox = vvAABB(probeMin, probeMax);
 
-  result.intersect(&probeBox);
+  result.intersect(probeBox);
 
   return result;
 }
@@ -3620,12 +3620,12 @@ void* vvTexRend::threadFuncTexBricks(void* threadargs)
       // Get the screen rect. Be sure to do this here, while the fbo's transformation
       // matrices are still applied. The boolean parameter tells the half space to
       // recalculate the screen rect as well as storing it for later use.
-      vvRect* screenRect = data->halfSpace->getProjectedScreenRect(&data->probeMin, &data->probeMax, true);
+      const vvRecti& screenRect = data->halfSpace->getProjectedScreenRect(&data->probeMin, &data->probeMax, true);
 
       // This call switches the currently readable buffer to the fbo offscreen buffer.
-      data->pixels->resize(screenRect->width * screenRect->height * 4);
+      data->pixels->resize(screenRect.width * screenRect.height * 4);
       glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-      glReadPixels(screenRect->x, screenRect->y, screenRect->width, screenRect->height, GL_RGBA, GL_FLOAT, &(*data->pixels)[0]);
+      glReadPixels(screenRect.x, screenRect.y, screenRect.width, screenRect.height, GL_RGBA, GL_FLOAT, &(*data->pixels)[0]);
       glPopAttrib();
       data->renderer->unsetGLenvironment();
       data->renderer->_offscreenBuffers[data->threadId]->unbindFramebuffer();

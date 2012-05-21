@@ -45,13 +45,13 @@ vvBaseAABB<T>::vvBaseAABB(const vvBaseVector3<T>& min, const vvBaseVector3<T>& m
 }
 
 template <typename T>
-vvBaseVector3<T> vvBaseAABB<T>::min() const
+const vvBaseVector3<T>& vvBaseAABB<T>::min() const
 {
   return _min;
 }
 
 template <typename T>
-vvBaseVector3<T> vvBaseAABB<T>::max() const
+const vvBaseVector3<T>& vvBaseAABB<T>::max() const
 {
   return _max;
 }
@@ -81,13 +81,13 @@ const typename vvBaseAABB<T>::vvBoxCorners& vvBaseAABB<T>::getVertices() const
 }
 
 template <typename T>
-vvBaseVector3<T> vvBaseAABB<T>::getCenter() const
+const vvBaseVector3<T>& vvBaseAABB<T>::getCenter() const
 {
   return _center;
 }
 
 template <typename T>
-vvRecti* vvBaseAABB<T>::getProjectedScreenRect() const
+vvRecti vvBaseAABB<T>::getProjectedScreenRect() const
 {
   GLdouble modelview[16];
   glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
@@ -128,28 +128,28 @@ vvRecti* vvBaseAABB<T>::getProjectedScreenRect() const
     }
   }
 
-  vvRecti* result = new vvRecti;
-  result->x = std::max(0, static_cast<int>(floorf(minX)));
-  result->y = std::max(0, static_cast<int>(floorf(minY)));
-  result->width = std::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2] - result->x);
-  result->height = std::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3] - result->y);
+  vvRecti result;
+  result.x = std::max(0, static_cast<int>(floorf(minX)));
+  result.y = std::max(0, static_cast<int>(floorf(minY)));
+  result.width = std::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2] - result.x);
+  result.height = std::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3] - result.y);
 
   return result;
 }
 
 template <typename T>
-void vvBaseAABB<T>::intersect(vvBaseAABB<T>* rhs)
+void vvBaseAABB<T>::intersect(const vvBaseAABB<T>& rhs)
 {
   for (int i = 0; i < 3; ++i)
   {
-    if (rhs->_min[i] > _min[i])
+    if (rhs._min[i] > _min[i])
     {
-      _min[i] = rhs->_min[i];
+      _min[i] = rhs._min[i];
     }
 
-    if (rhs->_max[i] < _max[i])
+    if (rhs._max[i] < _max[i])
     {
-      _max[i] = rhs->_max[i];
+      _max[i] = rhs._max[i];
     }
   }
   calcVertices();

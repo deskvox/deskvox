@@ -34,13 +34,12 @@
 //============================================================================
 
 vvHalfSpace::vvHalfSpace()
+  : _boundingBox(vvVector3(), vvVector3())
 {
   _firstSon = NULL;
   _nextBrother = NULL;
 
   _splitPlane = NULL;
-  _boundingBox = NULL;
-  _projectedScreenRect = NULL;
 }
 
 vvHalfSpace::~vvHalfSpace()
@@ -48,8 +47,6 @@ vvHalfSpace::~vvHalfSpace()
   delete _splitPlane;
   delete _firstSon;
   delete _nextBrother;
-  delete _boundingBox;
-  delete _projectedScreenRect;
 }
 
 void vvHalfSpace::accept(vvVisitor* visitor)
@@ -137,8 +134,7 @@ void vvHalfSpace::setBrickList(const std::vector<BrickList>& brickList)
       }
     }
   }
-  delete _boundingBox;
-  _boundingBox = new vvAABB(minCorner, maxCorner);
+  _boundingBox = vvAABB(minCorner, maxCorner);
   _brickList = brickList;
 }
 
@@ -183,36 +179,35 @@ float vvHalfSpace::getActualPercent() const
   return _actualPercent;
 }
 
-vvAABB* vvHalfSpace::getBoundingBox() const
+const vvAABB& vvHalfSpace::getBoundingBox() const
 {
   return _boundingBox;
 }
 
-vvRect* vvHalfSpace::getProjectedScreenRect(const vvVector3* probeMin, const vvVector3* probeMax, const bool recalculate)
+const vvRecti& vvHalfSpace::getProjectedScreenRect(const vvVector3* probeMin, const vvVector3* probeMax, const bool recalculate)
 {
   if (recalculate)
   {
-    delete _projectedScreenRect;
     vvVector3 min;
     vvVector3 max;
     for (int i = 0; i < 3; i++)
     {
-      if (_boundingBox->min()[i] < (*probeMin)[i])
+      if (_boundingBox.min()[i] < (*probeMin)[i])
       {
         min[i] = (*probeMin)[i];
       }
       else
       {
-        min[i] = _boundingBox->min()[i];
+        min[i] = _boundingBox.min()[i];
       }
 
-      if (_boundingBox->max()[i] > (*probeMax)[i])
+      if (_boundingBox.max()[i] > (*probeMax)[i])
       {
         max[i] = (*probeMax)[i];
       }
       else
       {
-        max[i] = _boundingBox->max()[i];
+        max[i] = _boundingBox.max()[i];
       }
     }
     vvAABB aabb(min, max);

@@ -66,8 +66,8 @@ public:
  
   vvBaseAABB(const vvBaseVector3<T>& min, const vvBaseVector3<T>& max);
 
-  vvBaseVector3<T> min() const;
-  vvBaseVector3<T> max() const;
+  const vvBaseVector3<T>& min() const;
+  const vvBaseVector3<T>& max() const;
 
   /*!
    * \brief         Calc the width of the aabb.
@@ -109,7 +109,7 @@ public:
    *
    *                Returns the stored center.
    */
-  vvBaseVector3<T> getCenter() const;
+  const vvBaseVector3<T>& getCenter() const;
 
   /*!
    * \brief         Get a rectangle of the projected screen section.
@@ -118,7 +118,7 @@ public:
    *                the projected area do to the current camera transformations.
    * \return        The rectangle of the projected screen section.
    */
-  vvRecti* getProjectedScreenRect() const;
+  vvRecti getProjectedScreenRect() const;
 
   /*!
    * \brief         Shrink the box to the intersection with another one.
@@ -127,7 +127,7 @@ public:
    *                the one specified.
    * \param         rhs The box to intersect with.
    */
-  void intersect(vvBaseAABB<T>* rhs);
+  void intersect(const vvBaseAABB<T>& rhs);
 
   /*!
    * \brief         Render the bounding box.
