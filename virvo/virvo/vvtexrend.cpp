@@ -1502,7 +1502,7 @@ vvTexRend::ErrorType vvTexRend::dispatchThreads()
       // During load balancing, the share will (probably) be adjusted.
       _threadData[i].share = 1.0f / static_cast<float>(_usedThreads);
       _threadData[i].viewport = vvGLTools::getViewport();
-      _threadData[i].pixels = new std::vector<GLfloat>;std::cerr << (_threadData[i].pixels) << std::endl;
+      _threadData[i].pixels = new std::vector<GLfloat>;
       _threadData[i].brickDataChanged = false;
       _threadData[i].transferFunctionChanged = false;
       _threadData[i].lastFrame = -1;
