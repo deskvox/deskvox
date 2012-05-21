@@ -17,9 +17,7 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
+
 #include <cmath>
 #include <set>
 
@@ -119,8 +117,8 @@ void vvHalfSpace::setBrickList(const std::vector<BrickList>& brickList)
     for (BrickList::const_iterator it = brickList[f].begin(); it != brickList[f].end(); ++it)
     {
       const vvAABB aabb = (*it)->getAABB();
-      const vvVector3 minAABB = aabb.min();
-      const vvVector3 maxAABB = aabb.max();
+      const vvVector3 minAABB = aabb.getMin();
+      const vvVector3 maxAABB = aabb.getMax();
       for (int i = 0; i < 3; ++i)
       {
         if (minAABB[i] < minCorner[i])
@@ -188,29 +186,29 @@ const vvRecti& vvHalfSpace::getProjectedScreenRect(const vvVector3* probeMin, co
 {
   if (recalculate)
   {
-    vvVector3 min;
-    vvVector3 max;
+    vvVector3 minval;
+    vvVector3 maxval;
     for (int i = 0; i < 3; i++)
     {
-      if (_boundingBox.min()[i] < (*probeMin)[i])
+      if (_boundingBox.getMin()[i] < (*probeMin)[i])
       {
-        min[i] = (*probeMin)[i];
+        minval[i] = (*probeMin)[i];
       }
       else
       {
-        min[i] = _boundingBox.min()[i];
+        minval[i] = _boundingBox.getMin()[i];
       }
 
-      if (_boundingBox.max()[i] > (*probeMax)[i])
+      if (_boundingBox.getMax()[i] > (*probeMax)[i])
       {
-        max[i] = (*probeMax)[i];
+        maxval[i] = (*probeMax)[i];
       }
       else
       {
-        max[i] = _boundingBox.max()[i];
+        maxval[i] = _boundingBox.getMax()[i];
       }
     }
-    vvAABB aabb(min, max);
+    vvAABB aabb(minval, maxval);
     _projectedScreenRect = aabb.getProjectedScreenRect();
   }
   return _projectedScreenRect;
@@ -240,8 +238,8 @@ void vvHalfSpace::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
   vvAABB probe(probeMin, probeMax);
   probe.intersect(_boundingBox);
 
-  probeMin = probe.min();
-  probeMax = probe.max();
+  probeMin = probe.getMin();
+  probeMax = probe.getMax();
 }
 
 //============================================================================
@@ -256,8 +254,8 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
   vvVector3 n1, n2;
   vvVector3 pnt;
   float dim[3];
-  float min[3];
-  float max[3];
+  vvVector3f minvals;
+  vvVector3f maxvals;
   //float tmpf;
   int cnt[3];
   int ratio[3][2];
@@ -281,12 +279,12 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
   //     the overall meanSqrError.
 
   // Get the aabb for the parent share of the volume.
-  max[0] = -VV_FLT_MAX;
-  min[0] = VV_FLT_MAX;
-  max[1] = -VV_FLT_MAX;
-  min[1] = VV_FLT_MAX;
-  max[2] = -VV_FLT_MAX;
-  min[2] = VV_FLT_MAX;
+  maxvals[0] = -VV_FLT_MAX;
+  minvals[0] = VV_FLT_MAX;
+  maxvals[1] = -VV_FLT_MAX;
+  minvals[1] = VV_FLT_MAX;
+  maxvals[2] = -VV_FLT_MAX;
+  minvals[2] = VV_FLT_MAX;
 
   BrickList tmpArray = BrickList(brickList[0].size());
   int i = 0;
@@ -341,7 +339,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
   // Get w, h and d.
   for (i = 0; i < 3; ++i)
   {
-    dim[i] = max[i] - min[i];
+    dim[i] = maxvals[i] - minvals[i];
   }
 
   // Calc the obj count along each axis.
@@ -508,7 +506,7 @@ vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>&
     {
       n1[i] = -1;
       n2[i] = 1;
-      pnt[i] = min[i] + bestWorkLoad[i][0] * dim[i] * 0.01f;
+      pnt[i] = minvals[i] + bestWorkLoad[i][0] * dim[i] * 0.01f;
       result[0]._actualPercent = bestWorkLoad[i][0];
       result[1]._actualPercent = bestWorkLoad[i][1];
     }

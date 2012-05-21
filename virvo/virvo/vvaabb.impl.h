@@ -34,9 +34,9 @@ using std::endl;
 //============================================================================
 
 template <typename T>
-vvBaseAABB<T>::vvBaseAABB(const vvBaseVector3<T>& min, const vvBaseVector3<T>& max)
-  : _min(min)
-  , _max(max)
+vvBaseAABB<T>::vvBaseAABB(const vvBaseVector3<T>& minval, const vvBaseVector3<T>& maxval)
+  : _min(minval)
+  , _max(maxval)
 {
   _center = vvBaseVector3<T>((_min[0] + _max[0]) * 0.5f,
                              (_min[1] + _max[1]) * 0.5f,
@@ -45,13 +45,13 @@ vvBaseAABB<T>::vvBaseAABB(const vvBaseVector3<T>& min, const vvBaseVector3<T>& m
 }
 
 template <typename T>
-const vvBaseVector3<T>& vvBaseAABB<T>::min() const
+const vvBaseVector3<T>& vvBaseAABB<T>::getMin() const
 {
   return _min;
 }
 
 template <typename T>
-const vvBaseVector3<T>& vvBaseAABB<T>::max() const
+const vvBaseVector3<T>& vvBaseAABB<T>::getMax() const
 {
   return _max;
 }

@@ -30,7 +30,7 @@
 namespace vvIbr
 {
 void calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
-                    const vvAABB& aabb, float& min, float& max);
+                    const vvAABB& aabb, float& minval, float& maxval);
 vvMatrix calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
                        const vvGLTools::Viewport& vp,
                        float depthRangeMin, float depthRangeMax);

@@ -3796,8 +3796,8 @@ bool vvTexRend::testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat
 
 void vvTexRend::calcAABBMask()
 {
-  vvVector3 min = vvVector3( FLT_MAX,  FLT_MAX,  FLT_MAX);
-  vvVector3 max = vvVector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+  vvVector3 minval = vvVector3( FLT_MAX,  FLT_MAX,  FLT_MAX);
+  vvVector3 maxval = vvVector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
   for (std::vector<BrickList>::const_iterator it1 = _brickList.begin();
        it1 != _brickList.end(); ++it1)
@@ -3809,20 +3809,20 @@ void vvTexRend::calcAABBMask()
 
       for (int i = 0; i < 3; ++i)
       {
-        if (brick->min[i] < min[i])
+        if (brick->min[i] < minval[i])
         {
-          min[i] = brick->min[i];
+          minval[i] = brick->min[i];
         }
 
-        if (brick->max[i] > max[i])
+        if (brick->max[i] > maxval[i])
         {
-          max[i] = brick->max[i];
+          maxval[i] = brick->max[i];
         }
       }
     }
   }
   delete _aabbMask;
-  _aabbMask = new vvAABB(min, max);
+  _aabbMask = new vvAABB(minval, maxval);
 }
 
 void vvTexRend::markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax)

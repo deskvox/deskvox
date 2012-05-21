@@ -22,10 +22,6 @@
 #define VV_AABB_H
 
 #include "vvvecmath.h"
-#ifdef min
-#undef min
-#undef max
-#endif
 
 template <typename T>
 class vvBaseRect
@@ -64,10 +60,10 @@ class vvBaseAABB
 public:
   typedef vvBaseVector3<T> vvBoxCorners[8];
  
-  vvBaseAABB(const vvBaseVector3<T>& min, const vvBaseVector3<T>& max);
+  vvBaseAABB(const vvBaseVector3<T>& minval, const vvBaseVector3<T>& maxval);
 
-  const vvBaseVector3<T>& min() const;
-  const vvBaseVector3<T>& max() const;
+  const vvBaseVector3<T>& getMin() const;
+  const vvBaseVector3<T>& getMax() const;
 
   /*!
    * \brief         Calc the width of the aabb.
@@ -159,7 +155,7 @@ inline std::ostream& operator<<(std::ostream& out, const vvRect& r)
 
 inline std::ostream& operator<<(std::ostream& out, const vvAABB& aabb)
 {
-  out << aabb.min() << "\n" << aabb.max();
+  out << aabb.getMin() << "\n" << aabb.getMax();
   return out;
 }
 

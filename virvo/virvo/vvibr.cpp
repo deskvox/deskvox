@@ -21,11 +21,11 @@
 #include "vvibr.h"
 
 void vvIbr::calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
-                           const vvAABB& aabb, float& min, float& max)
+                           const vvAABB& aabb, float& minval, float& maxval)
 {
   vvVector4 center4(aabb.getCenter()[0], aabb.getCenter()[1], aabb.getCenter()[2], 1.0f);
-  vvVector4 min4(aabb.min()[0], aabb.min()[1], aabb.min()[2], 1.0f);
-  vvVector4 max4(aabb.max()[0], aabb.max()[1], aabb.max()[2], 1.0f);
+  vvVector4 min4(aabb.getMin()[0], aabb.getMin()[1], aabb.getMin()[2], 1.0f);
+  vvVector4 max4(aabb.getMax()[0], aabb.getMax()[1], aabb.getMax()[2], 1.0f);
 
   center4.multiply(&mv);
   min4.multiply(&mv);
@@ -51,8 +51,8 @@ void vvIbr::calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
   min4.perspectiveDivide();
   max4.perspectiveDivide();
 
-  min = (min4[2]+1.f) * 0.5f;
-  max = (max4[2]+1.f) * 0.5f;
+  minval = (min4[2]+1.f) * 0.5f;
+  maxval = (max4[2]+1.f) * 0.5f;
 }
 
 vvMatrix vvIbr::calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
