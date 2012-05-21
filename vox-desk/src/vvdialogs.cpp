@@ -3161,7 +3161,7 @@ long VVEditVoxelsDialog::onResize(FXObject*, FXSelector, void*)
 
 long VVEditVoxelsDialog::onFlipX(FXObject*, FXSelector, void*)
 {
-  _canvas->_vd->flip(vvVolDesc::X_AXIS);
+  _canvas->_vd->flip(vvVecmath::X_AXIS);
   _shell->updateRendererVolume();
   _shell->drawScene();
   return 1;
@@ -3169,7 +3169,7 @@ long VVEditVoxelsDialog::onFlipX(FXObject*, FXSelector, void*)
 
 long VVEditVoxelsDialog::onFlipY(FXObject*, FXSelector, void*)
 {
-  _canvas->_vd->flip(vvVolDesc::Y_AXIS);
+  _canvas->_vd->flip(vvVecmath::Y_AXIS);
   _shell->updateRendererVolume();
   _shell->drawScene();
   return 1;
@@ -3185,7 +3185,7 @@ long VVEditVoxelsDialog::onInvertOrder(FXObject*, FXSelector, void*)
 
 long VVEditVoxelsDialog::onFlipZ(FXObject*, FXSelector, void*)
 {
-  _canvas->_vd->flip(vvVolDesc::Z_AXIS);
+  _canvas->_vd->flip(vvVecmath::Z_AXIS);
   _shell->updateRendererVolume();
   _shell->drawScene();
   return 1;

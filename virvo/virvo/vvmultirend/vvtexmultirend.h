@@ -110,9 +110,6 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
 	TexRendInfo tr;
 
   protected:
-
-    enum AxisType                                 /// names for coordinate axes
-    { X_AXIS, Y_AXIS, Z_AXIS };
     static const int NUM_PIXEL_SHADERS;           ///< number of pixel shaders used
     enum FragmentProgram
     {

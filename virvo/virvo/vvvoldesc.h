@@ -60,8 +60,6 @@ class VIRVOEXPORT vvVolDesc
       OK,                                         ///< no error
       TYPE_ERROR                                  ///< data type error
     };
-    enum AxisType                                 ///  names for coordinate axes
-    { X_AXIS, Y_AXIS, Z_AXIS };
     enum InterpolationType                        ///  interpolation types to use for resampling
     {
       NEAREST,                                    ///< nearest neighbor
@@ -181,8 +179,8 @@ class VIRVOEXPORT vvVolDesc
     void   bitShiftData(int, int frame=-1, bool=false);
     void   invert();
     void   convertRGB24toRGB8();
-    void   flip(AxisType);
-    void   rotate(AxisType, int);
+    void   flip(vvVecmath::AxisType);
+    void   rotate(vvVecmath::AxisType, int);
     void   convertRGBPlanarToRGBInterleaved(int frame=-1);
     void   toggleEndianness(int frame=-1);
     void   crop(int, int, int, int, int, int);
@@ -231,9 +229,9 @@ class VIRVOEXPORT vvVolDesc
     int    serializeAttributes(uchar* = NULL) const;
     void   deserializeAttributes(uchar*, const int=SERIAL_ATTRIB_SIZE);
     void   setSliceData(uchar*, int=0, int=0);
-    void   extractSliceData(int, AxisType, int, uchar*);
-    void   makeSliceImage(int, AxisType, int, uchar*);
-    void   getVolumeSize(AxisType, int&, int&, int&);
+    void   extractSliceData(int, vvVecmath::AxisType, int, uchar*);
+    void   makeSliceImage(int, vvVecmath::AxisType, int, uchar*);
+    void   getVolumeSize(vvVecmath::AxisType, int&, int&, int&);
     void   deinterlace();
     void   findMinMax(int, float&, float&);
     int    findNumValue(int, float);

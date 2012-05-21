@@ -207,12 +207,6 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     };
 
   protected:
-    enum AxisType                                 /// names for coordinate axes
-    {
-      X_AXIS,
-      Y_AXIS,
-      Z_AXIS
-    };
     RendererType rendererType;                    ///< currently used renderer type
     vvVolDesc* vd;                                ///< volume description
     float      _channel4Color[3];                 ///< weights for visualization of 4th channel in RGB mode
@@ -295,7 +289,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual void setVolDesc(vvVolDesc*);
     virtual vvVolDesc* getVolDesc();
 
-    virtual AxisType getPrincipalViewingAxis(const vvMatrix& mv, float& zx, float& zy, float& zz) const;
+    virtual vvVecmath::AxisType getPrincipalViewingAxis(const vvMatrix& mv, float& zx, float& zy, float& zz) const;
 };
 #endif
 

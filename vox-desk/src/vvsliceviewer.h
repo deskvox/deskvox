@@ -69,7 +69,7 @@ class VVSliceViewer : public FXDialogBox
     FXRadioButton* _xAxisButton;
     FXRadioButton* _yAxisButton;
     FXRadioButton* _zAxisButton;
-    vvVolDesc::AxisType _axis;
+    vvVecmath::AxisType _axis;
 
     VVSliceViewer(FXWindow*, vox::vvCanvas*);
     virtual ~VVSliceViewer();

@@ -337,8 +337,8 @@ vvVolDesc* vvRenderer::getVolDesc()
   return vd;
 }
 
-vvRenderer::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
-                                                         float& zx, float& zy, float& zz) const
+vvVecmath::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
+                                                        float& zx, float& zy, float& zz) const
 {
   vvMatrix invMV;
   invMV.copy(&mv);
@@ -358,13 +358,13 @@ vvRenderer::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
 
   if (fabs(zx) > fabs(zy))
   {
-    if (fabs(zx) > fabs(zz)) return X_AXIS;
-    else return Z_AXIS;
+    if (fabs(zx) > fabs(zz)) return vvVecmath::X_AXIS;
+    else return vvVecmath::Z_AXIS;
   }
   else
   {
-    if (fabs(zy) > fabs(zz)) return Y_AXIS;
-    else return Z_AXIS;
+    if (fabs(zy) > fabs(zz)) return vvVecmath::Y_AXIS;
+    else return vvVecmath::Z_AXIS;
   }
 }
 

@@ -925,9 +925,9 @@ void vvSoftPar::findPrincipalAxis()
 
    maximum = (float)ts_max(fabs(oViewDir[0]), fabs(oViewDir[1]), fabs(oViewDir[2]));
 
-   if      (fabs(oViewDir[0]) == maximum) principal = X_AXIS;
-   else if (fabs(oViewDir[1]) == maximum) principal = Y_AXIS;
-   else principal = Z_AXIS;
+   if      (fabs(oViewDir[0]) == maximum) principal = vvVecmath::X_AXIS;
+   else if (fabs(oViewDir[1]) == maximum) principal = vvVecmath::Y_AXIS;
+   else principal = vvVecmath::Z_AXIS;
 
    if (oViewDir[principal] > 0) stacking = false;
    else stacking = true;
@@ -986,13 +986,13 @@ void vvSoftPar::findShearMatrix()
    scaleMat.identity();
    switch(principal)
    {
-      case X_AXIS:
+      case vvVecmath::X_AXIS:
          scaleMat.scale(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]);
          break;
-      case Y_AXIS:
+      case vvVecmath::Y_AXIS:
          scaleMat.scale(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]);
          break;
-      case Z_AXIS:
+      case vvVecmath::Z_AXIS:
          scaleMat.scale(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
          break;
    }

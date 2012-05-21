@@ -58,7 +58,7 @@ VVSliceViewer::VVSliceViewer(FXWindow* owner, vvCanvas* c) :
 
   _canvas = c;
   _shell = (VVShell*)owner;
-  _axis = vvVolDesc::Z_AXIS;
+  _axis = vvVecmath::Z_AXIS;
 
   FXVerticalFrame* master = new FXVerticalFrame(this, LAYOUT_CENTER_X);
 
@@ -172,7 +172,7 @@ long VVSliceViewer::onCmdEnd(FXObject*,FXSelector,void*)
 
 long VVSliceViewer::onCmdXAxis(FXObject*,FXSelector,void*)
 {
-  _axis = vvVolDesc::X_AXIS;
+  _axis = vvVecmath::X_AXIS;
   _yAxisButton->setCheck(false);
   _zAxisButton->setCheck(false);
   updateValues();
@@ -181,7 +181,7 @@ long VVSliceViewer::onCmdXAxis(FXObject*,FXSelector,void*)
 
 long VVSliceViewer::onCmdYAxis(FXObject*,FXSelector,void*)
 {
-  _axis = vvVolDesc::Y_AXIS;
+  _axis = vvVecmath::Y_AXIS;
   _xAxisButton->setCheck(false);
   _zAxisButton->setCheck(false);
   updateValues();
@@ -190,7 +190,7 @@ long VVSliceViewer::onCmdYAxis(FXObject*,FXSelector,void*)
 
 long VVSliceViewer::onCmdZAxis(FXObject*,FXSelector,void*)
 {
-  _axis = vvVolDesc::Z_AXIS;
+  _axis = vvVecmath::Z_AXIS;
   _xAxisButton->setCheck(false);
   _yAxisButton->setCheck(false);
   updateValues();

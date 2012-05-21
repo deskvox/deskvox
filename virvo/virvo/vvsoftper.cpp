@@ -604,7 +604,7 @@ void vvSoftPer::findOEyePosition()
 */
 void vvSoftPer::findPrincipalAxis()
 {
-   AxisType pa[8];                                // principal axis for each volume vertex
+   vvVecmath::AxisType pa[8];                     // principal axis for each volume vertex
    vvVector3 vertex;                              // volume vertex
    vvVector3 dist;                                // distance from eye to volume corner
    vvVector3 oEye3;                               // eye position in object space
@@ -639,9 +639,9 @@ void vvSoftPer::findPrincipalAxis()
       ay = (float)fabs(dist[1]);
       az = (float)fabs(dist[2]);
       maxDist = ts_max(ax, ay, az);
-      if      (maxDist==ax) { pa[i] = X_AXIS; stack[0] = (dist[0] < 0.0f); }
-      else if (maxDist==ay) { pa[i] = Y_AXIS; stack[1] = (dist[1] < 0.0f); }
-      else                  { pa[i] = Z_AXIS; stack[2] = (dist[2] < 0.0f); }
+      if      (maxDist==ax) { pa[i] = vvVecmath::X_AXIS; stack[0] = (dist[0] < 0.0f); }
+      else if (maxDist==ay) { pa[i] = vvVecmath::Y_AXIS; stack[1] = (dist[1] < 0.0f); }
+      else                  { pa[i] = vvVecmath::Z_AXIS; stack[2] = (dist[2] < 0.0f); }
       vvDebugMsg::msg(3, "Found principal viewing axis (0=x, 1=y, 2=z): ", pa[i]);
    }
 
@@ -652,18 +652,18 @@ void vvSoftPer::findPrincipalAxis()
    {
       switch (pa[i])
       {
-         case X_AXIS: ++count[0]; break;
-         case Y_AXIS: ++count[1]; break;
-         case Z_AXIS: ++count[2]; break;
+         case vvVecmath::X_AXIS: ++count[0]; break;
+         case vvVecmath::Y_AXIS: ++count[1]; break;
+         case vvVecmath::Z_AXIS: ++count[2]; break;
          default: break;
       }
    }
 
    // Assign the dominant axis for the principal axis (favor the Z axis for ties):
    maxCount = ts_max(count[0], count[1], count[2]);
-   if (maxCount==count[2])      { principal = Z_AXIS; stacking = stack[2]; }
-   else if (maxCount==count[1]) { principal = Y_AXIS; stacking = stack[1]; }
-   else                         { principal = X_AXIS; stacking = stack[0]; }
+   if (maxCount==count[2])      { principal = vvVecmath::Z_AXIS; stacking = stack[2]; }
+   else if (maxCount==count[1]) { principal = vvVecmath::Y_AXIS; stacking = stack[1]; }
+   else                         { principal = vvVecmath::X_AXIS; stacking = stack[0]; }
 
    if (vvDebugMsg::isActive(3)) cerr << "Principal axis: " << principal << endl;
    if (vvDebugMsg::isActive(3))
@@ -730,13 +730,13 @@ void vvSoftPer::findScaleMatrix()
    const vvVector3 size = vd->getSize();
    switch(principal)
    {
-      case X_AXIS:
+      case vvVecmath::X_AXIS:
          scale.scale(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]);
          break;
-      case Y_AXIS:
+      case vvVecmath::Y_AXIS:
          scale.scale(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]);
          break;
-      case Z_AXIS:
+      case vvVecmath::Z_AXIS:
       default:
          scale.scale(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
          break;

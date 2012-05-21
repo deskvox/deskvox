@@ -311,17 +311,17 @@ void vvSoftVR::findVolumeDimensions()
 
    switch (principal)
    {
-      case X_AXIS:
+      case vvVecmath::X_AXIS:
          len[0] = vd->vox[1];
          len[1] = vd->vox[2];
          len[2] = vd->vox[0];
          break;
-      case Y_AXIS:
+      case vvVecmath::Y_AXIS:
          len[0] = vd->vox[2];
          len[1] = vd->vox[0];
          len[2] = vd->vox[1];
          break;
-      case Z_AXIS:
+      case vvVecmath::Z_AXIS:
       default:
          len[0] = vd->vox[0];
          len[1] = vd->vox[1];
@@ -641,19 +641,19 @@ void vvSoftVR::findPermutationMatrix()
    osPerm.zero();
    switch (principal)
    {
-      case X_AXIS:
+      case vvVecmath::X_AXIS:
          osPerm.e[0][1] = 1.0f;
          osPerm.e[1][2] = 1.0f;
          osPerm.e[2][0] = 1.0f;
          osPerm.e[3][3] = 1.0f;
          break;
-      case Y_AXIS:
+      case vvVecmath::Y_AXIS:
          osPerm.e[0][2] = 1.0f;
          osPerm.e[1][0] = 1.0f;
          osPerm.e[2][1] = 1.0f;
          osPerm.e[3][3] = 1.0f;
          break;
-      case Z_AXIS:
+      case vvVecmath::Z_AXIS:
       default:
          osPerm.e[0][0] = 1.0f;
          osPerm.e[1][1] = 1.0f;
@@ -722,7 +722,7 @@ void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
    // Determine voxel coordinates in object space:
    switch (principal)
    {
-      case X_AXIS:
+      case vvVecmath::X_AXIS:
          start->e[0] =  0.5f * _size[0] - (float)slice / (float)len[2] * _size[0];
          start->e[1] = -0.5f * _size[1];
          start->e[2] = -0.5f * _size[2];
@@ -735,7 +735,7 @@ void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
             end->e[3] = 1.;
          }
          break;
-      case Y_AXIS:
+      case vvVecmath::Y_AXIS:
          start->e[0] = -0.5f * _size[0];
          start->e[1] =  0.5f * _size[1] - (float)slice / (float)len[2] * _size[1];
          start->e[2] = -0.5f * _size[2];
@@ -748,7 +748,7 @@ void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
             end->e[3] = 1.;
          }
          break;
-      case Z_AXIS:
+      case vvVecmath::Z_AXIS:
          start->e[0] = -0.5f * _size[0];
          start->e[1] = -0.5f * _size[1];
          start->e[2] =  0.5f * _size[2] - (float)slice / (float)len[2] * _size[2];
@@ -795,7 +795,7 @@ void vvSoftVR::findClipPlaneEquation()
    xxPerm.zero();
    switch (principal)
    {
-      case X_AXIS:
+      case vvVecmath::X_AXIS:
          xxPerm.e[0][1] =-1.0f;
          xxPerm.e[0][3] = (float)vd->vox[1];
          xxPerm.e[1][2] = 1.0f;
@@ -803,7 +803,7 @@ void vvSoftVR::findClipPlaneEquation()
          xxPerm.e[2][3] = (float)vd->vox[0];
          xxPerm.e[3][3] = 1.0f;
          break;
-      case Y_AXIS:
+      case vvVecmath::Y_AXIS:
          xxPerm.e[0][2] =-1.0f;
          xxPerm.e[0][3] = (float)vd->vox[2];
          xxPerm.e[1][0] =-1.0f;
@@ -811,7 +811,7 @@ void vvSoftVR::findClipPlaneEquation()
          xxPerm.e[2][1] = 1.0f;
          xxPerm.e[3][3] = 1.0f;
          break;
-      case Z_AXIS:
+      case vvVecmath::Z_AXIS:
       default:
          xxPerm.e[0][0] = 1.0f;
          xxPerm.e[1][1] = 1.0f;

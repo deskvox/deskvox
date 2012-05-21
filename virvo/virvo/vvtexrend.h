@@ -254,7 +254,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void renderTex3DPlanar(vvMatrix*);
     void renderTexBricks(const vvMatrix*);
     void renderTex2DSlices(float);
-    void renderTex2DCubic(AxisType, float, float, float);
+    void renderTex2DCubic(vvVecmath::AxisType, float, float, float);
     void generateDebugColors();
     VoxelType findBestVoxelType(VoxelType) const;
     GeometryType findBestGeometry(GeometryType, VoxelType) const;

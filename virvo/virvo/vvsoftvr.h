@@ -72,10 +72,6 @@ used for the resampling.
 class VIRVOEXPORT vvSoftVR : public vvRenderer
 {
    protected:
-      enum AxisType                               /// type of coordinate axis
-      {
-         X_AXIS=0, Y_AXIS=1, Z_AXIS=2
-      };
       enum WarpType                               /// possible warp techniques
       {
          SOFTWARE,                                ///< perform warp in software
@@ -97,7 +93,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       int vWidth;                                 ///< OpenGL viewport width [pixels]
       int vHeight;                                ///< OpenGL viewport height [pixels]
       int len[3];                                 ///< volume dimensions in standard object space (x,y,z)
-      AxisType principal;                         ///< principal viewing axis
+      vvVecmath::AxisType principal;              ///< principal viewing axis
       bool stacking;                              ///< slice stacking order; true=front to back
       WarpType warpMode;                          ///< current warp mode
       float rgbaTF[4096*4];                       ///< transfer function lookup table

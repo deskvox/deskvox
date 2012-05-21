@@ -4168,7 +4168,7 @@ void vvTexRend::renderTex2DSlices(float zz)
   @param principal  principal viewing axis
   @param zx,zy,zz   z coordinates of transformed base vectors
 */
-void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float zz)
+void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float zy, float zz)
 {
   vvVector3 normal;                               // normal vector for slices
   vvVector3 texTL, texTR, texBL, texBR;           // texture coordinates (T=top etc.)
@@ -4200,7 +4200,7 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
   // Initialize parameters upon principal viewing direction:
   switch (principal)
   {
-    case X_AXIS:                                  // zx>0 -> draw left to right
+    case vvVecmath::X_AXIS:                                  // zx>0 -> draw left to right
       // Coordinate system:
       //     z
       //     |__y
@@ -4232,7 +4232,7 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
       }
       break;
 
-    case Y_AXIS:                                  // zy>0 -> draw bottom to top
+    case vvVecmath::Y_AXIS:                                  // zy>0 -> draw bottom to top
       // Coordinate system:
       //     x
       //     |__z
@@ -4264,7 +4264,7 @@ void vvTexRend::renderTex2DCubic(AxisType principal, float zx, float zy, float z
       }
       break;
 
-    case Z_AXIS:                                  // zz>0 -> draw back to front
+    case vvVecmath::Z_AXIS:                                  // zz>0 -> draw back to front
     default:
       // Coordinate system:
       //     y
@@ -4419,7 +4419,7 @@ void vvTexRend::renderVolumeGL()
       break;
     case VV_CUBIC2D:
       {
-        const AxisType at = getPrincipalViewingAxis(mv, zx, zy, zz);
+        const vvVecmath::AxisType at = getPrincipalViewingAxis(mv, zx, zy, zz);
         renderTex2DCubic(at, zx, zy, zz);
       }
       break;

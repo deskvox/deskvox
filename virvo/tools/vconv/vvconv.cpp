@@ -66,9 +66,9 @@ vvConv::vvConv()
   ipt           = vvVolDesc::NEAREST;
   resizeFactor  = 0.0f;
   flip          = false;
-  flipAxis      = vvVolDesc::X_AXIS;
+  flipAxis      = vvVecmath::X_AXIS;
   rotate        = false;
-  rotAxis       = vvVolDesc::X_AXIS;
+  rotAxis       = vvVecmath::X_AXIS;
   rotDir        = 0;
   setDist       = false;
   setRange      = false;
@@ -1377,9 +1377,9 @@ bool vvConv::parseCommandLine(int argc, char** argv)
       flip = true;
       switch (tolower(argv[arg][0]))
       {
-        case 'x': flipAxis = vvVolDesc::X_AXIS; break;
-        case 'y': flipAxis = vvVolDesc::Y_AXIS; break;
-        case 'z': flipAxis = vvVolDesc::Z_AXIS; break;
+        case 'x': flipAxis = vvVecmath::X_AXIS; break;
+        case 'y': flipAxis = vvVecmath::Y_AXIS; break;
+        case 'z': flipAxis = vvVecmath::Z_AXIS; break;
         default: cerr << "Invalid flip parameter." << endl; return false;
       }
     }
@@ -1402,9 +1402,9 @@ bool vvConv::parseCommandLine(int argc, char** argv)
       {
         switch (tolower(argv[arg][1]))
         {
-          case 'x': rotAxis = vvVolDesc::X_AXIS; break;
-          case 'y': rotAxis = vvVolDesc::Y_AXIS; break;
-          case 'z': rotAxis = vvVolDesc::Z_AXIS; break;
+          case 'x': rotAxis = vvVecmath::X_AXIS; break;
+          case 'y': rotAxis = vvVecmath::Y_AXIS; break;
+          case 'z': rotAxis = vvVecmath::Z_AXIS; break;
           default: rotDir = 0; break;
         }
       }
@@ -2442,7 +2442,7 @@ int vvConv::run(int argc, char** argv)
         tmpVD->makeHistogramTexture(-1, m, 1, size, imgData, vvVolDesc::VV_LOGARITHMIC, &col, tmpVD->real[0], tmpVD->real[1]);
         imgVD->addFrame(imgData, vvVolDesc::ARRAY_DELETE);
         imgVD->frames = 1;
-        imgVD->flip(vvVolDesc::Y_AXIS);
+        imgVD->flip(vvVecmath::Y_AXIS);
         vvFileIO* fio = new vvFileIO();
         switch (fio->saveVolumeData(imgVD, false))
         {

@@ -1640,7 +1640,7 @@ with the destination slice.</LI>
 </UL>
 @param axis axis along which to flip the volume data
 */
-void vvVolDesc::flip(AxisType axis)
+void vvVolDesc::flip(vvVecmath::AxisType axis)
 {
   uchar* rd;
   uchar* voxelData;                               // temporary buffer for voxel data
@@ -1654,7 +1654,7 @@ void vvVolDesc::flip(AxisType axis)
 
   lineSize = vox[0] * getBPV();
   sliceSize = getSliceBytes();
-  if (axis==Z_AXIS) voxelData = new uchar[sliceSize];
+  if (axis==vvVecmath::Z_AXIS) voxelData = new uchar[sliceSize];
   else voxelData = new uchar[lineSize];
   raw.first();
   for (f=0; f<frames; ++f)
@@ -1662,7 +1662,7 @@ void vvVolDesc::flip(AxisType axis)
     rd = raw.getData();
     switch (axis)
     {
-      case X_AXIS:
+      case vvVecmath::X_AXIS:
         dst = rd;
         for (z=0; z<vox[2]; ++z)
           for (y=0; y<vox[1]; ++y)
@@ -1677,7 +1677,7 @@ void vvVolDesc::flip(AxisType axis)
           }
         }
         break;
-      case Y_AXIS:
+      case vvVecmath::Y_AXIS:
         for (z=0; z<vox[2]; ++z)
           for (y=0; y<vox[1]/2; ++y)
         {
@@ -1688,7 +1688,7 @@ void vvVolDesc::flip(AxisType axis)
           memcpy((void*)src, (void*)voxelData, lineSize);
         }
         break;
-      case Z_AXIS:
+      case vvVecmath::Z_AXIS:
         for (z=0; z<vox[2]/2; ++z)
         {
           dst = rd + z * sliceSize;
@@ -1716,7 +1716,7 @@ void vvVolDesc::flip(AxisType axis)
   @param dir  direction into which to rotate when looking at the origin
               from the positive half of the chosen coordinate axis (-1=left, 1=right)
 */
-void vvVolDesc::rotate(AxisType axis, int dir)
+void vvVolDesc::rotate(vvVecmath::AxisType axis, int dir)
 {
   uchar* rd;
   uchar* dst;                                     // destination pointer
@@ -1733,17 +1733,17 @@ void vvVolDesc::rotate(AxisType axis, int dir)
   // Compute the new volume size:
   switch (axis)
   {
-    case X_AXIS:
+    case vvVecmath::X_AXIS:
       newWidth  = vox[0];
       newHeight = vox[2];
       newSlices = vox[1];
       break;
-    case Y_AXIS:
+    case vvVecmath::Y_AXIS:
       newWidth  = vox[2];
       newHeight = vox[1];
       newSlices = vox[0];
       break;
-    case Z_AXIS:
+    case vvVecmath::Z_AXIS:
       newWidth  = vox[1];
       newHeight = vox[0];
       newSlices = vox[2];
@@ -1764,7 +1764,7 @@ void vvVolDesc::rotate(AxisType axis, int dir)
     src = rd;
     switch (axis)
     {
-      case X_AXIS:
+      case vvVecmath::X_AXIS:
         for (y=0; y<newHeight; ++y)
         {
           if (dir>0) ypos = y;
@@ -1782,7 +1782,7 @@ void vvVolDesc::rotate(AxisType axis, int dir)
           }
         }
         break;
-      case Y_AXIS:
+      case vvVecmath::Y_AXIS:
         for (x=0; x<newWidth; ++x)
         {
           if (dir>0) xpos = x;
@@ -1798,7 +1798,7 @@ void vvVolDesc::rotate(AxisType axis, int dir)
           }
         }
         break;
-      case Z_AXIS:
+      case vvVecmath::Z_AXIS:
         for (z=0; z<newSlices; ++z)
           for (x=0; x<newWidth; ++x)
         {
@@ -3379,7 +3379,7 @@ void vvVolDesc::setSliceData(uchar* newData, int slice, int frame)
   @param slice  slice index to create, relative to slicing axis (>=0)
   @param dst    _allocated_ space for sliceWidth * sliceHeight * bpc * chan bytes
 */
-void vvVolDesc::extractSliceData(int frame, AxisType axis, int slice, uchar* dst)
+void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, int slice, uchar* dst)
 {
   uchar* raw;                                     // raw volume data of current frame
   int sliceSize;                                  // bytes per volume slice (z-axis view)
@@ -3414,13 +3414,13 @@ void vvVolDesc::extractSliceData(int frame, AxisType axis, int slice, uchar* dst
 /** @return volume size when looking from a specific axis
   @param axis viewing axis
 */
-void vvVolDesc::getVolumeSize(AxisType axis, int& width, int& height, int& slices)
+void vvVolDesc::getVolumeSize(vvVecmath::AxisType axis, int& width, int& height, int& slices)
 {
   switch(axis)
   {
-    case X_AXIS: width = vox[2]; height = vox[1]; slices = vox[0]; return;
-    case Y_AXIS: width = vox[0]; height = vox[2]; slices = vox[1]; return;
-    case Z_AXIS: width = vox[0]; height = vox[1]; slices = vox[2]; return;
+    case vvVecmath::X_AXIS: width = vox[2]; height = vox[1]; slices = vox[0]; return;
+    case vvVecmath::Y_AXIS: width = vox[0]; height = vox[2]; slices = vox[1]; return;
+    case vvVecmath::Z_AXIS: width = vox[0]; height = vox[1]; slices = vox[2]; return;
     default: assert(0); width = 0; height = 0; slices = 0; return;
   }
 }
@@ -3435,7 +3435,7 @@ void vvVolDesc::getVolumeSize(AxisType axis, int& width, int& height, int& slice
   @param width  image width [pixels]
   @param height image height [pixels]
 */
-void vvVolDesc::makeSliceImage(int frame, AxisType axis, int slice, uchar* dst)
+void vvVolDesc::makeSliceImage(int frame, vvVecmath::AxisType axis, int slice, uchar* dst)
 {
   uchar* sliceData;
   vvColor col;

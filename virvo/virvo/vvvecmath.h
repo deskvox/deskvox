@@ -71,6 +71,8 @@ typedef vvVector4f vvVector4;
 class VIRVOEXPORT vvVecmath
 {
   public:
+    enum AxisType                                 ///<  names for coordinate axes
+    { X_AXIS = 0, Y_AXIS = 1, Z_AXIS = 2 };
     static float sgn(float);
 };
 

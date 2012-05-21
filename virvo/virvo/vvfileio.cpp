@@ -2897,7 +2897,7 @@ vvFileIO::ErrorType vvFileIO::loadTGAFile(vvVolDesc* vd)
   }
 
   vd->addFrame(rawData, vvVolDesc::ARRAY_DELETE);
-  vd->flip(vvVolDesc::Y_AXIS);
+  vd->flip(vvVecmath::Y_AXIS);
 
   fclose(fp);
   return OK;
