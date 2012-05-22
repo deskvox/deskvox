@@ -32,29 +32,6 @@ class vvVisitor;
 
 typedef std::vector<vvBrick*> BrickList;
 
-/*!
- * \brief           Space node in a bsp tree hierarchy.
- *
- *                  The part of the space this node occupies is propagated to the
- *                  child nodes. If, say, the volume is to be divided
- *                  into 3 sub spaces with weights 33.33%, 33.33% and 33.33%
- *                  respectivelly, a partitioning with the following
- *                  weights will be derived:<br>
- *                  <br>
- *                                  root: 100%<br>
- *                                /             \<br>
- *                            A: 66.66 %     B: 33.33%<br>
- *                              /     \<br>
- *                        C: 50.00%  D: 50.00%<br>
- *                  <br>
- *                  Note that child C and D's share is 50% respectivelly
- *                  rather than 33.33%<br>
- *                  <br>
- *                  If the desired distribution can't be accomodated, an approximation
- *                  minimizing the mean squared error with the desired distribution
- *                  is derived. The resulting share of the volume actually managed
- *                  by this node is stored in the field \ref _actualPercent.
- */
 class vvHalfSpace : public vvVisitable
 {
   friend class vvSpacePartitioner;

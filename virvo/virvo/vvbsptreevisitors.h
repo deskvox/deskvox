@@ -62,21 +62,5 @@ private:
   void clearOffscreenBuffers();
 };
 
-class vvSlaveVisitor : public vvVisitor
-{
-public:
-  vvSlaveVisitor();
-  ~vvSlaveVisitor();
-  void visit(vvVisitable* obj) const;
-
-  void generateTextureIds(int numImages);
-  void setImages(std::vector<vvImage*>* images);
-  void clearImages();
-private:
-  std::vector<vvImage*>* _images;
-
-  GLuint* _textureIds;
-};
-
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
