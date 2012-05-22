@@ -43,7 +43,6 @@
 #endif
 
 #include "vvbrick.h"
-#include "vvbsptreevisitors.h"
 #include "vvvecmath.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
@@ -55,65 +54,13 @@
 #include "vvprintgl.h"
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
-#include "vvbsptree.h"
 #include "vvvoldesc.h"
 #include "vvpthread.h"
 
 using namespace std;
 
-struct vvTexRend::Threads
-{
-  pthread_t *thread;         ///< worker threads
-  pthread_barrier_t barrier;
-};
-
 //----------------------------------------------------------------------------
 const int vvTexRend::NUM_PIXEL_SHADERS = 13;
-
-struct ThreadArgs
-{
-  int threadId;                               ///< integer id of the thread
-  bool active;
-
-  // Algorithm specific.
-  vvHalfSpace* halfSpace;
-  std::vector<BrickList> brickList;
-  std::vector<BrickList> nonemptyList;
-  BrickList sortedList;                       ///< sorted list built up from the brick sets
-  BrickList insideList;
-  vvVector3 probeMin;
-  vvVector3 probeMax;
-  vvVector3 probePosObj;
-  vvVector3 probeSizeObj;
-  vvVector3 delta;
-  vvVector3 farthest;
-  vvVector3 normal;
-  vvVector3 eye;
-  bool isOrtho;
-  int numSlices;
-  GLfloat* modelview;                         ///< the current GL_MODELVIEW matrix
-  GLfloat* projection;                        ///< the current GL_PROJECTION matrix
-  vvTexRend* renderer;                        ///< pointer to the calling instance. useful to use functions from the renderer class
-  std::vector<GLfloat>* pixels;               ///< after rendering each thread will read back its data to this array
-  vvGLTools::Viewport viewport;               ///< the current OpenGL viewport
-  float lastRenderTime;                       ///< measured for dynamic load balancing
-  float share;                                ///< ... of the volume managed by this thread. Adjustable for load balancing.
-  bool brickDataChanged;
-  bool transferFunctionChanged;
-  int lastFrame;                              ///< last rendered animation frame
-
-  bool usePbuffer;
-#ifdef HAVE_X11
-  // Glx rendering specific.
-  GLXContext glxContext;                      ///< the initial glx context
-  Display* display;                           ///< a pointer to the current glx display
-  Drawable drawable;
-#elif defined _WIN32
-  HGLRC wglContext;
-  HWND window;
-  HDC deviceContext;
-#endif
-};
 
 //----------------------------------------------------------------------------
 /** Constructor.
@@ -125,20 +72,12 @@ struct ThreadArgs
   @param numDisplays             # displays for multi-gpu rendering
   @param multiGpuBufferPrecision precision of the offscreen buffer used for multi-gpu rendering
 */
-vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox,
-                     std::vector<BrickList>* bricks,
-                     const char** displayNames, const int numDisplays,
-                     const BufferPrecision multiGpuBufferPrecision)
+vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox)
   : vvRenderer(vd, renderState)
-  , _threads(NULL)
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
 
   glewInit();
-
-  _usedThreads = 0;
-  setDisplayNames(displayNames, numDisplays);
-  _multiGpuBufferPrecision = multiGpuBufferPrecision;
 
   if (vvDebugMsg::isActive(2))
   {
@@ -217,11 +156,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   opacityCorrection = true;
   _measureRenderTime = false;
   interpolation = true;
-  _bspTree = NULL;
-  _numSlaveNodes = 0;
-  _aabbMask = NULL;
-  _isSlave = (bricks != NULL) && (bricks->size() > 0);
-  _isectType = VERT_SHADER_ONLY;
 
   if (_useOffscreenBuffer)
   {
@@ -240,16 +174,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   _previousShader = _currentShader;
 
   _useOnlyOneBrick = false;
-  if (bricks != NULL)
-  {
-    _brickList = *bricks;
-    calcAABBMask();
-    _areEmptyBricksCreated = true;
-  }
-  else
-  {
-    _areEmptyBricksCreated = false;
-  }
+  _areEmptyBricksCreated = false;
   _areBricksCreated = false;
   _lastFrame = -1;
   lutDistance = -1.0;
@@ -281,18 +206,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     _isectType = CPU;
   }
 
-  if ((_numThreads > 0) && (geomType != VV_BRICKS))
-  {
-    cerr << "No multi-gpu support for the chosen render algorithm. Falling back to single-gpu mode" << endl;
-    _numThreads = 0;
-  }
-
-  if (_numThreads > 0)
-  {
-    dispatchThreadedGLXContexts();
-    dispatchThreadedWGLContexts();
-  }
-
   if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
   {
     cerr << "get2DTextureShader()" << endl;
@@ -306,13 +219,10 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   }
 
   pixLUTName = 0;
-  if (_usedThreads == 0)
-  {
-    _shader = initShader();
-    if(voxelType == VV_PIX_SHD && !_shader)
-      setVoxelType(VV_RGBA);
-    initClassificationStage(&pixLUTName, fragProgName);
-  }
+  _shader = initShader();
+  if(voxelType == VV_PIX_SHD && !_shader)
+    setVoxelType(VV_RGBA);
+  initClassificationStage(&pixLUTName, fragProgName);
 
   cerr << "Rendering algorithm: ";
   switch(geomType)
@@ -366,48 +276,14 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     computeBrickSize();
   }
 
-  if (_usedThreads == 0)
+  if (voxelType != VV_RGBA)
   {
-    if (voxelType != VV_RGBA)
-    {
-      makeTextures(pixLUTName, rgbaLUT);      // we only have to do this once for non-RGBA textures
-    }
-    updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
+    makeTextures(pixLUTName, rgbaLUT);      // we only have to do this once for non-RGBA textures
   }
-  else
-  {
-    if (vvDebugMsg::getDebugLevel() > 1)
-    {
-      generateDebugColors();
-    }
+  updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
 
-    vvVector3 probePosObj;
-    vvVector3 probeSizeObj;
-    vvVector3 probeMin, probeMax;
-
-    calcNumTexels();
-    calcNumBricks();
-    if (!_isSlave)
-    {
-      makeEmptyBricks();
-    }
-
-    pthread_barrier_wait(&_threads->barrier);
-
-    // Build global transfer function once in order to build up _nonemptyList.
-    updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
-    calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
-    getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _isROIChanged);
-    distributeBricks();
-
-    pthread_barrier_wait(&_threads->barrier);
-  }
-
-  if (_usedThreads == 0)
-  {
-    _shader = initShader();
-    if(_shader) _proxyGeometryOnGpuSupported = true;
-  }
+  _shader = initShader();
+  if(_shader) _proxyGeometryOnGpuSupported = true;
 }
 
 //----------------------------------------------------------------------------
@@ -417,13 +293,9 @@ vvTexRend::~vvTexRend()
   vvDebugMsg::msg(1, "vvTexRend::~vvTexRend()");
 
   delete _renderTarget;
-  
 
-  if (_usedThreads == 0)
-  {
-    freeClassificationStage(pixLUTName, fragProgName);
-    removeTextures(texNames, &textures);
-  }
+  freeClassificationStage(pixLUTName, fragProgName);
+  removeTextures(texNames, &textures);
 
   delete[] rgbaTF;
   delete[] rgbaLUT;
@@ -432,44 +304,12 @@ vvTexRend::~vvTexRend()
 
   delete[] preintTable;
 
-  delete _aabbMask;
-
   for(std::vector<BrickList>::iterator frame = _brickList.begin();
       frame != _brickList.end();
       ++frame)
   {
     for(BrickList::iterator brick = frame->begin(); brick != frame->end(); ++brick)
       delete *brick;
-  }
-
-  if (_usedThreads > 0)
-  {
-    // Finally join the threads.
-    _terminateThreads = true;
-    pthread_barrier_wait(&_threads->barrier);
-    for (uint i = 0; i < _usedThreads; ++i)
-    {
-      void* exitStatus;
-      pthread_join(_threads->thread[i], &exitStatus);
-    }
-
-    for (uint i = 0; i < _numThreads; ++i)
-    {
-      delete _threadData[i].pixels;
-    }
-
-    pthread_barrier_destroy(&_threads->barrier);
-
-    // Clean up arrays.
-    delete[] _threads->thread;
-    delete _threads;
-    delete[] _threadData;
-    delete[] _displayNames;
-    delete[] _screens;
-
-    delete _visitor;
-    delete _bspTree;
-    delete _shaderFactory;
   }
 }
 
@@ -626,13 +466,12 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
   {
     case VV_SLICES:  err=makeTextures2D(1); updateTextures2D(1, 0, 10, 20, 15, 10, 5); break;
     case VV_CUBIC2D: err=makeTextures2D(3); updateTextures2D(3, 0, 10, 20, 15, 10, 5); break;
-    // Threads will make their own copies of the textures as well as their own gl ids.
     case VV_BRICKS:
-      if (!_areEmptyBricksCreated && !_isSlave)
+      if (!_areEmptyBricksCreated)
       {
         err = makeEmptyBricks();
       }
-      // If in threaded mode, each thread will upload its texture data on its own.
+
       if (err == OK)
       {
         err = makeTextureBricks(texNames, &textures, lutData, _brickList, _areBricksCreated);
@@ -1233,411 +1072,6 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
   return err;
 }
 
-vvTexRend::ErrorType vvTexRend::setDisplayNames(const char** displayNames, const unsigned int numNames)
-{
-  ErrorType err = OK;
-
-  // Displays specified via _renderState?
-  if ((numNames <= 0) || (displayNames == NULL))
-  {
-    _numThreads = 0;
-    return NO_DISPLAYS_SPECIFIED;
-  }
-  _numThreads = numNames;
-
-  _threads = new Threads;
-  _threads->thread = new pthread_t[_numThreads];
-  _threadData = new ThreadArgs[_numThreads];
-  _displayNames = new const char*[_numThreads];
-  _screens = new unsigned int[_numThreads];
-
-  bool hostSeen;
-  for (unsigned int i = 0; i < _numThreads; ++i)
-  {
-    _displayNames[i] = displayNames[i];
-    hostSeen = false;
-
-    // Parse the display name string for host, display and screen.
-    for (size_t j = 0; j < strlen(_displayNames[i]); ++j)
-    {
-      if (_displayNames[i][j] == ':')
-      {
-        hostSeen = true;
-      }
-
-      // . could also be part of the host name ==> ensure that host was parsed.
-      if (hostSeen && (_displayNames[i][j] == '.'))
-      {
-        ++j;
-        _screens[i] = vvToolshed::parseNextUint32(_displayNames[i], j);
-      }
-      else
-      {
-        // Default to screen 0.
-        _screens[i] = 0;
-      }
-    }
-  }
-
-  return err;
-}
-
-#ifdef _WIN32
-LRESULT CALLBACK WndProcedure(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
-{
-  switch(Msg)
-  {
-  case WM_DESTROY:
-    PostQuitMessage(WM_QUIT);
-    break;
-  default:
-    return DefWindowProc(hWnd, Msg, wParam, lParam);
-  }
-  return 0;
-}
-#endif
-
-vvTexRend::ErrorType vvTexRend::dispatchThreadedWGLContexts()
-{
-#if !defined(_WIN32)
-  return UNSUPPORTED;
-#else
-  ErrorType err = OK;
-
-  DISPLAY_DEVICE dispDev;
-  DEVMODE devMode;
-  dispDev.cb = sizeof(DISPLAY_DEVICE);
-
-  for (unsigned int i = 0; i < _numThreads; ++i)
-  {
-    if (EnumDisplayDevices(NULL, i, &dispDev, 0))
-    {
-      EnumDisplaySettings(dispDev.DeviceName, ENUM_CURRENT_SETTINGS, &devMode);
-    }
-
-    HINSTANCE hInstance = GetModuleHandle(0);
-    WNDCLASSEX WndClsEx;
-    ZeroMemory(&WndClsEx, sizeof(WNDCLASSEX));
-
-
-    LPCTSTR ClsName = TEXT("Virvo Multi-GPU Renderer");
-    LPCTSTR WndName = TEXT("Debug Window");
-
-    WndClsEx.cbSize        = sizeof(WNDCLASSEX);
-    WndClsEx.style         = CS_HREDRAW | CS_VREDRAW;
-    WndClsEx.lpfnWndProc   = WndProcedure;
-    WndClsEx.cbClsExtra    = 0;
-    WndClsEx.cbWndExtra    = 0;
-    WndClsEx.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
-    WndClsEx.hCursor       = LoadCursor(NULL, IDC_ARROW);
-    WndClsEx.lpszMenuName  = NULL;
-    WndClsEx.lpszClassName = ClsName;
-    WndClsEx.hInstance     = hInstance;
-    WndClsEx.hbrBackground = 0;
-    WndClsEx.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
-    RegisterClassEx(&WndClsEx);
-
-    PIXELFORMATDESCRIPTOR pfd;
-    ZeroMemory(&pfd, sizeof(PIXELFORMATDESCRIPTOR));
-    pfd.nSize = sizeof(pfd);
-    pfd.nVersion = 1;
-    pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 32;
-    pfd.cDepthBits = 16;
-    pfd.iLayerType = PFD_MAIN_PLANE;
-
-    HWND hWnd = CreateWindow(ClsName, WndName, WS_OVERLAPPEDWINDOW,
-                             CW_USEDEFAULT, CW_USEDEFAULT, 512, 512,
-                             NULL, NULL, hInstance, NULL);
-
-    if (!hWnd)
-    {
-      cerr << "Couldn't create window on display: " << i << endl;
-    }
-    else
-    {
-      _threadData[i].window = hWnd;
-
-      //if (vvDebugMsg::getDebugLevel() > 0)
-      {
-        ShowWindow(hWnd, SW_SHOWNORMAL);
-      }
-      _threadData[i].deviceContext = GetDC(hWnd);
-      int pixelFormat = ChoosePixelFormat(_threadData[i].deviceContext, &pfd);
-      if (pixelFormat != 0)
-      {
-        SetPixelFormat(_threadData[i].deviceContext, pixelFormat, &pfd);
-        _threadData[i].wglContext = wglCreateContext(_threadData[i].deviceContext);
-      }
-    }
-  }
-
-  err = dispatchThreads();
-
-  return err;
-#endif
-}
-
-vvTexRend::ErrorType vvTexRend::dispatchThreadedGLXContexts()
-{
-#ifndef HAVE_X11
-  return UNSUPPORTED;
-#else
-  ErrorType err = OK;
-
-  int slaveWindowWidth = 1;
-  int slaveWindowHeight = 1;
-  if (vvDebugMsg::getDebugLevel() > 0)
-  {
-    slaveWindowWidth = 512;
-    slaveWindowHeight = 512;
-  }
-  uint unresolvedDisplays = 0;
-
-  for (uint i = 0; i < _numThreads; ++i)
-  {
-    _threadData[i].display = XOpenDisplay(_displayNames[i]);
-
-    if (_threadData[i].display != NULL)
-    {
-      _threadData[i].active = true;
-
-      int glxMajor;
-      int glxMinor;
-      glXQueryVersion(_threadData[i].display, &glxMajor, &glxMinor);
-
-      // Show windows in debug mode.
-      _threadData[i].usePbuffer = (vvDebugMsg::getDebugLevel() == 0);
-      // Supported since glx version 1.3.
-      _threadData[i].usePbuffer &= ((glxMajor >= 1) && (glxMinor >= 3));
-
-      bool pbufferFailed = !_threadData[i].usePbuffer;
-
-      if (_threadData[i].usePbuffer)
-      {
-        int attrList[] = { GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8, None};
-
-        int nelements;
-        GLXFBConfig* configs = glXChooseFBConfig(_threadData[i].display, DefaultScreen(_threadData[i].display),
-                                                 attrList, &nelements);
-        if (configs && (nelements > 0))
-        {
-          // TODO: find the nicest fbconfig.
-          int pbAttrList[] = { GLX_PBUFFER_WIDTH, 0, GLX_PBUFFER_HEIGHT, 0, None };
-          GLXPbuffer pbuffer = glXCreatePbuffer(_threadData[i].display, configs[0], pbAttrList);
-          _threadData[i].glxContext = glXCreateNewContext(_threadData[i].display, configs[0], GLX_RGBA_TYPE, 0, True);
-          _threadData[i].drawable = pbuffer;
-        }
-        else
-        {
-          _threadData[i].usePbuffer = false;
-          pbufferFailed = true;
-        }
-      }
-
-      // Use x-window.
-      if (pbufferFailed /* or no pbuffer desired */)
-      {
-        const Drawable parent = RootWindow(_threadData[i].display, _screens[i]);
-
-        int attrList[] = { GLX_RGBA, GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, GLX_ALPHA_SIZE, 8, None};
-        XVisualInfo* vi = glXChooseVisual(_threadData[i].display,
-                                          DefaultScreen(_threadData[i].display),
-                                          attrList);
-
-        XSetWindowAttributes wa = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-        wa.colormap = XCreateColormap(_threadData[i].display, parent, vi->visual, AllocNone );
-        wa.background_pixmap = None;
-        wa.border_pixel = 0;
-
-        if (vvDebugMsg::getDebugLevel() == 0)
-        {
-          wa.override_redirect = true;
-        }
-        else
-        {
-          wa.override_redirect = false;
-        }
-
-        _threadData[i].glxContext = glXCreateContext(_threadData[i].display, vi, NULL, GL_TRUE);
-        _threadData[i].drawable = XCreateWindow(_threadData[i].display, parent, 0, 0, slaveWindowWidth, slaveWindowHeight, 0,
-                                                vi->depth, InputOutput, vi->visual,
-                                                CWBackPixmap|CWBorderPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa );
-      }
-    }
-    else
-    {
-      _threadData[i].active = false;
-      cerr << "Couldn't open display: " << _displayNames[i] << endl;
-      ++unresolvedDisplays;
-    }
-  }
-
-  if (unresolvedDisplays >= _numThreads)
-  {
-    _numThreads = 0;
-    cerr << "Falling back to none-threaded rendering mode" << endl;
-    return NO_DISPLAYS_OPENED;
-  }
-  _usedThreads = _numThreads - unresolvedDisplays;
-
-  err = dispatchThreads();
-
-  return err;
-#endif
-}
-
-vvTexRend::ErrorType vvTexRend::dispatchThreads()
-{
-  ErrorType err = OK;
-
-  for (unsigned int i = 0; i < _numThreads; ++i)
-  {
-    if (_threadData[i].active)
-    {
-      _threadData[i].threadId = i;
-      _threadData[i].renderer = this;
-      // Start solution for load balancing: every thread renders 1/n of the volume.
-      // During load balancing, the share will (probably) be adjusted.
-      _threadData[i].share = 1.0f / static_cast<float>(_usedThreads);
-      _threadData[i].viewport = vvGLTools::getViewport();
-      _threadData[i].pixels = new std::vector<GLfloat>;
-      _threadData[i].brickDataChanged = false;
-      _threadData[i].transferFunctionChanged = false;
-      _threadData[i].lastFrame = -1;
-#ifdef HAVE_X11
-      if (!_threadData[i].usePbuffer)
-      {
-        XMapWindow(_threadData[i].display, _threadData[i].drawable);
-        XFlush(_threadData[i].display);
-      }
-#endif
-    }
-  }
-
-  _visitor = NULL;
-
-  // Only set to true by destructor to join threads.
-  _terminateThreads = false;
-
-  pthread_barrier_init(&_threads->barrier, NULL, _usedThreads + 1);
-
-  // Container for offscreen buffers. The threads will initialize
-  // their buffers themselves when their respective gl context is
-  // bound, thus the buffers are set to 0 initially.
-  _offscreenBuffers = new vvOffscreenBuffer*[_numThreads];
-  for (uint i = 0; i < _numThreads; ++i)
-  {
-    _offscreenBuffers[i] = NULL;
-  }
-
-  // Dispatch the threads. This has to be done in a separate loop since the first operation
-  // the callback function will perform is making its gl context current. This would most
-  // probably interfer with the context creation performed in the loop above.
-  for (uint i = 0; i < _numThreads; ++i)
-  {
-    if (_threadData[i].active)
-    {
-      pthread_create(&_threads->thread[i], NULL, threadFuncTexBricks, (void*)&_threadData[i]);
-    }
-  }
-
-  return err;
-}
-
-/*!
- *
- */
-vvTexRend::ErrorType vvTexRend::distributeBricks()
-{
-  ErrorType err = OK;
-
-  float* part = new float[_usedThreads];
-  int p = 0;
-  for (uint i = 0; i < _numThreads; ++i)
-  {
-    if (_threadData[i].active)
-    {
-      part[p] = _threadData[i].share;
-      ++p;
-    }
-  }
-
-  delete _bspTree;
-  _bspTree = new vvBspTree(part, _usedThreads, _brickList);
-  // The visitor (supplies rendering logic) must have knowledge
-  // about the texture ids of the compositing polygons.
-  // Thus provide a pointer to these.
-  delete _visitor;
-  _visitor = new vvThreadVisitor();
-  _visitor->setOffscreenBuffers(_offscreenBuffers, _usedThreads);
-
-  // Provide the visitor with the pixel data of each thread either.
-  std::vector< std::vector<GLfloat>* > pixels;
-  pixels.resize(_numThreads);
-  for (uint i = 0; i < _numThreads; ++i)
-  {
-    if (_threadData[i].active)
-    {
-      pixels[i] = _threadData[i].pixels;
-    }
-    else
-    {
-      pixels[i] = NULL;
-    }
-  }
-  _visitor->setPixels(pixels);
-
-  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-  _visitor->setWidth(viewport.values[2]);
-  _visitor->setHeight(viewport.values[3]);
-
-  _bspTree->setVisitor(_visitor);
-
-  delete[] part;
-
-  unsigned int i = 0;
-  std::vector<vvHalfSpace *>::const_iterator it = _bspTree->getLeafs()->begin();
-  while (true)
-  {
-    if (_threadData[i].active)
-    {
-      _threadData[i].halfSpace = *it;
-      _threadData[i].halfSpace->setId(_threadData[i].threadId);
-
-      _threadData[i].brickList.clear();
-
-      for (uint f=0; f<_threadData[i].halfSpace->getBrickList().size(); ++f)
-      {
-        _threadData[i].brickList.push_back(BrickList());
-        for (BrickList::iterator brickIt = _threadData[i].halfSpace->getBrickList()[f].begin();
-             brickIt != _threadData[i].halfSpace->getBrickList()[f].end(); ++brickIt)
-        {
-          _threadData[i].brickList[f].push_back(*brickIt);
-        }
-      }
-      ++it;
-    }
-    ++i;
-    if (i >= _numThreads) break;
-  }
-
-  return err;
-}
-
-void vvTexRend::notifyThreads(const bool brickDataChanged, const bool transferFunctionChanged)
-{
-  for (uint i = 0; i < _numThreads; ++i)
-  {
-    if (_threadData[i].active)
-    {
-      _threadData[i].brickDataChanged = brickDataChanged;
-      _threadData[i].transferFunctionChanged = transferFunctionChanged;
-    }
-  }
-}
-
 void vvTexRend::updateBrickGeom()
 {
   vvBrick* tmp;
@@ -1684,14 +1118,7 @@ void vvTexRend::setComputeBrickSize(const bool flag)
     computeBrickSize();
     if(!_areBricksCreated)
     {
-      if (_numThreads > 0)
-      {
-        notifyThreads(true, false);
-      }
-      else
-      {
-        makeTextures(pixLUTName, rgbaLUT);
-      }
+      makeTextures(pixLUTName, rgbaLUT);
     }
   }
 }
@@ -1702,14 +1129,7 @@ void vvTexRend::setBrickSize(const int newSize)
   _brickSize[0] = _brickSize[1] = _brickSize[2] = newSize-1;
   _useOnlyOneBrick = false;
 
-  if (_numThreads > 0)
-  {
-    notifyThreads(true, false);
-  }
-  else
-  {
-    makeTextures(pixLUTName, rgbaLUT);
-  }
+  makeTextures(pixLUTName, rgbaLUT);
 }
 
 int vvTexRend::getBrickSize() const
@@ -1730,14 +1150,7 @@ void vvTexRend::setTexMemorySize(const int newSize)
 
     if(!_areBricksCreated)
     {
-      if (_numThreads > 0)
-      {
-        notifyThreads(true, false);
-      }
-      else
-      {
-        makeTextures(pixLUTName, rgbaLUT);
-      }
+      makeTextures(pixLUTName, rgbaLUT);
     }
   }
 }
@@ -1745,49 +1158,6 @@ void vvTexRend::setTexMemorySize(const int newSize)
 int vvTexRend::getTexMemorySize() const
 {
   return _texMemorySize;
-}
-
-vvBspTree* vvTexRend::getBspTree() const
-{
-  return _bspTree;
-}
-
-//----------------------------------------------------------------------------
-/** A mask telling which portion of the loaded volume data this
-    renderer instance is responsible for. Used to calculate the
-    projected screen rect.
-    TODO: load only the relevant portion of the volume data.
- */
-void vvTexRend::setAABBMask(vvAABB* aabbMask)
-{
-  delete aabbMask;
-  _aabbMask = aabbMask;
-}
-
-vvAABB* vvTexRend::getAABBMask() const
-{
-  return _aabbMask;
-}
-
-vvAABB vvTexRend::getProbedMask() const
-{
-  vvAABB result = vvAABB(*_aabbMask);
-
-  vvVector3 probePosObj;
-  vvVector3 probeSizeObj;
-  vvVector3 probeMin, probeMax;
-
-  calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
-  vvAABB probeBox = vvAABB(probeMin, probeMax);
-
-  result.intersect(probeBox);
-
-  return result;
-}
-
-void vvTexRend::setIsSlave(const bool isSlave)
-{
-  _isSlave = isSlave;
 }
 
 void vvTexRend::computeBrickSize()
@@ -1876,14 +1246,7 @@ void vvTexRend::calcNumBricks()
 /// Update transfer function from volume description.
 void vvTexRend::updateTransferFunction()
 {
-  if (_numThreads == 0)
-  {
-    updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
-  }
-  else
-  {
-    notifyThreads(false, true);
-  }
+  updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
 }
 
 void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData, float& lutDistance,
@@ -1918,12 +1281,7 @@ void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData, float& 
   else
     lutDistance = -1.;                              // invalidate LUT
 
-  // No space leaping per thread, but only once. Otherwise brick list setup would collide.
-  const bool calledByWorkerThread = (lutName != pixLUTName); // FIXME: pixLUTName only initialised for certain voxel types
-  if (!calledByWorkerThread)
-  {
-    fillNonemptyList(_nonemptyList, _brickList);
-  }
+  fillNonemptyList(_nonemptyList, _brickList);
 
   _isROIChanged = true; // have to update list of visible bricks
 }
@@ -1940,14 +1298,7 @@ void vvTexRend::updateVolumeData()
     computeBrickSize();
   }
 
-  if (_numThreads > 0)
-  {
-    notifyThreads(true, false);
-  }
-  else
-  {
-    makeTextures(pixLUTName, rgbaLUT);
-  }
+  makeTextures(pixLUTName, rgbaLUT);
 }
 
 //----------------------------------------------------------------------------
@@ -3219,18 +2570,15 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   const bool isOrtho = pm.isProjOrtho();
 
   getObjNormal(normal, origin, eye, invMV, isOrtho);
-  if (_usedThreads == 0)
-  {
-    evaluateLocalIllumination(_shader, normal);
+  evaluateLocalIllumination(_shader, normal);
 
-    // Use alpha correction in indexed mode: adapt alpha values to number of textures:
-    if (instantClassification())
+  // Use alpha correction in indexed mode: adapt alpha values to number of textures:
+  if (instantClassification())
+  {
+    const float thickness = diagonalVoxels / float(numSlices);
+    if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
     {
-      const float thickness = diagonalVoxels / float(numSlices);
-      if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
-      {
-        updateLUT(thickness, pixLUTName, rgbaLUT, lutDistance);
-      }
+      updateLUT(thickness, pixLUTName, rgbaLUT, lutDistance);
     }
   }
 
@@ -3271,7 +2619,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
       numSlices = 1;
 
       // Make slice opaque if possible:
-      if (instantClassification() && (_usedThreads == 0))
+      if (instantClassification())
       {
         updateLUT(1.0f, pixLUTName, rgbaLUT, lutDistance);
       }
@@ -3280,388 +2628,53 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
 
   initVertArray(numSlices);
 
-  if (_usedThreads == 0)
-  {
-    getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _isROIChanged);
-  }
+  getBricksInProbe(_nonemptyList, _insideList, _sortedList, probePosObj, probeSizeObj, _isROIChanged);
 
   markBricksInFrustum(probeMin, probeMax);
 
-  if (_usedThreads > 0)
+  // Volume render a 3D texture:
+  enableTexture(GL_TEXTURE_3D_EXT);
+  sortBrickList(_sortedList, eye, normal, isOrtho);
+
+  if (_showBricks)
   {
-    GLfloat modelview[16];
-    glGetFloatv(GL_MODELVIEW_MATRIX , modelview);
-
-    GLfloat projection[16];
-    glGetFloatv(GL_PROJECTION_MATRIX, projection);
-
-    int leaf = 0;
-    for (uint i = 0; i < _numThreads; ++i)
-    {
-      if (_threadData[i].active)
-      {
-        // Clip the probe using the plane of the half space.
-        vvVector3 probeMinI(&probeMin);
-        vvVector3 probeMaxI(&probeMax);
-        vvVector3 probePosObjI(&probePosObj);
-        vvVector3 probeSizeObjI(&probeSizeObj);
-        _bspTree->getLeafs()->at(leaf)->clipProbe(probeMinI, probeMaxI, probePosObjI, probeSizeObjI);
-        _threadData[i].probeMin = vvVector3(&probeMinI);
-        _threadData[i].probeMax = vvVector3(&probeMaxI);
-        _threadData[i].probePosObj = vvVector3(&probePosObjI);
-        _threadData[i].probeSizeObj = vvVector3(&probeSizeObjI);
-        _threadData[i].delta = vvVector3(&delta);
-        _threadData[i].farthest = vvVector3(&farthest);
-        _threadData[i].normal = vvVector3(&normal);
-        _threadData[i].eye = vvVector3(&eye);
-        _threadData[i].isOrtho = isOrtho;
-        _threadData[i].numSlices = numSlices;
-
-        _threadData[i].modelview = modelview;
-        _threadData[i].projection = projection;
-        _threadData[i].viewport = vvGLTools::getViewport();
-
-        ++leaf;
-      }
-    }
-
-    // The sorted brick lists are distributed among the threads. All other data specific
-    // to the workers is assigned either. Now broadcast a signal telling the worker threads'
-    // rendering loops to resume.
-    pthread_barrier_wait(&_threads->barrier);
-
-    // Do compositing.
-    pthread_barrier_wait(&_threads->barrier);
-
-    // Blend the images from the worker threads onto a 2D-texture.
-
-    // Orthographic projection.
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-
-    // Fix the proxy quad for the frame buffer texture.
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    // Setup compositing.
-    glDisable(GL_CULL_FACE);
+    // Debugging mode: render the brick outlines and deactivate shaders,
+    // lighting and texturing.
+    glDisable(GL_TEXTURE_3D_EXT);
     glDisable(GL_LIGHTING);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_COLOR_MATERIAL);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-    // Traverse the bsp tree. As a side effect,
-    // the textured proxy geometry will be
-    // rendered by the bsp tree's visitor.
-    _bspTree->traverse(eye);
-
-    //performLoadBalancing();
-
-    vvGLTools::printGLError("orthotexture");
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
+    disableShader(_shader);
+    disableFragProg();
+    for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
+    {
+      (*it)->renderOutlines(probeMin, probeMax);
+    }
   }
   else
   {
-    // Volume render a 3D texture:
-    enableTexture(GL_TEXTURE_3D_EXT);
-    sortBrickList(_sortedList, eye, normal, isOrtho);
-
-    if (_showBricks)
+    if (_isectType != CPU)
     {
-      // Debugging mode: render the brick outlines and deactivate shaders,
-      // lighting and texturing.
-      glDisable(GL_TEXTURE_3D_EXT);
-      glDisable(GL_LIGHTING);
-      disableShader(_shader);
-      disableFragProg();
-      for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
-      {
-        (*it)->renderOutlines(probeMin, probeMax);
-      }
+      _shader->setParameter1f("delta", delta.length());
+      _shader->setParameter3f("planeNormal", normal[0], normal[1], normal[2]);
+
+      glEnableClientState(GL_VERTEX_ARRAY);
     }
-    else
+    for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
     {
-      if (_isectType != CPU)
-      {
-        _shader->setParameter1f("delta", delta.length());
-        _shader->setParameter3f("planeNormal", normal[0], normal[1], normal[2]);
-
-        glEnableClientState(GL_VERTEX_ARRAY);
-      }
-      for(BrickList::iterator it = _sortedList.begin(); it != _sortedList.end(); ++it)
-      {
-        (*it)->render(this, normal, farthest, delta, probeMin, probeMax,
-                     texNames,
-                     _shader);
-      }
-      if (_isectType != CPU)
-      {
-        glDisableClientState(GL_VERTEX_ARRAY);
-      }
+      (*it)->render(this, normal, farthest, delta, probeMin, probeMax,
+                   texNames,
+                   _shader);
     }
-
-    vvDebugMsg::msg(3, "Bricks discarded: ",
-                    static_cast<int>(_brickList[vd->getCurrentFrame()].size() - _sortedList.size()));
+    if (_isectType != CPU)
+    {
+      glDisableClientState(GL_VERTEX_ARRAY);
+    }
   }
+
+  vvDebugMsg::msg(3, "Bricks discarded: ",
+                  static_cast<int>(_brickList[vd->getCurrentFrame()].size() - _sortedList.size()));
 
   disableTexture(GL_TEXTURE_3D_EXT);
 }
-
-/** Partially renders the volume data set. Only that part is rendered that is
- *  represented by the provided bricks. Method is intended to be used as
- *  callback function for posix thread's create method.
- */
-void* vvTexRend::threadFuncTexBricks(void* threadargs)
-{
-  ThreadArgs* data = reinterpret_cast<ThreadArgs*>(threadargs);
-
-#ifdef HAVE_X11
-  if (!glXMakeCurrent(data->display, data->drawable, data->glxContext))
-#elif defined _WIN32
-  if (!wglMakeCurrent(data->deviceContext, data->wglContext))
-#else
-  if (0)
-#endif
-  {
-    vvDebugMsg::msg(3, "Couldn't make OpenGL context current");
-  }
-  else
-  {
-    vvGLTools::printGLError("enter vvTexRend::threadFuncTexBricks()");
-
-    vvShaderProgram* shader = NULL;
-    GLuint fragProgName[VV_FRAG_PROG_MAX];
-
-    vvStopwatch* stopwatch;
-
-    glewInit();
-
-    pthread_barrier_wait(&data->renderer->_threads->barrier);
-
-    // For the main thread, this will take some time... .
-    pthread_barrier_wait(&data->renderer->_threads->barrier);
-
-    uchar* rgbaLUT = new uchar[256 * 256 * 4];
-    GLuint* texNames = NULL;
-    int numTextures;
-    bool areBricksCreated;
-    data->renderer->makeTextureBricks(texNames, &numTextures, rgbaLUT, data->brickList, areBricksCreated);
-
-    GLuint pixLUTName = 0;
-    data->renderer->initClassificationStage(&pixLUTName, fragProgName);
-    float lutDistance = -1.0f;
-    if (data->renderer->voxelType==VV_PIX_SHD
-     || data->renderer->voxelType==VV_FRG_PRG
-     || data->renderer->voxelType==VV_TEX_SHD)
-    {
-      data->renderer->makeLUTTexture(pixLUTName, rgbaLUT);
-    }
-
-    data->renderer->setGLenvironment();
-
-    shader = data->renderer->initShader();
-
-    data->renderer->_offscreenBuffers[data->threadId] = new vvOffscreenBuffer(1.0f, data->renderer->_multiGpuBufferPrecision);
-
-    // Init framebuffer objects.
-    data->renderer->_offscreenBuffers[data->threadId]->initForRender();
-
-    // Init stop watch.
-    stopwatch = new vvStopwatch();
-
-    bool roiChanged = true;
-
-    // TODO: identify if method is called from an ordinary worker thread or
-    // the main thread. If the latter is the case, ensure that the environment
-    // is reset properly after rendering.
-
-    // Main render loop that is suspended while the sequential program flow is executing
-    // and resumes when the texture bricks are sorted in back to front order and the
-    // thread specific data is supplied.
-    while (1)
-    {
-      // Synchronous data setup per frame.
-      if (data->brickDataChanged)
-      {
-        data->renderer->makeTextureBricks(texNames, &numTextures, rgbaLUT, data->brickList, areBricksCreated);
-        data->brickDataChanged = false;
-      }
-
-      if (data->transferFunctionChanged)
-      {
-        int currentShader;
-        bool usePreIntegration;
-        data->renderer->updateTransferFunction(pixLUTName, rgbaLUT, lutDistance,
-                                               currentShader, usePreIntegration);
-        data->transferFunctionChanged = false;
-      }
-      roiChanged = data->renderer->_isROIChanged;
-      data->renderer->fillNonemptyList(data->nonemptyList, data->brickList);
-
-      // Start rendering.
-      pthread_barrier_wait(&data->renderer->_threads->barrier);
-
-      // Break out of loop if dtor was called.
-      if (data->renderer->_terminateThreads)
-      {
-        vvDebugMsg::msg(3, "Thread exiting rendering loop: ", data->threadId);
-        break;
-      }
-
-      data->renderer->_offscreenBuffers[data->threadId]->resize(data->viewport[2], data->viewport[3]);
-      data->renderer->enableLUTMode(pixLUTName, fragProgName);
-      data->renderer->evaluateLocalIllumination(shader, data->normal);
-
-      // Use alpha correction in indexed mode: adapt alpha values to number of textures:
-      if (data->renderer->instantClassification())
-      {
-        const float diagonalVoxels = sqrtf(float(data->renderer->vd->vox[0] * data->renderer->vd->vox[0] +
-          data->renderer->vd->vox[1] * data->renderer->vd->vox[1] +
-          data->renderer->vd->vox[2] * data->renderer->vd->vox[2]));
-        const float thickness = diagonalVoxels / float(data->numSlices);
-        if(lutDistance/thickness < 0.88 || thickness/lutDistance < 0.88)
-        {
-          data->renderer->updateLUT(thickness, pixLUTName, rgbaLUT, lutDistance);
-        }
-      }
-
-      glEnable(GL_TEXTURE_3D_EXT);
-
-      data->renderer->_offscreenBuffers[data->threadId]->bindFramebuffer();
-
-      // Individual per thread color to visualize the screen rect
-      // occupied by the the content rendered by this thread.
-      if (vvDebugMsg::getDebugLevel() > 1)
-      {
-        glClearColor(data->renderer->_debugColors[data->threadId][0],
-                     data->renderer->_debugColors[data->threadId][1],
-                     data->renderer->_debugColors[data->threadId][2], 0.0);
-      }
-      else
-      {
-        glClearColor(0.0, 0.0, 0.0, 0.0);
-      }
-      glClear(GL_COLOR_BUFFER_BIT);
-      data->renderer->setGLenvironment();
-
-      glPushAttrib(GL_VIEWPORT_BIT);
-      glViewport(data->viewport[0], data->viewport[1], data->viewport[2], data->viewport[3]);
-
-      glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();
-      glMultMatrixf(data->projection);
-      glMatrixMode(GL_MODELVIEW);
-      glLoadIdentity();
-      glMultMatrixf(data->modelview);
-
-      stopwatch->start();
-
-      if(shader)
-      {
-        data->renderer->enableShader(shader, pixLUTName);
-
-        // Per frame parameters.
-        shader->setParameter1f("delta", data->delta.length());
-        shader->setParameter3f("planeNormal", data->normal[0], data->normal[1], data->normal[2]);
-      }
-
-      data->renderer->getBricksInProbe(data->nonemptyList, data->insideList, data->sortedList,
-                                       data->probePosObj, data->probeSizeObj, roiChanged, data->threadId);
-      data->renderer->sortBrickList(data->sortedList, data->eye, data->normal, data->isOrtho);
-
-      if (data->renderer->_showBricks)
-      {
-        // Debugging mode: render the brick outlines and deactivate shaders,
-        // lighting and texturing.
-        glDisable(GL_TEXTURE_3D_EXT);
-        glDisable(GL_LIGHTING);
-        data->renderer->disableShader(shader);
-        data->renderer->disableFragProg();
-        for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
-        {
-          (*it)->renderOutlines(data->probeMin, data->probeMax);
-        }
-      }
-      else
-      {
-        if (data->renderer->_isectType != CPU)
-        {
-          glEnableClientState(GL_VERTEX_ARRAY);
-        }
-        for(BrickList::iterator it = data->sortedList.begin(); it != data->sortedList.end(); ++it)
-        {
-          vvBrick *tmp = *it;
-          tmp->render(data->renderer, data->normal,
-                      data->farthest, data->delta,
-                      data->probeMin, data->probeMax,
-                      texNames, shader);
-        }
-        if (data->renderer->_isectType != CPU)
-        {
-          glDisableClientState(GL_VERTEX_ARRAY);
-        }
-      }
-
-      vvDebugMsg::msg(3, "Bricks discarded: ",
-                      static_cast<int>(data->brickList[data->renderer->vd->getCurrentFrame()].size()
-                                       - data->sortedList.size()));
-
-      glDisable(GL_TEXTURE_3D_EXT);
-      data->renderer->disableLUTMode();
-      data->renderer->disableShader(shader);
-
-      // Blend the images to one single image.
-
-      // Get the screen rect. Be sure to do this here, while the fbo's transformation
-      // matrices are still applied. The boolean parameter tells the half space to
-      // recalculate the screen rect as well as storing it for later use.
-      const vvRecti& screenRect = data->halfSpace->getProjectedScreenRect(&data->probeMin, &data->probeMax, true);
-
-      // This call switches the currently readable buffer to the fbo offscreen buffer.
-      data->pixels->resize(screenRect.width * screenRect.height * 4);
-      glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-      glReadPixels(screenRect.x, screenRect.y, screenRect.width, screenRect.height, GL_RGBA, GL_FLOAT, &(*data->pixels)[0]);
-      glPopAttrib();
-      data->renderer->unsetGLenvironment();
-      data->renderer->_offscreenBuffers[data->threadId]->unbindFramebuffer();
-
-      // Output to screen in debug mode.
-      if (vvDebugMsg::getDebugLevel() > 0)
-      {
-        data->renderer->_offscreenBuffers[data->threadId]->writeBack(data->viewport[2], data->viewport[3]);
-        glFlush();
-      }
-
-      // Store the time to render. Based upon this, dynamic load balancing will be performed.
-      data->lastRenderTime = stopwatch->getTime();
-
-      pthread_barrier_wait(&data->renderer->_threads->barrier);
-    }
-
-    // Exited render loop - perform cleanup.
-    data->renderer->freeClassificationStage(pixLUTName, fragProgName);
-
-    data->renderer->removeTextures(texNames, &numTextures);
-    delete shader;
-
-    delete[] rgbaLUT;
-    delete stopwatch;
-#ifdef HAVE_X11
-    glXDestroyContext(data->display, data->glxContext);
-    XCloseDisplay(data->display);
-#endif
-  }
-  pthread_exit(NULL);
-#ifndef HAVE_X11
-  return NULL;
-#endif
-}
-
 void vvTexRend::updateFrustum()
 {
   float pm[16];
@@ -3794,37 +2807,6 @@ bool vvTexRend::testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat
   return false;
 }
 
-void vvTexRend::calcAABBMask()
-{
-  vvVector3 minval = vvVector3( FLT_MAX,  FLT_MAX,  FLT_MAX);
-  vvVector3 maxval = vvVector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
-  for (std::vector<BrickList>::const_iterator it1 = _brickList.begin();
-       it1 != _brickList.end(); ++it1)
-  {
-    for (BrickList::const_iterator it2 = (*it1).begin();
-         it2 != (*it1).end(); ++it2)
-    {
-      vvBrick* brick = (*it2);
-
-      for (int i = 0; i < 3; ++i)
-      {
-        if (brick->min[i] < minval[i])
-        {
-          minval[i] = brick->min[i];
-        }
-
-        if (brick->max[i] > maxval[i])
-        {
-          maxval[i] = brick->max[i];
-        }
-      }
-    }
-  }
-  delete _aabbMask;
-  _aabbMask = new vvAABB(minval, maxval);
-}
-
 void vvTexRend::markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax)
 {
   updateFrustum();
@@ -3849,22 +2831,12 @@ void vvTexRend::markBricksInFrustum(const vvVector3& probeMin, const vvVector3& 
 }
 
 void vvTexRend::getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
-                                 const vvVector3 pos, const vvVector3 size, bool& roiChanged, const int threadId)
+                                 const vvVector3 pos, const vvVector3 size, bool& roiChanged)
 {
-  if (threadId == -1)
-  {
-    // Single gpu mode.
-    if(!roiChanged && vd->getCurrentFrame() == _lastFrame)
-      return;
-    _lastFrame = vd->getCurrentFrame();
-  }
-  else
-  {
-    // Multi gpu mode.
-    if(!roiChanged && vd->getCurrentFrame() == _threadData[threadId].lastFrame)
-      return;
-    _threadData[threadId].lastFrame = vd->getCurrentFrame();
-  }
+  // Single gpu mode.
+  if(!roiChanged && vd->getCurrentFrame() == _lastFrame)
+    return;
+  _lastFrame = vd->getCurrentFrame();
   roiChanged = false;
 
   insideList.clear();
@@ -4346,18 +3318,6 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
   deactivateClippingPlane();
 }
 
-void vvTexRend::generateDebugColors()
-{
-  _debugColors[0] = vvColor(0.5f, 0.7f, 0.4f);
-  _debugColors[1] = vvColor(0.7f, 0.5f, 0.0f);
-  _debugColors[2] = vvColor(0.0f, 0.5f, 0.7f);
-  _debugColors[3] = vvColor(0.7f, 0.0f, 0.5f);
-  _debugColors[4] = vvColor(1.0f, 1.0f, 0.0f);
-  _debugColors[5] = vvColor(0.0f, 1.0f, 0.0f);
-  _debugColors[6] = vvColor(0.0f, 0.0f, 1.0f);
-  _debugColors[7] = vvColor(1.0f, 0.0f, 0.0f);
-}
-
 //----------------------------------------------------------------------------
 /** Render the volume onto currently selected drawBuffer.
  Viewport size in world coordinates is -1.0 .. +1.0 in both x and y direction
@@ -4402,13 +3362,10 @@ void vvTexRend::renderVolumeGL()
   // Get OpenGL modelview matrix:
   vvGLTools::getModelviewMatrix(&mv);
 
-  if (_usedThreads == 0)
+  if (geomType != VV_BRICKS || !_showBricks)
   {
-    if (geomType != VV_BRICKS || !_showBricks)
-    {
 	  enableShader(_shader, pixLUTName);
-      enableLUTMode(pixLUTName, fragProgName);
-    }
+    enableLUTMode(pixLUTName, fragProgName);
   }
 
   switch (geomType)
@@ -4430,16 +3387,9 @@ void vvTexRend::renderVolumeGL()
       break;
   }
 
-  if (_usedThreads == 0)
-  {
-    disableLUTMode();
-    unsetGLenvironment();
-    disableShader(_shader);
-  }
-  else
-  {
-    unsetGLenvironment();
-  }
+  disableLUTMode();
+  unsetGLenvironment();
+  disableShader(_shader);
   vvRenderer::renderVolumeGL();
 
   // Write output of alternative render target. Depending on the type of render target,
@@ -4650,10 +3600,7 @@ void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData, fl
   switch (voxelType)
   {
     case VV_RGBA:
-      if (_usedThreads == 0)
-      {
-        makeTextures(lutName, lutData);// this mode doesn't use a hardware LUT, so every voxel has to be updated
-      }
+      makeTextures(lutName, lutData);// this mode doesn't use a hardware LUT, so every voxel has to be updated
       break;
     case VV_SGI_LUT:
       glColorTableSGI(GL_TEXTURE_COLOR_TABLE_SGI, GL_RGBA,
@@ -4727,15 +3674,8 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       if (interpolation!=newInterpol)
       {
         interpolation = newInterpol;
-        if (_numThreads > 0)
-        {
-          notifyThreads(true, true);
-        }
-        else
-        {
-          makeTextures(pixLUTName, rgbaLUT);
-          updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
-        }
+        makeTextures(pixLUTName, rgbaLUT);
+        updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
       }
       break;
     case vvRenderer::VV_MIN_SLICE:
@@ -5543,72 +4483,6 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
   std::cerr << "Manhattan Distance: " << dist << endl;
 
   return dist;
-}
-
-void vvTexRend::prepareDistributedRendering(const int numSlaveNodes)
-{
-  _numSlaveNodes = numSlaveNodes;
-  // No load balancing for now, distribute equally among nodes.
-  float* part = new float[_numSlaveNodes];
-  for (int i = 0; i < _numSlaveNodes; ++i)
-  {
-    part[i] = 1.0f / static_cast<float>(_numSlaveNodes);
-  }
-
-  delete _bspTree;
-  _bspTree = new vvBspTree(part, _numSlaveNodes, _brickList);
-
-  int i = 0;
-  for (std::vector<vvHalfSpace*>::const_iterator it = _bspTree->getLeafs()->begin();
-       it != _bspTree->getLeafs()->end(); ++it)
-  {
-    vvHalfSpace* hs = (*it);
-    hs->setId(i);
-    ++i;
-  }
-
-  delete[] part;
-}
-
-std::vector<BrickList>** vvTexRend::getBrickListsToDistribute()
-{
-  std::vector<vvHalfSpace*>* _bspTreeLeafs = _bspTree->getLeafs();
-  std::vector<BrickList>** result = new std::vector<BrickList>*[_bspTreeLeafs->size()];
-
-  int i = 0;
-  for (std::vector<vvHalfSpace*>::const_iterator it = _bspTreeLeafs->begin();
-       it != _bspTreeLeafs->end(); ++it)
-  {
-    result[i] = new std::vector<BrickList>[vd->frames];
-
-    for (int f=0; f<vd->frames; ++f)
-    {
-      result[i]->push_back(((*it)->getBrickList()[f]));
-    }
-    ++i;
-  }
-
-  return result;
-}
-
-int vvTexRend::getNumBrickListsToDistribute() const
-{
-  return (int)_bspTree->getLeafs()->size();
-}
-
-void vvTexRend::calcProjectedScreenRects()
-{
-  vvVector3 probePosObj;
-  vvVector3 probeSizeObj;
-  vvVector3 probeMin, probeMax;
-
-  calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
-
-  for (std::vector<vvHalfSpace*>::const_iterator it = _bspTree->getLeafs()->begin();
-       it != _bspTree->getLeafs()->end(); ++it)
-  {
-    (*it)->getProjectedScreenRect(&probeMin, &probeMax, true);
-  }
 }
 
 //----------------------------------------------------------------------------

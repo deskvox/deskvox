@@ -203,7 +203,6 @@ class vvView
     void initGraphics(int argc, char *argv[]);
     void createMenus();
     void createRenderer(std::string renderertype, const vvRendererFactory::Options &opt,
-                     std::vector<std::vector<vvBrick*> > *bricks = NULL,
                      const int maxBrickSizeX = 64,
                      const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);
     void applyRendererParameters();

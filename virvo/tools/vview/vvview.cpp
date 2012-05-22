@@ -591,8 +591,7 @@ void vvView::applyRendererParameters()
 /** Set active rendering algorithm.
  */
 void vvView::createRenderer(std::string type, const vvRendererFactory::Options &options,
-                         std::vector<BrickList>* bricks, const int maxBrickSizeX,
-                         const int maxBrickSizeY, const int maxBrickSizeZ)
+                            const int maxBrickSizeX, const int maxBrickSizeY, const int maxBrickSizeZ)
 {
   vvDebugMsg::msg(3, "vvView::setRenderer()");
 
@@ -627,23 +626,7 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   vvVector3i maxBrickSize(maxBrickSizeX, maxBrickSizeY, maxBrickSizeZ);
   renderState.setParameter(vvRenderState::VV_MAX_BRICK_SIZE, maxBrickSize);
 
-  if (numDisplays > 0)
-  {
-    cerr << "Running in threaded mode using the following displays:" << endl;
-    for (unsigned int i=0; i<numDisplays; ++i)
-    {
-      cerr << displayNames[i] << endl;
-    }
-    renderer = new vvTexRend(vd, renderState, vvTexRend::VV_BRICKS, vvTexRend::VV_PIX_SHD, bricks, displayNames, numDisplays);
-  }
-  else if(bricks)
-  {
-    renderer = new vvTexRend(vd, renderState, vvTexRend::VV_BRICKS, vvTexRend::VV_PIX_SHD, bricks);
-  }
-  else
-  {
-    renderer = vvRendererFactory::create(vd, renderState, type.c_str(), opt);
-  }
+  renderer = vvRendererFactory::create(vd, renderState, type.c_str(), opt);
 
   //static_cast<vvTexRend *>(renderer)->setTexMemorySize( 4 );
   //static_cast<vvTexRend *>(renderer)->setComputeBrickSize( false );
@@ -1779,7 +1762,7 @@ double vvView::performanceTest()
       int framesRendered = 0;
       vvRendererFactory::Options opt;
       opt["voxeltype"] = test->getVoxelType();
-      ds->createRenderer(test->getGeomType(), opt, 0,
+      ds->createRenderer(test->getGeomType(), opt,
                       (int) test->getBrickDims()[0],
                       (int) test->getBrickDims()[1],
                       (int) test->getBrickDims()[2]);

@@ -30,19 +30,10 @@
 #include "vvsllist.h"
 #include "vvbrick.h"
 
-struct ThreadArgs;
 class vvOffscreenBuffer;
 class vvShaderFactory;
 class vvShaderProgram;
-class vvThreadVisitor;
 class vvVolDesc;
-class vvBspTree;
-
-/*!
- * Generate more colors by adjusting this literal and \ref generateDebugColors()
- * if more than 8 threads need to be colorized for debugging.
- */
-const int MAX_DEBUG_COLORS = 8;
 
 //============================================================================
 // Class Definitions
@@ -66,22 +57,11 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 {
   friend class vvBrick;
   public:
-    struct Threads;
-
-    uint _numThreads;                             ///< thread count
-    uint _usedThreads;                            ///< actually used threads, some maybe can't be used because of errors
-    
-    Threads *_threads;
-    ThreadArgs* _threadData;                      ///< args for each thread
-    bool _terminateThreads;
-
     std::vector<GLint> _vertArray;
     std::vector<GLsizei> _elemCounts;
     std::vector<GLuint> _vertIndicesAll;
     std::vector<GLuint *> _vertIndices;
     vvOffscreenBuffer** _offscreenBuffers;
-    vvBspTree* _bspTree;
-    vvThreadVisitor* _visitor;
 
     int _numBricks[3];                            ///< number of bricks for each dimension
     enum ErrorType                                /// Error Codes
@@ -90,8 +70,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       TRAM_ERROR,                                 ///< not enough texture memory
       TEX_SIZE_UNKNOWN,                           ///< size of 3D texture is unknown
       NO3DTEX,                                    ///< 3D textures not supported on this hardware
-      NO_DISPLAYS_SPECIFIED,                      ///< no x-displays in _renderState, thus no multi-threading
-      NO_DISPLAYS_OPENED,                         ///< no additional x-displays could be opened, thus no multi-threading
       UNSUPPORTED                                 ///< general error code
     };
     enum GeometryType                             /// Geometry textures are projected on
@@ -187,14 +165,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     IsectType _isectType;
     bool _proxyGeometryOnGpuSupported;            ///< indicate wether proxy geometry computation on gpu would work
     int _lastFrame;                               ///< last frame rendered
-    int _numDisplays;                             ///< # additional displays for multi-gpu rendering
-    const char** _displayNames;                   ///< list with displays of the form host:x.y
-    BufferPrecision _multiGpuBufferPrecision;     ///< 8, 16 or 32 bit precision for the render slave offscreen buffers
-    unsigned int* _displays;                      ///< display name = :x.0 ==> corresponding display: x
-    unsigned int* _screens;                       ///< display name = :0.x ==> corresponding screen: x
-    int _numSlaveNodes;                           ///< number of available distributed memory hosts
-    vvColor _debugColors[MAX_DEBUG_COLORS];       ///< array of colors to visualize threads in dbg mode (debug level >= 2).
-                                                  ///< Feel free to use these colors for similar purposes either.
 
     vvRenderTarget* _renderTarget;                ///< can e.g. be an offscreen buffer to use with image downscaling
                                                   ///< or an image creator making a screenshot
@@ -206,8 +176,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int _previousShader;                          ///< ID of previous shader
 
     vvVector3 _eye;                               ///< the current eye position
-    vvAABB* _aabbMask;                            ///< mask out the relevant portion of the volume
-    bool _isSlave;                                ///< let the renderer know if it is a rendering slave
 
     // GL state variables:
     GLboolean glsTexColTable;                     ///< stores GL_TEXTURE_COLOR_TABLE_SGI
@@ -217,13 +185,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void makeLUTTexture(const GLuint& lutName, uchar* lutData) const;
     ErrorType makeTextures2D(int axes);
 
-    ErrorType setDisplayNames(const char** displayNames, unsigned int numNames);
-    ErrorType dispatchThreadedWGLContexts(); 
-    ErrorType dispatchThreadedGLXContexts();
-    ErrorType dispatchThreads();
-    ErrorType distributeBricks();
-    void notifyThreads(bool brickDataChanged, bool transferFunctionChanged);
-    static void* threadFuncTexBricks(void* threadargs);
     void sortBrickList(std::vector<vvBrick*>& list, const vvVector3&, const vvVector3&, const bool);
 
     ErrorType makeTextures(const GLuint& lutName, uchar*& lutData);
@@ -255,7 +216,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void renderTexBricks(const vvMatrix*);
     void renderTex2DSlices(float);
     void renderTex2DCubic(vvVecmath::AxisType, float, float, float);
-    void generateDebugColors();
     VoxelType findBestVoxelType(VoxelType) const;
     GeometryType findBestGeometry(GeometryType, VoxelType) const;
     void updateLUT(float, GLuint& lutName, uchar*& lutData, float& lutDistance);
@@ -273,9 +233,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool insideFrustum(const vvVector3 &min, const vvVector3 &max) const;
     void markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax);
     void updateFrustum();
-    void calcAABBMask();
     void getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
-                          vvVector3, const vvVector3, bool& roiChanged, int threadId = -1); ///< threadId = -1 ==> main thread
+                          vvVector3, const vvVector3, bool& roiChanged);
     void computeBrickSize();
     void calcNumTexels();
     void calcNumBricks();
@@ -283,10 +242,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
     void evaluateLocalIllumination(vvShaderProgram* pixelShader, const vvVector3& normal);
   public:
-    vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST,
-              std::vector<BrickList>* bricks = 0,
-              const char** displayNames = 0, const int numDisplays = 0,
-              const BufferPrecision multiGpuBufferPrecision = VV_SHORT);
+    vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST);
     virtual ~vvTexRend();
     void  renderVolumeGL();
     void  updateTransferFunction();
@@ -318,17 +274,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     int getBrickSize() const;
     void setTexMemorySize(int);
     int getTexMemorySize() const;
-    vvBspTree* getBspTree() const;
-    void setAABBMask(vvAABB* aabbMask);
-    vvAABB* getAABBMask() const;
-    vvAABB getProbedMask() const;
-    void setIsSlave(bool isSlave);
     unsigned char* getHeightFieldData(float[4][3], int&, int&);
     float getManhattenDist(float[3], float[3]) const;
-    void prepareDistributedRendering(int numSlaveNodes);
-    std::vector<BrickList>** getBrickListsToDistribute();
-    int getNumBrickListsToDistribute() const;
-    void calcProjectedScreenRects();
     float calcQualityAndScaleImage();
 
     static int get2DTextureShader();
