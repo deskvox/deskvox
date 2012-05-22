@@ -122,7 +122,7 @@ class VIRVOEXPORT vvVolDesc
     
     static const int DEFAULT_ICON_SIZE;           ///< system default for icon size if not otherwise specified (only stored in XVF files)
     static const int NUM_HDR_BINS;                ///< constant value for HDR transfer functions
-    int vox[3];                                   ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
+    vvVector3i vox;                               ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
     int frames;                                   ///< number of animation frames in movie (0 if no volume data stored)
     int bpc;                                      ///< bytes per channel (default = 1); each channel is scalar:<UL>
                                                   ///< <LI>1 = 1 unsigned char</LI>
