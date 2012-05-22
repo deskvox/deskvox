@@ -5293,5 +5293,25 @@ void vvVolDesc::computeMinMaxArrays(uchar *minArray, uchar *maxArray, int downsa
   }
 }
 
+vvVector3i vvVolDesc::voxelCoords(const vvVector3& objCoords) const
+{
+  vvVector3 fltVox2 = vvVector3(static_cast<float>(vox[0]) * 0.5f,
+                                static_cast<float>(vox[1]) * 0.5f,
+                                static_cast<float>(vox[2]) * 0.5f);
+  return vvVector3i(static_cast<int>(objCoords[0] + fltVox2[0]),
+                    static_cast<int>(objCoords[1] + fltVox2[1]),
+                    static_cast<int>(objCoords[2] + fltVox2[2]));
+}
+
+vvVector3 vvVolDesc::objectCoords(const vvVector3i& voxCoords) const
+{
+  vvVector3 fltVox2 = vvVector3(static_cast<float>(vox[0]) * 0.5f,
+                                static_cast<float>(vox[1]) * 0.5f,
+                                static_cast<float>(vox[2]) * 0.5f);
+  return vvVector3(static_cast<float>(voxCoords[0]) - fltVox2[0],
+                   static_cast<float>(voxCoords[1]) - fltVox2[1],
+                   static_cast<float>(voxCoords[2]) - fltVox2[2]);
+}
+
 ///// EOF /////
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
