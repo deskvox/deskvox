@@ -24,13 +24,17 @@
 #include <stdlib.h>
 #include <vector>
 
-#include "vvaabb.h"
 #include "vvexport.h"
 #include "vvinttypes.h"
 #include "vvvecmath.h"
 #include "vvtransfunc.h"
 #include "vvsllist.h"
 #include "vvarray.h"
+
+template <typename T>
+class vvBaseAABB;
+typedef vvBaseAABB<float> vvAABBf;
+typedef vvAABBf vvAABB;
 
 //============================================================================
 // Class Definition
@@ -158,7 +162,7 @@ class VIRVOEXPORT vvVolDesc
     int    getSliceVoxels() const;
     int    getFrameVoxels() const;
     int    getMovieVoxels() const;
-    vvAABB getBoundingBox() const;
+    void getBoundingBox(vvAABB& aabb) const;
     uchar* getRaw(int) const;
     uchar* getRaw() const;
     const char* getFilename() const;

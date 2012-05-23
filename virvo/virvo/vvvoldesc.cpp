@@ -32,6 +32,7 @@
 #endif
 
 // Virvo:
+#include "vvaabb.h"
 #include "vvplatform.h"
 #include "vvvirvo.h"
 #include "vvdebugmsg.h"
@@ -457,10 +458,10 @@ int vvVolDesc::getMovieVoxels() const
 
 //----------------------------------------------------------------------------
 /// Get bounding box of the volume.
-vvAABB vvVolDesc::getBoundingBox() const
+void vvVolDesc::getBoundingBox(vvAABB& aabb) const
 {
   const vvVector3 size2 = getSize() * 0.5f;
-  return vvAABB(pos - size2, pos + size2);
+  aabb = vvAABB(pos - size2, pos + size2);
 }
 
 //----------------------------------------------------------------------------
