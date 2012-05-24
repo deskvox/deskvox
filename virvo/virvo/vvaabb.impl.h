@@ -23,10 +23,6 @@
 #include <algorithm>
 #include <limits>
 
-#include "vvaabb.h"
-#include "vvgltools.h"
-#include "vvopengl.h"
-
 using std::cerr;
 using std::endl;
 
@@ -82,57 +78,6 @@ const vvBaseVector3<T>& vvBaseAABB<T>::getCenter() const
 }
 
 template <typename T>
-vvRecti vvBaseAABB<T>::getProjectedScreenRect() const
-{
-  GLdouble modelview[16];
-  glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-
-  GLdouble projection[16];
-  glGetDoublev(GL_PROJECTION_MATRIX, projection);
-
-  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-
-  float minX = std::numeric_limits<float>::max();
-  float minY = std::numeric_limits<float>::max();
-  float maxX = -std::numeric_limits<float>::max();
-  float maxY = -std::numeric_limits<float>::max();
-
-  for (int i = 0; i < 8; ++i)
-  {
-    GLdouble vertex[3];
-    gluProject(_vertices[i][0], _vertices[i][1], _vertices[i][2],
-               modelview, projection, viewport.values,
-               &vertex[0], &vertex[1], &vertex[2]);
-
-    if (vertex[0] < minX)
-    {
-      minX = static_cast<float>(vertex[0]);
-    }
-    if (vertex[0] > maxX)
-    {
-      maxX = static_cast<float>(vertex[0]);
-    }
-
-    if (vertex[1] < minY)
-    {
-      minY = static_cast<float>(vertex[1]);
-    }
-    if (vertex[1] > maxY)
-    {
-      maxY = static_cast<float>(vertex[1]);
-    }
-  }
-
-  vvRecti result;
-  result.x = std::max(0, static_cast<int>(floorf(minX)));
-  result.y = std::max(0, static_cast<int>(floorf(minY)));
-  result.width = std::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2] - result.x);
-  result.height = std::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3] - result.y);
-
-  return result;
-}
-
-template <typename T>
 void vvBaseAABB<T>::intersect(const vvBaseAABB<T>& rhs)
 {
   for (int i = 0; i < 3; ++i)
@@ -148,55 +93,6 @@ void vvBaseAABB<T>::intersect(const vvBaseAABB<T>& rhs)
     }
   }
   calcVertices();
-}
-
-template <typename T>
-void vvBaseAABB<T>::render() const
-{
-  const vvBaseVector3<T> (&vertices)[8] = getVertices();
-  glBegin(GL_LINES);
-    glColor3f(1.0f, 1.0f, 1.0f);
-
-    // front
-    glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
-    glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
-
-    glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
-    glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
-
-    glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
-    glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
-
-    glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
-    glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
-
-    // back
-    glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
-    glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
-
-    glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
-    glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
-
-    glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
-    glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
-
-    glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
-    glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
-
-    // left
-    glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
-    glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
-
-    glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
-    glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
-
-    // right
-    glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
-    glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
-
-    glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
-    glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
-  glEnd();
 }
 
 template <typename T>

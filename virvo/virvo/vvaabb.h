@@ -109,15 +109,6 @@ public:
   const vvBaseVector3<T>& getCenter() const;
 
   /*!
-   * \brief         Get a rectangle of the projected screen section.
-   *
-   *                Calcs the rectangle defined to fully enclose the
-   *                the projected area do to the current camera transformations.
-   * \return        The rectangle of the projected screen section.
-   */
-  vvRecti getProjectedScreenRect() const;
-
-  /*!
    * \brief         Shrink the box to the intersection with another one.
    *
    *                Get the box resulting from intersecting this box with
@@ -126,13 +117,6 @@ public:
    */
   void intersect(const vvBaseAABB<T>& rhs);
 
-  /*!
-   * \brief         Render the bounding box.
-   *
-   *                Render the outlines of the bounding box using opengl
-   *                commands.
-   */
-  void render() const;
 private:
   vvBaseVector3<T> _min;
   vvBaseVector3<T> _max;

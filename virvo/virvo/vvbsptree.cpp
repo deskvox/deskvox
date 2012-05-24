@@ -208,8 +208,8 @@ const vvRecti& vvHalfSpace::getProjectedScreenRect(const vvVector3* probeMin, co
         maxval[i] = _boundingBox.getMax()[i];
       }
     }
-    vvAABB aabb(minval, maxval);
-    _projectedScreenRect = aabb.getProjectedScreenRect();
+
+    _projectedScreenRect = vvGLTools::getProjectedScreenRect(vvAABB(minval, maxval));
   }
   return _projectedScreenRect;
 }
