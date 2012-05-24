@@ -380,7 +380,7 @@ vvTexRend::GeometryType vvTexRend::findBestGeometry(const vvTexRend::GeometryTyp
 
   if (geom==VV_AUTO)
   {
-    if (extTex3d) return VV_BRICKS;
+    if (extTex3d) return VV_VIEWPORT;
     else return VV_SLICES;
   }
   else
