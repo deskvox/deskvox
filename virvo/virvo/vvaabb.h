@@ -117,6 +117,12 @@ public:
    */
   void intersect(const vvBaseAABB<T>& rhs);
 
+  /*!
+   * \brief         get the coord axis parallel to the longest side, return the side's length
+   */
+  T getLongestSide(vvVecmath::AxisType& axis) const;
+  std::pair<vvBaseAABB, vvBaseAABB> split(vvVecmath::AxisType axis, T splitPoint) const;
+  bool contains(const vvBaseVector3<T>& pos) const;
 private:
   vvBaseVector3<T> _min;
   vvBaseVector3<T> _max;

@@ -96,6 +96,60 @@ void vvBaseAABB<T>::intersect(const vvBaseAABB<T>& rhs)
 }
 
 template <typename T>
+T vvBaseAABB<T>::getLongestSide(vvVecmath::AxisType& axis) const
+{
+  const T w = calcWidth();
+  const T h = calcHeight();
+  const T d = calcDepth();
+
+  if (w >= h && w >= d)
+  {
+    axis = vvVecmath::X_AXIS;
+    return w;
+  }
+  else if (h >= w && h >= d)
+  {
+    axis = vvVecmath::Y_AXIS;
+    return h;
+  }
+  else
+  {
+    axis = vvVecmath::Z_AXIS;
+    return d;
+  }
+}
+
+template <typename T>
+std::pair<vvBaseAABB<T>, vvBaseAABB<T> > vvBaseAABB<T>::split(const vvVecmath::AxisType axis,
+                                                              const T splitPoint) const
+{
+  vvBaseVector3<T> min1 = _min;
+  vvBaseVector3<T> min2 = _min;
+  vvBaseVector3<T> max1 = _max;
+  vvBaseVector3<T> max2 = _max;
+
+  max1[axis] = splitPoint;
+  min2[axis] = splitPoint;
+
+  vvBaseAABB box1 = vvBaseAABB(min1, max1);
+  vvBaseAABB box2 = vvBaseAABB(min2, max2);
+  return std::pair<vvBaseAABB, vvBaseAABB>(box1, box2);
+}
+
+template <typename T>
+bool vvBaseAABB<T>::contains(const vvBaseVector3<T>& pos) const
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    if (pos[i] < _min[i] || pos[i] > _max[i])
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <typename T>
 void vvBaseAABB<T>::calcVertices()
 {
   for (int i=0; i<8; ++i)
