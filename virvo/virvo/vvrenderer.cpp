@@ -301,6 +301,10 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _probeColor;
   case VV_GAMMA:
     return _gamma;
+  case VV_SHOW_BRICKS:
+    return _showBricks;
+  case VV_COMPUTE_BRICK_SIZE:
+    return _computeBrickSize;
   default:
     return vvParam();
   }
