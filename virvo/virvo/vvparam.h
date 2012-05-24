@@ -24,7 +24,8 @@ public:
     VV_VEC3I,
     VV_VEC4,
     VV_COLOR,
-    VV_AABB
+    VV_AABB,
+    VV_AABBI
   };
 
 private:
@@ -37,6 +38,7 @@ private:
     const vvVector4* Vec4;
     const vvColor* Color;
     const vvAABB* AABB;
+    const vvAABBi* AABBI;
   };
 
   // The type of this parameter
@@ -89,6 +91,11 @@ public:
     value.AABB = &val;
   }
 
+  vvParam(const vvAABBi& val) : type(VV_AABBI)
+  {
+    value.AABBI = &val;
+  }
+
   bool asBool() const
   {
     assert( type == VV_BOOL );
@@ -137,6 +144,12 @@ public:
     return *value.AABB;
   }
 
+  const vvAABBi& asAABBi() const
+  {
+    assert( type == VV_AABBI );
+    return *value.AABBI;
+  }
+
   operator bool() const { return asBool(); }
   operator int() const { return asInt(); }
   operator float() const { return asFloat(); }
@@ -145,6 +158,7 @@ public:
   operator const vvVector4&() const { return asVec4(); }
   operator const vvColor&() const { return asColor(); }
   operator const vvAABB&() const { return asAABB(); }
+  operator const vvAABBi&() const { return asAABBi(); }
 
   // Returns the type of this parameter
   Type getType() const { return type; }
