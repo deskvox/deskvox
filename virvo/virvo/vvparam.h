@@ -7,6 +7,7 @@
 
 #include "vvvecmath.h"
 #include "vvcolor.h"
+#include "vvaabb.h"
 
 #include <cassert>
 
@@ -22,7 +23,8 @@ public:
     VV_VEC3,
     VV_VEC3I,
     VV_VEC4,
-    VV_COLOR
+    VV_COLOR,
+    VV_AABB
   };
 
 private:
@@ -34,6 +36,7 @@ private:
     const vvVector3i* Vec3I;
     const vvVector4* Vec4;
     const vvColor* Color;
+    const vvAABB* AABB;
   };
 
   // The type of this parameter
@@ -80,6 +83,11 @@ public:
   {
     value.Color = &val;
   }
+  
+  vvParam(const vvAABB& val) : type(VV_AABB)
+  {
+    value.AABB = &val;
+  }
 
   bool asBool() const
   {
@@ -122,6 +130,12 @@ public:
     assert( type == VV_COLOR );
     return *value.Color;
   }
+  
+  const vvAABB& asAABB() const
+  {
+    assert( type == VV_AABB );
+    return *value.AABB;
+  }
 
   operator bool() const { return asBool(); }
   operator int() const { return asInt(); }
@@ -130,6 +144,7 @@ public:
   operator const vvVector3i&() const { return asVec3i(); }
   operator const vvVector4&() const { return asVec4(); }
   operator const vvColor&() const { return asColor(); }
+  operator const vvAABB&() const { return asAABB(); }
 
   // Returns the type of this parameter
   Type getType() const { return type; }
