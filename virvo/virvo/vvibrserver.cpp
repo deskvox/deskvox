@@ -81,7 +81,9 @@ void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
 
   float drMin = 0.0f;
   float drMax = 0.0f;
-  vvIbr::calcDepthRange(pr, mv, renderer->getVolDesc()->getBoundingBox(), drMin, drMax);
+  vvAABB aabb = vvAABB(vvVector3(), vvVector3());
+  renderer->getVolDesc()->getBoundingBox(aabb);
+  vvIbr::calcDepthRange(pr, mv, aabb, drMin, drMax);
 
   rayRend->setDepthRange(drMin, drMax);
 
