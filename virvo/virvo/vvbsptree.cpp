@@ -23,721 +23,271 @@
 
 #include "vvbrick.h"
 #include "vvbsptree.h"
+#include "vvdebugmsg.h"
 #include "vvgltools.h"
 #include "vvopengl.h"
 #include "vvtoolshed.h"
+#include "vvvoldesc.h"
 
 //============================================================================
-// vvHalfSpace Method Definitions
+// vvBspNode Method Definitions
 //============================================================================
 
-vvHalfSpace::vvHalfSpace()
-  : _boundingBox(vvVector3(), vvVector3())
+vvBspNode::vvBspNode(const vvAABBi& aabb)
+  : _aabb(aabb)
 {
-  _firstSon = NULL;
-  _nextBrother = NULL;
-
-  _splitPlane = NULL;
+  _childLeft = NULL;
+  _childRight = NULL;
 }
 
-vvHalfSpace::~vvHalfSpace()
+vvBspNode::~vvBspNode()
 {
-  delete _splitPlane;
-  delete _firstSon;
-  delete _nextBrother;
+  delete _childLeft;
+  delete _childRight;
 }
 
-void vvHalfSpace::accept(vvVisitor* visitor)
+void vvBspNode::accept(vvVisitor* visitor)
 {
   visitor->visit(this);
 }
 
-void vvHalfSpace::addChild(vvHalfSpace* child)
+void vvBspNode::addChild(vvBspNode* child)
 {
-  if (_firstSon == NULL)
+  if (_childLeft == NULL)
   {
-    // First son.
-    _firstSon = child;
+    _childLeft = child;
   }
   else
   {
-    // Second son is _firstSon's next brother... .
-    _firstSon->_nextBrother = child;
+    _childRight = child;
   }
 }
 
-bool vvHalfSpace::contains(const vvVector3& pos) const
+bool vvBspNode::isLeaf() const
 {
-  for (int i = 0; i < 3; ++i)
-  {
-    if (_splitPlane->_normal[i] < 0.0f)
-    {
-      return (pos[i] < _splitPlane->_point[i]);
-    }
-    else if (_splitPlane->_normal[i] > 0.0f)
-    {
-      return (pos[i] > _splitPlane->_point[i]);
-    }
-  }
-  return false;
+  return (_childLeft == NULL && _childRight == NULL);
 }
 
-bool vvHalfSpace::isLeaf() const
-{
-  return (_firstSon == NULL);
-}
-
-void vvHalfSpace::setId(const int id)
+void vvBspNode::setId(const int id)
 {
   _id = id;
 }
 
-void vvHalfSpace::setFirstSon(vvHalfSpace* firstSon)
+void vvBspNode::setAabb(const vvAABBi& aabb)
 {
-  _firstSon = firstSon;
+  _aabb = aabb;
 }
 
-void vvHalfSpace::setNextBrother(vvHalfSpace* nextBrother)
-{
-  _nextBrother = nextBrother;
-}
-
-void vvHalfSpace::setSplitPlane(vvPlane* splitPlane)
-{
-  _splitPlane = splitPlane;
-}
-
-void vvHalfSpace::setBrickList(const std::vector<BrickList>& brickList)
-{
-  vvVector3 minCorner = vvVector3(VV_FLT_MAX, VV_FLT_MAX, VV_FLT_MAX);
-  vvVector3 maxCorner = vvVector3(-VV_FLT_MAX, -VV_FLT_MAX, -VV_FLT_MAX);
-
-  for (size_t f=0; f<brickList.size(); ++f)
-  {
-    for (BrickList::const_iterator it = brickList[f].begin(); it != brickList[f].end(); ++it)
-    {
-      const vvAABB aabb = (*it)->getAABB();
-      const vvVector3 minAABB = aabb.getMin();
-      const vvVector3 maxAABB = aabb.getMax();
-      for (int i = 0; i < 3; ++i)
-      {
-        if (minAABB[i] < minCorner[i])
-        {
-          minCorner[i] = minAABB[i];
-        }
-        if (maxAABB[i] > maxCorner[i])
-        {
-          maxCorner[i] = maxAABB[i];
-        }
-      }
-    }
-  }
-  _boundingBox = vvAABB(minCorner, maxCorner);
-  _brickList = brickList;
-}
-
-void vvHalfSpace::setPercent(const float percent)
-{
-  _percent = percent;
-}
-
-int vvHalfSpace::getId() const
+int vvBspNode::getId() const
 {
   return _id;
 }
 
-vvHalfSpace* vvHalfSpace::getFirstSon() const
+vvBspNode* vvBspNode::getChildLeft() const
 {
-  return _firstSon;
+  return _childLeft;
 }
 
-vvHalfSpace* vvHalfSpace::getNextBrother() const
+vvBspNode* vvBspNode::getChildRight() const
 {
-  return _nextBrother;
+  return _childRight;
 }
 
-vvPlane* vvHalfSpace::getSplitPlane() const
+const vvAABBi& vvBspNode::getAabb() const
 {
-  return _splitPlane;
+  return _aabb;
 }
 
-std::vector<BrickList>& vvHalfSpace::getBrickList()
+void vvBspNode::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
+                          vvVector3&, vvVector3&) const
 {
-  std::vector<BrickList>& brickList = _brickList;
-  return brickList;
-}
+  const vvVector3i probeMinI = vvVector3i(static_cast<int>(probeMin[0]),
+                                          static_cast<int>(probeMin[1]),
+                                          static_cast<int>(probeMin[2]));
 
-float vvHalfSpace::getPercent() const
-{
-  return _percent;
-}
+  const vvVector3i probeMaxI = vvVector3i(static_cast<int>(probeMax[0]),
+                                          static_cast<int>(probeMax[1]),
+                                          static_cast<int>(probeMax[2]));
 
-float vvHalfSpace::getActualPercent() const
-{
-  return _actualPercent;
-}
+  vvAABBi probe(probeMinI, probeMaxI);
+  probe.intersect(_aabb);
 
-const vvAABB& vvHalfSpace::getBoundingBox() const
-{
-  return _boundingBox;
-}
-
-const vvRecti& vvHalfSpace::getProjectedScreenRect(const vvVector3* probeMin, const vvVector3* probeMax, const bool recalculate)
-{
-  if (recalculate)
+  for (int i = 0; i < 3; ++i)
   {
-    vvVector3 minval;
-    vvVector3 maxval;
-    for (int i = 0; i < 3; i++)
-    {
-      if (_boundingBox.getMin()[i] < (*probeMin)[i])
-      {
-        minval[i] = (*probeMin)[i];
-      }
-      else
-      {
-        minval[i] = _boundingBox.getMin()[i];
-      }
-
-      if (_boundingBox.getMax()[i] > (*probeMax)[i])
-      {
-        maxval[i] = (*probeMax)[i];
-      }
-      else
-      {
-        maxval[i] = _boundingBox.getMax()[i];
-      }
-    }
-
-    _projectedScreenRect = vvGLTools::getProjectedScreenRect(vvAABB(minval, maxval));
+    probeMin[i] = static_cast<int>(probe.getMin()[i]);
+    probeMax[i] = static_cast<int>(probe.getMax()[i]);
   }
-  return _projectedScreenRect;
-}
-
-float vvHalfSpace::calcContainedVolume() const
-{
-  float w, h, d;
-
-  w = h = d = 0.0f;
-  for (size_t f=0; f<_brickList.size(); ++f)
-  {
-    for(BrickList::const_iterator it = _brickList[f].begin(); it != _brickList[f].end(); ++it)
-    {
-      const vvBrick *tmp = *it;
-      w += tmp->getAABB().calcWidth();
-      h += tmp->getAABB().calcHeight();
-      d += tmp->getAABB().calcDepth();
-    }
-  }
-  return w * h * d;
-}
-
-void vvHalfSpace::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
-                            vvVector3&, vvVector3&) const
-{
-  vvAABB probe(probeMin, probeMax);
-  probe.intersect(_boundingBox);
-
-  probeMin = probe.getMin();
-  probeMax = probe.getMax();
-}
-
-//============================================================================
-// vvSpacePartitioner Method Definitions
-//============================================================================
-vvHalfSpace* vvSpacePartitioner::getAABBHalfSpaces(const std::vector<BrickList>& brickList,
-                                                   const float percent1, const float percent2)
-{
-  vvHalfSpace* result = new vvHalfSpace[2];
-
-  //vvBrick* tmp;
-  vvVector3 n1, n2;
-  vvVector3 pnt;
-  float dim[3];
-  vvVector3f minvals;
-  vvVector3f maxvals;
-  //float tmpf;
-  int cnt[3];
-  int ratio[3][2];
-  float bestWorkLoad[3][2];                       // stored for convenience
-  float meanSqrErrorRatio[3];
-  int splitAxis;
-
-  // Determine the appropriate axis for the division plane as follows:
-  //
-  // Let x:y be the desired share (in percent).
-  //
-  // 1.) Determine w, h and d of the parental volume.
-  // 2.) for each axis x, y, z, determine if the volume could be split
-  //     so that two half spaces with non overlapping bricks would result
-  //     with one half space containing x% and the other one containing y%.
-  //     of the bricks.
-  // 3.) If 2.) is true for one or more axes, split the volume along this
-  //     one / an arbitrary one of these.
-  // 4.= If 2.) isn't true, for each axis determine the pair of x':y' values
-  //     minimizing the meanSqrError with x:y. Then choose the one minimizing
-  //     the overall meanSqrError.
-
-  // Get the aabb for the parent share of the volume.
-  maxvals[0] = -VV_FLT_MAX;
-  minvals[0] = VV_FLT_MAX;
-  maxvals[1] = -VV_FLT_MAX;
-  minvals[1] = VV_FLT_MAX;
-  maxvals[2] = -VV_FLT_MAX;
-  minvals[2] = VV_FLT_MAX;
-
-  BrickList tmpArray = BrickList(brickList[0].size());
-  int i = 0;
-
-  for(BrickList::const_iterator it = brickList[0].begin();
-      it != brickList[0].end();
-      ++it)
-  {
-#if 0
-    tmp = *it;
-    tmpf = tmp->getAABB().calcMaxExtent(vvVector3(1, 0, 0));
-    if (tmpf > max[0])
-    {
-      max[0] = tmpf;
-    }
-
-    tmpf = tmp->getAABB().calcMinExtent(vvVector3(1, 0, 0));
-    if (tmpf < min[0])
-    {
-      min[0] = tmpf;
-    }
-
-    tmpf = tmp->getAABB().calcMaxExtent(vvVector3(0, 1, 0));
-    if (tmpf > max[1])
-    {
-      max[1] = tmpf;
-    }
-
-    tmpf = tmp->getAABB().calcMinExtent(vvVector3(0, 1, 0));
-    if (tmpf < min[1])
-    {
-      min[1] = tmpf;
-    }
-
-    tmpf = tmp->getAABB().calcMaxExtent(vvVector3(0, 0, 1));
-    if (tmpf > max[2])
-    {
-      max[2] = tmpf;
-    }
-
-    tmpf = tmp->getAABB().calcMinExtent(vvVector3(0, 0, 1));
-    if (tmpf < min[2])
-    {
-      min[2] = tmpf;
-    }
-
-    tmpArray[i] = tmp;
-    ++i;
-#endif
-  }
-
-  // Get w, h and d.
-  for (i = 0; i < 3; ++i)
-  {
-    dim[i] = maxvals[i] - minvals[i];
-  }
-
-  // Calc the obj count along each axis.
-  for (i = 0; i < 3; ++i)
-  {
-    std::set<float> vals;
-    for(BrickList::const_iterator it = brickList[0].begin();
-      it != brickList[0].end();
-      ++it)
-    {
-      vals.insert((*it)->getAABB().getCenter()[i]);
-    }
-    cnt[i] = (int)vals.size();
-  }
-
-  // Reconstruct the 3D grid. This is done since generally the assumption isn't
-  // valid that each obj occupies the same volume (determined through its aabb).
-
-  // Sort overall array by x-axis.
-  vvBrick::sortByCenter(tmpArray, vvVector3(1, 0, 0));
-
-  std::vector<BrickList> dimX = std::vector<BrickList>(cnt[0]);
-
-  // Build the first dimension.
-  int iterator = 0;
-  for (int i = 0; i < cnt[0]; ++i)
-  {
-    dimX.push_back(BrickList(cnt[1] * cnt[2]));
-    for (int j = 0; j < cnt[1] * cnt[2]; ++j)
-    {
-      dimX[i].push_back(tmpArray[iterator]);
-      ++iterator;
-    }
-  }
-
-  // Sort for second dimension.
-  for (int i = 0; i < cnt[0]; ++i)
-  {
-    vvBrick::sortByCenter(dimX[i], vvVector3(0, 1, 0));
-  }
-
-  // Build second dimension.
-  typedef std::vector<BrickList> ListOfBrickLists;
-  std::vector<ListOfBrickLists> grid = std::vector<ListOfBrickLists>(cnt[0]);
-  for (int i = 0; i < cnt[0]; ++i)
-  {
-    grid.push_back(ListOfBrickLists(cnt[1]));
-    iterator = 0;
-    for (int j = 0; j < cnt[1]; ++j)
-    {
-      grid[i].push_back(BrickList(cnt[2]));
-      for (int k = 0; k < cnt[2]; ++k)
-      {
-        grid[i][j][k] = dimX[i][iterator];
-        ++iterator;
-      }
-
-      // Sort on the fly.
-      vvBrick::sortByCenter(grid[i][j], vvVector3(0, 0, 1));
-    }
-  }
-
-  // Derive the ratios for the three axes respectivly.
-
-  // We will compare the actual workload against this one.
-  float idealWorkLoad[] = { percent1, percent2 };
-
-  for (i = 0; i < 3; ++i)
-  {
-    meanSqrErrorRatio[i] = VV_FLT_MAX;
-
-    // Start solution.
-    ratio[i][0] = cnt[i];
-    ratio[i][1] = 0;
-
-    // Iterate over all possible ratios by swapping the
-    // greatest share from the left to the right side.
-
-    while (ratio[i][0] >= 0)
-    {
-      int iteratorX = 0;
-      int iteratorY = 0;
-      int iteratorZ = 0;
-
-      float workLoad[] = { 0.0f, 0.0f };
-
-      // For left and right work load.
-      for (int j = 0; j < 2; ++j)
-      {
-        for (int k = 0; k < ratio[i][j]; ++k)
-        {
-          switch (i)
-          {
-          case 0:
-            workLoad[j] += grid[iteratorX][iteratorY][iteratorZ]->getAABB().calcWidth();
-            ++iteratorX;
-            break;
-          case 1:
-            workLoad[j] += grid[iteratorX][iteratorY][iteratorZ]->getAABB().calcHeight();
-            ++iteratorY;
-            break;
-          case 2:
-            workLoad[j] += grid[iteratorX][iteratorY][iteratorZ]->getAABB().calcDepth();
-            ++iteratorZ;
-            break;
-          default:
-            break;
-          }
-        }
-
-        // Normalize (to 100) the respective work load.
-        switch (i)
-        {
-        case 0:
-          workLoad[j] /= dim[0];
-          break;
-        case 1:
-          workLoad[j] /= dim[1];
-          break;
-        case 2:
-          workLoad[j] /= dim[2];
-          break;
-        default:
-          break;
-        }
-        workLoad[j] *= 100.0f;
-      }
-
-      // If the mean sqr error is least, this is the best work load so far.
-      const float err = vvToolshed::meanAbsError(idealWorkLoad, workLoad, 2);
-      if (err < meanSqrErrorRatio[i])
-      {
-        bestWorkLoad[i][0] = workLoad[0];
-        bestWorkLoad[i][1] = workLoad[1];
-        meanSqrErrorRatio[i] = err;
-      }
-
-      // Iterate on.
-      --ratio[i][0];
-      ++ratio[i][1];
-    }
-  }
-
-  // Now find the axis with the smallest mean abs error. This yields
-  // the axis along which to split as well as the desired ratio.
-  float leastError = VV_FLT_MAX;
-  splitAxis = -1;
-
-  for (i = 0; i < 3; ++i)
-  {
-    if (meanSqrErrorRatio[i] < leastError)
-    {
-      leastError = meanSqrErrorRatio[i];
-      splitAxis = i;
-    }
-  }
-
-  // Split the volume along the axis.
-
-  // Calculate the splitting planes.
-  for (i = 0; i < 3; ++i)
-  {
-    if (i == splitAxis)
-    {
-      n1[i] = -1;
-      n2[i] = 1;
-      pnt[i] = minvals[i] + bestWorkLoad[i][0] * dim[i] * 0.01f;
-      result[0]._actualPercent = bestWorkLoad[i][0];
-      result[1]._actualPercent = bestWorkLoad[i][1];
-    }
-    else
-    {
-      n1[i] = 0;
-      n2[i] = 0;
-      pnt[i] = 0;
-    }
-  }
-
-  result[0].setSplitPlane(new vvPlane(pnt, n1));
-  result[1].setSplitPlane(new vvPlane(pnt, n2));
-
-  // Finally distribute pointers to the bricks.
-  result[0].setBrickList(std::vector<BrickList>());
-  result[1].setBrickList(std::vector<BrickList>());
-
-  for (size_t f=0; f<brickList.size(); ++f)
-  {
-    result[0].getBrickList().push_back(BrickList());
-    result[1].getBrickList().push_back(BrickList());
-
-    for(BrickList::const_iterator it = brickList[f].begin();
-      it != brickList[f].end();
-      ++it)
-    {
-      vvBrick *tmp = *it;
-      if (tmp->getAABB().getCenter()[splitAxis] < pnt[splitAxis])
-      {
-        result[0].getBrickList()[f].push_back(tmp);
-      }
-      else
-      {
-        result[1].getBrickList()[f].push_back(tmp);
-      }
-    }
-  }
-
-  return result;
 }
 
 //============================================================================
 // vvBspTree Method Definitions
 //============================================================================
 
-vvBspTree::vvBspTree(const float* partitioning, const int length, const std::vector<BrickList>& brickList)
+vvBspTree::vvBspTree(vvVolDesc* vd, const vvBspData& data)
+  : _vd(vd)
+  , _root(NULL)
+  , _visitor(NULL)
+  , _data(data)
 {
-  _root = new vvHalfSpace;
-  _root->setPercent(100.0f);
-  buildHierarchy(_root, partitioning, length, 0, length - 1);
-  _leafs = new std::vector<vvHalfSpace*>();
-  distributeBricks(_root, brickList);
-  _root->_actualPercent = 100.0f;
-  _visitor = NULL;
+  // load balance vector is optional
+  if (_data.loadBalance.size() < 1)
+  {
+    const float fraction = 1.0f / static_cast<float>(_data.numLeafs);
+
+    for (int i = 0; i < _data.numLeafs; ++i)
+    {
+      _data.loadBalance.push_back(fraction);
+    }
+  }
+
+  float totalLoad = 0.0f;
+  for (std::vector<float>::const_iterator it = _data.loadBalance.begin();
+       it != _data.loadBalance.end(); ++it)
+  {
+    totalLoad += *it;
+  }
+
+  // check if total load sums up to appr. 1
+  if ((totalLoad < 1.0f - FLT_EPSILON) || (totalLoad > 1.0f + FLT_EPSILON))
+  {
+    _root = NULL;
+    vvDebugMsg::msg(0, "vvBspTree::vvBspTree() - Error: load balance must sum up to 1: ", totalLoad);
+    return;
+  }
+
+  vvVector3i voxMin = vvVector3i(0, 0, 0);
+  vvVector3i voxMax = vd->vox;
+  _leafs.resize(_data.loadBalance.size());
+
+  if (_leafs.size() < 1)
+  {
+    vvDebugMsg::msg(0, "vvBspTree::vvBspTree() - Error: no leafs");
+    return;
+  }
+
+  if (_leafs.size() > 1)
+  {
+    _root = new vvBspNode(vvAABBi(voxMin, voxMax));
+    buildHierarchy(_root, 0);
+  }
+  else
+  {
+    _root = new vvBspNode(vvAABBi(voxMin, voxMax));
+    _root->setId(0);
+    _leafs[0] = _root;
+  }
 }
 
 vvBspTree::~vvBspTree()
 {
-  // Only delete _root and _leafs, the renderer is responsible
-  // for deleting the single _visitor instance.
+  // only delete _root and _leafs, the renderer is responsible
+  // for deleting the single _visitor instance
   delete _root;
-  delete _leafs;
 }
 
-void vvBspTree::traverse(const vvVector3& pos)
+void vvBspTree::traverse(const vvVector3i& pos) const
 {
   traverse(pos, _root);
 }
 
-std::vector<vvHalfSpace*>* vvBspTree::getLeafs() const
+const std::vector<vvBspNode*>& vvBspTree::getLeafs() const
 {
   return _leafs;
 }
 
-void vvBspTree::print()
-{
-  print(_root, 0);
-}
-
 void vvBspTree::setVisitor(vvVisitor* visitor)
 {
-  delete _visitor;
   _visitor = visitor;
 }
 
-void vvBspTree::buildHierarchy(vvHalfSpace* node, const float* partitioning, const int length,
-                               const int startIdx, const int endIdx)
+void vvBspTree::buildHierarchy(vvBspNode* node, const int leafIdx)
 {
-  float percent1, percent2;                               // Share for the two child nodes.
-  int startIdx1, startIdx2, endIdx1, endIdx2;
-  int length1, length2;
+  const float fraction = calcRelativeFraction(leafIdx);
+  const vvAABBi aabb = node->getAabb();
+  vvVecmath::AxisType axis;
+  const int length = aabb.getLongestSide(axis);
+  const float split = static_cast<float>(length) * fraction;
+  std::pair<vvAABBi, vvAABBi> splitted = aabb.split(axis, static_cast<int>(split));
 
-  if (length > 1)
+  if (leafIdx == _leafs.size() - 2)
   {
-    vvHalfSpace* childLeft = new vvHalfSpace();
-    vvHalfSpace* childRight = new vvHalfSpace();
+    vvBspNode* childLeft = new vvBspNode(splitted.first);
+    vvBspNode* childRight = new vvBspNode(splitted.second);
     node->addChild(childLeft);
     node->addChild(childRight);
 
-    // Get the indices the 2 children will use to
-    // address the percent array values.
-    if ((length & 1) == 0)
-    {
-      length1 = length2 = (length >> 1);
-      startIdx1 = startIdx;
-      endIdx1 = startIdx+(length >> 1) - 1;
-      startIdx2 = startIdx+(length >> 1);
-      endIdx2 = endIdx;
-    }
-    else
-    {
-      length1 = (length >> 1) + 1;
-      length2 = (length >> 1);
-      startIdx1 = startIdx;
-      endIdx1 = startIdx + (length >> 1);
-      startIdx2 = startIdx + (length >> 1) + 1;
-      endIdx2 = endIdx;
-    }
+    // make left child a leaf
+    _leafs.at(leafIdx) = childLeft;
+    childLeft->setId(leafIdx);
 
-    // Distribute share to children.
-    percent1 = percent2 = 0.0f;
-    for (int i = startIdx1; i <= endIdx1; ++i)
-    {
-      percent1 += partitioning[i];
-    }
+    // make right child a leaf
+    _leafs.at(leafIdx + 1) = childRight;
+    childRight->setId(leafIdx + 1);
+  }
+  else if (leafIdx < _leafs.size() - 2)
+  {
+    vvBspNode* childLeft = new vvBspNode(splitted.first);
+    vvBspNode* childRight = new vvBspNode(splitted.second);
+    node->addChild(childLeft);
+    node->addChild(childRight);
 
-    for (int i = startIdx2; i <= endIdx2; ++i)
-    {
-      percent2 += partitioning[i];
-    }
-
-    const float percent = percent1 + percent2;
-    childLeft->setPercent(percent1 / percent * 100);
-    childRight->setPercent(percent2 / percent * 100);
-
-    // Do the same thing for both children.
-    buildHierarchy(childLeft, partitioning, length1, startIdx1, endIdx1);
-    buildHierarchy(childRight, partitioning, length2, startIdx2, endIdx2);
+    // make left child a leaf
+    _leafs.at(leafIdx) = childLeft;
+    childLeft->setId(leafIdx);
+    
+    // recurse with right child
+    buildHierarchy(childRight, leafIdx + 1);
   }
 }
 
-void vvBspTree::distributeBricks(vvHalfSpace* node, const std::vector<BrickList>& brickList)
+float vvBspTree::calcRelativeFraction(const int leafIdx)
 {
-  // No leaf?
-  if (node->getFirstSon() != NULL)
+  float total = 0.0f;
+  for (int i = leafIdx; i < static_cast<int>(_leafs.size()); ++i)
   {
-    // Only one child?
-    if (node->getFirstSon()->getNextBrother() != NULL)
-    {
-      vvHalfSpace* hs = vvSpacePartitioner::getAABBHalfSpaces(brickList, node->getFirstSon()->getPercent(),
-                                                              node->getFirstSon()->getNextBrother()->getPercent());
-      node->getFirstSon()->_actualPercent = hs[0].getActualPercent();
-      node->getFirstSon()->setSplitPlane(new vvPlane(hs[0].getSplitPlane()->_point, hs[0].getSplitPlane()->_normal));
-      node->getFirstSon()->getNextBrother()->_actualPercent = hs[1].getActualPercent();
-      node->getFirstSon()->getNextBrother()->setSplitPlane(new vvPlane(hs[1].getSplitPlane()->_point, hs[1].getSplitPlane()->_normal));
-      distributeBricks(node->getFirstSon(), hs[0].getBrickList());
-      distributeBricks(node->getFirstSon()->getNextBrother(), hs[1].getBrickList());
-
-      // Just delete the array, not the bricks!
-      delete[] hs;
-    }
+    total += _data.loadBalance[i];
   }
-  else
-  {
-    // Leafs store bricks.
-    node->setBrickList(brickList);
-    _leafs->push_back(node);
-  }
+  return _data.loadBalance[leafIdx] / total;
 }
 
-void vvBspTree::print(vvHalfSpace* node, const int indent)
-{
-  const int inc = 4;
-  int i;
-
-  for (i = 0; i < indent; ++i)
-  {
-    std::cerr << " ";
-  }
-  std::cerr << "Desired: " << node->getPercent() << "%" << std::endl;
-  for (i = 0; i < indent; ++i)
-  {
-    std::cerr << " ";
-  }
-  std::cerr << "Realized: " << node->getActualPercent() << "%" << std::endl;
-  if (node->isLeaf())
-  {
-    for (i = 0; i < indent; ++i)
-    {
-      std::cerr << " ";
-    }
-    std::cerr << "# bricks: " << node->getBrickList().size() << std::endl;
-    for (i = 0; i < indent; ++i)
-    {
-      std::cerr << " ";
-    }
-    std::cerr << "contained volume: " << node->calcContainedVolume() << std::endl;
-  }
-
-  if (node->getFirstSon() != NULL)
-  {
-    print(node->getFirstSon(), indent + inc);
-  }
-
-  if (node->getNextBrother() != NULL)
-  {
-    print(node->getNextBrother(), indent);
-  }
-}
-
-void vvBspTree::traverse(const vvVector3& pos, vvHalfSpace* node) const
+void vvBspTree::traverse(const vvVector3i& pos, vvBspNode* node) const
 {
   if (node->isLeaf())
   {
-    // Since this bsp tree implementation utilized the visitor
+    // since this bsp tree implementation utilized the visitor
     // pattern, rendering is initiated using the visit() / accept()
-    // mechanism of the half space node / its visitor.
+    // mechanism of the half space node / its visitor
     node->accept(_visitor);
   }
   else
   {
-    if (node->getFirstSon()->contains(pos))
+    vvVector3i minval = node->getChildLeft()->getAabb().getMin();
+    vvVector3i maxval = node->getChildLeft()->getAabb().getMax();
+
+    for (int i = 0; i < 3; ++i)
     {
-      traverse(pos, node->getFirstSon()->getNextBrother());
-      traverse(pos, node->getFirstSon());
+      if (minval[i] == node->getAabb().getMin()[i])
+      {
+        minval[i] = -std::numeric_limits<int>::max() + 1;
+      }
+
+      if (maxval[i] == node->getAabb().getMax()[i])
+      {
+        maxval[i] = std::numeric_limits<int>::max();
+      }
+    }
+    const vvAABBi aabb = vvAABBi(minval, maxval);
+
+    // back-to-front traversal
+    if (aabb.contains(pos))
+    {
+      traverse(pos, node->getChildRight());
+      traverse(pos, node->getChildLeft());
     }
     else
     {
-      traverse(pos, node->getFirstSon());
-      traverse(pos, node->getFirstSon()->getNextBrother());
+      traverse(pos, node->getChildLeft());
+      traverse(pos, node->getChildRight());
     }
   }
 }

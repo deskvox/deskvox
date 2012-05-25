@@ -19,103 +19,99 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvglew.h"
+
+#include "vvaabb.h"
 #include "vvbsptree.h"
 #include "vvbsptreevisitors.h"
+#include "vvdebugmsg.h"
 #include "vvgltools.h"
-#include "vvoffscreenbuffer.h"
-#include "vvaabb.h"
 #include "vvimage.h"
+#include "vvrenderer.h"
+#include "vvvoldesc.h"
 
-vvThreadVisitor::vvThreadVisitor()
+vvSortLastVisitor::vvSortLastVisitor()
   : vvVisitor()
 {
-  _offscreenBuffers = NULL;
-  _numOffscreenBuffers = 0;
+  vvDebugMsg::msg(1, "vvSortLastVisitor::vvSortLastVisitor()");
 }
 
-vvThreadVisitor::~vvThreadVisitor()
+vvSortLastVisitor::~vvSortLastVisitor()
 {
-  clearOffscreenBuffers();
+  vvDebugMsg::msg(1, "vvSortLastVisitor::~vvSortLastVisitor()");
 }
 
 //----------------------------------------------------------------------------
-/** Thread visitor visit method. Supplies logic to render results of worker
+/** Sort-last visitor visit method. Supplies logic to render results of worker
     thread.
   @param obj  node to render
 */
-void vvThreadVisitor::visit(vvVisitable* obj) const
+void vvSortLastVisitor::visit(vvVisitable* obj) const
 {
-  // This is rather specific: the visitor knows the thread id
-  // of the bsp tree node, looks up the appropriate thread
-  // and renders its data.
+  vvDebugMsg::msg(3, "vvSortLastVisitor::visit()");
 
-  vvHalfSpace* hs = dynamic_cast<vvHalfSpace*>(obj);
-  // Make sure not to recalculate the screen rect, since the
-  // modelview and perspective transformations currently applied
-  // won't match the one's used for rendering.
-  const vvRecti& screenRect = hs->getProjectedScreenRect(0, 0, false);
+  vvBspNode* node = dynamic_cast<vvBspNode*>(obj);
 
-  glActiveTextureARB(GL_TEXTURE0_ARB);
-  glEnable(GL_TEXTURE_2D);
-  _offscreenBuffers[hs->getId()]->bindTexture();
-  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  std::vector<GLfloat>& data = *_pixels[hs->getId()];
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16,
-               screenRect.width, screenRect.height,
-               0, GL_RGBA, GL_FLOAT, &data[0]);
-
-  // Fix the tex coords to a range of 0.0 to 1.0 and adjust
-  // the size of the viewport aligned quad.
-
-  // Transform screen rect from viewport coordinate system to
-  // coordinate system ranging from -1 to 1 in x and y direction.
-  const float x1 = (static_cast<float>(screenRect.x)
-                    / static_cast<float>(_offscreenBuffers[hs->getId()]->getBufferWidth()))
-                   * 2.0f - 1.0f;
-  const float x2 = (static_cast<float>(screenRect.x + screenRect.width)
-                    / static_cast<float>(_offscreenBuffers[hs->getId()]->getBufferWidth()))
-                   * 2.0f - 1.0f;
-  const float y1 = (static_cast<float>(screenRect.y)
-                    / static_cast<float>(_offscreenBuffers[hs->getId()]->getBufferHeight()))
-                   * 2.0f - 1.0f;
-  const float y2 = (static_cast<float>(screenRect.y + screenRect.height)
-                    / static_cast<float>(_offscreenBuffers[hs->getId()]->getBufferHeight()))
-                   * 2.0f - 1.0f;
-
-  vvGLTools::drawViewAlignedQuad(x1, y1, x2, y2);
-}
-
-void vvThreadVisitor::setOffscreenBuffers(vvOffscreenBuffer** offscreenBuffers,
-                                          const int numOffscreenBuffers)
-{
-  clearOffscreenBuffers();
-  _offscreenBuffers = offscreenBuffers;
-  _numOffscreenBuffers = numOffscreenBuffers;
-}
-
-void vvThreadVisitor::setPixels(const std::vector< std::vector<GLfloat>* >& pixels)
-{
-  _pixels = pixels;
-}
-
-void vvThreadVisitor::setWidth(const int width)
-{
-  _width = width;
-}
-
-void vvThreadVisitor::setHeight(const int height)
-{
-  _height = height;
-}
-
-void vvThreadVisitor::clearOffscreenBuffers()
-{
-  for (int i = 0; i < _numOffscreenBuffers; ++i)
+  if (node->isLeaf())
   {
-    delete _offscreenBuffers[i];
+    const vvGLTools::Viewport vp = vvGLTools::getViewport();
+    glDrawPixels(vp[2], vp[3], GL_RGBA, GL_FLOAT, _textures.at(node->getId())->data());
   }
-  delete[] _offscreenBuffers;
 }
+
+void vvSortLastVisitor::setTextures(const std::vector< std::vector<float>* >& textures)
+{
+  vvDebugMsg::msg(3, "vvSortLastVisitor::setTextures()");
+
+  _textures = textures;
+}
+
+vvSimpleRenderVisitor::vvSimpleRenderVisitor(const std::vector<vvRenderer*>& renderers)
+  : vvVisitor()
+  , _renderers(renderers)
+{
+  vvDebugMsg::msg(1, "vvSimpleRenderVisitor::vvSimpleRenderVisitor()");
+}
+
+vvSimpleRenderVisitor::~vvSimpleRenderVisitor()
+{
+  vvDebugMsg::msg(1, "vvSimpleRenderVisitor::~vvSimpleRenderVisitor()");
+}
+
+void vvSimpleRenderVisitor::visit(vvVisitable* obj) const
+{
+  vvDebugMsg::msg(1, "vvSimpleRenderVisitor::visit()");
+  vvBspNode* node = dynamic_cast<vvBspNode*>(obj);
+  if (node->isLeaf())
+  {
+    _renderers[node->getId()]->renderVolumeGL();
+  }
+}
+
+vvShowBricksVisitor::vvShowBricksVisitor(vvVolDesc* vd)
+  : vvVisitor()
+  , _vd(vd)
+{
+  vvDebugMsg::msg(1, "vvShowBricksVisitor::vvShowBricksVisitor()");
+}
+
+vvShowBricksVisitor::~vvShowBricksVisitor()
+{
+  vvDebugMsg::msg(1, "vvShowBricksVisitor::~vvShowBricksVisitor()");
+}
+
+void vvShowBricksVisitor::visit(vvVisitable* obj) const
+{
+  vvDebugMsg::msg(3, "vvShowBricksVisitor::visit()");
+
+  vvBspNode* node = dynamic_cast<vvBspNode*>(obj);
+
+  if (node->isLeaf())
+  {
+    // convert voxel to obj coordinates
+    vvAABB objAabb = vvAABB(_vd->objectCoords(node->getAabb().getMin()),
+                            _vd->objectCoords(node->getAabb().getMax()));
+    vvGLTools::render(objAabb);
+  }
+}
+
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

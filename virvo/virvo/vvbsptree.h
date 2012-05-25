@@ -29,295 +29,79 @@
 
 class vvBrick;
 class vvVisitor;
+class vvVolDesc;
 
-typedef std::vector<vvBrick*> BrickList;
-
-class vvHalfSpace : public vvVisitable
+class vvBspNode : public vvVisitable
 {
-  friend class vvSpacePartitioner;
-  friend class vvBspTree;
 public:
-  vvHalfSpace();
-  virtual ~vvHalfSpace();
+  vvBspNode(const vvAABBi& aabb);
+  virtual ~vvBspNode();
 
   virtual void accept(vvVisitor* visitor);
 
-  /*!
-   * \brief         Add a child node to this half space.
-   *
-   *                Appends the child.
-   * \param         child The child node.
-   */
-  void addChild(vvHalfSpace* child);
-  /*!
-   * \brief         Check if a given point is in this half space.
-   *
-   *                Check if pos is in this half space. Needed
-   *                for bsp-tree traversal.
-   * \param         pos The point to check this condition for.
-   * \return        True if the point is in this half space.
-   */
-  bool contains(const vvVector3& pos) const;
-  /*!
-   * \brief         Check if node has no children.
-   *
-   *                Simple check if this node is a leaf node.
-   * \return        true if node is a leaf, false otherwise.
-   */
+  void addChild(vvBspNode* child);
   bool isLeaf() const;
-  /*!
-   * \brief         Set a distinct integer id.
-   *
-   *                Ids are useful, e.g. if one wants to render using multiple
-   *                threads and later identify which half space is associated
-   *                with which thread.
-   * \param         id The integer id.
-   */
   void setId(int id);
-  /*!
-   * \brief         Set first son.
-   *
-   *                Set the first son node.
-   * \param         firstSon A pointer to the new first son node.
-   */
-  void setFirstSon(vvHalfSpace* firstSon);
-  /*!
-   * \brief         Set next brother.
-   *
-   *                Set the next brother node.
-   * \param         nextBrother A pointer to the new next brother node.
-   */
-  void setNextBrother(vvHalfSpace* nextBrother);
-  /*!
-   * \brief         Set the splitting plane.
-   *
-   *                Set the plane that divides this half space from
-   *                the other one. Normal points inwards.
-   * \param         splitPlane Splitting plane with inwards pointing normal.
-   */
-  void setSplitPlane(vvPlane* splitPlane);
-  /*!
-   * \brief         Set object list.
-   *
-   *                Set the list of bricks this partial space contains.
-   * \param         bricks An array with pointers to convex bricks.
-   */
-  void setBrickList(const std::vector<BrickList>& brickList);
-  /*!
-   * \brief         Set percent of parent space this one occupies.
-   *
-   *                Share of volume data relative to the share of the
-   *                parent node.
-   * \param         percent The volume share relative to the share of the parent.
-   */
-  void setPercent(float percent);
-  /*!
-   * \brief         Get a distinct integer id.
-   *
-   *                Ids are useful, e.g. if one wants to render using multiple
-   *                threads and later identify which half space is associated
-   *                with which thread.
-   * \return        The integer id.
-   */
+  void setAabb(const vvAABBi& aabb);
+
   int getId() const;
-  /*!
-   * \brief         Get first son.
-   *
-   *                Get the first son node.
-   * \return        A pointer to the first son node.
-   */
-  vvHalfSpace* getFirstSon() const;
-  /*!
-   * \brief         Get next brother.
-   *
-   *                Get the next brother node.
-   * \return        A pointer to the next brother node.
-   */
-  vvHalfSpace* getNextBrother() const;
-  /*!
-   * \brief         Get the splitting plane.
-   *
-   *                Get the plane that divides this half space from
-   *                the other one. Normal points inwards.
-   * \return        Splitting plane with inwards pointing normal.
-   */
-  vvPlane* getSplitPlane() const;
-  /*!
-   * \brief         Get brick list.
-   *
-   *                Get the list of bricks this partial space contains.
-   * \return        An array with pointers to convex bricks.
-   */
-  std::vector<BrickList>& getBrickList();
-  /*!
-   * \brief         Get percent of parent space this one occupies.
-   *
-   *                Share of volume data relative to the share of the
-   *                parent node.
-   * \return        The volume share relative to the share of the parent.
-   */
-  float getPercent() const;
-  /*!
-   * \brief         Get the percent of parent space actually accomodated.
-   *
-   *                This read-only property stores the share of the parent
-   *                volume part that was actually distributed to this node.
-   *                When distributing the volume and the desired partitioning
-   *                can't be exactly realized, a partitioning minimizing
-   *                the mean squared error with the desired one will be
-   *                implemented.
-   * \return        The actually realized share in percent.
-   */
-  float getActualPercent() const;
-  /*!
-   * \brief         Get the bounding box of the half space.
-   *
-   *                Get an axis aligned bounding box surrounding the bricks
-   *                contained within this halfspace.
-   * \return        The bounding box around the bricks.
-   */
-  const vvAABB& getBoundingBox() const;
-  /*!
-   * \brief         Calc the projected screen rect.
-   *
-   *                Compute a rectangle in scree coordinates completely
-   *                occluding the sub-volume as tight as possible.
-   *                The rect is stored as a member for later retrieval.
-   *                If a probe is present, the bounding box is clipped
-   *                against it, otherwise the bounding box is clipped
-   *                against the volume.
-   *                TODO: Don't clip here, but rather when distributing
-   *                the convex bricks.
-   * \param         probeMin Used to clip the bounding box.
-   * \param         probeMax Used to clip the bounding box.
-   * \param         recalculate If true, the member rect will be recalculated.
-   * \return        A pointer to the screen rect.
-   */
-  const vvRecti& getProjectedScreenRect(const vvVector3* probeMin = 0, const vvVector3* probeMax = 0,
-                                        bool recalculate = false);
-  /*!
-   * \brief         Debug function. Calculate the contained volume.
-   *
-   *                Calculate the contained volume by evaluating the volume
-   *                of the aabbs of the contained bricks. Useful for
-   *                debugging, otherwise quite time consuming.
-   * \return        The contained volume.
-   */
-  float calcContainedVolume() const;
+  vvBspNode* getChildLeft() const;
+  vvBspNode* getChildRight() const;
+  const vvAABBi& getAabb() const;
 
   void clipProbe(vvVector3& probeMin, vvVector3& probeMax,
                  vvVector3& probePosObj, vvVector3& probeSizeObj) const;
 private:
   int _id;
-  vvHalfSpace* _firstSon;
-  vvHalfSpace* _nextBrother;
+  vvBspNode* _childLeft;
+  vvBspNode* _childRight;
 
-  vvPlane* _splitPlane;
-  std::vector<BrickList> _brickList;
-  float _percent;
-  float _actualPercent;
-  vvAABB _boundingBox;
-  vvRecti _projectedScreenRect;
+  vvAABBi _aabb;
 };
 
-/*!
- * \brief           Generic class providing static methods to partition space.
- *
- *                  Space partitioning can be performed in several different ways.
- *                  E.g. space can be partitioned into two separate half spaces.
- *                  Or space is partitioned using another criterium.<br>
- *                  <br>
- *                  Space partitioning can be performed on bricks (aabb's), but
- *                  this isn't necessarily the case. Thus the method used for
- *                  space partitioning is dependent on the brick located in the
- *                  spaces. Thus a generic interface to space partitioning is
- *                  necessary.
+/*! \brief Data passed to bsp-tree ctor
  */
-class vvSpacePartitioner
+struct vvBspData
 {
-public:
-  /*!
-   * \brief         Individual partitioner taking two percent values.
-   *
-   *                This partitioner will produce to half spaces, each of which
-   *                will contain appr. percent1 or percent2 of the provided
-   *                bricks respectivelly. Make sure to provide bricks that
-   *                are granulare enough to be divided according to the percent
-   *                values. Otherwise the percent values will only be approximated.
-   *                The provided bricks need to have AABBs. AABBs need to be
-   *                partitionable.
-   * \param         bricks All bricks to be contained in this half space.
-   * \param         percent1 The share for half space 1.
-   * \param         percent2 The share for half space 2.
-   */
-  static vvHalfSpace* getAABBHalfSpaces(const std::vector<BrickList>& bricks,
-                                        float percent1, float percent2);
-private:
+  vvBspData()
+    : numLeafs(0)
+  {
+
+  }
+
+  int numLeafs;
+  std::vector<float> loadBalance;
 };
 
-/*!
- * \brief           Binary space partitioning tree.
- *
- *                  In order to build up a space partitioning tree, you have to
- *                  provide a pointer to an array of primitives to subdivide
- *                  these. You have to provide an array with a given partition
- *                  with floats ranging from 0.0 to 100.0 (percent).
- */
 class vvBspTree
 {
 public:
-  vvBspTree(const float* partitioning, int length, const std::vector<BrickList>& bricks);
+  vvBspTree(vvVolDesc* vd, const vvBspData& data);
   virtual ~vvBspTree();
 
-  void traverse(const vvVector3& pos);
+  void traverse(const vvVector3i& pos) const;
 
-  /*!
-   * \brief         Get a list with all leafs.
-   *
-   *                Get a list with pointers to the leafs.
-   * \return        A list with pointers to the leafs.
-   */
-  std::vector<vvHalfSpace*> *getLeafs() const;
-  /*!
-   * \brief         Visualize tree using text console.
-   *
-   *                Print the tree with indented nodes to std::cerr.
-   */
-  void print();
+  const std::vector<vvBspNode*>& getLeafs() const;
 
-  /*!
-   * \brief         Set the tree's visitor brick.
-   *
-   *                Tree traversal is realized using the visitor
-   *                pattern. The rendering logic is supplied by
-   *                an externally implemented visitor class which
-   *                essentially will render the contained bricks
-   *                based upon the knowledge of their type.
-   * \param         visitor The visitor.
-   */
   void setVisitor(vvVisitor* visitor);
 private:
-  vvHalfSpace* _root;
-  std::vector<vvHalfSpace*> *_leafs;
+  std::vector<vvBspNode*> _leafs;
+  vvVolDesc* _vd;
+  vvBspNode* _root;
   vvVisitor* _visitor;
+  vvBspData _data;
+
+  void buildHierarchy(vvBspNode* node, int leafIdx);
 
   /*!
-   * \brief         Build up hierarchy of space partitioning nodes.
-   *
-   *                Builds up the tree given the provided partitioning. Won't
-   *                provide the partitioning nodes with primitives, this has to
-   *                be performed during a later partitioning step.
-   * \param         node The partial space node to append the child to.
-   * \param         partitioning An array of (0.0 .. 100.0) values with the partitioning.
-   * \param         length The length of the partitioning array.
-   * \param         startIdx The start index into the partitioning array.
-   * \param         endIdx The end index into the partitioning array.
-   */
-  void buildHierarchy(vvHalfSpace* node, const float* partitioning,
-                      int length, int startIdx, int endIdx);
-  void distributeBricks(vvHalfSpace* node, const std::vector<BrickList>& brickList);
-  void print(vvHalfSpace* node, int indent);
-  void traverse(const vvVector3& pos, vvHalfSpace* node) const;
+   by example: load balance == { 0.5, 0.4, 0.1 }
+   then the relative fractions are: {0.5, 0.8, 1.0 }
+   [0] := 50% of total volume
+   [1] := 40% of remaining fraction (0.4 + 0.1) == 0.8
+   [2] := 100% of remaining fraction (0.1) == 1.0
+  */
+  float calcRelativeFraction(int leafIdx);
+  void traverse(const vvVector3i& pos, vvBspNode* node) const;
 };
 
 #endif // VVBSPTREE_H

@@ -98,8 +98,6 @@ vvView::vvView()
   onOff[0] = "off";
   onOff[1] = "on";
   pos.zero();
-  numDisplays = 0;
-  displayNames = NULL;
   animating             = false;
   rotating              = false;
   activeStereoCapable   = false;
@@ -126,6 +124,7 @@ vvView::vvView()
   animSpeed             = 1.0f;
   iconMode              = false;
   isectType             = 0;
+  bricks                = 1;
   useOffscreenBuffer    = false;
   bufferPrecision       = 8;
   useHeadLight          = false;
@@ -269,31 +268,6 @@ void vvView::mainLoop(int argc, char *argv[])
 
   delete vd;
   vd = NULL;
-}
-
-//----------------------------------------------------------------------------
-/** Add a display to render. This is relevant if a multi threaded renderer
-    is used which distributes its work loads among multiple gpus.
-    @param name The descriptor for the x-display (e.g. host:0.1 <==>
-                host = host,
-                display = 0,
-                screen = 1)
-*/
-void vvView::addDisplay(const char* name)
-{
-  unsigned int i;
-
-  ++numDisplays;
-  const char** tmp = new const char*[numDisplays];
-
-  for (i = 0; i < (numDisplays - 1); ++i)
-  {
-    tmp[i] = displayNames[i];
-  }
-  tmp[i] = name;
-
-  delete[] displayNames;
-  displayNames = tmp;
 }
 
 
@@ -621,6 +595,18 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     port << slavePorts[0];
     opt["port"] = port.str();
   }
+
+  std::stringstream displaystr;
+  for (std::vector<std::string>::const_iterator it = displays.begin();
+       it != displays.end(); ++it)
+  {
+    displaystr << *it << ",";
+  }
+  opt["displays"] = displaystr.str();
+
+  std::stringstream brickstr;
+  brickstr << bricks;
+  opt["bricks"] = brickstr.str();
 
   if(renderer)
   renderState = *renderer;
@@ -2434,6 +2420,9 @@ void vvView::displayHelpInfo()
   cerr << "-dsp <host:display.screen>" << endl;
   cerr << "  Add x-org display for additional rendering context" << endl;
   cerr << endl;
+  cerr << "-bricks <value>" << endl;
+  cerr << "  Number of bricks used by serbrickrend renderer" << endl;
+  cerr << endl;
   cerr << "-server <url>[:port]" << endl;
   cerr << "  Add a server renderer connected to over tcp ip" << endl;
   cerr << endl;
@@ -2649,7 +2638,16 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cerr << "Display name unspecified." << endl;
         return false;
       }
-      addDisplay(argv[arg]);
+      displays.push_back(argv[arg]);
+    }
+    else if (vvToolshed::strCompare(argv[arg], "-bricks")==0)
+    {
+      if ((++arg)>=argc)
+      {
+        cerr << "Number of bricks missing." << endl;
+        return false;
+      }
+      bricks = atoi(argv[arg]);
     }
     else if (vvToolshed::strCompare(argv[arg], "-lighting")==0)
     {

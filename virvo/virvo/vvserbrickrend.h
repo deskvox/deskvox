@@ -18,57 +18,31 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_BSPTREEVISITORS_H_
-#define _VV_BSPTREEVISITORS_H_
+#ifndef _VVSERBRICKREND_H_
+#define _VVSERBRICKREND_H_
 
-#include "vvopengl.h"
-#include "vvvisitor.h"
+#include "vvbrickrend.h"
 
-class vvImage;
-class vvRenderer;
+class vvSimpleRenderVisitor;
+class vvVolDesc;
 
-#include <vector>
-
-/*!
- sort-last alpha compositing visitor
- */
-class vvSortLastVisitor : public vvVisitor
+class VIRVOEXPORT vvSerBrickRend : public vvBrickRend
 {
 public:
-  vvSortLastVisitor();
-  ~vvSortLastVisitor();
-  void visit(vvVisitable* obj) const;
+  vvSerBrickRend(vvVolDesc* vd, vvRenderState renderState, int numBricks,
+                 const std::string& type, const vvRendererFactory::Options& options);
+  ~vvSerBrickRend();
 
-  void setTextures(const std::vector< std::vector<float>* >& textures);
-private:
-  std::vector< std::vector<float>* > _textures;
-};
+  void renderVolumeGL();
 
-/*!
- simple visitor drawing bsp-nodes (aka bricks) using OpenGL
- */
-class vvSimpleRenderVisitor : public vvVisitor
-{
-public:
-  vvSimpleRenderVisitor(const std::vector<vvRenderer*>& renderers);
-  ~vvSimpleRenderVisitor();
-  void visit(vvVisitable* obj) const;
+  void setParameter(ParameterType param, const vvParam& newValue);
+  void updateTransferFunction();
 private:
+  vvSimpleRenderVisitor* _simpleRenderVisitor;
   std::vector<vvRenderer*> _renderers;
+
+  ErrorType createRenderers();
 };
 
-/*!
- visitor drawing the outlines of the bsp-nodes
- */
-class vvShowBricksVisitor : public vvVisitor
-{
-public:
-  vvShowBricksVisitor(vvVolDesc* vd);
-  ~vvShowBricksVisitor();
-  void visit(vvVisitable* obj) const;
-private:
-  vvVolDesc* _vd;
-};
-
-#endif
+#endif // _VVSERBRICKREND_H_
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

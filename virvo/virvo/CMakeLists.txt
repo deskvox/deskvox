@@ -54,11 +54,10 @@ SET(VIRVO_HEADERS
   vvaabb.h
   vvaabb.impl.h
   vvbrick.h
+  vvbrickrend.h
   vvbsptree.h
   vvbsptreevisitors.h
   vvcgprogram.h
-  #vvclusterclient.h
-  #vvclusterserver.h
   vvclock.h
   vvcomparisonrend.h
   vvcomparisonrend.impl.h
@@ -90,6 +89,7 @@ SET(VIRVO_HEADERS
   vvoffscreenbuffer.h
   vvopengl.h
   vvparam.h
+  vvparbrickrend.h
   vvplatform.h
   vvprintgl.h
   vvpthread.h
@@ -101,6 +101,7 @@ SET(VIRVO_HEADERS
   vvrendererfactory.h
   vvrendertarget.h
   vvrendervp.h
+  vvserbrickrend.h
   vvshaderfactory.h
   vvshaderprogram.h
   vvswitchrenderer.h
@@ -143,11 +144,10 @@ SET(VIRVO_SOURCES
   vvmultirend/vvtexmultirend.cpp
   vvmultirend/vvtexmultirendmngr.cpp
   vvbrick.cpp
+  vvbrickrend.cpp
   vvbsptree.cpp
   vvbsptreevisitors.cpp
   vvcgprogram.cpp
-  #vvclusterclient.cpp
-  #vvclusterserver.cpp
   vvclock.cpp
   vvcolor.cpp
   vvcuda.cpp
@@ -169,6 +169,7 @@ SET(VIRVO_SOURCES
   vvimageserver.cpp
   vvmulticast.cpp
   vvoffscreenbuffer.cpp
+  vvparbrickrend.cpp
   vvprintgl.cpp
   vvpthread.cpp
   vvremoteclient.cpp
@@ -178,6 +179,7 @@ SET(VIRVO_SOURCES
   vvrendererfactory.cpp
   vvrendertarget.cpp
   vvrendervp.cpp
+  vvserbrickrend.cpp
   vvshaderfactory.cpp
   vvshaderprogram.cpp
   vvsocket.cpp

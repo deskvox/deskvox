@@ -37,6 +37,8 @@
 #ifdef HAVE_VOLPACK
 #include "vvrendervp.h"
 #endif
+#include "vvparbrickrend.h"
+#include "vvserbrickrend.h"
 
 #include <map>
 #include <string>
@@ -78,6 +80,8 @@ void init()
   rendererAliasMap["10"] = "ibr";
   rendererAliasMap["11"] = "image";
   rendererAliasMap["12"] = "comparison";
+  rendererAliasMap["13"] = "serbrick";
+  rendererAliasMap["14"] = "parbrick";
   // used in COVER and Inventor renderer
   rendererAliasMap["tex2d"] = "slices";
   rendererAliasMap["slices2d"] = "slices";
@@ -123,6 +127,8 @@ void init()
   rendererTypeMap["comparison"] = vvRenderer::COMPARISON;
   rendererTypeMap["image"] = vvRenderer::REMOTE_IMAGE;
   rendererTypeMap["ibr"] = vvRenderer::REMOTE_IBR;
+  rendererTypeMap["serbrick"] = vvRenderer::SERBRICKREND;
+  rendererTypeMap["parbrick"] = vvRenderer::PARBRICKREND;
 }
 
 std::vector<std::string> split(const std::string &s, char delim)
@@ -138,13 +144,16 @@ std::vector<std::string> split(const std::string &s, char delim)
 
 struct ParsedOptions
 {
+  vvRendererFactory::Options options;
   std::string voxeltype;
   std::string server;
   int port;
   std::string filename;
+  int bricks;
+  std::vector<std::string> displays;
 
-  ParsedOptions() : voxeltype("default"), port(-1) {}
-  ParsedOptions(std::string str) : voxeltype("default"), port(-1)
+  ParsedOptions() : voxeltype("default"), port(-1), bricks(1) {}
+  ParsedOptions(std::string str) : voxeltype("default"), port(-1), bricks(1)
   {
     std::vector<std::string> optlist = split(str, ',');
     for(std::vector<std::string>::iterator it = optlist.begin();
@@ -172,7 +181,7 @@ struct ParsedOptions
     }
   }
 
-  ParsedOptions(const vvRendererFactory::Options &options) : voxeltype("default"), port(-1)
+  ParsedOptions(const vvRendererFactory::Options &options) : options(options), voxeltype("default"), port(-1), bricks(1)
   {
     for(std::map<std::string, std::string>::const_iterator it = options.begin();
         it != options.end();
@@ -205,6 +214,14 @@ struct ParsedOptions
       else if(opt == "filename")
       {
         filename = val;
+      }
+      else if(opt == "bricks")
+      {
+        bricks = atoi(val.c_str());
+      }
+      else if (opt == "displays")
+      {
+        displays = split(val, ',');
       }
       else
       {
@@ -239,6 +256,10 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
 
   switch(it->second)
   {
+  case vvRenderer::SERBRICKREND:
+    return new vvSerBrickRend(vd, rs, options.bricks, "planar", options.options);
+  case vvRenderer::PARBRICKREND:
+    return new vvParBrickRend(vd, rs, options.displays, "planar", options.options);
   case vvRenderer::COMPARISON:
     return new vvComparisonRend<vvImageClient, vvIbrClient>(vd, rs, options.server.c_str(), options.port,
                                                             options.filename.c_str(),

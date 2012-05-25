@@ -18,57 +18,41 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_BSPTREEVISITORS_H_
-#define _VV_BSPTREEVISITORS_H_
+#ifndef _VVPARBRICKREND_H_
+#define _VVPARBRICKREND_H_
 
-#include "vvopengl.h"
-#include "vvvisitor.h"
-
-class vvImage;
-class vvRenderer;
+#include "vvbrickrend.h"
 
 #include <vector>
 
-/*!
- sort-last alpha compositing visitor
- */
-class vvSortLastVisitor : public vvVisitor
+class vvRenderContext;
+class vvSortLastVisitor;
+class vvVolDesc;
+
+class VIRVOEXPORT vvParBrickRend : public vvBrickRend
 {
 public:
-  vvSortLastVisitor();
-  ~vvSortLastVisitor();
-  void visit(vvVisitable* obj) const;
+  vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
+                 const std::vector<std::string>& displays,
+                 const std::string& type, const vvRendererFactory::Options& options);
+  ~vvParBrickRend();
 
-  void setTextures(const std::vector< std::vector<float>* >& textures);
+  void renderVolumeGL();
+
+  void setParameter(ParameterType param, const vvParam& newValue);
+  void updateTransferFunction();
 private:
+  struct Thread;
+
+  vvSortLastVisitor* _sortLastVisitor;
+
+  static void* renderFunc(void* args);
+  static void render(Thread* thread);
+
+  Thread* _thread;                                   ///< main thread
+  std::vector<Thread*> _threads;                     ///< worker threads
   std::vector< std::vector<float>* > _textures;
 };
 
-/*!
- simple visitor drawing bsp-nodes (aka bricks) using OpenGL
- */
-class vvSimpleRenderVisitor : public vvVisitor
-{
-public:
-  vvSimpleRenderVisitor(const std::vector<vvRenderer*>& renderers);
-  ~vvSimpleRenderVisitor();
-  void visit(vvVisitable* obj) const;
-private:
-  std::vector<vvRenderer*> _renderers;
-};
-
-/*!
- visitor drawing the outlines of the bsp-nodes
- */
-class vvShowBricksVisitor : public vvVisitor
-{
-public:
-  vvShowBricksVisitor(vvVolDesc* vd);
-  ~vvShowBricksVisitor();
-  void visit(vvVisitable* obj) const;
-private:
-  vvVolDesc* _vd;
-};
-
-#endif
+#endif // _VVPARBRICKREND_H_
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

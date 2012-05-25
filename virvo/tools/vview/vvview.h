@@ -137,8 +137,8 @@ class vvView
     vvVector3 pos;                              ///< volume position in object space
     float animSpeed;                            ///< time per animation frame
     bool  iconMode;                             ///< true=display file icon
-    const char** displayNames;                  ///< X-window display names to use (relevant for threaded rendering)
-    unsigned int numDisplays;                   ///< number of displays to use
+    int bricks;                                 ///< num bricks (serbrickrend and parbrickrend)
+    std::vector<std::string> displays;          ///< for parbrickrend
     int isectType;
     bool useOffscreenBuffer;                    ///< render to an offscreen buffer. Mandatory for setting buffer precision
     bool useHeadLight;                          ///< toggle head light
@@ -215,7 +215,6 @@ class vvView
     void editClipPlane(int command, float val);
     void displayHelpInfo();
     bool parseCommandLine(int argc, char *argv[]);
-    void addDisplay(const char* name);
     void mainLoop(int argc, char *argv[]);
 };
 #endif
