@@ -234,7 +234,7 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
     {
       if ( (size = snappyEncode(imageptr, codedimage, width*height*4, width*height*4*2, 4)) < 0)
       {
-        vvDebugMsg::msg(1,"Error: snappyEncode()");
+        vvDebugMsg::msg(0,"Error: snappyEncode()");
         return -1;
       }
       codetype = VV_SNAPPY;

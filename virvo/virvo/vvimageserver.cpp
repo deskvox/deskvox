@@ -81,8 +81,15 @@ void vvImageServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer
 
   glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
 
-  _image->encode(_codetype, 0, h-1, 0, w-1);
-  _socketio->putImage(_image);
+  if(_image->encode(_codetype, 0, h-1, 0, w-1) < 0)
+  {
+    vvImage emtpyImg;
+    _socketio->putImage(&emtpyImg);
+  }
+  else
+  {
+    _socketio->putImage(_image);
+  }
 }
 
 void vvImageServer::resize(const int w, const int h)
