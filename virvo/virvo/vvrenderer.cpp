@@ -42,59 +42,47 @@
 
 //----------------------------------------------------------------------------
 vvRenderState::vvRenderState()
-  : _visibleRegion(vvAABBi(vvVector3i(0), vvVector3i(std::numeric_limits<int>::max())))
+  : _quality(1.0f)
+  , _clipPoint(vvVector3(0.0f, 0.0f, 0.0f))
+  , _clipNormal(vvVector3(0.0f, 0.0f, 1.0f))
+  , _clipColor(vvColor(1.0f, 1.0f, 1.0f))
+  , _mipMode(0)
+  , _alphaMode(0)
+  , _emptySpaceLeaping(true)
+  , _clipPerimeter(true)
+  , _boundaries(false)
+  , _orientation(false)
+  , _palette(false)
+  , _qualityDisplay(false)
+  , _clipMode(false)
+  , _clipSingleSlice(false)
+  , _clipOpaque(false)
+  , _isROIUsed(false)
+  , _roiPos(vvVector3(0.0f, 0.0f, 0.0f))
+  , _roiSize(vvVector3(0.5f, 0.5f, 0.5f))
+  , _sphericalROI(false)
+  , _brickSize(vvVector3i(0, 0, 0))
+  , _maxBrickSize(vvVector3i(64, 64, 64))
+  , _brickTexelOverlap(1)
+  , _showBricks(false)
+  , _computeBrickSize(true)
+  , _texMemorySize(0)
+  , _fpsDisplay(false)
+  , _gammaCorrection(false)
+  , _gamma(vvVector4(1.0f, 1.0f, 1.0f, 1.0f))
+  , _opacityWeights(false)
+  , _boundColor(vvColor(1.0f, 1.0f, 1.0f))
+  , _probeColor(vvColor(1.0f, 1.0f, 1.0f))
+  , _useOffscreenBuffer(false)
+  , _imageScale(1.0f)
+  , _imagePrecision(VV_BYTE)
+  , _showTexture(true)
+  , _opaqueGeometryPresent(false)
+  , _useIbr(false)
+  , _ibrMode(VV_REL_THRESHOLD)
+  , _visibleRegion(vvAABBi(vvVector3i(0), vvVector3i(std::numeric_limits<int>::max())))
 {
-  int i;
-
-  _mipMode = 0;
-  _alphaMode = 0;
-  _emptySpaceLeaping = true;
-  _clipPerimeter = true;
-  _boundaries = false;
-  _orientation = false;
-  _palette = false;
-  _qualityDisplay = false;
-  _fpsDisplay = false;
-  _quality = 1.0f;
-  _clipSingleSlice = false;
-  _clipOpaque = false;
-  _clipMode = false;
-  _roiPos.zero();
-  _roiSize.set(0.5f, 0.5f, 0.5f);
-  _isROIUsed = false;
-  _sphericalROI = false;
-  _brickSize[0] = _brickSize[1] = _brickSize[2] = 0;
-  _maxBrickSize[0] = 64;
-  _maxBrickSize[1] = 64;
-  _maxBrickSize[2] = 64;
-  _brickTexelOverlap = 1;
-  _showBricks = false;
-  _computeBrickSize = true;
-  _texMemorySize = 0;
-  _clipPoint.set(0.0f, 0.0f, 0.0f);
-  _clipNormal.set(0.0f, 0.0f, 1.0f);
-  _gammaCorrection = false;
-  _opacityWeights = false;
-
-  for (i=0; i<4; ++i)
-  {
-    _gamma[i] = 1.0f;
-  }
-
-  for (i=0; i<3; ++i)
-  {
-    _clipColor[i]  = 1.0f;
-    _probeColor[i] = 1.0f;
-    _boundColor[i] = 1.0f;
-  }
-
-  _useOffscreenBuffer = false;
-  _imageScale = 1.0f;
-  _imagePrecision = VV_BYTE;
-  _showTexture = true;	// added by Han, Feb 2008
-  _opaqueGeometryPresent = false;
-  _useIbr = false;
-  _ibrMode = VV_REL_THRESHOLD;
+  
 }
 
 void vvRenderState::setParameter(ParameterType param, const vvParam& value)
