@@ -125,7 +125,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     uchar* rgbaLUT;                               ///< final RGBA conversion table, as transferred to graphics hardware (includes opacity and gamma correction)
     uchar* preintTable;                           ///< lookup table for pre-integrated rendering, as transferred to graphics hardware
     float  lutDistance;                           ///< slice distance for which LUT was computed
-    int   texels[3];                              ///< width, height and depth of volume, including empty space [texels]
+    vvVector3i   texels;                          ///< width, height and depth of volume, including empty space [texels]
     float texMin[3];                              ///< minimum texture value of object [0..1] (to prevent border interpolation)
     float texMax[3];                              ///< maximum texture value of object [0..1] (to prevent border interpolation)
     int   textures;                               ///< number of textures stored in TRAM
@@ -208,7 +208,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType updateTextures3D(int, int, int, int, int, int, bool);
     ErrorType updateTextures2D(int, int, int, int, int, int, int);
     ErrorType updateTextureBricks(int, int, int, int, int, int);
-    void beforeSetGLenvironment() const;
     void setGLenvironment() const;
     void unsetGLenvironment() const;
     void renderTex3DSpherical(vvMatrix*);
@@ -236,8 +235,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
                           vvVector3, const vvVector3, bool& roiChanged);
     void computeBrickSize();
-    void calcNumTexels();
-    void calcNumBricks();
     void initVertArray(int numSlices);
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
     void evaluateLocalIllumination(vvShaderProgram* pixelShader, const vvVector3& normal);
@@ -277,9 +274,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     unsigned char* getHeightFieldData(float[4][3], int&, int&);
     float getManhattenDist(float[3], float[3]) const;
     float calcQualityAndScaleImage();
-
-    static int get2DTextureShader();
-    static int getLocalIlluminationShader();
 };
 #endif
 

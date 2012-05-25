@@ -208,9 +208,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   if(geomType==VV_SLICES || geomType==VV_CUBIC2D)
   {
-    cerr << "get2DTextureShader()" << endl;
-    _currentShader = get2DTextureShader();
-    cerr << "_currentShader: "<< _currentShader << endl;
+    _currentShader = 9;
   }
 
   if (geomType == VV_BRICKS)
@@ -220,6 +218,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   pixLUTName = 0;
   _shader = initShader();
+  if(_shader) _proxyGeometryOnGpuSupported = true;
   if(voxelType == VV_PIX_SHD && !_shader)
     setVoxelType(VV_RGBA);
   initClassificationStage(&pixLUTName, fragProgName);
@@ -281,9 +280,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
     makeTextures(pixLUTName, rgbaLUT);      // we only have to do this once for non-RGBA textures
   }
   updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
-
-  _shader = initShader();
-  if(_shader) _proxyGeometryOnGpuSupported = true;
 }
 
 //----------------------------------------------------------------------------
@@ -453,13 +449,42 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
 
   vvDebugMsg::msg(2, "vvTexRend::makeTextures()");
 
-  if (vd->vox[0] == 0 || vd->vox[1] == 0 || vd->vox[2] == 0)
+  vvVector3i vox = _paddingRegion.getMax() - _paddingRegion.getMin();
+  for (int i = 0; i < 3; ++i)
+  {
+    vox[i] = std::min(vox[i], vd->vox[i]);
+  }
+
+  if (vox[0] == 0 || vox[1] == 0 || vox[2] == 0)
     return err;
 
-  calcNumTexels();
+  // Compute texture dimensions (must be power of 2):
+  if (geomType != VV_BRICKS)
+  {
+    texels[0] = vvToolshed::getTextureSize(vox[0]);
+    texels[1] = vvToolshed::getTextureSize(vox[1]);
+    texels[2] = vvToolshed::getTextureSize(vox[2]);
+  }
+  else
+  {
+    texels[0] = vvToolshed::getTextureSize(_brickSize[0]);
+    texels[1] = vvToolshed::getTextureSize(_brickSize[1]);
+    texels[2] = vvToolshed::getTextureSize(_brickSize[2]);
+  }
+
   if (geomType == VV_BRICKS)
   {
-    calcNumBricks();
+    // compute number of bricks
+    if ((_useOnlyOneBrick) ||
+      ((texels[0] == vd->vox[0]) && (texels[1] == vd->vox[1]) && (texels[2] == vd->vox[2])))
+      _numBricks[0] = _numBricks[1] = _numBricks[2] = 1;
+
+    else
+    {
+      _numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_brickSize[0]));
+      _numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_brickSize[1]));
+      _numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_brickSize[2]));
+    }
   }
 
   switch (geomType)
@@ -1208,40 +1233,6 @@ void vvTexRend::computeBrickSize()
   }
 }
 
-
-void vvTexRend::calcNumTexels()
-{
-  // Compute texture dimensions (must be power of 2):
-  if (geomType != VV_BRICKS)
-  {
-    texels[0] = vvToolshed::getTextureSize(vd->vox[0]);
-    texels[1] = vvToolshed::getTextureSize(vd->vox[1]);
-    texels[2] = vvToolshed::getTextureSize(vd->vox[2]);
-  }
-  else
-  {
-    texels[0] = vvToolshed::getTextureSize(_brickSize[0]);
-    texels[1] = vvToolshed::getTextureSize(_brickSize[1]);
-    texels[2] = vvToolshed::getTextureSize(_brickSize[2]);
-  }
-}
-
-
-void vvTexRend::calcNumBricks()
-{
-  // compute number of bricks
-  if ((_useOnlyOneBrick) ||
-    ((texels[0] == vd->vox[0]) && (texels[1] == vd->vox[1]) && (texels[2] == vd->vox[2])))
-    _numBricks[0] = _numBricks[1] = _numBricks[2] = 1;
-
-  else
-  {
-    _numBricks[0] = (int) ceil((float) (vd->vox[0]) / (float) (_brickSize[0]));
-    _numBricks[1] = (int) ceil((float) (vd->vox[1]) / (float) (_brickSize[1]));
-    _numBricks[2] = (int) ceil((float) (vd->vox[2]) / (float) (_brickSize[2]));
-  }
-}
-
 //----------------------------------------------------------------------------
 /// Update transfer function from volume description.
 void vvTexRend::updateTransferFunction()
@@ -1395,7 +1386,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int of
   if (!extTex3d) return NO3DTEX;
 
   const int texSize = sizeX * sizeY * sizeZ * texelsize;
-
   vvDebugMsg::msg(1, "3D Texture width     = ", sizeX);
   vvDebugMsg::msg(1, "3D Texture height    = ", sizeY);
   vvDebugMsg::msg(1, "3D Texture depth     = ", sizeZ);
@@ -1420,20 +1410,23 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int of
   vvDebugMsg::msg(2, "Transferring textures to TRAM. Total size [KB]: ",
     vd->frames * texSize / 1024);
 
+  vvVector3i offsets = vvVector3i(offsetX, offsetY, offsetZ);
+  offsets += _paddingRegion.getMin();
+
   // Generate sub texture contents:
   for (int f = 0; f < vd->frames; f++)
   {
     raw = vd->getRaw(f);
-    for (int s = offsetZ; s < (offsetZ + sizeZ); s++)
+    for (int s = offsets[2]; s < (offsets[2] + sizeZ); s++)
     {
       const int rawSliceOffset = (vd->vox[2] - min(s,vd->vox[2]-1) - 1) * sliceSize;
-      for (int y = offsetY; y < (offsetY + sizeY); y++)
+      for (int y = offsets[1]; y < (offsets[1] + sizeY); y++)
       {
         const int heightOffset = (vd->vox[1] - min(y,vd->vox[1]-1) - 1) * vd->vox[0] * vd->bpc * vd->chan;
-        const int texLineOffset = (y - offsetY) * sizeX + (s - offsetZ) * sizeX * sizeY;
+        const int texLineOffset = (y - offsets[1] - offsetY) * sizeX + (s - offsets[2] - offsetZ) * sizeX * sizeY;
         if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
         {
-          for (int x = offsetX; x < (offsetX + sizeX); x++)
+          for (int x = offsets[0]; x < (offsets[0] + sizeX); x++)
           {
             srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
             if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
@@ -1447,7 +1440,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int of
               const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
               rawVal[0] = vd->mapFloat2Int(fval);
             }
-            texOffset = (x - offsetX) + texLineOffset;
+            texOffset = (x - offsets[0] - offsetX) + texLineOffset;
             switch(voxelType)
             {
               case VV_SGI_LUT:
@@ -2059,28 +2052,6 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(int offsetX, int offsetY, in
 }
 
 //----------------------------------------------------------------------------
-/// Do things that need to be done before virvo sets the rendering specific gl environment.
-void vvTexRend::beforeSetGLenvironment() const
-{
-  const vvVector3 size(vd->getSize());            // volume size [world coordinates]
-
-  // Draw boundary lines (must be done before setGLenvironment()):
-  if (_boundaries)
-  {
-    drawBoundingBox(&size, &vd->pos, &_boundColor);
-  }
-  if (_isROIUsed)
-  {
-    const vvVector3 probeSizeObj(size[0] * _roiSize[0], size[1] * _roiSize[1], size[2] * _roiSize[2]);
-    drawBoundingBox(&probeSizeObj, &_roiPos, &_probeColor);
-  }
-  if (_clipMode && _clipPerimeter)
-  {
-    drawPlanePerimeter(&size, &vd->pos, &_clipPoint, &_clipNormal, &_clipColor);
-  }
-}
-
-//----------------------------------------------------------------------------
 /// Set GL environment for texture rendering.
 void vvTexRend::setGLenvironment() const
 {
@@ -2200,7 +2171,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
 {
   vvMatrix invMV;                                 // inverse of model-view matrix
   vvMatrix pm;                                    // OpenGL projection matrix
-  vvVector3 size, size2;                          // full and half object sizes
+  vvVector3 vissize, vissize2;                    // full and half object visible sizes
   vvVector3 isect[6];                             // intersection points, maximum of 6 allowed when intersecting a plane and a volume [object space]
   vvVector3 texcoord[12];                         // intersection points in texture coordinate space [0..1]
   vvVector3 farthest;                             // volume vertex farthest from the viewer
@@ -2218,21 +2189,31 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   vvVector3 texSize;                              // size of 3D texture [object space]
   vvVector3 pos;                                  // volume location
   float     maxDist;                              // maximum length of texture drawing path
-  int       i;                                    // general counter
   int       numSlices;
 
   vvDebugMsg::msg(3, "vvTexRend::renderTex3DPlanar()");
 
   if (!extTex3d) return;                          // needs 3D texturing extension
 
-  // Determine texture object dimensions and half object size as a shortcut:
-  size.copy(vd->getSize());
-  for (i=0; i<3; ++i)
+  // determine visible size and half object size as shortcut
+  vvVector3i minVox = _visibleRegion.getMin();
+  vvVector3i maxVox = _visibleRegion.getMax();
+  for (int i = 0; i < 3; ++i)
   {
-    texSize[i] = size[i] * (float)texels[i] / (float)vd->vox[i];
-    size2[i]   = 0.5f * size[i];
+    minVox[i] = std::max(minVox[i], 0);
+    maxVox[i] = std::min(maxVox[i], vd->vox[i]);
   }
-  pos.copy(&vd->pos);
+  const vvVector3 minCorner = vd->objectCoords(minVox);
+  const vvVector3 maxCorner = vd->objectCoords(maxVox);
+  vissize = maxCorner - minCorner;
+  const vvVector3 center = vvAABB(minCorner, maxCorner).getCenter();
+
+  for (int i=0; i<3; ++i)
+  {
+    texSize[i] = vissize[i] * (float)texels[i] / (float)vd->vox[i];
+    vissize2[i]   = 0.5f * vissize[i];
+  }
+  pos.copy(&center);
 
   // Calculate inverted modelview matrix:
   invMV.copy(mv);
@@ -2244,19 +2225,21 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
 
   if (_isROIUsed)
   {
+    const vvVector3 size = vd->getSize();
+    const vvVector3 size2 = size * 0.5f;
     // Convert probe midpoint coordinates to object space w/o position:
     probePosObj.copy(&_roiPos);
     probePosObj.sub(&pos);                        // eliminate object position from probe position
 
     // Compute probe min/max coordinates in object space:
-    for (i=0; i<3; ++i)
+    for (int i=0; i<3; ++i)
     {
       probeMin[i] = probePosObj[i] - (_roiSize[i] * size[i]) * 0.5f;
       probeMax[i] = probePosObj[i] + (_roiSize[i] * size[i]) * 0.5f;
     }
 
     // Constrain probe boundaries to volume data area:
-    for (i=0; i<3; ++i)
+    for (int i=0; i<3; ++i)
     {
       if (probeMin[i] > size2[i] || probeMax[i] < -size2[i])
       {
@@ -2269,22 +2252,23 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     }
 
     // Compute probe edge lengths:
-    for (i=0; i<3; ++i)
+    for (int i=0; i<3; ++i)
       probeSizeObj[i] = probeMax[i] - probeMin[i];
   }
   else                                            // probe mode off
   {
+    const vvVector3 size = vd->getSize();
     probeSizeObj.copy(&size);
-    probeMin.set(-size2[0], -size2[1], -size2[2]);
-    probeMax.copy(&size2);
-    probePosObj.zero();
+    probeMin.copy(&minCorner);
+    probeMax.copy(&maxCorner);
+    probePosObj.copy(&center);
   }
 
   // Initialize texture counters
-  if (_roiSize[0])
+  if (_isROIUsed)
   {
     probeTexels.zero();
-    for (i=0; i<3; ++i)
+    for (int i=0; i<3; ++i)
     {
       probeTexels[i] = texels[i] * probeSizeObj[i] / texSize[i];
     }
@@ -2344,7 +2328,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   // Compute farthest point to draw texture at:
   farthest.copy(&delta);
   farthest.scale((float)(numSlices - 1) * -0.5f);
-  farthest.add(&probePosObj);
+  farthest.add(&vd->pos);
 
   if (_clipMode)                     // clipping plane present?
   {
@@ -2397,7 +2381,6 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
   releye.sub(&pos);
 
   // Volume render a 3D texture:
-
   if(voxelType == VV_PIX_SHD && _shader)
   {
     _shader->setParameterTex3D("pix3dtex", texNames[vd->getCurrentFrame()]);
@@ -2408,7 +2391,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
     glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
   }
   texPoint.copy(&farthest);
-  for (i=0; i<numSlices; ++i)                     // loop thru all drawn textures
+  for (int i=0; i<numSlices; ++i)                     // loop thru all drawn textures
   {
     // Search for intersections between texture plane (defined by texPoint and
     // normal) and texture object (0..1):
@@ -2461,10 +2444,10 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
 
         for (k=0; k<3; ++k)
         {
-          texcoord[j][k] = (back[k] + size2[k]) / size[k];
+          texcoord[j][k] = (back[k] - minCorner[k]) / vissize[k];
           texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
 
-          texcoord[j+6][k] = (front[k] + size2[k]) / size[k];
+          texcoord[j+6][k] = (front[k] - minCorner[k]) / vissize[k];
           texcoord[j+6][k] = texcoord[j+6][k] * (texMax[k] - texMin[k]) + texMin[k];
         }
       }
@@ -2475,7 +2458,7 @@ void vvTexRend::renderTex3DPlanar(vvMatrix* mv)
       {
         for (k=0; k<3; ++k)
         {
-          texcoord[j][k] = (isect[j][k] + size2[k]) / size[k];
+          texcoord[j][k] = (isect[j][k] - minCorner[k]) / vissize[k];
           texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
         }
       }
@@ -3332,7 +3315,13 @@ void vvTexRend::renderVolumeGL()
 
   vvGLTools::printGLError("enter vvTexRend::renderVolumeGL()");
 
-  if (vd->vox[0] * vd->vox[1] * vd->vox[2] == 0)
+  vvVector3i vox = _paddingRegion.getMax() - _paddingRegion.getMin();
+  for (int i = 0; i < 3; ++i)
+  {
+    vox[i] = std::min(vox[i], vd->vox[i]);
+  }
+
+  if (vox[0] * vox[1] * vox[2] == 0)
     return;
 
   if (_measureRenderTime)
@@ -3340,7 +3329,22 @@ void vvTexRend::renderVolumeGL()
     sw.start();
   }
 
-  beforeSetGLenvironment();
+  const vvVector3 size(vd->getSize());            // volume size [world coordinates]
+
+  // Draw boundary lines (must be done before setGLenvironment()):
+  if (_boundaries)
+  {
+    drawBoundingBox(&size, &vd->pos, &_boundColor);
+  }
+  if (_isROIUsed)
+  {
+    const vvVector3 probeSizeObj(size[0] * _roiSize[0], size[1] * _roiSize[1], size[2] * _roiSize[2]);
+    drawBoundingBox(&probeSizeObj, &_roiPos, &_probeColor);
+  }
+  if (_clipMode && _clipPerimeter)
+  {
+    drawPlanePerimeter(&size, &vd->pos, &_clipPoint, &_clipNormal, &_clipColor);
+  }
 
   // Reroute output to alternative render target.
   _renderTarget->initForRender();
@@ -3355,8 +3359,31 @@ void vvTexRend::renderVolumeGL()
   // Determine texture object extensions:
   for (int i = 0; i < 3; ++i)
   {
-    texMin[i] = 0.5f / (float)texels[i];
-    texMax[i] = (float)vd->vox[i] / (float)texels[i] - texMin[i];
+    // padded borders for (trilinear) interpolation
+    const int paddingLeft = abs(_visibleRegion.getMin()[i] - _paddingRegion.getMin()[i]);
+    const int paddingRight = abs(_visibleRegion.getMax()[i] - _paddingRegion.getMax()[i]);
+    // a voxels size
+    const float vsize = 1.0f / (float)texels[i];
+    // half a voxels size
+    const float vsize2 = 0.5f / (float)texels[i];
+    if (paddingLeft == 0)
+    {
+      texMin[i] = vsize2;
+    }
+    else
+    {
+      texMin[i] = vsize * (float)paddingLeft;
+    }
+
+    texMax[i] = (float)vox[i] / (float)texels[i];
+    if (paddingRight == 0)
+    {
+      texMax[i] -= vsize2;
+    }
+    else
+    {
+      texMax[i] -= vsize * (float)paddingRight;
+    }
   }
 
   // Get OpenGL modelview matrix:
@@ -3808,7 +3835,7 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
         if (newValue.asBool())
         {
           _previousShader = _currentShader;
-          _currentShader = getLocalIlluminationShader();
+          _currentShader = 12;
         }
         else
         {
@@ -3821,6 +3848,10 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       break;
     case vvRenderer::VV_MEASURETIME:
       _measureRenderTime = newValue;
+      break;
+    case vvRenderer::VV_PADDING_REGION:
+      vvRenderer::setParameter(param, newValue);
+      makeTextures(pixLUTName, rgbaLUT);
       break;
     default:
       vvRenderer::setParameter(param, newValue);
@@ -4508,18 +4539,6 @@ float vvTexRend::calcQualityAndScaleImage()
     }
   }
   return quality;
-}
-
-int vvTexRend::get2DTextureShader()
-{
-  // this is trivial, but a better idea than x times writing
-  // shader = 9 in your code and later changing that value... .
-  return 9;
-}
-
-int vvTexRend::getLocalIlluminationShader()
-{
-  return 12;
 }
 
 void vvTexRend::initVertArray(const int numSlices)
