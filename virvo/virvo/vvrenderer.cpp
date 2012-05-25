@@ -29,6 +29,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <limits>
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -41,6 +42,7 @@
 
 //----------------------------------------------------------------------------
 vvRenderState::vvRenderState()
+  : _visibleRegion(vvAABBi(vvVector3i(0), vvVector3i(std::numeric_limits<int>::max())))
 {
   int i;
 
@@ -186,6 +188,9 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     break;
   case VV_IBR_MODE:
     _ibrMode = (IbrMode)value.asInt();
+    break;
+  case VV_VISIBLE_REGION:
+    _visibleRegion = value;
     break;
   case VV_CLIP_POINT:
     _clipPoint = value;

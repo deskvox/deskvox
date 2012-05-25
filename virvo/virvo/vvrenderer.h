@@ -53,6 +53,7 @@ public:
   enum ParameterType                            ///<  Names for rendering parameters
   {
     VV_QUALITY = 0,
+    VV_VISIBLE_REGION,
     VV_CLIP_POINT,
     VV_CLIP_NORMAL,
     VV_CLIP_COLOR,
@@ -159,6 +160,7 @@ protected:
   bool _opaqueGeometryPresent;                  ///< true = opaque geometry was rendered before the volume
   bool _useIbr;                                 ///< use ibr in rayrenderer
   IbrMode _ibrMode;
+  vvAABBi _visibleRegion;                       ///< part of the vd that is visible and thus rendered
 public:
   vvRenderState();
 };
@@ -195,6 +197,8 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
       REMOTE_IBR,                                 ///< image based remote renderer
       REMOTE_IMAGE,                               ///< image based remote renderer
       COMPARISON,                                 ///< renderer to compare the output from two renderers
+      SERBRICKREND,                               ///< serial brick renderer
+      PARBRICKREND,                               ///< parallel brick renderer
       NUM_RENDERERS                               ///< keep last
     };
 
