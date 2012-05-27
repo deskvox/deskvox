@@ -138,13 +138,15 @@ private:
   void calcVertices();
 };
 
-inline std::ostream& operator<<(std::ostream& out, const vvRect& r)
+template <typename T>
+inline std::ostream& operator<<(std::ostream& out, const vvBaseRect<T>& r)
 {
   out << "x: " << r.x << ", y: " << r.y << ", width: " << r.width << ", height: " << r.height;
   return out;
 }
 
-inline std::ostream& operator<<(std::ostream& out, const vvAABB& aabb)
+template <typename T>
+inline std::ostream& operator<<(std::ostream& out, const vvBaseAABB<T>& aabb)
 {
   out << aabb.getMin() << "\n" << aabb.getMax();
   return out;
