@@ -4195,6 +4195,11 @@ void vvTexRend::freeClassificationStage(GLuint pixLUTName, GLuint progname[VV_FR
  */
 vvShaderProgram* vvTexRend::initShader()
 {
+  if (_isectType == CPU)
+  {
+    return NULL;
+  }
+
   vvGLTools::printGLError("Enter vvTexRend::initShader()");
 
   std::ostringstream fragName;
