@@ -32,6 +32,7 @@
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketmonitor.h>
 #include <virvo/vvsocketio.h>
+#include <virvo/vvtcpsocket.h>
 
 using namespace std;
 
@@ -229,6 +230,7 @@ void * vvResourceManager::updateResources(void * param)
     sleep(1); // check from time to time only
   }
 #else
+  vvDebugMsg::msg(0, "vvResourceManager::updateResources() resource live-updating not available");
   (void)param;
 #endif
 
@@ -261,6 +263,7 @@ void * vvResourceManager::processJob(void * param)
 {
   vvDebugMsg::msg(3, "vvResourceManager::processJob() Enter");
 
+#ifdef HAVE_BONJOUR
   vvJob *job = reinterpret_cast<vvJob*>(param);
   vvTcpSocket *clientsock = job->_requestSock;
 
@@ -420,6 +423,10 @@ void * vvResourceManager::processJob(void * param)
     serversock->disconnectFromHost();
   }
   delete serversock;
+
+#else
+  (void)param;
+#endif
 
   pthread_exit(NULL);
 #ifdef _WIN32
