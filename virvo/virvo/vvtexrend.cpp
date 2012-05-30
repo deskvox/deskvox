@@ -492,7 +492,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
 /// Generate texture for look-up table.
 void vvTexRend::makeLUTTexture(const GLuint& lutName, uchar* lutData) const
 {
-  int size[3];
+  vvVector3i size;
 
   vvGLTools::printGLError("enter makeLUTTexture");
   if(voxelType!=VV_PIX_SHD)
@@ -521,16 +521,16 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(const int axes)
   int rawVal[4];                                  // raw values for R,G,B,A
   int rawSliceSize;                               // number of bytes in a slice of the raw data array
   int rawLineSize;                                // number of bytes in a row of the raw data array
-  int texSize[3];                                 // size of a 2D texture in bytes for each principal axis
+  vvVector3i texSize;                             // size of a 2D texture in bytes for each principal axis
   uchar* raw;                                     // raw volume data
   int texIndex=0;                                 // index of current texture
   int texSliceIndex;                              // index of current voxel in texture
-  int tw[3], th[3];                               // current texture width and height for each principal axis
-  int rw[3], rh[3], rs[3];                        // raw data width, height, slices for each principal axis
-  int rawStart[3];                                // starting offset into raw data, for each principal axis
-  int rawStepW[3];                                // raw data step size for texture row, for each principal axis
-  int rawStepH[3];                                // raw data step size for texture column, for each principal axis
-  int rawStepS[3];                                // raw data step size for texture slices, for each principal axis
+  vvVector3i tw, th;                              // current texture width and height for each principal axis
+  vvVector3i rw, rh, rs;                          // raw data width, height, slices for each principal axis
+  vvVector3i rawStart;                            // starting offset into raw data, for each principal axis
+  vvVector3i rawStepW;                            // raw data step size for texture row, for each principal axis
+  vvVector3i rawStepH;                            // raw data step size for texture column, for each principal axis
+  vvVector3i rawStepS;                            // raw data step size for texture slices, for each principal axis
   uchar* rawVoxel;                                // current raw data voxel
   bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
   ErrorType err = OK;
@@ -736,7 +736,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(const int axes)
 vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
 {
   ErrorType err = OK;
-  int tmpTexels[3];                               // number of texels in each dimension for current brick
+  vvVector3i tmpTexels;                           // number of texels in each dimension for current brick
 
   vvDebugMsg::msg(2, "vvTexRend::makeEmptyBricks()");
 
@@ -860,7 +860,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                                                   std::vector<BrickList>& brickList, bool& areBricksCreated) const
 {
   ErrorType err = OK;
-  int rawVal[4];                                  // raw values for R,G,B,A
+  vvVector4i rawVal;                              // raw values for R,G,B,A
   bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
 
   removeTextures(privateTexNames, numTextures);
@@ -1252,7 +1252,7 @@ void vvTexRend::updateTransferFunction()
 void vvTexRend::updateTransferFunction(GLuint& lutName, uchar*& lutData, float& lutDistance,
                                        int& currentShader, bool& usePreIntegration)
 {
-  int size[3];
+  vvVector3i size;
 
   vvDebugMsg::msg(1, "vvTexRend::updateTransferFunction()");
   if (preIntegration &&
@@ -1384,7 +1384,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int of
   ErrorType err = OK;
   int srcIndex;
   int texOffset=0;
-  int rawVal[4];
+  vvVector4i rawVal;
   unsigned char* raw;
   unsigned char* texData;
   bool accommodated = true;
@@ -1595,20 +1595,20 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(const int axes,
                                                  const int offsetX, const int offsetY, const int offsetZ,
                                                  const int sizeX, const int sizeY, const int sizeZ)
 {
-  int rawVal[4];
+  vvVector4i rawVal;
   int rawSliceSize;
   int rawLineSize;
-  int texSize[3];
+  vvVector3i texSize;
   int texIndex = 0;
   int texSliceIndex;
-  int texW[3], texH[3];
-  int tw[3], th[3];
-  int rw[3], rh[3], rs[3];
-  int sw[3], sh[3], ss[3];
-  int rawStart[3];
-  int rawStepW[3];
-  int rawStepH[3];
-  int rawStepS[3];
+  vvVector3i texW, texH;
+  vvVector3i tw, th;
+  vvVector3i rw, rh, rs;
+  vvVector3i sw, sh, ss;
+  vvVector3i rawStart;
+  vvVector3i rawStepW;
+  vvVector3i rawStepH;
+  vvVector3i rawStepS;
   uchar* rgbaSlice[3];
   uchar* raw;
   uchar* rawVoxel;
@@ -1797,10 +1797,10 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(int offsetX, int offsetY, in
   int srcIndex;
   int texOffset;
   int sliceSize;
-  int rawVal[4];
+  vvVector4i rawVal;
   int alpha;
-  int startOffset[3], endOffset[3];
-  int start[3], end[3], size[3];
+  vvVector3i startOffset, endOffset;
+  vvVector3i start, end, size;
   int c, f, s, x, y;
   float fval;
   unsigned char* raw;
@@ -3109,7 +3109,7 @@ void vvTexRend::renderTex2DSlices(float zz)
 
     if(voxelType==VV_PAL_TEX)
     {
-      int size[3];
+      vvVector3i size;
       getLUTSize(size);
       glColorTableEXT(GL_TEXTURE_2D, GL_RGBA,
         size[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
@@ -3293,7 +3293,7 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
 
     if(voxelType==VV_PAL_TEX)
     {
-      int size[3];
+      vvVector3i size;
       getLUTSize(size);
       glColorTableEXT(GL_TEXTURE_2D, GL_RGBA,
         size[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
@@ -3499,7 +3499,7 @@ bool vvTexRend::instantClassification() const
 
 //----------------------------------------------------------------------------
 /// Returns the number of entries in the RGBA lookup table.
-int vvTexRend::getLUTSize(int* size) const
+int vvTexRend::getLUTSize(vvVector3i& size) const
 {
   int x, y, z;
 
@@ -3525,12 +3525,11 @@ int vvTexRend::getLUTSize(int* size) const
     else
        y = z = 1;
   }
-  if (size)
-  {
-    size[0] = x;
-    size[1] = y;
-    size[2] = z;
-  }
+
+  size[0] = x;
+  size[1] = y;
+  size[2] = z;
+
   return x * y * z;
 }
 
@@ -3552,8 +3551,8 @@ void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData, fl
 {
   vvDebugMsg::msg(3, "Generating texture LUT. Slice distance = ", dist);
 
-  float corr[4];                                  // gamma/alpha corrected RGBA values [0..1]
-  int lutSize[3];                                 // number of entries in the RGBA lookup table
+  vvVector4f corr;                                // gamma/alpha corrected RGBA values [0..1]
+  vvVector3i lutSize;                             // number of entries in the RGBA lookup table
   int total=0;
   lutDistance = dist;
 
@@ -4312,7 +4311,7 @@ void vvTexRend::setupIntersectionParameters(vvShaderProgram* shader)
 //----------------------------------------------------------------------------
 void vvTexRend::printLUT() const
 {
-  int lutEntries[3];
+  vvVector3i lutEntries;
 
   const int total = getLUTSize(lutEntries);
   for (int i=0; i<total; ++i)

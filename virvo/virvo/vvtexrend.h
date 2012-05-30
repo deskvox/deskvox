@@ -219,7 +219,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     VoxelType findBestVoxelType(VoxelType) const;
     GeometryType findBestGeometry(GeometryType, VoxelType) const;
     void updateLUT(float, GLuint& lutName, uchar*& lutData, float& lutDistance);
-    int  getLUTSize(int*) const;
+    int  getLUTSize(vvVector3i& size) const;
     int  getPreintTableSize() const;
     void enableNVShaders() const;
     void disableNVShaders() const;
