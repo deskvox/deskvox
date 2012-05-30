@@ -54,6 +54,7 @@ public:
   {
     VV_QUALITY = 0,
     VV_VISIBLE_REGION,
+    VV_PADDING_REGION,
     VV_CLIP_POINT,
     VV_CLIP_NORMAL,
     VV_CLIP_COLOR,
@@ -161,6 +162,7 @@ protected:
   bool _useIbr;                                 ///< use ibr in rayrenderer
   IbrMode _ibrMode;
   vvAABBi _visibleRegion;                       ///< part of the vd that is visible and thus rendered
+  vvAABBi _paddingRegion;                       ///< padding region for interpolation
 public:
   vvRenderState();
 };

@@ -81,6 +81,7 @@ vvRenderState::vvRenderState()
   , _useIbr(false)
   , _ibrMode(VV_REL_THRESHOLD)
   , _visibleRegion(vvAABBi(vvVector3i(0), vvVector3i(std::numeric_limits<int>::max())))
+  , _paddingRegion(vvAABBi(vvVector3i(0), vvVector3i(std::numeric_limits<int>::max())))
 {
   
 }
@@ -179,6 +180,9 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     break;
   case VV_VISIBLE_REGION:
     _visibleRegion = value;
+    break;
+  case VV_PADDING_REGION:
+    _paddingRegion = value;
     break;
   case VV_CLIP_POINT:
     _clipPoint = value;
