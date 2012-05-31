@@ -386,8 +386,7 @@ void * vvServer::handleClientThread(void *param)
         rType==vvRenderer::REMOTE_IBR ? "rayrend" : "default",
         "");
 
-    if(rType == vvRenderer::REMOTE_IBR)
-      renderer->setParameter(vvRenderer::VV_USE_IBR, 1.f);
+    renderer->setParameter(vvRenderer::VV_USE_IBR, rType == vvRenderer::REMOTE_IBR);
 
     while(1)
     {
