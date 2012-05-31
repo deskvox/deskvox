@@ -93,13 +93,13 @@ void vvServer::displayHelpInfo()
   cerr << "-port" << endl;
   cerr << " Don't use the default port (" << DEFAULT_PORT << "), but the specified one" << endl;
   cerr << endl;
+#ifdef HAVE_BONJOUR
   cerr << "-mode" << endl;
   cerr << " Start vvServer with one of the following modes:" << endl;
   cerr << " s     single server (default)" << endl;
   cerr << " rm    resource manager" << endl;
   cerr << " rm+s  server and resource manager simultanously" << endl;
   cerr << endl;
-#ifdef HAVE_BONJOUR
   cerr << "-bonjour" << endl;
   cerr << " use bonjour to broadcast this service. options:" << endl;
   cerr << " on" << endl;
@@ -144,6 +144,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
           _port = inport;
       }
     }
+#ifdef HAVE_BONJOUR
     else if (vvToolshed::strCompare(argv[arg], "-mode")==0)
     {
       if ((++arg)>=argc)
@@ -169,7 +170,6 @@ bool vvServer::parseCommandLine(int argc, char** argv)
         return false;
       }
     }
-#ifdef HAVE_BONJOUR
     else if (vvToolshed::strCompare(argv[arg], "-bonjour")==0)
     {
       if ((++arg)>=argc)
