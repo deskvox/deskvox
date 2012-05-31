@@ -25,6 +25,7 @@
 #include "../vvdebugmsg.h"
 #include "../vvsocket.h"
 
+#include <dns_sd.h>
 #include <iostream>
 #include <sstream>
 #include <vector>

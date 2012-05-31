@@ -27,6 +27,8 @@
 #include "vvsocketmonitor.h"
 #include "vvtcpsocket.h"
 
+#include <dns_sd.h>
+
 struct Thread
 {
   pthread_t _pthread;

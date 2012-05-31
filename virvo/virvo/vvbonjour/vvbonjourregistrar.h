@@ -26,12 +26,10 @@
 #endif
 
 #ifdef HAVE_BONJOUR
-
+#include "vvbonjour.h"
 #include "vvbonjourentry.h"
 #include "vvbonjoureventloop.h"
 #include "vvinttypes.h"
-
-#include <dns_sd.h>
 
 /**
   Class for registering a Bonjourservice.
@@ -59,14 +57,14 @@ public:
   void unregisterService();
 
   vvBonjourEventLoop *_eventLoop;
-  DNSServiceRef      _serviceRef;
-  vvBonjourEntry     _registeredService;
+  _DNSServiceRef_t   *_serviceRef;
+  vvBonjourEntry      _registeredService;
 private:
 
   /*!
    * \brief Callback function passed to bonjour.
    */
-  static void DNSSD_API RegisterCallBack(DNSServiceRef, DNSServiceFlags, DNSServiceErrorType,
+  static void DNSSD_API RegisterCallBack(_DNSServiceRef_t *, DNSServiceFlags, DNSServiceErrorType,
                                                const char *, const char *, const char *, void *);
 };
 

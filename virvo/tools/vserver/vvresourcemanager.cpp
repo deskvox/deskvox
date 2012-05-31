@@ -291,7 +291,7 @@ void * vvResourceManager::processJob(void * param)
 
   bool ready = false;
   vvBonjourResolver resolver;
-  if(kDNSServiceErr_NoError == resolver.resolveBonjourEntry(job->_resource->_bonjourEntry))
+  if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry(job->_resource->_bonjourEntry))
   {
     serversock = resolver.getBonjourSocket();
     if(NULL == serversock)

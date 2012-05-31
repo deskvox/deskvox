@@ -32,6 +32,16 @@
 #include "vvtcpsocket.h"
 #include "vvbonjourentry.h"
 
+// Forward declarations for types out of <dns_sd.h>
+struct _DNSServiceRef_t;
+typedef uint32_t DNSServiceFlags;
+typedef int32_t DNSServiceErrorType;
+#if defined(_WIN32) && !defined(EFI32) && !defined(EFI64)
+#define DNSSD_API __stdcall
+#else
+#define DNSSD_API
+#endif
+
 /** Wrapper Class for Bonjour
   This class automatically resolves all desired servicies for a given service type
   and returns a list of the demanded entries
@@ -43,6 +53,12 @@
 class VIRVOEXPORT vvBonjour
 {
 public:
+  enum ErrorType
+  {
+    VV_OK = 0,
+    VV_ERROR
+  };
+
   vvBonjour();
   ~vvBonjour();
 

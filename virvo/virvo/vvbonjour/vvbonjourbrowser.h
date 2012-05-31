@@ -26,11 +26,10 @@
 #endif
 
 #ifdef HAVE_BONJOUR
-
+#include "vvbonjour.h"
 #include "vvbonjourentry.h"
 #include "vvbonjoureventloop.h"
 
-#include <dns_sd.h>
 #include <vector>
 
 /**
@@ -52,7 +51,7 @@ public:
     @param to          Timeout in seconds. If not set, default will be used.
     @return Errorcode (0 == no error). See manpages of DNSSeriviceErrorType for further informations.
    */
-  DNSServiceErrorType browseForServiceType(const std::string& serviceType, const std::string domain = "", const double to = 1.0);
+  vvBonjour::ErrorType browseForServiceType(const std::string& serviceType, const std::string domain = "", const double to = 1.0);
 
   /**
     Returns list of found bonjourentries
@@ -67,7 +66,7 @@ private:
   /*!
    * \brief Callback function passed to bonjour.
    */
-  static void DNSSD_API BrowseCallBack(DNSServiceRef, DNSServiceFlags flags, uint32_t interfaceIndex,
+  static void DNSSD_API BrowseCallBack(_DNSServiceRef_t*, DNSServiceFlags flags, uint32_t interfaceIndex,
                                            DNSServiceErrorType errorCode,
                                            const char *name, const char *type, const char *domain,
                                            void *context);

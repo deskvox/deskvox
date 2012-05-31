@@ -26,10 +26,8 @@
 #endif
 
 #ifdef HAVE_BONJOUR
-
+#include "vvbonjour.h"
 #include "vvexport.h"
-
-#include <dns_sd.h>
 
 struct Thread;
 
@@ -42,7 +40,7 @@ struct Thread;
 class VIRVOEXPORT vvBonjourEventLoop
 {
 public:
-  vvBonjourEventLoop(DNSServiceRef service);
+  vvBonjourEventLoop(_DNSServiceRef_t *service);
   ~vvBonjourEventLoop();
 
   /**
@@ -60,10 +58,10 @@ public:
     */
   void stop();
 
-  double        _timeout;
-  bool          _run;
-  bool          _noMoreFlags;
-  DNSServiceRef _dnsServiceRef;
+  double            _timeout;
+  bool              _run;
+  bool              _noMoreFlags;
+  _DNSServiceRef_t *_dnsServiceRef;
 
 private:
   Thread *_thread;

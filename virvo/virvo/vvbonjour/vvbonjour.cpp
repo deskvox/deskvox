@@ -25,6 +25,7 @@
 #include "vvbonjourbrowser.h"
 #include "vvbonjourresolver.h"
 
+#include <dns_sd.h>
 #include <sstream>
 
 vvBonjour::vvBonjour()

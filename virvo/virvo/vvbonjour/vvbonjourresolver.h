@@ -26,13 +26,11 @@
 #endif
 
 #ifdef HAVE_BONJOUR
-
+#include "vvbonjour.h"
 #include "vvbonjourentry.h"
 #include "vvbonjoureventloop.h"
 #include "vvtcpsocket.h"
 #include "vvsocketmonitor.h"
-
-#include <dns_sd.h>
 
 /**
   Class for resolving bonjourentries and creating socket-connections to desired bonjour services.
@@ -63,7 +61,7 @@ private:
   /*!
    * \brief Callback function passed to bonjour.
    */
-  static void DNSSD_API ResolveCallBack(DNSServiceRef, DNSServiceFlags, uint32_t,
+  static void DNSSD_API ResolveCallBack(_DNSServiceRef_t*, DNSServiceFlags, uint32_t,
                                             DNSServiceErrorType errorCode, const char*,
                                             const char*, uint16_t, uint16_t,
                                             const uchar*, void*);

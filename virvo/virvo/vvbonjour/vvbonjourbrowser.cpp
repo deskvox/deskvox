@@ -24,10 +24,11 @@
 
 #include "../vvdebugmsg.h"
 
-#include <iostream>
-#include <sstream>
-#include <ostream>
 #include <algorithm>
+#include <dns_sd.h>
+#include <iostream>
+#include <ostream>
+#include <sstream>
 
 vvBonjourBrowser::vvBonjourBrowser()
   : _eventLoop(NULL)
@@ -40,7 +41,7 @@ vvBonjourBrowser::~vvBonjourBrowser()
   if(_eventLoop) delete _eventLoop;
 }
 
-DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string& serviceType, const std::string domain, const double to)
+vvBonjour::ErrorType vvBonjourBrowser::browseForServiceType(const std::string& serviceType, const std::string domain, const double to)
 {
   DNSServiceErrorType error;
   DNSServiceRef  serviceRef;
@@ -68,9 +69,10 @@ DNSServiceErrorType vvBonjourBrowser::browseForServiceType(const std::string& se
     std::ostringstream errmsg;
     errmsg << "vvBonjourBrowser::browseForServiceType(): DNSServiceBrowse() returned with error no " << error;
     vvDebugMsg::msg(2, errmsg.str().c_str());
+    return vvBonjour::VV_ERROR;
   }
 
-  return error;
+  return vvBonjour::VV_OK;
 }
 
 void vvBonjourBrowser::BrowseCallBack(DNSServiceRef serviceRef, DNSServiceFlags flags, uint32_t interfaceIndex,
