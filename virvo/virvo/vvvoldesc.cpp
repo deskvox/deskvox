@@ -5298,9 +5298,16 @@ vvVector3i vvVolDesc::voxelCoords(const vvVector3& objCoords) const
   vvVector3 fltVox2 = vvVector3(static_cast<float>(vox[0]) * 0.5f,
                                 static_cast<float>(vox[1]) * 0.5f,
                                 static_cast<float>(vox[2]) * 0.5f);
-  return vvVector3i(static_cast<int>(objCoords[0] + fltVox2[0]),
-                    static_cast<int>(objCoords[1] + fltVox2[1]),
-                    static_cast<int>(objCoords[2] + fltVox2[2]));
+  vvVector3 obj = objCoords;
+  for (int i = 0; i < 3; ++i)
+  {
+    obj[i] /= dist[i];
+    obj[i] /= _scale;
+  }
+
+  return vvVector3i(static_cast<int>(obj[0] + fltVox2[0]),
+                    static_cast<int>(obj[1] + fltVox2[1]),
+                    static_cast<int>(obj[2] + fltVox2[2]));
 }
 
 vvVector3 vvVolDesc::objectCoords(const vvVector3i& voxCoords) const
@@ -5308,9 +5315,15 @@ vvVector3 vvVolDesc::objectCoords(const vvVector3i& voxCoords) const
   vvVector3 fltVox2 = vvVector3(static_cast<float>(vox[0]) * 0.5f,
                                 static_cast<float>(vox[1]) * 0.5f,
                                 static_cast<float>(vox[2]) * 0.5f);
-  return vvVector3(static_cast<float>(voxCoords[0]) - fltVox2[0],
-                   static_cast<float>(voxCoords[1]) - fltVox2[1],
-                   static_cast<float>(voxCoords[2]) - fltVox2[2]);
+  vvVector3 result =  vvVector3(static_cast<float>(voxCoords[0]) - fltVox2[0],
+                                static_cast<float>(voxCoords[1]) - fltVox2[1],
+                                static_cast<float>(voxCoords[2]) - fltVox2[2]);
+  for (int i = 0; i < 3; ++i)
+  {
+    result[i] *= dist[i];
+    result[i] *= _scale;
+  }
+  return result;
 }
 
 ///// EOF /////
