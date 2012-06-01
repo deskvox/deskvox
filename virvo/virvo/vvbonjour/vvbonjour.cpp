@@ -42,7 +42,7 @@ std::vector<vvTcpSocket*> vvBonjour::getSocketsFor(const std::string& serviceTyp
   for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
   {
     vvBonjourResolver resolver;
-    if(kDNSServiceErr_NoError == resolver.resolveBonjourEntry(*it))
+    if(vvBonjour::VV_OK == resolver.resolveBonjourEntry(*it))
     {
       vvTcpSocket *socket = new vvTcpSocket();
       if(vvSocket::VV_OK == socket->connectToHost(resolver._hostname.c_str(), resolver._port))
@@ -74,7 +74,7 @@ std::vector<std::string> vvBonjour::getConnectionStringsFor(const std::string& s
   for (std::vector<vvBonjourEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it)
   {
     vvBonjourResolver resolver;
-    if(kDNSServiceErr_NoError == resolver.resolveBonjourEntry(*it))
+    if(vvBonjour::VV_OK == resolver.resolveBonjourEntry(*it))
     {
       std::ostringstream hostAndPort;
       hostAndPort << resolver._hostname << ":" << resolver._port;

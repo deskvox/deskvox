@@ -46,7 +46,7 @@ public:
     @param entry Entry of type vvBonjourEntry found by vvBonjourBrowser
     @return Errorcode (0 == no error). See manpages of DNSSeriviceErrorType for further informations.
     */
-  DNSServiceErrorType resolveBonjourEntry(const vvBonjourEntry& entry);
+  vvBonjour::ErrorType resolveBonjourEntry(const vvBonjourEntry& entry);
   /**
     Create a socket connection of vvSocket (TCP) connected to the resolved bonjourentry
     @return Pointer to ready to use vvSocket or NULL in case of error.

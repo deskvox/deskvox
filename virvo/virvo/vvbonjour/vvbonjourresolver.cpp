@@ -40,7 +40,7 @@ vvBonjourResolver::~vvBonjourResolver()
   if(_eventLoop) delete _eventLoop;
 }
 
-DNSServiceErrorType vvBonjourResolver::resolveBonjourEntry(const vvBonjourEntry& entry)
+vvBonjour::ErrorType vvBonjourResolver::resolveBonjourEntry(const vvBonjourEntry& entry)
 {
   vvDebugMsg::msg(3, "vvBonjourResolver::resolveBonjourEntry()");
   DNSServiceErrorType error;
@@ -59,13 +59,13 @@ DNSServiceErrorType vvBonjourResolver::resolveBonjourEntry(const vvBonjourEntry&
   {
     _eventLoop = new vvBonjourEventLoop(serviceRef);
     _eventLoop->run();
+    return vvBonjour::VV_OK;
   }
   else
   {
     vvDebugMsg::msg(2, "vvBonjourResolver::resolveBonjourEntry(): DNSServiceResolve failed with error code ", error);
+    return vvBonjour::VV_ERROR;
   }
-
-  return error;
 }
 
 vvTcpSocket* vvBonjourResolver::getBonjourSocket() const

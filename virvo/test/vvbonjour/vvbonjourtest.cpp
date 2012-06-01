@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     {
       cerr << "Resolve entry..." << flush;
       vvBonjourResolver resol;
-      if(kDNSServiceErr_NoError == resol.resolveBonjourEntry(*it))
+      if(vvBonjour::VV_OK == resol.resolveBonjourEntry(*it))
       {
         cerr << "done." << endl;
 
