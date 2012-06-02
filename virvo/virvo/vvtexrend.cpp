@@ -4225,11 +4225,6 @@ void vvTexRend::freeClassificationStage(GLuint pixLUTName, GLuint progname[VV_FR
  */
 vvShaderProgram* vvTexRend::initShader()
 {
-  if (_isectType == CPU)
-  {
-    return NULL;
-  }
-
   vvGLTools::printGLError("Enter vvTexRend::initShader()");
 
   std::ostringstream fragName;
@@ -4267,17 +4262,22 @@ vvShaderProgram* vvTexRend::initShader()
     args.numOutputVertices = 6;
     shader = _shaderFactory->createProgram(vertName.c_str(), geoName.c_str(), fragName.str(), args);
   }
-  
-  if(!shader)
+
+  if (!shader && _isectType != CPU)
   {
     vvDebugMsg::msg(0, "Cannot load shader, falling back to CPU proxy geometry");
     _isectType = CPU;
-    shader = _shaderFactory->createProgram("", "", fragName.str());
   }
 
-  if(shader)
+  if (_isectType != CPU)
   {
     setupIntersectionParameters(shader);
+  }
+  
+  if(!shader)
+  {
+    // intersection on CPU, try to create fragment program
+    shader = _shaderFactory->createProgram("", "", fragName.str());
   }
 
   vvGLTools::printGLError("Leave vvTexRend::initShader()");

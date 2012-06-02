@@ -1113,10 +1113,10 @@ void vvView::voxelMenuCallback(int item)
     ds->currentOptions["voxeltype"] = "regcomb";
     break;
   case 5:
-    ds->currentOptions["voxeltype"] = "arb";
+    ds->currentOptions["voxeltype"] = "shader";
     break;
   case 6:
-    ds->currentOptions["voxeltype"] = "shader";
+    ds->currentOptions["voxeltype"] = "arb";
     break;
   case 0:
   default:
