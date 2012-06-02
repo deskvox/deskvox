@@ -410,9 +410,13 @@ long VVPreferenceWindow::onMIPSelect(FXObject*,FXSelector,void* ptr)
 
 long VVPreferenceWindow::onInterpolationSelect(FXObject*,FXSelector,void* ptr)
 {
-  _shell->_glcanvas->makeCurrent();
-  _canvas->_renderer->setParameter(vvRenderer::VV_SLICEINT, (ptr != NULL));
-  _shell->_glcanvas->makeNonCurrent();
+  vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
+  if (texrend)
+  {
+    _shell->_glcanvas->makeCurrent();
+    _canvas->_renderer->setParameter(vvRenderer::VV_SLICEINT, (ptr != NULL));
+    _shell->_glcanvas->makeNonCurrent();
+  }
   return 1;
 }
 
@@ -541,8 +545,7 @@ void VVPreferenceWindow::updateValues()
   _eyeSlider->setValue(int(_canvas->_ov.getIOD()));
   _eyeTField->setText(FXStringFormat("%d",(FXint)_canvas->_ov.getIOD()));
 
-  _linterpButton->setCheck(_canvas->_renderer->getParameter(vvRenderer::VV_SLICEINT).asBool());
-  _mipButton->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==1);
+ _mipButton->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==1);
   _artoolkitButton->setCheck(_canvas->getARToolkit());
 
   if (_shell->_glcanvas->makeCurrent())
@@ -576,6 +579,7 @@ void VVPreferenceWindow::updateValues()
       if (texrend->isSupported(vvTexRend::VV_VIEWPORT)) _gtCombo->appendItem("3D textures (viewport aligned)");
       if (texrend->isSupported(vvTexRend::VV_SPHERICAL)) _gtCombo->appendItem("3D textures (spherical)");
       if (texrend->isSupported(vvTexRend::VV_VIEWPORT)) _gtCombo->appendItem("3D textures (bricked)");
+      _linterpButton->setCheck(texrend->getParameter(vvRenderer::VV_SLICEINT).asBool());
     }
     _gtCombo->setNumVisible(_gtCombo->getNumItems());
     if (texrend)
