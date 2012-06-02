@@ -277,7 +277,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   if (voxelType != VV_RGBA)
   {
-    makeTextures(pixLUTName, rgbaLUT);      // we only have to do this once for non-RGBA textures
+    makeTextures();      // we only have to do this once for non-RGBA textures
   }
   updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
 }
@@ -291,7 +291,7 @@ vvTexRend::~vvTexRend()
   delete _renderTarget;
 
   freeClassificationStage(pixLUTName, fragProgName);
-  removeTextures(texNames, &textures);
+  removeTextures();
 
   delete[] rgbaTF;
   delete[] rgbaLUT;
@@ -428,22 +428,22 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox
 
 //----------------------------------------------------------------------------
 /// Remove all textures from texture memory.
-void vvTexRend::removeTextures(GLuint*& privateTexNames, int* numTextures) const
+void vvTexRend::removeTextures()
 {
   vvDebugMsg::msg(1, "vvTexRend::removeTextures()");
 
-  if ((*numTextures > 0) && (privateTexNames != NULL))
+  if (textures > 0)
   {
-    glDeleteTextures(*numTextures, privateTexNames);
-    delete[] privateTexNames;
-    privateTexNames = NULL;
-    numTextures = 0;
+    glDeleteTextures(textures, texNames);
+    delete[] texNames;
+    texNames = NULL;
+    textures = 0;
   }
 }
 
 //----------------------------------------------------------------------------
 /// Generate textures for all rendering modes.
-vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutData)
+vvTexRend::ErrorType vvTexRend::makeTextures()
 {
   ErrorType err = OK;
 
@@ -499,7 +499,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
 
       if (err == OK)
       {
-        err = makeTextureBricks(texNames, &textures, lutData, _brickList, _areBricksCreated);
+        err = makeTextureBricks(_brickList, _areBricksCreated);
       }
       break;
     default: updateTextures3D(0, 0, 0, texels[0], texels[1], texels[2], true); break;
@@ -508,14 +508,14 @@ vvTexRend::ErrorType vvTexRend::makeTextures(const GLuint& lutName, uchar*& lutD
 
   if (voxelType==VV_PIX_SHD || voxelType==VV_FRG_PRG || voxelType==VV_TEX_SHD)
   {
-    makeLUTTexture(lutName, lutData);
+    makeLUTTexture();
   }
   return err;
 }
 
 //----------------------------------------------------------------------------
 /// Generate texture for look-up table.
-void vvTexRend::makeLUTTexture(const GLuint& lutName, uchar* lutData) const
+void vvTexRend::makeLUTTexture() const
 {
   vvVector3i size;
 
@@ -523,7 +523,7 @@ void vvTexRend::makeLUTTexture(const GLuint& lutName, uchar* lutData) const
   if(voxelType!=VV_PIX_SHD)
      glActiveTextureARB(GL_TEXTURE1_ARB);
   getLUTSize(size);
-  glBindTexture(GL_TEXTURE_2D, lutName);
+  glBindTexture(GL_TEXTURE_2D, pixLUTName);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -531,7 +531,7 @@ void vvTexRend::makeLUTTexture(const GLuint& lutName, uchar* lutData) const
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size[0], size[1], 0,
-    GL_RGBA, GL_UNSIGNED_BYTE, lutData);
+    GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
   if(voxelType!=VV_PIX_SHD)
      glActiveTextureARB(GL_TEXTURE0_ARB);
   vvGLTools::printGLError("leave makeLUTTexture");
@@ -564,7 +564,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(const int axes)
 
   assert(axes==1 || axes==3);
 
-  removeTextures(texNames, &textures);            // first remove previously generated textures from TRAM
+  removeTextures();                                // first remove previously generated textures from TRAM
 
   const int frames = vd->frames;
   
@@ -881,14 +881,13 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
   return err;
 }
 
-vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
-                                                  std::vector<BrickList>& brickList, bool& areBricksCreated) const
+vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickList, bool& areBricksCreated)
 {
   ErrorType err = OK;
   vvVector4i rawVal;                              // raw values for R,G,B,A
   bool accommodated = true;                       // false if a texture cannot be accommodated in TRAM
 
-  removeTextures(privateTexNames, numTextures);
+  removeTextures();
 
   const int frames = vd->frames;
 
@@ -896,14 +895,14 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
   uchar* texData = new uchar[texSize];
 
   // number of textures needed
-  *numTextures = frames * _numBricks[0] * _numBricks[1] * _numBricks[2];
+  textures = frames * _numBricks[0] * _numBricks[1] * _numBricks[2];
 
-  privateTexNames = new GLuint[*numTextures];
-  glGenTextures(*numTextures, privateTexNames);
+  texNames = new GLuint[textures];
+  glGenTextures(textures, texNames);
 
   // generate textures contents:
   vvDebugMsg::msg(2, "Transferring textures to TRAM. Total size [KB]: ",
-    *numTextures * texSize / 1024);
+    textures * texSize / 1024);
 
   const bool bpcValid = (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4);
   const bool oneChannel = ((vd->chan == 1) && bpcValid);
@@ -996,7 +995,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                 case VV_RGBA:
                   for (int c = 0; c < 4; c++)
                   {
-                    texData[4 * texOffset + c] = lutData[rawVal[0] * 4 + c];
+                    texData[4 * texOffset + c] = rgbaLUT[rawVal[0] * 4 + c];
                   }
                   break;
                 default:
@@ -1046,7 +1045,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                 if (vd->chan >= 4)  // RGBA
                 {
                   if (voxelType == VV_RGBA)
-                    texData[4 * texOffset + 3] = lutData[rawVal[3] * 4 + 3];
+                    texData[4 * texOffset + 3] = rgbaLUT[rawVal[3] * 4 + 3];
                   else
                     texData[4 * texOffset + 3] = (uchar) rawVal[3];
                 }
@@ -1056,7 +1055,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
                   for (int c = 0; c < vd->chan; c++)
                   {
                     // alpha: mean of sum of RGB conversion table results:
-                    alpha += (int) lutData[rawVal[c] * 4 + c];
+                    alpha += (int) rgbaLUT[rawVal[c] * 4 + c];
                   }
                   texData[4 * texOffset + 3] = (uchar) (alpha / vd->chan);
                 }
@@ -1075,7 +1074,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(GLuint*& privateTexNames, int*
       currBrick->maxValue = maxValue;
       currBrick->visible = true;
 
-      accommodated = currBrick->upload3DTexture(privateTexNames[currBrick->index], texData,
+      accommodated = currBrick->upload3DTexture(texNames[currBrick->index], texData,
                                                 texFormat, internalTexFormat,
                                                 interpolation);
       if(!accommodated)
@@ -1143,7 +1142,7 @@ void vvTexRend::setComputeBrickSize(const bool flag)
     computeBrickSize();
     if(!_areBricksCreated)
     {
-      makeTextures(pixLUTName, rgbaLUT);
+      makeTextures();
     }
   }
 }
@@ -1154,7 +1153,7 @@ void vvTexRend::setBrickSize(const int newSize)
   _brickSize[0] = _brickSize[1] = _brickSize[2] = newSize-1;
   _useOnlyOneBrick = false;
 
-  makeTextures(pixLUTName, rgbaLUT);
+  makeTextures();
 }
 
 int vvTexRend::getBrickSize() const
@@ -1175,7 +1174,7 @@ void vvTexRend::setTexMemorySize(const int newSize)
 
     if(!_areBricksCreated)
     {
-      makeTextures(pixLUTName, rgbaLUT);
+      makeTextures();
     }
   }
 }
@@ -1289,7 +1288,7 @@ void vvTexRend::updateVolumeData()
     computeBrickSize();
   }
 
-  makeTextures(pixLUTName, rgbaLUT);
+  makeTextures();
 }
 
 //----------------------------------------------------------------------------
@@ -1400,7 +1399,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int of
   {
     vvDebugMsg::msg(2, "Creating texture names. # of names: ", vd->frames);
 
-    removeTextures(texNames, &textures);
+    removeTextures();
     textures  = vd->frames;
     delete[] texNames;
     texNames = new GLuint[textures];
@@ -3626,7 +3625,7 @@ void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData, fl
   switch (voxelType)
   {
     case VV_RGBA:
-      makeTextures(lutName, lutData);// this mode doesn't use a hardware LUT, so every voxel has to be updated
+      makeTextures();// this mode doesn't use a hardware LUT, so every voxel has to be updated
       break;
     case VV_SGI_LUT:
       glColorTableSGI(GL_TEXTURE_COLOR_TABLE_SGI, GL_RGBA,
@@ -3700,7 +3699,7 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       if (interpolation!=newInterpol)
       {
         interpolation = newInterpol;
-        makeTextures(pixLUTName, rgbaLUT);
+        makeTextures();
         updateTransferFunction(pixLUTName, rgbaLUT, lutDistance, _currentShader, usePreIntegration);
       }
       break;
@@ -3851,7 +3850,7 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       break;
     case vvRenderer::VV_PADDING_REGION:
       vvRenderer::setParameter(param, newValue);
-      makeTextures(pixLUTName, rgbaLUT);
+      makeTextures();
       break;
     default:
       vvRenderer::setParameter(param, newValue);

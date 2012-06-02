@@ -182,15 +182,14 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     GLboolean glsSharedTexPal;                    ///< stores GL_SHARED_TEXTURE_PALETTE_EXT
 
     void setVoxelType(VoxelType vt);
-    void makeLUTTexture(const GLuint& lutName, uchar* lutData) const;
+    void makeLUTTexture() const;
     ErrorType makeTextures2D(int axes);
 
     void sortBrickList(std::vector<vvBrick*>& list, const vvVector3&, const vvVector3&, const bool);
 
-    ErrorType makeTextures(const GLuint& lutName, uchar*& lutData);
+    ErrorType makeTextures();
     ErrorType makeEmptyBricks();
-    ErrorType makeTextureBricks(GLuint*& privateTexNames, int* numTextures, uchar*& lutData,
-                                std::vector<BrickList>& bricks, bool& areBricksCreated) const;
+    ErrorType makeTextureBricks(std::vector<BrickList>& bricks, bool& areBricksCreated);
 
     void initClassificationStage(GLuint *pixLUTName, GLuint progName[VV_FRAG_PROG_MAX]) const;
     void freeClassificationStage(GLuint pixLUTName, GLuint progName[VV_FRAG_PROG_MAX]) const;
@@ -204,7 +203,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void setupIntersectionParameters(vvShaderProgram* isectShader);
 
     ErrorType makeTextures3D();
-    void removeTextures(GLuint*& privateTexNames, int* numTextures) const;
+    void removeTextures();
     ErrorType updateTextures3D(int, int, int, int, int, int, bool);
     ErrorType updateTextures2D(int, int, int, int, int, int, int);
     ErrorType updateTextureBricks(int, int, int, int, int, int);
