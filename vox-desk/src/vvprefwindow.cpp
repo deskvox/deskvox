@@ -297,8 +297,7 @@ long VVPreferenceWindow::onVTChange(FXObject*,FXSelector,void*)
 
 long VVPreferenceWindow::onPSChange(FXObject*,FXSelector,void*)
 {
-  vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->_renderer);
-  if (texrend) texrend->setCurrentShader(_psCombo->getCurrentItem());
+  _canvas->_renderer->setParameter(vvRenderer::VV_PIX_SHADER, _psCombo->getCurrentItem());
   return 1;
 }
 
@@ -622,7 +621,7 @@ void VVPreferenceWindow::updateValues()
        _psCombo->appendItem(s.str().c_str());
     }
     _psCombo->setNumVisible(_psCombo->getNumItems());
-    if (texrend) _psCombo->setCurrentItem(texrend->getCurrentShader());
+    _psCombo->setCurrentItem(texrend->getParameter(vvRenderer::VV_PIX_SHADER));
 
     // Brick size:
     _bsCombo->clearItems();

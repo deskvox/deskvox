@@ -3848,6 +3848,9 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
     case vvRenderer::VV_MEASURETIME:
       _measureRenderTime = newValue;
       break;
+    case vvRenderer::VV_PIX_SHADER:
+      setCurrentShader(newValue);
+      break;
     case vvRenderer::VV_PADDING_REGION:
       vvRenderer::setParameter(param, newValue);
       makeTextures();
@@ -3878,6 +3881,8 @@ vvParam vvTexRend::getParameter(ParameterType param) const
       return preIntegration;
     case vvRenderer::VV_BINNING:
       return (int)vd->_binning;
+    case vvRenderer::VV_PIX_SHADER:
+      return getCurrentShader();
     default:
       return vvRenderer::getParameter(param);
   }

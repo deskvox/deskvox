@@ -1269,12 +1269,10 @@ void vvView::optionsMenuCallback(int item)
     break;
   case 14:
     {
-      if(vvTexRend *rend = dynamic_cast<vvTexRend *>(ds->renderer))
-      {
-        int shader = rend->getCurrentShader()+1;
-        rend->setCurrentShader(shader);
-        cerr << "shader set to " << rend->getCurrentShader() << endl;
-      }
+      int shader = ds->renderer->getParameter(vvRenderer::VV_PIX_SHADER);
+      ++shader;
+      ds->renderer->setParameter(vvRenderer::VV_PIX_SHADER, shader);
+      cerr << "shader set to " << ds->renderer->getParameter(vvRenderer::VV_PIX_SHADER).asInt() << endl;
     }
     break;
   case 15:

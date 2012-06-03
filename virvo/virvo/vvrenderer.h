@@ -112,7 +112,8 @@ public:
     VV_IMG_SCALE,                               ///< downsample img by reducing img resolution [0..1]
     VV_IMG_PRECISION,                           ///< render to high-res target to minimize slicing rounding error
     VV_LIGHTING,
-    VV_MEASURETIME
+    VV_MEASURETIME,
+    VV_PIX_SHADER
   };
 
   virtual void setParameter(ParameterType param, const vvParam& value);
