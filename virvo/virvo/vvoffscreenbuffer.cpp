@@ -14,6 +14,8 @@
 // Lesser General Public License for more details.
 
 #include "vvglew.h"
+
+#include "vvdebugmsg.h"
 #include "vvgltools.h"
 #include "vvoffscreenbuffer.h"
 
@@ -36,7 +38,14 @@ vvOffscreenBuffer::~vvOffscreenBuffer()
   delete _scaledDepthBuffer;
   delete[] _depthPixelsF;
   delete[] _depthPixelsNV;
-  freeGLResources();
+
+  glDeleteTextures(1, &_colorBuffer);
+  if (_preserveDepthBuffer)
+  {
+    glDeleteRenderbuffersEXT(1, &_depthBuffer);
+  }
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  glDeleteFramebuffersEXT(1, &_fbo);
 }
 
 void vvOffscreenBuffer::initForRender()
@@ -53,14 +62,14 @@ void vvOffscreenBuffer::initForRender()
   glPushAttrib(GL_VIEWPORT_BIT);
 
   // If width and height haven't changed, resize will return immediatly.
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fbo);
   glViewport(0, 0, _bufferWidth, _bufferHeight);
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void vvOffscreenBuffer::writeBack(const int w, const int h)
 {
-  vvGLTools::printGLError("enter vvOffscreenBuffer::bindFramebuffer()");
+  vvGLTools::printGLError("enter vvOffscreenBuffer::writeBack()");
 
   if (_preserveDepthBuffer)
   {
@@ -88,7 +97,7 @@ void vvOffscreenBuffer::writeBack(const int w, const int h)
   }
   else
   {
-    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, _frameBufferObject);
+    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, _fbo);
     glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
     glBlitFramebufferEXT(0, 0, _bufferWidth, _bufferHeight,
                          0, 0, viewport[2], viewport[3],
@@ -96,7 +105,7 @@ void vvOffscreenBuffer::writeBack(const int w, const int h)
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
   }
 
-  vvGLTools::printGLError("leave vvOffscreenBuffer::bindFramebuffer()");
+  vvGLTools::printGLError("leave vvOffscreenBuffer::writeBack()");
 }
 
 void vvOffscreenBuffer::resize(const int w, const int h)
@@ -109,18 +118,50 @@ void vvOffscreenBuffer::resize(const int w, const int h)
   _viewportWidth = w;
   _viewportHeight = h;
 
-  doScale();
+  _bufferWidth = getScaled(_viewportWidth);
+  _bufferHeight = getScaled(_viewportHeight);
 
-  if (!_initialized)
+  glDeleteTextures(1, &_colorBuffer);
+
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fbo);
+  if (_preserveDepthBuffer)
   {
-    initFbo();
-  }
-  else
-  {
-    genColorAndDepthTextures();
+    glDeleteRenderbuffersEXT(1, &_depthBuffer);
+    glGenRenderbuffersEXT(1, &_depthBuffer);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _depthBuffer);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, _bufferWidth, _bufferHeight);
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
+                                 GL_RENDERBUFFER_EXT, _depthBuffer);
   }
 
+  glGenTextures(1, &_colorBuffer);
+  glBindTexture(GL_TEXTURE_2D, _colorBuffer);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  switch (_precision)
+  {
+  case VV_BYTE:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    break;
+  case VV_SHORT:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F_ARB, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_SHORT, NULL);
+    break;
+  case VV_FLOAT:
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+    break;
+  }
+  glViewport(0, 0, _bufferWidth, _bufferHeight);
+
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
+                            _colorBuffer, 0);
+
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
   _updatePosted = false;
+
+  vvGLTools::printGLError("leave vvOffscreenBuffer::resize()");
 }
 
 void vvOffscreenBuffer::clearBuffer()
@@ -136,8 +177,12 @@ void vvOffscreenBuffer::clearBuffer()
 
 void vvOffscreenBuffer::bindFramebuffer() const
 {
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _fbo);
 
+  if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+  {
+    vvDebugMsg::msg(0, "vvOffscreenBuffer::bindFramebuffer(): Error binding fbo");
+  }
   vvGLTools::printGLError("leave vvOffscreenBuffer::bindFramebuffer()");
 }
 
@@ -230,7 +275,7 @@ void vvOffscreenBuffer::init(const int w, const int h,
   _interpolation = true;
   glGenTextures(1, &_textureId);
   glGenTextures(1, &_depthTextureId);
-  _initialized = false;
+  glGenFramebuffersEXT(1, &_fbo);
   _updatePosted = true;
   _pixels = NULL;
   _scaledDepthBuffer = NULL;
@@ -239,78 +284,9 @@ void vvOffscreenBuffer::init(const int w, const int h,
   resize(_viewportWidth, _viewportHeight);
 }
 
-void vvOffscreenBuffer::initFbo()
-{
-  freeGLResources();
-
-  glGenFramebuffersEXT(1, &_frameBufferObject);
-  genColorAndDepthTextures();
-
-  _initialized = true;
-}
-
-void vvOffscreenBuffer::genColorAndDepthTextures()
-{
-  glDeleteTextures(1, &_colorBuffer);
-
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _frameBufferObject);
-  if (_preserveDepthBuffer)
-  {
-    glDeleteRenderbuffersEXT(1, &_depthBuffer);
-    glGenRenderbuffersEXT(1, &_depthBuffer);
-    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, _depthBuffer);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, _bufferWidth, _bufferHeight);
-    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                                 GL_RENDERBUFFER_EXT, _depthBuffer);
-  }
-
-  glGenTextures(1, &_colorBuffer);
-  glBindTexture(GL_TEXTURE_2D, _colorBuffer);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  switch (_precision)
-  {
-  case VV_BYTE:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    break;
-  case VV_SHORT:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F_ARB, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_SHORT, NULL);
-    break;
-  case VV_FLOAT:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, _bufferWidth, _bufferHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-    break;
-  }
-  glViewport(0, 0, _bufferWidth, _bufferHeight);
-
-  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D,
-                            _colorBuffer, 0);
-
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-}
-
-void vvOffscreenBuffer::freeGLResources() const
-{
-  glDeleteTextures(1, &_colorBuffer);
-  if (_preserveDepthBuffer)
-  {
-    glDeleteRenderbuffersEXT(1, &_depthBuffer);
-  }
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-  glDeleteFramebuffersEXT(1, &_frameBufferObject);
-}
-
 int vvOffscreenBuffer::getScaled(const int v) const
 {
   return (int)((float)v * _scale);
-}
-
-void vvOffscreenBuffer::doScale()
-{
-  _bufferWidth = getScaled(_viewportWidth);
-  _bufferHeight = getScaled(_viewportHeight);
 }
 
 void vvOffscreenBuffer::update()
@@ -334,7 +310,7 @@ void vvOffscreenBuffer::storeDepthBuffer(const int scaledWidth, const int scaled
   _scaledDepthBuffer = new vvOffscreenBuffer(scaledWidth, scaledHeight, 1.0f, _precision);
 
   glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, 0);
-  glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, _scaledDepthBuffer->_frameBufferObject);
+  glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, _scaledDepthBuffer->_fbo);
   glBlitFramebufferEXT(0, 0, _viewportWidth, _viewportHeight,
                        0, 0, _scaledDepthBuffer->_bufferWidth, _scaledDepthBuffer->_bufferHeight,
                        GL_DEPTH_BUFFER_BIT, GL_NEAREST);

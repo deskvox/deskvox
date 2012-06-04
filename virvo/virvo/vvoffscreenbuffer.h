@@ -75,7 +75,7 @@ private:
 
   bool _interpolation;
 
-  GLuint _frameBufferObject;
+  GLuint _fbo;
   GLuint _colorBuffer;
   GLuint _depthBuffer;
   GLuint _textureId;
@@ -94,15 +94,10 @@ private:
 
   vvOffscreenBuffer* _scaledDepthBuffer;
 
-  bool _initialized;
   bool _updatePosted;
 
   void init(int w, int h, float scale, BufferPrecision precision);
-  void initFbo();
-  void genColorAndDepthTextures();
-  void freeGLResources() const;
   int getScaled(int v) const;
-  void doScale();
   void update();
   void storeColorBuffer();
   void storeDepthBuffer(int scaledWidth, int scaledHeight);
