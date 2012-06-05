@@ -27,6 +27,9 @@ using std::ios;
 #include <GLUT/glut.h>
 #else
 #include <GL/glut.h>
+#ifdef FREEGLUT
+#include <GL/freeglut_ext.h>
+#endif
 #endif
 #include <time.h>
 #include <assert.h>
@@ -2151,7 +2154,7 @@ void vvView::initGraphics(int argc, char *argv[])
 
 // Other glut versions than freeglut currently don't support
 // debug context flags.
-#if defined(FREEGLUT) && defined(GLUT_INIT_MAJOR_VERSION)
+#if defined(FREEGLUT)
   glutInitContextFlags(GLUT_DEBUG);
 #endif // FREEGLUT
 
