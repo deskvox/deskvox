@@ -2158,7 +2158,7 @@ void vvView::initGraphics(int argc, char *argv[])
   glutInitContextFlags(GLUT_DEBUG);
 #endif // FREEGLUT
 
-  uint glutDisplayFlags = GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH;
+  uint glutDisplayFlags = GLUT_DOUBLE | GLUT_RGB | GLUT_ALPHA | GLUT_DEPTH;
   if (ibrValidation)
   {
     // Need a stencil buffer for this.
