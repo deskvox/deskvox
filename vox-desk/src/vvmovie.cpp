@@ -382,7 +382,7 @@ bool vvMovie::setStep(int step)
           peak[0] += steps->getData()->param[0];
           _canvas->_vd->tf.deleteWidgets(vvTFWidget::TF_PYRAMID);
           _canvas->_vd->tf.deleteWidgets(vvTFWidget::TF_BELL);
-          _canvas->_vd->tf._widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, peak[0], peak[1], 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+          _canvas->_vd->tf._widgets.push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, peak[0], peak[1], 0.0f));
           tfChanged = true;
           break;
         case SETPEAK:
@@ -390,7 +390,7 @@ bool vvMovie::setStep(int step)
           peak[1] = steps->getData()->param[1];
           _canvas->_vd->tf.deleteWidgets(vvTFWidget::TF_PYRAMID);
           _canvas->_vd->tf.deleteWidgets(vvTFWidget::TF_BELL);
-          _canvas->_vd->tf._widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, peak[0], peak[1], 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+          _canvas->_vd->tf._widgets.push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, peak[0], peak[1], 0.0f));
           tfChanged = true;
           break;
         case SETCLIP:

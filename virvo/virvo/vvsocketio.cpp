@@ -302,7 +302,7 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
       if (widget)
       {
         widget->fromString(line);
-        tf._widgets.append(widget, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+        tf._widgets.push_back(widget);
       }
     }
 
@@ -326,14 +326,12 @@ vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
     uchar* buffer = NULL;
     vvSocket::ErrorType retval;
 
-    const int numTF = tf._widgets.count();
     std::ostringstream out;
 
-    tf._widgets.first();
-    for (int i=0; i<numTF; ++i)
+    for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
+         it != tf._widgets.end(); ++it)
     {
-      out << tf._widgets.getData()->toString();
-      tf._widgets.next();
+      out << (*it)->toString();
     }
 
     const size_t len = strlen(out.str().c_str());

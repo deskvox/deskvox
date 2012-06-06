@@ -323,7 +323,12 @@ void vvVolDesc::initialize()
   filename = NULL;
   _mask = NULL;
   _radius = 0;
-  tf._widgets.removeAll();
+  for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
+       it != tf._widgets.end(); ++it)
+  {
+    delete *it;
+  }
+  tf._widgets.clear();
   iconSize = 0;
   _scale = 1.0f;
   _hdrBinLimits = new float[NUM_HDR_BINS];
@@ -3753,7 +3758,7 @@ int vvVolDesc::findNumTransparent(int frame)
 
   frameSize = getFrameBytes();
 
-  noTF = tf._widgets.isEmpty();
+  noTF = tf._widgets.empty();
 
   if (!noTF)
   {
@@ -5028,11 +5033,10 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     cerr << "Removing skipped regions from data array...";
     before = numVoxels;
     numSkip = 0;
-    numTF = tf._widgets.count();
-    tf._widgets.first();
-    for (j=0; j<numTF; ++j)
+    for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
+         it != tf._widgets.end(); ++it)
     {
-      if ((sw=dynamic_cast<vvTFSkip*>(tf._widgets.getData()))!=NULL)
+      if ((sw=dynamic_cast<vvTFSkip*>(*it))!=NULL)
       {
         min = sw->_pos[0] - sw->_size[0] / 2.0f;
         max = sw->_pos[0] + sw->_size[0] / 2.0f;
@@ -5058,7 +5062,6 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
           numVoxels -= numSkip;
         }
       }
-      tf._widgets.next();
     }
     cerr << stop.getDiff() << " sec" << endl;
     cerr << (before - numVoxels) << " voxels removed (" << (100.0f * float(numSkip) / float(getFrameVoxels())) << "%)" << endl;

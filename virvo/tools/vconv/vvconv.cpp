@@ -817,7 +817,12 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   }
   if (removeTF)
   {
-    v->tf._widgets.removeAll();
+    for (std::vector<vvTFWidget*>::const_iterator it = v->tf._widgets.begin();
+         it != v->tf._widgets.end(); ++it)
+    {
+      delete *it;
+    }
+    v->tf._widgets.clear();
   }
   if (fillRange)
   {

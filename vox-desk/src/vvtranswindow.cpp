@@ -30,6 +30,8 @@
 #include "vvcanvas.h"
 #include "vvshell.h"
 
+#include <algorithm>
+
 using namespace vox;
 
 const FXColor VVTransferWindow::BLACK = FXRGB(0,0,0);
@@ -551,7 +553,7 @@ long VVTransferWindow::onChngCustomWidth(FXObject*,FXSelector,void*)
 long VVTransferWindow::onMouseLDown1D(FXObject*,FXSelector,void* ptr)
 {
   _mouseButton = 1;
-  if(!_canvas || _canvas->_vd->tf._widgets.count() == 0)
+  if(!_canvas || _canvas->_vd->tf._widgets.size() == 0)
   {
     _currentWidget = NULL;
     return 1;
@@ -631,7 +633,7 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
     if (_mouseButton==1)
     {
       if(!_currentWidget || !_canvas) return 1;
-      if(_canvas->_vd->tf._widgets.count() == 0) return 1;
+      if(_canvas->_vd->tf._widgets.size() == 0) return 1;
       _pinPosLabel->setText(FXStringFormat("Pin: %.5g", mousePosVal));
       _currentWidget->_pos[0] = mousePosVal;
     }
@@ -660,7 +662,7 @@ long VVTransferWindow::onMouseMove1D(FXObject*, FXSelector, void* ptr)
 
 long VVTransferWindow::onMouseLDown2D(FXObject*,FXSelector,void* ptr)
 {
-  if(!_canvas || _canvas->_vd->tf._widgets.count() == 0)
+  if(!_canvas || _canvas->_vd->tf._widgets.size() == 0)
   {
     _currentWidget = NULL;
     return 1;
@@ -686,7 +688,7 @@ long VVTransferWindow::onMouseMove2D(FXObject*, FXSelector, void* ptr)
 {
   if (!_glCanvas2D->grabbed()) return 1;
   if(!_currentWidget || !_canvas) return 1;
-  if(_canvas->_vd->tf._widgets.count() == 0) return 1;
+  if(_canvas->_vd->tf._widgets.size() == 0) return 1;
   FXEvent* ev = (FXEvent*)ptr;
   float xPos = ts_clamp(float(ev->win_x) / float(_glCanvas2D->getWidth()),  0.0f, 1.0f);
   float yPos = ts_clamp(1.0f - float(ev->win_y) / float(_glCanvas2D->getHeight()), 0.0f, 1.0f);
@@ -740,9 +742,9 @@ void VVTransferWindow::updateTransFunc()
 
 long VVTransferWindow::onCmdDelete(FXObject*,FXSelector,void*)
 {
-  if(_canvas->_vd->tf._widgets.count() == 0 || _currentWidget == NULL) return 1;
+  if(_canvas->_vd->tf._widgets.size() == 0 || _currentWidget == NULL) return 1;
   _canvas->_vd->tf.putUndoBuffer();
-  if (_canvas->_vd->tf._widgets.find(_currentWidget)) _canvas->_vd->tf._widgets.remove();
+  _canvas->_vd->tf._widgets.erase(std::find(_canvas->_vd->tf._widgets.begin(), _canvas->_vd->tf._widgets.end(), _currentWidget));
   _currentWidget = NULL;
   drawTF();
   updateLabels();
@@ -909,7 +911,7 @@ void VVTransferWindow::newWidget(WidgetType wt)
       break;
     default: return;
   }
-  _canvas->_vd->tf._widgets.append(widget, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+  _canvas->_vd->tf._widgets.push_back(widget);
   _currentWidget = widget;
   if(_instantButton->getCheck()) updateTransFunc();
   drawTF();
@@ -1057,11 +1059,10 @@ void VVTransferWindow::draw2DTF()
 
 void VVTransferWindow::draw2DTFWidgets()
 {
-  _canvas->_vd->tf._widgets.first();
-  for(int j=0; j<_canvas->_vd->tf._widgets.count(); ++j)
+  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf._widgets.begin();
+       it != _canvas->_vd->tf._widgets.end() ; ++it)
   {
-    draw2DWidget(_canvas->_vd->tf._widgets.getData());
-    _canvas->_vd->tf._widgets.next();
+    draw2DWidget(*it);
   }
 }
 
@@ -1115,14 +1116,13 @@ void VVTransferWindow::drawPinBackground()
 
 void VVTransferWindow::drawCustomWidgets()
 {
-  vvTFWidget* w;
   vvTFCustom* cuw;
   if(!_canvas) return;
 
-  _canvas->_vd->tf._widgets.first();
-  for(int j=0; j<_canvas->_vd->tf._widgets.count(); ++j)
+  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf._widgets.begin();
+       it != _canvas->_vd->tf._widgets.end(); ++it)
   {
-    w = _canvas->_vd->tf._widgets.getData();
+    vvTFWidget* w = *it;
     if (w==_currentWidget)    // don't render control points when widget not current
     {
       if ((cuw=dynamic_cast<vvTFCustom*>(w))!=NULL) // is widget of control point type?
@@ -1130,7 +1130,6 @@ void VVTransferWindow::drawCustomWidgets()
         drawControlPoints(cuw);
       }
     }
-    _canvas->_vd->tf._widgets.next();
   }
 }
 
@@ -1250,11 +1249,10 @@ void VVTransferWindow::drawPinLines()
 {
   if(!_canvas) return;
 
-  _canvas->_vd->tf._widgets.first();
-  for(int j=0; j<_canvas->_vd->tf._widgets.count(); ++j)
+  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf._widgets.begin();
+       it != _canvas->_vd->tf._widgets.end(); ++it)
   {
-    drawPinLine(_canvas->_vd->tf._widgets.getData());
-    _canvas->_vd->tf._widgets.next();
+    drawPinLine(*it);
   }
 }
 
@@ -1379,15 +1377,13 @@ vvTFWidget* VVTransferWindow::closestWidget(float x, float y, float z)
   vvTFWidget* temp = NULL;
   float dist, xDist, yDist;     // [TF space]
   float minDist = FLT_MAX;      // [TF space]
-  int i;
   bool isColor;
 
   if (!_canvas) return NULL;
-  int numWidgets = _canvas->_vd->tf._widgets.count();
-  _canvas->_vd->tf._widgets.first();
-  for(i=0; i<numWidgets; ++i)
+  for (std::vector<vvTFWidget*>::const_iterator it = _canvas->_vd->tf._widgets.begin();
+       it != _canvas->_vd->tf._widgets.end(); ++it)
   {
-    temp = _canvas->_vd->tf._widgets.getData();
+    temp = *it;
     switch (_tfBook->getCurrent())
     {
       case 0: 
@@ -1417,7 +1413,6 @@ vvTFWidget* VVTransferWindow::closestWidget(float x, float y, float z)
         break;
       default: assert(0); break;
     }
-    _canvas->_vd->tf._widgets.next();
   }
   return w;
 }

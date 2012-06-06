@@ -24,7 +24,8 @@
 #include "vvexport.h"
 #include "vvinttypes.h"
 #include "vvtfwidget.h"
-#include "vvsllist.h"
+
+#include <vector>
 
 /** Description of a transfer function.
   @author Jurgen P. Schulze (jschulze@ucsd.edu)
@@ -33,17 +34,17 @@
 class VIRVOEXPORT vvTransFunc
 {
   private:
-    enum                                          /// number of elements in ring buffer
+    enum                                           /// number of elements in ring buffer
     {
       BUFFER_SIZE = 20
     };
-    vvSLList<vvTFWidget*> _buffer[BUFFER_SIZE];   ///< ring buffer which can be used to implement Undo functionality
-    int _nextBufferEntry;                         ///< index of next ring buffer entry to use for storage
-    int _bufferUsed;                              ///< number of ring buffer entries used
-    int _discreteColors;                          ///< number of discrete colors to use for color interpolation (0 for smooth colors)
+    std::vector<vvTFWidget*> _buffer[BUFFER_SIZE]; ///< ring buffer which can be used to implement Undo functionality
+    int _nextBufferEntry;                          ///< index of next ring buffer entry to use for storage
+    int _bufferUsed;                               ///< number of ring buffer entries used
+    int _discreteColors;                           ///< number of discrete colors to use for color interpolation (0 for smooth colors)
 
   public:
-    vvSLList<vvTFWidget*> _widgets;  ///< TF widget list
+    std::vector<vvTFWidget*> _widgets;             ///< TF widget list
 
     vvTransFunc();
     vvTransFunc(vvTransFunc*);
@@ -72,7 +73,7 @@ class VIRVOEXPORT vvTransFunc
     void makePreintLUTOptimized(int width, uchar *preintLUT, float thickness=1.0, float min=0.0, float max=1.0);
     void makePreintLUTCorrect(int width, uchar *preintLUT, float thickness=1.0, float min=0.0, float max=1.0);
     void makeMinMaxTable(int width, uchar *minmax, float min=0.0, float max=1.0);
-    static void copy(vvSLList<vvTFWidget*>*, vvSLList<vvTFWidget*>*);
+    static void copy(std::vector<vvTFWidget*>*, std::vector<vvTFWidget*>*);
     void putUndoBuffer();
     void getUndoBuffer();
     void clearUndoBuffer();

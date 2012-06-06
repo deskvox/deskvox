@@ -222,7 +222,12 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
         }
         break;
       case vvSocketIO::VV_TRANSFER_FUNCTION:
-        tf._widgets.removeAll();
+        for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
+             it != tf._widgets.end(); ++it)
+        {
+          delete *it;
+        }
+        tf._widgets.clear();
         if ((_socketio->getTransferFunction(tf)) == vvSocket::VV_OK)
         {
           renderer->getVolDesc()->tf = tf;

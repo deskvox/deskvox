@@ -1390,9 +1390,7 @@ void vvView::transferMenuCallback(int item)
     ds->vd->tf.deleteWidgets(vvTFWidget::TF_BELL);
     ds->vd->tf.deleteWidgets(vvTFWidget::TF_CUSTOM);
     ds->vd->tf.deleteWidgets(vvTFWidget::TF_SKIP);
-    ds->vd->tf._widgets.append(
-          new vvTFPyramid(vvColor(1.f, 1.f, 1.f), false, 1.f, peakPosX, .2f, 0.f),
-          vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    ds->vd->tf._widgets.push_back(new vvTFPyramid(vvColor(1.f, 1.f, 1.f), false, 1.f, peakPosX, .2f, 0.f));
     break;
   case 14:                                    // gamma red
   case 15:

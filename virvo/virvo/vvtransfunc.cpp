@@ -36,6 +36,8 @@
 #include "vvvoldesc.h"
 #include "vvtoolshed.h"
 
+#include <algorithm>
+
 using std::cerr;
 using std::endl;
 using std::list;
@@ -52,10 +54,10 @@ vvTransFunc::vvTransFunc()
 // Copy Constructor
 vvTransFunc::vvTransFunc(vvTransFunc* tf)
 {
-  tf->_widgets.first();
-  for (int i = 0; i < tf->_widgets.count(); i++)
+  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+       it != _widgets.end(); ++it)
   {
-    vvTFWidget* oldW = tf->_widgets.getData();
+    vvTFWidget* oldW = *it;
 
     vvTFColor* c;
     vvTFPyramid* p;
@@ -66,22 +68,21 @@ vvTransFunc::vvTransFunc(vvTransFunc* tf)
     vvTFCustomMap* cm;
 
     if ((c = dynamic_cast<vvTFColor*>(oldW)) != NULL)
-      _widgets.append(new vvTFColor(c), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFColor(c));
     else if ((p = dynamic_cast<vvTFPyramid*>(oldW)) != NULL)
-      _widgets.append(new vvTFPyramid(p), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFPyramid(p));
     else if ((b = dynamic_cast<vvTFBell*>(oldW)) != NULL)
-      _widgets.append(new vvTFBell(b), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFBell(b));
     else if ((s = dynamic_cast<vvTFSkip*>(oldW)) != NULL)
-      _widgets.append(new vvTFSkip(s), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFSkip(s));
     else if ((cu = dynamic_cast<vvTFCustom*>(oldW)) != NULL)
-      _widgets.append(new vvTFCustom(cu), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFCustom(cu));
     else if ((c2 = dynamic_cast<vvTFCustom2D*>(oldW)) != NULL)
-      _widgets.append(new vvTFCustom2D(c2), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFCustom2D(c2));
     else if ((cm = dynamic_cast<vvTFCustomMap*>(oldW)) != NULL)
-      _widgets.append(new vvTFCustomMap(cm), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFCustomMap(cm));
 
     else assert(0);
-    tf->_widgets.next();
   }
 
   _nextBufferEntry = tf->_nextBufferEntry;
@@ -94,7 +95,12 @@ vvTransFunc::vvTransFunc(vvTransFunc* tf)
 /// Destructor
 vvTransFunc::~vvTransFunc()
 {
-  _widgets.removeAll();
+  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+       it != _widgets.end(); ++it)
+  {
+    delete *it;
+  }
+  _widgets.clear();
 }
 
 //----------------------------------------------------------------------------
@@ -103,13 +109,10 @@ vvTransFunc::~vvTransFunc()
 */
 void vvTransFunc::deleteWidgets(vvTFWidget::WidgetType wt)
 {
-  vvTFWidget* w;
-  bool done = false;
-
-  _widgets.first();
-  while (!done && !_widgets.isEmpty())
+  std::vector<vvTFWidget*>::iterator it = _widgets.begin();
+  while (it != _widgets.end())
   {
-    w = _widgets.getData();
+    vvTFWidget* w = *it;
     if ((wt==vvTFWidget::TF_COLOR   && dynamic_cast<vvTFColor*>(w)) ||
       (wt==vvTFWidget::TF_PYRAMID   && dynamic_cast<vvTFPyramid*>(w)) ||
       (wt==vvTFWidget::TF_BELL      && dynamic_cast<vvTFBell*>(w)) ||
@@ -118,10 +121,12 @@ void vvTransFunc::deleteWidgets(vvTFWidget::WidgetType wt)
       (wt==vvTFWidget::TF_CUSTOM_2D && dynamic_cast<vvTFCustom2D*>(w)) ||
       (wt==vvTFWidget::TF_MAP       && dynamic_cast<vvTFCustomMap*>(w)))
     {
-      _widgets.remove();
-      _widgets.first();
+      it = _widgets.erase(it);
     }
-    else if (!_widgets.next()) done = true;
+    else
+    {
+      ++it;
+    }
   }
 }
 
@@ -130,7 +135,7 @@ void vvTransFunc::deleteWidgets(vvTFWidget::WidgetType wt)
  */
 bool vvTransFunc::isEmpty()
 {
-  return (_widgets.count()==0);
+  return _widgets.empty();
 }
 
 //----------------------------------------------------------------------------
@@ -147,55 +152,55 @@ void vvTransFunc::setDefaultColors(int index, float min, float max)
     case 0:                                       // bright colors
     default:
       // Set RGBA table to bright colors (range: blue->green->red):
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), min),  vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), (max-min) * 0.33f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), (max-min) * 0.67f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), max),  vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), min));
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), (max-min) * 0.33f + min));
+      _widgets.push_back(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), (max-min) * 0.67f + min));
+      _widgets.push_back(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), max));
       break;
 
     case 1:                                       // hue gradient
       // Set RGBA table to maximum intensity and value HSB colors:
-      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), (max-min) * 0.2f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), (max-min) * 0.4f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), (max-min) * 0.6f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), (max-min) * 0.8f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 1.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), min));
+      _widgets.push_back(new vvTFColor(vvColor(1.0f, 1.0f, 0.0f), (max-min) * 0.2f + min));
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), (max-min) * 0.4f + min));
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 1.0f, 1.0f), (max-min) * 0.6f + min));
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), (max-min) * 0.8f + min));
+      _widgets.push_back(new vvTFColor(vvColor(1.0f, 0.0f, 1.0f), max));
       break;
 
     case 2:                                       // grayscale ramp
       // Set RGBA table to grayscale ramp (range: black->white).
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min));
+      _widgets.push_back(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), max));
       break;
 
     case 3:                                       // white
       // Set RGBA table to all white values:
-      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), min));
+      _widgets.push_back(new vvTFColor(vvColor(1.0f, 1.0f, 1.0f), max));
       break;
 
     case 4:                                       // red ramp
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min));
+      _widgets.push_back(new vvTFColor(vvColor(1.0f, 0.0f, 0.0f), max));
       break;
 
     case 5:                                       // green ramp
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min));
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 1.0f, 0.0f), max));
       break;
 
     case 6:                                       // blue ramp
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 0.0f), min));
+      _widgets.push_back(new vvTFColor(vvColor(0.0f, 0.0f, 1.0f), max));
       break;
     case 7:                                       // cool to warm map
       // see http://www.cs.unm.edu/~kmorel/documents/ColorMaps/ColorMapsExpanded.pdf
-      _widgets.append(new vvTFColor(vvColor(0.231f, 0.298f, 0.752f), min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.552f, 0.690f, 0.996f), (max-min) * 0.25f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.866f, 0.866f, 0.866f), (max-min) * 0.5f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.956f, 0.603f, 0.486f), (max-min) * 0.75f + min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
-      _widgets.append(new vvTFColor(vvColor(0.705f, 0.015f, 0.149f), max), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFColor(vvColor(0.231f, 0.298f, 0.752f), min));
+      _widgets.push_back(new vvTFColor(vvColor(0.552f, 0.690f, 0.996f), (max-min) * 0.25f + min));
+      _widgets.push_back(new vvTFColor(vvColor(0.866f, 0.866f, 0.866f), (max-min) * 0.5f + min));
+      _widgets.push_back(new vvTFColor(vvColor(0.956f, 0.603f, 0.486f), (max-min) * 0.75f + min));
+      _widgets.push_back(new vvTFColor(vvColor(0.705f, 0.015f, 0.149f), max));
       break;
   }
 }
@@ -226,13 +231,13 @@ void vvTransFunc::setDefaultAlpha(int index, float min, float max)
   {
     case 0:                                       // ascending (0->1)
     default:
-      _widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, max, 2.0f * (max-min), 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, max, 2.0f * (max-min), 0.0f));
       break;
     case 1:                                       // descending (1->0)
-      _widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, min, 2.0f * (max-min), 0.0f), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, min, 2.0f * (max-min), 0.0f));
       break;
     case 2:                                       // opaque (all 1)
-      _widgets.append(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, (max-min)/2.0f+min, max-min, max-min), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFPyramid(vvColor(1.0f, 1.0f, 1.0f), false, 1.0f, (max-min)/2.0f+min, max-min, max-min));
       break;
   }
 }
@@ -253,18 +258,15 @@ int vvTransFunc::getNumDefaultAlpha()
 vvColor vvTransFunc::computeBGColor(float x, float, float)
 {
   vvColor col;
-  vvTFWidget* w;
   vvTFColor* wBefore = NULL;
   vvTFColor* wAfter = NULL;
   vvTFColor* cw;
   int c, i;
-  int numNodes;
 
-  numNodes = _widgets.count();
-  _widgets.first();
-  for (i=0; i<numNodes; ++i)
+  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+       it != _widgets.end(); ++it)
   {
-    w = _widgets.getData();
+    vvTFWidget* w = *it;
     if ((cw = dynamic_cast<vvTFColor*>(w)) != NULL)
     {
       if (cw->_pos[0] <= x)
@@ -276,7 +278,6 @@ vvColor vvTransFunc::computeBGColor(float x, float, float)
         if (wAfter==NULL || wAfter->_pos[0] > cw->_pos[0]) wAfter = cw;
       }
     }
-    _widgets.next();
   }
 
   if (wBefore==NULL && wAfter==NULL) return col;
@@ -302,8 +303,6 @@ vvColor vvTransFunc::computeColor(float x, float y, float z)
 {
   vvColor col;
   vvColor resultCol(0,0,0);
-  vvTFWidget* w;
-  int numNodes, i;
   int currentRange;
   float rangeWidth;
   bool hasOwn = false;
@@ -319,11 +318,10 @@ vvColor vvTransFunc::computeColor(float x, float y, float z)
     x = currentRange * rangeWidth + (rangeWidth / 2.0f);
   }
 
-  numNodes = _widgets.count();
-  _widgets.first();
-  for (i=0; i<numNodes; ++i)
+  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+       it != _widgets.end(); ++it)
   {
-    w = _widgets.getData();
+    vvTFWidget* w = *it;
     if (vvTFPyramid *pw = dynamic_cast<vvTFPyramid*>(w))
     {
       if (pw->hasOwnColor() && pw->getColor(col, x, y, z))
@@ -356,7 +354,6 @@ vvColor vvTransFunc::computeColor(float x, float y, float z)
         resultCol = resultCol + col;
       }
     }
-    _widgets.next();
   }
   if (!hasOwn) resultCol = computeBGColor(x, y, z);
   return resultCol;
@@ -368,18 +365,14 @@ vvColor vvTransFunc::computeColor(float x, float y, float z)
 */
 float vvTransFunc::computeOpacity(float x, float y, float z)
 {
-  vvTFWidget* w;
   float opacity = 0.0f;
-  int numNodes, i;
 
-  numNodes = _widgets.count();
-  _widgets.first();
-  for (i=0; i<numNodes; ++i)
+  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+       it != _widgets.end(); ++it)
   {
-    w = _widgets.getData();
+    vvTFWidget* w = *it;
     if (dynamic_cast<vvTFSkip*>(w) && w->getOpacity(x, y, z)==0.0f) return 0.0f;  // skip widget is dominant
     else opacity = ts_max(opacity, w->getOpacity(x, y, z));
-    _widgets.next();
   }
   return opacity;
 }
@@ -648,47 +641,47 @@ void vvTransFunc::make8bitLUT(int width, uchar* lut, float min, float max)
   @param dst destination list
   @param src source list
 */
-void vvTransFunc::copy(vvSLList<vvTFWidget*>* dst, vvSLList<vvTFWidget*>* src)
+void vvTransFunc::copy(std::vector<vvTFWidget*>* dst, std::vector<vvTFWidget*>* src)
 {
-  vvTFWidget* w;
-  int numNodes, i;
-
-  dst->removeAll();
-  numNodes = src->count();
-  src->first();
-  for (i=0; i<numNodes; ++i)
+  for (std::vector<vvTFWidget*>::const_iterator it = dst->begin();
+       it != dst->end(); ++it)
   {
-    w = src->getData();
+    delete *it;
+  }
+  dst->clear();
+  for (std::vector<vvTFWidget*>::const_iterator it = src->begin();
+       it != src->end(); ++it)
+  {
+    vvTFWidget* w = *it;
     if (vvTFPyramid *pw = dynamic_cast<vvTFPyramid*>(w))
     {
-      dst->append(new vvTFPyramid(pw), src->getDeleteType());
+      dst->push_back(new vvTFPyramid(pw));
     }
     else if (vvTFBell *bw = dynamic_cast<vvTFBell*>(w))
     {
-      dst->append(new vvTFBell(bw), src->getDeleteType());
+      dst->push_back(new vvTFBell(bw));
     }
     else if (vvTFColor *cw = dynamic_cast<vvTFColor*>(w))
     {
-      dst->append(new vvTFColor(cw), src->getDeleteType());
+      dst->push_back(new vvTFColor(cw));
     }
     else if (vvTFCustom *cuw = dynamic_cast<vvTFCustom*>(w))
     {
-      dst->append(new vvTFCustom(cuw), src->getDeleteType());
+      dst->push_back(new vvTFCustom(cuw));
     }
     else if (vvTFSkip *sw = dynamic_cast<vvTFSkip*>(w))
     {
-      dst->append(new vvTFSkip(sw), src->getDeleteType());
+      dst->push_back(new vvTFSkip(sw));
     }
     else if (vvTFCustomMap *cmw = dynamic_cast<vvTFCustomMap*>(w))
     {
-      dst->append(new vvTFCustomMap(cmw), src->getDeleteType());
+      dst->push_back(new vvTFCustomMap(cmw));
     }
     else if (vvTFCustom2D *c2w = dynamic_cast<vvTFCustom2D*>(w))
     {
-      dst->append(new vvTFCustom2D(c2w), src->getDeleteType());
+      dst->push_back(new vvTFCustom2D(c2w));
     }
     else assert(0);
-    src->next();
   }
 }
 
@@ -1053,11 +1046,9 @@ void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float th
 */
 int vvTransFunc::saveMeshviewer(const char* filename)
 {
-  vvTFWidget* w;
   vvTFColor* cw;
   vvTFCustom* cuw;
   FILE* fp;
-  int i;
 
   if ( (fp = fopen(filename, "wb")) == NULL)
   {
@@ -1067,22 +1058,21 @@ int vvTransFunc::saveMeshviewer(const char* filename)
   
   // Write color pins to file:
   fprintf(fp, "ColorMapKnots: %d\n", getNumWidgets(vvTFWidget::TF_COLOR));
-  _widgets.first();
-  for (i=0; i<_widgets.count(); ++i)
-  { 
-    w = _widgets.getData();
+  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+       it != _widgets.end(); ++it)
+  {
+    vvTFWidget* w = *it;
     if ((cw=dynamic_cast<vvTFColor*>(w)))
     {
       fprintf(fp, "Knot: %f %f %f %f\n", cw->_pos[0], cw->_col[0], cw->_col[1], cw->_col[2]);
     }
-    _widgets.next();
   }
   
   // Write opacity pins to file:
-  _widgets.first();
-  for (i=0; i<_widgets.count(); ++i)
-  { 
-    w = _widgets.getData();
+  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+       it != _widgets.end(); ++it)
+  {
+    vvTFWidget* w = *it;
     if ((cuw=dynamic_cast<vvTFCustom*>(w)))
     {
       fprintf(fp, "OpacityMapPoints: %d\n", (int)cuw->_points.size() + 2);   // add two points for edges of TF space
@@ -1094,7 +1084,6 @@ int vvTransFunc::saveMeshviewer(const char* filename)
       }
       fprintf(fp, "Point: %f %f\n", cuw->_pos[0] + cuw->_size[0]/2.0f, 0.0f);
     }
-    _widgets.next();
   }
 
   // Wrap up:
@@ -1170,7 +1159,12 @@ int vvTransFunc::loadMeshviewer(const char* filename)
   }
   
   // Remove all existing widgets:
-  _widgets.removeAll();
+  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+       it != _widgets.end(); ++it)
+  {
+    delete *it;
+  }
+  _widgets.clear();
   
   // Read color pins from file:
   if(fscanf(fp, "ColorMapKnots: %d\n", &numColorWidgets) != 1)
@@ -1185,7 +1179,7 @@ int vvTransFunc::loadMeshviewer(const char* filename)
     cw->_col[0] = col[0];
     cw->_col[1] = col[1];
     cw->_col[2] = col[2];
-    _widgets.append(cw, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    _widgets.push_back(cw);
   }
   
   // Read opacity pins from file:
@@ -1195,7 +1189,7 @@ int vvTransFunc::loadMeshviewer(const char* filename)
   {
     float begin=0., end=0.;
     cuw = new vvTFCustom(0.5f, 1.0f);
-    _widgets.append(cuw, vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+    _widgets.push_back(cuw);
     for (i=0; i<numOpacityPoints; ++i)
     { 
       if(fscanf(fp, "Point: %f %f\n", &pos, &opacity) != 2)
@@ -1234,14 +1228,12 @@ int vvTransFunc::loadMeshviewer(const char* filename)
 */
 int vvTransFunc::getNumWidgets(vvTFWidget::WidgetType wt)
 {
-  vvTFWidget* w;
   int num = 0;
-  int i;
   
-  _widgets.first();
-  for (i=0; i<_widgets.count(); ++i)
+  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+       it != _widgets.end(); ++it)
   {
-    w = _widgets.getData();
+    vvTFWidget* w = *it;
     switch(wt)
     {
       case vvTFWidget::TF_COLOR:   if (dynamic_cast<vvTFColor*>(w))   ++num; break;
@@ -1255,7 +1247,6 @@ int vvTransFunc::getNumWidgets(vvTFWidget::WidgetType wt)
 
       case vvTFWidget::TF_UNKNOWN: break;
     }
-    _widgets.next();
   }
   return num;
 }
@@ -1273,12 +1264,10 @@ vvTransFunc& vvTransFunc::operator=(vvTransFunc& rhs)
   deleteWidgets(vvTFWidget::TF_MAP);
   deleteWidgets(vvTFWidget::TF_SKIP);
 
-  _widgets.first();
-  rhs._widgets.first();
-
-  for (int i = 0; i < rhs._widgets.count(); ++i)
+  for (std::vector<vvTFWidget*>::const_iterator it = rhs._widgets.begin();
+       it != rhs._widgets.end(); ++it)
   {
-    vvTFWidget* w = rhs._widgets.getData();
+    vvTFWidget* w = *it;
 
     vvTFColor* tfColor = dynamic_cast<vvTFColor*>(w);
     vvTFPyramid* tfPyramid = dynamic_cast<vvTFPyramid*>(w);
@@ -1290,39 +1279,38 @@ vvTransFunc& vvTransFunc::operator=(vvTransFunc& rhs)
 
     if (tfColor != NULL)
     {
-      _widgets.append(new vvTFColor(tfColor), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFColor(tfColor));
     }
 
     if (tfPyramid != NULL)
     {
-      _widgets.append(new vvTFPyramid(tfPyramid), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFPyramid(tfPyramid));
     }
 
     if (tfBell != NULL)
     {
-      _widgets.append(new vvTFBell(tfBell), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFBell(tfBell));
     }
 
     if (tfSkip != NULL)
     {
-      _widgets.append(new vvTFSkip(tfSkip), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFSkip(tfSkip));
     }
 
     if (tfCustom != NULL)
     {
-      _widgets.append(new vvTFCustom(tfCustom), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFCustom(tfCustom));
     }
 
     if (tfCustom2D != NULL)
     {
-      _widgets.append(new vvTFCustom2D(tfCustom2D), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFCustom2D(tfCustom2D));
     }
 
     if (tfCustomMap != NULL)
     {
-      _widgets.append(new vvTFCustomMap(tfCustomMap), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+      _widgets.push_back(new vvTFCustomMap(tfCustomMap));
     }
-    rhs._widgets.next();
   }
   return *this;
 }

@@ -744,7 +744,6 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   int f, i;                                       // counters
   int frames;                                     // volume animation frames
   int frameSize;                                  // frame size
-  int numTF;                                      // number of transfer functions to save
   int encodedSize;                                // number of bytes in encoded array
 
   vvDebugMsg::msg(1, "vvFileIO::saveXVFFile()");
@@ -787,13 +786,10 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   }
   fprintf(fp, "\n");
 
-  // Write transfer function widgets:
-  numTF = vd->tf._widgets.count();
-  vd->tf._widgets.first();
-  for (i=0; i<numTF; ++i)
+  for (std::vector<vvTFWidget*>::iterator it = vd->tf._widgets.begin();
+       it != vd->tf._widgets.end(); ++it)
   {
-    vd->tf._widgets.getData()->write(fp);
-    vd->tf._widgets.next();
+    (*it)->write(fp);
   }
 
   // Write icon:
@@ -1039,25 +1035,25 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       else if (strcmp(tok->sval, "TF_PYRAMID")==0)
       {
         fseek(fp, tok->getFilePos(), SEEK_SET);
-        vd->tf._widgets.append(new vvTFPyramid(fp), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+        vd->tf._widgets.push_back(new vvTFPyramid(fp));
         tok->setFilePos(fp);
       }
       else if (strcmp(tok->sval, "TF_BELL")==0)
       {
         fseek(fp, tok->getFilePos(), SEEK_SET);
-        vd->tf._widgets.append(new vvTFBell(fp), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+        vd->tf._widgets.push_back(new vvTFBell(fp));
         tok->setFilePos(fp);
       }
       else if (strcmp(tok->sval, "TF_COLOR")==0)
       {
         fseek(fp, tok->getFilePos(), SEEK_SET);
-        vd->tf._widgets.append(new vvTFColor(fp), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+        vd->tf._widgets.push_back(new vvTFColor(fp));
         tok->setFilePos(fp);
       }
       else if (strcmp(tok->sval, "TF_CUSTOM")==0)
       {
         fseek(fp, tok->getFilePos(), SEEK_SET);
-        vd->tf._widgets.append(new vvTFCustom(fp), vvSLNode<vvTFWidget*>::NORMAL_DELETE);
+        vd->tf._widgets.push_back(new vvTFCustom(fp));
         tok->setFilePos(fp);
       }
       else if (strcmp(tok->sval, "ICON")==0)
