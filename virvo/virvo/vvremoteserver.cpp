@@ -139,7 +139,7 @@ vvRemoteServer::ErrorType vvRemoteServer::initRenderContext(const int w, const i
   co->width = w;
   co->height = h;
   co->displayName = "";
-  _renderContext = new vvRenderContext(co);
+  _renderContext = new vvRenderContext(*co);
   if (_renderContext->makeCurrent())
   {
     return vvRemoteServer::VV_OK;

@@ -4,7 +4,7 @@
 #import "vvcocoaglcontext.h"
 #import "vvrendercontext.h"
 
-vvCocoaGLContext::vvCocoaGLContext(vvContextOptions* options)
+vvCocoaGLContext::vvCocoaGLContext(const vvContextOptions& options)
   : _options(options)
 {
   init();
@@ -52,8 +52,8 @@ void vvCocoaGLContext::init()
 
   (void)[NSApplication sharedApplication];
   NSRect rect = NSMakeRect(0.0f, 0.0f,
-                           static_cast<float>(_options->width),
-                           static_cast<float>(_options->height));
+                           static_cast<float>(_options.width),
+                           static_cast<float>(_options.height));
   _win = [[NSWindow alloc]
     initWithContentRect:rect
     styleMask: NSTitledWindowMask
@@ -67,8 +67,8 @@ void vvCocoaGLContext::init()
   [_win makeKeyAndOrderFront:nil];
 
   NSRect glRect = NSMakeRect(0.0f, 0.0f,
-                             static_cast<float>(_options->width),
-                             static_cast<float>(_options->height));
+                             static_cast<float>(_options.width),
+                             static_cast<float>(_options.height));
 
   _glView = [[NSView alloc] initWithFrame:glRect];
   [_win setContentView:_glView];
@@ -100,7 +100,7 @@ void vvCocoaGLContext::createGLContext()
     NSOpenGLPFAAccelerated,
     NSOpenGLPFADepthSize,
     (NSOpenGLPixelFormatAttribute)32,
-    _options->doubleBuffering ? (NSOpenGLPixelFormatAttribute)NSOpenGLPFADoubleBuffer : (NSOpenGLPixelFormatAttribute)nil,
+    _options.doubleBuffering ? (NSOpenGLPixelFormatAttribute)NSOpenGLPFADoubleBuffer : (NSOpenGLPixelFormatAttribute)nil,
     (NSOpenGLPixelFormatAttribute)nil
   };
 

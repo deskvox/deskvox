@@ -60,7 +60,7 @@ struct ContextArchData
 #endif
 };
 
-vvRenderContext::vvRenderContext(vvContextOptions* co)
+vvRenderContext::vvRenderContext(const vvContextOptions& co)
   : _options(co)
 {
   _archData = new ContextArchData;
@@ -80,7 +80,7 @@ vvRenderContext::~vvRenderContext()
 
 #if defined(HAVE_X11) && defined(USE_X11)
     glXDestroyContext(_archData->display, _archData->glxContext);
-    switch (_options->type)
+    switch (_options.type)
     {
     case vvContextOptions::VV_PBUFFER:
       glXDestroyPbuffer(_archData->display, _archData->drawable);
@@ -142,10 +142,10 @@ void vvRenderContext::swapBuffers() const
 
 void vvRenderContext::resize(const int w, const int h)
 {
-  if ((_options->width != w) || (_options->height != h))
+  if ((_options.width != w) || (_options.height != h))
   {
-    _options->width = w;
-    _options->height = h;
+    _options.width = w;
+    _options.height = h;
     if (_initialized)
     {
 #ifdef USE_COCOA
@@ -153,7 +153,7 @@ void vvRenderContext::resize(const int w, const int h)
 #endif
 
 #if defined(HAVE_X11) && defined(USE_X11)
-      switch (_options->type)
+      switch (_options.type)
       {
       case vvContextOptions::VV_PBUFFER:
       {
@@ -184,7 +184,7 @@ void vvRenderContext::init()
 #endif
 
 #if defined(HAVE_X11) && defined(USE_X11)
-  _archData->display = XOpenDisplay(_options->displayName.c_str());
+  _archData->display = XOpenDisplay(_options.displayName.c_str());
 
   _archData->attributes.push_back(GLX_RGBA);
   _archData->attributes.push_back(GLX_RED_SIZE);
@@ -201,7 +201,7 @@ void vvRenderContext::init()
 
   if(_archData->display != NULL)
   {
-    switch(_options->type)
+    switch(_options.type)
     {
     case vvContextOptions::VV_PBUFFER:
       if (initPbuffer())
@@ -212,7 +212,7 @@ void vvRenderContext::init()
       }
       else
       {
-        _options->type = vvContextOptions::VV_WINDOW;
+        _options.type = vvContextOptions::VV_WINDOW;
       }
       // no pbuffer created - fall through
     case vvContextOptions::VV_WINDOW:
@@ -244,8 +244,8 @@ void vvRenderContext::init()
         if (_archData->glxContext != 0)
         {
 
-          int windowWidth = _options->width;
-          int windowHeight = _options->height;
+          int windowWidth = _options.width;
+          int windowHeight = _options.height;
           if (vvDebugMsg::getDebugLevel() > 0)
           {
             windowWidth = 512;
@@ -275,7 +275,7 @@ void vvRenderContext::init()
   {
     _initialized = false;
     std::ostringstream errmsg;
-    errmsg << "vvRenderContext::init() error: Could not open display " << _options->displayName;
+    errmsg << "vvRenderContext::init() error: Could not open display " << _options.displayName;
     vvDebugMsg::msg(0, errmsg.str().c_str());
   }
 #endif
@@ -298,7 +298,7 @@ void vvRenderContext::init()
     return;
   }
 
-  switch (_options->type)
+  switch (_options.type)
   {
   case vvContextOptions::VV_PBUFFER:
     std::cerr << "WGL Pbuffers not implemented yet" << std::endl;
@@ -333,7 +333,7 @@ void vvRenderContext::init()
       pfd.nSize = sizeof(pfd);
       pfd.nVersion = 1;
       pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
-      if (_options->doubleBuffering)
+      if (_options.doubleBuffering)
       {
         pfd.dwFlags |= PFD_DOUBLEBUFFER;
       }
@@ -344,10 +344,10 @@ void vvRenderContext::init()
       HWND hWnd = CreateWindow(ClsName,
                                WndName,
                                WS_OVERLAPPEDWINDOW,
-                               _options->left < 0 ? CW_USEDEFAULT : _options->left,
-                               _options->top < 0 ? CW_USEDEFAULT : _options->top,
-                               _options->width,
-                               _options->height,
+                               _options.left < 0 ? CW_USEDEFAULT : _options->left,
+                               _options.top < 0 ? CW_USEDEFAULT : _options->top,
+                               _options.width,
+                               _options.height,
                                NULL,      // handle of parent window
                                NULL,      // handle of menu
                                hInstance,
@@ -396,7 +396,7 @@ bool vvRenderContext::initPbuffer()
   if ((_archData->fbConfigs != NULL) && (nelements > 0))
   {
     // TODO: find the nicest fbconfig.
-    int pbAttrList[] = { GLX_PBUFFER_WIDTH, _options->width, GLX_PBUFFER_HEIGHT, _options->height, None };
+    int pbAttrList[] = { GLX_PBUFFER_WIDTH, _options.width, GLX_PBUFFER_HEIGHT, _options.height, None };
     _archData->drawable = glXCreatePbuffer(_archData->display, _archData->fbConfigs[0], pbAttrList);
     if (!_archData->drawable)
     {

@@ -17,14 +17,14 @@ class NSWindow;
 class vvCocoaGLContext
 {
 public:
-  vvCocoaGLContext(vvContextOptions* options);
+  vvCocoaGLContext(const vvContextOptions& options);
   ~vvCocoaGLContext();
 
   bool makeCurrent() const;
   void swapBuffers() const;
   void resize(int w, int h);
 private:
-  vvContextOptions* _options;
+  const vvContextOptions& _options;
 
   NSAutoreleasePool* _autoreleasePool;
   NSOpenGLContext* _context;

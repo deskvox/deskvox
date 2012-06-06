@@ -79,7 +79,7 @@ public:
     Creates a render context with given context options.
     Call makeCurrent() to enable context for rendering
     */
-  vvRenderContext(vvContextOptions* co);
+  vvRenderContext(const vvContextOptions& co);
   ~vvRenderContext();
 
   /**
@@ -94,7 +94,7 @@ public:
   void resize(int w, int h);
 private:
   ContextArchData *_archData;
-  vvContextOptions *_options;
+  vvContextOptions _options;
 
   bool _initialized;
 
