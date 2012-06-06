@@ -344,8 +344,8 @@ void vvRenderContext::init()
       HWND hWnd = CreateWindow(ClsName,
                                WndName,
                                WS_OVERLAPPEDWINDOW,
-                               _options.left < 0 ? CW_USEDEFAULT : _options->left,
-                               _options.top < 0 ? CW_USEDEFAULT : _options->top,
+                               _options.left < 0 ? CW_USEDEFAULT : _options.left,
+                               _options.top < 0 ? CW_USEDEFAULT : _options.top,
                                _options.width,
                                _options.height,
                                NULL,      // handle of parent window
