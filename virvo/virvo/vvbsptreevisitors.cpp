@@ -53,12 +53,13 @@ void vvSortLastVisitor::visit(vvVisitable* obj) const
 
   if (node->isLeaf())
   {
-    const vvGLTools::Viewport vp = vvGLTools::getViewport();
-    glDrawPixels(vp[2], vp[3], GL_RGBA, GL_FLOAT, &(*_textures.at(node->getId()))[0]);
+    const Texture& tex = _textures.at(node->getId());
+    glWindowPos2i(tex.rect->x, tex.rect->y);
+    glDrawPixels(tex.rect->width, tex.rect->height, GL_RGBA, GL_FLOAT, &(*tex.pixels)[0]);
   }
 }
 
-void vvSortLastVisitor::setTextures(const std::vector< std::vector<float>* >& textures)
+void vvSortLastVisitor::setTextures(const std::vector<Texture>& textures)
 {
   vvDebugMsg::msg(3, "vvSortLastVisitor::setTextures()");
 

@@ -33,17 +33,24 @@
 
 struct vvParBrickRend::Thread
 {
-  Thread() : parbrickrend(NULL), renderer(NULL) { }
+  Thread()
+    : parbrickrend(NULL)
+    , renderer(NULL)
+    , aabb(vvVector3(), vvVector3())
+  {
+  }
 
   vvContextOptions contextOptions;
   vvParBrickRend* parbrickrend;
   vvRenderer* renderer;
-  std::vector<float>* texture;
+  vvSortLastVisitor::Texture texture;
 
   int id;
   pthread_t threadHandle;
   pthread_barrier_t* barrier;
   pthread_mutex_t* mutex;
+
+  vvAABB aabb;
 
   vvMatrix mv;
   vvMatrix pr;
@@ -98,6 +105,8 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   setVisibleRegion(_thread->renderer, _bspTree->getLeafs().at(0)->getAabb());
   _thread->barrier = new pthread_barrier_t;
   _thread->mutex = new pthread_mutex_t;
+  _thread->aabb = vvAABB(vd->objectCoords(_bspTree->getLeafs()[0]->getAabb().getMin()),
+                         vd->objectCoords(_bspTree->getLeafs()[0]->getAabb().getMax()));
 
   int ret = pthread_barrier_init(_thread->barrier, NULL, numBricks);
   if (ret != 0)
@@ -113,7 +122,8 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
 
   const vvGLTools::Viewport vp = vvGLTools::getViewport();
 
-  _thread->texture = new std::vector<float>(vp[2] * vp[3] * 4);
+  _thread->texture.pixels = new std::vector<float>(vp[2] * vp[3] * 4);
+  _thread->texture.rect = new vvRecti;
 
   // workers
   for (int i = 1; i < numBricks; ++i)
@@ -122,10 +132,14 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
     thread->id = i;
     thread->contextOptions.displayName = displays.at(i - 1);
     thread->parbrickrend = this;
-    thread->texture = new std::vector<float>(vp[2] * vp[3] * 4);
+    thread->texture.pixels = new std::vector<float>(vp[2] * vp[3] * 4);
+    thread->texture.rect = new vvRecti;
 
     thread->barrier = _thread->barrier;
     thread->mutex = _thread->mutex;
+
+    thread->aabb = vvAABB(vd->objectCoords(_bspTree->getLeafs()[i]->getAabb().getMin()),
+                          vd->objectCoords(_bspTree->getLeafs()[i]->getAabb().getMax()));
 
     vvGLTools::getModelviewMatrix(&thread->mv);
     vvGLTools::getProjectionMatrix(&thread->pr);
@@ -159,7 +173,8 @@ vvParBrickRend::~vvParBrickRend()
     {
       vvDebugMsg::msg(0, "vvParBrickRend::~vvParBrickRend(): Error joining thread");
     }
-    delete (*it)->texture;
+    delete (*it)->texture.pixels;
+    delete (*it)->texture.rect;
     delete *it;
   }
 
@@ -168,7 +183,8 @@ vvParBrickRend::~vvParBrickRend()
 
   delete _thread->barrier;
   delete _thread->mutex;
-  delete _thread->texture;
+  delete _thread->texture.pixels;
+  delete _thread->texture.rect;
   delete _thread;
 
   delete _sortLastVisitor;
@@ -347,7 +363,19 @@ void vvParBrickRend::render(Thread* thread)
 
   thread->renderer->renderVolumeGL();
   const vvGLTools::Viewport vp = vvGLTools::getViewport();
-  glReadPixels(vp[0], vp[1], vp[2], vp[3], GL_RGBA, GL_FLOAT, &(*thread->texture)[0]);
+  vvRecti vprect = { vp[0], vp[1], vp[2], vp[3] };
+
+  vvRecti bounds = vvGLTools::getBoundingRect(thread->aabb);
+  bounds.intersect(vprect);
+
+  thread->texture.rect->x = bounds.x;
+  thread->texture.rect->y = bounds.y;
+  thread->texture.rect->width = bounds.width;
+  thread->texture.rect->height = bounds.height;
+
+  glReadPixels(thread->texture.rect->x, thread->texture.rect->y,
+               thread->texture.rect->width, thread->texture.rect->height,
+               GL_RGBA, GL_FLOAT, &(*thread->texture.pixels)[0]);
   pthread_barrier_wait(thread->barrier);
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -35,13 +35,19 @@ class vvRenderer;
 class vvSortLastVisitor : public vvVisitor
 {
 public:
+  struct Texture
+  {
+    vvRecti* rect;
+    std::vector<float>* pixels;
+  };
+
   vvSortLastVisitor();
   ~vvSortLastVisitor();
   void visit(vvVisitable* obj) const;
 
-  void setTextures(const std::vector< std::vector<float>* >& textures);
+  void setTextures(const std::vector<Texture>& textures);
 private:
-  std::vector< std::vector<float>* > _textures;
+  std::vector<Texture> _textures;
 };
 
 /*!

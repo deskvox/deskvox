@@ -22,11 +22,11 @@
 #define _VVPARBRICKREND_H_
 
 #include "vvbrickrend.h"
+#include "vvbsptreevisitors.h"
 
 #include <vector>
 
 class vvRenderContext;
-class vvSortLastVisitor;
 class vvVolDesc;
 
 class VIRVOEXPORT vvParBrickRend : public vvBrickRend
@@ -51,7 +51,7 @@ private:
 
   Thread* _thread;                                   ///< main thread
   std::vector<Thread*> _threads;                     ///< worker threads
-  std::vector< std::vector<float>* > _textures;
+  std::vector<vvSortLastVisitor::Texture> _textures;
 };
 
 #endif // _VVPARBRICKREND_H_
