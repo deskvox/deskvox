@@ -1396,3 +1396,54 @@ vvBaseVector3<T> operator * ( const T scalar, const vvBaseVector3<T> &other )
 
   return vResult;
 }
+
+template <typename T>
+vvBaseVector2<T>::vvBaseVector2()
+{
+  for (int i = 0; i < 2; ++i)
+  {
+    e[i] = 0.0;
+  }
+}
+
+//----------------------------------------------------------------------------
+/// Constructor with one value for all 2 elements
+template <typename T>
+vvBaseVector2<T>::vvBaseVector2(const T val)
+{
+  for (int i = 0; i < 2; ++i)
+  {
+    e[i] = val;
+  }
+}
+
+//----------------------------------------------------------------------------
+/// Constructor for a preset vector
+template <typename T>
+vvBaseVector2<T>::vvBaseVector2(const T x, const T y)
+{
+  e[0] = x;
+  e[1] = y;
+}
+
+
+//----------------------------------------------------------------------------
+/// Overload subscription operator.
+template <typename T>
+T &vvBaseVector2<T>::operator[](const int index)
+{
+  assert(index >= 0 && index < 2);
+
+  return e[index];
+}
+
+//----------------------------------------------------------------------------
+/// Overload subscription operator.
+template <typename T>
+T vvBaseVector2<T>::operator[](const int index) const
+{
+  assert(index >= 0 && index < 2);
+  return e[index];
+}
+
+

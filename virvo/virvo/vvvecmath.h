@@ -39,10 +39,22 @@ const float VV_FLT_MAX = FLT_MAX;                 ///< maximum float value
 //============================================================================
 
 template <typename T>
+class vvBaseVector2;
+template <typename T>
 class vvBaseVector3;
 template <typename T>
 class vvBaseVector4;
 class VIRVOEXPORT vvMatrix;
+
+typedef vvBaseVector2<int> vvVector2i;
+typedef vvBaseVector2<unsigned int> vvVector2ui;
+typedef vvBaseVector2<short> vvVector2s;
+typedef vvBaseVector2<unsigned short> vvVector2us;
+typedef vvBaseVector2<long> vvVector2l;
+typedef vvBaseVector2<unsigned long> vvVector2ul;
+typedef vvBaseVector2<float> vvVector2f;
+typedef vvBaseVector2<double> vvVector2d;
+typedef vvVector2f vvVector2;
 
 typedef vvBaseVector3<int> vvVector3i;
 typedef vvBaseVector3<unsigned int> vvVector3ui;
@@ -250,6 +262,20 @@ class vvBaseVector3
 
     vvBaseVector3 operator + (void) const;
     vvBaseVector3 operator - (void) const;
+};
+
+template <typename T>
+class vvBaseVector2
+{
+  public:
+    vvBaseVector2();
+    explicit vvBaseVector2(T);
+    vvBaseVector2(T x, T y);
+
+    T &operator[](const int);
+    T operator[](const int) const;
+  private:
+    T e[2];
 };
 
 /** 3D plane primitive.
