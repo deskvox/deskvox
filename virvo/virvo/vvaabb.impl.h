@@ -27,6 +27,63 @@ using std::cerr;
 using std::endl;
 
 //============================================================================
+// vvBaseRect<T> Method Definitions
+//============================================================================
+
+template <typename T>
+bool vvBaseRect<T>::contains(const vvBaseRect<T>& rhs)
+{
+  const vvBaseVector2<T> pt1 = vvBaseVector2<T>(x, y);
+  const vvBaseVector2<T> pt2 = vvBaseVector2<T>(x + width, y + height);
+
+  const vvBaseVector2<T> rpt1 = vvBaseVector2<T>(rhs.x, rhs.y);
+  const vvBaseVector2<T> rpt2 = vvBaseVector2<T>(rhs.x + rhs.width, rhs.y + rhs.height);
+
+  return (pt1[0] >= rpt1[0] && pt2[0] <= rpt2[0] && pt1[1] >= rpt1[1] && pt2[1] <= rpt2[1]);
+}
+
+template <typename T>
+bool vvBaseRect<T>::overlaps(const vvBaseRect<T>& rhs)
+{
+  const vvBaseVector2<T> pt1 = vvBaseVector2<T>(x, y);
+  const vvBaseVector2<T> pt2 = vvBaseVector2<T>(x + width, y + height);
+
+  const vvBaseVector2<T> rpt1 = vvBaseVector2<T>(rhs.x, rhs.y);
+  const vvBaseVector2<T> rpt2 = vvBaseVector2<T>(rhs.x + rhs.width, rhs.y + rhs.height);
+
+  return !(pt1[0] > rpt2[0] || pt2[0] < rpt1[0] || pt1[1] > rpt2[1] || pt2[1] < rpt1[1]);
+}
+
+template <typename T>
+void vvBaseRect<T>::intersect(const vvBaseRect<T>& rhs)
+{
+  if (overlaps(rhs))
+  {
+    const vvBaseVector2<T> pt1 = vvBaseVector2<T>(x, y);
+    const vvBaseVector2<T> pt2 = vvBaseVector2<T>(x + width, y + height);
+
+    const vvBaseVector2<T> rpt1 = vvBaseVector2<T>(rhs.x, rhs.y);
+    const vvBaseVector2<T> rpt2 = vvBaseVector2<T>(rhs.x + rhs.width, rhs.y + rhs.height);
+
+    x = std::max(pt1[0], rpt1[0]);
+    y = std::max(pt1[1], rpt1[1]);
+
+    const int x2 = std::min(pt2[0], rpt2[0]);
+    const int y2 = std::min(pt2[1], rpt2[1]);
+
+    width = x2 - x;
+    height = y2 - y;
+  }
+  else
+  {
+    x = 0;
+    y = 0;
+    width = 0;
+    height = 0;
+  }
+}
+
+//============================================================================
 // vvBaseAABB<T> Method Definitions
 //============================================================================
 

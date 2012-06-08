@@ -31,6 +31,11 @@ public:
   T y;
   T width;
   T height;
+
+  bool contains(const vvBaseRect<T>& rhs);
+
+  bool overlaps(const vvBaseRect<T>& rhs);
+  void intersect(const vvBaseRect<T>& rhs);
 };
 
 typedef vvBaseRect<int> vvRecti;
