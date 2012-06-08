@@ -261,7 +261,6 @@ vvColor vvTransFunc::computeBGColor(float x, float, float)
   vvTFColor* wBefore = NULL;
   vvTFColor* wAfter = NULL;
   vvTFColor* cw;
-  int c, i;
 
   for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
        it != _widgets.end(); ++it)
@@ -285,7 +284,7 @@ vvColor vvTransFunc::computeBGColor(float x, float, float)
   else if (wAfter==NULL) col = wBefore->_col;
   else
   {
-    for (c=0; c<3; ++c)
+    for (int c=0; c<3; ++c)
     {
       col[c] = vvToolshed::interpolateLinear(wBefore->_pos[0], wBefore->_col[c], wAfter->_pos[0], wAfter->_col[c], x);
     }

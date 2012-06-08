@@ -4953,7 +4953,6 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   int numVoxels;
   int i,j;
   int index, minIndex, maxIndex, numSkip;
-  int numTF;
   int before;
 
   assert(binning!=LINEAR);    // this routine supports only iso-data and opacity-weighted binning
