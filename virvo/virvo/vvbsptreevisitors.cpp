@@ -54,7 +54,7 @@ void vvSortLastVisitor::visit(vvVisitable* obj) const
   if (node->isLeaf())
   {
     const vvGLTools::Viewport vp = vvGLTools::getViewport();
-    glDrawPixels(vp[2], vp[3], GL_RGBA, GL_FLOAT, _textures.at(node->getId())->data());
+    glDrawPixels(vp[2], vp[3], GL_RGBA, GL_FLOAT, &(*_textures.at(node->getId()))[0]);
   }
 }
 

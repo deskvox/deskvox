@@ -347,7 +347,7 @@ void vvParBrickRend::render(Thread* thread)
 
   thread->renderer->renderVolumeGL();
   const vvGLTools::Viewport vp = vvGLTools::getViewport();
-  glReadPixels(vp[0], vp[1], vp[2], vp[3], GL_RGBA, GL_FLOAT, thread->texture->data());
+  glReadPixels(vp[0], vp[1], vp[2], vp[3], GL_RGBA, GL_FLOAT, &(*thread->texture)[0]);
   pthread_barrier_wait(thread->barrier);
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
