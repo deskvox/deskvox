@@ -97,9 +97,11 @@ class VIRVOEXPORT vvGLTools
     static void getClippingPlanes(vvPlane& znear, vvPlane& zfar);
     static vvVector3 project(const vvVector3& obj);
     static vvVector3 unProject(const vvVector3& win);
-    
+
+    /*! calc bounding rect of box in screen space coordinates
+     */ 
     template<typename T>
-    static vvRecti getProjectedScreenRect(const vvBaseAABB<T>& aabb)
+    static vvRecti getBoundingRect(const vvBaseAABB<T>& aabb)
     {
       GLdouble modelview[16];
       glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
