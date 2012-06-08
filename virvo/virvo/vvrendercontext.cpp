@@ -1,4 +1,4 @@
-// Virvo - Virtual Reality Volume RenderingVE
+// Virvo - Virtual Reality Volume Rendering
 // Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
 // Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
