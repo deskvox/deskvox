@@ -59,6 +59,7 @@ struct vvParBrickRend::Thread
   {
     VV_NEW_PARAM = 0,
     VV_RENDER,
+    VV_RESIZE,
     VV_TRANS_FUNC,
     VV_EXIT
   };
@@ -121,6 +122,8 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   }
 
   const vvGLTools::Viewport vp = vvGLTools::getViewport();
+  _width = vp[2];
+  _height = vp[3];
 
   _thread->texture.pixels = new std::vector<float>(vp[2] * vp[3] * 4);
   _thread->texture.rect = new vvRecti;
@@ -196,6 +199,21 @@ void vvParBrickRend::renderVolumeGL()
 
   if (!_showBricks)
   {
+    const vvGLTools::Viewport vp = vvGLTools::getViewport();
+    if (vp[2] != _width || vp[3] != _height)
+    {
+      _width = vp[2];
+      _height = vp[3];
+      _thread->texture.pixels->resize(_width * _height * 4);
+      for (std::vector<Thread*>::iterator it = _threads.begin();
+           it != _threads.end(); ++it)
+      {
+        pthread_mutex_lock(_thread->mutex);
+        (*it)->events.push(Thread::VV_RESIZE);
+        pthread_mutex_unlock(_thread->mutex);
+      }
+    }
+
     vvMatrix mv;
     vvGLTools::getModelviewMatrix(&mv);
 
@@ -211,7 +229,6 @@ void vvParBrickRend::renderVolumeGL()
       (*it)->pr = pr;
       (*it)->events.push(Thread::VV_RENDER);
     }
-
    
     // TODO: if main thread renders, store color and depth buffer right here
     // TODO: configure whether main thread renders or not
@@ -336,6 +353,11 @@ void* vvParBrickRend::renderFunc(void* args)
       }
       case Thread::VV_RENDER:
         render(thread);
+        break;
+      case Thread::VV_RESIZE:
+        thread->texture.pixels->resize(thread->parbrickrend->_width * thread->parbrickrend->_height * 4);
+        ctx->resize(thread->parbrickrend->_width, thread->parbrickrend->_height);
+        glViewport(0, 0, thread->parbrickrend->_width, thread->parbrickrend->_height);
         break;
       case Thread::VV_TRANS_FUNC:
         thread->renderer->updateTransferFunction();
