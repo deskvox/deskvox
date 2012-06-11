@@ -14,13 +14,23 @@ message(STATUS "Checking whether Bonjour/Avahi is supported")
 
 # Bonjour is built-in on MacOS X / iOS (i.e. available in libSystem)
 if(NOT APPLE)
-  find_path(BONJOUR_INCLUDE_DIR dns_sd.h 
-    PATHS /opt/dnssd/include /usr/include  /usr/local/include
-  )
-  find_library(BONJOUR_LIBRARY 
-    NAMES dns_sd
-    PATHS /opt/dnssd/lib /usr/lib /usr/local/lib
-  )
+  IF (WIN32)
+    FIND_PATH(BONJOUR_INCLUDE_DIR dns_sd.h
+      PATHS $ENV{PROGRAMW6432}/Bonjour\ SDK/Include
+    )
+    FIND_LIBRARY(BONJOUR_LIBRARY
+      NAMES dnssd
+      PATHS $ENV{PROGRAMW6432}/Bonjour\ SDK/Lib/x64
+    )
+  ELSE(WIN32)
+    find_path(BONJOUR_INCLUDE_DIR dns_sd.h 
+      PATHS /opt/dnssd/include /usr/include  /usr/local/include
+    )
+    find_library(BONJOUR_LIBRARY 
+      NAMES dns_sd
+      PATHS /opt/dnssd/lib /usr/lib /usr/local/lib
+    )
+  ENDIF(WIN32)
   if(NOT BONJOUR_INCLUDE_DIR OR NOT BONJOUR_LIBRARY)
     return()
   else()
