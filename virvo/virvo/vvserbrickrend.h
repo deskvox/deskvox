@@ -36,6 +36,7 @@ public:
   void renderVolumeGL();
 
   void setParameter(ParameterType param, const vvParam& newValue);
+  vvParam getParameter(ParameterType param) const;
   void updateTransferFunction();
 private:
   vvSimpleRenderVisitor* _simpleRenderVisitor;

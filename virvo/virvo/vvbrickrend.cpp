@@ -82,6 +82,13 @@ void vvBrickRend::setParameter(ParameterType param, const vvParam& newValue)
   vvRenderer::setParameter(param, newValue);
 }
 
+vvParam vvBrickRend::getParameter(ParameterType param) const
+{
+  vvDebugMsg::msg(3, "vvBrickRend::setParameter()");
+
+  return vvRenderer::getParameter(param);
+}
+
 void vvBrickRend::updateTransferFunction()
 {
   vvDebugMsg::msg(3, "vvBrickRend::updateTransferFunction()");

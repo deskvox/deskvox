@@ -90,6 +90,19 @@ void vvSerBrickRend::setParameter(ParameterType param, const vvParam& newValue)
   vvBrickRend::setParameter(param, newValue);
 }
 
+vvParam vvSerBrickRend::getParameter(ParameterType param) const
+{
+  vvDebugMsg::msg(3, "vvSerBrickRend::getParameter()");
+
+  for (std::vector<vvRenderer*>::const_iterator it = _renderers.begin();
+       it != _renderers.end(); ++it)
+  {
+    return (*it)->getParameter(param);
+  }
+
+  return vvBrickRend::getParameter(param);
+}
+
 void vvSerBrickRend::updateTransferFunction()
 {
   vvDebugMsg::msg(3, "vvSerBrickRend::updateTransferFunction()");

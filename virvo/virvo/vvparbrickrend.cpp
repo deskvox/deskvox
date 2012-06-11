@@ -291,6 +291,24 @@ void vvParBrickRend::setParameter(ParameterType param, const vvParam& newValue)
   vvBrickRend::setParameter(param, newValue);
 }
 
+vvParam vvParBrickRend::getParameter(ParameterType param) const
+{
+  vvDebugMsg::msg(3, "vvParBrickRend::getParameter()");
+
+  if (_thread != NULL && _thread->renderer != NULL)
+  {
+    return _thread->renderer->getParameter(param);
+  }
+
+  for (std::vector<Thread*>::const_iterator it = _threads.begin();
+       it != _threads.end(); ++it)
+  {
+    return (*it)->renderer->getParameter(param);
+  }
+
+  return vvBrickRend::getParameter(param);
+}
+
 void vvParBrickRend::updateTransferFunction()
 {
   vvDebugMsg::msg(3, "vvParBrickRend::updateTransferFunction()");

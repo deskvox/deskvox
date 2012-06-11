@@ -52,6 +52,7 @@ public:
   virtual void renderVolumeGL();
 
   virtual void setParameter(ParameterType param, const vvParam& newValue);
+  virtual vvParam getParameter(ParameterType param) const;
   virtual void updateTransferFunction();
 protected:
   vvBspTree* _bspTree;
