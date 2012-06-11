@@ -228,7 +228,7 @@ void * vvResourceManager::updateResources(void * param)
 
     pthread_mutex_unlock(&rm->_resourcesMutex);
 
-    sleep(1); // check from time to time only
+    vvToolshed::sleep(1); // check from time to time only
   }
 #else
   vvDebugMsg::msg(0, "vvResourceManager::updateResources() resource live-updating not available");
