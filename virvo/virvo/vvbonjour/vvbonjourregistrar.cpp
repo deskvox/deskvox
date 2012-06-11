@@ -24,6 +24,7 @@
 
 #include "../vvdebugmsg.h"
 #include "../vvsocket.h"
+#include "vvtoolshed.h"
 
 #include <dns_sd.h>
 #include <iostream>
@@ -66,7 +67,7 @@ DNSServiceErrorType vvBonjourRegistrar::registerService(const vvBonjourEntry& en
     _eventLoop->run(true, -1.0);
     while(!_eventLoop->_noMoreFlags)
     {
-      sleep(1);
+      vvToolshed::sleep(1);
       //waiting...
     }
   }
