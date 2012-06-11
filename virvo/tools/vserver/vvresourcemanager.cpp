@@ -33,6 +33,7 @@
 #include <virvo/vvsocketmonitor.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpsocket.h>
+#include <virvo/vvtoolshed.h>
 
 using namespace std;
 
@@ -250,7 +251,7 @@ void * vvResourceManager::checkWaitingQueue(void * param)
   {
     while(rm->initNextJob()) {}; // process all waiting jobs first, then wait
 
-    sleep(1);
+    vvToolshed::sleep(1);
   }
 
   pthread_exit(NULL);
