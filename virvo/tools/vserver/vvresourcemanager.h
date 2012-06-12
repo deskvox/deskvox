@@ -125,9 +125,9 @@ public:
   ~vvResourceManager();
 
   void addJob(vvTcpSocket* sock);         ///< thread-savely adds new connection to the job list
-private:
   bool initNextJob();                     ///< thread-savely check for waiting jobs and free resources and pair if possible
 
+private:
   std::vector<vvRequest*>  _requests;
   std::vector<vvResource*> _resources;
   pthread_mutex_t _jobsMutex;
@@ -135,7 +135,6 @@ private:
 
   // static thread functions
   static void * updateResources(void *param);
-  static void * checkWaitingQueue(void *param);
   static void * processJob(void *param);
   pthread_t               _threadUR;
   pthread_t               _threadCWQ;

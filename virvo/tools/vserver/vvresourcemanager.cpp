@@ -60,7 +60,6 @@ vvResourceManager::vvResourceManager(vvServer *server)
   pthread_mutex_init(&_resourcesMutex, NULL);
 
   pthread_create(&_threadUR,  NULL, updateResources,      this);
-  pthread_create(&_threadCWQ, NULL, checkWaitingQueue,    this);
 }
 
 vvResourceManager::~vvResourceManager()
@@ -228,31 +227,14 @@ void * vvResourceManager::updateResources(void * param)
 
     pthread_mutex_unlock(&rm->_resourcesMutex);
 
+    while(rm->initNextJob()) {}; // process all waiting jobs
+
     vvToolshed::sleep(1); // check from time to time only
   }
 #else
   vvDebugMsg::msg(0, "vvResourceManager::updateResources() resource live-updating not available");
   (void)param;
 #endif
-
-  pthread_exit(NULL);
-#ifdef _WIN32
-  return NULL;
-#endif
-}
-
-void * vvResourceManager::checkWaitingQueue(void * param)
-{
-  vvDebugMsg::msg(3, "vvResourceManager::checkWaitingQueue() Enter");
-
-  vvResourceManager *rm = reinterpret_cast<vvResourceManager*>(param);
-
-  while(true)
-  {
-    while(rm->initNextJob()) {}; // process all waiting jobs first, then wait
-
-    vvToolshed::sleep(1);
-  }
 
   pthread_exit(NULL);
 #ifdef _WIN32

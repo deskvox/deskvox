@@ -267,6 +267,7 @@ bool vvServer::serverLoop()
       if(RM == _sm || RM_WITH_SERVER == _sm)
       {
         rm->addJob(sock);
+        while(rm->initNextJob()) {}; // process all waiting jobs
       }
       else
       {
