@@ -128,7 +128,6 @@ vvView::vvView()
   useOffscreenBuffer    = false;
   bufferPrecision       = 8;
   useHeadLight          = false;
-  clientMode            = false;
   ibrPrecision          = 8;
   ibrMode               = vvRenderer::VV_GRADIENT;
   sync                  = false;
@@ -2517,7 +2516,6 @@ bool vvView::parseCommandLine(int argc, char** argv)
     else if (vvToolshed::strCompare(argv[arg], "-c")==0 ||
              vvToolshed::strCompare(argv[arg], "-clientmode")==0)
     {
-      clientMode = true;
       std::string val;
       if(argv[arg+1])
         val = argv[arg+1];
@@ -2650,9 +2648,8 @@ bool vvView::parseCommandLine(int argc, char** argv)
         return false;
       }
 
-      if (!clientMode)
+      if (rrMode == RR_NONE)
       {
-        clientMode = true;
         rrMode = RR_IBR;
         ds->currentRenderer = "ibr";
       }

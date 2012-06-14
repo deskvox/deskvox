@@ -98,7 +98,6 @@ class vvView
     int   x1,y1,x2,y2;                          ///< mouse coordinates for auto-rotation
     int   lastWidth, lastHeight;                ///< last window size
     int   lastPosX, lastPosY;                   ///< last window position
-    bool  clientMode;                           ///< true = renderer started as client
     bool  emptySpaceLeapingMode;                ///< true = bricks invisible due to current transfer function aren't rendered
     bool  earlyRayTermination;                  ///< true = don't compute invisible fragments
     bool  perspectiveMode;                      ///< true = perspective projection
