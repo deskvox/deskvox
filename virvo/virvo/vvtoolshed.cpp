@@ -2756,7 +2756,7 @@ int vvToolshed::parsePort(const char* url)
 //----------------------------------------------------------------------------
 /** Remove port from an url specified as follows:
     <hostname>[:port]
-    No checks will be performed if their is actually
+    No checks will be performed if there is actually
     a port substring. The caller is responsible for
     performing this check.
     @param url  The url to strip.
