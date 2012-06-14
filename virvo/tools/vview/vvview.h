@@ -78,7 +78,8 @@ class vvView
       RR_NONE = 0,
       RR_COMPARISON,
       RR_IMAGE,
-      RR_IBR
+      RR_IBR,
+      RR_PARBRICK
     };
     static const int ROT_TIMER_DELAY;           ///< rotation timer delay in milliseconds
     static const int DEFAULTSIZE;               ///< default window size (width and height) in pixels

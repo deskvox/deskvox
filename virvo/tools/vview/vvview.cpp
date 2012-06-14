@@ -568,6 +568,17 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
 
   vvGLTools::enableGLErrorBacktrace(ds->showBt);
 
+  if (rrMode == RR_NONE && servers.size() == 1)
+  {
+    rrMode = RR_IBR;
+    type = "ibr";
+  }
+  else if (rrMode == RR_NONE && servers.size() > 1)
+  {
+    rrMode = RR_PARBRICK;
+    type = "parbrick";
+  }
+
   ds->currentRenderer = type;
   ds->currentOptions = options;
 
@@ -2378,8 +2389,9 @@ void vvView::displayHelpInfo()
   cerr << "-clientmode <mode> (-c)" << endl;
   cerr << " Renderer is a client in mode <mode> and connects to server(s) given with -server" << endl;
   cerr << " Modes:" << endl;
-  cerr << " ibr     = image based rendering" << endl;
-  cerr << " image   = remote rendering" << endl;
+  cerr << " ibr      = image based rendering" << endl;
+  cerr << " image    = remote rendering" << endl;
+  cerr << " parbrick = parallel brick rendering" << endl;
   cerr << endl;
   cerr << "-port" << endl;
   cerr << " Renderer is a render slave. Don't use the default port (31050), but the specified one" << endl;
@@ -2538,6 +2550,12 @@ bool vvView::parseCommandLine(int argc, char** argv)
         ds->currentRenderer = "image";
         arg++;
       }
+      else if(val == "parbrick")
+      {
+        rrMode = RR_PARBRICK;
+        ds->currentRenderer = "parbrick";
+        arg++;
+      }
       else
       {
         cerr << "Set default client mode: image based rendering" << endl;
@@ -2646,12 +2664,6 @@ bool vvView::parseCommandLine(int argc, char** argv)
       {
         cerr << "Server unspecified." << endl;
         return false;
-      }
-
-      if (rrMode == RR_NONE)
-      {
-        rrMode = RR_IBR;
-        ds->currentRenderer = "ibr";
       }
 
       const int port = vvToolshed::parsePort(argv[arg]);
