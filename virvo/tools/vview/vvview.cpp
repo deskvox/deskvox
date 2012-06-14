@@ -129,7 +129,6 @@ vvView::vvView()
   bufferPrecision       = 8;
   useHeadLight          = false;
   clientMode            = false;
-  slavePort             = vvView::DEFAULT_PORT;
   ibrPrecision          = 8;
   ibrMode               = vvRenderer::VV_GRADIENT;
   sync                  = false;
@@ -2561,12 +2560,12 @@ bool vvView::parseCommandLine(int argc, char** argv)
       if ((++arg)>=argc)
       {
         cerr << "No port specified, defaulting to: " << vvView::DEFAULT_PORT << endl;
-        slavePort = vvView::DEFAULT_PORT;
+        slavePorts.push_back(vvView::DEFAULT_PORT);
         return false;
       }
       else
       {
-        slavePort = atoi(argv[arg]);
+        slavePorts.push_back(atoi(argv[arg]));
       }
     }
     else if (vvToolshed::strCompare(argv[arg], "-r")==0 ||

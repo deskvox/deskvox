@@ -99,7 +99,6 @@ class vvView
     int   lastWidth, lastHeight;                ///< last window size
     int   lastPosX, lastPosY;                   ///< last window position
     bool  clientMode;                           ///< true = renderer started as client
-    int   slavePort;                            ///< port the slave renderer uses to listen for incoming connections
     bool  emptySpaceLeapingMode;                ///< true = bricks invisible due to current transfer function aren't rendered
     bool  earlyRayTermination;                  ///< true = don't compute invisible fragments
     bool  perspectiveMode;                      ///< true = perspective projection
