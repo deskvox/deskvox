@@ -123,7 +123,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 
   if (socket->connectToHost(serverName ? serverName : _slaveName, port) == vvSocket::VV_OK)
   {
-    delete serverName;
+    delete[] serverName;
 
     // block until server created its thread/remoteserver-object and is ready
     bool serverRdy;
@@ -178,7 +178,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   }
   else
   {
-    delete serverName;
+    delete[] serverName;
     delete socket;
     delete _socketIO;
     _socketIO = NULL;
