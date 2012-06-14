@@ -608,6 +608,8 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   brickstr << bricks;
   opt["bricks"] = brickstr.str();
 
+  opt["brickrenderer"] = "planar";
+
   if(renderer)
   renderState = *renderer;
   delete renderer;

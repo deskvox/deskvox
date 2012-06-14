@@ -151,9 +151,22 @@ struct ParsedOptions
   std::string filename;
   int bricks;
   std::vector<std::string> displays;
+  std::string brickrenderer;
 
-  ParsedOptions() : voxeltype("default"), port(-1), bricks(1) {}
-  ParsedOptions(std::string str) : voxeltype("default"), port(-1), bricks(1)
+  ParsedOptions()
+    : voxeltype("default")
+    , port(-1)
+    , bricks(1)
+    , brickrenderer("planar")
+  {
+
+  }
+
+  ParsedOptions(std::string str)
+    : voxeltype("default")
+    , port(-1)
+    , bricks(1)
+    , brickrenderer("planar")
   {
     std::vector<std::string> optlist = split(str, ',');
     for(std::vector<std::string>::iterator it = optlist.begin();
@@ -181,7 +194,12 @@ struct ParsedOptions
     }
   }
 
-  ParsedOptions(const vvRendererFactory::Options &options) : options(options), voxeltype("default"), port(-1), bricks(1)
+  ParsedOptions(const vvRendererFactory::Options &options)
+    : options(options)
+    , voxeltype("default")
+    , port(-1)
+    , bricks(1)
+    , brickrenderer("planar")
   {
     for(std::map<std::string, std::string>::const_iterator it = options.begin();
         it != options.end();
@@ -223,6 +241,10 @@ struct ParsedOptions
       {
         displays = split(val, ',');
       }
+      else if (opt == "brickrenderer")
+      {
+        brickrenderer = val;
+      }
       else
       {
         vvDebugMsg::msg(1, "option not handled: ", opt.c_str());
@@ -257,9 +279,9 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   switch(it->second)
   {
   case vvRenderer::SERBRICKREND:
-    return new vvSerBrickRend(vd, rs, options.bricks, "planar", options.options);
+    return new vvSerBrickRend(vd, rs, options.bricks, options.brickrenderer, options.options);
   case vvRenderer::PARBRICKREND:
-    return new vvParBrickRend(vd, rs, options.displays, "planar", options.options);
+    return new vvParBrickRend(vd, rs, options.displays, options.brickrenderer, options.options);
   case vvRenderer::COMPARISON:
     return new vvComparisonRend<vvImageClient, vvIbrClient>(vd, rs, options.server.c_str(), options.port,
                                                             options.filename.c_str(),
