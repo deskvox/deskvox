@@ -203,11 +203,11 @@ void vvView::mainLoop(int argc, char *argv[])
     vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
   }
 
-  if (slaveNames.size() == 0 && rrMode != RR_NONE)
+  if (servers.size() == 0 && rrMode != RR_NONE)
   {
 #ifdef HAVE_BONJOUR
     vvBonjour bonjour;
-    slaveNames = bonjour.getConnectionStringsFor("_distrendering._tcp");
+    servers = bonjour.getConnectionStringsFor("_distrendering._tcp");
 #endif
   }
 
@@ -574,20 +574,20 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
 
   vvRendererFactory::Options opt(options);
 
-  if(!slaveNames.empty())
+  if(!servers.empty())
   {
-    opt["server"] = slaveNames[0];
+    opt["server"] = servers[0];
   }
 
-  if(!slaveFileNames.empty())
+  if(!serverFileNames.empty())
   {
-    opt["filename"] = slaveFileNames[0];
+    opt["filename"] = serverFileNames[0];
   }
 
-  if(!slavePorts.empty())
+  if(!ports.empty())
   {
     std::stringstream port;
-    port << slavePorts[0];
+    port << ports[0];
     opt["port"] = port.str();
   }
 
@@ -2560,12 +2560,12 @@ bool vvView::parseCommandLine(int argc, char** argv)
       if ((++arg)>=argc)
       {
         cerr << "No port specified, defaulting to: " << vvView::DEFAULT_PORT << endl;
-        slavePorts.push_back(vvView::DEFAULT_PORT);
+        ports.push_back(vvView::DEFAULT_PORT);
         return false;
       }
       else
       {
-        slavePorts.push_back(atoi(argv[arg]));
+        ports.push_back(atoi(argv[arg]));
       }
     }
     else if (vvToolshed::strCompare(argv[arg], "-r")==0 ||
@@ -2658,7 +2658,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
       }
 
       const int port = vvToolshed::parsePort(argv[arg]);
-      slavePorts.push_back(port);
+      ports.push_back(port);
 
       char* sname;
       if (port != -1)
@@ -2669,7 +2669,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
       {
         sname = argv[arg];
       }
-      slaveNames.push_back(sname);
+      servers.push_back(sname);
     }
     else if (vvToolshed::strCompare(argv[arg], "-serverfilename")==0)
     {
@@ -2678,7 +2678,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
         cerr << "Server file name unspecified" << endl;
         return false;
       }
-      slaveFileNames.push_back(argv[arg]);
+      serverFileNames.push_back(argv[arg]);
     }
     else if (vvToolshed::strCompare(argv[arg], "-testsuitefilename")==0)
     {
