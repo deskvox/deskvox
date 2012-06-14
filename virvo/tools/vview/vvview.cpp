@@ -2660,16 +2660,16 @@ bool vvView::parseCommandLine(int argc, char** argv)
       const int port = vvToolshed::parsePort(argv[arg]);
       ports.push_back(port);
 
-      char* sname;
       if (port != -1)
       {
-        sname = vvToolshed::stripPort(argv[arg]);
+        char* sname = vvToolshed::stripPort(argv[arg]);
+        servers.push_back(sname);
+        delete[] sname;
       }
       else
       {
-        sname = argv[arg];
+        servers.push_back(argv[arg]);
       }
-      servers.push_back(sname);
     }
     else if (vvToolshed::strCompare(argv[arg], "-serverfilename")==0)
     {
