@@ -1278,7 +1278,7 @@ void vvRayRend::compositeVolume(int, int)
 // see parent
 void vvRayRend::setParameter(ParameterType param, const vvParam& newValue)
 {
-  vvDebugMsg::msg(3, "vvTexRend::setParameter()");
+  vvDebugMsg::msg(3, "vvRayRend::setParameter()");
 
   switch (param)
   {
@@ -1318,7 +1318,7 @@ void vvRayRend::setParameter(ParameterType param, const vvParam& newValue)
 // see parent
 vvParam vvRayRend::getParameter(ParameterType param) const
 {
-  vvDebugMsg::msg(3, "vvTexRend::getParameter()");
+  vvDebugMsg::msg(3, "vvRayRend::getParameter()");
 
   switch (param)
   {
