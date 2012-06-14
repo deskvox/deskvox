@@ -227,11 +227,7 @@ void vvView::mainLoop(int argc, char *argv[])
   {
     currentRenderer = "image";
   }
-  else if(rrMode == RR_CLUSTER)
-  {
-    //_remoteClient = new vvClusterClient(ds->renderState, slaveNames, slavePorts, slaveFileNames, filename);
-  }
-
+  
   createRenderer(currentRenderer, currentOptions);
 
   const vvVector3 size = vd->getSize();
@@ -1130,8 +1126,6 @@ void vvView::optionsMenuCallback(int item)
   vvVector3 size;
 
   vvDebugMsg::msg(1, "vvView::optionsMenuCallback()");
-
-  //vvClusterClient* client = dynamic_cast<vvClusterClient*>(ds->_remoteClient);
 
   switch(item)
   {
@@ -2386,7 +2380,6 @@ void vvView::displayHelpInfo()
   cerr << "-clientmode <mode> (-c)" << endl;
   cerr << " Renderer is a client in mode <mode> and connects to server(s) given with -server" << endl;
   cerr << " Modes:" << endl;
-  cerr << " cluster = cluster rendering (default)" << endl;
   cerr << " ibr     = image based rendering" << endl;
   cerr << " image   = remote rendering" << endl;
   cerr << endl;
@@ -2530,13 +2523,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
       if(argv[arg+1])
         val = argv[arg+1];
 
-      if(val == "cluster")
-      {
-        rrMode = RR_CLUSTER;
-        ds->currentRenderer = "cluster";
-        arg++;
-      }
-      else if(val == "comparison")
+      if(val == "comparison")
       {
         rrMode = RR_COMPARISON;
         ds->currentRenderer = "comparison";

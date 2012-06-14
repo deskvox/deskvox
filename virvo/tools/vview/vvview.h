@@ -76,7 +76,6 @@ class vvView
     enum
     {
       RR_NONE = 0,
-      RR_CLUSTER,
       RR_COMPARISON,
       RR_IMAGE,
       RR_IBR
