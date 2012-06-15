@@ -656,7 +656,14 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   brickstr << bricks;
   opt["bricks"] = brickstr.str();
 
-  opt["brickrenderer"] = "planar";
+  if (displays.size() > 0)
+  {
+    opt["brickrenderer"] = "planar";
+  }
+  else if (servers.size() > 0)
+  {
+    opt["brickrenderer"] = "image";
+  }
 
   if(renderer)
   renderState = *renderer;
