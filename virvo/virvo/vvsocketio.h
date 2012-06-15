@@ -147,7 +147,8 @@ class VIRVOEXPORT vvSocketIO
       VV_PARAMETER_3I,
       VV_PARAMETER_3F,
       VV_PARAMETER_4I,
-      VV_PARAMETER_4F
+      VV_PARAMETER_4F,
+      VV_PARAMETER_AABBI
     };
 
     vvSocketIO(vvSocket* sock);
@@ -183,6 +184,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putVector3(const vvVector3& val);
     vvSocket::ErrorType getVector4(vvVector4& val);
     vvSocket::ErrorType putVector4(const vvVector4& val);
+    vvSocket::ErrorType getAABBi(vvAABBi& val);
+    vvSocket::ErrorType putAABBi(const vvAABBi& val);
     vvSocket::ErrorType getViewport(vvGLTools::Viewport &val);
     vvSocket::ErrorType putViewport(const vvGLTools::Viewport &val);
     vvSocket::ErrorType getCommReason(CommReason& val);

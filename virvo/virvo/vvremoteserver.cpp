@@ -292,6 +292,16 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
           }
         }
         break;
+      case vvSocketIO::VV_PARAMETER_AABBI:
+        {
+          int32_t param;
+          vvAABBi value = vvAABBi(vvVector3i(), vvVector3i());
+          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getAABBi(value) == vvSocket::VV_OK)
+          {
+            renderer->setParameter((vvRenderState::ParameterType)param, value);
+          }
+        }
+        break;
       default:
         vvDebugMsg::msg(0, "vvRemoteServer::mainLoop: comm reason not implemented: ", (int)commReason);
         return true;

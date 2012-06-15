@@ -333,6 +333,16 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
     return;
   }
 
+  if (value.isa(vvParam::VV_AABBI))
+  {
+    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_AABBI) == vvSocket::VV_OK)
+    {
+      _socketIO->putInt32((int32_t)param);
+      _socketIO->putAABBi(value);
+    }
+    return;
+  }
+
   assert( 0 && "Parameter not handled" );
 }
 

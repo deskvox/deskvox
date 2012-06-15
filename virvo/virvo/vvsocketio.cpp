@@ -1409,6 +1409,64 @@ vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val)
 }
 
 //----------------------------------------------------------------------------
+/** Writes a vvAABBi to the socket.
+ @param val  the vvAABBi.
+*/
+vvSocket::ErrorType vvSocketIO::putAABBi(const vvAABBi& val)
+{
+  if(_socket)
+  {
+    uchar buffer[24];
+    const vvVector3i minval = val.getMin();
+    const vvVector3i maxval = val.getMax();
+    vvToolshed::write32(&buffer[0], minval[0]);
+    vvToolshed::write32(&buffer[4], minval[1]);
+    vvToolshed::write32(&buffer[8], minval[2]);
+    vvToolshed::write32(&buffer[12], maxval[0]);
+    vvToolshed::write32(&buffer[16], maxval[1]);
+    vvToolshed::write32(&buffer[20], maxval[2]);
+    return _socket->writeData(&buffer[0], 24);
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Reads a vvAABBi from the socket.
+ @param val  the vvAABBi.
+*/
+vvSocket::ErrorType vvSocketIO::getAABBi(vvAABBi& val)
+{
+  if(_socket)
+  {
+    uchar buffer[24];
+    vvSocket::ErrorType retval;
+
+    if ((retval =_socket->readData(&buffer[0], 24)) != vvSocket::VV_OK)
+    {
+      return retval;
+    }
+
+    vvVector3i minval;
+    vvVector3i maxval;
+    minval[0] = vvToolshed::read32(&buffer[0]);
+    minval[1] = vvToolshed::read32(&buffer[4]);
+    minval[2] = vvToolshed::read32(&buffer[8]);
+    maxval[0] = vvToolshed::read32(&buffer[12]);
+    maxval[1] = vvToolshed::read32(&buffer[16]);
+    maxval[2] = vvToolshed::read32(&buffer[20]);
+    val = vvAABBi(minval, maxval);
+    return retval;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
 /** Writes a vvGLTools::Viewport to the socket.
  @param val  the vvGLTools::Viewport.
 */
