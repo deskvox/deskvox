@@ -41,6 +41,11 @@ struct vvParBrickRend::Thread
   }
 
   vvContextOptions contextOptions;
+
+  std::string server;
+  ushort port;
+  std::string filename;
+
   vvParBrickRend* parbrickrend;
   vvRenderer* renderer;
   vvSortLastVisitor::Texture texture;
@@ -75,16 +80,16 @@ struct vvParBrickRend::Thread
 };
 
 vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
-                               const std::vector<std::string>& displays,
+                               const std::vector<vvParBrickRend::Param>& params,
                                const std::string& type, const vvRendererFactory::Options& options)
-  : vvBrickRend(vd, rs, displays.size() + 1, type, options)
+  : vvBrickRend(vd, rs, params.size() + 1, type, options)
 {
   vvDebugMsg::msg(1, "vvParBrickRend::vvParBrickRend()");
 
   glewInit();
 
   // TODO: for now, the main thread is used for rendering in any case
-  const int numBricks = displays.size() + 1;
+  const int numBricks = params.size() + 1;
 
   // if the current render context has no alpha channel, we cannot use it
   int ac;
@@ -133,7 +138,13 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   {
     Thread* thread = new Thread;
     thread->id = i;
-    thread->contextOptions.displayName = displays.at(i - 1);
+
+    thread->contextOptions.displayName = params.at(i - 1).display;
+
+    thread->server = params.at(i - 1).server;
+    thread->port = params.at(i - 1).port;
+    thread->filename = params.at(i- 1).filename;
+
     thread->parbrickrend = this;
     thread->texture.pixels = new std::vector<float>(vp[2] * vp[3] * 4);
     thread->texture.rect = new vvRecti;
@@ -333,13 +344,18 @@ void* vvParBrickRend::renderFunc(void* args)
 
   Thread* thread = static_cast<Thread*>(args);
 
-  vvRenderContext* ctx = new vvRenderContext(thread->contextOptions);
+  vvRenderContext* ctx = NULL;
 
-  if (!ctx->makeCurrent())
+  if (thread->contextOptions.displayName != "")
   {
-    vvDebugMsg::msg(0, "vvParBrickRend::renderFunc(): cannot make render context current in worker thread");
-    pthread_exit(NULL);
-    return NULL;
+    ctx = new vvRenderContext(thread->contextOptions);
+
+    if (!ctx->makeCurrent())
+    {
+      vvDebugMsg::msg(0, "vvParBrickRend::renderFunc(): cannot make render context current in worker thread");
+      pthread_exit(NULL);
+      return NULL;
+    }
   }
 
   thread->renderer = vvRendererFactory::create(thread->parbrickrend->vd, *(thread->parbrickrend),
@@ -374,8 +390,11 @@ void* vvParBrickRend::renderFunc(void* args)
         break;
       case Thread::VV_RESIZE:
         thread->texture.pixels->resize(thread->parbrickrend->_width * thread->parbrickrend->_height * 4);
-        ctx->resize(thread->parbrickrend->_width, thread->parbrickrend->_height);
-        glViewport(0, 0, thread->parbrickrend->_width, thread->parbrickrend->_height);
+        if (ctx != NULL)
+        {
+          ctx->resize(thread->parbrickrend->_width, thread->parbrickrend->_height);
+          glViewport(0, 0, thread->parbrickrend->_width, thread->parbrickrend->_height);
+        }
         break;
       case Thread::VV_TRANS_FUNC:
         thread->renderer->updateTransferFunction();

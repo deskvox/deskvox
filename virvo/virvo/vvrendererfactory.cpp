@@ -146,16 +146,15 @@ struct ParsedOptions
 {
   vvRendererFactory::Options options;
   std::string voxeltype;
-  std::string server;
-  int port;
-  std::string filename;
+  std::vector<std::string> servers;
+  std::vector<int> ports;
+  std::vector<std::string> filenames;
   int bricks;
   std::vector<std::string> displays;
   std::string brickrenderer;
 
   ParsedOptions()
     : voxeltype("default")
-    , port(-1)
     , bricks(1)
     , brickrenderer("planar")
   {
@@ -164,7 +163,6 @@ struct ParsedOptions
 
   ParsedOptions(std::string str)
     : voxeltype("default")
-    , port(-1)
     , bricks(1)
     , brickrenderer("planar")
   {
@@ -197,7 +195,6 @@ struct ParsedOptions
   ParsedOptions(const vvRendererFactory::Options &options)
     : options(options)
     , voxeltype("default")
-    , port(-1)
     , bricks(1)
     , brickrenderer("planar")
   {
@@ -223,15 +220,21 @@ struct ParsedOptions
       }
       else if(opt == "server")
       {
-        server = val;
+        servers = split(val, ',');
       }
       else if(opt== "port")
       {
-        port = atoi(val.c_str());
+        ports.clear();
+        std::vector<std::string> portstr = split(val, ',');
+        for (std::vector<std::string>::const_iterator it = portstr.begin();
+             it != portstr.end(); ++it)
+        {
+          ports.push_back(atoi((*it).c_str()));
+        }
       }
       else if(opt == "filename")
       {
-        filename = val;
+        filenames = split(val, ',');
       }
       else if(opt == "bricks")
       {
@@ -276,23 +279,76 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   }
   assert(it != rendererTypeMap.end());
 
+  std::string server;
+  int port = -1;
+  std::string filename;
+
+  if (options.servers.size() > 0)
+  {
+    server = options.servers[0];
+  }
+
+  if (options.ports.size() > 0)
+  {
+    port = options.ports[0];
+  }
+
+  if (options.filenames.size() > 0)
+  {
+    filename = options.filenames[0];
+  }
+
   switch(it->second)
   {
   case vvRenderer::SERBRICKREND:
     return new vvSerBrickRend(vd, rs, options.bricks, options.brickrenderer, options.options);
   case vvRenderer::PARBRICKREND:
-    return new vvParBrickRend(vd, rs, options.displays, options.brickrenderer, options.options);
+  {
+    std::vector<vvParBrickRend::Param> params;
+
+    size_t numbricks = options.displays.size();
+    numbricks = std::max(options.servers.size(), numbricks);
+    numbricks = std::max(options.ports.size(), numbricks);
+    numbricks = std::max(options.filenames.size(), numbricks);
+
+    for (size_t i = 0; i < numbricks; ++i)
+    {
+      vvParBrickRend::Param p;
+      if (options.displays.size() > i)
+      {
+        p.display = options.displays[i];
+      }
+
+      if (options.servers.size() > i)
+      {
+        p.server = options.servers[i];
+      }
+
+      if (options.ports.size() > i)
+      {
+        p.port = options.ports[i];
+      }
+
+      if (options.filenames.size() > i)
+      {
+        p.filename = options.filenames[i];
+      }
+
+      params.push_back(p);
+    }
+    return new vvParBrickRend(vd, rs, params, options.brickrenderer, options.options);
+  }
   case vvRenderer::COMPARISON:
-    return new vvComparisonRend<vvImageClient, vvIbrClient>(vd, rs, options.server.c_str(), options.port,
-                                                            options.filename.c_str(),
-                                                            options.server.c_str(), options.port + 1,
-                                                            options.filename.c_str());
+  {
+    return new vvComparisonRend<vvImageClient, vvIbrClient>(vd, rs, server.c_str(), port, filename.c_str(),
+                                                            server.c_str(), port + 1, filename.c_str());
+  }
   case vvRenderer::GENERIC:
     return new vvRenderer(vd, rs);
   case vvRenderer::REMOTE_IMAGE:
-    return new vvImageClient(vd, rs, options.server.c_str(), options.port, options.filename.c_str());
+    return new vvImageClient(vd, rs, server.c_str(), port, filename.c_str());
   case vvRenderer::REMOTE_IBR:
-    return new vvIbrClient(vd, rs, options.server.c_str(), options.port, options.filename.c_str());
+    return new vvIbrClient(vd, rs, server.c_str(), port, filename.c_str());
   case vvRenderer::SOFTSW:
     return new vvSoftShearWarp(vd, rs);
 #ifdef HAVE_VOLPACK

@@ -32,8 +32,16 @@ class vvVolDesc;
 class VIRVOEXPORT vvParBrickRend : public vvBrickRend
 {
 public:
+  struct Param
+  {
+    std::string display;
+    std::string server;
+    ushort port;
+    std::string filename;
+  };
+
   vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
-                 const std::vector<std::string>& displays,
+                 const std::vector<Param>& params,
                  const std::string& type, const vvRendererFactory::Options& options);
   ~vvParBrickRend();
 
