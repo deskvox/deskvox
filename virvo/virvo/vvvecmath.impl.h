@@ -34,7 +34,7 @@ vvBaseVector3<T>::vvBaseVector3()
 {
   for (int i = 0; i < 3; ++i)
   {
-    e[i] = 0.0;
+    e[i] = 0;
   }
 }
 
@@ -145,12 +145,12 @@ void vvBaseVector3<T>::copy(const vvBaseVector3<T>& v)
 template <typename T>
 void vvBaseVector3<T>::copy(const vvBaseVector4<T>* v)
 {
-  if (v->e[3] != 0.0)
+  T w = v->e[3];
+  if (w != T(0))
   {
-    const T inv = 1.0 / v->e[3];
-    e[0] = v->e[0] * inv;
-    e[1] = v->e[1] * inv;
-    e[2] = v->e[2] * inv;
+    e[0] = v->e[0] / w;
+    e[1] = v->e[1] / w;
+    e[2] = v->e[2] / w;
   }
   else
   {
@@ -314,8 +314,7 @@ void vvBaseVector3<T>::multiply(const vvMatrix* m)
 template <typename T>
 T vvBaseVector3<T>::distance(const vvBaseVector3<T>* v) const
 {
-  const vvBaseVector3<T> diff = *v - *this;
-  return std::sqrt(static_cast<double>(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]));
+  return (*v - *this).length();
 }
 
 //----------------------------------------------------------------------------
@@ -323,7 +322,7 @@ T vvBaseVector3<T>::distance(const vvBaseVector3<T>* v) const
 template <typename T>
 T vvBaseVector3<T>::length() const
 {
-  return std::sqrt(static_cast<double>(dot(this)));
+  return static_cast<T>( std::sqrt(static_cast<double>(dot(this))) );
 }
 
 //----------------------------------------------------------------------------
@@ -370,12 +369,12 @@ T vvBaseVector3<T>::distPointPlane(const vvBaseVector3<T>* n,
 template <typename T>
 void vvBaseVector3<T>::normalize()
 {
-  const T d = std::sqrt(static_cast<double>(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]));
-  if (d == 0.0) return;                           // division by zero error
-  const T dInv = 1.0f / d;
-  e[0] *= dInv;
-  e[1] *= dInv;
-  e[2] *= dInv;
+  T len = length();
+  if (len != T(0)) {
+    e[0] /= len;
+    e[1] /= len;
+    e[2] /= len;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -1148,6 +1147,12 @@ vvBaseVector3<T> vvBaseVector3<T>::operator * ( const T scalar ) const
   return vResult;
 }
 
+template<typename T>
+vvBaseVector3<T> vvBaseVector3<T>::operator /(const T s) const
+{
+  return vvBaseVector3(e[0] / s, e[1] / s, e[2] / s);
+}
+
 template <typename T>
 vvBaseVector3<T> &vvBaseVector3<T>::operator = ( const vvBaseVector3<T> &other )
 {
@@ -1190,7 +1195,7 @@ vvBaseVector3<T> &vvBaseVector3<T>::operator -= ( const vvBaseVector3<T> &other 
 template <typename T>
 vvBaseVector4<T>::vvBaseVector4()
 {
-  e[0] = e[1] = e[2] = e[3] = 0.0f;
+  e[0] = e[1] = e[2] = e[3] = 0;
 }
 
 //----------------------------------------------------------------------------

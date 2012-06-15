@@ -255,6 +255,7 @@ class vvBaseVector3
     vvBaseVector3 operator * (const vvBaseVector3 &other) const;
 
     vvBaseVector3 operator * (const T scalar) const;
+    vvBaseVector3 operator / (const T scalar) const;
 
     vvBaseVector3& operator = (const vvBaseVector3 &other);
     vvBaseVector3& operator += (const vvBaseVector3 &other);

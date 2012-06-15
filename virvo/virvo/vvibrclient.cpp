@@ -279,10 +279,12 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   //// begin ellipsoid test code - temporary
 
   // hardwired parameters for now
-  float v_i[16] = { .70710678,  0.70710678, 0., 0.,
-                    -0.70710678, .70710678, 0., 0.,
-                    0., 0., 1., 0.,
-                      0., 0., 0., 1. };
+  float v_i[16] = {
+    0.70710678f, 0.70710678f, 0.0f, 0.0f,
+   -0.70710678f, 0.70710678f, 0.0f, 0.0f,
+           0.0f,        0.0f, 1.0f, 0.0f,
+           0.0f,        0.0f, 0.0f, 1.0f
+  };
   vvMatrix V_i = vvMatrix(v_i);
   V_i.invert();
 

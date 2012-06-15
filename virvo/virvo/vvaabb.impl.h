@@ -91,10 +91,8 @@ template <typename T>
 vvBaseAABB<T>::vvBaseAABB(const vvBaseVector3<T>& minval, const vvBaseVector3<T>& maxval)
   : _min(minval)
   , _max(maxval)
+  , _center((minval + maxval) / T(2))
 {
-  _center = vvBaseVector3<T>((_min[0] + _max[0]) * 0.5f,
-                             (_min[1] + _max[1]) * 0.5f,
-                             (_min[2] + _max[2]) * 0.5f);
   calcVertices();
 }
 
