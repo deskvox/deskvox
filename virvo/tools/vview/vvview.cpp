@@ -584,30 +584,73 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
 
   vvRendererFactory::Options opt(options);
 
-  if(!servers.empty())
+  // servers
+  std::stringstream serverstr;
+  for (std::vector<std::string>::const_iterator it = servers.begin();
+       it != servers.end(); ++it)
   {
-    opt["server"] = servers[0];
+    if (it != servers.begin())
+    {
+      serverstr << ",";
+    }
+    serverstr << *it;
   }
 
-  if(!serverFileNames.empty())
+  if (serverstr.str() != "")
   {
-    opt["filename"] = serverFileNames[0];
+    opt["server"] = serverstr.str();
   }
 
-  if(!ports.empty())
+  // file names
+  std::stringstream filenamestr;
+  for (std::vector<std::string>::const_iterator it = serverFileNames.begin();
+       it != serverFileNames.end(); ++it)
   {
-    std::stringstream port;
-    port << ports[0];
-    opt["port"] = port.str();
+    if (it != serverFileNames.begin())
+    {
+      filenamestr << ",";
+    }
+    filenamestr << *it;
   }
 
+  if (filenamestr.str() != "")
+  {
+    opt["filename"] = filenamestr.str();
+  }
+
+  // ports
+  std::stringstream portstr;
+  for (std::vector<int>::const_iterator it = ports.begin();
+       it != ports.end(); ++it)
+  {
+    if (it != ports.begin())
+    {
+      portstr << ",";
+    }
+    portstr << *it;
+  }
+
+  if (portstr.str() != "")
+  {
+    opt["port"] = portstr.str();
+  }
+
+  // displays
   std::stringstream displaystr;
   for (std::vector<std::string>::const_iterator it = displays.begin();
        it != displays.end(); ++it)
   {
-    displaystr << *it << ",";
+    if (it != displays.begin())
+    {
+      displaystr << ",";
+    }
+    displaystr << *it;
   }
-  opt["displays"] = displaystr.str();
+
+  if (displaystr.str() != "")
+  {
+    opt["displays"] = displaystr.str();
+  }
 
   std::stringstream brickstr;
   brickstr << bricks;
