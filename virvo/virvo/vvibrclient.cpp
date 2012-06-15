@@ -388,8 +388,6 @@ void vvIbrClient::destroyThreads()
 {
   vvDebugMsg::msg(1, "vvIbrClient::destroyThreads()");
 
-  quit();
-
   pthread_cancel(_thread->thread);
   pthread_join(_thread->thread, NULL);
 

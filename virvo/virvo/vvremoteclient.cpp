@@ -52,11 +52,7 @@ vvRemoteClient::~vvRemoteClient()
 {
   vvDebugMsg::msg(1, "vvRemoteClient::~vvRemoteClient()");
 
-  if(_socketIO)
-  {
-    delete _socketIO->getSocket();
-    delete _socketIO;
-  }
+  quit();
 }
 
 void vvRemoteClient::renderVolumeGL()
@@ -367,7 +363,7 @@ vvRemoteClient::ErrorType vvRemoteClient::requestFrame() const
 
 void vvRemoteClient::quit()
 {
-  vvDebugMsg::msg(1, "vvRemoteClient::quitCommunication()");
+  vvDebugMsg::msg(1, "vvRemoteClient::quit()");
 
   if(_socketIO)
   {
