@@ -114,8 +114,8 @@ void vvBspNode::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
 
   for (int i = 0; i < 3; ++i)
   {
-    probeMin[i] = static_cast<int>(probe.getMin()[i]);
-    probeMax[i] = static_cast<int>(probe.getMax()[i]);
+    probeMin[i] = static_cast<float>(probe.getMin()[i]);
+    probeMax[i] = static_cast<float>(probe.getMax()[i]);
   }
 }
 
