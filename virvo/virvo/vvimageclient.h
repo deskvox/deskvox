@@ -34,7 +34,6 @@ class vvVolDesc;
 
 class VIRVOEXPORT vvImageClient : public vvRemoteClient
 {
-  friend class vvComparisonRend<vvImageClient, vvIbrClient>;
 public:
   vvImageClient(vvVolDesc *vd, vvRenderState renderState,
               const char* slaveName = NULL, int port = -1,
