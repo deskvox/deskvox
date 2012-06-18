@@ -20,7 +20,6 @@
 
 #include <limits>
 
-#include "vvglew.h"
 #include "vvimageclient.h"
 #include "vvgltools.h"
 #include "vvtexrend.h"
@@ -45,8 +44,6 @@ vvImageClient::vvImageClient(vvVolDesc *vd, vvRenderState renderState,
   vvDebugMsg::msg(1, "vvImageClient::vvImageClient()");
 
   rendererType = REMOTE_IMAGE;
-
-  glewInit();
 
   glGenTextures(1, &_rgbaTex);
   _image = new vvImage;
