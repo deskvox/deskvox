@@ -47,8 +47,8 @@ public:
   };
 
   vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_t type,
-                 const char* slaveName, int port,
-                 const char* slaveFileName);
+                 const std::string &server, int port,
+                 const std::string &filename);
   virtual ~vvRemoteClient();
 
   virtual ErrorType render() = 0;
@@ -66,9 +66,9 @@ protected:
   virtual void quit();
 
   uint32_t _type;
-  const char* _slaveName;
+  std::string _server;
   int _port;
-  const char* _slaveFileName;
+  std::string _filename;
   vvSocketIO  *_socketIO;
 
   bool _changes; ///< indicate if a new rendering is required

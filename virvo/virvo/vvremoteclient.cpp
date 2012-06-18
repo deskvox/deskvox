@@ -31,13 +31,13 @@ using std::cerr;
 using std::endl;
 
 vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_t type,
-                               const char *slaveName, int port,
-                               const char *slaveFileName)
+                               const std::string &server, int port,
+                               const std::string &filename)
    : vvRenderer(vd, renderState),
     _type(type),
-    _slaveName(slaveName),
+    _server(server),
     _port(port),
-    _slaveFileName(slaveFileName),
+    _filename(filename),
     _socketIO(NULL),
     _changes(true),
     _viewportWidth(-1),
@@ -80,26 +80,26 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 
   const int defaultPort = 31050;
 
-  if(!_slaveName || !_slaveName[0])
+  if(_server.empty())
   {
     if(const char *s = getenv("VV_SERVER"))
     {
       vvDebugMsg::msg(1, "remote rendering server from environment: ", s);
-      _slaveName = s;
+      _server = s;
     }
   }
 
-  if(!_slaveName || !_slaveName[0])
+  if(_server.empty())
   {
     vvDebugMsg::msg(0, "no server specified");
     return VV_SOCKET_ERROR;
   }
 
   char *serverName = NULL;
-  int port = vvToolshed::parsePort(_slaveName);
+  int port = vvToolshed::parsePort(_server.c_str());
   if(port != -1)
   {
-    serverName = vvToolshed::stripPort(_slaveName);
+    serverName = vvToolshed::stripPort(_server.c_str());
   }
 
   if(_port != -1)
@@ -117,7 +117,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   vvTcpSocket *socket = new vvTcpSocket;
   _socketIO = new vvSocketIO(socket);
 
-  if (socket->connectToHost(serverName ? serverName : _slaveName, port) == vvSocket::VV_OK)
+  if (socket->connectToHost(serverName ? serverName : _server.c_str(), port) == vvSocket::VV_OK)
   {
     delete[] serverName;
 
@@ -138,10 +138,10 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
     socket->setParameter(vvSocket::VV_NO_NAGLE, true);
     _socketIO->putInt32(_type);
 
-    if (_slaveFileName && _slaveFileName[0])
+    if (!_filename.empty())
     {
       _socketIO->putBool(true);
-      _socketIO->putFileName(_slaveFileName);
+      _socketIO->putFileName(_filename.c_str());
       _socketIO->getVolumeAttributes(vd);
       vvTransFunc tf;
       for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
@@ -178,7 +178,7 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
     delete socket;
     delete _socketIO;
     _socketIO = NULL;
-    cerr << "No connection to remote rendering server established at: " << _slaveName << endl;
+    cerr << "No connection to remote rendering server established at: " << _server << endl;
     return VV_SOCKET_ERROR;
   }
   return VV_OK;
