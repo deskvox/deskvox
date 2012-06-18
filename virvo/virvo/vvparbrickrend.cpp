@@ -30,6 +30,7 @@
 #include "vvvoldesc.h"
 
 #include <queue>
+#include <sstream>
 
 struct vvParBrickRend::Thread
 {
@@ -43,7 +44,7 @@ struct vvParBrickRend::Thread
   vvContextOptions contextOptions;
 
   std::string server;
-  ushort port;
+  int port;
   std::string filename;
 
   vvParBrickRend* parbrickrend;
@@ -358,8 +359,15 @@ void* vvParBrickRend::renderFunc(void* args)
     }
   }
 
+  // copy options
+  vvRendererFactory::Options options = thread->parbrickrend->_options;
+  options["server"] = thread->server;
+  std::stringstream portstr;
+  portstr << thread->port;
+  options["port"] = portstr.str();
+  options["filename"] = thread->filename;
   thread->renderer = vvRendererFactory::create(thread->parbrickrend->vd, *(thread->parbrickrend),
-                                               thread->parbrickrend->_type.c_str(), thread->parbrickrend->_options);
+                                               thread->parbrickrend->_type.c_str(), options);
   setVisibleRegion(thread->renderer, thread->parbrickrend->_bspTree->getLeafs().at(thread->id)->getAabb());
 
   pthread_barrier_wait(thread->barrier);

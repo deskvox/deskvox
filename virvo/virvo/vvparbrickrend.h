@@ -36,7 +36,7 @@ public:
   {
     std::string display;
     std::string server;
-    ushort port;
+    int port;
     std::string filename;
   };
 
