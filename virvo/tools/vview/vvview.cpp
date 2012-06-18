@@ -56,8 +56,6 @@ using std::ios;
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvdebugmsg.h>
-#include <virvo/vvsocketio.h>
-#include <virvo/vvcuda.h>
 
 #ifdef HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjour.h>
@@ -211,7 +209,6 @@ void vvView::mainLoop(int argc, char *argv[])
   }
 
   initGraphics(argc, argv);
-  vvCuda::initGlInterop();
 
   if (rrMode == RR_COMPARISON)
   {
