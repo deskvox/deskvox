@@ -63,6 +63,8 @@ struct ContextArchData
 vvRenderContext::vvRenderContext(const vvContextOptions& co)
   : _options(co)
 {
+  vvDebugMsg::msg(1, "vvRenderContext::vvRenderContext()");
+
   _archData = new ContextArchData;
   _initialized = false;
   init();
@@ -104,6 +106,8 @@ vvRenderContext::~vvRenderContext()
 
 bool vvRenderContext::makeCurrent() const
 {
+  vvDebugMsg::msg(3, "vvRenderContext::makeCurrent()");
+
   if (_initialized)
   {
 #ifdef USE_COCOA
@@ -123,6 +127,8 @@ bool vvRenderContext::makeCurrent() const
 
 void vvRenderContext::swapBuffers() const
 {
+  vvDebugMsg::msg(3, "vvRenderContext::swapBuffers()");
+
   if (_initialized)
   {
 #ifdef USE_COCOA
@@ -141,6 +147,8 @@ void vvRenderContext::swapBuffers() const
 
 void vvRenderContext::resize(const int w, const int h)
 {
+  vvDebugMsg::msg(3, "vvRenderContext::resize()");
+
   if ((_options.width != w) || (_options.height != h))
   {
     _options.width = w;
@@ -235,6 +243,8 @@ bool vvRenderContext::matchesCurrent(const vvContextOptions& co)
 
 void vvRenderContext::init()
 {
+  vvDebugMsg::msg(3, "vvRenderContext::init()");
+
 #ifdef USE_COCOA
   _archData->cocoaContext = new vvCocoaGLContext(_options);
   _initialized = true;
@@ -446,6 +456,8 @@ void vvRenderContext::init()
 
 bool vvRenderContext::initPbuffer()
 {
+  vvDebugMsg::msg(3, "vvRenderContext::initPbuffer()");
+
 #if defined(HAVE_X11) && defined(USE_X11)
   int nelements;
   _archData->fbConfigs = glXChooseFBConfig(_archData->display, DefaultScreen(_archData->display),
