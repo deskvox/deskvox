@@ -192,6 +192,11 @@ vvParBrickRend::~vvParBrickRend()
 {
   vvDebugMsg::msg(1, "vvParBrickRend::~vvParBrickRend()");
 
+  if (_thread != NULL)
+  {
+    delete _thread->renderer;
+  }
+
   for (std::vector<Thread*>::const_iterator it = _threads.begin();
        it != _threads.end(); ++it)
   {
@@ -420,6 +425,7 @@ void* vvParBrickRend::renderFunc(void* args)
   }
 
 cleanup:
+  delete thread->renderer;
   delete ctx;
   pthread_exit(NULL);
   return NULL;
