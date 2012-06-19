@@ -1,28 +1,44 @@
 SET(CG_SHADERS
-  vv_passthrough_frag_shader.cg
   vv_preint_frag.cg
   vv_preint_vert.cg
-  vv_shader01.cg
-  vv_shader02.cg
-  vv_shader03.cg
-  vv_shader04.cg
-  vv_shader05.cg
-  vv_shader06.cg
-  vv_shader07.cg
-  vv_shader08.cg
-  vv_shader09.cg
-  vv_shader10.cg
-  vv_shader11.cg
-  vv_shader12.cg
-  vv_shader13.cg
+  vv_shader01.frag.cg
+  vv_shader02.frag.cg
+  vv_shader03.frag.cg
+  vv_shader04.frag.cg
+  vv_shader05.frag.cg
+  vv_shader06.frag.cg
+  vv_shader07.frag.cg
+  vv_shader08.frag.cg
+  vv_shader09.frag.cg
+  vv_shader10.frag.cg
+  vv_shader11.frag.cg
+  vv_shader12.frag.cg
+  vv_shader13.frag.cg
 )
 
 SET(GLSL_SHADERS
-  vv_intersection_geo.glsl
-  vv_intersection_geo_inst.glsl
-  vv_intersection.glsl
-  vv_intersection_ver.glsl
-  vv_intersection_ver_inst.glsl
+  vv_ibr.fsh
+  vv_ibr.vsh
+  vv_isect_geom_only.gsh
+  vv_isect_geom_only.vsh
+  vv_isect_vert_geom_combined.gsh
+  vv_isect_vert_geom_combined.vsh
+  vv_isect_vert_only.vsh
+  vv_preint_frag.cg
+  vv_preint_vert.cg
+  vv_shader01.fsh
+  vv_shader02.fsh
+  vv_shader03.fsh
+  vv_shader04.fsh
+  vv_shader05.fsh
+  vv_shader06.fsh
+  vv_shader07.fsh
+  vv_shader08.fsh
+  vv_shader09.fsh
+  vv_shader10.fsh
+  vv_shader11.fsh
+  vv_shader12.fsh
+  vv_shader13.fsh
 )
 
 IF(NOT COVISE_BUILD)
