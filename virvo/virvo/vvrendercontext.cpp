@@ -91,7 +91,6 @@ vvRenderContext::~vvRenderContext()
       XDestroyWindow(_archData->display, _archData->drawable);
       break;
     }
-    XCloseDisplay(_archData->display);
 #endif
 
 #ifdef _WIN32
@@ -174,6 +173,64 @@ void vvRenderContext::resize(const int w, const int h)
 #endif
     }
   }
+}
+
+bool vvRenderContext::matchesCurrent(const vvContextOptions& co)
+{
+  vvDebugMsg::msg(3, "vvRenderContext::matchesCurrent()");
+
+#ifdef USE_COCOA
+  (void)co;
+  vvDebugMsg::msg(0, "vvRenderContext::matchesCurrent() not implemented yet");
+#endif
+
+#if defined(HAVE_X11) && defined(USE_X11)
+  Display* dpy = glXGetCurrentDisplay();
+
+  if (dpy == NULL)
+  {
+    return false;
+  }
+
+  Display* other = XOpenDisplay(co.displayName.c_str());
+
+  if (other == NULL)
+  {
+    return false;
+  }
+
+  if (DefaultScreen(dpy) != DefaultScreen(other))
+  {
+    XCloseDisplay(other);
+    return false;
+  }
+
+  if (RootWindow(dpy, XDefaultScreen(dpy)) != RootWindow(other, XDefaultScreen(other)))
+  {
+    XCloseDisplay(other);
+    return false;
+  }
+
+  XCloseDisplay(other);
+
+  uint w;
+  glXQueryDrawable(dpy, glXGetCurrentDrawable(), GLX_WIDTH, &w);
+
+  uint h;
+  glXQueryDrawable(dpy, glXGetCurrentDrawable(), GLX_HEIGHT, &h);
+
+  if (w < co.width || h < co.height)
+  {
+    return false;
+  }
+
+  return true;
+#endif
+
+#ifdef _WIN32
+  (void)co;
+  vvDebugMsg::msg(0, "vvRenderContext::matchesCurrent() not implemented yet");
+#endif
 }
 
 void vvRenderContext::init()

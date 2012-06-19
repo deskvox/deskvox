@@ -92,6 +92,8 @@ public:
     */
   void swapBuffers() const;
   void resize(int w, int h);
+
+  static bool matchesCurrent(const vvContextOptions& co);
 private:
   ContextArchData *_archData;
   vvContextOptions _options;
