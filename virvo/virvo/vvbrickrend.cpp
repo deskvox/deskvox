@@ -37,14 +37,9 @@ vvBrickRend::vvBrickRend(vvVolDesc *vd, vvRenderState renderState, const int num
 
   _showBricksVisitor = new vvShowBricksVisitor(vd);
 
-  vvBspData data;
-  data.numLeafs = numBricks;
-
-  _bspTree = new vvBspTree(vd, data);
-
-  if (_bspTree == NULL)
+  if (!buildBspTree(numBricks))
   {
-    vvDebugMsg::msg(0, "vvBrickRend::vvBrickRend(): Error: could not create bsp tree");
+    vvDebugMsg::msg(0, "vvbrickrend::vvbrickrend(): error: could not create bsp tree");
   }
 }
 
@@ -94,6 +89,16 @@ void vvBrickRend::updateTransferFunction()
   vvDebugMsg::msg(3, "vvBrickRend::updateTransferFunction()");
 
   vvRenderer::updateTransferFunction();
+}
+
+bool vvBrickRend::buildBspTree(const int numBricks)
+{
+  vvBspData data;
+  data.numLeafs = numBricks;
+
+  _bspTree = new vvBspTree(vd, data);
+
+   return (_bspTree != NULL);
 }
 
 void vvBrickRend::setVisibleRegion(vvRenderer* renderer, const vvAABBi& aabb, const int padding)

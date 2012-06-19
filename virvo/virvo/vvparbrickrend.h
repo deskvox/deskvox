@@ -35,9 +35,20 @@ public:
   struct Param
   {
     std::string display;
+    bool reuseMainContext;
     std::string server;
     int port;
     std::string filename;
+
+    Param()
+      : display("")
+      , reuseMainContext(false)
+      , server("")
+      , port(-1)
+      , filename("")
+    {
+
+    }
   };
 
   vvParBrickRend(vvVolDesc* vd, vvRenderState rs,

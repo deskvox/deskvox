@@ -83,14 +83,12 @@ struct vvParBrickRend::Thread
 vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
                                const std::vector<vvParBrickRend::Param>& params,
                                const std::string& type, const vvRendererFactory::Options& options)
-  : vvBrickRend(vd, rs, params.size() + 1, type, options)
+  : vvBrickRend(vd, rs, params.size(), type, options)
+  , _thread(NULL)
 {
   vvDebugMsg::msg(1, "vvParBrickRend::vvParBrickRend()");
 
   glewInit();
-
-  // TODO: for now, the main thread is used for rendering in any case
-  const int numBricks = params.size() + 1;
 
   // if the current render context has no alpha channel, we cannot use it
   int ac;
@@ -100,58 +98,64 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
     vvDebugMsg::msg(0, "vvParBrickRend::vvParBrickRend(): main OpenGL context has no alpha channel");
   }
 
+  // determine the number of the thread that reuses the main context
+  int reuser = -1;
+  std::vector<vvParBrickRend::Param>::const_iterator it;
+  int i;
+  for (it = params.begin(), i = 0; it != params.end() && i < params.size(); ++it, ++i)
+  {
+    vvContextOptions co;
+    co.displayName = (*it).display;
+    if ((*it).reuseMainContext && vvRenderContext::matchesCurrent(co) && ac)
+    {
+      reuser = i;
+      break;
+    }
+  }
+
   // start out with empty rendering regions
   vvAABBi emptyBox = vvAABBi(vvVector3i(), vvVector3i());
   setParameter(vvRenderer::VV_VISIBLE_REGION, emptyBox);
   setParameter(vvRenderer::VV_PADDING_REGION, emptyBox);
 
-  // main thread
-  _thread = new Thread;
-  _thread->id = 0;
-  _thread->renderer = vvRendererFactory::create(vd, *this, _type.c_str(), _options);
-  setVisibleRegion(_thread->renderer, _bspTree->getLeafs().at(0)->getAabb());
-  _thread->barrier = new pthread_barrier_t;
-  _thread->mutex = new pthread_mutex_t;
-  _thread->aabb = vvAABB(vd->objectCoords(_bspTree->getLeafs()[0]->getAabb().getMin()),
-                         vd->objectCoords(_bspTree->getLeafs()[0]->getAabb().getMax()));
+  pthread_mutex_t* mutex = new pthread_mutex_t;
+  pthread_barrier_t* barrier = new pthread_barrier_t;
 
-  int ret = pthread_barrier_init(_thread->barrier, NULL, numBricks);
+  const int numBarriers = reuser == -1 ? params.size() + 1 : params.size();
+  int ret = pthread_barrier_init(barrier, NULL, numBarriers);
   if (ret != 0)
   {
     vvDebugMsg::msg(0, "vvParBrickRend::vvParBrickRend(): Cannot create barrier");
     return;
   }
-  ret = pthread_mutex_init(_thread->mutex, NULL);
+  ret = pthread_mutex_init(mutex, NULL);
   if (ret != 0)
   {
     vvDebugMsg::msg(0, "vvParBrickRend::vvParBrickRend(): Cannot create mutex");
+    return;
   }
 
   const vvGLTools::Viewport vp = vvGLTools::getViewport();
   _width = vp[2];
   _height = vp[3];
 
-  _thread->texture.pixels = new std::vector<float>(vp[2] * vp[3] * 4);
-  _thread->texture.rect = new vvRecti;
-
-  // workers
-  for (int i = 1; i < numBricks; ++i)
+  for (int i = 0; i < params.size(); ++i)
   {
     Thread* thread = new Thread;
     thread->id = i;
 
-    thread->contextOptions.displayName = params.at(i - 1).display;
+    thread->contextOptions.displayName = params.at(i).display;
 
-    thread->server = params.at(i - 1).server;
-    thread->port = params.at(i - 1).port;
-    thread->filename = params.at(i- 1).filename;
+    thread->server = params.at(i).server;
+    thread->port = params.at(i).port;
+    thread->filename = params.at(i).filename;
 
     thread->parbrickrend = this;
     thread->texture.pixels = new std::vector<float>(vp[2] * vp[3] * 4);
     thread->texture.rect = new vvRecti;
 
-    thread->barrier = _thread->barrier;
-    thread->mutex = _thread->mutex;
+    thread->barrier = barrier;
+    thread->mutex = mutex;
 
     thread->aabb = vvAABB(vd->objectCoords(_bspTree->getLeafs()[i]->getAabb().getMin()),
                           vd->objectCoords(_bspTree->getLeafs()[i]->getAabb().getMax()));
@@ -159,11 +163,19 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
     vvGLTools::getModelviewMatrix(&thread->mv);
     vvGLTools::getProjectionMatrix(&thread->pr);
 
-    pthread_create(&thread->threadHandle, NULL, renderFunc, thread);
+    if (i == reuser)
+    {
+      _thread = thread;
+      _thread->renderer = vvRendererFactory::create(vd, *this, _type.c_str(), _options);
+      setVisibleRegion(_thread->renderer, _bspTree->getLeafs()[i]->getAabb());
+    }
+    else
+    {
+      pthread_create(&thread->threadHandle, NULL, renderFunc, thread);
+    }
     _threads.push_back(thread);
   }
 
-  _textures.push_back(_thread->texture);
   for (std::vector<Thread*>::const_iterator it = _threads.begin();
        it != _threads.end(); ++it)
   {
@@ -173,7 +185,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   _sortLastVisitor = new vvSortLastVisitor;
   _sortLastVisitor->setTextures(_textures);
 
-  pthread_barrier_wait(_thread->barrier);
+  pthread_barrier_wait(barrier);
 }
 
 vvParBrickRend::~vvParBrickRend()
@@ -184,23 +196,23 @@ vvParBrickRend::~vvParBrickRend()
        it != _threads.end(); ++it)
   {
     (*it)->events.push(Thread::VV_EXIT);
-    if (pthread_join((*it)->threadHandle, NULL) != 0)
+    if ((*it) != _thread && pthread_join((*it)->threadHandle, NULL) != 0)
     {
       vvDebugMsg::msg(0, "vvParBrickRend::~vvParBrickRend(): Error joining thread");
     }
+
+    if (it == _threads.begin())
+    {
+      pthread_barrier_destroy((*it)->barrier);
+      pthread_mutex_destroy((*it)->mutex);
+      delete (*it)->barrier;
+      delete (*it)->mutex;
+    }
+
     delete (*it)->texture.pixels;
     delete (*it)->texture.rect;
     delete *it;
   }
-
-  pthread_barrier_destroy(_thread->barrier);
-  pthread_mutex_destroy(_thread->mutex);
-
-  delete _thread->barrier;
-  delete _thread->mutex;
-  delete _thread->texture.pixels;
-  delete _thread->texture.rect;
-  delete _thread;
 
   delete _sortLastVisitor;
 }
@@ -216,13 +228,12 @@ void vvParBrickRend::renderVolumeGL()
     {
       _width = vp[2];
       _height = vp[3];
-      _thread->texture.pixels->resize(_width * _height * 4);
       for (std::vector<Thread*>::iterator it = _threads.begin();
            it != _threads.end(); ++it)
       {
-        pthread_mutex_lock(_thread->mutex);
+        pthread_mutex_lock((*it)->mutex);
         (*it)->events.push(Thread::VV_RESIZE);
-        pthread_mutex_unlock(_thread->mutex);
+        pthread_mutex_unlock((*it)->mutex);
       }
     }
 
@@ -232,19 +243,30 @@ void vvParBrickRend::renderVolumeGL()
     vvMatrix pr;
     vvGLTools::getProjectionMatrix(&pr);
 
-    _thread->mv = mv;
-    _thread->pr = pr;
     for (std::vector<Thread*>::iterator it = _threads.begin();
          it != _threads.end(); ++it)
     {
+      pthread_mutex_lock((*it)->mutex);
       (*it)->mv = mv;
       (*it)->pr = pr;
       (*it)->events.push(Thread::VV_RENDER);
+      pthread_mutex_unlock((*it)->mutex);
     }
    
     // TODO: if main thread renders, store color and depth buffer right here
     // TODO: configure whether main thread renders or not
-    render(_thread);
+    
+    if (_thread != NULL)
+    {
+      render(_thread);
+    }
+    else
+    {
+      std::vector<Thread*>::iterator it = _threads.begin();
+      pthread_barrier_wait((*it)->barrier);
+      // no rendering
+      pthread_barrier_wait((*it)->barrier);
+    }
 
     vvMatrix invMV;
     invMV.copy(&mv);
@@ -286,11 +308,6 @@ void vvParBrickRend::setParameter(ParameterType param, const vvParam& newValue)
 
   const Thread::Param p = { param, newValue };
 
-  if (_thread != NULL && _thread->renderer != NULL)
-  {
-    _thread->renderer->setParameter(param, newValue);
-  }
-
   for (std::vector<Thread*>::iterator it = _threads.begin();
        it != _threads.end(); ++it)
   {
@@ -307,11 +324,6 @@ vvParam vvParBrickRend::getParameter(ParameterType param) const
 {
   vvDebugMsg::msg(3, "vvParBrickRend::getParameter()");
 
-  if (_thread != NULL && _thread->renderer != NULL)
-  {
-    return _thread->renderer->getParameter(param);
-  }
-
   for (std::vector<Thread*>::const_iterator it = _threads.begin();
        it != _threads.end(); ++it)
   {
@@ -324,11 +336,6 @@ vvParam vvParBrickRend::getParameter(ParameterType param) const
 void vvParBrickRend::updateTransferFunction()
 {
   vvDebugMsg::msg(3, "vvParBrickRend::updateTransferFunction()");
-
-  if (_thread != NULL && _thread->renderer != NULL)
-  {
-    _thread->renderer->updateTransferFunction();
-  }
 
   for (std::vector<Thread*>::iterator it = _threads.begin();
        it != _threads.end(); ++it)

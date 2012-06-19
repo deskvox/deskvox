@@ -61,6 +61,10 @@ protected:
   std::string _type;
   vvRendererFactory::Options _options;
 
+  /*! build a bsp tree with numBricks leafs
+   */
+  bool buildBspTree(int numBricks);
+
   /*! update visibible region of renderer with border padding for interpolation
    */
   static void setVisibleRegion(vvRenderer* renderer, const vvAABBi& aabb, int padding = 1);
