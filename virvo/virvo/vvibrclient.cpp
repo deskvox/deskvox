@@ -65,7 +65,7 @@ struct vvIbrClient::Thread
 };
 
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
-                         vvTcpSocket* socket,  const char* filename)
+                         vvTcpSocket* socket, const std::string& filename)
   : vvRemoteClient(vd, renderState, vvRenderer::REMOTE_IBR, socket, filename)
   , _thread(NULL)
   , _newFrame(true)
