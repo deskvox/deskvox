@@ -46,6 +46,12 @@
 #include <limits>
 #include <pthread.h>
 
+#ifndef _WIN32
+#include <signal.h>
+#include <syslog.h>
+#include <unistd.h>
+#endif
+
 const int vvServer::DEFAULTSIZE  = 512;
 const int vvServer::DEFAULT_PORT = 31050;
 
@@ -57,6 +63,8 @@ vvServer::vvServer()
   _port       = vvServer::DEFAULT_PORT;
   _sm         = SERVER;
   _useBonjour = false;
+  _daemonize  = false;
+  _daemonName = "voxserver";
 }
 
 vvServer::~vvServer()
@@ -74,10 +82,61 @@ int vvServer::run(int argc, char** argv)
   if(!parseCommandLine(argc, argv))
     return 1;
 
-  if(serverLoop())
-    return 0;
-  else
-    return 1;
+#ifndef _WIN32
+  if (_daemonize)
+  {
+    signal(SIGHUP, handleSignal);
+    signal(SIGTERM, handleSignal);
+    signal(SIGINT, handleSignal);
+    signal(SIGQUIT, handleSignal);
+
+    setlogmask(LOG_UPTO(LOG_INFO));
+    openlog(_daemonName.c_str(), LOG_CONS, LOG_USER);
+
+    pid_t pid;
+    pid_t sid;
+
+    syslog(LOG_INFO, "Starting %s.", _daemonName.c_str());
+
+    pid = fork();
+    if (pid < 0)
+    {
+      exit(EXIT_FAILURE);
+    }
+
+    if (pid > 0)
+    {
+      exit(EXIT_SUCCESS);
+    }
+
+    umask(0);
+
+    sid = setsid();
+    if (sid < 0)
+    {
+      exit(EXIT_FAILURE);
+    }
+
+    // change working directory to /, which cannot be unmounted
+    if (chdir("/") < 0)
+    {
+      exit(EXIT_FAILURE);
+    }
+
+    // close file descriptors for standard output
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+  }
+#endif
+
+  const bool res = serverLoop();
+
+#ifndef _WIN32
+  syslog(LOG_INFO, "%s exiting.", _daemonName.c_str());
+#endif
+
+  return (int)(!res);
 }
 
 void vvServer::displayHelpInfo()
@@ -106,6 +165,9 @@ void vvServer::displayHelpInfo()
   cerr << " off (default)" << endl;
   cerr << endl;
 #endif
+  cerr << "-daemon" << endl;
+  cerr << " Start in background as a daemon" << endl;
+  cerr << endl;
   cerr << "-debug" << endl;
   cerr << " Set debug level" << endl;
   cerr << endl;
@@ -190,6 +252,12 @@ bool vvServer::parseCommandLine(int argc, char** argv)
         cerr << "Unknown bonjour setting." << endl;
         return false;
       }
+    }
+#endif
+#ifndef _WIN32
+    else if (vvToolshed::strCompare(argv[arg], "-daemon")==0)
+    {
+      _daemonize = true;
     }
 #endif
     else if (vvToolshed::strCompare(argv[arg], "-debug")==0)
@@ -440,6 +508,25 @@ void sigproc(int )
   delete s;
   s = NULL;
 }*/
+
+
+//-------------------------------------------------------------------
+/// Handle signals a daemon receives.
+void vvServer::handleSignal(int sig)
+{
+  switch (sig)
+  {
+  case SIGHUP:
+    syslog(LOG_WARNING, "Got SIGHUP, quitting.");
+    break;
+  case SIGTERM:
+    syslog(LOG_WARNING, "Got SIGTERM, quitting.");
+    break;
+  default:
+    syslog(LOG_WARNING, "Got unhandled signal %s, quitting.", strsignal(sig));
+    break;
+  }
+}
 
 //-------------------------------------------------------------------
 /// Main entry point.

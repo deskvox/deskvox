@@ -98,10 +98,14 @@ private:
   unsigned short   _port;         ///< port the server renderer uses to listen for incoming connections
   ServerMode       _sm;           ///< indicating current server mode (default: single server)
   bool             _useBonjour;   ///< indicating the use of bonjour
+  bool             _daemonize;    ///< run in background as a unix daemon
+  std::string      _daemonName;   ///< name of the daemon for reference in syslog
 
 #ifdef HAVE_BONJOUR
   vvBonjourRegistrar _registrar;  ///< Bonjour registrar used by registerToBonjour() and unregisterFromBonjour()
 #endif
+
+  static void handleSignal(int sig);               ///< Handle signals sent to a daemon
 };
 
 #endif // _VV_SERVER_H_
