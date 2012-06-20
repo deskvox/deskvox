@@ -190,6 +190,7 @@ bool vvRenderContext::matchesCurrent(const vvContextOptions& co)
 #ifdef USE_COCOA
   (void)co;
   vvDebugMsg::msg(0, "vvRenderContext::matchesCurrent() not implemented yet");
+  return false;
 #endif
 
 #if defined(HAVE_X11) && defined(USE_X11)
@@ -238,6 +239,7 @@ bool vvRenderContext::matchesCurrent(const vvContextOptions& co)
 #ifdef _WIN32
   (void)co;
   vvDebugMsg::msg(0, "vvRenderContext::matchesCurrent() not implemented yet");
+  return false;
 #endif
 }
 
