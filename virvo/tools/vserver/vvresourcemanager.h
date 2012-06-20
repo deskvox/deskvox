@@ -25,19 +25,15 @@
 #include "vvconfig.h"
 #endif
 
-#include <pthread.h>
 #include <vector>
 
 #include <virvo/vvinttypes.h>
-
 #include <virvo/vvbonjour/vvbonjourentry.h>
 
 // forward declarations
 class vvServer;
 class vvTcpSocket;
 class vvBonjourBrowser;
-
-#include <iostream> //temp
 
 /**
  * Class for resouce manager
@@ -139,12 +135,7 @@ private:
   pthread_mutex_t _jobsMutex;
   pthread_mutex_t _resourcesMutex;
 
-  // static thread functions
-
   static void * processJob(void *param);
-  pthread_t               _threadUR;
-  pthread_t               _threadCWQ;
-  std::vector<pthread_t>  _threadsPJ;
 
   void exitLocalCallback();
 };

@@ -21,8 +21,7 @@
 #include "vvresourcemanager.h"
 #include "vvserver.h"
 
-#include <algorithm>
-#include <iostream>
+#include <pthread.h>
 
 #ifdef HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjourentry.h>
@@ -33,7 +32,6 @@
 #include <virvo/vvsocketmonitor.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpsocket.h>
-#include <virvo/vvtoolshed.h>
 
 using namespace std;
 
@@ -65,11 +63,6 @@ vvResourceManager::vvResourceManager(vvServer *server)
 
 vvResourceManager::~vvResourceManager()
 {
-  pthread_cancel(_threadCWQ);
-
-  pthread_join(_threadUR,  NULL);
-  pthread_join(_threadCWQ, NULL);
-
   pthread_mutex_destroy(&_jobsMutex);
   pthread_mutex_destroy(&_resourcesMutex);
 }
@@ -151,7 +144,7 @@ bool vvResourceManager::initNextJob()
 
       pthread_t threadID;
       pthread_create(&threadID, NULL, processJob, job);
-      _threadsPJ.push_back(threadID);
+      pthread_detach(threadID);
     }
   }
 
