@@ -514,6 +514,7 @@ void sigproc(int )
 /// Handle signals a daemon receives.
 void vvServer::handleSignal(int sig)
 {
+#ifndef _WIN32
   switch (sig)
   {
   case SIGHUP:
@@ -526,6 +527,7 @@ void vvServer::handleSignal(int sig)
     syslog(LOG_WARNING, "Got unhandled signal %s, quitting.", strsignal(sig));
     break;
   }
+#endif
 }
 
 //-------------------------------------------------------------------
