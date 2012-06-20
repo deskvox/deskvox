@@ -408,6 +408,8 @@ void vvResourceManager::exitLocalCallback()
   (*selfRes)->numGPUsUp();
 
   pthread_mutex_unlock(&_resourcesMutex);
+
+  while(initNextJob()) {}; // process all waiting jobs
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
