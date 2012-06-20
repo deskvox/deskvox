@@ -59,10 +59,12 @@ vvMatrix vvIbr::calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
                               const vvGLTools::Viewport& vp,
                               const float depthRangeMin, const float depthRangeMax)
 {
-  vvMatrix invModelviewProjection = mv * pr;
+  vvMatrix invModelviewProjection = pr * mv;
   invModelviewProjection.invert();
 
-  return calcDepthScaleMatrix(depthRangeMin, depthRangeMax) * calcViewportMatrix(vp) * invModelviewProjection;
+  return invModelviewProjection
+    * calcViewportMatrix(vp)
+    * calcDepthScaleMatrix(depthRangeMin, depthRangeMax);
 }
 
 vvMatrix vvIbr::calcViewportMatrix(const vvGLTools::Viewport& vp)

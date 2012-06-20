@@ -426,7 +426,7 @@ void vvObjView::setModelviewMatrix(EyeType eye)
   }
 
   // Load matrix to OpenGL:
-  mv = camera * _object;
+  mv = _object * camera;
   mv.getGL(flat);
   glLoadMatrixf(flat);
 

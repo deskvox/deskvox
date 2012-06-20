@@ -154,7 +154,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     return vvRemoteClient::VV_SHADER_ERROR;
   }
 
-  vvMatrix currentMatrix = _currentMv * _currentPr;
+  vvMatrix currentMatrix = _currentPr * _currentMv;
 
   if(newFrame && haveFrame)
   {
@@ -231,10 +231,9 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   }
   else
   {
-    vvMatrix invOld;
-    invOld = _imgMv * _imgPr;
+    vvMatrix invOld = _imgPr * _imgMv;
     invOld.invert();
-    reprojectionMatrix = invOld * currentMatrix;
+    reprojectionMatrix = currentMatrix * invOld;
   }
   vvMatrix invMv = _currentMv;
   invMv.invert();

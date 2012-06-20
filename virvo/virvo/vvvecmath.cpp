@@ -141,7 +141,7 @@ vvMatrix vvMatrix::operator*(const vvMatrix& operand) const
 {
   vvMatrix tmp;
   tmp = this;
-  tmp.multiplyPost(&operand);
+  tmp.multiplyPre(&operand);
   return tmp;
 }
 
@@ -1036,7 +1036,7 @@ void vvMatrix::makeLookAt(float eyeX, float eyeY, float eyeZ,
   trans.identity();
   eye = -eye;
   trans.setColumn(3, eye);
-  *this = (*this) * trans;
+  *this = trans * (*this);
 }
 
 //-----------------------------------------------------------------------------
