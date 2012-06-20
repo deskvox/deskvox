@@ -107,6 +107,7 @@ SET(VIRVO_HEADERS
   vvsllist.h
   vvsocket.h
   vvsocketio.h
+  vvsocketmap.h
   vvsocketmonitor.h
   vvsoftimg.h
   vvsoftpar.h
@@ -182,6 +183,7 @@ SET(VIRVO_SOURCES
   vvshaderprogram.cpp
   vvsocket.cpp
   vvsocketio.cpp
+  vvsocketmap.cpp
   vvsocketmonitor.cpp
   vvsoftimg.cpp
   vvsoftpar.cpp

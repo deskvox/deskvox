@@ -27,6 +27,8 @@
 #include "vvparbrickrend.h"
 #include "vvpthread.h"
 #include "vvrendercontext.h"
+#include "vvsocketmap.h"
+#include "vvtcpsocket.h"
 #include "vvvoldesc.h"
 
 #include <queue>
@@ -43,8 +45,7 @@ struct vvParBrickRend::Thread
 
   vvContextOptions contextOptions;
 
-  std::string server;
-  int port;
+  vvTcpSocket* socket;
   std::string filename;
 
   vvParBrickRend* parbrickrend;
@@ -146,8 +147,15 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
 
     thread->contextOptions.displayName = params.at(i).display;
 
-    thread->server = params.at(i).server;
-    thread->port = params.at(i).port;
+    if (params.at(i).sockidx >= 0)
+    {
+      thread->socket = static_cast<vvTcpSocket*>(vvSocketMap::get(params.at(i).sockidx));
+    }
+    else
+    {
+      thread->socket = NULL;
+    }
+
     thread->filename = params.at(i).filename;
 
     thread->parbrickrend = this;
@@ -387,11 +395,14 @@ void* vvParBrickRend::renderFunc(void* args)
 
   // copy options
   vvRendererFactory::Options options = thread->parbrickrend->_options;
-  options["server"] = thread->server;
-  std::stringstream portstr;
-  portstr << thread->port;
-  options["port"] = portstr.str();
+
+  int s = vvSocketMap::add(thread->socket);
+  std::stringstream sockstr;
+  sockstr << s;
+  options["sockets"] = sockstr.str();
+
   options["filename"] = thread->filename;
+
   thread->renderer = vvRendererFactory::create(thread->parbrickrend->vd, *(thread->parbrickrend),
                                                thread->parbrickrend->_type.c_str(), options);
   setVisibleRegion(thread->renderer, thread->parbrickrend->_bspTree->getLeafs().at(thread->id)->getAabb());

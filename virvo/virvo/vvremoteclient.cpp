@@ -31,17 +31,15 @@ using std::cerr;
 using std::endl;
 
 vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_t type,
-                               const std::string &server, int port,
-                               const std::string &filename)
-   : vvRenderer(vd, renderState),
-    _type(type),
-    _server(server),
-    _port(port),
-    _filename(filename),
-    _socketIO(NULL),
-    _changes(true),
-    _viewportWidth(-1),
-    _viewportHeight(-1)
+                               vvTcpSocket* socket, const std::string &filename)
+   : vvRenderer(vd, renderState)
+   , _type(type)
+   , _socket(socket)
+   , _filename(filename)
+   , _socketIO(NULL)
+   , _changes(true)
+   , _viewportWidth(-1)
+   , _viewportHeight(-1)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::vvRemoteClient()");
 
@@ -78,108 +76,56 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::initSocket()");
 
-  const int defaultPort = 31050;
+  delete _socketIO;
+  _socketIO = new vvSocketIO(_socket);
 
-  if(_server.empty())
+  // block until server created its thread/remoteserver-object and is ready
+  bool serverRdy;
+  _socketIO->getBool(serverRdy);
+  if(!serverRdy)
   {
-    if(const char *s = getenv("VV_SERVER"))
-    {
-      vvDebugMsg::msg(1, "remote rendering server from environment: ", s);
-      _server = s;
-    }
-  }
+    // additional resource manager details requested
+    _socketIO->putInt32(10); // priority
+    _socketIO->putInt32(1);  // requirements
 
-  if(_server.empty())
-  {
-    vvDebugMsg::msg(0, "no server specified");
-    return VV_SOCKET_ERROR;
-  }
-
-  char *serverName = NULL;
-  int port = vvToolshed::parsePort(_server.c_str());
-  if(port != -1)
-  {
-    serverName = vvToolshed::stripPort(_server.c_str());
-  }
-
-  if(_port != -1)
-    port = _port;
-  if(port == -1)
-    port = defaultPort;
-
-  if(_socketIO)
-  {
-    delete _socketIO->getSocket();
-    delete _socketIO;
-    _socketIO = NULL;
-  }
-
-  vvTcpSocket *socket = new vvTcpSocket;
-  _socketIO = new vvSocketIO(socket);
-
-  if (socket->connectToHost(serverName ? serverName : _server.c_str(), port) == vvSocket::VV_OK)
-  {
-    delete[] serverName;
-
-    // block until server created its thread/remoteserver-object and is ready
-    bool serverRdy;
+    // block again to ensure remoteclient is int turn
     _socketIO->getBool(serverRdy);
-    if(!serverRdy)
-    {
-      // additional resource manager details requested
-      _socketIO->putInt32(10); // priority
-      _socketIO->putInt32(1);  // requirements
+  }
 
-      // block again to ensure remoteclient is int turn
-      _socketIO->getBool(serverRdy);
+  _socketIO->putInt32(_type);
+
+  if (!_filename.empty())
+  {
+    _socketIO->putBool(true);
+    _socketIO->putFileName(_filename.c_str());
+    _socketIO->getVolumeAttributes(vd);
+    vvTransFunc tf;
+    for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
+         it != tf._widgets.end(); ++it)
+    {
+      delete *it;
     }
-
-
-    socket->setParameter(vvSocket::VV_NO_NAGLE, true);
-    _socketIO->putInt32(_type);
-
-    if (!_filename.empty())
+    tf._widgets.clear();
+    if ((_socketIO->getTransferFunction(tf)) == vvSocket::VV_OK)
     {
-      _socketIO->putBool(true);
-      _socketIO->putFileName(_filename.c_str());
-      _socketIO->getVolumeAttributes(vd);
-      vvTransFunc tf;
-      for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
-           it != tf._widgets.end(); ++it)
-      {
-        delete *it;
-      }
-      tf._widgets.clear();
-      if ((_socketIO->getTransferFunction(tf)) == vvSocket::VV_OK)
-      {
-        vd->tf = tf;
-      }
-    }
-    else
-    {
-      _socketIO->putBool(false);
-      switch (_socketIO->putVolume(vd))
-      {
-        case vvSocket::VV_OK:
-          cerr << "Volume transferred successfully" << endl;
-          break;
-        case vvSocket::VV_ALLOC_ERROR:
-          cerr << "Not enough memory" << endl;
-          return VV_SOCKET_ERROR;
-        default:
-          cerr << "Cannot write volume to socket" << endl;
-          return VV_SOCKET_ERROR;
-      }
+      vd->tf = tf;
     }
   }
   else
   {
-    delete[] serverName;
-    delete socket;
-    delete _socketIO;
-    _socketIO = NULL;
-    cerr << "No connection to remote rendering server established at: " << _server << endl;
-    return VV_SOCKET_ERROR;
+    _socketIO->putBool(false);
+    switch (_socketIO->putVolume(vd))
+    {
+      case vvSocket::VV_OK:
+        cerr << "Volume transferred successfully" << endl;
+        break;
+      case vvSocket::VV_ALLOC_ERROR:
+        cerr << "Not enough memory" << endl;
+        return VV_SOCKET_ERROR;
+      default:
+        cerr << "Cannot write volume to socket" << endl;
+        return VV_SOCKET_ERROR;
+    }
   }
   return VV_OK;
 }
@@ -368,7 +314,6 @@ void vvRemoteClient::quit()
   if(_socketIO)
   {
     _socketIO->putCommReason(vvSocketIO::VV_QUIT);
-    delete _socketIO->getSocket();
     delete _socketIO;
     _socketIO = NULL;
   }

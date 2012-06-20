@@ -36,15 +36,13 @@ public:
   {
     std::string display;
     bool reuseMainContext;
-    std::string server;
-    int port;
+    int sockidx;           ///< reference to a socket in socketmap
     std::string filename;
 
     Param()
       : display("")
       , reuseMainContext(false)
-      , server("")
-      , port(-1)
+      , sockidx(-1)
       , filename("")
     {
 

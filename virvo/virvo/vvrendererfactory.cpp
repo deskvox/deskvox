@@ -37,6 +37,8 @@
 #endif
 #include "vvparbrickrend.h"
 #include "vvserbrickrend.h"
+#include "vvsocketmap.h"
+#include "vvtcpsocket.h"
 
 #include <map>
 #include <string>
@@ -142,8 +144,7 @@ struct ParsedOptions
 {
   vvRendererFactory::Options options;
   std::string voxeltype;
-  std::vector<std::string> servers;
-  std::vector<int> ports;
+  std::vector<vvTcpSocket*> sockets;
   std::vector<std::string> filenames;
   int bricks;
   std::vector<std::string> displays;
@@ -214,18 +215,15 @@ struct ParsedOptions
       {
         voxeltype = val;
       }
-      else if(opt == "server")
+      else if(opt== "sockets")
       {
-        servers = split(val, ',');
-      }
-      else if(opt== "port")
-      {
-        ports.clear();
-        std::vector<std::string> portstr = split(val, ',');
-        for (std::vector<std::string>::const_iterator it = portstr.begin();
-             it != portstr.end(); ++it)
+        sockets.clear();
+        std::vector<std::string> sockstr = split(val, ',');
+        for (std::vector<std::string>::const_iterator it = sockstr.begin();
+             it != sockstr.end(); ++it)
         {
-          ports.push_back(atoi((*it).c_str()));
+          vvTcpSocket* sock = static_cast<vvTcpSocket*>(vvSocketMap::get(atoi((*it).c_str())));
+          sockets.push_back(sock);
         }
       }
       else if(opt == "filename")
@@ -275,18 +273,12 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   }
   assert(it != rendererTypeMap.end());
 
-  std::string server;
-  int port = -1;
+  vvTcpSocket* sock = NULL;
   std::string filename;
 
-  if (options.servers.size() > 0)
+  if (options.sockets.size() > 0)
   {
-    server = options.servers[0];
-  }
-
-  if (options.ports.size() > 0)
-  {
-    port = options.ports[0];
+    sock = options.sockets[0];
   }
 
   if (options.filenames.size() > 0)
@@ -303,8 +295,7 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
     std::vector<vvParBrickRend::Param> params;
 
     size_t numbricks = options.displays.size();
-    numbricks = std::max(options.servers.size(), numbricks);
-    numbricks = std::max(options.ports.size(), numbricks);
+    numbricks = std::max(options.sockets.size(), numbricks);
     numbricks = std::max(options.filenames.size(), numbricks);
 
     for (size_t i = 0; i < numbricks; ++i)
@@ -315,14 +306,9 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
         p.display = options.displays[i];
       }
 
-      if (options.servers.size() > i)
+      if (options.sockets.size() > i)
       {
-        p.server = options.servers[i];
-      }
-
-      if (options.ports.size() > i)
-      {
-        p.port = options.ports[i];
+        p.sockidx = vvSocketMap::getIndex(options.sockets[i]);
       }
 
       if (options.filenames.size() > i)
@@ -337,9 +323,9 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   case vvRenderer::GENERIC:
     return new vvRenderer(vd, rs);
   case vvRenderer::REMOTE_IMAGE:
-    return new vvImageClient(vd, rs, server.c_str(), port, filename.c_str());
+    return new vvImageClient(vd, rs, sock, filename.c_str());
   case vvRenderer::REMOTE_IBR:
-    return new vvIbrClient(vd, rs, server.c_str(), port, filename.c_str());
+    return new vvIbrClient(vd, rs, sock, filename.c_str());
   case vvRenderer::SOFTSW:
     return new vvSoftShearWarp(vd, rs);
 #ifdef HAVE_VOLPACK

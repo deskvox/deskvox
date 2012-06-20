@@ -18,33 +18,50 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_IMAGECLIENT_H_
-#define _VV_IMAGECLIENT_H_
+#include "vvsocket.h"
+#include "vvsocketmap.h"
 
-#include "vvexport.h"
-#include "vvopengl.h"
-#include "vvremoteclient.h"
-
+#include <iostream>
 #include <vector>
 
-class vvRenderer;
-class vvSlaveVisitor;
-class vvVolDesc;
-
-class VIRVOEXPORT vvImageClient : public vvRemoteClient
+namespace vvSocketMap
 {
-public:
-  vvImageClient(vvVolDesc *vd, vvRenderState renderState,
-                vvTcpSocket* socket, const char* filename = NULL);
-  ~vvImageClient();
+  std::vector<vvSocket*> sockets;
+}
 
-  ErrorType render();                                     ///< render image with depth-values
+int vvSocketMap::add(vvSocket* sock)
+{
+  sockets.push_back(sock);
+  return sockets.size() - 1;
+}
 
-private:
-  GLuint _rgbaTex;                                        ///< Texture names for RGBA image
+void vvSocketMap::remove(const int idx)
+{
+  sockets.erase(sockets.begin() + idx);
+}
 
-  vvImage *_image;
-};
+vvSocket* vvSocketMap::get(const int idx)
+{
+  if (sockets.size() > idx)
+  {
+    return sockets[idx];
+  }
+  else
+  {
+    return NULL;
+  }
+}
 
-#endif
-// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
+int vvSocketMap::getIndex(vvSocket* sock)
+{
+  for (size_t i = 0; i < sockets.size(); ++i)
+  {
+    if (sockets[i] == sock)
+    {
+      return static_cast<int>(i);
+    }
+  }
+
+  return -1;
+}
+

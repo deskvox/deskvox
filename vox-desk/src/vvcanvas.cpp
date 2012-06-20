@@ -481,10 +481,11 @@ void vvCanvas::setRenderer(vvRenderer::RendererType alg, vvTexRend::GeometryType
     _renderer = new vvTexRend(_vd, renderState, _currentGeom, _currentVoxels);
     break;
   case vvRenderer::REMOTE_IMAGE:
-    _renderer = new vvImageClient(_vd, renderState);
+    // TODO
+    _renderer = new vvImageClient(_vd, renderState, NULL);
     break;
   case vvRenderer::REMOTE_IBR:
-    _renderer = new vvIbrClient(_vd, renderState);
+    _renderer = new vvIbrClient(_vd, renderState, NULL);
     break;
   case vvRenderer::SOFTSW:
     _renderer = new vvSoftShearWarp(_vd, renderState);

@@ -54,6 +54,8 @@ using std::ios;
 #include <virvo/vvoffscreenbuffer.h>
 #include <virvo/vvclock.h>
 #include <virvo/vvrendererfactory.h>
+#include <virvo/vvsocketmap.h>
+#include <virvo/vvtcpsocket.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvdebugmsg.h>
 
@@ -157,10 +159,19 @@ vvView::~vvView()
   {
     fclose(matrixFile);
   }
+
   delete renderer;
   delete ov;
   delete vd;
   ds = NULL;
+
+  for (std::vector<vvSocket*>::const_iterator it = sockets.begin();
+       it != sockets.end(); ++it)
+  {
+    vvSocketMap::remove(vvSocketMap::getIndex(*it));
+    delete *it;
+  }
+  sockets.clear();
 }
 
 //----------------------------------------------------------------------------
@@ -581,21 +592,40 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
 
   vvRendererFactory::Options opt(options);
 
-  // servers
-  std::stringstream serverstr;
-  for (std::vector<std::string>::const_iterator it = servers.begin();
-       it != servers.end(); ++it)
+  // clear socketmap from already created sockets
+  for (std::vector<vvSocket*>::const_iterator it = sockets.begin();
+       it != sockets.end(); ++it)
   {
-    if (it != servers.begin())
+    vvSocketMap::remove(vvSocketMap::getIndex(*it));
+    delete *it;
+  }
+  sockets.clear();
+
+  // sockets for remote renderers
+  std::stringstream sockstr;
+  std::vector<std::string>::const_iterator sit;
+  std::vector<int>::const_iterator pit;
+  for (sit = servers.begin(), pit = ports.begin();
+       sit != servers.end() && pit != ports.end();
+       ++sit, ++pit)
+  {
+    vvTcpSocket* sock = new vvTcpSocket;
+    if (sock->connectToHost(*sit, static_cast<ushort>(*pit)) == vvSocket::VV_OK)
     {
-      serverstr << ",";
+      sock->setParameter(vvSocket::VV_NO_NAGLE, true);
+      int s = vvSocketMap::add(sock);
+      if (sockstr.str() != "")
+      {
+        sockstr << ",";
+      }
+      sockstr << s;
     }
-    serverstr << *it;
+    sockets.push_back(sock);
   }
 
-  if (serverstr.str() != "")
+  if (sockstr.str() != "")
   {
-    opt["server"] = serverstr.str();
+    opt["sockets"] = sockstr.str();
   }
 
   // file names
@@ -613,23 +643,6 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   if (filenamestr.str() != "")
   {
     opt["filename"] = filenamestr.str();
-  }
-
-  // ports
-  std::stringstream portstr;
-  for (std::vector<int>::const_iterator it = ports.begin();
-       it != ports.end(); ++it)
-  {
-    if (it != ports.begin())
-    {
-      portstr << ",";
-    }
-    portstr << *it;
-  }
-
-  if (portstr.str() != "")
-  {
-    opt["port"] = portstr.str();
   }
 
   // displays
@@ -2714,10 +2727,9 @@ bool vvView::parseCommandLine(int argc, char** argv)
       }
 
       const int port = vvToolshed::parsePort(argv[arg]);
-      ports.push_back(port);
-
       if (port != -1)
       {
+        ports.push_back(port);
         char* sname = vvToolshed::stripPort(argv[arg]);
         servers.push_back(sname);
         delete[] sname;

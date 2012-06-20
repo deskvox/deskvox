@@ -65,15 +65,14 @@ struct vvIbrClient::Thread
 };
 
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
-                         const char* slaveName, int slavePort,
-                         const char* slaveFileName)
-: vvRemoteClient(vd, renderState, vvRenderer::REMOTE_IBR, slaveName, slavePort, slaveFileName)
-, _thread(NULL)
-, _newFrame(true)
-, _haveFrame(false)
-, _synchronous(false)
-, _image(NULL)
-, _shader(NULL)
+                         vvTcpSocket* socket,  const char* filename)
+  : vvRemoteClient(vd, renderState, vvRenderer::REMOTE_IBR, socket, filename)
+  , _thread(NULL)
+  , _newFrame(true)
+  , _haveFrame(false)
+  , _synchronous(false)
+  , _image(NULL)
+  , _shader(NULL)
 {
   vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
 

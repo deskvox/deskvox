@@ -18,33 +18,25 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_IMAGECLIENT_H_
-#define _VV_IMAGECLIENT_H_
+#ifndef _VVSOCKETMAP_H_
+#define _VVSOCKETMAP_H_
 
-#include "vvexport.h"
-#include "vvopengl.h"
-#include "vvremoteclient.h"
+class vvSocket;
 
-#include <vector>
-
-class vvRenderer;
-class vvSlaveVisitor;
-class vvVolDesc;
-
-class VIRVOEXPORT vvImageClient : public vvRemoteClient
+namespace vvSocketMap
 {
-public:
-  vvImageClient(vvVolDesc *vd, vvRenderState renderState,
-                vvTcpSocket* socket, const char* filename = NULL);
-  ~vvImageClient();
+  /*! Store the socket and return an index that refers to it
+   */
+  int add(vvSocket* sock);
 
-  ErrorType render();                                     ///< render image with depth-values
+  void remove(int idx);
 
-private:
-  GLuint _rgbaTex;                                        ///< Texture names for RGBA image
+  vvSocket* get(int idx);
 
-  vvImage *_image;
-};
+  /*! Get index to refer to socket or -1 if sock was not found
+   */
+  int getIndex(vvSocket* sock);
+}
 
 #endif
-// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
+
