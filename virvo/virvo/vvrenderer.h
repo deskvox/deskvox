@@ -199,7 +199,6 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
       VIRTEXREND,                                 ///< virtualized texture memory using bricking + out-of-core
       REMOTE_IBR,                                 ///< image based remote renderer
       REMOTE_IMAGE,                               ///< image based remote renderer
-      COMPARISON,                                 ///< renderer to compare the output from two renderers
       SERBRICKREND,                               ///< serial brick renderer
       PARBRICKREND,                               ///< parallel brick renderer
       NUM_RENDERERS                               ///< keep last

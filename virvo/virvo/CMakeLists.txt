@@ -59,8 +59,6 @@ SET(VIRVO_HEADERS
   vvbsptreevisitors.h
   vvcgprogram.h
   vvclock.h
-  vvcomparisonrend.h
-  vvcomparisonrend.impl.h
   vvcolor.h
   vvcuda.h
   vvcudaimg.h

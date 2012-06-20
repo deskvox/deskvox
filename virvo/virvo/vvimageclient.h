@@ -21,7 +21,6 @@
 #ifndef _VV_IMAGECLIENT_H_
 #define _VV_IMAGECLIENT_H_
 
-#include "vvcomparisonrend.h"
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvremoteclient.h"

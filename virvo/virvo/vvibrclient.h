@@ -21,7 +21,6 @@
 #ifndef _VV_IBRCLIENT_H_
 #define _VV_IBRCLIENT_H_
 
-#include "vvcomparisonrend.h"
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvremoteclient.h"
@@ -38,7 +37,6 @@ class vvIbrImage;
 
 class VIRVOEXPORT vvIbrClient : public vvRemoteClient
 {
-  friend class vvComparisonRend<vvImageClient, vvIbrClient>;
 public:
   vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
               const char* slaveNames = NULL, int slavePorts = -1,
