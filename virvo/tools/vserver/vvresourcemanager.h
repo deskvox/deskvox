@@ -35,6 +35,7 @@
 // forward declarations
 class vvServer;
 class vvTcpSocket;
+class vvBonjourBrowser;
 
 #include <iostream> //temp
 
@@ -127,14 +128,19 @@ public:
   void addJob(vvTcpSocket* sock);         ///< thread-savely adds new connection to the job list
   bool initNextJob();                     ///< thread-savely check for waiting jobs and free resources and pair if possible
 
+  static void updateResources(void * param);
 private:
+#ifdef HAVE_BONJOUR
+  vvBonjourBrowser *_browser;
+#endif // HAVE_BONJOUR
+
   std::vector<vvRequest*>  _requests;
   std::vector<vvResource*> _resources;
   pthread_mutex_t _jobsMutex;
   pthread_mutex_t _resourcesMutex;
 
   // static thread functions
-  static void * updateResources(void *param);
+
   static void * processJob(void *param);
   pthread_t               _threadUR;
   pthread_t               _threadCWQ;

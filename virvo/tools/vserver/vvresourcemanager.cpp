@@ -59,12 +59,12 @@ vvResourceManager::vvResourceManager(vvServer *server)
   pthread_mutex_init(&_jobsMutex, NULL);
   pthread_mutex_init(&_resourcesMutex, NULL);
 
-  pthread_create(&_threadUR,  NULL, updateResources,      this);
+  _browser = new vvBonjourBrowser(updateResources, this);
+  _browser->browseForServiceType("_vserver._tcp", "", -1.0); // browse in continous mode
 }
 
 vvResourceManager::~vvResourceManager()
 {
-  pthread_cancel(_threadUR);
   pthread_cancel(_threadCWQ);
 
   pthread_join(_threadUR,  NULL);
@@ -161,84 +161,71 @@ bool vvResourceManager::initNextJob()
   return ret;
 }
 
-void * vvResourceManager::updateResources(void * param)
+void vvResourceManager::updateResources(void * param)
 {
 #ifdef HAVE_BONJOUR
   vvDebugMsg::msg(3, "vvResourceManager::updateResources() Enter");
 
   vvResourceManager *rm = reinterpret_cast<vvResourceManager*>(param);
 
-  vvBonjourBrowser browser;
-  browser.browseForServiceType("_vserver._tcp", "", -1.0); // browse in continous mode
+  std::vector<vvBonjourEntry> entries = rm->_browser->getBonjourEntries();
 
-  while(true)
+  pthread_mutex_lock(&rm->_resourcesMutex);
+
+  for(std::vector<vvResource*>::iterator resource = rm->_resources.begin(); resource != rm->_resources.end(); resource++)
   {
-    std::vector<vvBonjourEntry> entries = browser.getBonjourEntries();
-
-    pthread_mutex_lock(&rm->_resourcesMutex);
-
-    for(std::vector<vvResource*>::iterator resource = rm->_resources.begin(); resource != rm->_resources.end(); resource++)
+    // mark non-local vservers for updating
+    if((*resource)->_server == NULL)
     {
-      // mark non-local vservers for updating
-      if((*resource)->_server == NULL)
-      {
-        (*resource)->_upToDate = false;
-      }
-      else
-      {
-        (*resource)->_upToDate = true;
-      }
+      (*resource)->_upToDate = false;
     }
-
-    if(!entries.empty())
+    else
     {
-      for(std::vector<vvBonjourEntry>::iterator entry = entries.begin(); entry != entries.end(); entry++)
-      {
-        bool inList = false;
-        for(std::vector<vvResource*>::iterator resource = rm->_resources.begin(); resource != rm->_resources.end(); resource++)
-        {
-          if((*resource)->_bonjourEntry == *entry)
-          {
-            (*resource)->_upToDate = true;
-            inList = true;
-            break;
-          }
-        }
-        if(!inList)
-        {
-          vvResource *res = new vvResource();
-          res->_bonjourEntry = *entry;
-          res->numGPUsUp();
-          //res->numGPUsUp();
-          rm->_resources.push_back(res);
-        }
-      }
+      (*resource)->_upToDate = true;
     }
-
-    for(std::vector<vvResource*>::iterator resource = rm->_resources.begin(); resource != rm->_resources.end(); resource++)
-    {
-      if(!(*resource)->_upToDate)
-      {
-        delete *resource;
-        rm->_resources.erase(resource);
-        resource--; // prevent double-iteration, because 'for' and 'erase()' both iterate
-      }
-    }
-
-    pthread_mutex_unlock(&rm->_resourcesMutex);
-
-    while(rm->initNextJob()) {}; // process all waiting jobs
-
-    vvToolshed::sleep(1); // check from time to time only
   }
+
+  if(!entries.empty())
+  {
+    for(std::vector<vvBonjourEntry>::iterator entry = entries.begin(); entry != entries.end(); entry++)
+    {
+      bool inList = false;
+      for(std::vector<vvResource*>::iterator resource = rm->_resources.begin(); resource != rm->_resources.end(); resource++)
+      {
+        if((*resource)->_bonjourEntry == *entry)
+        {
+          (*resource)->_upToDate = true;
+          inList = true;
+          break;
+        }
+      }
+      if(!inList)
+      {
+        vvResource *res = new vvResource();
+        res->_bonjourEntry = *entry;
+        res->numGPUsUp();
+        //res->numGPUsUp();
+        rm->_resources.push_back(res);
+      }
+    }
+  }
+
+  for(std::vector<vvResource*>::iterator resource = rm->_resources.begin(); resource != rm->_resources.end(); resource++)
+  {
+    if(!(*resource)->_upToDate)
+    {
+      delete *resource;
+      rm->_resources.erase(resource);
+      resource--; // prevent double-iteration, because 'for' and 'erase()' both iterate
+    }
+  }
+
+  pthread_mutex_unlock(&rm->_resourcesMutex);
+
+  while(rm->initNextJob()) {}; // process all waiting jobs
 #else
   vvDebugMsg::msg(0, "vvResourceManager::updateResources() resource live-updating not available");
   (void)param;
-#endif
-
-  pthread_exit(NULL);
-#ifdef _WIN32
-  return NULL;
 #endif
 }
 

@@ -30,10 +30,12 @@
 #include <ostream>
 #include <sstream>
 
-vvBonjourBrowser::vvBonjourBrowser()
+vvBonjourBrowser::vvBonjourBrowser(void (*externCallBack)(void *), void *callBackParam)
   : _eventLoop(NULL)
 {
   _timeout = 1.0;
+  _externCallBack = externCallBack;
+  _callBackParam = callBackParam;
 }
 
 vvBonjourBrowser::~vvBonjourBrowser()
@@ -114,6 +116,10 @@ void vvBonjourBrowser::BrowseCallBack(DNSServiceRef serviceRef, DNSServiceFlags 
   {
     instance->_eventLoop->stop();
     DNSServiceRefDeallocate(serviceRef);
+  }
+  if(instance->_externCallBack)
+  {
+    (instance->_externCallBack)(instance->_callBackParam);
   }
 }
 

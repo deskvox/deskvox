@@ -41,7 +41,12 @@
 class VIRVOEXPORT vvBonjourBrowser
 {
 public:
-  vvBonjourBrowser();
+  /**
+    Create a bonjour-browser and register an callback for any changes (optionally)
+    @param externCallBack optional callback-function which is invoked on any change of bonjour entries
+    @param callBackParam  optional parameter to pass through on externCallBack if given.
+    */
+  vvBonjourBrowser(void (*externCallBack)(void *) = NULL, void *callBackParam = NULL);
   ~vvBonjourBrowser();
 
   /**
@@ -70,6 +75,8 @@ private:
                                            DNSServiceErrorType errorCode,
                                            const char *name, const char *type, const char *domain,
                                            void *context);
+  void (*_externCallBack)(void *);
+  void *_callBackParam;
 };
 
 #endif
