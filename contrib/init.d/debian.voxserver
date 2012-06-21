@@ -11,8 +11,9 @@ VV_SHADER_PATH=$VV_HOME/virvo/shader/
 VV_SERVER_PATH=$VV_HOME/voxserver
 PIDFILE=VV_SERVER_PATH/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
+DISPLAY=:0
 
-export VV_SHADER_PATH VV_SERVER_PATH
+export DISPLAY VV_SHADER_PATH VV_SERVER_PATH
 
 # require voxserver
 [ -x "$DAEMON" ] || exit 0
