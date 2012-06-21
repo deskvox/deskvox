@@ -2212,7 +2212,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     texSize[i] = vissize[i] * (float)texels[i] / (float)vd->vox[i];
     vissize2[i]   = 0.5f * vissize[i];
   }
-  pos.copy(center);
+  pos = center;
 
   // Calculate inverted modelview matrix:
   invMV = vvMatrix(mv);
@@ -2227,7 +2227,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     const vvVector3 size = vd->getSize();
     const vvVector3 size2 = size * 0.5f;
     // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj.copy(_roiPos);
+    probePosObj = _roiPos;
     probePosObj.sub(pos);                        // eliminate object position from probe position
 
     // Compute probe min/max coordinates in object space:
@@ -2257,10 +2257,10 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   else                                            // probe mode off
   {
     const vvVector3 size = vd->getSize();
-    probeSizeObj.copy(size);
-    probeMin.copy(minCorner);
-    probeMax.copy(maxCorner);
-    probePosObj.copy(center);
+    probeSizeObj = size;
+    probeMin = minCorner;
+    probeMax = maxCorner;
+    probePosObj = center;
   }
 
   // Initialize texture counters
@@ -2321,11 +2321,11 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     }
   }
 
-  delta.copy(normal);
+  delta = normal;
   delta.scale(sliceDistance);
 
   // Compute farthest point to draw texture at:
-  farthest.copy(delta);
+  farthest = delta;
   farthest.scale((float)(numSlices - 1) * -0.5f);
   farthest.add(vd->pos);
 
@@ -2336,24 +2336,24 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     // due to the automatic opacity correction.)
     // First find point on clipping plane which is on a line perpendicular
     // to clipping plane and which traverses the origin:
-    temp.copy(delta);
+    temp = delta;
     temp.scale(-0.5f);
     farthest.add(temp);                          // add a half delta to farthest
-    clipPosObj.copy(_clipPoint);
+    clipPosObj = _clipPoint;
     clipPosObj.sub(pos);
-    temp.copy(probePosObj);
+    temp = probePosObj;
     temp.add(normal);
     normClipPoint.isectPlaneLine(normal, clipPosObj, probePosObj, temp);
     maxDist = farthest.distance(normClipPoint);
     numSlices = (int)(maxDist / delta.length()) + 1;
-    temp.copy(delta);
+    temp = delta;
     temp.scale((float)(1 - numSlices));
-    farthest.copy(normClipPoint);
+    farthest = normClipPoint;
     farthest.add(temp);
     if (_clipSingleSlice)
     {
       // Compute slice position:
-      temp.copy(delta);
+      temp = delta;
       temp.scale((float)(numSlices-1));
       farthest.add(temp);
       numSlices = 1;
@@ -2371,12 +2371,12 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   int j,k;                                        // counters
   int drawn = 0;                                  // counter for drawn textures
   vvVector3 deltahalf;
-  deltahalf.copy(delta);
+  deltahalf = delta;
   deltahalf.scale(0.5f);
 
   // Relative viewing position
   vvVector3 releye;
-  releye.copy(eye);
+  releye = eye;
   releye.sub(pos);
 
   // Volume render a 3D texture:
@@ -2389,7 +2389,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     enableTexture(GL_TEXTURE_3D_EXT);
     glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
   }
-  texPoint.copy(farthest);
+  texPoint = farthest;
   for (int i=0; i<numSlices; ++i)                     // loop thru all drawn textures
   {
     // Search for intersections between texture plane (defined by texPoint and
@@ -2417,26 +2417,25 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
 
         if(isOrtho)
         {
-          back.copy(isect[j]);
+          back = isect[j];
           back.sub(deltahalf);
         }
         else
         {
-          vvVector3 v;
-          v.copy(isect[j]);
+          vvVector3 v = isect[j];
           v.sub(deltahalf);
           back.isectPlaneLine(normal, v, releye, isect[j]);
         }
 
         if(isOrtho)
         {
-          front.copy(isect[j]);
+          front = isect[j];
           front.add(deltahalf);
         }
         else
         {
           vvVector3 v;
-          v.copy(isect[j]);
+          v = isect[j];
           v.add(deltahalf);
           front.isectPlaneLine(normal, v, releye, isect[j]);
         }
@@ -2520,8 +2519,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
 
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
-  vvVector3 clippedProbeSizeObj;
-  clippedProbeSizeObj.copy(probeSizeObj);
+  vvVector3 clippedProbeSizeObj = probeSizeObj;
   for (int i=0; i<3; ++i)
   {
     if (clippedProbeSizeObj[i] < vd->getSize()[i])
@@ -2564,11 +2562,11 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
     }
   }
 
-  delta.copy(normal);
+  delta = normal;
   delta.scale(diagonal / ((float)numSlices));
 
   // Compute farthest point to draw texture at:
-  farthest.copy(delta);
+  farthest = delta;
   farthest.scale((float)(numSlices - 1) * -0.5f);
 
   if (_clipMode)                     // clipping plane present?
@@ -2583,15 +2581,15 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
     farthest.add(temp);                          // add a half delta to farthest
     vvVector3 clipPosObj(_clipPoint);
     clipPosObj.sub(vd->pos);
-    temp.copy(probePosObj);
+    temp = probePosObj;
     temp.add(normal);
     vvVector3 normClipPoint;
     normClipPoint.isectPlaneLine(normal, clipPosObj, probePosObj, temp);
     const float maxDist = farthest.distance(normClipPoint);
     numSlices = (int)(maxDist / delta.length()) + 1;
-    temp.copy(delta);
+    temp = delta;
     temp.scale((float)(1 - numSlices));
-    farthest.copy(normClipPoint);
+    farthest = normClipPoint;
     farthest.add(temp);
     if (_clipSingleSlice)
     {
@@ -3029,7 +3027,7 @@ void vvTexRend::renderTex2DSlices(float zz)
   if (_clipMode) activateClippingPlane();
 
   // Generate half object size as shortcut:
-  size.copy(vd->getSize());
+  size = vd->getSize();
   size2[0] = 0.5f * size[0];
   size2[1] = 0.5f * size[1];
   size2[2] = 0.5f * size[2];
@@ -3147,8 +3145,8 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
   if (numTextures < 2)  numTextures = 2;          // make sure that at least one slice is drawn to prevent division by zero
 
   // Generate half object size as a shortcut:
-  size.copy(vd->getSize());
-  size2.copy(size);
+  size = vd->getSize();
+  size2 = size;
   size2.scale(0.5f);
 
   // Initialize parameters upon principal viewing direction:
@@ -3458,7 +3456,7 @@ void vvTexRend::activateClippingPlane()
   if (_clipSingleSlice)
   {
     thickness = vd->_scale * vd->dist[0] * (vd->vox[0] * 0.01f);
-    clipNormal2.copy(_clipNormal);
+    clipNormal2 = _clipNormal;
     clipNormal2.negate();
     planeEq[0] = -clipNormal2[0];
     planeEq[1] = -clipNormal2[1];
@@ -3670,7 +3668,7 @@ void vvTexRend::updateLUT(const float dist, GLuint& lutName, uchar*& lutData, fl
 void vvTexRend::setViewingDirection(const vvVector3& vd)
 {
   vvDebugMsg::msg(3, "vvTexRend::setViewingDirection()");
-  viewDir.copy(vd);
+  viewDir = vd;
 }
 
 //----------------------------------------------------------------------------
@@ -3682,7 +3680,7 @@ void vvTexRend::setViewingDirection(const vvVector3& vd)
 void vvTexRend::setObjectDirection(const vvVector3& od)
 {
   vvDebugMsg::msg(3, "vvTexRend::setObjectDirection()");
-  objDir.copy(od);
+  objDir = od;
 }
 
 //----------------------------------------------------------------------------
@@ -4394,7 +4392,7 @@ unsigned char* vvTexRend::getHeightFieldData(float points[4][3], int& width, int
   glPushMatrix();
   glLoadIdentity();
 
-  size.copy(vd->getSize());
+  size = vd->getSize();
   for (i = 0; i < 3; ++i)
     size2[i]   = 0.5f * size[i];
 

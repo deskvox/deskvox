@@ -371,7 +371,6 @@ void vvSoftImg::drawBorder(int r, int g, int b)
 */
 void vvSoftImg::warp(vvMatrix* w, vvSoftImg* srcImg)
 {
-   vvMatrix inv;                                 // inverted warp matrix
    int xs, ys;                                    // source image coordinates
    int i, j;                                      // counters
    float xd, yd;                                  // precomputed destination values
@@ -382,7 +381,7 @@ void vvSoftImg::warp(vvMatrix* w, vvSoftImg* srcImg)
 
    vvDebugMsg::msg(3, "vvSoftImg::warp()");
 
-   inv.copy(*w);
+   vvMatrix inv = *w;                             // inverted warp matrix
    inv.invert();                                  // invert to compute source coords from destination coords
 
    inv00 = inv(0, 0);

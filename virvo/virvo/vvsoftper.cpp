@@ -588,7 +588,7 @@ void vvSoftPer::findOEyePosition()
 
    // Find eye position in object space:
    oEye.set(0.0f, 0.0f, -1.0f, 0.0f);
-   woView.copy(owView);
+   woView = owView;
    woView.invert();
    oEye.multiply(woView);
    if (vvDebugMsg::isActive(3)) oEye.print("Eye position in object space:");
@@ -618,7 +618,7 @@ void vvSoftPer::findPrincipalAxis()
 
    vvDebugMsg::msg(3, "vvSoftPer::findPrincipalAxis()");
 
-   oEye3.copy(&oEye);                              // convert eye coordinates from vector4 to vector3
+   oEye3 = vvVector3(oEye);                       // convert eye coordinates from vector4 to vector3
 
    // Find principal axes:
    for (i=0; i<8; ++i)
@@ -631,7 +631,7 @@ void vvSoftPer::findPrincipalAxis()
       vertex.scale(size);                         // vertices are scaled to correct object space coordinates
 
       // Compute distance between eye and corner:
-      dist.copy(vertex);
+      dist = vertex;
       dist.sub(oEye3);
 
       // Determine the principal viewing axis and the stacking order:
@@ -686,7 +686,7 @@ void vvSoftPer::findShiftMatrix()
 
    vvDebugMsg::msg(3, "vvSoftPer::findShiftMatrix()");
 
-   permEye.copy(oEye);
+   permEye = vvVector4(oEye);
    permEye.multiply(osPerm);
 
    shift.identity();
@@ -709,7 +709,7 @@ void vvSoftPer::findSEyePosition()
 {
    vvDebugMsg::msg(3, "vvSoftPer::findSEyePosition()");
 
-   sEye.copy(oEye);
+   sEye = vvVector4(oEye);
    sEye.multiply(osPerm);
    sEye.multiply(shift);
    if (vvDebugMsg::isActive(3))
@@ -788,7 +788,7 @@ void vvSoftPer::findOIShearMatrix()
 {
    vvDebugMsg::msg(3, "vvSoftPer::findOIShearMatrix()");
 
-   oiShear.copy(osPerm);
+   oiShear = vvMatrix(osPerm);
    oiShear.multiplyPost(shift);
    oiShear.multiplyPost(sdShear);
    oiShear.multiplyPost(scale);
@@ -809,14 +809,14 @@ void vvSoftPer::findWarpMatrix()
    vvDebugMsg::msg(3, "vvSoftPer::findWarpMatrix()");
 
    // Compute inverse of oiShear:
-   ioShear.copy(oiShear);
+   ioShear = vvMatrix(oiShear);
    ioShear.invert();
 
    // Assemble warp matrices:
-   iwWarp.copy(ioShear);
+   iwWarp = vvMatrix(ioShear);
    iwWarp.multiplyPost(owView);
    if (vvDebugMsg::isActive(3)) iwWarp.print("iwWarp");
-   ivWarp.copy(iwWarp);
+   ivWarp = vvMatrix(iwWarp);
    ivWarp.multiplyPost(wvConv);
    if (vvDebugMsg::isActive(3)) ivWarp.print("ivWarp");
 }

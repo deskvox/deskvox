@@ -506,7 +506,7 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
       real[i] = src->real[i];
     }
     for (i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
-    pos.copy(src->pos);
+    pos = src->pos;
     currentFrame = src->currentFrame;
     tf.copy(&tf._widgets, &src->tf._widgets);
 

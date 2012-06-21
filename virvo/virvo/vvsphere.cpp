@@ -112,7 +112,7 @@ void vvSphere::setRadius(float r)
 
 void vvSphere::setVolumeDim(const vvVector3& dim)
 {
-  mDimCube.copy(dim);
+  mDimCube = dim;
 }
 
 void vvSphere::setTextureOffset(float* offset)
@@ -124,7 +124,7 @@ void vvSphere::setTextureOffset(float* offset)
 
 void vvSphere::setViewMatrix(const vvMatrix& matrix)
 {
-  mModelView.copy(matrix);
+  mModelView = matrix;
   mModelView.invert();
 }
 

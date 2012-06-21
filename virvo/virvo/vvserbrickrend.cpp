@@ -57,7 +57,7 @@ void vvSerBrickRend::renderVolumeGL()
     vvMatrix mv, invMV;
     vvGLTools::getModelviewMatrix(&mv);
     _bspTree->setVisitor(_simpleRenderVisitor);
-    invMV.copy(mv);
+    invMV = mv;
     invMV.invert();
 
     // find eye position:

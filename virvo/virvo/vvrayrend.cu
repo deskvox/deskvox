@@ -1123,8 +1123,7 @@ void vvRayRend::compositeVolume(int, int)
   vvVector3 probeMax;
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
-  vvVector3 clippedProbeSizeObj;
-  clippedProbeSizeObj.copy(probeSizeObj);
+  vvVector3 clippedProbeSizeObj = probeSizeObj;
   for (int i=0; i<3; ++i)
   {
     if (clippedProbeSizeObj[i] < vd->getSize()[i])
@@ -1153,7 +1152,7 @@ void vvRayRend::compositeVolume(int, int)
   cudaMemcpyToSymbol(c_MvPrMatrix, mvprM, sizeof(float4) * 4);
 
   vvMatrix invMv;
-  invMv.copy(Mv);
+  invMv = vvMatrix(Mv);
   invMv.invert();
 
   vvMatrix pr;

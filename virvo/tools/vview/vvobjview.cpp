@@ -156,7 +156,7 @@ bool vvObjView::loadMV(FILE* fp)
     if (ttype != vvTokenizer::VV_NUMBER) goto done;
     camera(i, j) = tokenizer->nval;
   }
-  mv.copy(camera);
+  mv = vvMatrix(camera);
   retval = true;
 
   done:
@@ -294,7 +294,7 @@ void vvObjView::updateModelviewMatrix(EyeType eye)
   else                                           // convert for right eye
   {
     // Convert axis coordinates (v) from WCS to OCS:
-    mvRight.copy(mv);
+    mvRight = vvMatrix(mv);
     invRot.identity();
     invRot.copyRot(mv);
     invRot.invertOrtho();

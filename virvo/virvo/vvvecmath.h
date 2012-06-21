@@ -122,7 +122,6 @@ class VIRVOEXPORT vvMatrix
     float diagonal();
     void invertOrtho();
     void invert2D();
-    void copy(const vvMatrix& m);
     void copyTrans(const vvMatrix& m);
     void copyRot(const vvMatrix& m);
     void transOnly();
@@ -178,7 +177,6 @@ class vvBaseVector4
     T operator[](int) const;
     void set(T x, T y, T z, T w);
     void multiply(const vvMatrix& m);
-    void copy(const vvBaseVector4& rhs);
     void add(const vvBaseVector4& rhs);
     void sub(const vvBaseVector4& rhs);
     void print(const char* text = 0) const;
@@ -201,13 +199,12 @@ class vvBaseVector3
     vvBaseVector3();
     explicit vvBaseVector3(T);
     vvBaseVector3(T x, T y, T z);
+    vvBaseVector3(const vvBaseVector4<T>& v);
     vvBaseVector3 operator^(const vvBaseVector3) const;
     T &operator[](const int);
     T operator[](const int) const;
     void  set(T x, T y, T z);
     void  get(T* x, T* y, T* z) const;
-    void  copy(const vvBaseVector3&);
-    void  copy(const vvBaseVector4<T>*);
     void  add(const vvBaseVector3& rhs);
     void  add(T val);
     void  add(T x, T y, T z);

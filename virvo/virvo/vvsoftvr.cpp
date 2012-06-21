@@ -622,7 +622,7 @@ void vvSoftVR::findViewMatrix()
    vvGLTools::getProjectionMatrix(&pm);
 
    // Compute view matrix:
-   owView.copy(mv);
+   owView = vvMatrix(mv);
    owView.multiplyPost(pm);
    if (vvDebugMsg::isActive(3)) owView.print("owView");
 }
@@ -704,9 +704,19 @@ void vvSoftVR::findSlicePosition(int slice, vvVector3* start, vvVector3* end)
 {
    vvVector4 start4, end4;
    findSlicePosition(slice, &start4, end?&end4:NULL);
-   start->copy(&start4);
+   vvVector3 tmp = vvVector3(start4);
+   for (int i = 0; i < 3; ++i)
+   {
+     (*start)[i] = tmp[i];
+   }
    if (end)
-      end->copy(&end4);
+   {
+     tmp = vvVector3(end4);
+     for (int i = 0; i < 3; ++i)
+     {
+       (*end)[i] = tmp[i];
+     }
+   }
 }
 
 
@@ -821,8 +831,8 @@ void vvSoftVR::findClipPlaneEquation()
    }
 
    // Find two points determining the plane:
-   planePoint.copy(_clipPoint);
-   normalPoint.copy(_clipPoint);
+   planePoint = _clipPoint;
+   normalPoint = _clipPoint;
    normalPoint.add(_clipNormal);
 
    // Transfer points to voxel coordinate system:
@@ -834,7 +844,7 @@ void vvSoftVR::findClipPlaneEquation()
    normalPoint.multiply(xxPerm);
 
    // Compute plane equation:
-   xClipNormal.copy(normalPoint);
+   xClipNormal = normalPoint;
    xClipNormal.sub(planePoint);
    xClipNormal.normalize();
    xClipDist = xClipNormal.dot(planePoint);
@@ -914,7 +924,8 @@ void vvSoftVR::getIntermediateImage(vvImage* image)
 */
 void vvSoftVR::getWarpMatrix(vvMatrix* warp)
 {
-   warp->copy(iwWarp);
+  delete warp;
+  warp = new vvMatrix(iwWarp);
 }
 
 
@@ -1005,12 +1016,11 @@ bool vvSoftVR::prepareRendering()
    // Validate computed matrices:
    if (vvDebugMsg::isActive(3))
    {
-      vvMatrix ovTest;
+      vvMatrix ovTest = vvMatrix(oiShear);
       vvMatrix ovView;
-      ovTest.copy(oiShear);
       ovTest.multiplyPost(ivWarp);
       ovTest.print("ovTest = ivWarp x siShear x osPerm");
-      ovView.copy(owView);
+      ovView = vvMatrix(owView);
       ovView.multiplyPost(wvConv);
       ovView.print("ovView = wvConv x owView");
    }

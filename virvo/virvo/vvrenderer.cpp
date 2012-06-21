@@ -342,7 +342,7 @@ vvVecmath::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
                                                         float& zx, float& zy, float& zz) const
 {
   vvMatrix invMV;
-  invMV.copy(mv);
+  invMV = mv;
   invMV.invert();
 
   vvVector3 eye;
@@ -401,7 +401,7 @@ void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
   // then use viewDir as the normal.
   if (_clipMode)
   {
-    normal.copy(_clipNormal);
+    normal = vvVector3(_clipNormal);
   }
   else if (isOrtho || (viewDir[0] == 0.0f && viewDir[1] == 0.0f && viewDir[2] == 0.0f))
   {
@@ -415,13 +415,13 @@ void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
   else if (!_isROIUsed && isInVolume(&eye))
   {
     // Draw slices perpendicular to viewing direction:
-    normal.copy(viewDir);
+    normal = vvVector3(viewDir);
     normal.negate();                              // viewDir points away from user, the normal should point towards them
   }
   else
   {
     // Draw slices perpendicular to line eye->object:
-    normal.copy(objDir);
+    normal = vvVector3(objDir);
     normal.negate();
   }
 
@@ -447,13 +447,13 @@ void vvRenderer::getShadingNormal(vvVector3& normal, vvVector3& origin,
   else if (!_isROIUsed && isInVolume(&eye))
   {
     // Draw slices perpendicular to viewing direction:
-    normal.copy(viewDir);
+    normal = vvVector3(viewDir);
     normal.negate();                              // viewDir points away from user, the normal should point towards them
   }
   else
   {
     // Draw slices perpendicular to line eye->object:
-    normal.copy(objDir);
+    normal = vvVector3(objDir);
     normal.negate();
   }
 
@@ -495,7 +495,7 @@ void vvRenderer::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, 
   }
   else                                            // probe mode off
   {
-    probeSizeObj.copy(size);
+    probeSizeObj = size;
     probeMin = -size2;
     probeMax = size2;
   }
@@ -1075,7 +1075,7 @@ bool vvRenderer::instantClassification() const
 void vvRenderer::setPosition(const vvVector3& p)
 {
   vvDebugMsg::msg(3, "vvRenderer::setPosition()");
-  vd->pos.copy(p);
+  vd->pos = p;
 }
 
 //----------------------------------------------------------------------------
@@ -1083,7 +1083,10 @@ void vvRenderer::setPosition(const vvVector3& p)
 void vvRenderer::getPosition(vvVector3* p)
 {
   vvDebugMsg::msg(3, "vvRenderer::getPosition()");
-  p->copy(vd->pos);
+  for (int i = 0; i < 3; ++i)
+  {
+    (*p)[i] = vd->pos[i];
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -1175,7 +1178,11 @@ void vvRenderer::getEyePosition(vvVector3* eye) const
   invPM.invert();
   projEye.set(0.0f, 0.0f, -1.0f, 0.0f);
   projEye.multiply(invPM);
-  eye->copy(&projEye);
+  vvVector3 tmp = vvVector3(projEye);
+  for (int i = 0; i < 3; ++i)
+  {
+    (*eye)[i] = tmp[i];
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -1192,9 +1199,9 @@ bool vvRenderer::isInVolume(const vvVector3* point) const
 
   vvDebugMsg::msg(3, "vvRenderer::isInVolume()");
 
-  pos.copy(vd->pos);
+  pos = vd->pos;
   size = vd->getSize();
-  size2.copy(size);
+  size2 = size;
   size2.scale(0.5f);
   for (i=0; i<3; ++i)
   {
@@ -1224,9 +1231,9 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   vvDebugMsg::msg(3, "vvRenderer::getAlphaValue()");
 
   size = vd->getSize();
-  size2.copy(size);
+  size2 = size;
   size2.scale(0.5f);
-  pos.copy(vd->pos);
+  pos = vd->pos;
 
   for (i=0; i<3; ++i)
   {

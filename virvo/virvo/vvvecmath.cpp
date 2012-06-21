@@ -384,17 +384,6 @@ float vvMatrix::diagonal()
 }
 
 //----------------------------------------------------------------------------
-/// Creates an identical copy of a matrix
-void vvMatrix::copy(const vvMatrix& m)
-{
-  int row, col;
-
-  for (row=0; row<4; ++row)
-    for (col=0; col<4; ++col)
-      e[row][col] = m.e[row][col];
-}
-
-//----------------------------------------------------------------------------
 /// Copies only the translational part of a matrix and keeps the rest untouched
 void vvMatrix::copyTrans(const vvMatrix& m)
 {
@@ -1149,8 +1138,8 @@ vvPlane::vvPlane()
 /// Constructor for point-normal format.
 vvPlane::vvPlane(const vvVector3& p, const vvVector3& n)
 {
-  _point.copy(p);
-  _normal.copy(n);
+  _point = p;
+  _normal = n;
   _normal.normalize();
 }
 
@@ -1158,8 +1147,8 @@ vvPlane::vvPlane(const vvVector3& p, const vvVector3& n)
 /// Constructor for point-vector-vector format.
 vvPlane::vvPlane(const vvVector3& p, const vvVector3& dir1, const vvVector3& dir2)
 {
-  _point.copy(p);
-  _normal.copy(dir1);
+  _point = p;
+  _normal = dir1;
   _normal.cross(dir2);
   _normal.normalize();
 }

@@ -60,6 +60,26 @@ vvBaseVector3<T>::vvBaseVector3(const T x, const T y, const T z)
 }
 
 //----------------------------------------------------------------------------
+/// Copy constructor for vvVector4
+template <typename T>
+vvBaseVector3<T>::vvBaseVector3(const vvBaseVector4<T>& v)
+{
+  T w = v.e[3];
+  if (w != T(0))
+  {
+    e[0] = v.e[0] / w;
+    e[1] = v.e[1] / w;
+    e[2] = v.e[2] / w;
+  }
+  else
+  {
+    e[0] = v.e[0];
+    e[1] = v.e[1];
+    e[2] = v.e[2];
+  }
+}
+
+//----------------------------------------------------------------------------
 /** Cross product of two vectors.
  */
 template <typename T>
@@ -104,37 +124,6 @@ void vvBaseVector3<T>::get(T* x, T* y, T* z) const
   *x = e[0];
   *y = e[1];
   *z = e[2];
-}
-
-//----------------------------------------------------------------------------
-/// Copy a vector
-template <typename T>
-void vvBaseVector3<T>::copy(const vvBaseVector3<T>& v)
-{
-  for (int i = 0; i < 3; ++i)
-  {
-    e[i] = v.e[i];
-  }
-}
-
-//----------------------------------------------------------------------------
-/// Copy a vvVector4
-template <typename T>
-void vvBaseVector3<T>::copy(const vvBaseVector4<T>* v)
-{
-  T w = v->e[3];
-  if (w != T(0))
-  {
-    e[0] = v->e[0] / w;
-    e[1] = v->e[1] / w;
-    e[2] = v->e[2] / w;
-  }
-  else
-  {
-    e[0] = v->e[0];
-    e[1] = v->e[1];
-    e[2] = v->e[2];
-  }
 }
 
 //----------------------------------------------------------------------------
@@ -315,9 +304,12 @@ void vvBaseVector3<T>::planeNormalPPV(const vvBaseVector3<T>& point1,
 {
   vvBaseVector3<T> diff;    // difference vector between point1 and point2
 
-  diff.copy(point2);
+  diff = vvBaseVector3<T>(point2);
   diff.sub(point1);
-  this->copy(dir);
+  for (int i = 0; i < 3; ++i)
+  {
+    e[i] = dir[i];
+  }
   this->cross(diff);
 }
 
@@ -332,10 +324,9 @@ template <typename T>
 T vvBaseVector3<T>::distPointPlane(const vvBaseVector3<T>& n,
                                    const vvBaseVector3<T>& p) const
 {
-  vvBaseVector3<T> normal;                // normalized plane normal
+  vvBaseVector3<T> normal = vvBaseVector3<T>(n);                // normalized plane normal
   T d;                                   // scalar component of hessian form of plane
 
-  normal.copy(n);
   normal.normalize();
   d = -normal.dot(p);
   return (normal.dot(*this) + d);
@@ -481,9 +472,8 @@ bool vvBaseVector3<T>::isectPlaneLine(const vvBaseVector3<T>& n,
                                       const vvBaseVector3<T>& v1,
                                       const vvBaseVector3<T>& v2)
 {
-  vvBaseVector3 normal;                           // normalized normal
+  vvBaseVector3 normal = vvBaseVector3(n);                           // normalized normal
 
-  normal.copy(n);
   normal.normalize();
   vvBaseVector3 diff1 = v1 - v2;                  // diff1 = v1 - v2
   const T denom = diff1.dot(normal);              // denom = diff1 . n
@@ -495,7 +485,10 @@ bool vvBaseVector3<T>::isectPlaneLine(const vvBaseVector3<T>& n,
   const vvBaseVector3 diff2 = p - v1;             // diff2 = p - v1
   const T numer = diff2.dot(normal);              // number = diff2 . n
   diff1.scale(numer / denom);                     // diff1 = diff1 * numer / denom
-  this->copy(v1);
+  for (int i = 0; i < 3; ++i)
+  {
+    e[i] = v1[i];
+  }
   this->add(diff1);                               // this = v1 + diff1
   return true;
 }
@@ -524,10 +517,10 @@ bool vvBaseVector3<T>::isectPlaneRay(const vvBaseVector3<T>& n,
   // Check for intersection with straight line:
   if (this->isectPlaneLine(n, p, v1, v2) == false) return false;
 
-  diff1.copy(v2);
+  diff1 = vvBaseVector3<T>(v2);
   diff1.sub(v1);                                  // diff1 = v2 - v1
 
-  diff2.copy(*this);
+  diff2 = vvBaseVector3<T>(*this);
   diff2.sub(v1);                                  // diff2 = this - v1
 
   // Find out how to represent diff2 by diff1 times a factor:
@@ -661,13 +654,13 @@ int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>& cylBase,
   int       i;                                    // counter
 
   // Compute normalized direction vectors:
-  cylAxisN.copy(cylAxis);
+  cylAxisN = vvBaseVector3<T>(cylAxis);
   cylAxisN.normalize();
-  rayDirN.copy(rayDir);
+  rayDirN = vvBaseVector3<T>(rayDir);
   rayDirN.normalize();
 
   // Compute distance between closest point on line and cylinder axis:
-  ortho.copy(rayDir);
+  ortho = vvBaseVector3<T>(rayDir);
   ortho.cross(cylAxis);
   len = ortho.length();
   ortho.normalize();
@@ -676,7 +669,7 @@ int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>& cylBase,
     this->zero();
     return 0;
   }
-  diff.copy(rayBase);
+  diff = vvBaseVector3<T>(rayBase);
   diff.sub(cylBase);
   dist = (T)fabs(static_cast<double>(diff.dot(ortho)));
   if (dist > cylRadius)                           // do the ray and the cylinder intersect at all?
@@ -686,10 +679,10 @@ int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>& cylBase,
   }
 
   // Find point on line closest to cylinder axis:
-  temp.copy(diff);
+  temp = vvBaseVector3<T>(diff);
   temp.cross(cylAxisN);
   t = -1.0f * temp.dot(ortho) / len;
-  closest.copy(rayDirN);
+  closest = vvBaseVector3<T>(rayDirN);
   closest.scale(t);
   closest.add(rayBase);
 
@@ -737,15 +730,15 @@ bool vvBaseVector3<T>::isectRayTriangle(const vvBaseVector3<T>& rayPt,
   vvBaseVector3 sideNormal;                       // normal vector made from one triangle side and the triangle normal
 
   // Compute second point on ray:
-  rayPt2.copy(rayPt);
+  rayPt2 = vvBaseVector3<T>(rayPt);
   rayPt2.add(rayDir);
 
   // Compute triangle normal:
-  diff1.copy(tri2);
+  diff1 = vvBaseVector3<T>(tri2);
   diff1.sub(tri1);
-  diff2.copy(tri3);
+  diff2 = vvBaseVector3<T>(tri3);
   diff2.sub(tri1);
-  normal.copy(diff1);
+  normal = vvBaseVector3<T>(diff1);
   normal.cross(diff2);
   normal.normalize();
 
@@ -806,16 +799,19 @@ T vvBaseVector3<T>::isectLineLine(const vvBaseVector3<T>& pt1,
     vvPlane plane(p1, v1, v2);
 
     // Compute shortest distance between lines:
-    this->copy(p2);
+    for (int i = 0; i < 3; ++i)
+    {
+      e[i] = p2[i];
+    }
     dist = this->distPointPlane(plane.normal, plane.point);
 
     return dist;
   */
-  p1.copy(pt1);
-  p2.copy(pt1);
+  p1 = vvBaseVector3<T>(pt1);
+  p2 = vvBaseVector3<T>(pt1);
   p2.add(v1);
-  p3.copy(pt2);
-  p4.copy(pt2);
+  p3 = vvBaseVector3<T>(pt2);
+  p4 = vvBaseVector3<T>(pt2);
   p4.add(v2);
 
   p13.e[0] = p1.e[0] - p3.e[0];
@@ -856,7 +852,10 @@ T vvBaseVector3<T>::isectLineLine(const vvBaseVector3<T>& pt1,
   pb.e[1] = p3.e[1] + mub * p43.e[1];
   pb.e[2] = p3.e[2] + mub * p43.e[2];
 
-  this->copy(pa);
+  for (int i = 0; i < 3; ++i)
+  {
+    e[i] = pa[i];
+  }
 
   return(pa.distance(pb));
 }
@@ -889,10 +888,10 @@ bool vvBaseVector3<T>::isSameSideLine2D(const vvBaseVector3<T>& p1,
   diff2.e[1] = p2.e[1] - a.e[1];
   cp1.e[0] = b.e[0] - a.e[0];
   cp1.e[1] = b.e[1] - a.e[1];
-  cp2.copy(cp1);
+  cp2 = vvBaseVector3<T>(cp1);
   cp1.cross(diff1);
   cp2.cross(diff2);
-  dp.copy(cp1);
+  dp = vvBaseVector3<T>(cp1);
   if (dp.dot(cp2) >= 0.0f) return true;
   else return false;
 }
@@ -936,7 +935,7 @@ void vvBaseVector3<T>::cyclicSort(const int numVectors,
   // Compute difference vectors:
   for (int i=0; i<numVectors-1; ++i)
   {
-    diff[i].copy(this[i+1]);
+    diff[i] = vvBaseVector3<T>(this[i+1]);
     diff[i].sub(this[0]);
   }
 
@@ -949,7 +948,7 @@ void vvBaseVector3<T>::cyclicSort(const int numVectors,
     {
       for (int j=i+1; j<numVectors-1 && swapped==false; ++j)
       {
-        normal.copy(diff[i]);
+        normal = vvBaseVector3<T>(diff[i]);
         normal.cross(diff[i+1]);
         normal.normalize();
         if (normal.dot(axis) < 0.0f)              // do normals point into opposite directions?
@@ -1268,17 +1267,6 @@ void vvBaseVector4<T>::multiply(const vvMatrix& m)
     for(col=0; col<4; ++col)
       e[row] += m(row, col) * bak.e[col];
   }
-}
-
-//----------------------------------------------------------------------------
-/// Copy a vector
-template <typename T>
-void vvBaseVector4<T>::copy(const vvBaseVector4<T>& v)
-{
-  e[0] = v.e[0];
-  e[1] = v.e[1];
-  e[2] = v.e[2];
-  e[3] = v.e[3];
 }
 
 //----------------------------------------------------------------------------

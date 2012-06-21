@@ -282,7 +282,7 @@ void vvParBrickRend::renderVolumeGL()
     }
 
     vvMatrix invMV;
-    invMV.copy(mv);
+    invMV = mv;
     invMV.invert();
 
     // find eye position:
