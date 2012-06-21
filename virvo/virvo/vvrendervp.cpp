@@ -251,12 +251,12 @@ void vvRenderVP::updateModelviewMatrix()
   m.copy(&mv);               // copy model view matrix
 
   // Invert x axis rotation:
-  m.e[1][2] = -m.e[1][2];
-  m.e[2][1] = -m.e[2][1];
+  m(1, 2) = -m(1, 2);
+  m(2, 1) = -m(2, 1);
 
   // Invert y axis rotation:
-  m.e[0][2] = -m.e[0][2];
-  m.e[2][0] = -m.e[2][0];
+  m(0, 2) = -m(0, 2);
+  m(2, 0) = -m(2, 0);
 
   m.get(&vpm[0][0]);
   vpCurrentMatrix(vpc, VP_MODEL);
