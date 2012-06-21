@@ -91,7 +91,7 @@ class vvCanvas
     void mouseReleased(int, int, int);
     void repeatMouseDrag();
     void resize(int, int);
-    void transformObject(vvMatrix*);
+    void transformObject(const vvMatrix&);
     void setDoubleBuffering(bool);
     bool getDoubleBuffering();
     void setStereoMode(StereoType);

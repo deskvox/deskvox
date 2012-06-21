@@ -215,7 +215,7 @@ bool vvObjView::loadCamera(const char* filename)
           }
         }
       }
-      _camera.copy(&camera);
+      _camera = camera;
     }
     else 
     {

@@ -596,7 +596,7 @@ void VVClippingDialog::updateClipParameters()
 
   normal.set(x, y, z);
   normal.normalize();
-  point.copy(&normal);
+  point = normal;
   point.scale(d);
   _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_POINT, point);
   _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_NORMAL, normal);
@@ -612,9 +612,9 @@ void VVClippingDialog::updateValues()
   _opaqueCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_OPAQUE).asBool());
   _perimeterCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PERIMETER).asBool());
 
-  _xSlider->setValue(normal.e[0]);
-  _ySlider->setValue(normal.e[1]);
-  _zSlider->setValue(normal.e[2]);
+  _xSlider->setValue(normal[0]);
+  _ySlider->setValue(normal[1]);
+  _zSlider->setValue(normal[2]);
   if (_enableCheck->getCheck())
   {
     _xSlider->enable();
@@ -763,9 +763,9 @@ void VVROIDialog::updateROIParameters()
   vvVector3 pos;
   vvVector3 size;
 
-  pos.e[0] = _xSlider->getValue();
-  pos.e[1] = _ySlider->getValue();
-  pos.e[2] = _zSlider->getValue();
+  pos[0] = _xSlider->getValue();
+  pos[1] = _ySlider->getValue();
+  pos[2] = _zSlider->getValue();
   _canvas->_renderer->setProbePosition(&pos);
 
   size.set(_sizeSliderX->getValue(), _sizeSliderY->getValue(), _sizeSliderZ->getValue());

@@ -352,19 +352,19 @@ bool vvMovie::setStep(int step)
           axis[0] = axis[1] = axis[2] = 0.0f;
           axis[int(steps->getData()->param[0])] = steps->getData()->param[1];
           m.translate(axis[0], axis[1], axis[2]);
-          _canvas->transformObject(&m);
+          _canvas->transformObject(m);
           break;
         case ROT:
           m.identity();
           axis[0] = axis[1] = axis[2] = 0.0f;
           axis[int(steps->getData()->param[0])] = 1.0f;
           m.rotate(steps->getData()->param[1] * float(TS_PI) / 180.0f, axis[0], axis[1], axis[2]);
-          _canvas->transformObject(&m);
+          _canvas->transformObject(m);
           break;
         case SCALE:
           m.identity();
           m.scale(steps->getData()->param[0]);
-          _canvas->transformObject(&m);
+          _canvas->transformObject(m);
           break;
         case TIMESTEP:
           timestep = int(steps->getData()->param[0]);
@@ -404,7 +404,7 @@ bool vvMovie::setStep(int step)
             _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_MODE, true);
             vvVector3 normal(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
             normal.normalize();
-            vvVector3 point(&normal);
+            vvVector3 point = normal;
             point.scale(steps->getData()->param[3]);
             _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_NORMAL, normal);
             _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_POINT, point);
@@ -417,9 +417,9 @@ bool vvMovie::setStep(int step)
           point = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_POINT);
           normal.add(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
           normal.normalize();
-          vvVector3 diff(&normal);
+          vvVector3 diff(normal);
           diff.scale(steps->getData()->param[3]);
-          point.add(&diff);
+          point.add(diff);
           _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_NORMAL, normal);
           _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_POINT, point); 
           break;
