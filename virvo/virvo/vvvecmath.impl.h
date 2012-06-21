@@ -461,9 +461,9 @@ void vvBaseVector3<T>::print(const char* text) const
 template <typename T>
 void vvBaseVector3<T>::getRow(const vvMatrix* m, const int row)
 {
-  e[0] = m->e[row][0];
-  e[1] = m->e[row][1];
-  e[2] = m->e[row][2];
+  e[0] = (*m)(row, 0);
+  e[1] = (*m)(row, 1);
+  e[2] = (*m)(row, 2);
 }
 
 //----------------------------------------------------------------------------
@@ -474,9 +474,9 @@ void vvBaseVector3<T>::getRow(const vvMatrix* m, const int row)
 template <typename T>
 void vvBaseVector3<T>::getColumn(const vvMatrix* m, const int col)
 {
-  e[0] = m->e[0][col];
-  e[1] = m->e[1][col];
-  e[2] = m->e[2][col];
+  e[0] = (*m)(0, col);
+  e[1] = (*m)(1, col);
+  e[2] = (*m)(2, col);
 }
 
 //----------------------------------------------------------------------------
