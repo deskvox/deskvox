@@ -342,12 +342,12 @@ vvVecmath::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
                                                         float& zx, float& zy, float& zz) const
 {
   vvMatrix invMV;
-  invMV.copy(&mv);
+  invMV.copy(mv);
   invMV.invert();
 
   vvVector3 eye;
   getEyePosition(&eye);
-  eye.multiply(&invMV);
+  eye.multiply(invMV);
 
   vvVector3 normal;
   vvVector3 origin;
@@ -401,27 +401,27 @@ void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
   // then use viewDir as the normal.
   if (_clipMode)
   {
-    normal.copy(&_clipNormal);
+    normal.copy(_clipNormal);
   }
   else if (isOrtho || (viewDir[0] == 0.0f && viewDir[1] == 0.0f && viewDir[2] == 0.0f))
   {
     // Draw slices parallel to projection plane:
     normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
-    normal.multiply(&invMV);
+    normal.multiply(invMV);
     origin.zero();
-    origin.multiply(&invMV);
-    normal.sub(&origin);
+    origin.multiply(invMV);
+    normal.sub(origin);
   }
   else if (!_isROIUsed && isInVolume(&eye))
   {
     // Draw slices perpendicular to viewing direction:
-    normal.copy(&viewDir);
+    normal.copy(viewDir);
     normal.negate();                              // viewDir points away from user, the normal should point towards them
   }
   else
   {
     // Draw slices perpendicular to line eye->object:
-    normal.copy(&objDir);
+    normal.copy(objDir);
     normal.negate();
   }
 
@@ -439,21 +439,21 @@ void vvRenderer::getShadingNormal(vvVector3& normal, vvVector3& origin,
   {
     // Draw slices parallel to projection plane:
     normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
-    normal.multiply(&invMV);
+    normal.multiply(invMV);
     origin.zero();
-    origin.multiply(&invMV);
-    normal.sub(&origin);
+    origin.multiply(invMV);
+    normal.sub(origin);
   }
   else if (!_isROIUsed && isInVolume(&eye))
   {
     // Draw slices perpendicular to viewing direction:
-    normal.copy(&viewDir);
+    normal.copy(viewDir);
     normal.negate();                              // viewDir points away from user, the normal should point towards them
   }
   else
   {
     // Draw slices perpendicular to line eye->object:
-    normal.copy(&objDir);
+    normal.copy(objDir);
     normal.negate();
   }
 
@@ -495,7 +495,7 @@ void vvRenderer::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, 
   }
   else                                            // probe mode off
   {
-    probeSizeObj.copy(&size);
+    probeSizeObj.copy(size);
     probeMin = -size2;
     probeMax = size2;
   }
@@ -748,7 +748,7 @@ void vvRenderer::renderCoordinates()
   }
   mv.translate(0.8f * half[0], -0.8f * half[1], 0.0f);
   mv.scale(0.2f, 0.2f, 0.2f);
-  vvGLTools::setModelviewMatrix(&mv);
+  vvGLTools::setModelviewMatrix(mv);
 
   // Draw axis cross:
   glBegin(GL_LINES);
@@ -901,7 +901,7 @@ void vvRenderer::renderFPSDisplay()
   @param oPos   position of boundary box center [object coordinates]
 @param color  bounding box color (R,G,B) [0..1], array of 3 floats expected
 */
-void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, const vvColor* color) const
+void vvRenderer::drawBoundingBox(const vvVector3& oSize, const vvVector3& oPos, const vvColor& color) const
 {
   vvVector3 vertvec[8];                           // vertex vectors in object space
   GLboolean glsLighting;                          // stores GL_LIGHTING
@@ -943,10 +943,10 @@ void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, 
   // Translate boundaries by volume position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();                                 // save modelview matrix
-  glTranslatef((*oPos)[0], (*oPos)[1], (*oPos)[2]);
+  glTranslatef(oPos[0], oPos[1], oPos[2]);
 
   // Set box color:
-  glColor4f((*color)[0], (*color)[1], (*color)[2], 1.0);
+  glColor4f(color[0], color[1], color[2], 1.0);
 
   // Disable lighting:
   glDisable(GL_LIGHTING);
@@ -992,8 +992,8 @@ void vvRenderer::drawBoundingBox(const vvVector3* oSize, const vvVector3* oPos, 
   @param oNorm   normal of plane [object coordinates]
   @param color   box color (R,G,B) [0..1], array of 3 floats expected
 */
-void vvRenderer::drawPlanePerimeter(const vvVector3* oSize, const vvVector3* oPos,
-                                    const vvVector3* oPlane, const vvVector3* oNorm, const vvColor* color) const
+void vvRenderer::drawPlanePerimeter(const vvVector3& oSize, const vvVector3& oPos,
+                                    const vvVector3& oPlane, const vvVector3& oNorm, const vvColor& color) const
 {
   GLboolean glsLighting;                          // stores GL_LIGHTING
   GLfloat   glsColor[4];                          // stores GL_CURRENT_COLOR
@@ -1017,20 +1017,20 @@ void vvRenderer::drawPlanePerimeter(const vvVector3* oSize, const vvVector3* oPo
   // Translate by volume position:
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();                                 // save modelview matrix
-  glTranslatef((*oPos)[0], (*oPos)[1], (*oPos)[2]);
+  glTranslatef(oPos[0], oPos[1], oPos[2]);
 
   // Set color:
-  glColor4f((*color)[0], (*color)[1], (*color)[2], 1.0);
+  glColor4f(color[0], color[1], color[2], 1.0);
 
   // Disable lighting:
   glDisable(GL_LIGHTING);
 
   glLineWidth(3.0f);
 
-  boxMin.set((*oPos)[0] - (*oSize)[0] * 0.5f, (*oPos)[1] - (*oSize)[1] * 0.5f, (*oPos)[2] - (*oSize)[2] * 0.5f);
-  boxMax.set((*oPos)[0] + (*oSize)[0] * 0.5f, (*oPos)[1] + (*oSize)[1] * 0.5f, (*oPos)[2] + (*oSize)[2] * 0.5f);
+  boxMin.set(oPos[0] - oSize[0] * 0.5f, oPos[1] - oSize[1] * 0.5f, oPos[2] - oSize[2] * 0.5f);
+  boxMax.set(oPos[0] + oSize[0] * 0.5f, oPos[1] + oSize[1] * 0.5f, oPos[2] + oSize[2] * 0.5f);
 
-  isectCnt = isect->isectPlaneCuboid(oNorm, oPlane, &boxMin, &boxMax);
+  isectCnt = isect->isectPlaneCuboid(oNorm, oPlane, boxMin, boxMax);
 
   if (isectCnt>1)
   {
@@ -1072,7 +1072,7 @@ bool vvRenderer::instantClassification() const
 
 //----------------------------------------------------------------------------
 /// Set volume position.
-void vvRenderer::setPosition(const vvVector3* p)
+void vvRenderer::setPosition(const vvVector3& p)
 {
   vvDebugMsg::msg(3, "vvRenderer::setPosition()");
   vd->pos.copy(p);
@@ -1083,7 +1083,7 @@ void vvRenderer::setPosition(const vvVector3* p)
 void vvRenderer::getPosition(vvVector3* p)
 {
   vvDebugMsg::msg(3, "vvRenderer::getPosition()");
-  p->copy(&vd->pos);
+  p->copy(vd->pos);
 }
 
 //----------------------------------------------------------------------------
@@ -1091,14 +1091,14 @@ void vvRenderer::getPosition(vvVector3* p)
   The vector originates in the user's eye and points along the
   viewing direction.
 */
-void vvRenderer::setViewingDirection(const vvVector3*)
+void vvRenderer::setViewingDirection(const vvVector3&)
 {
   vvDebugMsg::msg(3, "vvRenderer::setViewingDirection()");
 }
 
 //----------------------------------------------------------------------------
 /// Set the direction from the user to the object.
-void vvRenderer::setObjectDirection(const vvVector3*)
+void vvRenderer::setObjectDirection(const vvVector3&)
 {
   vvDebugMsg::msg(3, "vvRenderer::setObjectDirection()");
 }
@@ -1174,7 +1174,7 @@ void vvRenderer::getEyePosition(vvVector3* eye) const
   vvGLTools::getProjectionMatrix(&invPM);
   invPM.invert();
   projEye.set(0.0f, 0.0f, -1.0f, 0.0f);
-  projEye.multiply(&invPM);
+  projEye.multiply(invPM);
   eye->copy(&projEye);
 }
 
@@ -1192,9 +1192,9 @@ bool vvRenderer::isInVolume(const vvVector3* point) const
 
   vvDebugMsg::msg(3, "vvRenderer::isInVolume()");
 
-  pos.copy(&vd->pos);
+  pos.copy(vd->pos);
   size = vd->getSize();
-  size2.copy(&size);
+  size2.copy(size);
   size2.scale(0.5f);
   for (i=0; i<3; ++i)
   {
@@ -1224,9 +1224,9 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   vvDebugMsg::msg(3, "vvRenderer::getAlphaValue()");
 
   size = vd->getSize();
-  size2.copy(&size);
+  size2.copy(size);
   size2.scale(0.5f);
-  pos.copy(&vd->pos);
+  pos.copy(vd->pos);
 
   for (i=0; i<3; ++i)
   {

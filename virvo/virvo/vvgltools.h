@@ -92,8 +92,8 @@ class VIRVOEXPORT vvGLTools
     static vvVector4 queryClearColor();
     static void getModelviewMatrix(vvMatrix*);
     static void getProjectionMatrix(vvMatrix*);
-    static void setModelviewMatrix(const vvMatrix*);
-    static void setProjectionMatrix(const vvMatrix*);
+    static void setModelviewMatrix(const vvMatrix& mv);
+    static void setProjectionMatrix(const vvMatrix& pr);
     static void getClippingPlanes(vvPlane& znear, vvPlane& zfar);
     static vvVector3 project(const vvVector3& obj);
     static vvVector3 unProject(const vvVector3& win);

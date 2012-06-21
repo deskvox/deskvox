@@ -503,21 +503,21 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     texSize[i] = size[i] * (float)texels[i] / (float)vd->vox[i];
     size2[i]   = 0.5f * size[i];
   }
-  pos.copy(&vd->pos);
+  pos.copy(vd->pos);
 
   // Calculate inverted modelview matrix:
-  invMV.copy(mv);
+  invMV.copy(*mv);
   invMV.invert();
 
   // Find eye position:
   getEyePosition(&eye);
-  eye.multiply(&invMV);
+  eye.multiply(invMV);
 
   if (_isROIUsed)
   {
     // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj.copy(&_roiPos);
-    probePosObj.sub(&pos);                        // eliminate object position from probe position
+    probePosObj.copy(_roiPos);
+    probePosObj.sub(pos);                        // eliminate object position from probe position
 
     // Compute probe min/max coordinates in object space:
     for (i=0; i<3; ++i)
@@ -545,9 +545,9 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   }
   else                                            // probe mode off
   {
-    probeSizeObj.copy(&size);
+    probeSizeObj.copy(size);
     probeMin.set(-size2[0], -size2[1], -size2[2]);
-    probeMax.copy(&size2);
+    probeMax.copy(size2);
     probePosObj.zero();
   }
 
@@ -578,16 +578,16 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   if (_sliceOrientation==VV_CLIPPLANE ||
      (_sliceOrientation==VV_VARIABLE && _clipMode))
   {
-    normal.copy(&_clipNormal);
+    normal.copy(_clipNormal);
   }
   else if(_sliceOrientation==VV_VIEWPLANE)
   {
     normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
     vvMatrix invPM;
-    invPM.copy(&pm);
+    invPM.copy(pm);
     invPM.invert();
-    normal.multiply(&invPM);
-    normal.multiply(&invMV);
+    normal.multiply(invPM);
+    normal.multiply(invMV);
     normal.negate();
   }
   else if (_sliceOrientation==VV_ORTHO ||
@@ -596,22 +596,22 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   {
     // Draw slices parallel to projection plane:
     normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
-    normal.multiply(&invMV);
+    normal.multiply(invMV);
     origin.zero();
-    origin.multiply(&invMV);
-    normal.sub(&origin);
+    origin.multiply(invMV);
+    normal.sub(origin);
   }
   else if (_sliceOrientation==VV_VIEWDIR || 
           (_sliceOrientation==VV_VARIABLE && (!_isROIUsed && isInVolume(&eye))))
   {
     // Draw slices perpendicular to viewing direction:
-    normal.copy(&viewDir);
+    normal.copy(viewDir);
     normal.negate();                              // viewDir points away from user, the normal should point towards them
   }
   else
   {
     // Draw slices perpendicular to line eye->object:
-    normal.copy(&objDir);
+    normal.copy(objDir);
     normal.negate();
   }
 
@@ -651,13 +651,13 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
 
   //vvDebugMsg::msg(1, "voxelDistance, sliceDistance, thickness: ", voxelDistance, sliceDistance, thickness, 1.0f/thickness);
 
-  delta.copy(&normal);
+  delta.copy(normal);
   delta.scale(sliceDistance);
 
   // Compute farthest point to draw texture at:
-  farthest.copy(&delta);
+  farthest.copy(delta);
   farthest.scale((float)(numSlices - 1) / -2.0f);
-  farthest.add(&probePosObj);
+  farthest.add(probePosObj);
 
   if (_clipMode)                     // clipping plane present?
   {
@@ -666,26 +666,26 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     // due to the automatic opacity correction.)
     // First find point on clipping plane which is on a line perpendicular
     // to clipping plane and which traverses the origin:
-    temp.copy(&delta);
+    temp.copy(delta);
     temp.scale(-0.5f);
-    farthest.add(&temp);                          // add a half delta to farthest
-    clipPosObj.copy(&_clipPoint);
-    clipPosObj.sub(&pos);
-    temp.copy(&probePosObj);
-    temp.add(&normal);
-    normClipPoint.isectPlaneLine(&normal, &clipPosObj, &probePosObj, &temp);
-    maxDist = farthest.distance(&normClipPoint);
+    farthest.add(temp);                          // add a half delta to farthest
+    clipPosObj.copy(_clipPoint);
+    clipPosObj.sub(pos);
+    temp.copy(probePosObj);
+    temp.add(normal);
+    normClipPoint.isectPlaneLine(normal, clipPosObj, probePosObj, temp);
+    maxDist = farthest.distance(normClipPoint);
     numSlices = (int)(maxDist / delta.length()) + 1;
-    temp.copy(&delta);
+    temp.copy(delta);
     temp.scale((float)(1 - numSlices));
-    farthest.copy(&normClipPoint);
-    farthest.add(&temp);
+    farthest.copy(normClipPoint);
+    farthest.add(temp);
     if (_clipSingleSlice)
     {
       // Compute slice position:
-      temp.copy(&delta);
+      temp.copy(delta);
       temp.scale((float)(numSlices-1));
-      farthest.add(&temp);
+      farthest.add(temp);
       numSlices = 1;
 
       // Make slice opaque if possible:
@@ -703,25 +703,25 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   int j,k;                                        // counters
   int drawn = 0;                                  // counter for drawn textures
   vvVector3 deltahalf;
-  deltahalf.copy(&delta);
+  deltahalf.copy(delta);
   deltahalf.scale(0.5f);
 
   // Relative viewing position
   vvVector3 releye;
-  releye.copy(&eye);
-  releye.sub(&pos);
+  releye.copy(eye);
+  releye.sub(pos);
 
   // Volume render a 3D texture:
   glEnable(GL_TEXTURE_3D_EXT);
   glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
-  texPoint.copy(&farthest);
+  texPoint.copy(farthest);
   for (i=0; i<numSlices; ++i)                     // loop thru all drawn textures
   {
     // Search for intersections between texture plane (defined by texPoint and
     // normal) and texture object (0..1):
-    isectCnt = isect->isectPlaneCuboid(&normal, &texPoint, &probeMin, &probeMax);
+    isectCnt = isect->isectPlaneCuboid(normal, texPoint, probeMin, probeMax);
 
-    texPoint.add(&delta);
+    texPoint.add(delta);
 
     if (isectCnt<3) continue;                     // at least 3 intersections needed for drawing
 
@@ -731,7 +731,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
 
     // Put the intersecting 3 to 6 vertices in cyclic order to draw adjacent
     // and non-overlapping triangles:
-    isect->cyclicSort(isectCnt, &normal);
+    isect->cyclicSort(isectCnt, normal);
 
     // Generate vertices in texture coordinates:
 	for (j=0; j<isectCnt; ++j)
@@ -786,16 +786,16 @@ void vvTexMultiRend::renderVolumeGL()
   // Draw boundary lines (must be done before setGLenvironment()):
   if (_boundaries)
   {
-    drawBoundingBox(&size, &vd->pos, &_boundColor);
+    drawBoundingBox(size, vd->pos, _boundColor);
   }
   if (_isROIUsed)
   {
     probeSizeObj.set(size[0] * _roiSize[0], size[1] * _roiSize[1], size[2] * _roiSize[2]);
-    drawBoundingBox(&probeSizeObj, &_roiPos, &_probeColor);
+    drawBoundingBox(probeSizeObj, _roiPos, _probeColor);
   }
   if (_clipMode && _clipPerimeter)
   {
-    drawPlanePerimeter(&size, &vd->pos, &_clipPoint, &_clipNormal, &_clipColor);
+    drawPlanePerimeter(size, vd->pos, _clipPoint, _clipNormal, _clipColor);
   }
 
   //setGLenvironment();
@@ -813,15 +813,15 @@ void vvTexMultiRend::renderVolumeGL()
   vvGLTools::getModelviewMatrix(&mv);
 
   // Transform 4 point vectors with the modelview matrix:
-  origin.multiply(&mv);
-  xAxis.multiply(&mv);
-  yAxis.multiply(&mv);
-  zAxis.multiply(&mv);
+  origin.multiply(mv);
+  xAxis.multiply(mv);
+  yAxis.multiply(mv);
+  zAxis.multiply(mv);
 
   // Generate coordinate system base vectors from those vectors:
-  xAxis.sub(&origin);
-  yAxis.sub(&origin);
-  zAxis.sub(&origin);
+  xAxis.sub(origin);
+  yAxis.sub(origin);
+  zAxis.sub(origin);
 
   xAxis.normalize();
   yAxis.normalize();
@@ -1028,7 +1028,7 @@ void vvTexMultiRend::enableLUTMode(vvShaderProgram* glslShader)
   in 3D texturing mode if the user is inside the volume.
   @param vd  viewing direction in object coordinates
 */
-void vvTexMultiRend::setViewingDirection(const vvVector3* vd)
+void vvTexMultiRend::setViewingDirection(const vvVector3& vd)
 {
   vvDebugMsg::msg(3, "vvTexMultiRend::setViewingDirection()");
   viewDir.copy(vd);
@@ -1038,12 +1038,12 @@ void vvTexMultiRend::setViewingDirection(const vvVector3* vd)
 /** Set the direction from the viewer to the object.
   This information is needed to correctly orientate the texture slices
   in 3D texturing mode if the viewer is outside of the volume.
-  @param vd  object direction in object coordinates
+  @param od  object direction in object coordinates
 */
-void vvTexMultiRend::setObjectDirection(const vvVector3* vd)
+void vvTexMultiRend::setObjectDirection(const vvVector3& od)
 {
   vvDebugMsg::msg(3, "vvTexMultiRend::setObjectDirection()");
-  objDir.copy(vd);
+  objDir.copy(od);
 }
 
 //----------------------------------------------------------------------------
@@ -1258,12 +1258,12 @@ void vvTexMultiRend::preRendering()
   vvVector3 planeNormal(0.0f, 0.0f, -1.0f);                 // (0|0|1) is normal on projection plane
   vvMatrix invPM(pm);
   invPM.invert();
-  planeNormal.multiply(&invPM);
+  planeNormal.multiply(invPM);
 
   // Get OpenGL modelview matrix:
   vvGLTools::getModelviewMatrix(&tr.mv);
-  tr.mv.translate(&translation);
-  tr.mv.multiplyPre(&rotation);
+  tr.mv.translate(translation);
+  tr.mv.multiplyPre(rotation);
   tr.mv.getGL(tr.glMV);
 
   // drawing bounding boxes
@@ -1272,7 +1272,7 @@ void vvTexMultiRend::preRendering()
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadMatrixf(tr.glMV);
-        drawBoundingBox(&size, &vd->pos, &_boundColor);
+        drawBoundingBox(size, vd->pos, _boundColor);
 	glPopMatrix();
   }
 
@@ -1289,19 +1289,19 @@ void vvTexMultiRend::preRendering()
         texSize[i] = size[i] * (float)texels[i] / (float)vd->vox[i];
         tr.size2[i]   = 0.5f * size[i];
   }
-  pos.copy(&vd->pos);
+  pos.copy(vd->pos);
 
   // Calculate inverted modelview matrix:
-  invMV.copy(&tr.mv);
+  invMV.copy(tr.mv);
   invMV.invert();
 
   // Find eye position:
   getEyePosition(&eye);
-  eye.multiply(&invMV);
+  eye.multiply(invMV);
 
-  probeSizeObj.copy(&size);
+  probeSizeObj.copy(size);
   tr.probeMin.set(-tr.size2[0], -tr.size2[1], -tr.size2[2]);
-  tr.probeMax.copy(&tr.size2);
+  tr.probeMax.copy(tr.size2);
   probePosObj.zero();
 
   // Initialize texture counters
@@ -1323,7 +1323,7 @@ void vvTexMultiRend::preRendering()
 
   // Compute distance vector between textures:
   tr.normal.copy(planeNormal);
-  tr.normal.multiply(&invMV);
+  tr.normal.multiply(invMV);
   tr.normal.normalize();
 
   // compute number of slices to draw
@@ -1365,15 +1365,15 @@ void vvTexMultiRend::preRendering()
 
   //vvDebugMsg::msg(1, "voxelDistance, sliceDistance, thickness: ", voxelDistance, sliceDistance, thickness, 1.0f/thickness);
 
-  tr.delta.copy(&tr.normal);
+  tr.delta.copy(tr.normal);
   tr.delta.scale(sliceDistance);
 
   // Compute farthest point to draw texture at:
-  tr.farthest.copy(&tr.delta);
+  tr.farthest.copy(tr.delta);
   tr.farthest.scale((float)(numSlices - 1) / -2.0f);
-  tr.farthest.add(&probePosObj);
+  tr.farthest.add(probePosObj);
   tr.farWS.copy(tr.farthest);
-  tr.farWS.multiply(&tr.mv);
+  tr.farWS.multiply(tr.mv);
 }
 
 
@@ -1403,18 +1403,18 @@ void vvTexMultiRend::renderMultipleVolume()
 
   // Search for intersections between texture plane (defined by texPoint and
   // normal) and texture object (0..1):
-  int isectCnt = isect->isectPlaneCuboid(&tr.normal, &tr.farthest, &tr.probeMin, &tr.probeMax);
+  int isectCnt = isect->isectPlaneCuboid(tr.normal, tr.farthest, tr.probeMin, tr.probeMax);
 
-  tr.farthest.add(&tr.delta);
+  tr.farthest.add(tr.delta);
 
   tr.farWS.copy(tr.farthest);
-  tr.farWS.multiply(&tr.mv);
+  tr.farWS.multiply(tr.mv);
 
   if (isectCnt<3) return;                     // at least 3 intersections needed for drawing
 
   // Put the intersecting 3 to 6 vertices in cyclic order to draw adjacent
   // and non-overlapping triangles:
-  isect->cyclicSort(isectCnt, &tr.normal);
+  isect->cyclicSort(isectCnt, tr.normal);
 
   // Generate vertices in texture coordinates:
 

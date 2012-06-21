@@ -176,7 +176,7 @@ void vvSoftVR::renderVolumeGL()
 
    if (_boundaries)
                                                   // draw back boundaries
-      drawBoundingBox(&_size, &vd->pos, &_boundColor /*FIXME:, false*/);
+      drawBoundingBox(_size, vd->pos, _boundColor /*FIXME:, false*/);
 
    if (warpMode==SOFTWARE)
    {
@@ -194,7 +194,7 @@ void vvSoftVR::renderVolumeGL()
 
    if (_boundaries)
                                                   // draw front boundaries
-      drawBoundingBox(&_size, &vd->pos, &_boundColor /*FIXME:, true*/);
+      drawBoundingBox(_size, vd->pos, _boundColor /*FIXME:, true*/);
 
    if (_timing)
    {
@@ -262,8 +262,8 @@ void vvSoftVR::compositeOutline()
       vertex[i][1] = (float)((i/2) % 2);
       vertex[i][2] = (float)((i/4) % 2);
       vertex[i].sub(0.5f);                        // vertices become -0.5 or +0.5
-      vertex[i].scale(&_size);                     // vertices are scaled to correct object space coordinates
-      vertex[i].multiply(&oiShear);               // shear and project vertex to intermediate image space
+      vertex[i].scale(_size);                     // vertices are scaled to correct object space coordinates
+      vertex[i].multiply(oiShear);                // shear and project vertex to intermediate image space
    }
 
    // Draw lines:
@@ -622,8 +622,8 @@ void vvSoftVR::findViewMatrix()
    vvGLTools::getProjectionMatrix(&pm);
 
    // Compute view matrix:
-   owView.copy(&mv);
-   owView.multiplyPost(&pm);
+   owView.copy(mv);
+   owView.multiplyPost(pm);
    if (vvDebugMsg::isActive(3)) owView.print("owView");
 }
 
@@ -764,9 +764,9 @@ void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
    }
 
    // Project bottom left voxel of this slice to intermediate image:
-   start->multiply(&oiShear);
+   start->multiply(oiShear);
    if (end)
-      end->multiply(&oiShear);
+      end->multiply(oiShear);
 }
 
 
@@ -821,23 +821,23 @@ void vvSoftVR::findClipPlaneEquation()
    }
 
    // Find two points determining the plane:
-   planePoint.copy(&_clipPoint);
-   normalPoint.copy(&_clipPoint);
-   normalPoint.add(&_clipNormal);
+   planePoint.copy(_clipPoint);
+   normalPoint.copy(_clipPoint);
+   normalPoint.add(_clipNormal);
 
    // Transfer points to voxel coordinate system:
-   planePoint.multiply(&oxConv);
-   normalPoint.multiply(&oxConv);
+   planePoint.multiply(oxConv);
+   normalPoint.multiply(oxConv);
 
    // Permute the points:
-   planePoint.multiply(&xxPerm);
-   normalPoint.multiply(&xxPerm);
+   planePoint.multiply(xxPerm);
+   normalPoint.multiply(xxPerm);
 
    // Compute plane equation:
-   xClipNormal.copy(&normalPoint);
-   xClipNormal.sub(&planePoint);
+   xClipNormal.copy(normalPoint);
+   xClipNormal.sub(planePoint);
    xClipNormal.normalize();
-   xClipDist = xClipNormal.dot(&planePoint);
+   xClipDist = xClipNormal.dot(planePoint);
 }
 
 
@@ -914,7 +914,7 @@ void vvSoftVR::getIntermediateImage(vvImage* image)
 */
 void vvSoftVR::getWarpMatrix(vvMatrix* warp)
 {
-   warp->copy(&iwWarp);
+   warp->copy(iwWarp);
 }
 
 
@@ -967,8 +967,8 @@ bool vvSoftVR::prepareRendering()
    trans.identity();
    trans.translate(vd->pos[0], vd->pos[1], vd->pos[2]);
    vvGLTools::getModelviewMatrix(&mv);
-   mv.multiplyPre(&trans);
-   vvGLTools::setModelviewMatrix(&mv);
+   mv.multiplyPre(trans);
+   vvGLTools::setModelviewMatrix(mv);
 
    // Make sure a parallel projection matrix is used:
    vvGLTools::getProjectionMatrix(&pm);
@@ -1007,11 +1007,11 @@ bool vvSoftVR::prepareRendering()
    {
       vvMatrix ovTest;
       vvMatrix ovView;
-      ovTest.copy(&oiShear);
-      ovTest.multiplyPost(&ivWarp);
+      ovTest.copy(oiShear);
+      ovTest.multiplyPost(ivWarp);
       ovTest.print("ovTest = ivWarp x siShear x osPerm");
-      ovView.copy(&owView);
-      ovView.multiplyPost(&wvConv);
+      ovView.copy(owView);
+      ovView.multiplyPost(wvConv);
       ovView.print("ovView = wvConv x owView");
    }
    return true;
@@ -1047,10 +1047,10 @@ int vvSoftVR::getCullingStatus(float nearPlaneZ)
    // Find volume midpoint location:
    vvGLTools::getModelviewMatrix(&mv);
    volPos.zero();
-   volPos.multiply(&mv);
+   volPos.multiply(mv);
 
    // Apply plane equation to volume midpoint:
-   volDist = nearNormal.dot(&volPos) - nearPlaneZ;
+   volDist = nearNormal.dot(volPos) - nearPlaneZ;
 
    if (fabs(volDist) < radius) return 0;
    else if (volDist < 0) return 1;

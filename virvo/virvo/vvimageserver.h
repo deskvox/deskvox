@@ -34,7 +34,7 @@ public:
   ~vvImageServer();
 
 private:
-  void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);
+  void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
   void resize(int w, int h);
   vvImage *_image;
   uchar *_pixels;

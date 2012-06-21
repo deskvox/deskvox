@@ -382,7 +382,7 @@ void vvSoftImg::warp(vvMatrix* w, vvSoftImg* srcImg)
 
    vvDebugMsg::msg(3, "vvSoftImg::warp()");
 
-   inv.copy(w);
+   inv.copy(*w);
    inv.invert();                                  // invert to compute source coords from destination coords
 
    inv00 = inv(0, 0);

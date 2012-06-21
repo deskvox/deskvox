@@ -110,7 +110,7 @@ void vvSphere::setRadius(float r)
   copyVerticesWorld();
 }
 
-void vvSphere::setVolumeDim(vvVector3* dim)
+void vvSphere::setVolumeDim(const vvVector3& dim)
 {
   mDimCube.copy(dim);
 }
@@ -122,7 +122,7 @@ void vvSphere::setTextureOffset(float* offset)
   texOffset[2] = offset[2];
 }
 
-void vvSphere::setViewMatrix(vvMatrix* matrix)
+void vvSphere::setViewMatrix(const vvMatrix& matrix)
 {
   mModelView.copy(matrix);
   mModelView.invert();
@@ -162,12 +162,12 @@ void vvSphere::calculateTexCoords()
   texMatrix.translate(0.5,0.5,0.5);
   texMatrix.scale(1.0f/mDimCube[0], 1.0f/mDimCube[1], 1.0f/mDimCube[2]);
   texMatrix.translate(texOffset[0], texOffset[1], texOffset[2]);
-  texMatrix.multiplyPre(&mModelView);
+  texMatrix.multiplyPre(mModelView);
 
   for (int i = 0; i < mNumVertices; i++)
   {
     vvVector3 tmp(mVerticesWorld[i].x, mVerticesWorld[i].y, mVerticesWorld[i].z);
-    tmp.multiply(&texMatrix);
+    tmp.multiply(texMatrix);
     mTexCoords[i].t[0] = tmp[0];
     mTexCoords[i].t[1] = tmp[1];
     mTexCoords[i].t[2] = tmp[2];

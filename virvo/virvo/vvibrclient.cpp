@@ -146,7 +146,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   if (_boundaries || !haveFrame || !glGenBuffers)
   {
     const vvVector3 size(vd->getSize()); // volume size [world coordinates]
-    drawBoundingBox(&size, &vd->pos, &_boundColor);
+    drawBoundingBox(size, vd->pos, _boundColor);
   }
 
   if (_shader == NULL)
@@ -170,7 +170,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   vvIbr::calcDepthRange(_currentPr, _currentMv, aabb, drMin, drMax);
   const vvGLTools::Viewport vp = vvGLTools::getViewport();
   vvMatrix currentImgMatrix = vvIbr::calcImgMatrix(_currentPr, _currentMv, vp, drMin, drMax);
-  bool matrixChanged = (!currentImgMatrix.equal(&_imgMatrix));
+  bool matrixChanged = (!currentImgMatrix.equal(_imgMatrix));
 
   if (newFrame) // no frame pending
   {
@@ -238,12 +238,12 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   vvMatrix invMv = _currentMv;
   invMv.invert();
   vvVector4 viewerObj(0.f, 0.f, 0.f, 1.f);
-  viewerObj.multiply(&invMv);
-  viewerObj.multiply(&_imgMv);
+  viewerObj.multiply(invMv);
+  viewerObj.multiply(_imgMv);
   bool closer = viewerObj[2] > 0.f; // inverse render order if viewer has moved closer
 
   // project current viewer onto original image along its normal
-  viewerObj.multiply(&_imgPr);
+  viewerObj.multiply(_imgPr);
   float splitX = (viewerObj[0]/viewerObj[3]+1.f)*_imgVp[2]*0.5f;
   float splitY = (viewerObj[1]/viewerObj[3]+1.f)*_imgVp[3]*0.5f;
   splitX = ts_clamp(splitX, 0.f, float(_imgVp[2]-1));

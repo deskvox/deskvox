@@ -200,19 +200,19 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
       case vvSocketIO::VV_OBJECT_DIRECTION:
         if ((_socketio->getVector3(objDir)) == vvSocket::VV_OK)
         {
-          renderer->setObjectDirection(&objDir);
+          renderer->setObjectDirection(objDir);
         }
         break;
       case vvSocketIO::VV_VIEWING_DIRECTION:
         if ((_socketio->getVector3(viewDir)) == vvSocket::VV_OK)
         {
-          renderer->setViewingDirection(&viewDir);
+          renderer->setViewingDirection(viewDir);
         }
         break;
       case vvSocketIO::VV_POSITION:
         if ((_socketio->getVector3(position)) == vvSocket::VV_OK)
         {
-          renderer->setPosition(&position);
+          renderer->setPosition(position);
         }
         break;
       case vvSocketIO::VV_RESIZE:

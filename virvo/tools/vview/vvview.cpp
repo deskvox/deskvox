@@ -540,7 +540,7 @@ void vvView::motionCallback(int x, int y)
 void vvView::applyRendererParameters()
 {
   renderer->setParameter(vvRenderState::VV_BOUNDARIES, boundariesMode);
-  renderer->setPosition(&pos);
+  renderer->setPosition(pos);
   renderer->setParameter(vvRenderState::VV_SLICEINT, interpolMode);
   renderer->setParameter(vvRenderer::VV_WARPINT, warpInterpolMode);
   renderer->setParameter(vvRenderer::VV_PREINT, preintMode);
@@ -1857,7 +1857,7 @@ double vvView::performanceTest()
             break;
           case vvPerformanceTest::VV_ROT_RAND:
             dir.random(0.0f, 1.0f);
-            ds->ov->mv.rotate(step, &dir);
+            ds->ov->mv.rotate(step, dir);
             break;
           default:
             break;
@@ -2399,8 +2399,8 @@ void vvView::editClipPlane(const int command, const float val)
       vvMatrix m;
       m.identity();
       const vvVector3 axis(1, 0, 0);
-      m.rotate(val, &axis);
-      clipNormal.multiply(&m);
+      m.rotate(val, axis);
+      clipNormal.multiply(m);
     }
     break;
   case PLANE_Y:
@@ -2408,8 +2408,8 @@ void vvView::editClipPlane(const int command, const float val)
       vvMatrix m;
       m.identity();
       const vvVector3 axis(0, 1, 0);
-      m.rotate(val, &axis);
-      clipNormal.multiply(&m);
+      m.rotate(val, axis);
+      clipNormal.multiply(m);
     }
     break;
   case PLANE_Z:
@@ -2417,8 +2417,8 @@ void vvView::editClipPlane(const int command, const float val)
       vvMatrix m;
       m.identity();
       const vvVector3 axis(0, 0, 1);
-      m.rotate(val, &axis);
-      clipNormal.multiply(&m);
+      m.rotate(val, axis);
+      clipNormal.multiply(m);
     }
     break;
   default:

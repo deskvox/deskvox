@@ -60,7 +60,7 @@ vvIbrServer::~vvIbrServer()
 /** Perform remote rendering, read back pixel data and send it over socket
     connections using a vvImage instance.
 */
-void vvIbrServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
+void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer)
 {
   vvDebugMsg::msg(3, "vvIbrServer::renderImage()");
 

@@ -1614,8 +1614,8 @@ bool vvCudaSW<Base>::compositeNearest(int fromY, int toY, int firstSlice, int la
    Base::findSlicePosition(firstSlice, &start, &end);
    vvVector4 sinc, einc;
    Base::findSlicePosition(firstSlice+sliceStep, &sinc, &einc);
-   sinc.sub(&start);
-   einc.sub(&end);
+   sinc.sub(start);
+   einc.sub(end);
 
    float dist = sqrtf(1.0f + sinc.e[0] * sinc.e[0] + sinc.e[1] * sinc.e[1]);
    if(oldLutDist/dist < 0.9f || dist/oldLutDist < 0.9f)
@@ -1632,7 +1632,7 @@ bool vvCudaSW<Base>::compositeNearest(int fromY, int toY, int firstSlice, int la
    {
        h_start[slice].x = int(scur.e[0] / scur.e[3] + 0.5f);
        h_start[slice].y = int(scur.e[1] / scur.e[3] + 0.5f);
-       scur.add(&sinc);
+       scur.add(sinc);
    }
    from.y = max(from.y, fromY);
    to.y = min(to.y, toY);
@@ -1681,8 +1681,8 @@ bool vvCudaSW<Base>::compositeBilinear(int fromY, int toY, int firstSlice, int l
     Base::findSlicePosition(firstSlice, &start, &end);
     vvVector4 sinc, einc;
     Base::findSlicePosition(firstSlice+sliceStep, &sinc, &einc);
-    sinc.sub(&start);
-    einc.sub(&end);
+    sinc.sub(start);
+    einc.sub(end);
 
     float dist = sqrtf(1.0f + sinc.e[0] * sinc.e[0] + sinc.e[1] * sinc.e[1]);
     if(oldLutDist/dist < 0.9f || dist/oldLutDist < 0.9f)
@@ -1757,8 +1757,8 @@ bool vvCudaSW<Base>::compositeBilinear(int fromY, int toY, int firstSlice, int l
                 break;
         }
 
-        ecur.add(&einc);
-        scur.add(&sinc);
+        ecur.add(einc);
+        scur.add(sinc);
     }
     from.y = max(from.y, fromY);
     to.y = min(to.y, toY);
@@ -1835,8 +1835,8 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
     Base::findSlicePosition(firstSlice, &start, &end);
     vvVector4 sinc, einc;
     Base::findSlicePosition(firstSlice+sliceStep, &sinc, &einc);
-    sinc.sub(&start);
-    einc.sub(&end);
+    sinc.sub(start);
+    einc.sub(end);
 
     float dist = sqrtf(1.0f + sinc.e[0] * sinc.e[0] + sinc.e[1] * sinc.e[1]);
 
@@ -1926,8 +1926,8 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
                 break;
         }
 
-        ecur.add(&einc);
-        scur.add(&sinc);
+        ecur.add(einc);
+        scur.add(sinc);
     }
 
     from.y = fromY;

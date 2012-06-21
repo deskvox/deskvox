@@ -209,9 +209,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ErrorType updateTextureBricks(int, int, int, int, int, int);
     void setGLenvironment() const;
     void unsetGLenvironment() const;
-    void renderTex3DSpherical(vvMatrix*);
-    void renderTex3DPlanar(vvMatrix*);
-    void renderTexBricks(const vvMatrix*);
+    void renderTex3DSpherical(const vvMatrix& view);
+    void renderTex3DPlanar(const vvMatrix& mv);
+    void renderTexBricks(const vvMatrix& mv);
     void renderTex2DSlices(float);
     void renderTex2DCubic(vvVecmath::AxisType, float, float, float);
     VoxelType findBestVoxelType(VoxelType) const;
@@ -254,8 +254,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void  deactivateClippingPlane();
     void  setNumLights(int);
     bool  instantClassification() const;
-    void  setViewingDirection(const vvVector3*);
-    void  setObjectDirection(const vvVector3*);
+    void  setViewingDirection(const vvVector3& vd);
+    void  setObjectDirection(const vvVector3& od);
     virtual void setParameter(ParameterType param, const vvParam& value);
     virtual vvParam getParameter(ParameterType param) const;
     static bool isSupported(GeometryType);

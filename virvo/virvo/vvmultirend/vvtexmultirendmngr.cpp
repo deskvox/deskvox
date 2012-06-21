@@ -170,7 +170,7 @@ void vvTexMultiRendMngr::renderMultipleVolume()
   vvVector3 planeNormal(0.0f, 0.0f, -1.0f);                 // (0|0|1) is normal on projection plane
   vvMatrix invPM(pm);
   invPM.invert();
-  planeNormal.multiply(&invPM);
+  planeNormal.multiply(invPM);
 
   for(int v = 0; v < _numVolume; v++)
   {
@@ -331,7 +331,7 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 	  if(_rendererList[i]->getNumSlices() <= 0) continue;
 
 	  vvVector3 diff = _rendererList[i]->tr.farWS - _rendererList[vol]->tr.farWS;
-	  if(planeNormal.dot(&diff) < 0.0f)
+	  if(planeNormal.dot(diff) < 0.0f)
 		vol = i;
 	}
 

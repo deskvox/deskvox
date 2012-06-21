@@ -144,7 +144,7 @@ vvMatrix vvMatrix::operator-(const vvMatrix& operand) const
 vvMatrix vvMatrix::operator*(const vvMatrix& operand) const
 {
   vvMatrix tmp = *this;
-  tmp.multiplyPre(&operand);
+  tmp.multiplyPre(operand);
   return tmp;
 }
 
@@ -201,11 +201,11 @@ void vvMatrix::translate(float x, float y, float z)
 
 //----------------------------------------------------------------------------
 /// Apply a translation.
-void vvMatrix::translate(const vvVector3* v)
+void vvMatrix::translate(const vvVector3& v)
 {
-  e[0][3] += (*v)[0];
-  e[1][3] += (*v)[1];
-  e[2][3] += (*v)[2];
+  e[0][3] += v[0];
+  e[1][3] += v[1];
+  e[2][3] += v[2];
 }
 
 //----------------------------------------------------------------------------
@@ -218,7 +218,7 @@ void vvMatrix::scale(float x, float y, float z)
   s.e[1][1] = y;
   s.e[2][2] = z;
   s.e[3][3] = 1.0f;
-  this->multiplyPre(&s);
+  this->multiplyPre(s);
 }
 
 //----------------------------------------------------------------------------
@@ -233,7 +233,7 @@ void vvMatrix::scale(float a)
   s.e[1][1] = a;
   s.e[2][2] = a;
   s.e[3][3] = 1.0f;
-  this->multiplyPre(&s);
+  this->multiplyPre(s);
 }
 
 //----------------------------------------------------------------------------
@@ -284,7 +284,7 @@ vvMatrix vvMatrix::rotate(float a, float x, float y, float z)
   rot.e[3][3] = 1.0;
 
   // Perform rotation:
-  multiplyPre(&rot);
+  multiplyPre(rot);
   return rot;
 }
 
@@ -292,39 +292,39 @@ vvMatrix vvMatrix::rotate(float a, float x, float y, float z)
 /** Rotation about vector v by angle a (radian).
   @return rotation matrix
  */
-vvMatrix vvMatrix::rotate(float a, const vvVector3* v)
+vvMatrix vvMatrix::rotate(float a, const vvVector3& v)
 {
-  return vvMatrix::rotate(a, (*v)[0], (*v)[1], (*v)[2]);
+  return vvMatrix::rotate(a, v[0], v[1], v[2]);
 }
 
 //----------------------------------------------------------------------------
 /** Multiplies two matrices. If matrices are resolved from left to right,
   this operation would be: this = this * m
 */
-void vvMatrix::multiplyPre(const vvMatrix* m)
+void vvMatrix::multiplyPre(const vvMatrix& m)
 {
   int row, col;
   vvMatrix bak(*this);                             // backup of current matrix
 
   for (row=0; row<4; ++row)
     for (col=0; col<4; ++col)
-      e[row][col] = bak.e[row][0] * m->e[0][col] + bak.e[row][1] * m->e[1][col] +
-        bak.e[row][2] * m->e[2][col] + bak.e[row][3] * m->e[3][col];
+      e[row][col] = bak.e[row][0] * m.e[0][col] + bak.e[row][1] * m.e[1][col] +
+        bak.e[row][2] * m.e[2][col] + bak.e[row][3] * m.e[3][col];
 }
 
 //----------------------------------------------------------------------------
 /** Multiplies two matrices. If matrices are resolved from left to right,
   this operation would be: this = m * this
 */
-void vvMatrix::multiplyPost(const vvMatrix* m)
+void vvMatrix::multiplyPost(const vvMatrix& m)
 {
   int row, col;
   vvMatrix bak(*this);                             // backup of current matrix
 
   for (row=0; row<4; ++row)
     for (col=0; col<4; ++col)
-      e[row][col] = bak.e[0][col] * m->e[row][0] + bak.e[1][col] * m->e[row][1] +
-        bak.e[2][col] * m->e[row][2] + bak.e[3][col] * m->e[row][3];
+      e[row][col] = bak.e[0][col] * m.e[row][0] + bak.e[1][col] * m.e[row][1] +
+        bak.e[2][col] * m.e[row][2] + bak.e[3][col] * m.e[row][3];
 }
 
 //----------------------------------------------------------------------------
@@ -385,33 +385,33 @@ float vvMatrix::diagonal()
 
 //----------------------------------------------------------------------------
 /// Creates an identical copy of a matrix
-void vvMatrix::copy(const vvMatrix* m)
+void vvMatrix::copy(const vvMatrix& m)
 {
   int row, col;
 
   for (row=0; row<4; ++row)
     for (col=0; col<4; ++col)
-      e[row][col] = m->e[row][col];
+      e[row][col] = m.e[row][col];
 }
 
 //----------------------------------------------------------------------------
 /// Copies only the translational part of a matrix and keeps the rest untouched
-void vvMatrix::copyTrans(const vvMatrix* m)
+void vvMatrix::copyTrans(const vvMatrix& m)
 {
-  e[0][3] = m->e[0][3];
-  e[1][3] = m->e[1][3];
-  e[2][3] = m->e[2][3];
+  e[0][3] = m.e[0][3];
+  e[1][3] = m.e[1][3];
+  e[2][3] = m.e[2][3];
 }
 
 //----------------------------------------------------------------------------
 /// Copies only the rotational part of a matrix and keeps the rest untouched
-void vvMatrix::copyRot(const vvMatrix* m)
+void vvMatrix::copyRot(const vvMatrix& m)
 {
   int row, col;
 
   for (row=0; row<3; ++row)
     for (col=0; col<3; ++col)
-      e[row][col] = m->e[row][col];
+      e[row][col] = m.e[row][col];
 }
 
 //----------------------------------------------------------------------------
@@ -461,13 +461,13 @@ void vvMatrix::killRot()
 
 //----------------------------------------------------------------------------
 /// Compares two matrices. Returns true if equal, otherwise false
-bool vvMatrix::equal(const vvMatrix* m) const
+bool vvMatrix::equal(const vvMatrix& m) const
 {
   int row, col;
 
   for (row=0; row<4; ++row)
     for (col=0; col<4; ++col)
-      if (e[row][col] != m->e[row][col])
+      if (e[row][col] != m.e[row][col])
       {
         return false;
       }
@@ -609,11 +609,11 @@ void vvMatrix::setRow(int row, float a, float b, float c, float d)
   @param row  row index
   @param vec  vector with new elements
 */
-void vvMatrix::setRow(int row, vvVector3* vec)
+void vvMatrix::setRow(int row, const vvVector3& vec)
 {
-  e[row][0] = (*vec)[0];
-  e[row][1] = (*vec)[1];
-  e[row][2] = (*vec)[2];
+  e[row][0] = vec[0];
+  e[row][1] = vec[1];
+  e[row][2] = vec[2];
 }
 
 //----------------------------------------------------------------------------
@@ -1088,16 +1088,16 @@ vvMatrix vvMatrix::trackballRotation(int width, int height, int fromX, int fromY
   v2[2]   = expf(-TRACKBALL_SIZE * d * d);
 
   // Compute rotational angle:
-  angle = v1.angle(&v2);                          // angle = angle between v1 and v2
+  angle = v1.angle(v2);                           // angle = angle between v1 and v2
 
   // Compute rotational axis:
-  v2.cross(&v1);                                  // v2 = v2 x v1 (cross product)
+  v2.cross(v1);                                   // v2 = v2 x v1 (cross product)
 
   // Convert axis coordinates (v2) from WCS to OCS:
   mInv.identity();
-  mInv.copyRot(this);                             // copy rotational part of mv to mInv
+  mInv.copyRot(*this);                            // copy rotational part of mv to mInv
   mInv.invertOrtho();                             // invert orthogonal matrix mInv
-  v2.multiply(&mInv);                             // v2 = v2 x mInv (matrix multiplication)
+  v2.multiply(mInv);                              // v2 = v2 x mInv (matrix multiplication)
   v2.normalize();                                 // normalize v2 before rotation
 
   // Perform acutal model view matrix modification:
@@ -1149,8 +1149,8 @@ vvPlane::vvPlane()
 /// Constructor for point-normal format.
 vvPlane::vvPlane(const vvVector3& p, const vvVector3& n)
 {
-  _point.copy(&p);
-  _normal.copy(&n);
+  _point.copy(p);
+  _normal.copy(n);
   _normal.normalize();
 }
 
@@ -1158,9 +1158,9 @@ vvPlane::vvPlane(const vvVector3& p, const vvVector3& n)
 /// Constructor for point-vector-vector format.
 vvPlane::vvPlane(const vvVector3& p, const vvVector3& dir1, const vvVector3& dir2)
 {
-  _point.copy(&p);
-  _normal.copy(&dir1);
-  _normal.cross(&dir2);
+  _point.copy(p);
+  _normal.copy(dir1);
+  _normal.cross(dir2);
   _normal.normalize();
 }
 
@@ -1183,8 +1183,8 @@ bool vvPlane::isSameSide(const vvVector3& p1, const vvVector3& p2) const
 */
 float vvPlane::dist(const vvVector3& p) const
 {
-  const float d = -_normal.dot(&_point); // scalar component of hessian form of plane
-  return (_normal.dot(&p) + d);
+  const float d = -_normal.dot(_point); // scalar component of hessian form of plane
+  return (_normal.dot(p) + d);
 }
 
 //============================================================================

@@ -160,7 +160,7 @@ void vvRemoteClient:: setCurrentFrame(const int index)
   }
 }
 
-void vvRemoteClient::setObjectDirection(const vvVector3* od)
+void vvRemoteClient::setObjectDirection(const vvVector3& od)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setObjectDirection()");
   _changes = true;
@@ -170,11 +170,11 @@ void vvRemoteClient::setObjectDirection(const vvVector3* od)
 
   if (_socketIO->putCommReason(vvSocketIO::VV_OBJECT_DIRECTION) == vvSocket::VV_OK)
   {
-    _socketIO->putVector3(*od);
+    _socketIO->putVector3(od);
   }
 }
 
-void vvRemoteClient::setViewingDirection(const vvVector3* vd)
+void vvRemoteClient::setViewingDirection(const vvVector3& vd)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setViewingDirection()");
   _changes = true;
@@ -184,11 +184,11 @@ void vvRemoteClient::setViewingDirection(const vvVector3* vd)
 
   if (_socketIO->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
   {
-    _socketIO->putVector3(*vd);
+    _socketIO->putVector3(vd);
   }
 }
 
-void vvRemoteClient::setPosition(const vvVector3* p)
+void vvRemoteClient::setPosition(const vvVector3& p)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setPosition()");
   _changes = true;
@@ -198,7 +198,7 @@ void vvRemoteClient::setPosition(const vvVector3* p)
 
   if (_socketIO->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
   {
-    _socketIO->putVector3(*p);
+    _socketIO->putVector3(p);
   }
 }
 

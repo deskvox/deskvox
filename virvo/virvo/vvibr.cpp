@@ -27,9 +27,9 @@ void vvIbr::calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
   vvVector4 min4(aabb.getMin()[0], aabb.getMin()[1], aabb.getMin()[2], 1.0f);
   vvVector4 max4(aabb.getMax()[0], aabb.getMax()[1], aabb.getMax()[2], 1.0f);
 
-  center4.multiply(&mv);
-  min4.multiply(&mv);
-  max4.multiply(&mv);
+  center4.multiply(mv);
+  min4.multiply(mv);
+  max4.multiply(mv);
 
   vvVector3 center(center4[0], center4[1], center4[2]);
   vvVector3 min3(min4.e[0], min4.e[1], min4.e[2]);
@@ -44,10 +44,10 @@ void vvIbr::calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
   min3 = center - scal;
   max3 = center + scal;
 
-  min4 = vvVector4(&min3, 1.f);
-  max4 = vvVector4(&max3, 1.f);
-  min4.multiply(&pr);
-  max4.multiply(&pr);
+  min4 = vvVector4(min3, 1.f);
+  max4 = vvVector4(max3, 1.f);
+  min4.multiply(pr);
+  max4.multiply(pr);
   min4.perspectiveDivide();
   max4.perspectiveDivide();
 

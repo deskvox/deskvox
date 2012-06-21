@@ -1124,7 +1124,7 @@ void vvRayRend::compositeVolume(int, int)
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
   vvVector3 clippedProbeSizeObj;
-  clippedProbeSizeObj.copy(&probeSizeObj);
+  clippedProbeSizeObj.copy(probeSizeObj);
   for (int i=0; i<3; ++i)
   {
     if (clippedProbeSizeObj[i] < vd->getSize()[i])
@@ -1135,7 +1135,7 @@ void vvRayRend::compositeVolume(int, int)
 
   if (_isROIUsed && !_sphericalROI)
   {
-    drawBoundingBox(&probeSizeObj, &_roiPos, &_probeColor);
+    drawBoundingBox(probeSizeObj, _roiPos, _probeColor);
   }
 
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
@@ -1146,14 +1146,14 @@ void vvRayRend::compositeVolume(int, int)
   vvMatrix Mv, MvPr;
   vvGLTools::getModelviewMatrix(&Mv);
   vvGLTools::getProjectionMatrix(&MvPr);
-  MvPr.multiplyPre(&Mv);
+  MvPr.multiplyPre(Mv);
 
   float* mvprM = new float[16];
   MvPr.get(mvprM);
   cudaMemcpyToSymbol(c_MvPrMatrix, mvprM, sizeof(float4) * 4);
 
   vvMatrix invMv;
-  invMv.copy(&Mv);
+  invMv.copy(Mv);
   invMv.invert();
 
   vvMatrix pr;
@@ -1161,7 +1161,7 @@ void vvRayRend::compositeVolume(int, int)
 
   vvMatrix invMvpr;
   vvGLTools::getModelviewMatrix(&invMvpr);
-  invMvpr.multiplyPost(&pr);
+  invMvpr.multiplyPost(pr);
   invMvpr.invert();
 
   float* viewM = new float[16];
@@ -1187,7 +1187,7 @@ void vvRayRend::compositeVolume(int, int)
 
   vvVector3 eye;
   getEyePosition(&eye);
-  eye.multiply(&invMv);
+  eye.multiply(invMv);
 
   vvVector3 origin;
 
@@ -1210,11 +1210,11 @@ void vvRayRend::compositeVolume(int, int)
 
   // Clip plane.
   const float3 pnormal = normalize(make_float3(_clipNormal[0], _clipNormal[1], _clipNormal[2]));
-  const float pdist = _clipNormal.dot(&_clipPoint);
+  const float pdist = _clipNormal.dot(_clipPoint);
 
   if (_clipMode && _clipPerimeter)
   {
-    drawPlanePerimeter(&size, &vd->pos, &_clipPoint, &_clipNormal, &_clipColor);
+    drawPlanePerimeter(size, vd->pos, _clipPoint, _clipNormal, _clipColor);
   }
 
   GLfloat bgcolor[4];

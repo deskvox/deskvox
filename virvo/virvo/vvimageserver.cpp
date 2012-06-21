@@ -48,13 +48,13 @@ vvImageServer::~vvImageServer()
 /** Perform remote rendering, read back pixel data and send it over socket
     connections using a vvImage instance.
 */
-void vvImageServer::renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer)
+void vvImageServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer)
 {
   vvDebugMsg::msg(3, "vvImageServer::renderImage()");
 
   // Render volume:
-  vvGLTools::setProjectionMatrix(&pr);
-  vvGLTools::setModelviewMatrix(&mv);
+  vvGLTools::setProjectionMatrix(pr);
+  vvGLTools::setModelviewMatrix(mv);
 
   glClearColor(0., 0., 0., 0.);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

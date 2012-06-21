@@ -60,25 +60,13 @@ vvBaseVector3<T>::vvBaseVector3(const T x, const T y, const T z)
 }
 
 //----------------------------------------------------------------------------
-/// Constructor for a copy of a vector
-template <typename T>
-vvBaseVector3<T>::vvBaseVector3(const vvBaseVector3<T>* v)
-{
-  for (int i = 0; i < 3; ++i)
-  {
-    e[i] = v->e[i];
-  }
-}
-
-//----------------------------------------------------------------------------
 /** Cross product of two vectors.
  */
 template <typename T>
 vvBaseVector3<T> vvBaseVector3<T>::operator^ (const vvBaseVector3<T> operand) const
 {
-  vvBaseVector3<T> tmp;
-  tmp = this;
-  tmp.cross(&operand);
+  vvBaseVector3<T> tmp = *this;
+  tmp.cross(operand);
   return tmp;
 }
 
@@ -121,17 +109,6 @@ void vvBaseVector3<T>::get(T* x, T* y, T* z) const
 //----------------------------------------------------------------------------
 /// Copy a vector
 template <typename T>
-void vvBaseVector3<T>::copy(const vvBaseVector3<T>* v)
-{
-  for (int i = 0; i < 3; ++i)
-  {
-    e[i] = v->e[i];
-  }
-}
-
-//----------------------------------------------------------------------------
-/// Copy a vector
-template <typename T>
 void vvBaseVector3<T>::copy(const vvBaseVector3<T>& v)
 {
   for (int i = 0; i < 3; ++i)
@@ -163,11 +140,11 @@ void vvBaseVector3<T>::copy(const vvBaseVector4<T>* v)
 //----------------------------------------------------------------------------
 /// Add two vectors
 template <typename T>
-void vvBaseVector3<T>::add(const vvBaseVector3<T>* v)
+void vvBaseVector3<T>::add(const vvBaseVector3<T>& v)
 {
   for (int i = 0; i < 3; ++i)
   {
-    e[i] += v->e[i];
+    e[i] += v.e[i];
   }
 }
 
@@ -195,11 +172,11 @@ void vvBaseVector3<T>::add(const T x, const T y, const T z)
 //----------------------------------------------------------------------------
 /// Subtract a vector from another
 template <typename T>
-void vvBaseVector3<T>::sub(const vvBaseVector3<T>* v)
+void vvBaseVector3<T>::sub(const vvBaseVector3<T>& v)
 {
   for (int i = 0; i < 3; ++i)
   {
-    e[i] -= v->e[i];
+    e[i] -= v.e[i];
   }
 }
 
@@ -228,11 +205,11 @@ void vvBaseVector3<T>::scale(const T s)
 //----------------------------------------------------------------------------
 /// Scale a vector by the elements of another vector
 template <typename T>
-void vvBaseVector3<T>::scale(const vvBaseVector3<T>* v)
+void vvBaseVector3<T>::scale(const vvBaseVector3<T>& v)
 {
   for (int i = 0; i < 3; ++i)
   {
-    e[i] *= v->e[i];
+    e[i] *= v.e[i];
   }
 }
 
@@ -249,17 +226,17 @@ void vvBaseVector3<T>::scale(const T x, const T y, const T z)
 //----------------------------------------------------------------------------
 /// Return the dot product of two vectors
 template <typename T>
-T vvBaseVector3<T>::dot(const vvBaseVector3<T>* v) const
+T vvBaseVector3<T>::dot(const vvBaseVector3<T>& v) const
 {
-  return e[0] * v->e[0] + e[1] * v->e[1] + e[2] * v->e[2];
+  return e[0] * v.e[0] + e[1] * v.e[1] + e[2] * v.e[2];
 }
 
 //----------------------------------------------------------------------------
 /// Return the angle (in radians) between two vectors
 template <typename T>
-T vvBaseVector3<T>::angle(const vvBaseVector3<T>* v) const
+T vvBaseVector3<T>::angle(const vvBaseVector3<T>& v) const
 {
-  const T multLength = this->length() * v->length();
+  const T multLength = this->length() * v.length();
   if (multLength == 0.0) return 0.0;
 
   const T div = this->dot(v) / multLength;
@@ -273,19 +250,19 @@ T vvBaseVector3<T>::angle(const vvBaseVector3<T>* v) const
 //----------------------------------------------------------------------------
 /// Create the cross product of two vectors
 template <typename T>
-void vvBaseVector3<T>::cross(const vvBaseVector3<T>* v)
+void vvBaseVector3<T>::cross(const vvBaseVector3<T>& v)
 {
-  const vvBaseVector3<T> bak(this);
+  const vvBaseVector3<T> bak(*this);
 
-  e[0] = bak.e[1] * v->e[2] - bak.e[2] * v->e[1];
-  e[1] = bak.e[2] * v->e[0] - bak.e[0] * v->e[2];
-  e[2] = bak.e[0] * v->e[1] - bak.e[1] * v->e[0];
+  e[0] = bak.e[1] * v.e[2] - bak.e[2] * v.e[1];
+  e[1] = bak.e[2] * v.e[0] - bak.e[0] * v.e[2];
+  e[2] = bak.e[0] * v.e[1] - bak.e[1] * v.e[0];
 }
 
 //----------------------------------------------------------------------------
 /// Multiplies a vector with a matrix (V' = M x V)
 template <typename T>
-void vvBaseVector3<T>::multiply(const vvMatrix* m)
+void vvBaseVector3<T>::multiply(const vvMatrix& m)
 {
   const T v1[4] = { e[0], e[1], e[2], 1.0f };
 
@@ -293,13 +270,13 @@ void vvBaseVector3<T>::multiply(const vvMatrix* m)
   {
     e[row] = 0.0f;
     for (int col=0; col<4; ++col)
-      e[row] += (*m)(row, col) * v1[col];
+      e[row] += m(row, col) * v1[col];
   }
 
-  const T w = (*m)(3, 0) * v1[0]
-            + (*m)(3, 1) * v1[1]
-            + (*m)(3, 2) * v1[2]
-            + (*m)(3, 3) * v1[3];
+  const T w = m(3, 0) * v1[0]
+            + m(3, 1) * v1[1]
+            + m(3, 2) * v1[2]
+            + m(3, 3) * v1[3];
 
   if (w != 1.0f)
   {
@@ -312,9 +289,9 @@ void vvBaseVector3<T>::multiply(const vvMatrix* m)
 //----------------------------------------------------------------------------
 /// Compute the distance between two points
 template <typename T>
-T vvBaseVector3<T>::distance(const vvBaseVector3<T>* v) const
+T vvBaseVector3<T>::distance(const vvBaseVector3<T>& v) const
 {
-  return (*v - *this).length();
+  return (v - *this).length();
 }
 
 //----------------------------------------------------------------------------
@@ -322,7 +299,7 @@ T vvBaseVector3<T>::distance(const vvBaseVector3<T>* v) const
 template <typename T>
 T vvBaseVector3<T>::length() const
 {
-  return static_cast<T>( std::sqrt(static_cast<double>(dot(this))) );
+  return static_cast<T>( std::sqrt(static_cast<double>(dot(*this))) );
 }
 
 //----------------------------------------------------------------------------
@@ -332,16 +309,16 @@ T vvBaseVector3<T>::length() const
   @param dir directional vector on the plane
 */
 template <typename T>
-void vvBaseVector3<T>::planeNormalPPV(const vvBaseVector3<T>* point1,
-                                      const vvBaseVector3<T>* point2,
-                                      const vvBaseVector3<T>* dir)
+void vvBaseVector3<T>::planeNormalPPV(const vvBaseVector3<T>& point1,
+                                      const vvBaseVector3<T>& point2,
+                                      const vvBaseVector3<T>& dir)
 {
   vvBaseVector3<T> diff;    // difference vector between point1 and point2
 
   diff.copy(point2);
   diff.sub(point1);
   this->copy(dir);
-  this->cross(&diff);
+  this->cross(diff);
 }
 
 //----------------------------------------------------------------------------
@@ -352,8 +329,8 @@ void vvBaseVector3<T>::planeNormalPPV(const vvBaseVector3<T>* point1,
           point lies: positive=side into which normal points, negative=other side
 */
 template <typename T>
-T vvBaseVector3<T>::distPointPlane(const vvBaseVector3<T>* n,
-                                   const vvBaseVector3<T>* p) const
+T vvBaseVector3<T>::distPointPlane(const vvBaseVector3<T>& n,
+                                   const vvBaseVector3<T>& p) const
 {
   vvBaseVector3<T> normal;                // normalized plane normal
   T d;                                   // scalar component of hessian form of plane
@@ -361,7 +338,7 @@ T vvBaseVector3<T>::distPointPlane(const vvBaseVector3<T>* n,
   normal.copy(n);
   normal.normalize();
   d = -normal.dot(p);
-  return (normal.dot(this) + d);
+  return (normal.dot(*this) + d);
 }
 
 //----------------------------------------------------------------------------
@@ -391,11 +368,11 @@ void vvBaseVector3<T>::negate()
 //----------------------------------------------------------------------------
 /// Compares two vectors. Returns true if equal, otherwise false
 template <typename T>
-bool vvBaseVector3<T>::equal(const vvBaseVector3<T>* v)
+bool vvBaseVector3<T>::equal(const vvBaseVector3<T>& v)
 {
   for (int i = 0; i < 3; ++i)
   {
-    if (e[i] != v->e[i])
+    if (e[i] != v.e[i])
     {
       return false;
     }
@@ -459,11 +436,11 @@ void vvBaseVector3<T>::print(const char* text) const
   @param row  row number [0..2]
 */
 template <typename T>
-void vvBaseVector3<T>::getRow(const vvMatrix* m, const int row)
+void vvBaseVector3<T>::getRow(const vvMatrix& m, const int row)
 {
-  e[0] = (*m)(row, 0);
-  e[1] = (*m)(row, 1);
-  e[2] = (*m)(row, 2);
+  e[0] = m(row, 0);
+  e[1] = m(row, 1);
+  e[2] = m(row, 2);
 }
 
 //----------------------------------------------------------------------------
@@ -472,21 +449,21 @@ void vvBaseVector3<T>::getRow(const vvMatrix* m, const int row)
   @param col  column number [0..2]
 */
 template <typename T>
-void vvBaseVector3<T>::getColumn(const vvMatrix* m, const int col)
+void vvBaseVector3<T>::getColumn(const vvMatrix& m, const int col)
 {
-  e[0] = (*m)(0, col);
-  e[1] = (*m)(1, col);
-  e[2] = (*m)(2, col);
+  e[0] = m(0, col);
+  e[1] = m(1, col);
+  e[2] = m(2, col);
 }
 
 //----------------------------------------------------------------------------
 /// Swap two vector element matrices
 template <typename T>
-void vvBaseVector3<T>::swap(vvBaseVector3<T>* v)
+void vvBaseVector3<T>::swap(vvBaseVector3<T>& v)
 {
-  std::swap(v->e[0], e[0]);
-  std::swap(v->e[1], e[1]);
-  std::swap(v->e[2], e[2]);
+  std::swap(v.e[0], e[0]);
+  std::swap(v.e[1], e[1]);
+  std::swap(v.e[2], e[2]);
 }
 
 //----------------------------------------------------------------------------
@@ -499,27 +476,27 @@ void vvBaseVector3<T>::swap(vvBaseVector3<T>* v)
           vector components are set to 0.0f
 */
 template <typename T>
-bool vvBaseVector3<T>::isectPlaneLine(const vvBaseVector3<T>* n,
-                                      const vvBaseVector3<T>* p,
-                                      const vvBaseVector3<T>* v1,
-                                      const vvBaseVector3<T>* v2)
+bool vvBaseVector3<T>::isectPlaneLine(const vvBaseVector3<T>& n,
+                                      const vvBaseVector3<T>& p,
+                                      const vvBaseVector3<T>& v1,
+                                      const vvBaseVector3<T>& v2)
 {
   vvBaseVector3 normal;                           // normalized normal
 
   normal.copy(n);
   normal.normalize();
-  vvBaseVector3 diff1 = *v1 - *v2;                // diff1 = v1 - v2
-  const T denom = diff1.dot(&normal);             // denom = diff1 . n
+  vvBaseVector3 diff1 = v1 - v2;                  // diff1 = v1 - v2
+  const T denom = diff1.dot(normal);              // denom = diff1 . n
   if (denom==0.0f)                                // are ray and plane parallel?
   {
     e[0] = e[1] = e[2] = 0.0f;                    // no intersection
     return false;
   }
-  const vvBaseVector3 diff2 = *p - *v1;           // diff2 = p - v1
-  const T numer = diff2.dot(&normal);             // number = diff2 . n
+  const vvBaseVector3 diff2 = p - v1;             // diff2 = p - v1
+  const T numer = diff2.dot(normal);              // number = diff2 . n
   diff1.scale(numer / denom);                     // diff1 = diff1 * numer / denom
   this->copy(v1);
-  this->add(&diff1);                              // this = v1 + diff1
+  this->add(diff1);                               // this = v1 + diff1
   return true;
 }
 
@@ -534,10 +511,10 @@ bool vvBaseVector3<T>::isectPlaneLine(const vvBaseVector3<T>* n,
           components are set to 0.0f
 */
 template <typename T>
-bool vvBaseVector3<T>::isectPlaneRay(const vvBaseVector3<T>* n,
-                                     const vvBaseVector3<T>* p,
-                                     const vvBaseVector3<T>* v1,
-                                     const vvBaseVector3<T>* v2)
+bool vvBaseVector3<T>::isectPlaneRay(const vvBaseVector3<T>& n,
+                                     const vvBaseVector3<T>& p,
+                                     const vvBaseVector3<T>& v1,
+                                     const vvBaseVector3<T>& v2)
 {
   vvBaseVector3<T> diff1;                         // difference vector between v1 and v2
   vvBaseVector3<T> diff2;                         // difference vector between this and v1
@@ -550,7 +527,7 @@ bool vvBaseVector3<T>::isectPlaneRay(const vvBaseVector3<T>* n,
   diff1.copy(v2);
   diff1.sub(v1);                                  // diff1 = v2 - v1
 
-  diff2.copy(this);
+  diff2.copy(*this);
   diff2.sub(v1);                                  // diff2 = this - v1
 
   // Find out how to represent diff2 by diff1 times a factor:
@@ -588,13 +565,13 @@ If less than six intersections occurred, the remaining vector
 components of this[] are undefined.
 */
 template <typename T>
-int vvBaseVector3<T>::isectPlaneCuboid(const vvBaseVector3<T>* normal,
-                                       const vvBaseVector3<T>* point,
-                                       const vvBaseVector3<T>* minv,
-                                       const vvBaseVector3<T>* maxv)
+int vvBaseVector3<T>::isectPlaneCuboid(const vvBaseVector3<T>& normal,
+                                       const vvBaseVector3<T>& point,
+                                       const vvBaseVector3<T>& minv,
+                                       const vvBaseVector3<T>& maxv)
 {
   vvBaseVector3 p[2];                             // two cuboid vertices defining a cuboid edge
-  vvBaseVector3* corner[2];                       // cuboid corners (copied from parameters)
+  vvBaseVector3 corner[2];                        // cuboid corners (copied from parameters)
   int key[4][3] =                                 // cuboid edge components
   {
     {
@@ -617,8 +594,8 @@ int vvBaseVector3<T>::isectPlaneCuboid(const vvBaseVector3<T>* normal,
   int i,j;
 
   // Copy parameters for easier access:
-  corner[0] = (vvBaseVector3*)minv;
-  corner[1] = (vvBaseVector3*)maxv;
+  corner[0] = minv;
+  corner[1] = maxv;
 
   // Search for intersections between texture plane (defined by texPoint and
   // normal) and texture object (0..1):
@@ -627,17 +604,17 @@ int vvBaseVector3<T>::isectPlaneCuboid(const vvBaseVector3<T>* normal,
     for (j=0; j<3 && isectCnt<6; ++j)             // loop thru secondary vertices
     {
       // Compute vertices of one cuboid edge:
-      p[0].set(corner[key[i][0]]->e[0], corner[key[i][1]]->e[1], corner[key[i][2]]->e[2]);
-      p[1].set((j==0) ? (corner[1-key[i][0]]->e[0]) : corner[key[i][0]]->e[0],
-        (j==1) ? (corner[1-key[i][1]]->e[1]) : corner[key[i][1]]->e[1],
-        (j==2) ? (corner[1-key[i][2]]->e[2]) : corner[key[i][2]]->e[2]);
+      p[0].set(corner[key[i][0]].e[0], corner[key[i][1]].e[1], corner[key[i][2]].e[2]);
+      p[1].set((j==0) ? (corner[1-key[i][0]].e[0]) : corner[key[i][0]].e[0],
+        (j==1) ? (corner[1-key[i][1]].e[1]) : corner[key[i][1]].e[1],
+        (j==2) ? (corner[1-key[i][2]].e[2]) : corner[key[i][2]].e[2]);
 
       // Compute intersections of one cuboid edge with the plane:
-      if (this[isectCnt].isectPlaneLine(normal, point, &p[0], &p[1]))
+      if (this[isectCnt].isectPlaneLine(normal, point, p[0], p[1]))
       {
-        if (this[isectCnt].e[0] >= minv->e[0] && this[isectCnt].e[0] <= maxv->e[0] &&
-          this[isectCnt].e[1] >= minv->e[1] && this[isectCnt].e[1] <= maxv->e[1] &&
-          this[isectCnt].e[2] >= minv->e[2] && this[isectCnt].e[2] <= maxv->e[2])
+        if (this[isectCnt].e[0] >= minv.e[0] && this[isectCnt].e[0] <= maxv.e[0] &&
+          this[isectCnt].e[1] >= minv.e[1] && this[isectCnt].e[1] <= maxv.e[1] &&
+          this[isectCnt].e[2] >= minv.e[2] && this[isectCnt].e[2] <= maxv.e[2])
         {
           ++isectCnt;                             // accept this entry
         }
@@ -663,11 +640,11 @@ int vvBaseVector3<T>::isectPlaneCuboid(const vvBaseVector3<T>* normal,
 was executed.
 */
 template <typename T>
-int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>* cylBase,
-                                       const vvBaseVector3<T>* cylAxis,
+int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>& cylBase,
+                                       const vvBaseVector3<T>& cylAxis,
                                        T cylRadius,
-                                       const vvBaseVector3<T>* rayBase,
-                                       const vvBaseVector3<T>* rayDir)
+                                       const vvBaseVector3<T>& rayBase,
+                                       const vvBaseVector3<T>& rayDir)
 {
   vvBaseVector3 ortho;                            // vector orthogonal to cylAxis and rayDir
   vvBaseVector3 diff;                             // difference vector between base points
@@ -701,7 +678,7 @@ int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>* cylBase,
   }
   diff.copy(rayBase);
   diff.sub(cylBase);
-  dist = (T)fabs(static_cast<double>(diff.dot(&ortho)));
+  dist = (T)fabs(static_cast<double>(diff.dot(ortho)));
   if (dist > cylRadius)                           // do the ray and the cylinder intersect at all?
   {
     this->zero();
@@ -709,10 +686,10 @@ int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>* cylBase,
   }
 
   // Find point on line closest to cylinder axis:
-  temp.copy(&diff);
-  temp.cross(&cylAxisN);
-  t = -1.0f * temp.dot(&ortho) / len;
-  closest.copy(&rayDirN);
+  temp.copy(diff);
+  temp.cross(cylAxisN);
+  t = -1.0f * temp.dot(ortho) / len;
+  closest.copy(rayDirN);
   closest.scale(t);
   closest.add(rayBase);
 
@@ -731,7 +708,7 @@ int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>* cylBase,
   else if (i2 < 0.0f) first = i1;
   else first = (i1 < i2) ? i1 : i2;
   for (i=0; i<3; ++i)
-    this->e[i] = rayBase->e[i] + first * rayDirN.e[i];
+    this->e[i] = rayBase.e[i] + first * rayDirN.e[i];
   if (i1<0.0f || i2<0.0f) return 1;
   else return 2;
 }
@@ -747,11 +724,11 @@ int vvBaseVector3<T>::isectRayCylinder(const vvBaseVector3<T>* cylBase,
           false if no intersection, this pointer contains zero vector.
 */
 template <typename T>
-bool vvBaseVector3<T>::isectRayTriangle(const vvBaseVector3<T>* rayPt,
-                                        const vvBaseVector3<T>* rayDir,
-                                        const vvBaseVector3<T>* tri1,
-                                        const vvBaseVector3<T>* tri2,
-                                        const vvBaseVector3<T>* tri3)
+bool vvBaseVector3<T>::isectRayTriangle(const vvBaseVector3<T>& rayPt,
+                                        const vvBaseVector3<T>& rayDir,
+                                        const vvBaseVector3<T>& tri1,
+                                        const vvBaseVector3<T>& tri2,
+                                        const vvBaseVector3<T>& tri3)
 {
   vvBaseVector3 rayPt2;                           // arbitrary point on ray
   vvBaseVector3 normal;                           // normal vector of triangle (normalized)
@@ -768,26 +745,26 @@ bool vvBaseVector3<T>::isectRayTriangle(const vvBaseVector3<T>* rayPt,
   diff1.sub(tri1);
   diff2.copy(tri3);
   diff2.sub(tri1);
-  normal.copy(&diff1);
-  normal.cross(&diff2);
+  normal.copy(diff1);
+  normal.cross(diff2);
   normal.normalize();
 
   // Compute intersection of ray and triangle plane:
-  if (this->isectPlaneRay(&normal, tri1, rayPt, &rayPt2) == false) return false;
+  if (this->isectPlaneRay(normal, tri1, rayPt, rayPt2) == false) return false;
 
   // Compute three triangle side normals and check if intersection point lies on same
   // side as third triangle point, respectively:
-  sideNormal.planeNormalPPV(tri1, tri2, &normal);
-  if (vvVecmath::sgn(tri3->distPointPlane(&sideNormal, tri1)) ==
-    vvVecmath::sgn(this->distPointPlane(&sideNormal, tri1)))
+  sideNormal.planeNormalPPV(tri1, tri2, normal);
+  if (vvVecmath::sgn(tri3->distPointPlane(sideNormal, tri1)) ==
+    vvVecmath::sgn(this->distPointPlane(sideNormal, tri1)))
   {
-    sideNormal.planeNormalPPV(tri1, tri3, &normal);
-    if (vvVecmath::sgn(tri2->distPointPlane(&sideNormal, tri1)) ==
-      vvVecmath::sgn(this->distPointPlane(&sideNormal, tri1)))
+    sideNormal.planeNormalPPV(tri1, tri3, normal);
+    if (vvVecmath::sgn(tri2->distPointPlane(sideNormal, tri1)) ==
+      vvVecmath::sgn(this->distPointPlane(sideNormal, tri1)))
     {
-      sideNormal.planeNormalPPV(tri2, tri3, &normal);
-      if (vvVecmath::sgn(tri1->distPointPlane(&sideNormal, tri2)) ==
-        vvVecmath::sgn(this->distPointPlane(&sideNormal, tri2)))
+      sideNormal.planeNormalPPV(tri2, tri3, normal);
+      if (vvVecmath::sgn(tri1->distPointPlane(sideNormal, tri2)) ==
+        vvVecmath::sgn(this->distPointPlane(sideNormal, tri2)))
       {
         return true;
       }
@@ -829,17 +806,17 @@ T vvBaseVector3<T>::isectLineLine(const vvBaseVector3<T>& pt1,
     vvPlane plane(p1, v1, v2);
 
     // Compute shortest distance between lines:
-    this->copy(&p2);
-    dist = this->distPointPlane(&plane.normal, &plane.point);
+    this->copy(p2);
+    dist = this->distPointPlane(plane.normal, plane.point);
 
     return dist;
   */
-  p1.copy(&pt1);
-  p2.copy(&pt1);
-  p2.add(&v1);
-  p3.copy(&pt2);
-  p4.copy(&pt2);
-  p4.add(&v2);
+  p1.copy(pt1);
+  p2.copy(pt1);
+  p2.add(v1);
+  p3.copy(pt2);
+  p4.copy(pt2);
+  p4.add(v2);
 
   p13.e[0] = p1.e[0] - p3.e[0];
   p13.e[1] = p1.e[1] - p3.e[1];
@@ -879,9 +856,9 @@ T vvBaseVector3<T>::isectLineLine(const vvBaseVector3<T>& pt1,
   pb.e[1] = p3.e[1] + mub * p43.e[1];
   pb.e[2] = p3.e[2] + mub * p43.e[2];
 
-  this->copy(&pa);
+  this->copy(pa);
 
-  return(pa.distance(&pb));
+  return(pa.distance(pb));
 }
 
 //----------------------------------------------------------------------------
@@ -896,27 +873,27 @@ T vvBaseVector3<T>::isectLineLine(const vvBaseVector3<T>& pt1,
   @param a,b points forming the line
 */
 template <typename T>
-bool vvBaseVector3<T>::isSameSideLine2D(const vvBaseVector3<T>* p1,
-                                        const vvBaseVector3<T>* p2,
-                                        const vvBaseVector3<T>* a,
-                                        const vvBaseVector3<T>* b)
+bool vvBaseVector3<T>::isSameSideLine2D(const vvBaseVector3<T>& p1,
+                                        const vvBaseVector3<T>& p2,
+                                        const vvBaseVector3<T>& a,
+                                        const vvBaseVector3<T>& b)
 {
   vvBaseVector3 diff1, diff2;
   vvBaseVector3 cp1, cp2;
   vvBaseVector3 dp;
 
-  assert(p1->e[2]==0.0f && p2->e[2]==0.0f && a->e[2]==0.0f && b->e[2]==0.0f);
-  diff1.e[0] = p1->e[0] - a->e[0];
-  diff1.e[1] = p1->e[1] - a->e[1];
-  diff2.e[0] = p2->e[0] - a->e[0];
-  diff2.e[1] = p2->e[1] - a->e[1];
-  cp1.e[0] = b->e[0] - a->e[0];
-  cp1.e[1] = b->e[1] - a->e[1];
-  cp2.copy(&cp1);
-  cp1.cross(&diff1);
-  cp2.cross(&diff2);
-  dp.copy(&cp1);
-  if (dp.dot(&cp2) >= 0.0f) return true;
+  assert(p1.e[2]==0.0f && p2.e[2]==0.0f && a.e[2]==0.0f && b.e[2]==0.0f);
+  diff1.e[0] = p1.e[0] - a.e[0];
+  diff1.e[1] = p1.e[1] - a.e[1];
+  diff2.e[0] = p2.e[0] - a.e[0];
+  diff2.e[1] = p2.e[1] - a.e[1];
+  cp1.e[0] = b.e[0] - a.e[0];
+  cp1.e[1] = b.e[1] - a.e[1];
+  cp2.copy(cp1);
+  cp1.cross(diff1);
+  cp2.cross(diff2);
+  dp.copy(cp1);
+  if (dp.dot(cp2) >= 0.0f) return true;
   else return false;
 }
 
@@ -926,11 +903,11 @@ bool vvBaseVector3<T>::isSameSideLine2D(const vvBaseVector3<T>* p1,
   @param v1,v2,v3 triangle vertices
 */
 template <typename T>
-bool vvBaseVector3<T>::isInTriangle(const vvBaseVector3<T>* v1,
-                                    const vvBaseVector3<T>* v2,
-                                    const vvBaseVector3<T>* v3)
+bool vvBaseVector3<T>::isInTriangle(const vvBaseVector3<T>& v1,
+                                    const vvBaseVector3<T>& v2,
+                                    const vvBaseVector3<T>& v3)
 {
-  assert(this->e[2]==0.0f && v1->e[2]==0.0f && v2->e[2]==0.0f && v3->e[2]==0.0f);
+  assert(this->e[2]==0.0f && v1.e[2]==0.0f && v2.e[2]==0.0f && v3.e[2]==0.0f);
 
   if (isSameSideLine2D(this, v1, v2, v3) && isSameSideLine2D(this, v2, v1, v3) &&
     isSameSideLine2D(this, v3, v1, v2)) return true;
@@ -947,7 +924,7 @@ bool vvBaseVector3<T>::isInTriangle(const vvBaseVector3<T>* v1,
 */
 template <typename T>
 void vvBaseVector3<T>::cyclicSort(const int numVectors,
-                                  const vvBaseVector3<T>* axis)
+                                  const vvBaseVector3<T>& axis)
 {
   vvBaseVector3* diff;                            // difference vectors between pairs of points
   vvBaseVector3 normal;                           // normal vector
@@ -959,8 +936,8 @@ void vvBaseVector3<T>::cyclicSort(const int numVectors,
   // Compute difference vectors:
   for (int i=0; i<numVectors-1; ++i)
   {
-    diff[i].copy(&this[i+1]);
-    diff[i].sub(&this[0]);
+    diff[i].copy(this[i+1]);
+    diff[i].sub(this[0]);
   }
 
   // Sort vectors:
@@ -972,13 +949,13 @@ void vvBaseVector3<T>::cyclicSort(const int numVectors,
     {
       for (int j=i+1; j<numVectors-1 && swapped==false; ++j)
       {
-        normal.copy(&diff[i]);
-        normal.cross(&diff[i+1]);
+        normal.copy(diff[i]);
+        normal.cross(diff[i+1]);
         normal.normalize();
         if (normal.dot(axis) < 0.0f)              // do normals point into opposite directions?
         {
-          this[i+1].swap(&this[j+1]);             // swap points
-          diff[i].swap(&diff[j]);                 // swap difference vectors
+          this[i+1].swap(this[j+1]);             // swap points
+          diff[i].swap(diff[j]);                  // swap difference vectors
           swapped = true;
         }
       }
@@ -1029,7 +1006,7 @@ void vvBaseVector3<T>::getSpherical(T* r, T* phi, T* theta)
   // Compute sphere coordinates of current destination voxel:
   upvec.set(0.0f, 1.0f, 0.0f);
   *r = length();
-  *theta = angle(&upvec);
+  *theta = angle(upvec);
 
   // Phi must be computed differently for each quadrant:
   if (e[0] >= 0.0f)
@@ -1062,10 +1039,10 @@ void vvBaseVector3<T>::getSpherical(T* r, T* phi, T* theta)
   @return direction cosines in 'this' vector
 */
 template <typename T>
-void vvBaseVector3<T>::directionCosines(const vvBaseVector3<T>* src)
+void vvBaseVector3<T>::directionCosines(const vvBaseVector3<T>& src)
 {
   for (int i=0; i<3; ++i)
-    e[i] = cosf(atanf(src->e[i]));
+    e[i] = cosf(atanf(src.e[i]));
 }
 
 //
@@ -1220,23 +1197,12 @@ vvBaseVector4<T>::vvBaseVector4(const T x, const T y, const T z, const T w)
 //----------------------------------------------------------------------------
 /// constructor for vector3 + w
 template <typename T>
-vvBaseVector4<T>::vvBaseVector4(const vvBaseVector3<T>* v, const T w)
+vvBaseVector4<T>::vvBaseVector4(const vvBaseVector3<T>& v, const T w)
 {
-  e[0] = v->e[0];
-  e[1] = v->e[1];
-  e[2] = v->e[2];
+  e[0] = v.e[0];
+  e[1] = v.e[1];
+  e[2] = v.e[2];
   e[3] = w;
-}
-
-//----------------------------------------------------------------------------
-/// Constructor for a copy of a vector
-template <typename T>
-vvBaseVector4<T>::vvBaseVector4(const vvBaseVector4<T>* v)
-{
-  e[0] = v->e[0];
-  e[1] = v->e[1];
-  e[2] = v->e[2];
-  e[3] = v->e[3];
 }
 
 //----------------------------------------------------------------------------
@@ -1269,50 +1235,50 @@ void vvBaseVector4<T>::set(const T a, const T b, const T c, const T d)
 //----------------------------------------------------------------------------
 /// Add two vectors
 template <typename T>
-void vvBaseVector4<T>::add(const vvBaseVector4<T>* v)
+void vvBaseVector4<T>::add(const vvBaseVector4<T>& v)
 {
-  e[0] += v->e[0];
-  e[1] += v->e[1];
-  e[2] += v->e[2];
-  e[3] += v->e[3];
+  e[0] += v.e[0];
+  e[1] += v.e[1];
+  e[2] += v.e[2];
+  e[3] += v.e[3];
 }
 
 //----------------------------------------------------------------------------
 /// Subtract two vectors
 template <typename T>
-void vvBaseVector4<T>::sub(const vvBaseVector4<T>* v)
+void vvBaseVector4<T>::sub(const vvBaseVector4<T>& v)
 {
-  e[0] -= v->e[0];
-  e[1] -= v->e[1];
-  e[2] -= v->e[2];
-  e[3] -= v->e[3];
+  e[0] -= v.e[0];
+  e[1] -= v.e[1];
+  e[2] -= v.e[2];
+  e[3] -= v.e[3];
 }
 
 //----------------------------------------------------------------------------
 /// Multiplies a vector with a matrix (V' = M x V)
 template <typename T>
-void vvBaseVector4<T>::multiply(const vvMatrix* m)
+void vvBaseVector4<T>::multiply(const vvMatrix& m)
 {
   int row, col;
-  vvVector4 bak((vvVector4*)this);
+  vvBaseVector4<T> bak(*this);
 
   for (row=0; row<4; ++row)
   {
     e[row] = 0.0f;
     for(col=0; col<4; ++col)
-      e[row] += (*m)(row, col) * bak.e[col];
+      e[row] += m(row, col) * bak.e[col];
   }
 }
 
 //----------------------------------------------------------------------------
 /// Copy a vector
 template <typename T>
-void vvBaseVector4<T>::copy(const vvBaseVector4<T>* v)
+void vvBaseVector4<T>::copy(const vvBaseVector4<T>& v)
 {
-  e[0] = v->e[0];
-  e[1] = v->e[1];
-  e[2] = v->e[2];
-  e[3] = v->e[3];
+  e[0] = v.e[0];
+  e[1] = v.e[1];
+  e[2] = v.e[2];
+  e[3] = v.e[3];
 }
 
 //----------------------------------------------------------------------------

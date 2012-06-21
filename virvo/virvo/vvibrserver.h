@@ -36,7 +36,7 @@ public:
 private:
   vvRenderer::IbrMode         _ibrMode;
 
-  void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer);
+  void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
   void resize(int w, int h);
   vvIbrImage *_image;
   uchar *_pixels;

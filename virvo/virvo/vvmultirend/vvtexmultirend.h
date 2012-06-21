@@ -196,8 +196,8 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     void  updateTransferFunction();
     void  updateVolumeData();
     void  updateVolumeData(int, int, int, int, int, int);
-    void  setViewingDirection(const vvVector3*);
-    void  setObjectDirection(const vvVector3*);
+    void  setViewingDirection(const vvVector3& vd);
+    void  setObjectDirection(const vvVector3& od);
     virtual void setParameter(ParameterType param, const vvParam& value);
     virtual vvParam getParameter(ParameterType param) const;
     static bool isSupported(GeometryType);

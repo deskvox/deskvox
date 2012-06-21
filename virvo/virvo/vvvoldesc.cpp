@@ -506,7 +506,7 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
       real[i] = src->real[i];
     }
     for (i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
-    pos.copy(&src->pos);
+    pos.copy(src->pos);
     currentFrame = src->currentFrame;
     tf.copy(&tf._widgets, &src->tf._widgets);
 
@@ -2593,7 +2593,7 @@ void vvVolDesc::makeSphere(int outer, int inner, InterpolationType ipt, bool ver
       {
         // Compute sphere coordinates of current destination voxel:
         v.set((float)x, (float)y, (float)z);
-        v.sub(&center);
+        v.sub(center);
         v[1] = -v[1];                             // adapt to vvVecmath coordinate system
         v[2] = -v[2];                             // adapt to vvVecmath coordinate system
         v.getSpherical(&dist, &phi, &theta);

@@ -52,9 +52,9 @@ public:
   void renderVolumeGL();
 
   void setCurrentFrame(int index);
-  void setObjectDirection(const vvVector3* od);
-  void setViewingDirection(const vvVector3* vd);
-  void setPosition(const vvVector3* p);
+  void setObjectDirection(const vvVector3& od);
+  void setViewingDirection(const vvVector3& vd);
+  void setPosition(const vvVector3& p);
   virtual void updateTransferFunction();
   virtual void setParameter(ParameterType param, const vvParam& value);
   virtual ErrorType requestFrame() const;

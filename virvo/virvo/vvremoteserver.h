@@ -60,7 +60,7 @@ protected:
   bool _loadVolumeFromFile;
   int _codetype;
 
-  virtual void renderImage(vvMatrix& pr, vvMatrix& mv, vvRenderer* renderer) = 0;
+  virtual void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer) = 0;
   virtual void resize(int w, int h);
 
 private:

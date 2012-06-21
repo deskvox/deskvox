@@ -282,13 +282,13 @@ void vvParBrickRend::renderVolumeGL()
     }
 
     vvMatrix invMV;
-    invMV.copy(&mv);
+    invMV.copy(mv);
     invMV.invert();
 
     // find eye position:
     vvVector3 eye;
     getEyePosition(&eye);
-    eye.multiply(&invMV);
+    eye.multiply(invMV);
 
     // bsp tree maintains boxes in voxel coordinates
     vvVector3i veye = vd->voxelCoords(eye);
@@ -460,8 +460,8 @@ void vvParBrickRend::render(Thread* thread)
 {
   pthread_barrier_wait(thread->barrier);
 
-  vvGLTools::setModelviewMatrix(&thread->mv);
-  vvGLTools::setProjectionMatrix(&thread->pr);
+  vvGLTools::setModelviewMatrix(thread->mv);
+  vvGLTools::setProjectionMatrix(thread->pr);
 
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

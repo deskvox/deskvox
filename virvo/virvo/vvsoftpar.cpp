@@ -131,7 +131,7 @@ void vvSoftPar::compositeVolume(int from, int to)
       vvVector3 pos1, pos2, dummy;
       findSlicePosition(0, &pos1, &dummy);
       findSlicePosition(1, &pos2, &dummy);
-      pos1.sub(&pos2);
+      pos1.sub(pos2);
       dx = sqrtf(1.0f + pos1[0] * pos1[0] + pos1[1] * pos1[1]);
       for (i=0; i<VV_OP_CORR_TABLE_SIZE; ++i)
       {
@@ -905,12 +905,12 @@ void vvSoftPar::findOViewingDirection()
    vvDebugMsg::msg(3, "vvSoftPar::findOViewingDirection()");
 
    // Compute inverse of view matrix:
-   woView.copy(&owView);
+   woView.copy(owView);
    woView.invert();
 
    // Compute viewing direction:
-   oViewDir.copy(&wViewDir);
-   oViewDir.multiply(&woView);
+   oViewDir.copy(wViewDir);
+   oViewDir.multiply(woView);
    if (vvDebugMsg::isActive(3)) oViewDir.print("oViewDir");
 }
 
@@ -951,8 +951,8 @@ void vvSoftPar::findSViewingDirection()
 {
    vvDebugMsg::msg(3, "vvSoftPar::findSViewingDirection()");
 
-   sViewDir.copy(&oViewDir);
-   sViewDir.multiply(&osPerm);
+   sViewDir.copy(oViewDir);
+   sViewDir.multiply(osPerm);
    if (vvDebugMsg::isActive(3)) sViewDir.print("sViewDir");
 }
 
@@ -996,7 +996,7 @@ void vvSoftPar::findShearMatrix()
          scaleMat.scale(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
          break;
    }
-   siShear.multiplyPost(&scaleMat);
+   siShear.multiplyPost(scaleMat);
 
    // Create conversion matrix for intermediate image coordinates:
    // Shift right and down.
@@ -1009,7 +1009,7 @@ void vvSoftPar::findShearMatrix()
    imgConv.scale(quality, quality, 1.0f);
    imgConv(0, 3) = (float)(intImg->width / 2);
    imgConv(1, 3) = (float)(intImg->height / 2);
-   siShear.multiplyPost(&imgConv);
+   siShear.multiplyPost(imgConv);
    if (vvDebugMsg::isActive(3))
    {
       intImg->print("intImg:");
@@ -1018,8 +1018,8 @@ void vvSoftPar::findShearMatrix()
    }
 
    // Assemble final shear matrix:
-   oiShear.copy(&osPerm);
-   oiShear.multiplyPost(&siShear);
+   oiShear.copy(osPerm);
+   oiShear.multiplyPost(siShear);
 
    if (vvDebugMsg::isActive(3)) oiShear.print("oiShear");
 }
@@ -1037,15 +1037,15 @@ void vvSoftPar::findWarpMatrix()
    vvDebugMsg::msg(3, "vvSoftPar::findWarpMatrix()");
 
    // Compute inverse of shear matrix:
-   ioShear.copy(&oiShear);
+   ioShear.copy(oiShear);
    ioShear.invert();
 
    // Compute warp matrices:
-   iwWarp.copy(&ioShear);
-   iwWarp.multiplyPost(&owView);
+   iwWarp.copy(ioShear);
+   iwWarp.multiplyPost(owView);
    if (vvDebugMsg::isActive(3)) iwWarp.print("iwWarp");
-   ivWarp.copy(&iwWarp);
-   ivWarp.multiplyPost(&wvConv);
+   ivWarp.copy(iwWarp);
+   ivWarp.multiplyPost(wvConv);
    if (vvDebugMsg::isActive(3)) ivWarp.print("ivWarp");
 }
 

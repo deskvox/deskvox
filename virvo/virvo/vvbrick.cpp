@@ -138,8 +138,8 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     for (int i = startSlices; i <= endSlices; ++i)
     {
       vvVector3 isect[6];
-      const int isectCnt = isect->isectPlaneCuboid(&normal, &startPoint, &minClipped, &maxClipped);
-      startPoint.add(&delta);
+      const int isectCnt = isect->isectPlaneCuboid(normal, startPoint, minClipped, maxClipped);
+      startPoint.add(delta);
       if (isectCnt < 3) continue;                 // at least 3 intersections needed for drawing
       // Check volume section mode:
       if (renderer->minSlice != -1 && i < renderer->minSlice) continue;
@@ -147,7 +147,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
 
       // Put the intersecting 3 to 6 vertices in cyclic order to draw adjacent
       // and non-overlapping triangles:
-      isect->cyclicSort(isectCnt, &normal);
+      isect->cyclicSort(isectCnt, normal);
 
       // Generate vertices in texture coordinates:
       vvVector3 texcoord[6];
@@ -299,7 +299,7 @@ ushort vvBrick::getFrontIndex(const vvVector3* vertices,
   for (int i=0; i<8; i++)
   {
     const vvVector3 v = vertices[i] - point;
-    const float dot = v.dot(&normal);
+    const float dot = v.dot(normal);
     if (dot > maxDot)
     {
       maxDot = dot;
@@ -334,7 +334,7 @@ void vvBrick::print() const
 void vvBrick::sortByCenter(std::vector<vvBrick*>& bricks, const vvVector3& axis)
 {
   const vvVector3 axisGetter(0, 1, 2);
-  const int a = static_cast<const int>(axis.dot(&axisGetter));
+  const int a = static_cast<const int>(axis.dot(axisGetter));
 
   for(std::vector<vvBrick*>::iterator it = bricks.begin(); it != bricks.end(); ++it)
   {

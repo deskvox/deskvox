@@ -87,8 +87,8 @@ class VIRVOEXPORT  vvSphere
     void performCulling();
     void calculateTexCoords();
     void setRadius(float);
-    void setVolumeDim(vvVector3*);
-    void setViewMatrix(vvMatrix*);
+    void setVolumeDim(const vvVector3& dim);
+    void setViewMatrix(const vvMatrix& viewMatrix);
     void setTextureOffset(float*);
 
   private:

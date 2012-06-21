@@ -362,12 +362,12 @@ void vvGLTools::getProjectionMatrix(vvMatrix* pm)
     Adjusts the opengl matrix mode to GL_MODELVIEW.
   @param new OpenGL modelview matrix
 */
-void vvGLTools::setModelviewMatrix(const vvMatrix* mv)
+void vvGLTools::setModelviewMatrix(const vvMatrix& mv)
 {
   vvDebugMsg::msg(3, "vvRenderer::setModelviewMatrix()");
 
   GLfloat glmatrix[16];                           // OpenGL compatible matrix
-  mv->getGL((float*)glmatrix);
+  mv.getGL((float*)glmatrix);
   glMatrixMode(GL_MODELVIEW);
   glLoadMatrixf(glmatrix);
 }
@@ -377,12 +377,12 @@ void vvGLTools::setModelviewMatrix(const vvMatrix* mv)
     Adjusts the opengl matrix mode to GL_PROJECTION.
   @param new OpenGL projection matrix
 */
-void vvGLTools::setProjectionMatrix(const vvMatrix* pm)
+void vvGLTools::setProjectionMatrix(const vvMatrix& pm)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProjectionMatrix()");
 
   GLfloat glmatrix[16];                           // OpenGL compatible matrix
-  pm->getGL((float*)glmatrix);
+  pm.getGL((float*)glmatrix);
   glMatrixMode(GL_PROJECTION);
   glLoadMatrixf(glmatrix);
 }
@@ -410,10 +410,10 @@ void vvGLTools::getClippingPlanes(vvPlane& znear, vvPlane& zfar)
   //trPr.invert();
 
   // Transform to eye coordinates.
-  znear._point.multiply(&invPr);
-  zfar._point.multiply(&invPr);
-  znear._normal.multiply(&trPr);
-  zfar._normal.multiply(&trPr);
+  znear._point.multiply(invPr);
+  zfar._point.multiply(invPr);
+  znear._normal.multiply(trPr);
+  zfar._normal.multiply(trPr);
   znear._normal.normalize();
   zfar._normal.normalize();
 }

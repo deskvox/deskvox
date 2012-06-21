@@ -248,7 +248,7 @@ void vvRenderVP::updateModelviewMatrix()
   vpIdentityMatrix(vpc);
 
   // Set model view matrix:
-  m.copy(&mv);               // copy model view matrix
+  m.copy(mv);               // copy model view matrix
 
   // Invert x axis rotation:
   m(1, 2) = -m(1, 2);
@@ -336,7 +336,7 @@ void vvRenderVP::renderVolumeGL()
   h = viewport[3];
   if (w<=0 || h<=0) return;   // safety first
 
-  pos.copy(&vd->pos);
+  pos.copy(vd->pos);
 
   // Check for projection type:
   vvGLTools::getProjectionMatrix(&pm);
@@ -368,7 +368,7 @@ void vvRenderVP::renderVolumeGL()
   if (_boundaries)
   {
     vvVector3 size = vd->getSize();
-    drawBoundingBox(&size, &pos, &defColor);   // draw boundaries
+    drawBoundingBox(size, pos, defColor);   // draw boundaries
   }
 
   vvRenderer::renderVolumeGL();
