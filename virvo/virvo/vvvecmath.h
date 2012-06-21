@@ -166,9 +166,8 @@ class VIRVOEXPORT vvMatrix
 template <typename T>
 class vvBaseVector4
 {
-  public:
     T e[4];                                   ///< vector elements (x|y|z|w)
-
+  public:
     vvBaseVector4();
     explicit vvBaseVector4(T val);
     vvBaseVector4(T x, T y, T z, T w);
@@ -193,9 +192,8 @@ class vvBaseVector4
 template <typename T>
 class vvBaseVector3
 {
-  public:
     T e[3];                                   ///< vector elements (x|y|z)
-
+  public:
     vvBaseVector3();
     explicit vvBaseVector3(T);
     vvBaseVector3(T x, T y, T z);

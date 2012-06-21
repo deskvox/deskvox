@@ -1617,7 +1617,7 @@ bool vvCudaSW<Base>::compositeNearest(int fromY, int toY, int firstSlice, int la
    sinc.sub(start);
    einc.sub(end);
 
-   float dist = sqrtf(1.0f + sinc.e[0] * sinc.e[0] + sinc.e[1] * sinc.e[1]);
+   float dist = sqrtf(1.0f + sinc[0] * sinc[0] + sinc[1] * sinc[1]);
    if(oldLutDist/dist < 0.9f || dist/oldLutDist < 0.9f)
    {
        updateLUT(dist);
@@ -1630,8 +1630,8 @@ bool vvCudaSW<Base>::compositeNearest(int fromY, int toY, int firstSlice, int la
    vvVector4 scur = start;
    for(int slice=firstSlice; slice != lastSlice; slice += sliceStep)
    {
-       h_start[slice].x = int(scur.e[0] / scur.e[3] + 0.5f);
-       h_start[slice].y = int(scur.e[1] / scur.e[3] + 0.5f);
+       h_start[slice].x = int(scur[0] / scur[3] + 0.5f);
+       h_start[slice].y = int(scur[1] / scur[3] + 0.5f);
        scur.add(sinc);
    }
    from.y = max(from.y, fromY);
@@ -1684,7 +1684,7 @@ bool vvCudaSW<Base>::compositeBilinear(int fromY, int toY, int firstSlice, int l
     sinc.sub(start);
     einc.sub(end);
 
-    float dist = sqrtf(1.0f + sinc.e[0] * sinc.e[0] + sinc.e[1] * sinc.e[1]);
+    float dist = sqrtf(1.0f + sinc[0] * sinc[0] + sinc[1] * sinc[1]);
     if(oldLutDist/dist < 0.9f || dist/oldLutDist < 0.9f)
     {
         updateLUT(dist);
@@ -1709,10 +1709,10 @@ bool vvCudaSW<Base>::compositeBilinear(int fromY, int toY, int firstSlice, int l
 #endif
     for(int slice=firstSlice; slice != lastSlice; slice += sliceStep)
     {
-        const float sx = scur.e[0]/scur.e[3];
-        const float sy = scur.e[1]/scur.e[3];
-        const float ex = ecur.e[0]/ecur.e[3];
-        const float ey = ecur.e[1]/ecur.e[3];
+        const float sx = scur[0]/scur[3];
+        const float sy = scur[1]/scur[3];
+        const float ex = ecur[0]/ecur[3];
+        const float ey = ecur[1]/ecur[3];
 
         h_start[slice].x = max(0,int(floor(sx)));
         h_start[slice].y = max(0,int(floor(sy)));
@@ -1838,7 +1838,7 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
     sinc.sub(start);
     einc.sub(end);
 
-    float dist = sqrtf(1.0f + sinc.e[0] * sinc.e[0] + sinc.e[1] * sinc.e[1]);
+    float dist = sqrtf(1.0f + sinc[0] * sinc[0] + sinc[1] * sinc[1]);
 
     float s = 1.f/(dist * Base::getParameter(vvRenderState::VV_QUALITY).asFloat());
     int nslice = (int)(Base::len[2]/s);
@@ -1884,10 +1884,10 @@ bool vvCudaSW<Base>::compositeRaycast(int fromY, int toY, int firstSlice, int la
 #endif
     for(int slice=0; slice<2; ++slice)
     {
-        const float sx = scur.e[0]/scur.e[3];
-        const float sy = scur.e[1]/scur.e[3];
-        const float ex = ecur.e[0]/ecur.e[3];
-        const float ey = ecur.e[1]/ecur.e[3];
+        const float sx = scur[0]/scur[3];
+        const float sy = scur[1]/scur[3];
+        const float ex = ecur[0]/ecur[3];
+        const float ey = ecur[1]/ecur[3];
 
         h_start[slice].x = max(0,int(floor(sx)));
         h_start[slice].y = max(0,int(floor(sy)));

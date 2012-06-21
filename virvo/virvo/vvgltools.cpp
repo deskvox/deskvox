@@ -326,9 +326,9 @@ vvGLTools::Viewport vvGLTools::getViewport()
 */
 vvVector4 vvGLTools::queryClearColor()
 {
-  vvVector4 result;
-  glGetFloatv(GL_COLOR_CLEAR_VALUE, result.e);
-  return result;
+  GLfloat tmp[4];
+  glGetFloatv(GL_COLOR_CLEAR_VALUE, tmp);
+  return vvVector4(tmp[0], tmp[1], tmp[2], tmp[3]);
 }
 
 //----------------------------------------------------------------------------

@@ -32,8 +32,8 @@ void vvIbr::calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
   max4.multiply(mv);
 
   vvVector3 center(center4[0], center4[1], center4[2]);
-  vvVector3 min3(min4.e[0], min4.e[1], min4.e[2]);
-  vvVector3 max3(max4.e[0], max4.e[1], max4.e[2]);
+  vvVector3 min3(min4[0], min4[1], min4[2]);
+  vvVector3 max3(max4[0], max4[1], max4[2]);
 
   float radius = (max3 - min3).length() * 0.5f;
 

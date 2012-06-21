@@ -733,42 +733,42 @@ void vvSoftVR::findSlicePosition(int slice, vvVector4* start, vvVector4* end)
    switch (principal)
    {
       case vvVecmath::X_AXIS:
-         start->e[0] =  0.5f * _size[0] - (float)slice / (float)len[2] * _size[0];
-         start->e[1] = -0.5f * _size[1];
-         start->e[2] = -0.5f * _size[2];
-         start->e[3] = 1.;
+         (*start)[0] =  0.5f * _size[0] - (float)slice / (float)len[2] * _size[0];
+         (*start)[1] = -0.5f * _size[1];
+         (*start)[2] = -0.5f * _size[2];
+         (*start)[3] = 1.;
          if (end)
          {
-            end->e[0]   =  start->e[0];
-            end->e[1]   = -start->e[1];
-            end->e[2]   = -start->e[2];
-            end->e[3] = 1.;
+            (*end)[0]   =  (*start)[0];
+            (*end)[1]   = -(*start)[1];
+            (*end)[2]   = -(*start)[2];
+            (*end)[3] = 1.;
          }
          break;
       case vvVecmath::Y_AXIS:
-         start->e[0] = -0.5f * _size[0];
-         start->e[1] =  0.5f * _size[1] - (float)slice / (float)len[2] * _size[1];
-         start->e[2] = -0.5f * _size[2];
-         start->e[3] = 1.;
+         (*start)[0] = -0.5f * _size[0];
+         (*start)[1] =  0.5f * _size[1] - (float)slice / (float)len[2] * _size[1];
+         (*start)[2] = -0.5f * _size[2];
+         (*start)[3] = 1.;
          if (end)
          {
-            end->e[0]   = -start->e[0];
-            end->e[1]   =  start->e[1];
-            end->e[2]   = -start->e[2];
-            end->e[3] = 1.;
+            (*end)[0]   = -(*start)[0];
+            (*end)[1]   =  (*start)[1];
+            (*end)[2]   = -(*start)[2];
+            (*end)[3] = 1.;
          }
          break;
       case vvVecmath::Z_AXIS:
-         start->e[0] = -0.5f * _size[0];
-         start->e[1] = -0.5f * _size[1];
-         start->e[2] =  0.5f * _size[2] - (float)slice / (float)len[2] * _size[2];
-         start->e[3] = 1.;
+         (*start)[0] = -0.5f * _size[0];
+         (*start)[1] = -0.5f * _size[1];
+         (*start)[2] =  0.5f * _size[2] - (float)slice / (float)len[2] * _size[2];
+         (*start)[3] = 1.;
          if (end)
          {
-            end->e[0]   = -start->e[0];
-            end->e[1]   = -start->e[1];
-            end->e[2]   =  start->e[2];
-            end->e[3] = 1.;
+            (*end)[0]   = -(*start)[0];
+            (*end)[1]   = -(*start)[1];
+            (*end)[2]   =  (*start)[2];
+            (*end)[3] = 1.;
          }
          break;
    }

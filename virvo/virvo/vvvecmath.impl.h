@@ -64,18 +64,18 @@ vvBaseVector3<T>::vvBaseVector3(const T x, const T y, const T z)
 template <typename T>
 vvBaseVector3<T>::vvBaseVector3(const vvBaseVector4<T>& v)
 {
-  T w = v.e[3];
+  T w = v[3];
   if (w != T(0))
   {
-    e[0] = v.e[0] / w;
-    e[1] = v.e[1] / w;
-    e[2] = v.e[2] / w;
+    e[0] = v[0] / w;
+    e[1] = v[1] / w;
+    e[2] = v[2] / w;
   }
   else
   {
-    e[0] = v.e[0];
-    e[1] = v.e[1];
-    e[2] = v.e[2];
+    e[0] = v[0];
+    e[1] = v[1];
+    e[2] = v[2];
   }
 }
 
@@ -1198,9 +1198,9 @@ vvBaseVector4<T>::vvBaseVector4(const T x, const T y, const T z, const T w)
 template <typename T>
 vvBaseVector4<T>::vvBaseVector4(const vvBaseVector3<T>& v, const T w)
 {
-  e[0] = v.e[0];
-  e[1] = v.e[1];
-  e[2] = v.e[2];
+  e[0] = v[0];
+  e[1] = v[1];
+  e[2] = v[2];
   e[3] = w;
 }
 
