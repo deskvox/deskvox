@@ -385,15 +385,15 @@ void vvSoftImg::warp(vvMatrix* w, vvSoftImg* srcImg)
    inv.copy(w);
    inv.invert();                                  // invert to compute source coords from destination coords
 
-   inv00 = inv.e[0][0];
-   inv01 = inv.e[0][1];
-   inv03 = inv.e[0][3];
-   inv10 = inv.e[1][0];
-   inv11 = inv.e[1][1];
-   inv13 = inv.e[1][3];
-   inv30 = inv.e[3][0];
-   inv31 = inv.e[3][1];
-   inv33 = inv.e[3][3];
+   inv00 = inv(0, 0);
+   inv01 = inv(0, 1);
+   inv03 = inv(0, 3);
+   inv10 = inv(1, 0);
+   inv11 = inv(1, 1);
+   inv13 = inv(1, 3);
+   inv30 = inv(3, 0);
+   inv31 = inv(3, 1);
+   inv33 = inv(3, 3);
 
    for (j=0; j<height; ++j)                       // loop thru destination pixels
    {

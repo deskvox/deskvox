@@ -1174,7 +1174,7 @@ vvSocket::ErrorType vvSocketIO::getMatrix(vvMatrix* m)
     }
     for (int i=0; i<4; i++)
       for (int j=0; j<4; j++)
-        m->e[i][j] = vvToolshed::readFloat(buffer+4*(4*i+j));
+        (*m)(i, j) = vvToolshed::readFloat(buffer+4*(4*i+j));
     delete[] buffer;
     return vvSocket::VV_OK;
   }
@@ -1608,7 +1608,7 @@ vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m)
 
     for (int i=0; i<4; i++)
       for (int j=0; j<4; j++)
-        vvToolshed::writeFloat(&buffer[4*(4*i+j)], m->e[i][j]);
+        vvToolshed::writeFloat(&buffer[4*(4*i+j)], (*m)(i, j));
     return putData(buffer, 64);
   }
   else

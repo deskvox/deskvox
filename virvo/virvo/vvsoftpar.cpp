@@ -977,8 +977,8 @@ void vvSoftPar::findShearMatrix()
 
    // Assemble standard object space shear matrix from shear factors:
    siShear.identity();
-   siShear.e[0][2] = si;
-   siShear.e[1][2] = sj;
+   siShear(0, 2) = si;
+   siShear(1, 2) = sj;
 
    // Add scale factor depending on object size:
    const vvVector3 size = vd->getSize();
@@ -1007,8 +1007,8 @@ void vvSoftPar::findShearMatrix()
    //  0   0    0    1
    imgConv.identity();
    imgConv.scale(quality, quality, 1.0f);
-   imgConv.e[0][3] = (float)(intImg->width / 2);
-   imgConv.e[1][3] = (float)(intImg->height / 2);
+   imgConv(0, 3) = (float)(intImg->width / 2);
+   imgConv(1, 3) = (float)(intImg->height / 2);
    siShear.multiplyPost(&imgConv);
    if (vvDebugMsg::isActive(3))
    {

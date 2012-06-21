@@ -293,13 +293,13 @@ void vvBaseVector3<T>::multiply(const vvMatrix* m)
   {
     e[row] = 0.0f;
     for (int col=0; col<4; ++col)
-      e[row] += m->e[row][col] * v1[col];
+      e[row] += (*m)(row, col) * v1[col];
   }
 
-  const T w = m->e[3][0] * v1[0]
-            + m->e[3][1] * v1[1]
-            + m->e[3][2] * v1[2]
-            + m->e[3][3] * v1[3];
+  const T w = (*m)(3, 0) * v1[0]
+            + (*m)(3, 1) * v1[1]
+            + (*m)(3, 2) * v1[2]
+            + (*m)(3, 3) * v1[3];
 
   if (w != 1.0f)
   {
@@ -1300,7 +1300,7 @@ void vvBaseVector4<T>::multiply(const vvMatrix* m)
   {
     e[row] = 0.0f;
     for(col=0; col<4; ++col)
-      e[row] += m->e[row][col] * bak.e[col];
+      e[row] += (*m)(row, col) * bak.e[col];
   }
 }
 

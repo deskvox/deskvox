@@ -2677,23 +2677,23 @@ void vvTexRend::updateFrustum()
   // extract the planes of the viewing frustum
 
   // left plane
-  _frustum[0].set(clip.e[3][0]+clip.e[0][0], clip.e[3][1]+clip.e[0][1],
-    clip.e[3][2]+clip.e[0][2], clip.e[3][3]+clip.e[0][3]);
+  _frustum[0].set(clip(3, 0)+clip(0, 0), clip(3, 1)+clip(0, 1),
+    clip(3, 2)+clip(0, 2), clip(3, 3)+clip(0, 3));
   // right plane
-  _frustum[1].set(clip.e[3][0]-clip.e[0][0], clip.e[3][1]-clip.e[0][1],
-    clip.e[3][2]-clip.e[0][2], clip.e[3][3]-clip.e[0][3]);
+  _frustum[1].set(clip(3, 0)-clip(0, 0), clip(3, 1)-clip(0, 1),
+    clip(3, 2)-clip(0, 2), clip(3, 3)-clip(0, 3));
   // top plane
-  _frustum[2].set(clip.e[3][0]-clip.e[1][0], clip.e[3][1]-clip.e[1][1],
-    clip.e[3][2]-clip.e[1][2], clip.e[3][3]-clip.e[1][3]);
+  _frustum[2].set(clip(3, 0)-clip(1, 0), clip(3, 1)-clip(1, 1),
+    clip(3, 2)-clip(1, 2), clip(3, 3)-clip(1, 3));
   // bottom plane
-  _frustum[3].set(clip.e[3][0]+clip.e[1][0], clip.e[3][1]+clip.e[1][1],
-    clip.e[3][2]+clip.e[1][2], clip.e[3][3]+clip.e[1][3]);
+  _frustum[3].set(clip(3, 0)+clip(1, 0), clip(3, 1)+clip(1, 1),
+    clip(3, 2)+clip(1, 2), clip(3, 3)+clip(1, 3));
   // near plane
-  _frustum[4].set(clip.e[3][0]+clip.e[2][0], clip.e[3][1]+clip.e[2][1],
-    clip.e[3][2]+clip.e[2][2], clip.e[3][3]+clip.e[2][3]);
+  _frustum[4].set(clip(3, 0)+clip(2, 0), clip(3, 1)+clip(2, 1),
+    clip(3, 2)+clip(2, 2), clip(3, 3)+clip(2, 3));
   // far plane
-  _frustum[5].set(clip.e[3][0]-clip.e[2][0], clip.e[3][1]-clip.e[2][1],
-    clip.e[3][2]-clip.e[2][2], clip.e[3][3]-clip.e[2][3]);
+  _frustum[5].set(clip(3, 0)-clip(2, 0), clip(3, 1)-clip(2, 1),
+    clip(3, 2)-clip(2, 2), clip(3, 3)-clip(2, 3));
 }
 
 bool vvTexRend::insideFrustum(const vvVector3 &min, const vvVector3 &max) const

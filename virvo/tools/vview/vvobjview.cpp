@@ -103,7 +103,7 @@ bool vvObjView::saveMV(FILE* fp)
   fputc('\n', fp);
   for (int i=0; i<4; ++i)
   {
-    fprintf(fp, "%f %f %f %f\n", mv.e[i][0], mv.e[i][1], mv.e[i][2], mv.e[i][3]);
+    fprintf(fp, "%f %f %f %f\n", mv(i, 0), mv(i, 1), mv(i, 2), mv(i, 3));
   }
   return true;
 }
@@ -154,7 +154,7 @@ bool vvObjView::loadMV(FILE* fp)
   {
     ttype = tokenizer->nextToken();
     if (ttype != vvTokenizer::VV_NUMBER) goto done;
-    camera.e[i][j] = tokenizer->nval;
+    camera(i, j) = tokenizer->nval;
   }
   mv.copy(&camera);
   retval = true;

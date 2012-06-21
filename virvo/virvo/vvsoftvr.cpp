@@ -642,23 +642,23 @@ void vvSoftVR::findPermutationMatrix()
    switch (principal)
    {
       case vvVecmath::X_AXIS:
-         osPerm.e[0][1] = 1.0f;
-         osPerm.e[1][2] = 1.0f;
-         osPerm.e[2][0] = 1.0f;
-         osPerm.e[3][3] = 1.0f;
+         osPerm(0, 1) = 1.0f;
+         osPerm(1, 2) = 1.0f;
+         osPerm(2, 0) = 1.0f;
+         osPerm(3, 3) = 1.0f;
          break;
       case vvVecmath::Y_AXIS:
-         osPerm.e[0][2] = 1.0f;
-         osPerm.e[1][0] = 1.0f;
-         osPerm.e[2][1] = 1.0f;
-         osPerm.e[3][3] = 1.0f;
+         osPerm(0, 2) = 1.0f;
+         osPerm(1, 0) = 1.0f;
+         osPerm(2, 1) = 1.0f;
+         osPerm(3, 3) = 1.0f;
          break;
       case vvVecmath::Z_AXIS:
       default:
-         osPerm.e[0][0] = 1.0f;
-         osPerm.e[1][1] = 1.0f;
-         osPerm.e[2][2] = 1.0f;
-         osPerm.e[3][3] = 1.0f;
+         osPerm(0, 0) = 1.0f;
+         osPerm(1, 1) = 1.0f;
+         osPerm(2, 2) = 1.0f;
+         osPerm(3, 3) = 1.0f;
          break;
    }
    if (vvDebugMsg::isActive(3)) osPerm.print("osPerm");
@@ -683,10 +683,10 @@ void vvSoftVR::findViewportMatrix(int w, int h)
    vvDebugMsg::msg(2, "vvSoftVR::findViewportMatrix()");
 
    wvConv.identity();
-   wvConv.e[0][0] = (float)(w / 2);
-   wvConv.e[0][3] = (float)(w / 2);
-   wvConv.e[1][1] = (float)(h / 2);
-   wvConv.e[1][3] = (float)(h / 2);
+   wvConv(0, 0) = (float)(w / 2);
+   wvConv(0, 3) = (float)(w / 2);
+   wvConv(1, 1) = (float)(h / 2);
+   wvConv(1, 3) = (float)(h / 2);
 
    if (vvDebugMsg::isActive(3)) wvConv.print("wvConv");
 
@@ -784,39 +784,39 @@ void vvSoftVR::findClipPlaneEquation()
 
    // Compute conversion matrix:
    oxConv.identity();
-   oxConv.e[0][0] =  (float)vd->vox[0]  / _size[0];
-   oxConv.e[1][1] = -(float)vd->vox[1] / _size[1]; // negate because y coodinate points down
-   oxConv.e[2][2] = -(float)vd->vox[2] / _size[2]; // negate because z coordinate points back
-   oxConv.e[0][3] =  (float)vd->vox[0]  / 2.0f;
-   oxConv.e[1][3] =  (float)vd->vox[1] / 2.0f;
-   oxConv.e[2][3] =  (float)vd->vox[2] / 2.0f;
+   oxConv(0, 0) =  (float)vd->vox[0]  / _size[0];
+   oxConv(1, 1) = -(float)vd->vox[1] / _size[1]; // negate because y coodinate points down
+   oxConv(2, 2) = -(float)vd->vox[2] / _size[2]; // negate because z coordinate points back
+   oxConv(0, 3) =  (float)vd->vox[0]  / 2.0f;
+   oxConv(1, 3) =  (float)vd->vox[1] / 2.0f;
+   oxConv(2, 3) =  (float)vd->vox[2] / 2.0f;
 
    // Find coordinate permutation matrix:
    xxPerm.zero();
    switch (principal)
    {
       case vvVecmath::X_AXIS:
-         xxPerm.e[0][1] =-1.0f;
-         xxPerm.e[0][3] = (float)vd->vox[1];
-         xxPerm.e[1][2] = 1.0f;
-         xxPerm.e[2][0] =-1.0f;
-         xxPerm.e[2][3] = (float)vd->vox[0];
-         xxPerm.e[3][3] = 1.0f;
+         xxPerm(0, 1) =-1.0f;
+         xxPerm(0, 3) = (float)vd->vox[1];
+         xxPerm(1, 2) = 1.0f;
+         xxPerm(2, 0) =-1.0f;
+         xxPerm(2, 3) = (float)vd->vox[0];
+         xxPerm(3, 3) = 1.0f;
          break;
       case vvVecmath::Y_AXIS:
-         xxPerm.e[0][2] =-1.0f;
-         xxPerm.e[0][3] = (float)vd->vox[2];
-         xxPerm.e[1][0] =-1.0f;
-         xxPerm.e[1][3] = (float)vd->vox[0];
-         xxPerm.e[2][1] = 1.0f;
-         xxPerm.e[3][3] = 1.0f;
+         xxPerm(0, 2) =-1.0f;
+         xxPerm(0, 3) = (float)vd->vox[2];
+         xxPerm(1, 0) =-1.0f;
+         xxPerm(1, 3) = (float)vd->vox[0];
+         xxPerm(2, 1) = 1.0f;
+         xxPerm(3, 3) = 1.0f;
          break;
       case vvVecmath::Z_AXIS:
       default:
-         xxPerm.e[0][0] = 1.0f;
-         xxPerm.e[1][1] = 1.0f;
-         xxPerm.e[2][2] = 1.0f;
-         xxPerm.e[3][3] = 1.0f;
+         xxPerm(0, 0) = 1.0f;
+         xxPerm(1, 1) = 1.0f;
+         xxPerm(2, 2) = 1.0f;
+         xxPerm(3, 3) = 1.0f;
          break;
    }
 

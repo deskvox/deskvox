@@ -205,10 +205,10 @@ void vvPerformanceTest::writeResultFiles()
         {
           fprintf(handle, "[%f],", *it);
           fprintf(handle, "[%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f]",
-                 matrices[i].e[0][0], matrices[i].e[0][1], matrices[i].e[0][2], matrices[i].e[0][3],
-                 matrices[i].e[1][0], matrices[i].e[1][1], matrices[i].e[1][2], matrices[i].e[1][3],
-                 matrices[i].e[2][0], matrices[i].e[2][1], matrices[i].e[2][2], matrices[i].e[2][3],
-                 matrices[i].e[3][0], matrices[i].e[3][1], matrices[i].e[3][2], matrices[i].e[3][3]);
+                 matrices[i](0, 0), matrices[i](0, 1), matrices[i](0, 2), matrices[i](0, 3),
+                 matrices[i](1, 0), matrices[i](1, 1), matrices[i](1, 2), matrices[i](1, 3),
+                 matrices[i](2, 0), matrices[i](2, 1), matrices[i](2, 2), matrices[i](2, 3),
+                 matrices[i](3, 0), matrices[i](3, 1), matrices[i](3, 2), matrices[i](3, 3));
           fprintf(handle, "\n");
           ++i;
         }

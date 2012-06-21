@@ -98,11 +98,12 @@ class VIRVOEXPORT vvMatrix
     void LUDecomposition(int index[4], float &d);
     void LUBackSubstitution(int index[4], float b[4]);
 
-  public:
     float e[4][4];                                ///< matrix elements: [row][column]
-
+  public:
     vvMatrix();
     vvMatrix(float* glf);
+    float& operator()(int row, int col);
+    float operator()(int row, int col) const;
     vvMatrix operator+(const vvMatrix& operand) const;
     vvMatrix operator-(const vvMatrix& operand) const;
     vvMatrix operator*(const vvMatrix& operand) const;
@@ -300,7 +301,7 @@ inline std::ostream& operator<<(std::ostream& out, const vvMatrix& m)
   {
     for (int j = 0; j < 4; ++j)
     {
-      out << " " << m.e[i][j];
+      out << " " << m(i, j);
     }
     out << "\n";
   }

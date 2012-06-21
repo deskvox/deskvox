@@ -130,7 +130,7 @@ bool vvObjView::saveCamera(const char* filename)
   {
     for (j=0; j<4; ++j)
     {
-      fprintf(fp, " %f", _camera.e[j][i]);
+      fprintf(fp, " %f", _camera(j, i));
     }
   }
   fputc('\n', fp);
@@ -207,7 +207,7 @@ bool vvObjView::loadCamera(const char* filename)
         for (j=0; j<4 && !done; ++j)
         {
           ttype = tokenizer->nextToken();
-          if (ttype == vvTokenizer::VV_NUMBER) camera.e[j][i] = tokenizer->nval;
+          if (ttype == vvTokenizer::VV_NUMBER) camera(j, i) = tokenizer->nval;
           else 
           {
             cerr << "Unexpected parameter in camera file line " << tokenizer->getLineNumber() << endl;

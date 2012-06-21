@@ -90,6 +90,22 @@ vvMatrix::vvMatrix(float* glf)
 }
 
 //----------------------------------------------------------------------------
+/** Subscript operator.
+ */
+float& vvMatrix::operator()(int row, int col)
+{
+  return e[row][col];
+}
+
+//---------------------------------------------------------------------------
+/** Subscript operator.
+ */
+float vvMatrix::operator()(int row, int col) const
+{
+  return e[row][col];
+}
+
+//----------------------------------------------------------------------------
 /** Multiplication. Operands will be multiplied from left to right.
  */
 vvMatrix vvMatrix::operator+(const vvMatrix& operand) const

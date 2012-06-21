@@ -571,8 +571,8 @@ void vvSoftPer::findDIConvMatrix()
    vvDebugMsg::msg(3, "vvSoftPer::findDIConvMatrix()");
 
    diConv.identity();
-   diConv.e[0][3] = (float)(intImg->width / 2);
-   diConv.e[1][3] = (float)(intImg->height / 2);
+   diConv(0, 3) = (float)(intImg->width / 2);
+   diConv(1, 3) = (float)(intImg->height / 2);
 
    if (vvDebugMsg::isActive(3)) diConv.print("diConv");
 }
@@ -743,9 +743,9 @@ void vvSoftPer::findScaleMatrix()
    }
 
    if (stacking==true)
-      sf = 1.0f - sdShear.e[3][2];
+      sf = 1.0f - sdShear(3, 2);
    else
-      sf = sdShear.e[3][2] + 1;
+      sf = sdShear(3, 2) + 1;
 
    sf = 1.0f / sf;                                // invert scale factor
    scale.scale(sf, sf, 1.0f);
@@ -770,9 +770,9 @@ void vvSoftPer::findSDShearMatrix()
 
    sdShear.identity();
    assert(sEye[2] != 0.0f);                       // this should be asserted by the shift matrix
-   sdShear.e[0][2] = -sEye[0] / sEye[2];          // shear in x direction
-   sdShear.e[1][2] = -sEye[1] / sEye[2];          // shear in y direction
-   sdShear.e[3][2] = -sEye[3] / sEye[2];          // perspective scale component
+   sdShear(0, 2) = -sEye[0] / sEye[2];          // shear in x direction
+   sdShear(1, 2) = -sEye[1] / sEye[2];          // shear in y direction
+   sdShear(3, 2) = -sEye[3] / sEye[2];          // perspective scale component
 
    if (vvDebugMsg::isActive(3)) sdShear.print("sdShear");
 }
