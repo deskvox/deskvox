@@ -90,23 +90,11 @@ vvMatrix::vvMatrix(float* glf)
 }
 
 //----------------------------------------------------------------------------
-/// Copy constructor.
-vvMatrix::vvMatrix(const vvMatrix* m)
-{
-  int row, col;
-
-  for (row=0; row<4; ++row)
-    for (col=0; col<4; ++col)
-      e[row][col] = m->e[row][col];
-}
-
-
-//----------------------------------------------------------------------------
 /** Multiplication. Operands will be multiplied from left to right.
  */
 vvMatrix vvMatrix::operator+(const vvMatrix& operand) const
 {
-  vvMatrix result = this;
+  vvMatrix result = *this;
   for (int i = 0; i < 4; ++i)
   {
     for (int j = 0; j < 4; ++j)
@@ -123,7 +111,7 @@ vvMatrix vvMatrix::operator+(const vvMatrix& operand) const
  */
 vvMatrix vvMatrix::operator-(const vvMatrix& operand) const
 {
-  vvMatrix result = this;
+  vvMatrix result = *this;
   for (int i = 0; i < 4; ++i)
   {
     for (int j = 0; j < 4; ++j)
@@ -139,8 +127,7 @@ vvMatrix vvMatrix::operator-(const vvMatrix& operand) const
  */
 vvMatrix vvMatrix::operator*(const vvMatrix& operand) const
 {
-  vvMatrix tmp;
-  tmp = this;
+  vvMatrix tmp = *this;
   tmp.multiplyPre(&operand);
   return tmp;
 }
@@ -301,7 +288,7 @@ vvMatrix vvMatrix::rotate(float a, const vvVector3* v)
 void vvMatrix::multiplyPre(const vvMatrix* m)
 {
   int row, col;
-  vvMatrix bak(this);                             // backup of current matrix
+  vvMatrix bak(*this);                             // backup of current matrix
 
   for (row=0; row<4; ++row)
     for (col=0; col<4; ++col)
@@ -316,7 +303,7 @@ void vvMatrix::multiplyPre(const vvMatrix* m)
 void vvMatrix::multiplyPost(const vvMatrix* m)
 {
   int row, col;
-  vvMatrix bak(this);                             // backup of current matrix
+  vvMatrix bak(*this);                             // backup of current matrix
 
   for (row=0; row<4; ++row)
     for (col=0; col<4; ++col)
@@ -331,7 +318,7 @@ void vvMatrix::multiplyPost(const vvMatrix* m)
 void vvMatrix::invertOrtho()
 {
   int row, col;
-  vvMatrix bak(this);                             // backup of current matrix
+  vvMatrix bak(*this);                             // backup of current matrix
 
   for (row=0; row<3; ++row)
     for (col=0; col<3; ++col)
@@ -342,7 +329,7 @@ void vvMatrix::invertOrtho()
 /// Inverts _only_ the 2D part of a matrix
 void vvMatrix::invert2D()
 {
-  vvMatrix bak(this);                             // backup of current matrix
+  vvMatrix bak(*this);                             // backup of current matrix
   float factor;                                   // constant factor
   float det;                                      // 2D part determinant
 
@@ -361,7 +348,7 @@ void vvMatrix::invert2D()
 void vvMatrix::transpose()
 {
   int row, col;
-  vvMatrix bak(this);                             // backup of current matrix
+  vvMatrix bak(*this);                             // backup of current matrix
 
   for (row=0; row<4; ++row)
     for (col=0; col<4; ++col)

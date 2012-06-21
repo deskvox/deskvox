@@ -102,7 +102,6 @@ class VIRVOEXPORT vvMatrix
     float e[4][4];                                ///< matrix elements: [row][column]
 
     vvMatrix();
-    vvMatrix(const vvMatrix*);
     vvMatrix(float* glf);
     vvMatrix operator+(const vvMatrix& operand) const;
     vvMatrix operator-(const vvMatrix& operand) const;

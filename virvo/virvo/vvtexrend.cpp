@@ -2511,7 +2511,7 @@ void vvTexRend::renderTexBricks(const vvMatrix* mv)
   if (_brickList.empty()) return;
 
   // Calculate inverted modelview matrix:
-  vvMatrix invMV(mv);
+  vvMatrix invMV(*mv);
   invMV.invert();
 
   // Find eye position:

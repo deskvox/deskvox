@@ -168,7 +168,7 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 
   // Compute normal vector of view planes
   vvVector3 planeNormal(0.0f, 0.0f, -1.0f);                 // (0|0|1) is normal on projection plane
-  vvMatrix invPM(&pm);
+  vvMatrix invPM(pm);
   invPM.invert();
   planeNormal.multiply(&invPM);
 
