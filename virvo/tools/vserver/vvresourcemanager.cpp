@@ -57,8 +57,10 @@ vvResourceManager::vvResourceManager(vvServer *server)
   pthread_mutex_init(&_jobsMutex, NULL);
   pthread_mutex_init(&_resourcesMutex, NULL);
 
+#ifdef HAVE_BONJOUR
   _browser = new vvBonjourBrowser(updateResources, this);
   _browser->browseForServiceType("_vserver._tcp", "", -1.0); // browse in continous mode
+#endif
 }
 
 vvResourceManager::~vvResourceManager()

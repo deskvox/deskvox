@@ -29,6 +29,8 @@
 #include <virvo/vvbonjour/vvbonjourregistrar.h>
 #endif
 
+#include <string>
+
 class vvTcpSocket;
 class vvResource;
 

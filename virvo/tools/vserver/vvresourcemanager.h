@@ -30,6 +30,8 @@
 #include <virvo/vvinttypes.h>
 #include <virvo/vvbonjour/vvbonjourentry.h>
 
+#include <pthread.h>
+
 // forward declarations
 class vvServer;
 class vvTcpSocket;
