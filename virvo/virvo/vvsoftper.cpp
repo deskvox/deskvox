@@ -731,14 +731,14 @@ void vvSoftPer::findScaleMatrix()
    switch(principal)
    {
       case vvVecmath::X_AXIS:
-         scale.scale(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]);
+         scale.scaleLocal(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]);
          break;
       case vvVecmath::Y_AXIS:
-         scale.scale(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]);
+         scale.scaleLocal(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]);
          break;
       case vvVecmath::Z_AXIS:
       default:
-         scale.scale(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
+         scale.scaleLocal(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
          break;
    }
 
@@ -748,10 +748,10 @@ void vvSoftPer::findScaleMatrix()
       sf = sdShear(3, 2) + 1;
 
    sf = 1.0f / sf;                                // invert scale factor
-   scale.scale(sf, sf, 1.0f);
+   scale.scaleLocal(sf, sf, 1.0f);
 
    // Adjust intermediate image size to desired image quality:
-   scale.scale(_quality, _quality, 1.0f);
+   scale.scaleLocal(_quality, _quality, 1.0f);
 
    if (vvDebugMsg::isActive(3)) scale.print("scale");
 }

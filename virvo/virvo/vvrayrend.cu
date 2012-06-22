@@ -1540,7 +1540,7 @@ void vvRayRend::factorViewMatrix()
 
   iwWarp.identity();
   iwWarp.translate(-1.0f, -1.0f, 0.0f);
-  iwWarp.scale(1.0f / (static_cast<float>(vp[2]) * 0.5f), 1.0f / (static_cast<float>(vp[3]) * 0.5f), 0.0f);
+  iwWarp.scaleLocal(1.0f / (static_cast<float>(vp[2]) * 0.5f), 1.0f / (static_cast<float>(vp[3]) * 0.5f), 0.0f);
 }
 
 void vvRayRend::findAxisRepresentations()

@@ -987,13 +987,13 @@ void vvSoftPar::findShearMatrix()
    switch(principal)
    {
       case vvVecmath::X_AXIS:
-         scaleMat.scale(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]);
+         scaleMat.scaleLocal(vd->vox[1] / size[1], vd->vox[2] / size[2], vd->vox[0] / size[0]);
          break;
       case vvVecmath::Y_AXIS:
-         scaleMat.scale(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]);
+         scaleMat.scaleLocal(vd->vox[2] / size[2], vd->vox[0] / size[0], vd->vox[1] / size[1]);
          break;
       case vvVecmath::Z_AXIS:
-         scaleMat.scale(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
+         scaleMat.scaleLocal(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
          break;
    }
    siShear.multiplyPost(scaleMat);
@@ -1006,7 +1006,7 @@ void vvSoftPar::findShearMatrix()
    //  0   0    1    0
    //  0   0    0    1
    imgConv.identity();
-   imgConv.scale(quality, quality, 1.0f);
+   imgConv.scaleLocal(quality, quality, 1.0f);
    imgConv(0, 3) = (float)(intImg->width / 2);
    imgConv(1, 3) = (float)(intImg->height / 2);
    siShear.multiplyPost(imgConv);

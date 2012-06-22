@@ -246,7 +246,7 @@ void vvView::mainLoop(int argc, char *argv[])
   createMenus();
 
   ov = new vvObjView();
-  ds->ov->mv.scale(mvScale);
+  ds->ov->mv.scaleLocal(mvScale);
 
   setProjectionMode(perspectiveMode);
 
@@ -527,7 +527,7 @@ void vvView::motionCallback(int x, int y)
     factor = 1.0f + ((float)dy) * 0.01f;
     if (factor > 2.0f) factor = 2.0f;
     if (factor < 0.5f) factor = 0.5f;
-    ds->ov->mv.scale(factor, factor, factor);
+    ds->ov->mv.scaleLocal(factor, factor, factor);
     break;
 
   default: break;
@@ -1062,7 +1062,7 @@ void vvView::mainMenuCallback(int item)
     break;
   case 7:                                     // reset object position
     ds->ov->reset();
-    ds->ov->mv.scale(ds->mvScale);
+    ds->ov->mv.scaleLocal(ds->mvScale);
     ds->setProjectionMode(ds->perspectiveMode);
     break;
   case 8:                                     // menu/zoom mode
@@ -1820,7 +1820,7 @@ double vvView::performanceTest()
       ds->draftQuality = test->getQuality();
       ds->ov->reset();
       ds->ov->resetMV();
-      ds->ov->mv.scale(ds->mvScale);
+      ds->ov->mv.scaleLocal(ds->mvScale);
       ds->perspectiveMode = (test->getProjectionType() == vvObjView::PERSPECTIVE);
       if (ds->perspectiveMode)
       {
@@ -1894,7 +1894,7 @@ double vvView::performanceTest()
 
     ds->hqMode = false;
     ds->ov->reset();
-    ds->ov->mv.scale(ds->mvScale);
+    ds->ov->mv.scaleLocal(ds->mvScale);
     ds->displayCallback();
 
     printProfilingInfo();
@@ -1911,7 +1911,7 @@ double vvView::performanceTest()
     }
 
     ds->ov->reset();
-    ds->ov->mv.scale(ds->mvScale);
+    ds->ov->mv.scaleLocal(ds->mvScale);
     for (angle=0; angle<180; angle+=2)
     {
       ds->ov->mv.rotate(step, 0.0f, 0.0f, 1.0f);  // rotate model view matrix
@@ -1920,7 +1920,7 @@ double vvView::performanceTest()
     }
 
     ds->ov->reset();
-    ds->ov->mv.scale(ds->mvScale);
+    ds->ov->mv.scaleLocal(ds->mvScale);
     for (angle=0; angle<180; angle+=2)
     {
       ds->ov->mv.rotate(step, 1.0f, 0.0f, 0.0f);  // rotate model view matrix

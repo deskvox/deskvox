@@ -71,9 +71,9 @@ vvMatrix vvIbr::calcViewportMatrix(const vvGLTools::Viewport& vp)
 {
   vvMatrix result;
   result.identity();
-  result.scale(1.0f / (0.5f * vp[2]),
-               1.0f / (0.5f * vp[3]),
-               2.0f);
+  result.scaleLocal(1.0f / (0.5f * vp[2]),
+                    1.0f / (0.5f * vp[3]),
+                    2.0f);
   result.translate((vp[0] / (0.5f * vp[2])) - 1.0f,
                    (vp[1] / (0.5f * vp[3])) - 1.0f,
                    -1.0f);
@@ -84,7 +84,7 @@ vvMatrix vvIbr::calcDepthScaleMatrix(const float depthRangeMin, const float dept
 {
   vvMatrix result;
   result.identity();
-  result.scale(1.0f, 1.0f, (depthRangeMax - depthRangeMin));
+  result.scaleLocal(1.0f, 1.0f, (depthRangeMax - depthRangeMin));
   result.translate(0.0f, 0.0f, depthRangeMin);
   return result;
 }

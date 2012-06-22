@@ -119,8 +119,12 @@ class VIRVOEXPORT vvMatrix
     // Note: assumes the 4th row of this matrix equals (0,0,0,1)
     vvMatrix& translate(const vvVector3& t);
 
-    void scale(float, float, float);
-    void scale(float);
+    // Multiplies this matrix from the right with a scaling matrix
+    vvMatrix& scaleLocal(float x, float y, float z);
+
+    // Multiplies this matrix from the right with a uniform scaling matrix
+    vvMatrix& scaleLocal(float s);
+
     vvMatrix rotate(float, float, float, float);
     vvMatrix rotate(float, const vvVector3& vec);
     void multiplyPre(const vvMatrix& rhs);

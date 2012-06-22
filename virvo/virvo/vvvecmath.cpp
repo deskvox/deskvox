@@ -210,7 +210,7 @@ vvMatrix& vvMatrix::translate(const vvVector3& t)
 
 //----------------------------------------------------------------------------
 /// Apply a non-uniform scale.
-void vvMatrix::scale(float x, float y, float z)
+vvMatrix& vvMatrix::scaleLocal(float x, float y, float z)
 {
   vvMatrix s;                                     // scaling matrix
 
@@ -218,22 +218,19 @@ void vvMatrix::scale(float x, float y, float z)
   s.e[1][1] = y;
   s.e[2][2] = z;
   s.e[3][3] = 1.0f;
-  this->multiplyPre(s);
+
+  multiplyPre(s);
+
+  return *this;
 }
 
 //----------------------------------------------------------------------------
 /** Apply a uniform scale.
   @param a scale factor
 */
-void vvMatrix::scale(float a)
+vvMatrix& vvMatrix::scaleLocal(float s)
 {
-  vvMatrix s;                                     // scaling matrix
-
-  s.e[0][0] = a;
-  s.e[1][1] = a;
-  s.e[2][2] = a;
-  s.e[3][3] = 1.0f;
-  this->multiplyPre(s);
+  return scaleLocal(s, s, s);
 }
 
 //----------------------------------------------------------------------------
