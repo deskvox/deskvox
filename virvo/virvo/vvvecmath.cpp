@@ -141,11 +141,11 @@ vvMatrix vvMatrix::operator-(const vvMatrix& operand) const
 //----------------------------------------------------------------------------
 /** Multiplication. Operands will be multiplied from left to right.
  */
-vvMatrix vvMatrix::operator*(const vvMatrix& operand) const
+vvMatrix vvMatrix::operator*(const vvMatrix& RHS) const
 {
-  vvMatrix tmp = *this;
-  tmp.multiplyPre(operand);
-  return tmp;
+  vvMatrix LHS(*this);
+  LHS.multiplyRight(RHS);
+  return LHS;
 }
 
 //----------------------------------------------------------------------------
@@ -219,9 +219,7 @@ vvMatrix& vvMatrix::scaleLocal(float x, float y, float z)
   s.e[2][2] = z;
   s.e[3][3] = 1.0f;
 
-  multiplyPre(s);
-
-  return *this;
+  return multiplyRight(s);
 }
 
 //----------------------------------------------------------------------------
@@ -281,7 +279,7 @@ vvMatrix vvMatrix::rotate(float a, float x, float y, float z)
   rot.e[3][3] = 1.0;
 
   // Perform rotation:
-  multiplyPre(rot);
+  multiplyRight(rot);
   return rot;
 }
 
@@ -294,34 +292,45 @@ vvMatrix vvMatrix::rotate(float a, const vvVector3& v)
   return vvMatrix::rotate(a, v[0], v[1], v[2]);
 }
 
-//----------------------------------------------------------------------------
-/** Multiplies two matrices. If matrices are resolved from left to right,
-  this operation would be: this = this * m
-*/
-void vvMatrix::multiplyPre(const vvMatrix& m)
-{
-  int row, col;
-  vvMatrix bak(*this);                             // backup of current matrix
 
-  for (row=0; row<4; ++row)
-    for (col=0; col<4; ++col)
-      e[row][col] = bak.e[row][0] * m.e[0][col] + bak.e[row][1] * m.e[1][col] +
-        bak.e[row][2] * m.e[2][col] + bak.e[row][3] * m.e[3][col];
+//----------------------------------------------------------------------------
+// Multiplies this matrix from the left with the given matrix: this = RHS * this
+vvMatrix& vvMatrix::multiplyLeft(const vvMatrix& LHS)
+{
+  vvMatrix RHS(*this);
+
+  for (int row = 0; row < 4; ++row)
+  {
+    for (int col = 0; col < 4; ++col)
+    {
+      e[row][col] = LHS(row, 0) * RHS(0, col)
+                  + LHS(row, 1) * RHS(1, col)
+                  + LHS(row, 2) * RHS(2, col)
+                  + LHS(row, 3) * RHS(3, col);
+    }
+  }
+
+  return *this;
 }
 
 //----------------------------------------------------------------------------
-/** Multiplies two matrices. If matrices are resolved from left to right,
-  this operation would be: this = m * this
-*/
-void vvMatrix::multiplyPost(const vvMatrix& m)
+// Multiplies this matrix from the right with the given matrix: this = this * RHS
+vvMatrix& vvMatrix::multiplyRight(const vvMatrix &RHS)
 {
-  int row, col;
-  vvMatrix bak(*this);                             // backup of current matrix
+  vvMatrix LHS(*this);
 
-  for (row=0; row<4; ++row)
-    for (col=0; col<4; ++col)
-      e[row][col] = bak.e[0][col] * m.e[row][0] + bak.e[1][col] * m.e[row][1] +
-        bak.e[2][col] * m.e[row][2] + bak.e[3][col] * m.e[row][3];
+  for (int row = 0; row < 4; ++row)
+  {
+    for (int col = 0; col < 4; ++col)
+    {
+      e[row][col] = LHS(row, 0) * RHS(0, col)
+                  + LHS(row, 1) * RHS(1, col)
+                  + LHS(row, 2) * RHS(2, col)
+                  + LHS(row, 3) * RHS(3, col);
+    }
+  }
+
+  return *this;
 }
 
 //----------------------------------------------------------------------------

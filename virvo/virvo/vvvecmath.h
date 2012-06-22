@@ -127,8 +127,13 @@ class VIRVOEXPORT vvMatrix
 
     vvMatrix rotate(float, float, float, float);
     vvMatrix rotate(float, const vvVector3& vec);
-    void multiplyPre(const vvMatrix& rhs);
-    void multiplyPost(const vvMatrix& rhs);
+
+    // Multiplies this matrix from the left with the given matrix: this = LHS * this
+    vvMatrix& multiplyLeft(const vvMatrix& LHS);
+
+    // Multiplies this matrix from the right with the given matrix: this = this * RHS
+    vvMatrix& multiplyRight(const vvMatrix& RHS);
+
     void transpose();
     float diagonal();
     void invertOrtho();

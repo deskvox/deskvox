@@ -1145,7 +1145,7 @@ void vvRayRend::compositeVolume(int, int)
   vvMatrix Mv, MvPr;
   vvGLTools::getModelviewMatrix(&Mv);
   vvGLTools::getProjectionMatrix(&MvPr);
-  MvPr.multiplyPre(Mv);
+  MvPr.multiplyRight(Mv);
 
   float* mvprM = new float[16];
   MvPr.get(mvprM);
@@ -1160,7 +1160,7 @@ void vvRayRend::compositeVolume(int, int)
 
   vvMatrix invMvpr;
   vvGLTools::getModelviewMatrix(&invMvpr);
-  invMvpr.multiplyPost(pr);
+  invMvpr.multiplyLeft(pr);
   invMvpr.invert();
 
   float* viewM = new float[16];

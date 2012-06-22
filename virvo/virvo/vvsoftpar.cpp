@@ -996,7 +996,7 @@ void vvSoftPar::findShearMatrix()
          scaleMat.scaleLocal(vd->vox[0] / size[0], vd->vox[1] / size[1], vd->vox[2] / size[2]);
          break;
    }
-   siShear.multiplyPost(scaleMat);
+   siShear.multiplyLeft(scaleMat);
 
    // Create conversion matrix for intermediate image coordinates:
    // Shift right and down.
@@ -1009,7 +1009,7 @@ void vvSoftPar::findShearMatrix()
    imgConv.scaleLocal(quality, quality, 1.0f);
    imgConv(0, 3) = (float)(intImg->width / 2);
    imgConv(1, 3) = (float)(intImg->height / 2);
-   siShear.multiplyPost(imgConv);
+   siShear.multiplyLeft(imgConv);
    if (vvDebugMsg::isActive(3))
    {
       intImg->print("intImg:");
@@ -1019,7 +1019,7 @@ void vvSoftPar::findShearMatrix()
 
    // Assemble final shear matrix:
    oiShear = vvMatrix(osPerm);
-   oiShear.multiplyPost(siShear);
+   oiShear.multiplyLeft(siShear);
 
    if (vvDebugMsg::isActive(3)) oiShear.print("oiShear");
 }
@@ -1042,10 +1042,10 @@ void vvSoftPar::findWarpMatrix()
 
    // Compute warp matrices:
    iwWarp = vvMatrix(ioShear);
-   iwWarp.multiplyPost(owView);
+   iwWarp.multiplyLeft(owView);
    if (vvDebugMsg::isActive(3)) iwWarp.print("iwWarp");
    ivWarp = vvMatrix(iwWarp);
-   ivWarp.multiplyPost(wvConv);
+   ivWarp.multiplyLeft(wvConv);
    if (vvDebugMsg::isActive(3)) ivWarp.print("ivWarp");
 }
 

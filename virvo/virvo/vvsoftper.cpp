@@ -789,10 +789,10 @@ void vvSoftPer::findOIShearMatrix()
    vvDebugMsg::msg(3, "vvSoftPer::findOIShearMatrix()");
 
    oiShear = vvMatrix(osPerm);
-   oiShear.multiplyPost(shift);
-   oiShear.multiplyPost(sdShear);
-   oiShear.multiplyPost(scale);
-   oiShear.multiplyPost(diConv);
+   oiShear.multiplyLeft(shift);
+   oiShear.multiplyLeft(sdShear);
+   oiShear.multiplyLeft(scale);
+   oiShear.multiplyLeft(diConv);
 
    if (vvDebugMsg::isActive(3)) oiShear.print("oiShear");
 }
@@ -814,10 +814,10 @@ void vvSoftPer::findWarpMatrix()
 
    // Assemble warp matrices:
    iwWarp = vvMatrix(ioShear);
-   iwWarp.multiplyPost(owView);
+   iwWarp.multiplyLeft(owView);
    if (vvDebugMsg::isActive(3)) iwWarp.print("iwWarp");
    ivWarp = vvMatrix(iwWarp);
-   ivWarp.multiplyPost(wvConv);
+   ivWarp.multiplyLeft(wvConv);
    if (vvDebugMsg::isActive(3)) ivWarp.print("ivWarp");
 }
 

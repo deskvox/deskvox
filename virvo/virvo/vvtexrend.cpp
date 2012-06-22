@@ -2670,7 +2670,7 @@ void vvTexRend::updateFrustum()
   modelview.setGL(mvm);
 
   clip = proj;
-  clip.multiplyPre(modelview);
+  clip.multiplyRight(modelview);
 
   // extract the planes of the viewing frustum
 
