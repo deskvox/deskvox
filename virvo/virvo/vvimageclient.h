@@ -35,7 +35,7 @@ class VIRVOEXPORT vvImageClient : public vvRemoteClient
 {
 public:
   vvImageClient(vvVolDesc *vd, vvRenderState renderState,
-                vvTcpSocket* socket, const std::string& filename = 0);
+                vvTcpSocket* socket, const std::string& filename = "");
   ~vvImageClient();
 
   ErrorType render();                                     ///< render image with depth-values
