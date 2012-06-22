@@ -110,8 +110,15 @@ class VIRVOEXPORT vvMatrix
     void print(const char*) const;
     void identity();
     void zero();
-    void translate(float, float, float);
-    void translate(const vvVector3& vec);
+
+    // Multiplies this matrix from the left with a translation matix
+    // Note: assumes the 4th row of this matrix equals (0,0,0,1)
+    vvMatrix& translate(float x, float y, float z);
+
+    // Multiplies this matrix from the left with a translation matix
+    // Note: assumes the 4th row of this matrix equals (0,0,0,1)
+    vvMatrix& translate(const vvVector3& t);
+
     void scale(float, float, float);
     void scale(float);
     vvMatrix rotate(float, float, float, float);

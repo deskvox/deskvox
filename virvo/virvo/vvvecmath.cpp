@@ -192,20 +192,20 @@ void vvMatrix::zero()
 
 //----------------------------------------------------------------------------
 /// Apply a translation.
-void vvMatrix::translate(float x, float y, float z)
+vvMatrix& vvMatrix::translate(float x, float y, float z)
 {
   e[0][3] += x;
   e[1][3] += y;
   e[2][3] += z;
+
+  return *this;
 }
 
 //----------------------------------------------------------------------------
 /// Apply a translation.
-void vvMatrix::translate(const vvVector3& v)
+vvMatrix& vvMatrix::translate(const vvVector3& t)
 {
-  e[0][3] += v[0];
-  e[1][3] += v[1];
-  e[2][3] += v[2];
+  return translate(t[0], t[1], t[2]);
 }
 
 //----------------------------------------------------------------------------
