@@ -1091,9 +1091,13 @@ void vvView::mainMenuCallback(int item)
     break;
   case 12:                                    // quit
     glutDestroyWindow(ds->window);
+#ifdef FREEGLUT
+    return;
+#else
     delete ds;
     exit(0);
     break;
+#endif
   case 13:                                    // rotate debug level
     {
         int l = vvDebugMsg::getDebugLevel()+1;
@@ -2262,6 +2266,9 @@ void vvView::initGraphics(int argc, char *argv[])
   glutMotionFunc(motionCallback);
   glutKeyboardFunc(keyboardCallback);
   glutSpecialFunc(specialCallback);
+#ifdef FREEGLUT
+  glutCloseFunc(cleanup);
+#endif
 
   version = (char*)glGetString(GL_VERSION);
   cerr << "Found OpenGL version: " << version << endl;
@@ -2954,7 +2961,9 @@ int main(int argc, char** argv)
   _CrtCheckMemory();
 #endif
 
+#ifndef FREEGLUT
   atexit(vvView::cleanup);
+#endif
 
   //vvDebugMsg::setDebugLevel(vvDebugMsg::NO_MESSAGES);
   int error = (new vvView())->run(argc, argv);
