@@ -73,7 +73,7 @@ class vvView
       PLANE_POS                                 ///< move plane along positive normal dir
     };
     /// Remote rendering type
-    enum
+    enum RemoteType
     {
       RR_NONE = 0,
       RR_COMPARISON,
@@ -141,7 +141,7 @@ class vvView
     bool useOffscreenBuffer;                    ///< render to an offscreen buffer. Mandatory for setting buffer precision
     bool useHeadLight;                          ///< toggle head light
     int  bufferPrecision;                       ///< 8 or 32 bit. Higher res can minimize rounding error during slicing
-    int  rrMode;                                ///< memory remote rendering mode
+    RemoteType  rrMode;                         ///< memory remote rendering mode
     int ibrPrecision;                           ///< Precision of depth buffer in image based (remote-)rendering mode
     vvRenderState::IbrMode          ibrMode;    ///< interruption mode for depth-calculation
     bool sync;                                  ///< synchronous ibr mode
