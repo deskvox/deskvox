@@ -371,6 +371,7 @@ void vvServer::unregisterFromBonjour()
 void vvServer::handleClient(vvTcpSocket *sock)
 {
   vvServerThreadArgs *args = new vvServerThreadArgs;
+  args->_instance = this;
   args->_sock = sock;
   args->_exitFunc = NULL;
 
@@ -392,9 +393,57 @@ void * vvServer::handleClientThread(void *param)
 
   vvTcpSocket *sock = args->_sock;
 
-  vvSocketIO *sockio = new vvSocketIO(sock);
+  vvCreateRemoteServerRes res = args->_instance->createRemoteServer(sock);
 
-  vvRemoteServer* server = NULL;
+  if(res.renderer && res.server && res.vd)
+  {
+    while(true)
+    {
+      std::cerr << "bla, " << std::flush;
+      if(!res.server->processEvents(res.renderer))
+      {
+        delete res.renderer;
+        res.renderer = NULL;
+        break;
+      }
+    }
+  }
+
+  if(res.server)
+  {
+    res.server->destroyRenderContext();
+  }
+
+  // Frames vector with bricks is deleted along with the renderer.
+  // Don't free them here.
+  // see setRenderer().
+
+  delete res.server;
+
+  sock->disconnectFromHost();
+
+  delete sock;
+
+  delete res.vd;
+
+  pthread_exit(NULL);
+  pthread_cleanup_pop(0);
+#ifdef _WIN32
+  return NULL;
+#endif
+}
+
+vvServer::vvCreateRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock, std::string renderertype, vvRendererFactory::Options opt)
+{
+  vvDebugMsg::msg(3, "vvServer::createRemoteServer() Enter");
+
+  vvCreateRemoteServerRes res;
+  res.server   = NULL;
+  res.renderer = NULL;
+  res.vd       = NULL;
+
+  // TODO: do not pass SocketIO to RemoteServer and delete it after use
+  vvSocketIO *sockio = new vvSocketIO(sock);
 
   sockio->putBool(true);  // let client know we are ready
 
@@ -404,96 +453,62 @@ void * vvServer::handleClientThread(void *param)
   switch(rType)
   {
     case vvRenderer::REMOTE_IMAGE:
-      server = new vvImageServer(sockio);
+      res.server = new vvImageServer(sockio);
       break;
     case vvRenderer::REMOTE_IBR:
-      server = new vvIbrServer(sockio);
+      res.server = new vvIbrServer(sockio);
       break;
     default:
       cerr << "Unknown remote rendering type " << rType << std::endl;
       break;
   }
-  if(!server)
-  {
-    pthread_exit(NULL);
-  #ifdef _WIN32
-    return NULL;
-  #endif
-  }
 
-  vvVolDesc *vd = NULL;
-  if(server->initRenderContext(DEFAULTSIZE, DEFAULTSIZE) != vvRemoteServer::VV_OK)
+  if(res.server->initRenderContext(DEFAULTSIZE, DEFAULTSIZE) != vvRemoteServer::VV_OK)
   {
     cerr << "Couldn't initialize render context" << std::endl;
-    goto cleanup;
+    return res;
   }
   vvGLTools::enableGLErrorBacktrace();
-  if(server->initData(vd) != vvRemoteServer::VV_OK)
+  if(res.server->initData(res.vd) != vvRemoteServer::VV_OK)
   {
     cerr << "Could not initialize volume data" << endl;
     cerr << "Continuing with next client..." << endl;
-    goto cleanup;
+    return res;
   }
 
-  if(vd != NULL)
+  if(res.vd != NULL)
   {
-    if(server->getLoadVolumeFromFile())
+    if(res.server->getLoadVolumeFromFile())
     {
-      vd->printInfoLine();
+      res.vd->printInfoLine();
     }
 
     // Set default color scheme if no TF present:
-    if(vd->tf.isEmpty())
+    if(res.vd->tf.isEmpty())
     {
-      vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-      vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+      res.vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+      res.vd->tf.setDefaultColors((res.vd->chan==1) ? 0 : 2, 0.0, 1.0);
     }
 
     vvRenderState rs;
-    vvRenderer *renderer = vvRendererFactory::create(vd,
-        rs,
-        rType==vvRenderer::REMOTE_IBR ? "rayrend" : "default",
-        "");
 
-    renderer->setParameter(vvRenderer::VV_USE_IBR, rType == vvRenderer::REMOTE_IBR);
-
-    while(1)
+    if(renderertype.empty())
     {
-      if(!server->processEvents(renderer))
-      {
-        delete renderer;
-        renderer = NULL;
-        break;
-      }
+      renderertype = (rType == vvRenderer::REMOTE_IBR) ? "rayrend" : "default";
     }
+    std::cerr << "vvRendererFactory::create() " << renderertype << opt["brickrenderer"] << opt["bricks"] << opt["displays"] << opt["sockets"] << std::endl;
+    res.renderer = vvRendererFactory::create(res.vd,
+      rs,
+      renderertype.c_str(),
+      opt);
+
+    res.renderer->setParameter(vvRenderer::VV_USE_IBR, rType == vvRenderer::REMOTE_IBR);
   }
 
-cleanup:
-  server->destroyRenderContext();
-
-  // Frames vector with bricks is deleted along with the renderer.
-  // Don't free them here.
-  // see setRenderer().
-
-  delete server;
-  server = NULL;
-
-  delete sockio;
-  sockio = NULL;
-
-  sock->disconnectFromHost();
-  delete sock;
-  sock = NULL;
-
-  delete vd;
-  vd = NULL;
-
-  pthread_exit(NULL);
-  pthread_cleanup_pop(0);
-#ifdef _WIN32
-  return NULL;
-#endif
+  return res;
 }
+
+
 
 /*vvServer *s = NULL;
 

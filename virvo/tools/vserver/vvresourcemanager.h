@@ -104,8 +104,8 @@ private:
 
   struct vvJob
   {
-    vvTcpSocket *_requestSock;
-    vvResource  *_resource;
+    vvTcpSocket       *requestSock;
+    vvResource        *resource;
   };
 
 public:

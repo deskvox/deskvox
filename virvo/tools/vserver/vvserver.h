@@ -29,10 +29,14 @@
 #include <virvo/vvbonjour/vvbonjourregistrar.h>
 #endif
 
+#include <virvo/vvrendererfactory.h>
 #include <string>
 
 class vvTcpSocket;
 class vvResource;
+class vvRemoteServer;
+class vvRenderer;
+class vvVolDesc;
 
 /**
  * Virvo Server main class.
@@ -66,8 +70,16 @@ public:
 
   struct vvServerThreadArgs
   {
+    vvServer    *_instance;
     vvTcpSocket *_sock;
     void(*_exitFunc)(void*);
+  };
+
+  struct vvCreateRemoteServerRes
+  {
+    vvRemoteServer *server;    ///< Remote Server of type ImageServer or IbrServer
+    vvRenderer     *renderer;  ///< to _server belonging renderer
+    vvVolDesc      *vd;        ///< to _renderer belonging volume describtion
   };
 
   vvServer();
@@ -81,6 +93,7 @@ public:
 
   void handleClient(vvTcpSocket *sock);           ///< Creates a thread handling the Client
   static void * handleClientThread(void *param);
+  static vvCreateRemoteServerRes createRemoteServer(vvTcpSocket *sock, std::string renderertype = "", vvRendererFactory::Options opt = vvRendererFactory::Options());
 
   static void exitCallback(void*)
   {

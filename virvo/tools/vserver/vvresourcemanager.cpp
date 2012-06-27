@@ -32,6 +32,14 @@
 #include <virvo/vvsocketmonitor.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpsocket.h>
+#include <virvo/vvibrserver.h>
+#include <virvo/vvimageserver.h>
+#include <virvo/vvremoteserver.h>
+#include <virvo/vvvoldesc.h>
+#include <virvo/vvrendererfactory.h>
+#include <virvo/vvsocketmap.h>
+
+#include <sstream>
 
 using namespace std;
 
@@ -139,10 +147,10 @@ bool vvResourceManager::initNextJob()
       vvTcpSocket *nextRequest = _requests.front()->_sock;
       delete _requests.front();
       _requests.erase(_requests.begin());
-      job->_requestSock = nextRequest;
+      job->requestSock = nextRequest;
 
       (*freeRes)->numGPUsDown();
-      job->_resource = *freeRes;
+      job->resource = *freeRes;
 
       pthread_t threadID;
       pthread_create(&threadID, NULL, processJob, job);
@@ -230,33 +238,13 @@ void * vvResourceManager::processJob(void * param)
 
 #ifdef HAVE_BONJOUR
   vvJob *job = reinterpret_cast<vvJob*>(param);
-  vvTcpSocket *clientsock = job->_requestSock;
+  vvTcpSocket *clientsock = job->requestSock;
 
-  // 1. case: local rendering
-  if(job->_resource->_server)
-  {
-    vvServer::vvServerThreadArgs *args = new vvServer::vvServerThreadArgs;
-    args->_sock = clientsock;
-    args->_exitFunc = &vvResourceManager::exitCallback;
-
-    pthread_t pthread;
-    pthread_create(&pthread,  NULL, job->_resource->_server->handleClientThread, args);
-    pthread_detach(pthread);
-
-    delete job;
-
-    pthread_exit(NULL);
-  #ifdef _WIN32
-    return NULL;
-  #endif
-  }
-
-  // 2. case: socket forwarding
   vvTcpSocket *serversock = NULL;
 
   bool ready = false;
   vvBonjourResolver resolver;
-  if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry(job->_resource->_bonjourEntry))
+  if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry(job->resource->_bonjourEntry))
   {
     serversock = resolver.getBonjourSocket();
     if(NULL == serversock)
@@ -272,108 +260,60 @@ void * vvResourceManager::processJob(void * param)
     vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not resolve bonjour service");
   }
 
-  while(ready)
+  vvRendererFactory::Options opt;
+
+  std::stringstream sockstr;
+  int s = vvSocketMap::add(serversock);
+  if (sockstr.str() != "")
   {
-    std::vector<vvSocket*> readFds;
+    sockstr << ",";
+  }
+  sockstr << s;
+  opt["sockets"] = sockstr.str();
 
-    readFds.push_back(clientsock);
-    readFds.push_back(serversock);
+  // remote server and client
+  bool brickrenderer = false;
+  vvServer::vvCreateRemoteServerRes res;
+  if(brickrenderer)
+  {
+    res = vvServer::createRemoteServer(clientsock, "brick??");
+  }
+  else
+  {
+    std::stringstream brickNum;
+    brickNum << 1;
+    opt["bricks"] = brickNum.str();
+    opt["brickrenderer"] = "image";
 
-    vvSocket *readable;
-    vvSocketMonitor sm;
-    sm.setReadFds(readFds);
-    vvSocketMonitor::ErrorType smErr = sm.wait(&readable);
+    std::stringstream displaystr;
+    displaystr << ":0";
+    opt["displays"] = displaystr.str();
 
-    if(vvSocketMonitor::VV_OK == smErr)
+    res = vvServer::createRemoteServer(clientsock, "", opt); // hier options mitgeben!
+  }
+
+  if(res.renderer && res.server && res.vd)
+  {
+    while(true)
     {
-      ssize_t clientret = 0;
-      ssize_t serverret = 0;
-
-      if(readable == clientsock)
+      std::cerr << "foo, " << std::flush;
+      if(!res.server->processEvents(res.renderer))
       {
-        // data ready for client to server transfer
-        int size = clientsock->isDataWaiting();
-
-        if(0 == size)
-        {
-          vvDebugMsg::msg(3, "vvResourceManager::processJob() clientsocket closed");
-          break;
-        }
-
-        uchar *buff = new uchar[size];
-        clientsock->readData(buff, size, &clientret);
-        if(size == clientret)
-        {
-          ssize_t ret;
-          serversock->writeData(buff, size, &ret);
-          if(ret != size)
-          {
-            delete[] buff;
-            break;
-          }
-        }
-        else
-        {
-          cerr << "vvResourceManager::processJob() clientsocket broken" << endl;
-        }
-        delete[] buff;
-      }
-      else if(readable == serversock)
-      {
-        // data ready for server to client transfer
-        int size = serversock->isDataWaiting();
-
-        if(0 == size)
-        {
-          vvDebugMsg::msg(3, "vvResourceManager::processJob() serversocket closed");
-          break;
-        }
-
-        uchar *buff = new uchar[size];
-        serversock->readData(buff, size, &serverret);
-        if(size == serverret)
-        {
-          ssize_t ret;
-          clientsock->writeData(buff, size, &ret);
-          if(ret != size)
-          {
-            delete[] buff;
-            break;
-          }
-        }
-        else
-        {
-          cerr << "vvResourceManager::processJob() serversocket broken" << endl;
-        }
-        delete[] buff;
-      }
-      else if(readable == NULL)
-      {
-        cerr << "vvResourceManager::processJob() sm timeout reached" << endl;
-        break;
-      }
-      else
-      {
-        cerr << "vvResourceManager::processJob() unexpected error" << endl;
-        break;
-      }
-
-      if(serverret < 0 || clientret < 0)
-      {
-        vvDebugMsg::msg(2, "vvResourceManager::processJob(): client- or serversocket broken");
+        delete res.renderer;
+        res.renderer = NULL;
         break;
       }
     }
-    else
-    {
-      vvDebugMsg::msg(2, "vvResourceManager::processJob(): socketmonitor returend error");
-      break;
-    }
+  }
+
+  if(res.server)
+  {
+    res.server->destroyRenderContext();
   }
 
   // free resource again
   pthread_mutex_lock(&vvResourceManager::inst->_resourcesMutex);
-  job->_resource->numGPUsUp();
+  job->resource->numGPUsUp();
   pthread_mutex_unlock(&vvResourceManager::inst->_resourcesMutex);
   delete job;
 
