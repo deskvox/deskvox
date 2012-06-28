@@ -2737,9 +2737,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
       if (port != -1)
       {
         ports.push_back(port);
-        char* sname = vvToolshed::stripPort(argv[arg]);
-        servers.push_back(sname);
-        delete[] sname;
+        servers.push_back(vvToolshed::stripPort(argv[arg]));
       }
       else
       {

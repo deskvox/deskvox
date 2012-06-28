@@ -254,8 +254,8 @@ class VIRVOEXPORT vvToolshed
                               const char* fileName, const Format format = VV_RGBA);
     static void    pixels2Ppm(float* pixels, const int width, const int height,
                               const char* fileName, const Format format = VV_RGBA);
-    static int     parsePort(const char* url);
-    static char*   stripPort(const char* url);
+    static int     parsePort(std::string const& url);
+    static std::string stripPort(std::string const& url);
     static void    printBacktrace();
 };
 #endif
