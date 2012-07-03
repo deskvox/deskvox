@@ -622,8 +622,12 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
         sockstr << ",";
       }
       sockstr << s;
+      sockets.push_back(sock);
     }
-    sockets.push_back(sock);
+    else
+    {
+      delete sock;
+    }
   }
 
   if (sockstr.str() != "")
