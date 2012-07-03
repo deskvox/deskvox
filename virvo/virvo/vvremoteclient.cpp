@@ -85,8 +85,8 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   if(!serverRdy)
   {
     // additional resource manager details requested
-    _socketIO->putInt32(10); // priority
-    _socketIO->putInt32(1);  // requirements
+    _socketIO->putInt32(0); // priority
+    _socketIO->putInt32(1); // requirements
 
     // block again to ensure remoteclient is int turn
     _socketIO->getBool(serverRdy);

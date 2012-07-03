@@ -53,16 +53,16 @@ class vvResourceManager
 private:
   struct vvRequest
   {
-//    vvRequest(uint i)
-//    {
-//      _id = i;
-//    };
+    int         priority;
+    int         type;
+    int         requirements;
+    vvTcpSocket *sock;
 
-//    uint _id;
-    int _priority;
-    int _type;
-    int _requirements;
-    vvTcpSocket *_sock;
+    bool operator<(vvRequest other)
+    {
+      // TODO: Fine adjust this
+      return priority < other.priority;
+    }
   };
 
   struct vvResource

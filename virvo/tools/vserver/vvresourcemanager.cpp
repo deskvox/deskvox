@@ -84,25 +84,30 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
   pthread_mutex_lock(&_jobsMutex);
 
   vvRequest *req = new vvRequest;
-  req->_sock = sock;
+  req->sock = sock;
 
   vvSocketIO sockio = vvSocketIO(sock);
   vvSocket::ErrorType err;
   sockio.putBool(false);
-  err = sockio.getInt32(req->_priority);
+  err = sockio.getInt32(req->priority);
   if(err != vvSocket::VV_OK)
   {
     cerr << "incoming connection socket error" << endl;
     goto abort;
   }
-  err = sockio.getInt32(req->_requirements);
+  err = sockio.getInt32(req->requirements);
   if(err != vvSocket::VV_OK)
   {
     cerr << "incoming connection socket error" << endl;
     goto abort;
   }
 
-  cerr << "priority: " << req->_priority << ", requirements: " << req->_requirements << std::endl;
+  if(vvDebugMsg::getDebugLevel() >= 3)
+  {
+    std::stringstream errmsg;
+    errmsg << "Incoming request has priority: " << req->priority << " and requirements: " << req->requirements;
+    vvDebugMsg::msg(0, errmsg.str().c_str());
+  }
 
   _requests.push_back(req);
 
@@ -143,8 +148,8 @@ bool vvResourceManager::initNextJob()
     {
       vvJob *job = new vvJob;
 
-      // TODO: Add some smarter prioritoring here
-      vvTcpSocket *nextRequest = _requests.front()->_sock;
+      std::sort(_requests.begin(), _requests.end());
+      vvTcpSocket *nextRequest = _requests.front()->sock;
       delete _requests.front();
       _requests.erase(_requests.begin());
       job->requestSock = nextRequest;
