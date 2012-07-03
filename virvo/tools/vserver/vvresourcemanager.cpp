@@ -265,6 +265,10 @@ void * vvResourceManager::processJob(void * param)
     vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not resolve bonjour service");
   }
 
+  vvSocketIO sockIO = vvSocketIO(serversock);
+  bool vserverRdy;
+  sockIO.getBool(vserverRdy);
+
   vvRendererFactory::Options opt;
 
   std::stringstream sockstr;

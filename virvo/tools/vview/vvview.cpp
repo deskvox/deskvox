@@ -58,6 +58,7 @@ using std::ios;
 #include <virvo/vvclock.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvsocketmap.h>
+#include <virvo/vvsocketio.h>
 #include <virvo/vvtcpsocket.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvdebugmsg.h>
@@ -676,6 +677,21 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   else if (servers.size() > 0)
   {
     opt["brickrenderer"] = "image";
+  }
+
+  if(sockets.size() > 0)
+  {
+    bool serverRdy;
+    vvSocketIO socketIO = vvSocketIO(sockets[0]);
+    socketIO.getBool(serverRdy);
+    if(!serverRdy)
+    {
+      // additional resource manager details requested
+      socketIO.putInt32(0); // priority
+      socketIO.putInt32(1); // requirements
+
+      socketIO.getBool(serverRdy);
+    }
   }
 
   if(renderer)

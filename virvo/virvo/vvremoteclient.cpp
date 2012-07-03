@@ -79,19 +79,6 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
   delete _socketIO;
   _socketIO = new vvSocketIO(_socket);
 
-  // block until server created its thread/remoteserver-object and is ready
-  bool serverRdy;
-  _socketIO->getBool(serverRdy);
-  if(!serverRdy)
-  {
-    // additional resource manager details requested
-    _socketIO->putInt32(0); // priority
-    _socketIO->putInt32(1); // requirements
-
-    // block again to ensure remoteclient is int turn
-    _socketIO->getBool(serverRdy);
-  }
-
   _socketIO->putInt32(_type);
 
   if (!_filename.empty())
