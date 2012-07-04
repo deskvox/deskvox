@@ -55,8 +55,9 @@ vvResourceManager::vvResourceManager(vvServer *vserver)
     serverRes->server = vserver;
 
     // TODO: set appropiate values here
-    serverRes->numCPUs = 1;
-    serverRes->numGPUs = 1;
+    vvGPU gpu;
+    gpu.freeMem = gpu.totalMem = 1000;
+    serverRes->GPUs.push_back(gpu);
 
     _resources.push_back(serverRes);
   }
@@ -139,7 +140,7 @@ bool vvResourceManager::initNextJob()
         vvResource *freeRes = getFreeResource();
         if(freeRes != NULL)
         {
-          freeRes->numGPUs--;
+          freeRes->GPUs[0].freeMem = 0;
           job->resources.push_back(freeRes);
         }
         else
@@ -222,7 +223,10 @@ void vvResourceManager::updateResources(void * param)
       {
         vvResource *res = new vvResource();
         res->_bonjourEntry = *entry;
-        res->numGPUs = 1; // TODO: set appropiate values here
+        // TODO: set appropiate values here
+        vvGPU gpu;
+        gpu.freeMem = gpu.totalMem = 1000;
+        res->GPUs.push_back(gpu);
         rm->_resources.push_back(res);
       }
     }
@@ -254,7 +258,7 @@ uint vvResourceManager::getFreeResourceCount()
   for(std::vector<vvResource*>::iterator freeRes = _resources.begin();
       freeRes != _resources.end(); freeRes++)
   {
-    if((*freeRes)->numGPUs > 0)
+    if((*freeRes)->GPUs[0].freeMem > 0)
       count++;
   }
 
@@ -266,7 +270,7 @@ vvResourceManager::vvResource* vvResourceManager::getFreeResource()
   std::vector<vvResource*>::iterator freeRes = _resources.begin();
   while(freeRes != _resources.end())
   {
-    if((*freeRes)->numGPUs == 0)
+    if((*freeRes)->GPUs[0].freeMem == 0)
       freeRes++;
     else
       return (*freeRes);
@@ -395,7 +399,7 @@ void vvResourceManager::exitLocalCallback()
 
   while(!(*selfRes)->server && selfRes != _resources.end()) selfRes++;
 
-  (*selfRes)->numGPUs++;
+  (*selfRes)->GPUs[0].freeMem = 1000;
 
   pthread_mutex_unlock(&_resourcesMutex);
 

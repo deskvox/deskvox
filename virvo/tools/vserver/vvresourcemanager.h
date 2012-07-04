@@ -65,6 +65,12 @@ private:
     }
   };
 
+  struct vvGPU
+  {
+    uint totalMem;
+    uint freeMem;
+  };
+
   struct vvResource
   {
   public:
@@ -75,14 +81,15 @@ private:
     }
 
     bool   upToDate;
-    ushort numGPUs;
-    ushort numCPUs;
-    uint   gpuMemSize;
-    uint   cpuMemSize;
+    std::vector<vvGPU> GPUs;
   #ifdef HAVE_BONJOUR
     vvBonjourEntry _bonjourEntry;
   #endif
     vvServer *server;
+
+    // vars for future use
+    ushort numCPUs;
+    uint   cpuMemSize;
   };
 
   struct vvJob
