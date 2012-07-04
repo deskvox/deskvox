@@ -692,7 +692,9 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     {
       // additional resource manager details requested
       socketIO.putInt32(0); // priority
-      socketIO.putInt32(1); // requirements
+
+      // temp: tell rm that we want brick rendering with x nodes
+      socketIO.putInt32(1); //(1); requirements
 
       socketIO.getBool(serverRdy);
     }

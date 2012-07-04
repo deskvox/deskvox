@@ -45,19 +45,18 @@ using namespace std;
 
 vvResourceManager* vvResourceManager::inst = NULL;
 
-vvResourceManager::vvResourceManager(vvServer *server)
+vvResourceManager::vvResourceManager(vvServer *vserver)
 {
   vvResourceManager::inst = this;
 
-  if(server)
+  if(vserver)
   {
     vvResource *serverRes = new vvResource;
-    serverRes->_server = server;
+    serverRes->server = vserver;
 
     // TODO: set appropiate values here
-
-    serverRes->numGPUsUp();
-    //serverRes->numGPUsUp();
+    serverRes->numCPUs = 1;
+    serverRes->numGPUs = 1;
 
     _resources.push_back(serverRes);
   }
@@ -119,54 +118,66 @@ bool vvResourceManager::initNextJob()
 {
   vvDebugMsg::msg(3, "vvResourceManager::initNextJob() Enter");
 
-  bool ret = true;
-
   pthread_mutex_lock(&_resourcesMutex);
   pthread_mutex_lock(&_jobsMutex);
 
-  if(_requests.empty() || _resources.empty())
-  {
-    ret = false;
-  }
-  else
-  {
-    // TODO: choose free resources smarter
-    std::vector<vvResource*>::iterator freeRes = _resources.begin();
-    while(freeRes != _resources.end())
-    {
-      if((*freeRes)->getGPUs() == 0)
-        freeRes++;
-      else
-        break;
-    }
+  // sort for correct priority
+  std::sort(_requests.begin(), _requests.end());
 
-    if(_resources.end() == freeRes)
-    {
-      ret = false; // no free resources yet
-    }
-    else
-    {
-      vvJob *job = new vvJob;
+  vvJob *job = NULL;
 
-      std::sort(_requests.begin(), _requests.end());
-      vvTcpSocket *nextRequest = _requests.front()->sock;
-      delete _requests.front();
+  if(_requests.size() > 0 && _resources.size() > 0)
+  {
+    if(getFreeResourceCount() >= _requests.front()->requirements)
+    {
+      job = new vvJob;
+      job->request = _requests.front();
       _requests.erase(_requests.begin());
-      job->requestSock = nextRequest;
 
-      (*freeRes)->numGPUsDown();
-      job->resource = *freeRes;
+      for(int i=0; i<job->request->requirements; i++)
+      {
+        vvResource *freeRes = getFreeResource();
+        if(freeRes != NULL)
+        {
+          freeRes->numGPUs--;
+          job->resources.push_back(freeRes);
+        }
+        else
+        {
+          vvDebugMsg::msg(1, "vvResourceManager::initNextJob() unexpected error: Job without enough Resources started");
+          goto quitonerror;
+        }
+      }
 
-      pthread_t threadID;
-      pthread_create(&threadID, NULL, processJob, job);
-      pthread_detach(threadID);
+      // job ready to start?
+      if(job->resources.size() == job->request->requirements)
+      {
+        pthread_t threadID;
+        pthread_create(&threadID, NULL, processJob, job);
+        pthread_detach(threadID);
+
+        pthread_mutex_unlock(&_jobsMutex);
+        pthread_mutex_unlock(&_resourcesMutex);
+
+        return true;
+      }
+      else
+      {
+        vvDebugMsg::msg(1, "vvResourceManager::initNextJob() unexpected error: Job's resource count mismatch");
+        goto quitonerror;
+      }
     }
   }
+
+  quitonerror:
+  // put job back to queue
+  if(job) _requests.push_back(job->request);
+  delete job;
 
   pthread_mutex_unlock(&_jobsMutex);
   pthread_mutex_unlock(&_resourcesMutex);
 
-  return ret;
+  return false;
 }
 
 void vvResourceManager::updateResources(void * param)
@@ -183,13 +194,13 @@ void vvResourceManager::updateResources(void * param)
   for(std::vector<vvResource*>::iterator resource = rm->_resources.begin(); resource != rm->_resources.end(); resource++)
   {
     // mark non-local vservers for updating
-    if((*resource)->_server == NULL)
+    if((*resource)->server == NULL)
     {
-      (*resource)->_upToDate = false;
+      (*resource)->upToDate = false;
     }
     else
     {
-      (*resource)->_upToDate = true;
+      (*resource)->upToDate = true;
     }
   }
 
@@ -202,7 +213,7 @@ void vvResourceManager::updateResources(void * param)
       {
         if((*resource)->_bonjourEntry == *entry)
         {
-          (*resource)->_upToDate = true;
+          (*resource)->upToDate = true;
           inList = true;
           break;
         }
@@ -211,8 +222,7 @@ void vvResourceManager::updateResources(void * param)
       {
         vvResource *res = new vvResource();
         res->_bonjourEntry = *entry;
-        res->numGPUsUp();
-        //res->numGPUsUp();
+        res->numGPUs = 1; // TODO: set appropiate values here
         rm->_resources.push_back(res);
       }
     }
@@ -220,7 +230,7 @@ void vvResourceManager::updateResources(void * param)
 
   for(std::vector<vvResource*>::iterator resource = rm->_resources.begin(); resource != rm->_resources.end(); resource++)
   {
-    if(!(*resource)->_upToDate)
+    if(!(*resource)->upToDate)
     {
       delete *resource;
       rm->_resources.erase(resource);
@@ -237,68 +247,102 @@ void vvResourceManager::updateResources(void * param)
 #endif
 }
 
+uint vvResourceManager::getFreeResourceCount()
+{
+  uint count = 0;
+
+  for(std::vector<vvResource*>::iterator freeRes = _resources.begin();
+      freeRes != _resources.end(); freeRes++)
+  {
+    if((*freeRes)->numGPUs > 0)
+      count++;
+  }
+
+  return count;
+}
+
+vvResourceManager::vvResource* vvResourceManager::getFreeResource()
+{
+  std::vector<vvResource*>::iterator freeRes = _resources.begin();
+  while(freeRes != _resources.end())
+  {
+    if((*freeRes)->numGPUs == 0)
+      freeRes++;
+    else
+      return (*freeRes);
+  }
+
+  return NULL;
+}
+
 void * vvResourceManager::processJob(void * param)
 {
   vvDebugMsg::msg(3, "vvResourceManager::processJob() Enter");
 
 #ifdef HAVE_BONJOUR
   vvJob *job = reinterpret_cast<vvJob*>(param);
-  vvTcpSocket *clientsock = job->requestSock;
+  vvTcpSocket *clientsock = job->request->sock;
 
-  vvTcpSocket *serversock = NULL;
-
-  bool ready = false;
-  vvBonjourResolver resolver;
-  if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry(job->resource->_bonjourEntry))
-  {
-    serversock = resolver.getBonjourSocket();
-    if(NULL == serversock)
-    {
-      ready = false;
-      vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not connect to resolved vserver");
-    }
-    ready = true;
-  }
-  else
-  {
-    ready = false;
-    vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not resolve bonjour service");
-  }
-
-  vvSocketIO sockIO = vvSocketIO(serversock);
-  bool vserverRdy;
-  sockIO.getBool(vserverRdy);
-
-  vvRendererFactory::Options opt;
-
+  bool ready = true;
+  std::vector<vvTcpSocket*> sockets;
   std::stringstream sockstr;
-  int s = vvSocketMap::add(serversock);
-  if (sockstr.str() != "")
+  for(std::vector<vvResource*>::iterator res = job->resources.begin();res!=job->resources.end();res++)
   {
-    sockstr << ",";
-  }
-  sockstr << s;
-  opt["sockets"] = sockstr.str();
+    vvTcpSocket *serversock = NULL;
 
-  // remote server and client
-  bool brickrenderer = false;
+    vvBonjourResolver resolver;
+    if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry((*res)->_bonjourEntry))
+    {
+      serversock = resolver.getBonjourSocket();
+      if(NULL != serversock)
+      {
+        vvSocketIO sockIO = vvSocketIO(serversock);
+        bool vserverRdy;
+        sockIO.getBool(vserverRdy);
+
+        sockets.push_back(serversock);
+        int s = vvSocketMap::add(serversock);
+        if(sockstr.str() != "") sockstr << ",";
+        sockstr << s;
+      }
+      else
+      {
+        vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not connect to resolved vserver");
+        ready = false;
+      }
+    }
+    else
+    {
+      vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not resolve bonjour service");
+      ready = false;
+    }
+  }
+
   vvServer::vvCreateRemoteServerRes res;
-  if(brickrenderer)
+  if(ready) // all resources are connected and ready to use
   {
-    res = vvServer::createRemoteServer(clientsock, "brick??");
-  }
-  else
-  {
-    std::stringstream brickNum;
-    brickNum << 1;
-    opt["bricks"] = brickNum.str();
-    opt["brickrenderer"] = "image";
+    vvRendererFactory::Options opt;
+    opt["sockets"] = sockstr.str();
 
-    std::stringstream displaystr;
-    displaystr << ":0";
-    opt["displays"] = displaystr.str();
+    std::cerr << "benötigte Knoten: " << job->request->requirements << std::endl;
+    if(job->request->requirements > 1) // brick rendering case
+    {
+      std::stringstream brickNum;
+      brickNum << job->request->requirements;
+      opt["bricks"] = brickNum.str();
+      opt["brickrenderer"] = "image";
 
-    res = vvServer::createRemoteServer(clientsock, "", opt); // hier options mitgeben!
+      std::stringstream displaystr;
+      displaystr << ":0,:0"; // TODO: fix this hardcoded setting!
+      opt["displays"] = displaystr.str();
+
+      res = vvServer::createRemoteServer(clientsock, "parbrick", opt);
+    }
+    else // regular remote rendering case
+    {
+      std::cerr << "FOOOOOOOOOOOOOOOO 2222222222222222" << std::endl;
+      res = vvServer::createRemoteServer(clientsock, "image", opt);
+    }
   }
 
   if(res.renderer && res.server && res.vd)
@@ -320,9 +364,10 @@ void * vvResourceManager::processJob(void * param)
     res.server->destroyRenderContext();
   }
 
-  // free resource again
   pthread_mutex_lock(&vvResourceManager::inst->_resourcesMutex);
-  job->resource->numGPUsUp();
+
+  // TODO: go over all resources and count gpus up again!
+
   pthread_mutex_unlock(&vvResourceManager::inst->_resourcesMutex);
   delete job;
 
@@ -331,12 +376,6 @@ void * vvResourceManager::processJob(void * param)
     clientsock->disconnectFromHost();
   }
   delete clientsock;
-
-  if(serversock)
-  {
-    serversock->disconnectFromHost();
-  }
-  delete serversock;
 
 #else
   (void)param;
@@ -354,9 +393,9 @@ void vvResourceManager::exitLocalCallback()
 
   std::vector<vvResource*>::iterator selfRes = _resources.begin();
 
-  while(!(*selfRes)->_server && selfRes != _resources.end()) selfRes++;
+  while(!(*selfRes)->server && selfRes != _resources.end()) selfRes++;
 
-  (*selfRes)->numGPUsUp();
+  (*selfRes)->numGPUs++;
 
   pthread_mutex_unlock(&_resourcesMutex);
 

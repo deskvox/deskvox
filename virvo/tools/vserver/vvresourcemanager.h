@@ -70,42 +70,25 @@ private:
   public:
     vvResource()
     {
-      _upToDate = true;
-      _server = NULL;
+      upToDate = true;
+      server = NULL;
     }
 
-    void numGPUsUp()
-    {
-      _numGPUs++;
-    }
-
-    void numGPUsDown()
-    {
-      _numGPUs--;
-    }
-
-    ushort getGPUs()
-    {
-      return _numGPUs;
-    }
-
-    bool   _upToDate;
-    ushort _numCPUs;
-    uint   _gpuMemSize;
-    uint   _cpuMemSize;
+    bool   upToDate;
+    ushort numGPUs;
+    ushort numCPUs;
+    uint   gpuMemSize;
+    uint   cpuMemSize;
   #ifdef HAVE_BONJOUR
     vvBonjourEntry _bonjourEntry;
   #endif
-    vvServer *_server;
-
-  private:
-    ushort _numGPUs;
+    vvServer *server;
   };
 
   struct vvJob
   {
-    vvTcpSocket       *requestSock;
-    vvResource        *resource;
+    vvRequest               *request;
+    std::vector<vvResource*> resources;
   };
 
 public:
@@ -128,6 +111,9 @@ public:
 
   static void updateResources(void * param);
 private:
+  uint getFreeResourceCount();
+  vvResource* getFreeResource();
+
 #ifdef HAVE_BONJOUR
   vvBonjourBrowser *_browser;
 #endif // HAVE_BONJOUR
