@@ -363,7 +363,7 @@ bool vvMovie::setStep(int step)
           break;
         case SCALE:
           m.identity();
-          m.scale(steps->getData()->param[0]);
+          m.scaleLocal(steps->getData()->param[0]);
           _canvas->transformObject(m);
           break;
         case TIMESTEP:

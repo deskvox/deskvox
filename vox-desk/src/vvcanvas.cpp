@@ -382,7 +382,7 @@ void vvCanvas::mouseReleased(int x, int y, int bs)
 void vvCanvas::repeatMouseDrag()
 {
   vvDebugMsg::msg(3, "vvCanvas::repeatMouseDrag()");
-  _ov._camera.multiplyPre(_lastRotation);
+  _ov._camera.multiplyRight(_lastRotation);
 }
 
 //----------------------------------------------------------------------------
@@ -443,7 +443,7 @@ void vvCanvas::resetObjectView()
 void vvCanvas::transformObject(const vvMatrix& m)
 {
   vvDebugMsg::msg(3, "vvCanvas::transformObject()");
-  _ov._camera.multiplyPre(m);
+  _ov._camera.multiplyRight(m);
 }
 
 //----------------------------------------------------------------------------

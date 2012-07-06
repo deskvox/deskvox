@@ -110,14 +110,30 @@ class VIRVOEXPORT vvMatrix
     void print(const char*) const;
     void identity();
     void zero();
-    void translate(float, float, float);
-    void translate(const vvVector3& vec);
-    void scale(float, float, float);
-    void scale(float);
+
+    // Multiplies this matrix from the left with a translation matix
+    // Note: assumes the 4th row of this matrix equals (0,0,0,1)
+    vvMatrix& translate(float x, float y, float z);
+
+    // Multiplies this matrix from the left with a translation matix
+    // Note: assumes the 4th row of this matrix equals (0,0,0,1)
+    vvMatrix& translate(const vvVector3& t);
+
+    // Multiplies this matrix from the right with a scaling matrix
+    vvMatrix& scaleLocal(float x, float y, float z);
+
+    // Multiplies this matrix from the right with a uniform scaling matrix
+    vvMatrix& scaleLocal(float s);
+
     vvMatrix rotate(float, float, float, float);
     vvMatrix rotate(float, const vvVector3& vec);
-    void multiplyPre(const vvMatrix& rhs);
-    void multiplyPost(const vvMatrix& rhs);
+
+    // Multiplies this matrix from the left with the given matrix: this = LHS * this
+    vvMatrix& multiplyLeft(const vvMatrix& LHS);
+
+    // Multiplies this matrix from the right with the given matrix: this = this * RHS
+    vvMatrix& multiplyRight(const vvMatrix& RHS);
+
     void transpose();
     float diagonal();
     void invertOrtho();

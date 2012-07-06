@@ -1263,7 +1263,7 @@ void vvTexMultiRend::preRendering()
   // Get OpenGL modelview matrix:
   vvGLTools::getModelviewMatrix(&tr.mv);
   tr.mv.translate(translation);
-  tr.mv.multiplyPre(rotation);
+  tr.mv.multiplyRight(rotation);
   tr.mv.getGL(tr.glMV);
 
   // drawing bounding boxes

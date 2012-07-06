@@ -246,7 +246,7 @@ void vvView::mainLoop(int argc, char *argv[])
   createMenus();
 
   ov = new vvObjView();
-  ds->ov->mv.scale(mvScale);
+  ds->ov->mv.scaleLocal(mvScale);
 
   setProjectionMode(perspectiveMode);
 
@@ -527,7 +527,7 @@ void vvView::motionCallback(int x, int y)
     factor = 1.0f + ((float)dy) * 0.01f;
     if (factor > 2.0f) factor = 2.0f;
     if (factor < 0.5f) factor = 0.5f;
-    ds->ov->mv.scale(factor, factor, factor);
+    ds->ov->mv.scaleLocal(factor, factor, factor);
     break;
 
   default: break;
@@ -1062,7 +1062,7 @@ void vvView::mainMenuCallback(int item)
     break;
   case 7:                                     // reset object position
     ds->ov->reset();
-    ds->ov->mv.scale(ds->mvScale);
+    ds->ov->mv.scaleLocal(ds->mvScale);
     ds->setProjectionMode(ds->perspectiveMode);
     break;
   case 8:                                     // menu/zoom mode
@@ -1091,9 +1091,13 @@ void vvView::mainMenuCallback(int item)
     break;
   case 12:                                    // quit
     glutDestroyWindow(ds->window);
+#ifdef FREEGLUT
+    return;
+#else
     delete ds;
     exit(0);
     break;
+#endif
   case 13:                                    // rotate debug level
     {
         int l = vvDebugMsg::getDebugLevel()+1;
@@ -1820,7 +1824,7 @@ double vvView::performanceTest()
       ds->draftQuality = test->getQuality();
       ds->ov->reset();
       ds->ov->resetMV();
-      ds->ov->mv.scale(ds->mvScale);
+      ds->ov->mv.scaleLocal(ds->mvScale);
       ds->perspectiveMode = (test->getProjectionType() == vvObjView::PERSPECTIVE);
       if (ds->perspectiveMode)
       {
@@ -1894,7 +1898,7 @@ double vvView::performanceTest()
 
     ds->hqMode = false;
     ds->ov->reset();
-    ds->ov->mv.scale(ds->mvScale);
+    ds->ov->mv.scaleLocal(ds->mvScale);
     ds->displayCallback();
 
     printProfilingInfo();
@@ -1911,7 +1915,7 @@ double vvView::performanceTest()
     }
 
     ds->ov->reset();
-    ds->ov->mv.scale(ds->mvScale);
+    ds->ov->mv.scaleLocal(ds->mvScale);
     for (angle=0; angle<180; angle+=2)
     {
       ds->ov->mv.rotate(step, 0.0f, 0.0f, 1.0f);  // rotate model view matrix
@@ -1920,7 +1924,7 @@ double vvView::performanceTest()
     }
 
     ds->ov->reset();
-    ds->ov->mv.scale(ds->mvScale);
+    ds->ov->mv.scaleLocal(ds->mvScale);
     for (angle=0; angle<180; angle+=2)
     {
       ds->ov->mv.rotate(step, 1.0f, 0.0f, 0.0f);  // rotate model view matrix
@@ -2262,6 +2266,9 @@ void vvView::initGraphics(int argc, char *argv[])
   glutMotionFunc(motionCallback);
   glutKeyboardFunc(keyboardCallback);
   glutSpecialFunc(specialCallback);
+#ifdef FREEGLUT
+  glutCloseFunc(cleanup);
+#endif
 
   version = (char*)glGetString(GL_VERSION);
   cerr << "Found OpenGL version: " << version << endl;
@@ -2730,9 +2737,7 @@ bool vvView::parseCommandLine(int argc, char** argv)
       if (port != -1)
       {
         ports.push_back(port);
-        char* sname = vvToolshed::stripPort(argv[arg]);
-        servers.push_back(sname);
-        delete[] sname;
+        servers.push_back(vvToolshed::stripPort(argv[arg]));
       }
       else
       {
@@ -2954,7 +2959,9 @@ int main(int argc, char** argv)
   _CrtCheckMemory();
 #endif
 
+#ifndef FREEGLUT
   atexit(vvView::cleanup);
+#endif
 
   //vvDebugMsg::setDebugLevel(vvDebugMsg::NO_MESSAGES);
   int error = (new vvView())->run(argc, argv);

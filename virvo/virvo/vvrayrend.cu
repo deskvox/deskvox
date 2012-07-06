@@ -1145,7 +1145,7 @@ void vvRayRend::compositeVolume(int, int)
   vvMatrix Mv, MvPr;
   vvGLTools::getModelviewMatrix(&Mv);
   vvGLTools::getProjectionMatrix(&MvPr);
-  MvPr.multiplyPre(Mv);
+  MvPr.multiplyRight(Mv);
 
   float* mvprM = new float[16];
   MvPr.get(mvprM);
@@ -1160,7 +1160,7 @@ void vvRayRend::compositeVolume(int, int)
 
   vvMatrix invMvpr;
   vvGLTools::getModelviewMatrix(&invMvpr);
-  invMvpr.multiplyPost(pr);
+  invMvpr.multiplyLeft(pr);
   invMvpr.invert();
 
   float* viewM = new float[16];
@@ -1540,7 +1540,7 @@ void vvRayRend::factorViewMatrix()
 
   iwWarp.identity();
   iwWarp.translate(-1.0f, -1.0f, 0.0f);
-  iwWarp.scale(1.0f / (static_cast<float>(vp[2]) * 0.5f), 1.0f / (static_cast<float>(vp[3]) * 0.5f), 0.0f);
+  iwWarp.scaleLocal(1.0f / (static_cast<float>(vp[2]) * 0.5f), 1.0f / (static_cast<float>(vp[3]) * 0.5f), 0.0f);
 }
 
 void vvRayRend::findAxisRepresentations()

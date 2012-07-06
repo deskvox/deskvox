@@ -747,7 +747,7 @@ void vvRenderer::renderCoordinates()
     mv.setColumn(i, column);
   }
   mv.translate(0.8f * half[0], -0.8f * half[1], 0.0f);
-  mv.scale(0.2f, 0.2f, 0.2f);
+  mv.scaleLocal(0.2f, 0.2f, 0.2f);
   vvGLTools::setModelviewMatrix(mv);
 
   // Draw axis cross:

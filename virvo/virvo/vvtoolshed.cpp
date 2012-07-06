@@ -2732,25 +2732,33 @@ void vvToolshed::pixels2Ppm(float* pixels, const int width, const int height,
     @param url  The url to parse the port from
     @return  The port if specified, -1 otherwise.
 */
-int vvToolshed::parsePort(const char* url)
+int vvToolshed::parsePort(std::string const& url)
 {
-  const char delimiter[] = ":";
-  char* token;
-  char* str = new char[strlen(url)+1];
-  strcpy(str, url);
+    std::string::size_type pos = url.find_last_of(":");
 
-  int port = -1;
+    // No colon found, no port!
+    if (pos == std::string::npos)
+        return -1;
 
-  if ((token = (strtok(str, delimiter))))
-  {
-    while ((token = (strtok(NULL, delimiter))))
-    {
-      port = atoi(token);
-    }
-  }
-  delete[] str;
+    // Colon found
+    // Check if there is a number following the colon
 
-  return port;
+    std::string strPort = url.substr(pos + 1);
+
+    char const* begin = strPort.c_str();
+    char* end = 0;
+
+    unsigned long port = strtoul(begin, &end, 10);
+
+    // Note:
+    // strtoul doesn't set errno if no valid conversion has been performed and simply returns 0.
+    // If the correct value is out of the range of representable values, ULONG_MAX is returned,
+    // an the global variable errno is set to ERANGE
+
+    if (port == 0 || port >= 65536)
+        return -1;
+
+    return port; // A valid port has been found
 }
 
 //----------------------------------------------------------------------------
@@ -2762,33 +2770,11 @@ int vvToolshed::parsePort(const char* url)
     @param url  The url to strip.
     @return The stripped result.
 */
-char* vvToolshed::stripPort(const char* url)
+std::string vvToolshed::stripPort(std::string const& url)
 {
-  int stripCount = 0;
-  bool colonSeen = false;
-  char* result = 0;
+    assert( parsePort(url) != -1 ); // Not checked for a valid port?!
 
-  for (int i = strlen(url) - 1; i >= 0; --i)
-  {
-    char c = url[i];
-
-    if ((c != ':') && (!colonSeen))
-    {
-      ++stripCount;
-    }
-    else if ((c == ':') && (!colonSeen))
-    {
-      ++stripCount;
-      colonSeen = true;
-      result = new char[strlen(url) - stripCount - 1];
-    }
-    else
-    {
-      result[i] = url[i];
-    }
-  }
-  result[strlen(url) - stripCount] = '\0';
-  return result;
+    return url.substr(0, url.find_last_of(":"));
 }
 
 void vvToolshed::printBacktrace()

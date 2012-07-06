@@ -623,7 +623,7 @@ void vvSoftVR::findViewMatrix()
 
    // Compute view matrix:
    owView = vvMatrix(mv);
-   owView.multiplyPost(pm);
+   owView.multiplyLeft(pm);
    if (vvDebugMsg::isActive(3)) owView.print("owView");
 }
 
@@ -978,7 +978,7 @@ bool vvSoftVR::prepareRendering()
    trans.identity();
    trans.translate(vd->pos[0], vd->pos[1], vd->pos[2]);
    vvGLTools::getModelviewMatrix(&mv);
-   mv.multiplyPre(trans);
+   mv.multiplyRight(trans);
    vvGLTools::setModelviewMatrix(mv);
 
    // Make sure a parallel projection matrix is used:
@@ -1018,10 +1018,10 @@ bool vvSoftVR::prepareRendering()
    {
       vvMatrix ovTest = vvMatrix(oiShear);
       vvMatrix ovView;
-      ovTest.multiplyPost(ivWarp);
+      ovTest.multiplyLeft(ivWarp);
       ovTest.print("ovTest = ivWarp x siShear x osPerm");
       ovView = vvMatrix(owView);
-      ovView.multiplyPost(wvConv);
+      ovView.multiplyLeft(wvConv);
       ovView.print("ovView = wvConv x owView");
    }
    return true;
