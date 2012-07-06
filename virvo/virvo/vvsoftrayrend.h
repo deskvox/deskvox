@@ -23,6 +23,8 @@
 
 #include "vvrenderer.h"
 
+#include <vector>
+
 class vvSoftRayRend : public vvRenderer
 {
 public:
@@ -32,10 +34,19 @@ public:
   void renderVolumeGL(); ///< TODO: rename, no OpenGL here
   void updateTransferFunction();
 private:
+  struct Tile 
+  { 
+    int left; 
+    int bottom; 
+    int right; 
+    int top; 
+  }; 
+
   float* _rgbaTF;
   bool _opacityCorrection;          ///< true = opacity correction on
 
   int getLUTSize() const;
+  std::vector<Tile> makeTiles(int w, int h);
 };
 
 #endif
