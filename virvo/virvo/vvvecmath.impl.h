@@ -1343,6 +1343,20 @@ vvBaseVector4<T> vvBaseVector4<T>::operator * ( const vvBaseVector4<T> &other ) 
   return vResult;
 }
 
+/// Operator * for scalar
+template <typename T>
+vvBaseVector4<T> vvBaseVector4<T>::operator * ( const T scalar ) const
+{
+  vvBaseVector4<T> vResult;
+
+  for (int i = 0; i < 4; ++i)
+  {
+    vResult.e[i] = e[i] * scalar;
+  }
+
+  return vResult;
+}
+
 template <typename T>
 vvBaseVector3<T> operator * ( const T scalar, const vvBaseVector3<T> &other )
 {

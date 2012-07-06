@@ -200,6 +200,7 @@ class vvBaseVector4
     vvBaseVector4 operator + (const vvBaseVector4 &other) const;
     vvBaseVector4 operator - (const vvBaseVector4 &other) const;
     vvBaseVector4 operator * (const vvBaseVector4 &other) const;
+    vvBaseVector4 operator * (const T scalar) const;
 };
 
 /** base vector primitive
