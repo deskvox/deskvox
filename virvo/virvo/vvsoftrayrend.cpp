@@ -78,8 +78,10 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvRenderer(vd, renderState)
   , _firstThread(NULL)
   , _earlyRayTermination(true)
-  , _opacityCorrection(false)
+  , _opacityCorrection(true)
 {
+  vvDebugMsg::msg(1, "vvSoftRayRend::vvSoftRayRend()");
+
   updateTransferFunction();
 
   int numThreads = vvToolshed::getNumProcessors();
@@ -111,6 +113,8 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
 
 vvSoftRayRend::~vvSoftRayRend()
 {
+  vvDebugMsg::msg(1, "vvSoftRayRend::~vvSoftRayRend()");
+
   for (std::vector<Thread*>::const_iterator it = _threads.begin();
        it != _threads.end(); ++it)
   {
@@ -134,6 +138,8 @@ vvSoftRayRend::~vvSoftRayRend()
 
 void vvSoftRayRend::renderVolumeGL()
 {
+  vvDebugMsg::msg(3, "vvSoftRayRend::renderVolumeGL()");
+
   vvMatrix mv;
   vvMatrix pr;
 
@@ -176,6 +182,8 @@ void vvSoftRayRend::renderVolumeGL()
 
 void vvSoftRayRend::updateTransferFunction()
 {
+  vvDebugMsg::msg(3, "vvSoftRayRend::updateTransferFunction()");
+
   int lutEntries = getLUTSize();
   delete[] _rgbaTF;
   _rgbaTF = new float[4 * lutEntries];
@@ -185,12 +193,47 @@ void vvSoftRayRend::updateTransferFunction()
 
 int vvSoftRayRend::getLUTSize() const
 {
-   vvDebugMsg::msg(3, "vvSoftRayRend::getLUTSize()");
-   return (vd->getBPV()==2) ? 4096 : 256;
+  vvDebugMsg::msg(3, "vvSoftRayRend::getLUTSize()");
+  return (vd->getBPV()==2) ? 4096 : 256;
+}
+
+void vvSoftRayRend::setParameter(ParameterType param, const vvParam& newValue)
+{
+  vvDebugMsg::msg(3, "vvSoftRayRend::setParameter()");
+
+  switch (param)
+  {
+  case vvRenderer::VV_OPCORR:
+    _opacityCorrection = newValue;
+    break;
+  case vvRenderer::VV_TERMINATEEARLY:
+    _earlyRayTermination = newValue;
+    break;
+  default:
+    vvRenderer::setParameter(param, newValue);
+    break;
+  }
+}
+
+vvParam vvSoftRayRend::getParameter(ParameterType param) const
+{
+  vvDebugMsg::msg(3, "vvSoftRayRend::getParameter()");
+
+  switch (param)
+  {
+  case vvRenderer::VV_OPCORR:
+    return _opacityCorrection;
+  case vvRenderer::VV_TERMINATEEARLY:
+    return _earlyRayTermination;
+  default:
+    return vvRenderer::getParameter(param);
+  }
 }
 
 std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int h)
 {
+  vvDebugMsg::msg(3, "vvSoftRayRend::makeTiles()");
+
   const int tilew = 16;
   const int tileh = 16;
 
@@ -215,6 +258,8 @@ std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int
 
 void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& invViewMatrix, std::vector<float>* colors)
 {
+  vvDebugMsg::msg(3, "vvSoftRayRend::renderTile()");
+
   const float opacityThreshold = 0.95f;
 
   const int W = 512;
@@ -313,6 +358,8 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
 
 void* vvSoftRayRend::renderFunc(void* args)
 {
+  vvDebugMsg::msg(3, "vvSoftRayRend::renderFunc()");
+
   Thread* thread = static_cast<Thread*>(args);
 
   while (true)
@@ -339,6 +386,8 @@ cleanup:
 
 void vvSoftRayRend::render(vvSoftRayRend::Thread* thread)
 {
+  vvDebugMsg::msg(3, "vvSoftRayRend::render()");
+
   pthread_barrier_wait(thread->barrier);
   while (true)
   {

@@ -33,6 +33,8 @@ public:
 
   void renderVolumeGL(); ///< TODO: rename, no OpenGL here
   void updateTransferFunction();
+  void setParameter(ParameterType param, const vvParam& newValue);
+  vvParam getParameter(ParameterType param) const;
 private:
   struct Thread;
   struct Tile 
