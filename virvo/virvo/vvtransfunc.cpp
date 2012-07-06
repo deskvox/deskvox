@@ -37,6 +37,7 @@
 #include "vvtoolshed.h"
 
 #include <algorithm>
+#include <fstream>
 
 using std::cerr;
 using std::endl;
@@ -1028,6 +1029,77 @@ void vvTransFunc::makePreintLUTOptimized(int width, uchar *preIntTable, float th
   delete[] gInt;
   delete[] bInt;
   delete[] aInt;
+}
+
+/** Save transfer function to ascii file
+ */
+bool vvTransFunc::save(const std::string& filename)
+{
+  std::ofstream file;
+  file.open(filename.c_str(), std::ios::out);
+
+  if (file.is_open())
+  {
+    for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+         it != _widgets.end(); ++it)
+    {
+      file << (*it)->toString();
+    }
+    file.close();
+  }
+  else
+  {
+    return false;
+  }
+  return true;
+}
+
+bool vvTransFunc::load(const std::string& filename)
+{
+  std::ifstream file;
+  file.open(filename.c_str(), std::ios::in);
+
+  if (file.is_open())
+  {
+    for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
+         it != _widgets.end(); ++it)
+    {
+      delete *it;
+    }
+    _widgets.clear();
+
+    std::string line;
+    while (file.good())
+    {
+      getline(file, line);
+      if (line.length() < 3)
+      {
+        continue;
+      }
+
+      std::vector<std::string> tokens = vvToolshed::split(line, " ");
+
+      if (tokens.size() < 3)
+      {
+        continue;
+      }
+      const char* name = tokens[0].c_str();
+
+      vvTFWidget* widget = vvTFWidget::produce(vvTFWidget::getWidgetType(name));
+
+      if (widget)
+      {
+        widget->fromString(line);
+        _widgets.push_back(widget);
+      }
+    }
+    file.close();
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
 
 //----------------------------------------------------------------------------

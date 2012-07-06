@@ -82,6 +82,8 @@ class VIRVOEXPORT vvTransFunc
     void clearUndoBuffer();
     void setDiscreteColors(int);
     int  getDiscreteColors();
+    bool save(const std::string& filename);
+    bool load(const std::string& filename);
     int  saveMeshviewer(const char*);
     int  saveBinMeshviewer(const char*);
     int  loadMeshviewer(const char*);
