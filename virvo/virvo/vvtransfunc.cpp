@@ -1167,7 +1167,10 @@ int vvTransFunc::loadMeshviewer(const char* filename)
   
   // Read color pins from file:
   if(fscanf(fp, "ColorMapKnots: %d\n", &numColorWidgets) != 1)
-     std::cerr << "vvTransFunc::loadMeshviewer: fscanf 1 failed" << std::endl;
+  {
+    std::cerr << "vvTransFunc::loadMeshviewer: fscanf 1 failed" << std::endl;
+    numColorWidgets = 0;
+  }
 
   for (i=0; i<numColorWidgets; ++i)
   { 
@@ -1183,7 +1186,11 @@ int vvTransFunc::loadMeshviewer(const char* filename)
   
   // Read opacity pins from file:
   if(fscanf(fp, "OpacityMapPoints: %d\n", &numOpacityPoints) != 1)
-     std::cerr << "vvTransFunc::loadMeshviewer: fscanf 3 failed" << std::endl;
+  {
+    std::cerr << "vvTransFunc::loadMeshviewer: fscanf 3 failed" << std::endl;
+    numOpacityPoints = 0;
+  }
+
   if (numOpacityPoints>0) 
   {
     float begin=0., end=0.;
