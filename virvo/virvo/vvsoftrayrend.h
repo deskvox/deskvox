@@ -34,6 +34,7 @@ public:
   void renderVolumeGL(); ///< TODO: rename, no OpenGL here
   void updateTransferFunction();
 private:
+  struct Thread;
   struct Tile 
   { 
     int left; 
@@ -42,11 +43,18 @@ private:
     int top; 
   }; 
 
+  Thread* _firstThread;
+  std::vector<Thread*> _threads;
+
   float* _rgbaTF;
   bool _opacityCorrection;          ///< true = opacity correction on
 
   int getLUTSize() const;
   std::vector<Tile> makeTiles(int w, int h);
+  void renderTile(const Tile& tile, const vvMatrix& invViewMatrix, std::vector<float>* colors);
+
+  static void* renderFunc(void* args);
+  static void render(Thread* thread);
 };
 
 #endif
