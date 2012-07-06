@@ -67,26 +67,17 @@ struct vvSoftRayRend::Thread
 
   enum Event
   {
-//    VV_NEW_PARAM = 0,
-    VV_RENDER,
-//    VV_RESIZE,
-//    VV_TRANS_FUNC,
+    VV_RENDER = 0,
     VV_EXIT
   };
 
-  struct Param
-  {
-    vvRenderState::ParameterType type;
-    vvParam newValue;
-  };
-
   std::queue<Event> events;
-  std::queue<Param> newParams;
 };
 
 vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvRenderer(vd, renderState)
   , _firstThread(NULL)
+  , _earlyRayTermination(true)
   , _opacityCorrection(false)
 {
   updateTransferFunction();
@@ -224,6 +215,8 @@ std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int
 
 void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& invViewMatrix, std::vector<float>* colors)
 {
+  const float opacityThreshold = 0.95f;
+
   const int W = 512;
   const int H = 512;
 
@@ -295,6 +288,11 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
           src[2] *= src[3];
 
           dst = dst + src * (1.0f - dst[3]);
+
+          if (_earlyRayTermination && (dst[3] > opacityThreshold))
+          {
+            break;
+          }
 
           t += dist;
           if (t > tbfar)

@@ -47,6 +47,7 @@ private:
   std::vector<Thread*> _threads;
 
   float* _rgbaTF;
+  bool _earlyRayTermination;
   bool _opacityCorrection;          ///< true = opacity correction on
 
   int getLUTSize() const;
