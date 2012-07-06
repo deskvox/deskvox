@@ -28,6 +28,7 @@
 #include "vvvoldesc.h"
 #include "vvtexrend.h"
 #include "vvcudasw.h"
+#include "vvsoftrayrend.h"
 #include "vvsoftsw.h"
 #include "vvrayrend.h"
 #include "vvibrclient.h"
@@ -81,6 +82,7 @@ void init()
   rendererAliasMap["11"] = "image";
   rendererAliasMap["13"] = "serbrick";
   rendererAliasMap["14"] = "parbrick";
+  rendererAliasMap["15"] = "softrayrend";
   // used in COVER and Inventor renderer
   rendererAliasMap["tex2d"] = "slices";
   rendererAliasMap["slices2d"] = "slices";
@@ -122,6 +124,7 @@ void init()
   rendererTypeMap["soft"] = vvRenderer::SOFTSW;
   rendererTypeMap["cudasw"] = vvRenderer::CUDASW;
   rendererTypeMap["rayrend"] = vvRenderer::RAYREND;
+  rendererTypeMap["softrayrend"] = vvRenderer::SOFTRAYREND;
   rendererTypeMap["volpack"] = vvRenderer::VOLPACK;
   rendererTypeMap["image"] = vvRenderer::REMOTE_IMAGE;
   rendererTypeMap["ibr"] = vvRenderer::REMOTE_IBR;
@@ -338,6 +341,8 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   case vvRenderer::CUDASW:
     return new vvCudaShearWarp(vd, rs);
 #endif
+  case vvRenderer::SOFTRAYREND:
+    return new vvSoftRayRend(vd, rs);
   case vvRenderer::TEXREND:
   default:
     {

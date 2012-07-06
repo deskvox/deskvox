@@ -112,6 +112,7 @@ SET(VIRVO_HEADERS
   vvsoftimg.h
   vvsoftpar.h
   vvsoftper.h
+  vvsoftrayrend.h
   vvsoftvr.h
   vvsoftsw.h
   vvsphere.h
@@ -188,6 +189,7 @@ SET(VIRVO_SOURCES
   vvsoftimg.cpp
   vvsoftpar.cpp
   vvsoftper.cpp
+  vvsoftrayrend.cpp
   vvsoftvr.cpp
   vvsoftsw.cpp
   vvsphere.cpp
