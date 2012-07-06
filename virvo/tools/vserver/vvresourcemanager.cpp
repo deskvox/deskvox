@@ -344,8 +344,7 @@ void * vvResourceManager::processJob(void * param)
     }
     else // regular remote rendering case
     {
-      std::cerr << "FOOOOOOOOOOOOOOOO 2222222222222222" << std::endl;
-      res = vvServer::createRemoteServer(clientsock, "image", opt);
+      res = vvServer::createRemoteServer(clientsock, std::string("forwarding"), opt);
     }
   }
 
@@ -370,7 +369,10 @@ void * vvResourceManager::processJob(void * param)
 
   pthread_mutex_lock(&vvResourceManager::inst->_resourcesMutex);
 
-  // TODO: go over all resources and count gpus up again!
+  for(std::vector<vvResource*>::iterator res = job->resources.begin();res!=job->resources.end();res++)
+  {
+    (*res)->GPUs[0].freeMem = 1000;
+  }
 
   pthread_mutex_unlock(&vvResourceManager::inst->_resourcesMutex);
   delete job;

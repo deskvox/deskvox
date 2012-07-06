@@ -496,6 +496,10 @@ vvServer::vvCreateRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock
     {
       renderertype = (rType == vvRenderer::REMOTE_IBR) ? "rayrend" : "default";
     }
+    else if(renderertype.compare(std::string("forwarding")) == 0)
+    {
+      renderertype = (rType == vvRenderer::REMOTE_IBR) ? "ibr" : "image";
+    }
     std::cerr << "vvRendererFactory::create() " << renderertype << opt["brickrenderer"] << opt["bricks"] << opt["displays"] << opt["sockets"] << std::endl;
     res.renderer = vvRendererFactory::create(res.vd,
       rs,
