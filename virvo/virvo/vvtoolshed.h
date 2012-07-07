@@ -256,6 +256,7 @@ class VIRVOEXPORT vvToolshed
     static int     parsePort(std::string const& url);
     static std::string stripPort(std::string const& url);
     static void    printBacktrace();
+    static int     iDivUp(int a, int b);
 };
 #endif
 

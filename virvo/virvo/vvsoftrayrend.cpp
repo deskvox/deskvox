@@ -10,6 +10,7 @@
 #endif
 
 #if HAVE_GL
+#include "vvglew.h"
 #include "vvgltools.h"
 #endif
 
@@ -45,11 +46,6 @@ bool intersectBox(const Ray& ray, const vvAABB& aabb,
   *tfar = tmax;
 
   return ((tmax >= tmin) && (tmax >= 0.0f));
-}
-
-int iDivUp(const int a, const int b)
-{
-  return (a + b - 1) / b;
 }
 
 struct vvSoftRayRend::Thread
@@ -237,8 +233,8 @@ std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int
   const int tilew = 16;
   const int tileh = 16;
 
-  int numtilesx = iDivUp(w, tilew);
-  int numtilesy = iDivUp(h, tileh);
+  int numtilesx = vvToolshed::iDivUp(w, tilew);
+  int numtilesy = vvToolshed::iDivUp(h, tileh);
 
   std::vector<Tile> result;
   for (int y = 0; y < numtilesy; ++y)

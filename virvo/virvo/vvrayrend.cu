@@ -46,11 +46,6 @@ texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture8;
 texture<ushort, 3, cudaReadModeNormalizedFloat> volTexture16;
 texture<float4, 1, cudaReadModeElementType> tfTexture;
 
-int iDivUp(const int a, const int b)
-{
-  return (a + b - 1) / b;
-}
-
 typedef struct
 {
   float m[4][4];
@@ -1114,7 +1109,7 @@ void vvRayRend::compositeVolume(int, int)
   dynamic_cast<vvCudaImg*>(intImg)->map();
 
   dim3 blockSize(16, 16);
-  dim3 gridSize = dim3(iDivUp(vp[2], blockSize.x), iDivUp(vp[3], blockSize.y));
+  dim3 gridSize = dim3(vvToolshed::iDivUp(vp[2], blockSize.x), vvToolshed::iDivUp(vp[3], blockSize.y));
   const vvVector3 size(vd->getSize());
 
   vvVector3 probePosObj;

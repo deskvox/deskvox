@@ -2798,6 +2798,11 @@ void vvToolshed::printBacktrace()
 #endif
 }
 
+int vvToolshed::iDivUp(const int a, const int b)
+{
+  return (a + b - 1) / b;
+}
+
 //----------------------------------------------------------------------------
 /// Main function for standalone test mode.
 #ifdef VV_STANDALONE
