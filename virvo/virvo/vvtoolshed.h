@@ -28,7 +28,6 @@
 #include <stdio.h>
 
 #include "vvexport.h"
-#include "vvarray.h"
 #include "vvinttypes.h"
 
 //============================================================================

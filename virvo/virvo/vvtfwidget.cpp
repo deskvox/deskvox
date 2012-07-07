@@ -24,6 +24,7 @@
 #include "vvtoolshed.h"
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 using std::cerr;
 using std::endl;

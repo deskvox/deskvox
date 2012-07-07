@@ -27,7 +27,6 @@
 #include "vvexport.h"
 #include "vvrenderer.h"
 #include "vvopengl.h"
-#include "vvsllist.h"
 #include "vvbrick.h"
 
 class vvOffscreenBuffer;
