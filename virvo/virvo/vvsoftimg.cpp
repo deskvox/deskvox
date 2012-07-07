@@ -22,7 +22,7 @@
 using std::cerr;
 using std::endl;
 
-#include "vvglew.h"
+#include <GL/glew.h>
 #include "vvplatform.h"
 
 #include <string.h>

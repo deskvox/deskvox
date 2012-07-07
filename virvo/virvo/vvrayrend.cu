@@ -24,7 +24,7 @@
 
 #ifdef HAVE_CUDA
 
-#include "vvglew.h"
+#include <GL/glew.h>
 
 #include "vvcuda.h"
 #include "vvcudatools.h"

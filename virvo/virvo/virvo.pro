@@ -112,7 +112,6 @@ HEADERS = \
   vvdynlib.h \
   vvexport.h \
   vvfileio.h \
-  vvglew.h \
   vvglslprogram.h \
   vvgltools.h \
   vvibr.h \

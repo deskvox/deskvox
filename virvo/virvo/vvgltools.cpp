@@ -22,7 +22,7 @@
 
 #include <string.h>
 #include <cstdlib>
-#include "vvglew.h"
+#include <GL/glew.h>
 #include "vvopengl.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"

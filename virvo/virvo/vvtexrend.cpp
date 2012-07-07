@@ -22,7 +22,7 @@
 #include "vvconfig.h"
 #endif
 
-#include "vvglew.h"
+#include <GL/glew.h>
 
 #include <iostream>
 #include <sstream>

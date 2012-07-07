@@ -10,7 +10,7 @@
 #endif
 
 #if HAVE_GL
-#include "vvglew.h"
+#include <GL/glew.h>
 #include "vvgltools.h"
 #endif
 
