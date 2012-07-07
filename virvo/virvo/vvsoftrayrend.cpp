@@ -180,11 +180,21 @@ void vvSoftRayRend::updateTransferFunction()
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::updateTransferFunction()");
 
+  if (_firstThread != NULL && _firstThread->mutex != NULL)
+  {
+    pthread_mutex_lock(_firstThread->mutex);
+  }
+
   int lutEntries = getLUTSize();
   delete[] _rgbaTF;
   _rgbaTF = new float[4 * lutEntries];
 
   vd->computeTFTexture(lutEntries, 1, 1, _rgbaTF);
+
+  if (_firstThread != NULL && _firstThread->mutex != NULL)
+  {
+    pthread_mutex_unlock(_firstThread->mutex);
+  }
 }
 
 int vvSoftRayRend::getLUTSize() const
