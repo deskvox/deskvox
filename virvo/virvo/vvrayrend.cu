@@ -1442,7 +1442,7 @@ void vvRayRend::initVolumeTexture()
     }
     else if (vd->bpc == 2)
     {
-      uchar* raw = vd->getRaw(0);
+      uchar* raw = vd->getRaw(f);
       uchar* data = new uchar[size];
 
       for (int i=0; i<size; i+=2)

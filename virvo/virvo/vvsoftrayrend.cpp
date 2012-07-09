@@ -298,7 +298,7 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
                                            vd->vox[2] * vd->vox[2]));
   int numSlices = std::max(1, static_cast<int>(_quality * diagonalVoxels));
 
-  uchar* raw = vd->getRaw(0);
+  uchar* raw = vd->getRaw(vd->getCurrentFrame());
 
   for (int y = tile.bottom; y < tile.top; ++y)
   {
