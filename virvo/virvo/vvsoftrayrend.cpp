@@ -9,7 +9,7 @@
 #include "vvconfig.h"
 #endif
 
-#if HAVE_GL
+#ifdef HAVE_GL
 #include <GL/glew.h>
 #include "vvgltools.h"
 #endif
@@ -139,7 +139,7 @@ void vvSoftRayRend::renderVolumeGL()
   vvMatrix mv;
   vvMatrix pr;
 
-#if HAVE_GL
+#ifdef HAVE_GL
   vvGLTools::getModelviewMatrix(&mv);
   vvGLTools::getProjectionMatrix(&pr);
 #endif
@@ -170,7 +170,7 @@ void vvSoftRayRend::renderVolumeGL()
   // threads render
 
   pthread_barrier_wait(_firstThread->barrier);
-#if HAVE_GL
+#ifdef HAVE_GL
   glWindowPos2i(0, 0);
   glDrawPixels(W, H, GL_RGBA, GL_FLOAT, &colors[0]);
 #endif
