@@ -278,8 +278,16 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
   const int W = 512;
   const int H = 512;
 
-  vvAABB aabb = vvAABB(vvVector3(), vvVector3());
-  vd->getBoundingBox(aabb);
+  vvVector3i minVox = _visibleRegion.getMin();
+  vvVector3i maxVox = _visibleRegion.getMax();
+  for (int i = 0; i < 3; ++i)
+  {
+    minVox[i] = std::max(minVox[i], 0);
+    maxVox[i] = std::min(maxVox[i], vd->vox[i]);
+  }
+  const vvVector3 minCorner = vd->objectCoords(minVox);
+  const vvVector3 maxCorner = vd->objectCoords(maxVox);
+  const vvAABB aabb = vvAABB(minCorner, maxCorner);
 
   vvVector3 size2 = vd->getSize() * 0.5f;
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
