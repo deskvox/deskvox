@@ -208,12 +208,19 @@ vvParBrickRend::~vvParBrickRend()
   for (std::vector<Thread*>::const_iterator it = _threads.begin();
        it != _threads.end(); ++it)
   {
+    pthread_mutex_lock((*it)->mutex);
     (*it)->events.push(Thread::VV_EXIT);
+    pthread_mutex_unlock((*it)->mutex);
+
     if ((*it) != _thread && pthread_join((*it)->threadHandle, NULL) != 0)
     {
       vvDebugMsg::msg(0, "vvParBrickRend::~vvParBrickRend(): Error joining thread");
     }
+  }
 
+  for (std::vector<Thread*>::const_iterator it = _threads.begin();
+       it != _threads.end(); ++it)
+  {
     if (it == _threads.begin())
     {
       pthread_barrier_destroy((*it)->barrier);
@@ -412,9 +419,15 @@ void* vvParBrickRend::renderFunc(void* args)
   while (true)
   {
     vvDebugMsg::msg(3, "vvParBrickRend::renderFunc() - render loop");
-    if (!thread->events.empty())
+    pthread_mutex_lock(thread->mutex);
+    bool haveEvent = !thread->events.empty();
+    pthread_mutex_unlock(thread->mutex);
+
+    if (haveEvent)
     {
+      pthread_mutex_lock(thread->mutex);
       Thread::Event e = thread->events.front();
+      pthread_mutex_unlock(thread->mutex);
 
       switch (e)
       {
@@ -422,12 +435,14 @@ void* vvParBrickRend::renderFunc(void* args)
         goto cleanup;
       case Thread::VV_NEW_PARAM:
       {
+        pthread_mutex_lock(thread->mutex);
         if (!thread->newParams.empty())
         {
           Thread::Param p = thread->newParams.front();
           thread->renderer->setParameter(p.type, p.newValue);
           thread->newParams.pop();
         }
+        pthread_mutex_unlock(thread->mutex);
         break;
       }
       case Thread::VV_RENDER:
@@ -445,7 +460,10 @@ void* vvParBrickRend::renderFunc(void* args)
         thread->renderer->updateTransferFunction();
         break;
       }
+
+      pthread_mutex_lock(thread->mutex);
       thread->events.pop();
+      pthread_mutex_unlock(thread->mutex);
     }
   }
 

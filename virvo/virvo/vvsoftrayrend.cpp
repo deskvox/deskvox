@@ -114,12 +114,19 @@ vvSoftRayRend::~vvSoftRayRend()
   for (std::vector<Thread*>::const_iterator it = _threads.begin();
        it != _threads.end(); ++it)
   {
+    pthread_mutex_lock((*it)->mutex);
     (*it)->events.push(Thread::VV_EXIT);
+    pthread_mutex_unlock((*it)->mutex);
+
     if (pthread_join((*it)->threadHandle, NULL) != 0)
     {
       vvDebugMsg::msg(0, "vvSoftRayRend::~vvSoftRayRend(): Error joining thread");
     }
+  }
 
+  for (std::vector<Thread*>::const_iterator it = _threads.begin();
+       it != _threads.end(); ++it)
+  {
     if (it == _threads.begin())
     {
       pthread_barrier_destroy((*it)->barrier);
@@ -370,9 +377,15 @@ void* vvSoftRayRend::renderFunc(void* args)
 
   while (true)
   {
-    if (!thread->events.empty())
+    pthread_mutex_lock(thread->mutex);
+    bool haveEvent = !thread->events.empty();
+    pthread_mutex_unlock(thread->mutex);
+
+    if (haveEvent)
     {
+      pthread_mutex_lock(thread->mutex);
       Thread::Event e = thread->events.front();
+      pthread_mutex_unlock(thread->mutex);
 
       switch (e)
       {
@@ -382,6 +395,10 @@ void* vvSoftRayRend::renderFunc(void* args)
         render(thread);
         break;
       }
+
+      pthread_mutex_lock(thread->mutex);
+      thread->events.pop();
+      pthread_mutex_unlock(thread->mutex);
     }
   }
 
