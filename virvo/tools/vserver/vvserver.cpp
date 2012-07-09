@@ -452,7 +452,7 @@ void * vvServer::handleClientThread(void *param)
     vvRenderState rs;
     vvRenderer *renderer = vvRendererFactory::create(vd,
         rs,
-        rType==vvRenderer::REMOTE_IBR ? "rayrend" : "default",
+        rType==vvRenderer::REMOTE_IBR ? "rayrend" : "softrayrend",
         "");
 
     renderer->setParameter(vvRenderer::VV_USE_IBR, rType == vvRenderer::REMOTE_IBR);

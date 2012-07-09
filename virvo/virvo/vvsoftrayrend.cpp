@@ -72,6 +72,8 @@ struct vvSoftRayRend::Thread
 
 vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvRenderer(vd, renderState)
+  , _width(512)
+  , _height(512)
   , _firstThread(NULL)
   , _rgbaTF(NULL)
   , _earlyRayTermination(true)
@@ -154,20 +156,19 @@ void vvSoftRayRend::renderVolumeGL()
 #ifdef HAVE_GL
   vvGLTools::getModelviewMatrix(&mv);
   vvGLTools::getProjectionMatrix(&pr);
+  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  _width = viewport[2];
+  _height = viewport[3];
 #endif
 
   vvMatrix invViewMatrix = mv;
   invViewMatrix.multiplyLeft(pr);
   invViewMatrix.invert();
 
-  // hardcoded
-  const int W = 512;
-  const int H = 512;
-
-  std::vector<Tile> tiles = makeTiles(W, H);
+  std::vector<Tile> tiles = makeTiles(_width, _height);
 
   std::vector<float> colors;
-  colors.resize(W * H * 4);
+  colors.resize(_width * _height * 4);
 
   for (std::vector<Thread*>::const_iterator it = _threads.begin();
        it != _threads.end(); ++it)
@@ -184,7 +185,7 @@ void vvSoftRayRend::renderVolumeGL()
   pthread_barrier_wait(_firstThread->barrier);
 #ifdef HAVE_GL
   glWindowPos2i(0, 0);
-  glDrawPixels(W, H, GL_RGBA, GL_FLOAT, &colors[0]);
+  glDrawPixels(_width, _height, GL_RGBA, GL_FLOAT, &colors[0]);
 #endif
 }
 
@@ -280,9 +281,6 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
 
   const float opacityThreshold = 0.95f;
 
-  const int W = 512;
-  const int H = 512;
-
   vvVector3i minVox = _visibleRegion.getMin();
   vvVector3i maxVox = _visibleRegion.getMax();
   for (int i = 0; i < 3; ++i)
@@ -306,8 +304,8 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
   {
     for (int x = tile.left; x < tile.right; ++x)
     {
-      const float u = (x / static_cast<float>(W)) * 2.0f - 1.0f;
-      const float v = (y / static_cast<float>(H)) * 2.0f - 1.0f;
+      const float u = (x / static_cast<float>(_width)) * 2.0f - 1.0f;
+      const float v = (y / static_cast<float>(_height)) * 2.0f - 1.0f;
 
       vvVector4 o(u, v, -1.0f, 1.0f);
       o.multiply(invViewMatrix);
@@ -375,7 +373,7 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
 
         for (int c = 0; c < 4; ++c)
         {
-          (*colors)[y * W * 4 + x * 4 + c] = dst[c];
+          (*colors)[y * _width * 4 + x * 4 + c] = dst[c];
         }
       }
     }

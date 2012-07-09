@@ -45,6 +45,9 @@ private:
     int top; 
   }; 
 
+  int _width;
+  int _height;
+
   Thread* _firstThread;
   std::vector<Thread*> _threads;
 
