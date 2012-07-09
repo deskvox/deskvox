@@ -593,7 +593,6 @@ written
 int vvImage::spec_RLC_decode(int start, short w, int src)
 {
   int dest = start;
-  int end = height*width*4;
   while (src < size)
   {
     int length = (int)codedimage[src];
@@ -603,7 +602,7 @@ int vvImage::spec_RLC_decode(int start, short w, int src)
       {
         if (((dest-start-4*w)% (4*width)) == 0 && dest != start)
           dest += (width-w)*4;
-		assert(dest <= end-4);
+		assert(dest <= (height*width*4)-4);
 		assert(src+1 <= size-4);
         memcpy(&imageptr[dest], &codedimage[src+1], 4);
         dest += 4;
@@ -617,7 +616,7 @@ int vvImage::spec_RLC_decode(int start, short w, int src)
       {
         if (((dest-start-4*w)% (4*width)) == 0 && dest != start)
           dest += (width-w)*4;
-		assert(dest <= end-4);
+		assert(dest <= (height*width*4)-4);
 		assert(src+1+i*4 <= size-4);
         memcpy(&imageptr[dest], &codedimage[src+1+i*4], 4);
         dest +=4;

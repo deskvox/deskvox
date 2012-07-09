@@ -109,7 +109,7 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd, vvMulticastParameters *
       return retval;
 
     int size = vd->getFrameBytes();
-    bool tryMC;
+    bool tryMC = false;
     getBool(tryMC);
 
     if(tryMC)
@@ -217,7 +217,7 @@ vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd, bool tryMC, bool 
           }
         }
       }
-      bool mcAnswer;
+      bool mcAnswer = false;
       getBool(mcAnswer);
       if(mcAnswer)
       {

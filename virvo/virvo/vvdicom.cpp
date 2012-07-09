@@ -80,6 +80,7 @@ inline int vvDicom::read16(FILE* fp)
 {
   uchar t1, t2;
   int n;
+  (void)n;
   n = fread(&t1, sizeof t1, 1, fp);
   assert(n == 1);
   n = fread(&t2, sizeof t2, 1, fp);
@@ -95,6 +96,7 @@ inline int vvDicom::read32(FILE* fp)
 {
   uchar t1, t2, t3, t4;
   int n;
+  (void)n;
   n = fread(&t1, sizeof t1, 1, fp); assert(n == 1);
   n = fread(&t2, sizeof t2, 1, fp); assert(n == 1);
   n = fread(&t3, sizeof t3, 1, fp); assert(n == 1);

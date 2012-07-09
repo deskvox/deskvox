@@ -4753,7 +4753,7 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
               case 1: surr[i] = float(*surrPtr[i]) / 255.0f; break;
               case 2: surr[i] = float((int(*surrPtr[i]) << 8) | int(*(surrPtr[i]+1))) / 65535.0f; break;
               case 4: surr[i] = *((float*)surrPtr[i]); break;
-              default: assert(0); break;
+              default: surr[i] = 0.0f; assert(0); break;
             }
           }
 
