@@ -78,6 +78,10 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
 {
   vvDebugMsg::msg(1, "vvSoftRayRend::vvSoftRayRend()");
 
+#ifdef HAVE_GL
+  glewInit();
+#endif
+
   updateTransferFunction();
 
   int numThreads = vvToolshed::getNumProcessors();
