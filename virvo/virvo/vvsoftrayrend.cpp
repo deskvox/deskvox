@@ -73,6 +73,7 @@ struct vvSoftRayRend::Thread
 vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvRenderer(vd, renderState)
   , _firstThread(NULL)
+  , _rgbaTF(NULL)
   , _earlyRayTermination(true)
   , _opacityCorrection(true)
 {
