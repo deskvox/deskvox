@@ -25,22 +25,25 @@ struct Ray
 bool intersectBox(const Ray& ray, const vvAABB& aabb,
                   float* tnear, float* tfar)
 {
+  using std::min;
+  using std::max;
+
   // compute intersection of ray with all six bbox planes
   vvVector3 invR(1.0f / ray.d[0], 1.0f / ray.d[1], 1.0f / ray.d[2]);
   float t1 = (aabb.getMin()[0] - ray.o[0]) * invR[0];
   float t2 = (aabb.getMax()[0] - ray.o[0]) * invR[0];
-  float tmin = fminf(t1, t2);
-  float tmax = fmaxf(t1, t2);
+  float tmin = min(t1, t2);
+  float tmax = max(t1, t2);
 
   t1 = (aabb.getMin()[1] - ray.o[1]) * invR[1];
   t2 = (aabb.getMax()[1] - ray.o[1]) * invR[1];
-  tmin = fmaxf(fminf(t1, t2), tmin);
-  tmax = fminf(fmaxf(t1, t2), tmax);
+  tmin = max(min(t1, t2), tmin);
+  tmax = min(max(t1, t2), tmax);
 
   t1 = (aabb.getMin()[2] - ray.o[2]) * invR[2];
   t2 = (aabb.getMax()[2] - ray.o[2]) * invR[2];
-  tmin = fmaxf(fminf(t1, t2), tmin);
-  tmax = fminf(fmaxf(t1, t2), tmax);
+  tmin = max(min(t1, t2), tmin);
+  tmax = min(max(t1, t2), tmax);
 
   *tnear = tmin;
   *tfar = tmax;
