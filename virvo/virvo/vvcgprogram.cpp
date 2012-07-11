@@ -258,10 +258,11 @@ void vvCgProgram::setParameterArray1i(const string& parameterName, const int* ar
   if(it->second != 0)
   {
     // transform integers to floats because CG doesn't support uniform integers
-    float floats[count];
+    float* floats(new float[count]);
     for(int i=0;i<count;i++)
       floats[i] = float(array[i]);
     cgGLSetParameterArray1f(it->second, 0, count, floats);
+    delete [] floats;
   }
 }
 
