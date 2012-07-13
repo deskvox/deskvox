@@ -21,21 +21,23 @@
 #ifndef _VVSOCKETMAP_H_
 #define _VVSOCKETMAP_H_
 
+#include "vvexport.h"
+
 class vvSocket;
 
 namespace vvSocketMap
 {
   /*! Store the socket and return an index that refers to it
    */
-  int add(vvSocket* sock);
+  VIRVOEXPORT int add(vvSocket* sock);
 
-  void remove(int idx);
+  VIRVOEXPORT void remove(int idx);
 
-  vvSocket* get(int idx);
+  VIRVOEXPORT vvSocket* get(int idx);
 
   /*! Get index to refer to socket or -1 if sock was not found
    */
-  int getIndex(vvSocket* sock);
+  VIRVOEXPORT int getIndex(vvSocket* sock);
 }
 
 #endif
