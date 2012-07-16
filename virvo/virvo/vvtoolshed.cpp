@@ -347,26 +347,25 @@ void vvToolshed::strcpyHead(char* head, const char* str, char c)
     @param str    string to trim
     @return result in str
 */
-void vvToolshed::strTrim(char* str)
+std::string vvToolshed::strTrim(const std::string& str)
 {
-  int i;
+  std::string result = str;
 
   // Trim trailing spaces:
-  for (i=strlen(str)-1; i>0; --i)
+  for (int i=result.length()-1; i>0; --i)
   {
-    if (str[i]==' ') str[i] = '\0';
+    if (std::isspace(str[i])) result.erase(i);
     else break;
   }
-  if (str[0]=='\0') return;                       // done
+  if (result.length()==0) return result; // done
 
   // Trim leading spaces:
-  i=0;
-  while (str[i]==' ')
+  while(std::isspace(result[0]))
   {
-    ++i;
+    result.erase(0,0);
   }
-  if (i==0) return;                               // done
-  strcpy(str, str+i);
+
+  return result;
 }
 
 //----------------------------------------------------------------------------
