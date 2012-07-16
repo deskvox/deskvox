@@ -170,7 +170,7 @@ class VIRVOEXPORT vvToolshed
     static void    strcpyTail(char*, const char*, char);
     static std::string  strcpyTail(const std::string, char);
     static void    strcpyHead(char*, const char*, char);
-    static void    strTrim(char*);
+    static std::string strTrim(const std::string& str);
     static unsigned int parseNextUint32(const char*, size_t&);
     static void    extractFilename(char*, const char*);
     static std::string  extractFilename(const std::string);
