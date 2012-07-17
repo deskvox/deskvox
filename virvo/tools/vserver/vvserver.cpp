@@ -75,8 +75,8 @@ int vvServer::run(int argc, char** argv)
 {
   vvDebugMsg::msg(3, "vvServer::run()");
 
-  cerr << "Virvo server " << virvo::getVersionMajor() << "." << virvo::getReleaseCounter() << endl;
-  cerr << "(c) " << virvo::getYearOfRelease() << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
+  cerr << "Virvo server " << virvo::version() << endl;
+  cerr << "(c) " << VV_VERSION_YEAR << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
   cerr << "Brown University" << endl << endl;
 
   if(!parseCommandLine(argc, argv))

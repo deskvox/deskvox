@@ -19,45 +19,14 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
-#ifndef VV_COVISE
-#include "vvversioninfo.h"
-#endif
 #include "vvvirvo.h"
 
-const char* virvo::getSvnRevision()
-{
-#ifndef VV_COVISE
-  return VV_SVN_REVISION;
-#else
-  return "unknown";
-#endif
-}
+#define VV_STRINGIFY(X) VV_STRINGIFY2(X)
+#define VV_STRINGIFY2(X) #X
 
-const char* virvo::getVersionMajor()
+const char* virvo::version()
 {
-#ifndef VV_COVISE
-  return VV_VERSION;
-#else
-  return "unknown";
-#endif
-}
-
-const char* virvo::getReleaseCounter()
-{
-#ifndef VV_COVISE
-  return VV_RELEASE;
-#else
-  return "unknown";
-#endif
-}
-
-int virvo::getYearOfRelease()
-{
-#ifndef VV_COVISE
-  return VV_YEAR;
-#else
-  return 2010;
-#endif
+  return VV_STRINGIFY(VV_VERSION_MAJOR) "." VV_STRINGIFY(VV_VERSION_MINOR);
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

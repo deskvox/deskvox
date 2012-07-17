@@ -46,12 +46,13 @@ and vvMatrix are components of vvVecmath, a useful library for linear algebra.
 </DL>
 */
 
+#define VV_VERSION_MAJOR    2
+#define VV_VERSION_MINOR    0
+#define VV_VERSION_YEAR     2010
+
 namespace virvo
 {
-  VIRVOEXPORT const char* getSvnRevision();
-  VIRVOEXPORT const char* getVersionMajor();
-  VIRVOEXPORT const char* getReleaseCounter();
-  VIRVOEXPORT int getYearOfRelease();
+  VIRVOEXPORT char const* version();
 }
 
 #endif
