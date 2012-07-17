@@ -47,7 +47,6 @@
 #include <ctype.h>
 #include <cstring>
 
-#include "vvvirvo.h"
 #include "vvfileio.h"
 #include "vvtoolshed.h"
 #include "vvdebugmsg.h"

@@ -26,7 +26,7 @@
 #include <iostream>
 #include <cstring>
 #include <cassert>
-#include "vvvirvo.h"
+
 #include "vvimage.h"
 #include "vvdebugmsg.h"
 #include "vvvideo.h"
