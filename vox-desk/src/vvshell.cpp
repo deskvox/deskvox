@@ -144,7 +144,7 @@ VVShell::VVShell(FXApp* a) : FXMainWindow(a,"DeskVOX",NULL,NULL,DECOR_ALL,0,0,60
   lmdFlag = mmdFlag = rmdFlag = 0;
 
   new FXToolTip(getApp());    // enable tool tips
-  setTitle(FXString("DeskVOX v") + FXString(virvo::getVersionMajor()) + FXString(".") + FXString(virvo::getReleaseCounter()));
+  setTitle(FXString("DeskVOX v") + FXString(virvo::version()));
 
   // Menubar
   menubar=new FXMenuBar(this,LAYOUT_SIDE_TOP|LAYOUT_FILL_X);
@@ -994,7 +994,7 @@ long VVShell::onCmdAbout(FXObject*,FXSelector,void*)
   vvDebugMsg::msg(1, "VVShell::onCmdAbout()");
 
   FXString name = "DeskVOX - Desktop VOlume eXplorer\n";
-  FXString version = FXString("Version ") + FXString(virvo::getVersionMajor()) + FXString(".") + FXString(virvo::getReleaseCounter()) + FXString("\n\n");
+  FXString version = FXString("Version ") + FXString(virvo::version());
   FXString info = name + version +
     "(c) Jurgen P. Schulze (jschulze@ucsd.edu)\n\n" \
     "Team: Alexander C. Rice, Chih Liang, Han Kim, Nancy Hsu\n\n" \
@@ -1749,7 +1749,7 @@ int main(int argc,char *argv[])
 
   // Make application
   FXString name;
-  name = "DeskVOX " + FXString(virvo::getVersionMajor()) + FXString(".") + FXString(virvo::getReleaseCounter());
+  name = "DeskVOX " + FXString(virvo::version());
   FXApp application(name, "UCSD");    // these values are used in the registry system
 
   // Open the display

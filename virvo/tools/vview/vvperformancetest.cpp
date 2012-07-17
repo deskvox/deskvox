@@ -171,9 +171,7 @@ void vvPerformanceTest::writeResultFiles()
       strftime(dateStr, 80, "%Y-%m-%d, %H:%M:%S %Z", ts);
       fprintf(handle, "************************* Summary test %i *************************\n", _id);
       fprintf(handle, "Test performed at:....................%s\n", dateStr);
-      fprintf(handle, "Virvo version:........................%s.%s\n",
-              virvo::getVersionMajor(), virvo::getReleaseCounter());
-      fprintf(handle, "Svn revision:.........................%s\n", virvo::getSvnRevision());
+      fprintf(handle, "Virvo version:........................%s\n", virvo::version());
       fprintf(handle, "OpenGL vendor string:.................%s\n", glInfo.vendor);
       fprintf(handle, "OpenGL renderer string:...............%s\n", glInfo.renderer);
       fprintf(handle, "OpenGL version string:................%s\n", glInfo.version);
