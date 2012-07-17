@@ -5,6 +5,9 @@
 // Affiliation:     Brown University, Department of Computer Science
 //****************************************************************************
 
+// Do not automatically link with freeglut
+#define FREEGLUT_LIB_PRAGMAS 0
+
 #ifndef HLRS
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
@@ -2249,9 +2252,7 @@ void vvView::initGraphics(int argc, char *argv[])
   // Create window title.
   // Don't use sprintf, it won't work with macros on Irix!
   strcpy(title, "Virvo File Viewer V");
-  strcat(title, virvo::getVersionMajor());
-  strcat(title, ".");
-  strcat(title, virvo::getReleaseCounter());
+  strcat(title, virvo::version());
   window = glutCreateWindow(title);              // open window and set window title
 
   // Set GL state:
@@ -2898,8 +2899,8 @@ int vvView::run(int argc, char** argv)
 {
   vvDebugMsg::msg(1, "vvView::run()");
 
-  cerr << "VView " << virvo::getVersionMajor() << "." << virvo::getReleaseCounter() << endl;
-  cerr << "(c) " << virvo::getYearOfRelease() << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
+  cerr << "VView " << virvo::version() << endl;
+  cerr << "(c) " << VV_VERSION_YEAR << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
   cerr << "Brown University" << endl << endl;
 
   if (argc<2)
