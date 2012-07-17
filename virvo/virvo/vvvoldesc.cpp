@@ -34,7 +34,6 @@
 // Virvo:
 #include "vvaabb.h"
 #include "vvplatform.h"
-#include "vvvirvo.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
 #include "vvvecmath.h"

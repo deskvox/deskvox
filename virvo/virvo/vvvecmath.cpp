@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
-#include "vvvirvo.h"
+
 #include "vvvecmath.h"
 
 #ifdef __sun
