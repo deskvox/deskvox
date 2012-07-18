@@ -1,0 +1,70 @@
+// Virvo - Virtual Reality Volume Rendering
+// Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
+// Contact: Jurgen P. Schulze, jschulze@ucsd.edu
+//
+// This file is part of Virvo.
+//
+// Virvo is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library (see license.txt); if not, write to the
+// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+#ifndef _VV_GPU_H_
+#define _VV_GPU_H_
+
+#include <GL/glew.h>
+#include <string>
+#include <vector>
+
+#include "vvinttypes.h"
+#include "vvrendercontext.h"
+
+struct vvGpuInfo
+{
+  GLint freeMem;
+  GLint totalMem;
+};
+
+class vvGpu
+{
+public:
+  /**
+    Get a list of known gpus available from for this process configured in a config file.
+    @return vector-list of vvGpus
+    */
+  static std::vector<vvGpu*> list();
+  /**
+    Get the current gpu infos of a gpus from either list() or createGpu()
+    @return vvGpuInfo with values up to date or -1 if not available
+    */
+  static vvGpuInfo getInfo(vvGpu *gpu);
+  /**
+    Create a gpu object from a configured string with notation like "key=value,key=value,..."
+    @return corresponding vvGpu object or NULL on error
+    */
+  static vvGpu* createGpu(std::string& data);
+
+private:
+  vvGpu();
+  vvGpu(const vvGpu& rhs);
+  vvGpu& operator = (const vvGpu& src);
+
+  std::string _glName;
+  std::string _Xdsp;
+  bool        _cuda;
+  bool        _openGL;
+  int         _cudaDevice;
+  vvRenderContext::WindowingSystem _wSystem;
+};
+
+#endif
+// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
