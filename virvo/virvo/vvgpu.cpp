@@ -113,7 +113,7 @@ vvGpuInfo vvGpu::getInfo(vvGpu *gpu)
 
 vvGpu* vvGpu::createGpu(std::string& data)
 {
-  vvDebugMsg::msg(0, "vvGpu::parseGpuData() Enter");
+  vvDebugMsg::msg(3, "vvGpu::createGpu() Enter");
 
   std::vector<std::string> attributes = vvToolshed::split(data, ",");
 
