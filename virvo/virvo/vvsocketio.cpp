@@ -1618,6 +1618,55 @@ vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m)
 }
 
 //----------------------------------------------------------------------------
+/** Reads a vvGpuInfo from the socket.
+  @param ginfo object in which read data will be saved
+*/
+vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpuInfo &ginfo)
+{
+  if(_socket)
+  {
+    uchar buffer[8];
+    vvSocket::ErrorType retval;
+
+    if ((retval =_socket->readData(&buffer[0], 8)) == vvSocket::VV_OK)
+    {
+      ginfo.freeMem  = vvToolshed::read32(&buffer[0]);
+      ginfo.totalMem = vvToolshed::read32(&buffer[4]);
+
+      return vvSocket::VV_OK;
+    }
+    else
+    {
+      return retval;
+    }
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Writes a vvGpuInfo to the socket.
+  @param ginfo object which will written to socket
+*/
+vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpuInfo ginfo)
+{
+  if(_socket)
+  {
+    uchar buffer[8];
+    vvToolshed::write32(&buffer[0], ginfo.freeMem);
+    vvToolshed::write32(&buffer[4], ginfo.totalMem);
+    return _socket->writeData(&buffer[0], 8);
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+
+//----------------------------------------------------------------------------
 /** get assigned vvSocket
 */
 vvSocket* vvSocketIO::getSocket() const

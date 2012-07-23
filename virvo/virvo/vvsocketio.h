@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "vvexport.h"
+#include "vvgpu.h"
 #include "vvsocket.h"
 #include "vvinttypes.h"
 #include "vvvecmath.h"
@@ -194,6 +195,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putWinDims(const int w, const int h);
     vvSocket::ErrorType getData(void*, int, DataType);      // known number and type
     vvSocket::ErrorType putData(void*, int, DataType);
+    vvSocket::ErrorType getGpuInfo(vvGpuInfo& ginfo);
+    vvSocket::ErrorType putGpuInfo(const vvGpuInfo ginfo);
 
     vvSocket* getSocket() const;
 private:
