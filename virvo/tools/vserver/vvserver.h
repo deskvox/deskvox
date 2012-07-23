@@ -90,7 +90,6 @@ public:
   */
   int run(int argc, char** argv);
 
-  void handleClient(vvTcpSocket *sock);           ///< Creates a thread handling the Client
   static void * handleClientThread(void *param);
   static vvCreateRemoteServerRes createRemoteServer(vvTcpSocket *sock, std::string renderertype = "", vvRendererFactory::Options opt = vvRendererFactory::Options());
 
