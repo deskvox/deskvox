@@ -31,6 +31,7 @@
 #include "vvserver.h"
 
 #include <virvo/vvdebugmsg.h>
+#include <virvo/vvgpu.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
 #include <virvo/vvremoteserver.h>
@@ -392,6 +393,19 @@ void * vvServer::handleClientThread(void *param)
   pthread_cleanup_push(args->_exitFunc, NULL);
 
   vvTcpSocket *sock = args->_sock;
+
+  vvSocketIO sockio(sock);
+  bool tellInfo;
+  sockio.getBool(tellInfo);
+  if(tellInfo)
+  {
+    vvGpuInfo info = vvGpu::getInfo(vvGpu::list()[0]);
+    sockio.putGpuInfo(info);
+
+    sock->disconnectFromHost();
+    delete sock;
+    pthread_exit(NULL);
+  }
 
   vvCreateRemoteServerRes res = args->_instance->createRemoteServer(sock);
 

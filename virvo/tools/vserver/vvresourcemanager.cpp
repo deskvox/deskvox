@@ -87,6 +87,14 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
   req->sock = sock;
 
   vvSocketIO sockio = vvSocketIO(sock);
+  bool tellinfo;
+  sockio.getBool(tellinfo); // need vvGpu info?
+  if(tellinfo)
+  {
+    // TODO: implement this case for ResourceManager too if reasonable
+    goto abort;
+  }
+
   vvSocket::ErrorType err;
   sockio.putBool(false);
   err = sockio.getInt32(req->priority);
@@ -301,6 +309,7 @@ void * vvResourceManager::processJob(void * param)
       if(NULL != serversock)
       {
         vvSocketIO sockIO = vvSocketIO(serversock);
+        sockIO.putBool(false); // no vvGpu info needed
         bool vserverRdy;
         sockIO.getBool(vserverRdy);
 
