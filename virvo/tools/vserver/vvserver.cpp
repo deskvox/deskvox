@@ -340,7 +340,13 @@ bool vvServer::serverLoop()
       }
       else
       {
-        handleClient(sock);
+        vvServerThreadArgs *args = new vvServerThreadArgs;
+        args->_instance = this;
+        args->_sock = sock;
+
+        pthread_t pthread;
+        pthread_create(&pthread,  NULL, handleClientThread, args);
+        pthread_detach(pthread);
       }
     }
   }
@@ -369,28 +375,9 @@ void vvServer::unregisterFromBonjour()
 }
 #endif
 
-void vvServer::handleClient(vvTcpSocket *sock)
-{
-  vvServerThreadArgs *args = new vvServerThreadArgs;
-  args->_instance = this;
-  args->_sock = sock;
-  args->_exitFunc = NULL;
-
-  pthread_t pthread;
-  pthread_create(&pthread,  NULL, handleClientThread, args);
-  pthread_detach(pthread);
-}
-
 void * vvServer::handleClientThread(void *param)
 {
   vvServerThreadArgs *args = reinterpret_cast<vvServerThreadArgs*>(param);
-
-  if(args->_exitFunc == NULL)
-  {
-    args->_exitFunc = &vvServer::exitCallback;
-  }
-
-  pthread_cleanup_push(args->_exitFunc, NULL);
 
   vvTcpSocket *sock = args->_sock;
 
@@ -440,8 +427,9 @@ void * vvServer::handleClientThread(void *param)
 
   delete res.vd;
 
+  delete args;
+
   pthread_exit(NULL);
-  pthread_cleanup_pop(0);
 #ifdef _WIN32
   return NULL;
 #endif

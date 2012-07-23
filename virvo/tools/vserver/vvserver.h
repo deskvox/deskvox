@@ -72,7 +72,6 @@ public:
   {
     vvServer    *_instance;
     vvTcpSocket *_sock;
-    void(*_exitFunc)(void*);
   };
 
   struct vvCreateRemoteServerRes
@@ -94,10 +93,6 @@ public:
   void handleClient(vvTcpSocket *sock);           ///< Creates a thread handling the Client
   static void * handleClientThread(void *param);
   static vvCreateRemoteServerRes createRemoteServer(vvTcpSocket *sock, std::string renderertype = "", vvRendererFactory::Options opt = vvRendererFactory::Options());
-
-  static void exitCallback(void*)
-  {
-  }
 
 private:
   void displayHelpInfo();                         ///< Display command usage help on the command line.
