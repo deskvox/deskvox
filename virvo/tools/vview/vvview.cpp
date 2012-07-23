@@ -685,6 +685,8 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
 
   if(sockets.size() > 0)
   {
+
+
     bool serverRdy;
     vvSocketIO socketIO = vvSocketIO(sockets[0]);
     socketIO.getBool(serverRdy);
