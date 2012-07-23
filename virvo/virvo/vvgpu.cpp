@@ -24,6 +24,7 @@
 #include "vvtoolshed.h"
 
 #include <algorithm>
+#include <GL/glew.h>
 #include <sstream>
 #include <istream>
 #include <fstream>

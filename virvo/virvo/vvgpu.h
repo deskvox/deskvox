@@ -21,7 +21,6 @@
 #ifndef _VV_GPU_H_
 #define _VV_GPU_H_
 
-#include <GL/glew.h>
 #include <string>
 #include <vector>
 
@@ -30,8 +29,8 @@
 
 struct vvGpuInfo
 {
-  GLint freeMem;
-  GLint totalMem;
+  int freeMem;
+  int totalMem;
 };
 
 class vvGpu
