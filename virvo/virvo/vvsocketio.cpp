@@ -1621,7 +1621,7 @@ vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m)
 /** Reads a vvGpuInfo from the socket.
   @param ginfo object in which read data will be saved
 */
-vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpuInfo &ginfo)
+vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpuInfo& ginfo)
 {
   if(_socket)
   {
@@ -1665,6 +1665,66 @@ vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpuInfo& ginfo)
   }
 }
 
+//----------------------------------------------------------------------------
+/** Reads a vector list of vvGpuInfos from the socket.
+  @param ginfos vector in which read data will be saved
+*/
+vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpuInfo>& ginfos)
+{
+  if(_socket)
+  {
+    vvSocket::ErrorType retval;
+
+    int size = 0;
+    retval = getInt32(size);
+    if(retval != vvSocket::VV_OK) return retval;
+    else if(size < 0)
+    {
+      vvDebugMsg::msg(2, "vvSocketIO::getGpuInfos() error - received negative vector size: ", size);
+      return vvSocket::VV_DATA_ERROR;
+    }
+
+    ginfos.resize(size);
+
+    for(unsigned int i=0; i<size; i++)
+    {
+      vvGpuInfo ginfo;
+      retval = getGpuInfo(ginfo);
+      if(retval != vvSocket::VV_OK) return retval;
+    }
+    return vvSocket::VV_OK;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Writes a vector list of vvGpuInfos to the socket.
+  @param ginfos vector of vvGpuInfos which will be written to socket
+*/
+vvSocket::ErrorType vvSocketIO::putGpuInfos(const std::vector<vvGpuInfo>& ginfos)
+{
+  if(_socket)
+  {
+    vvSocket::ErrorType retval;
+
+    retval = putInt32(ginfos.size());
+    if(retval != vvSocket::VV_OK) return retval;
+
+    for(std::vector<vvGpuInfo>::const_iterator ginfo = ginfos.begin();ginfo != ginfos.end(); ginfo++)
+    {
+      retval = putGpuInfo(*ginfo);
+      if(retval != vvSocket::VV_OK) return retval;
+    }
+    return vvSocket::VV_OK;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
 
 //----------------------------------------------------------------------------
 /** get assigned vvSocket
