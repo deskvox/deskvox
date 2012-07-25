@@ -361,7 +361,6 @@ void * vvResourceManager::processJob(void * param)
   {
     while(true)
     {
-      std::cerr << "foo, " << std::flush;
       if(!res.server->processEvents(res.renderer))
       {
         delete res.renderer;

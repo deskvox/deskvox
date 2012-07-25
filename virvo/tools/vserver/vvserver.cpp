@@ -405,7 +405,6 @@ void * vvServer::handleClientThread(void *param)
   {
     while(true)
     {
-      std::cerr << "bla, " << std::flush;
       if(!res.server->processEvents(res.renderer))
       {
         delete res.renderer;
