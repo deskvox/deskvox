@@ -686,15 +686,17 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   if(sockets.size() > 0)
   {
     vvSocketIO socketIO = vvSocketIO(sockets[0]);
-    socketIO.putBool(false); // need Gpu-Info?
+    socketIO.putBool(false); // need Gpu-Infos?
 
-    /*
-    socketIO.putBool(true);
-    vvGpuInfo gInfo;
-    socketIO.getGpuInfo(gInfo);
-    std::cerr << "free memory on server: " << gInfo.freeMem << std::endl;
-    std::cerr << "total memory on server: " << gInfo.totalMem << std::endl;
-    */
+/*    socketIO.putBool(true);
+    std::vector<vvGpuInfo> ginfos;
+    socketIO.getGpuInfos(ginfos);
+    std::cerr << "Number of gpus: " << ginfos.size() << std::endl;
+    for(std::vector<vvGpuInfo>::iterator ginfo = ginfos.begin(); ginfo != ginfos.end();ginfo++)
+    {
+      std::cerr << "free memory on server: "  << (*ginfo).freeMem << std::endl;
+      std::cerr << "total memory on server: " << (*ginfo).totalMem << std::endl;
+    }*/
 
     bool serverRdy;
     socketIO.getBool(serverRdy);

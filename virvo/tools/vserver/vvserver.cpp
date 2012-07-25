@@ -386,8 +386,13 @@ void * vvServer::handleClientThread(void *param)
   sockio.getBool(tellInfo);
   if(tellInfo)
   {
-    vvGpuInfo info = vvGpu::getInfo(vvGpu::list()[0]);
-    sockio.putGpuInfo(info);
+    std::vector<vvGpu*> gpus = vvGpu::list();
+    std::vector<vvGpuInfo> ginfos;
+    for(std::vector<vvGpu*>::iterator gpu = gpus.begin(); gpu != gpus.end(); gpu++)
+    {
+      ginfos.push_back(vvGpu::getInfo(*gpu));
+    }
+    sockio.putGpuInfos(ginfos);
 
     sock->disconnectFromHost();
     delete sock;
