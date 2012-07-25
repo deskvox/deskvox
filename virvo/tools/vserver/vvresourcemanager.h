@@ -27,6 +27,7 @@
 
 #include <vector>
 
+#include <vvgpu.h>
 #include <virvo/vvinttypes.h>
 #include <virvo/vvbonjour/vvbonjourentry.h>
 
@@ -65,12 +66,6 @@ private:
     }
   };
 
-  struct vvGPU
-  {
-    uint totalMem;
-    uint freeMem;
-  };
-
   struct vvResource
   {
   public:
@@ -81,9 +76,9 @@ private:
     }
 
     bool   upToDate;
-    std::vector<vvGPU> GPUs;
+    std::vector<vvGpuInfo> ginfos;
   #ifdef HAVE_BONJOUR
-    vvBonjourEntry _bonjourEntry;
+    vvBonjourEntry bonjourEntry;
   #endif
     vvServer *server;
 
@@ -99,13 +94,6 @@ private:
   };
 
 public:
-  static vvResourceManager *inst;
-  static void exitCallback(void*)
-  {
-    inst->exitLocalCallback();
-  }
-
-
   /**
     Creates a resource manager connected with server
     \param server if set, resource manager also uses this server running locally
@@ -123,6 +111,7 @@ private:
 
 #ifdef HAVE_BONJOUR
   vvBonjourBrowser *_browser;
+  static std::vector<vvGpuInfo> getResourceGpuInfos(const vvBonjourEntry entry);
 #endif // HAVE_BONJOUR
 
   std::vector<vvRequest*>  _requests;
@@ -131,8 +120,6 @@ private:
   pthread_mutex_t _resourcesMutex;
 
   static void * processJob(void *param);
-
-  void exitLocalCallback();
 };
 
 #endif // _VV_RESOURCEMANAGER_H_

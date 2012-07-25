@@ -43,21 +43,17 @@
 
 using namespace std;
 
-vvResourceManager* vvResourceManager::inst = NULL;
-
 vvResourceManager::vvResourceManager(vvServer *vserver)
 {
-  vvResourceManager::inst = this;
-
   if(vserver)
   {
     vvResource *serverRes = new vvResource;
     serverRes->server = vserver;
 
     // TODO: set appropiate values here
-    vvGPU gpu;
+    vvGpuInfo gpu;
     gpu.freeMem = gpu.totalMem = 1000;
-    serverRes->GPUs.push_back(gpu);
+    serverRes->ginfos.push_back(gpu);
 
     _resources.push_back(serverRes);
   }
@@ -148,7 +144,6 @@ bool vvResourceManager::initNextJob()
         vvResource *freeRes = getFreeResource();
         if(freeRes != NULL)
         {
-          freeRes->GPUs[0].freeMem = 0;
           job->resources.push_back(freeRes);
         }
         else
@@ -167,6 +162,12 @@ bool vvResourceManager::initNextJob()
 
         pthread_mutex_unlock(&_jobsMutex);
         pthread_mutex_unlock(&_resourcesMutex);
+
+        // Update Gpu-Status of used Resrources
+        for(std::vector<vvResource*>::iterator usedRes = job->resources.begin(); usedRes != job->resources.end(); usedRes++)
+        {
+          (*usedRes)->ginfos = getResourceGpuInfos((*usedRes)->bonjourEntry);
+        }
 
         return true;
       }
@@ -220,7 +221,7 @@ void vvResourceManager::updateResources(void * param)
       bool inList = false;
       for(std::vector<vvResource*>::iterator resource = rm->_resources.begin(); resource != rm->_resources.end(); resource++)
       {
-        if((*resource)->_bonjourEntry == *entry)
+        if((*resource)->bonjourEntry == *entry)
         {
           (*resource)->upToDate = true;
           inList = true;
@@ -230,11 +231,11 @@ void vvResourceManager::updateResources(void * param)
       if(!inList)
       {
         vvResource *res = new vvResource();
-        res->_bonjourEntry = *entry;
-        // TODO: set appropiate values here
-        vvGPU gpu;
-        gpu.freeMem = gpu.totalMem = 1000;
-        res->GPUs.push_back(gpu);
+        res->ginfos = getResourceGpuInfos(*entry);
+        std::cerr << "add resource into list with gpus: " << res->ginfos.size() << std::endl;
+        std::cerr << "free mem: " << res->ginfos[0].freeMem << std::endl;
+        res->bonjourEntry = *entry;
+
         rm->_resources.push_back(res);
       }
     }
@@ -266,19 +267,53 @@ uint vvResourceManager::getFreeResourceCount()
   for(std::vector<vvResource*>::iterator freeRes = _resources.begin();
       freeRes != _resources.end(); freeRes++)
   {
-    if((*freeRes)->GPUs[0].freeMem > 0)
+    // TODO: check all gpus and differ smarter
+    if((*freeRes)->ginfos[0].freeMem > 0)
       count++;
   }
 
   return count;
 }
 
+#ifdef HAVE_BONJOUR
+std::vector<vvGpuInfo> vvResourceManager::getResourceGpuInfos(const vvBonjourEntry entry)
+{
+  vvTcpSocket *serversock = NULL;
+
+  vvBonjourResolver resolver;
+  if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry(entry))
+  {
+    serversock = resolver.getBonjourSocket();
+    if(NULL != serversock)
+    {
+      vvSocketIO sockIO = vvSocketIO(serversock);
+      sockIO.putBool(true); // no vvGpu info needed
+
+      std::vector<vvGpuInfo> ginfos;
+      sockIO.getGpuInfos(ginfos);
+      return ginfos;
+    }
+    else
+    {
+      vvDebugMsg::msg(2, "vvResourceManager::registerResource() Could not connect to resolved vserver");
+      return std::vector<vvGpuInfo>();
+    }
+  }
+  else
+  {
+    vvDebugMsg::msg(2, "vvResourceManager::registerResource() Could not resolve bonjour service");
+    return std::vector<vvGpuInfo>();
+  }
+}
+#endif
+
 vvResourceManager::vvResource* vvResourceManager::getFreeResource()
 {
   std::vector<vvResource*>::iterator freeRes = _resources.begin();
   while(freeRes != _resources.end())
   {
-    if((*freeRes)->GPUs[0].freeMem == 0)
+    // TODO: check all gpus and differ smarter
+    if((*freeRes)->ginfos[0].freeMem == 0)
       freeRes++;
     else
       return (*freeRes);
@@ -303,7 +338,7 @@ void * vvResourceManager::processJob(void * param)
     vvTcpSocket *serversock = NULL;
 
     vvBonjourResolver resolver;
-    if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry((*res)->_bonjourEntry))
+    if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry((*res)->bonjourEntry))
     {
       serversock = resolver.getBonjourSocket();
       if(NULL != serversock)
@@ -375,14 +410,6 @@ void * vvResourceManager::processJob(void * param)
     res.server->destroyRenderContext();
   }
 
-  pthread_mutex_lock(&vvResourceManager::inst->_resourcesMutex);
-
-  for(std::vector<vvResource*>::iterator res = job->resources.begin();res!=job->resources.end();res++)
-  {
-    (*res)->GPUs[0].freeMem = 1000;
-  }
-
-  pthread_mutex_unlock(&vvResourceManager::inst->_resourcesMutex);
   delete job;
 
   if(clientsock)
@@ -399,21 +426,6 @@ void * vvResourceManager::processJob(void * param)
 #ifdef _WIN32
   return NULL;
 #endif
-}
-
-void vvResourceManager::exitLocalCallback()
-{
-  pthread_mutex_lock(&_resourcesMutex);
-
-  std::vector<vvResource*>::iterator selfRes = _resources.begin();
-
-  while(!(*selfRes)->server && selfRes != _resources.end()) selfRes++;
-
-  (*selfRes)->GPUs[0].freeMem = 1000;
-
-  pthread_mutex_unlock(&_resourcesMutex);
-
-  while(initNextJob()) {}; // process all waiting jobs
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
