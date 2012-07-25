@@ -1690,6 +1690,7 @@ vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpuInfo>& ginfos)
     {
       vvGpuInfo ginfo;
       retval = getGpuInfo(ginfo);
+      ginfos.push_back(ginfo);
       if(retval != vvSocket::VV_OK) return retval;
     }
     return vvSocket::VV_OK;
