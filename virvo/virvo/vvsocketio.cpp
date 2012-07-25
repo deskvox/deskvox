@@ -1684,8 +1684,6 @@ vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpuInfo>& ginfos)
       return vvSocket::VV_DATA_ERROR;
     }
 
-    ginfos.resize(size);
-
     for(unsigned int i=0; i<size; i++)
     {
       vvGpuInfo ginfo;
