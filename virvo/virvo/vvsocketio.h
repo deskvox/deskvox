@@ -196,7 +196,7 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType getData(void*, int, DataType);      // known number and type
     vvSocket::ErrorType putData(void*, int, DataType);
     vvSocket::ErrorType getGpuInfo(vvGpuInfo& ginfo);
-    vvSocket::ErrorType putGpuInfo(const vvGpuInfo ginfo);
+    vvSocket::ErrorType putGpuInfo(const vvGpuInfo& ginfo);
 
     vvSocket* getSocket() const;
 private:

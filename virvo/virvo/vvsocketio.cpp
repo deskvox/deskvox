@@ -1650,7 +1650,7 @@ vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpuInfo &ginfo)
 /** Writes a vvGpuInfo to the socket.
   @param ginfo object which will written to socket
 */
-vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpuInfo ginfo)
+vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpuInfo& ginfo)
 {
   if(_socket)
   {
