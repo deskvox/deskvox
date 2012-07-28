@@ -21,6 +21,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <cctype>
 
 #include <float.h>
 #include <errno.h>
