@@ -1,8 +1,13 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6.4)
+include_directories(
+  ${VIRVO_CONFIG_DIR}
+  ${VIRVO_INCLUDE_DIR}
+  ${VIRVO_INCLUDE_DIR}/virvo
+)
 
-LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
-ADD_SUBDIRECTORY(shader)
-ADD_SUBDIRECTORY(test)
-ADD_SUBDIRECTORY(tools)
-ADD_SUBDIRECTORY(virvo)
+if(DESKVOX_BUILD_TESTS)
+  add_subdirectory(test)
+endif()
+if(DESKVOX_BUILD_TOOLS)
+  add_subdirectory(tools)
+endif()
+add_subdirectory(virvo)

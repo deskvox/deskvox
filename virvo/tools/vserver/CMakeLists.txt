@@ -1,21 +1,8 @@
-SET(VSERVER_HEADERS
-  vvresourcemanager.h
-  vvserver.h
-)
+deskvox_use_package(Pthreads)
 
-SET(VSERVER_SOURCES
+deskvox_add_tool(vserver
   vvresourcemanager.cpp
+  vvresourcemanager.h
   vvserver.cpp
-)
-
-INCLUDE_DIRECTORIES(../..)
-INCLUDE_DIRECTORIES(${PTHREAD_INCLUDE_DIR})
-
-ADD_EXECUTABLE(vserver ${VSERVER_HEADERS} ${VSERVER_SOURCES})
-
-TARGET_LINK_LIBRARIES(vserver virvo)
-
-INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/vserver
-  DESTINATION ${INSTALL_DIR_BIN}
-  RENAME voxserver
+  vvserver.h
 )
