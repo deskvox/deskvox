@@ -1,15 +1,4 @@
-SET(VCONV_INC
-  vvconv.h
-)
-
-SET(VCONV_SRC
+deskvox_add_tool(vconv
   vvconv.cpp
-)
-
-ADD_EXECUTABLE(vconv ${VCONV_INC} ${VCONV_SRC})
-
-TARGET_LINK_LIBRARIES(vconv virvo)
-
-INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/vconv
-  DESTINATION ${INSTALL_DIR_BIN}
+  vvconv.h
 )

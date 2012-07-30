@@ -1,9 +1,11 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6.4)
+if(NOT DESKVOX_BUILD_TOOLS)
+  return()
+endif()
 
-LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+add_definitions(-DVV_APPLICATION_BUILD)
 
-ADD_DEFINITIONS(-DVV_APPLICATION_BUILD)
+deskvox_link_libraries(virvo)
 
-ADD_SUBDIRECTORY(vconv)
-ADD_SUBDIRECTORY(vserver)
-ADD_SUBDIRECTORY(vview)
+add_subdirectory(vconv)
+add_subdirectory(vserver)
+add_subdirectory(vview)

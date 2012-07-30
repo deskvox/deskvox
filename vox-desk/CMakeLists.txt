@@ -1,3 +1,1 @@
-ADD_DEFINITIONS(-DVV_APPLICATION_BUILD)
-
-ADD_SUBDIRECTORY(src)
+add_subdirectory(src)
