@@ -43,10 +43,11 @@ if(MSVC)
     /we4346 # Require "typename" where the standard requires it
   )
 
-  # Note:
-  # pedantic is not supported - enable all warnings instead
-  if(DESKVOX_ENABLE_WARNINGS OR DESKVOX_ENABLE_PEDANTIC)
-    add_definitions(/W4)
+  if(DESKVOX_ENABLE_WARNINGS)
+    deskvox_replace_compiler_option(CMAKE_CXX_FLAGS "/W3" "/W4")
+    if(DESKVOX_ENABLE_PEDANTIC)
+      # not supported...
+    endif()
   endif()
   if(DESKVOX_ENABLE_WERROR)
     add_definitions(/WX)
@@ -61,9 +62,9 @@ elseif(DESKVOX_COMPILER_IS_GCC_COMPATIBLE)
 
   if(DESKVOX_ENABLE_WARNINGS)
     add_definitions(-Wall -Wextra)
-  endif()
-  if(DESKVOX_ENABLE_PEDANTIC)
-    add_definitions(-pedantic)
+    if(DESKVOX_ENABLE_PEDANTIC)
+      add_definitions(-pedantic)
+    endif()
   endif()
   if(DESKVOX_ENABLE_WERROR)
     add_definitions(-Werror)
