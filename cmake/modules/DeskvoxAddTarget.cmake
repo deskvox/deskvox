@@ -39,53 +39,41 @@ endmacro()
 #
 
 
-macro(__deskvox_process_sources)
+function(__deskvox_process_sources)
   foreach(f ${ARGN})
-    get_filename_component(ext ${f} EXT)
     get_filename_component(path ${f} PATH)
 
-    ##
-    ## TODO:
-    ##
-    ## Re-order filesystem: (public) headers into 'include', source files into 'src'
-    ## then simply use
-    ##      source_group("${path}" FILES ${f})
-    ## below.
-    ##
-
-    if(ext MATCHES "\\.(c|cpp|cxx|mm|cu)")
-      set(group "src")
-    elseif(ext MATCHES "\\.(h|hpp|hxx|inl|inc|impl)")
-      set(group "include")
+    if(NOT path STREQUAL "")
+      string(REPLACE "/" "\\" path "${path}")
+      set(group "${path}")
     else()
       set(group "")
     endif()
 
-    if(NOT path STREQUAL "")
-      string(REPLACE "/" "\\" path "${path}")
-      set(group "${group}\\${path}")
-    endif()
-
     source_group("${group}" FILES ${f})
+
+    get_filename_component(ext ${f} EXT)
 
     if(ext MATCHES "\\.(cu)")
       if(NOT DESKVOX_CUDA_FOUND)
         message(STATUS "Note: '" ${f} "' ignored: CUDA support not available or disabled")
       else()
         if(BUILD_SHARED_LIBS)
-          cuda_compile(__dps_cuda_obj ${f} SHARED)
+          cuda_compile(cuda_compile_obj ${f} SHARED)
         else()
-          cuda_compile(__dps_cuda_obj ${f})
+          cuda_compile(cuda_compile_obj ${f})
         endif()
 
-        list(APPEND __DESKVOX_PROCESSED_SOURCES ${f})
-        list(APPEND __DESKVOX_PROCESSED_SOURCES ${__dps_cuda_obj})
+        list(APPEND processed_sources ${f})
+        list(APPEND processed_sources ${cuda_compile_obj})
       endif()
     else()
-      list(APPEND __DESKVOX_PROCESSED_SOURCES ${f})
+      list(APPEND processed_sources ${f})
     endif()
   endforeach()
-endmacro()
+
+  set(__DESKVOX_PROCESSED_SOURCES ${__DESKVOX_PROCESSED_SOURCES} ${processed_sources} PARENT_SCOPE)
+endfunction()
 
 
 #---------------------------------------------------------------------------------------------------
