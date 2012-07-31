@@ -46,22 +46,13 @@ set(VOXDESK_DIR ${DESKVOX_DIR}/vox-desk)
 #
 
 
-# Options might depend on the presence of optional or required packages
-include(DeskvoxFindPackage)
-
-
 option(BUILD_SHARED_LIBS "Build all libraries as shared libraries instead of static" ON)
 
 option(DESKVOX_USE_FOLDERS "Enable solution folders in Visual Studio. Disable for Express versions." ON)
 
 option(DESKVOX_BUILD_TESTS "Build tests" OFF)
 option(DESKVOX_BUILD_TOOLS "Build tools" ON)
-
-if(DESKVOX_FOX_FOUND)
-  option(DESKVOX_BUILD_VOX_DESK "Build vox-desk. Disable if fox toolkit is not available." ON)
-else()
-  option(DESKVOX_BUILD_VOX_DESK "Build vox-desk. Disable if fox toolkit is not available." OFF)
-endif()
+option(DESKVOX_BUILD_VOX_DESK "Build vox-desk. Disable if fox toolkit is not available." OFF)
 
 option(DESKVOX_ENABLE_WARNINGS "Enable all warnings" ON)
 if(MSVC)
@@ -80,23 +71,12 @@ include(DeskvoxHandleOptions)
 
 
 #---------------------------------------------------------------------------------------------------
-# Configure
-#
-
-configure_file(
-  ${DESKVOX_DIR}/cmake/vvconfig.h.in
-  ${VIRVO_CONFIG_DIR}/vvconfig.h
-)
-
-add_definitions(-DHAVE_CONFIG_H)
-
-
-#---------------------------------------------------------------------------------------------------
 # Subdirectories
 #
 
 
 include(DeskvoxAddTarget)
+include(DeskvoxUsePackage)
 
 
 add_subdirectory(virvo)

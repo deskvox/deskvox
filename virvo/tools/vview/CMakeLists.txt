@@ -1,5 +1,8 @@
-if(NOT DESKVOX_GLUT_FOUND)
-  message(STATUS "Note: not building vview (required package GLUT not found)")
+#find_package(GLUT_REQUIRED)
+
+find_package(GLUT)
+if(NOT GLUT_FOUND)
+  message(STATUS "Note: not building vview (GLUT not found)")
   return()
 endif()
 

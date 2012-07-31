@@ -1,3 +1,5 @@
+find_package(Pthreads REQUIRED)
+
 deskvox_use_package(Pthreads)
 
 deskvox_add_test(vvmulticast

@@ -1,18 +1,50 @@
-deskvox_use_package(OpenGL)
+find_package(Bonjour)
+find_package(Boost)
+find_package(Cg)
+find_package(CUDA)
+find_package(FFMPEG)
+find_package(GLEW REQUIRED)
+find_package(NORM)
+find_package(OpenGL REQUIRED)
+find_package(Protokit)
+find_package(Pthreads REQUIRED)
+find_package(SNAPPY)
+find_package(VolPack)
+find_package(X11)
+
+deskvox_use_package(Bonjour)
+deskvox_use_package(Boost)
+deskvox_use_package(Cg INCDIRS ${CG_INCLUDE_PATH} LIBS ${CG_LIBRARY} ${CG_GL_LIBRARY})
+deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
+deskvox_use_package(FFMPEG)
 deskvox_use_package(GLEW)
-deskvox_use_package(GLUT)
+deskvox_use_package(NORM)
+deskvox_use_package(OpenGL)
+deskvox_use_package(Protokit)
 deskvox_use_package(Pthreads)
+deskvox_use_package(SNAPPY)
+deskvox_use_package(VolPack)
+deskvox_use_package(X11)
 
-deskvox_use_optional_package(Boost)
-deskvox_use_optional_package(Cg)
-deskvox_use_optional_package(CUDA)
-deskvox_use_optional_package(FFMPEG)
-deskvox_use_optional_package(NORM)
-deskvox_use_optional_package(Protokit)
-deskvox_use_optional_package(SNAPPY)
-deskvox_use_optional_package(VolPack)
-deskvox_use_optional_package(X11)
 
+#---------------------------------------------------------------------------------------------------
+# Create config file
+#
+
+
+foreach(p ${__DESKVOX_USED_PACKAGES})
+  set(VV_HAVE_${p} 1)
+endforeach()
+
+configure_file(${VIRVO_INCLUDE_DIR}/virvo/vvconfig.h.in ${VIRVO_CONFIG_DIR}/vvconfig.h)
+
+
+#---------------------------------------------------------------------------------------------------
+# Add virvo library
+#
+
+
+add_definitions(-DHAVE_CONFIG_H)
 
 add_definitions(-DVV_LIBRARY_BUILD)
 
@@ -236,7 +268,7 @@ elseif(WIN32)
   set(VIRVO_WINDOWING_SYSTEM "WGL" CACHE STRING "Available windowing systems for render contexts")
 else()
   set(VIRVO_WINDOWING_SYSTEM "X11" CACHE STRING "Available windowing systems for render contexts")
-  if(DESKVOX_X11_FOUND)
+  if(X11_FOUND)
     add_definitions(-DUSE_X11)
   endif()
 endif()
