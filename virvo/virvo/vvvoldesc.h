@@ -171,7 +171,7 @@ class VIRVOEXPORT vvVolDesc
     int    getCurrentFrame() const;
     int    getBPV() const;
     void   setDist(float, float, float);
-    void   setDist(vvVector3&);
+    void   setDist(const vvVector3& d);
     vvVector3 getSize() const;
     int    getStoredFrames() const;
     float  getValueRange() const;

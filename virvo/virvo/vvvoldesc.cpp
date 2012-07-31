@@ -4326,11 +4326,9 @@ void vvVolDesc::setDist(float x, float y, float z)
   dist[2] = z;
 }
 
-void vvVolDesc::setDist(vvVector3& d)
+void vvVolDesc::setDist(const vvVector3& d)
 {
-  dist[0] = d[0];
-  dist[1] = d[1];
-  dist[2] = d[2];
+  dist = d;
 }
 
 //----------------------------------------------------------------------------
