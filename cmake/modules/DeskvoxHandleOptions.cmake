@@ -21,32 +21,33 @@ if(MSVC)
     -D_CRT_NONSTDC_NO_WARNINGS
     -D_SCL_SECURE_NO_DEPRECATE
     -D_SCL_SECURE_NO_WARNINGS
-
-    /wd4251 # Disable: "'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'"
-    /wd4275 # Disable: "non-DLL-interface classkey 'identifier' used as base for DLL-interface classkey 'identifier'"
-    /wd4503 # Disable: "'identifier' : decorated name length exceeded, name was truncated"
-
-    /w14062 # Promote to level 1 warning: "enumerator in switch of enum is not handled"
-    /w14146 # Promote to level 1 warning: "unary minus operator applied to unsigned type, result still unsigned"
-
-    #
-    # Promote warnings to errors:
-    #
-    # Using warning-as-errors will make it hard to miss or ignore warnings. Microsoft command line option /WX, makes
-    # all warnings errors, but this may be too drastic a step.
-    # The following have been recommended by Pete Bartlett to make the MSVC and GCC compilers behave as similarly as possible:
-    #
-
-    /we4238 # Don't take address of temporaries
-    /we4239 # Don't bind temporaries to non-const references (Stephan's "Evil Extension")
-    /we4288 # For-loop scoping (this is the default)
-    /we4346 # Require "typename" where the standard requires it
   )
+  
+  # Disable warning:
+  #
+  # C4251: 'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'
+  # C4275: non-DLL-interface classkey 'identifier' used as base for DLL-interface classkey 'identifier'
+  # C4503: 'identifier' : decorated name length exceeded, name was truncated
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4251 /wd4275 /wd4503")
+
+  # Promote to level 1 warnings:
+  #
+  # C4062: enumerator in switch of enum is not handled
+  # C4146:unary minus operator applied to unsigned type, result still unsigned
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w14062 /w14146")
+
+  # Promote to errors:
+  #
+  # C4238: Don't take address of temporaries
+  # C4239: Don't bind temporaries to non-const references (Stephan's "Evil Extension")
+  # C4288: For-loop scoping (this is the default)
+  # C4346: Require "typename" where the standard requires it
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /we4238 /we4239 /we4288 /we4346")
 
   if(DESKVOX_ENABLE_WARNINGS)
     deskvox_replace_compiler_option(CMAKE_CXX_FLAGS "/W3" "/W4")
     if(DESKVOX_ENABLE_PEDANTIC)
-      # not supported...
+      deskvox_replace_compiler_option(CMAKE_CXX_FLAGS "/W4" "/Wall")
     endif()
   endif()
   if(DESKVOX_ENABLE_WERROR)

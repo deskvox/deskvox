@@ -63,13 +63,12 @@ else()
   option(DESKVOX_BUILD_VOX_DESK "Build vox-desk. Disable if fox toolkit is not available." OFF)
 endif()
 
+option(DESKVOX_ENABLE_WARNINGS "Enable all warnings" ON)
 if(MSVC)
-  option(DESKVOX_ENABLE_WARNINGS "Enable all warnings" OFF)
+  option(DESKVOX_ENABLE_PEDANTIC "Compile with pedantic enabled (Ignored if warnings are disabled)" OFF)
 else()
-  option(DESKVOX_ENABLE_WARNINGS "Enable all warnings" ON)
+  option(DESKVOX_ENABLE_PEDANTIC "Compile with pedantic enabled (Ignored if warnings are disabled)" ON)
 endif()
-
-option(DESKVOX_ENABLE_PEDANTIC "Compile with pedantic enabled (Ignored if warnings are disabled)" ON)
 
 option(DESKVOX_ENABLE_WERROR "Fail and stop if a warning is triggered" OFF)
 
