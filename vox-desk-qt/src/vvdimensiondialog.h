@@ -44,8 +44,16 @@ private:
   vvCanvas* _canvas;
 
   vvVector3 _initialDist; ///< should be assigned when a new file is loaded
+
+  /*! update volume description with new dist
+   */
+  void setDist(const vvVector3& dist);
+  /*! refresh spin box values
+   */
+  void updateGui(const vvVector3& dist);
 private slots:
   void onApplyClicked();
+  void onResetClicked();
 };
 
 #endif

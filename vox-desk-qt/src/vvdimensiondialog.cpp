@@ -31,11 +31,13 @@ vvDimensionDialog::vvDimensionDialog(vvCanvas* canvas, QWidget* parent)
   : QDialog(parent)
   , ui(new Ui_DimensionDialog)
   , _canvas(canvas)
+  , _initialDist(vvVector3(1.0f, 1.0f, 1.0f))
 {
   vvDebugMsg::msg(1, "vvDimensionDialog::vvDimensionDialog()");
 
   ui->setupUi(this);
 
+  connect(ui->resetButton, SIGNAL(clicked()), this, SLOT(onResetClicked()));
   connect(ui->applyButton, SIGNAL(clicked()), this, SLOT(onApplyClicked()));
 }
 
@@ -49,17 +51,14 @@ void vvDimensionDialog::setInitialDist(const vvVector3& dist)
   vvDebugMsg::msg(3, "vvDimensionDialog::setInitialDist()");
 
   _initialDist = dist;
+  updateGui(dist);
 }
 
-void vvDimensionDialog::onApplyClicked()
+void vvDimensionDialog::setDist(const vvVector3& dist)
 {
-  vvDebugMsg::msg(3, "vvDimensionDialog::onApplyClicked()");
+  vvDebugMsg::msg(3, "vvDimensionDialog::setDist()");
 
-  vvVector3 dist(static_cast<float>(ui->distXBox->value()),
-                 static_cast<float>(ui->distYBox->value()),
-                 static_cast<float>(ui->distZBox->value()));
-
- _canvas->getVolDesc()->setDist(dist);
+  _canvas->getVolDesc()->setDist(dist);
 
   // TODO: hide this implementation detail
   if (vvTexRend* texrend = dynamic_cast<vvTexRend*>(_canvas->getRenderer()))
@@ -71,5 +70,31 @@ void vvDimensionDialog::onApplyClicked()
   }
 
   _canvas->updateGL();
+  updateGui(dist);
+}
+
+void vvDimensionDialog::updateGui(const vvVector3& dist)
+{
+  vvDebugMsg::msg(3, "vvDimensionDialog::updateGui()");
+
+  ui->distXBox->setValue(dist[0]);
+  ui->distYBox->setValue(dist[1]);
+  ui->distZBox->setValue(dist[2]);
+}
+
+void vvDimensionDialog::onApplyClicked()
+{
+  vvDebugMsg::msg(3, "vvDimensionDialog::onApplyClicked()");
+
+  setDist(vvVector3(static_cast<float>(ui->distXBox->value()),
+                    static_cast<float>(ui->distYBox->value()),
+                    static_cast<float>(ui->distZBox->value())));
+}
+
+void vvDimensionDialog::onResetClicked()
+{
+  vvDebugMsg::msg(3, "vvDimensionDialog::onResetClicked()");
+
+  setDist(_initialDist);
 }
 
