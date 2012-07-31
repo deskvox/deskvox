@@ -1,20 +1,64 @@
 include(FindPackageHandleStandardArgs)
 
+set(hints
+  $ENV{LIB_BASE_PATH}/glew
+)
+
+set(paths
+  /usr
+  /usr/local
+)
+
 find_path(GLEW_INCLUDE_DIR
-  NAMES GL/glew.h
+  NAMES
+    GL/glew.h
   HINTS
-    /usr/include
-    /usr/local/include
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    include
 )
 
 find_library(GLEW_LIBRARY
-  NAMES GLEW glew glew_static glew32 glew32_static
+  NAMES
+    GLEW
+    glew
+    glew-s
+    glew32
+    glew32-s
+    glew32_static
+  HINTS
+    ${hints}
   PATHS
-    /usr/lib64
-    /usr/lib
-    /usr/local/lib64
-    /usr/local/lib
+    ${paths}
+  PATH_SUFFIXES
+    lib64
+    lib
 )
+
+find_library(GLEW_LIBRARY_DEBUG
+  NAMES
+    GLEWd
+    glewd
+    glewd-s
+    glew32d
+    glew32d-s
+    glew32d_static
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    lib64
+    lib
+)
+
+if(GLEW_LIBRARY_DEBUG)
+  set(GLEW_LIBRARIES optimized ${GLEW_LIBRARY} debug ${GLEW_LIBRARY_DEBUG})
+else()
+  set(GLEW_LIBRARIES ${GLEW_LIBRARY})
+endif()
 
 find_package_handle_standard_args(GLEW DEFAULT_MSG
   GLEW_INCLUDE_DIR
