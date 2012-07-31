@@ -71,6 +71,14 @@ vvMainWindow::vvMainWindow(QWidget* parent)
 
   // edit menu
   connect(ui->actionSampleDistances, SIGNAL(triggered()), this, SLOT(onSampleDistancesTriggered()));
+
+  // view menu
+  connect(ui->actionShowOrientation, SIGNAL(triggered(bool)), this, SLOT(onShowOrientationTriggered(bool)));
+  connect(ui->actionShowBoundaries, SIGNAL(triggered(bool)), this, SLOT(onShowBoundariesTriggered(bool)));
+  connect(ui->actionShowPalette, SIGNAL(triggered(bool)), this, SLOT(onShowPaletteTriggered(bool)));
+  connect(ui->actionShowNumTextures, SIGNAL(triggered(bool)), this, SLOT(onShowNumTexturesTriggered(bool)));
+  connect(ui->actionShowFrameRate, SIGNAL(triggered(bool)), this, SLOT(onShowFrameRateTriggered(bool)));
+  connect(ui->actionAutoRotation, SIGNAL(triggered(bool)), this, SLOT(onAutoRotationTriggered(bool)));
 }
 
 vvMainWindow::~vvMainWindow()
@@ -303,6 +311,46 @@ void vvMainWindow::onSampleDistancesTriggered()
 
   _dimensionDialog->raise();
   _dimensionDialog->show();
+}
+
+void vvMainWindow::onShowOrientationTriggered(bool checked)
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onShowOrientationTriggered()");
+
+  _canvas->getRenderer()->setParameter(vvRenderState::VV_ORIENTATION, checked);
+}
+
+void vvMainWindow::onShowBoundariesTriggered(bool checked)
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onShowBoundariesTriggered()");
+
+  _canvas->getRenderer()->setParameter(vvRenderState::VV_BOUNDARIES, checked);
+}
+
+void vvMainWindow::onShowPaletteTriggered(bool checked)
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onShowPaletteTriggered()");
+
+  _canvas->getRenderer()->setParameter(vvRenderState::VV_PALETTE, checked);
+}
+
+void vvMainWindow::onShowNumTexturesTriggered(bool checked)
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onShowNumTexturesTriggered()");
+
+  _canvas->getRenderer()->setParameter(vvRenderState::VV_QUALITY_DISPLAY, checked);
+}
+
+void vvMainWindow::onShowFrameRateTriggered(bool checked)
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onShowFrameRateTriggered()");
+
+  _canvas->getRenderer()->setParameter(vvRenderState::VV_FPS_DISPLAY, checked);
+}
+
+void vvMainWindow::onAutoRotationTriggered(bool)
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onAutoRotationTriggered()");
 }
 
 int main(int argc, char** argv)

@@ -62,6 +62,13 @@ private slots:
   void onBackgroundColorTriggered();
 
   void onSampleDistancesTriggered();
+
+  void onShowOrientationTriggered(bool checked);
+  void onShowBoundariesTriggered(bool checked);
+  void onShowPaletteTriggered(bool checked);
+  void onShowNumTexturesTriggered(bool checked);
+  void onShowFrameRateTriggered(bool checked);
+  void onAutoRotationTriggered(bool checked);
 };
 
 #endif
