@@ -12,26 +12,26 @@ endmacro()
 
 
 #---------------------------------------------------------------------------------------------------
-# deskvox_cuda_compiles(processed_sources, sources...)
+# deskvox_cuda_compiles(outfiles, sources...)
 #
 
 
-#function(deskvox_cuda_compiles processed_sources)
-#  if(NOT DESKVOX_CUDA_FOUND)
-#    return()
-#  endif()
-#
-#  foreach(f ${ARGN})
-#    if(BUILD_SHARED_LIBS)
-#      cuda_compile(cuda_compile_obj ${f} SHARED)
-#    else()
-#      cuda_compile(cuda_compile_obj ${f})
-#    endif()
-#
-#    list(APPEND processed_sources ${f})
-#    list(APPEND processed_sources ${cuda_compile_obj})
-#  endforeach()
-#endfunction()
+function(deskvox_cuda_compiles outfiles)
+  if(NOT CUDA_FOUND)
+    return()
+  endif()
+
+  foreach(f ${ARGN})
+    if(BUILD_SHARED_LIBS)
+      cuda_compile(cuda_compile_obj ${f} SHARED)
+    else()
+      cuda_compile(cuda_compile_obj ${f})
+    endif()
+    set(out ${out} ${f} ${cuda_compile_obj})
+  endforeach()
+
+  set(${outfiles} ${out} PARENT_SCOPE)
+endfunction()
 
 
 #---------------------------------------------------------------------------------------------------
@@ -52,27 +52,10 @@ function(__deskvox_process_sources)
 
     source_group("${group}" FILES ${f})
 
-    get_filename_component(ext ${f} EXT)
-
-    if(ext MATCHES "\\.(cu)")
-      if(NOT DESKVOX_CUDA_FOUND)
-        message(STATUS "Note: '" ${f} "' ignored: CUDA support not available or disabled")
-      else()
-        if(BUILD_SHARED_LIBS)
-          cuda_compile(cuda_compile_obj ${f} SHARED)
-        else()
-          cuda_compile(cuda_compile_obj ${f})
-        endif()
-
-        list(APPEND processed_sources ${f})
-        list(APPEND processed_sources ${cuda_compile_obj})
-      endif()
-    else()
-      list(APPEND processed_sources ${f})
-    endif()
+    list(APPEND out ${f})
   endforeach()
 
-  set(__DESKVOX_PROCESSED_SOURCES ${__DESKVOX_PROCESSED_SOURCES} ${processed_sources} PARENT_SCOPE)
+  set(__DESKVOX_PROCESSED_SOURCES ${out} PARENT_SCOPE)
 endfunction()
 
 

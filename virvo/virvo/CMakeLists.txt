@@ -194,7 +194,7 @@ set(VIRVO_SOURCES
   vvvoldesc.cpp
 )
 
-set(VIRVO_CUDA_SOURCES
+deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
   vvcudasw.cu
   vvcudatransfunc.cu
   vvrayrend.cu
