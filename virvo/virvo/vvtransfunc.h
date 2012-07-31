@@ -24,6 +24,7 @@
 #include "vvexport.h"
 #include "vvinttypes.h"
 #include "vvtfwidget.h"
+#include "vvtoolshed.h"
 
 #include <vector>
 
@@ -57,14 +58,16 @@ class VIRVOEXPORT vvTransFunc
     int  getNumDefaultAlpha();
     int  getNumWidgets(vvTFWidget::WidgetType);
     void deleteWidgets(vvTFWidget::WidgetType);
-    void computeTFTexture(int, int, int, float*, float, float, float=0.0f, float=0.0f, float=0.0f, float=0.0f);
+    void computeTFTexture(int w, int h, int d, float* array,
+                          float minX, float maxX, float minY = 0.0f, float maxY = 0.0f,
+                          float minZ = 0.0f, float maxZ = 0.0f, vvToolshed::Format format = vvToolshed::VV_RGBA);
     vvColor computeBGColor(float, float, float);
     void computeTFTextureGamma(int, float*, float, float, int, float[], float[]);
     void computeTFTextureHighPass(int, float*, float, float, int, float[], float[], float[]);
     void computeTFTextureHistCDF(int, float*, float, float, int, int, uint*, float[], float[]);
     vvColor computeColor(float, float=-1.0f, float=-1.0f);
     float computeOpacity(float, float=-1.0f, float=-1.0f);
-    void makeColorBar(int, uchar*, float, float, bool);
+    void makeColorBar(int width, uchar* colors, float min, float max, bool invertAlpha, vvToolshed::Format format = vvToolshed::VV_RGBA);
     void makeAlphaTexture(int, int, uchar*, float, float);
     void make2DTFTexture(int, int, uchar*, float, float, float, float);
     void make2DTFTexture2(int, int, uchar*, float, float, float, float);
