@@ -1,5 +1,8 @@
-deskvox_use_package(OpenGL)
+find_package(FOX REQUIRED)
+find_package(OpenGL REQUIRED)
+
 deskvox_use_package(FOX)
+deskvox_use_package(OpenGL)
 
 add_definitions(-DVV_APPLICATION_BUILD)
 
@@ -14,8 +17,8 @@ include_directories(
 ## public virvo headers should not include third-party library headers...
 ##
 
-if(DESKVOX_CUDA_FOUND)
-  include_directories(SYSTEM ${DESKVOX_CUDA_INCLUDE_DIR})
+if(CUDA_FOUND)
+  include_directories(SYSTEM ${CUDA_TOOLKIT_INCLUDE})
 endif()
 
 deskvox_link_libraries(virvo)
