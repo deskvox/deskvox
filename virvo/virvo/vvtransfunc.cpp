@@ -385,27 +385,38 @@ float vvTransFunc::computeOpacity(float x, float y, float z)
  @param min,max min/max values to create texture for               
 */
 void vvTransFunc::computeTFTexture(int w, int h, int d, float* array, 
-  float minX, float maxX, float minY, float maxY, float minZ, float maxZ)
+  float minX, float maxX, float minY, float maxY, float minZ, float maxZ,
+  vvToolshed::Format format)
 {
-  vvColor col;
-  int x, y, z, index;
-  float norm[3];    // normalized 3D position
+  assert(format == vvToolshed::VV_RGBA || format == vvToolshed::VV_ARGB);
 
-  index = 0;
-  for (z=0; z<d; ++z)
+  vvVector4i mask;
+
+  if (format == vvToolshed::VV_ARGB)
+  {
+    mask = vvVector4i(3, 0, 1, 2);
+  }
+  else if (format == vvToolshed::VV_RGBA)
+  {
+    mask = vvVector4i(0, 1, 2, 3);
+  }
+
+  vvVector3f norm;    // normalized 3D position
+  int index = 0;
+  for (int z=0; z<d; ++z)
   {
     norm[2] = (d==1) ? -1.0f : ((float(z) / float(d-1)) * (maxZ - minZ) + minZ);
-    for (y=0; y<h; ++y)
+    for (int y=0; y<h; ++y)
     {
       norm[1] = (h==1) ? -1.0f : ((float(y) / float(h-1)) * (maxY - minY) + minY);
-      for (x=0; x<w; ++x)
+      for (int x=0; x<w; ++x)
       {
         norm[0] = (float(x) / float(w-1)) * (maxX - minX) + minX;
-        col = computeColor(norm[0], norm[1], norm[2]);
-        array[index]   = col[0];
-        array[index+1] = col[1];
-        array[index+2] = col[2];
-        array[index+3] = computeOpacity(norm[0], norm[1], norm[2]);
+        vvColor col = computeColor(norm[0], norm[1], norm[2]);
+        array[index + mask[0]] = col[0];
+        array[index + mask[1]] = col[1];
+        array[index + mask[2]] = col[2];
+        array[index + mask[3]] = computeOpacity(norm[0], norm[1], norm[2]);
         index += 4;
       }
     }
@@ -484,34 +495,33 @@ void vvTransFunc::computeTFTextureHistCDF(int w, float* dest, float minX, float 
                following order: RGBARGBARGBA...
   @param min,max data range for which color bar is to be created. Use 0..1 for integer data types.
   @param invertAlpha Setting for opacity only color bar: false=high opacity is white; true=high opacity is black
+  @param format VV_RGBA or VV_ARGB
 */
-void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, bool invertAlpha)
+void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, bool invertAlpha,
+                               vvToolshed::Format format)
 {
-  float* rgba;                                    // component values
-  int c, x, index;
-  float alpha;
-
+  assert(format == vvToolshed::VV_RGBA || format == vvToolshed::VV_ARGB);
   assert(colors);
 
   // Compute color components:
-  rgba = new float[width * 4];                    // four values per pixel
-  computeTFTexture(width, 1, 1, rgba, min, max);
+  std::vector<float> rgba;                    // four values per pixel
+  rgba.resize(width * 4);
+  computeTFTexture(width, 1, 1, &rgba[0], min, max, format);
 
   // Convert to uchar:
-  for (x=0; x<width; ++x)
+  for (int x=0; x<width; ++x)
   {
-    for (c=0; c<4; ++c)
+    for (int c=0; c<4; ++c)
     {
-      index = x * 4 + c;
+      int index = x * 4 + c;
       if (c<3) colors[index] = uchar(rgba[index] * 255.0f);
       else colors[index] = (uchar)255;
       colors[index + width * 4] = uchar(rgba[index] * 255.0f);
-      alpha = rgba[x * 4 + 3];
+      float alpha = rgba[x * 4 + 3];
       if (invertAlpha) alpha = 1.0f - alpha;
       colors[index + 2 * width * 4] = (c<3) ? (uchar(alpha * 255.0f)) : 255;
     }
   }
-  delete[] rgba;
 }
 
 //----------------------------------------------------------------------------
