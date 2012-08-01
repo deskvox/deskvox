@@ -1,13 +1,16 @@
 SET(VSERVER_HEADERS
   vvresourcemanager.h
   vvserver.h
+  vvsimpleserver.h
 )
 
 SET(VSERVER_SOURCES
   vvresourcemanager.cpp
   vvserver.cpp
+  vvsimpleserver.cpp
 )
 
+INCLUDE_DIRECTORIES(../common)
 INCLUDE_DIRECTORIES(../..)
 INCLUDE_DIRECTORIES(${PTHREAD_INCLUDE_DIR})
 

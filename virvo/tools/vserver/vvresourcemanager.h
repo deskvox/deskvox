@@ -25,16 +25,15 @@
 #include "vvconfig.h"
 #endif
 
-#include <vector>
-
-#include <vvgpu.h>
-#include <virvo/vvinttypes.h>
+#include <virvo/vvgpu.h>
+#ifdef HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjourentry.h>
+#endif // HAVE_BONJOUR
 
-#include <pthread.h>
+#include "vvserver.h"
+#include "vvsimpleserver.h"
 
 // forward declarations
-class vvServer;
 class vvTcpSocket;
 class vvBonjourBrowser;
 
@@ -49,7 +48,7 @@ class vvBonjourBrowser;
  *
  * @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
  */
-class vvResourceManager
+class vvResourceManager : public vvServer
 {
 private:
   struct vvRequest
@@ -98,30 +97,36 @@ public:
     Creates a resource manager connected with server
     \param server if set, resource manager also uses this server running locally
     */
-  vvResourceManager(vvServer *server = NULL);
+  vvResourceManager();
   ~vvResourceManager();
 
   void addJob(vvTcpSocket* sock);         ///< thread-savely adds new connection to the job list
   bool initNextJob();                     ///< thread-savely check for waiting jobs and free resources and pair if possible
 
   static void updateResources(void * param);
+
 private:
+  bool serverLoop();
+  static void * localServerLoop(void *param);
+  void handleNextConnection(vvTcpSocket *sock);
+  static void * processJob(void *param);
   uint getFreeResourceCount();
   vvResource* getFreeResource();
 
+  vvSimpleServer *_simpleServer;
 #ifdef HAVE_BONJOUR
   vvBonjourBrowser *_browser;
   static std::vector<vvGpu::vvGpuInfo> getResourceGpuInfos(const vvBonjourEntry entry);
 #endif // HAVE_BONJOUR
-
   std::vector<vvRequest*>  _requests;
   std::vector<vvResource*> _resources;
-  pthread_mutex_t _jobsMutex;
+  pthread_mutex_t _requestsMutex;
   pthread_mutex_t _resourcesMutex;
-
-  static void * processJob(void *param);
 };
 
 #endif // _VV_RESOURCEMANAGER_H_
 
+//===================================================================
+// End of File
+//===================================================================
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

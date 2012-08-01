@@ -51,8 +51,10 @@ using std::ios;
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+#include <vvcommon.h>
 #include <virvo/vvvirvo.h>
 #include <virvo/vvgltools.h>
+#include <virvo/vvgpu.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>
 #include <virvo/vvclock.h>
@@ -686,18 +688,18 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   if(sockets.size() > 0)
   {
     vvSocketIO socketIO = vvSocketIO(sockets[0]);
-    socketIO.putBool(false); // need Gpu-Infos?
 
-/*    socketIO.putBool(true);
-    std::vector<vvGpuInfo> ginfos;
+/*    socketIO.putInt32(virvo::GpuInfo);
+    std::vector<vvGpu::vvGpuInfo> ginfos;
     socketIO.getGpuInfos(ginfos);
     std::cerr << "Number of gpus: " << ginfos.size() << std::endl;
-    for(std::vector<vvGpuInfo>::iterator ginfo = ginfos.begin(); ginfo != ginfos.end();ginfo++)
+    for(std::vector<vvGpu::vvGpuInfo>::iterator ginfo = ginfos.begin(); ginfo != ginfos.end();ginfo++)
     {
       std::cerr << "free memory on server: "  << (*ginfo).freeMem << std::endl;
       std::cerr << "total memory on server: " << (*ginfo).totalMem << std::endl;
     }*/
 
+    socketIO.putInt32(virvo::Render);
     bool serverRdy;
     socketIO.getBool(serverRdy);
     if(!serverRdy)

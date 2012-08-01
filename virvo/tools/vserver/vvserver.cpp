@@ -31,11 +31,9 @@
 #include "vvserver.h"
 
 #include <virvo/vvdebugmsg.h>
-#include <virvo/vvgpu.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
 #include <virvo/vvremoteserver.h>
-#include <virvo/vvrendererfactory.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpserver.h>
 #include <virvo/vvtcpsocket.h>
@@ -53,11 +51,8 @@
 #include <unistd.h>
 #endif
 
-const int vvServer::DEFAULTSIZE  = 512;
-const int vvServer::DEFAULT_PORT = 31050;
-
-using std::cerr;
-using std::endl;
+const int            vvServer::DEFAULTSIZE  = 512;
+const unsigned short vvServer::DEFAULT_PORT = 31050;
 
 vvServer::vvServer()
 {
@@ -138,6 +133,11 @@ int vvServer::run(int argc, char** argv)
 #endif
 
   return (int)(!res);
+}
+
+void vvServer::setPort(unsigned short port)
+{
+  _port = port;
 }
 
 void vvServer::displayHelpInfo()
@@ -295,23 +295,6 @@ bool vvServer::serverLoop()
     cerr << "Failed to initialize server-socket on port " << _port << "." << endl;
     return false;
   }
-  else
-  {
-#ifdef HAVE_BONJOUR
-    if(_useBonjour) registerToBonjour();
-#endif
-  }
-
-  vvResourceManager *rm = NULL;
-
-  if(RM == _sm)
-  {
-    rm = new vvResourceManager();
-  }
-  else if(RM_WITH_SERVER == _sm)
-  {
-    rm = new vvResourceManager(this);
-  }
 
   while (1)
   {
@@ -321,7 +304,7 @@ bool vvServer::serverLoop()
 
     while((sock = tcpServ.nextConnection()) == NULL)
     {
-      vvDebugMsg::msg(3, "vvServer::serverLoop() Listening socket blocked, retry...");
+      vvDebugMsg::msg(3, "vvSimpleServer::serverLoop() Listening socket busy, retry...");
     }
 
     if(sock == NULL)
@@ -332,118 +315,19 @@ bool vvServer::serverLoop()
     else
     {
       cerr << "Incoming connection..." << endl;
-
-      if(RM == _sm || RM_WITH_SERVER == _sm)
-      {
-        rm->addJob(sock);
-        while(rm->initNextJob()) {}; // process all waiting jobs
-      }
-      else
-      {
-        vvServerThreadArgs *args = new vvServerThreadArgs;
-        args->_instance = this;
-        args->_sock = sock;
-
-        pthread_t pthread;
-        pthread_create(&pthread,  NULL, handleClientThread, args);
-        pthread_detach(pthread);
-      }
+      handleNextConnection(sock);
     }
   }
-
-#ifdef HAVE_BONJOUR
-  if(_useBonjour) unregisterFromBonjour();
-#endif
-
-  delete rm;
 
   return true;
 }
 
-#ifdef HAVE_BONJOUR
-DNSServiceErrorType vvServer::registerToBonjour()
-{
-  vvDebugMsg::msg(3, "vvServer::registerToBonjour()");
-  vvBonjourEntry entry = vvBonjourEntry("Virvo Server", "_vserver._tcp", "");
-  return _registrar.registerService(entry, _port);
-}
 
-void vvServer::unregisterFromBonjour()
-{
-  vvDebugMsg::msg(3, "vvServer::unregisterFromBonjour()");
-  _registrar.unregisterService();
-}
-#endif
-
-void * vvServer::handleClientThread(void *param)
-{
-  vvServerThreadArgs *args = reinterpret_cast<vvServerThreadArgs*>(param);
-
-  vvTcpSocket *sock = args->_sock;
-
-  vvSocketIO sockio(sock);
-  bool tellInfo;
-  sockio.getBool(tellInfo);
-  if(tellInfo)
-  {
-    std::vector<vvGpu*> gpus = vvGpu::list();
-    std::vector<vvGpu::vvGpuInfo> ginfos;
-    for(std::vector<vvGpu*>::iterator gpu = gpus.begin(); gpu != gpus.end(); gpu++)
-    {
-      ginfos.push_back(vvGpu::getInfo(*gpu));
-    }
-    sockio.putGpuInfos(ginfos);
-
-    sock->disconnectFromHost();
-    delete sock;
-    pthread_exit(NULL);
-  }
-
-  vvCreateRemoteServerRes res = args->_instance->createRemoteServer(sock);
-
-  if(res.renderer && res.server && res.vd)
-  {
-    while(true)
-    {
-      if(!res.server->processEvents(res.renderer))
-      {
-        delete res.renderer;
-        res.renderer = NULL;
-        break;
-      }
-    }
-  }
-
-  if(res.server)
-  {
-    res.server->destroyRenderContext();
-  }
-
-  // Frames vector with bricks is deleted along with the renderer.
-  // Don't free them here.
-  // see setRenderer().
-
-  delete res.server;
-
-  sock->disconnectFromHost();
-
-  delete sock;
-
-  delete res.vd;
-
-  delete args;
-
-  pthread_exit(NULL);
-#ifdef _WIN32
-  return NULL;
-#endif
-}
-
-vvServer::vvCreateRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock, std::string renderertype, vvRendererFactory::Options opt)
+vvServer::vvRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock, std::string renderertype, vvRendererFactory::Options opt)
 {
   vvDebugMsg::msg(3, "vvServer::createRemoteServer() Enter");
 
-  vvCreateRemoteServerRes res;
+  vvRemoteServerRes res;
   res.server   = NULL;
   res.renderer = NULL;
   res.vd       = NULL;
@@ -500,13 +384,14 @@ vvServer::vvCreateRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock
 
     if(renderertype.empty())
     {
+      cerr << "CREATE REMOTE SERVER LOCAL" << endl;
       renderertype = (rType == vvRenderer::REMOTE_IBR) ? "rayrend" : "default";
     }
     else if(renderertype.compare(std::string("forwarding")) == 0)
     {
+      cerr << "CREATE REMOTE SERVER REMOTE!!!" << endl;
       renderertype = (rType == vvRenderer::REMOTE_IBR) ? "ibr" : "image";
     }
-    std::cerr << "vvRendererFactory::create() " << renderertype << opt["brickrenderer"] << opt["bricks"] << opt["displays"] << opt["sockets"] << std::endl;
     res.renderer = vvRendererFactory::create(res.vd,
       rs,
       renderertype.c_str(),
@@ -517,22 +402,6 @@ vvServer::vvCreateRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock
 
   return res;
 }
-
-
-
-/*vvServer *s = NULL;
-
-void sigproc(int )
-{
-  // NOTE some versions of UNIX will reset signal to default
-  // after each call. So for portability set signal each time
-  signal(SIGINT, sigproc);
-
-  cerr << "you have pressed ctrl-c" << endl;
-
-  delete s;
-  s = NULL;
-}*/
 
 
 //-------------------------------------------------------------------
@@ -559,7 +428,6 @@ void vvServer::handleSignal(int sig)
 /// Main entry point.
 int main(int argc, char** argv)
 {
-//  signal(SIGINT, sigproc);
 #ifdef VV_DEBUG_MEMORY
   int flag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);// Get current flag
   flag |= _CRTDBG_LEAK_CHECK_DF;                 // Turn on leak-checking bit
@@ -588,8 +456,9 @@ int main(int argc, char** argv)
 #endif
 
   //vvDebugMsg::setDebugLevel(vvDebugMsg::NO_MESSAGES);
-  vvServer vserver;
-  int error = vserver.run(argc, argv);
+//  vvDebugMsg::setDebugLevel(5);
+  vvResourceManager vvRM;
+  int error = vvRM.run(argc, argv);
 
 #ifdef VV_DEBUG_MEMORY
   _CrtDumpMemoryLeaks();                         // display memory leaks, if any
