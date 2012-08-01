@@ -41,13 +41,25 @@ endfunction()
 
 function(__deskvox_process_sources)
   foreach(f ${ARGN})
+    set(group)
+
+    if(DESKVOX_GROUP_SOURCES_BY_TYPE)
+      get_filename_component(ext ${f} EXT)
+
+      if(ext MATCHES "\\.(h|hpp|hxx|inl|inc)")
+        set(group "include")
+      elseif(ext MATCHES "\\.(c|cpp|cxx)")
+        set(group "src")
+      else()
+        set(group "resources")
+      endif()
+    endif()
+
     get_filename_component(path ${f} PATH)
 
     if(NOT path STREQUAL "")
       string(REPLACE "/" "\\" path "${path}")
-      set(group "${path}")
-    else()
-      set(group "")
+      set(group "${group}\\${path}")
     endif()
 
     source_group("${group}" FILES ${f})

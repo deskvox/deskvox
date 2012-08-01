@@ -50,6 +50,8 @@ option(BUILD_SHARED_LIBS "Build all libraries as shared libraries instead of sta
 
 option(DESKVOX_USE_FOLDERS "Enable solution folders in Visual Studio. Disable for Express versions." ON)
 
+option(DESKVOX_GROUP_SOURCES_BY_TYPE "Group source files by type." ON)
+
 option(DESKVOX_BUILD_TESTS "Build tests" OFF)
 option(DESKVOX_BUILD_TOOLS "Build tools" ON)
 option(DESKVOX_BUILD_VOX_DESK "Build vox-desk. Disable if fox toolkit is not available." OFF)
