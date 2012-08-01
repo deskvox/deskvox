@@ -387,7 +387,7 @@ void * vvServer::handleClientThread(void *param)
   if(tellInfo)
   {
     std::vector<vvGpu*> gpus = vvGpu::list();
-    std::vector<vvGpuInfo> ginfos;
+    std::vector<vvGpu::vvGpuInfo> ginfos;
     for(std::vector<vvGpu*>::iterator gpu = gpus.begin(); gpu != gpus.end(); gpu++)
     {
       ginfos.push_back(vvGpu::getInfo(*gpu));

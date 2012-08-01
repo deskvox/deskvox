@@ -1621,7 +1621,7 @@ vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m)
 /** Reads a vvGpuInfo from the socket.
   @param ginfo object in which read data will be saved
 */
-vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpuInfo& ginfo)
+vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpu::vvGpuInfo& ginfo)
 {
   if(_socket)
   {
@@ -1650,7 +1650,7 @@ vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpuInfo& ginfo)
 /** Writes a vvGpuInfo to the socket.
   @param ginfo object which will written to socket
 */
-vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpuInfo& ginfo)
+vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpu::vvGpuInfo& ginfo)
 {
   if(_socket)
   {
@@ -1669,7 +1669,7 @@ vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpuInfo& ginfo)
 /** Reads a vector list of vvGpuInfos from the socket.
   @param ginfos vector in which read data will be saved
 */
-vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpuInfo>& ginfos)
+vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpu::vvGpuInfo>& ginfos)
 {
   if(_socket)
   {
@@ -1686,7 +1686,7 @@ vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpuInfo>& ginfos)
 
     for(unsigned int i=0; i<size; i++)
     {
-      vvGpuInfo ginfo;
+      vvGpu::vvGpuInfo ginfo;
       retval = getGpuInfo(ginfo);
       ginfos.push_back(ginfo);
       if(retval != vvSocket::VV_OK) return retval;
@@ -1703,7 +1703,7 @@ vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpuInfo>& ginfos)
 /** Writes a vector list of vvGpuInfos to the socket.
   @param ginfos vector of vvGpuInfos which will be written to socket
 */
-vvSocket::ErrorType vvSocketIO::putGpuInfos(const std::vector<vvGpuInfo>& ginfos)
+vvSocket::ErrorType vvSocketIO::putGpuInfos(const std::vector<vvGpu::vvGpuInfo>& ginfos)
 {
   if(_socket)
   {
@@ -1712,7 +1712,7 @@ vvSocket::ErrorType vvSocketIO::putGpuInfos(const std::vector<vvGpuInfo>& ginfos
     retval = putInt32(ginfos.size());
     if(retval != vvSocket::VV_OK) return retval;
 
-    for(std::vector<vvGpuInfo>::const_iterator ginfo = ginfos.begin();ginfo != ginfos.end(); ginfo++)
+    for(std::vector<vvGpu::vvGpuInfo>::const_iterator ginfo = ginfos.begin();ginfo != ginfos.end(); ginfo++)
     {
       retval = putGpuInfo(*ginfo);
       if(retval != vvSocket::VV_OK) return retval;

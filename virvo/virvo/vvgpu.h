@@ -25,17 +25,16 @@
 #include <vector>
 
 #include "vvinttypes.h"
-#include "vvrendercontext.h"
-
-struct vvGpuInfo
-{
-  int freeMem;
-  int totalMem;
-};
 
 class vvGpu
 {
 public:
+  struct vvGpuInfo
+  {
+    int freeMem;
+    int totalMem;
+  };
+
   /**
     Get a list of known gpus available from for this process configured in a config file.
     @return vector-list of vvGpus
@@ -57,12 +56,9 @@ private:
   vvGpu(const vvGpu& rhs);
   vvGpu& operator = (const vvGpu& src);
 
-  std::string _glName;
-  std::string _Xdsp;
-  bool        _cuda;
-  bool        _openGL;
-  int         _cudaDevice;
-  vvRenderContext::WindowingSystem _wSystem;
+  class GpuData;
+
+  GpuData *_data;
 };
 
 #endif

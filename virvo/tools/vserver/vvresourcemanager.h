@@ -76,7 +76,7 @@ private:
     }
 
     bool   upToDate;
-    std::vector<vvGpuInfo> ginfos;
+    std::vector<vvGpu::vvGpuInfo> ginfos;
   #ifdef HAVE_BONJOUR
     vvBonjourEntry bonjourEntry;
   #endif
@@ -111,7 +111,7 @@ private:
 
 #ifdef HAVE_BONJOUR
   vvBonjourBrowser *_browser;
-  static std::vector<vvGpuInfo> getResourceGpuInfos(const vvBonjourEntry entry);
+  static std::vector<vvGpu::vvGpuInfo> getResourceGpuInfos(const vvBonjourEntry entry);
 #endif // HAVE_BONJOUR
 
   std::vector<vvRequest*>  _requests;

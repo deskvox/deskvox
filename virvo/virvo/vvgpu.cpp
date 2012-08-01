@@ -33,19 +33,35 @@
 #define GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX 0x9048
 #define GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX 0x9049
 
+class vvGpu::GpuData
+{
+public:
+  GpuData()
+  {
+    glName = "";
+    Xdsp   = "";
+    cuda   = false;
+    openGL = false;
+    cudaDevice = -1;
+    wSystem = vvRenderContext::VV_NONE;
+  }
+  std::string glName;
+  std::string Xdsp;
+  bool        cuda;
+  bool        openGL;
+  int         cudaDevice;
+  vvRenderContext::WindowingSystem wSystem;
+};
+
 std::vector<vvGpu*> vvGpu::list()
 {
   std::vector<vvGpu*> gpus;
-
-  //istrstream ostr1(buffer1, 2048);
-  //int values1[100];
-  //int c=0;
 
   std::ifstream fin("/raid/home/sdelisav/deskvox/qtcreator-build/virvo/tools/vserver/vserver.config");
 
   if(!fin.is_open())
   {
-    std::cerr << "fehler beim öffnen der Datei!" << std::endl;
+    vvDebugMsg::msg(2, "vvGpu::list() could not open config file");
   }
 
   uint lineNum = 0;
@@ -79,14 +95,14 @@ std::vector<vvGpu*> vvGpu::list()
   return gpus;
 }
 
-vvGpuInfo vvGpu::getInfo(vvGpu *gpu)
+vvGpu::vvGpuInfo vvGpu::getInfo(vvGpu *gpu)
 {
   vvGpuInfo inf = { -1, -1 };
 
-  if(gpu->_openGL)
+  if(gpu->_data->openGL)
   {
     vvContextOptions co;
-    co.displayName = gpu->_Xdsp;
+    co.displayName = gpu->_data->Xdsp;
     co.doubleBuffering = false;
     co.height = 1;
     co.width = 1;
@@ -95,15 +111,13 @@ vvGpuInfo vvGpu::getInfo(vvGpu *gpu)
     vvRenderContext context = vvRenderContext(co);
     context.makeCurrent();
 
-    //GLint total_mem_kb = 0;
     glGetIntegerv(GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX,
                   &(inf.totalMem));
 
-    //GLint cur_avail_mem_kb = 0;
     glGetIntegerv(GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX,
                   &(inf.freeMem));
   }
-  else if(gpu->_cuda)
+  else if(gpu->_data->cuda)
   {
     // TODO: Implement cuda-case here!
   }
@@ -146,38 +160,36 @@ vvGpu* vvGpu::createGpu(std::string& data)
       switch(attrName)
       {
       case 1:
-        gpu->_glName = nameValue[1];
+        gpu->_data->glName = nameValue[1];
         break;
       case 2:
-        gpu->_Xdsp = nameValue[1];
+        gpu->_data->Xdsp = nameValue[1];
         break;
       case 3:
-        gpu->_cuda = vvToolshed::strCompare(nameValue[1].c_str(), "true") == 0 ? true : false;
+        gpu->_data->cuda = vvToolshed::strCompare(nameValue[1].c_str(), "true") == 0 ? true : false;
         break;
       case 4:
-        gpu->_openGL = vvToolshed::strCompare(nameValue[1].c_str(), "true") == 0 ? true : false;
+        gpu->_data->openGL = vvToolshed::strCompare(nameValue[1].c_str(), "true") == 0 ? true : false;
         break;
       case 5:
         if(vvToolshed::strCompare(nameValue[1].c_str(), "X11"))
         {
-          gpu->_wSystem = vvRenderContext::VV_X11;
+          gpu->_data->wSystem = vvRenderContext::VV_X11;
         }
         else if(vvToolshed::strCompare(nameValue[1].c_str(), "WGL"))
         {
-          gpu->_wSystem = vvRenderContext::VV_WGL;
+          gpu->_data->wSystem = vvRenderContext::VV_WGL;
         }
         else if(vvToolshed::strCompare(nameValue[1].c_str(), "COCOA"))
         {
-          gpu->_wSystem = vvRenderContext::VV_COCOA;
+          gpu->_data->wSystem = vvRenderContext::VV_COCOA;
         }
         else
         {
           vvDebugMsg::msg(2, "vvGpu::parseGpuData() parse error: unknown windowingsystem type");
-          gpu->_wSystem = vvRenderContext::VV_NONE;
+          gpu->_data->wSystem = vvRenderContext::VV_NONE;
         }
         break;
-      case 0:
-        // purposely fall through
       default:
         vvDebugMsg::msg(2, "vvGpu::createGpu() parse error: unknown attribute");
         delete gpu;
@@ -194,12 +206,13 @@ vvGpu* vvGpu::createGpu(std::string& data)
 
 vvGpu::vvGpu()
 {
-  _glName = "";
-  _Xdsp   = "";
-  _cuda   = false;
-  _openGL = false;
-  _cudaDevice = -1;
-  _wSystem = vvRenderContext::VV_NONE;
+  _data = new GpuData;
+}
+
+vvGpu& vvGpu::operator = (const vvGpu& src)
+{
+  (void)src;
+  return *this;
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

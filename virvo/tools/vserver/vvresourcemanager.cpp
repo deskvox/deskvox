@@ -51,7 +51,7 @@ vvResourceManager::vvResourceManager(vvServer *vserver)
     serverRes->server = vserver;
 
     // TODO: set appropiate values here
-    vvGpuInfo gpu;
+    vvGpu::vvGpuInfo gpu;
     gpu.freeMem = gpu.totalMem = 1000;
     serverRes->ginfos.push_back(gpu);
 
@@ -276,7 +276,7 @@ uint vvResourceManager::getFreeResourceCount()
 }
 
 #ifdef HAVE_BONJOUR
-std::vector<vvGpuInfo> vvResourceManager::getResourceGpuInfos(const vvBonjourEntry entry)
+std::vector<vvGpu::vvGpuInfo> vvResourceManager::getResourceGpuInfos(const vvBonjourEntry entry)
 {
   vvTcpSocket *serversock = NULL;
 
@@ -289,20 +289,20 @@ std::vector<vvGpuInfo> vvResourceManager::getResourceGpuInfos(const vvBonjourEnt
       vvSocketIO sockIO = vvSocketIO(serversock);
       sockIO.putBool(true); // no vvGpu info needed
 
-      std::vector<vvGpuInfo> ginfos;
+      std::vector<vvGpu::vvGpuInfo> ginfos;
       sockIO.getGpuInfos(ginfos);
       return ginfos;
     }
     else
     {
       vvDebugMsg::msg(2, "vvResourceManager::registerResource() Could not connect to resolved vserver");
-      return std::vector<vvGpuInfo>();
+      return std::vector<vvGpu::vvGpuInfo>();
     }
   }
   else
   {
     vvDebugMsg::msg(2, "vvResourceManager::registerResource() Could not resolve bonjour service");
-    return std::vector<vvGpuInfo>();
+    return std::vector<vvGpu::vvGpuInfo>();
   }
 }
 #endif
