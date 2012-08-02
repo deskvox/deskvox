@@ -1,74 +1,133 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
-
-IF(COMMAND CMAKE_POLICY)
-  CMAKE_POLICY(SET CMP0003 NEW)
-ENDIF(COMMAND CMAKE_POLICY)
-
-PROJECT("DeskVOX Volume Explorer")
-
-ADD_DEFINITIONS(-DNODLL)
-
-IF(MSVC)
-  ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-ENDIF(MSVC)
-
-IF(CMAKE_COMPILER_IS_GNUCXX)
-  SET(WNO_ERROR_FLAG "-Wno-error")
-ELSE(CMAKE_COMPILER_IS_GNUCXX)
-  SET(WNO_ERROR_FLAG "")
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
-
-IF(WIN32)
-  SET(HOST_WIN32 ${WIN32} CACHE BOOL "Whether build system is a Windows system." FORCE)
-ENDIF(WIN32)
-
-IF(NOT DESKVOX_CONFIGURED_ONCE)
-  # Defaults adapted on the first configure run, avoid adapting values again
-  SET(DESKVOX_CONFIGURED_ONCE 1 CACHE INTERNAL "DeskVOX was configured at least once.")
-
-  IF(CMAKE_COMPILER_IS_GNUCXX)
-    SET(WARN_FLAGS "${WARN_FLAGS} -Wall -Wextra -Wno-sign-compare")
-    IF(NOT APPLE)
-      SET(WARN_FLAGS "${WARN_FLAGS} -Woverloaded-virtual")
-    ENDIF(NOT APPLE)
-    SET(WARN_FLAGS "${WARN_FLAGS} -Werror -Wno-error=overloaded-virtual -Wno-error=missing-field-initializers")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARN_FLAGS}"
-        CACHE STRING "Flags used by the compiler during all build types." FORCE
-        )
-  ENDIF(CMAKE_COMPILER_IS_GNUCXX)
-ENDIF(NOT DESKVOX_CONFIGURED_ONCE)
+project(Deskvox)
 
 
-LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+cmake_minimum_required(VERSION 2.8)
 
-SET(VIRVO_DIR ${PROJECT_SOURCE_DIR}/virvo)
-SET(VIRVO_INCLUDE_DIR ${VIRVO_DIR}/virvo)
-SET(VIRVO_SHADER_DIR ${VIRVO_DIR}/shader)
-SET(VIRVO_SOURCE_DIR ${VIRVO_DIR}/virvo)
-SET(VOX_DESK_DIR ${PROJECT_SOURCE_DIR}/vox-desk-qt)
-SET(VOX_DESK_INCLUDE_DIR ${VOX_DESK_DIR}/include)
+# Add path for custom modules
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
+)
 
-SET(INSTALL_DIR_BIN bin)
-SET(INSTALL_DIR_INCLUDE include)
-SET(INSTALL_DIR_LIB lib)
-SET(INSTALL_DIR_SHARE share)
 
-INCLUDE(GenerateConfigHeader)
+#set(DESKVOX_VERSION_MAJOR 1)
+#set(DESKVOX_VERSION_MINOR 0)
 
-IF(CUDA_FOUND)
-  INCLUDE_DIRECTORIES(${CUDA_TOOLKIT_INCLUDE})
-  #SET(EXTRA_LIBS ${EXTRA_LIBS} ${CUDA_LIBRARIES})
-ENDIF(CUDA_FOUND)
+#set(PACKAGE_NAME DESKVOX)
+#set(PACKAGE_VERSION "${DESKVOX_VERSION_MAJOR}.${DESKVOX_VERSION_MINOR}")
+#set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
+#set(PACKAGE_BUGREPORT "http://sourceforge.net/tracker/?group_id=131783&atid=722235")
 
-INCLUDE_DIRECTORIES(${VIRVO_INCLUDE_DIR})
-ADD_SUBDIRECTORY(${VIRVO_DIR})
-ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/vox-desk)
-ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/vox-desk-qt)
 
-SET(CPACK_GENERATOR "ZIP")
-INCLUDE(CPack)
+set(DESKVOX_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(DESKVOX_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(DESKVOX_PREFIX ${CMAKE_INSTALL_PREFIX})
 
-IF(${CMAKE_VERSION} VERSION_GREATER "2.8.2")
-  INCLUDE(FeatureSummary)
-  FEATURE_SUMMARY(WHAT ALL)
-ENDIF()
+
+set(VIRVO_VERSION_MAJOR 1)
+set(VIRVO_VERSION_MINOR 0)
+set(VIRVO_VERSION "{VIRVO_VERSION_MAJOR}.${VIRVO_VERSION_MINOR}")
+
+
+set(VIRVO_DIR ${DESKVOX_DIR}/virvo)
+set(VIRVO_INCLUDE_DIR ${VIRVO_DIR})
+set(VIRVO_SOURCE_DIR ${VIRVO_DIR}/virvo)
+set(VIRVO_SHADER_DIR ${VIRVO_DIR}/shader)
+set(VIRVO_TOOLS_DIR ${VIRVO_DIR}/tools)
+set(VIRVO_TESTS_DIR ${VIRVO_DIR}/test)
+
+set(VIRVO_CONFIG_DIR ${DESKVOX_BINARY_DIR}/virvo/virvo/config)
+
+
+set(VOX_DESK_DIR ${DESKVOX_DIR}/vox-desk-qt)
+set(VOX_DESK_INCLUDE_DIR ${VOX_DESK_DIR}/include)
+
+
+#---------------------------------------------------------------------------------------------------
+# Options
+#
+
+
+option(BUILD_SHARED_LIBS "Build all libraries as shared libraries instead of static" ON)
+
+option(DESKVOX_USE_FOLDERS "Enable solution folders in Visual Studio. Disable for Express versions." ON)
+
+option(DESKVOX_BUILD_TESTS "Build tests" OFF)
+option(DESKVOX_BUILD_TOOLS "Build tools" ON)
+option(DESKVOX_BUILD_VOX_DESK "Build vox-desk. Disable if fox toolkit is not available." OFF)
+
+option(DESKVOX_ENABLE_WARNINGS "Enable all warnings" ON)
+if(MSVC)
+  option(DESKVOX_ENABLE_PEDANTIC "Compile with pedantic enabled (Ignored if warnings are disabled)" OFF)
+else()
+  option(DESKVOX_ENABLE_PEDANTIC "Compile with pedantic enabled (Ignored if warnings are disabled)" ON)
+endif()
+
+option(DESKVOX_ENABLE_WERROR "Fail and stop if a warning is triggered" OFF)
+
+
+# All options referred to from DeskvoxHandleOptions have to be specified BEFORE this include,
+# otherwise options will not be correctly set on first cmake run
+include(DeskvoxConfig)
+include(DeskvoxHandleOptions)
+
+
+#---------------------------------------------------------------------------------------------------
+# Subdirectories
+#
+
+
+include(DeskvoxAddTarget)
+include(DeskvoxUsePackage)
+
+
+add_subdirectory(virvo)
+if(DESKVOX_BUILD_VOX_DESK)
+  add_subdirectory(vox-desk)
+endif()
+
+
+#---------------------------------------------------------------------------------------------------
+# Additional install targets
+#
+
+
+# Copy headers
+install(DIRECTORY ${VIRVO_INCLUDE_DIR}/virvo/
+  DESTINATION include/virvo
+  FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.hpp"
+    PATTERN "*.hxx"
+    PATTERN "*.inl"
+    PATTERN "*.inc"
+)
+
+# Copy shaders
+install(DIRECTORY ${VIRVO_SHADER_DIR}/
+  DESTINATION shader
+  FILES_MATCHING
+    PATTERN "*.fsh"
+    PATTERN "*.gsh"
+    PATTERN "*.vsh"
+    PATTERN "*.glsl"
+    PATTERN "*.vert"
+    PATTERN "*.frag"
+    PATTERN "*.geom"
+    PATTERN "*.tess-ctrl"
+    PATTERN "*.tess-eval"
+)
+
+
+#---------------------------------------------------------------------------------------------------
+# Workaround for MSVS10 to avoid the Dialog Hell
+# FIXME: This could be removed with future version of CMake.
+#
+
+
+#if(MSVC_VERSION EQUAL 1600)
+#  set(DESKVOX_SLN_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/deskvox.sln")
+#  if(EXISTS "${DESKVOX_SLN_FILENAME}")
+#    file(APPEND "${DESKVOX_SLN_FILENAME}" "\n# This should be regenerated!\n")
+#  endif()
+#endif()

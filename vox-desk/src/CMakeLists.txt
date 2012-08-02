@@ -1,44 +1,49 @@
-FIND_PACKAGE(FOX)
-IF(NOT FOX_FOUND)
-  RETURN()
-ENDIF(NOT FOX_FOUND)
+find_package(FOX REQUIRED)
+find_package(OpenGL REQUIRED)
 
-SET(VOXDESK_INC
-  vvartracking.h
-  vvcanvas.h
-  vvclient.h
-  vvdialogs.h
-  vvmovie.h
-  vvobjview.h
-  vvprefwindow.h
-  vvshell.h
-  vvsliceviewer.h
-  vvtranswindow.h
+deskvox_use_package(FOX)
+deskvox_use_package(OpenGL)
+
+add_definitions(-DVV_APPLICATION_BUILD)
+
+include_directories(
+  ${VIRVO_CONFIG_DIR}
+  ${VIRVO_INCLUDE_DIR}
+  ${VIRVO_INCLUDE_DIR}/virvo
 )
 
-SET(VOXDESK_SRC
+##
+## TODO:
+## public virvo headers should not include third-party library headers...
+##
+
+if(CUDA_FOUND)
+  include_directories(SYSTEM ${CUDA_TOOLKIT_INCLUDE})
+endif()
+
+deskvox_link_libraries(virvo)
+
+deskvox_add_tool(vox-desk
   vvartracking.cpp
+  vvartracking.h
   vvcanvas.cpp
+  vvcanvas.h
   vvclient.cpp
+  vvclient.h
   vvdialogs.cpp
+  vvdialogs.h
   vvmovie.cpp
+  vvmovie.h
   vvobjview.cpp
+  vvobjview.h
   vvprefwindow.cpp
+  vvprefwindow.h
   vvshell.cpp
+  vvshell.h
   vvsliceviewer.cpp
+  vvsliceviewer.h
+# vvtranslines.cpp
+# vvtranslines.h
   vvtranswindow.cpp
-)
-
-ADD_EXECUTABLE(vox-desk ${VOXDESK_INC} ${VOXDESK_SRC})
-
-LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
-INCLUDE_DIRECTORIES(${FOX_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(vox-desk ${FOX_LIBRARIES})
-
-TARGET_LINK_LIBRARIES(vox-desk virvo)
-
-INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/vox-desk
-  DESTINATION ${INSTALL_DIR_BIN}
-  RENAME deskvox
+  vvtranswindow.h
 )

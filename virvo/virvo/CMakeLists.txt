@@ -1,62 +1,80 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6.4)
+find_package(Bonjour)
+find_package(Boost)
+find_package(Cg)
+find_package(CUDA)
+find_package(FFMPEG)
+find_package(GLEW REQUIRED)
+find_package(NORM)
+find_package(OpenGL REQUIRED)
+find_package(Protokit)
+find_package(Pthreads REQUIRED)
+find_package(SNAPPY)
+find_package(VolPack)
+find_package(X11)
 
-IF(COVISE_BUILD)
-  IF(NOT COVISE_USE_CUDA)
-    SET(CUDA_FOUND NO)
-  ENDIF(NOT COVISE_USE_CUDA) 
-  COVISE_FIND_PACKAGE(PTHREAD REQUIRED)
-ELSE(COVISE_BUILD)
-  FIND_PACKAGE(PTHREAD REQUIRED)
-ENDIF(COVISE_BUILD)
+deskvox_use_package(Bonjour)
+deskvox_use_package(Boost)
+deskvox_use_package(Cg INCDIRS ${CG_INCLUDE_PATH} LIBS ${CG_LIBRARY} ${CG_GL_LIBRARY})
+deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
+deskvox_use_package(FFMPEG)
+deskvox_use_package(GLEW)
+deskvox_use_package(NORM)
+deskvox_use_package(OpenGL)
+deskvox_use_package(Protokit)
+deskvox_use_package(Pthreads)
+deskvox_use_package(SNAPPY)
+deskvox_use_package(VolPack)
+deskvox_use_package(X11)
 
-IF(WIN32)
-  ADD_DEFINITIONS(-DUNICODE -DNOMINMAX -DVIRVO_EXPORT)
-  IF(MSVC)
-    IF(COVISE_BUILD)
-      # TODO: no externlibs for non-covise build
-      FIND_PATH(PTHREADW32_INCLUDE_DIR pthread.h PATHS "$ENV{EXTERNLIBS}/pthreads/include")
-      FIND_LIBRARY(PTHREADW32_LIBRARY pthreadVC2.lib PATHS "$ENV{EXTERNLIBS}/pthreads/lib")
-    ENDIF(COVISE_BUILD)
-  ENDIF(MSVC)
-ENDIF(WIN32)
 
-IF(COVISE_BUILD)
-  ADD_DEFINITIONS(-DNO_CONFIG_H -DVV_COVISE)
-ENDIF(COVISE_BUILD)
+#---------------------------------------------------------------------------------------------------
+# Create config file
+#
 
-# Mandatory include dirs
-INCLUDE_DIRECTORIES(
-  ${OPENGL_INCLUDE_DIR}
-  ${PTHREAD_INCLUDE_DIR}
-  ${GLEW_INCLUDE_DIR}
-)
 
-# Optional include dirs
-IF(CG_FOUND)
-  INCLUDE_DIRECTORIES(${CG_INCLUDE_PATH})
-ENDIF(CG_FOUND)
+foreach(p ${__DESKVOX_USED_PACKAGES})
+  set(VV_HAVE_${p} 1)
+endforeach()
 
-IF(NORM_FOUND)
-  INCLUDE_DIRECTORIES(${NORM_INCLUDE_DIR})
-ENDIF(NORM_FOUND)
+configure_file(${VIRVO_INCLUDE_DIR}/virvo/vvconfig.h.in ${VIRVO_CONFIG_DIR}/vvconfig.h)
 
-SET(VIRVO_HEADERS
+
+#---------------------------------------------------------------------------------------------------
+# Add virvo library
+#
+
+
+add_definitions(-DHAVE_CONFIG_H)
+
+add_definitions(-DVV_LIBRARY_BUILD)
+
+if(BUILD_SHARED_LIBS)
+  add_definitions(-DVIRVO_EXPORT)
+endif()
+
+
+set(VIRVO_HEADERS
   vvbonjour/vvbonjour.h
   vvbonjour/vvbonjourbrowser.h
   vvbonjour/vvbonjourentry.h
   vvbonjour/vvbonjoureventloop.h
   vvbonjour/vvbonjourregistrar.h
   vvbonjour/vvbonjourresolver.h
+
   vvmultirend/vvtexmultirend.h
   vvmultirend/vvtexmultirendmngr.h
+
   vvaabb.h
   vvaabb.impl.h
+  vvarray.h
   vvbrick.h
   vvbrickrend.h
   vvbsptree.h
   vvbsptreevisitors.h
   vvcgprogram.h
   vvclock.h
+# vvclusterclient.h
+# vvclusterserver.h
   vvcolor.h
   vvcuda.h
   vvcudaimg.h
@@ -75,7 +93,6 @@ SET(VIRVO_HEADERS
   vvibrclient.h
   vvibrimage.h
   vvibrserver.h
-  vvvideo.h
   vvimage.h
   vvimageclient.h
   vvimageserver.h
@@ -99,8 +116,6 @@ SET(VIRVO_HEADERS
   vvserbrickrend.h
   vvshaderfactory.h
   vvshaderprogram.h
-  vvswitchrenderer.h
-  vvswitchrenderer.impl.h
   vvsllist.h
   vvsocket.h
   vvsocketio.h
@@ -110,8 +125,8 @@ SET(VIRVO_HEADERS
   vvsoftpar.h
   vvsoftper.h
   vvsoftrayrend.h
-  vvsoftvr.h
   vvsoftsw.h
+  vvsoftvr.h
   vvsphere.h
   vvstingray.h
   vvtcpserver.h
@@ -125,27 +140,32 @@ SET(VIRVO_HEADERS
   vvvecmath.h
   vvvecmath.impl.h
   vvvffile.h
+  vvvideo.h
   vvvirvo.h
   vvvisitor.h
   vvvoldesc.h
-  vvx11.h 
+  vvx11.h
 )
 
-SET(VIRVO_SOURCES
+set(VIRVO_SOURCES
   vvbonjour/vvbonjour.cpp
   vvbonjour/vvbonjourbrowser.cpp
   vvbonjour/vvbonjourentry.cpp
   vvbonjour/vvbonjoureventloop.cpp
   vvbonjour/vvbonjourregistrar.cpp
   vvbonjour/vvbonjourresolver.cpp
+
   vvmultirend/vvtexmultirend.cpp
   vvmultirend/vvtexmultirendmngr.cpp
+
   vvbrick.cpp
   vvbrickrend.cpp
   vvbsptree.cpp
   vvbsptreevisitors.cpp
   vvcgprogram.cpp
   vvclock.cpp
+# vvclusterclient.cpp
+# vvclusterserver.cpp
   vvcolor.cpp
   vvcuda.cpp
   vvcudaimg.cpp
@@ -160,7 +180,6 @@ SET(VIRVO_SOURCES
   vvibrclient.cpp
   vvibrimage.cpp
   vvibrserver.cpp
-  vvvideo.cpp
   vvimage.cpp
   vvimageclient.cpp
   vvimageserver.cpp
@@ -187,8 +206,8 @@ SET(VIRVO_SOURCES
   vvsoftpar.cpp
   vvsoftper.cpp
   vvsoftrayrend.cpp
-  vvsoftvr.cpp
   vvsoftsw.cpp
+  vvsoftvr.cpp
   vvsphere.cpp
   vvstingray.cpp
   vvtcpserver.cpp
@@ -201,137 +220,74 @@ SET(VIRVO_SOURCES
   vvudpsocket.cpp
   vvvecmath.cpp
   vvvffile.cpp
+  vvvideo.cpp
   vvvirvo.cpp
   vvvisitor.cpp
-  vvvoldesc.cpp 
+  vvvoldesc.cpp
 )
 
-ADD_DEFINITIONS(-DVV_LIBRARY_BUILD)
+deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
+  vvcudasw.cu
+  vvcudatransfunc.cu
+  vvrayrend.cu
+)
 
-IF(APPLE) 
-  SET(VIRVO_WINDOWING_SYSTEM "Cocoa" CACHE STRING "Available windowing systems for render contexts (Cocoa | X11)") 
-ELSEIF(WIN32)
-# TOOD: implement render contexts with WGL
-  SET(VIRVO_WINDOWING_SYSTEM "WGL" CACHE STRING "Available windowing systems for render contexts (WGL | X11")
-ELSE()
-  SET(VIRVO_WINDOWING_SYSTEM "X11" CACHE STRING "Available windowing systems for render contexts (X11)") 
-ENDIF()
+set(VIRVO_SHADERS
+  ../shader/vv_ibr.fsh
+  ../shader/vv_ibr.vsh
+  ../shader/vv_isect_geom_only.gsh
+  ../shader/vv_isect_geom_only.vsh
+  ../shader/vv_isect_vert_geom_combined.gsh
+  ../shader/vv_isect_vert_geom_combined.vsh
+  ../shader/vv_isect_vert_only.vsh
+  ../shader/vv_shader01.fsh
+  ../shader/vv_shader02.fsh
+  ../shader/vv_shader03.fsh
+  ../shader/vv_shader04.fsh
+  ../shader/vv_shader05.fsh
+  ../shader/vv_shader06.fsh
+  ../shader/vv_shader07.fsh
+  ../shader/vv_shader08.fsh
+  ../shader/vv_shader09.fsh
+  ../shader/vv_shader10.fsh
+  ../shader/vv_shader11.fsh
+  ../shader/vv_shader12.fsh
+  ../shader/vv_shader13.fsh
+)
 
-IF(APPLE)
-  IF(${VIRVO_WINDOWING_SYSTEM} STREQUAL "Cocoa")
-    ADD_DEFINITIONS(-DUSE_COCOA)
-    SET(VIRVO_HEADERS ${VIRVO_HEADERS} vvcocoaglcontext.h)
-    SET(VIRVO_SOURCES ${VIRVO_SOURCES} vvcocoaglcontext.mm)
-    FIND_LIBRARY(COCOA_LIBRARY Cocoa)
-    SET(EXTRA_LIBS ${EXTRA_LIBS} ${COCOA_LIBRARY})
-  ELSE(${VIRVO_WINDOWING_SYSTEM} STREQUAL "Cocoa")
-    IF(X11_FOUND)
-      ADD_DEFINITIONS(-DUSE_X11)
-    ENDIF(X11_FOUND)
-  ENDIF(${VIRVO_WINDOWING_SYSTEM} STREQUAL "Cocoa")
-ELSE(APPLE)
-  IF(${VIRVO_WINDOWING_SYSTEM} STREQUAL "X11")
-    IF(X11_FOUND)
-      ADD_DEFINITIONS(-DUSE_X11)
-    ENDIF(X11_FOUND)
-  ENDIF(${VIRVO_WINDOWING_SYSTEM} STREQUAL "X11")
-ENDIF(APPLE)
+if(APPLE)
+  set(VIRVO_HEADERS ${VIRVO_HEADERS} vvcocoaglcontext.h)
+  set(VIRVO_SOURCES ${VIRVO_SOURCES} vvcocoaglcontext.mm)
+endif()
 
-IF(FFMPEG_FOUND)
-  INCLUDE_DIRECTORIES(${FFMPEG_INCLUDE_PATHS})
-  SET(EXTRA_LIBS ${EXTRA_LIBS} ${FFMPEG_LIBRARIES})
 
-  SET_SOURCE_FILES_PROPERTIES(vvvideo.cpp PROPERTIES COMPILE_FLAGS "${WNO_ERROR_FLAG}")
-ENDIF(FFMPEG_FOUND)
+if(APPLE)
+  set(VIRVO_WINDOWING_SYSTEM "Cocoa" CACHE STRING "Available windowing systems for render contexts")
+  add_definitions(-DUSE_COCOA)
+elseif(WIN32)
+  set(VIRVO_WINDOWING_SYSTEM "WGL" CACHE STRING "Available windowing systems for render contexts")
+else()
+  set(VIRVO_WINDOWING_SYSTEM "X11" CACHE STRING "Available windowing systems for render contexts")
+  if(X11_FOUND)
+    add_definitions(-DUSE_X11)
+  endif()
+endif()
 
-IF(SNAPPY_FOUND)
-  INCLUDE_DIRECTORIES(${SNAPPY_INCLUDE_DIR})
-  SET(EXTRA_LIBS ${EXTRA_LIBS} ${SNAPPY_LIBRARIES})
-ENDIF(SNAPPY_FOUND)
 
-IF(VOLPACK_FOUND)
-  INCLUDE_DIRECTORIES(${VOLPACK_INCLUDE_DIR})
-  SET(EXTRA_LIBS ${EXTRA_LIBS} ${VOLPACK_LIBRARIES})
-ENDIF(VOLPACK_FOUND)
+if(WIN32)
+  deskvox_link_libraries(ws2_32.lib)
+endif()
 
-IF(CUDA_FOUND)
-  SET(VIRVO_CUDA_SOURCES
-    vvcudasw.cu
-    vvcudatransfunc.cu
-    vvrayrend.cu
-  )
+if(NOT WIN32)
+  if(BUILD_SHARED_LIBS)
+    deskvox_link_libraries(dl)
+  endif()
+endif()
 
-  SET(VIRVO_SOURCES ${VIRVO_SOURCES} ${VIRVO_CUDA_SOURCES})
-  SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
-  INCLUDE_DIRECTORIES(${CUDA_TOOLKIT_INCLUDE})
-  IF(COVISE_BUILD)
-    ADD_DEFINITIONS(-DHAVE_CUDA)
-  ENDIF(COVISE_BUILD)
-  CUDA_COMPILE(VIRVO_CUDA_OBJ ${VIRVO_CUDA_SOURCES} SHARED)
-  SET(EXTRA_LIBS ${EXTRA_LIBS} ${CUDA_LIBRARIES})
-ENDIF(CUDA_FOUND)
 
-# Optional libraries
-IF(CG_FOUND)
-  SET(EXTRA_LIBS ${EXTRA_LIBS} ${CG_LIBRARY} ${CG_GL_LIBRARY})
-ENDIF(CG_FOUND)
-
-IF(BONJOUR_FOUND)
-  INCLUDE_DIRECTORIES(${BONJOUR_INCLUDE_DIR})
-  SET(EXTRA_LIBS ${EXTRA_LIBS} ${BONJOUR_LIBRARIES})
-ENDIF(BONJOUR_FOUND)
-
-IF(NORM_FOUND)
-  SET(EXTRA_LIBS ${EXTRA_LIBS} ${NORM_LIBRARIES})
-  SET_SOURCE_FILES_PROPERTIES(vvmulticast.cpp PROPERTIES COMPILE_FLAGS "${WNO_ERROR_FLAG}")
-ENDIF(NORM_FOUND)
-
-IF(APPLE)
-  # hack to find glx on mac osx >= leopard
-  IF(EXISTS ${CMAKE_OSX_SYSROOT}/usr/X11/include/GL/glx.h)
-    SET(OPENGL_INCLUDE_DIR /usr/X11/include)
-    SET(OPENGL_gl_LIBRARY /usr/X11/lib/libGL.dylib)
-    SET(OPENGL_glu_LIBRARY /usr/X11/lib/libGLU.dylib)
-  ELSEIF(EXISTS ${CMAKE_OSX_SYSROOT}/usr/X11R6/include/GL/glx.h)
-    SET(OPENGL_INCLUDE_DIR /usr/X11R6/include)
-    SET(OPENGL_gl_LIBRARY /usr/X11R6/lib/libGL.dylib)
-    SET(OPENGL_glu_LIBRARY /usr/X11R6/lib/libGL.dylib)
-  ENDIF()
-  INCLUDE_DIRECTORIES(BEFORE SYSTEM ${OPENGL_INCLUDE_DIR})
-  SET(EXTRA_LIBS ${X11_X11_LIB} ${OPENGL_glu_LIBRARY} ${OPENGL_gl_LIBRARY} ${EXTRA_LIBS})
-ELSE(APPLE)
-  IF(X11_FOUND)
-    SET(EXTRA_LIBS ${EXTRA_LIBS} ${X11_LIBRARIES})
-  ENDIF(X11_FOUND)
-ENDIF(APPLE)
-
-IF(WIN32)
-  SET(EXTRA_LIBS ${EXTRA_LIBS} ws2_32.lib)
-ENDIF(WIN32)
-
-SET(VIRVO_EXTERNAL_LIBRARIES ${GLEW_LIBRARY} ${OPENGL_LIBRARIES} ${PTHREAD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS} ${EXTRA_LIBS})
-
-IF(COVISE_BUILD)
-  ADD_COVISE_LIBRARY(coVirvo SHARED ${VIRVO_SOURCES} ${VIRVO_HEADERS} ${VIRVO_CUDA_OBJ})
-  TARGET_LINK_LIBRARIES(coVirvo ${VIRVO_EXTERNAL_LIBRARIES})
-
-  COVISE_WNOERROR(coVirvo)
-
-  COVISE_INSTALL_TARGET(coVirvo)
-ELSE(COVISE_BUILD)
-  ADD_DEFINITIONS(-DNODLL) 
-  ADD_LIBRARY(virvo STATIC ${VIRVO_HEADERS} ${VIRVO_CONFIG_DIR}/${VIRVO_CONFIG_H} ${VIRVO_SOURCES} ${VIRVO_CUDA_OBJ})
-  TARGET_LINK_LIBRARIES(virvo ${VIRVO_EXTERNAL_LIBRARIES})
-
-  INSTALL(FILES ${VIRVO_CONFIG_DIR}/${VIRVO_CONFIG_H}
-    DESTINATION ${INSTALL_DIR_INCLUDE}/virvo
-  )
-
-  INSTALL(FILES ${VIRVO_HEADERS}
-    DESTINATION ${INSTALL_DIR_INCLUDE}/virvo
-  )
-
-  INSTALL(TARGETS virvo
-    ARCHIVE DESTINATION ${INSTALL_DIR_LIB}
-  )
-ENDIF(COVISE_BUILD)
+deskvox_add_library(virvo
+  ${VIRVO_HEADERS}
+  ${VIRVO_SOURCES}
+  ${VIRVO_CUDA_SOURCES}
+  ${VIRVO_SHADERS}
+)

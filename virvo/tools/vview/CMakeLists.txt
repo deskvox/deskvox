@@ -1,37 +1,18 @@
-IF(NOT GLUT_FOUND)
-  RETURN()
-ENDIF(NOT GLUT_FOUND)
+#find_package(GLUT_REQUIRED)
 
-SET(VVIEW_INC
+find_package(GLUT)
+if(NOT GLUT_FOUND)
+  message(STATUS "Note: not building vview (GLUT not found)")
+  return()
+endif()
+
+deskvox_use_package(GLUT)
+
+deskvox_add_tool(vview
+  vvobjview.cpp
   vvobjview.h
+  vvperformancetest.cpp
   vvperformancetest.h
+  vvview.cpp
   vvview.h
 )
-
-SET(VVIEW_SRC
-  vvobjview.cpp
-  vvperformancetest.cpp
-  vvview.cpp
-)
-
-IF(COVISE_BUILD)
-  #SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "$ENV{EXTERNLIBS}/glut")
-  #FIND_PACKAGE(GLUT)
-  USE_GLUT()
-
-  ADD_DEFINITIONS(-DVV_APPLICATION_BUILD)
-
-  ADD_COVISE_EXECUTABLE(vview ${VVIEW_SRC} ${VVIEW_INC})
-  TARGET_LINK_LIBRARIES(vview coVirvo ${EXTRA_LIBS}) # ${CMAKE_THREAD_LIBS_INIT} 
-
-  COVISE_INSTALL_TARGET(vview)
-ELSE(COVISE_BUILD)
-  INCLUDE_DIRECTORIES(${GLUT_INCLUDE_DIR})
-  INCLUDE_DIRECTORIES(../..)
-
-  ADD_EXECUTABLE(vview ${VVIEW_INC} ${VVIEW_SRC})
-
-  TARGET_LINK_LIBRARIES(vview ${GLUT_LIBRARIES})
-  TARGET_LINK_LIBRARIES(vview virvo)
-ENDIF(COVISE_BUILD)
-
