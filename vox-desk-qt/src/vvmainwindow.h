@@ -41,6 +41,8 @@ public:
 private:
   Ui_MainWindow* ui;
 
+  QList<QObject*> m_plugins;
+
   vvCanvas* _canvas;
   vvDimensionDialog* _dimensionDialog;
   vvMergeDialog* _mergeDialog;

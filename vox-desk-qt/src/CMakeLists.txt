@@ -11,6 +11,7 @@ SET(VOXDESK_QT_INC
   vvmainwindow.h
   vvmergedialog.h
   vvobjview.h
+  vvpluginutil.h
   vvscreenshotdialog.h
   vvtfdialog.h
 )
@@ -21,6 +22,7 @@ SET(VOXDESK_QT_SRC
   vvmainwindow.cpp
   vvmergedialog.cpp
   vvobjview.cpp
+  vvpluginutil.cpp
   vvscreenshotdialog.cpp
   vvtfdialog.cpp
 )
