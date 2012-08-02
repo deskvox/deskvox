@@ -28,6 +28,7 @@
 class vvCanvas;
 class vvDimensionDialog;
 class vvMergeDialog;
+class vvPlugin;
 class vvScreenshotDialog;
 class vvTFDialog;
 class Ui_MainWindow;
@@ -41,7 +42,7 @@ public:
 private:
   Ui_MainWindow* ui;
 
-  QList<QObject*> m_plugins;
+  QList<vvPlugin*> m_plugins;
 
   vvCanvas* _canvas;
   vvDimensionDialog* _dimensionDialog;

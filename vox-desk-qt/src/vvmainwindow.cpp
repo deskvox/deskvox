@@ -22,6 +22,7 @@
 #include "vvdimensiondialog.h"
 #include "vvmainwindow.h"
 #include "vvmergedialog.h"
+#include "vvplugin.h"
 #include "vvpluginutil.h"
 #include "vvscreenshotdialog.h"
 #include "vvtfdialog.h"
@@ -47,8 +48,18 @@ vvMainWindow::vvMainWindow(QWidget* parent)
 
   ui->setupUi(this);
 
+  // plugins
   m_plugins = vvPluginUtil::getAll();
-  std::cerr << m_plugins.size() << std::endl;
+  foreach (vvPlugin* plugin, m_plugins)
+  {
+    if (QDialog* dialog = plugin->dialog(this))
+    {
+      ui->menuPlugins->setEnabled(true);
+      QAction* dialogAction = new QAction(plugin->name(), ui->menuPlugins);
+      ui->menuPlugins->addAction(dialogAction);
+      connect(dialogAction, SIGNAL(triggered()), dialog, SLOT(open()));
+    }
+  }
 
   // widgets and dialogs
   _canvas = new vvCanvas(this);

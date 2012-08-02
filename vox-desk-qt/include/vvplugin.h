@@ -24,6 +24,11 @@
 #include <QtPlugin>
 #include <QString>
 
+class QDialog;
+class QWidget;
+
+/*! plugin interface for the DeskVOX application
+ */
 class vvPlugin
 {
 public:
@@ -31,7 +36,16 @@ public:
     : m_name(name) {}
   virtual ~vvPlugin() {}
 
+  /*! \brief  override this method if the plugin provides logic for rendering
+   */
   virtual void render() {}
+  /*! \brief  override this method if the plugin provides a dialog for the plugins menu
+   */
+  virtual QDialog* dialog(QWidget* parent = 0)
+  {
+    (void)parent;
+    return NULL;
+  }
   QString name() { return m_name; }
 protected:
   QString m_name;

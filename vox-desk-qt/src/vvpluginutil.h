@@ -23,12 +23,12 @@
 
 #include <QList>
 
-class QObject;
+class vvPlugin;
 
 class vvPluginUtil
 {
 public:
-  static QList<QObject*> getAll();
+  static QList<vvPlugin*> getAll();
 };
 
 #endif

@@ -18,6 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include "vvplugin.h"
 #include "vvpluginutil.h"
 
 #include <QDir>
@@ -29,7 +30,7 @@
 namespace
 {
 
-QList<QObject*> plugins;
+QList<vvPlugin*> plugins;
 
 void init()
 {
@@ -39,7 +40,7 @@ void init()
   }
 
   const char* pluginEnv = "VV_PLUGIN_PATH";
-  char* pluginPath = getenv(pluginEnv);std::cerr << pluginPath << std::endl;
+  char* pluginPath = getenv(pluginEnv);
 
   if (pluginPath != NULL)
   {
@@ -47,10 +48,14 @@ void init()
     foreach(QString filename, dir.entryList())
     {
       QPluginLoader loader(dir.absoluteFilePath(filename));
-      QObject* plugin = loader.instance();
-      if (plugin)
+      QObject* obj = loader.instance();
+      if (obj)
       {
-        plugins.append(plugin);
+        vvPlugin* plugin = dynamic_cast<vvPlugin*>(obj);
+        if (plugin)
+        {
+          plugins.append(plugin);
+        }
       }
     }
   }
@@ -62,7 +67,7 @@ void init()
 
 }
 
-QList<QObject*> vvPluginUtil::getAll()
+QList<vvPlugin*> vvPluginUtil::getAll()
 {
   init();
   return plugins;
