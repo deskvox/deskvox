@@ -106,6 +106,32 @@ endfunction()
 
 
 #---------------------------------------------------------------------------------------------------
+# deskvox_add_plugin(name, sources...)
+#
+
+
+function(deskvox_add_plugin name)
+  message(STATUS "Adding plugin " ${name} "...")
+
+  __deskvox_process_sources(${ARGN})
+
+  add_library(${name} ${__DESKVOX_PROCESSED_SOURCES})
+
+  set_target_properties(${name} PROPERTIES FOLDER "Plugins")
+
+  __deskvox_set_target_postfixes(${name})
+
+  target_link_libraries(${name} ${__DESKVOX_LINK_LIBRARIES})
+
+  install(TARGETS ${name}
+    RUNTIME DESTINATION plugins
+    LIBRARY DESTINATION plugins
+    ARCHIVE DESTINATION plugins
+  )
+endfunction()
+
+
+#---------------------------------------------------------------------------------------------------
 # __deskvox_add_executable(folder, name, sources...)
 #
 

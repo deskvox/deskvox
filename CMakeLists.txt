@@ -83,7 +83,7 @@ include(DeskvoxUsePackage)
 
 add_subdirectory(virvo)
 if(DESKVOX_BUILD_VOX_DESK)
-  add_subdirectory(vox-desk)
+  add_subdirectory(vox-desk-qt)
 endif()
 
 

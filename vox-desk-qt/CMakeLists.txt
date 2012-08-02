@@ -1,5 +1,3 @@
-ADD_DEFINITIONS(-DVV_APPLICATION_BUILD)
-
-INCLUDE_DIRECTORIES(include)
-ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(plugins)
+include_directories(include)
+add_subdirectory(src)
+add_subdirectory(plugins)
