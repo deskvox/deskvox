@@ -23,7 +23,7 @@
      <height>21</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu_File">
+   <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>&amp;File</string>
     </property>
@@ -41,7 +41,7 @@
     <addaction name="actionPreferences"/>
     <addaction name="actionQuit"/>
    </widget>
-   <widget class="QMenu" name="menu_Settings">
+   <widget class="QMenu" name="menuSettings">
     <property name="title">
      <string>&amp;Settings</string>
     </property>
@@ -55,7 +55,7 @@
     <addaction name="actionRegionOfInterest"/>
     <addaction name="actionBackgroundColor"/>
    </widget>
-   <widget class="QMenu" name="menu_Edit">
+   <widget class="QMenu" name="menuEdit">
     <property name="title">
      <string>&amp;Edit</string>
     </property>
@@ -65,7 +65,7 @@
     <addaction name="actionGeometry"/>
     <addaction name="actionMakeHeightField"/>
    </widget>
-   <widget class="QMenu" name="menu_View">
+   <widget class="QMenu" name="menuView">
     <property name="title">
      <string>&amp;View</string>
     </property>
@@ -81,7 +81,7 @@
     <addaction name="actionTimeSteps"/>
     <addaction name="actionDiagrams"/>
    </widget>
-   <widget class="QMenu" name="menu_Help">
+   <widget class="QMenu" name="menuPlugins">
     <property name="enabled">
      <bool>false</bool>
     </property>
@@ -89,7 +89,7 @@
      <string>&amp;Plugins</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menu_Help_2">
+   <widget class="QMenu" name="menuHelp">
     <property name="enabled">
      <bool>false</bool>
     </property>
@@ -97,12 +97,12 @@
      <string>&amp;Help</string>
     </property>
    </widget>
-   <addaction name="menu_File"/>
-   <addaction name="menu_Settings"/>
-   <addaction name="menu_Edit"/>
-   <addaction name="menu_View"/>
-   <addaction name="menu_Help"/>
-   <addaction name="menu_Help_2"/>
+   <addaction name="menuFile"/>
+   <addaction name="menuSettings"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuView"/>
+   <addaction name="menuPlugins"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionLoadVolume">
