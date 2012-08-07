@@ -5,58 +5,63 @@
 #pragma once
 
 
-#cmakedefine VV_HAVE_BONJOUR
-#cmakedefine VV_HAVE_BOOST
-#cmakedefine VV_HAVE_CG
-#cmakedefine VV_HAVE_CUDA
-#cmakedefine VV_HAVE_FFMPEG
-#cmakedefine VV_HAVE_GLEW
-#cmakedefine VV_HAVE_NORM
-#cmakedefine VV_HAVE_OPENGL
-#cmakedefine VV_HAVE_PROTOKIT
-#cmakedefine VV_HAVE_PTHREADS
-#cmakedefine VV_HAVE_SNAPPY
-#cmakedefine VV_HAVE_VOLPACK
-#cmakedefine VV_HAVE_X11
+#define VV_VERSION_MAJOR @VIRVO_VERSION_MAJOR@
+#define VV_VERSION_MINOR @VIRVO_VERSION_MINOR@
+#define VV_VERSION "@VIRVO_VERSION@"
+
+
+#cmakedefine01 VV_HAVE_BONJOUR
+#cmakedefine01 VV_HAVE_BOOST
+#cmakedefine01 VV_HAVE_CG
+#cmakedefine01 VV_HAVE_CUDA
+#cmakedefine01 VV_HAVE_FFMPEG
+#cmakedefine01 VV_HAVE_GLEW
+#cmakedefine01 VV_HAVE_NORM
+#cmakedefine01 VV_HAVE_OPENGL
+#cmakedefine01 VV_HAVE_PROTOKIT
+#cmakedefine01 VV_HAVE_PTHREADS
+#cmakedefine01 VV_HAVE_SNAPPY
+#cmakedefine01 VV_HAVE_VOLPACK
+#cmakedefine01 VV_HAVE_X11
 
 
 // compatability...
-#ifdef VV_HAVE_BONJOUR
+#if VV_HAVE_BONJOUR
 #define HAVE_BONJOUR
 #endif
-#ifdef VV_HAVE_BOOST
+#if VV_HAVE_BOOST
 #define HAVE_BOOST
 #endif
-#ifdef VV_HAVE_CG
+#if VV_HAVE_CG
 #define HAVE_CG
 #endif
-#ifdef VV_HAVE_CUDA
+#if VV_HAVE_CUDA
 #define HAVE_CUDA
 #endif
-#ifdef VV_HAVE_FFMPEG
+#if VV_HAVE_FFMPEG
 #define HAVE_FFMPEG
 #endif
-#ifdef VV_HAVE_GLEW
+#if VV_HAVE_GLEW
 #define HAVE_GLEW
 #endif
-#ifdef VV_HAVE_NORM
+#if VV_HAVE_NORM
 #define HAVE_NORM
 #endif
-#ifdef VV_HAVE_OPENGL
+#if VV_HAVE_OPENGL
 #define HAVE_OPENGL
 #endif
-#ifdef VV_HAVE_PROTOKIT
+#if VV_HAVE_PROTOKIT
 #define HAVE_PROTOKIT
 #endif
-#ifdef VV_HAVE_PTHREADS
+#if VV_HAVE_PTHREADS
 #define HAVE_PTHREAD
 #endif
-#ifdef VV_HAVE_SNAPPY
+#if VV_HAVE_SNAPPY
 #define HAVE_SNAPPY
 #endif
-#ifdef VV_HAVE_VOLPACK
+#if VV_HAVE_VOLPACK
 #define HAVE_VOLPACK
 #endif
-#ifdef VV_HAVE_X11
+#if VV_HAVE_X11
 #define HAVE_X11
 #endif
