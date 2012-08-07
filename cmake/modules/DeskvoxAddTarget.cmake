@@ -48,7 +48,7 @@ function(__deskvox_process_sources)
 
       if(ext MATCHES "\\.(h|hpp|hxx|inl|inc)")
         set(group "include")
-      elseif(ext MATCHES "\\.(c|cpp|cxx)")
+      elseif(ext MATCHES "\\.(c|cu|cpp|cxx|mm)")
         set(group "src")
       else()
         set(group "resources")
@@ -100,6 +100,11 @@ function(deskvox_add_library name)
   message(STATUS "Adding library " ${name} "...")
 
   __deskvox_process_sources(${ARGN})
+
+  # Hide all symbols by default
+  if(DESKVOX_COMPILER_IS_GCC_COMPATIBLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+  endif()
 
   add_library(${name} ${__DESKVOX_PROCESSED_SOURCES})
 
