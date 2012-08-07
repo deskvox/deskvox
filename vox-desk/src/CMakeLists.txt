@@ -5,6 +5,9 @@ deskvox_use_package(FOX)
 deskvox_use_package(OpenGL)
 
 add_definitions(-DVV_APPLICATION_BUILD)
+if(NOT BUILD_SHARED_LIBS)
+  add_definitions(-DVIRVO_STATIC)
+endif()
 
 include_directories(
   ${VIRVO_CONFIG_DIR}

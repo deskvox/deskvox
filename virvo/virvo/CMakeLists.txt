@@ -48,8 +48,10 @@ add_definitions(-DHAVE_CONFIG_H)
 
 add_definitions(-DVV_LIBRARY_BUILD)
 
-if(BUILD_SHARED_LIBS)
-  add_definitions(-DVIRVO_EXPORT)
+if(NOT BUILD_SHARED_LIBS)
+  add_definitions(-DVIRVO_STATIC)
+else()
+  add_definitions(-DVIRVO_EXPORTS)
 endif()
 
 
@@ -275,7 +277,7 @@ endif()
 
 
 if(WIN32)
-  deskvox_link_libraries(ws2_32.lib)
+  deskvox_link_libraries(ws2_32)
 endif()
 
 if(NOT WIN32)

@@ -21,26 +21,33 @@
 #ifndef VV_EXPORT_H
 #define VV_EXPORT_H
 
-// ---------------------------------------------------------------------- //
-
-// defines symbol visibility/exports
-#ifndef VIRVOEXPORT
-# ifndef NODLL
-#  if defined (_WIN32)
-#   if defined (VIRVO_EXPORT)
-#    define VIRVOEXPORT __declspec(dllexport)
-#   else
-#    define VIRVOEXPORT __declspec(dllimport)
-#   endif
-#  elif defined(__GNUC__) && __GNUC__ >= 4
-#   define VIRVOEXPORT __attribute__ ((visibility("default")))
-#  else
-#   define VIRVOEXPORT
-#  endif
-# else
-#  define VIRVOEXPORT
-# endif
+#ifdef _MSC_VER
+# define VV_DLLEXPORT __declspec(dllexport)
+# define VV_DLLIMPORT __declspec(dllimport)
+# define VV_DLLHIDDEN
+#elif defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 4)
+# define VV_DLLEXPORT __attribute__((visibility("default")))
+# define VV_DLLIMPORT __attribute__((visibility("default")))
+# define VV_DLLHIDDEN __attribute__((visibility("hidden")))
+#else
+# define VV_DLLEXPORT
+# define VV_DLLIMPORT
+# define VV_DLLHIDDEN
 #endif
 
-#endif                                            /* VV_EXPORT_H */
-// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
+#ifndef VIRVO_STATIC
+# ifdef VIRVO_EXPORTS
+#   define VVAPI VV_DLLEXPORT
+# else
+#   define VVAPI VV_DLLIMPORT
+# endif
+# define VVLOCAL VV_DLLHIDDEN
+#else
+# define VVAPI
+# define VVLOCAL
+#endif
+
+// compatibility...
+#define VIRVOEXPORT VVAPI
+
+#endif
