@@ -30,7 +30,7 @@ class vvImage;
 class VIRVOEXPORT vvImageServer : public vvRemoteServer
 {
 public:
-  vvImageServer(vvSocketIO *socket);
+  vvImageServer(vvSocket *socket);
   ~vvImageServer();
 
 private:

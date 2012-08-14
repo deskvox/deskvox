@@ -28,7 +28,7 @@
 #include "vvdebugmsg.h"
 #include "vvimage.h"
 
-vvImageServer::vvImageServer(vvSocketIO *socket)
+vvImageServer::vvImageServer(vvSocket *socket)
   : vvRemoteServer(socket)
   , _image(NULL)
   , _pixels(NULL)

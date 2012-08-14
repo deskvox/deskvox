@@ -332,21 +332,20 @@ vvServer::vvRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock, std:
   res.renderer = NULL;
   res.vd       = NULL;
 
-  // TODO: do not pass SocketIO to RemoteServer and delete it after use
-  vvSocketIO *sockio = new vvSocketIO(sock);
+  vvSocketIO sockio = vvSocketIO(sock);
 
-  sockio->putBool(true);  // let client know we are ready
+  sockio.putBool(true);  // let client know we are ready
 
   int getType;
-  sockio->getInt32(getType);
+  sockio.getInt32(getType);
   vvRenderer::RendererType rType = (vvRenderer::RendererType)getType;
   switch(rType)
   {
     case vvRenderer::REMOTE_IMAGE:
-      res.server = new vvImageServer(sockio);
+      res.server = new vvImageServer(sock);
       break;
     case vvRenderer::REMOTE_IBR:
-      res.server = new vvIbrServer(sockio);
+      res.server = new vvIbrServer(sock);
       break;
     default:
       cerr << "Unknown remote rendering type " << rType << std::endl;

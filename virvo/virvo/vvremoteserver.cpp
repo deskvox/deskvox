@@ -33,9 +33,10 @@
 using std::cerr;
 using std::endl;
 
-vvRemoteServer::vvRemoteServer(vvSocketIO *socket)
-  : _socketio(socket), _renderContext(NULL), _loadVolumeFromFile(false), _codetype(0)
+vvRemoteServer::vvRemoteServer(vvSocket *socket)
+  : _renderContext(NULL), _loadVolumeFromFile(false), _codetype(0)
 {
+  _socketio = new vvSocketIO(socket);
   co = NULL;
   vvDebugMsg::msg(1, "vvRemoteServer::vvRemoteServer()");
   initSocket();
@@ -45,6 +46,7 @@ vvRemoteServer::~vvRemoteServer()
 {
   vvDebugMsg::msg(1, "vvRemoteServer::~vvRemoteServer()");
 
+  delete _socketio;
   delete _renderContext;
   delete co;
 }

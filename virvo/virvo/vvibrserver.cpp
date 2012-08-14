@@ -35,7 +35,7 @@
 #include "vvconfig.h"
 #endif
 
-vvIbrServer::vvIbrServer(vvSocketIO *socket)
+vvIbrServer::vvIbrServer(vvSocket *socket)
 : vvRemoteServer(socket)
 , _ibrMode(vvRenderer::VV_GRADIENT)
 , _image(NULL)
