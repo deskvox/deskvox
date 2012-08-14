@@ -60,8 +60,15 @@ private:
 
     bool operator<(vvRequest other)
     {
-      // TODO: Fine adjust this
-      return priority < other.priority;
+      if(priority != other.priority)
+      {
+        return priority < other.priority;
+      }
+      else
+      {
+        // sort higher requirement-requests first
+        return requirements > other.requirements;
+      }
     }
   };
 
