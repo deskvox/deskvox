@@ -29,6 +29,7 @@
 #ifdef HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjourentry.h>
 #endif // HAVE_BONJOUR
+#include <pthread.h>
 
 #include "vvserver.h"
 
