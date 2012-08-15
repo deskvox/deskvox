@@ -166,9 +166,11 @@ void vvServer::displayHelpInfo()
   cerr << " off (default)" << endl;
   cerr << endl;
 #endif
+#ifndef _WIN32
   cerr << "-daemon" << endl;
   cerr << " Start in background as a daemon" << endl;
   cerr << endl;
+#endif
   cerr << "-debug" << endl;
   cerr << " Set debug level" << endl;
   cerr << endl;
