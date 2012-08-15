@@ -31,9 +31,9 @@
 #endif // HAVE_BONJOUR
 
 #include "vvserver.h"
-#include "vvsimpleserver.h"
 
 // forward declarations
+class vvSimpleServer;
 class vvTcpSocket;
 class vvBonjourBrowser;
 

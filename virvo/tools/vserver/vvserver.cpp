@@ -43,7 +43,6 @@
 
 #include <iostream>
 #include <limits>
-#include <pthread.h>
 
 #ifndef _WIN32
 #include <signal.h>

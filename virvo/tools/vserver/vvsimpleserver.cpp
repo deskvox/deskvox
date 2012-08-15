@@ -39,7 +39,6 @@
 #include <virvo/vvvoldesc.h>
 
 #include <iostream>
-#include <limits>
 #include <pthread.h>
 
 vvSimpleServer::vvSimpleServer(bool useBonjour)
