@@ -37,6 +37,7 @@
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvvoldesc.h>
+#include <virvo/vvtcpsocket.h>
 
 #include <iostream>
 #include <pthread.h>

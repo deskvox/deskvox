@@ -35,6 +35,7 @@
 #include <virvo/vvsocketio.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvsocketmap.h>
+#include <virvo/vvtcpsocket.h>
 
 vvResourceManager::vvResourceManager()
   : vvServer()
@@ -170,7 +171,9 @@ bool vvResourceManager::initNextJob()
         // Update Gpu-Status of used Resrources
         for(std::vector<vvResource*>::iterator usedRes = job->resources.begin(); usedRes != job->resources.end(); usedRes++)
         {
+#ifdef HAVE_BONJOUR
           (*usedRes)->ginfos = getResourceGpuInfos((*usedRes)->bonjourEntry);
+#endif
         }
         return true;
       }
