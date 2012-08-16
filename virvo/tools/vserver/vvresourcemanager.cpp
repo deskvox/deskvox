@@ -496,11 +496,13 @@ uint vvResourceManager::getFreeResourceCount()
     }
     else
     {
+#ifdef HAVE_BONJOUR
       std::ostringstream msg;
       msg << "vvResourceManager::getFreeResourceCount() Resource on "
           << (*freeRes)->bonjourEntry.getServiceName()
           << "is out of memory";
       vvDebugMsg::msg(3, msg.str().c_str());
+#endif
     }
   }
 
@@ -526,11 +528,13 @@ vvResourceManager::vvResource* vvResourceManager::getFreeResource()
     else
     {
       freeRes++;
+#ifdef HAVE_BONJOUR
       std::ostringstream msg;
       msg << "vvResourceManager::getFreeResourceCount() Resource on "
           << (*freeRes)->bonjourEntry.getServiceName()
           << "is out of memory";
       vvDebugMsg::msg(3, msg.str().c_str());
+#endif
     }
   }
 
