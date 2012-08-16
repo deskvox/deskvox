@@ -91,7 +91,7 @@ private:
   vvVisitor* _visitor;
   vvBspData _data;
 
-  void buildHierarchy(vvBspNode* node, int leafIdx);
+  void buildHierarchy(vvBspNode* node, uint leafIdx);
 
   /*!
    by example: load balance == { 0.5, 0.4, 0.1 }

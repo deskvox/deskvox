@@ -130,12 +130,12 @@ vvSerBrickRend::ErrorType vvSerBrickRend::createRenderers()
   }
   _renderers.clear();
 
-  for (int i = 0; i < _bspTree->getLeafs().size(); ++i)
+  for (uint i = 0; i < _bspTree->getLeafs().size(); ++i)
   {
     _renderers.push_back(vvRendererFactory::create(vd, *this, _type.c_str(), _options));
   }
 
-  for (int i = 0; i < _renderers.size(); ++i)
+  for (uint i = 0; i < _renderers.size(); ++i)
   {
     const vvAABBi aabb = _bspTree->getLeafs().at(i)->getAabb();
 

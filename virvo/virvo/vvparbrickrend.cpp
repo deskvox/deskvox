@@ -102,7 +102,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   // determine the number of the thread that reuses the main context
   int reuser = -1;
   std::vector<vvParBrickRend::Param>::const_iterator it;
-  int i;
+  uint i;
   for (it = params.begin(), i = 0; it != params.end() && i < params.size(); ++it, ++i)
   {
     vvContextOptions co;
@@ -140,7 +140,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   _width = vp[2];
   _height = vp[3];
 
-  for (int i = 0; i < params.size(); ++i)
+  for (uint i = 0; i < params.size(); ++i)
   {
     Thread* thread = new Thread;
     thread->id = i;
@@ -171,7 +171,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
     vvGLTools::getModelviewMatrix(&thread->mv);
     vvGLTools::getProjectionMatrix(&thread->pr);
 
-    if (i == reuser)
+    if ((int)i == reuser)
     {
       _thread = thread;
       _thread->renderer = vvRendererFactory::create(vd, *this, _type.c_str(), _options);

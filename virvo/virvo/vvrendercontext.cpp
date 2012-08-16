@@ -145,7 +145,7 @@ void vvRenderContext::swapBuffers() const
   }
 }
 
-void vvRenderContext::resize(const int w, const int h)
+void vvRenderContext::resize(const uint w, const uint h)
 {
   vvDebugMsg::msg(3, "vvRenderContext::resize()");
 
