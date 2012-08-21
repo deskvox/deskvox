@@ -114,6 +114,22 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
         goOn = false;
       }
       break;
+    case virvo::Statistics:
+      {
+        float free = 0.0f;
+        float total = 0.0f;
+        for(std::vector<vvResource*>::iterator res = _resources.begin(); res != _resources.end(); res++)
+        {
+          for(std::vector<vvGpu::vvGpuInfo>::iterator ginfo = (*res)->ginfos.begin(); ginfo != (*res)->ginfos.end(); ginfo++)
+          {
+            free += (*ginfo).freeMem;
+            total += (*ginfo).totalMem;
+          }
+        }
+        sockio.putFloat(free/total);
+        sockio.putInt32(_resources.size());
+      }
+      break;
     case virvo::GpuInfo:
     default:
       // TODO: implement this case for ResourceManager too if reasonable

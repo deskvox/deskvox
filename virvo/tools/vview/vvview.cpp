@@ -689,7 +689,8 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   {
     vvSocketIO socketIO = vvSocketIO(sockets[0]);
 
-/*    socketIO.putInt32(virvo::GpuInfo);
+    /* uncomment to test GpuInfo-event
+    socketIO.putInt32(virvo::GpuInfo);
     std::vector<vvGpu::vvGpuInfo> ginfos;
     socketIO.getGpuInfos(ginfos);
     std::cerr << "Number of gpus: " << ginfos.size() << std::endl;
@@ -697,7 +698,17 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     {
       std::cerr << "free memory on server: "  << (*ginfo).freeMem << std::endl;
       std::cerr << "total memory on server: " << (*ginfo).totalMem << std::endl;
-    }*/
+    }
+    */
+
+    /* uncomment to test statistics-event
+    socketIO.putInt32(virvo::Statistics);
+    float wload;
+    socketIO.getFloat(wload);
+    int resCount;
+    socketIO.getInt32(resCount);
+    std::cerr << "Total work-load " << wload << " caused with " << resCount << " resources." << endl;
+    */
 
     socketIO.putInt32(virvo::Render);
     bool serverRdy;
