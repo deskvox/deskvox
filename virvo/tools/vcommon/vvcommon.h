@@ -27,7 +27,7 @@ namespace virvo
   {
     GpuInfo,
     Render,
-    Status,
+    Statistics,
     Exit
   };
 }
