@@ -71,7 +71,6 @@ SET(VIRVO_HEADERS
   vvfileio.h
   vvglslprogram.h
   vvgltools.h
-  vvgpu.h
   vvibr.h
   vvibrclient.h
   vvibrimage.h
@@ -97,6 +96,7 @@ SET(VIRVO_HEADERS
   vvrendererfactory.h
   vvrendertarget.h
   vvrendervp.h
+  vvrequestmanagement.h
   vvserbrickrend.h
   vvshaderfactory.h
   vvshaderprogram.h
@@ -157,7 +157,6 @@ SET(VIRVO_SOURCES
   vvfileio.cpp
   vvglslprogram.cpp
   vvgltools.cpp
-  vvgpu.cpp
   vvibr.cpp
   vvibrclient.cpp
   vvibrimage.cpp
@@ -178,6 +177,7 @@ SET(VIRVO_SOURCES
   vvrendererfactory.cpp
   vvrendertarget.cpp
   vvrendervp.cpp
+  vvrequestmanagement.cpp
   vvserbrickrend.cpp
   vvshaderfactory.cpp
   vvshaderprogram.cpp

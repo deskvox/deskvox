@@ -18,13 +18,15 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_GPU_H_
-#define _VV_GPU_H_
+#ifndef _VV_REQUESTMANAGEMENT_H_
+#define _VV_REQUESTMANAGEMENT_H_
 
 #include <string>
 #include <vector>
 
 #include "vvinttypes.h"
+#include "vvrenderer.h"
+#include "vvtcpsocket.h"
 
 class vvGpu
 {
@@ -59,6 +61,37 @@ private:
   class GpuData;
 
   GpuData *_data;
+};
+
+struct vvRequest
+{
+  vvRequest()
+  {
+    type = vvRenderer::TEXREND;
+    niceness = 0;
+    nodes.push_back(1);
+    sock = NULL;
+  }
+
+  vvRenderer::RendererType type;  ///< requested rendering type
+  int         niceness;           ///< niceness priority ranging from -20 to 20
+  typedef int numgpus;
+  std::vector<numgpus> nodes;     ///< requested amount of nodes with corresponding number of gpus
+
+  vvTcpSocket *sock;              ///< socket to requesting client
+
+  bool operator<(vvRequest other)
+  {
+    if(niceness != other.niceness)
+    {
+      return niceness < other.niceness;
+    }
+    else
+    {
+      // sort more note-requests first
+      return nodes.size() > other.nodes.size();
+    }
+  }
 };
 
 #endif

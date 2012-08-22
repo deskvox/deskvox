@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "vvexport.h"
-#include "vvgpu.h"
+#include "vvrequestmanagement.h"
 #include "vvsocket.h"
 #include "vvinttypes.h"
 #include "vvvecmath.h"
@@ -199,6 +199,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putGpuInfo(const vvGpu::vvGpuInfo& ginfo);
     vvSocket::ErrorType getGpuInfos(std::vector<vvGpu::vvGpuInfo>& ginfos);
     vvSocket::ErrorType putGpuInfos(const std::vector<vvGpu::vvGpuInfo>& ginfos);
+    vvSocket::ErrorType getRequest(vvRequest& req);
+    vvSocket::ErrorType putRequest(const vvRequest& req);
 
     vvSocket* getSocket() const;
 private:

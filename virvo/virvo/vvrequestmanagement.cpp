@@ -19,7 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvdebugmsg.h"
-#include "vvgpu.h"
+#include "vvrequestmanagement.h"
 #include "vvrendercontext.h"
 #include "vvtoolshed.h"
 
@@ -214,5 +214,4 @@ vvGpu& vvGpu::operator = (const vvGpu& src)
   (void)src;
   return *this;
 }
-
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

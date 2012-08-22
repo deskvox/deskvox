@@ -69,9 +69,6 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
 
   pthread_mutex_lock(&_requestsMutex);
 
-  vvRequest *req = new vvRequest;
-  req->sock = sock;
-
   vvSocketIO sockio = vvSocketIO(sock);
 
   bool goOn = true;
@@ -90,13 +87,11 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
       {
         vvSocket::ErrorType err;
         sockio.putBool(false);
-        err = sockio.getInt32(req->priority);
-        if(err != vvSocket::VV_OK)
-        {
-          cerr << "incoming connection socket error" << endl;
-          goto abort;
-        }
-        err = sockio.getInt32(req->requirements);
+
+        vvRequest *req = new vvRequest;
+        req->sock = sock;
+
+        err = sockio.getRequest(*req);
         if(err != vvSocket::VV_OK)
         {
           cerr << "incoming connection socket error" << endl;
@@ -106,7 +101,7 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
         if(vvDebugMsg::getDebugLevel() >= 3)
         {
           std::stringstream errmsg;
-          errmsg << "Incoming request has priority: " << req->priority << " and requirements: " << req->requirements;
+          errmsg << "Incoming request has niceness: " << req->niceness << " and number of nodes: " << req->nodes.size();
           vvDebugMsg::msg(0, errmsg.str().c_str());
         }
 
@@ -154,13 +149,13 @@ bool vvResourceManager::initNextJob()
   vvJob *job = NULL;
   if(_requests.size() > 0 && _resources.size() > 0)
   {
-    if(getFreeResourceCount() >= _requests.front()->requirements)
+    if(getFreeResourceCount() >= _requests.front()->nodes.size())
     {
       job = new vvJob;
       job->request = _requests.front();
       _requests.erase(_requests.begin());
 
-      for(int i=0; i<job->request->requirements; i++)
+      for(int i=0; i<job->request->nodes.size(); i++)
       {
         vvResource *freeRes = getFreeResource();
         if(freeRes != NULL)
@@ -175,7 +170,7 @@ bool vvResourceManager::initNextJob()
       }
 
       // job ready to start?
-      if(job->resources.size() == job->request->requirements)
+      if(job->resources.size() == job->request->nodes.size())
       {
         pthread_t threadID;
         pthread_create(&threadID, NULL, processJob, job);
@@ -436,10 +431,10 @@ void * vvResourceManager::processJob(void * param)
     vvRendererFactory::Options opt;
     opt["sockets"] = sockstr.str();
 
-    if(job->request->requirements > 1) // brick rendering case
+    if(job->request->nodes.size() > 1) // brick rendering case
     {
       std::stringstream brickNum;
-      brickNum << job->request->requirements;
+      brickNum << job->request->nodes.size();
       opt["bricks"] = brickNum.str();
       opt["brickrenderer"] = "image";
 
@@ -455,7 +450,6 @@ void * vvResourceManager::processJob(void * param)
     }
   }
 
-  cerr << "remote rendering process Events..." << endl;
   if(res.renderer && res.server && res.vd)
   {
     while(true)

@@ -1726,6 +1726,76 @@ vvSocket::ErrorType vvSocketIO::putGpuInfos(const std::vector<vvGpu::vvGpuInfo>&
 }
 
 //----------------------------------------------------------------------------
+/** Reads a vvRequest from the socket.
+  @param req request objecto to which read data will be saved
+*/
+vvSocket::ErrorType vvSocketIO::getRequest(vvRequest& req)
+{
+  if(_socket)
+  {
+    vvSocket::ErrorType retval;
+
+    retval = getInt32(req.niceness);
+    if(retval != vvSocket::VV_OK) return retval;
+
+    int type;
+    retval = getInt32(type);
+    if(retval != vvSocket::VV_OK) return retval;
+    req.type = (vvRenderer::RendererType)type;
+
+    int numnodes = 0;
+    retval = getInt32(numnodes);
+    if(retval != vvSocket::VV_OK) return retval;
+
+    for(int i=0;i<numnodes;i++)
+    {
+      int numgpus = 0;
+      retval = getInt32(numgpus);
+      if(retval != vvSocket::VV_OK) return retval;
+
+      req.nodes.push_back(numgpus);
+    }
+    return vvSocket::VV_OK;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Writes a vvRequest to the socket.
+  @param req vvRequest which will be written to socket
+*/
+vvSocket::ErrorType vvSocketIO::putRequest(const vvRequest& req)
+{
+  if(_socket)
+  {
+    vvSocket::ErrorType retval;
+
+    retval = putInt32(req.niceness);
+    if(retval != vvSocket::VV_OK) return retval;
+
+    retval = putInt32((int)req.type);
+    if(retval != vvSocket::VV_OK) return retval;
+
+    retval = putInt32(req.nodes.size());
+    if(retval != vvSocket::VV_OK) return retval;
+
+    for(int i=0; i<req.nodes.size(); i++)
+    {
+      retval = putInt32(req.nodes[i]);
+      if(retval != vvSocket::VV_OK) return retval;
+    }
+    return vvSocket::VV_OK;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
 /** get assigned vvSocket
 */
 vvSocket* vvSocketIO::getSocket() const

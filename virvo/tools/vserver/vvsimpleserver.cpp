@@ -33,7 +33,7 @@
 #include <vvcommon.h>
 
 #include <virvo/vvdebugmsg.h>
-#include <virvo/vvgpu.h>
+#include <virvo/vvrequestmanagement.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvvoldesc.h>

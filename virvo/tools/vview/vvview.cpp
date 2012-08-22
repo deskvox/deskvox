@@ -54,7 +54,7 @@ using std::ios;
 #include <vvcommon.h>
 #include <virvo/vvvirvo.h>
 #include <virvo/vvgltools.h>
-#include <virvo/vvgpu.h>
+#include <virvo/vvrequestmanagement.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>
 #include <virvo/vvclock.h>
@@ -685,9 +685,9 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     opt["brickrenderer"] = "image";
   }
 
-  if(sockets.size() > 0)
+  for(int i = 0; i<sockets.size();i++)
   {
-    vvSocketIO socketIO = vvSocketIO(sockets[0]);
+    vvSocketIO socketIO = vvSocketIO(sockets[i]);
 
     /* uncomment to test GpuInfo-event
     socketIO.putInt32(virvo::GpuInfo);
@@ -715,11 +715,8 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     socketIO.getBool(serverRdy);
     if(!serverRdy)
     {
-      // additional resource manager details requested
-      socketIO.putInt32(0); // priority
-
-      // temp: tell rm that we want brick rendering with x nodes
-      socketIO.putInt32(1); //(1); requirements
+      vvRequest req;
+      socketIO.putRequest(req);
 
       socketIO.getBool(serverRdy);
     }

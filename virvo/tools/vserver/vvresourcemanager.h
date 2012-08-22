@@ -25,7 +25,7 @@
 #include "vvconfig.h"
 #endif
 
-#include <virvo/vvgpu.h>
+#include <virvo/vvrequestmanagement.h>
 #ifdef HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjourentry.h>
 #endif // HAVE_BONJOUR
@@ -50,29 +50,8 @@ class vvBonjourBrowser;
  * @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
  */
 class vvResourceManager : public vvServer
-{
+{  
 private:
-  struct vvRequest
-  {
-    int         priority;
-    int         type;
-    int         requirements;
-    vvTcpSocket *sock;
-
-    bool operator<(vvRequest other)
-    {
-      if(priority != other.priority)
-      {
-        return priority < other.priority;
-      }
-      else
-      {
-        // sort higher requirement-requests first
-        return requirements > other.requirements;
-      }
-    }
-  };
-
   struct vvResource
   {
   public:
