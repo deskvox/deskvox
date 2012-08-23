@@ -24,6 +24,7 @@
 #include "vvaabb.h"
 #include "vvvecmath.h"
 #include "vvvisitor.h"
+#include "vvinttypes.h"
 
 #include <vector>
 
