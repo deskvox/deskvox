@@ -248,7 +248,7 @@ class VIRVOEXPORT vvToolshed
     static float   meanAbsError(float*, float*, const int);
     static float   meanError(float*, float*, const int);
     static float   meanSqrError(float*, float*, const int);
-    static char*   file2string(const char* filename);
+    static std::string file2string(const std::string& filename);
     static int     string2Int(const char* str);
     static void    pixels2Ppm(uchar* pixels, const int width, const int height,
                               const char* fileName, const Format format = VV_RGBA);

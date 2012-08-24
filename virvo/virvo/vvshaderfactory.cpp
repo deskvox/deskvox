@@ -152,22 +152,23 @@ vvShaderProgram* vvShaderFactory::createProgram(const std::string& vert, const s
 
 bool vvShaderFactory::loadFileStrings()
 {
-  bool hit = true;
-  for(int i=0;i<3;i++)
+  try
   {
-    _fileString[i].clear();;
+    for (size_t i = 0; i < 3; ++i)
+    {
+      if (_shaderName[i].empty())
+        _fileString[i] = "";
+      else
+        _fileString[i] = vvToolshed::file2string(_shaderDir + _shaderName[i]);
+    }
 
-    if(_shaderName[i].empty())
-      continue;
-
-    std::string filePath = _shaderDir+_shaderName[i];
-    char* tempString = vvToolshed::file2string(filePath.c_str());
-    if(tempString)
-      _fileString[i] = tempString;
-    else
-      hit = false;
+    return true;
   }
-  return hit;
+  catch (std::exception& e)
+  {
+    std::cerr << e.what() << std::endl;
+    return false;
+  }
 }
 
 const string vvShaderFactory::getShaderDir()
