@@ -200,7 +200,7 @@ void vvBspTree::setVisitor(vvVisitor* visitor)
   _visitor = visitor;
 }
 
-void vvBspTree::buildHierarchy(vvBspNode* node, const int leafIdx)
+void vvBspTree::buildHierarchy(vvBspNode* node, const uint leafIdx)
 {
   const float fraction = calcRelativeFraction(leafIdx);
   const vvAABBi aabb = node->getAabb();

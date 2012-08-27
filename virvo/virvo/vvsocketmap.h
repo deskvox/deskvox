@@ -33,7 +33,7 @@ namespace vvSocketMap
 
   VIRVOEXPORT void remove(int idx);
 
-  VIRVOEXPORT vvSocket* get(int idx);
+  VIRVOEXPORT vvSocket* get(uint idx);
 
   /*! Get index to refer to socket or -1 if sock was not found
    */

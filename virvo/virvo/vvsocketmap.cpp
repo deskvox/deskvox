@@ -40,7 +40,7 @@ void vvSocketMap::remove(const int idx)
   sockets.erase(sockets.begin() + idx);
 }
 
-vvSocket* vvSocketMap::get(const int idx)
+vvSocket* vvSocketMap::get(const uint idx)
 {
   if (sockets.size() > idx)
   {

@@ -12,6 +12,11 @@ if(NOT BUILD_SHARED_LIBS)
 endif()
 
 
+if(WIN32)
+  add_definitions(-D_UNICODE -DUNICODE)
+endif()
+
+
 if(MSVC)
 
   add_definitions(

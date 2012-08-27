@@ -68,6 +68,12 @@ else()
   set(Pthreads_LIBRARIES ${Pthreads_LIBRARY})
 endif()
 
+# TODO:
+# Command line option -lpthread gets defined twice...
+if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+  set(Pthreads_PACKAGE_CXX_FLAGS "-pthread")
+endif()
+
 find_package_handle_standard_args(Pthreads DEFAULT_MSG
   Pthreads_INCLUDE_DIR
   Pthreads_LIBRARY

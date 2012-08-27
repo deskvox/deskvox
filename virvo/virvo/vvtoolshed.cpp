@@ -22,6 +22,8 @@
 #include <iostream>
 #include <iomanip>
 #include <cctype>
+#include <stdexcept>
+#include <iterator>
 
 #include <float.h>
 #include <errno.h>
@@ -2546,28 +2548,17 @@ float vvToolshed::meanSqrError(float* val1, float* val2, const int numValues)
   return err * err;
 }
 
-char* vvToolshed::file2string(const char *filename)
+std::string vvToolshed::file2string(const std::string& filename)
 {
-  FILE *fp = fopen(filename,"rt");
+  std::ifstream source(filename.c_str());
 
-  if (fp == NULL)
-  {
-    cerr << "File NOT found: " << filename << endl;
-    return NULL;
-  }
+  if (!source.is_open())
+    throw std::runtime_error("File not found: \"" + filename + "\"");
 
-  fseek(fp, 0, SEEK_END);
-  int count = ftell(fp);
-  rewind(fp);
-
-  char* content = new char[count+1];
-
-  count = fread(content,sizeof(char),count,fp);
-  content[count] = '\0';
-
-  fclose(fp);
-
-  return content;
+  return std::string(
+    std::istreambuf_iterator<char>(source.rdbuf()),
+    std::istreambuf_iterator<char>()
+    );
 }
 
 int vvToolshed::string2Int(const char* str)

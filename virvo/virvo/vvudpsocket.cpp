@@ -428,7 +428,7 @@ vvSocket::ErrorType vvUdpSocket::writeData(const uchar* dataptr, size_t size, ss
     ssize_t written = sendto(_sockfd, dataptr, size, 0, (struct sockaddr*)&_groupSock, sizeof(_groupSock));
 #endif
     if(ret) *ret = written;
-    if(written == size)
+    if(written == (ssize_t)size)
     {
       return VV_OK;
     }

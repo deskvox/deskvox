@@ -61,7 +61,7 @@ class vvView
     {
       ANIMATION_TIMER = 0,                     ///< volume animation timer callback
       ROTATION_TIMER  = 1,                     ///< rotation animation timer callback
-      BENCHMARK_TIMER  = 2,                    ///< benchmark timer callback
+      BENCHMARK_TIMER  = 2                     ///< benchmark timer callback
     };
     /// Clipping edit mode
     enum

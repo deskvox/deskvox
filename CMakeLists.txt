@@ -26,8 +26,7 @@ set(DESKVOX_PREFIX ${CMAKE_INSTALL_PREFIX})
 
 set(VIRVO_VERSION_MAJOR 1)
 set(VIRVO_VERSION_MINOR 0)
-set(VIRVO_VERSION "{VIRVO_VERSION_MAJOR}.${VIRVO_VERSION_MINOR}")
-
+set(VIRVO_VERSION "${VIRVO_VERSION_MAJOR}.${VIRVO_VERSION_MINOR}")
 
 set(VIRVO_DIR ${DESKVOX_DIR}/virvo)
 set(VIRVO_INCLUDE_DIR ${VIRVO_DIR})
@@ -39,8 +38,12 @@ set(VIRVO_TESTS_DIR ${VIRVO_DIR}/test)
 set(VIRVO_CONFIG_DIR ${DESKVOX_BINARY_DIR}/virvo/virvo/config)
 
 
-set(VOX_DESK_DIR ${DESKVOX_DIR}/vox-desk-qt)
-set(VOX_DESK_INCLUDE_DIR ${VOX_DESK_DIR}/include)
+set(VOXDESK_DIR ${DESKVOX_DIR}/vox-desk)
+
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${DESKVOX_BINARY_DIR}/${CMAKE_BUILD_TYPE}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${DESKVOX_BINARY_DIR}/${CMAKE_BUILD_TYPE}/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${DESKVOX_BINARY_DIR}/${CMAKE_BUILD_TYPE}/lib")
 
 
 #---------------------------------------------------------------------------------------------------
@@ -51,6 +54,8 @@ set(VOX_DESK_INCLUDE_DIR ${VOX_DESK_DIR}/include)
 option(BUILD_SHARED_LIBS "Build all libraries as shared libraries instead of static" ON)
 
 option(DESKVOX_USE_FOLDERS "Enable solution folders in Visual Studio. Disable for Express versions." ON)
+
+option(DESKVOX_GROUP_SOURCES_BY_TYPE "Group source files by type." ON)
 
 option(DESKVOX_BUILD_TESTS "Build tests" OFF)
 option(DESKVOX_BUILD_TOOLS "Build tools" ON)
