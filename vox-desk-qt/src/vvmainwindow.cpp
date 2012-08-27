@@ -26,6 +26,7 @@
 #include "vvpluginutil.h"
 #include "vvscreenshotdialog.h"
 #include "vvtfdialog.h"
+#include "vvtimestepdialog.h"
 
 #include "ui_vvmainwindow.h"
 
@@ -70,6 +71,7 @@ vvMainWindow::vvMainWindow(QWidget* parent)
   _dimensionDialog = new vvDimensionDialog(_canvas, this);
   _mergeDialog = new vvMergeDialog(this);
   _screenshotDialog = new vvScreenshotDialog(_canvas, this);
+  _timeStepDialog = new vvTimeStepDialog(this);
 
   // file menu
   connect(ui->actionLoadVolume, SIGNAL(triggered()), this, SLOT(onLoadVolumeTriggered()));
@@ -94,6 +96,19 @@ vvMainWindow::vvMainWindow(QWidget* parent)
   connect(ui->actionShowNumTextures, SIGNAL(triggered(bool)), this, SLOT(onShowNumTexturesTriggered(bool)));
   connect(ui->actionShowFrameRate, SIGNAL(triggered(bool)), this, SLOT(onShowFrameRateTriggered(bool)));
   connect(ui->actionAutoRotation, SIGNAL(triggered(bool)), this, SLOT(onAutoRotationTriggered(bool)));
+  connect(ui->actionTimeSteps, SIGNAL(triggered()), this, SLOT(onTimeStepsTriggered()));
+
+  // misc.
+  connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), this, SLOT(onNewVolDesc(vvVolDesc*)));
+
+  connect(_timeStepDialog, SIGNAL(valueChanged(int)), _canvas, SLOT(setTimeStep(int)));
+  connect(_timeStepDialog, SIGNAL(play(double)), _canvas, SLOT(startAnimation(double)));
+  connect(_timeStepDialog, SIGNAL(pause()), _canvas, SLOT(stopAnimation()));
+  connect(_timeStepDialog, SIGNAL(back()), _canvas, SLOT(decTimeStep()));
+  connect(_timeStepDialog, SIGNAL(fwd()), _canvas, SLOT(incTimeStep()));
+  connect(_timeStepDialog, SIGNAL(first()), _canvas, SLOT(firstTimeStep()));
+  connect(_timeStepDialog, SIGNAL(last()), _canvas, SLOT(lastTimeStep()));
+  connect(_canvas, SIGNAL(currentFrame(int)), _timeStepDialog, SLOT(setCurrentFrame(int)));
 }
 
 vvMainWindow::~vvMainWindow()
@@ -366,6 +381,21 @@ void vvMainWindow::onShowFrameRateTriggered(bool checked)
 void vvMainWindow::onAutoRotationTriggered(bool)
 {
   vvDebugMsg::msg(3, "vvMainWindow::onAutoRotationTriggered()");
+}
+
+void vvMainWindow::onTimeStepsTriggered()
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onTimeStepsTriggered()");
+
+  _timeStepDialog->raise();
+  _timeStepDialog->show();
+}
+
+void vvMainWindow::onNewVolDesc(vvVolDesc* vd)
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onNewVolDesc()");
+
+  _timeStepDialog->setFrames(vd->frames);
 }
 
 int main(int argc, char** argv)

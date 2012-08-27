@@ -27,6 +27,7 @@
 #include <virvo/vvgltools.h>
 
 #include <QSettings>
+#include <QTimer>
 
 #include <iostream>
 
@@ -65,6 +66,9 @@ vvCanvas::vvCanvas(QWidget* parent)
   QSettings settings;
   QColor qcolor = settings.value("canvas/bgcolor").value<QColor>();
   _bgColor = vvColor(qcolor.redF(), qcolor.greenF(), qcolor.blueF());
+
+  _animTimer = new QTimer(this);
+  connect(_animTimer, SIGNAL(timeout()), this, SLOT(incTimeStep()));
 }
 
 vvCanvas::~vvCanvas()
@@ -106,6 +110,8 @@ void vvCanvas::setVolDesc(vvVolDesc* vd)
   {
     createRenderer();
   }
+
+  emit newVolDesc(_vd);
 }
 
 vvVolDesc* vvCanvas::getVolDesc() const
@@ -266,6 +272,8 @@ void vvCanvas::init()
   }
 
   updateProjection();
+
+  emit newVolDesc(_vd);
 }
 
 void vvCanvas::createRenderer()
@@ -295,5 +303,82 @@ void vvCanvas::updateProjection()
   {
     _ov.setProjection(vvObjView::ORTHO, vvObjView::DEF_VIEWPORT_WIDTH, vvObjView::DEF_CLIP_NEAR, vvObjView::DEF_CLIP_FAR);
   }
+}
+
+void vvCanvas::setCurrentFrame(const int frame)
+{
+  vvDebugMsg::msg(3, "vvCanvas::setCurrentFrame()");
+
+  _renderer->setCurrentFrame(frame);
+  emit currentFrame(frame);
+  updateGL();
+}
+
+void vvCanvas::startAnimation(const double fps)
+{
+  vvDebugMsg::msg(3, "vvCanvas::startAnimation()");
+
+  _vd->dt = 1.0f / static_cast<float>(fps);
+  const float delay = std::abs(_vd->dt * 1000.0f);
+  _animTimer->start(static_cast<int>(delay));
+}
+
+void vvCanvas::stopAnimation()
+{
+  vvDebugMsg::msg(3, "vvCanvas::stopAnimation()");
+
+  _animTimer->stop();
+}
+
+void vvCanvas::setTimeStep(const int step)
+{
+  vvDebugMsg::msg(3, "vvCanvas::setTimeStep()");
+
+  int f = step;
+  while (f < 0)
+  {
+    f += _vd->frames; 
+  }
+
+  while (f >= _vd->frames)
+  {
+    f -= _vd->frames;
+  }
+
+  _renderer->setCurrentFrame(f);
+  // don't emit currentFrame!
+  updateGL();
+}
+
+void vvCanvas::incTimeStep()
+{
+  vvDebugMsg::msg(3, "vvCanvas::incTimeStep()");
+
+  int f = _renderer->getCurrentFrame();
+  f = (f >= _vd->frames - 1) ? 0 : f + 1;
+  setCurrentFrame(f);
+}
+
+void vvCanvas::decTimeStep()
+{
+  vvDebugMsg::msg(3, "vvCanvas::decTimeStep()");
+
+  int f = _renderer->getCurrentFrame();
+  f = (f <= 0) ? _vd->frames - 1 : f - 1;
+  setCurrentFrame(f);
+}
+
+void vvCanvas::firstTimeStep()
+{
+  vvDebugMsg::msg(3, "vvCanvas::firstTimeStep()");
+
+  setCurrentFrame(0);
+}
+
+void vvCanvas::lastTimeStep()
+{
+  vvDebugMsg::msg(3, "vvCanvas::lastTimeStep()");
+
+  setCurrentFrame(_vd->frames - 1);
 }
 

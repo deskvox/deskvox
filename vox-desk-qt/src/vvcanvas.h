@@ -29,6 +29,8 @@
 #include <QGLWidget>
 #include <QMouseEvent>
 
+class QTimer;
+
 class vvCanvas : public QGLWidget
 {
   Q_OBJECT
@@ -74,10 +76,23 @@ private:
   Qt::MouseButton _mouseButton;
   QPoint _lastMousePos;
 
+  QTimer* _animTimer;
+
   void init();
   void createRenderer();
   void updateProjection();
+  void setCurrentFrame(int frame);
+public slots:
+  void startAnimation(double fps);
+  void stopAnimation();
+  void setTimeStep(int step);
+  void incTimeStep();
+  void decTimeStep();
+  void firstTimeStep();
+  void lastTimeStep();
 signals:
+  void newVolDesc(vvVolDesc* vd);
+  void currentFrame(int frame);
   void resized(const QSize& size);
 };
 
