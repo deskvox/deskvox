@@ -335,7 +335,7 @@ void * vvResourceManager::localServerLoop(void *param)
 
 void vvResourceManager::handleNextConnection(vvTcpSocket *sock)
 {
-  std::cerr << "vvResourceManager::handleNextConnection(vvTcpSocket *sock)" << std::endl;
+  vvDebugMsg::msg(3, "vvResourceManager::handleNextConnection()");
 
   std::cerr << "server mode: " << _sm << std::endl;
 
@@ -369,50 +369,18 @@ void * vvResourceManager::processJob(void * param)
   for(std::vector<vvResource*>::iterator res = job->resources.begin();res!=job->resources.end();res++)
   {
     vvTcpSocket *serversock = NULL;
+    vvBonjourResolver resolver;
 
     // special case for local vserver: no bonjour resolving necessary
     if((*res)->server != NULL)
     {
       serversock = new vvTcpSocket();
       serversock->connectToHost("localhost", DEFAULT_PORT+1); // TODO: Fix this default-port behaviour
-
-      if(NULL != serversock)
-      {
-        vvSocketIO sockIO = vvSocketIO(serversock);
-        sockIO.putInt32(virvo::Render);
-        bool vserverRdy;
-        sockIO.getBool(vserverRdy);
-
-        sockets.push_back(serversock);
-        int s = vvSocketMap::add(serversock);
-        if(sockstr.str() != "") sockstr << ",";
-        sockstr << s;
-      }
-      else
-      {
-        vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not connect to local vserver");
-        ready = false;
-      }
-      continue;
     }
-
-    vvBonjourResolver resolver;
-    if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry((*res)->bonjourEntry))
+    else if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry((*res)->bonjourEntry))
     {
       serversock = resolver.getBonjourSocket();
-      if(NULL != serversock)
-      {
-        vvSocketIO sockIO = vvSocketIO(serversock);
-        sockIO.putInt32(virvo::Render);
-        bool vserverRdy;
-        sockIO.getBool(vserverRdy);
-
-        sockets.push_back(serversock);
-        int s = vvSocketMap::add(serversock);
-        if(sockstr.str() != "") sockstr << ",";
-        sockstr << s;
-      }
-      else
+      if(NULL == serversock)
       {
         vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not connect to resolved vserver");
         ready = false;
@@ -421,6 +389,24 @@ void * vvResourceManager::processJob(void * param)
     else
     {
       vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not resolve bonjour service");
+      ready = false;
+    }
+
+    if(NULL != serversock)
+    {
+      vvSocketIO sockIO = vvSocketIO(serversock);
+      sockIO.putInt32(virvo::Render);
+      bool vserverRdy;
+      sockIO.getBool(vserverRdy);
+
+      sockets.push_back(serversock);
+      int s = vvSocketMap::add(serversock);
+      if(sockstr.str() != "") sockstr << ",";
+      sockstr << s;
+    }
+    else
+    {
+      vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not connect to vserver");
       ready = false;
     }
   }
