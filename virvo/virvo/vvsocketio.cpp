@@ -1747,6 +1747,7 @@ vvSocket::ErrorType vvSocketIO::getRequest(vvRequest& req)
     retval = getInt32(numnodes);
     if(retval != vvSocket::VV_OK) return retval;
 
+    req.nodes.clear();
     for(int i=0;i<numnodes;i++)
     {
       int numgpus = 0;
