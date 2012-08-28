@@ -40,8 +40,9 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSettings>
+#include <QStringList>
 
-vvMainWindow::vvMainWindow(QWidget* parent)
+vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   : QMainWindow(parent)
   , ui(new Ui_MainWindow)
 {
@@ -76,7 +77,7 @@ vvMainWindow::vvMainWindow(QWidget* parent)
     format.setSampleBuffers(true);
     format.setSamples(superSamples);
   }
-  _canvas = new vvCanvas(format, this);
+  _canvas = new vvCanvas(format, filename, this);
   setCentralWidget(_canvas);
 
   _tfDialog = new vvTFDialog(_canvas, this);
@@ -416,7 +417,63 @@ int main(int argc, char** argv)
   vvDebugMsg::setDebugLevel(0);
 
   QApplication a(argc, argv);
-  vvMainWindow win;
+
+  // parse command line
+  QString filename;
+  QSize size(600, 600);
+  QStringList arglist = a.arguments();
+  for (QStringList::iterator it = arglist.begin();
+       it != arglist.end(); ++it)
+  {
+    QString str = *it;
+    if (str == arglist.first())
+    {
+      continue;
+    }
+
+    if (str == "-size")
+    {
+      ++it;
+      int w = 0;
+      int h = 0;;
+      if (it != arglist.end())
+      {
+        str = *it;
+        w = str.toInt();
+      }
+      else
+      {
+        vvDebugMsg::msg(0, "Warning: -size followed by no arguments");
+        break;
+      }
+
+      ++it;
+      if (it != arglist.end())
+      {
+        str = *it;
+        h = str.toInt();
+        size = QSize(w, h);
+      }
+      else
+      {
+        vvDebugMsg::msg(0, "Warning: -size followed by only one argument");
+        break;
+      }
+    }
+    else if (str[0] == '-')
+    {
+      vvDebugMsg::msg(0, "Warning: invalid command line option");
+      break;
+    }
+    else
+    {
+      filename = str;
+    }
+  }
+
+  // create main window
+  vvMainWindow win(filename);
+  win.resize(size);
   win.show();
   return a.exec();
 }

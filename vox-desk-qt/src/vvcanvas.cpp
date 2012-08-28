@@ -33,7 +33,7 @@
 
 using vox::vvObjView;
 
-vvCanvas::vvCanvas(const QGLFormat& format, QWidget* parent)
+vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* parent)
   : QGLWidget(format, parent)
   , _vd(NULL)
   , _renderer(NULL)
@@ -42,6 +42,20 @@ vvCanvas::vvCanvas(const QGLFormat& format, QWidget* parent)
   , _superSamples(format.samples())
 {
   vvDebugMsg::msg(1, "vvCanvas::vvCanvas()");
+
+  if (filename != "")
+  {
+    _vd = new vvVolDesc(filename.toStdString().c_str());
+  }
+  else
+  {
+    // load default volume
+    _vd = new vvVolDesc;
+    _vd->vox[0] = 32;
+    _vd->vox[1] = 32;
+    _vd->vox[2] = 32;
+    _vd->frames = 0;
+  }
 
   // init ui
   setMouseTracking(true);
@@ -231,12 +245,7 @@ void vvCanvas::init()
 {
   vvDebugMsg::msg(3, "vvCanvas::init()");
 
-  // load default volume
-  _vd = new vvVolDesc;
-  _vd->vox[0] = 32;
-  _vd->vox[1] = 32;
-  _vd->vox[2] = 32;
-  _vd->frames = 0;
+  
   vvFileIO* fio = new vvFileIO;
   fio->loadVolumeData(_vd, vvFileIO::ALL_DATA);
   delete fio;

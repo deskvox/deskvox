@@ -38,7 +38,7 @@ class vvMainWindow : public QMainWindow
 {
   Q_OBJECT
 public:
-  explicit vvMainWindow(QWidget* parent = 0);
+  explicit vvMainWindow(const QString& filename, QWidget* parent = 0);
   ~vvMainWindow();
 private:
   Ui_MainWindow* ui;
