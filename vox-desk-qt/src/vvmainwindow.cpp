@@ -63,7 +63,20 @@ vvMainWindow::vvMainWindow(QWidget* parent)
   }
 
   // widgets and dialogs
-  _canvas = new vvCanvas(this);
+  const int superSamples = 0;
+  QGLFormat format;
+  format.setDoubleBuffer(true);
+  format.setDepth(true);
+  format.setRgba(true);
+  format.setAlpha(true);
+  format.setAccum(true);
+  format.setStencil(false);
+  if (superSamples > 0)
+  {
+    format.setSampleBuffers(true);
+    format.setSamples(superSamples);
+  }
+  _canvas = new vvCanvas(format, this);
   setCentralWidget(_canvas);
 
   _tfDialog = new vvTFDialog(_canvas, this);

@@ -42,7 +42,7 @@ public:
     VV_SUPERSAMPLES
   };
 
-  vvCanvas(QWidget* parent = 0);
+  vvCanvas(const QGLFormat& format, QWidget* parent = 0);
   ~vvCanvas();
 
   void setParameter(ParameterType param, const vvParam& value);

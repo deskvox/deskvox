@@ -33,34 +33,19 @@
 
 using vox::vvObjView;
 
-vvCanvas::vvCanvas(QWidget* parent)
-  : QGLWidget(parent)
+vvCanvas::vvCanvas(const QGLFormat& format, QWidget* parent)
+  : QGLWidget(format, parent)
   , _vd(NULL)
   , _renderer(NULL)
   , _projectionType(vox::vvObjView::PERSPECTIVE)
-  , _doubleBuffering(true)
-  , _superSamples(0)
+  , _doubleBuffering(format.doubleBuffer())
+  , _superSamples(format.samples())
 {
   vvDebugMsg::msg(1, "vvCanvas::vvCanvas()");
 
   // init ui
   setMouseTracking(true);
   setFocusPolicy(Qt::StrongFocus);
-
-  // init visual
-  QGLFormat format;
-  format.setDoubleBuffer(_doubleBuffering);
-  format.setDepth(true);
-  format.setRgba(true);
-  format.setAlpha(true);
-  format.setAccum(true);
-  format.setStencil(false);
-  if (_superSamples > 0)
-  {
-    format.setSampleBuffers(true);
-    format.setSamples(_superSamples);
-  }
-  setFormat(format);
 
   // read persistent settings
   QSettings settings;
