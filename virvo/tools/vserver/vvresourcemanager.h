@@ -98,7 +98,7 @@ private:
   void handleNextConnection(vvTcpSocket *sock);
   static void * processJob(void *param);
   uint getFreeResourceCount();
-  vvResource* getFreeResource();
+  std::vector<vvResource*> getFreeResources(uint amount);
 
   vvSimpleServer *_simpleServer;
 #ifdef HAVE_BONJOUR

@@ -155,18 +155,12 @@ bool vvResourceManager::initNextJob()
       job->request = _requests.front();
       _requests.erase(_requests.begin());
 
-      for(int i=0; i<job->request->nodes.size(); i++)
+      job->resources = getFreeResources(job->request->nodes.size());
+
+      if(job->resources.size() != job->request->nodes.size())
       {
-        vvResource *freeRes = getFreeResource();
-        if(freeRes != NULL)
-        {
-          job->resources.push_back(freeRes);
-        }
-        else
-        {
-          vvDebugMsg::msg(1, "vvResourceManager::initNextJob() unexpected error: Job without enough Resources started");
-          goto quitonerror;
-        }
+        vvDebugMsg::msg(1, "vvResourceManager::initNextJob() unexpected error: Job without enough Resources started");
+        goto quitonerror;
       }
 
       // job ready to start?
@@ -406,7 +400,7 @@ void * vvResourceManager::processJob(void * param)
     }
     else
     {
-      vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not connect to vserver");
+      vvDebugMsg::msg(0, "vvResourceManager::processJob() Could not connect to vserver");
       ready = false;
     }
   }
@@ -505,10 +499,17 @@ uint vvResourceManager::getFreeResourceCount()
   return count;
 }
 
-vvResourceManager::vvResource* vvResourceManager::getFreeResource()
+std::vector<vvResourceManager::vvResource*> vvResourceManager::getFreeResources(uint amount)
 {
+  vvDebugMsg::msg(3, "vvResourceManager::getFreeResources() Enter");
+
+  std::vector<vvResourceManager::vvResource*> freeResources;
+
+  if(amount > _resources.size())
+    return freeResources;
+
   std::vector<vvResource*>::iterator freeRes = _resources.begin();
-  while(freeRes != _resources.end())
+  while(freeRes != _resources.end() && freeResources.size() < amount)
   {
     int freeMemory = 0;
     for(std::vector<vvGpu::vvGpuInfo>::iterator ginfo = (*freeRes)->ginfos.begin();
@@ -519,7 +520,8 @@ vvResourceManager::vvResource* vvResourceManager::getFreeResource()
 
     if(freeMemory > 0)
     {
-      return (*freeRes);
+      freeResources.push_back(*freeRes);
+      freeRes++;
     }
     else
     {
@@ -534,8 +536,12 @@ vvResourceManager::vvResource* vvResourceManager::getFreeResource()
     }
   }
 
-  vvDebugMsg::msg(3, "vvResourceManager::getFreeResource() no free resource found");
-  return NULL;
+  if(freeResources.size() != amount)
+  {
+    vvDebugMsg::msg(3, "vvResourceManager::getFreeResource() not enough free resource found");
+    freeResources.clear();
+  }
+  return freeResources;
 }
 
 #ifdef HAVE_BONJOUR
