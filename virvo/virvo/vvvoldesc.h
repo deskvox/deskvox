@@ -129,7 +129,7 @@ class VIRVOEXPORT vvVolDesc
                                                   ///< <LI>2 = 16 bit unsigned short (12 bit values must be located in 12 most significant bits, padded with 0's)</LI>
                                                   ///< <LI>4 = float</LI>
     int chan;                                     ///< number of channels (default = 1), each channel contains bpc bytes
-    float dist[3];                                ///< Distance between sampling points in x/y/z direction [mm]
+    vvVector3 dist;                               ///< Distance between sampling points in x/y/z direction [mm]
     float dt;                                     ///< Length of an animation time step [seconds]. Negative values play the animation backwards.
     float real[2];                                ///< 1/2 bpc: physical equivalent of min/max scalar value
                                                   ///< 4 bpc:   min and max values for mapping to transfer function space

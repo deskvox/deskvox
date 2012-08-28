@@ -1,9 +1,14 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6.4)
+if(NOT DESKVOX_BUILD_TESTS)
+  return()
+endif()
 
-LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+add_definitions(-DVV_APPLICATION_BUILD)
+if(NOT BUILD_SHARED_LIBS)
+  add_definitions(-DVIRVO_STATIC)
+endif()
 
-ADD_DEFINITIONS(-DVV_APPLICATION_BUILD)
+deskvox_link_libraries(virvo)
 
-ADD_SUBDIRECTORY(vvbonjour)
-ADD_SUBDIRECTORY(vvmulticast)
-ADD_SUBDIRECTORY(vvstopwatch)
+add_subdirectory(vvbonjour)
+add_subdirectory(vvmulticast)
+add_subdirectory(vvstopwatch)

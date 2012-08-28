@@ -685,7 +685,7 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     opt["brickrenderer"] = "image";
   }
 
-  for(int i = 0; i<sockets.size();i++)
+  for(unsigned int i = 0; i<sockets.size();i++)
   {
     vvSocketIO socketIO = vvSocketIO(sockets[i]);
 

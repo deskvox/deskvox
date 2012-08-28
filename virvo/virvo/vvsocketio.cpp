@@ -1684,7 +1684,7 @@ vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpu::vvGpuInfo>& ginfo
       return vvSocket::VV_DATA_ERROR;
     }
 
-    for(unsigned int i=0; i<size; i++)
+    for(int i=0; i<size; i++)
     {
       vvGpu::vvGpuInfo ginfo;
       retval = getGpuInfo(ginfo);
@@ -1783,7 +1783,7 @@ vvSocket::ErrorType vvSocketIO::putRequest(const vvRequest& req)
     retval = putInt32(req.nodes.size());
     if(retval != vvSocket::VV_OK) return retval;
 
-    for(int i=0; i<req.nodes.size(); i++)
+    for(unsigned int i=0; i<req.nodes.size(); i++)
     {
       retval = putInt32(req.nodes[i]);
       if(retval != vvSocket::VV_OK) return retval;

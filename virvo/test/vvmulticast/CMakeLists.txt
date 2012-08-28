@@ -1,11 +1,11 @@
-SET(MULTICASTTEST_SRC vvmulticasttest.cpp)
-SET(MULTICASTTEST2_SRC vvmulticasttest2.cpp)
+find_package(Pthreads REQUIRED)
 
-# vvMulticasttest
-INCLUDE_DIRECTORIES(${PTHREAD_INCLUDE_DIR})
-ADD_EXECUTABLE(vvmulticasttest ${MULTICASTTEST_SRC})
-TARGET_LINK_LIBRARIES(vvmulticasttest virvo ${PTHREAD_LIBRARIES})
+deskvox_use_package(Pthreads)
 
-# vvMulticasttest2 (with vvSocket)
-ADD_EXECUTABLE(vvmulticasttest2 ${MULTICASTTEST2_SRC})
-TARGET_LINK_LIBRARIES(vvmulticasttest2 virvo)
+deskvox_add_test(vvmulticast
+  vvmulticasttest.cpp
+)
+
+deskvox_add_test(vvmulticast2
+  vvmulticasttest2.cpp
+)

@@ -1,37 +1,66 @@
-#
-# Try to find GLEW library and include path.
-# Once done this will define
-#
-# GLEW_FOUND
-# GLEW_INCLUDE_DIR
-# GLEW_LIBRARY
-# 
+include(FindPackageHandleStandardArgs)
 
-IF (WIN32)
-	FIND_PATH( GLEW_INCLUDE_DIR GL/glew.h
-		DOC "The directory where GL/glew.h resides")
-	FIND_LIBRARY( GLEW_LIBRARY
-		NAMES glew GLEW glew32 glew32s
-		PATHS
-		DOC "The GLEW library")
-ELSE (WIN32)
-	FIND_PATH( GLEW_INCLUDE_DIR GL/glew.h
-		/usr/include
-		/usr/local/include
-		/sw/include
-		/opt/local/include
-		DOC "The directory where GL/glew.h resides")
-	FIND_LIBRARY( GLEW_LIBRARY
-		NAMES GLEW glew
-		PATHS
-		/usr/lib64
-		/usr/lib
-		/usr/local/lib64
-		/usr/local/lib
-		/sw/lib
-		/opt/local/lib
-		DOC "The GLEW library")
-ENDIF (WIN32)
+set(hints
+  $ENV{LIB_BASE_PATH}/glew
+)
 
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(GLEW DEFAULT_MSG GLEW_LIBRARY GLEW_INCLUDE_DIR)
+set(paths
+  /usr
+  /usr/local
+)
+
+find_path(GLEW_INCLUDE_DIR
+  NAMES
+    GL/glew.h
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    include
+)
+
+find_library(GLEW_LIBRARY
+  NAMES
+    GLEW
+    glew
+    glew-s
+    glew32
+    glew32-s
+    glew32_static
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    lib64
+    lib
+)
+
+find_library(GLEW_LIBRARY_DEBUG
+  NAMES
+    GLEWd
+    glewd
+    glewd-s
+    glew32d
+    glew32d-s
+    glew32d_static
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    lib64
+    lib
+)
+
+if(GLEW_LIBRARY_DEBUG)
+  set(GLEW_LIBRARIES optimized ${GLEW_LIBRARY} debug ${GLEW_LIBRARY_DEBUG})
+else()
+  set(GLEW_LIBRARIES ${GLEW_LIBRARY})
+endif()
+
+find_package_handle_standard_args(GLEW DEFAULT_MSG
+  GLEW_INCLUDE_DIR
+  GLEW_LIBRARY
+)

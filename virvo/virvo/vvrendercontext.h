@@ -55,8 +55,8 @@ public:
   std::string displayName;            ///< name of display e.g. ":0" leave empty for default
   int left;
   int top;
-  int width;                          ///< width of rendercontext (and windows if related)
-  int height;                         ///< height of rendercontext (and windows if related)
+  uint width;                         ///< width of rendercontext (and windows if related)
+  uint height;                        ///< height of rendercontext (and windows if related)
   bool doubleBuffering;               ///< flag indicating usage of double-buffering
 };
 
@@ -93,7 +93,7 @@ public:
     Swap buffers in case of double-buffering
     */
   void swapBuffers() const;
-  void resize(int w, int h);
+  void resize(uint w, uint h);
 
   static bool matchesCurrent(const vvContextOptions& co);
 private:
