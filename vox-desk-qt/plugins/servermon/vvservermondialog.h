@@ -19,7 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #ifndef VV_SERVERMONDIALOG_H
-#define VV_SERVERMONDIALOG_h
+#define VV_SERVERMONDIALOG_H
 
 #include <QDialog>
 
