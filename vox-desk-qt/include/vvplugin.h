@@ -33,12 +33,16 @@ class vvPlugin
 {
 public:
   vvPlugin(const QString& name)
-    : m_name(name) {}
+    : _name(name)
+    , _active(true) {}
   virtual ~vvPlugin() {}
 
-  /*! \brief  override this method if the plugin provides logic for rendering
+  /*! \brief  override this method if the plugin renders before volume rendering
    */
-  virtual void render() {}
+  virtual void prerender() {}
+  /*! \brief  override this method if the plugin renders after volume rendering
+   */
+  virtual void postrender() {}
   /*! \brief  override this method if the plugin provides a dialog for the plugins menu
    */
   virtual QDialog* dialog(QWidget* parent = 0)
@@ -46,9 +50,11 @@ public:
     (void)parent;
     return NULL;
   }
-  QString name() { return m_name; }
+  QString name() { return _name; }
+  bool isActive() { return _active; }
 protected:
-  QString m_name;
+  QString _name;
+  bool _active;
 };
 Q_DECLARE_INTERFACE(vvPlugin, "DeskVOX.Plugin")
 

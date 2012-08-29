@@ -113,6 +113,13 @@ void vvCanvas::setVolDesc(vvVolDesc* vd)
   emit newVolDesc(_vd);
 }
 
+void vvCanvas::setPlugins(const QList<vvPlugin*>& plugins)
+{
+  vvDebugMsg::msg(3, "vvCanvas::setPlugins()");
+
+  _plugins = plugins;
+}
+
 vvVolDesc* vvCanvas::getVolDesc() const
 {
   vvDebugMsg::msg(3, "vvCanvas::getVolDesc()");
@@ -174,7 +181,24 @@ void vvCanvas::paintGL()
 
   glMatrixMode(GL_MODELVIEW);
   _ov.setModelviewMatrix(vvObjView::CENTER);
+
+  foreach (vvPlugin* plugin, _plugins)
+  {
+    if (plugin->isActive())
+    {
+      plugin->prerender();
+    }
+  }
+
   _renderer->renderVolumeGL();
+
+  foreach (vvPlugin* plugin, _plugins)
+  {
+    if (plugin->isActive())
+    {
+      plugin->postrender();
+    }
+  }
 }
 
 void vvCanvas::resizeGL(const int w, const int h)

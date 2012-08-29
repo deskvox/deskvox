@@ -43,7 +43,7 @@ public:
 private:
   Ui_MainWindow* ui;
 
-  QList<vvPlugin*> m_plugins;
+  QList<vvPlugin*> _plugins;
 
   vvCanvas* _canvas;
   vvDimensionDialog* _dimensionDialog;

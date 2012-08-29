@@ -51,8 +51,8 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   ui->setupUi(this);
 
   // plugins
-  m_plugins = vvPluginUtil::getAll();
-  foreach (vvPlugin* plugin, m_plugins)
+  _plugins = vvPluginUtil::getAll();
+  foreach (vvPlugin* plugin, _plugins)
   {
     if (QDialog* dialog = plugin->dialog(this))
     {
@@ -78,6 +78,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
     format.setSamples(superSamples);
   }
   _canvas = new vvCanvas(format, filename, this);
+  _canvas->setPlugins(_plugins);
   setCentralWidget(_canvas);
 
   _tfDialog = new vvTFDialog(_canvas, this);

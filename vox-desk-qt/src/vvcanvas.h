@@ -22,13 +22,16 @@
 #define VV_CANVAS_H
 
 #include "vvobjview.h"
+#include "vvplugin.h"
 
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvvecmath.h>
 
 #include <QGLWidget>
+#include <QList>
 #include <QMouseEvent>
 
+class vvPlugin;
 class QTimer;
 
 class vvCanvas : public QGLWidget
@@ -47,6 +50,7 @@ public:
 
   void setParameter(ParameterType param, const vvParam& value);
   void setVolDesc(vvVolDesc* vd);
+  void setPlugins(const QList<vvPlugin*>& plugins);
 
   vvVolDesc* getVolDesc() const;
   vvRenderer* getRenderer() const;
@@ -66,6 +70,8 @@ private:
   vvRenderer* _renderer;
   std::string _currentRenderer;
   vvRendererFactory::Options _currentOptions;
+
+  QList<vvPlugin*> _plugins;
 
   vox::vvObjView _ov;
   vox::vvObjView::ProjectionType _projectionType;
