@@ -24,6 +24,7 @@
 #include <QtPlugin>
 #include <QString>
 
+class vvVolDesc;
 class QDialog;
 class QWidget;
 
@@ -34,8 +35,11 @@ class vvPlugin
 public:
   vvPlugin(const QString& name)
     : _name(name)
-    , _active(true) {}
+    , _active(true)
+    , _vd(NULL) {}
   virtual ~vvPlugin() {}
+
+  void setVolDesc(vvVolDesc* vd) { _vd = vd; }
 
   /*! \brief  override this method if the plugin renders before volume rendering
    */
@@ -55,6 +59,7 @@ public:
 protected:
   QString _name;
   bool _active;
+  vvVolDesc* _vd;
 };
 Q_DECLARE_INTERFACE(vvPlugin, "DeskVOX.Plugin")
 

@@ -110,6 +110,11 @@ void vvCanvas::setVolDesc(vvVolDesc* vd)
     createRenderer();
   }
 
+  foreach (vvPlugin* plugin, _plugins)
+  {
+    plugin->setVolDesc(_vd);
+  }
+
   emit newVolDesc(_vd);
 }
 
@@ -290,6 +295,11 @@ void vvCanvas::init()
   }
 
   updateProjection();
+
+  foreach (vvPlugin* plugin, _plugins)
+  {
+    plugin->setVolDesc(_vd);
+  }
 
   emit newVolDesc(_vd);
 }
