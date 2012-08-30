@@ -373,9 +373,7 @@ void vvCanvas::setTimeStep(const int step)
     f -= _vd->frames;
   }
 
-  _renderer->setCurrentFrame(f);
-  // don't emit currentFrame!
-  updateGL();
+  setCurrentFrame(f);
 }
 
 void vvCanvas::incTimeStep()
