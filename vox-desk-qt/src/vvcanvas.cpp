@@ -315,6 +315,9 @@ void vvCanvas::createRenderer()
     delete _renderer;
   }
 
+  const float DEFAULT_OBJ_SIZE = 0.6f;
+  _vd->resizeEdgeMax(_ov.getViewportWidth() * DEFAULT_OBJ_SIZE);
+
   vvRendererFactory::Options opt(_currentOptions);
   _renderer = vvRendererFactory::create(_vd, state, _currentRenderer.c_str(), opt);
 }
