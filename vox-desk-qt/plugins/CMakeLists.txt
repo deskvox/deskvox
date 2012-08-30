@@ -1,7 +1,12 @@
-find_package(Qt REQUIRED)
-include_directories(${VOX_DESK_INCLUDE_DIR})
-include_directories(${PROJECT_SOURCE_DIR}/virvo)
-include_directories(${QT_INCLUDE_DIR} ${QT_QTCORE_INCLUDE_DIR} ${QT_QTGUI_INCLUDE_DIR} ${QT_QTOPENGL_INCLUDE_DIR})
+find_package(Qt REQUIRED QtCore QtGui QtOpenGL)
+
+deskvox_use_package(Qt
+  INCDIRS ${QT_INCLUDES}
+  LIBS ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTOPENGL_LIBRARY}
+)
+
+deskvox_link_libraries(virvo)
+
 add_definitions(-DQT_PLUGIN)
 
 add_subdirectory(servermon)

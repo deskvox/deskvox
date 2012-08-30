@@ -12,8 +12,8 @@ set(SERVERMON_UI
   vvservermondialog.ui
 )
 
-QT4_WRAP_CPP(SERVERMON_MOC_INC ${SERVERMON_INC})
-QT4_WRAP_UI(SERVERMON_UI_INC ${SERVERMON_UI})
+qt4_wrap_cpp(SERVERMON_MOC_INC ${SERVERMON_INC})
+qt4_wrap_ui(SERVERMON_UI_INC ${SERVERMON_UI})
 
 # moc'd headers reside here
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
