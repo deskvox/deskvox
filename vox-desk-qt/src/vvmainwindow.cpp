@@ -60,7 +60,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
       ui->menuPlugins->setEnabled(true);
       QAction* dialogAction = new QAction(plugin->name(), ui->menuPlugins);
       ui->menuPlugins->addAction(dialogAction);
-      connect(dialogAction, SIGNAL(triggered()), dialog, SLOT(open()));
+      connect(dialogAction, SIGNAL(triggered()), dialog, SLOT(show()));
     }
   }
 
