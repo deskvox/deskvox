@@ -38,6 +38,7 @@
 #include <QByteArray>
 #include <QColorDialog>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QSettings>
 #include <QStringList>
@@ -208,8 +209,10 @@ void vvMainWindow::onLoadVolumeTriggered()
 {
   vvDebugMsg::msg(3, "vvMainWindow::onLoadVolumeTriggered()");
 
+  QSettings settings;
+
   QString caption = tr("Load Volume File");
-  QString dir;
+  QString dir = settings.value("canvas/voldir").value<QString>();
   QString filter = tr("All Volume Files (*.rvf *.xvf *.avf *.tif *.tiff *.hdr *.volb);;"
     "3D TIF Files (*.tif,*.tiff);;"
     "ASCII Volume Files (*.avf);;"
@@ -220,6 +223,9 @@ void vvMainWindow::onLoadVolumeTriggered()
   if (!filename.isEmpty())
   {
     loadVolumeFile(filename);
+
+    QDir dir = QFileInfo(filename).absoluteDir();
+    settings.setValue("canvas/voldir", dir.path());
   }
   else
   {
