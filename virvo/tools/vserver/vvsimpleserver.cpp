@@ -130,7 +130,7 @@ void * vvSimpleServer::handleClientThread(void *param)
         delete res.server;
         delete res.vd;
       }
-      break;
+      // fall through...
     case virvo::Exit:
       goOn = false;
       break;
