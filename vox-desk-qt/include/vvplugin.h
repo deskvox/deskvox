@@ -47,6 +47,9 @@ public:
   /*! \brief  override this method if the plugin renders after volume rendering
    */
   virtual void postrender() {}
+  /*! \brief  override this method to adjust state before a new time step is processed
+   */
+  virtual void timestep() {}
   /*! \brief  override this method if the plugin provides a dialog for the plugins menu
    */
   virtual QDialog* dialog(QWidget* parent = 0)

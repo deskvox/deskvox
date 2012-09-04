@@ -342,6 +342,13 @@ void vvCanvas::setCurrentFrame(const int frame)
 
   _renderer->setCurrentFrame(frame);
   emit currentFrame(frame);
+
+  // inform plugins of new frame
+  foreach (vvPlugin* plugin, _plugins)
+  {
+    plugin->timestep();
+  }
+
   updateGL();
 }
 
