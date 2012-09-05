@@ -318,6 +318,13 @@ inline std::ostream& operator<<(std::ostream& out, const vvMatrix& m)
 }
 
 template <typename T>
+inline std::ostream& operator<<(std::ostream& out, const vvBaseVector2<T>& v)
+{
+  out << v[0] << " " << v[1];
+  return out;
+}
+
+template <typename T>
 inline std::ostream& operator<<(std::ostream& out, const vvBaseVector3<T>& v)
 {
   out << v[0] << " " << v[1] << " " << v[2];
