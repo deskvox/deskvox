@@ -39,8 +39,9 @@ public:
     , _vd(NULL) {}
   virtual ~vvPlugin() {}
 
-  void setVolDesc(vvVolDesc* vd) { _vd = vd; }
-
+  /*! \brief  override this method to perform custom logic when the volume is loaded
+   */
+  virtual void setVolDesc(vvVolDesc* vd) { _vd = vd; }
   /*! \brief  override this method if the plugin renders before volume rendering
    */
   virtual void prerender() {}
