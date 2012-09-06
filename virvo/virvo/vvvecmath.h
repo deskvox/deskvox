@@ -44,7 +44,7 @@ template <typename T>
 class vvBaseVector3;
 template <typename T>
 class vvBaseVector4;
-class VIRVOEXPORT vvMatrix;
+
 
 typedef vvBaseVector2<int> vvVector2i;
 typedef vvBaseVector2<unsigned int> vvVector2ui;
@@ -196,11 +196,6 @@ class vvBaseVector4
     void sub(const vvBaseVector4& rhs);
     void print(const char* text = 0) const;
     void perspectiveDivide();
-
-    vvBaseVector4 operator + (const vvBaseVector4 &other) const;
-    vvBaseVector4 operator - (const vvBaseVector4 &other) const;
-    vvBaseVector4 operator * (const vvBaseVector4 &other) const;
-    vvBaseVector4 operator * (const T scalar) const;
 };
 
 /** base vector primitive
@@ -215,7 +210,7 @@ class vvBaseVector3
     explicit vvBaseVector3(T);
     vvBaseVector3(T x, T y, T z);
     vvBaseVector3(const vvBaseVector4<T>& v);
-    vvBaseVector3 operator^(const vvBaseVector3) const;
+
     T &operator[](const int);
     T operator[](const int) const;
     void  set(T x, T y, T z);
@@ -259,19 +254,6 @@ class vvBaseVector3
     bool  isZero() const;
     void  getSpherical(T*, T*, T*);
     void  directionCosines(const vvBaseVector3&);
-    vvBaseVector3 operator + (const vvBaseVector3 &other) const;
-    vvBaseVector3 operator - (const vvBaseVector3 &other) const;
-    vvBaseVector3 operator * (const vvBaseVector3 &other) const;
-
-    vvBaseVector3 operator * (const T scalar) const;
-    vvBaseVector3 operator / (const T scalar) const;
-
-    vvBaseVector3& operator = (const vvBaseVector3 &other);
-    vvBaseVector3& operator += (const vvBaseVector3 &other);
-    vvBaseVector3& operator -= (const vvBaseVector3 &other);
-
-    vvBaseVector3 operator + (void) const;
-    vvBaseVector3 operator - (void) const;
 };
 
 template <typename T>
@@ -338,7 +320,615 @@ inline std::ostream& operator<<(std::ostream& out, const vvBaseVector4<T>& v)
   return out;
 }
 
+
+//------------------------------------------------------------------------------
+// vvBaseVector2 operators
+//------------------------------------------------------------------------------
+
+
+template<typename T>
+bool operator ==(vvBaseVector2<T> const& u, vvBaseVector2<T> const& v)
+{
+  return u[0] == v[0] && u[1] == v[1];
+}
+
+
+template<typename T>
+bool operator !=(vvBaseVector2<T> const& u, vvBaseVector2<T> const& v)
+{
+  return !(u == v);
+}
+
+
+template<typename T>
+vvBaseVector2<T>& operator +=(vvBaseVector2<T>& u, vvBaseVector2<T> const& v)
+{
+  u[0] += v[0];
+  u[1] += v[1];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector2<T>& operator -=(vvBaseVector2<T>& u, vvBaseVector2<T> const& v)
+{
+  u[0] -= v[0];
+  u[1] -= v[1];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector2<T>& operator *=(vvBaseVector2<T>& u, vvBaseVector2<T> const& v)
+{
+  u[0] *= v[0];
+  u[1] *= v[1];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector2<T>& operator /=(vvBaseVector2<T>& u, vvBaseVector2<T> const& v)
+{
+  u[0] /= v[0];
+  u[1] /= v[1];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector2<T>& operator +=(vvBaseVector2<T>& u, T const& v)
+{
+  u[0] += v;
+  u[1] += v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector2<T>& operator -=(vvBaseVector2<T>& u, T const& v)
+{
+  u[0] -= v;
+  u[1] -= v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector2<T>& operator *=(vvBaseVector2<T>& u, T const& v)
+{
+  u[0] *= v;
+  u[1] *= v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector2<T>& operator /=(vvBaseVector2<T>& u, T const& v)
+{
+  u[0] /= v;
+  u[1] /= v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator -(vvBaseVector2<T> const& u)
+{
+  return vvBaseVector2<T>(-u[0], -u[1]);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator +(vvBaseVector2<T> const& u, vvBaseVector2<T> const& v)
+{
+  return vvBaseVector2<T>(u[0] + v[0], u[1] + v[1]);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator -(vvBaseVector2<T> const& u, vvBaseVector2<T> const& v)
+{
+  return vvBaseVector2<T>(u[0] - v[0], u[1] - v[1]);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator *(vvBaseVector2<T> const& u, vvBaseVector2<T> const& v)
+{
+  return vvBaseVector2<T>(u[0] * v[0], u[1] * v[1]);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator /(vvBaseVector2<T> const& u, vvBaseVector2<T> const& v)
+{
+  return vvBaseVector2<T>(u[0] / v[0], u[1] / v[1]);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator +(vvBaseVector2<T> const& u, T const& v)
+{
+  return vvBaseVector2<T>(u[0] + v, u[1] + v);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator -(vvBaseVector2<T> const& u, T const& v)
+{
+  return vvBaseVector2<T>(u[0] - v, u[1] - v);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator *(vvBaseVector2<T> const& u, T const& v)
+{
+  return vvBaseVector2<T>(u[0] * v, u[1] * v);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator /(vvBaseVector2<T> const& u, T const& v)
+{
+  return vvBaseVector2<T>(u[0] / v, u[1] / v);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator +(T const& u, vvBaseVector2<T> const& v)
+{
+  return vvBaseVector2<T>(u + v[0], u + v[1]);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator -(T const& u, vvBaseVector2<T> const& v)
+{
+  return vvBaseVector2<T>(u - v[0], u - v[1]);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator *(T const& u, vvBaseVector2<T> const& v)
+{
+  return vvBaseVector2<T>(u * v[0], u * v[1]);
+}
+
+
+template<typename T>
+vvBaseVector2<T> operator /(T const& u, vvBaseVector2<T> const& v)
+{
+  return vvBaseVector2<T>(u / v[0], u / v[1]);
+}
+
+
+//------------------------------------------------------------------------------
+// vvBaseVector3 operators
+//------------------------------------------------------------------------------
+
+
+template<typename T>
+bool operator ==(vvBaseVector3<T> const& u, vvBaseVector3<T> const& v)
+{
+  return u[0] == v[0] && u[1] == v[1] && u[2] == v[2];
+}
+
+
+template<typename T>
+bool operator !=(vvBaseVector3<T> const& u, vvBaseVector3<T> const& v)
+{
+  return !(u == v);
+}
+
+
+template<typename T>
+vvBaseVector3<T>& operator +=(vvBaseVector3<T>& u, vvBaseVector3<T> const& v)
+{
+  u[0] += v[0];
+  u[1] += v[1];
+  u[2] += v[2];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector3<T>& operator -=(vvBaseVector3<T>& u, vvBaseVector3<T> const& v)
+{
+  u[0] -= v[0];
+  u[1] -= v[1];
+  u[2] -= v[2];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector3<T>& operator *=(vvBaseVector3<T>& u, vvBaseVector3<T> const& v)
+{
+  u[0] *= v[0];
+  u[1] *= v[1];
+  u[2] *= v[2];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector3<T>& operator /=(vvBaseVector3<T>& u, vvBaseVector3<T> const& v)
+{
+  u[0] /= v[0];
+  u[1] /= v[1];
+  u[2] /= v[2];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector3<T>& operator +=(vvBaseVector3<T>& u, T const& v)
+{
+  u[0] += v;
+  u[1] += v;
+  u[2] += v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector3<T>& operator -=(vvBaseVector3<T>& u, T const& v)
+{
+  u[0] -= v;
+  u[1] -= v;
+  u[2] -= v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector3<T>& operator *=(vvBaseVector3<T>& u, T const& v)
+{
+  u[0] *= v;
+  u[1] *= v;
+  u[2] *= v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector3<T>& operator /=(vvBaseVector3<T>& u, T const& v)
+{
+  u[0] /= v;
+  u[1] /= v;
+  u[2] /= v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator -(vvBaseVector3<T> const& u)
+{
+  return vvBaseVector3<T>(-u[0], -u[1], -u[2]);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator +(vvBaseVector3<T> const& u, vvBaseVector3<T> const& v)
+{
+  return vvBaseVector3<T>(u[0] + v[0], u[1] + v[1], u[2] + v[2]);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator -(vvBaseVector3<T> const& u, vvBaseVector3<T> const& v)
+{
+  return vvBaseVector3<T>(u[0] - v[0], u[1] - v[1], u[2] - v[2]);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator *(vvBaseVector3<T> const& u, vvBaseVector3<T> const& v)
+{
+  return vvBaseVector3<T>(u[0] * v[0], u[1] * v[1], u[2] * v[2]);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator /(vvBaseVector3<T> const& u, vvBaseVector3<T> const& v)
+{
+  return vvBaseVector3<T>(u[0] / v[0], u[1] / v[1], u[2] / v[2]);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator +(vvBaseVector3<T> const& u, T const& v)
+{
+  return vvBaseVector3<T>(u[0] + v, u[1] + v, u[2] + v);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator -(vvBaseVector3<T> const& u, T const& v)
+{
+  return vvBaseVector3<T>(u[0] - v, u[1] - v, u[2] - v);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator *(vvBaseVector3<T> const& u, T const& v)
+{
+  return vvBaseVector3<T>(u[0] * v, u[1] * v, u[2] * v);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator /(vvBaseVector3<T> const& u, T const& v)
+{
+  return vvBaseVector3<T>(u[0] / v, u[1] / v, u[2] / v);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator +(T const& u, vvBaseVector3<T> const& v)
+{
+  return vvBaseVector3<T>(u + v[0], u + v[1], u + v[2]);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator -(T const& u, vvBaseVector3<T> const& v)
+{
+  return vvBaseVector3<T>(u - v[0], u - v[1], u - v[2]);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator *(T const& u, vvBaseVector3<T> const& v)
+{
+  return vvBaseVector3<T>(u * v[0], u * v[1], u * v[2]);
+}
+
+
+template<typename T>
+vvBaseVector3<T> operator /(T const& u, vvBaseVector3<T> const& v)
+{
+  return vvBaseVector3<T>(u / v[0], u / v[1], u / v[2]);
+}
+
+
+// Returns the cross product of u and v
+template<typename T>
+vvBaseVector3<T> operator ^(vvBaseVector3<T> const& u, vvBaseVector3<T> const& v)
+{
+  return vvBaseVector3<T>(
+    u[1] * v[2] - u[2] * v[1],
+    u[2] * v[0] - u[0] * v[2],
+    u[0] * v[1] - u[1] * v[0]
+    );
+}
+
+
+//------------------------------------------------------------------------------
+// vvBaseVector4 operators
+//------------------------------------------------------------------------------
+
+
+template<typename T>
+bool operator ==(vvBaseVector4<T> const& u, vvBaseVector4<T> const& v)
+{
+  return u[0] == v[0] && u[1] == v[1] && u[2] == v[2] && u[3] == v[3];
+}
+
+
+template<typename T>
+bool operator !=(vvBaseVector4<T> const& u, vvBaseVector4<T> const& v)
+{
+  return !(u == v);
+}
+
+
+template<typename T>
+vvBaseVector4<T>& operator +=(vvBaseVector4<T>& u, vvBaseVector4<T> const& v)
+{
+  u[0] += v[0];
+  u[1] += v[1];
+  u[2] += v[2];
+  u[3] += v[3];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector4<T>& operator -=(vvBaseVector4<T>& u, vvBaseVector4<T> const& v)
+{
+  u[0] -= v[0];
+  u[1] -= v[1];
+  u[2] -= v[2];
+  u[3] -= v[3];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector4<T>& operator *=(vvBaseVector4<T>& u, vvBaseVector4<T> const& v)
+{
+  u[0] *= v[0];
+  u[1] *= v[1];
+  u[2] *= v[2];
+  u[3] *= v[3];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector4<T>& operator /=(vvBaseVector4<T>& u, vvBaseVector4<T> const& v)
+{
+  u[0] /= v[0];
+  u[1] /= v[1];
+  u[2] /= v[2];
+  u[3] /= v[3];
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector4<T>& operator +=(vvBaseVector4<T>& u, T const& v)
+{
+  u[0] += v;
+  u[1] += v;
+  u[2] += v;
+  u[3] += v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector4<T>& operator -=(vvBaseVector4<T>& u, T const& v)
+{
+  u[0] -= v;
+  u[1] -= v;
+  u[2] -= v;
+  u[3] -= v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector4<T>& operator *=(vvBaseVector4<T>& u, T const& v)
+{
+  u[0] *= v;
+  u[1] *= v;
+  u[2] *= v;
+  u[3] *= v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector4<T>& operator /=(vvBaseVector4<T>& u, T const& v)
+{
+  u[0] /= v;
+  u[1] /= v;
+  u[2] /= v;
+  u[3] /= v;
+
+  return u;
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator -(vvBaseVector4<T> const& u)
+{
+  return vvBaseVector4<T>(-u[0], -u[1], -u[2], -u[3]);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator +(vvBaseVector4<T> const& u, vvBaseVector4<T> const& v)
+{
+  return vvBaseVector4<T>(u[0] + v[0], u[1] + v[1], u[2] + v[2], u[3] + v[3]);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator -(vvBaseVector4<T> const& u, vvBaseVector4<T> const& v)
+{
+  return vvBaseVector4<T>(u[0] - v[0], u[1] - v[1], u[2] - v[2], u[3] - v[3]);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator *(vvBaseVector4<T> const& u, vvBaseVector4<T> const& v)
+{
+  return vvBaseVector4<T>(u[0] * v[0], u[1] * v[1], u[2] * v[2], u[3] * v[3]);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator /(vvBaseVector4<T> const& u, vvBaseVector4<T> const& v)
+{
+  return vvBaseVector4<T>(u[0] / v[0], u[1] / v[1], u[2] / v[2], u[3] / v[3]);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator +(vvBaseVector4<T> const& u, T const& v)
+{
+  return vvBaseVector4<T>(u[0] + v, u[1] + v, u[2] + v, u[3] + v);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator -(vvBaseVector4<T> const& u, T const& v)
+{
+  return vvBaseVector4<T>(u[0] - v, u[1] - v, u[2] - v, u[3] - v);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator *(vvBaseVector4<T> const& u, T const& v)
+{
+  return vvBaseVector4<T>(u[0] * v, u[1] * v, u[2] * v, u[3] * v);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator /(vvBaseVector4<T> const& u, T const& v)
+{
+  return vvBaseVector4<T>(u[0] / v, u[1] / v, u[2] / v, u[3] / v);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator +(T const& u, vvBaseVector4<T> const& v)
+{
+  return vvBaseVector4<T>(u + v[0], u + v[1], u + v[2], u + v[3]);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator -(T const& u, vvBaseVector4<T> const& v)
+{
+  return vvBaseVector4<T>(u - v[0], u - v[1], u - v[2], u - v[3]);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator *(T const& u, vvBaseVector4<T> const& v)
+{
+  return vvBaseVector4<T>(u * v[0], u * v[1], u * v[2], u * v[3]);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator /(T const& u, vvBaseVector4<T> const& v)
+{
+  return vvBaseVector4<T>(u / v[0], u / v[1], u / v[2], u / v[3]);
+}
+
+
 #include "vvvecmath.impl.h"
+
 
 #endif
 
