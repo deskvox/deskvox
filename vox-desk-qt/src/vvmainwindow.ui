@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -91,11 +94,14 @@
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="enabled">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="title">
      <string>&amp;Help</string>
     </property>
+    <addaction name="actionKeyboardCommands"/>
+    <addaction name="separator"/>
+    <addaction name="actionAboutDeskVOX"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSettings"/>
@@ -368,6 +374,19 @@
    </property>
    <property name="text">
     <string>Diagrams...</string>
+   </property>
+  </action>
+  <action name="actionKeyboardCommands">
+   <property name="text">
+    <string>Keyboard Commands</string>
+   </property>
+  </action>
+  <action name="actionAboutDeskVOX">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>About DeskVOX</string>
    </property>
   </action>
  </widget>

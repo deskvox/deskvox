@@ -22,9 +22,12 @@
 #include "vvdimensiondialog.h"
 #include "vvmainwindow.h"
 #include "vvmergedialog.h"
+#include "vvobjview.h"
 #include "vvplugin.h"
 #include "vvpluginutil.h"
+#include "vvprefdialog.h"
 #include "vvscreenshotdialog.h"
+#include "vvshortcutdialog.h"
 #include "vvtfdialog.h"
 #include "vvtimestepdialog.h"
 
@@ -41,7 +44,10 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QSettings>
+#include <QShortcut>
 #include <QStringList>
+
+using vox::vvObjView;
 
 vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   : QMainWindow(parent)
@@ -82,11 +88,14 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   _canvas->setPlugins(_plugins);
   setCentralWidget(_canvas);
 
+  _prefDialog = new vvPrefDialog(this);
+
   _tfDialog = new vvTFDialog(_canvas, this);
 
   _dimensionDialog = new vvDimensionDialog(_canvas, this);
   _mergeDialog = new vvMergeDialog(this);
   _screenshotDialog = new vvScreenshotDialog(_canvas, this);
+  _shortcutDialog = new vvShortcutDialog(this);
   _timeStepDialog = new vvTimeStepDialog(this);
 
   // file menu
@@ -114,8 +123,14 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(ui->actionAutoRotation, SIGNAL(triggered(bool)), this, SLOT(onAutoRotationTriggered(bool)));
   connect(ui->actionTimeSteps, SIGNAL(triggered()), this, SLOT(onTimeStepsTriggered()));
 
+  // help menu
+  connect(ui->actionKeyboardCommands, SIGNAL(triggered()), this, SLOT(onKeyboardCommandsClicked()));
+
   // misc.
   connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), this, SLOT(onNewVolDesc(vvVolDesc*)));
+
+  connect(_prefDialog, SIGNAL(parameterChanged(vvRenderer::ParameterType, const vvParam&)),
+    _canvas, SLOT(setParameter(vvRenderer::ParameterType, const vvParam&)));
 
   connect(_timeStepDialog, SIGNAL(valueChanged(int)), _canvas, SLOT(setTimeStep(int)));
   connect(_timeStepDialog, SIGNAL(play(double)), _canvas, SLOT(startAnimation(double)));
@@ -125,6 +140,62 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(_timeStepDialog, SIGNAL(first()), _canvas, SLOT(firstTimeStep()));
   connect(_timeStepDialog, SIGNAL(last()), _canvas, SLOT(lastTimeStep()));
   connect(_canvas, SIGNAL(currentFrame(int)), _timeStepDialog, SLOT(setCurrentFrame(int)));
+
+  // shortcuts
+
+  QShortcut* sc; // reassign for each shortcut, objects are ref-counted by Qt, anyway
+
+  // rendering quality
+  sc = new QShortcut(tr("+"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(incQuality()));
+
+  sc = new QShortcut(tr("="), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(incQuality()));
+
+  sc = new QShortcut(tr("-"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(decQuality()));
+
+  // rendering
+  sc = new QShortcut(tr("o"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(toggleOrientation()));
+
+  sc = new QShortcut(tr("b"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(toggleBoundaries()));
+
+  sc = new QShortcut(tr("c"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(togglePalette()));
+
+  sc = new QShortcut(tr("f"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(toggleFrameRate()));
+
+  sc = new QShortcut(tr("t"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(toggleNumTextures()));
+
+  sc = new QShortcut(tr("i"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(toggleInterpolation()));
+
+  sc = new QShortcut(tr("p"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(toggleProjectionType()));
+
+  // animation
+  sc = new QShortcut(tr("a"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), _timeStepDialog, SLOT(togglePlayback()));
+
+  // misc.
+  sc = new QShortcut(tr("q"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), this, SLOT(close()));
 }
 
 vvMainWindow::~vvMainWindow()
@@ -203,6 +274,61 @@ void vvMainWindow::mergeFiles(const QString& firstFile, const int num, const int
     QMessageBox::warning(this, tr("Error merging file"), tr("Cannot merge file: ") + firstFile, QMessageBox::Ok);
     break;
   }
+}
+
+void vvMainWindow::toggleOrientation()
+{
+  ui->actionShowOrientation->trigger();
+}
+
+void vvMainWindow::toggleBoundaries()
+{
+  ui->actionShowBoundaries->trigger();
+}
+
+void vvMainWindow::togglePalette()
+{
+  ui->actionShowPalette->trigger();
+}
+
+void vvMainWindow::toggleFrameRate()
+{
+  ui->actionShowFrameRate->trigger();
+}
+
+void vvMainWindow::toggleNumTextures()
+{
+  ui->actionShowNumTextures->trigger();
+}
+
+void vvMainWindow::toggleInterpolation()
+{
+  _prefDialog->toggleInterpolation();
+}
+
+void vvMainWindow::toggleProjectionType()
+{
+  vvObjView::ProjectionType type = static_cast<vvObjView::ProjectionType>(_canvas->getParameter(vvCanvas::VV_PROJECTIONTYPE).asInt());
+
+  if (type == vvObjView::PERSPECTIVE)
+  {
+    type = vvObjView::ORTHO;
+  }
+  else
+  {
+    type = vvObjView::PERSPECTIVE;
+  }
+  _canvas->setParameter(vvCanvas::VV_PROJECTIONTYPE, static_cast<int>(type));
+}
+
+void vvMainWindow::incQuality()
+{
+  _prefDialog->scaleStillQuality(1.05f);
+}
+
+void vvMainWindow::decQuality()
+{
+  _prefDialog->scaleStillQuality(0.95f);
 }
 
 void vvMainWindow::onLoadVolumeTriggered()
@@ -368,35 +494,35 @@ void vvMainWindow::onShowOrientationTriggered(bool checked)
 {
   vvDebugMsg::msg(3, "vvMainWindow::onShowOrientationTriggered()");
 
-  _canvas->getRenderer()->setParameter(vvRenderState::VV_ORIENTATION, checked);
+  _canvas->setParameter(vvRenderState::VV_ORIENTATION, checked);
 }
 
 void vvMainWindow::onShowBoundariesTriggered(bool checked)
 {
   vvDebugMsg::msg(3, "vvMainWindow::onShowBoundariesTriggered()");
 
-  _canvas->getRenderer()->setParameter(vvRenderState::VV_BOUNDARIES, checked);
+  _canvas->setParameter(vvRenderState::VV_BOUNDARIES, checked);
 }
 
 void vvMainWindow::onShowPaletteTriggered(bool checked)
 {
   vvDebugMsg::msg(3, "vvMainWindow::onShowPaletteTriggered()");
 
-  _canvas->getRenderer()->setParameter(vvRenderState::VV_PALETTE, checked);
+  _canvas->setParameter(vvRenderState::VV_PALETTE, checked);
 }
 
 void vvMainWindow::onShowNumTexturesTriggered(bool checked)
 {
   vvDebugMsg::msg(3, "vvMainWindow::onShowNumTexturesTriggered()");
 
-  _canvas->getRenderer()->setParameter(vvRenderState::VV_QUALITY_DISPLAY, checked);
+  _canvas->setParameter(vvRenderState::VV_QUALITY_DISPLAY, checked);
 }
 
 void vvMainWindow::onShowFrameRateTriggered(bool checked)
 {
   vvDebugMsg::msg(3, "vvMainWindow::onShowFrameRateTriggered()");
 
-  _canvas->getRenderer()->setParameter(vvRenderState::VV_FPS_DISPLAY, checked);
+  _canvas->setParameter(vvRenderState::VV_FPS_DISPLAY, checked);
 }
 
 void vvMainWindow::onAutoRotationTriggered(bool)
@@ -410,6 +536,14 @@ void vvMainWindow::onTimeStepsTriggered()
 
   _timeStepDialog->raise();
   _timeStepDialog->show();
+}
+
+void vvMainWindow::onKeyboardCommandsClicked()
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onKeyboardCommandsClicked()");
+
+  _shortcutDialog->raise();
+  _shortcutDialog->show();
 }
 
 void vvMainWindow::onNewVolDesc(vvVolDesc* vd)

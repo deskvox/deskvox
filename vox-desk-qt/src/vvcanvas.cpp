@@ -78,26 +78,6 @@ vvCanvas::~vvCanvas()
   delete _vd;
 }
 
-void vvCanvas::setParameter(ParameterType param, const vvParam& value)
-{
-  vvDebugMsg::msg(3, "vvCanvas::setParameter()");
-
-  switch (param)
-  {
-  case VV_BG_COLOR:
-    _bgColor = value;
-    break;
-  case VV_DOUBLEBUFFERING:
-    _doubleBuffering = value;
-    break;
-  case VV_SUPERSAMPLES:
-    _superSamples = value;
-    break;
-  default:
-    break;
-  }
-}
-
 void vvCanvas::setVolDesc(vvVolDesc* vd)
 {
   vvDebugMsg::msg(3, "vvCanvas::setVolDesc()");
@@ -352,6 +332,67 @@ void vvCanvas::setCurrentFrame(const int frame)
   updateGL();
 }
 
+void vvCanvas::setParameter(ParameterType param, const vvParam& value)
+{
+  vvDebugMsg::msg(3, "vvCanvas::setParameter()");
+
+  switch (param)
+  {
+  case VV_BG_COLOR:
+    _bgColor = value;
+    break;
+  case VV_DOUBLEBUFFERING:
+    _doubleBuffering = value;
+    break;
+  case VV_SUPERSAMPLES:
+    _superSamples = value;
+    break;
+  case VV_PROJECTIONTYPE:
+    _projectionType = static_cast<vvObjView::ProjectionType>(value.asInt());
+    updateProjection();
+  default:
+    break;
+  }
+  updateGL();
+}
+
+void vvCanvas::setParameter(vvRenderer::ParameterType param, const vvParam& value)
+{
+  vvDebugMsg::msg(3, "vvCanvas::setParameter()");
+
+  if (_renderer != NULL)
+  {
+    _renderer->setParameter(param, value);
+    updateGL();
+  }
+}
+
+vvParam vvCanvas::getParameter(vvCanvas::ParameterType param) const
+{
+  switch (param)
+  {
+  case VV_BG_COLOR:
+    return _bgColor;
+  case VV_DOUBLEBUFFERING:
+    return _doubleBuffering;
+  case VV_SUPERSAMPLES:
+    return _superSamples;
+  case VV_PROJECTIONTYPE:
+    return static_cast<int>(_projectionType);
+  default:
+    return vvParam();
+  }
+}
+
+vvParam vvCanvas::getParameter(vvRenderer::ParameterType param) const
+{
+  if (_renderer != NULL)
+  {
+    return _renderer->getParameter(param);
+  }
+  return vvParam();
+}
+
 void vvCanvas::startAnimation(const double fps)
 {
   vvDebugMsg::msg(3, "vvCanvas::startAnimation()");
@@ -416,5 +457,12 @@ void vvCanvas::lastTimeStep()
   vvDebugMsg::msg(3, "vvCanvas::lastTimeStep()");
 
   setCurrentFrame(_vd->frames - 1);
+}
+
+void vvCanvas::setQuality(const float quality)
+{
+  vvDebugMsg::msg(3, "vvCanvas::setQuality()");
+
+  setParameter(vvRenderer::VV_QUALITY, quality);
 }
 
