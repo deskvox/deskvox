@@ -71,6 +71,13 @@ void vvTimeStepDialog::setCurrentFrame(const int frame)
   ui->timeStepSlider->setValue(frame);
 }
 
+void vvTimeStepDialog::togglePlayback()
+{
+  vvDebugMsg::msg(3, "vvTimeStepDialog::togglePlayback()");
+
+  onPlayClicked();
+}
+
 void vvTimeStepDialog::onPlayClicked()
 {
   vvDebugMsg::msg(3, "vvTimeStepDialog::onPlayClicked()");

@@ -18,39 +18,27 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_TIMESTEPDIALOG_H
-#define VV_TIMESTEPDIALOG_H
+#ifndef VV_PREFDIALOG_H
+#define VV_PREFDIALOG_H
+
+#include <virvo/vvrenderer.h>
 
 #include <QDialog>
 
-class vvCanvas;
-class Ui_TimeStepDialog;
+class Ui_PrefDialog;
 
-class vvTimeStepDialog : public QDialog
+class vvPrefDialog : public QDialog
 {
   Q_OBJECT
 public:
-  vvTimeStepDialog(QWidget* parent = 0);
-  ~vvTimeStepDialog();
-private:
-  Ui_TimeStepDialog* ui;
+  vvPrefDialog(QWidget* parent = 0);
 
-  bool _playing;
-public slots:
-  void setFrames(int frames);
-  void setCurrentFrame(int frame);
-  void togglePlayback();
-private slots:
-  void onPlayClicked();
-  void onFrameRateChanged();
+  void toggleInterpolation();
+  void scaleStillQuality(float s);
+private:
+  Ui_PrefDialog* ui;
 signals:
-  void valueChanged(int value);
-  void play(double fps);
-  void pause();
-  void back();
-  void fwd();
-  void first();
-  void last();
+  void parameterChanged(vvRenderer::ParameterType param, const vvParam& value);
 };
 
 #endif

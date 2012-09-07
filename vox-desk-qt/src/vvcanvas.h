@@ -42,13 +42,13 @@ public:
   {
     VV_BG_COLOR = 0,
     VV_DOUBLEBUFFERING,
-    VV_SUPERSAMPLES
+    VV_SUPERSAMPLES,
+    VV_PROJECTIONTYPE
   };
 
   vvCanvas(const QGLFormat& format, const QString& filename = "", QWidget* parent = 0);
   ~vvCanvas();
 
-  void setParameter(ParameterType param, const vvParam& value);
   void setVolDesc(vvVolDesc* vd);
   void setPlugins(const QList<vvPlugin*>& plugins);
 
@@ -89,6 +89,11 @@ private:
   void updateProjection();
   void setCurrentFrame(int frame);
 public slots:
+  void setParameter(ParameterType param, const vvParam& value);
+  void setParameter(vvRenderer::ParameterType param, const vvParam& value);
+  vvParam getParameter(ParameterType param) const;
+  vvParam getParameter(vvRenderer::ParameterType param) const;
+
   void startAnimation(double fps);
   void stopAnimation();
   void setTimeStep(int step);
@@ -96,6 +101,7 @@ public slots:
   void decTimeStep();
   void firstTimeStep();
   void lastTimeStep();
+  void setQuality(float quality);
 signals:
   void newVolDesc(vvVolDesc* vd);
   void currentFrame(int frame);

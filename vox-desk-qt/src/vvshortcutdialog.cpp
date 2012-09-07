@@ -18,40 +18,18 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_TIMESTEPDIALOG_H
-#define VV_TIMESTEPDIALOG_H
+#include "vvshortcutdialog.h"
 
-#include <QDialog>
+#include "ui_vvshortcutdialog.h"
 
-class vvCanvas;
-class Ui_TimeStepDialog;
+#include <virvo/vvdebugmsg.h>
 
-class vvTimeStepDialog : public QDialog
+vvShortcutDialog::vvShortcutDialog(QWidget* parent)
+  : QDialog(parent)
+  , ui(new Ui_ShortcutDialog)
 {
-  Q_OBJECT
-public:
-  vvTimeStepDialog(QWidget* parent = 0);
-  ~vvTimeStepDialog();
-private:
-  Ui_TimeStepDialog* ui;
+  vvDebugMsg::msg(1, "vvShortcutDialog::vvShortcutDialog()");
 
-  bool _playing;
-public slots:
-  void setFrames(int frames);
-  void setCurrentFrame(int frame);
-  void togglePlayback();
-private slots:
-  void onPlayClicked();
-  void onFrameRateChanged();
-signals:
-  void valueChanged(int value);
-  void play(double fps);
-  void pause();
-  void back();
-  void fwd();
-  void first();
-  void last();
-};
-
-#endif
+  ui->setupUi(this);
+}
 
