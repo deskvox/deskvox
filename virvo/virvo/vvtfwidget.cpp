@@ -265,6 +265,24 @@ void vvTFBell::fromString(const std::string& str)
 
   _name = new char[tokens[1].length()];
   strcpy(_name, tokens[1].c_str());
+
+#define atof(x) static_cast<float>(atof(x))
+  _pos[0] = atof(tokens[2].c_str());
+  _pos[1] = atof(tokens[3].c_str());
+  _pos[2] = atof(tokens[4].c_str());
+
+  _size[0] = atof(tokens[5].c_str());
+  _size[1] = atof(tokens[6].c_str());
+  _size[2] = atof(tokens[7].c_str());
+
+  _col[0] = atof(tokens[8].c_str());
+  _col[1] = atof(tokens[9].c_str());
+  _col[2] = atof(tokens[10].c_str());
+
+  _ownColor = (tokens[11].compare("1") == 0);
+
+  _opacity = atof(tokens[12].c_str());
+#undef atof
 }
 
 /** The 2D gaussian function can be found at:
@@ -765,6 +783,16 @@ void vvTFSkip::fromString(const std::string& str)
 
   _name = new char[tokens[1].length()+1];
   strcpy(_name, tokens[1].c_str());
+
+#define atof(x) static_cast<float>(atof(x))
+  _pos[0] = atof(tokens[2].c_str());
+  _pos[1] = atof(tokens[3].c_str());
+  _pos[2] = atof(tokens[4].c_str());
+
+  _size[0] = atof(tokens[5].c_str());
+  _size[1] = atof(tokens[6].c_str());
+  _size[2] = atof(tokens[7].c_str());
+#undef atof
 }
 
 /** @return 0 if x/y/z point is within skipped area, otherwise -1
