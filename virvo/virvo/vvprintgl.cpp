@@ -23,9 +23,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "vvopengl.h"
-#ifdef VV_GLUT
-#include <glut.h>
-#endif
+#include "vvx11.h"
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -40,7 +38,7 @@ using std::cerr;
 using std::endl;
 
 #ifdef HAVE_X11
-Display* vvPrintGL::dsp = NULL;
+Display* dsp = NULL;
 #endif
 
 /** Constructor.
@@ -80,11 +78,11 @@ vvPrintGL::vvPrintGL()
 
   wglUseFontBitmaps(hDC, 32, 96, base);           // Builds 96 Characters Starting At Character 32
 #elif defined(HAVE_X11)
-  if (vvPrintGL::dsp == NULL)
+  if (dsp == NULL)
   {
-    vvPrintGL::dsp = XOpenDisplay(NULL);
+    dsp = XOpenDisplay(NULL);
   }
-  XFontStruct* font = XLoadQueryFont(vvPrintGL::dsp, "-*-courier-bold-r-normal--20-*-*-*-*-*-*-*");
+  XFontStruct* font = XLoadQueryFont(dsp, "-*-courier-bold-r-normal--20-*-*-*-*-*-*-*");
 
   if (font)
   {
