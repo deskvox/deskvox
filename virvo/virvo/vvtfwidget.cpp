@@ -179,6 +179,10 @@ vvTFWidget::WidgetType vvTFWidget::getWidgetType(const char* str)
   }
   else if (strcmp(str, "TF_SKIP") == 0)
   {
+    return vvTFWidget::TF_SKIP;
+  }
+  else if (strcmp(str, "TF_CUSTOM") == 0)
+  {
     return vvTFWidget::TF_CUSTOM;
   }
   else if (strcmp(str, "TF_CUSTOM_2D") == 0)
