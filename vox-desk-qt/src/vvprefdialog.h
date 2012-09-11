@@ -37,6 +37,9 @@ public:
   void scaleStillQuality(float s);
 private:
   Ui_PrefDialog* ui;
+private slots:
+  void onInterpolationToggled(bool checked);
+  void onMipToggled(bool checked);
 signals:
   void parameterChanged(vvRenderer::ParameterType param, const vvParam& value);
 };

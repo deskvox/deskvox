@@ -106,6 +106,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(ui->actionLoadCamera, SIGNAL(triggered()), this, SLOT(onLoadCameraTriggered()));
   connect(ui->actionSaveCameraAs, SIGNAL(triggered()), this, SLOT(onSaveCameraAsTriggered()));
   connect(ui->actionScreenshot, SIGNAL(triggered()), this, SLOT(onScreenshotTriggered()));
+  connect(ui->actionPreferences, SIGNAL(triggered()), this, SLOT(onPreferencesTriggered()));
 
   // settings menu
   connect(ui->actionBackgroundColor, SIGNAL(triggered()), this, SLOT(onBackgroundColorTriggered()));
@@ -461,6 +462,14 @@ void vvMainWindow::onScreenshotTriggered()
 
   _screenshotDialog->raise();
   _screenshotDialog->show();
+}
+
+void vvMainWindow::onPreferencesTriggered()
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onPreferencesTriggered()");
+
+  _prefDialog->raise();
+  _prefDialog->show();
 }
 
 void vvMainWindow::onTransferFunctionTriggered()

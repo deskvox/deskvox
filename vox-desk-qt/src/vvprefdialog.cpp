@@ -35,6 +35,9 @@ vvPrefDialog::vvPrefDialog(QWidget* parent)
   vvDebugMsg::msg(1, "vvPrefDialog::vvPrefDialog()");
 
   ui->setupUi(this);
+
+  connect(ui->interpolationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onInterpolationToggled(bool)));
+  connect(ui->mipCheckBox, SIGNAL(toggled(bool)), this, SLOT(onMipToggled(bool)));
 }
 
 void vvPrefDialog::toggleInterpolation()
@@ -62,5 +65,20 @@ void vvPrefDialog::scaleStillQuality(const float s)
   
   ui->stillSpinBox->setValue(quality);
   emit parameterChanged(vvRenderer::VV_QUALITY, quality);
+}
+
+void vvPrefDialog::onInterpolationToggled(const bool checked)
+{
+  vvDebugMsg::msg(3, "vvPrefDialog::onInterpolationToggled()");
+
+  emit parameterChanged(vvRenderer::VV_SLICEINT, checked);
+}
+
+void vvPrefDialog::onMipToggled(bool checked)
+{
+  vvDebugMsg::msg(3, "vvPrefDialog::onMipToggled()");
+
+  const int mipMode = checked ? 1 : 0; // don't support mip == 2 (min. intensity) for now
+  emit parameterChanged(vvRenderer::VV_MIP_MODE, mipMode);
 }
 

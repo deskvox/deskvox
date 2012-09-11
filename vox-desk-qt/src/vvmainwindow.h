@@ -77,6 +77,7 @@ private slots:
   void onLoadCameraTriggered();
   void onSaveCameraAsTriggered();
   void onScreenshotTriggered();
+  void onPreferencesTriggered();
 
   void onTransferFunctionTriggered();
   void onBackgroundColorTriggered();
