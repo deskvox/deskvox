@@ -23,8 +23,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "vvopengl.h"
-#ifdef VV_GLUT
-#include <glut.h>
+#if !defined(__APPLE__)
+#include "vvx11.h"
 #endif
 
 #ifdef VV_DEBUG_MEMORY
@@ -39,8 +39,12 @@
 using std::cerr;
 using std::endl;
 
-#ifdef HAVE_X11
-Display* vvPrintGL::dsp = NULL;
+#if defined(HAVE_X11) && !defined(__APPLE__)
+Display* dsp = NULL;
+#endif
+
+#ifdef __APPLE__
+#include <CoreGraphics/CoreGraphics.h>
 #endif
 
 /** Constructor.
@@ -48,11 +52,9 @@ Display* vvPrintGL::dsp = NULL;
   @param hDC Windows device context
 */
 vvPrintGL::vvPrintGL()
-  : _consoleOutput(false)
+  : _fontColor(vvVector4(1.0f, 1.0f, 1.0f, 1.0f))
 {
   vvDebugMsg::msg(3, "vvPrintGL::vvPrintGL()");
-
-  _fontColor = vvVector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 #ifdef _WIN32
   HFONT font;                                     // Windows Font ID
@@ -79,12 +81,12 @@ vvPrintGL::vvPrintGL()
   SelectObject(hDC, font);                        // Selects The Font We Want
 
   wglUseFontBitmaps(hDC, 32, 96, base);           // Builds 96 Characters Starting At Character 32
-#elif defined(HAVE_X11)
-  if (vvPrintGL::dsp == NULL)
+#elif defined(HAVE_X11) && !defined(__APPLE__)
+  if (dsp == NULL)
   {
-    vvPrintGL::dsp = XOpenDisplay(NULL);
+    dsp = XOpenDisplay(NULL);
   }
-  XFontStruct* font = XLoadQueryFont(vvPrintGL::dsp, "-*-courier-bold-r-normal--20-*-*-*-*-*-*-*");
+  XFontStruct* font = XLoadQueryFont(dsp, "-*-courier-bold-r-normal--20-*-*-*-*-*-*-*");
 
   if (font)
   {
@@ -98,10 +100,6 @@ vvPrintGL::vvPrintGL()
       glXUseXFont(id, first, last - first + 1, base + first);
     }
   }
-#else
-  // Don't render to OpenGL window, but to console.
-  _consoleOutput = true;
-  (void)_fontColor;
 #endif
 }
 
@@ -144,31 +142,46 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
           *p = '+';
   }
 
-  if (!_consoleOutput)
-  {
-    saveGLState();
+  saveGLState();
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glRasterPos2f(x, y);
 
-    glColor4f(_fontColor[0], _fontColor[1], _fontColor[2], _fontColor[3]);
-    glRasterPos2f(x, y);                            // set text position
-  #ifdef _WIN32
-    glListBase(base - 32);                          // Sets The Base Character to 32
-  #else
-    glListBase(base);
-  #endif
+#if !defined(__APPLE__)
+  glColor4f(_fontColor[0], _fontColor[1], _fontColor[2], _fontColor[3]);
+#ifdef _WIN32
+  glListBase(base - 32);                          // Sets The Base Character to 32
+#else
+  glListBase(base);
+#endif
                                                     // Draws The Display List Text
-    glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
+  glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
+#elif defined(__APPLE__)
+  size_t size = 24;
+  std::string font = "Courier New";
+  size_t len = strlen(text);
+  CGFloat w = size * len;
+  CGFloat h = size;
+  void* buf = NULL;
+  buf = calloc(4 * w, h);
+  CGContextRef ctx = CGBitmapContextCreate(buf, w, h, 8, w * 4, CGColorSpaceCreateDeviceRGB(), kCGImageAlphaPremultipliedLast);
+  CGContextSelectFont(ctx, font.c_str(), size, kCGEncodingMacRoman);//kCGEncodingFontSpecific);
+  CGContextSetTextDrawingMode(ctx, kCGTextFill);
+  CGContextSetRGBFillColor(ctx, _fontColor[0], _fontColor[1], _fontColor[2], _fontColor[3]);
+  CGContextSetTextMatrix(ctx, CGAffineTransformIdentity);
+  CGContextTranslateCTM(ctx, 0, size);
+  CGContextScaleCTM(ctx, 1, -1);
+  CGContextShowTextAtPoint(ctx, 0, 0, text, len);
 
-    restoreGLState();
-  }
-  else
-  {
-    cerr << text << endl;
-  }
+  glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+
+  CGContextRelease(ctx);
+  free(buf);
+#endif
+  restoreGLState();
 }
 
 //----------------------------------------------------------------------------

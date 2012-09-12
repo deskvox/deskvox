@@ -21,11 +21,8 @@
 #ifndef _VVPRINTGL_H_
 #define _VVPRINTGL_H_
 
-#include <float.h>
-
 #include "vvexport.h"
 #include "vvvecmath.h"
-#include "vvx11.h"
 
 //============================================================================
 // Class Definition
@@ -41,11 +38,7 @@ class VIRVOEXPORT vvPrintGL
     GLuint base;
     GLint glsRasterPos[4];                        ///< stores GL_CURRENT_RASTER_POSITION
     GLfloat glsColor[4];                          ///< stores GL_CURRENT_COLOR
-#ifdef HAVE_X11
-    static Display* dsp;
-#endif
     vvVector4 _fontColor;
-    bool _consoleOutput;
 
     void saveGLState();
     void restoreGLState();
