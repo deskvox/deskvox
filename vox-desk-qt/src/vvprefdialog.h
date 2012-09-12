@@ -40,6 +40,8 @@ private:
 private slots:
   void onInterpolationToggled(bool checked);
   void onMipToggled(bool checked);
+  void onMovingDialChanged(int value);
+  void onStillDialChanged(int value);
 signals:
   void parameterChanged(vvRenderer::ParameterType param, const vvParam& value);
 };

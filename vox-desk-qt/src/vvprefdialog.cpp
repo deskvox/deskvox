@@ -28,6 +28,18 @@
 #include <iostream>
 #include <limits>
 
+namespace
+{
+  int movingDialOldValue = 0;
+  int stillDialOldValue = 0;
+
+  int getDialDelta(int oldval, int newval, int minval, int maxval)
+  {
+    const int median = (minval + maxval) / 2;
+//    if (oldval >= minval && oldval < median && newval < maxval
+  }
+}
+
 vvPrefDialog::vvPrefDialog(QWidget* parent)
   : QDialog(parent)
   , ui(new Ui_PrefDialog)
@@ -38,6 +50,8 @@ vvPrefDialog::vvPrefDialog(QWidget* parent)
 
   connect(ui->interpolationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onInterpolationToggled(bool)));
   connect(ui->mipCheckBox, SIGNAL(toggled(bool)), this, SLOT(onMipToggled(bool)));
+  connect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
+  connect(ui->stillDial, SIGNAL(valueChanged(int)), this, SLOT(onStillDialChanged(int)));
 }
 
 void vvPrefDialog::toggleInterpolation()
@@ -80,5 +94,19 @@ void vvPrefDialog::onMipToggled(bool checked)
 
   const int mipMode = checked ? 1 : 0; // don't support mip == 2 (min. intensity) for now
   emit parameterChanged(vvRenderer::VV_MIP_MODE, mipMode);
+}
+
+void vvPrefDialog::onMovingDialChanged(int value)
+{
+  vvDebugMsg::msg(3, "vvPrefDialog::onMovingDialChanged()");
+
+  int d = getDialDelta(movingDialOldValue, value, ui->movingDial->minimum(), ui->movingDial->maximum());
+  std::cerr << d << std::endl;
+  movingDialOldValue = value;
+}
+
+void vvPrefDialog::onStillDialChanged(int value)
+{
+  vvDebugMsg::msg(3, "vvPrefDialog::onStillDialChanged()");
 }
 

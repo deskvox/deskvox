@@ -42,9 +42,6 @@
    </item>
    <item>
     <widget class="QGroupBox" name="qualityBox">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
      <property name="title">
       <string>Rendering quality</string>
      </property>
@@ -60,6 +57,12 @@
         </item>
         <item>
          <widget class="QDial" name="movingDial">
+          <property name="maximum">
+           <number>99</number>
+          </property>
+          <property name="invertedAppearance">
+           <bool>false</bool>
+          </property>
           <property name="wrapping">
            <bool>true</bool>
           </property>
@@ -68,7 +71,7 @@
         <item>
          <widget class="QDoubleSpinBox" name="movingSpinBox">
           <property name="decimals">
-           <number>6</number>
+           <number>2</number>
           </property>
           <property name="maximum">
            <double>99999.000000000000000</double>
@@ -102,7 +105,7 @@
         <item>
          <widget class="QDoubleSpinBox" name="stillSpinBox">
           <property name="decimals">
-           <number>6</number>
+           <number>2</number>
           </property>
           <property name="maximum">
            <double>99999.000000000000000</double>
