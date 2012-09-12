@@ -40,6 +40,8 @@ public slots:
   void setFrames(int frames);
   void setCurrentFrame(int frame);
   void togglePlayback();
+  void stepFwd();
+  void stepBack();
 private slots:
   void onPlayClicked();
   void onFrameRateChanged();

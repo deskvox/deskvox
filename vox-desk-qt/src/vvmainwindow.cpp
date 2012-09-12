@@ -193,6 +193,14 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   sc->setContext(Qt::ApplicationShortcut);
   connect(sc, SIGNAL(activated()), _timeStepDialog, SLOT(togglePlayback()));
 
+  sc = new QShortcut(tr("n"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), _timeStepDialog, SLOT(stepFwd()));
+
+  sc = new QShortcut(tr("Shift+n"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), _timeStepDialog, SLOT(stepBack()));
+
   // misc.
   sc = new QShortcut(tr("q"), this);
   sc->setContext(Qt::ApplicationShortcut);

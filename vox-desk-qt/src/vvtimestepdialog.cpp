@@ -78,6 +78,20 @@ void vvTimeStepDialog::togglePlayback()
   onPlayClicked();
 }
 
+void vvTimeStepDialog::stepFwd()
+{
+  vvDebugMsg::msg(3, "vvTimeStepDialog::stepFwd()");
+
+  emit fwd();
+}
+
+void vvTimeStepDialog::stepBack()
+{
+  vvDebugMsg::msg(3, "vvTimeStepDialog::stepBack()");
+
+  emit back();
+}
+
 void vvTimeStepDialog::onPlayClicked()
 {
   vvDebugMsg::msg(3, "vvTimeStepDialog::onPlayClicked()");
