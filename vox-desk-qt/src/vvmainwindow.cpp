@@ -129,6 +129,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
 
   // misc.
   connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), this, SLOT(onNewVolDesc(vvVolDesc*)));
+  connect(_canvas, SIGNAL(statusMessage(const std::string&)), this, SLOT(onStatusMessage(const std::string&)));
 
   connect(_prefDialog, SIGNAL(parameterChanged(vvRenderer::ParameterType, const vvParam&)),
     _canvas, SLOT(setParameter(vvRenderer::ParameterType, const vvParam&)));
@@ -205,6 +206,8 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   sc = new QShortcut(tr("q"), this);
   sc->setContext(Qt::ApplicationShortcut);
   connect(sc, SIGNAL(activated()), this, SLOT(close()));
+
+  statusBar()->showMessage(tr("Welcome to DeskVOX!"));
 }
 
 vvMainWindow::~vvMainWindow()
@@ -568,6 +571,13 @@ void vvMainWindow::onNewVolDesc(vvVolDesc* vd)
   vvDebugMsg::msg(3, "vvMainWindow::onNewVolDesc()");
 
   _timeStepDialog->setFrames(vd->frames);
+}
+
+void vvMainWindow::onStatusMessage(const std::string& str)
+{
+  vvDebugMsg::msg(3, "vvMainWindow::onStatusMessage()");
+
+  statusBar()->showMessage(str.c_str());
 }
 
 int main(int argc, char** argv)

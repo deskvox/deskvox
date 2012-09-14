@@ -96,6 +96,7 @@ private slots:
 
   // misc.
   void onNewVolDesc(vvVolDesc* vd);
+  void onStatusMessage(const std::string& str);
 };
 
 #endif

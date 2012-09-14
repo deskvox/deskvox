@@ -104,6 +104,7 @@ public slots:
   void setQuality(float quality);
 signals:
   void newVolDesc(vvVolDesc* vd);
+  void statusMessage(const std::string& str);
   void currentFrame(int frame);
   void resized(const QSize& size);
 };

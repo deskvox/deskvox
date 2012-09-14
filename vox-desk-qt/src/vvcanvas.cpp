@@ -95,6 +95,9 @@ void vvCanvas::setVolDesc(vvVolDesc* vd)
     plugin->setVolDesc(_vd);
   }
 
+  std::string str;
+  _vd->makeInfoString(&str);
+  emit statusMessage(str);
   emit newVolDesc(_vd);
 }
 
