@@ -168,8 +168,6 @@ set(VIRVO_SOURCES
   vvbsptreevisitors.cpp
   vvcgprogram.cpp
   vvclock.cpp
-# vvclusterclient.cpp
-# vvclusterserver.cpp
   vvcolor.cpp
   vvcuda.cpp
   vvcudaimg.cpp
