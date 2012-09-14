@@ -219,7 +219,7 @@ class VIRVOEXPORT vvVolDesc
     void   makeIcon(int, const uchar*);
     void   makeIcon(int);
     void   printInfoLine(const char* = NULL);
-    void   makeInfoString(char*);
+    void   makeInfoString(std::string* infoString);
     void   makeShortInfoString(char*);
     void   printVolumeInfo();
     void   printStatistics();

@@ -3226,9 +3226,9 @@ void VVEditVoxelsDialog::updateValues()
 */
 void VVEditVoxelsDialog::updateDialogs()
 {
-  char string[256];
-  _canvas->_vd->makeInfoString(string);
-  _shell->_statusBar->setText(string);
+  std::string str;
+  _canvas->_vd->makeInfoString(&str);
+  _shell->_statusBar->setText(str.c_str());
   _shell->_volumeDialog->updateValues();
   _shell->_transWindow->setDirtyHistogram();
 }

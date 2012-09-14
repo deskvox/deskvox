@@ -1377,8 +1377,6 @@ long VVShell::onAllUpdate(FXObject*,FXSelector,void*)
 */
 void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorithm, vvTexRend::GeometryType gt, vvTexRend::VoxelType vt)
 {
-  char string[256];
-
   vvDebugMsg::msg(1, "VVShell::setCanvasRenderer()");
 
   if (_glcanvas->makeCurrent())
@@ -1401,8 +1399,9 @@ void VVShell::setCanvasRenderer(vvVolDesc* vd, vvRenderer::RendererType algorith
 
     if (vd->chan>1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt()==0) _prefWindow->toggleMIP();
     else if (vd->chan==1 && _canvas->_renderer->getParameter(vvRenderState::VV_MIP_MODE).asInt() > 0) _prefWindow->toggleMIP();
-    vd->makeInfoString(string);
-    _statusBar->setText(string);
+    std::string str;
+    vd->makeInfoString(&str);
+    _statusBar->setText(str.c_str());
     _volumeDialog->updateValues();
     _transWindow->updateValues();
     _prefWindow->updateValues();

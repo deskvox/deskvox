@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <sstream>
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -2637,27 +2638,60 @@ void vvVolDesc::makeSphere(int outer, int inner, InterpolationType ipt, bool ver
 */
 void vvVolDesc::printInfoLine(const char* desc)
 {
-  char string[256];
+  std::string str;
 
-  if (desc!=NULL) cerr << desc << " ";
+  if (desc!=NULL) std::cerr << desc << " ";
 
-  makeInfoString(string);
-  cerr << string << endl;
+  makeInfoString(&str);
+  std::cerr << str << std::endl;
 }
 
 //----------------------------------------------------------------------------
 /** Expects an array of 256 _allocated_ char values.
  */
-void vvVolDesc::makeInfoString(char* infoString)
+void vvVolDesc::makeInfoString(std::string* infoString)
 {
   char* basename = new char[strlen(getFilename()) + 1];
   vvToolshed::extractFilename(basename, getFilename());
 
-  sprintf(infoString, "%s: %d %s, %d x %d x %d %s, %d %s %s, %d %s",
-    basename, frames, (frames!=1) ? "frames" : "frame",
-    vox[0], vox[1], vox[2], (frames>1) ? "voxels per frame" : "voxels",
-    bpc, (bpc!=1) ? "bytes" : "byte", "per channel",
-    chan, (chan!=1) ? "channels" : "channel");
+  std::stringstream buf;
+  buf << basename << ": " << frames << " ";
+  if (frames != 1)
+  {
+    buf << "frames";
+  }
+  else
+  {
+    buf << "frame";
+  }
+  buf << ", " << vox[0] << " x " << vox[1] << " x " << vox[2] << " ";
+  if (frames > 1)
+  {
+    buf << "voxels per frame";
+  }
+  else
+  {
+    buf << "voxels";
+  }
+  buf << ", " << bpc << " ";
+  if (bpc != 1)
+  {
+    buf << "bytes";
+  }
+  else
+  {
+    buf << "byte";
+  }
+  buf << " per channel" << ", " << chan << " ";
+  if (chan != 1)
+  {
+    buf << "channels";
+  }
+  else
+  {
+    buf << "channel";
+  }
+  *infoString = buf.str();
 
   delete[] basename;
 }
