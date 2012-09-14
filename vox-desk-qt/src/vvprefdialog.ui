@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>270</width>
-    <height>317</height>
+    <width>380</width>
+    <height>349</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,6 +20,27 @@
       <string>Rendering algorithm</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLabel" name="rendererLabel">
+          <property name="text">
+           <string>Renderer:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="comboBox">
+          <property name="minimumSize">
+           <size>
+            <width>200</width>
+            <height>0</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
       <item>
        <widget class="QCheckBox" name="interpolationCheckBox">
         <property name="text">
@@ -74,7 +95,7 @@
            <number>2</number>
           </property>
           <property name="maximum">
-           <double>99999.000000000000000</double>
+           <double>10000.000000000000000</double>
           </property>
           <property name="singleStep">
            <double>0.010000000000000</double>
@@ -108,7 +129,7 @@
            <number>2</number>
           </property>
           <property name="maximum">
-           <double>99999.000000000000000</double>
+           <double>10000.000000000000000</double>
           </property>
           <property name="singleStep">
            <double>0.010000000000000</double>

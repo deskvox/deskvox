@@ -40,6 +40,8 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   , _projectionType(vox::vvObjView::PERSPECTIVE)
   , _doubleBuffering(format.doubleBuffer())
   , _superSamples(format.samples())
+  , _stillQuality(1.0f)
+  , _movingQuality(1.0f)
 {
   vvDebugMsg::msg(1, "vvCanvas::vvCanvas()");
 
@@ -242,6 +244,8 @@ void vvCanvas::mousePressEvent(QMouseEvent* event)
 {
   vvDebugMsg::msg(3, "vvCanvas::mousePressEvent()");
 
+  _stillQuality = _renderer->getParameter(vvRenderer::VV_QUALITY);
+  _renderer->setParameter(vvRenderer::VV_QUALITY, _movingQuality);
   _mouseButton = event->button();
   _lastMousePos = event->pos();
 }
@@ -251,6 +255,8 @@ void vvCanvas::mouseReleaseEvent(QMouseEvent*)
   vvDebugMsg::msg(3, "vvCanvas::mouseReleaseEvent()");
 
   _mouseButton = Qt::NoButton;
+  _renderer->setParameter(vvRenderer::VV_QUALITY, _stillQuality);
+  updateGL();
 }
 
 void vvCanvas::init()
@@ -335,22 +341,25 @@ void vvCanvas::setCurrentFrame(const int frame)
   updateGL();
 }
 
-void vvCanvas::setParameter(ParameterType param, const vvParam& value)
+void vvCanvas::setParameter(vvParameters::ParameterType param, const vvParam& value)
 {
   vvDebugMsg::msg(3, "vvCanvas::setParameter()");
 
   switch (param)
   {
-  case VV_BG_COLOR:
+  case vvParameters::VV_BG_COLOR:
     _bgColor = value;
     break;
-  case VV_DOUBLEBUFFERING:
+  case vvParameters::VV_DOUBLEBUFFERING:
     _doubleBuffering = value;
     break;
-  case VV_SUPERSAMPLES:
+  case vvParameters::VV_MOVING_QUALITY:
+    _movingQuality = value;
+    break;
+  case vvParameters::VV_SUPERSAMPLES:
     _superSamples = value;
     break;
-  case VV_PROJECTIONTYPE:
+  case vvParameters::VV_PROJECTIONTYPE:
     _projectionType = static_cast<vvObjView::ProjectionType>(value.asInt());
     updateProjection();
   default:
@@ -370,17 +379,17 @@ void vvCanvas::setParameter(vvRenderer::ParameterType param, const vvParam& valu
   }
 }
 
-vvParam vvCanvas::getParameter(vvCanvas::ParameterType param) const
+vvParam vvCanvas::getParameter(vvParameters::ParameterType param) const
 {
   switch (param)
   {
-  case VV_BG_COLOR:
+  case vvParameters::VV_BG_COLOR:
     return _bgColor;
-  case VV_DOUBLEBUFFERING:
+  case vvParameters::VV_DOUBLEBUFFERING:
     return _doubleBuffering;
-  case VV_SUPERSAMPLES:
+  case vvParameters::VV_SUPERSAMPLES:
     return _superSamples;
-  case VV_PROJECTIONTYPE:
+  case vvParameters::VV_PROJECTIONTYPE:
     return static_cast<int>(_projectionType);
   default:
     return vvParam();
@@ -460,12 +469,5 @@ void vvCanvas::lastTimeStep()
   vvDebugMsg::msg(3, "vvCanvas::lastTimeStep()");
 
   setCurrentFrame(_vd->frames - 1);
-}
-
-void vvCanvas::setQuality(const float quality)
-{
-  vvDebugMsg::msg(3, "vvCanvas::setQuality()");
-
-  setParameter(vvRenderer::VV_QUALITY, quality);
 }
 

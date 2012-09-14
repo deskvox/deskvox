@@ -134,7 +134,7 @@ void vvPrefDialog::onMovingSpinBoxChanged(double value)
   movingDialOldValue = dialval;
   ui->movingDial->setValue(dialval);
   movingSpinBoxOldValue = value;
-  emit parameterChanged(VV_MOVING_QUALITY, static_cast<float>(ui->movingSpinBox->value()));
+  emit parameterChanged(vvParameters::VV_MOVING_QUALITY, static_cast<float>(ui->movingSpinBox->value()));
   connect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
 }
 
@@ -170,7 +170,7 @@ void vvPrefDialog::onMovingDialChanged(int value)
   ui->movingSpinBox->setValue(ui->movingSpinBox->value() + dd);
   movingSpinBoxOldValue = ui->movingSpinBox->value();
   movingDialOldValue = value;
-  emit parameterChanged(VV_MOVING_QUALITY, static_cast<float>(ui->movingSpinBox->value()));
+  emit parameterChanged(vvParameters::VV_MOVING_QUALITY, static_cast<float>(ui->movingSpinBox->value()));
   connect(ui->movingSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onMovingSpinBoxChanged(double)));
 }
 

@@ -22,6 +22,7 @@
 #define VV_CANVAS_H
 
 #include "vvobjview.h"
+#include "vvparameters.h"
 #include "vvplugin.h"
 
 #include <virvo/vvrendererfactory.h>
@@ -38,14 +39,6 @@ class vvCanvas : public QGLWidget
 {
   Q_OBJECT
 public:
-  enum ParameterType
-  {
-    VV_BG_COLOR = 0,
-    VV_DOUBLEBUFFERING,
-    VV_SUPERSAMPLES,
-    VV_PROJECTIONTYPE
-  };
-
   vvCanvas(const QGLFormat& format, const QString& filename = "", QWidget* parent = 0);
   ~vvCanvas();
 
@@ -78,6 +71,8 @@ private:
   vvColor _bgColor;
   bool _doubleBuffering;
   int _superSamples;
+  float _stillQuality;
+  float _movingQuality;
 
   Qt::MouseButton _mouseButton;
   QPoint _lastMousePos;
@@ -89,9 +84,9 @@ private:
   void updateProjection();
   void setCurrentFrame(int frame);
 public slots:
-  void setParameter(ParameterType param, const vvParam& value);
+  void setParameter(vvParameters::ParameterType param, const vvParam& value);
   void setParameter(vvRenderer::ParameterType param, const vvParam& value);
-  vvParam getParameter(ParameterType param) const;
+  vvParam getParameter(vvParameters::ParameterType param) const;
   vvParam getParameter(vvRenderer::ParameterType param) const;
 
   void startAnimation(double fps);
@@ -101,7 +96,6 @@ public slots:
   void decTimeStep();
   void firstTimeStep();
   void lastTimeStep();
-  void setQuality(float quality);
 signals:
   void newVolDesc(vvVolDesc* vd);
   void statusMessage(const std::string& str);

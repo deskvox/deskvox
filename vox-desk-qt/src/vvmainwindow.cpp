@@ -131,6 +131,8 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), this, SLOT(onNewVolDesc(vvVolDesc*)));
   connect(_canvas, SIGNAL(statusMessage(const std::string&)), this, SLOT(onStatusMessage(const std::string&)));
 
+  connect(_prefDialog, SIGNAL(parameterChanged(vvParameters::ParameterType, const vvParam&)),
+    _canvas, SLOT(setParameter(vvParameters::ParameterType, const vvParam&)));
   connect(_prefDialog, SIGNAL(parameterChanged(vvRenderer::ParameterType, const vvParam&)),
     _canvas, SLOT(setParameter(vvRenderer::ParameterType, const vvParam&)));
 
@@ -320,7 +322,7 @@ void vvMainWindow::toggleInterpolation()
 
 void vvMainWindow::toggleProjectionType()
 {
-  vvObjView::ProjectionType type = static_cast<vvObjView::ProjectionType>(_canvas->getParameter(vvCanvas::VV_PROJECTIONTYPE).asInt());
+  vvObjView::ProjectionType type = static_cast<vvObjView::ProjectionType>(_canvas->getParameter(vvParameters::VV_PROJECTIONTYPE).asInt());
 
   if (type == vvObjView::PERSPECTIVE)
   {
@@ -330,7 +332,7 @@ void vvMainWindow::toggleProjectionType()
   {
     type = vvObjView::PERSPECTIVE;
   }
-  _canvas->setParameter(vvCanvas::VV_PROJECTIONTYPE, static_cast<int>(type));
+  _canvas->setParameter(vvParameters::VV_PROJECTIONTYPE, static_cast<int>(type));
 }
 
 void vvMainWindow::incQuality()
@@ -497,7 +499,7 @@ void vvMainWindow::onBackgroundColorTriggered()
 
   QColor qcolor = QColorDialog::getColor();
   vvColor color(qcolor.redF(), qcolor.greenF(), qcolor.blueF());
-  _canvas->setParameter(vvCanvas::VV_BG_COLOR, color);
+  _canvas->setParameter(vvParameters::VV_BG_COLOR, color);
   QSettings settings;
   settings.setValue("canvas/bgcolor", qcolor);
 }

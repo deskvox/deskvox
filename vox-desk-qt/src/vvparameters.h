@@ -18,38 +18,20 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_PREFDIALOG_H
-#define VV_PREFDIALOG_H
+#ifndef VV_PARAMETERS_H
+#define VV_PARAMETERS_H
 
-#include "vvparameters.h"
-
-#include <virvo/vvrenderer.h>
-
-#include <QDialog>
-
-class Ui_PrefDialog;
-
-class vvPrefDialog : public QDialog
+namespace vvParameters
 {
-  Q_OBJECT
-public:
-  vvPrefDialog(QWidget* parent = 0);
-
-  void toggleInterpolation();
-  void scaleStillQuality(float s);
-private:
-  Ui_PrefDialog* ui;
-private slots:
-  void onInterpolationToggled(bool checked);
-  void onMipToggled(bool checked);
-  void onMovingSpinBoxChanged(double value);
-  void onStillSpinBoxChanged(double value);
-  void onMovingDialChanged(int value);
-  void onStillDialChanged(int value);
-signals:
-  void parameterChanged(vvParameters::ParameterType param, const vvParam& value);
-  void parameterChanged(vvRenderer::ParameterType param, const vvParam& value);
-};
+  enum ParameterType
+  {
+    VV_BG_COLOR = 0,
+    VV_DOUBLEBUFFERING,
+    VV_MOVING_QUALITY,
+    VV_PROJECTIONTYPE,
+    VV_SUPERSAMPLES
+  };
+}
 
 #endif
 

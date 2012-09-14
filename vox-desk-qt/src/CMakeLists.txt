@@ -16,6 +16,7 @@ set(VOXDESK_QT_INC
   vvmainwindow.h
   vvmergedialog.h
   vvobjview.h
+  vvparameters.h
   vvpluginutil.h
   vvprefdialog.h
   vvscreenshotdialog.h
