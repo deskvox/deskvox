@@ -131,6 +131,8 @@ set(VIRVO_HEADERS
   vvsoftvr.h
   vvsphere.h
   vvstingray.h
+  vvswitchrenderer.h
+  vvswitchrenderer.impl.h
   vvtcpserver.h
   vvtcpsocket.h
   vvtexrend.h
@@ -166,8 +168,6 @@ set(VIRVO_SOURCES
   vvbsptreevisitors.cpp
   vvcgprogram.cpp
   vvclock.cpp
-# vvclusterclient.cpp
-# vvclusterserver.cpp
   vvcolor.cpp
   vvcuda.cpp
   vvcudaimg.cpp
