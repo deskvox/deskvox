@@ -25,18 +25,37 @@
 #include <virvo/vvdebugmsg.h>
 
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <limits>
 
 namespace
 {
+  double movingSpinBoxOldValue = 1.0;
+  double stillSpinBoxOldValue = 1.0;
   int movingDialOldValue = 0;
   int stillDialOldValue = 0;
 
+  /* make qt dials behave as if they had an unlimited range
+   */
   int getDialDelta(int oldval, int newval, int minval, int maxval)
   {
-    const int median = (minval + maxval) / 2;
-//    if (oldval >= minval && oldval < median && newval < maxval
+    const int eps = 10; // largest possible step from a single user action
+    const int mineps = minval + eps;
+    const int maxeps = maxval - eps;
+
+    if (oldval < mineps && newval > maxeps)
+    {
+      return -(oldval + maxval + 1 - newval);
+    }
+    else if (oldval > maxeps && newval < mineps)
+    {
+      return maxval + 1 - oldval + newval;
+    }
+    else
+    {
+      return newval - oldval;
+    }
   }
 }
 
@@ -50,6 +69,8 @@ vvPrefDialog::vvPrefDialog(QWidget* parent)
 
   connect(ui->interpolationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onInterpolationToggled(bool)));
   connect(ui->mipCheckBox, SIGNAL(toggled(bool)), this, SLOT(onMipToggled(bool)));
+  connect(ui->movingSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onMovingSpinBoxChanged(double)));
+  connect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
   connect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
   connect(ui->stillDial, SIGNAL(valueChanged(int)), this, SLOT(onStillDialChanged(int)));
 }
@@ -78,7 +99,6 @@ void vvPrefDialog::scaleStillQuality(const float s)
   quality *= s;
   
   ui->stillSpinBox->setValue(quality);
-  emit parameterChanged(vvRenderer::VV_QUALITY, quality);
 }
 
 void vvPrefDialog::onInterpolationToggled(const bool checked)
@@ -96,17 +116,75 @@ void vvPrefDialog::onMipToggled(bool checked)
   emit parameterChanged(vvRenderer::VV_MIP_MODE, mipMode);
 }
 
+void vvPrefDialog::onMovingSpinBoxChanged(double value)
+{
+  vvDebugMsg::msg(3, "vvPrefDialog::onMovingSpinBoxChanged()");
+
+  disconnect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
+  const int upper = ui->movingDial->maximum() + 1;
+  double d = value - movingSpinBoxOldValue;
+  int di = round(d * upper);
+  int dialval = ui->movingDial->value();
+  dialval += di;
+  dialval %= upper;
+  while (dialval < ui->movingDial->minimum())
+  {
+    dialval += upper;
+  }
+  movingDialOldValue = dialval;
+  ui->movingDial->setValue(dialval);
+  movingSpinBoxOldValue = value;
+  emit parameterChanged(VV_MOVING_QUALITY, static_cast<float>(ui->movingSpinBox->value()));
+  connect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
+}
+
+void vvPrefDialog::onStillSpinBoxChanged(double value)
+{
+  vvDebugMsg::msg(3, "vvPrefDialog::onStillSpinBoxChanged()");
+
+  disconnect(ui->stillDial, SIGNAL(valueChanged(int)), this, SLOT(onStillDialChanged(int)));
+  const int upper = ui->stillDial->maximum() + 1;
+  double d = value - stillSpinBoxOldValue;
+  int di = round(d * upper);
+  int dialval = ui->stillDial->value();
+  dialval += di;
+  dialval %= upper;
+  while (dialval < ui->stillDial->minimum())
+  {
+    dialval += upper;
+  }
+  stillDialOldValue = dialval;
+  ui->stillDial->setValue(dialval);
+  stillSpinBoxOldValue = value;
+  emit parameterChanged(vvRenderer::VV_QUALITY, static_cast<float>(ui->stillSpinBox->value()));
+  connect(ui->stillDial, SIGNAL(valueChanged(int)), this, SLOT(onStillDialChanged(int)));
+}
+
 void vvPrefDialog::onMovingDialChanged(int value)
 {
   vvDebugMsg::msg(3, "vvPrefDialog::onMovingDialChanged()");
 
-  int d = getDialDelta(movingDialOldValue, value, ui->movingDial->minimum(), ui->movingDial->maximum());
-  std::cerr << d << std::endl;
+  const int d = getDialDelta(movingDialOldValue, value, ui->movingDial->minimum(), ui->movingDial->maximum());
+  const double dd = static_cast<double>(d) / static_cast<double>(ui->movingDial->maximum() + 1);
+  disconnect(ui->movingSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onMovingSpinBoxChanged(double)));
+  ui->movingSpinBox->setValue(ui->movingSpinBox->value() + dd);
+  movingSpinBoxOldValue = ui->movingSpinBox->value();
   movingDialOldValue = value;
+  emit parameterChanged(VV_MOVING_QUALITY, static_cast<float>(ui->movingSpinBox->value()));
+  connect(ui->movingSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onMovingSpinBoxChanged(double)));
 }
 
 void vvPrefDialog::onStillDialChanged(int value)
 {
   vvDebugMsg::msg(3, "vvPrefDialog::onStillDialChanged()");
+
+  const int d = getDialDelta(stillDialOldValue, value, ui->stillDial->minimum(), ui->stillDial->maximum());
+  const double dd = static_cast<double>(d) / static_cast<double>(ui->stillDial->maximum() + 1);
+  disconnect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
+  ui->stillSpinBox->setValue(ui->stillSpinBox->value() + dd);
+  stillSpinBoxOldValue = ui->stillSpinBox->value();
+  stillDialOldValue = value;
+  emit parameterChanged(vvRenderer::VV_QUALITY, static_cast<float>(ui->stillSpinBox->value()));
+  connect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
 }
 

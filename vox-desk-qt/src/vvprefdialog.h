@@ -31,6 +31,11 @@ class vvPrefDialog : public QDialog
 {
   Q_OBJECT
 public:
+  enum ParameterType
+  {
+    VV_MOVING_QUALITY = 0
+  };
+
   vvPrefDialog(QWidget* parent = 0);
 
   void toggleInterpolation();
@@ -40,9 +45,12 @@ private:
 private slots:
   void onInterpolationToggled(bool checked);
   void onMipToggled(bool checked);
+  void onMovingSpinBoxChanged(double value);
+  void onStillSpinBoxChanged(double value);
   void onMovingDialChanged(int value);
   void onStillDialChanged(int value);
 signals:
+  void parameterChanged(ParameterType param, const vvParam& value);
   void parameterChanged(vvRenderer::ParameterType param, const vvParam& value);
 };
 
