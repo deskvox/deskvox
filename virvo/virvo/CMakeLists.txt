@@ -131,6 +131,8 @@ set(VIRVO_HEADERS
   vvsoftvr.h
   vvsphere.h
   vvstingray.h
+  vvswitchrenderer.h
+  vvswitchrenderer.impl.h
   vvtcpserver.h
   vvtcpsocket.h
   vvtexrend.h
