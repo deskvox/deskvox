@@ -258,9 +258,9 @@ set(VIRVO_SHADERS
 )
 
 if(APPLE)
-  set(VIRVO_WINDOWING_SYSTEM "Cocoa" CACHE STRING "Available windowing systems for render contexts (Cocoa | X11")
+  set(VIRVO_WINDOWING_SYSTEM "Cocoa" CACHE STRING "Available windowing systems for render contexts (Cocoa | X11)")
 elseif(WIN32)
-  set(VIRVO_WINDOWING_SYSTEM "WGL" CACHE STRING "Available windowing systems for render contexts (WGL | X11")
+  set(VIRVO_WINDOWING_SYSTEM "WGL" CACHE STRING "Available windowing systems for render contexts (WGL | X11)")
 else()
   set(VIRVO_WINDOWING_SYSTEM "X11" CACHE STRING "Available windowing systems for render contexts (X11)")
 endif()
