@@ -148,7 +148,6 @@ set(VIRVO_HEADERS
   vvvirvo.h
   vvvisitor.h
   vvvoldesc.h
-  vvx11.h
 )
 
 set(VIRVO_SOURCES

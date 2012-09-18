@@ -18,13 +18,21 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #include "vvcocoaglcontext.h"
 #include "vvdebugmsg.h"
 #include "vvrendercontext.h"
-#include "vvx11.h"
 
 #include <sstream>
 #include <vector>
+
+#ifdef HAVE_X11
+#include <GL/glx.h>
+#include <X11/Xlib.h>
+#endif
 
 struct ContextArchData
 {

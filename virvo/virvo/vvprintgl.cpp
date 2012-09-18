@@ -23,8 +23,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "vvopengl.h"
-#if !defined(__APPLE__)
-#include "vvx11.h"
+
+#if defined(HAVE_X11) && !defined(__APPLE__)
+#include <GL/glx.h>
+#include <X11/Xlib.h>
 #endif
 
 #ifdef VV_DEBUG_MEMORY

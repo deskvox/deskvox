@@ -35,7 +35,10 @@
 #include "vvopengl.h"
 #include "vvdynlib.h"
 
-#include "vvx11.h"
+#ifdef HAVE_X11
+#include <GL/glx.h>
+#include <X11/Xlib.h>
+#endif
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
