@@ -53,6 +53,10 @@ and vvMatrix are components of vvVecmath, a useful library for linear algebra.
 namespace virvo
 {
   VIRVOEXPORT char const* version();
+  /** \brief  Query if the library was linked against one of the following:
+    cg|cuda|gl|glu|volpack|x11|ffmpeg|snappy|volpack
+   */
+  VIRVOEXPORT bool hasFeature(const char* name);
 }
 
 #endif
