@@ -393,6 +393,33 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd,
   return ::create(vd, rs, t, options);
 }
 
+bool vvRendererFactory::hasRenderer(vvRenderer::RendererType type)
+{
+  switch (type)
+  {
+  case vvRenderer::CUDASW:
+#ifdef HAVE_CUDA
+    return true;
+#else
+    return false;
+#endif
+  case vvRenderer::RAYREND:
+#ifdef HAVE_CUDA
+    return true;
+#else
+    return false;
+#endif
+  case vvRenderer::VOLPACK:
+#ifdef HAVE_VOLPACK
+    return true;
+#else
+    return false;
+#endif
+  default:
+    return true;
+  }
+}
+
 //============================================================================
 // End of File
 //============================================================================

@@ -56,6 +56,8 @@ class VIRVOEXPORT vvRendererFactory
         const char *type=NULL,
         const char *options=NULL);
 
+    static bool hasRenderer(vvRenderer::RendererType type);
+
 };
 #endif
 
