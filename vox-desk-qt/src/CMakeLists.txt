@@ -6,6 +6,8 @@ deskvox_use_package(Qt
   LIBS ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTOPENGL_LIBRARY}
 )
 
+deskvox_use_package(GLEW)
+
 deskvox_link_libraries(virvo)
 
 add_definitions(-DVV_APPLICATION_BUILD)
