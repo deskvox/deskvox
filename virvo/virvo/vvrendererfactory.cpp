@@ -393,6 +393,55 @@ vvRenderer *vvRendererFactory::create(vvVolDesc *vd,
   return ::create(vd, rs, t, options);
 }
 
+bool vvRendererFactory::hasRenderer(const std::string& name)
+{
+  std::string str = name;
+  std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+
+  if (str == "rayrend")
+  {
+    return hasRenderer(vvRenderer::RAYREND);
+  }
+  else if (str == "softrayrend")
+  {
+    return hasRenderer(vvRenderer::SOFTRAYREND);
+  }
+#ifdef HAVE_OPENGL
+  else if (str == "slices")
+  {
+    return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_SLICES);
+  }
+  else if (str == "cubic2d")
+  {
+    return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_CUBIC2D);
+  }
+  else if (str == "planar")
+  {
+    return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_VIEWPORT);
+  }
+  else if (str == "bricks")
+  {
+    return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_BRICKS);
+  }
+  else if (str == "spherical")
+  {
+    return hasRenderer(vvRenderer::TEXREND) && vvTexRend::isSupported(vvTexRend::VV_SPHERICAL);
+  }
+#endif
+  else if (str == "serbrick")
+  {
+    return hasRenderer(vvRenderer::SERBRICKREND);
+  }
+  else if (str == "parbrick")
+  {
+    return hasRenderer(vvRenderer::PARBRICKREND);
+  }
+  else
+  {
+    return false;
+  }
+}
+
 bool vvRendererFactory::hasRenderer(vvRenderer::RendererType type)
 {
   switch (type)
@@ -405,6 +454,12 @@ bool vvRendererFactory::hasRenderer(vvRenderer::RendererType type)
 #endif
   case vvRenderer::RAYREND:
 #ifdef HAVE_CUDA
+    return true;
+#else
+    return false;
+#endif
+  case vvRenderer::TEXREND:
+#ifdef HAVE_OPENGL
     return true;
 #else
     return false;
