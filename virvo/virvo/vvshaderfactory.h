@@ -56,8 +56,10 @@ public:
   vvShaderProgram* createProgram(const std::string& vert, const std::string& geom, const std::string& frag,
                                  const vvShaderProgram::GeoShaderArgs& geoShaderArgs);
 
-  bool cgSupport();     ///< returns if CG is supported
-  bool glslSupport();   ///< returns if GLSL is supported
+  /** Query support for a shading language
+    \param lang  ("cg"|"glsl")
+    */
+  static bool isSupported(const std::string& lang);
 
 private:
   const std::string getShaderDir();
