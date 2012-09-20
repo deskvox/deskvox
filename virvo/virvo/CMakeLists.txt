@@ -75,8 +75,6 @@ set(VIRVO_HEADERS
   vvbsptreevisitors.h
   vvcgprogram.h
   vvclock.h
-# vvclusterclient.h
-# vvclusterserver.h
   vvcolor.h
   vvcuda.h
   vvcudaimg.h
