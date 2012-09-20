@@ -88,7 +88,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   _canvas->setPlugins(_plugins);
   setCentralWidget(_canvas);
 
-  _prefDialog = new vvPrefDialog(this);
+  _prefDialog = new vvPrefDialog(_canvas, this);
 
   _tfDialog = new vvTFDialog(_canvas, this);
 
@@ -131,6 +131,8 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), this, SLOT(onNewVolDesc(vvVolDesc*)));
   connect(_canvas, SIGNAL(statusMessage(const std::string&)), this, SLOT(onStatusMessage(const std::string&)));
 
+  connect(_prefDialog, SIGNAL(rendererChanged(const std::string&, const vvRendererFactory::Options&)),
+    _canvas, SLOT(setRenderer(const std::string&, const vvRendererFactory::Options&)));
   connect(_prefDialog, SIGNAL(parameterChanged(vvParameters::ParameterType, const vvParam&)),
     _canvas, SLOT(setParameter(vvParameters::ParameterType, const vvParam&)));
   connect(_prefDialog, SIGNAL(parameterChanged(vvRenderer::ParameterType, const vvParam&)),

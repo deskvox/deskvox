@@ -84,6 +84,7 @@ private:
   void updateProjection();
   void setCurrentFrame(int frame);
 public slots:
+  void setRenderer(const std::string& name, const vvRendererFactory::Options& options);
   void setParameter(vvParameters::ParameterType param, const vvParam& value);
   void setParameter(vvRenderer::ParameterType param, const vvParam& value);
   vvParam getParameter(vvParameters::ParameterType param) const;

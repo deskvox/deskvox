@@ -262,7 +262,6 @@ void vvCanvas::mouseReleaseEvent(QMouseEvent*)
 void vvCanvas::init()
 {
   vvDebugMsg::msg(3, "vvCanvas::init()");
-
   
   vvFileIO* fio = new vvFileIO;
   fio->loadVolumeData(_vd, vvFileIO::ALL_DATA);
@@ -278,7 +277,7 @@ void vvCanvas::init()
   // init renderer
   if (_vd != NULL)
   {
-    _currentRenderer = "viewport";
+    _currentRenderer = "planar";
     _currentOptions["voxeltype"] = "arb";
     createRenderer();
   }
@@ -307,8 +306,7 @@ void vvCanvas::createRenderer()
   const float DEFAULT_OBJ_SIZE = 0.6f;
   _vd->resizeEdgeMax(_ov.getViewportWidth() * DEFAULT_OBJ_SIZE);
 
-  vvRendererFactory::Options opt(_currentOptions);
-  _renderer = vvRendererFactory::create(_vd, state, _currentRenderer.c_str(), opt);
+  _renderer = vvRendererFactory::create(_vd, state, _currentRenderer.c_str(), _currentOptions);
 }
 
 void vvCanvas::updateProjection()
@@ -338,6 +336,16 @@ void vvCanvas::setCurrentFrame(const int frame)
     plugin->timestep();
   }
 
+  updateGL();
+}
+
+void vvCanvas::setRenderer(const std::string& name, const vvRendererFactory::Options& options)
+{
+  vvDebugMsg::msg(3, "vvCanvas::setRenderer()");
+
+  _currentRenderer = name;
+  _currentOptions = options;
+  createRenderer();
   updateGL();
 }
 
