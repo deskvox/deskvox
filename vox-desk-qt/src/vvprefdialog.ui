@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>380</width>
-    <height>580</height>
+    <width>420</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -51,8 +51,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>340</width>
-           <height>168</height>
+           <width>366</width>
+           <height>238</height>
           </rect>
          </property>
          <attribute name="label">
@@ -61,7 +61,7 @@
          <attribute name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Renderer: OpenGL textures&lt;/p&gt;&lt;p&gt;Geometry; Voxel type; Pixel Shader; Brick size&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </attribute>
-         <layout class="QVBoxLayout" name="verticalLayout_4">
+         <layout class="QVBoxLayout" name="verticalLayout_6">
           <item>
            <layout class="QHBoxLayout" name="geometryLayout">
             <item>
@@ -134,23 +134,40 @@
           <item>
            <layout class="QHBoxLayout" name="texInfoLayout">
             <item>
-             <widget class="QLabel" name="texInfoIconLabel">
-              <property name="minimumSize">
-               <size>
-                <width>32</width>
-                <height>32</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>32</width>
-                <height>32</height>
-               </size>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="texInfoIconLayout">
+              <item>
+               <widget class="QLabel" name="texInfoIconLabel">
+                <property name="minimumSize">
+                 <size>
+                  <width>32</width>
+                  <height>32</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>32</width>
+                  <height>32</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="verticalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
             </item>
             <item>
              <widget class="QLabel" name="texInfoLabel">
@@ -171,8 +188,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>340</width>
-           <height>168</height>
+           <width>366</width>
+           <height>238</height>
           </rect>
          </property>
          <attribute name="label">
@@ -217,8 +234,8 @@ p, li { white-space: pre-wrap; }
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>340</width>
-           <height>168</height>
+           <width>366</width>
+           <height>238</height>
           </rect>
          </property>
          <attribute name="label">
