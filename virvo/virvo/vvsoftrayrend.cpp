@@ -288,7 +288,15 @@ std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int
       t.left = tilew * x;
       t.bottom = tileh * y;
       t.right = t.left + tilew;
+      if (t.right > w)
+      {
+        t.right = w;
+      }
       t.top = t.bottom + tileh;
+      if (t.top > h)
+      {
+        t.top = h;
+      }
       result.push_back(t);
     }
   }
