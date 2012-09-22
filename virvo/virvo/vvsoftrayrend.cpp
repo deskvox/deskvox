@@ -204,6 +204,8 @@ void vvSoftRayRend::renderVolumeGL()
 
   pthread_barrier_wait(_firstThread->barrier);
 #ifdef HAVE_OPENGL
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glWindowPos2i(0, 0);
   glDrawPixels(_width, _height, GL_RGBA, GL_FLOAT, &colors[0]);
 #endif
