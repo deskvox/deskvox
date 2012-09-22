@@ -239,6 +239,7 @@ vvMatrix& vvMatrix::scaleLocal(float s)
 vvMatrix vvMatrix::rotate(float a, float x, float y, float z)
 {
   vvMatrix rot;                                   // rotation matrix
+  rot.identity();
   float cosfa, sinfa;                             // shortcuts
 
   // normalize vector:
