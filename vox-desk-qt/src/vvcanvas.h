@@ -73,11 +73,15 @@ private:
   int _superSamples;
   float _stillQuality;
   float _movingQuality;
+  bool _spinAnimation;
+
+  vvMatrix _lastRotation;
 
   Qt::MouseButton _mouseButton;
   QPoint _lastMousePos;
 
   QTimer* _animTimer;
+  QTimer* _spinTimer;
 
   void init();
   void createRenderer();
@@ -97,6 +101,8 @@ public slots:
   void decTimeStep();
   void firstTimeStep();
   void lastTimeStep();
+private slots:
+  void repeatLastRotation();
 signals:
   void newVolDesc(vvVolDesc* vd);
   void statusMessage(const std::string& str);

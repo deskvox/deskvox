@@ -42,6 +42,7 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   , _superSamples(format.samples())
   , _stillQuality(1.0f)
   , _movingQuality(1.0f)
+  , _spinAnimation(false)
 {
   vvDebugMsg::msg(1, "vvCanvas::vvCanvas()");
 
@@ -70,6 +71,9 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
 
   _animTimer = new QTimer(this);
   connect(_animTimer, SIGNAL(timeout()), this, SLOT(incTimeStep()));
+
+  _spinTimer = new QTimer(this);
+  connect(_spinTimer, SIGNAL(timeout()), this, SLOT(repeatLastRotation()));
 }
 
 vvCanvas::~vvCanvas()
@@ -213,9 +217,13 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
   {
   case Qt::LeftButton:
   {
-    _ov._camera.trackballRotation(width(), height(),
+    _lastRotation = _ov._camera.trackballRotation(width(), height(),
       _lastMousePos.x(), _lastMousePos.y(),
       event->pos().x(), event->pos().y());
+    if (_spinAnimation)
+    {
+      repeatLastRotation();
+    }
     break;
   }
   case Qt::MiddleButton:
@@ -248,6 +256,11 @@ void vvCanvas::mousePressEvent(QMouseEvent* event)
   _renderer->setParameter(vvRenderer::VV_QUALITY, _movingQuality);
   _mouseButton = event->button();
   _lastMousePos = event->pos();
+  _lastRotation.identity();
+  if (_spinAnimation)
+  {
+    _spinTimer->stop();
+  }
 }
 
 void vvCanvas::mouseReleaseEvent(QMouseEvent*)
@@ -370,6 +383,9 @@ void vvCanvas::setParameter(vvParameters::ParameterType param, const vvParam& va
   case vvParameters::VV_PROJECTIONTYPE:
     _projectionType = static_cast<vvObjView::ProjectionType>(value.asInt());
     updateProjection();
+  case vvParameters::VV_SPIN_ANIMATION:
+    _spinAnimation = value;
+    break;
   default:
     break;
   }
@@ -399,6 +415,8 @@ vvParam vvCanvas::getParameter(vvParameters::ParameterType param) const
     return _superSamples;
   case vvParameters::VV_PROJECTIONTYPE:
     return static_cast<int>(_projectionType);
+  case vvParameters::VV_SPIN_ANIMATION:
+    return _spinAnimation;
   default:
     return vvParam();
   }
@@ -477,5 +495,17 @@ void vvCanvas::lastTimeStep()
   vvDebugMsg::msg(3, "vvCanvas::lastTimeStep()");
 
   setCurrentFrame(_vd->frames - 1);
+}
+
+void vvCanvas::repeatLastRotation()
+{
+  vvDebugMsg::msg(3, "vvCanvas::repeatLastRotation()");
+
+  _ov._camera.multiplyRight(_lastRotation);
+  updateGL();
+
+  const float spindelay = 0.05f;
+  const float delay = std::abs(spindelay * 1000.0f);
+  _spinTimer->start(static_cast<int>(delay));
 }
 

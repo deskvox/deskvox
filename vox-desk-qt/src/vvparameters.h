@@ -29,6 +29,7 @@ namespace vvParameters
     VV_DOUBLEBUFFERING,
     VV_MOVING_QUALITY,
     VV_PROJECTIONTYPE,
+    VV_SPIN_ANIMATION,
     VV_SUPERSAMPLES
   };
 }

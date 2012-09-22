@@ -549,9 +549,11 @@ void vvMainWindow::onShowFrameRateTriggered(bool checked)
   _canvas->setParameter(vvRenderState::VV_FPS_DISPLAY, checked);
 }
 
-void vvMainWindow::onAutoRotationTriggered(bool)
+void vvMainWindow::onAutoRotationTriggered(bool checked)
 {
   vvDebugMsg::msg(3, "vvMainWindow::onAutoRotationTriggered()");
+
+  _canvas->setParameter(vvParameters::VV_SPIN_ANIMATION, checked);
 }
 
 void vvMainWindow::onTimeStepsTriggered()
