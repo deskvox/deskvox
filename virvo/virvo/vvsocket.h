@@ -59,6 +59,12 @@ typedef SOCKET vvsock_t;
 typedef int vvsock_t;
 #endif
 
+#ifdef _WIN32
+#define VV_INVALID_SOCKET INVALID_SOCKET
+#else
+#define VV_INVALID_SOCKET (-1)
+#endif
+
 //----------------------------------------------------------------------------
 /** This abstract class provides basic socket functionality. It is used for
     TCP and UDP sockets. For example code see documentation about vvSocket<BR>
@@ -171,9 +177,6 @@ protected:
   int _recvBuffsize;
   int _sendBuffsize;
 
-#if !defined(__linux__) && !defined(LINUX) && !(defined(__APPLE__) && defined(__GNUC__) && GNUC__ < 4)
-#define socklen_t int
-#endif
   socklen_t _hostAddrLen;
   socklen_t _bufflen;
 };
