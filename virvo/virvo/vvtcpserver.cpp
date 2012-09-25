@@ -40,7 +40,9 @@ vvTcpServer::vvTcpServer(const ushort port)
   int optval=1;
 #endif
 
-  if((sockfd = socket(AF_INET, SOCK_STREAM, 0 )) < 0)
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+  if (sockfd == VV_INVALID_SOCKET)
   {
     vvDebugMsg::msg(1, "Error: socket()", true);
     _server = NULL;
@@ -85,15 +87,7 @@ vvTcpServer::~vvTcpServer()
 
 bool vvTcpServer::initStatus() const
 {
-  if(_server)
-  {
-    if(_server->getSockfd() < 0)
-      return false;
-    else
-      return true;
-  }
-  else
-    return false;
+  return _server && (_server->getSockfd() != VV_INVALID_SOCKET);
 }
 
 vvTcpSocket* vvTcpServer::nextConnection(double timeout)
@@ -133,8 +127,9 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
     }
   }
 
-  vvsock_t n;
-  if ( (n = accept(_server->getSockfd(), (struct sockaddr *)&_hostAddr, &_hostAddrlen)) < 0)
+  vvsock_t n = accept(_server->getSockfd(), (struct sockaddr *)&_hostAddr, &_hostAddrlen);
+
+  if (n == VV_INVALID_SOCKET)
   {
     vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: accept() failed", true);
     return NULL;
