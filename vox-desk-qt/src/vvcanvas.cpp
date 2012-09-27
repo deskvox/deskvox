@@ -321,6 +321,19 @@ void vvCanvas::createRenderer()
   _vd->resizeEdgeMax(_ov.getViewportWidth() * DEFAULT_OBJ_SIZE);
 
   _renderer = vvRendererFactory::create(_vd, state, _currentRenderer.c_str(), _currentOptions);
+
+  // set boundary color to inverse of background
+  vvColor invColor;
+  if (_bgColor[0] + _bgColor[1] + _bgColor[2] > 1.5f)
+  {
+    invColor = vvColor(0.0f, 0.0f, 0.0f);
+  }
+  else
+  {
+    invColor = vvColor(1.0f, 1.0f, 1.0f);
+  }
+  _renderer->setParameter(vvRenderState::VV_BOUND_COLOR, invColor);
+  _renderer->setParameter(vvRenderState::VV_CLIP_COLOR, invColor);
 }
 
 void vvCanvas::updateProjection()
