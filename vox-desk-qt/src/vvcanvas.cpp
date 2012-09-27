@@ -397,6 +397,7 @@ void vvCanvas::setParameter(vvParameters::ParameterType param, const vvParam& va
   case vvParameters::VV_PROJECTIONTYPE:
     _projectionType = static_cast<vvObjView::ProjectionType>(value.asInt());
     updateProjection();
+    break;
   case vvParameters::VV_SPIN_ANIMATION:
     _spinAnimation = value;
     break;
