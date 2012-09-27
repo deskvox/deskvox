@@ -2046,11 +2046,11 @@ FXDEFMAP(VVGammaDialog) VVGammaDialogMap[]=
 {
   FXMAPFUNC(SEL_COMMAND, VVGammaDialog::ID_CLOSE,    VVGammaDialog::onClose),
   FXMAPFUNC(SEL_COMMAND, VVGammaDialog::ID_DEFAULTS, VVGammaDialog::onSetDefaults),
-  FXMAPFUNC(SEL_COMMAND, VVGammaDialog::ID_GAMMA,    VVGammaDialog::onGammaChange),
-  FXMAPFUNC(SEL_CHANGED, VVGammaDialog::ID_GRED,     VVGammaDialog::onGRedChange),
-  FXMAPFUNC(SEL_CHANGED, VVGammaDialog::ID_GGREEN,   VVGammaDialog::onGGreenChange),
-  FXMAPFUNC(SEL_CHANGED, VVGammaDialog::ID_GBLUE,    VVGammaDialog::onGBlueChange),
-  FXMAPFUNC(SEL_CHANGED, VVGammaDialog::ID_GFOUR,    VVGammaDialog::onGFourChange),
+  FXMAPFUNC(SEL_COMMAND, VVGammaDialog::ID_GAMMA,    VVGammaDialog::onUseGammaChange),
+  FXMAPFUNC(SEL_CHANGED, VVGammaDialog::ID_GRED,     VVGammaDialog::onGammaChange),
+  FXMAPFUNC(SEL_CHANGED, VVGammaDialog::ID_GGREEN,   VVGammaDialog::onGammaChange),
+  FXMAPFUNC(SEL_CHANGED, VVGammaDialog::ID_GBLUE,    VVGammaDialog::onGammaChange),
+  FXMAPFUNC(SEL_CHANGED, VVGammaDialog::ID_GFOUR,    VVGammaDialog::onGammaChange),
 };
 
 FXIMPLEMENT(VVGammaDialog,FXDialogBox,VVGammaDialogMap,ARRAYNUMBER(VVGammaDialogMap))
@@ -2127,15 +2127,13 @@ long VVGammaDialog::onClose(FXObject*, FXSelector, void*)
 long VVGammaDialog::onSetDefaults(FXObject*, FXSelector, void*)
 {
   const float DEFAULT_VALUE = 1.0f;
-  _canvas->_renderer->setGamma(vvRenderer::VV_RED,   DEFAULT_VALUE);
-  _canvas->_renderer->setGamma(vvRenderer::VV_GREEN, DEFAULT_VALUE);
-  _canvas->_renderer->setGamma(vvRenderer::VV_BLUE,  DEFAULT_VALUE);
-  _canvas->_renderer->setGamma(vvRenderer::VV_ALPHA, DEFAULT_VALUE);
+  const vvVector4 gamma(DEFAULT_VALUE, DEFAULT_VALUE, DEFAULT_VALUE, DEFAULT_VALUE);
+  _canvas->_renderer->setParameter(vvRenderer::VV_GAMMA, gamma);
   updateValues();
   return 1;
 }
 
-long VVGammaDialog::onGammaChange(FXObject*, FXSelector, void* ptr)
+long VVGammaDialog::onUseGammaChange(FXObject*, FXSelector, void* ptr)
 {
   _canvas->_renderer->setParameter(vvRenderState::VV_GAMMA_CORRECTION, (ptr != NULL));
   if (ptr)
@@ -2155,35 +2153,15 @@ long VVGammaDialog::onGammaChange(FXObject*, FXSelector, void* ptr)
   return 1;
 }
 
-long VVGammaDialog::onGRedChange(FXObject*,FXSelector,void*)
+long VVGammaDialog::onGammaChange(FXObject*,FXSelector,void*)
 {
-  float f = getDialValue(_gRedDial);
-  _gRedLabel->setText(FXStringFormat("%.2f", f));
-  _canvas->_renderer->setGamma(vvRenderer::VV_RED, f);
-  return 1;
-}
-
-long VVGammaDialog::onGGreenChange(FXObject*,FXSelector,void*)
-{
-  float f = getDialValue(_gGreenDial);
-  _gGreenLabel->setText(FXStringFormat("%.2f", f));
-  _canvas->_renderer->setGamma(vvRenderer::VV_GREEN, f);
-  return 1;
-}
-
-long VVGammaDialog::onGBlueChange(FXObject*,FXSelector,void*)
-{
-  float f = getDialValue(_gBlueDial);
-  _gBlueLabel->setText(FXStringFormat("%.2f", f));
-  _canvas->_renderer->setGamma(vvRenderer::VV_BLUE, f);
-  return 1;
-}
-
-long VVGammaDialog::onGFourChange(FXObject*,FXSelector,void*)
-{
-  float f = getDialValue(_gFourDial);
-  _gFourLabel->setText(FXStringFormat("%.2f", f));
-  _canvas->_renderer->setGamma(vvRenderer::VV_ALPHA, f);
+  const vvVector4 val(getDialValue(_gRedDial), getDialValue(_gGreenDial),
+    getDialValue(_gBlueDial), getDialValue(_gFourDial));
+  _gRedLabel->setText(FXStringFormat("%.2f", val[0]));
+  _gGreenLabel->setText(FXStringFormat("%.2f", val[1]));
+  _gBlueLabel->setText(FXStringFormat("%.2f", val[2]));
+  _gFourLabel->setText(FXStringFormat("%.2f", val[3]));
+  _canvas->_renderer->setParameter(vvRenderer::VV_GAMMA, val);
   return 1;
 }
 
@@ -2199,30 +2177,26 @@ void VVGammaDialog::setDialValue(FXDial* dial, float val)
 
 void VVGammaDialog::updateValues()
 {
-  float gr=1.0f,gg=1.0f,gb=1.0f,gf=1.0f;
-
-  if (_canvas->_renderer)
+  vvVector4 gamma(1.0f, 1.0f, 1.0f, 1.0f);
+  if (_canvas->_renderer != NULL)
   {
-    gr = _canvas->_renderer->getGamma(vvRenderer::VV_RED);
-    gg = _canvas->_renderer->getGamma(vvRenderer::VV_GREEN);
-    gb = _canvas->_renderer->getGamma(vvRenderer::VV_BLUE);
-    gf = _canvas->_renderer->getGamma(vvRenderer::VV_ALPHA);
+    gamma = _canvas->_renderer->getParameter(vvRenderer::VV_GAMMA);
   }
 
-  _gRedLabel->setText(FXStringFormat("%.2f", gr));
-  _gGreenLabel->setText(FXStringFormat("%.2f", gg));
-  _gBlueLabel->setText(FXStringFormat("%.2f", gb));
-  _gFourLabel->setText(FXStringFormat("%.2f", gf));
+  _gRedLabel->setText(FXStringFormat("%.2f", gamma[0]));
+  _gGreenLabel->setText(FXStringFormat("%.2f", gamma[1]));
+  _gBlueLabel->setText(FXStringFormat("%.2f", gamma[2]));
+  _gFourLabel->setText(FXStringFormat("%.2f", gamma[3]));
 
-  setDialValue(_gRedDial, gr);
-  setDialValue(_gGreenDial, gg);
-  setDialValue(_gBlueDial, gb);
-  setDialValue(_gFourDial, gf);
+  setDialValue(_gRedDial, gamma[0]);
+  setDialValue(_gGreenDial, gamma[1]);
+  setDialValue(_gBlueDial, gamma[2]);
+  setDialValue(_gFourDial, gamma[3]);
 
   if (_canvas->_renderer) 
   { 
-    bool gamma = _canvas->_renderer->getParameter(vvRenderState::VV_GAMMA_CORRECTION);
-    handle(this, FXSEL(SEL_COMMAND, ID_GAMMA), (void*)gamma);
+    bool g = _canvas->_renderer->getParameter(vvRenderState::VV_GAMMA_CORRECTION);
+    handle(this, FXSEL(SEL_COMMAND, ID_GAMMA), (void*)g);
   }
 }
 

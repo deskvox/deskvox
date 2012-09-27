@@ -215,7 +215,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void renderTex2DCubic(vvVecmath::AxisType, float, float, float);
     VoxelType findBestVoxelType(VoxelType) const;
     GeometryType findBestGeometry(GeometryType, VoxelType) const;
-    void updateLUT(float, GLuint& lutName, uchar*& lutData, float& lutDistance);
+    void updateLUT(float dist);
     int  getLUTSize(vvVector3i& size) const;
     int  getPreintTableSize() const;
     void enableNVShaders() const;
@@ -244,8 +244,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     virtual ~vvTexRend();
     void  renderVolumeGL();
     void  updateTransferFunction();
-    void  updateTransferFunction(GLuint& lutName, uchar*& lutData, float& lutDistance,
-                                 int& currentShader, bool& usePreIntegration);
     void  updateVolumeData();
     void  updateVolumeData(int, int, int, int, int, int);
     void  fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vector<BrickList>& brickList) const;
