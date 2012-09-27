@@ -3686,6 +3686,12 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
   vvDebugMsg::msg(3, "vvTexRend::setParameter()");
   switch (param)
   {
+    case vvRenderer::VV_GAMMA:
+      // fall-through
+    case vvRenderer::VV_GAMMA_CORRECTION:
+      vvRenderer::setParameter(param, newValue);
+      updateTransferFunction();
+      break;
     case vvRenderer::VV_SLICEINT:
       newInterpol = newValue;
       if (interpolation!=newInterpol)
