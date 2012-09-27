@@ -171,6 +171,8 @@ void vvCanvas::paintGL()
     glDrawBuffer(GL_FRONT);
   }
 
+  glEnable(GL_DEPTH_TEST);
+
   glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
