@@ -43,6 +43,7 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   , _stillQuality(1.0f)
   , _movingQuality(1.0f)
   , _spinAnimation(false)
+  , _mouseButton(Qt::NoButton)
 {
   vvDebugMsg::msg(1, "vvCanvas::vvCanvas()");
 
