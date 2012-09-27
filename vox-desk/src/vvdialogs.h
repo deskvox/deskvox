@@ -632,11 +632,8 @@ class VVGammaDialog : public FXDialogBox
     VVGammaDialog(FXWindow*, vox::vvCanvas*);
     long onClose(FXObject*, FXSelector, void*);
     long onSetDefaults(FXObject*, FXSelector, void*);
+    long onUseGammaChange(FXObject*, FXSelector, void*);
     long onGammaChange(FXObject*, FXSelector, void*);
-    long onGRedChange(FXObject*, FXSelector, void*);
-    long onGGreenChange(FXObject*, FXSelector, void*);
-    long onGBlueChange(FXObject*, FXSelector, void*);
-    long onGFourChange(FXObject*, FXSelector, void*);
     void updateValues();
 };
 
