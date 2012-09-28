@@ -25,6 +25,10 @@
 #include <locale>
 #include <string>
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #define VV_STRINGIFY(X) VV_STRINGIFY2(X)
 #define VV_STRINGIFY2(X) #X
 
