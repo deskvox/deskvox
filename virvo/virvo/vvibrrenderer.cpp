@@ -18,30 +18,47 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_IBRSERVER_H_
-#define _VV_IBRSERVER_H_
+#include "vvibrrenderer.h"
+#include "vvvoldesc.h"
 
-#include "vvexport.h"
-#include "vvremoteserver.h"
-#include "vvrenderer.h"
-
-class vvIbrImage;
-
-class VIRVOEXPORT vvIbrServer : public vvRemoteServer
+vvIbrRenderer::vvIbrRenderer(vvVolDesc* vd, vvRenderState renderState)
+  : vvSoftVR(vd, renderState)
+  , _depthPrecision(8)
 {
-public:
-  vvIbrServer(vvSocketIO *socket);
-  ~vvIbrServer();
 
-private:
-  vvRenderer::IbrMode         _ibrMode;
+}
 
-  void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
-  void resize(int w, int h);
-  vvIbrImage *_image;
-  uchar *_pixels;
-  uchar *_depth;
-};
+vvIbrRenderer::~vvIbrRenderer()
+{
 
-#endif
-// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
+}
+
+void vvIbrRenderer::setParameter(ParameterType param, const vvParam& newValue)
+{
+  switch (param)
+  {
+  case vvRenderer::VV_IBR_DEPTH_PREC:
+    _depthPrecision = newValue;
+    break;
+  case vvRenderer::VV_IBR_DEPTH_RANGE:
+    _depthRange = newValue;
+    break;
+  default:
+    vvSoftVR::setParameter(param, newValue);
+    break;
+  }
+}
+
+vvParam vvIbrRenderer::getParameter(ParameterType param) const
+{
+  switch (param)
+  {
+  case vvRenderer::VV_IBR_DEPTH_PREC:
+    return _depthPrecision;
+  case vvRenderer::VV_IBR_DEPTH_RANGE:
+    return _depthRange;
+  default:
+    return vvSoftVR::getParameter(param);
+  }
+}
+
