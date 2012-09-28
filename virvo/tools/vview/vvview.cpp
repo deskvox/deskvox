@@ -560,7 +560,6 @@ void vvView::applyRendererParameters()
 
   renderer->setParameter(vvRenderState::VV_IBR_SYNC, sync);
   renderer->setParameter(vvRenderer::VV_IBR_DEPTH_PREC, ibrPrecision);
-  renderer->setParameter(vvRenderer::VV_IBR_UNCERTAINTY_PREC, ibrPrecision); // both precisions the same for now
   if(rrMode == RR_IBR)
     renderer->setParameter(vvRenderer::VV_USE_IBR, true);
 

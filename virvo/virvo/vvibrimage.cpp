@@ -27,18 +27,13 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-vvIbrImage::vvIbrImage(short h, short w, uchar* image, int dp, int up)
+vvIbrImage::vvIbrImage(short h, short w, uchar* image, int dp)
 : vvImage(h, w, image)
 , _depthPrecision(dp)
 , _depthCodeType(VV_RAW)
 , _codedDepthSize(0)
-, _uncertaintyPrecision(up)
-, _uncertaintyCodeType(VV_RAW)
-, _codedUncertaintySize(0)
 , _pixeldepth(NULL)
 , _codeddepth(NULL)
-, _uncertainty(NULL)
-, _codeduncertainty(NULL)
 , _viewport(0, 0, w, h)
 {
   _projectionMatrix.identity();
@@ -51,13 +46,8 @@ vvIbrImage::vvIbrImage()
 , _depthPrecision(0)
 , _depthCodeType(VV_RAW)
 , _codedDepthSize(0)
-, _uncertaintyPrecision(0)
-, _uncertaintyCodeType(VV_RAW)
-, _codedUncertaintySize(0)
 , _pixeldepth(NULL)
 , _codeddepth(NULL)
-, _uncertainty(NULL)
-, _codeduncertainty(NULL)
 , _viewport(0, 0, 0, 0)
 {
   _projectionMatrix.identity();
@@ -70,28 +60,13 @@ vvIbrImage::~vvIbrImage()
   if(t == VV_CLIENT)
   {
     delete[] _pixeldepth;
-    delete[] _uncertainty;
   }
   delete[] _codeddepth;
-  delete[] _codeduncertainty;
 }
 
 uchar* vvIbrImage::getPixelDepth() const
 {
   return _pixeldepth;
-}
-
-uchar* vvIbrImage::getUncertainty() const
-{
-  return _uncertainty;
-}
-
-uchar *vvIbrImage::getCodedUncertainty() const
-{
-  if(_uncertaintyCodeType == VV_RAW)
-    return _uncertainty;
-  else
-    return _codeduncertainty;
 }
 
 uchar *vvIbrImage::getCodedDepth() const
@@ -112,16 +87,6 @@ void vvIbrImage::setDepthCodetype(vvImage::CodeType ct)
   _depthCodeType = ct;
 }
 
-vvImage::CodeType vvIbrImage::getUncertaintyCodetype() const
-{
-  return _uncertaintyCodeType;
-}
-
-void vvIbrImage::setUncertaintyCodetype(vvImage::CodeType ct)
-{
-  _uncertaintyCodeType = ct;
-}
-
 //----------------------------------------------------------------------------
 /** Allocates memory for a new image and 2.5d-data
  */
@@ -131,24 +96,15 @@ void vvIbrImage::alloc_pd()
   {
     delete[] _pixeldepth;
     _pixeldepth = new uchar[width*height*_depthPrecision/8];
-    delete[] _uncertainty;
-    _uncertainty = new uchar[width*height*_uncertaintyPrecision/8];
   }
 
   delete[] _codeddepth;
   _codeddepth = new uchar[width*height*_depthPrecision/8*2];
-  delete[] _codeduncertainty;
-  _codeduncertainty = new uchar[width*height*_uncertaintyPrecision/8*2];
 }
 
 int vvIbrImage::getDepthPrecision() const
 {
   return _depthPrecision;
-}
-
-int vvIbrImage::getUncertaintyPrecision() const
-{
-  return _uncertaintyPrecision;
 }
 
 int vvIbrImage::getDepthSize() const
@@ -173,28 +129,6 @@ void vvIbrImage::setDepthPrecision(int dp)
   }
 }
 
-void vvIbrImage::setUncertaintyPrecision(int up)
-{
-  assert(up==8 || up==16 || up==32);
-  _uncertaintyPrecision = up;
-  if(t == VV_CLIENT)
-  {
-    delete[] _uncertainty;
-    _uncertainty = NULL;
-  }
-}
-
-int vvIbrImage::getUncertaintySize() const
-{
-  switch(_uncertaintyCodeType)
-  {
-  case 0:
-    return width*height*(_uncertaintyPrecision/8);
-  default:
-    return _codedUncertaintySize;
-  }
-}
-
 void vvIbrImage::setNewDepthPtr(uchar *depth)
 {
   _pixeldepth = depth;
@@ -202,21 +136,9 @@ void vvIbrImage::setNewDepthPtr(uchar *depth)
   _codedDepthSize = 0;
 }
 
-void vvIbrImage::setNewUncertaintyPtr(uchar *uncertainty)
-{
-  _uncertainty = uncertainty;
-  _uncertaintyCodeType = VV_RAW;
-  _codedUncertaintySize = 0;
-}
-
 void vvIbrImage::setDepthSize(int size)
 {
   _codedDepthSize = size;
-}
-
-void vvIbrImage::setUncertaintySize(int size)
-{
-  _codedUncertaintySize = size;
 }
 
 void vvIbrImage::setModelViewMatrix(const vvMatrix &mv)
@@ -277,7 +199,6 @@ int vvIbrImage::encode(short ct, short sh, short eh, short sw, short ew)
   case 0:
     cr=1.f;
     _depthCodeType = VV_RAW;
-    _uncertaintyCodeType = VV_RAW;
     break;
   default:
     {
@@ -290,8 +211,6 @@ int vvIbrImage::encode(short ct, short sh, short eh, short sw, short ew)
       }
 
       _codedDepthSize = enc(_pixeldepth, _codeddepth, width*height*(_depthPrecision/8), width*height*(_depthPrecision/8)*2, _depthPrecision/8);
-      _codedUncertaintySize = enc(_uncertainty, _codeduncertainty, width*height*(_uncertaintyPrecision/8),
-          width*height*(_uncertaintyPrecision/8)*2, _uncertaintyPrecision/8);
       if(_codedDepthSize < 0)
       {
         cr = 1.f;
@@ -301,17 +220,6 @@ int vvIbrImage::encode(short ct, short sh, short eh, short sw, short ew)
       {
         cr = (float)_codedDepthSize/width/height/(_depthPrecision/8);
         _depthCodeType = ctused;
-      }
-
-      if(_codedUncertaintySize < 0)
-      {
-        cr = 1.f;
-        _uncertaintyCodeType = VV_RAW;
-      }
-      else
-      {
-        cr = (float)_codedUncertaintySize/width/height/(_uncertaintyPrecision/8);
-        _uncertaintyCodeType = ctused;
       }
     }
     break;
@@ -349,31 +257,6 @@ int vvIbrImage::decode()
       else
       {
         vvDebugMsg::msg(1, "vvIbrImage::decode: failed to decode depth");
-      }
-    }
-    break;
-  }
-
-  switch(_uncertaintyCodeType)
-  {
-  case VV_RAW:
-    break;
-  default:
-    {
-      CodecFunc dec = gen_RLC_decode;
-      if(_uncertaintyCodeType == VV_SNAPPY)
-        dec = snappyDecode;
-
-      err = dec(_codeduncertainty, _uncertainty, _codedUncertaintySize, width*height*(_uncertaintyPrecision/8), _uncertaintyPrecision/8);
-      if(!err)
-      {
-        vvDebugMsg::msg(3, "vvIbrImage::decode: success, compressed size for uncertainty was ", _codedUncertaintySize);
-        _uncertaintyCodeType = VV_RAW;
-        _codedUncertaintySize = 0;
-      }
-      else
-      {
-        vvDebugMsg::msg(1, "vvIbrImage::decode: failed to decode uncertainty");
       }
     }
     break;

@@ -25,6 +25,7 @@
 #include "vvsocket.h"
 
 class vvContextOptions;
+class vvMatrix;
 class vvRenderContext;
 class vvRenderer;
 class vvSocketIO;

@@ -18,30 +18,27 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_IBRSERVER_H_
-#define _VV_IBRSERVER_H_
+#ifndef _VV_IBRRENDERER_H_
+#define _VV_IBRRENDERER_H_
 
-#include "vvexport.h"
-#include "vvremoteserver.h"
-#include "vvrenderer.h"
+#include "vvsoftvr.h"
 
-class vvIbrImage;
+class vvVolDesc;
 
-class VIRVOEXPORT vvIbrServer : public vvRemoteServer
+class VIRVOEXPORT vvIbrRenderer : public vvSoftVR
 {
 public:
-  vvIbrServer(vvSocketIO *socket);
-  ~vvIbrServer();
-
-private:
-  vvRenderer::IbrMode         _ibrMode;
-
-  void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
-  void resize(int w, int h);
-  vvIbrImage *_image;
-  uchar *_pixels;
-  uchar *_depth;
+  vvIbrRenderer(vvVolDesc* vd, vvRenderState renderState);
+  virtual ~vvIbrRenderer();
+  virtual void compositeVolume(int w = -1, int h = -1) = 0;
+  virtual void getColorBuffer(uchar** colors) const = 0;
+  virtual void getDepthBuffer(uchar** depths) const = 0;
+  virtual void setParameter(ParameterType param, const vvParam& newValue);
+  virtual vvParam getParameter(ParameterType param) const;
+protected:
+  int _depthPrecision;             ///< number of bits in depth buffer for image based rendering
+  vvVector2 _depthRange;
 };
 
 #endif
-// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
+

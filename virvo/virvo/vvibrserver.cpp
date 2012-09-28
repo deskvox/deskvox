@@ -22,9 +22,8 @@
 
 #include "vvgltools.h"
 #include "vvibr.h"
+#include "vvibrrenderer.h"
 #include "vvibrserver.h"
-#include "vvrayrend.h"
-#include "vvcudaimg.h"
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
 #include "vvibrimage.h"
@@ -41,7 +40,6 @@ vvIbrServer::vvIbrServer(vvSocketIO *socket)
 , _image(NULL)
 , _pixels(NULL)
 , _depth(NULL)
-, _uncertainty(NULL)
 {
   vvDebugMsg::msg(1, "vvIbrServer::vvIbrServer()");
 }
@@ -53,7 +51,6 @@ vvIbrServer::~vvIbrServer()
   delete _image;
   delete[] _pixels;
   delete[] _depth;
-  delete[] _uncertainty;
 }
 
 //----------------------------------------------------------------------------
@@ -64,7 +61,6 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
 {
   vvDebugMsg::msg(3, "vvIbrServer::renderImage()");
 
-#ifdef HAVE_CUDA
   // Render volume:
   float matrixGL[16];
 
@@ -76,8 +72,12 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
   mv.getGL(matrixGL);
   glLoadMatrixf(matrixGL);
 
-  vvRayRend* rayRend = dynamic_cast<vvRayRend*>(renderer);
-  assert(rayRend != NULL);
+  vvIbrRenderer* ibrRenderer = dynamic_cast<vvIbrRenderer*>(renderer);
+  if (ibrRenderer == NULL)
+  {
+    vvDebugMsg::msg(0, "No IBR rendering supported. Aborting...");
+    return;
+  }
 
   float drMin = 0.0f;
   float drMax = 0.0f;
@@ -85,25 +85,22 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
   renderer->getVolDesc()->getBoundingBox(aabb);
   vvIbr::calcDepthRange(pr, mv, aabb, drMin, drMax);
 
-  rayRend->setDepthRange(drMin, drMax);
+  renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, vvVector2(drMin, drMax));
 
-  int dp = static_cast<int>(rayRend->getParameter(vvRenderer::VV_IBR_DEPTH_PREC));
-  int up = static_cast<int>(rayRend->getParameter(vvRenderer::VV_IBR_UNCERTAINTY_PREC));
-  rayRend->compositeVolume();
+  int dp = renderer->getParameter(vvRenderer::VV_IBR_DEPTH_PREC);
+  ibrRenderer->compositeVolume();
 
   // Fetch rendered image
   vvGLTools::Viewport vp = vvGLTools::getViewport();
   const int w = vp[2];
   const int h = vp[3];
   if(!_image || _image->getWidth() != w || _image->getHeight() != h
-      || _image->getDepthPrecision() != dp || _image->getUncertaintyPrecision() != up)
+      || _image->getDepthPrecision() != dp)
   {
     delete[] _pixels;
     delete[] _depth;
-    delete[] _uncertainty;
     _pixels = new uchar[w*h*4];
     _depth = new uchar[w*h*(dp/8)];
-    _uncertainty = new uchar[w*h*(up/8)];
     if(_image)
     {
       _image->setDepthPrecision(dp);
@@ -111,7 +108,7 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
     }
     else
     {
-      _image = new vvIbrImage(h, w, _pixels, dp, up);
+      _image = new vvIbrImage(h, w, _pixels, dp);
     }
     _image->alloc_pd();
   }
@@ -120,11 +117,9 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
     _image->setNewImagePtr(_pixels);
   }
   _image->setNewDepthPtr(_depth);
-  _image->setNewUncertaintyPtr(_uncertainty);
 
-  cudaMemcpy(_pixels, rayRend->getDeviceImg(), w*h*4, cudaMemcpyDeviceToHost);
-  cudaMemcpy(_depth, rayRend->getDeviceDepth(), w*h*(dp/8), cudaMemcpyDeviceToHost);
-  cudaMemcpy(_uncertainty, rayRend->getDeviceUncertainty(), w*h*(up/8), cudaMemcpyDeviceToHost);
+  ibrRenderer->getColorBuffer(&_pixels);
+  ibrRenderer->getDepthBuffer(&_depth);
 
   _image->setModelViewMatrix(mv);
   _image->setProjectionMatrix(pr);
@@ -142,11 +137,6 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
   {
     vvDebugMsg::msg(1, "Error encoding image...");
   }
-#else
-  (void)pr;
-  (void)mv;
-  (void)renderer;
-#endif
 }
 
 void vvIbrServer::resize(const int w, const int h)
