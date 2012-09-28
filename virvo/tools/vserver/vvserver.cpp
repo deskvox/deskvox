@@ -152,19 +152,20 @@ void vvServer::displayHelpInfo()
   cerr << "-port" << endl;
   cerr << " Don't use the default port (" << DEFAULT_PORT << "), but the specified one" << endl;
   cerr << endl;
-#ifdef HAVE_BONJOUR
-  cerr << "-mode" << endl;
-  cerr << " Start vvServer with one of the following modes:" << endl;
-  cerr << " s     single server (default)" << endl;
-  cerr << " rm    resource manager" << endl;
-  cerr << " rm+s  server and resource manager simultanously" << endl;
-  cerr << endl;
-  cerr << "-bonjour" << endl;
-  cerr << " use bonjour to broadcast this service. options:" << endl;
-  cerr << " on" << endl;
-  cerr << " off (default)" << endl;
-  cerr << endl;
-#endif
+  if (virvo::hasFeature("bonjour"))
+  {
+    cerr << "-mode" << endl;
+    cerr << " Start vvServer with one of the following modes:" << endl;
+    cerr << " s     single server (default)" << endl;
+    cerr << " rm    resource manager" << endl;
+    cerr << " rm+s  server and resource manager simultanously" << endl;
+    cerr << endl;
+    cerr << "-bonjour" << endl;
+    cerr << " use bonjour to broadcast this service. options:" << endl;
+    cerr << " on" << endl;
+    cerr << " off (default)" << endl;
+    cerr << endl;
+  }
 #ifndef _WIN32
   cerr << "-daemon" << endl;
   cerr << " Start in background as a daemon" << endl;
@@ -178,6 +179,8 @@ void vvServer::displayHelpInfo()
 bool vvServer::parseCommandLine(int argc, char** argv)
 {
   vvDebugMsg::msg(1, "vvServer::parseCommandLine()");
+
+  const static bool HaveBonjour = virvo::hasFeature("bonjour");
 
   for (int arg=1; arg<argc; ++arg)
   {
@@ -208,8 +211,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
           _port = inport;
       }
     }
-#ifdef HAVE_BONJOUR
-    else if (vvToolshed::strCompare(argv[arg], "-mode")==0)
+    else if (HaveBonjour && vvToolshed::strCompare(argv[arg], "-mode")==0)
     {
       if ((++arg)>=argc)
       {
@@ -234,7 +236,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
         return false;
       }
     }
-    else if (vvToolshed::strCompare(argv[arg], "-bonjour")==0)
+    else if (HaveBonjour && vvToolshed::strCompare(argv[arg], "-bonjour")==0)
     {
       if ((++arg)>=argc)
       {
@@ -255,7 +257,6 @@ bool vvServer::parseCommandLine(int argc, char** argv)
         return false;
       }
     }
-#endif
 #ifndef _WIN32
     else if (vvToolshed::strCompare(argv[arg], "-daemon")==0)
     {

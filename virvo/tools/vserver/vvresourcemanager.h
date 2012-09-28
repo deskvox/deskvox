@@ -21,14 +21,8 @@
 #ifndef _VV_RESOURCEMANAGER_H_
 #define _VV_RESOURCEMANAGER_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
 #include <virvo/vvrequestmanagement.h>
-#ifdef HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjourentry.h>
-#endif // HAVE_BONJOUR
 #include <pthread.h>
 
 #include "vvserver.h"
@@ -63,9 +57,7 @@ private:
 
     bool   upToDate;
     std::vector<vvGpu::vvGpuInfo> ginfos;
-  #ifdef HAVE_BONJOUR
     vvBonjourEntry bonjourEntry;
-  #endif
     vvServer *server;
 
     // vars for future use
@@ -101,10 +93,8 @@ private:
   std::vector<vvResource*> getFreeResources(uint amount);
 
   vvSimpleServer *_simpleServer;
-#ifdef HAVE_BONJOUR
   vvBonjourBrowser *_browser;
   static std::vector<vvGpu::vvGpuInfo> getResourceGpuInfos(const vvBonjourEntry entry);
-#endif // HAVE_BONJOUR
   std::vector<vvRequest*>  _requests;
   std::vector<vvResource*> _resources;
   pthread_mutex_t _requestsMutex;

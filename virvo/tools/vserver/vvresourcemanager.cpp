@@ -26,16 +26,16 @@
 #include <sstream>
 
 #include <vvcommon.h>
-#ifdef HAVE_BONJOUR
+
 #include <virvo/vvbonjour/vvbonjourentry.h>
 #include <virvo/vvbonjour/vvbonjourbrowser.h>
 #include <virvo/vvbonjour/vvbonjourresolver.h>
-#endif
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvsocketmap.h>
 #include <virvo/vvtcpsocket.h>
+#include <virvo/vvvirvo.h>
 
 vvResourceManager::vvResourceManager()
   : vvServer()
@@ -176,9 +176,10 @@ bool vvResourceManager::initNextJob()
         // Update Gpu-Status of used Resrources
         for(std::vector<vvResource*>::iterator usedRes = job->resources.begin(); usedRes != job->resources.end(); usedRes++)
         {
-#ifdef HAVE_BONJOUR
-          (*usedRes)->ginfos = getResourceGpuInfos((*usedRes)->bonjourEntry);
-#endif
+          if (virvo::hasFeature("bonjour"))
+          {
+            (*usedRes)->ginfos = getResourceGpuInfos((*usedRes)->bonjourEntry);
+          }
         }
         return true;
       }
@@ -203,7 +204,8 @@ bool vvResourceManager::initNextJob()
 
 void vvResourceManager::updateResources(void * param)
 {
-#ifdef HAVE_BONJOUR
+  if (virvo::hasFeature("bonjour"))
+  {
   vvDebugMsg::msg(0, "vvResourceManager::updateResources() Enter");
 
   vvResourceManager *rm = reinterpret_cast<vvResourceManager*>(param);
@@ -266,10 +268,11 @@ void vvResourceManager::updateResources(void * param)
   pthread_mutex_unlock(&rm->_resourcesMutex);
 
   while(rm->initNextJob()) {}; // process all waiting jobs
-#else
+  }
+  else
+  {
   vvDebugMsg::msg(0, "vvResourceManager::updateResources() resource live-updating not available");
-  (void)param;
-#endif
+  }
 }
 
 bool vvResourceManager::serverLoop()
@@ -304,14 +307,15 @@ bool vvResourceManager::serverLoop()
     break;
   }
 
-#ifdef HAVE_BONJOUR
+  if (virvo::hasFeature("bonjour"))
+  {
   if(_sm != vvServer::SERVER)
   {
     _browser = new vvBonjourBrowser(updateResources, this);
     _browser->browseForServiceType("_vserver._tcp", "", -1.0); // browse in continous mode
     std::cerr << "browsing bonjour..." << std::endl;
   }
-#endif
+  }
 
   return vvServer::serverLoop();
 }
@@ -353,7 +357,8 @@ void * vvResourceManager::processJob(void * param)
 {
   vvDebugMsg::msg(3, "vvResourceManager::processJob() Enter");
 
-#ifdef HAVE_BONJOUR
+  if (virvo::hasFeature("bonjour"))
+  {
   vvJob *job = reinterpret_cast<vvJob*>(param);
   vvTcpSocket *clientsock = job->request->sock;
 
@@ -455,10 +460,7 @@ void * vvResourceManager::processJob(void * param)
     clientsock->disconnectFromHost();
   }
   delete clientsock;
-
-#else
-  (void)param;
-#endif
+  }
 
   pthread_exit(NULL);
 #ifdef _WIN32
@@ -486,13 +488,14 @@ uint vvResourceManager::getFreeResourceCount()
     }
     else
     {
-#ifdef HAVE_BONJOUR
+      if (virvo::hasFeature("bonjour"))
+      {
       std::ostringstream msg;
       msg << "vvResourceManager::getFreeResourceCount() Resource on "
           << (*freeRes)->bonjourEntry.getServiceName()
           << "is out of memory";
       vvDebugMsg::msg(3, msg.str().c_str());
-#endif
+      }
     }
   }
 
@@ -526,13 +529,14 @@ std::vector<vvResourceManager::vvResource*> vvResourceManager::getFreeResources(
     else
     {
       freeRes++;
-#ifdef HAVE_BONJOUR
+      if (virvo::hasFeature("bonjour"))
+      {
       std::ostringstream msg;
       msg << "vvResourceManager::getFreeResourceCount() Resource on "
           << (*freeRes)->bonjourEntry.getServiceName()
           << "is out of memory";
       vvDebugMsg::msg(3, msg.str().c_str());
-#endif
+      }
     }
   }
 
@@ -544,7 +548,6 @@ std::vector<vvResourceManager::vvResource*> vvResourceManager::getFreeResources(
   return freeResources;
 }
 
-#ifdef HAVE_BONJOUR
 std::vector<vvGpu::vvGpuInfo> vvResourceManager::getResourceGpuInfos(const vvBonjourEntry entry)
 {
   vvTcpSocket *serversock = NULL;
@@ -575,7 +578,6 @@ std::vector<vvGpu::vvGpuInfo> vvResourceManager::getResourceGpuInfos(const vvBon
     return std::vector<vvGpu::vvGpuInfo>();
   }
 }
-#endif
 
 //===================================================================
 // End of File

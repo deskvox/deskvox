@@ -44,21 +44,17 @@
 
 vvSimpleServer::vvSimpleServer(bool useBonjour)
   : vvServer()
+  , _useBonjour(useBonjour)
 {
-  _useBonjour = useBonjour;
-#ifdef HAVE_BONJOUR
   if(_useBonjour)
   {
     registerToBonjour();
   }
-#endif
 }
 
 vvSimpleServer::~vvSimpleServer()
 {
-#ifdef HAVE_BONJOUR
   if(_useBonjour) unregisterFromBonjour();
-#endif
 }
 
 void vvSimpleServer::handleNextConnection(vvTcpSocket *sock)
@@ -150,8 +146,7 @@ void * vvSimpleServer::handleClientThread(void *param)
 #endif
 }
 
-#ifdef HAVE_BONJOUR
-DNSServiceErrorType vvSimpleServer::registerToBonjour()
+bool vvSimpleServer::registerToBonjour()
 {
   vvDebugMsg::msg(3, "vvSimpleServer::registerToBonjour()");
   vvBonjourEntry entry = vvBonjourEntry("Virvo Server", "_vserver._tcp", "");
@@ -163,7 +158,6 @@ void vvSimpleServer::unregisterFromBonjour()
   vvDebugMsg::msg(3, "vvSimpleServer::unregisterFromBonjour()");
   _registrar.unregisterService();
 }
-#endif
 
 //===================================================================
 // End of File

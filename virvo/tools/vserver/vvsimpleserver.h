@@ -21,13 +21,7 @@
 #ifndef _VV_SIMPLESERVER_H_
 #define _VV_SIMPLESERVER_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjourregistrar.h>
-#endif
 
 #include <string>
 
@@ -50,14 +44,10 @@ public:
 private:
   void handleNextConnection(vvTcpSocket *sock);
   static void * handleClientThread(void *param);
-#ifdef HAVE_BONJOUR
-  DNSServiceErrorType registerToBonjour();
-  void                unregisterFromBonjour();
-#endif
+  bool registerToBonjour();
+  void unregisterFromBonjour();
 
-#ifdef HAVE_BONJOUR
   vvBonjourRegistrar _registrar;  ///< Bonjour registrar used by registerToBonjour() and unregisterFromBonjour()
-#endif
 };
 
 #endif // _VV_SERVER_H_
