@@ -21,26 +21,10 @@
 #ifndef _VV_BONJOUR_H_
 #define _VV_BONJOUR_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_BONJOUR
-
 #include <vector>
 
 #include "vvtcpsocket.h"
 #include "vvbonjourentry.h"
-
-// Forward declarations for types out of <dns_sd.h>
-struct _DNSServiceRef_t;
-typedef uint32_t DNSServiceFlags;
-typedef int32_t DNSServiceErrorType;
-#if defined(_WIN32) && !defined(EFI32) && !defined(EFI64)
-#define DNSSD_API __stdcall
-#else
-#define DNSSD_API
-#endif
 
 /** Wrapper Class for Bonjour
   This class automatically resolves all desired servicies for a given service type
@@ -86,8 +70,6 @@ public:
    */
   std::vector<std::string> getConnectionStringsFor(const std::string& serviceType, std::string domain = "") const;
 };
-
-#endif
 
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

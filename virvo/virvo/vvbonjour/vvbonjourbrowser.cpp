@@ -18,66 +18,29 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "vvbonjourbrowser.h"
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
 
-#ifdef HAVE_BONJOUR
+#include "vvbonjourbrowser.h"
 
 #include "../vvdebugmsg.h"
 
 #include <algorithm>
+#ifdef HAVE_BONJOUR
 #include <dns_sd.h>
+#endif
 #include <iostream>
 #include <ostream>
 #include <sstream>
 
-vvBonjourBrowser::vvBonjourBrowser(void (*externCallBack)(void *), void *callBackParam)
-  : _eventLoop(NULL)
+namespace
 {
-  _timeout = 1.0;
-  _externCallBack = externCallBack;
-  _callBackParam = callBackParam;
-}
+void (*externCallBack)(void *); 
+void *callBackParam;
 
-vvBonjourBrowser::~vvBonjourBrowser()
-{
-  if(_eventLoop) delete _eventLoop;
-}
-
-vvBonjour::ErrorType vvBonjourBrowser::browseForServiceType(const std::string& serviceType, const std::string domain, const double to)
-{
-  DNSServiceErrorType error;
-  DNSServiceRef  serviceRef;
-
-  _bonjourEntries.clear();
-
-  error = DNSServiceBrowse(&serviceRef,
-              0,                    // no flags
-              0,                    // all network interfaces
-              serviceType.c_str(),  // service type
-              domain.c_str(),       // default domains
-              BrowseCallBack,       // call back function
-              this);                // adress of pointer to eventloop
-  if (error == kDNSServiceErr_NoError)
-  {
-    _timeout = to;
-    _eventLoop = new vvBonjourEventLoop(serviceRef);
-    if(to != -1.0)
-      _eventLoop->run(false, to);
-    else
-      _eventLoop->run(true, to);
-  }
-  else
-  {
-    std::ostringstream errmsg;
-    errmsg << "vvBonjourBrowser::browseForServiceType(): DNSServiceBrowse() returned with error no " << error;
-    vvDebugMsg::msg(2, errmsg.str().c_str());
-    return vvBonjour::VV_ERROR;
-  }
-
-  return vvBonjour::VV_OK;
-}
-
-void vvBonjourBrowser::BrowseCallBack(DNSServiceRef serviceRef, DNSServiceFlags flags, uint32_t interfaceIndex,
+#ifdef HAVE_BONJOUR
+void BrowseCallBack(DNSServiceRef serviceRef, DNSServiceFlags flags, uint32_t interfaceIndex,
                                       DNSServiceErrorType errorCode,
                                       const char * name, const char * type, const char * domain,
                                       void * context)
@@ -117,10 +80,66 @@ void vvBonjourBrowser::BrowseCallBack(DNSServiceRef serviceRef, DNSServiceFlags 
     instance->_eventLoop->stop();
     DNSServiceRefDeallocate(serviceRef);
   }
-  if(instance->_externCallBack)
+  if(::externCallBack)
   {
-    (instance->_externCallBack)(instance->_callBackParam);
+    ::externCallBack(::callBackParam);
   }
+}
+#endif
+}
+
+vvBonjourBrowser::vvBonjourBrowser(void (*externCallBack)(void *), void *callBackParam)
+  : _eventLoop(NULL)
+{
+  _timeout = 1.0;
+  ::externCallBack = externCallBack;
+  ::callBackParam = callBackParam;
+}
+
+vvBonjourBrowser::~vvBonjourBrowser()
+{
+  if(_eventLoop) delete _eventLoop;
+}
+
+vvBonjour::ErrorType vvBonjourBrowser::browseForServiceType(const std::string& serviceType, const std::string domain, const double to)
+{
+#ifdef HAVE_BONJOUR
+  DNSServiceErrorType error;
+  DNSServiceRef  serviceRef;
+
+  _bonjourEntries.clear();
+
+  error = DNSServiceBrowse(&serviceRef,
+              0,                    // no flags
+              0,                    // all network interfaces
+              serviceType.c_str(),  // service type
+              domain.c_str(),       // default domains
+              BrowseCallBack,       // call back function
+              this);                // adress of pointer to eventloop
+  if (error == kDNSServiceErr_NoError)
+  {
+    _timeout = to;
+    _eventLoop = new vvBonjourEventLoop(serviceRef);
+    if(to != -1.0)
+      _eventLoop->run(false, to);
+    else
+      _eventLoop->run(true, to);
+  }
+  else
+  {
+    std::ostringstream errmsg;
+    errmsg << "vvBonjourBrowser::browseForServiceType(): DNSServiceBrowse() returned with error no " << error;
+    vvDebugMsg::msg(2, errmsg.str().c_str());
+    return vvBonjour::VV_ERROR;
+  }
+
+  return vvBonjour::VV_OK;
+#else
+  (void)serviceType;
+  (void)domain;
+  (void)to;
+  return vvBonjour::VV_ERROR;
+#endif
 }
 
 std::vector<vvBonjourEntry> vvBonjourBrowser::getBonjourEntries() const
@@ -128,5 +147,4 @@ std::vector<vvBonjourEntry> vvBonjourBrowser::getBonjourEntries() const
   return _bonjourEntries;
 }
 
-#endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

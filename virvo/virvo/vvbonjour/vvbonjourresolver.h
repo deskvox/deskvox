@@ -21,11 +21,6 @@
 #ifndef _VV_BONJOURRESOLVER_H_
 #define _VV_BONJOURRESOLVER_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_BONJOUR
 #include "vvbonjour.h"
 #include "vvbonjourentry.h"
 #include "vvbonjoureventloop.h"
@@ -53,21 +48,11 @@ public:
     */
   vvTcpSocket* getBonjourSocket() const;
 
+  // TODO: make these private
   vvBonjourEventLoop *_eventLoop;
   std::string _hostname;
   ushort      _port;
-private:
-
-  /*!
-   * \brief Callback function passed to bonjour.
-   */
-  static void DNSSD_API ResolveCallBack(_DNSServiceRef_t*, DNSServiceFlags, uint32_t,
-                                            DNSServiceErrorType errorCode, const char*,
-                                            const char*, uint16_t, uint16_t,
-                                            const uchar*, void*);
 };
-
-#endif
 
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

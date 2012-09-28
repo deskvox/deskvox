@@ -18,27 +18,42 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "vvbonjoureventloop.h"
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
 
-#ifdef HAVE_BONJOUR
+#include "vvbonjoureventloop.h"
 
 #include "vvdebugmsg.h"
 #include "vvpthread.h"
 #include "vvsocketmonitor.h"
 #include "vvtcpsocket.h"
 
+#ifdef HAVE_BONJOUR
 #include <dns_sd.h>
+#endif
+
+namespace
+{
+#ifdef HAVE_BONJOUR
+_DNSServiceRef_t *dnsServiceRef;
+#endif
+}
 
 struct Thread
 {
   pthread_t _pthread;
 };
 
-vvBonjourEventLoop::vvBonjourEventLoop(DNSServiceRef service)
+vvBonjourEventLoop::vvBonjourEventLoop(void* service)
 {
   _thread = new Thread;
   _thread->_pthread = NULL;
-  _dnsServiceRef = service;
+#ifdef HAVE_BONJOUR
+  ::dnsServiceRef = reinterpret_cast<_DNSServiceRef_t*>(service);
+#else
+  (void)service;
+#endif
 }
 
 vvBonjourEventLoop::~vvBonjourEventLoop()
@@ -52,26 +67,32 @@ vvBonjourEventLoop::~vvBonjourEventLoop()
 
 void vvBonjourEventLoop::run(bool inThread, double timeout)
 {
+#ifdef HAVE_BONJOUR
   _timeout = timeout;
   _noMoreFlags = false;
   if(inThread == false)
   {
     loop(this);
-    _dnsServiceRef = NULL;
+    ::dnsServiceRef = NULL;
   }
   else
   {
     pthread_create(&(_thread->_pthread), NULL, loop, this);
   }
+#else
+  (void)inThread;
+  (void)timeout;
+#endif
 }
 
 void * vvBonjourEventLoop::loop(void * attrib)
 {
+#ifdef HAVE_BONJOUR
   vvDebugMsg::msg(3, "vvBonjourEventLoop::loop()");
   vvBonjourEventLoop *instance = reinterpret_cast<vvBonjourEventLoop*>(attrib);
 
   instance->_run = true;
-  int dns_sd_fd = DNSServiceRefSockFD(instance->_dnsServiceRef);
+  int dns_sd_fd = DNSServiceRefSockFD(::dnsServiceRef);
 
   vvTcpSocket sock = vvTcpSocket();
   sock.setSockfd(dns_sd_fd);
@@ -90,7 +111,7 @@ void * vvBonjourEventLoop::loop(void * attrib)
 
     if (smErr == vvSocketMonitor::VV_OK)
     {
-      DNSServiceErrorType err = DNSServiceProcessResult(instance->_dnsServiceRef);
+      DNSServiceErrorType err = DNSServiceProcessResult(::dnsServiceRef);
 
       switch(err)
       {
@@ -156,6 +177,9 @@ void * vvBonjourEventLoop::loop(void * attrib)
       break;
     }
   }
+#else
+  (void)attrib;
+#endif
   return NULL;
 }
 
@@ -165,5 +189,4 @@ void vvBonjourEventLoop::stop()
   _run = false;
 }
 
-#endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

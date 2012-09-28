@@ -20,12 +20,17 @@
 
 #include "vvbonjour.h"
 
-#ifdef HAVE_BONJOUR
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
 
 #include "vvbonjourbrowser.h"
 #include "vvbonjourresolver.h"
 
+#ifdef HAVE_BONJOUR
 #include <dns_sd.h>
+#endif
+
 #include <sstream>
 
 vvBonjour::vvBonjour()
@@ -85,5 +90,4 @@ std::vector<std::string> vvBonjour::getConnectionStringsFor(const std::string& s
   return connectionStrings;
 }
 
-#endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

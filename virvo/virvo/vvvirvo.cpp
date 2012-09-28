@@ -25,6 +25,10 @@
 #include <locale>
 #include <string>
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #define VV_STRINGIFY(X) VV_STRINGIFY2(X)
 #define VV_STRINGIFY2(X) #X
 
@@ -42,7 +46,15 @@ bool virvo::hasFeature(const char* name)
   std::string str = name;
   std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 
-  if (str == "cg")
+  if (str == "bonjour")
+  {
+#ifdef HAVE_BONJOUR
+    return true;
+#else
+    return false;
+#endif
+  }
+  else if (str == "cg")
   {
 #ifdef HAVE_CG
     return true;

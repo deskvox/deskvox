@@ -21,11 +21,6 @@
 #ifndef _VV_BONJOURBROWSER_H_
 #define _VV_BONJOURBROWSER_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_BONJOUR
 #include "vvbonjour.h"
 #include "vvbonjourentry.h"
 #include "vvbonjoureventloop.h"
@@ -66,20 +61,9 @@ public:
   vvBonjourEventLoop* _eventLoop;
   std::vector<vvBonjourEntry> _bonjourEntries;
 
+  // TODO: make these private
   double _timeout;
-private:
-  /*!
-   * \brief Callback function passed to bonjour.
-   */
-  static void DNSSD_API BrowseCallBack(_DNSServiceRef_t*, DNSServiceFlags flags, uint32_t interfaceIndex,
-                                           DNSServiceErrorType errorCode,
-                                           const char *name, const char *type, const char *domain,
-                                           void *context);
-  void (*_externCallBack)(void *);
-  void *_callBackParam;
 };
-
-#endif
 
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
