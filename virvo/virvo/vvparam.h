@@ -37,6 +37,8 @@ public:
     VV_BOOL,
     VV_INT,
     VV_FLOAT,
+    VV_VEC2,
+    VV_VEC2I,
     VV_VEC3,
     VV_VEC3I,
     VV_VEC4,
@@ -50,6 +52,8 @@ private:
     bool B;
     int I;
     float F;
+    const vvVector2* Vec2;
+    const vvVector2i* Vec2I;
     const vvVector3* Vec3;
     const vvVector3i* Vec3I;
     const vvVector4* Vec4;
@@ -81,6 +85,16 @@ public:
   vvParam(const float& val) : type(VV_FLOAT)
   {
     value.F = val;
+  }
+
+  vvParam(const vvVector2& val) : type(VV_VEC2)
+  {
+    value.Vec2 = &val;
+  }
+
+  vvParam(const vvVector2i& val) : type(VV_VEC2I)
+  {
+    value.Vec2I = &val;
   }
 
   vvParam(const vvVector3& val) : type(VV_VEC3)
@@ -131,6 +145,18 @@ public:
     return value.F;
   }
 
+  const vvVector2& asVec2() const
+  {
+    assert( type == VV_VEC2 );
+    return *value.Vec2;
+  }
+
+  const vvVector2i& asVec2i() const
+  {
+    assert( type == VV_VEC2I);
+    return *value.Vec2I;
+  }
+
   const vvVector3& asVec3() const
   {
     assert( type == VV_VEC3 );
@@ -170,6 +196,8 @@ public:
   operator bool() const { return asBool(); }
   operator int() const { return asInt(); }
   operator float() const { return asFloat(); }
+  operator const vvVector2&() const { return asVec2(); }
+  operator const vvVector2i&() const { return asVec2i(); }
   operator const vvVector3&() const { return asVec3(); }
   operator const vvVector3i&() const { return asVec3i(); }
   operator const vvVector4&() const { return asVec4(); }
