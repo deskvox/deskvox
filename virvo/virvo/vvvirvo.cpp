@@ -42,7 +42,15 @@ bool virvo::hasFeature(const char* name)
   std::string str = name;
   std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 
-  if (str == "cg")
+  if (str == "bonjour")
+  {
+#ifdef HAVE_BONJOUR
+    return true;
+#else
+    return false;
+#endif
+  }
+  else if (str == "cg")
   {
 #ifdef HAVE_CG
     return true;
