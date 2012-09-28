@@ -21,12 +21,6 @@
 #ifndef _VV_BONJOURENTRY_H_
 #define _VV_BONJOURENTRY_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_BONJOUR
-
 #include "vvexport.h"
 #include <string>
 
@@ -56,8 +50,6 @@ private:
   std::string _registeredType;
   std::string _replyDomain;
 };
-
-#endif
 
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -18,74 +18,27 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "vvbonjourresolver.h"
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
 
-#ifdef HAVE_BONJOUR
+#include "vvbonjourresolver.h"
 
 #include "../vvdebugmsg.h"
 #include "../vvsocket.h"
 
+#ifdef HAVE_BONJOUR
 #include <dns_sd.h>
+#endif
+
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-vvBonjourResolver::vvBonjourResolver()
-  : _eventLoop(NULL), _hostname(""), _port(0)
+namespace
 {
-}
-
-vvBonjourResolver::~vvBonjourResolver()
-{
-  if(_eventLoop) delete _eventLoop;
-}
-
-vvBonjour::ErrorType vvBonjourResolver::resolveBonjourEntry(const vvBonjourEntry& entry)
-{
-  vvDebugMsg::msg(3, "vvBonjourResolver::resolveBonjourEntry()");
-  DNSServiceErrorType error;
-  DNSServiceRef  serviceRef;
-
-  error = DNSServiceResolve(&serviceRef,
-                 0,                 // no flags
-                 0,                 // all network interfaces
-                 entry.getServiceName().c_str(),    //name
-                 entry.getRegisteredType().c_str(), // service type
-                 entry.getReplyDomain().c_str(),    //domain
-                 ResolveCallBack,
-                 this);             // no context
-
-  if (error == kDNSServiceErr_NoError)
-  {
-    _eventLoop = new vvBonjourEventLoop(serviceRef);
-    _eventLoop->run();
-    return vvBonjour::VV_OK;
-  }
-  else
-  {
-    vvDebugMsg::msg(2, "vvBonjourResolver::resolveBonjourEntry(): DNSServiceResolve failed with error code ", error);
-    return vvBonjour::VV_ERROR;
-  }
-}
-
-vvTcpSocket* vvBonjourResolver::getBonjourSocket() const
-{
-  vvDebugMsg::msg(3, "vvBonjourResolver::getBonjourSocket() enter");
-
-  if(_hostname.length() > 0 && 0 != _port)
-  {
-    vvTcpSocket* sock = new vvTcpSocket;
-    sock->connectToHost(_hostname.c_str(), _port);
-    return sock;
-  }
-  else
-  {
-    vvDebugMsg::msg(2, "vvBonjourResolver::getBonjourSocket() hostname and/or port not resolved");
-    return NULL;
-  }
-}
-
-void vvBonjourResolver::ResolveCallBack(DNSServiceRef,
+#ifdef HAVE_BONJOUR
+void ResolveCallBack(DNSServiceRef,
           DNSServiceFlags flags,
           uint32_t ,      // interface
           DNSServiceErrorType errorCode,
@@ -122,6 +75,67 @@ void vvBonjourResolver::ResolveCallBack(DNSServiceRef,
     instance->_eventLoop->stop();
   }
 }
-
 #endif
+}
+
+vvBonjourResolver::vvBonjourResolver()
+  : _eventLoop(NULL), _hostname(""), _port(0)
+{
+}
+
+vvBonjourResolver::~vvBonjourResolver()
+{
+  if(_eventLoop) delete _eventLoop;
+}
+
+vvBonjour::ErrorType vvBonjourResolver::resolveBonjourEntry(const vvBonjourEntry& entry)
+{
+#ifdef HAVE_BONJOUR
+  vvDebugMsg::msg(3, "vvBonjourResolver::resolveBonjourEntry()");
+  DNSServiceErrorType error;
+  DNSServiceRef  serviceRef;
+
+  error = DNSServiceResolve(&serviceRef,
+                 0,                 // no flags
+                 0,                 // all network interfaces
+                 entry.getServiceName().c_str(),    //name
+                 entry.getRegisteredType().c_str(), // service type
+                 entry.getReplyDomain().c_str(),    //domain
+                 ResolveCallBack,
+                 this);             // no context
+
+  if (error == kDNSServiceErr_NoError)
+  {
+    _eventLoop = new vvBonjourEventLoop(serviceRef);
+    _eventLoop->run();
+    return vvBonjour::VV_OK;
+  }
+  else
+  {
+    vvDebugMsg::msg(2, "vvBonjourResolver::resolveBonjourEntry(): DNSServiceResolve failed with error code ", error);
+    return vvBonjour::VV_ERROR;
+  }
+#else
+  (void)entry;
+  return vvBonjour::VV_ERROR;
+#endif
+}
+
+vvTcpSocket* vvBonjourResolver::getBonjourSocket() const
+{
+  vvDebugMsg::msg(3, "vvBonjourResolver::getBonjourSocket() enter");
+
+  if(_hostname.length() > 0 && 0 != _port)
+  {
+    vvTcpSocket* sock = new vvTcpSocket;
+    sock->connectToHost(_hostname.c_str(), _port);
+    return sock;
+  }
+  else
+  {
+    vvDebugMsg::msg(2, "vvBonjourResolver::getBonjourSocket() hostname and/or port not resolved");
+    return NULL;
+  }
+}
+
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
