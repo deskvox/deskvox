@@ -21,18 +21,10 @@
 #ifndef _VV_RAYREND_H_
 #define _VV_RAYREND_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_CUDA
-
 #include "vvexport.h"
 #include "vvibrrenderer.h"
-#include "vvcuda.h"
+
 #include <vector>
-#include <cuda.h>
-#include <cuda_gl_interop.h>
 
 
 class vvVolDesc;
@@ -61,14 +53,7 @@ public:
   bool getIllumination() const;
   bool getInterpolation() const;
   bool getOpacityCorrection() const;
-
-  uchar4* getDeviceImg() const;
-  void* getDeviceDepth() const;
 private:
-  cudaChannelFormatDesc _channelDesc;
-  std::vector<cudaArray*> d_volumeArrays;
-  cudaArray* d_transferFuncArray;
-
   float* _rgbaTF;
 
   bool _earlyRayTermination;        ///< Terminate ray marching when enough alpha was gathered
@@ -78,14 +63,11 @@ private:
   bool _volumeCopyToGpuOk;          ///< must be true for memCopy to be run
   bool _twoPassIbr;                 ///< Perform an alpha-gathering pass before the actual render pass
 
-  void* d_depth;
-
   void initVolumeTexture();
   void factorViewMatrix();
   void findAxisRepresentations();
   bool allocIbrArrays(int w, int h);
 };
 
-#endif // HAVE_CUDA
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
