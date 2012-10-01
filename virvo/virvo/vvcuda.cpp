@@ -24,7 +24,6 @@
 #include "vvconfig.h"
 #endif
 
-#include "vvx11.h"
 #include "vvcudatools.h"
 
 #include <string>
@@ -33,6 +32,11 @@
 
 #ifdef HAVE_CUDA
 #include <cuda_gl_interop.h>
+#endif
+
+#ifdef HAVE_X11
+#include <GL/glx.h>
+#include <X11/Xlib.h>
 #endif
 
 #include "vvdebugmsg.h"

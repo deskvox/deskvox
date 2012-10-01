@@ -75,8 +75,6 @@ set(VIRVO_HEADERS
   vvbsptreevisitors.h
   vvcgprogram.h
   vvclock.h
-# vvclusterclient.h
-# vvclusterserver.h
   vvcolor.h
   vvcuda.h
   vvcudaimg.h
@@ -94,6 +92,7 @@ set(VIRVO_HEADERS
   vvibr.h
   vvibrclient.h
   vvibrimage.h
+  vvibrrenderer.h
   vvibrserver.h
   vvimage.h
   vvimageclient.h
@@ -132,6 +131,8 @@ set(VIRVO_HEADERS
   vvsoftvr.h
   vvsphere.h
   vvstingray.h
+  vvswitchrenderer.h
+  vvswitchrenderer.impl.h
   vvtcpserver.h
   vvtcpsocket.h
   vvtexrend.h
@@ -147,7 +148,6 @@ set(VIRVO_HEADERS
   vvvirvo.h
   vvvisitor.h
   vvvoldesc.h
-  vvx11.h
 )
 
 set(VIRVO_SOURCES
@@ -167,8 +167,6 @@ set(VIRVO_SOURCES
   vvbsptreevisitors.cpp
   vvcgprogram.cpp
   vvclock.cpp
-# vvclusterclient.cpp
-# vvclusterserver.cpp
   vvcolor.cpp
   vvcuda.cpp
   vvcudaimg.cpp
@@ -182,6 +180,7 @@ set(VIRVO_SOURCES
   vvibr.cpp
   vvibrclient.cpp
   vvibrimage.cpp
+  vvibrrenderer.cpp
   vvibrserver.cpp
   vvimage.cpp
   vvimageclient.cpp
@@ -260,29 +259,39 @@ set(VIRVO_SHADERS
 )
 
 if(APPLE)
-  set(VIRVO_HEADERS ${VIRVO_HEADERS} vvcocoaglcontext.h)
-  set(VIRVO_SOURCES ${VIRVO_SOURCES} vvcocoaglcontext.mm)
+  set(VIRVO_WINDOWING_SYSTEM "Cocoa" CACHE STRING "Available windowing systems for render contexts (Cocoa | X11)")
+elseif(WIN32)
+  set(VIRVO_WINDOWING_SYSTEM "WGL" CACHE STRING "Available windowing systems for render contexts (WGL | X11)")
+else()
+  set(VIRVO_WINDOWING_SYSTEM "X11" CACHE STRING "Available windowing systems for render contexts (X11)")
 endif()
-
 
 if(APPLE)
-  set(VIRVO_WINDOWING_SYSTEM "Cocoa" CACHE STRING "Available windowing systems for render contexts")
-  add_definitions(-DUSE_COCOA)
-elseif(WIN32)
-  set(VIRVO_WINDOWING_SYSTEM "WGL" CACHE STRING "Available windowing systems for render contexts")
-else()
-  set(VIRVO_WINDOWING_SYSTEM "X11" CACHE STRING "Available windowing systems for render contexts")
-  if(X11_FOUND)
-    add_definitions(-DUSE_X11)
-  endif()
-endif()
-
+  if(${VIRVO_WINDOWING_SYSTEM} STREQUAL "Cocoa")
+    add_definitions(-DUSE_COCOA)
+    set(VIRVO_HEADERS ${VIRVO_HEADERS} vvcocoaglcontext.h)
+    set(VIRVO_SOURCES ${VIRVO_SOURCES} vvcocoaglcontext.mm)
+    find_library(COCOA_LIBRARY Cocoa)
+    if(NOT COCOA_LIBRARY)
+      message(FATAL_ERROR "Cocoa not found")
+    endif()
+    deskvox_link_libraries(${COCOA_LIBRARY})
+  else(${VIRVO_WINDOWING_SYSTEM} STREQUAL "Cocoa")
+    if(X11_FOUND)
+      ADD_DEFINITIONS(-DUSE_X11)
+    endif(X11_FOUND)
+  endif(${VIRVO_WINDOWING_SYSTEM} STREQUAL "Cocoa")
+else(APPLE)
+  if(${VIRVO_WINDOWING_SYSTEM} STREQUAL "X11")
+    if(X11_FOUND)
+      add_definitions(-DUSE_X11)
+    endif(X11_FOUND)
+  endif(${VIRVO_WINDOWING_SYSTEM} STREQUAL "X11")
+endif(APPLE)
 
 if(WIN32)
   deskvox_link_libraries(ws2_32)
-endif()
-
-if(NOT WIN32)
+else()
   if(BUILD_SHARED_LIBS)
     deskvox_link_libraries(dl)
   endif()

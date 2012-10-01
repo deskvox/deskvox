@@ -30,6 +30,7 @@
 #include "vvcolor.h"
 #include "vvexport.h"
 #include "vvinttypes.h"
+#include "vvvecmath.h"
 
 /** Specifies a 3D point with an opacity. 
   @see vvTFCustom
@@ -37,7 +38,7 @@
 class VIRVOEXPORT vvTFPoint
 {
   public:
-    float _pos[3];
+    vvVector3 _pos;
     float _opacity;   ///< opacity at this point in the TF [0..1]
     
     vvTFPoint();
@@ -70,7 +71,7 @@ class VIRVOEXPORT vvTFWidget
     };
     static const int MAX_STR_LEN = 65535;
 
-    float _pos[3];                                ///< position of widget's center [volume data space]
+    vvVector3 _pos;                               ///< position of widget's center [volume data space]
     float _opacity;                               ///< maximum opacity [0..1]
 
     vvTFWidget();
@@ -99,7 +100,7 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
 
   public:
     vvColor _col;                                 ///< RGB color
-    float _size[3];                               ///< width, height, depth of bell's bounding box [volume data space]
+    vvVector3 _size;                              ///< width, height, depth of bell's bounding box [volume data space]
 
     vvTFBell();
     vvTFBell(vvTFBell*);
@@ -123,8 +124,8 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
 
   public:
     vvColor _col;                                 ///< RGB color
-    float _top[3];                                ///< width at top [volume data space]
-    float _bottom[3];                             ///< width at bottom of pyramid [volume data space]
+    vvVector3 _top;                               ///< width at top [volume data space]
+    vvVector3 _bottom;                            ///< width at bottom of pyramid [volume data space]
 
     vvTFPyramid();
     vvTFPyramid(vvTFPyramid*);
@@ -158,7 +159,7 @@ class VIRVOEXPORT vvTFColor : public vvTFWidget
 class VIRVOEXPORT vvTFSkip : public vvTFWidget
 {
   public:
-    float _size[3];          ///< width, height, depth of skipped area [volume data space]
+    vvVector3 _size;         ///< width, height, depth of skipped area [volume data space]
 
     vvTFSkip();
     vvTFSkip(vvTFSkip*);
@@ -176,7 +177,7 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
 class VIRVOEXPORT vvTFCustom : public vvTFWidget
 {
   public:
-    float _size[3];                ///< width, height, depth of TF area [volume data space]
+    vvVector3 _size;               ///< width, height, depth of TF area [volume data space]
     std::list<vvTFPoint*> _points; ///< list of control points; coordinates are relative to widget center
     vvTFPoint* _currentPoint;      ///< currently selected point
 
@@ -235,7 +236,7 @@ public:
     virtual void setOwnColor(bool);
 
 private:
-   float _size[3];                // width, height, depth of TF area [volume data space]
+   vvVector3 _size;               // width, height, depth of TF area [volume data space]
    float* _map;
    int _dim;                      // dimension of the map
 
@@ -258,9 +259,9 @@ class VIRVOEXPORT vvTFCustomMap : public vvTFWidget
 
   public:
     vvColor _col;                  // RGB color
-    float _size[3];                // width, height, depth of TF area [volume data space]
+    vvVector3 _size;               // width, height, depth of TF area [volume data space]
     float* _map;
-    int _dim[3];                   // dimensions of the map [widget data space]
+    vvVector3i _dim;                 // dimensions of the map [widget data space]
 
     vvTFCustomMap();
     vvTFCustomMap(float x, float w, float y=0.5f, float h=0.0f, float z=0.5f, float d=0.0f);

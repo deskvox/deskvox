@@ -171,7 +171,7 @@ class VIRVOEXPORT vvVolDesc
     int    getCurrentFrame() const;
     int    getBPV() const;
     void   setDist(float, float, float);
-    void   setDist(vvVector3&);
+    void   setDist(const vvVector3& d);
     vvVector3 getSize() const;
     int    getStoredFrames() const;
     float  getValueRange() const;
@@ -219,7 +219,7 @@ class VIRVOEXPORT vvVolDesc
     void   makeIcon(int, const uchar*);
     void   makeIcon(int);
     void   printInfoLine(const char* = NULL);
-    void   makeInfoString(char*);
+    void   makeInfoString(std::string* infoString);
     void   makeShortInfoString(char*);
     void   printVolumeInfo();
     void   printStatistics();

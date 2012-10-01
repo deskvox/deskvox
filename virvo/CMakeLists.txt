@@ -1,8 +1,4 @@
-include_directories(
-  ${VIRVO_CONFIG_DIR}
-  ${VIRVO_INCLUDE_DIR}
-  ${VIRVO_INCLUDE_DIR}/virvo
-)
+include_directories(${VIRVO_INCLUDE_DIRS})
 
 if(DESKVOX_BUILD_TESTS)
   add_subdirectory(test)

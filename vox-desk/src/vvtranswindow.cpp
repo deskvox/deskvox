@@ -844,7 +844,7 @@ long VVTransferWindow::onCmdSaveTF(FXObject*,FXSelector,void*)
     int over = FXMessageBox::question((FXWindow*)this, MBOX_OK_CANCEL, "Warning", "Overwrite existing file?");
     if(over == FX::MBOX_CLICKED_CANCEL) return 1;
   }
-  _canvas->_vd->tf.saveMeshviewer(filename.text());
+  _canvas->_vd->tf.save(filename.text());
   return 1;
 }
 
@@ -872,7 +872,7 @@ long VVTransferWindow::onCmdLoadTF(FXObject*,FXSelector,void*)
     FXMessageBox::question((FXWindow*)this, MBOX_OK, "Error", "File does not exist");
     return 1;
   }
-  _canvas->_vd->tf.loadMeshviewer(filename.text());
+  _canvas->_vd->tf.load(filename.text());
   if(_instantButton->getCheck()) updateTransFunc();
   drawTF();
   return 1;

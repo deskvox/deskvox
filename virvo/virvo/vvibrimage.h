@@ -28,8 +28,7 @@
 class VIRVOEXPORT vvIbrImage : public vvImage
 {
   public:
-    vvIbrImage(short w, short h, uchar *data, int depthPrecision,
-               int uncertaintyPrecision);
+    vvIbrImage(short w, short h, uchar *data, int depthPrecision);
     vvIbrImage();
     virtual ~vvIbrImage();
 
@@ -38,24 +37,15 @@ class VIRVOEXPORT vvIbrImage : public vvImage
 
     uchar *getPixelDepth() const;
     uchar *getCodedDepth() const;
-    uchar *getUncertainty() const;
-    uchar *getCodedUncertainty() const;
     int  getDepthSize() const;
     void  setDepthSize(int size);
-    int  getUncertaintySize() const;
-    void  setUncertaintySize(int size);
     void    alloc_pd();
     void setNewDepthPtr(uchar *depth);
-    void setNewUncertaintyPtr(uchar* uncertainty);
 
     void setDepthPrecision(int dp);
     int getDepthPrecision() const;
-    void setUncertaintyPrecision(int up);
-    int getUncertaintyPrecision() const;
     CodeType getDepthCodetype() const;
     void setDepthCodetype(CodeType ct);
-    CodeType getUncertaintyCodetype() const;
-    void setUncertaintyCodetype(CodeType ct);
 
     void setModelViewMatrix(const vvMatrix &mv);
     vvMatrix getModelViewMatrix() const;
@@ -72,13 +62,8 @@ class VIRVOEXPORT vvIbrImage : public vvImage
     int  _depthPrecision; // 8: 8 bit int, 16: 16 bit int, 32: 32 bit float
     CodeType  _depthCodeType;
     int _codedDepthSize;
-    int  _uncertaintyPrecision; // 8: 8 bit int, 16: 16 bit int, 32: 32 bit float
-    CodeType  _uncertaintyCodeType;
-    int _codedUncertaintySize;
     uchar*          _pixeldepth;
     uchar*          _codeddepth;
-    uchar*          _uncertainty;
-    uchar*          _codeduncertainty;
 
     vvMatrix        _modelViewMatrix;
     vvMatrix        _projectionMatrix;

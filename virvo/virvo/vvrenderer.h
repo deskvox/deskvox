@@ -91,9 +91,9 @@ public:
     VV_SHOW_TEXTURE,
     VV_OPAQUE_GEOMETRY_PRESENT,
     VV_USE_IBR,
+    VV_IBR_DEPTH_RANGE,
     VV_IBR_MODE,
     VV_IBR_DEPTH_PREC,                          ///< precision of generated pixel depth values (8, 16 or 32 bit)
-    VV_IBR_UNCERTAINTY_PREC,                    ///< precision of uncertainty for pixel depth (8, 16 or 32 bit)
     VV_CODEC,                                   ///< id of image/video codec for remote rendering
     VV_IBR_SYNC,                                ///< display each image as it is sent
 

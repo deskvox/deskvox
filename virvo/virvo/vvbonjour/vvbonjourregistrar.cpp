@@ -18,87 +18,28 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "vvbonjourregistrar.h"
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
 
-#ifdef HAVE_BONJOUR
+#include "vvbonjourregistrar.h"
 
 #include "../vvdebugmsg.h"
 #include "../vvsocket.h"
 #include "vvtoolshed.h"
 
+#ifdef HAVE_BONJOUR
 #include <dns_sd.h>
+#endif
 #include <iostream>
 #include <sstream>
 
-vvBonjourRegistrar::vvBonjourRegistrar()
+namespace
 {
-  _serviceRef = NULL;
-  _eventLoop = NULL;
-}
+#ifdef HAVE_BONJOUR
+_DNSServiceRef_t   *serviceRef;
 
-vvBonjourRegistrar::~vvBonjourRegistrar()
-{
-  if(_serviceRef)
-    unregisterService();
-}
-
-DNSServiceErrorType vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const ushort port)
-{
-  vvDebugMsg::msg(3, "vvBonjourRegistrar::registerService() Enter");
-
-  DNSServiceErrorType error;
-
-  error = DNSServiceRegister(&_serviceRef,
-                0,                // no flags
-                0,                // all network interfaces
-                entry.getServiceName().c_str(),
-                entry.getRegisteredType().c_str(),
-                entry.getReplyDomain().c_str(),
-                NULL,             // use default host name
-                htons(port),      // port number
-                0,                // length of TXT record
-                NULL,             // no TXT record
-                RegisterCallBack, // call back function
-                this);            // no context
-
-  if (error == kDNSServiceErr_NoError)
-  {
-    _eventLoop = new vvBonjourEventLoop(_serviceRef);
-    _eventLoop->run(true, -1.0);
-    while(!_eventLoop->_noMoreFlags)
-    {
-      vvToolshed::sleep(1);
-      //waiting...
-    }
-  }
-  else
-  {
-    vvDebugMsg::msg(2, "vvBonjourRegistrar::registerService(): DNSServiceResolve failed with error code ", error);
-  }
-
-  return error;
-}
-
-void vvBonjourRegistrar::unregisterService()
-{
-  if(!_serviceRef)
-  {
-    vvDebugMsg::msg(2, "vvBonjourRegistrar::unregisterService() no service registered");
-    return;
-  }
-
-  if(_eventLoop)
-  {
-    _eventLoop->stop();
-    delete _eventLoop;
-    _eventLoop = NULL;
-  }
-
-  DNSServiceRefDeallocate(_serviceRef);
-  _serviceRef = NULL;
-}
-
-void vvBonjourRegistrar::RegisterCallBack(DNSServiceRef service,
+void RegisterCallBack(DNSServiceRef service,
            DNSServiceFlags flags,
            DNSServiceErrorType errorCode,
            const char * name,
@@ -134,6 +75,85 @@ void vvBonjourRegistrar::RegisterCallBack(DNSServiceRef service,
     instance->_eventLoop->stop();
   }
 }
-
 #endif
+}
+
+vvBonjourRegistrar::vvBonjourRegistrar()
+{
+#ifdef HAVE_BONJOUR
+  ::serviceRef = NULL;
+#endif
+  _eventLoop = NULL;
+}
+
+vvBonjourRegistrar::~vvBonjourRegistrar()
+{
+#ifdef HAVE_BONJOUR
+  if(::serviceRef)
+    unregisterService();
+#endif
+}
+
+bool vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const ushort port)
+{
+#ifdef HAVE_BONJOUR
+  vvDebugMsg::msg(3, "vvBonjourRegistrar::registerService() Enter");
+
+  DNSServiceErrorType error = DNSServiceRegister(&::serviceRef,
+                0,                // no flags
+                0,                // all network interfaces
+                entry.getServiceName().c_str(),
+                entry.getRegisteredType().c_str(),
+                entry.getReplyDomain().c_str(),
+                NULL,             // use default host name
+                htons(port),      // port number
+                0,                // length of TXT record
+                NULL,             // no TXT record
+                RegisterCallBack, // call back function
+                this);            // no context
+
+  if (error == kDNSServiceErr_NoError)
+  {
+    _eventLoop = new vvBonjourEventLoop(::serviceRef);
+    _eventLoop->run(true, -1.0);
+    while(!_eventLoop->_noMoreFlags)
+    {
+      vvToolshed::sleep(1);
+      //waiting...
+    }
+    return true;
+  }
+  else
+  {
+    vvDebugMsg::msg(2, "vvBonjourRegistrar::registerService(): DNSServiceResolve failed with error code ", error);
+    return false;
+  }
+#else
+  (void)entry;
+  (void)port;
+  return false;
+#endif
+}
+
+void vvBonjourRegistrar::unregisterService()
+{
+#ifdef HAVE_BONJOUR
+  if(!::serviceRef)
+  {
+    vvDebugMsg::msg(2, "vvBonjourRegistrar::unregisterService() no service registered");
+    return;
+  }
+
+  if(_eventLoop)
+  {
+    _eventLoop->stop();
+    delete _eventLoop;
+    _eventLoop = NULL;
+  }
+
+  DNSServiceRefDeallocate(::serviceRef);
+  ::serviceRef = NULL;
+#endif
+}
+
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

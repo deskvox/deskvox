@@ -21,18 +21,10 @@
 #ifndef _VV_RAYREND_H_
 #define _VV_RAYREND_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_CUDA
-
 #include "vvexport.h"
-#include "vvsoftvr.h"
-#include "vvcuda.h"
+#include "vvibrrenderer.h"
+
 #include <vector>
-#include <cuda.h>
-#include <cuda_gl_interop.h>
 
 
 class vvVolDesc;
@@ -43,7 +35,7 @@ class vvVolDesc;
   the following location:
   http://developer.download.nvidia.com/compute/cuda/sdk/website/samples.html
  */
-class VIRVOEXPORT vvRayRend : public vvSoftVR
+class VIRVOEXPORT vvRayRend : public vvIbrRenderer
 {
 public:
   vvRayRend(vvVolDesc* vd, vvRenderState renderState);
@@ -52,6 +44,8 @@ public:
   int getLUTSize() const;
   void updateTransferFunction();
   void compositeVolume(int w = -1, int h = -1);
+  void getColorBuffer(uchar** colors) const;
+  void getDepthBuffer(uchar** depths) const;
   virtual void setParameter(ParameterType param, const vvParam& newValue);
   virtual vvParam getParameter(ParameterType param) const;
 
@@ -59,18 +53,7 @@ public:
   bool getIllumination() const;
   bool getInterpolation() const;
   bool getOpacityCorrection() const;
-
-  uchar4* getDeviceImg() const;
-  void* getDeviceDepth() const;
-  void* getDeviceUncertainty() const;
-  void setDepthRange(float min, float max);
-  const float* getDepthRange() const;
-
 private:
-  cudaChannelFormatDesc _channelDesc;
-  std::vector<cudaArray*> d_volumeArrays;
-  cudaArray* d_transferFuncArray;
-
   float* _rgbaTF;
 
   bool _earlyRayTermination;        ///< Terminate ray marching when enough alpha was gathered
@@ -80,18 +63,11 @@ private:
   bool _volumeCopyToGpuOk;          ///< must be true for memCopy to be run
   bool _twoPassIbr;                 ///< Perform an alpha-gathering pass before the actual render pass
 
-  int _depthPrecision;              ///< number of bits in depth buffer for image based rendering
-  int _uncertaintyPrecision;        ///< number of bits in uncertainty array for image based rendering
-  void* d_depth;
-  void* d_uncertainty;
-  float _depthRange[2];
-
   void initVolumeTexture();
   void factorViewMatrix();
   void findAxisRepresentations();
   bool allocIbrArrays(int w, int h);
 };
 
-#endif // HAVE_CUDA
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

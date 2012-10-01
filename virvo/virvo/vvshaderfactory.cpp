@@ -26,8 +26,10 @@
 #include "vvshaderprogram.h"
 #include "vvtoolshed.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <locale>
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
@@ -68,7 +70,7 @@ vvShaderProgram* vvShaderFactory::createProgram(const std::string& vert, const s
 
   vvShaderProgram *program = NULL;
 
-  if(!glslSupport())
+  if(!isSupported("glsl"))
   {
     vvDebugMsg::msg(0, "vvShaderFactory::createProgram: no GLSL support!");
   }
@@ -98,7 +100,7 @@ vvShaderProgram* vvShaderFactory::createProgram(const std::string& vert, const s
 #ifdef HAVE_CG
   if(!program)
   {
-    if(!cgSupport())
+    if(!isSupported("cg"))
     {
       vvDebugMsg::msg(0, "vvShaderFactory::createProgram: no CG support!");
     }
@@ -216,27 +218,36 @@ const string vvShaderFactory::getShaderDir()
   return result;
 }
 
-bool vvShaderFactory::cgSupport()
+bool vvShaderFactory::isSupported(const std::string& lang)
 {
-  #ifdef HAVE_CG
-    return true;
-  #else
-    return false;
-  #endif
-}
+  std::string str = lang;
+  std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 
-bool vvShaderFactory::glslSupport()
-{
-  #if defined GL_VERSION_1_1 || defined GL_VERSION_1_2 \
-    || defined GL_VERSION_1_3 || defined GL_VERSION_1_4 \
-    || defined GL_VERSION_1_5 || defined GL_VERSION_2_0 \
-    || defined GL_VERSION_3_0
+  if (str == "cg")
+  {
+#ifdef HAVE_CG
+    return true;
+#else
+    return false;
+#endif
+  }
+  else if (str == "glsl")
+  {
+#if defined GL_VERSION_1_1 || defined GL_VERSION_1_2 \
+ || defined GL_VERSION_1_3 || defined GL_VERSION_1_4 \
+ || defined GL_VERSION_1_5 || defined GL_VERSION_2_0 \
+ || defined GL_VERSION_3_0
     // Assume that even compilers that support higher gl versions
     // will know at least one of those listed here.
     return glCreateProgram && glDeleteProgram && glUniform1f;
-  #else
+#else
     return false;
-  #endif
+#endif
+  }
+  else
+  {
+    return false;
+  }
 }
 
 //============================================================================

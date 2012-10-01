@@ -35,7 +35,10 @@
 #include "vvopengl.h"
 #include "vvdynlib.h"
 
-#include "vvx11.h"
+#ifdef HAVE_X11
+#include <GL/glx.h>
+#include <X11/Xlib.h>
+#endif
 
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
@@ -3943,8 +3946,8 @@ bool vvTexRend::isSupported(const VoxelType voxel)
         vvGLTools::isGLextensionSupported("GL_NV_register_combiners2");
     case VV_PIX_SHD:
       {
-        vvShaderFactory shaderFactory;
-        return (shaderFactory.cgSupport() || shaderFactory.glslSupport());
+        return (vvShaderFactory::isSupported("cg")
+          || vvShaderFactory::isSupported("glsl"));
       }
     case VV_FRG_PRG:
       return vvGLTools::isGLextensionSupported("GL_ARB_fragment_program");

@@ -22,8 +22,8 @@
 #define _VV_IBRSERVER_H_
 
 #include "vvexport.h"
-#include "vvrenderer.h"
 #include "vvremoteserver.h"
+#include "vvrenderer.h"
 
 class vvIbrImage;
 
@@ -41,7 +41,6 @@ private:
   vvIbrImage *_image;
   uchar *_pixels;
   uchar *_depth;
-  uchar *_uncertainty;
 };
 
 #endif

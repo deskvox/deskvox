@@ -21,11 +21,6 @@
 #ifndef _VV_BONJOUREVENTLOOP_H_
 #define _VV_BONJOUREVENTLOOP_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_BONJOUR
 #include "vvbonjour.h"
 #include "vvexport.h"
 
@@ -40,7 +35,7 @@ struct Thread;
 class VIRVOEXPORT vvBonjourEventLoop
 {
 public:
-  vvBonjourEventLoop(_DNSServiceRef_t *service);
+  vvBonjourEventLoop(void *service);
   ~vvBonjourEventLoop();
 
   /**
@@ -61,13 +56,9 @@ public:
   double            _timeout;
   bool              _run;
   bool              _noMoreFlags;
-  _DNSServiceRef_t *_dnsServiceRef;
-
 private:
   Thread *_thread;
 };
-
-#endif
 
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

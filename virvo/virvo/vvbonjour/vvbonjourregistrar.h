@@ -21,11 +21,6 @@
 #ifndef _VV_BONJOURREGISTRAR_H_
 #define _VV_BONJOURREGISTRAR_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_BONJOUR
 #include "vvbonjour.h"
 #include "vvbonjourentry.h"
 #include "vvbonjoureventloop.h"
@@ -50,25 +45,16 @@ public:
     @param port Port on which the service provider is listening for incoming connections
     @return Errorcode (0 == no error). See manpages of DNSSeriviceErrorType for further informations.
     */
-  DNSServiceErrorType registerService(const vvBonjourEntry& entry, const ushort port);
+  bool registerService(const vvBonjourEntry& entry, const ushort port);
   /**
     Unregister the registered service
     */
   void unregisterService();
 
+  // TODO: make these private
   vvBonjourEventLoop *_eventLoop;
-  _DNSServiceRef_t   *_serviceRef;
   vvBonjourEntry      _registeredService;
-private:
-
-  /*!
-   * \brief Callback function passed to bonjour.
-   */
-  static void DNSSD_API RegisterCallBack(_DNSServiceRef_t *, DNSServiceFlags, DNSServiceErrorType,
-                                               const char *, const char *, const char *, void *);
 };
-
-#endif
 
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

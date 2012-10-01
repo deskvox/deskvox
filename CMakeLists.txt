@@ -37,8 +37,16 @@ set(VIRVO_TESTS_DIR ${VIRVO_DIR}/test)
 
 set(VIRVO_CONFIG_DIR ${DESKVOX_BINARY_DIR}/virvo/virvo/config)
 
+set(VIRVO_INCLUDE_DIRS
+  ${VIRVO_CONFIG_DIR}
+  ${VIRVO_INCLUDE_DIR}
+  ${VIRVO_INCLUDE_DIR}/virvo
+)
 
-set(VOXDESK_DIR ${DESKVOX_DIR}/vox-desk)
+set(VOXDESK_DIR ${DESKVOX_DIR}/vox-desk-qt)
+set(VOXDESK_INCLUDE_DIR ${VOXDESK_DIR}/include)
+set(VOXDESK_SOURCE_DIR ${VOXDESK_DIR}/src)
+set(VOXDESK_PLUGINS_DIR ${VOXDESK_DIR}/plugins)
 
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${DESKVOX_BINARY_DIR}/${CMAKE_BUILD_TYPE}/bin")
@@ -88,6 +96,7 @@ include(DeskvoxUsePackage)
 
 add_subdirectory(virvo)
 if(DESKVOX_BUILD_VOX_DESK)
+  add_subdirectory(vox-desk-qt)
   add_subdirectory(vox-desk)
 endif()
 
