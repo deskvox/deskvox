@@ -9,7 +9,6 @@ endif()
 
 deskvox_link_libraries(virvo)
 
-ADD_SUBDIRECTORY(vcommon)
 ADD_SUBDIRECTORY(vconv)
 ADD_SUBDIRECTORY(vserver)
 ADD_SUBDIRECTORY(vview)
