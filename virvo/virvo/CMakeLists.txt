@@ -114,6 +114,7 @@ set(VIRVO_HEADERS
   vvrendererfactory.h
   vvrendertarget.h
   vvrendervp.h
+  vvrequestmanagement.h
   vvserbrickrend.h
   vvshaderfactory.h
   vvshaderprogram.h
@@ -196,6 +197,7 @@ set(VIRVO_SOURCES
   vvrendererfactory.cpp
   vvrendertarget.cpp
   vvrendervp.cpp
+  vvrequestmanagement.cpp
   vvserbrickrend.cpp
   vvshaderfactory.cpp
   vvshaderprogram.cpp

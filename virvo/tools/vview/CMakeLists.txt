@@ -1,3 +1,5 @@
+INCLUDE_DIRECTORIES(../vcommon)
+
 #find_package(GLUT_REQUIRED)
 
 find_package(GLUT)

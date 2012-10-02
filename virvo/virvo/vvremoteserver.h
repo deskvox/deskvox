@@ -42,7 +42,7 @@ public:
     VV_RENDERCONTEXT_ERROR
   };
 
-  vvRemoteServer(vvSocketIO *socket);
+  vvRemoteServer(vvSocket *socket);
   virtual ~vvRemoteServer();
 
   bool getLoadVolumeFromFile() const;

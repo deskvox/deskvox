@@ -1618,6 +1618,185 @@ vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m)
 }
 
 //----------------------------------------------------------------------------
+/** Reads a vvGpuInfo from the socket.
+  @param ginfo object in which read data will be saved
+*/
+vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpu::vvGpuInfo& ginfo)
+{
+  if(_socket)
+  {
+    uchar buffer[8];
+    vvSocket::ErrorType retval;
+
+    if ((retval =_socket->readData(&buffer[0], 8)) == vvSocket::VV_OK)
+    {
+      ginfo.freeMem  = vvToolshed::read32(&buffer[0]);
+      ginfo.totalMem = vvToolshed::read32(&buffer[4]);
+
+      return vvSocket::VV_OK;
+    }
+    else
+    {
+      return retval;
+    }
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Writes a vvGpuInfo to the socket.
+  @param ginfo object which will written to socket
+*/
+vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpu::vvGpuInfo& ginfo)
+{
+  if(_socket)
+  {
+    uchar buffer[8];
+    vvToolshed::write32(&buffer[0], ginfo.freeMem);
+    vvToolshed::write32(&buffer[4], ginfo.totalMem);
+    return _socket->writeData(&buffer[0], 8);
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Reads a vector list of vvGpuInfos from the socket.
+  @param ginfos vector in which read data will be saved
+*/
+vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpu::vvGpuInfo>& ginfos)
+{
+  if(_socket)
+  {
+    vvSocket::ErrorType retval;
+
+    int size = 0;
+    retval = getInt32(size);
+    if(retval != vvSocket::VV_OK) return retval;
+    else if(size < 0)
+    {
+      vvDebugMsg::msg(2, "vvSocketIO::getGpuInfos() error - received negative vector size: ", size);
+      return vvSocket::VV_DATA_ERROR;
+    }
+
+    for(int i=0; i<size; i++)
+    {
+      vvGpu::vvGpuInfo ginfo;
+      retval = getGpuInfo(ginfo);
+      ginfos.push_back(ginfo);
+      if(retval != vvSocket::VV_OK) return retval;
+    }
+    return vvSocket::VV_OK;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Writes a vector list of vvGpuInfos to the socket.
+  @param ginfos vector of vvGpuInfos which will be written to socket
+*/
+vvSocket::ErrorType vvSocketIO::putGpuInfos(const std::vector<vvGpu::vvGpuInfo>& ginfos)
+{
+  if(_socket)
+  {
+    vvSocket::ErrorType retval;
+
+    retval = putInt32(ginfos.size());
+    if(retval != vvSocket::VV_OK) return retval;
+
+    for(std::vector<vvGpu::vvGpuInfo>::const_iterator ginfo = ginfos.begin();ginfo != ginfos.end(); ginfo++)
+    {
+      retval = putGpuInfo(*ginfo);
+      if(retval != vvSocket::VV_OK) return retval;
+    }
+    return vvSocket::VV_OK;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Reads a vvRequest from the socket.
+  @param req request objecto to which read data will be saved
+*/
+vvSocket::ErrorType vvSocketIO::getRequest(vvRequest& req)
+{
+  if(_socket)
+  {
+    vvSocket::ErrorType retval;
+
+    retval = getInt32(req.niceness);
+    if(retval != vvSocket::VV_OK) return retval;
+
+    int type;
+    retval = getInt32(type);
+    if(retval != vvSocket::VV_OK) return retval;
+    req.type = (vvRenderer::RendererType)type;
+
+    int numnodes = 0;
+    retval = getInt32(numnodes);
+    if(retval != vvSocket::VV_OK) return retval;
+
+    req.nodes.clear();
+    for(int i=0;i<numnodes;i++)
+    {
+      int numgpus = 0;
+      retval = getInt32(numgpus);
+      if(retval != vvSocket::VV_OK) return retval;
+
+      req.nodes.push_back(numgpus);
+    }
+    return vvSocket::VV_OK;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
+/** Writes a vvRequest to the socket.
+  @param req vvRequest which will be written to socket
+*/
+vvSocket::ErrorType vvSocketIO::putRequest(const vvRequest& req)
+{
+  if(_socket)
+  {
+    vvSocket::ErrorType retval;
+
+    retval = putInt32(req.niceness);
+    if(retval != vvSocket::VV_OK) return retval;
+
+    retval = putInt32((int)req.type);
+    if(retval != vvSocket::VV_OK) return retval;
+
+    retval = putInt32(req.nodes.size());
+    if(retval != vvSocket::VV_OK) return retval;
+
+    for(unsigned int i=0; i<req.nodes.size(); i++)
+    {
+      retval = putInt32(req.nodes[i]);
+      if(retval != vvSocket::VV_OK) return retval;
+    }
+    return vvSocket::VV_OK;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+//----------------------------------------------------------------------------
 /** get assigned vvSocket
 */
 vvSocket* vvSocketIO::getSocket() const

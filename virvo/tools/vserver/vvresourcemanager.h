@@ -21,19 +21,14 @@
 #ifndef _VV_RESOURCEMANAGER_H_
 #define _VV_RESOURCEMANAGER_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#include <vector>
-
-#include <virvo/vvinttypes.h>
+#include <virvo/vvrequestmanagement.h>
 #include <virvo/vvbonjour/vvbonjourentry.h>
-
 #include <pthread.h>
 
+#include "vvserver.h"
+
 // forward declarations
-class vvServer;
+class vvSimpleServer;
 class vvTcpSocket;
 class vvBonjourBrowser;
 
@@ -48,100 +43,67 @@ class vvBonjourBrowser;
  *
  * @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
  */
-class vvResourceManager
-{
+class vvResourceManager : public vvServer
+{  
 private:
-  struct vvRequest
-  {
-//    vvRequest(uint i)
-//    {
-//      _id = i;
-//    };
-
-//    uint _id;
-    int _priority;
-    int _type;
-    int _requirements;
-    vvTcpSocket *_sock;
-  };
-
   struct vvResource
   {
   public:
     vvResource()
     {
-      _upToDate = true;
-      _server = NULL;
+      upToDate = true;
+      server = NULL;
     }
 
-    void numGPUsUp()
-    {
-      _numGPUs++;
-    }
+    bool   upToDate;
+    std::vector<vvGpu::vvGpuInfo> ginfos;
+    vvBonjourEntry bonjourEntry;
+    vvServer *server;
 
-    void numGPUsDown()
-    {
-      _numGPUs--;
-    }
-
-    ushort getGPUs()
-    {
-      return _numGPUs;
-    }
-
-    bool   _upToDate;
-    ushort _numCPUs;
-    uint   _gpuMemSize;
-    uint   _cpuMemSize;
-  #ifdef HAVE_BONJOUR
-    vvBonjourEntry _bonjourEntry;
-  #endif
-    vvServer *_server;
-
-  private:
-    ushort _numGPUs;
+    // vars for future use
+    ushort numCPUs;
+    uint   cpuMemSize;
   };
 
   struct vvJob
   {
-    vvTcpSocket *_requestSock;
-    vvResource  *_resource;
+    vvRequest               *request;
+    std::vector<vvResource*> resources;
   };
 
 public:
-  static vvResourceManager *inst;
-  static void exitCallback(void*)
-  {
-    inst->exitLocalCallback();
-  }
-
-
   /**
     Creates a resource manager connected with server
     \param server if set, resource manager also uses this server running locally
     */
-  vvResourceManager(vvServer *server = NULL);
+  vvResourceManager();
   ~vvResourceManager();
 
   void addJob(vvTcpSocket* sock);         ///< thread-savely adds new connection to the job list
   bool initNextJob();                     ///< thread-savely check for waiting jobs and free resources and pair if possible
 
   static void updateResources(void * param);
-private:
-#ifdef HAVE_BONJOUR
-  vvBonjourBrowser *_browser;
-#endif // HAVE_BONJOUR
 
+private:
+  bool serverLoop();
+  static void * localServerLoop(void *param);
+  void handleNextConnection(vvTcpSocket *sock);
+  static void * processJob(void *param);
+  uint getFreeResourceCount();
+  std::vector<vvResource*> getFreeResources(uint amount);
+
+  vvSimpleServer *_simpleServer;
+  vvBonjourBrowser *_browser;
+  static std::vector<vvGpu::vvGpuInfo> getResourceGpuInfos(const vvBonjourEntry entry);
   std::vector<vvRequest*>  _requests;
   std::vector<vvResource*> _resources;
-  pthread_mutex_t _jobsMutex;
+  pthread_mutex_t _requestsMutex;
   pthread_mutex_t _resourcesMutex;
-
-  static void * processJob(void *param);
-
-  void exitLocalCallback();
 };
 
 #endif // _VV_RESOURCEMANAGER_H_
 
+//===================================================================
+// End of File
+//===================================================================
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

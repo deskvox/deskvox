@@ -51,13 +51,16 @@ using std::ios;
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+#include <vvcommon.h>
 #include <virvo/vvvirvo.h>
 #include <virvo/vvgltools.h>
+#include <virvo/vvrequestmanagement.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>
 #include <virvo/vvclock.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvsocketmap.h>
+#include <virvo/vvsocketio.h>
 #include <virvo/vvtcpsocket.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvdebugmsg.h>
@@ -679,6 +682,43 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   else if (servers.size() > 0)
   {
     opt["brickrenderer"] = "image";
+  }
+
+  for(unsigned int i = 0; i<sockets.size();i++)
+  {
+    vvSocketIO socketIO = vvSocketIO(sockets[i]);
+
+    /* uncomment to test GpuInfo-event
+    socketIO.putInt32(virvo::GpuInfo);
+    std::vector<vvGpu::vvGpuInfo> ginfos;
+    socketIO.getGpuInfos(ginfos);
+    std::cerr << "Number of gpus: " << ginfos.size() << std::endl;
+    for(std::vector<vvGpu::vvGpuInfo>::iterator ginfo = ginfos.begin(); ginfo != ginfos.end();ginfo++)
+    {
+      std::cerr << "free memory on server: "  << (*ginfo).freeMem << std::endl;
+      std::cerr << "total memory on server: " << (*ginfo).totalMem << std::endl;
+    }
+    */
+
+    /* uncomment to test statistics-event
+    socketIO.putInt32(virvo::Statistics);
+    float wload;
+    socketIO.getFloat(wload);
+    int resCount;
+    socketIO.getInt32(resCount);
+    std::cerr << "Total work-load " << wload << " caused with " << resCount << " resources." << endl;
+    */
+
+    socketIO.putInt32(virvo::Render);
+    bool serverRdy;
+    socketIO.getBool(serverRdy);
+    if(!serverRdy)
+    {
+      vvRequest req;
+      socketIO.putRequest(req);
+
+      socketIO.getBool(serverRdy);
+    }
   }
 
   if(renderer)
