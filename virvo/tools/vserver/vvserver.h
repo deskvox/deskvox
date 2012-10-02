@@ -21,10 +21,6 @@
 #ifndef _VV_SERVER_H_
 #define _VV_SERVER_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
 #include <virvo/vvrendererfactory.h>
 #include <string>
 
@@ -68,7 +64,7 @@ public:
     vvVolDesc      *vd;        ///< to _renderer belonging volume describtion
   };
 
-  vvServer();
+  vvServer(bool useBonjour);
   ~vvServer();
 
   /** Main Virvo server routine.

@@ -119,47 +119,47 @@ void * vvBonjourEventLoop::loop(void * attrib)
         continue;
         break;
       case kDNSServiceErr_NoSuchName:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Given name does not exist");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Given name does not exist");
         break;
       case kDNSServiceErr_NoMemory:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Out of memory");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Out of memory");
         break;
       case kDNSServiceErr_BadParam:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Parameter contains invalid data");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Parameter contains invalid data");
         break;
       case kDNSServiceErr_BadReference:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Reference being passed is invalid");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Reference being passed is invalid");
         break;
       case kDNSServiceErr_BadState:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Internal error");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Internal error");
         break;
       case kDNSServiceErr_BadFlags:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Invalid values for flags");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Invalid values for flags");
         break;
       case kDNSServiceErr_Unsupported:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Operation not supported");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Operation not supported");
         break;
       case kDNSServiceErr_NotInitialized:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Reference not initialized");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Reference not initialized");
         break;
       case kDNSServiceErr_AlreadyRegistered:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Attempt to register a service that is registered");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Attempt to register a service that is registered");
         break;
       case kDNSServiceErr_NameConflict:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Attempt to register a service with an already used name");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Attempt to register a service with an already used name");
         break;
       case kDNSServiceErr_Invalid:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Certain invalid parameter data, such as domain name more than 255 bytes long");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Certain invalid parameter data, such as domain name more than 255 bytes long");
         break;
       case kDNSServiceErr_Incompatible:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Client library incompatible with daemon");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Client library incompatible with daemon");
         break;
       case kDNSServiceErr_BadInterfaceIndex:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() Specified interface does not exist");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() Specified interface does not exist");
         break;
       case kDNSServiceErr_Unknown:
       default:
-        vvDebugMsg::msg(1, "DNSServiceProcessResult() unknown error");
+        vvDebugMsg::msg(0, "DNSServiceProcessResult() unknown error");
         break;
       }
 
@@ -168,12 +168,12 @@ void * vvBonjourEventLoop::loop(void * attrib)
     }
     else if(smErr == vvSocketMonitor::VV_TIMEOUT)
     {
-      vvDebugMsg::msg(1, "vvBonjourEventLoop::loop() timeout reached");
+      vvDebugMsg::msg(0, "vvBonjourEventLoop::loop() timeout reached");
       break;
     }
     else
     {
-      vvDebugMsg::msg(1, "vvBonjourEventLoop::loop() socketmonitor returned error");
+      vvDebugMsg::msg(0, "vvBonjourEventLoop::loop() socketmonitor returned error");
       break;
     }
   }

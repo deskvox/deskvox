@@ -98,7 +98,7 @@ vvBonjourBrowser::vvBonjourBrowser(void (*externCallBack)(void *), void *callBac
 
 vvBonjourBrowser::~vvBonjourBrowser()
 {
-  if(_eventLoop) delete _eventLoop;
+  delete _eventLoop;
 }
 
 vvBonjour::ErrorType vvBonjourBrowser::browseForServiceType(const std::string& serviceType, const std::string domain, const double to)

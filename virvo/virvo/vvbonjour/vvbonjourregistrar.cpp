@@ -89,8 +89,10 @@ vvBonjourRegistrar::vvBonjourRegistrar()
 vvBonjourRegistrar::~vvBonjourRegistrar()
 {
 #ifdef HAVE_BONJOUR
-  if(::serviceRef)
+  if (::serviceRef != NULL)
+  {
     unregisterService();
+  }
 #endif
 }
 
