@@ -38,7 +38,7 @@
 #include <virvo/vvvirvo.h>
 
 vvResourceManager::vvResourceManager()
-  : vvServer()
+  : vvServer(false)
 {
   _simpleServer = NULL;
 

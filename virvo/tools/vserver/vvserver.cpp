@@ -53,13 +53,13 @@
 const int            vvServer::DEFAULTSIZE  = 512;
 const unsigned short vvServer::DEFAULT_PORT = 31050;
 
-vvServer::vvServer()
+vvServer::vvServer(bool useBonjour)
+  : _port(vvServer::DEFAULT_PORT)
+  , _sm(SERVER)
+  , _useBonjour(useBonjour)
+  , _daemonize(false)
+  , _daemonName("voxserver")
 {
-  _port       = vvServer::DEFAULT_PORT;
-  _sm         = SERVER;
-  _useBonjour = false;
-  _daemonize  = false;
-  _daemonName = "voxserver";
 }
 
 vvServer::~vvServer()
