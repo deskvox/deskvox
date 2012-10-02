@@ -25,13 +25,12 @@
 #include <pthread.h>
 #include <sstream>
 
-#include <vvcommon.h>
-
 #include <virvo/vvbonjour/vvbonjourentry.h>
 #include <virvo/vvbonjour/vvbonjourbrowser.h>
 #include <virvo/vvbonjour/vvbonjourresolver.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
+#include <virvo/vvremoteevents.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvsocketmap.h>
 #include <virvo/vvtcpsocket.h>

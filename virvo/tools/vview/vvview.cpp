@@ -51,9 +51,9 @@ using std::ios;
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
-#include <vvcommon.h>
 #include <virvo/vvvirvo.h>
 #include <virvo/vvgltools.h>
+#include <virvo/vvremoteevents.h>
 #include <virvo/vvrequestmanagement.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>

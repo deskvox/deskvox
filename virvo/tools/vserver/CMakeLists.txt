@@ -1,5 +1,3 @@
-INCLUDE_DIRECTORIES(../vcommon)
-
 find_package(Pthreads REQUIRED)
 
 deskvox_use_package(Pthreads)
