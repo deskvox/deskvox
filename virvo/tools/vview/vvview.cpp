@@ -53,6 +53,7 @@ using std::ios;
 
 #include <virvo/vvvirvo.h>
 #include <virvo/vvgltools.h>
+#include <virvo/vvremoteevents.h>
 #include <virvo/vvrequestmanagement.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>
