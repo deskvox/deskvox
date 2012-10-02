@@ -168,7 +168,7 @@ void * vvBonjourEventLoop::loop(void * attrib)
     }
     else if(smErr == vvSocketMonitor::VV_TIMEOUT)
     {
-      vvDebugMsg::msg(1, "vvBonjourEventLoop::loop() timeout reached");
+      vvDebugMsg::msg(0, "vvBonjourEventLoop::loop() timeout reached");
       break;
     }
     else
