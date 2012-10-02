@@ -23,7 +23,7 @@
 
 namespace virvo
 {
-  enum Event
+  enum RemoteEvent
   {
     GpuInfo,
     Render,

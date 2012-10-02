@@ -26,10 +26,9 @@
 #include "vvresourcemanager.h"
 #include "vvsimpleserver.h"
 
-#include <vvcommon.h>
-
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvrequestmanagement.h>
+#include <virvo/vvremoteevents.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvvoldesc.h>
