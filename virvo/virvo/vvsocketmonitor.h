@@ -85,7 +85,7 @@ private:
   std::vector<vvSocket*> _writeSockets;
   std::vector<vvSocket*> _errorSockets;
 
-  int _highestSocketNum;
+  vvsock_t _highestSocketNum;
 };
 
 #endif

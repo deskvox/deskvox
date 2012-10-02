@@ -68,7 +68,7 @@ public:
     vvVolDesc      *vd;        ///< to _renderer belonging volume describtion
   };
 
-  vvServer();
+  vvServer(bool useBonjour);
   ~vvServer();
 
   /** Main Virvo server routine.

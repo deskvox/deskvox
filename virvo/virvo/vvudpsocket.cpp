@@ -70,7 +70,7 @@ vvSocket::ErrorType vvUdpSocket::bind(const std::string& hostname, const ushort 
 #endif
 
   _sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (_sockfd < 0)
+  if (_sockfd == VV_INVALID_SOCKET)
   {
     vvDebugMsg::msg(1, "Error: socket", true);
     return VV_SOCK_ERROR;
@@ -162,7 +162,8 @@ vvSocket::ErrorType vvUdpSocket::bind(const ushort port)
   int optval=1;
 #endif
   ErrorType retval;
-  if ((_sockfd= socket(AF_INET, SOCK_DGRAM, 0)) <0)
+  _sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (_sockfd == VV_INVALID_SOCKET)
   {
     vvDebugMsg::msg(1, "Error: socket()", true);
     return VV_SOCK_ERROR;
@@ -223,48 +224,32 @@ vvSocket::ErrorType vvUdpSocket::bind(const ushort port)
 
 vvSocket::ErrorType vvUdpSocket::unbind()
 {
+  if (_sockfd == VV_INVALID_SOCKET)
+  {
+    vvDebugMsg::msg(1, "vvUdpSocket::unbind() error: called on unbound socket");
+    return VV_SOCK_ERROR;
+  }
+
 #ifdef _WIN32
-  if(_sockfd >= 0)
-  {
-    if(closesocket(_sockfd))
-    {
-      if (WSAGetLastError() ==  WSAEWOULDBLOCK)
-        vvDebugMsg::msg(1, "Linger time expires");
-      return VV_SOCK_ERROR;
-    }
-    else
-    {
-      _sockfd = -1;
-      return VV_OK;
-    }
-  }
-  else
-  {
-    vvDebugMsg::msg(1, "vvUdpSocket::unbind() error: called on unbound socket");
-    return VV_SOCK_ERROR;
-  }
-  WSACleanup();
+  if (0 == closesocket(_sockfd))
 #else
-  if(_sockfd >= 0)
-  {
-    if (close(_sockfd))
-    {
-      if (errno ==  EWOULDBLOCK)
-        vvDebugMsg::msg(1, "Linger time expires");
-      return VV_SOCK_ERROR;
-    }
-    else
-    {
-      _sockfd = -1;
-      return VV_OK;
-    }
-  }
-  else
-  {
-    vvDebugMsg::msg(1, "vvUdpSocket::unbind() error: called on unbound socket");
-    return VV_SOCK_ERROR;
-  }
+  if (0 == close(_sockfd))
 #endif
+  {
+    _sockfd = VV_INVALID_SOCKET;
+    return VV_OK;
+  }
+
+#ifdef _WIN32
+  if (WSAGetLastError() == WSAEWOULDBLOCK)
+#else
+  if (errno == EWOULDBLOCK)
+#endif
+  {
+    vvDebugMsg::msg(1, "Linger time expires");
+  }
+
+  return VV_SOCK_ERROR;
 }
 
 vvSocket::ErrorType vvUdpSocket::multicast(const std::string& hostname, const ushort port, const MulticastType type)
@@ -278,7 +263,7 @@ vvSocket::ErrorType vvUdpSocket::multicast(const std::string& hostname, const us
     _mc = true;
 
     _sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (_sockfd < 0)
+    if (_sockfd == VV_INVALID_SOCKET)
     {
       vvDebugMsg::msg(1, "Error: socket", true);
       return VV_SOCK_ERROR;
@@ -332,7 +317,7 @@ vvSocket::ErrorType vvUdpSocket::multicast(const std::string& hostname, const us
     _mc = true;
 
     _sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(_sockfd < 0)
+    if (_sockfd == VV_INVALID_SOCKET)
     {
       vvDebugMsg::msg(1, "Error: socket()", true);
       return VV_SOCK_ERROR;

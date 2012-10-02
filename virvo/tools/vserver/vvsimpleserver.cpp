@@ -43,8 +43,7 @@
 #include <pthread.h>
 
 vvSimpleServer::vvSimpleServer(bool useBonjour)
-  : vvServer()
-  , _useBonjour(useBonjour)
+  : vvServer(useBonjour)
 {
   if(_useBonjour)
   {
