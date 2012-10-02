@@ -52,7 +52,7 @@ public:
     @param domain      String of desired domain to search (optional). By default all local domains.
     @return Vectorlist of connected tcp sockets of type vvSocket*
    */
-  std::vector<vvTcpSocket*> getSocketsFor(const std::string& serviceType, std::string domain = "") const;
+  std::vector<vvTcpSocket*> getSocketsFor(const std::string& serviceType, const std::string& domain = "") const;
 
   /**
     Returns a vectorlist of BonjourEntries for all existing services.
@@ -60,7 +60,7 @@ public:
     @param domain      String of desired domain to search (optional). By default all local domains.
     @return Vectorlist of all entries of type vvBonjourEntry, which have to be resolved for further use.
    */
-  std::vector<vvBonjourEntry> getEntriesFor(const std::string& serviceType, std::string domain = "") const;
+  std::vector<vvBonjourEntry> getEntriesFor(const std::string& serviceType, const std::string& domain = "") const;
 
   /**
     Returns a vectorlist of connectionstring for all existing services.
@@ -68,7 +68,7 @@ public:
     @param domain      String of desired domain to search (optional). By default all local domains.
     @return Vectorlist of strings formatted as "hostname:port".
    */
-  std::vector<std::string> getConnectionStringsFor(const std::string& serviceType, std::string domain = "") const;
+  std::vector<std::string> getConnectionStringsFor(const std::string& serviceType, const std::string& domain = "") const;
 };
 
 #endif
