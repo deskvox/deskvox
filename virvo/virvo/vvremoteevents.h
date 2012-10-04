@@ -25,6 +25,7 @@ namespace virvo
 {
   enum RemoteEvent
   {
+    ServerInfo = 0,
     GpuInfo,
     Render,
     Statistics,

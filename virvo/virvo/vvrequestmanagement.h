@@ -28,6 +28,13 @@
 #include "vvrenderer.h"
 #include "vvtcpsocket.h"
 
+struct vvServerInfo 
+{
+  /** Comma separated list of renderers
+   */
+  std::string renderers;
+};
+
 class vvGpu
 {
 public:
