@@ -75,8 +75,8 @@ void * vvSimpleServer::handleClientThread(void *param)
   vvSocketIO sockio(sock);
 
   bool goOn = true;
-  int event;
-  while(sockio.getInt32(event) == vvSocket::VV_OK && goOn)
+  virvo::RemoteEvent event;
+  while(sockio.getEvent(event) == vvSocket::VV_OK && goOn)
   {
     switch(event)
     {

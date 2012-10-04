@@ -67,6 +67,28 @@ bool vvSocketIO::sock_action()
 }
 
 //----------------------------------------------------------------------------
+/** Get remote event from sockets.
+  @param event  @see virvo::RemoteEvents
+*/
+vvSocket::ErrorType vvSocketIO::getEvent(virvo::RemoteEvent& event)
+{
+  vvSocket::ErrorType result;
+  int val;
+  result = getInt32(val);
+  event = static_cast<virvo::RemoteEvent>(val);
+  return result;
+}
+
+//----------------------------------------------------------------------------
+/** Put remote events to socket.
+  @param event  @see virvo::RemoteEvents
+*/
+vvSocket::ErrorType vvSocketIO::putEvent(const virvo::RemoteEvent event)
+{
+  return putInt32(event);
+}
+
+//----------------------------------------------------------------------------
 /** Get volume attributes from socket.
   @param vd  empty volume description which is to be filled with the volume attributes
 */
