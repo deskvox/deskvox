@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "vvexport.h"
+#include "vvremoteevents.h"
 #include "vvrequestmanagement.h"
 #include "vvsocket.h"
 #include "vvinttypes.h"
@@ -155,6 +156,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocketIO(vvSocket* sock);
     ~vvSocketIO();
     bool sock_action();
+    vvSocket::ErrorType getEvent(virvo::RemoteEvent& event);
+    vvSocket::ErrorType putEvent(virvo::RemoteEvent event);
     vvSocket::ErrorType getVolumeAttributes(vvVolDesc* vd);
     vvSocket::ErrorType getVolume(vvVolDesc*, vvMulticastParameters *mcParam = NULL);
     vvSocket::ErrorType putVolumeAttributes(const vvVolDesc*);

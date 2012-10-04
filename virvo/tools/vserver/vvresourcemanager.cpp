@@ -30,7 +30,6 @@
 #include <virvo/vvbonjour/vvbonjourresolver.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
-#include <virvo/vvremoteevents.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvsocketmap.h>
 #include <virvo/vvtcpsocket.h>
@@ -71,10 +70,10 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
   vvSocketIO sockio = vvSocketIO(sock);
 
   bool goOn = true;
-  int event;
+  virvo::RemoteEvent event;
   while(goOn)
   {
-    if(sockio.getInt32(event) != vvSocket::VV_OK)
+    if(sockio.getEvent(event) != vvSocket::VV_OK)
     {
       vvDebugMsg::msg(2, "vvResourceManager::addJob() error getting next event");
       break;
