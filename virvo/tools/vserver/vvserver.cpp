@@ -39,6 +39,7 @@
 
 #include <iostream>
 #include <limits>
+#include <sstream>
 
 #ifndef _WIN32
 #include <signal.h>
@@ -320,10 +321,58 @@ bool vvServer::serverLoop()
   return true;
 }
 
-void vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& /* io */)
+void vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
 {
   switch (event)
   {
+  case virvo::ServerInfo:
+    {
+      // we create an image server and assume that the render context
+      // which is created for that instance is representative for any
+      // render context instance
+      vvRemoteServer* server = new vvImageServer(static_cast<vvTcpSocket*>(io.getSocket()));
+
+      vvServerInfo info;
+      if (server->initRenderContext(DEFAULTSIZE, DEFAULTSIZE) != vvRemoteServer::VV_OK)
+      {
+        delete server;
+        // send an empty server info
+        io.putServerInfo(info);
+        return;
+      }
+
+      // assemble renderers
+      std::vector<std::string> renderers;
+      renderers.push_back("rayrend");
+      renderers.push_back("softrayrend");
+      renderers.push_back("slices");
+      renderers.push_back("cubic2d");
+      renderers.push_back("planar");
+      renderers.push_back("bricks");
+      renderers.push_back("spherical");
+      renderers.push_back("serbrick");
+      renderers.push_back("parbrick");
+
+      // query available renderers
+      std::stringstream rendstr;
+      for (std::vector<std::string>::const_iterator it = renderers.begin();
+           it != renderers.end(); ++it)
+      {
+        if (vvRendererFactory::hasRenderer(*it))
+        {
+          if (rendstr.str() != "")
+          {
+            rendstr << ",";
+          }
+          rendstr << *it;
+        }
+      }
+      info.renderers = rendstr.str();
+      server->destroyRenderContext();
+      io.putServerInfo(info);
+      delete server;
+    }
+    break;
   default:
     break;
   }

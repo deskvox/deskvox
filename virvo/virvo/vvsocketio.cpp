@@ -1639,6 +1639,58 @@ vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m)
   }
 }
 
+vvSocket::ErrorType vvSocketIO::getServerInfo(vvServerInfo& info)
+{
+  if (_socket != NULL)
+  {
+    vvSocket::ErrorType retval;
+
+    uchar sizebuf[4];
+    if ((retval =_socket->readData(sizebuf, 4)) != vvSocket::VV_OK)
+    {
+      return retval;
+    }
+    size_t len = vvToolshed::read32(sizebuf);
+
+    std::vector<uchar> buf(len);
+    if ((retval =_socket->readData(&buf[0], len)) != vvSocket::VV_OK)
+    {
+      return retval;
+    }
+
+    info.renderers = std::string((char*)&buf[0], len);
+
+    return vvSocket::VV_OK;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+vvSocket::ErrorType vvSocketIO::putServerInfo(vvServerInfo info) const
+{
+  if (_socket != NULL)
+  {
+    vvSocket::ErrorType retval;
+
+    uchar sizebuf[4];
+    vvToolshed::write32(sizebuf, info.renderers.length());
+
+    if ((retval = _socket->writeData(sizebuf, 4)) != vvSocket::VV_OK)
+    {
+      return retval;
+    }
+
+    uchar* buf = (uchar*)info.renderers.data();
+    return _socket->writeData(buf, info.renderers.length());
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
 //----------------------------------------------------------------------------
 /** Reads a vvGpuInfo from the socket.
   @param ginfo object in which read data will be saved
