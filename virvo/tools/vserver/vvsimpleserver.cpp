@@ -37,6 +37,15 @@
 #include <iostream>
 #include <pthread.h>
 
+namespace
+{
+  struct ThreadArgs
+  {
+    vvServer    *_instance;
+    vvTcpSocket *_sock;
+  };
+}
+
 vvSimpleServer::vvSimpleServer(bool useBonjour)
   : vvServer(useBonjour)
 {
@@ -55,7 +64,7 @@ void vvSimpleServer::handleNextConnection(vvTcpSocket *sock)
 {
   vvDebugMsg::msg(3, "vvSimpleServer::handleNextConnection()");
 
-  vvThreadArgs *args = new vvThreadArgs;
+  ThreadArgs *args = new ThreadArgs;
   args->_instance = this;
   args->_sock = sock;
 
@@ -68,7 +77,7 @@ void * vvSimpleServer::handleClientThread(void *param)
 {
   vvDebugMsg::msg(3, "vvSimpleServer::handleClientThread()");
 
-  vvThreadArgs *args = reinterpret_cast<vvThreadArgs*>(param);
+  ThreadArgs *args = reinterpret_cast<ThreadArgs*>(param);
 
   vvTcpSocket *sock = args->_sock;
 
