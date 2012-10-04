@@ -35,6 +35,7 @@
 #include <virvo/vvvirvo.h>
 
 #include <QMessageBox>
+#include <QSettings>
 
 #include <cassert>
 #include <cmath>
@@ -50,6 +51,8 @@ namespace
   std::map<int, vvRenderer::RendererType> rendererMap;
   std::map<int, std::string> texRendTypeMap;
   std::map<int, std::string> voxTypeMap;
+  std::map<std::string, std::string> rendererDescriptions;
+  std::map<std::string, std::string> algoDescriptions;
 
   double movingSpinBoxOldValue = 1.0;
   double stillSpinBoxOldValue = 1.0;
@@ -95,25 +98,38 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   _canvas->makeCurrent();
   glewInit(); // we need glCreateProgram etc. when checking for glsl support
 
+  rendererDescriptions.insert(std::pair<std::string, std::string>("slices", "OpenGL textures"));
+  rendererDescriptions.insert(std::pair<std::string, std::string>("cubic2d", "OpenGL textures"));
+  rendererDescriptions.insert(std::pair<std::string, std::string>("planar", "OpenGL textures"));
+  rendererDescriptions.insert(std::pair<std::string, std::string>("spherical", "OpenGL textures"));
+  rendererDescriptions.insert(std::pair<std::string, std::string>("rayrend", "CUDA ray casting"));
+  rendererDescriptions.insert(std::pair<std::string, std::string>("softrayrend", "Software ray casting"));
+
+  algoDescriptions.insert(std::pair<std::string, std::string>("default", "Autoselect"));
+  algoDescriptions.insert(std::pair<std::string, std::string>("slices", "2D textures (slices)"));
+  algoDescriptions.insert(std::pair<std::string, std::string>("cubic2d", "2D textures (cubic)"));
+  algoDescriptions.insert(std::pair<std::string, std::string>("planar", "3D textures (viewport aligned)"));
+  algoDescriptions.insert(std::pair<std::string, std::string>("spherical", "3D textures (spherical)"));
+
   // renderer combo box
   int idx = 0;
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
-    ui->rendererBox->addItem("OpenGL textures");
+    ui->rendererBox->addItem(rendererDescriptions["slices"].c_str());
     rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::TEXREND));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer(vvRenderer::RAYREND))
   {
-    ui->rendererBox->addItem("CUDA ray casting");
+    ui->rendererBox->addItem(rendererDescriptions["rayrend"].c_str());
     rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::RAYREND));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer(vvRenderer::SOFTRAYREND))
   {
-    ui->rendererBox->addItem("Software ray casting");
+    ui->rendererBox->addItem(rendererDescriptions["softrayrend"].c_str());
     rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::SOFTRAYREND));
     ++idx;
   }
@@ -128,35 +144,35 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
 
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
-    ui->geometryBox->addItem("Autoselect");
+    ui->geometryBox->addItem(algoDescriptions["default"].c_str());
     texRendTypeMap.insert(std::pair<int, std::string>(idx, "default"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("slices"))
   {
-    ui->geometryBox->addItem("2D textures (slices)");
+    ui->geometryBox->addItem(algoDescriptions["slices"].c_str());
     texRendTypeMap.insert(std::pair<int, std::string>(idx, "slices"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("cubic2d"))
   {
-    ui->geometryBox->addItem("2D textures (cubic)");
+    ui->geometryBox->addItem(algoDescriptions["cubic2d"].c_str());
     texRendTypeMap.insert(std::pair<int, std::string>(idx, "cubic2d"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("planar"))
   {
-    ui->geometryBox->addItem("3D textures (viewport aligned)");
+    ui->geometryBox->addItem(algoDescriptions["planar"].c_str());
     texRendTypeMap.insert(std::pair<int, std::string>(idx, "planar"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("spherical"))
   {
-    ui->geometryBox->addItem("3D textures (spherical)");
+    ui->geometryBox->addItem(algoDescriptions["spherical"].c_str());
     texRendTypeMap.insert(std::pair<int, std::string>(idx, "spherical"));
     ++idx;
   }
@@ -213,6 +229,15 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
   connect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
   connect(ui->stillDial, SIGNAL(valueChanged(int)), this, SLOT(onStillDialChanged(int)));
+
+  // apply settings after signals/slots are connected
+  QSettings settings;
+  ui->hostEdit->setText(settings.value("remote/host").toString());
+  if (settings.value("remote/port").toString() != "")
+  {
+    int port = settings.value("remote/port").toInt();
+    ui->portBox->setValue(port);
+  }
 }
 
 void vvPrefDialog::toggleInterpolation()
@@ -384,17 +409,26 @@ void vvPrefDialog::onGetInfoClicked()
     {
       sock->setParameter(vvSocket::VV_NO_NAGLE, true);
       vvSocketIO io(sock);
-     // io.putInt32(virvo::Statistics);
-     // float wload;
-     // io.getFloat(wload);
-     // int resCount;
-     // io.getInt32(resCount);
-     // std::cerr << "Total work-load " << wload << " caused with " << resCount << " resources." << endl;
       vvServerInfo info;
       io.putEvent(virvo::ServerInfo);
       io.getServerInfo(info);
-      std::cerr << info.renderers << std::endl;
+      QString qrenderers;
+      std::vector<std::string> renderers = vvToolshed::split(info.renderers, ",");
+      for (std::vector<std::string>::const_iterator it = renderers.begin();
+           it != renderers.end(); ++it)
+      {
+        std::string rend = rendererDescriptions[*it];
+        std::string algo = algoDescriptions[*it];
+        qrenderers += "<tr><td>" + tr(rend.c_str()) + "</td><td>" + tr(algo.c_str()) + "</td></tr>";
+      }
+      QMessageBox::information(this, tr("Server info"), tr("Remote server supports the following rendering algorithms<br /><br />")
+        + tr("<table>") + qrenderers + tr("</table>"), QMessageBox::Ok);
       io.putEvent(virvo::Exit);
+
+      // store to registry because connection was successful
+      QSettings settings;
+      settings.setValue("remote/host", ui->hostEdit->text());
+      settings.setValue("remote/port", ui->portBox->value());
     }
     else
     {
@@ -429,12 +463,12 @@ void vvPrefDialog::onConnectClicked()
     {
       sock->setParameter(vvSocket::VV_NO_NAGLE, true);
       vvSocketIO io(sock);
-     // io.putInt32(virvo::Statistics);
-     // float wload;
-     // io.getFloat(wload);
-     // int resCount;
-     // io.getInt32(resCount);
-     // std::cerr << "Total work-load " << wload << " caused with " << resCount << " resources." << endl;
+      ui->connectButton->setText(tr("Disconnect"));
+
+      // store to registry because connection was successful
+      QSettings settings;
+      settings.setValue("remote/host", ui->hostEdit->text());
+      settings.setValue("remote/port", ui->portBox->value());
     }
     else
     {
