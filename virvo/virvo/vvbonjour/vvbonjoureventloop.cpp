@@ -42,7 +42,12 @@ _DNSServiceRef_t *dnsServiceRef;
 
 struct Thread
 {
-  pthread_t _pthread;
+  Thread()
+    : _pthread(NULL)
+  {
+  }
+
+  pthread_t* _pthread;
 };
 
 vvBonjourEventLoop::vvBonjourEventLoop(void* service)
@@ -58,9 +63,10 @@ vvBonjourEventLoop::vvBonjourEventLoop(void* service)
 
 vvBonjourEventLoop::~vvBonjourEventLoop()
 {
-  if(_thread->_pthread)
+  if (_thread != NULL && _thread->_pthread != NULL)
   {
-    pthread_join(_thread->_pthread, NULL);
+    pthread_join(*_thread->_pthread, NULL);
+    delete _thread->_pthread;
   }
   delete _thread;
 }
@@ -77,7 +83,9 @@ void vvBonjourEventLoop::run(bool inThread, double timeout)
   }
   else
   {
-    pthread_create(&(_thread->_pthread), NULL, loop, this);
+    delete _thread->_pthread;
+    _thread->_pthread = new pthread_t;
+    pthread_create(_thread->_pthread, NULL, loop, this);
   }
 #else
   (void)inThread;
