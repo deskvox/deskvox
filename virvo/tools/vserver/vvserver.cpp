@@ -320,6 +320,14 @@ bool vvServer::serverLoop()
   return true;
 }
 
+void vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& /* io */)
+{
+  switch (event)
+  {
+  default:
+    break;
+  }
+}
 
 vvServer::vvRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock, std::string renderertype, vvRendererFactory::Options opt)
 {

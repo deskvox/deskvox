@@ -21,9 +21,12 @@
 #ifndef _VV_SERVER_H_
 #define _VV_SERVER_H_
 
+#include <virvo/vvremoteevents.h>
 #include <virvo/vvrendererfactory.h>
+
 #include <string>
 
+class vvSocketIO;
 class vvTcpSocket;
 class vvRemoteServer;
 
@@ -80,6 +83,7 @@ protected:
   bool parseCommandLine(int argc, char *argv[]);  ///< Parse command line arguments.
   virtual bool serverLoop();
   virtual void handleNextConnection(vvTcpSocket *sock) = 0;
+  static void handleEvent(virvo::RemoteEvent, const vvSocketIO& io);
 
   static vvRemoteServerRes createRemoteServer(vvTcpSocket *sock, std::string renderertype = "", vvRendererFactory::Options opt = vvRendererFactory::Options());
 

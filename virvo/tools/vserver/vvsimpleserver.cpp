@@ -125,7 +125,7 @@ void * vvSimpleServer::handleClientThread(void *param)
       goOn = false;
       break;
     default:
-      vvDebugMsg::msg(2, "vvSimpleServer::handleClientThread() unknown event!");
+      vvServer::handleEvent(event, sockio);
       break;
     }
   }

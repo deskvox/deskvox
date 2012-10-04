@@ -126,7 +126,7 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
     case virvo::GpuInfo:
       // TODO: implement this case for ResourceManager too if reasonable
     default:
-      goto abort;
+      vvServer::handleEvent(event, sockio);
       break;
     }
   }
