@@ -45,9 +45,15 @@ private:
   vvCanvas* _canvas;
 
   void emitRenderer();
+  bool validateRemoteHost(const QString& host, ushort port);
 private slots:
   void onRendererChanged(int index);
-  void onTexRendOptionChanged(int inex);
+  void onTexRendOptionChanged(int index);
+  void onHostChanged(const QString& text);
+  void onPortChanged(int i);
+  void onGetInfoClicked();
+  void onBrowseClicked();
+  void onConnectClicked();
   void onInterpolationToggled(bool checked);
   void onMipToggled(bool checked);
   void onMovingSpinBoxChanged(double value);

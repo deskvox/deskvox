@@ -19,14 +19,22 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <GL/glew.h>
+#include <QUrl>
 
 #include "vvcanvas.h"
 #include "vvprefdialog.h"
 
 #include "ui_vvprefdialog.h"
 
+#include <virvo/vvbonjour/vvbonjour.h>
 #include <virvo/vvdebugmsg.h>
+#include <virvo/vvremoteevents.h>
 #include <virvo/vvshaderfactory.h>
+#include <virvo/vvsocketio.h>
+#include <virvo/vvtoolshed.h>
+#include <virvo/vvvirvo.h>
+
+#include <QMessageBox>
 
 #include <cassert>
 #include <cmath>
@@ -184,10 +192,21 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
     ++idx;
   }
 
+  // remote rendering page
+  if (virvo::hasFeature("bonjour"))
+  {
+    ui->browseButton->setEnabled(true);
+  }
+
   connect(ui->rendererBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onRendererChanged(int)));
   connect(ui->geometryBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
   connect(ui->voxTypeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
   connect(ui->pixShdBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
+  connect(ui->hostEdit, SIGNAL(textChanged(const QString&)), this, SLOT(onHostChanged(const QString&)));
+  connect(ui->portBox, SIGNAL(valueChanged(int)), this, SLOT(onPortChanged(int)));
+  connect(ui->getInfoButton, SIGNAL(clicked()), this, SLOT(onGetInfoClicked()));
+  connect(ui->browseButton, SIGNAL(clicked()), this, SLOT(onBrowseClicked()));
+  connect(ui->connectButton, SIGNAL(clicked()), this, SLOT(onConnectClicked()));
   connect(ui->interpolationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onInterpolationToggled(bool)));
   connect(ui->mipCheckBox, SIGNAL(toggled(bool)), this, SLOT(onMipToggled(bool)));
   connect(ui->movingSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onMovingSpinBoxChanged(double)));
@@ -280,6 +299,30 @@ void vvPrefDialog::emitRenderer()
   }
 }
 
+bool vvPrefDialog::validateRemoteHost(const QString& host, const ushort port)
+{
+  int parsedPort = vvToolshed::parsePort(host.toStdString());
+  if (parsedPort >= 0 && parsedPort <= std::numeric_limits<ushort>::max()
+   && static_cast<ushort>(parsedPort) != port)
+  {
+    ui->portBox->setValue(parsedPort);
+  }
+
+  std::string h = (parsedPort == -1)
+    ? host.toStdString()
+    : vvToolshed::stripPort(host.toStdString());
+  ushort p = static_cast<ushort>(ui->portBox->value());
+
+  if (h == "")
+  {
+    return false;
+  }
+
+  QUrl url(h.c_str());
+  url.setPort(p);
+  return url.isValid();
+}
+
 void vvPrefDialog::onRendererChanged(const int index)
 {
   vvDebugMsg::msg(3, "vvPrefDialog::onRendererChanged()");
@@ -299,6 +342,108 @@ void vvPrefDialog::onTexRendOptionChanged(const int index)
   {
     emitRenderer();
   }
+}
+
+void vvPrefDialog::onHostChanged(const QString& text)
+{
+  const ushort port = static_cast<ushort>(ui->portBox->value());
+  if (validateRemoteHost(text, port))
+  {
+    ui->getInfoButton->setEnabled(true);
+    ui->connectButton->setEnabled(true);
+  }
+  else
+  {
+    ui->getInfoButton->setEnabled(false);
+    ui->connectButton->setEnabled(false);
+  }
+}
+
+void vvPrefDialog::onPortChanged(const int i)
+{
+  const ushort port = static_cast<ushort>(i);
+  if (validateRemoteHost(ui->hostEdit->text(), port))
+  {
+    ui->getInfoButton->setEnabled(true);
+    ui->connectButton->setEnabled(true);
+  }
+  else
+  {
+    ui->getInfoButton->setEnabled(false);
+    ui->connectButton->setEnabled(false);
+  }
+}
+
+void vvPrefDialog::onGetInfoClicked()
+{
+  if (validateRemoteHost(ui->hostEdit->text(), static_cast<ushort>(ui->portBox->value())))
+  {
+    vvTcpSocket* sock = new vvTcpSocket;
+    if (sock->connectToHost(ui->hostEdit->text().toStdString(),
+      static_cast<ushort>(static_cast<ushort>(ui->portBox->value()))) == vvSocket::VV_OK)
+    {
+      sock->setParameter(vvSocket::VV_NO_NAGLE, true);
+      vvSocketIO io(sock);
+     // io.putInt32(virvo::Statistics);
+     // float wload;
+     // io.getFloat(wload);
+     // int resCount;
+     // io.getInt32(resCount);
+     // std::cerr << "Total work-load " << wload << " caused with " << resCount << " resources." << endl;
+      vvServerInfo info;
+      io.putEvent(virvo::ServerInfo);
+      io.getServerInfo(info);
+      std::cerr << info.renderers << std::endl;
+      io.putEvent(virvo::Exit);
+    }
+    else
+    {
+      QMessageBox::warning(this, tr("Failed to connect"), tr("Could not connect to host \"") + ui->hostEdit->text()
+        + tr("\" on port \"") + QString::number(ui->portBox->value()) + tr("\""), QMessageBox::Ok);
+    }
+    delete sock;
+  }
+}
+
+void vvPrefDialog::onBrowseClicked()
+{
+  if (virvo::hasFeature("bonjour"))
+  {
+    vvBonjour bonjour;
+    std::vector<std::string> servers = bonjour.getConnectionStringsFor("_vserver._tcp");
+    for (std::vector<std::string>::const_iterator it = servers.begin();
+         it != servers.end(); ++it)
+    {
+      std::cerr << *it << std::endl;
+    }
+  }
+}
+
+void vvPrefDialog::onConnectClicked()
+{
+  if (validateRemoteHost(ui->hostEdit->text(), static_cast<ushort>(ui->portBox->value())))
+  {
+    vvTcpSocket* sock = new vvTcpSocket;
+    if (sock->connectToHost(ui->hostEdit->text().toStdString(),
+      static_cast<ushort>(static_cast<ushort>(ui->portBox->value()))) == vvSocket::VV_OK)
+    {
+      sock->setParameter(vvSocket::VV_NO_NAGLE, true);
+      vvSocketIO io(sock);
+     // io.putInt32(virvo::Statistics);
+     // float wload;
+     // io.getFloat(wload);
+     // int resCount;
+     // io.getInt32(resCount);
+     // std::cerr << "Total work-load " << wload << " caused with " << resCount << " resources." << endl;
+    }
+    else
+    {
+      QMessageBox::warning(this, tr("Failed to connect"), tr("Could not connect to host \"") + ui->hostEdit->text()
+        + tr("\" on port \"") + QString::number(ui->portBox->value()) + tr("\""), QMessageBox::Ok);
+    }
+    delete sock;
+  }
+
 }
 
 void vvPrefDialog::onInterpolationToggled(const bool checked)
