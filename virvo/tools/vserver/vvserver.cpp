@@ -358,6 +358,12 @@ vvServer::vvRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock, std:
       break;
   }
 
+  if (res.server == NULL)
+  {
+    std::cerr << "Couldn't create remote server" << std::endl;
+    return res;
+  }
+
   if(res.server->initRenderContext(DEFAULTSIZE, DEFAULTSIZE) != vvRemoteServer::VV_OK)
   {
     cerr << "Couldn't initialize render context" << std::endl;
