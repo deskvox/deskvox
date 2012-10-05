@@ -37,6 +37,15 @@
 #include <iostream>
 #include <pthread.h>
 
+namespace
+{
+  struct ThreadArgs
+  {
+    vvServer    *_instance;
+    vvTcpSocket *_sock;
+  };
+}
+
 vvSimpleServer::vvSimpleServer(bool useBonjour)
   : vvServer(useBonjour)
 {
@@ -55,7 +64,7 @@ void vvSimpleServer::handleNextConnection(vvTcpSocket *sock)
 {
   vvDebugMsg::msg(3, "vvSimpleServer::handleNextConnection()");
 
-  vvThreadArgs *args = new vvThreadArgs;
+  ThreadArgs *args = new ThreadArgs;
   args->_instance = this;
   args->_sock = sock;
 
@@ -68,15 +77,15 @@ void * vvSimpleServer::handleClientThread(void *param)
 {
   vvDebugMsg::msg(3, "vvSimpleServer::handleClientThread()");
 
-  vvThreadArgs *args = reinterpret_cast<vvThreadArgs*>(param);
+  ThreadArgs *args = reinterpret_cast<ThreadArgs*>(param);
 
   vvTcpSocket *sock = args->_sock;
 
   vvSocketIO sockio(sock);
 
   bool goOn = true;
-  int event;
-  while(sockio.getInt32(event) == vvSocket::VV_OK && goOn)
+  virvo::RemoteEvent event;
+  while(sockio.getEvent(event) == vvSocket::VV_OK && goOn)
   {
     switch(event)
     {
@@ -108,11 +117,6 @@ void * vvSimpleServer::handleClientThread(void *param)
           }
         }
 
-        if(res.server)
-        {
-          res.server->destroyRenderContext();
-        }
-
         // Frames vector with bricks is deleted along with the renderer.
         // Don't free them here.
         // see setRenderer().
@@ -125,7 +129,7 @@ void * vvSimpleServer::handleClientThread(void *param)
       goOn = false;
       break;
     default:
-      vvDebugMsg::msg(2, "vvSimpleServer::handleClientThread() unknown event!");
+      vvServer::handleEvent(event, sockio);
       break;
     }
   }

@@ -30,13 +30,6 @@
 class vvSimpleServer : public vvServer
 {
   friend class vvResourceManager;
-private:
-  struct vvThreadArgs
-  {
-    vvServer    *_instance;
-    vvTcpSocket *_sock;
-  };
-
 public:
   vvSimpleServer(bool useBonjour);
   ~vvSimpleServer();

@@ -20,24 +20,19 @@
 
 #include "vvfileio.h"
 #include "vvgltools.h"
-#include "vvrendercontext.h"
 #include "vvrenderer.h"
 #include "vvremoteserver.h"
 #include "vvdebugmsg.h"
 #include "vvsocketio.h"
 #include "vvtcpsocket.h"
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
 
 using std::cerr;
 using std::endl;
 
 vvRemoteServer::vvRemoteServer(vvSocket *socket)
-  : _renderContext(NULL), _loadVolumeFromFile(false), _codetype(0)
+  : _loadVolumeFromFile(false), _codetype(0)
 {
   _socketio = new vvSocketIO(socket);
-  co = NULL;
   vvDebugMsg::msg(1, "vvRemoteServer::vvRemoteServer()");
   initSocket();
 }
@@ -47,8 +42,6 @@ vvRemoteServer::~vvRemoteServer()
   vvDebugMsg::msg(1, "vvRemoteServer::~vvRemoteServer()");
 
   delete _socketio;
-  delete _renderContext;
-  delete co;
 }
 
 bool vvRemoteServer::getLoadVolumeFromFile() const
@@ -56,14 +49,6 @@ bool vvRemoteServer::getLoadVolumeFromFile() const
   vvDebugMsg::msg(1, "vvRemoteServer::getLoadVolumeFromFile()");
 
   return _loadVolumeFromFile;
-}
-
-void vvRemoteServer::resize(const int w, const int h)
-{
-  if (_renderContext != NULL)
-  {
-    _renderContext->resize(w, h);
-  }
 }
 
 vvRemoteServer::ErrorType vvRemoteServer::initSocket()
@@ -131,36 +116,6 @@ vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
   return VV_OK;
 }
 
-vvRemoteServer::ErrorType vvRemoteServer::initRenderContext(const int w, const int h)
-{
-  vvDebugMsg::msg(3, "vvRemoteServer::initRenderContext()");
-
-  delete _renderContext;
-  co = new vvContextOptions;
-  co->type = vvContextOptions::VV_PBUFFER;
-  co->width = w;
-  co->height = h;
-  co->displayName = "";
-  _renderContext = new vvRenderContext(*co);
-  if (_renderContext->makeCurrent())
-  {
-    return vvRemoteServer::VV_OK;
-  }
-  else
-  {
-    return vvRemoteServer::VV_RENDERCONTEXT_ERROR;
-  }
-}
-
-vvRemoteServer::ErrorType vvRemoteServer::destroyRenderContext()
-{
-  vvDebugMsg::msg(3, "vvRemoteServer::destroyRenderContext()");
-
-  delete _renderContext;
-  _renderContext = NULL;
-  return vvRemoteServer::VV_OK;
-}
-
 bool vvRemoteServer::processEvents(vvRenderer* renderer)
 {
   vvDebugMsg::msg(3, "vvRemoteServer::processEvents()");
@@ -171,8 +126,6 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
   vvVector3 position;
   vvVector3 viewDir;
   vvVector3 objDir;
-  int w;
-  int h;
   int currentFrame;
   vvTransFunc tf;
 
@@ -215,12 +168,6 @@ bool vvRemoteServer::processEvents(vvRenderer* renderer)
         if ((_socketio->getVector3(position)) == vvSocket::VV_OK)
         {
           renderer->setPosition(position);
-        }
-        break;
-      case vvSocketIO::VV_RESIZE:
-        if ((_socketio->getWinDims(w, h)) == vvSocket::VV_OK)
-        {
-          resize(w, h);
         }
         break;
       case vvSocketIO::VV_TRANSFER_FUNCTION:

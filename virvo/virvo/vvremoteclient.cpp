@@ -30,16 +30,13 @@
 using std::cerr;
 using std::endl;
 
-vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_t type,
+vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
                                vvTcpSocket* socket, const std::string &filename)
    : vvRenderer(vd, renderState)
-   , _type(type)
    , _socket(socket)
    , _filename(filename)
    , _socketIO(NULL)
    , _changes(true)
-   , _viewportWidth(-1)
-   , _viewportHeight(-1)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::vvRemoteClient()");
 
@@ -55,13 +52,6 @@ vvRemoteClient::~vvRemoteClient()
 
 void vvRemoteClient::renderVolumeGL()
 {
-  GLint vp[4];
-  glGetIntegerv(GL_VIEWPORT, vp);
-  if(vp[2] != _viewportWidth || vp[3] != _viewportHeight)
-  {
-    resize(vp[2], vp[3]);
-  }
-
   vvGLTools::getModelviewMatrix(&_currentMv);
   vvGLTools::getProjectionMatrix(&_currentPr);
 
@@ -78,8 +68,6 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 
   delete _socketIO;
   _socketIO = new vvSocketIO(_socket);
-
-  _socketIO->putInt32(_type);
 
   if (!_filename.empty())
   {
@@ -115,22 +103,6 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
     }
   }
   return VV_OK;
-}
-
-void vvRemoteClient::resize(const int w, const int h)
-{
-  vvDebugMsg::msg(1, "vvRemoteClient::resize()");
-  _changes = true;
-  _viewportWidth = w;
-  _viewportHeight = h;
-
-  if(!_socketIO)
-    return;
-
-  if (_socketIO->putCommReason(vvSocketIO::VV_RESIZE) == vvSocket::VV_OK)
-  {
-    _socketIO->putWinDims(w, h);
-  }
 }
 
 void vvRemoteClient:: setCurrentFrame(const int index)

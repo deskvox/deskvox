@@ -28,6 +28,13 @@
 #include "vvrenderer.h"
 #include "vvtcpsocket.h"
 
+struct vvServerInfo 
+{
+  /** Comma separated list of renderers
+   */
+  std::string renderers;
+};
+
 class vvGpu
 {
 public:
@@ -66,11 +73,11 @@ private:
 struct vvRequest
 {
   vvRequest()
+    : type(vvRenderer::TEXREND)
+    , niceness(0)
+    , sock(NULL)
   {
-    type = vvRenderer::TEXREND;
-    niceness = 0;
     nodes.push_back(1);
-    sock = NULL;
   }
 
   vvRenderer::RendererType type;  ///< requested rendering type
