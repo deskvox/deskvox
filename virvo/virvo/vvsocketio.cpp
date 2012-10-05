@@ -20,6 +20,7 @@
 
 #include "vvsocketio.h"
 #include "vvibrimage.h"
+#include "vvinttypes.h"
 #include "vvvoldesc.h"
 #include "vvdebugmsg.h"
 #include "vvbrick.h"
@@ -73,7 +74,7 @@ bool vvSocketIO::sock_action()
 vvSocket::ErrorType vvSocketIO::getEvent(virvo::RemoteEvent& event) const
 {
   vvSocket::ErrorType result;
-  int val;
+  int32_t val;
   result = getInt32(val);
   event = static_cast<virvo::RemoteEvent>(val);
   return result;
@@ -85,7 +86,7 @@ vvSocket::ErrorType vvSocketIO::getEvent(virvo::RemoteEvent& event) const
 */
 vvSocket::ErrorType vvSocketIO::putEvent(const virvo::RemoteEvent event) const
 {
-  return putInt32(event);
+  return putInt32((int32_t)event);
 }
 
 //----------------------------------------------------------------------------
