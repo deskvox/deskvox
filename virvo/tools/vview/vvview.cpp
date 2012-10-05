@@ -683,9 +683,20 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     opt["brickrenderer"] = "image";
   }
 
-  for(unsigned int i = 0; i<sockets.size();i++)
+  for(size_t i = 0; i<sockets.size();i++)
   {
-    vvSocketIO socketIO = vvSocketIO(sockets[i]);
+    vvSocketIO io = vvSocketIO(sockets[i]);
+
+    virvo::RemoteEvent event;
+    io.getEvent(event);
+    if (event != virvo::WaitEvents)
+    {
+      vvDebugMsg::msg(0, "Bad connection established");
+    }
+    else
+    {
+      vvDebugMsg::msg(1, "Remote server ready to process events");
+    }
 
     /* uncomment to test GpuInfo-event
     socketIO.putInt32(virvo::GpuInfo);
@@ -708,29 +719,6 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     std::cerr << "Total work-load " << wload << " caused with " << resCount << " resources." << endl;
     */
 
-    socketIO.putEvent(virvo::Render);
-    bool serverRdy;
-    socketIO.getBool(serverRdy);
-    if (rrMode == RR_IMAGE)
-    {
-      socketIO.putInt32((int32_t)vvRenderer::REMOTE_IMAGE);
-    }
-    else if (rrMode == RR_IBR)
-    {
-      socketIO.putInt32((int32_t)vvRenderer::REMOTE_IBR);
-    }
-    else
-    {
-      std::cerr << "Unknown remote rendering type..." << std::endl;
-    }
-
-    if(!serverRdy)
-    {
-      vvRequest req;
-      socketIO.putRequest(req);
-
-      socketIO.getBool(serverRdy);
-    }
   }
 
   if(renderer)

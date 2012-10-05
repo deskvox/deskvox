@@ -73,9 +73,8 @@ bool vvSocketIO::sock_action()
 */
 vvSocket::ErrorType vvSocketIO::getEvent(virvo::RemoteEvent& event) const
 {
-  vvSocket::ErrorType result;
   int32_t val;
-  result = getInt32(val);
+  vvSocket::ErrorType result = getInt32(val);
   event = static_cast<virvo::RemoteEvent>(val);
   return result;
 }
@@ -123,42 +122,16 @@ vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd) const
 /** Get volume data from socket.
   @param vd  empty volume description which is to be filled with the volume data
 */
-vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd, vvMulticastParameters *mcParam) const
+vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd) const
 {
-  if(_socket)
+  if (_socket)
   {
     vvSocket::ErrorType retval = getVolumeAttributes(vd);
     if(retval != vvSocket::VV_OK)
       return retval;
 
     int size = vd->getFrameBytes();
-    bool tryMC = false;
-    getBool(tryMC);
 
-    if(tryMC)
-    {
-      vvMulticast mcSock = mcParam
-                         ? vvMulticast(vvMulticast::VV_RECEIVER, mcParam->api, mcParam->addr, mcParam->port)
-                         : vvMulticast(vvMulticast::VV_RECEIVER);
-      putBool(true);
-      for(int k =0; k< vd->frames; k++)
-      {
-        uchar *buffer = new uchar[size];
-        if (!buffer)
-          return vvSocket::VV_ALLOC_ERROR;
-        if (mcSock.read(buffer, size, 3.0) != size) // set timeout!
-        {
-          delete[] buffer;
-          putBool(false);
-          goto tcpTransfer;
-        }
-        vd->addFrame(buffer, vvVolDesc::ARRAY_DELETE);
-      }
-      putBool(true);
-      return vvSocket::VV_OK;
-    }
-
-    tcpTransfer:
     for(int k =0; k< vd->frames; k++)
     {
       uchar *buffer = new uchar[size];
@@ -205,7 +178,7 @@ vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd) const
 /** Write volume data to socket.
   @param vd  volume description of volume to be send.
 */
-vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd, bool tryMC, bool mcMaster, vvMulticastParameters *mcParam) const
+vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd) const
 {
   if(_socket)
   {
@@ -217,40 +190,6 @@ vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd, bool tryMC, bool 
 
     int size = vd->getFrameBytes();
     vvDebugMsg::msg(3, "Sending data ...");
-
-    putBool(tryMC);
-    if(tryMC)
-    {
-      if(mcMaster)
-      {
-        for(int k=0; k < frames; k++)
-        {
-          vvMulticast mcSock = mcParam
-                               ? vvMulticast(vvMulticast::VV_SENDER, mcParam->api, mcParam->addr, mcParam->port)
-                               : vvMulticast(vvMulticast::VV_SENDER);
-
-          const uchar *buffer = vd->getRaw(k);
-          bool ready;
-          getBool(ready);
-          if(!ready) break; // unexpected answer
-
-          if (mcSock.write(buffer, size, 3.0) != size) // set timeout!
-          {
-            return vvSocket::VV_WRITE_ERROR;
-          }
-        }
-      }
-      bool mcAnswer = false;
-      getBool(mcAnswer);
-      if(mcAnswer)
-      {
-        return vvSocket::VV_OK;
-      }
-      else
-      {
-        vvDebugMsg::msg(3, "vvSocketIO::putVolume() Multicast-transfer failed. Fallback: sending via TCP...");
-      }
-    }
 
     for(int k=0; k < frames; k++)
     {
@@ -858,41 +797,26 @@ vvSocket::ErrorType vvSocketIO::putIbrImage(const vvIbrImage* im) const
 /** Get a file name from the socket.
  @param fn  the file name.
 */
-vvSocket::ErrorType vvSocketIO::getFileName(char*& fn) const
+vvSocket::ErrorType vvSocketIO::getFileName(std::string& fn) const
 {
-  if(_socket)
+  if (_socket != NULL)
   {
-    uchar* buffer;
     vvSocket::ErrorType retval;
 
-    buffer = new uchar[4];
-    if ((retval =_socket->readData(buffer, 4)) != vvSocket::VV_OK)
+    uchar sizebuf[4];
+    if ((retval =_socket->readData(sizebuf, 4)) != vvSocket::VV_OK)
     {
-      delete[] buffer;
       return retval;
     }
-    const size_t len = vvToolshed::read32(buffer);
-    delete[] buffer;
+    size_t len = vvToolshed::read32(sizebuf);
 
-    buffer = new uchar[len];
-    if ((retval =_socket->readData(buffer, len)) != vvSocket::VV_OK)
+    std::vector<uchar> buf(len);
+    if ((retval =_socket->readData(&buf[0], len)) != vvSocket::VV_OK)
     {
-      delete[] buffer;
       return retval;
     }
 
-    delete[] fn;
-    fn = new char[len + 1];
-
-    for (size_t i=0; i<len; ++i)
-    {
-      fn[i] = (char)buffer[i];
-    }
-    fn[len] = '\0';
-
-    delete[] buffer;
-
-    // TODO: check if this is really a file name... .
+    fn = std::string((char*)&buf[0], len);
 
     return vvSocket::VV_OK;
   }
@@ -906,31 +830,22 @@ vvSocket::ErrorType vvSocketIO::getFileName(char*& fn) const
 /** Write a file name to the socket.
  @param fn  the file name.
 */
-vvSocket::ErrorType vvSocketIO::putFileName(const char* fn) const
+vvSocket::ErrorType vvSocketIO::putFileName(const std::string& fn) const
 {
-  if(_socket)
+  if (_socket != NULL)
   {
-    uchar* buffer;
     vvSocket::ErrorType retval;
 
-    const size_t len = fn ? strlen(fn) : 0;
-    buffer = new uchar[4 + len];
-    vvToolshed::write32(&buffer[0], (uint32_t)len);
+    uchar sizebuf[4];
+    vvToolshed::write32(sizebuf, fn.length());
 
-    for (size_t i=0; i<len; ++i)
+    if ((retval = _socket->writeData(sizebuf, 4)) != vvSocket::VV_OK)
     {
-      buffer[4 + i] = (uchar)fn[i];
-    }
-
-    if ((retval =_socket->writeData(buffer, 4 + len)) != vvSocket::VV_OK)
-    {
-      delete[] buffer;
       return retval;
     }
 
-    delete[] buffer;
-
-    return vvSocket::VV_OK;
+    uchar* buf = (uchar*)fn.data();
+    return _socket->writeData(buf, fn.length());
   }
   else
   {
@@ -1531,48 +1446,6 @@ vvSocket::ErrorType vvSocketIO::getViewport(vvGLTools::Viewport &val) const
     val[2] = vvToolshed::read32(&buffer[8]);
     val[3] = vvToolshed::read32(&buffer[12]);
     return retval;
-  }
-  else
-  {
-    return vvSocket::VV_SOCK_ERROR;
-  }
-}
-
-//----------------------------------------------------------------------------
-/** Writes a comm reason to the socket.
- @param val  the comm reason.
-*/
-vvSocket::ErrorType vvSocketIO::putCommReason(const CommReason val) const
-{
-  if(_socket)
-  {
-    uchar buffer[] = { (uchar)val };
-    return _socket->writeData(&buffer[0], 4);
-  }
-  else
-  {
-    return vvSocket::VV_SOCK_ERROR;
-  }
-}
-
-//----------------------------------------------------------------------------
-/** Reads a comm reason from the socket.
- @param val  the comm reason.
-*/
-vvSocket::ErrorType vvSocketIO::getCommReason(CommReason& val) const
-{
-  if(_socket)
-  {
-    uchar buffer[4];
-    vvSocket::ErrorType retval;
-
-    if ((retval =_socket->readData(&buffer[0], 4)) != vvSocket::VV_OK)
-    {
-      return retval;
-    }
-    val = (CommReason)buffer[0];
-
-    return vvSocket::VV_OK;
   }
   else
   {

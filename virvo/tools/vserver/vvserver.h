@@ -26,9 +26,10 @@
 
 #include <string>
 
+class vvRemoteServer;
 class vvSocketIO;
 class vvTcpSocket;
-class vvRemoteServer;
+class vvVolDesc;
 
 /**
  * Virvo Server main class.
@@ -60,13 +61,6 @@ public:
     RM_WITH_SERVER
   };
 
-  struct vvRemoteServerRes
-  {
-    vvRemoteServer *server;    ///< Remote Server of type ImageServer or IbrServer
-    vvRenderer     *renderer;  ///< to _server belonging renderer
-    vvVolDesc      *vd;        ///< to _renderer belonging volume describtion
-  };
-
   vvServer(bool useBonjour);
   virtual ~vvServer();
 
@@ -83,9 +77,14 @@ protected:
   bool parseCommandLine(int argc, char *argv[]);  ///< Parse command line arguments.
   virtual bool serverLoop();
   virtual void handleNextConnection(vvTcpSocket *sock) = 0;
-  static void handleEvent(virvo::RemoteEvent, const vvSocketIO& io);
+  virtual bool handleEvent(virvo::RemoteEvent, const vvSocketIO& io);
 
-  static vvRemoteServerRes createRemoteServer(vvTcpSocket *sock, std::string renderertype = "", vvRendererFactory::Options opt = vvRendererFactory::Options());
+  bool createRemoteServer(vvTcpSocket* sock);
+
+  vvRemoteServer* _server;
+  vvRenderer::RendererType _remoteRendererType;
+  vvRenderer* _renderer;
+  vvVolDesc* _vd;
 
   static const int            DEFAULTSIZE;   ///< default window size (width and height) in pixels
   static const unsigned short DEFAULT_PORT;  ///< default port for socket connections

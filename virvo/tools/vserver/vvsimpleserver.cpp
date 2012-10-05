@@ -41,15 +41,17 @@ namespace
 {
   struct ThreadArgs
   {
-    vvServer    *_instance;
     vvTcpSocket *_sock;
   };
 }
 
+vvSimpleServer* vvSimpleServer::_instance = NULL;
+
 vvSimpleServer::vvSimpleServer(bool useBonjour)
   : vvServer(useBonjour)
 {
-  if(_useBonjour)
+  _instance = this;
+  if (_useBonjour)
   {
     registerToBonjour();
   }
@@ -60,12 +62,34 @@ vvSimpleServer::~vvSimpleServer()
   if(_useBonjour) unregisterFromBonjour();
 }
 
+bool vvSimpleServer::handleEvent(virvo::RemoteEvent event, const vvSocketIO& io)
+{
+  switch (event)
+  {
+  case virvo::GpuInfo:
+    {
+      std::vector<vvGpu*> gpus = vvGpu::list();
+      std::vector<vvGpu::vvGpuInfo> ginfos;
+      for(std::vector<vvGpu*>::iterator gpu = gpus.begin(); gpu != gpus.end(); gpu++)
+      {
+        ginfos.push_back(vvGpu::getInfo(*gpu));
+      }
+      io.putGpuInfos(ginfos);
+    }
+    return true;
+  case virvo::Disconnect:
+    vvServer::handleEvent(event, io);
+    return false;
+  default:
+    return vvServer::handleEvent(event, io);
+  }
+}
+
 void vvSimpleServer::handleNextConnection(vvTcpSocket *sock)
 {
   vvDebugMsg::msg(3, "vvSimpleServer::handleNextConnection()");
 
   ThreadArgs *args = new ThreadArgs;
-  args->_instance = this;
   args->_sock = sock;
 
   pthread_t pthread;
@@ -81,55 +105,14 @@ void * vvSimpleServer::handleClientThread(void *param)
 
   vvTcpSocket *sock = args->_sock;
 
-  vvSocketIO sockio(sock);
+  vvSocketIO io(sock);
+  io.putEvent(virvo::WaitEvents);
 
-  bool goOn = true;
   virvo::RemoteEvent event;
-  while(sockio.getEvent(event) == vvSocket::VV_OK && goOn)
+  while (io.getEvent(event) == vvSocket::VV_OK)
   {
-    switch(event)
+    if (!_instance->handleEvent(event, io))
     {
-    case virvo::GpuInfo:
-      {
-        std::vector<vvGpu*> gpus = vvGpu::list();
-        std::vector<vvGpu::vvGpuInfo> ginfos;
-        for(std::vector<vvGpu*>::iterator gpu = gpus.begin(); gpu != gpus.end(); gpu++)
-        {
-          ginfos.push_back(vvGpu::getInfo(*gpu));
-        }
-        sockio.putGpuInfos(ginfos);
-      }
-      break;
-    case virvo::Render:
-      {
-        vvRemoteServerRes res = args->_instance->createRemoteServer(sock);
-
-        if(res.renderer && res.server && res.vd)
-        {
-          while(true)
-          {
-            if(!res.server->processEvents(res.renderer))
-            {
-              delete res.renderer;
-              res.renderer = NULL;
-              break;
-            }
-          }
-        }
-
-        // Frames vector with bricks is deleted along with the renderer.
-        // Don't free them here.
-        // see setRenderer().
-
-        delete res.server;
-        delete res.vd;
-      }
-      // fall through...
-    case virvo::Exit:
-      goOn = false;
-      break;
-    default:
-      vvServer::handleEvent(event, sockio);
       break;
     }
   }

@@ -35,12 +35,15 @@ public:
   ~vvSimpleServer();
 
 private:
+  vvBonjourRegistrar _registrar;  ///< Bonjour registrar used by registerToBonjour() and unregisterFromBonjour()
+
+  static vvSimpleServer* _instance;
+
   void handleNextConnection(vvTcpSocket *sock);
+  bool handleEvent(virvo::RemoteEvent, const vvSocketIO& io);
   static void * handleClientThread(void *param);
   bool registerToBonjour();
   void unregisterFromBonjour();
-
-  vvBonjourRegistrar _registrar;  ///< Bonjour registrar used by registerToBonjour() and unregisterFromBonjour()
 };
 
 #endif // _VV_SERVER_H_

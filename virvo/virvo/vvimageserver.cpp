@@ -31,7 +31,6 @@
 vvImageServer::vvImageServer(vvSocket *socket)
   : vvRemoteServer(socket)
   , _image(NULL)
-  , _pixels(NULL)
 {
   vvDebugMsg::msg(1, "vvImageServer::vvImageServer()");
 }
@@ -41,7 +40,6 @@ vvImageServer::~vvImageServer()
   vvDebugMsg::msg(1, "vvImageServer::~vvImageServer()");
 
   delete _image;
-  delete[] _pixels;
 }
 
 //----------------------------------------------------------------------------
@@ -67,19 +65,18 @@ void vvImageServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRender
   const int h = vp[3];
   if(!_image || _image->getWidth() != w || _image->getHeight() != h)
   {
-    delete[] _pixels;
-    _pixels = new uchar[w*h*4];
+    _pixels.resize(w*h*4);
     if(_image)
-      _image->setNewImage(h, w, _pixels);
+      _image->setNewImage(h, w, &_pixels[0]);
     else
-      _image = new vvImage(h, w, _pixels);
+      _image = new vvImage(h, w, &_pixels[0]);
   }
   else
   {
-    _image->setNewImagePtr(_pixels);
+    _image->setNewImagePtr(&_pixels[0]);
   }
 
-  glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
+  glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, &_pixels[0]);
 
   if(_image->encode(_codetype, 0, h-1, 0, w-1) < 0)
   {

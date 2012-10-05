@@ -81,6 +81,7 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
 
     switch(event)
     {
+#if 0
     case virvo::Render:
       {
         vvSocket::ErrorType err;
@@ -107,6 +108,7 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
         goOn = false;
       }
       break;
+#endif
     case virvo::Statistics:
       {
         float free = 0.0f;
@@ -392,7 +394,7 @@ void * vvResourceManager::processJob(void * param)
     if(NULL != serversock)
     {
       vvSocketIO sockIO = vvSocketIO(serversock);
-      sockIO.putInt32(virvo::Render);
+      //sockIO.putInt32(virvo::Render);
       bool vserverRdy;
       sockIO.getBool(vserverRdy);
 
@@ -408,7 +410,6 @@ void * vvResourceManager::processJob(void * param)
     }
   }
 
-  vvRemoteServerRes res;
   if(ready) // all resources are connected and ready to use
   {
     vvRendererFactory::Options opt;
@@ -425,26 +426,28 @@ void * vvResourceManager::processJob(void * param)
       displaystr << ":0,:0"; // TODO: fix this hardcoded setting!
       opt["displays"] = displaystr.str();
 
-      res = createRemoteServer(clientsock, "parbrick", opt);
+//      createRemoteServer(clientsock, "parbrick", opt);
     }
     else // regular remote rendering case
     {
-      res = createRemoteServer(clientsock, "forwarding", opt);
+//      createRemoteServer(clientsock, "forwarding", opt);
     }
   }
 
-  if(res.renderer && res.server && res.vd)
+#if 0
+  if (false)//if(res.renderer && res.server && res.vd)
   {
     while(true)
     {
-      if(!res.server->processEvents(res.renderer))
+      if(!_server->processEvents(_renderer))
       {
-        delete res.renderer;
-        res.renderer = NULL;
+        delete _renderer;
+        _renderer = NULL;
         break;
       }
     }
   }
+#endif
 
   delete job;
 
@@ -555,7 +558,7 @@ std::vector<vvGpu::vvGpuInfo> vvResourceManager::getResourceGpuInfos(const vvBon
       sockIO.putInt32(virvo::GpuInfo);
       std::vector<vvGpu::vvGpuInfo> ginfos;
       sockIO.getGpuInfos(ginfos);
-      sockIO.putInt32(virvo::Exit);
+      sockIO.putInt32(virvo::Disconnect);
       delete serversock;
       return ginfos;
     }

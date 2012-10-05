@@ -72,7 +72,7 @@ protected:
 private:
   virtual void destroyThreads() { }
 
-  ErrorType initSocket(vvVolDesc*& vd);
+  ErrorType sendVolume(vvVolDesc*& vd);
 };
 
 #endif

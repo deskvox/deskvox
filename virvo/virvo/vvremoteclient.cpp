@@ -40,7 +40,8 @@ vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
 {
   vvDebugMsg::msg(1, "vvRemoteClient::vvRemoteClient()");
 
-  initSocket(vd);
+  _socketIO = new vvSocketIO(_socket);
+  sendVolume(vd);
 }
 
 vvRemoteClient::~vvRemoteClient()
@@ -62,58 +63,43 @@ void vvRemoteClient::renderVolumeGL()
   vvRenderer::renderVolumeGL();
 }
 
-vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
+vvRemoteClient::ErrorType vvRemoteClient::sendVolume(vvVolDesc*& vd)
 {
-  vvDebugMsg::msg(3, "vvRemoteClient::initSocket()");
-
-  delete _socketIO;
-  _socketIO = new vvSocketIO(_socket);
-
   if (!_filename.empty())
   {
-    _socketIO->putBool(true);
-    _socketIO->putFileName(_filename.c_str());
-    _socketIO->getVolumeAttributes(vd);
-    vvTransFunc tf;
-    for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
-         it != tf._widgets.end(); ++it)
-    {
-      delete *it;
-    }
-    tf._widgets.clear();
-    if ((_socketIO->getTransferFunction(tf)) == vvSocket::VV_OK)
-    {
-      vd->tf = tf;
-    }
+    _socketIO->putEvent(virvo::VolumeFile);
+    _socketIO->putFileName(_filename);
   }
   else
   {
-    _socketIO->putBool(false);
+    _socketIO->putEvent(virvo::Volume);
     switch (_socketIO->putVolume(vd))
     {
       case vvSocket::VV_OK:
-        cerr << "Volume transferred successfully" << endl;
+        vvDebugMsg::msg(1, "Volume transferred successfully");
         break;
       case vvSocket::VV_ALLOC_ERROR:
-        cerr << "Not enough memory" << endl;
+        vvDebugMsg::msg(0, "Not enough memory to accomodate volume");
         return VV_SOCKET_ERROR;
       default:
-        cerr << "Cannot write volume to socket" << endl;
+        vvDebugMsg::msg(0, "Unknown error writing volume to socket");
         return VV_SOCKET_ERROR;
     }
   }
   return VV_OK;
 }
 
-void vvRemoteClient:: setCurrentFrame(const int index)
+void vvRemoteClient::setCurrentFrame(const int index)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setCurrentFrame()");
   _changes = true;
 
-  if(!_socketIO)
+  if (_socketIO == NULL)
+  {
     return;
+  }
 
-  if (_socketIO->putCommReason(vvSocketIO::VV_CURRENT_FRAME) == vvSocket::VV_OK)
+  if (_socketIO->putEvent(virvo::CurrentFrame) == vvSocket::VV_OK)
   {
     _socketIO->putInt32(index);
   }
@@ -127,7 +113,7 @@ void vvRemoteClient::setObjectDirection(const vvVector3& od)
   if(!_socketIO)
     return;
 
-  if (_socketIO->putCommReason(vvSocketIO::VV_OBJECT_DIRECTION) == vvSocket::VV_OK)
+  if (_socketIO->putEvent(virvo::ObjectDirection) == vvSocket::VV_OK)
   {
     _socketIO->putVector3(od);
   }
@@ -138,10 +124,12 @@ void vvRemoteClient::setViewingDirection(const vvVector3& vd)
   vvDebugMsg::msg(3, "vvRemoteClient::setViewingDirection()");
   _changes = true;
 
-  if(!_socketIO)
+  if (!_socketIO)
+  {
     return;
+  }
 
-  if (_socketIO->putCommReason(vvSocketIO::VV_VIEWING_DIRECTION) == vvSocket::VV_OK)
+  if (_socketIO->putEvent(virvo::ViewingDirection) == vvSocket::VV_OK)
   {
     _socketIO->putVector3(vd);
   }
@@ -152,10 +140,12 @@ void vvRemoteClient::setPosition(const vvVector3& p)
   vvDebugMsg::msg(3, "vvRemoteClient::setPosition()");
   _changes = true;
 
-  if(!_socketIO)
+  if (!_socketIO)
+  {
     return;
+  }
 
-  if (_socketIO->putCommReason(vvSocketIO::VV_POSITION) == vvSocket::VV_OK)
+  if (_socketIO->putEvent(virvo::Position) == vvSocket::VV_OK)
   {
     _socketIO->putVector3(p);
   }
@@ -166,10 +156,12 @@ void vvRemoteClient::updateTransferFunction()
   vvDebugMsg::msg(1, "vvRemoteClient::updateTransferFunction()");
   _changes = true;
 
-  if(!_socketIO)
+  if (!_socketIO)
+  {
     return;
+  }
 
-  if (_socketIO->putCommReason(vvSocketIO::VV_TRANSFER_FUNCTION) == vvSocket::VV_OK)
+  if (_socketIO->putEvent(virvo::TransFunc) == vvSocket::VV_OK)
   {
     _socketIO->putTransferFunction(vd->tf);
   }
@@ -181,12 +173,14 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
   _changes = true;
   vvRenderer::setParameter(param, value);
 
-  if(!_socketIO)
+  if (_socketIO == NULL)
+  {
     return;
+  }
 
   if (value.isa(vvParam::VV_BOOL))
   {
-    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_1B) == vvSocket::VV_OK)
+    if (_socketIO->putEvent(virvo::Parameter1B) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
       _socketIO->putBool(value);
@@ -196,7 +190,7 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
 
   if (value.isa(vvParam::VV_INT))
   {
-    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_1I) == vvSocket::VV_OK)
+    if (_socketIO->putEvent(virvo::Parameter1I) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
       _socketIO->putInt32((int32_t)value);
@@ -206,7 +200,7 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
 
   if (value.isa(vvParam::VV_FLOAT))
   {
-    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_1F) == vvSocket::VV_OK)
+    if (_socketIO->putEvent(virvo::Parameter1F) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
       _socketIO->putFloat(value);
@@ -216,7 +210,7 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
 
   if (value.isa(vvParam::VV_VEC3))
   {
-    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_3F) == vvSocket::VV_OK)
+    if (_socketIO->putEvent(virvo::Parameter3F) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
       _socketIO->putVector3(value);
@@ -226,7 +220,7 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
 
   if (value.isa(vvParam::VV_VEC4))
   {
-    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_4F) == vvSocket::VV_OK)
+    if (_socketIO->putEvent(virvo::Parameter4F) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
       _socketIO->putVector4(value);
@@ -236,7 +230,7 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
 
   if (value.isa(vvParam::VV_AABBI))
   {
-    if (_socketIO->putCommReason(vvSocketIO::VV_PARAMETER_AABBI) == vvSocket::VV_OK)
+    if (_socketIO->putEvent(virvo::ParameterAABBI) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
       _socketIO->putAABBi(value);
@@ -251,28 +245,34 @@ vvRemoteClient::ErrorType vvRemoteClient::requestFrame() const
 {
   vvDebugMsg::msg(1, "vvRemoteClient::requestFrame()");
 
-  if(!_socketIO)
+  if (!_socketIO)
+  {
     return vvRemoteClient::VV_SOCKET_ERROR;
+  }
 
-  if(_socketIO->putCommReason(vvSocketIO::VV_MATRIX) != vvSocket::VV_OK)
-      return vvRemoteClient::VV_SOCKET_ERROR;
+  if (_socketIO->putEvent(virvo::CameraMatrix) != vvSocket::VV_OK)
+  {
+    return vvRemoteClient::VV_SOCKET_ERROR;
+  }
 
-  if(_socketIO->putMatrix(&_currentPr) != vvSocket::VV_OK)
-      return vvRemoteClient::VV_SOCKET_ERROR;
+  if (_socketIO->putMatrix(&_currentPr) != vvSocket::VV_OK)
+  {
+    return vvRemoteClient::VV_SOCKET_ERROR;
+  }
 
-  if(_socketIO->putMatrix(&_currentMv) != vvSocket::VV_OK)
-      return vvRemoteClient::VV_SOCKET_ERROR;
+  if (_socketIO->putMatrix(&_currentMv) != vvSocket::VV_OK)
+  {
+    return vvRemoteClient::VV_SOCKET_ERROR;
+  }
 
   return vvRemoteClient::VV_OK;
 }
 
 void vvRemoteClient::quit()
 {
-  vvDebugMsg::msg(1, "vvRemoteClient::quit()");
-
   if(_socketIO)
   {
-    _socketIO->putCommReason(vvSocketIO::VV_QUIT);
+    _socketIO->putEvent(virvo::Disconnect);
     delete _socketIO;
     _socketIO = NULL;
   }
