@@ -31,6 +31,7 @@
 #include <virvo/vvremoteevents.h>
 #include <virvo/vvshaderfactory.h>
 #include <virvo/vvsocketio.h>
+#include <virvo/vvsocketmap.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvvirvo.h>
 
@@ -42,6 +43,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <sstream>
 #include <utility>
 
 #define VV_UNUSED(x) ((void)(x))
@@ -53,6 +55,10 @@ namespace
   std::map<int, std::string> voxTypeMap;
   std::map<std::string, std::string> rendererDescriptions;
   std::map<std::string, std::string> algoDescriptions;
+
+  // e.g. ibr or image
+  std::string remoterend = "";
+  vvTcpSocket* sock;
 
   double movingSpinBoxOldValue = 1.0;
   double stillSpinBoxOldValue = 1.0;
@@ -240,6 +246,15 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   }
 }
 
+vvPrefDialog::~vvPrefDialog()
+{
+  if (::sock != NULL)
+  {
+    vvSocketMap::remove(vvSocketMap::getIndex(::sock));
+  }
+  delete ::sock;
+}
+
 void vvPrefDialog::toggleInterpolation()
 {
   vvDebugMsg::msg(3, "vvPrefDialog::toggletInterpolation()");
@@ -279,43 +294,57 @@ void vvPrefDialog::emitRenderer()
 
   vvRendererFactory::Options options;
 
-  switch (rendererMap[ui->rendererBox->currentIndex()])
+  if (::remoterend == "ibr" || ::remoterend == "image")
   {
-  case vvRenderer::RAYREND:
-    ui->optionsToolBox->setCurrentIndex(rayidx);
-    name = "rayrend";
-    break;
-  case vvRenderer::SOFTRAYREND:
-    ui->optionsToolBox->setCurrentIndex(rayidx);
-    name = "softrayrend";
-    break;
-  case vvRenderer::TEXREND:
-    ui->optionsToolBox->setCurrentIndex(texidx);
-    name = texRendTypeMap[ui->geometryBox->currentIndex()];
-    options["voxeltype"] = voxTypeMap[ui->voxTypeBox->currentIndex()];
-    break;
-  default:
-    name = "default";
-    break;
+    int s = vvSocketMap::add(::sock);
+    std::stringstream sockstr;
+    sockstr << s;
+    if (sockstr.str() != "")
+    {
+      name = ::remoterend;
+      options["sockets"] = sockstr.str();
+    }
   }
+  else
+  {  
+    switch (rendererMap[ui->rendererBox->currentIndex()])
+    {
+    case vvRenderer::RAYREND:
+      ui->optionsToolBox->setCurrentIndex(rayidx);
+      name = "rayrend";
+      break;
+    case vvRenderer::SOFTRAYREND:
+      ui->optionsToolBox->setCurrentIndex(rayidx);
+      name = "softrayrend";
+      break;
+    case vvRenderer::TEXREND:
+      ui->optionsToolBox->setCurrentIndex(texidx);
+      name = texRendTypeMap[ui->geometryBox->currentIndex()];
+      options["voxeltype"] = voxTypeMap[ui->voxTypeBox->currentIndex()];
+      break;
+    default:
+      name = "default";
+      break;
+    }
 
-  if (options["voxeltype"] == "rgba")
-  {
-    ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type RGBA</b><br />"
-      "Pre-interpolative transfer function,"
-      " is applied by assigning each voxel an RGBA color before rendering.</html>");
-  }
-  else if (options["voxeltype"] == "arb")
-  {
-    ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type ARB fragment program</b><br />"
-      "Post-interpolative transfer function,"
-      " is applied after sampling the volume texture.</html>");
-  }
-  else if (options["voxeltype"] == "shader")
-  {
-    ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type GLSL fragment program</b><br />"
-      "Post-interpolative transfer function,"
-      " is applied after sampling the volume texture.</html>");
+    if (options["voxeltype"] == "rgba")
+    {
+      ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type RGBA</b><br />"
+        "Pre-interpolative transfer function,"
+        " is applied by assigning each voxel an RGBA color before rendering.</html>");
+    }
+    else if (options["voxeltype"] == "arb")
+    {
+      ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type ARB fragment program</b><br />"
+        "Post-interpolative transfer function,"
+        " is applied after sampling the volume texture.</html>");
+    }
+    else if (options["voxeltype"] == "shader")
+    {
+      ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type GLSL fragment program</b><br />"
+        "Post-interpolative transfer function,"
+        " is applied after sampling the volume texture.</html>");
+    }
   }
 
   if (name != "")
@@ -455,29 +484,47 @@ void vvPrefDialog::onBrowseClicked()
 
 void vvPrefDialog::onConnectClicked()
 {
-  if (validateRemoteHost(ui->hostEdit->text(), static_cast<ushort>(ui->portBox->value())))
+  if (::remoterend == "")
   {
-    vvTcpSocket* sock = new vvTcpSocket;
-    if (sock->connectToHost(ui->hostEdit->text().toStdString(),
-      static_cast<ushort>(static_cast<ushort>(ui->portBox->value()))) == vvSocket::VV_OK)
+    if (validateRemoteHost(ui->hostEdit->text(), static_cast<ushort>(ui->portBox->value())))
     {
-      sock->setParameter(vvSocket::VV_NO_NAGLE, true);
-      vvSocketIO io(sock);
-      ui->connectButton->setText(tr("Disconnect"));
+      delete ::sock;
+      ::sock = new vvTcpSocket;
+      if (sock->connectToHost(ui->hostEdit->text().toStdString(),
+        static_cast<ushort>(static_cast<ushort>(ui->portBox->value()))) == vvSocket::VV_OK)
+      {
+        sock->setParameter(vvSocket::VV_NO_NAGLE, true);
+        ui->connectButton->setText(tr("Disconnect"));
 
-      // store to registry because connection was successful
-      QSettings settings;
-      settings.setValue("remote/host", ui->hostEdit->text());
-      settings.setValue("remote/port", ui->portBox->value());
+        ::remoterend = "image";
+
+        // store to registry because connection was successful
+        QSettings settings;
+        settings.setValue("remote/host", ui->hostEdit->text());
+        settings.setValue("remote/port", ui->portBox->value());
+
+        emitRenderer();
+      }
+      else
+      {
+        ::remoterend = "";
+        QMessageBox::warning(this, tr("Failed to connect"), tr("Could not connect to host \"") + ui->hostEdit->text()
+          + tr("\" on port \"") + QString::number(ui->portBox->value()) + tr("\""), QMessageBox::Ok);
+      }
     }
-    else
-    {
-      QMessageBox::warning(this, tr("Failed to connect"), tr("Could not connect to host \"") + ui->hostEdit->text()
-        + tr("\" on port \"") + QString::number(ui->portBox->value()) + tr("\""), QMessageBox::Ok);
-    }
-    delete sock;
   }
+  else
+  {
+    ::remoterend = "";
 
+    if (::sock != NULL)
+    {
+      vvSocketMap::remove(vvSocketMap::getIndex(sock));
+      delete ::sock;
+    }
+
+    emitRenderer();
+  }
 }
 
 void vvPrefDialog::onInterpolationToggled(const bool checked)

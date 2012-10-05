@@ -36,6 +36,7 @@ class vvPrefDialog : public QDialog
   Q_OBJECT
 public:
   vvPrefDialog(vvCanvas* canvas, QWidget* parent = 0);
+  ~vvPrefDialog();
 
   void toggleInterpolation();
   void scaleStillQuality(float s);
