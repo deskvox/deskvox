@@ -68,7 +68,7 @@ public:
   };
 
   vvServer(bool useBonjour);
-  ~vvServer();
+  virtual ~vvServer();
 
   /** Main Virvo server routine.
     @param argc,argv command line arguments
