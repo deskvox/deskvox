@@ -708,7 +708,7 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     std::cerr << "Total work-load " << wload << " caused with " << resCount << " resources." << endl;
     */
 
-    socketIO.putInt32(virvo::Render);
+    socketIO.putEvent(virvo::Render);
     bool serverRdy;
     socketIO.getBool(serverRdy);
     if(!serverRdy)
