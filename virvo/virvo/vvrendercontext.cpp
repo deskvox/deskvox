@@ -571,7 +571,7 @@ void vvRenderContext::init()
   HDC hdc = wglGetCurrentDC();
 
   // Now obtain a list of pixel formats that meet these minimum requirements...
-  std::vector<int> pformats = GetPixelFormats(hdc);
+  std::vector<int> pformats = GetPixelFormats(_options, hdc);
 
   //
   // After determining a list of pixel formats, the next step is to create
