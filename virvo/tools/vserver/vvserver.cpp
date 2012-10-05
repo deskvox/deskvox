@@ -30,6 +30,7 @@
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
 #include <virvo/vvremoteserver.h>
+#include <virvo/vvrendercontext.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpserver.h>
 #include <virvo/vvtcpsocket.h>
@@ -46,6 +47,23 @@
 #include <unistd.h>
 #endif
 
+namespace
+{
+  vvRenderContext* renderContext = NULL;
+  vvContextOptions contextOptions;
+
+  bool createRenderContext(const int w, const int h)
+  {
+    delete renderContext;
+    contextOptions.type = vvContextOptions::VV_PBUFFER;
+    contextOptions.width = w;
+    contextOptions.height = h;
+    contextOptions.displayName = "";
+    renderContext = new vvRenderContext(contextOptions);
+    return renderContext->makeCurrent();
+  }
+}
+
 const int            vvServer::DEFAULTSIZE  = 512;
 const unsigned short vvServer::DEFAULT_PORT = 31050;
 
@@ -60,6 +78,7 @@ vvServer::vvServer(bool useBonjour)
 
 vvServer::~vvServer()
 {
+  delete ::renderContext;
 }
 
 int vvServer::run(int argc, char** argv)
@@ -338,6 +357,13 @@ vvServer::vvRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock, std:
   res.renderer = NULL;
   res.vd       = NULL;
 
+  // need a render context. either reuse existing or create a new one
+  if (::renderContext == NULL && !::createRenderContext(DEFAULTSIZE, DEFAULTSIZE))
+  {
+    std::cerr << "Couldn't initialize render context" << std::endl;
+    return res;
+  }
+
   vvSocketIO sockio = vvSocketIO(sock);
 
   sockio.putBool(true);  // let client know we are ready
@@ -364,11 +390,6 @@ vvServer::vvRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock, std:
     return res;
   }
 
-  if(res.server->initRenderContext(DEFAULTSIZE, DEFAULTSIZE) != vvRemoteServer::VV_OK)
-  {
-    cerr << "Couldn't initialize render context" << std::endl;
-    return res;
-  }
   vvGLTools::enableGLErrorBacktrace();
   if(res.server->initData(res.vd) != vvRemoteServer::VV_OK)
   {

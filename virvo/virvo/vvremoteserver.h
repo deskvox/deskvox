@@ -24,9 +24,7 @@
 #include "vvexport.h"
 #include "vvsocket.h"
 
-class vvContextOptions;
 class vvMatrix;
-class vvRenderContext;
 class vvRenderer;
 class vvSocketIO;
 class vvVolDesc;
@@ -48,25 +46,18 @@ public:
   bool getLoadVolumeFromFile() const;
 
   vvRemoteServer::ErrorType initData(vvVolDesc*& vd);
-  vvRemoteServer::ErrorType initRenderContext(int w, int h);
-
-  vvRemoteServer::ErrorType destroyRenderContext();
 
   virtual bool processEvents(vvRenderer* renderer);
 protected:
   vvSocketIO* _socketio;                    ///< socket for remote rendering
 
-  vvRenderContext* _renderContext;
-
   bool _loadVolumeFromFile;
   int _codetype;
 
   virtual void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer) = 0;
-  virtual void resize(int w, int h);
-
+  virtual void resize(int w, int h) { (void)w; (void)h; }
 private:
   vvRemoteServer::ErrorType initSocket();
-  vvContextOptions* co;
 };
 
 #endif // VVREMOTESERVER_H

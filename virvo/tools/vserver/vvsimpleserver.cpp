@@ -117,11 +117,6 @@ void * vvSimpleServer::handleClientThread(void *param)
           }
         }
 
-        if(res.server)
-        {
-          res.server->destroyRenderContext();
-        }
-
         // Frames vector with bricks is deleted along with the renderer.
         // Don't free them here.
         // see setRenderer().

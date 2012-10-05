@@ -446,11 +446,6 @@ void * vvResourceManager::processJob(void * param)
     }
   }
 
-  if(res.server)
-  {
-    res.server->destroyRenderContext();
-  }
-
   delete job;
 
   if(clientsock)

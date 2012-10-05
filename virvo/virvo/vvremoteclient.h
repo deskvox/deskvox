@@ -68,11 +68,9 @@ protected:
   vvSocketIO  *_socketIO;
 
   bool _changes; ///< indicate if a new rendering is required
-  int _viewportWidth, _viewportHeight;
   vvMatrix _currentMv;                                    ///< Current modelview matrix
   vvMatrix _currentPr;                                    ///< Current projection matrix
 private:
-  void resize(int w, int h);
   virtual void destroyThreads() { }
 
   ErrorType initSocket(vvVolDesc*& vd);
