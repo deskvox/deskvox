@@ -1796,18 +1796,18 @@ vvSocket::ErrorType vvSocketIO::putRequest(const vvRequest& req)
   {
     vvSocket::ErrorType retval;
 
-    retval = putInt32(req.niceness);
+    retval = putInt32((int32_t)req.niceness);
     if(retval != vvSocket::VV_OK) return retval;
 
-    retval = putInt32((int)req.type);
+    retval = putInt32((int32_t)req.type);
     if(retval != vvSocket::VV_OK) return retval;
 
-    retval = putInt32(req.nodes.size());
+    retval = putInt32((int32_t)req.nodes.size());
     if(retval != vvSocket::VV_OK) return retval;
 
     for(unsigned int i=0; i<req.nodes.size(); i++)
     {
-      retval = putInt32(req.nodes[i]);
+      retval = putInt32((int32_t)req.nodes[i]);
       if(retval != vvSocket::VV_OK) return retval;
     }
     return vvSocket::VV_OK;
