@@ -38,8 +38,6 @@ vvIbrServer::vvIbrServer(vvSocket *socket)
 : vvRemoteServer(socket)
 , _ibrMode(vvRenderer::VV_GRADIENT)
 , _image(NULL)
-, _pixels(NULL)
-, _depth(NULL)
 {
   vvDebugMsg::msg(1, "vvIbrServer::vvIbrServer()");
 }
