@@ -30,10 +30,9 @@
 using std::cerr;
 using std::endl;
 
-vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_t type,
+vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
                                vvTcpSocket* socket, const std::string &filename)
    : vvRenderer(vd, renderState)
-   , _type(type)
    , _socket(socket)
    , _filename(filename)
    , _socketIO(NULL)
@@ -69,8 +68,6 @@ vvRemoteClient::ErrorType vvRemoteClient::initSocket(vvVolDesc*& vd)
 
   delete _socketIO;
   _socketIO = new vvSocketIO(_socket);
-
-  _socketIO->putInt32(_type);
 
   if (!_filename.empty())
   {

@@ -711,6 +711,19 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     socketIO.putEvent(virvo::Render);
     bool serverRdy;
     socketIO.getBool(serverRdy);
+    if (rrMode == RR_IMAGE)
+    {
+      socketIO.putInt32((int32_t)vvRenderer::REMOTE_IMAGE);
+    }
+    else if (rrMode == RR_IBR)
+    {
+      socketIO.putInt32((int32_t)vvRenderer::REMOTE_IBR);
+    }
+    else
+    {
+      std::cerr << "Unknown remote rendering type..." << std::endl;
+    }
+
     if(!serverRdy)
     {
       vvRequest req;
