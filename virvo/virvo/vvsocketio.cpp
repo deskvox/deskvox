@@ -70,7 +70,7 @@ bool vvSocketIO::sock_action()
 /** Get remote event from sockets.
   @param event  @see virvo::RemoteEvents
 */
-vvSocket::ErrorType vvSocketIO::getEvent(virvo::RemoteEvent& event)
+vvSocket::ErrorType vvSocketIO::getEvent(virvo::RemoteEvent& event) const
 {
   vvSocket::ErrorType result;
   int val;
@@ -83,7 +83,7 @@ vvSocket::ErrorType vvSocketIO::getEvent(virvo::RemoteEvent& event)
 /** Put remote events to socket.
   @param event  @see virvo::RemoteEvents
 */
-vvSocket::ErrorType vvSocketIO::putEvent(const virvo::RemoteEvent event)
+vvSocket::ErrorType vvSocketIO::putEvent(const virvo::RemoteEvent event) const
 {
   return putInt32(event);
 }
@@ -92,7 +92,7 @@ vvSocket::ErrorType vvSocketIO::putEvent(const virvo::RemoteEvent event)
 /** Get volume attributes from socket.
   @param vd  empty volume description which is to be filled with the volume attributes
 */
-vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd)
+vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd) const
 {
   if(_socket)
   {
@@ -122,7 +122,7 @@ vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd)
 /** Get volume data from socket.
   @param vd  empty volume description which is to be filled with the volume data
 */
-vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd, vvMulticastParameters *mcParam)
+vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd, vvMulticastParameters *mcParam) const
 {
   if(_socket)
   {
@@ -183,7 +183,7 @@ vvSocket::ErrorType vvSocketIO::getVolume(vvVolDesc* vd, vvMulticastParameters *
 /** Write volume attributes to socket.
   @param vd  volume description of volume to be send.
 */
-vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd)
+vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd) const
 {
   if(_socket)
   {
@@ -204,7 +204,7 @@ vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd)
 /** Write volume data to socket.
   @param vd  volume description of volume to be send.
 */
-vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd, bool tryMC, bool mcMaster, vvMulticastParameters *mcParam)
+vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd, bool tryMC, bool mcMaster, vvMulticastParameters *mcParam) const
 {
   if(_socket)
   {
@@ -271,7 +271,7 @@ vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd, bool tryMC, bool 
 /** Get a transfer function from the socket.
   @param tf  pointer to a vvTransFunc.
 */
-vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
+vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf) const
 {
   if(_socket)
   {
@@ -341,7 +341,7 @@ vvSocket::ErrorType vvSocketIO::getTransferFunction(vvTransFunc& tf)
 /** Write a transfer function to the socket.
   @param tf  pointer to a vvTransFunc.
 */
-vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
+vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf) const
 {
   if(_socket)
   {
@@ -381,7 +381,7 @@ vvSocket::ErrorType vvSocketIO::putTransferFunction(vvTransFunc& tf)
 /** Get a single brick from the socket.
   @param brick  pointer to a vvBrick.
 */
-vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick)
+vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick) const
 {
   if(_socket)
   {
@@ -449,7 +449,7 @@ vvSocket::ErrorType vvSocketIO::getBrick(vvBrick* brick)
 /** Write a single brick to the socket.
   @param brick  pointer to a vvBrick.
 */
-vvSocket::ErrorType vvSocketIO::putBrick(const vvBrick* brick)
+vvSocket::ErrorType vvSocketIO::putBrick(const vvBrick* brick) const
 {
   if(_socket)
   {
@@ -517,7 +517,7 @@ vvSocket::ErrorType vvSocketIO::putBrick(const vvBrick* brick)
 /** Get brick list from the socket. Bricks contain no volume data.
   @param bricks  std::vector with pointers to bricks.
 */
-vvSocket::ErrorType vvSocketIO::getBricks(std::vector<vvBrick*>& bricks)
+vvSocket::ErrorType vvSocketIO::getBricks(std::vector<vvBrick*>& bricks) const
 {
   if(_socket)
   {
@@ -557,7 +557,7 @@ vvSocket::ErrorType vvSocketIO::getBricks(std::vector<vvBrick*>& bricks)
 /** Write brick list to the socket. Bricks contain no volume data.
   @param bricks  std::vector with pointers to bricks.
 */
-vvSocket::ErrorType vvSocketIO::putBricks(const std::vector<vvBrick*>& bricks)
+vvSocket::ErrorType vvSocketIO::putBricks(const std::vector<vvBrick*>& bricks) const
 {
   if(_socket)
   {
@@ -597,7 +597,7 @@ vvSocket::ErrorType vvSocketIO::putBricks(const std::vector<vvBrick*>& bricks)
 /** Get an image from the socket.
  @param im  pointer to a vvImage object.
 */
-vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
+vvSocket::ErrorType vvSocketIO::getImage(vvImage* im) const
 {
   if(_socket)
   {
@@ -656,7 +656,7 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im)
 /** Write an image to the socket.
  @param im  pointer to an vvImage object.
 */
-vvSocket::ErrorType vvSocketIO::putImage(const vvImage* im)
+vvSocket::ErrorType vvSocketIO::putImage(const vvImage* im) const
 {
   if(_socket)
   {
@@ -705,7 +705,7 @@ vvSocket::ErrorType vvSocketIO::putImage(const vvImage* im)
 /** Get an 2.5d-image from the socket.
  @param im  pointer to a vvImage2_5d object.
 */
-vvSocket::ErrorType vvSocketIO::getIbrImage(vvIbrImage* im)
+vvSocket::ErrorType vvSocketIO::getIbrImage(vvIbrImage* im) const
 {
   if(_socket)
   {
@@ -777,7 +777,7 @@ vvSocket::ErrorType vvSocketIO::getIbrImage(vvIbrImage* im)
 /** Write an 2.5d-image to the socket.
  @param im  pointer to an vvImage2_5d object.
 */
-vvSocket::ErrorType vvSocketIO::putIbrImage(const vvIbrImage* im)
+vvSocket::ErrorType vvSocketIO::putIbrImage(const vvIbrImage* im) const
 {
   if(_socket)
   {
@@ -857,7 +857,7 @@ vvSocket::ErrorType vvSocketIO::putIbrImage(const vvIbrImage* im)
 /** Get a file name from the socket.
  @param fn  the file name.
 */
-vvSocket::ErrorType vvSocketIO::getFileName(char*& fn)
+vvSocket::ErrorType vvSocketIO::getFileName(char*& fn) const
 {
   if(_socket)
   {
@@ -905,7 +905,7 @@ vvSocket::ErrorType vvSocketIO::getFileName(char*& fn)
 /** Write a file name to the socket.
  @param fn  the file name.
 */
-vvSocket::ErrorType vvSocketIO::putFileName(const char* fn)
+vvSocket::ErrorType vvSocketIO::putFileName(const char* fn) const
 {
   if(_socket)
   {
@@ -943,7 +943,7 @@ vvSocket::ErrorType vvSocketIO::putFileName(const char* fn)
  allocated which has to be deallocated outside this function.
  @param size  reference of an integer which includes the number of read bytes.
 */
-vvSocket::ErrorType vvSocketIO::allocateAndGetData(uchar** data, int& size)
+vvSocket::ErrorType vvSocketIO::allocateAndGetData(uchar** data, int& size) const
 {
   if(_socket)
   {
@@ -977,7 +977,7 @@ vvSocket::ErrorType vvSocketIO::allocateAndGetData(uchar** data, int& size)
  @param data  pointer to the data which has to be written.
  @param size  number of bytes to write.
 */
-vvSocket::ErrorType vvSocketIO::putData(uchar* data, int size)
+vvSocket::ErrorType vvSocketIO::putData(uchar* data, int size) const
 {
   if(_socket)
   {
@@ -1011,7 +1011,7 @@ vvSocket::ErrorType vvSocketIO::putData(uchar* data, int size)
  vvSocketIO::INT for integer and vvSocketIO::FLOAT for float.
 
 */
-vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
+vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type) const
 {
   if(_socket)
   {
@@ -1103,7 +1103,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type)
     @param type  data type to write. vvSocketIO::UCHAR for unsigned char,
     vvSocketIO::INT for integer and vvSocketIO::FLOAT for float.
 */
-vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type)
+vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type) const
 {
   if(_socket)
   {
@@ -1181,7 +1181,7 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type)
 /** Gets a Matrix from the socket.
     @param m  pointer to an object of vvMatrix.
 */
-vvSocket::ErrorType vvSocketIO::getMatrix(vvMatrix* m)
+vvSocket::ErrorType vvSocketIO::getMatrix(vvMatrix* m) const
 {
   if(_socket)
   {
@@ -1210,7 +1210,7 @@ vvSocket::ErrorType vvSocketIO::getMatrix(vvMatrix* m)
 /** Writes a boolean flag to the socket.
  @param val  the boolean flag.
 */
-vvSocket::ErrorType vvSocketIO::putBool(const bool val)
+vvSocket::ErrorType vvSocketIO::putBool(const bool val) const
 {
   if(_socket)
   {
@@ -1227,7 +1227,7 @@ vvSocket::ErrorType vvSocketIO::putBool(const bool val)
 /** Reads a boolean flag from the socket.
  @param val  the boolean flag.
 */
-vvSocket::ErrorType vvSocketIO::getBool(bool& val)
+vvSocket::ErrorType vvSocketIO::getBool(bool& val) const
 {
   if(_socket)
   {
@@ -1252,7 +1252,7 @@ vvSocket::ErrorType vvSocketIO::getBool(bool& val)
 /** Writes an int value to the socket.
  @param val  the int value.
 */
-vvSocket::ErrorType vvSocketIO::putInt32(const int val)
+vvSocket::ErrorType vvSocketIO::putInt32(const int val) const
 {
   if(_socket)
   {
@@ -1270,7 +1270,7 @@ vvSocket::ErrorType vvSocketIO::putInt32(const int val)
 /** Reads an int value from the socket.
  @param val  the int value.
 */
-vvSocket::ErrorType vvSocketIO::getInt32(int& val)
+vvSocket::ErrorType vvSocketIO::getInt32(int& val) const
 {
   if(_socket)
   {
@@ -1295,7 +1295,7 @@ vvSocket::ErrorType vvSocketIO::getInt32(int& val)
 /** Writes a float value to the socket.
  @param val  the float value.
 */
-vvSocket::ErrorType vvSocketIO::putFloat(const float val)
+vvSocket::ErrorType vvSocketIO::putFloat(const float val) const
 {
   if(_socket)
   {
@@ -1313,7 +1313,7 @@ vvSocket::ErrorType vvSocketIO::putFloat(const float val)
 /** Reads a float value from the socket.
  @param val  the float value.
 */
-vvSocket::ErrorType vvSocketIO::getFloat(float& val)
+vvSocket::ErrorType vvSocketIO::getFloat(float& val) const
 {
   if(_socket)
   {
@@ -1338,7 +1338,7 @@ vvSocket::ErrorType vvSocketIO::getFloat(float& val)
 /** Writes a vvVector3 to the socket.
  @param val  the vvVector3.
 */
-vvSocket::ErrorType vvSocketIO::putVector3(const vvVector3& val)
+vvSocket::ErrorType vvSocketIO::putVector3(const vvVector3& val) const
 {
   if(_socket)
   {
@@ -1358,7 +1358,7 @@ vvSocket::ErrorType vvSocketIO::putVector3(const vvVector3& val)
 /** Reads a vvVector3 from the socket.
  @param val  the vvVector3.
 */
-vvSocket::ErrorType vvSocketIO::getVector3(vvVector3& val)
+vvSocket::ErrorType vvSocketIO::getVector3(vvVector3& val) const
 {
   if(_socket)
   {
@@ -1385,7 +1385,7 @@ vvSocket::ErrorType vvSocketIO::getVector3(vvVector3& val)
 /** Writes a vvVector4 to the socket.
  @param val  the vvVector4.
 */
-vvSocket::ErrorType vvSocketIO::putVector4(const vvVector4& val)
+vvSocket::ErrorType vvSocketIO::putVector4(const vvVector4& val) const
 {
   if(_socket)
   {
@@ -1406,7 +1406,7 @@ vvSocket::ErrorType vvSocketIO::putVector4(const vvVector4& val)
 /** Reads a vvVector4 from the socket.
  @param val  the vvVector4.
 */
-vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val)
+vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val) const
 {
   if(_socket)
   {
@@ -1434,7 +1434,7 @@ vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val)
 /** Writes a vvAABBi to the socket.
  @param val  the vvAABBi.
 */
-vvSocket::ErrorType vvSocketIO::putAABBi(const vvAABBi& val)
+vvSocket::ErrorType vvSocketIO::putAABBi(const vvAABBi& val) const
 {
   if(_socket)
   {
@@ -1459,7 +1459,7 @@ vvSocket::ErrorType vvSocketIO::putAABBi(const vvAABBi& val)
 /** Reads a vvAABBi from the socket.
  @param val  the vvAABBi.
 */
-vvSocket::ErrorType vvSocketIO::getAABBi(vvAABBi& val)
+vvSocket::ErrorType vvSocketIO::getAABBi(vvAABBi& val) const
 {
   if(_socket)
   {
@@ -1492,7 +1492,7 @@ vvSocket::ErrorType vvSocketIO::getAABBi(vvAABBi& val)
 /** Writes a vvGLTools::Viewport to the socket.
  @param val  the vvGLTools::Viewport.
 */
-vvSocket::ErrorType vvSocketIO::putViewport(const vvGLTools::Viewport &val)
+vvSocket::ErrorType vvSocketIO::putViewport(const vvGLTools::Viewport &val) const
 {
   if(_socket)
   {
@@ -1513,7 +1513,7 @@ vvSocket::ErrorType vvSocketIO::putViewport(const vvGLTools::Viewport &val)
 /** Reads a vvGLTools::Viewport from the socket.
  @param val  the vvGLTools::Viewport.
 */
-vvSocket::ErrorType vvSocketIO::getViewport(vvGLTools::Viewport &val)
+vvSocket::ErrorType vvSocketIO::getViewport(vvGLTools::Viewport &val) const
 {
   if(_socket)
   {
@@ -1541,7 +1541,7 @@ vvSocket::ErrorType vvSocketIO::getViewport(vvGLTools::Viewport &val)
 /** Writes a comm reason to the socket.
  @param val  the comm reason.
 */
-vvSocket::ErrorType vvSocketIO::putCommReason(const CommReason val)
+vvSocket::ErrorType vvSocketIO::putCommReason(const CommReason val) const
 {
   if(_socket)
   {
@@ -1558,7 +1558,7 @@ vvSocket::ErrorType vvSocketIO::putCommReason(const CommReason val)
 /** Reads a comm reason from the socket.
  @param val  the comm reason.
 */
-vvSocket::ErrorType vvSocketIO::getCommReason(CommReason& val)
+vvSocket::ErrorType vvSocketIO::getCommReason(CommReason& val) const
 {
   if(_socket)
   {
@@ -1579,7 +1579,7 @@ vvSocket::ErrorType vvSocketIO::getCommReason(CommReason& val)
   }
 }
 
-vvSocket::ErrorType vvSocketIO::putWinDims(const int w, const int h)
+vvSocket::ErrorType vvSocketIO::putWinDims(const int w, const int h) const
 {
   if(_socket)
   {
@@ -1596,7 +1596,7 @@ vvSocket::ErrorType vvSocketIO::putWinDims(const int w, const int h)
   }
 }
 
-vvSocket::ErrorType vvSocketIO::getWinDims(int& w, int& h)
+vvSocket::ErrorType vvSocketIO::getWinDims(int& w, int& h) const
 {
   if(_socket)
   {
@@ -1622,7 +1622,7 @@ vvSocket::ErrorType vvSocketIO::getWinDims(int& w, int& h)
 /** Writes a Matrix to the socket.
  @param m  pointer to the matrix to write, has to be an object of vvMatrix.
 */
-vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m)
+vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m) const
 {
   if(_socket)
   {
@@ -1643,7 +1643,7 @@ vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m)
 /** Reads a vvGpuInfo from the socket.
   @param ginfo object in which read data will be saved
 */
-vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpu::vvGpuInfo& ginfo)
+vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpu::vvGpuInfo& ginfo) const
 {
   if(_socket)
   {
@@ -1672,7 +1672,7 @@ vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpu::vvGpuInfo& ginfo)
 /** Writes a vvGpuInfo to the socket.
   @param ginfo object which will written to socket
 */
-vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpu::vvGpuInfo& ginfo)
+vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpu::vvGpuInfo& ginfo) const
 {
   if(_socket)
   {
@@ -1685,13 +1685,12 @@ vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpu::vvGpuInfo& ginfo)
   {
     return vvSocket::VV_SOCK_ERROR;
   }
-}
-
+} 
 //----------------------------------------------------------------------------
 /** Reads a vector list of vvGpuInfos from the socket.
   @param ginfos vector in which read data will be saved
 */
-vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpu::vvGpuInfo>& ginfos)
+vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpu::vvGpuInfo>& ginfos) const
 {
   if(_socket)
   {
@@ -1725,7 +1724,7 @@ vvSocket::ErrorType vvSocketIO::getGpuInfos(std::vector<vvGpu::vvGpuInfo>& ginfo
 /** Writes a vector list of vvGpuInfos to the socket.
   @param ginfos vector of vvGpuInfos which will be written to socket
 */
-vvSocket::ErrorType vvSocketIO::putGpuInfos(const std::vector<vvGpu::vvGpuInfo>& ginfos)
+vvSocket::ErrorType vvSocketIO::putGpuInfos(const std::vector<vvGpu::vvGpuInfo>& ginfos) const
 {
   if(_socket)
   {
@@ -1751,7 +1750,7 @@ vvSocket::ErrorType vvSocketIO::putGpuInfos(const std::vector<vvGpu::vvGpuInfo>&
 /** Reads a vvRequest from the socket.
   @param req request objecto to which read data will be saved
 */
-vvSocket::ErrorType vvSocketIO::getRequest(vvRequest& req)
+vvSocket::ErrorType vvSocketIO::getRequest(vvRequest& req) const
 {
   if(_socket)
   {
@@ -1790,7 +1789,7 @@ vvSocket::ErrorType vvSocketIO::getRequest(vvRequest& req)
 /** Writes a vvRequest to the socket.
   @param req vvRequest which will be written to socket
 */
-vvSocket::ErrorType vvSocketIO::putRequest(const vvRequest& req)
+vvSocket::ErrorType vvSocketIO::putRequest(const vvRequest& req) const
 {
   if(_socket)
   {
