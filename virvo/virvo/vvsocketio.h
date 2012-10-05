@@ -27,6 +27,7 @@
 
 #include <vector>
 
+#include "vvcolor.h"
 #include "vvexport.h"
 #include "vvremoteevents.h"
 #include "vvrequestmanagement.h"
@@ -150,6 +151,7 @@ class VIRVOEXPORT vvSocketIO
       VV_PARAMETER_3F,
       VV_PARAMETER_4I,
       VV_PARAMETER_4F,
+      VV_COLOR,
       VV_PARAMETER_AABBI
     };
 
@@ -188,6 +190,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putVector3(const vvVector3& val);
     vvSocket::ErrorType getVector4(vvVector4& val);
     vvSocket::ErrorType putVector4(const vvVector4& val);
+    vvSocket::ErrorType getColor(vvColor& val);
+    vvSocket::ErrorType putColor(const vvColor& val);
     vvSocket::ErrorType getAABBi(vvAABBi& val);
     vvSocket::ErrorType putAABBi(const vvAABBi& val);
     vvSocket::ErrorType getViewport(vvGLTools::Viewport &val);
