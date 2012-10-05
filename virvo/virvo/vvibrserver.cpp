@@ -49,8 +49,6 @@ vvIbrServer::~vvIbrServer()
   vvDebugMsg::msg(1, "vvIbrServer::~vvIbrServer()");
 
   delete _image;
-  delete[] _pixels;
-  delete[] _depth;
 }
 
 //----------------------------------------------------------------------------
@@ -97,29 +95,29 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
   if(!_image || _image->getWidth() != w || _image->getHeight() != h
       || _image->getDepthPrecision() != dp)
   {
-    delete[] _pixels;
-    delete[] _depth;
-    _pixels = new uchar[w*h*4];
-    _depth = new uchar[w*h*(dp/8)];
+    _pixels.resize(w*h*4);
+    _depth.resize(w*h*(dp/8));
     if(_image)
     {
       _image->setDepthPrecision(dp);
-      _image->setNewImage(h, w, _pixels);
+      _image->setNewImage(h, w, &_pixels[0]);
     }
     else
     {
-      _image = new vvIbrImage(h, w, _pixels, dp);
+      _image = new vvIbrImage(h, w, &_pixels[0], dp);
     }
     _image->alloc_pd();
   }
   else
   {
-    _image->setNewImagePtr(_pixels);
+    _image->setNewImagePtr(&_pixels[0]);
   }
-  _image->setNewDepthPtr(_depth);
+  _image->setNewDepthPtr(&_depth[0]);
 
-  ibrRenderer->getColorBuffer(&_pixels);
-  ibrRenderer->getDepthBuffer(&_depth);
+  uchar* p = &_pixels[0];
+  ibrRenderer->getColorBuffer(&p);
+  p = &_depth[0];
+  ibrRenderer->getDepthBuffer(&p);
 
   _image->setModelViewMatrix(mv);
   _image->setProjectionMatrix(pr);
