@@ -44,7 +44,7 @@ public:
     VV_BAD_IMAGE
   };
 
-  vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, uint32_t type,
+  vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
                  vvTcpSocket* socket, const std::string &filename);
   virtual ~vvRemoteClient();
 
@@ -62,17 +62,14 @@ public:
 protected:
   virtual void quit();
 
-  uint32_t _type;
   vvTcpSocket* _socket;
   std::string _filename;
   vvSocketIO  *_socketIO;
 
   bool _changes; ///< indicate if a new rendering is required
-  int _viewportWidth, _viewportHeight;
   vvMatrix _currentMv;                                    ///< Current modelview matrix
   vvMatrix _currentPr;                                    ///< Current projection matrix
 private:
-  void resize(int w, int h);
   virtual void destroyThreads() { }
 
   ErrorType initSocket(vvVolDesc*& vd);

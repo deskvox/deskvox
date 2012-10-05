@@ -30,7 +30,6 @@
 #include <virvo/vvbonjour/vvbonjourresolver.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvsocketio.h>
-#include <virvo/vvremoteevents.h>
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvsocketmap.h>
 #include <virvo/vvtcpsocket.h>
@@ -445,11 +444,6 @@ void * vvResourceManager::processJob(void * param)
         break;
       }
     }
-  }
-
-  if(res.server)
-  {
-    res.server->destroyRenderContext();
   }
 
   delete job;

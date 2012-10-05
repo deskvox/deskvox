@@ -67,7 +67,7 @@ struct vvIbrClient::Thread
 
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
                          vvTcpSocket* socket, const std::string& filename)
-  : vvRemoteClient(vd, renderState, vvRenderer::REMOTE_IBR, socket, filename)
+  : vvRemoteClient(vd, renderState, socket, filename)
   , _thread(NULL)
   , _newFrame(true)
   , _haveFrame(false)
@@ -262,8 +262,8 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   _shader->enable();
 
-  _shader->setParameter1f("vpWidth", static_cast<float>(_viewportWidth));
-  _shader->setParameter1f("vpHeight", static_cast<float>(_viewportHeight));
+  _shader->setParameter1f("vpWidth", static_cast<float>(vp[2]));
+  _shader->setParameter1f("vpHeight", static_cast<float>(vp[3]));
   _shader->setParameter1f("imageWidth", static_cast<float>(_imgVp[2]));
   _shader->setParameter1f("imageHeight", static_cast<float>(_imgVp[3]));
   _shader->setParameterTex2D("rgbaTex", _rgbaTex);
