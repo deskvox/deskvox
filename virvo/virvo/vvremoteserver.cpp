@@ -171,6 +171,16 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
       }
     }
     break;
+  case virvo::ParameterColor:
+    {
+      int32_t param;
+      vvColor value;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getColor(value) == vvSocket::VV_OK)
+      {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
   case virvo::ParameterAABBI:
     {
       int32_t param;

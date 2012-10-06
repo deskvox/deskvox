@@ -167,6 +167,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putVector3(const vvVector3& val) const;
     vvSocket::ErrorType getVector4(vvVector4& val) const;
     vvSocket::ErrorType putVector4(const vvVector4& val) const;
+    vvSocket::ErrorType getColor(vvColor& val) const;
+    vvSocket::ErrorType putColor(const vvColor& val) const;
     vvSocket::ErrorType getAABBi(vvAABBi& val) const;
     vvSocket::ErrorType putAABBi(const vvAABBi& val) const;
     vvSocket::ErrorType getViewport(vvGLTools::Viewport &val) const;

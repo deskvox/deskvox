@@ -1346,7 +1346,6 @@ vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val) const
   }
 }
 
-/*
 vvSocket::ErrorType vvSocketIO::putColor(const vvColor& val) const
 {
   return putVector3(vvVector3(val[0], val[1], val[2]));
@@ -1367,7 +1366,6 @@ vvSocket::ErrorType vvSocketIO::getColor(vvColor& val) const
 
   return err;
 }
-*/
 
 //----------------------------------------------------------------------------
 /** Writes a vvAABBi to the socket.

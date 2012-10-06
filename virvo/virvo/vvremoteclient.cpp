@@ -240,17 +240,15 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
     return;
   }
 
-/*
   if (value.isa(vvParam::VV_COLOR))
   {
-    if (_socketIO->putEvent(virvo:ParameterColor) == vvSocket::VV_OK)
+    if (_socketIO->putEvent(virvo::ParameterColor) == vvSocket::VV_OK)
     {
       _socketIO->putInt32((int32_t)param);
       _socketIO->putColor(value);
     }
     return;
   }
-*/
 
   if (value.isa(vvParam::VV_AABBI))
   {
