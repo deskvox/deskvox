@@ -41,19 +41,9 @@
 
 #ifdef _WIN32
 
-#if 1
 #include <Windows.h>
 #include <GL/glew.h>
 #include <GL/wglew.h>
-#else
-#include <Windows.h>
-#include <GL/gl.h>
-#include "vvgl/glext.h"
-#include "vvgl/wglext.h"
-
-#define WGLEXT(Type, Name) \
-  Type Name = (Type)wglGetProcAddress(#Name)
-#endif
 
 namespace
 {
