@@ -132,84 +132,57 @@ class VIRVOEXPORT vvSocketIO
       VV_FLOAT
     };
 
-    enum CommReason                               /// before sending data, let the recipient know what to expect
-    {
-      VV_QUIT = 0,
-      VV_MATRIX,
-      VV_CURRENT_FRAME,
-      VV_IMAGE,
-      VV_OBJECT_DIRECTION,
-      VV_POSITION,
-      VV_RESIZE,
-      VV_TRANSFER_FUNCTION,
-      VV_VIEWING_DIRECTION,
-      VV_VOLUME,
-      VV_PARAMETER_1B,
-      VV_PARAMETER_1I,
-      VV_PARAMETER_1F,
-      VV_PARAMETER_3I,
-      VV_PARAMETER_3F,
-      VV_PARAMETER_4I,
-      VV_PARAMETER_4F,
-      VV_COLOR,
-      VV_PARAMETER_AABBI
-    };
-
     vvSocketIO(vvSocket* sock);
     ~vvSocketIO();
     bool sock_action();
-    vvSocket::ErrorType getEvent(virvo::RemoteEvent& event);
-    vvSocket::ErrorType putEvent(virvo::RemoteEvent event);
-    vvSocket::ErrorType getVolumeAttributes(vvVolDesc* vd);
-    vvSocket::ErrorType getVolume(vvVolDesc*, vvMulticastParameters *mcParam = NULL);
-    vvSocket::ErrorType putVolumeAttributes(const vvVolDesc*);
-    vvSocket::ErrorType putVolume(const vvVolDesc*, bool tryMC = false, bool mcMaster = false, vvMulticastParameters *mcParam = NULL);
-    vvSocket::ErrorType getTransferFunction(vvTransFunc& tf);
-    vvSocket::ErrorType putTransferFunction(vvTransFunc& tf);
-    vvSocket::ErrorType getBrick(vvBrick* brick);
-    vvSocket::ErrorType putBrick(const vvBrick* brick);
-    vvSocket::ErrorType getBricks(std::vector<vvBrick*>& bricks);
-    vvSocket::ErrorType putBricks(const std::vector<vvBrick*>& bricks);
-    vvSocket::ErrorType getImage(vvImage*);
-    vvSocket::ErrorType putImage(const vvImage*);
-    vvSocket::ErrorType getIbrImage(vvIbrImage*);
-    vvSocket::ErrorType putIbrImage(const vvIbrImage*);
-    vvSocket::ErrorType getFileName(char*& fn);
-    vvSocket::ErrorType putFileName(const char* fn);
-    vvSocket::ErrorType allocateAndGetData(uchar**, int&);             //  unknown number and type
-    vvSocket::ErrorType putData(uchar*, int);
-    vvSocket::ErrorType getMatrix(vvMatrix*);
-    vvSocket::ErrorType putMatrix(const vvMatrix*);
-    vvSocket::ErrorType getBool(bool& val);
-    vvSocket::ErrorType putBool(const bool val);
-    vvSocket::ErrorType getInt32(int& val);
-    vvSocket::ErrorType putInt32(const int val);
-    vvSocket::ErrorType getFloat(float& val);
-    vvSocket::ErrorType putFloat(const float val);
-    vvSocket::ErrorType getVector3(vvVector3& val);
-    vvSocket::ErrorType putVector3(const vvVector3& val);
-    vvSocket::ErrorType getVector4(vvVector4& val);
-    vvSocket::ErrorType putVector4(const vvVector4& val);
-    vvSocket::ErrorType getColor(vvColor& val);
-    vvSocket::ErrorType putColor(const vvColor& val);
-    vvSocket::ErrorType getAABBi(vvAABBi& val);
-    vvSocket::ErrorType putAABBi(const vvAABBi& val);
-    vvSocket::ErrorType getViewport(vvGLTools::Viewport &val);
-    vvSocket::ErrorType putViewport(const vvGLTools::Viewport &val);
-    vvSocket::ErrorType getCommReason(CommReason& val);
-    vvSocket::ErrorType putCommReason(const CommReason val);
-    vvSocket::ErrorType getWinDims(int& w, int& h);
-    vvSocket::ErrorType putWinDims(const int w, const int h);
-    vvSocket::ErrorType getData(void*, int, DataType);      // known number and type
-    vvSocket::ErrorType putData(void*, int, DataType);
-    vvSocket::ErrorType getServerInfo(vvServerInfo& info);
+    vvSocket::ErrorType getEvent(virvo::RemoteEvent& event) const;
+    vvSocket::ErrorType putEvent(virvo::RemoteEvent event) const;
+    vvSocket::ErrorType getVolumeAttributes(vvVolDesc* vd) const;
+    vvSocket::ErrorType getVolume(vvVolDesc* vd) const;
+    vvSocket::ErrorType putVolumeAttributes(const vvVolDesc*) const;
+    vvSocket::ErrorType putVolume(const vvVolDesc* vd) const;
+    vvSocket::ErrorType getTransferFunction(vvTransFunc& tf) const;
+    vvSocket::ErrorType putTransferFunction(vvTransFunc& tf) const;
+    vvSocket::ErrorType getBrick(vvBrick* brick) const;
+    vvSocket::ErrorType putBrick(const vvBrick* brick) const;
+    vvSocket::ErrorType getBricks(std::vector<vvBrick*>& bricks) const;
+    vvSocket::ErrorType putBricks(const std::vector<vvBrick*>& bricks) const;
+    vvSocket::ErrorType getImage(vvImage*) const;
+    vvSocket::ErrorType putImage(const vvImage*) const;
+    vvSocket::ErrorType getIbrImage(vvIbrImage*) const;
+    vvSocket::ErrorType putIbrImage(const vvIbrImage*) const;
+    vvSocket::ErrorType getFileName(std::string& fn) const;
+    vvSocket::ErrorType putFileName(const std::string& fn) const;
+    vvSocket::ErrorType allocateAndGetData(uchar**, int&) const;             //  unknown number and type
+    vvSocket::ErrorType putData(uchar*, int) const;
+    vvSocket::ErrorType getMatrix(vvMatrix*) const;
+    vvSocket::ErrorType putMatrix(const vvMatrix*) const;
+    vvSocket::ErrorType getBool(bool& val) const;
+    vvSocket::ErrorType putBool(const bool val) const;
+    vvSocket::ErrorType getInt32(int& val) const;
+    vvSocket::ErrorType putInt32(const int val) const;
+    vvSocket::ErrorType getFloat(float& val) const;
+    vvSocket::ErrorType putFloat(const float val) const;
+    vvSocket::ErrorType getVector3(vvVector3& val) const;
+    vvSocket::ErrorType putVector3(const vvVector3& val) const;
+    vvSocket::ErrorType getVector4(vvVector4& val) const;
+    vvSocket::ErrorType putVector4(const vvVector4& val) const;
+    vvSocket::ErrorType getAABBi(vvAABBi& val) const;
+    vvSocket::ErrorType putAABBi(const vvAABBi& val) const;
+    vvSocket::ErrorType getViewport(vvGLTools::Viewport &val) const;
+    vvSocket::ErrorType putViewport(const vvGLTools::Viewport &val) const;
+    vvSocket::ErrorType getWinDims(int& w, int& h) const;
+    vvSocket::ErrorType putWinDims(int w, int h) const;
+    vvSocket::ErrorType getData(void*, int, DataType) const;      // known number and type
+    vvSocket::ErrorType putData(void*, int, DataType) const;
+    vvSocket::ErrorType getServerInfo(vvServerInfo& info) const;
     vvSocket::ErrorType putServerInfo(vvServerInfo info) const;
-    vvSocket::ErrorType getGpuInfo(vvGpu::vvGpuInfo& ginfo);
-    vvSocket::ErrorType putGpuInfo(const vvGpu::vvGpuInfo& ginfo);
-    vvSocket::ErrorType getGpuInfos(std::vector<vvGpu::vvGpuInfo>& ginfos);
-    vvSocket::ErrorType putGpuInfos(const std::vector<vvGpu::vvGpuInfo>& ginfos);
-    vvSocket::ErrorType getRequest(vvRequest& req);
-    vvSocket::ErrorType putRequest(const vvRequest& req);
+    vvSocket::ErrorType getGpuInfo(vvGpu::vvGpuInfo& ginfo) const;
+    vvSocket::ErrorType putGpuInfo(const vvGpu::vvGpuInfo& ginfo) const;
+    vvSocket::ErrorType getGpuInfos(std::vector<vvGpu::vvGpuInfo>& ginfos) const;
+    vvSocket::ErrorType putGpuInfos(const std::vector<vvGpu::vvGpuInfo>& ginfos) const;
+    vvSocket::ErrorType getRequest(vvRequest& req) const;
+    vvSocket::ErrorType putRequest(const vvRequest& req) const;
 
     vvSocket* getSocket() const;
 private:

@@ -25,6 +25,8 @@
 #include "vvremoteserver.h"
 #include "vvrenderer.h"
 
+#include <vector>
+
 class vvIbrImage;
 
 class VIRVOEXPORT vvIbrServer : public vvRemoteServer
@@ -39,8 +41,8 @@ private:
   void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
   void resize(int w, int h);
   vvIbrImage *_image;
-  uchar *_pixels;
-  uchar *_depth;
+  std::vector<uchar> _pixels;
+  std::vector<uchar> _depth;
 };
 
 #endif
