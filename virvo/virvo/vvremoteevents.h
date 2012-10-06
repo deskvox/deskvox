@@ -35,6 +35,7 @@ namespace virvo
     Parameter1F,
     Parameter3F,
     Parameter4F,
+    ParameterColor,
     ParameterAABBI,
     CurrentFrame,
     ObjectDirection,
