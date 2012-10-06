@@ -489,7 +489,9 @@ bool vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
       if (::renderContext == NULL && !createRenderContext(w, h))
       {
         vvDebugMsg::msg(0, "Cannot resize remote rendering context");
+        return true;
       }
+      ::renderContext->resize(static_cast<uint>(w), static_cast<uint>(h));
     }
     return true;
   case virvo::Disconnect:

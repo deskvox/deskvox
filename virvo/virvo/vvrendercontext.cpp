@@ -24,6 +24,7 @@
 
 #include "vvcocoaglcontext.h"
 #include "vvdebugmsg.h"
+#include "vvgltools.h"
 #include "vvrendercontext.h"
 
 #include <cassert>
@@ -383,6 +384,11 @@ void vvRenderContext::resize(const uint w, const uint h)
         XSync(_archData->display, False);
         break;
       }
+#endif
+
+#ifdef HAVE_OPENGL
+      vvGLTools::Viewport vp = vvGLTools::getViewport();
+      glViewport(vp[0], vp[1], w, h);
 #endif
 
 #ifdef _WIN32

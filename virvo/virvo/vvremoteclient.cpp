@@ -27,8 +27,10 @@
 #include "vvimage.h"
 #include "vvtoolshed.h"
 
-using std::cerr;
-using std::endl;
+namespace
+{
+  vvGLTools::Viewport viewport;
+}
 
 vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
                                vvTcpSocket* socket, const std::string &filename)
@@ -53,6 +55,16 @@ vvRemoteClient::~vvRemoteClient()
 
 void vvRemoteClient::renderVolumeGL()
 {
+  vvGLTools::Viewport vp = vvGLTools::getViewport();
+  if (::viewport != vp)
+  {
+    if (_socketIO->putEvent(virvo::WindowResize) == vvSocket::VV_OK)
+    {
+      _socketIO->putWinDims(vp[2], vp[3]);
+    }
+    ::viewport = vp;
+  }
+
   vvGLTools::getModelviewMatrix(&_currentMv);
   vvGLTools::getProjectionMatrix(&_currentPr);
 
