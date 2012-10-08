@@ -697,6 +697,15 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
       vvDebugMsg::msg(1, "Remote server ready to process events");
     }
 
+    // vserver defaults to image remote rendering
+    if (rrMode == RR_IBR)
+    {
+      if (io.putEvent(virvo::RemoteServerType) == vvSocket::VV_OK)
+      {
+        io.putRendererType(vvRenderer::REMOTE_IBR);
+      }
+    }
+
     /* uncomment to test GpuInfo-event
     socketIO.putInt32(virvo::GpuInfo);
     std::vector<vvGpu::vvGpuInfo> ginfos;

@@ -82,7 +82,7 @@ protected:
   bool createRemoteServer(vvTcpSocket* sock);
 
   vvRemoteServer* _server;
-  vvRenderer::RendererType _remoteRendererType;
+  vvRenderer::RendererType _remoteServerType;
   vvRenderer* _renderer;
   vvVolDesc* _vd;
 
