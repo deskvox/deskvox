@@ -84,18 +84,25 @@ vvRemoteClient::ErrorType vvRemoteClient::sendVolume(vvVolDesc*& vd)
   }
   else
   {
-    _socketIO->putEvent(virvo::Volume);
-    switch (_socketIO->putVolume(vd))
+    if (_socketIO->putEvent(virvo::Volume) == vvSocket::VV_OK)
     {
-      case vvSocket::VV_OK:
-        vvDebugMsg::msg(1, "Volume transferred successfully");
-        break;
-      case vvSocket::VV_ALLOC_ERROR:
-        vvDebugMsg::msg(0, "Not enough memory to accomodate volume");
-        return VV_SOCKET_ERROR;
-      default:
-        vvDebugMsg::msg(0, "Unknown error writing volume to socket");
-        return VV_SOCKET_ERROR;
+      switch (_socketIO->putVolume(vd))
+      {
+        case vvSocket::VV_OK:
+          vvDebugMsg::msg(1, "Volume transferred successfully");
+          break;
+        case vvSocket::VV_ALLOC_ERROR:
+          vvDebugMsg::msg(0, "Not enough memory to accomodate volume");
+          return VV_SOCKET_ERROR;
+        default:
+          vvDebugMsg::msg(0, "Unknown error writing volume to socket");
+          return VV_SOCKET_ERROR;
+      }
+    }
+    else
+    {
+      vvDebugMsg::msg(0, "Unknown socket error");
+      return VV_SOCKET_ERROR;
     }
   }
   return VV_OK;
