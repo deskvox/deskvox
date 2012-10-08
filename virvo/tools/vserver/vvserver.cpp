@@ -371,6 +371,16 @@ bool vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
       _vd = NULL;
       return true;
     }
+
+    // if remote server is already created, create a new one
+    if (_server != NULL)
+    {
+      if (!createRemoteServer(static_cast<vvTcpSocket*>(io.getSocket())))
+      {
+        vvDebugMsg::msg(0, "Couldn't create remote server");
+        return true;
+      }
+    }
     return true;
   case virvo::VolumeFile:
     {
@@ -398,6 +408,16 @@ bool vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
       {
         _vd->tf.setDefaultAlpha(0, 0.0, 1.0);
         _vd->tf.setDefaultColors((_vd->chan == 1) ? 0 : 2, 0.0, 1.0);
+      }
+
+      // if remote server is already created, create a new one
+      if (_server != NULL)
+      {
+        if (!createRemoteServer(static_cast<vvTcpSocket*>(io.getSocket())))
+        {
+          vvDebugMsg::msg(0, "Couldn't create remote server");
+          return true;
+        }
       }
     }
     return true;
@@ -443,6 +463,16 @@ bool vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
     {
       vvDebugMsg::msg(0, "Cannot get remote server type");
       return false;
+    }
+
+    // if an old server exists, we need to create a new server
+    if (_server != NULL)
+    {
+      if (!createRemoteServer(static_cast<vvTcpSocket*>(io.getSocket())))
+      {
+        vvDebugMsg::msg(0, "Couldn't create remote server");
+        return true;
+      }
     }
     return true;
   case virvo::ServerInfo:
@@ -529,8 +559,9 @@ bool vvServer::createRemoteServer(vvTcpSocket* sock)
     return false;
   }
 
-  vvSocketIO sockio = vvSocketIO(sock);
+  vvSocketIO sockio(sock);
 
+  delete _server;
   switch (_remoteServerType)
   {
   case vvRenderer::REMOTE_IMAGE:
