@@ -60,8 +60,6 @@ public:
   virtual ErrorType requestFrame() const;
 
 protected:
-  virtual void quit();
-
   vvTcpSocket* _socket;
   std::string _filename;
   vvSocketIO  *_socketIO;
