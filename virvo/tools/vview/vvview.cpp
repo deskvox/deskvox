@@ -688,8 +688,7 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     vvSocketIO io = vvSocketIO(sockets[i]);
 
     virvo::RemoteEvent event;
-    io.getEvent(event);
-    if (event != virvo::WaitEvents)
+    if (io.getEvent(event) != vvSocket::VV_OK || event != virvo::WaitEvents)
     {
       vvDebugMsg::msg(0, "Bad connection established");
     }
