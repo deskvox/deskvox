@@ -34,7 +34,7 @@ vvSocketMonitor::vvSocketMonitor()
   FD_ZERO(&_writesockfds);
   FD_ZERO(&_errorsockfds);
 
-  _highestSocketNum = -1;
+  _highestSocketNum = VV_INVALID_SOCKET;
 }
 
 vvSocketMonitor::~vvSocketMonitor()
@@ -52,7 +52,7 @@ void vvSocketMonitor::setReadFds(const std::vector<vvSocket*>& readfds)
     vvSocket* socket = (*it);
     FD_SET(socket->getSockfd(), &_readsockfds);
 
-    if (socket->getSockfd() > _highestSocketNum)
+    if (_highestSocketNum == VV_INVALID_SOCKET || _highestSocketNum < socket->getSockfd())
     {
       _highestSocketNum = socket->getSockfd();
     }
@@ -70,7 +70,7 @@ void vvSocketMonitor::setWriteFds(const std::vector<vvSocket*>& writefds)
     vvSocket* socket = (*it);
     FD_SET(socket->getSockfd(), &_writesockfds);
 
-    if (socket->getSockfd() > _highestSocketNum)
+    if (_highestSocketNum == VV_INVALID_SOCKET || _highestSocketNum < socket->getSockfd())
     {
       _highestSocketNum = socket->getSockfd();
     }
@@ -88,7 +88,7 @@ void vvSocketMonitor::setErrorFds(const std::vector<vvSocket*>& errorfds)
     vvSocket* socket = (*it);
     FD_SET(socket->getSockfd(), &_errorsockfds);
 
-    if (socket->getSockfd() > _highestSocketNum)
+    if (_highestSocketNum == VV_INVALID_SOCKET || _highestSocketNum < socket->getSockfd())
     {
       _highestSocketNum = socket->getSockfd();
     }

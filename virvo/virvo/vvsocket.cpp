@@ -28,15 +28,42 @@
 #include <signal.h>
 #endif
 
+#ifdef _WIN32
+namespace
+{
+  class WinsockInit
+  {
+  public:
+    int ErrorCode;
+
+    WinsockInit() {
+      WSADATA data;
+      ErrorCode = WSAStartup(MAKEWORD(2,2), &data);
+    }
+
+    ~WinsockInit() {
+      WSACleanup();
+    }
+  };
+
+  void EnsureWinsockInitialized()
+  {
+    static const WinsockInit init;
+
+    if (init.ErrorCode != 0)
+      vvDebugMsg::msg(0, "Failed to initialize Winsock");
+  }
+}
+#endif
+
 //----------------------------------------------------------------------------
 vvSocket::vvSocket()
-  : _sockfd(-1), _sockBuffsize(-1)
+  : _sockfd(VV_INVALID_SOCKET)
+  , _sockBuffsize(-1)
 {
   _bufflen = sizeof(_sendBuffsize);
 #ifdef _WIN32
-  WSADATA wsaData;
-  if (WSAStartup(MAKEWORD(2,0), &wsaData) != 0)
-    vvDebugMsg::msg(1, "WSAStartup failed!");
+  EnsureWinsockInitialized();
 #endif
 }
 
@@ -44,17 +71,17 @@ vvSocket::vvSocket()
 /// Destructor
 vvSocket::~vvSocket()
 {
+  if (_sockfd == VV_INVALID_SOCKET)
+    return;
+
 #ifdef _WIN32
-  if(_sockfd >= 0)
-    if(closesocket(_sockfd))
-      if (WSAGetLastError() ==  WSAEWOULDBLOCK)
-        vvDebugMsg::msg(1, "Linger time expires");
-  WSACleanup();
+  if(closesocket(_sockfd))
+    if (WSAGetLastError() ==  WSAEWOULDBLOCK)
+      vvDebugMsg::msg(1, "Linger time expires");
 #else
-  if(_sockfd >= 0)
-    if (close(_sockfd))
-      if (errno ==  EWOULDBLOCK)
-        vvDebugMsg::msg(1, "Linger time expires");
+  if (close(_sockfd))
+    if (errno ==  EWOULDBLOCK)
+      vvDebugMsg::msg(1, "Linger time expires");
 #endif
 }
 
@@ -516,8 +543,8 @@ int vvSocket::getMTU()
 vvSocket::Sigfunc *vvSocket::signal(int signo, vvSocket::Sigfunc *func)
 {
 #ifdef _WIN32
-  signo = 0;
-  func = NULL;
+  (void)signo; // unused
+  (void)func; // unused
 #else
   struct sigaction  act, oact;
 

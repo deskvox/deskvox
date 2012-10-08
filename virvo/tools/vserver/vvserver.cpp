@@ -71,7 +71,7 @@ const unsigned short vvServer::DEFAULT_PORT = 31050;
 
 vvServer::vvServer(bool useBonjour)
   : _server(NULL)
-  , _remoteRendererType(vvRenderer::REMOTE_IMAGE)
+  , _remoteServerType(vvRenderer::REMOTE_IMAGE)
   , _renderer(NULL)
   , _vd(NULL)
   , _port(vvServer::DEFAULT_PORT)
@@ -407,6 +407,7 @@ bool vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
   case virvo::Parameter1F:
   case virvo::Parameter3F:
   case virvo::Parameter4F:
+  case virvo::ParameterColor:
   case virvo::ParameterAABBI:
   case virvo::CurrentFrame:
   case virvo::ObjectDirection:
@@ -434,6 +435,13 @@ bool vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
     else
     {
       vvDebugMsg::msg(0, "Cannot process remote rendering event");
+      return false;
+    }
+    return true;
+  case virvo::RemoteServerType:
+    if (io.getRendererType(_remoteServerType) != vvSocket::VV_OK)
+    {
+      vvDebugMsg::msg(0, "Cannot get remote server type");
       return false;
     }
     return true;
@@ -523,7 +531,7 @@ bool vvServer::createRemoteServer(vvTcpSocket* sock)
 
   vvSocketIO sockio = vvSocketIO(sock);
 
-  switch (_remoteRendererType)
+  switch (_remoteServerType)
   {
   case vvRenderer::REMOTE_IMAGE:
     _server = new vvImageServer(sock);
@@ -556,7 +564,7 @@ bool vvServer::createRemoteServer(vvTcpSocket* sock)
     vvRenderState rs;
     vvRendererFactory::Options opt;
 
-    std::string renderertype = _remoteRendererType == vvRenderer::REMOTE_IMAGE
+    std::string renderertype = _remoteServerType == vvRenderer::REMOTE_IMAGE
       ? "default"
       : "rayrend";
     _renderer = vvRendererFactory::create(_vd,
@@ -564,7 +572,7 @@ bool vvServer::createRemoteServer(vvTcpSocket* sock)
       renderertype.c_str(),
       opt);
 
-    _renderer->setParameter(vvRenderer::VV_USE_IBR, _remoteRendererType == vvRenderer::REMOTE_IBR);
+    _renderer->setParameter(vvRenderer::VV_USE_IBR, _remoteServerType == vvRenderer::REMOTE_IBR);
     return true;
   }
   else

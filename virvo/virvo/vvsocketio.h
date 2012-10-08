@@ -176,6 +176,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putWinDims(int w, int h) const;
     vvSocket::ErrorType getData(void*, int, DataType) const;      // known number and type
     vvSocket::ErrorType putData(void*, int, DataType) const;
+    vvSocket::ErrorType getRendererType(vvRenderer::RendererType& type) const;
+    vvSocket::ErrorType putRendererType(vvRenderer::RendererType type) const;
     vvSocket::ErrorType getServerInfo(vvServerInfo& info) const;
     vvSocket::ErrorType putServerInfo(vvServerInfo info) const;
     vvSocket::ErrorType getGpuInfo(vvGpu::vvGpuInfo& ginfo) const;

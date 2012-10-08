@@ -1534,6 +1534,19 @@ vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m) const
   }
 }
 
+vvSocket::ErrorType vvSocketIO::getRendererType(vvRenderer::RendererType& type) const
+{
+  int32_t val;
+  vvSocket::ErrorType result = getInt32(val);
+  type = static_cast<vvRenderer::RendererType>(val);
+  return result;
+}
+
+vvSocket::ErrorType vvSocketIO::putRendererType(const vvRenderer::RendererType type) const
+{
+  return putInt32((int32_t)type);
+}
+
 vvSocket::ErrorType vvSocketIO::getServerInfo(vvServerInfo& info) const
 {
   if (_socket != NULL)
