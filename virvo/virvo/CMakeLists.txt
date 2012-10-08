@@ -78,7 +78,6 @@ set(VIRVO_HEADERS
   vvcolor.h
   vvcuda.h
   vvcudaimg.h
-  vvcudasw.h
   vvcudatools.h
   vvcudatransfunc.h
   vvcudautils.h
@@ -230,7 +229,6 @@ set(VIRVO_SOURCES
 )
 
 deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
-  vvcudasw.cu
   vvcudatransfunc.cu
   vvrayrend.cu
 )

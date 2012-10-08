@@ -186,9 +186,6 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
       SOFTPAR,                                    ///< software based renderer for parallel projection
       SOFTPER,                                    ///< software based renderer for perspective projection
       SOFTSW,                                     ///< software based shear-warp renderer
-      CUDAPAR,                                    ///< CUDA based renderer for parallel projection
-      CUDAPER,                                    ///< CUDA based renderer for perspective projection
-      CUDASW,                                     ///< CUDA based shear-warp renderer
       RAYREND,                                    ///< CUDA based ray casting renderer
       RENDERVP,                                   ///< Phil Lacroute's VolPack renderer
       VOLPACK,                                    ///< Phil Lacroute's VolPack renderer or no rendering for perspective projection
