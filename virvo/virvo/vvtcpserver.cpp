@@ -23,8 +23,10 @@
 #include "vvdebugmsg.h"
 #include "vvsocketmonitor.h"
 #include "vvtcpserver.h"
+#include "vvtcpsocket.h"
 
 vvTcpServer::vvTcpServer(const ushort port)
+  : _listener(NULL)
 {
   vvsock_t sockfd;
 
@@ -43,51 +45,46 @@ vvTcpServer::vvTcpServer(const ushort port)
   if((sockfd = socket(AF_INET, SOCK_STREAM, 0 )) < 0)
   {
     vvDebugMsg::msg(0, "Error: socket()", true);
-    _server = NULL;
     return;
   }
 
   if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,sizeof(optval)))
   {
     vvDebugMsg::msg(0, "Error: setsockopt()");
-    _server = NULL;
     return;
   }
 
   memset((char *) &_hostAddr, 0, sizeof(_hostAddr));
   _hostAddr.sin_family = AF_INET;
-  _hostAddr.sin_port = htons((unsigned short)port);
+  _hostAddr.sin_port = htons((ushort)port);
   _hostAddr.sin_addr.s_addr = INADDR_ANY;
   _hostAddrlen = sizeof(_hostAddr);
   if(bind(sockfd, (struct sockaddr *)&_hostAddr, _hostAddrlen))
   {
     vvDebugMsg::msg(0, "Error: bind()");
-    _server = NULL;
     return;
   }
 
   if (listen(sockfd, 1))
   {
     vvDebugMsg::msg(0, "Error: listen()");
-    _server = NULL;
     return;
   }
 
-  _server = new vvTcpSocket();
-  _server->setSockfd(sockfd);
+  _listener = new vvTcpSocket();
+  _listener->setSockfd(sockfd);
 }
 
 vvTcpServer::~vvTcpServer()
 {
-  if(_server)
-    delete _server;
+  delete _listener;
 }
 
 bool vvTcpServer::initStatus() const
 {
-  if(_server)
+  if (_listener)
   {
-    if(_server->getSockfd() < 0)
+    if (_listener->getSockfd() < 0)
       return false;
     else
       return true;
@@ -106,14 +103,14 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
 
   if (timeout < 0.0 ? false : true)
   {
-    if(vvSocket::VV_OK != _server->setParameter(vvSocket::VV_NONBLOCKING, 1.f))
+    if(vvSocket::VV_OK != _listener->setParameter(vvSocket::VV_NONBLOCKING, 1.f))
     {
       vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: setting O_NONBLOCK on server-socket failed");
       return NULL;
     }
 
     std::vector<vvSocket*> socks;
-    socks.push_back(_server);
+    socks.push_back(_listener);
 
     vvSocketMonitor sm;
     sm.setReadFds(socks);
@@ -126,7 +123,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
   }
   else
   {
-    if(vvSocket::VV_OK != _server->setParameter(vvSocket::VV_NONBLOCKING, 0.0f))
+    if(vvSocket::VV_OK != _listener->setParameter(vvSocket::VV_NONBLOCKING, 0.0f))
     {
       vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: removing O_NONBLOCK from server-socket failed.");
       return NULL;
@@ -134,7 +131,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
   }
 
   vvsock_t n;
-  if ( (n = accept(_server->getSockfd(), (struct sockaddr *)&_hostAddr, &_hostAddrlen)) < 0)
+  if ( (n = accept(_listener->getSockfd(), (struct sockaddr *)&_hostAddr, &_hostAddrlen)) < 0)
   {
     vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: accept() failed", true);
     return NULL;
