@@ -35,6 +35,132 @@
 #include <virvo/vvtcpsocket.h>
 #include <virvo/vvvirvo.h>
 
+namespace
+{
+  void * localServerLoop(void *param)
+  {
+    vvSimpleServer *sserver = reinterpret_cast<vvSimpleServer*>(param);
+    sserver->run(0, NULL);
+
+    pthread_exit(NULL);
+  #ifdef _WIN32
+    return NULL;
+  #endif
+  }
+
+  void * processJob(void *param)
+  {
+    vvDebugMsg::msg(3, "vvResourceManager::processJob() Enter");
+
+    if (virvo::hasFeature("bonjour"))
+    {
+    vvResourceManager::vvJob *job = reinterpret_cast<vvResourceManager::vvJob*>(param);
+    vvTcpSocket *clientsock = job->request->sock;
+
+    bool ready = true;
+    std::vector<vvTcpSocket*> sockets;
+    std::stringstream sockstr;
+    for(std::vector<vvResourceManager::vvResource*>::iterator res = job->resources.begin();res!=job->resources.end();res++)
+    {
+      vvTcpSocket *serversock = NULL;
+      vvBonjourResolver resolver;
+
+      // special case for local vserver: no bonjour resolving necessary
+      if((*res)->server != NULL)
+      {
+        serversock = new vvTcpSocket();
+        serversock->connectToHost("localhost", vvResourceManager::DEFAULT_PORT+1); // TODO: Fix this default-port behaviour
+      }
+      else if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry((*res)->bonjourEntry))
+      {
+        serversock = resolver.getBonjourSocket();
+        if(NULL == serversock)
+        {
+          vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not connect to resolved vserver");
+          ready = false;
+        }
+      }
+      else
+      {
+        vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not resolve bonjour service");
+        ready = false;
+      }
+
+      if(NULL != serversock)
+      {
+        vvSocketIO sockIO = vvSocketIO(serversock);
+        //sockIO.putInt32(virvo::Render);
+        bool vserverRdy;
+        sockIO.getBool(vserverRdy);
+
+        sockets.push_back(serversock);
+        int s = vvSocketMap::add(serversock);
+        if(sockstr.str() != "") sockstr << ",";
+        sockstr << s;
+      }
+      else
+      {
+        vvDebugMsg::msg(0, "vvResourceManager::processJob() Could not connect to vserver");
+        ready = false;
+      }
+    }
+
+    if(ready) // all resources are connected and ready to use
+    {
+      vvRendererFactory::Options opt;
+      opt["sockets"] = sockstr.str();
+
+      if(job->request->nodes.size() > 1) // brick rendering case
+      {
+        std::stringstream brickNum;
+        brickNum << job->request->nodes.size();
+        opt["bricks"] = brickNum.str();
+        opt["brickrenderer"] = "image";
+
+        std::stringstream displaystr;
+        displaystr << ":0,:0"; // TODO: fix this hardcoded setting!
+        opt["displays"] = displaystr.str();
+
+  //      createRemoteServer(clientsock, "parbrick", opt);
+      }
+      else // regular remote rendering case
+      {
+  //      createRemoteServer(clientsock, "forwarding", opt);
+      }
+    }
+
+  #if 0
+    if (false)//if(res.renderer && res.server && res.vd)
+    {
+      while(true)
+      {
+        if(!_server->processEvents(_renderer))
+        {
+          delete _renderer;
+          _renderer = NULL;
+          break;
+        }
+      }
+    }
+  #endif
+
+    delete job;
+
+    if(clientsock)
+    {
+      clientsock->disconnectFromHost();
+    }
+    delete clientsock;
+    }
+
+    pthread_exit(NULL);
+  #ifdef _WIN32
+    return NULL;
+  #endif
+  }
+
+}
+
 vvResourceManager::vvResourceManager()
   : vvServer(false)
 {
@@ -167,7 +293,7 @@ bool vvResourceManager::initNextJob()
       if(job->resources.size() == job->request->nodes.size())
       {
         pthread_t threadID;
-        pthread_create(&threadID, NULL, processJob, job);
+        pthread_create(&threadID, NULL, ::processJob, job);
         pthread_detach(threadID);
 
         pthread_mutex_unlock(&_requestsMutex);
@@ -297,7 +423,7 @@ bool vvResourceManager::serverLoop()
       _resources.push_back(serverRes);
 
       pthread_t threadID;
-      pthread_create(&threadID, NULL, localServerLoop, serverRes->server);
+      pthread_create(&threadID, NULL, ::localServerLoop, serverRes->server);
       pthread_detach(threadID);
     }
     break;
@@ -320,17 +446,6 @@ bool vvResourceManager::serverLoop()
   return vvServer::serverLoop();
 }
 
-void * vvResourceManager::localServerLoop(void *param)
-{
-  vvSimpleServer *sserver = reinterpret_cast<vvSimpleServer*>(param);
-  sserver->run(0, NULL);
-
-  pthread_exit(NULL);
-#ifdef _WIN32
-  return NULL;
-#endif
-}
-
 void vvResourceManager::handleNextConnection(vvTcpSocket *sock)
 {
   vvDebugMsg::msg(3, "vvResourceManager::handleNextConnection()");
@@ -351,117 +466,6 @@ void vvResourceManager::handleNextConnection(vvTcpSocket *sock)
     // unknown case
     break;
   }
-}
-
-void * vvResourceManager::processJob(void * param)
-{
-  vvDebugMsg::msg(3, "vvResourceManager::processJob() Enter");
-
-  if (virvo::hasFeature("bonjour"))
-  {
-  vvJob *job = reinterpret_cast<vvJob*>(param);
-  vvTcpSocket *clientsock = job->request->sock;
-
-  bool ready = true;
-  std::vector<vvTcpSocket*> sockets;
-  std::stringstream sockstr;
-  for(std::vector<vvResource*>::iterator res = job->resources.begin();res!=job->resources.end();res++)
-  {
-    vvTcpSocket *serversock = NULL;
-    vvBonjourResolver resolver;
-
-    // special case for local vserver: no bonjour resolving necessary
-    if((*res)->server != NULL)
-    {
-      serversock = new vvTcpSocket();
-      serversock->connectToHost("localhost", DEFAULT_PORT+1); // TODO: Fix this default-port behaviour
-    }
-    else if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry((*res)->bonjourEntry))
-    {
-      serversock = resolver.getBonjourSocket();
-      if(NULL == serversock)
-      {
-        vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not connect to resolved vserver");
-        ready = false;
-      }
-    }
-    else
-    {
-      vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not resolve bonjour service");
-      ready = false;
-    }
-
-    if(NULL != serversock)
-    {
-      vvSocketIO sockIO = vvSocketIO(serversock);
-      //sockIO.putInt32(virvo::Render);
-      bool vserverRdy;
-      sockIO.getBool(vserverRdy);
-
-      sockets.push_back(serversock);
-      int s = vvSocketMap::add(serversock);
-      if(sockstr.str() != "") sockstr << ",";
-      sockstr << s;
-    }
-    else
-    {
-      vvDebugMsg::msg(0, "vvResourceManager::processJob() Could not connect to vserver");
-      ready = false;
-    }
-  }
-
-  if(ready) // all resources are connected and ready to use
-  {
-    vvRendererFactory::Options opt;
-    opt["sockets"] = sockstr.str();
-
-    if(job->request->nodes.size() > 1) // brick rendering case
-    {
-      std::stringstream brickNum;
-      brickNum << job->request->nodes.size();
-      opt["bricks"] = brickNum.str();
-      opt["brickrenderer"] = "image";
-
-      std::stringstream displaystr;
-      displaystr << ":0,:0"; // TODO: fix this hardcoded setting!
-      opt["displays"] = displaystr.str();
-
-//      createRemoteServer(clientsock, "parbrick", opt);
-    }
-    else // regular remote rendering case
-    {
-//      createRemoteServer(clientsock, "forwarding", opt);
-    }
-  }
-
-#if 0
-  if (false)//if(res.renderer && res.server && res.vd)
-  {
-    while(true)
-    {
-      if(!_server->processEvents(_renderer))
-      {
-        delete _renderer;
-        _renderer = NULL;
-        break;
-      }
-    }
-  }
-#endif
-
-  delete job;
-
-  if(clientsock)
-  {
-    clientsock->disconnectFromHost();
-  }
-  delete clientsock;
-  }
-
-  pthread_exit(NULL);
-#ifdef _WIN32
-  return NULL;
-#endif
 }
 
 uint vvResourceManager::getFreeResourceCount()

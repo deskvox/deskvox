@@ -48,6 +48,8 @@ class vvVolDesc;
 class vvServer
 {
 public:
+  static const int            DEFAULTSIZE;   ///< default window size (width and height) in pixels
+  static const unsigned short DEFAULT_PORT;  ///< default port for socket connections
   enum ServerRequest
   {
     STATUS,
@@ -86,8 +88,6 @@ protected:
   vvRenderer* _renderer;
   vvVolDesc* _vd;
 
-  static const int            DEFAULTSIZE;   ///< default window size (width and height) in pixels
-  static const unsigned short DEFAULT_PORT;  ///< default port for socket connections
   unsigned short   _port;         ///< port the server renderer uses to listen for incoming connections
   ServerMode       _sm;           ///< indicating current server mode (default: single server)
   bool             _useBonjour;   ///< indicating the use of bonjour

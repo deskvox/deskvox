@@ -44,8 +44,8 @@ class vvBonjourBrowser;
  * @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
  */
 class vvResourceManager : public vvServer
-{  
-private:
+{
+public:
   struct vvResource
   {
   public:
@@ -71,7 +71,6 @@ private:
     std::vector<vvResource*> resources;
   };
 
-public:
   /**
     Creates a resource manager connected with server
     \param server if set, resource manager also uses this server running locally
@@ -79,16 +78,14 @@ public:
   vvResourceManager();
   ~vvResourceManager();
 
-  void addJob(vvTcpSocket* sock);         ///< thread-savely adds new connection to the job list
-  bool initNextJob();                     ///< thread-savely check for waiting jobs and free resources and pair if possible
+private:
+  void addJob(vvTcpSocket* sock);
+  bool initNextJob();
 
   static void updateResources(void * param);
 
-private:
   bool serverLoop();
-  static void * localServerLoop(void *param);
   void handleNextConnection(vvTcpSocket *sock);
-  static void * processJob(void *param);
   uint getFreeResourceCount();
   std::vector<vvResource*> getFreeResources(uint amount);
 
