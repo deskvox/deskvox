@@ -983,7 +983,7 @@ bool vvSoftVR::prepareRendering()
 
    // Make sure a parallel projection matrix is used:
    vvGLTools::getProjectionMatrix(&pm);
-   if ((rendererType==SOFTPAR || rendererType==CUDAPAR) && !pm.isProjOrtho())
+   if (rendererType==SOFTPAR && !pm.isProjOrtho())
    {
       vvDebugMsg::msg(1, "Parallel projection matrix expected! Rendering aborted.");
       return false;

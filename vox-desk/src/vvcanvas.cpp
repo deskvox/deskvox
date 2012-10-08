@@ -36,7 +36,6 @@
 #include <vvfileio.h>
 #include <vvstingray.h>
 #include <vvsoftsw.h>
-#include <vvcudasw.h>
 #include <vvrayrend.h>
 #include <vvimageclient.h>
 #include <vvibrclient.h>
