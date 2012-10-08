@@ -50,10 +50,6 @@ vvRemoteClient::~vvRemoteClient()
 {
   vvDebugMsg::msg(1, "vvRemoteClient::~vvRemoteClient()");
 
-  if (_socketIO != NULL)
-  {
-    _socketIO->putEvent(virvo::Disconnect);
-  }
   delete _socketIO;
 }
 
