@@ -30,7 +30,9 @@
 #include "vvcudasw.h"
 #include "vvsoftrayrend.h"
 #include "vvsoftsw.h"
+#ifdef HAVE_CUDA
 #include "vvrayrend.h"
+#endif
 #include "vvibrclient.h"
 #include "vvimageclient.h"
 #ifdef HAVE_VOLPACK
