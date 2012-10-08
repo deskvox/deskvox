@@ -329,7 +329,7 @@ bool vvServer::serverLoop()
 
     while((sock = tcpServ.nextConnection()) == NULL)
     {
-      vvDebugMsg::msg(3, "vvSimpleServer::serverLoop() Listening socket busy, retry...");
+      vvDebugMsg::msg(3, "vvServer::serverLoop() Listening socket busy, retry...");
     }
 
     if(sock == NULL)
