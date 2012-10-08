@@ -26,11 +26,7 @@
 
 #include "vvimageclient.h"
 #include "vvgltools.h"
-#include "vvtexrend.h"
 #include "float.h"
-#ifdef HAVE_CUDA
-#include "vvrayrend.h"
-#endif
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
 #include "vvtoolshed.h"

@@ -22,7 +22,6 @@
 #include "vvbsptree.h"
 #include "vvbsptreevisitors.h"
 #include "vvdebugmsg.h"
-#include "vvtexrend.h"
 #include "vvtoolshed.h"
 
 #include <cmath>
