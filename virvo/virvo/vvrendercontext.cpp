@@ -22,6 +22,13 @@
 #include "vvconfig.h"
 #endif
 
+#ifdef _WIN32
+#include "vvplatform.h"
+
+#include <GL/glew.h>
+#include <GL/wglew.h>
+#endif
+
 #include "vvcocoaglcontext.h"
 #include "vvdebugmsg.h"
 #include "vvgltools.h"
@@ -33,6 +40,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 #ifdef HAVE_X11
 #include <GL/glx.h>
@@ -40,10 +48,6 @@
 #endif
 
 #ifdef _WIN32
-
-#include <Windows.h>
-#include <GL/glew.h>
-#include <GL/wglew.h>
 
 namespace
 {
@@ -92,7 +96,9 @@ namespace
   {
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
-    WNDCLASSEX wc = {0};
+    WNDCLASSEX wc;
+
+    memset(&wc, 0, sizeof(wc));
 
     wc.cbSize           = sizeof(wc);
     wc.hInstance        = hInstance;
@@ -310,12 +316,7 @@ bool vvRenderContext::makeCurrent() const
 #endif
 
 #ifdef _WIN32
-    if (!wglMakeCurrent(_archData->hdc, _archData->hglrc))
-    {
-      DWORD err = GetLastError();
-      return false;
-    }
-    return true;
+    return 0 != wglMakeCurrent(_archData->hdc, _archData->hglrc);
 #endif
   }
   return false;
