@@ -31,7 +31,7 @@ vvTcpServer::vvTcpServer(const ushort port)
 #ifdef _WIN32
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2,0), &wsaData) != 0)
-    vvDebugMsg::msg(1, "WSAStartup failed!");
+    vvDebugMsg::msg(0, "WSAStartup failed!");
 #endif
 
 #ifdef _WIN32
@@ -42,14 +42,14 @@ vvTcpServer::vvTcpServer(const ushort port)
 
   if((sockfd = socket(AF_INET, SOCK_STREAM, 0 )) < 0)
   {
-    vvDebugMsg::msg(1, "Error: socket()", true);
+    vvDebugMsg::msg(0, "Error: socket()", true);
     _server = NULL;
     return;
   }
 
   if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,sizeof(optval)))
   {
-    vvDebugMsg::msg(1, "Error: setsockopt()");
+    vvDebugMsg::msg(0, "Error: setsockopt()");
     _server = NULL;
     return;
   }
@@ -61,14 +61,14 @@ vvTcpServer::vvTcpServer(const ushort port)
   _hostAddrlen = sizeof(_hostAddr);
   if(bind(sockfd, (struct sockaddr *)&_hostAddr, _hostAddrlen))
   {
-    vvDebugMsg::msg(1, "Error: bind()");
+    vvDebugMsg::msg(0, "Error: bind()");
     _server = NULL;
     return;
   }
 
   if (listen(sockfd, 1))
   {
-    vvDebugMsg::msg(1, "Error: listen()");
+    vvDebugMsg::msg(0, "Error: listen()");
     _server = NULL;
     return;
   }
@@ -100,7 +100,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
 {
   if(!initStatus())
   {
-    vvDebugMsg::msg(2, "vvTcpServer::nextConnection() error: server not correctly initialized");
+    vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: server not correctly initialized");
     return NULL;
   }
 
@@ -108,7 +108,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
   {
     if(vvSocket::VV_OK != _server->setParameter(vvSocket::VV_NONBLOCKING, 1.f))
     {
-      vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: setting O_NONBLOCK on server-socket failed");
+      vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: setting O_NONBLOCK on server-socket failed");
       return NULL;
     }
 
@@ -128,7 +128,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
   {
     if(vvSocket::VV_OK != _server->setParameter(vvSocket::VV_NONBLOCKING, 0.0f))
     {
-      vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: removing O_NONBLOCK from server-socket failed.");
+      vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: removing O_NONBLOCK from server-socket failed.");
       return NULL;
     }
   }
@@ -136,7 +136,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
   vvsock_t n;
   if ( (n = accept(_server->getSockfd(), (struct sockaddr *)&_hostAddr, &_hostAddrlen)) < 0)
   {
-    vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: accept() failed", true);
+    vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: accept() failed", true);
     return NULL;
   }
 
