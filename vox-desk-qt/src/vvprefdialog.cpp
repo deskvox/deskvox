@@ -229,6 +229,7 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->getInfoButton, SIGNAL(clicked()), this, SLOT(onGetInfoClicked()));
   connect(ui->browseButton, SIGNAL(clicked()), this, SLOT(onBrowseClicked()));
   connect(ui->connectButton, SIGNAL(clicked()), this, SLOT(onConnectClicked()));
+  connect(ui->ibrBox, SIGNAL(toggled(bool)), this, SLOT(onIbrToggled(bool)));
   connect(ui->interpolationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onInterpolationToggled(bool)));
   connect(ui->mipCheckBox, SIGNAL(toggled(bool)), this, SLOT(onMipToggled(bool)));
   connect(ui->movingSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onMovingSpinBoxChanged(double)));
@@ -244,6 +245,7 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
     int port = settings.value("remote/port").toInt();
     ui->portBox->setValue(port);
   }
+  ui->ibrBox->setChecked(settings.value("remote/ibr").toBool());
 }
 
 vvPrefDialog::~vvPrefDialog()
@@ -504,7 +506,18 @@ void vvPrefDialog::onConnectClicked()
         {
           ui->connectButton->setText(tr("Disconnect"));
 
-          ::remoterend = "image";
+          if (!ui->ibrBox->isChecked())
+          {
+            ::remoterend = "image";
+          }
+          else
+          {
+            ::remoterend = "ibr";
+            if (io.putEvent(virvo::RemoteServerType) == vvSocket::VV_OK)
+            {
+              io.putRendererType(vvRenderer::REMOTE_IBR);
+            }
+          }
 
           // store to registry because connection was successful
           QSettings settings;
@@ -519,6 +532,8 @@ void vvPrefDialog::onConnectClicked()
         ::remoterend = "";
         QMessageBox::warning(this, tr("Failed to connect"), tr("Could not connect to host \"") + ui->hostEdit->text()
           + tr("\" on port \"") + QString::number(ui->portBox->value()) + tr("\""), QMessageBox::Ok);
+        delete ::sock;
+        ::sock = NULL;
       }
     }
   }
@@ -530,9 +545,39 @@ void vvPrefDialog::onConnectClicked()
     {
       vvSocketMap::remove(vvSocketMap::getIndex(sock));
       delete ::sock;
+      ::sock = NULL;
     }
 
     emitRenderer();
+  }
+}
+
+void vvPrefDialog::onIbrToggled(const bool checked)
+{
+  QSettings settings;
+  settings.setValue("remote/ibr", checked);
+
+  if (::sock != NULL && ::remoterend != "")
+  {
+    vvSocketIO io(::sock);
+    if (io.putEvent(virvo::RemoteServerType) == vvSocket::VV_OK)
+    {
+      if (checked)
+      {
+        ::remoterend = "ibr";
+        io.putRendererType(vvRenderer::REMOTE_IBR);
+      }
+      else
+      {
+        ::remoterend = "image";
+        io.putRendererType(vvRenderer::REMOTE_IMAGE);
+      }
+
+      virvo::RemoteEvent e;
+      io.getEvent(e);
+      if (e == virvo::WaitEvents)
+      emitRenderer();
+    }
   }
 }
 

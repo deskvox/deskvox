@@ -51,8 +51,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>388</width>
-           <height>288</height>
+           <width>371</width>
+           <height>138</height>
           </rect>
          </property>
          <attribute name="label">
@@ -188,8 +188,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>146</width>
-           <height>33</height>
+           <width>388</width>
+           <height>288</height>
           </rect>
          </property>
          <attribute name="label">
@@ -241,9 +241,9 @@ p, li { white-space: pre-wrap; }
          <attribute name="label">
           <string>Remote rendering</string>
          </attribute>
-         <layout class="QVBoxLayout" name="verticalLayout_4">
+         <layout class="QVBoxLayout" name="verticalLayout_7">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <layout class="QHBoxLayout" name="remoteConnectionLayout">
             <item>
              <widget class="QLabel" name="hostLabel">
               <property name="text">
@@ -286,7 +286,7 @@ p, li { white-space: pre-wrap; }
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <layout class="QHBoxLayout" name="remoteButtonLayout">
             <item>
              <widget class="QPushButton" name="getInfoButton">
               <property name="enabled">
@@ -320,14 +320,30 @@ p, li { white-space: pre-wrap; }
            </layout>
           </item>
           <item>
-           <spacer name="verticalSpacer_2">
+           <widget class="QGroupBox" name="remoteOptionsBox">
+            <property name="title">
+             <string>Options</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <widget class="QCheckBox" name="ibrBox">
+               <property name="text">
+                <string>Image-Based Rendering</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="remoteSpacer">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
               <width>20</width>
-              <height>218</height>
+              <height>156</height>
              </size>
             </property>
            </spacer>
@@ -339,8 +355,8 @@ p, li { white-space: pre-wrap; }
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>225</width>
-           <height>58</height>
+           <width>388</width>
+           <height>288</height>
           </rect>
          </property>
          <attribute name="label">

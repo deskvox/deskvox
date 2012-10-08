@@ -55,6 +55,7 @@ private slots:
   void onGetInfoClicked();
   void onBrowseClicked();
   void onConnectClicked();
+  void onIbrToggled(bool checked);
   void onInterpolationToggled(bool checked);
   void onMipToggled(bool checked);
   void onMovingSpinBoxChanged(double value);
