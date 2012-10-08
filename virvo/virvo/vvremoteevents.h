@@ -52,6 +52,7 @@ namespace virvo
     Statistics,
     WaitEvents,
     WindowResize,
+    RemoteServerType,
     Disconnect
   };
 }
