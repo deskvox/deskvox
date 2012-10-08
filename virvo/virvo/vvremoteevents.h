@@ -25,11 +25,34 @@ namespace virvo
 {
   enum RemoteEvent
   {
-    ServerInfo = 0,
+    // initialization
+    Volume = 0,
+    VolumeFile,
+
+    // renderer parameters
+    Parameter1B,
+    Parameter1I,
+    Parameter1F,
+    Parameter3F,
+    Parameter4F,
+    ParameterColor,
+    ParameterAABBI,
+    CurrentFrame,
+    ObjectDirection,
+    ViewingDirection,
+    Position,
+    TransFunc,
+
+    // rendering
+    CameraMatrix,
+
+    // misc.
+    ServerInfo,
     GpuInfo,
-    Render,
     Statistics,
-    Exit
+    WaitEvents,
+    WindowResize,
+    Disconnect
   };
 }
 

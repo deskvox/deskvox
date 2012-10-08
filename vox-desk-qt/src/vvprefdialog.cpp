@@ -452,7 +452,7 @@ void vvPrefDialog::onGetInfoClicked()
       }
       QMessageBox::information(this, tr("Server info"), tr("Remote server supports the following rendering algorithms<br /><br />")
         + tr("<table>") + qrenderers + tr("</table>"), QMessageBox::Ok);
-      io.putEvent(virvo::Exit);
+      io.putEvent(virvo::Disconnect);
 
       // store to registry because connection was successful
       QSettings settings;

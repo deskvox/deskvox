@@ -27,6 +27,7 @@
 #include "vvserver.h"
 
 #include <virvo/vvdebugmsg.h>
+#include <virvo/vvfileio.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
 #include <virvo/vvremoteserver.h>
@@ -69,7 +70,11 @@ const int            vvServer::DEFAULTSIZE  = 512;
 const unsigned short vvServer::DEFAULT_PORT = 31050;
 
 vvServer::vvServer(bool useBonjour)
-  : _port(vvServer::DEFAULT_PORT)
+  : _server(NULL)
+  , _remoteRendererType(vvRenderer::REMOTE_IMAGE)
+  , _renderer(NULL)
+  , _vd(NULL)
+  , _port(vvServer::DEFAULT_PORT)
   , _sm(SERVER)
   , _useBonjour(useBonjour)
   , _daemonize(false)
@@ -80,6 +85,8 @@ vvServer::vvServer(bool useBonjour)
 vvServer::~vvServer()
 {
   delete ::renderContext;
+  delete _server;
+  delete _renderer;
 }
 
 int vvServer::run(int argc, char** argv)
@@ -340,10 +347,96 @@ bool vvServer::serverLoop()
   return true;
 }
 
-void vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
+bool vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
 {
   switch (event)
   {
+  case virvo::Volume:
+    delete _vd;
+    _vd = new vvVolDesc;
+
+    switch (io.getVolume(_vd))
+    {
+    case vvSocket::VV_OK:
+      vvDebugMsg::msg(1, "Volume transferred successfully");
+      return true;
+    case vvSocket::VV_ALLOC_ERROR:
+      vvDebugMsg::msg(0, "Not enough memory to accomodate volume");
+      delete _vd;
+      _vd = NULL;
+      return true;
+    default:
+      vvDebugMsg::msg(0, "Unknown error while reading volume from socket");
+      delete _vd;
+      _vd = NULL;
+      return true;
+    }
+    return true;
+  case virvo::VolumeFile:
+    {
+      std::string fn;
+      io.getFileName(fn);
+      vvDebugMsg::msg(1, "Load volume from file: ", fn.c_str());
+      delete _vd;
+      _vd = new vvVolDesc(fn.c_str());
+
+      vvFileIO fio;
+      if (fio.loadVolumeData(_vd) != vvFileIO::OK)
+      {
+        vvDebugMsg::msg(0, "Error loading volume file");
+        delete _vd;
+        _vd = NULL;
+        return true;
+      }
+      else
+      {
+        _vd->printInfoLine();
+      }
+
+      // set default color scheme if no TF present
+      if (_vd->tf.isEmpty())
+      {
+        _vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+        _vd->tf.setDefaultColors((_vd->chan == 1) ? 0 : 2, 0.0, 1.0);
+      }
+    }
+    return true;
+  case virvo::CameraMatrix:
+  case virvo::Parameter1B:
+  case virvo::Parameter1I:
+  case virvo::Parameter1F:
+  case virvo::Parameter3F:
+  case virvo::Parameter4F:
+  case virvo::ParameterAABBI:
+  case virvo::CurrentFrame:
+  case virvo::ObjectDirection:
+  case virvo::ViewingDirection:
+  case virvo::Position:
+  case virvo::TransFunc:
+    // if no render context exists, create one
+    if (::renderContext == NULL && !createRenderContext(DEFAULTSIZE, DEFAULTSIZE))
+    {
+      vvDebugMsg::msg(0, "Couldn't create render context");
+      return true;
+    }
+
+    // if no remote server exists, create one
+    if (_server == NULL && !createRemoteServer(static_cast<vvTcpSocket*>(io.getSocket())))
+    {
+      vvDebugMsg::msg(0, "Couldn't create remote server");
+      return true;
+    }
+
+    if (_server != NULL && _vd != NULL && _renderer != NULL)
+    {
+      return _server->processEvent(event, _renderer);
+    }
+    else
+    {
+      vvDebugMsg::msg(0, "Cannot process remote rendering event");
+      return false;
+    }
+    return true;
   case virvo::ServerInfo:
     {
       vvServerInfo info;
@@ -351,9 +444,11 @@ void vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
       // if no render context exists, create one
       if (::renderContext == NULL && !createRenderContext(DEFAULTSIZE, DEFAULTSIZE))
       {
+        vvDebugMsg::msg(0, "Couldn't create render context");
+
         // send an empty server info
         io.putServerInfo(info);
-        return;
+        return true;
       }
 
       // assemble renderers
@@ -385,97 +480,98 @@ void vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
       info.renderers = rendstr.str();
       io.putServerInfo(info);
     }
-    break;
+    return true;
+  case virvo::WindowResize:
+    {
+      int w;
+      int h;
+      io.getWinDims(w, h);
+      if (::renderContext == NULL && !createRenderContext(w, h))
+      {
+        vvDebugMsg::msg(0, "Cannot resize remote rendering context");
+        return true;
+      }
+      ::renderContext->resize(static_cast<uint>(w), static_cast<uint>(h));
+    }
+    return true;
+  case virvo::Disconnect:
+    delete _renderer;
+    delete _vd;
+    delete _server;
+    delete ::renderContext;
+    _renderer = NULL;
+    _vd = NULL;
+    _server = NULL;
+    ::renderContext = NULL;
+    return true;
   default:
-    break;
+    assert(0 && "Event not handled");
+    return false;
   }
 }
 
-vvServer::vvRemoteServerRes vvServer::createRemoteServer(vvTcpSocket *sock, std::string renderertype, vvRendererFactory::Options opt)
+bool vvServer::createRemoteServer(vvTcpSocket* sock)
 {
   vvDebugMsg::msg(3, "vvServer::createRemoteServer() Enter");
-
-  vvRemoteServerRes res;
-  res.server   = NULL;
-  res.renderer = NULL;
-  res.vd       = NULL;
 
   // need a render context. either reuse existing or create a new one
   if (::renderContext == NULL && !::createRenderContext(DEFAULTSIZE, DEFAULTSIZE))
   {
-    std::cerr << "Couldn't initialize render context" << std::endl;
-    return res;
+    vvDebugMsg::msg(0, "Couldn't create render context");
+    return false;
   }
 
   vvSocketIO sockio = vvSocketIO(sock);
 
-  sockio.putBool(true);  // let client know we are ready
-
-  int getType;
-  sockio.getInt32(getType);
-  vvRenderer::RendererType rType = (vvRenderer::RendererType)getType;
-  switch(rType)
+  switch (_remoteRendererType)
   {
-    case vvRenderer::REMOTE_IMAGE:
-      res.server = new vvImageServer(sock);
-      break;
-    case vvRenderer::REMOTE_IBR:
-      res.server = new vvIbrServer(sock);
-      break;
-    default:
-      cerr << "Unknown remote rendering type " << rType << std::endl;
-      break;
+  case vvRenderer::REMOTE_IMAGE:
+    _server = new vvImageServer(sock);
+    break;
+  case vvRenderer::REMOTE_IBR:
+    _server = new vvIbrServer(sock);
+    break;
+  default:
+    vvDebugMsg::msg(0, "Unknown remote rendering type");
+    break;
   }
 
-  if (res.server == NULL)
+  if (_server == NULL)
   {
-    std::cerr << "Couldn't create remote server" << std::endl;
-    return res;
+    vvDebugMsg::msg(0, "Couldn't create remote server");
+    return false;
   }
 
   vvGLTools::enableGLErrorBacktrace();
-  if(res.server->initData(res.vd) != vvRemoteServer::VV_OK)
-  {
-    cerr << "Could not initialize volume data" << endl;
-    cerr << "Continuing with next client..." << endl;
-    return res;
-  }
 
-  if(res.vd != NULL)
+  if (_vd != NULL)
   {
-    if(res.server->getLoadVolumeFromFile())
+    // set default color scheme if no TF present
+    if (_vd->tf.isEmpty())
     {
-      res.vd->printInfoLine();
-    }
-
-    // Set default color scheme if no TF present:
-    if(res.vd->tf.isEmpty())
-    {
-      res.vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-      res.vd->tf.setDefaultColors((res.vd->chan==1) ? 0 : 2, 0.0, 1.0);
+      _vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+      _vd->tf.setDefaultColors((_vd->chan == 1) ? 0 : 2, 0.0, 1.0);
     }
 
     vvRenderState rs;
+    vvRendererFactory::Options opt;
 
-    if(renderertype.empty())
-    {
-      cerr << "CREATE REMOTE SERVER LOCAL" << endl;
-      renderertype = (rType == vvRenderer::REMOTE_IBR) ? "rayrend" : "default";
-    }
-    else if(renderertype.compare(std::string("forwarding")) == 0)
-    {
-      cerr << "CREATE REMOTE SERVER REMOTE!!!" << endl;
-      renderertype = (rType == vvRenderer::REMOTE_IBR) ? "ibr" : "image";
-    }
-    res.renderer = vvRendererFactory::create(res.vd,
+    std::string renderertype = _remoteRendererType == vvRenderer::REMOTE_IMAGE
+      ? "default"
+      : "rayrend";
+    _renderer = vvRendererFactory::create(_vd,
       rs,
       renderertype.c_str(),
       opt);
 
-    res.renderer->setParameter(vvRenderer::VV_USE_IBR, rType == vvRenderer::REMOTE_IBR);
+    _renderer->setParameter(vvRenderer::VV_USE_IBR, _remoteRendererType == vvRenderer::REMOTE_IBR);
+    return true;
   }
-
-  return res;
+  else
+  {
+    vvDebugMsg::msg(0, "No volume loaded");
+    return false;
+  }
 }
 
 

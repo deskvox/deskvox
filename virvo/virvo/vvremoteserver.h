@@ -22,6 +22,7 @@
 #define VVREMOTESERVER_H
 
 #include "vvexport.h"
+#include "vvremoteevents.h"
 #include "vvsocket.h"
 
 class vvMatrix;
@@ -43,15 +44,10 @@ public:
   vvRemoteServer(vvSocket *socket);
   virtual ~vvRemoteServer();
 
-  bool getLoadVolumeFromFile() const;
-
-  vvRemoteServer::ErrorType initData(vvVolDesc*& vd);
-
-  virtual bool processEvents(vvRenderer* renderer);
+  virtual bool processEvent(virvo::RemoteEvent event, vvRenderer* renderer);
 protected:
   vvSocketIO* _socketio;                    ///< socket for remote rendering
 
-  bool _loadVolumeFromFile;
   int _codetype;
 
   virtual void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer) = 0;

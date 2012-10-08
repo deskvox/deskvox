@@ -24,14 +24,194 @@
 
 #include "vvcocoaglcontext.h"
 #include "vvdebugmsg.h"
+#include "vvgltools.h"
 #include "vvrendercontext.h"
 
+#include <cassert>
+
+#include <algorithm>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #ifdef HAVE_X11
 #include <GL/glx.h>
 #include <X11/Xlib.h>
+#endif
+
+#ifdef _WIN32
+
+#include <Windows.h>
+#include <GL/glew.h>
+#include <GL/wglew.h>
+
+namespace
+{
+
+  class Attribs
+  {
+    std::vector<int> attribs;
+
+  public:
+    void add(int key, int value)
+    {
+      attribs.push_back(key);
+      attribs.push_back(value);
+    }
+
+    int const* get() const
+    {
+      // check if the array is "null-terminated"
+      assert( attribs.size() >= 2 );
+      assert( attribs[attribs.size() - 2] == 0 && attribs[attribs.size() - 1] == 0 );
+
+      return &attribs[0];
+    }
+  };
+
+  // Creates a dummy window and a default OpenGL rendering context.
+  // This is necessary since to use wglChoosePixelFormatARB we must have a valid context
+  // which can only be created if one sets the pixel format for the DC. After a pixel format
+  // is returned from wglChoosePixelFormatARB we would have to set the pixel format a
+  // second time, which is not allowed.
+  class DefaultContext
+  {
+    HWND hwnd;
+    HDC hdc;
+    HGLRC hglrc;
+
+  public:
+    DefaultContext();
+    ~DefaultContext();
+  };
+
+  DefaultContext::DefaultContext()
+    : hwnd(0)
+    , hdc(0)
+    , hglrc(0)
+  {
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+
+    WNDCLASSEX wc = {0};
+
+    wc.cbSize           = sizeof(wc);
+    wc.hInstance        = hInstance;
+    wc.lpfnWndProc      = DefWindowProc;
+    wc.lpszClassName    = TEXT("VVDefaultContext");
+
+    if (!RegisterClassEx(&wc))
+    {
+    }
+
+    // Create the dummy window
+    hwnd = CreateWindowEx(
+      0,
+      wc.lpszClassName,
+      TEXT(""),
+      WS_OVERLAPPEDWINDOW,
+      0, 0, 0, 0,
+      NULL,
+      NULL,
+      hInstance,
+      NULL);
+
+    if (hwnd == NULL)
+      throw std::runtime_error("not supported");
+
+    // Get the window context
+    hdc = GetDC(hwnd);
+    if (hdc == NULL)
+      throw std::runtime_error("not supported");
+
+    // Create a minimal GL pixel format
+    PIXELFORMATDESCRIPTOR pfd = {
+      sizeof(pfd),
+      1,
+      PFD_DRAW_TO_WINDOW |
+      PFD_SUPPORT_OPENGL |
+      PFD_DEPTH_DONTCARE |
+      PFD_DOUBLEBUFFER_DONTCARE |
+      PFD_STEREO_DONTCARE,
+      PFD_TYPE_RGBA,
+      24,             // color bits
+      0,0,0,0,0,0,
+      0,              // alpha bits
+      0,0,0,0,0,0,
+      0,              // depth bits
+      0,              // stencil bits
+      0,0,0,0,0,0,
+    };
+
+    // Choose a pixel format
+    int pixelformat = ChoosePixelFormat(hdc, &pfd);
+    if (pixelformat < 0)
+      throw std::runtime_error("not supported");
+
+    // Set the pixel format
+    if (!SetPixelFormat(hdc, pixelformat, NULL/*&pfd*/))
+      throw std::runtime_error("not supported");
+
+    // Create the context
+    hglrc = wglCreateContext(hdc);
+    if (hglrc == NULL)
+      throw std::runtime_error("not supported");
+
+    // and make it current
+    if (!wglMakeCurrent(hdc, hglrc))
+      throw std::runtime_error("not supported");
+  }
+
+  DefaultContext::~DefaultContext()
+  {
+    // Delete the rendering context
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(hglrc);
+
+    // Release the window DC
+    ReleaseDC(hwnd, hdc);
+
+    // Destroy the window
+    DestroyWindow(hwnd);
+  }
+
+  std::vector<int> GetPixelFormats(vvContextOptions const& co, HDC hdc)
+  {
+    if (!wglChoosePixelFormatARB)
+      return std::vector<int>();
+
+    Attribs attribs;
+
+    // Since we are trying to create a pbuffer, the pixel format we
+    // request (and subsequently use) must be "p-buffer capable".
+    attribs.add(WGL_DRAW_TO_PBUFFER_ARB, 1);
+
+    // We require a minimum of 24-bit depth.
+    attribs.add(WGL_DEPTH_BITS_ARB, 24);
+
+    // We require a minimum of 8-bits for each R, G, B, and A.
+    attribs.add(WGL_RED_BITS_ARB, 8);
+    attribs.add(WGL_GREEN_BITS_ARB, 8);
+    attribs.add(WGL_BLUE_BITS_ARB, 8);
+    attribs.add(WGL_ALPHA_BITS_ARB, 8);
+
+    if (co.doubleBuffering)
+      attribs.add(WGL_DOUBLE_BUFFER_ARB, 1);
+
+    attribs.add(0,0);
+
+    // Now obtain a list of pixel formats that meet these minimum requirements.
+    std::vector<int> buffer(512);
+
+    unsigned count = 0;
+
+    if (!wglChoosePixelFormatARB(hdc, attribs.get(), 0, buffer.size(), &buffer[0], &count))
+      return std::vector<int>();
+
+    return std::vector<int>(buffer.begin(), buffer.begin() + count);
+  }
+
+} // namespace
+
 #endif
 
 struct ContextArchData
@@ -49,22 +229,18 @@ struct ContextArchData
 #endif
 
 #ifdef _WIN32
-  HGLRC wglContext;
-  HWND window;
-  HDC deviceContext;
-
-  static LRESULT CALLBACK func(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+  ContextArchData()
+    : hbuffer(NULL)
+    , hdc(NULL)
+    , hglrc(NULL)
+    , format(-1)
   {
-    switch(Msg)
-    {
-    case WM_DESTROY:
-      PostQuitMessage(WM_QUIT);
-      break;
-    default:
-      return DefWindowProc(hWnd, Msg, wParam, lParam);
-    }
-    return 0;
   }
+
+  HPBUFFERARB hbuffer;
+  HDC hdc;
+  HGLRC hglrc;
+  int format;
 #endif
 };
 
@@ -104,9 +280,16 @@ vvRenderContext::~vvRenderContext()
 #endif
 
 #ifdef _WIN32
-    wglMakeCurrent(_archData->deviceContext, NULL);
-    wglDeleteContext(_archData->wglContext);
-    DestroyWindow(_archData->window);
+    wglMakeCurrent(NULL, NULL);
+
+    if (_archData->hglrc)
+      wglDeleteContext(_archData->hglrc);
+
+    if (wglReleasePbufferDCARB)
+      wglReleasePbufferDCARB(_archData->hbuffer, _archData->hdc);
+
+    if (wglDestroyPbufferARB)
+      wglDestroyPbufferARB(_archData->hbuffer);
 #endif
   }
   delete _archData;
@@ -127,7 +310,12 @@ bool vvRenderContext::makeCurrent() const
 #endif
 
 #ifdef _WIN32
-    return (wglMakeCurrent(_archData->deviceContext, _archData->wglContext) == TRUE);
+    if (!wglMakeCurrent(_archData->hdc, _archData->hglrc))
+    {
+      DWORD err = GetLastError();
+      return false;
+    }
+    return true;
 #endif
   }
   return false;
@@ -148,7 +336,7 @@ void vvRenderContext::swapBuffers() const
 #endif
 
 #ifdef _WIN32
-    SwapBuffers(_archData->deviceContext);
+    SwapBuffers(_archData->hdc);
 #endif
   }
 }
@@ -186,6 +374,15 @@ void vvRenderContext::resize(const uint w, const uint h)
         XSync(_archData->display, False);
         break;
       }
+#endif
+
+#ifdef HAVE_OPENGL
+      vvGLTools::Viewport vp = vvGLTools::getViewport();
+      glViewport(vp[0], vp[1], w, h);
+#endif
+
+#ifdef _WIN32
+      vvDebugMsg::msg(0, "vvRenderContext::resize() not implemented yet");
 #endif
     }
   }
@@ -358,109 +555,70 @@ void vvRenderContext::init()
 #endif
 
 #ifdef _WIN32
-  LPCTSTR dev = NULL; // TODO: configurable
-  DWORD devNum = 0; // TODO: configurable
-  DWORD dwFlags = 0;
-  DISPLAY_DEVICE dispDev;
-  DEVMODE devMode;
-  dispDev.cb = sizeof(DISPLAY_DEVICE);
+  _initialized = false;
 
-  if (EnumDisplayDevices(dev, devNum, &dispDev, dwFlags))
+  // Create a default OpenGL rendering context
+  DefaultContext context;
+
+  // Initialize OpenGL extensions
+  glewInit();
+
+  // Get a valid device context
+  HDC hdc = wglGetCurrentDC();
+
+  // Now obtain a list of pixel formats that meet these minimum requirements...
+  std::vector<int> pformats = GetPixelFormats(_options, hdc);
+
+  //
+  // After determining a list of pixel formats, the next step is to create
+  // a pbuffer of the chosen format
+  //
+
+  if (!wglCreatePbufferARB)
+    throw std::runtime_error("not supported");
+
+  _archData->hbuffer = NULL;
+  _archData->format = -1;
+
+  for (size_t i = 0; i < pformats.size(); ++i)
   {
-    EnumDisplaySettings(dispDev.DeviceName, ENUM_CURRENT_SETTINGS, &devMode);
+    _archData->format = pformats[i];
+    _archData->hbuffer = wglCreatePbufferARB(hdc,
+                                             _archData->format,
+                                             _options.width,
+                                             _options.height,
+                                             NULL);
+
+    if (_archData->hbuffer != NULL)
+      break;
   }
-  else
-  {
-    _initialized = false;
-    return;
-  }
 
-  switch (_options.type)
-  {
-  case vvContextOptions::VV_PBUFFER:
-    std::cerr << "WGL Pbuffers not implemented yet" << std::endl;
-    // fall through
-  case vvContextOptions::VV_WINDOW:
-    // fall through
-  default:
-    {
-      HINSTANCE hInstance = GetModuleHandle(0);
-      WNDCLASSEX WndClsEx;
-      ZeroMemory(&WndClsEx, sizeof(WNDCLASSEX));
+  if (_archData->hbuffer == NULL)
+    throw std::runtime_error("not supported");
 
-      LPCTSTR ClsName = TEXT("Virvo");
-      LPCTSTR WndName = TEXT("Render Context");
+  //
+  // The next step is to create a device context for the newly created pbuffer
+  //
 
-      WndClsEx.cbSize        = sizeof(WNDCLASSEX);
-      WndClsEx.style         = CS_HREDRAW | CS_VREDRAW;
-      WndClsEx.lpfnWndProc   = ContextArchData::func;
-      WndClsEx.cbClsExtra    = 0;
-      WndClsEx.cbWndExtra    = 0;
-      WndClsEx.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
-      WndClsEx.hCursor       = LoadCursor(NULL, IDC_ARROW);
-      WndClsEx.lpszMenuName  = NULL;
-      WndClsEx.lpszClassName = ClsName;
-      WndClsEx.hInstance     = hInstance;
-      WndClsEx.hbrBackground = 0;
-      WndClsEx.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
-      RegisterClassEx(&WndClsEx);
+  if (!wglGetPbufferDCARB)
+    throw std::runtime_error("not supported");
 
-      PIXELFORMATDESCRIPTOR pfd;
-      ZeroMemory(&pfd, sizeof(PIXELFORMATDESCRIPTOR));
-      pfd.nSize = sizeof(pfd);
-      pfd.nVersion = 1;
-      pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
-      if (_options.doubleBuffering)
-      {
-        pfd.dwFlags |= PFD_DOUBLEBUFFER;
-      }
-      pfd.iPixelType = PFD_TYPE_RGBA; // TODO: configurable
-      pfd.cColorBits = 32; // TODO: configurable
-      pfd.cDepthBits = 16; // TODO: configurable
-      pfd.iLayerType = PFD_MAIN_PLANE;
-      HWND hWnd = CreateWindow(ClsName,
-                               WndName,
-                               WS_OVERLAPPEDWINDOW,
-                               _options.left < 0 ? CW_USEDEFAULT : _options.left,
-                               _options.top < 0 ? CW_USEDEFAULT : _options.top,
-                               _options.width,
-                               _options.height,
-                               NULL,      // handle of parent window
-                               NULL,      // handle of menu
-                               hInstance,
-                               NULL);     // for MDI client windows
+  _archData->hdc = wglGetPbufferDCARB(_archData->hbuffer);
 
-      if(!hWnd)
-      {
-        vvDebugMsg::msg(0, "vvRenderContext::init(): error CreateWindow()");
-        _initialized = false;
-        return;
-      }
-      else
-      {
-        _archData->window = hWnd;
-        _archData->deviceContext = GetDC(hWnd);
-        int pf = ChoosePixelFormat(_archData->deviceContext, &pfd);
-        if (pf != 0)
-        {
-          if (SetPixelFormat(_archData->deviceContext, pf, &pfd))
-          {
-            _archData->wglContext = wglCreateContext(_archData->deviceContext);
-          }
-          else
-          {
-            vvDebugMsg::msg(0, "vvRenderContext::init(): error SetPixelFormat()");
-            _initialized = false;
-            return;
-          }
-        }
-        ShowWindow(hWnd, SW_SHOWNORMAL);
-      }
+  if (!_archData->hdc)
+    throw std::runtime_error("not supported");
 
-      _initialized = true;
-    }
-    break;
-  }
+  //
+  // The final step of pbuffer creation is to create an OpenGL rendering context and
+  // associate it with the handle for the pbuffer’s device context
+  //
+
+  _archData->hglrc = wglCreateContext(_archData->hdc);
+
+  if (!_archData->hglrc)
+    throw std::runtime_error("not supported");
+
+  _initialized = true;
 #endif
 }
 

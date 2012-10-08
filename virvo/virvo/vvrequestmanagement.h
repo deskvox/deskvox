@@ -35,7 +35,7 @@ struct vvServerInfo
   std::string renderers;
 };
 
-class vvGpu
+class VIRVOEXPORT vvGpu
 {
 public:
   struct vvGpuInfo

@@ -132,37 +132,15 @@ class VIRVOEXPORT vvSocketIO
       VV_FLOAT
     };
 
-    enum CommReason                               /// before sending data, let the recipient know what to expect
-    {
-      VV_QUIT = 0,
-      VV_MATRIX,
-      VV_CURRENT_FRAME,
-      VV_IMAGE,
-      VV_OBJECT_DIRECTION,
-      VV_POSITION,
-      VV_TRANSFER_FUNCTION,
-      VV_VIEWING_DIRECTION,
-      VV_VOLUME,
-      VV_PARAMETER_1B,
-      VV_PARAMETER_1I,
-      VV_PARAMETER_1F,
-      VV_PARAMETER_3I,
-      VV_PARAMETER_3F,
-      VV_PARAMETER_4I,
-      VV_PARAMETER_4F,
-      VV_COLOR,
-      VV_PARAMETER_AABBI
-    };
-
     vvSocketIO(vvSocket* sock);
     ~vvSocketIO();
     bool sock_action();
     vvSocket::ErrorType getEvent(virvo::RemoteEvent& event) const;
     vvSocket::ErrorType putEvent(virvo::RemoteEvent event) const;
     vvSocket::ErrorType getVolumeAttributes(vvVolDesc* vd) const;
-    vvSocket::ErrorType getVolume(vvVolDesc*, vvMulticastParameters *mcParam = NULL) const;
+    vvSocket::ErrorType getVolume(vvVolDesc* vd) const;
     vvSocket::ErrorType putVolumeAttributes(const vvVolDesc*) const;
-    vvSocket::ErrorType putVolume(const vvVolDesc*, bool tryMC = false, bool mcMaster = false, vvMulticastParameters *mcParam = NULL) const;
+    vvSocket::ErrorType putVolume(const vvVolDesc* vd) const;
     vvSocket::ErrorType getTransferFunction(vvTransFunc& tf) const;
     vvSocket::ErrorType putTransferFunction(vvTransFunc& tf) const;
     vvSocket::ErrorType getBrick(vvBrick* brick) const;
@@ -173,8 +151,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putImage(const vvImage*) const;
     vvSocket::ErrorType getIbrImage(vvIbrImage*) const;
     vvSocket::ErrorType putIbrImage(const vvIbrImage*) const;
-    vvSocket::ErrorType getFileName(char*& fn) const;
-    vvSocket::ErrorType putFileName(const char* fn) const;
+    vvSocket::ErrorType getFileName(std::string& fn) const;
+    vvSocket::ErrorType putFileName(const std::string& fn) const;
     vvSocket::ErrorType allocateAndGetData(uchar**, int&) const;             //  unknown number and type
     vvSocket::ErrorType putData(uchar*, int) const;
     vvSocket::ErrorType getMatrix(vvMatrix*) const;
@@ -195,10 +173,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putAABBi(const vvAABBi& val) const;
     vvSocket::ErrorType getViewport(vvGLTools::Viewport &val) const;
     vvSocket::ErrorType putViewport(const vvGLTools::Viewport &val) const;
-    vvSocket::ErrorType getCommReason(CommReason& val) const;
-    vvSocket::ErrorType putCommReason(const CommReason val) const;
     vvSocket::ErrorType getWinDims(int& w, int& h) const;
-    vvSocket::ErrorType putWinDims(const int w, const int h) const;
+    vvSocket::ErrorType putWinDims(int w, int h) const;
     vvSocket::ErrorType getData(void*, int, DataType) const;      // known number and type
     vvSocket::ErrorType putData(void*, int, DataType) const;
     vvSocket::ErrorType getServerInfo(vvServerInfo& info) const;

@@ -24,6 +24,8 @@
 #include "vvexport.h"
 #include "vvremoteserver.h"
 
+#include <vector>
+
 class vvRenderer;
 class vvImage;
 
@@ -37,7 +39,7 @@ private:
   void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
   void resize(int w, int h);
   vvImage *_image;
-  uchar *_pixels;
+  std::vector<uchar> _pixels;
 };
 
 #endif
