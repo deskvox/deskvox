@@ -407,6 +407,7 @@ bool vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
   case virvo::Parameter1F:
   case virvo::Parameter3F:
   case virvo::Parameter4F:
+  case virvo::ParameterColor:
   case virvo::ParameterAABBI:
   case virvo::CurrentFrame:
   case virvo::ObjectDirection:
