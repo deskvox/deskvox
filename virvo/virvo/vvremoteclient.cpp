@@ -50,7 +50,11 @@ vvRemoteClient::~vvRemoteClient()
 {
   vvDebugMsg::msg(1, "vvRemoteClient::~vvRemoteClient()");
 
-  quit();
+  if (_socketIO != NULL)
+  {
+    _socketIO->putEvent(virvo::Disconnect);
+  }
+  delete _socketIO;
 }
 
 void vvRemoteClient::renderVolumeGL()
@@ -295,16 +299,6 @@ vvRemoteClient::ErrorType vvRemoteClient::requestFrame() const
   }
 
   return vvRemoteClient::VV_OK;
-}
-
-void vvRemoteClient::quit()
-{
-  if(_socketIO)
-  {
-    _socketIO->putEvent(virvo::Disconnect);
-    delete _socketIO;
-    _socketIO = NULL;
-  }
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
