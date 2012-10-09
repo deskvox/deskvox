@@ -84,7 +84,15 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
     format.setSampleBuffers(true);
     format.setSamples(superSamples);
   }
-  _canvas = new vvCanvas(format, filename, this);
+
+  QString fn = filename;
+  if (fn == "")
+  {
+    QSettings settings;
+    fn = settings.value("canvas/recentfile").toString();
+  }
+
+  _canvas = new vvCanvas(format, fn, this);
   _canvas->setPlugins(_plugins);
   setCentralWidget(_canvas);
 
@@ -241,6 +249,9 @@ void vvMainWindow::loadVolumeFile(const QString& filename)
     }
     _canvas->setVolDesc(vd);
     _dimensionDialog->setInitialDist(vd->dist);
+
+    QSettings settings;
+    settings.setValue("canvas/recentfile", filename);
     break;
   }
   case vvFileIO::FILE_NOT_FOUND:
