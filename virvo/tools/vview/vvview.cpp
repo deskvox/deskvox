@@ -687,16 +687,6 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   {
     vvSocketIO io = vvSocketIO(sockets[i]);
 
-    virvo::RemoteEvent event;
-    if (io.getEvent(event) != vvSocket::VV_OK || event != virvo::WaitEvents)
-    {
-      vvDebugMsg::msg(0, "Bad connection established");
-    }
-    else
-    {
-      vvDebugMsg::msg(1, "Remote server ready to process events");
-    }
-
     // vserver defaults to image remote rendering
     if (rrMode == RR_IBR)
     {

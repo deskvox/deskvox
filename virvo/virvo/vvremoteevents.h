@@ -50,7 +50,6 @@ namespace virvo
     ServerInfo,
     GpuInfo,
     Statistics,
-    WaitEvents,
     WindowResize,
     RemoteServerType,
     Disconnect

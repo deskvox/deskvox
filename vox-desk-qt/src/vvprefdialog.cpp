@@ -440,30 +440,27 @@ void vvPrefDialog::onGetInfoClicked()
     {
       sock->setParameter(vvSocket::VV_NO_NAGLE, true);
       vvSocketIO io(sock);
-      virvo::RemoteEvent event;
-      if (io.getEvent(event) == vvSocket::VV_OK && event == virvo::WaitEvents)
-      {
-        vvServerInfo info;
-        io.putEvent(virvo::ServerInfo);
-        io.getServerInfo(info);
-        QString qrenderers;
-        std::vector<std::string> renderers = vvToolshed::split(info.renderers, ",");
-        for (std::vector<std::string>::const_iterator it = renderers.begin();
-             it != renderers.end(); ++it)
-        {
-          std::string rend = rendererDescriptions[*it];
-          std::string algo = algoDescriptions[*it];
-          qrenderers += "<tr><td>" + tr(rend.c_str()) + "</td><td>" + tr(algo.c_str()) + "</td></tr>";
-        }
-        QMessageBox::information(this, tr("Server info"), tr("Remote server supports the following rendering algorithms<br /><br />")
-          + tr("<table>") + qrenderers + tr("</table>"), QMessageBox::Ok);
-        io.putEvent(virvo::Disconnect);
 
-        // store to registry because connection was successful
-        QSettings settings;
-        settings.setValue("remote/host", ui->hostEdit->text());
-        settings.setValue("remote/port", ui->portBox->value());
+      vvServerInfo info;
+      io.putEvent(virvo::ServerInfo);
+      io.getServerInfo(info);
+      QString qrenderers;
+      std::vector<std::string> renderers = vvToolshed::split(info.renderers, ",");
+      for (std::vector<std::string>::const_iterator it = renderers.begin();
+           it != renderers.end(); ++it)
+      {
+        std::string rend = rendererDescriptions[*it];
+        std::string algo = algoDescriptions[*it];
+        qrenderers += "<tr><td>" + tr(rend.c_str()) + "</td><td>" + tr(algo.c_str()) + "</td></tr>";
       }
+      QMessageBox::information(this, tr("Server info"), tr("Remote server supports the following rendering algorithms<br /><br />")
+        + tr("<table>") + qrenderers + tr("</table>"), QMessageBox::Ok);
+      io.putEvent(virvo::Disconnect);
+
+      // store to registry because connection was successful
+      QSettings settings;
+      settings.setValue("remote/host", ui->hostEdit->text());
+      settings.setValue("remote/port", ui->portBox->value());
     }
     else
     {
@@ -500,32 +497,30 @@ void vvPrefDialog::onConnectClicked()
         static_cast<ushort>(static_cast<ushort>(ui->portBox->value()))) == vvSocket::VV_OK)
       {
         ::sock->setParameter(vvSocket::VV_NO_NAGLE, true);
+
         vvSocketIO io(::sock);
-        virvo::RemoteEvent event;
-        if (io.getEvent(event) == vvSocket::VV_OK && event == virvo::WaitEvents)
+
+        ui->connectButton->setText(tr("Disconnect"));
+
+        if (!ui->ibrBox->isChecked())
         {
-          ui->connectButton->setText(tr("Disconnect"));
-
-          if (!ui->ibrBox->isChecked())
-          {
-            ::remoterend = "image";
-          }
-          else
-          {
-            ::remoterend = "ibr";
-            if (io.putEvent(virvo::RemoteServerType) == vvSocket::VV_OK)
-            {
-              io.putRendererType(vvRenderer::REMOTE_IBR);
-            }
-          }
-
-          // store to registry because connection was successful
-          QSettings settings;
-          settings.setValue("remote/host", ui->hostEdit->text());
-          settings.setValue("remote/port", ui->portBox->value());
-
-          emitRenderer();
+          ::remoterend = "image";
         }
+        else
+        {
+          ::remoterend = "ibr";
+          if (io.putEvent(virvo::RemoteServerType) == vvSocket::VV_OK)
+          {
+            io.putRendererType(vvRenderer::REMOTE_IBR);
+          }
+        }
+
+        // store to registry because connection was successful
+        QSettings settings;
+        settings.setValue("remote/host", ui->hostEdit->text());
+        settings.setValue("remote/port", ui->portBox->value());
+
+        emitRenderer();
       }
       else
       {
@@ -573,9 +568,6 @@ void vvPrefDialog::onIbrToggled(const bool checked)
         io.putRendererType(vvRenderer::REMOTE_IMAGE);
       }
 
-      virvo::RemoteEvent e;
-      io.getEvent(e);
-      if (e == virvo::WaitEvents)
       emitRenderer();
     }
   }
