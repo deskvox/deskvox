@@ -34,6 +34,7 @@ class vvScreenshotDialog;
 class vvShortcutDialog;
 class vvTFDialog;
 class vvTimeStepDialog;
+class vvVolInfoDialog;
 class Ui_MainWindow;
 
 class vvMainWindow : public QMainWindow
@@ -55,6 +56,7 @@ private:
   vvShortcutDialog* _shortcutDialog;
   vvTFDialog* _tfDialog;
   vvTimeStepDialog* _timeStepDialog;
+  vvVolInfoDialog* _volInfoDialog;
 
   void loadVolumeFile(const QString& filename);
   void mergeFiles(const QString& firstFile, int num, int increment, vvVolDesc::MergeType mergeType);
@@ -90,6 +92,7 @@ private slots:
   void onShowNumTexturesTriggered(bool checked);
   void onShowFrameRateTriggered(bool checked);
   void onAutoRotationTriggered(bool checked);
+  void onVolumeInformationTriggered();
   void onTimeStepsTriggered();
 
   void onKeyboardCommandsClicked();

@@ -30,6 +30,7 @@
 #include "vvshortcutdialog.h"
 #include "vvtfdialog.h"
 #include "vvtimestepdialog.h"
+#include "vvvolinfodialog.h"
 
 #include "ui_vvmainwindow.h"
 
@@ -105,6 +106,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   _screenshotDialog = new vvScreenshotDialog(_canvas, this);
   _shortcutDialog = new vvShortcutDialog(this);
   _timeStepDialog = new vvTimeStepDialog(this);
+  _volInfoDialog = new vvVolInfoDialog(this);
 
   // file menu
   connect(ui->actionLoadVolume, SIGNAL(triggered()), this, SLOT(onLoadVolumeTriggered()));
@@ -130,6 +132,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(ui->actionShowNumTextures, SIGNAL(triggered(bool)), this, SLOT(onShowNumTexturesTriggered(bool)));
   connect(ui->actionShowFrameRate, SIGNAL(triggered(bool)), this, SLOT(onShowFrameRateTriggered(bool)));
   connect(ui->actionAutoRotation, SIGNAL(triggered(bool)), this, SLOT(onAutoRotationTriggered(bool)));
+  connect(ui->actionVolumeInformation, SIGNAL(triggered(bool)), this, SLOT(onVolumeInformationTriggered()));
   connect(ui->actionTimeSteps, SIGNAL(triggered()), this, SLOT(onTimeStepsTriggered()));
 
   // help menu
@@ -145,6 +148,8 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
     _canvas, SLOT(setParameter(vvParameters::ParameterType, const vvParam&)));
   connect(_prefDialog, SIGNAL(parameterChanged(vvRenderer::ParameterType, const vvParam&)),
     _canvas, SLOT(setParameter(vvRenderer::ParameterType, const vvParam&)));
+
+  connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), _volInfoDialog, SLOT(onNewVolDesc(vvVolDesc*)));
 
   connect(_timeStepDialog, SIGNAL(valueChanged(int)), _canvas, SLOT(setTimeStep(int)));
   connect(_timeStepDialog, SIGNAL(play(double)), _canvas, SLOT(startAnimation(double)));
@@ -565,6 +570,12 @@ void vvMainWindow::onAutoRotationTriggered(bool checked)
   vvDebugMsg::msg(3, "vvMainWindow::onAutoRotationTriggered()");
 
   _canvas->setParameter(vvParameters::VV_SPIN_ANIMATION, checked);
+}
+
+void vvMainWindow::onVolumeInformationTriggered()
+{
+  _volInfoDialog->raise();
+  _volInfoDialog->show();
 }
 
 void vvMainWindow::onTimeStepsTriggered()
