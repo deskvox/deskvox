@@ -541,7 +541,7 @@ bool vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
     _vd = NULL;
     _server = NULL;
     ::renderContext = NULL;
-    return true;
+    return false;
   default:
     assert(0 && "Event not handled");
     return false;

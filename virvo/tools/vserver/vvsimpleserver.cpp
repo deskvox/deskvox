@@ -77,9 +77,6 @@ bool vvSimpleServer::handleEvent(virvo::RemoteEvent event, const vvSocketIO& io)
       io.putGpuInfos(ginfos);
     }
     return true;
-  case virvo::Disconnect:
-    vvServer::handleEvent(event, io);
-    return false;
   default:
     return vvServer::handleEvent(event, io);
   }
@@ -114,6 +111,7 @@ void * vvSimpleServer::handleClientThread(void *param)
       break;
     }
   }
+  _instance->handleEvent(virvo::Disconnect, io);
 
   sock->disconnectFromHost();
   delete sock;
