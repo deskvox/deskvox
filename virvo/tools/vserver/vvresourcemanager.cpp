@@ -37,6 +37,12 @@
 
 namespace
 {
+  struct ThreadArgs
+  {
+    vvResourceManager *instance;
+    vvTcpSocket       *sock;
+  };
+
   void * localServerLoop(void *param)
   {
     vvSimpleServer *sserver = reinterpret_cast<vvSimpleServer*>(param);
@@ -187,14 +193,48 @@ vvResourceManager::~vvResourceManager()
   pthread_mutex_destroy(&_resourcesMutex);
 }
 
-void vvResourceManager::addJob(vvTcpSocket* sock)
+void vvResourceManager::addJob(vvTcpSocket *sock)
+{
+  vvSocketIO sockio(sock);
+
+  vvRequest *req = new vvRequest;
+  vvSocket::ErrorType err = sockio.getRequest(*req);
+  if(err != vvSocket::VV_OK)
+  {
+    cerr << "incoming connection socket error" << endl;
+    return;
+  }
+
+  if(vvDebugMsg::getDebugLevel() >= 3)
+  {
+    std::stringstream errmsg;
+    errmsg << "vvResourceManager::addJob() Incoming request has niceness: " << req->niceness << " and number of nodes: " << req->nodes.size();
+    vvDebugMsg::msg(0, errmsg.str().c_str());
+  }
+
+  req->sock = sock;
+
+  pthread_mutex_lock(&_requestsMutex);
+  _requests.push_back(req);
+  pthread_mutex_unlock(&_requestsMutex);
+
+  while(initNextJob()) {}
+}
+
+void * vvResourceManager::newConnection(void *param)
 {
   vvDebugMsg::msg(3, "vvResourceManager::addJob() Enter");
 
-  pthread_mutex_lock(&_requestsMutex);
+  ThreadArgs *args = reinterpret_cast<ThreadArgs*>(param);
 
-  vvSocketIO sockio = vvSocketIO(sock);
+  vvSocketIO sockio = vvSocketIO(args->sock);
 
+  if (sockio.putEvent(virvo::WaitEvents) != vvSocket::VV_OK)
+  {
+    vvDebugMsg::msg(0, "Socket error");
+    return NULL;
+  }
+  std::cerr << "bla1" << std::endl;
   bool goOn = true;
   virvo::RemoteEvent event;
   while(goOn)
@@ -207,39 +247,12 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
 
     switch(event)
     {
-#if 0
-    case virvo::Render:
-      {
-        vvSocket::ErrorType err;
-        sockio.putBool(false);
-
-        vvRequest *req = new vvRequest;
-        req->sock = sock;
-
-        err = sockio.getRequest(*req);
-        if(err != vvSocket::VV_OK)
-        {
-          cerr << "incoming connection socket error" << endl;
-          goto abort;
-        }
-
-        if(vvDebugMsg::getDebugLevel() >= 3)
-        {
-          std::stringstream errmsg;
-          errmsg << "Incoming request has niceness: " << req->niceness << " and number of nodes: " << req->nodes.size();
-          vvDebugMsg::msg(0, errmsg.str().c_str());
-        }
-
-        _requests.push_back(req);
-        goOn = false;
-      }
-      break;
-#endif
     case virvo::Statistics:
       {
+            std::cerr << "bla2" << std::endl;
         float free = 0.0f;
         float total = 0.0f;
-        for(std::vector<vvResource*>::iterator res = _resources.begin(); res != _resources.end(); res++)
+        for(std::vector<vvResource*>::iterator res = args->instance->_resources.begin(); res != args->instance->_resources.end(); res++)
         {
           for(std::vector<vvGpu::vvGpuInfo>::iterator ginfo = (*res)->ginfos.begin(); ginfo != (*res)->ginfos.end(); ginfo++)
           {
@@ -248,19 +261,18 @@ void vvResourceManager::addJob(vvTcpSocket* sock)
           }
         }
         sockio.putFloat(free/total);
-        sockio.putInt32(_resources.size());
+        sockio.putInt32(args->instance->_resources.size());
       }
       break;
     case virvo::GpuInfo:
       // TODO: implement this case for ResourceManager too if reasonable
     default:
-      vvServer::handleEvent(event, sockio);
+      //vvServer::handleEvent();
       break;
     }
   }
 
-  abort:
-  pthread_mutex_unlock(&_requestsMutex);
+  delete args;
 }
 
 bool vvResourceManager::initNextJob()
@@ -459,8 +471,14 @@ void vvResourceManager::handleNextConnection(vvTcpSocket *sock)
     break;
   case vvServer::RM:
   case vvServer::RM_WITH_SERVER:
-      addJob(sock);
-      while(initNextJob()) {}
+      {
+        ::ThreadArgs *args = new ::ThreadArgs;
+        args->sock = sock;
+        args->instance = this;
+        pthread_t threadID;
+        pthread_create(&threadID, NULL, newConnection, (void*)args);
+        pthread_detach(threadID);
+      }
     break;
   default:
     // unknown case
