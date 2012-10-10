@@ -21,19 +21,10 @@
 #ifndef _VV_CGPROGRAM_H_
 #define _VV_CGPROGRAM_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
 #include "vvexport.h"
 #include "vvshaderprogram.h"
 
 #include <map>
-
-#ifdef HAVE_CG
-
-#include <Cg/cg.h>
-#include <Cg/cgGL.h>
 
 /** Wrapper Class for Cg Shading Language
   This class loads a combination of up to three shaders
@@ -42,7 +33,6 @@
 
   @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
  */
-
 class VIRVOEXPORT vvCgProgram : public vvShaderProgram
 {
 public:
@@ -98,25 +88,12 @@ public:
   void setParameterTex3D(const std::string& parameterName, const unsigned int& ui);
 
 private:
-  typedef std::map<std::string, CGparameter> ParameterMap;
-  typedef ParameterMap::iterator ParameterIterator;
-
-  bool loadShaders();                               ///< Creates CgProgram and loads shaders into it.
-  //! Looks for a parameter and connects it with all other active shaders
-  ParameterIterator initParameter(const std::string& parameterName);
-
-  static void cgErrorHandler(CGcontext context, CGerror error, void*);
-  CGGLenum toCgEnum(const int i) const;
+  bool loadShaders();
 
   // CG data
-  CGcontext _program;     ///< Id of the CgProgram (in Cg: context)
-  CGprofile _profile[3];  ///< Cg-specific profile-ids
-  CGprogram _shaderId[3]; ///< Shader-ids
-
-  ParameterMap _cgParameterNameMaps;  ///< Parameter name-id maps
+  struct CGdata;
+  CGdata *_data;
 };
-
-#endif // HAVE_CG
 
 #endif // _VV_CGPGROGRAM_H_
 
