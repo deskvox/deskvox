@@ -88,8 +88,8 @@ private:
 
   bool serverLoop();
   void handleNextConnection(vvTcpSocket *sock);
-  uint getFreeResourceCount();
-  std::vector<vvResource*> getFreeResources(uint amount);
+  uint getFreeResourceCount() const;
+  std::vector<vvResource*> getFreeResources(uint amount) const;
 
   vvSimpleServer *_simpleServer;
   vvBonjourBrowser *_browser;

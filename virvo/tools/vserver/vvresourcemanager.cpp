@@ -486,11 +486,11 @@ void vvResourceManager::handleNextConnection(vvTcpSocket *sock)
   }
 }
 
-uint vvResourceManager::getFreeResourceCount()
+uint vvResourceManager::getFreeResourceCount() const
 {
   uint count = 0;
 
-  for(std::vector<vvResource*>::iterator freeRes = _resources.begin();
+  for(std::vector<vvResource*>::const_iterator freeRes = _resources.begin();
       freeRes != _resources.end(); freeRes++)
   {
     int freeMemory = 0;
@@ -520,7 +520,7 @@ uint vvResourceManager::getFreeResourceCount()
   return count;
 }
 
-std::vector<vvResourceManager::vvResource*> vvResourceManager::getFreeResources(uint amount)
+std::vector<vvResourceManager::vvResource*> vvResourceManager::getFreeResources(uint amount) const
 {
   vvDebugMsg::msg(3, "vvResourceManager::getFreeResources() Enter");
 
@@ -529,7 +529,7 @@ std::vector<vvResourceManager::vvResource*> vvResourceManager::getFreeResources(
   if(amount > _resources.size())
     return freeResources;
 
-  std::vector<vvResource*>::iterator freeRes = _resources.begin();
+  std::vector<vvResource*>::const_iterator freeRes = _resources.begin();
   while(freeRes != _resources.end() && freeResources.size() < amount)
   {
     int freeMemory = 0;
