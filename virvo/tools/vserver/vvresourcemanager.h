@@ -80,9 +80,9 @@ public:
   vvResourceManager();
   ~vvResourceManager();
 
+private:
   void addJob(vvTcpSocket *sock);
 
-private:
   static void * newConnection(void *param);
   bool initNextJob();
 
