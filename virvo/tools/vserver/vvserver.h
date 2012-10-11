@@ -24,9 +24,11 @@
 #include <virvo/vvremoteevents.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvrendercontext.h>
+#include <virvo/vvrequestmanagement.h>
 
 #include <string>
 
+class vvResourceManager;
 class vvRemoteServer;
 class vvSocketIO;
 class vvTcpSocket;
@@ -80,12 +82,15 @@ protected:
     ThreadData();
     ~ThreadData();
 
-    vvRenderContext* renderContext;
-    vvContextOptions contextOptions;
-    vvRemoteServer* server;
+    vvResourceManager *instance;
+    vvRenderContext   *renderContext;
+    vvContextOptions   contextOptions;
+    vvRemoteServer    *server;
     vvRenderer::RendererType remoteServerType;
-    vvRenderer* renderer;
-    vvVolDesc* vd;
+    vvRenderer        *renderer;
+    vvVolDesc         *vd;
+    vvRequest         *request;
+    vvRendererFactory::Options opt;
   };
   void displayHelpInfo();                         ///< Display command usage help on the command line.
   bool parseCommandLine(int argc, char *argv[]);  ///< Parse command line arguments.
@@ -94,7 +99,7 @@ protected:
   virtual bool handleEvent(ThreadData *tData, virvo::RemoteEvent, const vvSocketIO& io);
 
   bool createRenderContext(ThreadData* tData, const int w, const int h);
-  bool createRemoteServer(ThreadData* tData, vvTcpSocket* sock);
+  virtual bool createRemoteServer(ThreadData* tData, vvTcpSocket* sock);
 
   unsigned short   _port;         ///< port the server renderer uses to listen for incoming connections
   ServerMode       _sm;           ///< indicating current server mode (default: single server)

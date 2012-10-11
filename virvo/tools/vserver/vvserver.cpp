@@ -57,6 +57,7 @@ vvServer::ThreadData::ThreadData()
   , remoteServerType(vvRenderer::REMOTE_IMAGE)
   , renderer(NULL)
   , vd(NULL)
+  , request(NULL)
 {}
 
 vvServer::ThreadData::~ThreadData()

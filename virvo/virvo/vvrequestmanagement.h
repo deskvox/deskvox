@@ -97,17 +97,15 @@ struct vvRequest
   vvRequest()
     : type(vvRenderer::TEXREND)
     , niceness(0)
-    , sock(NULL)
-  {
-    nodes.push_back(1);
-  }
+//    , sock(NULL)
+  {}
 
   vvRenderer::RendererType type;  ///< requested rendering type
   int         niceness;           ///< niceness priority ranging from -20 to 20
   typedef int numgpus;
   std::vector<numgpus> nodes;     ///< requested amount of nodes with corresponding number of gpus
 
-  vvTcpSocket *sock;              ///< socket to requesting client
+//  vvTcpSocket *sock;              ///< socket to requesting client
 
   std::vector<vvResource*> resources;
 
@@ -119,7 +117,7 @@ struct vvRequest
     }
     else
     {
-      // sort more note-requests first
+      // sort more node-requests first
       return nodes.size() > other.nodes.size();
     }
   }

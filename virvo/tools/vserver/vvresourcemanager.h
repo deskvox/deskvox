@@ -50,10 +50,14 @@ public:
   ~vvResourceManager();
 
 private:
+  bool handleEvent(ThreadData *tData, virvo::RemoteEvent event, const vvSocketIO& io);
+
   void addJob(vvTcpSocket *sock);
 
   static void * handleClientThread(void *param);
-  bool pairNextJob();
+  void pairNextJobs();
+
+  bool createRemoteServer(ThreadData* tData, vvTcpSocket* sock);
 
   static void updateResources(void * param);
 
@@ -67,6 +71,7 @@ private:
   std::vector<vvRequest*>  _requests;
   std::vector<vvResource*> _resources;
   pthread_mutex_t _requestsMutex;
+  pthread_cond_t  _requestsCondition;
   pthread_mutex_t _resourcesMutex;
 };
 
