@@ -232,7 +232,7 @@ void vvResourceManager::addJob(vvTcpSocket *sock)
   while(pairNextJob()) {}
 }
 
-void * vvResourceManager::newConnection(void *param)
+void * vvResourceManager::handleClientThread(void *param)
 {
   vvDebugMsg::msg(3, "vvResourceManager::addJob() Enter");
 
@@ -497,7 +497,7 @@ void vvResourceManager::handleNextConnection(vvTcpSocket *sock)
         args->sock = sock;
         args->instance = this;
         pthread_t threadID;
-        pthread_create(&threadID, NULL, newConnection, (void*)args);
+        pthread_create(&threadID, NULL, handleClientThread, (void*)args);
         pthread_detach(threadID);
       }
     break;

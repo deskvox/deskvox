@@ -52,7 +52,7 @@ public:
 private:
   void addJob(vvTcpSocket *sock);
 
-  static void * newConnection(void *param);
+  static void * handleClientThread(void *param);
   bool pairNextJob();
 
   static void updateResources(void * param);
