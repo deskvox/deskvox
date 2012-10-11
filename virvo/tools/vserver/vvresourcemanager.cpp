@@ -150,6 +150,29 @@ namespace
   #endif
   }
 
+  std::vector<vvGpu::vvGpuInfo> getResourceGpuInfos(vvTcpSocket *serversock)
+  {
+    if(NULL != serversock)
+    {
+      std::vector<vvGpu::vvGpuInfo> ginfos;
+      vvSocketIO sockIO = vvSocketIO(serversock);
+      virvo::RemoteEvent event;
+      sockIO.getEvent(event);
+      if(virvo::WaitEvents == event)
+      {
+        sockIO.putEvent(virvo::GpuInfo);
+        sockIO.getGpuInfos(ginfos);
+      }
+      sockIO.putInt32(virvo::Disconnect);
+      delete serversock;
+      return ginfos;
+    }
+    else
+    {
+      vvDebugMsg::msg(2, "vvResourceManager::registerResource() Could not connect to resolved vserver");
+      return std::vector<vvGpu::vvGpuInfo>();
+    }
+  }
 }
 
 vvResourceManager::vvResourceManager()
@@ -567,30 +590,6 @@ std::vector<vvResourceManager::vvResource*> vvResourceManager::getFreeResources(
     freeResources.clear();
   }
   return freeResources;
-}
-
-std::vector<vvGpu::vvGpuInfo> vvResourceManager::getResourceGpuInfos(vvTcpSocket *serversock)
-{
-  if(NULL != serversock)
-  {
-    std::vector<vvGpu::vvGpuInfo> ginfos;
-    vvSocketIO sockIO = vvSocketIO(serversock);
-    virvo::RemoteEvent event;
-    sockIO.getEvent(event);
-    if(virvo::WaitEvents == event)
-    {
-      sockIO.putEvent(virvo::GpuInfo);
-      sockIO.getGpuInfos(ginfos);
-    }
-    sockIO.putInt32(virvo::Disconnect);
-    delete serversock;
-    return ginfos;
-  }
-  else
-  {
-    vvDebugMsg::msg(2, "vvResourceManager::registerResource() Could not connect to resolved vserver");
-    return std::vector<vvGpu::vvGpuInfo>();
-  }
 }
 
 //===================================================================

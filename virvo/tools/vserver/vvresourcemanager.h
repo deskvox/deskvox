@@ -95,7 +95,6 @@ private:
 
   vvSimpleServer *_simpleServer;
   vvBonjourBrowser *_browser;
-  static std::vector<vvGpu::vvGpuInfo> getResourceGpuInfos(vvTcpSocket *serversock);
   std::vector<vvRequest*>  _requests;
   std::vector<vvResource*> _resources;
   pthread_mutex_t _requestsMutex;
