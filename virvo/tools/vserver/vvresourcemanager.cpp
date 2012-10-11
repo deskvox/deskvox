@@ -281,6 +281,11 @@ void * vvResourceManager::newConnection(void *param)
   }
 
   delete args;
+
+  pthread_exit(NULL);
+#ifdef _WIN32
+  return NULL;
+#endif
 }
 
 bool vvResourceManager::initNextJob()
