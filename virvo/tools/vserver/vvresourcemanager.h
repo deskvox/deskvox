@@ -73,10 +73,6 @@ public:
     std::vector<vvResource*> resources;
   };
 
-  /**
-    Creates a resource manager connected with server
-    \param server if set, resource manager also uses this server running locally
-    */
   vvResourceManager();
   ~vvResourceManager();
 
