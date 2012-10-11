@@ -71,28 +71,8 @@ namespace
       vvTcpSocket *serversock = NULL;
       vvBonjourResolver resolver;
 
-      // special case for local vserver: no bonjour resolving necessary
-      if((*res)->server != NULL)
-      {
-        serversock = new vvTcpSocket();
-        serversock->connectToHost("localhost", vvResourceManager::DEFAULT_PORT+1); // TODO: Fix this default-port behaviour
-      }
-      else if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry((*res)->bonjourEntry))
-      {
-        serversock = resolver.getBonjourSocket();
-        if(NULL == serversock)
-        {
-          vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not connect to resolved vserver");
-          ready = false;
-        }
-      }
-      else
-      {
-        vvDebugMsg::msg(2, "vvResourceManager::processJob() Could not resolve bonjour service");
-        ready = false;
-      }
-
-      if(NULL != serversock)
+      serversock = new vvTcpSocket();
+      if(vvSocket::VV_OK == serversock->connectToHost((*res)->hostname, (*res)->port))
       {
         vvSocketIO sockIO = vvSocketIO(serversock);
         //sockIO.putInt32(virvo::Render);
@@ -107,6 +87,7 @@ namespace
       else
       {
         vvDebugMsg::msg(0, "vvResourceManager::processJob() Could not connect to vserver");
+        delete serversock;
         ready = false;
       }
     }
@@ -133,6 +114,10 @@ namespace
       {
   //      createRemoteServer(clientsock, "forwarding", opt);
       }
+    }
+    else
+    {
+      //TODO: Clean up sockets or implement fallback behaviour!
     }
 
   #if 0
@@ -316,7 +301,10 @@ bool vvResourceManager::initNextJob()
         {
           if (virvo::hasFeature("bonjour"))
           {
-            (*usedRes)->ginfos = getResourceGpuInfos((*usedRes)->bonjourEntry);
+            vvTcpSocket *sock = new vvTcpSocket();
+            sock->connectToHost((*usedRes)->hostname, (*usedRes)->port);
+            (*usedRes)->ginfos = getResourceGpuInfos(sock);
+            delete sock;
           }
         }
         return true;
@@ -383,12 +371,24 @@ void vvResourceManager::updateResources(void * param)
       if(!inList)
       {
         vvResource *res = new vvResource();
-        res->ginfos = getResourceGpuInfos(*entry);
-        std::cerr << "add resource into list with gpus: " << res->ginfos.size() << std::endl;
-        std::cerr << "free mem: " << res->ginfos[0].freeMem << std::endl;
-        res->bonjourEntry = *entry;
+        vvBonjourResolver resolver;
+        if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry(*entry))
+        {
+          vvTcpSocket *serversock = resolver.getBonjourSocket();
+          res->ginfos       = getResourceGpuInfos(serversock);
+          res->bonjourEntry = *entry;
+          res->hostname     = resolver._hostname;
+          res->port         = resolver._port;
 
-        rm->_resources.push_back(res);
+          std::cerr << "add resource into list with gpus: " << res->ginfos.size() << std::endl;
+          std::cerr << "free mem: " << res->ginfos[0].freeMem << std::endl;
+
+          rm->_resources.push_back(res);
+        }
+        else
+        {
+          vvDebugMsg::msg(2, "vvResourceManager::updateResources() Could not resolve bonjour service. Resource skipped.");
+        }
       }
     }
   }
@@ -424,7 +424,10 @@ bool vvResourceManager::serverLoop()
     {
       vvResource *serverRes = new vvResource;
       serverRes->server = new vvSimpleServer(false); // RM and vserver-Bonjour at the same time is not possible
-      serverRes->server->setPort(vvServer::DEFAULT_PORT+1);
+      ushort serverResPort = vvServer::DEFAULT_PORT+1;
+      serverRes->server->setPort(serverResPort);
+      serverRes->hostname = "localhost";
+      serverRes->port = serverResPort;
 
       std::vector<vvGpu*> gpus = vvGpu::list();
       for(std::vector<vvGpu*>::iterator gpu = gpus.begin(); gpu != gpus.end();gpu++)
@@ -566,33 +569,26 @@ std::vector<vvResourceManager::vvResource*> vvResourceManager::getFreeResources(
   return freeResources;
 }
 
-std::vector<vvGpu::vvGpuInfo> vvResourceManager::getResourceGpuInfos(const vvBonjourEntry entry)
+std::vector<vvGpu::vvGpuInfo> vvResourceManager::getResourceGpuInfos(vvTcpSocket *serversock)
 {
-  vvTcpSocket *serversock = NULL;
-
-  vvBonjourResolver resolver;
-  if(vvBonjour::VV_OK  == resolver.resolveBonjourEntry(entry))
+  if(NULL != serversock)
   {
-    serversock = resolver.getBonjourSocket();
-    if(NULL != serversock)
+    std::vector<vvGpu::vvGpuInfo> ginfos;
+    vvSocketIO sockIO = vvSocketIO(serversock);
+    virvo::RemoteEvent event;
+    sockIO.getEvent(event);
+    if(virvo::WaitEvents == event)
     {
-      vvSocketIO sockIO = vvSocketIO(serversock);
-      sockIO.putInt32(virvo::GpuInfo);
-      std::vector<vvGpu::vvGpuInfo> ginfos;
+      sockIO.putEvent(virvo::GpuInfo);
       sockIO.getGpuInfos(ginfos);
-      sockIO.putInt32(virvo::Disconnect);
-      delete serversock;
-      return ginfos;
     }
-    else
-    {
-      vvDebugMsg::msg(2, "vvResourceManager::registerResource() Could not connect to resolved vserver");
-      return std::vector<vvGpu::vvGpuInfo>();
-    }
+    sockIO.putInt32(virvo::Disconnect);
+    delete serversock;
+    return ginfos;
   }
   else
   {
-    vvDebugMsg::msg(2, "vvResourceManager::registerResource() Could not resolve bonjour service");
+    vvDebugMsg::msg(2, "vvResourceManager::registerResource() Could not connect to resolved vserver");
     return std::vector<vvGpu::vvGpuInfo>();
   }
 }

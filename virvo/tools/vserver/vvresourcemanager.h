@@ -55,10 +55,12 @@ public:
       server = NULL;
     }
 
-    bool   upToDate;
-    std::vector<vvGpu::vvGpuInfo> ginfos;
+    bool           upToDate;
+    std::string    hostname;
+    ushort         port;
+    vvServer      *server;
     vvBonjourEntry bonjourEntry;
-    vvServer *server;
+    std::vector<vvGpu::vvGpuInfo> ginfos;
 
     // vars for future use
     ushort numCPUs;
@@ -93,7 +95,7 @@ private:
 
   vvSimpleServer *_simpleServer;
   vvBonjourBrowser *_browser;
-  static std::vector<vvGpu::vvGpuInfo> getResourceGpuInfos(const vvBonjourEntry entry);
+  static std::vector<vvGpu::vvGpuInfo> getResourceGpuInfos(vvTcpSocket *serversock);
   std::vector<vvRequest*>  _requests;
   std::vector<vvResource*> _resources;
   pthread_mutex_t _requestsMutex;
