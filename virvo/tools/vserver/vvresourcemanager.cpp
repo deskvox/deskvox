@@ -57,7 +57,7 @@ namespace
   void * processJob(void *param)
   {
     vvDebugMsg::msg(3, "vvResourceManager::processJob() Enter");
-
+/*
     if (virvo::hasFeature("bonjour"))
     {
     vvResourceManager::vvJob *job = reinterpret_cast<vvResourceManager::vvJob*>(param);
@@ -143,11 +143,12 @@ namespace
     }
     delete clientsock;
     }
-
+  */
     pthread_exit(NULL);
   #ifdef _WIN32
     return NULL;
   #endif
+
   }
 
   std::vector<vvGpu::vvGpuInfo> getResourceGpuInfos(vvTcpSocket *serversock)
@@ -226,7 +227,7 @@ void vvResourceManager::addJob(vvTcpSocket *sock)
   _requests.push_back(req);
   pthread_mutex_unlock(&_requestsMutex);
 
-  while(initNextJob()) {}
+  while(pairNextJob()) {}
 }
 
 void * vvResourceManager::newConnection(void *param)
@@ -288,7 +289,7 @@ void * vvResourceManager::newConnection(void *param)
 #endif
 }
 
-bool vvResourceManager::initNextJob()
+bool vvResourceManager::pairNextJob()
 {
   vvDebugMsg::msg(3, "vvResourceManager::initNextJob() Enter");
 
@@ -297,58 +298,43 @@ bool vvResourceManager::initNextJob()
 
   // sort for correct priority
   std::sort(_requests.begin(), _requests.end());
-  vvJob *job = NULL;
   if(_requests.size() > 0 && _resources.size() > 0)
   {
-    if(getFreeResourceCount() >= _requests.front()->nodes.size())
+    std::vector<vvRequest*>::iterator req = _requests.begin();
+    while((*req)->nodes.size() > 0 && (*req)->resources.size() == 0)
     {
-      job = new vvJob;
-      job->request = _requests.front();
-      _requests.erase(_requests.begin());
+      req++;
+    }
+    vvRequest* request = *req;
+    if(getFreeResourceCount() >= request->nodes.size())
+    {
+      request->resources = getFreeResources(request->nodes.size());
 
-      job->resources = getFreeResources(job->request->nodes.size());
-
-      if(job->resources.size() != job->request->nodes.size())
-      {
-        vvDebugMsg::msg(1, "vvResourceManager::initNextJob() unexpected error: Job without enough Resources started");
-        goto quitonerror;
-      }
-
-      // job ready to start?
-      if(job->resources.size() == job->request->nodes.size())
+      if(request->resources.size() == request->nodes.size())
       {
         pthread_t threadID;
-        pthread_create(&threadID, NULL, ::processJob, job);
+        pthread_create(&threadID, NULL, ::processJob, request);
         pthread_detach(threadID);
 
         pthread_mutex_unlock(&_requestsMutex);
         pthread_mutex_unlock(&_resourcesMutex);
 
         // Update Gpu-Status of used Resrources
-        for(std::vector<vvResource*>::iterator usedRes = job->resources.begin(); usedRes != job->resources.end(); usedRes++)
+        for(std::vector<vvResource*>::iterator usedRes = request->resources.begin(); usedRes != request->resources.end(); usedRes++)
         {
-          if (virvo::hasFeature("bonjour"))
-          {
-            vvTcpSocket *sock = new vvTcpSocket();
-            sock->connectToHost((*usedRes)->hostname, (*usedRes)->port);
-            (*usedRes)->ginfos = getResourceGpuInfos(sock);
-            delete sock;
-          }
+          vvTcpSocket *sock = new vvTcpSocket();
+          sock->connectToHost((*usedRes)->hostname, (*usedRes)->port);
+          (*usedRes)->ginfos = getResourceGpuInfos(sock);
+          delete sock;
         }
         return true;
       }
       else
       {
-        vvDebugMsg::msg(1, "vvResourceManager::initNextJob() unexpected error: Job's resource count mismatch");
-        goto quitonerror;
+        vvDebugMsg::msg(0, "vvResourceManager::initNextJob() unexpected error: Job's resource count mismatch");
       }
     }
   }
-
-  quitonerror:
-  // put job back to queue
-  if(job) _requests.push_back(job->request);
-  delete job;
 
   pthread_mutex_unlock(&_requestsMutex);
   pthread_mutex_unlock(&_resourcesMutex);
@@ -371,7 +357,7 @@ void vvResourceManager::updateResources(void * param)
   for(std::vector<vvResource*>::iterator resource = rm->_resources.begin(); resource != rm->_resources.end(); resource++)
   {
     // mark non-local vservers for updating
-    if((*resource)->server == NULL)
+    if((*resource)->local == false)
     {
       (*resource)->upToDate = false;
     }
@@ -433,7 +419,7 @@ void vvResourceManager::updateResources(void * param)
 
   pthread_mutex_unlock(&rm->_resourcesMutex);
 
-  while(rm->initNextJob()) {}; // process all waiting jobs
+  while(rm->pairNextJob()) {}; // process waiting requests
   }
   else
   {
@@ -451,9 +437,9 @@ bool vvResourceManager::serverLoop()
   case vvServer::RM_WITH_SERVER:
     {
       vvResource *serverRes = new vvResource;
-      serverRes->server = new vvSimpleServer(false); // RM and vserver-Bonjour at the same time is not possible
+      _simpleServer = new vvSimpleServer(false); // RM and vserver-Bonjour at the same time is not possible
       ushort serverResPort = vvServer::DEFAULT_PORT+1;
-      serverRes->server->setPort(serverResPort);
+      _simpleServer->setPort(serverResPort);
       serverRes->hostname = "localhost";
       serverRes->port = serverResPort;
 
@@ -466,7 +452,7 @@ bool vvResourceManager::serverLoop()
       _resources.push_back(serverRes);
 
       pthread_t threadID;
-      pthread_create(&threadID, NULL, ::localServerLoop, serverRes->server);
+      pthread_create(&threadID, NULL, ::localServerLoop, _simpleServer);
       pthread_detach(threadID);
     }
     break;
@@ -551,11 +537,11 @@ uint vvResourceManager::getFreeResourceCount() const
   return count;
 }
 
-std::vector<vvResourceManager::vvResource*> vvResourceManager::getFreeResources(uint amount) const
+std::vector<vvResource*> vvResourceManager::getFreeResources(uint amount) const
 {
   vvDebugMsg::msg(3, "vvResourceManager::getFreeResources() Enter");
 
-  std::vector<vvResourceManager::vvResource*> freeResources;
+  std::vector<vvResource*> freeResources;
 
   if(amount > _resources.size())
     return freeResources;

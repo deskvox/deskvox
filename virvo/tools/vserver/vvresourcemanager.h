@@ -46,33 +46,6 @@ class vvBonjourBrowser;
 class vvResourceManager : public vvServer
 {
 public:
-  struct vvResource
-  {
-  public:
-    vvResource()
-    {
-      upToDate = true;
-      server = NULL;
-    }
-
-    bool           upToDate;
-    std::string    hostname;
-    ushort         port;
-    vvServer      *server;
-    vvBonjourEntry bonjourEntry;
-    std::vector<vvGpu::vvGpuInfo> ginfos;
-
-    // vars for future use
-    ushort numCPUs;
-    uint   cpuMemSize;
-  };
-
-  struct vvJob
-  {
-    vvRequest               *request;
-    std::vector<vvResource*> resources;
-  };
-
   vvResourceManager();
   ~vvResourceManager();
 
@@ -80,7 +53,7 @@ private:
   void addJob(vvTcpSocket *sock);
 
   static void * newConnection(void *param);
-  bool initNextJob();
+  bool pairNextJob();
 
   static void updateResources(void * param);
 

@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include "vvbonjour/vvbonjourentry.h"
 #include "vvinttypes.h"
 #include "vvrenderer.h"
 #include "vvtcpsocket.h"
@@ -70,6 +71,27 @@ private:
   GpuData *_data;
 };
 
+struct vvResource
+{
+public:
+  vvResource()
+  {
+    upToDate = true;
+    local    = false;
+  }
+
+  bool           upToDate;
+  bool           local;
+  std::string    hostname;
+  ushort         port;
+  vvBonjourEntry bonjourEntry;
+  std::vector<vvGpu::vvGpuInfo> ginfos;
+
+  // vars for future use
+  ushort numCPUs;
+  uint   cpuMemSize;
+};
+
 struct vvRequest
 {
   vvRequest()
@@ -86,6 +108,8 @@ struct vvRequest
   std::vector<numgpus> nodes;     ///< requested amount of nodes with corresponding number of gpus
 
   vvTcpSocket *sock;              ///< socket to requesting client
+
+  std::vector<vvResource*> resources;
 
   bool operator<(vvRequest other)
   {
