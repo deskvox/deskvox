@@ -95,9 +95,6 @@ public:
 private:
   vvGLSLData* _data;
 
-//  GLint getUniform(const std::string& parameterName, const std::string& parameterType);
-//  vvGLSLTexture* getTexture(const std::string& textureName, const std::string& parameterType);
-
   bool loadShaders();     ///< Initializes, compiles, and links a shader program
   void deleteProgram();   ///< deletes program with all shaders and frees memory
 };
