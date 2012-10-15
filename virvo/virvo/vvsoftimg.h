@@ -46,18 +46,6 @@ class VIRVOEXPORT vvSoftImg
       {
          BOTTOM_LEFT
       };
-#ifndef VV_REMOTE_RENDERING
-      GLuint    texName;                          ///< name of warp texture
-      GLuint    pboName;                          ///< name for PBO for CUDA/OpenGL interop
-      GLboolean glsTexture2D;                     ///< state buffer for GL_TEXTURE_2D
-      GLboolean glsBlend;                         ///< stores GL_BLEND
-      GLboolean glsLighting;                      ///< stores GL_LIGHTING
-      GLboolean glsCulling;                       ///< stores GL_CULL_FACE
-      GLint     glsBlendSrc;                      ///< stores glBlendFunc(source,...)
-      GLint     glsBlendDst;                      ///< stores glBlendFunc(...,destination)
-      GLint     glsUnpackAlignment;               ///< stores glPixelStore(GL_UNPACK_ALIGNMENT,...)
-      GLfloat   glsRasterPos[4];                  ///< current raster position (glRasterPos)
-#endif
       bool      warpInterpolation;                ///< true = linear interpolation, false = nearest neighbor interpolation
       bool      reinitTex;                        ///< true if texture parameters have to be (re-)set
       bool      canUsePbo;                        ///< true if GL functions for PBOs are available
@@ -95,7 +83,7 @@ class VIRVOEXPORT vvSoftImg
       void setWarpInterpolation(bool);
       void setImageData(int, int, uchar*);
       void print(const char*);
-      GLuint getPboName() const;
+      uint getPboName() const;
 };
 #endif
 

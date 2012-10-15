@@ -27,13 +27,9 @@
 #include "vvconfig.h"
 #endif
 
-#ifdef HAVE_CUDA
-#include <cuda_runtime.h>
-
 #include "vvinttypes.h"
 
 bool makePreintLUTCorrectCuda(int width, uchar *preIntTable, float thickness, float min, float max, const float *rgba);
-#endif
 
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

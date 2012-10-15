@@ -53,6 +53,41 @@ Display* dsp = NULL;
 #include <CoreGraphics/CoreGraphics.h>
 #endif
 
+namespace
+{
+
+//----------------------------------------------------------------------------
+/// Save GL state for text display.
+void saveGLState()
+{
+  vvDebugMsg::msg(3, "saveGLState()");
+
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+
+  glPushAttrib(GL_CURRENT_BIT | GL_TRANSFORM_BIT | GL_LIST_BIT);
+}
+
+//----------------------------------------------------------------------------
+/// Restore GL state to previous state.
+void restoreGLState()
+{
+  vvDebugMsg::msg(3, "restoreGLState()");
+
+  glPopAttrib();
+
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix();
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
+}
+
+GLuint base;
+
+}
+
 /** Constructor.
   Builds the bitmap font.
   @param hDC Windows device context
@@ -66,7 +101,7 @@ vvPrintGL::vvPrintGL()
   HFONT font;                                     // Windows Font ID
   HDC   hDC;                                      // Windows device context
 
-  base = glGenLists(96);                          // Storage For 96 Characters
+  ::base = glGenLists(96);                        // Storage For 96 Characters
 
   font = CreateFont(-24,                          // Height Of Font
     0,                                            // Width Of Font
@@ -86,7 +121,7 @@ vvPrintGL::vvPrintGL()
   hDC = wglGetCurrentDC();
   SelectObject(hDC, font);                        // Selects The Font We Want
 
-  wglUseFontBitmaps(hDC, 32, 96, base);           // Builds 96 Characters Starting At Character 32
+  wglUseFontBitmaps(hDC, 32, 96, ::base);         // Builds 96 Characters Starting At Character 32
 #elif defined(HAVE_X11) && !defined(__APPLE__)
   if (dsp == NULL)
   {
@@ -99,11 +134,11 @@ vvPrintGL::vvPrintGL()
     const Font id = font->fid;
     uint first = font->min_char_or_byte2;
     uint last = font->max_char_or_byte2;
-    base = glGenLists(last + 1);
+    ::base = glGenLists(last + 1);
 
-    if (base)
+    if (::base)
     {
-      glXUseXFont(id, first, last - first + 1, base + first);
+      glXUseXFont(id, first, last - first + 1, ::base + first);
     }
   }
 #endif
@@ -116,7 +151,7 @@ vvPrintGL::~vvPrintGL()
 {
   vvDebugMsg::msg(3, "vvPrintGL::~vvPrintGL()");
 
-  glDeleteLists(base, 96);                        // Delete All 96 Characters
+  glDeleteLists(::base, 96);                        // Delete All 96 Characters
 }
 
 //----------------------------------------------------------------------------
@@ -148,7 +183,7 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
           *p = '+';
   }
 
-  saveGLState();
+  ::saveGLState();
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -159,9 +194,9 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
 #if !defined(__APPLE__)
   glColor4f(_fontColor[0], _fontColor[1], _fontColor[2], _fontColor[3]);
 #ifdef _WIN32
-  glListBase(base - 32);                          // Sets The Base Character to 32
+  glListBase(::base - 32);                        // Sets The Base Character to 32
 #else
-  glListBase(base);
+  glListBase(::base);
 #endif
                                                     // Draws The Display List Text
   glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
@@ -187,7 +222,7 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
   CGContextRelease(ctx);
   free(buf);
 #endif
-  restoreGLState();
+  ::restoreGLState();
 }
 
 //----------------------------------------------------------------------------
@@ -195,34 +230,6 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
 void vvPrintGL::setFontColor(const vvVector4& fontColor)
 {
   _fontColor = fontColor;
-}
-
-//----------------------------------------------------------------------------
-/// Save GL state for text display.
-void vvPrintGL::saveGLState()
-{
-  vvDebugMsg::msg(3, "vvPrintGL::saveGLState()");
-
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-
-  glPushAttrib(GL_CURRENT_BIT | GL_TRANSFORM_BIT | GL_LIST_BIT);
-}
-
-//----------------------------------------------------------------------------
-/// Restore GL state to previous state.
-void vvPrintGL::restoreGLState()
-{
-  vvDebugMsg::msg(3, "vvPrintGL::restoreGLState()");
-
-  glPopAttrib();
-
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
 }
 
 //============================================================================
