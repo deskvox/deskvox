@@ -23,6 +23,7 @@
 
 #include <virvo/vvremoteevents.h>
 #include <virvo/vvrendererfactory.h>
+#include <virvo/vvrendercontext.h>
 
 #include <string>
 
@@ -47,7 +48,36 @@ class vvVolDesc;
  */
 class vvServer
 {
+protected:
+  struct ThreadData
+  {
+    ThreadData()
+      : renderContext(NULL)
+      , server(NULL)
+      , remoteServerType(vvRenderer::REMOTE_IMAGE)
+      , renderer(NULL)
+      , vd(NULL)
+    {}
+
+    ~ThreadData()
+    {
+      delete renderContext;
+      delete server;
+      delete renderer;
+      delete vd;
+    }
+
+    vvRenderContext* renderContext;
+    vvContextOptions contextOptions;
+    vvRemoteServer* server;
+    vvRenderer::RendererType remoteServerType;
+    vvRenderer* renderer;
+    vvVolDesc* vd;
+  };
+
 public:
+  static const int            DEFAULTSIZE;   ///< default window size (width and height) in pixels
+  static const unsigned short DEFAULT_PORT;  ///< default port for socket connections
   enum ServerRequest
   {
     STATUS,
@@ -77,17 +107,11 @@ protected:
   bool parseCommandLine(int argc, char *argv[]);  ///< Parse command line arguments.
   virtual bool serverLoop();
   virtual void handleNextConnection(vvTcpSocket *sock) = 0;
-  virtual bool handleEvent(virvo::RemoteEvent, const vvSocketIO& io);
+  virtual bool handleEvent(ThreadData *tData, virvo::RemoteEvent, const vvSocketIO& io);
 
-  bool createRemoteServer(vvTcpSocket* sock);
+  bool createRenderContext(ThreadData* tData, const int w, const int h);
+  bool createRemoteServer(ThreadData* tData, vvTcpSocket* sock);
 
-  vvRemoteServer* _server;
-  vvRenderer::RendererType _remoteServerType;
-  vvRenderer* _renderer;
-  vvVolDesc* _vd;
-
-  static const int            DEFAULTSIZE;   ///< default window size (width and height) in pixels
-  static const unsigned short DEFAULT_PORT;  ///< default port for socket connections
   unsigned short   _port;         ///< port the server renderer uses to listen for incoming connections
   ServerMode       _sm;           ///< indicating current server mode (default: single server)
   bool             _useBonjour;   ///< indicating the use of bonjour

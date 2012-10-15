@@ -44,57 +44,26 @@ class vvBonjourBrowser;
  * @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
  */
 class vvResourceManager : public vvServer
-{  
-private:
-  struct vvResource
-  {
-  public:
-    vvResource()
-    {
-      upToDate = true;
-      server = NULL;
-    }
-
-    bool   upToDate;
-    std::vector<vvGpu::vvGpuInfo> ginfos;
-    vvBonjourEntry bonjourEntry;
-    vvServer *server;
-
-    // vars for future use
-    ushort numCPUs;
-    uint   cpuMemSize;
-  };
-
-  struct vvJob
-  {
-    vvRequest               *request;
-    std::vector<vvResource*> resources;
-  };
-
+{
 public:
-  /**
-    Creates a resource manager connected with server
-    \param server if set, resource manager also uses this server running locally
-    */
   vvResourceManager();
   ~vvResourceManager();
 
-  void addJob(vvTcpSocket* sock);         ///< thread-savely adds new connection to the job list
-  bool initNextJob();                     ///< thread-savely check for waiting jobs and free resources and pair if possible
+private:
+  void addJob(vvTcpSocket *sock);
+
+  static void * newConnection(void *param);
+  bool pairNextJob();
 
   static void updateResources(void * param);
 
-private:
   bool serverLoop();
-  static void * localServerLoop(void *param);
   void handleNextConnection(vvTcpSocket *sock);
-  static void * processJob(void *param);
-  uint getFreeResourceCount();
-  std::vector<vvResource*> getFreeResources(uint amount);
+  uint getFreeResourceCount() const;
+  std::vector<vvResource*> getFreeResources(uint amount) const;
 
   vvSimpleServer *_simpleServer;
   vvBonjourBrowser *_browser;
-  static std::vector<vvGpu::vvGpuInfo> getResourceGpuInfos(const vvBonjourEntry entry);
   std::vector<vvRequest*>  _requests;
   std::vector<vvResource*> _resources;
   pthread_mutex_t _requestsMutex;
