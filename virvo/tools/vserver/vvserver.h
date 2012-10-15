@@ -41,8 +41,7 @@ class vvVolDesc;
  *  -port:    set port, else default will be used.
  *  -mode:    choose server mode (default: server only)
  *  -bonjour: Use bonjour to broadcast this service (default: off)
- *  -debug:   set debug level, else default will be used.
- *
+ *  -debug:   set debug level, else default will be used.  *
  * @author Juergen Schulze (schulze@cs.brown.de)
  * @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
  */

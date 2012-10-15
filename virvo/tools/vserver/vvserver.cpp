@@ -544,6 +544,7 @@ bool vvServer::createRemoteServer(ThreadData *tData, vvTcpSocket* sock)
     return false;
   }
 
+  delete tData->server;
   switch (tData->remoteServerType)
   {
   case vvRenderer::REMOTE_IMAGE:
