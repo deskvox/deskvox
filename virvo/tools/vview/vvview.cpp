@@ -709,11 +709,11 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     */
 
     /* uncomment to test statistics-event
-    socketIO.putInt32(virvo::Statistics);
+    io.putEvent(virvo::Statistics);
     float wload;
-    socketIO.getFloat(wload);
+    io.getFloat(wload);
     int resCount;
-    socketIO.getInt32(resCount);
+    io.getInt32(resCount);
     std::cerr << "Total work-load " << wload << " caused with " << resCount << " resources." << endl;
     */
 

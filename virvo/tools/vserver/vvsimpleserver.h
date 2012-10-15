@@ -40,7 +40,7 @@ private:
   static vvSimpleServer* _instance;
 
   void handleNextConnection(vvTcpSocket *sock);
-  bool handleEvent(virvo::RemoteEvent, const vvSocketIO& io);
+  bool handleEvent(ThreadData *tData, virvo::RemoteEvent, const vvSocketIO& io);
   static void * handleClientThread(void *param);
   bool registerToBonjour();
   void unregisterFromBonjour();

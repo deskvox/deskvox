@@ -62,7 +62,7 @@ vvSimpleServer::~vvSimpleServer()
   if(_useBonjour) unregisterFromBonjour();
 }
 
-bool vvSimpleServer::handleEvent(virvo::RemoteEvent event, const vvSocketIO& io)
+bool vvSimpleServer::handleEvent(ThreadData *tData, virvo::RemoteEvent event, const vvSocketIO& io)
 {
   switch (event)
   {
@@ -77,8 +77,11 @@ bool vvSimpleServer::handleEvent(virvo::RemoteEvent event, const vvSocketIO& io)
       io.putGpuInfos(ginfos);
     }
     return true;
+  case virvo::Disconnect:
+    vvServer::handleEvent(tData, event, io);
+    return false;
   default:
-    return vvServer::handleEvent(event, io);
+    return vvServer::handleEvent(tData, event, io);
   }
 }
 
@@ -98,6 +101,7 @@ void * vvSimpleServer::handleClientThread(void *param)
 {
   vvDebugMsg::msg(3, "vvSimpleServer::handleClientThread()");
 
+  ThreadData *tData = new ThreadData;
   ThreadArgs *args = reinterpret_cast<ThreadArgs*>(param);
 
   vvTcpSocket *sock = args->_sock;
@@ -106,16 +110,17 @@ void * vvSimpleServer::handleClientThread(void *param)
   virvo::RemoteEvent event;
   while (io.getEvent(event) == vvSocket::VV_OK)
   {
-    if (!_instance->handleEvent(event, io))
+    if (!_instance->handleEvent(tData, event, io))
     {
       break;
     }
   }
-  _instance->handleEvent(virvo::Disconnect, io);
+  _instance->handleEvent(tData, virvo::Disconnect, io);
 
   sock->disconnectFromHost();
   delete sock;
   delete args;
+  delete tData;
 
   pthread_exit(NULL);
 #ifdef _WIN32
