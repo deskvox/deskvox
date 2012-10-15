@@ -41,40 +41,12 @@ class vvVolDesc;
  *  -port:    set port, else default will be used.
  *  -mode:    choose server mode (default: server only)
  *  -bonjour: Use bonjour to broadcast this service (default: off)
- *  -debug:   set debug level, else default will be used.
- *
+ *  -debug:   set debug level, else default will be used.  *
  * @author Juergen Schulze (schulze@cs.brown.de)
  * @author Stavros Delisavas (stavros.delisavas@uni-koeln.de)
  */
 class vvServer
 {
-protected:
-  struct ThreadData
-  {
-    ThreadData()
-      : renderContext(NULL)
-      , server(NULL)
-      , remoteServerType(vvRenderer::REMOTE_IMAGE)
-      , renderer(NULL)
-      , vd(NULL)
-    {}
-
-    ~ThreadData()
-    {
-      delete renderContext;
-      delete server;
-      delete renderer;
-      delete vd;
-    }
-
-    vvRenderContext* renderContext;
-    vvContextOptions contextOptions;
-    vvRemoteServer* server;
-    vvRenderer::RendererType remoteServerType;
-    vvRenderer* renderer;
-    vvVolDesc* vd;
-  };
-
 public:
   static const int            DEFAULTSIZE;   ///< default window size (width and height) in pixels
   static const unsigned short DEFAULT_PORT;  ///< default port for socket connections
@@ -103,6 +75,18 @@ public:
   void setPort(unsigned short port);
 
 protected:
+  struct ThreadData
+  {
+    ThreadData();
+    ~ThreadData();
+
+    vvRenderContext* renderContext;
+    vvContextOptions contextOptions;
+    vvRemoteServer* server;
+    vvRenderer::RendererType remoteServerType;
+    vvRenderer* renderer;
+    vvVolDesc* vd;
+  };
   void displayHelpInfo();                         ///< Display command usage help on the command line.
   bool parseCommandLine(int argc, char *argv[]);  ///< Parse command line arguments.
   virtual bool serverLoop();
