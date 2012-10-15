@@ -107,12 +107,6 @@ void * vvSimpleServer::handleClientThread(void *param)
   vvTcpSocket *sock = args->_sock;
 
   vvSocketIO io(sock);
-  if (io.putEvent(virvo::WaitEvents) != vvSocket::VV_OK)
-  {
-    vvDebugMsg::msg(0, "Socket error");
-    return NULL;
-  }
-
   virvo::RemoteEvent event;
   while (io.getEvent(event) == vvSocket::VV_OK)
   {

@@ -159,11 +159,13 @@ namespace
       vvSocketIO sockIO = vvSocketIO(serversock);
       virvo::RemoteEvent event;
       sockIO.getEvent(event);
+#if 0
       if(virvo::WaitEvents == event)
       {
         sockIO.putEvent(virvo::GpuInfo);
         sockIO.getGpuInfos(ginfos);
       }
+#endif
       sockIO.putInt32(virvo::Disconnect);
       delete serversock;
       return ginfos;
@@ -238,11 +240,13 @@ void * vvResourceManager::newConnection(void *param)
 
   vvSocketIO sockio = vvSocketIO(args->sock);
 
+#if 0
   if (sockio.putEvent(virvo::WaitEvents) != vvSocket::VV_OK)
   {
     vvDebugMsg::msg(0, "Socket error");
     return NULL;
   }
+#endif
   std::cerr << "bla1" << std::endl;
   bool goOn = true;
   virvo::RemoteEvent event;
