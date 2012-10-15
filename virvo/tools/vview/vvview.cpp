@@ -53,11 +53,13 @@ using std::ios;
 
 #include <virvo/vvvirvo.h>
 #include <virvo/vvgltools.h>
+#include <virvo/vvrequestmanagement.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>
 #include <virvo/vvclock.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvsocketmap.h>
+#include <virvo/vvsocketio.h>
 #include <virvo/vvtcpsocket.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvdebugmsg.h>
@@ -679,6 +681,52 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   else if (servers.size() > 0)
   {
     opt["brickrenderer"] = "image";
+  }
+
+  for(size_t i = 0; i<sockets.size();i++)
+  {
+    vvSocketIO io = vvSocketIO(sockets[i]);
+
+    virvo::RemoteEvent event;
+    if (io.getEvent(event) != vvSocket::VV_OK || event != virvo::WaitEvents)
+    {
+      vvDebugMsg::msg(0, "Bad connection established");
+    }
+    else
+    {
+      vvDebugMsg::msg(1, "Remote server ready to process events");
+    }
+
+    // vserver defaults to image remote rendering
+    if (rrMode == RR_IBR)
+    {
+      if (io.putEvent(virvo::RemoteServerType) == vvSocket::VV_OK)
+      {
+        io.putRendererType(vvRenderer::REMOTE_IBR);
+      }
+    }
+
+    /* uncomment to test GpuInfo-event
+    socketIO.putInt32(virvo::GpuInfo);
+    std::vector<vvGpu::vvGpuInfo> ginfos;
+    socketIO.getGpuInfos(ginfos);
+    std::cerr << "Number of gpus: " << ginfos.size() << std::endl;
+    for(std::vector<vvGpu::vvGpuInfo>::iterator ginfo = ginfos.begin(); ginfo != ginfos.end();ginfo++)
+    {
+      std::cerr << "free memory on server: "  << (*ginfo).freeMem << std::endl;
+      std::cerr << "total memory on server: " << (*ginfo).totalMem << std::endl;
+    }
+    */
+
+    /* uncomment to test statistics-event
+    socketIO.putInt32(virvo::Statistics);
+    float wload;
+    socketIO.getFloat(wload);
+    int resCount;
+    socketIO.getInt32(resCount);
+    std::cerr << "Total work-load " << wload << " caused with " << resCount << " resources." << endl;
+    */
+
   }
 
   if(renderer)

@@ -20,23 +20,19 @@
 
 #include "vvfileio.h"
 #include "vvgltools.h"
-#include "vvrendercontext.h"
 #include "vvrenderer.h"
 #include "vvremoteserver.h"
 #include "vvdebugmsg.h"
 #include "vvsocketio.h"
 #include "vvtcpsocket.h"
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
 
 using std::cerr;
 using std::endl;
 
-vvRemoteServer::vvRemoteServer(vvSocketIO *socket)
-  : _socketio(socket), _renderContext(NULL), _loadVolumeFromFile(false), _codetype(0)
+vvRemoteServer::vvRemoteServer(vvSocket *socket)
+  : _codetype(0)
 {
-  co = NULL;
+  _socketio = new vvSocketIO(socket);
   vvDebugMsg::msg(1, "vvRemoteServer::vvRemoteServer()");
   initSocket();
 }
@@ -45,23 +41,7 @@ vvRemoteServer::~vvRemoteServer()
 {
   vvDebugMsg::msg(1, "vvRemoteServer::~vvRemoteServer()");
 
-  delete _renderContext;
-  delete co;
-}
-
-bool vvRemoteServer::getLoadVolumeFromFile() const
-{
-  vvDebugMsg::msg(1, "vvRemoteServer::getLoadVolumeFromFile()");
-
-  return _loadVolumeFromFile;
-}
-
-void vvRemoteServer::resize(const int w, const int h)
-{
-  if (_renderContext != NULL)
-  {
-    _renderContext->resize(w, h);
-  }
+  delete _socketio;
 }
 
 vvRemoteServer::ErrorType vvRemoteServer::initSocket()
@@ -73,247 +53,149 @@ vvRemoteServer::ErrorType vvRemoteServer::initSocket()
   return VV_OK;
 }
 
-vvRemoteServer::ErrorType vvRemoteServer::initData(vvVolDesc*& vd)
-{
-  vvDebugMsg::msg(1, "vvRemoteServer::initData()");
-
-  _socketio->getBool(_loadVolumeFromFile);
-
-  if (_loadVolumeFromFile)
-  {
-    char* fn = 0;
-    _socketio->getFileName(fn);
-    cerr << "Load volume from file: " << fn << endl;
-    vd = new vvVolDesc(fn);
-    delete[] fn;
-    fn = NULL;
-
-    vvFileIO fio;
-    if (fio.loadVolumeData(vd) != vvFileIO::OK)
-    {
-      cerr << "Error loading volume file" << endl;
-      return VV_FILEIO_ERROR;
-    }
-    else
-    {
-      vd->printInfoLine();
-    }
-    // Set default color scheme if no TF present:
-    if (vd->tf.isEmpty())
-    {
-      vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-      vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
-    }
-    _socketio->putVolumeAttributes(vd);
-    _socketio->putTransferFunction(vd->tf);
-  }
-  else
-  {
-    cerr << "Wait for volume data to be transferred..." << endl;
-    vd = new vvVolDesc();
-
-    // Get a volume
-    switch (_socketio->getVolume(vd))
-    {
-    case vvSocket::VV_OK:
-      cerr << "Volume transferred successfully" << endl;
-      break;
-    case vvSocket::VV_ALLOC_ERROR:
-      cerr << "Not enough memory" << endl;
-      return VV_SOCKET_ERROR;
-    default:
-      cerr << "Cannot read volume from socket" << endl;
-      return VV_SOCKET_ERROR;
-    }
-  }
-  return VV_OK;
-}
-
-vvRemoteServer::ErrorType vvRemoteServer::initRenderContext(const int w, const int h)
-{
-  vvDebugMsg::msg(3, "vvRemoteServer::initRenderContext()");
-
-  delete _renderContext;
-  co = new vvContextOptions;
-  co->type = vvContextOptions::VV_PBUFFER;
-  co->width = w;
-  co->height = h;
-  co->displayName = "";
-  _renderContext = new vvRenderContext(*co);
-  if (_renderContext->makeCurrent())
-  {
-    return vvRemoteServer::VV_OK;
-  }
-  else
-  {
-    return vvRemoteServer::VV_RENDERCONTEXT_ERROR;
-  }
-}
-
-vvRemoteServer::ErrorType vvRemoteServer::destroyRenderContext()
-{
-  vvDebugMsg::msg(3, "vvRemoteServer::destroyRenderContext()");
-
-  delete _renderContext;
-  _renderContext = NULL;
-  return vvRemoteServer::VV_OK;
-}
-
-bool vvRemoteServer::processEvents(vvRenderer* renderer)
+bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer)
 {
   vvDebugMsg::msg(3, "vvRemoteServer::processEvents()");
 
-  vvSocketIO::CommReason commReason;
-  vvMatrix pr;
-  vvMatrix mv;
   vvVector3 position;
   vvVector3 viewDir;
   vvVector3 objDir;
-  int w;
-  int h;
   int currentFrame;
   vvTransFunc tf;
 
+  switch (event)
   {
-    vvGLTools::printGLError("begin vvRemoteServer::renderLoop()");
-
-    vvSocket::ErrorType err = _socketio->getCommReason(commReason);
-    if (err == vvSocket::VV_OK)
+  case virvo::CameraMatrix:
     {
-      switch (commReason)
+      vvMatrix pr;
+      vvMatrix mv;
+      if ((_socketio->getMatrix(&pr) == vvSocket::VV_OK)
+         && (_socketio->getMatrix(&mv) == vvSocket::VV_OK))
       {
-      case vvSocketIO::VV_QUIT:
-        return false;
-      case vvSocketIO::VV_MATRIX:
-        if ((_socketio->getMatrix(&pr) == vvSocket::VV_OK)
-           && (_socketio->getMatrix(&mv) == vvSocket::VV_OK))
-        {
-          renderImage(pr, mv, renderer);
-        }
-        break;
-      case vvSocketIO::VV_CURRENT_FRAME:
-        if ((_socketio->getInt32(currentFrame)) == vvSocket::VV_OK)
-        {
-          renderer->setCurrentFrame(currentFrame);
-        }
-        break;
-      case vvSocketIO::VV_OBJECT_DIRECTION:
-        if ((_socketio->getVector3(objDir)) == vvSocket::VV_OK)
-        {
-          renderer->setObjectDirection(objDir);
-        }
-        break;
-      case vvSocketIO::VV_VIEWING_DIRECTION:
-        if ((_socketio->getVector3(viewDir)) == vvSocket::VV_OK)
-        {
-          renderer->setViewingDirection(viewDir);
-        }
-        break;
-      case vvSocketIO::VV_POSITION:
-        if ((_socketio->getVector3(position)) == vvSocket::VV_OK)
-        {
-          renderer->setPosition(position);
-        }
-        break;
-      case vvSocketIO::VV_RESIZE:
-        if ((_socketio->getWinDims(w, h)) == vvSocket::VV_OK)
-        {
-          resize(w, h);
-        }
-        break;
-      case vvSocketIO::VV_TRANSFER_FUNCTION:
-        for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
-             it != tf._widgets.end(); ++it)
-        {
-          delete *it;
-        }
-        tf._widgets.clear();
-        if ((_socketio->getTransferFunction(tf)) == vvSocket::VV_OK)
-        {
-          renderer->getVolDesc()->tf = tf;
-          renderer->updateTransferFunction();
-        }
-        break;
-      case vvSocketIO::VV_PARAMETER_1B:
-        {
-          int32_t param;
-          bool value = false;
-          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getBool(value) == vvSocket::VV_OK)
-          {
-            renderer->setParameter((vvRenderState::ParameterType)param, value);
-          }
-        }
-        break;
-      case vvSocketIO::VV_PARAMETER_1I:
-        {
-          int32_t param;
-          int value = 0;
-          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getInt32(value) == vvSocket::VV_OK)
-          {
-            switch(param)
-            {
-            case vvRenderer::VV_CODEC:
-              _codetype = value;
-              break;
-            default:
-              renderer->setParameter((vvRenderState::ParameterType)param, value);
-              break;
-            }
-          }
-        }
-        break;
-      case vvSocketIO::VV_PARAMETER_1F:
-        {
-          int32_t param;
-          float value = 0.f;
-          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getFloat(value) == vvSocket::VV_OK)
-          {
-            renderer->setParameter((vvRenderState::ParameterType)param, value);
-          }
-        }
-        break;
-      case vvSocketIO::VV_PARAMETER_3F:
-        {
-          int32_t param;
-          vvVector3 value;
-          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getVector3(value) == vvSocket::VV_OK)
-          {
-            renderer->setParameter((vvRenderState::ParameterType)param, value);
-          }
-        }
-        break;
-      case vvSocketIO::VV_PARAMETER_4F:
-        {
-          int32_t param;
-          vvVector4 value;
-          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getVector4(value) == vvSocket::VV_OK)
-          {
-            renderer->setParameter((vvRenderState::ParameterType)param, value);
-          }
-        }
-        break;
-      case vvSocketIO::VV_PARAMETER_AABBI:
-        {
-          int32_t param;
-          vvAABBi value = vvAABBi(vvVector3i(), vvVector3i());
-          if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getAABBi(value) == vvSocket::VV_OK)
-          {
-            renderer->setParameter((vvRenderState::ParameterType)param, value);
-          }
-        }
-        break;
-      default:
-        vvDebugMsg::msg(0, "vvRemoteServer::mainLoop: comm reason not implemented: ", (int)commReason);
-        return true;
+        renderImage(pr, mv, renderer);
       }
     }
-    else if (err == vvSocket::VV_PEER_SHUTDOWN)
+    break;
+  case virvo::CurrentFrame:
+    if ((_socketio->getInt32(currentFrame)) == vvSocket::VV_OK)
     {
-      return false;
+      renderer->setCurrentFrame(currentFrame);
     }
-
-    vvGLTools::printGLError("end vvRemoteServer::renderLoop()");
+    break;
+  case virvo::ObjectDirection:
+    if ((_socketio->getVector3(objDir)) == vvSocket::VV_OK)
+    {
+      renderer->setObjectDirection(objDir);
+    }
+    break;
+  case virvo::ViewingDirection:
+    if ((_socketio->getVector3(viewDir)) == vvSocket::VV_OK)
+    {
+      renderer->setViewingDirection(viewDir);
+    }
+    break;
+  case virvo::Position:
+    if ((_socketio->getVector3(position)) == vvSocket::VV_OK)
+    {
+      renderer->setPosition(position);
+    }
+    break;
+  case virvo::TransFunc:
+    for (std::vector<vvTFWidget*>::const_iterator it = tf._widgets.begin();
+         it != tf._widgets.end(); ++it)
+    {
+      delete *it;
+    }
+    tf._widgets.clear();
+    if ((_socketio->getTransferFunction(tf)) == vvSocket::VV_OK)
+    {
+      renderer->getVolDesc()->tf = tf;
+      renderer->updateTransferFunction();
+    }
+    break;
+  case virvo::Parameter1B:
+    {
+      int32_t param;
+      bool value = false;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getBool(value) == vvSocket::VV_OK)
+      {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
+  case virvo::Parameter1I:
+    {
+      int32_t param;
+      int value = 0;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getInt32(value) == vvSocket::VV_OK)
+      {
+        switch(param)
+        {
+        case vvRenderer::VV_CODEC:
+          _codetype = value;
+          break;
+        default:
+          renderer->setParameter((vvRenderState::ParameterType)param, value);
+          break;
+        }
+      }
+    }
+    break;
+  case virvo::Parameter1F:
+    {
+      int32_t param;
+      float value = 0.f;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getFloat(value) == vvSocket::VV_OK)
+      {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
+  case virvo::Parameter3F:
+    {
+      int32_t param;
+      vvVector3 value;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getVector3(value) == vvSocket::VV_OK)
+      {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
+  case virvo::Parameter4F:
+    {
+      int32_t param;
+      vvVector4 value;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getVector4(value) == vvSocket::VV_OK)
+      {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
+  case virvo::ParameterColor:
+    {
+      int32_t param;
+      vvColor value;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getColor(value) == vvSocket::VV_OK)
+      {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
+  case virvo::ParameterAABBI:
+    {
+      int32_t param;
+      vvAABBi value = vvAABBi(vvVector3i(), vvVector3i());
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getAABBi(value) == vvSocket::VV_OK)
+      {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
+  default:
+    vvDebugMsg::msg(0, "vvRemoteServer::processEvent(): event not implemented: ", (int)event);
+    return true;
   }
+
   return true;
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

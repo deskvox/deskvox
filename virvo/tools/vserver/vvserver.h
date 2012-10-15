@@ -21,18 +21,15 @@
 #ifndef _VV_SERVER_H_
 #define _VV_SERVER_H_
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#ifdef HAVE_BONJOUR
-#include <virvo/vvbonjour/vvbonjourregistrar.h>
-#endif
+#include <virvo/vvremoteevents.h>
+#include <virvo/vvrendererfactory.h>
 
 #include <string>
 
+class vvRemoteServer;
+class vvSocketIO;
 class vvTcpSocket;
-class vvResource;
+class vvVolDesc;
 
 /**
  * Virvo Server main class.
@@ -64,14 +61,8 @@ public:
     RM_WITH_SERVER
   };
 
-  struct vvServerThreadArgs
-  {
-    vvTcpSocket *_sock;
-    void(*_exitFunc)(void*);
-  };
-
-  vvServer();
-  ~vvServer();
+  vvServer(bool useBonjour);
+  virtual ~vvServer();
 
   /** Main Virvo server routine.
     @param argc,argv command line arguments
@@ -79,33 +70,29 @@ public:
   */
   int run(int argc, char** argv);
 
-  void handleClient(vvTcpSocket *sock);           ///< Creates a thread handling the Client
-  static void * handleClientThread(void *param);
+  void setPort(unsigned short port);
 
-  static void exitCallback(void*)
-  {
-  }
-
-private:
+protected:
   void displayHelpInfo();                         ///< Display command usage help on the command line.
   bool parseCommandLine(int argc, char *argv[]);  ///< Parse command line arguments.
-  bool serverLoop();
-#ifdef HAVE_BONJOUR
-  DNSServiceErrorType registerToBonjour();
-  void unregisterFromBonjour();
-#endif
+  virtual bool serverLoop();
+  virtual void handleNextConnection(vvTcpSocket *sock) = 0;
+  virtual bool handleEvent(virvo::RemoteEvent, const vvSocketIO& io);
 
-  static const int DEFAULTSIZE;   ///< default window size (width and height) in pixels
-  static const int DEFAULT_PORT;  ///< default port for socket connections
+  bool createRemoteServer(vvTcpSocket* sock);
+
+  vvRemoteServer* _server;
+  vvRenderer::RendererType _remoteServerType;
+  vvRenderer* _renderer;
+  vvVolDesc* _vd;
+
+  static const int            DEFAULTSIZE;   ///< default window size (width and height) in pixels
+  static const unsigned short DEFAULT_PORT;  ///< default port for socket connections
   unsigned short   _port;         ///< port the server renderer uses to listen for incoming connections
   ServerMode       _sm;           ///< indicating current server mode (default: single server)
   bool             _useBonjour;   ///< indicating the use of bonjour
   bool             _daemonize;    ///< run in background as a unix daemon
   std::string      _daemonName;   ///< name of the daemon for reference in syslog
-
-#ifdef HAVE_BONJOUR
-  vvBonjourRegistrar _registrar;  ///< Bonjour registrar used by registerToBonjour() and unregisterFromBonjour()
-#endif
 
   static void handleSignal(int sig);               ///< Handle signals sent to a daemon
 };

@@ -23,7 +23,8 @@
 
 #include "vvexport.h"
 #include "vvinttypes.h"
-#include "vvtcpsocket.h"
+
+class vvTcpSocket;
 
 /**
   This class creates a tcp-server which can listen on a set port for
@@ -54,7 +55,7 @@ public:
   vvTcpSocket* nextConnection(double timeout = -1.0);
 
 private:
-  vvTcpSocket *_server;
+  vvTcpSocket *_listener;
   struct sockaddr_in _hostAddr;
 #if !defined(__linux__) && !defined(LINUX) && !(defined(__APPLE__) && defined(__GNUC__) && GNUC__ < 4)
 #define socklen_t int

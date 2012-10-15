@@ -18,10 +18,6 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -31,10 +27,11 @@
 #include "vvserver.h"
 
 #include <virvo/vvdebugmsg.h>
+#include <virvo/vvfileio.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
 #include <virvo/vvremoteserver.h>
-#include <virvo/vvrendererfactory.h>
+#include <virvo/vvrendercontext.h>
 #include <virvo/vvsocketio.h>
 #include <virvo/vvtcpserver.h>
 #include <virvo/vvtcpsocket.h>
@@ -44,7 +41,7 @@
 
 #include <iostream>
 #include <limits>
-#include <pthread.h>
+#include <sstream>
 
 #ifndef _WIN32
 #include <signal.h>
@@ -52,23 +49,44 @@
 #include <unistd.h>
 #endif
 
-const int vvServer::DEFAULTSIZE  = 512;
-const int vvServer::DEFAULT_PORT = 31050;
-
-using std::cerr;
-using std::endl;
-
-vvServer::vvServer()
+namespace
 {
-  _port       = vvServer::DEFAULT_PORT;
-  _sm         = SERVER;
-  _useBonjour = false;
-  _daemonize  = false;
-  _daemonName = "voxserver";
+  vvRenderContext* renderContext = NULL;
+  vvContextOptions contextOptions;
+
+  bool createRenderContext(const int w, const int h)
+  {
+    delete renderContext;
+    contextOptions.type = vvContextOptions::VV_PBUFFER;
+    contextOptions.width = w;
+    contextOptions.height = h;
+    contextOptions.displayName = "";
+    renderContext = new vvRenderContext(contextOptions);
+    return renderContext->makeCurrent();
+  }
+}
+
+const int            vvServer::DEFAULTSIZE  = 512;
+const unsigned short vvServer::DEFAULT_PORT = 31050;
+
+vvServer::vvServer(bool useBonjour)
+  : _server(NULL)
+  , _remoteServerType(vvRenderer::REMOTE_IMAGE)
+  , _renderer(NULL)
+  , _vd(NULL)
+  , _port(vvServer::DEFAULT_PORT)
+  , _sm(SERVER)
+  , _useBonjour(useBonjour)
+  , _daemonize(false)
+  , _daemonName("voxserver")
+{
 }
 
 vvServer::~vvServer()
 {
+  delete ::renderContext;
+  delete _server;
+  delete _renderer;
 }
 
 int vvServer::run(int argc, char** argv)
@@ -139,6 +157,11 @@ int vvServer::run(int argc, char** argv)
   return (int)(!res);
 }
 
+void vvServer::setPort(unsigned short port)
+{
+  _port = port;
+}
+
 void vvServer::displayHelpInfo()
 {
   vvDebugMsg::msg(3, "vvServer::displayHelpInfo()");
@@ -152,22 +175,25 @@ void vvServer::displayHelpInfo()
   cerr << "-port" << endl;
   cerr << " Don't use the default port (" << DEFAULT_PORT << "), but the specified one" << endl;
   cerr << endl;
-#ifdef HAVE_BONJOUR
-  cerr << "-mode" << endl;
-  cerr << " Start vvServer with one of the following modes:" << endl;
-  cerr << " s     single server (default)" << endl;
-  cerr << " rm    resource manager" << endl;
-  cerr << " rm+s  server and resource manager simultanously" << endl;
-  cerr << endl;
-  cerr << "-bonjour" << endl;
-  cerr << " use bonjour to broadcast this service. options:" << endl;
-  cerr << " on" << endl;
-  cerr << " off (default)" << endl;
-  cerr << endl;
-#endif
+  if (virvo::hasFeature("bonjour"))
+  {
+    cerr << "-mode" << endl;
+    cerr << " Start vvServer with one of the following modes:" << endl;
+    cerr << " s     single server (default)" << endl;
+    cerr << " rm    resource manager" << endl;
+    cerr << " rm+s  server and resource manager simultanously" << endl;
+    cerr << endl;
+    cerr << "-bonjour" << endl;
+    cerr << " use bonjour to broadcast this service. options:" << endl;
+    cerr << " on" << endl;
+    cerr << " off (default)" << endl;
+    cerr << endl;
+  }
+#ifndef _WIN32
   cerr << "-daemon" << endl;
   cerr << " Start in background as a daemon" << endl;
   cerr << endl;
+#endif
   cerr << "-debug" << endl;
   cerr << " Set debug level" << endl;
   cerr << endl;
@@ -176,6 +202,8 @@ void vvServer::displayHelpInfo()
 bool vvServer::parseCommandLine(int argc, char** argv)
 {
   vvDebugMsg::msg(1, "vvServer::parseCommandLine()");
+
+  const static bool HaveBonjour = virvo::hasFeature("bonjour");
 
   for (int arg=1; arg<argc; ++arg)
   {
@@ -206,8 +234,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
           _port = inport;
       }
     }
-#ifdef HAVE_BONJOUR
-    else if (vvToolshed::strCompare(argv[arg], "-mode")==0)
+    else if (HaveBonjour && vvToolshed::strCompare(argv[arg], "-mode")==0)
     {
       if ((++arg)>=argc)
       {
@@ -232,7 +259,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
         return false;
       }
     }
-    else if (vvToolshed::strCompare(argv[arg], "-bonjour")==0)
+    else if (HaveBonjour && vvToolshed::strCompare(argv[arg], "-bonjour")==0)
     {
       if ((++arg)>=argc)
       {
@@ -253,7 +280,6 @@ bool vvServer::parseCommandLine(int argc, char** argv)
         return false;
       }
     }
-#endif
 #ifndef _WIN32
     else if (vvToolshed::strCompare(argv[arg], "-daemon")==0)
     {
@@ -294,23 +320,6 @@ bool vvServer::serverLoop()
     cerr << "Failed to initialize server-socket on port " << _port << "." << endl;
     return false;
   }
-  else
-  {
-#ifdef HAVE_BONJOUR
-    if(_useBonjour) registerToBonjour();
-#endif
-  }
-
-  vvResourceManager *rm = NULL;
-
-  if(RM == _sm)
-  {
-    rm = new vvResourceManager();
-  }
-  else if(RM_WITH_SERVER == _sm)
-  {
-    rm = new vvResourceManager(this);
-  }
 
   while (1)
   {
@@ -320,7 +329,7 @@ bool vvServer::serverLoop()
 
     while((sock = tcpServ.nextConnection()) == NULL)
     {
-      vvDebugMsg::msg(3, "vvServer::serverLoop() Listening socket blocked, retry...");
+      vvDebugMsg::msg(3, "vvSimpleServer::serverLoop() Listening socket busy, retry...");
     }
 
     if(sock == NULL)
@@ -331,183 +340,278 @@ bool vvServer::serverLoop()
     else
     {
       cerr << "Incoming connection..." << endl;
-
-      if(RM == _sm || RM_WITH_SERVER == _sm)
-      {
-        rm->addJob(sock);
-        while(rm->initNextJob()) {}; // process all waiting jobs
-      }
-      else
-      {
-        handleClient(sock);
-      }
+      handleNextConnection(sock);
     }
   }
-
-#ifdef HAVE_BONJOUR
-  if(_useBonjour) unregisterFromBonjour();
-#endif
-
-  delete rm;
 
   return true;
 }
 
-#ifdef HAVE_BONJOUR
-DNSServiceErrorType vvServer::registerToBonjour()
+bool vvServer::handleEvent(const virvo::RemoteEvent event, const vvSocketIO& io)
 {
-  vvDebugMsg::msg(3, "vvServer::registerToBonjour()");
-  vvBonjourEntry entry = vvBonjourEntry("Virvo Server", "_vserver._tcp", "");
-  return _registrar.registerService(entry, _port);
-}
-
-void vvServer::unregisterFromBonjour()
-{
-  vvDebugMsg::msg(3, "vvServer::unregisterFromBonjour()");
-  _registrar.unregisterService();
-}
-#endif
-
-void vvServer::handleClient(vvTcpSocket *sock)
-{
-  vvServerThreadArgs *args = new vvServerThreadArgs;
-  args->_sock = sock;
-  args->_exitFunc = NULL;
-
-  pthread_t pthread;
-  pthread_create(&pthread,  NULL, handleClientThread, args);
-  pthread_detach(pthread);
-}
-
-void * vvServer::handleClientThread(void *param)
-{
-  vvServerThreadArgs *args = reinterpret_cast<vvServerThreadArgs*>(param);
-
-  if(args->_exitFunc == NULL)
+  switch (event)
   {
-    args->_exitFunc = &vvServer::exitCallback;
-  }
+  case virvo::Volume:
+    delete _vd;
+    _vd = new vvVolDesc;
 
-  pthread_cleanup_push(args->_exitFunc, NULL);
-
-  vvTcpSocket *sock = args->_sock;
-
-  vvSocketIO *sockio = new vvSocketIO(sock);
-
-  vvRemoteServer* server = NULL;
-
-  sockio->putBool(true);  // let client know we are ready
-
-  int getType;
-  sockio->getInt32(getType);
-  vvRenderer::RendererType rType = (vvRenderer::RendererType)getType;
-  switch(rType)
-  {
-    case vvRenderer::REMOTE_IMAGE:
-      server = new vvImageServer(sockio);
-      break;
-    case vvRenderer::REMOTE_IBR:
-      server = new vvIbrServer(sockio);
-      break;
-    default:
-      cerr << "Unknown remote rendering type " << rType << std::endl;
-      break;
-  }
-  if(!server)
-  {
-    pthread_exit(NULL);
-  #ifdef _WIN32
-    return NULL;
-  #endif
-  }
-
-  vvVolDesc *vd = NULL;
-  if(server->initRenderContext(DEFAULTSIZE, DEFAULTSIZE) != vvRemoteServer::VV_OK)
-  {
-    cerr << "Couldn't initialize render context" << std::endl;
-    goto cleanup;
-  }
-  vvGLTools::enableGLErrorBacktrace();
-  if(server->initData(vd) != vvRemoteServer::VV_OK)
-  {
-    cerr << "Could not initialize volume data" << endl;
-    cerr << "Continuing with next client..." << endl;
-    goto cleanup;
-  }
-
-  if(vd != NULL)
-  {
-    if(server->getLoadVolumeFromFile())
+    switch (io.getVolume(_vd))
     {
-      vd->printInfoLine();
+    case vvSocket::VV_OK:
+      vvDebugMsg::msg(1, "Volume transferred successfully");
+      return true;
+    case vvSocket::VV_ALLOC_ERROR:
+      vvDebugMsg::msg(0, "Not enough memory to accomodate volume");
+      delete _vd;
+      _vd = NULL;
+      return true;
+    default:
+      vvDebugMsg::msg(0, "Unknown error while reading volume from socket");
+      delete _vd;
+      _vd = NULL;
+      return true;
     }
 
-    // Set default color scheme if no TF present:
-    if(vd->tf.isEmpty())
+    // if remote server is already created, create a new one
+    if (_server != NULL)
     {
-      vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-      vd->tf.setDefaultColors((vd->chan==1) ? 0 : 2, 0.0, 1.0);
+      if (!createRemoteServer(static_cast<vvTcpSocket*>(io.getSocket())))
+      {
+        vvDebugMsg::msg(0, "Couldn't create remote server");
+        return true;
+      }
+    }
+    return true;
+  case virvo::VolumeFile:
+    {
+      std::string fn;
+      io.getFileName(fn);
+      vvDebugMsg::msg(1, "Load volume from file: ", fn.c_str());
+      delete _vd;
+      _vd = new vvVolDesc(fn.c_str());
+
+      vvFileIO fio;
+      if (fio.loadVolumeData(_vd) != vvFileIO::OK)
+      {
+        vvDebugMsg::msg(0, "Error loading volume file");
+        delete _vd;
+        _vd = NULL;
+        return true;
+      }
+      else
+      {
+        _vd->printInfoLine();
+      }
+
+      // set default color scheme if no TF present
+      if (_vd->tf.isEmpty())
+      {
+        _vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+        _vd->tf.setDefaultColors((_vd->chan == 1) ? 0 : 2, 0.0, 1.0);
+      }
+
+      // if remote server is already created, create a new one
+      if (_server != NULL)
+      {
+        if (!createRemoteServer(static_cast<vvTcpSocket*>(io.getSocket())))
+        {
+          vvDebugMsg::msg(0, "Couldn't create remote server");
+          return true;
+        }
+      }
+    }
+    return true;
+  case virvo::CameraMatrix:
+  case virvo::Parameter1B:
+  case virvo::Parameter1I:
+  case virvo::Parameter1F:
+  case virvo::Parameter3F:
+  case virvo::Parameter4F:
+  case virvo::ParameterColor:
+  case virvo::ParameterAABBI:
+  case virvo::CurrentFrame:
+  case virvo::ObjectDirection:
+  case virvo::ViewingDirection:
+  case virvo::Position:
+  case virvo::TransFunc:
+    // if no render context exists, create one
+    if (::renderContext == NULL && !createRenderContext(DEFAULTSIZE, DEFAULTSIZE))
+    {
+      vvDebugMsg::msg(0, "Couldn't create render context");
+      return true;
+    }
+
+    // if no remote server exists, create one
+    if (_server == NULL && !createRemoteServer(static_cast<vvTcpSocket*>(io.getSocket())))
+    {
+      vvDebugMsg::msg(0, "Couldn't create remote server");
+      return true;
+    }
+
+    if (_server != NULL && _vd != NULL && _renderer != NULL)
+    {
+      return _server->processEvent(event, _renderer);
+    }
+    else
+    {
+      vvDebugMsg::msg(0, "Cannot process remote rendering event");
+      return false;
+    }
+    return true;
+  case virvo::RemoteServerType:
+    if (io.getRendererType(_remoteServerType) != vvSocket::VV_OK)
+    {
+      vvDebugMsg::msg(0, "Cannot get remote server type");
+      return false;
+    }
+
+    // if an old server exists, we need to create a new server
+    if (_server != NULL)
+    {
+      if (!createRemoteServer(static_cast<vvTcpSocket*>(io.getSocket())))
+      {
+        vvDebugMsg::msg(0, "Couldn't create remote server");
+        return true;
+      }
+    }
+    return true;
+  case virvo::ServerInfo:
+    {
+      vvServerInfo info;
+
+      // if no render context exists, create one
+      if (::renderContext == NULL && !createRenderContext(DEFAULTSIZE, DEFAULTSIZE))
+      {
+        vvDebugMsg::msg(0, "Couldn't create render context");
+
+        // send an empty server info
+        io.putServerInfo(info);
+        return true;
+      }
+
+      // assemble renderers
+      std::vector<std::string> renderers;
+      renderers.push_back("rayrend");
+      renderers.push_back("softrayrend");
+      renderers.push_back("slices");
+      renderers.push_back("cubic2d");
+      renderers.push_back("planar");
+      renderers.push_back("bricks");
+      renderers.push_back("spherical");
+      renderers.push_back("serbrick");
+      renderers.push_back("parbrick");
+
+      // query available renderers
+      std::stringstream rendstr;
+      for (std::vector<std::string>::const_iterator it = renderers.begin();
+           it != renderers.end(); ++it)
+      {
+        if (vvRendererFactory::hasRenderer(*it))
+        {
+          if (rendstr.str() != "")
+          {
+            rendstr << ",";
+          }
+          rendstr << *it;
+        }
+      }
+      info.renderers = rendstr.str();
+      io.putServerInfo(info);
+    }
+    return true;
+  case virvo::WindowResize:
+    {
+      int w;
+      int h;
+      io.getWinDims(w, h);
+      if (::renderContext == NULL && !createRenderContext(w, h))
+      {
+        vvDebugMsg::msg(0, "Cannot resize remote rendering context");
+        return true;
+      }
+      ::renderContext->resize(static_cast<uint>(w), static_cast<uint>(h));
+    }
+    return true;
+  case virvo::Disconnect:
+    delete _renderer;
+    delete _vd;
+    delete _server;
+    delete ::renderContext;
+    _renderer = NULL;
+    _vd = NULL;
+    _server = NULL;
+    ::renderContext = NULL;
+    return true;
+  default:
+    assert(0 && "Event not handled");
+    return false;
+  }
+}
+
+bool vvServer::createRemoteServer(vvTcpSocket* sock)
+{
+  vvDebugMsg::msg(3, "vvServer::createRemoteServer() Enter");
+
+  // need a render context. either reuse existing or create a new one
+  if (::renderContext == NULL && !::createRenderContext(DEFAULTSIZE, DEFAULTSIZE))
+  {
+    vvDebugMsg::msg(0, "Couldn't create render context");
+    return false;
+  }
+
+  vvSocketIO sockio(sock);
+
+  delete _server;
+  switch (_remoteServerType)
+  {
+  case vvRenderer::REMOTE_IMAGE:
+    _server = new vvImageServer(sock);
+    break;
+  case vvRenderer::REMOTE_IBR:
+    _server = new vvIbrServer(sock);
+    break;
+  default:
+    vvDebugMsg::msg(0, "Unknown remote rendering type");
+    break;
+  }
+
+  if (_server == NULL)
+  {
+    vvDebugMsg::msg(0, "Couldn't create remote server");
+    return false;
+  }
+
+  vvGLTools::enableGLErrorBacktrace();
+
+  if (_vd != NULL)
+  {
+    // set default color scheme if no TF present
+    if (_vd->tf.isEmpty())
+    {
+      _vd->tf.setDefaultAlpha(0, 0.0, 1.0);
+      _vd->tf.setDefaultColors((_vd->chan == 1) ? 0 : 2, 0.0, 1.0);
     }
 
     vvRenderState rs;
-    vvRenderer *renderer = vvRendererFactory::create(vd,
-        rs,
-        rType==vvRenderer::REMOTE_IBR ? "rayrend" : "default",
-        "");
+    vvRendererFactory::Options opt;
 
-    renderer->setParameter(vvRenderer::VV_USE_IBR, rType == vvRenderer::REMOTE_IBR);
+    std::string renderertype = _remoteServerType == vvRenderer::REMOTE_IMAGE
+      ? "default"
+      : "rayrend";
+    _renderer = vvRendererFactory::create(_vd,
+      rs,
+      renderertype.c_str(),
+      opt);
 
-    while(1)
-    {
-      if(!server->processEvents(renderer))
-      {
-        delete renderer;
-        renderer = NULL;
-        break;
-      }
-    }
+    _renderer->setParameter(vvRenderer::VV_USE_IBR, _remoteServerType == vvRenderer::REMOTE_IBR);
+    return true;
   }
-
-cleanup:
-  server->destroyRenderContext();
-
-  // Frames vector with bricks is deleted along with the renderer.
-  // Don't free them here.
-  // see setRenderer().
-
-  delete server;
-  server = NULL;
-
-  delete sockio;
-  sockio = NULL;
-
-  sock->disconnectFromHost();
-  delete sock;
-  sock = NULL;
-
-  delete vd;
-  vd = NULL;
-
-  pthread_exit(NULL);
-  pthread_cleanup_pop(0);
-#ifdef _WIN32
-  return NULL;
-#endif
+  else
+  {
+    vvDebugMsg::msg(0, "No volume loaded");
+    return false;
+  }
 }
-
-/*vvServer *s = NULL;
-
-void sigproc(int )
-{
-  // NOTE some versions of UNIX will reset signal to default
-  // after each call. So for portability set signal each time
-  signal(SIGINT, sigproc);
-
-  cerr << "you have pressed ctrl-c" << endl;
-
-  delete s;
-  s = NULL;
-}*/
 
 
 //-------------------------------------------------------------------
@@ -534,7 +638,6 @@ void vvServer::handleSignal(int sig)
 /// Main entry point.
 int main(int argc, char** argv)
 {
-//  signal(SIGINT, sigproc);
 #ifdef VV_DEBUG_MEMORY
   int flag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);// Get current flag
   flag |= _CRTDBG_LEAK_CHECK_DF;                 // Turn on leak-checking bit
@@ -563,8 +666,9 @@ int main(int argc, char** argv)
 #endif
 
   //vvDebugMsg::setDebugLevel(vvDebugMsg::NO_MESSAGES);
-  vvServer vserver;
-  int error = vserver.run(argc, argv);
+//  vvDebugMsg::setDebugLevel(5);
+  vvResourceManager vvRM;
+  int error = vvRM.run(argc, argv);
 
 #ifdef VV_DEBUG_MEMORY
   _CrtDumpMemoryLeaks();                         // display memory leaks, if any

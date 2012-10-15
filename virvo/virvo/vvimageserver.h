@@ -24,20 +24,22 @@
 #include "vvexport.h"
 #include "vvremoteserver.h"
 
+#include <vector>
+
 class vvRenderer;
 class vvImage;
 
 class VIRVOEXPORT vvImageServer : public vvRemoteServer
 {
 public:
-  vvImageServer(vvSocketIO *socket);
+  vvImageServer(vvSocket *socket);
   ~vvImageServer();
 
 private:
   void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
   void resize(int w, int h);
   vvImage *_image;
-  uchar *_pixels;
+  std::vector<uchar> _pixels;
 };
 
 #endif

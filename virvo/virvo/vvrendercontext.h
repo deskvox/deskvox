@@ -69,11 +69,13 @@ public:
 class VIRVOEXPORT vvRenderContext
 {
 public:
-//  enum ContextWindow
-//  {
-//    VV_X11,
-//    VV_WINAPI
-//  };
+  enum WindowingSystem
+  {
+    VV_NONE,
+    VV_X11,
+    VV_WGL,
+    VV_COCOA
+  };
 
   /**
     Creates a render context with given context options.

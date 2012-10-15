@@ -85,7 +85,7 @@ vvBonjourResolver::vvBonjourResolver()
 
 vvBonjourResolver::~vvBonjourResolver()
 {
-  if(_eventLoop) delete _eventLoop;
+  delete _eventLoop;
 }
 
 vvBonjour::ErrorType vvBonjourResolver::resolveBonjourEntry(const vvBonjourEntry& entry)

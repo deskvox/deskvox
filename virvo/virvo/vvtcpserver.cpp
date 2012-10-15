@@ -23,15 +23,17 @@
 #include "vvdebugmsg.h"
 #include "vvsocketmonitor.h"
 #include "vvtcpserver.h"
+#include "vvtcpsocket.h"
 
 vvTcpServer::vvTcpServer(const ushort port)
+  : _listener(NULL)
 {
   vvsock_t sockfd;
 
 #ifdef _WIN32
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2,0), &wsaData) != 0)
-    vvDebugMsg::msg(1, "WSAStartup failed!");
+    vvDebugMsg::msg(0, "WSAStartup failed!");
 #endif
 
 #ifdef _WIN32
@@ -40,80 +42,69 @@ vvTcpServer::vvTcpServer(const ushort port)
   int optval=1;
 #endif
 
-  if((sockfd = socket(AF_INET, SOCK_STREAM, 0 )) < 0)
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+  if (sockfd == VV_INVALID_SOCKET)
   {
-    vvDebugMsg::msg(1, "Error: socket()", true);
-    _server = NULL;
+    vvDebugMsg::msg(0, "Error: socket()", true);
     return;
   }
 
   if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval,sizeof(optval)))
   {
-    vvDebugMsg::msg(1, "Error: setsockopt()");
-    _server = NULL;
+    vvDebugMsg::msg(0, "Error: setsockopt()");
     return;
   }
 
   memset((char *) &_hostAddr, 0, sizeof(_hostAddr));
   _hostAddr.sin_family = AF_INET;
-  _hostAddr.sin_port = htons((unsigned short)port);
+  _hostAddr.sin_port = htons((ushort)port);
   _hostAddr.sin_addr.s_addr = INADDR_ANY;
   _hostAddrlen = sizeof(_hostAddr);
   if(bind(sockfd, (struct sockaddr *)&_hostAddr, _hostAddrlen))
   {
-    vvDebugMsg::msg(1, "Error: bind()");
-    _server = NULL;
+    vvDebugMsg::msg(0, "Error: bind()");
     return;
   }
 
   if (listen(sockfd, 1))
   {
-    vvDebugMsg::msg(1, "Error: listen()");
-    _server = NULL;
+    vvDebugMsg::msg(0, "Error: listen()");
     return;
   }
 
-  _server = new vvTcpSocket();
-  _server->setSockfd(sockfd);
+  _listener = new vvTcpSocket();
+  _listener->setSockfd(sockfd);
 }
 
 vvTcpServer::~vvTcpServer()
 {
-  if(_server)
-    delete _server;
+  delete _listener;
 }
 
 bool vvTcpServer::initStatus() const
 {
-  if(_server)
-  {
-    if(_server->getSockfd() < 0)
-      return false;
-    else
-      return true;
-  }
-  else
-    return false;
+  return _listener && (_listener->getSockfd() != VV_INVALID_SOCKET);
 }
 
 vvTcpSocket* vvTcpServer::nextConnection(double timeout)
 {
   if(!initStatus())
   {
-    vvDebugMsg::msg(2, "vvTcpServer::nextConnection() error: server not correctly initialized");
+    vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: server not correctly initialized");
     return NULL;
   }
 
   if (timeout < 0.0 ? false : true)
   {
-    if(vvSocket::VV_OK != _server->setParameter(vvSocket::VV_NONBLOCKING, 1.f))
+    if(vvSocket::VV_OK != _listener->setParameter(vvSocket::VV_NONBLOCKING, 1.f))
     {
-      vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: setting O_NONBLOCK on server-socket failed");
+      vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: setting O_NONBLOCK on server-socket failed");
       return NULL;
     }
 
     std::vector<vvSocket*> socks;
-    socks.push_back(_server);
+    socks.push_back(_listener);
 
     vvSocketMonitor sm;
     sm.setReadFds(socks);
@@ -126,17 +117,18 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
   }
   else
   {
-    if(vvSocket::VV_OK != _server->setParameter(vvSocket::VV_NONBLOCKING, 0.0f))
+    if(vvSocket::VV_OK != _listener->setParameter(vvSocket::VV_NONBLOCKING, 0.0f))
     {
-      vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: removing O_NONBLOCK from server-socket failed.");
+      vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: removing O_NONBLOCK from server-socket failed.");
       return NULL;
     }
   }
 
-  vvsock_t n;
-  if ( (n = accept(_server->getSockfd(), (struct sockaddr *)&_hostAddr, &_hostAddrlen)) < 0)
+  vvsock_t n = accept(_listener->getSockfd(), (struct sockaddr *)&_hostAddr, &_hostAddrlen);
+
+  if (n == VV_INVALID_SOCKET)
   {
-    vvDebugMsg::msg(1, "vvTcpServer::nextConnection() error: accept() failed", true);
+    vvDebugMsg::msg(0, "vvTcpServer::nextConnection() error: accept() failed", true);
     return NULL;
   }
 

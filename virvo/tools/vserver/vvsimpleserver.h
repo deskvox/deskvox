@@ -18,32 +18,37 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_IBRSERVER_H_
-#define _VV_IBRSERVER_H_
+#ifndef _VV_SIMPLESERVER_H_
+#define _VV_SIMPLESERVER_H_
 
-#include "vvexport.h"
-#include "vvremoteserver.h"
-#include "vvrenderer.h"
+#include <virvo/vvbonjour/vvbonjourregistrar.h>
 
-#include <vector>
+#include <string>
 
-class vvIbrImage;
+#include "vvserver.h"
 
-class VIRVOEXPORT vvIbrServer : public vvRemoteServer
+class vvSimpleServer : public vvServer
 {
+  friend class vvResourceManager;
 public:
-  vvIbrServer(vvSocket *socket);
-  ~vvIbrServer();
+  vvSimpleServer(bool useBonjour);
+  ~vvSimpleServer();
 
 private:
-  vvRenderer::IbrMode         _ibrMode;
+  vvBonjourRegistrar _registrar;  ///< Bonjour registrar used by registerToBonjour() and unregisterFromBonjour()
 
-  void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
-  void resize(int w, int h);
-  vvIbrImage *_image;
-  std::vector<uchar> _pixels;
-  std::vector<uchar> _depth;
+  static vvSimpleServer* _instance;
+
+  void handleNextConnection(vvTcpSocket *sock);
+  bool handleEvent(virvo::RemoteEvent, const vvSocketIO& io);
+  static void * handleClientThread(void *param);
+  bool registerToBonjour();
+  void unregisterFromBonjour();
 };
 
-#endif
+#endif // _VV_SERVER_H_
+
+//===================================================================
+// End of File
+//===================================================================
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

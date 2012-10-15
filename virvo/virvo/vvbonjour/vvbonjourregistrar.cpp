@@ -89,8 +89,10 @@ vvBonjourRegistrar::vvBonjourRegistrar()
 vvBonjourRegistrar::~vvBonjourRegistrar()
 {
 #ifdef HAVE_BONJOUR
-  if(::serviceRef)
+  if (::serviceRef != NULL)
+  {
     unregisterService();
+  }
 #endif
 }
 
@@ -115,12 +117,7 @@ bool vvBonjourRegistrar::registerService(const vvBonjourEntry& entry, const usho
   if (error == kDNSServiceErr_NoError)
   {
     _eventLoop = new vvBonjourEventLoop(::serviceRef);
-    _eventLoop->run(true, -1.0);
-    while(!_eventLoop->_noMoreFlags)
-    {
-      vvToolshed::sleep(1);
-      //waiting...
-    }
+    _eventLoop->run(false, -1.0);
     return true;
   }
   else

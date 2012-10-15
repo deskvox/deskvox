@@ -39,7 +39,7 @@ vvBonjour::vvBonjour()
 vvBonjour::~vvBonjour()
 {}
 
-std::vector<vvTcpSocket*> vvBonjour::getSocketsFor(const std::string& serviceType, std::string domain) const
+std::vector<vvTcpSocket*> vvBonjour::getSocketsFor(const std::string& serviceType, const std::string& domain) const
 {
   std::vector<vvTcpSocket*> sockets;
   std::vector<vvBonjourEntry> entries = getEntriesFor(serviceType, domain);
@@ -63,7 +63,7 @@ std::vector<vvTcpSocket*> vvBonjour::getSocketsFor(const std::string& serviceTyp
   return sockets;
 }
 
-std::vector<vvBonjourEntry> vvBonjour::getEntriesFor(const std::string& serviceType, std::string domain) const
+std::vector<vvBonjourEntry> vvBonjour::getEntriesFor(const std::string& serviceType, const std::string& domain) const
 {
   vvBonjourBrowser browser;
   browser.browseForServiceType(serviceType, domain);
@@ -71,7 +71,7 @@ std::vector<vvBonjourEntry> vvBonjour::getEntriesFor(const std::string& serviceT
   return browser.getBonjourEntries();
 }
 
-std::vector<std::string> vvBonjour::getConnectionStringsFor(const std::string& serviceType, std::string domain) const
+std::vector<std::string> vvBonjour::getConnectionStringsFor(const std::string& serviceType, const std::string& domain) const
 {
   std::vector<vvBonjourEntry> entries = getEntriesFor(serviceType, domain);
   std::vector<std::string> connectionStrings;

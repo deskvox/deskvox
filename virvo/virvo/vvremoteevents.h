@@ -18,32 +18,48 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_IBRSERVER_H_
-#define _VV_IBRSERVER_H_
+#ifndef _VVCOMMON_H_
+#define _VVCOMMON_H_
 
-#include "vvexport.h"
-#include "vvremoteserver.h"
-#include "vvrenderer.h"
-
-#include <vector>
-
-class vvIbrImage;
-
-class VIRVOEXPORT vvIbrServer : public vvRemoteServer
+namespace virvo
 {
-public:
-  vvIbrServer(vvSocket *socket);
-  ~vvIbrServer();
+  enum RemoteEvent
+  {
+    // initialization
+    Volume = 0,
+    VolumeFile,
 
-private:
-  vvRenderer::IbrMode         _ibrMode;
+    // renderer parameters
+    Parameter1B,
+    Parameter1I,
+    Parameter1F,
+    Parameter3F,
+    Parameter4F,
+    ParameterColor,
+    ParameterAABBI,
+    CurrentFrame,
+    ObjectDirection,
+    ViewingDirection,
+    Position,
+    TransFunc,
 
-  void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
-  void resize(int w, int h);
-  vvIbrImage *_image;
-  std::vector<uchar> _pixels;
-  std::vector<uchar> _depth;
-};
+    // rendering
+    CameraMatrix,
 
-#endif
+    // misc.
+    ServerInfo,
+    GpuInfo,
+    Statistics,
+    WaitEvents,
+    WindowResize,
+    RemoteServerType,
+    Disconnect
+  };
+}
+
+#endif // _VVCOMMON_H_
+
+//===================================================================
+// End of File
+//===================================================================
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
