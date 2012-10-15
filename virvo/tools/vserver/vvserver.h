@@ -77,21 +77,8 @@ public:
 protected:
   struct ThreadData
   {
-    ThreadData()
-      : renderContext(NULL)
-      , server(NULL)
-      , remoteServerType(vvRenderer::REMOTE_IMAGE)
-      , renderer(NULL)
-      , vd(NULL)
-    {}
-
-    ~ThreadData()
-    {
-      delete renderContext;
-      delete server;
-      delete renderer;
-      delete vd;
-    }
+    ThreadData();
+    ~ThreadData();
 
     vvRenderContext* renderContext;
     vvContextOptions contextOptions;

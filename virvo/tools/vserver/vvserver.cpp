@@ -51,6 +51,22 @@
 const int            vvServer::DEFAULTSIZE  = 512;
 const unsigned short vvServer::DEFAULT_PORT = 31050;
 
+vvServer::ThreadData::ThreadData()
+  : renderContext(NULL)
+  , server(NULL)
+  , remoteServerType(vvRenderer::REMOTE_IMAGE)
+  , renderer(NULL)
+  , vd(NULL)
+{}
+
+vvServer::ThreadData::~ThreadData()
+{
+  delete renderContext;
+  delete server;
+  delete renderer;
+  delete vd;
+}
+
 vvServer::vvServer(bool useBonjour)
   : _port(vvServer::DEFAULT_PORT)
   , _sm(SERVER)
