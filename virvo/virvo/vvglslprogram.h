@@ -28,6 +28,8 @@
 #include <vector>
 #include <map>
 
+struct vvGLSLData;
+
 /** Wrapper Class for OpenGL Shading Language
   This class loads a combination of up to three shaders
   (vertex-, geometry- and fragment-shaders) and
@@ -91,38 +93,13 @@ public:
   void disableTexture3D(const std::string& parameterName = NULL);
 
 private:
-  enum TextureType
-  {
-    TEXTURE_1D = 0,
-    TEXTURE_2D,
-    TEXTURE_3D
-  };
+  vvGLSLData* _data;
 
-  struct vvGLSLTexture
-  {
-    GLint       _id;
-    GLint       _unit;
-    TextureType _type;
-    GLint       _uniform;
-    vvGLSLTexture() : _id(-1), _unit(-1), _type(TEXTURE_1D), _uniform(-1) {}
-  };
-
-  typedef std::map<std::string, GLint> ParaMap;
-  typedef std::map<std::string, vvGLSLTexture*> TextureMap;
-  typedef TextureMap::iterator TextureIterator;
-
-  GLint getUniform(const std::string& parameterName, const std::string& parameterType);
-  vvGLSLTexture* getTexture(const std::string& textureName, const std::string& parameterType);
+//  GLint getUniform(const std::string& parameterName, const std::string& parameterType);
+//  vvGLSLTexture* getTexture(const std::string& textureName, const std::string& parameterType);
 
   bool loadShaders();     ///< Initializes, compiles, and links a shader program
   void deleteProgram();   ///< deletes program with all shaders and frees memory
-
-  GLuint      _programId;
-  GLuint      _shaderId[3];
-  ParaMap     _parameterMaps;
-  TextureMap  _textureNameMaps; ///< maps of texturename on texture unit
-  GLuint      _nTexture;        ///< counter for texture units
-  bool        _isSupported;     ///< true if there is GLSL support
 };
 #endif // _VV_GLSLPROGRAM_H_
 
