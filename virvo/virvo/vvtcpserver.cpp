@@ -25,6 +25,10 @@
 #include "vvtcpserver.h"
 #include "vvtcpsocket.h"
 
+#ifndef TEMP_FAILURE_RETRY
+#define TEMP_FAILURE_RETRY(x) (x)
+#endif
+
 vvTcpServer::vvTcpServer(const ushort port)
   : _listener(NULL)
 {
@@ -124,7 +128,7 @@ vvTcpSocket* vvTcpServer::nextConnection(double timeout)
     }
   }
 
-  vvsock_t n = accept(_listener->getSockfd(), (struct sockaddr *)&_hostAddr, &_hostAddrlen);
+  vvsock_t n = TEMP_FAILURE_RETRY(accept(_listener->getSockfd(), (struct sockaddr *)&_hostAddr, &_hostAddrlen));
 
   if (n == VV_INVALID_SOCKET)
   {
