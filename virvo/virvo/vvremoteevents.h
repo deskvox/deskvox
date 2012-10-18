@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VVCOMMON_H_
-#define _VVCOMMON_H_
+#ifndef _VVREMOTEEVENTS_H_
+#define _VVREMOTEEVENTS_H_
 
 namespace virvo
 {
@@ -56,7 +56,7 @@ namespace virvo
   };
 }
 
-#endif // _VVCOMMON_H_
+#endif // _VVREMOTEEVENTS_H_
 
 //===================================================================
 // End of File

@@ -108,6 +108,7 @@ set(VIRVO_HEADERS
   vvpthread.h
   vvrayrend.h
   vvremoteclient.h
+  vvremoteevents.h
   vvremoteserver.h
   vvrendercontext.h
   vvrenderer.h
