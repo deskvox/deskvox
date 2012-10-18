@@ -27,6 +27,7 @@
 
 #include <vector>
 
+#include "vvcolor.h"
 #include "vvexport.h"
 #include "vvremoteevents.h"
 #include "vvrequestmanagement.h"

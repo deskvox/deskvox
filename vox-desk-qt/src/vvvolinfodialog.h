@@ -18,21 +18,27 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_PARAMETERS_H
-#define VV_PARAMETERS_H
+#ifndef VV_VOLINFODIALOG_H
+#define VV_VOLINFODIALOG_H
 
-namespace vvParameters
+#include <QDialog>
+
+class vvVolDesc;
+class Ui_VolInfoDialog;
+
+class vvVolInfoDialog : public QDialog
 {
-  enum ParameterType
-  {
-    VV_BG_COLOR = 0,
-    VV_DOUBLEBUFFERING,
-    VV_MOVING_QUALITY,
-    VV_PROJECTIONTYPE,
-    VV_SPIN_ANIMATION,
-    VV_SUPERSAMPLES
-  };
-}
+  Q_OBJECT
+public:
+  vvVolInfoDialog(QWidget* parent = 0);
+  ~vvVolInfoDialog();
+private:
+  Ui_VolInfoDialog* ui;
+public slots:
+  void onNewVolDesc(vvVolDesc* vd);
+private slots:
+  void onUpdateIconClicked();
+};
 
 #endif
 

@@ -115,6 +115,7 @@ void * vvSimpleServer::handleClientThread(void *param)
       break;
     }
   }
+  _instance->handleEvent(tData, virvo::Disconnect, io);
 
   sock->disconnectFromHost();
   delete sock;

@@ -410,6 +410,16 @@ bool vvServer::handleEvent(ThreadData *tData, const virvo::RemoteEvent event, co
           return true;
         }
       }
+
+      // if remote server is already created, create a new one
+      if (tData->server != NULL)
+      {
+        if (!createRemoteServer(tData, static_cast<vvTcpSocket*>(io.getSocket())))
+        {
+          vvDebugMsg::msg(0, "Couldn't create remote server");
+          return true;
+        }
+      }
     }
     return true;
   case virvo::CameraMatrix:

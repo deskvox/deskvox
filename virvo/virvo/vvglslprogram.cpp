@@ -30,17 +30,106 @@ using std::cout;
 using std::endl;
 using std::string;
 
+namespace
+{
+  enum TextureType
+  {
+    TEXTURE_1D = 0,
+    TEXTURE_2D,
+    TEXTURE_3D
+  };
+
+  struct Texture
+  {
+    GLint       _id;
+    GLint       _unit;
+    TextureType _type;
+    GLint       _uniform;
+    Texture() : _id(-1), _unit(-1), _type(TEXTURE_1D), _uniform(-1) {}
+  };
+}
+
+typedef std::map<std::string, GLint> ParaMap;
+typedef std::map<std::string, Texture*> TextureMap;
+typedef TextureMap::iterator TextureIterator;
+
+struct vvGLSLData
+{
+  vvGLSLData()
+    : programId(0)
+    , nTexture(0)
+  {
+
+  }
+
+  GLuint      programId;
+  GLuint      shaderId[3];
+  ParaMap     parameterMaps;
+  TextureMap  textureNameMaps; ///< maps of texturename on texture unit
+  GLuint      nTexture;        ///< counter for texture units
+};
+
+namespace
+{
+  Texture* getTexture(vvGLSLData* data, const string& parameterName, const string& parameterType)
+  {
+    TextureIterator texIterator = data->textureNameMaps.find(parameterName);
+    if (texIterator != data->textureNameMaps.end())
+    {
+      return texIterator->second;
+    }
+    else
+    {
+      Texture* newTex = new Texture;
+      newTex->_uniform = glGetUniformLocation(data->programId, parameterName.c_str());
+      if(newTex->_uniform == -1)
+      {
+        string errmsg;
+        errmsg = parameterType + "(" + parameterName
+                 + ") does not correspond to an active uniform variable in program";
+        vvDebugMsg::msg(1, errmsg.c_str());
+      }
+      else
+      {
+        newTex->_unit = data->nTexture++;
+      }
+      data->textureNameMaps[parameterName] = newTex;
+      return newTex;
+    }
+  }
+
+  GLint getUniform(vvGLSLData* data, const string& parameterName, const string& parameterType)
+  {
+    if (data->parameterMaps.find(parameterName) != data->parameterMaps.end())
+    {
+      return data->parameterMaps[parameterName];
+    }
+    else
+    {
+      const GLint uniform = glGetUniformLocation(data->programId, parameterName.c_str());
+      if (uniform == -1)
+      {
+        string errmsg;
+        errmsg = parameterType + "(" + parameterName
+                 + ") does not correspond to an active uniform variable in program";
+        vvDebugMsg::msg(1, errmsg.c_str());
+      }
+
+      data->parameterMaps[parameterName] = uniform;
+      return uniform;
+    }
+  }
+}
+
 vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const string& frag)
-: vvShaderProgram(vert, geom, frag)
-, _programId(0)
-, _nTexture(0)
-, _isSupported(false)
+  : vvShaderProgram(vert, geom, frag)
+  , _data(new vvGLSLData)
 {
   for(int i=0; i<3;i++)
-    _shaderId[i] = 0;
+    _data->shaderId[i] = 0;
 
   _shadersLoaded = loadShaders();
-  if(!_shadersLoaded)
+  if (!_shadersLoaded)
   {
     vvDebugMsg::msg(1, "vvGLSLProgram::vvGLSLProgram() Loading Shaders failed!");
   }
@@ -48,13 +137,11 @@ vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const strin
 
 vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const string& frag,
                              const vvShaderProgram::GeoShaderArgs& geoShaderArgs)
-: vvShaderProgram(vert, geom, frag, geoShaderArgs)
-, _programId(0)
-, _nTexture(0)
-, _isSupported(false)
+  : vvShaderProgram(vert, geom, frag, geoShaderArgs)
+  , _data(new vvGLSLData)
 {
   for(int i=0; i<3;i++)
-    _shaderId[i] = 0;
+    _data->shaderId[i] = 0;
 
   _shadersLoaded = loadShaders();
   if(!_shadersLoaded)
@@ -65,24 +152,25 @@ vvGLSLProgram::vvGLSLProgram(const string& vert, const string& geom, const strin
 
 vvGLSLProgram::~vvGLSLProgram()
 {
-  for (TextureIterator it = _textureNameMaps.begin();
-       it != _textureNameMaps.end(); ++it)
+  for (TextureIterator it = _data->textureNameMaps.begin();
+       it != _data->textureNameMaps.end(); ++it)
   {
     delete it->second;
   }
 
   disable();
-  if(_programId)
+  if (_data->programId)
   {
-    glDeleteProgram(_programId);
+    glDeleteProgram(_data->programId);
   }
+  delete _data;
 }
 
 bool vvGLSLProgram::loadShaders()
 {
   vvGLTools::printGLError("Enter vvGLSLProgram::loadShaders()");
 
-  _programId = glCreateProgram();
+  _data->programId = glCreateProgram();
 
   for(int i=0;i<3;i++)
   {
@@ -92,12 +180,12 @@ bool vvGLSLProgram::loadShaders()
     switch(i)
     {
     case 0:
-      _shaderId[i] = glCreateShader(GL_VERTEX_SHADER);
+      _data->shaderId[i] = glCreateShader(GL_VERTEX_SHADER);
       vvDebugMsg::msg(2, "glCreateShader(GL_VERTEX_SHADER)");
       break;
     case 1:
     {
-      _shaderId[i] = glCreateShader(GL_GEOMETRY_SHADER_EXT);
+      _data->shaderId[i] = glCreateShader(GL_GEOMETRY_SHADER_EXT);
 
       GLenum inputType = VV_TRIANGLES;
       switch (_geoShaderArgs.inputType)
@@ -138,8 +226,8 @@ bool vvGLSLProgram::loadShaders()
         vvDebugMsg::msg(0, "Invalid output type for geometry shader. Supported: GL_POINTS, GL_LINE_STRIP, GL_TRIANGLE_STRIP");
       }
 
-      glProgramParameteriEXT(_programId, GL_GEOMETRY_INPUT_TYPE_EXT, inputType);
-      glProgramParameteriEXT(_programId, GL_GEOMETRY_OUTPUT_TYPE_EXT, outputType);
+      glProgramParameteriEXT(_data->programId, GL_GEOMETRY_INPUT_TYPE_EXT, inputType);
+      glProgramParameteriEXT(_data->programId, GL_GEOMETRY_OUTPUT_TYPE_EXT, outputType);
 
       int maxVertices = 0;
       glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES_EXT, &maxVertices);
@@ -152,7 +240,7 @@ bool vvGLSLProgram::loadShaders()
 
       if (_geoShaderArgs.numOutputVertices <= maxVertices)
       {
-        glProgramParameteriEXT(_programId, GL_GEOMETRY_VERTICES_OUT_EXT, _geoShaderArgs.numOutputVertices);
+        glProgramParameteriEXT(_data->programId, GL_GEOMETRY_VERTICES_OUT_EXT, _geoShaderArgs.numOutputVertices);
       }
       else
       {
@@ -163,43 +251,43 @@ bool vvGLSLProgram::loadShaders()
       break;
     }
     case 2:
-      _shaderId[i] = glCreateShader(GL_FRAGMENT_SHADER);
+      _data->shaderId[i] = glCreateShader(GL_FRAGMENT_SHADER);
       vvDebugMsg::msg(2, "glCreateShader(GL_FRAGMENT_SHADER)");
       break;
     }
 
     GLint size = (GLint)_fileStrings[i].size();
     const char* code = _fileStrings[i].c_str();
-    glShaderSource(_shaderId[i], 1, (const GLchar**)&code, &size);
-    glCompileShader(_shaderId[i]);
+    glShaderSource(_data->shaderId[i], 1, (const GLchar**)&code, &size);
+    glCompileShader(_data->shaderId[i]);
 
     GLint compiled;
-    glGetShaderiv(_shaderId[i], GL_COMPILE_STATUS, &compiled);
+    glGetShaderiv(_data->shaderId[i], GL_COMPILE_STATUS, &compiled);
     if (!compiled)
     {
       GLint length;
       std::vector<GLchar> compileLog;
-      glGetShaderiv(_shaderId[i], GL_INFO_LOG_LENGTH, &length);
+      glGetShaderiv(_data->shaderId[i], GL_INFO_LOG_LENGTH, &length);
       compileLog.resize(length);
-      glGetShaderInfoLog(_shaderId[i], length, &length, &compileLog[0]);
+      glGetShaderInfoLog(_data->shaderId[i], length, &length, &compileLog[0]);
       vvDebugMsg::msg(0, "glCompileShader failed: " , &compileLog[0]);
       return false;
     }
 
-    glAttachShader(_programId, _shaderId[i]);
+    glAttachShader(_data->programId, _data->shaderId[i]);
   }
 
-  glLinkProgram(_programId);
+  glLinkProgram(_data->programId);
 
   GLint linked;
-  glGetProgramiv(_programId, GL_LINK_STATUS, &linked);
+  glGetProgramiv(_data->programId, GL_LINK_STATUS, &linked);
   if (!linked)
   {
     GLint length;
     std::vector<GLchar> linkLog;
-    glGetProgramiv(_programId, GL_INFO_LOG_LENGTH, &length);
+    glGetProgramiv(_data->programId, GL_INFO_LOG_LENGTH, &length);
     linkLog.resize(length);
-    glGetProgramInfoLog(_programId, length, &length, &linkLog[0]);
+    glGetProgramInfoLog(_data->programId, length, &length, &linkLog[0]);
     vvDebugMsg::msg(0, "glLinkProgram failed: ", &linkLog[0]);
     return false;
   }
@@ -219,9 +307,9 @@ void vvGLSLProgram::enable()
   {
     GLint activeTexture = GL_TEXTURE0;
     glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
-    for(TextureMap::iterator i = _textureNameMaps.begin(); i != _textureNameMaps.end(); ++i)
+    for(TextureMap::iterator i = _data->textureNameMaps.begin(); i != _data->textureNameMaps.end(); ++i)
     {
-      vvGLSLTexture* tex = i->second;
+      Texture* tex = i->second;
       if(tex->_unit == -1)
       {
         vvDebugMsg::msg(2, "texture unit invalid for ", i->first.c_str());
@@ -250,7 +338,7 @@ void vvGLSLProgram::enable()
         break;
       }
     }
-    glUseProgramObjectARB(_programId);
+    glUseProgramObjectARB(_data->programId);
     glActiveTexture(activeTexture);
   }
   else
@@ -272,21 +360,21 @@ void vvGLSLProgram::disable()
 
 void vvGLSLProgram::setParameter1f(const string& parameterName, const float& f1)
 {
-  const GLint uniform = getUniform(parameterName, "setParameter1f");
+  const GLint uniform = getUniform(_data, parameterName, "setParameter1f");
   if(uniform != -1)
     glUniform1f(uniform, f1);
 }
 
 void vvGLSLProgram::setParameter1i(const string& parameterName, const int& i1)
 {
-  const GLint uniform = getUniform(parameterName, "setParameter1i");
+  const GLint uniform = getUniform(_data, parameterName, "setParameter1i");
   if(uniform != -1)
     glUniform1i(uniform, i1);
 }
 
 void vvGLSLProgram::setParameter3f(const string& parameterName, const float* array)
 {
-  const GLint uniform = getUniform(parameterName, "setParameter3f");
+  const GLint uniform = getUniform(_data, parameterName, "setParameter3f");
   if(uniform != -1)
     glUniform3fv(uniform, 3, array);
 }
@@ -294,14 +382,14 @@ void vvGLSLProgram::setParameter3f(const string& parameterName, const float* arr
 void vvGLSLProgram::setParameter3f(const string& parameterName,
                             const float& f1, const float& f2, const float& f3)
 {
-  const GLint uniform = getUniform(parameterName, "setParameter3f");
+  const GLint uniform = getUniform(_data, parameterName, "setParameter3f");
   if(uniform != -1)
     glUniform3f(uniform, f1, f2, f3);
 }
 
 void vvGLSLProgram::setParameter4f(const string& parameterName, const float* array)
 {
-  const GLint uniform = getUniform(parameterName, "setParameter4f");
+  const GLint uniform = getUniform(_data, parameterName, "setParameter4f");
   if(uniform != -1)
     glUniform4fv(uniform, 4, array);
 }
@@ -309,28 +397,28 @@ void vvGLSLProgram::setParameter4f(const string& parameterName, const float* arr
 void vvGLSLProgram::setParameter4f(const string& parameterName,
                             const float& f1, const float& f2, const float& f3, const float& f4)
 {
-  const GLint uniform = getUniform(parameterName, "setParameter4f");
+  const GLint uniform = getUniform(_data, parameterName, "setParameter4f");
   if(uniform != -1)
     glUniform4f(uniform, f1, f2, f3, f4);
 }
 
 void vvGLSLProgram::setParameterArray1i(const string& parameterName, const int* array, const int& count)
 {
-  const GLint uniform = getUniform(parameterName, "setParameterArray1i");
+  const GLint uniform = getUniform(_data, parameterName, "setParameterArray1i");
   if(uniform != -1)
     glUniform1iv(uniform, count, array);
 }
 
 void vvGLSLProgram::setParameterArray3f(const string& parameterName, const float* array, const int& count)
 {
-  const GLint uniform = getUniform(parameterName, "setParameterArray3f");
+  const GLint uniform = getUniform(_data, parameterName, "setParameterArray3f");
   if(uniform != -1)
     glUniform3fv(uniform, 3*count, array);
 }
 
 void vvGLSLProgram::setParameterMatrix4f(const string& parameterName, const float* mat)
 {
-  const GLint uniform = getUniform(parameterName, "setParameterMatrix4f");
+  const GLint uniform = getUniform(_data, parameterName, "setParameterMatrix4f");
   if(uniform != -1)
     glUniformMatrix4fv(uniform, 1, GL_FALSE, mat);
 }
@@ -339,63 +427,14 @@ void vvGLSLProgram::setParameterMatrix4f(const string& parameterName, const vvMa
 {
   float m[16];
   mat.get(m);
-  const GLint uniform = getUniform(parameterName, "setParameterMatrix4f");
+  const GLint uniform = getUniform(_data, parameterName, "setParameterMatrix4f");
   if(uniform != -1)
     glUniformMatrix4fv(uniform, 1, GL_TRUE, m);
 }
 
-GLint vvGLSLProgram::getUniform(const string& parameterName, const string& parameterType)
-{
-  if(_parameterMaps.find(parameterName) != _parameterMaps.end())
-  {
-    return _parameterMaps[parameterName];
-  }
-  else
-  {
-    const GLint uniform = glGetUniformLocation(_programId, parameterName.c_str());
-    if(uniform == -1)
-    {
-      string errmsg;
-      errmsg = parameterType + "(" + parameterName
-               + ") does not correspond to an active uniform variable in program";
-      vvDebugMsg::msg(1, errmsg.c_str());
-    }
-
-    _parameterMaps[parameterName] = uniform;
-    return uniform;
-  }
-}
-
-vvGLSLProgram::vvGLSLTexture* vvGLSLProgram::getTexture(const string& parameterName, const string& parameterType)
-{
-  TextureIterator texIterator = _textureNameMaps.find(parameterName);
-  if(texIterator != _textureNameMaps.end())
-  {
-    return texIterator->second;
-  }
-  else
-  {
-    vvGLSLTexture* newTex = new vvGLSLTexture;
-    newTex->_uniform = glGetUniformLocation(_programId, parameterName.c_str());
-    if(newTex->_uniform == -1)
-    {
-      string errmsg;
-      errmsg = parameterType + "(" + parameterName
-               + ") does not correspond to an active uniform variable in program";
-      vvDebugMsg::msg(1, errmsg.c_str());
-    }
-    else
-    {
-      newTex->_unit = _nTexture++;
-    }
-    _textureNameMaps[parameterName] = newTex;
-    return newTex;
-  }
-}
-
 void vvGLSLProgram::setParameterTex1D(const string& parameterName, const unsigned int& ui)
 {
-  vvGLSLTexture* tex = getTexture(parameterName, "setParameterTex1D");
+  Texture* tex = getTexture(_data, parameterName, "setParameterTex1D");
   if(tex->_uniform != -1)
   {
     tex->_type = TEXTURE_1D;
@@ -411,7 +450,7 @@ void vvGLSLProgram::setParameterTex1D(const string& parameterName, const unsigne
 
 void vvGLSLProgram::setParameterTex2D(const string& parameterName, const unsigned int& ui)
 {
-  vvGLSLTexture* tex = getTexture(parameterName, "setParameterTex2D");
+  Texture* tex = getTexture(_data, parameterName, "setParameterTex2D");
   if(tex->_uniform != -1)
   {
     tex->_type = TEXTURE_2D;
@@ -427,7 +466,7 @@ void vvGLSLProgram::setParameterTex2D(const string& parameterName, const unsigne
 
 void vvGLSLProgram::setParameterTex3D(const string& parameterName, const unsigned int& ui)
 {
-  vvGLSLTexture* tex = getTexture(parameterName, "setParameterTex3D");
+  Texture* tex = getTexture(_data, parameterName, "setParameterTex3D");
   if(tex->_uniform != -1)
   {
     tex->_type = TEXTURE_3D;

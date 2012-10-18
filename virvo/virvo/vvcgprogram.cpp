@@ -35,13 +35,112 @@ using std::string;
 
 #ifdef HAVE_CG
 
+#include <Cg/cg.h>
+#include <Cg/cgGL.h>
+
+typedef std::map<std::string, CGparameter> ParameterMap;
+typedef ParameterMap::iterator ParameterIterator;
+
+struct vvCgProgram::CGdata
+{
+  ParameterIterator initParameter(const string& parameterName)
+  {
+    // check if already initialized
+    ParameterIterator paraIterator = cgParameterNameMaps.find(parameterName);
+    if(paraIterator != cgParameterNameMaps.end())
+      return paraIterator;
+
+    CGparameter paraFirst = 0;
+    for(int i=0;i<3;i++)
+    {
+      if(shaderId[i]==0)
+        continue;
+
+      CGparameter param = cgGetNamedParameter(shaderId[i], parameterName.c_str());
+
+      if(param != NULL && paraFirst == 0)
+      {
+        paraFirst = param;
+      }
+      else if(param != NULL && paraFirst != 0)
+      {
+        cgConnectParameter(paraFirst, param);
+      }
+    }
+
+    cgParameterNameMaps[parameterName] = paraFirst;
+
+    if(paraFirst == 0)
+    {
+      string errmsg = "cgParameter (" + parameterName + ")not found!";
+      vvDebugMsg::msg(2, errmsg.c_str());
+      return cgParameterNameMaps.end();
+    }
+
+    return cgParameterNameMaps.find(parameterName);
+  }
+
+  CGcontext program;
+  CGprofile profile[3];
+  CGprogram shaderId[3];
+
+  ParameterMap cgParameterNameMaps;
+};
+
+namespace
+{
+  void cgErrorHandler(CGcontext context, CGerror error, void*)
+  {
+    if(error != CG_NO_ERROR)
+      cerr << cgGetErrorString(error) << " (" << static_cast<int>(error) << ")" << endl;
+    for(GLint glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
+    {
+      cerr << "GL error: " << gluErrorString(glerr) << endl;
+    }
+    if(context && error==CG_COMPILER_ERROR)
+    {
+       if(const char *listing = cgGetLastListing(context))
+       {
+          cerr << "last listing:" << endl;
+          cerr << listing << endl;
+       }
+    }
+  }
+
+  CGGLenum toCgEnum(const int i)
+  {
+    CGGLenum result;
+    switch(i)
+    {
+    case 0:
+      result = CG_GL_VERTEX;
+      break;
+  #if CG_VERSION_NUM >= 2000
+    case 1:
+      result = CG_GL_GEOMETRY;
+      break;
+  #endif
+    case 2:
+      result = CG_GL_FRAGMENT;
+      break;
+    default:
+      vvDebugMsg::msg(0, "toCgEnum() unknown ShaderType!");
+      result = CG_GL_FRAGMENT;
+      break;
+    }
+    return result;
+  }
+}
+
 vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& frag)
 : vvShaderProgram(vert, geom, frag)
 {
+  _data = new CGdata();
+
   for(int i=0; i<3;i++)
   {
-    _shaderId[i] = 0;
-    _profile[i] = CGprofile(0);
+    _data->shaderId[i] = 0;
+    _data->profile[i] = CGprofile(0);
   }
 
   _shadersLoaded = loadShaders();
@@ -55,10 +154,12 @@ vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& f
                          const vvShaderProgram::GeoShaderArgs& geoShaderArgs)
 : vvShaderProgram(vert, geom, frag, geoShaderArgs)
 {
+  _data = new CGdata();
+
   for(int i=0; i<3;i++)
   {
-    _shaderId[i] = 0;
-    _profile[i] = CGprofile(0);
+    _data->shaderId[i] = 0;
+    _data->profile[i] = CGprofile(0);
   }
 
   _shadersLoaded = loadShaders();
@@ -71,18 +172,19 @@ vvCgProgram::vvCgProgram(const string& vert, const string& geom, const string& f
 vvCgProgram::~vvCgProgram()
 {
   disable();
-  if (_program)
+  if (_data->program)
   {
-    cgDestroyContext(_program);
+    cgDestroyContext(_data->program);
   }
+  delete _data;
 }
 
 bool vvCgProgram::loadShaders()
 {
   cgSetErrorHandler(cgErrorHandler, NULL);
-  _program = cgCreateContext();
+  _data->program = cgCreateContext();
 
-  if (_program == NULL)
+  if (_data->program == NULL)
   {
     vvDebugMsg::msg(0, "Can't create Cg context");
   }
@@ -92,11 +194,11 @@ bool vvCgProgram::loadShaders()
     if(_fileStrings[i].length() == 0)
       continue;
 
-    _profile[i] = cgGLGetLatestProfile(toCgEnum(i));
-    cgGLSetOptimalOptions(_profile[i]);
-    _shaderId[i] = cgCreateProgram( _program, CG_SOURCE, _fileStrings[i].c_str(), _profile[i], NULL, NULL);
+    _data->profile[i] = cgGLGetLatestProfile(toCgEnum(i));
+    cgGLSetOptimalOptions(_data->profile[i]);
+    _data->shaderId[i] = cgCreateProgram( _data->program, CG_SOURCE, _fileStrings[i].c_str(), _data->profile[i], NULL, NULL);
 
-    if (_shaderId[i] == NULL)
+    if (_data->shaderId[i] == NULL)
     {
       vvDebugMsg::msg(0, "Couldn't load cg-shader!");
       return false;
@@ -109,12 +211,12 @@ void vvCgProgram::enable()
 {
   for(int i=0;i<3;i++)
   {
-    if(_shaderId[i] == 0)
+    if(_data->shaderId[i] == 0)
       continue;
 
-    cgGLLoadProgram(_shaderId[i]);
-    cgGLEnableProfile(_profile[i]);
-    cgGLBindProgram(_shaderId[i]);
+    cgGLLoadProgram(_data->shaderId[i]);
+    cgGLEnableProfile(_data->profile[i]);
+    cgGLBindProgram(_data->shaderId[i]);
   }
 }
 
@@ -122,109 +224,30 @@ void vvCgProgram::disable()
 {
   for(int i=0;i<3;i++)
   {
-    if(_profile[i] == 0)
+    if(_data->profile[i] == 0)
       continue;
 
-    cgGLDisableProfile(_profile[i]);
+    cgGLDisableProfile(_data->profile[i]);
   }
-}
-
-void vvCgProgram::cgErrorHandler(CGcontext context, CGerror error, void*)
-{
-  if(error != CG_NO_ERROR)
-    cerr << cgGetErrorString(error) << " (" << static_cast<int>(error) << ")" << endl;
-  for(GLint glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
-  {
-    cerr << "GL error: " << gluErrorString(glerr) << endl;
-  }
-  if(context && error==CG_COMPILER_ERROR)
-  {
-     if(const char *listing = cgGetLastListing(context))
-     {
-        cerr << "last listing:" << endl;
-        cerr << listing << endl;
-     }
-  }
-}
-
-CGGLenum vvCgProgram::toCgEnum(const int i) const
-{
-  CGGLenum result;
-  switch(i)
-  {
-  case 0:
-    result = CG_GL_VERTEX;
-    break;
-#if CG_VERSION_NUM >= 2000
-  case 1:
-    result = CG_GL_GEOMETRY;
-    break;
-#endif
-  case 2:
-    result = CG_GL_FRAGMENT;
-    break;
-  default:
-    vvDebugMsg::msg(0, "toCgEnum() unknown ShaderType!");
-    result = CG_GL_FRAGMENT;
-    break;
-  }
-  return result;
-}
-
-vvCgProgram::ParameterIterator vvCgProgram::initParameter(const string& parameterName)
-{
-  // check if already initialized
-  ParameterIterator paraIterator = _cgParameterNameMaps.find(parameterName);
-  if(paraIterator != _cgParameterNameMaps.end())
-    return paraIterator;
-
-  CGparameter paraFirst = 0;
-  for(int i=0;i<3;i++)
-  {
-    if(_shaderId[i]==0)
-      continue;
-
-    CGparameter param = cgGetNamedParameter(_shaderId[i], parameterName.c_str());
-
-    if(param != NULL && paraFirst == 0)
-    {
-      paraFirst = param;
-    }
-    else if(param != NULL && paraFirst != 0)
-    {
-      cgConnectParameter(paraFirst, param);
-    }
-  }
-
-  _cgParameterNameMaps[parameterName] = paraFirst;
-
-  if(paraFirst == 0)
-  {
-    string errmsg = "cgParameter (" + parameterName + ")not found!";
-    vvDebugMsg::msg(2, errmsg.c_str());
-    return _cgParameterNameMaps.end();
-  }
-
-  return _cgParameterNameMaps.find(parameterName);
 }
 
 void vvCgProgram::setParameter1f(const string& parameterName, const float& f1)
 {
-  ParameterIterator it = initParameter(parameterName);
+  ParameterIterator it = _data->initParameter(parameterName);
   if(it->second != 0)
     cgSetParameter1f(it->second, f1);
 }
 
 void vvCgProgram::setParameter1i(const string& parameterName, const int& i1)
 {
-  ParameterIterator it = initParameter(parameterName);
+  ParameterIterator it = _data->initParameter(parameterName);
   if(it->second != 0)
     cgSetParameter1i(it->second, i1);
 }
 
 void vvCgProgram::setParameter3f(const string& parameterName, const float* array)
 {
-  ParameterIterator it = initParameter(parameterName);
+  ParameterIterator it = _data->initParameter(parameterName);
   if(it->second != 0)
     cgSetParameter3fv(it->second, array);
 }
@@ -232,14 +255,14 @@ void vvCgProgram::setParameter3f(const string& parameterName, const float* array
 void vvCgProgram::setParameter3f(const string& parameterName,
                           const float& f1, const float& f2, const float& f3)
 {
-  ParameterIterator it = initParameter(parameterName);
+  ParameterIterator it = _data->initParameter(parameterName);
   if(it->second != 0)
     cgSetParameter3f(it->second, f1, f2, f3);
 }
 
 void vvCgProgram::setParameter4f(const string& parameterName, const float* array)
 {
-  ParameterIterator it = initParameter(parameterName);
+  ParameterIterator it = _data->initParameter(parameterName);
   if(it->second != 0)
     cgSetParameter4fv(it->second, array);
 }
@@ -247,14 +270,14 @@ void vvCgProgram::setParameter4f(const string& parameterName, const float* array
 void vvCgProgram::setParameter4f(const string& parameterName,
                           const float& f1, const float& f2, const float& f3, const float& f4)
 {
-  ParameterIterator it = initParameter(parameterName);
+  ParameterIterator it = _data->initParameter(parameterName);
   if(it->second != 0)
     cgSetParameter4f(it->second, f1, f2, f3, f4);
 }
 
 void vvCgProgram::setParameterArray1i(const string& parameterName, const int* array, const int& count)
 {
-  ParameterIterator it = initParameter(parameterName);
+  ParameterIterator it = _data->initParameter(parameterName);
   if(it->second != 0)
   {
     // transform integers to floats because CG doesn't support uniform integers
@@ -268,14 +291,14 @@ void vvCgProgram::setParameterArray1i(const string& parameterName, const int* ar
 
 void vvCgProgram::setParameterArray3f(const string& parameterName, const float* array, const int& count)
 {
-  ParameterIterator it = initParameter(parameterName);
+  ParameterIterator it = _data->initParameter(parameterName);
   if(it->second != 0)
     cgGLSetParameterArray3f(it->second, 0, 3*count, array);
 }
 
 void vvCgProgram::setParameterMatrix4f(const string& parameterName, const float* mat)
 {
-  ParameterIterator it = initParameter(parameterName);
+  ParameterIterator it = _data->initParameter(parameterName);
   if(it->second != 0)
     cgSetMatrixParameterfr(it->second, mat);
 }
@@ -289,7 +312,7 @@ void vvCgProgram::setParameterMatrix4f(const string& parameterName, const vvMatr
 
 void vvCgProgram::setParameterTex1D(const string& parameterName, const unsigned int& ui)
 {
-  ParameterIterator it = initParameter(parameterName);
+  ParameterIterator it = _data->initParameter(parameterName);
   if(it->second != 0)
   {
     cgGLSetTextureParameter(it->second, ui);

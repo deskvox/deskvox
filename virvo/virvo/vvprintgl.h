@@ -35,13 +35,7 @@
 class VIRVOEXPORT vvPrintGL
 {
   private:
-    GLuint base;
-    GLint glsRasterPos[4];                        ///< stores GL_CURRENT_RASTER_POSITION
-    GLfloat glsColor[4];                          ///< stores GL_CURRENT_COLOR
     vvVector4 _fontColor;
-
-    void saveGLState();
-    void restoreGLState();
 
   public:
     vvPrintGL();

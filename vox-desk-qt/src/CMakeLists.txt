@@ -25,6 +25,7 @@ set(VOXDESK_QT_INC
   vvshortcutdialog.h
   vvtfdialog.h
   vvtimestepdialog.h
+  vvvolinfodialog.h
 )
 
 SET(VOXDESK_QT_SRC
@@ -39,6 +40,7 @@ SET(VOXDESK_QT_SRC
   vvshortcutdialog.cpp
   vvtfdialog.cpp
   vvtimestepdialog.cpp
+  vvvolinfodialog.cpp
 )
 
 SET(VOXDESK_QT_UI
@@ -50,6 +52,7 @@ SET(VOXDESK_QT_UI
   vvshortcutdialog.ui
   vvtfdialog.ui
   vvtimestepdialog.ui
+  vvvolinfodialog.ui
 )
 
 QT4_WRAP_CPP(VOXDESK_QT_MOC_INC ${VOXDESK_QT_INC})

@@ -27,10 +27,11 @@
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
 #include "vvtexrend.h"
-#include "vvcudasw.h"
 #include "vvsoftrayrend.h"
 #include "vvsoftsw.h"
+#ifdef HAVE_CUDA
 #include "vvrayrend.h"
+#endif
 #include "vvibrclient.h"
 #include "vvimageclient.h"
 #ifdef HAVE_VOLPACK
@@ -75,7 +76,6 @@ void init()
   rendererAliasMap["4"] = "spherical";
   rendererAliasMap["5"] = "bricks";
   rendererAliasMap["6"] = "soft";
-  rendererAliasMap["7"] = "cudasw";
   rendererAliasMap["8"] = "rayrend";
   rendererAliasMap["9"] = "volpack";
   rendererAliasMap["10"] = "ibr";
@@ -122,7 +122,6 @@ void init()
   // other renderers
   rendererTypeMap["generic"] = vvRenderer::GENERIC;
   rendererTypeMap["soft"] = vvRenderer::SOFTSW;
-  rendererTypeMap["cudasw"] = vvRenderer::CUDASW;
   rendererTypeMap["rayrend"] = vvRenderer::RAYREND;
   rendererTypeMap["softrayrend"] = vvRenderer::SOFTRAYREND;
   rendererTypeMap["volpack"] = vvRenderer::VOLPACK;
@@ -338,8 +337,6 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
 #ifdef HAVE_CUDA
   case vvRenderer::RAYREND:
     return new vvRayRend(vd, rs);
-  case vvRenderer::CUDASW:
-    return new vvCudaShearWarp(vd, rs);
 #endif
   case vvRenderer::SOFTRAYREND:
     return new vvSoftRayRend(vd, rs);
@@ -446,12 +443,6 @@ bool vvRendererFactory::hasRenderer(vvRenderer::RendererType type)
 {
   switch (type)
   {
-  case vvRenderer::CUDASW:
-#ifdef HAVE_CUDA
-    return true;
-#else
-    return false;
-#endif
   case vvRenderer::RAYREND:
 #ifdef HAVE_CUDA
     return true;

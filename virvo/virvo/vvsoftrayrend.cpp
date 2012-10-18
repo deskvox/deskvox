@@ -23,8 +23,11 @@
 #include "vvconfig.h"
 #endif
 
-#ifdef HAVE_GL
+#ifdef HAVE_GLEW
 #include <GL/glew.h>
+#endif
+
+#ifdef HAVE_OPENGL
 #include "vvgltools.h"
 #endif
 
@@ -98,7 +101,7 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
 {
   vvDebugMsg::msg(1, "vvSoftRayRend::vvSoftRayRend()");
 
-#ifdef HAVE_GL
+#ifdef HAVE_GLEW
   glewInit();
 #endif
 
@@ -170,7 +173,7 @@ void vvSoftRayRend::renderVolumeGL()
   vvMatrix mv;
   vvMatrix pr;
 
-#ifdef HAVE_GL
+#ifdef HAVE_OPENGL
   vvGLTools::getModelviewMatrix(&mv);
   vvGLTools::getProjectionMatrix(&pr);
   const vvGLTools::Viewport viewport = vvGLTools::getViewport();
@@ -200,7 +203,9 @@ void vvSoftRayRend::renderVolumeGL()
   // threads render
 
   pthread_barrier_wait(_firstThread->barrier);
-#ifdef HAVE_GL
+#ifdef HAVE_OPENGL
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glWindowPos2i(0, 0);
   glDrawPixels(_width, _height, GL_RGBA, GL_FLOAT, &colors[0]);
 #endif
@@ -285,7 +290,15 @@ std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int
       t.left = tilew * x;
       t.bottom = tileh * y;
       t.right = t.left + tilew;
+      if (t.right > w)
+      {
+        t.right = w;
+      }
       t.top = t.bottom + tileh;
+      if (t.top > h)
+      {
+        t.top = h;
+      }
       result.push_back(t);
     }
   }

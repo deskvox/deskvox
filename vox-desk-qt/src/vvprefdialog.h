@@ -24,22 +24,38 @@
 #include "vvparameters.h"
 
 #include <virvo/vvrenderer.h>
+#include <virvo/vvrendererfactory.h>
 
 #include <QDialog>
 
 class Ui_PrefDialog;
+class vvCanvas;
 
 class vvPrefDialog : public QDialog
 {
   Q_OBJECT
 public:
-  vvPrefDialog(QWidget* parent = 0);
+  vvPrefDialog(vvCanvas* canvas, QWidget* parent = 0);
+  ~vvPrefDialog();
 
   void toggleInterpolation();
   void scaleStillQuality(float s);
 private:
   Ui_PrefDialog* ui;
+
+  vvCanvas* _canvas;
+
+  void emitRenderer();
+  bool validateRemoteHost(const QString& host, ushort port);
 private slots:
+  void onRendererChanged(int index);
+  void onTexRendOptionChanged(int index);
+  void onHostChanged(const QString& text);
+  void onPortChanged(int i);
+  void onGetInfoClicked();
+  void onBrowseClicked();
+  void onConnectClicked();
+  void onIbrToggled(bool checked);
   void onInterpolationToggled(bool checked);
   void onMipToggled(bool checked);
   void onMovingSpinBoxChanged(double value);
@@ -47,6 +63,7 @@ private slots:
   void onMovingDialChanged(int value);
   void onStillDialChanged(int value);
 signals:
+  void rendererChanged(const std::string& name, const vvRendererFactory::Options& options);
   void parameterChanged(vvParameters::ParameterType param, const vvParam& value);
   void parameterChanged(vvRenderer::ParameterType param, const vvParam& value);
 };

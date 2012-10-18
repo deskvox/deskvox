@@ -621,7 +621,10 @@ void VVPreferenceWindow::updateValues()
        _psCombo->appendItem(s.str().c_str());
     }
     _psCombo->setNumVisible(_psCombo->getNumItems());
-    _psCombo->setCurrentItem(texrend->getParameter(vvRenderer::VV_PIX_SHADER));
+    if (texrend != NULL)
+    {
+      _psCombo->setCurrentItem(texrend->getParameter(vvRenderer::VV_PIX_SHADER));
+    }
 
     // Brick size:
     _bsCombo->clearItems();

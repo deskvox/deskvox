@@ -73,17 +73,22 @@ private:
   int _superSamples;
   float _stillQuality;
   float _movingQuality;
+  bool _spinAnimation;
+
+  vvMatrix _lastRotation;
 
   Qt::MouseButton _mouseButton;
   QPoint _lastMousePos;
 
   QTimer* _animTimer;
+  QTimer* _spinTimer;
 
   void init();
   void createRenderer();
   void updateProjection();
   void setCurrentFrame(int frame);
 public slots:
+  void setRenderer(const std::string& name, const vvRendererFactory::Options& options);
   void setParameter(vvParameters::ParameterType param, const vvParam& value);
   void setParameter(vvRenderer::ParameterType param, const vvParam& value);
   vvParam getParameter(vvParameters::ParameterType param) const;
@@ -96,6 +101,8 @@ public slots:
   void decTimeStep();
   void firstTimeStep();
   void lastTimeStep();
+private slots:
+  void repeatLastRotation();
 signals:
   void newVolDesc(vvVolDesc* vd);
   void statusMessage(const std::string& str);
