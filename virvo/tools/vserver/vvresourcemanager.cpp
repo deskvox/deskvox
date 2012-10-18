@@ -63,15 +63,6 @@ namespace
     {
       std::vector<vvGpu::vvGpuInfo> ginfos;
       vvSocketIO sockIO = vvSocketIO(serversock);
-#if 0
-      virvo::RemoteEvent event;
-      sockIO.getEvent(event);
-      if(virvo::WaitEvents == event)
-      {
-        sockIO.putEvent(virvo::GpuInfo);
-        sockIO.getGpuInfos(ginfos);
-      }
-#endif
       sockIO.putInt32(virvo::Disconnect);
       return ginfos;
     }
@@ -114,6 +105,34 @@ vvResourceManager::~vvResourceManager()
   pthread_mutex_destroy(&_resourcesMutex);
 }
 
+void vvResourceManager::handleNextConnection(vvTcpSocket *sock)
+{
+  vvDebugMsg::msg(3, "vvResourceManager::handleNextConnection()");
+
+  vvDebugMsg::msg(3, "vvResourceManager::handleNextConnection() server mode: ", (_sm == vvServer::SERVER) ? "SimpleServer" : "ResourceManager");
+
+  switch(_sm)
+  {
+  case vvServer::SERVER:
+    _simpleServer->handleNextConnection(sock);
+    break;
+  case vvServer::RM:
+  case vvServer::RM_WITH_SERVER:
+      {
+        ::ThreadArgs *args = new ::ThreadArgs;
+        args->sock = sock;
+        args->instance = this;
+        pthread_t threadID;
+        pthread_create(&threadID, NULL, handleClientThread, (void*)args);
+        pthread_detach(threadID);
+      }
+    break;
+  default:
+    // unknown case
+    break;
+  }
+}
+
 bool vvResourceManager::handleEvent(ThreadData *tData, virvo::RemoteEvent event, const vvSocketIO& io)
 {
   switch (event)
@@ -143,87 +162,6 @@ bool vvResourceManager::handleEvent(ThreadData *tData, virvo::RemoteEvent event,
       return false;
     default:
       return vvServer::handleEvent(tData, event, io);
-  }
-}
-
-void * vvResourceManager::handleClientThread(void *param)
-{
-  vvDebugMsg::msg(3, "vvResourceManager::handleClientThread() Enter");
-
-  ThreadArgs *args = reinterpret_cast<ThreadArgs*>(param);
-
-  vvSocketIO sockio = vvSocketIO(args->sock);
-  vvResourceManager *rm = args->instance;
-  ThreadData *tData = new ThreadData();
-  tData->instance = args->instance;
-
-  virvo::RemoteEvent event;
-  while(sockio.getEvent(event) == vvSocket::VV_OK)
-  {
-    if (!rm->handleEvent(tData, event, sockio))
-    {
-      break;
-    }
-  }
-  delete args->sock;
-  delete args;
-  delete tData;
-
-  pthread_exit(NULL);
-#ifdef _WIN32
-  return NULL;
-#endif
-}
-
-void vvResourceManager::pairNextJobs()
-{
-  vvDebugMsg::msg(0, "vvResourceManager::pairNextJobs() Enter");
-
-  pthread_mutex_lock(&_resourcesMutex);
-  pthread_mutex_lock(&_requestsMutex);
-
-  // sort for correct priority
-  std::sort(_requests.begin(), _requests.end());
-  if(_requests.size() > 0 && _resources.size() > 0)
-  {
-    // Update Gpu-Status of all Resources
-    for(std::vector<vvResource*>::iterator res = _resources.begin(); res != _resources.end(); res++)
-    {
-      vvTcpSocket *sock = new vvTcpSocket();
-      if(sock->connectToHost((*res)->hostname, (*res)->port) == vvSocket::VV_OK)
-      {
-        (*res)->ginfos = getResourceGpuInfos(sock);
-      }
-      else
-      {
-        vvDebugMsg::msg(0, "vvResourceManager::pairNextJobs() connecting to vserver failed ", (*res)->hostname.c_str());
-      }
-      delete sock;
-    }
-
-    for(std::vector<vvRequest*>::iterator req = _requests.begin(); req != _requests.end(); req++)
-    {
-      vvRequest* request = *req;
-      if(getFreeResourceCount() >= request->nodes.size())
-      {
-        request->resources = getFreeResources(request->nodes.size());
-        if(request->resources.size() != request->nodes.size())
-        {
-          vvDebugMsg::msg(0, "vvResourceManager::pairNextJobs() unexpected error: Job's resource count mismatch");
-        }
-      }
-      else
-      {
-        break;
-      }
-    }
-  }
-  pthread_mutex_unlock(&_requestsMutex);
-  pthread_mutex_unlock(&_resourcesMutex);
-
-  if(pthread_cond_broadcast(&_requestsCondition) != 0)
-  {
-    vvDebugMsg::msg(0, "vvResourceManager::pairNextJobs() could not unblock request condition");
   }
 }
 
@@ -341,6 +279,35 @@ bool vvResourceManager::createRemoteServer(ThreadData* tData, vvTcpSocket* sock)
   }
 }
 
+void * vvResourceManager::handleClientThread(void *param)
+{
+  vvDebugMsg::msg(3, "vvResourceManager::handleClientThread() Enter");
+
+  ThreadArgs *args = reinterpret_cast<ThreadArgs*>(param);
+
+  vvSocketIO sockio = vvSocketIO(args->sock);
+  vvResourceManager *rm = args->instance;
+  ThreadData *tData = new ThreadData();
+  tData->instance = args->instance;
+
+  virvo::RemoteEvent event;
+  while(sockio.getEvent(event) == vvSocket::VV_OK)
+  {
+    if (!rm->handleEvent(tData, event, sockio))
+    {
+      break;
+    }
+  }
+  delete args->sock;
+  delete args;
+  delete tData;
+
+  pthread_exit(NULL);
+#ifdef _WIN32
+  return NULL;
+#endif
+}
+
 void vvResourceManager::updateResources(void * param)
 {
   if (virvo::hasFeature("bonjour"))
@@ -425,6 +392,58 @@ void vvResourceManager::updateResources(void * param)
   }
 }
 
+void vvResourceManager::pairNextJobs()
+{
+  vvDebugMsg::msg(0, "vvResourceManager::pairNextJobs() Enter");
+
+  pthread_mutex_lock(&_resourcesMutex);
+  pthread_mutex_lock(&_requestsMutex);
+
+  // sort for correct priority
+  std::sort(_requests.begin(), _requests.end());
+  if(_requests.size() > 0 && _resources.size() > 0)
+  {
+    // Update Gpu-Status of all Resources
+    for(std::vector<vvResource*>::iterator res = _resources.begin(); res != _resources.end(); res++)
+    {
+      vvTcpSocket *sock = new vvTcpSocket();
+      if(sock->connectToHost((*res)->hostname, (*res)->port) == vvSocket::VV_OK)
+      {
+        (*res)->ginfos = getResourceGpuInfos(sock);
+      }
+      else
+      {
+        vvDebugMsg::msg(0, "vvResourceManager::pairNextJobs() connecting to vserver failed ", (*res)->hostname.c_str());
+      }
+      delete sock;
+    }
+
+    for(std::vector<vvRequest*>::iterator req = _requests.begin(); req != _requests.end(); req++)
+    {
+      vvRequest* request = *req;
+      if(getFreeResourceCount() >= request->nodes.size())
+      {
+        request->resources = getFreeResources(request->nodes.size());
+        if(request->resources.size() != request->nodes.size())
+        {
+          vvDebugMsg::msg(0, "vvResourceManager::pairNextJobs() unexpected error: Job's resource count mismatch");
+        }
+      }
+      else
+      {
+        break;
+      }
+    }
+  }
+  pthread_mutex_unlock(&_requestsMutex);
+  pthread_mutex_unlock(&_resourcesMutex);
+
+  if(pthread_cond_broadcast(&_requestsCondition) != 0)
+  {
+    vvDebugMsg::msg(0, "vvResourceManager::pairNextJobs() could not unblock request condition");
+  }
+}
+
 bool vvResourceManager::serverLoop()
 {
   switch(_sm)
@@ -471,34 +490,6 @@ bool vvResourceManager::serverLoop()
   }
 
   return vvServer::serverLoop();
-}
-
-void vvResourceManager::handleNextConnection(vvTcpSocket *sock)
-{
-  vvDebugMsg::msg(3, "vvResourceManager::handleNextConnection()");
-
-  vvDebugMsg::msg(3, "vvResourceManager::handleNextConnection() server mode: ", (_sm == vvServer::SERVER) ? "SimpleServer" : "ResourceManager");
-
-  switch(_sm)
-  {
-  case vvServer::SERVER:
-    _simpleServer->handleNextConnection(sock);
-    break;
-  case vvServer::RM:
-  case vvServer::RM_WITH_SERVER:
-      {
-        ::ThreadArgs *args = new ::ThreadArgs;
-        args->sock = sock;
-        args->instance = this;
-        pthread_t threadID;
-        pthread_create(&threadID, NULL, handleClientThread, (void*)args);
-        pthread_detach(threadID);
-      }
-    break;
-  default:
-    // unknown case
-    break;
-  }
 }
 
 uint vvResourceManager::getFreeResourceCount() const

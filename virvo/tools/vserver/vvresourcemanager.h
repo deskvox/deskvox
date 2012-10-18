@@ -50,19 +50,17 @@ public:
   ~vvResourceManager();
 
 private:
+  void handleNextConnection(vvTcpSocket *sock);
   bool handleEvent(ThreadData *tData, virvo::RemoteEvent event, const vvSocketIO& io);
-
-  void addJob(vvTcpSocket *sock);
-
-  static void * handleClientThread(void *param);
-  void pairNextJobs();
-
   bool createRemoteServer(ThreadData* tData, vvTcpSocket* sock);
 
+  static void * handleClientThread(void *param);
   static void updateResources(void * param);
 
+  void pairNextJobs();
+
   bool serverLoop();
-  void handleNextConnection(vvTcpSocket *sock);
+
   uint getFreeResourceCount() const;
   std::vector<vvResource*> getFreeResources(uint amount) const;
 
