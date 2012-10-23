@@ -33,29 +33,35 @@
 #include <dns_sd.h>
 #endif
 
-namespace
+struct vvBonjourEventLoop::BonjourData
 {
-#ifdef HAVE_BONJOUR
-_DNSServiceRef_t *dnsServiceRef;
-#endif
-}
-
-struct Thread
-{
-  Thread()
-    : _pthread(NULL)
+  BonjourData()
+    : dnsServiceRef(NULL)
   {
   }
 
-  pthread_t* _pthread;
+#ifdef HAVE_BONJOUR
+  _DNSServiceRef_t *dnsServiceRef;
+#endif
+};
+
+struct vvBonjourEventLoop::Thread
+{
+  Thread()
+    : pthread(NULL)
+  {
+  }
+
+  pthread_t* pthread;
 };
 
 vvBonjourEventLoop::vvBonjourEventLoop(void* service)
 {
   _thread = new Thread;
-  _thread->_pthread = NULL;
+  _thread->pthread = NULL;
+  _bonjourData = new BonjourData;
 #ifdef HAVE_BONJOUR
-  ::dnsServiceRef = reinterpret_cast<_DNSServiceRef_t*>(service);
+  _bonjourData->dnsServiceRef = reinterpret_cast<_DNSServiceRef_t*>(service);
 #else
   (void)service;
 #endif
@@ -63,10 +69,10 @@ vvBonjourEventLoop::vvBonjourEventLoop(void* service)
 
 vvBonjourEventLoop::~vvBonjourEventLoop()
 {
-  if (_thread != NULL && _thread->_pthread != NULL)
+  if (_thread != NULL && _thread->pthread != NULL)
   {
-    pthread_join(*_thread->_pthread, NULL);
-    delete _thread->_pthread;
+    pthread_join(*_thread->pthread, NULL);
+    delete _thread->pthread;
   }
   delete _thread;
 }
@@ -79,13 +85,13 @@ void vvBonjourEventLoop::run(bool inThread, double timeout)
   if(inThread == false)
   {
     loop(this);
-    ::dnsServiceRef = NULL;
+    _bonjourData->dnsServiceRef = NULL;
   }
   else
   {
-    delete _thread->_pthread;
-    _thread->_pthread = new pthread_t;
-    pthread_create(_thread->_pthread, NULL, loop, this);
+    delete _thread->pthread;
+    _thread->pthread = new pthread_t;
+    pthread_create(_thread->pthread, NULL, loop, this);
   }
 #else
   (void)inThread;
@@ -100,7 +106,7 @@ void * vvBonjourEventLoop::loop(void * attrib)
   vvBonjourEventLoop *instance = reinterpret_cast<vvBonjourEventLoop*>(attrib);
 
   instance->_run = true;
-  int dns_sd_fd = DNSServiceRefSockFD(::dnsServiceRef);
+  int dns_sd_fd = DNSServiceRefSockFD(instance->_bonjourData->dnsServiceRef);
 
   vvTcpSocket sock = vvTcpSocket();
   sock.setSockfd(dns_sd_fd);
@@ -117,9 +123,9 @@ void * vvBonjourEventLoop::loop(void * attrib)
     double to = instance->_timeout;
     vvSocketMonitor::ErrorType smErr = socketMonitor.wait(&ready, &to);
 
-    if (smErr == vvSocketMonitor::VV_OK)
+    if (smErr == vvSocketMonitor::VV_OK && instance->_run)
     {
-      DNSServiceErrorType err = DNSServiceProcessResult(::dnsServiceRef);
+      DNSServiceErrorType err = DNSServiceProcessResult(instance->_bonjourData->dnsServiceRef);
 
       switch(err)
       {

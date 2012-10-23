@@ -24,8 +24,6 @@
 #include "vvbonjour.h"
 #include "vvexport.h"
 
-struct Thread;
-
 /**
   Class to handle Bonjourevents in a blocking or nonblocking/threaded loop.
   In general this class is never needed directly and only used by the other Bonjour-classes.
@@ -57,7 +55,11 @@ public:
   bool              _run;
   bool              _noMoreFlags;
 private:
-  Thread *_thread;
+  struct Thread;
+  struct BonjourData;
+
+  Thread      *_thread;
+  BonjourData *_bonjourData;
 };
 
 #endif
