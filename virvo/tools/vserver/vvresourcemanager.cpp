@@ -213,8 +213,13 @@ bool vvResourceManager::allocateResources(ThreadData *tData)
     if(tData->request->resources.size() == 0)
     {
       // wait until the request changed
-      while(int i = pthread_cond_wait(&rm->_requestsCondition, &rm->_requestsMutex))
+      while(int err = pthread_cond_wait(&rm->_requestsCondition, &rm->_requestsMutex))
       {
+        if(err != 0)
+        {
+          vvDebugMsg::msg(0, "vvResourceManager::allocateResources() pthread_cond_wait() failed");
+          return false;
+        }
         if(tData->request->resources.size() > 0)
         {
           // resources allocated
