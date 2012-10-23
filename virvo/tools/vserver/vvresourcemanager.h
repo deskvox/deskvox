@@ -53,6 +53,7 @@ private:
   void handleNextConnection(vvTcpSocket *sock);
   bool handleEvent(ThreadData *tData, virvo::RemoteEvent event, const vvSocketIO& io);
   bool createRemoteServer(ThreadData* tData, vvTcpSocket* sock);
+  bool allocateResources(ThreadData* tData);
 
   static void * handleClientThread(void *param);
   static void updateResources(void * param);

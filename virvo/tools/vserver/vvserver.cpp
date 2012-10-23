@@ -55,6 +55,7 @@ vvServer::ThreadData::ThreadData()
   : renderContext(NULL)
   , server(NULL)
   , remoteServerType(vvRenderer::REMOTE_IMAGE)
+  , renderertype("default")
   , renderer(NULL)
   , vd(NULL)
   , request(NULL)
@@ -603,15 +604,12 @@ bool vvServer::createRemoteServer(ThreadData *tData, vvTcpSocket* sock)
     }
 
     vvRenderState rs;
-    vvRendererFactory::Options opt;
 
-    std::string renderertype = tData->remoteServerType == vvRenderer::REMOTE_IMAGE
-      ? "default"
-      : "rayrend";
+
     tData->renderer = vvRendererFactory::create(tData->vd,
       rs,
-      renderertype.c_str(),
-      opt);
+      tData->renderertype.c_str(),
+      tData->opt);
 
     tData->renderer->setParameter(vvRenderer::VV_USE_IBR, tData->remoteServerType == vvRenderer::REMOTE_IBR);
     return true;

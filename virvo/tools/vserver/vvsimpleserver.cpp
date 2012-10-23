@@ -141,6 +141,17 @@ void vvSimpleServer::unregisterFromBonjour()
   _registrar.unregisterService();
 }
 
+bool vvSimpleServer::createRemoteServer(ThreadData* tData, vvTcpSocket* sock)
+{
+  vvDebugMsg::msg(3, "vvSimpleServer::createRemoteServer() Enter");
+
+  tData->renderertype = tData->remoteServerType == vvRenderer::REMOTE_IMAGE
+    ? "default"
+    : "rayrend";
+
+  return vvServer::createRemoteServer(tData, sock);
+}
+
 //===================================================================
 // End of File
 //===================================================================

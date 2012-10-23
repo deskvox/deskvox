@@ -44,6 +44,8 @@ private:
   static void * handleClientThread(void *param);
   bool registerToBonjour();
   void unregisterFromBonjour();
+
+  bool createRemoteServer(ThreadData *tData, vvTcpSocket *sock);
 };
 
 #endif // _VV_SERVER_H_

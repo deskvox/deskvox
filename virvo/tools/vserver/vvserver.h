@@ -87,6 +87,7 @@ protected:
     vvContextOptions   contextOptions;
     vvRemoteServer    *server;
     vvRenderer::RendererType remoteServerType;
+    std::string        renderertype;
     vvRenderer        *renderer;
     vvVolDesc         *vd;
     vvRequest         *request;

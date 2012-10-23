@@ -169,6 +169,24 @@ bool vvResourceManager::createRemoteServer(ThreadData* tData, vvTcpSocket* sock)
 {
   vvDebugMsg::msg(3, "vvResourceManager::createRemoteServer() Enter");
 
+  tData->renderertype = (tData->remoteServerType == vvRenderer::REMOTE_IBR)
+    ? "ibr"
+    : "image";
+
+  if(allocateResources(tData) && vvServer::createRemoteServer(tData, sock))
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool vvResourceManager::allocateResources(ThreadData *tData)
+{
+  vvDebugMsg::msg(3, "vvResourceManager::allocateResources() Enter");
+
   vvResourceManager *rm = tData->instance;
 
   // Ensure resources are allocated already
@@ -206,7 +224,7 @@ bool vvResourceManager::createRemoteServer(ThreadData* tData, vvTcpSocket* sock)
     }
     else //debug only
     {
-      vvDebugMsg::msg(3, "vvResourceManager::createRemoteServer() no condition wait necessary");
+      vvDebugMsg::msg(3, "vvResourceManager::allocateResources() no condition wait necessary");
     }
     std::vector<vvRequest*>::iterator rit = std::find(rm->_requests.begin(), rm->_requests.end(), tData->request);
     rm->_requests.erase(rit);
@@ -222,7 +240,7 @@ bool vvResourceManager::createRemoteServer(ThreadData* tData, vvTcpSocket* sock)
       vvTcpSocket *serversock = new vvTcpSocket();
       if(serversock->connectToHost(host, port) != vvSocket::VV_OK )
       {
-        vvDebugMsg::msg(0, "vvResourceManager::createRemoteServer() fatal error: could not connect to vserver resource");
+        vvDebugMsg::msg(0, "vvResourceManager::allocateResources() fatal error: could not connect to vserver resource");
         delete serversock;
         // TODO: Delete sockets on socketmap too
         return false;
@@ -234,49 +252,7 @@ bool vvResourceManager::createRemoteServer(ThreadData* tData, vvTcpSocket* sock)
     }
     tData->opt["sockets"] = sockstr.str();
   }
-
-  switch(tData->remoteServerType)
-  {
-    case vvRenderer::REMOTE_IMAGE:
-      tData->server = new vvImageServer(sock);
-      break;
-    case vvRenderer::REMOTE_IBR:
-      tData->server = new vvIbrServer(sock);
-      break;
-    default:
-      cerr << "Unknown remote rendering type " << tData->remoteServerType << std::endl;
-      break;
-  }
-
-  vvGLTools::enableGLErrorBacktrace();
-
-  if(tData->vd != NULL)
-  {
-    // Set default color scheme if no TF present:
-    if(tData->vd->tf.isEmpty())
-    {
-      tData->vd->tf.setDefaultAlpha(0, 0.0, 1.0);
-      tData->vd->tf.setDefaultColors((tData->vd->chan==1) ? 0 : 2, 0.0, 1.0);
-    }
-
-    vvRenderState rs;
-
-    std::string renderertype;
-    renderertype = (tData->remoteServerType == vvRenderer::REMOTE_IBR) ? "ibr" : "image";
-
-    tData->renderer = vvRendererFactory::create(tData->vd,
-      rs,
-      renderertype.c_str(),
-      tData->opt);
-
-    tData->renderer->setParameter(vvRenderer::VV_USE_IBR, tData->remoteServerType == vvRenderer::REMOTE_IBR);
-    return true;
-  }
-  else
-  {
-    vvDebugMsg::msg(0, "No volume loaded");
-    return false;
-  }
+  return true;
 }
 
 void * vvResourceManager::handleClientThread(void *param)
@@ -312,7 +288,7 @@ void vvResourceManager::updateResources(void * param)
 {
   if (virvo::hasFeature("bonjour"))
   {
-  vvDebugMsg::msg(0, "vvResourceManager::updateResources() Enter");
+  vvDebugMsg::msg(3, "vvResourceManager::updateResources() Enter");
 
   vvResourceManager *rm = reinterpret_cast<vvResourceManager*>(param);
 
@@ -394,7 +370,7 @@ void vvResourceManager::updateResources(void * param)
 
 void vvResourceManager::pairNextJobs()
 {
-  vvDebugMsg::msg(0, "vvResourceManager::pairNextJobs() Enter");
+  vvDebugMsg::msg(3, "vvResourceManager::pairNextJobs() Enter");
 
   pthread_mutex_lock(&_resourcesMutex);
   pthread_mutex_lock(&_requestsMutex);
