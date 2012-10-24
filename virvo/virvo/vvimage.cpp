@@ -913,7 +913,7 @@ int vvImage::snappyEncode(const uchar* in, uchar* out, int size, int space, int 
 {
 #ifdef HAVE_SNAPPY
   (void)symbol_size;
-  if(snappy::MaxCompressedLength(size) > space)
+  if(snappy::MaxCompressedLength(size) > uint(space))
     return -1;
   size_t compressed = 0;
   snappy::RawCompress((const char *)in, size, (char *)out, &compressed);
