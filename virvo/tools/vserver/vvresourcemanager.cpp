@@ -152,6 +152,7 @@ bool vvResourceManager::handleEvent(ThreadData *tData, virvo::RemoteEvent event,
         }
         sockio.putFloat(free/total);
         sockio.putInt32(rm->_resources.size());*/
+        return true;
       }
       break;
     case virvo::GpuInfo:
