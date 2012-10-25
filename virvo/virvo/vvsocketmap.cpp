@@ -40,11 +40,11 @@ void vvSocketMap::remove(const int idx)
   sockets.erase(sockets.begin() + idx);
 }
 
-vvSocket* vvSocketMap::get(const uint idx)
+vvSocket* vvSocketMap::get(const int idx)
 {
-  if (sockets.size() > idx)
+  if (idx >= 0 && sockets.size() > static_cast<size_t>(idx))
   {
-    return sockets[idx];
+    return sockets[static_cast<size_t>(idx)];
   }
   else
   {
