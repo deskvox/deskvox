@@ -24,6 +24,7 @@
 
 #include <pthread.h>
 #include <sstream>
+#include <fstream>
 
 #include <virvo/vvbonjour/vvbonjourentry.h>
 #include <virvo/vvbonjour/vvbonjourbrowser.h>
@@ -286,6 +287,8 @@ void * vvResourceManager::handleClientThread(void *param)
   delete args;
   delete tData;
 
+  rm->pairNextJobs();
+
   pthread_exit(NULL);
 #ifdef _WIN32
   return NULL;
@@ -443,6 +446,7 @@ bool vvResourceManager::serverLoop()
       _simpleServer->setPort(serverResPort);
       serverRes->hostname = "localhost";
       serverRes->port = serverResPort;
+      serverRes->local = true;
 
       std::vector<vvGpu*> gpus = vvGpu::list();
       for(std::vector<vvGpu*>::iterator gpu = gpus.begin(); gpu != gpus.end();gpu++)
@@ -456,21 +460,84 @@ bool vvResourceManager::serverLoop()
       pthread_create(&threadID, NULL, ::localServerLoop, _simpleServer);
       pthread_detach(threadID);
     }
-    break;
+    // fall through...
   case vvServer::RM:
-  default:
-    // nothing to do for other cases here.
-    break;
-  }
-
-  if (virvo::hasFeature("bonjour"))
-  {
-    if(_sm != vvServer::SERVER)
+    // find resources...
+    // ...via bonjour
+    if (virvo::hasFeature("bonjour") && _useBonjour)
     {
-      _browser = new vvBonjourBrowser(updateResources, this);
-      _browser->browseForServiceType("_vserver._tcp", "", -1.0); // browse in continous mode
-      vvDebugMsg::msg(3, "vvResourceManager::serverLoop() browsing bonjour");
+      if(_sm != vvServer::SERVER)
+      {
+        _browser = new vvBonjourBrowser(updateResources, this);
+        _browser->browseForServiceType("_vserver._tcp", "", -1.0); // browse in continous mode
+        vvDebugMsg::msg(3, "vvResourceManager::serverLoop() browsing bonjour");
+      }
     }
+    // ...via config file
+    else
+    {
+      std::string result;
+
+      const char* serverEnv = "VV_SERVER_PATH";
+      if (getenv(serverEnv))
+      {
+        std::cerr << "Environment variable " << serverEnv << " found: " << getenv(serverEnv) << std::endl;
+        result = getenv(serverEnv);
+
+        std::ifstream nodes;
+        nodes.open(result.c_str());
+        if(nodes.is_open())
+        {
+          while(!nodes.eof())
+          {
+            char line[256] = {' '};
+            nodes.getline(line, 256);
+            if(!(vvToolshed::strTrim(line)).empty())
+            {
+              std::string address = vvToolshed::strTrim(line);
+              int port = vvToolshed::parsePort(address);
+              std::string host = vvToolshed::stripPort(line);
+              if(port >= 0 && !host.empty())
+              {
+                vvTcpSocket sock;
+                if(sock.connectToHost(host, static_cast<ushort>(port)) == vvSocket::VV_OK)
+                {
+                  vvResource *res = new vvResource;
+                  res->hostname = host;
+                  res->port = static_cast<ushort>(port);
+                  res->ginfos = getResourceGpuInfos(&sock);
+                  res->local = true;
+
+                  _resources.push_back(res);
+                }
+                else
+                {
+                  vvDebugMsg::msg(0, "vvResourceManager::serverLoop() could not connect to vserver");
+                }
+              }
+            }
+          }
+          if(_resources.size() == 0)
+          {
+            std::cerr << "File " << result << " did not contain any legal entries" << std::endl;
+          }
+        }
+        else
+        {
+          std::cerr << "File not found: " << result << std::endl;
+          return false;
+        }
+      }
+      else
+      {
+        std::cerr << "Environment variable " << serverEnv << " not set. Aborting..." << std::endl;
+        return false;
+      }
+    }
+    break;
+  default:
+    vvDebugMsg::msg(0, "vvResourceManager::serverLoop() unknown server mode");
+    return false;
   }
 
   return vvServer::serverLoop();
