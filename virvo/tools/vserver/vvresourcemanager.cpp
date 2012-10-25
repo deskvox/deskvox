@@ -76,6 +76,7 @@ namespace
 
 vvResourceManager::vvResourceManager()
   : vvServer(false)
+  , _browser(NULL)
 {
   _simpleServer = NULL;
 
@@ -99,6 +100,7 @@ vvResourceManager::~vvResourceManager()
   }
 
   delete _simpleServer;
+  delete _browser;
 
   pthread_mutex_destroy(&_requestsMutex);
   pthread_cond_destroy (&_requestsCondition);
