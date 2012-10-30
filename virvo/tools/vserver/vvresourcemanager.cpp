@@ -39,6 +39,8 @@
 #include <virvo/vvvirvo.h>
 #include <virvo/vvvoldesc.h>
 
+typedef std::multiset<vvRequest*, vvRequest::Compare> requestset;
+
 namespace
 {
   struct ThreadArgs
@@ -95,7 +97,7 @@ vvResourceManager::~vvResourceManager()
   {
     delete *res;
   }
-  for(std::vector<vvRequest*>::iterator req = _requests.begin(); req < _requests.end(); req++)
+  for(requestset::iterator req = _requests.begin(); req != _requests.end(); req++)
   {
     delete *req;
   }
@@ -208,9 +210,9 @@ bool vvResourceManager::allocateResources(ThreadData *tData)
     }
 
     // insert request if not already in list
-    if(std::find(rm->_requests.begin(), rm->_requests.end(), tData->request) == rm->_requests.end())
+    if(rm->_requests.find(tData->request) == rm->_requests.end())
     {
-      rm->_requests.push_back(tData->request);
+      rm->_requests.insert(tData->request);
       rm->pairNextJobs();
     }
 
@@ -235,8 +237,7 @@ bool vvResourceManager::allocateResources(ThreadData *tData)
     {
       vvDebugMsg::msg(3, "vvResourceManager::allocateResources() no condition wait necessary");
     }
-    std::vector<vvRequest*>::iterator rit = std::find(rm->_requests.begin(), rm->_requests.end(), tData->request);
-    rm->_requests.erase(rit);
+    rm->_requests.erase(rm->_requests.find(tData->request));
 
     pthread_mutex_unlock(&rm->_requestsMutex);
 
@@ -386,8 +387,6 @@ void vvResourceManager::pairNextJobs()
   pthread_mutex_lock(&_resourcesMutex);
   pthread_mutex_lock(&_requestsMutex);
 
-  // sort for correct priority
-  std::sort(_requests.begin(), _requests.end());
   if(_requests.size() > 0 && _resources.size() > 0)
   {
     // Update Gpu-Status of all Resources
@@ -405,7 +404,7 @@ void vvResourceManager::pairNextJobs()
       delete sock;
     }
 
-    for(std::vector<vvRequest*>::iterator req = _requests.begin(); req != _requests.end(); req++)
+    for(requestset::iterator req = _requests.begin(); req != _requests.end(); req++)
     {
       vvRequest* request = *req;
       if(getFreeResourceCount() >= request->nodes.size())

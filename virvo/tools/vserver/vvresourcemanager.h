@@ -24,6 +24,7 @@
 #include <virvo/vvrequestmanagement.h>
 #include <virvo/vvbonjour/vvbonjourentry.h>
 #include <pthread.h>
+#include <set>
 
 #include "vvserver.h"
 
@@ -67,7 +68,7 @@ private:
 
   vvSimpleServer *_simpleServer;
   vvBonjourBrowser *_browser;
-  std::vector<vvRequest*>  _requests;
+  std::multiset<vvRequest*, vvRequest::Compare> _requests;
   std::vector<vvResource*> _resources;
   pthread_mutex_t _requestsMutex;
   pthread_cond_t  _requestsCondition;
