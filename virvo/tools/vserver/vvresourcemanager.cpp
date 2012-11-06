@@ -556,7 +556,7 @@ uint vvResourceManager::getFreeResourceCount() const
       freeMemory += (*ginfo).freeMem;
     }
 
-    if(true) //QUICKFIX ONLY !!!  freeMemory > 0)
+    if(freeMemory > 0)
     {
       count++;
     }
@@ -595,7 +595,7 @@ std::vector<vvResource*> vvResourceManager::getFreeResources(uint amount) const
       freeMemory += (*ginfo).freeMem;
     }
 
-    if(true) // QUICKFIX ONLY !!!freeMemory > 0)
+    if(freeMemory > 0)
     {
       freeResources.push_back(*freeRes);
       freeRes++;
