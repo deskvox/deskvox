@@ -46,13 +46,13 @@ public:
   };
 
   /**
-    Get a list of known gpus available from for this process configured in a config file.
+    Get a list of known gpus available for this process configured in a config file.
     @return vector-list of vvGpus
     */
   static std::vector<vvGpu*> list();
   /**
     Get the current gpu infos of a gpus from either list() or createGpu()
-    @return vvGpuInfo with values up to date or -1 if not available
+    @return vvGpuInfo with values up to date or set to -1 if not available
     */
   static vvGpuInfo getInfo(vvGpu *gpu);
   /**
@@ -60,11 +60,19 @@ public:
     @return corresponding vvGpu object or NULL on error
     */
   static vvGpu* createGpu(std::string& data);
+  /**
+    Clear all gpu entries found in config file and added via createGpu().
+    If list() or createGpu() was ever called, this should be called before
+    termination of program to prevent memory leaks
+    */
+  static void clearGpus();
 
 private:
   vvGpu();
+  ~vvGpu();
   vvGpu(const vvGpu& rhs);
   vvGpu& operator = (const vvGpu& src);
+  bool operator == (const vvGpu& other) const;
 
   class GpuData;
 

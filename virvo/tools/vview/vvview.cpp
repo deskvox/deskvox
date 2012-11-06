@@ -697,9 +697,9 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
     }
 
     /* uncomment to test GpuInfo-event
-    socketIO.putInt32(virvo::GpuInfo);
+    io.putInt32(virvo::GpuInfo);
     std::vector<vvGpu::vvGpuInfo> ginfos;
-    socketIO.getGpuInfos(ginfos);
+    io.getGpuInfos(ginfos);
     std::cerr << "Number of gpus: " << ginfos.size() << std::endl;
     for(std::vector<vvGpu::vvGpuInfo>::iterator ginfo = ginfos.begin(); ginfo != ginfos.end();ginfo++)
     {

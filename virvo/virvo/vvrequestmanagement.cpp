@@ -51,52 +51,75 @@ public:
   bool        openGL;
   int         cudaDevice;
   vvRenderContext::WindowingSystem wSystem;
+
+  bool operator == (const GpuData& other) const
+  {
+    return this->glName     == other.glName
+        && this->Xdsp       == other.Xdsp
+        && this->cuda       == other.cuda
+        && this->openGL     == other.openGL
+        && this->cudaDevice == other.cudaDevice
+        && this->wSystem    == other.wSystem;
+  }
 };
+
+std::vector<vvGpu*> gpus;
 
 std::vector<vvGpu*> vvGpu::list()
 {
-  std::vector<vvGpu*> gpus;
+  vvDebugMsg::msg(3, "vvGpu::list() Enter");
 
-  std::ifstream fin("/raid/home/sdelisav/deskvox/qtcreator-build/virvo/tools/vserver/vserver.config");
-
-  if(!fin.is_open())
+  const char* serverEnv = "VV_SERVER_PATH";
+  if (getenv(serverEnv))
   {
-    vvDebugMsg::msg(2, "vvGpu::list() could not open config file");
-  }
+    std::string filepath = std::string(getenv(serverEnv)) + std::string("/vserver.config");
+    std::ifstream fin(filepath.c_str());
 
-  uint lineNum = 0;
-  std::string line;
-  while(fin.good())
+    if(!fin.is_open())
+    {
+      std::string errmsg = std::string("vvGpu::list() could not open config file ")+filepath;
+      vvDebugMsg::msg(0, errmsg.c_str());
+    }
+
+    uint lineNum = 0;
+    std::string line;
+    while(fin.good())
+    {
+      lineNum++;
+      std::getline(fin, line);
+
+      std::vector<std::string> subStrs = vvToolshed::split(line, "=");
+      if(subStrs.size() < 2)
+      {
+        vvDebugMsg::msg(2, "vvGpu::list() nothing to parse in config file line ", (int)lineNum);
+      }
+      else
+      {
+        if(vvToolshed::strCompare("gpu", subStrs[0].c_str()) == 0)
+        {
+          line.erase(0,line.find_first_of("=",0)+1);
+          vvGpu::createGpu(line);
+        }
+        else if(vvToolshed::strCompare("node", subStrs[0].c_str()) == 0)
+        {
+          // NODE bla bla
+        }
+      }
+    }
+  }
+  else
   {
-    lineNum++;
-    std::getline(fin, line);
-
-    std::vector<std::string> subStrs = vvToolshed::split(line, "=");
-    if(subStrs.size() < 2)
-    {
-      vvDebugMsg::msg(2, "vvGpu::list() nothing to parse in config file line ", (int)lineNum);
-    }
-    else
-    {
-      if(vvToolshed::strCompare("gpu", subStrs[0].c_str()) == 0)
-      {
-        line.erase(0,line.find_first_of("=",0)+1);
-        gpus.push_back(vvGpu::createGpu(line));
-      }
-      else if(vvToolshed::strCompare("node", subStrs[0].c_str()) == 0)
-      {
-        // NODE bla bla
-      }
-    }
+    std::string errmsg = std::string("vvGpu::list() Environment variable ")+std::string(serverEnv)+std::string(" not set.");
+    vvDebugMsg::msg(1, errmsg.c_str());
   }
-
-  // TODO: add all found gpus here
 
   return gpus;
 }
 
 vvGpu::vvGpuInfo vvGpu::getInfo(vvGpu *gpu)
 {
+  vvDebugMsg::msg(3, "vvGpu::getInfo() Enter");
+
   vvGpuInfo inf = { -1, -1 };
 
   if(gpu->_data->openGL)
@@ -196,7 +219,25 @@ vvGpu* vvGpu::createGpu(std::string& data)
         return NULL;
       }
     }
-    return gpu;
+
+    // check if gpu already known
+    vvGpu *found = NULL;
+    for(std::vector<vvGpu*>::iterator g = gpus.begin(); g != gpus.end(); g++)
+    {
+      if(**g == *gpu)
+        found = *g;
+    }
+
+    if(found)
+    {
+      delete gpu;
+      return found;
+    }
+    else
+    {
+      gpus.push_back(gpu);
+      return gpu;
+    }
   }
   else
   {
@@ -204,9 +245,23 @@ vvGpu* vvGpu::createGpu(std::string& data)
   }
 }
 
+void vvGpu::clearGpus()
+{
+  for(std::vector<vvGpu*>::iterator g = gpus.begin(); g!=gpus.end(); g++)
+  {
+    delete *g;
+  }
+  gpus.clear();
+}
+
 vvGpu::vvGpu()
 {
   _data = new GpuData;
+}
+
+vvGpu::~vvGpu()
+{
+  delete _data;
 }
 
 vvGpu& vvGpu::operator = (const vvGpu& src)
@@ -214,4 +269,10 @@ vvGpu& vvGpu::operator = (const vvGpu& src)
   (void)src;
   return *this;
 }
+
+bool vvGpu::operator == (const vvGpu& other) const
+{
+  return *this->_data == *other._data;
+}
+
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
