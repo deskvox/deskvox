@@ -209,12 +209,13 @@ vvGpu* vvGpu::createGpu(std::string& data)
         }
         else
         {
-          vvDebugMsg::msg(2, "vvGpu::parseGpuData() parse error: unknown windowingsystem type");
+          vvDebugMsg::msg(0, "vvGpu::parseGpuData() parse error: unknown windowingsystem type");
           gpu->_data->wSystem = vvRenderContext::VV_NONE;
         }
         break;
       default:
-        vvDebugMsg::msg(2, "vvGpu::createGpu() parse error: unknown attribute");
+        std::string errmsg = std::string("vvGpu::createGpu() parse error: unknown attribute near: ")+std::string(nameValue[0]);
+        vvDebugMsg::msg(0, errmsg.c_str());
         delete gpu;
         return NULL;
       }
