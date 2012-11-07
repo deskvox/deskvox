@@ -108,7 +108,12 @@ std::vector<vvGpu*> vvGpu::list()
         }
         else if(vvToolshed::strCompare("node", subStrs[0].c_str()) == 0)
         {
-          // NODE bla bla
+          vvDebugMsg::msg(3, "vvGpu::list() skipping unappendand entry \"node\"");
+        }
+        else
+        {
+          std::string errmsg = std::string("vvGpu::list() parse error: unknown attribute near: ")+std::string(subStrs[0]);
+          vvDebugMsg::msg(0, errmsg.c_str());
         }
       }
     }
