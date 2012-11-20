@@ -71,14 +71,8 @@ struct vvParBrickRend::Thread
     VV_EXIT
   };
 
-  struct Param
-  {
-    vvRenderState::ParameterType type;
-    vvParam newValue;
-  };
-
   std::queue<Event> events;
-  std::queue<Param> newParams;
+  std::queue<vvRenderState::ParameterType> newParams;
 };
 
 vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
@@ -326,8 +320,6 @@ void vvParBrickRend::setParameter(ParameterType param, const vvParam& newValue)
 {
   vvDebugMsg::msg(3, "vvParBrickRend::setParameter()");
 
-  const Thread::Param p = { param, newValue };
-
   if (_thread != NULL && _thread->renderer != NULL)
   {
     _thread->renderer->setParameter(param, newValue);
@@ -338,7 +330,7 @@ void vvParBrickRend::setParameter(ParameterType param, const vvParam& newValue)
   {
     pthread_mutex_lock((*it)->mutex);
     (*it)->events.push(Thread::VV_NEW_PARAM);
-    (*it)->newParams.push(p);
+    (*it)->newParams.push(param);
     pthread_mutex_unlock((*it)->mutex);
   }
 
@@ -348,17 +340,6 @@ void vvParBrickRend::setParameter(ParameterType param, const vvParam& newValue)
 vvParam vvParBrickRend::getParameter(ParameterType param) const
 {
   vvDebugMsg::msg(3, "vvParBrickRend::getParameter()");
-
-  if (_thread != NULL && _thread->renderer != NULL)
-  {
-    return _thread->renderer->getParameter(param);
-  }
-
-  for (std::vector<Thread*>::const_iterator it = _threads.begin();
-       it != _threads.end(); ++it)
-  {
-    return (*it)->renderer->getParameter(param);
-  }
 
   return vvBrickRend::getParameter(param);
 }
@@ -438,8 +419,8 @@ void* vvParBrickRend::renderFunc(void* args)
         pthread_mutex_lock(thread->mutex);
         if (!thread->newParams.empty())
         {
-          Thread::Param p = thread->newParams.front();
-          thread->renderer->setParameter(p.type, p.newValue);
+          vvRenderState::ParameterType p = thread->newParams.front();
+          thread->renderer->setParameter(p, thread->parbrickrend->getParameter(p));
           thread->newParams.pop();
         }
         pthread_mutex_unlock(thread->mutex);
