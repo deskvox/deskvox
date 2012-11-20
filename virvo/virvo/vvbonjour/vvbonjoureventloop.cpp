@@ -35,12 +35,12 @@
 
 struct vvBonjourEventLoop::BonjourData
 {
+#ifdef HAVE_BONJOUR
   BonjourData()
     : dnsServiceRef(NULL)
   {
   }
 
-#ifdef HAVE_BONJOUR
   _DNSServiceRef_t *dnsServiceRef;
 #endif
 };
