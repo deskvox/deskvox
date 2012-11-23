@@ -1067,7 +1067,9 @@ void vvRayRend::compositeVolume(int, int)
   const vvGLTools::Viewport vp = vvGLTools::getViewport();
 
   allocIbrArrays(vp[2], vp[3]);
-  intImg->setSize(vp[2], vp[3]);
+  int w = vvToolshed::getTextureSize(vp[2]);
+  int h = vvToolshed::getTextureSize(vp[3]);
+  intImg->setSize(w, h);
 
   vvCudaImg* cudaImg = dynamic_cast<vvCudaImg*>(intImg);
   if (cudaImg == NULL)
