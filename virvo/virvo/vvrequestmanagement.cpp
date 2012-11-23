@@ -72,7 +72,13 @@ std::vector<vvGpu*> vvGpu::list()
   const char* serverEnv = "VV_SERVER_PATH";
   if (getenv(serverEnv))
   {
-    std::string filepath = std::string(getenv(serverEnv)) + std::string("/vserver.config");
+    std::string filepath = std::string(getenv(serverEnv));
+#ifdef WIN32
+    filepath = filepath + std::string("\\vserver.config");
+#else
+    filepath = filepath + std::string("/vserver.config");
+#endif
+
     std::ifstream fin(filepath.c_str());
 
     if(!fin.is_open())
@@ -102,7 +108,12 @@ std::vector<vvGpu*> vvGpu::list()
         }
         else if(vvToolshed::strCompare("node", subStrs[0].c_str()) == 0)
         {
-          // NODE bla bla
+          vvDebugMsg::msg(3, "vvGpu::list() skipping unappendand entry \"node\"");
+        }
+        else
+        {
+          std::string errmsg = std::string("vvGpu::list() parse error: unknown attribute near: ")+std::string(subStrs[0]);
+          vvDebugMsg::msg(0, errmsg.c_str());
         }
       }
     }
