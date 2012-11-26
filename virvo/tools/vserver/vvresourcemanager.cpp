@@ -143,23 +143,8 @@ bool vvResourceManager::handleEvent(ThreadData *tData, virvo::RemoteEvent event,
   switch (event)
   {
     case virvo::Statistics:
-      {
-        /*
-        float free = 0.0f;
-        float total = 0.0f;
-        for(std::vector<vvResource*>::iterator res = tData->instance->_resources.begin(); res != args->instance->_resources.end(); res++)
-        {
-          for(std::vector<vvGpu::vvGpuInfo>::iterator ginfo = (*res)->ginfos.begin(); ginfo != (*res)->ginfos.end(); ginfo++)
-          {
-            free += (*ginfo).freeMem;
-            total += (*ginfo).totalMem;
-          }
-        }
-        sockio.putFloat(free/total);
-        sockio.putInt32(rm->_resources.size());*/
-        return true;
-      }
-      break;
+      // TODO: implement this case for ResourceManager too if reasonable
+      return false;
     case virvo::GpuInfo:
       // TODO: implement this case for ResourceManager too if reasonable
       return false;
