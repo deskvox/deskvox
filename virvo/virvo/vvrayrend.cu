@@ -247,7 +247,8 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
                              const float3& L, const float3& H,
                              const float3& Ka, const float3& Kd, const float3& Ks,
                              const float shininess,
-                             const float3* normal = NULL)
+                             const float3* normal = NULL,
+                             float constAtt = 1.0f, float linearAtt = 0.0f, float quadAtt = 0.0f)
 {
   float3 N = normalize(gradient<t_bpc>(pos));
 
@@ -258,6 +259,8 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
     N = normalize(N);
   }
 
+  float dist = norm(L);
+  float att = 1.0f / (constAtt + linearAtt * dist + quadAtt * dist * dist);
   const float ldot = dot(L, N);
 
   const float3 c = make_float3(classification);
@@ -267,13 +270,13 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
   if (ldot > 0.0f)
   {
     // Diffuse term.
-    tmp += Kd * ldot * c;
+    tmp += Kd * ldot * c * att;
 
     // Specular term.
     const float spec = powf(dot(H, N), shininess);
     if (spec > 0.0f)
     {
-      tmp += Ks * spec * c;
+      tmp += Ks * spec * c * att;
     }
   }
   return make_float4(tmp.x, tmp.y, tmp.z, classification.w);
@@ -333,6 +336,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const float3 volPos, const float3 volSizeHalf,
                        const float3 probePos, const float3 probeSizeHalf,
                        const float3 L, const float3 H,
+                       float constAtt, float linearAtt, float quadAtt,
                        const bool clipPlane,
                        const bool clipSphere,
                        const bool useSphereAsProbe,
@@ -527,13 +531,13 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       const float shininess = 1000.0f;
       if (justClippedPlane)
       {
-        src = blinnPhong<t_bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal);
+        src = blinnPhong<t_bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal, constAtt, linearAtt, quadAtt);
         justClippedPlane = false;
       }
       else if (justClippedSphere)
       {
         float3 sphereNormal = normalize(pos - sphereCenter);
-        src = blinnPhong<t_bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal);
+        src = blinnPhong<t_bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal, constAtt, linearAtt, quadAtt);
         justClippedSphere = false;
       }
       else
@@ -728,6 +732,7 @@ typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint heigh
                             const float3 volPos, const float3 volSizeHalf,
                             const float3 probePos, const float3 probeSizeHalf,
                             const float3 L, const float3 H,
+                            float constAtt, float linearAtt, float quadAtt,
                             const bool clipPlane,
                             const bool clipSphere,
                             const bool useSphereAsProbe,
@@ -1156,15 +1161,25 @@ void vvRayRend::compositeVolume(int, int)
 
   vvVector3 origin;
 
+  // use GL_LIGHT0 for local lighting
+  GLfloat lv[4];
+  float constAtt = 1.0f;
+  float linearAtt = 0.0f;
+  float quadAtt = 0.0f;
+  if (glIsEnabled(GL_LIGHTING))
+  {
+    glGetLightfv(GL_LIGHT0, GL_POSITION, &lv[0]);
+    glGetLightfv(GL_LIGHT0, GL_CONSTANT_ATTENUATION, &constAtt);
+    glGetLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &linearAtt);
+    glGetLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &quadAtt);
+  }
+  const float3 L = -normalize(make_float3(lv[0], lv[1], lv[2]));
+
   vvVector3 normal;
   getShadingNormal(normal, origin, eye, invMv, isOrtho);
 
-  const float3 N = make_float3(normal[0], normal[1], normal[2]);
-
-  const float3 L(-N);
-
-  // Viewing direction.
-  const float3 V(-N);
+  // viewing direction equals normal direction
+  const float3 V = make_float3(normal[0], normal[1], normal[2]);
 
   // Half way vector.
   const float3 H = normalize(L + V);
@@ -1213,6 +1228,7 @@ void vvRayRend::compositeVolume(int, int)
                                         volPos, volSize * 0.5f,
                                         probePos, probeSize * 0.5f,
                                         L, H,
+                                        constAtt, linearAtt, quadAtt,
                                         false, false, false,
                                         center, radius * radius,
                                         pnormal, pdist, ::d_depth, _depthPrecision,
@@ -1224,6 +1240,7 @@ void vvRayRend::compositeVolume(int, int)
                                       volPos, volSize * 0.5f,
                                       probePos, probeSize * 0.5f,
                                       L, H,
+                                      constAtt, linearAtt, quadAtt,
                                       false, false, false,
                                       center, radius * radius,
                                       pnormal, pdist, ::d_depth, _depthPrecision,

@@ -20,6 +20,7 @@
 
 #include "vvcanvas.h"
 #include "vvdimensiondialog.h"
+#include "vvlightdialog.h"
 #include "vvmainwindow.h"
 #include "vvmergedialog.h"
 #include "vvobjview.h"
@@ -100,6 +101,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   _prefDialog = new vvPrefDialog(_canvas, this);
 
   _tfDialog = new vvTFDialog(_canvas, this);
+  _lightDialog = new vvLightDialog(this);
 
   _dimensionDialog = new vvDimensionDialog(_canvas, this);
   _mergeDialog = new vvMergeDialog(this);
@@ -119,8 +121,9 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(ui->actionPreferences, SIGNAL(triggered()), this, SLOT(onPreferencesTriggered()));
 
   // settings menu
-  connect(ui->actionBackgroundColor, SIGNAL(triggered()), this, SLOT(onBackgroundColorTriggered()));
   connect(ui->actionTransferFunction, SIGNAL(triggered()), this, SLOT(onTransferFunctionTriggered()));
+  connect(ui->actionLightSource, SIGNAL(triggered()), this, SLOT(onLightSourceTriggered()));
+  connect(ui->actionBackgroundColor, SIGNAL(triggered()), this, SLOT(onBackgroundColorTriggered()));
 
   // edit menu
   connect(ui->actionSampleDistances, SIGNAL(triggered()), this, SLOT(onSampleDistancesTriggered()));
@@ -148,6 +151,11 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
     _canvas, SLOT(setParameter(vvParameters::ParameterType, const vvParam&)));
   connect(_prefDialog, SIGNAL(parameterChanged(vvRenderer::ParameterType, const vvParam&)),
     _canvas, SLOT(setParameter(vvRenderer::ParameterType, const vvParam&)));
+
+  connect(_lightDialog, SIGNAL(enabled(bool)), _canvas, SLOT(enableLighting(bool)));
+  connect(_lightDialog, SIGNAL(showLightSource(bool)), _canvas, SLOT(showLightSource(bool)));
+  connect(_lightDialog, SIGNAL(editPositionToggled(bool)), _canvas, SLOT(editLightPosition(bool)));
+  connect(_lightDialog, SIGNAL(attenuationChanged(const vvVector3&)), _canvas, SLOT(setLightAttenuation(const vvVector3&)));
 
   connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), _volInfoDialog, SLOT(onNewVolDesc(vvVolDesc*)));
 
@@ -509,6 +517,12 @@ void vvMainWindow::onTransferFunctionTriggered()
 
   _tfDialog->raise();
   _tfDialog->show();
+}
+
+void vvMainWindow::onLightSourceTriggered()
+{
+  _lightDialog->raise();
+  _lightDialog->show();
 }
 
 void vvMainWindow::onBackgroundColorTriggered()

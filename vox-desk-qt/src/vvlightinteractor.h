@@ -18,22 +18,30 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_PARAMETERS_H
-#define VV_PARAMETERS_H
+#ifndef VV_LIGHTINTERACTOR_H
+#define VV_LIGHTINTERACTOR_H
 
-namespace vvParameters
+#include "vvinteractor.h"
+
+#include <QObject>
+
+class vvLightInteractor : public QObject, public vvInteractor
 {
-  enum ParameterType
-  {
-    VV_BG_COLOR = 0,
-    VV_DOUBLEBUFFERING,
-    VV_LIGHTING,
-    VV_MOVING_QUALITY,
-    VV_PROJECTIONTYPE,
-    VV_SPIN_ANIMATION,
-    VV_SUPERSAMPLES
-  };
-}
+  Q_OBJECT
+public:
+  vvLightInteractor();
+  void render() const;
+  void mouseMoveEvent(QMouseEvent* event);
+  void mousePressEvent(QMouseEvent* event);
+  void mouseReleaseEvent(QMouseEvent* event);
+
+  void setLightingEnabled(bool enabled);
+private:
+  bool _lightingEnabled;
+  Qt::MouseButton _mouseButton;
+signals:
+  void lightPos(const vvVector3& pos);
+};
 
 #endif
 

@@ -21,6 +21,7 @@
 #include <GL/glew.h>
 
 #include "vvcanvas.h"
+#include "vvlightinteractor.h"
 
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvfileio.h>
@@ -28,6 +29,7 @@
 
 #include <QSettings>
 #include <QTimer>
+#include <QVector3D>
 
 #include <iostream>
 
@@ -43,6 +45,7 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   , _stillQuality(1.0f)
   , _movingQuality(1.0f)
   , _spinAnimation(false)
+  , _lightVisible(false)
   , _mouseButton(Qt::NoButton)
 {
   vvDebugMsg::msg(1, "vvCanvas::vvCanvas()");
@@ -69,6 +72,15 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   QSettings settings;
   QColor qcolor = settings.value("canvas/bgcolor").value<QColor>();
   _bgColor = vvColor(qcolor.redF(), qcolor.greenF(), qcolor.blueF());
+
+  _lighting = settings.value("canvas/lighting").toBool();
+
+  // note: Qt 4.6 introduced QVector3D
+  QVector3D qlightpos = settings.value("canvas/lightpos").value<QVector3D>();
+  _lightPos = vvVector3(qlightpos.x(), qlightpos.y(), qlightpos.z());
+
+  QVector3D qlightatt = settings.value("canvas/lightattenuation").value<QVector3D>();
+  _lightAtt = vvVector3(qlightatt.x(), qlightatt.y(), qlightatt.z());
 
   _animTimer = new QTimer(this);
   connect(_animTimer, SIGNAL(timeout()), this, SLOT(incTimeStep()));
@@ -115,6 +127,11 @@ void vvCanvas::setPlugins(const QList<vvPlugin*>& plugins)
   _plugins = plugins;
 }
 
+void vvCanvas::setInteractors(const QList<vvInteractor*>& interactors)
+{
+  _interactors = interactors;
+}
+
 vvVolDesc* vvCanvas::getVolDesc() const
 {
   vvDebugMsg::msg(3, "vvCanvas::getVolDesc()");
@@ -127,6 +144,11 @@ vvRenderer* vvCanvas::getRenderer() const
   vvDebugMsg::msg(3, "vvCanvas::getRenderer()");
 
   return _renderer;
+}
+
+const QList<vvInteractor*>& vvCanvas::getInteractors() const
+{
+  return _interactors;
 }
 
 void vvCanvas::loadCamera(const QString& filename)
@@ -173,6 +195,16 @@ void vvCanvas::paintGL()
 
   glEnable(GL_DEPTH_TEST);
 
+  if (_lighting)
+  {
+    glEnable(GL_LIGHTING);
+    float lv[4] = { _lightPos[0], _lightPos[1], _lightPos[2], 1.0f };
+    glLightfv(GL_LIGHT0, GL_POSITION, lv);
+    glLightfv(GL_LIGHT0, GL_CONSTANT_ATTENUATION, &_lightAtt[0]);
+    glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &_lightAtt[1]);
+    glLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &_lightAtt[2]);
+  }
+
   glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -196,6 +228,14 @@ void vvCanvas::paintGL()
       plugin->postrender();
     }
   }
+
+  foreach (vvInteractor* interactor, _interactors)
+  {
+    if (interactor->enabled() && interactor->visible())
+    {
+      interactor->render();
+    }
+  }
 }
 
 void vvCanvas::resizeGL(const int w, const int h)
@@ -216,6 +256,19 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
 {
   vvDebugMsg::msg(3, "vvCanvas::mouseMoveEvent()");
 
+  // interactors
+  foreach (vvInteractor* interactor, _interactors)
+  {
+    // first interactor with focus gets event
+    if (interactor->enabled() && interactor->hasFocus())
+    {
+      interactor->mouseMoveEvent(event);
+      // no more mouse processing
+      return;
+    }
+  }
+
+  // default mouse move event
   switch (_mouseButton)
   {
   case Qt::LeftButton:
@@ -255,6 +308,19 @@ void vvCanvas::mousePressEvent(QMouseEvent* event)
 {
   vvDebugMsg::msg(3, "vvCanvas::mousePressEvent()");
 
+  // interactors
+  foreach (vvInteractor* interactor, _interactors)
+  {
+    // first interactor with focus gets event
+    if (interactor->enabled() && interactor->hasFocus())
+    {
+      interactor->mousePressEvent(event);
+      // no more mouse processing
+      return;
+    }
+  }
+
+  // default mouse press event
   _stillQuality = _renderer->getParameter(vvRenderer::VV_QUALITY);
   _renderer->setParameter(vvRenderer::VV_QUALITY, _movingQuality);
   _mouseButton = event->button();
@@ -266,10 +332,23 @@ void vvCanvas::mousePressEvent(QMouseEvent* event)
   }
 }
 
-void vvCanvas::mouseReleaseEvent(QMouseEvent*)
+void vvCanvas::mouseReleaseEvent(QMouseEvent* event)
 {
   vvDebugMsg::msg(3, "vvCanvas::mouseReleaseEvent()");
 
+  // interactors
+  foreach (vvInteractor* interactor, _interactors)
+  {
+    // first interactor with focus gets event
+    if (interactor->enabled() && interactor->hasFocus())
+    {
+      interactor->mouseReleaseEvent(event);
+      // no more mouse processing
+      return;
+    }
+  }
+
+  // default mouse release event
   _mouseButton = Qt::NoButton;
   _renderer->setParameter(vvRenderer::VV_QUALITY, _stillQuality);
   updateGL();
@@ -390,6 +469,19 @@ void vvCanvas::setParameter(vvParameters::ParameterType param, const vvParam& va
   case vvParameters::VV_DOUBLEBUFFERING:
     _doubleBuffering = value;
     break;
+  case vvParameters::VV_LIGHTING:
+    {
+      _lighting = value;
+      foreach (vvInteractor* interactor, _interactors)
+      {
+        vvLightInteractor* li = dynamic_cast<vvLightInteractor*>(interactor);
+        if (li != NULL)
+        {
+          li->setLightingEnabled(_lighting);
+        }
+      }
+    } 
+    break;
   case vvParameters::VV_MOVING_QUALITY:
     _movingQuality = value;
     break;
@@ -428,6 +520,8 @@ vvParam vvCanvas::getParameter(vvParameters::ParameterType param) const
     return _bgColor;
   case vvParameters::VV_DOUBLEBUFFERING:
     return _doubleBuffering;
+  case vvParameters::VV_LIGHTING:
+    return _lighting;
   case vvParameters::VV_SUPERSAMPLES:
     return _superSamples;
   case vvParameters::VV_PROJECTIONTYPE:
@@ -514,6 +608,95 @@ void vvCanvas::lastTimeStep()
   setCurrentFrame(_vd->frames - 1);
 }
 
+void vvCanvas::enableLighting(bool enabled)
+{
+  setParameter(vvRenderState::VV_LIGHTING, enabled);
+  setParameter(vvParameters::VV_LIGHTING, enabled);
+  updateGL();
+}
+
+void vvCanvas::showLightSource(bool show)
+{
+  _lightVisible = show;
+
+  // canvas lazily uses the light source interactor to visualize the light source
+  vvLightInteractor* li = NULL;
+  foreach (vvInteractor* interactor, _interactors)
+  {
+    if (dynamic_cast<vvLightInteractor*>(interactor) != NULL)
+    {
+      li = static_cast<vvLightInteractor*>(interactor);
+    }
+  }
+
+  if (li == NULL)
+  {
+    li = new vvLightInteractor;
+    _interactors.append(li);
+  }
+
+  li->setEnabled(true);
+  li->setLightingEnabled(getParameter(vvParameters::VV_LIGHTING));
+  li->setPos(_lightPos);
+
+  if (!li->hasFocus())
+  {
+    li->setVisible(_lightVisible);
+  }
+
+  updateGL();
+}
+
+void vvCanvas::editLightPosition(bool edit)
+{
+  if (edit)
+  {
+    vvLightInteractor* li = NULL;
+    foreach (vvInteractor* interactor, _interactors)
+    {
+      if (dynamic_cast<vvLightInteractor*>(interactor) != NULL)
+      {
+        li = static_cast<vvLightInteractor*>(interactor);
+      }
+    }
+
+    if (li == NULL)
+    {
+      li = new vvLightInteractor;
+      _interactors.append(li);
+    }
+
+    li->setFocus();
+    li->setVisible(true);
+    li->setLightingEnabled(getParameter(vvParameters::VV_LIGHTING));
+    li->setPos(_lightPos);
+    connect(li, SIGNAL(lightPos(const vvVector3&)), this, SLOT(setLightPos(const vvVector3&)));
+  }
+  else
+  {
+    foreach (vvInteractor* interactor, _interactors)
+    {
+      if (dynamic_cast<vvLightInteractor*>(interactor) != NULL)
+      {
+        interactor->clearFocus();
+        interactor->setVisible(_lightVisible);
+      }
+    }
+  }
+  updateGL();
+}
+
+void vvCanvas::setLightAttenuation(const vvVector3& att)
+{
+  _lightAtt = att;
+
+  QVector3D qatt(att[0], att[1], att[2]);
+  QSettings settings;
+  settings.setValue("canvas/lightattenuation", qatt);
+
+  updateGL();
+}
+
 void vvCanvas::repeatLastRotation()
 {
   vvDebugMsg::msg(3, "vvCanvas::repeatLastRotation()");
@@ -524,5 +707,16 @@ void vvCanvas::repeatLastRotation()
   const float spindelay = 0.05f;
   const float delay = std::abs(spindelay * 1000.0f);
   _spinTimer->start(static_cast<int>(delay));
+}
+
+void vvCanvas::setLightPos(const vvVector3& pos)
+{
+  _lightPos = pos;
+
+  QVector3D qpos(pos[0], pos[1], pos[2]);
+  QSettings settings;
+  settings.setValue("canvas/lightpos", qpos);
+
+  updateGL();
 }
 

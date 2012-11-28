@@ -18,22 +18,64 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_PARAMETERS_H
-#define VV_PARAMETERS_H
+#include "vvinteractor.h"
 
-namespace vvParameters
+vvInteractor::vvInteractor()
+  : _enabled(true)
+  , _hasFocus(false)
+  , _visible(true)
+  , _pos(vvVector3())
 {
-  enum ParameterType
-  {
-    VV_BG_COLOR = 0,
-    VV_DOUBLEBUFFERING,
-    VV_LIGHTING,
-    VV_MOVING_QUALITY,
-    VV_PROJECTIONTYPE,
-    VV_SPIN_ANIMATION,
-    VV_SUPERSAMPLES
-  };
+
 }
 
-#endif
+vvInteractor::~vvInteractor()
+{
+
+}
+
+void vvInteractor::setEnabled(bool enabled)
+{
+  _enabled = enabled;
+}
+
+void vvInteractor::setFocus()
+{
+  _hasFocus = true;
+}
+
+void vvInteractor::clearFocus()
+{
+  _hasFocus = false;
+}
+
+void vvInteractor::setVisible(bool visible)
+{
+  _visible = visible;
+}
+
+void vvInteractor::setPos(const vvVector3& pos)
+{
+  _pos = pos;
+}
+
+bool vvInteractor::enabled() const
+{
+  return _enabled;
+}
+
+bool vvInteractor::hasFocus() const
+{
+  return _hasFocus;
+}
+
+bool vvInteractor::visible() const
+{
+  return _visible;
+}
+
+vvVector3 vvInteractor::pos() const
+{
+  return _pos;
+}
 

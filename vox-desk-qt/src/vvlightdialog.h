@@ -18,22 +18,36 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_PARAMETERS_H
-#define VV_PARAMETERS_H
 
-namespace vvParameters
+#ifndef VV_LIGHTDIALOG_H
+#define VV_LIGHTDIALOG_H
+
+#include <virvo/vvvecmath.h>
+
+#include <QDialog>
+
+class Ui_LightDialog;
+
+class vvLightDialog : public QDialog
 {
-  enum ParameterType
-  {
-    VV_BG_COLOR = 0,
-    VV_DOUBLEBUFFERING,
-    VV_LIGHTING,
-    VV_MOVING_QUALITY,
-    VV_PROJECTIONTYPE,
-    VV_SPIN_ANIMATION,
-    VV_SUPERSAMPLES
-  };
-}
+  Q_OBJECT
+public:
+  vvLightDialog(QWidget* parent = 0);
+  ~vvLightDialog();
+private:
+  Ui_LightDialog* ui;
+private slots:
+  void onEnableToggled(bool checked);
+  void onEditPositionClicked();
+  void onConstAttChanged(double value);
+  void onLinearAttChanged(double value);
+  void onQuadAttChanged(double value);
+signals:
+  void enabled(bool enable);
+  void showLightSource(bool show);
+  void editPositionToggled(bool edit);
+  void attenuationChanged(const vvVector3& att);
+};
 
 #endif
 

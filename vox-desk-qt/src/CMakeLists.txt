@@ -15,6 +15,9 @@ add_definitions(-DVV_APPLICATION_BUILD)
 set(VOXDESK_QT_INC
   vvcanvas.h
   vvdimensiondialog.h
+  vvinteractor.h
+  vvlightdialog.h
+  vvlightinteractor.h
   vvmainwindow.h
   vvmergedialog.h
   vvobjview.h
@@ -31,6 +34,9 @@ set(VOXDESK_QT_INC
 SET(VOXDESK_QT_SRC
   vvcanvas.cpp
   vvdimensiondialog.cpp
+  vvinteractor.cpp
+  vvlightdialog.cpp
+  vvlightinteractor.cpp
   vvmainwindow.cpp
   vvmergedialog.cpp
   vvobjview.cpp
@@ -45,6 +51,7 @@ SET(VOXDESK_QT_SRC
 
 SET(VOXDESK_QT_UI
   vvdimensiondialog.ui
+  vvlightdialog.ui
   vvmainwindow.ui
   vvmergedialog.ui
   vvprefdialog.ui

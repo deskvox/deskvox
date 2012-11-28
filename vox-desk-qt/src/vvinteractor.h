@@ -18,22 +18,40 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_PARAMETERS_H
-#define VV_PARAMETERS_H
+#ifndef VV_INTERACTOR_H
+#define VV_INTERACTOR_H
 
-namespace vvParameters
+#include <virvo/vvvecmath.h>
+
+class QMouseEvent;
+
+class vvInteractor
 {
-  enum ParameterType
-  {
-    VV_BG_COLOR = 0,
-    VV_DOUBLEBUFFERING,
-    VV_LIGHTING,
-    VV_MOVING_QUALITY,
-    VV_PROJECTIONTYPE,
-    VV_SPIN_ANIMATION,
-    VV_SUPERSAMPLES
-  };
-}
+public:
+  vvInteractor();
+  virtual ~vvInteractor();
+
+  virtual void render() const {}
+  virtual void mouseMoveEvent(QMouseEvent* /* event */) {}
+  virtual void mousePressEvent(QMouseEvent* /* event */) {}
+  virtual void mouseReleaseEvent(QMouseEvent* /* event */) {}
+
+  void setEnabled(bool enabled);
+  void setFocus();
+  void clearFocus();
+  void setVisible(bool visible);
+  void setPos(const vvVector3& pos);
+
+  bool enabled() const;
+  bool hasFocus() const;
+  bool visible() const;
+  vvVector3 pos() const;
+protected:
+  bool _enabled;
+  bool _hasFocus;
+  bool _visible;
+  vvVector3 _pos;
+};
 
 #endif
 

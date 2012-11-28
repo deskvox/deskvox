@@ -27,6 +27,7 @@
 
 class vvCanvas;
 class vvDimensionDialog;
+class vvLightDialog;
 class vvMergeDialog;
 class vvPlugin;
 class vvPrefDialog;
@@ -55,6 +56,7 @@ private:
   vvScreenshotDialog* _screenshotDialog;
   vvShortcutDialog* _shortcutDialog;
   vvTFDialog* _tfDialog;
+  vvLightDialog* _lightDialog;
   vvTimeStepDialog* _timeStepDialog;
   vvVolInfoDialog* _volInfoDialog;
 
@@ -82,6 +84,7 @@ private slots:
   void onPreferencesTriggered();
 
   void onTransferFunctionTriggered();
+  void onLightSourceTriggered();
   void onBackgroundColorTriggered();
 
   void onSampleDistancesTriggered();

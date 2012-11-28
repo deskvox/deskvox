@@ -32,6 +32,7 @@
 #include <QList>
 #include <QMouseEvent>
 
+class vvInteractor;
 class vvPlugin;
 class QTimer;
 
@@ -44,9 +45,11 @@ public:
 
   void setVolDesc(vvVolDesc* vd);
   void setPlugins(const QList<vvPlugin*>& plugins);
+  void setInteractors(const QList<vvInteractor*>& interactors);
 
   vvVolDesc* getVolDesc() const;
   vvRenderer* getRenderer() const;
+  const QList<vvInteractor*>& getInteractors() const;
 
   void loadCamera(const QString& filename);
   void saveCamera(const QString& filename);
@@ -65,15 +68,20 @@ private:
   vvRendererFactory::Options _currentOptions;
 
   QList<vvPlugin*> _plugins;
+  QList<vvInteractor*> _interactors;
 
   vox::vvObjView _ov;
   vox::vvObjView::ProjectionType _projectionType;
   vvColor _bgColor;
+  vvVector3 _lightPos;
+  vvVector3 _lightAtt;
   bool _doubleBuffering;
+  bool _lighting;
   int _superSamples;
   float _stillQuality;
   float _movingQuality;
   bool _spinAnimation;
+  bool _lightVisible;
 
   vvMatrix _lastRotation;
 
@@ -101,8 +109,14 @@ public slots:
   void decTimeStep();
   void firstTimeStep();
   void lastTimeStep();
+
+  void enableLighting(bool enabled);
+  void showLightSource(bool show);
+  void editLightPosition(bool edit);
+  void setLightAttenuation(const vvVector3& att);
 private slots:
   void repeatLastRotation();
+  void setLightPos(const vvVector3& pos);
 signals:
   void newVolDesc(vvVolDesc* vd);
   void statusMessage(const std::string& str);

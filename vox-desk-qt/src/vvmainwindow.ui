@@ -23,7 +23,7 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -56,6 +56,7 @@
     <addaction name="actionFloatingPointRange"/>
     <addaction name="actionClippingPlane"/>
     <addaction name="actionRegionOfInterest"/>
+    <addaction name="actionLightSource"/>
     <addaction name="actionBackgroundColor"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -387,6 +388,11 @@
    </property>
    <property name="text">
     <string>About DeskVOX</string>
+   </property>
+  </action>
+  <action name="actionLightSource">
+   <property name="text">
+    <string>Light Source...</string>
    </property>
   </action>
  </widget>
