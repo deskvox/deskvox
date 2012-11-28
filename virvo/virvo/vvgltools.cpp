@@ -456,9 +456,9 @@ vvVector3 vvGLTools::unProject(const vvVector3& win)
   double objY;
   double objZ;
 
-  gluProject(win[0], win[1], win[2],
-             modelview, projection, viewport.values,
-             &objX, &objY, &objZ);
+  gluUnProject(win[0], win[1], win[2],
+               modelview, projection, viewport.values,
+               &objX, &objY, &objZ);
   return vvVector3(static_cast<float>(objX),
                    static_cast<float>(objY),
                    static_cast<float>(objZ));
