@@ -121,7 +121,7 @@ std::vector<vvGpu*> vvGpu::list()
   else
   {
     std::string errmsg = std::string("vvGpu::list() Environment variable ")+std::string(serverEnv)+std::string(" not set.");
-    vvDebugMsg::msg(1, errmsg.c_str());
+    vvDebugMsg::msg(0, errmsg.c_str());
   }
 
   return gpus;

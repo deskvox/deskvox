@@ -66,13 +66,36 @@ namespace
     {
       std::vector<vvGpu::vvGpuInfo> ginfos;
       vvSocketIO sockIO = vvSocketIO(serversock);
-      sockIO.putInt32(virvo::Disconnect);
+      sockIO.putInt32(virvo::GpuInfo);
+      sockIO.getGpuInfos(ginfos);
       return ginfos;
     }
     else
     {
       vvDebugMsg::msg(2, "vvResourceManager::getResourceGpuInfos() invalid socket");
       return std::vector<vvGpu::vvGpuInfo>();
+    }
+  }
+
+  bool compareResources(vvResource* first, vvResource* second)
+  {
+    int firstMem = 0;
+    int secondMem = 0;
+    for(std::vector<vvGpu::vvGpuInfo>::iterator it = first->ginfos.begin(); it!=first->ginfos.end(); it++)
+    {
+      firstMem += (*it).freeMem;
+    }
+    for(std::vector<vvGpu::vvGpuInfo>::iterator it = second->ginfos.begin(); it!=second->ginfos.end(); it++)
+    {
+      secondMem += (*it).freeMem;
+    }
+    if(firstMem < secondMem)
+    {
+      return false;
+    }
+    else
+    {
+      return true;
     }
   }
 }
@@ -160,13 +183,84 @@ bool vvResourceManager::createRemoteServer(ThreadData* tData, vvTcpSocket* sock)
 {
   vvDebugMsg::msg(3, "vvResourceManager::createRemoteServer() Enter");
 
-  tData->renderertype = (tData->remoteServerType == vvRenderer::REMOTE_IBR)
-    ? "ibr"
-    : "image";
-
-  if(allocateResources(tData) && vvServer::createRemoteServer(tData, sock))
+  if(allocateResources(tData))
   {
-    return true;
+    if(tData->request->resources.size() == 1)
+    tData->renderertype = (tData->remoteServerType == vvRenderer::REMOTE_IBR)
+      ? "ibr"
+      : "image";
+    else if(tData->request->resources.size() > 1)
+    {
+      tData->renderertype = "parbrick";
+
+      tData->opt["bricks"] = tData->request->resources.size();
+
+      // sockets for remote renderers
+      // TODO: Make calls of vvSocketMap threadsafe!
+      std::stringstream sockstr;
+      std::vector<vvResource*>::const_iterator sit;
+      std::vector<int>::const_iterator pit;
+      for (sit = tData->request->resources.begin();
+           sit != tData->request->resources.end();
+           sit++)
+      {
+        vvTcpSocket* sock = new vvTcpSocket;
+        if (sock->connectToHost((*sit)->hostname, (*sit)->port) == vvSocket::VV_OK)
+        {
+          sock->setParameter(vvSocket::VV_NO_NAGLE, true);
+          int s = vvSocketMap::add(sock);
+          if (sockstr.str() != "")
+          {
+            sockstr << ",";
+          }
+          sockstr << s;
+        }
+        else
+        {
+          // TODO: clean up (previous sockets) and abort everything here
+          delete sock;
+          return false;
+        }
+      }
+
+      if (sockstr.str() != "")
+      {
+        tData->opt["sockets"] = sockstr.str();
+      }
+      else
+      {
+        vvDebugMsg::msg(0, "vvResourceManager::createRemoteServer() connecting to resources failed");
+        return false;
+      }
+
+      // displays
+      std::stringstream displaystr;
+      for (unsigned int i = 0; i<tData->request->nodes.size(); i++)
+      {
+        if (i != 0)
+        {
+          displaystr << ",";
+        }
+        // TODO: fix this hardcoded setting
+        displaystr << ":0";
+      }
+
+      if (displaystr.str() != "")
+      {
+        tData->opt["displays"] = displaystr.str();
+      }
+
+      tData->opt["brickrenderer"] = (tData->remoteServerType == vvRenderer::REMOTE_IBR)
+        ? "ibr"
+        : "image";
+    }
+    else
+    {
+      vvDebugMsg::msg(0, "vvResourceManager::createRemoteServer() unexpected error: resource allocation succeded but no resource entries in request found");
+      return false;
+    }
+
+    return (vvServer::createRemoteServer(tData, sock)) ? true : false;
   }
   else
   {
@@ -187,11 +281,39 @@ bool vvResourceManager::allocateResources(ThreadData *tData)
     if(!tData->request)
     {
       // init with default values
-      // TODO: make those values adjustable to fit estimated job
       tData->request = new vvRequest;
       tData->request->niceness = 0;
-      tData->request->nodes.push_back(1);
       tData->request->type = vvRenderer::REMOTE_IMAGE;
+
+      // volume size in kb
+      ssize_t volSize = tData->vd->getBytesize() / 1024;
+
+      // sort a copy for free gpu memory
+      std::vector<vvResource*> resCopy = rm->_resources;
+      std::sort(resCopy.begin(), resCopy.end(), compareResources);
+      for(std::vector<vvResource*>::iterator it = resCopy.begin(); it!=resCopy.end(); it++)
+      {
+        if(volSize > 0)
+        {
+          if((*it)->ginfos.size() > 0)
+          {
+            volSize = volSize - (*it)->ginfos[0].freeMem; // TODO: Fix this!
+          }
+          tData->request->nodes.push_back(1);
+          tData->request->resources.push_back(*it);
+        }
+        else
+        {
+          // already enough resources counted
+          break;
+        }
+      }
+
+      if(volSize > 0)
+      {
+        vvDebugMsg::msg(0, "vvResourceManager::allocateResources() volume too big for all resources together");
+        return false;
+      }
     }
 
     // insert request if not already in list
@@ -468,11 +590,17 @@ bool vvResourceManager::serverLoop()
         std::cerr << "Environment variable " << serverEnv << " found: " << getenv(serverEnv) << std::endl;
         result = getenv(serverEnv);
 
+#ifdef WIN32
+        result = result + std::string("\\nodes");
+#else
+        result = result + std::string("/nodes");
+#endif
+
         std::ifstream nodes;
         nodes.open(result.c_str());
         if(nodes.is_open())
         {
-          while(!nodes.eof())
+          while(nodes.good())
           {
             char line[256] = {' '};
             nodes.getline(line, 256);
