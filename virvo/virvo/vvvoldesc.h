@@ -175,6 +175,8 @@ class VIRVOEXPORT vvVolDesc
     vvVector3 getSize() const;
     int    getStoredFrames() const;
     float  getValueRange() const;
+    size_t getBytesize() const;
+    size_t getBytesize(int f) const;
 
     // Conversion routines:
     void   convertBPC(int, bool=false);

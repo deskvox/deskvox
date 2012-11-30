@@ -1387,7 +1387,7 @@ void vvRayRend::initVolumeTexture()
 
     cudaMemcpy3DParms copyParams = { 0 };
 
-    const int size = vd->vox[0] * vd->vox[1] * vd->vox[2] * vd->bpc;
+    const size_t size = vd->getBytesize(0);
     if (vd->bpc == 1)
     {
       copyParams.srcPtr = make_cudaPitchedPtr(vd->getRaw(f), volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
@@ -1397,7 +1397,7 @@ void vvRayRend::initVolumeTexture()
       uchar* raw = vd->getRaw(f);
       uchar* data = new uchar[size];
 
-      for (int i=0; i<size; i+=2)
+      for (size_t i=0; i<size; i+=2)
       {
         int val = ((int) raw[i] << 8) | (int) raw[i + 1];
         val >>= 4;
