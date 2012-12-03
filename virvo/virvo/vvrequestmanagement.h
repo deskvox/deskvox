@@ -51,7 +51,7 @@ public:
     */
   static std::vector<vvGpu*> list();
   /**
-    Get the current gpu infos of a gpus from either list() or createGpu()
+    Get the current gpu infos (in kb) of a gpu from either list() or createGpu()
     @return vvGpuInfo with values up to date or set to -1 if not available
     */
   static vvGpuInfo getInfo(vvGpu *gpu);
