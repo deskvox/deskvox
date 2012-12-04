@@ -5,11 +5,6 @@
 #pragma once
 
 
-#define VV_VERSION_MAJOR @VIRVO_VERSION_MAJOR@
-#define VV_VERSION_MINOR @VIRVO_VERSION_MINOR@
-#define VV_VERSION "@VIRVO_VERSION@"
-
-
 #cmakedefine01 VV_HAVE_BONJOUR
 #cmakedefine01 VV_HAVE_BOOST
 #cmakedefine01 VV_HAVE_CG
