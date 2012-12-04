@@ -21,19 +21,19 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
-#include <cctype>
 #include <stdexcept>
 #include <iterator>
 
-#include <float.h>
+#include <cassert>
+#include <cctype>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
 #include <errno.h>
 #include "vvplatform.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <float.h>
-#include <math.h>
-#include <assert.h>
 
 #if defined(__linux__) || defined(__APPLE__)
 #include <execinfo.h>
@@ -1269,14 +1269,14 @@ int vvToolshed::getLargestPrimeFactor(const int number)
   else return ts_max(remainder, largest);
 }
 
-//----------------------------------------------------------------------------
-/** Round the float value to the nearest integer value.
-    @param fval value to round
-    @return rounded value
-*/
-int vvToolshed::round(float fval)
+int vvToolshed::round(float x)
 {
-  return int(fval + 0.5f);
+  return x >= 0.0f ? std::floor(x + 0.5f) : std::ceil(x - 0.5f);
+}
+
+int vvToolshed::round(double x)
+{
+  return x >= 0.0 ? std::floor(x + 0.5) : std::ceil(x - 0.5);
 }
 
 //----------------------------------------------------------------------------
@@ -2383,10 +2383,10 @@ bool vvToolshed::makeFileList(std::string& path, std::list<std::string>& fileNam
   WIN32_FIND_DATAA fileInfo;
   HANDLE fileHandle;
   string searchPath;
-  
+
   searchPath = path + "\\*";
   fileHandle = FindFirstFileA(searchPath.c_str(), &fileInfo);
-  if (fileHandle == INVALID_HANDLE_VALUE) 
+  if (fileHandle == INVALID_HANDLE_VALUE)
   {
     cerr << "FindFirstFile failed: " << GetLastError() << endl;
     return false;
@@ -2440,7 +2440,7 @@ bool vvToolshed::makeFileList(std::string& path, std::list<std::string>& fileNam
   folderNames.sort();
 
   closedir(dirHandle);
-#endif  
+#endif
   return true;
 }
 
@@ -2456,12 +2456,12 @@ bool vvToolshed::nextListString(list<string>& listStrings, string& knownEntry, s
   list<string>::const_iterator iter;
   for (iter=listStrings.begin(); iter != listStrings.end(); ++iter)
   {
-    if ((*iter)==knownEntry) 
+    if ((*iter)==knownEntry)
     {
       ++iter;
       if (iter == listStrings.end()) return false;  // end of list reached
-      else 
-      {  
+      else
+      {
         nextEntry = *iter;
         return true;
       }

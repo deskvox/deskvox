@@ -279,7 +279,7 @@ void vvPrefDialog::scaleStillQuality(const float s)
     quality = std::numeric_limits<float>::epsilon();
   }
   quality *= s;
-  
+
   ui->stillSpinBox->setValue(quality);
 }
 
@@ -308,7 +308,7 @@ void vvPrefDialog::emitRenderer()
     }
   }
   else
-  {  
+  {
     switch (rendererMap[ui->rendererBox->currentIndex()])
     {
     case vvRenderer::RAYREND:
@@ -595,7 +595,7 @@ void vvPrefDialog::onMovingSpinBoxChanged(double value)
   disconnect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
   const int upper = ui->movingDial->maximum() + 1;
   double d = value - movingSpinBoxOldValue;
-  int di = round(d * upper);
+  int di = vvToolshed::round(d * upper);
   int dialval = ui->movingDial->value();
   dialval += di;
   dialval %= upper;
@@ -617,7 +617,7 @@ void vvPrefDialog::onStillSpinBoxChanged(double value)
   disconnect(ui->stillDial, SIGNAL(valueChanged(int)), this, SLOT(onStillDialChanged(int)));
   const int upper = ui->stillDial->maximum() + 1;
   double d = value - stillSpinBoxOldValue;
-  int di = round(d * upper);
+  int di = vvToolshed::round(d * upper);
   int dialval = ui->stillDial->value();
   dialval += di;
   dialval %= upper;

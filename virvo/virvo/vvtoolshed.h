@@ -132,7 +132,7 @@ template <class C> inline C ts_sqr(C a)
     Example: c:/test/vfview.exe
     <UL>
       <LI>Pathname  = c:/test/vfview.exe
-      <LI>Dirname   = c:/test/ 
+      <LI>Dirname   = c:/test/
       <LI>Extension = exe
       <LI>Filename  = vfview.exe
 <LI>Basename  = vfview
@@ -201,7 +201,10 @@ class VIRVOEXPORT vvToolshed
     static void    convertFloat2ShortClamp(const float*, uchar*, int, float, float);
     static void    convertFloat2UCharClampZero(const float*, uchar*, int, float, float, float);
     static int     getLargestPrimeFactor(const int);
-    static int     round(float);
+    // Rounds x to the nearest integer
+    static int     round(float x);
+    // Rounds x to the nearest integer
+    static int     round(double x);
     static void    initProgress(int);
     static void    printProgress(int);
     static int     encodeRLE(uchar*, uchar*, int, int, int);
