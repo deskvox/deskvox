@@ -19,6 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include <iostream>
+#include <sstream>
 #include <cstdlib>
 #include <stdio.h>
 #include <string.h>
@@ -92,9 +93,9 @@ void vvDebugMsg::msg(const int level, const char* text, const bool perr)
 
       if (!FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, 0, last_error, 0, errmsg, 511, NULL))
       {
-        std::string formaterr;
-        formaterr = "vvDebugMsg::msg() failed in FormatMessage() with errno: " + GetLastError();
-        msg(2, formaterr.c_str());
+        std::ostringstream formaterr;
+        formaterr << "vvDebugMsg::msg() failed in FormatMessage() with errno: " << GetLastError();
+        msg(2, formaterr.str().c_str());
         return;
       }
       cerr << errmsg;
