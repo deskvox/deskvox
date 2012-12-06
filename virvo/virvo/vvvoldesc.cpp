@@ -1248,25 +1248,6 @@ float vvVolDesc::getValueRange() const
 }
 
 //----------------------------------------------------------------------------
-/** Get volumes bytesize for all frames
- @return size in bytes
-*/
-size_t vvVolDesc::getBytesize() const
-{
-  return vox[0] * vox[1] * vox[2] * bpc * frames;
-}
-
-//----------------------------------------------------------------------------
-/** Get volumes bytesize for frame f
- @return size in bytes
-*/
-size_t vvVolDesc::getBytesize(int) const
-{
-  // TODO: Adjust this if future frame sizes differ
-  return vox[0] * vox[1] * vox[2] * bpc;
-}
-
-//----------------------------------------------------------------------------
 /** Converts the number of bytes per channel.
   The strategy depends on the number of bytes per channel both in the source
   and in the destination volume:

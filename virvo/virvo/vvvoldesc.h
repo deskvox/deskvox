@@ -175,8 +175,18 @@ class VIRVOEXPORT vvVolDesc
     vvVector3 getSize() const;
     int    getStoredFrames() const;
     float  getValueRange() const;
-    size_t getBytesize() const;
-    size_t getBytesize(int f) const;
+    /** Get volumes bytesize for all frames
+     @return size in bytes */
+    inline size_t getBytesize() const
+    {
+      return vox[0] * vox[1] * vox[2] * bpc * frames;
+    }
+    /** Get volumes bytesize for a frame
+     @return size in bytes */
+    inline size_t getBytesize(int) const
+    {
+      return vox[0] * vox[1] * vox[2] * bpc; // TODO: Adjust this if future frame sizes differ
+    }
 
     // Conversion routines:
     void   convertBPC(int, bool=false);
