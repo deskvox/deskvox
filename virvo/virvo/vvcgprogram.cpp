@@ -18,11 +18,10 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
 #include "vvcgprogram.h"
+
+#ifdef HAVE_CG
+
 #include "vvgltools.h"
 #include "vvopengl.h"
 #include "vvdebugmsg.h"
@@ -32,8 +31,6 @@
 using std::cerr;
 using std::endl;
 using std::string;
-
-#ifdef HAVE_CG
 
 #include <Cg/cg.h>
 #include <Cg/cgGL.h>

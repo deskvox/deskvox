@@ -31,10 +31,6 @@
 #include <cstring>
 #include <locale>
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
 using std::string;
 using std::cerr;
 using std::endl;

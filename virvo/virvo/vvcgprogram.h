@@ -21,6 +21,12 @@
 #ifndef _VV_CGPROGRAM_H_
 #define _VV_CGPROGRAM_H_
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+#ifdef HAVE_CG
+
 #include "vvexport.h"
 #include "vvshaderprogram.h"
 
@@ -94,6 +100,8 @@ private:
   struct CGdata;
   CGdata *_data;
 };
+
+#endif // HAVE_CG
 
 #endif // _VV_CGPGROGRAM_H_
 
