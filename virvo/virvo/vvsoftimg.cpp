@@ -440,7 +440,7 @@ void vvSoftImg::warpTex(vvMatrix* w)
 {
 #ifndef VV_REMOTE_RENDERING
    const float ZPOS = 0.0f;                       // texture z position. TODO: make zPos changeable and adjust warp matrix accordingly
-   static vvSoftImg texImg(1,1);                  // texture image
+   static vvSoftImg* texImg = new vvSoftImg(1,1); // texture image
    GLfloat glmatrix[16];                          // OpenGL compatible matrix
    GLenum format;                                 // pixel format
    int texWidth, texHeight;                       // texture compatible image size
@@ -472,13 +472,13 @@ void vvSoftImg::warpTex(vvMatrix* w)
    else
    {
       useOriginalImg = false;
-      imgUsed = &texImg;
+      imgUsed = texImg;
    }
 
    if (!useOriginalImg)
    {
-      texImg.setSize(texWidth, texHeight);
-      texImg.copy(BOTTOM_LEFT, this);
+      texImg->setSize(texWidth, texHeight);
+      texImg->copy(BOTTOM_LEFT, this);
    }
 
    switch (PIXEL_SIZE)
