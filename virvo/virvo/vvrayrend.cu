@@ -21,10 +21,10 @@
 
 #include "vvrayrend.h"
 #include "vvrayrend-common.h"
-#include "vvcudatools.h"
 #include "vvcudautils.h"
 #include "vvvoldesc.h"
 
+#include "Cuda/Memory.h"
 #include "Cuda/Symbol.h"
 #include "Cuda/Texture.h"
 
@@ -939,18 +939,22 @@ extern "C" void CallRayRendKernel(vvRayRend* rayrend,
   dim3 blockSize(16, 16);
   dim3 gridSize = dim3(vvToolshed::iDivUp(width, blockSize.x), vvToolshed::iDivUp(height, blockSize.y));
 
-  float* d_firstIbrPass = NULL;
-
-  bool ok = true;
+  cu::AutoPointer<float> d_firstIbrPass;
 
   if (twoPassIbr)
   {
-    const size_t size = width * height * sizeof(float);
-    vvCudaTools::checkError(&ok, cudaMalloc(&d_firstIbrPass, size),
-                        "vvRayRend::compositeVolume() - malloc first ibr pass array");
-    vvCudaTools::checkError(&ok, cudaMemset(d_firstIbrPass, 0, size),
-                        "vvRayRend::compositeVolume() - memset first ibr pass array");
+    size_t size = width * height * sizeof(float);
 
+    d_firstIbrPass.reset( cu::deviceMalloc(size) );
+
+    if (d_firstIbrPass.get())
+      cudaMemset(d_firstIbrPass.get(), 0, size);
+    else
+      twoPassIbr = false; // Fall back to single pass if allocation failed.
+  }
+
+  if (twoPassIbr)
+  {
     (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
                                       backgroundColor,
                                       texwidth, dist,
@@ -965,7 +969,7 @@ extern "C" void CallRayRendKernel(vvRayRend* rayrend,
                                       planeNormal, planeDist,
                                       d_depth, dp,
                                       ibrPlanes,
-                                      ibrMode, true, d_firstIbrPass);
+                                      ibrMode, true, d_firstIbrPass.get());
   }
 
   (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
@@ -982,10 +986,7 @@ extern "C" void CallRayRendKernel(vvRayRend* rayrend,
                                     planeNormal, planeDist,
                                     d_depth, dp,
                                     ibrPlanes,
-                                    ibrMode, false, d_firstIbrPass);
-
-  vvCudaTools::checkError(&ok, cudaFree(d_firstIbrPass),
-                          "vvRayRend::compositeVolume() - free first ibr pass array");
+                                    ibrMode, false, d_firstIbrPass.get());
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

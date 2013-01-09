@@ -30,6 +30,7 @@
 #include <GL/glew.h>
 
 #include "Cuda/Array.h"
+#include "Cuda/Memory.h"
 #include "Cuda/Symbol.h"
 #include "Cuda/Texture.h"
 
@@ -51,7 +52,7 @@ namespace
 cudaChannelFormatDesc channelDesc;
 VolumeArrays d_volumeArrays;
 cu::Array d_transferFuncArray;
-void* d_depth;
+cu::AutoPointer<void> d_depth;
 }
 
 
@@ -132,7 +133,6 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
   _rgbaTF = NULL;
 
-  ::d_depth = NULL;
   intImg = new vvCudaImg(0, 0);
   allocIbrArrays(0, 0);
 
@@ -159,7 +159,7 @@ vvRayRend::~vvRayRend()
 
   d_transferFuncArray.reset();
 
-  cudaFree(::d_depth);
+  ::d_depth.reset();
 
   delete[] _rgbaTF;
 }
@@ -352,7 +352,7 @@ void vvRayRend::compositeVolume(int, int)
                     constAtt, linearAtt, quadAtt,
                     false, false, false,
                     center, radius * radius,
-                    pnormal, pdist, ::d_depth, _depthPrecision,
+                    pnormal, pdist, ::d_depth.get(), _depthPrecision,
                     make_float2(_depthRange[0], _depthRange[1]),
                     getIbrMode(_ibrMode), _twoPassIbr);
 
@@ -369,7 +369,7 @@ void vvRayRend::getColorBuffer(uchar** colors) const
 
 void vvRayRend::getDepthBuffer(uchar** depths) const
 {
-  cudaMemcpy(*depths, ::d_depth, intImg->width*intImg->height*_depthPrecision/8, cudaMemcpyDeviceToHost);
+  cudaMemcpy(*depths, ::d_depth.get(), intImg->width*intImg->height*_depthPrecision/8, cudaMemcpyDeviceToHost);
 }
 
 //----------------------------------------------------------------------------
@@ -588,14 +588,15 @@ bool vvRayRend::allocIbrArrays(const int w, const int h)
 {
   vvDebugMsg::msg(3, "vvRayRend::allocIbrArrays()");
 
-  bool ok = true;
-  vvCudaTools::checkError(&ok, cudaFree(::d_depth),
-                          "vvRayRend::allocIbrArrays() - free d_depth");
-  vvCudaTools::checkError(&ok, cudaMalloc(&::d_depth, w * h * _depthPrecision/8),
-                          "vvRayRend::allocIbrArrays() - malloc d_depth");
-  vvCudaTools::checkError(&ok, cudaMemset(::d_depth, 0, w * h * _depthPrecision/8),
-                          "vvRayRend::allocIbrArrays() - memset d_depth");
-  return ok;
+  size_t size = w * h * _depthPrecision/8;
+
+  // deallocate the current and allocate new buffer
+  if (!d_depth.allocate(size))
+    return false;
+
+  cudaMemset(d_depth.get(), 0, size);
+
+  return true;
 }
 
 
