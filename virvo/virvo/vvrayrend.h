@@ -18,13 +18,16 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_RAYREND_H_
-#define _VV_RAYREND_H_
+#ifndef VV_RAYREND_H
+#define VV_RAYREND_H
 
-#include "vvexport.h"
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+#ifdef HAVE_CUDA
+
 #include "vvibrrenderer.h"
-
-#include <vector>
 
 
 class vvVolDesc;
@@ -69,5 +72,8 @@ private:
   bool allocIbrArrays(int w, int h);
 };
 
-#endif
+#endif // HAVE_CUDA
+
+#endif // VV_RAYREND_H
+
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

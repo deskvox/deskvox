@@ -19,6 +19,93 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
+#include "vvrayrend.h"
+
+
+#ifdef HAVE_CUDA
+
+
+#include "vvrayrend-common.h"
+
+#include <GL/glew.h>
+
+#include "Cuda/Symbol.h"
+#include "Cuda/Texture.h"
+
+#include "vvcudaimg.h"
+#include "vvcudatools.h"
+#include "vvcudautils.h"
+#include "vvdebugmsg.h"
+#include "vvgltools.h"
+#include "vvvoldesc.h"
+
+namespace cu = virvo::cuda;
+
+
+namespace
+{
+cudaChannelFormatDesc channelDesc;
+std::vector<cudaArray*> d_volumeArrays;
+cudaArray* d_transferFuncArray;
+void* d_depth;
+}
+
+
+// in vvrayrend.cu
+extern cu::Texture cVolTexture8;
+extern cu::Texture cVolTexture16;
+extern cu::Texture cTFTexture;
+
+// in vvrayrend.cu
+extern cu::Symbol<matrix4x4> cInvViewMatrix;
+extern cu::Symbol<matrix4x4> cMvPrMatrix;
+
+// in vvrayrend.cu
+extern "C" void CallRayRendKernel(vvRayRend* rayrend,
+                                  uchar4* d_output, const uint width, const uint height,
+                                  const float4 backgroundColor,
+                                  const uint texwidth, const float dist,
+                                  const float3 volPos, const float3 volSizeHalf,
+                                  const float3 probePos, const float3 probeSizeHalf,
+                                  const float3 L, const float3 H,
+                                  float constAtt, float linearAtt, float quadAtt,
+                                  const bool clipPlane,
+                                  const bool clipSphere,
+                                  const bool useSphereAsProbe,
+                                  const float3 sphereCenter, const float sphereRadius,
+                                  const float3 planeNormal, const float planeDist,
+                                  void* d_depth, int dp,
+                                  const float2 ibrPlanes,
+                                  const IbrMode ibrMode,
+                                  bool twoPassIbr);
+
+
+IbrMode getIbrMode(vvRenderer::IbrMode mode)
+{
+  switch (mode)
+  {
+  case vvRenderer::VV_ENTRANCE:
+    return VV_ENTRANCE;
+  case vvRenderer::VV_EXIT:
+    return VV_EXIT;
+  case vvRenderer::VV_MIDPOINT:
+    return VV_MIDPOINT;
+  case vvRenderer::VV_THRESHOLD:
+    return VV_THRESHOLD;
+  case vvRenderer::VV_PEAK:
+    return VV_PEAK;
+  case vvRenderer::VV_GRADIENT:
+    return VV_GRADIENT;
+  case VV_REL_THRESHOLD:
+    return VV_REL_THRESHOLD;
+  case VV_EN_EX_MEAN:
+    return VV_EN_EX_MEAN;
+  default:
+    return VV_NONE;
+  }
+}
+
+
 vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvIbrRenderer(vd, renderState)
 {
@@ -107,19 +194,16 @@ void vvRayRend::updateTransferFunction()
                      "vvRayRend::updateTransferFunction() - copy tf texture to device");
 
 
-  tfTexture.filterMode = cudaFilterModeLinear;
-  tfTexture.normalized = true;    // access with normalized texture coordinates
-  tfTexture.addressMode[0] = cudaAddressModeClamp;   // wrap texture coordinates
+  cTFTexture.setFilterMode(cudaFilterModeLinear);
+  cTFTexture.setNormalized(true);    // access with normalized texture coordinates
+  cTFTexture.setAddressMode(cudaAddressModeClamp);   // wrap texture coordinates
 
-  vvCudaTools::checkError(&ok, cudaBindTextureToArray(tfTexture, ::d_transferFuncArray, channelDesc),
-                     "vvRayRend::updateTransferFunction() - bind tf texture");
+  ok = cTFTexture.bind(::d_transferFuncArray, channelDesc);
 }
 
 void vvRayRend::compositeVolume(int, int)
 {
   vvDebugMsg::msg(3, "vvRayRend::compositeVolume()");
-
-  bool ok;
 
   if(!_volumeCopyToGpuOk)
   {
@@ -170,16 +254,14 @@ void vvRayRend::compositeVolume(int, int)
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
-  int numSlices = max(1, static_cast<int>(_quality * diagonalVoxels));
+  int numSlices = std::max(1, static_cast<int>(_quality * diagonalVoxels));
 
   vvMatrix Mv, MvPr;
   vvGLTools::getModelviewMatrix(&Mv);
   vvGLTools::getProjectionMatrix(&MvPr);
   MvPr.multiplyRight(Mv);
 
-  float* mvprM = new float[16];
-  MvPr.get(mvprM);
-  cudaMemcpyToSymbol(c_MvPrMatrix, mvprM, sizeof(float4) * 4);
+  cMvPrMatrix.update(MvPr.data(), 16 * sizeof(float));
 
   vvMatrix invMv;
   invMv = vvMatrix(Mv);
@@ -193,10 +275,7 @@ void vvRayRend::compositeVolume(int, int)
   invMvpr.multiplyLeft(pr);
   invMvpr.invert();
 
-  float* viewM = new float[16];
-  invMvpr.get(viewM);
-  cudaMemcpyToSymbol(c_invViewMatrix, viewM, sizeof(float4) * 4);
-  delete[] viewM;
+  cInvViewMatrix.update(invMvpr.data(), 16 * sizeof(float));
 
   const float3 volPos = make_float3(vd->pos[0], vd->pos[1], vd->pos[2]);
   float3 probePos = volPos;
@@ -260,54 +339,28 @@ void vvRayRend::compositeVolume(int, int)
   glGetFloatv(GL_COLOR_CLEAR_VALUE, bgcolor);
   float4 backgroundColor = make_float4(bgcolor[0], bgcolor[1], bgcolor[2], bgcolor[3]);
 
-  renderKernel kernel = getKernel(this);
-
-  if (kernel != NULL)
+  if (vd->bpc == 1)
   {
-    if (vd->bpc == 1)
-    {
-      cudaBindTextureToArray(volTexture8, ::d_volumeArrays[vd->getCurrentFrame()], ::channelDesc);
-    }
-    else if (vd->bpc == 2)
-    {
-      cudaBindTextureToArray(volTexture16, ::d_volumeArrays[vd->getCurrentFrame()], ::channelDesc);
-    }
-
-    float* d_firstIbrPass = NULL;
-    if (_twoPassIbr)
-    {
-      const size_t size = vp[2] * vp[3] * sizeof(float);
-      vvCudaTools::checkError(&ok, cudaMalloc(&d_firstIbrPass, size),
-                         "vvRayRend::compositeVolume() - malloc first ibr pass array");
-      vvCudaTools::checkError(&ok, cudaMemset(d_firstIbrPass, 0, size),
-                         "vvRayRend::compositeVolume() - memset first ibr pass array");
-
-      (kernel)<<<gridSize, blockSize>>>(cudaImg->getDeviceImg(), vp[2], vp[3],
-                                        backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
-                                        volPos, volSize * 0.5f,
-                                        probePos, probeSize * 0.5f,
-                                        L, H,
-                                        constAtt, linearAtt, quadAtt,
-                                        false, false, false,
-                                        center, radius * radius,
-                                        pnormal, pdist, ::d_depth, _depthPrecision,
-                                        make_float2(_depthRange[0], _depthRange[1]),
-                                        getIbrMode(_ibrMode), true, d_firstIbrPass);
-    }
-    (kernel)<<<gridSize, blockSize>>>(cudaImg->getDeviceImg(), vp[2], vp[3],
-                                      backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
-                                      volPos, volSize * 0.5f,
-                                      probePos, probeSize * 0.5f,
-                                      L, H,
-                                      constAtt, linearAtt, quadAtt,
-                                      false, false, false,
-                                      center, radius * radius,
-                                      pnormal, pdist, ::d_depth, _depthPrecision,
-                                      make_float2(_depthRange[0], _depthRange[1]),
-                                      getIbrMode(_ibrMode), false, d_firstIbrPass);
-    vvCudaTools::checkError(&ok, cudaFree(d_firstIbrPass),
-                            "vvRayRend::compositeVolume() - free first ibr pass array");
+    cVolTexture8.bind(::d_volumeArrays[vd->getCurrentFrame()], ::channelDesc);
   }
+  else if (vd->bpc == 2)
+  {
+    cVolTexture16.bind(::d_volumeArrays[vd->getCurrentFrame()], ::channelDesc);
+  }
+
+  CallRayRendKernel(this,
+                    cudaImg->getDeviceImg(), vp[2], vp[3],
+                    backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
+                    volPos, volSize * 0.5f,
+                    probePos, probeSize * 0.5f,
+                    L, H,
+                    constAtt, linearAtt, quadAtt,
+                    false, false, false,
+                    center, radius * radius,
+                    pnormal, pdist, ::d_depth, _depthPrecision,
+                    make_float2(_depthRange[0], _depthRange[1]),
+                    getIbrMode(_ibrMode), _twoPassIbr);
+
   cudaImg->unmap();
 
   // For bounding box, tf palette display, etc.
@@ -497,35 +550,19 @@ void vvRayRend::initVolumeTexture()
   {
     if (vd->bpc == 1)
     {
-        volTexture8.normalized = true;
-        if (_interpolation)
-        {
-          volTexture8.filterMode = cudaFilterModeLinear;
-        }
-        else
-        {
-          volTexture8.filterMode = cudaFilterModePoint;
-        }
-        volTexture8.addressMode[0] = cudaAddressModeClamp;
-        volTexture8.addressMode[1] = cudaAddressModeClamp;
-        vvCudaTools::checkError(&ok, cudaBindTextureToArray(volTexture8, ::d_volumeArrays[0], ::channelDesc),
-                           "vvRayRend::initVolumeTexture() - bind volume texture (bpc == 1)");
+        cVolTexture8.setNormalized(true);
+        cVolTexture8.setFilterMode(_interpolation ? cudaFilterModeLinear : cudaFilterModePoint);
+        cVolTexture8.setAddressMode(cudaAddressModeClamp);
+
+        ok = cVolTexture8.bind(::d_volumeArrays[0], ::channelDesc);
     }
     else if (vd->bpc == 2)
     {
-        volTexture16.normalized = true;
-        if (_interpolation)
-        {
-          volTexture16.filterMode = cudaFilterModeLinear;
-        }
-        else
-        {
-          volTexture16.filterMode = cudaFilterModePoint;
-        }
-        volTexture16.addressMode[0] = cudaAddressModeClamp;
-        volTexture16.addressMode[1] = cudaAddressModeClamp;
-        vvCudaTools::checkError(&ok, cudaBindTextureToArray(volTexture16, ::d_volumeArrays[0], ::channelDesc),
-                           "vvRayRend::initVolumeTexture() - bind volume texture (bpc == 2)");
+        cVolTexture16.setNormalized(true);
+        cVolTexture16.setFilterMode(_interpolation ? cudaFilterModeLinear : cudaFilterModePoint);
+        cVolTexture16.setAddressMode(cudaAddressModeClamp);
+
+        ok = cVolTexture16.bind(::d_volumeArrays[0], ::channelDesc);
     }
   }
 }
@@ -567,3 +604,6 @@ bool vvRayRend::allocIbrArrays(const int w, const int h)
                           "vvRayRend::allocIbrArrays() - memset d_depth");
   return ok;
 }
+
+
+#endif // HAVE_CUDA

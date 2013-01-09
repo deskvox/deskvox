@@ -111,6 +111,7 @@ set(VIRVO_HEADERS
   vvplatform.h
   vvprintgl.h
   vvpthread.h
+  vvrayrend-common.h
   vvrayrend.h
   vvremoteclient.h
   vvremoteevents.h

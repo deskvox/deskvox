@@ -18,49 +18,44 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include <GL/glew.h>
 
-#include "vvcuda.h"
-#include "vvcudatools.h"
-#include "vvcudaimg.h"
-#include "vvcudautils.h"
-#include "vvdebugmsg.h"
-#include "vvgltools.h"
-#include "vvvoldesc.h"
-#include "vvtoolshed.h"
 #include "vvrayrend.h"
+#include "vvrayrend-common.h"
+#include "vvcudatools.h"
+#include "vvcudautils.h"
+#include "vvvoldesc.h"
 
-#include <iostream>
-#include <limits>
+#include "Cuda/Symbol.h"
+#include "Cuda/Texture.h"
 
-using std::cerr;
-using std::endl;
 
-namespace
-{
-cudaChannelFormatDesc channelDesc;
-std::vector<cudaArray*> d_volumeArrays;
-cudaArray* d_transferFuncArray;
-void* d_depth;
-}
+namespace cu = virvo::cuda;
 
-texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture8;
-texture<ushort, 3, cudaReadModeNormalizedFloat> volTexture16;
-texture<float4, 1, cudaReadModeElementType> tfTexture;
-
-typedef struct
-{
-  float m[4][4];
-} matrix4x4;
-
-__constant__ matrix4x4 c_invViewMatrix;
-__constant__ matrix4x4 c_MvPrMatrix;
 
 struct Ray
 {
   float3 o;
   float3 d;
 };
+
+
+static texture<uchar, 3, cudaReadModeNormalizedFloat> volTexture8;
+static texture<ushort, 3, cudaReadModeNormalizedFloat> volTexture16;
+static texture<float4, 1, cudaReadModeElementType> tfTexture;
+
+static __constant__ matrix4x4 c_invViewMatrix;
+static __constant__ matrix4x4 c_MvPrMatrix;
+
+
+// referenced in vvrayrend.cpp
+cu::Texture cVolTexture8 = &volTexture8;
+cu::Texture cVolTexture16 = &volTexture16;
+cu::Texture cTFTexture = &tfTexture;
+
+// referenced in vvrayrend.cpp
+cu::Symbol<matrix4x4> cInvViewMatrix = &c_invViewMatrix;
+cu::Symbol<matrix4x4> cMvPrMatrix = &c_MvPrMatrix;
+
 
 template<int t_bpc>
 __device__ float volume(const float x, const float y, const float z)
@@ -280,45 +275,6 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos,
     }
   }
   return make_float4(tmp.x, tmp.y, tmp.z, classification.w);
-}
-
-enum IbrMode
-{
-  VV_ENTRANCE = 0,
-  VV_EXIT,
-  VV_MIDPOINT,
-  VV_THRESHOLD,
-  VV_PEAK,
-  VV_GRADIENT,
-
-  VV_REL_THRESHOLD,
-  VV_EN_EX_MEAN,
-  VV_NONE
-};
-
-IbrMode getIbrMode(vvRenderer::IbrMode mode)
-{
-  switch (mode)
-  {
-  case vvRenderer::VV_ENTRANCE:
-    return VV_ENTRANCE;
-  case vvRenderer::VV_EXIT:
-    return VV_EXIT;
-  case vvRenderer::VV_MIDPOINT:
-    return VV_MIDPOINT;
-  case vvRenderer::VV_THRESHOLD:
-    return VV_THRESHOLD;
-  case vvRenderer::VV_PEAK:
-    return VV_PEAK;
-  case vvRenderer::VV_GRADIENT:
-    return VV_GRADIENT;
-  case VV_REL_THRESHOLD:
-    return VV_REL_THRESHOLD;
-  case VV_EN_EX_MEAN:
-    return VV_EN_EX_MEAN;
-  default:
-    return VV_NONE;
-  }
 }
 
 template<
@@ -958,6 +914,78 @@ renderKernel getKernel(vvRayRend* rayRend)
   {
     return getKernelWithBpc<1>(rayRend);
   }
+}
+
+extern "C" void CallRayRendKernel(vvRayRend* rayrend,
+                                  uchar4* d_output, const uint width, const uint height,
+                                  const float4 backgroundColor,
+                                  const uint texwidth, const float dist,
+                                  const float3 volPos, const float3 volSizeHalf,
+                                  const float3 probePos, const float3 probeSizeHalf,
+                                  const float3 L, const float3 H,
+                                  float constAtt, float linearAtt, float quadAtt,
+                                  const bool clipPlane,
+                                  const bool clipSphere,
+                                  const bool useSphereAsProbe,
+                                  const float3 sphereCenter, const float sphereRadius,
+                                  const float3 planeNormal, const float planeDist,
+                                  void* d_depth, int dp,
+                                  const float2 ibrPlanes,
+                                  const IbrMode ibrMode,
+                                  bool twoPassIbr)
+{
+  renderKernel kernel = getKernel(rayrend);
+
+  dim3 blockSize(16, 16);
+  dim3 gridSize = dim3(vvToolshed::iDivUp(width, blockSize.x), vvToolshed::iDivUp(height, blockSize.y));
+
+  float* d_firstIbrPass = NULL;
+
+  bool ok = true;
+
+  if (twoPassIbr)
+  {
+    const size_t size = width * height * sizeof(float);
+    vvCudaTools::checkError(&ok, cudaMalloc(&d_firstIbrPass, size),
+                        "vvRayRend::compositeVolume() - malloc first ibr pass array");
+    vvCudaTools::checkError(&ok, cudaMemset(d_firstIbrPass, 0, size),
+                        "vvRayRend::compositeVolume() - memset first ibr pass array");
+
+    (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
+                                      backgroundColor,
+                                      texwidth, dist,
+                                      volPos, volSizeHalf,
+                                      probePos, probeSizeHalf,
+                                      L, H,
+                                      constAtt, linearAtt, quadAtt,
+                                      clipPlane,
+                                      clipSphere,
+                                      useSphereAsProbe,
+                                      sphereCenter, sphereRadius,
+                                      planeNormal, planeDist,
+                                      d_depth, dp,
+                                      ibrPlanes,
+                                      ibrMode, true, d_firstIbrPass);
+  }
+
+  (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
+                                    backgroundColor,
+                                    texwidth, dist,
+                                    volPos, volSizeHalf,
+                                    probePos, probeSizeHalf,
+                                    L, H,
+                                    constAtt, linearAtt, quadAtt,
+                                    clipPlane,
+                                    clipSphere,
+                                    useSphereAsProbe,
+                                    sphereCenter, sphereRadius,
+                                    planeNormal, planeDist,
+                                    d_depth, dp,
+                                    ibrPlanes,
+                                    ibrMode, false, d_firstIbrPass);
+
+  vvCudaTools::checkError(&ok, cudaFree(d_firstIbrPass),
+                          "vvRayRend::compositeVolume() - free first ibr pass array");
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

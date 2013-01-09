@@ -32,6 +32,18 @@ inline float rsqrtf(const float x)
   return 1.0f / sqrtf(x);
 }
 
+#ifdef _MSC_VER
+inline float fminf(float x, float y)
+{
+  return x < y ? x : y;
+}
+
+inline float fmaxf(float x, float y)
+{
+  return x > y ? x : y;
+}
+#endif
+
 #endif
 
 #include <ostream>
