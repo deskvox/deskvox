@@ -197,6 +197,7 @@ set(VIRVO_SOURCES
   vvparbrickrend.cpp
   vvprintgl.cpp
   vvpthread.cpp
+  vvrayrend.cpp
   vvremoteclient.cpp
   vvremoteserver.cpp
   vvrendercontext.cpp
