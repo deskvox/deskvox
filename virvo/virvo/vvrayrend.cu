@@ -19,10 +19,9 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
-#include "vvrayrend.h"
 #include "vvrayrend-common.h"
 #include "vvcudautils.h"
-#include "vvvoldesc.h"
+#include "vvinttypes.h"
 
 #include "Cuda/Memory.h"
 #include "Cuda/Symbol.h"
@@ -55,6 +54,12 @@ cu::Texture cTFTexture = &tfTexture;
 // referenced in vvrayrend.cpp
 cu::Symbol<matrix4x4> cInvViewMatrix = &c_invViewMatrix;
 cu::Symbol<matrix4x4> cMvPrMatrix = &c_MvPrMatrix;
+
+
+static inline int divup(int x, int n)
+{
+  return (x + (n - 1)) / n;
+}
 
 
 template<int t_bpc>
@@ -709,7 +714,7 @@ template<
          int t_mipMode,
          bool t_useIbr
         >
-renderKernel getKernelWithIbr(vvRayRend*)
+renderKernel getKernelWithIbr(const RayRendKernelParams& /*params*/)
 {
   return &render<t_earlyRayTermination, // Early ray termination.
                  t_bpc, // Bytes per channel.
@@ -729,9 +734,9 @@ template<
          bool t_clipping,
          int t_mipMode
         >
-renderKernel getKernelWithMip(vvRayRend* rayRend)
+renderKernel getKernelWithMip(const RayRendKernelParams& params)
 {
-  if(rayRend->getParameter(vvRenderState::VV_USE_IBR))
+  if(params.useIbr)
   {
     return getKernelWithIbr<
                             t_bpc,
@@ -741,7 +746,7 @@ renderKernel getKernelWithMip(vvRayRend* rayRend)
                             t_clipping,
                             t_mipMode,
                             true
-                           >(rayRend);
+                           >(params);
   }
   else
   {
@@ -753,7 +758,7 @@ renderKernel getKernelWithMip(vvRayRend* rayRend)
                             t_clipping,
                             t_mipMode,
                             false
-                           >(rayRend);
+                           >(params);
   }
 }
 
@@ -764,10 +769,10 @@ template<
          bool t_earlyRayTermination,
          bool t_clipping
         >
-renderKernel getKernelWithClipping(vvRayRend* rayRend)
+renderKernel getKernelWithClipping(const RayRendKernelParams& params)
 {
 
-  switch ((int)rayRend->getParameter(vvRenderState::VV_MIP_MODE))
+  switch (params.mipMode)
   {
   case 0:
     return getKernelWithMip<
@@ -777,7 +782,7 @@ renderKernel getKernelWithClipping(vvRayRend* rayRend)
                             t_earlyRayTermination,
                             t_clipping,
                             0
-                           >(rayRend);
+                           >(params);
   case 1:
     // No early ray termination possible with max intensity projection.
     return getKernelWithMip<
@@ -787,7 +792,7 @@ renderKernel getKernelWithClipping(vvRayRend* rayRend)
                             false,
                             t_clipping,
                             1
-                           >(rayRend);
+                           >(params);
   case 2:
     // No early ray termination possible with min intensity projection.
     return getKernelWithMip<
@@ -797,7 +802,7 @@ renderKernel getKernelWithClipping(vvRayRend* rayRend)
                             false,
                             t_clipping,
                             2
-                           >(rayRend);
+                           >(params);
   default:
     return getKernelWithMip<
                             t_bpc,
@@ -806,7 +811,7 @@ renderKernel getKernelWithClipping(vvRayRend* rayRend)
                             t_earlyRayTermination,
                             t_clipping,
                             0
-                           >(rayRend);
+                           >(params);
   }
 }
 
@@ -816,9 +821,9 @@ template<
          bool t_opacityCorrection,
          bool t_earlyRayTermination
         >
-renderKernel getKernelWithEarlyRayTermination(vvRayRend* rayRend)
+renderKernel getKernelWithEarlyRayTermination(const RayRendKernelParams& params)
 {
-  if (rayRend->getParameter(vvRenderState::VV_CLIP_MODE))
+  if (params.clipping)
   {
     return getKernelWithClipping<
                                   t_bpc,
@@ -826,7 +831,7 @@ renderKernel getKernelWithEarlyRayTermination(vvRayRend* rayRend)
                                   t_opacityCorrection,
                                   t_earlyRayTermination,
                                   true
-                                 >(rayRend);
+                                 >(params);
   }
   else
   {
@@ -837,7 +842,7 @@ renderKernel getKernelWithEarlyRayTermination(vvRayRend* rayRend)
                                     t_opacityCorrection,
                                     t_earlyRayTermination,
                                     false
-                                   >(rayRend);
+                                   >(params);
     }
   }
 }
@@ -847,16 +852,16 @@ template<
          bool t_illumination,
          bool t_opacityCorrection
         >
-renderKernel getKernelWithOpacityCorrection(vvRayRend* rayRend)
+renderKernel getKernelWithOpacityCorrection(const RayRendKernelParams& params)
 {
-  if (rayRend->getEarlyRayTermination())
+  if (params.earlyRayTermination)
   {
     return getKernelWithEarlyRayTermination<
                                             t_bpc,
                                             t_illumination,
                                             t_opacityCorrection,
                                             true
-                                           >(rayRend);
+                                           >(params);
   }
   else
   {
@@ -865,7 +870,7 @@ renderKernel getKernelWithOpacityCorrection(vvRayRend* rayRend)
                                             t_illumination,
                                             t_opacityCorrection,
                                             false
-                                           >(rayRend);
+                                           >(params);
   }
 }
 
@@ -873,50 +878,50 @@ template<
          int t_bpc,
          bool t_illumination
         >
-renderKernel getKernelWithIllumination(vvRayRend* rayRend)
+renderKernel getKernelWithIllumination(const RayRendKernelParams& params)
 {
-  if (rayRend->getOpacityCorrection())
+  if (params.opacityCorrection)
   {
-    return getKernelWithOpacityCorrection<t_bpc, t_illumination, true>(rayRend);
+    return getKernelWithOpacityCorrection<t_bpc, t_illumination, true>(params);
   }
   else
   {
-    return getKernelWithOpacityCorrection<t_bpc, t_illumination, false>(rayRend);
+    return getKernelWithOpacityCorrection<t_bpc, t_illumination, false>(params);
   }
 }
 
 template<
          int t_bpc
         >
-renderKernel getKernelWithBpc(vvRayRend* rayRend)
+renderKernel getKernelWithBpc(const RayRendKernelParams& params)
 {
-  if (rayRend->getIllumination())
+  if (params.illumination)
   {
-    return getKernelWithIllumination<t_bpc, true>(rayRend);
+    return getKernelWithIllumination<t_bpc, true>(params);
   }
   else
   {
-    return getKernelWithIllumination<t_bpc, false>(rayRend);
+    return getKernelWithIllumination<t_bpc, false>(params);
   }
 }
 
-renderKernel getKernel(vvRayRend* rayRend)
+renderKernel getKernel(const RayRendKernelParams& params)
 {
-  if (rayRend->getVolDesc()->bpc == 1)
+  if (params.bpc == 1)
   {
-    return getKernelWithBpc<1>(rayRend);
+    return getKernelWithBpc<1>(params);
   }
-  else if (rayRend->getVolDesc()->bpc == 2)
+  else if (params.bpc == 2)
   {
-    return getKernelWithBpc<2>(rayRend);
+    return getKernelWithBpc<2>(params);
   }
   else
   {
-    return getKernelWithBpc<1>(rayRend);
+    return getKernelWithBpc<1>(params);
   }
 }
 
-extern "C" void CallRayRendKernel(vvRayRend* rayrend,
+extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   uchar4* d_output, const uint width, const uint height,
                                   const float4 backgroundColor,
                                   const uint texwidth, const float dist,
@@ -934,10 +939,10 @@ extern "C" void CallRayRendKernel(vvRayRend* rayrend,
                                   const IbrMode ibrMode,
                                   bool twoPassIbr)
 {
-  renderKernel kernel = getKernel(rayrend);
+  renderKernel kernel = getKernel(params);
 
   dim3 blockSize(16, 16);
-  dim3 gridSize = dim3(vvToolshed::iDivUp(width, blockSize.x), vvToolshed::iDivUp(height, blockSize.y));
+  dim3 gridSize = dim3(divup(width, blockSize.x), divup(height, blockSize.y));
 
   cu::AutoPointer<float> d_firstIbrPass;
 

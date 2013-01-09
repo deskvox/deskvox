@@ -40,4 +40,15 @@ enum IbrMode
   VV_NONE
 };
 
+struct RayRendKernelParams
+{
+  int bpc;
+  bool illumination;
+  bool opacityCorrection;
+  bool earlyRayTermination;
+  bool clipping;
+  int mipMode;
+  bool useIbr;
+};
+
 #endif

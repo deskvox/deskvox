@@ -66,7 +66,7 @@ extern cu::Symbol<matrix4x4> cInvViewMatrix;
 extern cu::Symbol<matrix4x4> cMvPrMatrix;
 
 // in vvrayrend.cu
-extern "C" void CallRayRendKernel(vvRayRend* rayrend,
+extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   uchar4* d_output, const uint width, const uint height,
                                   const float4 backgroundColor,
                                   const uint texwidth, const float dist,
@@ -343,7 +343,17 @@ void vvRayRend::compositeVolume(int, int)
     cVolTexture16.bind(::d_volumeArrays[vd->getCurrentFrame()], ::channelDesc);
   }
 
-  CallRayRendKernel(this,
+  RayRendKernelParams kernelParams;
+
+  kernelParams.bpc                  = getVolDesc()->bpc;
+  kernelParams.illumination         = getIllumination();
+  kernelParams.opacityCorrection    = getOpacityCorrection();
+  kernelParams.earlyRayTermination  = getEarlyRayTermination();
+  kernelParams.clipping             = getParameter(vvRenderState::VV_CLIP_MODE);
+  kernelParams.mipMode              = getParameter(vvRenderState::VV_MIP_MODE);
+  kernelParams.useIbr               = getParameter(vvRenderState::VV_USE_IBR);
+
+  CallRayRendKernel(kernelParams,
                     cudaImg->getDeviceImg(), vp[2], vp[3],
                     backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                     volPos, volSize * 0.5f,
