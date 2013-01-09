@@ -29,6 +29,7 @@
 
 #include <GL/glew.h>
 
+#include "Cuda/Array.h"
 #include "Cuda/Symbol.h"
 #include "Cuda/Texture.h"
 
@@ -42,11 +43,14 @@
 namespace cu = virvo::cuda;
 
 
+typedef std::vector<cu::Array> VolumeArrays;
+
+
 namespace
 {
 cudaChannelFormatDesc channelDesc;
-std::vector<cudaArray*> d_volumeArrays;
-cudaArray* d_transferFuncArray;
+VolumeArrays d_volumeArrays;
+cu::Array d_transferFuncArray;
 void* d_depth;
 }
 
@@ -142,7 +146,6 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
   initVolumeTexture();
 
-  ::d_transferFuncArray = NULL;
   updateTransferFunction();
 }
 
@@ -150,17 +153,13 @@ vvRayRend::~vvRayRend()
 {
   vvDebugMsg::msg(1, "vvRayRend::~vvRayRend()");
 
-  bool ok;
-  for (size_t f = 0; f < ::d_volumeArrays.size(); ++f)
-  {
-    vvCudaTools::checkError(&ok, cudaFreeArray(::d_volumeArrays[f]),
-                       "vvRayRend::~vvRayRend() - free volume frame");
-  }
+  // free volume frames
+  for (VolumeArrays::size_type n = 0; n < d_volumeArrays.size(); ++n)
+    d_volumeArrays[n].reset();
 
-  vvCudaTools::checkError(&ok, cudaFreeArray(::d_transferFuncArray),
-                     "vvRayRend::~vvRayRend() - free tf");
-  vvCudaTools::checkError(&ok, cudaFree(::d_depth),
-                     "vvRayRend::~vvRayRend() - free depth");
+  d_transferFuncArray.reset();
+
+  cudaFree(::d_depth);
 
   delete[] _rgbaTF;
 }
@@ -175,8 +174,6 @@ void vvRayRend::updateTransferFunction()
 {
   vvDebugMsg::msg(3, "vvRayRend::updateTransferFunction()");
 
-  bool ok;
-
   int lutEntries = getLUTSize();
   delete[] _rgbaTF;
   _rgbaTF = new float[4 * lutEntries];
@@ -185,20 +182,18 @@ void vvRayRend::updateTransferFunction()
 
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
 
-  vvCudaTools::checkError(&ok, cudaFreeArray(::d_transferFuncArray),
-                     "vvRayRend::updateTransferFunction() - free tf texture");
-  vvCudaTools::checkError(&ok, cudaMallocArray(&::d_transferFuncArray, &channelDesc, lutEntries, 1),
-                     "vvRayRend::updateTransferFunction() - malloc tf texture");
-  vvCudaTools::checkError(&ok, cudaMemcpyToArray(::d_transferFuncArray, 0, 0, _rgbaTF, lutEntries * 4 * sizeof(float),
-                                            cudaMemcpyHostToDevice),
-                     "vvRayRend::updateTransferFunction() - copy tf texture to device");
-
+  if (!d_transferFuncArray.allocate(channelDesc, lutEntries, 1))
+  {
+  }
+  if (!d_transferFuncArray.upload(0, 0, _rgbaTF, lutEntries * 4 * sizeof(float)))
+  {
+  }
 
   cTFTexture.setFilterMode(cudaFilterModeLinear);
   cTFTexture.setNormalized(true);    // access with normalized texture coordinates
   cTFTexture.setAddressMode(cudaAddressModeClamp);   // wrap texture coordinates
 
-  ok = cTFTexture.bind(::d_transferFuncArray, channelDesc);
+  cTFTexture.bind(::d_transferFuncArray, channelDesc);
 }
 
 void vvRayRend::compositeVolume(int, int)
@@ -479,10 +474,8 @@ void vvRayRend::initVolumeTexture()
   int outOfMemFrame = -1;
   for (int f=0; f<vd->frames; ++f)
   {
-    vvCudaTools::checkError(&_volumeCopyToGpuOk, cudaMalloc3DArray(&::d_volumeArrays[f],
-                                            &::channelDesc,
-                                            volumeSize),
-                       "vvRayRend::initVolumeTexture() - try to alloc 3D array");
+    _volumeCopyToGpuOk = d_volumeArrays[f].allocate3D(::channelDesc, volumeSize);
+
     size_t availableMem;
     size_t totalMem;
     vvCudaTools::checkError(&ok, cudaMemGetInfo(&availableMem, &totalMem),
@@ -518,7 +511,7 @@ void vvRayRend::initVolumeTexture()
       }
       copyParams.srcPtr = make_cudaPitchedPtr(data, volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
     }
-    copyParams.dstArray = ::d_volumeArrays[f];
+    copyParams.dstArray = ::d_volumeArrays[f].get();
     copyParams.extent = volumeSize;
     copyParams.kind = cudaMemcpyHostToDevice;
     vvCudaTools::checkError(&ok, cudaMemcpy3D(&copyParams),
@@ -530,19 +523,19 @@ void vvRayRend::initVolumeTexture()
     cerr << "Couldn't accomodate the volume" << endl;
     for (int f=0; f<=outOfMemFrame; ++f)
     {
-      vvCudaTools::checkError(&ok, cudaFree(::d_volumeArrays[f]),
-                         "vvRayRend::initVolumeTexture() - free memory after failure");
-      ::d_volumeArrays[f] = NULL;
+      d_volumeArrays[f].reset();
     }
   }
 
   if (vd->bpc == 1)
   {
+    //
+    // XXX:
+    // why do we do this right here?
+    //
     for (int f=0; f<outOfMemFrame; ++f)
     {
-      vvCudaTools::checkError(&ok, cudaFreeArray(::d_volumeArrays[f]),
-                         "vvRayRend::initVolumeTexture() - why do we do this right here?");
-      ::d_volumeArrays[f] = NULL;
+      d_volumeArrays[f].reset();
     }
   }
 
