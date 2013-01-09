@@ -18,19 +18,38 @@
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_CUDATRANSFUNC_H
-#define VV_CUDATRANSFUNC_H
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
+#include "vvcudatransfunc.h"
+
 
 #ifdef HAVE_CUDA
 
-bool makePreintLUTCorrectCuda(int width, unsigned char *preIntTable, float thickness, float min, float max, const float *rgba);
+
+#include "Cuda/Memory.h"
+
+namespace cu = virvo::cuda;
+
+
+// vvcudatransfunc.cu
+extern "C" void CallCudaTransFuncKernel(int width, uchar4* preIntTable, float thickness, float min, float max, const float4* rgba);
+
+
+bool makePreintLUTCorrectCuda(int width, unsigned char *preIntTable, float thickness, float min, float max, const float *rgba)
+{
+    cu::AutoPointer<uchar4> d_preIntTable ( cu::deviceMalloc(sizeof(uchar4) * width * width) );
+    cu::AutoPointer<float4> d_rgba        ( cu::deviceMalloc(sizeof(float4) * (width + 1)) );
+
+    if (!d_preIntTable.get() || !d_rgba.get())
+        return false;
+
+    cu::upload(d_rgba.get(), rgba, sizeof(float4) * (width + 1));
+
+    CallCudaTransFuncKernel(width, d_preIntTable.get(), thickness, min, max, d_rgba.get());
+
+    cu::download(preIntTable, d_preIntTable.get(), sizeof(uchar4) * width * width);
+
+    return true;
+}
+
 
 #endif // HAVE_CUDA
-
-#endif // VV_CUDATRANSFUNC_H
-
-// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -18,19 +18,6 @@
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "vvplatform.h"
-
-#include <cmath>
-#include <cassert>
-#include <cuda.h>
-#include <cuda_runtime_api.h>
-#include "vvdebugmsg.h"
-#include "vvvecmath.h"
-#include "vvclock.h"
-#include "vvcuda.h"
-#include "vvcudatools.h"
-#include "vvcudautils.h"
-#include "vvcudatransfunc.h"
 
 __global__ void makePreintLUTCorrectKernel(int width, uchar4 *__restrict__ preIntTable,
         float thickness, float min, float max, const float4 *__restrict__ rgba)
@@ -70,34 +57,18 @@ __global__ void makePreintLUTCorrectKernel(int width, uchar4 *__restrict__ preIn
       tau = tau + tauc;
   }
 
-  clamp(r);
-  clamp(g);
-  clamp(b);
+  saturate(r);
+  saturate(g);
+  saturate(b);
 
   preIntTable[sf*width+sb] = make_uchar4(r*255.99f, g*255.99f, b*255.99f, (1.f-expf(-tau))*255.99f);
 }
 
-bool makePreintLUTCorrectCuda(int width, uchar *preIntTable, float thickness, float min, float max, const float *rgba)
+
+extern "C" void CallCudaTransFuncKernel(int width, uchar4* preIntTable, float thickness, float min, float max, const float4* rgba)
 {
-    float4 *d_rgba = NULL;
-    uchar4 *d_preIntTable = NULL;
-
-    bool ok = true;
-        vvCudaTools::checkError(&ok, cudaMalloc(&d_rgba, sizeof(float4)*(width+1)), "cudaMalloc d_rgba");
-    if(ok)
-        vvCudaTools::checkError(&ok, cudaMalloc(&d_preIntTable, sizeof(uchar4)*width*width), "cudaMalloc d_preIntTable");
-    if(ok)
-        vvCudaTools::checkError(&ok, cudaMemcpy(d_rgba, rgba, sizeof(float4)*(width+1), cudaMemcpyHostToDevice), "cudaMemcpy rgba");
-
-    if(ok)
-        makePreintLUTCorrectKernel<<<width, width>>>(width, d_preIntTable, thickness, min, max, d_rgba);
-
-    if(ok)
-        vvCudaTools::checkError(&ok, cudaMemcpy(preIntTable, d_preIntTable, sizeof(uchar4)*width*width, cudaMemcpyDeviceToHost), "cudaMemcpy preIntTable");
-
-    vvCudaTools::checkError(&ok, cudaFree(d_rgba), "cudaFree d_rgba");
-    vvCudaTools::checkError(&ok, cudaFree(d_preIntTable), "cudaFree d_preIntTable");
-
-    return ok;
+    makePreintLUTCorrectKernel<<<width, width>>>(width, preIntTable, thickness, min, max, rgba);
 }
+
+
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -177,6 +177,7 @@ set(VIRVO_SOURCES
   vvcuda.cpp
   vvcudaimg.cpp
   vvcudatools.cpp
+  vvcudatransfunc.cpp
   vvdebugmsg.cpp
   vvdicom.cpp
   vvdynlib.cpp
