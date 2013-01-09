@@ -56,6 +56,12 @@ endif()
 
 
 set(VIRVO_HEADERS
+  Cuda/Array.h
+  Cuda/Debug.h
+  Cuda/Memory.h
+  Cuda/Symbol.h
+  Cuda/Texture.h
+
   vvbonjour/vvbonjour.h
   vvbonjour/vvbonjourbrowser.h
   vvbonjour/vvbonjourentry.h
