@@ -111,6 +111,12 @@ class VIRVOEXPORT vvMatrix
     void identity();
     void zero();
 
+    // Returns a pointer to the matrix elements
+    float* data() { return &e[0][0]; }
+
+    // Returns a pointer to the matrix elements
+    const float* data() const { return &e[0][0]; }
+
     // Multiplies this matrix from the left with a translation matix
     // Note: assumes the 4th row of this matrix equals (0,0,0,1)
     vvMatrix& translate(float x, float y, float z);
