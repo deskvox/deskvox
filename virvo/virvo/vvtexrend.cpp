@@ -3337,15 +3337,17 @@ void vvTexRend::renderVolumeGL()
     drawPlanePerimeter(size, vd->pos, _clipPoint, _clipNormal, _clipColor);
   }
 
-  // Reroute output to alternative render target.
-  _renderTarget->initForRender();
+  if (_renderTarget != NULL)
+  {
+    _renderTarget->bind();
+  }
 
   setGLenvironment();
 
-  // If the render target is of base class type, nothing
-  // will happen here. Offscreen buffers e.g. need to
-  // cleanup the content from the last rendering step.
-  _renderTarget->clearBuffer();
+  if (_renderTarget != NULL)
+  {
+    _renderTarget->clear();
+  }
 
   // Determine texture object extensions:
   for (int i = 0; i < 3; ++i)
@@ -3410,9 +3412,10 @@ void vvTexRend::renderVolumeGL()
   disableShader(_shader);
   vvRenderer::renderVolumeGL();
 
-  // Write output of alternative render target. Depending on the type of render target,
-  // output can be redirected to the screen or for example an image file.
-  _renderTarget->writeBack();
+  if (_renderTarget != NULL)
+  {
+    _renderTarget->unbind();
+  }
 
   if (_measureRenderTime)
   {
@@ -3760,6 +3763,11 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
             _renderTarget->setPreserveDepthBuffer(true);
           }
         }
+      }
+      else
+      {
+        delete _renderTarget;
+        _renderTarget = NULL;
       }
       break;
     case vvRenderer::VV_IMG_SCALE:

@@ -78,9 +78,6 @@ const float vvView::OBJ_SIZE  = 1.0f;
 const int vvView::DEFAULT_PORT = 31050;
 vvView* vvView::ds = NULL;
 
-//#define CLIPPING_TEST
-//#define FBO_WITH_GEOMETRY_TEST
-
 //----------------------------------------------------------------------------
 /// Constructor
 vvView::vvView()
@@ -371,17 +368,7 @@ void vvView::displayCallback(void)
   {
     glDrawBuffer(GL_BACK);
     ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
-#ifdef CLIPPING_TEST
-    ds->renderClipObject();
-    ds->renderQuad();
-#endif
-
-#ifdef FBO_WITH_GEOMETRY_TEST
-    ds->renderCube();
-    ds->renderer->_renderState._opaqueGeometryPresent = true;
-#endif
     ds->renderer->renderVolumeGL();
-    //ds->renderCube();
   }
 
   if (ds->iconMode)
@@ -2347,71 +2334,6 @@ void vvView::setProjectionMode(bool newmode)
     ov->setProjection(vvObjView::ORTHO, 2.0f, -100.0, 100.0);
   }
 }
-
-void vvView::setupClipBuffer()
-{
-  delete clipBuffer;
-  clipBuffer = new vvOffscreenBuffer(1.0f, virvo::Float);
-  clipBuffer->initForRender();
-}
-
-void vvView::renderClipObject()
-{
-  if (clipBuffer == NULL)
-  {
-    setupClipBuffer();
-  }
-
-  clipBuffer->bindFramebuffer();
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  renderCube();
-
-  delete[] framebufferDump;
-  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-  framebufferDump = new GLfloat[viewport[2] * viewport[3] * 4];
-  glReadPixels(viewport[0], viewport[1], viewport[2], viewport[3], GL_RGBA, GL_FLOAT, framebufferDump);
-  clipBuffer->unbindFramebuffer();
-}
-
-
-
-
-void vvView::renderCube() const
-{
-
-
-}
-
-void vvView::renderQuad() const
-{
-  glEnable(GL_TEXTURE_2D);
-  clipBuffer->bindTexture();
-  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, viewport[2], viewport[3],
-               0, GL_RGBA, GL_FLOAT, framebufferDump);
-  glDisable(GL_LIGHTING);
-  glDisable(GL_DEPTH_TEST);
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
-
-  vvGLTools::drawViewAlignedQuad();
-
-  glPopMatrix();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glEnable(GL_LIGHTING);
-  glEnable(GL_DEPTH_TEST);
-}
-
 
 void vvView::renderMotion() const
 {

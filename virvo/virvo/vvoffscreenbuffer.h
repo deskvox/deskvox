@@ -35,26 +35,10 @@ public:
   vvOffscreenBuffer(int w, int h, float scale = 1.0f, virvo::BufferPrecision precision = virvo::Byte);
   virtual ~vvOffscreenBuffer();
 
-  virtual void initForRender();
-  /*!
-   * \brief         Write data back to hardware framebuffer.
-   *
-   *                If not provided with width and height,
-   *                this method will unbind the current buffer,
-   *                get the viewport information from the
-   *                hardware buffer and rebind the buffer again.
-   *                In cases one knows width and height of the
-   *                viewport, it is preferable to pass these
-   *                to the function to avoid this behavior.
-   * \param         w Width of the hardware buffer viewport.
-   * \param         h Height of the hardware buffer viewport.
-   */
-  void writeBack(int w = -1, int h = -1);
+  void bind();
+  void unbind();
   void resize(int w, int h);
-  void clearBuffer();
-
-  void bindFramebuffer() const;
-  void unbindFramebuffer() const;
+  void clear();
   void bindTexture() const;
 
   void setScale(float scale);
@@ -101,6 +85,8 @@ private:
   void storeDepthBuffer(int scaledWidth, int scaledHeight);
   void renderToViewAlignedQuad() const;
   void writeBackDepthBuffer() const;
+  void bindFramebuffer() const;
+  void unbindFramebuffer() const;
 };
 
 #endif

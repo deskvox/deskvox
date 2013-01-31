@@ -206,10 +206,6 @@ class vvView
                      const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);
     void applyRendererParameters();
     void setProjectionMode(bool);
-    void setupClipBuffer();
-    void renderClipObject();
-    void renderCube() const;
-    void renderQuad() const;
     void renderMotion() const;
     void editClipPlane(int command, float val);
     void displayHelpInfo();

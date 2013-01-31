@@ -66,7 +66,7 @@ vvOffscreenBuffer::~vvOffscreenBuffer()
   delete _gldata;
 }
 
-void vvOffscreenBuffer::initForRender()
+void vvOffscreenBuffer::bind()
 {
   const vvGLTools::Viewport v = vvGLTools::getViewport();
 
@@ -85,7 +85,7 @@ void vvOffscreenBuffer::initForRender()
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void vvOffscreenBuffer::writeBack(int w, int h)
+void vvOffscreenBuffer::unbind()
 {
   vvGLTools::printGLError("enter vvOffscreenBuffer::writeBack()");
 
@@ -95,19 +95,11 @@ void vvOffscreenBuffer::writeBack(int w, int h)
   }
 
   vvGLTools::Viewport viewport;
-  if ((w == -1) || (h == -1))
-  {
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
-    glPopAttrib();
+  glPopAttrib();
 
-    glGetIntegerv(GL_VIEWPORT, viewport.values);
-  }
-  else
-  {
-    viewport[2] = w;
-    viewport[3] = h;
-  }
+  glGetIntegerv(GL_VIEWPORT, viewport.values);
 
   if (_preserveDepthBuffer)
   {
@@ -182,7 +174,7 @@ void vvOffscreenBuffer::resize(int w, int h)
   vvGLTools::printGLError("leave vvOffscreenBuffer::resize()");
 }
 
-void vvOffscreenBuffer::clearBuffer()
+void vvOffscreenBuffer::clear()
 {
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -191,24 +183,6 @@ void vvOffscreenBuffer::clearBuffer()
   {
     writeBackDepthBuffer();
   }
-}
-
-void vvOffscreenBuffer::bindFramebuffer() const
-{
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _gldata->fbo);
-
-  if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
-  {
-    vvDebugMsg::msg(0, "vvOffscreenBuffer::bindFramebuffer(): Error binding fbo");
-  }
-  vvGLTools::printGLError("leave vvOffscreenBuffer::bindFramebuffer()");
-}
-
-void vvOffscreenBuffer::unbindFramebuffer() const
-{
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-
-  vvGLTools::printGLError("leave vvOffscreenBuffer::unbindFramebuffer()");
 }
 
 void vvOffscreenBuffer::bindTexture() const
@@ -404,5 +378,23 @@ void vvOffscreenBuffer::writeBackDepthBuffer() const
 
   glPopClientAttrib();
   glPopAttrib();
+}
+
+void vvOffscreenBuffer::bindFramebuffer() const
+{
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _gldata->fbo);
+
+  if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+  {
+    vvDebugMsg::msg(0, "vvOffscreenBuffer::bindFramebuffer(): Error binding fbo");
+  }
+  vvGLTools::printGLError("leave vvOffscreenBuffer::bindFramebuffer()");
+}
+
+void vvOffscreenBuffer::unbindFramebuffer() const
+{
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
+  vvGLTools::printGLError("leave vvOffscreenBuffer::unbindFramebuffer()");
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
