@@ -21,8 +21,8 @@
 #ifndef _VVRENDERER_H_
 #define _VVRENDERER_H_
 
+#include "vvoffscreenbuffer.h"
 #include "vvparam.h"
-#include "vvrendertarget.h"
 #include "vvinttypes.h"
 
 class vvVolDesc;
@@ -156,7 +156,7 @@ protected:
   vvColor _probeColor;                          ///< probe boundary color (R,G,B in [0..1])
   bool  _useOffscreenBuffer;                    ///< render target for image downscaling
   float _imageScale;                            ///< undersampling by downscaling rendered img [0..1]
-  BufferPrecision _imagePrecision;              /*!  render to high-res offscreen buffer (32 bit float) to minimize rounding error
+  virvo::BufferPrecision _imagePrecision;       /*!  render to high-res offscreen buffer (32 bit float) to minimize rounding error
                                                      caused by adding up contribution of to many slices */
   bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
   bool _opaqueGeometryPresent;                  ///< true = opaque geometry was rendered before the volume

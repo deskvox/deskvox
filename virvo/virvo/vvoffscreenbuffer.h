@@ -16,13 +16,23 @@
 #ifndef _VV_OFFSCREENBUFFER_H_
 #define _VV_OFFSCREENBUFFER_H_
 
-#include "vvrendertarget.h"
+#include "vvexport.h"
 
-class VIRVOEXPORT vvOffscreenBuffer : public vvRenderTarget
+namespace virvo
+{
+enum BufferPrecision
+{
+  Byte = 0,
+  Short,
+  Float
+};
+}
+
+class VIRVOEXPORT vvOffscreenBuffer
 {
 public:
-  vvOffscreenBuffer(float scale, BufferPrecision precision);
-  vvOffscreenBuffer(int w, int h, float scale, BufferPrecision precision);
+  vvOffscreenBuffer(float scale = 1.0f, virvo::BufferPrecision precision = virvo::Byte);
+  vvOffscreenBuffer(int w, int h, float scale = 1.0f, virvo::BufferPrecision precision = virvo::Byte);
   virtual ~vvOffscreenBuffer();
 
   virtual void initForRender();
@@ -39,9 +49,9 @@ public:
    * \param         w Width of the hardware buffer viewport.
    * \param         h Height of the hardware buffer viewport.
    */
-  virtual void writeBack(int w = -1, int h = -1);
-  virtual void resize(int w, int h);
-  virtual void clearBuffer();
+  void writeBack(int w = -1, int h = -1);
+  void resize(int w, int h);
+  void clearBuffer();
 
   void bindFramebuffer() const;
   void unbindFramebuffer() const;
@@ -50,7 +60,7 @@ public:
   void setScale(float scale);
   void setPreserveDepthBuffer(bool preserveDepthBuffer);
   void setUseNVDepthStencil(bool useNVDepthStencil);
-  void setPrecision(const BufferPrecision& precision);
+  void setPrecision(virvo::BufferPrecision precision);
   void setInterpolation(bool interpolation);
 
   int getBufferWidth() const;
@@ -58,9 +68,12 @@ public:
   float getScale() const;
   bool getPreserveFramebuffer() const;
   bool getUseNVDepthStencil() const;
-  BufferPrecision getPrecision() const;
+  virvo::BufferPrecision getPrecision() const;
   bool getInterpolation() const;
 private:
+  struct GLData;
+  GLData* _gldata;
+
   int _viewportWidth;
   int _viewportHeight;
 
@@ -71,32 +84,17 @@ private:
   bool _preserveDepthBuffer;
   bool _useNVDepthStencil;
 
-  BufferPrecision _precision;
+  virvo::BufferPrecision _precision;
 
   bool _interpolation;
 
-  GLuint _fbo;
-  GLuint _colorBuffer;
-  GLuint _depthBuffer;
-  GLuint _textureId;
-  GLuint _depthTextureId;
-
   unsigned char* _pixels;
-
-  /*!
-   * \brief         This pointer is used if the depth buffer is stored as GL_FLOAT.
-   */
-  GLfloat* _depthPixelsF;
-  /*!
-   * \brief         This pointer is used with the GL_DEPTH_STENCIL_NV for storing the depth buffer.
-   */
-  GLuint* _depthPixelsNV;
 
   vvOffscreenBuffer* _scaledDepthBuffer;
 
   bool _updatePosted;
 
-  void init(int w, int h, float scale, BufferPrecision precision);
+  void init(int w, int h, float scale, virvo::BufferPrecision precision);
   int getScaled(int v) const;
   void update();
   void storeColorBuffer();

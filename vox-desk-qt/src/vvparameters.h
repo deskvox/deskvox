@@ -31,6 +31,7 @@ namespace vvParameters
     VV_MOVING_QUALITY,
     VV_PROJECTIONTYPE,
     VV_SPIN_ANIMATION,
+    VV_STEREO_MODE,
     VV_SUPERSAMPLES
   };
 }

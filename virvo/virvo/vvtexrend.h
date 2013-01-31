@@ -165,7 +165,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool _proxyGeometryOnGpuSupported;            ///< indicate wether proxy geometry computation on gpu would work
     int _lastFrame;                               ///< last frame rendered
 
-    vvRenderTarget* _renderTarget;                ///< can e.g. be an offscreen buffer to use with image downscaling
+    vvOffscreenBuffer* _renderTarget;             ///< offscreen buffer used for image downscaling
                                                   ///< or an image creator making a screenshot
 
     vvShaderFactory* _shaderFactory;              ///< Factory for shader-creation

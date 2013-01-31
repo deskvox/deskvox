@@ -2351,7 +2351,7 @@ void vvView::setProjectionMode(bool newmode)
 void vvView::setupClipBuffer()
 {
   delete clipBuffer;
-  clipBuffer = new vvOffscreenBuffer(1.0f, VV_FLOAT);
+  clipBuffer = new vvOffscreenBuffer(1.0f, virvo::Float);
   clipBuffer->initForRender();
 }
 

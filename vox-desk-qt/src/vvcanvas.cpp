@@ -26,6 +26,7 @@
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvgltools.h>
+#include <virvo/vvoffscreenbuffer.h>
 
 #include <QSettings>
 #include <QTimer>
@@ -46,6 +47,9 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   , _movingQuality(1.0f)
   , _spinAnimation(false)
   , _lightVisible(false)
+  , _stereoMode(InterlacedLines)
+  , _leftBuffer(NULL)
+  , _rightBuffer(NULL)
   , _mouseButton(Qt::NoButton)
 {
   vvDebugMsg::msg(1, "vvCanvas::vvCanvas()");
@@ -93,6 +97,8 @@ vvCanvas::~vvCanvas()
 {
   vvDebugMsg::msg(1, "vvCanvas::~vvCanvas()");
 
+  delete _leftBuffer;
+  delete _rightBuffer;
   delete _renderer;
   delete _vd;
 }
@@ -184,17 +190,6 @@ void vvCanvas::paintGL()
     return;
   }
 
-  if (_doubleBuffering)
-  {
-    glDrawBuffer(GL_BACK);
-  }
-  else
-  {
-    glDrawBuffer(GL_FRONT);
-  }
-
-  glEnable(GL_DEPTH_TEST);
-
   if (_lighting)
   {
     glEnable(GL_LIGHTING);
@@ -208,32 +203,30 @@ void vvCanvas::paintGL()
   glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  glMatrixMode(GL_MODELVIEW);
-  _ov.setModelviewMatrix(vvObjView::CENTER);
-
-  foreach (vvPlugin* plugin, _plugins)
+  if (_stereoMode == Mono)
   {
-    if (plugin->isActive())
+    if (_doubleBuffering)
     {
-      plugin->prerender();
+      glDrawBuffer(GL_BACK);
     }
-  }
-
-  _renderer->renderVolumeGL();
-
-  foreach (vvPlugin* plugin, _plugins)
-  {
-    if (plugin->isActive())
+    else
     {
-      plugin->postrender();
+      glDrawBuffer(GL_FRONT);
     }
-  }
 
-  foreach (vvInteractor* interactor, _interactors)
+    glEnable(GL_DEPTH_TEST);
+
+    glMatrixMode(GL_MODELVIEW);
+    _ov.setModelviewMatrix(vvObjView::CENTER);
+
+    render();
+  }
+  else if (_stereoMode == InterlacedLines)
   {
-    if (interactor->enabled() && interactor->visible())
+    if (_leftBuffer == NULL && _rightBuffer == NULL)
     {
-      interactor->render();
+      _leftBuffer = new vvOffscreenBuffer;
+      _rightBuffer = new vvOffscreenBuffer;
     }
   }
 }
@@ -445,6 +438,35 @@ void vvCanvas::setCurrentFrame(const int frame)
   }
 
   updateGL();
+}
+
+void vvCanvas::render()
+{
+  foreach (vvPlugin* plugin, _plugins)
+  {
+    if (plugin->isActive())
+    {
+      plugin->prerender();
+    }
+  }
+
+  _renderer->renderVolumeGL();
+
+  foreach (vvPlugin* plugin, _plugins)
+  {
+    if (plugin->isActive())
+    {
+      plugin->postrender();
+    }
+  }
+
+  foreach (vvInteractor* interactor, _interactors)
+  {
+    if (interactor->enabled() && interactor->visible())
+    {
+      interactor->render();
+    }
+  }
 }
 
 void vvCanvas::setRenderer(const std::string& name, const vvRendererFactory::Options& options)

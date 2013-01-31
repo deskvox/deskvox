@@ -77,6 +77,7 @@ const int vvTexRend::NUM_PIXEL_SHADERS = 13;
 */
 vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox)
   : vvRenderer(vd, renderState)
+  , _renderTarget(NULL)
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
 
@@ -162,15 +163,11 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   if (_useOffscreenBuffer)
   {
-    _renderTarget = new vvOffscreenBuffer(_imageScale, VV_BYTE);
+    _renderTarget = new vvOffscreenBuffer(_imageScale, virvo::Byte);
     if (_opaqueGeometryPresent)
     {
-      dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPreserveDepthBuffer(true);
+      _renderTarget->setPreserveDepthBuffer(true);
     }
-  }
-  else
-  {
-    _renderTarget = new vvRenderTarget();
   }
 
   _currentShader = vd->chan - 1;
@@ -3754,29 +3751,24 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       _useOffscreenBuffer = newValue;
       if (_useOffscreenBuffer)
       {
-        if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) == NULL)
+        if (_renderTarget == NULL)
         {
           delete _renderTarget;
           _renderTarget = new vvOffscreenBuffer(_imageScale, _imagePrecision);
           if (_opaqueGeometryPresent)
           {
-            dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPreserveDepthBuffer(true);
+            _renderTarget->setPreserveDepthBuffer(true);
           }
         }
-      }
-      else
-      {
-        delete _renderTarget;
-        _renderTarget = new vvRenderTarget();
       }
       break;
     case vvRenderer::VV_IMG_SCALE:
       _imageScale = newValue;
       if (_useOffscreenBuffer)
       {
-        if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
+        if (_renderTarget != NULL)
         {
-          dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setScale(_imageScale);
+          _renderTarget->setScale(_imageScale);
         }
         else
         {
@@ -3790,40 +3782,40 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       {
         if (int(newValue) <= 8)
         {
-          if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
+          if (_renderTarget != NULL)
           {
-            dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPrecision(VV_BYTE);
+            _renderTarget->setPrecision(virvo::Byte);
           }
           else
           {
             delete _renderTarget;
-            _renderTarget = new vvOffscreenBuffer(_imageScale, VV_BYTE);
+            _renderTarget = new vvOffscreenBuffer(_imageScale, virvo::Byte);
           }
           break;
         }
         else if ((int(newValue) > 8) && (int(newValue) < 32))
         {
-          if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
+          if (_renderTarget != NULL)
           {
-            dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPrecision(VV_SHORT);
+            _renderTarget->setPrecision(virvo::Short);
           }
           else
           {
             delete _renderTarget;
-            _renderTarget = new vvOffscreenBuffer(_imageScale, VV_SHORT);
+            _renderTarget = new vvOffscreenBuffer(_imageScale, virvo::Short);
           }
           break;
         }
         else if (int(newValue) >= 32)
         {
-          if (dynamic_cast<vvOffscreenBuffer*>(_renderTarget) != NULL)
+          if (_renderTarget != NULL)
           {
-            dynamic_cast<vvOffscreenBuffer*>(_renderTarget)->setPrecision(VV_FLOAT);
+            _renderTarget->setPrecision(virvo::Float);
           }
           else
           {
             delete _renderTarget;
-            _renderTarget = new vvOffscreenBuffer(_imageScale, VV_FLOAT);
+            _renderTarget = new vvOffscreenBuffer(_imageScale, virvo::Float);
           }
           break;
         }
@@ -4539,11 +4531,10 @@ float vvTexRend::calcQualityAndScaleImage()
   float quality = _quality;
   if (quality < 1.0f)
   {
-    vvOffscreenBuffer* offscreenBuffer = dynamic_cast<vvOffscreenBuffer*>(_renderTarget);
-    if (offscreenBuffer != NULL)
+    if (_renderTarget != NULL)
     {
       quality = powf(quality, 1.0f/3.0f);
-      offscreenBuffer->setScale(quality);
+      _renderTarget->setScale(quality);
     }
   }
   return quality;

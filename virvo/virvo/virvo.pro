@@ -59,7 +59,6 @@ SOURCES = \
   vvrendercontext.cpp \
   vvrenderer.cpp \
   vvrendererfactory.cpp \
-  vvrendertarget.cpp \
   vvrendervp.cpp \
   vvshaderfactory.cpp \
   vvshaderprogram.cpp \
@@ -136,7 +135,6 @@ HEADERS = \
   vvrendercontext.h \
   vvrenderer.h \
   vvrendererfactory.h \
-  vvrendertarget.h \
   vvrendervp.h \
   vvshaderfactory.h \
   vvshaderprogram.h \

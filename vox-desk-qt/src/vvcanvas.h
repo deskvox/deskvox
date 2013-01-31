@@ -33,6 +33,7 @@
 #include <QMouseEvent>
 
 class vvInteractor;
+class vvOffscreenBuffer;
 class vvPlugin;
 class QTimer;
 
@@ -40,6 +41,13 @@ class vvCanvas : public QGLWidget
 {
   Q_OBJECT
 public:
+  enum StereoMode
+  {
+    Mono = 0,
+    InterlacedCheckerboard,
+    InterlacedLines
+  };
+
   vvCanvas(const QGLFormat& format, const QString& filename = "", QWidget* parent = 0);
   ~vvCanvas();
 
@@ -82,6 +90,10 @@ private:
   float _movingQuality;
   bool _spinAnimation;
   bool _lightVisible;
+  StereoMode _stereoMode;
+
+  vvOffscreenBuffer* _leftBuffer;
+  vvOffscreenBuffer* _rightBuffer;
 
   vvMatrix _lastRotation;
 
@@ -95,6 +107,7 @@ private:
   void createRenderer();
   void updateProjection();
   void setCurrentFrame(int frame);
+  void render();
 public slots:
   void setRenderer(const std::string& name, const vvRendererFactory::Options& options);
   void setParameter(vvParameters::ParameterType param, const vvParam& value);

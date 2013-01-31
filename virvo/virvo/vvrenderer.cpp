@@ -75,7 +75,7 @@ vvRenderState::vvRenderState()
   , _probeColor(vvColor(1.0f, 1.0f, 1.0f))
   , _useOffscreenBuffer(false)
   , _imageScale(1.0f)
-  , _imagePrecision(VV_BYTE)
+  , _imagePrecision(virvo::Byte)
   , _showTexture(true)
   , _opaqueGeometryPresent(false)
   , _useIbr(false)
@@ -164,7 +164,7 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     _imageScale = value;
     break;
   case VV_IMAGE_PRECISION:
-    _imagePrecision = (BufferPrecision)value.asInt();
+    _imagePrecision = (virvo::BufferPrecision)value.asInt();
     break;
   case VV_SHOW_TEXTURE:
     _showTexture = value;

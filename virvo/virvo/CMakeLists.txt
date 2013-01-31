@@ -121,7 +121,6 @@ set(VIRVO_HEADERS
   vvrendercontext.h
   vvrenderer.h
   vvrendererfactory.h
-  vvrendertarget.h
   vvrendervp.h
   vvrequestmanagement.h
   vvserbrickrend.h
@@ -208,7 +207,6 @@ set(VIRVO_SOURCES
   vvrendercontext.cpp
   vvrenderer.cpp
   vvrendererfactory.cpp
-  vvrendertarget.cpp
   vvrendervp.cpp
   vvrequestmanagement.cpp
   vvserbrickrend.cpp
