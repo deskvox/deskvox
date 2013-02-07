@@ -176,7 +176,7 @@ void vvSoftRayRend::renderVolumeGL()
 #ifdef HAVE_OPENGL
   vvGLTools::getModelviewMatrix(&mv);
   vvGLTools::getProjectionMatrix(&pr);
-  const vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  const virvo::Viewport viewport = vvGLTools::getViewport();
   _width = viewport[2];
   _height = viewport[3];
 #endif

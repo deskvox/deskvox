@@ -22,6 +22,7 @@
 #define _VV_REMOTECLIENT_H_
 
 #include "vvexport.h"
+#include "vvgltools.h"
 #include "vvrenderer.h"
 #include "vvvecmath.h"
 

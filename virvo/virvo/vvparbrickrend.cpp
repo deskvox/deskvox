@@ -130,7 +130,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
     return;
   }
 
-  const vvGLTools::Viewport vp = vvGLTools::getViewport();
+  const virvo::Viewport vp = vvGLTools::getViewport();
   _width = vp[2];
   _height = vp[3];
 
@@ -237,7 +237,7 @@ void vvParBrickRend::renderVolumeGL()
 
   if (!_showBricks)
   {
-    const vvGLTools::Viewport vp = vvGLTools::getViewport();
+    const virvo::Viewport vp = vvGLTools::getViewport();
     if (vp[2] != _width || vp[3] != _height)
     {
       _width = vp[2];
@@ -466,19 +466,18 @@ void vvParBrickRend::render(Thread* thread)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   thread->renderer->renderVolumeGL();
-  const vvGLTools::Viewport vp = vvGLTools::getViewport();
-  vvRecti vprect = { vp[0], vp[1], vp[2], vp[3] };
+  const virvo::Viewport vp = vvGLTools::getViewport();
 
   vvRecti bounds = vvGLTools::getBoundingRect(thread->aabb);
-  bounds.intersect(vprect);
+  bounds.intersect(vp);
 
-  thread->texture.rect->x = bounds.x;
-  thread->texture.rect->y = bounds.y;
-  thread->texture.rect->width = bounds.width;
-  thread->texture.rect->height = bounds.height;
+  (*thread->texture.rect)[0] = bounds[0];
+  (*thread->texture.rect)[1] = bounds[1];
+  (*thread->texture.rect)[2] = bounds[2];
+  (*thread->texture.rect)[3] = bounds[3];
 
-  glReadPixels(thread->texture.rect->x, thread->texture.rect->y,
-               thread->texture.rect->width, thread->texture.rect->height,
+  glReadPixels((*thread->texture.rect)[0], (*thread->texture.rect)[1],
+               (*thread->texture.rect)[2], (*thread->texture.rect)[2],
                GL_RGBA, GL_FLOAT, &(*thread->texture.pixels)[0]);
   pthread_barrier_wait(thread->barrier);
 }

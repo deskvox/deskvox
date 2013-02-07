@@ -19,6 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvsocketio.h"
+#include "vvgltools.h"
 #include "vvibrimage.h"
 #include "vvinttypes.h"
 #include "vvvoldesc.h"
@@ -666,7 +667,7 @@ vvSocket::ErrorType vvSocketIO::getIbrImage(vvIbrImage* im) const
       return err;
     im->setModelViewMatrix(mv);
 
-    vvGLTools::Viewport vp;
+    virvo::Viewport vp;
     err = getViewport(vp);
     if(err != vvSocket::VV_OK)
       return err;
@@ -741,7 +742,7 @@ vvSocket::ErrorType vvSocketIO::putIbrImage(const vvIbrImage* im) const
       return err;
     }
 
-    vvGLTools::Viewport vp = im->getViewport();
+    virvo::Viewport vp = im->getViewport();
     err = putViewport(vp);
     if (err != vvSocket::VV_OK)
     {
@@ -1426,10 +1427,10 @@ vvSocket::ErrorType vvSocketIO::getAABBi(vvAABBi& val) const
 }
 
 //----------------------------------------------------------------------------
-/** Writes a vvGLTools::Viewport to the socket.
- @param val  the vvGLTools::Viewport.
+/** Writes a virvo::Viewport to the socket.
+ @param val  the virvo::Viewport.
 */
-vvSocket::ErrorType vvSocketIO::putViewport(const vvGLTools::Viewport &val) const
+vvSocket::ErrorType vvSocketIO::putViewport(const virvo::Viewport &val) const
 {
   if(_socket)
   {
@@ -1447,10 +1448,10 @@ vvSocket::ErrorType vvSocketIO::putViewport(const vvGLTools::Viewport &val) cons
 }
 
 //----------------------------------------------------------------------------
-/** Reads a vvGLTools::Viewport from the socket.
- @param val  the vvGLTools::Viewport.
+/** Reads a virvo::Viewport from the socket.
+ @param val  the virvo::Viewport.
 */
-vvSocket::ErrorType vvSocketIO::getViewport(vvGLTools::Viewport &val) const
+vvSocket::ErrorType vvSocketIO::getViewport(virvo::Viewport &val) const
 {
   if(_socket)
   {

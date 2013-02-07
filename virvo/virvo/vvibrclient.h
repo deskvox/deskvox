@@ -24,7 +24,6 @@
 #include "vvexport.h"
 #include "vvopengl.h"
 #include "vvremoteclient.h"
-#include "vvgltools.h"
 
 #include <vector>
 
@@ -62,7 +61,7 @@ private:
   vvMatrix _imgMatrix;                                    ///< Reprojection matrix of _ibrImg
   vvMatrix _imgMv;                                        ///< model-view matrix of _ibrImg
   vvMatrix _imgPr;                                        ///< Projection matrix of _ibrImg
-  vvGLTools::Viewport _imgVp;                             ///< Viewport of _ibrImg
+  virvo::Viewport _imgVp;                                 ///< Viewport of _ibrImg
   float _imgDepthRange[2];                                ///< Depth range of _ibrImg
   void initIbrFrame();                                    ///< initialize pixel-points in object space
 

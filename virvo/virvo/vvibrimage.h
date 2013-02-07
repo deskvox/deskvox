@@ -22,8 +22,8 @@
 #define _VVIBRIMAGE_H_
 
 #include "vvimage.h"
+#include "vvrect.h"
 #include "vvvecmath.h"
-#include "vvgltools.h"
 
 class VIRVOEXPORT vvIbrImage : public vvImage
 {
@@ -51,8 +51,8 @@ class VIRVOEXPORT vvIbrImage : public vvImage
     vvMatrix getModelViewMatrix() const;
     void setProjectionMatrix(const vvMatrix &pm);
     vvMatrix getProjectionMatrix() const;
-    void setViewport(const vvGLTools::Viewport &vp);
-    vvGLTools::Viewport getViewport() const;
+    void setViewport(const virvo::Viewport &vp);
+    virvo::Viewport getViewport() const;
     void setDepthRange(float depthMin, float depthMax);
     void getDepthRange(float *depthMin, float *depthMax) const;
 
@@ -67,7 +67,7 @@ class VIRVOEXPORT vvIbrImage : public vvImage
 
     vvMatrix        _modelViewMatrix;
     vvMatrix        _projectionMatrix;
-    vvGLTools::Viewport _viewport;
+    virvo::Viewport _viewport;
     float           _depthMin;
     float           _depthMax;
 };

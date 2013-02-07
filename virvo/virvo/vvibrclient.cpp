@@ -169,7 +169,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   vvAABB aabb = vvAABB(vvVector3(), vvVector3());
   vd->getBoundingBox(aabb);
   vvIbr::calcDepthRange(_currentPr, _currentMv, aabb, drMin, drMax);
-  const vvGLTools::Viewport vp = vvGLTools::getViewport();
+  const virvo::Viewport vp = vvGLTools::getViewport();
   vvMatrix currentImgMatrix = vvIbr::calcImgMatrix(_currentPr, _currentMv, vp, drMin, drMax);
   bool matrixChanged = (!currentImgMatrix.equal(_imgMatrix));
 

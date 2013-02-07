@@ -29,13 +29,13 @@
 
 #include "vvcolor.h"
 #include "vvexport.h"
+#include "vvrect.h"
 #include "vvremoteevents.h"
 #include "vvrequestmanagement.h"
 #include "vvsocket.h"
 #include "vvinttypes.h"
 #include "vvvecmath.h"
 #include "vvtransfunc.h"
-#include "vvgltools.h"
 
 struct vvMulticastParameters;
 class vvBrick;
@@ -171,8 +171,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putColor(const vvColor& val) const;
     vvSocket::ErrorType getAABBi(vvAABBi& val) const;
     vvSocket::ErrorType putAABBi(const vvAABBi& val) const;
-    vvSocket::ErrorType getViewport(vvGLTools::Viewport &val) const;
-    vvSocket::ErrorType putViewport(const vvGLTools::Viewport &val) const;
+    vvSocket::ErrorType getViewport(virvo::Viewport &val) const;
+    vvSocket::ErrorType putViewport(const virvo::Viewport &val) const;
     vvSocket::ErrorType getWinDims(int& w, int& h) const;
     vvSocket::ErrorType putWinDims(int w, int h) const;
     vvSocket::ErrorType getData(void*, int, DataType) const;      // known number and type

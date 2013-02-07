@@ -173,12 +173,12 @@ void vvIbrImage::getDepthRange(float *dmin, float *dmax) const
   *dmax = _depthMax;
 }
 
-void vvIbrImage::setViewport(const vvGLTools::Viewport &vp)
+void vvIbrImage::setViewport(const virvo::Viewport &vp)
 {
   _viewport = vp;
 }
 
-vvGLTools::Viewport vvIbrImage::getViewport() const
+virvo::Viewport vvIbrImage::getViewport() const
 {
   return _viewport;
 }

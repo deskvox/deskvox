@@ -87,7 +87,7 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
   ibrRenderer->compositeVolume();
 
   // Fetch rendered image
-  vvGLTools::Viewport vp = vvGLTools::getViewport();
+  virvo::Viewport vp = vvGLTools::getViewport();
   const int w = vp[2];
   const int h = vp[3];
   if(!_image || _image->getWidth() != w || _image->getHeight() != h

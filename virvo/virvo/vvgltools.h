@@ -48,30 +48,6 @@ class VIRVOEXPORT vvGLTools
       CONSECUTIVE = 0,                            ///< using entire line length
       ONE_BY_ONE  = 1                             ///< one extension per line
     };
-    struct Viewport                               /// for convenience
-    {
-      Viewport() { for(int i=0; i<4; ++i) values[i]=0; }
-      Viewport(int x, int y, int w, int h) { values[0]=x; values[1]=y; values[2]=w; values[3]=h; }
-      int values[4];
-
-      inline int &operator[](const unsigned int i)
-      {
-        return values[i];
-      }
-
-      inline int operator[](const unsigned int i) const
-      {
-        return values[i];
-      }
-
-      inline void print() const
-      {
-          std::cerr << "Left: " << values[0] << " "
-             << "Top: " << values[1] << " "
-             << "Width: " << values[2] << " "
-             << "Height: " << values[3] << std::endl;
-      }
-    };
     struct GLInfo
     {
       const char* vendor;
@@ -87,7 +63,7 @@ class VIRVOEXPORT vvGLTools
     static void displayOpenGLextensions(const DisplayStyle);
     static void checkOpenGLextensions();
     static void drawQuad(float x1 = -1.0f, float y1 = -1.0f, float x2 =  1.0f, float y2 =  1.0f);
-    static Viewport getViewport();
+    static virvo::Viewport getViewport();
     static vvVector4 queryClearColor();
     static void getModelviewMatrix(vvMatrix*);
     static void getProjectionMatrix(vvMatrix*);
@@ -108,7 +84,7 @@ class VIRVOEXPORT vvGLTools
       GLdouble projection[16];
       glGetDoublev(GL_PROJECTION_MATRIX, projection);
 
-      const Viewport viewport = getViewport();
+      const virvo::Viewport viewport = getViewport();
 
       T minX = std::numeric_limits<T>::max();
       T minY = std::numeric_limits<T>::max();
@@ -144,10 +120,10 @@ class VIRVOEXPORT vvGLTools
       }
 
       vvRecti result;
-      result.x = std::max(0, static_cast<int>(floorf(minX)));
-      result.y = std::max(0, static_cast<int>(floorf(minY)));
-      result.width = std::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2] - result.x);
-      result.height = std::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3] - result.y);
+      result[0] = std::max(0, static_cast<int>(floorf(minX)));
+      result[1] = std::max(0, static_cast<int>(floorf(minY)));
+      result[2] = std::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2] - result[0]);
+      result[3] = std::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3] - result[1]);
 
       return result;
     }
@@ -203,17 +179,17 @@ class VIRVOEXPORT vvGLTools
     }
 };
 
-inline bool operator==(const vvGLTools::Viewport& vp1, const vvGLTools::Viewport& vp2)
+inline bool operator==(const virvo::Viewport& vp1, const virvo::Viewport& vp2)
 {
   return (vp1[0] == vp2[0] && vp1[1] == vp2[1] && vp1[2] == vp2[2] && vp1[3] == vp2[3]);
 }
 
-inline bool operator!=(const vvGLTools::Viewport& vp1, const vvGLTools::Viewport& vp2)
+inline bool operator!=(const virvo::Viewport& vp1, const virvo::Viewport& vp2)
 {
   return (vp1[0] != vp2[0] || vp1[1] != vp2[1] || vp1[2] != vp2[2] || vp1[3] != vp2[3]);
 }
 
-inline std::ostream& operator<<(std::ostream& out, const vvGLTools::Viewport& vp)
+inline std::ostream& operator<<(std::ostream& out, const virvo::Viewport& vp)
 {
   out << "Left: " << vp[0] << " "
       << "Top: " << vp[1] << " "

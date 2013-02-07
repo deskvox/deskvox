@@ -60,9 +60,9 @@ void vvImageServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRender
   renderer->renderVolumeGL();
 
   // Fetch rendered image
-  vvGLTools::Viewport vp = vvGLTools::getViewport();
-  const int w = vp[2];
-  const int h = vp[3];
+  virvo::Viewport vp = vvGLTools::getViewport();
+  int w = vp[2];
+  int h = vp[3];
   if(!_image || _image->getWidth() != w || _image->getHeight() != h)
   {
     _pixels.resize(w*h*4);

@@ -313,9 +313,9 @@ void vvGLTools::drawQuad(float x1, float y1, float x2, float y2)
 //----------------------------------------------------------------------------
 /** Get OpenGL viewport info: 0 ==> x, 1 ==> y, 2 ==> width, 3 ==> height.
 */
-vvGLTools::Viewport vvGLTools::getViewport()
+virvo::Viewport vvGLTools::getViewport()
 {
-  Viewport result;
+  virvo::Viewport result;
   glGetIntegerv(GL_VIEWPORT, result.values);
   return result;
 }
@@ -427,7 +427,7 @@ vvVector3 vvGLTools::project(const vvVector3& obj)
   double projection[16];
   glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
   glGetDoublev(GL_PROJECTION_MATRIX, projection);
-  vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  virvo::Viewport viewport = vvGLTools::getViewport();
   double winX;
   double winY;
   double winZ;
@@ -450,7 +450,7 @@ vvVector3 vvGLTools::unProject(const vvVector3& win)
   double projection[16];
   glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
   glGetDoublev(GL_PROJECTION_MATRIX, projection);
-  vvGLTools::Viewport viewport = vvGLTools::getViewport();
+  virvo::Viewport viewport = vvGLTools::getViewport();
   double objX;
   double objY;
   double objZ;

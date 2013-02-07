@@ -54,8 +54,8 @@ void vvSortLastVisitor::visit(vvVisitable* obj) const
   if (node->isLeaf())
   {
     const Texture& tex = _textures.at(node->getId());
-    glWindowPos2i(tex.rect->x, tex.rect->y);
-    glDrawPixels(tex.rect->width, tex.rect->height, GL_RGBA, GL_FLOAT, &(*tex.pixels)[0]);
+    glWindowPos2i((*tex.rect)[0], (*tex.rect)[1]);
+    glDrawPixels((*tex.rect)[2], (*tex.rect)[3], GL_RGBA, GL_FLOAT, &(*tex.pixels)[0]);
   }
 }
 

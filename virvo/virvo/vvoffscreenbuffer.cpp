@@ -39,7 +39,7 @@ struct vvOffscreenBuffer::GLData
 vvOffscreenBuffer::vvOffscreenBuffer(float scale, virvo::BufferPrecision precision)
   : _gldata(new GLData)
 {
-  vvGLTools::Viewport v = vvGLTools::getViewport();
+  virvo::Viewport v = vvGLTools::getViewport();
   init(v[2], v[3], scale, precision);
 }
 
@@ -68,7 +68,7 @@ vvOffscreenBuffer::~vvOffscreenBuffer()
 
 void vvOffscreenBuffer::bind()
 {
-  const vvGLTools::Viewport v = vvGLTools::getViewport();
+  const virvo::Viewport v = vvGLTools::getViewport();
 
   if (_preserveDepthBuffer)
   {
@@ -94,7 +94,7 @@ void vvOffscreenBuffer::unbind()
     storeColorBuffer();
   }
 
-  vvGLTools::Viewport viewport;
+  virvo::Viewport viewport;
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
   glPopAttrib();

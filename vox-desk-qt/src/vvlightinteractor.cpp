@@ -22,6 +22,7 @@
 
 #include "vvlightinteractor.h"
 
+#include <virvo/vvrect.h>
 #include <virvo/vvgltools.h>
 
 #include <iostream>
@@ -118,7 +119,7 @@ void vvLightInteractor::mouseMoveEvent(QMouseEvent* event)
 {
   if (_mouseButton == Qt::LeftButton)
   {
-    vvGLTools::Viewport vp = vvGLTools::getViewport();
+    virvo::Viewport vp = vvGLTools::getViewport();
 
     vvVector3 obj = vvGLTools::project(_pos);
     vvVector3 win(event->x(), vp[3] - event->y(), obj[2]);

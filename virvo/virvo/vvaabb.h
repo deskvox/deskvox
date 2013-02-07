@@ -21,27 +21,8 @@
 #ifndef VV_AABB_H
 #define VV_AABB_H
 
+#include "vvrect.h"
 #include "vvvecmath.h"
-
-template <typename T>
-class vvBaseRect
-{
-public:
-  T x;
-  T y;
-  T width;
-  T height;
-
-  bool contains(const vvBaseRect<T>& rhs);
-
-  bool overlaps(const vvBaseRect<T>& rhs);
-  void intersect(const vvBaseRect<T>& rhs);
-};
-
-typedef vvBaseRect<int> vvRecti;
-typedef vvBaseRect<float> vvRectf;
-typedef vvBaseRect<double> vvRectd;
-typedef vvRecti vvRect;
 
 template <typename T>
 class vvBaseAABB;

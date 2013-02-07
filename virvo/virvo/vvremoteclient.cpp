@@ -29,7 +29,7 @@
 
 namespace
 {
-  vvGLTools::Viewport viewport;
+  virvo::Viewport viewport;
 }
 
 vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
@@ -55,7 +55,7 @@ vvRemoteClient::~vvRemoteClient()
 
 void vvRemoteClient::renderVolumeGL()
 {
-  vvGLTools::Viewport vp = vvGLTools::getViewport();
+  virvo::Viewport vp = vvGLTools::getViewport();
   if (::viewport != vp)
   {
     if (_socketIO->putEvent(virvo::WindowResize) == vvSocket::VV_OK)

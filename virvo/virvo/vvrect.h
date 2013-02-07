@@ -18,24 +18,45 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_IBR_H_
-#define _VV_IBR_H_
+#ifndef VV_RECT_H
+#define VV_RECT_H
 
-#include "vvaabb.h"
-#include "vvvecmath.h"
-
-#include <iostream>
-
-namespace vvIbr
+template <typename T>
+class vvBaseRect
 {
-void calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
-                    const vvAABB& aabb, float& minval, float& maxval);
-vvMatrix calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
-                       const virvo::Viewport& vp,
-                       float depthRangeMin, float depthRangeMax);
-vvMatrix calcViewportMatrix(const virvo::Viewport& vp);
-vvMatrix calcDepthScaleMatrix(float depthRangeMin, float depthRangeMax);
+public:
+  vvBaseRect();
+  vvBaseRect(T x, T y, T width, T height);
+
+  T values[4];
+
+  bool contains(const vvBaseRect<T>& rhs);
+
+  bool overlaps(const vvBaseRect<T>& rhs);
+  void intersect(const vvBaseRect<T>& rhs);
+
+  inline T &operator[](unsigned int i)
+  {
+    return values[i];
+  }
+
+  inline T operator[](unsigned int i) const
+  {
+    return values[i];
+  }
+};
+
+typedef vvBaseRect<int> vvRecti;
+typedef vvBaseRect<float> vvRectf;
+typedef vvBaseRect<double> vvRectd;
+typedef vvRecti vvRect;
+
+namespace virvo
+{
+typedef vvRecti Viewport;
 }
 
+#include "vvrect.impl.h"
 
-#endif
+#endif // VV_RECT_H
+
