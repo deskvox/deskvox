@@ -86,8 +86,7 @@ class VIRVOEXPORT vvGLTools
     static bool isGLextensionSupported(const char*);
     static void displayOpenGLextensions(const DisplayStyle);
     static void checkOpenGLextensions();
-    static void drawViewAlignedQuad(const float x1 = -1.0f, const float y1 = -1.0f,
-                                    const float x2 =  1.0f, const float y2 =  1.0f);
+    static void drawQuad(float x1 = -1.0f, float y1 = -1.0f, float x2 =  1.0f, float y2 =  1.0f);
     static Viewport getViewport();
     static vvVector4 queryClearColor();
     static void getModelviewMatrix(vvMatrix*);

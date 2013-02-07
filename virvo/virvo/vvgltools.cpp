@@ -290,8 +290,7 @@ void vvGLTools::checkOpenGLextensions()
     these default to: (-1.0f, -1.0f) (1.0f, 1.0f). No multi texture coordinates
     supported.
 */
-void vvGLTools::drawViewAlignedQuad(const float x1, const float y1,
-                                    const float x2, const float y2)
+void vvGLTools::drawQuad(float x1, float y1, float x2, float y2)
 {
   glBegin(GL_QUADS);
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);

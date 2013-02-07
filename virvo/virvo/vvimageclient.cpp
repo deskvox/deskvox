@@ -108,7 +108,7 @@ vvRemoteClient::ErrorType vvImageClient::render()
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, _image->getImagePtr());
 
-  vvGLTools::drawViewAlignedQuad();
+  vvGLTools::drawQuad();
 
   glPopAttrib();
 
