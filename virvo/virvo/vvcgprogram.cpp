@@ -22,9 +22,10 @@
 
 #ifdef HAVE_CG
 
-#include "vvgltools.h"
 #include "vvopengl.h"
 #include "vvdebugmsg.h"
+
+#include "private/vvgltools.h"
 
 #include <iostream>
 

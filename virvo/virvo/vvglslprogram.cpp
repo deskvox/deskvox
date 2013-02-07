@@ -22,8 +22,9 @@
 #include <cassert>
 #include "vvdebugmsg.h"
 #include "vvglslprogram.h"
-#include "vvgltools.h"
 #include "vvtoolshed.h"
+
+#include "private/vvgltools.h"
 
 using std::cerr;
 using std::cout;

@@ -38,8 +38,9 @@
 #include "vvcudatools.h"
 #include "vvcudautils.h"
 #include "vvdebugmsg.h"
-#include "vvgltools.h"
 #include "vvvoldesc.h"
+
+#include "private/vvgltools.h"
 
 namespace cu = virvo::cuda;
 
@@ -207,7 +208,7 @@ void vvRayRend::compositeVolume(int, int)
   }
   vvDebugMsg::msg(1, "vvRayRend::compositeVolume()");
 
-  const vvGLTools::Viewport vp = vvGLTools::getViewport();
+  const virvo::Viewport vp = vvGLTools::getViewport();
 
   allocIbrArrays(vp[2], vp[3]);
   int w = vvToolshed::getTextureSize(vp[2]);
@@ -530,7 +531,7 @@ void vvRayRend::initVolumeTexture()
 
   if (outOfMemFrame >= 0)
   {
-    cerr << "Couldn't accomodate the volume" << endl;
+    std::cerr << "Couldn't accomodate the volume" << std::endl;
     for (int f=0; f<=outOfMemFrame; ++f)
     {
       d_volumeArrays[f].reset();
@@ -574,7 +575,7 @@ void vvRayRend::factorViewMatrix()
 {
   vvDebugMsg::msg(3, "vvRayRend::factorViewMatrix()");
 
-  vvGLTools::Viewport vp = vvGLTools::getViewport();
+  virvo::Viewport vp = vvGLTools::getViewport();
   const int w = vvToolshed::getTextureSize(vp[2]);
   const int h = vvToolshed::getTextureSize(vp[3]);
 

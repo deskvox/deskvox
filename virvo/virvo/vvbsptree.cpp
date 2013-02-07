@@ -24,10 +24,11 @@
 #include "vvbrick.h"
 #include "vvbsptree.h"
 #include "vvdebugmsg.h"
-#include "vvgltools.h"
 #include "vvopengl.h"
 #include "vvtoolshed.h"
 #include "vvvoldesc.h"
+
+#include "private/vvgltools.h"
 
 //============================================================================
 // vvBspNode Method Definitions
