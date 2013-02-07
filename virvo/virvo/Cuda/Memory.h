@@ -106,7 +106,7 @@ namespace cuda
         if (void* devPtr = deviceMalloc(size))
             return devPtr;
 
-        throw std::bad_alloc("CUDA: out of memory");
+        throw std::bad_alloc();
     }
 
 
