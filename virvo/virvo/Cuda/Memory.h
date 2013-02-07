@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#pragma once
-
+#ifndef VV_CUDA_MEMORY_H
+#define VV_CUDA_MEMORY_H
 
 #include <cuda_runtime_api.h>
 
@@ -153,3 +153,6 @@ namespace cuda
 
 } // namespace cuda
 } // namespace virvo
+
+#endif // VV_CUDA_MEMORY_H
+
