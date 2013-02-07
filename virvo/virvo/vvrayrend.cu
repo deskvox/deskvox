@@ -23,9 +23,9 @@
 #include "vvcudautils.h"
 #include "vvinttypes.h"
 
-#include "Cuda/Memory.h"
-#include "Cuda/Symbol.h"
-#include "Cuda/Texture.h"
+#include "cuda/memory.h"
+#include "cuda/symbol.h"
+#include "cuda/texture.h"
 
 
 namespace cu = virvo::cuda;

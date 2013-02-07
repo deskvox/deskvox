@@ -21,7 +21,7 @@
 #ifndef VV_CUDA_TEXTURE_H
 #define VV_CUDA_TEXTURE_H
 
-#include "Array.h"
+#include "array.h"
 
 #include <assert.h>
 

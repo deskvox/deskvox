@@ -29,10 +29,10 @@
 
 #include <GL/glew.h>
 
-#include "Cuda/Array.h"
-#include "Cuda/Memory.h"
-#include "Cuda/Symbol.h"
-#include "Cuda/Texture.h"
+#include "cuda/array.h"
+#include "cuda/memory.h"
+#include "cuda/symbol.h"
+#include "cuda/texture.h"
 
 #include "vvcudaimg.h"
 #include "vvcudatools.h"

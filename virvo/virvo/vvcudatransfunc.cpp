@@ -25,7 +25,7 @@
 #ifdef HAVE_CUDA
 
 
-#include "Cuda/Memory.h"
+#include "cuda/memory.h"
 
 namespace cu = virvo::cuda;
 
