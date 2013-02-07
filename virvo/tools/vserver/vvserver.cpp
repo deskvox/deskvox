@@ -85,9 +85,9 @@ int vvServer::run(int argc, char** argv)
 {
   vvDebugMsg::msg(3, "vvServer::run()");
 
-  cerr << "Virvo server " << virvo::version() << endl;
-  cerr << "(c) " << VV_VERSION_YEAR << " Juergen Schulze (schulze@cs.brown.edu)" << endl;
-  cerr << "Brown University" << endl << endl;
+  std::cerr << "Virvo server " << virvo::version() << std::endl;
+  std::cerr << "(c) " << VV_VERSION_YEAR << " Juergen Schulze (schulze@cs.brown.edu)" << std::endl;
+  std::cerr << "Brown University" << std::endl << std::endl;
 
   if(!parseCommandLine(argc, argv))
     return 1;
@@ -158,37 +158,37 @@ void vvServer::displayHelpInfo()
 {
   vvDebugMsg::msg(3, "vvServer::displayHelpInfo()");
 
-  cerr << "Syntax:" << endl;
-  cerr << endl;
-  cerr << "  vserver [options]" << endl;
-  cerr << endl;
-  cerr << "Available options:" << endl;
-  cerr << endl;
-  cerr << "-port" << endl;
-  cerr << " Don't use the default port (" << DEFAULT_PORT << "), but the specified one" << endl;
-  cerr << endl;
+  std::cerr << "Syntax:" << std::endl;
+  std::cerr << std::endl;
+  std::cerr << "  vserver [options]" << std::endl;
+  std::cerr << std::endl;
+  std::cerr << "Available options:" << std::endl;
+  std::cerr << std::endl;
+  std::cerr << "-port" << std::endl;
+  std::cerr << " Don't use the default port (" << DEFAULT_PORT << "), but the specified one" << std::endl;
+  std::cerr << std::endl;
   if (virvo::hasFeature("bonjour"))
   {
-    cerr << "-mode" << endl;
-    cerr << " Start vvServer with one of the following modes:" << endl;
-    cerr << " s     single server (default)" << endl;
-    cerr << " rm    resource manager" << endl;
-    cerr << " rm+s  server and resource manager simultanously" << endl;
-    cerr << endl;
-    cerr << "-bonjour" << endl;
-    cerr << " use bonjour to broadcast this service. options:" << endl;
-    cerr << " on" << endl;
-    cerr << " off (default)" << endl;
-    cerr << endl;
+    std::cerr << "-mode" << std::endl;
+    std::cerr << " Start vvServer with one of the following modes:" << std::endl;
+    std::cerr << " s     single server (default)" << std::endl;
+    std::cerr << " rm    resource manager" << std::endl;
+    std::cerr << " rm+s  server and resource manager simultanously" << std::endl;
+    std::cerr << std::endl;
+    std::cerr << "-bonjour" << std::endl;
+    std::cerr << " use bonjour to broadcast this service. options:" << std::endl;
+    std::cerr << " on" << std::endl;
+    std::cerr << " off (default)" << std::endl;
+    std::cerr << std::endl;
   }
 #ifndef _WIN32
-  cerr << "-daemon" << endl;
-  cerr << " Start in background as a daemon" << endl;
-  cerr << endl;
+  std::cerr << "-daemon" << std::endl;
+  std::cerr << " Start in background as a daemon" << std::endl;
+  std::cerr << std::endl;
 #endif
-  cerr << "-debug" << endl;
-  cerr << " Set debug level" << endl;
-  cerr << endl;
+  std::cerr << "-debug" << std::endl;
+  std::cerr << " Set debug level" << std::endl;
+  std::cerr << std::endl;
 }
 
 bool vvServer::parseCommandLine(int argc, char** argv)
@@ -211,7 +211,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
     {
       if ((++arg)>=argc)
       {
-        cerr << "No port specified" << endl;
+        std::cerr << "No port specified" << std::endl;
         return false;
       }
       else
@@ -219,7 +219,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
         int inport = atoi(argv[arg]);
         if(inport > std::numeric_limits<ushort>::max() || inport <= std::numeric_limits<ushort>::min())
         {
-          cerr << "Specified port is out of range. Falling back to default: " << vvServer::DEFAULT_PORT << endl;
+          std::cerr << "Specified port is out of range. Falling back to default: " << vvServer::DEFAULT_PORT << std::endl;
           _port = vvServer::DEFAULT_PORT;
         }
         else
@@ -230,7 +230,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
     {
       if ((++arg)>=argc)
       {
-        cerr << "Mode type missing." << endl;
+        std::cerr << "Mode type missing." << std::endl;
         return false;
       }
       if     (vvToolshed::strCompare(argv[arg], "s")==0)
@@ -247,7 +247,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
       }
       else
       {
-        cerr << "Unknown mode type." << endl;
+        std::cerr << "Unknown mode type." << std::endl;
         return false;
       }
     }
@@ -255,7 +255,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
     {
       if ((++arg)>=argc)
       {
-        cerr << "Bonjour setting missing." << endl;
+        std::cerr << "Bonjour setting missing." << std::endl;
         return false;
       }
       if     (vvToolshed::strCompare(argv[arg], "on")==0)
@@ -268,7 +268,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
       }
       else
       {
-        cerr << "Unknown bonjour setting." << endl;
+        std::cerr << "Unknown bonjour setting." << std::endl;
         return false;
       }
     }
@@ -282,7 +282,7 @@ bool vvServer::parseCommandLine(int argc, char** argv)
     {
       if ((++arg)>=argc)
       {
-        cerr << "Debug level missing." << endl;
+        std::cerr << "Debug level missing." << std::endl;
         return false;
       }
       int level = atoi(argv[arg]);
@@ -290,13 +290,13 @@ bool vvServer::parseCommandLine(int argc, char** argv)
         vvDebugMsg::setDebugLevel(level);
       else
       {
-        cerr << "Invalid debug level." << endl;
+        std::cerr << "Invalid debug level." << std::endl;
         return false;
       }
     }
     else
     {
-      cerr << "Unknown option/parameter: \"" << argv[arg] << "\", use -help for instructions" << endl;
+      std::cerr << "Unknown option/parameter: \"" << argv[arg] << "\", use -help for instructions" << std::endl;
       return false;
     }
   }
@@ -309,13 +309,13 @@ bool vvServer::serverLoop()
 
   if(!tcpServ.initStatus())
   {
-    cerr << "Failed to initialize server-socket on port " << _port << "." << endl;
+    std::cerr << "Failed to initialize server-socket on port " << _port << "." << std::endl;
     return false;
   }
 
   while (1)
   {
-    cerr << "Listening on port " << _port << endl;
+    std::cerr << "Listening on port " << _port << std::endl;
 
     vvTcpSocket *sock = NULL;
 
@@ -326,12 +326,12 @@ bool vvServer::serverLoop()
 
     if(sock == NULL)
     {
-      cerr << "vvServer::serverLoop() Failed to initialize server-socket on port " << _port << endl;
+      std::cerr << "vvServer::serverLoop() Failed to initialize server-socket on port " << _port << std::endl;
       break;
     }
     else
     {
-      cerr << "Incoming connection..." << endl;
+      std::cerr << "Incoming connection..." << std::endl;
       handleNextConnection(sock);
     }
   }
