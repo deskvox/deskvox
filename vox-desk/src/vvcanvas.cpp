@@ -30,7 +30,6 @@
 // Virvo:
 #include <vvdebugmsg.h>
 #include <vvtoolshed.h>
-#include <vvgltools.h>
 #include <vvtexrend.h>
 #include <vvclock.h>
 #include <vvfileio.h>
@@ -42,6 +41,8 @@
 #ifdef HAVE_VOLPACK
 #include <vvrendervp.h>
 #endif
+
+#include <virvo/private/vvgltools.h>
 
 // Local:
 #include "vvcanvas.h"

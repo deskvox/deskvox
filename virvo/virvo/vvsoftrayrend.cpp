@@ -28,7 +28,7 @@
 #endif
 
 #ifdef HAVE_OPENGL
-#include "vvgltools.h"
+#include "private/vvgltools.h"
 #endif
 
 #include <queue>

@@ -24,10 +24,11 @@
 #include "vvbsptree.h"
 #include "vvbsptreevisitors.h"
 #include "vvdebugmsg.h"
-#include "vvgltools.h"
 #include "vvimage.h"
 #include "vvrenderer.h"
 #include "vvvoldesc.h"
+
+#include "private/vvgltools.h"
 
 vvSortLastVisitor::vvSortLastVisitor()
   : vvVisitor()

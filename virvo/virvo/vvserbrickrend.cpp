@@ -21,9 +21,10 @@
 #include "vvbsptree.h"
 #include "vvbsptreevisitors.h"
 #include "vvdebugmsg.h"
-#include "vvgltools.h"
 #include "vvserbrickrend.h"
 #include "vvvoldesc.h"
+
+#include "private/vvgltools.h"
 
 vvSerBrickRend::vvSerBrickRend(vvVolDesc *vd, vvRenderState renderState, const int numBricks,
                                const std::string& type, const vvRendererFactory::Options& options)

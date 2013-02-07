@@ -52,7 +52,6 @@ using std::ios;
 #endif
 
 #include <virvo/vvvirvo.h>
-#include <virvo/vvgltools.h>
 #include <virvo/vvrequestmanagement.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvoffscreenbuffer.h>
@@ -67,6 +66,8 @@ using std::ios;
 #ifdef HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjour.h>
 #endif
+
+#include <virvo/private/vvgltools.h>
 
 #include "vvobjview.h"
 #include "vvperformancetest.h"

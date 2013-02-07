@@ -28,7 +28,6 @@
 
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvfileio.h>
-#include <virvo/vvgltools.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
 #include <virvo/vvremoteserver.h>
@@ -38,6 +37,8 @@
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvvirvo.h>
 #include <virvo/vvvoldesc.h>
+
+#include <virvo/private/vvgltools.h>
 
 #include <iostream>
 #include <limits>

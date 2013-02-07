@@ -22,7 +22,6 @@
 
 #include <stdlib.h>
 #include "vvplatform.h"
-#include "vvgltools.h"
 #include "vvopengl.h"
 #include "vvvoldesc.h"
 #include "vvtoolshed.h"
@@ -39,6 +38,8 @@
 #include "vvrenderer.h"
 #include "vvdebugmsg.h"
 #include "vvprintgl.h"
+
+#include "private/vvgltools.h"
 
 //----------------------------------------------------------------------------
 vvRenderState::vvRenderState()

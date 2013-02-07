@@ -52,7 +52,7 @@
 #include "../vvvecmath.h"
 #include "../vvdebugmsg.h"
 #include "../vvtoolshed.h"
-#include "../vvgltools.h"
+#include "../private/vvgltools.h"
 #include "../vvshaderfactory.h"
 #include "../vvsphere.h"
 #include "../vvclock.h"

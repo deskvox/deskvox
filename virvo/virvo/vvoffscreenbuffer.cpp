@@ -16,8 +16,9 @@
 #include <GL/glew.h>
 
 #include "vvdebugmsg.h"
-#include "vvgltools.h"
 #include "vvoffscreenbuffer.h"
+
+#include "private/vvgltools.h"
 
 struct vvOffscreenBuffer::GLData
 {

@@ -11,6 +11,8 @@ using std::cerr;
 using std::endl;
 using std::setprecision;
 
+#include "private/vvgltools.h"
+
 #include <cstring>
 #include "vvplatform.h"
 #include "vvopengl.h"
@@ -20,7 +22,6 @@ using std::setprecision;
 #include "vvtoolshed.h"
 #include "vvclock.h"
 #include "vvvoldesc.h"
-#include "vvgltools.h"
 #include "vvswitchrenderer.impl.h"
 
 #ifdef HAVE_VOLPACK

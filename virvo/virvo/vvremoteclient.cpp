@@ -27,6 +27,8 @@
 #include "vvimage.h"
 #include "vvtoolshed.h"
 
+#include "private/vvgltools.h"
+
 namespace
 {
   virvo::Viewport viewport;

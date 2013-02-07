@@ -23,13 +23,14 @@
 #include "vvbsptree.h"
 #include "vvbsptreevisitors.h"
 #include "vvdebugmsg.h"
-#include "vvgltools.h"
 #include "vvparbrickrend.h"
 #include "vvpthread.h"
 #include "vvrendercontext.h"
 #include "vvsocketmap.h"
 #include "vvtcpsocket.h"
 #include "vvvoldesc.h"
+
+#include "private/vvgltools.h"
 
 #include <queue>
 #include <sstream>

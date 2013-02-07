@@ -20,7 +20,6 @@
 
 #include <cmath>
 
-#include "vvgltools.h"
 #include "vvibr.h"
 #include "vvibrrenderer.h"
 #include "vvibrserver.h"
@@ -29,6 +28,8 @@
 #include "vvibrimage.h"
 #include "vvsocketio.h"
 #include "vvtoolshed.h"
+
+#include "private/vvgltools.h"
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"

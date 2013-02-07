@@ -38,9 +38,10 @@ using std::endl;
 #include "vvsoftvr.h"
 #include "vvclock.h"
 #include "vvimage.h"
-#include "vvgltools.h"
 #include "vvvoldesc.h"
 #include "vvtoolshed.h"
+
+#include "private/vvgltools.h"
 
 //----------------------------------------------------------------------------
 /// Constructor.

@@ -56,6 +56,7 @@ endif()
 
 
 set(VIRVO_HEADERS
+  private/vvgltools.h
   private/vvlog.h
 
   cuda/array.h
@@ -95,7 +96,6 @@ set(VIRVO_HEADERS
   vvexport.h
   vvfileio.h
   vvglslprogram.h
-  vvgltools.h
   vvibr.h
   vvibrclient.h
   vvibrimage.h
@@ -160,6 +160,7 @@ set(VIRVO_HEADERS
 )
 
 set(VIRVO_SOURCES
+  private/vvgltools.cpp
   private/vvlog.cpp
 
   vvbonjour/vvbonjour.cpp
@@ -188,7 +189,6 @@ set(VIRVO_SOURCES
   vvdynlib.cpp
   vvfileio.cpp
   vvglslprogram.cpp
-  vvgltools.cpp
   vvibr.cpp
   vvibrclient.cpp
   vvibrimage.cpp

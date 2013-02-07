@@ -20,13 +20,14 @@
 
 #include <cmath>
 
-#include "vvgltools.h"
 #include "vvimageserver.h"
 #include "vvrenderer.h"
 #include "vvsocketio.h"
 #include "vvopengl.h"
 #include "vvdebugmsg.h"
 #include "vvimage.h"
+
+#include "private/vvgltools.h"
 
 vvImageServer::vvImageServer(vvSocket *socket)
   : vvRemoteServer(socket)

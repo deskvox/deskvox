@@ -20,10 +20,11 @@
 
 // Virvo:
 #include <vvvoldesc.h>
-#include <vvgltools.h>
 #include <vvdebugmsg.h>
 #include <vvvirvo.h>
 #include <vvtoolshed.h>
+
+#include <private/vvgltools.h>
 
 // Local:
 #include "vvshell.h"

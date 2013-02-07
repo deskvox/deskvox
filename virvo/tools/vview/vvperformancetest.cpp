@@ -19,10 +19,11 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvperformancetest.h"
-#include <virvo/vvgltools.h>
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvvecmath.h>
 #include <virvo/vvvirvo.h>
+
+#include <virvo/private/vvgltools.h>
 
 #include <cstdio>
 #include <cstring>

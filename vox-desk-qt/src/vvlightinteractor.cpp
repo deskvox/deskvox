@@ -23,7 +23,7 @@
 #include "vvlightinteractor.h"
 
 #include <virvo/vvrect.h>
-#include <virvo/vvgltools.h>
+#include <virvo/private/vvgltools.h>
 
 #include <iostream>
 

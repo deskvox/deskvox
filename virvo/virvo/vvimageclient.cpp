@@ -25,7 +25,6 @@
 #include <limits>
 
 #include "vvimageclient.h"
-#include "vvgltools.h"
 #include "float.h"
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
@@ -33,6 +32,8 @@
 #include "vvsocketio.h"
 #include "vvdebugmsg.h"
 #include "vvimage.h"
+
+#include "private/vvgltools.h"
 
 using std::cerr;
 using std::endl;

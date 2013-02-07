@@ -19,12 +19,13 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvfileio.h"
-#include "vvgltools.h"
 #include "vvrenderer.h"
 #include "vvremoteserver.h"
 #include "vvdebugmsg.h"
 #include "vvsocketio.h"
 #include "vvtcpsocket.h"
+
+#include "private/vvgltools.h"
 
 using std::cerr;
 using std::endl;

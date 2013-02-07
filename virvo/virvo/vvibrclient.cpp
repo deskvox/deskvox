@@ -23,7 +23,6 @@
 #include "vvibr.h"
 #include "vvibrclient.h"
 #include "vvibrimage.h"
-#include "vvgltools.h"
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
 #include "vvtoolshed.h"
@@ -31,6 +30,8 @@
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
 #include "vvpthread.h"
+
+#include "private/vvgltools.h"
 
 using std::cerr;
 using std::endl;

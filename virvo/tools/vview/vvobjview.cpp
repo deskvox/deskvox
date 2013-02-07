@@ -18,8 +18,8 @@
 #endif
 
 #include <virvo/vvdebugmsg.h>
-#include <virvo/vvgltools.h>
 #include <virvo/vvtokenizer.h>
+#include <virvo/private/vvgltools.h>
 #include "vvobjview.h"
 
 using std::cerr;

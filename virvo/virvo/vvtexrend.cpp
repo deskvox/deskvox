@@ -49,7 +49,6 @@
 #include "vvvecmath.h"
 #include "vvdebugmsg.h"
 #include "vvtoolshed.h"
-#include "vvgltools.h"
 #include "vvsphere.h"
 #include "vvtexrend.h"
 #include "vvclock.h"
@@ -59,6 +58,8 @@
 #include "vvshaderprogram.h"
 #include "vvvoldesc.h"
 #include "vvpthread.h"
+
+#include "private/vvgltools.h"
 
 using namespace std;
 
