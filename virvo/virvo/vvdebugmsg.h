@@ -43,23 +43,22 @@ class VIRVOEXPORT vvDebugMsg
 
   private:
     static const char* DEBUG_TEXT;                ///< string to be printed at debug message
-    static LevelType debugLevel;                  ///< current debug level
 
   public:
-    static void setDebugLevel(const LevelType);
-    static void setDebugLevel(const int);
+    static void setDebugLevel(LevelType level);
+    static void setDebugLevel(int level);
     static LevelType getDebugLevel();
-    static void msg(const int, const char*, const bool perr = false);
-    static void msg(const int, const char*, const int);
-    static void msg(const int, const char*, const int, const int);
-    static void msg(const int, const char*, const int, const int, const int);
-    static void msg(const int, const char*, const int, const int, const int, const int);
-    static void msg(const int, const char*, const float);
-    static void msg(const int, const char*, const float, const float);
-    static void msg(const int, const char*, const float, const float, const float);
-    static void msg(const int, const char*, const float, const float, const float, const float);
-    static void msg(const int, const char*, const char*);
-    static bool isActive(const int);
+    static void msg(int level, const char* text, bool perr = false);
+    static void msg(int level, const char* text, int number);
+    static void msg(int level, const char* text, int n1, int n2);
+    static void msg(int level, const char* text, int n1, int n2, int n3);
+    static void msg(int level, const char* text, int n1, int n2, int n3, int n4);
+    static void msg(int level, const char* text, float number);
+    static void msg(int level, const char* text, float n1, float n2);
+    static void msg(int level, const char* text, float n1, float n2, float n3);
+    static void msg(int level, const char* text, float n1, float n2, float n3, float n4);
+    static void msg(int level, const char* text, const char* str);
+    static bool isActive(int level);
 };
 #endif
 

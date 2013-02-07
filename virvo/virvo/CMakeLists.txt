@@ -56,6 +56,8 @@ endif()
 
 
 set(VIRVO_HEADERS
+  private/vvlog.h
+
   cuda/array.h
   cuda/debug.h
   cuda/memory.h
@@ -158,6 +160,8 @@ set(VIRVO_HEADERS
 )
 
 set(VIRVO_SOURCES
+  private/vvlog.cpp
+
   vvbonjour/vvbonjour.cpp
   vvbonjour/vvbonjourbrowser.cpp
   vvbonjour/vvbonjourentry.cpp
