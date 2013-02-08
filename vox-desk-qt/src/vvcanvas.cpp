@@ -48,7 +48,7 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   , _movingQuality(1.0f)
   , _spinAnimation(false)
   , _lightVisible(false)
-  , _stereoMode(InterlacedLines)
+  , _stereoMode(Mono)
   , _leftBuffer(NULL)
   , _rightBuffer(NULL)
   , _mouseButton(Qt::NoButton)
@@ -351,7 +351,7 @@ void vvCanvas::mouseReleaseEvent(QMouseEvent* event)
 void vvCanvas::init()
 {
   vvDebugMsg::msg(3, "vvCanvas::init()");
-  
+
   vvFileIO* fio = new vvFileIO;
   fio->loadVolumeData(_vd, vvFileIO::ALL_DATA);
   delete fio;
@@ -503,7 +503,7 @@ void vvCanvas::setParameter(vvParameters::ParameterType param, const vvParam& va
           li->setLightingEnabled(_lighting);
         }
       }
-    } 
+    }
     break;
   case vvParameters::VV_MOVING_QUALITY:
     _movingQuality = value;
@@ -588,7 +588,7 @@ void vvCanvas::setTimeStep(const int step)
   int f = step;
   while (f < 0)
   {
-    f += _vd->frames; 
+    f += _vd->frames;
   }
 
   while (f >= _vd->frames)
