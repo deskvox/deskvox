@@ -21,6 +21,10 @@
 
 #include "host_device_array.h"
 
+
+#ifdef HAVE_CUDA
+
+
 #include <cuda_runtime_api.h>
 
 
@@ -78,3 +82,6 @@ bool HostDeviceArray::upload()
 
     return cudaSuccess == cudaMemcpy(DevicePtr, HostPtr, Size, cudaMemcpyHostToDevice);
 }
+
+
+#endif // HAVE_CUDA

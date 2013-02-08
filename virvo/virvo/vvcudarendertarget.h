@@ -23,6 +23,14 @@
 #define VV_CUDA_RENDER_TARGET_H
 
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+
+#ifdef HAVE_CUDA
+
+
 #include "vvrendertarget.h"
 
 #include "cuda/graphics_resource.h"
@@ -145,6 +153,9 @@ namespace virvo
 
 
 } // namespace virvo
+
+
+#endif // HAVE_CUDA
 
 
 #endif

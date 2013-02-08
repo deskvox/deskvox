@@ -23,6 +23,14 @@
 #define VV_CUDA_HOST_DEVICE_ARRAY_H
 
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+
+#ifdef HAVE_CUDA
+
+
 #include "vvexport.h"
 
 #include <new> // bad_alloc
@@ -99,6 +107,9 @@ namespace cuda
 
 } // namespace cuda
 } // namespace virvo
+
+
+#endif // HAVE_CUDA
 
 
 #endif

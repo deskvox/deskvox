@@ -21,6 +21,10 @@
 
 #include "graphics_resource.h"
 
+
+#ifdef HAVE_CUDA
+
+
 #ifdef _WIN32
 #include <windows.h> // APIENTRY
 #endif
@@ -84,3 +88,6 @@ void GraphicsResource::unmap()
     cudaGraphicsUnmapResources(1, &Resource);
     DevPtr = 0;
 }
+
+
+#endif // HAVE_CUDA

@@ -21,6 +21,10 @@
 
 #include "vvcudarendertarget.h"
 
+
+#ifdef HAVE_CUDA
+
+
 #include <assert.h>
 
 #include <stdexcept>
@@ -162,3 +166,6 @@ bool DeviceBufferRT::ResizeImpl(int w, int h)
 
     return true;
 }
+
+
+#endif // HAVE_CUDA
