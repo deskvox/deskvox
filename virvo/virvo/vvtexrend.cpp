@@ -3416,6 +3416,7 @@ void vvTexRend::renderVolumeGL()
   if (_renderTarget != NULL)
   {
     _renderTarget->unbind();
+    _renderTarget->blit();
   }
 
   if (_measureRenderTime)

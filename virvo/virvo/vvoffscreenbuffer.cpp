@@ -18,6 +18,7 @@
 #include "vvdebugmsg.h"
 #include "vvoffscreenbuffer.h"
 
+#include "private/vvlog.h"
 #include "private/vvgltools.h"
 
 struct vvOffscreenBuffer::GLData
@@ -67,7 +68,7 @@ vvOffscreenBuffer::~vvOffscreenBuffer()
   delete _gldata;
 }
 
-void vvOffscreenBuffer::bind()
+bool vvOffscreenBuffer::bind()
 {
   const virvo::Viewport v = vvGLTools::getViewport();
 
@@ -84,9 +85,11 @@ void vvOffscreenBuffer::bind()
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, _gldata->fbo);
   glViewport(0, 0, _bufferWidth, _bufferHeight);
   glBindTexture(GL_TEXTURE_2D, 0);
+  GLuint status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+  return status == GL_FRAMEBUFFER_COMPLETE_EXT;
 }
 
-void vvOffscreenBuffer::unbind()
+bool vvOffscreenBuffer::unbind()
 {
   vvGLTools::printGLError("enter vvOffscreenBuffer::writeBack()");
 
@@ -95,28 +98,30 @@ void vvOffscreenBuffer::unbind()
     storeColorBuffer();
   }
 
-  virvo::Viewport viewport;
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
   glPopAttrib();
-
-  glGetIntegerv(GL_VIEWPORT, viewport.values);
 
   if (_preserveDepthBuffer)
   {
     renderToViewAlignedQuad();
   }
-  else
-  {
-    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, _gldata->fbo);
-    glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
-    glBlitFramebufferEXT(0, 0, _bufferWidth, _bufferHeight,
-                         0, 0, viewport[2], viewport[3],
-                         GL_COLOR_BUFFER_BIT, GL_LINEAR);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-  }
-
+  
   vvGLTools::printGLError("leave vvOffscreenBuffer::writeBack()");
+
+  GLuint status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+  return status == GL_FRAMEBUFFER_COMPLETE_EXT;
+}
+
+void vvOffscreenBuffer::blit()
+{
+  virvo::Viewport viewport = vvGLTools::getViewport();
+  glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, _gldata->fbo);
+  glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
+  glBlitFramebufferEXT(0, 0, _bufferWidth, _bufferHeight,
+                       0, 0, viewport[2], viewport[3],
+                       GL_COLOR_BUFFER_BIT, GL_LINEAR);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
 void vvOffscreenBuffer::resize(int w, int h)

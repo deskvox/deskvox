@@ -35,8 +35,9 @@ public:
   vvOffscreenBuffer(int w, int h, float scale = 1.0f, virvo::BufferPrecision precision = virvo::Byte);
   virtual ~vvOffscreenBuffer();
 
-  void bind();
-  void unbind();
+  bool bind();
+  bool unbind();
+  void blit();
   void resize(int w, int h);
   void clear();
   void bindTexture() const;
