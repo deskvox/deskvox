@@ -375,6 +375,33 @@ void vvCanvas::paintGL()
       render();
     }
   }
+  else if (_stereoMode == vox::SideBySide)
+  {
+    std::vector<vvObjView::EyeType> eyes;
+    eyes.push_back(vvObjView::LEFT_EYE);
+    eyes.push_back(vvObjView::RIGHT_EYE);
+
+    _ov.setAspectRatio((float)width() / 2.0f / (float)height());
+    for (std::vector<vvObjView::EyeType>::const_iterator it = eyes.begin();
+         it != eyes.end(); ++it)
+    {
+      glMatrixMode(GL_MODELVIEW);
+      _ov.setModelviewMatrix(*it);
+
+      if ((*it == vvObjView::LEFT_EYE && !_swapEyes) || (*it == vvObjView::RIGHT_EYE && _swapEyes))
+      {
+        glViewport(0, 0, width() / 2, height());
+      }
+      else
+      {
+        glViewport(width() / 2, 0, width() / 2, height());
+      }
+
+      render();
+    }
+    glViewport(0, 0, width(), height());
+    _ov.setAspectRatio((float)width() / (float)height());
+  }
 
   glPopAttrib();
 }

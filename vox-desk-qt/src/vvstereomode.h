@@ -27,7 +27,8 @@ namespace vox
   {
     Mono = 0,
     InterlacedCheckerboard,
-    InterlacedLines
+    InterlacedLines,
+    SideBySide
   };
 }
 
