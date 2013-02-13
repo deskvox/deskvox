@@ -214,6 +214,11 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
     ++idx;
   }
 
+  // stereo mode combo box
+  ui->stereoModeBox->addItem("Off (Mono)");
+  ui->stereoModeBox->addItem("Interlaced (Lines)");
+  ui->stereoModeBox->addItem("Interlaced (Checkerboard)");
+
   // remote rendering page
   if (virvo::hasFeature("bonjour"))
   {
