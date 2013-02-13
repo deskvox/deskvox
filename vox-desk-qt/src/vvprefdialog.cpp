@@ -237,9 +237,14 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
     ++idx;
   }
 
+  ui->stereoModeBox->addItem("Red cyan");
+  stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::RedCyan));
+  ++idx;
+
   ui->stereoModeBox->addItem("Side by side");
   stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::SideBySide));
   ++idx;
+
 
   // remote rendering page
   if (virvo::hasFeature("bonjour"))

@@ -28,7 +28,8 @@ namespace vox
     Mono = 0,
     InterlacedCheckerboard,
     InterlacedLines,
-    SideBySide
+    SideBySide,
+    RedCyan
   };
 }
 

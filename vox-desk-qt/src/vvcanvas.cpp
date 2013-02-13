@@ -402,6 +402,35 @@ void vvCanvas::paintGL()
     glViewport(0, 0, width(), height());
     _ov.setAspectRatio((float)width() / (float)height());
   }
+  else if (_stereoMode == vox::RedCyan)
+  {
+    GLboolean cm[4];
+    glGetBooleanv(GL_COLOR_WRITEMASK, cm);
+
+    std::vector<vvObjView::EyeType> eyes;
+    eyes.push_back(vvObjView::LEFT_EYE);
+    eyes.push_back(vvObjView::RIGHT_EYE);
+
+    for (std::vector<vvObjView::EyeType>::const_iterator it = eyes.begin();
+         it != eyes.end(); ++it)
+    {
+      glMatrixMode(GL_MODELVIEW);
+      _ov.setModelviewMatrix(*it);
+
+      if ((*it == vvObjView::LEFT_EYE && !_swapEyes) || (*it == vvObjView::RIGHT_EYE && _swapEyes))
+      {
+        glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
+      }
+      else
+      {
+        glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_FALSE);
+      }
+
+      render();
+    }
+
+    glColorMask(cm[0], cm[1], cm[2], cm[3]);
+  }
 
   glPopAttrib();
 }
