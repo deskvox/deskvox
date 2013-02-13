@@ -54,6 +54,7 @@ namespace
   std::map<int, vvRenderer::RendererType> rendererMap;
   std::map<int, std::string> texRendTypeMap;
   std::map<int, std::string> voxTypeMap;
+  std::map<int, int> fboPrecisionMap;
   std::map<int, vox::StereoMode> stereoModeMap;
   std::map<std::string, std::string> rendererDescriptions;
   std::map<std::string, std::string> algoDescriptions;
@@ -216,6 +217,25 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
     ++idx;
   }
 
+  // fbo combo box
+  idx = 0;
+
+  ui->fboBox->addItem("None");
+  fboPrecisionMap.insert(std::pair<int, int>(idx, 0));
+  ++idx;
+
+  ui->fboBox->addItem("8 bit precision");
+  fboPrecisionMap.insert(std::pair<int, int>(idx, 8));
+  ++idx;
+
+  ui->fboBox->addItem("16 bit precision");
+  fboPrecisionMap.insert(std::pair<int, int>(idx, 16));
+  ++idx;
+
+  ui->fboBox->addItem("32 bit precision");
+  fboPrecisionMap.insert(std::pair<int, int>(idx, 32));
+  ++idx;
+
   // stereo mode combo box
   idx = 0;
 
@@ -254,6 +274,7 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
 
   connect(ui->rendererBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onRendererChanged(int)));
   connect(ui->geometryBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
+  connect(ui->fboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onFboChanged(int)));
   connect(ui->voxTypeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
   connect(ui->pixShdBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
   connect(ui->hostEdit, SIGNAL(textChanged(const QString&)), this, SLOT(onHostChanged(const QString&)));
@@ -431,6 +452,36 @@ void vvPrefDialog::onTexRendOptionChanged(const int index)
   if (rendererMap[ui->rendererBox->currentIndex()] == vvRenderer::TEXREND)
   {
     emitRenderer();
+  }
+}
+
+void vvPrefDialog::onFboChanged(int index)
+{
+  ui->texInfoLabel->setText("");
+  if (fboPrecisionMap[index] >= 8)
+  {
+    ui->texInfoLabel->setText("<html><b>" + QString::number(fboPrecisionMap[index]) + " bit fbo rendering</b><br />"
+      "An fbo is bound during slice compositing. A higher precision can help to avoid rounding errors but will result "
+      "in an increased rendering time.</html>");
+  }
+
+  switch (fboPrecisionMap[index])
+  {
+  case 8:
+    emit parameterChanged(vvRenderer::VV_OFFSCREENBUFFER, true);
+    emit parameterChanged(vvRenderer::VV_IMG_PRECISION, 8);
+    break;
+  case 16:
+    emit parameterChanged(vvRenderer::VV_OFFSCREENBUFFER, true);
+    emit parameterChanged(vvRenderer::VV_IMG_PRECISION, 16);
+    break;
+  case 32:
+    emit parameterChanged(vvRenderer::VV_OFFSCREENBUFFER, true);
+    emit parameterChanged(vvRenderer::VV_IMG_PRECISION, 32);
+    break;
+  default:
+    emit parameterChanged(vvRenderer::VV_OFFSCREENBUFFER, false);
+    break;
   }
 }
 

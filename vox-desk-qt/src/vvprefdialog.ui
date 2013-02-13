@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>600</width>
-    <height>550</height>
+    <height>570</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="rendererTab">
       <attribute name="title">
@@ -55,8 +55,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>351</width>
-            <height>176</height>
+            <width>530</width>
+            <height>265</height>
            </rect>
           </property>
           <attribute name="label">
@@ -136,6 +136,20 @@
             </layout>
            </item>
            <item>
+            <layout class="QHBoxLayout" name="fboLayout">
+             <item>
+              <widget class="QLabel" name="fboLabel">
+               <property name="text">
+                <string>FBO compositing:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="fboBox"/>
+             </item>
+            </layout>
+           </item>
+           <item>
             <layout class="QHBoxLayout" name="texInfoLayout">
              <item>
               <layout class="QVBoxLayout" name="texInfoIconLayout">
@@ -192,8 +206,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>169</width>
-            <height>47</height>
+            <width>530</width>
+            <height>265</height>
            </rect>
           </property>
           <attribute name="label">
@@ -238,8 +252,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>314</width>
-            <height>171</height>
+            <width>530</width>
+            <height>265</height>
            </rect>
           </property>
           <attribute name="label">
@@ -359,8 +373,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>262</width>
-            <height>68</height>
+            <width>530</width>
+            <height>265</height>
            </rect>
           </property>
           <attribute name="label">
