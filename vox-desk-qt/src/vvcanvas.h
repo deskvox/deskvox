@@ -24,6 +24,7 @@
 #include "vvobjview.h"
 #include "vvparameters.h"
 #include "vvplugin.h"
+#include "vvstereomode.h"
 
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvvecmath.h>
@@ -33,7 +34,6 @@
 #include <QMouseEvent>
 
 class vvInteractor;
-class vvOffscreenBuffer;
 class vvPlugin;
 class QTimer;
 
@@ -41,13 +41,6 @@ class vvCanvas : public QGLWidget
 {
   Q_OBJECT
 public:
-  enum StereoMode
-  {
-    Mono = 0,
-    InterlacedCheckerboard,
-    InterlacedLines
-  };
-
   vvCanvas(const QGLFormat& format, const QString& filename = "", QWidget* parent = 0);
   ~vvCanvas();
 
@@ -90,10 +83,8 @@ private:
   float _movingQuality;
   bool _spinAnimation;
   bool _lightVisible;
-  StereoMode _stereoMode;
-
-  vvOffscreenBuffer* _leftBuffer;
-  vvOffscreenBuffer* _rightBuffer;
+  vox::StereoMode _stereoMode;
+  bool _swapEyes;
 
   vvMatrix _lastRotation;
 
@@ -102,6 +93,8 @@ private:
 
   QTimer* _animTimer;
   QTimer* _spinTimer;
+
+  bool _updateStencilBuffer;
 
   void init();
   void createRenderer();

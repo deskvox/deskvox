@@ -23,6 +23,7 @@
 
 #include "vvcanvas.h"
 #include "vvprefdialog.h"
+#include "vvstereomode.h"
 
 #include "ui_vvprefdialog.h"
 
@@ -53,6 +54,7 @@ namespace
   std::map<int, vvRenderer::RendererType> rendererMap;
   std::map<int, std::string> texRendTypeMap;
   std::map<int, std::string> voxTypeMap;
+  std::map<int, vox::StereoMode> stereoModeMap;
   std::map<std::string, std::string> rendererDescriptions;
   std::map<std::string, std::string> algoDescriptions;
 
@@ -215,9 +217,25 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   }
 
   // stereo mode combo box
+  idx = 0;
+
   ui->stereoModeBox->addItem("Off (Mono)");
-  ui->stereoModeBox->addItem("Interlaced (Lines)");
-  ui->stereoModeBox->addItem("Interlaced (Checkerboard)");
+  stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::Mono));
+  ++idx;
+
+  if (_canvas->format().stencil())
+  {
+    ui->stereoModeBox->addItem("Interlaced (Lines)");
+    stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::InterlacedLines));
+    ++idx;
+  }
+
+  if (_canvas->format().stencil())
+  {
+    ui->stereoModeBox->addItem("Interlaced (Checkerboard)");
+    stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::InterlacedCheckerboard));
+    ++idx;
+  }
 
   // remote rendering page
   if (virvo::hasFeature("bonjour"))
@@ -237,6 +255,8 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->ibrBox, SIGNAL(toggled(bool)), this, SLOT(onIbrToggled(bool)));
   connect(ui->interpolationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onInterpolationToggled(bool)));
   connect(ui->mipCheckBox, SIGNAL(toggled(bool)), this, SLOT(onMipToggled(bool)));
+  connect(ui->stereoModeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onStereoModeChanged(int)));
+  connect(ui->swapEyesBox, SIGNAL(toggled(bool)), this, SLOT(onSwapEyesToggled(bool)));
   connect(ui->movingSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onMovingSpinBoxChanged(double)));
   connect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
   connect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
@@ -591,6 +611,16 @@ void vvPrefDialog::onMipToggled(bool checked)
 
   const int mipMode = checked ? 1 : 0; // don't support mip == 2 (min. intensity) for now
   emit parameterChanged(vvRenderer::VV_MIP_MODE, mipMode);
+}
+
+void vvPrefDialog::onStereoModeChanged(int index)
+{
+  emit parameterChanged(vvParameters::VV_STEREO_MODE, static_cast<int>(stereoModeMap[index]));
+}
+
+void vvPrefDialog::onSwapEyesToggled(bool checked)
+{
+  emit parameterChanged(vvParameters::VV_SWAP_EYES, checked);
 }
 
 void vvPrefDialog::onMovingSpinBoxChanged(double value)

@@ -58,6 +58,8 @@ private slots:
   void onIbrToggled(bool checked);
   void onInterpolationToggled(bool checked);
   void onMipToggled(bool checked);
+  void onStereoModeChanged(int index);
+  void onSwapEyesToggled(bool checked);
   void onMovingSpinBoxChanged(double value);
   void onStillSpinBoxChanged(double value);
   void onMovingDialChanged(int value);

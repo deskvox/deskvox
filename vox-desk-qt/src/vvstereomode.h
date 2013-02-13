@@ -18,24 +18,18 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VV_PARAMETERS_H
-#define VV_PARAMETERS_H
+#ifndef VV_STEREOMODE_H
+#define VV_STEREOMODE_H
 
-namespace vvParameters
+namespace vox
 {
-  enum ParameterType
+  enum StereoMode
   {
-    VV_BG_COLOR = 0,
-    VV_DOUBLEBUFFERING,
-    VV_LIGHTING,
-    VV_MOVING_QUALITY,
-    VV_PROJECTIONTYPE,
-    VV_SPIN_ANIMATION,
-    VV_STEREO_MODE,
-    VV_SWAP_EYES,
-    VV_SUPERSAMPLES
+    Mono = 0,
+    InterlacedCheckerboard,
+    InterlacedLines
   };
 }
 
-#endif
+#endif // VV_STEREOMODE_H
 

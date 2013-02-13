@@ -80,7 +80,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   format.setRgba(true);
   format.setAlpha(true);
   format.setAccum(true);
-  format.setStencil(false);
+  format.setStencil(true); // needed for interlaced stereo
   if (superSamples > 0)
   {
     format.setSampleBuffers(true);

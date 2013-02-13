@@ -37,6 +37,129 @@
 
 using vox::vvObjView;
 
+namespace
+{
+void updateStencilBuffer(int w, int h, vox::StereoMode mode)
+{
+  static const GLubyte patternlines[] =
+  {
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0x00
+  };
+
+  static const GLubyte patternchecker[] =
+  {
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+    0xAA, 0xAA, 0xAA, 0xAA,
+    0x55, 0x55, 0x55, 0x55,
+  };
+
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_SCISSOR_TEST);
+  glDisable(GL_LIGHTING);
+
+  glViewport(0, 0, w, h);
+  
+  glClearStencil(0);
+  glClear(GL_STENCIL_BUFFER_BIT);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
+  glEnable(GL_POLYGON_STIPPLE);
+
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+  switch (mode)
+  {
+  case vox::InterlacedLines:
+    glPolygonStipple(patternlines);
+    break;
+  case vox::InterlacedCheckerboard:
+    glPolygonStipple(patternchecker);
+    break;
+  default:
+    break;
+  }
+
+  glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+  glDepthMask(GL_FALSE);
+
+  glEnable(GL_STENCIL_TEST);
+  glStencilMask(0xFFFFFFFF);
+  glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+  glStencilFunc(GL_ALWAYS, 1, 0xFFFFFFFF);
+
+  glRectf(0.0f, 0.0f, 1.0f, 1.0f);
+
+  glPopAttrib(); 
+}
+}
+
 vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* parent)
   : QGLWidget(format, parent)
   , _vd(NULL)
@@ -48,10 +171,10 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   , _movingQuality(1.0f)
   , _spinAnimation(false)
   , _lightVisible(false)
-  , _stereoMode(InterlacedLines)
-  , _leftBuffer(NULL)
-  , _rightBuffer(NULL)
+  , _stereoMode(vox::Mono)
+  , _swapEyes(false)
   , _mouseButton(Qt::NoButton)
+  , _updateStencilBuffer(true)
 {
   vvDebugMsg::msg(1, "vvCanvas::vvCanvas()");
 
@@ -98,8 +221,6 @@ vvCanvas::~vvCanvas()
 {
   vvDebugMsg::msg(1, "vvCanvas::~vvCanvas()");
 
-  delete _leftBuffer;
-  delete _rightBuffer;
   delete _renderer;
   delete _vd;
 }
@@ -186,6 +307,8 @@ void vvCanvas::paintGL()
 {
   vvDebugMsg::msg(3, "vvCanvas::paintGL()");
 
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
   if (_renderer == NULL)
   {
     return;
@@ -204,7 +327,7 @@ void vvCanvas::paintGL()
   glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (_stereoMode == Mono)
+  if (_stereoMode == vox::Mono)
   {
     if (_doubleBuffering)
     {
@@ -222,17 +345,41 @@ void vvCanvas::paintGL()
 
     render();
   }
-  else if (_stereoMode == InterlacedLines)
+  else if (_stereoMode == vox::InterlacedLines || _stereoMode == vox::InterlacedCheckerboard)
   {
-    if (_leftBuffer == NULL && _rightBuffer == NULL)
+    if (_updateStencilBuffer)
     {
-      _leftBuffer = new vvOffscreenBuffer;
-      _rightBuffer = new vvOffscreenBuffer;
+      glDrawBuffer(GL_BACK);
+      ::updateStencilBuffer(width(), height(), _stereoMode);
+      updateProjection();
+
+      _updateStencilBuffer = false;
+    }
+
+    std::vector<vvObjView::EyeType> eyes;
+    eyes.push_back(vvObjView::LEFT_EYE);
+    eyes.push_back(vvObjView::RIGHT_EYE);
+
+    for (std::vector<vvObjView::EyeType>::const_iterator it = eyes.begin();
+         it != eyes.end(); ++it)
+    {
+      glEnable(GL_DEPTH_TEST);
+
+      glEnable(GL_STENCIL_TEST);
+      GLint ref = _swapEyes ? *it == vvObjView::LEFT_EYE : *it == vvObjView::RIGHT_EYE;
+      glStencilFunc(GL_EQUAL, ref, 0xFF);
+
+      glMatrixMode(GL_MODELVIEW);
+      _ov.setModelviewMatrix(*it);
+
+      render();
     }
   }
+
+  glPopAttrib();
 }
 
-void vvCanvas::resizeGL(const int w, const int h)
+void vvCanvas::resizeGL(int w, int h)
 {
   vvDebugMsg::msg(3, "vvCanvas::resizeGL()");
 
@@ -241,6 +388,7 @@ void vvCanvas::resizeGL(const int w, const int h)
   {
     _ov.setAspectRatio(static_cast<float>(w) / static_cast<float>(h));
   }
+  _updateStencilBuffer = true;
   updateGL();
 
   emit resized(QSize(w, h));
@@ -518,6 +666,16 @@ void vvCanvas::setParameter(vvParameters::ParameterType param, const vvParam& va
   case vvParameters::VV_SPIN_ANIMATION:
     _spinAnimation = value;
     break;
+  case vvParameters::VV_STEREO_MODE:
+    _stereoMode = static_cast<vox::StereoMode>(value.asInt());
+    if (_stereoMode == vox::InterlacedLines || _stereoMode == vox::InterlacedCheckerboard)
+    {
+      _updateStencilBuffer = true;
+    }
+    break;
+  case vvParameters::VV_SWAP_EYES:
+    _swapEyes = value;
+    break;
   default:
     break;
   }
@@ -551,6 +709,10 @@ vvParam vvCanvas::getParameter(vvParameters::ParameterType param) const
     return static_cast<int>(_projectionType);
   case vvParameters::VV_SPIN_ANIMATION:
     return _spinAnimation;
+  case vvParameters::VV_STEREO_MODE:
+    return _stereoMode;
+  case vvParameters::VV_SWAP_EYES:
+    return _swapEyes;
   default:
     return vvParam();
   }
