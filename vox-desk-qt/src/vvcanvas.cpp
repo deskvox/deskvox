@@ -215,6 +215,16 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
 
   _spinTimer = new QTimer(this);
   connect(_spinTimer, SIGNAL(timeout()), this, SLOT(repeatLastRotation()));
+
+  if (!settings.value("stereo/distance").isNull())
+  {
+    _ov.setIOD(settings.value("stereo/distance").toFloat());
+  }
+
+  if (!settings.value("stereo/swap").isNull())
+  {
+    _swapEyes = settings.value("stereo/swap").toBool();
+  }
 }
 
 vvCanvas::~vvCanvas()

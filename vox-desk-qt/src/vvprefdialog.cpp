@@ -310,6 +310,18 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
     ui->portBox->setValue(port);
   }
   ui->ibrBox->setChecked(settings.value("remote/ibr").toBool());
+
+  if (!settings.value("stereo/distance").isNull())
+  {
+    int dist = settings.value("stereo/distance").toInt();
+    ui->stereoDistEdit->setText(QString::number(dist));
+    ui->stereoDistSlider->setValue(dist);
+  }
+
+  if (!settings.value("stereo/swap").isNull())
+  {
+    ui->swapEyesBox->setChecked(settings.value("stereo/swap").toBool());
+  }
 }
 
 vvPrefDialog::~vvPrefDialog()
@@ -699,11 +711,15 @@ void vvPrefDialog::onStereoDistSliderMoved(int value)
 
 void vvPrefDialog::onStereoDistChanged(int value)
 {
+  QSettings settings;
+  settings.setValue("stereo/distance", value);
   emit parameterChanged(vvParameters::VV_EYE_DIST, static_cast<float>(value));
 }
 
 void vvPrefDialog::onSwapEyesToggled(bool checked)
 {
+  QSettings settings;
+  settings.setValue("stereo/swap", checked);
   emit parameterChanged(vvParameters::VV_SWAP_EYES, checked);
 }
 
