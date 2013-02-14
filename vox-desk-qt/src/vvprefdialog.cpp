@@ -38,6 +38,7 @@
 
 #include <QMessageBox>
 #include <QSettings>
+#include <QValidator>
 
 #include <cassert>
 #include <cmath>
@@ -272,6 +273,11 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
     ui->browseButton->setEnabled(true);
   }
 
+  QIntValidator* val = new QIntValidator(this);
+  val->setRange(ui->stereoDistSlider->minimum(), ui->stereoDistSlider->maximum());
+  ui->stereoDistEdit->setValidator(val);
+  ui->stereoDistEdit->setText(QString::number(ui->stereoDistSlider->value()));
+
   connect(ui->rendererBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onRendererChanged(int)));
   connect(ui->geometryBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
   connect(ui->fboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onFboChanged(int)));
@@ -286,6 +292,9 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->interpolationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onInterpolationToggled(bool)));
   connect(ui->mipCheckBox, SIGNAL(toggled(bool)), this, SLOT(onMipToggled(bool)));
   connect(ui->stereoModeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onStereoModeChanged(int)));
+  connect(ui->stereoDistEdit, SIGNAL(textEdited(const QString&)), this, SLOT(onStereoDistEdited(const QString&)));
+  connect(ui->stereoDistSlider, SIGNAL(sliderMoved(int)), this, SLOT(onStereoDistSliderMoved(int)));
+  connect(ui->stereoDistSlider, SIGNAL(valueChanged(int)), this, SLOT(onStereoDistChanged(int)));
   connect(ui->swapEyesBox, SIGNAL(toggled(bool)), this, SLOT(onSwapEyesToggled(bool)));
   connect(ui->movingSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onMovingSpinBoxChanged(double)));
   connect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
@@ -676,6 +685,21 @@ void vvPrefDialog::onMipToggled(bool checked)
 void vvPrefDialog::onStereoModeChanged(int index)
 {
   emit parameterChanged(vvParameters::VV_STEREO_MODE, static_cast<int>(stereoModeMap[index]));
+}
+
+void vvPrefDialog::onStereoDistEdited(const QString& text)
+{
+  ui->stereoDistSlider->setValue(text.toInt());
+}
+
+void vvPrefDialog::onStereoDistSliderMoved(int value)
+{
+  ui->stereoDistEdit->setText(QString::number(value));
+}
+
+void vvPrefDialog::onStereoDistChanged(int value)
+{
+  emit parameterChanged(vvParameters::VV_EYE_DIST, static_cast<float>(value));
 }
 
 void vvPrefDialog::onSwapEyesToggled(bool checked)

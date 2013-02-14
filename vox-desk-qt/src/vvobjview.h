@@ -80,7 +80,7 @@ class vvObjView
     void  setAspectRatio(float);
     void  setDepthRange(float, float);
     void  setIOD(float);
-    float getIOD();
+    float getIOD() const;
     void  setProjectionMatrix();
     void  setModelviewMatrix(EyeType = LEFT_EYE);
     float getFOV();

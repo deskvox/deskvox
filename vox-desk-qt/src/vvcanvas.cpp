@@ -729,6 +729,9 @@ void vvCanvas::setParameter(vvParameters::ParameterType param, const vvParam& va
       _updateStencilBuffer = true;
     }
     break;
+  case vvParameters::VV_EYE_DIST:
+    _ov.setIOD(value);
+    break;
   case vvParameters::VV_SWAP_EYES:
     _swapEyes = value;
     break;
@@ -767,6 +770,8 @@ vvParam vvCanvas::getParameter(vvParameters::ParameterType param) const
     return _spinAnimation;
   case vvParameters::VV_STEREO_MODE:
     return _stereoMode;
+  case vvParameters::VV_EYE_DIST:
+    return _ov.getIOD();
   case vvParameters::VV_SWAP_EYES:
     return _swapEyes;
   default:

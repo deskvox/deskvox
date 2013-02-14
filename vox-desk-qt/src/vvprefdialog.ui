@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="rendererTab">
       <attribute name="title">
@@ -206,8 +206,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>530</width>
-            <height>265</height>
+            <width>169</width>
+            <height>47</height>
            </rect>
           </property>
           <attribute name="label">
@@ -252,8 +252,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>530</width>
-            <height>265</height>
+            <width>314</width>
+            <height>171</height>
            </rect>
           </property>
           <attribute name="label">
@@ -373,8 +373,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>530</width>
-            <height>265</height>
+            <width>262</width>
+            <height>68</height>
            </rect>
           </property>
           <attribute name="label">
@@ -436,6 +436,46 @@ p, li { white-space: pre-wrap; }
          </item>
          <item>
           <widget class="QComboBox" name="stereoModeBox"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="stereoDistLayout">
+         <item>
+          <widget class="QLabel" name="stereoDistLabel">
+           <property name="text">
+            <string>Inter-ocular distance [mm]:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="stereoDistEdit">
+           <property name="maximumSize">
+            <size>
+             <width>60</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSlider" name="stereoDistSlider">
+           <property name="maximum">
+            <number>100</number>
+           </property>
+           <property name="singleStep">
+            <number>10</number>
+           </property>
+           <property name="sliderPosition">
+            <number>63</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="tickPosition">
+            <enum>QSlider::TicksBelow</enum>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>

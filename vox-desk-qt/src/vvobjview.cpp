@@ -446,7 +446,7 @@ void vvObjView::setIOD(float iod)
 //----------------------------------------------------------------------------
 /** @return inter-ocular distance for stereo viewing [mm]
 */
-float vvObjView::getIOD()
+float vvObjView::getIOD() const
 {
   return _iod;
 }

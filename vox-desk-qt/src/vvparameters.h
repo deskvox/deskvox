@@ -27,6 +27,7 @@ namespace vvParameters
   {
     VV_BG_COLOR = 0,
     VV_DOUBLEBUFFERING,
+    VV_EYE_DIST,
     VV_LIGHTING,
     VV_MOVING_QUALITY,
     VV_PROJECTIONTYPE,

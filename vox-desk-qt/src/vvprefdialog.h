@@ -60,6 +60,9 @@ private slots:
   void onInterpolationToggled(bool checked);
   void onMipToggled(bool checked);
   void onStereoModeChanged(int index);
+  void onStereoDistEdited(const QString& text);
+  void onStereoDistSliderMoved(int value);
+  void onStereoDistChanged(int value);
   void onSwapEyesToggled(bool checked);
   void onMovingSpinBoxChanged(double value);
   void onStillSpinBoxChanged(double value);
