@@ -317,6 +317,12 @@ void vvCanvas::paintGL()
 {
   vvDebugMsg::msg(3, "vvCanvas::paintGL()");
 
+  GLuint status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+  if (status != GL_FRAMEBUFFER_COMPLETE_EXT)
+  {
+    return;
+  }
+
   glPushAttrib(GL_ALL_ATTRIB_BITS);
 
   if (_renderer == NULL)
