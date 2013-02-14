@@ -555,7 +555,7 @@ void vvCanvas::mouseReleaseEvent(QMouseEvent* event)
 void vvCanvas::init()
 {
   vvDebugMsg::msg(3, "vvCanvas::init()");
-  
+
   vvFileIO* fio = new vvFileIO;
   fio->loadVolumeData(_vd, vvFileIO::ALL_DATA);
   delete fio;
@@ -707,7 +707,7 @@ void vvCanvas::setParameter(vvParameters::ParameterType param, const vvParam& va
           li->setLightingEnabled(_lighting);
         }
       }
-    } 
+    }
     break;
   case vvParameters::VV_MOVING_QUALITY:
     _movingQuality = value;
@@ -811,7 +811,7 @@ void vvCanvas::setTimeStep(const int step)
   int f = step;
   while (f < 0)
   {
-    f += _vd->frames; 
+    f += _vd->frames;
   }
 
   while (f >= _vd->frames)

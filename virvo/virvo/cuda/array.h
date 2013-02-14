@@ -144,6 +144,11 @@ namespace cuda
         {
             return cudaSuccess == cudaArrayGetInfo(&desc, &extent, &flags, get());
         }
+
+    private:
+        // NOT copyable!
+        Array(Array const&);
+        Array& operator =(Array const&);
     };
 
 

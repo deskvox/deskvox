@@ -56,14 +56,20 @@ endif()
 
 
 set(VIRVO_HEADERS
+  private/vvcompiler.h
   private/vvgltools.h
   private/vvlog.h
+  private/vvvariadic.h
 
   cuda/array.h
   cuda/debug.h
+  cuda/graphics_resource.h
+  cuda/host_device_array.h
   cuda/memory.h
   cuda/symbol.h
   cuda/texture.h
+
+  gl/handle.h
 
   vvbonjour/vvbonjour.h
   vvbonjour/vvbonjourbrowser.h
@@ -87,6 +93,7 @@ set(VIRVO_HEADERS
   vvcolor.h
   vvcuda.h
   vvcudaimg.h
+  vvcudarendertarget.h
   vvcudatools.h
   vvcudatransfunc.h
   vvcudautils.h
@@ -122,6 +129,7 @@ set(VIRVO_HEADERS
   vvrendercontext.h
   vvrenderer.h
   vvrendererfactory.h
+  vvrendertarget.h
   vvrendervp.h
   vvrequestmanagement.h
   vvserbrickrend.h
@@ -163,6 +171,9 @@ set(VIRVO_SOURCES
   private/vvgltools.cpp
   private/vvlog.cpp
 
+  cuda/graphics_resource.cpp
+  cuda/host_device_array.cpp
+
   vvbonjour/vvbonjour.cpp
   vvbonjour/vvbonjourbrowser.cpp
   vvbonjour/vvbonjourentry.cpp
@@ -182,6 +193,7 @@ set(VIRVO_SOURCES
   vvcolor.cpp
   vvcuda.cpp
   vvcudaimg.cpp
+  vvcudarendertarget.cpp
   vvcudatools.cpp
   vvcudatransfunc.cpp
   vvdebugmsg.cpp
@@ -208,6 +220,7 @@ set(VIRVO_SOURCES
   vvrendercontext.cpp
   vvrenderer.cpp
   vvrendererfactory.cpp
+  vvrendertarget.cpp
   vvrendervp.cpp
   vvrequestmanagement.cpp
   vvserbrickrend.cpp

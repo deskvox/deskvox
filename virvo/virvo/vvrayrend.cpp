@@ -50,8 +50,13 @@ typedef std::vector<cu::Array> VolumeArrays;
 
 namespace
 {
+//
+// TODO:
+// Make these members of vvRayRend!!!
+//
 cudaChannelFormatDesc channelDesc;
-VolumeArrays d_volumeArrays;
+cu::Array* d_volumeArrays = 0;
+unsigned numVolumeArrays = 0;
 cu::Array d_transferFuncArray;
 cu::AutoPointer<void> d_depth;
 }
@@ -117,6 +122,9 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 {
   vvDebugMsg::msg(1, "vvRayRend::vvRayRend()");
 
+  assert( d_volumeArrays == 0 );
+  assert( numVolumeArrays == 0 );
+
   glewInit();
 
   bool ok;
@@ -155,8 +163,9 @@ vvRayRend::~vvRayRend()
   vvDebugMsg::msg(1, "vvRayRend::~vvRayRend()");
 
   // free volume frames
-  for (VolumeArrays::size_type n = 0; n < d_volumeArrays.size(); ++n)
-    d_volumeArrays[n].reset();
+  delete [] d_volumeArrays;
+  d_volumeArrays = 0;
+  numVolumeArrays = 0;
 
   d_transferFuncArray.reset();
 
@@ -480,7 +489,11 @@ void vvRayRend::initVolumeTexture()
   {
     ::channelDesc = cudaCreateChannelDesc<ushort>();
   }
-  ::d_volumeArrays.resize(vd->frames);
+
+  delete [] d_volumeArrays;
+  numVolumeArrays = 0;
+  d_volumeArrays = new cu::Array[vd->frames];
+  numVolumeArrays = vd->frames;
 
   int outOfMemFrame = -1;
   for (int f=0; f<vd->frames; ++f)
