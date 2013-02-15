@@ -33,6 +33,7 @@
 
 #include "vvexport.h"
 
+#include <cstdlib>
 #include <new> // bad_alloc
 
 
@@ -46,7 +47,7 @@ namespace cuda
     {
     public:
         // Construct an empty buffer
-        HostDeviceArray::HostDeviceArray()
+        HostDeviceArray()
             : Size(0)
             , HostPtr(0)
             , DevicePtr(0)
@@ -54,7 +55,7 @@ namespace cuda
         }
 
         // Construct a buffer with the given size
-        HostDeviceArray::HostDeviceArray(unsigned count)
+        HostDeviceArray(unsigned count)
             : Size(0)
             , HostPtr(0)
             , DevicePtr(0)
