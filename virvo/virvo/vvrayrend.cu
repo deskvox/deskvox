@@ -52,8 +52,8 @@ cu::Texture cVolTexture16 = &volTexture16;
 cu::Texture cTFTexture = &tfTexture;
 
 // referenced in vvrayrend.cpp
-cu::Symbol<matrix4x4> cInvViewMatrix = &c_invViewMatrix;
-cu::Symbol<matrix4x4> cMvPrMatrix = &c_MvPrMatrix;
+cu::Symbol<matrix4x4> cInvViewMatrix( VV_CUDA_SYMBOL_INIT(c_invViewMatrix) );
+cu::Symbol<matrix4x4> cMvPrMatrix( VV_CUDA_SYMBOL_INIT(c_MvPrMatrix) );
 
 
 static inline int divup(int x, int n)
