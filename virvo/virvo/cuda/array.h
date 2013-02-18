@@ -139,12 +139,6 @@ namespace cuda
             return cudaSuccess == cudaMemcpyToArray(get(), dst_x, dst_y, src, count, cudaMemcpyHostToDevice);
         }
 
-        // Return the type, shape and flags of this array.
-        bool getInfo(cudaChannelFormatDesc& desc, cudaExtent& extent, unsigned& flags) /*const*/
-        {
-            return cudaSuccess == cudaArrayGetInfo(&desc, &extent, &flags, get());
-        }
-
     private:
         // NOT copyable!
         Array(Array const&);

@@ -69,11 +69,6 @@ namespace cuda
             texPtr->channelDesc = desc;
         }
 
-        void setSRGB(int sRGB) const
-        {
-            texPtr->sRGB = sRGB;
-        }
-
         // Returns the current channel descriptor
         const cudaChannelFormatDesc& desc() const
         {
