@@ -24,6 +24,7 @@
 #include <cuda_runtime_api.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 
 
 #ifndef VV_CUDA_DEBUGGING
@@ -49,8 +50,8 @@ namespace cuda
 
     inline void debug_report_error(cudaError_t err, char const* file, int line)
     {
-        // Just print a message and continue execution.
         fprintf(stderr, "%s(%d) : CUDA error: %s\n", file, line, cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
     }
 
 
