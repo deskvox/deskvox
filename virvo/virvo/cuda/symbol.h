@@ -23,6 +23,23 @@
 
 #include <cuda_runtime_api.h>
 
+#include "debug.h"
+
+
+//
+// CUDA 5 Release Notes:
+//
+// The use of a character string to indicate a device symbol, which was possible
+// with certain API functions, is no longer supported. Instead, the symbol
+// should be used directly.
+//
+
+#if CUDART_VERSION < 5000
+#define VV_CUDA_SYMBOL_INIT(SYMBOL_NAME) #SYMBOL_NAME
+#else
+#define VV_CUDA_SYMBOL_INIT(SYMBOL_NAME) &SYMBOL_NAME
+#endif
+
 
 namespace virvo
 {
@@ -33,24 +50,27 @@ namespace cuda
     template<class T>
     class Symbol
     {
-        T* symbolPtr;
+#if CUDART_VERSION < 5000
+        typedef const char* SymbolPointerType;
+#else
+        typedef const void* SymbolPointerType;
+#endif
+
+        SymbolPointerType symbolPtr;
 
     public:
-        Symbol(T* symbolPtr) : symbolPtr(symbolPtr)
+        explicit Symbol(SymbolPointerType ptr) : symbolPtr(ptr)
         {
         }
 
         // Returns a pointer to the symbol
-        T* get() { return symbolPtr; }
-
-        // Returns a pointer to the symbol
-        const T* get() const { return symbolPtr; }
+        SymbolPointerType get() const { return symbolPtr; }
 
         // Copy data to the given symbol on the device.
         template<class U>
         bool update(const U* hostPtr, size_t count, size_t offset = 0) const
         {
-            return cudaSuccess == cudaMemcpyToSymbol(Name(), hostPtr, count, offset);
+            return cudaSuccess == VV_CUDA_CALL(cudaMemcpyToSymbol(get(), (const void*)hostPtr, count, offset, cudaMemcpyHostToDevice));
         }
 
         // Find the address associated with a CUDA symbol
@@ -58,7 +78,7 @@ namespace cuda
         {
             void* devPtr;
 
-            if (cudaSuccess == cudaGetSymbolAddress(&devPtr, Name()))
+            if (cudaSuccess == VV_CUDA_CALL(cudaGetSymbolAddress(&devPtr, get())))
                 return devPtr;
 
             return 0;
@@ -69,22 +89,11 @@ namespace cuda
         {
             size_t symbolSize = 0;
 
-            if (cudaSuccess == cudaGetSymbolSize(&symbolSize, Name()))
+            if (cudaSuccess == VV_CUDA_CALL(cudaGetSymbolSize(&symbolSize, get())))
                 return symbolSize;
 
             return 0;
         }
-
-    private:
-        // CUDA 5 Release Notes:
-        // The use of a character string to indicate a device symbol, which was
-        // possible with certain API functions, is no longer supported. Instead,
-        // the symbol should be used directly.
-#if CUDART_VERSION < 5000
-        const char* Name() const { return reinterpret_cast<const char*>(symbolPtr); }
-#else
-        T* Name() const { return symbolPtr; }
-#endif
     };
 
 
