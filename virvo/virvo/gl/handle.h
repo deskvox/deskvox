@@ -147,7 +147,7 @@ namespace gl
 
     public:
         // Construct from the given object
-        explicit Buffer(GLuint buffer = 0) : Handle(buffer) {}
+        explicit Buffer(GLuint buffer = 0) : Handle<Buffer>(buffer) {}
 
         // Destroy the buffer object
         void destroy() { glDeleteBuffers(1, &this->handle); }
@@ -164,7 +164,7 @@ namespace gl
 
     public:
         // Construct from the given object
-        explicit Renderbuffer(GLuint renderbuffer = 0) : Handle(renderbuffer) {}
+        explicit Renderbuffer(GLuint renderbuffer = 0) : Handle<Renderbuffer>(renderbuffer) {}
 
         // Destroy the renderbuffer object
         void destroy() { glDeleteRenderbuffers(1, &this->handle); }
@@ -181,7 +181,7 @@ namespace gl
 
     public:
         // Construct from the given object
-        explicit Texture(GLuint texture = 0) : Handle(texture) {}
+        explicit Texture(GLuint texture = 0) : Handle<Texture>(texture) {}
 
         // Destroy the texture object
         void destroy() { glDeleteTextures(1, &this->handle); }
