@@ -93,6 +93,11 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
     QSettings settings;
     fn = settings.value("canvas/recentfile").toString();
   }
+  else
+  {
+    QSettings settings;
+    settings.setValue("canvas/recentfile", fn);
+  }
 
   _canvas = new vvCanvas(format, fn, this);
   _canvas->setPlugins(_plugins);
