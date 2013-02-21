@@ -174,6 +174,8 @@ set(VIRVO_SOURCES
   cuda/graphics_resource.cpp
   cuda/host_device_array.cpp
 
+  gl/handle.cpp
+
   vvbonjour/vvbonjour.cpp
   vvbonjour/vvbonjourbrowser.cpp
   vvbonjour/vvbonjourentry.cpp
