@@ -25,6 +25,8 @@
 #ifdef HAVE_CUDA
 
 
+#include <GL/glew.h>
+
 #include <assert.h>
 
 #include <stdexcept>
