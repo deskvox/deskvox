@@ -58,6 +58,9 @@ namespace cuda
             unregister();
         }
 
+        // Returns the CUDA resource
+        cudaGraphicsResource_t get() const { return Resource; }
+
         // Register an OpenGL buffer object
         VVAPI bool registerBuffer(unsigned buffer, cudaGraphicsRegisterFlags flags = cudaGraphicsRegisterFlagsNone);
 
