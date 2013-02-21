@@ -40,13 +40,15 @@ using virvo::cuda::GraphicsResource;
 
 bool GraphicsResource::registerBuffer(unsigned buffer, cudaGraphicsRegisterFlags flags)
 {
-    return cudaSuccess == VV_CUDA_CALL(cudaGraphicsGLRegisterBuffer(&Resource, buffer, flags));
+    unregister();
+    return cudaSuccess == cudaGraphicsGLRegisterBuffer(&Resource, buffer, flags);
 }
 
 
 bool GraphicsResource::registerImage(unsigned image, unsigned target, cudaGraphicsRegisterFlags flags)
 {
-    return cudaSuccess == VV_CUDA_CALL(cudaGraphicsGLRegisterImage(&Resource, image, target, flags));
+    unregister();
+    return cudaSuccess == cudaGraphicsGLRegisterImage(&Resource, image, target, flags);
 }
 
 
@@ -62,10 +64,10 @@ void GraphicsResource::unregister()
 
 void* GraphicsResource::map(size_t& size)
 {
-    if (cudaSuccess != VV_CUDA_CALL(cudaGraphicsMapResources(1, &Resource)))
+    if (cudaSuccess != cudaGraphicsMapResources(1, &Resource))
         return 0;
 
-    if (cudaSuccess != VV_CUDA_CALL(cudaGraphicsResourceGetMappedPointer(&DevPtr, &size, Resource)))
+    if (cudaSuccess != cudaGraphicsResourceGetMappedPointer(&DevPtr, &size, Resource))
     {
         cudaGraphicsUnmapResources(1, &Resource);
         DevPtr = 0;
