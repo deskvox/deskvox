@@ -62,10 +62,10 @@ namespace virvo
         unsigned depthBits() const { return DepthBits; }
 
         // Returns the pixel-unpack buffer
-        unsigned buffer() const { return Buffer.get(); }
+        GLuint buffer() const { return Buffer.get(); }
 
         // Returns the texture
-        unsigned texture() const { return Texture.get(); }
+        GLuint texture() const { return Texture.get(); }
 
         // Returns a pointer to the device color buffer
         virtual void* deviceColor() { return Resource.devPtr(); }
