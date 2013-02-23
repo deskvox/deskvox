@@ -67,7 +67,7 @@ namespace cuda
         // Clean up
         ~HostDeviceArray()
         {
-            clear();
+            reset();
         }
 
         // Returns the size in bytes of the host and the device array
@@ -80,7 +80,7 @@ namespace cuda
         void* devicePtr() const { return DevicePtr; }
 
         // Release all resources
-        VVAPI void clear();
+        VVAPI void reset();
 
         // Resize the host and device arrays
         VVAPI bool resize(size_t count);
@@ -90,6 +90,9 @@ namespace cuda
 
         // Upload the contents of the host array into the device array
         VVAPI bool upload();
+
+        // Performs a memset on the host and device buffers
+        VVAPI void fill(int value);
 
     private:
         // NOT copyable!

@@ -30,7 +30,7 @@
 using virvo::cuda::HostDeviceArray;
 
 
-void HostDeviceArray::clear()
+void HostDeviceArray::reset()
 {
     if (HostPtr)
         free(HostPtr);
@@ -46,7 +46,7 @@ void HostDeviceArray::clear()
 
 bool HostDeviceArray::resize(size_t count)
 {
-    clear();
+    reset();
 
     HostPtr = malloc(count);
     if (HostPtr == 0)
@@ -80,6 +80,18 @@ bool HostDeviceArray::upload()
         return true;
 
     return cudaSuccess == cudaMemcpy(DevicePtr, HostPtr, Size, cudaMemcpyHostToDevice);
+}
+
+
+void HostDeviceArray::fill(int value)
+{
+    if (Size == 0)
+        return;
+
+    // Clear the host buffer
+    memset(HostPtr, value, Size);
+    // Clear the device buffer
+    cudaMemset(DevicePtr, value, Size);
 }
 
 

@@ -258,15 +258,15 @@ bool DeviceBufferRT::EndFrameImpl()
 
 bool DeviceBufferRT::ResizeImpl(int w, int h)
 {
-    ColorBuffer.clear();
-    DepthBuffer.clear();
+    ColorBuffer.reset();
+    DepthBuffer.reset();
 
     if (!ColorBuffer.resize(ComputeBufferSize(w, h, ColorBits)))
         return false;
 
     if (DepthBits != 0 && !DepthBuffer.resize(ComputeBufferSize(w, h, DepthBits)))
     {
-        ColorBuffer.clear();
+        ColorBuffer.reset();
         return false;
     }
 
