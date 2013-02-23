@@ -44,11 +44,11 @@ RenderTarget::~RenderTarget()
 }
 
 
-bool RenderTarget::beginFrame()
+bool RenderTarget::beginFrame(unsigned clearMask)
 {
     assert( Bound == false && "already bound" );
 
-    Bound = BeginFrameImpl();
+    Bound = BeginFrameImpl(clearMask);
     return Bound;
 }
 
@@ -94,7 +94,7 @@ DefaultFramebufferRT::~DefaultFramebufferRT()
 }
 
 
-bool DefaultFramebufferRT::BeginFrameImpl()
+bool DefaultFramebufferRT::BeginFrameImpl(unsigned /*clearMask*/)
 {
     return true;
 }
@@ -131,7 +131,7 @@ FramebufferObjectRT::~FramebufferObjectRT()
 }
 
 
-bool FramebufferObjectRT::BeginFrameImpl()
+bool FramebufferObjectRT::BeginFrameImpl(unsigned /*clearMask*/)
 {
     assert( Framebuffer.get() != 0 );
 
@@ -295,7 +295,7 @@ HostBufferRT::~HostBufferRT()
 }
 
 
-bool HostBufferRT::BeginFrameImpl()
+bool HostBufferRT::BeginFrameImpl(unsigned /*clearMask*/)
 {
     return true;
 }

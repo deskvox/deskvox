@@ -67,7 +67,7 @@ namespace virvo
         bool bound() const { return Bound; }
 
         // Prepare for rendering
-        VVAPI bool beginFrame();
+        VVAPI bool beginFrame(unsigned clearMask = 0);
 
         // Finish rendering
         VVAPI bool endFrame();
@@ -88,7 +88,7 @@ namespace virvo
         virtual void* hostDepth() { return 0; }
 
     private:
-        virtual bool BeginFrameImpl() = 0;
+        virtual bool BeginFrameImpl(unsigned clearMask) = 0;
         virtual bool EndFrameImpl() = 0;
         virtual bool ResizeImpl(int w, int h) = 0;
 
@@ -111,7 +111,7 @@ namespace virvo
         VVAPI virtual ~DefaultFramebufferRT();
 
     private:
-        VVAPI virtual bool BeginFrameImpl();
+        VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int /*w*/, int /*h*/);
     };
@@ -153,7 +153,7 @@ namespace virvo
         void displayColorBuffer() const;
 
     private:
-        VVAPI virtual bool BeginFrameImpl();
+        VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int w, int h);
 
@@ -202,7 +202,7 @@ namespace virvo
         virtual void* hostDepth() { return &DepthBuffer[0]; }
 
     private:
-        VVAPI virtual bool BeginFrameImpl();
+        VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int w, int h);
 
