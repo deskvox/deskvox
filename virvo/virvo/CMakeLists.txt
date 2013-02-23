@@ -69,7 +69,9 @@ set(VIRVO_HEADERS
   cuda/symbol.h
   cuda/texture.h
 
+  gl/format.h
   gl/handle.h
+  gl/types.h
 
   vvbonjour/vvbonjour.h
   vvbonjour/vvbonjourbrowser.h
@@ -174,6 +176,7 @@ set(VIRVO_SOURCES
   cuda/graphics_resource.cpp
   cuda/host_device_array.cpp
 
+  gl/format.cpp
   gl/handle.cpp
 
   vvbonjour/vvbonjour.cpp
