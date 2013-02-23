@@ -26,8 +26,11 @@
 #include <assert.h>
 
 
+namespace gl = virvo::gl;
+
 using virvo::RenderTarget;
 using virvo::DefaultFramebufferRT;
+using virvo::FramebufferObjectRT;
 using virvo::HostBufferRT;
 
 
@@ -106,6 +109,172 @@ bool DefaultFramebufferRT::EndFrameImpl()
 bool DefaultFramebufferRT::ResizeImpl(int /*w*/, int /*h*/)
 {
     return true;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// FramebufferObjectRT
+//--------------------------------------------------------------------------------------------------
+
+
+FramebufferObjectRT::FramebufferObjectRT(gl::EFormat ColorBufferFormat, gl::EFormat DepthBufferFormat)
+    : ColorBufferFormat(ColorBufferFormat)
+    , DepthBufferFormat(DepthBufferFormat)
+{
+    assert( gl::isColorFormat(ColorBufferFormat) );
+    assert( DepthBufferFormat == gl::EFormat_Unspecified || gl::isDepthFormat(DepthBufferFormat) );
+}
+
+
+FramebufferObjectRT::~FramebufferObjectRT()
+{
+}
+
+
+bool FramebufferObjectRT::BeginFrameImpl()
+{
+    assert( Framebuffer.get() != 0 );
+
+    // Save current viewport
+    glPushAttrib(GL_VIEWPORT_BIT);
+
+    // Bind the framebuffer for rendering
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, Framebuffer.get());
+
+    // Set the viewport
+    glViewport(0, 0, width(), height());
+
+    // Clear the render targets
+    // XXX: Save the clear-mask as a member in FramebufferObjectRT!!!
+    if (gl::isDepthFormat(DepthBufferFormat))
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    else
+        glClear(GL_COLOR_BUFFER_BIT);
+
+    return true;
+}
+
+
+bool FramebufferObjectRT::EndFrameImpl()
+{
+    // Unbind the framebuffer
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+    // Restore the viewport
+    glPopAttrib();
+
+    return true;
+}
+
+
+bool FramebufferObjectRT::ResizeImpl(int w, int h)
+{
+    gl::Format cf = gl::mapFormat(ColorBufferFormat);
+    gl::Format df = gl::mapFormat(DepthBufferFormat);
+
+    // Delete current color and depth buffers
+    ColorBuffer.reset();
+    DepthBuffer.reset();
+
+    //
+    // Create the framebuffer object (if not already done...)
+    //
+
+    if (Framebuffer.get() == 0)
+        Framebuffer.reset( gl::createFramebuffer() );
+
+    glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer.get());
+
+    //
+    // Create the color-buffer
+    //
+
+    ColorBuffer.reset( gl::createTexture() );
+
+    glBindTexture(GL_TEXTURE_2D, ColorBuffer.get());
+
+    // Initialize texture
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexImage2D(GL_TEXTURE_2D, 0, cf.internalFormat, w, h, 0, cf.format, cf.type, 0);
+
+    // Attach to framebuffer
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ColorBuffer.get(), 0);
+
+    //
+    // Create the depth-buffer
+    //
+
+    if (DepthBufferFormat != gl::EFormat_Unspecified)
+    {
+        DepthBuffer.reset( gl::createRenderbuffer() );
+
+        glBindRenderbuffer(GL_RENDERBUFFER, DepthBuffer.get());
+
+        glRenderbufferStorage(GL_RENDERBUFFER, df.internalFormat, w, h);
+
+        GLenum attachment =
+            gl::isDepthStencilFormat(DepthBufferFormat)
+                ? GL_DEPTH_STENCIL_ATTACHMENT
+                : GL_DEPTH_ATTACHMENT;
+
+        // Attach as depth (and stencil) target
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, DepthBuffer.get());
+    }
+
+    //
+    // Check for errors
+    //
+
+    bool success = GL_FRAMEBUFFER_COMPLETE == glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+    // Unbind the framebuffer object!!!
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return success;
+}
+
+
+void FramebufferObjectRT::displayColorBuffer() const
+{
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
+
+    glActiveTexture(GL_TEXTURE0);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glMatrixMode(GL_TEXTURE);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, ColorBuffer.get());
+
+    glDepthMask(GL_FALSE);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, -1.0f);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0f, -1.0f);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0f,  1.0f);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f,  1.0f);
+    glEnd();
+
+    glMatrixMode(GL_TEXTURE);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+
+    glPopAttrib();
+    glPopClientAttrib();
 }
 
 
