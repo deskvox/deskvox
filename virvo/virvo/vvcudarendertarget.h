@@ -80,7 +80,7 @@ namespace virvo
         void displayColorBuffer() const;
 
     private:
-        VVAPI virtual bool BeginFrameImpl();
+        VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int w, int h);
 
@@ -138,7 +138,7 @@ namespace virvo
         virtual void* hostDepth() { return DepthBuffer.hostPtr(); }
 
     private:
-        VVAPI virtual bool BeginFrameImpl();
+        VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int w, int h);
 

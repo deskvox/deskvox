@@ -112,7 +112,7 @@ PixelUnpackBufferRT::~PixelUnpackBufferRT()
 }
 
 
-bool PixelUnpackBufferRT::BeginFrameImpl()
+bool PixelUnpackBufferRT::BeginFrameImpl(unsigned /*clearMask*/)
 {
     return Resource.map() != 0;
 }
@@ -244,7 +244,7 @@ DeviceBufferRT::~DeviceBufferRT()
 }
 
 
-bool DeviceBufferRT::BeginFrameImpl()
+bool DeviceBufferRT::BeginFrameImpl(unsigned /*clearMask*/)
 {
     return true;
 }
