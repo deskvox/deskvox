@@ -186,6 +186,47 @@ bool PixelUnpackBufferRT::CreateGLBuffers(int w, int h, bool linearInterpolation
 }
 
 
+void PixelUnpackBufferRT::displayColorBuffer() const
+{
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
+
+    glActiveTexture(GL_TEXTURE0);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glMatrixMode(GL_TEXTURE);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, Texture.get());
+
+    glDepthMask(GL_FALSE);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, -1.0f);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0f, -1.0f);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0f,  1.0f);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f,  1.0f);
+    glEnd();
+
+    glMatrixMode(GL_TEXTURE);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+
+    glPopAttrib();
+    glPopClientAttrib();
+}
+
+
 //--------------------------------------------------------------------------------------------------
 // DeviceBufferRT
 //--------------------------------------------------------------------------------------------------

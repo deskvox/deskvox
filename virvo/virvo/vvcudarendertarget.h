@@ -76,6 +76,9 @@ namespace virvo
         // Returns a pointer to the host depth buffer
         virtual void* hostDepth() { return DepthBuffer.hostPtr(); }
 
+        // Render the color buffer into the current draw buffer
+        void displayColorBuffer() const;
+
     private:
         VVAPI virtual bool BeginFrameImpl();
         VVAPI virtual bool EndFrameImpl();
