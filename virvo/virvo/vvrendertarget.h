@@ -27,6 +27,9 @@
 
 #include <vector>
 
+#include "gl/handle.h"
+#include "gl/format.h"
+
 
 namespace virvo
 {
@@ -111,6 +114,60 @@ namespace virvo
         VVAPI virtual bool BeginFrameImpl();
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int /*w*/, int /*h*/);
+    };
+
+
+    //----------------------------------------------------------------------------------------------
+    // FramebufferObjectRT
+    //----------------------------------------------------------------------------------------------
+    class FramebufferObjectRT : public RenderTarget
+    {
+    public:
+        // Construct a new framebuffer object
+        //
+        // NOTE: The actual framebuffer object (and the color- and depth-buffer) is constructed
+        // when resize() is called for the first time.
+        VVAPI FramebufferObjectRT(
+            gl::EFormat ColorBufferFormat = gl::EFormat_RGBA8,
+            gl::EFormat DepthBufferFormat = gl::EFormat_DEPTH24_STENCIL8
+            );
+
+        VVAPI virtual ~FramebufferObjectRT();
+
+        // Returns the color buffer format
+        gl::EFormat colorBufferFormat() { return ColorBufferFormat; }
+
+        // Returns the depth(-stencil) buffer format
+        gl::EFormat depthBufferFormat() { return DepthBufferFormat; }
+
+        // Returns the framebuffer object
+        GLuint framebuffer() { return Framebuffer.get(); }
+
+        // Returns the color texture
+        GLuint colorTexture() { return ColorBuffer.get(); }
+
+        // Returns the depth(-stencil) renderbuffer
+        GLuint depthRenderbuffer() { return DepthBuffer.get(); }
+
+        // Render the color buffer into the current draw buffer
+        void displayColorBuffer() const;
+
+    private:
+        VVAPI virtual bool BeginFrameImpl();
+        VVAPI virtual bool EndFrameImpl();
+        VVAPI virtual bool ResizeImpl(int w, int h);
+
+    private:
+        // Color buffer format
+        gl::EFormat ColorBufferFormat;
+        // Depth buffer format
+        gl::EFormat DepthBufferFormat;
+        // The framebuffer object
+        gl::Framebuffer Framebuffer;
+        // Color buffer
+        gl::Texture ColorBuffer;
+        // Depth buffer
+        gl::Renderbuffer DepthBuffer;
     };
 
 
