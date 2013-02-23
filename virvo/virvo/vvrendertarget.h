@@ -35,6 +35,17 @@ namespace virvo
 {
 
 
+    enum ClearMask
+    {
+        CLEAR_NONE      = 0,
+        CLEAR_DEPTH     = 0x00000100, // = GL_DEPTH_BUFFER_BIT
+        CLEAR_ACCUM     = 0x00000200, // = GL_ACCUM_BUFFER_BIT
+        CLEAR_STENCIL   = 0x00000400, // = GL_STENCIL_BUFFER_BIT
+        CLEAR_COLOR     = 0x00004000, // = GL_COLOR_BUFFER_BIT
+        CLEAR_ALL       = CLEAR_COLOR | CLEAR_DEPTH | CLEAR_STENCIL | CLEAR_ACCUM
+    };
+
+
     //----------------------------------------------------------------------------------------------
     // RenderTarget
     //----------------------------------------------------------------------------------------------
