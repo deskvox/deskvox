@@ -81,6 +81,9 @@ namespace virvo
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int w, int h);
 
+        // (Re-)create the render buffers (but not the depth buffer)
+        bool CreateGLBuffers(int w, int h, bool linearInterpolation = false);
+
     private:
         static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits) {
             return w * h * (bits / 8);
