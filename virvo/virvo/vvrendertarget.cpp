@@ -94,8 +94,9 @@ DefaultFramebufferRT::~DefaultFramebufferRT()
 }
 
 
-bool DefaultFramebufferRT::BeginFrameImpl(unsigned /*clearMask*/)
+bool DefaultFramebufferRT::BeginFrameImpl(unsigned clearMask)
 {
+    glClear(clearMask);
     return true;
 }
 
@@ -131,7 +132,7 @@ FramebufferObjectRT::~FramebufferObjectRT()
 }
 
 
-bool FramebufferObjectRT::BeginFrameImpl(unsigned /*clearMask*/)
+bool FramebufferObjectRT::BeginFrameImpl(unsigned clearMask)
 {
     assert( Framebuffer.get() != 0 );
 
@@ -145,11 +146,7 @@ bool FramebufferObjectRT::BeginFrameImpl(unsigned /*clearMask*/)
     glViewport(0, 0, width(), height());
 
     // Clear the render targets
-    // XXX: Save the clear-mask as a member in FramebufferObjectRT!!!
-    if (gl::isDepthFormat(DepthBufferFormat))
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    else
-        glClear(GL_COLOR_BUFFER_BIT);
+    glClear(clearMask);
 
     return true;
 }
@@ -295,8 +292,14 @@ HostBufferRT::~HostBufferRT()
 }
 
 
-bool HostBufferRT::BeginFrameImpl(unsigned /*clearMask*/)
+bool HostBufferRT::BeginFrameImpl(unsigned clearMask)
 {
+    if (clearMask & CLEAR_COLOR)
+        std::fill(ColorBuffer.begin(), ColorBuffer.end(), 0);
+
+    if (clearMask & CLEAR_DEPTH)
+        std::fill(DepthBuffer.begin(), DepthBuffer.end(), 0);
+
     return true;
 }
 

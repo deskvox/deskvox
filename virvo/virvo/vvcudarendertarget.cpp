@@ -112,8 +112,16 @@ PixelUnpackBufferRT::~PixelUnpackBufferRT()
 }
 
 
-bool PixelUnpackBufferRT::BeginFrameImpl(unsigned /*clearMask*/)
+bool PixelUnpackBufferRT::BeginFrameImpl(unsigned clearMask)
 {
+    if (clearMask & CLEAR_COLOR)
+    {
+    }
+
+    if (clearMask & CLEAR_DEPTH)
+    {
+    }
+
     return Resource.map() != 0;
 }
 
@@ -244,8 +252,14 @@ DeviceBufferRT::~DeviceBufferRT()
 }
 
 
-bool DeviceBufferRT::BeginFrameImpl(unsigned /*clearMask*/)
+bool DeviceBufferRT::BeginFrameImpl(unsigned clearMask)
 {
+    if (clearMask & CLEAR_COLOR)
+        ColorBuffer.fill(0);
+
+    if (clearMask & CLEAR_DEPTH)
+        DepthBuffer.fill(0);
+
     return true;
 }
 
