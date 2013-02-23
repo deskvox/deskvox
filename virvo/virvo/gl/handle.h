@@ -24,6 +24,7 @@
 
 
 #include "vvexport.h"
+#include "types.h"
 
 
 namespace virvo
@@ -36,10 +37,10 @@ namespace gl
 #define VV_GL_DEFINE_OBJECT(NAME)                                   \
     class NAME {                                                    \
     private:                                                        \
-        unsigned name;                                              \
+        GLuint name;                                                \
     public:                                                         \
         /* Construct from the given object */                       \
-        explicit NAME(unsigned name = 0) : name(name)               \
+        explicit NAME(GLuint name = 0) : name(name)                 \
         {                                                           \
         }                                                           \
         /* Destroy the currently held OpenGL object */              \
@@ -48,22 +49,22 @@ namespace gl
             reset();                                                \
         }                                                           \
         /* Returns the OpenGL name */                               \
-        unsigned get() const                                        \
+        GLuint get() const                                          \
         {                                                           \
             return name;                                            \
         }                                                           \
         /* Reset with another OpenGL object (of the same type!) */  \
         /* Destroy the currently held OpenGL object */              \
-        void reset(unsigned n = 0)                                  \
+        void reset(GLuint n = 0)                                    \
         {                                                           \
             if (name)                                               \
                 destroy();                                          \
             name = n;                                               \
         }                                                           \
         /* Release ownership of the OpenGL object */                \
-        unsigned release()                                          \
+        GLuint release()                                            \
         {                                                           \
-            unsigned n = name; name = 0; return n;                  \
+            GLuint n = name; name = 0; return n;                    \
         }                                                           \
         /* Destroy the currently held OpenGL object */              \
         VVAPI void destroy();                                       \
@@ -87,16 +88,16 @@ namespace gl
 
 
     // Creates an OpenGL buffer
-    VVAPI unsigned createBuffer();
+    VVAPI GLuint createBuffer();
 
     // Creates an OpenGL framebuffer object
-    VVAPI unsigned createFramebuffer();
+    VVAPI GLuint createFramebuffer();
 
     // Creates an OpenGL renderbuffer
-    VVAPI unsigned createRenderbuffer();
+    VVAPI GLuint createRenderbuffer();
 
     // Creates an OpenGL texture
-    VVAPI unsigned createTexture();
+    VVAPI GLuint createTexture();
 
 
 } // namespace gl

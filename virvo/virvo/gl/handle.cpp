@@ -51,33 +51,33 @@ void gl::Texture::destroy()
 }
 
 
-unsigned gl::createBuffer()
+GLuint gl::createBuffer()
 {
-    unsigned n = 0;
+    GLuint n = 0;
     glGenBuffers(1, &n);
     return n;
 }
 
 
-unsigned gl::createFramebuffer()
+GLuint gl::createFramebuffer()
 {
-    unsigned n = 0;
+    GLuint n = 0;
     glGenFramebuffers(1, &n);
     return n;
 }
 
 
-unsigned gl::createRenderbuffer()
+GLuint gl::createRenderbuffer()
 {
-    unsigned n = 0;
+    GLuint n = 0;
     glGenRenderbuffers(1, &n);
     return n;
 }
 
 
-unsigned gl::createTexture()
+GLuint gl::createTexture()
 {
-    unsigned n = 0;
+    GLuint n = 0;
     glGenTextures(1, &n);
     return n;
 }
