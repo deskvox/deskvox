@@ -252,8 +252,8 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos, co
                              const float3& Lpos, const float3& V,
                              const float3& Ka, const float3& Kd, const float3& Ks,
                              const float shininess,
-                             const float3* normal = NULL,
-                             float constAtt = 1.0f, float linearAtt = 0.0f, float quadAtt = 0.0f)
+                             const float constAtt, const float linearAtt, const float quadAtt,
+                             const float3* normal = NULL)
 {
   // Normal transformed from texture to volume coordinates
   float3 N = normalize(gradient<t_bpc>(texcoord));
@@ -505,18 +505,18 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       const float shininess = 1000.0f;
       if (justClippedPlane)
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, &planeNormal, constAtt, linearAtt, quadAtt);
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt, &planeNormal);
         justClippedPlane = false;
       }
       else if (justClippedSphere)
       {
         float3 sphereNormal = normalize(pos - sphereCenter);
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, &sphereNormal, constAtt, linearAtt, quadAtt);
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt, &sphereNormal);
         justClippedSphere = false;
       }
       else
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess);
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt);
       }
     }
     justClippedPlane = false;
