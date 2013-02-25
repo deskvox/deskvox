@@ -804,6 +804,24 @@ vvParam vvCanvas::getParameter(vvRenderer::ParameterType param) const
   return vvParam();
 }
 
+void vvCanvas::addTFWidget(vvTFWidget* widget)
+{
+  _vd->tf.putUndoBuffer();
+  _vd->tf._widgets.push_back(widget);
+  updateTransferFunction();
+}
+
+void vvCanvas::updateTransferFunction()
+{
+  _renderer->updateTransferFunction();
+  updateGL();
+}
+
+void vvCanvas::undoTransferFunction()
+{
+  _vd->tf.getUndoBuffer();
+}
+
 void vvCanvas::startAnimation(const double fps)
 {
   vvDebugMsg::msg(3, "vvCanvas::startAnimation()");

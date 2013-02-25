@@ -157,6 +157,10 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(_prefDialog, SIGNAL(parameterChanged(vvRenderer::ParameterType, const vvParam&)),
     _canvas, SLOT(setParameter(vvRenderer::ParameterType, const vvParam&)));
 
+  connect(_tfDialog, SIGNAL(newWidget(vvTFWidget*)), _canvas, SLOT(addTFWidget(vvTFWidget*)));
+  connect(_tfDialog, SIGNAL(newTransferFunction()), _canvas, SLOT(updateTransferFunction()));
+  connect(_tfDialog, SIGNAL(undo()), _canvas, SLOT(undoTransferFunction()));
+
   connect(_lightDialog, SIGNAL(enabled(bool)), _canvas, SLOT(enableLighting(bool)));
   connect(_lightDialog, SIGNAL(showLightSource(bool)), _canvas, SLOT(showLightSource(bool)));
   connect(_lightDialog, SIGNAL(editPositionToggled(bool)), _canvas, SLOT(editLightPosition(bool)));

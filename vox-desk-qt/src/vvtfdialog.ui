@@ -60,6 +60,37 @@
       <enum>QFrame::NoFrame</enum>
      </property>
     </widget>
+    <widget class="QGraphicsView" name="alpha1DView">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>768</width>
+       <height>225</height>
+      </rect>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>768</width>
+       <height>225</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>768</width>
+       <height>225</height>
+      </size>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="tf2DTab">
     <attribute name="title">
@@ -118,6 +149,9 @@
    <layout class="QHBoxLayout" name="widgetButtonLayout">
     <item>
      <widget class="QPushButton" name="colorButton">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="text">
        <string>Color</string>
       </property>
@@ -125,6 +159,9 @@
     </item>
     <item>
      <widget class="QPushButton" name="pyramidButton">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="text">
        <string>Pyramid</string>
       </property>
@@ -132,6 +169,9 @@
     </item>
     <item>
      <widget class="QPushButton" name="gaussianButton">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="text">
        <string>Gaussian</string>
       </property>
@@ -139,6 +179,9 @@
     </item>
     <item>
      <widget class="QPushButton" name="customButton">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="text">
        <string>Custom</string>
       </property>
@@ -146,6 +189,9 @@
     </item>
     <item>
      <widget class="QPushButton" name="skipRangeButton">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="text">
        <string>Skip Range</string>
       </property>
@@ -153,6 +199,9 @@
     </item>
     <item>
      <widget class="QPushButton" name="deleteButton">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="text">
        <string>Delete</string>
       </property>
@@ -160,6 +209,9 @@
     </item>
     <item>
      <widget class="QPushButton" name="undoButton">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="text">
        <string>Undo</string>
       </property>

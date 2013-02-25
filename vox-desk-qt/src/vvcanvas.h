@@ -27,6 +27,7 @@
 #include "vvstereomode.h"
 
 #include <virvo/vvrendererfactory.h>
+#include <virvo/vvtfwidget.h>
 #include <virvo/vvvecmath.h>
 
 #include <QGLWidget>
@@ -107,6 +108,10 @@ public slots:
   void setParameter(vvRenderer::ParameterType param, const vvParam& value);
   vvParam getParameter(vvParameters::ParameterType param) const;
   vvParam getParameter(vvRenderer::ParameterType param) const;
+
+  void addTFWidget(vvTFWidget* widget);
+  void updateTransferFunction();
+  void undoTransferFunction();
 
   void startAnimation(double fps);
   void stopAnimation();

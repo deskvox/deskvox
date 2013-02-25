@@ -21,6 +21,7 @@
 #ifndef VV_TFDIALOG_H
 #define VV_TFDIALOG_H
 
+#include <virvo/vvtfwidget.h>
 #include <virvo/vvvoldesc.h>
 
 #include <QDialog>
@@ -43,12 +44,20 @@ private:
   vvVector2f _zoomRange; ///< min/max for zoom area on data range
 
   void drawColorTexture();
+  void drawAlphaTexture();
   void makeColorBar(std::vector<uchar>* colorBar, int width) const;
-  void updateTransFunc();
+  void makeAlphaTexture(std::vector<uchar>* alphaTex, int width, int height) const;
+  void emitTransFunc();
 private slots:
+  void onNewWidget();
+  void onUndoClicked();
   void onPresetColorsChanged(int index);
   void onPresetAlphaChanged(int index);
   void onApplyClicked();
+signals:
+  void newWidget(vvTFWidget* widget);
+  void newTransferFunction();
+  void undo();
 };
 
 #endif
