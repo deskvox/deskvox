@@ -26,6 +26,7 @@
 
 #include <cuda_runtime_api.h>
 
+#include <cstring>
 
 using virvo::cuda::HostDeviceArray;
 

@@ -33,6 +33,7 @@ class vvPlugin;
 class vvPrefDialog;
 class vvScreenshotDialog;
 class vvShortcutDialog;
+class vvSliceViewer;
 class vvTFDialog;
 class vvTimeStepDialog;
 class vvVolInfoDialog;
@@ -57,6 +58,7 @@ private:
   vvShortcutDialog* _shortcutDialog;
   vvTFDialog* _tfDialog;
   vvLightDialog* _lightDialog;
+  vvSliceViewer* _sliceViewer;
   vvTimeStepDialog* _timeStepDialog;
   vvVolInfoDialog* _volInfoDialog;
 
@@ -96,6 +98,7 @@ private slots:
   void onShowFrameRateTriggered(bool checked);
   void onAutoRotationTriggered(bool checked);
   void onVolumeInformationTriggered();
+  void onSliceViewerTriggered();
   void onTimeStepsTriggered();
 
   void onKeyboardCommandsClicked();

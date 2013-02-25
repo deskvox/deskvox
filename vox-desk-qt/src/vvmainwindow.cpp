@@ -29,6 +29,7 @@
 #include "vvprefdialog.h"
 #include "vvscreenshotdialog.h"
 #include "vvshortcutdialog.h"
+#include "vvsliceviewer.h"
 #include "vvtfdialog.h"
 #include "vvtimestepdialog.h"
 #include "vvvolinfodialog.h"
@@ -112,6 +113,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   _mergeDialog = new vvMergeDialog(this);
   _screenshotDialog = new vvScreenshotDialog(_canvas, this);
   _shortcutDialog = new vvShortcutDialog(this);
+  _sliceViewer = new vvSliceViewer(_canvas->getVolDesc(), this);
   _timeStepDialog = new vvTimeStepDialog(this);
   _volInfoDialog = new vvVolInfoDialog(this);
 
@@ -141,6 +143,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(ui->actionShowFrameRate, SIGNAL(triggered(bool)), this, SLOT(onShowFrameRateTriggered(bool)));
   connect(ui->actionAutoRotation, SIGNAL(triggered(bool)), this, SLOT(onAutoRotationTriggered(bool)));
   connect(ui->actionVolumeInformation, SIGNAL(triggered(bool)), this, SLOT(onVolumeInformationTriggered()));
+  connect(ui->actionSliceViewer, SIGNAL(triggered()), this, SLOT(onSliceViewerTriggered()));
   connect(ui->actionTimeSteps, SIGNAL(triggered()), this, SLOT(onTimeStepsTriggered()));
 
   // help menu
@@ -167,6 +170,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(_lightDialog, SIGNAL(attenuationChanged(const vvVector3&)), _canvas, SLOT(setLightAttenuation(const vvVector3&)));
 
   connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), _volInfoDialog, SLOT(onNewVolDesc(vvVolDesc*)));
+  connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), _sliceViewer, SLOT(onNewVolDesc(vvVolDesc*)));
 
   connect(_timeStepDialog, SIGNAL(valueChanged(int)), _canvas, SLOT(setTimeStep(int)));
   connect(_timeStepDialog, SIGNAL(play(double)), _canvas, SLOT(startAnimation(double)));
@@ -176,6 +180,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(_timeStepDialog, SIGNAL(first()), _canvas, SLOT(firstTimeStep()));
   connect(_timeStepDialog, SIGNAL(last()), _canvas, SLOT(lastTimeStep()));
   connect(_canvas, SIGNAL(currentFrame(int)), _timeStepDialog, SLOT(setCurrentFrame(int)));
+  connect(_canvas, SIGNAL(currentFrame(int)), _sliceViewer, SLOT(onNewFrame(int)));
 
   // shortcuts
 
@@ -599,6 +604,12 @@ void vvMainWindow::onVolumeInformationTriggered()
 {
   _volInfoDialog->raise();
   _volInfoDialog->show();
+}
+
+void vvMainWindow::onSliceViewerTriggered()
+{
+  _sliceViewer->raise();
+  _sliceViewer->show();
 }
 
 void vvMainWindow::onTimeStepsTriggered()

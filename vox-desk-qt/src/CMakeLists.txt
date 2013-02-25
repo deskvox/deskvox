@@ -26,6 +26,7 @@ set(VOXDESK_QT_INC
   vvprefdialog.h
   vvscreenshotdialog.h
   vvshortcutdialog.h
+  vvsliceviewer.h
   vvtfdialog.h
   vvtimestepdialog.h
   vvvolinfodialog.h
@@ -44,6 +45,7 @@ SET(VOXDESK_QT_SRC
   vvprefdialog.cpp
   vvscreenshotdialog.cpp
   vvshortcutdialog.cpp
+  vvsliceviewer.cpp
   vvtfdialog.cpp
   vvtimestepdialog.cpp
   vvvolinfodialog.cpp
@@ -57,6 +59,7 @@ SET(VOXDESK_QT_UI
   vvprefdialog.ui
   vvscreenshotdialog.ui
   vvshortcutdialog.ui
+  vvsliceviewer.ui
   vvtfdialog.ui
   vvtimestepdialog.ui
   vvvolinfodialog.ui
