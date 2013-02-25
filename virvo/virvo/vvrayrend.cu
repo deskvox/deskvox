@@ -230,19 +230,19 @@ __device__ uchar4 rgbaFloatToInt(float4 rgba)
 }
 
 template<int t_bpc>
-__device__ float3 gradient(const float3& pos)
+__device__ float3 gradient(const float3& texcoord)
 {
   const float DELTA = 0.01f;
 
   float3 sample1;
   float3 sample2;
 
-  sample1.x = volume<t_bpc>(pos - make_float3(DELTA, 0.0f, 0.0f));
-  sample2.x = volume<t_bpc>(pos + make_float3(DELTA, 0.0f, 0.0f));
-  sample1.y = volume<t_bpc>(pos - make_float3(0.0f, DELTA, 0.0f));
-  sample2.y = volume<t_bpc>(pos + make_float3(0.0f, DELTA, 0.0f));
-  sample1.z = volume<t_bpc>(pos - make_float3(0.0f, 0.0f, DELTA));
-  sample2.z = volume<t_bpc>(pos + make_float3(0.0f, 0.0f, DELTA));
+  sample1.x = volume<t_bpc>(texcoord - make_float3(DELTA, 0.0f, 0.0f));
+  sample2.x = volume<t_bpc>(texcoord + make_float3(DELTA, 0.0f, 0.0f));
+  sample1.y = volume<t_bpc>(texcoord - make_float3(0.0f, DELTA, 0.0f));
+  sample2.y = volume<t_bpc>(texcoord + make_float3(0.0f, DELTA, 0.0f));
+  sample1.z = volume<t_bpc>(texcoord - make_float3(0.0f, 0.0f, DELTA));
+  sample2.z = volume<t_bpc>(texcoord + make_float3(0.0f, 0.0f, DELTA));
 
   return sample2 - sample1;
 }
