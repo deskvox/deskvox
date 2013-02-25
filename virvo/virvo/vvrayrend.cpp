@@ -78,7 +78,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   const uint texwidth, const float dist,
                                   const float3 volPos, const float3 volSizeHalf,
                                   const float3 probePos, const float3 probeSizeHalf,
-                                  const float3 L, const float3 H,
+                                  const float3 Lpos, const float3 V,
                                   float constAtt, float linearAtt, float quadAtt,
                                   const bool clipPlane,
                                   const bool clipSphere,
@@ -316,16 +316,16 @@ void vvRayRend::compositeVolume(int, int)
     glGetLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &linearAtt);
     glGetLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &quadAtt);
   }
-  const float3 L = -normalize(make_float3(lv[0], lv[1], lv[2]));
+  // position of light source. transform eye coordinates to object coordinates
+  vvVector3 LposEye = vvVector3(lv[0], lv[1], lv[2]);
+  LposEye.multiply(invMv);
+  const float3 Lpos = make_float3(LposEye[0], LposEye[1], LposEye[2]);
 
   vvVector3 normal;
   getShadingNormal(normal, origin, eye, invMv, isOrtho);
 
   // viewing direction equals normal direction
   const float3 V = make_float3(normal[0], normal[1], normal[2]);
-
-  // Half way vector.
-  const float3 H = normalize(L + V);
 
   // Clip sphere.
   const float3 center = make_float3(_roiPos[0], _roiPos[1], _roiPos[2]);
@@ -368,7 +368,7 @@ void vvRayRend::compositeVolume(int, int)
                     backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
                     volPos, volSize * 0.5f,
                     probePos, probeSize * 0.5f,
-                    L, H,
+                    Lpos, V,
                     constAtt, linearAtt, quadAtt,
                     false, false, false,
                     center, radius * radius,
