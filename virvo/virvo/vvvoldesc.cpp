@@ -3470,8 +3470,6 @@ void vvVolDesc::getVolumeSize(vvVecmath::AxisType axis, int& width, int& height,
   @param slice  slice index to create, relative to slicing axis (>=0)
   @param dst    _allocated_ space for sliceWidth * sliceHeight * 3 bytes;
                 get width and height via getVolumeSize
-  @param width  image width [pixels]
-  @param height image height [pixels]
 */
 void vvVolDesc::makeSliceImage(int frame, vvVecmath::AxisType axis, int slice, uchar* dst)
 {
