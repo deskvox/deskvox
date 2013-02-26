@@ -252,7 +252,7 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos, co
                              const float3& Lpos, const float3& V,
                              const float3& Ka, const float3& Kd, const float3& Ks,
                              const float shininess,
-                             const float constAtt, const float linearAtt, const float quadAtt,
+                             const float constAtt = 1.f, const float linearAtt = 0.f, const float quadAtt = 0.f,
                              const float3* normal = NULL)
 {
   // Normal transformed from texture to volume coordinates
