@@ -1420,46 +1420,59 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(const int offsetX, const int of
         const int texLineOffset = (y - offsets[1] - offsetY) * sizeX + (s - offsets[2] - offsetZ) * sizeX * sizeY;
         if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
         {
-          for (int x = offsets[0]; x < (offsets[0] + sizeX); x++)
+          if (vd->bpc == 1 && voxelType != VV_SGI_LUT && voxelType != VV_TEX_SHD && voxelType != VV_RGBA)
           {
-            srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
-            if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
-            else if (vd->bpc == 2)
+            // one byte, one color channel ==> can use memcpy for consecutive memory chunks
+            int x1 = offsets[0];
+            int x2 = offsets[0] + sizeX;
+            int srcMin = vd->bpc * min(x1, vd->vox[0] - 1) + rawSliceOffset + heightOffset;
+            int srcMax = vd->bpc * min(x2, vd->vox[0] - 1) + rawSliceOffset + heightOffset;
+            texOffset = texLineOffset - offsetX;
+            memcpy(&texData[texelsize * texOffset], &raw[srcMin], srcMax - srcMin);
+          }
+          else
+          {
+            for (int x = offsets[0]; x < (offsets[0] + sizeX); x++)
             {
-              rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-              rawVal[0] >>= 4;
-            }
-            else // vd->bpc==4: convert floating point to 8bit value
-            {
-              const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-              rawVal[0] = vd->mapFloat2Int(fval);
-            }
-            texOffset = (x - offsets[0] - offsetX) + texLineOffset;
-            switch(voxelType)
-            {
-              case VV_SGI_LUT:
-                texData[2 * texOffset] = texData[2 * texOffset + 1] = (uchar) rawVal[0];
-                break;
-              case VV_PAL_TEX:
-              case VV_FRG_PRG:
-              case VV_PIX_SHD:
-                texData[texelsize * texOffset] = (uchar) rawVal[0];
-                break;
-              case VV_TEX_SHD:
-                for (int c = 0; c < 4; c++)
-                {
-                  texData[4 * texOffset + c] = (uchar) rawVal[0];
-                }
-                break;
-              case VV_RGBA:
-                for (int c = 0; c < 4; c++)
-                {
-                  texData[4 * texOffset + c] = rgbaLUT[rawVal[0] * 4 + c];
-                }
-                break;
-              default:
-                assert(0);
-                break;
+              srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
+              if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
+              else if (vd->bpc == 2)
+              {
+                rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
+                rawVal[0] >>= 4;
+              }
+              else // vd->bpc==4: convert floating point to 8bit value
+              {
+                const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+                rawVal[0] = vd->mapFloat2Int(fval);
+              }
+              texOffset = (x - offsets[0] - offsetX) + texLineOffset;
+              switch(voxelType)
+              {
+                case VV_SGI_LUT:
+                  texData[2 * texOffset] = texData[2 * texOffset + 1] = (uchar) rawVal[0];
+                  break;
+                case VV_PAL_TEX:
+                case VV_FRG_PRG:
+                case VV_PIX_SHD:
+                  texData[texelsize * texOffset] = (uchar) rawVal[0];
+                  break;
+                case VV_TEX_SHD:
+                  for (int c = 0; c < 4; c++)
+                  {
+                    texData[4 * texOffset + c] = (uchar) rawVal[0];
+                  }
+                  break;
+                case VV_RGBA:
+                  for (int c = 0; c < 4; c++)
+                  {
+                    texData[4 * texOffset + c] = rgbaLUT[rawVal[0] * 4 + c];
+                  }
+                  break;
+                default:
+                  assert(0);
+                  break;
+              }
             }
           }
         }
