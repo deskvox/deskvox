@@ -21,6 +21,7 @@
 
 #include "host_device_array.h"
 
+#include <cstring>
 
 #ifdef HAVE_CUDA
 

@@ -109,6 +109,11 @@ __device__ float3 calcTexCoord(const float3& pos, const float3& volPos, const fl
                      (-pos.z - volPos.z + volSizeHalf.z) / (volSizeHalf.z * 2.0f));
 }
 
+__device__ float3 tex2vol(const float3& tex)
+{
+  return make_float3(-tex.x, tex.y, tex.z);
+}
+
 __device__ bool solveQuadraticEquation(const float A, const float B, const float C,
                                        float* tnear, float* tfar)
 {
@@ -225,32 +230,40 @@ __device__ uchar4 rgbaFloatToInt(float4 rgba)
 }
 
 template<int t_bpc>
-__device__ float3 gradient(const float3& pos)
+__device__ float3 gradient(const float3& texcoord)
 {
   const float DELTA = 0.01f;
 
   float3 sample1;
   float3 sample2;
 
-  sample1.x = volume<t_bpc>(pos - make_float3(DELTA, 0.0f, 0.0f));
-  sample2.x = volume<t_bpc>(pos + make_float3(DELTA, 0.0f, 0.0f));
-  sample1.y = volume<t_bpc>(pos - make_float3(0.0f, DELTA, 0.0f));
-  sample2.y = volume<t_bpc>(pos + make_float3(0.0f, DELTA, 0.0f));
-  sample1.z = volume<t_bpc>(pos - make_float3(0.0f, 0.0f, DELTA));
-  sample2.z = volume<t_bpc>(pos + make_float3(0.0f, 0.0f, DELTA));
+  sample1.x = volume<t_bpc>(texcoord - make_float3(DELTA, 0.0f, 0.0f));
+  sample2.x = volume<t_bpc>(texcoord + make_float3(DELTA, 0.0f, 0.0f));
+  sample1.y = volume<t_bpc>(texcoord - make_float3(0.0f, DELTA, 0.0f));
+  sample2.y = volume<t_bpc>(texcoord + make_float3(0.0f, DELTA, 0.0f));
+  sample1.z = volume<t_bpc>(texcoord - make_float3(0.0f, 0.0f, DELTA));
+  sample2.z = volume<t_bpc>(texcoord + make_float3(0.0f, 0.0f, DELTA));
 
   return sample2 - sample1;
 }
 
 template<int t_bpc>
-__device__ float4 blinnPhong(const float4& classification, const float3& pos,
-                             const float3& L, const float3& H,
+__device__ float4 blinnPhong(const float4& classification, const float3& pos, const float3& texcoord,
+                             const float3& Lpos, const float3& V,
                              const float3& Ka, const float3& Kd, const float3& Ks,
                              const float shininess,
-                             const float3* normal = NULL,
-                             float constAtt = 1.0f, float linearAtt = 0.0f, float quadAtt = 0.0f)
+                             const float constAtt = 1.f, const float linearAtt = 0.f, const float quadAtt = 0.f,
+                             const float3* normal = NULL)
 {
-  float3 N = normalize(gradient<t_bpc>(pos));
+  // Normal transformed from texture to volume coordinates
+  float3 N = normalize(gradient<t_bpc>(texcoord));
+  N = tex2vol(N);
+
+  // Light direction
+  const float3 L = normalize(Lpos - pos);
+
+  // Half way vector.
+  const float3 H = normalize(L + V);
 
   if (normal != NULL)
   {
@@ -296,7 +309,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const uint texwidth, const float dist,
                        const float3 volPos, const float3 volSizeHalf,
                        const float3 probePos, const float3 probeSizeHalf,
-                       const float3 L, const float3 H,
+                       const float3 Lpos, const float3 V,
                        float constAtt, float linearAtt, float quadAtt,
                        const bool clipPlane,
                        const bool clipSphere,
@@ -492,18 +505,18 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       const float shininess = 1000.0f;
       if (justClippedPlane)
       {
-        src = blinnPhong<t_bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &planeNormal, constAtt, linearAtt, quadAtt);
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt, &planeNormal);
         justClippedPlane = false;
       }
       else if (justClippedSphere)
       {
         float3 sphereNormal = normalize(pos - sphereCenter);
-        src = blinnPhong<t_bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess, &sphereNormal, constAtt, linearAtt, quadAtt);
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt, &sphereNormal);
         justClippedSphere = false;
       }
       else
       {
-        src = blinnPhong<t_bpc>(src, texCoord, L, H, Ka, Kd, Ks, shininess);
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt);
       }
     }
     justClippedPlane = false;
@@ -692,7 +705,7 @@ typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint heigh
                             const uint texwidth, const float dist,
                             const float3 volPos, const float3 volSizeHalf,
                             const float3 probePos, const float3 probeSizeHalf,
-                            const float3 L, const float3 H,
+                            const float3 Lpos, const float3 V,
                             float constAtt, float linearAtt, float quadAtt,
                             const bool clipPlane,
                             const bool clipSphere,
@@ -927,7 +940,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   const uint texwidth, const float dist,
                                   const float3 volPos, const float3 volSizeHalf,
                                   const float3 probePos, const float3 probeSizeHalf,
-                                  const float3 L, const float3 H,
+                                  const float3 Lpos, const float3 V,
                                   float constAtt, float linearAtt, float quadAtt,
                                   const bool clipPlane,
                                   const bool clipSphere,
@@ -965,7 +978,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                       texwidth, dist,
                                       volPos, volSizeHalf,
                                       probePos, probeSizeHalf,
-                                      L, H,
+                                      Lpos, V,
                                       constAtt, linearAtt, quadAtt,
                                       clipPlane,
                                       clipSphere,
@@ -982,7 +995,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                     texwidth, dist,
                                     volPos, volSizeHalf,
                                     probePos, probeSizeHalf,
-                                    L, H,
+                                    Lpos, V,
                                     constAtt, linearAtt, quadAtt,
                                     clipPlane,
                                     clipSphere,
