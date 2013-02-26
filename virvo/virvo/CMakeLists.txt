@@ -72,6 +72,7 @@ set(VIRVO_HEADERS
   gl/format.h
   gl/handle.h
   gl/types.h
+  gl/util.h
 
   vvbonjour/vvbonjour.h
   vvbonjour/vvbonjourbrowser.h
@@ -178,6 +179,7 @@ set(VIRVO_SOURCES
 
   gl/format.cpp
   gl/handle.cpp
+  gl/util.cpp
 
   vvbonjour/vvbonjour.cpp
   vvbonjour/vvbonjourbrowser.cpp
