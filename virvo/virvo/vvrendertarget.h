@@ -75,6 +75,10 @@ namespace virvo
         // Resize the render target
         VVAPI bool resize(int w, int h);
 
+        // Render the color buffer into the current draw buffer
+        // NOTE: Must not be supported by all render targets
+        VVAPI bool displayColorBuffer() const;
+
         // Returns a pointer to the device color buffer - if any
         virtual void* deviceColor() { return 0; }
 
@@ -91,6 +95,7 @@ namespace virvo
         virtual bool BeginFrameImpl(unsigned clearMask) = 0;
         virtual bool EndFrameImpl() = 0;
         virtual bool ResizeImpl(int w, int h) = 0;
+        virtual bool DisplayColorBufferImpl() const = 0;
 
     private:
         // The width of the render-target
@@ -114,6 +119,7 @@ namespace virvo
         VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int /*w*/, int /*h*/);
+        VVAPI virtual bool DisplayColorBufferImpl() const;
     };
 
 
@@ -149,13 +155,11 @@ namespace virvo
         // Returns the depth(-stencil) renderbuffer
         GLuint depthRenderbuffer() { return DepthBuffer.get(); }
 
-        // Render the color buffer into the current draw buffer
-        void displayColorBuffer() const;
-
     private:
         VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int w, int h);
+        VVAPI virtual bool DisplayColorBufferImpl() const;
 
     private:
         // Color buffer format
@@ -201,13 +205,11 @@ namespace virvo
         // Returns a pointer to the host depth buffer - if any
         virtual void* hostDepth() { return &DepthBuffer[0]; }
 
-        // Render the color buffer into the current draw buffer
-        void displayColorBuffer() const;
-
     private:
         VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int w, int h);
+        VVAPI virtual bool DisplayColorBufferImpl() const;
 
     private:
         static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits) {

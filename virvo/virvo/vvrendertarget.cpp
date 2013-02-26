@@ -58,12 +58,13 @@ RenderTarget::RenderTarget(int Width, int Height)
 
 RenderTarget::~RenderTarget()
 {
+    assert( !Bound );
 }
 
 
 bool RenderTarget::beginFrame(unsigned clearMask)
 {
-    assert( Bound == false && "already bound" );
+    assert( !Bound && "already bound" );
 
     Bound = BeginFrameImpl(clearMask);
     return Bound;
@@ -72,7 +73,7 @@ bool RenderTarget::beginFrame(unsigned clearMask)
 
 bool RenderTarget::endFrame()
 {
-    assert( Bound == true && "not bound" );
+    assert( Bound && "not bound" );
 
     bool Success = EndFrameImpl();
 
@@ -84,7 +85,7 @@ bool RenderTarget::endFrame()
 
 bool RenderTarget::resize(int w, int h)
 {
-    assert( Bound == false && "resize while bound" );
+    assert( !Bound && "resize while bound" );
 
     if (Width == w && Height == h)
         return true;
@@ -101,6 +102,14 @@ bool RenderTarget::resize(int w, int h)
 }
 
 
+bool RenderTarget::displayColorBuffer() const
+{
+    assert( Bound == false && "display while bound" );
+
+    return DisplayColorBufferImpl();
+}
+
+
 //--------------------------------------------------------------------------------------------------
 // DefaultFramebufferRT
 //--------------------------------------------------------------------------------------------------
@@ -113,10 +122,7 @@ DefaultFramebufferRT::~DefaultFramebufferRT()
 
 bool DefaultFramebufferRT::BeginFrameImpl(unsigned clearMask)
 {
-#if 0
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClearDepth(1.0);
-#endif
+    // Clear the render targets (using the current values from OpenGL)
     glClear(clearMask);
     return true;
 }
@@ -130,6 +136,17 @@ bool DefaultFramebufferRT::EndFrameImpl()
 
 bool DefaultFramebufferRT::ResizeImpl(int /*w*/, int /*h*/)
 {
+    return true;
+}
+
+
+bool DefaultFramebufferRT::DisplayColorBufferImpl() const
+{
+    //
+    // XXX:
+    // Swap buffers?!
+    //
+
     return true;
 }
 
@@ -167,6 +184,7 @@ bool FramebufferObjectRT::BeginFrameImpl(unsigned clearMask)
     glViewport(0, 0, width(), height());
 
     // Clear the render targets
+    // Always use transparent black here!
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0);
     glClear(clearMask);
@@ -269,9 +287,10 @@ bool FramebufferObjectRT::ResizeImpl(int w, int h)
 }
 
 
-void FramebufferObjectRT::displayColorBuffer() const
+bool FramebufferObjectRT::DisplayColorBufferImpl() const
 {
     gl::blendTexture(ColorBuffer.get());
+    return true;
 }
 
 
@@ -321,7 +340,8 @@ bool HostBufferRT::ResizeImpl(int w, int h)
 }
 
 
-void HostBufferRT::displayColorBuffer() const
+bool HostBufferRT::DisplayColorBufferImpl() const
 {
     gl::blendPixels(width(), height(), GL_RGBA, GL_FLOAT, &ColorBuffer[0]);
+    return true;
 }

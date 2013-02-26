@@ -76,13 +76,11 @@ namespace virvo
         // Returns a pointer to the host depth buffer
         virtual void* hostDepth() { return DepthBuffer.hostPtr(); }
 
-        // Render the color buffer into the current draw buffer
-        void displayColorBuffer() const;
-
     private:
         VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int w, int h);
+        VVAPI virtual bool DisplayColorBufferImpl() const;
 
         // (Re-)create the render buffers (but not the depth buffer)
         bool CreateGLBuffers(int w, int h, bool linearInterpolation = false);
@@ -151,6 +149,7 @@ namespace virvo
         VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
         VVAPI virtual bool EndFrameImpl();
         VVAPI virtual bool ResizeImpl(int w, int h);
+        VVAPI virtual bool DisplayColorBufferImpl() const;
 
     private:
         static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits) {

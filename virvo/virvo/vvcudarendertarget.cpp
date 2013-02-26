@@ -175,9 +175,10 @@ bool PixelUnpackBufferRT::CreateGLBuffers(int w, int h, bool linearInterpolation
 }
 
 
-void PixelUnpackBufferRT::displayColorBuffer() const
+bool PixelUnpackBufferRT::DisplayColorBufferImpl() const
 {
     gl::blendTexture(Texture.get());
+    return true;
 }
 
 
@@ -230,6 +231,13 @@ bool DeviceBufferRT::ResizeImpl(int w, int h)
         return false;
     }
 
+    return true;
+}
+
+
+bool DeviceBufferRT::DisplayColorBufferImpl() const
+{
+    gl::blendPixels(width(), height(), GetFormat(ColorBits), GL_UNSIGNED_BYTE, ColorBuffer.hostPtr());
     return true;
 }
 
