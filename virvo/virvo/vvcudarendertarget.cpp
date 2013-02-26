@@ -26,6 +26,7 @@
 
 
 #include "vvcuda.h"
+#include "gl/util.h"
 
 #include <GL/glew.h>
 
@@ -42,30 +43,10 @@ using virvo::PixelUnpackBufferRT;
 using virvo::DeviceBufferRT;
 
 
-static GLenum GetGLError(char const* file, int line)
-{
-    GLenum err = glGetError();
-
-    if (err != GL_NO_ERROR)
-        fprintf(stderr, "%s(%d) : GL error: %s\n", file, line, gluErrorString(err));
-
-    return err;
-}
-
-#define GET_GL_ERROR() GetGLError(__FILE__, __LINE__)
-
-
 //--------------------------------------------------------------------------------------------------
 // PixelUnpackBufferRT
 //--------------------------------------------------------------------------------------------------
 
-
-//struct Format
-//{
-//    GLenum internalFormat;
-//    GLenum format;
-//    GLenum type;
-//};
 
 static GLenum GetInternalFormat(unsigned bits)
 {
@@ -145,7 +126,7 @@ bool PixelUnpackBufferRT::EndFrameImpl()
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-    if (GL_NO_ERROR != GET_GL_ERROR())
+    if (GL_NO_ERROR != VV_GET_GL_ERROR())
         return false;
 
     return true;
@@ -173,7 +154,7 @@ bool PixelUnpackBufferRT::CreateGLBuffers(int w, int h, bool linearInterpolation
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexImage2D(GL_TEXTURE_2D, 0, GetInternalFormat(ColorBits), w, h, 0, GetFormat(ColorBits), GL_UNSIGNED_BYTE, 0);
 
-    if (GL_NO_ERROR != GET_GL_ERROR())
+    if (GL_NO_ERROR != VV_GET_GL_ERROR())
         return false;
 
     // Create the buffer
@@ -183,7 +164,7 @@ bool PixelUnpackBufferRT::CreateGLBuffers(int w, int h, bool linearInterpolation
     glBufferData(GL_PIXEL_UNPACK_BUFFER, ComputeBufferSize(w, h, ColorBits), 0, GL_STREAM_DRAW);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-    if (GL_NO_ERROR != GET_GL_ERROR())
+    if (GL_NO_ERROR != VV_GET_GL_ERROR())
         return false;
 
     // Register the buffer object for use with CUDA
@@ -196,42 +177,7 @@ bool PixelUnpackBufferRT::CreateGLBuffers(int w, int h, bool linearInterpolation
 
 void PixelUnpackBufferRT::displayColorBuffer() const
 {
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
-
-    glActiveTexture(GL_TEXTURE0);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_TEXTURE);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, Texture.get());
-
-    glDepthMask(GL_FALSE);
-
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, -1.0f);
-    glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0f, -1.0f);
-    glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0f,  1.0f);
-    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f,  1.0f);
-    glEnd();
-
-    glMatrixMode(GL_TEXTURE);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-
-    glPopAttrib();
-    glPopClientAttrib();
+    gl::blendTexture(Texture.get());
 }
 
 

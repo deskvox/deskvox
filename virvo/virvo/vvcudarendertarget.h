@@ -125,6 +125,16 @@ namespace virvo
         // Returns the precision of the depth buffer
         unsigned depthBits() const { return DepthBits; }
 
+        // Returns the size of the color buffer in bytes
+        unsigned getColorBufferSize() const {
+            return ComputeBufferSize(width(), height(), ColorBits);
+        }
+
+        // Returns the size of the depth buffer in bytes
+        unsigned getDepthBufferSize() const {
+            return ComputeBufferSize(width(), height(), DepthBits);
+        }
+
         // Returns a pointer to the device color buffer
         virtual void* deviceColor() { return ColorBuffer.devicePtr(); }
 

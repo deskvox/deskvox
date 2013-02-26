@@ -52,19 +52,8 @@ namespace virvo
     class RenderTarget
     {
     public:
-        RenderTarget()
-            : Width(0)
-            , Height(0)
-            , Bound(false)
-        {
-        }
-
-        RenderTarget(int Width, int Height)
-            : Width(Width)
-            , Height(Height)
-            , Bound(false)
-        {
-        }
+        VVAPI RenderTarget();
+        VVAPI RenderTarget(int Width, int Height);
 
         VVAPI virtual ~RenderTarget();
 
@@ -211,6 +200,9 @@ namespace virvo
 
         // Returns a pointer to the host depth buffer - if any
         virtual void* hostDepth() { return &DepthBuffer[0]; }
+
+        // Render the color buffer into the current draw buffer
+        void displayColorBuffer() const;
 
     private:
         VVAPI virtual bool BeginFrameImpl(unsigned clearMask);

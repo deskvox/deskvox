@@ -20,6 +20,7 @@
 
 
 #include "vvrendertarget.h"
+#include "gl/util.h"
 
 #include <GL/glew.h>
 
@@ -37,6 +38,22 @@ using virvo::HostBufferRT;
 //--------------------------------------------------------------------------------------------------
 // RenderTarget
 //--------------------------------------------------------------------------------------------------
+
+
+RenderTarget::RenderTarget()
+    : Width(0)
+    , Height(0)
+    , Bound(false)
+{
+}
+
+
+RenderTarget::RenderTarget(int Width, int Height)
+    : Width(Width)
+    , Height(Height)
+    , Bound(false)
+{
+}
 
 
 RenderTarget::~RenderTarget()
@@ -96,6 +113,10 @@ DefaultFramebufferRT::~DefaultFramebufferRT()
 
 bool DefaultFramebufferRT::BeginFrameImpl(unsigned clearMask)
 {
+#if 0
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearDepth(1.0);
+#endif
     glClear(clearMask);
     return true;
 }
@@ -146,6 +167,8 @@ bool FramebufferObjectRT::BeginFrameImpl(unsigned clearMask)
     glViewport(0, 0, width(), height());
 
     // Clear the render targets
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearDepth(1.0);
     glClear(clearMask);
 
     return true;
@@ -197,8 +220,14 @@ bool FramebufferObjectRT::ResizeImpl(int w, int h)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexImage2D(GL_TEXTURE_2D, 0, cf.internalFormat, w, h, 0, cf.format, cf.type, 0);
 
+    if (VV_GET_GL_ERROR() != GL_NO_ERROR)
+        return false;
+
     // Attach to framebuffer
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ColorBuffer.get(), 0);
+
+    if (VV_GET_GL_ERROR() != GL_NO_ERROR)
+        return false;
 
     //
     // Create the depth-buffer
@@ -212,6 +241,9 @@ bool FramebufferObjectRT::ResizeImpl(int w, int h)
 
         glRenderbufferStorage(GL_RENDERBUFFER, df.internalFormat, w, h);
 
+        if (VV_GET_GL_ERROR() != GL_NO_ERROR)
+            return false;
+
         GLenum attachment =
             gl::isDepthStencilFormat(DepthBufferFormat)
                 ? GL_DEPTH_STENCIL_ATTACHMENT
@@ -219,59 +251,27 @@ bool FramebufferObjectRT::ResizeImpl(int w, int h)
 
         // Attach as depth (and stencil) target
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, DepthBuffer.get());
+
+        if (VV_GET_GL_ERROR() != GL_NO_ERROR)
+            return false;
     }
 
     //
     // Check for errors
     //
 
-    bool success = GL_FRAMEBUFFER_COMPLETE == glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    GLenum status = VV_GET_FRAMEBUFFER_STATUS(GL_FRAMEBUFFER);
 
     // Unbind the framebuffer object!!!
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    return success;
+    return status == GL_FRAMEBUFFER_COMPLETE;
 }
 
 
 void FramebufferObjectRT::displayColorBuffer() const
 {
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
-
-    glActiveTexture(GL_TEXTURE0);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_TEXTURE);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, ColorBuffer.get());
-
-    glDepthMask(GL_FALSE);
-
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, -1.0f);
-    glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0f, -1.0f);
-    glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0f,  1.0f);
-    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f,  1.0f);
-    glEnd();
-
-    glMatrixMode(GL_TEXTURE);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-
-    glPopAttrib();
-    glPopClientAttrib();
+    gl::blendTexture(ColorBuffer.get());
 }
 
 
@@ -313,7 +313,15 @@ bool HostBufferRT::EndFrameImpl()
 bool HostBufferRT::ResizeImpl(int w, int h)
 {
     ColorBuffer.resize(ComputeBufferSize(w, h, ColorBits));
-    DepthBuffer.resize(ComputeBufferSize(w, h, DepthBits));
+
+    if (DepthBits > 0)
+        DepthBuffer.resize(ComputeBufferSize(w, h, DepthBits));
 
     return true;
+}
+
+
+void HostBufferRT::displayColorBuffer() const
+{
+    gl::blendPixels(width(), height(), GL_RGBA, GL_FLOAT, &ColorBuffer[0]);
 }
