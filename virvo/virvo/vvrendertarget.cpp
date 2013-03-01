@@ -30,7 +30,7 @@
 namespace gl = virvo::gl;
 
 using virvo::RenderTarget;
-using virvo::DefaultFramebufferRT;
+using virvo::NullRT;
 using virvo::FramebufferObjectRT;
 using virvo::HostBufferRT;
 
@@ -111,42 +111,40 @@ bool RenderTarget::displayColorBuffer() const
 
 
 //--------------------------------------------------------------------------------------------------
-// DefaultFramebufferRT
+// NullRT
 //--------------------------------------------------------------------------------------------------
 
 
-DefaultFramebufferRT::~DefaultFramebufferRT()
+NullRT::NullRT()
 {
 }
 
 
-bool DefaultFramebufferRT::BeginFrameImpl(unsigned clearMask)
+NullRT::~NullRT()
 {
-    // Clear the render targets (using the current values from OpenGL)
-    glClear(clearMask);
-    return true;
 }
 
 
-bool DefaultFramebufferRT::EndFrameImpl()
-{
-    return true;
-}
-
-
-bool DefaultFramebufferRT::ResizeImpl(int /*w*/, int /*h*/)
+bool NullRT::BeginFrameImpl(unsigned /*clearMask*/)
 {
     return true;
 }
 
 
-bool DefaultFramebufferRT::DisplayColorBufferImpl() const
+bool NullRT::EndFrameImpl()
 {
-    //
-    // XXX:
-    // Swap buffers?!
-    //
+    return true;
+}
 
+
+bool NullRT::ResizeImpl(int /*w*/, int /*h*/)
+{
+    return true;
+}
+
+
+bool NullRT::DisplayColorBufferImpl() const
+{
     return true;
 }
 
@@ -185,9 +183,12 @@ bool FramebufferObjectRT::BeginFrameImpl(unsigned clearMask)
 
     // Clear the render targets
     // Always use transparent black here!
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClearDepth(1.0);
-    glClear(clearMask);
+    if (clearMask != 0)
+    {
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearDepth(1.0);
+        glClear(clearMask);
+    }
 
     return true;
 }

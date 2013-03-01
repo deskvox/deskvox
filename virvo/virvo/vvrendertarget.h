@@ -108,12 +108,13 @@ namespace virvo
 
 
     //----------------------------------------------------------------------------------------------
-    // DefaultFramebufferRT
+    // NullRT
     //----------------------------------------------------------------------------------------------
-    class DefaultFramebufferRT : public RenderTarget
+    class NullRT : public RenderTarget
     {
     public:
-        VVAPI virtual ~DefaultFramebufferRT();
+        VVAPI NullRT();
+        VVAPI virtual ~NullRT();
 
     private:
         VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
