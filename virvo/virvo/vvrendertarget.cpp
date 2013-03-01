@@ -48,14 +48,6 @@ RenderTarget::RenderTarget()
 }
 
 
-RenderTarget::RenderTarget(int Width, int Height)
-    : Width(Width)
-    , Height(Height)
-    , Bound(false)
-{
-}
-
-
 RenderTarget::~RenderTarget()
 {
     assert( !Bound );
@@ -120,6 +112,12 @@ NullRT::NullRT()
 }
 
 
+RenderTarget* NullRT::create()
+{
+    return new NullRT;
+}
+
+
 NullRT::~NullRT()
 {
 }
@@ -160,6 +158,12 @@ FramebufferObjectRT::FramebufferObjectRT(gl::EFormat ColorBufferFormat, gl::EFor
 {
     assert( gl::isColorFormat(ColorBufferFormat) );
     assert( DepthBufferFormat == gl::EFormat_Unspecified || gl::isDepthFormat(DepthBufferFormat) );
+}
+
+
+RenderTarget* FramebufferObjectRT::create(gl::EFormat ColorBufferFormat, gl::EFormat DepthBufferFormat)
+{
+    return new FramebufferObjectRT(ColorBufferFormat, DepthBufferFormat);
 }
 
 
@@ -308,6 +312,12 @@ HostBufferRT::HostBufferRT(unsigned ColorBits, unsigned DepthBits)
     : ColorBits(ColorBits)
     , DepthBits(DepthBits)
 {
+}
+
+
+RenderTarget* HostBufferRT::create(unsigned ColorBits, unsigned DepthBits)
+{
+    return new HostBufferRT(ColorBits, DepthBits);
 }
 
 

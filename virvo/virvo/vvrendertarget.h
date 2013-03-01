@@ -51,11 +51,11 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class RenderTarget
     {
-    public:
-        VVAPI RenderTarget();
-        VVAPI RenderTarget(int Width, int Height);
+    protected:
+        RenderTarget();
 
-        VVAPI virtual ~RenderTarget();
+    public:
+        virtual ~RenderTarget();
 
         // Returns the width of the render target
         int width() const { return Width; }
@@ -118,15 +118,18 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class NullRT : public RenderTarget
     {
+        NullRT();
+
     public:
-        VVAPI NullRT();
+        static VVAPI RenderTarget* create();
+
         VVAPI virtual ~NullRT();
 
     private:
-        VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
-        VVAPI virtual bool EndFrameImpl();
-        VVAPI virtual bool ResizeImpl(int /*w*/, int /*h*/);
-        VVAPI virtual bool DisplayColorBufferImpl() const;
+        virtual bool BeginFrameImpl(unsigned clearMask);
+        virtual bool EndFrameImpl();
+        virtual bool ResizeImpl(int /*w*/, int /*h*/);
+        virtual bool DisplayColorBufferImpl() const;
     };
 
 
@@ -135,15 +138,12 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class FramebufferObjectRT : public RenderTarget
     {
+        FramebufferObjectRT(gl::EFormat ColorBufferFormat, gl::EFormat DepthBufferFormat);
+
     public:
         // Construct a new framebuffer object
-        //
-        // NOTE: The actual framebuffer object (and the color- and depth-buffer) is constructed
-        // when resize() is called for the first time.
-        VVAPI FramebufferObjectRT(
-            gl::EFormat ColorBufferFormat = gl::EFormat_RGBA8,
-            gl::EFormat DepthBufferFormat = gl::EFormat_DEPTH24_STENCIL8
-            );
+        static VVAPI RenderTarget* create(gl::EFormat ColorBufferFormat = gl::EFormat_RGBA8,
+                                          gl::EFormat DepthBufferFormat = gl::EFormat_DEPTH24_STENCIL8);
 
         VVAPI virtual ~FramebufferObjectRT();
 
@@ -169,10 +169,10 @@ namespace virvo
         GLuint depthRenderbuffer() { return DepthBuffer.get(); }
 
     private:
-        VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
-        VVAPI virtual bool EndFrameImpl();
-        VVAPI virtual bool ResizeImpl(int w, int h);
-        VVAPI virtual bool DisplayColorBufferImpl() const;
+        virtual bool BeginFrameImpl(unsigned clearMask);
+        virtual bool EndFrameImpl();
+        virtual bool ResizeImpl(int w, int h);
+        virtual bool DisplayColorBufferImpl() const;
 
     private:
         // Color buffer format
@@ -193,9 +193,11 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class HostBufferRT : public RenderTarget
     {
+        HostBufferRT(unsigned ColorBits, unsigned DepthBits);
+
     public:
         // Construct a render target
-        VVAPI HostBufferRT(unsigned ColorBits = 32, unsigned DepthBits = 8);
+        static VVAPI RenderTarget* create(unsigned ColorBits = 32, unsigned DepthBits = 8);
 
         // Clean up
         VVAPI virtual ~HostBufferRT();
@@ -219,10 +221,10 @@ namespace virvo
         virtual void* hostDepth() { return &DepthBuffer[0]; }
 
     private:
-        VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
-        VVAPI virtual bool EndFrameImpl();
-        VVAPI virtual bool ResizeImpl(int w, int h);
-        VVAPI virtual bool DisplayColorBufferImpl() const;
+        virtual bool BeginFrameImpl(unsigned clearMask);
+        virtual bool EndFrameImpl();
+        virtual bool ResizeImpl(int w, int h);
+        virtual bool DisplayColorBufferImpl() const;
 
     private:
         static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits) {

@@ -23,20 +23,9 @@
 #define VV_CUDA_RENDER_TARGET_H
 
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-
-#ifdef HAVE_CUDA
-
-
 #include "vvrendertarget.h"
 
-#include "cuda/graphics_resource.h"
-#include "cuda/host_device_array.h"
-
-#include "gl/handle.h"
+#include <memory>
 
 
 namespace virvo
@@ -48,60 +37,48 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class PixelUnpackBufferRT : public RenderTarget
     {
+        PixelUnpackBufferRT(unsigned ColorBits = 32, unsigned DepthBits = 8);
+
     public:
         // Construct a render target
-        VVAPI PixelUnpackBufferRT(unsigned ColorBits = 32, unsigned DepthBits = 8);
+        static VVAPI RenderTarget* create(unsigned ColorBits = 32, unsigned DepthBits = 8);
 
         // Clean up
         VVAPI virtual ~PixelUnpackBufferRT();
 
         // Returns the precision of the color buffer
-        virtual unsigned colorBits() const { return ColorBits; }
+        VVAPI virtual unsigned colorBits() const;
 
         // Returns the precision of the depth buffer
-        virtual unsigned depthBits() const { return DepthBits; }
-
-        // Returns the pixel-unpack buffer
-        GLuint buffer() const { return Buffer.get(); }
-
-        // Returns the texture
-        GLuint texture() const { return Texture.get(); }
+        VVAPI virtual unsigned depthBits() const;
 
         // Returns a pointer to the device color buffer
-        virtual void* deviceColor() { return Resource.devPtr(); }
+        VVAPI virtual void* deviceColor();
 
         // Returns a pointer to the device depth buffer
-        virtual void* deviceDepth() { return DepthBuffer.devicePtr(); }
+        VVAPI virtual void* deviceDepth();
 
         // Returns a pointer to the host depth buffer
-        virtual void* hostDepth() { return DepthBuffer.hostPtr(); }
+        VVAPI virtual void* hostDepth();
+
+        // Returns the pixel-unpack buffer
+        VVAPI GLuint buffer() const;
+
+        // Returns the texture
+        VVAPI GLuint texture() const;
 
     private:
-        VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
-        VVAPI virtual bool EndFrameImpl();
-        VVAPI virtual bool ResizeImpl(int w, int h);
-        VVAPI virtual bool DisplayColorBufferImpl() const;
+        virtual bool BeginFrameImpl(unsigned clearMask);
+        virtual bool EndFrameImpl();
+        virtual bool ResizeImpl(int w, int h);
+        virtual bool DisplayColorBufferImpl() const;
 
         // (Re-)create the render buffers (but not the depth buffer)
         bool CreateGLBuffers(int w, int h, bool linearInterpolation = false);
 
     private:
-        static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits) {
-            return w * h * (bits / 8);
-        }
-
-        // The precision of the color buffer
-        unsigned ColorBits;
-        // The precision of the depth buffer
-        unsigned DepthBits;
-        // The CUDA graphics resource
-        cuda::GraphicsResource Resource;
-        // The OpenGL buffer object
-        gl::Buffer Buffer;
-        // The OpenGL texture object
-        gl::Texture Texture;
-        // The depth buffer
-        cuda::HostDeviceArray DepthBuffer;
+        struct Impl;
+        std::auto_ptr<Impl> impl;
     };
 
 
@@ -110,67 +87,52 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class DeviceBufferRT : public RenderTarget
     {
+        DeviceBufferRT(unsigned ColorBits = 32, unsigned DepthBits = 8);
+
     public:
         // Construct a render target
-        VVAPI DeviceBufferRT(unsigned ColorBits = 32, unsigned DepthBits = 8);
+        static VVAPI RenderTarget* create(unsigned ColorBits = 32, unsigned DepthBits = 8);
 
         // Clean up
         VVAPI virtual ~DeviceBufferRT();
 
         // Returns the precision of the color buffer
-        virtual unsigned colorBits() const { return ColorBits; }
+        VVAPI virtual unsigned colorBits() const;
 
         // Returns the precision of the depth buffer
-        virtual unsigned depthBits() const { return DepthBits; }
-
-        // Returns the size of the color buffer in bytes
-        unsigned getColorBufferSize() const {
-            return ComputeBufferSize(width(), height(), ColorBits);
-        }
-
-        // Returns the size of the depth buffer in bytes
-        unsigned getDepthBufferSize() const {
-            return ComputeBufferSize(width(), height(), DepthBits);
-        }
+        VVAPI virtual unsigned depthBits() const;
 
         // Returns a pointer to the device color buffer
-        virtual void* deviceColor() { return ColorBuffer.devicePtr(); }
+        VVAPI virtual void* deviceColor();
 
         // Returns a pointer to the device depth buffer
-        virtual void* deviceDepth() { return DepthBuffer.devicePtr(); }
+        VVAPI virtual void* deviceDepth();
 
         // Returns a pointer to the host color buffer
-        virtual void* hostColor() { return ColorBuffer.hostPtr(); }
+        VVAPI virtual void* hostColor();
 
         // Returns a pointer to the host depth buffer
-        virtual void* hostDepth() { return DepthBuffer.hostPtr(); }
+        VVAPI virtual void* hostDepth();
+
+        // Returns the size of the color buffer in bytes
+        VVAPI unsigned getColorBufferSize() const;
+
+        // Returns the size of the depth buffer in bytes
+        VVAPI unsigned getDepthBufferSize() const;
 
     private:
-        VVAPI virtual bool BeginFrameImpl(unsigned clearMask);
-        VVAPI virtual bool EndFrameImpl();
-        VVAPI virtual bool ResizeImpl(int w, int h);
-        VVAPI virtual bool DisplayColorBufferImpl() const;
+        virtual bool BeginFrameImpl(unsigned clearMask);
+        virtual bool EndFrameImpl();
+        virtual bool ResizeImpl(int w, int h);
+        virtual bool DisplayColorBufferImpl() const;
 
     private:
-        static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits) {
-            return w * h * (bits / 8);
-        }
-
-        // The precision of the color buffer
-        unsigned ColorBits;
-        // The precision of the depth buffer
-        unsigned DepthBits;
-        // The color buffer
-        cuda::HostDeviceArray ColorBuffer;
-        // The depth buffer
-        cuda::HostDeviceArray DepthBuffer;
+        struct Impl;
+        std::auto_ptr<Impl> impl;
     };
 
 
 } // namespace virvo
-
-
-#endif // HAVE_CUDA
 
 
 #endif

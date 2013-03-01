@@ -201,6 +201,8 @@ set(VIRVO_SOURCES
   vvcuda.cpp
   vvcudaimg.cpp
   vvcudarendertarget.cpp
+# vvcudarendertarget.inc
+# vvcudarendertarget-null.inc
   vvcudatools.cpp
   vvcudatransfunc.cpp
   vvdebugmsg.cpp
