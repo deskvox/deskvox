@@ -90,11 +90,13 @@ namespace gl
         GLenum internalFormat;
         GLenum format;
         GLenum type;
+        unsigned sizeInBytes;
 
-        Format(GLenum internalFormat, GLenum format, GLenum type)
+        Format(GLenum internalFormat, GLenum format, GLenum type, unsigned sizeInBytes)
             : internalFormat(internalFormat)
             , format(format)
             , type(type)
+            , sizeInBytes(sizeInBytes)
         {
         }
     };
