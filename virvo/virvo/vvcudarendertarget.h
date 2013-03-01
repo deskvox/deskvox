@@ -56,10 +56,10 @@ namespace virvo
         VVAPI virtual ~PixelUnpackBufferRT();
 
         // Returns the precision of the color buffer
-        unsigned colorBits() const { return ColorBits; }
+        virtual unsigned colorBits() const { return ColorBits; }
 
         // Returns the precision of the depth buffer
-        unsigned depthBits() const { return DepthBits; }
+        virtual unsigned depthBits() const { return DepthBits; }
 
         // Returns the pixel-unpack buffer
         GLuint buffer() const { return Buffer.get(); }
@@ -118,10 +118,10 @@ namespace virvo
         VVAPI virtual ~DeviceBufferRT();
 
         // Returns the precision of the color buffer
-        unsigned colorBits() const { return ColorBits; }
+        virtual unsigned colorBits() const { return ColorBits; }
 
         // Returns the precision of the depth buffer
-        unsigned depthBits() const { return DepthBits; }
+        virtual unsigned depthBits() const { return DepthBits; }
 
         // Returns the size of the color buffer in bytes
         unsigned getColorBufferSize() const {

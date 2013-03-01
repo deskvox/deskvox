@@ -79,6 +79,12 @@ namespace virvo
         // NOTE: Must not be supported by all render targets
         VVAPI bool displayColorBuffer() const;
 
+        // Returns the number of bits per pixel in the color buffer
+        virtual unsigned colorBits() const { return 0; }
+
+        // Returns the number of bits per pixel in the depth buffer
+        virtual unsigned depthBits() const { return 0; }
+
         // Returns a pointer to the device color buffer - if any
         virtual void* deviceColor() { return 0; }
 
@@ -141,6 +147,12 @@ namespace virvo
 
         VVAPI virtual ~FramebufferObjectRT();
 
+        // Returns the number of bits per pixel in the color buffer
+        virtual unsigned colorBits() const { return 8 * gl::mapFormat(ColorBufferFormat).sizeInBytes; }
+
+        // Returns the number of bits per pixel in the depth buffer
+        virtual unsigned depthBits() const { return 8 * gl::mapFormat(DepthBufferFormat).sizeInBytes; }
+
         // Returns the color buffer format
         gl::EFormat colorBufferFormat() { return ColorBufferFormat; }
 
@@ -189,10 +201,10 @@ namespace virvo
         VVAPI virtual ~HostBufferRT();
 
         // Returns the precision of the color buffer
-        unsigned colorBits() const { return ColorBits; }
+        virtual unsigned colorBits() const { return ColorBits; }
 
         // Returns the precision of the depth buffer
-        unsigned depthBits() const { return DepthBits; }
+        virtual unsigned depthBits() const { return DepthBits; }
 
         // Returns a pointer to the device color buffer - if any
         virtual void* deviceColor() { return &ColorBuffer[0]; }
