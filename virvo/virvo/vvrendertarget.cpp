@@ -263,10 +263,14 @@ bool FramebufferObjectRT::ResizeImpl(int w, int h)
         if (VV_GET_GL_ERROR() != GL_NO_ERROR)
             return false;
 
+#if 1
+        GLenum attachment = GL_DEPTH_ATTACHMENT;
+#else
         GLenum attachment =
             gl::isDepthStencilFormat(DepthBufferFormat)
                 ? GL_DEPTH_STENCIL_ATTACHMENT
                 : GL_DEPTH_ATTACHMENT;
+#endif
 
         // Attach as depth (and stencil) target
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, DepthBuffer.get());
