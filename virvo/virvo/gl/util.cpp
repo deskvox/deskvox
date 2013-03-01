@@ -151,7 +151,7 @@ GLenum gl::getError(char const* file, int line)
 //--------------------------------------------------------------------------------------------------
 //
 //--------------------------------------------------------------------------------------------------
-char const* GetFramebufferStatusString(GLenum status)
+static char const* GetFramebufferStatusString(GLenum status)
 {
     switch (status)
     {
@@ -232,7 +232,7 @@ GLenum gl::getFramebufferStatus(GLenum target, char const* file, int line)
 //--------------------------------------------------------------------------------------------------
 //
 //--------------------------------------------------------------------------------------------------
-void gl::blendTexture(GLuint texture, GLenum sfactor, GLenum dfactor)
+static void DrawFullScreenQuad()
 {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -240,12 +240,27 @@ void gl::blendTexture(GLuint texture, GLenum sfactor, GLenum dfactor)
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    glMatrixMode(GL_TEXTURE);
-    glPushMatrix();
-    glLoadIdentity();
 
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, -1.0f);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0f, -1.0f);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0f,  1.0f);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f,  1.0f);
+    glEnd();
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
+
+
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
+void gl::blendTexture(GLuint texture, GLenum sfactor, GLenum dfactor)
+{
     glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
 
     glActiveTexture(GL_TEXTURE0);
 
@@ -257,22 +272,9 @@ void gl::blendTexture(GLuint texture, GLenum sfactor, GLenum dfactor)
 
     glDepthMask(GL_FALSE);
 
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, -1.0f);
-    glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0f, -1.0f);
-    glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0f,  1.0f);
-    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f,  1.0f);
-    glEnd();
+    DrawFullScreenQuad();
 
     glPopAttrib();
-    glPopClientAttrib();
-
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_TEXTURE);
-    glPopMatrix();
 }
 
 
@@ -318,4 +320,112 @@ void gl::blendPixels(GLsizei srcW, GLsizei srcH, GLenum format, GLenum type, con
 void gl::blendPixels(GLsizei srcW, GLsizei srcH, GLenum format, GLenum type, const GLvoid* pixels)
 {
     blendPixels(srcW, srcH, format, type, pixels, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
+void gl::renderInterlacedStereoStencilBuffer(bool lines)
+{
+    static const GLubyte kPatternLines[32*(32/8)] = {
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0x00, 0x00, 0x00, 0x00,
+    };
+
+    static const GLubyte kPatternCheckerBoard[32*(32/8)] = {
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+        0xAA, 0xAA, 0xAA, 0xAA,
+        0x55, 0x55, 0x55, 0x55,
+    };
+
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_LIGHTING);
+
+    glColorMask(0, 0, 0, 0);
+    glDepthMask(0);
+
+    glClearStencil(0);
+    glClear(GL_STENCIL_BUFFER_BIT);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glEnable(GL_POLYGON_STIPPLE);
+    if (lines)
+        glPolygonStipple(kPatternLines);
+    else
+        glPolygonStipple(kPatternCheckerBoard);
+
+    glEnable(GL_STENCIL_TEST);
+    glStencilMask(0xFFFFFFFF);
+    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+    glStencilFunc(GL_ALWAYS, 1, 0xFFFFFFFF);
+
+    DrawFullScreenQuad();
+
+    glPopAttrib();
+    glPopClientAttrib();
 }

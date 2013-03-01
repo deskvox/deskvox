@@ -63,6 +63,10 @@ namespace gl
     // Assuming premultiplied color values.
     VVAPI void blendPixels(GLsizei srcW, GLsizei srcH, GLenum format, GLenum type, const GLvoid* pixels);
 
+    // Prepare the stencil buffer for interlaced stereo rendering.
+    // If w == 0 || h == 0 uses the current viewport.
+    VVAPI void renderInterlacedStereoStencilBuffer(bool lines = true);
+
 
 } // namespace gl
 } // namespace virvo
