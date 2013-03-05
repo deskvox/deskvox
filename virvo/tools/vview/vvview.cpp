@@ -1685,7 +1685,7 @@ void vvView::clipMenuCallback(const int item)
   case 0:
     ds->clipPlane = !ds->clipPlane;
     ds->renderer->setParameter(vvRenderState::VV_CLIP_MODE, ds->clipPlane);
-    cerr << "Clipping " << ds->onOff[ds->boundariesMode] << endl;
+    cerr << "Clipping " << ds->onOff[ds->clipPlane] << endl;
     break;
   case 1:
     ds->clipEditMode = !ds->clipEditMode;
