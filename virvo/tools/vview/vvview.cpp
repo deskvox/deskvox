@@ -1275,6 +1275,14 @@ void vvView::optionsMenuCallback(int item)
     break;
   case 7:
     ds->useHeadLight = !ds->useHeadLight;
+    if(ds->useHeadLight && false)
+    {
+      vvVector3 eyePos;
+      ds->renderer->getEyePosition(&eyePos);
+
+      glEnable(GL_LIGHTING);
+      glLightfv(GL_LIGHT0, GL_POSITION, &vvVector4(eyePos, 1.0f)[0]);
+    }
     ds->renderer->setParameter(vvRenderer::VV_LIGHTING, ds->useHeadLight);
     break;
   case 8:                                     // increase z size
