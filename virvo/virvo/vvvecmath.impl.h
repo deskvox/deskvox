@@ -165,7 +165,7 @@ void vvBaseVector3<T>::sub(const T val)
 {
   for (int i = 0; i < 3; ++i)
   {
-    e[i] += val;
+    e[i] -= val;
   }
 }
 
