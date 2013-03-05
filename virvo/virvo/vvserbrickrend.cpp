@@ -64,7 +64,6 @@ void vvSerBrickRend::renderVolumeGL()
     // find eye position:
     vvVector3 eye;
     getEyePosition(&eye);
-    eye.multiply(invMV);
 
     // bsp tree maintains boxes in voxel coordinates
     vvVector3i veye = vd->voxelCoords(eye);

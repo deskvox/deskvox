@@ -2228,7 +2228,6 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
 
   // Find eye position:
   getEyePosition(&eye);
-  eye.multiply(invMV);
 
   if (_isROIUsed)
   {
@@ -2523,7 +2522,6 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
 
   // Find eye position:
   getEyePosition(&eye);
-  eye.multiply(invMV);
 
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 

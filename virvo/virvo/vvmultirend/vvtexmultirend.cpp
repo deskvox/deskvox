@@ -511,7 +511,6 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
 
   // Find eye position:
   getEyePosition(&eye);
-  eye.multiply(invMV);
 
   if (_isROIUsed)
   {
@@ -1297,7 +1296,6 @@ void vvTexMultiRend::preRendering()
 
   // Find eye position:
   getEyePosition(&eye);
-  eye.multiply(invMV);
 
   probeSizeObj = size;
   tr.probeMin.set(-tr.size2[0], -tr.size2[1], -tr.size2[2]);

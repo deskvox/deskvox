@@ -227,7 +227,6 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 
 	// Find eye position:
 	aRenderer->getEyePosition(&eye);
-	eye.multiply(&invMV);
 
 	probeSizeObj.copy(&size);
 	tr.probeMin.set(-tr.size2[0], -tr.size2[1], -tr.size2[2]);

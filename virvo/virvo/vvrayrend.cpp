@@ -300,7 +300,6 @@ void vvRayRend::compositeVolume(int, int)
 
   vvVector3 eye;
   getEyePosition(&eye);
-  eye.multiply(invMv);
 
   vvVector3 origin;
 

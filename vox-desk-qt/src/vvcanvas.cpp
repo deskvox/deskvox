@@ -340,10 +340,7 @@ void vvCanvas::paintGL()
     {
       vvVector3 eyePos;
       _renderer->getEyePosition(&eyePos);
-      vvMatrix invmv;
-      vvGLTools::getModelviewMatrix(&invmv);
-      invmv.invert();
-      eyePos.multiply(invmv);
+
       lightpos = vvVector4(eyePos, 1.0f);
     }
     else

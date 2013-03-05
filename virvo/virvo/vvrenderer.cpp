@@ -348,7 +348,6 @@ vvVecmath::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
 
   vvVector3 eye;
   getEyePosition(&eye);
-  eye.multiply(invMV);
 
   vvVector3 normal;
   vvVector3 origin;
@@ -1171,14 +1170,18 @@ void vvRenderer::getProbeSize(vvVector3* size) const
 void vvRenderer::getEyePosition(vvVector3* eye) const
 {
   vvMatrix invPM;                                 // inverted projection matrix
-  vvVector4 projEye;                              // eye x PM
+  vvMatrix invMV;                                 // inverted modelview matrix
+  vvVector4 projEye;                              // eye x invPM x invMV
 
   vvDebugMsg::msg(3, "vvRenderer::getEyePosition()");
 
   vvGLTools::getProjectionMatrix(&invPM);
+  vvGLTools::getModelviewMatrix(&invMV);
   invPM.invert();
+  invMV.invert();
   projEye.set(0.0f, 0.0f, -1.0f, 0.0f);
   projEye.multiply(invPM);
+  projEye.multiply(invMV);
   vvVector3 tmp = vvVector3(projEye);
   for (int i = 0; i < 3; ++i)
   {
