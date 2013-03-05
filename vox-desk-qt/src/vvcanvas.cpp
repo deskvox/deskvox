@@ -166,6 +166,8 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   , _renderer(NULL)
   , _projectionType(vox::vvObjView::PERSPECTIVE)
   , _doubleBuffering(format.doubleBuffer())
+  , _lighting(false)
+  , _headlight(false)
   , _superSamples(format.samples())
   , _stillQuality(1.0f)
   , _movingQuality(1.0f)
@@ -202,6 +204,7 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
   _bgColor = vvColor(qcolor.redF(), qcolor.greenF(), qcolor.blueF());
 
   _lighting = settings.value("canvas/lighting").toBool();
+  _headlight = settings.value("canvas/headlight").toBool();
 
   // note: Qt 4.6 introduced QVector3D
   QVector3D qlightpos = settings.value("canvas/lightpos").value<QVector3D>();
@@ -332,9 +335,24 @@ void vvCanvas::paintGL()
 
   if (_lighting)
   {
+    vvVector4 lightpos;
+    if (_headlight)
+    {
+      vvVector3 eyePos;
+      _renderer->getEyePosition(&eyePos);
+      vvMatrix invmv;
+      vvGLTools::getModelviewMatrix(&invmv);
+      invmv.invert();
+      eyePos.multiply(invmv);
+      lightpos = vvVector4(eyePos, 1.0f);
+    }
+    else
+    {
+      lightpos = vvVector4(_lightPos, 1.0f);
+    }
+
     glEnable(GL_LIGHTING);
-    float lv[4] = { _lightPos[0], _lightPos[1], _lightPos[2], 1.0f };
-    glLightfv(GL_LIGHT0, GL_POSITION, lv);
+    glLightfv(GL_LIGHT0, GL_POSITION, &lightpos[0]);
     glLightfv(GL_LIGHT0, GL_CONSTANT_ATTENUATION, &_lightAtt[0]);
     glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &_lightAtt[1]);
     glLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &_lightAtt[2]);
@@ -923,6 +941,13 @@ void vvCanvas::showLightSource(bool show)
   {
     li->setVisible(_lightVisible);
   }
+
+  updateGL();
+}
+
+void vvCanvas::enableHeadlight(bool enable)
+{
+  _headlight = enable;
 
   updateGL();
 }

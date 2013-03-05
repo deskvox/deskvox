@@ -79,6 +79,7 @@ private:
   vvVector3 _lightAtt;
   bool _doubleBuffering;
   bool _lighting;
+  bool _headlight;
   int _superSamples;
   float _stillQuality;
   float _movingQuality;
@@ -123,6 +124,7 @@ public slots:
 
   void enableLighting(bool enabled);
   void showLightSource(bool show);
+  void enableHeadlight(bool enable);
   void editLightPosition(bool edit);
   void setLightAttenuation(const vvVector3& att);
 private slots:

@@ -44,6 +44,7 @@ vvLightDialog::vvLightDialog(QWidget* parent)
 
   connect(ui->enableBox, SIGNAL(toggled(bool)), this, SLOT(onEnableToggled(bool)));
   connect(ui->showBox, SIGNAL(toggled(bool)), this, SIGNAL(showLightSource(bool)));
+  connect(ui->headlightBox, SIGNAL(toggled(bool)), this, SIGNAL(enableHeadlight(bool)));
   connect(ui->positionButton, SIGNAL(clicked()), this, SLOT(onEditPositionClicked()));
   connect(ui->constSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onConstAttChanged(double)));
   connect(ui->linearSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onLinearAttChanged(double)));

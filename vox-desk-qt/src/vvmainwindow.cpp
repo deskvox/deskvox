@@ -166,6 +166,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
 
   connect(_lightDialog, SIGNAL(enabled(bool)), _canvas, SLOT(enableLighting(bool)));
   connect(_lightDialog, SIGNAL(showLightSource(bool)), _canvas, SLOT(showLightSource(bool)));
+  connect(_lightDialog, SIGNAL(enableHeadlight(bool)), _canvas, SLOT(enableHeadlight(bool)));
   connect(_lightDialog, SIGNAL(editPositionToggled(bool)), _canvas, SLOT(editLightPosition(bool)));
   connect(_lightDialog, SIGNAL(attenuationChanged(const vvVector3&)), _canvas, SLOT(setLightAttenuation(const vvVector3&)));
 

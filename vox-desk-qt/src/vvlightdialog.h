@@ -45,6 +45,7 @@ private slots:
 signals:
   void enabled(bool enable);
   void showLightSource(bool show);
+  void enableHeadlight(bool enable);
   void editPositionToggled(bool edit);
   void attenuationChanged(const vvVector3& att);
 };
