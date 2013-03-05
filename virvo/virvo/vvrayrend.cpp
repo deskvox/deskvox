@@ -370,7 +370,7 @@ void vvRayRend::compositeVolume(int, int)
                     probePos, probeSize * 0.5f,
                     Lpos, V,
                     constAtt, linearAtt, quadAtt,
-                    false, false, false,
+                    kernelParams.clipping, false, false,
                     center, radius * radius,
                     pnormal, pdist, ::d_depth.get(), _depthPrecision,
                     make_float2(_depthRange[0], _depthRange[1]),
