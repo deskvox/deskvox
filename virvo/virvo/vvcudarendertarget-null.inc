@@ -125,6 +125,18 @@ bool PixelUnpackBufferRT::DisplayColorBufferImpl() const
 }
 
 
+bool PixelUnpackBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& /*buffer*/) const
+{
+    return false;
+}
+
+
+bool PixelUnpackBufferRT::DownloadDepthBufferImpl(std::vector<unsigned char>& /*buffer*/) const
+{
+    return false;
+}
+
+
 //--------------------------------------------------------------------------------------------------
 // DeviceBufferRT
 //--------------------------------------------------------------------------------------------------
@@ -218,6 +230,18 @@ bool DeviceBufferRT::ResizeImpl(int /*w*/, int /*h*/)
 
 
 bool DeviceBufferRT::DisplayColorBufferImpl() const
+{
+    return false;
+}
+
+
+bool DeviceBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& /*buffer*/) const
+{
+    return false;
+}
+
+
+bool DeviceBufferRT::DownloadDepthBufferImpl(std::vector<unsigned char>& /*buffer*/) const
 {
     return false;
 }

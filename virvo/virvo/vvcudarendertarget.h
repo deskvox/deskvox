@@ -71,7 +71,11 @@ namespace virvo
         virtual bool BeginFrameImpl(unsigned clearMask);
         virtual bool EndFrameImpl();
         virtual bool ResizeImpl(int w, int h);
+
         virtual bool DisplayColorBufferImpl() const;
+
+        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const;
+        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const;
 
         // (Re-)create the render buffers (but not the depth buffer)
         bool CreateGLBuffers(int w, int h, bool linearInterpolation = false);
@@ -124,7 +128,11 @@ namespace virvo
         virtual bool BeginFrameImpl(unsigned clearMask);
         virtual bool EndFrameImpl();
         virtual bool ResizeImpl(int w, int h);
+
         virtual bool DisplayColorBufferImpl() const;
+
+        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const;
+        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const;
 
     private:
         struct Impl;

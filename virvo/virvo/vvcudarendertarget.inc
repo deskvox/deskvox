@@ -261,6 +261,35 @@ bool PixelUnpackBufferRT::DisplayColorBufferImpl() const
 }
 
 
+bool PixelUnpackBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const
+{
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, impl->Buffer.get());
+
+    // Map the buffer into CPU memory
+    unsigned char* ptr = static_cast<unsigned char*>( glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_ONLY) );
+
+    // Copy the buffer
+    buffer.assign( ptr, ptr + ComputeBufferSize(width(), height(), impl->ColorBits) );
+
+    // Unmap
+    glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    return GL_NO_ERROR == VV_GET_GL_ERROR();
+}
+
+
+bool PixelUnpackBufferRT::DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const
+{
+    unsigned char* ptr = static_cast<unsigned char*>(impl->DepthBuffer.hostPtr());
+
+    buffer.assign(ptr, ptr + impl->DepthBuffer.size());
+
+    return true;
+}
+
+
 //--------------------------------------------------------------------------------------------------
 // DeviceBufferRT
 //--------------------------------------------------------------------------------------------------
@@ -389,5 +418,25 @@ bool DeviceBufferRT::ResizeImpl(int w, int h)
 bool DeviceBufferRT::DisplayColorBufferImpl() const
 {
     gl::blendPixels(width(), height(), GetFormat(impl->ColorBits), GL_UNSIGNED_BYTE, impl->ColorBuffer.hostPtr());
+    return true;
+}
+
+
+bool DeviceBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const
+{
+    unsigned char* ptr = static_cast<unsigned char*>(impl->ColorBuffer.hostPtr());
+
+    buffer.assign(ptr, ptr + impl->ColorBuffer.size());
+
+    return true;
+}
+
+
+bool DeviceBufferRT::DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const
+{
+    unsigned char* ptr = static_cast<unsigned char*>(impl->DepthBuffer.hostPtr());
+
+    buffer.assign(ptr, ptr + impl->DepthBuffer.size());
+
     return true;
 }

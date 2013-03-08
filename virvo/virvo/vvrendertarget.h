@@ -79,6 +79,12 @@ namespace virvo
         // NOTE: Must not be supported by all render targets
         VVAPI bool displayColorBuffer() const;
 
+        // Copy the color buffer into the given vector
+        VVAPI bool downloadColorBuffer(std::vector<unsigned char>& buffer) const;
+
+        // Copy the depth buffer into the given vector
+        VVAPI bool downloadDepthBuffer(std::vector<unsigned char>& buffer) const;
+
         // Returns the number of bits per pixel in the color buffer
         virtual unsigned colorBits() const { return 0; }
 
@@ -101,7 +107,11 @@ namespace virvo
         virtual bool BeginFrameImpl(unsigned clearMask) = 0;
         virtual bool EndFrameImpl() = 0;
         virtual bool ResizeImpl(int w, int h) = 0;
+
         virtual bool DisplayColorBufferImpl() const = 0;
+
+        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const = 0;
+        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const = 0;
 
     private:
         // The width of the render-target
@@ -129,7 +139,11 @@ namespace virvo
         virtual bool BeginFrameImpl(unsigned clearMask);
         virtual bool EndFrameImpl();
         virtual bool ResizeImpl(int /*w*/, int /*h*/);
+
         virtual bool DisplayColorBufferImpl() const;
+
+        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const;
+        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const;
     };
 
 
@@ -172,7 +186,11 @@ namespace virvo
         virtual bool BeginFrameImpl(unsigned clearMask);
         virtual bool EndFrameImpl();
         virtual bool ResizeImpl(int w, int h);
+
         virtual bool DisplayColorBufferImpl() const;
+
+        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const;
+        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const;
 
     private:
         // Color buffer format
@@ -224,7 +242,11 @@ namespace virvo
         virtual bool BeginFrameImpl(unsigned clearMask);
         virtual bool EndFrameImpl();
         virtual bool ResizeImpl(int w, int h);
+
         virtual bool DisplayColorBufferImpl() const;
+
+        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const;
+        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const;
 
     private:
         static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits) {

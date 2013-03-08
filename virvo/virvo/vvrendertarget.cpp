@@ -96,9 +96,25 @@ bool RenderTarget::resize(int w, int h)
 
 bool RenderTarget::displayColorBuffer() const
 {
-    assert( Bound == false && "display while bound" );
+    assert( !Bound && "display while bound" );
 
     return DisplayColorBufferImpl();
+}
+
+
+bool RenderTarget::downloadColorBuffer(std::vector<unsigned char>& buffer) const
+{
+    assert( !Bound && "download color buffer while bound" );
+
+    return DownloadColorBufferImpl(buffer);
+}
+
+
+bool RenderTarget::downloadDepthBuffer(std::vector<unsigned char>& buffer) const
+{
+    assert( !Bound && "download depth buffer while bound" );
+
+    return DownloadDepthBufferImpl(buffer);
 }
 
 
@@ -142,6 +158,18 @@ bool NullRT::ResizeImpl(int /*w*/, int /*h*/)
 
 
 bool NullRT::DisplayColorBufferImpl() const
+{
+    return true;
+}
+
+
+bool NullRT::DownloadColorBufferImpl(std::vector<unsigned char>& /*buffer*/) const
+{
+    return true;
+}
+
+
+bool NullRT::DownloadDepthBufferImpl(std::vector<unsigned char>& /*buffer*/) const
 {
     return true;
 }
@@ -303,6 +331,67 @@ bool FramebufferObjectRT::DisplayColorBufferImpl() const
 }
 
 
+bool FramebufferObjectRT::DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const
+{
+    buffer.resize(width() * height() * (colorBits() / 8));
+
+    GLenum format = 0;
+    switch (colorBits() / 8)
+    {
+    case 1:
+        format = GL_RED;
+        break;
+    case 2:
+        format = GL_RG;
+        break;
+    case 3:
+        format = GL_RGB;
+        break;
+    case 4:
+        format = GL_RGBA;
+        break;
+    }
+
+    assert( format != 0 );
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, Framebuffer.get());
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    glReadPixels(0, 0, width(), height(), format, GL_UNSIGNED_BYTE, &buffer[0]);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+    return true;
+}
+
+
+bool FramebufferObjectRT::DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const
+{
+    buffer.resize(width() * height() * (depthBits() / 8));
+
+    GLenum type = 0;
+    switch (depthBits() / 8)
+    {
+    case 1:
+        type = GL_UNSIGNED_BYTE;
+        break;
+    case 2:
+        type = GL_UNSIGNED_SHORT;
+        break;
+    case 4:
+        type = GL_UNSIGNED_INT;
+        break;
+    }
+
+    assert( type != 0 );
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, Framebuffer.get());
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    glReadPixels(0, 0, width(), height(), GL_DEPTH_COMPONENT, type, &buffer[0]);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+    return true;
+}
+
+
 //--------------------------------------------------------------------------------------------------
 // HostBufferRT
 //--------------------------------------------------------------------------------------------------
@@ -358,5 +447,19 @@ bool HostBufferRT::ResizeImpl(int w, int h)
 bool HostBufferRT::DisplayColorBufferImpl() const
 {
     gl::blendPixels(width(), height(), GL_RGBA, GL_FLOAT, &ColorBuffer[0]);
+    return true;
+}
+
+
+bool HostBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const
+{
+    buffer = ColorBuffer;
+    return true;
+}
+
+
+bool HostBufferRT::DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const
+{
+    buffer = DepthBuffer;
     return true;
 }
