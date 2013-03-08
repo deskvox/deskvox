@@ -1275,7 +1275,7 @@ void vvView::optionsMenuCallback(int item)
     break;
   case 7:
     ds->useHeadLight = !ds->useHeadLight;
-    if(ds->useHeadLight && false)
+    if(ds->useHeadLight)
     {
       vvVector3 eyePos;
       ds->renderer->getEyePosition(&eyePos);
