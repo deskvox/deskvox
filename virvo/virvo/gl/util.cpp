@@ -45,6 +45,7 @@ namespace gl = virvo::gl;
 //--------------------------------------------------------------------------------------------------
 //
 //--------------------------------------------------------------------------------------------------
+#if defined(GL_KHR_debug)
 static char const* GetDebugTypeString(GLenum type)
 {
     switch (type)
@@ -67,6 +68,7 @@ static char const* GetDebugTypeString(GLenum type)
 
     return "{unknown type}";
 }
+#endif
 
 //--------------------------------------------------------------------------------------------------
 //
@@ -90,6 +92,7 @@ static void OutputDebugStringAF(char const* format, ...)
 //--------------------------------------------------------------------------------------------------
 //
 //--------------------------------------------------------------------------------------------------
+#if defined(GL_KHR_debug)
 static void APIENTRY DebugCallback( GLenum /*source*/,
                                     GLenum type,
                                     GLuint /*id*/,
@@ -112,7 +115,7 @@ static void APIENTRY DebugCallback( GLenum /*source*/,
 
     fprintf(stderr, "GL %s: %s\n", GetDebugTypeString(type), message);
 }
-
+#endif
 
 #endif // !NDEBUG
 
