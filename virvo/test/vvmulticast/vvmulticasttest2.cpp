@@ -128,7 +128,7 @@ int main(int argc, char** argv)
     cout << endl;
 
     // Number of Bytes to be send/received
-    uint count = 1024;
+    ssize_t count = 1024;
     if(NULL != argv[2] && 3 <= argc)
     {
       count = atoi(argv[2]);
