@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="rendererTab">
       <attribute name="title">
@@ -55,8 +55,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>530</width>
-            <height>265</height>
+            <width>566</width>
+            <height>346</height>
            </rect>
           </property>
           <attribute name="label">
@@ -206,8 +206,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>169</width>
-            <height>47</height>
+            <width>566</width>
+            <height>346</height>
            </rect>
           </property>
           <attribute name="label">
@@ -252,8 +252,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>314</width>
-            <height>171</height>
+            <width>566</width>
+            <height>346</height>
            </rect>
           </property>
           <attribute name="label">
@@ -373,8 +373,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>262</width>
-            <height>68</height>
+            <width>566</width>
+            <height>346</height>
            </rect>
           </property>
           <attribute name="label">
