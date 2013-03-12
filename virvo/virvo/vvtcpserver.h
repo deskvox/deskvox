@@ -23,6 +23,7 @@
 
 #include "vvexport.h"
 #include "vvinttypes.h"
+#include "vvsocket.h"
 
 class vvTcpSocket;
 
