@@ -354,6 +354,8 @@ void vvRayRend::compositeVolume(int, int)
 
   RayRendKernelParams kernelParams;
 
+  kernelParams.blockDimX            = 16;
+  kernelParams.blockDimY            = 16;
   kernelParams.bpc                  = getVolDesc()->bpc;
   kernelParams.illumination         = getIllumination();
   kernelParams.opacityCorrection    = getOpacityCorrection();

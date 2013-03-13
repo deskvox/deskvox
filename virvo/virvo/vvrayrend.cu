@@ -955,7 +955,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
 {
   renderKernel kernel = getKernel(params);
 
-  dim3 blockSize(16, 16);
+  dim3 blockSize(params.blockDimX, params.blockDimY);
   dim3 gridSize = dim3(divup(width, blockSize.x), divup(height, blockSize.y));
 
   cu::AutoPointer<float> d_firstIbrPass;

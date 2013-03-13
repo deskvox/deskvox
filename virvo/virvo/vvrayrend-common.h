@@ -42,6 +42,8 @@ enum IbrMode
 
 struct RayRendKernelParams
 {
+  int blockDimX;
+  int blockDimY;
   int bpc;
   bool illumination;
   bool opacityCorrection;
