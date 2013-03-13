@@ -33,7 +33,7 @@
 
 #include "vvexport.h"
 
-#include <cstdlib>
+#include <stdlib.h>
 #include <new> // bad_alloc
 
 
@@ -55,7 +55,7 @@ namespace cuda
         }
 
         // Construct a buffer with the given size
-        HostDeviceArray(unsigned count)
+        HostDeviceArray(size_t count)
             : Size(0)
             , HostPtr(0)
             , DevicePtr(0)
@@ -71,7 +71,7 @@ namespace cuda
         }
 
         // Returns the size in bytes of the host and the device array
-        unsigned size() const { return Size; }
+        size_t size() const { return Size; }
 
         // Returns a pointer to the host data
         void* hostPtr() const { return HostPtr; }
@@ -101,7 +101,7 @@ namespace cuda
 
     private:
         // The size of the host and the device buffer
-        unsigned Size;
+        size_t Size;
         // Pointer to the host data
         void* HostPtr;
         // Pointer to the device data

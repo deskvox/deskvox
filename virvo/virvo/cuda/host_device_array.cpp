@@ -21,13 +21,13 @@
 
 #include "host_device_array.h"
 
-#include <cstring>
 
 #ifdef HAVE_CUDA
 
+
 #include <cuda_runtime_api.h>
 
-#include <cstring>
+#include <string.h>
 
 using virvo::cuda::HostDeviceArray;
 
