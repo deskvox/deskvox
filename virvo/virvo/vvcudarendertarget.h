@@ -59,7 +59,7 @@ namespace virvo
         VVAPI virtual void* deviceDepth();
 
         // Returns a pointer to the host depth buffer
-        VVAPI virtual void* hostDepth();
+        VVAPI virtual void const* hostDepth() const;
 
         // Returns the pixel-unpack buffer
         VVAPI GLuint buffer() const;
@@ -113,10 +113,10 @@ namespace virvo
         VVAPI virtual void* deviceDepth();
 
         // Returns a pointer to the host color buffer
-        VVAPI virtual void* hostColor();
+        VVAPI virtual void const* hostColor() const;
 
         // Returns a pointer to the host depth buffer
-        VVAPI virtual void* hostDepth();
+        VVAPI virtual void const* hostDepth() const;
 
         // Returns the size of the color buffer in bytes
         VVAPI unsigned getColorBufferSize() const;

@@ -77,7 +77,7 @@ void* PixelUnpackBufferRT::deviceDepth()
 }
 
 
-void* PixelUnpackBufferRT::hostDepth()
+void const* PixelUnpackBufferRT::hostDepth() const
 {
     return 0;
 }
@@ -187,13 +187,13 @@ void* DeviceBufferRT::deviceDepth()
 }
 
 
-void* DeviceBufferRT::hostColor()
+void const* DeviceBufferRT::hostColor() const
 {
     return 0;
 }
 
 
-void* DeviceBufferRT::hostDepth()
+void const* DeviceBufferRT::hostDepth() const
 {
     return 0;
 }

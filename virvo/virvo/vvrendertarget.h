@@ -98,10 +98,10 @@ namespace virvo
         virtual void* deviceDepth() { return 0; }
 
         // Returns a pointer to the host color buffer - if any
-        virtual void* hostColor() { return 0; }
+        virtual void const* hostColor() const { return 0; }
 
         // Returns a pointer to the host depth buffer - if any
-        virtual void* hostDepth() { return 0; }
+        virtual void const* hostDepth() const { return 0; }
 
     private:
         virtual bool BeginFrameImpl(unsigned clearMask) = 0;
@@ -233,10 +233,10 @@ namespace virvo
         virtual void* deviceDepth() { return &DepthBuffer[0]; }
 
         // Returns a pointer to the host color buffer - if any
-        virtual void* hostColor() { return &ColorBuffer[0]; }
+        virtual void const* hostColor() const { return &ColorBuffer[0]; }
 
         // Returns a pointer to the host depth buffer - if any
-        virtual void* hostDepth() { return &DepthBuffer[0]; }
+        virtual void const* hostDepth() const { return &DepthBuffer[0]; }
 
     private:
         virtual bool BeginFrameImpl(unsigned clearMask);
