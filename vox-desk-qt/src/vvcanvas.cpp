@@ -511,7 +511,7 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
     }
     break;
   }
-  case Qt::MiddleButton:
+  case Qt::MidButton:
   {
     const float pixelInWorld = _ov.getViewportWidth() / static_cast<float>(width());
     const float dx = static_cast<float>(event->pos().x() - _lastMousePos.x());
