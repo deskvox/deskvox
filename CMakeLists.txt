@@ -145,3 +145,8 @@ install(DIRECTORY ${VIRVO_SHADER_DIR}/
 #    file(APPEND "${DESKVOX_SLN_FILENAME}" "\n# This should be regenerated!\n")
 #  endif()
 #endif()
+
+IF(${CMAKE_VERSION} VERSION_GREATER "2.8.2")
+  INCLUDE(FeatureSummary)
+  FEATURE_SUMMARY(WHAT ALL)
+ENDIF()
