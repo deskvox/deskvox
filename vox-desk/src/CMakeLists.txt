@@ -1,4 +1,7 @@
-find_package(FOX REQUIRED)
+find_package(FOX)
+if (NOT FOX_FOUND)
+  return()
+endif()
 find_package(OpenGL REQUIRED)
 
 deskvox_use_package(FOX)
