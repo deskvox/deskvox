@@ -337,3 +337,8 @@ deskvox_add_library(virvo
   ${VIRVO_CUDA_SOURCES}
   ${VIRVO_SHADERS}
 )
+
+INSTALL(TARGETS virvo EXPORT covise-targets
+    RUNTIME DESTINATION covise/${ARCHSUFFIX}/bin${_category_path}
+    LIBRARY DESTINATION covise/${ARCHSUFFIX}/lib
+    ARCHIVE DESTINATION covise/${ARCHSUFFIX}/lib COMPONENT modules.${category})

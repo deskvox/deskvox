@@ -68,7 +68,9 @@ vvVideo::vvVideo()
   if(!global_init_done)
   {
 #if defined(VV_FFMPEG)
+#if LIBAVCODEC_VERSION_MAJOR < 54
     avcodec_init();
+#endif
     avcodec_register_all();
 #endif
     global_init_done = true;
