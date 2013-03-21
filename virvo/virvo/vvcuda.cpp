@@ -34,7 +34,7 @@
 #include <cuda_gl_interop.h>
 #endif
 
-#ifdef HAVE_X11
+#ifdef USE_X11
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 #endif
@@ -62,7 +62,7 @@ bool vvCuda::initGlInterop()
   if (done)
     return true;
 
-#ifdef HAVE_X11
+#ifdef USE_X11
   GLXContext ctx = glXGetCurrentContext();
   Display *dsp = XOpenDisplay(NULL);
   if(dsp)
