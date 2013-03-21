@@ -21,7 +21,7 @@
 #ifndef _VV_BONJOURENTRY_H_
 #define _VV_BONJOURENTRY_H_
 
-#include "vvexport.h"
+#include "../vvexport.h"
 #include <string>
 
 /*!
