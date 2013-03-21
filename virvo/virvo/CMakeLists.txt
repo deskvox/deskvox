@@ -15,7 +15,9 @@ find_package(X11)
 deskvox_use_package(Bonjour)
 deskvox_use_package(Boost)
 deskvox_use_package(Cg INCDIRS ${CG_INCLUDE_PATH} LIBS ${CG_LIBRARY} ${CG_GL_LIBRARY})
-deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
+if(DESKVOX_USE_CUDA)
+    deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})
+endif(DESKVOX_USE_CUDA)
 deskvox_use_package(FFMPEG)
 deskvox_use_package(GLEW)
 deskvox_use_package(NORM)
@@ -263,10 +265,12 @@ set(VIRVO_SOURCES
   vvvoldesc.cpp
 )
 
+if(DESKVOX_USE_CUDA)
 deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
   vvcudatransfunc.cu
   vvrayrend.cu
 )
+endif(DESKVOX_USE_CUDA)
 
 set(VIRVO_SHADERS
   ../shader/vv_ibr.fsh
@@ -338,7 +342,9 @@ deskvox_add_library(virvo
   ${VIRVO_SHADERS}
 )
 
-INSTALL(TARGETS virvo EXPORT covise-targets
+if(COVISE_BUILD)
+    install(TARGETS virvo EXPORT covise-targets
     RUNTIME DESTINATION covise/${ARCHSUFFIX}/bin${_category_path}
     LIBRARY DESTINATION covise/${ARCHSUFFIX}/lib
     ARCHIVE DESTINATION covise/${ARCHSUFFIX}/lib COMPONENT modules.${category})
+endif(COVISE_BUILD)
