@@ -27,13 +27,15 @@ if(MSVC)
     -D_SCL_SECURE_NO_DEPRECATE
     -D_SCL_SECURE_NO_WARNINGS
   )
-  
+
   # Disable warning:
   #
   # C4251: 'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'
   # C4275: non-DLL-interface classkey 'identifier' used as base for DLL-interface classkey 'identifier'
+  # C4481: nonstandard extension used: override specifier 'keyword'
   # C4503: 'identifier' : decorated name length exceeded, name was truncated
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4251 /wd4275 /wd4503")
+  # C4512: 'class' : assignment operator could not be generated
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4251 /wd4275 /wd4481 /wd4503 /wd4512")
 
   # Promote to level 1 warnings:
   #
