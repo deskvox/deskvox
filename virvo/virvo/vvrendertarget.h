@@ -31,6 +31,9 @@
 #include "gl/format.h"
 
 
+class vvRenderer;
+
+
 namespace virvo
 {
 
@@ -39,10 +42,9 @@ namespace virvo
     {
         CLEAR_NONE      = 0,
         CLEAR_DEPTH     = 0x00000100, // = GL_DEPTH_BUFFER_BIT
-        CLEAR_ACCUM     = 0x00000200, // = GL_ACCUM_BUFFER_BIT
         CLEAR_STENCIL   = 0x00000400, // = GL_STENCIL_BUFFER_BIT
         CLEAR_COLOR     = 0x00004000, // = GL_COLOR_BUFFER_BIT
-        CLEAR_ALL       = CLEAR_COLOR | CLEAR_DEPTH | CLEAR_STENCIL | CLEAR_ACCUM
+        CLEAR_ALL       = CLEAR_COLOR | CLEAR_DEPTH | CLEAR_STENCIL
     };
 
 
@@ -51,6 +53,8 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class RenderTarget
     {
+        friend class ::vvRenderer;
+
     protected:
         RenderTarget();
 
@@ -65,15 +69,6 @@ namespace virvo
 
         // Returns whether the render-target is currently bound for rendering
         bool bound() const { return Bound; }
-
-        // Prepare for rendering
-        VVAPI bool beginFrame(unsigned clearMask = 0);
-
-        // Finish rendering
-        VVAPI bool endFrame();
-
-        // Resize the render target
-        VVAPI bool resize(int w, int h);
 
         // Render the color buffer into the current draw buffer
         // NOTE: Must not be supported by all render targets
@@ -102,6 +97,16 @@ namespace virvo
 
         // Returns a pointer to the host depth buffer - if any
         virtual void const* hostDepth() const { return 0; }
+
+    protected:
+        // Prepare for rendering
+        VVAPI bool beginFrame(unsigned clearMask = 0);
+
+        // Finish rendering
+        VVAPI bool endFrame();
+
+        // Resize the render target
+        VVAPI bool resize(int w, int h);
 
     private:
         virtual bool BeginFrameImpl(unsigned clearMask) = 0;
@@ -135,15 +140,20 @@ namespace virvo
 
         VVAPI virtual ~NullRT();
 
+        // XXX
+        virtual unsigned colorBits() const VV_OVERRIDE { return 32; }
+        // XXX
+        virtual unsigned depthBits() const VV_OVERRIDE { return 8; }
+
     private:
-        virtual bool BeginFrameImpl(unsigned clearMask);
-        virtual bool EndFrameImpl();
-        virtual bool ResizeImpl(int /*w*/, int /*h*/);
+        virtual bool BeginFrameImpl(unsigned clearMask) VV_OVERRIDE;
+        virtual bool EndFrameImpl() VV_OVERRIDE;
+        virtual bool ResizeImpl(int w, int h) VV_OVERRIDE;
 
         virtual bool DisplayColorBufferImpl() const;
 
-        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const;
-        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const;
+        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
+        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
     };
 
 
@@ -162,35 +172,39 @@ namespace virvo
         VVAPI virtual ~FramebufferObjectRT();
 
         // Returns the number of bits per pixel in the color buffer
-        virtual unsigned colorBits() const { return 8 * gl::mapFormat(ColorBufferFormat).sizeInBytes; }
+        virtual unsigned colorBits() const VV_OVERRIDE {
+            return 8 * gl::mapFormat(ColorBufferFormat).sizeInBytes;
+        }
 
         // Returns the number of bits per pixel in the depth buffer
-        virtual unsigned depthBits() const { return 8 * gl::mapFormat(DepthBufferFormat).sizeInBytes; }
+        virtual unsigned depthBits() const VV_OVERRIDE {
+            return 8 * gl::mapFormat(DepthBufferFormat).sizeInBytes;
+        }
 
         // Returns the color buffer format
-        gl::EFormat colorBufferFormat() { return ColorBufferFormat; }
+        gl::EFormat colorBufferFormat() const { return ColorBufferFormat; }
 
         // Returns the depth(-stencil) buffer format
-        gl::EFormat depthBufferFormat() { return DepthBufferFormat; }
+        gl::EFormat depthBufferFormat() const { return DepthBufferFormat; }
 
         // Returns the framebuffer object
-        GLuint framebuffer() { return Framebuffer.get(); }
+        GLuint framebuffer() const { return Framebuffer.get(); }
 
         // Returns the color texture
-        GLuint colorTexture() { return ColorBuffer.get(); }
+        GLuint colorTexture() const { return ColorBuffer.get(); }
 
         // Returns the depth(-stencil) renderbuffer
-        GLuint depthRenderbuffer() { return DepthBuffer.get(); }
+        GLuint depthRenderbuffer() const { return DepthBuffer.get(); }
 
     private:
-        virtual bool BeginFrameImpl(unsigned clearMask);
-        virtual bool EndFrameImpl();
-        virtual bool ResizeImpl(int w, int h);
+        virtual bool BeginFrameImpl(unsigned clearMask) VV_OVERRIDE;
+        virtual bool EndFrameImpl() VV_OVERRIDE;
+        virtual bool ResizeImpl(int w, int h) VV_OVERRIDE;
 
-        virtual bool DisplayColorBufferImpl() const;
+        virtual bool DisplayColorBufferImpl() const VV_OVERRIDE;
 
-        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const;
-        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const;
+        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
+        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
 
     private:
         // Color buffer format
@@ -221,32 +235,32 @@ namespace virvo
         VVAPI virtual ~HostBufferRT();
 
         // Returns the precision of the color buffer
-        virtual unsigned colorBits() const { return ColorBits; }
+        virtual unsigned colorBits() const VV_OVERRIDE { return ColorBits; }
 
         // Returns the precision of the depth buffer
-        virtual unsigned depthBits() const { return DepthBits; }
+        virtual unsigned depthBits() const VV_OVERRIDE { return DepthBits; }
 
         // Returns a pointer to the device color buffer - if any
-        virtual void* deviceColor() { return &ColorBuffer[0]; }
+        virtual void* deviceColor() VV_OVERRIDE { return &ColorBuffer[0]; }
 
         // Returns a pointer to the device depth buffer - if any
-        virtual void* deviceDepth() { return &DepthBuffer[0]; }
+        virtual void* deviceDepth() VV_OVERRIDE { return &DepthBuffer[0]; }
 
         // Returns a pointer to the host color buffer - if any
-        virtual void const* hostColor() const { return &ColorBuffer[0]; }
+        virtual void const* hostColor() const VV_OVERRIDE { return &ColorBuffer[0]; }
 
         // Returns a pointer to the host depth buffer - if any
-        virtual void const* hostDepth() const { return &DepthBuffer[0]; }
+        virtual void const* hostDepth() const VV_OVERRIDE { return &DepthBuffer[0]; }
 
     private:
-        virtual bool BeginFrameImpl(unsigned clearMask);
-        virtual bool EndFrameImpl();
-        virtual bool ResizeImpl(int w, int h);
+        virtual bool BeginFrameImpl(unsigned clearMask) VV_OVERRIDE;
+        virtual bool EndFrameImpl() VV_OVERRIDE;
+        virtual bool ResizeImpl(int w, int h) VV_OVERRIDE;
 
         virtual bool DisplayColorBufferImpl() const;
 
-        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const;
-        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const;
+        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
+        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
 
     private:
         static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits) {
