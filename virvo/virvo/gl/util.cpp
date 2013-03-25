@@ -174,8 +174,10 @@ static char const* GetFramebufferStatusString(GLenum status)
         return "framebuffer unsupported";
     case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
         return "framebuffer incomplete multisample";
+#ifdef GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS
     case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
         return "framebuffer incomplete layer targets";
+#endif
     default:
         return "{unknown status}";
     }
