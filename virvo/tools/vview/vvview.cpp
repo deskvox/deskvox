@@ -2247,7 +2247,7 @@ void vvView::initGraphics(int argc, char *argv[])
 
 // Other glut versions than freeglut currently don't support
 // debug context flags.
-#if defined(FREEGLUT)
+#if defined(FREEGLUT) && defined(GLUT_DEBUG)
   glutInitContextFlags(GLUT_DEBUG);
 #endif // FREEGLUT
 
