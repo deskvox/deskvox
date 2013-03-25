@@ -1,5 +1,4 @@
-set(DESIRED_QT_VERSION 4)
-find_package(Qt REQUIRED QtCore QtGui QtOpenGL)
+find_package(Qt4 REQUIRED QtCore QtGui QtOpenGL)
 find_package(GLEW REQUIRED)
 
 deskvox_use_package(Qt
