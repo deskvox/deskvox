@@ -80,6 +80,12 @@ endif()
 
 option(DESKVOX_ENABLE_WERROR "Fail and stop if a warning is triggered" OFF)
 
+if (NOT DEFINED DESKVOX_USE_CUDA)
+  # Make this an option only if the variable has not otherwise been set. Allows
+  # other CMake modules to override the default value defined here.
+  option(DESKVOX_USE_CUDA "Use CUDA if available" ON)
+endif()
+
 
 # All options referred to from DeskvoxHandleOptions have to be specified BEFORE this include,
 # otherwise options will not be correctly set on first cmake run
