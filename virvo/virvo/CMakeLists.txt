@@ -63,7 +63,6 @@ set(VIRVO_HEADERS
   private/vvibrimage.h
   private/vvimage.h
   private/vvlog.h
-  private/vvvariadic.h
 
   cuda/array.h
   cuda/debug.h
