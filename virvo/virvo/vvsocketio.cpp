@@ -28,6 +28,8 @@
 #include "vvtoolshed.h"
 
 #include "private/vvgltools.h"
+#include "private/vvimage.h"
+#include "private/vvibrimage.h"
 
 //#ifdef VV_DEBUG_MEMORY
 //#include <crtdbg.h>
@@ -1777,6 +1779,122 @@ vvSocket::ErrorType vvSocketIO::putRequest(const vvRequest& req) const
   {
     return vvSocket::VV_SOCK_ERROR;
   }
+}
+
+vvSocket::ErrorType vvSocketIO::getStdVector(std::vector<unsigned char>& vec) const
+{
+  if (!getSocket())
+    return vvSocket::VV_SOCK_ERROR;
+
+  int size = 0;
+
+  vvSocket::ErrorType err = getInt32(size);
+
+  if (err == vvSocket::VV_OK)
+  {
+    vec.resize(static_cast<size_t>(size));
+    err = getSocket()->readData(&vec[0], vec.size());
+  }
+
+  return err;
+}
+
+vvSocket::ErrorType vvSocketIO::putStdVector(std::vector<unsigned char> const& vec) const
+{
+  if (!getSocket())
+    return vvSocket::VV_SOCK_ERROR;
+
+  if (vec.size() > static_cast<size_t>(0x7FFFFFFF))
+    return vvSocket::VV_DATA_ERROR;
+
+  vvSocket::ErrorType err = putInt32(static_cast<int>(vec.size()));
+
+  if (err == vvSocket::VV_OK)
+    err = getSocket()->writeData(&vec[0], vec.size());
+
+  return err;
+}
+
+vvSocket::ErrorType vvSocketIO::getImage(virvo::Image& image) const
+{
+  if (!getSocket())
+    return vvSocket::VV_SOCK_ERROR;
+
+  unsigned char header[16]; // 4 int's
+
+  vvSocket::ErrorType err = getSocket()->readData(header, sizeof(header));
+
+  if (err == vvSocket::VV_OK)
+  {
+    int w      = vvToolshed::read32(&header[ 0]);
+    int h      = vvToolshed::read32(&header[ 4]);
+    int pixlen = vvToolshed::read32(&header[ 8]);
+    int stride = vvToolshed::read32(&header[12]);
+
+    image.resize(w, h, pixlen, stride);
+
+    err = getStdVector(image.data_);
+  }
+
+  return err;
+}
+
+vvSocket::ErrorType vvSocketIO::putImage(virvo::Image const& image) const
+{
+  if (!getSocket())
+    return vvSocket::VV_SOCK_ERROR;
+
+  unsigned char header[16]; // 4 int's
+
+  vvToolshed::write32(&header[ 0], image.width());
+  vvToolshed::write32(&header[ 4], image.height());
+  vvToolshed::write32(&header[ 8], image.pixlen());
+  vvToolshed::write32(&header[12], image.stride());
+
+  vvSocket::ErrorType err = getSocket()->writeData(header, sizeof(header));
+
+  if (err == vvSocket::VV_OK)
+    err = putStdVector(image.data_);
+
+  return err;
+}
+
+vvSocket::ErrorType vvSocketIO::getIbrImage(virvo::IbrImage& image) const
+{
+  if (!getSocket())
+    return vvSocket::VV_SOCK_ERROR;
+
+  vvSocket::ErrorType err = vvSocket::VV_OK;
+
+  if (err == vvSocket::VV_OK) err = getImage(image);
+  if (err == vvSocket::VV_OK) err = getStdVector(image.depth_);
+  if (err == vvSocket::VV_OK) err = getInt32(image.depthBits_);
+  if (err == vvSocket::VV_OK) err = getFloat(image.depthMin_);
+  if (err == vvSocket::VV_OK) err = getFloat(image.depthMax_);
+  if (err == vvSocket::VV_OK) err = getMatrix(&image.viewMatrix_);
+  if (err == vvSocket::VV_OK) err = getMatrix(&image.projMatrix_);
+  if (err == vvSocket::VV_OK) err = getViewport(image.viewport_);
+
+  return err;
+}
+
+vvSocket::ErrorType vvSocketIO::putIbrImage(virvo::IbrImage const& image) const
+{
+  if (!getSocket())
+    return vvSocket::VV_SOCK_ERROR;
+
+  vvSocket::ErrorType err = vvSocket::VV_OK;
+
+  if (err == vvSocket::VV_OK) err = putImage(image);
+  if (err == vvSocket::VV_OK) err = putStdVector(image.depth_);
+  if (err == vvSocket::VV_OK) err = putInt32(static_cast<int>(image.depthBits_));
+  if (err == vvSocket::VV_OK) err = putFloat(image.depthMin_);
+  if (err == vvSocket::VV_OK) err = putFloat(image.depthMax_);
+  if (err == vvSocket::VV_OK) err = putMatrix(&image.viewMatrix_);
+  if (err == vvSocket::VV_OK) err = putMatrix(&image.projMatrix_);
+  if (err == vvSocket::VV_OK) err = putViewport(image.viewport_);
+
+  return err;
 }
 
 //----------------------------------------------------------------------------

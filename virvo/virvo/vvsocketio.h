@@ -43,6 +43,12 @@ class vvImage;
 class vvIbrImage;
 class vvVolDesc;
 
+namespace virvo
+{
+  class Image;
+  class IbrImage;
+}
+
 /** This class provides specific data transfer through sockets.
   It requires a socket of type vvSocket.<BR>
   Here is an example code fragment for a TCP sever which reads
@@ -187,6 +193,12 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putGpuInfos(const std::vector<vvGpu::vvGpuInfo>& ginfos) const;
     vvSocket::ErrorType getRequest(vvRequest& req) const;
     vvSocket::ErrorType putRequest(const vvRequest& req) const;
+    vvSocket::ErrorType getStdVector(std::vector<unsigned char>& vec) const;
+    vvSocket::ErrorType putStdVector(std::vector<unsigned char> const& vec) const;
+    vvSocket::ErrorType getImage(virvo::Image& image) const;
+    vvSocket::ErrorType putImage(virvo::Image const& image) const;
+    vvSocket::ErrorType getIbrImage(virvo::IbrImage& image) const;
+    vvSocket::ErrorType putIbrImage(virvo::IbrImage const& image) const;
 
     vvSocket* getSocket() const;
 private:
