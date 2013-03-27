@@ -21,33 +21,18 @@
 #ifndef VV_EXPORT_H
 #define VV_EXPORT_H
 
-#ifdef _MSC_VER
-# define VV_DLLEXPORT __declspec(dllexport)
-# define VV_DLLIMPORT __declspec(dllimport)
-# define VV_DLLHIDDEN
-#elif defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 4)
-# define VV_DLLEXPORT __attribute__((visibility("default")))
-# define VV_DLLIMPORT __attribute__((visibility("default")))
-# define VV_DLLHIDDEN __attribute__((visibility("hidden")))
-#else
-# define VV_DLLEXPORT
-# define VV_DLLIMPORT
-# define VV_DLLHIDDEN
-#endif
+#include "vvcompiler.h"
 
 #ifndef VIRVO_STATIC
-# ifdef VIRVO_EXPORTS
-#   define VVAPI VV_DLLEXPORT
-# else
-#   define VVAPI VV_DLLIMPORT
+#   ifdef VIRVO_EXPORTS
+#       define VVAPI VV_DLL_EXPORT
+#   else
+#       define VVAPI VV_DLL_IMPORT
 # endif
-# define VVLOCAL VV_DLLHIDDEN
 #else
-# define VVAPI
-# define VVLOCAL
+#   define VVAPI
 #endif
 
-// compatibility...
 #define VIRVOEXPORT VVAPI
 
 #endif
