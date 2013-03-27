@@ -29,6 +29,13 @@
 #include <limits>
 #include <vector>
 
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
 class vvTexRend;
 class vvShaderProgram;
 
