@@ -73,34 +73,34 @@ public:
   int depthBits() const { return depthBits_; }
 
   // Returns the minimum depth value
-  float& depthMin() { return depthMin_; }
+  float depthMin() const { return depthMin_; }
 
-  // Returns the minimum depth value
-  float const& depthMin() const { return depthMin_; }
-
-  // Returns the maximum depth value
-  float& depthMax() { return depthMax_; }
+  // Sets the minimum depth value
+  void setDepthMin(float value) { depthMin_ = value; }
 
   // Returns the maximum depth value
-  float const& depthMax() const { return depthMax_; }
+  float depthMax() const { return depthMax_; }
 
-  // Returns the model-view matrix
-  vvMatrix& viewMatrix() { return viewMatrix_; }
+  // Sets the maximum depth value
+  void setDepthMax(float value) { depthMax_ = value; }
 
   // Returns the model-view matrix
   vvMatrix const& viewMatrix() const { return viewMatrix_; }
 
-  // Returns the projection matrix
-  vvMatrix& projMatrix() { return projMatrix_; }
+  // Sets the model-view matrix
+  void setViewMatrix(vvMatrix const& value) { viewMatrix_ = value; }
 
   // Returns the projection matrix
   vvMatrix const& projMatrix() const { return projMatrix_; }
 
-  // Returns the viewport
-  virvo::Viewport& viewport() { return viewport_; }
+  // Sets the projection matrix
+  void setProjMatrix(vvMatrix const& value) { projMatrix_ = value; }
 
   // Returns the viewport
   virvo::Viewport const& viewport() const { return viewport_; }
+
+  // Sets the viewport
+  void setViewport(virvo::Viewport const& value) { viewport_ = value; }
 
   // Compress the image
   VVAPI bool compress();
