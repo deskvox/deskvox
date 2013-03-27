@@ -60,6 +60,8 @@ endif()
 set(VIRVO_HEADERS
   private/vvcompress.h
   private/vvgltools.h
+  private/vvibrimage.h
+  private/vvimage.h
   private/vvlog.h
   private/vvvariadic.h
 
@@ -176,6 +178,8 @@ set(VIRVO_HEADERS
 set(VIRVO_SOURCES
   private/vvcompress.cpp
   private/vvgltools.cpp
+  private/vvibrimage.cpp
+  private/vvimage.cpp
   private/vvlog.cpp
 
   cuda/graphics_resource.cpp
