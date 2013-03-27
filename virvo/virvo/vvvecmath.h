@@ -101,6 +101,8 @@ class VIRVOEXPORT vvMatrix
     float e[4][4];                                ///< matrix elements: [row][column]
   public:
     vvMatrix();
+    // Constructs a diagonal matrix
+    vvMatrix(float d0, float d1, float d2, float d3);
     vvMatrix(float* glf);
     float& operator()(int row, int col);
     float operator()(int row, int col) const;

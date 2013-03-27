@@ -72,6 +72,26 @@ vvMatrix::vvMatrix()
       e[row][col] = 0.0;
 }
 
+vvMatrix::vvMatrix(float d0, float d1, float d2, float d3)
+{
+  e[0][0] = d0;
+  e[0][1] = 0;
+  e[0][2] = 0;
+  e[0][3] = 0;
+  e[1][0] = 0;
+  e[1][1] = d1;
+  e[1][2] = 0;
+  e[1][3] = 0;
+  e[2][0] = 0;
+  e[2][1] = 0;
+  e[2][2] = d2;
+  e[2][3] = 0;
+  e[3][0] = 0;
+  e[3][1] = 0;
+  e[3][2] = 0;
+  e[3][3] = d3;
+}
+
 //----------------------------------------------------------------------------
 /// Constructor to init matrix from GLfloat array (GLfloat[16])
 vvMatrix::vvMatrix(float* glf)
