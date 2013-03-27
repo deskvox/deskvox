@@ -58,6 +58,7 @@ endif()
 
 
 set(VIRVO_HEADERS
+  private/vvcompress.h
   private/vvgltools.h
   private/vvlog.h
   private/vvvariadic.h
@@ -173,6 +174,7 @@ set(VIRVO_HEADERS
 )
 
 set(VIRVO_SOURCES
+  private/vvcompress.cpp
   private/vvgltools.cpp
   private/vvlog.cpp
 
