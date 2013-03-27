@@ -56,5 +56,109 @@ int pthread_barrier_destroy(pthread_barrier_t* barrier);
 int pthread_barrier_wait(pthread_barrier_t* barrier);
 #endif
 
+namespace virvo
+{
+
+//------------------------------------------------------------------------------
+// Mutex
+//
+class Mutex
+{
+  pthread_mutex_t mutex;
+
+public:
+  Mutex() { pthread_mutex_init(&mutex, 0); }
+ ~Mutex() { pthread_mutex_destroy(&mutex); }
+
+  // Returns a pointer to the internal pthread_mutex_t
+  pthread_mutex_t const* get() const { return &mutex; }
+
+  // Returns a pointer to the internal pthread_mutex_t
+  pthread_mutex_t* get() { return &mutex; }
+
+  // Lock
+  void lock() { pthread_mutex_lock(get()); }
+
+  // Unlock
+  void unlock() { pthread_mutex_unlock(get()); }
+
+  // Try to lock.
+  // Returns true on success, false otherwise.
+  bool tryLock() { return pthread_mutex_trylock(get()) == 0; }
+};
+
+//------------------------------------------------------------------------------
+// ScopedLock
+//
+// Locks the given mutex upon construction and unlocks
+// the mutex when destructed.
+//
+class ScopedLock
+{
+  Mutex* mutex;
+
+public:
+  ScopedLock(Mutex* mutex) : mutex(mutex) { mutex->lock(); }
+ ~ScopedLock() { mutex->unlock(); }
+};
+
+//------------------------------------------------------------------------------
+// Condition
+//
+class Condition
+{
+  pthread_cond_t cond;
+
+public:
+  Condition() { pthread_cond_init(&cond, 0); }
+ ~Condition() { pthread_cond_destroy(&cond); }
+
+  // Returns a pointer to the internal pthread_cond_t
+  pthread_cond_t const* get() const { return &cond; }
+
+  // Returns a pointer to the internal pthread_cond_t
+  pthread_cond_t* get() { return &cond; }
+
+  // Calling thread waits for the condition
+  // NOTE: Mutex must be locked!
+  void wait(Mutex* mutex) { pthread_cond_wait(get(), mutex->get()); }
+
+  // Wake up any thread waiting on the condition
+  void signal() { pthread_cond_signal(get()); }
+
+  // Wake up all threads waiting on the condition
+  void broadcast() { pthread_cond_broadcast(get()); }
+};
+
+//------------------------------------------------------------------------------
+// SyncedCondition
+//
+// Same as Condition, but includes a mutex to synchronize the condition
+// variable.
+//
+class SyncedCondition
+{
+  // Mutex to sync the condition variable
+  Mutex mutex;
+  // The actual condition variable
+  Condition cond;
+
+public:
+  // Calling thread blocks until the condition variable becomes signaled
+  void wait()
+  {
+    ScopedLock lock(&mutex);
+    cond.wait(&mutex);
+  }
+
+  // Wake up any thread waiting on the condition
+  void signal() { cond.signal(); }
+
+  // Wake up all threads waiting on the condition
+  void broadcast() { cond.broadcast(); }
+};
+
+} // namespace virvo
+
 #endif
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
