@@ -74,8 +74,8 @@ namespace virvo
 
         virtual bool DisplayColorBufferImpl() const;
 
-        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
-        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
+        virtual bool DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
+        virtual bool DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
 
         // (Re-)create the render buffers (but not the depth buffer)
         bool CreateGLBuffers(int w, int h, bool linearInterpolation = false);
@@ -131,8 +131,8 @@ namespace virvo
 
         virtual bool DisplayColorBufferImpl() const VV_OVERRIDE;
 
-        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
-        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
+        virtual bool DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
+        virtual bool DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
 
     private:
         struct Impl;

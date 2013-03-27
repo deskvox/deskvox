@@ -125,13 +125,13 @@ bool PixelUnpackBufferRT::DisplayColorBufferImpl() const
 }
 
 
-bool PixelUnpackBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& /*buffer*/) const
+bool PixelUnpackBufferRT::DownloadColorBufferImpl(unsigned char* /*buffer*/, size_t /*bufferSize*/) const
 {
     return false;
 }
 
 
-bool PixelUnpackBufferRT::DownloadDepthBufferImpl(std::vector<unsigned char>& /*buffer*/) const
+bool PixelUnpackBufferRT::DownloadDepthBufferImpl(unsigned char* /*buffer*/, size_t /*bufferSize*/) const
 {
     return false;
 }
@@ -235,13 +235,13 @@ bool DeviceBufferRT::DisplayColorBufferImpl() const
 }
 
 
-bool DeviceBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& /*buffer*/) const
+bool DeviceBufferRT::DownloadColorBufferImpl(unsigned char* /*buffer*/, size_t /*bufferSize*/) const
 {
     return false;
 }
 
 
-bool DeviceBufferRT::DownloadDepthBufferImpl(std::vector<unsigned char>& /*buffer*/) const
+bool DeviceBufferRT::DownloadDepthBufferImpl(unsigned char* /*buffer*/, size_t /*bufferSize*/) const
 {
     return false;
 }

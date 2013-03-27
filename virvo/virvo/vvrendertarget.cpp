@@ -25,6 +25,7 @@
 #include <GL/glew.h>
 
 #include <assert.h>
+#include <string.h>
 
 
 namespace gl = virvo::gl;
@@ -102,11 +103,30 @@ bool RenderTarget::displayColorBuffer() const
 }
 
 
+bool RenderTarget::downloadColorBuffer(unsigned char* buffer, size_t size) const
+{
+    assert( !Bound && "download color buffer while bound" );
+
+    return DownloadColorBufferImpl(buffer, size);
+}
+
+
+bool RenderTarget::downloadDepthBuffer(unsigned char* buffer, size_t size) const
+{
+    assert( !Bound && "download color buffer while bound" );
+
+    return DownloadDepthBufferImpl(buffer, size);
+}
+
+
 bool RenderTarget::downloadColorBuffer(std::vector<unsigned char>& buffer) const
 {
     assert( !Bound && "download color buffer while bound" );
 
-    return DownloadColorBufferImpl(buffer);
+    // TODO: Check for overflow...
+    buffer.resize(width() * height() * (colorBits() / 8));
+
+    return DownloadColorBufferImpl(&buffer[0], buffer.size());
 }
 
 
@@ -114,7 +134,10 @@ bool RenderTarget::downloadDepthBuffer(std::vector<unsigned char>& buffer) const
 {
     assert( !Bound && "download depth buffer while bound" );
 
-    return DownloadDepthBufferImpl(buffer);
+    // TODO: Check for overflow...
+    buffer.resize(width() * height() * (depthBits() / 8));
+
+    return DownloadDepthBufferImpl(&buffer[0], buffer.size());
 }
 
 
@@ -163,13 +186,13 @@ bool NullRT::DisplayColorBufferImpl() const
 }
 
 
-bool NullRT::DownloadColorBufferImpl(std::vector<unsigned char>& /*buffer*/) const
+bool NullRT::DownloadColorBufferImpl(unsigned char* /*buffer*/, size_t /*bufferSize*/) const
 {
     return true;
 }
 
 
-bool NullRT::DownloadDepthBufferImpl(std::vector<unsigned char>& /*buffer*/) const
+bool NullRT::DownloadDepthBufferImpl(unsigned char* /*buffer*/, size_t /*bufferSize*/) const
 {
     return true;
 }
@@ -331,9 +354,9 @@ bool FramebufferObjectRT::DisplayColorBufferImpl() const
 }
 
 
-bool FramebufferObjectRT::DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const
+bool FramebufferObjectRT::DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    buffer.resize(width() * height() * (colorBits() / 8));
+    assert( bufferSize >= width() * height() * (colorBits() / 8) );
 
     GLenum format = 0;
     switch (colorBits() / 8)
@@ -363,9 +386,9 @@ bool FramebufferObjectRT::DownloadColorBufferImpl(std::vector<unsigned char>& bu
 }
 
 
-bool FramebufferObjectRT::DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const
+bool FramebufferObjectRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    buffer.resize(width() * height() * (depthBits() / 8));
+    assert( bufferSize >= width() * height() * (colorBits() / 8) );
 
     GLenum type = 0;
     switch (depthBits() / 8)
@@ -451,15 +474,23 @@ bool HostBufferRT::DisplayColorBufferImpl() const
 }
 
 
-bool HostBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const
+bool HostBufferRT::DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    buffer = ColorBuffer;
+    size_t bytes = width() * height() * (colorBits() / 8);
+
+    assert( bufferSize >= bytes );
+
+    memcpy(&buffer[0], &ColorBuffer[0], bytes);
     return true;
 }
 
 
-bool HostBufferRT::DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const
+bool HostBufferRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    buffer = DepthBuffer;
+    size_t bytes = width() * height() * (colorBits() / 8);
+
+    assert( bufferSize >= bytes );
+
+    memcpy(&buffer[0], &DepthBuffer[0], bytes);
     return true;
 }

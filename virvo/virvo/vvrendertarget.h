@@ -74,6 +74,12 @@ namespace virvo
         // NOTE: Must not be supported by all render targets
         VVAPI bool displayColorBuffer() const;
 
+        // Copy the color buffer into the given buffer
+        VVAPI bool downloadColorBuffer(unsigned char* buffer, size_t size) const;
+
+        // Copy the depth buffer into the given buffer
+        VVAPI bool downloadDepthBuffer(unsigned char* buffer, size_t size) const;
+
         // Copy the color buffer into the given vector
         VVAPI bool downloadColorBuffer(std::vector<unsigned char>& buffer) const;
 
@@ -115,8 +121,8 @@ namespace virvo
 
         virtual bool DisplayColorBufferImpl() const = 0;
 
-        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const = 0;
-        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const = 0;
+        virtual bool DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const = 0;
+        virtual bool DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const = 0;
 
     private:
         // The width of the render-target
@@ -152,8 +158,8 @@ namespace virvo
 
         virtual bool DisplayColorBufferImpl() const;
 
-        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
-        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
+        virtual bool DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
+        virtual bool DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
     };
 
 
@@ -203,8 +209,8 @@ namespace virvo
 
         virtual bool DisplayColorBufferImpl() const VV_OVERRIDE;
 
-        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
-        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
+        virtual bool DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
+        virtual bool DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
 
     private:
         // Color buffer format
@@ -259,8 +265,8 @@ namespace virvo
 
         virtual bool DisplayColorBufferImpl() const;
 
-        virtual bool DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
-        virtual bool DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const VV_OVERRIDE;
+        virtual bool DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
+        virtual bool DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
 
     private:
         static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits) {

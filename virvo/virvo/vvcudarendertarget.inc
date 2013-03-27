@@ -33,6 +33,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <stdexcept>
 
@@ -261,15 +262,19 @@ bool PixelUnpackBufferRT::DisplayColorBufferImpl() const
 }
 
 
-bool PixelUnpackBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const
+bool PixelUnpackBufferRT::DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
+    size_t bytes = ComputeBufferSize(width(), height(), impl->ColorBits);
+
+    assert( bufferSize >= bytes );
+
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, impl->Buffer.get());
 
     // Map the buffer into CPU memory
-    unsigned char* ptr = static_cast<unsigned char*>( glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_ONLY) );
+    void* ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_ONLY);
 
     // Copy the buffer
-    buffer.assign( ptr, ptr + ComputeBufferSize(width(), height(), impl->ColorBits) );
+    memcpy( &buffer[0], ptr, bytes );
 
     // Unmap
     glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
@@ -280,12 +285,11 @@ bool PixelUnpackBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& bu
 }
 
 
-bool PixelUnpackBufferRT::DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const
+bool PixelUnpackBufferRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    unsigned char* ptr = static_cast<unsigned char*>(impl->DepthBuffer.hostPtr());
+    assert( bufferSize >= impl->DepthBuffer.size() );
 
-    buffer.assign(ptr, ptr + impl->DepthBuffer.size());
-
+    memcpy(&buffer[0], impl->DepthBuffer.hostPtr(), impl->DepthBuffer.size() );
     return true;
 }
 
@@ -422,21 +426,19 @@ bool DeviceBufferRT::DisplayColorBufferImpl() const
 }
 
 
-bool DeviceBufferRT::DownloadColorBufferImpl(std::vector<unsigned char>& buffer) const
+bool DeviceBufferRT::DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    unsigned char* ptr = static_cast<unsigned char*>(impl->ColorBuffer.hostPtr());
+    assert( bufferSize >= impl->ColorBuffer.size() );
 
-    buffer.assign(ptr, ptr + impl->ColorBuffer.size());
-
+    memcpy(&buffer[0], impl->ColorBuffer.hostPtr(), impl->ColorBuffer.size());
     return true;
 }
 
 
-bool DeviceBufferRT::DownloadDepthBufferImpl(std::vector<unsigned char>& buffer) const
+bool DeviceBufferRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    unsigned char* ptr = static_cast<unsigned char*>(impl->DepthBuffer.hostPtr());
+    assert( bufferSize >= impl->DepthBuffer.size() );
 
-    buffer.assign(ptr, ptr + impl->DepthBuffer.size());
-
+    memcpy(&buffer[0], impl->DepthBuffer.hostPtr(), impl->DepthBuffer.size());
     return true;
 }
