@@ -58,7 +58,6 @@ endif()
 
 
 set(VIRVO_HEADERS
-  private/vvcompiler.h
   private/vvgltools.h
   private/vvlog.h
   private/vvvariadic.h
@@ -96,6 +95,7 @@ set(VIRVO_HEADERS
   vvcgprogram.h
   vvclock.h
   vvcolor.h
+  vvcompiler.h
   vvcuda.h
   vvcudaimg.h
   vvcudarendertarget.h
