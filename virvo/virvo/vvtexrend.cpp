@@ -2202,6 +2202,10 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
 
   if (!extTex3d) return;                          // needs 3D texturing extension
 
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
+
   // determine visible size and half object size as shortcut
   vvVector3i minVox = _visibleRegion.getMin();
   vvVector3i maxVox = _visibleRegion.getMax();
@@ -2220,7 +2224,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     texSize[i] = vissize[i] * (float)texels[i] / (float)vd->vox[i];
     vissize2[i]   = 0.5f * vissize[i];
   }
-  pos = center;
+  pos = vd->pos + center;
 
   // Calculate inverted modelview matrix:
   invMV = vvMatrix(mv);
@@ -2492,6 +2496,8 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   }
   vvDebugMsg::msg(3, "Number of textures drawn: ", drawn);
   disableTexture(GL_TEXTURE_3D_EXT);
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
 }
 
 void vvTexRend::renderTexBricks(const vvMatrix& mv)
@@ -3081,6 +3087,9 @@ void vvTexRend::renderTex2DSlices(float zz)
   // Volume rendering with multiple 2D textures:
   enableTexture(GL_TEXTURE_2D);
 
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
   for (int i=0; i<numTextures; ++i)
   {
     if(voxelType == VV_PIX_SHD && _shader)
@@ -3115,6 +3124,8 @@ void vvTexRend::renderTex2DSlices(float zz)
   }
 
   disableTexture(GL_TEXTURE_2D);
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
   deactivateClippingPlane();
   vvDebugMsg::msg(3, "Number of textures stored: ", vd->vox[2]);
   vvDebugMsg::msg(3, "Number of textures drawn:  ", numTextures);
@@ -3266,6 +3277,9 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
 
   // Volume render a 2D texture:
   enableTexture(GL_TEXTURE_2D);
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
   for (i=0; i<numTextures; ++i)
   {
     if(voxelType == VV_PIX_SHD && _shader)
@@ -3300,6 +3314,8 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
 
     texIndex += texStep;
   }
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
   disableTexture(GL_TEXTURE_2D);
   deactivateClippingPlane();
 }
