@@ -2338,7 +2338,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   // Compute farthest point to draw texture at:
   farthest = delta;
   farthest.scale((float)(numSlices - 1) * -0.5f);
-  farthest.add(vd->pos);
+  farthest.add(probePosObj); // will be vd->pos if no probe present
 
   if (_clipMode)                     // clipping plane present?
   {
