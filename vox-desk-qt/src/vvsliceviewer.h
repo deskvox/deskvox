@@ -37,7 +37,7 @@ private:
   Ui_SliceViewer* ui;
 
   vvVolDesc* _vd;
-  int _slice;
+  size_t _slice;
   vvVecmath::AxisType _axis;
 
   void paint();

@@ -23,6 +23,7 @@ using std::setprecision;
 #include "vvclock.h"
 #include "vvvoldesc.h"
 #include "vvswitchrenderer.impl.h"
+#include "private/vvlog.h"
 
 #ifdef HAVE_VOLPACK
 
@@ -444,13 +445,12 @@ void vvRenderVP::updateTransferFunction()
 /** Set new frame index.
   @param index  new frame index (0 for first frame)
 */
-void vvRenderVP::setCurrentFrame(int index)
+void vvRenderVP::setCurrentFrame(size_t index)
 {
   vvDebugMsg::msg(1, "vvRenderVP::setCurrentFrame()");
   if (index == vd->getCurrentFrame()) return;
-  if (index < 0) index = 0;
   if (index >= vd->frames) index = vd->frames-1;
-  vvDebugMsg::msg(2, "New frame index: ", index);
+  VV_LOG(2) << "New frame index: " << index << std::endl;
   vd->setCurrentFrame(index);
 
   // Create new classified volume:

@@ -41,6 +41,7 @@
 #include "vvvoldesc.h"
 
 #include "private/vvgltools.h"
+#include "private/vvlog.h"
 
 namespace cu = virvo::cuda;
 
@@ -174,7 +175,7 @@ vvRayRend::~vvRayRend()
   delete[] _rgbaTF;
 }
 
-int vvRayRend::getLUTSize() const
+size_t vvRayRend::getLUTSize() const
 {
    vvDebugMsg::msg(2, "vvRayRend::getLUTSize()");
    return (vd->getBPV()==2) ? 4096 : 256;
@@ -184,7 +185,7 @@ void vvRayRend::updateTransferFunction()
 {
   vvDebugMsg::msg(3, "vvRayRend::updateTransferFunction()");
 
-  int lutEntries = getLUTSize();
+  size_t lutEntries = getLUTSize();
   delete[] _rgbaTF;
   _rgbaTF = new float[4 * lutEntries];
 
@@ -220,8 +221,8 @@ void vvRayRend::compositeVolume(int, int)
   const virvo::Viewport vp = vvGLTools::getViewport();
 
   allocIbrArrays(vp[2], vp[3]);
-  int w = vvToolshed::getTextureSize(vp[2]);
-  int h = vvToolshed::getTextureSize(vp[3]);
+  size_t w = vvToolshed::getTextureSize(vp[2]);
+  size_t h = vvToolshed::getTextureSize(vp[3]);
   intImg->setSize(w, h);
 
   vvCudaImg* cudaImg = dynamic_cast<vvCudaImg*>(intImg);
@@ -232,8 +233,6 @@ void vvRayRend::compositeVolume(int, int)
   }
   cudaImg->map();
 
-  dim3 blockSize(16, 16);
-  dim3 gridSize = dim3(vvToolshed::iDivUp(vp[2], blockSize.x), vvToolshed::iDivUp(vp[3], blockSize.y));
   const vvVector3 size(vd->getSize());
 
   vvVector3 probePosObj;
@@ -259,7 +258,7 @@ void vvRayRend::compositeVolume(int, int)
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
-  int numSlices = std::max(1, static_cast<int>(_quality * diagonalVoxels));
+  size_t numSlices = std::max(size_t(1), static_cast<size_t>(_quality * diagonalVoxels));
 
   vvMatrix Mv, MvPr;
   vvGLTools::getModelviewMatrix(&Mv);
@@ -496,8 +495,9 @@ void vvRayRend::initVolumeTexture()
   d_volumeArrays = new cu::Array[vd->frames];
   numVolumeArrays = vd->frames;
 
-  int outOfMemFrame = -1;
-  for (int f=0; f<vd->frames; ++f)
+  bool outOfMem = false;
+  size_t outOfMemFrame;
+  for (size_t f=0; f<vd->frames; ++f)
   {
     _volumeCopyToGpuOk = d_volumeArrays[f].allocate3D(::channelDesc, volumeSize);
 
@@ -508,12 +508,13 @@ void vvRayRend::initVolumeTexture()
 
     if(!_volumeCopyToGpuOk)
     {
+      outOfMem = true;
       outOfMemFrame = f;
       break;
     }
 
-    vvDebugMsg::msg(1, "Total CUDA memory (MB):     ", (int)(totalMem/1024/1024));
-    vvDebugMsg::msg(1, "Available CUDA memory (MB): ", (int)(availableMem/1024/1024));
+    VV_LOG(1) << "Total CUDA memory (MB):     " << (size_t)(totalMem/1024/1024) << std::endl;
+    VV_LOG(1) << "Available CUDA memory (MB): " << (size_t)(availableMem/1024/1024) << std::endl;
 
     cudaMemcpy3DParms copyParams = { 0 };
 
@@ -543,10 +544,10 @@ void vvRayRend::initVolumeTexture()
                        "vvRayRend::initVolumeTexture() - copy volume frame to 3D array");
   }
 
-  if (outOfMemFrame >= 0)
+  if (outOfMem)
   {
     std::cerr << "Couldn't accomodate the volume" << std::endl;
-    for (int f=0; f<=outOfMemFrame; ++f)
+    for (size_t f=0; f<=outOfMemFrame; ++f)
     {
       d_volumeArrays[f].reset();
     }
@@ -558,7 +559,7 @@ void vvRayRend::initVolumeTexture()
     // XXX:
     // why do we do this right here?
     //
-    for (int f=0; f<outOfMemFrame; ++f)
+    for (size_t f=0; f<outOfMemFrame; ++f)
     {
       d_volumeArrays[f].reset();
     }
@@ -590,10 +591,10 @@ void vvRayRend::factorViewMatrix()
   vvDebugMsg::msg(3, "vvRayRend::factorViewMatrix()");
 
   virvo::Viewport vp = vvGLTools::getViewport();
-  const int w = vvToolshed::getTextureSize(vp[2]);
-  const int h = vvToolshed::getTextureSize(vp[3]);
+  size_t w = vvToolshed::getTextureSize(vp[2]);
+  size_t h = vvToolshed::getTextureSize(vp[3]);
 
-  if ((intImg->width != w) || (intImg->height != h))
+  if (intImg->width != static_cast<int>(w) || intImg->height != static_cast<int>(h))
   {
     intImg->setSize(w, h);
     allocIbrArrays(w, h);
@@ -609,7 +610,7 @@ void vvRayRend::findAxisRepresentations()
   // Overwrite default behavior.
 }
 
-bool vvRayRend::allocIbrArrays(const int w, const int h)
+bool vvRayRend::allocIbrArrays(size_t w, size_t h)
 {
   vvDebugMsg::msg(3, "vvRayRend::allocIbrArrays()");
 

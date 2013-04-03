@@ -660,7 +660,7 @@ void vvCanvas::updateProjection()
   }
 }
 
-void vvCanvas::setCurrentFrame(const int frame)
+void vvCanvas::setCurrentFrame(size_t frame)
 {
   vvDebugMsg::msg(3, "vvCanvas::setCurrentFrame()");
 
@@ -853,16 +853,11 @@ void vvCanvas::stopAnimation()
   _animTimer->stop();
 }
 
-void vvCanvas::setTimeStep(const int step)
+void vvCanvas::setTimeStep(int step)
 {
   vvDebugMsg::msg(3, "vvCanvas::setTimeStep()");
 
-  int f = step;
-  while (f < 0)
-  {
-    f += _vd->frames;
-  }
-
+  size_t f = step;
   while (f >= _vd->frames)
   {
     f -= _vd->frames;
@@ -875,7 +870,7 @@ void vvCanvas::incTimeStep()
 {
   vvDebugMsg::msg(3, "vvCanvas::incTimeStep()");
 
-  int f = _renderer->getCurrentFrame();
+  size_t f = _renderer->getCurrentFrame();
   f = (f >= _vd->frames - 1) ? 0 : f + 1;
   setCurrentFrame(f);
 }
@@ -884,8 +879,8 @@ void vvCanvas::decTimeStep()
 {
   vvDebugMsg::msg(3, "vvCanvas::decTimeStep()");
 
-  int f = _renderer->getCurrentFrame();
-  f = (f <= 0) ? _vd->frames - 1 : f - 1;
+  size_t f = _renderer->getCurrentFrame();
+  f = (f == 0) ? _vd->frames - 1 : f - 1;
   setCurrentFrame(f);
 }
 

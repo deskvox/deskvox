@@ -115,7 +115,7 @@ int vvToolshed::strCompare(const char* str1, const char* str2)
     @param n = number of characters to compare
     @return the same values as in #strCompare(const char*, const char*)
 */
-int vvToolshed::strCompare(const char* str1, const char* str2, int n)
+int vvToolshed::strCompare(const char* str1, const char* str2, size_t n)
 {
 #ifdef _WIN32
   return strnicmp(str1, str2, n);
@@ -355,7 +355,7 @@ std::string vvToolshed::strTrim(const std::string& str)
   std::string result = str;
 
   // Trim trailing spaces:
-  for (int i=result.length()-1; i>0; --i)
+  for (size_t i=result.length()-1; i>0; --i)
   {
     if (std::isspace(str[i])) result.erase(i);
     else break;
@@ -378,11 +378,9 @@ std::string vvToolshed::strTrim(const std::string& str)
     @param str    source string
     @return next int at given position
  */
-unsigned int vvToolshed::parseNextUint32(const char* str, size_t& iterator)
+uint32_t vvToolshed::parseNextUint32(const char* str, size_t& iterator)
 {
-  int result;
-
-  result = 0;
+  uint32_t result = 0;
 
   // Skip leading white spaces.
   while (isWhitespace(str[iterator]))
@@ -395,7 +393,7 @@ unsigned int vvToolshed::parseNextUint32(const char* str, size_t& iterator)
   while ((c >= '0') && (c <= '9'))
   {
       result *= 10;
-      result += static_cast<int>(c-48);
+      result += static_cast<uint32_t>(c-48);
 
       iterator++;
       c = str[iterator];
@@ -920,9 +918,9 @@ uint color, uchar* data, int bpp, int w, int h)
     @param imgSize  the image size [pixels]
     @return the closest power-of-2 value that is greater than or equal to imgSize.
 */
-int vvToolshed::getTextureSize(const int imgSize)
+size_t vvToolshed::getTextureSize(size_t imgSize)
 {
-  return (int)powf(2.0f, (float)ceil(log((float)imgSize) / log(2.0f)));
+  return (size_t)pow(2.0, (double)ceil(log((double)imgSize) / log(2.0)));
 }
 
 //----------------------------------------------------------------------------
@@ -1317,23 +1315,25 @@ void vvToolshed::printProgress(int current)
   @param symbol_size  bytes per chunk
   @param space  number of bytes allocated for destination array.
                 Encoding process is stopped when this number is reached.
-  @return number of bytes written to destination memory or -1 if there is not
-enough destination memory, -2 if an invalid data size was passed
+  @param outsize number of bytes written to destination memory
+  @return ok if data was written destination memory or an error type if there is not
+enough destination memory or if an invalid data size was passed
 @see decodeRLE
 @author Michael Poehnl
 */
-int vvToolshed::encodeRLE(uchar* out, uchar* in, int size, int symbol_size, int space)
+vvToolshed::ErrorType vvToolshed::encodeRLE(uint8_t* out, uint8_t* in, size_t size, size_t symbol_size, size_t space, size_t* outsize)
 {
   int same_symbol=1;
   int diff_symbol=0;
-  int src=0;
-  int dest=0;
+  size_t src=0;
+  size_t dest=0;
   bool same;
-  int i;
+  size_t i;
 
   if ((size % symbol_size) != 0)
   {
-    return -2;
+    *outsize = 0;
+    return VV_INVALID_SIZE;
   }
 
   while (src < (size - symbol_size))
@@ -1352,7 +1352,7 @@ int vvToolshed::encodeRLE(uchar* out, uchar* in, int size, int symbol_size, int 
       if (same_symbol == 129)
       {
         assert(dest<space);
-        out[dest] = (uchar)(126+same_symbol);
+        out[dest] = (uint8_t)(126+same_symbol);
         dest += symbol_size+1;
         same_symbol = 1;
       }
@@ -1362,7 +1362,7 @@ int vvToolshed::encodeRLE(uchar* out, uchar* in, int size, int symbol_size, int 
         if (diff_symbol > 0)
         {
           assert(dest<space);
-          out[dest] = (uchar)(diff_symbol-1);
+          out[dest] = (uint8_t)(diff_symbol-1);
           dest += 1+symbol_size*diff_symbol;
           diff_symbol=0;
         }
@@ -1370,7 +1370,8 @@ int vvToolshed::encodeRLE(uchar* out, uchar* in, int size, int symbol_size, int 
         {
           if ((dest+1+symbol_size) > space)
           {
-            return -1;
+            *outsize = 0;
+            return VV_OUT_OF_MEMORY;
           }
           memcpy(&out[dest+1], &in[src], symbol_size);
         }
@@ -1381,7 +1382,7 @@ int vvToolshed::encodeRLE(uchar* out, uchar* in, int size, int symbol_size, int 
       if (same_symbol > 1)
       {
         assert(dest<space);
-        out[dest] = (uchar)(126+same_symbol);
+        out[dest] = (uint8_t)(126+same_symbol);
         dest += symbol_size+1;
         same_symbol = 1;
       }
@@ -1389,14 +1390,15 @@ int vvToolshed::encodeRLE(uchar* out, uchar* in, int size, int symbol_size, int 
       {
         if ((dest+1+diff_symbol*symbol_size+symbol_size) > space)
         {
-          return -1;
+          outsize = 0;
+          return VV_OUT_OF_MEMORY;
         }
         memcpy(&out[dest+1+diff_symbol*symbol_size], &in[src], symbol_size);
         diff_symbol++;
         if (diff_symbol == 128)
         {
           assert(dest<space);
-          out[dest] = (uchar)(diff_symbol-1);
+          out[dest] = (uint8_t)(diff_symbol-1);
           dest += 1+symbol_size*diff_symbol;
           diff_symbol=0;
         }
@@ -1407,21 +1409,23 @@ int vvToolshed::encodeRLE(uchar* out, uchar* in, int size, int symbol_size, int 
   if (same_symbol > 1)
   {
     assert(dest<space);
-    out[dest] = (uchar)(126+same_symbol);
+    out[dest] = (uint8_t)(126+same_symbol);
     dest += symbol_size+1;
   }
   else
   {
     if ((dest+1+diff_symbol*symbol_size+symbol_size) > space)
     {
-      return -1;
+      *outsize = 0;
+      return VV_OUT_OF_MEMORY;
     }
     memcpy(&out[dest+1+diff_symbol*symbol_size], &in[src], symbol_size);
     diff_symbol++;
-    out[dest] = (uchar)(diff_symbol-1);
+    out[dest] = (uint8_t)(diff_symbol-1);
     dest += 1+symbol_size*diff_symbol;
   }
-  return dest;
+  *outsize = dest;
+  return VV_OK;
 }
 
 //----------------------------------------------------------------------------
@@ -1432,27 +1436,29 @@ int vvToolshed::encodeRLE(uchar* out, uchar* in, int size, int symbol_size, int 
   @param size number of bytes in source array to decode
   @param symbol_size  bytes per chunk (e.g., to encode 24 bit RGB data, use bpc=3)
   @param space  number of allocated bytes in destination memory (for range checking)
-  @return number of bytes written to destination memory. If max would
-          have been exceeded, -1 is returned
+  @param outsize number of bytes written to destination memory
+  @return ok if bytes written to destination memory. If max would
+          have been exceeded, an error type is returned
   @see encodeRLE
   @author Michael Poehnl
 */
-int vvToolshed::decodeRLE(uchar* out, uchar* in, int size, int symbol_size, int space)
+vvToolshed::ErrorType vvToolshed::decodeRLE(uint8_t* out, uint8_t* in, size_t size, size_t symbol_size, size_t space, size_t* outsize)
 {
-  int src=0;
-  int dest=0;
-  int i, length;
+  size_t src=0;
+  size_t dest=0;
+  size_t i, length;
 
   while (src < size)
   {
-    length = (int)in[src];
+    length = (size_t)in[src];
     if (length > 127)
     {
       for(i=0; i<(length - 126); i++)
       {
         if ((dest + symbol_size) > space)
         {
-          return -1;
+          *outsize = 0;
+          return VV_INVALID_SIZE;
         }
         memcpy(&out[dest], &in[src+1], symbol_size);
         dest += symbol_size;
@@ -1464,14 +1470,16 @@ int vvToolshed::decodeRLE(uchar* out, uchar* in, int size, int symbol_size, int 
       length++;
       if ((dest + length*symbol_size) > space)
       {
-        return -1;
+        *outsize = 0;
+        return VV_OUT_OF_MEMORY;
       }
       memcpy(&out[dest], &in[src+1], symbol_size*length);
       dest += length*symbol_size;
       src += 1+symbol_size*length;
     }
   }
-  return dest;
+  *outsize = dest;
+  return VV_OK;
 }
 
 //----------------------------------------------------------------------------
@@ -1487,13 +1495,13 @@ int vvToolshed::decodeRLE(uchar* out, uchar* in, int size, int symbol_size, int 
   @return number of bytes written to destination memory
   @see decodeRLEFast
 */
-int vvToolshed::encodeRLEFast(uchar* dst, uchar* src, int len, int max)
+size_t vvToolshed::encodeRLEFast(uint8_t* dst, uint8_t* src, size_t len, size_t max)
 {
-  int offset;                                     // start position of currently processed run in source array
-  int index;                                      // index in source array
-  int out;                                        // index in destination array
-  int i;                                          // counter
-  uchar cur;                                      // currently processed data byte
+  size_t offset;                                  // start position of currently processed run in source array
+  size_t index;                                   // index in source array
+  size_t out;                                     // index in destination array
+  size_t i;                                       // counter
+  uint8_t cur;                                    // currently processed data byte
 
   offset = out = 0;
   while (offset < len)
@@ -1519,14 +1527,14 @@ int vvToolshed::encodeRLEFast(uchar* dst, uchar* src, int len, int max)
       while (index<len && src[index]==src[index-1])
         index--;
       if (out < max)
-        dst[out++] = (uchar)(index - offset - 1);
+        dst[out++] = (uint8_t)(index - offset - 1);
       for (i=offset; i<index; i++)
         if (out < max) dst[out++] = src[i];
     }
     else                                          // generate replicate run
     {
       if (out < max)
-        dst[out++] = (uchar)(index - offset + 127);
+        dst[out++] = (uint8_t)(index - offset + 127);
       if (out < max)
         dst[out++] = cur;
     }
@@ -1545,10 +1553,10 @@ int vvToolshed::encodeRLEFast(uchar* dst, uchar* src, int len, int max)
           have been exceeded, max+1 is returned
   @see encodeRLEFast
 */
-int vvToolshed::decodeRLEFast(uchar* dst, uchar* src, int len, int max)
+size_t vvToolshed::decodeRLEFast(uint8_t* dst, uint8_t* src, size_t len, size_t max)
 {
-  int count;                                      // RLE counter
-  int out=0;                                      // counter for written output bytes
+  size_t count;                                   // RLE counter
+  size_t out=0;                                   // counter for written output bytes
 
   while (len > 0)
   {
@@ -1726,11 +1734,11 @@ void vvToolshed::convertHS2XY(float hue, float saturation, float* x, float* y)
 }
 
 //----------------------------------------------------------------------------
-/** Read an unsigned char value from a file.
+/** Read an unsigned 8-bit integer value from a file.
  */
-uchar vvToolshed::read8(FILE* src)
+uint8_t vvToolshed::read8(FILE* src)
 {
-  uchar val;
+  uint8_t val;
   size_t retval;
 
   retval=fread(&val, 1, 1, src);
@@ -1743,10 +1751,10 @@ uchar vvToolshed::read8(FILE* src)
 }
 
 //----------------------------------------------------------------------------
-/** Write an unsigned char value to a file.
+/** Write an unsigned 8-bit integer value to a file.
   @return number of bytes written
 */
-int vvToolshed::write8(FILE* dst, uchar val)
+size_t vvToolshed::write8(FILE* dst, uint8_t val)
 {
   size_t retval;
   retval=fwrite(&val, 1, 1, dst);
@@ -1759,12 +1767,12 @@ int vvToolshed::write8(FILE* dst, uchar val)
 }
 
 //----------------------------------------------------------------------------
-/** Read an unsigned short value system independently from a file.
+/** Read an unsigned 16-bit integer value system independently from a file.
  */
-ushort vvToolshed::read16(FILE* src, vvToolshed::EndianType end)
+uint16_t vvToolshed::read16(FILE* src, vvToolshed::EndianType end)
 {
-  uchar buf[2];
-  int val;
+  uint8_t buf[2];
+  uint16_t val;
 
   size_t retval;
 
@@ -1777,32 +1785,32 @@ ushort vvToolshed::read16(FILE* src, vvToolshed::EndianType end)
   }
   if (end==VV_LITTLE_END)
   {
-    val = (int)buf[0] + (int)buf[1] * (int)256;
+    val = (uint16_t)buf[0] + (uint16_t)buf[1] * (uint16_t)256;
   }
   else
   {
-    val = (int)buf[0] * (int)256 + (int)buf[1];
+    val = (uint16_t)buf[0] * (uint16_t)256 + (uint16_t)buf[1];
   }
-  return (ushort)val;
+  return val;
 }
 
 //----------------------------------------------------------------------------
-/** Write an unsigned short value system independently to a file.
+/** Write an unsigned 16-bit integer value system independently to a file.
   @return number of bytes written
 */
-int vvToolshed::write16(FILE* fp, ushort val, vvToolshed::EndianType end)
+size_t vvToolshed::write16(FILE* fp, uint16_t val, vvToolshed::EndianType end)
 {
-  uchar buf[2];
+  uint8_t buf[2];
 
   if (end==VV_LITTLE_END)
   {
-    buf[0] = (uchar)(val & 0xFF);
-    buf[1] = (uchar)(val >> 8);
+    buf[0] = (uint8_t)(val & 0xFF);
+    buf[1] = (uint8_t)(val >> 8);
   }
   else
   {
-    buf[0] = (uchar)(val >> 8);
-    buf[1] = (uchar)(val & 0xFF);
+    buf[0] = (uint8_t)(val >> 8);
+    buf[1] = (uint8_t)(val & 0xFF);
   }
   size_t retval;
   retval=fwrite(buf, 2, 1, fp);
@@ -1815,11 +1823,11 @@ int vvToolshed::write16(FILE* fp, ushort val, vvToolshed::EndianType end)
 }
 
 //----------------------------------------------------------------------------
-/** Read an unsigned long value system independently from a file.
+/** Read an unsigned 32-bit integer value system independently from a file.
  */
 uint32_t vvToolshed::read32(FILE* src, vvToolshed::EndianType end)
 {
-  uchar buf[4];
+  uint8_t buf[4];
   uint32_t val;
 
   size_t retval;
@@ -1844,26 +1852,26 @@ uint32_t vvToolshed::read32(FILE* src, vvToolshed::EndianType end)
 }
 
 //----------------------------------------------------------------------------
-/** Write an unsigned long value system independently to a file.
+/** Write an unsigned 32-bit integer value system independently to a file.
   @return number of bytes written
 */
-int vvToolshed::write32(FILE* fp, uint32_t val, vvToolshed::EndianType end)
+size_t vvToolshed::write32(FILE* fp, uint32_t val, vvToolshed::EndianType end)
 {
-  uchar buf[4];
+  uint8_t buf[4];
 
   if (end==VV_LITTLE_END)
   {
-    buf[0] = (uchar)(val & 0xFF);
-    buf[1] = (uchar)((val >> 8)  & 0xFF);
-    buf[2] = (uchar)((val >> 16) & 0xFF);
-    buf[3] = (uchar)(val  >> 24);
+    buf[0] = (uint8_t)(val & 0xFF);
+    buf[1] = (uint8_t)((val >> 8)  & 0xFF);
+    buf[2] = (uint8_t)((val >> 16) & 0xFF);
+    buf[3] = (uint8_t)(val  >> 24);
   }
   else
   {
-    buf[0] = (uchar)(val  >> 24);
-    buf[1] = (uchar)((val >> 16) & 0xFF);
-    buf[2] = (uchar)((val >> 8)  & 0xFF);
-    buf[3] = (uchar)(val & 0xFF);
+    buf[0] = (uint8_t)(val  >> 24);
+    buf[1] = (uint8_t)((val >> 16) & 0xFF);
+    buf[2] = (uint8_t)((val >> 8)  & 0xFF);
+    buf[3] = (uint8_t)(val & 0xFF);
   }
   size_t retval;
   retval=fwrite(buf, 4, 1, fp);
@@ -1880,8 +1888,8 @@ int vvToolshed::write32(FILE* fp, uint32_t val, vvToolshed::EndianType end)
  */
 float vvToolshed::readFloat(FILE* src, vvToolshed::EndianType end)
 {
-  uchar *buf;
-  uchar tmp;
+  uint8_t *buf;
+  uint8_t tmp;
   float val;
 
   size_t retval;
@@ -1896,7 +1904,7 @@ float vvToolshed::readFloat(FILE* src, vvToolshed::EndianType end)
   if (getEndianness() != end)
   {
     // Reverse byte order:
-    buf = (uchar*)&val;
+    buf = (uint8_t*)&val;
     tmp = buf[0]; buf[0] = buf[3]; buf[3] = tmp;
     tmp = buf[1]; buf[1] = buf[2]; buf[2] = tmp;
   }
@@ -1907,15 +1915,15 @@ float vvToolshed::readFloat(FILE* src, vvToolshed::EndianType end)
 /** Write a 32 bit float value system independently to a file.
   @return number of bytes written
 */
-int vvToolshed::writeFloat(FILE* fp, float val, vvToolshed::EndianType end)
+size_t vvToolshed::writeFloat(FILE* fp, float val, vvToolshed::EndianType end)
 {
-  uchar* buf;
-  uchar tmp;
+  uint8_t* buf;
+  uint8_t tmp;
 
   if (getEndianness() != end)
   {
     // Reverse byte order:
-    buf = (uchar*)&val;
+    buf = (uint8_t*)&val;
     tmp = buf[0]; buf[0] = buf[3]; buf[3] = tmp;
     tmp = buf[1]; buf[1] = buf[2]; buf[2] = tmp;
   }
@@ -1940,65 +1948,65 @@ int vvToolshed::align(const int i, const int pot)
 }
 
 //----------------------------------------------------------------------------
-/** Read an unsigned char value from a buffer.
+/** Read an unsigned 8-bit integer value from a buffer.
  */
-uchar vvToolshed::read8(uchar* src)
+uint8_t vvToolshed::read8(uint8_t* src)
 {
   return *src;
 }
 
 //----------------------------------------------------------------------------
-/** Write an unsigned char value to a buffer.
+/** Write an unsigned 8-bit integer value to a buffer.
   @return number of bytes written
 */
-int vvToolshed::write8(uchar* src, uchar val)
+size_t vvToolshed::write8(uint8_t* src, uint8_t val)
 {
   *src = val;
-  return sizeof(uchar);
+  return sizeof(uint8_t);
 }
 
 //----------------------------------------------------------------------------
-/** Read a little endian unsigned short value system independently from a buffer
+/** Read a little endian unsigned 16-bit integer value system independently from a buffer
   (least significant byte first).
 */
-ushort vvToolshed::read16(uchar* src, const vvToolshed::EndianType end)
+uint16_t vvToolshed::read16(uint8_t* src, const vvToolshed::EndianType end)
 {
   if (end==VV_LITTLE_END)
   {
-    return static_cast<ushort>((int)src[0] + (int)src[1] * (int)256);
+    return static_cast<ushort>((uint16_t)src[0] + (uint16_t)src[1] * (uint16_t)256);
   }
   else
   {
-    return static_cast<ushort>((int)src[0] * (int)256 + (int)src[1]);
+    return static_cast<ushort>((uint16_t)src[0] * (uint16_t)256 + (uint16_t)src[1]);
   }
 }
 
 //----------------------------------------------------------------------------
-/** Write a little endian unsigned short value system independently to a buffer
+/** Write a little endian unsigned 16-bit integer value system independently to a buffer
   (least significant byte first).
   @param buf pointer to 2 bytes of _allocated_ memory
   @return number of bytes written
 */
-int vvToolshed::write16(uchar* buf, ushort val, vvToolshed::EndianType end)
+size_t vvToolshed::write16(uint8_t* buf, uint16_t val, vvToolshed::EndianType end)
 {
   if (end==VV_LITTLE_END)
   {
-    buf[0] = (uchar)(val & 0xFF);
-    buf[1] = (uchar)(val >> 8);
+    buf[0] = (uint8_t)(val & 0xFF);
+    buf[1] = (uint8_t)(val >> 8);
   }
   else
   {
-    buf[0] = (uchar)(val >> 8);
-    buf[1] = (uchar)(val & 0xFF);
+    buf[0] = (uint8_t)(val >> 8);
+    buf[1] = (uint8_t)(val & 0xFF);
   }
-  return sizeof(ushort);
+  return 2 * sizeof(uint8_t);
 }
 
 //----------------------------------------------------------------------------
-/** Read a little endian unsigned long value system independently from a buffer.
+/** Read a little endian unsigned 32-bit integer value system independently from a buffer.
  Read four bytes in a row in unix-style (least significant byte first).
 */
-uint32_t vvToolshed::read32(uchar* buf, const vvToolshed::EndianType end)
+uint32_t vvToolshed::read32(uint8_t* buf, const vvToolshed::EndianType end)
 {
   if (end==VV_LITTLE_END)
   {
@@ -2013,24 +2021,24 @@ uint32_t vvToolshed::read32(uchar* buf, const vvToolshed::EndianType end)
 }
 
 //----------------------------------------------------------------------------
-/** Write an unsigned long value system independently to a buffer.
+/** Write an unsigned 32-bit integer value system independently to a buffer.
   @return number of bytes written
 */
-int vvToolshed::write32(uchar* buf, uint32_t val, vvToolshed::EndianType end)
+size_t vvToolshed::write32(uint8_t* buf, uint32_t val, vvToolshed::EndianType end)
 {
   if (end==VV_LITTLE_END)
   {
-    buf[0] = (uchar)(val & 0xFF);
-    buf[1] = (uchar)((val >> 8)  & 0xFF);
-    buf[2] = (uchar)((val >> 16) & 0xFF);
-    buf[3] = (uchar)(val  >> 24);
+    buf[0] = (uint8_t)(val & 0xFF);
+    buf[1] = (uint8_t)((val >> 8)  & 0xFF);
+    buf[2] = (uint8_t)((val >> 16) & 0xFF);
+    buf[3] = (uint8_t)(val  >> 24);
   }
   else
   {
-    buf[0] = (uchar)(val  >> 24);
-    buf[1] = (uchar)((val >> 16) & 0xFF);
-    buf[2] = (uchar)((val >> 8)  & 0xFF);
-    buf[3] = (uchar)(val & 0xFF);
+    buf[0] = (uint8_t)(val  >> 24);
+    buf[1] = (uint8_t)((val >> 16) & 0xFF);
+    buf[2] = (uint8_t)((val >> 8)  & 0xFF);
+    buf[3] = (uint8_t)(val & 0xFF);
   }
   return sizeof(uint32_t);
 }
@@ -2038,18 +2046,18 @@ int vvToolshed::write32(uchar* buf, uint32_t val, vvToolshed::EndianType end)
 //----------------------------------------------------------------------------
 /** Read a 32 bit float value system independently from a buffer.
  */
-float vvToolshed::readFloat(uchar* buf, vvToolshed::EndianType end)
+float vvToolshed::readFloat(uint8_t* buf, vvToolshed::EndianType end)
 {
   float  fval;
-  uchar* ptr;
-  uchar  tmp;
+  uint8_t* ptr;
+  uint8_t  tmp;
 
   assert(sizeof(float)==4);
   memcpy(&fval, buf, 4);
   if (getEndianness() != end)
   {
     // Reverse byte order:
-    ptr = (uchar*)&fval;
+    ptr = (uint8_t*)&fval;
     tmp = ptr[0]; ptr[0] = ptr[3]; ptr[3] = tmp;
     tmp = ptr[1]; ptr[1] = ptr[2]; ptr[2] = tmp;
   }
@@ -2060,9 +2068,9 @@ float vvToolshed::readFloat(uchar* buf, vvToolshed::EndianType end)
 /** Write a 32 bit float value system independently to a buffer.
   @return number of bytes written
 */
-int vvToolshed::writeFloat(uchar* buf, float val, vvToolshed::EndianType end)
+size_t vvToolshed::writeFloat(uint8_t* buf, float val, vvToolshed::EndianType end)
 {
-  uchar tmp;
+  uint8_t tmp;
 
   assert(sizeof(float)==4);
   memcpy(buf, &val, 4);
@@ -2083,9 +2091,9 @@ int vvToolshed::writeFloat(uchar* buf, float val, vvToolshed::EndianType end)
 */
 void vvToolshed::makeArraySystemIndependent(int numValues, float* array)
 {
-  uchar* buf;                                     // array pointer in uchar format
+  uint8_t* buf;                                   // array pointer in uchar format
   int i;
-  uchar tmp;                                      // temporary byte value from float array, needed for swapping
+  uint8_t tmp;                                    // temporary byte value from float array, needed for swapping
 
   assert(sizeof(float) == 4);
   if (getEndianness()==VV_BIG_END)  return;       // nothing needs to be done
@@ -2845,11 +2853,11 @@ int main(int, char**)
   char* testData = {"ABABACACACABABABACABCD"};
   char encoded[100];
   char decoded[100];
-  int len;
-  int bpc = 2;
+  size_t len;
+  size_t bpc = 2;
   cout << "Unencoded: " << testData << endl;
-  len = vvToolshed::encodeRLE((uchar*)encoded, (uchar*)testData, strlen(testData), bpc, 100);
-  len = vvToolshed::decodeRLE((uchar*)decoded, (uchar*)encoded, len, bpc, 100);
+  bool success = vvToolshed::encodeRLE((uint8_t*)encoded, (uint8_t*)testData, strlen(testData), bpc, 100, &len);
+  success &= vvToolshed::decodeRLE((uint8_t*)decoded, (uint8_t*)encoded, len, bpc, 100, &len);
   decoded[len] = '\0';
   cout << "Decoded:   " << decoded << endl;
 

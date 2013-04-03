@@ -35,24 +35,24 @@
 
 namespace
 {
-void clamp(int* slice, int slices)
+void clamp(size_t* slice, size_t slices)
 {
   *slice = std::min(*slice, slices - 1);
-  *slice = std::max(0, *slice);
+  *slice = std::max(size_t(0), *slice);
 }
 
-QImage getSlice(vvVolDesc* vd, std::vector<uchar>* texture, int slice, vvVecmath::AxisType axis)
+QImage getSlice(vvVolDesc* vd, std::vector<uchar>* texture, size_t slice, vvVecmath::AxisType axis)
 {
   assert(texture != NULL);
 
-  int width;
-  int height;
-  int slices;
+  size_t width;
+  size_t height;
+  size_t slices;
   vd->getVolumeSize(axis, width, height, slices);
   clamp(&slice, slices);
   texture->resize(width * height * 3);
   vd->makeSliceImage(vd->getCurrentFrame(), axis, slice, &(*texture)[0]);
-  int bytesPerLine = width * 3 * sizeof(uchar);
+  size_t bytesPerLine = width * 3 * sizeof(uchar);
   return QImage(&(*texture)[0], width, height, bytesPerLine, QImage::Format_RGB888);
 }
 }
@@ -102,9 +102,9 @@ void vvSliceViewer::paint()
 
 void vvSliceViewer::updateUi()
 {
-  int width;
-  int height;
-  int slices;
+  size_t width;
+  size_t height;
+  size_t slices;
   _vd->getVolumeSize(_axis, width, height, slices);
   clamp(&_slice, slices);
 
@@ -156,9 +156,9 @@ void vvSliceViewer::onNewFrame(int frame)
 
 void vvSliceViewer::setSlice(int slice)
 {
-  int width;
-  int height;
-  int slices;
+  size_t width;
+  size_t height;
+  size_t slices;
   _vd->getVolumeSize(_axis, width, height, slices);
   _slice = slice;
   clamp(&_slice, slices);

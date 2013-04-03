@@ -101,7 +101,7 @@ private:
   void init();
   void createRenderer();
   void updateProjection();
-  void setCurrentFrame(int frame);
+  void setCurrentFrame(size_t frame);
   void render();
 public slots:
   void setRenderer(const std::string& name, const vvRendererFactory::Options& options);

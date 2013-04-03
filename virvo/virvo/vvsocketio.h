@@ -38,7 +38,6 @@
 #include "vvtransfunc.h"
 
 struct vvMulticastParameters;
-class vvBrick;
 class vvImage;
 class vvIbrImage;
 class vvVolDesc;
@@ -149,10 +148,6 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putVolume(const vvVolDesc* vd) const;
     vvSocket::ErrorType getTransferFunction(vvTransFunc& tf) const;
     vvSocket::ErrorType putTransferFunction(vvTransFunc& tf) const;
-    vvSocket::ErrorType getBrick(vvBrick* brick) const;
-    vvSocket::ErrorType putBrick(const vvBrick* brick) const;
-    vvSocket::ErrorType getBricks(std::vector<vvBrick*>& bricks) const;
-    vvSocket::ErrorType putBricks(const std::vector<vvBrick*>& bricks) const;
     vvSocket::ErrorType getImage(vvImage*) const;
     vvSocket::ErrorType putImage(const vvImage*) const;
     vvSocket::ErrorType getIbrImage(vvIbrImage*) const;
@@ -201,8 +196,6 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putIbrImage(virvo::IbrImage const& image) const;
 
     vvSocket* getSocket() const;
-private:
-    int sizeOfBrick() const;
 
     vvSocket *_socket;
 };

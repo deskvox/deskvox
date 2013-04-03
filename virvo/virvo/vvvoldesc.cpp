@@ -47,8 +47,8 @@
 
 using namespace std;
 
-const int vvVolDesc::DEFAULT_ICON_SIZE = 64;
-const int vvVolDesc::NUM_HDR_BINS = 256;
+const size_t vvVolDesc::DEFAULT_ICON_SIZE = 64;
+const size_t vvVolDesc::NUM_HDR_BINS = 256;
 
 //============================================================================
 // Class vvVolDesc
@@ -86,11 +86,10 @@ vvVolDesc::vvVolDesc(const char* fn)
  @param m   number of channels
  @param d   pointer to pointer array of raw voxel data
 */
-vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, int f, int b, int m,
-uchar** d, vvVolDesc::DeleteType deleteType)
+vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, size_t f, size_t b, int m,
+uint8_t** d, vvVolDesc::DeleteType deleteType)
 {
-  uchar* data;
-  int i;
+  uint8_t* data;
 
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(3)");
   initialize();
@@ -104,7 +103,7 @@ uchar** d, vvVolDesc::DeleteType deleteType)
 
   if(d)
   {
-    for (i=0; i<f; ++i)
+    for (size_t i=0; i<f; ++i)
     {
       // Replicate data if necessary
       if(deleteType == ARRAY_DELETE)
@@ -113,7 +112,7 @@ uchar** d, vvVolDesc::DeleteType deleteType)
       }
       else
       {
-        data = new uchar[getFrameBytes()];
+        data = new uint8_t[getFrameBytes()];
         memcpy(data, d[i], getFrameBytes());
         addFrame(data, ARRAY_DELETE);
         if(deleteType == NORMAL_DELETE)
@@ -136,10 +135,9 @@ uchar** d, vvVolDesc::DeleteType deleteType)
  @param f      number of animation frames
  @param d      pointer array to raw voxel data (must be deleted by caller!)
 */
-vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, int f, float** d)
+vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, size_t f, float** d)
 {
-  uchar* data;
-  int i;
+  uint8_t* data;
   float frameMin, frameMax;                       // minimum and maximum value in one frame
 
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(4)");
@@ -154,15 +152,15 @@ vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, int f, float** d)
   real[0] = VV_FLT_MAX;
   real[1] = -VV_FLT_MAX;
 
-  for (i=0; i<f; ++i)
+  for (size_t i=0; i<f; ++i)
   {
     vvToolshed::getMinMaxIgnore(d[i], getFrameVoxels(), VV_FLT_MAX, &frameMin, &frameMax);
     if (frameMin < real[0]) real[0] = frameMin;
     if (frameMax > real[1]) real[1] = frameMax;
   }
-  for (i=0; i<f; ++i)
+  for (size_t i=0; i<f; ++i)
   {
-    data = new uchar[getFrameBytes()];
+    data = new uint8_t[getFrameBytes()];
     vvToolshed::convertFloat2UCharClampZero(d[i], data, getFrameVoxels(),
       real[0], real[1], VV_FLT_MAX);
     addFrame(data, ARRAY_DELETE);
@@ -182,14 +180,13 @@ vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, int f, float** d)
  @param r,g,b  pointer arrays to raw voxel data for red, green, blue [0.0f..1.0f]
                (must be deleted by caller!)
 */
-vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, int f, float** r,
+vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, size_t f, float** r,
 float** g, float** b)
 {
-  uchar* data;
+  uint8_t* data;
   float* c[3];
-  int i,j,k;
-  int frameSize;                                  // number of bytes per volume animation frame
-  int compSize;                                   // size of one color component
+  size_t frameSize;                               // number of bytes per volume animation frame
+  size_t compSize;                                // size of one color component
 
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(5)");
   initialize();
@@ -203,15 +200,15 @@ float** g, float** b)
   compSize  = getFrameVoxels();
 
   // Convert float to uchar:
-  for (k=0; k<f; ++k)
+  for (size_t k=0; k<f; ++k)
   {
     c[0] = r[k];
     c[1] = g[k];
     c[2] = b[k];
-    data = new uchar[frameSize];
-    for (j=0; j<3; ++j)
-      for (i=0; i<compSize; ++i)
-        data[i * 3 + j] = (uchar)(255.0f * c[j][i]);
+    data = new uint8_t[frameSize];
+    for (size_t j=0; j<3; ++j)
+      for (size_t i=0; i<compSize; ++i)
+        data[i * 3 + j] = (uint8_t)(255.0f * c[j][i]);
     addFrame(data, ARRAY_DELETE);
   }
   if (strcmp("COVISE", fn)==0)                    // convert data if source is COVISE
@@ -226,10 +223,8 @@ float** g, float** b)
  @param w,h  width and height of image in pixels
  @param d    pointer to raw voxel data (must be deleted by caller!)
 */
-vvVolDesc::vvVolDesc(const char* fn, int w, int h, uchar* d)
+vvVolDesc::vvVolDesc(const char* fn, int w, int h, uint8_t* d)
 {
-  uchar* data;
-
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(6)");
   initialize();
   setFilename(fn);
@@ -239,7 +234,7 @@ vvVolDesc::vvVolDesc(const char* fn, int w, int h, uchar* d)
   bpc    = 1;
   chan    = 3;
   frames = 1;
-  data = new uchar[getFrameBytes()];
+  uint8_t* data = new uint8_t[getFrameBytes()];
   memcpy(data, d, getFrameBytes());
   addFrame(data, ARRAY_DELETE);
 }
@@ -252,17 +247,15 @@ vvVolDesc::vvVolDesc(const char* fn, int w, int h, uchar* d)
 */
 vvVolDesc::vvVolDesc(vvVolDesc* v, int f)
 {
-  int i;
-
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(7)");
   initialize();
   setFilename(v->filename);
-  for (i=0; i<3; ++i)
+  for (int i=0; i<3; ++i)
   {
     vox[i]  = v->vox[i];
     dist[i] = v->dist[i];
   }
-  for (i=0; i<2; ++i)
+  for (int i=0; i<2; ++i)
   {
     real[i] = v->real[i];
   }
@@ -276,7 +269,7 @@ vvVolDesc::vvVolDesc(vvVolDesc* v, int f)
   iconSize = v->iconSize;
   if (iconSize > 0)
   {
-    iconData = new uchar[iconSize * iconSize * ICON_BPP];
+    iconData = new uint8_t[iconSize * iconSize * ICON_BPP];
     memcpy(iconData, v->iconData, iconSize * iconSize * ICON_BPP);
   }
 
@@ -285,7 +278,7 @@ vvVolDesc::vvVolDesc(vvVolDesc* v, int f)
 
   if (f==-1)
   {
-    for (i=0; i<v->frames; ++i)
+    for (size_t i=0; i<v->frames; ++i)
     {
       copyFrame(v->getRaw(i));
       ++frames;
@@ -369,7 +362,7 @@ void vvVolDesc::removeSequence()
 void vvVolDesc::deleteChannelNames()
 {
   vvDebugMsg::msg(2, "vvVolDesc::deleteChannelNames()");
-  for (int i=0; i<channelNames.count(); ++i)
+  for (size_t i=0; i<channelNames.count(); ++i)
   {
     delete[] channelNames[i];
   }
@@ -382,14 +375,14 @@ void vvVolDesc::deleteChannelNames()
   @param name new channel name; name will be copied: caller has to delete name.
          NULL may be passed as a name.
 */
-void vvVolDesc::setChannelName(int channel, const char* name)
+void vvVolDesc::setChannelName(size_t channel, const char* name)
 {
   vvDebugMsg::msg(2, "vvVolDesc::setChannelName()");
 
   // Create channel names as required:
   if (channel >= channelNames.count())
   {
-    for (int i=0; i<channel-channelNames.count()+1; ++i) channelNames.append(NULL);
+    for (size_t i=0; i<channel-channelNames.count()+1; ++i) channelNames.append(NULL);
   }
 
   // Set new name:
@@ -405,7 +398,7 @@ void vvVolDesc::setChannelName(int channel, const char* name)
 /** @return a channel name.
   @param channel channel index to get name of (0=first channel)
 */
-const char* vvVolDesc::getChannelName(int channel)
+const char* vvVolDesc::getChannelName(size_t channel)
 {
   vvDebugMsg::msg(2, "vvVolDesc::getChannelName()");
   assert(channel < channelNames.count());
@@ -416,7 +409,7 @@ const char* vvVolDesc::getChannelName(int channel)
 /** Get slice size.
  @return slice size in number of bytes
 */
-int vvVolDesc::getSliceBytes() const
+size_t vvVolDesc::getSliceBytes() const
 {
   return vox[0] * vox[1] * getBPV();
 }
@@ -425,7 +418,7 @@ int vvVolDesc::getSliceBytes() const
 /** Get frame size.
  @return frame size in number of bytes
 */
-int vvVolDesc::getFrameBytes() const
+size_t vvVolDesc::getFrameBytes() const
 {
   return vox[0] * vox[1] * vox[2] * getBPV();
 }
@@ -434,28 +427,28 @@ int vvVolDesc::getFrameBytes() const
 /** Get movie size.
  @return movie size in bytes (movie = timely sequence of all volume frames)
 */
-int vvVolDesc::getMovieBytes() const
+size_t vvVolDesc::getMovieBytes() const
 {
   return vox[0] * vox[1] * vox[2] * frames * getBPV();
 }
 
 //----------------------------------------------------------------------------
 /// Get number of voxels in a slice.
-int vvVolDesc::getSliceVoxels() const
+size_t vvVolDesc::getSliceVoxels() const
 {
   return vox[0] * vox[1];
 }
 
 //----------------------------------------------------------------------------
 /// Get number of voxels in a frame.
-int vvVolDesc::getFrameVoxels() const
+size_t vvVolDesc::getFrameVoxels() const
 {
   return vox[0] * vox[1] * vox[2];
 }
 
 //----------------------------------------------------------------------------
 /// Get number of voxels in the volume movie.
-int vvVolDesc::getMovieVoxels() const
+size_t vvVolDesc::getMovieVoxels() const
 {
   return vox[0] * vox[1] * vox[2] * frames;
 }
@@ -478,9 +471,8 @@ void vvVolDesc::getBoundingBox(vvAABB& aabb) const
 */
 vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype)
 {
-  uchar* newRaw;
-  uchar* rd;
-  int f, i;
+  uint8_t* newRaw;
+  uint8_t* rd;
 
   vvDebugMsg::msg(2, "vvVolDesc::merge()");
   if (src->frames==0) return OK;                  // is source src empty?
@@ -499,12 +491,12 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     chan   = src->chan;
     dt     = src->dt;
     raw.merge(&src->raw);
-    for (i=0; i<3; ++i) dist[i] = src->dist[i];
-    for (i=0; i<2; ++i)
+    for (int i=0; i<3; ++i) dist[i] = src->dist[i];
+    for (int i=0; i<2; ++i)
     {
       real[i] = src->real[i];
     }
-    for (i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
+    for (size_t i=0; i<chan; ++i) setChannelName(i, src->channelNames[i]);
     pos = src->pos;
     currentFrame = src->currentFrame;
     tf.copy(&tf._widgets, &src->tf._widgets);
@@ -520,22 +512,22 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     if (vox[0]==src->vox[0] && vox[1]==src->vox[1] &&
       vox[2]==src->vox[2] && bpc==src->bpc && frames==src->frames)
     {
-      for (f=0; f<frames; ++f)
+      for (size_t f=0; f<frames; ++f)
       {
         raw.makeCurrent(f);
         rd = raw.getData();
-        uchar* srcRD = src->getRaw(f);
-        newRaw = new uchar[getFrameBytes() + src->getFrameBytes()];
-        for (i=0; i<getFrameVoxels(); ++i)
+        uint8_t* srcRD = src->getRaw(f);
+        newRaw = new uint8_t[getFrameBytes() + src->getFrameBytes()];
+        for (size_t i=0; i<getFrameVoxels(); ++i)
         {
           memcpy(newRaw + i * bpc * (chan+src->chan), rd + i * getBPV(), getBPV());
           memcpy(newRaw + i * bpc * (chan+src->chan) + getBPV(), srcRD + i * src->getBPV(), src->getBPV());
         }
         raw.remove();
-        if (f==0) raw.insertBefore(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
-        else raw.insertAfter(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
+        if (f==0) raw.insertBefore(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
+        else raw.insertAfter(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
       }
-      for (i=0; i<src->chan; ++i) setChannelName((chan+i), src->channelNames[i]);
+      for (size_t i=0; i<src->chan; ++i) setChannelName((chan+i), src->channelNames[i]);
       chan += src->chan;                          // update target channel number
       src->removeSequence();                      // delete copied frames from source
       return OK;
@@ -573,11 +565,11 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     if (vox[0]==src->vox[0] && vox[1]==src->vox[1] && frames==src->frames)
     {
       // Append all slices of each animation step to target volume:
-      for (f=0; f<frames; ++f)
+      for (size_t f=0; f<frames; ++f)
       {
         raw.makeCurrent(f);
         rd = raw.getData();
-        newRaw = new uchar[getFrameBytes() + src->getFrameBytes()];
+        newRaw = new uint8_t[getFrameBytes() + src->getFrameBytes()];
         memcpy(newRaw, rd, getFrameBytes());      // copy current frame to new raw data array
                                                   // copy source frame to new raw data array
         memcpy(newRaw + getFrameBytes(), src->getRaw(f), src->getFrameBytes());
@@ -605,12 +597,16 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
 */
 vvVolDesc::ErrorType vvVolDesc::mergeFrames()
 {
-  uchar *newRaw = new uchar[getFrameBytes() * frames];
-  for (int f=0; f<frames; f++)
+  uint8_t *newRaw = new uint8_t[getFrameBytes() * frames];
+  for (size_t f=0; f<frames; f++)
   {
-    int fn = rawFrameNumber[f]-1;
-    if(fn<0)
-       fn = f;
+    int fni = rawFrameNumber[f]-1;
+    size_t fn;
+    if(fni<0)
+      fn = f;
+    else
+      fn = size_t(fni);
+
     if(fn >= frames)
     {
        fn = frames-1;
@@ -627,22 +623,24 @@ vvVolDesc::ErrorType vvVolDesc::mergeFrames()
 }
 
 //----------------------------------------------------------------------------
-/** Returns a pointer to the raw data of a specific frame.
-  @param frame  index of desired frame (0 for first frame) if frame does not
-                exist, NULL will be returned; -1 for current frame
+/** Legacy function, getRaw(-1) returns data for current frame
+  @param frame  has default value -1
 */
-uchar* vvVolDesc::getRaw(const int frame) const
+uint8_t* vvVolDesc::getRaw(int) const
 {
-  if (frame<-1 || frame>=frames) return NULL;     // frame does not exist
-  if (frame > -1) raw.makeCurrent(frame);
-  return raw.getData();
+  return getRaw(currentFrame);
 }
 
 //----------------------------------------------------------------------------
-/// Return the pointer to the raw data of the current frame.
-uchar* vvVolDesc::getRaw() const
+/** Returns a pointer to the raw data of a specific frame.
+  @param frame  index of desired frame (0 for first frame) if frame does not
+                exist, NULL will be returned
+*/
+uint8_t* vvVolDesc::getRaw(size_t frame) const
 {
-  return getRaw(currentFrame);
+  if (frame>=frames) return NULL;     // frame does not exist
+  raw.makeCurrent(frame);
+  return raw.getData();
 }
 
 //----------------------------------------------------------------------------
@@ -666,13 +664,13 @@ the back slice.
 @param ptr          pointer to raw data
 @param deleteData   data deletion type: delete or don't delete when not used anymore
 */
-void vvVolDesc::addFrame(uchar* ptr, DeleteType deleteData,int fn)
+void vvVolDesc::addFrame(uint8_t* ptr, DeleteType deleteData,int fn)
 {
   switch(deleteData)
   {
-    case NO_DELETE:     raw.append(ptr, vvSLNode<uchar*>::NO_DELETE); break;
-    case NORMAL_DELETE: raw.append(ptr, vvSLNode<uchar*>::NORMAL_DELETE); break;
-    case ARRAY_DELETE:  raw.append(ptr, vvSLNode<uchar*>::ARRAY_DELETE); break;
+    case NO_DELETE:     raw.append(ptr, vvSLNode<uint8_t*>::NO_DELETE); break;
+    case NORMAL_DELETE: raw.append(ptr, vvSLNode<uint8_t*>::NORMAL_DELETE); break;
+    case ARRAY_DELETE:  raw.append(ptr, vvSLNode<uint8_t*>::ARRAY_DELETE); break;
     default: assert(0); break;
   }
   rawFrameNumber.push_back(fn);
@@ -680,13 +678,13 @@ void vvVolDesc::addFrame(uchar* ptr, DeleteType deleteData,int fn)
   // Make sure channel names exist:
   if (channelNames.count() == 0)
   {
-    for (int i=0; i<chan; ++i) channelNames.append(NULL);
+    for (size_t i=0; i<chan; ++i) channelNames.append(NULL);
   }
 }
 
 //----------------------------------------------------------------------------
 /// Return the number of frames actually stored.
-int vvVolDesc::getStoredFrames() const
+size_t vvVolDesc::getStoredFrames() const
 {
   return raw.count();
 }
@@ -696,19 +694,19 @@ int vvVolDesc::getStoredFrames() const
     to the animation sequence.
   @param ptr  pointer to raw source data, _must_ be deleted by the caller!
 */
-void vvVolDesc::copyFrame(uchar* ptr)
+void vvVolDesc::copyFrame(uint8_t* ptr)
 {
-  uchar* newData;
+  uint8_t* newData;
 
   vvDebugMsg::msg(3, "vvVolDesc::copyFrame()");
-  newData = new uchar[getFrameBytes()];
+  newData = new uint8_t[getFrameBytes()];
   memcpy(newData, ptr, getFrameBytes());
-  raw.append(newData, vvSLNode<uchar*>::ARRAY_DELETE);
+  raw.append(newData, vvSLNode<uint8_t*>::ARRAY_DELETE);
 
   // Make sure channel names exist:
   if (channelNames.count() == 0)
   {
-    for (int i=0; i<chan; ++i) channelNames.append(NULL);
+    for (size_t i=0; i<chan; ++i) channelNames.append(NULL);
   }
 }
 
@@ -719,16 +717,16 @@ the same.
   @param newData pointer to raw source data.
   @param deleteData   data deletion type: delete or don't delete when not used anymore
 */
-void vvVolDesc::updateFrame(int frame, uchar* newData, DeleteType deleteData)
+void vvVolDesc::updateFrame(int frame, uint8_t* newData, DeleteType deleteData)
 {
   vvDebugMsg::msg(3, "vvVolDesc::updateFrame()");
   raw.makeCurrent(frame);
   raw.remove();
   switch(deleteData)
   {
-    case NO_DELETE:     raw.insertAfter(newData, vvSLNode<uchar*>::NO_DELETE); break;
-    case NORMAL_DELETE: raw.insertAfter(newData, vvSLNode<uchar*>::NORMAL_DELETE); break;
-    case ARRAY_DELETE:  raw.insertAfter(newData, vvSLNode<uchar*>::ARRAY_DELETE); break;
+    case NO_DELETE:     raw.insertAfter(newData, vvSLNode<uint8_t*>::NO_DELETE); break;
+    case NORMAL_DELETE: raw.insertAfter(newData, vvSLNode<uint8_t*>::NORMAL_DELETE); break;
+    case ARRAY_DELETE:  raw.insertAfter(newData, vvSLNode<uint8_t*>::ARRAY_DELETE); break;
     default: assert(0); break;
   }
 }
@@ -783,18 +781,18 @@ void vvVolDesc::normalizeHistogram(int buckets, int* count, float* normalized, N
   @param min,max data range for which histogram is to be created. Use 0..1 for integer data types.
   @return histogram values in 'count'
 */
-void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, int* count, float min, float max)
+void vvVolDesc::makeHistogram(size_t frame, size_t chan1, size_t numChan, int* buckets, int* count, float min, float max)
 {
-  uchar* raw;                                     // raw voxel data
+  uint8_t* raw;                                   // raw voxel data
   float* voxVal;                                  // voxel values
   float* valPerBucket;                            // scalar data values per bucket
-  int f, i, c, m;                                 // counters
-  int srcIndex;                                   // index into raw volume data
-  int dstIndex;                                   // index into histogram array
-  int factor;                                     // multiplication factor for dstIndex
-  int numVoxels;                                  // number of voxels per frame
+  size_t c, m;                                    // counters
+  size_t srcIndex;                                // index into raw volume data
+  size_t dstIndex;                                // index into histogram array
+  size_t factor;                                  // multiplication factor for dstIndex
+  size_t numVoxels;                               // number of voxels per frame
   int* bucket;                                    // bucket ID
-  int srcChan;                                    // channel index in data set
+  size_t srcChan;                                 // channel index in data set
   int totalBuckets;                               // total number of buckets
 
   vvDebugMsg::msg(2, "vvVolDesc::makeHistogram()");
@@ -815,15 +813,15 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
     if (bpc==4) valPerBucket[c] = (max-min) / float(buckets[c]);
     else valPerBucket[c] = getValueRange() / float(buckets[c]);
   }
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
-    if (frame>-1 && frame!=f) continue;           // only compute histogram for a specific frame
+    if (frame!=f) continue;           // only compute histogram for a specific frame
     raw = getRaw(f);
-    for (i=0; i<numVoxels; ++i)                   // count each voxel value
+    for (size_t i=0; i<numVoxels; ++i)                   // count each voxel value
     {
       srcIndex = i * getBPV();
       dstIndex = 0;
-      for (c=0; c<numChan; ++c)
+      for (size_t c=0; c<numChan; ++c)
       {
         srcChan = ts_min(c, chan);
         switch (bpc)
@@ -872,17 +870,17 @@ void vvVolDesc::makeHistogram(int frame, int chan1, int numChan, int* buckets, i
   @param color           color for histogram foreground (background is transparent)
   @param min,max         data range for which histogram is to be created. Use 0..1 for integer data types.
 */
-void vvVolDesc::makeHistogramTexture(int frame, int chan1, int numChan, int* size, uchar* data,
+void vvVolDesc::makeHistogramTexture(size_t frame, size_t chan1, size_t numChan, size_t* size, uint8_t* data,
   NormalizationType ntype, vvColor* color, float min, float max)
 {
-  const int BPT = 4;                              // bytes per texel
+  const size_t BPT = 4;                           // bytes per texel
   float* hist;                                    // histogram values (float)
   int*   count;                                   // histogram values (integer)
-  int    x,y;                                     // texel index
-  int    barHeight;                               // histogram bar height [texels]
-  int    c;                                       // color component counter
-  int    texIndex;                                // index in TF texture
-  int    numValues;
+  size_t x,y;                                     // texel index
+  size_t barHeight;                               // histogram bar height [texels]
+  size_t c;                                       // color component counter
+  size_t texIndex;                                // index in TF texture
+  size_t numValues;
   int    histIndex;
   int*   buckets;                                 // histogram dimensions
   int*   index;                                   // index in histogram array
@@ -991,7 +989,7 @@ void vvVolDesc::computeTFTexture(int w, int h, int d, float* dest)
 void vvVolDesc::makeLineTexture(DiagType type, unsigned char selChannel, int twidth, int theight, bool alpha,
   vvArray<float*> voxData, unsigned char* texData)
 {
-  int i, x, y, c;
+  int x, y, c;
   int bpt;
   int* data;
   float *normalized=NULL;
@@ -1027,7 +1025,7 @@ void vvVolDesc::makeLineTexture(DiagType type, unsigned char selChannel, int twi
         ++tex;
       }
 
-  for (i = 0; i < chan; ++i)
+  for (size_t i = 0; i < chan; ++i)
   {
     if (isChannelOn(i, selChannel))
     {
@@ -1135,7 +1133,6 @@ void vvVolDesc::createHistogramFiles(bool overwrite)
 {
   FILE* fp;
   int* hist;
-  int i, m;
   int buckets[1];
 
   char* basePath = new char[strlen(filename) + 1];
@@ -1145,11 +1142,11 @@ void vvVolDesc::createHistogramFiles(bool overwrite)
   buckets[0] = int(getValueRange());
   hist = new int[buckets[0]];
 
-  for (m=0; m<chan; ++m)
+  for (size_t m=0; m<chan; ++m)
   {
     if (chan > 1)
     {
-      sprintf(fileName, "%s-hist-ch%02d.txt", basePath, m);
+      sprintf(fileName, "%s-hist-ch%02d.txt", basePath, static_cast<int32_t>(m));
     }
     else
     {
@@ -1172,7 +1169,7 @@ void vvVolDesc::createHistogramFiles(bool overwrite)
       cerr << "Error - cannot open: " << fileName << endl;
       continue;
     }
-    for (i=0; i<buckets[0]; ++i)
+    for (int i=0; i<buckets[0]; ++i)
     {
       fprintf(fp, "%d\n", hist[i]);
     }
@@ -1212,21 +1209,21 @@ const char* vvVolDesc::getFilename() const
 /** Set current frame.
   @param f  current frame
 */
-void vvVolDesc::setCurrentFrame(int f)
+void vvVolDesc::setCurrentFrame(size_t f)
 {
-  if (f>=0 && f<frames) currentFrame = f;
+  if (f<frames) currentFrame = f;
 }
 
 //----------------------------------------------------------------------------
 /// Get current frame.
-int vvVolDesc::getCurrentFrame() const
+size_t vvVolDesc::getCurrentFrame() const
 {
   return currentFrame;
 }
 
 //----------------------------------------------------------------------------
 /// Get number of bytes per voxel.
-int vvVolDesc::getBPV() const
+size_t vvVolDesc::getBPV() const
 {
   return bpc * chan;
 }
@@ -1266,15 +1263,14 @@ Each channel is converted.
 @param newBPC  new number of bytes per channel
 @param verbose true = print progress info
 */
-void vvVolDesc::convertBPC(int newBPC, bool verbose)
+void vvVolDesc::convertBPC(size_t newBPC, bool verbose)
 {
-  uchar* newRaw;
-  uchar* rd;
-  uchar* src;
-  uchar* dst;
+  uint8_t* newRaw;
+  uint8_t* rd;
+  uint8_t* src;
+  uint8_t* dst;
   float val;
-  int newSliceSize;
-  int x, y, z, f, c;
+  size_t newSliceSize;
 
   vvDebugMsg::msg(2, "vvVolDesc::convertBPC()");
 
@@ -1286,19 +1282,19 @@ void vvVolDesc::convertBPC(int newBPC, bool verbose)
   if (verbose) vvToolshed::initProgress(vox[2] * frames);
 
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
     newRaw = new uchar[newSliceSize * vox[2]];
     src = rd;
     dst = newRaw;
-    for (z=0; z<vox[2]; ++z)
+    for (size_t z=0; z<vox[2]; ++z)
     {
-      for (y=0; y<vox[1]; ++y)
+      for (size_t y=0; y<vox[1]; ++y)
       {
-        for (x=0; x<vox[0]; ++x)
+        for (size_t x=0; x<vox[0]; ++x)
         {
-          for (c=0; c<chan; ++c)
+          for (size_t c=0; c<chan; ++c)
           {
             // Perform actual conversion:
             switch (bpc)                          // switch by source voxel type
@@ -1333,7 +1329,7 @@ void vvVolDesc::convertBPC(int newBPC, bool verbose)
                     *dst = uchar((val - real[0]) / (real[1] - real[0]) * 255.0f);
                     break;
                   case 2:
-                    vvToolshed::write16(dst, ushort((val - real[0]) / (real[1] - real[0]) * 65535.0f));
+                    vvToolshed::write16(dst, uint16_t((val - real[0]) / (real[1] - real[0]) * 65535.0f));
                     break;
                 }
                 break;
@@ -1359,22 +1355,21 @@ void vvVolDesc::convertBPC(int newBPC, bool verbose)
   @param newChan new number of channels
   @param verbose true = print progress info
 */
-void vvVolDesc::convertChannels(int newChan, int frame, bool verbose)
+void vvVolDesc::convertChannels(size_t newChan, int frame, bool verbose)
 {
-  uchar* newRaw;
-  uchar* rd;
-  uchar* src;
-  uchar* dst;
-  int newSliceSize;
-  int x, y, z, f, i;
+  uint8_t* newRaw;
+  uint8_t* rd;
+  uint8_t* src;
+  uint8_t* dst;
+  size_t newSliceSize;
 
   vvDebugMsg::msg(2, "vvVolDesc::convertChannels()");
 
   if (chan==newChan) return;                      // this was easy!
   assert(newChan>0);                              // ignore invalid values
 
-  int startFrame = 0;
-  int endFrame = frames;
+  size_t startFrame = 0;
+  size_t endFrame = frames;
   if(frame != -1)
   {
     startFrame = frame;
@@ -1384,20 +1379,20 @@ void vvVolDesc::convertChannels(int newChan, int frame, bool verbose)
   newSliceSize = vox[0] * vox[1] * newChan * bpc;
   if (verbose) vvToolshed::initProgress(vox[2] * (endFrame-startFrame));
   raw.first();
-  for (f=startFrame; f<endFrame; ++f)
+  for (size_t f=startFrame; f<endFrame; ++f)
   {
     rd = raw.getData();
-    newRaw = new uchar[newSliceSize * vox[2]];
+    newRaw = new uint8_t[newSliceSize * vox[2]];
     src = rd;
     dst = newRaw;
-    for (z=0; z<vox[2]; ++z)
+    for (size_t z=0; z<vox[2]; ++z)
     {
-      for (y=0; y<vox[1]; ++y)
+      for (size_t y=0; y<vox[1]; ++y)
       {
-        for (x=0; x<vox[0]; ++x)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           // Perform actual conversion:
-          for (i=0; i<newChan; ++i)
+          for (size_t i=0; i<newChan; ++i)
           {
             if (i < chan) memcpy(dst+i*bpc, src+i*bpc, bpc);
             else memset(dst+i*bpc, 0, bpc);
@@ -1409,18 +1404,18 @@ void vvVolDesc::convertChannels(int newChan, int frame, bool verbose)
       if (verbose) vvToolshed::printProgress(z + vox[2] * (f-startFrame));
     }
     raw.remove();
-    if (f==0) raw.insertBefore(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
-    else raw.insertAfter(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
+    if (f==0) raw.insertBefore(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
+    else raw.insertAfter(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
     raw.next();
   }
   // Adjust channel names:
   if (newChan > chan)
   {
-    for (i=0; i<newChan-chan; ++i) channelNames.append(NULL);
+    for (size_t i=0; i<newChan-chan; ++i) channelNames.append(NULL);
   }
   else if (newChan < chan)
   {
-    for (i=0; i<chan-newChan; ++i)
+    for (size_t i=0; i<chan-newChan; ++i)
     {
       delete[] channelNames[newChan];
       channelNames.remove(newChan);
@@ -1434,42 +1429,39 @@ void vvVolDesc::convertChannels(int newChan, int frame, bool verbose)
   @param channel channel index to delete [0 is first channel, valid: 1..numChannels-1]
   @param verbose true = print progress info
 */
-void vvVolDesc::deleteChannel(int channel, bool verbose)
+void vvVolDesc::deleteChannel(size_t channel, bool verbose)
 {
-  uchar* newRaw;
-  uchar* rd;
-  uchar* src;
-  uchar* dst;
-  int newSliceSize;
-  int x, y, z, f, c;
+  uint8_t* newRaw;
+  uint8_t* rd;
+  uint8_t* src;
+  uint8_t* dst;
+  size_t newSliceSize;
 
   vvDebugMsg::msg(2, "vvVolDesc::deleteChannel()");
 
   if (channel >= chan) return;                    // this was easy!
-  assert(channel>=0);
-  assert(chan>0);
 
   newSliceSize = vox[0] * vox[1] * (chan-1) * bpc;
   if (verbose) vvToolshed::initProgress(vox[2] * frames);
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
-    newRaw = new uchar[newSliceSize * vox[2]];
+    newRaw = new uint8_t[newSliceSize * vox[2]];
     src = rd;
     dst = newRaw;
-    for (z=0; z<vox[2]; ++z)
+    for (size_t z=0; z<vox[2]; ++z)
     {
-      for (y=0; y<vox[1]; ++y)
+      for (size_t y=0; y<vox[1]; ++y)
       {
-        for (x=0; x<vox[0]; ++x)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           // Perform actual conversion:
-          for (c=0; c<channel; ++c)
+          for (size_t c=0; c<channel; ++c)
           {
             memcpy(dst+c*bpc, src+c*bpc, bpc);    // copy channels up to the one to delete
           }
-          for (c=(channel+1); c<chan; ++c)
+          for (size_t c=(channel+1); c<chan; ++c)
           {
             memcpy(dst+(c-1)*bpc, src+c*bpc, bpc);// copy channels above the one to delete
           }
@@ -1480,8 +1472,8 @@ void vvVolDesc::deleteChannel(int channel, bool verbose)
       if (verbose) vvToolshed::printProgress(z + vox[2] * f);
     }
     raw.remove();
-    if (f==0) raw.insertBefore(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
-    else raw.insertAfter(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
+    if (f==0) raw.insertBefore(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
+    else raw.insertAfter(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
     raw.next();
   }
   delete[] channelNames[channel];
@@ -1496,22 +1488,21 @@ void vvVolDesc::deleteChannel(int channel, bool verbose)
 */
 void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
 {
-  int  x, y, z, b, f;
   long pixel;
   long byte;
   int  shift;
-  uchar* rd;
-  int sliceSize;
-  int offset;
+  uint8_t* rd;
+  size_t sliceSize;
+  size_t offset;
 
   vvDebugMsg::msg(2, "vvVolDesc::bitShiftData()");
-  assert(bpc*chan<=int(sizeof(long)));                 // shift only works up to sizeof(long) byte per pixel
+  assert(bpc*chan<=sizeof(long));                 // shift only works up to sizeof(long) byte per pixel
   if (bits==0) return;                            // done!
 
   sliceSize = getSliceBytes();
   shift = ts_max(bits, -bits);                    // find absolute value
-  int startFrame=0;
-  int endFrame=frames;
+  size_t startFrame=0;
+  size_t endFrame=frames;
   if(frame != -1)
   {
     startFrame = frame;
@@ -1519,18 +1510,18 @@ void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
   }
   if (verbose) vvToolshed::initProgress(vox[2] * (endFrame-startFrame));
   raw.first();
-  for (f=startFrame; f<endFrame; ++f)
+  for (size_t f=startFrame; f<endFrame; ++f)
   {
     rd = raw.getData();
     raw.next();
-    for (z=0; z<vox[2]; ++z)
+    for (size_t z=0; z<vox[2]; ++z)
     {
-      for (y=0; y<vox[1]; ++y)
-        for (x=0; x<vox[0]; ++x)
+      for (size_t y=0; y<vox[1]; ++y)
+        for (size_t x=0; x<vox[0]; ++x)
       {
         offset = x * getBPV() + y * vox[0] * getBPV() + z * sliceSize;
         pixel = 0;
-        for (b=0; b<bpc*chan; ++b)
+        for (size_t b=0; b<bpc*chan; ++b)
         {
           byte = (int)rd[offset + b];
           byte = byte << (((bpc*chan)-b-1) * 8);
@@ -1540,10 +1531,10 @@ void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
           pixel = pixel >> shift;
         else
           pixel = pixel << shift;
-        for (b=0; b<bpc*chan; ++b)
+        for (size_t b=0; b<bpc*chan; ++b)
         {
           byte = pixel >> (((bpc*chan)-b-1) * 8);
-          rd[offset + b] = (uchar)(byte & 0xFF);
+          rd[offset + b] = (uint8_t)(byte & 0xFF);
         }
       }
       if (verbose) vvToolshed::printProgress(z + vox[2] * (f-startFrame));
@@ -1556,24 +1547,23 @@ void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
  */
 void vvVolDesc::invert()
 {
-  int  x, y, z, b, f;
-  uchar* ptr;                                     // pointer to currently worked on byte
-  uchar* rd;
+  uint8_t* ptr;                                     // pointer to currently worked on byte
+  uint8_t* rd;
 
   vvDebugMsg::msg(2, "vvVolDesc::invert()");
 
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
     raw.next();
     ptr = &rd[0];
-    for (z=0; z<vox[2]; ++z)
-      for (y=0; y<vox[1]; ++y)
-        for (x=0; x<vox[0]; ++x)
-          for (b=0; b<bpc*chan; ++b)
+    for (size_t z=0; z<vox[2]; ++z)
+      for (size_t y=0; y<vox[1]; ++y)
+        for (size_t x=0; x<vox[0]; ++x)
+          for (size_t b=0; b<bpc*chan; ++b)
           {
-            *ptr = (uchar)(~(*ptr));
+            *ptr = (uint8_t)(~(*ptr));
             ++ptr;
           }
   }
@@ -1583,17 +1573,16 @@ void vvVolDesc::invert()
 /// Convert 24 bit RGB to 8 bit RGB332.
 void vvVolDesc::convertRGB24toRGB8()
 {
-  int x, y, z, f, i;
-  uchar* newRaw;
+  uint8_t* newRaw;
   int pixel;
   int color;
   int shift[3] =                                  // 3 bit red, 3 bit green, 2 bit blue
   {
     3, 3, 2
   };
-  uchar* rd;
-  int newSliceSize;
-  int oldSliceSize;
+  uint8_t* rd;
+  size_t newSliceSize;
+  size_t oldSliceSize;
 
   vvDebugMsg::msg(2, "vvVolDesc::convertRGB24toRGB8()");
   assert(bpc==1 && chan==3);                      // cannot work on non-24bit-modes
@@ -1601,27 +1590,27 @@ void vvVolDesc::convertRGB24toRGB8()
   oldSliceSize = getSliceBytes();
   newSliceSize = vox[0] * vox[1];
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
-    newRaw = new uchar[vox[0] * vox[1] * vox[2]];
-    for (z=0; z<vox[2]; ++z)
-      for (y=0; y<vox[1]; ++y)
-        for (x=0; x<vox[0]; ++x)
+    newRaw = new uint8_t[vox[0] * vox[1] * vox[2]];
+    for (size_t z=0; z<vox[2]; ++z)
+      for (size_t y=0; y<vox[1]; ++y)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           pixel = 0;
-          for (i=0; i<3; ++i)
+          for (int i=0; i<3; ++i)
           {
             color = rd[x * 3 + y * vox[0] * 3 + z * oldSliceSize + i];
             pixel &= 0xFF00;
             pixel += color;
             pixel <<= shift[i];
           }
-          newRaw[x + y * vox[0] + z * newSliceSize] = (uchar)(pixel >> 8);
+          newRaw[x + y * vox[0] + z * newSliceSize] = (uint8_t)(pixel >> 8);
     }
     raw.remove();
-    if (f==0) raw.insertBefore(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
-    else raw.insertAfter(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
+    if (f==0) raw.insertBefore(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
+    else raw.insertAfter(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
     raw.next();
   }
   chan = 1;
@@ -1647,34 +1636,33 @@ with the destination slice.</LI>
 */
 void vvVolDesc::flip(vvVecmath::AxisType axis)
 {
-  uchar* rd;
-  uchar* voxelData;                               // temporary buffer for voxel data
-  uchar* dst;                                     // destination pointer
-  uchar* src;                                     // source pointer
-  int lineSize;
-  int sliceSize;
-  int x, y, z, f;
+  uint8_t* rd;
+  uint8_t* voxelData;                             // temporary buffer for voxel data
+  uint8_t* dst;                                   // destination pointer
+  uint8_t* src;                                   // source pointer
+  size_t lineSize;
+  size_t sliceSize;
 
   vvDebugMsg::msg(2, "vvVolDesc::flip()");
 
   lineSize = vox[0] * getBPV();
   sliceSize = getSliceBytes();
   if (axis==vvVecmath::Z_AXIS) voxelData = new uchar[sliceSize];
-  else voxelData = new uchar[lineSize];
+  else voxelData = new uint8_t[lineSize];
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
     switch (axis)
     {
       case vvVecmath::X_AXIS:
         dst = rd;
-        for (z=0; z<vox[2]; ++z)
-          for (y=0; y<vox[1]; ++y)
+        for (size_t z=0; z<vox[2]; ++z)
+          for (size_t y=0; y<vox[1]; ++y)
         {
           memcpy((void*)voxelData, (void*)dst, lineSize);
           src = voxelData + (vox[0]-1) * getBPV();
-          for (x=0; x<vox[0]; ++x)
+          for (size_t x=0; x<vox[0]; ++x)
           {
             memcpy(dst, src, getBPV());
             dst += getBPV();
@@ -1683,8 +1671,8 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
         }
         break;
       case vvVecmath::Y_AXIS:
-        for (z=0; z<vox[2]; ++z)
-          for (y=0; y<vox[1]/2; ++y)
+        for (size_t z=0; z<vox[2]; ++z)
+          for (size_t y=0; y<vox[1]/2; ++y)
         {
           src = rd + y * lineSize + z * sliceSize;
           dst = rd + (vox[1] - y - 1) * lineSize + z * sliceSize;
@@ -1694,7 +1682,7 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
         }
         break;
       case vvVecmath::Z_AXIS:
-        for (z=0; z<vox[2]/2; ++z)
+        for (size_t z=0; z<vox[2]/2; ++z)
         {
           dst = rd + z * sliceSize;
           src = rd + (vox[2]-z-1) * sliceSize;
@@ -1723,13 +1711,12 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
 */
 void vvVolDesc::rotate(vvVecmath::AxisType axis, int dir)
 {
-  uchar* rd;
-  uchar* dst;                                     // destination pointer
-  uchar* src;                                     // source pointer
-  uchar* newRaw;                                  // new volume data
-  int frameSize;
+  uint8_t* rd;
+  uint8_t* dst;                                   // destination pointer
+  uint8_t* src;                                   // source pointer
+  uint8_t* newRaw;                                // new volume data
   int newWidth, newHeight, newSlices;             // dimensions of rotated volume
-  int x, y, z, f;
+  int x, y, z;
   int xpos, ypos, zpos;
 
   vvDebugMsg::msg(2, "vvVolDesc::rotate()");
@@ -1760,12 +1747,12 @@ void vvVolDesc::rotate(vvVecmath::AxisType axis, int dir)
       break;
   }
 
-  frameSize = getFrameBytes();
+  size_t frameSize = getFrameBytes();
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
-    newRaw = new uchar[frameSize];
+    newRaw = new uint8_t[frameSize];
     src = rd;
     switch (axis)
     {
@@ -1838,30 +1825,27 @@ void vvVolDesc::rotate(vvVecmath::AxisType axis, int dir)
 */
 void vvVolDesc::convertRGBPlanarToRGBInterleaved(int frame)
 {
-  uchar* raw;
-  uchar* tmpData;
-  int i, c, f;
-  int voxels;
-  int frameSize;
+  uint8_t* raw;
+  uint8_t* tmpData;
 
   vvDebugMsg::msg(2, "vvVolDesc::convertRGBPlanarToRGBInterleaved()");
   assert(bpc==1 && chan==3);                      // this routine works only on RGB volumes
 
-  frameSize = getFrameBytes();
-  voxels = getFrameVoxels();
-  tmpData = new uchar[frameSize];
-  int startFrame = 0;
-  int endFrame = frames;
+  size_t frameSize = getFrameBytes();
+  size_t voxels = getFrameVoxels();
+  tmpData = new uint8_t[frameSize];
+  size_t startFrame = 0;
+  size_t endFrame = frames;
   if(frame != -1)
   {
     startFrame = frame;
     endFrame = frame+1;
   }
-  for (f=startFrame; f<endFrame; ++f)
+  for (size_t f=startFrame; f<endFrame; ++f)
   {
     raw = getRaw(f);
-    for (i=0; i<voxels; ++i)
-      for (c=0; c<3; ++c)
+    for (size_t i=0; i<voxels; ++i)
+      for (size_t c=0; c<3; ++c)
         tmpData[i * 3 + c] = raw[c * voxels + i];
     memcpy(raw, tmpData, frameSize);
   }
@@ -1878,39 +1862,37 @@ void vvVolDesc::convertRGBPlanarToRGBInterleaved(int frame)
 */
 void vvVolDesc::toggleEndianness(int frame)
 {
-  uchar* rd;
-  int    x, y, z, f, c;
-  int    sliceSize;
-  int    rowOffset, sliceOffset, voxelOffset, channelOffset;
-  uchar  buffer;
+  uint8_t* rd;
+  size_t    rowOffset, sliceOffset, voxelOffset, channelOffset;
+  uint8_t  buffer;
 
   vvDebugMsg::msg(2, "vvVolDesc::toggleEndianness()");
   if (bpc==1) return;                             // done
 
-  sliceSize = getSliceBytes();
+  size_t sliceSize = getSliceBytes();
   raw.first();
-  int startFrame=0;
-  int endFrame=frames;
+  size_t startFrame=0;
+  size_t endFrame=frames;
 
   if(frame != -1)
   {
     startFrame = frame;
     endFrame = frame+1;
   }
-  for (f=startFrame; f<endFrame; ++f)
+  for (size_t f=startFrame; f<endFrame; ++f)
   {
     rd = getRaw(f);
-    for (z=0; z<vox[2]; ++z)
+    for (size_t z=0; z<vox[2]; ++z)
     {
       sliceOffset = z * sliceSize;
-      for (y=0; y<vox[1]; ++y)
+      for (size_t y=0; y<vox[1]; ++y)
       {
         rowOffset = sliceOffset + y * vox[0] * getBPV();
-        for (x=0; x<vox[0]; ++x)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           voxelOffset = x * getBPV() + rowOffset;
 
-          for (c=0; c<chan; ++c)
+          for (size_t c=0; c<chan; ++c)
           {
             channelOffset = voxelOffset + c * bpc;
 
@@ -1943,19 +1925,17 @@ void vvVolDesc::toggleEndianness(int frame)
 */
 void vvVolDesc::toggleSign(int /* frame */)
 {
-  uchar* rd;
-  int    frameVoxels;
-  int    f, i;
+  uint8_t* rd;
   float  val;
 
   vvDebugMsg::msg(2, "vvVolDesc::toggleSign()");
 
-  frameVoxels = getFrameVoxels();
+  size_t frameVoxels = getFrameVoxels();
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
-    for (i=0; i<frameVoxels*chan; ++i)
+    for (size_t i=0; i<frameVoxels*chan; ++i)
     {
       switch(bpc)
       {
@@ -1979,21 +1959,19 @@ void vvVolDesc::toggleSign(int /* frame */)
 /** Returns true if a specific channel is nonzero in any voxel of the volume.
   @param m channel index (0=first)
 */
-bool vvVolDesc::isChannelUsed(int m)
+bool vvVolDesc::isChannelUsed(size_t m)
 {
-  uchar* rd;
-  int    i, f;
-  int    frameSize;
+  uint8_t* rd;
 
   vvDebugMsg::msg(2, "vvVolDesc::isChannelUsed()");
-  assert(m>=0 && m<chan);
+  assert(m<chan);
 
-  frameSize = getFrameVoxels();
+  size_t frameSize = getFrameVoxels();
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
-    for (i=0; i<frameSize; ++i)
+    for (size_t i=0; i<frameSize; ++i)
     {
       switch(bpc)
       {
@@ -2012,23 +1990,23 @@ bool vvVolDesc::isChannelUsed(int m)
   @param x,y,z  coordinates of top-left-front corner of sub-volume
   @param w,h,s  width, height, and number of slices of sub-volume
 */
-void vvVolDesc::crop(int x, int y, int z, int w, int h, int s)
+void vvVolDesc::crop(size_t x, size_t y, size_t z, size_t w, size_t h, size_t s)
 {
-  int j, i, f;
-  uchar* newRaw;
-  uchar* rd;
+  int j, i;
+  uint8_t* newRaw;
+  uint8_t* rd;
   int xmin, xmax, ymin, ymax, zmin, zmax;
   int newWidth, newHeight, newSlices;
-  int newSliceSize;
-  int oldSliceSize;
-  uchar *src, *dst;
+  size_t newSliceSize;
+  size_t oldSliceSize;
+  uint8_t *src, *dst;
 
   vvDebugMsg::msg(2, "vvVolDesc::crop()");
 
   // Find minimum and maximum values for crop:
-  xmin = ts_max(0, ts_min(x, vox[0]-1, x + w - 1));
-  ymin = ts_max(0, ts_min(y, vox[1]-1, y + h - 1));
-  zmin = ts_max(0, ts_min(z, vox[2]-1, z + s - 1));
+  xmin = ts_max(size_t(0), ts_min(x, vox[0]-1, x + w - 1));
+  ymin = ts_max(size_t(0), ts_min(y, vox[1]-1, y + h - 1));
+  zmin = ts_max(size_t(0), ts_min(z, vox[2]-1, z + s - 1));
   xmax = ts_min(vox[0]-1, ts_max(x, x + w - 1));
   ymax = ts_min(vox[1]-1, ts_max(y, y + h - 1));
   zmax = ts_min(vox[2]-1, ts_max(z, z + s - 1));
@@ -2042,10 +2020,10 @@ void vvVolDesc::crop(int x, int y, int z, int w, int h, int s)
   oldSliceSize = getSliceBytes();
   newSliceSize = newWidth * newHeight * getBPV();
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
-    newRaw = new uchar[newSliceSize * newSlices];
+    newRaw = new uint8_t[newSliceSize * newSlices];
     for (j=0; j<newSlices; ++j)
       for (i=0; i<newHeight; ++i)
     {
@@ -2071,19 +2049,17 @@ void vvVolDesc::crop(int x, int y, int z, int w, int h, int s)
   @param start first time step to keep in the sequence [0..timesteps-1]
   @param steps number of steps to keep
 */
-void vvVolDesc::cropTimesteps(int start, int steps)
+void vvVolDesc::cropTimesteps(size_t start, size_t steps)
 {
-  int i;
-
   raw.first();
 
   // Remove steps before the desired range:
-  for (i=0; i<start; ++i)
+  for (size_t i=0; i<start; ++i)
     raw.remove();
 
   // Remove steps after the desired range:
   raw.last();
-  for (i=0; i<frames-start-steps; ++i)
+  for (size_t i=0; i<frames-start-steps; ++i)
     raw.remove();
 
   frames = raw.count();
@@ -2096,17 +2072,16 @@ void vvVolDesc::cropTimesteps(int start, int steps)
   @param ipt     interpolation type to use for resampling
   @param verbose true = verbose mode
 */
-void vvVolDesc::resize(int w, int h, int s, InterpolationType ipt, bool verbose)
+void vvVolDesc::resize(size_t w, size_t h, size_t s, InterpolationType ipt, bool verbose)
 {
-  uchar* newRaw;                                  // pointer to new volume data
-  uchar* rd;
-  int newSliceSize, newFrameSize;
-  int oldSliceVoxels;
-  uchar *src, *dst;
-  int ix, iy, iz;                                 // integer source voxel coordinates
+  uint8_t* newRaw;                                  // pointer to new volume data
+  uint8_t* rd;
+  size_t newSliceSize, newFrameSize;
+  size_t oldSliceVoxels;
+  uint8_t *src, *dst;
+  size_t ix, iy, iz;                              // integer source voxel coordinates
   float fx, fy, fz;                               // floating point source voxel coordinates
-  uchar interpolated[4];                          // interpolated voxel values
-  int f, x, y, z;
+  uint8_t interpolated[4];                        // interpolated voxel values
 
   vvDebugMsg::msg(2, "vvVolDesc::resize()");
 
@@ -2120,17 +2095,17 @@ void vvVolDesc::resize(int w, int h, int s, InterpolationType ipt, bool verbose)
   newFrameSize = newSliceSize * s;
   if (verbose) vvToolshed::initProgress(s * frames);
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
-    newRaw = new uchar[newFrameSize];
+    newRaw = new uint8_t[newFrameSize];
     dst = newRaw;
 
     // Traverse destination data:
-    for (z=0; z<s; ++z)
+    for (size_t z=0; z<s; ++z)
     {
-      for (y=0; y<h; ++y)
-        for (x=0; x<w; ++x)
+      for (size_t y=0; y<h; ++y)
+        for (size_t x=0; x<w; ++x)
       {
         // Compute source coordinates of current destination voxel:
         if (ipt==TRILINEAR)                       // trilinear interpolation
@@ -2153,9 +2128,9 @@ void vvVolDesc::resize(int w, int h, int s, InterpolationType ipt, bool verbose)
           else     iy = 0;
           if (s>1) iz = z * (vox[2]-1) / (s-1);
           else     iz = 0;
-          ix = ts_clamp(ix, 0, vox[0]-1);
-          iy = ts_clamp(iy, 0, vox[1]-1);
-          iz = ts_clamp(iz, 0, vox[2]-1);
+          ix = ts_clamp(ix, size_t(0), vox[0]-1);
+          iy = ts_clamp(iy, size_t(0), vox[1]-1);
+          iz = ts_clamp(iz, size_t(0), vox[2]-1);
 
           // Copy source voxel data to destination voxel:
           src = rd + getBPV() * (ix + iy * vox[0] + iz * oldSliceVoxels);
@@ -2192,13 +2167,12 @@ void vvVolDesc::resize(int w, int h, int s, InterpolationType ipt, bool verbose)
 */
 void vvVolDesc::shift(int sx, int sy, int sz)
 {
-  uchar* rd;
-  uchar* newRaw;                                  // shifted volume data
-  uchar* src;
-  uchar* dst;
-  int lineSize, sliceSize, frameSize;
+  uint8_t* rd;
+  uint8_t* newRaw;                                // shifted volume data
+  uint8_t* src;
+  uint8_t* dst;
+  size_t lineSize, sliceSize, frameSize;
   int sval[3];                                    // shift amount
-  int f, x, y, z, i;
 
   vvDebugMsg::msg(2, "vvVolDesc::shift()");
 
@@ -2217,23 +2191,23 @@ void vvVolDesc::shift(int sx, int sy, int sz)
   sliceSize = getSliceBytes();
   frameSize = getFrameBytes();
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
-    for (i=0; i<3; ++i)
+    for (int i=0; i<3; ++i)
     {
       raw.makeCurrent(f);
       rd = raw.getData();
 
       if (sval[i] > 0)
       {
-        newRaw = new uchar[frameSize];
+        newRaw = new uint8_t[frameSize];
         switch (i)
         {
           case 0:                                 // x shift
             src = rd;
-            for (z=0; z<vox[2]; ++z)
-              for (y=0; y<vox[1]; ++y)
-                for (x=0; x<vox[0]; ++x)
+            for (size_t z=0; z<vox[2]; ++z)
+              for (size_t y=0; y<vox[1]; ++y)
+                for (size_t x=0; x<vox[0]; ++x)
                 {
                   dst = newRaw + z * sliceSize + y * lineSize + ((x + sval[0]) % vox[0]) * getBPV();
                   memcpy(dst, src, getBPV());
@@ -2242,8 +2216,8 @@ void vvVolDesc::shift(int sx, int sy, int sz)
           break;
           case 1:                                 // y shift
             src = rd;
-            for (z=0; z<vox[2]; ++z)
-              for (y=0; y<vox[1]; ++y)
+            for (size_t z=0; z<vox[2]; ++z)
+              for (size_t y=0; y<vox[1]; ++y)
             {
               dst = newRaw + z * sliceSize + ((y + sval[1]) % vox[1]) * lineSize;
               memcpy(dst, src, lineSize);
@@ -2253,7 +2227,7 @@ void vvVolDesc::shift(int sx, int sy, int sz)
           default:
           case 2:                                 // z shift
             src = rd;
-            for (z=0; z<vox[2]; ++z)
+            for (size_t z=0; z<vox[2]; ++z)
             {
               dst = newRaw + ((z + sval[2]) % vox[2]) * sliceSize;
               memcpy(dst, src, sliceSize);
@@ -2275,23 +2249,21 @@ void vvVolDesc::shift(int sx, int sy, int sz)
 */
 void vvVolDesc::convertVoxelOrder()
 {
-  uchar* raw;
-  uchar* tmpData;
-  uchar* src;
-  uchar* dst;
-  int    z, y, x, f;
-  int    frameSize;
+  uint8_t* raw;
+  uint8_t* tmpData;
+  uint8_t* src;
+  uint8_t* dst;
 
   vvDebugMsg::msg(2, "vvVolDesc::convertVoxelOrder()");
 
-  frameSize = getFrameBytes();
-  tmpData = dst = new uchar[frameSize];
-  for (f=0; f<frames; ++f)
+  size_t frameSize = getFrameBytes();
+  tmpData = dst = new uint8_t[frameSize];
+  for (size_t f=0; f<frames; ++f)
   {
     raw = src = getRaw(f);
-    for (x=0; x<vox[0]; ++x)
-      for (y=0; y<vox[1]; ++y)
-        for (z=0; z<vox[2]; ++z)
+    for (size_t x=0; x<vox[0]; ++x)
+      for (size_t y=0; y<vox[1]; ++y)
+        for (size_t z=0; z<vox[2]; ++z)
         {
           dst = tmpData + getBPV() * (x + (vox[1] - y - 1) * vox[0] + z * vox[0] * vox[1]);
           memcpy(dst, src, getBPV());
@@ -2309,24 +2281,22 @@ void vvVolDesc::convertVoxelOrder()
 */
 void vvVolDesc::convertCoviseToVirvo()
 {
-  uchar* raw;
-  uchar* tmpData;
-  int z, y, x, f;
-  int frameSize;
-  int srcIndex;                                   // index into COVISE volume array
-  uchar* ptr;
+  uint8_t* raw;
+  uint8_t* tmpData;
+  size_t srcIndex;                                   // index into COVISE volume array
+  uint8_t* ptr;
 
   vvDebugMsg::msg(2, "vvVolDesc::convertCoviseToVirvo()");
 
-  frameSize = getFrameBytes();
-  tmpData = new uchar[frameSize];
-  for (f=0; f<frames; ++f)
+  size_t frameSize = getFrameBytes();
+  tmpData = new uint8_t[frameSize];
+  for (size_t f=0; f<frames; ++f)
   {
     raw = getRaw(f);
     ptr = tmpData;
-    for (z=0; z<vox[2]; ++z)
-      for (y=0; y<vox[1]; ++y)
-        for (x=0; x<vox[0]; ++x)
+    for (size_t z=0; z<vox[2]; ++z)
+      for (size_t y=0; y<vox[1]; ++y)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           srcIndex = getBPV() * ((vox[2]-z-1)+ (vox[1]-y-1) * vox[2] + x * vox[1] * vox[2]);
           memcpy(ptr, raw + srcIndex, getBPV());
@@ -2348,24 +2318,22 @@ void vvVolDesc::convertCoviseToVirvo()
 */
 void vvVolDesc::convertVirvoToCovise()
 {
-  uchar* raw;
-  uchar* tmpData;
-  uchar* ptr;
-  int    z, y, x, f;
-  int    frameSize;
-  int    dstIndex;                                // index into COVISE volume array
+  uint8_t* raw;
+  uint8_t* tmpData;
+  uint8_t* ptr;
+  size_t    dstIndex;                                // index into COVISE volume array
 
   vvDebugMsg::msg(2, "vvVolDesc::convertVirvoToCovise()");
 
-  frameSize = getFrameBytes();
-  tmpData = new uchar[frameSize];
-  for (f=0; f<frames; ++f)
+  size_t frameSize = getFrameBytes();
+  tmpData = new uint8_t[frameSize];
+  for (size_t f=0; f<frames; ++f)
   {
     raw = getRaw(f);
     ptr = raw;
-    for (z=0; z<vox[2]; ++z)
-      for (y=0; y<vox[1]; ++y)
-        for (x=0; x<vox[0]; ++x)
+    for (size_t z=0; z<vox[2]; ++z)
+      for (size_t y=0; y<vox[1]; ++y)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           dstIndex = getBPV() * (x * vox[1] * vox[2] + (vox[1]-y-1) * vox[2] + (vox[2]-z-1));
           memcpy(tmpData + dstIndex, ptr, getBPV());
@@ -2383,24 +2351,22 @@ void vvVolDesc::convertVirvoToCovise()
 */
 void vvVolDesc::convertVirvoToOpenGL()
 {
-  uchar* raw;
-  uchar* tmpData;
-  uchar* ptr;
-  int    z, y, x, f;
-  int    frameSize;
-  int    dstIndex;                                // index into OpenGL volume array
+  uint8_t* raw;
+  uint8_t* tmpData;
+  uint8_t* ptr;
+  size_t    dstIndex;                                // index into OpenGL volume array
 
   vvDebugMsg::msg(2, "vvVolDesc::convertVirvoToOpenGL()");
 
-  frameSize = getFrameBytes();
-  tmpData = new uchar[frameSize];
-  for (f=0; f<frames; ++f)
+  size_t frameSize = getFrameBytes();
+  tmpData = new uint8_t[frameSize];
+  for (size_t f=0; f<frames; ++f)
   {
     raw = getRaw(f);
     ptr = raw;
-    for (z=0; z<vox[2]; ++z)
-      for (y=0; y<vox[1]; ++y)
-        for (x=0; x<vox[0]; ++x)
+    for (size_t z=0; z<vox[2]; ++z)
+      for (size_t y=0; y<vox[1]; ++y)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           dstIndex = getBPV() * (x + (vox[1] - y - 1) * vox[0] + (vox[2] - z - 1) * vox[0] * vox[1]);
           memcpy(tmpData + dstIndex, ptr, getBPV());
@@ -2418,24 +2384,22 @@ void vvVolDesc::convertVirvoToOpenGL()
 */
 void vvVolDesc::convertOpenGLToVirvo()
 {
-  uchar* raw;
-  uchar* tmpData;
-  uchar* ptr;
-  int    z, y, x, f;
-  int    frameSize;
-  int    dstIndex;                                // index into Virvo volume array
+  uint8_t* raw;
+  uint8_t* tmpData;
+  uint8_t* ptr;
+  size_t    dstIndex;                                // index into Virvo volume array
 
   vvDebugMsg::msg(2, "vvVolDesc::convertOpenGLToVirvo()");
 
-  frameSize = getFrameBytes();
-  tmpData = new uchar[frameSize];
-  for (f=0; f<frames; ++f)
+  size_t frameSize = getFrameBytes();
+  tmpData = new uint8_t[frameSize];
+  for (size_t f=0; f<frames; ++f)
   {
     raw = getRaw(f);
     ptr = raw;
-    for (z=0; z<vox[2]; ++z)
-      for (y=0; y<vox[1]; ++y)
-        for (x=0; x<vox[0]; ++x)
+    for (size_t z=0; z<vox[2]; ++z)
+      for (size_t y=0; y<vox[1]; ++y)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           dstIndex = getBPV() * (x + (vox[1] - y - 1) * vox[0] + (vox[2] - z - 1)  * vox[0] * vox[1]);
           memcpy(tmpData + dstIndex, ptr, getBPV());
@@ -2452,7 +2416,7 @@ void vvVolDesc::convertOpenGLToVirvo()
  @param s    icon size in pixels (size = width = height), if 0 icon will be deleted
  @param rgb  icon image data array (size * size * 4 bytes expected)
 */
-void vvVolDesc::makeIcon(int s, const uchar* rgba)
+void vvVolDesc::makeIcon(int s, const uint8_t* rgba)
 {
   const int BPP = 4;
   vvDebugMsg::msg(2, "vvVolDesc::makeIcon(2)");
@@ -2466,8 +2430,8 @@ void vvVolDesc::makeIcon(int s, const uchar* rgba)
   else
   {
     iconSize = s;
-    int iconBytes = iconSize * iconSize * BPP;
-    iconData = new uchar[iconBytes];
+    size_t iconBytes = iconSize * iconSize * BPP;
+    iconData = new uint8_t[iconBytes];
     memcpy(iconData, rgba, iconBytes);
   }
 }
@@ -2477,11 +2441,11 @@ void vvVolDesc::makeIcon(int s, const uchar* rgba)
   front), using MIP.
   @param size icon edge length [pixels]
 */
-void vvVolDesc::makeIcon(int size)
+void vvVolDesc::makeIcon(size_t size)
 {
   vvVolDesc* tmpVD;
   int i;
-  int iconBytes;
+  size_t iconBytes;
 
   vvDebugMsg::msg(2, "vvVolDesc::makeIcon(1)");
 
@@ -2494,12 +2458,12 @@ void vvVolDesc::makeIcon(int size)
   iconSize = size;
   iconBytes = iconSize * iconSize * ICON_BPP;
   delete[] iconData;
-  iconData = new uchar[iconBytes];
+  iconData = new uint8_t[iconBytes];
 
   // Compute icon image:
-  uchar* tmpSlice = new uchar[iconBytes];
+  uint8_t* tmpSlice = new uint8_t[iconBytes];
   memset(iconData, 0, iconBytes);
-  uchar* raw = tmpVD->getRaw();
+  uint8_t* raw = tmpVD->getRaw();
   for (i=tmpVD->vox[2]-1; i>=0; --i)
   {
     // Resample current volume slice to temporary image of icon size:
@@ -2543,22 +2507,22 @@ voxel to the vector (0|-1|0).
 */
 void vvVolDesc::makeSphere(int outer, int inner, InterpolationType ipt, bool verbose)
 {
-  uchar* rd;                                      // raw data of current source frame
+  uint8_t* rd;                                    // raw data of current source frame
   vvVector3 center;                               // sphere center position [voxel space]
   vvVector3 v;                                    // currently processed voxel coordinates [voxel space]
-  uchar* newRaw;                                  // raw data of current destination frame
+  uint8_t* newRaw;                                // raw data of current destination frame
   float dist;                                     // distance from voxel to sphere center
   float phi;                                      // angle in x/z plane
   float theta;                                    // angle to y axis
-  uchar *src, *dst;                               // source and destination volume data
+  uint8_t *src, *dst;                             // source and destination volume data
   float radius;                                   // outer radius of sphere [voxels]
   float core;                                     // core radius [voxels]
-  int newFrameSize;                               // sphere volume frame size [voxels]
-  int sliceVoxels;                                // number of voxels per slice in source volume
-  int f, x, y, z;                                 // loop counters
+  size_t newFrameSize;                            // sphere volume frame size [voxels]
+  size_t sliceVoxels;                             // number of voxels per slice in source volume
+  int x, y, z;                                    // loop counters
   float sx, sy, sz;                               // coordinates in source volume
   float ringSize;                                 // precomputed ring size
-  uchar interpolated[4];                          // interpolated voxel values
+  uint8_t interpolated[4];                        // interpolated voxel values
 
   vvDebugMsg::msg(2, "vvVolDesc::makeSphere()");
   if (outer<1 || inner<0) return;
@@ -2578,10 +2542,10 @@ void vvVolDesc::makeSphere(int outer, int inner, InterpolationType ipt, bool ver
   sliceVoxels = vox[0] * vox[1];
   if (verbose) vvToolshed::initProgress(outer * frames);
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
-    newRaw = new uchar[newFrameSize];
+    newRaw = new uint8_t[newFrameSize];
     dst = newRaw;
 
     // Traverse destination data:
@@ -2625,8 +2589,8 @@ void vvVolDesc::makeSphere(int outer, int inner, InterpolationType ipt, bool ver
       if (verbose) vvToolshed::printProgress(z + outer * f);
     }
     raw.remove();
-    if (f==0) raw.insertBefore(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
-    else raw.insertAfter(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
+    if (f==0) raw.insertBefore(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
+    else raw.insertAfter(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
     raw.next();
   }
   vox[0] = vox[1] = vox[2] = outer;
@@ -2702,8 +2666,9 @@ void vvVolDesc::makeInfoString(std::string* infoString)
 void vvVolDesc::makeShortInfoString(char* infoString)
 {
   sprintf(infoString, "%d %s, %d x %d x %d, %d x %d",
-    frames, (frames!=1) ? "frames" : "frame",
-    vox[0], vox[1], vox[2], bpc, chan);
+    static_cast<int32_t>(frames), (frames!=1) ? "frames" : "frame",
+    static_cast<int32_t>(vox[0]), static_cast<int32_t>(vox[1]),
+    static_cast<int32_t>(vox[2]), static_cast<int32_t>(bpc), static_cast<int32_t>(chan));
 }
 
 //----------------------------------------------------------------------------
@@ -2740,9 +2705,8 @@ void vvVolDesc::printStatistics()
   float scalarMin, scalarMax;
   float mean, variance, stdev;
   float zeroVoxels, numTransparent;
-  int c;
 
-  for (c=0; c<chan; ++c)
+  for (size_t c=0; c<chan; ++c)
   {
     if (chan>1) cerr << "Channel " << c+1 << endl;
     findMinMax(0, scalarMin, scalarMax);
@@ -2791,11 +2755,10 @@ void vvVolDesc::printHistogram(int frame, int channel)
   @param width number of voxels to display per row (starting left, 0 for all voxels)
   @param height number of voxels to display per column (starting at top, 0 for all voxels))
 */
-void vvVolDesc::printVoxelData(int frame, int slice, int width, int height)
+void vvVolDesc::printVoxelData(int frame, size_t slice, size_t width, size_t height)
 {
-  uchar* raw;                                     // pointer to raw volume data
-  int x,y,m;                                      // voxel counters
-  int nx,ny;                                      // number of voxels to display per row/column
+  uint8_t* raw;                                   // pointer to raw volume data
+  size_t nx,ny;                                   // number of voxels to display per row/column
   int val;
 
   raw = getRaw(frame);
@@ -2805,13 +2768,13 @@ void vvVolDesc::printVoxelData(int frame, int slice, int width, int height)
   if (height<=0) ny = vox[1];
   else ny = ts_min(height, vox[1]);
   cerr << "Voxel data of frame " << frame << ":" << endl;
-  for (y=0; y<ny; ++y)
+  for (size_t y=0; y<ny; ++y)
   {
     cerr << "Row " << y << ": ";
-    for (x=0; x<nx; ++x)
+    for (size_t x=0; x<nx; ++x)
     {
       cerr << "(";
-      for (m=0; m<chan; ++m)
+      for (size_t m=0; m<chan; ++m)
       {
         switch (bpc)
         {
@@ -2854,15 +2817,14 @@ void vvVolDesc::printVoxelData(int frame, int slice, int width, int height)
 @param result interpolated voxel data. This must be a pointer to
 an _allocated_ memory space of bpc * chan bytes.
 */
-void vvVolDesc::trilinearInterpolation(int f, float x, float y, float z, uchar* result)
+void vvVolDesc::trilinearInterpolation(size_t f, float x, float y, float z, uint8_t* result)
 {
-  uchar* rd;
-  uchar* neighbor[8];                             // pointers to neighboring voxels
+  uint8_t* rd;
+  uint8_t* neighbor[8];                           // pointers to neighboring voxels
   float val[8];                                   // neighboring voxel values
-  int tfl[3];                                     // coordinates of neighbor 0 (top-front-left)
+  vvsize3 tfl;                                    // coordinates of neighbor 0 (top-front-left)
   float dist[3];                                  // distance to neighbor 0
-  int lineSize, sliceSize;
-  int i, j;
+  size_t lineSize, sliceSize;
   int interpolated;                               // interpolated value
 
   vvDebugMsg::msg(3, "vvVolDesc::trilinearInterpolation()");
@@ -2870,7 +2832,7 @@ void vvVolDesc::trilinearInterpolation(int f, float x, float y, float z, uchar* 
   if (vox[0]<2 || vox[1]<2 || vox[2]<2) return;   // done!
 
   // Check for valid frame index:
-  if (f<0 || f>=frames) return;
+  if (f>=frames) return;
 
   // Constrain voxel position to the valid region:
   x = ts_clamp(x, 0.0f, (float)(vox[0]-1));
@@ -2878,9 +2840,9 @@ void vvVolDesc::trilinearInterpolation(int f, float x, float y, float z, uchar* 
   z = ts_clamp(z, 0.0f, (float)(vox[2]-1));
 
   // Compute coordinates of neighbor 0:
-  tfl[0] = (int)x;
-  tfl[1] = (int)y;
-  tfl[2] = (int)z;
+  tfl[0] = (size_t)x;
+  tfl[1] = (size_t)y;
+  tfl[2] = (size_t)z;
 
   // Compute distance to neighbor 0:
   if (tfl[0] < (vox[0]-1))
@@ -2920,10 +2882,10 @@ void vvVolDesc::trilinearInterpolation(int f, float x, float y, float z, uchar* 
   neighbor[6] = neighbor[2] + sliceSize;
   neighbor[7] = neighbor[3] + sliceSize;
 
-  for (j=0; j<chan; ++j)
+  for (size_t j=0; j<chan; ++j)
   {
     // Get neighboring voxel values:
-    for (i=0; i<8; ++i)
+    for (size_t i=0; i<8; ++i)
     {
       switch (bpc)
       {
@@ -2948,9 +2910,9 @@ void vvVolDesc::trilinearInterpolation(int f, float x, float y, float z, uchar* 
     switch (bpc)
     {
       default:
-      case 1: result[j]     = (uchar)interpolated; break;
-      case 2: result[j*2]   = (uchar)(interpolated / 256);
-      result[j*2+1] = (uchar)(interpolated % 256); break;
+      case 1: result[j]     = (uint8_t)interpolated; break;
+      case 2: result[j*2]   = (uint8_t)(interpolated / 256);
+      result[j*2+1] = (uint8_t)(interpolated % 256); break;
       case 4: *((float*)(result+j*4)) = float(interpolated); break;
     }
   }
@@ -2963,29 +2925,28 @@ void vvVolDesc::trilinearInterpolation(int f, float x, float y, float z, uchar* 
   @param chan          channel to draw in
   @param val           value of channel voxel, array size must equal bpc
 */
-void vvVolDesc::drawBox(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, int chan, uchar* val)
+void vvVolDesc::drawBox(size_t p1x, size_t p1y, size_t p1z, size_t p2x, size_t p2y, size_t p2z, size_t chan, uint8_t* val)
 {
-  uchar* raw;
-  int lineSize, sliceSize;
-  int x,y,z,c;
+  uint8_t* raw;
+  size_t lineSize, sliceSize;
 
   vvDebugMsg::msg(3, "vvVolDesc::drawBox()");
 
-  p1x = ts_clamp(p1x, 0, vox[0]-1);
-  p1y = ts_clamp(p1y, 0, vox[1]-1);
-  p1z = ts_clamp(p1z, 0, vox[2]-1);
-  p2x = ts_clamp(p2x, 0, vox[0]-1);
-  p2y = ts_clamp(p2y, 0, vox[1]-1);
-  p2z = ts_clamp(p2z, 0, vox[2]-1);
+  p1x = ts_clamp(p1x, size_t(0), vox[0]-1);
+  p1y = ts_clamp(p1y, size_t(0), vox[1]-1);
+  p1z = ts_clamp(p1z, size_t(0), vox[2]-1);
+  p2x = ts_clamp(p2x, size_t(0), vox[0]-1);
+  p2y = ts_clamp(p2y, size_t(0), vox[1]-1);
+  p2z = ts_clamp(p2z, size_t(0), vox[2]-1);
 
   sliceSize = getSliceBytes();
   lineSize  = vox[0] * getBPV();
   raw = getRaw(currentFrame);
-  for (z=0; z<vox[2]; ++z)
+  for (size_t z=0; z<vox[2]; ++z)
   {
-    for (y=0; y<vox[1]; ++y)
+    for (size_t y=0; y<vox[1]; ++y)
     {
-      for (x=0; x<vox[0]; ++x)
+      for (size_t x=0; x<vox[0]; ++x)
       {
         if (x>=p1x && y>=p1y && z>=p1z &&
           x<=p2x && y<=p2y && z<=p2z)
@@ -2998,7 +2959,7 @@ void vvVolDesc::drawBox(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, in
                 }*/
           if (bPaint)
           {
-            for (c=0; c<bpc*chan; ++c)
+            for (size_t c=0; c<bpc*chan; ++c)
             {
               raw[z * sliceSize + y * lineSize + x * getBPV() + c] = val[c];
             }
@@ -3016,7 +2977,7 @@ void vvVolDesc::drawBox(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, in
   @param chan          channel to draw in
   @param val           value of channel voxel, array size must equal bpc
 */
-void vvVolDesc::drawSphere(int p1x, int p1y, int p1z, int radius, int chan, uchar* val)
+void vvVolDesc::drawSphere(size_t p1x, size_t p1y, size_t p1z, size_t radius, size_t chan, uint8_t* val)
 {
   /*
   if (_radius != radius)
@@ -3043,33 +3004,32 @@ void vvVolDesc::drawSphere(int p1x, int p1y, int p1z, int radius, int chan, ucha
   }
   }
   */
-  int xstart = ts_max(0, p1x - radius);
-  int xend = ts_min(vox[0], p1x + radius);
-  int ystart = ts_max(0, p1y - radius);
-  int yend = ts_min(vox[1], p1y + radius);
-  int zstart = ts_max(0, p1z - radius);
-  int zend = ts_min(vox[2], p1z + radius);
+  size_t xstart = ts_max(size_t(0), p1x - radius);
+  size_t xend = ts_min(vox[0], p1x + radius);
+  size_t ystart = ts_max(size_t(0), p1y - radius);
+  size_t yend = ts_min(vox[1], p1y + radius);
+  size_t zstart = ts_max(size_t(0), p1z - radius);
+  size_t zend = ts_min(vox[2], p1z + radius);
 
   cerr << xstart << " " << xend << " " << ystart << " " << yend << " " << zstart << " " << zend << endl;
 
   cerr << radius << endl;
-  uchar* raw;
-  int lineSize, sliceSize;
-  int x,y,z,c;
+  uint8_t* raw;
+  size_t lineSize, sliceSize;
 
   sliceSize = getSliceBytes();
   lineSize  = vox[0] * getBPV();
   raw = getRaw(currentFrame);
-  for (z = zstart; z < zend; ++z)
+  for (size_t z = zstart; z < zend; ++z)
   {
-    for (y = ystart; y < yend; ++y)
+    for (size_t y = ystart; y < yend; ++y)
     {
-      for (x = xstart; x < xend; ++x)
+      for (size_t x = xstart; x < xend; ++x)
       {
-        int dist = (int)sqrt(float((x - p1x) * (x - p1x) + (y - p1y) * (y - p1y) + (z - p1z) * (z - p1z)));
+        size_t dist = (int)sqrt(float((x - p1x) * (x - p1x) + (y - p1y) * (y - p1y) + (z - p1z) * (z - p1z)));
 
         if (radius > dist)
-          for (c=0; c<bpc*chan; ++c)
+          for (size_t c=0; c<bpc*chan; ++c)
         {
           raw[z * sliceSize + y * lineSize + x * getBPV() + c] = val[c] * (1 - dist / radius);
         }
@@ -3084,9 +3044,9 @@ void vvVolDesc::drawSphere(int p1x, int p1y, int p1z, int radius, int chan, ucha
   @param p2x,p2y,p2z   line end point
   @param val           value of line voxels, array size must equal bpc * chan
 */
-void vvVolDesc::drawLine(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, uchar* val)
+void vvVolDesc::drawLine(size_t p1x, size_t p1y, size_t p1z, size_t p2x, size_t p2y, size_t p2z, uint8_t* val)
 {
-  uchar* raw;
+  uint8_t* raw;
 
   vvDebugMsg::msg(3, "vvVolDesc::drawLine()");
 
@@ -3102,7 +3062,7 @@ void vvVolDesc::drawLine(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, u
 */
 void vvVolDesc::drawBoundaries(uchar* color, int frame)
 {
-  uchar* raw;
+  uint8_t* raw;
   int f;                                          // frame counter
   int i;
   int from, to;
@@ -3273,9 +3233,9 @@ Length          Data Type        VolDesc Attribute
 @param buffer pointer to _allocated_ memory for serialized attributes
 @return number of bytes required for serialization buffer
 */
-int vvVolDesc::serializeAttributes(uchar* buffer) const
+int vvVolDesc::serializeAttributes(uint8_t* buffer) const
 {
-  uchar* ptr;                                     // pointer to current serialization buffer element
+  uint8_t* ptr;                                     // pointer to current serialization buffer element
 
   vvDebugMsg::msg(3, "vvVolDesc::serializeAttributes()");
 
@@ -3286,7 +3246,7 @@ int vvVolDesc::serializeAttributes(uchar* buffer) const
     ptr += vvToolshed::write32 (ptr, vox[1]);
     ptr += vvToolshed::write32 (ptr, vox[2]);
     ptr += vvToolshed::write32 (ptr, frames);
-    ptr += vvToolshed::write8    (ptr, uchar(bpc));
+    ptr += vvToolshed::write8    (ptr, uint8_t(bpc));
     ptr += vvToolshed::writeFloat(ptr, dist[0]);
     ptr += vvToolshed::writeFloat(ptr, dist[1]);
     ptr += vvToolshed::writeFloat(ptr, dist[2]);
@@ -3296,7 +3256,7 @@ int vvVolDesc::serializeAttributes(uchar* buffer) const
     ptr += vvToolshed::writeFloat(ptr, pos[0]);
     ptr += vvToolshed::writeFloat(ptr, pos[1]);
     ptr += vvToolshed::writeFloat(ptr, pos[2]);
-    ptr += vvToolshed::write8    (ptr, uchar(chan));
+    ptr += vvToolshed::write8    (ptr, uint8_t(chan));
     assert(ptr - buffer == SERIAL_ATTRIB_SIZE);
   }
   return SERIAL_ATTRIB_SIZE;
@@ -3311,7 +3271,7 @@ int vvVolDesc::serializeAttributes(uchar* buffer) const
                   size are allowed and only fill the values up to the
                   passed value. The remaining values will be set to default values.
 */
-void vvVolDesc::deserializeAttributes(uchar* buffer, const int bufSize)
+void vvVolDesc::deserializeAttributes(uint8_t* buffer, size_t bufSize)
 {
   vvDebugMsg::msg(3, "vvVolDesc::deserializeAttributes()");
   assert(buffer!=NULL);
@@ -3319,64 +3279,80 @@ void vvVolDesc::deserializeAttributes(uchar* buffer, const int bufSize)
   // Set default values for all serializable attributes:
   setDefaults();
 
-  uchar* ptr = buffer;
-  if (ptr+4 - buffer <= bufSize)
+  uint8_t* ptr = buffer;
+
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     vox[0] = vvToolshed::read32(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     vox[1] = vvToolshed::read32(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     vox[2] = vvToolshed::read32(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     frames = vvToolshed::read32(ptr);
   else return;
   ptr += 4;
-  if (ptr+1 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+1 - buffer) <= bufSize)
     bpc = vvToolshed::read8(ptr);
   else return;
   ptr += 1;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     dist[0] = vvToolshed::readFloat(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     dist[1]  = vvToolshed::readFloat(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     dist[2] = vvToolshed::readFloat(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     dt = vvToolshed::readFloat(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     real[0] = vvToolshed::readFloat(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     real[1] = vvToolshed::readFloat(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     pos[0] = vvToolshed::readFloat(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     pos[1] = vvToolshed::readFloat(ptr);
   else return;
   ptr += 4;
-  if (ptr+4 - buffer <= bufSize)
+  assert(ptr + 4 - buffer >= 0);
+  if (size_t(ptr+4 - buffer) <= bufSize)
     pos[2] = vvToolshed::readFloat(ptr);
   else return;
   ptr += 4;
-  if (ptr+1 - buffer <= bufSize)
+  assert(ptr + 1 - buffer >= 0);
+  if (size_t(ptr+1 - buffer) <= bufSize)
     chan = vvToolshed::read8(ptr);
   else return;
   ptr += 1;
@@ -3392,10 +3368,10 @@ void vvVolDesc::deserializeAttributes(uchar* buffer, const int bufSize)
   @param slice   slice index (first slice = 0 = default)
   @param frame   frame index (first frame = 0 = default)
 */
-void vvVolDesc::setSliceData(uchar* newData, int slice, int frame)
+void vvVolDesc::setSliceData(uint8_t* newData, int slice, int frame)
 {
-  uchar* dst;                                     // pointer to beginning of slice
-  int sliceSize;                                  // shortcut for speed
+  uint8_t* dst;                                   // pointer to beginning of slice
+  size_t sliceSize;                               // shortcut for speed
 
   if (frames>0 && vox[2]>0)                       // make sure at least one slice is stored
   {
@@ -3417,12 +3393,11 @@ void vvVolDesc::setSliceData(uchar* newData, int slice, int frame)
   @param slice  slice index to create, relative to slicing axis (>=0)
   @param dst    _allocated_ space for sliceWidth * sliceHeight * bpc * chan bytes
 */
-void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, int slice, uchar* dst)
+void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, int slice, uint8_t* dst)
 {
-  uchar* raw;                                     // raw volume data of current frame
-  int sliceSize;                                  // bytes per volume slice (z-axis view)
-  int lineSize;                                   // bytes per voxel line
-  int i, j;
+  uint8_t* raw;                                   // raw volume data of current frame
+  size_t sliceSize;                               // bytes per volume slice (z-axis view)
+  size_t lineSize;                                // bytes per voxel line
 
   sliceSize = getSliceBytes();
   lineSize  = vox[0] * getBPV();
@@ -3430,15 +3405,15 @@ void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, int slice,
   switch (axis)
   {
     case 0:                                       // x axis
-      for (j=0; j<vox[1]; ++j)
-        for (i=0; i<vox[2]; ++i)
+      for (size_t j=0; j<vox[1]; ++j)
+        for (size_t i=0; i<vox[2]; ++i)
       {
         memcpy(dst, raw + i * sliceSize + j * lineSize + (vox[0] - slice - 1) * getBPV(), getBPV());
         dst += getBPV();
       }
       break;
     case 1:                                       // y axis
-      for (i=0; i<vox[2]; ++i)
+      for (size_t i=0; i<vox[2]; ++i)
         memcpy(dst + i * lineSize, raw + (vox[2] - i - 1) * sliceSize + slice * lineSize, lineSize);
       break;
     case 2:                                       // z axis
@@ -3452,7 +3427,7 @@ void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, int slice,
 /** @return volume size when looking from a specific axis
   @param axis viewing axis
 */
-void vvVolDesc::getVolumeSize(vvVecmath::AxisType axis, int& width, int& height, int& slices)
+void vvVolDesc::getVolumeSize(vvVecmath::AxisType axis, size_t& width, size_t& height, size_t& slices)
 {
   switch(axis)
   {
@@ -3471,26 +3446,25 @@ void vvVolDesc::getVolumeSize(vvVecmath::AxisType axis, int& width, int& height,
   @param dst    _allocated_ space for sliceWidth * sliceHeight * 3 bytes;
                 get width and height via getVolumeSize
 */
-void vvVolDesc::makeSliceImage(int frame, vvVecmath::AxisType axis, int slice, uchar* dst)
+void vvVolDesc::makeSliceImage(int frame, vvVecmath::AxisType axis, int slice, uint8_t* dst)
 {
-  uchar* sliceData;
+  uint8_t* sliceData;
   vvColor col;
   float voxelVal = 0.f;
-  int sliceBytes;
-  int width, height, slices;
-  int pixel;
-  int srcOffset, dstOffset;
-  int c;
+  size_t sliceBytes;
+  size_t width, height, slices;
+  size_t pixel;
+  size_t srcOffset, dstOffset;
 
   getVolumeSize(axis, width, height, slices);
   sliceBytes = width * height * bpc * chan;
-  sliceData = new uchar[sliceBytes];
+  sliceData = new uint8_t[sliceBytes];
   extractSliceData(frame, axis, slice, sliceData);
   memset(dst, 0, width * height * 3);
 
   for(pixel=0; pixel<width*height; ++pixel)
   {
-    for (c=0; c<ts_min(chan,3); ++c)
+    for (size_t c=0; c<ts_min(chan, size_t(3)); ++c)
     {
       dstOffset = pixel * 3 + c;
       srcOffset = pixel * bpc * chan + bpc * c;
@@ -3524,26 +3498,25 @@ void vvVolDesc::makeSliceImage(int frame, vvVecmath::AxisType axis, int slice, u
 */
 void vvVolDesc::deinterlace()
 {
-  uchar* rd;
-  uchar* volBuf;                                  // temporary buffer for voxel data of one time step
-  uchar* dst;                                     // destination pointer
-  uchar* src;                                     // source pointer
-  int sliceSize;
-  int frameSize;
-  int z, f;
+  uint8_t* rd;
+  uint8_t* volBuf;                                 // temporary buffer for voxel data of one time step
+  uint8_t* dst;                                   // destination pointer
+  uint8_t* src;                                   // source pointer
+  size_t sliceSize;
+  size_t frameSize;
 
   vvDebugMsg::msg(2, "vvVolDesc::deinterlace()");
 
   sliceSize = getSliceBytes();
   frameSize = getFrameBytes();
-  volBuf = new uchar[frameSize];
+  volBuf = new uint8_t[frameSize];
   assert(volBuf);
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
     memcpy(volBuf, rd, frameSize);                // make backup copy of volume
-    for (z=0; z<vox[2]; ++z)
+    for (size_t z=0; z<vox[2]; ++z)
     {
       dst = rd + z * sliceSize;
       if ((z % 2) == 0)                           // even slice number?
@@ -3567,7 +3540,6 @@ void vvVolDesc::deinterlace()
 void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax)
 {
   (void)channel;
-  int f;
   int mi, ma;
   float fMin, fMax;
 
@@ -3591,7 +3563,7 @@ void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax)
   }
 
   // TODO: make search channel dependent
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     switch(bpc)
     {
@@ -3628,9 +3600,7 @@ float vvVolDesc::findClampValue(int frame, int channel, float threshold)
   int buckets[1] = {1000};
   float fMin, fMax;
   float clampVal = 0.0f;
-  int frameVoxels;
-  int voxelCount=0;
-  int thresholdVoxelCount;
+  size_t voxelCount=0;
   int i;
 
   vvDebugMsg::msg(2, "vvVolDesc::findClampValue()");
@@ -3641,8 +3611,8 @@ float vvVolDesc::findClampValue(int frame, int channel, float threshold)
   findMinMax(channel, fMin, fMax);
   real[0] = fMin;
   real[1] = fMax;
-  frameVoxels = getFrameVoxels();
-  thresholdVoxelCount = int(float(frameVoxels) * threshold);
+  size_t frameVoxels = getFrameVoxels();
+  size_t thresholdVoxelCount = size_t(float(frameVoxels) * threshold);
   hist = new int[buckets[0]];
   makeHistogram(frame, channel, 1, buckets, hist, real[0], real[1]);
   for (i=0; i<buckets[0]; ++i)
@@ -3671,28 +3641,26 @@ float vvVolDesc::findClampValue(int frame, int channel, float threshold)
 */
 int vvVolDesc::findNumValue(int frame, float val)
 {
-  uchar* raw;
-  int i, m;
+  uint8_t* raw;
   int num = 0;
-  int frameVoxels;
   int sval;
   bool allEqual;
 
   vvDebugMsg::msg(2, "vvVolDesc::findNumValue()");
 
-  frameVoxels = getFrameVoxels();
+  size_t frameVoxels = getFrameVoxels();
 
   // Search volume:
   raw = getRaw(frame);
-  for (i=0; i<frameVoxels; ++i)
+  for (size_t i=0; i<frameVoxels; ++i)
   {
     allEqual = true;
-    for (m=0; m<chan; ++m)
+    for (size_t m=0; m<chan; ++m)
     {
       switch (bpc)
       {
         case 1:
-          if (raw[i] != uchar(val)) allEqual = false;
+          if (raw[i] != uint8_t(val)) allEqual = false;
           break;
         case 2:
           sval = int(raw[i]) * 256 + raw[i+1];
@@ -3714,33 +3682,31 @@ int vvVolDesc::findNumValue(int frame, float val)
 */
 int vvVolDesc::findNumUsed(int channel)
 {
-  int f, i;
   bool* used;                                     // true = scalar value occurs in array
-  uchar* raw;
+  uint8_t* raw;
   int numValues;
   int numUsed = 0;
   int value;
-  int frameVoxels;
 
   vvDebugMsg::msg(2, "vvVolDesc::findNumUsed()");
 
   if (bpc>=3) return -1;     // doesn't work with floats
 
-  frameVoxels = getFrameVoxels();
+  size_t frameVoxels = getFrameVoxels();
   numValues = (bpc==2) ? 65536 : 256;
   used = new bool[numValues];
 
   // Initialize occurrence array:
-  for (i=0; i<numValues; ++i)
+  for (int i=0; i<numValues; ++i)
   {
     used[i] = false;
   }
 
   // Fill occurrence array:
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     raw = getRaw(f);
-    for (i=0; i<frameVoxels; ++i)
+    for (size_t i=0; i<frameVoxels; ++i)
     {
       switch (bpc)
       {
@@ -3756,7 +3722,7 @@ int vvVolDesc::findNumUsed(int channel)
   }
 
   // Count number of 'true' entries in occurrence array:
-  for (i=0; i<numValues; ++i)
+  for (int i=0; i<numValues; ++i)
   {
     if (used[i]==true) ++numUsed;
   }
@@ -3774,10 +3740,8 @@ int vvVolDesc::findNumUsed(int channel)
 int vvVolDesc::findNumTransparent(int frame)
 {
   float* rgba = NULL;
-  uchar* raw;
-  int i;
+  uint8_t* raw;
   int numTransparent = 0;
-  int frameSize;
   int lutEntries = 0;
   int scalar;
   bool noTF;                                      // true = no TF present in file
@@ -3786,7 +3750,7 @@ int vvVolDesc::findNumTransparent(int frame)
 
   if (bpc==4) return 0;                           // TODO: implement for floats
 
-  frameSize = getFrameBytes();
+  size_t frameSize = getFrameBytes();
 
   noTF = tf._widgets.empty();
 
@@ -3811,7 +3775,7 @@ int vvVolDesc::findNumTransparent(int frame)
     case 1:
     case 2:
     case 4:
-      for (i=bpc-1; i<frameSize; i += getBPV())
+      for (size_t i=bpc-1; i<frameSize; i += getBPV())
       {
         if (bpc==2) scalar = (int(raw[i-1]) << 8) | int(raw[i]);
         else scalar = raw[i];
@@ -3838,22 +3802,19 @@ int vvVolDesc::findNumTransparent(int frame)
 */
 float vvVolDesc::calculateMean(int frame)
 {
-  uchar* raw;
+  uint8_t* raw;
   float scalar = 0.f;
   float mean;
   double sum = 0.0;
-  int i;
-  int frameSize;
-  int bpv;
 
   vvDebugMsg::msg(2, "vvVolDesc::calculateMean()");
 
-  frameSize = getFrameBytes();
-  bpv = getBPV();
+  size_t frameSize = getFrameBytes();
+  size_t bpv = getBPV();
 
   // Search volume:
   raw = getRaw(frame);
-  for (i=0; i<frameSize; i += bpv)
+  for (size_t i=0; i<frameSize; i += bpv)
   {
     switch (bpc)
     {
@@ -3882,23 +3843,20 @@ float vvVolDesc::calculateMean(int frame)
 */
 void vvVolDesc::calculateDistribution(int frame, int chan, float& mean, float& variance, float& stdev)
 {
-  uchar* raw;
+  uint8_t* raw;
   double sumSquares = 0.0;
   float scalar = 0.f;
   float diff;
-  int i;
-  int frameSize;
-  int bpv;
 
   vvDebugMsg::msg(2, "vvVolDesc::calculateDistribution()");
 
-  frameSize = getFrameBytes();
-  bpv = getBPV();
+  size_t frameSize = getFrameBytes();
+  size_t bpv = getBPV();
   mean = calculateMean(frame);
 
   // Search volume:
   raw = getRaw(frame);
-  for (i=chan*bpc; i<frameSize; i += bpv)
+  for (size_t i=chan*bpc; i<frameSize; i += bpv)
   {
     switch (bpc)
     {
@@ -3948,9 +3906,8 @@ void vvVolDesc::expandDataRange(bool verbose)
 */
 void vvVolDesc::zoomDataRange(int channel, int low, int high, bool verbose)
 {
-  uchar* raw;                                     // raw volume data
-  int frameSize;                                  // values per frame
-  int f,i,c;
+  uint8_t* raw;                                   // raw volume data
+  size_t frameSize;                               // values per frame
   int ival;
   float fmin, fmax, fval, frange;
 
@@ -3973,14 +3930,14 @@ void vvVolDesc::zoomDataRange(int channel, int low, int high, bool verbose)
 
   // Perform the actual expansion:
   if (verbose) vvToolshed::initProgress(frames);
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     raw = getRaw(f);
-    for (i=0; i<frameSize; ++i)
+    for (size_t i=0; i<frameSize; ++i)
     {
-      for (c=0; c<chan; ++c)
+      for (size_t c=0; c<chan; ++c)
       {
-        if (c==channel || channel<0)
+        if (c==static_cast<size_t>(channel) || channel<0)
         {
           switch (bpc)
           {
@@ -3988,15 +3945,15 @@ void vvVolDesc::zoomDataRange(int channel, int low, int high, bool verbose)
               fval = float(*raw);
               ival = int(255.0f * (fval-fmin) / frange);
               ival = ts_clamp(ival, 0, 255);
-              *raw = uchar(ival);
+              *raw = uint8_t(ival);
               break;
             case 2:
               ival = (int(*raw) << 8) | int(*(raw+1));
               fval = float(ival);
               ival = int(65535.0f * (fval - fmin) / frange);
               ival = ts_clamp(ival, 0, 65535);
-              *raw = uchar(ival >> 8);
-              *(raw+1) = uchar(ival & 0xFF);
+              *raw = uint8_t(ival >> 8);
+              *(raw+1) = uint8_t(ival & 0xFF);
               break;
             default: assert(0); break;
           }
@@ -4023,10 +3980,10 @@ void vvVolDesc::zoomDataRange(int channel, int low, int high, bool verbose)
 */
 void vvVolDesc::blend(vvVolDesc* blendVD, int method, bool verbose)
 {
-  uchar* raw;                                     // raw volume data
-  uchar* rawBlend;                                // raw volume data of file to blend
-  int frameSize;                                  // bytes per frame
-  int f, i, fBlend;
+  uint8_t* raw;                                   // raw volume data
+  uint8_t* rawBlend;                              // raw volume data of file to blend
+  size_t frameSize;                               // bytes per frame
+  size_t fBlend;
   float val1, val2;
   float blended;                                  // result from blending operation
 
@@ -4045,11 +4002,11 @@ void vvVolDesc::blend(vvVolDesc* blendVD, int method, bool verbose)
   fBlend = 0;
 
   if (verbose) vvToolshed::initProgress(frames);
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     raw = getRaw(f);
     rawBlend = blendVD->getRaw(fBlend);
-    for (i=0; i<frameSize; ++i)                   // step through all voxel bytes
+    for (size_t i=0; i<frameSize; ++i)                   // step through all voxel bytes
     {
       switch(bpc)
       {
@@ -4077,11 +4034,11 @@ void vvVolDesc::blend(vvVolDesc* blendVD, int method, bool verbose)
       switch(bpc)
       {
         case 1:
-          raw[i] = uchar(blended);
+          raw[i] = uint8_t(blended);
           break;
         case 2:
-          raw[i]   = uchar(int(blended) >> 8);
-          raw[i+1] = uchar(int(blended) & 0xff);
+          raw[i]   = uint8_t(int(blended) >> 8);
+          raw[i+1] = uint8_t(int(blended) & 0xff);
           ++i;                                    // skip second byte
           break;
         case 4:
@@ -4105,13 +4062,12 @@ void vvVolDesc::blend(vvVolDesc* blendVD, int method, bool verbose)
 */
 void vvVolDesc::swapChannels(int ch0, int ch1, bool verbose)
 {
-  uchar* rd;
-  int x, y, z, f;
-  int sliceSize;
-  int rowOffset, sliceOffset, voxelOffset;
-  uchar buffer[4];                                // buffer for one channel value while swapping
-  uchar* ptr0;
-  uchar* ptr1;
+  uint8_t* rd;
+  size_t sliceSize;
+  size_t rowOffset, sliceOffset, voxelOffset;
+  uint8_t buffer[4];                                // buffer for one channel value while swapping
+  uint8_t* ptr0;
+  uint8_t* ptr1;
 
   vvDebugMsg::msg(2, "vvVolDesc::swapChannels()");
   if (ch0==ch1) return;                           // this was easy!
@@ -4120,17 +4076,17 @@ void vvVolDesc::swapChannels(int ch0, int ch1, bool verbose)
   sliceSize = getSliceBytes();
   raw.first();
   if (verbose) vvToolshed::initProgress(frames * vox[2]);
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
     raw.next();
-    for (z=0; z<vox[2]; ++z)
+    for (size_t z=0; z<vox[2]; ++z)
     {
       sliceOffset = z * sliceSize;
-      for (y=0; y<vox[1]; ++y)
+      for (size_t y=0; y<vox[1]; ++y)
       {
         rowOffset = sliceOffset + y * vox[0] * getBPV();
-        for (x=0; x<vox[0]; ++x)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           voxelOffset = x * getBPV() + rowOffset;
 
@@ -4161,13 +4117,12 @@ void vvVolDesc::swapChannels(int ch0, int ch1, bool verbose)
 */
 void vvVolDesc::extractChannel(float weights[3], bool verbose)
 {
-  uchar* newRaw;
-  uchar* rd;
-  uchar* src;
-  uchar* dst;
+  uint8_t* newRaw;
+  uint8_t* rd;
+  uint8_t* src;
+  uint8_t* dst;
   float val, testval;
-  int newSliceSize;
-  int x, y, z, f, i;
+  size_t newSliceSize;
   bool is4th;
 
   vvDebugMsg::msg(2, "vvVolDesc::extractChannel()");
@@ -4179,22 +4134,22 @@ void vvVolDesc::extractChannel(float weights[3], bool verbose)
   if (verbose) vvToolshed::initProgress(vox[2] * frames);
 
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
-    newRaw = new uchar[newSliceSize * vox[2]];
+    newRaw = new uint8_t[newSliceSize * vox[2]];
     src = rd;
     dst = newRaw;
-    for (z=0; z<vox[2]; ++z)
+    for (size_t z=0; z<vox[2]; ++z)
     {
-      for (y=0; y<vox[1]; ++y)
+      for (size_t y=0; y<vox[1]; ++y)
       {
-        for (x=0; x<vox[0]; ++x)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           // Determine whether voxel belongs to 4th channel:
           val = -1.0f;                            // init
           is4th = true;
-          for (i=0; i<3; ++i)
+          for (int i=0; i<3; ++i)
           {
             if (weights[i] > 0.0f)
             {
@@ -4209,12 +4164,12 @@ void vvVolDesc::extractChannel(float weights[3], bool verbose)
           if (is4th)
           {
             memset(dst, 0, 3);
-            dst[3] = uchar(val);
+            dst[3] = uint8_t(val);
           }
           else                                    // not the 4th channel: copy voxel to new volume
           {
             memcpy(dst, src, 3);
-            dst[3] = uchar(0);
+            dst[3] = uint8_t(0);
           }
           src += 3;
           dst += 4;
@@ -4223,8 +4178,8 @@ void vvVolDesc::extractChannel(float weights[3], bool verbose)
       if (verbose) vvToolshed::printProgress(z + vox[2] * f);
     }
     raw.remove();
-    if (f==0) raw.insertBefore(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
-    else raw.insertAfter(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
+    if (f==0) raw.insertBefore(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
+    else raw.insertAfter(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
     raw.next();
   }
   chan = 4;
@@ -4238,10 +4193,10 @@ void vvVolDesc::extractChannel(float weights[3], bool verbose)
   @param algorithm algorithm to use in computation
   @param x,y,z size of volume [voxels]
 */
-void vvVolDesc::computeVolume(int algorithm, int vx, int vy, int vz)
+void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
 {
-  int x, y, z, f;                                 // counters
-  uchar* rd;                                      // raw volume data
+  size_t x, y, z, f;                              // counters
+  uint8_t* rd;                                    // raw volume data
 
   vvDebugMsg::msg(1, "vvFileIO::computeDefaultVolume()");
 
@@ -4263,19 +4218,19 @@ void vvVolDesc::computeVolume(int algorithm, int vx, int vy, int vz)
     case 0:                                       // default startup data set
       for (f=0; f<8; ++f)
       {
-        rd = new uchar[getFrameBytes()];
+        rd = new uint8_t[getFrameBytes()];
         for (z=0; z<vox[2]; ++z)
           for (y=0; y<vox[1]; ++y)
             for (x=0; x<vox[0]; ++x)
             {
-              rd[x + y * vox[0] + z * getSliceBytes()] = (uchar)((x*(y+1)*(z+1)*(f+1)) % 256);
+              rd[x + y * vox[0] + z * getSliceBytes()] = (uint8_t)((x*(y+1)*(z+1)*(f+1)) % 256);
             }
       addFrame(rd, vvVolDesc ::ARRAY_DELETE);
       ++frames;
     }
     break;
     case 1:                                       // top=max, bottom=min
-      rd = new uchar[getFrameBytes()];
+      rd = new uint8_t[getFrameBytes()];
       for (z=0; z<vox[2]; ++z)
         for (y=0; y<vox[1]; ++y)
           for (x=0; x<vox[0]; ++x)
@@ -4292,7 +4247,7 @@ void vvVolDesc::computeVolume(int algorithm, int vx, int vy, int vz)
     break;
     case 2:                                       // 4-channel test data set
       chan = 4;
-      rd = new uchar[getFrameBytes()];
+      rd = new uint8_t[getFrameBytes()];
       for (z=0; z<vox[2]; ++z)
         for (y=0; y<vox[1]; ++y)
           for (x=0; x<vox[0]; ++x)
@@ -4312,7 +4267,7 @@ void vvVolDesc::computeVolume(int algorithm, int vx, int vy, int vz)
       int d[3];
       int i;
       for (i=0; i<3; ++i) d[i] = vox[i] / ((2 * numCubes) + 1);
-      rd = new uchar[getFrameBytes()];
+      rd = new uint8_t[getFrameBytes()];
       for (z=0; z<vox[2]; ++z)
         for (y=0; y<vox[1]; ++y)
           for (x=0; x<vox[0]; ++x)
@@ -4329,7 +4284,7 @@ void vvVolDesc::computeVolume(int algorithm, int vx, int vy, int vz)
     }
     case 4:                                       // float test data set
       bpc = 4;
-      rd = new uchar[getFrameBytes()];
+      rd = new uint8_t[getFrameBytes()];
       for (z=0; z<vox[2]; ++z)
         for (y=0; y<vox[1]; ++y)
           for (x=0; x<vox[0]; ++x)
@@ -4383,10 +4338,10 @@ void vvVolDesc::resizeEdgeMax(float len)
 //----------------------------------------------------------------------------
 float vvVolDesc::getChannelValue(int frame, int x, int y, int z, int chan)
 {
-  uchar* data = getRaw(frame);
+  uint8_t* data = getRaw(frame);
   float fval;
-  int index;
-  int bpv = getBPV();
+  size_t index;
+  size_t bpv = getBPV();
   int ival;
 
   index = bpv * (x + y * vox[0] + z * vox[0] * vox[1]) + chan * bpc;
@@ -4428,18 +4383,17 @@ vvArray<float*>& resArray)
   int ax, ay, az;
   int sx, sy, sz;
   int dx, dy, dz;
-  int i;
   int index;
 
-  uchar* data = getRaw();                         //raw.getData();
-  int bpv = getBPV();
+  uint8_t* data = getRaw();                         //raw.getData();
+  size_t bpv = getBPV();
 
-  x0 = ts_clamp(x0, 0, vox[0]-1);
-  x1 = ts_clamp(x1, 0, vox[0]-1);
-  y0 = ts_clamp(y0, 0, vox[1]-1);
-  y1 = ts_clamp(y1, 0, vox[1]-1);
-  z0 = ts_clamp(z0, 0, vox[2]-1);
-  z1 = ts_clamp(z1, 0, vox[2]-1);
+  x0 = ts_clamp(x0, 0, (int)vox[0]-1);
+  x1 = ts_clamp(x1, 0, (int)vox[0]-1);
+  y0 = ts_clamp(y0, 0, (int)vox[1]-1);
+  y1 = ts_clamp(y1, 0, (int)vox[1]-1);
+  z0 = ts_clamp(z0, 0, (int)vox[2]-1);
+  z1 = ts_clamp(z1, 0, (int)vox[2]-1);
 
   dx = x1 - x0;
   dy = y1 - y0;
@@ -4469,7 +4423,7 @@ vvArray<float*>& resArray)
 
       float* tmp = new float[chan];
 
-      for (i = 0; i < chan; i++)
+      for (size_t i = 0; i < chan; i++)
       {
         switch (bpc)
         {
@@ -4517,7 +4471,7 @@ vvArray<float*>& resArray)
 
       float* tmp = new float[chan];
 
-      for (i = 0; i < chan; i++)
+      for (size_t i = 0; i < chan; i++)
       {
         switch (bpc)
         {
@@ -4566,7 +4520,7 @@ vvArray<float*>& resArray)
 
       float* tmp = new float[chan];
 
-      for (i = 0; i < chan; i++)
+      for (size_t i = 0; i < chan; i++)
       {
         switch (bpc)
         {
@@ -4629,17 +4583,16 @@ void vvVolDesc::setDefaultRealMinMax()
   @param verbose true=show progress
   @return true if successful, false on error
 */
-bool vvVolDesc::makeHeightField(int slices, int mode, bool verbose)
+bool vvVolDesc::makeHeightField(size_t slices, int mode, bool verbose)
 {
   float height = 0.f;                             // current height on scale 0..1
 
-  uchar* rd;                                      // raw data of current source frame
+  uint8_t* rd;                                    // raw data of current source frame
   vvVector3 v;                                    // currently processed voxel coordinates [voxel space]
-  uchar* newRaw;                                  // raw data of current destination frame
-  uchar *src, *dst;                               // source and destination volume data
-  int newFrameSize;                               // new volume's frame size [voxels]
-  int f, x, y, z;                                 // loop counters
-  int zPos;
+  uint8_t* newRaw;                                // raw data of current destination frame
+  uint8_t *src, *dst;                             // source and destination volume data
+  size_t newFrameSize;                            // new volume's frame size [voxels]
+  size_t zPos;
 
   vvDebugMsg::msg(2, "vvVolDesc::makeHeightField()");
 
@@ -4657,19 +4610,19 @@ bool vvVolDesc::makeHeightField(int slices, int mode, bool verbose)
   newFrameSize = vox[0] * vox[1] * slices * bpc;
   if (verbose) vvToolshed::initProgress(slices * frames);
   raw.first();
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     rd = raw.getData();
-    newRaw = new uchar[newFrameSize];
+    newRaw = new uint8_t[newFrameSize];
     dst = newRaw;
 
     // Traverse destination data:
-    for (z=0; z<slices; ++z)
+    for (size_t z=0; z<slices; ++z)
     {
       src = rd;
-      for (y=0; y<vox[1]; ++y)
+      for (size_t y=0; y<vox[1]; ++y)
       {
-        for (x=0; x<vox[0]; ++x)
+        for (size_t x=0; x<vox[0]; ++x)
         {
           // Calculate normalized height [0..1]:
           switch(bpc)
@@ -4681,7 +4634,7 @@ bool vvVolDesc::makeHeightField(int slices, int mode, bool verbose)
           }
 
           // Calculate voxel value:
-          zPos = int(float(slices) * height);
+          zPos = size_t(float(slices) * height);
           if (z > zPos)
           {
             memset(dst, 0, bpc);                  // above surface
@@ -4697,8 +4650,8 @@ bool vvVolDesc::makeHeightField(int slices, int mode, bool verbose)
       if (verbose) vvToolshed::printProgress(z + slices * f);
     }
     raw.remove();
-    if (f==0) raw.insertBefore(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
-    else raw.insertAfter(newRaw, vvSLNode<uchar*>::ARRAY_DELETE);
+    if (f==0) raw.insertBefore(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
+    else raw.insertAfter(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
     raw.next();
   }
   vox[2] = slices;
@@ -4721,21 +4674,20 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
   const char* GRADIENT_X_CHANNEL_NAME = "GRADIENT_X";
   const char* GRADIENT_Y_CHANNEL_NAME = "GRADIENT_Y";
   const char* GRADIENT_Z_CHANNEL_NAME = "GRADIENT_Z";
-  uchar* src;                                     // pointer to current source channel
-  uchar* dst;                                     // pointer to current destination channel (first of three if gradient vectors)
-  uchar* surrPtr[6];                              // pointers to surrounding voxels: next and previous values along coordinate axes
+  uint8_t* src;                                   // pointer to current source channel
+  uint8_t* dst;                                   // pointer to current destination channel (first of three if gradient vectors)
+  uint8_t* surrPtr[6];                            // pointers to surrounding voxels: next and previous values along coordinate axes
   float surr[6];                                  // values of surrounding voxels
   float diff[3];                                  // differences along coordinate axes
   float grad;                                     // gradient value as floating point
   int iGrad;                                      // gradient value as integer
-  int sliceVoxels;                                // number of voxels per slice
-  int sliceBytes;                                 // number of bytes per slice
-  int lineBytes;                                  // number of bytes per volume line
-  int bpv;                                        // bytes per voxel
-  int offset;                                     // offset from source channel to destination channel
+  size_t sliceVoxels;                             // number of voxels per slice
+  size_t sliceBytes;                              // number of bytes per slice
+  size_t lineBytes;                               // number of bytes per volume line
+  size_t bpv;                                     // bytes per voxel
+  size_t offset;                                  // offset from source channel to destination channel
 
-  int f, x, y, z, i;
-  int numNewChannels;
+  size_t numNewChannels;
 
   // Add new channels and name them:
   numNewChannels = (gradType==GRADIENT_MAGNITUDE) ? 1 : 3;
@@ -4758,15 +4710,15 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
   offset = bpc * (chan - srcChan - numNewChannels);
 
   // Add gradient magnitudes to every frame:
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     // Calculate gradient magnitudes for non-edge voxels:
     src = getRaw(f) + bpv * (1 + vox[0] + sliceVoxels) + bpc * srcChan;
-    for(z=1; z<vox[2]-1; ++z)
+    for(size_t z=1; z<vox[2]-1; ++z)
     {
-      for(y=1; y<vox[1]-1; ++y)
+      for(size_t y=1; y<vox[1]-1; ++y)
       {
-        for(x=1; x<vox[0]-1; ++x)
+        for(size_t x=1; x<vox[0]-1; ++x)
         {
           // Calculate gradient from surrounding voxels:
           surrPtr[0] = src - bpv;
@@ -4775,7 +4727,7 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
           surrPtr[3] = src + lineBytes;
           surrPtr[4] = src - sliceBytes;
           surrPtr[5] = src + sliceBytes;
-          for (i=0; i<6; ++i)
+          for (int i=0; i<6; ++i)
           {
             switch(bpc)
             {
@@ -4808,7 +4760,7 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
           }
           else
           {
-            for (i=0; i<3; ++i)
+            for (int i=0; i<3; ++i)
             {
               switch(bpc)
               {
@@ -4840,19 +4792,19 @@ void vvVolDesc::addGradient(int srcChan, GradientType gradType)
 //----------------------------------------------------------------------------
 /** Calculate mean and variance for the 3x3x3 neighborhood of a voxel.
 */
-void vvVolDesc::voxelStatistics(int frame, int c, int x, int y, int z, float& mean, float& variance)
+void vvVolDesc::voxelStatistics(size_t frame, size_t c, size_t x, size_t y, size_t z, float& mean, float& variance)
 {
-  uchar* raw;
+  uint8_t* raw;
   double sumSquares = 0.0;
   double sum = 0.0;
   float diff;
   float scalar = 0.f;
-  int offset;
-  int dx,dy,dz;     // offsets to neighboring voxels
-  int bpv;
+  size_t offset;
+  ptrdiff_t dx,dy,dz;     // offsets to neighboring voxels
+  size_t bpv;
   int mode;   // 0=mean, 1=variance
-  int i;
-  int numSummed;
+  size_t i;
+  size_t numSummed;
 
   raw = getRaw(frame);
   bpv = bpc * chan;
@@ -4862,13 +4814,13 @@ void vvVolDesc::voxelStatistics(int frame, int c, int x, int y, int z, float& me
     numSummed = 0;
     for (dx=-1; dx<=1; ++dx)
     {
-      if (x+dx < 0 || x+dx > vox[0]-1) continue;
+      if (x+dx > vox[0]-1) continue;
       for (dy=-1; dy<=1; ++dy)
       {
-        if (y+dy < 0 || y+dy > vox[1]-1) continue;
+        if (y+dy > vox[1]-1) continue;
         for (dz=-1; dz<=1; ++dz)
         {
-          if (z+dz < 0 || z+dz > vox[2]-1) continue;
+          if (z+dz > vox[2]-1) continue;
           i = offset + bpv * (dx + dy * vox[0] + dz * vox[0] * vox[1]);
           switch (bpc)
           {
@@ -4910,14 +4862,13 @@ void vvVolDesc::voxelStatistics(int frame, int c, int x, int y, int z, float& me
 void vvVolDesc::addVariance(int srcChan)
 {
   const char* VARIANCE_CHANNEL_NAME = "VARIANCE";
-  uchar* src;                                     // pointer to current source channel
-  uchar* dst;                                     // pointer to current destination channel (first of three if gradient vectors)
+  uint8_t* src;                                   // pointer to current source channel
+  uint8_t* dst;                                   // pointer to current destination channel (first of three if gradient vectors)
   float mean;                                     // mean data value in a frame
   float variance;
   int iVar;                                       // variance as integer
-  int bpv;                                        // bytes per voxel
-  int voxelOffset;                                // offset from source channel to destination channel [bytes]
-  int f, x, y, z;
+  size_t bpv;                                     // bytes per voxel
+  size_t voxelOffset;                             // offset from source channel to destination channel [bytes]
 
   // Add new channel and name it:
   convertChannels(chan + 1);
@@ -4927,15 +4878,15 @@ void vvVolDesc::addVariance(int srcChan)
   voxelOffset = bpc * (chan - srcChan - 1);
 
   // Add variance to every frame:
-  for (f=0; f<frames; ++f)
+  for (size_t f=0; f<frames; ++f)
   {
     // Calculate variance for all voxels, including edge voxels:
     src = getRaw(f) + bpc * srcChan;
-    for(z=0; z<vox[2]; ++z)
+    for(size_t z=0; z<vox[2]; ++z)
     {
-      for(y=0; y<vox[1]; ++y)
+      for(size_t y=0; y<vox[1]; ++y)
       {
-        for(x=0; x<vox[0]; ++x)
+        for(size_t x=0; x<vox[0]; ++x)
         {
           voxelStatistics(f, srcChan, x, y, z, mean, variance);
           dst = src + voxelOffset;
@@ -4966,10 +4917,10 @@ void vvVolDesc::addVariance(int srcChan)
   @param binning binning type
   @param transOp true=transfer opacities to bin space
 */
-void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, bool lockRange, BinningType binning, bool transOp)
+void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, bool lockRange, BinningType binning, bool transOp)
 {
   vvTFSkip* sw;
-  uchar* srcData;
+  uint8_t* srcData;
   float* sortedData;
   float* sortedTmp;
   float* opacities=NULL;
@@ -4978,10 +4929,9 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   double localSum;
   float min,max;
   float valuesPerBin;
-  int numVoxels;
-  int i,j;
-  int index, minIndex, maxIndex, numSkip;
-  int before;
+  size_t numVoxels;
+  size_t index, minIndex, maxIndex, numSkip;
+  size_t before;
 
   assert(binning!=LINEAR);    // this routine supports only iso-data and opacity-weighted binning
   if (bpc!=4 || chan!=1)
@@ -5007,7 +4957,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   }
   else  // create monte carlo volume
   {
-    for (i=0; i<numVoxels; ++i)
+    for (size_t i=0; i<numVoxels; ++i)
     {
       index = int(numVoxels * float(rand()) / float(RAND_MAX));
       sortedData[i] = *((float*)(srcData + (sizeof(float) * index)));
@@ -5034,11 +4984,12 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     cerr << "Trimming values to maintain range...";
 
     // Trim values below realMin:
+    size_t i;
     for(i=0; i<numVoxels && sortedData[i] < real[0]; ++i)
     {
       minIndex = i;  // find index of realMin
     }
-    minIndex = ts_clamp(i, 0, numVoxels-1);
+    minIndex = ts_clamp(i, size_t(0), numVoxels-1);
     if (minIndex > 0)
     {
       memcpy(&sortedData[0], &sortedData[minIndex], sizeof(float) * (numVoxels - minIndex));
@@ -5049,7 +5000,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     // find index of realMax
     for(i=numVoxels-1; i>0 && sortedData[i] > real[1]; --i)
        ;
-    maxIndex = ts_clamp(i, 0, numVoxels-1);
+    maxIndex = ts_clamp(i, size_t(0), numVoxels-1);
     numVoxels -= (numVoxels-1-maxIndex);
     cerr << stop.getDiff() << " sec" << endl;
   }
@@ -5069,6 +5020,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
         max = sw->_pos[0] + sw->_size[0] / 2.0f;
 
         // Find index of beginning of skip area:
+        size_t i;
         for(i=0; i<numVoxels && sortedData[i] < min; ++i)
            ;
         if (i<numVoxels)   // is skip region outside of data array?
@@ -5078,7 +5030,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
           // Find index of end of skip area:
           for(i=minIndex; i<numVoxels && sortedData[i] < max; ++i)
              ;
-          maxIndex = ts_clamp(i, 0, numVoxels-1);
+          maxIndex = ts_clamp(i, size_t(0), numVoxels-1);
 
           // Cut values:
           numSkip = maxIndex - minIndex + 1;
@@ -5101,8 +5053,8 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     cerr << "Removing duplicate values...";
     sortedTmp = new float[numVoxels];
     sortedTmp[0] = sortedData[0];
-    j=0;
-    for (i=1; i<numVoxels; ++i)
+    size_t j=0;
+    for (size_t i=1; i<numVoxels; ++i)
     {
       if (sortedData[i] != sortedTmp[j])
       {
@@ -5123,7 +5075,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
     cerr << "Creating opacity array...";
     sumOpacities = 0.0;
     opacities = new float[numVoxels * sizeof(float)];
-    for (i=0; i<numVoxels; ++i)
+    for (size_t i=0; i<numVoxels; ++i)
     {
       opacities[i] = tf.computeOpacity(sortedData[i]);
       sumOpacities += opacities[i];
@@ -5137,18 +5089,19 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
   {
     case ISO_DATA:
       valuesPerBin = float(numVoxels) / float(NUM_HDR_BINS);
-      for (i=0; i<NUM_HDR_BINS; ++i)
+      for (size_t i=0; i<NUM_HDR_BINS; ++i)
       {
-        index = int(float(i) * valuesPerBin);
-        index = ts_clamp(index, 0, numVoxels-1);
+        index = size_t(float(i) * valuesPerBin);
+        index = ts_clamp(index, size_t(0), numVoxels-1);
         _hdrBinLimits[i] = sortedData[index];
       }
       break;
     case OPACITY:
+    {
       opacityPerBin = sumOpacities / NUM_HDR_BINS;
       localSum = 0.0;
-      j = 0;    // index to current voxel
-      for (i=0; i<NUM_HDR_BINS; ++i)
+      size_t j = 0;    // index to current voxel
+      for (size_t i=0; i<NUM_HDR_BINS; ++i)
       {
         while (localSum<opacityPerBin)
         {
@@ -5172,6 +5125,7 @@ void vvVolDesc::updateHDRBins(int numValues, bool skipWidgets, bool cullDup, boo
         }
       }
       break;
+    }
     case LINEAR:
       // cannot happen
       break;
@@ -5229,13 +5183,11 @@ int vvVolDesc::mapFloat2Int(float fval)
 */
 int vvVolDesc::findHDRBin(float fval)
 {
-  int i;
-
-  for (i=0; i<NUM_HDR_BINS; ++i)
+  for (size_t i=0; i<NUM_HDR_BINS; ++i)
   {
     if (_hdrBinLimits[i] > fval)
     {
-      return ts_max(i-1, 0);
+      return ts_max(i-1, size_t(0));
     }
   }
   return NUM_HDR_BINS-1;
@@ -5249,16 +5201,15 @@ int vvVolDesc::findHDRBin(float fval)
 void vvVolDesc::makeBinTexture(uchar* texture, int width)
 {
   float range;
-  int i, index;
 
   memset(texture, 0, width * 4);    // initialize with transparent texels
   if (bpc==4)
   {
     range = real[1] - real[0];
-    for (i=0; i<NUM_HDR_BINS; ++i)
+    for (size_t i=0; i<NUM_HDR_BINS; ++i)
     {
-      index = int((_hdrBinLimits[i] - real[0]) / range * float(width-1));
-      index = ts_clamp(index, 0, width-1);
+      size_t index = size_t((_hdrBinLimits[i] - real[0]) / range * float(width-1));
+      index = ts_clamp(index, size_t(0), size_t(width-1));
       texture[4*index]   = 0;
       texture[4*index+1] = 0;
       texture[4*index+2] = 0;
@@ -5282,32 +5233,32 @@ static size_t index(int i, int j, int k, int d0, int d1, int d2)
   @param channel no. of channel to extract data from
   @param frame no. of channel to extract data from
 */
-void vvVolDesc::computeMinMaxArrays(uchar *minArray, uchar *maxArray, int downsample, int channel, int frame) const
+void vvVolDesc::computeMinMaxArrays(uchar *minArray, uint8_t *maxArray, size_t downsample, size_t channel, int frame) const
 {
   vvDebugMsg::msg(2, "vvVolDesc::computeMinMaxArrays()");
 
   if(bpc != 1)
     return;
 
-  const int v0 = (vox[0]+downsample-1)/downsample;
-  const int v1 = (vox[1]+downsample-1)/downsample;
-  const int v2 = (vox[2]+downsample-1)/downsample;
+  size_t v0 = (vox[0]+downsample-1)/downsample;
+  size_t v1 = (vox[1]+downsample-1)/downsample;
+  size_t v2 = (vox[2]+downsample-1)/downsample;
 
-  uchar *raw = const_cast<vvVolDesc *>(this)->getRaw(frame);
-  for(int k=0; k<vox[2]; k += downsample)
+  uint8_t *raw = const_cast<vvVolDesc *>(this)->getRaw(frame);
+  for(size_t k=0; k<vox[2]; k += downsample)
   {
-    for(int j=0; j<vox[1]; j += downsample)
+    for(size_t j=0; j<vox[1]; j += downsample)
     {
-      for(int i=0; i<vox[0]; i += downsample)
+      for(size_t i=0; i<vox[0]; i += downsample)
       {
-        uchar cMin = 255, cMax = 0;
+        uint8_t cMin = 255, cMax = 0;
         {
-          for(int kk=k; kk<vox[2] && kk<k+downsample; ++kk)
-            for(int jj=j; jj<vox[1] && jj<j+downsample; ++jj)
+          for(size_t kk=k; kk<vox[2] && kk<k+downsample; ++kk)
+            for(size_t jj=j; jj<vox[1] && jj<j+downsample; ++jj)
             {
-              for(int ii=i; ii<vox[0] && ii<i+downsample; ++ii)
+              for(size_t ii=i; ii<vox[0] && ii<i+downsample; ++ii)
               {
-                uchar v = raw[chan*index(ii, jj, kk, vox[0], vox[1], vox[2])+channel];
+                uint8_t v = raw[chan*index(ii, jj, kk, vox[0], vox[1], vox[2])+channel];
                 if(cMin > v)
                   cMin = v;
                 if(cMax < v)
@@ -5323,7 +5274,7 @@ void vvVolDesc::computeMinMaxArrays(uchar *minArray, uchar *maxArray, int downsa
   }
 }
 
-vvVector3i vvVolDesc::voxelCoords(const vvVector3& objCoords) const
+vvsize3 vvVolDesc::voxelCoords(const vvVector3& objCoords) const
 {
   vvVector3 fltVox2 = vvVector3(static_cast<float>(vox[0]) * 0.5f,
                                 static_cast<float>(vox[1]) * 0.5f,
@@ -5335,12 +5286,12 @@ vvVector3i vvVolDesc::voxelCoords(const vvVector3& objCoords) const
     obj[i] /= _scale;
   }
 
-  return vvVector3i(static_cast<int>(obj[0] + fltVox2[0]),
-                    static_cast<int>(obj[1] + fltVox2[1]),
-                    static_cast<int>(obj[2] + fltVox2[2]));
+  return vvsize3(static_cast<size_t>(obj[0] + fltVox2[0]),
+                 static_cast<size_t>(obj[1] + fltVox2[1]),
+                 static_cast<size_t>(obj[2] + fltVox2[2]));
 }
 
-vvVector3 vvVolDesc::objectCoords(const vvVector3i& voxCoords) const
+vvVector3 vvVolDesc::objectCoords(const vvsize3& voxCoords) const
 {
   vvVector3 fltVox2 = vvVector3(static_cast<float>(vox[0]) * 0.5f,
                                 static_cast<float>(vox[1]) * 0.5f,

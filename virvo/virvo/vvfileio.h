@@ -84,7 +84,7 @@ class VIRVOEXPORT vvFileIO
     ErrorType saveVolumeData(vvVolDesc*, bool, LoadType sec = ALL_DATA);
     ErrorType loadVolumeData(vvVolDesc*, LoadType sec = ALL_DATA, bool addFrame=false);
     ErrorType loadDicomFile(vvVolDesc*, int* = NULL, int* = NULL, float* = NULL);
-    ErrorType loadRawFile(vvVolDesc*, int, int, int, int, int, int);
+    ErrorType loadRawFile(vvVolDesc*, size_t, size_t, size_t, size_t, size_t, size_t);
     ErrorType loadXB7File(vvVolDesc*,int=128,int=8,bool=true);
     ErrorType loadCPTFile(vvVolDesc*,int=128,int=8,bool=true);
     ErrorType mergeFiles(vvVolDesc*, int, int, vvVolDesc::MergeType);
@@ -99,9 +99,9 @@ class VIRVOEXPORT vvFileIO
 
     void setDefaultValues(vvVolDesc*);
     int  readASCIIint(FILE*);
-    bool parseLeicaFilename(const std::string, int&, int&, std::string&);
-    bool changeLeicaFilename(std::string&, int, int);
-    void makeLeicaFilename(const char*, int, int, char*);
+    bool parseLeicaFilename(const std::string, int32_t&, int32_t&, std::string&);
+    bool changeLeicaFilename(std::string&, int32_t, int32_t);
+    void makeLeicaFilename(const char*, int32_t, int32_t, char*);
     ErrorType loadWLFile(vvVolDesc*);
     ErrorType loadASCFile(vvVolDesc*);
     ErrorType saveRVFFile(vvVolDesc*);

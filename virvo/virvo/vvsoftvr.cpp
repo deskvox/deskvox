@@ -340,12 +340,11 @@ void vvSoftVR::findVolumeDimensions()
 */
 void vvSoftVR::findAxisRepresentations()
 {
-   int frameSize;                                 // number of bytes per frame
-   int sliceVoxels;                               // number of voxels per slice
-   int i, x, y, z, c;
-   int offset;                                    // unit: voxels
-   int srcIndex;                                  // unit: bytes
-   uchar* data;
+   size_t frameSize;                              // number of bytes per frame
+   size_t sliceVoxels;                            // number of voxels per slice
+   size_t offset;                                 // unit: voxels
+   size_t srcIndex;                               // unit: bytes
+   uint8_t* data;
 
    vvDebugMsg::msg(3, "vvSoftVR::findAxisRepresentations()");
 
@@ -355,21 +354,21 @@ void vvSoftVR::findAxisRepresentations()
 
    // Raw data for z axis view:
    delete[] raw[2];
-   raw[2] = new uchar[frameSize];
+   raw[2] = new uint8_t[frameSize];
    memcpy(raw[2], data, frameSize);
 
    // Raw data for x axis view:
    delete[] raw[0];
-   raw[0] = new uchar[frameSize];
-   i=0;
-   for (x=vd->vox[0]-1; x>=0; --x)                // counts slices in x axis view
-      for (z=0; z<vd->vox[2]; ++z)                // counts height in x axis view
+   raw[0] = new uint8_t[frameSize];
+   size_t i=0;
+   for (ptrdiff_t x=vd->vox[0]-1; x>=0; --x)                // counts slices in x axis view
+      for (size_t z=0; z<vd->vox[2]; ++z)                // counts height in x axis view
    {
       offset = z * sliceVoxels + x;
-      for (y=vd->vox[1]-1; y>=0; --y)
+      for (ptrdiff_t y=vd->vox[1]-1; y>=0; --y)
       {
          srcIndex = (y * vd->vox[0] + offset) * vd->getBPV();
-         for (c=0; c<vd->getBPV(); ++c)
+         for (size_t c=0; c<vd->getBPV(); ++c)
          {
             raw[0][i] = data[srcIndex + c];
             ++i;
@@ -379,21 +378,23 @@ void vvSoftVR::findAxisRepresentations()
 
    // Raw data for y axis view:
    if (raw[1]!=NULL) delete[] raw[1];
-   raw[1] = new uchar[frameSize];
+   raw[1] = new uint8_t[frameSize];
    i=0;
-   for (y=0; y<vd->vox[1]; ++y)
-      for (x=vd->vox[0]-1; x>=0; --x)
+   for (size_t y=0; y<vd->vox[1]; ++y)
+   {
+      for (ptrdiff_t x=vd->vox[0]-1; x>=0; --x)
    {
       offset = x + y * vd->vox[0];
-      for (z=vd->vox[2]-1; z>=0; --z)
+      for (ptrdiff_t z=vd->vox[2]-1; z>=0; --z)
       {
          srcIndex = (offset + z * sliceVoxels) * vd->getBPV();
-         for (c=0; c<vd->getBPV(); ++c)
+         for (size_t c=0; c<vd->getBPV(); ++c)
          {
             raw[1][i] = data[srcIndex + c];
             ++i;
          }
       }
+   }
    }
 }
 
@@ -408,13 +409,13 @@ void vvSoftVR::findAxisRepresentations()
 */
 void vvSoftVR::encodeRLE()
 {
-   int lineSize;                                  // number of bytes per line
-   uchar* src;                                    // pointer to unencoded array
-   uchar* dst;                                    // pointer to encoded array
-   int i,j,a,b;
-   int len;                                       // length of encoded data [bytes]
-   int rest;                                      // number of bytes remaining in buffer
-   int numvox[3];                                 // object dimensions (x,y,z) [voxels]
+   size_t lineSize;                               // number of bytes per line
+   uint8_t* src;                                  // pointer to unencoded array
+   uint8_t* dst;                                  // pointer to encoded array
+   int i,j;
+   size_t len;                                    // length of encoded data [bytes]
+   size_t rest;                                   // number of bytes remaining in buffer
+   vvsize3 numvox;                                // object dimensions (x,y,z) [voxels]
 
    vvDebugMsg::msg(1, "vvSoftVR::encodeRLE()");
 
@@ -424,7 +425,7 @@ void vvSoftVR::encodeRLE()
    numvox[1] = vd->vox[1];
    numvox[2] = vd->vox[2];
 
-   vvDebugMsg::msg(1, "Original volume size: ", vd->getFrameBytes());
+   vvDebugMsg::msg(1, "Original volume size: ", static_cast<int>(vd->getFrameBytes()));
 
    // Prepare 3 sets of compressed data, one for each principal axis:
    for (i=0; i<3; ++i)
@@ -443,11 +444,11 @@ void vvSoftVR::encodeRLE()
       rest = vd->getFrameBytes();
       lineSize = numvox[(i+1)%3];
 
-      for (a=0; a<numvox[i]; ++a)
-         for (b=0; b<numvox[(i+2)%3]; ++b)
+      for (size_t a=0; a<numvox[i]; ++a)
+         for (size_t b=0; b<numvox[(i+2)%3]; ++b)
       {
          rleStart[i][a * numvox[(i+2)%3] + b] = dst;
-         len   = vvToolshed::encodeRLE(dst, src, numvox[(i+1)%3], vd->getBPV(), rest);
+         vvToolshed::encodeRLE(dst, src, numvox[(i+1)%3], vd->getBPV(), rest, &len);
          dst  += len;
          rest -= len;
          src  += lineSize;
@@ -899,7 +900,7 @@ vvSoftVR::WarpType vvSoftVR::getWarpMode()
   have to be re-computed.
   @see vvRenderer#setCurrentFrame(int)
 */
-void vvSoftVR::setCurrentFrame(int index)
+void vvSoftVR::setCurrentFrame(size_t index)
 {
    vvDebugMsg::msg(3, "vvSoftVR::setCurrentFrame()");
    vvRenderer::setCurrentFrame(index);

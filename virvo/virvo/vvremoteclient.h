@@ -51,7 +51,7 @@ public:
   virtual ErrorType render() = 0;
   void renderVolumeGL();
 
-  void setCurrentFrame(int index);
+  void setCurrentFrame(size_t index);
   void setObjectDirection(const vvVector3& od);
   void setViewingDirection(const vvVector3& vd);
   void setPosition(const vvVector3& p);

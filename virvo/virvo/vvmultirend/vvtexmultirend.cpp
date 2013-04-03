@@ -55,6 +55,7 @@
 #include "../vvdebugmsg.h"
 #include "../vvtoolshed.h"
 #include "../private/vvgltools.h"
+#include "../private/vvlog.h"
 #include "../vvsphere.h"
 #include "../vvclock.h"
 #include "../vvprintgl.h"
@@ -188,7 +189,7 @@ void vvTexMultiRend::makeLUTTexture()
   getLUTSize(size);
   if (vd->chan > 1)
   {
-	  for (int i = 0; i < vd->chan+1; i++)
+	  for (size_t i = 0; i < vd->chan+1; i++)
 	  {
 		vvDebugMsg::msg(1, "makeLUTTexture(): ", (int)pixLUTName[i]);
 		  glBindTexture(GL_TEXTURE_1D, pixLUTName[i]);
@@ -277,20 +278,19 @@ vvTexMultiRend::ErrorType vvTexMultiRend::updateTextures3D(int offsetX, int offs
 int sizeX, int sizeY, int sizeZ, bool newTex)
 {
   ErrorType err = OK;
-  int frames;
-  int texSize;
-  int sliceSize;
-  int rawSliceOffset;
-  int heightOffset;
-  int texLineOffset;
-  int srcIndex;
-  int texOffset = 0;
+  size_t frames;
+  size_t texSize;
+  size_t sliceSize;
+  size_t rawSliceOffset;
+  size_t heightOffset;
+  size_t texLineOffset;
+  size_t srcIndex;
+  size_t texOffset = 0;
   int rawVal[10];
   //int alpha;
-  int c, f, s, x, y;
   float fval;
-  unsigned char* raw;
-  unsigned char* texData;
+  uint8_t* raw;
+  uint8_t* texData;
   bool accommodated = true;
   GLint glWidth;
 
@@ -306,7 +306,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
   vvDebugMsg::msg(1, "3D Texture width     = ", sizeX);
   vvDebugMsg::msg(1, "3D Texture height    = ", sizeY);
   vvDebugMsg::msg(1, "3D Texture depth     = ", sizeZ);
-  vvDebugMsg::msg(1, "3D Texture size (KB) = ", texSize / 1024);
+  VV_LOG(1) << "3D Texture size (KB) = " << texSize / 1024 << std::endl;
 
   texData = new uchar[texSize];
   memset(texData, 0, texSize);
@@ -317,7 +317,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
 
   if (newTex)
   {
-    vvDebugMsg::msg(1, "Creating texture names. # of names: ", frames);
+    VV_LOG(1) << "Creating texture names. # of names: " << frames << std::endl;
 
     removeTextures();
 	
@@ -330,23 +330,22 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
 	glGenTextures(_ntextures, texNames);
   }
 
-  vvDebugMsg::msg(1, "Transferring textures to TRAM. Total size [KB]: ",
-    frames * texSize / 1024);
+  VV_LOG(1) << "Transferring textures to TRAM. Total size [KB]: " << frames * texSize / 1024 << std::endl;
 
   // Generate sub texture contents:
-  for (f = 0; f < frames; f++)
+  for (size_t f = 0; f < frames; f++)
   {
     raw = vd->getRaw(f);
-    for (s = offsetZ; s < (offsetZ + sizeZ); s++)
+    for (size_t s = offsetZ; s < (offsetZ + sizeZ); s++)
     {
       rawSliceOffset = (vd->vox[2] - min(s,vd->vox[2]-1) - 1) * sliceSize;
-      for (y = offsetY; y < (offsetY + sizeY); y++)
+      for (size_t y = offsetY; y < (offsetY + sizeY); y++)
       {
         heightOffset = (vd->vox[1] - min(y,vd->vox[1]-1) - 1) * vd->vox[0] * vd->bpc * vd->chan;
         texLineOffset = (y - offsetY) * sizeX + (s - offsetZ) * sizeX * sizeY;
         if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
         {
-          for (x = offsetX; x < (offsetX + sizeX); x++)
+          for (size_t x = offsetX; x < (offsetX + sizeX); x++)
           {
             srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
             if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
@@ -366,11 +365,11 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
         }
         else if (vd->bpc==1 || vd->bpc==2 || vd->bpc==4)
         {
-		  int size = sizeX * sizeY * sizeZ;
-		  for (x = offsetX; x < (offsetX + sizeX); x++)
+		  size_t size = sizeX * sizeY * sizeZ;
+		  for (size_t x = offsetX; x < (offsetX + sizeX); x++)
 		  {
 			texOffset = (x - offsetX) + texLineOffset;
-			for (c = 0; c < vd->chan; c++)
+			for (size_t c = 0; c < vd->chan; c++)
 			{
 			  srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
 			  if (vd->bpc == 1)
@@ -388,7 +387,7 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
 			}
 
 			// Copy color components:
-			for (c = 0; c < vd->chan; c++)					
+			for (size_t c = 0; c < vd->chan; c++)					
 			  texData[c * size + texOffset] = (uchar) rawVal[c];
 		  }
 		}
@@ -400,8 +399,8 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
 	{
 	  if (vd->chan > 1)   
 	  {
-		int size = sizeX * sizeY * sizeZ;
-		for (int c = 0; c < vd->chan; c++)
+		size_t size = sizeX * sizeY * sizeZ;
+		for (size_t c = 0; c < vd->chan; c++)
 		{
 		  // interleave channels within each frame for texName
 		  glBindTexture(GL_TEXTURE_3D_EXT, texNames[f*vd->chan + c]);
@@ -875,8 +874,8 @@ void vvTexMultiRend::updateLUT(float dist)
 
   float corr[4];                                  // gamma/alpha corrected RGBA values [0..1]
   int lutSize[3];                                 // number of entries in the RGBA lookup table
-  int i,c;
-  int total;
+  size_t i,c;
+  size_t total;
 
   lutDistance = dist;
 	
@@ -899,7 +898,7 @@ void vvTexMultiRend::updateLUT(float dist)
 	// Copy LUT to graphics card:
 	vvGLTools::printGLError("enter updateLUT()");
 
-	for (int i = 0; i < vd->chan+1; i++)
+	for (size_t i = 0; i < vd->chan+1; i++)
 	{
 	  glBindTexture(GL_TEXTURE_1D, pixLUTName[i]);
 	  glTexImage1D(GL_TEXTURE_1D, 0, GL_LUMINANCE, lutSize[0], 0, GL_LUMINANCE, 
@@ -963,26 +962,26 @@ void vvTexMultiRend::enableLUTMode(vvShaderProgram* glslShader)
   {
     glslShader->setParameterTex1D("tfTex[0]", pixLUTName[vd->chan]);
 
-	for(int c = 0; c < vd->chan; c++)
+	for(size_t c = 0; c < vd->chan; c++)
 	{
 	  char varName[20];
 #ifdef WIN32
-	  _snprintf(varName, sizeof(varName), "tfTex[%i]", c+1);
+	  _snprintf(varName, sizeof(varName), "tfTex[%" VV_PRIiSIZE "]", c+1);
 #else
-	  snprintf(varName, sizeof(varName), "tfTex[%i]", c+1);
+	  snprintf(varName, sizeof(varName), "tfTex[%" VV_PRIiSIZE "]", c+1);
 #endif
     glslShader->setParameterTex1D(varName, pixLUTName[c]);
   }
   }
 
   // initialize 3D channel texture
-  for(int c = 0; c < vd->chan; c++)
+  for(size_t c = 0; c < vd->chan; c++)
   {
 	char varName[20];
 #ifdef WIN32
-	_snprintf(varName, sizeof(varName), "gl3dTex%i", c);
+	_snprintf(varName, sizeof(varName), "gl3dTex%" VV_PRIiSIZE, c);
 #else
-	snprintf(varName, sizeof(varName), "gl3dTex%i", c);
+	snprintf(varName, sizeof(varName), "gl3dTex%" VV_PRIiSIZE, c);
 #endif
   glslShader->setParameterTex3D(varName, texNames[c]);
   }
@@ -993,7 +992,7 @@ void vvTexMultiRend::enableLUTMode(vvShaderProgram* glslShader)
 
   float maxWeight = 0.0f, sumWeight = 0.0f;
   // channel weights
-  for (int c = 0; c < vd->chan; c++)
+  for (size_t c = 0; c < vd->chan; c++)
   {
 	weight[c] =  chanWeight[c] * volWeight;
 	maxWeight = max(weight[c], maxWeight);
@@ -1002,13 +1001,13 @@ void vvTexMultiRend::enableLUTMode(vvShaderProgram* glslShader)
 
   glslShader->setParameter1f("weight", weight[vd->chan]);
 
-  for(int c = 0; c < vd->chan; c++)
+  for(size_t c = 0; c < vd->chan; c++)
   {
 	char varName[20];
 #ifdef WIN32
-   _snprintf(varName, sizeof(varName), "color[%d]", c);
+   _snprintf(varName, sizeof(varName), "color[%" VV_PRIdSIZE "]", c);
 #else
-	snprintf(varName, sizeof(varName), "color[%d]", c);
+	snprintf(varName, sizeof(varName), "color[%" VV_PRIdSIZE "]", c);
 #endif
         float e[3] = { color[c][0], color[c][1], color[c][2] };
         glslShader->setParameter3f(varName, e);
@@ -1072,7 +1071,7 @@ void vvTexMultiRend::setParameter(ParameterType param, const vvParam& newValue)
 	  //opacityCorrection = newValue;;
 	  break;
 	case vvRenderer::VV_SLICEORIENT:
-	  _sliceOrientation = SliceOrientation(int(newValue));
+	  _sliceOrientation = SliceOrientation(newValue.asInt());
 	  break;
 	case vvRenderer::VV_BINNING:
     vd->_binning = (vvVolDesc::BinningType)newValue.asInt();
@@ -1202,7 +1201,7 @@ void vvTexMultiRend::init()
   tfHPCutoff = new float[vd->chan+1];
   tfOffset = new float[vd->chan+1];
 
-  for (int c = 0; c < vd->chan+1; c++)
+  for (size_t c = 0; c < vd->chan+1; c++)
   {
 	tfGamma[c] = 1.0f;
 	tfHPOrder[c] = 1.0f;
@@ -1211,7 +1210,7 @@ void vvTexMultiRend::init()
   }
   tfGamma[vd->chan] = 3.0f;
 
-  for (int c = 0; c < vd->chan; c++)
+  for (size_t c = 0; c < vd->chan; c++)
 	chanWeight[c] = 1.0f;
   volWeight = 1.0f;
   color = new vvVector3[vd->chan];

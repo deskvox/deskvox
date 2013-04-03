@@ -70,7 +70,7 @@ bool intersectBox(const Ray& ray, const vvAABB& aabb,
 
 struct vvSoftRayRend::Thread
 {
-  int id;
+  size_t id;
   pthread_t threadHandle;
 
   vvSoftRayRend* renderer;
@@ -107,14 +107,14 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
 
   updateTransferFunction();
 
-  int numThreads = vvToolshed::getNumProcessors();
+  size_t numThreads = static_cast<size_t>(vvToolshed::getNumProcessors());
   pthread_barrier_t* barrier = numThreads > 0 ? new pthread_barrier_t : NULL;
   pthread_mutex_t* mutex = numThreads > 0 ? new pthread_mutex_t : NULL;
 
   pthread_barrier_init(barrier, NULL, numThreads + 1);
   pthread_mutex_init(mutex, NULL);
 
-  for (int i = 0; i < numThreads; ++i)
+  for (size_t i = 0; i < numThreads; ++i)
   {
     Thread* thread = new Thread;
     thread->id = i;
@@ -220,7 +220,7 @@ void vvSoftRayRend::updateTransferFunction()
     pthread_mutex_lock(_firstThread->mutex);
   }
 
-  int lutEntries = getLUTSize();
+  size_t lutEntries = getLUTSize();
   delete[] _rgbaTF;
   _rgbaTF = new float[4 * lutEntries];
 
@@ -232,7 +232,7 @@ void vvSoftRayRend::updateTransferFunction()
   }
 }
 
-int vvSoftRayRend::getLUTSize() const
+size_t vvSoftRayRend::getLUTSize() const
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::getLUTSize()");
   return (vd->getBPV()==2) ? 4096 : 256;
@@ -311,11 +311,11 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
 
   const float opacityThreshold = 0.95f;
 
-  vvVector3i minVox = _visibleRegion.getMin();
-  vvVector3i maxVox = _visibleRegion.getMax();
+  vvsize3 minVox = _visibleRegion.getMin();
+  vvsize3 maxVox = _visibleRegion.getMax();
   for (int i = 0; i < 3; ++i)
   {
-    minVox[i] = std::max(minVox[i], 0);
+    minVox[i] = std::max(minVox[i], size_t(0));
     maxVox[i] = std::min(maxVox[i], vd->vox[i]);
   }
   const vvVector3 minCorner = vd->objectCoords(minVox);
@@ -326,9 +326,9 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
-  int numSlices = std::max(1, static_cast<int>(_quality * diagonalVoxels));
+  size_t numSlices = std::max(size_t(1), static_cast<size_t>(_quality * diagonalVoxels));
 
-  uchar* raw = vd->getRaw(vd->getCurrentFrame());
+  uint8_t* raw = vd->getRaw(vd->getCurrentFrame());
 
   for (int y = tile.bottom; y < tile.top; ++y)
   {
@@ -366,15 +366,15 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
                      (-pos[1] - vd->pos[1] + size2[1]) / (size2[1] * 2.0f),
                      (-pos[2] - vd->pos[2] + size2[2]) / (size2[2] * 2.0f));
           // calc voxel coordinates
-          vvVector3i texcoordi = vvVector3i(int(texcoord[0] * float(vd->vox[0] - 1)),
-                                            int(texcoord[1] * float(vd->vox[1] - 1)),
-                                            int(texcoord[2] * float(vd->vox[2] - 1)));
-          int idx = texcoordi[2] * vd->vox[0] * vd->vox[1] + texcoordi[1] * vd->vox[0] + texcoordi[0];
+          vvsize3 texcoordi = vvsize3(size_t(texcoord[0] * float(vd->vox[0] - 1)),
+                                      size_t(texcoord[1] * float(vd->vox[1] - 1)),
+                                      size_t(texcoord[2] * float(vd->vox[2] - 1)));
+          size_t idx = texcoordi[2] * vd->vox[0] * vd->vox[1] + texcoordi[1] * vd->vox[0] + texcoordi[0];
           float sample = float(raw[idx]) / 256.0f;
-          vvVector4 src(_rgbaTF[int(sample * 4 * getLUTSize())],
-                        _rgbaTF[int(sample * 4 * getLUTSize()) + 1],
-                        _rgbaTF[int(sample * 4 * getLUTSize()) + 2],
-                        _rgbaTF[int(sample * 4 * getLUTSize()) + 3]);
+          vvVector4 src(_rgbaTF[size_t(sample * 4 * getLUTSize())],
+                        _rgbaTF[size_t(sample * 4 * getLUTSize()) + 1],
+                        _rgbaTF[size_t(sample * 4 * getLUTSize()) + 2],
+                        _rgbaTF[size_t(sample * 4 * getLUTSize()) + 3]);
 
           if (_opacityCorrection)
           {

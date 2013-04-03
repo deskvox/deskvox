@@ -45,6 +45,8 @@ class vvBaseVector3;
 template <typename T>
 class vvBaseVector4;
 
+typedef vvBaseVector3<size_t> vvsize3;
+typedef vvBaseVector3<ssize_t> vvssize3;
 
 typedef vvBaseVector2<int> vvVector2i;
 typedef vvBaseVector2<unsigned int> vvVector2ui;

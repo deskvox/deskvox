@@ -170,7 +170,7 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     vvVector3 objDir;                       ///< direction from viewer to object [object coordinates]
     bool interpolation;                     ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
     bool opacityCorrection;                 ///< true = opacity correction on
-    int  minSlice, maxSlice;                ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
+    ssize_t minSlice, maxSlice;             ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
 
     SliceOrientation _sliceOrientation;     ///< slice orientation for planar 3d textures
 

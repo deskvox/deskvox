@@ -141,13 +141,13 @@ protected:
   vvVector3 _roiSize;                           ///< size of roi in each dimension [0..1]
   bool  _sphericalROI;                          ///< true = use sphere rather than cube for roi
 
-  vvVector3i _brickSize;                        ///< last bricksize in x/y/z
-  vvVector3i _maxBrickSize;                     ///< max allowed bricksize in x/y/z
-  int   _brickTexelOverlap;                     /*!  overlap needed for performing calculations at brick borders
+  vvsize3 _brickSize;                           ///< last bricksize in x/y/z
+  vvsize3 _maxBrickSize;                        ///< max allowed bricksize in x/y/z
+  size_t   _brickTexelOverlap;                  /*!  overlap needed for performing calculations at brick borders
                                                      max value: min(brickSize[d])/2-1 */
   bool  _showBricks;                            ///< true = show brick boundarys
   bool  _computeBrickSize;                      ///< true = calculate brick size
-  int   _texMemorySize;                         ///< size of texture memory
+  size_t   _texMemorySize;                      ///< size of texture memory
   bool  _fpsDisplay;                            ///< true = show frame rate
   bool  _gammaCorrection;                       ///< true = gamma correction on
   vvVector4 _gamma;                             ///< gamma correction value: 0=red, 1=green, 2=blue, 3=4th channel
@@ -162,8 +162,8 @@ protected:
   bool _opaqueGeometryPresent;                  ///< true = opaque geometry was rendered before the volume
   bool _useIbr;                                 ///< use ibr in rayrenderer
   IbrMode _ibrMode;
-  vvAABBi _visibleRegion;                       ///< part of the vd that is visible and thus rendered
-  vvAABBi _paddingRegion;                       ///< padding region for interpolation
+  vvAABBs _visibleRegion;                       ///< part of the vd that is visible and thus rendered
+  vvAABBs _paddingRegion;                       ///< padding region for interpolation
 public:
   vvRenderState();
 };
@@ -252,9 +252,9 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual void  renderMultipleVolume();
     virtual void  updateTransferFunction();
     virtual void  updateVolumeData();
-    virtual int   getNumFrames();
-    virtual int   getCurrentFrame();
-    virtual void  setCurrentFrame(int);
+    virtual size_t getNumFrames();
+    virtual size_t getCurrentFrame();
+    virtual void  setCurrentFrame(size_t);
     virtual float getLastRenderTime();
     virtual void  setPosition(const vvVector3& p);
     virtual void  getPosition(vvVector3*);

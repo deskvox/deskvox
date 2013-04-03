@@ -110,7 +110,7 @@ vvRemoteClient::ErrorType vvRemoteClient::sendVolume(vvVolDesc*& vd)
   return VV_OK;
 }
 
-void vvRemoteClient::setCurrentFrame(const int index)
+void vvRemoteClient::setCurrentFrame(size_t index)
 {
   vvDebugMsg::msg(3, "vvRemoteClient::setCurrentFrame()");
   _changes = true;

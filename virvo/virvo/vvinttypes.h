@@ -65,6 +65,32 @@ typedef unsigned long long uint64_t;
 #include <inttypes.h>
 #endif
 
+#if defined(__GNUC__)
+#  if (__LP64__ == 1)
+#    define VV_PRI64_PREFIX "l"
+#  else
+#    define VV_PRI64_PREFIX ""
+#  endif
+#  define VV_SCN64_PREFIX VV_PRI64_PREFIX
+#else
+#  define VV_PRI64_PREFIX ""
+#  define VV_SCN64_PREFIX VV_PRI64_PREFIX
+#endif
+
+#define VV_PRIdSIZE VV_PRI64_PREFIX "d"
+#define VV_PRIiSIZE VV_PRI64_PREFIX "i"
+#define VV_PRIoSIZE VV_PRI64_PREFIX "o"
+#define VV_PRIuSIZE VV_PRI64_PREFIX "u"
+#define VV_PRIxSIZE VV_PRI64_PREFIX "x"
+#define VV_PRIXSIZE VV_PRI64_PREFIX "X"
+
+#define VV_SCNdSIZE VV_SCN64_PREFIX "d"
+#define VV_SCNiSIZE VV_SCN64_PREFIX "i"
+#define VV_SCNoSIZE VV_SCN64_PREFIX "o"
+#define VV_SCNuSIZE VV_SCN64_PREFIX "u"
+#define VV_SCNxSIZE VV_SCN64_PREFIX "x"
+#define VV_SCNXSIZE VV_SCN64_PREFIX "X"
+
 typedef unsigned char   uchar;                    ///< abbreviation for unsigned char
 typedef unsigned short  ushort;                   ///< abbreviation for unsigned short
 typedef unsigned int    uint;                     ///< abbreviation for unsigned int

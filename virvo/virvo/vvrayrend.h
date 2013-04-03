@@ -44,7 +44,7 @@ public:
   vvRayRend(vvVolDesc* vd, vvRenderState renderState);
   ~vvRayRend();
 
-  int getLUTSize() const;
+  size_t getLUTSize() const;
   void updateTransferFunction();
   void compositeVolume(int w = -1, int h = -1);
   void getColorBuffer(uchar** colors) const;
@@ -69,7 +69,7 @@ private:
   void initVolumeTexture();
   void factorViewMatrix();
   void findAxisRepresentations();
-  bool allocIbrArrays(int w, int h);
+  bool allocIbrArrays(size_t w, size_t h);
 };
 
 #endif // HAVE_CUDA

@@ -321,19 +321,19 @@ int vvMovie::getNumScriptSteps()
   @param step index of desired movie step (first step = 0)
   @return true if step was set correctly
 */
-bool vvMovie::setStep(int step)
+bool vvMovie::setStep(size_t step)
 {
   vvDebugMsg::msg(1, "vvMovie::setStep()");
 
   vvMatrix m;
   float axis[3];                                  // rotation axis
-  int timestep = 0;                               // volume dataset index
-  int i;
+  size_t timestep = 0;                            // volume dataset index
+  size_t i;
   bool done;
   float peak[2] = {0.f, 0.f};                     // peak position and width
   bool tfChanged = false;
 
-  if (steps==NULL || step<0 || steps->count()==0) return false;
+  if (steps==NULL || steps->count()==0) return false;
 
   _canvas->resetObjectView();
   steps->first();
@@ -367,7 +367,7 @@ bool vvMovie::setStep(int step)
           _canvas->transformObject(m);
           break;
         case TIMESTEP:
-          timestep = int(steps->getData()->param[0]);
+          timestep = size_t(steps->getData()->param[0]);
           break;
         case NEXTSTEP:
           if (timestep < _canvas->_vd->frames-1)
@@ -456,7 +456,7 @@ bool vvMovie::setStep(int step)
 }
 
 //----------------------------------------------------------------------------
-int vvMovie::getStep()
+size_t vvMovie::getStep()
 {
   return _currentStep;
 }

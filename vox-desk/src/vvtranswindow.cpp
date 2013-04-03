@@ -957,7 +957,7 @@ void VVTransferWindow::setDirtyHistogram()
 
 void VVTransferWindow::computeHistogram()
 {
-  int size[2];
+  size_t size[2];
 
   if (_isHistogramDirty)
   {
@@ -1136,7 +1136,6 @@ void VVTransferWindow::drawCustomWidgets()
 void VVTransferWindow::drawBinLimits()
 {
   float xmin, xmax, ymin, ymax;
-  int i;
    
   if (_glCanvas1D->makeCurrent())
   {
@@ -1157,7 +1156,7 @@ void VVTransferWindow::drawBinLimits()
 
     if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
     {
-      for (i=0; i<vvVolDesc::NUM_HDR_BINS; ++i)
+      for (size_t i=0; i<vvVolDesc::NUM_HDR_BINS; ++i)
       {
         xmin = data2norm(_canvas->_vd->_hdrBinLimits[i]);
         if (i==vvVolDesc::NUM_HDR_BINS-1) xmax = data2norm(_canvas->_vd->real[1]);
@@ -1177,7 +1176,7 @@ void VVTransferWindow::drawBinLimits()
     }
     else
     {
-      for (i=0; i<=256; ++i)
+      for (size_t i=0; i<=256; ++i)
       {
         glBegin(GL_LINES);
           glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
@@ -1292,7 +1291,7 @@ float VVTransferWindow::datad2normd(float data)
 */
 float VVTransferWindow::hdr2data(float hdr)
 {
-  int bin = _canvas->_vd->findHDRBin(hdr);
+  size_t bin = _canvas->_vd->findHDRBin(hdr);
   float binStart = _canvas->_vd->_hdrBinLimits[bin];
   float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[1];
   float binPos = (binEnd - binStart) / 2.0f + binStart;
@@ -1303,7 +1302,7 @@ float VVTransferWindow::hdr2data(float hdr)
 */
 float VVTransferWindow::data2hdr(float data)
 {
-  int bin = _canvas->_vd->findHDRBin(data);
+  size_t bin = _canvas->_vd->findHDRBin(data);
   float binStart = _canvas->_vd->_hdrBinLimits[bin];
   float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[1];
   float binPos = (binEnd - binStart) / 2.0f + binStart;
@@ -1314,7 +1313,7 @@ float VVTransferWindow::data2hdr(float data)
 */
 float VVTransferWindow::hdr2realbin(float hdr)
 {    
-  int bin = _canvas->_vd->findHDRBin(hdr);
+  size_t bin = _canvas->_vd->findHDRBin(hdr);
   float realbin = float(bin) * (_canvas->_vd->real[1] - _canvas->_vd->real[0]) / float(vvVolDesc::NUM_HDR_BINS-1) + _canvas->_vd->real[0];
   return realbin;
 }
@@ -1323,8 +1322,8 @@ float VVTransferWindow::hdr2realbin(float hdr)
 */
 float VVTransferWindow::realbin2hdr(float realbin)
 {    
-  int bin = (realbin - _canvas->_vd->real[0]) / (_canvas->_vd->real[1] - _canvas->_vd->real[0]) * float(vvVolDesc::NUM_HDR_BINS-1);
-  bin = ts_clamp(bin, 0, vvVolDesc::NUM_HDR_BINS-1);
+  size_t bin = (realbin - _canvas->_vd->real[0]) / (_canvas->_vd->real[1] - _canvas->_vd->real[0]) * float(vvVolDesc::NUM_HDR_BINS-1);
+  bin = ts_clamp(bin, size_t(0), vvVolDesc::NUM_HDR_BINS-1);
   float binStart = _canvas->_vd->_hdrBinLimits[bin];
   float binEnd = (bin < vvVolDesc::NUM_HDR_BINS-1) ? _canvas->_vd->_hdrBinLimits[bin+1] : _canvas->_vd->real[1];
   float binPos = (binEnd - binStart) / 2.0f + binStart;
@@ -1476,7 +1475,7 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
   const int RGBA = 4;   // bytes per pixel in RGBA mode
   uchar* tmpBar;
   float fval;
-  int i,bin;
+  int i;
 
   if (_shell->_floatRangeDialog->_hdrCheck->getCheck())
   {
@@ -1486,8 +1485,8 @@ void VVTransferWindow::makeColorBar(int width, uchar* colorBar)
     for (i=0; i<width; ++i)
     {
       fval = norm2data(float(i) / float(width));  // calculates pixel position in linear data space
-      bin = _canvas->_vd->findHDRBin(fval);
-      bin = ts_clamp(bin, 0, vvVolDesc::NUM_HDR_BINS-1);
+      size_t bin = _canvas->_vd->findHDRBin(fval);
+      bin = ts_clamp(bin, size_t(0), vvVolDesc::NUM_HDR_BINS-1);
       memcpy(colorBar + i*RGBA, tmpBar + bin*RGBA, RGBA);
       memcpy(colorBar + RGBA*(i+width), tmpBar + RGBA * (bin + vvVolDesc::NUM_HDR_BINS), RGBA);
       if (_shell->_floatRangeDialog->_opacityCheck->getCheck())
@@ -1523,7 +1522,7 @@ void VVTransferWindow::makeAlphaTexture(int width, int height, uchar* alphaTex)
   const int RGBA = 4;   // bytes per pixel in RGBA mode
   uchar* tmpTex;
   float fval;
-  int i,y,bin;
+  int i,y;
 
   if (_shell->_floatRangeDialog->_hdrCheck->getCheck() && _shell->_floatRangeDialog->_opacityCheck->getCheck())
   {   // histogram equalization mode?
@@ -1532,8 +1531,8 @@ void VVTransferWindow::makeAlphaTexture(int width, int height, uchar* alphaTex)
     for (i=0; i<width; ++i)
     {
       fval = norm2data(float(i) / float(width));
-      bin = _canvas->_vd->findHDRBin(fval);
-      bin = ts_clamp(bin, 0, vvVolDesc::NUM_HDR_BINS-1);
+      size_t bin = _canvas->_vd->findHDRBin(fval);
+      bin = ts_clamp(bin, size_t(0), vvVolDesc::NUM_HDR_BINS-1);
       for (y=0; y<height; ++y)
       {
         memcpy(alphaTex + RGBA * (y * width + i), tmpTex + RGBA * (y * vvVolDesc::NUM_HDR_BINS + bin), RGBA);

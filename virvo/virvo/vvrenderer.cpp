@@ -40,6 +40,7 @@
 #include "vvprintgl.h"
 
 #include "private/vvgltools.h"
+#include "private/vvlog.h"
 
 //----------------------------------------------------------------------------
 vvRenderState::vvRenderState()
@@ -62,8 +63,8 @@ vvRenderState::vvRenderState()
   , _roiPos(vvVector3(0.0f, 0.0f, 0.0f))
   , _roiSize(vvVector3(0.5f, 0.5f, 0.5f))
   , _sphericalROI(false)
-  , _brickSize(vvVector3i(0, 0, 0))
-  , _maxBrickSize(vvVector3i(64, 64, 64))
+  , _brickSize(vvsize3(0, 0, 0))
+  , _maxBrickSize(vvsize3(64, 64, 64))
   , _brickTexelOverlap(1)
   , _showBricks(false)
   , _computeBrickSize(true)
@@ -81,8 +82,8 @@ vvRenderState::vvRenderState()
   , _opaqueGeometryPresent(false)
   , _useIbr(false)
   , _ibrMode(VV_REL_THRESHOLD)
-  , _visibleRegion(vvAABBi(vvVector3i(0), vvVector3i(std::numeric_limits<int>::max())))
-  , _paddingRegion(vvAABBi(vvVector3i(0), vvVector3i(std::numeric_limits<int>::max())))
+  , _visibleRegion(vvAABBs(vvsize3(0), vvsize3(std::numeric_limits<size_t>::max())))
+  , _paddingRegion(vvAABBs(vvsize3(0), vvsize3(std::numeric_limits<size_t>::max())))
 {
   
 }
@@ -664,7 +665,7 @@ void vvRenderer::updateVolumeData()
 //----------------------------------------------------------------------------
 /** Returns the number of animation frames.
  */
-int vvRenderer::getNumFrames()
+size_t vvRenderer::getNumFrames()
 {
   vvDebugMsg::msg(3, "vvRenderer::getNumFrames()");
   return vd->frames;
@@ -674,7 +675,7 @@ int vvRenderer::getNumFrames()
 /** Returns index of current animation frame.
   (first frame = 0, <0 if undefined)
 */
-int vvRenderer::getCurrentFrame()
+size_t vvRenderer::getCurrentFrame()
 {
   vvDebugMsg::msg(3, "vvRenderer::getCurrentFrame()");
   return vd->getCurrentFrame();
@@ -684,13 +685,12 @@ int vvRenderer::getCurrentFrame()
 /** Set new frame index.
   @param index  new frame index (0 for first frame)
 */
-void vvRenderer::setCurrentFrame(int index)
+void vvRenderer::setCurrentFrame(size_t index)
 {
   vvDebugMsg::msg(3, "vvRenderer::setCurrentFrame()");
   if (index == vd->getCurrentFrame()) return;
-  if (index < 0) index = 0;
   if (index >= vd->frames) index = vd->frames - 1;
-  vvDebugMsg::msg(3, "New frame index: ", index);
+  VV_LOG(3) << "New frame index: " << index << std::endl;
   vd->setCurrentFrame(index);
 }
 
@@ -1228,7 +1228,7 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   vvVector3 point(x,y,z);                         // point to get alpha value at
   vvVector3 pos;
   float index;                                    // floating point index value into alpha TF [0..1]
-  int vp[3];                                      // position of nearest voxel to x/y/z [voxel space]
+  size_t vp[3];                                   // position of nearest voxel to x/y/z [voxel space]
   int i;
   uchar* ptr;
 
@@ -1244,8 +1244,8 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
     if (point[i] < (pos[i] - size2[i])) return -1.0f;
     if (point[i] > (pos[i] + size2[i])) return -1.0f;
 
-    vp[i] = int(float(vd->vox[i]) * (point[i] - pos[i] + size2[i]) / size[i]);
-    vp[i] = ts_clamp(vp[i], 0, vd->vox[i]-1);
+    vp[i] = size_t(float(vd->vox[i]) * (point[i] - pos[i] + size2[i]) / size[i]);
+    vp[i] = ts_clamp(vp[i], size_t(0), vd->vox[i]-1);
   }
 
   vp[1] = vd->vox[1] - vp[1] - 1;

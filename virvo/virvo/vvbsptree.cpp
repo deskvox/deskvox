@@ -21,7 +21,6 @@
 #include <cmath>
 #include <set>
 
-#include "vvbrick.h"
 #include "vvbsptree.h"
 #include "vvdebugmsg.h"
 #include "vvopengl.h"
@@ -34,7 +33,7 @@
 // vvBspNode Method Definitions
 //============================================================================
 
-vvBspNode::vvBspNode(const vvAABBi& aabb)
+vvBspNode::vvBspNode(const vvAABBs& aabb)
   : _aabb(aabb)
 {
   _childLeft = NULL;
@@ -69,17 +68,17 @@ bool vvBspNode::isLeaf() const
   return (_childLeft == NULL && _childRight == NULL);
 }
 
-void vvBspNode::setId(const int id)
+void vvBspNode::setId(size_t id)
 {
   _id = id;
 }
 
-void vvBspNode::setAabb(const vvAABBi& aabb)
+void vvBspNode::setAabb(const vvAABBs& aabb)
 {
   _aabb = aabb;
 }
 
-int vvBspNode::getId() const
+size_t vvBspNode::getId() const
 {
   return _id;
 }
@@ -94,7 +93,7 @@ vvBspNode* vvBspNode::getChildRight() const
   return _childRight;
 }
 
-const vvAABBi& vvBspNode::getAabb() const
+const vvAABBs& vvBspNode::getAabb() const
 {
   return _aabb;
 }
@@ -102,15 +101,15 @@ const vvAABBi& vvBspNode::getAabb() const
 void vvBspNode::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
                           vvVector3&, vvVector3&) const
 {
-  const vvVector3i probeMinI = vvVector3i(static_cast<int>(probeMin[0]),
-                                          static_cast<int>(probeMin[1]),
-                                          static_cast<int>(probeMin[2]));
+  vvsize3 probeMinI(static_cast<size_t>(probeMin[0]),
+                    static_cast<size_t>(probeMin[1]),
+                    static_cast<size_t>(probeMin[2]));
 
-  const vvVector3i probeMaxI = vvVector3i(static_cast<int>(probeMax[0]),
-                                          static_cast<int>(probeMax[1]),
-                                          static_cast<int>(probeMax[2]));
+  vvsize3 probeMaxI(static_cast<size_t>(probeMax[0]),
+                    static_cast<size_t>(probeMax[1]),
+                    static_cast<size_t>(probeMax[2]));
 
-  vvAABBi probe(probeMinI, probeMaxI);
+  vvAABBs probe(probeMinI, probeMaxI);
   probe.intersect(_aabb);
 
   for (int i = 0; i < 3; ++i)
@@ -135,7 +134,7 @@ vvBspTree::vvBspTree(vvVolDesc* vd, const vvBspData& data)
   {
     const float fraction = 1.0f / static_cast<float>(_data.numLeafs);
 
-    for (int i = 0; i < _data.numLeafs; ++i)
+    for (size_t i = 0; i < _data.numLeafs; ++i)
     {
       _data.loadBalance.push_back(fraction);
     }
@@ -156,8 +155,8 @@ vvBspTree::vvBspTree(vvVolDesc* vd, const vvBspData& data)
     return;
   }
 
-  vvVector3i voxMin = vvVector3i(0, 0, 0);
-  vvVector3i voxMax = vd->vox;
+  vvsize3 voxMin(0, 0, 0);
+  vvsize3 voxMax = vd->vox;
   _leafs.resize(_data.loadBalance.size());
 
   if (_leafs.size() < 1)
@@ -168,12 +167,12 @@ vvBspTree::vvBspTree(vvVolDesc* vd, const vvBspData& data)
 
   if (_leafs.size() > 1)
   {
-    _root = new vvBspNode(vvAABBi(voxMin, voxMax));
+    _root = new vvBspNode(vvAABBs(voxMin, voxMax));
     buildHierarchy(_root, 0);
   }
   else
   {
-    _root = new vvBspNode(vvAABBi(voxMin, voxMax));
+    _root = new vvBspNode(vvAABBs(voxMin, voxMax));
     _root->setId(0);
     _leafs[0] = _root;
   }
@@ -186,7 +185,7 @@ vvBspTree::~vvBspTree()
   delete _root;
 }
 
-void vvBspTree::traverse(const vvVector3i& pos) const
+void vvBspTree::traverse(const vvsize3& pos) const
 {
   traverse(pos, _root);
 }
@@ -201,14 +200,14 @@ void vvBspTree::setVisitor(vvVisitor* visitor)
   _visitor = visitor;
 }
 
-void vvBspTree::buildHierarchy(vvBspNode* node, const uint leafIdx)
+void vvBspTree::buildHierarchy(vvBspNode* node, size_t leafIdx)
 {
   const float fraction = calcRelativeFraction(leafIdx);
-  const vvAABBi aabb = node->getAabb();
+  const vvAABBs aabb = node->getAabb();
   vvVecmath::AxisType axis;
-  const int length = aabb.getLongestSide(axis);
+  const size_t length = aabb.getLongestSide(axis);
   const float split = static_cast<float>(length) * fraction;
-  std::pair<vvAABBi, vvAABBi> splitted = aabb.split(axis, static_cast<int>(split));
+  std::pair<vvAABBs, vvAABBs> splitted = aabb.split(axis, static_cast<size_t>(split));
 
   if (leafIdx == _leafs.size() - 2)
   {
@@ -241,17 +240,17 @@ void vvBspTree::buildHierarchy(vvBspNode* node, const uint leafIdx)
   }
 }
 
-float vvBspTree::calcRelativeFraction(const int leafIdx)
+float vvBspTree::calcRelativeFraction(size_t leafIdx)
 {
   float total = 0.0f;
-  for (int i = leafIdx; i < static_cast<int>(_leafs.size()); ++i)
+  for (size_t i = leafIdx; i < _leafs.size(); ++i)
   {
     total += _data.loadBalance[i];
   }
   return _data.loadBalance[leafIdx] / total;
 }
 
-void vvBspTree::traverse(const vvVector3i& pos, vvBspNode* node) const
+void vvBspTree::traverse(const vvsize3& pos, vvBspNode* node) const
 {
   if (node->isLeaf())
   {
@@ -262,22 +261,22 @@ void vvBspTree::traverse(const vvVector3i& pos, vvBspNode* node) const
   }
   else
   {
-    vvVector3i minval = node->getChildLeft()->getAabb().getMin();
-    vvVector3i maxval = node->getChildLeft()->getAabb().getMax();
+    vvsize3 minval = node->getChildLeft()->getAabb().getMin();
+    vvsize3 maxval = node->getChildLeft()->getAabb().getMax();
 
     for (int i = 0; i < 3; ++i)
     {
       if (minval[i] == node->getAabb().getMin()[i])
       {
-        minval[i] = -std::numeric_limits<int>::max() + 1;
+        minval[i] = 0;
       }
 
       if (maxval[i] == node->getAabb().getMax()[i])
       {
-        maxval[i] = std::numeric_limits<int>::max();
+        maxval[i] = std::numeric_limits<size_t>::max();
       }
     }
-    const vvAABBi aabb = vvAABBi(minval, maxval);
+    const vvAABBs aabb(minval, maxval);
 
     // back-to-front traversal
     if (aabb.contains(pos))

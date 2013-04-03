@@ -62,7 +62,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     std::vector<GLuint *> _vertIndices;
     vvOffscreenBuffer** _offscreenBuffers;
 
-    int _numBricks[3];                            ///< number of bricks for each dimension
+    vvsize3 _numBricks;                           ///< number of bricks for each dimension
     enum ErrorType                                /// Error Codes
     {
       OK = 0,                                     ///< no error
@@ -121,14 +121,14 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
       VV_FRAG_PROG_MAX                            // has always to be last in list
     };
     float* rgbaTF;                                ///< density to RGBA conversion table, as created by TF [0..1]
-    uchar* rgbaLUT;                               ///< final RGBA conversion table, as transferred to graphics hardware (includes opacity and gamma correction)
-    uchar* preintTable;                           ///< lookup table for pre-integrated rendering, as transferred to graphics hardware
+    uint8_t* rgbaLUT;                             ///< final RGBA conversion table, as transferred to graphics hardware (includes opacity and gamma correction)
+    uint8_t* preintTable;                         ///< lookup table for pre-integrated rendering, as transferred to graphics hardware
     float  lutDistance;                           ///< slice distance for which LUT was computed
-    vvVector3i   texels;                          ///< width, height and depth of volume, including empty space [texels]
+    vvsize3   texels;                             ///< width, height and depth of volume, including empty space [texels]
     float texMin[3];                              ///< minimum texture value of object [0..1] (to prevent border interpolation)
     float texMax[3];                              ///< maximum texture value of object [0..1] (to prevent border interpolation)
-    int   textures;                               ///< number of textures stored in TRAM
-    int   texelsize;                              ///< number of bytes/voxel transferred to OpenGL (depending on rendering mode)
+    size_t   textures;                            ///< number of textures stored in TRAM
+    size_t   texelsize;                           ///< number of bytes/voxel transferred to OpenGL (depending on rendering mode)
     GLint internalTexFormat;                      ///< internal texture format (parameter for glTexImage...)
     GLenum texFormat;                             ///< texture format (parameter for glTexImage...)
     GLuint* texNames;                             ///< names of texture slices stored in TRAM
@@ -150,7 +150,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool usePreIntegration;                       ///< true = pre-integrated rendering is actually used
     bool interpolation;                           ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
     bool opacityCorrection;                       ///< true = opacity correction on
-    int  minSlice, maxSlice;                      ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
+    ptrdiff_t minSlice, maxSlice;                 ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
     bool _areEmptyBricksCreated;                  ///< true when brick outlines are created or assigned through constructor
     bool _areBricksCreated;                       ///< true after the first creation of the bricks
     bool _measureRenderTime;                      ///< if time needs not to be measured, a costly call to glFinish can be spared
@@ -163,7 +163,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     IsectType _isectType;
     bool _proxyGeometryOnGpuSupported;            ///< indicate wether proxy geometry computation on gpu would work
-    int _lastFrame;                               ///< last frame rendered
+    size_t _lastFrame;                            ///< last frame rendered
 
     vvOffscreenBuffer* _renderTarget;             ///< offscreen buffer used for image downscaling
                                                   ///< or an image creator making a screenshot
@@ -182,7 +182,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     void setVoxelType(VoxelType vt);
     void makeLUTTexture() const;
-    ErrorType makeTextures2D(int axes);
+    ErrorType makeTextures2D(size_t axes);
 
     void sortBrickList(std::vector<vvBrick*>& list, const vvVector3&, const vvVector3&, const bool);
 
@@ -203,9 +203,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     ErrorType makeTextures3D();
     void removeTextures();
-    ErrorType updateTextures3D(int, int, int, int, int, int, bool);
-    ErrorType updateTextures2D(int, int, int, int, int, int, int);
-    ErrorType updateTextureBricks(int, int, int, int, int, int);
+    ErrorType updateTextures3D(size_t, size_t, size_t, size_t, size_t, size_t, bool);
+    ErrorType updateTextures2D(int, size_t, size_t, size_t, size_t, size_t, size_t);
+    ErrorType updateTextureBricks(size_t, size_t, size_t, size_t, size_t, size_t);
     void setGLenvironment() const;
     void unsetGLenvironment() const;
     void renderTex3DSpherical(const vvMatrix& view);
@@ -216,8 +216,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     VoxelType findBestVoxelType(VoxelType) const;
     GeometryType findBestGeometry(GeometryType, VoxelType) const;
     void updateLUT(float dist);
-    int  getLUTSize(vvVector3i& size) const;
-    int  getPreintTableSize() const;
+    size_t getLUTSize(vvsize3& size) const;
+    size_t getPreintTableSize() const;
     void enableNVShaders() const;
     void disableNVShaders() const;
     void enableFragProg(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]) const;
@@ -233,7 +233,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
                           vvVector3, const vvVector3, bool& roiChanged);
     void computeBrickSize();
-    void initVertArray(int numSlices);
+    void initVertArray(size_t numSlices);
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
     void evaluateLocalIllumination(vvShaderProgram* pixelShader, const vvVector3& normal);
 
@@ -245,7 +245,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void  renderVolumeGL();
     void  updateTransferFunction();
     void  updateVolumeData();
-    void  updateVolumeData(int, int, int, int, int, int);
+    void  updateVolumeData(size_t, size_t, size_t, size_t, size_t, size_t);
     void  fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vector<BrickList>& brickList) const;
     void  activateClippingPlane();
     void  deactivateClippingPlane();
@@ -264,11 +264,11 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void printLUT() const;
     void updateBrickGeom();
     void setComputeBrickSize(bool);
-    void setBrickSize(int);
-    int getBrickSize() const;
-    void setTexMemorySize(int);
-    int getTexMemorySize() const;
-    unsigned char* getHeightFieldData(float[4][3], int&, int&);
+    void setBrickSize(size_t);
+    size_t getBrickSize() const;
+    void setTexMemorySize(size_t);
+    size_t getTexMemorySize() const;
+    uint8_t* getHeightFieldData(float[4][3], size_t&, size_t&);
     float getManhattenDist(float[3], float[3]) const;
     float calcQualityAndScaleImage();
 };

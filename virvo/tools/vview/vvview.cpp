@@ -62,6 +62,7 @@ using std::ios;
 #include <virvo/vvtcpsocket.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvdebugmsg.h>
+#include <virvo/private/vvlog.h>
 
 #ifdef HAVE_BONJOUR
 #include <virvo/vvbonjour/vvbonjour.h>
@@ -562,7 +563,7 @@ void vvView::applyRendererParameters()
 /** Set active rendering algorithm.
  */
 void vvView::createRenderer(std::string type, const vvRendererFactory::Options &options,
-                            const int maxBrickSizeX, const int maxBrickSizeY, const int maxBrickSizeZ)
+                            size_t maxBrickSizeX, size_t maxBrickSizeY, size_t maxBrickSizeZ)
 {
   vvDebugMsg::msg(3, "vvView::setRenderer()");
 
@@ -711,7 +712,7 @@ void vvView::createRenderer(std::string type, const vvRendererFactory::Options &
   renderState = *renderer;
   delete renderer;
   renderer = NULL;
-  vvVector3i maxBrickSize(maxBrickSizeX, maxBrickSizeY, maxBrickSizeZ);
+  vvsize3 maxBrickSize(maxBrickSizeX, maxBrickSizeY, maxBrickSizeZ);
   renderState.setParameter(vvRenderState::VV_MAX_BRICK_SIZE, maxBrickSize);
 
   renderer = vvRendererFactory::create(vd, renderState, type.c_str(), opt);
@@ -1541,11 +1542,17 @@ void vvView::transferMenuCallback(int item)
 /** Display a specific animation frame.
     @param f Index of frame to display. First index = 0
 */
-void vvView::setAnimationFrame(int f)
+void vvView::setAnimationFrame(ssize_t f)
 {
   vvDebugMsg::msg(3, "vvView::setAnimationFrame()");
 
-  if (f >= vd->frames)
+  if (vd->frames > static_cast<size_t>(std::numeric_limits<ssize_t>::max()))
+  {
+    VV_LOG(0) << "Invalid animation frame" << std::endl;
+    return;
+  }
+
+  if (f >= static_cast<ssize_t>(vd->frames))
     frame = 0;
   else if (f<0)
     frame = vd->frames - 1;

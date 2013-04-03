@@ -122,7 +122,7 @@ class vvView
     bool  animating;                            ///< true = animation mode on
     bool  rotating;                             ///< true = rotation mode on
     bool  rotationMode;                         ///< true = auto-rotation possible
-    int   frame;                                ///< current animation frame
+    size_t frame;                               ///< current animation frame
     std::string currentRenderer;                ///< current renderer/rendering geometry
     vvRendererFactory::Options currentOptions;  ///< current options/voxel type
     vvVector3 bgColor;                          ///< background color (R,G,B in [0..1])
@@ -198,12 +198,11 @@ class vvView
     static void printProfilingInfo(const int testNr = 1, const int testCnt = 1);
     static void printProfilingResult(vvStopwatch* totalTime, const int framesRendered);
     static void printROIMessage();
-    void setAnimationFrame(int);
+    void setAnimationFrame(ssize_t);
     void initGraphics(int argc, char *argv[]);
     void createMenus();
     void createRenderer(std::string renderertype, const vvRendererFactory::Options &opt,
-                     const int maxBrickSizeX = 64,
-                     const int maxBrickSizeY = 64, const int maxBrickSizeZ = 64);
+                        size_t maxBrickSizeX = 64, size_t maxBrickSizeY = 64, size_t maxBrickSizeZ = 64);
     void applyRendererParameters();
     void setProjectionMode(bool);
     void renderMotion() const;

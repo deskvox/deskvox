@@ -64,8 +64,8 @@ private:
 
   vvSortLastVisitor* _sortLastVisitor;
 
-  int _width;
-  int _height;
+  size_t _width;
+  size_t _height;
 
   static void* renderFunc(void* args);
   static void render(Thread* thread);

@@ -551,7 +551,7 @@ class VVHistWindow : public FXDialogBox
     vvArray<FXColor> _colorArray;
     vvArray<float*> _valArray;
     FXCanvas* _histCanvas;
-    int _channels;
+    size_t _channels;
 
     VVHistWindow(FXWindow* owner);
     virtual ~VVHistWindow();

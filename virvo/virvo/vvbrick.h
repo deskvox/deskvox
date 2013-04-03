@@ -43,11 +43,10 @@ class VIRVOEXPORT vvBrick
 {
 public:
   vvBrick()                                     ///< dflt. constructor (needed for C++ templates)
-  : minValue(std::numeric_limits<int>::max())
-  , maxValue(std::numeric_limits<int>::min())
+  : minValue(std::numeric_limits<size_t>::max())
+  , maxValue(0)
   , visible(true)
   , insideProbe(true)
-  , index(-1)
   , dist(-1.f)
   {
     startOffset[0] = startOffset[1] = startOffset[2] = 0;
@@ -90,13 +89,13 @@ public:
   vvVector3 max;                                    ///< maximum position of brick
   vvVector3 texRange;
   vvVector3 texMin;
-  int minValue;                                     ///< min scalar value after lut, needed for empty space leaping
-  int maxValue;                                     ///< max scalar value after lut, needed for empty space leaping
+  size_t minValue;                                  ///< min scalar value after lut, needed for empty space leaping
+  size_t maxValue;                                  ///< max scalar value after lut, needed for empty space leaping
   bool visible;                                     ///< if brick isn't visible, it won't be rendered at all
   bool insideProbe;                                 ///< true iff brick is completely included inside probe
-  int index;                                        ///< index for texture object
-  int startOffset[3];                               ///< startvoxel of brick
-  int texels[3];                                    ///< number of texels in each dimension
+  size_t index;                                     ///< index for texture object
+  vvsize3 startOffset;                              ///< startvoxel of brick
+  vvsize3 texels;                                   ///< number of texels in each dimension
   float dist;                                       ///< distance from plane given by eye and normal
                                                     ///< or distance from (0|0|0) to brick center. Both used for sorting
 

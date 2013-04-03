@@ -55,7 +55,7 @@ private:
   bool _earlyRayTermination;
   bool _opacityCorrection;          ///< true = opacity correction on
 
-  int getLUTSize() const;
+  size_t getLUTSize() const;
   std::vector<Tile> makeTiles(int w, int h);
   void renderTile(const Tile& tile, const vvMatrix& invViewMatrix, std::vector<float>* colors);
 

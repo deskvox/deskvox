@@ -131,7 +131,7 @@ class vvMovie
     char* scriptName;                             ///< Filename of movie script, "" if undefined
     vvSLList<vvMovieStep*>* steps;                ///< pointer to list of movie steps, NULL if no movie present
     vox::vvCanvas* _canvas;
-    int _currentStep;
+    size_t _currentStep;
 
   public:
     enum TransformType                            /// object modification types
@@ -154,8 +154,8 @@ class vvMovie
     ErrorType parseCommand(vvTokenizer*, vvSLList<vvMovieStep*>*);
     const char* getScriptName();
     int   getNumScriptSteps();
-    bool  setStep(int);
-    int   getStep();
+    bool  setStep(size_t);
+    size_t   getStep();
     bool  write(int, int, const char*);
 };
 

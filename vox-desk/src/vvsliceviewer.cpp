@@ -149,10 +149,10 @@ long VVSliceViewer::onCmdForward(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVSliceViewer::onCmdForward()");
 
-  int width, height, slices;
+  size_t width, height, slices;
   _canvas->_vd->getVolumeSize(_axis, width, height, slices);
 
-  int current = _sliceSlider->getValue() - 1;
+  size_t current = _sliceSlider->getValue() - 1;
   ++current;
   current = ts_min(current, slices-1);
   selectSlice(current);
@@ -163,7 +163,7 @@ long VVSliceViewer::onCmdEnd(FXObject*,FXSelector,void*)
 {
   vvDebugMsg::msg(1, "VVSliceViewer::onCmdEnd()");
 
-  int width, height, slices;
+  size_t width, height, slices;
   _canvas->_vd->getVolumeSize(_axis, width, height, slices);
 
   selectSlice(slices - 1);
@@ -199,10 +199,10 @@ long VVSliceViewer::onCmdZAxis(FXObject*,FXSelector,void*)
 
 void VVSliceViewer::selectSlice(int slice)
 {
-  int width, height, slices;
+  size_t width, height, slices;
   _canvas->_vd->getVolumeSize(_axis, width, height, slices);
   _sliceSlider->setValue(slice + 1);
-  _sliceLabel->setText(FXStringFormat("%d of %d", slice + 1, slices));
+  _sliceLabel->setText(FXStringFormat("%d of %" VV_PRIdSIZE, slice + 1, slices));
   showSlice(slice);
 }
 
@@ -211,9 +211,9 @@ void VVSliceViewer::showSlice(int slice)
   static uchar* sliceTexture = NULL;
   static FXColor* sliceBuffer = NULL;
   static FXImage* sliceImage = NULL;
-  int x, y, c, color[3], pos;
+  int color[3], pos;
 
-  int width, height, slices;
+  size_t width, height, slices;
   _canvas->_vd->getVolumeSize(_axis, width, height, slices);
 
   FXDCWindow dc(_sliceCanvas);
@@ -222,12 +222,12 @@ void VVSliceViewer::showSlice(int slice)
   _canvas->_vd->makeSliceImage(-1, _axis, slice, sliceTexture);
   delete sliceBuffer;
   sliceBuffer = new FXColor[width * height];
-  for(y=0; y<height; ++y)
+  for(size_t y=0; y<height; ++y)
   {
-    for(x=0; x<width; ++x)
+    for(size_t x=0; x<width; ++x)
     {
       pos = y * width + x;
-      for (c=0; c<3; ++c)
+      for (int c=0; c<3; ++c)
       {
         color[c] = (int)(sliceTexture[pos * 3 + c]);
       }
@@ -244,10 +244,10 @@ void VVSliceViewer::showSlice(int slice)
 
 void VVSliceViewer::updateValues()
 {
-  int width, height, slices;
+  size_t width, height, slices;
   _canvas->_vd->getVolumeSize(_axis, width, height, slices);
   _sliceSlider->setRange(1, slices);
-  _resolutionLabel->setText(FXStringFormat("%d x %d", width, height));
+  _resolutionLabel->setText(FXStringFormat("%" VV_PRIdSIZE " x %" VV_PRIdSIZE, width, height));
   selectSlice(0);
 }
 

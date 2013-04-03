@@ -171,7 +171,7 @@ void vvTFDialog::onNewWidget()
   }
   else if (QObject::sender() == ui->gaussianButton)
   {
-    widget = new vvTFBell(vvColor(), false, 1.0f, norm2data(_zoomRange, 0.2f), normd2datad(_zoomRange, 0.2));
+    widget = new vvTFBell(vvColor(), false, 1.0f, norm2data(_zoomRange, 0.2f), normd2datad(_zoomRange, 0.2f));
   }
   else if (QObject::sender() == ui->customButton)
   {

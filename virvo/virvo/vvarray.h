@@ -21,6 +21,7 @@
 #ifndef VV_ARRAY_H
 #define VV_ARRAY_H
 
+#include <limits>
 #include <iostream>
 #include <string.h>
 #include "vvexport.h"
@@ -43,35 +44,35 @@ template<class T> class vvArray
 {
   public:
     vvArray();
-    vvArray(int, int);
+    vvArray(size_t, size_t);
     vvArray(const vvArray<T>&);
     ~vvArray();
 
     void clear();
-    void set(int, const T&);
-    T*   get(int);
+    void set(size_t, const T&);
+    T*   get(size_t);
     void append(const T&);
-    void insert(int, const T&);
-    void replace(int, const T&);
-    void remove(int);
+    void insert(size_t, const T&);
+    void replace(size_t, const T&);
+    void remove(size_t);
     void removeLast();
     bool removeElement(const T&);
-    void resize(int);
-    void setIncrement(int);
+    void resize(size_t);
+    void setIncrement(size_t);
     void fill(const T&);
     T*   first();
     T*   last();
-    int  find(const T&);
-    int  count() const;
+    size_t find(const T&);
+    size_t count() const;
     void print(char*);
     T*   getArrayPtr();
     void deleteElementsNormal();
     void deleteElementsArray();
 
     /// Direct array access:
-    T & operator[] (const int index)
+    T & operator[] (size_t index)
     {
-      if (index<0 || index>(usedSize-1))
+      if (index>(usedSize-1))
       {
         return nullValue;
       }
@@ -79,9 +80,9 @@ template<class T> class vvArray
     }
 
     /// Direct array access:
-    const T & operator[] (const int index) const
+    const T & operator[] (size_t index) const
     {
-      if (index<0 || index>(usedSize-1))
+      if (index>(usedSize-1))
       {
         return nullValue;
       }
@@ -93,9 +94,9 @@ template<class T> class vvArray
 
   private:
     T*   data;                                    ///< actual data array
-    int  usedSize;                                ///< number of array elements actually used
-    int  allocSize;                               ///< number of array elements allocated in memory
-    int  allocInc;                                ///< number of array elements by which the array grows when increased
+    size_t usedSize;                              ///< number of array elements actually used
+    size_t allocSize;                             ///< number of array elements allocated in memory
+    size_t allocInc;                              ///< number of array elements by which the array grows when increased
     T    nullValue;                               ///< NULL value to use as a return value
 
     void incSize();
@@ -116,30 +117,26 @@ template<class T> vvArray<T>::vvArray()
 /** Constructor for a new array with 'amount' initial elements and an
   array increment of 'inc'.
 */
-template<class T> vvArray<T>::vvArray(int amount, int inc)
+template<class T> vvArray<T>::vvArray(size_t amount, size_t inc)
 {
-  int i;
-
   nullValue = (T)0;
   allocSize = amount;
   allocInc = inc;
   usedSize = 0;
   data = new T[allocSize];
-  for (i=0; i<allocSize; ++i) data[i] = 0;
+  for (size_t i=0; i<allocSize; ++i) data[i] = 0;
 }
 
 //----------------------------------------------------------------------------
 /// Copy constructor.
 template<class T> vvArray<T>::vvArray(const vvArray<T>& v)
 {
-  int i;
-
   nullValue = (T)0;
   allocSize = v.allocSize;
   allocInc = v.allocInc;
   usedSize = v.usedSize;
   data = new T[allocSize];
-  for (i=0; i<usedSize; ++i) data[i] = v.data[i];
+  for (size_t i=0; i<usedSize; ++i) data[i] = v.data[i];
 }
 
 //----------------------------------------------------------------------------
@@ -167,9 +164,9 @@ template<class T> void vvArray<T>::append(const T& in_data)
 
 //----------------------------------------------------------------------------
 /// Replace element at the given index.
-template<class T> inline void vvArray<T>::replace(int index, const T& newData)
+template<class T> inline void vvArray<T>::replace(size_t index, const T& newData)
 {
-  if (index<0 || index>(usedSize - 1)) return;
+  if (index>(usedSize - 1)) return;
   data[index] = newData;
 }
 
@@ -177,16 +174,13 @@ template<class T> inline void vvArray<T>::replace(int index, const T& newData)
 /** Insert element at the given array index. If index is out of bounds,
   nothing will be done.
 */
-template<class T> inline void vvArray<T>::insert(int index, const T& in_data)
+template<class T> inline void vvArray<T>::insert(size_t index, const T& in_data)
 {
-  int i;
-
-  if (index < 0) return;
   if (usedSize == allocSize)
     incSize();
   if (index >= usedSize) return;
 
-  for (i=usedSize; i>index; --i)
+  for (size_t i=usedSize; i>index; --i)
     data[i] = data[i - 1];
 
   data[index] = in_data;
@@ -198,13 +192,11 @@ template<class T> inline void vvArray<T>::insert(int index, const T& in_data)
   If the array is a list of pointers, the elements pointed to must be deleted separately!
   @param index index of element to remove (0 for first element, etc.)
 */
-template<class T> inline void vvArray<T>::remove(int index)
+template<class T> inline void vvArray<T>::remove(size_t index)
 {
-  int i;
+  if (index>(usedSize - 1)) return;
 
-  if (index<0 || index>(usedSize - 1)) return;
-
-  for (i=index; i<usedSize-1; ++i)
+  for (size_t i=index; i<usedSize-1; ++i)
     data[i] = data[i + 1];
 
   --usedSize;
@@ -225,8 +217,8 @@ template<class T> inline void vvArray<T>::removeLast()
 */
 template<class T> inline bool vvArray<T>::removeElement(const T& in_data)
 {
-  int index = find(in_data);
-  if (index != -1)
+  size_t index = find(in_data);
+  if (index < std::numeric_limits<size_t>::max())
   {
     remove(index);
     return true;
@@ -239,7 +231,7 @@ template<class T> inline bool vvArray<T>::removeElement(const T& in_data)
   If index is out of bounds, NULL is returned.
   The current index is set to the index of the returned element.
 */
-template<class T> inline T* vvArray<T>::get(int index)
+template<class T> inline T* vvArray<T>::get(size_t index)
 {
   if (index<0 || index>=usedSize) return &nullValue;
 
@@ -270,15 +262,13 @@ template<class T> inline T* vvArray<T>::first()
 //----------------------------------------------------------------------------
 /** Find the first occurrence of the specified element.
   @element element to find in array
-  @return index of the desired element, or -1 if element was not found
+  @return index of the desired element, or max size_t if element was not found
 */
-template<class T> inline int vvArray<T>::find(const T& element)
+template<class T> inline size_t vvArray<T>::find(const T& element)
 {
-  int i;
+  if (usedSize==0) return std::numeric_limits<size_t>::max();
 
-  if (usedSize==0) return -1;
-
-  for (i=0; i<usedSize; ++i)
+  for (size_t i=0; i<usedSize; ++i)
   {
     if (data[i] == element) return i;
   }
@@ -290,7 +280,7 @@ template<class T> inline int vvArray<T>::find(const T& element)
 /** Resize the array.
   @param newSize new array size [elements]
 */
-template<class T> void vvArray<T>::resize(int newSize)
+template<class T> void vvArray<T>::resize(size_t newSize)
 {
   T* newData;
 
@@ -307,7 +297,7 @@ template<class T> void vvArray<T>::resize(int newSize)
 //----------------------------------------------------------------------------
 /** Set the array incrementation size [elements].
  */
-template<class T> void vvArray<T>::setIncrement(int inc)
+template<class T> void vvArray<T>::setIncrement(size_t inc)
 {
   allocInc = inc;
 }
@@ -316,9 +306,7 @@ template<class T> void vvArray<T>::setIncrement(int inc)
 /// Fills the whole array with fillData.
 template<class T> void vvArray<T>::fill(const T& fillData)
 {
-  int i;
-
-  for (i=0; i<usedSize; ++i)
+  for (size_t i=0; i<usedSize; ++i)
     data[i] = fillData;
 }
 
@@ -353,7 +341,7 @@ template<class T> vvArray<T> &vvArray<T>::operator =(const vvArray<T>& v)
 
 //----------------------------------------------------------------------------
 /// Set array element. Any previously existing element will be overwritten.
-template<class T> inline void vvArray<T>::set(int index, const T& newData)
+template<class T> inline void vvArray<T>::set(size_t index, const T& newData)
 {
   if (usedSize == 0 || index < 0 || index > (usedSize - 1)) return;
   data[index] = newData;
@@ -361,7 +349,7 @@ template<class T> inline void vvArray<T>::set(int index, const T& newData)
 
 //----------------------------------------------------------------------------
 /// Returns the number of array enries.
-template<class T> inline int vvArray<T>::count() const
+template<class T> inline size_t vvArray<T>::count() const
 {
   return usedSize;
 }
@@ -372,8 +360,6 @@ template<class T> inline int vvArray<T>::count() const
 */
 template<class T> inline void vvArray<T>::print(char* title)
 {
-  int i;
-
   std::cerr << title << std::endl;
 
   if (usedSize == 0)
@@ -382,7 +368,7 @@ template<class T> inline void vvArray<T>::print(char* title)
     return;
   }
 
-  for (i=0; i<usedSize; ++i)
+  for (size_t i=0; i<usedSize; ++i)
     std::cerr << "[" << i << "]: " << data[i] << std::endl;
 }
 
@@ -405,8 +391,7 @@ template<class T> void vvArray<T>::incSize()
 //----------------------------------------------------------------------------
 template<class T> void vvArray<T>::deleteElementsNormal()
 {
-  int i;
-  for (i=0; i<usedSize; ++i)
+  for (size_t i=0; i<usedSize; ++i)
   {
     delete data[i];
   }
@@ -415,8 +400,7 @@ template<class T> void vvArray<T>::deleteElementsNormal()
 //----------------------------------------------------------------------------
 template<class T> void vvArray<T>::deleteElementsArray()
 {
-  int i;
-  for (i=0; i<usedSize; ++i)
+  for (size_t i=0; i<usedSize; ++i)
   {
     delete[] data[i];
   }

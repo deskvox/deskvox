@@ -30,6 +30,8 @@ class vvBaseAABB;
 typedef vvBaseAABB<int> vvAABBi;
 typedef vvBaseAABB<float> vvAABBf;
 typedef vvBaseAABB<double> vvAABBd;
+typedef vvBaseAABB<size_t> vvAABBs;
+typedef vvBaseAABB<ssize_t> vvAABBss;
 typedef vvAABBf vvAABB;
 
 /*!

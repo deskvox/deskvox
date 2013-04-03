@@ -26,7 +26,7 @@
 
 #include "private/vvgltools.h"
 
-vvSerBrickRend::vvSerBrickRend(vvVolDesc *vd, vvRenderState renderState, const int numBricks,
+vvSerBrickRend::vvSerBrickRend(vvVolDesc *vd, vvRenderState renderState, size_t numBricks,
                                const std::string& type, const vvRendererFactory::Options& options)
   : vvBrickRend(vd, renderState, numBricks, type, options)
 {
@@ -66,7 +66,7 @@ void vvSerBrickRend::renderVolumeGL()
     getEyePosition(&eye);
 
     // bsp tree maintains boxes in voxel coordinates
-    vvVector3i veye = vd->voxelCoords(eye);
+    vvsize3 veye = vd->voxelCoords(eye);
     _bspTree->traverse(veye);
   }
   else
@@ -135,9 +135,9 @@ vvSerBrickRend::ErrorType vvSerBrickRend::createRenderers()
     _renderers.push_back(vvRendererFactory::create(vd, *this, _type.c_str(), _options));
   }
 
-  for (uint i = 0; i < _renderers.size(); ++i)
+  for (size_t i = 0; i < _renderers.size(); ++i)
   {
-    const vvAABBi aabb = _bspTree->getLeafs().at(i)->getAabb();
+    const vvAABBs aabb = _bspTree->getLeafs().at(i)->getAabb();
 
     setVisibleRegion(_renderers.at(i), aabb);
   }

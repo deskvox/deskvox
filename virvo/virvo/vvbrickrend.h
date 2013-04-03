@@ -21,7 +21,6 @@
 #ifndef _VVBRICKREND_H_
 #define _VVBRICKREND_H_
 
-#include "vvbrick.h"
 #include "vvrenderer.h"
 #include "vvrendererfactory.h"
 #include "vvvoldesc.h"
@@ -43,7 +42,7 @@ public:
   /*! @param type     passed to renderer factory to create one renderer per brick
       @param options  passed to renderer factory to create one renderer per brick
    */
-  vvBrickRend(vvVolDesc* vd, vvRenderState renderState, int numBricks,
+  vvBrickRend(vvVolDesc* vd, vvRenderState renderState, size_t numBricks,
               const std::string& type, const vvRendererFactory::Options& options);
   virtual ~vvBrickRend();
 
@@ -63,11 +62,11 @@ protected:
 
   /*! build a bsp tree with numBricks leafs
    */
-  bool buildBspTree(int numBricks);
+  bool buildBspTree(size_t numBricks);
 
   /*! update visibible region of renderer with border padding for interpolation
    */
-  static void setVisibleRegion(vvRenderer* renderer, const vvAABBi& aabb, int padding = 1);
+  static void setVisibleRegion(vvRenderer* renderer, const vvAABBs& aabb, size_t padding = 1);
 };
 
 #endif // _VVBRICKREND_H_

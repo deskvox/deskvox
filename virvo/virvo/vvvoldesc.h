@@ -120,15 +120,15 @@ class VIRVOEXPORT vvVolDesc
       OPACITY
     };
     
-    static const int DEFAULT_ICON_SIZE;           ///< system default for icon size if not otherwise specified (only stored in XVF files)
-    static const int NUM_HDR_BINS;                ///< constant value for HDR transfer functions
-    vvVector3i vox;                               ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
-    int frames;                                   ///< number of animation frames in movie (0 if no volume data stored)
-    int bpc;                                      ///< bytes per channel (default = 1); each channel is scalar:<UL>
+    static const size_t DEFAULT_ICON_SIZE;        ///< system default for icon size if not otherwise specified (only stored in XVF files)
+    static const size_t NUM_HDR_BINS;             ///< constant value for HDR transfer functions
+    vvsize3 vox;                                  ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
+    size_t frames;                                ///< number of animation frames in movie (0 if no volume data stored)
+    size_t bpc;                                   ///< bytes per channel (default = 1); each channel is scalar:<UL>
                                                   ///< <LI>1 = 1 unsigned char</LI>
                                                   ///< <LI>2 = 16 bit unsigned short (12 bit values must be located in 12 most significant bits, padded with 0's)</LI>
                                                   ///< <LI>4 = float</LI>
-    int chan;                                     ///< number of channels (default = 1), each channel contains bpc bytes
+    size_t chan;                                  ///< number of channels (default = 1), each channel contains bpc bytes
     vvVector3 dist;                               ///< Distance between sampling points in x/y/z direction [mm]
     float dt;                                     ///< Length of an animation time step [seconds]. Negative values play the animation backwards.
     float real[2];                                ///< 1/2 bpc: physical equivalent of min/max scalar value
@@ -137,7 +137,7 @@ class VIRVOEXPORT vvVolDesc
     vvVector3 pos;                                ///< location of volume center [mm]
     vvTransFunc tf;                               ///< transfer functions
     int iconSize;                                 ///< width and height of icon [pixels] (0 if no icon stored, e.g., 64 for 64x64 pixels icon)
-    uchar* iconData;                              ///< icon image data as RGBA (RGBA, RGBA, ...), starting top left,
+    uint8_t* iconData;                            ///< icon image data as RGBA (RGBA, RGBA, ...), starting top left,
                                                   ///< then going right, then down
     int _radius;                                  ///< Radius of the previous sphere
     int* _mask;                                   ///< Mask of the previous sphere
@@ -148,32 +148,34 @@ class VIRVOEXPORT vvVolDesc
     // Constructors and destructors:
     vvVolDesc();
     vvVolDesc(const char*);
-    vvVolDesc(const char*, int, int, int, int, int, int, uchar**, DeleteType=NO_DELETE);
-    vvVolDesc(const char*, int, int, int, int, float**);
-    vvVolDesc(const char*, int, int, int, int, float**, float**, float**);
-    vvVolDesc(const char*, int, int, uchar*);
+    vvVolDesc(const char* fn, int w, int h, int s, size_t f, size_t b, int m, uint8_t** d, DeleteType=NO_DELETE);
+    vvVolDesc(const char* fn, int w, int h, int s, size_t f, float**);
+    vvVolDesc(const char* fn, int w, int h, int s, size_t f, float**, float**, float**);
+    vvVolDesc(const char* fn, int w, int h, uint8_t* d);
     vvVolDesc(vvVolDesc*, int=-1);
     virtual ~vvVolDesc();
 
     // Getters and setters:
-    int    getSliceBytes() const;
-    int    getFrameBytes() const;
-    int    getMovieBytes() const;
-    int    getSliceVoxels() const;
-    int    getFrameVoxels() const;
-    int    getMovieVoxels() const;
+    size_t getSliceBytes() const;
+    size_t getFrameBytes() const;
+    size_t getMovieBytes() const;
+    size_t getSliceVoxels() const;
+    size_t getFrameVoxels() const;
+    size_t getMovieVoxels() const;
     void getBoundingBox(vvAABB& aabb) const;
-    uchar* getRaw(int) const;
-    uchar* getRaw() const;
+    /** Legacy function, returns current frame
+     @param  default to -1 in the past meant current frame */
+    uint8_t* getRaw(int frame = -1) const;
+    uint8_t* getRaw(size_t) const;
     const char* getFilename() const;
     void   setFilename(const char*);
-    void   setCurrentFrame(int);
-    int    getCurrentFrame() const;
-    int    getBPV() const;
+    void   setCurrentFrame(size_t);
+    size_t getCurrentFrame() const;
+    size_t getBPV() const;
     void   setDist(float, float, float);
     void   setDist(const vvVector3& d);
     vvVector3 getSize() const;
-    int    getStoredFrames() const;
+    size_t getStoredFrames() const;
     float  getValueRange() const;
     /** Get volumes bytesize for all frames
      @return size in bytes */
@@ -189,9 +191,9 @@ class VIRVOEXPORT vvVolDesc
     }
 
     // Conversion routines:
-    void   convertBPC(int, bool=false);
-    void   convertChannels(int, int frame=-1, bool=false);
-    void   deleteChannel(int, bool=false);
+    void   convertBPC(size_t, bool=false);
+    void   convertChannels(size_t, int frame=-1, bool=false);
+    void   deleteChannel(size_t, bool=false);
     void   bitShiftData(int, int frame=-1, bool=false);
     void   invert();
     void   convertRGB24toRGB8();
@@ -199,9 +201,9 @@ class VIRVOEXPORT vvVolDesc
     void   rotate(vvVecmath::AxisType, int);
     void   convertRGBPlanarToRGBInterleaved(int frame=-1);
     void   toggleEndianness(int frame=-1);
-    void   crop(int, int, int, int, int, int);
-    void   cropTimesteps(int, int);
-    void   resize(int, int, int, InterpolationType, bool=false);
+    void   crop(size_t, size_t, size_t, size_t, size_t, size_t);
+    void   cropTimesteps(size_t start, size_t steps);
+    void   resize(size_t, size_t, size_t, InterpolationType, bool=false);
     void   shift(int, int, int);
     void   convertVoxelOrder();
     void   convertCoviseToVirvo();
@@ -215,49 +217,49 @@ class VIRVOEXPORT vvVolDesc
     void   blend(vvVolDesc*, int, bool=false);
     void   swapChannels(int, int, bool=false);
     void   extractChannel(float[3], bool=false);
-    bool   makeHeightField(int, int, bool=false);
+    bool   makeHeightField(size_t, int, bool=false);
 
     // Other routines:
     ErrorType merge(vvVolDesc*, vvVolDesc::MergeType);
     ErrorType mergeFrames();
-    void   addFrame(uchar*, DeleteType, int fd=-1);
-    void   copyFrame(uchar*);
+    void   addFrame(uint8_t*, DeleteType, int fd=-1);
+    void   copyFrame(uint8_t*);
     void   removeSequence();
-    void   makeHistogram(int, int, int, int*, int*, float, float);
+    void   makeHistogram(size_t, size_t, size_t, int*, int*, float, float);
     void   normalizeHistogram(int, int*, float*, NormalizationType);
-    void   makeHistogramTexture(int, int, int, int*, uchar*, NormalizationType, vvColor*, float, float);
+    void   makeHistogramTexture(size_t, size_t, size_t, size_t*, uint8_t* data, NormalizationType, vvColor*, float, float);
     void   createHistogramFiles(bool = false);
-    bool   isChannelUsed(int);
-    void   makeIcon(int, const uchar*);
-    void   makeIcon(int);
+    bool   isChannelUsed(size_t);
+    void   makeIcon(int, const uint8_t*);
+    void   makeIcon(size_t);
     void   printInfoLine(const char* = NULL);
     void   makeInfoString(std::string* infoString);
     void   makeShortInfoString(char*);
     void   printVolumeInfo();
     void   printStatistics();
-    void   printVoxelData(int, int, int=0, int=0);
+    void   printVoxelData(int, size_t, size_t=0, size_t=0);
     void   printHistogram(int, int);
-    void   trilinearInterpolation(int, float, float, float, uchar*);
-    void   drawBox(int, int, int, int, int, int, int, uchar*);
-    void   drawSphere(int, int, int, int, int, uchar*);
-    void   drawLine(int, int, int, int, int, int, uchar*);
+    void   trilinearInterpolation(size_t f, float, float, float, uint8_t*);
+    void   drawBox(size_t, size_t, size_t, size_t, size_t, size_t, size_t, uint8_t*);
+    void   drawSphere(size_t, size_t, size_t, size_t, size_t, uint8_t*);
+    void   drawLine(size_t, size_t, size_t, size_t, size_t, size_t, uint8_t*);
     void   drawBoundaries(uchar*, int=-1);
-    int    serializeAttributes(uchar* = NULL) const;
-    void   deserializeAttributes(uchar*, const int=SERIAL_ATTRIB_SIZE);
-    void   setSliceData(uchar*, int=0, int=0);
-    void   extractSliceData(int, vvVecmath::AxisType, int, uchar*);
-    void   makeSliceImage(int, vvVecmath::AxisType, int, uchar*);
-    void   getVolumeSize(vvVecmath::AxisType, int&, int&, int&);
+    int    serializeAttributes(uint8_t* = NULL) const;
+    void   deserializeAttributes(uint8_t*, size_t bufSize=SERIAL_ATTRIB_SIZE);
+    void   setSliceData(uint8_t*, int=0, int=0);
+    void   extractSliceData(int, vvVecmath::AxisType, int, uint8_t*);
+    void   makeSliceImage(int, vvVecmath::AxisType, int, uint8_t*);
+    void   getVolumeSize(vvVecmath::AxisType, size_t&, size_t&, size_t&);
     void   deinterlace();
     void   findMinMax(int, float&, float&);
     int    findNumValue(int, float);
     int    findNumUsed(int);
     int    findNumTransparent(int);
     void   calculateDistribution(int, int, float&, float&, float&);
-    void   voxelStatistics(int, int, int, int, int, float&, float&);
+    void   voxelStatistics(size_t, size_t, size_t, size_t, size_t, float&, float&);
     float  calculateMean(int);
     float  findClampValue(int, int, float);
-    void   computeVolume(int, int, int, int);
+    void   computeVolume(int, size_t, size_t, size_t);
     void   resizeEdgeMax(float);
     float  getChannelValue(int, int, int, int, int);
     void   getLineHistData(int, int, int, int, int, int, vvArray<float*>&);
@@ -265,25 +267,25 @@ class VIRVOEXPORT vvVolDesc
     void   addGradient(int, GradientType);
     void   addVariance(int);
     void   deleteChannelNames();
-    void   setChannelName(int, const char*);
-    const char* getChannelName(int);
-    void updateFrame(int, uchar*, DeleteType);
-    void updateHDRBins(int, bool, bool, bool, BinningType, bool);
+    void   setChannelName(size_t, const char*);
+    const char* getChannelName(size_t);
+    void updateFrame(int, uint8_t*, DeleteType);
+    void updateHDRBins(size_t numValues, bool, bool, bool, BinningType, bool);
     int  findHDRBin(float);
     int  mapFloat2Int(float);
     void makeBinTexture(uchar*, int);
     void computeTFTexture(int, int, int, float*);
     void makeLineTexture(DiagType, uchar, int, int, bool, vvArray<float*>, uchar*);
     void makeLineHistogram(int, int, vvArray<float*>, int*);
-    void computeMinMaxArrays(uchar *minArray, uchar *maxArray, int downsample, int channel=0, int frame=-1) const;
-    vvVector3i voxelCoords(const vvVector3& objCoords) const;
-    vvVector3 objectCoords(const vvVector3i& voxCoords) const;
+    void computeMinMaxArrays(uint8_t *minArray, uchar *maxArray, size_t downsample, size_t channel=0, int frame=-1) const;
+    vvsize3 voxelCoords(const vvVector3& objCoords) const;
+    vvVector3 objectCoords(const vvsize3& voxCoords) const;
 
   private:
     char*  filename;                              ///< name of volume data file, including extension, excluding path ("" if undefined)
-    int    currentFrame;                          ///< current animation frame
-    mutable vvSLList<uchar*> raw;                 ///< pointer list to raw volume data - mutable because of Java style iterators
-    std::vector<int> rawFrameNumber;              ///< frame numbers (if frames do not come in sequence)
+    size_t currentFrame;                          ///< current animation frame
+    mutable vvSLList<uint8_t*> raw;               ///< pointer list to raw volume data - mutable because of Java style iterators
+    std::vector<size_t> rawFrameNumber;           ///< frame numbers (if frames do not come in sequence)
     vvArray<char*> channelNames;                  ///< names of data channels
 
     void initialize();

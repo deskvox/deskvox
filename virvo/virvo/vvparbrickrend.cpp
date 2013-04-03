@@ -53,7 +53,7 @@ struct vvParBrickRend::Thread
   vvRenderer* renderer;
   vvSortLastVisitor::Texture texture;
 
-  int id;
+  size_t id;
   pthread_t threadHandle;
   pthread_barrier_t* barrier;
   pthread_mutex_t* mutex;
@@ -97,7 +97,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   // determine the number of the thread that reuses the main context
   int reuser = -1;
   std::vector<vvParBrickRend::Param>::const_iterator it;
-  uint i;
+  size_t i;
   for (it = params.begin(), i = 0; it != params.end() && i < params.size(); ++it, ++i)
   {
     vvContextOptions co;
@@ -117,7 +117,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   pthread_mutex_t* mutex = new pthread_mutex_t;
   pthread_barrier_t* barrier = new pthread_barrier_t;
 
-  const int numBarriers = reuser == -1 ? params.size() + 1 : params.size();
+  size_t numBarriers = reuser == -1 ? params.size() + 1 : params.size();
   int ret = pthread_barrier_init(barrier, NULL, numBarriers);
   if (ret != 0)
   {
@@ -132,10 +132,11 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   }
 
   const virvo::Viewport vp = vvGLTools::getViewport();
-  _width = vp[2];
-  _height = vp[3];
+  assert(vp[2] >= 0 && vp[3] >= 0);
+  _width = size_t(vp[2]);
+  _height = size_t(vp[3]);
 
-  for (uint i = 0; i < params.size(); ++i)
+  for (size_t i = 0; i < params.size(); ++i)
   {
     Thread* thread = new Thread;
     thread->id = i;
@@ -154,7 +155,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
     thread->filename = params.at(i).filename;
 
     thread->parbrickrend = this;
-    thread->texture.pixels = new std::vector<float>(vp[2] * vp[3] * 4);
+    thread->texture.pixels = new std::vector<float>(size_t(vp[2]) * size_t(vp[3]) * 4);
     thread->texture.rect = new vvRecti;
 
     thread->barrier = barrier;
@@ -239,10 +240,10 @@ void vvParBrickRend::renderVolumeGL()
   if (!_showBricks)
   {
     const virvo::Viewport vp = vvGLTools::getViewport();
-    if (vp[2] != _width || vp[3] != _height)
+    if (size_t(vp[2]) != _width || size_t(vp[3]) != _height)
     {
-      _width = vp[2];
-      _height = vp[3];
+      _width = static_cast<size_t>(vp[2]);
+      _height = static_cast<size_t>(vp[3]);
       for (std::vector<Thread*>::iterator it = _threads.begin();
            it != _threads.end(); ++it)
       {
@@ -292,7 +293,7 @@ void vvParBrickRend::renderVolumeGL()
     getEyePosition(&eye);
 
     // bsp tree maintains boxes in voxel coordinates
-    vvVector3i veye = vd->voxelCoords(eye);
+    vvsize3 veye = vd->voxelCoords(eye);
 
     // TODO: if we want to use this context for rendering,
     // store the framebuffer before rendering and restore

@@ -148,7 +148,7 @@ struct ParsedOptions
   std::string voxeltype;
   std::vector<vvTcpSocket*> sockets;
   std::vector<std::string> filenames;
-  int bricks;
+  size_t bricks;
   std::vector<std::string> displays;
   std::string brickrenderer;
 

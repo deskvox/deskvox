@@ -35,29 +35,29 @@ class vvVolDesc;
 class vvBspNode : public vvVisitable
 {
 public:
-  vvBspNode(const vvAABBi& aabb);
+  vvBspNode(const vvAABBs& aabb);
   virtual ~vvBspNode();
 
   virtual void accept(vvVisitor* visitor);
 
   void addChild(vvBspNode* child);
   bool isLeaf() const;
-  void setId(int id);
-  void setAabb(const vvAABBi& aabb);
+  void setId(size_t id);
+  void setAabb(const vvAABBs& aabb);
 
-  int getId() const;
+  size_t getId() const;
   vvBspNode* getChildLeft() const;
   vvBspNode* getChildRight() const;
-  const vvAABBi& getAabb() const;
+  const vvAABBs& getAabb() const;
 
   void clipProbe(vvVector3& probeMin, vvVector3& probeMax,
                  vvVector3& probePosObj, vvVector3& probeSizeObj) const;
 private:
-  int _id;
+  size_t _id;
   vvBspNode* _childLeft;
   vvBspNode* _childRight;
 
-  vvAABBi _aabb;
+  vvAABBs _aabb;
 };
 
 /*! \brief Data passed to bsp-tree ctor
@@ -70,7 +70,7 @@ struct vvBspData
 
   }
 
-  int numLeafs;
+  size_t numLeafs;
   std::vector<float> loadBalance;
 };
 
@@ -80,7 +80,7 @@ public:
   vvBspTree(vvVolDesc* vd, const vvBspData& data);
   virtual ~vvBspTree();
 
-  void traverse(const vvVector3i& pos) const;
+  void traverse(const vvsize3& pos) const;
 
   const std::vector<vvBspNode*>& getLeafs() const;
 
@@ -92,7 +92,7 @@ private:
   vvVisitor* _visitor;
   vvBspData _data;
 
-  void buildHierarchy(vvBspNode* node, uint leafIdx);
+  void buildHierarchy(vvBspNode* node, size_t leafIdx);
 
   /*!
    by example: load balance == { 0.5, 0.4, 0.1 }
@@ -101,8 +101,8 @@ private:
    [1] := 40% of remaining fraction (0.4 + 0.1) == 0.8
    [2] := 100% of remaining fraction (0.1) == 1.0
   */
-  float calcRelativeFraction(int leafIdx);
-  void traverse(const vvVector3i& pos, vvBspNode* node) const;
+  float calcRelativeFraction(size_t leafIdx);
+  void traverse(const vvsize3& pos, vvBspNode* node) const;
 };
 
 #endif // VVBSPTREE_H

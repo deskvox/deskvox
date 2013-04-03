@@ -217,7 +217,7 @@ bool vvConv::readVolumeData()
       gain = new int[vd->chan];
       offset = new int[vd->chan];
 
-      for (int i = 0; i < vd->chan; i++)
+      for (size_t i = 0; i < vd->chan; i++)
       {
         laser[i] = 0;
         intensity[i] = 0;
@@ -788,12 +788,11 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   }
   if (drawBox)
   {
-    uchar* col;
-    col = new uchar[v->bpc];
-    int i;
-    for (i=0; i<v->bpc; ++i)
+    uint8_t* col;
+    col = new uint8_t[v->bpc];
+    for (size_t i=0; i<v->bpc; ++i)
     {
-      col[i] = uchar(boxColor);
+      col[i] = uint8_t(boxColor);
     }
     cerr << "Drawing box." << endl;
     v->drawBox(boxStart[0], boxStart[1], boxStart[2], 
@@ -804,7 +803,7 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
   {
     if (v->bpc==1 && v->chan==1)
     {
-      uchar col = uchar(lineColor);
+      uint8_t col = uint8_t(lineColor);
       cerr << "Drawing line." << endl;
       v->drawLine(lineStart[0], lineStart[1], lineStart[2], 
         lineEnd[0], lineEnd[1], lineEnd[2], &col);
@@ -873,9 +872,9 @@ void vvConv::modifyOutputFile(vvVolDesc* v)
     else
     {  
       vd->iconSize = ts_min(iconVD->vox[0], iconVD->vox[1]);
-      uchar* raw = iconVD->getRaw();
+      uint8_t* raw = iconVD->getRaw();
       delete[] vd->iconData;
-      vd->iconData = new uchar[vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP];
+      vd->iconData = new uint8_t[vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP];
       vvToolshed::resample(raw, iconVD->vox[0], iconVD->vox[1], iconVD->bpc * iconVD->chan, 
         vd->iconData, vd->iconSize, vd->iconSize, vvVolDesc::ICON_BPP);
     }
@@ -2413,7 +2412,7 @@ int vvConv::run(int argc, char** argv)
     else if (histType==0)   // ASCII on screen
     {
       cerr << endl;
-      for (int m=0; m<tmpVD->chan; ++m)
+      for (size_t m=0; m<tmpVD->chan; ++m)
       {
         if (tmpVD->chan>1) cerr << "Channel " << m << ":" << endl;
         tmpVD->printHistogram(0, m);
@@ -2425,11 +2424,11 @@ int vvConv::run(int argc, char** argv)
       char* basePath = new char[strlen(srcFile) + 1];
       vvToolshed::extractBasePath(basePath, srcFile);
       char* imgFileName = new char[strlen(srcFile) + 15];
-      for (int m=0; m<tmpVD->chan; ++m)
+      for (size_t m=0; m<tmpVD->chan; ++m)
       {
         if (tmpVD->chan>1)
         {
-          sprintf(imgFileName, "%s-hist-ch%02d.ppm", basePath, m);
+          sprintf(imgFileName, "%s-hist-ch%02d.ppm", basePath, static_cast<int32_t>(m));
         }
         else 
         {
@@ -2441,8 +2440,8 @@ int vvConv::run(int argc, char** argv)
         imgVD->vox[2] = 1;
         imgVD->bpc = 1;
         imgVD->chan = 3;
-        uchar* imgData = new uchar[imgVD->vox[0] * imgVD->vox[1] * 3];
-        int size[2] = {imgVD->vox[0], imgVD->vox[1]};
+        uint8_t* imgData = new uint8_t[imgVD->vox[0] * imgVD->vox[1] * 3];
+        size_t size[2] = {imgVD->vox[0], imgVD->vox[1]};
         vvColor col(1.0f, 1.0f, 1.0f);
         tmpVD->makeHistogramTexture(-1, m, 1, size, imgData, vvVolDesc::VV_LOGARITHMIC, &col, tmpVD->real[0], tmpVD->real[1]);
         imgVD->addFrame(imgData, vvVolDesc::ARRAY_DELETE);
@@ -2534,7 +2533,7 @@ int vvConv::run(int argc, char** argv)
     iconVD->setFilename(iconFile);
     iconVD->bpc = 1;
     iconVD->chan = vvVolDesc::ICON_BPP;
-    uchar* iconData = new uchar[iconVD->getSliceBytes()];
+    uint8_t* iconData = new uint8_t[iconVD->getSliceBytes()];
     memcpy(iconData, tmpVD->iconData, iconVD->getSliceBytes());
     iconVD->addFrame(iconData, vvVolDesc::ARRAY_DELETE);
     iconVD->frames = 1;

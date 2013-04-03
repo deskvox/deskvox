@@ -92,7 +92,7 @@ void vvScreenshotDialog::takePicture()
   }
 
   // reserve RGB image space
-  std::vector<uchar> image(w * h * 3);
+  std::vector<uint8_t> image(static_cast<size_t>(w * h * 3));
 
   // render screenshot to memory
   if (_canvas->getRenderer() != NULL)

@@ -71,8 +71,8 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
 
   const float deltaInv = 1.0f / delta.length();
 
-  const int startSlices = static_cast<const int>(ceilf(minDot * deltaInv));
-  const int endSlices = static_cast<const int>(floorf(maxDot * deltaInv));
+  ptrdiff_t startSlices = static_cast<ptrdiff_t>(ceilf(minDot * deltaInv));
+  ptrdiff_t endSlices = static_cast<ptrdiff_t>(floorf(maxDot * deltaInv));
 
   if(shader && renderer->voxelType == vvTexRend::VV_PIX_SHD )
   {
@@ -84,14 +84,14 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   }
   if (renderer->_isectType != vvTexRend::CPU)
   {
-    const int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
-                               1, 2, 3, 0, 7, 4, 5, 6,
-                               2, 7, 6, 3, 4, 1, 0, 5,
-                               3, 6, 5, 0, 7, 2, 1, 4,
-                               4, 5, 6, 7, 0, 1, 2, 3,
-                               5, 0, 3, 6, 1, 4, 7, 2,
-                               6, 7, 4, 5, 2, 3, 0, 1,
-                               7, 6, 3, 2, 5, 4, 1, 0 };
+    static const int sequence[64] = { 0, 1, 2, 3, 4, 5, 6, 7,
+                                      1, 2, 3, 0, 7, 4, 5, 6,
+                                      2, 7, 6, 3, 4, 1, 0, 5,
+                                      3, 6, 5, 0, 7, 2, 1, 4,
+                                      4, 5, 6, 7, 0, 1, 2, 3,
+                                      5, 0, 3, 6, 1, 4, 7, 2,
+                                      6, 7, 4, 5, 2, 3, 0, 1,
+                                      7, 6, 3, 2, 5, 4, 1, 0 };
 
     float edges[8 * 3];
     for (int i = 0; i < 8; ++i)
@@ -109,9 +109,9 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     // Thus add that little difference.
     shader->setParameter3f("texRange", texRange[0], texRange[1], texRange[2]);
     shader->setParameter3f("texMin", texMin[0], texMin[1], texMin[2]);
-    const int primCount = (endSlices - startSlices) + 1;
+    ptrdiff_t primCount = (endSlices - startSlices) + 1;
 
-    int vertArrayIdx = startSlices * 12; // vert shader
+    size_t vertArrayIdx = startSlices * 12; // vert shader
     if (renderer->_isectType == vvTexRend::GEOM_SHADER_ONLY)
     {
       vertArrayIdx = startSlices * 2;
@@ -136,7 +136,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   else // render proxy geometry on gpu? else then:
   {
     vvVector3 startPoint = farthest + delta * static_cast<float>(startSlices);
-    for (int i = startSlices; i <= endSlices; ++i)
+    for (ptrdiff_t i = startSlices; i <= endSlices; ++i)
     {
       vvVector3 isect[6];
       const int isectCnt = isect->isectPlaneCuboid(normal, startPoint, minClipped, maxClipped);
@@ -239,7 +239,7 @@ void vvBrick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMa
   glEnd();
 }
 
-bool vvBrick::upload3DTexture(const GLuint& texName, const uchar* texData,
+bool vvBrick::upload3DTexture(const GLuint& texName, const uint8_t* texData,
                               const GLenum texFormat, const GLint internalTexFormat,
                               const bool interpolation) const
 {

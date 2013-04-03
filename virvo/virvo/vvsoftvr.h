@@ -149,7 +149,7 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       bool     instantClassification() const;
       void     setWarpMode(WarpType);
       WarpType getWarpMode();
-      void     setCurrentFrame(int);
+      void     setCurrentFrame(size_t);
       void     renderVolumeGL();
       void     getIntermediateImage(vvImage*);
       void     getWarpMatrix(vvMatrix*);

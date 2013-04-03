@@ -29,7 +29,7 @@ class vvVolDesc;
 class VIRVOEXPORT vvSerBrickRend : public vvBrickRend
 {
 public:
-  vvSerBrickRend(vvVolDesc* vd, vvRenderState renderState, int numBricks,
+  vvSerBrickRend(vvVolDesc* vd, vvRenderState renderState, size_t numBricks,
                  const std::string& type, const vvRendererFactory::Options& options);
   ~vvSerBrickRend();
 

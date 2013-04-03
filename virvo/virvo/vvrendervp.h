@@ -98,7 +98,7 @@ class vvRenderVP : public vvRenderer
     void     renderVolumeGL();
     void     renderVolumeRGB(int, int, uchar*);
     void     updateTransferFunction();
-    void     setCurrentFrame(int);
+    void     setCurrentFrame(size_t);
     void     setLights(int, bool);
 };
 

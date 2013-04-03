@@ -26,7 +26,7 @@
 
 #include <cmath>
 
-vvBrickRend::vvBrickRend(vvVolDesc *vd, vvRenderState renderState, const int numBricks,
+vvBrickRend::vvBrickRend(vvVolDesc *vd, vvRenderState renderState, size_t numBricks,
                          const std::string& type, const vvRendererFactory::Options& options)
   : vvRenderer(vd, renderState)
   , _type(type)
@@ -58,7 +58,7 @@ void vvBrickRend::renderVolumeGL()
   {
     _bspTree->setVisitor(_showBricksVisitor);
     // no depth ordering necessary, don't calculate eye pos
-    vvVector3i eye = vvVector3i(0, 0, 0);
+    vvsize3 eye(0, 0, 0);
     _bspTree->traverse(eye);
   }
   else
@@ -90,7 +90,7 @@ void vvBrickRend::updateTransferFunction()
   vvRenderer::updateTransferFunction();
 }
 
-bool vvBrickRend::buildBspTree(const int numBricks)
+bool vvBrickRend::buildBspTree(size_t numBricks)
 {
   vvBspData data;
   data.numLeafs = numBricks;
@@ -100,14 +100,14 @@ bool vvBrickRend::buildBspTree(const int numBricks)
    return (_bspTree != NULL);
 }
 
-void vvBrickRend::setVisibleRegion(vvRenderer* renderer, const vvAABBi& aabb, const int padding)
+void vvBrickRend::setVisibleRegion(vvRenderer* renderer, const vvAABBs& aabb, size_t padding)
 {
   vvDebugMsg::msg(3, "vvBrickRend::setVisibleRegion()");
 
   renderer->setParameter(vvRenderer::VV_VISIBLE_REGION, aabb);
 
-  vvVector3i minval = aabb.getMin();
-  vvVector3i maxval = aabb.getMax();
+  vvsize3 minval = aabb.getMin();
+  vvsize3 maxval = aabb.getMax();
   for (int j = 0; j < 3; ++j)
   {
     if (minval[j] > 0)
@@ -120,7 +120,7 @@ void vvBrickRend::setVisibleRegion(vvRenderer* renderer, const vvAABBi& aabb, co
       maxval[j] += padding;
     }
   }
-  renderer->setParameter(vvRenderer::VV_PADDING_REGION, vvAABBi(minval, maxval));
+  renderer->setParameter(vvRenderer::VV_PADDING_REGION, vvAABBs(minval, maxval));
 
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

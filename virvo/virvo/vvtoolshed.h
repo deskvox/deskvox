@@ -144,6 +144,13 @@ class VIRVOEXPORT vvToolshed
     static int progressSteps;                     ///< total number of progress steps
 
   public:
+    enum ErrorType
+    {
+      VV_OK = 0,
+      VV_INVALID_SIZE,
+      VV_OUT_OF_MEMORY
+    };
+
     enum EndianType                               /// endianness
     {
       VV_LITTLE_END,                              ///< little endian: low-order byte is stored first
@@ -160,7 +167,7 @@ class VIRVOEXPORT vvToolshed
 
     static bool    isWhitespace(const char);
     static int     strCompare(const char*, const char*);
-    static int     strCompare(const char*, const char*, int n);
+    static int     strCompare(const char*, const char*, size_t n);
     static std::vector<std::string> split(const std::string& str, const std::string& delim);
     static bool    isSuffix(const char*, const char*);
     static void    HSBtoRGB(float*, float*, float*);
@@ -171,7 +178,7 @@ class VIRVOEXPORT vvToolshed
     static std::string  strcpyTail(const std::string, char);
     static void    strcpyHead(char*, const char*, char);
     static std::string strTrim(const std::string& str);
-    static unsigned int parseNextUint32(const char*, size_t&);
+    static uint32_t parseNextUint32(const char*, size_t&);
     static void    extractFilename(char*, const char*);
     static std::string  extractFilename(const std::string);
     static void    extractDirname(char*, const char*);
@@ -186,7 +193,7 @@ class VIRVOEXPORT vvToolshed
     static bool    increaseFilename(std::string&);
     static void    draw3DLine(int, int, int, int, int, int, uchar*, uchar*, int, int, int, int);
     static void    draw2DLine(int, int, int, int, uint, uchar*, int, int, int);
-    static int     getTextureSize(const int);
+    static size_t  getTextureSize(size_t);
     static bool    isFile(const char*);
     static bool    isDirectory(const char*);
     static long    getFileSize(const char*);
@@ -207,31 +214,31 @@ class VIRVOEXPORT vvToolshed
     static int     round(double x);
     static void    initProgress(int);
     static void    printProgress(int);
-    static int     encodeRLE(uchar*, uchar*, int, int, int);
-    static int     decodeRLE(uchar*, uchar*, int, int, int);
-    static int     encodeRLEFast(uchar*, uchar*, int, int);
-    static int     decodeRLEFast(uchar*, uchar*, int, int);
+    static ErrorType encodeRLE(uint8_t*, uint8_t*, size_t, size_t, size_t, size_t* outsize);
+    static ErrorType decodeRLE(uint8_t*, uint8_t*, size_t, size_t, size_t, size_t* outsize);
+    static size_t  encodeRLEFast(uint8_t*, uint8_t*, size_t, size_t);
+    static size_t  decodeRLEFast(uint8_t*, uint8_t*, size_t, size_t);
     static int     getNumProcessors();
     static void    makeColorBoardTexture(int, int, float, uchar*);
     static void    convertXY2HS(float, float, float*, float*);
     static void    convertHS2XY(float, float, float*, float*);
     static int     align(const int i, const int pot = 16);
-    static uchar   read8(FILE*);
-    static int     write8(FILE*, uchar);
-    static ushort  read16(FILE*, vvToolshed::EndianType = VV_BIG_END);
-    static int     write16(FILE*, ushort, vvToolshed::EndianType = VV_BIG_END);
+    static uint8_t read8(FILE*);
+    static size_t  write8(FILE*, uint8_t);
+    static uint16_t read16(FILE*, vvToolshed::EndianType = VV_BIG_END);
+    static size_t  write16(FILE*, uint16_t, vvToolshed::EndianType = VV_BIG_END);
     static uint32_t read32(FILE*, vvToolshed::EndianType = VV_BIG_END);
-    static int     write32(FILE*, uint32_t, vvToolshed::EndianType = VV_BIG_END);
+    static size_t  write32(FILE*, uint32_t, vvToolshed::EndianType = VV_BIG_END);
     static float   readFloat(FILE*, vvToolshed::EndianType = VV_BIG_END);
-    static int     writeFloat(FILE*, float, vvToolshed::EndianType = VV_BIG_END);
-    static uchar   read8(uchar*);
-    static int     write8(uchar*, uchar);
-    static ushort  read16(uchar*, const vvToolshed::EndianType = VV_BIG_END);
-    static int     write16(uchar*, ushort, vvToolshed::EndianType = VV_BIG_END);
-    static uint32_t read32(uchar*, const vvToolshed::EndianType = VV_BIG_END);
-    static int     write32(uchar*, uint32_t, vvToolshed::EndianType = VV_BIG_END);
-    static float   readFloat(uchar*, vvToolshed::EndianType = VV_BIG_END);
-    static int     writeFloat(uchar*, float, vvToolshed::EndianType = VV_BIG_END);
+    static size_t  writeFloat(FILE*, float, vvToolshed::EndianType = VV_BIG_END);
+    static uint8_t read8(uint8_t*);
+    static size_t  write8(uint8_t*, uint8_t);
+    static uint16_t read16(uint8_t*, const vvToolshed::EndianType = VV_BIG_END);
+    static size_t  write16(uint8_t*, uint16_t, vvToolshed::EndianType = VV_BIG_END);
+    static uint32_t read32(uint8_t*, const vvToolshed::EndianType = VV_BIG_END);
+    static size_t  write32(uint8_t*, uint32_t, vvToolshed::EndianType = VV_BIG_END);
+    static float   readFloat(uint8_t*, vvToolshed::EndianType = VV_BIG_END);
+    static size_t  writeFloat(uint8_t*, float, vvToolshed::EndianType = VV_BIG_END);
     static void    makeArraySystemIndependent(int, float*);
     static void    makeArraySystemDependent(int, float*);
     static EndianType getEndianness();

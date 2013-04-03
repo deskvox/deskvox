@@ -181,12 +181,11 @@ long VVVolumeDialog::onMakeIcon(FXObject*, FXSelector, void*)
 long VVVolumeDialog::onChannels(FXObject*, FXSelector, void*)
 {
   const char* name;
-  int c;
 
   FXString info;
-  for (c=0; c<_canvas->_vd->chan; ++c)
+  for (size_t c=0; c<_canvas->_vd->chan; ++c)
   {
-    info += "Channel " + FXStringFormat("%d", c) + ": ";
+    info += "Channel " + FXStringFormat("%" VV_PRIdSIZE, c) + ": ";
     name = _canvas->_vd->getChannelName(c);
     if (name) info += name;
     else info += "UNNAMED";
@@ -211,14 +210,14 @@ void VVVolumeDialog::updateValues()
   float fMin, fMax;
 
   _fileTField->setText(_canvas->_vd->getFilename());
-  _widthLabel->setText(FXStringFormat("%d",  _canvas->_vd->vox[0]));
-  _heightLabel->setText(FXStringFormat("%d", _canvas->_vd->vox[1]));
-  _slicesLabel->setText(FXStringFormat("%d", _canvas->_vd->vox[2]));
-  _framesLabel->setText(FXStringFormat("%d", _canvas->_vd->frames));
-  _bpcLabel->setText(FXStringFormat("%d",    _canvas->_vd->bpc));
-  _chanLabel->setText(FXStringFormat("%d",   _canvas->_vd->chan));
-  _voxelsLabel->setText(FXStringFormat("%d", _canvas->_vd->getFrameVoxels()));
-  _bytesLabel->setText(FXStringFormat("%d",  _canvas->_vd->getFrameBytes()));
+  _widthLabel->setText(FXStringFormat("%" VV_PRIdSIZE,  _canvas->_vd->vox[0]));
+  _heightLabel->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[1]));
+  _slicesLabel->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[2]));
+  _framesLabel->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->frames));
+  _bpcLabel->setText(FXStringFormat("%" VV_PRIdSIZE,    _canvas->_vd->bpc));
+  _chanLabel->setText(FXStringFormat("%" VV_PRIdSIZE,   _canvas->_vd->chan));
+  _voxelsLabel->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->getFrameVoxels()));
+  _bytesLabel->setText(FXStringFormat("%" VV_PRIdSIZE,  _canvas->_vd->getFrameBytes()));
   _dxLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[0]));
   _dyLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[1]));
   _dzLabel->setText(FXStringFormat("%.9g",   _canvas->_vd->dist[2]));
@@ -1235,10 +1234,10 @@ void VVServerDialog::updateValues()
   
   _x0TField->setText(FXStringFormat("%d", 0));
   _y0TField->setText(FXStringFormat("%d", 0));
-  _x1TField->setText(FXStringFormat("%d", _canvas->_vd->vox[0] - 1));
-  _y1TField->setText(FXStringFormat("%d", _canvas->_vd->vox[1] - 1));
+  _x1TField->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[0] - 1));
+  _y1TField->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[1] - 1));
   _startSliceTField->setText(FXStringFormat("%d", 0));
-  _endSliceTField->setText(FXStringFormat("%d", _canvas->_vd->vox[2] - 1));
+  _endSliceTField->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[2] - 1));
 }
 
 long VVServerDialog::onCmdRequest(FXObject*, FXSelector, void*)
@@ -1837,7 +1836,7 @@ void VVTimeStepDialog::playback()
 
 void VVTimeStepDialog::stepForward()
 {
-  int curr = _canvas->_renderer->getCurrentFrame();
+  size_t curr = _canvas->_renderer->getCurrentFrame();
   curr = (curr >= _canvas->_vd->frames - 1) ? 0 : curr + 1;
   _stepSlider->setValue(curr + 1);
   setTimeStep(curr);
@@ -2019,9 +2018,9 @@ void VVHistWindow::drawHist()
   int indWidth = totalWidth / (_valArray.count()-1);
   double scale = ((double)totalHeight)/255.0;
   int currWidth = wOffset;
-  for(int i = 0; i < _valArray.count() - 1; ++i)
+  for(size_t i = 0; i < _valArray.count() - 1; ++i)
   {
-    for(int j = 0; j < _channels; ++j)
+    for(size_t j = 0; j < _channels; ++j)
     {
       temp = _valArray[i][j];
       temp1 = _valArray[i+1][j];
@@ -2999,19 +2998,17 @@ long VVDataTypeDialog::onBytesPerChannel(FXObject* obj, FXSelector, void*)
 */
 void VVDataTypeDialog::updateValues()
 {
-  int i;
-
   _channel1Combo->clearItems();
   _channel2Combo->clearItems();
   _channelCombo->clearItems();
   _channel1Combo->setNumVisible(_canvas->_vd->chan);
   _channel2Combo->setNumVisible(_canvas->_vd->chan);
   _channelCombo->setNumVisible(_canvas->_vd->chan);
-  for (i=0; i<_canvas->_vd->chan; ++i)
+  for (size_t i=0; i<_canvas->_vd->chan; ++i)
   {
-    _channel1Combo->appendItem(FXStringFormat("%d", i+1));
-    _channel2Combo->appendItem(FXStringFormat("%d", i+1));
-    _channelCombo->appendItem(FXStringFormat("%d", i+1));
+    _channel1Combo->appendItem(FXStringFormat("%" VV_PRIdSIZE, i+1));
+    _channel2Combo->appendItem(FXStringFormat("%" VV_PRIdSIZE, i+1));
+    _channelCombo->appendItem(FXStringFormat("%" VV_PRIdSIZE, i+1));
   }
   if (_canvas->_vd->chan==1) _swapChannelsButton->disable();
   else _swapChannelsButton->enable();
@@ -3185,15 +3182,15 @@ long VVEditVoxelsDialog::onCrop(FXObject*, FXSelector, void*)
 */
 void VVEditVoxelsDialog::updateValues()
 {
-  _resizeXField->setText(FXStringFormat("%d", _canvas->_vd->vox[0]));
-  _resizeYField->setText(FXStringFormat("%d", _canvas->_vd->vox[1]));
-  _resizeZField->setText(FXStringFormat("%d", _canvas->_vd->vox[2]));
+  _resizeXField->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[0]));
+  _resizeYField->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[1]));
+  _resizeZField->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[2]));
   _cropXField->setText("0");
   _cropYField->setText("0");
   _cropZField->setText("0");
-  _cropWField->setText(FXStringFormat("%d", _canvas->_vd->vox[0]));
-  _cropHField->setText(FXStringFormat("%d", _canvas->_vd->vox[1]));
-  _cropSField->setText(FXStringFormat("%d", _canvas->_vd->vox[2]));
+  _cropWField->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[0]));
+  _cropHField->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[1]));
+  _cropSField->setText(FXStringFormat("%" VV_PRIdSIZE, _canvas->_vd->vox[2]));
 }
 
 /** Update other dialogs in app.
