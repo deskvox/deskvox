@@ -81,7 +81,7 @@ static void OutputDebugStringAF(char const* format, ...)
     va_list args;
     va_start(args, format);
 
-    vsnprintf_s(text, _TRUNCATE, format, args);
+    _vsnprintf_s(text, _TRUNCATE, format, args);
 
     va_end(args);
 
