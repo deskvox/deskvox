@@ -496,7 +496,7 @@ void vvRayRend::initVolumeTexture()
   numVolumeArrays = vd->frames;
 
   bool outOfMem = false;
-  size_t outOfMemFrame;
+  size_t outOfMemFrame = 0;
   for (size_t f=0; f<vd->frames; ++f)
   {
     _volumeCopyToGpuOk = d_volumeArrays[f].allocate3D(::channelDesc, volumeSize);
