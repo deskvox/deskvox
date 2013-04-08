@@ -181,6 +181,7 @@ set(VIRVO_SOURCES
   private/vvimage.cpp
   private/vvlog.cpp
 
+  cuda/debug.cpp
   cuda/graphics_resource.cpp
   cuda/host_device_array.cpp
 

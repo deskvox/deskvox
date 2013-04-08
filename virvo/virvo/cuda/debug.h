@@ -18,13 +18,12 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+
 #ifndef VV_CUDA_DEBUG_H
 #define VV_CUDA_DEBUG_H
 
-#include <cuda_runtime_api.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cuda_runtime_api.h>
 
 
 #ifndef VV_CUDA_DEBUGGING
@@ -41,6 +40,12 @@
 #   define VV_CUDA_CALL(X) X
 #endif
 
+#if VV_CUDA_DEBUGGING
+#   define VV_CUDA_MEMINFO() virvo::cuda::debug_meminfo(__FILE__, __LINE__)
+#else
+#   define VV_CUDA_MEMINFO()
+#endif
+
 
 namespace virvo
 {
@@ -48,13 +53,12 @@ namespace cuda
 {
 
 
-    inline void debug_report_error(cudaError_t err, char const* file, int line)
-    {
-        fprintf(stderr, "%s(%d) : CUDA error: %s\n", file, line, cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }
+    // Prints a description of the given error to stderr,
+    // then - depending on the configuration - breaks into the debugger or exits the application.
+    void debug_report_error(cudaError_t err, char const* file, int line);
 
 
+    // Checks if err equals cudaSuccess, if so returns immediately, otherwise calls debug_report_error.
     inline cudaError_t debug_call(cudaError_t err, char const* file, int line)
     {
         if (err != cudaSuccess)
@@ -64,8 +68,12 @@ namespace cuda
     }
 
 
+    // Prints the current CUDA memory usage to stderr.
+    void debug_meminfo(char const* file, int line);
+
+
 } // namespace cuda
 } // namespace virvo
 
-#endif // VV_CUDA_DEBUG_H
 
+#endif // VV_CUDA_DEBUG_H
