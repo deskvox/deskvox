@@ -25,6 +25,7 @@
 #include <iostream>
 
 #include "vvexport.h"
+#include "vvinttypes.h"
 
 //============================================================================
 // Constant Definitions
