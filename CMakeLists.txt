@@ -70,6 +70,7 @@ option(DESKVOX_GROUP_SOURCES_BY_TYPE "Group source files by type." ON)
 option(DESKVOX_BUILD_TESTS "Build tests" OFF)
 option(DESKVOX_BUILD_TOOLS "Build tools" ON)
 option(DESKVOX_BUILD_VOX_DESK "Build vox-desk. Disable if Qt 4 is not available." ON)
+option(DESKVOX_BUILD_VOX_DESK_FOX "Build fox-based vox-desk." OFF)
 
 option(DESKVOX_ENABLE_WARNINGS "Enable all warnings" ON)
 if(MSVC)
@@ -105,6 +106,9 @@ include(DeskvoxUsePackage)
 add_subdirectory(virvo)
 if(DESKVOX_BUILD_VOX_DESK)
   add_subdirectory(vox-desk-qt)
+endif()
+
+if(DESKVOX_BUILD_VOX_DESK_FOX)
   add_subdirectory(vox-desk)
 endif()
 
