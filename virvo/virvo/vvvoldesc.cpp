@@ -815,7 +815,9 @@ void vvVolDesc::makeHistogram(size_t frame, size_t chan1, size_t numChan, int* b
   }
   for (size_t f=0; f<frames; ++f)
   {
-    if (frame!=f) continue;           // only compute histogram for a specific frame
+    if (frame != size_t(-1) && frame != f)
+      continue; // only compute histogram for a specific frame
+
     raw = getRaw(f);
     for (size_t i=0; i<numVoxels; ++i)                   // count each voxel value
     {
@@ -1154,7 +1156,7 @@ void vvVolDesc::createHistogramFiles(bool overwrite)
     }
 
     // Compute histogram:
-    makeHistogram(-1, m, 1, buckets, hist, real[0], real[1]);
+    makeHistogram(size_t(-1), m, 1, buckets, hist, real[0], real[1]);
 
     // Check if file exists:
     if (!overwrite && vvToolshed::isFile(fileName))
