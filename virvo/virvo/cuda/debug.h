@@ -23,6 +23,14 @@
 #define VV_CUDA_DEBUG_H
 
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+
+#ifdef HAVE_CUDA
+
+
 #include <cuda_runtime_api.h>
 
 
@@ -74,6 +82,8 @@ namespace cuda
 
 } // namespace cuda
 } // namespace virvo
+
+#endif // HAVE_CUDA
 
 
 #endif // VV_CUDA_DEBUG_H

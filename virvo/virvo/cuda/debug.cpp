@@ -21,6 +21,10 @@
 
 #include "debug.h"
 
+
+#ifdef HAVE_CUDA
+
+
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif
@@ -62,3 +66,5 @@ void cu::debug_meminfo(char const* file, int line)
 
     fprintf(stdout, "%s(%d) : CUDA memory usage: %d%%\n", file, line, 100.0 * (davail / dtotal));
 }
+
+#endif // HAVE_CUDA
