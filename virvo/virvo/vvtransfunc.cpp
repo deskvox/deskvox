@@ -545,15 +545,19 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, b
 }
 
 //----------------------------------------------------------------------------
-/** Returns RGBA texture values for the alpha function of the 1D transfer function.
- Order of components: RGBARGBARGBA...
+/** Returns texture values for the alpha function of the 1D transfer function.
+ Order of components: RGBARGBARGBA... or ARGBARGBARGB... or BGRABGRABGRA...
  @param width,height size of texture [pixels]
  @param texture  _allocated_ array in which to store texture values.
                  Space for width*height*4 bytes must be provided.
  @param min,max data range for which alpha texture is to be created. Use 0..1 for integer data types.
+ @param format VV_RGBA, VV_ARGB or VV_BGRA
 */
-void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float min, float max)
+void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float min, float max,
+  vvToolshed::Format format)
 {
+  assert(format == vvToolshed::VV_RGBA || format == vvToolshed::VV_ARGB || format == vvToolshed::VV_BGRA);
+
   const int RGBA = 4;
   const int GRAY_LEVEL = 160;
   const int ALPHA_LEVEL = 230;
@@ -563,6 +567,22 @@ void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float 
   computeTFTexture(width, 1, 1, rgba, min, max);
   memset(texture, 0, width * height * RGBA); // make black and transparent
 
+  vvVector4i mask;
+
+  if (format == vvToolshed::VV_ARGB)
+  {
+    mask = vvVector4i(1, 2, 3, 0);
+  }
+  else if (format == vvToolshed::VV_RGBA)
+  {
+    mask = vvVector4i(0, 1, 2, 3);
+  }
+  else if (format == vvToolshed::VV_BGRA)
+  {
+    mask = vvVector4i(2, 1, 0, 3);
+  }
+  
+
   for (x=0; x<width; ++x)
   {
     index1D = RGBA * x + 3;                          // alpha component of TF
@@ -570,10 +590,10 @@ void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float 
     for (y=0; y<barHeight; ++y)
     {
       index2D = RGBA * (x + (height - y - 1) * width);
-      texture[index2D]     = GRAY_LEVEL;
-      texture[index2D + 1] = GRAY_LEVEL;
-      texture[index2D + 2] = GRAY_LEVEL;
-      texture[index2D + 3] = ALPHA_LEVEL;
+      texture[index2D + mask[0]] = GRAY_LEVEL;
+      texture[index2D + mask[1]] = GRAY_LEVEL;
+      texture[index2D + mask[2]] = GRAY_LEVEL;
+      texture[index2D + mask[3]] = ALPHA_LEVEL;
     }
   }
   delete[] rgba;

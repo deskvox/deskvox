@@ -68,7 +68,7 @@ class VIRVOEXPORT vvTransFunc
     vvColor computeColor(float, float=-1.0f, float=-1.0f);
     float computeOpacity(float, float=-1.0f, float=-1.0f);
     void makeColorBar(int width, uchar* colors, float min, float max, bool invertAlpha, vvToolshed::Format format = vvToolshed::VV_RGBA);
-    void makeAlphaTexture(int, int, uchar*, float, float);
+    void makeAlphaTexture(int, int, uchar*, float, float, vvToolshed::Format format = vvToolshed::VV_RGBA);
     void make2DTFTexture(int, int, uchar*, float, float, float, float);
     void make2DTFTexture2(int, int, uchar*, float, float, float, float);
     void make8bitLUT(int, uchar*, float, float);
