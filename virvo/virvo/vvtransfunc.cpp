@@ -395,7 +395,7 @@ void vvTransFunc::computeTFTexture(int w, int h, int d, float* array,
 
   if (format == vvToolshed::VV_ARGB)
   {
-    mask = vvVector4i(3, 0, 1, 2);
+    mask = vvVector4i(1, 2, 3, 0);
   }
   else if (format == vvToolshed::VV_RGBA)
   {
@@ -509,18 +509,29 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, b
   rgba.resize(width * 4);
   computeTFTexture(width, 1, 1, &rgba[0], min, max, 0.0f, 0.0f, 0.0f, 0.0f, format);
 
+  vvVector4i mask;
+
+  if (format == vvToolshed::VV_ARGB)
+  {
+    mask = vvVector4i(1, 0, 0, 0);
+  }
+  else if (format == vvToolshed::VV_RGBA)
+  {
+    mask = vvVector4i(0, 0, 0, 1);
+  }
+
   // Convert to uchar:
   for (int x=0; x<width; ++x)
   {
-    for (int c=0; c<4; ++c)
+    for (size_t c=0; c<4; ++c)
     {
       int index = x * 4 + c;
-      if (c<3) colors[index] = uchar(rgba[index] * 255.0f);
+      if (mask[c] == 0) colors[index] = uchar(rgba[index] * 255.0f);
       else colors[index] = (uchar)255;
       colors[index + width * 4] = uchar(rgba[index] * 255.0f);
       float alpha = rgba[x * 4 + 3];
       if (invertAlpha) alpha = 1.0f - alpha;
-      colors[index + 2 * width * 4] = (c<3) ? (uchar(alpha * 255.0f)) : 255;
+      colors[index + 2 * width * 4] = (mask[c] == 0) ? (uchar(alpha * 255.0f)) : 255;
     }
   }
 }
