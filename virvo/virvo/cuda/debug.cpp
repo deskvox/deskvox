@@ -64,7 +64,7 @@ void cu::debug_meminfo(char const* file, int line)
     double davail = static_cast<double>(avail);
     double dtotal = static_cast<double>(total);
 
-    fprintf(stdout, "%s(%d) : CUDA memory usage: %d%%\n", file, line, 100.0 * (davail / dtotal));
+    fprintf(stdout, "%s(%d) : CUDA memory usage: %e%%\n", file, line, 100.0 * (davail / dtotal));
 }
 
 #endif // HAVE_CUDA
