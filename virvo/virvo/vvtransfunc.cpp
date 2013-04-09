@@ -389,7 +389,7 @@ void vvTransFunc::computeTFTexture(int w, int h, int d, float* array,
   float minX, float maxX, float minY, float maxY, float minZ, float maxZ,
   vvToolshed::Format format)
 {
-  assert(format == vvToolshed::VV_RGBA || format == vvToolshed::VV_ARGB);
+  assert(format == vvToolshed::VV_RGBA || format == vvToolshed::VV_ARGB || format == vvToolshed::VV_BGRA);
 
   vvVector4i mask;
 
@@ -400,6 +400,10 @@ void vvTransFunc::computeTFTexture(int w, int h, int d, float* array,
   else if (format == vvToolshed::VV_RGBA)
   {
     mask = vvVector4i(0, 1, 2, 3);
+  }
+  else if (format == vvToolshed::VV_BGRA)
+  {
+    mask = vvVector4i(2, 1, 0, 3);
   }
 
   vvVector3f norm;    // normalized 3D position
@@ -496,12 +500,12 @@ void vvTransFunc::computeTFTextureHistCDF(int w, float* dest, float minX, float 
                following order: RGBARGBARGBA...
   @param min,max data range for which color bar is to be created. Use 0..1 for integer data types.
   @param invertAlpha Setting for opacity only color bar: false=high opacity is white; true=high opacity is black
-  @param format VV_RGBA or VV_ARGB
+  @param format VV_RGBA, VV_ARGB or VV_BGRA
 */
 void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, bool invertAlpha,
                                vvToolshed::Format format)
 {
-  assert(format == vvToolshed::VV_RGBA || format == vvToolshed::VV_ARGB);
+  assert(format == vvToolshed::VV_RGBA || format == vvToolshed::VV_ARGB || format == vvToolshed::VV_BGRA);
   assert(colors);
 
   // Compute color components:
@@ -516,6 +520,10 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, b
     mask = vvVector4i(1, 0, 0, 0);
   }
   else if (format == vvToolshed::VV_RGBA)
+  {
+    mask = vvVector4i(0, 0, 0, 1);
+  }
+  else if (format == vvToolshed::VV_BGRA)
   {
     mask = vvVector4i(0, 0, 0, 1);
   }

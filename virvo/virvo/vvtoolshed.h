@@ -162,7 +162,8 @@ class VIRVOEXPORT vvToolshed
       VV_LUMINANCE = 0,
       VV_RGB,
       VV_ARGB,
-      VV_RGBA
+      VV_RGBA,
+      VV_BGRA
     };
 
     static bool    isWhitespace(const char);
