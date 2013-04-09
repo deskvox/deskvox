@@ -507,7 +507,7 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, b
   // Compute color components:
   std::vector<float> rgba;                    // four values per pixel
   rgba.resize(width * 4);
-  computeTFTexture(width, 1, 1, &rgba[0], min, max, format);
+  computeTFTexture(width, 1, 1, &rgba[0], min, max, 0.0f, 0.0f, 0.0f, 0.0f, format);
 
   // Convert to uchar:
   for (int x=0; x<width; ++x)
