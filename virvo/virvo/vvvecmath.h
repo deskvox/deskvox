@@ -107,8 +107,8 @@ class VIRVOEXPORT vvMatrix
     // Constructs a diagonal matrix
     vvMatrix(float d0, float d1, float d2, float d3);
     vvMatrix(float* glf);
-    float& operator()(int row, int col);
-    float operator()(int row, int col) const;
+    float& operator()(size_t row, size_t col);
+    float const& operator()(size_t row, size_t col) const;
     vvMatrix operator+(const vvMatrix& operand) const;
     vvMatrix operator-(const vvMatrix& operand) const;
     vvMatrix operator*(const vvMatrix& operand) const;
@@ -199,8 +199,8 @@ class vvBaseVector4
     explicit vvBaseVector4(T val);
     vvBaseVector4(T x, T y, T z, T w);
     vvBaseVector4(const vvBaseVector3<T>& v, const T w);
-    T &operator[](int);
-    T operator[](int) const;
+    T &operator[](size_t index);
+    T const& operator[](size_t index) const;
     void set(T x, T y, T z, T w);
     void multiply(const vvMatrix& m);
     void add(const vvBaseVector4& rhs);
@@ -222,8 +222,8 @@ class vvBaseVector3
     vvBaseVector3(T x, T y, T z);
     vvBaseVector3(const vvBaseVector4<T>& v);
 
-    T &operator[](const int);
-    T operator[](const int) const;
+    T &operator[](size_t index);
+    T const& operator[](size_t index) const;
     void  set(T x, T y, T z);
     void  get(T* x, T* y, T* z) const;
     void  add(const vvBaseVector3& rhs);
@@ -275,8 +275,8 @@ class vvBaseVector2
     explicit vvBaseVector2(T);
     vvBaseVector2(T x, T y);
 
-    T &operator[](const int);
-    T operator[](const int) const;
+    T &operator[](size_t index);
+    T const& operator[](size_t index) const;
   private:
     T e[2];
 };

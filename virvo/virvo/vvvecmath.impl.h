@@ -82,16 +82,18 @@ vvBaseVector3<T>::vvBaseVector3(const vvBaseVector4<T>& v)
 //----------------------------------------------------------------------------
 /// Overload subscription operator.
 template <typename T>
-T &vvBaseVector3<T>::operator[](const int index)
+T &vvBaseVector3<T>::operator[](size_t index)
 {
+  assert(index < 3);
   return e[index];
 }
 
 //----------------------------------------------------------------------------
 /// Overload subscription operator.
 template <typename T>
-T vvBaseVector3<T>::operator[](const int index) const
+T const& vvBaseVector3<T>::operator[](size_t index) const
 {
+  assert(index < 3);
   return e[index];
 }
 
@@ -1079,16 +1081,18 @@ vvBaseVector4<T>::vvBaseVector4(const vvBaseVector3<T>& v, const T w)
 //----------------------------------------------------------------------------
 /// Overload subscription operator.
 template <typename T>
-T &vvBaseVector4<T>::operator[](const int index)
+T &vvBaseVector4<T>::operator[](size_t index)
 {
+  assert(index < 4);
   return e[index];
 }
 
 //----------------------------------------------------------------------------
 /// Overload subscription operator.
 template <typename T>
-T vvBaseVector4<T>::operator[](const int index) const
+T const& vvBaseVector4<T>::operator[](size_t index) const
 {
+  assert(index < 4);
   return e[index];
 }
 
@@ -1205,19 +1209,18 @@ vvBaseVector2<T>::vvBaseVector2(const T x, const T y)
 //----------------------------------------------------------------------------
 /// Overload subscription operator.
 template <typename T>
-T &vvBaseVector2<T>::operator[](const int index)
+T &vvBaseVector2<T>::operator[](size_t index)
 {
-  assert(index >= 0 && index < 2);
-
+  assert(index < 2);
   return e[index];
 }
 
 //----------------------------------------------------------------------------
 /// Overload subscription operator.
 template <typename T>
-T vvBaseVector2<T>::operator[](const int index) const
+T const& vvBaseVector2<T>::operator[](size_t index) const
 {
-  assert(index >= 0 && index < 2);
+  assert(index < 2);
   return e[index];
 }
 

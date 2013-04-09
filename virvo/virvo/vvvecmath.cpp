@@ -112,16 +112,20 @@ vvMatrix::vvMatrix(float* glf)
 //----------------------------------------------------------------------------
 /** Subscript operator.
  */
-float& vvMatrix::operator()(int row, int col)
+float& vvMatrix::operator()(size_t row, size_t col)
 {
+  assert(row < 4);
+  assert(col < 4);
   return e[row][col];
 }
 
 //---------------------------------------------------------------------------
 /** Subscript operator.
  */
-float vvMatrix::operator()(int row, int col) const
+float const& vvMatrix::operator()(size_t row, size_t col) const
 {
+  assert(row < 4);
+  assert(col < 4);
   return e[row][col];
 }
 
