@@ -331,7 +331,7 @@ void vvRayRend::compositeVolume(int, int)
 
   // Clip plane.
   const float3 pnormal = normalize(make_float3(_clipNormal[0], _clipNormal[1], _clipNormal[2]));
-  const float pdist = _clipNormal.dot(_clipPoint);
+  const float pdist = (-_clipNormal).dot(_clipPoint);
 
   if (_clipMode && _clipPerimeter)
   {

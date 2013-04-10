@@ -188,8 +188,8 @@ __device__ bool intersectSphere(const Ray& ray, const float3& center, const floa
 __device__ void intersectPlane(const Ray& ray, const float3& normal, const float& dist,
                                float* nddot, float* tnear)
 {
-  *nddot = dot(normal, ray.d);
-  const float vOrigin = dist - dot(normal, ray.o);
+  *nddot = dot(-normal, ray.d);
+  const float vOrigin = dist - dot(-normal, ray.o);
   *tnear = vOrigin / *nddot;
 }
 
@@ -268,7 +268,7 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos, co
   if (normal != NULL)
   {
     // Interpolate gradient with normal from clip object (based on opacity).
-    float3 normalVolume = tex2vol(*normal);
+    float3 normalVolume = *normal;
     N = (normalVolume * classification.w) + (N * (1.0f - classification.w));
     N = normalize(N);
   }
