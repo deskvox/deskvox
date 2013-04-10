@@ -43,6 +43,7 @@ typedef _W64 int ssize_t;
 #ifndef __sgi
 #ifndef _MSC_VER
 #include <stdint.h>
+#include <sys/types.h>
 #else
 #ifdef HAVE_GDCM
 #include "stdint.h"
