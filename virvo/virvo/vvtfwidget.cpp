@@ -113,6 +113,16 @@ const char* vvTFWidget::getName()
   return _name;
 }
 
+void vvTFWidget::setPos(const vvVector3& pos)
+{
+  _pos = pos;
+}
+
+vvVector3 vvTFWidget::pos() const
+{
+  return _pos;
+}
+
 void vvTFWidget::readName(FILE* fp)
 {
   char tmpName[128];

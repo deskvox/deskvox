@@ -80,6 +80,8 @@ class VIRVOEXPORT vvTFWidget
     virtual ~vvTFWidget();
     virtual void setName(const char*);
     virtual const char* getName();
+    void setPos(const vvVector3& pos);
+    vvVector3 pos() const;
     virtual void readName(FILE*);
     void write(FILE*);
     virtual const char* toString() = 0;
