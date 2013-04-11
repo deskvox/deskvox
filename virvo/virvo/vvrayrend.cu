@@ -146,7 +146,7 @@ __device__ bool solveQuadraticEquation(const float A, const float B, const float
 }
 
 __device__ bool intersectBox(const Ray& ray, const float3& boxmin, const float3& boxmax,
-                             float* tnear, float* tfar)
+                             float* tnear, float* tfar, float3* boxNormal)
 {
   // compute intersection of ray with all six bbox planes
   float3 invR = make_float3(1.0f, 1.0f, 1.0f) / ray.d;
@@ -155,15 +155,54 @@ __device__ bool intersectBox(const Ray& ray, const float3& boxmin, const float3&
   float tmin = fminf(t1, t2);
   float tmax = fmaxf(t1, t2);
 
+  if(t1 < t2)
+  {
+    (*boxNormal).x = 1.f;
+    (*boxNormal).y = 0.f;
+    (*boxNormal).z = 0.f;
+  }
+  else
+  {
+    (*boxNormal).x = -1.f;
+    (*boxNormal).y = 0.f;
+    (*boxNormal).z = 0.f;
+  }
+
   t1 = (boxmin.y - ray.o.y) * invR.y;
   t2 = (boxmax.y - ray.o.y) * invR.y;
   tmin = fmaxf(fminf(t1, t2), tmin);
   tmax = fminf(fmaxf(t1, t2), tmax);
 
+  if(t1 > tmin)
+  {
+    (*boxNormal).x = 0.f;
+    (*boxNormal).y = 1.f;
+    (*boxNormal).z = 0.f;
+  }
+  else if(t2 > tmin)
+  {
+    (*boxNormal).x = 0.f;
+    (*boxNormal).y = -1.f;
+    (*boxNormal).z = 0.f;
+  }
+
   t1 = (boxmin.z - ray.o.z) * invR.z;
   t2 = (boxmax.z - ray.o.z) * invR.z;
   tmin = fmaxf(fminf(t1, t2), tmin);
   tmax = fminf(fmaxf(t1, t2), tmax);
+
+  if(t1 > tmin)
+  {
+    (*boxNormal).x = 0.f;
+    (*boxNormal).y = 0.f;
+    (*boxNormal).z = 1.f;
+  }
+  else if(t2 > tmin)
+  {
+    (*boxNormal).x = 0.f;
+    (*boxNormal).y = 0.f;
+    (*boxNormal).z = -1.f;
+  }
 
   *tnear = tmin;
   *tfar = tmax;
@@ -355,7 +394,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
   float tbnear = 0.0f;
   float tbfar = 0.0f;
-  const bool hit = intersectBox(ray, probePos - probeSizeHalf, probePos + probeSizeHalf, &tbnear, &tbfar);
+  float3 boxNormal;
+  const bool hit = intersectBox(ray, probePos - probeSizeHalf, probePos + probeSizeHalf, &tbnear, &tbfar, &boxNormal);
   if (!hit)
   {
     d_output[y * texwidth + x] = make_uchar4(0);
@@ -376,6 +416,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     }
     return;
   }
+  bool justClippedBox = true;
 
   if (fmodf(tbnear, dist) != 0.0f)
   {
@@ -515,10 +556,15 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
         src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt, &sphereNormal);
         justClippedSphere = false;
       }
+      else if(justClippedBox)
+      {
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt, &boxNormal);
+      }
       else
       {
         src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt);
       }
+      justClippedBox = false; // just clipped bounding box passed after any case
     }
     justClippedPlane = false;
     justClippedSphere = false;
