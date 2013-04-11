@@ -73,4 +73,4 @@ ENDIF(QT_FOUND)
 # moc'd headers reside here
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-deskvox_add_tool(vox-desk-qt ${VOXDESK_QT_SRC} ${VOXDESK_QT_MOC_INC} ${VOXDESK_QT_UI_INC})
+deskvox_add_tool(vox-desk-qt ${VOXDESK_QT_INC} ${VOXDESK_QT_SRC} ${VOXDESK_QT_MOC_INC} ${VOXDESK_QT_UI_INC})
