@@ -23,7 +23,7 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -279,7 +279,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Orientation...</string>
+    <string>Show Orientation</string>
    </property>
   </action>
   <action name="actionShowBoundaries">
@@ -290,7 +290,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Boundaries...</string>
+    <string>Show Boundaries</string>
    </property>
   </action>
   <action name="actionShowPalette">
