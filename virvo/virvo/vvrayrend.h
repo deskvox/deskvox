@@ -29,6 +29,8 @@
 
 #include "vvibrrenderer.h"
 
+#include <memory>
+
 
 class vvVolDesc;
 
@@ -70,6 +72,13 @@ private:
   void factorViewMatrix();
   void findAxisRepresentations();
   bool allocIbrArrays(size_t w, size_t h);
+
+  struct Impl;
+  std::auto_ptr<Impl> impl;
+
+private:
+  vvRayRend(vvRayRend const&); // = delete;
+  vvRayRend& operator =(vvRayRend const&); // = delete;
 };
 
 #endif // HAVE_CUDA

@@ -46,23 +46,6 @@
 namespace cu = virvo::cuda;
 
 
-typedef std::vector<cu::Array> VolumeArrays;
-
-
-namespace
-{
-//
-// TODO:
-// Make these members of vvRayRend!!!
-//
-cudaChannelFormatDesc channelDesc;
-cu::Array* d_volumeArrays = 0;
-unsigned numVolumeArrays = 0;
-cu::Array d_transferFuncArray;
-cu::AutoPointer<void> d_depth;
-}
-
-
 // in vvrayrend.cu
 extern cu::Texture cVolTexture8;
 extern cu::Texture cVolTexture16;
@@ -118,13 +101,64 @@ IbrMode getIbrMode(vvRenderer::IbrMode mode)
 }
 
 
+struct vvRayRend::Impl
+{
+private:
+  cu::Array* volumeArrays;
+  size_t numVolumeArrays;
+public:
+  cu::Array transferFuncArray;
+  cu::AutoPointer<void> depth;
+  cudaChannelFormatDesc channelDesc;
+
+  Impl()
+    : volumeArrays(0)
+    , numVolumeArrays(0)
+    , transferFuncArray()
+    , depth()
+    , channelDesc()
+  {
+  }
+
+  ~Impl()
+  {
+    delete [] volumeArrays;
+  }
+
+  cu::Array& getVolumeArray(size_t index) const
+  {
+    assert( index < numVolumeArrays );
+    return volumeArrays[index];
+  }
+
+  void allocateVolumeArrays(size_t size)
+  {
+    // Create a new array
+    cu::Array* newArrays = size == 0 ? 0 : new cu::Array[size];
+
+#if 1
+    // Move the old arrays into the new ones
+    for (size_t n = 0; n < numVolumeArrays && n < size; ++n)
+    {
+      newArrays[n].reset(volumeArrays[n].release());
+    }
+#endif
+
+    // Delete the old arrays
+    delete [] volumeArrays;
+
+    // Update members
+    volumeArrays = newArrays;
+    numVolumeArrays = size;
+  }
+};
+
+
 vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvIbrRenderer(vd, renderState)
+  , impl(new Impl)
 {
   vvDebugMsg::msg(1, "vvRayRend::vvRayRend()");
-
-  assert( d_volumeArrays == 0 );
-  assert( numVolumeArrays == 0 );
 
   glewInit();
 
@@ -163,15 +197,6 @@ vvRayRend::~vvRayRend()
 {
   vvDebugMsg::msg(1, "vvRayRend::~vvRayRend()");
 
-  // free volume frames
-  delete [] d_volumeArrays;
-  d_volumeArrays = 0;
-  numVolumeArrays = 0;
-
-  d_transferFuncArray.reset();
-
-  ::d_depth.reset();
-
   delete[] _rgbaTF;
 }
 
@@ -193,10 +218,10 @@ void vvRayRend::updateTransferFunction()
 
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
 
-  if (!d_transferFuncArray.allocate(channelDesc, lutEntries, 1))
+  if (!impl->transferFuncArray.allocate(channelDesc, lutEntries, 1))
   {
   }
-  if (!d_transferFuncArray.upload(0, 0, _rgbaTF, lutEntries * 4 * sizeof(float)))
+  if (!impl->transferFuncArray.upload(0, 0, _rgbaTF, lutEntries * 4 * sizeof(float)))
   {
   }
 
@@ -204,7 +229,7 @@ void vvRayRend::updateTransferFunction()
   cTFTexture.setNormalized(true);    // access with normalized texture coordinates
   cTFTexture.setAddressMode(cudaAddressModeClamp);   // wrap texture coordinates
 
-  cTFTexture.bind(::d_transferFuncArray, channelDesc);
+  cTFTexture.bind(impl->transferFuncArray, channelDesc);
 }
 
 void vvRayRend::compositeVolume(int, int)
@@ -344,11 +369,11 @@ void vvRayRend::compositeVolume(int, int)
 
   if (vd->bpc == 1)
   {
-    cVolTexture8.bind(::d_volumeArrays[vd->getCurrentFrame()], ::channelDesc);
+    cVolTexture8.bind(impl->getVolumeArray(vd->getCurrentFrame()), impl->channelDesc);
   }
   else if (vd->bpc == 2)
   {
-    cVolTexture16.bind(::d_volumeArrays[vd->getCurrentFrame()], ::channelDesc);
+    cVolTexture16.bind(impl->getVolumeArray(vd->getCurrentFrame()), impl->channelDesc);
   }
 
   RayRendKernelParams kernelParams;
@@ -372,7 +397,7 @@ void vvRayRend::compositeVolume(int, int)
                     constAtt, linearAtt, quadAtt,
                     kernelParams.clipping, false, false,
                     center, radius * radius,
-                    pnormal, pdist, ::d_depth.get(), _depthPrecision,
+                    pnormal, pdist, impl->depth.get(), _depthPrecision,
                     make_float2(_depthRange[0], _depthRange[1]),
                     getIbrMode(_ibrMode), _twoPassIbr);
 
@@ -389,7 +414,7 @@ void vvRayRend::getColorBuffer(uchar** colors) const
 
 void vvRayRend::getDepthBuffer(uchar** depths) const
 {
-  cudaMemcpy(*depths, ::d_depth.get(), intImg->width*intImg->height*_depthPrecision/8, cudaMemcpyDeviceToHost);
+  cudaMemcpy(*depths, impl->depth.get(), intImg->width*intImg->height*_depthPrecision/8, cudaMemcpyDeviceToHost);
 }
 
 //----------------------------------------------------------------------------
@@ -483,23 +508,20 @@ void vvRayRend::initVolumeTexture()
   cudaExtent volumeSize = make_cudaExtent(vd->vox[0], vd->vox[1], vd->vox[2]);
   if (vd->bpc == 1)
   {
-    ::channelDesc = cudaCreateChannelDesc<uchar>();
+    impl->channelDesc = cudaCreateChannelDesc<uchar>();
   }
   else if (vd->bpc == 2)
   {
-    ::channelDesc = cudaCreateChannelDesc<ushort>();
+    impl->channelDesc = cudaCreateChannelDesc<ushort>();
   }
 
-  delete [] d_volumeArrays;
-  numVolumeArrays = 0;
-  d_volumeArrays = new cu::Array[vd->frames];
-  numVolumeArrays = vd->frames;
+  impl->allocateVolumeArrays(vd->frames);
 
   bool outOfMem = false;
   size_t outOfMemFrame = 0;
   for (size_t f=0; f<vd->frames; ++f)
   {
-    _volumeCopyToGpuOk = d_volumeArrays[f].allocate3D(::channelDesc, volumeSize);
+    _volumeCopyToGpuOk = impl->getVolumeArray(f).allocate3D(impl->channelDesc, volumeSize);
 
     size_t availableMem;
     size_t totalMem;
@@ -537,7 +559,7 @@ void vvRayRend::initVolumeTexture()
       }
       copyParams.srcPtr = make_cudaPitchedPtr(data, volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
     }
-    copyParams.dstArray = ::d_volumeArrays[f].get();
+    copyParams.dstArray = impl->getVolumeArray(f).get();
     copyParams.extent = volumeSize;
     copyParams.kind = cudaMemcpyHostToDevice;
     vvCudaTools::checkError(&ok, cudaMemcpy3D(&copyParams),
@@ -549,7 +571,7 @@ void vvRayRend::initVolumeTexture()
     std::cerr << "Couldn't accomodate the volume" << std::endl;
     for (size_t f=0; f<=outOfMemFrame; ++f)
     {
-      d_volumeArrays[f].reset();
+      impl->getVolumeArray(f).reset();
     }
   }
 
@@ -561,7 +583,7 @@ void vvRayRend::initVolumeTexture()
     //
     for (size_t f=0; f<outOfMemFrame; ++f)
     {
-      d_volumeArrays[f].reset();
+      impl->getVolumeArray(f).reset();
     }
   }
 
@@ -573,7 +595,7 @@ void vvRayRend::initVolumeTexture()
         cVolTexture8.setFilterMode(_interpolation ? cudaFilterModeLinear : cudaFilterModePoint);
         cVolTexture8.setAddressMode(cudaAddressModeClamp);
 
-        ok = cVolTexture8.bind(::d_volumeArrays[0], ::channelDesc);
+        ok = cVolTexture8.bind(impl->getVolumeArray(0), impl->channelDesc);
     }
     else if (vd->bpc == 2)
     {
@@ -581,7 +603,7 @@ void vvRayRend::initVolumeTexture()
         cVolTexture16.setFilterMode(_interpolation ? cudaFilterModeLinear : cudaFilterModePoint);
         cVolTexture16.setAddressMode(cudaAddressModeClamp);
 
-        ok = cVolTexture16.bind(::d_volumeArrays[0], ::channelDesc);
+        ok = cVolTexture16.bind(impl->getVolumeArray(0), impl->channelDesc);
     }
   }
 }
@@ -617,10 +639,10 @@ bool vvRayRend::allocIbrArrays(size_t w, size_t h)
   size_t size = w * h * _depthPrecision/8;
 
   // deallocate the current and allocate new buffer
-  if (!d_depth.allocate(size))
+  if (!impl->depth.allocate(size))
     return false;
 
-  cudaMemset(d_depth.get(), 0, size);
+  cudaMemset(impl->depth.get(), 0, size);
 
   return true;
 }
