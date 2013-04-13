@@ -203,6 +203,10 @@ GLenum gl::getFramebufferStatus(GLenum target, char const* file, int line)
 //--------------------------------------------------------------------------------------------------
 static void DrawFullScreenQuad()
 {
+    GLint matrixMode = 0;
+
+    glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
+
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -221,6 +225,8 @@ static void DrawFullScreenQuad()
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
+
+    glMatrixMode(matrixMode);
 }
 
 
@@ -261,7 +267,7 @@ void gl::blendTexture(GLuint texture)
 //--------------------------------------------------------------------------------------------------
 void gl::blendPixels(GLsizei srcW, GLsizei srcH, GLenum format, GLenum type, const GLvoid* pixels, GLenum sfactor, GLenum dfactor)
 {
-    glPushAttrib(GL_COLOR_BUFFER_BIT);
+    glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT | GL_PIXEL_MODE_BIT);
 
     GLint viewport[4];
 
