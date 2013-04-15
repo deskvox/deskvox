@@ -43,6 +43,11 @@ class VIRVOEXPORT vvTFPoint
     
     vvTFPoint();
     vvTFPoint(float, float, float=-1.0f, float=-1.0f);
+
+    void setPos(const vvVector3& pos);
+    void setOpacity(float opacity);
+    vvVector3 pos() const;
+    float opacity() const;
 };
 
 /** Base class of transfer function widgets.
@@ -78,9 +83,14 @@ class VIRVOEXPORT vvTFWidget
     vvTFWidget(float, float, float);
     vvTFWidget(vvTFWidget*);
     virtual ~vvTFWidget();
+
+    void setOpacity(float opacity);
+    float opacity() const;
+
     virtual void setName(const char*);
     virtual const char* getName();
     void setPos(const vvVector3& pos);
+    void setPos(float x, float y, float z);
     vvVector3 pos() const;
     virtual void readName(FILE*);
     void write(FILE*);
@@ -108,6 +118,12 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
     vvTFBell(vvTFBell*);
     vvTFBell(vvColor, bool, float, float, float, float=0.5f, float=1.0f, float=0.5f, float=1.0f);
     vvTFBell(FILE*);
+
+    void setColor(const vvColor& col);
+    void setSize(const vvVector3& size);
+    vvColor color() const;
+    vvVector3 size() const;
+
     virtual const char* toString();
     virtual void fromString(const std::string& str);
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
@@ -133,6 +149,14 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     vvTFPyramid(vvTFPyramid*);
     vvTFPyramid(vvColor, bool, float, float, float, float, float=0.5f, float=1.0f, float=0.0f, float=0.5f, float=1.0f, float=0.0f);
     vvTFPyramid(FILE*);
+
+    void setColor(const vvColor& col);
+    void setTop(const vvVector3& top);
+    void setBottom(const vvVector3& bottom);
+    vvColor color() const;
+    vvVector3 top() const;
+    vvVector3 bottom() const;
+
     virtual const char* toString();
     virtual void fromString(const std::string& str);
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
@@ -146,6 +170,9 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
 class VIRVOEXPORT vvTFColor : public vvTFWidget
 {
   public:
+    void setColor(const vvColor& col);
+    vvColor color() const;
+
     vvColor _col;                                 ///< RGB color
 
     vvTFColor();
@@ -161,6 +188,9 @@ class VIRVOEXPORT vvTFColor : public vvTFWidget
 class VIRVOEXPORT vvTFSkip : public vvTFWidget
 {
   public:
+    void setSize(const vvVector3& size);
+    vvVector3 size() const;
+
     vvVector3 _size;         ///< width, height, depth of skipped area [volume data space]
 
     vvTFSkip();

@@ -36,7 +36,7 @@ using std::list;
 
 vvTFPoint::vvTFPoint()
 {
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _pos[i] = 0.0f;
   }
@@ -51,6 +51,26 @@ vvTFPoint::vvTFPoint(float op, float x, float y, float z)
   _opacity = op;
 }
 
+void vvTFPoint::setPos(const vvVector3& pos)
+{
+  _pos = pos;
+}
+
+void vvTFPoint::setOpacity(float opacity)
+{
+  _opacity = opacity;
+}
+
+vvVector3 vvTFPoint::pos() const
+{
+  return _pos;
+}
+
+float vvTFPoint::opacity() const
+{
+  return _opacity;
+}
+
 //============================================================================
 
 const char* vvTFWidget::NO_NAME = "UNNAMED";
@@ -59,10 +79,8 @@ const char* vvTFWidget::NO_NAME = "UNNAMED";
 */
 vvTFWidget::vvTFWidget()
 {
-  int i;
-
   _name = NULL;
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _pos[i] = 0.5f;                               // default is center of TF space
   }
@@ -72,11 +90,9 @@ vvTFWidget::vvTFWidget()
 */
 vvTFWidget::vvTFWidget(vvTFWidget* src)
 {
-  int i;
-
   _name = NULL;
   setName(src->_name);
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _pos[i] = src->_pos[i];
   }
@@ -95,6 +111,16 @@ vvTFWidget::vvTFWidget(float x, float y, float z)
 vvTFWidget::~vvTFWidget()
 {
   delete[] _name;
+}
+
+void vvTFWidget::setOpacity(float opacity)
+{
+  _opacity = opacity;
+}
+
+float vvTFWidget::opacity() const
+{
+  return _opacity;
 }
 
 void vvTFWidget::setName(const char* newName)
@@ -116,6 +142,11 @@ const char* vvTFWidget::getName()
 void vvTFWidget::setPos(const vvVector3& pos)
 {
   _pos = pos;
+}
+
+void vvTFWidget::setPos(float x, float y, float z)
+{
+  _pos = vvVector3(x, y, z);
 }
 
 vvVector3 vvTFWidget::pos() const
@@ -214,11 +245,9 @@ vvTFWidget::WidgetType vvTFWidget::getWidgetType(const char* str)
 
 vvTFBell::vvTFBell() : vvTFWidget()
 {
-  int i;
-
   _opacity = 1.0f;
   _ownColor = true;
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _col[i] = 1.0f;                               // default is white
     _size[i] = 0.2f;                              // default with: smaller rather than bigger
@@ -227,11 +256,9 @@ vvTFBell::vvTFBell() : vvTFWidget()
 
 vvTFBell::vvTFBell(vvTFBell* src) : vvTFWidget(src)
 {
-  int i;
-
   _opacity = src->_opacity;
   _ownColor = src->_ownColor;
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _col[i] = src->_col[i];
     _size[i] = src->_size[i];
@@ -258,6 +285,26 @@ vvTFBell::vvTFBell(FILE* fp) : vvTFWidget()
     &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity) != 11)
      std::cerr << "vvTFBell: fscanf failed" << std::endl;
   _ownColor = (ownColorInt != 0);
+}
+
+void vvTFBell::setColor(const vvColor& col)
+{
+  _col = col;
+}
+
+void vvTFBell::setSize(const vvVector3& size)
+{
+  _size = size;
+}
+
+vvColor vvTFBell::color() const
+{
+  return _col;
+}
+
+vvVector3 vvTFBell::size() const
+{
+  return _size;
 }
 
 const char* vvTFBell::toString()
@@ -402,11 +449,9 @@ void vvTFBell::setOwnColor(bool own)
 
 vvTFPyramid::vvTFPyramid() : vvTFWidget()
 {
-  int i;
-
   _opacity = 1.0f;
   _ownColor = true;
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _col[i] = 1.0f;                               // default is white
     _top[i] = 0.2f;                               // default with: smaller rather than bigger
@@ -416,11 +461,9 @@ vvTFPyramid::vvTFPyramid() : vvTFWidget()
 
 vvTFPyramid::vvTFPyramid(vvTFPyramid* src) : vvTFWidget(src)
 {
-  int i;
-
   _opacity = src->_opacity;
   _ownColor = src->_ownColor;
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _col[i] = src->_col[i];
     _top[i] = src->_top[i];
@@ -451,6 +494,36 @@ vvTFPyramid::vvTFPyramid(FILE* fp) : vvTFWidget()
     &_top[0], &_top[1], &_top[2], &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity) != 14)
      std::cerr << "vvTFPyramid: fscanf failed" << std::endl;
   _ownColor = (ownColorInt != 0);
+}
+
+void vvTFPyramid::setColor(const vvColor& col)
+{
+  _col = col;
+}
+
+void vvTFPyramid::setTop(const vvVector3& top)
+{
+  _top = top;
+}
+
+void vvTFPyramid::setBottom(const vvVector3& bottom)
+{
+  _bottom = bottom;
+}
+
+vvColor vvTFPyramid::color() const
+{
+  return _col;
+}
+
+vvVector3 vvTFPyramid::top() const
+{
+  return _top;
+}
+
+vvVector3 vvTFPyramid::bottom() const
+{
+  return _bottom;
 }
 
 const char* vvTFPyramid::toString()
@@ -674,9 +747,7 @@ void vvTFPyramid::setOwnColor(bool own)
 
 vvTFColor::vvTFColor() : vvTFWidget()
 {
-  int i;
-  
-  for(i=0; i<3; ++i)
+  for(size_t i=0; i<3; ++i)
   {
     _col[i] = 1.0f;                               // default is white
   }
@@ -684,9 +755,7 @@ vvTFColor::vvTFColor() : vvTFWidget()
 
 vvTFColor::vvTFColor(vvTFColor* src) : vvTFWidget(src)
 {
-  int i;
-  
-  for(i=0; i<3; ++i)
+  for(size_t i=0; i<3; ++i)
   {
     _col[i] = src->_col[i];
   }
@@ -695,6 +764,16 @@ vvTFColor::vvTFColor(vvTFColor* src) : vvTFWidget(src)
 vvTFColor::vvTFColor(vvColor col, float x, float y, float z) : vvTFWidget(x, y, z)
 {
   _col = col;
+}
+
+void vvTFColor::setColor(const vvColor& col)
+{
+  _col = col;
+}
+
+vvColor vvTFColor::color() const
+{
+  return _col;
 }
 
 vvTFColor::vvTFColor(FILE* fp) : vvTFWidget()
@@ -777,6 +856,16 @@ vvTFSkip::vvTFSkip(FILE* fp) : vvTFWidget()
   readName(fp);
   if(fscanf(fp, " %g %g %g %g %g %g\n", &_pos[0], &_pos[1], &_pos[2], &_size[0], &_size[1], &_size[2]) != 6)
      std::cerr << "vvTFSkip: fscanf failed" << std::endl;
+}
+
+void vvTFSkip::setSize(const vvVector3& size)
+{
+  _size = size;
+}
+
+vvVector3 vvTFSkip::size() const
+{
+  return _size;
 }
 
 const char* vvTFSkip::toString()
