@@ -10,8 +10,6 @@ deskvox_use_package(GLEW)
 
 deskvox_link_libraries(virvo)
 
-add_definitions(-DVV_APPLICATION_BUILD)
-
 set(VOXDESK_QT_INC
   vvcanvas.h
   vvdimensiondialog.h

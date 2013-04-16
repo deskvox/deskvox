@@ -48,8 +48,6 @@ configure_file(${VIRVO_INCLUDE_DIR}/virvo/vvconfig.h.in ${VIRVO_CONFIG_DIR}/vvco
 
 add_definitions(-DHAVE_CONFIG_H)
 
-add_definitions(-DVV_LIBRARY_BUILD)
-
 if(NOT BUILD_SHARED_LIBS)
   add_definitions(-DVIRVO_STATIC)
 else()

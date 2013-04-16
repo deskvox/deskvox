@@ -18,10 +18,6 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#if !defined(VV_LIBRARY_BUILD) && !defined(VV_APPLICATION_BUILD)
-#error "vvsocket.h is meant for internal use only"
-#endif
-
 #ifndef _VVSOCKET_H_
 #define _VVSOCKET_H_
 
