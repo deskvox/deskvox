@@ -22,13 +22,13 @@
 #define VV_TFDIALOG_H
 
 #include <virvo/vvtfwidget.h>
-#include <virvo/vvvoldesc.h>
 
 #include <QDialog>
 
 class vvCanvas;
+class vvTFWidget;
+class vvVolDesc;
 class Ui_TFDialog;
-class QGraphicsScene;
 
 class vvTFDialog : public QDialog
 {
@@ -38,22 +38,46 @@ public:
   ~vvTFDialog();
 private:
   Ui_TFDialog* ui;
-  QGraphicsScene* _scene;
+
+  /** pimpl idiom data for Qt graphics view */
+  struct QData;
+  QData* _qdata;
+
   vvCanvas* _canvas;
 
   vvVector2f _zoomRange; ///< min/max for zoom area on data range
 
+  void drawTF();
   void drawColorTexture();
   void drawAlphaTexture();
+  void clearPins();
+  void createPins();
+  void createPin(vvTFWidget* w);
   void makeColorBar(std::vector<uchar>* colorBar, int width) const;
   void makeAlphaTexture(std::vector<uchar>* alphaTex, int width, int height) const;
   void emitTransFunc();
+  void updateSettingsBox();
 private slots:
   void onNewWidget();
+  void onDeleteClicked();
   void onUndoClicked();
   void onPresetColorsChanged(int index);
   void onPresetAlphaChanged(int index);
   void onApplyClicked();
+  void onNewVolDesc(vvVolDesc* vd);
+  void saveTF();
+  void loadTF();
+
+  void onColor(const QColor& color);
+  void onHasOwnColor(bool hascolor);
+  void onSize(const vvVector3& size);
+  void onOpacity(float opacity);
+  void onTop(const vvVector3& top);
+  void onBottom(const vvVector3& bottom);
+
+  void onTFMouseMove(QPointF pos, Qt::MouseButton button);
+  void onTFMousePress(QPointF pos, Qt::MouseButton button);
+  void onTFMouseRelease(QPointF pos, Qt::MouseButton button);
 signals:
   void newWidget(vvTFWidget* widget);
   void newTransferFunction();

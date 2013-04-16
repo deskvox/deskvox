@@ -11,6 +11,12 @@ deskvox_use_package(GLEW)
 deskvox_link_libraries(virvo)
 
 set(VOXDESK_QT_INC
+  tfeditor/colorbox.h
+  tfeditor/gaussianbox.h
+  tfeditor/graphicsscene.h
+  tfeditor/pyramidbox.h
+  tfeditor/skipbox.h
+
   vvcanvas.h
   vvdimensiondialog.h
   vvinteractor.h
@@ -31,6 +37,12 @@ set(VOXDESK_QT_INC
 )
 
 SET(VOXDESK_QT_SRC
+  tfeditor/colorbox.cpp
+  tfeditor/gaussianbox.cpp
+  tfeditor/graphicsscene.cpp
+  tfeditor/pyramidbox.cpp
+  tfeditor/skipbox.cpp
+
   vvcanvas.cpp
   vvdimensiondialog.cpp
   vvinteractor.cpp
@@ -50,6 +62,11 @@ SET(VOXDESK_QT_SRC
 )
 
 SET(VOXDESK_QT_UI
+  tfeditor/colorbox.ui
+  tfeditor/gaussianbox.ui
+  tfeditor/pyramidbox.ui
+  tfeditor/skipbox.ui
+
   vvdimensiondialog.ui
   vvlightdialog.ui
   vvmainwindow.ui
