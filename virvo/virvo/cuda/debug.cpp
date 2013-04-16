@@ -26,7 +26,7 @@
 
 
 #ifdef _MSC_VER
-#include <Windows.h>
+#include <windows.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
