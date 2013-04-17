@@ -79,8 +79,8 @@ namespace
 
   bool compareResources(vvResource* first, vvResource* second)
   {
-    int firstMem = 0;
-    int secondMem = 0;
+    size_t firstMem = 0;
+    size_t secondMem = 0;
     for(std::vector<vvGpu::vvGpuInfo>::iterator it = first->ginfos.begin(); it!=first->ginfos.end(); it++)
     {
       firstMem += (*it).freeMem;
@@ -285,8 +285,8 @@ bool vvResourceManager::allocateResources(ThreadData *tData)
       tData->request->niceness = 0;
       tData->request->type = vvRenderer::REMOTE_IMAGE;
 
-      // volume size in kb
-      ssize_t volSize = tData->vd->getBytesize() / 1024;
+      // volume size in bytes
+      size_t volSize = tData->vd->getBytesize();
 
       // sort a copy for free gpu memory
       std::vector<vvResource*> resCopy = rm->_resources;
@@ -297,6 +297,7 @@ bool vvResourceManager::allocateResources(ThreadData *tData)
         {
           if((*it)->ginfos.size() > 0)
           {
+            assert(volSize >= (*it)->ginfos[0].freeMem);
             volSize = volSize - (*it)->ginfos[0].freeMem; // TODO: Fix this!
           }
           tData->request->nodes.push_back(1);
@@ -662,7 +663,7 @@ uint vvResourceManager::getFreeResourceCount() const
   for(std::vector<vvResource*>::const_iterator freeRes = _resources.begin();
       freeRes != _resources.end(); freeRes++)
   {
-    int freeMemory = 0;
+    size_t freeMemory = 0;
     for(std::vector<vvGpu::vvGpuInfo>::iterator ginfo = (*freeRes)->ginfos.begin();
         ginfo < (*freeRes)->ginfos.end(); ginfo++)
     {
@@ -701,7 +702,7 @@ std::vector<vvResource*> vvResourceManager::getFreeResources(uint amount) const
   std::vector<vvResource*>::const_iterator freeRes = _resources.begin();
   while(freeRes != _resources.end() && freeResources.size() < amount)
   {
-    int freeMemory = 0;
+    size_t freeMemory = 0;
     for(std::vector<vvGpu::vvGpuInfo>::iterator ginfo = (*freeRes)->ginfos.begin();
         ginfo < (*freeRes)->ginfos.end(); ginfo++)
     {

@@ -254,7 +254,7 @@ class vvBaseVector3
     void  swap(vvBaseVector3<T>& v);
     bool  isectPlaneLine(const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&);
     bool  isectPlaneRay(const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&);
-    int   isectPlaneCuboid(const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&);
+    size_t isectPlaneCuboid(const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&);
     int   isectRayCylinder(const vvBaseVector3&, const vvBaseVector3&, T, const vvBaseVector3&, const vvBaseVector3&);
     bool  isectRayTriangle(const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&);
     T isectLineLine(const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&, const vvBaseVector3&);
@@ -299,9 +299,9 @@ class vvPlane
 
 inline std::ostream& operator<<(std::ostream& out, const vvMatrix& m)
 {
-  for (int i = 0; i < 4; ++i)
+  for (size_t i = 0; i < 4; ++i)
   {
-    for (int j = 0; j < 4; ++j)
+    for (size_t j = 0; j < 4; ++j)
     {
       out << " " << m(i, j);
     }

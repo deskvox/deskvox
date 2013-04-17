@@ -101,7 +101,7 @@ bool vvObjView::saveMV(FILE* fp)
 {
   fputs(cameraString, fp);
   fputc('\n', fp);
-  for (int i=0; i<4; ++i)
+  for (size_t i=0; i<4; ++i)
   {
     fprintf(fp, "%f %f %f %f\n", mv(i, 0), mv(i, 1), mv(i, 2), mv(i, 3));
   }
@@ -149,8 +149,8 @@ bool vvObjView::loadMV(FILE* fp)
   ttype = tokenizer->nextToken();
   if (ttype!=vvTokenizer::VV_WORD) goto done;
   if (strcmp(tokenizer->sval, cameraString) != 0) goto done;
-  for (int i=0; i<4; ++i)
-    for (int j=0; j<4; ++j)
+  for (size_t i=0; i<4; ++i)
+    for (size_t j=0; j<4; ++j)
   {
     ttype = tokenizer->nextToken();
     if (ttype != vvTokenizer::VV_NUMBER) goto done;

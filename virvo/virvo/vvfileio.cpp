@@ -158,9 +158,11 @@ vvFileIO::ErrorType vvFileIO::loadWLFile(vvVolDesc* vd)
     }
   }
 
-  vd->vox[0] = max[0];
-  vd->vox[1] = max[1];
-  vd->vox[2] = max[2];
+  assert(max[0] >= 1 && max[1] >= 1 && max[2] >= 1);
+
+  vd->vox[0] = static_cast<size_t>(max[0]);
+  vd->vox[1] = static_cast<size_t>(max[1]);
+  vd->vox[2] = static_cast<size_t>(max[2]);
   vd->frames = 1;
 
   // Allocate memory for volume:
@@ -213,9 +215,9 @@ vvFileIO::ErrorType vvFileIO::loadWLFile(vvVolDesc* vd)
 vvFileIO::ErrorType vvFileIO::loadASCFile(vvVolDesc* vd)
 {
   FILE* fp;
-  int32_t x, y, z, op;
+  int32_t op;
   uint8_t* raw;                                     // raw volume data
-  size_t retval;
+  int retval;
 
   vvDebugMsg::msg(1, "vvFileIO::loadASCFile()");
 
@@ -229,7 +231,19 @@ vvFileIO::ErrorType vvFileIO::loadASCFile(vvVolDesc* vd)
 
   vd->removeSequence();
 
-  retval=fscanf(fp, "%d %d %d", &x, &y, &z);
+  int32_t tmpx;
+  int32_t tmpy;
+  int32_t tmpz;
+  retval=fscanf(fp, "%d %d %d", &tmpx, &tmpy, &tmpz);
+  if (tmpx < 0 || tmpy < 0 || tmpz < 0)
+  {
+    VV_LOG(0) << "Error: Invalid header in ASC file." << std::endl;
+    return FILE_ERROR;
+  }
+
+  size_t x = static_cast<size_t>(tmpx);
+  size_t y = static_cast<size_t>(tmpy);
+  size_t z = static_cast<size_t>(tmpz);
   if (retval==3)
   {
     vd->vox[0] = x;
@@ -251,7 +265,7 @@ vvFileIO::ErrorType vvFileIO::loadASCFile(vvVolDesc* vd)
 
   while (!feof(fp))
   {
-    retval=fscanf(fp, "%d %d %d %d", &x, &y, &z, &op);
+    retval=fscanf(fp, "%d %d %d %d", &tmpx, &tmpy, &tmpz, &op);
     if (retval!=4)
     {
       vvDebugMsg::msg(1, "vvFileIO::loadASCFile: fscanf failed");
@@ -259,14 +273,17 @@ vvFileIO::ErrorType vvFileIO::loadASCFile(vvVolDesc* vd)
       delete[] raw;
       return FILE_ERROR;
     }
-    if (x < 0 || size_t(x)>vd->vox[0]-1 || y < 0 || size_t(y)>vd->vox[1]-1
-     || z < 0 || size_t(z)>vd->vox[2]-1 || op < 0 || op>255)
+    if (tmpx < 0 || size_t(tmpx)>vd->vox[0]-1 || tmpy < 0 || size_t(tmpy)>vd->vox[1]-1
+     || tmpy < 0 || size_t(tmpz)>vd->vox[2]-1 || op < 0 || op>255)
     {
       vvDebugMsg::msg(1, "Error: Invalid value in ASC file.");
       fclose(fp);
       delete[] raw;
       return FILE_ERROR;
     }
+    x = static_cast<size_t>(tmpx);
+    y = static_cast<size_t>(tmpy);
+    z = static_cast<size_t>(tmpz);
     raw[x + y * vd->vox[0] + z * vd->vox[0] * vd->vox[1]] = (uint8_t)op;
   }
   fclose(fp);
@@ -550,7 +567,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   // Load volume data:
   if ((_sections & RAW_DATA) != 0)
   {
-    fseek(fp, headerSize, SEEK_SET);
+    fseek(fp, static_cast<long>(headerSize), SEEK_SET);
     if (ctype==1) encoded = new uint8_t[frameSize];
     for (size_t f=0; f<vd->frames; ++f)
     {
@@ -611,7 +628,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
 
   // Read transfer function(s):
   size_t offset = headerSize;
-  fseek(fp, offset, SEEK_SET);
+  fseek(fp, static_cast<long>(offset), SEEK_SET);
   for (size_t f=0; f<vd->frames; ++f)
   {
     switch (ctype)
@@ -625,7 +642,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
       else offset += encodedSize;
       break;
     }
-    fseek(fp, offset, SEEK_SET);
+    fseek(fp, static_cast<long>(offset), SEEK_SET);
   }
   for (int i=0; i<tnum; ++i)
   {
@@ -658,7 +675,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   if (!feof(fp) && vd->iconSize>0)
   {
     delete[] vd->iconData;
-    const size_t iconBytes = vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP;
+    const size_t iconBytes = vd->iconSize * vd->iconSize * static_cast<size_t>(vvVolDesc::ICON_BPP);
     vd->iconData = new uint8_t[iconBytes];
     const size_t encodedSize = vvToolshed::read32(fp);
     if (encodedSize>0)                            // compressed icon?
@@ -800,7 +817,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   fprintf(fp, "ICON %d %d\n", static_cast<int32_t>(vd->iconSize), static_cast<int32_t>(vd->iconSize));
   if (vd->iconSize>0)
   {
-    size_t iconBytes = vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP;
+    size_t iconBytes = vd->iconSize * vd->iconSize * static_cast<size_t>(vvVolDesc::ICON_BPP);
     uint8_t* encodedIcon = new uint8_t[iconBytes];
     vvToolshed::ErrorType err = vvToolshed::encodeRLE(encodedIcon, vd->iconData, iconBytes, vvVolDesc::ICON_BPP, iconBytes, &encodedSize);
     if (err == vvToolshed::VV_OK)                           // compression possible?
@@ -959,34 +976,34 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       }
       else if (strcmp(tok->sval, "VOXELS")==0)
       {
-        for (int i=0; i<3; ++i)
+        for (size_t i=0; i<3; ++i)
         {
           ttype = tok->nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          vd->vox[i] = int(tok->nval);
+          vd->vox[i] = static_cast<size_t>(tok->nval);
         }
       }
       else if (strcmp(tok->sval, "TIMESTEPS")==0)
       {
         ttype = tok->nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->frames = int(tok->nval);
+        vd->frames = static_cast<size_t>(tok->nval);
       }
       else if (strcmp(tok->sval, "BPC")==0)
       {
         ttype = tok->nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->bpc = int(tok->nval);
+        vd->bpc = static_cast<size_t>(tok->nval);
       }
       else if (strcmp(tok->sval, "CHANNELS")==0)
       {
         ttype = tok->nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->chan = int(tok->nval);
+        vd->chan = static_cast<size_t>(tok->nval);
       }
       else if (strcmp(tok->sval, "DIST")==0)
       {
-        for (int i=0; i<3; ++i)
+        for (size_t i=0; i<3; ++i)
         {
           ttype = tok->nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
@@ -1006,7 +1023,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       }
       else if (strcmp(tok->sval, "MINMAX")==0)
       {
-        for (int i=0; i<2; ++i)
+        for (size_t i=0; i<2; ++i)
         {
           ttype = tok->nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
@@ -1015,7 +1032,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       }
       else if (strcmp(tok->sval, "POS")==0)
       {
-        for (int i=0; i<3; ++i)
+        for (size_t i=0; i<3; ++i)
         {
           ttype = tok->nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
@@ -1063,7 +1080,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       {
         ttype = tok->nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->iconSize = int(tok->nval);
+        vd->iconSize = size_t(tok->nval);
         tok->nextLine();
 
         // Read icon:
@@ -1740,7 +1757,7 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
   tokenizer->setParseNumbers(true);
 
   // Read all time step data but don't create volume yet:
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     boxMin[i] =  VV_FLT_MAX;
     boxMax[i] = -VV_FLT_MAX;
@@ -1761,7 +1778,7 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
       }
       switch (i)
       {
-        case 0: numParticles = int(tokenizer->nval); break;
+        case 0: numParticles = size_t(tokenizer->nval); break;
         case 1: break;                            // ignore time value
         case 2: if (tokenizer->nval < boxMin[0]) boxMin[0] = tokenizer->nval; break;
         case 3: if (tokenizer->nval < boxMin[1]) boxMin[1] = tokenizer->nval; break;
@@ -1856,17 +1873,17 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
   // Now that all particles are read from all time steps, the volumes can be generated.
 
   // Compute header values:
-  for(int i=0; i<3; ++i)
+  for(size_t i=0; i<3; ++i)
   {
     boxSize[i] = boxMax[i] - boxMin[i];
   }
   maxBoxSize = ts_max(boxSize[0], boxSize[1], boxSize[2]);
-  for(int i=0; i<3; ++i)
+  for(size_t i=0; i<3; ++i)
   {
     vd->vox[i] = size_t(float(maxEdgeLength) * boxSize[i] / maxBoxSize);
     vd->vox[i] = ts_clamp(vd->vox[i], size_t(1), size_t(maxEdgeLength));
   }
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     vd->dist[i] = boxSize[i] / float(vd->vox[i]);
   }
@@ -1882,7 +1899,7 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
 
     for (size_t i=0; i<numParticles; ++i)
     {
-      for (int j=0; j<3; ++j)
+      for (size_t j=0; j<3; ++j)
       {
         iPos[j] = int(float(vd->vox[j] - 1) * (timesteps.getData()->pos[j][i] - boxMin[j]) / (boxMax[j] - boxMin[j]));
         iPos[j] = ts_clamp(iPos[j], size_t(0), vd->vox[j] - 1);
@@ -1960,12 +1977,11 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   float minVal,maxVal;                            // density min and max values of current time step
   float val = 0.f;                                // particle value
   int numParticles=0;                             // number of particles in current time step
-  int numTimesteps;                               // number of time steps in file
+  size_t numTimesteps;                            // number of time steps in file
   size_t frameSize;                               // number of bytes per frame
   int iVal;                                       // integer density
   size_t iPos[3];                                 // position of particle in volume
   int index;
-  int i,j,t;
   float speed[3];
 
   vvDebugMsg::msg(1, "vvFileIO::loadCPTFile()");
@@ -1988,7 +2004,7 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   vd->dt = 0.1f;
 
   // Initialize variables:
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     boxMin[i] =  VV_FLT_MAX;
     boxMax[i] = -VV_FLT_MAX;
@@ -2024,10 +2040,10 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
     for (;;)                                      // loop thru particles in one time step
     {
       // Read an entire line of numbers:
-      for(i=0; tokenizer->nextToken() == vvTokenizer::VV_NUMBER; ++i)
+      for(size_t i=0; tokenizer->nextToken() == vvTokenizer::VV_NUMBER; ++i)
       {
         // Memorize position and adjust simulation box:
-        if (i>=0 && i<=2)
+        if (i<=2)
         {
           if (i==0) xpos.append(tokenizer->nval);
           else if (i==1) ypos.append(tokenizer->nval);
@@ -2085,33 +2101,33 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   // Now that all particles are read from all time steps, the volumes can be generated.
 
   // Compute header values:
-  for(i=0; i<3; ++i)
+  for(size_t i=0; i<3; ++i)
   {
     boxSize[i] = boxMax[i] - boxMin[i];
   }
   maxBoxSize = ts_max(boxSize[0], boxSize[1], boxSize[2]);
-  for(i=0; i<3; ++i)
+  for(size_t i=0; i<3; ++i)
   {
     vd->vox[i] = size_t(float(maxEdgeLength) * boxSize[i] / maxBoxSize);
     vd->vox[i] = ts_clamp(vd->vox[i], size_t(1), size_t(maxEdgeLength));
   }
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     vd->dist[i] = boxSize[i] / float(vd->vox[i]);
   }
 
   frameSize = vd->getFrameBytes();
   timesteps.first();
-  for(t=0; t<numTimesteps; ++t)
+  for(size_t t=0; t<numTimesteps; ++t)
   {
     raw = new uint8_t[frameSize];
     assert(raw);
     memset(raw, 0, frameSize);
     numParticles = timesteps.getData()->numParticles;
 
-    for (i=0; i<numParticles; ++i)
+    for (size_t i=0; i<numParticles; ++i)
     {
-      for (j=0; j<3; ++j)
+      for (size_t j=0; j<3; ++j)
       {
         iPos[j] = int(float(vd->vox[j] - 1) * (timesteps.getData()->pos[j][i] - boxMin[j]) / (boxMax[j] - boxMin[j]));
         iPos[j] = ts_clamp(iPos[j], size_t(0), vd->vox[j] - 1);
@@ -2179,7 +2195,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   size_t*   stripByteCounts=NULL;                 // bytes per strip
   int    rowsPerStrip=0;                          // rows per strip
   int planarConfiguration = 1;                    // 1=RGBRGB, 2=RRGGBB
-  size_t where;                                   // current position in file
+  long where;                                     // current position in file
   size_t strips=1;                                // number of strips
   size_t readBytes;                               // number of bytes read
   size_t bytesToRead;                             // bytes left to read from file
@@ -2224,7 +2240,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
 
   // Find and process first IFD:
   ifdpos = vvToolshed::read32(fp, endian);
-  fseek(fp, ifdpos, SEEK_SET);
+  fseek(fp, static_cast<long>(ifdpos), SEEK_SET);
   numEntries = vvToolshed::read16(fp, endian);
 
   vvDebugMsg::msg(2, "TIFF IFD Tags: ", numEntries);
@@ -2391,7 +2407,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     // Load volume data:
     for (size_t i=0; i<numTiles; ++i)
     {
-      fseek(fp, tilePos[i], SEEK_SET);
+      fseek(fp, static_cast<long>(tilePos[i]), SEEK_SET);
       tpx = i % numTilesX;
       tpy = (i / numTilesX) % numTilesY;
       tpz = i / (numTilesX * numTilesY);
@@ -2454,12 +2470,12 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
   assert(vd->frames>0 && vd->vox[2]>0);
 
   // Generate file names:
-  digits = 1 + int32_t(log((double)vd->vox[2]) / log(10.0));
+  digits = 1 + size_t(log((double)vd->vox[2]) / log(10.0));
   filenames = new char*[vd->vox[2]];
   len = strlen(vd->getFilename());
   for (size_t i=0; i<vd->vox[2]; ++i)
   {
-    filenames[i] = new char[len + digits + 2];    // add 2 for '-' and '\0'
+    filenames[i] = new char[len + static_cast<size_t>(digits) + 2];    // add 2 for '-' and '\0'
     vvToolshed::extractDirname(buffer, vd->getFilename());
     strcpy(filenames[i], buffer);
     vvToolshed::extractBasename(buffer, vd->getFilename());
@@ -2512,7 +2528,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
     vvToolshed::write32(fp, ifdOffset, vvToolshed::VV_BIG_END);
 
     // Write 8,8,8 as SHORT for RGB:
-    rgbOffset = ftell(fp);
+    rgbOffset = static_cast<size_t>(ftell(fp));
     vvToolshed::write16(fp, 8, ENDIAN_TYPE);
     vvToolshed::write16(fp, 8, ENDIAN_TYPE);
     vvToolshed::write16(fp, 8, ENDIAN_TYPE);
@@ -2930,7 +2946,7 @@ vvFileIO::ErrorType vvFileIO::loadRawFile(vvVolDesc* vd)
   lSize = vvToolshed::getFileSize(vd->getFilename());
   if (lSize <= 0) return FILE_ERROR;
   if (lSize > INT_MAX) return FORMAT_ERROR;
-  size = (int)lSize;
+  size = (size_t)lSize;
 
                                                   // try different ways to find the volume dimensions
   for (attempt=0; attempt<NUM_ALGORITHMS; ++attempt)
@@ -2939,7 +2955,7 @@ vvFileIO::ErrorType vvFileIO::loadRawFile(vvVolDesc* vd)
     {
       if ((size % components) != 0) continue;
       else voxels = size / components;
-      cubRoot = (int)powf((float)voxels, 1.0f/3.0f);
+      cubRoot = (size_t)powf((float)voxels, 1.0f/3.0f);
       width = height = slices = 0;
       switch (attempt)
       {
@@ -2957,15 +2973,15 @@ vvFileIO::ErrorType vvFileIO::loadRawFile(vvVolDesc* vd)
             {
               switch (i)
               {
-                case 0: slices = atoi(ptr+1); break;
-                case 1: height = atoi(ptr+1); break;
-                case 2: width  = atoi(ptr+1); break;
+                case 0: slices = size_t(atoi(ptr+1)); break;
+                case 1: height = size_t(atoi(ptr+1)); break;
+                case 2: width  = size_t(atoi(ptr+1)); break;
                 default: break;
               }
               ++i;
               *ptr = '\0';                        // convert delimiters to string terminators
             }
-            else if (ptr==filename && i==2) width = atoi(ptr);
+            else if (ptr==filename && i==2) width = size_t(atoi(ptr));
           }
           break;
 
@@ -2976,7 +2992,7 @@ vvFileIO::ErrorType vvFileIO::loadRawFile(vvVolDesc* vd)
 
         case 2:                                   // Check for slices being powers of 2:
           width = vvToolshed::getTextureSize(cubRoot);
-          sqrRoot = (int)sqrt((double)voxels / (double)width);
+          sqrRoot = (size_t)sqrt((double)voxels / (double)width);
           height = vvToolshed::getTextureSize(sqrRoot);
           slices = voxels / width / height;
           break;
@@ -3093,8 +3109,8 @@ vvFileIO::ErrorType vvFileIO::loadRawFile(vvVolDesc* vd, size_t w, size_t h, siz
   vd->bpc    = b;
   vd->chan   = c;
 
-  fseek(fp, header, SEEK_SET);                    // skip header
-  rawData = new uint8_t[vd->getFrameBytes()];std::cerr << vd->getFrameBytes() << std::endl;
+  fseek(fp, static_cast<long>(header), SEEK_SET);                    // skip header
+  rawData = new uint8_t[vd->getFrameBytes()];
   read = fread(rawData, vd->getFrameBytes(), 1, fp);
   if (read != 1)
   {
@@ -3121,7 +3137,6 @@ vvFileIO::ErrorType vvFileIO::loadPXMRawImage(vvVolDesc* vd)
   char buf[3][BUFSIZE];
   bool isPGM;                                     // true=PGM, false=PPM
   char* retval_fgets;
-  size_t retval_sscanf;
 
   vvDebugMsg::msg(1, "vvFileIO::loadPXMRawImage()");
   if ( (fp=fopen(vd->getFilename(), "rb")) == NULL)
@@ -3160,7 +3175,7 @@ vvFileIO::ErrorType vvFileIO::loadPXMRawImage(vvVolDesc* vd)
       return FILE_ERROR;
     }
   } while (buf[0][0] == '#');
-  retval_sscanf=sscanf(buf[0], "%s %s", buf[1], buf[2]);
+  int retval_sscanf=sscanf(buf[0], "%s %s", buf[1], buf[2]);
   if (retval_sscanf!=2)
   {
     std::cerr<<"vvFileIO::loadPXMRawImage sscanf failed"<<std::endl;
@@ -3282,7 +3297,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   vd->vox[1] = dim[1];
   vd->vox[2] = 1;
   const double *spacing = image.GetSpacing();
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     vd->dist[i] =spacing[i];
   }
@@ -3339,7 +3354,6 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
 #else
   vvDicom* dicomReader;
   vvDicomProperties prop;
-  int i;
 
   dicomReader = new vvDicom(&prop);
   if (!dicomReader->readDicomFile((char*)vd->getFilename()))
@@ -3363,7 +3377,7 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   vd->vox[0] = static_cast<size_t>(prop.width);
   vd->vox[1] = static_cast<size_t>(prop.height);
   vd->vox[2] = 1;
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     vd->dist[i] = prop.dist[i];
   }
@@ -3566,7 +3580,7 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
      ;
   vd->frames = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
   vd->dist[0] = vd->dist[1] = vd->dist[2] = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     start      = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
     end        = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
@@ -3648,7 +3662,7 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
   vvTokenizer::TokenType prevTT = vvTokenizer::VV_NOTHING;
   uint8_t* raw;                                   // raw volume data
   size_t frameSize;                               // size of a frame in bytes
-  int dimension = 0;                              // dimension of the volume dataset
+  size_t dimension = 0;                           // dimension of the volume dataset
   bool bigEnd = true;                             // true = big endian
 
   vvDebugMsg::msg(1, "vvFileIO::loadNrrdFile()");
@@ -3720,14 +3734,14 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
       ttype = tokenizer->nextToken();
       if (ttype == vvTokenizer::VV_NUMBER)
       {
-        dimension = int(tokenizer->nval);
+        dimension = static_cast<size_t>(tokenizer->nval);
         if (dimension < 1 || dimension > 4) cerr << "dimension must be 1 to 4" << endl;
       }
       else cerr << "invalid dimension" << endl;
     }
     else if (strcmp(tokenizer->sval, "sizes")==0)
     {
-      for (int i=0; i<dimension; ++i)
+      for (size_t i=0; i<dimension; ++i)
       {
         ttype = tokenizer->nextToken();
         if (tokenizer->nval <= -std::numeric_limits<float>::epsilon())
@@ -3760,7 +3774,7 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
     else if (strcmp(tokenizer->sval, "spacings")==0)
     {
       bool multiModal = false;
-      for (int i=0; i<dimension; ++i)
+      for (size_t i=0; i<dimension; ++i)
       {
         ttype = tokenizer->nextToken();
         if (i==0 && ttype==vvTokenizer::VV_WORD)  // if first value is NaN, expect multi-modal data
@@ -3978,7 +3992,7 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
   ErrorType err;
   vvTokenizer::TokenType ttype;                   // currently processed token type
   size_t skipBytes = 0;
-  int i;
+  size_t i;
   bool done = false;
   bool bigEnd = true;
   bool rightHanded = true;
@@ -4173,7 +4187,7 @@ vvFileIO::ErrorType vvFileIO::loadVOLBFile(vvVolDesc* vd)
   const char* VOLB_V1_STRING = "VOLB\n";
   const char* VOLB_V2_STRING = "Volb2";
   FILE* fp;
-  int i;
+  size_t i;
   size_t blocksRead;
   char buf[128];
   uint32_t chunkSize;
@@ -4491,12 +4505,12 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
   vd->bpc = 4;
 
   // Read header:
-  for (int i=0; i<3; ++i)   // read number of gridpoints
+  for (size_t i=0; i<3; ++i)   // read number of gridpoints
   {  
     if (tok->nextToken() != vvTokenizer::VV_NUMBER) assert(0);
     vd->vox[i] = size_t(tok->nval);
   }
-  for (int i=0; i<3; ++i)   // read distance between gridpoints
+  for (size_t i=0; i<3; ++i)   // read distance between gridpoints
   {  
     if (tok->nextToken() != vvTokenizer::VV_NUMBER) assert(0);
     vd->dist[i] = tok->nval;

@@ -107,7 +107,6 @@ void vvObjView::resetCamera()
 bool vvObjView::saveCamera(const char* filename)
 {
   FILE* fp;
-  int i,j;
   float xMin, xMax, yMin, yMax, yFOV;
 
   vvDebugMsg::msg(1, "vvObjView::saveCamera()");
@@ -126,9 +125,9 @@ bool vvObjView::saveCamera(const char* filename)
 
   // Write camara matrix:
   fputs(CAMERA_MATRIX_STRING, fp);
-  for (i=0; i<4; ++i)
+  for (size_t i=0; i<4; ++i)
   {
-    for (j=0; j<4; ++j)
+    for (size_t j=0; j<4; ++j)
     {
       fprintf(fp, " %f", _camera(j, i));
     }
@@ -146,7 +145,6 @@ bool vvObjView::saveCamera(const char* filename)
 bool vvObjView::loadCamera(const char* filename)
 {
   FILE* fp;
-  int i,j;
   bool done = false;
   vvMatrix camera;
   float extent[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -172,7 +170,7 @@ bool vvObjView::loadCamera(const char* filename)
     if (ttype != vvTokenizer::VV_WORD) done = true;
     else if (vvToolshed::strCompare(tokenizer->sval, CAMERA_WINDOW_STRING) == 0)
     {
-      for (i=0; i<4 && !done; ++i)
+      for (size_t i=0; i<4 && !done; ++i)
       {
         ttype = tokenizer->nextToken();
         if (ttype == vvTokenizer::VV_NUMBER) extent[i] = tokenizer->nval;
@@ -187,7 +185,7 @@ bool vvObjView::loadCamera(const char* filename)
     }
     else if (vvToolshed::strCompare(tokenizer->sval, CAMERA_CLIPPING_STRING) == 0)
     {
-      for (i=0; i<3 && !done; ++i)
+      for (size_t i=0; i<3 && !done; ++i)
       {
         ttype = tokenizer->nextToken();
         if (ttype == vvTokenizer::VV_NUMBER) clip[i] = tokenizer->nval;
@@ -202,9 +200,9 @@ bool vvObjView::loadCamera(const char* filename)
     }
     else if (vvToolshed::strCompare(tokenizer->sval, CAMERA_MATRIX_STRING) == 0)
     {
-      for (i=0; i<4 && !done; ++i)
+      for (size_t i=0; i<4 && !done; ++i)
       {
-        for (j=0; j<4 && !done; ++j)
+        for (size_t j=0; j<4 && !done; ++j)
         {
           ttype = tokenizer->nextToken();
           if (ttype == vvTokenizer::VV_NUMBER) camera(j, i) = tokenizer->nval;

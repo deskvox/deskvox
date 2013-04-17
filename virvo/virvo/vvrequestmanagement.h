@@ -41,8 +41,8 @@ class VIRVOEXPORT vvGpu
 public:
   struct vvGpuInfo
   {
-    int freeMem;
-    int totalMem;
+    size_t freeMem;
+    size_t totalMem;
   };
 
   /**

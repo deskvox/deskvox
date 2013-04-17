@@ -108,7 +108,7 @@ void vvBrickRend::setVisibleRegion(vvRenderer* renderer, const vvAABBs& aabb, si
 
   vvsize3 minval = aabb.getMin();
   vvsize3 maxval = aabb.getMax();
-  for (int j = 0; j < 3; ++j)
+  for (size_t j = 0; j < 3; ++j)
   {
     if (minval[j] > 0)
     {

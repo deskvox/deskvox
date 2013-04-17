@@ -173,8 +173,8 @@ void vvTFDialog::drawColorTexture()
 {
   vvDebugMsg::msg(3, "vvTFDialog::drawColorTexture()");
 
-  int w = 768;
-  int h = 3;
+  size_t w = 768;
+  size_t h = 3;
   std::vector<uchar> colorBar;
   colorBar.resize(w * h * 4);
   makeColorBar(&colorBar, w);
@@ -191,8 +191,10 @@ void vvTFDialog::drawAlphaTexture()
 {
   int w = ui->alpha1DView->width();
   int h = ui->alpha1DView->height();
+  assert(w >= 0 && h >= 0);
+
   std::vector<uchar> alphaTex;
-  alphaTex.resize(w * h * 4);
+  alphaTex.resize(static_cast<size_t>(w) * static_cast<size_t>(h) * 4);
   makeAlphaTexture(&alphaTex, w, h);
   QImage img(&alphaTex[0], w, h, QImage::Format_ARGB32);
   if (!img.isNull())

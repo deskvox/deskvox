@@ -75,7 +75,7 @@ const vvBaseVector3<T>& vvBaseAABB<T>::getCenter() const
 template <typename T>
 void vvBaseAABB<T>::intersect(const vvBaseAABB<T>& rhs)
 {
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     if (rhs._min[i] > _min[i])
     {
@@ -134,7 +134,7 @@ std::pair<vvBaseAABB<T>, vvBaseAABB<T> > vvBaseAABB<T>::split(const vvVecmath::A
 template <typename T>
 bool vvBaseAABB<T>::contains(const vvBaseVector3<T>& pos) const
 {
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     if (pos[i] < _min[i] || pos[i] > _max[i])
     {
@@ -154,7 +154,7 @@ void vvBaseAABB<T>::calcVertices()
     if(i>=2 && i<=5)
       d ^= 1;
 
-    for (int c=0; c<3; ++c)
+    for (size_t c=0; c<3; ++c)
     {
       _vertices[i][c] = (1<<c)&d ? _min[c] : _max[c];
     }

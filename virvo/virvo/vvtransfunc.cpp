@@ -1215,10 +1215,9 @@ int vvTransFunc::saveMeshviewer(const char* filename)
 int vvTransFunc::saveBinMeshviewer(const char* filename)
 {
   vvColor col;
-  unsigned int x;
   float normX;    
   unsigned int index;
-  const unsigned int nBins = vvVolDesc::NUM_HDR_BINS;
+  const size_t nBins = vvVolDesc::NUM_HDR_BINS;
   FILE* fp;
 
   // open file
@@ -1232,8 +1231,8 @@ int vvTransFunc::saveBinMeshviewer(const char* filename)
   computeTFTexture(nBins, 1, 1, rgba, 0.0, 1.0);
 
   // save color
-  fprintf(fp, "BinKnots: %d\n", nBins);
-  for(x = 0; x < nBins; x++)
+  fprintf(fp, "BinKnots: %d\n", (uint32_t)nBins);
+  for(size_t x = 0; x < nBins; x++)
   {
 	normX = float(x) / float(nBins-1);
 	index = x * 4;
@@ -1241,9 +1240,9 @@ int vvTransFunc::saveBinMeshviewer(const char* filename)
   }
 
   // save opacity
-  fprintf(fp, "OpacityMapPoints: %d\n", nBins);   // add two points for edges of TF space
+  fprintf(fp, "OpacityMapPoints: %d\n", (uint32_t)nBins);   // add two points for edges of TF space
 
-  for (x=0; x< nBins; ++x)
+  for (size_t x=0; x< nBins; ++x)
   {
 	normX = (float(x) / float(nBins-1));
 	index = x * 4 + 3;

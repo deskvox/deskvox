@@ -246,10 +246,10 @@ void vvBaseVector3<T>::multiply(const vvMatrix& m)
 {
   const T v1[4] = { e[0], e[1], e[2], 1.0f };
 
-  for (int row=0; row<3; ++row)
+  for (size_t row=0; row<3; ++row)
   {
     e[row] = 0.0f;
-    for (int col=0; col<4; ++col)
+    for (size_t col=0; col<4; ++col)
       e[row] += m(row, col) * v1[col];
   }
 
@@ -261,7 +261,7 @@ void vvBaseVector3<T>::multiply(const vvMatrix& m)
   if (w != 1.0f)
   {
     const T wInv = 1.0f / w;
-    for (int row=0; row<3; ++row)
+    for (size_t row=0; row<3; ++row)
       e[row] *= wInv;
   }
 }
@@ -476,7 +476,7 @@ bool vvBaseVector3<T>::isectPlaneLine(const vvBaseVector3<T>& n,
   const vvBaseVector3 diff2 = p - v1;             // diff2 = p - v1
   const T numer = diff2.dot(normal);              // number = diff2 . n
   diff1.scale(numer / denom);                     // diff1 = diff1 * numer / denom
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     e[i] = v1[i];
   }
@@ -503,7 +503,7 @@ bool vvBaseVector3<T>::isectPlaneRay(const vvBaseVector3<T>& n,
   vvBaseVector3<T> diff1;                         // difference vector between v1 and v2
   vvBaseVector3<T> diff2;                         // difference vector between this and v1
   T factor;                                       // distance factor
-  int i;
+  size_t i;
 
   // Check for intersection with straight line:
   if (this->isectPlaneLine(n, p, v1, v2) == false) return false;
@@ -549,14 +549,14 @@ If less than six intersections occurred, the remaining vector
 components of this[] are undefined.
 */
 template <typename T>
-int vvBaseVector3<T>::isectPlaneCuboid(const vvBaseVector3<T>& normal,
-                                       const vvBaseVector3<T>& point,
-                                       const vvBaseVector3<T>& minv,
-                                       const vvBaseVector3<T>& maxv)
+size_t vvBaseVector3<T>::isectPlaneCuboid(const vvBaseVector3<T>& normal,
+                                         const vvBaseVector3<T>& point,
+                                         const vvBaseVector3<T>& minv,
+                                         const vvBaseVector3<T>& maxv)
 {
   vvBaseVector3 p[2];                             // two cuboid vertices defining a cuboid edge
   vvBaseVector3 corner[2];                        // cuboid corners (copied from parameters)
-  int key[4][3] =                                 // cuboid edge components
+  size_t key[4][3] =                              // cuboid edge components
   {
     {
       0, 0, 0
@@ -574,8 +574,8 @@ int vvBaseVector3<T>::isectPlaneCuboid(const vvBaseVector3<T>& normal,
       0, 1, 1
     }
   };
-  int isectCnt = 0;                               // intersection counter
-  int i,j;
+  size_t isectCnt = 0;                            // intersection counter
+  size_t i,j;
 
   // Copy parameters for easier access:
   corner[0] = minv;
@@ -1134,7 +1134,7 @@ void vvBaseVector4<T>::sub(const vvBaseVector4<T>& v)
 template <typename T>
 void vvBaseVector4<T>::multiply(const vvMatrix& m)
 {
-  int row, col;
+  size_t row, col;
   vvBaseVector4<T> bak(*this);
 
   for (row=0; row<4; ++row)
@@ -1179,7 +1179,7 @@ void vvBaseVector4<T>::perspectiveDivide()
 template <typename T>
 vvBaseVector2<T>::vvBaseVector2()
 {
-  for (int i = 0; i < 2; ++i)
+  for (size_t i = 0; i < 2; ++i)
   {
     e[i] = 0.0;
   }
@@ -1190,7 +1190,7 @@ vvBaseVector2<T>::vvBaseVector2()
 template <typename T>
 vvBaseVector2<T>::vvBaseVector2(const T val)
 {
-  for (int i = 0; i < 2; ++i)
+  for (size_t i = 0; i < 2; ++i)
   {
     e[i] = val;
   }

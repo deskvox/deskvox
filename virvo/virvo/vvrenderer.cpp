@@ -481,7 +481,7 @@ void vvRenderer::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, 
     probeMax = probePosObj + maxSize;
 
     // Constrain probe boundaries to volume data area:
-    for (int i = 0; i < 3; ++i)
+    for (size_t i = 0; i < 3; ++i)
     {
       if (probeMin[i] > size2[i] || probeMax[i] < -size2[i])
       {
@@ -1085,7 +1085,7 @@ void vvRenderer::setPosition(const vvVector3& p)
 void vvRenderer::getPosition(vvVector3* p)
 {
   vvDebugMsg::msg(3, "vvRenderer::getPosition()");
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     (*p)[i] = vd->pos[i];
   }
@@ -1185,7 +1185,7 @@ void vvRenderer::getEyePosition(vvVector3* eye) const
   projEye.multiply(invPM);
   projEye.multiply(invMV);
   vvVector3 tmp = vvVector3(projEye);
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     (*eye)[i] = tmp[i];
   }
@@ -1201,7 +1201,6 @@ bool vvRenderer::isInVolume(const vvVector3* point) const
   vvVector3 size;                                 // object size
   vvVector3 size2;                                // half object size
   vvVector3 pos;                                  // object location
-  int i;
 
   vvDebugMsg::msg(3, "vvRenderer::isInVolume()");
 
@@ -1209,7 +1208,7 @@ bool vvRenderer::isInVolume(const vvVector3* point) const
   size = vd->getSize();
   size2 = size;
   size2.scale(0.5f);
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     if ((*point)[i] < (pos[i] - size2[i])) return false;
     if ((*point)[i] > (pos[i] + size2[i])) return false;
@@ -1231,7 +1230,6 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   vvVector3 pos;
   float index;                                    // floating point index value into alpha TF [0..1]
   size_t vp[3];                                   // position of nearest voxel to x/y/z [voxel space]
-  int i;
   uchar* ptr;
 
   vvDebugMsg::msg(3, "vvRenderer::getAlphaValue()");
@@ -1241,7 +1239,7 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   size2.scale(0.5f);
   pos = vd->pos;
 
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     if (point[i] < (pos[i] - size2[i])) return -1.0f;
     if (point[i] > (pos[i] + size2[i])) return -1.0f;

@@ -91,7 +91,7 @@ namespace
   {
     if(error != CG_NO_ERROR)
       cerr << cgGetErrorString(error) << " (" << static_cast<int>(error) << ")" << endl;
-    for(GLint glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
+    for(GLenum glerr = glGetError(); glerr != GL_NO_ERROR; glerr = glGetError())
     {
       cerr << "GL error: " << gluErrorString(glerr) << endl;
     }

@@ -136,7 +136,7 @@ class VIRVOEXPORT vvVolDesc
     float _scale;                                 ///< determines volume size in conjunction with dist [world space]
     vvVector3 pos;                                ///< location of volume center [mm]
     vvTransFunc tf;                               ///< transfer functions
-    int iconSize;                                 ///< width and height of icon [pixels] (0 if no icon stored, e.g., 64 for 64x64 pixels icon)
+    size_t iconSize;                              ///< width and height of icon [pixels] (0 if no icon stored, e.g., 64 for 64x64 pixels icon)
     uint8_t* iconData;                            ///< icon image data as RGBA (RGBA, RGBA, ...), starting top left,
                                                   ///< then going right, then down
     int _radius;                                  ///< Radius of the previous sphere
@@ -148,10 +148,10 @@ class VIRVOEXPORT vvVolDesc
     // Constructors and destructors:
     vvVolDesc();
     vvVolDesc(const char*);
-    vvVolDesc(const char* fn, int w, int h, int s, size_t f, size_t b, int m, uint8_t** d, DeleteType=NO_DELETE);
-    vvVolDesc(const char* fn, int w, int h, int s, size_t f, float**);
-    vvVolDesc(const char* fn, int w, int h, int s, size_t f, float**, float**, float**);
-    vvVolDesc(const char* fn, int w, int h, uint8_t* d);
+    vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, size_t b, size_t m, uint8_t** d, DeleteType=NO_DELETE);
+    vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, float**);
+    vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, float**, float**, float**);
+    vvVolDesc(const char* fn, size_t w, size_t h, uint8_t* d);
     vvVolDesc(vvVolDesc*, int=-1);
     virtual ~vvVolDesc();
 
@@ -210,12 +210,12 @@ class VIRVOEXPORT vvVolDesc
     void   convertVirvoToCovise();
     void   convertVirvoToOpenGL();
     void   convertOpenGLToVirvo();
-    void   makeSphere(int, int, InterpolationType, bool=false);
+    void   makeSphere(size_t outer, size_t inner, InterpolationType, bool=false);
     void   expandDataRange(bool = false);
     void   zoomDataRange(int, int, int, bool = false);
     void   toggleSign(int frame=-1);
     void   blend(vvVolDesc*, int, bool=false);
-    void   swapChannels(int, int, bool=false);
+    void   swapChannels(size_t, size_t, bool=false);
     void   extractChannel(float[3], bool=false);
     bool   makeHeightField(size_t, int, bool=false);
 
@@ -225,12 +225,12 @@ class VIRVOEXPORT vvVolDesc
     void   addFrame(uint8_t*, DeleteType, int fd=-1);
     void   copyFrame(uint8_t*);
     void   removeSequence();
-    void   makeHistogram(size_t, size_t, size_t, int*, int*, float, float);
+    void   makeHistogram(int, size_t, size_t, int*, int*, float, float);
     void   normalizeHistogram(int, int*, float*, NormalizationType);
-    void   makeHistogramTexture(size_t, size_t, size_t, size_t*, uint8_t* data, NormalizationType, vvColor*, float, float);
+    void   makeHistogramTexture(int frame, size_t, size_t, size_t*, uint8_t* data, NormalizationType, vvColor*, float, float);
     void   createHistogramFiles(bool = false);
     bool   isChannelUsed(size_t);
-    void   makeIcon(int, const uint8_t*);
+    void   makeIcon(size_t, const uint8_t*);
     void   makeIcon(size_t);
     void   printInfoLine(const char* = NULL);
     void   makeInfoString(std::string* infoString);
@@ -238,34 +238,34 @@ class VIRVOEXPORT vvVolDesc
     void   printVolumeInfo();
     void   printStatistics();
     void   printVoxelData(int, size_t, size_t=0, size_t=0);
-    void   printHistogram(int, int);
+    void   printHistogram(int frame, size_t channel);
     void   trilinearInterpolation(size_t f, float, float, float, uint8_t*);
     void   drawBox(size_t, size_t, size_t, size_t, size_t, size_t, size_t, uint8_t*);
     void   drawSphere(size_t, size_t, size_t, size_t, size_t, uint8_t*);
     void   drawLine(size_t, size_t, size_t, size_t, size_t, size_t, uint8_t*);
     void   drawBoundaries(uchar*, int=-1);
-    int    serializeAttributes(uint8_t* = NULL) const;
+    size_t serializeAttributes(uint8_t* = NULL) const;
     void   deserializeAttributes(uint8_t*, size_t bufSize=SERIAL_ATTRIB_SIZE);
     void   setSliceData(uint8_t*, int=0, int=0);
-    void   extractSliceData(int, vvVecmath::AxisType, int, uint8_t*);
-    void   makeSliceImage(int, vvVecmath::AxisType, int, uint8_t*);
+    void   extractSliceData(int, vvVecmath::AxisType, size_t slice, uint8_t*);
+    void   makeSliceImage(int, vvVecmath::AxisType, size_t slice, uint8_t*);
     void   getVolumeSize(vvVecmath::AxisType, size_t&, size_t&, size_t&);
     void   deinterlace();
-    void   findMinMax(int, float&, float&);
+    void   findMinMax(size_t channel, float&, float&);
     int    findNumValue(int, float);
-    int    findNumUsed(int);
+    int    findNumUsed(size_t channel);
     int    findNumTransparent(int);
-    void   calculateDistribution(int, int, float&, float&, float&);
+    void   calculateDistribution(int frame, size_t chan, float&, float&, float&);
     void   voxelStatistics(size_t, size_t, size_t, size_t, size_t, float&, float&);
     float  calculateMean(int);
-    float  findClampValue(int, int, float);
+    float  findClampValue(int, size_t channel, float);
     void   computeVolume(int, size_t, size_t, size_t);
     void   resizeEdgeMax(float);
-    float  getChannelValue(int, int, int, int, int);
+    float  getChannelValue(int frame, size_t x, size_t y, size_t z, size_t chan);
     void   getLineHistData(int, int, int, int, int, int, vvArray<float*>&);
     void   setDefaultRealMinMax();
-    void   addGradient(int, GradientType);
-    void   addVariance(int);
+    void   addGradient(size_t srcChan, GradientType);
+    void   addVariance(size_t srcChan);
     void   deleteChannelNames();
     void   setChannelName(size_t, const char*);
     const char* getChannelName(size_t);
@@ -273,10 +273,10 @@ class VIRVOEXPORT vvVolDesc
     void updateHDRBins(size_t numValues, bool, bool, bool, BinningType, bool);
     int  findHDRBin(float);
     int  mapFloat2Int(float);
-    void makeBinTexture(uchar*, int);
+    void makeBinTexture(uint8_t* texture, size_t width);
     void computeTFTexture(int, int, int, float*);
-    void makeLineTexture(DiagType, uchar, int, int, bool, vvArray<float*>, uchar*);
-    void makeLineHistogram(int, int, vvArray<float*>, int*);
+    void makeLineTexture(DiagType, uchar, int, int, bool, vvArray<float*>, uint8_t*);
+    void makeLineHistogram(size_t channel, int buckets, vvArray<float*>, int*);
     void computeMinMaxArrays(uint8_t *minArray, uchar *maxArray, size_t downsample, size_t channel=0, int frame=-1) const;
     vvsize3 voxelCoords(const vvVector3& objCoords) const;
     vvVector3 objectCoords(const vvsize3& voxCoords) const;
@@ -290,8 +290,8 @@ class VIRVOEXPORT vvVolDesc
 
     void initialize();
     void setDefaults();
-    void makeLineIntensDiag(int, vvArray<float*>, int, int*);
-    bool isChannelOn(int, unsigned char);
+    void makeLineIntensDiag(size_t channel, vvArray<float*>, size_t numValues, int*);
+    bool isChannelOn(size_t num, unsigned char);
 };
 #endif
 

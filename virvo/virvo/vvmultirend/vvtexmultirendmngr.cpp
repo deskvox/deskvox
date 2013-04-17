@@ -172,7 +172,7 @@ void vvTexMultiRendMngr::renderMultipleVolume()
   invPM.invert();
   planeNormal.multiply(invPM);
 
-  for(int v = 0; v < _numVolume; v++)
+  for(size_t v = 0; v < _numVolume; v++)
   {
 	//TexRendData &tr = texRendArray[v];
 
@@ -321,11 +321,11 @@ void vvTexMultiRendMngr::renderMultipleVolume()
   for(int drawn = 0; drawn < totalSlices; drawn++)
   {
 	swS.start();
-	int vol = 0;
+	size_t vol = 0;
 	while(_rendererList[vol]->getNumSlices() <= 0) vol++;
 
 	// TODO: check if it works
-	for(int i = vol+1; i < _numVolume; i++)
+	for(size_t i = vol+1; i < _numVolume; i++)
 	{
 	  if(_rendererList[i]->getNumSlices() <= 0) continue;
 
@@ -344,7 +344,7 @@ void vvTexMultiRendMngr::renderMultipleVolume()
 
 	if(oldVol != vol)
 	{
-    int n = (static_cast<size_t>(vd->chan) < glslShader.size()) ? vd->chan - 1 : glslShader.size() - 1;
+    size_t n = (static_cast<size_t>(vd->chan) < glslShader.size()) ? vd->chan - 1 : glslShader.size() - 1;
     aRenderer->enableLUTMode(glslShader[n]);
 	  oldVol = vol;
 	}

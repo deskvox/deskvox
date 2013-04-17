@@ -86,7 +86,7 @@ vvVolDesc::vvVolDesc(const char* fn)
  @param m   number of channels
  @param d   pointer to pointer array of raw voxel data
 */
-vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, size_t f, size_t b, int m,
+vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, size_t b, size_t m,
 uint8_t** d, vvVolDesc::DeleteType deleteType)
 {
   uint8_t* data;
@@ -135,7 +135,7 @@ uint8_t** d, vvVolDesc::DeleteType deleteType)
  @param f      number of animation frames
  @param d      pointer array to raw voxel data (must be deleted by caller!)
 */
-vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, size_t f, float** d)
+vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, float** d)
 {
   uint8_t* data;
   float frameMin, frameMax;                       // minimum and maximum value in one frame
@@ -180,7 +180,7 @@ vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, size_t f, float** d)
  @param r,g,b  pointer arrays to raw voxel data for red, green, blue [0.0f..1.0f]
                (must be deleted by caller!)
 */
-vvVolDesc::vvVolDesc(const char* fn, int w, int h, int s, size_t f, float** r,
+vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, float** r,
 float** g, float** b)
 {
   uint8_t* data;
@@ -223,7 +223,7 @@ float** g, float** b)
  @param w,h  width and height of image in pixels
  @param d    pointer to raw voxel data (must be deleted by caller!)
 */
-vvVolDesc::vvVolDesc(const char* fn, int w, int h, uint8_t* d)
+vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, uint8_t* d)
 {
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(6)");
   initialize();
@@ -250,12 +250,12 @@ vvVolDesc::vvVolDesc(vvVolDesc* v, int f)
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(7)");
   initialize();
   setFilename(v->filename);
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     vox[i]  = v->vox[i];
     dist[i] = v->dist[i];
   }
-  for (int i=0; i<2; ++i)
+  for (size_t i=0; i<2; ++i)
   {
     real[i] = v->real[i];
   }
@@ -491,8 +491,8 @@ vvVolDesc::ErrorType vvVolDesc::merge(vvVolDesc* src, vvVolDesc::MergeType mtype
     chan   = src->chan;
     dt     = src->dt;
     raw.merge(&src->raw);
-    for (int i=0; i<3; ++i) dist[i] = src->dist[i];
-    for (int i=0; i<2; ++i)
+    for (size_t i=0; i<3; ++i) dist[i] = src->dist[i];
+    for (size_t i=0; i<2; ++i)
     {
       real[i] = src->real[i];
     }
@@ -781,7 +781,7 @@ void vvVolDesc::normalizeHistogram(int buckets, int* count, float* normalized, N
   @param min,max data range for which histogram is to be created. Use 0..1 for integer data types.
   @return histogram values in 'count'
 */
-void vvVolDesc::makeHistogram(size_t frame, size_t chan1, size_t numChan, int* buckets, int* count, float min, float max)
+void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, int* buckets, int* count, float min, float max)
 {
   uint8_t* raw;                                   // raw voxel data
   float* voxVal;                                  // voxel values
@@ -815,7 +815,7 @@ void vvVolDesc::makeHistogram(size_t frame, size_t chan1, size_t numChan, int* b
   }
   for (size_t f=0; f<frames; ++f)
   {
-    if (frame != size_t(-1) && frame != f)
+    if (frame != -1 && frame != f)
       continue; // only compute histogram for a specific frame
 
     raw = getRaw(f);
@@ -872,7 +872,7 @@ void vvVolDesc::makeHistogram(size_t frame, size_t chan1, size_t numChan, int* b
   @param color           color for histogram foreground (background is transparent)
   @param min,max         data range for which histogram is to be created. Use 0..1 for integer data types.
 */
-void vvVolDesc::makeHistogramTexture(size_t frame, size_t chan1, size_t numChan, size_t* size, uint8_t* data,
+void vvVolDesc::makeHistogramTexture(int frame, size_t chan1, size_t numChan, size_t* size, uint8_t* data,
   NormalizationType ntype, vvColor* color, float min, float max)
 {
   const size_t BPT = 4;                           // bytes per texel
@@ -911,7 +911,7 @@ void vvVolDesc::makeHistogramTexture(size_t frame, size_t chan1, size_t numChan,
     {
       index[0] = int(float(x) / float(size[0]) * float(buckets[0]));
       // Find height of histogram bar:
-      barHeight = int(hist[index[0]] * float(size[1]-1));
+      barHeight = size_t(hist[index[0]] * float(size[1]-1));
       for (y=0; y<barHeight; ++y)
       {
         texIndex = BPT * (x + y * size[0]);
@@ -989,7 +989,7 @@ void vvVolDesc::computeTFTexture(int w, int h, int d, float* dest)
   @param texData: the created texture data
 */
 void vvVolDesc::makeLineTexture(DiagType type, unsigned char selChannel, int twidth, int theight, bool alpha,
-  vvArray<float*> voxData, unsigned char* texData)
+  vvArray<float*> voxData, uint8_t* texData)
 {
   int x, y, c;
   int bpt;
@@ -1068,7 +1068,7 @@ void vvVolDesc::makeLineTexture(DiagType type, unsigned char selChannel, int twi
 }
 
 //----------------------------------------------------------------------------
-bool vvVolDesc::isChannelOn(int num, unsigned char selected)
+bool vvVolDesc::isChannelOn(size_t num, unsigned char selected)
 {
   switch (num)
   {
@@ -1088,10 +1088,9 @@ bool vvVolDesc::isChannelOn(int num, unsigned char selected)
   }
 }
 
-void vvVolDesc::makeLineHistogram(int channel, int buckets, vvArray<float*> data, int* count)
+void vvVolDesc::makeLineHistogram(size_t channel, int buckets, vvArray<float*> data, int* count)
 {
-  int numVoxels;
-  int i;
+  size_t numVoxels;
   int bucket;
   float valPerBucket;
   float voxVal;
@@ -1101,7 +1100,7 @@ void vvVolDesc::makeLineHistogram(int channel, int buckets, vvArray<float*> data
   numVoxels = data.count();
   valPerBucket = getValueRange() / float(buckets);
 
-  for (i = 0; i < numVoxels; ++i)
+  for (size_t i = 0; i < numVoxels; ++i)
   {
     voxVal = data[i][channel];
     bucket = int(voxVal / valPerBucket);
@@ -1110,18 +1109,17 @@ void vvVolDesc::makeLineHistogram(int channel, int buckets, vvArray<float*> data
   }
 }
 
-void vvVolDesc::makeLineIntensDiag(int channel, vvArray<float*> data, int numValues, int* values)
+void vvVolDesc::makeLineIntensDiag(size_t channel, vvArray<float*> data, size_t numValues, int* values)
 {
-  int i, index;
   float step;
 
   step = (float) data.count() / (float) numValues;
 
   memset(values, 0, numValues * sizeof(int));
 
-  for (i = 0; i < numValues; ++i)
+  for (size_t i = 0; i < numValues; ++i)
   {
-    index = (int) floor((float) i * step);
+    size_t index = (size_t) floor((float) i * step);
     values[i] = (int) data[index][channel];
   }
 }
@@ -1156,7 +1154,7 @@ void vvVolDesc::createHistogramFiles(bool overwrite)
     }
 
     // Compute histogram:
-    makeHistogram(size_t(-1), m, 1, buckets, hist, real[0], real[1]);
+    makeHistogram(-1, m, 1, buckets, hist, real[0], real[1]);
 
     // Check if file exists:
     if (!overwrite && vvToolshed::isFile(fileName))
@@ -1717,9 +1715,9 @@ void vvVolDesc::rotate(vvVecmath::AxisType axis, int dir)
   uint8_t* dst;                                   // destination pointer
   uint8_t* src;                                   // source pointer
   uint8_t* newRaw;                                // new volume data
-  int newWidth, newHeight, newSlices;             // dimensions of rotated volume
-  int x, y, z;
-  int xpos, ypos, zpos;
+  size_t newWidth, newHeight, newSlices;          // dimensions of rotated volume
+  size_t x, y, z;
+  size_t xpos, ypos, zpos;
 
   vvDebugMsg::msg(2, "vvVolDesc::rotate()");
   if (dir!=-1 && dir!=1) return;                  // validate direction
@@ -1994,11 +1992,11 @@ bool vvVolDesc::isChannelUsed(size_t m)
 */
 void vvVolDesc::crop(size_t x, size_t y, size_t z, size_t w, size_t h, size_t s)
 {
-  int j, i;
+  size_t j, i;
   uint8_t* newRaw;
   uint8_t* rd;
-  int xmin, xmax, ymin, ymax, zmin, zmax;
-  int newWidth, newHeight, newSlices;
+  size_t xmin, xmax, ymin, ymax, zmin, zmax;
+  size_t newWidth, newHeight, newSlices;
   size_t newSliceSize;
   size_t oldSliceSize;
   uint8_t *src, *dst;
@@ -2195,7 +2193,7 @@ void vvVolDesc::shift(int sx, int sy, int sz)
   raw.first();
   for (size_t f=0; f<frames; ++f)
   {
-    for (int i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
       raw.makeCurrent(f);
       rd = raw.getData();
@@ -2418,9 +2416,9 @@ void vvVolDesc::convertOpenGLToVirvo()
  @param s    icon size in pixels (size = width = height), if 0 icon will be deleted
  @param rgb  icon image data array (size * size * 4 bytes expected)
 */
-void vvVolDesc::makeIcon(int s, const uint8_t* rgba)
+void vvVolDesc::makeIcon(size_t s, const uint8_t* rgba)
 {
-  const int BPP = 4;
+  const size_t BPP = 4;
   vvDebugMsg::msg(2, "vvVolDesc::makeIcon(2)");
 
   if (s<=0)                                       // delete icon
@@ -2446,7 +2444,6 @@ void vvVolDesc::makeIcon(int s, const uint8_t* rgba)
 void vvVolDesc::makeIcon(size_t size)
 {
   vvVolDesc* tmpVD;
-  int i;
   size_t iconBytes;
 
   vvDebugMsg::msg(2, "vvVolDesc::makeIcon(1)");
@@ -2466,7 +2463,7 @@ void vvVolDesc::makeIcon(size_t size)
   uint8_t* tmpSlice = new uint8_t[iconBytes];
   memset(iconData, 0, iconBytes);
   uint8_t* raw = tmpVD->getRaw();
-  for (i=tmpVD->vox[2]-1; i>=0; --i)
+  for (ptrdiff_t i=tmpVD->vox[2]-1; i>=0; --i)
   {
     // Resample current volume slice to temporary image of icon size:
     vvToolshed::resample(raw + tmpVD->getSliceBytes() * i,
@@ -2507,7 +2504,7 @@ voxel to the vector (0|-1|0).
 @param ipt     interpolation type
 @param verbose true = verbose mode
 */
-void vvVolDesc::makeSphere(int outer, int inner, InterpolationType ipt, bool verbose)
+void vvVolDesc::makeSphere(size_t outer, size_t inner, InterpolationType ipt, bool verbose)
 {
   uint8_t* rd;                                    // raw data of current source frame
   vvVector3 center;                               // sphere center position [voxel space]
@@ -2521,13 +2518,11 @@ void vvVolDesc::makeSphere(int outer, int inner, InterpolationType ipt, bool ver
   float core;                                     // core radius [voxels]
   size_t newFrameSize;                            // sphere volume frame size [voxels]
   size_t sliceVoxels;                             // number of voxels per slice in source volume
-  int x, y, z;                                    // loop counters
   float sx, sy, sz;                               // coordinates in source volume
   float ringSize;                                 // precomputed ring size
   uint8_t interpolated[4];                        // interpolated voxel values
 
   vvDebugMsg::msg(2, "vvVolDesc::makeSphere()");
-  if (outer<1 || inner<0) return;
 
   newFrameSize = outer * outer * outer * getBPV();
   if (outer>1)
@@ -2551,10 +2546,10 @@ void vvVolDesc::makeSphere(int outer, int inner, InterpolationType ipt, bool ver
     dst = newRaw;
 
     // Traverse destination data:
-    for (z=0; z<outer; ++z)
+    for (size_t z=0; z<outer; ++z)
     {
-      for (y=0; y<outer; ++y)
-        for (x=0; x<outer; ++x)
+      for (size_t y=0; y<outer; ++y)
+        for (size_t x=0; x<outer; ++x)
       {
         // Compute sphere coordinates of current destination voxel:
         v.set((float)x, (float)y, (float)z);
@@ -2580,7 +2575,7 @@ void vvVolDesc::makeSphere(int outer, int inner, InterpolationType ipt, bool ver
             sx = ts_clamp(sx, 0.0f, (float)(vox[0]-1));
             sy = ts_clamp(sy, 0.0f, (float)(vox[1]-1));
             sz = ts_clamp(sz, 0.0f, (float)(vox[2]-1));
-            src = rd + getBPV() * ((int)sx + (int)sy * vox[0] + (int)sz * sliceVoxels);
+            src = rd + getBPV() * ((size_t)sx + (size_t)sy * vox[0] + (size_t)sz * sliceVoxels);
             memcpy(dst, src, getBPV());
           }
         }
@@ -2733,7 +2728,7 @@ void vvVolDesc::printStatistics()
   @param frame   frame to compute histogram for (-1 for all frames)
   @param channel channel to compute histogram for (0=first)
 */
-void vvVolDesc::printHistogram(int frame, int channel)
+void vvVolDesc::printHistogram(int frame, size_t channel)
 {
   int* hist;
   int i;
@@ -3028,7 +3023,7 @@ void vvVolDesc::drawSphere(size_t p1x, size_t p1y, size_t p1z, size_t radius, si
     {
       for (size_t x = xstart; x < xend; ++x)
       {
-        size_t dist = (int)sqrt(float((x - p1x) * (x - p1x) + (y - p1y) * (y - p1y) + (z - p1z) * (z - p1z)));
+        size_t dist = (size_t)sqrt(float((x - p1x) * (x - p1x) + (y - p1y) * (y - p1y) + (z - p1z) * (z - p1z)));
 
         if (radius > dist)
           for (size_t c=0; c<bpc*chan; ++c)
@@ -3212,7 +3207,7 @@ void vvVolDesc::drawBoundaries(uchar* color, int frame)
   Since the serialization buffer must be allocated before calling the function,
   its size can be found by calling the function with the NULL parameter or no
   parameter at all. Here's an example:<PRE>
-  int num_bytes = serializeAttributes();
+  size_t num_bytes = serializeAttributes();
   uchar* buffer = new uchar[num_bytes];
   serializeAttributes(buffer);
   </PRE><BR>
@@ -3235,7 +3230,7 @@ Length          Data Type        VolDesc Attribute
 @param buffer pointer to _allocated_ memory for serialized attributes
 @return number of bytes required for serialization buffer
 */
-int vvVolDesc::serializeAttributes(uint8_t* buffer) const
+size_t vvVolDesc::serializeAttributes(uint8_t* buffer) const
 {
   uint8_t* ptr;                                     // pointer to current serialization buffer element
 
@@ -3395,7 +3390,7 @@ void vvVolDesc::setSliceData(uint8_t* newData, int slice, int frame)
   @param slice  slice index to create, relative to slicing axis (>=0)
   @param dst    _allocated_ space for sliceWidth * sliceHeight * bpc * chan bytes
 */
-void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, int slice, uint8_t* dst)
+void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, size_t slice, uint8_t* dst)
 {
   uint8_t* raw;                                   // raw volume data of current frame
   size_t sliceSize;                               // bytes per volume slice (z-axis view)
@@ -3448,7 +3443,7 @@ void vvVolDesc::getVolumeSize(vvVecmath::AxisType axis, size_t& width, size_t& h
   @param dst    _allocated_ space for sliceWidth * sliceHeight * 3 bytes;
                 get width and height via getVolumeSize
 */
-void vvVolDesc::makeSliceImage(int frame, vvVecmath::AxisType axis, int slice, uint8_t* dst)
+void vvVolDesc::makeSliceImage(int frame, vvVecmath::AxisType axis, size_t slice, uint8_t* dst)
 {
   uint8_t* sliceData;
   vvColor col;
@@ -3539,7 +3534,7 @@ void vvVolDesc::deinterlace()
   @param channel data channel to search
   @param scalarMin,scalarMax  minimum and maximum scalar values in volume animation
 */
-void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax)
+void vvVolDesc::findMinMax(size_t channel, float& scalarMin, float& scalarMax)
 {
   (void)channel;
   int mi, ma;
@@ -3596,7 +3591,7 @@ void vvVolDesc::findMinMax(int channel, float& scalarMin, float& scalarMax)
   @param channel data channel to work on
   @param threshold  threshold value for data range clamping [0..1]
 */
-float vvVolDesc::findClampValue(int frame, int channel, float threshold)
+float vvVolDesc::findClampValue(int frame, size_t channel, float threshold)
 {
   int* hist;
   int buckets[1] = {1000};
@@ -3682,11 +3677,11 @@ int vvVolDesc::findNumValue(int frame, float val)
 /** Find the number of different data values used in a dataset.
   @return -1 if data type is float
 */
-int vvVolDesc::findNumUsed(int channel)
+int vvVolDesc::findNumUsed(size_t channel)
 {
   bool* used;                                     // true = scalar value occurs in array
   uint8_t* raw;
-  int numValues;
+  size_t numValues;
   int numUsed = 0;
   int value;
 
@@ -3699,7 +3694,7 @@ int vvVolDesc::findNumUsed(int channel)
   used = new bool[numValues];
 
   // Initialize occurrence array:
-  for (int i=0; i<numValues; ++i)
+  for (size_t i=0; i<numValues; ++i)
   {
     used[i] = false;
   }
@@ -3724,7 +3719,7 @@ int vvVolDesc::findNumUsed(int channel)
   }
 
   // Count number of 'true' entries in occurrence array:
-  for (int i=0; i<numValues; ++i)
+  for (size_t i=0; i<numValues; ++i)
   {
     if (used[i]==true) ++numUsed;
   }
@@ -3843,7 +3838,7 @@ float vvVolDesc::calculateMean(int frame)
   @param chan channel to look at
   @return mean, variance, stdev
 */
-void vvVolDesc::calculateDistribution(int frame, int chan, float& mean, float& variance, float& stdev)
+void vvVolDesc::calculateDistribution(int frame, size_t chan, float& mean, float& variance, float& stdev)
 {
   uint8_t* raw;
   double sumSquares = 0.0;
@@ -4062,7 +4057,7 @@ void vvVolDesc::blend(vvVolDesc* blendVD, int method, bool verbose)
   @param ch0,ch1 channel indices to swap (start with 0)
   @param verbose true = print progress info
 */
-void vvVolDesc::swapChannels(int ch0, int ch1, bool verbose)
+void vvVolDesc::swapChannels(size_t ch0, size_t ch1, bool verbose)
 {
   uint8_t* rd;
   size_t sliceSize;
@@ -4267,8 +4262,7 @@ void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
       const int numCubes = 4;
       int value;
       int d[3];
-      int i;
-      for (i=0; i<3; ++i) d[i] = vox[i] / ((2 * numCubes) + 1);
+      for (size_t i=0; i<3; ++i) d[i] = vox[i] / ((2 * numCubes) + 1);
       rd = new uint8_t[getFrameBytes()];
       for (z=0; z<vox[2]; ++z)
         for (y=0; y<vox[1]; ++y)
@@ -4338,7 +4332,7 @@ void vvVolDesc::resizeEdgeMax(float len)
 }
 
 //----------------------------------------------------------------------------
-float vvVolDesc::getChannelValue(int frame, int x, int y, int z, int chan)
+float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, size_t chan)
 {
   uint8_t* data = getRaw(frame);
   float fval;
@@ -4669,7 +4663,7 @@ bool vvVolDesc::makeHeightField(size_t slices, int mode, bool verbose)
   @param gradType type of gradient: magnitude (adds 1 channel),
                   or gradient vectors (adds 3 channels)
 */
-void vvVolDesc::addGradient(int srcChan, GradientType gradType)
+void vvVolDesc::addGradient(size_t srcChan, GradientType gradType)
 {
   const float SQRT3 = float(sqrt(3.0));
   const char* GRADIENT_MAGNITUDE_CHANNEL_NAME = "GRADMAG";
@@ -4861,7 +4855,7 @@ void vvVolDesc::voxelStatistics(size_t frame, size_t c, size_t x, size_t y, size
   the variance in the 3x3x3 voxel neighborhood for one of the other channels.
   @param srcChan channel to calculate variance for [0..numChan-1]
 */
-void vvVolDesc::addVariance(int srcChan)
+void vvVolDesc::addVariance(size_t srcChan)
 {
   const char* VARIANCE_CHANNEL_NAME = "VARIANCE";
   uint8_t* src;                                   // pointer to current source channel
@@ -4961,7 +4955,7 @@ void vvVolDesc::updateHDRBins(size_t numValues, bool skipWidgets, bool cullDup, 
   {
     for (size_t i=0; i<numVoxels; ++i)
     {
-      index = int(numVoxels * float(rand()) / float(RAND_MAX));
+      index = size_t(numVoxels * float(rand()) / float(RAND_MAX));
       sortedData[i] = *((float*)(srcData + (sizeof(float) * index)));
     }
   }
@@ -5200,7 +5194,7 @@ int vvVolDesc::findHDRBin(float fval)
   @param texture pointer to _allocated_ space for width * 4 bytes
   @param width texture width [pixels]
 */
-void vvVolDesc::makeBinTexture(uchar* texture, int width)
+void vvVolDesc::makeBinTexture(uint8_t* texture, size_t width)
 {
   float range;
 
@@ -5220,7 +5214,7 @@ void vvVolDesc::makeBinTexture(uchar* texture, int width)
   }
 }
 
-static size_t index(int i, int j, int k, int d0, int d1, int d2)
+static size_t index(size_t i, size_t j, size_t k, size_t d0, size_t d1, size_t d2)
 {
   (void)d2;
   return i+j*d0+k*d0*d1;
@@ -5282,7 +5276,7 @@ vvsize3 vvVolDesc::voxelCoords(const vvVector3& objCoords) const
                                 static_cast<float>(vox[1]) * 0.5f,
                                 static_cast<float>(vox[2]) * 0.5f);
   vvVector3 obj = objCoords;
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     obj[i] /= dist[i];
     obj[i] /= _scale;
@@ -5301,7 +5295,7 @@ vvVector3 vvVolDesc::objectCoords(const vvsize3& voxCoords) const
   vvVector3 result =  vvVector3(static_cast<float>(voxCoords[0]) - fltVox2[0],
                                 static_cast<float>(voxCoords[1]) - fltVox2[1],
                                 static_cast<float>(voxCoords[2]) - fltVox2[2]);
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     result[i] *= dist[i];
     result[i] *= _scale;
