@@ -883,7 +883,7 @@ template<
         >
 renderKernel getKernelWithEarlyRayTermination(const RayRendKernelParams& params)
 {
-  if (params.clipping)
+  if (params.clipMode > 0)
   {
     return getKernelWithClipping<
                                   t_bpc,

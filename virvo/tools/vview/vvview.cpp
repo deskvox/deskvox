@@ -147,7 +147,7 @@ vvView::vvView()
   matrixFile            = NULL;
   roiEnabled            = false;
   sphericalROI          = false;
-  clipPlane             = false;
+  clipMode              = 0;
   clipPerimeter         = false;
   mvScale               = 1.0f;
   showBt                = true;
@@ -840,8 +840,8 @@ void vvView::specialCallback(int key, int, int)
   const int modifiers = glutGetModifiers();
   const float delta = 0.1f / ds->mvScale;
 
-  const vvVector3 clipPoint = ds->renderer->getParameter(vvRenderState::VV_CLIP_POINT);
-  const vvVector3 clipNormal = ds->renderer->getParameter(vvRenderState::VV_CLIP_NORMAL);
+  const vvVector3 clipPoint = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_POINT);
+  const vvVector3 clipNormal = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
 
   switch(key)
   {
@@ -853,7 +853,7 @@ void vvView::specialCallback(int key, int, int)
     }
     else if (ds->clipEditMode)
     {
-      ds->renderer->setParameter(vvRenderState::VV_CLIP_POINT, clipPoint - clipNormal * delta);
+      ds->renderer->setParameter(vvRenderState::VV_CLIP_PLANE_POINT, clipPoint - clipNormal * delta);
     }
     break;
   case GLUT_KEY_RIGHT:
@@ -864,7 +864,7 @@ void vvView::specialCallback(int key, int, int)
     }
     else if (ds->clipEditMode)
     {
-      ds->renderer->setParameter(vvRenderState::VV_CLIP_POINT, clipPoint + clipNormal * delta);
+      ds->renderer->setParameter(vvRenderState::VV_CLIP_PLANE_POINT, clipPoint + clipNormal * delta);
     }
     break;
   case GLUT_KEY_UP:
@@ -882,7 +882,7 @@ void vvView::specialCallback(int key, int, int)
     }
     else if (ds->clipEditMode)
     {
-      ds->renderer->setParameter(vvRenderState::VV_CLIP_POINT, clipPoint + clipNormal * delta);
+      ds->renderer->setParameter(vvRenderState::VV_CLIP_PLANE_POINT, clipPoint + clipNormal * delta);
     }
     break;
   case GLUT_KEY_DOWN:
@@ -900,7 +900,7 @@ void vvView::specialCallback(int key, int, int)
     }
     else if (ds->clipEditMode)
     {
-      ds->renderer->setParameter(vvRenderState::VV_CLIP_POINT, clipPoint - clipNormal * delta);
+      ds->renderer->setParameter(vvRenderState::VV_CLIP_PLANE_POINT, clipPoint - clipNormal * delta);
     }
     break;
   default: break;
@@ -1698,16 +1698,20 @@ void vvView::clipMenuCallback(const int item)
   switch (item)
   {
   case 0:
-    ds->clipPlane = !ds->clipPlane;
-    ds->renderer->setParameter(vvRenderState::VV_CLIP_MODE, ds->clipPlane);
-    cerr << "Clipping " << ds->onOff[ds->clipPlane] << endl;
+    ds->clipMode++;
+    if(ds->clipMode > 2)
+    {
+      ds->clipMode = 0;
+    }
+    ds->renderer->setParameter(vvRenderState::VV_CLIP_MODE, ds->clipMode);
+    cerr << "Clipping " << ds->onOff[(ds->clipMode > 0)] << endl;
     break;
   case 1:
     ds->clipEditMode = !ds->clipEditMode;
     if (ds->clipEditMode)
     {
-      ds->clipPlane = true;
-      ds->renderer->setParameter(vvRenderState::VV_CLIP_MODE, ds->clipPlane);
+      ds->clipMode = 1;
+      ds->renderer->setParameter(vvRenderState::VV_CLIP_MODE, ds->clipMode);
       cerr << "Clip edit mode activated" << endl;
       cerr << "x|y|z keys:\t\trotation along (x|y|z) axis" << endl;
       cerr << "Arrow down/left:\tmove in negative normal direction" << endl;
@@ -2378,7 +2382,7 @@ void vvView::renderMotion() const
 
 void vvView::editClipPlane(const int command, const float val)
 {
-  vvVector3 clipNormal = ds->renderer->getParameter(vvRenderState::VV_CLIP_NORMAL);
+  vvVector3 clipNormal = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
   switch (command)
   {
   case PLANE_X:
@@ -2412,7 +2416,7 @@ void vvView::editClipPlane(const int command, const float val)
     cerr << "Unknown command" << endl;
     break;
   }
-  ds->renderer->setParameter(vvRenderState::VV_CLIP_NORMAL, clipNormal);
+  ds->renderer->setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, clipNormal);
   glutPostRedisplay();
 }
 

@@ -833,9 +833,9 @@ void vvSoftVR::findClipPlaneEquation()
    }
 
    // Find two points determining the plane:
-   planePoint = _clipPoint;
-   normalPoint = _clipPoint;
-   normalPoint.add(_clipNormal);
+   planePoint = _clipPlanePoint;
+   normalPoint = _clipPlanePoint;
+   normalPoint.add(_clipPlaneNormal);
 
    // Transfer points to voxel coordinate system:
    planePoint.multiply(oxConv);
@@ -862,7 +862,7 @@ bool vvSoftVR::isVoxelClipped(int x, int y, int z)
 {
    vvDebugMsg::msg(3, "vvSoftVR::isClipped()");
 
-   if (!_clipMode) return false;
+   if (_clipMode == 0) return false;
 
    if (xClipNormal[0] * (float)x + xClipNormal[1] *
       (float)y + xClipNormal[2] * (float)z > xClipDist)
@@ -1010,7 +1010,7 @@ bool vvSoftVR::prepareRendering()
    findViewMatrix();
    factorViewMatrix();                            // do the factorization
    findVolumeDimensions();                        // precompute the permuted volume dimensions
-   if (_clipMode) findClipPlaneEquation();         // prepare clipping plane processing
+   if (_clipMode == 1) findClipPlaneEquation();         // prepare clipping plane processing
 
    // Set interpolation types:
    intImg->setWarpInterpolation(warpInterpol);

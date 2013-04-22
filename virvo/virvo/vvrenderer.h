@@ -55,9 +55,6 @@ public:
     VV_QUALITY = 0,
     VV_VISIBLE_REGION,
     VV_PADDING_REGION,
-    VV_CLIP_POINT,
-    VV_CLIP_NORMAL,
-    VV_CLIP_COLOR,
     VV_MIP_MODE,
     VV_ALPHA_MODE,
     VV_LEAPEMPTY,                               ///< empty space leaping
@@ -67,6 +64,11 @@ public:
     VV_PALETTE,
     VV_QUALITY_DISPLAY,
     VV_CLIP_MODE,
+    VV_CLIP_PLANE_POINT,
+    VV_CLIP_PLANE_NORMAL,
+    VV_CLIP_COLOR,
+    VV_CLIP_SPHERE_CENTER,
+    VV_CLIP_SPHERE_RADIUS,
     VV_CLIP_SINGLE_SLICE,
     VV_CLIP_OPAQUE,
     VV_IS_ROI_USED,
@@ -121,22 +123,24 @@ public:
 
 protected:
   float _quality;                               ///< rendering image quality (0=minimum, 1=sampling rate, >1=oversampling)
-  vvVector3 _clipPoint;                         ///< point on clipping plane
-  vvVector3 _clipNormal;                        ///< clipping plane normal
-  vvColor _clipColor;                           ///< clipping plane boundary color (R,G,B in [0..1])
   int   _mipMode;                               ///< min/maximum intensity projection (0=off, 1=max, 2=min)
-  int	_alphaMode;                             ///< calculation for alpha value (0=max of channel weights*values, 1=weighted avg)
+  int	  _alphaMode;                             ///< calculation for alpha value (0=max of channel weights*values, 1=weighted avg)
   bool  _emptySpaceLeaping;                     ///< true = don't render bricks without contribution
-  bool  _clipPerimeter;                         ///< true = render line around clipping plane
   bool  _boundaries;                            ///< true = display volume boundaries
   bool  _orientation;                           ///< true = display object orientation
   bool  _palette;                               ///< true = display transfer function palette
   bool  _qualityDisplay;                        ///< true = display rendering quality level
-  bool  _clipMode;                              ///< true = clipping plane enabled, false=disabled
+  unsigned int _clipMode;                       ///< 0 = clipping disabled, 1 = clipping plane, 2 = clipping sphere
+  vvVector3 _clipPlanePoint;                    ///< point on clipping plane
+  vvVector3 _clipPlaneNormal;                   ///< clipping plane normal
+  bool      _clipPlanePerimeter;                ///< true = render line around clipping plane
+  vvColor   _clipPlaneColor;                    ///< clipping plane boundary color (R,G,B in [0..1])
+  vvVector3 _clipSphereCenter;                  ///< clipping sphere center
+  float     _clipSphereRadius;                  ///< clipping sphere radius
   bool  _clipSingleSlice;                       ///< true = use single slice in clipping mode
   bool  _clipOpaque;                            ///< true = make single slice opaque
   bool  _isROIUsed;                             ///< true = use roi
-  bool _isROIChanged;                           ///< true = roi related values have been changed
+  bool  _isROIChanged;                          ///< true = roi related values have been changed
   vvVector3 _roiPos;                            ///< object space coordinates of ROI midpoint [mm]
   vvVector3 _roiSize;                           ///< size of roi in each dimension [0..1]
   bool  _sphericalROI;                          ///< true = use sphere rather than cube for roi

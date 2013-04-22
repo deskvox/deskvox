@@ -48,7 +48,7 @@ struct RayRendKernelParams
   bool illumination;
   bool opacityCorrection;
   bool earlyRayTermination;
-  bool clipping;
+  unsigned int clipMode;
   int mipMode;
   bool useIbr;
 };

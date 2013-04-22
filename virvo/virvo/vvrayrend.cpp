@@ -351,16 +351,16 @@ void vvRayRend::compositeVolume(int, int)
   const float3 V = make_float3(normal[0], normal[1], normal[2]);
 
   // Clip sphere.
-  const float3 center = make_float3(_roiPos[0], _roiPos[1], _roiPos[2]);
-  const float radius = _roiSize[0] * vd->getSize()[0];
+  const float3 center = make_float3(_clipSphereCenter[0], _clipSphereCenter[1], _clipSphereCenter[2]);
+  const float radius  = _clipSphereRadius;
 
   // Clip plane.
-  const float3 pnormal = normalize(make_float3(_clipNormal[0], _clipNormal[1], _clipNormal[2]));
-  const float pdist = (-_clipNormal).dot(_clipPoint);
+  const float3 pnormal = normalize(make_float3(_clipPlaneNormal[0], _clipPlaneNormal[1], _clipPlaneNormal[2]));
+  const float pdist = (-_clipPlaneNormal).dot(_clipPlanePoint);
 
-  if (_clipMode && _clipPerimeter)
+  if (_clipMode == 1 && _clipPlanePerimeter)
   {
-    drawPlanePerimeter(size, vd->pos, _clipPoint, _clipNormal, _clipColor);
+    drawPlanePerimeter(size, vd->pos, _clipPlanePoint, _clipPlaneNormal, _clipPlaneColor);
   }
 
   GLfloat bgcolor[4];
@@ -384,7 +384,7 @@ void vvRayRend::compositeVolume(int, int)
   kernelParams.illumination         = getIllumination();
   kernelParams.opacityCorrection    = getOpacityCorrection();
   kernelParams.earlyRayTermination  = getEarlyRayTermination();
-  kernelParams.clipping             = getParameter(vvRenderState::VV_CLIP_MODE);
+  kernelParams.clipMode             = getParameter(vvRenderState::VV_CLIP_MODE);
   kernelParams.mipMode              = getParameter(vvRenderState::VV_MIP_MODE);
   kernelParams.useIbr               = getParameter(vvRenderState::VV_USE_IBR);
 
@@ -395,7 +395,7 @@ void vvRayRend::compositeVolume(int, int)
                     probePos, probeSize * 0.5f,
                     Lpos, V,
                     constAtt, linearAtt, quadAtt,
-                    kernelParams.clipping, false, false,
+                    kernelParams.clipMode == 1, kernelParams.clipMode == 2, false,
                     center, radius * radius,
                     pnormal, pdist, impl->depth.get(), _depthPrecision,
                     make_float2(_depthRange[0], _depthRange[1]),

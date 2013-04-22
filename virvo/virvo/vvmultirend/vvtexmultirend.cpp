@@ -574,9 +574,9 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   // Exception: if user's eye is inside object and probe mode is off,
   // then use viewDir as the normal.
   if (_sliceOrientation==VV_CLIPPLANE ||
-     (_sliceOrientation==VV_VARIABLE && _clipMode))
+     (_sliceOrientation==VV_VARIABLE && _clipMode == 1))
   {
-    normal = vvVector3(_clipNormal);
+    normal = vvVector3(_clipPlaneNormal);
   }
   else if(_sliceOrientation==VV_VIEWPLANE)
   {
@@ -657,7 +657,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   farthest.scale((float)(numSlices - 1) / -2.0f);
   farthest.add(probePosObj);
 
-  if (_clipMode)                     // clipping plane present?
+  if (_clipMode == 1)                     // clipping plane present?
   {
     // Adjust numSlices and set farthest point so that textures are only
     // drawn up to the clipPoint. (Delta may not be changed
@@ -667,7 +667,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     temp = vvVector3(delta);
     temp.scale(-0.5f);
     farthest.add(temp);                          // add a half delta to farthest
-    clipPosObj = vvVector3(_clipPoint);
+    clipPosObj = vvVector3(_clipPlanePoint);
     clipPosObj.sub(pos);
     temp = vvVector3(probePosObj);
     temp.add(normal);
@@ -791,9 +791,9 @@ void vvTexMultiRend::renderVolumeGL()
     probeSizeObj.set(size[0] * _roiSize[0], size[1] * _roiSize[1], size[2] * _roiSize[2]);
     drawBoundingBox(probeSizeObj, _roiPos, _probeColor);
   }
-  if (_clipMode && _clipPerimeter)
+  if (_clipMode == 1 && _clipPlanePerimeter)
   {
-    drawPlanePerimeter(size, vd->pos, _clipPoint, _clipNormal, _clipColor);
+    drawPlanePerimeter(size, vd->pos, _clipPlanePoint, _clipPlaneNormal, _clipPlaneColor);
   }
 
   //setGLenvironment();
@@ -930,7 +930,7 @@ void vvTexMultiRend::updateLUT(float dist)
 
       // Opacity correction:
                                                   // for 0 distance draw opaque slices
-      if (dist<=0.0 || (_clipMode && _clipOpaque)) corr[3] = 1.0f;
+      if (dist<=0.0 || (_clipMode == 1 && _clipOpaque)) corr[3] = 1.0f;
       
 	  corr[3] = 1.0f - powf(1.0f - corr[3], dist);
 

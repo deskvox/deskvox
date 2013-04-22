@@ -45,18 +45,20 @@
 //----------------------------------------------------------------------------
 vvRenderState::vvRenderState()
   : _quality(1.0f)
-  , _clipPoint(vvVector3(0.0f, 0.0f, 0.0f))
-  , _clipNormal(vvVector3(0.0f, 0.0f, 1.0f))
-  , _clipColor(vvColor(1.0f, 1.0f, 1.0f))
   , _mipMode(0)
   , _alphaMode(0)
   , _emptySpaceLeaping(true)
-  , _clipPerimeter(true)
   , _boundaries(false)
   , _orientation(false)
   , _palette(false)
   , _qualityDisplay(false)
-  , _clipMode(false)
+  , _clipMode(0)
+  , _clipPlanePoint(vvVector3(0.0f, 0.0f, 0.0f))
+  , _clipPlaneNormal(vvVector3(0.0f, 0.0f, 1.0f))
+  , _clipPlanePerimeter(true)
+  , _clipPlaneColor(vvColor(1.0f, 1.0f, 1.0f))
+  , _clipSphereCenter(vvVector3(0.0f, 0.0f, 0.0f))
+  , _clipSphereRadius(100.0f)
   , _clipSingleSlice(false)
   , _clipOpaque(false)
   , _isROIUsed(false)
@@ -107,7 +109,7 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     _emptySpaceLeaping = value;
     break;
   case VV_CLIP_PERIMETER:
-    _clipPerimeter = value;
+    _clipPlanePerimeter = value;
     break;
   case VV_BOUNDARIES:
     _boundaries = value;
@@ -186,15 +188,15 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_PADDING_REGION:
     _paddingRegion = value;
     break;
-  case VV_CLIP_POINT:
-    _clipPoint = value;
+  case VV_CLIP_PLANE_POINT:
+    _clipPlanePoint = value;
     break;
-  case VV_CLIP_NORMAL:
-    _clipNormal = value;
-    _clipNormal.normalize();
+  case VV_CLIP_PLANE_NORMAL:
+    _clipPlaneNormal = value;
+    _clipPlaneNormal.normalize();
     break;
   case VV_CLIP_COLOR:
-    _clipColor = value;
+    _clipPlaneColor = value;
     break;
   case VV_ROI_POS:
     _roiPos = value;
@@ -237,7 +239,7 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_ALPHA_MODE:
     return _alphaMode;
   case VV_CLIP_PERIMETER:
-    return _clipPerimeter;
+    return _clipPlanePerimeter;
   case VV_BOUNDARIES:
     return _boundaries;
   case VV_ORIENTATION:
@@ -280,12 +282,12 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _useIbr;
   case VV_IBR_MODE:
     return (int)_ibrMode;
-  case VV_CLIP_POINT:
-    return _clipPoint;
-  case VV_CLIP_NORMAL:
-    return _clipNormal;
+  case VV_CLIP_PLANE_POINT:
+    return _clipPlanePoint;
+  case VV_CLIP_PLANE_NORMAL:
+    return _clipPlaneNormal;
   case VV_CLIP_COLOR:
-    return _clipColor;
+    return _clipPlaneColor;
   case VV_ROI_SIZE:
     return _roiSize;
   case VV_ROI_POS:
@@ -400,9 +402,9 @@ void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
   // Otherwise use objDir as the normal.
   // Exception: if user's eye is inside object and probe mode is off,
   // then use viewDir as the normal.
-  if (_clipMode)
+  if (_clipMode == 1)
   {
-    normal = vvVector3(_clipNormal);
+    normal = vvVector3(_clipPlaneNormal);
   }
   else if (isOrtho || (viewDir[0] == 0.0f && viewDir[1] == 0.0f && viewDir[2] == 0.0f))
   {

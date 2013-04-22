@@ -192,7 +192,7 @@ void vvStingray::renderVolumeGL()
   {
     drawBoundingBox(&size, &vd->pos, boundColor);
   }
-  if (_renderState._clipMode)
+  if (_renderState._clipMode == 1)
   {
     drawPlanePerimeter(&size, &vd->pos, &_renderState._clipPoint,
       &_renderState._clipNormal, _renderState._clipColor);

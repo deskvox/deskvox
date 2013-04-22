@@ -162,7 +162,7 @@ class vvView
     vvStopwatch stopWatch;                      ///< used in record mode to store time along with each frame
     bool roiEnabled;                            ///< mode where probe is shown and can be moved via arrow keys
     bool sphericalROI;                          ///< use sphere instead of cube
-    bool clipPlane;                             ///< use clip plane
+    unsigned int clipMode;                      ///< clip mode, 0 = disabled, 1 = plane, 2 = sphere
     bool clipPerimeter;                         ///< draw clip perimeter
     bool clipEditMode;                          ///< edit clip plane using keyboard
     float mvScale;                              ///< scale factor for the mv matrix to view the whole volume

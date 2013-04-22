@@ -1237,7 +1237,7 @@ void vvTexRend::updateTransferFunction()
   if (preIntegration &&
       arbMltTex && 
       geomType==VV_VIEWPORT && 
-      !(_clipMode && (_clipSingleSlice || _clipOpaque)) &&
+      !(_clipMode == 1 && (_clipSingleSlice || _clipOpaque)) &&
       (voxelType==VV_FRG_PRG || (voxelType==VV_PIX_SHD && (_currentShader==0 || _currentShader==11))))
   {
     usePreIntegration = true;
@@ -2320,7 +2320,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   farthest.scale((float)(numSlices - 1) * -0.5f);
   farthest.add(probePosObj); // will be vd->pos if no probe present
 
-  if (_clipMode)                     // clipping plane present?
+  if (_clipMode == 1)                     // clipping plane present?
   {
     // Adjust numSlices and set farthest point so that textures are only
     // drawn up to the clipPoint. (Delta may not be changed
@@ -2330,7 +2330,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     temp = delta;
     temp.scale(-0.5f);
     farthest.add(temp);                          // add a half delta to farthest
-    clipPosObj = _clipPoint;
+    clipPosObj = _clipPlanePoint;
     clipPosObj.sub(pos);
     temp = probePosObj;
     temp.add(normal);
@@ -2561,7 +2561,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
   farthest = delta;
   farthest.scale((float)(numSlices - 1) * -0.5f);
 
-  if (_clipMode)                     // clipping plane present?
+  if (_clipMode == 1)                     // clipping plane present?
   {
     // Adjust numSlices and set farthest point so that textures are only
     // drawn up to the clipPoint. (Delta may not be changed
@@ -2571,7 +2571,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
     vvVector3 temp(delta);
     temp.scale(-0.5f);
     farthest.add(temp);                          // add a half delta to farthest
-    vvVector3 clipPosObj(_clipPoint);
+    vvVector3 clipPosObj(_clipPlanePoint);
     clipPosObj.sub(vd->pos);
     temp = probePosObj;
     temp.add(normal);
@@ -2980,7 +2980,7 @@ void vvTexRend::renderTex3DSpherical(const vvMatrix& mv)
   }
 
   // Enable clipping plane if appropriate:
-  if (_clipMode) activateClippingPlane();
+  if (_clipMode == 1) activateClippingPlane();
 
   float radius = maxDist;
   for (int i=0; i<numShells; ++i)                     // loop thru all drawn textures
@@ -3016,7 +3016,7 @@ void vvTexRend::renderTex2DSlices(float zz)
   vvDebugMsg::msg(3, "vvTexRend::renderTex2DSlices()");
 
   // Enable clipping plane if appropriate:
-  if (_clipMode) activateClippingPlane();
+  if (_clipMode == 1) activateClippingPlane();
 
   // Generate half object size as shortcut:
   size = vd->getSize();
@@ -3133,7 +3133,7 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
   vvDebugMsg::msg(3, "vvTexRend::renderTex2DCubic()");
 
   // Enable clipping plane if appropriate:
-  if (_clipMode) activateClippingPlane();
+  if (_clipMode == 1) activateClippingPlane();
 
   // Initialize texture parameters:
   numTextures = size_t(_quality * 100.0f);
@@ -3339,9 +3339,9 @@ void vvTexRend::renderVolumeGL()
     const vvVector3 probeSizeObj(size[0] * _roiSize[0], size[1] * _roiSize[1], size[2] * _roiSize[2]);
     drawBoundingBox(probeSizeObj, _roiPos, _probeColor);
   }
-  if (_clipMode && _clipPerimeter)
+  if (_clipMode == 1 && _clipPlanePerimeter)
   {
-    drawPlanePerimeter(size, vd->pos, _clipPoint, _clipNormal, _clipColor);
+    drawPlanePerimeter(size, vd->pos, _clipPlanePoint, _clipPlaneNormal, _clipPlaneColor);
   }
 
   if (_renderTarget != NULL)
@@ -3450,10 +3450,10 @@ void vvTexRend::activateClippingPlane()
 
   // Generate OpenGL compatible clipping plane parameters:
   // normal points into oppisite direction
-  planeEq[0] = -_clipNormal[0];
-  planeEq[1] = -_clipNormal[1];
-  planeEq[2] = -_clipNormal[2];
-  planeEq[3] = _clipNormal.dot(_clipPoint);
+  planeEq[0] = -_clipPlaneNormal[0];
+  planeEq[1] = -_clipPlaneNormal[1];
+  planeEq[2] = -_clipPlaneNormal[2];
+  planeEq[3] = _clipPlaneNormal.dot(_clipPlanePoint);
   glClipPlane(GL_CLIP_PLANE0, planeEq);
   glEnable(GL_CLIP_PLANE0);
 
@@ -3461,12 +3461,12 @@ void vvTexRend::activateClippingPlane()
   if (_clipSingleSlice)
   {
     thickness = vd->_scale * vd->dist[0] * (vd->vox[0] * 0.01f);
-    clipNormal2 = _clipNormal;
+    clipNormal2 = _clipPlaneNormal;
     clipNormal2.negate();
     planeEq[0] = -clipNormal2[0];
     planeEq[1] = -clipNormal2[1];
     planeEq[2] = -clipNormal2[2];
-    planeEq[3] = clipNormal2.dot(_clipPoint) + thickness;
+    planeEq[3] = clipNormal2.dot(_clipPlanePoint) + thickness;
     glClipPlane(GL_CLIP_PLANE1, planeEq);
     glEnable(GL_CLIP_PLANE1);
   }
@@ -3612,7 +3612,7 @@ void vvTexRend::updateLUT(const float dist)
 
       // Opacity correction:
                                                   // for 0 distance draw opaque slices
-      if (dist<=0.0 || (_clipMode && _clipOpaque)) corr[3] = 1.0f;
+      if (dist<=0.0 || (_clipMode == 1 && _clipOpaque)) corr[3] = 1.0f;
       else if (opacityCorrection) corr[3] = 1.0f - powf(1.0f - corr[3], dist);
 
       // Convert float to uint8_t and copy to rgbaLUT array:
