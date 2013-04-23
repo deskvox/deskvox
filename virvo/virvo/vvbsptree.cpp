@@ -112,7 +112,7 @@ void vvBspNode::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
   vvAABBs probe(probeMinI, probeMaxI);
   probe.intersect(_aabb);
 
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     probeMin[i] = static_cast<float>(probe.getMin()[i]);
     probeMax[i] = static_cast<float>(probe.getMax()[i]);
@@ -264,7 +264,7 @@ void vvBspTree::traverse(const vvsize3& pos, vvBspNode* node) const
     vvsize3 minval = node->getChildLeft()->getAabb().getMin();
     vvsize3 maxval = node->getChildLeft()->getAabb().getMax();
 
-    for (int i = 0; i < 3; ++i)
+    for (size_t i = 0; i < 3; ++i)
     {
       if (minval[i] == node->getAabb().getMin()[i])
       {

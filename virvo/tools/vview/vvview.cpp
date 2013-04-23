@@ -1868,9 +1868,9 @@ double vvView::performanceTest()
       vvRendererFactory::Options opt;
       opt["voxeltype"] = test->getVoxelType();
       ds->createRenderer(test->getGeomType(), opt,
-                      (int) test->getBrickDims()[0],
-                      (int) test->getBrickDims()[1],
-                      (int) test->getBrickDims()[2]);
+                      (size_t) test->getBrickDims()[0],
+                      (size_t) test->getBrickDims()[1],
+                      (size_t) test->getBrickDims()[2]);
       ds->hqMode = false;
       ds->draftQuality = test->getQuality();
       ds->ov->reset();

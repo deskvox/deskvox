@@ -260,8 +260,8 @@ void vvTexMultiRend::updateVolumeData()
 }
 
 //----------------------------------------------------------------------------
-void vvTexMultiRend::updateVolumeData(int offsetX, int offsetY, int offsetZ,
-  int sizeX, int sizeY, int sizeZ)
+void vvTexMultiRend::updateVolumeData(size_t offsetX, size_t offsetY, size_t offsetZ,
+  size_t sizeX, size_t sizeY, size_t sizeZ)
 {
   updateTextures3D(offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ, false);
 }
@@ -274,8 +274,8 @@ void vvTexMultiRend::updateVolumeData(int offsetX, int offsetY, int offsetZ,
    @param newTex: true: create a new texture
                   false: update an existing texture
 */
-vvTexMultiRend::ErrorType vvTexMultiRend::updateTextures3D(int offsetX, int offsetY, int offsetZ,
-int sizeX, int sizeY, int sizeZ, bool newTex)
+vvTexMultiRend::ErrorType vvTexMultiRend::updateTextures3D(size_t offsetX, size_t offsetY, size_t offsetZ,
+size_t sizeX, size_t sizeY, size_t sizeZ, bool newTex)
 {
   ErrorType err = OK;
   size_t frames;
@@ -303,9 +303,9 @@ int sizeX, int sizeY, int sizeZ, bool newTex)
   if (vd->chan > 1) texelsize = vd->chan;
   texSize = sizeX * sizeY * sizeZ * texelsize;
 
-  vvDebugMsg::msg(1, "3D Texture width     = ", sizeX);
-  vvDebugMsg::msg(1, "3D Texture height    = ", sizeY);
-  vvDebugMsg::msg(1, "3D Texture depth     = ", sizeZ);
+  VV_LOG(1) << "3D Texture width     = " << sizeX << std::endl;
+  VV_LOG(1) << "3D Texture height    = " << sizeY << std::endl;
+  VV_LOG(1) << "3D Texture depth     = " << sizeZ << std::endl;
   VV_LOG(1) << "3D Texture size (KB) = " << texSize / 1024 << std::endl;
 
   texData = new uchar[texSize];
@@ -488,7 +488,6 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   vvVector3 texSize;                              // size of 3D texture [object space]
   vvVector3 pos;                                  // volume location
   float     maxDist;                              // maximum length of texture drawing path
-  int       i;                                    // general counter
   //int       numSlices;
 
   vvDebugMsg::msg(3, "vvTexMultiRend::renderTex3DPlanar()");
@@ -497,7 +496,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
 
   // Determine texture object dimensions and half object size as a shortcut:
   size = vvVector3(vd->getSize());
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     texSize[i] = size[i] * (float)texels[i] / (float)vd->vox[i];
     size2[i]   = 0.5f * size[i];
@@ -518,14 +517,14 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     probePosObj.sub(pos);                        // eliminate object position from probe position
 
     // Compute probe min/max coordinates in object space:
-    for (i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
       probeMin[i] = probePosObj[i] - (_roiSize[i] * size[i]) / 2.0f;
       probeMax[i] = probePosObj[i] + (_roiSize[i] * size[i]) / 2.0f;
     }
 
     // Constrain probe boundaries to volume data area:
-    for (i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
       if (probeMin[i] > size2[i] || probeMax[i] < -size2[i])
       {
@@ -538,7 +537,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     }
 
     // Compute probe edge lengths:
-    for (i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
       probeSizeObj[i] = probeMax[i] - probeMin[i];
   }
   else                                            // probe mode off
@@ -553,7 +552,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   if (_roiSize[0])
   {
     probeTexels.zero();
-    for (i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
       probeTexels[i] = texels[i] * probeSizeObj[i] / texSize[i];
     }
@@ -617,7 +616,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   normal.normalize();
   // compute number of slices to draw
   float depth = fabs(normal[0]*probeSizeObj[0]) + fabs(normal[1]*probeSizeObj[1]) + fabs(normal[2]*probeSizeObj[2]);
-  int minDistanceInd = 0;
+  size_t minDistanceInd = 0;
   if(probeSizeObj[1]/probeTexels[1] < probeSizeObj[minDistanceInd]/probeTexels[minDistanceInd])
     minDistanceInd=1;
   if(probeSizeObj[2]/probeTexels[2] < probeSizeObj[minDistanceInd]/probeTexels[minDistanceInd])
@@ -697,8 +696,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   //glTranslatef(pos.e[0], pos.e[1], pos.e[2]);
 
   vvVector3 texPoint;                             // arbitrary point on current texture
-  int isectCnt;                                   // intersection counter
-  int j,k;                                        // counters
+  size_t isectCnt;                                // intersection counter
   int drawn = 0;                                  // counter for drawn textures
   vvVector3 deltahalf;
   deltahalf = vvVector3(delta);
@@ -713,7 +711,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
   glEnable(GL_TEXTURE_3D_EXT);
   glBindTexture(GL_TEXTURE_3D_EXT, texNames[vd->getCurrentFrame()]);
   texPoint = vvVector3(farthest);
-  for (i=0; i<numSlices; ++i)                     // loop thru all drawn textures
+  for (size_t i=0; i<numSlices; ++i)                     // loop thru all drawn textures
   {
     // Search for intersections between texture plane (defined by texPoint and
     // normal) and texture object (0..1):
@@ -732,9 +730,9 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     isect->cyclicSort(isectCnt, normal);
 
     // Generate vertices in texture coordinates:
-	for (j=0; j<isectCnt; ++j)
+	for (size_t j=0; j<isectCnt; ++j)
 	{
-	  for (k=0; k<3; ++k)
+	  for (size_t k=0; k<3; ++k)
 	  {
             texcoord[j][k] = (isect[j][k] + size2[k]) / size[k];
 	    texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
@@ -745,7 +743,7 @@ void vvTexMultiRend::renderTex3DPlanar(vvMatrix* mv)
     glColor4f(1.0, 1.0, 1.0, 1.0);
     glNormal3f(normal[0], normal[1], normal[2]);
     ++drawn;
-    for (j=0; j<isectCnt; ++j)
+    for (size_t j=0; j<isectCnt; ++j)
     {
 	  glTexCoord3f(texcoord[j][0], texcoord[j][1], texcoord[j][2]);
       glVertex3f(isect[j][0], isect[j][1], isect[j][2]);
@@ -773,7 +771,6 @@ void vvTexMultiRend::renderVolumeGL()
   vvVector3 zAxis(0.0f, 0.0f, 1.0f);              // vector in z axis direction
   vvVector3 probeSizeObj;                         // probe size [object space]
   vvVector3 size;                                 // volume size [world coordinates]
-  int i;
 
   vvDebugMsg::msg(3, "vvTexMultiRend::renderVolumeGL()");
 
@@ -799,7 +796,7 @@ void vvTexMultiRend::renderVolumeGL()
   //setGLenvironment();
 
   // Determine texture object extensions:
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     texMin[i] = 0.5f / (float)texels[i];
     texMax[i] = (float)vd->vox[i] / (float)texels[i] - texMin[i];
@@ -1275,14 +1272,14 @@ void vvTexMultiRend::preRendering()
   }
 
   // Determine texture object extensions:
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
 	texMin[i] = 0.5f / (float)texels[i];
 	texMax[i] = (float)vd->vox[i] / (float)texels[i] - texMin[i];
   }
 
   // Determine texture object dimensions and half object size as a shortcut:
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
         texSize[i] = size[i] * (float)texels[i] / (float)vd->vox[i];
         tr.size2[i]   = 0.5f * size[i];
@@ -1305,7 +1302,7 @@ void vvTexMultiRend::preRendering()
   if (_roiSize[0])
   {
 	  probeTexels.zero();
-	  for (int i=0; i<3; ++i)
+	  for (size_t i=0; i<3; ++i)
 	  {
                   probeTexels[i] = texels[i] * probeSizeObj[i] / texSize[i];
 	  }
@@ -1326,7 +1323,7 @@ void vvTexMultiRend::preRendering()
   // compute number of slices to draw
   float depth = fabs(tr.normal[0]*probeSizeObj[0]) + fabs(tr.normal[1]*probeSizeObj[1]) + fabs(tr.normal[2]*probeSizeObj[2]);
 
-  int minDistanceInd = 0;
+  size_t minDistanceInd = 0;
   if(probeSizeObj[1]/probeTexels[1] < probeSizeObj[minDistanceInd]/probeTexels[minDistanceInd])
 	  minDistanceInd=1;
   if(probeSizeObj[2]/probeTexels[2] < probeSizeObj[minDistanceInd]/probeTexels[minDistanceInd])
@@ -1376,15 +1373,15 @@ void vvTexMultiRend::preRendering()
 
 void vvTexMultiRend::updateChannelHistCDF(int channel, int frame, uchar* data)
 {
-	int size = texels[0] * texels[1] * texels[2];
+	size_t size = texels[0] * texels[1] * texels[2];
 	uint *hist = histCDF + (channel + frame*vd->chan)*256;
 
 	memset(hist, 0, 256*sizeof(uint));
 
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 		hist[data[i]]++;
 
-	for (int i = 1; i < 256; i++)
+	for (size_t i = 1; i < 256; i++)
 		hist[i] += hist[i-1];
 }
 
@@ -1400,7 +1397,7 @@ void vvTexMultiRend::renderMultipleVolume()
 
   // Search for intersections between texture plane (defined by texPoint and
   // normal) and texture object (0..1):
-  int isectCnt = isect->isectPlaneCuboid(tr.normal, tr.farthest, tr.probeMin, tr.probeMax);
+  size_t isectCnt = isect->isectPlaneCuboid(tr.normal, tr.farthest, tr.probeMin, tr.probeMax);
 
   tr.farthest.add(tr.delta);
 
@@ -1415,9 +1412,9 @@ void vvTexMultiRend::renderMultipleVolume()
 
   // Generate vertices in texture coordinates:
 
-  for (int j=0; j<isectCnt; ++j)
+  for (size_t j=0; j<isectCnt; ++j)
   {
-	  for (int k=0; k<3; ++k)
+	  for (size_t k=0; k<3; ++k)
 	  {
                   texcoord[j][k] = (isect[j][k] + tr.size2[k]) / vd->getSize()[k];
 		  texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
@@ -1432,7 +1429,7 @@ void vvTexMultiRend::renderMultipleVolume()
   glColor4f(1.0, 1.0, 1.0, 1.0);
   glNormal3f(tr.normal[0], tr.normal[1], tr.normal[2]);
 
-  for (int j=0; j<isectCnt; ++j)
+  for (size_t j=0; j<isectCnt; ++j)
   {
 	  glTexCoord3f(texcoord[j][0], texcoord[j][1], texcoord[j][2]);
 	  glVertex3f(isect[j][0], isect[j][1], isect[j][2]);

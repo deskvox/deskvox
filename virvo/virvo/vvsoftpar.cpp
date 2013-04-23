@@ -99,7 +99,7 @@ void vvSoftPar::compositeVolume(int from, int to)
       if (!sliceBuffer)
       {
          // Manage two buffer slices:
-         for (int i=0; i<2; ++i)
+         for (size_t i=0; i<2; ++i)
          {
             if (bufSlice[i]==NULL || bufSliceLen[0]!=len[0]-1 || bufSliceLen[1]!=len[1]-1)
             {

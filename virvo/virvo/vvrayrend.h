@@ -55,16 +55,9 @@ public:
   virtual vvParam getParameter(ParameterType param) const;
 
   bool getEarlyRayTermination() const;
-  bool getIllumination() const;
-  bool getInterpolation() const;
-  bool getOpacityCorrection() const;
 private:
   float* _rgbaTF;
 
-  bool _earlyRayTermination;        ///< Terminate ray marching when enough alpha was gathered
-  bool _illumination;               ///< Use local illumination
-  bool _interpolation;              ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
-  bool _opacityCorrection;          ///< true = opacity correction on
   bool _volumeCopyToGpuOk;          ///< must be true for memCopy to be run
   bool _twoPassIbr;                 ///< Perform an alpha-gathering pass before the actual render pass
 

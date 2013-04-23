@@ -360,20 +360,18 @@ float vvTFBell::getOpacity(float x, float y, float z)
   float bMin[3], bMax[3];                         // widget boundary
   float p[3];                                     // sample point position
   float sqrt2pi;                                  // square root of 2 PI
-  int dim;
-  int i;
 
   p[0] = x;
   p[1] = y;
   p[2] = z;
 
   // Determine dimensionality of transfer function:
-  dim = 1;
+  size_t dim = 1;
   if (z>-1.0f) dim = 3;
   else if (y>-1.0f) dim = 2;
 
   // Determine widget boundaries:
-  for (i=0; i<dim; ++i)
+  for (size_t i=0; i<dim; ++i)
   {
     bMin[i] = _pos[i] - _size[i] / 2.0f;
     bMax[i] = _pos[i] + _size[i] / 2.0f;
@@ -387,13 +385,13 @@ float vvTFBell::getOpacity(float x, float y, float z)
     return 0.0f;
   }
 
-  for (i=0; i<dim; ++i)
+  for (size_t i=0; i<dim; ++i)
   {
     stdev[i] = _size[i] / WIDTH_ADJUST;
   }
 
   sqrt2pi = sqrtf(2.0f * TS_PI);
-  for (i=0; i<dim; ++i)
+  for (size_t i=0; i<dim; ++i)
   {
     exponent += (p[i] - _pos[i]) * (p[i] - _pos[i]) / (2.0f * stdev[i] * stdev[i]);
     factor *= sqrt2pi * stdev[i];
@@ -409,15 +407,14 @@ float vvTFBell::getOpacity(float x, float y, float z)
 bool vvTFBell::getColor(vvColor& color, float x, float y, float z)
 {
   float bMin[3], bMax[3];                         // widget boundary
-  int i, dim;
 
   // Determine dimensionality of transfer function:
-  dim = 1;
+  size_t dim = 1;
   if (z>-1.0f) dim = 3;
   else if (y>-1.0f) dim = 2;
 
   // Determine widget boundaries:
-  for (i=0; i<dim; ++i)
+  for (size_t i=0; i<dim; ++i)
   {
     bMin[i] = _pos[i] - _size[i] / 2.0f;
     bMax[i] = _pos[i] + _size[i] / 2.0f;
@@ -574,19 +571,18 @@ float vvTFPyramid::getOpacity(float x, float y, float z)
   float p[3];                                     // sample point position
   float outMin[3], outMax[3];                     // outer boundaries of pyramid
   float inMin[3], inMax[3];                       // inner boundaries of pyramid
-  int dim, i;
 
   p[0] = x;
   p[1] = y;
   p[2] = z;
 
   // Determine dimensionality of transfer function:
-  dim = 1;
+  size_t dim = 1;
   if (z>-1.0f) dim = 3;
   else if (y>-1.0f) dim = 2;
 
   // Calculate inner and outer boundaries of pyramid:
-  for (i=0; i<dim; ++i)
+  for (size_t i=0; i<dim; ++i)
   {
     outMin[i] = _pos[i] - _bottom[i] / 2.0f;
     outMax[i] = _pos[i] + _bottom[i] / 2.0f;
@@ -708,15 +704,14 @@ float vvTFPyramid::getOpacity(float x, float y, float z)
 bool vvTFPyramid::getColor(vvColor& color, float x, float y, float z)
 {
   float outMin[3], outMax[3];                     // outer boundaries of pyramid
-  int i, dim;
 
   // Determine dimensionality of transfer function:
-  dim = 1;
+  size_t dim = 1;
   if (z>-1.0f) dim = 3;
   else if (y>-1.0f) dim = 2;
 
   // Calculate inner and outer boundaries of pyramid:
-  for (i=0; i<dim; ++i)
+  for (size_t i=0; i<dim; ++i)
   {
     outMin[i] = _pos[i] - _bottom[i] / 2.0f;
     outMax[i] = _pos[i] + _bottom[i] / 2.0f;
@@ -820,9 +815,7 @@ void vvTFColor::fromString(const std::string& str)
 */
 vvTFSkip::vvTFSkip() : vvTFWidget()
 {
-  int i;
-  
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _size[i] = 0.0f;
   }
@@ -832,9 +825,7 @@ vvTFSkip::vvTFSkip() : vvTFWidget()
 */
 vvTFSkip::vvTFSkip(vvTFSkip* src) : vvTFWidget(src)
 {
-  int i;
-  
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _size[i] = src->_size[i];
   }
@@ -904,16 +895,15 @@ float vvTFSkip::getOpacity(float x, float y, float z)
 {
   float _min[3];
   float _max[3];
-  int i, dim;
   
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _min[i] = _pos[i] - _size[i] / 2.0f;
     _max[i] = _pos[i] + _size[i] / 2.0f;
   }
   
   // Determine dimensionality of transfer function:
-  dim = 1;
+  size_t dim = 1;
   if (z>-1.0f) dim = 3;
   else if (y>-1.0f) dim = 2;
 
@@ -932,9 +922,7 @@ float vvTFSkip::getOpacity(float x, float y, float z)
 */
 vvTFCustom::vvTFCustom() : vvTFWidget()
 {
-  int i;
-  
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _size[i] = 0.0f;
   }
@@ -945,9 +933,7 @@ vvTFCustom::vvTFCustom() : vvTFWidget()
 */
 vvTFCustom::vvTFCustom(vvTFCustom* src) : vvTFWidget(src)
 {
-   int i;
-
-   for (i=0; i<3; ++i)
+   for (size_t i=0; i<3; ++i)
    {
       _size[i] = src->_size[i];
    }
@@ -1053,17 +1039,16 @@ float vvTFCustom::getOpacity(float x, float y, float z)
   vvTFPoint* prev;    // previous point in list
   float _min[3];
   float _max[3];
-  int i, dim;
   float xTF;    // x position in widget space
   
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     _min[i] = _pos[i] - _size[i] / 2.0f;
     _max[i] = _pos[i] + _size[i] / 2.0f;
   }
   
   // Determine dimensionality of transfer function:
-  dim = 1;
+  size_t dim = 1;
   if (z>-1.0f) dim = 3;
   else if (y>-1.0f) dim = 2;
 
@@ -1138,11 +1123,10 @@ vvTFPoint* vvTFCustom::selectPoint(float o, float ot, float x, float xt, float y
 
   float global[3];  // global x/y/z coordinates of control point
   list<vvTFPoint*>::iterator iter;
-  int i;
   
   for(iter=_points.begin(); iter!=_points.end(); iter++) 
   {
-    for (i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
       global[i] = _pos[i] + (*iter)->_pos[i];
     }
@@ -1179,8 +1163,6 @@ void vvTFCustom::setCurrentPoint(float opacity, float x, float y, float z)
 */
 void vvTFCustom::moveCurrentPoint(float dop, float dx, float dy, float dz)
 {
-  int i;
-  
   if (_currentPoint)
   {
     _currentPoint->_pos[0]  += dx;
@@ -1190,7 +1172,7 @@ void vvTFCustom::moveCurrentPoint(float dop, float dx, float dy, float dz)
     
     // Constrain point position to limits:
     _currentPoint->_opacity = ts_clamp(_currentPoint->_opacity, 0.0f, 1.0f);
-    for (i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
       if (_size[i] > 0.0f)
       {
@@ -1239,7 +1221,6 @@ void vvTFCustom::sortPoints()
 void vvTFCustom::setSize(float x, float y, float z)
 {
   list<vvTFPoint*>::iterator iter;
-  int i;
 
   if (x!=-1.0f) _size[0] = x;
   if (y!=-1.0f) _size[1] = y;
@@ -1247,7 +1228,7 @@ void vvTFCustom::setSize(float x, float y, float z)
   
   for(iter=_points.begin(); iter!=_points.end(); iter++) 
   {
-    for (i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
       if (_size[i]!=-1.0f)
       {
@@ -1611,8 +1592,8 @@ void vvTFCustom2D::uniformFillFreeArea()
 
 void vvTFCustom2D::drawFreeContour()
 {
-   int xDim = int(this->_size[0] * 255) + 1;
-   int yDim = int(this->_size[1] * 255) + 1;
+   size_t xDim = static_cast<size_t>(this->_size[0] * 255) + 1;
+   size_t yDim = static_cast<size_t>(this->_size[1] * 255) + 1;
    // firts, clear map
    memset((void*)_map, 0, xDim * yDim * sizeof(float));
 
@@ -1786,14 +1767,14 @@ int vvTFCustomMap::computeIdx(float x, float y, float z)
    int idx = -1;
 
    // Determine dimensionality of transfer function:
-   int dim = 1;
+   size_t dim = 1;
    if (z>-1.0f) dim = 3;
    else if (y>-1.0f) dim = 2;
 
    float half[3], lb[3], ub[3];
 
    // compute half sizes, upper and lower bounds
-   for (int i = 0; i < dim; ++i)
+   for (size_t i = 0; i < dim; ++i)
    {
       half[i] = _size[i] / 2.0f;
       lb[i] = std::max(0.0f, _pos[i] - half[i]);

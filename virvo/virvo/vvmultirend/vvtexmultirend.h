@@ -130,7 +130,7 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     GLuint* pixLUTName;
 
 	GLuint* texNames;
-	int   texels[3];						///< width, height and depth of volume, including empty space [texels]
+	size_t   texels[3];						///< width, height and depth of volume, including empty space [texels]
     float texMin[3];						///< minimum texture value of object [0..1] (to prevent border interpolation)
     float texMax[3];						///< maximum texture value of object [0..1] (to prevent border interpolation)
     int   _ntextures;						///< number of textures stored in TRAM
@@ -157,7 +157,7 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
 	//========================================================================
 
 
-    int   texelsize;                        ///< number of bytes/voxel transferred to OpenGL (depending on rendering mode)
+    size_t   texelsize;                     ///< number of bytes/voxel transferred to OpenGL (depending on rendering mode)
     GLint internalTexFormat;                ///< internal texture format (parameter for glTexImage...)
     GLenum texFormat;                       ///< texture format (parameter for glTexImage...)
 
@@ -178,7 +178,7 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     ErrorType makeTextures();
     void makeLUTTexture();
     ErrorType makeTextures3D();
-    ErrorType updateTextures3D(int, int, int, int, int, int, bool);
+    ErrorType updateTextures3D(size_t, size_t, size_t, size_t, size_t, size_t, bool);
     void removeTextures();
     void renderTex3DPlanar(vvMatrix*);
     int  getLUTSize(int*);
@@ -195,7 +195,7 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
     void  renderVolumeGL();
     void  updateTransferFunction();
     void  updateVolumeData();
-    void  updateVolumeData(int, int, int, int, int, int);
+    void  updateVolumeData(size_t, size_t, size_t, size_t, size_t, size_t);
     void  setViewingDirection(const vvVector3& vd);
     void  setObjectDirection(const vvVector3& od);
     virtual void setParameter(ParameterType param, const vvParam& value);
@@ -239,9 +239,9 @@ class VIRVOEXPORT vvTexMultiRend : public vvRenderer
 	void setRotation(vvMatrix _rotation) { rotation = _rotation; }
 	void setRotation(float rot[16]) { rotation.setGL(rot); }
 	void setNumSlices(int _numSlices) { numSlices = _numSlices; }
-	void setTexMax(int idx, float val) { assert(idx<3 && idx>=0); texMax[idx]=val;} 
-	void setTexMin(int idx, float val) { assert(idx<3 && idx>=0); texMin[idx]=val;} 
-	void setTexels(int idx, int val) { assert(idx<3 && idx>=0); texels[idx]=val;} 
+	void setTexMax(size_t idx, float val) { assert(idx<3); texMax[idx]=val;} 
+	void setTexMin(size_t idx, float val) { assert(idx<3); texMin[idx]=val;} 
+	void setTexels(size_t idx, size_t val) { assert(idx<3); texels[idx]=val;} 
 	void setChanWeight(int idx, float val) { chanWeight[idx] = val; }
 	void setVolWeight(float val) { volWeight = val; }
 	void setChannelColor(int channel, float val[3]) { color[channel].set(val[0], val[1], val[2]); }

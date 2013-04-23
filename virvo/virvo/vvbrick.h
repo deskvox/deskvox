@@ -73,7 +73,7 @@ public:
     return vvAABB(min, max);
   }
 
-  ushort getFrontIndex(const vvVector3* vertices,   ///< front index of the brick dependent upon the current model view
+  size_t getFrontIndex(const vvVector3* vertices,   ///< front index of the brick dependent upon the current model view
                        const vvVector3& point,
                        const vvVector3& normal,
                        float& minDot,

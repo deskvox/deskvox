@@ -131,7 +131,7 @@ vvGpu::vvGpuInfo vvGpu::getInfo(vvGpu *gpu)
 {
   vvDebugMsg::msg(3, "vvGpu::getInfo() Enter");
 
-  vvGpuInfo inf = { -1, -1 };
+  vvGpuInfo inf = { 0, 0 };
 
   if(gpu->_data->openGL)
   {
@@ -145,11 +145,16 @@ vvGpu::vvGpuInfo vvGpu::getInfo(vvGpu *gpu)
     vvRenderContext context = vvRenderContext(co);
     context.makeCurrent();
 
+    // TODO: this is an NVIDIA extension
+    int totalkb = 0;
     glGetIntegerv(GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX,
-                  &(inf.totalMem));
+                  &totalkb);
+    inf.totalMem = static_cast<size_t>(totalkb) * 1024;
 
+    int freekb;
     glGetIntegerv(GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX,
-                  &(inf.freeMem));
+                  &freekb);
+    inf.freeMem = static_cast<size_t>(freekb) * 1024;
   }
   else if(gpu->_data->cuda)
   {

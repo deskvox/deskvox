@@ -324,9 +324,9 @@ vvMatrix& vvMatrix::multiplyLeft(const vvMatrix& LHS)
 {
   vvMatrix RHS(*this);
 
-  for (int row = 0; row < 4; ++row)
+  for (size_t row = 0; row < 4; ++row)
   {
-    for (int col = 0; col < 4; ++col)
+    for (size_t col = 0; col < 4; ++col)
     {
       e[row][col] = LHS(row, 0) * RHS(0, col)
                   + LHS(row, 1) * RHS(1, col)
@@ -344,9 +344,9 @@ vvMatrix& vvMatrix::multiplyRight(const vvMatrix &RHS)
 {
   vvMatrix LHS(*this);
 
-  for (int row = 0; row < 4; ++row)
+  for (size_t row = 0; row < 4; ++row)
   {
-    for (int col = 0; col < 4; ++col)
+    for (size_t col = 0; col < 4; ++col)
     {
       e[row][col] = LHS(row, 0) * RHS(0, col)
                   + LHS(row, 1) * RHS(1, col)

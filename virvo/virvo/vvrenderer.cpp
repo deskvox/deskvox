@@ -80,12 +80,16 @@ vvRenderState::vvRenderState()
   , _useOffscreenBuffer(false)
   , _imageScale(1.0f)
   , _imagePrecision(virvo::Byte)
+  , _lighting(false)
   , _showTexture(true)
   , _opaqueGeometryPresent(false)
   , _useIbr(false)
   , _ibrMode(VV_REL_THRESHOLD)
   , _visibleRegion(vvAABBs(vvsize3(0), vvsize3(std::numeric_limits<size_t>::max())))
   , _paddingRegion(vvAABBs(vvsize3(0), vvsize3(std::numeric_limits<size_t>::max())))
+  , _opacityCorrection(true)
+  , _interpolation(true)
+  , _earlyRayTermination(true)
 {
   
 }
@@ -221,6 +225,18 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_GAMMA:
     _gamma = value;
     break;
+  case VV_LIGHTING:
+    _lighting = value;
+    break;
+  case VV_OPCORR:
+    _opacityCorrection = value;
+    break;
+  case VV_SLICEINT:
+    _interpolation = value;
+    break;
+  case VV_TERMINATEEARLY:
+    _earlyRayTermination = value;
+    break;
   default:
     break;
   }
@@ -306,6 +322,14 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _showBricks;
   case VV_COMPUTE_BRICK_SIZE:
     return _computeBrickSize;
+  case VV_LIGHTING:
+    return _lighting;
+  case VV_OPCORR:
+    return _opacityCorrection;
+  case VV_SLICEINT:
+    return _interpolation;
+  case VV_TERMINATEEARLY:
+    return _earlyRayTermination;
   default:
     return vvParam();
   }
@@ -481,7 +505,7 @@ void vvRenderer::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, 
     probeMax = probePosObj + maxSize;
 
     // Constrain probe boundaries to volume data area:
-    for (int i = 0; i < 3; ++i)
+    for (size_t i = 0; i < 3; ++i)
     {
       if (probeMin[i] > size2[i] || probeMax[i] < -size2[i])
       {
@@ -1085,7 +1109,7 @@ void vvRenderer::setPosition(const vvVector3& p)
 void vvRenderer::getPosition(vvVector3* p)
 {
   vvDebugMsg::msg(3, "vvRenderer::getPosition()");
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     (*p)[i] = vd->pos[i];
   }
@@ -1185,7 +1209,7 @@ void vvRenderer::getEyePosition(vvVector3* eye) const
   projEye.multiply(invPM);
   projEye.multiply(invMV);
   vvVector3 tmp = vvVector3(projEye);
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     (*eye)[i] = tmp[i];
   }
@@ -1201,7 +1225,6 @@ bool vvRenderer::isInVolume(const vvVector3* point) const
   vvVector3 size;                                 // object size
   vvVector3 size2;                                // half object size
   vvVector3 pos;                                  // object location
-  int i;
 
   vvDebugMsg::msg(3, "vvRenderer::isInVolume()");
 
@@ -1209,7 +1232,7 @@ bool vvRenderer::isInVolume(const vvVector3* point) const
   size = vd->getSize();
   size2 = size;
   size2.scale(0.5f);
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     if ((*point)[i] < (pos[i] - size2[i])) return false;
     if ((*point)[i] > (pos[i] + size2[i])) return false;
@@ -1231,7 +1254,6 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   vvVector3 pos;
   float index;                                    // floating point index value into alpha TF [0..1]
   size_t vp[3];                                   // position of nearest voxel to x/y/z [voxel space]
-  int i;
   uchar* ptr;
 
   vvDebugMsg::msg(3, "vvRenderer::getAlphaValue()");
@@ -1241,7 +1263,7 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   size2.scale(0.5f);
   pos = vd->pos;
 
-  for (i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     if (point[i] < (pos[i] - size2[i])) return -1.0f;
     if (point[i] > (pos[i] + size2[i])) return -1.0f;

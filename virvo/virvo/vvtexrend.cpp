@@ -159,9 +159,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   preIntegration = false;
   usePreIntegration = false;
   textures = 0;
-  opacityCorrection = true;
   _measureRenderTime = false;
-  interpolation = true;
 
   if (_useOffscreenBuffer)
   {
@@ -452,7 +450,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures()
   vvDebugMsg::msg(2, "vvTexRend::makeTextures()");
 
   vvsize3 vox = _paddingRegion.getMax() - _paddingRegion.getMin();
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     vox[i] = std::min(vox[i], vd->vox[i]);
   }
@@ -592,7 +590,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(size_t axes)
   th[1] = tw[2] = texels[0];
   tw[0] = th[2] = texels[1];
   tw[1] = th[0] = texels[2];
-  for (int i=3-axes; i<3; ++i)
+  for (size_t i=3-axes; i<3; ++i)
   {
     texSize[i] = tw[i] * th[i] * texelsize;
   }
@@ -619,7 +617,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(size_t axes)
   rawStepS[2] = rawSliceSize;
 
   // Generate texture data arrays:
-  for (int i=3-axes; i<3; ++i)
+  for (size_t i=3-axes; i<3; ++i)
   {
     rgbaSlice[i] = new uint8_t[texSize[i]];
   }
@@ -628,7 +626,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(size_t axes)
   for (size_t f=0; f<frames; ++f)
   {
     raw = vd->getRaw(f);                          // points to beginning of frame in raw data
-    for (int i=3-axes; i<3; ++i)                      // generate textures for each principal axis
+    for (size_t i=3-axes; i<3; ++i)                      // generate textures for each principal axis
     {
       memset(rgbaSlice[i], 0, texSize[i]);        // initialize with 0's for invisible empty regions
 
@@ -726,8 +724,8 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(size_t axes)
         glBindTexture(GL_TEXTURE_2D, texNames[texIndex]);
         glPixelStorei(GL_UNPACK_ALIGNMENT,1);
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
@@ -835,7 +833,7 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
           }
 
           size_t brickTexelOverlap[3];
-          for (int d = 0; d < 3; ++d)
+          for (size_t d = 0; d < 3; ++d)
           {
             brickTexelOverlap[d] = _brickTexelOverlap;
             const float maxObj = (startOffset[d] + bs[d]) * vd->dist[d] * vd->_scale;
@@ -855,7 +853,7 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
             voxSize[1] * (startOffset[1] + (tmpTexels[1] - brickTexelOverlap[1]) - halfVolume[1]),
             voxSize[2] * (startOffset[2] + (tmpTexels[2] - brickTexelOverlap[2]) - halfVolume[2]));
 
-          for (int d = 0; d < 3; ++d)
+          for (size_t d = 0; d < 3; ++d)
           {
             if (currBrick->max[d] > vd->getSize()[d])
             {
@@ -1071,7 +1069,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickL
 
       accommodated = currBrick->upload3DTexture(texNames[currBrick->index], texData,
                                                 texFormat, internalTexFormat,
-                                                interpolation);
+                                                _interpolation);
       if(!accommodated)
          break;
     } // # foreach (numBricks[i])
@@ -1192,7 +1190,7 @@ void vvTexRend::computeBrickSize()
   }
 
   _useOnlyOneBrick = true;
-  for(int i=0; i<3; ++i)
+  for(size_t i=0; i<3; ++i)
   {
     newBrickSize[i] = vvToolshed::getTextureSize(vd->vox[i]);
     if(newBrickSize[i] > _maxBrickSize[i])
@@ -1549,8 +1547,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(size_t offsetX, size_t offsetY,
       glBindTexture(GL_TEXTURE_3D_EXT, texNames[f]);
       glPixelStorei(GL_UNPACK_ALIGNMENT,1);
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
       glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
       glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
       glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
@@ -1584,9 +1582,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(size_t offsetX, size_t offsetY,
   return err;
 }
 
-vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes,
-                                                 size_t offsetX, size_t offsetY, size_t offsetZ,
-                                                 size_t sizeX, size_t sizeY, size_t sizeZ)
+vvTexRend::ErrorType vvTexRend::updateTextures2D(size_t axes, size_t offsetX, size_t offsetY, size_t offsetZ,
+  size_t sizeX, size_t sizeY, size_t sizeZ)
 {
   vvVector4i rawVal;
   size_t rawSliceSize;
@@ -1663,13 +1660,13 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes,
   tw[0] = th[2] = sizeY;
   tw[1] = th[0] = sizeZ;
 
-  for (int i = 3-axes; i < 3; i++)
+  for (size_t i = 3-axes; i < 3; i++)
   {
     texSize[i] = tw[i] * th[i] * texelsize;
   }
 
   // generate texture data arrays
-  for (int i=3-axes; i<3; ++i)
+  for (size_t i=3-axes; i<3; ++i)
   {
     rgbaSlice[i] = new uint8_t[texSize[i]];
   }
@@ -1679,7 +1676,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(int axes,
   {
     raw = vd->getRaw(f);
 
-    for (int i = 3-axes; i < 3; i++)
+    for (size_t i = 3-axes; i < 3; i++)
     {
       memset(rgbaSlice[i], 0, texSize[i]);
 
@@ -2189,7 +2186,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   // determine visible size and half object size as shortcut
   vvsize3 minVox = _visibleRegion.getMin();
   vvsize3 maxVox = _visibleRegion.getMax();
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     minVox[i] = std::max(minVox[i], size_t(0));
     maxVox[i] = std::min(maxVox[i], vd->vox[i]);
@@ -2199,7 +2196,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   vissize = maxCorner - minCorner;
   const vvVector3 center = vvAABB(minCorner, maxCorner).getCenter();
 
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     texSize[i] = vissize[i] * (float)texels[i] / (float)vd->vox[i];
     vissize2[i]   = 0.5f * vissize[i];
@@ -2222,14 +2219,14 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     probePosObj.sub(pos);                        // eliminate object position from probe position
 
     // Compute probe min/max coordinates in object space:
-    for (int i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
       probeMin[i] = probePosObj[i] - (_roiSize[i] * size[i]) * 0.5f;
       probeMax[i] = probePosObj[i] + (_roiSize[i] * size[i]) * 0.5f;
     }
 
     // Constrain probe boundaries to volume data area:
-    for (int i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
       if (probeMin[i] > size2[i] || probeMax[i] < -size2[i])
       {
@@ -2242,7 +2239,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     }
 
     // Compute probe edge lengths:
-    for (int i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
       probeSizeObj[i] = probeMax[i] - probeMin[i];
   }
   else                                            // probe mode off
@@ -2258,7 +2255,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   if (_isROIUsed)
   {
     probeTexels.zero();
-    for (int i=0; i<3; ++i)
+    for (size_t i=0; i<3; ++i)
     {
       probeTexels[i] = texels[i] * probeSizeObj[i] / texSize[i];
     }
@@ -2277,7 +2274,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
 
   // compute number of slices to draw
   float depth = fabs(normal[0]*probeSizeObj[0]) + fabs(normal[1]*probeSizeObj[1]) + fabs(normal[2]*probeSizeObj[2]);
-  int minDistanceInd = 0;
+  size_t minDistanceInd = 0;
   if(probeSizeObj[1]/probeTexels[1] < probeSizeObj[minDistanceInd]/probeTexels[minDistanceInd])
     minDistanceInd=1;
   if(probeSizeObj[2]/probeTexels[2] < probeSizeObj[minDistanceInd]/probeTexels[minDistanceInd])
@@ -2336,7 +2333,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     temp.add(normal);
     normClipPoint.isectPlaneLine(normal, clipPosObj, probePosObj, temp);
     maxDist = farthest.distance(normClipPoint);
-    numSlices = (int)(maxDist / delta.length()) + 1;
+    numSlices = (size_t)(maxDist / delta.length()) + 1;
     temp = delta;
     temp.scale((float)(1 - numSlices));
     farthest = normClipPoint;
@@ -2358,8 +2355,6 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   }
 
   vvVector3 texPoint;                             // arbitrary point on current texture
-  int isectCnt;                                   // intersection counter
-  int j,k;                                        // counters
   int drawn = 0;                                  // counter for drawn textures
   vvVector3 deltahalf;
   deltahalf = delta;
@@ -2385,7 +2380,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   {
     // Search for intersections between texture plane (defined by texPoint and
     // normal) and texture object (0..1):
-    isectCnt = isect->isectPlaneCuboid(normal, texPoint, probeMin, probeMax);
+    size_t isectCnt = isect->isectPlaneCuboid(normal, texPoint, probeMin, probeMax);
 
     texPoint.add(delta);
 
@@ -2402,7 +2397,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     // Generate vertices in texture coordinates:
     if(usePreIntegration)
     {
-      for (j=0; j<isectCnt; ++j)
+      for (size_t j=0; j<isectCnt; ++j)
       {
         vvVector3 front, back;
 
@@ -2431,7 +2426,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
           front.isectPlaneLine(normal, v, releye, isect[j]);
         }
 
-        for (k=0; k<3; ++k)
+        for (size_t k=0; k<3; ++k)
         {
           texcoord[j][k] = (back[k] - minCorner[k]) / vissize[k];
           texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
@@ -2443,9 +2438,9 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     }
     else
     {
-      for (j=0; j<isectCnt; ++j)
+      for (size_t j=0; j<isectCnt; ++j)
       {
-        for (k=0; k<3; ++k)
+        for (size_t k=0; k<3; ++k)
         {
           texcoord[j][k] = (isect[j][k] - minCorner[k]) / vissize[k];
           texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
@@ -2457,7 +2452,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     glColor4f(1.0, 1.0, 1.0, 1.0);
     glNormal3f(normal[0], normal[1], normal[2]);
     ++drawn;
-    for (j=0; j<isectCnt; ++j)
+    for (size_t j=0; j<isectCnt; ++j)
     {
       // The following lines are the bottleneck of this method:
       if(usePreIntegration)
@@ -2512,7 +2507,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
   vvVector3 clippedProbeSizeObj = probeSizeObj;
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     if (clippedProbeSizeObj[i] < vd->getSize()[i])
     {
@@ -2691,13 +2686,13 @@ bool vvTexRend::insideFrustum(const vvVector3 &min, const vvVector3 &max) const
   vvVector3 pv;
 
   // get p-vertex (that's the farthest vertex in the direction of the normal plane
-  for (int i = 0; i < 6; i++)
+  for (size_t i = 0; i < 6; i++)
   {
     const vvVector3 normal(_frustum[i][0], _frustum[i][1], _frustum[i][2]);
 
-    for(int j = 0; j < 8; ++j)
+    for(size_t j = 0; j < 8; ++j)
     {
-      for(int c = 0; c < 3; ++c)
+      for(size_t c = 0; c < 3; ++c)
         pv[c] = (j & (1<<c)) ? min[c] : max[c];
 
       if ((pv.dot(normal) + _frustum[i][3]) < 0)
@@ -2715,7 +2710,7 @@ bool vvTexRend::intersectsFrustum(const vvVector3 &min, const vvVector3 &max) co
   vvVector3 pv;
 
   // get p-vertex (that's the farthest vertex in the direction of the normal plane
-  for (int i = 0; i < 6; ++i)
+  for (size_t i = 0; i < 6; ++i)
   {
     if (_frustum[i][0] > 0.0)
       pv[0] = max[0];
@@ -2889,7 +2884,7 @@ void vvTexRend::renderTex3DSpherical(const vvMatrix& mv)
 
   // Determine texture object dimensions:
   const vvVector3 size(vd->getSize());
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     texSize[i]  = size[i] * (float)texels[i] / (float)vd->vox[i];
     texSize2[i] = 0.5f * texSize[i];
@@ -2899,16 +2894,16 @@ void vvTexRend::renderTex3DSpherical(const vvMatrix& mv)
   invView.invert();
 
   // generates the vertices of the cube (volume) in world coordinates
-  int vertexIdx = 0;
-  for (int ix=0; ix<2; ++ix)
-    for (int iy=0; iy<2; ++iy)
-      for (int iz=0; iz<2; ++iz)
+  size_t vertexIdx = 0;
+  for (size_t ix=0; ix<2; ++ix)
+    for (size_t iy=0; iy<2; ++iy)
+      for (size_t iz=0; iz<2; ++iz)
       {
         volumeVertices[vertexIdx][0] = (float)ix;
         volumeVertices[vertexIdx][1] = (float)iy;
         volumeVertices[vertexIdx][2] = (float)iz;
         // transfers vertices to world coordinates:
-        for (int k=0; k<3; ++k)
+        for (size_t k=0; k<3; ++k)
           volumeVertices[vertexIdx][k] =
             (volumeVertices[vertexIdx][k] * 2.0f - 1.0f) * texSize2[k];
         volumeVertices[vertexIdx].multiply(mv);
@@ -2917,7 +2912,7 @@ void vvTexRend::renderTex3DSpherical(const vvMatrix& mv)
 
   // Determine maximal and minimal distance of the volume from the eyepoint:
   maxDist = minDist = volumeVertices[0].length();
-  for (int i = 1; i<7; i++)
+  for (size_t i = 1; i<7; i++)
   {
     const float dist = volumeVertices[i].length();
     if (dist > maxDist)  maxDist = dist;
@@ -2932,7 +2927,7 @@ void vvTexRend::renderTex3DSpherical(const vvMatrix& mv)
   vvVector3 eye(0.0, 0.0, 0.0);
   eye.multiply(invView);
   bool inside = true;
-  for (int k=0; k<3; ++k)
+  for (size_t k=0; k<3; ++k)
   {
     if (eye[k] < -texSize2[k] || eye[k] > texSize2[k])
       inside = false;
@@ -3314,7 +3309,7 @@ void vvTexRend::renderVolumeGL()
   vvGLTools::printGLError("enter vvTexRend::renderVolumeGL()");
 
   vvsize3 vox = _paddingRegion.getMax() - _paddingRegion.getMin();
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     vox[i] = std::min(vox[i], vd->vox[i]);
   }
@@ -3357,7 +3352,7 @@ void vvTexRend::renderVolumeGL()
   }
 
   // Determine texture object extensions:
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     // padded borders for (trilinear) interpolation
     size_t paddingLeft = size_t(abs(ptrdiff_t(_visibleRegion.getMin()[i] - _paddingRegion.getMin()[i])));
@@ -3613,7 +3608,7 @@ void vvTexRend::updateLUT(const float dist)
       // Opacity correction:
                                                   // for 0 distance draw opaque slices
       if (dist<=0.0 || (_clipMode == 1 && _clipOpaque)) corr[3] = 1.0f;
-      else if (opacityCorrection) corr[3] = 1.0f - powf(1.0f - corr[3], dist);
+      else if (_opacityCorrection) corr[3] = 1.0f - powf(1.0f - corr[3], dist);
 
       // Convert float to uint8_t and copy to rgbaLUT array:
       for (size_t c=0; c<4; ++c)
@@ -3692,8 +3687,6 @@ void vvTexRend::setObjectDirection(const vvVector3& od)
 // see parent
 void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
 {
-  bool newInterpol;
-
   vvDebugMsg::msg(3, "vvTexRend::setParameter()");
   switch (param)
   {
@@ -3704,10 +3697,9 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       updateTransferFunction();
       break;
     case vvRenderer::VV_SLICEINT:
-      newInterpol = newValue;
-      if (interpolation!=newInterpol)
+      if (_interpolation != newValue.asBool())
       {
-        interpolation = newInterpol;
+        _interpolation = newValue;
         makeTextures();
         updateTransferFunction();
       }
@@ -3717,9 +3709,6 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       break;
     case vvRenderer::VV_MAX_SLICE:
       maxSlice = newValue;
-      break;
-    case vvRenderer::VV_OPCORR:
-      opacityCorrection = newValue;
       break;
     case vvRenderer::VV_SLICEORIENT:
       _sliceOrientation = (SliceOrientation)newValue.asInt();
@@ -3878,8 +3867,6 @@ vvParam vvTexRend::getParameter(ParameterType param) const
 
   switch (param)
   {
-    case vvRenderer::VV_SLICEINT:
-      return interpolation;
     case vvRenderer::VV_MIN_SLICE:
       return minSlice;
     case vvRenderer::VV_MAX_SLICE:
@@ -4364,7 +4351,7 @@ void vvTexRend::printLUT() const
   for (size_t i=0; i<total; ++i)
   {
     cerr << "#" << i << ": ";
-    for (int c=0; c<4; ++c)
+    for (size_t c=0; c<4; ++c)
     {
       cerr << int(rgbaLUT[i * 4 + c]);
       if (c<3) cerr << ", ";
@@ -4378,7 +4365,6 @@ uint8_t* vvTexRend::getHeightFieldData(float points[4][3], size_t& width, size_t
   GLint viewport[4];
   uint8_t *pixels, *data, *result=NULL;
   size_t numPixels;
-  int j, k;
   size_t index;
   float sizeX, sizeY;
   vvVector3 size, size2;
@@ -4406,11 +4392,11 @@ uint8_t* vvTexRend::getHeightFieldData(float points[4][3], size_t& width, size_t
   glLoadIdentity();
 
   size = vd->getSize();
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
     size2[i]   = 0.5f * size[i];
 
-  for (j = 0; j < 4; j++)
-    for (k = 0; k < 3; k++)
+  for (size_t j = 0; j < 4; j++)
+    for (size_t k = 0; k < 3; k++)
   {
     texcoord[j][k] = (points[j][k] + size2[k]) / size[k];
     texcoord[j][k] = texcoord[j][k] * (texMax[k] - texMin[k]) + texMin[k];
@@ -4525,7 +4511,7 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
 {
   float dist = 0;
 
-  for (int i=0; i<3; ++i)
+  for (size_t i=0; i<3; ++i)
   {
     dist += float(fabs(p1[i] - p2[i])) / float(vd->getSize()[i] * vd->vox[i]);
   }

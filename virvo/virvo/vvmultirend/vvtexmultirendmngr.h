@@ -52,9 +52,9 @@ class VIRVOEXPORT vvTexMultiRendMngr
 	void init();
 	void addVolume(vvVolDesc* vd);
 	void renderMultipleVolume();
-	vvTexMultiRend* getRenderer(int volNum) { return _rendererList[volNum]; }
+	vvTexMultiRend* getRenderer(size_t volNum) { return _rendererList[volNum]; }
 	bool isEmpty() { return _rendererList.empty(); }
-	int getNumVolume() { return _numVolume; }
+	size_t getNumVolume() { return _numVolume; }
 	float getLastRenderTime() { return _lastRenderTime; }
 	float getLastComputeTime() { return _lastComputeTime; }
 	float getLastGLDrawTime() { return _lastGLdrawTime; }
@@ -64,8 +64,8 @@ class VIRVOEXPORT vvTexMultiRendMngr
 
   protected:
         std::vector<vvTexMultiRend*> _rendererList;
-	int _numVolume;
-	int _currentVolume;
+	size_t _numVolume;
+	size_t _currentVolume;
 
   vvShaderFactory* _shaderFactory;
   std::vector<vvShaderProgram*> glslShader;

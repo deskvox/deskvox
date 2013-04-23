@@ -25,6 +25,7 @@
 #include "vvtoolshed.h"
 
 #include "private/vvgltools.h"
+#include "private/vvlog.h"
 
 using std::cerr;
 using std::cout;
@@ -269,7 +270,12 @@ bool vvGLSLProgram::loadShaders()
       GLint length;
       std::vector<GLchar> compileLog;
       glGetShaderiv(_data->shaderId[i], GL_INFO_LOG_LENGTH, &length);
-      compileLog.resize(length);
+      if (length < 0)
+      {
+        VV_LOG(0) << "glCompileShader failed, cannot obtain log" << std::endl;
+        return false;
+      }
+      compileLog.resize(static_cast<size_t>(length));
       glGetShaderInfoLog(_data->shaderId[i], length, &length, &compileLog[0]);
       vvDebugMsg::msg(0, "glCompileShader failed: " , &compileLog[0]);
       return false;

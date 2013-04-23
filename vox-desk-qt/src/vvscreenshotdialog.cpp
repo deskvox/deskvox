@@ -112,7 +112,7 @@ void vvScreenshotDialog::takePicture()
     if (!info.isFile())
     {
       const QByteArray ba = filename.toLatin1();
-      vvVolDesc* vd = new vvVolDesc(ba.data(), w, h, &image[0]);
+      vvVolDesc* vd = new vvVolDesc(ba.data(), static_cast<size_t>(w), static_cast<size_t>(h), &image[0]);
       vvDebugMsg::msg(0, "Writing screenshot to file: ", ba.data());
       vvFileIO fio;
       fio.saveVolumeData(vd, false);

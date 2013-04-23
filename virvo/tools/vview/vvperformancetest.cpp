@@ -199,7 +199,7 @@ void vvPerformanceTest::writeResultFiles()
         std::vector<float>::const_iterator it;
 
         fprintf(handle, "\"TIME\",\"MODELVIEW_MATRIX\"\n");
-        int i = 0;
+        size_t i = 0;
         for (it = times.begin(); it != times.end(); ++it)
         {
           fprintf(handle, "[%f],", *it);

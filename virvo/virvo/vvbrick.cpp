@@ -42,7 +42,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   // Clip probe object to brick extents.
   vvVector3 minClipped;
   vvVector3 maxClipped;
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     if (min[i] < probeMin[i])
     {
@@ -67,7 +67,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
 
   float minDot;
   float maxDot;
-  const ushort idx = getFrontIndex(verts, farthest, normal, minDot, maxDot);
+  size_t idx = getFrontIndex(verts, farthest, normal, minDot, maxDot);
 
   const float deltaInv = 1.0f / delta.length();
 
@@ -94,7 +94,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
                                       7, 6, 3, 2, 5, 4, 1, 0 };
 
     float edges[8 * 3];
-    for (int i = 0; i < 8; ++i)
+    for (size_t i = 0; i < 8; ++i)
     {
       edges[i * 3] = verts[sequence[idx * 8 + i]][0];
       edges[i * 3 + 1] = verts[sequence[idx * 8 + i]][1];
@@ -139,7 +139,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     for (ptrdiff_t i = startSlices; i <= endSlices; ++i)
     {
       vvVector3 isect[6];
-      const int isectCnt = isect->isectPlaneCuboid(normal, startPoint, minClipped, maxClipped);
+      size_t isectCnt = isect->isectPlaneCuboid(normal, startPoint, minClipped, maxClipped);
       startPoint.add(delta);
       if (isectCnt < 3) continue;                 // at least 3 intersections needed for drawing
       // Check volume section mode:
@@ -152,9 +152,9 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
 
       // Generate vertices in texture coordinates:
       vvVector3 texcoord[6];
-      for (int j = 0; j < isectCnt; ++j)
+      for (size_t j = 0; j < isectCnt; ++j)
       {
-        for (int k = 0; k < 3; ++k)
+        for (size_t k = 0; k < 3; ++k)
         {
           texcoord[j][k] = (isect[j][k] - min[k]) / dist[k];
           texcoord[j][k] = texcoord[j][k] * texRange[k] + texMin[k];
@@ -164,7 +164,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
       glBegin(GL_TRIANGLE_FAN);
       glColor4f(1.0, 1.0, 1.0, 1.0);
       glNormal3f(normal[0], normal[1], normal[2]);
-      for (int j = 0; j < isectCnt; ++j)
+      for (size_t j = 0; j < isectCnt; ++j)
       {
         // The following lines are the bottleneck of this method:
         glTexCoord3f(texcoord[j][0], texcoord[j][1], texcoord[j][2]);
@@ -179,7 +179,7 @@ void vvBrick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMa
 {
   vvVector3 minClipped;
   vvVector3 maxClipped;
-  for (int i = 0; i < 3; i++)
+  for (size_t i = 0; i < 3; i++)
   {
     if (min[i] < probeMin[i])
     {
@@ -285,7 +285,7 @@ bool vvBrick::upload3DTexture(const GLuint& texName, const uint8_t* texData,
   @param maxDot    The maximum dot product of vector point-vertex and normal,
                    passed along for later calculations.
 */
-ushort vvBrick::getFrontIndex(const vvVector3* vertices,
+size_t vvBrick::getFrontIndex(const vvVector3* vertices,
                               const vvVector3& point,
                               const vvVector3& normal,
                               float& minDot,
@@ -335,7 +335,7 @@ void vvBrick::print() const
 void vvBrick::sortByCenter(std::vector<vvBrick*>& bricks, const vvVector3& axis)
 {
   const vvVector3 axisGetter(0, 1, 2);
-  const int a = static_cast<const int>(axis.dot(axisGetter));
+  size_t a = static_cast<size_t>(axis.dot(axisGetter));
 
   for(std::vector<vvBrick*>::iterator it = bricks.begin(); it != bricks.end(); ++it)
   {

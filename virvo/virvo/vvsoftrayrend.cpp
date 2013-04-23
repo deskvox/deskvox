@@ -96,8 +96,6 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   , _height(512)
   , _firstThread(NULL)
   , _rgbaTF(NULL)
-  , _earlyRayTermination(true)
-  , _opacityCorrection(true)
 {
   vvDebugMsg::msg(1, "vvSoftRayRend::vvSoftRayRend()");
 
@@ -241,34 +239,13 @@ size_t vvSoftRayRend::getLUTSize() const
 void vvSoftRayRend::setParameter(ParameterType param, const vvParam& newValue)
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::setParameter()");
-
-  switch (param)
-  {
-  case vvRenderer::VV_OPCORR:
-    _opacityCorrection = newValue;
-    break;
-  case vvRenderer::VV_TERMINATEEARLY:
-    _earlyRayTermination = newValue;
-    break;
-  default:
-    vvRenderer::setParameter(param, newValue);
-    break;
-  }
+  vvRenderer::setParameter(param, newValue);
 }
 
 vvParam vvSoftRayRend::getParameter(ParameterType param) const
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::getParameter()");
-
-  switch (param)
-  {
-  case vvRenderer::VV_OPCORR:
-    return _opacityCorrection;
-  case vvRenderer::VV_TERMINATEEARLY:
-    return _earlyRayTermination;
-  default:
-    return vvRenderer::getParameter(param);
-  }
+  return vvRenderer::getParameter(param);
 }
 
 std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int h)
@@ -313,7 +290,7 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
 
   vvsize3 minVox = _visibleRegion.getMin();
   vvsize3 maxVox = _visibleRegion.getMax();
-  for (int i = 0; i < 3; ++i)
+  for (size_t i = 0; i < 3; ++i)
   {
     minVox[i] = std::max(minVox[i], size_t(0));
     maxVox[i] = std::min(maxVox[i], vd->vox[i]);
@@ -401,7 +378,7 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
           pos += step;
         }
 
-        for (int c = 0; c < 4; ++c)
+        for (size_t c = 0; c < 4; ++c)
         {
           (*colors)[y * _width * 4 + x * 4 + c] = dst[c];
         }

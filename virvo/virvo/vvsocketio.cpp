@@ -101,9 +101,9 @@ vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd) const
   {
     vvSocket::ErrorType retval;
 
-    int size = vd->serializeAttributes();
+    size_t size = vd->serializeAttributes();
 
-    std::vector<uchar> buffer(size+4);
+    std::vector<uint8_t> buffer(size+4);
     if ((retval =_socket->readData(&buffer[0], size+4)) != vvSocket::VV_OK)
     {
       return retval;
@@ -164,8 +164,8 @@ vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd) const
 {
   if(_socket)
   {
-    int size = vd->serializeAttributes();
-    std::vector<uchar> buffer(size+4);
+    size_t size = vd->serializeAttributes();
+    std::vector<uint8_t> buffer(size+4);
     vd->serializeAttributes(&buffer[0]);
     vvToolshed::writeFloat(&buffer[size], vd->_scale);
     vvDebugMsg::msg(3, "Sending header ...");
@@ -189,14 +189,14 @@ vvSocket::ErrorType vvSocketIO::putVolume(const vvVolDesc* vd) const
     if(retval != vvSocket::VV_OK)
       return retval;
 
-    int frames = vd->frames;
+    size_t frames = vd->frames;
 
-    int size = vd->getFrameBytes();
+    size_t size = vd->getFrameBytes();
     vvDebugMsg::msg(3, "Sending data ...");
 
-    for(int k=0; k < frames; k++)
+    for(size_t k=0; k < frames; k++)
     {
-      const uchar *buffer = vd->getRaw(k);
+      const uint8_t *buffer = vd->getRaw(k);
       if ((retval =_socket->writeData(buffer, size)) != vvSocket::VV_OK)
       {
         return retval;
@@ -328,7 +328,7 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im) const
 {
   if(_socket)
   {
-    const int BUFSIZE = 13;
+    const size_t BUFSIZE = 13;
     uchar buffer[BUFSIZE];
     vvSocket::ErrorType retval;
     short w, h;
@@ -719,25 +719,25 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type) c
   if(_socket)
   {
     vvSocket::ErrorType retval;
-    int size;
-    uchar* buffer;
+    size_t size;
+    uint8_t* buffer;
 
     switch(type)
     {
       case VV_UCHAR:
       {
         size = number;
-        if ((retval =_socket->readData((uchar*)data, size)) != vvSocket::VV_OK)
+        if ((retval =_socket->readData((uint8_t*)data, size)) != vvSocket::VV_OK)
         {
           return retval;
         }
-        vvDebugMsg::msg(3, "uchar received");
+        vvDebugMsg::msg(3, "uint8_t received");
       }break;
       case VV_USHORT:
       {
         int tmp;
         size = number*2;
-        buffer = new uchar[size];
+        buffer = new uint8_t[size];
         if ((retval =_socket->readData(buffer, size)) != vvSocket::VV_OK)
         {
           delete[] buffer;
@@ -746,7 +746,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type) c
         for (int i=0; i<number; i++)
         {
           tmp = vvToolshed::read16(&buffer[i*2]);
-          memcpy((uchar*)data+i*2, &tmp, 2);
+          memcpy((uint8_t*)data+i*2, &tmp, 2);
         }
         vvDebugMsg::msg(3, "ushort received");
         delete[] buffer;
@@ -755,7 +755,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type) c
       {
         int tmp;
         size = number*4;
-        buffer = new uchar[size];
+        buffer = new uint8_t[size];
         if ((retval =_socket->readData(buffer, size)) != vvSocket::VV_OK)
         {
           delete[] buffer;
@@ -764,7 +764,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type) c
         for (int i=0; i<number; i++)
         {
           tmp = vvToolshed::read32(&buffer[i*4]);
-          memcpy((uchar*)data+i*4, &tmp, 4);
+          memcpy((uint8_t*)data+i*4, &tmp, 4);
         }
         vvDebugMsg::msg(3, "int received");
         delete[] buffer;
@@ -773,7 +773,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type) c
       {
         float tmp;
         size = number*4;
-        buffer = new uchar[size];
+        buffer = new uint8_t[size];
         if ((retval =_socket->readData(buffer, size)) != vvSocket::VV_OK)
         {
           delete[] buffer;
@@ -1145,7 +1145,7 @@ vvSocket::ErrorType vvSocketIO::getColor(vvColor& val) const
 
   if (err == vvSocket::VV_OK)
   {
-    for (int i = 0; i < 3; ++i)
+    for (size_t i = 0; i < 3; ++i)
     {
       val[i] = clr[i];
     }
