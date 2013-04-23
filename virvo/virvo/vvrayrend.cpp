@@ -169,10 +169,6 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
   _volumeCopyToGpuOk = true;
 
-  _earlyRayTermination = true;
-  _illumination = false;
-  _interpolation = true;
-  _opacityCorrection = true;
   _twoPassIbr = (_ibrMode == VV_REL_THRESHOLD || _ibrMode == VV_EN_EX_MEAN);
 
   _rgbaTF = NULL;
@@ -381,9 +377,9 @@ void vvRayRend::compositeVolume(int, int)
   kernelParams.blockDimX            = 16;
   kernelParams.blockDimY            = 16;
   kernelParams.bpc                  = getVolDesc()->bpc;
-  kernelParams.illumination         = getIllumination();
-  kernelParams.opacityCorrection    = getOpacityCorrection();
-  kernelParams.earlyRayTermination  = getEarlyRayTermination();
+  kernelParams.illumination         = _lighting;
+  kernelParams.opacityCorrection    = _opacityCorrection;
+  kernelParams.earlyRayTermination  = _earlyRayTermination;
   kernelParams.clipMode             = getParameter(vvRenderState::VV_CLIP_MODE);
   kernelParams.mipMode              = getParameter(vvRenderState::VV_MIP_MODE);
   kernelParams.useIbr               = getParameter(vvRenderState::VV_USE_IBR);
@@ -427,23 +423,13 @@ void vvRayRend::setParameter(ParameterType param, const vvParam& newValue)
   {
   case vvRenderer::VV_SLICEINT:
     {
-      const bool newInterpol = newValue;
-      if (_interpolation != newInterpol)
+      if (_interpolation != newValue.asBool())
       {
-        _interpolation = newInterpol;
+        _interpolation = newValue;
         initVolumeTexture();
         updateTransferFunction();
       }
     }
-    break;
-  case vvRenderer::VV_LIGHTING:
-    _illumination = newValue;
-    break;
-  case vvRenderer::VV_OPCORR:
-    _opacityCorrection = newValue;
-    break;
-  case vvRenderer::VV_TERMINATEEARLY:
-    _earlyRayTermination = newValue;
     break;
   default:
     vvIbrRenderer::setParameter(param, newValue);
@@ -461,42 +447,9 @@ vvParam vvRayRend::getParameter(ParameterType param) const
   {
   case vvRenderer::VV_SLICEINT:
     return _interpolation;
-  case vvRenderer::VV_LIGHTING:
-    return _illumination;
-  case vvRenderer::VV_OPCORR:
-    return _opacityCorrection;
-  case vvRenderer::VV_TERMINATEEARLY:
-    return _earlyRayTermination;
   default:
     return vvIbrRenderer::getParameter(param);
   }
-}
-
-bool vvRayRend::getEarlyRayTermination() const
-{
-  vvDebugMsg::msg(3, "vvRayRend::getEarlyRayTermination()");
-
-  return _earlyRayTermination;
-}
-bool vvRayRend::getIllumination() const
-{
-  vvDebugMsg::msg(3, "vvRayRend::getIllumination()");
-
-  return _illumination;
-}
-
-bool vvRayRend::getInterpolation() const
-{
-  vvDebugMsg::msg(3, "vvRayRend::getInterpolation()");
-
-  return _interpolation;
-}
-
-bool vvRayRend::getOpacityCorrection() const
-{
-  vvDebugMsg::msg(3, "vvRayRend::getOpacityCorrection()");
-
-  return _opacityCorrection;
 }
 
 void vvRayRend::initVolumeTexture()

@@ -159,9 +159,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   preIntegration = false;
   usePreIntegration = false;
   textures = 0;
-  opacityCorrection = true;
   _measureRenderTime = false;
-  interpolation = true;
 
   if (_useOffscreenBuffer)
   {
@@ -726,8 +724,8 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(size_t axes)
         glBindTexture(GL_TEXTURE_2D, texNames[texIndex]);
         glPixelStorei(GL_UNPACK_ALIGNMENT,1);
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
@@ -1071,7 +1069,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickL
 
       accommodated = currBrick->upload3DTexture(texNames[currBrick->index], texData,
                                                 texFormat, internalTexFormat,
-                                                interpolation);
+                                                _interpolation);
       if(!accommodated)
          break;
     } // # foreach (numBricks[i])
@@ -1549,8 +1547,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(size_t offsetX, size_t offsetY,
       glBindTexture(GL_TEXTURE_3D_EXT, texNames[f]);
       glPixelStorei(GL_UNPACK_ALIGNMENT,1);
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (interpolation) ? GL_LINEAR : GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
       glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_R_EXT, GL_CLAMP);
       glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP);
       glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP);
@@ -3610,7 +3608,7 @@ void vvTexRend::updateLUT(const float dist)
       // Opacity correction:
                                                   // for 0 distance draw opaque slices
       if (dist<=0.0 || (_clipMode == 1 && _clipOpaque)) corr[3] = 1.0f;
-      else if (opacityCorrection) corr[3] = 1.0f - powf(1.0f - corr[3], dist);
+      else if (_opacityCorrection) corr[3] = 1.0f - powf(1.0f - corr[3], dist);
 
       // Convert float to uint8_t and copy to rgbaLUT array:
       for (size_t c=0; c<4; ++c)
@@ -3689,8 +3687,6 @@ void vvTexRend::setObjectDirection(const vvVector3& od)
 // see parent
 void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
 {
-  bool newInterpol;
-
   vvDebugMsg::msg(3, "vvTexRend::setParameter()");
   switch (param)
   {
@@ -3701,10 +3697,9 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       updateTransferFunction();
       break;
     case vvRenderer::VV_SLICEINT:
-      newInterpol = newValue;
-      if (interpolation!=newInterpol)
+      if (_interpolation != newValue.asBool())
       {
-        interpolation = newInterpol;
+        _interpolation = newValue;
         makeTextures();
         updateTransferFunction();
       }
@@ -3714,9 +3709,6 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       break;
     case vvRenderer::VV_MAX_SLICE:
       maxSlice = newValue;
-      break;
-    case vvRenderer::VV_OPCORR:
-      opacityCorrection = newValue;
       break;
     case vvRenderer::VV_SLICEORIENT:
       _sliceOrientation = (SliceOrientation)newValue.asInt();
@@ -3875,8 +3867,6 @@ vvParam vvTexRend::getParameter(ParameterType param) const
 
   switch (param)
   {
-    case vvRenderer::VV_SLICEINT:
-      return interpolation;
     case vvRenderer::VV_MIN_SLICE:
       return minSlice;
     case vvRenderer::VV_MAX_SLICE:

@@ -148,8 +148,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool arbMltTex;                               ///< true = ARB multitexture support
     bool preIntegration;                          ///< true = try to use pre-integrated rendering (planar 3d textures)
     bool usePreIntegration;                       ///< true = pre-integrated rendering is actually used
-    bool interpolation;                           ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
-    bool opacityCorrection;                       ///< true = opacity correction on
     ptrdiff_t minSlice, maxSlice;                 ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
     bool _areEmptyBricksCreated;                  ///< true when brick outlines are created or assigned through constructor
     bool _areBricksCreated;                       ///< true after the first creation of the bricks

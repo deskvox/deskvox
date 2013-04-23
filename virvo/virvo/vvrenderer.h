@@ -162,12 +162,16 @@ protected:
   float _imageScale;                            ///< undersampling by downscaling rendered img [0..1]
   virvo::BufferPrecision _imagePrecision;       /*!  render to high-res offscreen buffer (32 bit float) to minimize rounding error
                                                      caused by adding up contribution of to many slices */
+  bool _lighting;                               ///< use local illumination
   bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
   bool _opaqueGeometryPresent;                  ///< true = opaque geometry was rendered before the volume
   bool _useIbr;                                 ///< use ibr in rayrenderer
   IbrMode _ibrMode;
   vvAABBs _visibleRegion;                       ///< part of the vd that is visible and thus rendered
   vvAABBs _paddingRegion;                       ///< padding region for interpolation
+  bool _opacityCorrection;                      ///< true = opacity correction on
+  bool _interpolation;                          ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
+  bool _earlyRayTermination;                    ///< terminate ray marching when enough alpha was gathered
 public:
   vvRenderState();
 };

@@ -96,8 +96,6 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   , _height(512)
   , _firstThread(NULL)
   , _rgbaTF(NULL)
-  , _earlyRayTermination(true)
-  , _opacityCorrection(true)
 {
   vvDebugMsg::msg(1, "vvSoftRayRend::vvSoftRayRend()");
 
@@ -241,34 +239,13 @@ size_t vvSoftRayRend::getLUTSize() const
 void vvSoftRayRend::setParameter(ParameterType param, const vvParam& newValue)
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::setParameter()");
-
-  switch (param)
-  {
-  case vvRenderer::VV_OPCORR:
-    _opacityCorrection = newValue;
-    break;
-  case vvRenderer::VV_TERMINATEEARLY:
-    _earlyRayTermination = newValue;
-    break;
-  default:
-    vvRenderer::setParameter(param, newValue);
-    break;
-  }
+  vvRenderer::setParameter(param, newValue);
 }
 
 vvParam vvSoftRayRend::getParameter(ParameterType param) const
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::getParameter()");
-
-  switch (param)
-  {
-  case vvRenderer::VV_OPCORR:
-    return _opacityCorrection;
-  case vvRenderer::VV_TERMINATEEARLY:
-    return _earlyRayTermination;
-  default:
-    return vvRenderer::getParameter(param);
-  }
+  return vvRenderer::getParameter(param);
 }
 
 std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int h)

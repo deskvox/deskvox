@@ -80,12 +80,16 @@ vvRenderState::vvRenderState()
   , _useOffscreenBuffer(false)
   , _imageScale(1.0f)
   , _imagePrecision(virvo::Byte)
+  , _lighting(false)
   , _showTexture(true)
   , _opaqueGeometryPresent(false)
   , _useIbr(false)
   , _ibrMode(VV_REL_THRESHOLD)
   , _visibleRegion(vvAABBs(vvsize3(0), vvsize3(std::numeric_limits<size_t>::max())))
   , _paddingRegion(vvAABBs(vvsize3(0), vvsize3(std::numeric_limits<size_t>::max())))
+  , _opacityCorrection(true)
+  , _interpolation(true)
+  , _earlyRayTermination(true)
 {
   
 }
@@ -221,6 +225,18 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_GAMMA:
     _gamma = value;
     break;
+  case VV_LIGHTING:
+    _lighting = value;
+    break;
+  case VV_OPCORR:
+    _opacityCorrection = value;
+    break;
+  case VV_SLICEINT:
+    _interpolation = value;
+    break;
+  case VV_TERMINATEEARLY:
+    _earlyRayTermination = value;
+    break;
   default:
     break;
   }
@@ -306,6 +322,14 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _showBricks;
   case VV_COMPUTE_BRICK_SIZE:
     return _computeBrickSize;
+  case VV_LIGHTING:
+    return _lighting;
+  case VV_OPCORR:
+    return _opacityCorrection;
+  case VV_SLICEINT:
+    return _interpolation;
+  case VV_TERMINATEEARLY:
+    return _earlyRayTermination;
   default:
     return vvParam();
   }
