@@ -406,22 +406,22 @@ bool vvMovie::setStep(size_t step)
             normal.normalize();
             vvVector3 point = normal;
             point.scale(steps->getData()->param[3]);
-            _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_NORMAL, normal);
-            _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_POINT, point);
+            _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, normal);
+            _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_POINT, point);
           }
           break;
         case MOVECLIP:
         {
           vvVector3 point, normal;
-          normal = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_NORMAL);
-          point = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_POINT);
+          normal = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
+          point = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PLANE_POINT);
           normal.add(steps->getData()->param[0], steps->getData()->param[1], steps->getData()->param[2]);
           normal.normalize();
           vvVector3 diff(normal);
           diff.scale(steps->getData()->param[3]);
           point.add(diff);
-          _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_NORMAL, normal);
-          _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_POINT, point); 
+          _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, normal);
+          _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_POINT, point);
           break;
         }
         case SETCLIPPARAM:

@@ -597,13 +597,13 @@ void VVClippingDialog::updateClipParameters()
   normal.normalize();
   point = normal;
   point.scale(d);
-  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_POINT, point);
-  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_NORMAL, normal);
+  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_POINT, point);
+  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, normal);
 }
 
 void VVClippingDialog::updateValues()
 {
-  vvVector3 normal = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_NORMAL);
+  vvVector3 normal = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
   normal.normalize();
 
   _enableCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_MODE).asBool());
