@@ -156,7 +156,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   rgbaTF  = new float[256 * 256 * 4];
   rgbaLUT = new uint8_t[256 * 256 * 4];
   preintTable = new uint8_t[getPreintTableSize()*getPreintTableSize()*4];
-  preIntegration = false;
   usePreIntegration = false;
   textures = 0;
   _measureRenderTime = false;
@@ -1232,7 +1231,7 @@ void vvTexRend::updateTransferFunction()
   vvsize3 size;
 
   vvDebugMsg::msg(1, "vvTexRend::updateTransferFunction()");
-  if (preIntegration &&
+  if (_preIntegration &&
       arbMltTex && 
       geomType==VV_VIEWPORT && 
       !(_clipMode == 1 && (_clipSingleSlice || _clipOpaque)) &&
@@ -3714,7 +3713,7 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       _sliceOrientation = (SliceOrientation)newValue.asInt();
       break;
     case vvRenderer::VV_PREINT:
-      preIntegration = newValue;
+      _preIntegration = newValue;
       updateTransferFunction();
       disableShader(_shader);
       delete _shader;
@@ -3873,8 +3872,6 @@ vvParam vvTexRend::getParameter(ParameterType param) const
       return maxSlice;
     case vvRenderer::VV_SLICEORIENT:
       return (int)_sliceOrientation;
-    case vvRenderer::VV_PREINT:
-      return preIntegration;
     case vvRenderer::VV_BINNING:
       return (int)vd->_binning;
     case vvRenderer::VV_PIX_SHADER:

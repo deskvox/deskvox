@@ -105,7 +105,6 @@ class VIRVOEXPORT vvSoftVR : public vvRenderer
       int numProc;                                ///< number of processors in system
       bool compression;                           ///< true = use compressed volume data for rendering
       bool multiprocessing;                       ///< true = use multiprocessing where possible
-      bool preIntegration;                        ///< true = use pre-integrated values for compositing
       bool sliceInterpol;                         ///< inter-slice interpolation mode: true=bilinear interpolation (default), false=nearest neighbor
       bool warpInterpol;                          ///< warp interpolation: true=bilinear, false=nearest neighbor
       bool sliceBuffer;                           ///< slice buffer: true=intermediate image aligned, false=slice aligned

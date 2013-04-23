@@ -110,7 +110,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   }
 
   // start out with empty rendering regions
-  vvAABBi emptyBox = vvAABBi(vvVector3i(), vvVector3i());
+  vvAABBs emptyBox = vvAABBs(vvsize3(), vvsize3());
   setParameter(vvRenderer::VV_VISIBLE_REGION, emptyBox);
   setParameter(vvRenderer::VV_PADDING_REGION, emptyBox);
 
@@ -421,7 +421,11 @@ void* vvParBrickRend::renderFunc(void* args)
         if (!thread->newParams.empty())
         {
           vvRenderState::ParameterType p = thread->newParams.front();
-          thread->renderer->setParameter(p, thread->parbrickrend->getParameter(p));
+          vvParam param = thread->parbrickrend->getParameter(p);
+          if (param.getType() != vvParam::VV_EMPTY)
+          {
+            thread->renderer->setParameter(p, param);
+          }
           thread->newParams.pop();
         }
         pthread_mutex_unlock(thread->mutex);

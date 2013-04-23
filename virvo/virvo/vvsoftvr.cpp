@@ -58,7 +58,6 @@ vvSoftVR::vvSoftVR(vvVolDesc* vd, vvRenderState rs) : vvRenderer(vd, rs)
    len[0] = len[1] = len[2] = 0;
    compression = false;
    multiprocessing = false;
-   preIntegration = false;
    sliceInterpol = true;
    warpInterpol = true;
    sliceBuffer = true;
@@ -496,7 +495,7 @@ void vvSoftVR::updateLUT(float dist)
          rgbaConv[i][c] = (uchar)(rgbaTF[i*4+c] * 255.0f);
 
    // Make pre-integrated LUT:
-   if (preIntegration)
+   if (_preIntegration)
    {
       //makeLookupTextureOptimized(dist);           // use this line for fast pre-integration LUT
       makeLookupTextureCorrect(dist);   // use this line for slow but more correct pre-integration LUT
@@ -1101,9 +1100,9 @@ void vvSoftVR::setParameter(ParameterType param, const vvParam& value)
          break;
  #endif
       case vvRenderer::VV_PREINT:
-         preIntegration = value;
-         if (preIntegration) updateLUT(1.f);
-         cerr << "preIntegration set to " << int(preIntegration) << endl;
+         _preIntegration = value;
+         if (_preIntegration) updateLUT(1.f);
+         cerr << "preIntegration set to " << int(_preIntegration) << endl;
          break;
      case vvRenderer::VV_OPCORR:
          opCorr = value;
@@ -1140,8 +1139,6 @@ vvParam vvSoftVR::getParameter(ParameterType param) const
 #endif
       case vvRenderer::VV_OPCORR:
          return opCorr;
-      case vvRenderer::VV_PREINT:
-         return preIntegration;
       default:
          return vvRenderer::getParameter(param);
    }

@@ -90,6 +90,7 @@ vvRenderState::vvRenderState()
   , _opacityCorrection(true)
   , _interpolation(true)
   , _earlyRayTermination(true)
+  , _preIntegration(false)
 {
   
 }
@@ -234,6 +235,9 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_SLICEINT:
     _interpolation = value;
     break;
+  case VV_PREINT:
+    _preIntegration = value;
+    break;
   case VV_TERMINATEEARLY:
     _earlyRayTermination = value;
     break;
@@ -254,6 +258,8 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _mipMode;
   case VV_ALPHA_MODE:
     return _alphaMode;
+  case VV_LEAPEMPTY:
+    return _emptySpaceLeaping;
   case VV_CLIP_PERIMETER:
     return _clipPlanePerimeter;
   case VV_BOUNDARIES:
@@ -328,6 +334,8 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _opacityCorrection;
   case VV_SLICEINT:
     return _interpolation;
+  case VV_PREINT:
+    return _preIntegration;
   case VV_TERMINATEEARLY:
     return _earlyRayTermination;
   default:

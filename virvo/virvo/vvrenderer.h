@@ -172,6 +172,7 @@ protected:
   bool _opacityCorrection;                      ///< true = opacity correction on
   bool _interpolation;                          ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
   bool _earlyRayTermination;                    ///< terminate ray marching when enough alpha was gathered
+  bool _preIntegration;                         ///< true = try to use pre-integrated rendering (planar 3d textures)
 public:
   vvRenderState();
 };

@@ -94,7 +94,7 @@ void vvSoftPar::compositeVolume(int from, int to)
 
    earlyRayTermination = 0;
 
-   if (preIntegration)
+   if (_preIntegration)
    {
       if (!sliceBuffer)
       {
@@ -143,7 +143,7 @@ void vvSoftPar::compositeVolume(int from, int to)
 
    for (slice=firstSlice; slice!=lastSlice; slice += sliceStep)
    {
-      if (preIntegration)  compositeSlicePreIntegrated(slice, sliceStep);
+      if (_preIntegration)  compositeSlicePreIntegrated(slice, sliceStep);
       else if (compression && rleStart[0]!=NULL)
       {
          if (sliceInterpol) compositeSliceCompressedBilinear(slice);
