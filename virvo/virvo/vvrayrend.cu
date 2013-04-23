@@ -552,7 +552,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       }
       else if (justClippedSphere)
       {
-        float3 sphereNormal = normalize(pos - sphereCenter);
+        float3 sphereNormal = normalize(sphereCenter - pos);
         src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt, &sphereNormal);
         justClippedSphere = false;
       }
