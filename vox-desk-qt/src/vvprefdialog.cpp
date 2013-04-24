@@ -283,6 +283,7 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->fboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onFboChanged(int)));
   connect(ui->voxTypeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
   connect(ui->pixShdBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
+  connect(ui->earlyRayBox, SIGNAL(toggled(bool)), this, SLOT(onEarlyRayTerminationToggled(bool)));
   connect(ui->hostEdit, SIGNAL(textChanged(const QString&)), this, SLOT(onHostChanged(const QString&)));
   connect(ui->portBox, SIGNAL(valueChanged(int)), this, SLOT(onPortChanged(int)));
   connect(ui->getInfoButton, SIGNAL(clicked()), this, SLOT(onGetInfoClicked()));
@@ -455,7 +456,7 @@ bool vvPrefDialog::validateRemoteHost(const QString& host, const ushort port)
   return url.isValid();
 }
 
-void vvPrefDialog::onRendererChanged(const int index)
+void vvPrefDialog::onRendererChanged(int index)
 {
   vvDebugMsg::msg(3, "vvPrefDialog::onRendererChanged()");
 
@@ -464,7 +465,7 @@ void vvPrefDialog::onRendererChanged(const int index)
   emitRenderer();
 }
 
-void vvPrefDialog::onTexRendOptionChanged(const int index)
+void vvPrefDialog::onTexRendOptionChanged(int index)
 {
   vvDebugMsg::msg(3, "vvPrefDialog::onTexRendOptionChanged()");
 
@@ -504,6 +505,11 @@ void vvPrefDialog::onFboChanged(int index)
     emit parameterChanged(vvRenderer::VV_OFFSCREENBUFFER, false);
     break;
   }
+}
+
+void vvPrefDialog::onEarlyRayTerminationToggled(bool checked)
+{
+  emit parameterChanged(vvRenderState::VV_TERMINATEEARLY, checked);
 }
 
 void vvPrefDialog::onHostChanged(const QString& text)
