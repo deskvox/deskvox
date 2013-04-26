@@ -248,7 +248,7 @@ int vvVideo::createEncoder(int w, int h)
   }
   enc_ctx->width = w;
   enc_ctx->height = h;
-  AVRational avr = {1,framerate};
+  AVRational avr = {1, static_cast<int>(framerate) };
   enc_ctx->time_base= avr;
   enc_ctx->max_b_frames = 0;
   enc_ctx->pix_fmt = fmt;
