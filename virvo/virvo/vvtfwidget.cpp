@@ -983,7 +983,7 @@ vvTFCustom::vvTFCustom(FILE* fp) : vvTFWidget()
   for(i=0; i<numPoints; ++i) 
   {
     if(fscanf(fp, "%g %g %g %g\n", &op, &x, &y, &z) != 4)
-       std::cerr << "vvTFCustom: fscanf 2 failed" << std::cerr;
+       std::cerr << "vvTFCustom: fscanf 2 failed" << std::endl;
     point = new vvTFPoint(op, x, y, z);
     _points.push_back(point);
   }  
