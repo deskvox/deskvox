@@ -978,7 +978,7 @@ vvTFCustom::vvTFCustom(FILE* fp) : vvTFWidget()
   
   readName(fp);
   if(fscanf(fp, " %d %g %g %g\n", &numPoints, &_size[0], &_size[1], &_size[2]) != 4)
-     std::cerr << "vvTFCustom: fscanf 1 failed" << std::cerr;
+     std::cerr << "vvTFCustom: fscanf 1 failed" << std::endl;
 
   for(i=0; i<numPoints; ++i) 
   {
