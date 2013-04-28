@@ -155,6 +155,11 @@ class VIRVOEXPORT vvVolDesc
     vvVolDesc(vvVolDesc*, int=-1);
     virtual ~vvVolDesc();
 
+    uint8_t* operator()(size_t x, size_t y, size_t slice);
+    const uint8_t* operator()(size_t x, size_t y, size_t slice) const;
+    uint8_t* operator()(size_t f, size_t x, size_t y, size_t slice);
+    const uint8_t* operator()(size_t f, size_t x, size_t y, size_t slice) const;
+
     // Getters and setters:
     size_t getSliceBytes() const;
     size_t getFrameBytes() const;

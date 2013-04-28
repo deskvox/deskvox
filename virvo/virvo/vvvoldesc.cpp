@@ -302,6 +302,34 @@ vvVolDesc::~vvVolDesc()
   delete[] _hdrBinLimits;
 }
 
+uint8_t* vvVolDesc::operator()(size_t x, size_t y, size_t slice)
+{
+  uint8_t* raw = getRaw(-1);
+  raw += slice * getSliceBytes();
+  return &raw[(vox[0] * y + x) * getBPV()];
+}
+
+const uint8_t* vvVolDesc::operator()(size_t x, size_t y, size_t slice) const
+{
+  const uint8_t* raw = getRaw(-1);
+  raw += slice * getSliceBytes();
+  return &raw[(vox[0] * y + x) * getBPV()];
+}
+
+uint8_t* vvVolDesc::operator()(size_t f, size_t x, size_t y, size_t slice)
+{
+  uint8_t* raw = getRaw(f);
+  raw += slice * getSliceBytes();
+  return &raw[(vox[0] * y + x) * getBPV()];
+}
+
+const uint8_t* vvVolDesc::operator()(size_t f, size_t x, size_t y, size_t slice) const
+{
+  uint8_t* raw = getRaw(f);
+  raw += slice * getSliceBytes();
+  return &raw[(vox[0] * y + x) * getBPV()];
+}
+
 //----------------------------------------------------------------------------
 /** Initialization of class attributes.
   May only be called by constructors!
