@@ -286,7 +286,7 @@ bool vvResourceManager::allocateResources(ThreadData *tData)
       tData->request->type = vvRenderer::REMOTE_IMAGE;
 
       // volume size in bytes
-      size_t volSize = tData->vd->getBytesize();
+      size_t volSize = tData->vd->getMovieBytes();
 
       // sort a copy for free gpu memory
       std::vector<vvResource*> resCopy = rm->_resources;

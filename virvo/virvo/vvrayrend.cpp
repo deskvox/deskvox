@@ -493,7 +493,7 @@ void vvRayRend::initVolumeTexture()
 
     cudaMemcpy3DParms copyParams = { 0 };
 
-    const size_t size = vd->getBytesize(0);
+    const size_t size = vd->getFrameBytes();
     if (vd->bpc == 1)
     {
       copyParams.srcPtr = make_cudaPitchedPtr(vd->getRaw(f), volumeSize.width*vd->bpc, volumeSize.width, volumeSize.height);
