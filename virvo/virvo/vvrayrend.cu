@@ -157,52 +157,56 @@ __device__ bool intersectBox(const Ray& ray, const float3& boxmin, const float3&
 
   if(t1 < t2)
   {
-    (*boxNormal).x = 1.f;
+    (*boxNormal).x = -1.f;
     (*boxNormal).y = 0.f;
     (*boxNormal).z = 0.f;
   }
   else
   {
-    (*boxNormal).x = -1.f;
+    (*boxNormal).x = 1.f;
     (*boxNormal).y = 0.f;
     (*boxNormal).z = 0.f;
   }
 
   t1 = (boxmin.y - ray.o.y) * invR.y;
   t2 = (boxmax.y - ray.o.y) * invR.y;
-  tmin = fmaxf(fminf(t1, t2), tmin);
-  tmax = fminf(fmaxf(t1, t2), tmax);
-
-  if(t1 > tmin)
+  if(t1 < t2)
+  {
+    if(t1 > tmin)
+    {
+      (*boxNormal).x = 0.f;
+      (*boxNormal).y = -1.f;
+      (*boxNormal).z = 0.f;
+    }
+  }
+  else if(t2 > tmin)
   {
     (*boxNormal).x = 0.f;
     (*boxNormal).y = 1.f;
     (*boxNormal).z = 0.f;
   }
-  else if(t2 > tmin)
-  {
-    (*boxNormal).x = 0.f;
-    (*boxNormal).y = -1.f;
-    (*boxNormal).z = 0.f;
-  }
-
-  t1 = (boxmin.z - ray.o.z) * invR.z;
-  t2 = (boxmax.z - ray.o.z) * invR.z;
   tmin = fmaxf(fminf(t1, t2), tmin);
   tmax = fminf(fmaxf(t1, t2), tmax);
 
-  if(t1 > tmin)
+  t1 = (boxmin.z - ray.o.z) * invR.z;
+  t2 = (boxmax.z - ray.o.z) * invR.z;
+  if(t1 < t2)
+  {
+    if(t1 > tmin)
+    {
+      (*boxNormal).x = 0.f;
+      (*boxNormal).y = 0.f;
+      (*boxNormal).z = -1.f;
+    }
+  }
+  else if(t2 > tmin)
   {
     (*boxNormal).x = 0.f;
     (*boxNormal).y = 0.f;
     (*boxNormal).z = 1.f;
   }
-  else if(t2 > tmin)
-  {
-    (*boxNormal).x = 0.f;
-    (*boxNormal).y = 0.f;
-    (*boxNormal).z = -1.f;
-  }
+  tmin = fmaxf(fminf(t1, t2), tmin);
+  tmax = fminf(fmaxf(t1, t2), tmax);
 
   *tnear = tmin;
   *tfar = tmax;
