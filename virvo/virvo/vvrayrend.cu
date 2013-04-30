@@ -420,8 +420,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     }
     return;
   }
-  bool justClippedBox = true;
-
   if (fmodf(tbnear, dist) != 0.0f)
   {
     int tmp = (tbnear / dist);
@@ -476,6 +474,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
   const float3 step = ray.d * dist;
 
   // If just clipped, shade with the normal of the clipping surface.
+  bool justClippedBox = true;
   bool justClippedPlane = false;
   bool justClippedSphere = false;
 
@@ -568,8 +567,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       {
         src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, constAtt, linearAtt, quadAtt);
       }
-      justClippedBox = false; // just clipped bounding box passed after any case
     }
+    justClippedBox = false;
     justClippedPlane = false;
     justClippedSphere = false;
 
