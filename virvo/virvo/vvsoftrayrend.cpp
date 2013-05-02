@@ -255,8 +255,8 @@ std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int
   const int tilew = 16;
   const int tileh = 16;
 
-  int numtilesx = vvToolshed::iDivUp(w, tilew);
-  int numtilesy = vvToolshed::iDivUp(h, tileh);
+  int numtilesx = virvo::toolshed::iDivUp(w, tilew);
+  int numtilesy = virvo::toolshed::iDivUp(h, tileh);
 
   std::vector<Tile> result;
   for (int y = 0; y < numtilesy; ++y)

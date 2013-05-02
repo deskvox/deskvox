@@ -268,8 +268,19 @@ class VIRVOEXPORT vvToolshed
     static int     parsePort(std::string const& url);
     static std::string stripPort(std::string const& url);
     static void    printBacktrace();
-    static int     iDivUp(int a, int b);
 };
+
+namespace virvo
+{
+namespace toolshed
+{
+template <typename T>
+inline T iDivUp(T a, T b)
+{
+  return (a + b - 1) / b;
+}
+}
+}
 #endif
 
 //============================================================================
