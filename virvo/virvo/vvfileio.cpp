@@ -305,7 +305,7 @@ vvFileIO::ErrorType vvFileIO::saveRVFFile(vvVolDesc* vd)
   vvDebugMsg::msg(1, "vvFileIO::saveRVFFile()");
 
   // Save volume data:
-  v = new vvVolDesc(vd, vd->getCurrentFrame());   // copy current frame to a new VD
+  v = new vvVolDesc(vd, (int)vd->getCurrentFrame());   // copy current frame to a new VD
   if (vd->bpc!=1)
   {
     cerr << "Converting data to 1 bpc" << endl;
@@ -1976,12 +1976,12 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   float globalMin,globalMax;                      // density min and max values over all time steps
   float minVal,maxVal;                            // density min and max values of current time step
   float val = 0.f;                                // particle value
-  int numParticles=0;                             // number of particles in current time step
+  size_t numParticles=0;                          // number of particles in current time step
   size_t numTimesteps;                            // number of time steps in file
   size_t frameSize;                               // number of bytes per frame
   int iVal;                                       // integer density
   size_t iPos[3];                                 // position of particle in volume
-  int index;
+  size_t index;
   float speed[3];
 
   vvDebugMsg::msg(1, "vvFileIO::loadCPTFile()");
@@ -2190,8 +2190,8 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   size_t    offset;                               // volume data offset to first byte of tile
   ErrorType err = OK;                             // error
   uint8_t* raw;                                   // raw volume data
-  int    rawOffset;                               // offset into raw data
-  int*   stripOffsets=NULL;                       // array of strip offsets
+  size_t    rawOffset;                               // offset into raw data
+  size_t*   stripOffsets=NULL;                       // array of strip offsets
   size_t*   stripByteCounts=NULL;                 // bytes per strip
   int    rowsPerStrip=0;                          // rows per strip
   int planarConfiguration = 1;                    // 1=RGBRGB, 2=RRGGBB
@@ -2299,7 +2299,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       break;                                      // Compression; must be uncompressed
       case 0x106: break;                          // PhotometricInterpretation; ignore
       case 0x111: delete[] stripOffsets;          // StripOffsets
-      stripOffsets = new int[numValues];
+      stripOffsets = new size_t[numValues];
       if (numValues==1) stripOffsets[0] = value;
       else
       {
@@ -2386,8 +2386,8 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     if (vd->chan==4 && !vd->isChannelUsed(3))     // is alpha not used in a RGBA volume?
     {
       // Preset alpha:
-      vd->convertChannels(3, vd->frames-1);       // convert to RGB (drops alpha)
-      vd->convertChannels(4, vd->frames-1);       // convert back to RGBA
+      vd->convertChannels(3, (int)(vd->frames-1));       // convert to RGB (drops alpha)
+      vd->convertChannels(4, (int)(vd->frames-1));       // convert back to RGBA
     }
   }
   else                                            // load 3D TIFF
@@ -2470,7 +2470,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
   assert(vd->frames>0 && vd->vox[2]>0);
 
   // Generate file names:
-  digits = 1 + size_t(log((double)vd->vox[2]) / log(10.0));
+  digits = 1 + int32_t(log((double)vd->vox[2]) / log(10.0));
   filenames = new char*[vd->vox[2]];
   len = strlen(vd->getFilename());
   for (size_t i=0; i<vd->vox[2]; ++i)
@@ -2934,7 +2934,7 @@ vvFileIO::ErrorType vvFileIO::loadRawFile(vvVolDesc* vd)
   size_t size, voxels;
                                                   // volume parameters
   size_t width, height, slices, bpc, chan, components;
-  int remainder;
+  size_t remainder;
   size_t cubRoot;                                 // cubic root
   size_t sqrRoot;                                 // square root
   int attempt;

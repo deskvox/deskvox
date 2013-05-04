@@ -38,11 +38,11 @@ class VIRVOEXPORT vvFileIO
     class ParticleTimestep
     {
       public:
-        int numParticles;                         // number of particles
+        size_t numParticles;                         // number of particles
         float* pos[3];                            // x/y/z positions
         float* val;                               // values
         float min,max;                            // minimum and maximum scalar values
-        ParticleTimestep(int np)
+        ParticleTimestep(size_t np)
         {
           numParticles = np;
           min = max = 0;

@@ -25,6 +25,10 @@
 #include <iostream>
 #include <string.h>
 #include "vvexport.h"
+#ifdef max
+#undef max
+#undef min
+#endif
 
 /** Templated dynamic array class.<P>
   Example usage:
