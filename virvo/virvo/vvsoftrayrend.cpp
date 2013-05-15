@@ -19,6 +19,8 @@
 #include "vvtoolshed.h"
 #include "vvvoldesc.h"
 
+#include "private/vvlog.h"
+
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
 #endif
@@ -31,6 +33,7 @@
 #include "private/vvgltools.h"
 #endif
 
+#include <cstdlib>
 #include <queue>
 
 struct Ray
@@ -106,6 +109,13 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   updateTransferFunction();
 
   size_t numThreads = static_cast<size_t>(vvToolshed::getNumProcessors());
+  char* envNumThreads = getenv("VV_NUM_THREADS");
+  if (envNumThreads != NULL)
+  {
+    numThreads = atoi(envNumThreads);
+    VV_LOG(0) << "VV_NUM_THREADS: " << envNumThreads;
+  }
+
   pthread_barrier_t* barrier = numThreads > 0 ? new pthread_barrier_t : NULL;
   pthread_mutex_t* mutex = numThreads > 0 ? new pthread_mutex_t : NULL;
 
