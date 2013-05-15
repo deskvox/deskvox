@@ -30,8 +30,14 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <widget class="QMenu" name="menuRecentVolumes">
+     <property name="title">
+      <string>Recent Volumes</string>
+     </property>
+    </widget>
     <addaction name="actionLoadVolume"/>
     <addaction name="actionReloadVolume"/>
+    <addaction name="menuRecentVolumes"/>
     <addaction name="actionSaveVolumeAs"/>
     <addaction name="actionMergeFiles"/>
     <addaction name="separator"/>
@@ -393,6 +399,11 @@
   <action name="actionLightSource">
    <property name="text">
     <string>Light Source...</string>
+   </property>
+  </action>
+  <action name="action_file">
+   <property name="text">
+    <string>&lt;file&gt;</string>
    </property>
   </action>
  </widget>

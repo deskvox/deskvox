@@ -78,6 +78,7 @@ private slots:
   // menus
   void onLoadVolumeTriggered();
   void onReloadVolumeTriggered();
+  void onRecentVolumeTriggered();
   void onSaveVolumeAsTriggered();
   void onMergeFilesTriggered();
   void onLoadCameraTriggered();

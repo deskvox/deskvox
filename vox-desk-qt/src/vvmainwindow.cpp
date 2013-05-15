@@ -52,6 +52,42 @@
 
 using vox::vvObjView;
 
+namespace
+{
+std::vector<std::string> getRecentFiles()
+{
+  QSettings settings;
+  QString qrecent = settings.value("canvas/recentfiles").toString();
+  std::string recent = qrecent.toStdString();
+  std::vector<std::string> files = vvToolshed::split(recent, ";");
+  return files;
+}
+
+void addRecentFile(const QString& filename)
+{
+  std::vector<std::string> files = getRecentFiles();
+  if (std::find(files.begin(), files.end(), filename.toStdString()) == files.end())
+  {
+    files.push_back(filename.toStdString());
+  }
+
+  const static size_t BUFSIZE = 10;
+  size_t first = files.size() < BUFSIZE ? 0 : files.size() - BUFSIZE;
+
+  QString recentstr;
+  for (size_t i = first; i < files.size(); ++i)
+  {
+    recentstr.append(files[i].c_str());
+    if (i < files.size() - 1)
+    {
+      recentstr.append(";");
+    }
+  }
+  QSettings settings;
+  settings.setValue("canvas/recentfiles", recentstr);
+}
+}
+
 vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   : QMainWindow(parent)
   , ui(new Ui_MainWindow)
@@ -89,20 +125,24 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   }
 
   QString fn = filename;
-  if (fn == "")
-  {
-    QSettings settings;
-    fn = settings.value("canvas/recentfile").toString();
-  }
-  else
-  {
-    QSettings settings;
-    settings.setValue("canvas/recentfile", fn);
-  }
-
   _canvas = new vvCanvas(format, fn, this);
   _canvas->setPlugins(_plugins);
   setCentralWidget(_canvas);
+
+  ui->menuRecentVolumes->clear();
+  std::vector<std::string> recents = getRecentFiles();
+  for (std::vector<std::string>::const_iterator it = recents.begin();
+       it != recents.end(); ++it)
+  {
+    QAction* action = new QAction((*it).c_str(), this);
+    connect(action, SIGNAL(triggered()), this, SLOT(onRecentVolumeTriggered()));
+    ui->menuRecentVolumes->insertAction(*ui->menuRecentVolumes->actions().begin(), action);
+  }
+
+  if (fn != "")
+  {
+    addRecentFile(fn);
+  }
 
   _prefDialog = new vvPrefDialog(_canvas, this);
 
@@ -278,8 +318,16 @@ void vvMainWindow::loadVolumeFile(const QString& filename)
     _canvas->setVolDesc(vd);
     _dimensionDialog->setInitialDist(vd->dist);
 
-    QSettings settings;
-    settings.setValue("canvas/recentfile", filename);
+    ui->menuRecentVolumes->clear();
+    std::vector<std::string> recents = getRecentFiles();
+    for (std::vector<std::string>::const_iterator it = recents.begin();
+         it != recents.end(); ++it)
+    {
+      QAction* action = new QAction((*it).c_str(), this);
+      connect(action, SIGNAL(triggered()), this, SLOT(onRecentVolumeTriggered()));
+      ui->menuRecentVolumes->insertAction(*ui->menuRecentVolumes->actions().begin(), action);
+    } 
+    addRecentFile(filename);
     break;
   }
   case vvFileIO::FILE_NOT_FOUND:
@@ -422,6 +470,23 @@ void vvMainWindow::onReloadVolumeTriggered()
   if (vd != NULL)
   {
     loadVolumeFile(vd->getFilename());
+  }
+}
+
+void vvMainWindow::onRecentVolumeTriggered()
+{
+  QAction* action = dynamic_cast<QAction*>(sender());
+  if (action != NULL)
+  {
+    QString filename = action->text();
+    if (!filename.isEmpty())
+    {
+      loadVolumeFile(filename);
+
+      QDir dir = QFileInfo(filename).absoluteDir();
+      QSettings settings;
+      settings.setValue("canvas/voldir", dir.path());
+    }
   }
 }
 
