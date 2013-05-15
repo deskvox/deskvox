@@ -545,10 +545,13 @@ void vvMainWindow::onBackgroundColorTriggered()
   vvDebugMsg::msg(3, "vvMainWindow::onBackgroundColorTriggered()");
 
   QColor qcolor = QColorDialog::getColor();
-  vvColor color(qcolor.redF(), qcolor.greenF(), qcolor.blueF());
-  _canvas->setParameter(vvParameters::VV_BG_COLOR, color);
-  QSettings settings;
-  settings.setValue("canvas/bgcolor", qcolor);
+  if (qcolor.isValid())
+  {
+    vvColor color(qcolor.redF(), qcolor.greenF(), qcolor.blueF());
+    _canvas->setParameter(vvParameters::VV_BG_COLOR, color);
+    QSettings settings;
+    settings.setValue("canvas/bgcolor", qcolor);
+  }
 }
 
 void vvMainWindow::onSampleDistancesTriggered()
