@@ -301,8 +301,19 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
   connect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
   connect(ui->stillDial, SIGNAL(valueChanged(int)), this, SLOT(onStillDialChanged(int)));
+}
 
-  // apply settings after signals/slots are connected
+vvPrefDialog::~vvPrefDialog()
+{
+  if (::sock != NULL)
+  {
+    vvSocketMap::remove(vvSocketMap::getIndex(::sock));
+  }
+  delete ::sock;
+}
+
+void vvPrefDialog::applySettings()
+{
   QSettings settings;
   ui->hostEdit->setText(settings.value("remote/host").toString());
   if (settings.value("remote/port").toString() != "")
@@ -311,6 +322,11 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
     ui->portBox->setValue(port);
   }
   ui->ibrBox->setChecked(settings.value("remote/ibr").toBool());
+
+  if (!settings.value("appearance/interpolation").isNull())
+  {
+    ui->interpolationCheckBox->setChecked(settings.value("appearance/interpolation").toBool());
+  }
 
   if (!settings.value("stereo/distance").isNull())
   {
@@ -323,15 +339,6 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   {
     ui->swapEyesBox->setChecked(settings.value("stereo/swap").toBool());
   }
-}
-
-vvPrefDialog::~vvPrefDialog()
-{
-  if (::sock != NULL)
-  {
-    vvSocketMap::remove(vvSocketMap::getIndex(::sock));
-  }
-  delete ::sock;
 }
 
 void vvPrefDialog::toggleInterpolation()
@@ -685,10 +692,10 @@ void vvPrefDialog::onIbrToggled(const bool checked)
   }
 }
 
-void vvPrefDialog::onInterpolationToggled(const bool checked)
+void vvPrefDialog::onInterpolationToggled(bool checked)
 {
-  vvDebugMsg::msg(3, "vvPrefDialog::onInterpolationToggled()");
-
+  QSettings settings;
+  settings.setValue("appearance/interpolation", checked);
   emit parameterChanged(vvRenderer::VV_SLICEINT, checked);
 }
 

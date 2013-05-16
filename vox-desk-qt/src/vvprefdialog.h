@@ -38,6 +38,7 @@ public:
   vvPrefDialog(vvCanvas* canvas, QWidget* parent = 0);
   ~vvPrefDialog();
 
+  void applySettings();
   void toggleInterpolation();
   void scaleStillQuality(float s);
 private:
