@@ -64,6 +64,9 @@ protected:
   void mousePressEvent(QMouseEvent* event);
   void mouseReleaseEvent(QMouseEvent* event);
 private:
+  struct Impl;
+  Impl* impl;
+
   vvVolDesc* _vd;
   vvRenderer* _renderer;
   std::string _currentRenderer;

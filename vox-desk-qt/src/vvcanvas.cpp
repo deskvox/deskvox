@@ -160,8 +160,14 @@ void updateStencilBuffer(int w, int h, vox::StereoMode mode)
 }
 }
 
+struct vvCanvas::Impl
+{
+  vvRenderState renderState;
+};
+
 vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* parent)
   : QGLWidget(format, parent)
+  , impl(new Impl)
   , _vd(NULL)
   , _renderer(NULL)
   , _projectionType(vox::vvObjView::PERSPECTIVE)
@@ -234,6 +240,7 @@ vvCanvas::~vvCanvas()
 {
   vvDebugMsg::msg(1, "vvCanvas::~vvCanvas()");
 
+  delete impl;
   delete _renderer;
   delete _vd;
 }
@@ -620,17 +627,16 @@ void vvCanvas::createRenderer()
 {
   vvDebugMsg::msg(3, "vvCanvas::createRenderer()");
 
-  vvRenderState state;
   if (_renderer)
   {
-    state = *_renderer;
+    impl->renderState = *_renderer;
     delete _renderer;
   }
 
   const float DEFAULT_OBJ_SIZE = 0.6f;
   _vd->resizeEdgeMax(_ov.getViewportWidth() * DEFAULT_OBJ_SIZE);
 
-  _renderer = vvRendererFactory::create(_vd, state, _currentRenderer.c_str(), _currentOptions);
+  _renderer = vvRendererFactory::create(_vd, impl->renderState, _currentRenderer.c_str(), _currentOptions);
 
   // set boundary color to inverse of background
   vvColor invColor;
@@ -776,6 +782,7 @@ void vvCanvas::setParameter(vvRenderer::ParameterType param, const vvParam& valu
 {
   vvDebugMsg::msg(3, "vvCanvas::setParameter()");
 
+  impl->renderState.setParameter(param, value);
   if (_renderer != NULL)
   {
     _renderer->setParameter(param, value);
