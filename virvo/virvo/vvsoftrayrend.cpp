@@ -352,21 +352,76 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
           vvVector3 texcoord = vvVector3((pos[0] - vd->pos[0] + size2[0]) / (size2[0] * 2.0f),
                      (-pos[1] - vd->pos[1] + size2[1]) / (size2[1] * 2.0f),
                      (-pos[2] - vd->pos[2] + size2[2]) / (size2[2] * 2.0f));
-          // calc voxel coordinates
-          vvsize3 texcoordi = vvsize3(size_t((texcoord[0] * float(vd->vox[0]))),
-                                      size_t((texcoord[1] * float(vd->vox[1]))),
-                                      size_t((texcoord[2] * float(vd->vox[2]))));
+          texcoord[0] = ts_clamp<float>(texcoord[0], 0.0f, 1.0f);
+          texcoord[1] = ts_clamp<float>(texcoord[1], 0.0f, 1.0f);
+          texcoord[2] = ts_clamp<float>(texcoord[2], 0.0f, 1.0f);
 
-          // clamp to edge
-          texcoordi[0] = ts_clamp<size_t>(texcoordi[0], 0, vd->vox[0] - 1);
-          texcoordi[1] = ts_clamp<size_t>(texcoordi[1], 0, vd->vox[1] - 1);
-          texcoordi[2] = ts_clamp<size_t>(texcoordi[2], 0, vd->vox[2] - 1);
-          size_t idx = texcoordi[2] * vd->vox[0] * vd->vox[1] + texcoordi[1] * vd->vox[0] + texcoordi[0];
-          float sample = float(raw[idx]) / 256.0f;
-          vvVector4 src(_rgbaTF[size_t(sample * 4 * getLUTSize())],
-                        _rgbaTF[size_t(sample * 4 * getLUTSize()) + 1],
-                        _rgbaTF[size_t(sample * 4 * getLUTSize()) + 2],
-                        _rgbaTF[size_t(sample * 4 * getLUTSize()) + 3]);
+          float sample = 0.0f;
+          if (_interpolation)
+          {
+            vvVector3 texcoordf(texcoord[0] * float(vd->vox[0] - 1),
+                                texcoord[1] * float(vd->vox[1] - 1),
+                                texcoord[2] * float(vd->vox[2] - 1));
+
+            vvsize3 texcoordsi[8] =
+            {
+              vvsize3(texcoordf[0],     texcoordf[1],     texcoordf[2]),
+              vvsize3(texcoordf[0] + 1, texcoordf[1],     texcoordf[2]),
+              vvsize3(texcoordf[0] + 1, texcoordf[1] + 1, texcoordf[2]),
+              vvsize3(texcoordf[0],     texcoordf[1] + 1, texcoordf[2]),
+
+              vvsize3(texcoordf[0] + 1, texcoordf[1],     texcoordf[2] + 1),
+              vvsize3(texcoordf[0],     texcoordf[1],     texcoordf[2] + 1),
+              vvsize3(texcoordf[0],     texcoordf[1] + 1, texcoordf[2] + 1),
+              vvsize3(texcoordf[0] + 1, texcoordf[1] + 1, texcoordf[2] + 1)
+            };
+
+            float samples[8];
+            for (size_t i = 0; i < 8; ++i)
+            {
+              // clamp to edge
+              texcoordsi[i][0] = ts_clamp<size_t>(texcoordsi[i][0], 0, vd->vox[0] - 1);
+              texcoordsi[i][1] = ts_clamp<size_t>(texcoordsi[i][1], 0, vd->vox[1] - 1);
+              texcoordsi[i][2] = ts_clamp<size_t>(texcoordsi[i][2], 0, vd->vox[2] - 1);
+
+              size_t idx = texcoordsi[i][2] * vd->vox[0] * vd->vox[1] + texcoordsi[i][1] * vd->vox[0] + texcoordsi[i][0];
+              samples[i] = float(raw[idx]) / 256.0f;
+            }
+
+            vvVector3 tmp((int)texcoordf[0], (int)texcoordf[1], (int)texcoordf[2]);
+            vvVector3 uvw = texcoordf - tmp;
+
+            // lerp
+            float p1 = (1 - uvw[0]) * samples[0] + uvw[0] * samples[1];
+            float p2 = (1 - uvw[0]) * samples[3] + uvw[0] * samples[2];
+            float p12 = (1 - uvw[1]) * p1 + uvw[1] * p2;
+
+            float p3 = (1 - uvw[0]) * samples[5] + uvw[0] * samples[4];
+            float p4 = (1 - uvw[0]) * samples[6] + uvw[0] * samples[7];
+            float p34 = (1 - uvw[1]) * p3 + uvw[1] * p4;
+
+            sample = (1 - uvw[2]) * p12 + uvw[2] * p34;
+          }
+          else
+          {
+            // calc voxel coordinates using Manhattan distance
+            vvsize3 texcoordi = vvsize3(size_t(round(texcoord[0] * float(vd->vox[0] - 1))),
+                                        size_t(round(texcoord[1] * float(vd->vox[1] - 1))),
+                                        size_t(round(texcoord[2] * float(vd->vox[2] - 1))));
+  
+            // clamp to edge
+            texcoordi[0] = ts_clamp<size_t>(texcoordi[0], 0, vd->vox[0] - 1);
+            texcoordi[1] = ts_clamp<size_t>(texcoordi[1], 0, vd->vox[1] - 1);
+            texcoordi[2] = ts_clamp<size_t>(texcoordi[2], 0, vd->vox[2] - 1);
+
+            size_t idx = texcoordi[2] * vd->vox[0] * vd->vox[1] + texcoordi[1] * vd->vox[0] + texcoordi[0];
+            sample = float(raw[idx]) / 256.0f;
+          }
+
+          vvVector4 src(_rgbaTF[size_t(sample * (float)getLUTSize()) * 4],
+                        _rgbaTF[size_t(sample * (float)getLUTSize()) * 4 + 1],
+                        _rgbaTF[size_t(sample * (float)getLUTSize()) * 4 + 2],
+                        _rgbaTF[size_t(sample * (float)getLUTSize()) * 4 + 3]);
 
           if (_opacityCorrection)
           {
