@@ -353,9 +353,14 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
                      (-pos[1] - vd->pos[1] + size2[1]) / (size2[1] * 2.0f),
                      (-pos[2] - vd->pos[2] + size2[2]) / (size2[2] * 2.0f));
           // calc voxel coordinates
-          vvsize3 texcoordi = vvsize3(size_t(texcoord[0] * float(vd->vox[0] - 1)),
-                                      size_t(texcoord[1] * float(vd->vox[1] - 1)),
-                                      size_t(texcoord[2] * float(vd->vox[2] - 1)));
+          vvsize3 texcoordi = vvsize3(size_t((texcoord[0] * float(vd->vox[0]))),
+                                      size_t((texcoord[1] * float(vd->vox[1]))),
+                                      size_t((texcoord[2] * float(vd->vox[2]))));
+
+          // clamp to edge
+          texcoordi[0] = ts_clamp<size_t>(texcoordi[0], 0, vd->vox[0] - 1);
+          texcoordi[1] = ts_clamp<size_t>(texcoordi[1], 0, vd->vox[1] - 1);
+          texcoordi[2] = ts_clamp<size_t>(texcoordi[2], 0, vd->vox[2] - 1);
           size_t idx = texcoordi[2] * vd->vox[0] * vd->vox[1] + texcoordi[1] * vd->vox[0] + texcoordi[0];
           float sample = float(raw[idx]) / 256.0f;
           vvVector4 src(_rgbaTF[size_t(sample * 4 * getLUTSize())],
