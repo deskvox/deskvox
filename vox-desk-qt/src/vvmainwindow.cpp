@@ -612,7 +612,12 @@ void vvMainWindow::onBackgroundColorTriggered()
 {
   vvDebugMsg::msg(3, "vvMainWindow::onBackgroundColorTriggered()");
 
-  QColor qcolor = QColorDialog::getColor();
+  vvColor bgcolor = _canvas->getParameter(vvParameters::VV_BG_COLOR);
+  QColor initial;
+  initial.setRedF(bgcolor[0]);
+  initial.setGreenF(bgcolor[1]);
+  initial.setBlueF(bgcolor[2]);
+  QColor qcolor = QColorDialog::getColor(initial);
   if (qcolor.isValid())
   {
     vvColor color(qcolor.redF(), qcolor.greenF(), qcolor.blueF());
