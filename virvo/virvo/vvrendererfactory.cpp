@@ -80,9 +80,9 @@ void init()
   rendererAliasMap["9"] = "volpack";
   rendererAliasMap["10"] = "ibr";
   rendererAliasMap["11"] = "image";
+  rendererAliasMap["12"] = "softrayrend";
   rendererAliasMap["13"] = "serbrick";
   rendererAliasMap["14"] = "parbrick";
-  rendererAliasMap["15"] = "softrayrend";
   // used in COVER and Inventor renderer
   rendererAliasMap["tex2d"] = "slices";
   rendererAliasMap["slices2d"] = "slices";

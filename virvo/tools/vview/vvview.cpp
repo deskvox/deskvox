@@ -2105,7 +2105,7 @@ void vvView::createMenus()
   glutAddMenuEntry("VolPack [9]", 9);
   glutAddMenuEntry("Image-based remote rendering", 10);
   glutAddMenuEntry("Remote rendering", 11);
-  glutAddMenuEntry("Comparison rendering", 12);
+  glutAddMenuEntry("CPU Ray casting", 12);
   glutAddMenuEntry("Decrease quality [-]", 98);
   glutAddMenuEntry("Increase quality [+]", 99);
 
