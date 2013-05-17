@@ -463,6 +463,15 @@ void* vvSoftRayRend::renderFunc(void* args)
 
   Thread* thread = static_cast<Thread*>(args);
 
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(thread->id, &cpuset);
+  int s = pthread_setaffinity_np(thread->threadHandle, sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+      std::cerr << "Error setting thread affinity" << std::endl;
+  }
+
   while (true)
   {
     pthread_mutex_lock(thread->mutex);
