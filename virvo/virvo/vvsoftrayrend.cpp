@@ -471,7 +471,7 @@ void* vvSoftRayRend::renderFunc(void* args)
   int s = pthread_setaffinity_np(thread->threadHandle, sizeof(cpu_set_t), &cpuset);
   if (s != 0)
   {
-      std::cerr << "Error setting thread affinity: " << strerror(s) << std::endl;
+    VV_LOG(0) << "Error setting thread affinity: " << strerror(s);
   }
 #endif
 
