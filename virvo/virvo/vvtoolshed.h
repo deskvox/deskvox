@@ -279,6 +279,15 @@ inline T iDivUp(T a, T b)
 {
   return (a + b - 1) / b;
 }
+
+template <typename T>
+inline T clamp(const T a, const T left, const T right)
+{
+  if (a < left)  return left;
+  if (a > right) return right;
+  return a;
+}
+
 }
 }
 #endif
