@@ -237,6 +237,7 @@ class vvBaseVector4
     vvBaseVector4();
     explicit vvBaseVector4(T val);
     vvBaseVector4(T x, T y, T z, T w);
+    vvBaseVector4(T const v[4]);
     vvBaseVector4(const vvBaseVector3<T>& v, const T w);
     T &operator[](size_t index);
     T const& operator[](size_t index) const;

@@ -76,6 +76,17 @@ set(VIRVO_HEADERS
   gl/types.h
   gl/util.h
 
+  mem/align.h
+  mem/allocator.h
+
+  sse/aabb.h
+  sse/matrix.h
+  sse/sse.h
+  sse/vec.h
+  sse/vec3.h
+  sse/vec4.h
+  sse/veci.h
+
   vvbonjour/vvbonjour.h
   vvbonjour/vvbonjourbrowser.h
   vvbonjour/vvbonjourentry.h

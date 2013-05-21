@@ -19,6 +19,7 @@
 #include "vvtoolshed.h"
 #include "vvvoldesc.h"
 
+#include "mem/allocator.h"
 #include "private/vvlog.h"
 
 #ifdef HAVE_CONFIG_H
@@ -37,24 +38,161 @@
 #include <cstring>
 #include <queue>
 
+typedef std::vector<float, virvo::mem::aligned_allocator<float, CACHE_LINE> > vecf;
+
+#if VV_USE_SSE
+
+#include "sse/sse.h"
+
+typedef virvo::sse::Veci dim_t;
+#if 0//__LP64__
+struct index_t
+{
+  virvo::sse::Veci lo;
+  virvo::sse::Veci hi;
+};
+#else
+typedef virvo::sse::Veci index_t;
+#endif
+
+#define PACK_SIZE_X 2
+#define PACK_SIZE_Y 2
+
+using virvo::sse::clamp;
+using virvo::sse::min;
+using virvo::sse::max;
+namespace fast = virvo::sse::fast;
+typedef virvo::sse::Veci Vecs;
+typedef virvo::sse::Vec3i Vec3s;
+typedef virvo::sse::Vec4i Vec4s;
+using virvo::sse::AABB;
+using virvo::sse::Vec;
+using virvo::sse::Vec3;
+using virvo::sse::Vec4;
+using virvo::sse::Matrix;
+
+#else
+
+typedef size_t dim_t;
+typedef size_t index_t;
+#define PACK_SIZE_X 1
+#define PACK_SIZE_Y 1
+
+#define any(x) (x)
+#define all(x) (x)
+using virvo::toolshed::clamp;
+typedef size_t Vecs;
+namespace fast
+{
+inline virvo::Vec3 normalize(virvo::Vec3 const& v)
+{
+  return virvo::vecmath::normalize(v);
+}
+}
+typedef vvsize3 Vec3s;
+using virvo::AABB;
+typedef float Vec;
+using virvo::Vec3;
+using virvo::Vec4;
+using virvo::Matrix;
+
+inline Vec sub(Vec const& u, Vec const& v, Vec const& mask)
+{
+  (void)mask;
+  return u - v;
+}
+
+inline Vec4 mul(Vec4 const& v, Vec const& s, Vec const& mask)
+{
+  (void)mask;
+  return v * s;
+}
+
+#endif
+
+template <class T, class U>
+inline T vec_cast(U u)
+{
+#if VV_USE_SSE
+  return virvo::sse::sse_cast<T>(u);
+#else
+  return static_cast<T>(u);
+#endif
+}
+
+inline Vec volume(uint8_t* raw, index_t idx)
+{
+#if VV_USE_SSE
+#if 0//__LP64__
+
+#else
+  CACHE_ALIGN int indices[4];
+  virvo::sse::store(idx, &indices[0]);
+  CACHE_ALIGN float vals[4];
+  for (size_t i = 0; i < 4; ++i)
+  {
+    vals[i] = raw[indices[i]];
+  }
+  return Vec(&vals[0]);
+#endif
+#else
+  return raw[idx];
+#endif
+}
+
+inline Vec4 rgba(vecf* tf, Vecs idx)
+{
+#if VV_USE_SSE
+  CACHE_ALIGN int indices[4];
+  store(idx, &indices[0]);
+  Vec4 colors;
+  for (size_t i = 0; i < 4; ++i)
+  {
+    colors[i] = &(*tf)[0] + indices[i];
+  }
+  colors = transpose(colors);
+  return colors;
+#else
+  return Vec4(&(*tf)[0] + idx);
+#endif
+}
+
+inline Vec pixelx(int x)
+{
+#if VV_USE_SSE
+  return Vec(x, x + 1, x, x + 1);
+#else
+  return x;
+#endif
+}
+
+inline Vec pixely(int y)
+{
+#if VV_USE_SSE
+  return Vec(y, y, y + 1, y + 1);
+#else
+  return y;
+#endif
+}
+
 struct Ray
 {
-  vvVector3 o;
-  vvVector3 d;
+  Vec3 o;
+  Vec3 d;
 };
 
-bool intersectBox(const Ray& ray, const vvAABB& aabb,
-                  float* tnear, float* tfar)
+Vec intersectBox(const Ray& ray, const AABB& aabb,
+                 Vec* tnear, Vec* tfar)
 {
   using std::min;
   using std::max;
 
   // compute intersection of ray with all six bbox planes
-  vvVector3 invR(1.0f / ray.d[0], 1.0f / ray.d[1], 1.0f / ray.d[2]);
-  float t1 = (aabb.getMin()[0] - ray.o[0]) * invR[0];
-  float t2 = (aabb.getMax()[0] - ray.o[0]) * invR[0];
-  float tmin = min(t1, t2);
-  float tmax = max(t1, t2);
+  Vec3 invR(1.0f / ray.d[0], 1.0f / ray.d[1], 1.0f / ray.d[2]);
+  Vec t1 = (aabb.getMin()[0] - ray.o[0]) * invR[0];
+  Vec t2 = (aabb.getMax()[0] - ray.o[0]) * invR[0];
+  Vec tmin = min(t1, t2);
+  Vec tmax = max(t1, t2);
 
   t1 = (aabb.getMin()[1] - ray.o[1]) * invR[1];
   t2 = (aabb.getMax()[1] - ray.o[1]) * invR[1];
@@ -78,8 +216,8 @@ struct vvSoftRayRend::Thread
   pthread_t threadHandle;
 
   vvSoftRayRend* renderer;
-  vvMatrix invViewMatrix;
-  std::vector<float>* colors;
+  Matrix invViewMatrix;
+  vecf* colors;
 
   pthread_barrier_t* barrier;
   pthread_mutex_t* mutex;
@@ -94,12 +232,17 @@ struct vvSoftRayRend::Thread
   std::queue<Event> events;
 };
 
+struct vvSoftRayRend::Impl
+{
+  vecf rgbaTF;
+};
+
 vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvRenderer(vd, renderState)
+  , impl(new Impl)
   , _width(512)
   , _height(512)
   , _firstThread(NULL)
-  , _rgbaTF(NULL)
 {
   vvDebugMsg::msg(1, "vvSoftRayRend::vvSoftRayRend()");
 
@@ -173,31 +316,32 @@ vvSoftRayRend::~vvSoftRayRend()
 
     delete *it;
   }
+
+  delete impl;
 }
 
 void vvSoftRayRend::renderVolumeGL()
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::renderVolumeGL()");
 
-  vvMatrix mv;
-  vvMatrix pr;
+  Matrix mv;
+  Matrix pr;
 
 #ifdef HAVE_OPENGL
-  vvGLTools::getModelviewMatrix(&mv);
-  vvGLTools::getProjectionMatrix(&pr);
+  mv = virvo::gltools::getModelViewMatrix();
+  pr = virvo::gltools::getProjectionMatrix();
   const virvo::Viewport viewport = vvGLTools::getViewport();
   _width = viewport[2];
   _height = viewport[3];
 #endif
 
-  vvMatrix invViewMatrix = mv;
-  invViewMatrix.multiplyLeft(pr);
+  Matrix invViewMatrix = mv;
+  invViewMatrix = pr * invViewMatrix;
   invViewMatrix.invert();
 
   std::vector<Tile> tiles = makeTiles(_width, _height);
 
-  std::vector<float> colors;
-  colors.resize(_width * _height * 4);
+  vecf colors(_width * _height * 4);
 
   for (std::vector<Thread*>::const_iterator it = _threads.begin();
        it != _threads.end(); ++it)
@@ -230,10 +374,9 @@ void vvSoftRayRend::updateTransferFunction()
   }
 
   size_t lutEntries = getLUTSize();
-  delete[] _rgbaTF;
-  _rgbaTF = new float[4 * lutEntries];
+  impl->rgbaTF.resize(4 * lutEntries);
 
-  vd->computeTFTexture(lutEntries, 1, 1, _rgbaTF);
+  vd->computeTFTexture(lutEntries, 1, 1, &impl->rgbaTF[0]);
 
   if (_firstThread != NULL && _firstThread->mutex != NULL)
   {
@@ -259,7 +402,7 @@ vvParam vvSoftRayRend::getParameter(ParameterType param) const
   return vvRenderer::getParameter(param);
 }
 
-std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int h)
+std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(int w, int h)
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::makeTiles()");
 
@@ -293,24 +436,24 @@ std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(const int w, const int
   return result;
 }
 
-void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& invViewMatrix, std::vector<float>* colors)
+void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* thread)
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::renderTile()");
 
-  const float opacityThreshold = 0.95f;
+  static const Vec opacityThreshold = 0.95f;
 
-  vvsize3 minVox = _visibleRegion.getMin();
-  vvsize3 maxVox = _visibleRegion.getMax();
+  virvo::size3 minVox = _visibleRegion.getMin();
+  virvo::size3 maxVox = _visibleRegion.getMax();
   for (size_t i = 0; i < 3; ++i)
   {
     minVox[i] = std::max(minVox[i], size_t(0));
     maxVox[i] = std::min(maxVox[i], vd->vox[i]);
   }
-  const vvVector3 minCorner = vd->objectCoords(minVox);
-  const vvVector3 maxCorner = vd->objectCoords(maxVox);
-  const vvAABB aabb = vvAABB(minCorner, maxCorner);
+  const virvo::Vec3 minCorner = vd->objectCoords(minVox);
+  const virvo::Vec3 maxCorner = vd->objectCoords(maxVox);
+  const AABB aabb(minCorner, maxCorner);
 
-  vvVector3 size2 = vd->getSize() * 0.5f;
+  Vec3 size2 = vd->getSize() * 0.5f;
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
@@ -318,111 +461,109 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
 
   uint8_t* raw = vd->getRaw(vd->getCurrentFrame());
 
-  for (int y = tile.bottom; y < tile.top; ++y)
+  for (int y = tile.bottom; y <= tile.top - PACK_SIZE_Y; y += PACK_SIZE_Y)
   {
-    for (int x = tile.left; x < tile.right; ++x)
+    for (int x = tile.left; x <= tile.right - PACK_SIZE_X; x += PACK_SIZE_X)
     {
-      const float u = (x / static_cast<float>(_width)) * 2.0f - 1.0f;
-      const float v = (y / static_cast<float>(_height)) * 2.0f - 1.0f;
+      const Vec u = (pixelx(x) / static_cast<float>(_width - 1)) * 2.0f - 1.0f;
+      const Vec v = (pixely(y) / static_cast<float>(_height - 1)) * 2.0f - 1.0f;
 
-      vvVector4 o(u, v, -1.0f, 1.0f);
-      o.multiply(invViewMatrix);
-      vvVector4 d(u, v, 1.0f, 1.0f);
-      d.multiply(invViewMatrix);
+      Vec4 o(u, v, -1.0f, 1.0f);
+      o = thread->invViewMatrix * o;
+      Vec4 d(u, v, 1.0f, 1.0f);
+      d = thread->invViewMatrix * d;
 
       Ray ray;
-      ray.o = vvVector3(o[0] / o[3], o[1] / o[3], o[2] / o[3]);
-      ray.d = vvVector3(d[0] / d[3], d[1] / d[3], d[2] / d[3]);
+      ray.o = Vec3(o[0] / o[3], o[1] / o[3], o[2] / o[3]);
+      ray.d = Vec3(d[0] / d[3], d[1] / d[3], d[2] / d[3]);
       ray.d = ray.d - ray.o;
-      ray.d.normalize();
+      ray.d = fast::normalize(ray.d);
 
-      float tbnear = 0.0f;
-      float tbfar = 0.0f;
+      Vec tbnear = 0.0f;
+      Vec tbfar = 0.0f;
 
-      const bool hit = intersectBox(ray, aabb, &tbnear, &tbfar);
-      if (hit)
+      Vec active = intersectBox(ray, aabb, &tbnear, &tbfar);
+      if (any(active))
       {
-        float dist = diagonalVoxels / float(numSlices);
-        float t = tbnear;
-        vvVector3 pos = ray.o + ray.d * tbnear;
-        const vvVector3 step = ray.d * dist;
-        vvVector4 dst(0.0f);
+        Vec dist = diagonalVoxels / Vec(numSlices);
+        Vec t = tbnear;
+        Vec3 pos = ray.o + ray.d * tbnear;
+        const Vec3 step = ray.d * dist;
+        Vec4 dst(0.0f);
 
         while (true)
         {
-          vvVector3 texcoord = vvVector3((pos[0] - vd->pos[0] + size2[0]) / (size2[0] * 2.0f),
-                     (-pos[1] - vd->pos[1] + size2[1]) / (size2[1] * 2.0f),
-                     (-pos[2] - vd->pos[2] + size2[2]) / (size2[2] * 2.0f));
-          texcoord[0] = ts_clamp<float>(texcoord[0], 0.0f, 1.0f);
-          texcoord[1] = ts_clamp<float>(texcoord[1], 0.0f, 1.0f);
-          texcoord[2] = ts_clamp<float>(texcoord[2], 0.0f, 1.0f);
+          Vec3 texcoord((pos[0] - vd->pos[0] + size2[0]) / (size2[0] * 2.0f),
+                        (-pos[1] - vd->pos[1] + size2[1]) / (size2[1] * 2.0f),
+                        (-pos[2] - vd->pos[2] + size2[2]) / (size2[2] * 2.0f));
+          texcoord[0] = clamp(texcoord[0], Vec(0.0f), Vec(1.0f));
+          texcoord[1] = clamp(texcoord[1], Vec(0.0f), Vec(1.0f));
+          texcoord[2] = clamp(texcoord[2], Vec(0.0f), Vec(1.0f));
 
-          float sample = 0.0f;
+          Vec sample = 0.0f;
           if (_interpolation)
           {
-            vvVector3 texcoordf(texcoord[0] * float(vd->vox[0] - 1),
-                                texcoord[1] * float(vd->vox[1] - 1),
-                                texcoord[2] * float(vd->vox[2] - 1));
+            Vec3 texcoordf(texcoord[0] * float(vd->vox[0] - 1),
+                           texcoord[1] * float(vd->vox[1] - 1),
+                           texcoord[2] * float(vd->vox[2] - 1));
 
-            vvsize3 texcoordsi[8] =
+            Vec3s texcoordsi[8] =
             {
-              vvsize3(texcoordf[0],     texcoordf[1],     texcoordf[2]),
-              vvsize3(texcoordf[0] + 1, texcoordf[1],     texcoordf[2]),
-              vvsize3(texcoordf[0] + 1, texcoordf[1] + 1, texcoordf[2]),
-              vvsize3(texcoordf[0],     texcoordf[1] + 1, texcoordf[2]),
+              Vec3s(vec_cast<Vecs>(texcoordf[0]),     vec_cast<Vecs>(texcoordf[1]),     vec_cast<Vecs>(texcoordf[2])),
+              Vec3s(vec_cast<Vecs>(texcoordf[0]) + 1, vec_cast<Vecs>(texcoordf[1]),     vec_cast<Vecs>(texcoordf[2])),
+              Vec3s(vec_cast<Vecs>(texcoordf[0]) + 1, vec_cast<Vecs>(texcoordf[1]) + 1, vec_cast<Vecs>(texcoordf[2])),
+              Vec3s(vec_cast<Vecs>(texcoordf[0]),     vec_cast<Vecs>(texcoordf[1]) + 1, vec_cast<Vecs>(texcoordf[2])),
 
-              vvsize3(texcoordf[0] + 1, texcoordf[1],     texcoordf[2] + 1),
-              vvsize3(texcoordf[0],     texcoordf[1],     texcoordf[2] + 1),
-              vvsize3(texcoordf[0],     texcoordf[1] + 1, texcoordf[2] + 1),
-              vvsize3(texcoordf[0] + 1, texcoordf[1] + 1, texcoordf[2] + 1)
+              Vec3s(vec_cast<Vecs>(texcoordf[0]) + 1, vec_cast<Vecs>(texcoordf[1]),     vec_cast<Vecs>(texcoordf[2]) + 1),
+              Vec3s(vec_cast<Vecs>(texcoordf[0]),     vec_cast<Vecs>(texcoordf[1]),     vec_cast<Vecs>(texcoordf[2]) + 1),
+              Vec3s(vec_cast<Vecs>(texcoordf[0]),     vec_cast<Vecs>(texcoordf[1]) + 1, vec_cast<Vecs>(texcoordf[2]) + 1),
+              Vec3s(vec_cast<Vecs>(texcoordf[0]) + 1, vec_cast<Vecs>(texcoordf[1]) + 1, vec_cast<Vecs>(texcoordf[2]) + 1)
             };
 
-            float samples[8];
+            Vec samples[8];
             for (size_t i = 0; i < 8; ++i)
             {
               // clamp to edge
-              texcoordsi[i][0] = ts_clamp<size_t>(texcoordsi[i][0], 0, vd->vox[0] - 1);
-              texcoordsi[i][1] = ts_clamp<size_t>(texcoordsi[i][1], 0, vd->vox[1] - 1);
-              texcoordsi[i][2] = ts_clamp<size_t>(texcoordsi[i][2], 0, vd->vox[2] - 1);
+              texcoordsi[i][0] = clamp<dim_t>(texcoordsi[i][0], 0, vd->vox[0] - 1);
+              texcoordsi[i][1] = clamp<dim_t>(texcoordsi[i][1], 0, vd->vox[1] - 1);
+              texcoordsi[i][2] = clamp<dim_t>(texcoordsi[i][2], 0, vd->vox[2] - 1);
 
-              size_t idx = texcoordsi[i][2] * vd->vox[0] * vd->vox[1] + texcoordsi[i][1] * vd->vox[0] + texcoordsi[i][0];
-              samples[i] = float(raw[idx]) / 256.0f;
+              index_t idx = texcoordsi[i][2] * vd->vox[0] * vd->vox[1] + texcoordsi[i][1] * vd->vox[0] + texcoordsi[i][0];
+              samples[i] = volume(raw, idx) / 255.0f;
             }
 
-            vvVector3 tmp((int)texcoordf[0], (int)texcoordf[1], (int)texcoordf[2]);
-            vvVector3 uvw = texcoordf - tmp;
+            Vec3 tmp(vec_cast<Vec>(vec_cast<Vecs>(texcoordf[0])),
+              vec_cast<Vec>(vec_cast<Vecs>(texcoordf[1])), vec_cast<Vec>(vec_cast<Vecs>(texcoordf[2])));
+            Vec3 uvw = texcoordf - tmp;
 
             // lerp
-            float p1 = (1 - uvw[0]) * samples[0] + uvw[0] * samples[1];
-            float p2 = (1 - uvw[0]) * samples[3] + uvw[0] * samples[2];
-            float p12 = (1 - uvw[1]) * p1 + uvw[1] * p2;
+            Vec p1 = (1 - uvw[0]) * samples[0] + uvw[0] * samples[1];
+            Vec p2 = (1 - uvw[0]) * samples[3] + uvw[0] * samples[2];
+            Vec p12 = (1 - uvw[1]) * p1 + uvw[1] * p2;
 
-            float p3 = (1 - uvw[0]) * samples[5] + uvw[0] * samples[4];
-            float p4 = (1 - uvw[0]) * samples[6] + uvw[0] * samples[7];
-            float p34 = (1 - uvw[1]) * p3 + uvw[1] * p4;
+            Vec p3 = (1 - uvw[0]) * samples[5] + uvw[0] * samples[4];
+            Vec p4 = (1 - uvw[0]) * samples[6] + uvw[0] * samples[7];
+            Vec p34 = (1 - uvw[1]) * p3 + uvw[1] * p4;
 
             sample = (1 - uvw[2]) * p12 + uvw[2] * p34;
           }
           else
           {
             // calc voxel coordinates using Manhattan distance
-            vvsize3 texcoordi = vvsize3(size_t(round(texcoord[0] * float(vd->vox[0] - 1))),
-                                        size_t(round(texcoord[1] * float(vd->vox[1] - 1))),
-                                        size_t(round(texcoord[2] * float(vd->vox[2] - 1))));
+            Vec3s texcoordi(vec_cast<Vecs>(round(texcoord[0] * float(vd->vox[0] - 1))),
+                            vec_cast<Vecs>(round(texcoord[1] * float(vd->vox[1] - 1))),
+                            vec_cast<Vecs>(round(texcoord[2] * float(vd->vox[2] - 1))));
   
             // clamp to edge
-            texcoordi[0] = ts_clamp<size_t>(texcoordi[0], 0, vd->vox[0] - 1);
-            texcoordi[1] = ts_clamp<size_t>(texcoordi[1], 0, vd->vox[1] - 1);
-            texcoordi[2] = ts_clamp<size_t>(texcoordi[2], 0, vd->vox[2] - 1);
+            texcoordi[0] = clamp<dim_t>(texcoordi[0], 0, vd->vox[0] - 1);
+            texcoordi[1] = clamp<dim_t>(texcoordi[1], 0, vd->vox[1] - 1);
+            texcoordi[2] = clamp<dim_t>(texcoordi[2], 0, vd->vox[2] - 1);
 
-            size_t idx = texcoordi[2] * vd->vox[0] * vd->vox[1] + texcoordi[1] * vd->vox[0] + texcoordi[0];
-            sample = float(raw[idx]) / 256.0f;
+            index_t idx = texcoordi[2] * vd->vox[0] * vd->vox[1] + texcoordi[1] * vd->vox[0] + texcoordi[0];
+            sample = volume(raw, idx) / 255.0f;
           }
 
-          vvVector4 src(_rgbaTF[size_t(sample * (float)getLUTSize()) * 4],
-                        _rgbaTF[size_t(sample * (float)getLUTSize()) * 4 + 1],
-                        _rgbaTF[size_t(sample * (float)getLUTSize()) * 4 + 2],
-                        _rgbaTF[size_t(sample * (float)getLUTSize()) * 4 + 3]);
+          Vec4 src = rgba(&impl->rgbaTF, vec_cast<Vecs>(sample * static_cast<float>(getLUTSize())) * 4);
 
           if (_opacityCorrection)
           {
@@ -434,25 +575,48 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const vvMatrix& 
           src[1] *= src[3];
           src[2] *= src[3];
 
-          dst = dst + src * (1.0f - dst[3]);
+          dst = dst + mul(src, sub(1.0f, dst[3], active), active);
 
-          if (_earlyRayTermination && (dst[3] > opacityThreshold))
+          if (_earlyRayTermination && all(dst[3] > opacityThreshold))
           {
             break;
           }
 
           t += dist;
-          if (t > tbfar)
+          active = active && (t < tbfar);
+          if (!any(active))
           {
             break;
           }
           pos += step;
         }
 
+#if VV_USE_SSE
+        CACHE_ALIGN float r[4];
+        CACHE_ALIGN float g[4];
+        CACHE_ALIGN float b[4];
+        CACHE_ALIGN float a[4];
+        store(dst.x, r);
+        store(dst.y, g);
+        store(dst.z, b);
+        store(dst.w, a);
+
+        for (int y1 = y; y1 < y + PACK_SIZE_Y; ++y1)
+        {
+          for (int x1 = x; x1 < x + PACK_SIZE_X; ++x1)
+          {
+            (*thread->colors)[y1 * _width * 4 + x1 * 4] = r[(y1 - y) * PACK_SIZE_X + (x1 - x)];
+            (*thread->colors)[y1 * _width * 4 + x1 * 4 + 1] = g[(y1 - y) * PACK_SIZE_X + (x1 - x)];
+            (*thread->colors)[y1 * _width * 4 + x1 * 4 + 2] = b[(y1 - y) * PACK_SIZE_X + (x1 - x)];
+            (*thread->colors)[y1 * _width * 4 + x1 * 4 + 3] = a[(y1 - y) * PACK_SIZE_X + (x1 - x)];
+          }
+        }
+#else
         for (size_t c = 0; c < 4; ++c)
         {
-          (*colors)[y * _width * 4 + x * 4 + c] = dst[c];
+          (*thread->colors)[y * _width * 4 + x * 4 + c] = dst[c];
         }
+#endif
       }
     }
   }
@@ -523,7 +687,7 @@ void vvSoftRayRend::render(vvSoftRayRend::Thread* thread)
     Tile tile = thread->tiles->back();
     thread->tiles->pop_back();
     pthread_mutex_unlock(thread->mutex);
-    thread->renderer->renderTile(tile, thread->invViewMatrix, thread->colors);
+    thread->renderer->renderTile(tile, thread);
   }
   pthread_barrier_wait(thread->barrier);
 }

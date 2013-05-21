@@ -45,17 +45,18 @@ private:
     int top; 
   }; 
 
+  struct Impl;
+  Impl* impl;
+
   int _width;
   int _height;
 
   Thread* _firstThread;
   std::vector<Thread*> _threads;
 
-  float* _rgbaTF;
-
   size_t getLUTSize() const;
   std::vector<Tile> makeTiles(int w, int h);
-  void renderTile(const Tile& tile, const vvMatrix& invViewMatrix, std::vector<float>* colors);
+  void renderTile(const Tile& tile, const Thread* thread);
 
   static void* renderFunc(void* args);
   static void render(Thread* thread);

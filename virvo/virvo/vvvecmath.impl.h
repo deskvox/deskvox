@@ -1068,6 +1068,17 @@ vvBaseVector4<T>::vvBaseVector4(const T x, const T y, const T z, const T w)
 }
 
 //----------------------------------------------------------------------------
+/// array constructor
+template <typename T>
+vvBaseVector4<T>::vvBaseVector4(T const v[4])
+{
+  e[0] = v[0];
+  e[1] = v[1];
+  e[2] = v[2];
+  e[3] = v[3];
+}
+
+//----------------------------------------------------------------------------
 /// constructor for vector3 + w
 template <typename T>
 vvBaseVector4<T>::vvBaseVector4(const vvBaseVector3<T>& v, const T w)
