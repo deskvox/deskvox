@@ -39,6 +39,7 @@ const float VV_FLT_MAX = FLT_MAX;                 ///< maximum float value
 // Forward Declarations
 //============================================================================
 
+class vvMatrix;
 template <typename T>
 class vvBaseVector2;
 template <typename T>
@@ -78,6 +79,44 @@ typedef vvBaseVector4<unsigned long> vvVector4ul;
 typedef vvBaseVector4<float> vvVector4f;
 typedef vvBaseVector4<double> vvVector4d;
 typedef vvVector4f vvVector4;
+
+namespace virvo
+{
+typedef vvMatrix Matrix;
+
+typedef vvsize3 size3;
+typedef vvssize3 ssize3;
+
+typedef vvVector2i Vec2i;
+typedef vvVector2ui Vec2ui;
+typedef vvVector2s Vec2s;
+typedef vvVector2us Vec2us;
+typedef vvVector2l Vec2l;
+typedef vvVector2ul Vec2ul;
+typedef vvVector2f Vec2f;
+typedef vvVector2d Vec2d;
+typedef vvVector2 Vec2;
+
+typedef vvVector3i Vec3i;
+typedef vvVector3ui Vec3ui;
+typedef vvVector3s Vec3s;
+typedef vvVector3us Vec3us;
+typedef vvVector3l Vec3l;
+typedef vvVector3ul Vec3ul;
+typedef vvVector3f Vec3f;
+typedef vvVector3d Vec3d;
+typedef vvVector3 Vec3;
+
+typedef vvVector4i Vec4i;
+typedef vvVector4ui Vec4ui;
+typedef vvVector4s Vec4s;
+typedef vvVector4us Vec4us;
+typedef vvVector4l Vec4l;
+typedef vvVector4ul Vec4ul;
+typedef vvVector4f Vec4f;
+typedef vvVector4d Vec4d;
+typedef vvVector4 Vec4;
+}
 
 //============================================================================
 // Class Definitions

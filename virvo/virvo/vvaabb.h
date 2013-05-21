@@ -34,6 +34,16 @@ typedef vvBaseAABB<size_t> vvAABBs;
 typedef vvBaseAABB<ssize_t> vvAABBss;
 typedef vvAABBf vvAABB;
 
+namespace virvo
+{
+typedef vvAABBi AABBi;
+typedef vvAABBf AABBf;
+typedef vvAABBd AABBd;
+typedef vvAABBs AABBs;
+typedef vvAABBss AABBss;
+typedef vvAABB AABB;
+}
+
 /*!
  * \brief           Axis aligned bounding box (AABB).
  *
