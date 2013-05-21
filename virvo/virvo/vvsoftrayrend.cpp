@@ -34,6 +34,7 @@
 #endif
 
 #include <cstdlib>
+#include <cstring>
 #include <queue>
 
 struct Ray
@@ -463,14 +464,16 @@ void* vvSoftRayRend::renderFunc(void* args)
 
   Thread* thread = static_cast<Thread*>(args);
 
+#ifdef __linux__
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   CPU_SET(thread->id, &cpuset);
   int s = pthread_setaffinity_np(thread->threadHandle, sizeof(cpu_set_t), &cpuset);
   if (s != 0)
   {
-      std::cerr << "Error setting thread affinity" << std::endl;
+      std::cerr << "Error setting thread affinity: " << strerror(s) << std::endl;
   }
+#endif
 
   while (true)
   {
