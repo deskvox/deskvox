@@ -994,6 +994,39 @@ vvBaseVector4<T> operator *(vvMatrix const& m, vvBaseVector4<T> const& v)
 }
 
 
+//------------------------------------------------------------------------------
+// vvBaseVector3 functions
+//------------------------------------------------------------------------------
+
+namespace virvo
+{
+namespace vecmath
+{
+template <typename T>
+T dot(vvBaseVector3<T> const& v)
+{
+  return v.dot();
+}
+
+
+template <typename T>
+T length(vvBaseVector3<T> const& v)
+{
+  return v.length();
+}
+
+
+template <typename T>
+vvBaseVector3<T> normalize(vvBaseVector3<T> const& v)
+{
+  vvBaseVector3<T> result = v;
+  result.normalize();
+  return result;
+}
+
+} // vecmath
+} // virvo
+
 #include "vvvecmath.impl.h"
 
 
