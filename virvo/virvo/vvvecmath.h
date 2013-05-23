@@ -759,6 +759,14 @@ vvBaseVector3<T> operator /(T const& u, vvBaseVector3<T> const& v)
 }
 
 
+template<typename T>
+vvBaseVector3<T> operator *(vvMatrix const& m, vvBaseVector3<T> const& v)
+{
+  vvBaseVector3<T> result = v;
+  result.multiply(m);
+  return result;
+}
+
 // Returns the cross product of u and v
 template<typename T>
 vvBaseVector3<T> operator ^(vvBaseVector3<T> const& u, vvBaseVector3<T> const& v)
@@ -974,6 +982,15 @@ template<typename T>
 vvBaseVector4<T> operator /(T const& u, vvBaseVector4<T> const& v)
 {
   return vvBaseVector4<T>(u / v[0], u / v[1], u / v[2], u / v[3]);
+}
+
+
+template<typename T>
+vvBaseVector4<T> operator *(vvMatrix const& m, vvBaseVector4<T> const& v)
+{
+  vvBaseVector4<T> result = v;
+  result.multiply(m);
+  return result;
 }
 
 
