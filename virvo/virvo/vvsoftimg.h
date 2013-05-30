@@ -42,6 +42,9 @@ class vvMatrix;
 class VIRVOEXPORT vvSoftImg
 {
    private:
+      struct Impl;
+      Impl* impl;
+
       enum AlignType                              /// alignment of images
       {
          BOTTOM_LEFT

@@ -39,7 +39,7 @@ using std::endl;
 
 const int vvSoftImg::PIXEL_SIZE = 4;
 
-namespace
+struct vvSoftImg::Impl
 {
   GLuint    texName;                          ///< name of warp texture
   GLuint    pboName;                          ///< name for PBO for CUDA/OpenGL interop
@@ -51,13 +51,14 @@ namespace
   GLint     glsBlendDst;                      ///< stores glBlendFunc(...,destination)
   GLint     glsUnpackAlignment;               ///< stores glPixelStore(GL_UNPACK_ALIGNMENT,...)
   GLfloat   glsRasterPos[4];                  ///< current raster position (glRasterPos)
-}
+};
 
 //----------------------------------------------------------------------------
 /** Constructor
   @param w,h initial image size (default: w=h=0)
 */
 vvSoftImg::vvSoftImg(int w, int h)
+  : impl(new Impl)
 {
    vvDebugMsg::msg(1, "vvSoftImg::vvSoftImg(): ", w, h);
 
@@ -72,13 +73,13 @@ vvSoftImg::vvSoftImg(int w, int h)
       data = new uchar[width * height * PIXEL_SIZE];
    else
       data = NULL;
-   ::pboName = 0;
+   impl->pboName = 0;
 
    canUsePbo = glGenBuffers && glDeleteBuffers && glBufferData && glBindBuffer;
 
 #ifndef VV_REMOTE_RENDERING
    // Generate texture name:
-   glGenTextures(1, &::texName);
+   glGenTextures(1, &impl->texName);
 #endif
    reinitTex = true;
 }
@@ -90,11 +91,13 @@ vvSoftImg::~vvSoftImg()
 {
    vvDebugMsg::msg(1, "vvSoftImg::~vvSoftImg()");
 #ifndef VV_REMOTE_RENDERING
-   glDeleteTextures(1, &::texName);
-   if (canUsePbo && ::pboName != 0)
-      glDeleteBuffers(1, &::pboName);
+   glDeleteTextures(1, &impl->texName);
+   if (canUsePbo && impl->pboName != 0)
+      glDeleteBuffers(1, &impl->pboName);
 #endif
    if (deleteData) delete[] data;
+
+   delete impl;
 }
 
 
@@ -121,7 +124,7 @@ void vvSoftImg::setSize(int w, int h)
 {
    vvDebugMsg::msg(3, "vvSoftImg::setSize() ", w, h);
 
-   if (width!=w || height!=h || (usePbo!=(::pboName!=0))) // recreate image buffer only if needed
+   if (width!=w || height!=h || (usePbo!=(impl->pboName!=0))) // recreate image buffer only if needed
    {
       width  = w;
       height = h;
@@ -135,16 +138,16 @@ void vvSoftImg::setSize(int w, int h)
       {
           if (usePbo)
           {
-              if (::pboName == 0)
-                  glGenBuffers(1, &::pboName);
-              glBindBuffer(GL_PIXEL_UNPACK_BUFFER, ::pboName);
+              if (impl->pboName == 0)
+                  glGenBuffers(1, &impl->pboName);
+              glBindBuffer(GL_PIXEL_UNPACK_BUFFER, impl->pboName);
               glBufferData(GL_PIXEL_UNPACK_BUFFER, width*height*PIXEL_SIZE, NULL, GL_STREAM_COPY);
               glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
           }
-          else if (::pboName)
+          else if (impl->pboName)
           {
-              glDeleteBuffers(1, &::pboName);
-              ::pboName = 0;
+              glDeleteBuffers(1, &impl->pboName);
+              impl->pboName = 0;
           }
       }
 
@@ -165,7 +168,7 @@ void vvSoftImg::initTexture(GLuint format)
    int texWidth  = vvToolshed::getTextureSize(width);
    int texHeight = vvToolshed::getTextureSize(height);
 
-   glBindTexture(GL_TEXTURE_2D, ::texName);
+   glBindTexture(GL_TEXTURE_2D, impl->texName);
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (warpInterpolation) ? GL_LINEAR : GL_NEAREST);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (warpInterpolation) ? GL_LINEAR : GL_NEAREST);
@@ -336,10 +339,10 @@ void vvSoftImg::draw()
       default: format = GL_RGBA; break;
    }
 
-   if (canUsePbo && ::pboName)
-      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, ::pboName);
-   glDrawPixels(width, height, format, GL_UNSIGNED_BYTE, ::pboName ? 0 : data);
-   if (canUsePbo && ::pboName)
+   if (canUsePbo && impl->pboName)
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, impl->pboName);
+   glDrawPixels(width, height, format, GL_UNSIGNED_BYTE, impl->pboName ? 0 : data);
+   if (canUsePbo && impl->pboName)
       glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
    restoreGLState();
@@ -502,13 +505,13 @@ void vvSoftImg::warpTex(vvMatrix* w)
    if (reinitTex)
        initTexture(format);
 
-   if (canUsePbo && ::pboName)
-      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, ::pboName);
+   if (canUsePbo && impl->pboName)
+      glBindBuffer(GL_PIXEL_UNPACK_BUFFER, impl->pboName);
 
-   glBindTexture(GL_TEXTURE_2D, ::texName);
+   glBindTexture(GL_TEXTURE_2D, impl->texName);
    // Now texture can be loaded:
    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, imgUsed->width, imgUsed->height,
-           format, GL_UNSIGNED_BYTE, ::pboName ? 0 : imgUsed->data);
+           format, GL_UNSIGNED_BYTE, impl->pboName ? 0 : imgUsed->data);
 
    // Modelview matrix becomes warp matrix:
    glMatrixMode(GL_MODELVIEW);
@@ -533,7 +536,7 @@ void vvSoftImg::warpTex(vvMatrix* w)
    glTexCoord2f(0.0f, 1.0f); glVertex3f( 0.0f,                 (float)imgUsed->height, ZPOS);
    glEnd();
 
-   if (canUsePbo && ::pboName)
+   if (canUsePbo && impl->pboName)
       glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
    restoreGLState();
@@ -602,21 +605,21 @@ void vvSoftImg::saveGLState()
    glPushMatrix();
 
    // Store blending function:
-   glGetIntegerv(GL_BLEND_SRC, &::glsBlendSrc);
-   glGetIntegerv(GL_BLEND_DST, &::glsBlendDst);
+   glGetIntegerv(GL_BLEND_SRC, &impl->glsBlendSrc);
+   glGetIntegerv(GL_BLEND_DST, &impl->glsBlendDst);
 
    // Store unpack alignment:
-   glGetIntegerv(GL_UNPACK_ALIGNMENT, &::glsUnpackAlignment);
+   glGetIntegerv(GL_UNPACK_ALIGNMENT, &impl->glsUnpackAlignment);
 
    // Store raster position:
                                                   // memorize raster position
-   glGetFloatv(GL_CURRENT_RASTER_POSITION, ::glsRasterPos);
+   glGetFloatv(GL_CURRENT_RASTER_POSITION, impl->glsRasterPos);
 
    // Store boolean OpenGL states:
-   glGetBooleanv(GL_TEXTURE_2D, &::glsTexture2D);
-   glGetBooleanv(GL_BLEND, &::glsBlend);
-   glGetBooleanv(GL_LIGHTING, &::glsLighting);
-   glGetBooleanv(GL_CULL_FACE, &::glsCulling);
+   glGetBooleanv(GL_TEXTURE_2D, &impl->glsTexture2D);
+   glGetBooleanv(GL_BLEND, &impl->glsBlend);
+   glGetBooleanv(GL_LIGHTING, &impl->glsLighting);
+   glGetBooleanv(GL_CULL_FACE, &impl->glsCulling);
 #endif
 }
 
@@ -629,29 +632,29 @@ void vvSoftImg::restoreGLState()
    vvDebugMsg::msg(3, "vvSoftImg::restoreGLState()");
 
    // Restore state of GL_TEXTURE_2D:
-   if (::glsTexture2D) glEnable(GL_TEXTURE_2D);
+   if (impl->glsTexture2D) glEnable(GL_TEXTURE_2D);
    else glDisable(GL_TEXTURE_2D);
 
    // Restore state of GL_BLEND:
-   if (::glsBlend==(uchar)true) glEnable(GL_BLEND);
+   if (impl->glsBlend==(uchar)true) glEnable(GL_BLEND);
    else glDisable(GL_BLEND);
 
    // Restore state of GL_LIGHTING:
-   if (::glsLighting==(uchar)true) glEnable(GL_LIGHTING);
+   if (impl->glsLighting==(uchar)true) glEnable(GL_LIGHTING);
    else glDisable(GL_LIGHTING);
 
    // Restore state of GL_CULL_FACE:
-   if (::glsCulling==(uchar)true) glEnable(GL_CULL_FACE);
+   if (impl->glsCulling==(uchar)true) glEnable(GL_CULL_FACE);
    else glDisable(GL_CULL_FACE);
 
    // Restore blending function:
-   glBlendFunc(::glsBlendSrc, ::glsBlendDst);
+   glBlendFunc(impl->glsBlendSrc, impl->glsBlendDst);
 
    // Restore unpack alignment:
-   glPixelStorei(GL_UNPACK_ALIGNMENT, ::glsUnpackAlignment);
+   glPixelStorei(GL_UNPACK_ALIGNMENT, impl->glsUnpackAlignment);
 
    // Restore raster position:
-   glRasterPos4fv(::glsRasterPos);
+   glRasterPos4fv(impl->glsRasterPos);
 
    // Restore projection matrix:
    glMatrixMode(GL_PROJECTION);
@@ -709,7 +712,7 @@ void vvSoftImg::print(const char* title)
 */
 uint vvSoftImg::getPboName() const
 {
-   return ::pboName;
+   return impl->pboName;
 }
 
 
