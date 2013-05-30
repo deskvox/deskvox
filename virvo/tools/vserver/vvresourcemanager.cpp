@@ -51,7 +51,7 @@ namespace
 
   void * localServerLoop(void *param)
   {
-    vvSimpleServer *sserver = reinterpret_cast<vvSimpleServer*>(param);
+    vvSimpleServer *sserver = static_cast<vvSimpleServer*>(param);
     sserver->run(0, NULL);
 
     pthread_exit(NULL);
@@ -410,7 +410,7 @@ void vvResourceManager::updateResources(void * param)
   {
   vvDebugMsg::msg(3, "vvResourceManager::updateResources() Enter");
 
-  vvResourceManager *rm = reinterpret_cast<vvResourceManager*>(param);
+  vvResourceManager *rm = static_cast<vvResourceManager*>(param);
 
   std::vector<vvBonjourEntry> entries = rm->_browser->getBonjourEntries();
 
