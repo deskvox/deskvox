@@ -477,6 +477,20 @@ std::string virvo::gltools::lastError(const std::string& file, int line)
   return out.str();
 }
 
+virvo::Matrix virvo::gltools::getModelViewMatrix()
+{
+  Matrix mv;
+  vvGLTools::getModelviewMatrix(&mv);
+  return mv;
+}
+
+virvo::Matrix virvo::gltools::getProjectionMatrix()
+{
+  Matrix pr;
+  vvGLTools::getProjectionMatrix(&pr);
+  return pr;
+}
+
 //============================================================================
 // End of File
 //============================================================================

@@ -180,6 +180,8 @@ namespace virvo
 namespace gltools
 {
 std::string lastError(const std::string& file, int line);
+VVAPI Matrix getModelViewMatrix();
+VVAPI Matrix getProjectionMatrix();
 }
 }
 
