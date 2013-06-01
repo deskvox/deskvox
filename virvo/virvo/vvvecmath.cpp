@@ -667,7 +667,7 @@ void vvMatrix::setColumn(int col, const vvVector3& vec)
   @param row row index
   @return Row values are found in a,b,c,d (left to right)
 */
-void vvMatrix::getRow(int row, float* a, float* b, float* c, float* d)
+void vvMatrix::getRow(int row, float* a, float* b, float* c, float* d) const
 {
   *a = e[row][0];
   *b = e[row][1];
@@ -681,7 +681,7 @@ void vvMatrix::getRow(int row, float* a, float* b, float* c, float* d)
   @param row  row index
   @param vec  vector to obtain matrix elements
 */
-void vvMatrix::getRow(int row, vvVector3* vec)
+void vvMatrix::getRow(int row, vvVector3* vec) const
 {
   (*vec)[0] = e[row][0];
   (*vec)[1] = e[row][1];
