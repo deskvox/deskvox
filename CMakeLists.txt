@@ -73,7 +73,7 @@ if (NOT DEFINED DESKVOX_BUILD_VOX_DESK)
   # Make this an option only if the variable has not otherwise been set. Allows
   # other CMake modules to override the default value defined here.
   option(DESKVOX_BUILD_VOX_DESK "Build vox-desk. Disable if Qt 4 is not available." ON)
-endif
+endif()
 option(DESKVOX_BUILD_VOX_DESK_FOX "Build fox-based vox-desk." OFF)
 
 option(DESKVOX_ENABLE_WARNINGS "Enable all warnings" ON)
