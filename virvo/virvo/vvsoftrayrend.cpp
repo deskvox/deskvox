@@ -36,9 +36,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <queue>
-#ifdef WIN32
-#define round(x) ((int)x)
-#endif
 
 struct Ray
 {
