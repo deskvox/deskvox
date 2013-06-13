@@ -38,7 +38,7 @@ class VIRVOEXPORT vvRendererFactory
      * @param rs renderer state
      * @param t renderer type or vvTexRend's geometry type
      * @param opt options for renderer or vvTexRend's voxel type
- */
+     */
     static vvRenderer *create(vvVolDesc *vd,
         const vvRenderState &rs,
         const char *type,
@@ -50,13 +50,17 @@ class VIRVOEXPORT vvRendererFactory
      * @param t renderer type or vvTexRend's geometry type
      * @param o options for renderer or vvTexRend's voxel type, specify in this format: option1=value1,option2=value2
      * do not use if you want to specify a server side filename
- */
+     */
     static vvRenderer *create(vvVolDesc *vd,
         const vvRenderState &rs,
         const char *type=NULL,
         const char *options=NULL);
 
-    static bool hasRenderer(const std::string& name);
+    /**
+     * @param name renderer name string
+     * @param arch architecture string further describing the renderer (optional)
+     */
+    static bool hasRenderer(const std::string& name, std::string const& arch = "");
     static bool hasRenderer(vvRenderer::RendererType type);
 
 };

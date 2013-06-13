@@ -51,6 +51,7 @@ private:
 private slots:
   void onRendererChanged(int index);
   void onTexRendOptionChanged(int index);
+  void onRayRendArchChanged(int index);
   void onFboChanged(int index);
   void onEarlyRayTerminationToggled(bool checked);
   void onHostChanged(const QString& text);

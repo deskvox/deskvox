@@ -74,6 +74,8 @@ private:
   vvRayRend& operator =(vvRayRend const&); // = delete;
 };
 
+#include "vvrayrendfactory.h"
+
 #endif // HAVE_CUDA
 
 #endif // VV_RAYREND_H

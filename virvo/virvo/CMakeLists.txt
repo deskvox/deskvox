@@ -79,14 +79,6 @@ set(VIRVO_HEADERS
   mem/align.h
   mem/allocator.h
 
-  sse/aabb.h
-  sse/matrix.h
-  sse/sse.h
-  sse/vec.h
-  sse/vec3.h
-  sse/vec4.h
-  sse/veci.h
-
   vvbonjour/vvbonjour.h
   vvbonjour/vvbonjourbrowser.h
   vvbonjour/vvbonjourentry.h
@@ -134,8 +126,6 @@ set(VIRVO_HEADERS
   vvplatform.h
   vvprintgl.h
   vvpthread.h
-  vvrayrend-common.h
-  vvrayrend.h
   vvrect.h
   vvremoteclient.h
   vvremoteevents.h
@@ -157,7 +147,6 @@ set(VIRVO_HEADERS
   vvsoftimg.h
   vvsoftpar.h
   vvsoftper.h
-  vvsoftrayrend.h
   vvsoftsw.h
   vvsoftvr.h
   vvsphere.h
@@ -237,7 +226,6 @@ set(VIRVO_SOURCES
   vvparbrickrend.cpp
   vvprintgl.cpp
   vvpthread.cpp
-  vvrayrend.cpp
   vvremoteclient.cpp
   vvremoteserver.cpp
   vvrendercontext.cpp
@@ -256,7 +244,6 @@ set(VIRVO_SOURCES
   vvsoftimg.cpp
   vvsoftpar.cpp
   vvsoftper.cpp
-  vvsoftrayrend.cpp
   vvsoftsw.cpp
   vvsoftvr.cpp
   vvsphere.cpp
@@ -280,7 +267,6 @@ set(VIRVO_SOURCES
 if(DESKVOX_USE_CUDA)
 deskvox_cuda_compiles(VIRVO_CUDA_SOURCES
   vvcudatransfunc.cu
-  vvrayrend.cu
 )
 endif(DESKVOX_USE_CUDA)
 

@@ -4,7 +4,9 @@
 
 #include <xmmintrin.h>
 #include <emmintrin.h>
+#ifdef __SSE4_1__
 #include <smmintrin.h>
+#endif
 
 #include <ostream>
 
@@ -331,7 +333,11 @@ inline Vec clamp(Vec const& v, Vec const& a, Vec const& b)
  */
 inline Vec dot(Vec const& u, Vec const& v)
 {
+#ifdef __SSE4_1__
   return _mm_dp_ps(u, v, 0xFF);
+#else
+  throw "not implemented yet";
+#endif
 }
 
 namespace fast

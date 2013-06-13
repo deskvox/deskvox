@@ -20,9 +20,6 @@
 #cmakedefine01 VV_HAVE_X11
 
 
-#cmakedefine01 VV_USE_SSE
-
-
 // compatability...
 #if VV_HAVE_BONJOUR
 #define HAVE_BONJOUR
@@ -64,7 +61,3 @@
 #define HAVE_X11
 #endif
 
-
-#if VV_USE_SSE
-#define USE_SSE
-#endif

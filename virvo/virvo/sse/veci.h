@@ -4,7 +4,9 @@
 
 #include <xmmintrin.h>
 #include <emmintrin.h>
+#ifdef __SSE4_1__
 #include <smmintrin.h>
+#endif
 
 #include <ostream>
 
@@ -85,10 +87,14 @@ inline Veci operator-(Veci const& u, Veci const& v)
 
 inline Veci operator*(Veci const& u, Veci const& v)
 {
+#ifdef __SSE4_1__
   Veci tmp_2_0 = _mm_mul_epi32(u, v);
   Veci tmp_3_1 = _mm_mul_epi32(_mm_srli_si128(u, 4), _mm_srli_si128(v, 4));
   return _mm_unpacklo_epi32(_mm_shuffle_epi32(tmp_2_0, _MM_SHUFFLE(0, 0, 2, 0)),
     _mm_shuffle_epi32(tmp_3_1, _MM_SHUFFLE(0, 0, 2, 0)));
+#else
+  throw "not implemented yet";
+#endif
 }
 
 inline Veci& operator+=(Veci& u, Veci const& v)

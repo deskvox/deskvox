@@ -62,5 +62,7 @@ private:
   static void render(Thread* thread);
 };
 
+#include "vvrayrendfactory.h"
+
 #endif
 

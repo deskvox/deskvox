@@ -56,6 +56,7 @@ namespace
   std::map<int, std::string> texRendTypeMap;
   std::map<int, std::string> voxTypeMap;
   std::map<int, int> fboPrecisionMap;
+  std::map<int, std::string> rayRendArchMap;
   std::map<int, vox::StereoMode> stereoModeMap;
   std::map<std::string, std::string> rendererDescriptions;
   std::map<std::string, std::string> algoDescriptions;
@@ -112,8 +113,7 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   rendererDescriptions.insert(std::pair<std::string, std::string>("cubic2d", "OpenGL textures"));
   rendererDescriptions.insert(std::pair<std::string, std::string>("planar", "OpenGL textures"));
   rendererDescriptions.insert(std::pair<std::string, std::string>("spherical", "OpenGL textures"));
-  rendererDescriptions.insert(std::pair<std::string, std::string>("rayrend", "CUDA ray casting"));
-  rendererDescriptions.insert(std::pair<std::string, std::string>("softrayrend", "Software ray casting"));
+  rendererDescriptions.insert(std::pair<std::string, std::string>("rayrend", "Ray casting"));
 
   algoDescriptions.insert(std::pair<std::string, std::string>("default", "Autoselect"));
   algoDescriptions.insert(std::pair<std::string, std::string>("slices", "2D textures (slices)"));
@@ -134,13 +134,6 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   {
     ui->rendererBox->addItem(rendererDescriptions["rayrend"].c_str());
     rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::RAYREND));
-    ++idx;
-  }
-
-  if (vvRendererFactory::hasRenderer(vvRenderer::SOFTRAYREND))
-  {
-    ui->rendererBox->addItem(rendererDescriptions["softrayrend"].c_str());
-    rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::SOFTRAYREND));
     ++idx;
   }
 
@@ -237,6 +230,30 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   fboPrecisionMap.insert(std::pair<int, int>(idx, 32));
   ++idx;
 
+  // ray rend architecture combo box
+  idx = 0;
+
+  if (vvRendererFactory::hasRenderer("rayrend", "cuda"))
+  {
+    ui->rayRendArchBox->addItem("CUDA - GPGPU ray casting");
+    rayRendArchMap.insert(std::pair<int, std::string>(idx, "cuda"));
+    ++idx;
+  }
+
+  if (vvRendererFactory::hasRenderer("rayrend", "fpu"))
+  {
+    ui->rayRendArchBox->addItem("FPU - CPU ray casting");
+    rayRendArchMap.insert(std::pair<int, std::string>(idx, "fpu"));
+    ++idx;
+  }
+
+  if (vvRendererFactory::hasRenderer("rayrend", "sse4_1"))
+  {
+    ui->rayRendArchBox->addItem("SSE 4.1 - optimized CPU ray casting");
+    rayRendArchMap.insert(std::pair<int, std::string>(idx, "sse4_1"));
+    ++idx;
+  }
+
   // stereo mode combo box
   idx = 0;
 
@@ -283,6 +300,7 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->fboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onFboChanged(int)));
   connect(ui->voxTypeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
   connect(ui->pixShdBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onTexRendOptionChanged(int)));
+  connect(ui->rayRendArchBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onRayRendArchChanged(int)));
   connect(ui->earlyRayBox, SIGNAL(toggled(bool)), this, SLOT(onEarlyRayTerminationToggled(bool)));
   connect(ui->hostEdit, SIGNAL(textChanged(const QString&)), this, SLOT(onHostChanged(const QString&)));
   connect(ui->portBox, SIGNAL(valueChanged(int)), this, SLOT(onPortChanged(int)));
@@ -315,6 +333,9 @@ vvPrefDialog::~vvPrefDialog()
 void vvPrefDialog::applySettings()
 {
   QSettings settings;
+
+  ui->rayRendArchBox->setCurrentIndex(settings.value("rayrend/arch").toInt());
+
   ui->hostEdit->setText(settings.value("remote/host").toString());
   if (settings.value("remote/port").toString() != "")
   {
@@ -398,10 +419,7 @@ void vvPrefDialog::emitRenderer()
     case vvRenderer::RAYREND:
       ui->optionsToolBox->setCurrentIndex(rayidx);
       name = "rayrend";
-      break;
-    case vvRenderer::SOFTRAYREND:
-      ui->optionsToolBox->setCurrentIndex(rayidx);
-      name = "softrayrend";
+      options["arch"] = rayRendArchMap[ui->rayRendArchBox->currentIndex()];
       break;
     case vvRenderer::TEXREND:
       ui->optionsToolBox->setCurrentIndex(texidx);
@@ -479,6 +497,17 @@ void vvPrefDialog::onTexRendOptionChanged(int index)
   VV_UNUSED(index);
 
   if (rendererMap[ui->rendererBox->currentIndex()] == vvRenderer::TEXREND)
+  {
+    emitRenderer();
+  }
+}
+
+void vvPrefDialog::onRayRendArchChanged(int index)
+{
+  QSettings settings;
+  settings.setValue("rayrend/arch", index);
+
+  if (rendererMap[ui->rendererBox->currentIndex()] == vvRenderer::RAYREND)
   {
     emitRenderer();
   }

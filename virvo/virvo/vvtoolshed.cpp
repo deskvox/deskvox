@@ -2797,6 +2797,26 @@ void vvToolshed::printBacktrace()
 #endif
 }
 
+std::vector<std::string> virvo::toolshed::entryList(std::string const& dir)
+{
+  std::vector<std::string> result;
+  if (vvToolshed::isDirectory(dir.c_str()))
+  {
+#ifdef _WIN32
+
+#else
+    DIR* dirp = opendir(dir.c_str());
+    struct dirent* dp;
+    while ((dp = readdir(dirp)) != NULL)
+    {
+      result.push_back(dp->d_name);
+    }
+    closedir(dirp);
+#endif
+  }
+  return result;
+}
+
 //----------------------------------------------------------------------------
 /// Main function for standalone test mode.
 #ifdef VV_STANDALONE

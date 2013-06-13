@@ -288,8 +288,10 @@ inline T clamp(const T a, const T left, const T right)
   return a;
 }
 
-}
-}
+std::vector<std::string> entryList(std::string const& dir);
+
+} // toolshed
+} // virvo
 #endif
 
 //============================================================================

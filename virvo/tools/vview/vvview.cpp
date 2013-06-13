@@ -1158,7 +1158,7 @@ void vvView::rendererMenuCallback(int item)
     "Draft", "High"
   };
 
-  if (item>=0 && item<=12)
+  if (item>=0 && item<=16)
   {
     char type[100];
     sprintf(type, "%d", item);
@@ -2101,11 +2101,12 @@ void vvView::createMenus()
   if (vvTexRend::isSupported(vvTexRend::VV_BRICKS))    glutAddMenuEntry("3D textures - bricked [5]", 5);
   glutAddMenuEntry("CPU Shear-warp [6]", 6);
   glutAddMenuEntry("GPU Shear-warp [7]", 7);
-  glutAddMenuEntry("GPU Ray casting [8]", 8);
-  glutAddMenuEntry("VolPack [9]", 9);
-  glutAddMenuEntry("Image-based remote rendering", 10);
-  glutAddMenuEntry("Remote rendering", 11);
-  glutAddMenuEntry("CPU Ray casting", 12);
+  glutAddMenuEntry("VolPack [8]", 8);
+  if (vvRendererFactory::hasRenderer("rayrend", "cuda")) glutAddMenuEntry("CUDA ray casting [9]", 9);
+  if (vvRendererFactory::hasRenderer("rayrend", "fpu")) glutAddMenuEntry("FPU ray casting", 10);
+  if (vvRendererFactory::hasRenderer("rayrend", "sse4_1")) glutAddMenuEntry("SSE 4.1 ray casting", 12);
+  glutAddMenuEntry("Image-based remote rendering", 13);
+  glutAddMenuEntry("Remote rendering", 14);
   glutAddMenuEntry("Decrease quality [-]", 98);
   glutAddMenuEntry("Increase quality [+]", 99);
 

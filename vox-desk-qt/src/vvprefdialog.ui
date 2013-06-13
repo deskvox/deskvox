@@ -56,7 +56,7 @@
             <x>0</x>
             <y>0</y>
             <width>566</width>
-            <height>346</height>
+            <height>208</height>
            </rect>
           </property>
           <attribute name="label">
@@ -222,6 +222,27 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Early ray termination&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_5">
+           <item>
+            <layout class="QHBoxLayout" name="rayRendArchLayout">
+             <item>
+              <widget class="QLabel" name="rayRendArchLabel">
+               <property name="text">
+                <string>Architecture:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="rayRendArchBox">
+               <property name="minimumSize">
+                <size>
+                 <width>240</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
            <item>
             <widget class="QCheckBox" name="earlyRayBox">
              <property name="text">

@@ -7,3 +7,6 @@ if(DESKVOX_BUILD_TOOLS)
   add_subdirectory(tools)
 endif()
 add_subdirectory(virvo)
+
+add_subdirectory(virvo/rayrend)
+
