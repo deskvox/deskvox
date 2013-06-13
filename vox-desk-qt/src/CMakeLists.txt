@@ -1,10 +1,6 @@
-find_package(Qt4 REQUIRED QtCore QtGui QtOpenGL)
-find_package(GLEW REQUIRED)
+find_qt()
 
-deskvox_use_package(Qt
-  INCDIRS ${QT_INCLUDES}
-  LIBS ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTOPENGL_LIBRARY}
-)
+find_package(GLEW REQUIRED)
 
 deskvox_use_package(GLEW)
 
@@ -80,12 +76,12 @@ SET(VOXDESK_QT_UI
   vvvolinfodialog.ui
 )
 
-IF(QT_FOUND)
-  QT4_WRAP_CPP(VOXDESK_QT_MOC_INC ${VOXDESK_QT_INC})
-  QT4_WRAP_UI(VOXDESK_QT_UI_INC ${VOXDESK_QT_UI})
-ENDIF(QT_FOUND)
+qt_wrap_cpp(VOXDESK_QT_MOC_INC ${VOXDESK_QT_INC})
+qt_wrap_ui(VOXDESK_QT_UI_INC ${VOXDESK_QT_UI})
 
 # moc'd headers reside here
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 deskvox_add_tool(vox-desk-qt ${VOXDESK_QT_INC} ${VOXDESK_QT_SRC} ${VOXDESK_QT_MOC_INC} ${VOXDESK_QT_UI_INC})
+
+qt_use_modules(vox-desk-qt Core OpenGL Widgets Gui)

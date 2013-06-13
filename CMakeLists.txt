@@ -91,6 +91,13 @@ if (NOT DEFINED DESKVOX_USE_CUDA)
   option(DESKVOX_USE_CUDA "Use CUDA if available" ON)
 endif()
 
+if (NOT DEFINED DESKVOX_USE_QT4)
+  # Make this an option only if the variable has not otherwise been set. Allows
+  # other CMake modules to override the default value defined here.
+  option(DESKVOX_USE_QT4 "Use QT4 not QT5 if available" ON)
+endif()
+include(Qt4-5)
+
 
 # All options referred to from DeskvoxHandleOptions have to be specified BEFORE this include,
 # otherwise options will not be correctly set on first cmake run

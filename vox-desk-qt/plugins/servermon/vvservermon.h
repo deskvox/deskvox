@@ -27,6 +27,7 @@ class vvServerMon : public QObject, public vvPlugin
 {
   Q_OBJECT
   Q_INTERFACES(vvPlugin)
+  Q_PLUGIN_METADATA(IID "org.deskvox.vvServerMon" FILE "vvservermon.json")
 public:
   vvServerMon();
 
