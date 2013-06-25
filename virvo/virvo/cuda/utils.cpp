@@ -77,6 +77,17 @@ bool virvo::cuda::checkError(bool *success, cudaError_t err, const char *msg, bo
   return false;
 }
 
+int virvo::cuda::deviceCount()
+{
+  int cnt = 0;
+  bool ok = true;
+  if (!virvo::cuda::checkError(&ok, cudaGetDeviceCount(&cnt), "virvo::cuda::deviceCount", false))
+  {
+    return 0;
+  }
+  return cnt;
+}
+
 bool virvo::cuda::init()
 {
   bool ok = true;

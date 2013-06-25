@@ -34,6 +34,7 @@ namespace virvo
 namespace cuda
 {
 VVAPI bool checkError(bool *success, cudaError_t err, const char *msg = NULL, bool syncIfDebug = true);
+VVAPI int deviceCount();
 VVAPI bool init();
 VVAPI bool initGlInterop();
 }
