@@ -69,6 +69,7 @@ set(VIRVO_HEADERS
   cuda/memory.h
   cuda/symbol.h
   cuda/texture.h
+  cuda/utils.h
 
   gl/format.h
   gl/handle.h
@@ -96,12 +97,9 @@ set(VIRVO_HEADERS
   vvclock.h
   vvcolor.h
   vvcompiler.h
-  vvcuda.h
   vvcudaimg.h
   vvcudarendertarget.h
-  vvcudatools.h
   vvcudatransfunc.h
-  vvcudautils.h
   vvdebugmsg.h
   vvdicom.h
   vvdynlib.h
@@ -182,6 +180,7 @@ set(VIRVO_SOURCES
   cuda/debug.cpp
   cuda/graphics_resource.cpp
   cuda/host_device_array.cpp
+  cuda/utils.cpp
 
   gl/format.cpp
   gl/handle.cpp
@@ -204,12 +203,10 @@ set(VIRVO_SOURCES
   vvcgprogram.cpp
   vvclock.cpp
   vvcolor.cpp
-  vvcuda.cpp
   vvcudaimg.cpp
   vvcudarendertarget.cpp
 # vvcudarendertarget.inc
 # vvcudarendertarget-null.inc
-  vvcudatools.cpp
   vvcudatransfunc.cpp
   vvdebugmsg.cpp
   vvdicom.cpp

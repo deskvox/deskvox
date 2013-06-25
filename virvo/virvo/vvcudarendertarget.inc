@@ -21,7 +21,7 @@
 
 #include "vvcudarendertarget.h"
 
-#include "vvcuda.h"
+#include "cuda/utils.h"
 
 #include "cuda/graphics_resource.h"
 #include "cuda/host_device_array.h"
@@ -119,7 +119,7 @@ PixelUnpackBufferRT::PixelUnpackBufferRT(unsigned ColorBits, unsigned DepthBits)
 
 RenderTarget* PixelUnpackBufferRT::create(unsigned ColorBits, unsigned DepthBits)
 {
-	if (!vvCuda::initGlInterop())
+	if (!virvo::cuda::initGlInterop())
 		return 0;
 
     return new PixelUnpackBufferRT(ColorBits, DepthBits);

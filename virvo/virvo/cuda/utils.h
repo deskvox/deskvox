@@ -21,9 +21,24 @@
 #ifndef _VV_CUDAUTILS_H_
 #define _VV_CUDAUTILS_H_
 
-#include <cuda.h>
+#include <cuda_runtime.h>
 
 #ifndef __CUDACC__
+
+
+#include "../vvexport.h"
+
+
+namespace virvo
+{
+namespace cuda
+{
+VVAPI bool checkError(bool *success, cudaError_t err, const char *msg = NULL, bool syncIfDebug = true);
+VVAPI bool init();
+VVAPI bool initGlInterop();
+}
+}
+
 
 #include <cmath>
 
@@ -45,6 +60,7 @@ inline float fmaxf(float x, float y)
 #endif
 
 #endif
+
 
 #include <ostream>
 

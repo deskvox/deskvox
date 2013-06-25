@@ -20,12 +20,12 @@
 
 
 #include "vvrayrend-common.h"
-#include "vvcudautils.h"
 #include "vvinttypes.h"
 
 #include "cuda/memory.h"
 #include "cuda/symbol.h"
 #include "cuda/texture.h"
+#include "cuda/utils.h"
 
 
 namespace cu = virvo::cuda;

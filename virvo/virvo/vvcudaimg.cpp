@@ -21,7 +21,15 @@
 #include <cassert>
 #include "vvdebugmsg.h"
 #include "vvcudaimg.h"
-#include "vvcudatools.h"
+
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
+
+#ifdef HAVE_CUDA
+#include "cuda/utils.h"
+#endif
 
 vvCudaImg::vvCudaImg(const int w, const int h, const Mode mode)
   : vvSoftImg(w, h)
@@ -66,21 +74,21 @@ void vvCudaImg::allocate()
   {
     if ((width > 0) && (height > 0))
     {
-      vvCudaTools::checkError(&ok, cudaGraphicsGLRegisterBuffer(&_imgRes, getPboName(), cudaGraphicsMapFlagsWriteDiscard),
+      virvo::cuda::checkError(&ok, cudaGraphicsGLRegisterBuffer(&_imgRes, getPboName(), cudaGraphicsMapFlagsWriteDiscard),
                          "vvCudaImg::allocate() - map PBO to CUDA");
     }
   }
   else if (_mapped)
   {
-    vvCudaTools::checkError(&ok, cudaHostAlloc(&h_img, width*height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped),
+    virvo::cuda::checkError(&ok, cudaHostAlloc(&h_img, width*height*vvSoftImg::PIXEL_SIZE, cudaHostAllocMapped),
                        "vvCudaImg::allocate() - img alloc");
     setBuffer(h_img);
     setSize(width, height);
-    vvCudaTools::checkError(&ok, cudaHostGetDevicePointer(&d_img, h_img, 0), "get dev ptr img");
+    virvo::cuda::checkError(&ok, cudaHostGetDevicePointer(&d_img, h_img, 0), "get dev ptr img");
   }
   else
   {
-    vvCudaTools::checkError(&ok, cudaMalloc(&d_img, width*height*vvSoftImg::PIXEL_SIZE),
+    virvo::cuda::checkError(&ok, cudaMalloc(&d_img, width*height*vvSoftImg::PIXEL_SIZE),
                        "vvCudaImg::allocate() - cudaMalloc img");
   }
 #else
@@ -96,18 +104,18 @@ void vvCudaImg::deallocate()
   {
     if (_imgRes != NULL)
     {
-      vvCudaTools::checkError(&ok, cudaGraphicsUnregisterResource(_imgRes),
+      virvo::cuda::checkError(&ok, cudaGraphicsUnregisterResource(_imgRes),
                          "vvCudaImg::deallocate() - cudaGraphicsUnregisterResource");
     }
   }
   else if (_mapped)
   {
-    vvCudaTools::checkError(&ok, cudaFreeHost(h_img),
+    virvo::cuda::checkError(&ok, cudaFreeHost(h_img),
                        "vvCudaImg::deallocate() - cudaFreeHost");
   }
   else
   {
-    vvCudaTools::checkError(&ok, cudaFree(d_img),
+    virvo::cuda::checkError(&ok, cudaFree(d_img),
                        "vvCudaImg::deallocate() - cudaFree");
   }
 #else
@@ -121,10 +129,10 @@ void vvCudaImg::map()
   bool ok = true;
   if (_mode==TEXTURE)
   {
-    vvCudaTools::checkError(&ok, cudaGraphicsMapResources(1, &_imgRes, NULL),
+    virvo::cuda::checkError(&ok, cudaGraphicsMapResources(1, &_imgRes, NULL),
                        "vvCudaImg::map() - map CUDA resource");
     size_t size;
-    vvCudaTools::checkError(&ok, cudaGraphicsResourceGetMappedPointer((void**)&d_img, &size, _imgRes),
+    virvo::cuda::checkError(&ok, cudaGraphicsResourceGetMappedPointer((void**)&d_img, &size, _imgRes),
                        "vvCudaImg::map() - get PBO mapping");
     assert(size == static_cast<size_t>(width*height*vvSoftImg::PIXEL_SIZE));
   }
@@ -143,17 +151,17 @@ void vvCudaImg::unmap()
   bool ok = true;
   if (_mode==TEXTURE)
   {
-    vvCudaTools::checkError(&ok, cudaGraphicsUnmapResources(1, &_imgRes, NULL),
+    virvo::cuda::checkError(&ok, cudaGraphicsUnmapResources(1, &_imgRes, NULL),
                        "vvCudaImg::unmap() - unmap CUDA resource");
   }
   else if (_mapped)
   {
-    vvCudaTools::checkError(&ok, cudaThreadSynchronize(),
+    virvo::cuda::checkError(&ok, cudaThreadSynchronize(),
                        "vvCudaImg::unmap() - cudaThreadSynchronize");
   }
   else
   {
-    vvCudaTools::checkError(&ok, cudaMemcpy(data, d_img, width*height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost),
+    virvo::cuda::checkError(&ok, cudaMemcpy(data, d_img, width*height*vvSoftImg::PIXEL_SIZE, cudaMemcpyDeviceToHost),
                        "vvCudaImg::unmap() - cpy to host");
   }
 #else
@@ -178,7 +186,7 @@ void vvCudaImg::init()
   if (_mode==TEXTURE)
   {
 #ifdef HAVE_CUDA
-    if (vvCuda::initGlInterop())
+    if (virvo::cuda::initGlInterop())
     {
       vvDebugMsg::msg(1, "using CUDA/GL interop");
       // avoid image copy from GPU to CPU and back

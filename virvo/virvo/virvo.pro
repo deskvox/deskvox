@@ -33,9 +33,7 @@ SOURCES = \
   #vvclusterserver.cpp \
   vvclock.cpp \
   vvcolor.cpp \
-  vvcuda.cpp \
   vvcudaimg.cpp \
-  vvcudatools.cpp \
   vvdebugmsg.cpp \
   vvdicom.cpp \
   vvdynlib.cpp \
@@ -100,10 +98,8 @@ HEADERS = \
   vvcomparisonrend.h \
   vvcomparisonrend.impl.h \
   vvcolor.h \
-  vvcuda.h \
   vvcudaimg.h \
   vvcudasw.h \
-  vvcudatools.h \
   vvcudatransfunc.h \
   vvcudautils.h \
   vvdebugmsg.h \

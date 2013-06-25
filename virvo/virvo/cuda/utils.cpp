@@ -1,5 +1,5 @@
 // Virvo - Virtual Reality Volume Rendering
-// Copyright (C) 2010 University of Cologne
+// Copyright (C) 1999-2003 University of Stuttgart, 2004-2005 Brown University
 // Contact: Jurgen P. Schulze, jschulze@ucsd.edu
 //
 // This file is part of Virvo.
@@ -18,21 +18,20 @@
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "vvcuda.h"
-
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
 #endif
 
-#include "vvcudatools.h"
+
+#ifdef HAVE_CUDA
+
+#include "utils.h"
 
 #include <string>
 #include <cstring>
 #include <iostream>
 
-#ifdef HAVE_CUDA
 #include <cuda_gl_interop.h>
-#endif
 
 #ifdef USE_X11
 #include <GL/glx.h>
@@ -41,23 +40,54 @@
 
 #include "vvdebugmsg.h"
 
-bool vvCuda::init()
+bool virvo::cuda::checkError(bool *success, cudaError_t err, const char *msg, bool syncIfDebug)
 {
-#ifdef HAVE_CUDA
+  if (err == cudaSuccess)
+  {
+    if (!vvDebugMsg::isActive(2) || !syncIfDebug)
+      return (success ? *success : true);
+
+    if (syncIfDebug)
+    {
+     cudaThreadSynchronize();
+     err = cudaGetLastError();
+    }
+  }
+
+  if (!msg)
+    msg = "virvo::cuda";
+
+  if (err == cudaSuccess)
+  {
+    vvDebugMsg::msg(3, msg, ": ok");
+    return (success ? *success : true);
+  }
+
+  std::string s(msg);
+  s += ": ";
+  s += cudaGetErrorString(err);
+  vvDebugMsg::msg(0, s.c_str());
+
+  if (success)
+  {
+    *success = false;
+    return *success;
+  }
+
+  return false;
+}
+
+bool virvo::cuda::init()
+{
   bool ok = true;
-  if(!vvCudaTools::checkError(&ok, cudaSetDeviceFlags(cudaDeviceMapHost), "vvCuda::init (set device flags)", false))
+  if(!virvo::cuda::checkError(&ok, cudaSetDeviceFlags(cudaDeviceMapHost), "virvo::cuda::init (set device flags)", false))
     return false;
 
   return true;
-#else
-  std::cerr << "Cuda not found!" << std::endl;
-  return false;
-#endif
 }
 
-bool vvCuda::initGlInterop()
+bool virvo::cuda::initGlInterop()
 {
-#ifdef HAVE_CUDA
   static bool done = false;
   if (done)
     return true;
@@ -81,20 +111,14 @@ bool vvCuda::initGlInterop()
 
   int dev;
   bool ok = true;
-  if(!vvCudaTools::checkError(&ok, cudaChooseDevice(&dev, &prop), "vvCuda::initGlInterop (choose device)", false))
+  if(!virvo::cuda::checkError(&ok, cudaChooseDevice(&dev, &prop), "virvo::cuda::initGlInterop (choose device)", false))
     return false;
-  if(!vvCudaTools::checkError(&ok, cudaGLSetGLDevice(dev), "vvCuda::initGlInterop (set device)", false))
+  if(!virvo::cuda::checkError(&ok, cudaGLSetGLDevice(dev), "virvo::cuda::initGlInterop (set device)", false))
     return false;
 
   done = true;
   return true;
-#else
-  return false;
-#endif
 }
 
-//============================================================================
-// End of File
-//============================================================================
+#endif // HAVE_CUDA
 
-// vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -33,10 +33,9 @@
 #include "cuda/memory.h"
 #include "cuda/symbol.h"
 #include "cuda/texture.h"
+#include "cuda/utils.h"
 
 #include "vvcudaimg.h"
-#include "vvcudatools.h"
-#include "vvcudautils.h"
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
 
@@ -165,7 +164,7 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   bool ok;
 
   // Free "cuda error cache".
-  vvCudaTools::checkError(&ok, cudaGetLastError(), "vvRayRend::vvRayRend() - free cuda error cache");
+  virvo::cuda::checkError(&ok, cudaGetLastError(), "vvRayRend::vvRayRend() - free cuda error cache");
 
   _volumeCopyToGpuOk = true;
 
@@ -478,7 +477,7 @@ void vvRayRend::initVolumeTexture()
 
     size_t availableMem;
     size_t totalMem;
-    vvCudaTools::checkError(&ok, cudaMemGetInfo(&availableMem, &totalMem),
+    virvo::cuda::checkError(&ok, cudaMemGetInfo(&availableMem, &totalMem),
                        "vvRayRend::initVolumeTexture() - get mem info from device");
 
     if(!_volumeCopyToGpuOk)
@@ -515,7 +514,7 @@ void vvRayRend::initVolumeTexture()
     copyParams.dstArray = impl->getVolumeArray(f).get();
     copyParams.extent = volumeSize;
     copyParams.kind = cudaMemcpyHostToDevice;
-    vvCudaTools::checkError(&ok, cudaMemcpy3D(&copyParams),
+    virvo::cuda::checkError(&ok, cudaMemcpy3D(&copyParams),
                        "vvRayRend::initVolumeTexture() - copy volume frame to 3D array");
   }
 
