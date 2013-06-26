@@ -466,9 +466,9 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
 
   uint8_t* raw = vd->getRaw(vd->getCurrentFrame());
 
-  for (int y = tile.bottom; y <= tile.top - PACK_SIZE_Y; y += PACK_SIZE_Y)
+  for (int y = tile.bottom; y < tile.top; y += PACK_SIZE_Y)
   {
-    for (int x = tile.left; x <= tile.right - PACK_SIZE_X; x += PACK_SIZE_X)
+    for (int x = tile.left; x < tile.right; x += PACK_SIZE_X)
     {
       const Vec u = (pixelx(x) / static_cast<float>(_width - 1)) * 2.0f - 1.0f;
       const Vec v = (pixely(y) / static_cast<float>(_height - 1)) * 2.0f - 1.0f;
@@ -610,9 +610,9 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
         store(dst.z, b);
         store(dst.w, a);
 
-        for (int y1 = y; y1 < y + PACK_SIZE_Y; ++y1)
+        for (int y1 = y; y1 < std::min(y + PACK_SIZE_Y, tile.top); ++y1)
         {
-          for (int x1 = x; x1 < x + PACK_SIZE_X; ++x1)
+          for (int x1 = x; x1 < std::min(x + PACK_SIZE_X, tile.right); ++x1)
           {
             (*thread->colors)[y1 * _width * 4 + x1 * 4] = r[(y1 - y) * PACK_SIZE_X + (x1 - x)];
             (*thread->colors)[y1 * _width * 4 + x1 * 4 + 1] = g[(y1 - y) * PACK_SIZE_X + (x1 - x)];
