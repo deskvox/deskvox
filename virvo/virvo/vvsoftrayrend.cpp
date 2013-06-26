@@ -582,9 +582,13 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
 
           dst = dst + mul(src, sub(1.0f, dst[3], active), active);
 
-          if (_earlyRayTermination && all(dst[3] > opacityThreshold))
+          if (_earlyRayTermination)
           {
-            break;
+            active = active && dst[3] <= opacityThreshold;
+            if (!any(active))
+            {
+              break;
+            }
           }
 
           t += dist;
