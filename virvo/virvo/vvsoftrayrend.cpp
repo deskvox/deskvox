@@ -182,6 +182,12 @@ inline Vec pixely(int y)
 
 struct Ray
 {
+  Ray(Vec3 const& ori, Vec3 const& dir)
+    : o(ori)
+    , d(dir)
+  {
+  }
+
   Vec3 o;
   Vec3 d;
 };
@@ -458,6 +464,8 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
   const virvo::Vec3 maxCorner = vd->objectCoords(maxVox);
   const AABB aabb(minCorner, maxCorner);
 
+  Vec3 size = vd->getSize();
+  Vec3 invsize = 1.0f / size;
   Vec3 size2 = vd->getSize() * 0.5f;
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
                                            vd->vox[1] * vd->vox[1] +
@@ -478,9 +486,8 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
       Vec4 d(u, v, 1.0f, 1.0f);
       d = thread->invViewMatrix * d;
 
-      Ray ray;
-      ray.o = Vec3(o[0] / o[3], o[1] / o[3], o[2] / o[3]);
-      ray.d = Vec3(d[0] / d[3], d[1] / d[3], d[2] / d[3]);
+      Ray ray(Vec3(o[0] / o[3], o[1] / o[3], o[2] / o[3]),
+              Vec3(d[0] / d[3], d[1] / d[3], d[2] / d[3]));
       ray.d = ray.d - ray.o;
       ray.d = fast::normalize(ray.d);
 
@@ -496,11 +503,11 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
         const Vec3 step = ray.d * dist;
         Vec4 dst(0.0f);
 
-        while (true)
+        while (any(active))
         {
-          Vec3 texcoord((pos[0] - vd->pos[0] + size2[0]) / (size2[0] * 2.0f),
-                        (-pos[1] - vd->pos[1] + size2[1]) / (size2[1] * 2.0f),
-                        (-pos[2] - vd->pos[2] + size2[2]) / (size2[2] * 2.0f));
+          Vec3 texcoord((pos[0] - vd->pos[0] + size2[0]) * invsize[0],
+                        (-pos[1] - vd->pos[1] + size2[1]) * invsize[1],
+                        (-pos[2] - vd->pos[2] + size2[2]) * invsize[2]);
           texcoord[0] = clamp(texcoord[0], Vec(0.0f), Vec(1.0f));
           texcoord[1] = clamp(texcoord[1], Vec(0.0f), Vec(1.0f));
           texcoord[2] = clamp(texcoord[2], Vec(0.0f), Vec(1.0f));
@@ -534,7 +541,7 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
               texcoordsi[i][2] = clamp<dim_t>(texcoordsi[i][2], 0, vd->vox[2] - 1);
 
               index_t idx = texcoordsi[i][2] * vd->vox[0] * vd->vox[1] + texcoordsi[i][1] * vd->vox[0] + texcoordsi[i][0];
-              samples[i] = volume(raw, idx) / 255.0f;
+              samples[i] = volume(raw, idx);
             }
 
             Vec3 tmp(vec_cast<Vec>(vec_cast<Vecs>(texcoordf[0])),
@@ -565,9 +572,10 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
             texcoordi[2] = clamp<dim_t>(texcoordi[2], 0, vd->vox[2] - 1);
 
             index_t idx = texcoordi[2] * vd->vox[0] * vd->vox[1] + texcoordi[1] * vd->vox[0] + texcoordi[0];
-            sample = volume(raw, idx) / 255.0f;
+            sample = volume(raw, idx);
           }
 
+          sample /= 255.0f;
           Vec4 src = rgba(&impl->rgbaTF, vec_cast<Vecs>(sample * static_cast<float>(getLUTSize())) * 4);
 
           if (_opacityCorrection)
@@ -585,46 +593,22 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
           if (_earlyRayTermination)
           {
             active = active && dst[3] <= opacityThreshold;
-            if (!any(active))
-            {
-              break;
-            }
           }
 
           t += dist;
           active = active && (t < tbfar);
-          if (!any(active))
-          {
-            break;
-          }
           pos += step;
         }
 
 #if VV_USE_SSE
-        CACHE_ALIGN float r[4];
-        CACHE_ALIGN float g[4];
-        CACHE_ALIGN float b[4];
-        CACHE_ALIGN float a[4];
-        store(dst.x, r);
-        store(dst.y, g);
-        store(dst.z, b);
-        store(dst.w, a);
-
-        for (int y1 = y; y1 < std::min(y + PACK_SIZE_Y, tile.top); ++y1)
-        {
-          for (int x1 = x; x1 < std::min(x + PACK_SIZE_X, tile.right); ++x1)
-          {
-            (*thread->colors)[y1 * _width * 4 + x1 * 4] = r[(y1 - y) * PACK_SIZE_X + (x1 - x)];
-            (*thread->colors)[y1 * _width * 4 + x1 * 4 + 1] = g[(y1 - y) * PACK_SIZE_X + (x1 - x)];
-            (*thread->colors)[y1 * _width * 4 + x1 * 4 + 2] = b[(y1 - y) * PACK_SIZE_X + (x1 - x)];
-            (*thread->colors)[y1 * _width * 4 + x1 * 4 + 3] = a[(y1 - y) * PACK_SIZE_X + (x1 - x)];
-          }
-        }
+        // transform to AoS for framebuffer write
+        dst = transpose(dst);
+        store(dst.x, &(*thread->colors)[y * _width * 4 + x * 4]);
+        store(dst.y, &(*thread->colors)[y * _width * 4 + (x + 1) * 4]);
+        store(dst.z, &(*thread->colors)[(y + 1) * _width * 4 + x * 4]);
+        store(dst.w, &(*thread->colors)[(y + 1) * _width * 4 + (x + 1) * 4]);
 #else
-        for (size_t c = 0; c < 4; ++c)
-        {
-          (*thread->colors)[y * _width * 4 + x * 4 + c] = dst[c];
-        }
+        memcpy(&(*thread->colors)[y * _width * 4 + x * 4], &dst[0], 4 * sizeof(float));
 #endif
       }
     }
