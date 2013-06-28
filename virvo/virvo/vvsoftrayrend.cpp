@@ -604,9 +604,18 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
         // transform to AoS for framebuffer write
         dst = transpose(dst);
         store(dst.x, &(*thread->colors)[y * _width * 4 + x * 4]);
-        store(dst.y, &(*thread->colors)[y * _width * 4 + (x + 1) * 4]);
-        store(dst.z, &(*thread->colors)[(y + 1) * _width * 4 + x * 4]);
-        store(dst.w, &(*thread->colors)[(y + 1) * _width * 4 + (x + 1) * 4]);
+        if (x + 1 < tile.right)
+        {
+          store(dst.y, &(*thread->colors)[y * _width * 4 + (x + 1) * 4]);
+        }
+        if (y + 1 < tile.top)
+        {
+          store(dst.z, &(*thread->colors)[(y + 1) * _width * 4 + x * 4]);
+        }
+        if (x + 1 < tile.right && y + 1 < tile.top)
+        {
+          store(dst.w, &(*thread->colors)[(y + 1) * _width * 4 + (x + 1) * 4]);
+        }
 #else
         memcpy(&(*thread->colors)[y * _width * 4 + x * 4], &dst[0], 4 * sizeof(float));
 #endif
