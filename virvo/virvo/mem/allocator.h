@@ -3,7 +3,9 @@
 #include <new>
 #include <stddef.h>
 
-#ifdef __GNUC__
+#ifdef __INTEL_COMPILER
+#include <malloc.h>
+#elif defined __GNUC__
 #include <mm_malloc.h>
 #else
 #include <malloc.h>
