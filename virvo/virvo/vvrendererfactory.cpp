@@ -67,7 +67,11 @@ static void __cpuid(int reg[4], int type)
 {
   __asm__ __volatile__
   (
+#ifdef __i386__
+   "xchgl %%ebx, %k1; cpuid; xchgl %%ebx, %k1": "=a" (reg[EAX]), "=&r" (reg[EBX]), "=c" (reg[ECX]), "=d" (reg[EDX]) : "a" (type)
+#else
     "cpuid": "=a" (reg[EAX]), "=b" (reg[EBX]), "=c" (reg[ECX]), "=d" (reg[EDX]) : "a" (type)
+#endif
   );
 }
 
