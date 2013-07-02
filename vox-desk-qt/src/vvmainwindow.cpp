@@ -287,7 +287,8 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   sc->setContext(Qt::ApplicationShortcut);
   connect(sc, SIGNAL(activated()), this, SLOT(close()));
 
-  // cannot be done in pref dialog ctor because signals/slots need to be connected first
+  // cannot be done in dialog ctors because signals/slots need to be connected first
+  _lightDialog->applySettings();
   _prefDialog->applySettings();
 
   statusBar()->showMessage(tr("Welcome to DeskVOX!"));

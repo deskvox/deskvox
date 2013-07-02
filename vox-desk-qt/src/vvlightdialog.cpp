@@ -33,6 +33,22 @@ vvLightDialog::vvLightDialog(QWidget* parent)
 {
   ui->setupUi(this);
 
+  connect(ui->enableBox, SIGNAL(toggled(bool)), this, SLOT(onEnableToggled(bool)));
+  connect(ui->showBox, SIGNAL(toggled(bool)), this, SIGNAL(showLightSource(bool)));
+  connect(ui->headlightBox, SIGNAL(toggled(bool)), this, SLOT(onEnableHeadlightToggled(bool)));
+  connect(ui->positionButton, SIGNAL(clicked()), this, SLOT(onEditPositionClicked()));
+  connect(ui->constSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onConstAttChanged(double)));
+  connect(ui->linearSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onLinearAttChanged(double)));
+  connect(ui->quadSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onQuadAttChanged(double)));
+}
+
+vvLightDialog::~vvLightDialog()
+{
+
+}
+
+void vvLightDialog::applySettings()
+{
   QSettings settings;
   if (settings.contains("canvas/lightattenuation"))
   {
@@ -42,20 +58,7 @@ vvLightDialog::vvLightDialog(QWidget* parent)
     ui->quadSpinBox->setValue(qatt.z());
   }
 
-  connect(ui->enableBox, SIGNAL(toggled(bool)), this, SLOT(onEnableToggled(bool)));
-  connect(ui->showBox, SIGNAL(toggled(bool)), this, SIGNAL(showLightSource(bool)));
-  connect(ui->headlightBox, SIGNAL(toggled(bool)), this, SIGNAL(enableHeadlight(bool)));
-  connect(ui->positionButton, SIGNAL(clicked()), this, SLOT(onEditPositionClicked()));
-  connect(ui->constSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onConstAttChanged(double)));
-  connect(ui->linearSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onLinearAttChanged(double)));
-  connect(ui->quadSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onQuadAttChanged(double)));
-
   ui->enableBox->setChecked(settings.value("canvas/lighting").toBool());
-}
-
-vvLightDialog::~vvLightDialog()
-{
-
 }
 
 void vvLightDialog::onEnableToggled(bool checked)
@@ -69,6 +72,13 @@ void vvLightDialog::onEnableToggled(bool checked)
   settings.setValue("canvas/lighting", checked);
 
   emit enabled(checked);
+}
+
+void vvLightDialog::onEnableHeadlightToggled(bool checked)
+{
+  QSettings settings;
+  settings.setValue("canvas/headlight", checked);
+  emit enableHeadlight(checked);
 }
 
 void vvLightDialog::onEditPositionClicked()

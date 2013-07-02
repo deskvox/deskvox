@@ -34,10 +34,13 @@ class vvLightDialog : public QDialog
 public:
   vvLightDialog(QWidget* parent = 0);
   ~vvLightDialog();
+
+  void applySettings();
 private:
   Ui_LightDialog* ui;
 private slots:
   void onEnableToggled(bool checked);
+  void onEnableHeadlightToggled(bool checked);
   void onEditPositionClicked();
   void onConstAttChanged(double value);
   void onLinearAttChanged(double value);
