@@ -147,7 +147,7 @@ bool vvSimpleServer::createRemoteServer(ThreadData* tData, vvTcpSocket* sock)
 
   tData->renderertype = tData->remoteServerType == vvRenderer::REMOTE_IMAGE
     ? "default"
-    : "rayrend";
+    : "rayrendcuda";
 
   return vvServer::createRemoteServer(tData, sock);
 }
