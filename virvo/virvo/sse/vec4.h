@@ -20,11 +20,11 @@ public:
   T z;
   T w;
 
-  inline base_vec4()
+  VV_FORCE_INLINE base_vec4()
   {
   }
 
-  inline base_vec4(T const& s)
+  VV_FORCE_INLINE base_vec4(T const& s)
     : x(s)
     , y(s)
     , z(s)
@@ -32,7 +32,7 @@ public:
   {
   }
 
-  inline base_vec4(T const& x, T const& y, T const& z, T const& w)
+  VV_FORCE_INLINE base_vec4(T const& x, T const& y, T const& z, T const& w)
     : x(x)
     , y(y)
     , z(z)
@@ -42,7 +42,7 @@ public:
 
   /*! \brief  construct from aligned float[4]
    */
-  inline base_vec4(T const v[4])
+  VV_FORCE_INLINE base_vec4(T const v[4])
     : x(v[0])
     , y(v[1])
     , z(v[2])
@@ -53,7 +53,7 @@ public:
   /*! \brief  construct from virvo vector
    */
   template <typename U>
-  inline base_vec4(vvBaseVector4<U> const& v)
+  VV_FORCE_INLINE base_vec4(vvBaseVector4<U> const& v)
     : x(v[0])
     , y(v[1])
     , z(v[2])
@@ -61,7 +61,7 @@ public:
   {
   }
 
-  inline T& operator[](size_t i)
+  VV_FORCE_INLINE T& operator[](size_t i)
   {
     if (i == 0)
     {
@@ -82,7 +82,7 @@ public:
     assert(0);
   }
 
-  inline const T& operator[](size_t i) const
+  VV_FORCE_INLINE const T& operator[](size_t i) const
   {
     if (i == 0)
     {
@@ -108,7 +108,7 @@ typedef base_vec4<Veci> Vec4i;
 typedef base_vec4<Vec>  Vec4;
 
 template <typename T>
-inline base_vec4<T> transpose(base_vec4<T> const& v)
+VV_FORCE_INLINE base_vec4<T> transpose(base_vec4<T> const& v)
 {
   base_vec4<T> result = v;
 
@@ -128,82 +128,82 @@ inline base_vec4<T> transpose(base_vec4<T> const& v)
 /* operators */
 
 template <typename T>
-inline base_vec4<T> operator-(base_vec4<T> const& v)
+VV_FORCE_INLINE base_vec4<T> operator-(base_vec4<T> const& v)
 {
   return base_vec4<T>(-v.x, -v.y, -v.z, -v.w);
 }
 
 template <typename T>
-inline base_vec4<T> operator+(base_vec4<T> const& u, base_vec4<T> const& v)
+VV_FORCE_INLINE base_vec4<T> operator+(base_vec4<T> const& u, base_vec4<T> const& v)
 {
   return base_vec4<T>(u.x + v.x, u.y + v.y, u.z + v.z, u.w + v.w);
 }
 
 template <typename T>
-inline base_vec4<T> operator-(base_vec4<T> const& u, base_vec4<T> const& v)
+VV_FORCE_INLINE base_vec4<T> operator-(base_vec4<T> const& u, base_vec4<T> const& v)
 {
   return base_vec4<T>(u.x - v.x, u.y - v.y, u.z - v.z, u.w - v.w);
 }
 
 template <typename T>
-inline base_vec4<T> operator*(base_vec4<T> const& u, base_vec4<T> const& v)
+VV_FORCE_INLINE base_vec4<T> operator*(base_vec4<T> const& u, base_vec4<T> const& v)
 {
   return base_vec4<T>(u.x * v.x, u.y * v.y, u.z * v.z, u.w * v.w);
 }
 
-inline Vec4 operator/(Vec4 const& u, Vec4 const& v)
+VV_FORCE_INLINE Vec4 operator/(Vec4 const& u, Vec4 const& v)
 {
   return Vec4(u.x / v.x, u.y / v.y, u.z / v.z, u.w / v.w);
 }
 
 template <typename T>
-inline base_vec4<T> operator+(base_vec4<T> const& v, T const& s)
+VV_FORCE_INLINE base_vec4<T> operator+(base_vec4<T> const& v, T const& s)
 {
   return base_vec4<T>(v.x + s, v.y + s, v.z + s, v.w + s);
 }
 
 template <typename T>
-inline base_vec4<T> operator-(base_vec4<T> const& v, T const& s)
+VV_FORCE_INLINE base_vec4<T> operator-(base_vec4<T> const& v, T const& s)
 {
   return base_vec4<T>(v.x - s, v.y - s, v.z - s, v.w - s);
 }
 
 template <typename T>
-inline base_vec4<T> operator*(base_vec4<T> const& v, T const& s)
+VV_FORCE_INLINE base_vec4<T> operator*(base_vec4<T> const& v, T const& s)
 {
   return base_vec4<T>(v.x * s, v.y * s, v.z * s, v.w * s);
 }
 
-inline Vec4 operator/(Vec4 const& v, Vec const& s)
+VV_FORCE_INLINE Vec4 operator/(Vec4 const& v, Vec const& s)
 {
   return Vec4(v.x / s, v.y / s, v.z / s, v.w / s);
 }
 
 template <typename T>
-inline base_vec4<T> operator+(T const& s, base_vec4<T> const& v)
+VV_FORCE_INLINE base_vec4<T> operator+(T const& s, base_vec4<T> const& v)
 {
   return base_vec4<T>(s + v.x, s + v.y, s + v.z, s + v.w);
 }
 
 template <typename T>
-inline base_vec4<T> operator-(T const& s, base_vec4<T> const& v)
+VV_FORCE_INLINE base_vec4<T> operator-(T const& s, base_vec4<T> const& v)
 {
   return base_vec4<T>(s - v.x, s - v.y, s - v.z, s - v.w);
 }
 
 template <typename T>
-inline base_vec4<T> operator*(T const& s, base_vec4<T> const& v)
+VV_FORCE_INLINE base_vec4<T> operator*(T const& s, base_vec4<T> const& v)
 {
   return base_vec4<T>(s * v.x, s * v.y, s * v.z, s * v.w);
 }
 
-inline Vec4 operator/(Vec const& s, Vec4 const& v)
+VV_FORCE_INLINE Vec4 operator/(Vec const& s, Vec4 const& v)
 {
   return Vec4(s / v.x, s / v.y, s / v.z, s / v.w);
 }
 
 template <typename T>
-inline std::ostream& operator<<(std::ostream& out, base_vec4<T> const& v)
+VV_FORCE_INLINE std::ostream& operator<<(std::ostream& out, base_vec4<T> const& v)
 {
   out << "x: " << v.x << "\n";
   out << "y: " << v.y << "\n";
@@ -215,79 +215,79 @@ inline std::ostream& operator<<(std::ostream& out, base_vec4<T> const& v)
 /* masked operators */
 
 template <typename T, typename M>
-inline base_vec4<T> neg(base_vec4<T> const& v, M const& mask)
+VV_FORCE_INLINE base_vec4<T> neg(base_vec4<T> const& v, M const& mask)
 {
   return base_vec4<T>(neg(v.x, mask), neg(v.y, mask), neg(v.z, mask), neg(v.w, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> add(base_vec4<T> const& u, base_vec4<T> const& v, M const& mask)
+VV_FORCE_INLINE base_vec4<T> add(base_vec4<T> const& u, base_vec4<T> const& v, M const& mask)
 {
   return base_vec4<T>(add(u.x, v.x, mask), add(u.y, v.y, mask), add(u.z, v.z, mask), add(u.w, v.w, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> sub(base_vec4<T> const& u, base_vec4<T> const& v, M const& mask)
+VV_FORCE_INLINE base_vec4<T> sub(base_vec4<T> const& u, base_vec4<T> const& v, M const& mask)
 {
   return base_vec4<T>(sub(u.x, v.x, mask), sub(u.y, v.y, mask), sub(u.z, v.z, mask), sub(u.w, v.w, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> mul(base_vec4<T> const& u, base_vec4<T> const& v, M const& mask)
+VV_FORCE_INLINE base_vec4<T> mul(base_vec4<T> const& u, base_vec4<T> const& v, M const& mask)
 {
   return base_vec4<T>(mul(u.x, v.x, mask), mul(u.y, v.y, mask), mul(u.z, v.z, mask), mul(u.w, v.w, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> div(base_vec4<T> const& u, base_vec4<T> const& v, M const& mask)
+VV_FORCE_INLINE base_vec4<T> div(base_vec4<T> const& u, base_vec4<T> const& v, M const& mask)
 {
   return base_vec4<T>(div(u.x, v.x, mask), div(u.y, v.y, mask), div(u.z, v.z, mask), div(u.w, v.w, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> add(base_vec4<T> const& v, T const& s, M const& mask)
+VV_FORCE_INLINE base_vec4<T> add(base_vec4<T> const& v, T const& s, M const& mask)
 {
   return base_vec4<T>(add(v.x, s, mask), add(v.y, s, mask), add(v.z, s, mask), add(v.w, s, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> sub(base_vec4<T> const& v, T const& s, M const& mask)
+VV_FORCE_INLINE base_vec4<T> sub(base_vec4<T> const& v, T const& s, M const& mask)
 {
   return base_vec4<T>(sub(v.x, s, mask), sub(v.y, s, mask), sub(v.z, s, mask), sub(v.w, s, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> mul(base_vec4<T> const& v, T const& s, M const& mask)
+VV_FORCE_INLINE base_vec4<T> mul(base_vec4<T> const& v, T const& s, M const& mask)
 {
   return base_vec4<T>(mul(v.x, s, mask), mul(v.y, s, mask), mul(v.z, s, mask), mul(v.w, s, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> div(base_vec4<T> const& v, T const& s, M const& mask)
+VV_FORCE_INLINE base_vec4<T> div(base_vec4<T> const& v, T const& s, M const& mask)
 {
   return base_vec4<T>(div(v.x, s, mask), div(v.y, s, mask), div(v.z, s, mask), div(v.w, s, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> add(T const& s, base_vec4<T> const& v, M const& mask)
+VV_FORCE_INLINE base_vec4<T> add(T const& s, base_vec4<T> const& v, M const& mask)
 {
   return base_vec4<T>(add(s, v.x, mask), add(s, v.y, mask), add(s, v.z, mask), add(s, v.w, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> sub(T const& s, base_vec4<T> const& v, M const& mask)
+VV_FORCE_INLINE base_vec4<T> sub(T const& s, base_vec4<T> const& v, M const& mask)
 {
   return base_vec4<T>(sub(s, v.x, mask), sub(s, v.y, mask), sub(s, v.z, mask), sub(s, v.w, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> mul(T const& s, base_vec4<T> const& v, M const& mask)
+VV_FORCE_INLINE base_vec4<T> mul(T const& s, base_vec4<T> const& v, M const& mask)
 {
   return base_vec4<T>(mul(s, v.x, mask), mul(s, v.y, mask), mul(s, v.z, mask), mul(s, v.w, mask));
 }
 
 template <typename T, typename M>
-inline base_vec4<T> div(T const& s, base_vec4<T> const& v, M const& mask)
+VV_FORCE_INLINE base_vec4<T> div(T const& s, base_vec4<T> const& v, M const& mask)
 {
   return base_vec4<T>(div(s, v.x, mask), div(s, v.y, mask), div(s, v.z, mask), div(s, v.w, mask));
 }
@@ -295,7 +295,7 @@ inline base_vec4<T> div(T const& s, base_vec4<T> const& v, M const& mask)
 /* vector math functions */
 
 template <typename T>
-inline T dot(base_vec4<T> const& u, base_vec4<T> const& v)
+VV_FORCE_INLINE T dot(base_vec4<T> const& u, base_vec4<T> const& v)
 {
   return u.x * v.x + u.y * v.y + u.z * v.z + u.w * v.w;
 }

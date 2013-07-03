@@ -54,7 +54,6 @@ private:
   Thread* _firstThread;
   std::vector<Thread*> _threads;
 
-  size_t getLUTSize() const;
   std::vector<Tile> makeTiles(int w, int h);
   void renderTile(const Tile& tile, const Thread* thread);
 
