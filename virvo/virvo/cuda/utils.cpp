@@ -31,6 +31,10 @@
 #include <cstring>
 #include <iostream>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <cuda_gl_interop.h>
 
 #ifdef USE_X11

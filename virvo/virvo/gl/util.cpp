@@ -21,11 +21,12 @@
 
 #include "util.h"
 
-#include <GL/glew.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
+#include <GL/glew.h>
 
 #include <stdio.h>
 #include <stdarg.h>
