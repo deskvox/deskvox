@@ -24,6 +24,7 @@
 #include "array.h"
 
 #include <assert.h>
+#include <vvexport.h>
 
 
 namespace virvo
@@ -32,7 +33,7 @@ namespace cuda
 {
 
 
-    class Texture
+    class VIRVOEXPORT Texture
     {
         textureReference* texPtr;
 

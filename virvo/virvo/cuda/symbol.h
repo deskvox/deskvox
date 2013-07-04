@@ -24,6 +24,7 @@
 #include <cuda_runtime_api.h>
 
 #include "debug.h"
+#include "vvexport.h"
 
 
 //
@@ -48,7 +49,7 @@ namespace cuda
 
 
     template<class T>
-    class Symbol
+    class VIRVOEXPORT Symbol
     {
 #if CUDART_VERSION < 5000
         typedef const char* SymbolPointerType;

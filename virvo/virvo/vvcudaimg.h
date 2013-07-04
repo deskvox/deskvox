@@ -36,7 +36,9 @@
 
 #endif
 
-class vvCudaImg : public vvSoftImg
+#include "vvconfig.h"
+
+class VIRVOEXPORT vvCudaImg : public vvSoftImg
 {
 public:
   enum Mode

@@ -26,7 +26,7 @@
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
 #endif
-
+#include "vvexport.h"
 
 #ifdef HAVE_CUDA
 
@@ -63,7 +63,7 @@ namespace cuda
 
     // Prints a description of the given error to stderr,
     // then - depending on the configuration - breaks into the debugger or exits the application.
-    void debug_report_error(cudaError_t err, char const* file, int line);
+    void VIRVOEXPORT debug_report_error(cudaError_t err, char const* file, int line);
 
 
     // Checks if err equals cudaSuccess, if so returns immediately, otherwise calls debug_report_error.
