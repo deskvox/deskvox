@@ -20,7 +20,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
 add_definitions(-DHAVE_CONFIG_H)
 add_definitions(-DVV_USE_SSE=1)
 
-deskvox_add_library(rayrendsse
+deskvox_add_library(rayrendsse2
   ${RAYREND_HEADERS}
   ${RAYREND_SOURCES}
 )

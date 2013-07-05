@@ -108,7 +108,7 @@ void init()
   rendererAliasMap["8"] = "volpack";
   rendererAliasMap["9"] = "rayrendcuda";
   rendererAliasMap["10"] = "rayrendfpu";
-  rendererAliasMap["11"] = "rayrendsse";
+  rendererAliasMap["11"] = "rayrendsse2";
   rendererAliasMap["12"] = "rayrendsse4_1";
   rendererAliasMap["13"] = "ibr";
   rendererAliasMap["14"] = "image";
@@ -156,7 +156,7 @@ void init()
   rendererTypeMap["rayrend"] = vvRenderer::RAYREND;
   rendererTypeMap["rayrendcuda"] = vvRenderer::RAYREND;
   rendererTypeMap["rayrendfpu"] = vvRenderer::RAYREND;
-  rendererTypeMap["rayrendsse"] = vvRenderer::RAYREND;
+  rendererTypeMap["rayrendsse2"] = vvRenderer::RAYREND;
   rendererTypeMap["rayrendsse4_1"] = vvRenderer::RAYREND;
   rendererTypeMap["volpack"] = vvRenderer::VOLPACK;
   rendererTypeMap["image"] = vvRenderer::REMOTE_IMAGE;
@@ -167,7 +167,7 @@ void init()
   // ray rend architectures
   rayRendArchs.push_back("cuda");
   rayRendArchs.push_back("fpu");
-  rayRendArchs.push_back("sse");
+  rayRendArchs.push_back("sse2");
   rayRendArchs.push_back("sse4_1");
 }
 
@@ -311,7 +311,7 @@ struct ParsedOptions
   vvRendererFactory::Options options;
   std::string voxeltype;
   std::vector<vvTcpSocket*> sockets;
-  std::string arch; // fpu|sse|sse4_1|best (default)
+  std::string arch; // fpu|sse2|sse4_1|best (default)
   std::vector<std::string> filenames;
   size_t bricks;
   std::vector<std::string> displays;
