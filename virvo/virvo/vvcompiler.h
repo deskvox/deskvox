@@ -29,6 +29,8 @@
 
 #if defined(__clang__)
 #define VV_CXX_CLANG    (100 * __clang_major__ + __clang_minor__)
+#elif defined(__INTEL_COMPILER) && defined(__GNUC__)
+#define VV_CXX_INTEL    (100 * __GNUC__ + __GNUC_MINOR__)
 #elif defined(__GNUC__)
 #define VV_CXX_GCC      (100 * __GNUC__ + __GNUC_MINOR__)
 #elif defined(_MSC_VER)
@@ -37,6 +39,9 @@
 
 #ifndef VV_CXX_CLANG
 #define VV_CXX_CLANG 0
+#endif
+#ifndef VV_CXX_INTEL
+#define VV_CXX_INTEL 0
 #endif
 #ifndef VV_CXX_GCC
 #define VV_CXX_GCC 0

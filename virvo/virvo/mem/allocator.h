@@ -1,11 +1,11 @@
 #pragma once
 
+#include "../vvcompiler.h"
+
 #include <new>
 #include <stddef.h>
 
-#ifdef __INTEL_COMPILER
-#include <malloc.h>
-#elif defined __GNUC__
+#if VV_CXX_GCC || VV_CXX_CLANG
 #include <mm_malloc.h>
 #else
 #include <malloc.h>

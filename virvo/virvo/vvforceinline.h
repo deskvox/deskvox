@@ -1,10 +1,12 @@
 #pragma once
 
-#ifdef __INTEL_COMPILER
+#include "vvcompiler.h"
+
+#if VV_CXX_INTEL
 #define VV_FORCE_INLINE __forceinline
-#elif defined(__GNUC__)
+#elif VV_CXX_GCC
 #define VV_FORCE_INLINE __attribute((always_inline))
-#elif defined(_MSC_VER)
+#elif VV_CXX_MSVC
 #define VV_FORCE_INLINE __forceinline
 #else
 #define VV_FORCE_INLINE inline
