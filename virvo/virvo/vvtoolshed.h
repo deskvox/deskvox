@@ -290,6 +290,9 @@ inline T clamp(const T a, const T left, const T right)
 
 std::vector<std::string> entryList(std::string const& dir);
 
+bool startsWith(std::string const& string, std::string const& prefix);
+bool endsWith(std::string const& string, std::string const& suffix);
+
 } // toolshed
 } // virvo
 #endif

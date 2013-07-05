@@ -2805,7 +2805,7 @@ std::vector<std::string> virvo::toolshed::entryList(std::string const& dir)
 #ifdef _WIN32
     std::string path = dir;
 
-    if (path.back() != '\\')
+    if (!endsWith(path, "\\*"))
         path += "\\*";
 
     WIN32_FIND_DATAA findData = {0};
@@ -2833,6 +2833,28 @@ std::vector<std::string> virvo::toolshed::entryList(std::string const& dir)
 #endif
   }
   return result;
+}
+
+bool virvo::toolshed::startsWith(std::string const& string, std::string const& prefix)
+{
+    if (string.size() < prefix.size())
+        return false;
+
+    if (prefix.empty())
+        return true;
+
+    return memcmp(string.c_str(), prefix.c_str(), prefix.size()) == 0;
+}
+
+bool virvo::toolshed::endsWith(std::string const& string, std::string const& suffix)
+{
+    if (string.size() < suffix.size())
+        return false;
+
+    if (suffix.empty())
+        return true;
+
+    return memcmp(string.c_str() + (string.size() - suffix.size()), suffix.c_str(), suffix.size()) == 0;
 }
 
 //----------------------------------------------------------------------------
