@@ -220,7 +220,11 @@ static bool archSupported(std::string const& arch)
 std::string findRayRendPlugin(std::string const& plugindir, std::string const& arch)
 {
   std::stringstream namestr;
+#ifdef _WIN32
+  namestr << "rayrend";
+#else
   namestr << "librayrend";
+#endif
   if (arch == "best")
   {
     // TODO: determine *best available*
