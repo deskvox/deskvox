@@ -16,7 +16,11 @@ set(RAYREND_SOURCES
   ../../vvsoftrayrend.cpp
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+if(MSVC)
+  add_definitions(-D__SSE4_1__)
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+endif()
 add_definitions(-DHAVE_CONFIG_H)
 add_definitions(-DVV_USE_SSE=1)
 
