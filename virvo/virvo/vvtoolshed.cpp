@@ -2803,7 +2803,25 @@ std::vector<std::string> virvo::toolshed::entryList(std::string const& dir)
   if (vvToolshed::isDirectory(dir.c_str()))
   {
 #ifdef _WIN32
+    std::string path = dir;
 
+    if (path.back() != '\\')
+        path += "\\*";
+
+    WIN32_FIND_DATAA findData = {0};
+
+    HANDLE hFindFile = FindFirstFileA(path.c_str(), &findData);
+
+    if (hFindFile != INVALID_HANDLE_VALUE)
+    {
+        result.push_back(findData.cFileName);
+
+        while (FindNextFileA(hFindFile, &findData)) {
+            result.push_back(findData.cFileName);
+        }
+
+        FindClose(hFindFile);
+    }
 #else
     DIR* dirp = opendir(dir.c_str());
     struct dirent* dp;
