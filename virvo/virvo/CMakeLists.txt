@@ -78,6 +78,15 @@ set(VIRVO_HEADERS
 
   mem/align.h
   mem/allocator.h
+  
+  sse/aabb.h
+  sse/cast.h
+  sse/matrix.h
+  sse/sse.h
+  sse/vec.h
+  sse/vec3.h
+  sse/vec4.h
+  sse/veci.h
 
   vvbonjour/vvbonjour.h
   vvbonjour/vvbonjourbrowser.h
