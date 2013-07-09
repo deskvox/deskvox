@@ -732,7 +732,7 @@ void vvRenderer::setCurrentFrame(size_t index)
 /** Get last render time.
   @return time to render last image
 */
-float vvRenderer::getLastRenderTime()
+float vvRenderer::getLastRenderTime() const
 {
   vvDebugMsg::msg(3, "vvRenderer::getLastRenderTime()");
   return _lastRenderTime;
@@ -743,7 +743,7 @@ float vvRenderer::getLastRenderTime()
   Arrows are of length 1.0<BR>
   Colors: x-axis=red, y-axis=green, z-axis=blue
 */
-void vvRenderer::renderCoordinates()
+void vvRenderer::renderCoordinates() const
 {
   vvMatrix mv;                                    // current modelview matrix
   vvVector3 column;                               // column vector
@@ -830,7 +830,7 @@ void vvRenderer::renderCoordinates()
 
 //----------------------------------------------------------------------------
 /// Render transfer function palette at left border.
-void vvRenderer::renderPalette()
+void vvRenderer::renderPalette() const
 {
   const int WIDTH = 10;                           // palette width [pixels]
   GLfloat viewport[4];                            // OpenGL viewport information (position and size)
@@ -896,7 +896,7 @@ void vvRenderer::renderPalette()
 
 //----------------------------------------------------------------------------
 /// Display rendering quality.
-void vvRenderer::renderQualityDisplay()
+void vvRenderer::renderQualityDisplay() const
 {
   vvPrintGL* printGL = new vvPrintGL();
   vvVector4 clearColor = vvGLTools::queryClearColor();
@@ -908,7 +908,7 @@ void vvRenderer::renderQualityDisplay()
 
 //----------------------------------------------------------------------------
 /// Display frame rate.
-void vvRenderer::renderFPSDisplay()
+void vvRenderer::renderFPSDisplay() const
 {
   float fps = getLastRenderTime();
   if (fps > 0.0f) fps = 1.0f / fps;

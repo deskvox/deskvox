@@ -263,13 +263,13 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual size_t getNumFrames();
     virtual size_t getCurrentFrame();
     virtual void  setCurrentFrame(size_t);
-    virtual float getLastRenderTime();
+    virtual float getLastRenderTime() const;
     virtual void  setPosition(const vvVector3& p);
     virtual void  getPosition(vvVector3*);
-    virtual void  renderCoordinates();
-    virtual void  renderPalette();
-    virtual void  renderQualityDisplay();
-    virtual void  renderFPSDisplay();
+    virtual void  renderCoordinates() const;
+    virtual void  renderPalette() const;
+    virtual void  renderQualityDisplay() const;
+    virtual void  renderFPSDisplay() const;
     virtual void  drawBoundingBox(const vvVector3&, const vvVector3&, const vvColor&) const;
     virtual void  drawPlanePerimeter(const vvVector3&, const vvVector3&, const vvVector3&, const vvVector3&, const vvColor&) const;
     virtual bool  instantClassification() const;
