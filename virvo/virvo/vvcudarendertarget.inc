@@ -269,19 +269,12 @@ bool PixelUnpackBufferRT::DownloadColorBufferImpl(unsigned char* buffer, size_t 
     assert( bufferSize >= bytes );
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, impl->Buffer.get());
-
-    // Map the buffer into CPU memory
-    void* ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_ONLY);
-
-    // Copy the buffer
-    memcpy( &buffer[0], ptr, bytes );
-
-    // Unmap
-    glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
-
+    glGetBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, bytes, buffer);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     return GL_NO_ERROR == VV_GET_GL_ERROR();
+
+    static_cast<void>(bufferSize); // unused
 }
 
 
@@ -291,6 +284,8 @@ bool PixelUnpackBufferRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t 
 
     memcpy(&buffer[0], impl->DepthBuffer.hostPtr(), impl->DepthBuffer.size() );
     return true;
+
+    static_cast<void>(bufferSize); // unused
 }
 
 
@@ -432,6 +427,8 @@ bool DeviceBufferRT::DownloadColorBufferImpl(unsigned char* buffer, size_t buffe
 
     memcpy(&buffer[0], impl->ColorBuffer.hostPtr(), impl->ColorBuffer.size());
     return true;
+
+    static_cast<void>(bufferSize); // unused
 }
 
 
@@ -441,4 +438,6 @@ bool DeviceBufferRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t buffe
 
     memcpy(&buffer[0], impl->DepthBuffer.hostPtr(), impl->DepthBuffer.size());
     return true;
+
+    static_cast<void>(bufferSize); // unused
 }
