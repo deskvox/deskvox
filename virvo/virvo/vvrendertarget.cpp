@@ -356,33 +356,18 @@ bool FramebufferObjectRT::DisplayColorBufferImpl() const
 
 bool FramebufferObjectRT::DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    assert( bufferSize >= width() * height() * (colorBits() / 8) );
+    gl::Format f = gl::mapFormat(this->ColorBufferFormat);
 
-    GLenum format = 0;
-    switch (colorBits() / 8)
-    {
-    case 1:
-        format = GL_RED;
-        break;
-    case 2:
-        format = GL_RG;
-        break;
-    case 3:
-        format = GL_RGB;
-        break;
-    case 4:
-        format = GL_RGBA;
-        break;
-    }
-
-    assert( format != 0 );
+    assert( bufferSize >= width() * height() * f.sizeInBytes );
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, Framebuffer.get());
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-    glReadPixels(0, 0, width(), height(), format, GL_UNSIGNED_BYTE, &buffer[0]);
+    glReadPixels(0, 0, width(), height(), f.format, f.type, &buffer[0]);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
     return true;
+
+    static_cast<void>(bufferSize); // unused
 }
 
 
@@ -412,6 +397,8 @@ bool FramebufferObjectRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
     return true;
+
+    static_cast<void>(bufferSize); // unused
 }
 
 
@@ -482,6 +469,8 @@ bool HostBufferRT::DownloadColorBufferImpl(unsigned char* buffer, size_t bufferS
 
     memcpy(&buffer[0], &ColorBuffer[0], bytes);
     return true;
+
+    static_cast<void>(bufferSize); // unused
 }
 
 
@@ -493,4 +482,6 @@ bool HostBufferRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferS
 
     memcpy(&buffer[0], &DepthBuffer[0], bytes);
     return true;
+
+    static_cast<void>(bufferSize); // unused
 }
