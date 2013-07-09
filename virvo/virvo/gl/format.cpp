@@ -37,51 +37,51 @@ using gl::Format;
 const Format kFormats[] =
 {
     // Unspecified
-    Format(0,0,0,0),
+    Format(0, 0, 0, 0, false, false, false),
 
     // Color formats
-    Format(GL_R8,                   GL_RED,                 GL_UNSIGNED_BYTE,                   1),
-    Format(GL_RG8,                  GL_RG,                  GL_UNSIGNED_BYTE,                   2),
-    Format(GL_RGB8,                 GL_RGB,                 GL_UNSIGNED_BYTE,                   3),
-    Format(GL_RGBA8,                GL_RGBA,                GL_UNSIGNED_BYTE,                   4),
-    Format(GL_R16F,                 GL_RED,                 GL_HALF_FLOAT,                      2),
-    Format(GL_RG16F,                GL_RG,                  GL_HALF_FLOAT,                      4),
-    Format(GL_RGB16F,               GL_RGB,                 GL_HALF_FLOAT,                      6),
-    Format(GL_RGBA16F,              GL_RGBA,                GL_HALF_FLOAT,                      8),
-    Format(GL_R32F,                 GL_RED,                 GL_FLOAT,                           4),
-    Format(GL_RG32F,                GL_RG,                  GL_FLOAT,                           8),
-    Format(GL_RGB32F,               GL_RGB,                 GL_FLOAT,                          12),
-    Format(GL_RGBA32F,              GL_RGBA,                GL_FLOAT,                          16),
-    Format(GL_R16I,                 GL_RED_INTEGER,         GL_INT,                             2),
-    Format(GL_RG16I,                GL_RG_INTEGER,          GL_INT,                             4),
-    Format(GL_RGB16I,               GL_RGB_INTEGER,         GL_INT,                             6),
-    Format(GL_RGBA16I,              GL_RGBA_INTEGER,        GL_INT,                             8),
-    Format(GL_R32I,                 GL_RED_INTEGER,         GL_INT,                             4),
-    Format(GL_RG32I,                GL_RG_INTEGER,          GL_INT,                             8),
-    Format(GL_RGB32I,               GL_RGB_INTEGER,         GL_INT,                            12),
-    Format(GL_RGBA32I,              GL_RGBA_INTEGER,        GL_INT,                            16),
-    Format(GL_R16UI,                GL_RED_INTEGER,         GL_UNSIGNED_INT,                    2),
-    Format(GL_RG16UI,               GL_RG_INTEGER,          GL_UNSIGNED_INT,                    4),
-    Format(GL_RGB16UI,              GL_RGB_INTEGER,         GL_UNSIGNED_INT,                    6),
-    Format(GL_RGBA16UI,             GL_RGBA_INTEGER,        GL_UNSIGNED_INT,                    8),
-    Format(GL_R32UI,                GL_RED_INTEGER,         GL_UNSIGNED_INT,                    4),
-    Format(GL_RG32UI,               GL_RG_INTEGER,          GL_UNSIGNED_INT,                    8),
-    Format(GL_RGB32UI,              GL_RGB_INTEGER,         GL_UNSIGNED_INT,                   12),
-    Format(GL_RGBA32UI,             GL_RGBA_INTEGER,        GL_UNSIGNED_INT,                   16),
-    Format(GL_RGB8,                 GL_BGR,                 GL_UNSIGNED_BYTE,                   3),
-    Format(GL_RGBA8,                GL_BGRA,                GL_UNSIGNED_BYTE,                   4),
-    Format(GL_RGB10_A2,             GL_RGBA,                GL_UNSIGNED_INT_10_10_10_2,         4),
-    Format(GL_R11F_G11F_B10F,       GL_RGB,                 GL_UNSIGNED_INT_10F_11F_11F_REV,    4),
+    Format(GL_R8,                   GL_RED,                 GL_UNSIGNED_BYTE,                   1, true, false, false), // EFormat_R8
+    Format(GL_RG8,                  GL_RG,                  GL_UNSIGNED_BYTE,                   2, true, false, false), // EFormat_RG8
+    Format(GL_RGB8,                 GL_RGB,                 GL_UNSIGNED_BYTE,                   3, true, false, false), // EFormat_RGB8
+    Format(GL_RGBA8,                GL_RGBA,                GL_UNSIGNED_BYTE,                   4, true, false, false), // EFormat_RGBA8
+    Format(GL_R16F,                 GL_RED,                 GL_HALF_FLOAT,                      2, true, false, false), // EFormat_R16F
+    Format(GL_RG16F,                GL_RG,                  GL_HALF_FLOAT,                      4, true, false, false), // EFormat_RG16F
+    Format(GL_RGB16F,               GL_RGB,                 GL_HALF_FLOAT,                      6, true, false, false), // EFormat_RGB16F
+    Format(GL_RGBA16F,              GL_RGBA,                GL_HALF_FLOAT,                      8, true, false, false), // EFormat_RGBA16F
+    Format(GL_R32F,                 GL_RED,                 GL_FLOAT,                           4, true, false, false), // EFormat_R32F
+    Format(GL_RG32F,                GL_RG,                  GL_FLOAT,                           8, true, false, false), // EFormat_RG32F
+    Format(GL_RGB32F,               GL_RGB,                 GL_FLOAT,                          12, true, false, false), // EFormat_RGB32F
+    Format(GL_RGBA32F,              GL_RGBA,                GL_FLOAT,                          16, true, false, false), // EFormat_RGBA32F
+    Format(GL_R16I,                 GL_RED_INTEGER,         GL_INT,                             2, true, false, false), // EFormat_R16I
+    Format(GL_RG16I,                GL_RG_INTEGER,          GL_INT,                             4, true, false, false), // EFormat_RG16I
+    Format(GL_RGB16I,               GL_RGB_INTEGER,         GL_INT,                             6, true, false, false), // EFormat_RGB16I
+    Format(GL_RGBA16I,              GL_RGBA_INTEGER,        GL_INT,                             8, true, false, false), // EFormat_RGBA16I
+    Format(GL_R32I,                 GL_RED_INTEGER,         GL_INT,                             4, true, false, false), // EFormat_R32I
+    Format(GL_RG32I,                GL_RG_INTEGER,          GL_INT,                             8, true, false, false), // EFormat_RG32I
+    Format(GL_RGB32I,               GL_RGB_INTEGER,         GL_INT,                            12, true, false, false), // EFormat_RGB32I
+    Format(GL_RGBA32I,              GL_RGBA_INTEGER,        GL_INT,                            16, true, false, false), // EFormat_RGBA32I
+    Format(GL_R16UI,                GL_RED_INTEGER,         GL_UNSIGNED_INT,                    2, true, false, false), // EFormat_R16UI
+    Format(GL_RG16UI,               GL_RG_INTEGER,          GL_UNSIGNED_INT,                    4, true, false, false), // EFormat_RG16UI
+    Format(GL_RGB16UI,              GL_RGB_INTEGER,         GL_UNSIGNED_INT,                    6, true, false, false), // EFormat_RGB16UI
+    Format(GL_RGBA16UI,             GL_RGBA_INTEGER,        GL_UNSIGNED_INT,                    8, true, false, false), // EFormat_RGBA16UI
+    Format(GL_R32UI,                GL_RED_INTEGER,         GL_UNSIGNED_INT,                    4, true, false, false), // EFormat_R32UI
+    Format(GL_RG32UI,               GL_RG_INTEGER,          GL_UNSIGNED_INT,                    8, true, false, false), // EFormat_RG32UI
+    Format(GL_RGB32UI,              GL_RGB_INTEGER,         GL_UNSIGNED_INT,                   12, true, false, false), // EFormat_RGB32UI
+    Format(GL_RGBA32UI,             GL_RGBA_INTEGER,        GL_UNSIGNED_INT,                   16, true, false, false), // EFormat_RGBA32UI
+    Format(GL_RGB8,                 GL_BGR,                 GL_UNSIGNED_BYTE,                   3, true, false, false), // EFormat_BGR8
+    Format(GL_RGBA8,                GL_BGRA,                GL_UNSIGNED_BYTE,                   4, true, false, false), // EFormat_BGRA8
+    Format(GL_RGB10_A2,             GL_RGBA,                GL_UNSIGNED_INT_10_10_10_2,         4, true, false, false), // EFormat_RGB10_A2
+    Format(GL_R11F_G11F_B10F,       GL_RGB,                 GL_UNSIGNED_INT_10F_11F_11F_REV,    4, true, false, false), // EFormat_R11F_G11F_B10F
 
     // Depth formats
-    Format(GL_DEPTH_COMPONENT16,    GL_DEPTH_COMPONENT,     GL_UNSIGNED_INT,                    2),
-    Format(GL_DEPTH_COMPONENT24,    GL_DEPTH_COMPONENT,     GL_UNSIGNED_INT,                    3),
-    Format(GL_DEPTH_COMPONENT32,    GL_DEPTH_COMPONENT,     GL_UNSIGNED_INT,                    4),
-    Format(GL_DEPTH_COMPONENT32F,   GL_DEPTH_COMPONENT,     GL_FLOAT,                           4),
+    Format(GL_DEPTH_COMPONENT16,    GL_DEPTH_COMPONENT,     GL_UNSIGNED_INT,                    2, false, true, false), // EFormat_DEPTH_COMPONENT16
+    Format(GL_DEPTH_COMPONENT24,    GL_DEPTH_COMPONENT,     GL_UNSIGNED_INT,                    3, false, true, false), // EFormat_DEPTH_COMPONENT24
+    Format(GL_DEPTH_COMPONENT32,    GL_DEPTH_COMPONENT,     GL_UNSIGNED_INT,                    4, false, true, false), // EFormat_DEPTH_COMPONENT32
+    Format(GL_DEPTH_COMPONENT32F,   GL_DEPTH_COMPONENT,     GL_FLOAT,                           4, false, true, false), // EFormat_DEPTH_COMPONENT32F
 
     // Combined depth-stencil formats
-    Format(GL_DEPTH24_STENCIL8,     GL_DEPTH_STENCIL,       GL_UNSIGNED_INT_24_8,               4),
-    Format(GL_DEPTH32F_STENCIL8,    GL_DEPTH_STENCIL,       GL_FLOAT_32_UNSIGNED_INT_24_8_REV,  8),
+    Format(GL_DEPTH24_STENCIL8,     GL_DEPTH_STENCIL,       GL_UNSIGNED_INT_24_8,               4, false, true, true), // EFormat_DEPTH24_STENCIL8
+    Format(GL_DEPTH32F_STENCIL8,    GL_DEPTH_STENCIL,       GL_FLOAT_32_UNSIGNED_INT_24_8_REV,  8, false, true, true), // EFormat_DEPTH32F_STENCIL8
 };
 
 const size_t kNumFormats = sizeof(kFormats) / sizeof(kFormats[0]);
@@ -98,17 +98,18 @@ Format gl::mapFormat(EFormat f)
 
 bool gl::isColorFormat(EFormat f)
 {
-    return EFormat_R8 <= f && f <= EFormat_R11F_G11F_B10F;
+    return mapFormat(f).isColor;
 }
 
 
 bool gl::isDepthFormat(EFormat f)
 {
-    return EFormat_DEPTH_COMPONENT16 <= f && f <= EFormat_DEPTH32F_STENCIL8;
+    return mapFormat(f).isDepth;
 }
 
 
 bool gl::isDepthStencilFormat(EFormat f)
 {
-    return EFormat_DEPTH24_STENCIL8 <= f && f <= EFormat_DEPTH32F_STENCIL8;
+    Format fmt = mapFormat(f);
+    return fmt.isDepth && fmt.isStencil;
 }

@@ -25,8 +25,6 @@
 
 #include "vvexport.h"
 
-#include "types.h"
-
 
 namespace virvo
 {
@@ -34,7 +32,7 @@ namespace gl
 {
 
 
-    enum /*class*/ EFormat
+    enum EFormat
     {
         EFormat_Unspecified = 0,
 
@@ -87,16 +85,22 @@ namespace gl
     // Internal GL representation of the texture formats above
     struct Format
     {
-        GLenum internalFormat;
-        GLenum format;
-        GLenum type;
+        unsigned internalFormat;
+        unsigned format;
+        unsigned type;
         unsigned sizeInBytes;
+        bool isColor;
+        bool isDepth;
+        bool isStencil;
 
-        Format(GLenum internalFormat, GLenum format, GLenum type, unsigned sizeInBytes)
+        Format(unsigned internalFormat, unsigned format, unsigned type, unsigned sizeInBytes, bool isColor, bool isDepth, bool isStencil)
             : internalFormat(internalFormat)
             , format(format)
             , type(type)
             , sizeInBytes(sizeInBytes)
+            , isColor(isColor)
+            , isDepth(isDepth)
+            , isStencil(isStencil)
         {
         }
     };
