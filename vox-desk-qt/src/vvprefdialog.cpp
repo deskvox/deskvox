@@ -685,6 +685,8 @@ void vvPrefDialog::onConnectClicked()
       ::sock = NULL;
     }
 
+    ui->connectButton->setText(tr("Connect"));
+
     emitRenderer();
   }
 }
