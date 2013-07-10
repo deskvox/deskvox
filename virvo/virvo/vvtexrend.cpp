@@ -2334,7 +2334,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     maxDist = farthest.distance(normClipPoint);
     numSlices = (size_t)(maxDist / delta.length()) + 1;
     temp = delta;
-    temp.scale((float)(1 - numSlices));
+    temp.scale((float)(1 - static_cast<ptrdiff_t>(numSlices)));
     farthest = normClipPoint;
     farthest.add(temp);
     if (_clipSingleSlice)
@@ -2574,7 +2574,7 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
     const float maxDist = farthest.distance(normClipPoint);
     numSlices = size_t(maxDist / delta.length()) + 1;
     temp = delta;
-    temp.scale((float)(1 - numSlices));
+    temp.scale((float)(1 - static_cast<ptrdiff_t>(numSlices)));
     farthest = normClipPoint;
     farthest.add(temp);
     if (_clipSingleSlice)
