@@ -23,7 +23,7 @@
 #define VV_GL_HANDLE_H
 
 
-#include "vvexport.h"
+#include "../vvexport.h"
 #include "types.h"
 
 

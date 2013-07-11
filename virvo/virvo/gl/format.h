@@ -23,7 +23,7 @@
 #define VV_GL_FORMAT_H
 
 
-#include "vvexport.h"
+#include "../vvexport.h"
 
 
 namespace virvo
