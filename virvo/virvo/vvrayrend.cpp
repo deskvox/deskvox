@@ -43,6 +43,7 @@
 #include "private/vvlog.h"
 
 namespace cu = virvo::cuda;
+namespace gl = virvo::gl;
 
 
 // in vvrayrend.cu
@@ -107,14 +108,12 @@ private:
   size_t numVolumeArrays;
 public:
   cu::Array transferFuncArray;
-  cu::AutoPointer<void> depth;
   cudaChannelFormatDesc channelDesc;
 
   Impl()
     : volumeArrays(0)
     , numVolumeArrays(0)
     , transferFuncArray()
-    , depth()
     , channelDesc()
   {
   }
@@ -154,12 +153,14 @@ public:
 
 
 vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
-  : vvIbrRenderer(vd, renderState)
+  : BaseType(vd, renderState)
   , impl(new Impl)
 {
   vvDebugMsg::msg(1, "vvRayRend::vvRayRend()");
 
   glewInit();
+
+  setRenderTarget(virvo::PixelUnpackBufferRT::create(32, 8));
 
   bool ok;
 
@@ -171,17 +172,6 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   _twoPassIbr = (_ibrMode == VV_REL_THRESHOLD || _ibrMode == VV_EN_EX_MEAN);
 
   _rgbaTF = NULL;
-
-  intImg = new vvCudaImg(0, 0);
-  allocIbrArrays(0, 0);
-
-  const vvCudaImg::Mode mode = dynamic_cast<vvCudaImg*>(intImg)->getMode();
-  if (mode == vvCudaImg::TEXTURE)
-  {
-    setWarpMode(CUDATEXTURE);
-  }
-
-  factorViewMatrix();
 
   initVolumeTexture();
 
@@ -227,7 +217,7 @@ void vvRayRend::updateTransferFunction()
   cTFTexture.bind(impl->transferFuncArray, channelDesc);
 }
 
-void vvRayRend::compositeVolume(int, int)
+void vvRayRend::renderVolumeGL()
 {
   vvDebugMsg::msg(3, "vvRayRend::compositeVolume()");
 
@@ -236,22 +226,6 @@ void vvRayRend::compositeVolume(int, int)
     std::cerr << "vvRayRend::compositeVolume() aborted because of previous CUDA-Error" << std::endl;
     return;
   }
-  vvDebugMsg::msg(1, "vvRayRend::compositeVolume()");
-
-  const virvo::Viewport vp = vvGLTools::getViewport();
-
-  allocIbrArrays(vp[2], vp[3]);
-  size_t w = vvToolshed::getTextureSize(vp[2]);
-  size_t h = vvToolshed::getTextureSize(vp[3]);
-  intImg->setSize(w, h);
-
-  vvCudaImg* cudaImg = dynamic_cast<vvCudaImg*>(intImg);
-  if (cudaImg == NULL)
-  {
-    vvDebugMsg::msg(0, "vvRayRend::compositeVolume() - cannot map CUDA image");
-    return;
-  }
-  cudaImg->map();
 
   const vvVector3 size(vd->getSize());
 
@@ -383,33 +357,44 @@ void vvRayRend::compositeVolume(int, int)
   kernelParams.mipMode              = getParameter(vvRenderState::VV_MIP_MODE);
   kernelParams.useIbr               = getParameter(vvRenderState::VV_USE_IBR);
 
+  virvo::RenderTarget* rt = getRenderTarget();
+
+  assert(rt);
+
+  void* deviceColor = rt->deviceColor();
+  void* deviceDepth = rt->deviceDepth();
+
+  assert(deviceColor);
+
   CallRayRendKernel(kernelParams,
-                    cudaImg->getDeviceImg(), vp[2], vp[3],
-                    backgroundColor, intImg->width,diagonalVoxels / (float)numSlices,
-                    volPos, volSize * 0.5f,
-                    probePos, probeSize * 0.5f,
-                    Lpos, V,
-                    constAtt, linearAtt, quadAtt,
-                    kernelParams.clipMode == 1, kernelParams.clipMode == 2, false,
-                    center, radius * radius,
-                    pnormal, pdist, impl->depth.get(), _depthPrecision,
+                    reinterpret_cast<uchar4*>(deviceColor),
+                    rt->width(),
+                    rt->height(),
+                    backgroundColor,
+                    rt->width(),
+                    diagonalVoxels / (float)numSlices,
+                    volPos,
+                    volSize * 0.5f,
+                    probePos,
+                    probeSize * 0.5f,
+                    Lpos,
+                    V,
+                    constAtt,
+                    linearAtt,
+                    quadAtt,
+                    kernelParams.clipMode == 1,
+                    kernelParams.clipMode == 2,
+                    false,
+                    center,
+                    radius * radius,
+                    pnormal,
+                    pdist,
+                    deviceDepth,
+                    rt->depthBits(),
                     make_float2(_depthRange[0], _depthRange[1]),
-                    getIbrMode(_ibrMode), _twoPassIbr);
-
-  cudaImg->unmap();
-
-  // For bounding box, tf palette display, etc.
-  vvRenderer::renderVolumeGL();
-}
-
-void vvRayRend::getColorBuffer(uchar** colors) const
-{
-  cudaMemcpy(*colors, static_cast<vvCudaImg*>(intImg)->getDeviceImg(), intImg->width*intImg->height*4, cudaMemcpyDeviceToHost);
-}
-
-void vvRayRend::getDepthBuffer(uchar** depths) const
-{
-  cudaMemcpy(*depths, impl->depth.get(), intImg->width*intImg->height*_depthPrecision/8, cudaMemcpyDeviceToHost);
+                    getIbrMode(_ibrMode),
+                    _twoPassIbr
+                    );
 }
 
 //----------------------------------------------------------------------------
@@ -431,7 +416,7 @@ void vvRayRend::setParameter(ParameterType param, const vvParam& newValue)
     }
     break;
   default:
-    vvIbrRenderer::setParameter(param, newValue);
+    BaseType::setParameter(param, newValue);
     break;
   }
 }
@@ -447,7 +432,7 @@ vvParam vvRayRend::getParameter(ParameterType param) const
   case vvRenderer::VV_SLICEINT:
     return _interpolation;
   default:
-    return vvIbrRenderer::getParameter(param);
+    return BaseType::getParameter(param);
   }
 }
 
@@ -558,45 +543,6 @@ void vvRayRend::initVolumeTexture()
         ok = cVolTexture16.bind(impl->getVolumeArray(0), impl->channelDesc);
     }
   }
-}
-
-void vvRayRend::factorViewMatrix()
-{
-  vvDebugMsg::msg(3, "vvRayRend::factorViewMatrix()");
-
-  virvo::Viewport vp = vvGLTools::getViewport();
-  size_t w = vvToolshed::getTextureSize(vp[2]);
-  size_t h = vvToolshed::getTextureSize(vp[3]);
-
-  if (intImg->width != static_cast<int>(w) || intImg->height != static_cast<int>(h))
-  {
-    intImg->setSize(w, h);
-    allocIbrArrays(w, h);
-  }
-
-  iwWarp.identity();
-  iwWarp.translate(-1.0f, -1.0f, 0.0f);
-  iwWarp.scaleLocal(1.0f / (static_cast<float>(vp[2]) * 0.5f), 1.0f / (static_cast<float>(vp[3]) * 0.5f), 0.0f);
-}
-
-void vvRayRend::findAxisRepresentations()
-{
-  // Overwrite default behavior.
-}
-
-bool vvRayRend::allocIbrArrays(size_t w, size_t h)
-{
-  vvDebugMsg::msg(3, "vvRayRend::allocIbrArrays()");
-
-  size_t size = w * h * _depthPrecision/8;
-
-  // deallocate the current and allocate new buffer
-  if (!impl->depth.allocate(size))
-    return false;
-
-  cudaMemset(impl->depth.get(), 0, size);
-
-  return true;
 }
 
 vvRenderer* createRayRend(vvVolDesc* vd, vvRenderState const& rs)

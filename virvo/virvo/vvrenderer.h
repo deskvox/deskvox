@@ -176,6 +176,8 @@ protected:
   bool _interpolation;                          ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
   bool _earlyRayTermination;                    ///< terminate ray marching when enough alpha was gathered
   bool _preIntegration;                         ///< true = try to use pre-integrated rendering (planar 3d textures)
+  int _depthPrecision;                          ///< number of bits in depth buffer for image based rendering
+  vvVector2 _depthRange;
 public:
   vvRenderState();
 };

@@ -91,6 +91,8 @@ vvRenderState::vvRenderState()
   , _interpolation(true)
   , _earlyRayTermination(true)
   , _preIntegration(false)
+  , _depthPrecision(8)
+  , _depthRange(0.0f, 0.0f)
 {
   
 }
@@ -241,6 +243,12 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_TERMINATEEARLY:
     _earlyRayTermination = value;
     break;
+  case VV_IBR_DEPTH_PREC:
+    _depthPrecision = value;
+    break;
+  case VV_IBR_DEPTH_RANGE:
+    _depthRange = value;
+    break;
   default:
     break;
   }
@@ -338,6 +346,10 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _preIntegration;
   case VV_TERMINATEEARLY:
     return _earlyRayTermination;
+  case VV_IBR_DEPTH_PREC:
+    return _depthPrecision;
+  case VV_IBR_DEPTH_RANGE:
+    return _depthRange;
   default:
     return vvParam();
   }

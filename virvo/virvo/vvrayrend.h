@@ -27,7 +27,8 @@
 
 #ifdef HAVE_CUDA
 
-#include "vvibrrenderer.h"
+#include "vvcudarendertarget.h"
+#include "vvrenderer.h"
 
 #include <memory>
 
@@ -40,21 +41,25 @@ class vvVolDesc;
   the following location:
   http://developer.download.nvidia.com/compute/cuda/sdk/website/samples.html
  */
-class VIRVOEXPORT vvRayRend : public vvIbrRenderer
+class vvRayRend : public vvRenderer
 {
+  typedef vvRenderer BaseType;
+
 public:
-  vvRayRend(vvVolDesc* vd, vvRenderState renderState);
-  ~vvRayRend();
+  VVAPI vvRayRend(vvVolDesc* vd, vvRenderState renderState);
+  VVAPI ~vvRayRend();
 
-  size_t getLUTSize() const;
-  void updateTransferFunction();
-  void compositeVolume(int w = -1, int h = -1);
-  void getColorBuffer(uchar** colors) const;
-  void getDepthBuffer(uchar** depths) const;
-  virtual void setParameter(ParameterType param, const vvParam& newValue);
-  virtual vvParam getParameter(ParameterType param) const;
+  VVAPI size_t getLUTSize() const;
+  VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
+  VVAPI virtual void renderVolumeGL() VV_OVERRIDE;
+  VVAPI virtual void setParameter(ParameterType param, const vvParam& newValue) VV_OVERRIDE;
+  VVAPI virtual vvParam getParameter(ParameterType param) const VV_OVERRIDE;
 
-  bool getEarlyRayTermination() const;
+  VVAPI bool getEarlyRayTermination() const;
+  VVAPI bool getIllumination() const;
+  VVAPI bool getInterpolation() const;
+  VVAPI bool getOpacityCorrection() const;
+
 private:
   float* _rgbaTF;
 
@@ -62,9 +67,6 @@ private:
   bool _twoPassIbr;                 ///< Perform an alpha-gathering pass before the actual render pass
 
   void initVolumeTexture();
-  void factorViewMatrix();
-  void findAxisRepresentations();
-  bool allocIbrArrays(size_t w, size_t h);
 
   struct Impl;
   std::auto_ptr<Impl> impl;
