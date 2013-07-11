@@ -29,6 +29,8 @@
 
 #include <virvo/private/vvgltools.h>
 
+#include <virvo/gl/util.h>
+
 #include <QSettings>
 #include <QTimer>
 #include <QVector3D>
@@ -37,128 +39,7 @@
 
 using vox::vvObjView;
 
-namespace
-{
-void updateStencilBuffer(int w, int h, vox::StereoMode mode)
-{
-  static const GLubyte patternlines[] =
-  {
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0x00
-  };
-
-  static const GLubyte patternchecker[] =
-  {
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-    0xAA, 0xAA, 0xAA, 0xAA,
-    0x55, 0x55, 0x55, 0x55,
-  };
-
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
-
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_SCISSOR_TEST);
-  glDisable(GL_LIGHTING);
-
-  glViewport(0, 0, w, h);
-  
-  glClearStencil(0);
-  glClear(GL_STENCIL_BUFFER_BIT);
-
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-
-  glEnable(GL_POLYGON_STIPPLE);
-
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-  switch (mode)
-  {
-  case vox::InterlacedLines:
-    glPolygonStipple(patternlines);
-    break;
-  case vox::InterlacedCheckerboard:
-    glPolygonStipple(patternchecker);
-    break;
-  default:
-    break;
-  }
-
-  glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-  glDepthMask(GL_FALSE);
-
-  glEnable(GL_STENCIL_TEST);
-  glStencilMask(0xFFFFFFFF);
-  glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-  glStencilFunc(GL_ALWAYS, 1, 0xFFFFFFFF);
-
-  glRectf(0.0f, 0.0f, 1.0f, 1.0f);
-
-  glPopAttrib(); 
-}
-}
+namespace gl = virvo::gl;
 
 struct vvCanvas::Impl
 {
@@ -327,17 +208,19 @@ void vvCanvas::paintGL()
 {
   vvDebugMsg::msg(3, "vvCanvas::paintGL()");
 
-  GLuint status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-  if (status != GL_FRAMEBUFFER_COMPLETE_EXT)
-  {
+  if (!_renderer)
     return;
-  }
 
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  bool isInterlacedLines = this->_stereoMode == vox::InterlacedLines;
+  bool isInterlacedCheck = this->_stereoMode == vox::InterlacedCheckerboard;
 
-  if (_renderer == NULL)
+  if (isInterlacedLines || isInterlacedCheck)
   {
-    return;
+    if (this->_updateStencilBuffer)
+    {
+      gl::renderInterlacedStereoStencilBuffer(isInterlacedLines);
+      this->_updateStencilBuffer = false;
+    }
   }
 
   if (_lighting)
@@ -363,114 +246,34 @@ void vvCanvas::paintGL()
   }
 
   glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 0.0f);
+  glClearDepth(1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (_stereoMode == vox::Mono)
+  GLint viewport[4] = {0};
+
+  glGetIntegerv(GL_VIEWPORT, &viewport[0]);
+
+#if 0
+  int w = viewport[2];
+  int h = viewport[3];
+#else
+  int w = viewport[2] / 8;
+  int h = viewport[3] / 8;
+#endif
+
+  unsigned clearMask = virvo::CLEAR_COLOR | virvo::CLEAR_DEPTH;
+
+  if (this->_stereoMode == vox::Mono)
   {
-    if (_doubleBuffering)
-    {
-      glDrawBuffer(GL_BACK);
-    }
-    else
-    {
-      glDrawBuffer(GL_FRONT);
-    }
-
-    glEnable(GL_DEPTH_TEST);
-
-    glMatrixMode(GL_MODELVIEW);
-    _ov.setModelviewMatrix(vvObjView::CENTER);
-
-    render();
+    render(w, h, vvObjView::CENTER, clearMask);
   }
-  else if (_stereoMode == vox::InterlacedLines || _stereoMode == vox::InterlacedCheckerboard)
+  else
   {
-    if (_updateStencilBuffer)
-    {
-      glDrawBuffer(GL_BACK);
-      ::updateStencilBuffer(width(), height(), _stereoMode);
-      updateProjection();
-
-      _updateStencilBuffer = false;
-    }
-
-    std::vector<vvObjView::EyeType> eyes;
-    eyes.push_back(vvObjView::LEFT_EYE);
-    eyes.push_back(vvObjView::RIGHT_EYE);
-
-    for (std::vector<vvObjView::EyeType>::const_iterator it = eyes.begin();
-         it != eyes.end(); ++it)
-    {
-      glEnable(GL_DEPTH_TEST);
-
-      glEnable(GL_STENCIL_TEST);
-      GLint ref = _swapEyes ? *it == vvObjView::LEFT_EYE : *it == vvObjView::RIGHT_EYE;
-      glStencilFunc(GL_EQUAL, ref, 0xFF);
-
-      glMatrixMode(GL_MODELVIEW);
-      _ov.setModelviewMatrix(*it);
-
-      render();
-    }
+    // render left image
+    render(w, h, vvObjView::LEFT_EYE, clearMask);
+    // render right image
+    render(w, h, vvObjView::RIGHT_EYE, clearMask);
   }
-  else if (_stereoMode == vox::SideBySide)
-  {
-    std::vector<vvObjView::EyeType> eyes;
-    eyes.push_back(vvObjView::LEFT_EYE);
-    eyes.push_back(vvObjView::RIGHT_EYE);
-
-    _ov.setAspectRatio((float)width() / 2.0f / (float)height());
-    for (std::vector<vvObjView::EyeType>::const_iterator it = eyes.begin();
-         it != eyes.end(); ++it)
-    {
-      glMatrixMode(GL_MODELVIEW);
-      _ov.setModelviewMatrix(*it);
-
-      if ((*it == vvObjView::LEFT_EYE && !_swapEyes) || (*it == vvObjView::RIGHT_EYE && _swapEyes))
-      {
-        glViewport(0, 0, width() / 2, height());
-      }
-      else
-      {
-        glViewport(width() / 2, 0, width() / 2, height());
-      }
-
-      render();
-    }
-    glViewport(0, 0, width(), height());
-    _ov.setAspectRatio((float)width() / (float)height());
-  }
-  else if (_stereoMode == vox::RedCyan)
-  {
-    GLboolean cm[4];
-    glGetBooleanv(GL_COLOR_WRITEMASK, cm);
-
-    std::vector<vvObjView::EyeType> eyes;
-    eyes.push_back(vvObjView::LEFT_EYE);
-    eyes.push_back(vvObjView::RIGHT_EYE);
-
-    for (std::vector<vvObjView::EyeType>::const_iterator it = eyes.begin();
-         it != eyes.end(); ++it)
-    {
-      glMatrixMode(GL_MODELVIEW);
-      _ov.setModelviewMatrix(*it);
-
-      if ((*it == vvObjView::LEFT_EYE && !_swapEyes) || (*it == vvObjView::RIGHT_EYE && _swapEyes))
-      {
-        glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
-      }
-      else
-      {
-        glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_FALSE);
-      }
-
-      render();
-    }
-
-    glColorMask(cm[0], cm[1], cm[2], cm[3]);
-  }
-
-  glPopAttrib();
 }
 
 void vvCanvas::resizeGL(int w, int h)
@@ -682,32 +485,152 @@ void vvCanvas::setCurrentFrame(size_t frame)
   updateGL();
 }
 
-void vvCanvas::render()
+void vvCanvas::render(int w, int h, unsigned eye, unsigned clearMask)
 {
+  // Set projection matrix
+  updateProjection();
+  // Set model-view matrix
+  this->_ov.setModelviewMatrix(static_cast<vvObjView::EyeType>(eye));
+
+  // Prepare (stereo) rendering...
+  initRendering(eye);
+
+  // Resize the render target
+  if (!this->_renderer->resize(w, h))
+  {
+  }
+
+  // Start rendering
+  if (!this->_renderer->beginFrame(clearMask))
+  {
+  }
+
+  // Render opaque geometry into framebuffer
+  // this->_renderer->renderOpaqueGeometry();
+
   foreach (vvPlugin* plugin, _plugins)
   {
     if (plugin->isActive())
-    {
       plugin->prerender();
-    }
   }
 
-  _renderer->renderVolumeGL();
+  // Render the volume
+  this->_renderer->renderVolumeGL();
 
   foreach (vvPlugin* plugin, _plugins)
   {
     if (plugin->isActive())
-    {
       plugin->postrender();
-    }
   }
+
+  // Stop rendering
+  if (!this->_renderer->endFrame())
+  {
+  }
+
+  // Display the rendered image
+  finishRendering();
 
   foreach (vvInteractor* interactor, _interactors)
   {
     if (interactor->enabled() && interactor->visible())
-    {
       interactor->render();
-    }
+  }
+
+  // Render palette etc...
+  this->_renderer->renderHUD();
+}
+
+void vvCanvas::initRendering(unsigned eye)
+{
+  bool left = (eye == vvObjView::LEFT_EYE);
+
+  if (this->_swapEyes)
+    left = !left;
+
+  switch (this->_stereoMode)
+  {
+  case vox::Mono:
+    break;
+
+  case vox::InterlacedLines:
+  case vox::InterlacedCheckerboard:
+    initStereoInterlaced(left);
+    break;
+
+  case vox::RedCyan:
+    initStereoRedCyan(left);
+    break;
+
+  case vox::SideBySide:
+    initStereoSideBySide(left);
+    break;
+  }
+}
+
+void vvCanvas::initStereoInterlaced(bool left)
+{
+  assert( this->_stereoMode == vox::InterlacedLines || this->_stereoMode == vox::InterlacedCheckerboard );
+
+  glEnable(GL_STENCIL_TEST);
+  glStencilFunc(GL_EQUAL, left ? 0x01 : 0x00, 0xFFFFFFFF);
+}
+
+void vvCanvas::initStereoRedCyan(bool left)
+{
+  assert( this->_stereoMode == vox::RedCyan );
+
+  if (left)
+    glColorMask(1,0,0,0);
+  else
+    glColorMask(0,1,1,0);
+}
+
+void vvCanvas::initStereoSideBySide(bool left)
+{
+  assert( this->_stereoMode == vox::SideBySide );
+
+  int w = width();
+  int h = height();
+
+  if (left)
+  {
+    this->_ov.setAspectRatio((static_cast<float>(w / 2)) / static_cast<float>(h));
+    glViewport(0, 0, w / 2, h);
+  }
+  else
+  {
+    this->_ov.setAspectRatio((static_cast<float>(w - w / 2)) / static_cast<float>(h));
+    glViewport(w / 2, 0, w - w / 2, h);
+  }
+}
+
+void vvCanvas::finishRendering()
+{
+  // Blend the rendered volume into the current draw buffer
+  this->_renderer->present();
+
+  int w = width();
+  int h = height();
+
+  switch (this->_stereoMode)
+  {
+  case vox::Mono:
+    break;
+
+  case vox::InterlacedLines:
+  case vox::InterlacedCheckerboard:
+    glDisable(GL_STENCIL_TEST);
+    break;
+
+  case vox::RedCyan:
+    glColorMask(1,1,1,1);
+    break;
+
+  case vox::SideBySide:
+    this->_ov.setAspectRatio(static_cast<float>(w) / static_cast<float>(h));
+    glViewport(0, 0, w, h);
+    break;
   }
 }
 

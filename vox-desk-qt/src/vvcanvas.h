@@ -105,7 +105,17 @@ private:
   void createRenderer();
   void updateProjection();
   void setCurrentFrame(size_t frame);
-  void render();
+
+  void render(int w, int h, unsigned eye, unsigned clearMask);
+
+  void initRendering(unsigned eye);
+
+  void initStereoInterlaced(bool left);
+  void initStereoRedCyan(bool left);
+  void initStereoSideBySide(bool left);
+
+  void finishRendering();
+
 public slots:
   void setRenderer(const std::string& name, const vvRendererFactory::Options& options);
   void setParameter(vvParameters::ParameterType param, const vvParam& value);
