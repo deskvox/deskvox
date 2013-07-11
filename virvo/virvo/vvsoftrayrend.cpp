@@ -242,7 +242,7 @@ struct vvSoftRayRend::Thread
 
   vvSoftRayRend* renderer;
   Matrix invViewMatrix;
-  vecf* colors;
+  float* colors;
 
   pthread_barrier_t* barrier;
   pthread_mutex_t* mutex;
@@ -265,8 +265,6 @@ struct vvSoftRayRend::Impl
 vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvRenderer(vd, renderState)
   , impl(new Impl)
-  , _width(512)
-  , _height(512)
   , _firstThread(NULL)
 {
   vvDebugMsg::msg(1, "vvSoftRayRend::vvSoftRayRend()");
@@ -274,6 +272,8 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
 #ifdef HAVE_GLEW
   glewInit();
 #endif
+
+  setRenderTarget(virvo::HostBufferRT::create(32 * 4, 8));
 
   updateTransferFunction();
 
@@ -352,27 +352,27 @@ void vvSoftRayRend::renderVolumeGL()
   Matrix mv;
   Matrix pr;
 
-#ifdef HAVE_OPENGL
   mv = virvo::gltools::getModelViewMatrix();
   pr = virvo::gltools::getProjectionMatrix();
-  const virvo::Viewport viewport = vvGLTools::getViewport();
-  _width = viewport[2];
-  _height = viewport[3];
-#endif
+
+  virvo::RenderTarget* rt = getRenderTarget();
+
+  int w = rt->width();
+  int h = rt->height();
 
   Matrix invViewMatrix = mv;
   invViewMatrix = pr * invViewMatrix;
   invViewMatrix.invert();
 
-  std::vector<Tile> tiles = makeTiles(_width, _height);
+  std::vector<Tile> tiles = makeTiles(w, h);
 
-  vecf colors(_width * _height * 4);
+  float* colorBuffer = reinterpret_cast<float*>(rt->deviceColor());
 
   for (std::vector<Thread*>::const_iterator it = _threads.begin();
        it != _threads.end(); ++it)
   {
     (*it)->invViewMatrix = invViewMatrix;
-    (*it)->colors = &colors;
+    (*it)->colors = colorBuffer;
     (*it)->tiles = &tiles;
     (*it)->events.push(Thread::VV_RENDER);
   }
@@ -381,12 +381,6 @@ void vvSoftRayRend::renderVolumeGL()
   // threads render
 
   pthread_barrier_wait(_firstThread->barrier);
-#ifdef HAVE_OPENGL
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glWindowPos2i(0, 0);
-  glDrawPixels(_width, _height, GL_RGBA, GL_FLOAT, &colors[0]);
-#endif
 }
 
 void vvSoftRayRend::updateTransferFunction()
@@ -482,12 +476,14 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
 
   uint8_t* raw = vd->getRaw(vd->getCurrentFrame());
 
+  virvo::RenderTarget const* rt = getRenderTarget();
+
   for (int y = tile.bottom; y < tile.top; y += PACK_SIZE_Y)
   {
     for (int x = tile.left; x < tile.right; x += PACK_SIZE_X)
     {
-      const Vec u = (pixelx(x) / static_cast<float>(_width - 1)) * 2.0f - 1.0f;
-      const Vec v = (pixely(y) / static_cast<float>(_height - 1)) * 2.0f - 1.0f;
+      const Vec u = (pixelx(x) / static_cast<float>(rt->width() - 1)) * 2.0f - 1.0f;
+      const Vec v = (pixely(y) / static_cast<float>(rt->height() - 1)) * 2.0f - 1.0f;
 
       Vec4 o(u, v, -1.0f, 1.0f);
       o = thread->invViewMatrix * o;
@@ -650,21 +646,21 @@ void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* th
 #if VV_USE_SSE
         // transform to AoS for framebuffer write
         dst = transpose(dst);
-        store(dst.x, &(*thread->colors)[y * _width * 4 + x * 4]);
+        store(dst.x, &(thread->colors)[y * rt->width() * 4 + x * 4]);
         if (x + 1 < tile.right)
         {
-          store(dst.y, &(*thread->colors)[y * _width * 4 + (x + 1) * 4]);
+          store(dst.y, &(thread->colors)[y * rt->width() * 4 + (x + 1) * 4]);
         }
         if (y + 1 < tile.top)
         {
-          store(dst.z, &(*thread->colors)[(y + 1) * _width * 4 + x * 4]);
+          store(dst.z, &(thread->colors)[(y + 1) * rt->width() * 4 + x * 4]);
         }
         if (x + 1 < tile.right && y + 1 < tile.top)
         {
-          store(dst.w, &(*thread->colors)[(y + 1) * _width * 4 + (x + 1) * 4]);
+          store(dst.w, &(thread->colors)[(y + 1) * rt->width() * 4 + (x + 1) * 4]);
         }
 #else
-        memcpy(&(*thread->colors)[y * _width * 4 + x * 4], &dst[0], 4 * sizeof(float));
+        memcpy(&(thread->colors)[y * rt->width() * 4 + x * 4], &dst[0], 4 * sizeof(float));
 #endif
       }
     }

@@ -234,6 +234,7 @@ namespace virvo
     class HostBufferRT : public RenderTarget
     {
         HostBufferRT(unsigned ColorBits, unsigned DepthBits);
+
     public:
         typedef std::vector<unsigned char, mem::aligned_allocator<unsigned char, 16> > BufferType;
 

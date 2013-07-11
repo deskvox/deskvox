@@ -28,13 +28,13 @@
 class vvSoftRayRend : public vvRenderer
 {
 public:
-  vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState);
-  ~vvSoftRayRend();
+  VVAPI vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState);
+  VVAPI ~vvSoftRayRend();
 
-  void renderVolumeGL(); ///< TODO: rename, no OpenGL here
-  void updateTransferFunction();
-  void setParameter(ParameterType param, const vvParam& newValue);
-  vvParam getParameter(ParameterType param) const;
+  VVAPI virtual void renderVolumeGL() VV_OVERRIDE;
+  VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
+  VVAPI virtual void setParameter(ParameterType param, const vvParam& newValue) VV_OVERRIDE;
+  VVAPI virtual vvParam getParameter(ParameterType param) const VV_OVERRIDE;
 private:
   struct Thread;
   struct Tile 
@@ -47,9 +47,6 @@ private:
 
   struct Impl;
   Impl* impl;
-
-  int _width;
-  int _height;
 
   Thread* _firstThread;
   std::vector<Thread*> _threads;
