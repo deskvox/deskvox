@@ -30,6 +30,8 @@
 #include "gl/handle.h"
 #include "gl/format.h"
 
+#include "mem/allocator.h"
+
 
 class vvRenderer;
 
@@ -232,6 +234,8 @@ namespace virvo
     class HostBufferRT : public RenderTarget
     {
         HostBufferRT(unsigned ColorBits, unsigned DepthBits);
+    public:
+        typedef std::vector<unsigned char, mem::aligned_allocator<unsigned char, 16> > BufferType;
 
     public:
         // Construct a render target
@@ -278,9 +282,9 @@ namespace virvo
         // The precision of the depth buffer
         unsigned DepthBits;
         // The color buffer
-        std::vector<unsigned char> ColorBuffer;
+        BufferType ColorBuffer;
         // The depth buffer
-        std::vector<unsigned char> DepthBuffer;
+        BufferType DepthBuffer;
     };
 
 
