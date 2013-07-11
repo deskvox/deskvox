@@ -29,7 +29,6 @@
 #include "vvopengl.h"
 #include "vvbrick.h"
 
-class vvOffscreenBuffer;
 class vvShaderFactory;
 class vvShaderProgram;
 class vvVolDesc;
@@ -162,9 +161,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     IsectType _isectType;
     bool _proxyGeometryOnGpuSupported;            ///< indicate wether proxy geometry computation on gpu would work
     size_t _lastFrame;                            ///< last frame rendered
-
-    vvOffscreenBuffer* _renderTarget;             ///< offscreen buffer used for image downscaling
-                                                  ///< or an image creator making a screenshot
 
     vvShaderFactory* _shaderFactory;              ///< Factory for shader-creation
     vvShaderProgram* _shader;                     ///< shader performing intersection test on gpu

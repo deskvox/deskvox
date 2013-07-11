@@ -64,8 +64,42 @@
 
 using namespace std;
 
+namespace gl = virvo::gl;
+
 //----------------------------------------------------------------------------
 const int vvTexRend::NUM_PIXEL_SHADERS = 13;
+
+static virvo::BufferPrecision mapBitsToBufferPrecision(int bits)
+{
+    switch (bits)
+    {
+    case 8:
+        return virvo::Byte;
+    case 16:
+        return virvo::Short;
+    case 32:
+        return virvo::Float;
+    default:
+        assert(!"unknown bit size");
+        return virvo::Byte;
+    }
+}
+
+static gl::EFormat mapBufferPrecisionToFormat(virvo::BufferPrecision bp)
+{
+    switch (bp)
+    {
+    case virvo::Byte:
+        return gl::EFormat_RGBA8;
+    case virvo::Short:
+        return gl::EFormat_RGBA16F;
+    case virvo::Float:
+        return gl::EFormat_RGBA32F;
+    default:
+        assert(!"unknown format");
+        return gl::EFormat_Unspecified;
+    }
+}
 
 //----------------------------------------------------------------------------
 /** Constructor.
@@ -79,11 +113,13 @@ const int vvTexRend::NUM_PIXEL_SHADERS = 13;
 */
 vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom, VoxelType vox)
   : vvRenderer(vd, renderState)
-  , _renderTarget(NULL)
 {
   vvDebugMsg::msg(1, "vvTexRend::vvTexRend()");
 
   glewInit();
+
+  if (this->_useOffscreenBuffer)
+    setRenderTarget( virvo::FramebufferObjectRT::create( mapBufferPrecisionToFormat(this->_imagePrecision), gl::EFormat_DEPTH24_STENCIL8) );
 
   if (vvDebugMsg::isActive(2))
   {
@@ -159,15 +195,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   usePreIntegration = false;
   textures = 0;
   _measureRenderTime = false;
-
-  if (_useOffscreenBuffer)
-  {
-    _renderTarget = new vvOffscreenBuffer(_imageScale, virvo::Byte);
-    if (_opaqueGeometryPresent)
-    {
-      _renderTarget->setPreserveDepthBuffer(true);
-    }
-  }
 
   _currentShader = vd->chan - 1;
   _previousShader = _currentShader;
@@ -286,8 +313,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 vvTexRend::~vvTexRend()
 {
   vvDebugMsg::msg(1, "vvTexRend::~vvTexRend()");
-
-  delete _renderTarget;
 
   freeClassificationStage(pixLUTName, fragProgName);
   removeTextures();
@@ -3324,10 +3349,6 @@ void vvTexRend::renderVolumeGL()
   const vvVector3 size(vd->getSize());            // volume size [world coordinates]
 
   // Draw boundary lines (must be done before setGLenvironment()):
-  if (_boundaries)
-  {
-    drawBoundingBox(size, vd->pos, _boundColor);
-  }
   if (_isROIUsed)
   {
     const vvVector3 probeSizeObj(size[0] * _roiSize[0], size[1] * _roiSize[1], size[2] * _roiSize[2]);
@@ -3338,17 +3359,7 @@ void vvTexRend::renderVolumeGL()
     drawPlanePerimeter(size, vd->pos, _clipPlanePoint, _clipPlaneNormal, _clipPlaneColor);
   }
 
-  if (_renderTarget != NULL)
-  {
-    _renderTarget->bind();
-  }
-
   setGLenvironment();
-
-  if (_renderTarget != NULL)
-  {
-    _renderTarget->clear();
-  }
 
   // Determine texture object extensions:
   for (size_t i = 0; i < 3; ++i)
@@ -3411,13 +3422,6 @@ void vvTexRend::renderVolumeGL()
   disableLUTMode();
   unsetGLenvironment();
   disableShader(_shader);
-  vvRenderer::renderVolumeGL();
-
-  if (_renderTarget != NULL)
-  {
-    _renderTarget->unbind();
-    _renderTarget->blit();
-  }
 
   if (_measureRenderTime)
   {
@@ -3747,82 +3751,46 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       updateTransferFunction();
       break;
     case vvRenderer::VV_OFFSCREENBUFFER:
-      _useOffscreenBuffer = newValue;
-      if (_useOffscreenBuffer)
+    case vvRenderer::VV_USE_OFFSCREEN_BUFFER:
       {
-        if (_renderTarget == NULL)
+        bool fbo = static_cast<bool>(newValue);
+
+        if (fbo != _useOffscreenBuffer)
         {
-          delete _renderTarget;
-          _renderTarget = new vvOffscreenBuffer(_imageScale, _imagePrecision);
-          if (_opaqueGeometryPresent)
-          {
-            _renderTarget->setPreserveDepthBuffer(true);
-          }
+          this->_useOffscreenBuffer = fbo;
+
+          if (fbo)
+            setRenderTarget( virvo::FramebufferObjectRT::create() );
+          else
+            setRenderTarget( virvo::NullRT::create() );
         }
-      }
-      else
-      {
-        delete _renderTarget;
-        _renderTarget = NULL;
       }
       break;
     case vvRenderer::VV_IMG_SCALE:
-      _imageScale = newValue;
-      if (_useOffscreenBuffer)
-      {
-        if (_renderTarget != NULL)
-        {
-          _renderTarget->setScale(_imageScale);
-        }
-        else
-        {
-          delete _renderTarget;
-          _renderTarget = new vvOffscreenBuffer(_imageScale, _imagePrecision);
-        }
-      }
+      //_imageScale = newValue;
       break;
     case vvRenderer::VV_IMG_PRECISION:
-      if (_useOffscreenBuffer)
+    case vvRenderer::VV_IMAGE_PRECISION:
       {
-        if (int(newValue) <= 8)
+        if (static_cast<int>(newValue) == 0)
         {
-          if (_renderTarget != NULL)
-          {
-            _renderTarget->setPrecision(virvo::Byte);
-          }
-          else
-          {
-            delete _renderTarget;
-            _renderTarget = new vvOffscreenBuffer(_imageScale, virvo::Byte);
-          }
-          break;
+            if (this->_useOffscreenBuffer)
+            {
+                this->_useOffscreenBuffer = false;
+                setRenderTarget( virvo::NullRT::create() );
+            }
+            break;
         }
-        else if ((int(newValue) > 8) && (int(newValue) < 32))
-        {
-          if (_renderTarget != NULL)
-          {
-            _renderTarget->setPrecision(virvo::Short);
-          }
-          else
-          {
-            delete _renderTarget;
-            _renderTarget = new vvOffscreenBuffer(_imageScale, virvo::Short);
-          }
+
+        virvo::BufferPrecision bp = mapBitsToBufferPrecision(static_cast<int>(newValue));
+
+        if (bp == this->_imagePrecision)
           break;
-        }
-        else if (int(newValue) >= 32)
-        {
-          if (_renderTarget != NULL)
-          {
-            _renderTarget->setPrecision(virvo::Float);
-          }
-          else
-          {
-            delete _renderTarget;
-            _renderTarget = new vvOffscreenBuffer(_imageScale, virvo::Float);
-          }
-          break;
-        }
+
+        this->_imagePrecision = bp;
+
+//      setRenderTarget( virvo::FramebufferObjectRT::create(mapBufferPrecisionToFormat(bp), gl::EFormat_DEPTH32F_STENCIL8) );
+        setRenderTarget( virvo::FramebufferObjectRT::create(mapBufferPrecisionToFormat(bp), gl::EFormat_DEPTH24_STENCIL8) );
       }
       break;
     case vvRenderer::VV_LIGHTING:
@@ -4526,16 +4494,7 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
 */
 float vvTexRend::calcQualityAndScaleImage()
 {
-  float quality = _quality;
-  if (quality < 1.0f)
-  {
-    if (_renderTarget != NULL)
-    {
-      quality = powf(quality, 1.0f/3.0f);
-      _renderTarget->setScale(quality);
-    }
-  }
-  return quality;
+  return _quality;
 }
 
 void vvTexRend::initVertArray(size_t numSlices)
