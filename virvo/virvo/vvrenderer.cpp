@@ -745,17 +745,17 @@ float vvRenderer::getLastRenderTime() const
 */
 void vvRenderer::renderCoordinates() const
 {
+  glPushAttrib(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_CURRENT_BIT | GL_TRANSFORM_BIT);
+
   vvMatrix mv;                                    // current modelview matrix
   vvVector3 column;                               // column vector
-  GLboolean glsLighting;                          // stores GL_LIGHTING
   GLint viewPort[4];                              // x, y, width, height of viewport
   float aspect;                                   // viewport aspect ratio
   float half[2];                                  // half viewport dimensions (x,y)
   int i;
 
-  // Save lighting mode:
-  glGetBooleanv(GL_LIGHTING, &glsLighting);
-  glDisable(GL_LIGHTING);
+  glDepthFunc(GL_ALWAYS);
+  glDepthMask(GL_FALSE);
 
   // Get viewport parameters:
   glGetIntegerv(GL_VIEWPORT, viewPort);
@@ -818,14 +818,12 @@ void vvRenderer::renderCoordinates() const
   glEnd();
 
   // Restore matrix states:
-  glPopMatrix();
   glMatrixMode(GL_PROJECTION);
   glPopMatrix();
   glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
 
-  // Restore lighting mode:
-  if (glsLighting==(uchar)true) glEnable(GL_LIGHTING);
-  else glDisable(GL_LIGHTING);
+  glPopAttrib();
 }
 
 //----------------------------------------------------------------------------
@@ -848,13 +846,16 @@ void vvRenderer::renderPalette() const
   glGetFloatv(GL_VIEWPORT, viewport);
   if (viewport[2]<=0 || viewport[3]<=0) return;   // safety first
 
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+  glDepthFunc(GL_ALWAYS);
+  glDepthMask(GL_FALSE);
+
   // Save matrix states:
   glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
   glLoadIdentity();
   glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f);
   glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
   glLoadIdentity();
 
   // Store raster position:
@@ -884,14 +885,8 @@ void vvRenderer::renderPalette() const
   printGL->print(-0.90f, -0.95f, "%-9.2f", vd->real[0]);
   delete printGL;
 
-  // Restore raster position:
-  glRasterPos4fv(glsRasterPos);
-
-  // Restore matrix states:
-  glPopMatrix();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
+  // Restore state:
+  glPopAttrib();
 }
 
 //----------------------------------------------------------------------------
