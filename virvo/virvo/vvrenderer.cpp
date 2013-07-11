@@ -352,6 +352,7 @@ vvParam vvRenderState::getParameter(ParameterType param) const
 */
 vvRenderer::vvRenderer(vvVolDesc* voldesc, vvRenderState renderState)
   : vvRenderState(renderState)
+  , renderTarget_(virvo::NullRT::create())
 {
   vvDebugMsg::msg(1, "vvRenderer::vvRenderer()");
   assert(voldesc!=NULL);
@@ -598,7 +599,15 @@ void vvRenderer::renderVolumeGL()
   vvDebugMsg::msg(3, "vvRenderer::renderVolumeGL()");
 
   vvGLTools::printGLError("enter vvRenderer::renderVolumeGL");
+}
 
+void vvRenderer::renderOpaqueGeometry() const
+{
+  renderBoundingBox();
+}
+
+void vvRenderer::renderHUD() const
+{
   // Draw legend if requested:
   if (_orientation) renderCoordinates();
   if (_palette) renderPalette();
@@ -1453,6 +1462,70 @@ float vvRenderer::getOpacityWeight(BasicColorType color)
     case VV_ALPHA: return _opacityWeights[3];
     default: assert(0); return -1.0f;
   }
+}
+
+bool vvRenderer::beginFrame(unsigned clearMask)
+{
+  if (renderTarget_->beginFrame(clearMask))
+  {
+    renderOpaqueGeometry();
+    return true;
+  }
+
+  return false;
+}
+
+bool vvRenderer::endFrame()
+{
+  return renderTarget_->endFrame();
+}
+
+bool vvRenderer::resize(int w, int h)
+{
+  return renderTarget_->resize(w, h);
+}
+
+bool vvRenderer::present() const
+{
+  return renderTarget_->displayColorBuffer();
+}
+
+void vvRenderer::renderFrame()
+{
+  GLint viewport[4] = {0};
+
+  glGetIntegerv(GL_VIEWPORT, &viewport[0]);
+
+  renderFrame(viewport[2], viewport[3]);
+}
+
+void vvRenderer::renderFrame(int w, int h)
+{
+  // TODO:
+  // Error handling...
+
+  resize(w, h);
+  beginFrame(virvo::CLEAR_COLOR | virvo::CLEAR_DEPTH);
+  renderVolumeGL();
+  endFrame();
+  present();
+
+  renderHUD();
+}
+
+void vvRenderer::renderBoundingBox() const
+{
+  if (!_boundaries)
+    return;
+
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
+
+  vvAABB bb(vvVector3(0.0f), vvVector3(0.0f));
+
+  vd->getBoundingBox(bb);
+
+  drawBoundingBox(bb.getMax() - bb.getMin(), vd->pos, _boundColor);
 }
 
 //============================================================================

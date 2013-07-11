@@ -24,6 +24,9 @@
 #include "vvoffscreenbuffer.h"
 #include "vvparam.h"
 #include "vvinttypes.h"
+#include "vvrendertarget.h"
+
+#include <memory>
 
 class vvVolDesc;
 
@@ -302,6 +305,47 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     virtual vvVolDesc* getVolDesc();
 
     virtual vvVecmath::AxisType getPrincipalViewingAxis(const vvMatrix& mv, float& zx, float& zy, float& zz) const;
+
+    // Returns the current render target
+    virvo::RenderTarget const* getRenderTarget() const {
+      return renderTarget_.get();
+    }
+
+    // Returns the current render target
+    virvo::RenderTarget* getRenderTarget() {
+      return renderTarget_.get();
+    }
+
+    // Sets a new render-target
+    virtual void setRenderTarget(virvo::RenderTarget* rt) {
+      renderTarget_.reset(rt);
+    }
+
+    // Prepare this renderer to render a new frame
+    virtual bool beginFrame(unsigned clearMask);
+
+    // Called when a new frame has been rendered
+    virtual bool endFrame();
+
+    // Resize the current render-target
+    virtual bool resize(int w, int h);
+
+    // Displays the render-target
+    virtual bool present() const;
+
+    void renderBoundingBox() const;
+    void renderHUD() const;
+    void renderOpaqueGeometry() const;
+
+    // Renders and displays a single frame in one go
+    void renderFrame();
+
+    // Renders and displays a single frame in one go
+    void renderFrame(int w, int h);
+
+private:
+    // The current render target
+    std::auto_ptr<virvo::RenderTarget> renderTarget_;
 };
 #endif
 
