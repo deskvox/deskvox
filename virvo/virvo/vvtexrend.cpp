@@ -3976,7 +3976,7 @@ void vvTexRend::setCurrentShader(const int shader)
 
 //----------------------------------------------------------------------------
 /// inherited from vvRenderer, only valid for planar textures
-void vvTexRend::renderQualityDisplay()
+void vvTexRend::renderQualityDisplay() const
 {
   const int numSlices = int(_quality * 100.0f);
   vvPrintGL* printGL = new vvPrintGL();

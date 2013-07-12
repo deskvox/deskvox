@@ -254,7 +254,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool isSupported(FeatureType) const;
     GeometryType getGeomType() const;
     VoxelType getVoxelType() const;
-    void renderQualityDisplay();
+    void renderQualityDisplay() const;
     void printLUT() const;
     void updateBrickGeom();
     void setComputeBrickSize(bool);
