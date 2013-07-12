@@ -186,14 +186,20 @@ bool NullRT::DisplayColorBufferImpl() const
 }
 
 
-bool NullRT::DownloadColorBufferImpl(unsigned char* /*buffer*/, size_t /*bufferSize*/) const
+bool NullRT::DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
+    for (size_t n = 0; n < bufferSize; ++n)
+        buffer[n] = (unsigned char)( (255.0 * n) / bufferSize );
+
     return true;
 }
 
 
-bool NullRT::DownloadDepthBufferImpl(unsigned char* /*buffer*/, size_t /*bufferSize*/) const
+bool NullRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
+    for (size_t n = 0; n < bufferSize; ++n)
+        buffer[n] = (unsigned char)( 255.0 - (255.0 * n) / bufferSize );
+
     return true;
 }
 
@@ -476,7 +482,7 @@ bool HostBufferRT::DownloadColorBufferImpl(unsigned char* buffer, size_t bufferS
 
 bool HostBufferRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    size_t bytes = width() * height() * (colorBits() / 8);
+    size_t bytes = width() * height() * (depthBits() / 8);
 
     assert( bufferSize >= bytes );
 
