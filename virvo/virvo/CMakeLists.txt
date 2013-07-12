@@ -95,9 +95,6 @@ set(VIRVO_HEADERS
   vvbonjour/vvbonjourregistrar.h
   vvbonjour/vvbonjourresolver.h
 
-  vvmultirend/vvtexmultirend.h
-  vvmultirend/vvtexmultirendmngr.h
-
   vvaabb.h
   vvaabb.impl.h
   vvarray.h
@@ -201,9 +198,6 @@ set(VIRVO_SOURCES
   vvbonjour/vvbonjoureventloop.cpp
   vvbonjour/vvbonjourregistrar.cpp
   vvbonjour/vvbonjourresolver.cpp
-
-  vvmultirend/vvtexmultirend.cpp
-  vvmultirend/vvtexmultirendmngr.cpp
 
   vvbrick.cpp
   vvbrickrend.cpp
