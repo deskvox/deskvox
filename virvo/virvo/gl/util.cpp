@@ -177,9 +177,7 @@ GLenum gl::getFramebufferStatus(GLenum target, char const* file, int line)
 //--------------------------------------------------------------------------------------------------
 static void DrawFullScreenQuad()
 {
-    GLint matrixMode = 0;
-
-    glGetIntegerv(GL_MATRIX_MODE, &matrixMode);
+    glPushAttrib(GL_TEXTURE_BIT | GL_TRANSFORM_BIT);
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -187,6 +185,10 @@ static void DrawFullScreenQuad()
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
+
+    glActiveTexture(GL_TEXTURE0);
+
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, -1.0f);
@@ -200,7 +202,7 @@ static void DrawFullScreenQuad()
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 
-    glMatrixMode(matrixMode);
+    glPopAttrib();
 }
 
 
