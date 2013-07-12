@@ -160,7 +160,14 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
   glewInit();
 
-  setRenderTarget(virvo::PixelUnpackBufferRT::create(32, 8));
+  virvo::RenderTarget* rt = virvo::PixelUnpackBufferRT::create(32, 8);
+
+  // no direct rendering
+  if (rt == NULL)
+  {
+    rt = virvo::DeviceBufferRT::create(32, 8);
+  }
+  setRenderTarget(rt);
 
   bool ok;
 

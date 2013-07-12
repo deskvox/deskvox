@@ -253,7 +253,7 @@ void vvCanvas::paintGL()
 
   glGetIntegerv(GL_VIEWPORT, &viewport[0]);
 
-#if 1
+#if 0
   int w = viewport[2];
   int h = viewport[3];
 #else
