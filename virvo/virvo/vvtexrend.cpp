@@ -66,6 +66,9 @@ using namespace std;
 
 namespace gl = virvo::gl;
 
+using virvo::EColorFormat;
+using virvo::EDepthFormat;
+
 //----------------------------------------------------------------------------
 const int vvTexRend::NUM_PIXEL_SHADERS = 13;
 
@@ -85,19 +88,19 @@ static virvo::BufferPrecision mapBitsToBufferPrecision(int bits)
     }
 }
 
-static gl::EFormat mapBufferPrecisionToFormat(virvo::BufferPrecision bp)
+static EColorFormat mapBufferPrecisionToFormat(virvo::BufferPrecision bp)
 {
     switch (bp)
     {
     case virvo::Byte:
-        return gl::EFormat_RGBA8;
+        return virvo::CF_RGBA8;
     case virvo::Short:
-        return gl::EFormat_RGBA16F;
+        return virvo::CF_RGBA16F;
     case virvo::Float:
-        return gl::EFormat_RGBA32F;
+        return virvo::CF_RGBA32F;
     default:
         assert(!"unknown format");
-        return gl::EFormat_Unspecified;
+        return virvo::CF_UNSPECIFIED;
     }
 }
 
@@ -119,7 +122,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   glewInit();
 
   if (this->_useOffscreenBuffer)
-    setRenderTarget( virvo::FramebufferObjectRT::create( mapBufferPrecisionToFormat(this->_imagePrecision), gl::EFormat_DEPTH24_STENCIL8) );
+    setRenderTarget( virvo::FramebufferObjectRT::create( mapBufferPrecisionToFormat(this->_imagePrecision), virvo::DF_DEPTH24_STENCIL8) );
 
   if (vvDebugMsg::isActive(2))
   {
@@ -3789,8 +3792,8 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
 
         this->_imagePrecision = bp;
 
-//      setRenderTarget( virvo::FramebufferObjectRT::create(mapBufferPrecisionToFormat(bp), gl::EFormat_DEPTH32F_STENCIL8) );
-        setRenderTarget( virvo::FramebufferObjectRT::create(mapBufferPrecisionToFormat(bp), gl::EFormat_DEPTH24_STENCIL8) );
+//      setRenderTarget( virvo::FramebufferObjectRT::create(mapBufferPrecisionToFormat(bp), virvo::DF_DEPTH32F_STENCIL8) );
+        setRenderTarget( virvo::FramebufferObjectRT::create(mapBufferPrecisionToFormat(bp), virvo::DF_DEPTH24_STENCIL8) );
       }
       break;
     case vvRenderer::VV_LIGHTING:

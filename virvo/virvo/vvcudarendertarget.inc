@@ -45,41 +45,20 @@ namespace gl = virvo::gl;
 using virvo::RenderTarget;
 using virvo::PixelUnpackBufferRT;
 using virvo::DeviceBufferRT;
+using virvo::EColorFormat;
+using virvo::EDepthFormat;
 
 
-static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits)
-{
-    return w * h * (bits / 8);
+static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned sizeInBytes) {
+    return w * h * sizeInBytes;
 }
 
-
-static GLenum GetInternalFormat(unsigned bits)
-{
-    switch (bits / 8)
-    {
-    case 1: return GL_R8;
-    case 2: return GL_RG8;
-    case 3: return GL_RGB8;
-    case 4: return GL_RGBA8;
-    }
-
-    assert(!"bit depth not supported");
-    return 0;
+static unsigned ComputeBufferSize(unsigned w, unsigned h, EColorFormat format) {
+    return ComputeBufferSize(w, h, getPixelSize(format));
 }
 
-
-static GLenum GetFormat(unsigned bits)
-{
-    switch (bits / 8)
-    {
-    case 1: return GL_RED;
-    case 2: return GL_RG;
-    case 3: return GL_RGB;
-    case 4: return GL_RGBA;
-    }
-
-    assert(!"bit depth not supported");
-    return 0;
+static unsigned ComputeBufferSize(unsigned w, unsigned h, EDepthFormat format) {
+    return ComputeBufferSize(w, h, getPixelSize(format));
 }
 
 
@@ -91,9 +70,9 @@ static GLenum GetFormat(unsigned bits)
 struct PixelUnpackBufferRT::Impl
 {
     // The precision of the color buffer
-    unsigned ColorBits;
+    EColorFormat ColorFormat;
     // The precision of the depth buffer
-    unsigned DepthBits;
+    EDepthFormat DepthFormat;
     // The CUDA graphics resource
     cu::GraphicsResource Resource;
     // The OpenGL buffer object
@@ -103,26 +82,26 @@ struct PixelUnpackBufferRT::Impl
     // The depth buffer
     cu::HostDeviceArray DepthBuffer;
 
-    Impl(unsigned ColorBits, unsigned DepthBits)
-        : ColorBits(ColorBits)
-        , DepthBits(DepthBits)
+    Impl(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+        : ColorFormat(ColorFormat)
+        , DepthFormat(DepthFormat)
     {
     }
 };
 
 
-PixelUnpackBufferRT::PixelUnpackBufferRT(unsigned ColorBits, unsigned DepthBits)
-    : impl(new Impl(ColorBits, DepthBits))
+PixelUnpackBufferRT::PixelUnpackBufferRT(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+    : impl(new Impl(ColorFormat, DepthFormat))
 {
 }
 
 
-RenderTarget* PixelUnpackBufferRT::create(unsigned ColorBits, unsigned DepthBits)
+RenderTarget* PixelUnpackBufferRT::create(EColorFormat ColorFormat, EDepthFormat DepthFormat)
 {
 	if (!virvo::cuda::initGlInterop())
 		return 0;
 
-    return new PixelUnpackBufferRT(ColorBits, DepthBits);
+    return new PixelUnpackBufferRT(ColorFormat, DepthFormat);
 }
 
 
@@ -131,15 +110,15 @@ PixelUnpackBufferRT::~PixelUnpackBufferRT()
 }
 
 
-unsigned PixelUnpackBufferRT::colorBits() const
+EColorFormat PixelUnpackBufferRT::colorFormat() const
 {
-    return impl->ColorBits;
+    return impl->ColorFormat;
 }
 
 
-unsigned PixelUnpackBufferRT::depthBits() const
+EDepthFormat PixelUnpackBufferRT::depthFormat() const
 {
-    return impl->DepthBits;
+    return impl->DepthFormat;
 }
 
 
@@ -189,6 +168,8 @@ bool PixelUnpackBufferRT::BeginFrameImpl(unsigned clearMask)
 
 bool PixelUnpackBufferRT::EndFrameImpl()
 {
+    PixelFormat cf = mapPixelFormat(impl->ColorFormat);
+
     impl->Resource.unmap();
 
     // Download the depth buffer
@@ -202,7 +183,7 @@ bool PixelUnpackBufferRT::EndFrameImpl()
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, impl->Buffer.get());
 
     // Copy the buffer data into the texture
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width(), height(), GetFormat(impl->ColorBits), GL_UNSIGNED_BYTE, 0);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width(), height(), cf.format, cf.type, 0);
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
@@ -215,7 +196,7 @@ bool PixelUnpackBufferRT::EndFrameImpl()
 
 bool PixelUnpackBufferRT::ResizeImpl(int w, int h)
 {
-    if (impl->DepthBits != 0 && !impl->DepthBuffer.resize(ComputeBufferSize(w, h, impl->DepthBits)))
+    if (impl->DepthFormat != DF_UNSPECIFIED && !impl->DepthBuffer.resize(ComputeBufferSize(w, h, impl->DepthFormat)))
         return false;
 
     return CreateGLBuffers(w, h);
@@ -224,6 +205,8 @@ bool PixelUnpackBufferRT::ResizeImpl(int w, int h)
 
 bool PixelUnpackBufferRT::CreateGLBuffers(int w, int h, bool linearInterpolation)
 {
+    PixelFormat cf = mapPixelFormat(impl->ColorFormat);
+
     // Create the texture
     impl->Texture.reset( gl::createTexture() );
 
@@ -232,7 +215,7 @@ bool PixelUnpackBufferRT::CreateGLBuffers(int w, int h, bool linearInterpolation
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, linearInterpolation ? GL_LINEAR : GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexImage2D(GL_TEXTURE_2D, 0, GetInternalFormat(impl->ColorBits), w, h, 0, GetFormat(impl->ColorBits), GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, cf.internalFormat, w, h, 0, cf.format, cf.type, 0);
 
     if (GL_NO_ERROR != VV_GET_GL_ERROR())
         return false;
@@ -241,7 +224,7 @@ bool PixelUnpackBufferRT::CreateGLBuffers(int w, int h, bool linearInterpolation
     impl->Buffer.reset( gl::createBuffer() );
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, impl->Buffer.get());
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, ComputeBufferSize(w, h, impl->ColorBits), 0, GL_STREAM_DRAW);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, ComputeBufferSize(w, h, cf.size), 0, GL_STREAM_DRAW);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     if (GL_NO_ERROR != VV_GET_GL_ERROR())
@@ -264,7 +247,7 @@ bool PixelUnpackBufferRT::DisplayColorBufferImpl() const
 
 bool PixelUnpackBufferRT::DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    size_t bytes = ComputeBufferSize(width(), height(), impl->ColorBits);
+    size_t bytes = ComputeBufferSize(width(), height(), impl->ColorFormat);
 
     assert( bufferSize >= bytes );
 
@@ -297,31 +280,31 @@ bool PixelUnpackBufferRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t 
 struct DeviceBufferRT::Impl
 {
     // The precision of the color buffer
-    unsigned ColorBits;
+    EColorFormat ColorFormat;
     // The precision of the depth buffer
-    unsigned DepthBits;
+    EDepthFormat DepthFormat;
     // The color buffer
     cu::HostDeviceArray ColorBuffer;
     // The depth buffer
     cu::HostDeviceArray DepthBuffer;
 
-    Impl(unsigned ColorBits, unsigned DepthBits)
-        : ColorBits(ColorBits)
-        , DepthBits(DepthBits)
+    Impl(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+        : ColorFormat(ColorFormat)
+        , DepthFormat(DepthFormat)
     {
     }
 };
 
 
-DeviceBufferRT::DeviceBufferRT(unsigned ColorBits, unsigned DepthBits)
-    : impl(new Impl(ColorBits, DepthBits))
+DeviceBufferRT::DeviceBufferRT(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+    : impl(new Impl(ColorFormat, DepthFormat))
 {
 }
 
 
-RenderTarget* DeviceBufferRT::create(unsigned ColorBits, unsigned DepthBits)
+RenderTarget* DeviceBufferRT::create(EColorFormat ColorFormat, EDepthFormat DepthFormat)
 {
-    return new DeviceBufferRT(ColorBits, DepthBits);
+    return new DeviceBufferRT(ColorFormat, DepthFormat);
 }
 
 
@@ -330,15 +313,15 @@ DeviceBufferRT::~DeviceBufferRT()
 }
 
 
-unsigned DeviceBufferRT::colorBits() const
+EColorFormat DeviceBufferRT::colorFormat() const
 {
-    return impl->ColorBits;
+    return impl->ColorFormat;
 }
 
 
-unsigned DeviceBufferRT::depthBits() const
+EDepthFormat DeviceBufferRT::depthFormat() const
 {
-    return impl->DepthBits;
+    return impl->DepthFormat;
 }
 
 
@@ -368,23 +351,23 @@ void const* DeviceBufferRT::hostDepth() const
 
 unsigned DeviceBufferRT::getColorBufferSize() const
 {
-    return ComputeBufferSize(width(), height(), impl->ColorBits);
+    return ComputeBufferSize(width(), height(), impl->ColorFormat);
 }
 
 
 unsigned DeviceBufferRT::getDepthBufferSize() const
 {
-    return ComputeBufferSize(width(), height(), impl->DepthBits);
+    return ComputeBufferSize(width(), height(), impl->DepthFormat);
 }
 
 
 bool DeviceBufferRT::BeginFrameImpl(unsigned clearMask)
 {
     if (clearMask & CLEAR_COLOR)
-        impl->ColorBuffer.fill(0);
+        impl->ColorBuffer.fill('c');
 
     if (clearMask & CLEAR_DEPTH)
-        impl->DepthBuffer.fill(0);
+        impl->DepthBuffer.fill('d');
 
     return true;
 }
@@ -392,7 +375,15 @@ bool DeviceBufferRT::BeginFrameImpl(unsigned clearMask)
 
 bool DeviceBufferRT::EndFrameImpl()
 {
-    return impl->ColorBuffer.download() && impl->DepthBuffer.download();
+    bool colorOK = impl->ColorBuffer.download();
+    bool depthOK = impl->DepthBuffer.download();
+
+    if (!colorOK || !depthOK)
+    {
+        return false;
+    }
+
+    return colorOK && depthOK;
 }
 
 
@@ -401,10 +392,10 @@ bool DeviceBufferRT::ResizeImpl(int w, int h)
     impl->ColorBuffer.reset();
     impl->DepthBuffer.reset();
 
-    if (!impl->ColorBuffer.resize(ComputeBufferSize(w, h, impl->ColorBits)))
+    if (!impl->ColorBuffer.resize(ComputeBufferSize(w, h, impl->ColorFormat)))
         return false;
 
-    if (impl->DepthBits != 0 && !impl->DepthBuffer.resize(ComputeBufferSize(w, h, impl->DepthBits)))
+    if (impl->DepthFormat != DF_UNSPECIFIED && !impl->DepthBuffer.resize(ComputeBufferSize(w, h, impl->DepthFormat)))
     {
         impl->ColorBuffer.reset();
         return false;
@@ -416,7 +407,9 @@ bool DeviceBufferRT::ResizeImpl(int w, int h)
 
 bool DeviceBufferRT::DisplayColorBufferImpl() const
 {
-    gl::blendPixels(width(), height(), GetFormat(impl->ColorBits), GL_UNSIGNED_BYTE, impl->ColorBuffer.hostPtr());
+    PixelFormat cf = mapPixelFormat(impl->ColorFormat);
+
+    gl::blendPixels(width(), height(), cf.format, cf.type, impl->ColorBuffer.hostPtr());
     return true;
 }
 

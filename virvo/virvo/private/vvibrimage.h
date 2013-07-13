@@ -46,7 +46,7 @@ public:
   VVAPI IbrImage();
 
   // Construct a new IBR image
-  VVAPI IbrImage(int w, int h, int colorBits, int depthBits);
+  VVAPI IbrImage(int w, int h, EColorFormat colorFormat, EDepthFormat depthFormat);
 
   // Destructor
   VVAPI virtual ~IbrImage();
@@ -61,16 +61,12 @@ public:
   size_t depthSize() const
   {
     // size mismatch? internal error
-    assert(depth_.size() == static_cast<size_t>(width() * height() * (depthBits() / 8)));
-
+    assert(depth_.size() == static_cast<size_t>(width() * height() * getPixelSize(depthFormat_)));
     return depth_.size();
   }
 
-  // Returns the number of bits per color value
-  int colorBits() const { return 8 * pixlen(); }
-
-  // Returns the number of bits per depth value
-  int depthBits() const { return depthBits_; }
+  // Returns the format of the depth buffer
+  EDepthFormat depthBufferFormat() const { return depthFormat_; }
 
   // Returns the minimum depth value
   float depthMin() const { return depthMin_; }
@@ -111,8 +107,8 @@ public:
 private:
   // The depth buffer
   std::vector<unsigned char> depth_;
-  // Precision of the depth buffer
-  int depthBits_;
+  // Format of the depth buffer
+  EDepthFormat depthFormat_;
   // Depth range
   float depthMin_;
   float depthMax_;

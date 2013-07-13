@@ -27,8 +27,9 @@
 
 #include <vector>
 
+#include "vvpixelformat.h"
+
 #include "gl/handle.h"
-#include "gl/format.h"
 
 #include "mem/allocator.h"
 
@@ -88,11 +89,11 @@ namespace virvo
         // Copy the depth buffer into the given vector
         VVAPI bool downloadDepthBuffer(std::vector<unsigned char>& buffer) const;
 
-        // Returns the number of bits per pixel in the color buffer
-        virtual unsigned colorBits() const { return 0; }
+        // Returns the format of the color buffer
+        virtual EColorFormat colorFormat() const { return CF_UNSPECIFIED; }
 
-        // Returns the number of bits per pixel in the depth buffer
-        virtual unsigned depthBits() const { return 0; }
+        // Returns the format of the depth buffer
+        virtual EDepthFormat depthFormat() const { return DF_UNSPECIFIED; }
 
         // Returns a pointer to the device color buffer - if any
         virtual void* deviceColor() { return 0; }
@@ -149,9 +150,9 @@ namespace virvo
         VVAPI virtual ~NullRT();
 
         // XXX
-        virtual unsigned colorBits() const VV_OVERRIDE { return 32; }
+        virtual EColorFormat colorFormat() const VV_OVERRIDE { return CF_RGBA8; }
         // XXX
-        virtual unsigned depthBits() const VV_OVERRIDE { return 8; }
+        virtual EDepthFormat depthFormat() const VV_OVERRIDE { return DF_LUMINANCE8; }
 
     private:
         virtual bool BeginFrameImpl(unsigned clearMask) VV_OVERRIDE;
@@ -170,30 +171,20 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class FramebufferObjectRT : public RenderTarget
     {
-        FramebufferObjectRT(gl::EFormat ColorBufferFormat, gl::EFormat DepthBufferFormat);
+        FramebufferObjectRT(EColorFormat ColorFormat, EDepthFormat DepthFormat);
 
     public:
         // Construct a new framebuffer object
-        static VVAPI RenderTarget* create(gl::EFormat ColorBufferFormat = gl::EFormat_RGBA8,
-                                          gl::EFormat DepthBufferFormat = gl::EFormat_DEPTH24_STENCIL8);
+        static VVAPI RenderTarget* create(EColorFormat ColorFormat = CF_RGBA8,
+                                          EDepthFormat DepthFormat = DF_DEPTH24_STENCIL8);
 
         VVAPI virtual ~FramebufferObjectRT();
 
         // Returns the number of bits per pixel in the color buffer
-        virtual unsigned colorBits() const VV_OVERRIDE {
-            return 8 * gl::mapFormat(ColorBufferFormat).sizeInBytes;
-        }
+        virtual EColorFormat colorFormat() const VV_OVERRIDE { return ColorFormat; }
 
         // Returns the number of bits per pixel in the depth buffer
-        virtual unsigned depthBits() const VV_OVERRIDE {
-            return 8 * gl::mapFormat(DepthBufferFormat).sizeInBytes;
-        }
-
-        // Returns the color buffer format
-        gl::EFormat colorBufferFormat() const { return ColorBufferFormat; }
-
-        // Returns the depth(-stencil) buffer format
-        gl::EFormat depthBufferFormat() const { return DepthBufferFormat; }
+        virtual EDepthFormat depthFormat() const VV_OVERRIDE { return DepthFormat; }
 
         // Returns the framebuffer object
         GLuint framebuffer() const { return Framebuffer.get(); }
@@ -216,9 +207,9 @@ namespace virvo
 
     private:
         // Color buffer format
-        gl::EFormat ColorBufferFormat;
+        EColorFormat ColorFormat;
         // Depth buffer format
-        gl::EFormat DepthBufferFormat;
+        EDepthFormat DepthFormat;
         // The framebuffer object
         gl::Framebuffer Framebuffer;
         // Color buffer
@@ -233,23 +224,23 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class HostBufferRT : public RenderTarget
     {
-        HostBufferRT(unsigned ColorBits, unsigned DepthBits);
+        HostBufferRT(EColorFormat ColorFormat, EDepthFormat DepthFormat);
 
     public:
         typedef std::vector<unsigned char, mem::aligned_allocator<unsigned char, 16> > BufferType;
 
     public:
         // Construct a render target
-        static VVAPI RenderTarget* create(unsigned ColorBits = 32, unsigned DepthBits = 8);
+        static VVAPI RenderTarget* create(EColorFormat ColorFormat = CF_RGBA8, EDepthFormat DepthFormat = DF_LUMINANCE8);
 
         // Clean up
         VVAPI virtual ~HostBufferRT();
 
         // Returns the precision of the color buffer
-        virtual unsigned colorBits() const VV_OVERRIDE { return ColorBits; }
+        virtual EColorFormat colorFormat() const VV_OVERRIDE { return ColorFormat; }
 
         // Returns the precision of the depth buffer
-        virtual unsigned depthBits() const VV_OVERRIDE { return DepthBits; }
+        virtual EDepthFormat depthFormat() const VV_OVERRIDE { return DepthFormat; }
 
         // Returns a pointer to the device color buffer - if any
         virtual void* deviceColor() VV_OVERRIDE { return &ColorBuffer[0]; }
@@ -274,14 +265,14 @@ namespace virvo
         virtual bool DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const VV_OVERRIDE;
 
     private:
-        static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned bits) {
-            return w * h * (bits / 8);
+        static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned sizePerPixel) {
+            return w * h * sizePerPixel;
         }
 
         // The precision of the color buffer
-        unsigned ColorBits;
+        EColorFormat ColorFormat;
         // The precision of the depth buffer
-        unsigned DepthBits;
+        EDepthFormat DepthFormat;
         // The color buffer
         BufferType ColorBuffer;
         // The depth buffer

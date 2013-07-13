@@ -37,20 +37,20 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class PixelUnpackBufferRT : public RenderTarget
     {
-        PixelUnpackBufferRT(unsigned ColorBits = 32, unsigned DepthBits = 8);
+        PixelUnpackBufferRT(EColorFormat ColorFormat, EDepthFormat DepthFormat);
 
     public:
         // Construct a render target
-        static VVAPI RenderTarget* create(unsigned ColorBits = 32, unsigned DepthBits = 8);
+        static VVAPI RenderTarget* create(EColorFormat ColorFormat = CF_RGBA8, EDepthFormat DepthFormat = DF_LUMINANCE8);
 
         // Clean up
         VVAPI virtual ~PixelUnpackBufferRT();
 
         // Returns the precision of the color buffer
-        VVAPI virtual unsigned colorBits() const VV_OVERRIDE;
+        VVAPI virtual EColorFormat colorFormat() const VV_OVERRIDE;
 
         // Returns the precision of the depth buffer
-        VVAPI virtual unsigned depthBits() const VV_OVERRIDE;
+        VVAPI virtual EDepthFormat depthFormat() const VV_OVERRIDE;
 
         // Returns a pointer to the device color buffer
         VVAPI virtual void* deviceColor() VV_OVERRIDE;
@@ -91,20 +91,20 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class DeviceBufferRT : public RenderTarget
     {
-        DeviceBufferRT(unsigned ColorBits = 32, unsigned DepthBits = 8);
+        DeviceBufferRT(EColorFormat ColorFormat, EDepthFormat DepthFormat);
 
     public:
         // Construct a render target
-        static VVAPI RenderTarget* create(unsigned ColorBits = 32, unsigned DepthBits = 8);
+        static VVAPI RenderTarget* create(EColorFormat ColorFormat = CF_RGBA8, EDepthFormat DepthFormat = DF_LUMINANCE8);
 
         // Clean up
         VVAPI virtual ~DeviceBufferRT();
 
         // Returns the precision of the color buffer
-        VVAPI virtual unsigned colorBits() const VV_OVERRIDE;
+        VVAPI virtual EColorFormat colorFormat() const VV_OVERRIDE;
 
         // Returns the precision of the depth buffer
-        VVAPI virtual unsigned depthBits() const VV_OVERRIDE;
+        VVAPI virtual EDepthFormat depthFormat() const VV_OVERRIDE;
 
         // Returns a pointer to the device color buffer
         VVAPI virtual void* deviceColor() VV_OVERRIDE;

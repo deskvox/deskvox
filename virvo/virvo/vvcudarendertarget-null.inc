@@ -25,6 +25,8 @@
 using virvo::RenderTarget;
 using virvo::PixelUnpackBufferRT;
 using virvo::DeviceBufferRT;
+using virvo::EColorFormat;
+using virvo::EDepthFormat;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -37,12 +39,12 @@ struct PixelUnpackBufferRT::Impl
 };
 
 
-PixelUnpackBufferRT::PixelUnpackBufferRT(unsigned /*ColorBits*/, unsigned /*DepthBits*/)
+PixelUnpackBufferRT::PixelUnpackBufferRT(EColorFormat /*ColorFormat*/, EDepthFormat /*DepthFormat*/)
 {
 }
 
 
-RenderTarget* PixelUnpackBufferRT::create(unsigned /*ColorBits*/, unsigned /*DepthBits*/)
+RenderTarget* PixelUnpackBufferRT::create(EColorFormat /*ColorFormat*/, EDepthFormat /*DepthFormat*/)
 {
     return 0;
 }
@@ -53,15 +55,15 @@ PixelUnpackBufferRT::~PixelUnpackBufferRT()
 }
 
 
-unsigned PixelUnpackBufferRT::colorBits() const
+EColorFormat PixelUnpackBufferRT::colorFormat() const
 {
-    return 0;
+    return CF_UNSPECIFIED;
 }
 
 
-unsigned PixelUnpackBufferRT::depthBits() const
+EDepthFormat PixelUnpackBufferRT::depthFormat() const
 {
-    return 0;
+    return DF_UNSPECIFIED;
 }
 
 
@@ -147,12 +149,12 @@ struct DeviceBufferRT::Impl
 };
 
 
-DeviceBufferRT::DeviceBufferRT(unsigned /*ColorBits*/, unsigned /*DepthBits*/)
+DeviceBufferRT::DeviceBufferRT(EColorFormat /*ColorFormat*/, EDepthFormat /*DepthFormat*/)
 {
 }
 
 
-RenderTarget* DeviceBufferRT::create(unsigned /*ColorBits*/, unsigned /*DepthBits*/)
+RenderTarget* DeviceBufferRT::create(EColorFormat /*ColorFormat*/, EDepthFormat /*DepthFormat*/)
 {
     return 0;
 }
@@ -163,15 +165,15 @@ DeviceBufferRT::~DeviceBufferRT()
 }
 
 
-unsigned DeviceBufferRT::colorBits() const
+EColorFormat DeviceBufferRT::colorFormat() const
 {
-    return 0;
+    return CF_UNSPECIFIED;
 }
 
 
-unsigned DeviceBufferRT::depthBits() const
+EDepthFormat DeviceBufferRT::depthFormat() const
 {
-    return 0;
+    return DF_UNSPECIFIED;
 }
 
 

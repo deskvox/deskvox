@@ -24,6 +24,7 @@
 
 
 #include "vvexport.h"
+#include "vvpixelformat.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -43,15 +44,15 @@ class Image
 
 public:
   // Construct an empty image
-  Image() : data_(0), width_(0), height_(0), pixlen_(0), stride_(0)
+  Image() : data_(0), width_(0), height_(0), format_(CF_UNSPECIFIED), stride_(0)
   {
   }
 
   // Construct a new image
-  VVAPI Image(int w, int h, int pixlen = 4, int stride = 0);
+  VVAPI Image(int w, int h, EColorFormat format = CF_RGBA8, int stride = 0);
 
   // Copy-construct a new image
-  VVAPI Image(unsigned char* data, int w, int h, int pixlen = 4, int stride = 0);
+  VVAPI Image(unsigned char* data, int w, int h, EColorFormat format = CF_RGBA8, int stride = 0);
 
   // Destructor
   VVAPI virtual ~Image();
@@ -69,7 +70,7 @@ public:
   int height() const { return height_; }
 
   // Returns the size in bytes of a single pixel
-  int pixlen() const { return pixlen_; }
+  EColorFormat format() const { return format_; }
 
   // Returns the size in bytes of a single scanline
   int stride() const { return stride_; }
@@ -79,10 +80,10 @@ public:
   size_t size() const { return stride_ * height_; }
 
   // Resets the image
-  VVAPI void resize(int w, int h, int pixlen = 4, int stride = 0);
+  VVAPI void resize(int w, int h, EColorFormat format = CF_RGBA8, int stride = 0);
 
   // Resets the image
-  VVAPI void assign(unsigned char* data, int w, int h, int pixlen = 4, int stride = 0);
+  VVAPI void assign(unsigned char* data, int w, int h, EColorFormat format = CF_RGBA8, int stride = 0);
 
   // Compress the image
   VVAPI bool compress();
@@ -91,7 +92,7 @@ public:
   VVAPI bool decompress();
 
 private:
-  void init(int w, int h, int pixlen = 4, int stride = 0);
+  void init(int w, int h, EColorFormat format = CF_RGBA8, int stride = 0);
 
 private:
   // The image data
@@ -100,8 +101,8 @@ private:
   int width_;
   // Height in pixels
   int height_;
-  // Size in bytes of a single pixel
-  int pixlen_;
+  // Format of the pixels
+  EColorFormat format_;
   // Size in bytes of a single scanline
   int stride_;
 };

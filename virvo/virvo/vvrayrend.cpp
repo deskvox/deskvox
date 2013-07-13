@@ -160,12 +160,12 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
 
   glewInit();
 
-  virvo::RenderTarget* rt = virvo::PixelUnpackBufferRT::create(32, 8);
+  virvo::RenderTarget* rt = virvo::PixelUnpackBufferRT::create(virvo::CF_RGBA8, virvo::DF_LUMINANCE8);
 
   // no direct rendering
   if (rt == NULL)
   {
-    rt = virvo::DeviceBufferRT::create(32, 8);
+    rt = virvo::DeviceBufferRT::create(virvo::CF_RGBA8, virvo::DF_LUMINANCE8);
   }
   setRenderTarget(rt);
 
@@ -397,7 +397,7 @@ void vvRayRend::renderVolumeGL()
                     pnormal,
                     pdist,
                     deviceDepth,
-                    rt->depthBits(),
+                    8 * getPixelSize(rt->depthFormat()),
                     make_float2(_depthRange[0], _depthRange[1]),
                     getIbrMode(_ibrMode),
                     _twoPassIbr

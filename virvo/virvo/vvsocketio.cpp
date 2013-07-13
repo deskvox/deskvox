@@ -1611,10 +1611,10 @@ vvSocket::ErrorType vvSocketIO::getImage(virvo::Image& image) const
   {
     int w      = vvToolshed::read32(&header[ 0]);
     int h      = vvToolshed::read32(&header[ 4]);
-    int pixlen = vvToolshed::read32(&header[ 8]);
+    int format = vvToolshed::read32(&header[ 8]);
     int stride = vvToolshed::read32(&header[12]);
 
-    image.resize(w, h, pixlen, stride);
+    image.resize(w, h, static_cast<virvo::EColorFormat>(format), stride);
 
     err = getStdVector(image.data_);
   }
@@ -1631,7 +1631,7 @@ vvSocket::ErrorType vvSocketIO::putImage(virvo::Image const& image) const
 
   vvToolshed::write32(&header[ 0], image.width());
   vvToolshed::write32(&header[ 4], image.height());
-  vvToolshed::write32(&header[ 8], image.pixlen());
+  vvToolshed::write32(&header[ 8], image.format());
   vvToolshed::write32(&header[12], image.stride());
 
   vvSocket::ErrorType err = getSocket()->writeData(header, sizeof(header));
@@ -1649,14 +1649,18 @@ vvSocket::ErrorType vvSocketIO::getIbrImage(virvo::IbrImage& image) const
 
   vvSocket::ErrorType err = vvSocket::VV_OK;
 
+  int depthFormat = 0;
+
   if (err == vvSocket::VV_OK) err = getImage(image);
   if (err == vvSocket::VV_OK) err = getStdVector(image.depth_);
-  if (err == vvSocket::VV_OK) err = getInt32(image.depthBits_);
+  if (err == vvSocket::VV_OK) err = getInt32(depthFormat);
   if (err == vvSocket::VV_OK) err = getFloat(image.depthMin_);
   if (err == vvSocket::VV_OK) err = getFloat(image.depthMax_);
   if (err == vvSocket::VV_OK) err = getMatrix(&image.viewMatrix_);
   if (err == vvSocket::VV_OK) err = getMatrix(&image.projMatrix_);
   if (err == vvSocket::VV_OK) err = getViewport(image.viewport_);
+
+  image.depthFormat_ = static_cast<virvo::EDepthFormat>(depthFormat);
 
   return err;
 }
@@ -1670,7 +1674,7 @@ vvSocket::ErrorType vvSocketIO::putIbrImage(virvo::IbrImage const& image) const
 
   if (err == vvSocket::VV_OK) err = putImage(image);
   if (err == vvSocket::VV_OK) err = putStdVector(image.depth_);
-  if (err == vvSocket::VV_OK) err = putInt32(static_cast<int>(image.depthBits_));
+  if (err == vvSocket::VV_OK) err = putInt32(image.depthFormat_);
   if (err == vvSocket::VV_OK) err = putFloat(image.depthMin_);
   if (err == vvSocket::VV_OK) err = putFloat(image.depthMax_);
   if (err == vvSocket::VV_OK) err = putMatrix(&image.viewMatrix_);

@@ -71,7 +71,6 @@ set(VIRVO_HEADERS
   cuda/texture.h
   cuda/utils.h
 
-  gl/format.h
   gl/handle.h
   gl/types.h
   gl/util.h
@@ -129,6 +128,7 @@ set(VIRVO_HEADERS
   vvopengl.h
   vvparam.h
   vvparbrickrend.h
+  vvpixelformat.h
   vvplatform.h
   vvprintgl.h
   vvpthread.h
@@ -188,7 +188,6 @@ set(VIRVO_SOURCES
   cuda/host_device_array.cpp
   cuda/utils.cpp
 
-  gl/format.cpp
   gl/handle.cpp
   gl/util.cpp
 
@@ -227,6 +226,7 @@ set(VIRVO_SOURCES
   vvmulticast.cpp
   vvoffscreenbuffer.cpp
   vvparbrickrend.cpp
+  vvpixelformat.cpp
   vvprintgl.cpp
   vvpthread.cpp
   vvremoteclient.cpp

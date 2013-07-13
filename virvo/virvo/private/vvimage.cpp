@@ -23,18 +23,19 @@
 #include "vvcompress.h"
 
 
+using virvo::EColorFormat;
 using virvo::Image;
 
 
-Image::Image(int w, int h, int pixlen, int stride)
+Image::Image(int w, int h, EColorFormat format, int stride)
 {
-  resize(w, h, pixlen, stride);
+  resize(w, h, format, stride);
 }
 
 
-Image::Image(unsigned char* data, int w, int h, int pixlen, int stride)
+Image::Image(unsigned char* data, int w, int h, EColorFormat format, int stride)
 {
-  assign(data, w, h, pixlen, stride);
+  assign(data, w, h, format, stride);
 }
 
 
@@ -43,18 +44,18 @@ Image::~Image()
 }
 
 
-void Image::resize(int w, int h, int pixlen, int stride)
+void Image::resize(int w, int h, EColorFormat format, int stride)
 {
-  init(w, h, pixlen, stride);
+  init(w, h, format, stride);
   data_.resize(size());
 }
 
 
-void Image::assign(unsigned char* data, int w, int h, int pixlen, int stride)
+void Image::assign(unsigned char* data, int w, int h, EColorFormat format, int stride)
 {
   assert( data );
 
-  init(w, h, pixlen, stride);
+  init(w, h, format, stride);
   data_.assign(data, data + size());
 }
 
@@ -78,14 +79,14 @@ bool Image::decompress()
 }
 
 
-void Image::init(int w, int h, int pixlen, int stride)
+void Image::init(int w, int h, EColorFormat format, int stride)
 {
   assert( w > 0 );
   assert( h > 0 );
-  assert( pixlen > 0 );
+  assert( format != CF_UNSPECIFIED );
 
   width_ = w;
   height_ = h;
-  pixlen_ = pixlen;
-  stride_ = stride <= 0 ? w * pixlen : stride;
+  format_ = format;
+  stride_ = stride <= 0 ? w * getPixelSize(format) : stride;
 }

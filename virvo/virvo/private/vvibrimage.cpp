@@ -23,13 +23,15 @@
 #include "vvcompress.h"
 
 
+using virvo::EColorFormat;
+using virvo::EDepthFormat;
 using virvo::IbrImage;
 
 
 IbrImage::IbrImage()
   : BaseType()
   , depth_(0)
-  , depthBits_(0)
+  , depthFormat_(DF_UNSPECIFIED)
   , depthMin_(0.0f)
   , depthMax_(0.0f)
   , viewMatrix_(1.0f, 1.0f, 1.0f, 1.0f)
@@ -39,10 +41,10 @@ IbrImage::IbrImage()
 }
 
 
-IbrImage::IbrImage(int w, int h, int colorBits, int depthBits)
-  : BaseType(w, h, colorBits / 8)
-  , depth_(w * h * (depthBits / 8))
-  , depthBits_(depthBits)
+IbrImage::IbrImage(int w, int h, EColorFormat colorFormat, EDepthFormat depthFormat)
+  : BaseType(w, h, colorFormat)
+  , depth_(w * h * getPixelSize(depthFormat))
+  , depthFormat_(depthFormat)
   , depthMin_(0.0f)
   , depthMax_(1.0f)
   , viewMatrix_(1.0f, 1.0f, 1.0f, 1.0f)
