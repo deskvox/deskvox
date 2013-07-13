@@ -34,6 +34,8 @@
 
 #include "gl/util.h"
 
+#include <stdexcept>
+
 using std::cerr;
 using std::endl;
 
