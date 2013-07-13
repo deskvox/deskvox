@@ -21,25 +21,16 @@
 #ifndef _VV_IMAGESERVER_H_
 #define _VV_IMAGESERVER_H_
 
-#include "vvexport.h"
 #include "vvremoteserver.h"
 
-#include <vector>
-
-class vvRenderer;
-class vvImage;
-
-class VIRVOEXPORT vvImageServer : public vvRemoteServer
+class vvImageServer : public vvRemoteServer
 {
 public:
-  vvImageServer(vvSocket *socket);
-  ~vvImageServer();
+  VVAPI vvImageServer(vvSocket *socket);
+  VVAPI virtual ~vvImageServer();
 
 private:
-  void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
-  void resize(int w, int h);
-  vvImage *_image;
-  std::vector<uchar> _pixels;
+  virtual void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer) VV_OVERRIDE;
 };
 
 #endif
