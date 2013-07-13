@@ -528,12 +528,11 @@ bool vvServer::handleEvent(ThreadData *tData, const virvo::RemoteEvent event, co
       int w;
       int h;
       io.getWinDims(w, h);
-      if (tData->renderContext == NULL && !createRenderContext(tData, w, h))
-      {
-        vvDebugMsg::msg(0, "Cannot resize remote rendering context");
-        return true;
-      }
-      tData->renderContext->resize(static_cast<uint>(w), static_cast<uint>(h));
+#if 1
+      tData->renderer->resize(w, h);
+#else
+      tData->renderer->resize(w / 4, h / 4);
+#endif
     }
     return true;
   case virvo::Disconnect:
