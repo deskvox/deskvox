@@ -18,27 +18,21 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include <cmath>
-
-#include "vvibr.h"
-#include "vvibrrenderer.h"
-#include "vvibrserver.h"
-#include "vvdebugmsg.h"
-#include "vvvoldesc.h"
-#include "vvibrimage.h"
-#include "vvsocketio.h"
-#include "vvtoolshed.h"
-
-#include "private/vvgltools.h"
-
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
 #endif
 
+#include "vvibrserver.h"
+#include "vvibr.h"
+#include "vvdebugmsg.h"
+#include "vvvoldesc.h"
+#include "vvsocketio.h"
+
+#include "private/vvgltools.h"
+#include "private/vvibrimage.h"
+
 vvIbrServer::vvIbrServer(vvSocket *socket)
 : vvRemoteServer(socket)
-, _ibrMode(vvRenderer::VV_GRADIENT)
-, _image(NULL)
 {
   vvDebugMsg::msg(1, "vvIbrServer::vvIbrServer()");
 }
@@ -46,8 +40,6 @@ vvIbrServer::vvIbrServer(vvSocket *socket)
 vvIbrServer::~vvIbrServer()
 {
   vvDebugMsg::msg(1, "vvIbrServer::~vvIbrServer()");
-
-  delete _image;
 }
 
 //----------------------------------------------------------------------------
@@ -58,87 +50,59 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
 {
   vvDebugMsg::msg(3, "vvIbrServer::renderImage()");
 
+  // Update matrices
+  vvGLTools::setProjectionMatrix(pr);
+  vvGLTools::setModelviewMatrix(mv);
+
   // Render volume:
-  float matrixGL[16];
+  renderer->beginFrame(virvo::CLEAR_COLOR | virvo::CLEAR_DEPTH);
+  renderer->renderVolumeGL();
+  renderer->endFrame();
 
-  glMatrixMode(GL_PROJECTION);
-  pr.getGL(matrixGL);
-  glLoadMatrixf(matrixGL);
+  // Compute depth range
+  vvAABB aabb = vvAABB(vvVector3(), vvVector3());
 
-  glMatrixMode(GL_MODELVIEW);
-  mv.getGL(matrixGL);
-  glLoadMatrixf(matrixGL);
-
-  vvIbrRenderer* ibrRenderer = dynamic_cast<vvIbrRenderer*>(renderer);
-  if (ibrRenderer == NULL)
-  {
-    vvDebugMsg::msg(0, "No IBR rendering supported. Aborting...");
-    return;
-  }
+  renderer->getVolDesc()->getBoundingBox(aabb);
 
   float drMin = 0.0f;
   float drMax = 0.0f;
-  vvAABB aabb = vvAABB(vvVector3(), vvVector3());
-  renderer->getVolDesc()->getBoundingBox(aabb);
+
   vvIbr::calcDepthRange(pr, mv, aabb, drMin, drMax);
 
   renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, vvVector2(drMin, drMax));
 
-  int dp = renderer->getParameter(vvRenderer::VV_IBR_DEPTH_PREC);
-  ibrRenderer->compositeVolume();
+  virvo::RenderTarget* rt = renderer->getRenderTarget();
+
+  int w = rt->width();
+  int h = rt->height();
+
+  // Create a new IBR image
+  virvo::IbrImage image(w, h, rt->colorFormat(), rt->depthFormat());
+
+  image.setDepthMin(drMin);
+  image.setDepthMax(drMax);
+  image.setViewMatrix(mv);
+  image.setProjMatrix(pr);
+  image.setViewport(virvo::Viewport(0, 0, w, h));
 
   // Fetch rendered image
-  virvo::Viewport vp = vvGLTools::getViewport();
-  const int w = vp[2];
-  const int h = vp[3];
-  if(!_image || _image->getWidth() != w || _image->getHeight() != h
-      || _image->getDepthPrecision() != dp)
+  if (!rt->downloadColorBuffer(image.data(), image.size()))
   {
-    _pixels.resize(w*h*4);
-    _depth.resize(w*h*(dp/8));
-    if(_image)
-    {
-      _image->setDepthPrecision(dp);
-      _image->setNewImage(h, w, &_pixels[0]);
-    }
-    else
-    {
-      _image = new vvIbrImage(h, w, &_pixels[0], dp);
-    }
-    _image->alloc_pd();
+    return;
   }
-  else
+  if (!rt->downloadDepthBuffer(image.depthData(), image.depthSize()))
   {
-    _image->setNewImagePtr(&_pixels[0]);
+    return;
   }
-  _image->setNewDepthPtr(&_depth[0]);
 
-  uchar* p = &_pixels[0];
-  ibrRenderer->getColorBuffer(&p);
-  p = &_depth[0];
-  ibrRenderer->getDepthBuffer(&p);
+  // Compress the image
+  image.compress();
 
-  _image->setModelViewMatrix(mv);
-  _image->setProjectionMatrix(pr);
-  _image->setViewport(vp);
-  _image->setDepthRange(drMin, drMax);
-  const int size = _image->encode(_codetype, 0, h-1, 0, w-1);
-  if (size > 0)
+  // Send the image
+  if (vvSocket::VV_OK != _socketio->putIbrImage(image))
   {
-    if (_socketio->putIbrImage(_image) != vvSocket::VV_OK)
-    {
-      vvDebugMsg::msg(1, "Error sending image over socket...");
-    }
-  }
-  else
-  {
-    vvDebugMsg::msg(1, "Error encoding image...");
+    return;
   }
 }
 
-void vvIbrServer::resize(const int w, const int h)
-{
-  vvRemoteServer::resize(w, h);
-  glViewport(0, 0, w, h);
-}
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

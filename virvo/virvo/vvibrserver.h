@@ -21,28 +21,18 @@
 #ifndef _VV_IBRSERVER_H_
 #define _VV_IBRSERVER_H_
 
-#include "vvexport.h"
 #include "vvremoteserver.h"
-#include "vvrenderer.h"
-
-#include <vector>
 
 class vvIbrImage;
 
-class VIRVOEXPORT vvIbrServer : public vvRemoteServer
+class vvIbrServer : public vvRemoteServer
 {
 public:
-  vvIbrServer(vvSocket *socket);
-  ~vvIbrServer();
+  VVAPI vvIbrServer(vvSocket *socket);
+  VVAPI virtual ~vvIbrServer();
 
 private:
-  vvRenderer::IbrMode         _ibrMode;
-
-  void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer);
-  void resize(int w, int h);
-  vvIbrImage *_image;
-  std::vector<uchar> _pixels;
-  std::vector<uchar> _depth;
+  virtual void renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer* renderer) VV_OVERRIDE;
 };
 
 #endif
