@@ -20,18 +20,19 @@
 
 #include <GL/glew.h>
 
-#include "vvibr.h"
 #include "vvibrclient.h"
-#include "vvibrimage.h"
+#include "vvibr.h"
 #include "vvshaderfactory.h"
 #include "vvshaderprogram.h"
-#include "vvtoolshed.h"
 #include "vvsocketio.h"
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
 #include "vvpthread.h"
 
 #include "private/vvgltools.h"
+#include "private/vvibrimage.h"
+
+#include "gl/util.h"
 
 using std::cerr;
 using std::endl;
@@ -39,42 +40,23 @@ using std::endl;
 struct vvIbrClient::Thread
 {
   pthread_t thread;               ///< list for threads of each server connection
-  pthread_barrier_t startBarrier; ///< signal when network thread has started
-  pthread_mutex_t signalMutex;    ///< mutex for thread synchronization
-  pthread_mutex_t imageMutex;     ///< mutex for access to _image
-  pthread_cond_t imageCond;       ///< condition variable for access to _image
-  pthread_cond_t readyCond;       ///< signal when image has been received
+  virvo::Mutex mutex;
+  virvo::SyncedCondition imageRequest;
+  bool newImage;
+  bool cancel;
 
-  Thread(int numThreads)
+  Thread()
+    : newImage(false)
+    , cancel(false)
   {
-    pthread_barrier_init(&startBarrier, NULL, numThreads);
-
-    pthread_mutex_init(&imageMutex, NULL);
-    pthread_mutex_init(&signalMutex, NULL);
-
-    pthread_cond_init(&imageCond, NULL);
-    pthread_cond_init(&readyCond, NULL);
-  }
-
-  ~Thread()
-  {
-    pthread_mutex_destroy(&imageMutex);
-    pthread_mutex_destroy(&signalMutex);
-    pthread_cond_destroy(&imageCond);
-    pthread_barrier_destroy(&startBarrier);
-    pthread_cond_destroy(&readyCond);
   }
 };
 
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
                          vvTcpSocket* socket, const std::string& filename)
   : vvRemoteClient(vd, renderState, socket, filename)
-  , _thread(NULL)
-  , _newFrame(true)
-  , _haveFrame(false)
-  , _synchronous(false)
-  , _image(NULL)
-  , _shader(NULL)
+  , _thread(new Thread)
+  , _shader(vvShaderFactory().createProgram("ibr", "", "ibr"))
 {
   vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
 
@@ -82,26 +64,15 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
 
   glewInit();
 
-  if(glGenBuffers)
-  {
-    glGenBuffers(1, &_pointVBO);
-  }
-  else
-  {
-    vvDebugMsg::msg(0, "vvIbrClient::vvIbrClient: no support for buffer objects");
-  }
+  if (!GLEW_VERSION_1_5)
+    throw std::runtime_error("OpenGL 1.5 or later required");
 
+  if (!_shader)
+    throw std::runtime_error("Could not find ibr shaders");
 
+  glGenBuffers(1, &_pointVBO);
   glGenTextures(1, &_rgbaTex);
   glGenTextures(1, &_depthTex);
-
-  _haveFrame = false; // no rendered frame available
-  _newFrame = true; // request a new frame
-  _image = new vvIbrImage;
-
-  _shader = vvShaderFactory().createProgram("ibr", "", "ibr");
-  if(!_shader)
-    vvDebugMsg::msg(0, "vvIbrClient::vvIbrClient: could not find ibr shader");
 
   createThreads();
 }
@@ -112,58 +83,49 @@ vvIbrClient::~vvIbrClient()
 
   destroyThreads();
 
-  if(glDeleteBuffers)
-    glDeleteBuffers(1, &_pointVBO);
+  glDeleteBuffers(1, &_pointVBO);
   glDeleteTextures(1, &_rgbaTex);
   glDeleteTextures(1, &_depthTex);
+
   delete _shader;
-  delete _image;
 }
-
-void vvIbrClient::setParameter(vvRenderer::ParameterType param, const vvParam& newValue)
-{
-  switch(param)
-  {
-  case VV_IBR_SYNC:
-    _synchronous = newValue;
-    break;
-  default:
-    // intentionally do nothing
-    break;
-  }
-  vvRemoteClient::setParameter(param, newValue);
-}
-
 
 vvRemoteClient::ErrorType vvIbrClient::render()
 {
   vvDebugMsg::msg(1, "vvIbrClient::render()");
 
-  pthread_mutex_lock(&_thread->signalMutex);
-  bool haveFrame = _haveFrame;
-  bool newFrame = _newFrame;
-  pthread_mutex_unlock(&_thread->signalMutex);
+  // Request a new image
+  this->_thread->imageRequest.signal();
+
+  bool imageValid = false;
+  bool imageNew = false;
+
+  {
+    virvo::ScopedLock lock(&this->_thread->mutex);
+
+    imageNew = this->_thread->newImage;
+
+    // If the image changed, update the textures/buffers
+    if (this->_thread->newImage)
+    {
+      initIbrFrame();
+      this->_thread->newImage = false;
+    }
+
+    imageValid = _image.get() && _image->width() > 0 && _image->height() > 0;
+  }
+
+  if (!imageValid)
+    return VV_OK;
 
   // Draw boundary lines
-  if (_boundaries || !haveFrame || !glGenBuffers)
+  if (_boundaries)
   {
     const vvVector3 size(vd->getSize()); // volume size [world coordinates]
     drawBoundingBox(size, vd->pos, _boundColor);
   }
 
-  if (_shader == NULL)
-  {
-    return vvRemoteClient::VV_SHADER_ERROR;
-  }
-
   vvMatrix currentMatrix = _currentPr * _currentMv;
-
-  if(newFrame && haveFrame)
-  {
-    pthread_mutex_lock(&_thread->imageMutex);
-    initIbrFrame();
-    pthread_mutex_unlock(&_thread->imageMutex);
-  }
 
   float drMin = 0.0f;
   float drMax = 0.0f;
@@ -173,50 +135,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   const virvo::Viewport vp = vvGLTools::getViewport();
   vvMatrix currentImgMatrix = vvIbr::calcImgMatrix(_currentPr, _currentMv, vp, drMin, drMax);
   bool matrixChanged = (!currentImgMatrix.equal(_imgMatrix));
-
-  if (newFrame) // no frame pending
-  {
-    _changes |= matrixChanged;
-
-    if(_changes)
-    {
-      pthread_mutex_lock(&_thread->signalMutex);
-      vvRemoteClient::ErrorType err = requestFrame();
-      _newFrame = false;
-      pthread_cond_signal(&_thread->imageCond);
-      pthread_mutex_unlock(&_thread->signalMutex);
-      _changes = false;
-      if(err != vvRemoteClient::VV_OK)
-        std::cerr << "vvibrClient::requestFrame() - error() " << err << std::endl;
-      else if(_synchronous)
-      {
-        pthread_mutex_lock(&_thread->signalMutex);
-        pthread_cond_wait(&_thread->readyCond, &_thread->signalMutex);
-        haveFrame = _haveFrame;
-        newFrame = _newFrame;
-        matrixChanged = false;
-        pthread_mutex_unlock(&_thread->signalMutex);
-        if(newFrame && haveFrame)
-        {
-          pthread_mutex_lock(&_thread->imageMutex);
-          initIbrFrame();
-          pthread_mutex_unlock(&_thread->imageMutex);
-        }
-      }
-    }
-  }
-
-  if(!haveFrame)
-  {
-    // no frame was yet received
-    return VV_OK;
-  }
-
-  if(!glGenBuffers)
-  {
-    // rendering requires vertex buffer objects
-    return VV_GL_ERROR;
-  }
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -320,21 +238,25 @@ void vvIbrClient::initIbrFrame()
 {
   vvDebugMsg::msg(1, "vvIbrClient::initIbrFrame()");
 
-  const int h = _image->getHeight();
-  const int w = _image->getWidth();
-  _imgMatrix = _image->getReprojectionMatrix();
-  _imgPr = _image->getProjectionMatrix();
-  _imgMv = _image->getModelViewMatrix();
-  _image->getDepthRange(&_imgDepthRange[0], &_imgDepthRange[1]);
+  const int h = _image->height();
+  const int w = _image->width();
+
+  _imgPr = _image->projMatrix();
+  _imgMv = _image->viewMatrix();
+  _imgDepthRange[0] = _image->depthMin();
+  _imgDepthRange[1] = _image->depthMax();
+  _imgMatrix = vvIbr::calcImgMatrix(_imgPr, _imgMv, _image->viewport(), _imgDepthRange[0], _imgDepthRange[1]);
 
   // get pixel and depth-data
+  virvo::PixelFormat cf = mapPixelFormat(_image->format());
+
   glBindTexture(GL_TEXTURE_2D, _rgbaTex);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, _image->getImagePtr());
+  glTexImage2D(GL_TEXTURE_2D, 0, cf.internalFormat, w, h, 0, cf.format, cf.type, _image->data());
 
   glBindTexture(GL_TEXTURE_2D, _depthTex);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -342,24 +264,15 @@ void vvIbrClient::initIbrFrame()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  uchar* depth = _image->getPixelDepth();
-  switch(_image->getDepthPrecision())
-  {
-    case 8:
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, depth);
-      break;
-    case 16:
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE16, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_SHORT, depth);
-      break;
-    case 32:
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, w, h, 0, GL_LUMINANCE, GL_FLOAT, depth);
-      break;
-  }
+
+  virvo::PixelFormat df = mapPixelFormat(_image->depthBufferFormat());
+
+  glTexImage2D(GL_TEXTURE_2D, 0, df.internalFormat, w, h, 0, df.format, df.type, _image->depthData());
 
   if(_imgVp[2] == w && _imgVp[3] == h)
       return;
 
-  _imgVp = _image->getViewport();
+  _imgVp = _image->viewport();
 
   std::vector<GLfloat> points(w*h*3);
 
@@ -383,58 +296,57 @@ void vvIbrClient::createThreads()
 {
   vvDebugMsg::msg(1, "vvIbrClient::createThreads()");
 
-  _thread = new Thread(2);
-
   pthread_create(&_thread->thread, NULL, getImageFromSocket, this);
-
-  pthread_barrier_wait(&_thread->startBarrier);
 }
 
 void vvIbrClient::destroyThreads()
 {
   vvDebugMsg::msg(1, "vvIbrClient::destroyThreads()");
 
-  pthread_cancel(_thread->thread);
-  pthread_join(_thread->thread, NULL);
+  this->_thread->cancel = true;
+  this->_thread->imageRequest.signal(); // wake up the thread in case it's waiting...
 
-  delete _thread;
+  pthread_join(_thread->thread, NULL);
 }
+
+#define THREAD_FAILURE ((void*)-1)
 
 void* vvIbrClient::getImageFromSocket(void* threadargs)
 {
   vvDebugMsg::msg(1, "vvIbrClient::getImageFromSocket(): thread started");
 
   vvIbrClient *ibr = static_cast<vvIbrClient*>(threadargs);
-  vvIbrImage* img = ibr->_image;
 
-  pthread_barrier_wait(&ibr->_thread->startBarrier);
-
-  while (ibr->_socketIO)
+  for (;;)
   {
-    pthread_mutex_lock( &ibr->_thread->imageMutex );
-    pthread_cond_wait(&ibr->_thread->imageCond, &ibr->_thread->imageMutex);
-    vvSocket::ErrorType err = ibr->_socketIO->getIbrImage(img);
-    if(err != vvSocket::VV_OK)
-    {
-      std::cerr << "vvIbrClient::getImageFromSocket: socket-error (" << err << ") - exiting..." << std::endl;
-      pthread_mutex_unlock( &ibr->_thread->imageMutex );
+    // Block until a new request arrives...
+    ibr->_thread->imageRequest.wait();
+
+    // Exit?
+    if (ibr->_thread->cancel)
       break;
-    }
-    img->decode();
-    pthread_mutex_unlock( &ibr->_thread->imageMutex );
-    //vvToolshed::sleep(1000);
 
-    pthread_mutex_lock( &ibr->_thread->signalMutex );
-    ibr->_newFrame = true;
-    ibr->_haveFrame = true;
-    pthread_cond_signal(&ibr->_thread->readyCond);
-    pthread_mutex_unlock( &ibr->_thread->signalMutex );
+    // Send the request
+    if (VV_OK != ibr->requestFrame())
+      return THREAD_FAILURE;
+
+    // Create a new image
+    std::auto_ptr<virvo::IbrImage> image(new virvo::IbrImage);
+
+    // Get the image
+    if (vvSocket::VV_OK != ibr->_socketIO->getIbrImage(*image))
+      return THREAD_FAILURE;
+
+    // Decompress the image
+    if (!image->decompress())
+      return THREAD_FAILURE;
+
+    virvo::ScopedLock lock(&ibr->_thread->mutex);
+
+    ibr->_image.reset(image.release()); // Swap the images
+    ibr->_thread->newImage = true;
   }
-  pthread_exit(NULL);
 
-  vvDebugMsg::msg(1, "vvIbrClient::getImageFromSocket(): thread terminated");
-#if !defined(__GNUC__) || defined(__MINGW32__)
-  return NULL;
-#endif
+  return 0;
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

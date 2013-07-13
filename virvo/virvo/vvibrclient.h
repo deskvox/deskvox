@@ -21,36 +21,29 @@
 #ifndef _VV_IBRCLIENT_H_
 #define _VV_IBRCLIENT_H_
 
-#include "vvexport.h"
-#include "vvopengl.h"
 #include "vvremoteclient.h"
 
-#include <vector>
+#include <memory>
 
-class vvRenderer;
-class vvSlaveVisitor;
-class vvVolDesc;
-class vvShaderFactory;
 class vvShaderProgram;
-class vvIbrImage;
 
-class VIRVOEXPORT vvIbrClient : public vvRemoteClient
+namespace virvo
+{
+  class IbrImage;
+}
+
+class vvIbrClient : public vvRemoteClient
 {
 public:
-  vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
-              vvTcpSocket* socket, const std::string& filename = "");
-  ~vvIbrClient();
+  VVAPI vvIbrClient(vvVolDesc *vd, vvRenderState renderState, vvTcpSocket* socket, const std::string& filename = "");
+  VVAPI virtual ~vvIbrClient();
 
-  ErrorType render();                                     ///< render image with depth-values
-  virtual void setParameter(ParameterType param, const vvParam& newValue);
+  VVAPI virtual ErrorType render() VV_OVERRIDE; ///< render image with depth-values
 
 private:
   struct Thread;
   Thread *_thread;                                        ///< threads, mutexes, barriers, ...
-  bool   _newFrame;                                       ///< flag indicating a new ibr-frame waiting to be rendered
-  bool   _haveFrame;                                      ///< flag indicating that at least one frame has been received
-  bool   _synchronous;                                    ///< display what was received w/y delay
-  vvIbrImage *_image;                                     ///< image, protected by _imageMutex
+  std::auto_ptr<virvo::IbrImage> _image;                  ///< image, protected by _imageMutex
   GLuint _pointVBO;                                       ///< Vertex Buffer Object id for point-pixels
 
   GLuint _rgbaTex;                                        ///< Texture names for RGBA image
