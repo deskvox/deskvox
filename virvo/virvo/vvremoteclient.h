@@ -30,8 +30,10 @@ class vvTcpSocket;
 class vvImage;
 class vvIbrClient;
 
-class VIRVOEXPORT vvRemoteClient : public vvRenderer
+class vvRemoteClient : public vvRenderer
 {
+  typedef vvRenderer BaseType;
+
 public:
   enum ErrorType
   {
@@ -44,20 +46,28 @@ public:
     VV_BAD_IMAGE
   };
 
-  vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
-                 vvTcpSocket* socket, const std::string &filename);
-  virtual ~vvRemoteClient();
+public:
+  VVAPI vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, vvTcpSocket* socket, const std::string &filename);
+  VVAPI virtual ~vvRemoteClient();
 
-  virtual ErrorType render() = 0;
-  void renderVolumeGL();
+  VVAPI virtual ErrorType render() = 0;
 
-  void setCurrentFrame(size_t index);
-  void setObjectDirection(const vvVector3& od);
-  void setViewingDirection(const vvVector3& vd);
-  void setPosition(const vvVector3& p);
-  virtual void updateTransferFunction();
-  virtual void setParameter(ParameterType param, const vvParam& value);
-  virtual ErrorType requestFrame() const;
+  VVAPI virtual void renderVolumeGL() VV_OVERRIDE;
+
+  VVAPI virtual bool resize(int w, int h) VV_OVERRIDE;
+
+  VVAPI virtual bool present() const VV_OVERRIDE;
+
+  VVAPI virtual void setCurrentFrame(size_t index) VV_OVERRIDE;
+  VVAPI virtual void setObjectDirection(const vvVector3& od) VV_OVERRIDE;
+  VVAPI virtual void setViewingDirection(const vvVector3& vd) VV_OVERRIDE;
+  VVAPI virtual void setPosition(const vvVector3& p) VV_OVERRIDE;
+
+  VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
+
+  VVAPI virtual void setParameter(ParameterType param, const vvParam& value) VV_OVERRIDE;
+
+  VVAPI virtual ErrorType requestFrame() const;
 
 protected:
   vvTcpSocket* _socket;
@@ -67,9 +77,8 @@ protected:
   bool _changes; ///< indicate if a new rendering is required
   vvMatrix _currentMv;                                    ///< Current modelview matrix
   vvMatrix _currentPr;                                    ///< Current projection matrix
-private:
-  virtual void destroyThreads() { }
 
+private:
   ErrorType sendVolume(vvVolDesc*& vd);
 };
 

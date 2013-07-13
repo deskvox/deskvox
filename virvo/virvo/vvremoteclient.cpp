@@ -57,16 +57,6 @@ vvRemoteClient::~vvRemoteClient()
 
 void vvRemoteClient::renderVolumeGL()
 {
-  virvo::Viewport vp = vvGLTools::getViewport();
-  if (::viewport != vp)
-  {
-    if (_socketIO->putEvent(virvo::WindowResize) == vvSocket::VV_OK)
-    {
-      _socketIO->putWinDims(vp[2], vp[3]);
-    }
-    ::viewport = vp;
-  }
-
   vvGLTools::getModelviewMatrix(&_currentMv);
   vvGLTools::getProjectionMatrix(&_currentPr);
 
@@ -74,7 +64,24 @@ void vvRemoteClient::renderVolumeGL()
   {
     vvDebugMsg::msg(0, "vvRemoteClient::renderVolumeGL(): remote rendering error");
   }
-  vvRenderer::renderVolumeGL();
+}
+
+bool vvRemoteClient::resize(int w, int h)
+{
+  if (vvSocket::VV_OK != this->_socketIO->putEvent(virvo::WindowResize))
+  {
+  }
+
+  if (vvSocket::VV_OK != this->_socketIO->putWinDims(w, h))
+  {
+  }
+
+  return BaseType::resize(w, h);
+}
+
+bool vvRemoteClient::present() const
+{
+  return true;
 }
 
 vvRemoteClient::ErrorType vvRemoteClient::sendVolume(vvVolDesc*& vd)
