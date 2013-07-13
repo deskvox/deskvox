@@ -40,13 +40,11 @@ namespace gl = virvo::gl;
 #endif
 
 
-#ifndef NDEBUG
-
+#if !defined(NDEBUG) && defined(GL_KHR_debug)
 
 //--------------------------------------------------------------------------------------------------
 //
 //--------------------------------------------------------------------------------------------------
-#if defined(GL_KHR_debug)
 static char const* GetDebugTypeString(GLenum type)
 {
     switch (type)
@@ -69,27 +67,6 @@ static char const* GetDebugTypeString(GLenum type)
 
     return "{unknown type}";
 }
-#endif
-
-#if defined(GL_KHR_debug)
-//--------------------------------------------------------------------------------------------------
-//
-//--------------------------------------------------------------------------------------------------
-#ifdef _WIN32
-static void OutputDebugStringAF(char const* format, ...)
-{
-    char text[1024] = {0};
-
-    va_list args;
-    va_start(args, format);
-
-    _vsnprintf_s(text, _TRUNCATE, format, args);
-
-    va_end(args);
-
-    OutputDebugStringA(text);
-}
-#endif
 
 //--------------------------------------------------------------------------------------------------
 //
@@ -103,22 +80,18 @@ static void APIENTRY DebugCallback( GLenum /*source*/,
                                     GLvoid* /*userParam*/
                                     )
 {
-    if (type != GL_DEBUG_TYPE_ERROR)
-        return;
-
-#ifdef _WIN32
-    if (IsDebuggerPresent())
-    {
-        OutputDebugStringAF("GL %s: %s\n", GetDebugTypeString(type), message);
-        DebugBreak();
-    }
-#endif
-
     fprintf(stderr, "GL %s: %s\n", GetDebugTypeString(type), message);
-}
-#endif
 
-#endif // !NDEBUG
+    if (type == GL_DEBUG_TYPE_ERROR)
+    {
+#ifdef _WIN32
+        if (IsDebuggerPresent())
+            DebugBreak();
+#endif
+    }
+}
+
+#endif // !NDEBUG && GL_KHR_debug
 
 
 //--------------------------------------------------------------------------------------------------
@@ -134,7 +107,7 @@ void gl::enableDebugCallback()
 
         glDebugMessageCallback(DebugCallback, 0);
     }
-#endif // !NDEBUG
+#endif
 }
 
 
