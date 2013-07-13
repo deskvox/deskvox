@@ -42,16 +42,22 @@
 #   endif
 #endif
 
-#if VV_CUDA_DEBUGGING
-#   define VV_CUDA_CALL(X) virvo::cuda::debug_call(X, __FILE__, __LINE__)
-#else
-#   define VV_CUDA_CALL(X) X
-#endif
 
 #if VV_CUDA_DEBUGGING
-#   define VV_CUDA_MEMINFO() virvo::cuda::debug_meminfo(__FILE__, __LINE__)
+
+#define VV_CUDA_CALL(X) \
+    virvo::cuda::debug_call(X, __FILE__, __LINE__)
+#define VV_CUDA_CHECK_ERROR() \
+    virvo::cuda::debug_call(cudaGetLastError(), __FILE__, __LINE__)
+#define VV_CUDA_MEMINFO() \
+    virvo::cuda::debug_meminfo(__FILE__, __LINE__)
+
 #else
-#   define VV_CUDA_MEMINFO()
+
+#define VV_CUDA_CALL(X) X
+#define VV_CUDA_CHECK_ERROR() /**/
+#define VV_CUDA_MEMINFO() /**/
+
 #endif
 
 
@@ -77,7 +83,7 @@ namespace cuda
 
 
     // Prints the current CUDA memory usage to stderr.
-    void debug_meminfo(char const* file, int line);
+    void VIRVOEXPORT debug_meminfo(char const* file, int line);
 
 
 } // namespace cuda

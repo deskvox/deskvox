@@ -1038,6 +1038,8 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                       d_depth, dp,
                                       ibrPlanes,
                                       ibrMode, true, d_firstIbrPass.get());
+
+    VV_CUDA_CHECK_ERROR();
   }
 
   (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
@@ -1055,6 +1057,8 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                     d_depth, dp,
                                     ibrPlanes,
                                     ibrMode, false, d_firstIbrPass.get());
+
+  VV_CUDA_CHECK_ERROR();
 }
 
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0
