@@ -100,12 +100,9 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   this->_thread->imageRequest.signal();
 
   bool imageValid = false;
-  bool imageNew = false;
 
   {
     virvo::ScopedLock lock(&this->_thread->mutex);
-
-    imageNew = this->_thread->newImage;
 
     // If the image changed, update the textures/buffers
     if (this->_thread->newImage)
