@@ -18,22 +18,14 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifdef HAVE_CONFIG_H
-#include "vvconfig.h"
-#endif
-
-#include <limits>
-
 #include "vvimageclient.h"
-#include "float.h"
-#include "vvshaderfactory.h"
-#include "vvshaderprogram.h"
-#include "vvtoolshed.h"
 #include "vvsocketio.h"
 #include "vvdebugmsg.h"
-#include "vvimage.h"
+
+#include "gl/util.h"
 
 #include "private/vvgltools.h"
+#include "private/vvimage.h"
 
 using std::cerr;
 using std::endl;
@@ -41,81 +33,43 @@ using std::endl;
 vvImageClient::vvImageClient(vvVolDesc *vd, vvRenderState renderState,
                              vvTcpSocket* socket, const std::string& filename)
   : vvRemoteClient(vd, renderState, socket, filename)
-  , _image(NULL)
 {
   vvDebugMsg::msg(1, "vvImageClient::vvImageClient()");
 
   rendererType = REMOTE_IMAGE;
-
-  glGenTextures(1, &_rgbaTex);
-  _image = new vvImage;
 }
 
 vvImageClient::~vvImageClient()
 {
   vvDebugMsg::msg(1, "vvImageClient::~vvImageClient()");
-
-  glDeleteTextures(1, &_rgbaTex);
 }
 
 vvRemoteClient::ErrorType vvImageClient::render()
 {
   vvDebugMsg::msg(1, "vvImageClient::render()");
 
+  // Send the request
   vvRemoteClient::ErrorType err = requestFrame();
-  if(err != vvRemoteClient::VV_OK)
+  if(err != VV_OK)
     return err;
 
-  if(!_socketIO)
-    return vvRemoteClient::VV_SOCKET_ERROR;
+  virvo::Image image;
 
-  vvSocket::ErrorType sockerr = _socketIO->getImage(_image);
-  if(sockerr != vvSocket::VV_OK)
+  // Get the image
+  vvSocket::ErrorType sockerr = _socketIO->getImage(image);
+  if (vvSocket::VV_OK != sockerr)
   {
     std::cerr << "vvImageClient::render: socket error (" << sockerr << ") - exiting..." << std::endl;
     return vvRemoteClient::VV_SOCKET_ERROR;
   }
 
-  _image->decode();
+  // Decompress the image
+  if (!image.decompress())
+    return VV_BAD_IMAGE;
 
-  const int h = _image->getHeight();
-  const int w = _image->getWidth();
-
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
-
-  glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT
-               | GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_TRANSFORM_BIT);
-
-  glDisable(GL_LIGHTING);
-  glDisable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-  glEnable(GL_TEXTURE_2D);
-
-  // get pixel and depth-data
-  glBindTexture(GL_TEXTURE_2D, _rgbaTex);
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, _image->getImagePtr());
-
-  vvGLTools::drawQuad();
-
-  glPopAttrib();
-
-  glPopMatrix();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
+  // Display the image
+  virvo::PixelFormat f = mapPixelFormat(image.format());
+  virvo::gl::blendPixels(image.width(), image.height(), f.format, f.type, image.data());
 
   return VV_OK;
 }

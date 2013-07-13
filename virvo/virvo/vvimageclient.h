@@ -21,29 +21,19 @@
 #ifndef _VV_IMAGECLIENT_H_
 #define _VV_IMAGECLIENT_H_
 
-#include "vvexport.h"
-#include "vvopengl.h"
 #include "vvremoteclient.h"
-
-#include <vector>
 
 class vvRenderer;
 class vvSlaveVisitor;
 class vvVolDesc;
 
-class VIRVOEXPORT vvImageClient : public vvRemoteClient
+class vvImageClient : public vvRemoteClient
 {
 public:
-  vvImageClient(vvVolDesc *vd, vvRenderState renderState,
-                vvTcpSocket* socket, const std::string& filename = "");
-  ~vvImageClient();
+  VVAPI vvImageClient(vvVolDesc *vd, vvRenderState renderState, vvTcpSocket* socket, const std::string& filename = "");
+  VVAPI virtual ~vvImageClient();
 
-  ErrorType render();                                     ///< render image with depth-values
-
-private:
-  GLuint _rgbaTex;                                        ///< Texture names for RGBA image
-
-  vvImage *_image;
+  VVAPI virtual ErrorType render() VV_OVERRIDE; ///< render image with depth-values
 };
 
 #endif
