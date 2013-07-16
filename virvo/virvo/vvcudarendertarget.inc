@@ -98,8 +98,8 @@ PixelUnpackBufferRT::PixelUnpackBufferRT(EColorFormat ColorFormat, EDepthFormat 
 
 RenderTarget* PixelUnpackBufferRT::create(EColorFormat ColorFormat, EDepthFormat DepthFormat)
 {
-	if (!virvo::cuda::initGlInterop())
-		return 0;
+    if (!virvo::cuda::initGlInterop())
+        return 0;
 
     return new PixelUnpackBufferRT(ColorFormat, DepthFormat);
 }
@@ -187,9 +187,6 @@ bool PixelUnpackBufferRT::EndFrameImpl()
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-    if (GL_NO_ERROR != VV_GET_GL_ERROR())
-        return false;
-
     return true;
 }
 
@@ -217,18 +214,12 @@ bool PixelUnpackBufferRT::CreateGLBuffers(int w, int h, bool linearInterpolation
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexImage2D(GL_TEXTURE_2D, 0, cf.internalFormat, w, h, 0, cf.format, cf.type, 0);
 
-    if (GL_NO_ERROR != VV_GET_GL_ERROR())
-        return false;
-
     // Create the buffer
     impl->Buffer.reset( gl::createBuffer() );
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, impl->Buffer.get());
     glBufferData(GL_PIXEL_UNPACK_BUFFER, ComputeBufferSize(w, h, cf.size), 0, GL_STREAM_DRAW);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-
-    if (GL_NO_ERROR != VV_GET_GL_ERROR())
-        return false;
 
     // Register the buffer object for use with CUDA
     if (!impl->Resource.registerBuffer(impl->Buffer.get(), cudaGraphicsRegisterFlagsWriteDiscard))
@@ -255,7 +246,7 @@ bool PixelUnpackBufferRT::DownloadColorBufferImpl(unsigned char* buffer, size_t 
     glGetBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, bytes, buffer);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-    return GL_NO_ERROR == VV_GET_GL_ERROR();
+    return true;
 
     static_cast<void>(bufferSize); // unused
 }
@@ -364,10 +355,10 @@ unsigned DeviceBufferRT::getDepthBufferSize() const
 bool DeviceBufferRT::BeginFrameImpl(unsigned clearMask)
 {
     if (clearMask & CLEAR_COLOR)
-        impl->ColorBuffer.fill('c');
+        impl->ColorBuffer.fill(0);
 
     if (clearMask & CLEAR_DEPTH)
-        impl->DepthBuffer.fill('d');
+        impl->DepthBuffer.fill(0);
 
     return true;
 }
@@ -375,15 +366,7 @@ bool DeviceBufferRT::BeginFrameImpl(unsigned clearMask)
 
 bool DeviceBufferRT::EndFrameImpl()
 {
-    bool colorOK = impl->ColorBuffer.download();
-    bool depthOK = impl->DepthBuffer.download();
-
-    if (!colorOK || !depthOK)
-    {
-        return false;
-    }
-
-    return colorOK && depthOK;
+    return impl->ColorBuffer.download() && impl->DepthBuffer.download();
 }
 
 

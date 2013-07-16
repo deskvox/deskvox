@@ -300,14 +300,8 @@ bool FramebufferObjectRT::ResizeImpl(int w, int h)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexImage2D(GL_TEXTURE_2D, 0, cf.internalFormat, w, h, 0, cf.format, cf.type, 0);
 
-    if (VV_GET_GL_ERROR() != GL_NO_ERROR)
-        return false;
-
     // Attach to framebuffer
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ColorBuffer.get(), 0);
-
-    if (VV_GET_GL_ERROR() != GL_NO_ERROR)
-        return false;
 
     //
     // Create the depth-buffer
@@ -321,14 +315,8 @@ bool FramebufferObjectRT::ResizeImpl(int w, int h)
 
         glRenderbufferStorage(GL_RENDERBUFFER, df.internalFormat, w, h);
 
-        if (VV_GET_GL_ERROR() != GL_NO_ERROR)
-            return false;
-
         // Attach as depth (and stencil) target
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, DepthBuffer.get());
-
-        if (VV_GET_GL_ERROR() != GL_NO_ERROR)
-            return false;
     }
 
     //
