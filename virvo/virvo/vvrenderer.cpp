@@ -201,6 +201,11 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
   case VV_CLIP_PLANE_NORMAL:
     _clipPlaneNormal = value;
     _clipPlaneNormal.normalize();
+    if(_clipPlaneNormal.length() < 0.5)
+    {
+        _clipPlaneNormal.set(0,0,1);
+    }
+    
     break;
   case VV_CLIP_COLOR:
     _clipPlaneColor = value;
