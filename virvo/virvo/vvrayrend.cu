@@ -1007,12 +1007,6 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
   dim3 blockSize(params.blockDimX, params.blockDimY);
   dim3 gridSize = dim3(divup(width, blockSize.x), divup(height, blockSize.y));
 
-#if 1//ndef NDEBUG
-  if (!cu::isLaunchable(kernel, blockSize, 0/*dynamic shared memory*/))
-  {
-  }
-#endif
-
   cu::AutoPointer<float> d_firstIbrPass;
 
   if (twoPassIbr)
