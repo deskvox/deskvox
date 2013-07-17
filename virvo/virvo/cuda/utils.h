@@ -21,12 +21,54 @@
 #ifndef _VV_CUDAUTILS_H_
 #define _VV_CUDAUTILS_H_
 
+
 #include <cuda_runtime.h>
+ 
+#include "../vvexport.h"
+
+
+namespace virvo
+{
+namespace cuda
+{
+
+
+// Returns the first block size for which the given kernel, specified by <attr>,
+// can be executed on the current device.
+VVAPI bool findConfig(cudaFuncAttributes const& attr, dim3 const*& begin, dim3 const* end, size_t dynamicSharedMem = 0);
+
+
+// Returns the first block size for which the given kernel
+// can be executed on the current device.
+template<class T>
+bool findConfig(T* func, dim3 const*& begin, dim3 const* end, size_t dynamicSharedMem = 0)
+{
+  cudaFuncAttributes attr;
+
+  if (cudaSuccess == cudaFuncGetAttributes(&attr, (const void*)func))
+    return findConfig(attr, begin, end, dynamicSharedMem);
+
+  return false;
+}
+
+
+// Returns whether the given kernel, can be executed on the current
+// device using the given launch configuration.
+template<class T>
+bool isLaunchable(T* func, dim3 const& blockDim, size_t dynamicSharedMem = 0)
+{
+  dim3 const* begin = &blockDim;
+  dim3 const* end   = &blockDim + 1;
+
+  return findConfig(func, begin, end, dynamicSharedMem);
+}
+
+
+} // namespace cuda
+} // namespace virvo
+
 
 #ifndef __CUDACC__
-
-
-#include "../vvexport.h"
 
 
 namespace virvo

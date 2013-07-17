@@ -43,6 +43,7 @@
 #endif
 
 #include "vvdebugmsg.h"
+#include "private/vvlog.h"
 
 bool virvo::cuda::checkError(bool *success, cudaError_t err, const char *msg, bool syncIfDebug)
 {
@@ -134,6 +135,67 @@ bool virvo::cuda::initGlInterop()
   done = true;
   return true;
 }
+
+
+namespace {
+
+bool CheckConfig(cudaFuncAttributes const& attr, cudaDeviceProp const& prop, dim3 const& blockDim, size_t dynamicSharedMem)
+{
+  // Compute the number of threads per block
+  size_t numThreads = blockDim.x * blockDim.y * blockDim.z;
+
+  // Compare blockDim with the maximum block dimension for the current device and the current kernel
+  if (numThreads > attr.maxThreadsPerBlock)
+  {
+    VV_LOG(1) << "too many threads used\n";
+    return false;
+  }
+
+#if 0
+  // Check if the number of registers per block is above the limit
+  if (numThreads * attr.numRegs > prop.regsPerBlock)
+  {
+    VV_LOG(1) << "too many registers used\n";
+    return false;
+  }
+#endif
+
+  // Check the size of the shared memory
+  if (attr.sharedSizeBytes/*static*/ + dynamicSharedMem > prop.sharedMemPerBlock)
+  {
+    VV_LOG(1) << "too much shared memory used\n";
+    return false;
+  }
+
+  return true;
+}
+
+} // namespace
+
+
+bool virvo::cuda::findConfig(cudaFuncAttributes const& attr, dim3 const*& begin, dim3 const* end, size_t dynamicSharedMem)
+{
+  if (begin != end)
+  {
+    // The current device
+    int device = -1;
+    // The device properties for the current device
+    cudaDeviceProp prop = cudaDevicePropDontCare;
+
+    if (cudaSuccess == cudaGetDevice(&device) && cudaSuccess == cudaGetDeviceProperties(&prop, device))
+    {
+      // Test all possible block dimensions...
+      for (; begin != end; ++begin)
+      {
+        if (CheckConfig(attr, prop, *begin, dynamicSharedMem))
+          return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 
 #endif // HAVE_CUDA
 
