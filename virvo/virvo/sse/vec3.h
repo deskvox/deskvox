@@ -61,7 +61,8 @@ public:
     {
       return z;
     }
-    assert(0);
+    assert("index out of range" == 0);
+    return x;
   }
 
   VV_FORCE_INLINE const T& operator[](size_t i) const
@@ -78,7 +79,8 @@ public:
     {
       return z;
     }
-    assert(0);
+    assert("index out of range" == 0);
+    return x;
   }
 };
 
