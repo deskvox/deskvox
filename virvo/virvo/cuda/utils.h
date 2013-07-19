@@ -45,8 +45,14 @@ bool findConfig(T* func, dim3 const*& begin, dim3 const* end, size_t dynamicShar
 {
   cudaFuncAttributes attr;
 
+#if CUDART_VERSION < 5000
+  if (cudaSuccess == cudaFuncGetAttributes(&attr, (const char*)func))
+#else
   if (cudaSuccess == cudaFuncGetAttributes(&attr, (const void*)func))
+#endif
+  {
     return findConfig(attr, begin, end, dynamicSharedMem);
+  }
 
   return false;
 }

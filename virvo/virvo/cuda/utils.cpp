@@ -145,27 +145,12 @@ bool CheckConfig(cudaFuncAttributes const& attr, cudaDeviceProp const& prop, dim
   size_t numThreads = blockDim.x * blockDim.y * blockDim.z;
 
   // Compare blockDim with the maximum block dimension for the current device and the current kernel
-  if (numThreads > attr.maxThreadsPerBlock)
-  {
-    VV_LOG(1) << "too many threads used\n";
+  if (numThreads > static_cast<size_t>(attr.maxThreadsPerBlock))
     return false;
-  }
-
-#if 0
-  // Check if the number of registers per block is above the limit
-  if (numThreads * attr.numRegs > prop.regsPerBlock)
-  {
-    VV_LOG(1) << "too many registers used\n";
-    return false;
-  }
-#endif
 
   // Check the size of the shared memory
   if (attr.sharedSizeBytes/*static*/ + dynamicSharedMem > prop.sharedMemPerBlock)
-  {
-    VV_LOG(1) << "too much shared memory used\n";
     return false;
-  }
 
   return true;
 }
