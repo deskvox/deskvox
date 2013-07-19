@@ -27,6 +27,7 @@
 #include "cuda/texture.h"
 #include "cuda/utils.h"
 
+//#define REALLY_LONG_COMPILE_TIME
 
 namespace cu = virvo::cuda;
 
@@ -61,39 +62,30 @@ static inline int divup(int x, int n)
   return (x + (n - 1)) / n;
 }
 
-
 template<int t_bpc>
-__device__ float volume(const float x, const float y, const float z)
+__device__ float volume(const float x, const float y, const float z);
+template<>
+__device__ float volume<1>(const float x, const float y, const float z)
 {
-  if (t_bpc == 1)
-  {
-    return tex3D(volTexture8, x, y, z);
-  }
-  else if (t_bpc == 2)
-  {
-    return tex3D(volTexture16, x, y, z);
-  }
-  else
-  {
-    return -1.0f;
-  }
+  return tex3D(volTexture8, x, y, z);
+}
+template<>
+__device__ float volume<2>(const float x, const float y, const float z)
+{
+  return tex3D(volTexture16, x, y, z);
 }
 
 template<int t_bpc>
-__device__ float volume(const float3& pos)
+__device__ float volume(const float3& pos);
+template<>
+__device__ float volume<1>(const float3& pos)
 {
-  if (t_bpc == 1)
-  {
-    return tex3D(volTexture8, pos.x, pos.y, pos.z);
-  }
-  else if (t_bpc == 2)
-  {
-    return tex3D(volTexture16, pos.x, pos.y, pos.z);
-  }
-  else
-  {
-    return -1.0f;
-  }
+  return tex3D(volTexture8, pos.x, pos.y, pos.z);
+}
+template<>
+__device__ float volume<2>(const float3& pos)
+{
+  return tex3D(volTexture16, pos.x, pos.y, pos.z);
 }
 
 __device__ bool skipSpace(const float3& pos)
@@ -363,9 +355,19 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        void* d_depth, int dp,
                        const float2 ibrPlanes,
                        const IbrMode ibrMode,
-                       const bool gatherPass, float* d_firstIbrPass)
+                       const bool gatherPass, float* d_firstIbrPass,
+                       bool p_earlyRayTermination, int p_mipMode, bool p_lighting)
 {
   const float opacityThreshold = 0.95f;
+#ifdef REALLY_LONG_COMPILE_TIME
+  const bool earlyRayTermination = t_earlyRayTermination;
+  int mipMode = t_mipMode;
+  const bool lighting = t_lighting;
+#else
+  const bool earlyRayTermination = p_earlyRayTermination;
+  int mipMode = p_mipMode;
+  const bool lighting = p_lighting;
+#endif
 
   const uint x = blockIdx.x * blockDim.x + threadIdx.x;
   const uint y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -460,7 +462,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
   float4 dst = make_float4(0.0f);
 
-  if (t_mipMode > 0)
+  if (mipMode > 0)
   {
     dst = backgroundColor;
   }
@@ -526,14 +528,14 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     // Post-classification transfer-function lookup.
     float4 src = tex1D(tfTexture, sample);
 
-    if (t_mipMode == 1)
+    if (mipMode == 1)
     {
       dst.x = fmaxf(src.x, dst.x);
       dst.y = fmaxf(src.y, dst.y);
       dst.z = fmaxf(src.z, dst.z);
       dst.w = 1;
     }
-    else if (t_mipMode == 2)
+    else if (mipMode == 2)
     {
       dst.x = fminf(src.x, dst.x);
       dst.y = fminf(src.y, dst.y);
@@ -542,7 +544,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     }
 
     // Local illumination.
-    if (t_lighting && (src.w > 0.1f))
+    if (lighting && (src.w > 0.1f))
     {
       const float3 Ka = make_float3(0.0f, 0.0f, 0.0f);
       const float3 Kd = make_float3(0.8f, 0.8f, 0.8f);
@@ -577,7 +579,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       src.w = 1 - powf(1 - src.w, dist);
     }
 
-    if (t_mipMode == 0)
+    if (mipMode == 0)
     {
       // pre-multiply alpha
       src.x *= src.w;
@@ -585,12 +587,12 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       src.z *= src.w;
     }
 
-    if (t_mipMode == 0)
+    if (mipMode == 0)
     {
       dst = dst + src * (1.0f - dst.w);
     }
 
-    if (t_earlyRayTermination && (dst.w > opacityThreshold))
+    if (earlyRayTermination && (dst.w > opacityThreshold))
     {
       break;
     }
@@ -766,7 +768,8 @@ typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint heigh
                             void* d_depth, int dp,
                             const float2 ibrPlanes,
                             const IbrMode ibrMode,
-                            const bool gatherPass, float* d_firstIbrPass);
+                            const bool gatherPass, float* d_firstIbrPass,
+                            bool p_earlyRayTermination, int p_mipMode, bool p_lighting);
 
 template<
          int t_bpc,
@@ -835,6 +838,7 @@ template<
 renderKernel getKernelWithClipping(const RayRendKernelParams& params)
 {
 
+#ifdef REALLY_LONG_COMPILE_TIME
   switch (params.mipMode)
   {
   case 0:
@@ -876,6 +880,16 @@ renderKernel getKernelWithClipping(const RayRendKernelParams& params)
                             0
                            >(params);
   }
+#else
+  return getKernelWithMip<
+                            t_bpc,
+                            t_illumination,
+                            t_opacityCorrection,
+                            t_earlyRayTermination,
+                            t_clipping,
+                            0
+                           >(params);
+#endif
 }
 
 template<
@@ -917,6 +931,7 @@ template<
         >
 renderKernel getKernelWithOpacityCorrection(const RayRendKernelParams& params)
 {
+#ifdef REALLY_LONG_COMPILE_TIME
   if (params.earlyRayTermination)
   {
     return getKernelWithEarlyRayTermination<
@@ -935,6 +950,14 @@ renderKernel getKernelWithOpacityCorrection(const RayRendKernelParams& params)
                                             false
                                            >(params);
   }
+#else
+  return getKernelWithEarlyRayTermination<
+                                            t_bpc,
+                                            t_illumination,
+                                            t_opacityCorrection,
+                                            true
+                                           >(params);
+#endif
 }
 
 template<
@@ -958,6 +981,7 @@ template<
         >
 renderKernel getKernelWithBpc(const RayRendKernelParams& params)
 {
+#ifdef REALLY_LONG_COMPILE_TIME
   if (params.illumination)
   {
     return getKernelWithIllumination<t_bpc, true>(params);
@@ -966,6 +990,9 @@ renderKernel getKernelWithBpc(const RayRendKernelParams& params)
   {
     return getKernelWithIllumination<t_bpc, false>(params);
   }
+#else
+  return getKernelWithIllumination<t_bpc, true>(params);
+#endif
 }
 
 renderKernel getKernel(const RayRendKernelParams& params)
@@ -1037,7 +1064,8 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                       planeNormal, planeDist,
                                       d_depth, dp,
                                       ibrPlanes,
-                                      ibrMode, true, d_firstIbrPass.get());
+                                      ibrMode, true, d_firstIbrPass.get(),
+                                      params.earlyRayTermination, params.mipMode, params.illumination);
 
     VV_CUDA_CHECK_ERROR();
   }
@@ -1056,7 +1084,8 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                     planeNormal, planeDist,
                                     d_depth, dp,
                                     ibrPlanes,
-                                    ibrMode, false, d_firstIbrPass.get());
+                                    ibrMode, false, d_firstIbrPass.get(),
+                                    params.earlyRayTermination, params.mipMode, params.illumination);
 
   VV_CUDA_CHECK_ERROR();
 }
