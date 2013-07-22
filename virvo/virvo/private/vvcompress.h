@@ -32,9 +32,16 @@ namespace virvo
 {
 
 
+class CompressedVector;
+
+
 VVAPI bool encodeSnappy(std::vector<unsigned char>& data);
 
 VVAPI bool decodeSnappy(std::vector<unsigned char>& data);
+
+VVAPI bool encodeSnappy(CompressedVector& data);
+
+VVAPI bool decodeSnappy(CompressedVector& data);
 
 
 } // namespace virvo

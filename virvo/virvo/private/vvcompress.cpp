@@ -20,6 +20,7 @@
 
 
 #include "vvcompress.h"
+#include "vvcompressedvector.h"
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
@@ -78,14 +79,44 @@ bool virvo::decodeSnappy(std::vector<unsigned char>& data)
 
 bool virvo::encodeSnappy(std::vector<unsigned char>& /*data*/)
 {
-  return false;
+    return false;
 }
 
 
 bool virvo::decodeSnappy(std::vector<unsigned char>& /*data*/)
 {
-  return false;
+    return false;
 }
 
 
 #endif
+
+
+bool virvo::encodeSnappy(CompressedVector& data)
+{
+    if (data.getCompressionType() != Compress_None)
+        return false;
+
+    if (encodeSnappy(data.vector()))
+    {
+        data.setCompressionType(Compress_Snappy);
+        return true;
+    }
+
+    return false;
+}
+
+
+bool virvo::decodeSnappy(CompressedVector& data)
+{
+    if (data.getCompressionType() != Compress_Snappy)
+        return false;
+    
+    if (decodeSnappy(data.vector()))
+    {
+        data.setCompressionType(Compress_None);
+        return true;
+    }
+
+    return false;
+}
