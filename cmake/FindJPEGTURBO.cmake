@@ -1,38 +1,71 @@
-# - Find JPEGTURBO
-# Find the libjpeg-turbo includes and library
-# This module defines
-#  JPEGTURBO_INCLUDE_DIR, where to find jpeglib.h and turbojpeg.h, etc.
-#  JPEGTURBO_LIBRARIES, the libraries needed to use libjpeg-turbo.
-#  JPEGTURBO_FOUND, If false, do not try to use libjpeg-turbo.
-# also defined, but not for general use are
-#  JPEGTURBO_LIBRARY, where to find the libjpeg-turbo library.
+include(FindPackageHandleStandardArgs)
 
-#=============================================================================
-# Copyright 2001-2009 Kitware, Inc.
-#
-# Distributed under the OSI-approved BSD License (the "License");
-# see accompanying file Copyright.txt for details.
-#
-# This software is distributed WITHOUT ANY WARRANTY; without even the
-# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the License for more information.
-#=============================================================================
-# (To distribute this file outside of CMake, substitute the full
-#  License text for the above reference.)
+set(hints
+  $ENV{EXTERNLIBS}/libjpeg-turbo
+  $ENV{LIB_BASE_PATH}/libjpeg-turbo
+)
 
-FIND_PATH(JPEGTURBO_INCLUDE_DIR turbojpeg.h)
+set(paths
+  /usr
+  /usr/local
+)
 
-FIND_LIBRARY(TURBOJPEG_LIBRARY NAMES turbojpeg)
-FIND_LIBRARY(JPEGTURBO_LIBRARY NAMES jpeg)
+find_path(JPEGTURBO_INCLUDE_DIR
+  NAMES
+    jconfig.h jerror.h jmorecfg.h jpeglib.h # turbojpeg.h
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    include
+)
 
-# handle the QUIETLY and REQUIRED arguments and set JPEGTURBO_FOUND to TRUE if
-# all listed variables are TRUE
-INCLUDE(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(JPEGTURBO DEFAULT_MSG TURBOJPEG_LIBRARY JPEGTURBO_LIBRARY JPEGTURBO~
+find_library(JPEGTURBO_LIBRARY
+  NAMES
+    jpeg
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    lib64
+    lib
+)
 
-IF(JPEGTURBO_FOUND)
-  SET(JPEGTURBO_LIBRARIES ${JPEGTURBO_LIBRARY})
-  SET(TURBOJPEG_LIBRARIES ${TURBOJPEG_LIBRARY})
-ENDIF(JPEGTURBO_FOUND)
+find_library(JPEGTURBO_LIBRARY_DEBUG
+  NAMES
+    jpegd
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    lib64
+    lib
+)
 
-MARK_AS_ADVANCED(TURBOJPEG_LIBRARY JPEGTURBO_LIBRARY JPEGTURBO_INCLUDE_DIR )
+if(NOT JPEGTURBO_LIBRARY_DEBUG)
+  find_library(JPEGTURBO_LIBRARY_DEBUG
+    NAMES
+      jpeg
+    HINTS
+      ${hints}
+    PATHS
+      ${paths}
+    PATH_SUFFIXES
+      lib64/debug
+      lib/debug
+  )
+endif()
+
+if(JPEGTURBO_LIBRARY_DEBUG)
+  set(JPEGTURBO_LIBRARIES optimized ${JPEGTURBO_LIBRARY} debug ${JPEGTURBO_LIBRARY_DEBUG})
+else()
+  set(JPEGTURBO_LIBRARIES ${JPEGTURBO_LIBRARY})
+endif()
+
+find_package_handle_standard_args(JPEGTURBO DEFAULT_MSG
+  JPEGTURBO_INCLUDE_DIR
+  JPEGTURBO_LIBRARY
+)

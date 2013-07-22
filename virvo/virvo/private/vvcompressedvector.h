@@ -37,6 +37,8 @@ enum CompressionType
     Compress_None,
     // The buffer is compressed using the SNAPPY algorithm
     Compress_Snappy,
+    // JPEG compression
+    Compress_JPEG,
 };
 
 

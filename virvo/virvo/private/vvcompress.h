@@ -24,6 +24,7 @@
 
 
 #include "vvexport.h"
+#include "../vvpixelformat.h"
 
 #include <vector>
 
@@ -35,6 +36,16 @@ namespace virvo
 class CompressedVector;
 
 
+struct JPEGOptions
+{
+    PixelFormat format;
+    int w;
+    int h;
+    int pitch;
+    int quality;
+};
+
+
 VVAPI bool encodeSnappy(std::vector<unsigned char>& data);
 
 VVAPI bool decodeSnappy(std::vector<unsigned char>& data);
@@ -42,6 +53,14 @@ VVAPI bool decodeSnappy(std::vector<unsigned char>& data);
 VVAPI bool encodeSnappy(CompressedVector& data);
 
 VVAPI bool decodeSnappy(CompressedVector& data);
+
+VVAPI bool encodeJPEG(std::vector<unsigned char>& data, JPEGOptions const& options);
+
+VVAPI bool decodeJPEG(std::vector<unsigned char>& data, JPEGOptions const& options);
+
+VVAPI bool encodeJPEG(CompressedVector& data, JPEGOptions const& options);
+
+VVAPI bool decodeJPEG(CompressedVector& data, JPEGOptions const& options);
 
 
 } // namespace virvo
