@@ -51,11 +51,11 @@ public:
   // Destructor
   VVAPI virtual ~IbrImage();
 
-  // Returns a pointer to the depth buffer
-  unsigned char* depthData() { return &depth_[0]; }
+  // Returns the depth buffer
+  CompressedVector& depthBuffer() { return depth_; }
 
-  // Returns a pointer to the depth buffer
-  unsigned char const* depthData() const { return &depth_[0]; }
+  // Returns the depth buffer
+  CompressedVector const& depthBuffer() const { return depth_; }
 
   // Returns the size of the depth buffer
   size_t depthSize() const
@@ -106,7 +106,7 @@ public:
 
 private:
   // The depth buffer
-  std::vector<unsigned char> depth_;
+  CompressedVector depth_;
   // Format of the depth buffer
   PixelFormat depthFormat_;
   // Depth range

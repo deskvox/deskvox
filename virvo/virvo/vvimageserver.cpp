@@ -61,7 +61,7 @@ void vvImageServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRender
   virvo::Image image(w, h, rt->colorFormat());
 
   // Fetch rendered image
-  if (!rt->downloadColorBuffer(image.data(), image.size()))
+  if (!rt->downloadColorBuffer(image.data().ptr(), image.size()))
   {
     return;
   }

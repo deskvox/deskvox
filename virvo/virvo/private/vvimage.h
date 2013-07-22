@@ -25,6 +25,7 @@
 
 #include "vvexport.h"
 #include "vvpixelformat.h"
+#include "vvcompressedvector.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -57,11 +58,11 @@ public:
   // Destructor
   VVAPI virtual ~Image();
 
-  // Returns a pointer to the image data
-  unsigned char* data() { return &data_[0]; }
+  // Returns the image buffer
+  CompressedVector& data() { return data_; }
 
-  // Returns a pointer to the image data
-  unsigned char const* data() const { return &data_[0]; }
+  // Returns the image buffer
+  CompressedVector const& data() const { return data_; }
 
   // Returns the width of the image
   int width() const { return width_; }
@@ -96,7 +97,7 @@ private:
 
 private:
   // The image data
-  std::vector<unsigned char> data_;
+  CompressedVector data_;
   // Width in pixels
   int width_;
   // Height in pixels

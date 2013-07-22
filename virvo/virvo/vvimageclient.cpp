@@ -69,7 +69,7 @@ vvRemoteClient::ErrorType vvImageClient::render()
 
   // Display the image
   virvo::PixelFormatInfo f = mapPixelFormat(image.format());
-  virvo::gl::blendPixels(image.width(), image.height(), f.format, f.type, image.data());
+  virvo::gl::blendPixels(image.width(), image.height(), f.format, f.type, image.data().ptr());
 
   return VV_OK;
 }
