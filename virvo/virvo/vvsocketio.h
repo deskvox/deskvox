@@ -40,8 +40,9 @@ class vvVolDesc;
 
 namespace virvo
 {
-  class Image;
+  class CompressedVector;
   class IbrImage;
+  class Image;
 }
 
 /** This class provides specific data transfer through sockets.
@@ -190,6 +191,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putImage(virvo::Image const& image) const;
     vvSocket::ErrorType getIbrImage(virvo::IbrImage& image) const;
     vvSocket::ErrorType putIbrImage(virvo::IbrImage const& image) const;
+    vvSocket::ErrorType getCompressedVector(virvo::CompressedVector& vec) const;
+    vvSocket::ErrorType putCompressedVector(virvo::CompressedVector const& vec) const;
 
     vvSocket* getSocket() const;
 

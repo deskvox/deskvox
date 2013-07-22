@@ -29,6 +29,7 @@
 #include "private/vvgltools.h"
 #include "private/vvimage.h"
 #include "private/vvibrimage.h"
+#include "private/vvcompressedvector.h"
 
 //#ifdef VV_DEBUG_MEMORY
 //#include <crtdbg.h>
@@ -1614,7 +1615,7 @@ vvSocket::ErrorType vvSocketIO::getImage(virvo::Image& image) const
     int format = vvToolshed::read32(&header[ 8]);
     int stride = vvToolshed::read32(&header[12]);
 
-    image.resize(w, h, static_cast<virvo::PixelFormat>(format), stride);
+    image.init(w, h, static_cast<virvo::PixelFormat>(format), stride);
 
     err = getStdVector(image.data_);
   }
@@ -1680,6 +1681,36 @@ vvSocket::ErrorType vvSocketIO::putIbrImage(virvo::IbrImage const& image) const
   if (err == vvSocket::VV_OK) err = putMatrix(&image.viewMatrix_);
   if (err == vvSocket::VV_OK) err = putMatrix(&image.projMatrix_);
   if (err == vvSocket::VV_OK) err = putViewport(image.viewport_);
+
+  return err;
+}
+
+vvSocket::ErrorType vvSocketIO::getCompressedVector(virvo::CompressedVector& vec) const
+{
+  if (!getSocket())
+    return vvSocket::VV_SOCK_ERROR;
+
+  vvSocket::ErrorType err = vvSocket::VV_OK;
+
+  int type = 0;
+
+  if (err == vvSocket::VV_OK) err = getStdVector(vec.vector());
+  if (err == vvSocket::VV_OK) err = getInt32(type);
+
+  vec.setCompressionType(static_cast<virvo::CompressionType>(type));
+
+  return err;
+}
+
+vvSocket::ErrorType vvSocketIO::putCompressedVector(virvo::CompressedVector const& vec) const
+{
+  if (!getSocket())
+    return vvSocket::VV_SOCK_ERROR;
+
+  vvSocket::ErrorType err = vvSocket::VV_OK;
+
+  if (err == vvSocket::VV_OK) err = putStdVector(vec.vector());
+  if (err == vvSocket::VV_OK) err = putInt32(static_cast<int>(vec.getCompressionType()));
 
   return err;
 }

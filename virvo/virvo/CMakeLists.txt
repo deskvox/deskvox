@@ -57,6 +57,7 @@ endif()
 
 set(VIRVO_HEADERS
   private/vvcompress.h
+  private/vvcompressedvector.h
   private/vvgltools.h
   private/vvibrimage.h
   private/vvimage.h
@@ -77,7 +78,7 @@ set(VIRVO_HEADERS
 
   mem/align.h
   mem/allocator.h
-  
+
   sse/aabb.h
   sse/cast.h
   sse/matrix.h
