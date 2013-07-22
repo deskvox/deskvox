@@ -106,7 +106,7 @@ public:
   void setViewport(virvo::Viewport const& value) { viewport_ = value; }
 
   // Compress the image
-  VVAPI bool compress();
+  VVAPI bool compress(CompressionType ctColor = Compress_Snappy, CompressionType ctDepth = Compress_Snappy);
 
   // Decompress the image
   VVAPI bool decompress();

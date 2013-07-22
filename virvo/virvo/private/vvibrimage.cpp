@@ -56,14 +56,14 @@ IbrImage::~IbrImage()
 }
 
 
-bool IbrImage::compress()
+bool IbrImage::compress(virvo::CompressionType ctColor, virvo::CompressionType ctDepth)
 {
   // Compress the color buffer
-  if (!color_.compress())
+  if (!color_.compress(ctColor))
     return false;
 
   // Compress the depth buffer
-  if (!depth_.compress())
+  if (!depth_.compress(ctDepth))
     return false;
 
   return true;

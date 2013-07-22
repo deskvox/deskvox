@@ -87,7 +87,7 @@ public:
   VVAPI void assign(unsigned char* data, int w, int h, PixelFormat format = PF_RGBA8, int stride = 0);
 
   // Compress the image
-  VVAPI bool compress();
+  VVAPI bool compress(CompressionType ct = Compress_JPEG);
 
   // Decompress the image
   VVAPI bool decompress();

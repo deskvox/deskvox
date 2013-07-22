@@ -60,22 +60,62 @@ void Image::assign(unsigned char* data, int w, int h, PixelFormat format, int st
 }
 
 
-bool Image::compress()
+bool Image::compress(virvo::CompressionType ct)
 {
-  assert( size() == data_.size() );
+  assert( data_.getCompressionType() == Compress_None );
 
-  return virvo::encodeSnappy(data_);
+  switch (ct)
+  {
+  case Compress_None:
+    return true;
+
+  case Compress_JPEG: {
+    virvo::JPEGOptions options;
+
+    options.format  = this->format();
+    options.w       = this->width();
+    options.h       = this->height();
+    options.pitch   = this->stride();
+    options.quality = 75; // TODO: Make this an option?!?!
+
+    if (virvo::encodeJPEG(data_, options))
+      return true;
+
+    // JPEG compression failed. Try Snappy.
+    /* FALL THROUGH */
+    }
+
+  case Compress_Snappy:
+    return virvo::encodeSnappy(data_);
+  }
+
+  return false;
 }
 
 
 bool Image::decompress()
 {
-  if (!virvo::decodeSnappy(data_))
-    return false;
+  switch (data_.getCompressionType())
+  {
+  case Compress_None:
+    return true;
 
-  assert( size() == data_.size() );
+  case Compress_JPEG: {
+    virvo::JPEGOptions options;
 
-  return true;
+    options.format  = this->format();
+    options.w       = this->width();
+    options.h       = this->height();
+    options.pitch   = this->stride();
+
+    return virvo::decodeJPEG(data_, options);
+    }
+
+  case Compress_Snappy:
+    return virvo::decodeSnappy(data_);
+  }
+
+  return false;
 }
 
 
