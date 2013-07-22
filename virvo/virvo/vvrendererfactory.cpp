@@ -430,7 +430,7 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
 {
   init();
 
-  if(!t || !strcmp(t, "default"))
+  if(!t || strcmp(t, "") == 0 || strcmp(t, "default") == 0)
     t = getenv("VV_RENDERER");
   if(!t)
     t = "default";
