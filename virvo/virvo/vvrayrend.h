@@ -50,6 +50,7 @@ public:
   VVAPI ~vvRayRend();
 
   VVAPI size_t getLUTSize() const;
+  VVAPI bool instantClassification() const;
   VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
   VVAPI virtual void renderVolumeGL() VV_OVERRIDE;
   VVAPI virtual void setParameter(ParameterType param, const vvParam& newValue) VV_OVERRIDE;

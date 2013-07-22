@@ -198,6 +198,11 @@ size_t vvRayRend::getLUTSize() const
    return (vd->getBPV()==2) ? 4096 : 256;
 }
 
+bool vvRayRend::instantClassification() const
+{
+  return true;
+}
+
 void vvRayRend::updateTransferFunction()
 {
   vvDebugMsg::msg(3, "vvRayRend::updateTransferFunction()");
