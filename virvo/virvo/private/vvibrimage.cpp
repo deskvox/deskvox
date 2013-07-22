@@ -28,9 +28,8 @@ using virvo::PixelFormat;
 
 
 IbrImage::IbrImage()
-  : BaseType()
-  , depth_(0)
-  , depthFormat_(PF_UNSPECIFIED)
+  : color_()
+  , depth_()
   , depthMin_(0.0f)
   , depthMax_(0.0f)
   , viewMatrix_(1.0f, 1.0f, 1.0f, 1.0f)
@@ -41,9 +40,8 @@ IbrImage::IbrImage()
 
 
 IbrImage::IbrImage(int w, int h, PixelFormat colorFormat, PixelFormat depthFormat)
-  : BaseType(w, h, colorFormat)
-  , depth_(w * h * getPixelSize(depthFormat))
-  , depthFormat_(depthFormat)
+  : color_(w, h, colorFormat)
+  , depth_(w, h, depthFormat)
   , depthMin_(0.0f)
   , depthMax_(1.0f)
   , viewMatrix_(1.0f, 1.0f, 1.0f, 1.0f)
@@ -61,11 +59,11 @@ IbrImage::~IbrImage()
 bool IbrImage::compress()
 {
   // Compress the color buffer
-  if (!BaseType::compress())
+  if (!color_.compress())
     return false;
 
   // Compress the depth buffer
-  if (!virvo::encodeSnappy(depth_))
+  if (!depth_.compress())
     return false;
 
   return true;
@@ -75,11 +73,11 @@ bool IbrImage::compress()
 bool IbrImage::decompress()
 {
   // Decompress the color buffer
-  if (!BaseType::decompress())
+  if (!color_.decompress())
     return false;
 
   // Decompress the depth buffer
-  if (!virvo::decodeSnappy(depth_))
+  if (!depth_.decompress())
     return false;
 
   return true;

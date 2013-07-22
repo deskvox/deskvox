@@ -359,8 +359,8 @@ void vvRayRend::renderVolumeGL()
 
   RayRendKernelParams kernelParams;
 
-  kernelParams.blockDimX            = 16;
-  kernelParams.blockDimY            = 16;
+  kernelParams.blockDimX            = 8;
+  kernelParams.blockDimY            = 8;
   kernelParams.bpc                  = getVolDesc()->bpc;
   kernelParams.illumination         = _lighting;
   kernelParams.opacityCorrection    = _opacityCorrection;

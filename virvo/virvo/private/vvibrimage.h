@@ -35,11 +35,9 @@ namespace virvo
 {
 
 
-class IbrImage : public Image
+class IbrImage
 {
   friend class ::vvSocketIO; // Serialize/Deserialize
-
-  typedef Image BaseType;
 
 public:
   // Construct an empty (invalid) IBR image
@@ -51,22 +49,31 @@ public:
   // Destructor
   VVAPI virtual ~IbrImage();
 
-  // Returns the depth buffer
-  CompressedVector& depthBuffer() { return depth_; }
+  // Returns the color buffer
+  Image& colorBuffer() { return color_; }
+
+  // Returns the color buffer
+  Image const& colorBuffer() const { return color_; }
 
   // Returns the depth buffer
-  CompressedVector const& depthBuffer() const { return depth_; }
+  Image& depthBuffer() { return depth_; }
 
-  // Returns the size of the depth buffer
-  size_t depthSize() const
+  // Returns the depth buffer
+  Image const& depthBuffer() const { return depth_; }
+
+  // Returns the width of the IBR frame
+  int width() const
   {
-    // size mismatch? internal error
-    assert(depth_.size() == static_cast<size_t>(width() * height() * getPixelSize(depthFormat_)));
-    return depth_.size();
+    assert( colorBuffer().width() == depthBuffer().width() );
+    return colorBuffer().width();
   }
 
-  // Returns the format of the depth buffer
-  PixelFormat depthBufferFormat() const { return depthFormat_; }
+  // Returns the height of the IBR frame
+  int height() const
+  {
+    assert( colorBuffer().height() == depthBuffer().height() );
+    return colorBuffer().height();
+  }
 
   // Returns the minimum depth value
   float depthMin() const { return depthMin_; }
@@ -105,10 +112,10 @@ public:
   VVAPI bool decompress();
 
 private:
+  // The color buffer
+  Image color_;
   // The depth buffer
-  CompressedVector depth_;
-  // Format of the depth buffer
-  PixelFormat depthFormat_;
+  Image depth_;
   // Depth range
   float depthMin_;
   float depthMax_;

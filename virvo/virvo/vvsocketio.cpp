@@ -1650,18 +1650,13 @@ vvSocket::ErrorType vvSocketIO::getIbrImage(virvo::IbrImage& image) const
 
   vvSocket::ErrorType err = vvSocket::VV_OK;
 
-  int depthFormat = 0;
-
-  if (err == vvSocket::VV_OK) err = getImage(image);
-  if (err == vvSocket::VV_OK) err = getCompressedVector(image.depth_);
-  if (err == vvSocket::VV_OK) err = getInt32(depthFormat);
+  if (err == vvSocket::VV_OK) err = getImage(image.color_);
+  if (err == vvSocket::VV_OK) err = getImage(image.depth_);
   if (err == vvSocket::VV_OK) err = getFloat(image.depthMin_);
   if (err == vvSocket::VV_OK) err = getFloat(image.depthMax_);
   if (err == vvSocket::VV_OK) err = getMatrix(&image.viewMatrix_);
   if (err == vvSocket::VV_OK) err = getMatrix(&image.projMatrix_);
   if (err == vvSocket::VV_OK) err = getViewport(image.viewport_);
-
-  image.depthFormat_ = static_cast<virvo::PixelFormat>(depthFormat);
 
   return err;
 }
@@ -1673,9 +1668,8 @@ vvSocket::ErrorType vvSocketIO::putIbrImage(virvo::IbrImage const& image) const
 
   vvSocket::ErrorType err = vvSocket::VV_OK;
 
-  if (err == vvSocket::VV_OK) err = putImage(image);
-  if (err == vvSocket::VV_OK) err = putCompressedVector(image.depth_);
-  if (err == vvSocket::VV_OK) err = putInt32(image.depthFormat_);
+  if (err == vvSocket::VV_OK) err = putImage(image.color_);
+  if (err == vvSocket::VV_OK) err = putImage(image.depth_);
   if (err == vvSocket::VV_OK) err = putFloat(image.depthMin_);
   if (err == vvSocket::VV_OK) err = putFloat(image.depthMax_);
   if (err == vvSocket::VV_OK) err = putMatrix(&image.viewMatrix_);

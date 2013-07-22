@@ -86,11 +86,11 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
   image.setViewport(virvo::Viewport(0, 0, w, h));
 
   // Fetch rendered image
-  if (!rt->downloadColorBuffer(image.data().ptr(), image.size()))
+  if (!rt->downloadColorBuffer(image.colorBuffer().data().ptr(), image.colorBuffer().size()))
   {
     return;
   }
-  if (!rt->downloadDepthBuffer(image.depthBuffer().ptr(), image.depthSize()))
+  if (!rt->downloadDepthBuffer(image.depthBuffer().data().ptr(), image.depthBuffer().size()))
   {
     return;
   }
