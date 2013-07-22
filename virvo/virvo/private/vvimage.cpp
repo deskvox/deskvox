@@ -64,13 +64,13 @@ bool Image::compress()
 {
   assert( size() == data_.size() );
 
-  return virvo::compress(data_);
+  return virvo::encodeSnappy(data_);
 }
 
 
 bool Image::decompress()
 {
-  if (!virvo::decompress(data_))
+  if (!virvo::decodeSnappy(data_))
     return false;
 
   assert( size() == data_.size() );

@@ -30,49 +30,62 @@
 #endif
 
 
-bool virvo::compress(std::vector<unsigned char>& data)
-{
 #ifdef HAVE_SNAPPY
-  if (data.empty())
+
+
+bool virvo::encodeSnappy(std::vector<unsigned char>& data)
+{
+    if (data.empty())
+        return true;
+
+    std::vector<unsigned char> compressed(snappy::MaxCompressedLength(data.size()));
+
+    size_t len = 0;
+
+    snappy::RawCompress((char const*)&data[0], data.size(), (char*)&compressed[0], &len);
+
+    compressed.resize(len);
+
+    data.swap(compressed);
+
     return true;
-
-  std::vector<unsigned char> compressed(snappy::MaxCompressedLength(data.size()));
-
-  size_t len = 0;
-
-  snappy::RawCompress((char const*)&data[0], data.size(), (char*)&compressed[0], &len);
-
-  compressed.resize(len);
-
-  data.swap(compressed);
-#else
-  static_cast<void>(data);
-#endif
-
-  return true;
 }
 
 
-bool virvo::decompress(std::vector<unsigned char>& data)
+bool virvo::decodeSnappy(std::vector<unsigned char>& data)
 {
-#ifdef HAVE_SNAPPY
-  if (data.empty())
+    if (data.empty())
+        return true;
+
+    size_t len = 0;
+
+    if (!snappy::GetUncompressedLength((char const*)&data[0], data.size(), &len))
+        return false;
+
+    std::vector<unsigned char> uncompressed(len);
+
+    if (!snappy::RawUncompress((char const*)&data[0], data.size(), (char*)&uncompressed[0]))
+        return false;
+
+    data.swap(uncompressed);
+
     return true;
-
-  size_t len = 0;
-
-  if (!snappy::GetUncompressedLength((char const*)&data[0], data.size(), &len))
-    return false;
-
-  std::vector<unsigned char> uncompressed(len);
-
-  if (!snappy::RawUncompress((char const*)&data[0], data.size(), (char*)&uncompressed[0]))
-    return false;
-
-  data.swap(uncompressed);
-#else
-  static_cast<void>(data);
-#endif
-
-  return true;
 }
+
+
+#else
+
+
+bool virvo::encodeSnappy(std::vector<unsigned char>& /*data*/)
+{
+  return false;
+}
+
+
+bool virvo::decodeSnappy(std::vector<unsigned char>& /*data*/)
+{
+  return false;
+}
+
+
+#endif

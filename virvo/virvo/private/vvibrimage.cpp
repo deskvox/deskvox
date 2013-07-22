@@ -65,7 +65,7 @@ bool IbrImage::compress()
     return false;
 
   // Compress the depth buffer
-  if (!virvo::compress(depth_))
+  if (!virvo::encodeSnappy(depth_))
     return false;
 
   return true;
@@ -79,7 +79,7 @@ bool IbrImage::decompress()
     return false;
 
   // Decompress the depth buffer
-  if (!virvo::decompress(depth_))
+  if (!virvo::decodeSnappy(depth_))
     return false;
 
   return true;
