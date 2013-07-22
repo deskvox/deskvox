@@ -55,11 +55,6 @@ public:
   VVAPI virtual void setParameter(ParameterType param, const vvParam& newValue) VV_OVERRIDE;
   VVAPI virtual vvParam getParameter(ParameterType param) const VV_OVERRIDE;
 
-  VVAPI bool getEarlyRayTermination() const;
-  VVAPI bool getIllumination() const;
-  VVAPI bool getInterpolation() const;
-  VVAPI bool getOpacityCorrection() const;
-
 private:
   float* _rgbaTF;
 
