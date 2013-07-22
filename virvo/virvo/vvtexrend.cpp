@@ -66,8 +66,8 @@ using namespace std;
 
 namespace gl = virvo::gl;
 
-using virvo::EColorFormat;
-using virvo::EDepthFormat;
+using virvo::PixelFormat;
+
 
 //----------------------------------------------------------------------------
 const int vvTexRend::NUM_PIXEL_SHADERS = 13;
@@ -88,19 +88,19 @@ static virvo::BufferPrecision mapBitsToBufferPrecision(int bits)
     }
 }
 
-static EColorFormat mapBufferPrecisionToFormat(virvo::BufferPrecision bp)
+static PixelFormat mapBufferPrecisionToFormat(virvo::BufferPrecision bp)
 {
     switch (bp)
     {
     case virvo::Byte:
-        return virvo::CF_RGBA8;
+        return virvo::PF_RGBA8;
     case virvo::Short:
-        return virvo::CF_RGBA16F;
+        return virvo::PF_RGBA16F;
     case virvo::Float:
-        return virvo::CF_RGBA32F;
+        return virvo::PF_RGBA32F;
     default:
         assert(!"unknown format");
-        return virvo::CF_UNSPECIFIED;
+        return virvo::PF_UNSPECIFIED;
     }
 }
 
@@ -122,7 +122,7 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   glewInit();
 
   if (this->_useOffscreenBuffer)
-    setRenderTarget( virvo::FramebufferObjectRT::create( mapBufferPrecisionToFormat(this->_imagePrecision), virvo::DF_DEPTH24_STENCIL8) );
+    setRenderTarget( virvo::FramebufferObjectRT::create( mapBufferPrecisionToFormat(this->_imagePrecision), virvo::PF_DEPTH24_STENCIL8) );
 
   if (vvDebugMsg::isActive(2))
   {
@@ -3792,8 +3792,8 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
 
         this->_imagePrecision = bp;
 
-//      setRenderTarget( virvo::FramebufferObjectRT::create(mapBufferPrecisionToFormat(bp), virvo::DF_DEPTH32F_STENCIL8) );
-        setRenderTarget( virvo::FramebufferObjectRT::create(mapBufferPrecisionToFormat(bp), virvo::DF_DEPTH24_STENCIL8) );
+//      setRenderTarget( virvo::FramebufferObjectRT::create(mapBufferPrecisionToFormat(bp), virvo::PF_DEPTH32F_STENCIL8) );
+        setRenderTarget( virvo::FramebufferObjectRT::create(mapBufferPrecisionToFormat(bp), virvo::PF_DEPTH24_STENCIL8) );
       }
       break;
     case vvRenderer::VV_LIGHTING:

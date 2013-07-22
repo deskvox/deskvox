@@ -12,69 +12,65 @@ namespace virvo
 {
 
 
-    // Pixel formats for color buffers and images
-    enum EColorFormat
+    enum PixelFormat
     {
-        CF_UNSPECIFIED,
-        CF_R8,
-        CF_RG8,
-        CF_RGB8,
-        CF_RGBA8,
-        CF_R16F,
-        CF_RG16F,
-        CF_RGB16F,
-        CF_RGBA16F,
-        CF_R32F,
-        CF_RG32F,
-        CF_RGB32F,
-        CF_RGBA32F,
-        CF_R16I,
-        CF_RG16I,
-        CF_RGB16I,
-        CF_RGBA16I,
-        CF_R32I,
-        CF_RG32I,
-        CF_RGB32I,
-        CF_RGBA32I,
-        CF_R16UI,
-        CF_RG16UI,
-        CF_RGB16UI,
-        CF_RGBA16UI,
-        CF_R32UI,
-        CF_RG32UI,
-        CF_RGB32UI,
-        CF_RGBA32UI,
+        PF_UNSPECIFIED,
 
-        CF_BGR8,
-        CF_BGRA8,
-        CF_RGB10_A2,
-        CF_R11F_G11F_B10F,
+        // Pixel formats for color buffers and images
 
-        CF_COUNT // Last!!!
+        PF_R8,
+        PF_RG8,
+        PF_RGB8,
+        PF_RGBA8,
+        PF_R16F,
+        PF_RG16F,
+        PF_RGB16F,
+        PF_RGBA16F,
+        PF_R32F,
+        PF_RG32F,
+        PF_RGB32F,
+        PF_RGBA32F,
+        PF_R16I,
+        PF_RG16I,
+        PF_RGB16I,
+        PF_RGBA16I,
+        PF_R32I,
+        PF_RG32I,
+        PF_RGB32I,
+        PF_RGBA32I,
+        PF_R16UI,
+        PF_RG16UI,
+        PF_RGB16UI,
+        PF_RGBA16UI,
+        PF_R32UI,
+        PF_RG32UI,
+        PF_RGB32UI,
+        PF_RGBA32UI,
+
+        PF_BGR8,
+        PF_BGRA8,
+
+        PF_RGB10_A2,
+
+        PF_R11F_G11F_B10F,
+
+        // Pixel formats for depth/stencil buffers
+
+        PF_DEPTH16,
+        PF_DEPTH24,
+        PF_DEPTH32,
+        PF_DEPTH32F,
+        PF_DEPTH24_STENCIL8,
+        PF_DEPTH32F_STENCIL8,
+        PF_LUMINANCE8,      // not an OpenGL format!
+        PF_LUMINANCE16,     // not an OpenGL format!
+        PF_LUMINANCE32F,    // not an OpenGL format!
+
+        PF_COUNT // Last!!!
     };
 
 
-    // Pixel formats for depth/stencil buffers
-    enum EDepthFormat
-    {
-        DF_UNSPECIFIED,
-
-        DF_DEPTH16,
-        DF_DEPTH24,
-        DF_DEPTH32,
-        DF_DEPTH32F,
-        DF_DEPTH24_STENCIL8,
-        DF_DEPTH32F_STENCIL8,
-
-        DF_LUMINANCE8,      // not an OpenGL format!
-        DF_LUMINANCE16,     // not an OpenGL format!
-        DF_LUMINANCE32F,    // not an OpenGL format!
-
-        DF_COUNT // Last!!!
-    };
-
-
-    struct PixelFormat
+    struct PixelFormatInfo
     {
         unsigned internalFormat;
         unsigned format;
@@ -85,25 +81,13 @@ namespace virvo
 
 
     // Returns some information about the given color format
-    VVAPI PixelFormat mapPixelFormat(EColorFormat format);
-
-
-    // Returns some information about the given depth/stencil format
-    VVAPI PixelFormat mapPixelFormat(EDepthFormat format);
+    VVAPI PixelFormatInfo mapPixelFormat(PixelFormat format);
 
 
     // Returns the size of a single pixel of the given format
-    inline unsigned getPixelSize(EColorFormat format)
+    inline unsigned getPixelSize(PixelFormat format)
     {
-        PixelFormat f = mapPixelFormat(format);
-        return f.size;
-    }
-
-
-    // Returns the size of a single pixel of the given format
-    inline unsigned getPixelSize(EDepthFormat format)
-    {
-        PixelFormat f = mapPixelFormat(format);
+        PixelFormatInfo f = mapPixelFormat(format);
         return f.size;
     }
 

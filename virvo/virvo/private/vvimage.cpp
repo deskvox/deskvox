@@ -23,17 +23,17 @@
 #include "vvcompress.h"
 
 
-using virvo::EColorFormat;
 using virvo::Image;
+using virvo::PixelFormat;
 
 
-Image::Image(int w, int h, EColorFormat format, int stride)
+Image::Image(int w, int h, PixelFormat format, int stride)
 {
   resize(w, h, format, stride);
 }
 
 
-Image::Image(unsigned char* data, int w, int h, EColorFormat format, int stride)
+Image::Image(unsigned char* data, int w, int h, PixelFormat format, int stride)
 {
   assign(data, w, h, format, stride);
 }
@@ -44,14 +44,14 @@ Image::~Image()
 }
 
 
-void Image::resize(int w, int h, EColorFormat format, int stride)
+void Image::resize(int w, int h, PixelFormat format, int stride)
 {
   init(w, h, format, stride);
   data_.resize(size());
 }
 
 
-void Image::assign(unsigned char* data, int w, int h, EColorFormat format, int stride)
+void Image::assign(unsigned char* data, int w, int h, PixelFormat format, int stride)
 {
   assert( data );
 
@@ -79,11 +79,11 @@ bool Image::decompress()
 }
 
 
-void Image::init(int w, int h, EColorFormat format, int stride)
+void Image::init(int w, int h, PixelFormat format, int stride)
 {
   assert( w > 0 );
   assert( h > 0 );
-  assert( format != CF_UNSPECIFIED );
+  assert( format != PF_UNSPECIFIED );
 
   width_ = w;
   height_ = h;

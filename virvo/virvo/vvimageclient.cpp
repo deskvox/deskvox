@@ -68,7 +68,7 @@ vvRemoteClient::ErrorType vvImageClient::render()
     return VV_BAD_IMAGE;
 
   // Display the image
-  virvo::PixelFormat f = mapPixelFormat(image.format());
+  virvo::PixelFormatInfo f = mapPixelFormat(image.format());
   virvo::gl::blendPixels(image.width(), image.height(), f.format, f.type, image.data());
 
   return VV_OK;

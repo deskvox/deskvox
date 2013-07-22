@@ -42,22 +42,17 @@ namespace cu = virvo::cuda;
 namespace gl = virvo::gl;
 
 
-using virvo::RenderTarget;
-using virvo::PixelUnpackBufferRT;
 using virvo::DeviceBufferRT;
-using virvo::EColorFormat;
-using virvo::EDepthFormat;
+using virvo::PixelFormat;
+using virvo::PixelUnpackBufferRT;
+using virvo::RenderTarget;
 
 
 static unsigned ComputeBufferSize(unsigned w, unsigned h, unsigned sizeInBytes) {
     return w * h * sizeInBytes;
 }
 
-static unsigned ComputeBufferSize(unsigned w, unsigned h, EColorFormat format) {
-    return ComputeBufferSize(w, h, getPixelSize(format));
-}
-
-static unsigned ComputeBufferSize(unsigned w, unsigned h, EDepthFormat format) {
+static unsigned ComputeBufferSize(unsigned w, unsigned h, PixelFormat format) {
     return ComputeBufferSize(w, h, getPixelSize(format));
 }
 
@@ -70,9 +65,9 @@ static unsigned ComputeBufferSize(unsigned w, unsigned h, EDepthFormat format) {
 struct PixelUnpackBufferRT::Impl
 {
     // The precision of the color buffer
-    EColorFormat ColorFormat;
+    PixelFormat ColorFormat;
     // The precision of the depth buffer
-    EDepthFormat DepthFormat;
+    PixelFormat DepthFormat;
     // The CUDA graphics resource
     cu::GraphicsResource Resource;
     // The OpenGL buffer object
@@ -82,7 +77,7 @@ struct PixelUnpackBufferRT::Impl
     // The depth buffer
     cu::HostDeviceArray DepthBuffer;
 
-    Impl(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+    Impl(PixelFormat ColorFormat, PixelFormat DepthFormat)
         : ColorFormat(ColorFormat)
         , DepthFormat(DepthFormat)
     {
@@ -90,13 +85,13 @@ struct PixelUnpackBufferRT::Impl
 };
 
 
-PixelUnpackBufferRT::PixelUnpackBufferRT(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+PixelUnpackBufferRT::PixelUnpackBufferRT(PixelFormat ColorFormat, PixelFormat DepthFormat)
     : impl(new Impl(ColorFormat, DepthFormat))
 {
 }
 
 
-RenderTarget* PixelUnpackBufferRT::create(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+RenderTarget* PixelUnpackBufferRT::create(PixelFormat ColorFormat, PixelFormat DepthFormat)
 {
     if (!virvo::cuda::initGlInterop())
         return 0;
@@ -110,13 +105,13 @@ PixelUnpackBufferRT::~PixelUnpackBufferRT()
 }
 
 
-EColorFormat PixelUnpackBufferRT::colorFormat() const
+PixelFormat PixelUnpackBufferRT::colorFormat() const
 {
     return impl->ColorFormat;
 }
 
 
-EDepthFormat PixelUnpackBufferRT::depthFormat() const
+PixelFormat PixelUnpackBufferRT::depthFormat() const
 {
     return impl->DepthFormat;
 }
@@ -168,7 +163,7 @@ bool PixelUnpackBufferRT::BeginFrameImpl(unsigned clearMask)
 
 bool PixelUnpackBufferRT::EndFrameImpl()
 {
-    PixelFormat cf = mapPixelFormat(impl->ColorFormat);
+    PixelFormatInfo cf = mapPixelFormat(impl->ColorFormat);
 
     impl->Resource.unmap();
 
@@ -193,7 +188,7 @@ bool PixelUnpackBufferRT::EndFrameImpl()
 
 bool PixelUnpackBufferRT::ResizeImpl(int w, int h)
 {
-    if (impl->DepthFormat != DF_UNSPECIFIED && !impl->DepthBuffer.resize(ComputeBufferSize(w, h, impl->DepthFormat)))
+    if (impl->DepthFormat != PF_UNSPECIFIED && !impl->DepthBuffer.resize(ComputeBufferSize(w, h, impl->DepthFormat)))
         return false;
 
     return CreateGLBuffers(w, h);
@@ -202,7 +197,7 @@ bool PixelUnpackBufferRT::ResizeImpl(int w, int h)
 
 bool PixelUnpackBufferRT::CreateGLBuffers(int w, int h, bool linearInterpolation)
 {
-    PixelFormat cf = mapPixelFormat(impl->ColorFormat);
+    PixelFormatInfo cf = mapPixelFormat(impl->ColorFormat);
 
     // Create the texture
     impl->Texture.reset( gl::createTexture() );
@@ -271,15 +266,15 @@ bool PixelUnpackBufferRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t 
 struct DeviceBufferRT::Impl
 {
     // The precision of the color buffer
-    EColorFormat ColorFormat;
+    PixelFormat ColorFormat;
     // The precision of the depth buffer
-    EDepthFormat DepthFormat;
+    PixelFormat DepthFormat;
     // The color buffer
     cu::HostDeviceArray ColorBuffer;
     // The depth buffer
     cu::HostDeviceArray DepthBuffer;
 
-    Impl(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+    Impl(PixelFormat ColorFormat, PixelFormat DepthFormat)
         : ColorFormat(ColorFormat)
         , DepthFormat(DepthFormat)
     {
@@ -287,13 +282,13 @@ struct DeviceBufferRT::Impl
 };
 
 
-DeviceBufferRT::DeviceBufferRT(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+DeviceBufferRT::DeviceBufferRT(PixelFormat ColorFormat, PixelFormat DepthFormat)
     : impl(new Impl(ColorFormat, DepthFormat))
 {
 }
 
 
-RenderTarget* DeviceBufferRT::create(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+RenderTarget* DeviceBufferRT::create(PixelFormat ColorFormat, PixelFormat DepthFormat)
 {
     return new DeviceBufferRT(ColorFormat, DepthFormat);
 }
@@ -304,13 +299,13 @@ DeviceBufferRT::~DeviceBufferRT()
 }
 
 
-EColorFormat DeviceBufferRT::colorFormat() const
+PixelFormat DeviceBufferRT::colorFormat() const
 {
     return impl->ColorFormat;
 }
 
 
-EDepthFormat DeviceBufferRT::depthFormat() const
+PixelFormat DeviceBufferRT::depthFormat() const
 {
     return impl->DepthFormat;
 }
@@ -378,7 +373,7 @@ bool DeviceBufferRT::ResizeImpl(int w, int h)
     if (!impl->ColorBuffer.resize(ComputeBufferSize(w, h, impl->ColorFormat)))
         return false;
 
-    if (impl->DepthFormat != DF_UNSPECIFIED && !impl->DepthBuffer.resize(ComputeBufferSize(w, h, impl->DepthFormat)))
+    if (impl->DepthFormat != PF_UNSPECIFIED && !impl->DepthBuffer.resize(ComputeBufferSize(w, h, impl->DepthFormat)))
     {
         impl->ColorBuffer.reset();
         return false;
@@ -390,7 +385,7 @@ bool DeviceBufferRT::ResizeImpl(int w, int h)
 
 bool DeviceBufferRT::DisplayColorBufferImpl() const
 {
-    PixelFormat cf = mapPixelFormat(impl->ColorFormat);
+    PixelFormatInfo cf = mapPixelFormat(impl->ColorFormat);
 
     gl::blendPixels(width(), height(), cf.format, cf.type, impl->ColorBuffer.hostPtr());
     return true;

@@ -247,7 +247,7 @@ void vvIbrClient::initIbrFrame()
   _imgMatrix = vvIbr::calcImgMatrix(_imgPr, _imgMv, _image->viewport(), _imgDepthRange[0], _imgDepthRange[1]);
 
   // get pixel and depth-data
-  virvo::PixelFormat cf = mapPixelFormat(_image->format());
+  virvo::PixelFormatInfo cf = mapPixelFormat(_image->format());
 
   glBindTexture(GL_TEXTURE_2D, _rgbaTex);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -264,7 +264,7 @@ void vvIbrClient::initIbrFrame()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  virvo::PixelFormat df = mapPixelFormat(_image->depthBufferFormat());
+  virvo::PixelFormatInfo df = mapPixelFormat(_image->depthBufferFormat());
 
   glTexImage2D(GL_TEXTURE_2D, 0, df.internalFormat, w, h, 0, df.format, df.type, _image->depthData());
 

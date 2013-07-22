@@ -46,7 +46,7 @@ public:
   VVAPI IbrImage();
 
   // Construct a new IBR image
-  VVAPI IbrImage(int w, int h, EColorFormat colorFormat, EDepthFormat depthFormat);
+  VVAPI IbrImage(int w, int h, PixelFormat colorFormat, PixelFormat depthFormat);
 
   // Destructor
   VVAPI virtual ~IbrImage();
@@ -66,7 +66,7 @@ public:
   }
 
   // Returns the format of the depth buffer
-  EDepthFormat depthBufferFormat() const { return depthFormat_; }
+  PixelFormat depthBufferFormat() const { return depthFormat_; }
 
   // Returns the minimum depth value
   float depthMin() const { return depthMin_; }
@@ -108,7 +108,7 @@ private:
   // The depth buffer
   std::vector<unsigned char> depth_;
   // Format of the depth buffer
-  EDepthFormat depthFormat_;
+  PixelFormat depthFormat_;
   // Depth range
   float depthMin_;
   float depthMax_;

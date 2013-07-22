@@ -34,8 +34,7 @@ using virvo::RenderTarget;
 using virvo::NullRT;
 using virvo::FramebufferObjectRT;
 using virvo::HostBufferRT;
-using virvo::EColorFormat;
-using virvo::EDepthFormat;
+using virvo::PixelFormat;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -211,14 +210,14 @@ bool NullRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) c
 //--------------------------------------------------------------------------------------------------
 
 
-FramebufferObjectRT::FramebufferObjectRT(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+FramebufferObjectRT::FramebufferObjectRT(PixelFormat ColorFormat, PixelFormat DepthFormat)
     : ColorFormat(ColorFormat)
     , DepthFormat(DepthFormat)
 {
 }
 
 
-RenderTarget* FramebufferObjectRT::create(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+RenderTarget* FramebufferObjectRT::create(PixelFormat ColorFormat, PixelFormat DepthFormat)
 {
     return new FramebufferObjectRT(ColorFormat, DepthFormat);
 }
@@ -269,8 +268,8 @@ bool FramebufferObjectRT::EndFrameImpl()
 
 bool FramebufferObjectRT::ResizeImpl(int w, int h)
 {
-    PixelFormat cf = mapPixelFormat(ColorFormat);
-    PixelFormat df = mapPixelFormat(DepthFormat);
+    PixelFormatInfo cf = mapPixelFormat(ColorFormat);
+    PixelFormatInfo df = mapPixelFormat(DepthFormat);
 
     // Delete current color and depth buffers
     ColorBuffer.reset();
@@ -307,7 +306,7 @@ bool FramebufferObjectRT::ResizeImpl(int w, int h)
     // Create the depth-buffer
     //
 
-    if (DepthFormat != DF_UNSPECIFIED)
+    if (DepthFormat != PF_UNSPECIFIED)
     {
         DepthBuffer.reset( gl::createRenderbuffer() );
 
@@ -341,7 +340,7 @@ bool FramebufferObjectRT::DisplayColorBufferImpl() const
 
 bool FramebufferObjectRT::DownloadColorBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    PixelFormat f = mapPixelFormat(ColorFormat);
+    PixelFormatInfo f = mapPixelFormat(ColorFormat);
 
     assert( bufferSize >= width() * height() * f.size );
 
@@ -358,7 +357,7 @@ bool FramebufferObjectRT::DownloadColorBufferImpl(unsigned char* buffer, size_t 
 
 bool FramebufferObjectRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t bufferSize) const
 {
-    PixelFormat f = mapPixelFormat(DepthFormat);
+    PixelFormatInfo f = mapPixelFormat(DepthFormat);
 
     assert( bufferSize >= width() * height() * f.size );
 
@@ -378,14 +377,14 @@ bool FramebufferObjectRT::DownloadDepthBufferImpl(unsigned char* buffer, size_t 
 //--------------------------------------------------------------------------------------------------
 
 
-HostBufferRT::HostBufferRT(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+HostBufferRT::HostBufferRT(PixelFormat ColorFormat, PixelFormat DepthFormat)
     : ColorFormat(ColorFormat)
     , DepthFormat(DepthFormat)
 {
 }
 
 
-RenderTarget* HostBufferRT::create(EColorFormat ColorFormat, EDepthFormat DepthFormat)
+RenderTarget* HostBufferRT::create(PixelFormat ColorFormat, PixelFormat DepthFormat)
 {
     return new HostBufferRT(ColorFormat, DepthFormat);
 }
@@ -418,7 +417,7 @@ bool HostBufferRT::ResizeImpl(int w, int h)
 {
     ColorBuffer.resize(ComputeBufferSize(w, h, getPixelSize(ColorFormat)));
 
-    if (DepthFormat != DF_UNSPECIFIED)
+    if (DepthFormat != PF_UNSPECIFIED)
         DepthBuffer.resize(ComputeBufferSize(w, h, getPixelSize(DepthFormat)));
 
     return true;
@@ -427,7 +426,7 @@ bool HostBufferRT::ResizeImpl(int w, int h)
 
 bool HostBufferRT::DisplayColorBufferImpl() const
 {
-    PixelFormat f = mapPixelFormat(ColorFormat);
+    PixelFormatInfo f = mapPixelFormat(ColorFormat);
 
     gl::blendPixels(width(), height(), f.format, f.type, &ColorBuffer[0]);
     return true;

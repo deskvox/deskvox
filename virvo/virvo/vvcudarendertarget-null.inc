@@ -22,11 +22,10 @@
 #include "vvcudarendertarget.h"
 
 
-using virvo::RenderTarget;
-using virvo::PixelUnpackBufferRT;
 using virvo::DeviceBufferRT;
-using virvo::EColorFormat;
-using virvo::EDepthFormat;
+using virvo::PixelFormat;
+using virvo::PixelUnpackBufferRT;
+using virvo::RenderTarget;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -39,12 +38,12 @@ struct PixelUnpackBufferRT::Impl
 };
 
 
-PixelUnpackBufferRT::PixelUnpackBufferRT(EColorFormat /*ColorFormat*/, EDepthFormat /*DepthFormat*/)
+PixelUnpackBufferRT::PixelUnpackBufferRT(PixelFormat /*ColorFormat*/, PixelFormat /*DepthFormat*/)
 {
 }
 
 
-RenderTarget* PixelUnpackBufferRT::create(EColorFormat /*ColorFormat*/, EDepthFormat /*DepthFormat*/)
+RenderTarget* PixelUnpackBufferRT::create(PixelFormat /*ColorFormat*/, PixelFormat /*DepthFormat*/)
 {
     return 0;
 }
@@ -55,15 +54,15 @@ PixelUnpackBufferRT::~PixelUnpackBufferRT()
 }
 
 
-EColorFormat PixelUnpackBufferRT::colorFormat() const
+PixelFormat PixelUnpackBufferRT::colorFormat() const
 {
-    return CF_UNSPECIFIED;
+    return PF_UNSPECIFIED;
 }
 
 
-EDepthFormat PixelUnpackBufferRT::depthFormat() const
+PixelFormat PixelUnpackBufferRT::depthFormat() const
 {
-    return DF_UNSPECIFIED;
+    return PF_UNSPECIFIED;
 }
 
 
@@ -149,12 +148,12 @@ struct DeviceBufferRT::Impl
 };
 
 
-DeviceBufferRT::DeviceBufferRT(EColorFormat /*ColorFormat*/, EDepthFormat /*DepthFormat*/)
+DeviceBufferRT::DeviceBufferRT(PixelFormat /*ColorFormat*/, PixelFormat /*DepthFormat*/)
 {
 }
 
 
-RenderTarget* DeviceBufferRT::create(EColorFormat /*ColorFormat*/, EDepthFormat /*DepthFormat*/)
+RenderTarget* DeviceBufferRT::create(PixelFormat /*ColorFormat*/, PixelFormat /*DepthFormat*/)
 {
     return 0;
 }
@@ -165,15 +164,15 @@ DeviceBufferRT::~DeviceBufferRT()
 }
 
 
-EColorFormat DeviceBufferRT::colorFormat() const
+PixelFormat DeviceBufferRT::colorFormat() const
 {
-    return CF_UNSPECIFIED;
+    return PF_UNSPECIFIED;
 }
 
 
-EDepthFormat DeviceBufferRT::depthFormat() const
+PixelFormat DeviceBufferRT::depthFormat() const
 {
-    return DF_UNSPECIFIED;
+    return PF_UNSPECIFIED;
 }
 
 

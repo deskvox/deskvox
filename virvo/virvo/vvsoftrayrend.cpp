@@ -273,7 +273,7 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   glewInit();
 #endif
 
-  setRenderTarget(virvo::HostBufferRT::create(virvo::CF_RGBA32F, virvo::DF_LUMINANCE8));
+  setRenderTarget(virvo::HostBufferRT::create(virvo::PF_RGBA32F, virvo::PF_LUMINANCE8));
 
   updateTransferFunction();
 

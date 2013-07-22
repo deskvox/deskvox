@@ -90,10 +90,10 @@ namespace virvo
         VVAPI bool downloadDepthBuffer(std::vector<unsigned char>& buffer) const;
 
         // Returns the format of the color buffer
-        virtual EColorFormat colorFormat() const { return CF_UNSPECIFIED; }
+        virtual PixelFormat colorFormat() const { return PF_UNSPECIFIED; }
 
         // Returns the format of the depth buffer
-        virtual EDepthFormat depthFormat() const { return DF_UNSPECIFIED; }
+        virtual PixelFormat depthFormat() const { return PF_UNSPECIFIED; }
 
         // Returns a pointer to the device color buffer - if any
         virtual void* deviceColor() { return 0; }
@@ -150,9 +150,9 @@ namespace virvo
         VVAPI virtual ~NullRT();
 
         // XXX
-        virtual EColorFormat colorFormat() const VV_OVERRIDE { return CF_RGBA8; }
+        virtual PixelFormat colorFormat() const VV_OVERRIDE { return PF_RGBA8; }
         // XXX
-        virtual EDepthFormat depthFormat() const VV_OVERRIDE { return DF_LUMINANCE8; }
+        virtual PixelFormat depthFormat() const VV_OVERRIDE { return PF_LUMINANCE8; }
 
     private:
         virtual bool BeginFrameImpl(unsigned clearMask) VV_OVERRIDE;
@@ -171,20 +171,20 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class FramebufferObjectRT : public RenderTarget
     {
-        FramebufferObjectRT(EColorFormat ColorFormat, EDepthFormat DepthFormat);
+        FramebufferObjectRT(PixelFormat ColorFormat, PixelFormat DepthFormat);
 
     public:
         // Construct a new framebuffer object
-        static VVAPI RenderTarget* create(EColorFormat ColorFormat = CF_RGBA8,
-                                          EDepthFormat DepthFormat = DF_DEPTH24_STENCIL8);
+        static VVAPI RenderTarget* create(PixelFormat ColorFormat = PF_RGBA8,
+                                          PixelFormat DepthFormat = PF_DEPTH24_STENCIL8);
 
         VVAPI virtual ~FramebufferObjectRT();
 
         // Returns the number of bits per pixel in the color buffer
-        virtual EColorFormat colorFormat() const VV_OVERRIDE { return ColorFormat; }
+        virtual PixelFormat colorFormat() const VV_OVERRIDE { return ColorFormat; }
 
         // Returns the number of bits per pixel in the depth buffer
-        virtual EDepthFormat depthFormat() const VV_OVERRIDE { return DepthFormat; }
+        virtual PixelFormat depthFormat() const VV_OVERRIDE { return DepthFormat; }
 
         // Returns the framebuffer object
         GLuint framebuffer() const { return Framebuffer.get(); }
@@ -207,9 +207,9 @@ namespace virvo
 
     private:
         // Color buffer format
-        EColorFormat ColorFormat;
+        PixelFormat ColorFormat;
         // Depth buffer format
-        EDepthFormat DepthFormat;
+        PixelFormat DepthFormat;
         // The framebuffer object
         gl::Framebuffer Framebuffer;
         // Color buffer
@@ -224,23 +224,23 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
     class HostBufferRT : public RenderTarget
     {
-        HostBufferRT(EColorFormat ColorFormat, EDepthFormat DepthFormat);
+        HostBufferRT(PixelFormat ColorFormat, PixelFormat DepthFormat);
 
     public:
         typedef std::vector<unsigned char, mem::aligned_allocator<unsigned char, 16> > BufferType;
 
     public:
         // Construct a render target
-        static VVAPI RenderTarget* create(EColorFormat ColorFormat = CF_RGBA8, EDepthFormat DepthFormat = DF_LUMINANCE8);
+        static VVAPI RenderTarget* create(PixelFormat ColorFormat = PF_RGBA8, PixelFormat DepthFormat = PF_LUMINANCE8);
 
         // Clean up
         VVAPI virtual ~HostBufferRT();
 
         // Returns the precision of the color buffer
-        virtual EColorFormat colorFormat() const VV_OVERRIDE { return ColorFormat; }
+        virtual PixelFormat colorFormat() const VV_OVERRIDE { return ColorFormat; }
 
         // Returns the precision of the depth buffer
-        virtual EDepthFormat depthFormat() const VV_OVERRIDE { return DepthFormat; }
+        virtual PixelFormat depthFormat() const VV_OVERRIDE { return DepthFormat; }
 
         // Returns a pointer to the device color buffer - if any
         virtual void* deviceColor() VV_OVERRIDE { return &ColorBuffer[0]; }
@@ -270,9 +270,9 @@ namespace virvo
         }
 
         // The precision of the color buffer
-        EColorFormat ColorFormat;
+        PixelFormat ColorFormat;
         // The precision of the depth buffer
-        EDepthFormat DepthFormat;
+        PixelFormat DepthFormat;
         // The color buffer
         BufferType ColorBuffer;
         // The depth buffer

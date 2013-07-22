@@ -1614,7 +1614,7 @@ vvSocket::ErrorType vvSocketIO::getImage(virvo::Image& image) const
     int format = vvToolshed::read32(&header[ 8]);
     int stride = vvToolshed::read32(&header[12]);
 
-    image.resize(w, h, static_cast<virvo::EColorFormat>(format), stride);
+    image.resize(w, h, static_cast<virvo::PixelFormat>(format), stride);
 
     err = getStdVector(image.data_);
   }
@@ -1660,7 +1660,7 @@ vvSocket::ErrorType vvSocketIO::getIbrImage(virvo::IbrImage& image) const
   if (err == vvSocket::VV_OK) err = getMatrix(&image.projMatrix_);
   if (err == vvSocket::VV_OK) err = getViewport(image.viewport_);
 
-  image.depthFormat_ = static_cast<virvo::EDepthFormat>(depthFormat);
+  image.depthFormat_ = static_cast<virvo::PixelFormat>(depthFormat);
 
   return err;
 }
