@@ -2,7 +2,9 @@ include(FindPackageHandleStandardArgs)
 
 set(hints
   $ENV{EXTERNLIBS}/libjpeg-turbo
+  $ENV{EXTERNLIBS}/libjpeg
   $ENV{LIB_BASE_PATH}/libjpeg-turbo
+  $ENV{LIB_BASE_PATH}/libjpeg
 )
 
 set(paths
@@ -12,7 +14,7 @@ set(paths
 
 find_path(JPEGTURBO_INCLUDE_DIR
   NAMES
-    jconfig.h jerror.h jmorecfg.h jpeglib.h # turbojpeg.h
+    jconfig.h jerror.h jmorecfg.h jpeglib.h turbojpeg.h
   HINTS
     ${hints}
   PATHS

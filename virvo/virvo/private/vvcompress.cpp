@@ -40,6 +40,12 @@
 
 #ifdef HAVE_JPEGTURBO
 #include <jpeglib.h>
+#if !defined(LIBJPEG_TURBO_VERSION)
+#undef HAVE_JPEGTURBO
+#endif
+#if !defined(JCS_EXTENSIONS) || !defined(JCS_ALPHA_EXTENSIONS)
+#undef HAVE_JPEGTURBO
+#endif
 #endif
 
 
@@ -148,11 +154,6 @@ bool virvo::decodeSnappy(CompressedVector& data)
 #ifdef HAVE_JPEGTURBO
 
 
-#ifndef LIBJPEG_TURBO_VERSION
-#error "libjpeg-turbo required"
-#endif
-
-
 #ifdef _MSC_VER
 #pragma warning(disable: 4324) // structure was padded due to __declspec(align())
 #pragma warning(disable: 4611) // interaction between '_setjmp' and C++ object destruction is non-portable
@@ -177,7 +178,8 @@ static void JPEGErrorExit(j_common_ptr info)
 {
     JPEGErrorManager* err = (JPEGErrorManager*)info->err;
 
-    err->pub.output_message(info);
+    //fprintf(stderr, "JPEG error %d: \"%s\"\n",
+    //    err->pub.msg_code, err->pub.jpeg_message_table[err->pub.msg_code]);
 
     longjmp(err->jmpbuf, 1);
 }
@@ -190,8 +192,6 @@ static J_COLOR_SPACE JPEGGetColorSpace(virvo::PixelFormat format)
     case virvo::PF_R8:
     case virvo::PF_LUMINANCE8:
         return JCS_GRAYSCALE;
-
-#ifdef JCS_EXTENSIONS
     case virvo::PF_RGB8:
         return JCS_EXT_RGB;
     case virvo::PF_RGBA8:
@@ -200,8 +200,6 @@ static J_COLOR_SPACE JPEGGetColorSpace(virvo::PixelFormat format)
         return JCS_EXT_BGR;
     case virvo::PF_BGRA8:
         return JCS_EXT_BGRA;
-#endif
-
     default:
         return JCS_UNKNOWN;
     }
@@ -258,13 +256,11 @@ struct JPEGDestinationManager : jpeg_destination_mgr
         this->term_destination = &TermDestination;
     }
 
-    static const size_t kBlockSize = 16 * 1024;
-
     static void InitDestination(j_compress_ptr cinfo)
     {
         JPEGDestinationManager* dest = (JPEGDestinationManager*)cinfo->dest;
 
-        dest->buffer.resize(kBlockSize);
+        dest->buffer.resize(16 * 1024);
 
         dest->next_output_byte = &dest->buffer[0];
         dest->free_in_buffer = dest->buffer.size();
@@ -276,7 +272,7 @@ struct JPEGDestinationManager : jpeg_destination_mgr
 
         size_t size = dest->buffer.size();
 
-        dest->buffer.resize(size + kBlockSize);
+        dest->buffer.resize(size * 2);
 
         dest->next_output_byte = &dest->buffer[size];
         dest->free_in_buffer = dest->buffer.size() - size;
