@@ -30,6 +30,7 @@
 #include "../vvpixelformat.h"
 
 #include <assert.h>
+#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
