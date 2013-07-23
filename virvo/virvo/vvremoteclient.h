@@ -70,7 +70,6 @@ public:
   VVAPI virtual ErrorType requestFrame() const;
 
 protected:
-  vvTcpSocket* _socket;
   std::string _filename;
   vvSocketIO  *_socketIO;
 

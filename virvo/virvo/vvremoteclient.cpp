@@ -29,22 +29,16 @@
 
 #include "private/vvgltools.h"
 
-namespace
-{
-  virvo::Viewport viewport;
-}
-
 vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
                                vvTcpSocket* socket, const std::string &filename)
    : vvRenderer(vd, renderState)
-   , _socket(socket)
    , _filename(filename)
    , _socketIO(NULL)
    , _changes(true)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::vvRemoteClient()");
 
-  _socketIO = new vvSocketIO(_socket);
+  _socketIO = new vvSocketIO(socket);
   sendVolume(vd);
 }
 
