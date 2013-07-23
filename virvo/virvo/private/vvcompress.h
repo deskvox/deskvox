@@ -38,10 +38,20 @@ class CompressedVector;
 
 struct JPEGOptions
 {
+    // encode: [in] The pixel format of the input image
+    // decode: [in] The pixel format of the output image
     PixelFormat format;
+    // encode: [in] The width of the input image
+    // decode: [out] The width of the output image
     int w;
+    // encode: [in] The height of the input image
+    // decode: [out] The height of the output image
     int h;
+    // encode: [in] The width in bytes of a single scanline in the input image
+    // decode: [out] The width in bytes of a single scanline in the output image
     int pitch;
+    // encode: [in] The quality of the JPEG encoding. Must be in the range [0,100]
+    // decode: [ignored]
     int quality;
 };
 
@@ -56,11 +66,11 @@ VVAPI bool decodeSnappy(CompressedVector& data);
 
 VVAPI bool encodeJPEG(std::vector<unsigned char>& data, JPEGOptions const& options);
 
-VVAPI bool decodeJPEG(std::vector<unsigned char>& data, JPEGOptions const& options);
+VVAPI bool decodeJPEG(std::vector<unsigned char>& data, JPEGOptions& options);
 
 VVAPI bool encodeJPEG(CompressedVector& data, JPEGOptions const& options);
 
-VVAPI bool decodeJPEG(CompressedVector& data, JPEGOptions const& options);
+VVAPI bool decodeJPEG(CompressedVector& data, JPEGOptions& options);
 
 
 } // namespace virvo

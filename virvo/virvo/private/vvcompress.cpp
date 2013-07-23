@@ -395,7 +395,7 @@ bool virvo::encodeJPEG(std::vector<unsigned char>& data, JPEGOptions const& opti
 }
 
 
-bool virvo::decodeJPEG(std::vector<unsigned char>& data, JPEGOptions const& options)
+bool virvo::decodeJPEG(std::vector<unsigned char>& data, JPEGOptions& options)
 {
     J_COLOR_SPACE colorSpace = JPEGGetColorSpace(options.format);
 
@@ -454,6 +454,10 @@ bool virvo::decodeJPEG(std::vector<unsigned char>& data, JPEGOptions const& opti
 
     jpeg_read_header(&info, TRUE);
 
+    options.w = info.image_width;
+    options.h = info.image_height;
+    options.pitch = options.w * imageFormat.size;
+
     //
     // Set parameters for decompression
     //
@@ -509,7 +513,7 @@ bool virvo::encodeJPEG(std::vector<unsigned char>& /*data*/, JPEGOptions const& 
 }
 
 
-bool virvo::decodeJPEG(std::vector<unsigned char>& /*data*/, JPEGOptions const& /*options*/)
+bool virvo::decodeJPEG(std::vector<unsigned char>& /*data*/, JPEGOptions& /*options*/)
 {
     return false;
 }
@@ -533,7 +537,7 @@ bool virvo::encodeJPEG(CompressedVector& data, JPEGOptions const& options)
 }
 
 
-bool virvo::decodeJPEG(CompressedVector& data, JPEGOptions const& options)
+bool virvo::decodeJPEG(CompressedVector& data, JPEGOptions& options)
 {
     if (data.getCompressionType() != Compress_JPEG)
         return false;
