@@ -426,11 +426,15 @@ bool vvServer::handleEvent(ThreadData *tData, const virvo::RemoteEvent event, co
     }
     return true;
   case virvo::CameraMatrix:
-  case virvo::Parameter1B:
-  case virvo::Parameter1I:
-  case virvo::Parameter1F:
-  case virvo::Parameter3F:
-  case virvo::Parameter4F:
+  case virvo::ParameterBool:
+  case virvo::ParameterInt32:
+  case virvo::ParameterInt64:
+  case virvo::ParameterUint32:
+  case virvo::ParameterUint64:
+  case virvo::ParameterFloat:
+  case virvo::ParameterVec3:
+  case virvo::ParameterVec4:
+  case virvo::ParameterSize3:
   case virvo::ParameterColor:
   case virvo::ParameterAABBI:
   case virvo::CurrentFrame:

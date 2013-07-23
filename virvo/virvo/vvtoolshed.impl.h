@@ -44,6 +44,13 @@ inline uint32_t virvo::serialization::read32(uint8_t* src, virvo::serialization:
   return val;
 }
 
+inline uint64_t virvo::serialization::read64(uint8_t* src, virvo::serialization::EndianType end)
+{
+  uint64_t val = 0;
+  read(src, &val, end);
+  return val;
+}
+
 inline float virvo::serialization::readFloat(uint8_t* src, virvo::serialization::EndianType end)
 {
   float val = 0.0f;
@@ -72,6 +79,13 @@ inline uint32_t virvo::serialization::read32(FILE* src, virvo::serialization::En
   return val;
 }
 
+inline uint64_t virvo::serialization::read64(FILE* src, virvo::serialization::EndianType end)
+{
+  uint64_t val = 0;
+  read(src, &val, end);
+  return val;
+}
+
 inline float virvo::serialization::readFloat(FILE* src, virvo::serialization::EndianType end)
 {
   float val = 0;
@@ -94,6 +108,11 @@ inline size_t virvo::serialization::write32(uint8_t* dst, uint32_t val, virvo::s
   return write(dst, val, end);
 }
 
+inline size_t virvo::serialization::write64(uint8_t* dst, uint64_t val, virvo::serialization::EndianType end)
+{
+  return write(dst, val, end);
+}
+
 inline size_t virvo::serialization::writeFloat(uint8_t* dst, float val, virvo::serialization::EndianType end)
 {
   return write(dst, val, end);
@@ -110,6 +129,11 @@ inline size_t virvo::serialization::write16(FILE* dst, uint16_t val, virvo::seri
 }
 
 inline size_t virvo::serialization::write32(FILE* dst, uint32_t val, virvo::serialization::EndianType end)
+{
+  return write(dst, val, end);
+}
+
+inline size_t virvo::serialization::write64(FILE* dst, uint64_t val, virvo::serialization::EndianType end)
 {
   return write(dst, val, end);
 }

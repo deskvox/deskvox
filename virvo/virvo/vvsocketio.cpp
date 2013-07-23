@@ -804,7 +804,7 @@ vvSocket::ErrorType vvSocketIO::getBool(bool& val) const
 /** Writes an int value to the socket.
  @param val  the int value.
 */
-vvSocket::ErrorType vvSocketIO::putInt32(const int val) const
+vvSocket::ErrorType vvSocketIO::putInt32(int32_t val) const
 {
   if(_socket)
   {
@@ -822,7 +822,7 @@ vvSocket::ErrorType vvSocketIO::putInt32(const int val) const
 /** Reads an int value from the socket.
  @param val  the int value.
 */
-vvSocket::ErrorType vvSocketIO::getInt32(int& val) const
+vvSocket::ErrorType vvSocketIO::getInt32(int32_t& val) const
 {
   if(_socket)
   {
@@ -841,6 +841,73 @@ vvSocket::ErrorType vvSocketIO::getInt32(int& val) const
   {
     return vvSocket::VV_SOCK_ERROR;
   }
+}
+
+vvSocket::ErrorType vvSocketIO::putInt64(int64_t val) const
+{
+  if (_socket != NULL)
+  {
+    uint8_t buffer[8];
+    virvo::serialization::write64(&buffer[0], val);
+    return _socket->writeData(&buffer[0], 8);
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+vvSocket::ErrorType vvSocketIO::getInt64(int64_t& val) const
+{
+  if (_socket != NULL)
+  {
+    uint8_t buffer[8];
+    vvSocket::ErrorType retval;
+
+    if ((retval = _socket->readData(&buffer[0], 8)) != vvSocket::VV_OK)
+    {
+      return retval;
+    }
+
+    val = virvo::serialization::read64(&buffer[0]);
+    return retval;
+  }
+  else
+  {
+    return vvSocket::VV_SOCK_ERROR;
+  }
+}
+
+vvSocket::ErrorType vvSocketIO::putUint32(uint32_t val) const
+{
+  return putInt32(static_cast<int32_t>(val));
+}
+
+vvSocket::ErrorType vvSocketIO::getUint32(uint32_t& val) const
+{
+  int32_t tmp;
+  vvSocket::ErrorType err = getInt32(tmp);
+  if (err == vvSocket::VV_OK)
+  {
+    val = static_cast<uint32_t>(tmp);
+  }
+  return err;
+}
+
+vvSocket::ErrorType vvSocketIO::putUint64(uint64_t val) const
+{
+  return putInt64(static_cast<uint64_t>(val));
+}
+
+vvSocket::ErrorType vvSocketIO::getUint64(uint64_t& val) const
+{
+  int64_t tmp;
+  vvSocket::ErrorType err = getInt64(tmp);
+  if (err == vvSocket::VV_OK)
+  {
+    val = static_cast<uint64_t>(tmp);
+  }
+  return err;
 }
 
 //----------------------------------------------------------------------------

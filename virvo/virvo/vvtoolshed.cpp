@@ -2542,15 +2542,46 @@ size_t virvo::serialization::read(uint8_t* src, uint32_t* val, virvo::serializat
 {
   if (end == VV_LITTLE_END)
   {
-    *val = (uint32_t)src[3] * (uint32_t)16777216 + (uint32_t)src[2] * (uint32_t)65536 +
-      (uint32_t)src[1] * (uint32_t)256 + (uint32_t)src[0];
+    *val = (uint32_t)src[3] * (uint32_t)0x1000000
+         + (uint32_t)src[2] * (uint32_t)0x10000
+         + (uint32_t)src[1] * (uint32_t)0x100
+         + (uint32_t)src[0] * (uint32_t)0x1;
   }
   else
   {
-    *val = (uint32_t)src[0] * (uint32_t)16777216 + (uint32_t)src[1] * (uint32_t)65536 +
-      (uint32_t)src[2] * (uint32_t)256 + (uint32_t)src[3];
+    *val = (uint32_t)src[0] * (uint32_t)0x1000000
+         + (uint32_t)src[1] * (uint32_t)0x10000
+         + (uint32_t)src[2] * (uint32_t)0x100
+         + (uint32_t)src[3] * (uint32_t)0x1;
   }
   return 4;
+}
+
+size_t virvo::serialization::read(uint8_t* src, uint64_t* val, virvo::serialization::EndianType end)
+{
+  if (end == VV_LITTLE_END)
+  {
+    *val = static_cast<uint64_t>(src[7]) * 0x100000000000000
+         + static_cast<uint64_t>(src[6]) * 0x1000000000000
+         + static_cast<uint64_t>(src[5]) * 0x10000000000
+         + static_cast<uint64_t>(src[4]) * 0x100000000
+         + static_cast<uint64_t>(src[3]) * 0x1000000
+         + static_cast<uint64_t>(src[2]) * 0x10000
+         + static_cast<uint64_t>(src[1]) * 0x100
+         + static_cast<uint64_t>(src[0]) * 0x1;
+  }
+  else
+  {
+    *val = static_cast<uint64_t>(src[0]) * 0x100000000000000
+         + static_cast<uint64_t>(src[1]) * 0x1000000000000
+         + static_cast<uint64_t>(src[2]) * 0x10000000000
+         + static_cast<uint64_t>(src[3]) * 0x100000000
+         + static_cast<uint64_t>(src[4]) * 0x1000000
+         + static_cast<uint64_t>(src[5]) * 0x10000
+         + static_cast<uint64_t>(src[6]) * 0x100
+         + static_cast<uint64_t>(src[7]) * 0x1;
+  }
+  return 8;
 }
 
 size_t virvo::serialization::read(uint8_t* src, float* val, virvo::serialization::EndianType end)
@@ -2621,15 +2652,55 @@ size_t virvo::serialization::read(FILE* src, uint32_t* val, virvo::serialization
 
   if (end == VV_LITTLE_END)
   {
-    *val = (uint32_t)buf[3] * (uint32_t)16777216 + (uint32_t)buf[2] * (uint32_t)65536 +
-      (uint32_t)buf[1] * (uint32_t)256 + (uint32_t)buf[0];
+    *val = (uint32_t)buf[3] * 0x1000000
+         + (uint32_t)buf[2] * 0x10000 
+         + (uint32_t)buf[1] * 0x100
+         + (uint32_t)buf[0] * 0x1;
   }
   else
   {
-    *val = (uint32_t)buf[0] * (uint32_t)16777216 + (uint32_t)buf[1] * (uint32_t)65536 +
-      (uint32_t)buf[2] * (uint32_t)256 + (uint32_t)buf[3];
+    *val = (uint32_t)buf[0] * 0x1000000
+         + (uint32_t)buf[1] * 0x10000
+         + (uint32_t)buf[2] * 0x100
+         + (uint32_t)buf[3] * 0x1;
   }
   return 4;
+}
+
+size_t virvo::serialization::read(FILE* src, uint64_t* val, virvo::serialization::EndianType end)
+{
+  uint8_t buf[8];
+
+  size_t retval = fread(buf, 8, 1, src);
+  if (retval != 1)
+  {
+    VV_LOG(0) << "virvo::serialization::read(FILE*, uint64_t*) failed";
+    return 0;
+  }
+
+  if (end == VV_LITTLE_END)
+  {
+    *val = static_cast<uint64_t>(buf[7]) * 0x100000000000000
+         + static_cast<uint64_t>(buf[6]) * 0x1000000000000
+         + static_cast<uint64_t>(buf[5]) * 0x10000000000
+         + static_cast<uint64_t>(buf[4]) * 0x100000000
+         + static_cast<uint64_t>(buf[3]) * 0x1000000
+         + static_cast<uint64_t>(buf[2]) * 0x10000
+         + static_cast<uint64_t>(buf[1]) * 0x100
+         + static_cast<uint64_t>(buf[0]) * 0x1;
+  }
+  else
+  {
+    *val = static_cast<uint64_t>(buf[0]) * 0x10000000000000
+         + static_cast<uint64_t>(buf[1]) * 0x1000000000000
+         + static_cast<uint64_t>(buf[2]) * 0x10000000000
+         + static_cast<uint64_t>(buf[3]) * 0x100000000
+         + static_cast<uint64_t>(buf[4]) * 0x1000000
+         + static_cast<uint64_t>(buf[5]) * 0x10000
+         + static_cast<uint64_t>(buf[6]) * 0x100
+         + static_cast<uint64_t>(buf[7]) * 0x1;
+  }
+  return 8;
 }
 
 size_t virvo::serialization::read(FILE* src, float* val, virvo::serialization::EndianType end)
@@ -2694,6 +2765,33 @@ size_t virvo::serialization::write(uint8_t* dst, uint32_t val, virvo::serializat
     dst[3] = (uint8_t)(val & 0xFF);
   }
   return sizeof(uint32_t);
+}
+
+size_t virvo::serialization::write(uint8_t* dst, uint64_t val, virvo::serialization::EndianType end)
+{
+  if (end == VV_LITTLE_END)
+  {
+    dst[0] = static_cast<uint8_t>(val & 0xFF);
+    dst[1] = static_cast<uint8_t>((val >> 8)  & 0xFF);
+    dst[2] = static_cast<uint8_t>((val >> 16) & 0xFF);
+    dst[3] = static_cast<uint8_t>((val >> 24) & 0xFF);
+    dst[4] = static_cast<uint8_t>((val >> 32) & 0xFF);
+    dst[5] = static_cast<uint8_t>((val >> 40) & 0xFF);
+    dst[6] = static_cast<uint8_t>((val >> 48) & 0xFF);
+    dst[7] = static_cast<uint8_t>((val >> 56) & 0xFF);
+  }
+  else
+  {
+    dst[0] = static_cast<uint8_t>(val  >> 56);
+    dst[1] = static_cast<uint8_t>((val >> 48) & 0xFF);
+    dst[2] = static_cast<uint8_t>((val >> 40) & 0xFF);
+    dst[3] = static_cast<uint8_t>((val >> 32) & 0xFF);
+    dst[4] = static_cast<uint8_t>((val >> 24) & 0xFF);
+    dst[5] = static_cast<uint8_t>((val >> 16) & 0xFF);
+    dst[6] = static_cast<uint8_t>((val >>  8) & 0xFF);
+    dst[7] = static_cast<uint8_t>(val & 0xFF);
+  }
+  return sizeof(uint64_t);
 }
 
 size_t virvo::serialization::write(uint8_t* dst, float val, virvo::serialization::EndianType end)
@@ -2770,6 +2868,41 @@ size_t virvo::serialization::write(FILE* dst, uint32_t val, virvo::serialization
     return 0;
   }
   return 4;
+}
+
+size_t virvo::serialization::write(FILE* dst, uint64_t val, virvo::serialization::EndianType end)
+{
+  uint8_t buf[8];
+
+  if (end == VV_LITTLE_END)
+  {
+    buf[0] = static_cast<uint8_t>(val & 0xFF);
+    buf[1] = static_cast<uint8_t>((val >> 8)  & 0xFF);
+    buf[2] = static_cast<uint8_t>((val >> 16) & 0xFF);
+    buf[3] = static_cast<uint8_t>((val >> 24) & 0xFF);
+    buf[4] = static_cast<uint8_t>((val >> 32) & 0xFF);
+    buf[5] = static_cast<uint8_t>((val >> 40) & 0xFF);
+    buf[6] = static_cast<uint8_t>((val >> 48) & 0xFF);
+    buf[7] = static_cast<uint8_t>((val >> 56) & 0xFF);
+  }
+  else
+  {
+    buf[0] = static_cast<uint8_t>(val  >> 56);
+    buf[1] = static_cast<uint8_t>((val >> 48) & 0xFF);
+    buf[2] = static_cast<uint8_t>((val >> 40) & 0xFF);
+    buf[3] = static_cast<uint8_t>((val >> 32) & 0xFF);
+    buf[4] = static_cast<uint8_t>((val >> 24) & 0xFF);
+    buf[5] = static_cast<uint8_t>((val >> 16) & 0xFF);
+    buf[6] = static_cast<uint8_t>((val >> 8)  & 0xFF);
+    buf[7] = static_cast<uint8_t>(val & 0xFF);
+  }
+  size_t retval = fwrite(buf, 8, 1, dst);
+  if (retval != 1)
+  {
+    VV_LOG(0) << "virvo::serialization::write(FILE*, uint64_t) failed";
+    return 0;
+  }
+  return 8;
 }
 
 size_t virvo::serialization::write(FILE* dst, float val, virvo::serialization::EndianType end)

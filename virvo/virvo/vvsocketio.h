@@ -154,8 +154,14 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putMatrix(const vvMatrix*) const;
     vvSocket::ErrorType getBool(bool& val) const;
     vvSocket::ErrorType putBool(const bool val) const;
-    vvSocket::ErrorType getInt32(int& val) const;
-    vvSocket::ErrorType putInt32(const int val) const;
+    vvSocket::ErrorType getInt32(int32_t& val) const;
+    vvSocket::ErrorType putInt32(int32_t val) const;
+    vvSocket::ErrorType getInt64(int64_t& val) const;
+    vvSocket::ErrorType putInt64(int64_t val) const;
+    vvSocket::ErrorType getUint32(uint32_t& val) const;
+    vvSocket::ErrorType putUint32(uint32_t val) const;
+    vvSocket::ErrorType getUint64(uint64_t& val) const;
+    vvSocket::ErrorType putUint64(uint64_t val) const;
     vvSocket::ErrorType getFloat(float& val) const;
     vvSocket::ErrorType putFloat(const float val) const;
     vvSocket::ErrorType getVector3(vvVector3& val) const;

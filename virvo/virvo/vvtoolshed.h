@@ -283,38 +283,46 @@ EndianType getEndianness();
 size_t  read(uint8_t* src, uint8_t* val);
 size_t  read(uint8_t* src, uint16_t* val, EndianType end = VV_BIG_END);
 size_t  read(uint8_t* src, uint32_t* val, EndianType end = VV_BIG_END);
+size_t  read(uint8_t* src, uint64_t* val, EndianType end = VV_BIG_END);
 size_t  read(uint8_t* src, float* val, EndianType end = VV_BIG_END);
 size_t  read(FILE* src, uint8_t* val);
 size_t  read(FILE* src, uint16_t* val, EndianType end = VV_BIG_END);
 size_t  read(FILE* src, uint32_t* val, EndianType end = VV_BIG_END);
+size_t  read(FILE* src, uint64_t* val, EndianType end = VV_BIG_END);
 size_t  read(FILE* src, float* val, EndianType end = VV_BIG_END);
 
 size_t  write(uint8_t* dst, uint8_t val);
 size_t  write(uint8_t* dst, uint16_t val, EndianType end = VV_BIG_END);
 size_t  write(uint8_t* dst, uint32_t val, EndianType end = VV_BIG_END);
+size_t  write(uint8_t* dst, uint64_t val, EndianType end = VV_BIG_END);
 size_t  write(uint8_t* dst, float val, EndianType end = VV_BIG_END);
 size_t  write(FILE* dst, uint8_t val);
 size_t  write(FILE* dst, uint16_t val, EndianType end = VV_BIG_END);
 size_t  write(FILE* dst, uint32_t val, EndianType end = VV_BIG_END);
+size_t  write(FILE* dst, uint64_t val, EndianType end = VV_BIG_END);
 size_t  write(FILE* dst, float val, EndianType end = VV_BIG_END);
 
 /* legacy functions -- DEPRECATED */
 inline uint8_t  read8(uint8_t* src);
 inline uint16_t read16(uint8_t* src, EndianType end = VV_BIG_END);
 inline uint32_t read32(uint8_t* src, EndianType end = VV_BIG_END);
+inline uint64_t read64(uint8_t* src, EndianType end = VV_BIG_END);
 inline float    readFloat(uint8_t* src, EndianType end = VV_BIG_END);
 inline uint8_t  read8(FILE* src);
 inline uint16_t read16(FILE* src, EndianType end = VV_BIG_END);
 inline uint32_t read32(FILE* src, EndianType end = VV_BIG_END);
+inline uint64_t read64(FILE* src, EndianType end = VV_BIG_END);
 inline float    readFloat(FILE* src, EndianType end = VV_BIG_END);
 
 inline size_t   write8(uint8_t* dst, uint8_t val);
 inline size_t   write16(uint8_t* dst, uint16_t val, EndianType end = VV_BIG_END);
 inline size_t   write32(uint8_t* dst, uint32_t val, EndianType end = VV_BIG_END);
+inline size_t   write64(uint8_t* dst, uint64_t val, EndianType end = VV_BIG_END);
 inline size_t   writeFloat(uint8_t* dst, float val, EndianType end = VV_BIG_END);
 inline size_t   write8(FILE* dst, uint8_t val);
 inline size_t   write16(FILE* dst, uint16_t val, EndianType end = VV_BIG_END);
 inline size_t   write32(FILE* dst, uint32_t val, EndianType end = VV_BIG_END);
+inline size_t   write64(FILE* dst, uint64_t val, EndianType end = VV_BIG_END);
 inline size_t   writeFloat(FILE* dst, float val, EndianType end = VV_BIG_END);
 
 } // serialization

@@ -114,7 +114,7 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
       renderer->updateTransferFunction();
     }
     break;
-  case virvo::Parameter1B:
+  case virvo::ParameterBool:
     {
       int32_t param;
       bool value = false;
@@ -124,7 +124,7 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
       }
     }
     break;
-  case virvo::Parameter1I:
+  case virvo::ParameterInt32:
     {
       int32_t param;
       int value = 0;
@@ -142,7 +142,37 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
       }
     }
     break;
-  case virvo::Parameter1F:
+  case virvo::ParameterInt64:
+    {
+      int32_t param;
+      int64_t value = 0;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getInt64(value) == vvSocket::VV_OK)
+      {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
+  case virvo::ParameterUint32:
+    {
+      int32_t param;
+      uint32_t value = 0;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getUint32(value) == vvSocket::VV_OK)
+      {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
+  case virvo::ParameterUint64:
+    {
+      int32_t param;
+      uint64_t value = 0;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getUint64(value) == vvSocket::VV_OK)
+      {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
+  case virvo::ParameterFloat:
     {
       int32_t param;
       float value = 0.f;
@@ -152,7 +182,7 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
       }
     }
     break;
-  case virvo::Parameter3F:
+  case virvo::ParameterVec3:
     {
       int32_t param;
       vvVector3 value;
@@ -162,12 +192,56 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
       }
     }
     break;
-  case virvo::Parameter4F:
+  case virvo::ParameterVec4:
     {
       int32_t param;
       vvVector4 value;
       if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getVector4(value) == vvSocket::VV_OK)
       {
+        renderer->setParameter((vvRenderState::ParameterType)param, value);
+      }
+    }
+    break;
+  case virvo::ParameterSize3:
+    {
+      int32_t param;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK)
+      {
+        vvsize3 value;
+        uint32_t sizeofsize_t = 0;
+        if (_socketio->getUint32(sizeofsize_t) == vvSocket::VV_OK)
+        {
+          if (sizeofsize_t == 8)
+          {
+            vvBaseVector3<uint64_t> tmp;
+            if (_socketio->getUint64(tmp[0]) == vvSocket::VV_OK
+             && _socketio->getUint64(tmp[1]) == vvSocket::VV_OK
+             && _socketio->getUint64(tmp[2]) == vvSocket::VV_OK)
+            {
+              for (size_t i = 0; i < 3; ++i)
+              {
+                value[i] = tmp[i];
+              }
+            }
+          }
+          else if(sizeofsize_t == 4)
+          {
+            vvBaseVector3<uint32_t> tmp;
+            if (_socketio->getUint32(tmp[0]) == vvSocket::VV_OK
+             && _socketio->getUint32(tmp[1]) == vvSocket::VV_OK
+             && _socketio->getUint32(tmp[2]) == vvSocket::VV_OK)
+            {
+              for (size_t i = 0; i < 3; ++i)
+              {
+                value[i] = tmp[i];
+              }
+            }
+          }
+          else
+          {
+            assert(0);
+          }
+        }
         renderer->setParameter((vvRenderState::ParameterType)param, value);
       }
     }

@@ -234,11 +234,11 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 }
 
 void vvIbrClient::initIbrFrame()
-{
+{std::cerr << "init" << std::endl;
   vvDebugMsg::msg(1, "vvIbrClient::initIbrFrame()");
 
   const int h = _image->height();
-  const int w = _image->width();
+  const int w = _image->width();std::cerr << w << " " << h << std::endl;
 
   _imgPr = _image->projMatrix();
   _imgMv = _image->viewMatrix();
