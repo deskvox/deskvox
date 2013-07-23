@@ -28,25 +28,77 @@
 #include "vvtoolshed.h"
 
 #include "private/vvgltools.h"
+#include "private/vvlog.h"
+
+struct vvRemoteClient::Impl
+{
+  Impl() : ownsock(NULL) {}
+  vvTcpSocket* ownsock;
+};
 
 vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState,
                                vvTcpSocket* socket, const std::string &filename)
-   : vvRenderer(vd, renderState)
-   , _filename(filename)
-   , _socketIO(NULL)
-   , _changes(true)
+  : vvRenderer(vd, renderState)
+  , _filename(filename)
+  , _socketIO(NULL)
+  , _changes(true)
+  , impl_(new Impl)
 {
   vvDebugMsg::msg(1, "vvRemoteClient::vvRemoteClient()");
 
-  _socketIO = new vvSocketIO(socket);
+  if (socket == NULL)
+  {
+    // fall back to VV_RENDERER variable
+    if (const char* s = getenv("VV_SERVER"))
+    {
+      int port = vvToolshed::parsePort(s);
+      std::string servername(s);
+      if (port == -1)
+      {
+        port = 31050;
+      }
+      else
+      {
+        servername = vvToolshed::stripPort(s);
+      }
+
+      if (!servername.empty())
+      {
+        impl_->ownsock = new vvTcpSocket;
+        impl_->ownsock->setParameter(vvSocket::VV_NO_NAGLE, true);
+        if (impl_->ownsock->connectToHost(servername, static_cast<ushort>(port)) != vvSocket::VV_OK)
+        {
+          delete impl_->ownsock;
+          impl_->ownsock = NULL;
+        }
+        else
+        {
+          VV_LOG(1) << "remote rendering server from environment: " << s;
+        }
+      }
+    }
+
+    if (impl_->ownsock != NULL)
+    {
+      _socketIO = new vvSocketIO(impl_->ownsock);
+    }
+  }
+  else
+  {
+    _socketIO = new vvSocketIO(socket);
+  }
   sendVolume(vd);
 }
 
 vvRemoteClient::~vvRemoteClient()
 {
-  vvDebugMsg::msg(1, "vvRemoteClient::~vvRemoteClient()");
-
   delete _socketIO;
+  if (impl_->ownsock != NULL)
+  {
+    impl_->ownsock->disconnectFromHost();
+  }
+  delete impl_->ownsock;
+  delete impl_;
 }
 
 void vvRemoteClient::renderVolumeGL()

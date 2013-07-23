@@ -78,6 +78,13 @@ protected:
   vvMatrix _currentPr;                                    ///< Current projection matrix
 
 private:
+  // NOT copyable!
+  vvRemoteClient(vvRemoteClient const& rhs);
+  vvRemoteClient& operator=(vvRemoteClient const& rhs);
+
+  struct Impl;
+  Impl* impl_;
+
   ErrorType sendVolume(vvVolDesc*& vd);
 };
 
