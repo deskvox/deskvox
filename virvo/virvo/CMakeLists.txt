@@ -166,6 +166,7 @@ set(VIRVO_HEADERS
   vvtfwidget.h
   vvtokenizer.h
   vvtoolshed.h
+  vvtoolshed.impl.h
   vvtransfunc.h
   vvudpsocket.h
   vvvecmath.h

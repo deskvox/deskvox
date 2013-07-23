@@ -46,6 +46,8 @@
 
 #include "vvtoolshed.h"
 
+#include "private/vvlog.h"
+
 #ifdef __sun
 #define powf pow
 #define atanf atan
@@ -66,7 +68,7 @@ using namespace std;
 int vvToolshed::progressSteps = 0;
 
 //============================================================================
-// Method Definitions
+// method definitions
 //============================================================================
 
 //----------------------------------------------------------------------------
@@ -1734,353 +1736,12 @@ void vvToolshed::convertHS2XY(float hue, float saturation, float* x, float* y)
 }
 
 //----------------------------------------------------------------------------
-/** Read an unsigned 8-bit integer value from a file.
- */
-uint8_t vvToolshed::read8(FILE* src)
-{
-  uint8_t val;
-  size_t retval;
-
-  retval=fread(&val, 1, 1, src);
-  if (retval!=1)
-  {
-    std::cerr<<"vvToolshed::read8 fread failed"<<std::endl;
-    return 0;
-  }
-  return val;
-}
-
-//----------------------------------------------------------------------------
-/** Write an unsigned 8-bit integer value to a file.
-  @return number of bytes written
-*/
-size_t vvToolshed::write8(FILE* dst, uint8_t val)
-{
-  size_t retval;
-  retval=fwrite(&val, 1, 1, dst);
-  if (retval!=1)
-  {
-    std::cerr<<"vvToolshed::write8 fwrite failed"<<std::endl;
-    return 0;
-  }
-  return 1;
-}
-
-//----------------------------------------------------------------------------
-/** Read an unsigned 16-bit integer value system independently from a file.
- */
-uint16_t vvToolshed::read16(FILE* src, vvToolshed::EndianType end)
-{
-  uint8_t buf[2];
-  uint16_t val;
-
-  size_t retval;
-
-  retval=fread(buf, 2, 1, src);
-
-  if (retval!=1)
-  {
-    std::cerr<<"vvToolshed::read16 fread failed"<<std::endl;
-    return 0;
-  }
-  if (end==VV_LITTLE_END)
-  {
-    val = (uint16_t)buf[0] + (uint16_t)buf[1] * (uint16_t)256;
-  }
-  else
-  {
-    val = (uint16_t)buf[0] * (uint16_t)256 + (uint16_t)buf[1];
-  }
-  return val;
-}
-
-//----------------------------------------------------------------------------
-/** Write an unsigned 16-bit integer value system independently to a file.
-  @return number of bytes written
-*/
-size_t vvToolshed::write16(FILE* fp, uint16_t val, vvToolshed::EndianType end)
-{
-  uint8_t buf[2];
-
-  if (end==VV_LITTLE_END)
-  {
-    buf[0] = (uint8_t)(val & 0xFF);
-    buf[1] = (uint8_t)(val >> 8);
-  }
-  else
-  {
-    buf[0] = (uint8_t)(val >> 8);
-    buf[1] = (uint8_t)(val & 0xFF);
-  }
-  size_t retval;
-  retval=fwrite(buf, 2, 1, fp);
-  if (retval!=1)
-  {
-    std::cerr<<"vvToolshed::write16 fwrite failed"<<std::endl;
-    return 0;
-  }
-  return 2;
-}
-
-//----------------------------------------------------------------------------
-/** Read an unsigned 32-bit integer value system independently from a file.
- */
-uint32_t vvToolshed::read32(FILE* src, vvToolshed::EndianType end)
-{
-  uint8_t buf[4];
-  uint32_t val;
-
-  size_t retval;
-  retval=fread(buf, 4, 1, src);
-  if (retval!=1)
-  {
-    std::cerr<<"vvToolshed::read32 fread failed"<<std::endl;
-    return 0;
-  }
-
-  if (end==VV_LITTLE_END)
-  {
-    val = (uint32_t)buf[3] * (uint32_t)16777216 + (uint32_t)buf[2] * (uint32_t)65536 +
-      (uint32_t)buf[1] * (uint32_t)256 + (uint32_t)buf[0];
-  }
-  else
-  {
-    val = (uint32_t)buf[0] * (uint32_t)16777216 + (uint32_t)buf[1] * (uint32_t)65536 +
-      (uint32_t)buf[2] * (uint32_t)256 + (uint32_t)buf[3];
-  }
-  return (uint32_t)val;
-}
-
-//----------------------------------------------------------------------------
-/** Write an unsigned 32-bit integer value system independently to a file.
-  @return number of bytes written
-*/
-size_t vvToolshed::write32(FILE* fp, uint32_t val, vvToolshed::EndianType end)
-{
-  uint8_t buf[4];
-
-  if (end==VV_LITTLE_END)
-  {
-    buf[0] = (uint8_t)(val & 0xFF);
-    buf[1] = (uint8_t)((val >> 8)  & 0xFF);
-    buf[2] = (uint8_t)((val >> 16) & 0xFF);
-    buf[3] = (uint8_t)(val  >> 24);
-  }
-  else
-  {
-    buf[0] = (uint8_t)(val  >> 24);
-    buf[1] = (uint8_t)((val >> 16) & 0xFF);
-    buf[2] = (uint8_t)((val >> 8)  & 0xFF);
-    buf[3] = (uint8_t)(val & 0xFF);
-  }
-  size_t retval;
-  retval=fwrite(buf, 4, 1, fp);
-  if (retval!=1)
-  {
-    std::cerr<<"vvToolshed::write32 fwrite failed"<<std::endl;
-    return 0;
-  }
-  return 4;
-}
-
-//----------------------------------------------------------------------------
-/** Read a 32 bit float value system independently from a file.
- */
-float vvToolshed::readFloat(FILE* src, vvToolshed::EndianType end)
-{
-  uint8_t *buf;
-  uint8_t tmp;
-  float val;
-
-  size_t retval;
-  retval=fread(&val, 4, 1, src);
-
-  if (retval!=1)
-  {
-    std::cerr<<"vvToolshed::readFloat fread failed"<<std::endl;
-    return 0;
-  }
-
-  if (getEndianness() != end)
-  {
-    // Reverse byte order:
-    buf = (uint8_t*)&val;
-    tmp = buf[0]; buf[0] = buf[3]; buf[3] = tmp;
-    tmp = buf[1]; buf[1] = buf[2]; buf[2] = tmp;
-  }
-  return val;
-}
-
-//----------------------------------------------------------------------------
-/** Write a 32 bit float value system independently to a file.
-  @return number of bytes written
-*/
-size_t vvToolshed::writeFloat(FILE* fp, float val, vvToolshed::EndianType end)
-{
-  uint8_t* buf;
-  uint8_t tmp;
-
-  if (getEndianness() != end)
-  {
-    // Reverse byte order:
-    buf = (uint8_t*)&val;
-    tmp = buf[0]; buf[0] = buf[3]; buf[3] = tmp;
-    tmp = buf[1]; buf[1] = buf[2]; buf[2] = tmp;
-  }
-
-  size_t retval;
-  retval=fwrite(&val, 4, 1, fp);
-  if (retval!=1)
-  {
-    std::cerr<<"vvToolshed::writeFloat fwrite failed"<<std::endl;
-    return 0;
-  }
-  return 4;
-}
-
-//----------------------------------------------------------------------------
 /** Return an integer aligned to a power of two (dflt: 16).
  */
 int vvToolshed::align(const int i, const int pot)
 {
   const int alignment = sizeof(int) * pot;
   return (i + (alignment - 1)) & ~(alignment - 1);
-}
-
-//----------------------------------------------------------------------------
-/** Read an unsigned 8-bit integer value from a buffer.
- */
-uint8_t vvToolshed::read8(uint8_t* src)
-{
-  return *src;
-}
-
-//----------------------------------------------------------------------------
-/** Write an unsigned 8-bit integer value to a buffer.
-  @return number of bytes written
-*/
-size_t vvToolshed::write8(uint8_t* src, uint8_t val)
-{
-  *src = val;
-  return sizeof(uint8_t);
-}
-
-//----------------------------------------------------------------------------
-/** Read a little endian unsigned 16-bit integer value system independently from a buffer
-  (least significant byte first).
-*/
-uint16_t vvToolshed::read16(uint8_t* src, const vvToolshed::EndianType end)
-{
-  if (end==VV_LITTLE_END)
-  {
-    return static_cast<ushort>((uint16_t)src[0] + (uint16_t)src[1] * (uint16_t)256);
-  }
-  else
-  {
-    return static_cast<ushort>((uint16_t)src[0] * (uint16_t)256 + (uint16_t)src[1]);
-  }
-}
-
-//----------------------------------------------------------------------------
-/** Write a little endian unsigned 16-bit integer value system independently to a buffer
-  (least significant byte first).
-  @param buf pointer to 2 bytes of _allocated_ memory
-  @return number of bytes written
-*/
-size_t vvToolshed::write16(uint8_t* buf, uint16_t val, vvToolshed::EndianType end)
-{
-  if (end==VV_LITTLE_END)
-  {
-    buf[0] = (uint8_t)(val & 0xFF);
-    buf[1] = (uint8_t)(val >> 8);
-  }
-  else
-  {
-    buf[0] = (uint8_t)(val >> 8);
-    buf[1] = (uint8_t)(val & 0xFF);
-  }
-  return 2 * sizeof(uint8_t);
-}
-
-//----------------------------------------------------------------------------
-/** Read a little endian unsigned 32-bit integer value system independently from a buffer.
- Read four bytes in a row in unix-style (least significant byte first).
-*/
-uint32_t vvToolshed::read32(uint8_t* buf, const vvToolshed::EndianType end)
-{
-  if (end==VV_LITTLE_END)
-  {
-    return (uint32_t)buf[3] * (uint32_t)16777216 + (uint32_t)buf[2] * (uint32_t)65536 +
-      (uint32_t)buf[1] * (uint32_t)256 + (uint32_t)buf[0];
-  }
-  else
-  {
-    return (uint32_t)buf[0] * (uint32_t)16777216 + (uint32_t)buf[1] * (uint32_t)65536 +
-      (uint32_t)buf[2] * (uint32_t)256 + (uint32_t)buf[3];
-  }
-}
-
-//----------------------------------------------------------------------------
-/** Write an unsigned 32-bit integer value system independently to a buffer.
-  @return number of bytes written
-*/
-size_t vvToolshed::write32(uint8_t* buf, uint32_t val, vvToolshed::EndianType end)
-{
-  if (end==VV_LITTLE_END)
-  {
-    buf[0] = (uint8_t)(val & 0xFF);
-    buf[1] = (uint8_t)((val >> 8)  & 0xFF);
-    buf[2] = (uint8_t)((val >> 16) & 0xFF);
-    buf[3] = (uint8_t)(val  >> 24);
-  }
-  else
-  {
-    buf[0] = (uint8_t)(val  >> 24);
-    buf[1] = (uint8_t)((val >> 16) & 0xFF);
-    buf[2] = (uint8_t)((val >> 8)  & 0xFF);
-    buf[3] = (uint8_t)(val & 0xFF);
-  }
-  return sizeof(uint32_t);
-}
-
-//----------------------------------------------------------------------------
-/** Read a 32 bit float value system independently from a buffer.
- */
-float vvToolshed::readFloat(uint8_t* buf, vvToolshed::EndianType end)
-{
-  float  fval;
-  uint8_t* ptr;
-  uint8_t  tmp;
-
-  assert(sizeof(float)==4);
-  memcpy(&fval, buf, 4);
-  if (getEndianness() != end)
-  {
-    // Reverse byte order:
-    ptr = (uint8_t*)&fval;
-    tmp = ptr[0]; ptr[0] = ptr[3]; ptr[3] = tmp;
-    tmp = ptr[1]; ptr[1] = ptr[2]; ptr[2] = tmp;
-  }
-  return fval;
-}
-
-//----------------------------------------------------------------------------
-/** Write a 32 bit float value system independently to a buffer.
-  @return number of bytes written
-*/
-size_t vvToolshed::writeFloat(uint8_t* buf, float val, vvToolshed::EndianType end)
-{
-  uint8_t tmp;
-
-  assert(sizeof(float)==4);
-  memcpy(buf, &val, 4);
-  if (getEndianness() != end)
-  {
-    // Reverse byte order:
-    tmp = buf[0]; buf[0] = buf[3]; buf[3] = tmp;
-    tmp = buf[1]; buf[1] = buf[2]; buf[2] = tmp;
-  }
-  return sizeof(float);
 }
 
 //----------------------------------------------------------------------------
@@ -2096,7 +1757,7 @@ void vvToolshed::makeArraySystemIndependent(int numValues, float* array)
   uint8_t tmp;                                    // temporary byte value from float array, needed for swapping
 
   assert(sizeof(float) == 4);
-  if (getEndianness()==VV_BIG_END)  return;       // nothing needs to be done
+  if (virvo::serialization::getEndianness()==virvo::serialization::VV_BIG_END)  return;       // nothing needs to be done
 
   buf = (uchar*)array;
   for (i=0; i<numValues; ++i)
@@ -2118,22 +1779,6 @@ void vvToolshed::makeArraySystemDependent(int numValues, float* array)
 {
   // Swapping bytes is the same as above, therefore use the same code:
   makeArraySystemIndependent(numValues, array);
-}
-
-//----------------------------------------------------------------------------
-/** Returns the current system's endianness.
- */
-vvToolshed::EndianType vvToolshed::getEndianness()
-{
-  const float one = 1.0f;                          // memory representation of 1.0 on big endian machines: 3F 80 00 00
-
-  const uchar* ptr = (uchar*)&one;
-  if (*ptr == 0x3f) return VV_BIG_END;
-  else
-  {
-    assert(*ptr == 0);
-    return VV_LITTLE_END;
-  }
 }
 
 //----------------------------------------------------------------------------
@@ -2856,6 +2501,299 @@ bool virvo::toolshed::endsWith(std::string const& string, std::string const& suf
 
     return memcmp(string.c_str() + (string.size() - suffix.size()), suffix.c_str(), suffix.size()) == 0;
 }
+
+//============================================================================
+// serialization namespace
+//============================================================================
+
+virvo::serialization::EndianType virvo::serialization::getEndianness()
+{
+  const float one = 1.0f;                          // memory representation of 1.0 on big endian machines: 3F 80 00 00
+
+  const uchar* ptr = (uchar*)&one;
+  if (*ptr == 0x3f) return VV_BIG_END;
+  else
+  {
+    assert(*ptr == 0);
+    return VV_LITTLE_END;
+  }
+}
+
+size_t virvo::serialization::read(uint8_t* src, uint8_t* val)
+{
+  *val = *src;
+  return 1;
+}
+
+size_t virvo::serialization::read(uint8_t* src, uint16_t* val, virvo::serialization::EndianType end)
+{
+  if (end == VV_LITTLE_END)
+  {
+    *val = static_cast<uint16_t>((uint16_t)src[0] + (uint16_t)src[1] * (uint16_t)256);
+  }
+  else
+  {
+    *val = static_cast<uint16_t>((uint16_t)src[0] * (uint16_t)256 + (uint16_t)src[1]);
+  }
+  return 2;
+}
+
+size_t virvo::serialization::read(uint8_t* src, uint32_t* val, virvo::serialization::EndianType end)
+{
+  if (end == VV_LITTLE_END)
+  {
+    *val = (uint32_t)src[3] * (uint32_t)16777216 + (uint32_t)src[2] * (uint32_t)65536 +
+      (uint32_t)src[1] * (uint32_t)256 + (uint32_t)src[0];
+  }
+  else
+  {
+    *val = (uint32_t)src[0] * (uint32_t)16777216 + (uint32_t)src[1] * (uint32_t)65536 +
+      (uint32_t)src[2] * (uint32_t)256 + (uint32_t)src[3];
+  }
+  return 4;
+}
+
+size_t virvo::serialization::read(uint8_t* src, float* val, virvo::serialization::EndianType end)
+{
+  uint8_t* ptr;
+  uint8_t  tmp;
+
+  assert(sizeof(float) == 4);
+  memcpy(val, src, 4);
+  if (getEndianness() != end)
+  {
+    // Reverse byte order:
+    ptr = (uint8_t*)val;
+    tmp = ptr[0]; ptr[0] = ptr[3]; ptr[3] = tmp;
+    tmp = ptr[1]; ptr[1] = ptr[2]; ptr[2] = tmp;
+  }
+  return 4;
+}
+
+
+size_t virvo::serialization::read(FILE* src, uint8_t* val)
+{
+  size_t retval;
+
+  retval = fread(val, 1, 1, src);
+  if (retval != 1)
+  {
+    VV_LOG(0) << "virvo::serialization::read(FILE*, uint8_t*) failed";
+    return 0;
+  }
+  return retval;
+}
+
+size_t virvo::serialization::read(FILE* src, uint16_t* val, virvo::serialization::EndianType end)
+{
+  uint8_t buf[2];
+  size_t retval;
+
+  retval = fread(buf, 2, 1, src);
+
+  if (retval != 1)
+  {
+    VV_LOG(0) << "virvo::serialization::read(FILE*, uint16_t*) failed";
+    return 0;
+  }
+  if (end == VV_LITTLE_END)
+  {
+    *val = (uint16_t)buf[0] + (uint16_t)buf[1] * (uint16_t)256;
+  }
+  else
+  {
+    *val = (uint16_t)buf[0] * (uint16_t)256 + (uint16_t)buf[1];
+  }
+  return 2;
+}
+
+size_t virvo::serialization::read(FILE* src, uint32_t* val, virvo::serialization::EndianType end)
+{
+  uint8_t buf[4];
+
+  size_t retval;
+  retval = fread(buf, 4, 1, src);
+  if (retval != 1)
+  {
+    VV_LOG(0) << "virvo::serialization::read(FILE*, uint32_t*) failed";
+    return 0;
+  }
+
+  if (end == VV_LITTLE_END)
+  {
+    *val = (uint32_t)buf[3] * (uint32_t)16777216 + (uint32_t)buf[2] * (uint32_t)65536 +
+      (uint32_t)buf[1] * (uint32_t)256 + (uint32_t)buf[0];
+  }
+  else
+  {
+    *val = (uint32_t)buf[0] * (uint32_t)16777216 + (uint32_t)buf[1] * (uint32_t)65536 +
+      (uint32_t)buf[2] * (uint32_t)256 + (uint32_t)buf[3];
+  }
+  return 4;
+}
+
+size_t virvo::serialization::read(FILE* src, float* val, virvo::serialization::EndianType end)
+{
+  uint8_t *buf;
+  uint8_t tmp;
+
+  size_t retval;
+  retval = fread(val, 4, 1, src);
+
+  if (retval != 1)
+  {
+    VV_LOG(0) << "vvToolshed::readFloat fread failed";
+    return 0;
+  }
+
+  if (getEndianness() != end)
+  {
+    // Reverse byte order:
+    buf = (uint8_t*)val;
+    tmp = buf[0]; buf[0] = buf[3]; buf[3] = tmp;
+    tmp = buf[1]; buf[1] = buf[2]; buf[2] = tmp;
+  }
+  return 4;
+}
+
+size_t virvo::serialization::write(uint8_t* dst, uint8_t val)
+{
+  *dst = val;
+  return sizeof(uint8_t);
+}
+
+size_t virvo::serialization::write(uint8_t* dst, uint16_t val, virvo::serialization::EndianType end)
+{
+  if (end == VV_LITTLE_END)
+  {
+    dst[0] = (uint8_t)(val & 0xFF);
+    dst[1] = (uint8_t)(val >> 8);
+  }
+  else
+  {
+    dst[0] = (uint8_t)(val >> 8);
+    dst[1] = (uint8_t)(val & 0xFF);
+  }
+  return 2 * sizeof(uint8_t);
+}
+
+size_t virvo::serialization::write(uint8_t* dst, uint32_t val, virvo::serialization::EndianType end)
+{
+  if (end == VV_LITTLE_END)
+  {
+    dst[0] = (uint8_t)(val & 0xFF);
+    dst[1] = (uint8_t)((val >> 8)  & 0xFF);
+    dst[2] = (uint8_t)((val >> 16) & 0xFF);
+    dst[3] = (uint8_t)(val  >> 24);
+  }
+  else
+  {
+    dst[0] = (uint8_t)(val  >> 24);
+    dst[1] = (uint8_t)((val >> 16) & 0xFF);
+    dst[2] = (uint8_t)((val >> 8)  & 0xFF);
+    dst[3] = (uint8_t)(val & 0xFF);
+  }
+  return sizeof(uint32_t);
+}
+
+size_t virvo::serialization::write(uint8_t* dst, float val, virvo::serialization::EndianType end)
+{
+  uint8_t tmp;
+
+  assert(sizeof(float) == 4);
+  memcpy(dst, &val, 4);
+  if (getEndianness() != end)
+  {
+    // Reverse byte order:
+    tmp = dst[0]; dst[0] = dst[3]; dst[3] = tmp;
+    tmp = dst[1]; dst[1] = dst[2]; dst[2] = tmp;
+  }
+  return sizeof(float);
+}
+
+size_t virvo::serialization::write(FILE* dst, uint8_t val)
+{
+  size_t retval = fwrite(&val, 1, 1, dst);
+  if (retval != 1)
+  {
+    VV_LOG(0) << "virvo::serialization::write(FILE*, uint8_t) failed";
+    return 0;
+  }
+  return 1;
+}
+
+size_t virvo::serialization::write(FILE* dst, uint16_t val, virvo::serialization::EndianType end)
+{
+  uint8_t buf[2];
+
+  if (end == VV_LITTLE_END)
+  {
+    buf[0] = (uint8_t)(val & 0xFF);
+    buf[1] = (uint8_t)(val >> 8);
+  }
+  else
+  {
+    buf[0] = (uint8_t)(val >> 8);
+    buf[1] = (uint8_t)(val & 0xFF);
+  }
+  size_t retval = fwrite(buf, 2, 1, dst);
+  if (retval != 1)
+  {
+    VV_LOG(0) << "virvo::serialization::write(FILE*, uint16_t) failed";
+    return 0;
+  }
+  return 2;
+}
+
+size_t virvo::serialization::write(FILE* dst, uint32_t val, virvo::serialization::EndianType end)
+{
+  uint8_t buf[4];
+
+  if (end == VV_LITTLE_END)
+  {
+    buf[0] = (uint8_t)(val & 0xFF);
+    buf[1] = (uint8_t)((val >> 8)  & 0xFF);
+    buf[2] = (uint8_t)((val >> 16) & 0xFF);
+    buf[3] = (uint8_t)(val  >> 24);
+  }
+  else
+  {
+    buf[0] = (uint8_t)(val  >> 24);
+    buf[1] = (uint8_t)((val >> 16) & 0xFF);
+    buf[2] = (uint8_t)((val >> 8)  & 0xFF);
+    buf[3] = (uint8_t)(val & 0xFF);
+  }
+  size_t retval = fwrite(buf, 4, 1, dst);
+  if (retval != 1)
+  {
+    VV_LOG(0) << "virvo::serialization::write(FILE*, uint32_t) failed";
+    return 0;
+  }
+  return 4;
+}
+
+size_t virvo::serialization::write(FILE* dst, float val, virvo::serialization::EndianType end)
+{
+  uint8_t* buf;
+  uint8_t tmp;
+
+  if (getEndianness() != end)
+  {
+    // Reverse byte order:
+    buf = (uint8_t*)&val;
+    tmp = buf[0]; buf[0] = buf[3]; buf[3] = tmp;
+    tmp = buf[1]; buf[1] = buf[2]; buf[2] = tmp;
+  }
+
+  size_t retval=fwrite(&val, 4, 1, dst);
+  if (retval != 1)
+  {
+    VV_LOG(0) << "vvToolshed::writeFloat fwrite failed";
+    return 0;
+  }
+  return 4;
+}
+
 
 //----------------------------------------------------------------------------
 /// Main function for standalone test mode.

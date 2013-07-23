@@ -151,12 +151,6 @@ class VIRVOEXPORT vvToolshed
       VV_OUT_OF_MEMORY
     };
 
-    enum EndianType                               /// endianness
-    {
-      VV_LITTLE_END,                              ///< little endian: low-order byte is stored first
-      VV_BIG_END                                  ///< big endian: hight-order byte is stored first
-    };
-
     enum Format
     {
       VV_LUMINANCE = 0,
@@ -224,25 +218,8 @@ class VIRVOEXPORT vvToolshed
     static void    convertXY2HS(float, float, float*, float*);
     static void    convertHS2XY(float, float, float*, float*);
     static int     align(const int i, const int pot = 16);
-    static uint8_t read8(FILE*);
-    static size_t  write8(FILE*, uint8_t);
-    static uint16_t read16(FILE*, vvToolshed::EndianType = VV_BIG_END);
-    static size_t  write16(FILE*, uint16_t, vvToolshed::EndianType = VV_BIG_END);
-    static uint32_t read32(FILE*, vvToolshed::EndianType = VV_BIG_END);
-    static size_t  write32(FILE*, uint32_t, vvToolshed::EndianType = VV_BIG_END);
-    static float   readFloat(FILE*, vvToolshed::EndianType = VV_BIG_END);
-    static size_t  writeFloat(FILE*, float, vvToolshed::EndianType = VV_BIG_END);
-    static uint8_t read8(uint8_t*);
-    static size_t  write8(uint8_t*, uint8_t);
-    static uint16_t read16(uint8_t*, const vvToolshed::EndianType = VV_BIG_END);
-    static size_t  write16(uint8_t*, uint16_t, vvToolshed::EndianType = VV_BIG_END);
-    static uint32_t read32(uint8_t*, const vvToolshed::EndianType = VV_BIG_END);
-    static size_t  write32(uint8_t*, uint32_t, vvToolshed::EndianType = VV_BIG_END);
-    static float   readFloat(uint8_t*, vvToolshed::EndianType = VV_BIG_END);
-    static size_t  writeFloat(uint8_t*, float, vvToolshed::EndianType = VV_BIG_END);
     static void    makeArraySystemIndependent(int, float*);
     static void    makeArraySystemDependent(int, float*);
-    static EndianType getEndianness();
     static void    sleep(int);
     static void    resample(uchar*, int, int, int, uchar*, int, int, int);
     static void    blendMIP(uchar*, int, int, int, uchar*);
@@ -293,8 +270,63 @@ std::vector<std::string> entryList(std::string const& dir);
 bool startsWith(std::string const& string, std::string const& prefix);
 bool endsWith(std::string const& string, std::string const& suffix);
 
+namespace serialization
+{
+enum EndianType                               /// endianness
+{
+  VV_LITTLE_END,                              ///< little endian: low-order byte is stored first
+  VV_BIG_END                                  ///< big endian: hight-order byte is stored first
+};
+
+EndianType getEndianness();
+
+size_t  read(uint8_t* src, uint8_t* val);
+size_t  read(uint8_t* src, uint16_t* val, EndianType end = VV_BIG_END);
+size_t  read(uint8_t* src, uint32_t* val, EndianType end = VV_BIG_END);
+size_t  read(uint8_t* src, float* val, EndianType end = VV_BIG_END);
+size_t  read(FILE* src, uint8_t* val);
+size_t  read(FILE* src, uint16_t* val, EndianType end = VV_BIG_END);
+size_t  read(FILE* src, uint32_t* val, EndianType end = VV_BIG_END);
+size_t  read(FILE* src, float* val, EndianType end = VV_BIG_END);
+
+size_t  write(uint8_t* dst, uint8_t val);
+size_t  write(uint8_t* dst, uint16_t val, EndianType end = VV_BIG_END);
+size_t  write(uint8_t* dst, uint32_t val, EndianType end = VV_BIG_END);
+size_t  write(uint8_t* dst, float val, EndianType end = VV_BIG_END);
+size_t  write(FILE* dst, uint8_t val);
+size_t  write(FILE* dst, uint16_t val, EndianType end = VV_BIG_END);
+size_t  write(FILE* dst, uint32_t val, EndianType end = VV_BIG_END);
+size_t  write(FILE* dst, float val, EndianType end = VV_BIG_END);
+
+/* legacy functions -- DEPRECATED */
+inline uint8_t  read8(uint8_t* src);
+inline uint16_t read16(uint8_t* src, EndianType end = VV_BIG_END);
+inline uint32_t read32(uint8_t* src, EndianType end = VV_BIG_END);
+inline float    readFloat(uint8_t* src, EndianType end = VV_BIG_END);
+inline uint8_t  read8(FILE* src);
+inline uint16_t read16(FILE* src, EndianType end = VV_BIG_END);
+inline uint32_t read32(FILE* src, EndianType end = VV_BIG_END);
+inline float    readFloat(FILE* src, EndianType end = VV_BIG_END);
+
+inline size_t   write8(uint8_t* dst, uint8_t val);
+inline size_t   write16(uint8_t* dst, uint16_t val, EndianType end = VV_BIG_END);
+inline size_t   write32(uint8_t* dst, uint32_t val, EndianType end = VV_BIG_END);
+inline size_t   writeFloat(uint8_t* dst, float val, EndianType end = VV_BIG_END);
+inline size_t   write8(FILE* dst, uint8_t val);
+inline size_t   write16(FILE* dst, uint16_t val, EndianType end = VV_BIG_END);
+inline size_t   write32(FILE* dst, uint32_t val, EndianType end = VV_BIG_END);
+inline size_t   writeFloat(FILE* dst, float val, EndianType end = VV_BIG_END);
+
+} // serialization
+
 } // toolshed
+
+namespace serialization = toolshed::serialization;
+
 } // virvo
+
+#include "vvtoolshed.impl.h"
+
 #endif
 
 //============================================================================

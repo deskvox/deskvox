@@ -332,9 +332,9 @@ vvFileIO::ErrorType vvFileIO::saveRVFFile(vvVolDesc* vd)
     return FILE_ERROR;
   }
 
-  vvToolshed::write16(fp, (uint16_t)v->vox[0]);
-  vvToolshed::write16(fp, (uint16_t)v->vox[1]);
-  vvToolshed::write16(fp, (uint16_t)v->vox[2]);
+  virvo::serialization::write16(fp, (uint16_t)v->vox[0]);
+  virvo::serialization::write16(fp, (uint16_t)v->vox[1]);
+  virvo::serialization::write16(fp, (uint16_t)v->vox[2]);
 
   // Write volume data:
   if (fwrite(raw, 1, frameSize, fp) != frameSize)
@@ -374,9 +374,9 @@ vvFileIO::ErrorType vvFileIO::loadRVFFile(vvVolDesc* vd)
   vd->removeSequence();
 
   // Read header:
-  vd->vox[0] = vvToolshed::read16(fp);
-  vd->vox[1] = vvToolshed::read16(fp);
-  vd->vox[2] = vvToolshed::read16(fp);
+  vd->vox[0] = virvo::serialization::read16(fp);
+  vd->vox[1] = virvo::serialization::read16(fp);
+  vd->vox[2] = virvo::serialization::read16(fp);
   vd->frames = 1;
   vd->bpc    = 1;
   vd->chan   = 1;
@@ -503,7 +503,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
       return DATA_ERROR;
     }
   }
-  headerSize = vvToolshed::read16(fp);            // total header size in bytes
+  headerSize = virvo::serialization::read16(fp);  // total header size in bytes
   if (headerSize<=28)                             // early files didn't have transfer function info
     serializedSize = headerSize - strlen(_xvfID);
   else if (headerSize<=70)                        // after this version icon size was introduced
@@ -544,13 +544,13 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
   }
   else
   {
-    ctype  = vvToolshed::read8(fp);
-    tnum   = vvToolshed::read16(fp);
-    ttype  = vvToolshed::read16(fp);
+    ctype  = virvo::serialization::read8(fp);
+    tnum   = virvo::serialization::read16(fp);
+    ttype  = virvo::serialization::read16(fp);
   }
   if (headerSize >= 72)                           // icon info?
   {
-    vd->iconSize = vvToolshed::read16(fp);
+    vd->iconSize = virvo::serialization::read16(fp);
   }
 
   const size_t frameSize = vd->getFrameBytes();
@@ -586,7 +586,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
           }
           break;
         case 1:                                   // RLE encoding
-          encodedSize = static_cast<size_t>(vvToolshed::read32(fp));
+          encodedSize = static_cast<size_t>(virvo::serialization::read32(fp));
           if (encodedSize>0)
           {
             if (fread(encoded, 1, encodedSize, fp) != encodedSize)
@@ -636,7 +636,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
       default:
       case 0: offset += frameSize;
       break;
-      case 1: encodedSize = vvToolshed::read32(fp);
+      case 1: encodedSize = virvo::serialization::read32(fp);
       offset += 4;                                // add 4 bytes for encoded size value
       if (encodedSize==0) offset += frameSize;
       else offset += encodedSize;
@@ -664,7 +664,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
       {
         for (int c=0; c<9; ++c)
         {
-          v[c] = vvToolshed::readFloat(fp);
+          v[c] = virvo::serialization::readFloat(fp);
         }
         if (v[0]==-1.0f || feof(fp)) done = true;
       }
@@ -677,7 +677,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
     delete[] vd->iconData;
     const size_t iconBytes = vd->iconSize * vd->iconSize * static_cast<size_t>(vvVolDesc::ICON_BPP);
     vd->iconData = new uint8_t[iconBytes];
-    const size_t encodedSize = vvToolshed::read32(fp);
+    const size_t encodedSize = virvo::serialization::read32(fp);
     if (encodedSize>0)                            // compressed icon?
     {
       uint8_t* encoded = new uint8_t[encodedSize];
@@ -793,7 +793,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   fprintf(fp, "BPC %d\n", static_cast<int32_t>(vd->bpc));
   fprintf(fp, "CHANNELS %d\n", static_cast<int32_t>(vd->chan));
   fprintf(fp, "DIST %g %g %g\n", vd->dist[0], vd->dist[1], vd->dist[2]);
-  fprintf(fp, "ENDIAN %s\n", (vvToolshed::getEndianness()==vvToolshed::VV_LITTLE_END) ? "LITTLE" : "BIG");
+  fprintf(fp, "ENDIAN %s\n", (virvo::serialization::getEndianness()==virvo::serialization::VV_LITTLE_END) ? "LITTLE" : "BIG");
   fprintf(fp, "DTIME %g\n", vd->dt);
   fprintf(fp, "MINMAX %g %g\n", vd->real[0], vd->real[1]);
   fprintf(fp, "POS %g %g %g\n", vd->pos[0], vd->pos[1], vd->pos[2]);
@@ -822,7 +822,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
     vvToolshed::ErrorType err = vvToolshed::encodeRLE(encodedIcon, vd->iconData, iconBytes, vvVolDesc::ICON_BPP, iconBytes, &encodedSize);
     if (err == vvToolshed::VV_OK)                           // compression possible?
     {
-      vvToolshed::write32(fp, static_cast<uint32_t>(encodedSize));       // write length of encoded icon
+      virvo::serialization::write32(fp, static_cast<uint32_t>(encodedSize));       // write length of encoded icon
       if (fwrite(encodedIcon, 1, encodedSize, fp) != encodedSize)
       {
         cerr << "Error: Cannot write compressed icon data to file." << endl;
@@ -833,7 +833,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
     }
     else
     {
-      vvToolshed::write32(fp, 0);                 // write zero to indicate unencoded icon
+      virvo::serialization::write32(fp, 0);                 // write zero to indicate unencoded icon
       if (fwrite(vd->iconData, 1, iconBytes, fp) != iconBytes)
       {
         cerr << "Error: Cannot write uncompressed icon data to file." << endl;
@@ -864,7 +864,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
       vvToolshed::ErrorType err = vvToolshed::encodeRLE(encoded, raw, frameSize, vd->bpc * vd->chan, frameSize, &encodedSize);
       if (err == vvToolshed::VV_OK)                         // compression possible?
       {
-        vvToolshed::write32(fp, static_cast<uint32_t>(encodedSize));     // write length of encoded frame
+        virvo::serialization::write32(fp, static_cast<uint32_t>(encodedSize));     // write length of encoded frame
         if (fwrite(encoded, 1, encodedSize, fp) != encodedSize)
         {
           cerr << "Error: Cannot write compressed voxel data to file." << endl;
@@ -875,7 +875,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
       }
       else                                        // no compression possible -> store unencoded
       {
-        vvToolshed::write32(fp, 0);               // write zero to mark as unencoded
+        virvo::serialization::write32(fp, 0);     // write zero to mark as unencoded
         if (fwrite(raw, 1, frameSize, fp) != frameSize)
         {
           cerr << "Error: Cannot write uncompressed voxel data to file." << endl;
@@ -887,7 +887,7 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
     }
     else                                          // no compression
     {
-	  vvToolshed::write32(fp, 0);               // write zero to mark as unencoded
+      virvo::serialization::write32(fp, 0);       // write zero to mark as unencoded
       if (fwrite(raw, 1, frameSize, fp) != frameSize)
       {
         cerr << "Error: Cannot write voxel data to file." << endl;
@@ -1090,7 +1090,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
           size_t iconBytes = vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP;
           vd->iconData = new uint8_t[iconBytes];
           fseek(fp, tok->getFilePos(), SEEK_SET);
-          size_t encodedSize = vvToolshed::read32(fp);
+          size_t encodedSize = virvo::serialization::read32(fp);
           if (encodedSize>0)                      // compressed icon?
           {
             uint8_t* encoded = new uint8_t[encodedSize];
@@ -1156,7 +1156,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
     for (size_t f=0; f<vd->frames; ++f)
     {
       raw = new uint8_t[frameSize];                 // create new data space for volume data
-      encodedSize = vvToolshed::read32(fp);
+      encodedSize = virvo::serialization::read32(fp);
       if (encodedSize>0)
       {
         if (fread(encoded, 1, encodedSize, fp) != encodedSize)
@@ -2168,7 +2168,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   const ushort BIG_ENDIAN_ID  = 0x4d4d;           // TIF endianness for big-endian (Unix) style
   const ushort LITTLE_ENDIAN_ID = 0x4949;         // TIF endianness for little-endian (Intel) style
   const ushort MAGICNUMBER = 42;                  // TIF magic number
-  vvToolshed::EndianType endian;                  // file endianness
+  virvo::serialization::EndianType endian;        // file endianness
   FILE* fp;                                       // volume file pointer
   ushort endianID, magicID;                       // file format test values
   ulong ifdpos;                                   // position of first IFD
@@ -2211,16 +2211,16 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   }
 
   // Check file format:
-  endianID = vvToolshed::read16(fp);
-  if      (endianID == BIG_ENDIAN_ID)    endian = vvToolshed::VV_BIG_END;
-  else if (endianID == LITTLE_ENDIAN_ID) endian = vvToolshed::VV_LITTLE_END;
+  endianID = virvo::serialization::read16(fp);
+  if      (endianID == BIG_ENDIAN_ID)    endian = virvo::serialization::VV_BIG_END;
+  else if (endianID == LITTLE_ENDIAN_ID) endian = virvo::serialization::VV_LITTLE_END;
   else
   {
     fclose(fp);
     cerr << "TIFF: wrong header ID" << endl;
     return FORMAT_ERROR;
   }
-  magicID = vvToolshed::read16(fp, endian);
+  magicID = virvo::serialization::read16(fp, endian);
   if (magicID != MAGICNUMBER)
   {
     fclose(fp);
@@ -2239,20 +2239,20 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   }
 
   // Find and process first IFD:
-  ifdpos = vvToolshed::read32(fp, endian);
+  ifdpos = virvo::serialization::read32(fp, endian);
   fseek(fp, static_cast<long>(ifdpos), SEEK_SET);
-  numEntries = vvToolshed::read16(fp, endian);
+  numEntries = virvo::serialization::read16(fp, endian);
 
   vvDebugMsg::msg(2, "TIFF IFD Tags: ", numEntries);
   for (ifd=0; ifd<numEntries; ++ifd)              // process all IFD entries
   {
-    tag       = vvToolshed::read16(fp, endian);
-    dataType  = vvToolshed::read16(fp, endian);
-    numValues = vvToolshed::read32(fp, endian);
-    value     = vvToolshed::read32(fp, endian);
+    tag       = virvo::serialization::read16(fp, endian);
+    dataType  = virvo::serialization::read16(fp, endian);
+    numValues = virvo::serialization::read32(fp, endian);
+    value     = virvo::serialization::read32(fp, endian);
 
                                                   // 16 bit values are left aligned
-	if (endian==vvToolshed::VV_BIG_END && dataType==3 && tag!=0x102) value = value >> 16;
+	if (endian==virvo::serialization::VV_BIG_END && dataType==3 && tag!=0x102) value = value >> 16;
 
     if (vvDebugMsg::isActive(2))
     {
@@ -2275,8 +2275,8 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
         size_t bitsPerSample = 0;
         for (size_t i=0; i<numValues; ++i)
         {
-          if (dataType==4) bitsPerSample = vvToolshed::read32(fp, endian);
-          else if (dataType==3) bitsPerSample = vvToolshed::read16(fp, endian);
+          if (dataType==4) bitsPerSample = virvo::serialization::read32(fp, endian);
+          else if (dataType==3) bitsPerSample = virvo::serialization::read16(fp, endian);
           else assert(0);
           if (i==0) vd->bpc = bitsPerSample / 8;
           else if (vd->bpc != bitsPerSample / 8)
@@ -2307,8 +2307,8 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
         fseek(fp, value, SEEK_SET);
         for (size_t i=0; i<numValues; ++i)
         {
-          if (dataType==4) stripOffsets[i] = vvToolshed::read32(fp, endian);
-          else if (dataType==3) stripOffsets[i] = vvToolshed::read16(fp, endian);
+          if (dataType==4) stripOffsets[i] = virvo::serialization::read32(fp, endian);
+          else if (dataType==3) stripOffsets[i] = virvo::serialization::read16(fp, endian);
           else assert(0);
         }
         fseek(fp, where, SEEK_SET);
@@ -2326,8 +2326,8 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
         fseek(fp, value, SEEK_SET);
         for (size_t i=0; i<numValues; ++i)
         {
-          if (dataType==4) stripByteCounts[i] = vvToolshed::read32(fp, endian);
-          else if (dataType==3) stripByteCounts[i] = vvToolshed::read16(fp, endian);
+          if (dataType==4) stripByteCounts[i] = virvo::serialization::read32(fp, endian);
+          else if (dataType==3) stripByteCounts[i] = virvo::serialization::read16(fp, endian);
           else assert(0);
         }
         fseek(fp, where, SEEK_SET);
@@ -2345,7 +2345,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
 
   strips = int(ceilf(float(vd->vox[1]) / float(rowsPerStrip)));
 
-  nextIFD = vvToolshed::read32(fp, endian);       // check for further IFDs
+  nextIFD = virvo::serialization::read32(fp, endian);       // check for further IFDs
   if (nextIFD==0) vvDebugMsg::msg(3, "No more IFDs in file.");
   else vvDebugMsg::msg(1, "There are more IFDs in the file.");
 
@@ -2397,7 +2397,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     fseek(fp, tileOffset, SEEK_SET);
     for (size_t i=0; i<numTiles; ++i)
     {
-      tilePos[i] = vvToolshed::read32(fp, endian);
+      tilePos[i] = virvo::serialization::read32(fp, endian);
     }
 
     // Compute tiles distribution (in z direction there are as many tiles as slices):
@@ -2450,7 +2450,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
   const ushort MAGICNUMBER = 42;                  // TIF magic number
   const int DEFAULT_DPI = 72;                     // DPI stored with image
                                                   // endianness
-  const vvToolshed::EndianType ENDIAN_TYPE = vvToolshed::VV_BIG_END;
+  virvo::serialization::EndianType ENDIAN_TYPE = virvo::serialization::VV_BIG_END;
   FILE* fp;
   vvVolDesc* tmpVD;                               // temporary VD to modify pixel format
   ErrorType err = OK;
@@ -2514,8 +2514,8 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
     }
 
     // Write header:
-    vvToolshed::write16(fp, (ENDIAN_TYPE==vvToolshed::VV_BIG_END) ? BIG_ENDIAN_ID : LITTLE_ENDIAN_ID, vvToolshed::VV_BIG_END);
-    vvToolshed::write16(fp, MAGICNUMBER, vvToolshed::VV_BIG_END);
+    virvo::serialization::write16(fp, (ENDIAN_TYPE==virvo::serialization::VV_BIG_END) ? BIG_ENDIAN_ID : LITTLE_ENDIAN_ID, virvo::serialization::VV_BIG_END);
+    virvo::serialization::write16(fp, MAGICNUMBER, virvo::serialization::VV_BIG_END);
 
     // Compute IFD location:
                                                   // grayscale image
@@ -2525,18 +2525,18 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
                                                   // advance to next word boundary
     if ((ifdOffset % 4) != 0) ifdOffset += 4 - (ifdOffset % 4);
                                                   // IFD location: right after image data
-    vvToolshed::write32(fp, ifdOffset, vvToolshed::VV_BIG_END);
+    virvo::serialization::write32(fp, ifdOffset, virvo::serialization::VV_BIG_END);
 
     // Write 8,8,8 as SHORT for RGB:
     rgbOffset = static_cast<size_t>(ftell(fp));
-    vvToolshed::write16(fp, 8, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 8, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 8, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 8, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 8, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 8, ENDIAN_TYPE);
 
     // Write dpi:
     dpiOffset = ftell(fp);
-    vvToolshed::write32(fp, DEFAULT_DPI, ENDIAN_TYPE);
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, DEFAULT_DPI, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
 
     // Write image data:
     imgOffset = ftell(fp);
@@ -2549,106 +2549,106 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
 
     // Write IFD:
     fseek(fp, ifdOffset, SEEK_SET);
-    vvToolshed::write16(fp, uint16_t((tmpVD->chan==1) ? 11 : 12), vvToolshed::VV_BIG_END);
+    virvo::serialization::write16(fp, uint16_t((tmpVD->chan==1) ? 11 : 12), virvo::serialization::VV_BIG_END);
 
     // ImageWidth:
-    vvToolshed::write16(fp, 0x100, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 4, ENDIAN_TYPE);      // LONG
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-    vvToolshed::write32(fp, tmpVD->vox[0], ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 0x100, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, tmpVD->vox[0], ENDIAN_TYPE);
 
     // ImageLength:
-    vvToolshed::write16(fp, 0x101, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 4, ENDIAN_TYPE);      // LONG
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-    vvToolshed::write32(fp, tmpVD->vox[1], ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 0x101, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, tmpVD->vox[1], ENDIAN_TYPE);
 
     // BitsPerSample:
-    vvToolshed::write16(fp, 0x102, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 0x102, ENDIAN_TYPE);
     if (tmpVD->chan==1)
     {
-      vvToolshed::write16(fp, 3, ENDIAN_TYPE);    // SHORT
-      vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-      vvToolshed::write16(fp, 8, ENDIAN_TYPE);    // 8 bits per sample
-      vvToolshed::write16(fp, 0, ENDIAN_TYPE);    // pad
+      virvo::serialization::write16(fp, 3, ENDIAN_TYPE);    // SHORT
+      virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+      virvo::serialization::write16(fp, 8, ENDIAN_TYPE);    // 8 bits per sample
+      virvo::serialization::write16(fp, 0, ENDIAN_TYPE);    // pad
     }
     else
     {
-      vvToolshed::write16(fp, 3, ENDIAN_TYPE);    // SHORT
-      vvToolshed::write32(fp, 3, ENDIAN_TYPE);    // 3 numbers required
-      vvToolshed::write32(fp, rgbOffset, ENDIAN_TYPE);
+      virvo::serialization::write16(fp, 3, ENDIAN_TYPE);    // SHORT
+      virvo::serialization::write32(fp, 3, ENDIAN_TYPE);    // 3 numbers required
+      virvo::serialization::write32(fp, rgbOffset, ENDIAN_TYPE);
     }
 
     // Compression:
-    vvToolshed::write16(fp, 0x103, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 3, ENDIAN_TYPE);      // SHORT
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 1, ENDIAN_TYPE);      // no compression
-    vvToolshed::write16(fp, 0, ENDIAN_TYPE);      // pad
+    virvo::serialization::write16(fp, 0x103, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 3, ENDIAN_TYPE);      // SHORT
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 1, ENDIAN_TYPE);      // no compression
+    virvo::serialization::write16(fp, 0, ENDIAN_TYPE);      // pad
 
     // PhotometricInterpretation:
-    vvToolshed::write16(fp, 0x106, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 3, ENDIAN_TYPE);      // SHORT
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 0x106, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 3, ENDIAN_TYPE);      // SHORT
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
     if (tmpVD->chan > 1)
     {
-      vvToolshed::write16(fp, 2, ENDIAN_TYPE);    // RGB
+      virvo::serialization::write16(fp, 2, ENDIAN_TYPE);    // RGB
     }
     else
     {
-      vvToolshed::write16(fp, 1, ENDIAN_TYPE);    // black is zero
+      virvo::serialization::write16(fp, 1, ENDIAN_TYPE);    // black is zero
     }
-    vvToolshed::write16(fp, 0, ENDIAN_TYPE);      // pad
+    virvo::serialization::write16(fp, 0, ENDIAN_TYPE);      // pad
 
     // StripOffsets:
-    vvToolshed::write16(fp, 0x111, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 4, ENDIAN_TYPE);      // LONG
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-    vvToolshed::write32(fp, imgOffset, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 0x111, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, imgOffset, ENDIAN_TYPE);
 
     // SamplesPerPixel:
     if (tmpVD->chan>1)
     {
-      vvToolshed::write16(fp, 0x115, ENDIAN_TYPE);
-      vvToolshed::write16(fp, 3, ENDIAN_TYPE);    // SHORT
-      vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-      vvToolshed::write16(fp, 3, ENDIAN_TYPE);    // 3 for RGB
-      vvToolshed::write16(fp, 0, ENDIAN_TYPE);    // pad
+      virvo::serialization::write16(fp, 0x115, ENDIAN_TYPE);
+      virvo::serialization::write16(fp, 3, ENDIAN_TYPE);    // SHORT
+      virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+      virvo::serialization::write16(fp, 3, ENDIAN_TYPE);    // 3 for RGB
+      virvo::serialization::write16(fp, 0, ENDIAN_TYPE);    // pad
     }
 
     // RowsPerStrip:
-    vvToolshed::write16(fp, 0x116, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 4, ENDIAN_TYPE);      // LONG
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-    vvToolshed::write32(fp, tmpVD->vox[1], ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 0x116, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, tmpVD->vox[1], ENDIAN_TYPE);
 
     // StripByteCounts:
-    vvToolshed::write16(fp, 0x117, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 4, ENDIAN_TYPE);      // LONG
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-    vvToolshed::write32(fp, tmpVD->vox[0] * tmpVD->vox[1] * tmpVD->chan, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 0x117, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 4, ENDIAN_TYPE);      // LONG
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, tmpVD->vox[0] * tmpVD->vox[1] * tmpVD->chan, ENDIAN_TYPE);
 
     // XResolution:
-    vvToolshed::write16(fp, 0x11a, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 5, ENDIAN_TYPE);      // RATIONAL
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-    vvToolshed::write32(fp, dpiOffset, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 0x11a, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 5, ENDIAN_TYPE);      // RATIONAL
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, dpiOffset, ENDIAN_TYPE);
 
     // YResolution:
-    vvToolshed::write16(fp, 0x11b, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 5, ENDIAN_TYPE);      // RATIONAL
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-    vvToolshed::write32(fp, dpiOffset, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 0x11b, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 5, ENDIAN_TYPE);      // RATIONAL
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write32(fp, dpiOffset, ENDIAN_TYPE);
 
     // ResolutionUnit:
-    vvToolshed::write16(fp, 0x128, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 3, ENDIAN_TYPE);      // SHORT
-    vvToolshed::write32(fp, 1, ENDIAN_TYPE);
-    vvToolshed::write16(fp, 2, ENDIAN_TYPE);      // inch
-    vvToolshed::write16(fp, 0, ENDIAN_TYPE);      // pad
+    virvo::serialization::write16(fp, 0x128, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 3, ENDIAN_TYPE);      // SHORT
+    virvo::serialization::write32(fp, 1, ENDIAN_TYPE);
+    virvo::serialization::write16(fp, 2, ENDIAN_TYPE);      // inch
+    virvo::serialization::write16(fp, 0, ENDIAN_TYPE);      // pad
 
     // Offset to next IFD:
-    vvToolshed::write32(fp, 0, ENDIAN_TYPE);      // end of IFD
+    virvo::serialization::write32(fp, 0, ENDIAN_TYPE);      // end of IFD
 
     fclose(fp);
   }
@@ -2680,7 +2680,7 @@ vvFileIO::ErrorType vvFileIO::loadRGBFile(vvVolDesc* vd)
 
   // Check magic number:
   fseek(fp, 0, SEEK_SET);
-  if (vvToolshed::read16(fp) != 474)
+  if (virvo::serialization::read16(fp) != 474)
   {
     vvDebugMsg::msg(1, "Error: Invalid magic number in RGB file.");
     fclose(fp);
@@ -2689,8 +2689,8 @@ vvFileIO::ErrorType vvFileIO::loadRGBFile(vvVolDesc* vd)
 
   // Read dimensions:
   fseek(fp, DIMENSIONS_OFFSET, SEEK_SET);
-  vd->vox[0] = vvToolshed::read16(fp);
-  vd->vox[1] = vvToolshed::read16(fp);
+  vd->vox[0] = virvo::serialization::read16(fp);
+  vd->vox[1] = virvo::serialization::read16(fp);
   vd->bpc    = 1;
   vd->chan    = 1;
   vd->vox[2] = 1;
@@ -2789,8 +2789,8 @@ vvFileIO::ErrorType vvFileIO::loadTGAFile(vvVolDesc* vd)
   // read color map infos
   if ( 0 != colorMapType)
   {
-    colorMapOrigin = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-    colorMapLength = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
+    colorMapOrigin = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
+    colorMapLength = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
     retval=fread(&colorMapEntrySize, 1, 1, fp);
     if (retval!=1)
     {
@@ -2805,10 +2805,10 @@ vvFileIO::ErrorType vvFileIO::loadTGAFile(vvVolDesc* vd)
 
   // read image specification block
   fseek(fp, offset_imageSpec, SEEK_SET);
-  imageOriginX = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-  imageOriginY = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-  imageWidth   = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-  imageHeigth  = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
+  imageOriginX = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
+  imageOriginY = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
+  imageWidth   = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
+  imageHeigth  = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
   retval=fread(&imagePixelSize, 1, 1, fp);
   retval+=fread(&imageDescriptorByte, 1, 1, fp);
   if (retval!=2)
@@ -3486,9 +3486,9 @@ vvFileIO::ErrorType vvFileIO::loadVMRFile(vvVolDesc* vd)
   vd->removeSequence();
 
   // Read header:
-  vd->vox[0] = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-  vd->vox[1] = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-  vd->vox[2] = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
+  vd->vox[0] = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
+  vd->vox[1] = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
+  vd->vox[2] = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
   vd->frames = 1;
   vd->bpc    = 1;
   vd->chan    = 1;
@@ -3571,29 +3571,29 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
   vd->bpc = 2;
   vd->chan = 1;
                                                   // read version number
-  version = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
+  version = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
   // ignore FMR file name string
   while (fgetc(fp)!=0)
      ;
   // ignore PRT file name string
   while (fgetc(fp)!=0)
      ;
-  vd->frames = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-  vd->dist[0] = vd->dist[1] = vd->dist[2] = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
+  vd->frames = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
+  vd->dist[0] = vd->dist[1] = vd->dist[2] = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
   for (size_t i=0; i<3; ++i)
   {
-    start      = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-    end        = vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
+    start      = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
+    end        = virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
     vd->vox[i] = size_t((end - start) / vd->dist[0]);
   }
   if (version==2)                                 // the following parameters are only in the header if version equals 2
   {
     // Ignore the extra header information:
-    vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
-    vvToolshed::readFloat(fp, vvToolshed::VV_LITTLE_END);
-    vvToolshed::readFloat(fp, vvToolshed::VV_LITTLE_END);
-    vvToolshed::readFloat(fp, vvToolshed::VV_LITTLE_END);
-    vvToolshed::read16(fp, vvToolshed::VV_LITTLE_END);
+    virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
+    virvo::serialization::readFloat(fp, virvo::serialization::VV_LITTLE_END);
+    virvo::serialization::readFloat(fp, virvo::serialization::VV_LITTLE_END);
+    virvo::serialization::readFloat(fp, virvo::serialization::VV_LITTLE_END);
+    virvo::serialization::read16(fp, virvo::serialization::VV_LITTLE_END);
   }
 
   if ((_sections & RAW_DATA) != 0)
@@ -3867,7 +3867,7 @@ vvFileIO::ErrorType vvFileIO::loadXIMGFile(vvVolDesc* vd)
   // Read magic number:
   for (i=0; i<4; ++i)
   {
-    magic[i] = static_cast<char>(vvToolshed::read8(fp));
+    magic[i] = static_cast<char>(virvo::serialization::read8(fp));
   }
   if (magic[0]!='I' || magic[1]!='M' || magic[2]!='G' || magic[3]!='F')
   {
@@ -3877,14 +3877,14 @@ vvFileIO::ErrorType vvFileIO::loadXIMGFile(vvVolDesc* vd)
   }
 
   // Read offset to data area:
-  offset = vvToolshed::read32(fp);
+  offset = virvo::serialization::read32(fp);
 
   // Read image size:
-  vd->vox[0] = vvToolshed::read32(fp);
-  vd->vox[1] = vvToolshed::read32(fp);
+  vd->vox[0] = virvo::serialization::read32(fp);
+  vd->vox[1] = virvo::serialization::read32(fp);
 
   // Read bpv:
-  uint32_t bytes = vvToolshed::read32(fp) / 8;
+  uint32_t bytes = virvo::serialization::read32(fp) / 8;
   switch(bytes)
   {
     case 1:
@@ -3901,7 +3901,7 @@ vvFileIO::ErrorType vvFileIO::loadXIMGFile(vvVolDesc* vd)
   }
 
   // Read compression:
-  compression = vvToolshed::read32(fp);
+  compression = virvo::serialization::read32(fp);
   if (compression!=1)
   {
     fclose(fp);
@@ -4227,13 +4227,13 @@ vvFileIO::ErrorType vvFileIO::loadVOLBFile(vvVolDesc* vd)
   cerr << "Volb file is version " << version << endl;
   for (i=0; i<3; ++i)
   {
-    vd->vox[i] = vvToolshed::read32(fp, vvToolshed::VV_BIG_END);
+    vd->vox[i] = virvo::serialization::read32(fp, virvo::serialization::VV_BIG_END);
   }
   if (version==2)
   {
     for (i=0; i<3; ++i)
     {
-      chunkSize = vvToolshed::read32(fp, vvToolshed::VV_BIG_END);
+      chunkSize = virvo::serialization::read32(fp, virvo::serialization::VV_BIG_END);
       if (chunkSize>1) 
       {
         cerr << "Error: chunks not supported" << endl;
@@ -4243,7 +4243,7 @@ vvFileIO::ErrorType vvFileIO::loadVOLBFile(vvVolDesc* vd)
     }
     for (i=0; i<3; ++i)
     {
-      axisNameLength = vvToolshed::read32(fp, vvToolshed::VV_BIG_END);
+      axisNameLength = virvo::serialization::read32(fp, virvo::serialization::VV_BIG_END);
       fseek(fp, axisNameLength, SEEK_CUR);  // skip axis name
     }
   }
@@ -4332,8 +4332,8 @@ vvFileIO::ErrorType vvFileIO::loadDDSFile(vvVolDesc* vd)
   setDefaultValues(vd);
 
   // Validate file format:
-  dwMagic = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
-  dwSize = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
+  dwMagic = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
+  dwSize = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
   if (dwMagic != MAGIC_NUMBER || dwSize != STRUCTURE_SIZE)
   {
     cerr << "Error: Invalid DDS file header." << endl;
@@ -4342,16 +4342,16 @@ vvFileIO::ErrorType vvFileIO::loadDDSFile(vvVolDesc* vd)
   }
 
   // Parse DDSURFACEDESC2 structure:
-  dwFlags = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
-  dwHeight = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
-  dwWidth = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
-  dwPitchOrLinearSize = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
-  dwDepth = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
-  dwMipMapCount = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
-  dwReserved1 = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
-  ddpfPixelFormat = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
-  ddsCaps = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
-  dwReserved2 = vvToolshed::read32(fp, vvToolshed::VV_LITTLE_END);
+  dwFlags = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
+  dwHeight = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
+  dwWidth = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
+  dwPitchOrLinearSize = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
+  dwDepth = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
+  dwMipMapCount = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
+  dwReserved1 = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
+  ddpfPixelFormat = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
+  ddsCaps = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
+  dwReserved2 = virvo::serialization::read32(fp, virvo::serialization::VV_LITTLE_END);
 
   // Avoid -Wunused-but-set-variable.
   (void)dwFlags;

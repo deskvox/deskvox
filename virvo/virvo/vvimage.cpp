@@ -221,8 +221,8 @@ int vvImage::encode(short ct, short sw, short ew, short sh, short eh)
         return -1;
       }
       start = (sh)*width*4 + (sw)*4;
-      vvToolshed::write32(&codedimage[0],(ulong)start);
-      vvToolshed::write16(&codedimage[4],realwidth);
+      virvo::serialization::write32(&codedimage[0],(ulong)start);
+      virvo::serialization::write16(&codedimage[4],realwidth);
       if (spec_RLC_encode(start, realheight, realwidth, 6))
       {
         vvDebugMsg::msg(1,"No compression possible");
@@ -296,8 +296,8 @@ int vvImage::decode()
     case VV_RLE_RECT:
     {
       memset(imageptr, 0, height*width*4);
-      start = (int)vvToolshed::read32(&codedimage[0]);
-      realwidth = vvToolshed::read16(&codedimage[4]);
+      start = (int)virvo::serialization::read32(&codedimage[0]);
+      realwidth = virvo::serialization::read16(&codedimage[4]);
       spec_RLC_decode(start, realwidth, 6);
     }break;
     case VV_SNAPPY:

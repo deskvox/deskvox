@@ -111,7 +111,7 @@ vvSocket::ErrorType vvSocketIO::getVolumeAttributes(vvVolDesc* vd) const
     }
     vvDebugMsg::msg(3, "Header received");
     vd->deserializeAttributes(&buffer[0]);
-    vd->_scale = vvToolshed::readFloat(&buffer[size]);
+    vd->_scale = virvo::serialization::readFloat(&buffer[size]);
 
     return vvSocket::VV_OK;
   }
@@ -168,7 +168,7 @@ vvSocket::ErrorType vvSocketIO::putVolumeAttributes(const vvVolDesc* vd) const
     size_t size = vd->serializeAttributes();
     std::vector<uint8_t> buffer(size+4);
     vd->serializeAttributes(&buffer[0]);
-    vvToolshed::writeFloat(&buffer[size], vd->_scale);
+    virvo::serialization::writeFloat(&buffer[size], vd->_scale);
     vvDebugMsg::msg(3, "Sending header ...");
     return _socket->writeData(&buffer[0], size+4);
   }
@@ -341,10 +341,10 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im) const
       return retval;
     }
     vvDebugMsg::msg(3, "Header received");
-    w = vvToolshed::read16(&buffer[2]);
-    h = vvToolshed::read16(&buffer[0]);
+    w = virvo::serialization::read16(&buffer[2]);
+    h = virvo::serialization::read16(&buffer[0]);
 
-    vvImage::CodeType ct = (vvImage::CodeType)vvToolshed::read8(&buffer[4]);
+    vvImage::CodeType ct = (vvImage::CodeType)virvo::serialization::read8(&buffer[4]);
     if (h != im->getHeight() || w  != im->getWidth() || ct != im->getCodeType() )
     {
       im->setCodeType(ct);
@@ -353,8 +353,8 @@ vvSocket::ErrorType vvSocketIO::getImage(vvImage* im) const
       if(im->alloc_mem())
         return vvSocket::VV_ALLOC_ERROR;
     }
-    imagesize = (int)vvToolshed::read32(&buffer[5]);
-    videosize = (int)vvToolshed::read32(&buffer[9]);
+    imagesize = (int)virvo::serialization::read32(&buffer[5]);
+    videosize = (int)virvo::serialization::read32(&buffer[9]);
     im->setSize(imagesize);
     im->setVideoSize(videosize);
     if (vvDebugMsg::isActive(3))
@@ -397,11 +397,11 @@ vvSocket::ErrorType vvSocketIO::putImage(const vvImage* im) const
     imagesize = im->getSize();
     videosize = im->getVideoSize();
     ct = im->getCodeType();
-    vvToolshed::write16(&buffer[0], im->getHeight());
-    vvToolshed::write16(&buffer[2], im->getWidth());
-    vvToolshed::write8(&buffer[4], (uchar)ct);
-    vvToolshed::write32(&buffer[5], (ulong)imagesize);
-    vvToolshed::write32(&buffer[9], (ulong)videosize);
+    virvo::serialization::write16(&buffer[0], im->getHeight());
+    virvo::serialization::write16(&buffer[2], im->getWidth());
+    virvo::serialization::write8(&buffer[4], (uchar)ct);
+    virvo::serialization::write32(&buffer[5], (ulong)imagesize);
+    virvo::serialization::write32(&buffer[9], (ulong)videosize);
 
     vvDebugMsg::msg(3, "Sending header ...");
     if ((retval =_socket->writeData(&buffer[0], BUFSIZE)) != vvSocket::VV_OK)
@@ -444,7 +444,7 @@ vvSocket::ErrorType vvSocketIO::getFileName(std::string& fn) const
     {
       return retval;
     }
-    size_t len = vvToolshed::read32(sizebuf);
+    size_t len = virvo::serialization::read32(sizebuf);
 
     std::vector<uchar> buf(len);
     if ((retval =_socket->readData(&buf[0], len)) != vvSocket::VV_OK)
@@ -473,7 +473,7 @@ vvSocket::ErrorType vvSocketIO::putFileName(const std::string& fn) const
     vvSocket::ErrorType retval;
 
     uchar sizebuf[4];
-    vvToolshed::write32(sizebuf, fn.length());
+    virvo::serialization::write32(sizebuf, fn.length());
 
     if ((retval = _socket->writeData(sizebuf, 4)) != vvSocket::VV_OK)
     {
@@ -509,7 +509,7 @@ vvSocket::ErrorType vvSocketIO::allocateAndGetData(uchar** data, int& size) cons
       return retval;
     }
     vvDebugMsg::msg(3, "Header received");
-    size = (int)vvToolshed::read32(&buffer[0]);
+    size = (int)virvo::serialization::read32(&buffer[0]);
     *data = new uchar[size];                        // delete buffer outside!!!
     if ((retval =_socket->readData(*data, size)) != vvSocket::VV_OK)
     {
@@ -536,7 +536,7 @@ vvSocket::ErrorType vvSocketIO::putData(uchar* data, int size) const
     uchar buffer[4];
     vvSocket::ErrorType retval;
 
-    vvToolshed::write32(&buffer[0], (ulong)size);
+    virvo::serialization::write32(&buffer[0], (ulong)size);
     vvDebugMsg::msg(3, "Sending header ...");
     if ((retval =_socket->writeData(&buffer[0], 4)) != vvSocket::VV_OK)
     {
@@ -594,7 +594,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type) c
         }
         for (int i=0; i<number; i++)
         {
-          tmp = vvToolshed::read16(&buffer[i*2]);
+          tmp = virvo::serialization::read16(&buffer[i*2]);
           memcpy((uint8_t*)data+i*2, &tmp, 2);
         }
         vvDebugMsg::msg(3, "ushort received");
@@ -612,7 +612,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type) c
         }
         for (int i=0; i<number; i++)
         {
-          tmp = vvToolshed::read32(&buffer[i*4]);
+          tmp = virvo::serialization::read32(&buffer[i*4]);
           memcpy((uint8_t*)data+i*4, &tmp, 4);
         }
         vvDebugMsg::msg(3, "int received");
@@ -630,7 +630,7 @@ vvSocket::ErrorType vvSocketIO::getData(void* data, int number, DataType type) c
         }
         for (int i=0; i<number; i++)
         {
-          tmp = vvToolshed::readFloat(&buffer[i*4]);
+          tmp = virvo::serialization::readFloat(&buffer[i*4]);
           memcpy((uchar*)data+i*4, &tmp, 4);
         }
         vvDebugMsg::msg(3, "float received");
@@ -680,7 +680,7 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type) c
         for (int i=0; i<number; i++)
         {
           memcpy(&tmp, (uchar*)data+i*2 , 2);
-          vvToolshed::write16(&buffer[i*2], (ushort)tmp);
+          virvo::serialization::write16(&buffer[i*2], (ushort)tmp);
         }
         vvDebugMsg::msg(3, "Sending ushort ...");
       }break;
@@ -693,7 +693,7 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type) c
         for (int i=0; i<number; i++)
         {
           memcpy(&tmp, (uchar*)data+i*4 , 4);
-          vvToolshed::write32(&buffer[i*4], (ulong)tmp);
+          virvo::serialization::write32(&buffer[i*4], (ulong)tmp);
         }
         vvDebugMsg::msg(3, "Sending integer ...");
       }break;
@@ -705,7 +705,7 @@ vvSocket::ErrorType vvSocketIO::putData(void* data, int number, DataType type) c
         for (int i=0; i<number; i++)
         {
           memcpy(&tmp, (uchar*)data+i*4 , 4);
-          vvToolshed::writeFloat(&buffer[i*4], (float)tmp);
+          virvo::serialization::writeFloat(&buffer[i*4], (float)tmp);
         }
         vvDebugMsg::msg(3, "Sending float ...");
       }break;
@@ -748,7 +748,7 @@ vvSocket::ErrorType vvSocketIO::getMatrix(vvMatrix* m) const
     }
     for (int i=0; i<4; i++)
       for (int j=0; j<4; j++)
-        (*m)(i, j) = vvToolshed::readFloat(buffer+4*(4*i+j));
+        (*m)(i, j) = virvo::serialization::readFloat(buffer+4*(4*i+j));
     delete[] buffer;
     return vvSocket::VV_OK;
   }
@@ -809,7 +809,7 @@ vvSocket::ErrorType vvSocketIO::putInt32(const int val) const
   if(_socket)
   {
     uchar buffer[4];
-    vvToolshed::write32(&buffer[0], val);
+    virvo::serialization::write32(&buffer[0], val);
     return _socket->writeData(&buffer[0], 4);
   }
   else
@@ -834,7 +834,7 @@ vvSocket::ErrorType vvSocketIO::getInt32(int& val) const
       return retval;
     }
 
-    val = vvToolshed::read32(&buffer[0]);
+    val = virvo::serialization::read32(&buffer[0]);
     return retval;
   }
   else
@@ -852,7 +852,7 @@ vvSocket::ErrorType vvSocketIO::putFloat(const float val) const
   if(_socket)
   {
     uchar buffer[4];
-    vvToolshed::writeFloat(&buffer[0], val);
+    virvo::serialization::writeFloat(&buffer[0], val);
     return _socket->writeData(&buffer[0], 4);
   }
   else
@@ -877,7 +877,7 @@ vvSocket::ErrorType vvSocketIO::getFloat(float& val) const
       return retval;
     }
 
-    val = vvToolshed::readFloat(&buffer[0]);
+    val = virvo::serialization::readFloat(&buffer[0]);
     return retval;
   }
   else
@@ -895,9 +895,9 @@ vvSocket::ErrorType vvSocketIO::putVector3(const vvVector3& val) const
   if(_socket)
   {
     uchar buffer[12];
-    vvToolshed::writeFloat(&buffer[0], val[0]);
-    vvToolshed::writeFloat(&buffer[4], val[1]);
-    vvToolshed::writeFloat(&buffer[8], val[2]);
+    virvo::serialization::writeFloat(&buffer[0], val[0]);
+    virvo::serialization::writeFloat(&buffer[4], val[1]);
+    virvo::serialization::writeFloat(&buffer[8], val[2]);
     return _socket->writeData(&buffer[0], 12);
   }
   else
@@ -922,9 +922,9 @@ vvSocket::ErrorType vvSocketIO::getVector3(vvVector3& val) const
       return retval;
     }
 
-    val[0] = vvToolshed::readFloat(&buffer[0]);
-    val[1] = vvToolshed::readFloat(&buffer[4]);
-    val[2] = vvToolshed::readFloat(&buffer[8]);
+    val[0] = virvo::serialization::readFloat(&buffer[0]);
+    val[1] = virvo::serialization::readFloat(&buffer[4]);
+    val[2] = virvo::serialization::readFloat(&buffer[8]);
     return retval;
   }
   else
@@ -942,10 +942,10 @@ vvSocket::ErrorType vvSocketIO::putVector4(const vvVector4& val) const
   if(_socket)
   {
     uchar buffer[16];
-    vvToolshed::writeFloat(&buffer[0], val[0]);
-    vvToolshed::writeFloat(&buffer[4], val[1]);
-    vvToolshed::writeFloat(&buffer[8], val[2]);
-    vvToolshed::writeFloat(&buffer[12], val[3]);
+    virvo::serialization::writeFloat(&buffer[0], val[0]);
+    virvo::serialization::writeFloat(&buffer[4], val[1]);
+    virvo::serialization::writeFloat(&buffer[8], val[2]);
+    virvo::serialization::writeFloat(&buffer[12], val[3]);
     return _socket->writeData(&buffer[0], 16);
   }
   else
@@ -970,10 +970,10 @@ vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val) const
       return retval;
     }
 
-    val[0] = vvToolshed::readFloat(&buffer[0]);
-    val[1] = vvToolshed::readFloat(&buffer[4]);
-    val[2] = vvToolshed::readFloat(&buffer[8]);
-    val[3] = vvToolshed::readFloat(&buffer[12]);
+    val[0] = virvo::serialization::readFloat(&buffer[0]);
+    val[1] = virvo::serialization::readFloat(&buffer[4]);
+    val[2] = virvo::serialization::readFloat(&buffer[8]);
+    val[3] = virvo::serialization::readFloat(&buffer[12]);
     return retval;
   }
   else
@@ -1014,12 +1014,12 @@ vvSocket::ErrorType vvSocketIO::putAABBi(const vvAABBi& val) const
     uchar buffer[24];
     const vvVector3i minval = val.getMin();
     const vvVector3i maxval = val.getMax();
-    vvToolshed::write32(&buffer[0], minval[0]);
-    vvToolshed::write32(&buffer[4], minval[1]);
-    vvToolshed::write32(&buffer[8], minval[2]);
-    vvToolshed::write32(&buffer[12], maxval[0]);
-    vvToolshed::write32(&buffer[16], maxval[1]);
-    vvToolshed::write32(&buffer[20], maxval[2]);
+    virvo::serialization::write32(&buffer[0], minval[0]);
+    virvo::serialization::write32(&buffer[4], minval[1]);
+    virvo::serialization::write32(&buffer[8], minval[2]);
+    virvo::serialization::write32(&buffer[12], maxval[0]);
+    virvo::serialization::write32(&buffer[16], maxval[1]);
+    virvo::serialization::write32(&buffer[20], maxval[2]);
     return _socket->writeData(&buffer[0], 24);
   }
   else
@@ -1046,12 +1046,12 @@ vvSocket::ErrorType vvSocketIO::getAABBi(vvAABBi& val) const
 
     vvVector3i minval;
     vvVector3i maxval;
-    minval[0] = vvToolshed::read32(&buffer[0]);
-    minval[1] = vvToolshed::read32(&buffer[4]);
-    minval[2] = vvToolshed::read32(&buffer[8]);
-    maxval[0] = vvToolshed::read32(&buffer[12]);
-    maxval[1] = vvToolshed::read32(&buffer[16]);
-    maxval[2] = vvToolshed::read32(&buffer[20]);
+    minval[0] = virvo::serialization::read32(&buffer[0]);
+    minval[1] = virvo::serialization::read32(&buffer[4]);
+    minval[2] = virvo::serialization::read32(&buffer[8]);
+    maxval[0] = virvo::serialization::read32(&buffer[12]);
+    maxval[1] = virvo::serialization::read32(&buffer[16]);
+    maxval[2] = virvo::serialization::read32(&buffer[20]);
     val = vvAABBi(minval, maxval);
     return retval;
   }
@@ -1070,10 +1070,10 @@ vvSocket::ErrorType vvSocketIO::putViewport(const virvo::Viewport &val) const
   if(_socket)
   {
     uchar buffer[16];
-    vvToolshed::write32(&buffer[0], val[0]);
-    vvToolshed::write32(&buffer[4], val[1]);
-    vvToolshed::write32(&buffer[8], val[2]);
-    vvToolshed::write32(&buffer[12], val[3]);
+    virvo::serialization::write32(&buffer[0], val[0]);
+    virvo::serialization::write32(&buffer[4], val[1]);
+    virvo::serialization::write32(&buffer[8], val[2]);
+    virvo::serialization::write32(&buffer[12], val[3]);
     return _socket->writeData(&buffer[0], 16);
   }
   else
@@ -1098,10 +1098,10 @@ vvSocket::ErrorType vvSocketIO::getViewport(virvo::Viewport &val) const
       return retval;
     }
 
-    val[0] = vvToolshed::read32(&buffer[0]);
-    val[1] = vvToolshed::read32(&buffer[4]);
-    val[2] = vvToolshed::read32(&buffer[8]);
-    val[3] = vvToolshed::read32(&buffer[12]);
+    val[0] = virvo::serialization::read32(&buffer[0]);
+    val[1] = virvo::serialization::read32(&buffer[4]);
+    val[2] = virvo::serialization::read32(&buffer[8]);
+    val[3] = virvo::serialization::read32(&buffer[12]);
     return retval;
   }
   else
@@ -1116,8 +1116,8 @@ vvSocket::ErrorType vvSocketIO::putWinDims(const int w, const int h) const
   {
     uchar buffer[8];
 
-    vvToolshed::write32(&buffer[0], w);
-    vvToolshed::write32(&buffer[4], h);
+    virvo::serialization::write32(&buffer[0], w);
+    virvo::serialization::write32(&buffer[4], h);
 
     return _socket->writeData(&buffer[0], 8);
   }
@@ -1138,8 +1138,8 @@ vvSocket::ErrorType vvSocketIO::getWinDims(int& w, int& h) const
     {
       return  retval;
     }
-    w = vvToolshed::read32(&buffer[0]);
-    h = vvToolshed::read32(&buffer[4]);
+    w = virvo::serialization::read32(&buffer[0]);
+    h = virvo::serialization::read32(&buffer[4]);
 
     return vvSocket::VV_OK;
   }
@@ -1161,7 +1161,7 @@ vvSocket::ErrorType vvSocketIO::putMatrix(const vvMatrix* m) const
 
     for (int i=0; i<4; i++)
       for (int j=0; j<4; j++)
-        vvToolshed::writeFloat(&buffer[4*(4*i+j)], (*m)(i, j));
+        virvo::serialization::writeFloat(&buffer[4*(4*i+j)], (*m)(i, j));
     return putData(buffer, 64);
   }
   else
@@ -1194,7 +1194,7 @@ vvSocket::ErrorType vvSocketIO::getServerInfo(vvServerInfo& info) const
     {
       return retval;
     }
-    size_t len = vvToolshed::read32(sizebuf);
+    size_t len = virvo::serialization::read32(sizebuf);
 
     std::vector<uchar> buf(len);
     if ((retval =_socket->readData(&buf[0], len)) != vvSocket::VV_OK)
@@ -1219,7 +1219,7 @@ vvSocket::ErrorType vvSocketIO::putServerInfo(vvServerInfo info) const
     vvSocket::ErrorType retval;
 
     uchar sizebuf[4];
-    vvToolshed::write32(sizebuf, info.renderers.length());
+    virvo::serialization::write32(sizebuf, info.renderers.length());
 
     if ((retval = _socket->writeData(sizebuf, 4)) != vvSocket::VV_OK)
     {
@@ -1248,8 +1248,8 @@ vvSocket::ErrorType vvSocketIO::getGpuInfo(vvGpu::vvGpuInfo& ginfo) const
 
     if ((retval =_socket->readData(&buffer[0], 8)) == vvSocket::VV_OK)
     {
-      ginfo.freeMem  = vvToolshed::read32(&buffer[0]);
-      ginfo.totalMem = vvToolshed::read32(&buffer[4]);
+      ginfo.freeMem  = virvo::serialization::read32(&buffer[0]);
+      ginfo.totalMem = virvo::serialization::read32(&buffer[4]);
 
       return vvSocket::VV_OK;
     }
@@ -1273,8 +1273,8 @@ vvSocket::ErrorType vvSocketIO::putGpuInfo(const vvGpu::vvGpuInfo& ginfo) const
   if(_socket)
   {
     uchar buffer[8];
-    vvToolshed::write32(&buffer[0], ginfo.freeMem);
-    vvToolshed::write32(&buffer[4], ginfo.totalMem);
+    virvo::serialization::write32(&buffer[0], ginfo.freeMem);
+    virvo::serialization::write32(&buffer[4], ginfo.totalMem);
     return _socket->writeData(&buffer[0], 8);
   }
   else
@@ -1458,10 +1458,10 @@ vvSocket::ErrorType vvSocketIO::getImage(virvo::Image& image) const
 
   if (err == vvSocket::VV_OK)
   {
-    int w      = vvToolshed::read32(&header[ 0]);
-    int h      = vvToolshed::read32(&header[ 4]);
-    int format = vvToolshed::read32(&header[ 8]);
-    int stride = vvToolshed::read32(&header[12]);
+    int w      = virvo::serialization::read32(&header[ 0]);
+    int h      = virvo::serialization::read32(&header[ 4]);
+    int format = virvo::serialization::read32(&header[ 8]);
+    int stride = virvo::serialization::read32(&header[12]);
 
     image.init(w, h, static_cast<virvo::PixelFormat>(format), stride);
 
@@ -1478,10 +1478,10 @@ vvSocket::ErrorType vvSocketIO::putImage(virvo::Image const& image) const
 
   unsigned char header[16]; // 4 int's
 
-  vvToolshed::write32(&header[ 0], image.width());
-  vvToolshed::write32(&header[ 4], image.height());
-  vvToolshed::write32(&header[ 8], image.format());
-  vvToolshed::write32(&header[12], image.stride());
+  virvo::serialization::write32(&header[ 0], image.width());
+  virvo::serialization::write32(&header[ 4], image.height());
+  virvo::serialization::write32(&header[ 8], image.format());
+  virvo::serialization::write32(&header[12], image.stride());
 
   vvSocket::ErrorType err = getSocket()->writeData(header, sizeof(header));
 

@@ -1331,7 +1331,7 @@ void vvVolDesc::convertBPC(size_t newBPC, bool verbose)
                 switch (newBPC)                   // switch by destination voxel type
                 {
                   case 2:
-                    vvToolshed::write16(dst, src[0]);
+                    virvo::serialization::write16(dst, src[0]);
                     break;
                   case 4:
                     *((float*)dst) = src[0] / 255.0f;
@@ -1357,7 +1357,7 @@ void vvVolDesc::convertBPC(size_t newBPC, bool verbose)
                     *dst = uchar((val - real[0]) / (real[1] - real[0]) * 255.0f);
                     break;
                   case 2:
-                    vvToolshed::write16(dst, uint16_t((val - real[0]) / (real[1] - real[0]) * 65535.0f));
+                    virvo::serialization::write16(dst, uint16_t((val - real[0]) / (real[1] - real[0]) * 65535.0f));
                     break;
                 }
                 break;
@@ -3267,21 +3267,21 @@ size_t vvVolDesc::serializeAttributes(uint8_t* buffer) const
   if (buffer != NULL)
   {
     ptr = buffer;
-    ptr += vvToolshed::write32 (ptr, vox[0]);
-    ptr += vvToolshed::write32 (ptr, vox[1]);
-    ptr += vvToolshed::write32 (ptr, vox[2]);
-    ptr += vvToolshed::write32 (ptr, frames);
-    ptr += vvToolshed::write8    (ptr, uint8_t(bpc));
-    ptr += vvToolshed::writeFloat(ptr, dist[0]);
-    ptr += vvToolshed::writeFloat(ptr, dist[1]);
-    ptr += vvToolshed::writeFloat(ptr, dist[2]);
-    ptr += vvToolshed::writeFloat(ptr, dt);
-    ptr += vvToolshed::writeFloat(ptr, real[0]);
-    ptr += vvToolshed::writeFloat(ptr, real[1]);
-    ptr += vvToolshed::writeFloat(ptr, pos[0]);
-    ptr += vvToolshed::writeFloat(ptr, pos[1]);
-    ptr += vvToolshed::writeFloat(ptr, pos[2]);
-    ptr += vvToolshed::write8    (ptr, uint8_t(chan));
+    ptr += virvo::serialization::write32 (ptr, vox[0]);
+    ptr += virvo::serialization::write32 (ptr, vox[1]);
+    ptr += virvo::serialization::write32 (ptr, vox[2]);
+    ptr += virvo::serialization::write32 (ptr, frames);
+    ptr += virvo::serialization::write8    (ptr, uint8_t(bpc));
+    ptr += virvo::serialization::writeFloat(ptr, dist[0]);
+    ptr += virvo::serialization::writeFloat(ptr, dist[1]);
+    ptr += virvo::serialization::writeFloat(ptr, dist[2]);
+    ptr += virvo::serialization::writeFloat(ptr, dt);
+    ptr += virvo::serialization::writeFloat(ptr, real[0]);
+    ptr += virvo::serialization::writeFloat(ptr, real[1]);
+    ptr += virvo::serialization::writeFloat(ptr, pos[0]);
+    ptr += virvo::serialization::writeFloat(ptr, pos[1]);
+    ptr += virvo::serialization::writeFloat(ptr, pos[2]);
+    ptr += virvo::serialization::write8    (ptr, uint8_t(chan));
     assert(ptr - buffer == SERIAL_ATTRIB_SIZE);
   }
   return SERIAL_ATTRIB_SIZE;
@@ -3308,77 +3308,77 @@ void vvVolDesc::deserializeAttributes(uint8_t* buffer, size_t bufSize)
 
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    vox[0] = vvToolshed::read32(ptr);
+    vox[0] = virvo::serialization::read32(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    vox[1] = vvToolshed::read32(ptr);
+    vox[1] = virvo::serialization::read32(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    vox[2] = vvToolshed::read32(ptr);
+    vox[2] = virvo::serialization::read32(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    frames = vvToolshed::read32(ptr);
+    frames = virvo::serialization::read32(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+1 - buffer) <= bufSize)
-    bpc = vvToolshed::read8(ptr);
+    bpc = virvo::serialization::read8(ptr);
   else return;
   ptr += 1;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    dist[0] = vvToolshed::readFloat(ptr);
+    dist[0] = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    dist[1]  = vvToolshed::readFloat(ptr);
+    dist[1]  = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    dist[2] = vvToolshed::readFloat(ptr);
+    dist[2] = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    dt = vvToolshed::readFloat(ptr);
+    dt = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    real[0] = vvToolshed::readFloat(ptr);
+    real[0] = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    real[1] = vvToolshed::readFloat(ptr);
+    real[1] = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    pos[0] = vvToolshed::readFloat(ptr);
+    pos[0] = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    pos[1] = vvToolshed::readFloat(ptr);
+    pos[1] = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
   assert(ptr + 4 - buffer >= 0);
   if (size_t(ptr+4 - buffer) <= bufSize)
-    pos[2] = vvToolshed::readFloat(ptr);
+    pos[2] = virvo::serialization::readFloat(ptr);
   else return;
   ptr += 4;
   assert(ptr + 1 - buffer >= 0);
   if (size_t(ptr+1 - buffer) <= bufSize)
-    chan = vvToolshed::read8(ptr);
+    chan = virvo::serialization::read8(ptr);
   else return;
   ptr += 1;
 }
