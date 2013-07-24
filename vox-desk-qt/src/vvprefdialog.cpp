@@ -646,8 +646,6 @@ void vvPrefDialog::onConnectClicked()
       {
         ::sock->setParameter(vvSocket::VV_NO_NAGLE, true);
 
-        vvSocketIO io(::sock);
-
         ui->connectButton->setText(tr("Disconnect"));
 
         if (!ui->ibrBox->isChecked())
@@ -657,10 +655,6 @@ void vvPrefDialog::onConnectClicked()
         else
         {
           ::remoterend = "ibr";
-          if (io.putEvent(virvo::RemoteServerType) == vvSocket::VV_OK)
-          {
-            io.putRendererType(vvRenderer::REMOTE_IBR);
-          }
         }
 
         // store to registry because connection was successful

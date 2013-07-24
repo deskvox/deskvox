@@ -37,6 +37,8 @@ vvImageClient::vvImageClient(vvVolDesc *vd, vvRenderState renderState,
   vvDebugMsg::msg(1, "vvImageClient::vvImageClient()");
 
   rendererType = REMOTE_IMAGE;
+  _socketIO->putEvent(virvo::RemoteServerType);
+  _socketIO->putRendererType(rendererType);
 }
 
 vvImageClient::~vvImageClient()

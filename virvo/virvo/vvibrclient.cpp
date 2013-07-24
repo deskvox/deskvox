@@ -61,6 +61,8 @@ vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
   vvDebugMsg::msg(1, "vvIbrClient::vvIbrClient()");
 
   rendererType = REMOTE_IBR;
+  _socketIO->putEvent(virvo::RemoteServerType);
+  _socketIO->putRendererType(rendererType);
 
   glewInit();
 
@@ -234,11 +236,11 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 }
 
 void vvIbrClient::initIbrFrame()
-{std::cerr << "init" << std::endl;
+{
   vvDebugMsg::msg(1, "vvIbrClient::initIbrFrame()");
 
   const int h = _image->height();
-  const int w = _image->width();std::cerr << w << " " << h << std::endl;
+  const int w = _image->width();
 
   _imgPr = _image->projMatrix();
   _imgMv = _image->viewMatrix();
