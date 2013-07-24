@@ -120,7 +120,6 @@ set(VIRVO_HEADERS
   vvibr.h
   vvibrclient.h
   vvibrimage.h
-  vvibrrenderer.h
   vvibrserver.h
   vvimage.h
   vvimageclient.h
@@ -221,7 +220,6 @@ set(VIRVO_SOURCES
   vvibr.cpp
   vvibrclient.cpp
   vvibrimage.cpp
-  vvibrrenderer.cpp
   vvibrserver.cpp
   vvimage.cpp
   vvimageclient.cpp
