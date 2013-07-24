@@ -35,7 +35,6 @@
 
 struct vvMulticastParameters;
 class vvImage;
-class vvIbrImage;
 class vvVolDesc;
 
 namespace virvo
@@ -147,8 +146,6 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putTransferFunction(vvTransFunc& tf) const;
     vvSocket::ErrorType getImage(vvImage*) const;
     vvSocket::ErrorType putImage(const vvImage*) const;
-    vvSocket::ErrorType getIbrImage(vvIbrImage*) const;
-    vvSocket::ErrorType putIbrImage(const vvIbrImage*) const;
     vvSocket::ErrorType getFileName(std::string& fn) const;
     vvSocket::ErrorType putFileName(const std::string& fn) const;
     vvSocket::ErrorType allocateAndGetData(uchar**, int&) const;             //  unknown number and type

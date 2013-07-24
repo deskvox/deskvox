@@ -23,8 +23,6 @@
 
 #include "vvremoteserver.h"
 
-class vvIbrImage;
-
 class vvIbrServer : public vvRemoteServer
 {
 public:
