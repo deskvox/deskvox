@@ -370,7 +370,7 @@ void vvView::displayCallback(void)
   {
     glDrawBuffer(GL_BACK);
     ds->ov->updateModelviewMatrix(vvObjView::LEFT_EYE);
-    ds->renderer->renderVolumeGL();
+    ds->renderer->renderFrame();
   }
 
   if (ds->iconMode)
