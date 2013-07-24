@@ -44,12 +44,10 @@ struct vvIbrClient::Thread
   pthread_t thread;               ///< list for threads of each server connection
   virvo::Mutex mutex;
   virvo::SyncedCondition imageRequest;
-  bool newImage;
   bool cancel;
 
   Thread()
-    : newImage(false)
-    , cancel(false)
+    : cancel(false)
   {
   }
 };
@@ -99,23 +97,25 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   // Request a new image
   this->_thread->imageRequest.signal();
 
-  bool imageValid = false;
+  bool imageNew = false;
 
   {
     virvo::ScopedLock lock(&this->_thread->mutex);
 
-    // If the image changed, update the textures/buffers
-    if (this->_thread->newImage)
+    imageNew = this->_nextImage.get() != 0;
+    if (imageNew)
     {
-      initIbrFrame();
-      this->_thread->newImage = false;
+      this->_image.reset(this->_nextImage.release());
     }
-
-    imageValid = _image.get() && _image->width() > 0 && _image->height() > 0;
   }
 
-  if (!imageValid)
+  // Check for a valid image
+  if (this->_image.get() == 0 || this->_image->width() <= 0 || this->_image->height() <= 0)
     return VV_OK;
+
+  // If this is a new image, update the textures and buffers
+  if (imageNew)
+    initIbrFrame();
 
   // Draw boundary lines
   if (_boundaries)
@@ -342,8 +342,7 @@ void* vvIbrClient::getImageFromSocket(void* threadargs)
 
     virvo::ScopedLock lock(&ibr->_thread->mutex);
 
-    ibr->_image.reset(image.release()); // Swap the images
-    ibr->_thread->newImage = true;
+    ibr->_nextImage.reset(image.release()); // Swap the images
   }
 
   return 0;

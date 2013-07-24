@@ -44,6 +44,7 @@ private:
   struct Thread;
   Thread *_thread;                                        ///< threads, mutexes, barriers, ...
   std::auto_ptr<virvo::IbrImage> _image;                  ///< image, protected by _imageMutex
+  std::auto_ptr<virvo::IbrImage> _nextImage;
   GLuint _pointVBO;                                       ///< Vertex Buffer Object id for point-pixels
 
   GLuint _rgbaTex;                                        ///< Texture names for RGBA image
