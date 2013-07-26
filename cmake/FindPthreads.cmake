@@ -1,6 +1,7 @@
 include(FindPackageHandleStandardArgs)
 
 set(hints
+  $ENV{LIB_BASE_PATH}/
   $ENV{LIB_BASE_PATH}/pthread
   $ENV{LIB_BASE_PATH}/pthreads
 )
@@ -36,9 +37,15 @@ else()
   endif()
 endif()
 
+if(MSVC)
+  set(Pthreads_PREFIX "V")
+else()
+  set(Pthreads_PREFIX "G")
+endif()
+
 find_library(Pthreads_LIBRARY
   NAMES
-    pthreadV${Pthreads_EXCEPTION_SCHEME}2
+    pthread${Pthreads_PREFIX}${Pthreads_EXCEPTION_SCHEME}2
     pthread
   HINTS
     ${hints}
@@ -51,7 +58,7 @@ find_library(Pthreads_LIBRARY
 
 find_library(Pthreads_LIBRARY_DEBUG
   NAMES
-    pthreadV${Pthreads_EXCEPTION_SCHEME}2d
+    pthread${Pthreads_PREFIX}${Pthreads_EXCEPTION_SCHEME}2d
     pthreadd
   HINTS
     ${hints}
@@ -66,6 +73,14 @@ if(Pthreads_LIBRARY_DEBUG)
   set(Pthreads_LIBRARIES optimized ${Pthreads_LIBRARY} debug ${Pthreads_LIBRARY_DEBUG})
 else()
   set(Pthreads_LIBRARIES ${Pthreads_LIBRARY})
+endif()
+
+if(Pthreads_EXCEPTION_SCHEME STREQUAL "C")
+  set(Pthreads_PACKAGE_DEFINITIONS "-D__CLEANUP_C")
+elseif(Pthreads_EXCEPTION_SCHEME STREQUAL "CE")
+  set(Pthreads_PACKAGE_DEFINITIONS "-D__CLEANUP_CXX")
+elseif(Pthreads_EXCEPTION_SCHEME STREQUAL "SE")
+  set(Pthreads_PACKAGE_DEFINITIONS "-D__CLEANUP_SEH")
 endif()
 
 # TODO:

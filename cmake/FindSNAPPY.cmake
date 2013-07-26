@@ -1,31 +1,59 @@
-# Find SNAPPY - A fast compressor/decompressor
-#
-# This module defines
-#  SNAPPY_FOUND - whether the snappy library was found
-#  SNAPPY_LIBRARIES - the snappy library
-#  SNAPPY_INCLUDE_DIR - the include path of the snappy library
-#
+include(FindPackageHandleStandardArgs)
 
-if (SNAPPY_INCLUDE_DIR AND SNAPPY_LIBRARIES)
+set(hints
+  $ENV{EXTERNLIBS}/snappy
+  $ENV{LIB_BASE_PATH}/
+  $ENV{LIB_BASE_PATH}/snappy
+)
 
-  # Already in cache
-  set (SNAPPY_FOUND TRUE)
+set(paths
+  /usr
+  /usr/local
+)
 
-else (SNAPPY_INCLUDE_DIR AND SNAPPY_LIBRARIES)
-
-  find_library (SNAPPY_LIBRARIES
-    NAMES
-    snappy
-    PATHS
-  )
-
-  find_path (SNAPPY_INCLUDE_DIR
-    NAMES
+find_path(SNAPPY_INCLUDE_DIR
+  NAMES
     snappy.h
-    PATHS
-  )
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    include
+    include/snappy
+)
 
-  include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(SNAPPY DEFAULT_MSG SNAPPY_LIBRARIES SNAPPY_INCLUDE_DIR)
+find_library(SNAPPY_LIBRARY
+  NAMES
+    snappy
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    lib64
+    lib
+)
 
-endif (SNAPPY_INCLUDE_DIR AND SNAPPY_LIBRARIES)
+find_library(SNAPPY_LIBRARY_DEBUG
+  NAMES
+    snappyd
+  HINTS
+    ${hints}
+  PATHS
+    ${paths}
+  PATH_SUFFIXES
+    lib64
+    lib
+)
+
+if(SNAPPY_LIBRARY_DEBUG)
+  set(SNAPPY_LIBRARIES optimized ${SNAPPY_LIBRARY} debug ${SNAPPY_LIBRARY_DEBUG})
+else()
+  set(SNAPPY_LIBRARIES ${SNAPPY_LIBRARY})
+endif()
+
+find_package_handle_standard_args(SNAPPY DEFAULT_MSG
+  SNAPPY_INCLUDE_DIR
+  SNAPPY_LIBRARY
+)

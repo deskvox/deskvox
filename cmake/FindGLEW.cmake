@@ -1,7 +1,9 @@
 include(FindPackageHandleStandardArgs)
 
 set(hints
-  $ENV{LIB_BASE_PATH}/glew
+  $ENV{EXTERNLIBS}/glew
+  $ENV{LIB_BASE_PATH}/
+  $ENV{LIB_BASE_PATH}/glew/
 )
 
 set(paths

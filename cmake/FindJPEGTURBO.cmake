@@ -3,6 +3,7 @@ include(FindPackageHandleStandardArgs)
 set(hints
   $ENV{EXTERNLIBS}/libjpeg-turbo
   $ENV{EXTERNLIBS}/libjpeg
+  $ENV{LIB_BASE_PATH}/
   $ENV{LIB_BASE_PATH}/libjpeg-turbo
   $ENV{LIB_BASE_PATH}/libjpeg
 )
@@ -21,6 +22,7 @@ find_path(JPEGTURBO_INCLUDE_DIR
     ${paths}
   PATH_SUFFIXES
     include
+    include/libjpeg
 )
 
 find_library(JPEGTURBO_LIBRARY
