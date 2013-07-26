@@ -68,6 +68,9 @@ elseif(DESKVOX_COMPILER_IS_GCC_COMPATIBLE)
   add_definitions(-Wwrite-strings)
   add_definitions(-Woverloaded-virtual)
 
+  # Disable -Wlong-long...
+  add_definitions(-Wno-long-long)
+
   if(DESKVOX_ENABLE_WARNINGS)
     add_definitions(-Wall -Wextra)
     if(DESKVOX_ENABLE_PEDANTIC)
