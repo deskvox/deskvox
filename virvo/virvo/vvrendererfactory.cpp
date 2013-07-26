@@ -38,6 +38,7 @@
 #include "vvserbrickrend.h"
 #include "vvsocketmap.h"
 #include "vvtcpsocket.h"
+#include "vvcompiler.h"
 
 #ifdef HAVE_CUDA
 #include "cuda/utils.h"
@@ -57,13 +58,18 @@
 #define ECX 0x2
 #define EDX 0x3
 
-#ifdef _MSC_VER
+#if VV_CXX_MSVC || VV_CXX_MINGW
 
 #include <intrin.h>
 
-#else // g++/clang
+static void get_cpuid(int reg[4], int type)
+{
+  __cpuid(reg, type);
+}
 
-static void __cpuid(int reg[4], int type)
+#else
+
+static void get_cpuid(int reg[4], int type)
 {
   __asm__ __volatile__
   (
@@ -194,7 +200,7 @@ static bool archSupported(std::string const& arch)
   }
 
   int reg[4];
-  __cpuid(reg, 1);
+  get_cpuid(reg, 1);
 
   if (arch == "mmx")
     return test_bit(reg[EDX], 23);
@@ -220,7 +226,7 @@ static bool archSupported(std::string const& arch)
 std::string findRayRendPlugin(std::string const& plugindir, std::string const& arch)
 {
   std::stringstream namestr;
-#ifdef _WIN32
+#if defined(_WIN32) && !VV_CXX_MINGW
   namestr << "rayrend";
 #else
   namestr << "librayrend";
