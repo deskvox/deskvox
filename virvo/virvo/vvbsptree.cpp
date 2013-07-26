@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <set>
+#include <limits>
 
 #include "vvbsptree.h"
 #include "vvdebugmsg.h"
@@ -148,7 +149,7 @@ vvBspTree::vvBspTree(vvVolDesc* vd, const vvBspData& data)
   }
 
   // check if total load sums up to appr. 1
-  if ((totalLoad < 1.0f - FLT_EPSILON) || (totalLoad > 1.0f + FLT_EPSILON))
+  if ((totalLoad < 1.0f - std::numeric_limits<float>::epsilon()) || (totalLoad > 1.0f + std::numeric_limits<float>::epsilon()))
   {
     _root = NULL;
     vvDebugMsg::msg(0, "vvBspTree::vvBspTree() - Error: load balance must sum up to 1: ", totalLoad);
@@ -234,7 +235,7 @@ void vvBspTree::buildHierarchy(vvBspNode* node, size_t leafIdx)
     // make left child a leaf
     _leafs.at(leafIdx) = childLeft;
     childLeft->setId(leafIdx);
-    
+
     // recurse with right child
     buildHierarchy(childRight, leafIdx + 1);
   }
