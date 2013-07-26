@@ -50,6 +50,13 @@
 #define VV_CXX_MSVC 0
 #endif
 
+// MinGW on Windows?
+#if defined(_WIN32) && (defined(__MINGW32__) || defined(__MINGW64__))
+#define VV_CXX_MINGW VV_CXX_GCC
+#else
+#define VV_CXX_MINGW 0
+#endif
+
 
 //
 // Determine available C++11 features
