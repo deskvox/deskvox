@@ -31,9 +31,14 @@
 #endif
 
 // Min windows version: WinXP.
-#ifndef _WIN32_WINNT                
+#ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
-#endif 
+#endif
+
+// MinGW-w64 needs these three includes before windows.h
+#include <stdlib.h>
+#include <intrin.h>
+#include <malloc.h>
 
 #include <winsock2.h>
 #include <windows.h>
