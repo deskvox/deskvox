@@ -23,7 +23,7 @@ add_definitions(-DHAVE_CONFIG_H)
 
 
 deskvox_cuda_compiles(RAYREND_CUDA_SOURCES
-  ../../vvrayrend.cu
+  vvrayrend.cu
 )
 
 deskvox_add_library(rayrendcuda
