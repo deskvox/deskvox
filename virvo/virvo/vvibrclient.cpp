@@ -39,6 +39,39 @@
 using std::cerr;
 using std::endl;
 
+struct vvIbrClient::Impl
+{
+  Impl() : glstate(0) {}
+
+  unsigned glstate;
+
+  void pushGLClientState()
+  {
+    if (glIsEnabled(GL_COLOR_ARRAY))         glstate |= GL_COLOR_ARRAY;
+    if (glIsEnabled(GL_EDGE_FLAG_ARRAY))     glstate |= GL_EDGE_FLAG_ARRAY;
+    if (glIsEnabled(GL_INDEX_ARRAY))         glstate |= GL_INDEX_ARRAY;
+    if (glIsEnabled(GL_NORMAL_ARRAY))        glstate |= GL_NORMAL_ARRAY;
+    if (glIsEnabled(GL_TEXTURE_COORD_ARRAY)) glstate |= GL_TEXTURE_COORD_ARRAY;
+    if (glIsEnabled(GL_VERTEX_ARRAY))        glstate |= GL_VERTEX_ARRAY;
+  }
+
+  void popGLClientState()
+  {
+    (glstate & GL_COLOR_ARRAY) == GL_COLOR_ARRAY ? glEnableClientState(GL_COLOR_ARRAY)
+      : glDisableClientState(GL_COLOR_ARRAY);
+    (glstate & GL_EDGE_FLAG_ARRAY) == GL_EDGE_FLAG_ARRAY ? glEnableClientState(GL_EDGE_FLAG_ARRAY)
+      : glDisableClientState(GL_EDGE_FLAG_ARRAY);
+    (glstate & GL_INDEX_ARRAY) == GL_INDEX_ARRAY ? glEnableClientState(GL_INDEX_ARRAY)
+      : glDisableClientState(GL_INDEX_ARRAY);
+    (glstate & GL_NORMAL_ARRAY) == GL_NORMAL_ARRAY ? glEnableClientState(GL_NORMAL_ARRAY)
+      : glDisableClientState(GL_NORMAL_ARRAY);
+    (glstate & GL_TEXTURE_COORD_ARRAY) == GL_TEXTURE_COORD_ARRAY ? glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+      : glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    (glstate & GL_VERTEX_ARRAY) == GL_VERTEX_ARRAY ? glEnableClientState(GL_VERTEX_ARRAY)
+      : glDisableClientState(GL_VERTEX_ARRAY);
+  }
+};
+
 struct vvIbrClient::Thread
 {
   pthread_t thread;               ///< list for threads of each server connection
@@ -55,6 +88,7 @@ struct vvIbrClient::Thread
 vvIbrClient::vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
                          vvTcpSocket* socket, const std::string& filename)
   : vvRemoteClient(vd, renderState, socket, filename)
+  , impl_(new Impl)
   , _thread(new Thread)
   , _shader(vvShaderFactory().createProgram("ibr", "", "ibr"))
 {
@@ -90,6 +124,7 @@ vvIbrClient::~vvIbrClient()
   glDeleteTextures(1, &_depthTex);
 
   delete _shader;
+  delete impl_;
 }
 
 vvRemoteClient::ErrorType vvIbrClient::render()
@@ -139,11 +174,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  // prepare VBOs
-  glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
-  glVertexPointer(3, GL_FLOAT, 0, NULL);
-  glEnableClientState(GL_VERTEX_ARRAY);
 
   vvMatrix reprojectionMatrix;
   if (!matrixChanged)
@@ -220,7 +250,27 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   //// end ellipsoid test code - temporary
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+
+  // push the client state and temporarily disable every
+  // client state but vertex arrays
+  impl_->pushGLClientState();
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_EDGE_FLAG_ARRAY);
+  glDisableClientState(GL_INDEX_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+  glBindBuffer(GL_ARRAY_BUFFER, _pointVBO);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glVertexPointer(3, GL_FLOAT, 0, NULL);
+
   glDrawArrays(GL_POINTS, 0, _imgVp[2]*_imgVp[3]);
+
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  impl_->pushGLClientState();
 
   _shader->disable();
 
@@ -228,9 +278,6 @@ vvRemoteClient::ErrorType vvIbrClient::render()
     glDepthMask(GL_TRUE);
   if(!pointSmooth)
     glDisable(GL_POINT_SMOOTH);
-
-  glDisableClientState(GL_VERTEX_ARRAY);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   return VV_OK;
 }

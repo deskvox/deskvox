@@ -41,6 +41,13 @@ public:
   VVAPI virtual ErrorType render() VV_OVERRIDE; ///< render image with depth-values
 
 private:
+  // NOT copyable!
+  vvIbrClient(vvIbrClient const& rhs);
+  vvIbrClient& operator=(vvIbrClient const& rhs);
+
+  struct Impl;
+  Impl* impl_;
+
   struct Thread;
   Thread *_thread;                                        ///< threads, mutexes, barriers, ...
   std::auto_ptr<virvo::IbrImage> _image;                  ///< image, protected by _imageMutex
