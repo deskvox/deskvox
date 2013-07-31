@@ -41,34 +41,45 @@ using std::endl;
 
 struct vvIbrClient::Impl
 {
-  Impl() : glstate(0) {}
-
-  unsigned glstate;
+  // OpenGL client state flags
+  struct GLState
+  {
+    GLState()
+      : colorArray(false)
+      , edgeFlagArray(false)
+      , indexArray(false)
+      , normalArray(false)
+      , textureCoordArray(false)
+      , vertexArray(false)
+    {
+    }
+    GLboolean colorArray;
+    GLboolean edgeFlagArray;
+    GLboolean indexArray;
+    GLboolean normalArray;
+    GLboolean textureCoordArray;
+    GLboolean vertexArray;
+  };
+  GLState glstate;
 
   void pushGLClientState()
   {
-    if (glIsEnabled(GL_COLOR_ARRAY))         glstate |= GL_COLOR_ARRAY;
-    if (glIsEnabled(GL_EDGE_FLAG_ARRAY))     glstate |= GL_EDGE_FLAG_ARRAY;
-    if (glIsEnabled(GL_INDEX_ARRAY))         glstate |= GL_INDEX_ARRAY;
-    if (glIsEnabled(GL_NORMAL_ARRAY))        glstate |= GL_NORMAL_ARRAY;
-    if (glIsEnabled(GL_TEXTURE_COORD_ARRAY)) glstate |= GL_TEXTURE_COORD_ARRAY;
-    if (glIsEnabled(GL_VERTEX_ARRAY))        glstate |= GL_VERTEX_ARRAY;
+    glstate.colorArray        = glIsEnabled(GL_COLOR_ARRAY);
+    glstate.edgeFlagArray     = glIsEnabled(GL_EDGE_FLAG_ARRAY);
+    glstate.indexArray        = glIsEnabled(GL_INDEX_ARRAY);
+    glstate.normalArray       = glIsEnabled(GL_NORMAL_ARRAY);
+    glstate.textureCoordArray = glIsEnabled(GL_TEXTURE_COORD_ARRAY);
+    glstate.vertexArray       = glIsEnabled(GL_VERTEX_ARRAY);
   }
 
   void popGLClientState()
   {
-    (glstate & GL_COLOR_ARRAY) == GL_COLOR_ARRAY ? glEnableClientState(GL_COLOR_ARRAY)
-      : glDisableClientState(GL_COLOR_ARRAY);
-    (glstate & GL_EDGE_FLAG_ARRAY) == GL_EDGE_FLAG_ARRAY ? glEnableClientState(GL_EDGE_FLAG_ARRAY)
-      : glDisableClientState(GL_EDGE_FLAG_ARRAY);
-    (glstate & GL_INDEX_ARRAY) == GL_INDEX_ARRAY ? glEnableClientState(GL_INDEX_ARRAY)
-      : glDisableClientState(GL_INDEX_ARRAY);
-    (glstate & GL_NORMAL_ARRAY) == GL_NORMAL_ARRAY ? glEnableClientState(GL_NORMAL_ARRAY)
-      : glDisableClientState(GL_NORMAL_ARRAY);
-    (glstate & GL_TEXTURE_COORD_ARRAY) == GL_TEXTURE_COORD_ARRAY ? glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-      : glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    (glstate & GL_VERTEX_ARRAY) == GL_VERTEX_ARRAY ? glEnableClientState(GL_VERTEX_ARRAY)
-      : glDisableClientState(GL_VERTEX_ARRAY);
+    glstate.colorArray ? glEnableClientState(GL_COLOR_ARRAY) : glDisableClientState(GL_COLOR_ARRAY);
+    glstate.edgeFlagArray ? glEnableClientState(GL_EDGE_FLAG_ARRAY) : glDisableClientState(GL_EDGE_FLAG_ARRAY);
+    glstate.indexArray ? glEnableClientState(GL_INDEX_ARRAY) : glDisableClientState(GL_INDEX_ARRAY);
+    glstate.normalArray ? glEnableClientState(GL_NORMAL_ARRAY) : glDisableClientState(GL_NORMAL_ARRAY);
+    glstate.textureCoordArray ? glEnableClientState(GL_TEXTURE_COORD_ARRAY) : glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glstate.vertexArray ? glEnableClientState(GL_VERTEX_ARRAY) : glDisableClientState(GL_VERTEX_ARRAY);
   }
 };
 
