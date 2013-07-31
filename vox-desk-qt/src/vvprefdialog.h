@@ -43,9 +43,12 @@ public:
   void scaleStillQuality(float s);
 private:
   Ui_PrefDialog* ui;
-
   vvCanvas* _canvas;
-
+  
+  struct Impl;
+  Impl* impl;
+  
+  
   void emitRenderer();
   bool validateRemoteHost(const QString& host, ushort port);
 private slots:

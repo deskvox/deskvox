@@ -50,8 +50,17 @@
 
 #define VV_UNUSED(x) ((void)(x))
 
-namespace
+struct vvPrefDialog::Impl
 {
+  Impl()
+    : sock(NULL)
+    , movingSpinBoxOldValue(1.0)
+    , stillSpinBoxOldValue(1.0)
+    , movingDialOldValue(0.0)
+    , stillDialOldValue(0.0)
+  {
+  }
+
   std::map<int, vvRenderer::RendererType> rendererMap;
   std::map<int, std::string> texRendTypeMap;
   std::map<int, std::string> voxTypeMap;
@@ -62,44 +71,44 @@ namespace
   std::map<std::string, std::string> algoDescriptions;
 
   // e.g. ibr or image
-  std::string remoterend = "";
+  std::string remoterend;
   vvTcpSocket* sock;
 
-  double movingSpinBoxOldValue = 1.0;
-  double stillSpinBoxOldValue = 1.0;
-  int movingDialOldValue = 0;
-  int stillDialOldValue = 0;
+  double movingSpinBoxOldValue;
+  double stillSpinBoxOldValue;
+  int movingDialOldValue;
+  int stillDialOldValue ;
+};
 
-  /* make qt dials behave as if they had an unlimited range
-   */
-  int getDialDelta(int oldval, int newval, int minval, int maxval)
+/* make qt dials behave as if they had an unlimited range
+ */
+int getDialDelta(int oldval, int newval, int minval, int maxval)
+{
+  const int eps = 10; // largest possible step from a single user action
+  const int mineps = minval + eps;
+  const int maxeps = maxval - eps;
+
+  if (oldval < mineps && newval > maxeps)
   {
-    const int eps = 10; // largest possible step from a single user action
-    const int mineps = minval + eps;
-    const int maxeps = maxval - eps;
-
-    if (oldval < mineps && newval > maxeps)
-    {
-      return -(oldval + maxval + 1 - newval);
-    }
-    else if (oldval > maxeps && newval < mineps)
-    {
-      return maxval + 1 - oldval + newval;
-    }
-    else
-    {
-      return newval - oldval;
-    }
+    return -(oldval + maxval + 1 - newval);
+  }
+  else if (oldval > maxeps && newval < mineps)
+  {
+    return maxval + 1 - oldval + newval;
+  }
+  else
+  {
+    return newval - oldval;
   }
 }
+
 
 vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   : QDialog(parent)
   , ui(new Ui_PrefDialog)
   , _canvas(canvas)
+  , impl(new Impl)
 {
-  vvDebugMsg::msg(1, "vvPrefDialog::vvPrefDialog()");
-
   ui->setupUi(this);
 
   // can't be done in designer unfortunately
@@ -109,31 +118,31 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   _canvas->makeCurrent();
   glewInit(); // we need glCreateProgram etc. when checking for glsl support
 
-  rendererDescriptions.insert(std::pair<std::string, std::string>("slices", "OpenGL textures"));
-  rendererDescriptions.insert(std::pair<std::string, std::string>("cubic2d", "OpenGL textures"));
-  rendererDescriptions.insert(std::pair<std::string, std::string>("planar", "OpenGL textures"));
-  rendererDescriptions.insert(std::pair<std::string, std::string>("spherical", "OpenGL textures"));
-  rendererDescriptions.insert(std::pair<std::string, std::string>("rayrend", "Ray casting"));
+  impl->rendererDescriptions.insert(std::pair<std::string, std::string>("slices", "OpenGL textures"));
+  impl->rendererDescriptions.insert(std::pair<std::string, std::string>("cubic2d", "OpenGL textures"));
+  impl->rendererDescriptions.insert(std::pair<std::string, std::string>("planar", "OpenGL textures"));
+  impl->rendererDescriptions.insert(std::pair<std::string, std::string>("spherical", "OpenGL textures"));
+  impl->rendererDescriptions.insert(std::pair<std::string, std::string>("rayrend", "Ray casting"));
 
-  algoDescriptions.insert(std::pair<std::string, std::string>("default", "Autoselect"));
-  algoDescriptions.insert(std::pair<std::string, std::string>("slices", "2D textures (slices)"));
-  algoDescriptions.insert(std::pair<std::string, std::string>("cubic2d", "2D textures (cubic)"));
-  algoDescriptions.insert(std::pair<std::string, std::string>("planar", "3D textures (viewport aligned)"));
-  algoDescriptions.insert(std::pair<std::string, std::string>("spherical", "3D textures (spherical)"));
+  impl->algoDescriptions.insert(std::pair<std::string, std::string>("default", "Autoselect"));
+  impl->algoDescriptions.insert(std::pair<std::string, std::string>("slices", "2D textures (slices)"));
+  impl->algoDescriptions.insert(std::pair<std::string, std::string>("cubic2d", "2D textures (cubic)"));
+  impl->algoDescriptions.insert(std::pair<std::string, std::string>("planar", "3D textures (viewport aligned)"));
+  impl->algoDescriptions.insert(std::pair<std::string, std::string>("spherical", "3D textures (spherical)"));
 
   // renderer combo box
   int idx = 0;
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
-    ui->rendererBox->addItem(rendererDescriptions["slices"].c_str());
-    rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::TEXREND));
+    ui->rendererBox->addItem(impl->rendererDescriptions["slices"].c_str());
+    impl->rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::TEXREND));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer(vvRenderer::RAYREND))
   {
-    ui->rendererBox->addItem(rendererDescriptions["rayrend"].c_str());
-    rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::RAYREND));
+    ui->rendererBox->addItem(impl->rendererDescriptions["rayrend"].c_str());
+    impl->rendererMap.insert(std::pair<int, vvRenderer::RendererType>(idx, vvRenderer::RAYREND));
     ++idx;
   }
 
@@ -147,36 +156,36 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
 
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
-    ui->geometryBox->addItem(algoDescriptions["default"].c_str());
-    texRendTypeMap.insert(std::pair<int, std::string>(idx, "default"));
+    ui->geometryBox->addItem(impl->algoDescriptions["default"].c_str());
+    impl->texRendTypeMap.insert(std::pair<int, std::string>(idx, "default"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("slices"))
   {
-    ui->geometryBox->addItem(algoDescriptions["slices"].c_str());
-    texRendTypeMap.insert(std::pair<int, std::string>(idx, "slices"));
+    ui->geometryBox->addItem(impl->algoDescriptions["slices"].c_str());
+    impl->texRendTypeMap.insert(std::pair<int, std::string>(idx, "slices"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("cubic2d"))
   {
-    ui->geometryBox->addItem(algoDescriptions["cubic2d"].c_str());
-    texRendTypeMap.insert(std::pair<int, std::string>(idx, "cubic2d"));
+    ui->geometryBox->addItem(impl->algoDescriptions["cubic2d"].c_str());
+    impl->texRendTypeMap.insert(std::pair<int, std::string>(idx, "cubic2d"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("planar"))
   {
-    ui->geometryBox->addItem(algoDescriptions["planar"].c_str());
-    texRendTypeMap.insert(std::pair<int, std::string>(idx, "planar"));
+    ui->geometryBox->addItem(impl->algoDescriptions["planar"].c_str());
+    impl->texRendTypeMap.insert(std::pair<int, std::string>(idx, "planar"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("spherical"))
   {
-    ui->geometryBox->addItem(algoDescriptions["spherical"].c_str());
-    texRendTypeMap.insert(std::pair<int, std::string>(idx, "spherical"));
+    ui->geometryBox->addItem(impl->algoDescriptions["spherical"].c_str());
+    impl->texRendTypeMap.insert(std::pair<int, std::string>(idx, "spherical"));
     ++idx;
   }
 
@@ -186,28 +195,28 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
     ui->voxTypeBox->addItem("Autoselect");
-    voxTypeMap.insert(std::pair<int, std::string>(idx, "default"));
+    impl->voxTypeMap.insert(std::pair<int, std::string>(idx, "default"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
     ui->voxTypeBox->addItem("RGBA");
-    voxTypeMap.insert(std::pair<int, std::string>(idx, "rgba"));
+    impl->voxTypeMap.insert(std::pair<int, std::string>(idx, "rgba"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND))
   {
     ui->voxTypeBox->addItem("ARB fragment program");
-    voxTypeMap.insert(std::pair<int, std::string>(idx, "arb"));
+    impl->voxTypeMap.insert(std::pair<int, std::string>(idx, "arb"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer(vvRenderer::TEXREND) && vvShaderFactory::isSupported("glsl"))
   {
     ui->voxTypeBox->addItem("GLSL fragment program");
-    voxTypeMap.insert(std::pair<int, std::string>(idx, "shader"));
+    impl->voxTypeMap.insert(std::pair<int, std::string>(idx, "shader"));
     ++idx;
   }
 
@@ -215,19 +224,19 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   idx = 0;
 
   ui->fboBox->addItem("None");
-  fboPrecisionMap.insert(std::pair<int, int>(idx, 0));
+  impl->fboPrecisionMap.insert(std::pair<int, int>(idx, 0));
   ++idx;
 
   ui->fboBox->addItem("8 bit precision");
-  fboPrecisionMap.insert(std::pair<int, int>(idx, 8));
+  impl->fboPrecisionMap.insert(std::pair<int, int>(idx, 8));
   ++idx;
 
   ui->fboBox->addItem("16 bit precision");
-  fboPrecisionMap.insert(std::pair<int, int>(idx, 16));
+  impl->fboPrecisionMap.insert(std::pair<int, int>(idx, 16));
   ++idx;
 
   ui->fboBox->addItem("32 bit precision");
-  fboPrecisionMap.insert(std::pair<int, int>(idx, 32));
+  impl->fboPrecisionMap.insert(std::pair<int, int>(idx, 32));
   ++idx;
 
   // ray rend architecture combo box
@@ -236,21 +245,21 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   if (vvRendererFactory::hasRenderer("rayrend", "cuda"))
   {
     ui->rayRendArchBox->addItem("CUDA - GPGPU ray casting");
-    rayRendArchMap.insert(std::pair<int, std::string>(idx, "cuda"));
+    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "cuda"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("rayrend", "fpu"))
   {
     ui->rayRendArchBox->addItem("FPU - CPU ray casting");
-    rayRendArchMap.insert(std::pair<int, std::string>(idx, "fpu"));
+    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "fpu"));
     ++idx;
   }
 
   if (vvRendererFactory::hasRenderer("rayrend", "sse4_1"))
   {
     ui->rayRendArchBox->addItem("SSE 4.1 - optimized CPU ray casting");
-    rayRendArchMap.insert(std::pair<int, std::string>(idx, "sse4_1"));
+    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "sse4_1"));
     ++idx;
   }
 
@@ -258,29 +267,29 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   idx = 0;
 
   ui->stereoModeBox->addItem("Off (Mono)");
-  stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::Mono));
+  impl->stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::Mono));
   ++idx;
 
   if (_canvas->format().stencil())
   {
     ui->stereoModeBox->addItem("Interlaced (Lines)");
-    stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::InterlacedLines));
+    impl->stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::InterlacedLines));
     ++idx;
   }
 
   if (_canvas->format().stencil())
   {
     ui->stereoModeBox->addItem("Interlaced (Checkerboard)");
-    stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::InterlacedCheckerboard));
+    impl->stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::InterlacedCheckerboard));
     ++idx;
   }
 
   ui->stereoModeBox->addItem("Red cyan");
-  stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::RedCyan));
+  impl->stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::RedCyan));
   ++idx;
 
   ui->stereoModeBox->addItem("Side by side");
-  stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::SideBySide));
+  impl->stereoModeMap.insert(std::pair<int, vox::StereoMode>(idx, vox::SideBySide));
   ++idx;
 
 
@@ -323,11 +332,12 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
 
 vvPrefDialog::~vvPrefDialog()
 {
-  if (::sock != NULL)
+  if (impl->sock!= NULL)
   {
-    vvSocketMap::remove(vvSocketMap::getIndex(::sock));
+    vvSocketMap::remove(vvSocketMap::getIndex(impl->sock));
   }
-  delete ::sock;
+  delete impl->sock;
+  delete impl;
 }
 
 void vvPrefDialog::applySettings()
@@ -401,30 +411,30 @@ void vvPrefDialog::emitRenderer()
 
   vvRendererFactory::Options options;
 
-  if (::remoterend == "ibr" || ::remoterend == "image")
+  if (impl->remoterend == "ibr" || impl->remoterend == "image")
   {
-    int s = vvSocketMap::add(::sock);
+    int s = vvSocketMap::add(impl->sock);
     std::stringstream sockstr;
     sockstr << s;
     if (sockstr.str() != "")
     {
-      name = ::remoterend;
+      name = impl->remoterend;
       options["sockets"] = sockstr.str();
     }
   }
   else
   {
-    switch (rendererMap[ui->rendererBox->currentIndex()])
+    switch (impl->rendererMap[ui->rendererBox->currentIndex()])
     {
     case vvRenderer::RAYREND:
       ui->optionsToolBox->setCurrentIndex(rayidx);
       name = "rayrend";
-      options["arch"] = rayRendArchMap[ui->rayRendArchBox->currentIndex()];
+      options["arch"] = impl->rayRendArchMap[ui->rayRendArchBox->currentIndex()];
       break;
     case vvRenderer::TEXREND:
       ui->optionsToolBox->setCurrentIndex(texidx);
-      name = texRendTypeMap[ui->geometryBox->currentIndex()];
-      options["voxeltype"] = voxTypeMap[ui->voxTypeBox->currentIndex()];
+      name = impl->texRendTypeMap[ui->geometryBox->currentIndex()];
+      options["voxeltype"] = impl->voxTypeMap[ui->voxTypeBox->currentIndex()];
       break;
     default:
       name = "default";
@@ -496,7 +506,7 @@ void vvPrefDialog::onTexRendOptionChanged(int index)
 
   VV_UNUSED(index);
 
-  if (rendererMap[ui->rendererBox->currentIndex()] == vvRenderer::TEXREND)
+  if (impl->rendererMap[ui->rendererBox->currentIndex()] == vvRenderer::TEXREND)
   {
     emitRenderer();
   }
@@ -507,7 +517,7 @@ void vvPrefDialog::onRayRendArchChanged(int index)
   QSettings settings;
   settings.setValue("rayrend/arch", index);
 
-  if (rendererMap[ui->rendererBox->currentIndex()] == vvRenderer::RAYREND)
+  if (impl->rendererMap[ui->rendererBox->currentIndex()] == vvRenderer::RAYREND)
   {
     emitRenderer();
   }
@@ -516,14 +526,14 @@ void vvPrefDialog::onRayRendArchChanged(int index)
 void vvPrefDialog::onFboChanged(int index)
 {
   ui->texInfoLabel->setText("");
-  if (fboPrecisionMap[index] >= 8)
+  if (impl->fboPrecisionMap[index] >= 8)
   {
-    ui->texInfoLabel->setText("<html><b>" + QString::number(fboPrecisionMap[index]) + " bit fbo rendering</b><br />"
+    ui->texInfoLabel->setText("<html><b>" + QString::number(impl->fboPrecisionMap[index]) + " bit fbo rendering</b><br />"
       "An fbo is bound during slice compositing. A higher precision can help to avoid rounding errors but will result "
       "in an increased rendering time.</html>");
   }
 
-  switch (fboPrecisionMap[index])
+  switch (impl->fboPrecisionMap[index])
   {
   case 8:
     emit parameterChanged(vvRenderer::VV_OFFSCREENBUFFER, true);
@@ -597,8 +607,8 @@ void vvPrefDialog::onGetInfoClicked()
       for (std::vector<std::string>::const_iterator it = renderers.begin();
            it != renderers.end(); ++it)
       {
-        std::string rend = rendererDescriptions[*it];
-        std::string algo = algoDescriptions[*it];
+        std::string rend = impl->rendererDescriptions[*it];
+        std::string algo = impl->algoDescriptions[*it];
         qrenderers += "<tr><td>" + tr(rend.c_str()) + "</td><td>" + tr(algo.c_str()) + "</td></tr>";
       }
       QMessageBox::information(this, tr("Server info"), tr("Remote server supports the following rendering algorithms<br /><br />")
@@ -635,26 +645,31 @@ void vvPrefDialog::onBrowseClicked()
 
 void vvPrefDialog::onConnectClicked()
 {
-  if (::remoterend == "")
+  if (impl->remoterend == "")
   {
     if (validateRemoteHost(ui->hostEdit->text(), static_cast<ushort>(ui->portBox->value())))
     {
-      delete ::sock;
-      ::sock = new vvTcpSocket;
-      if (sock->connectToHost(ui->hostEdit->text().toStdString(),
+      delete impl->sock;
+      impl->sock = new vvTcpSocket;
+      if (impl->sock->connectToHost(ui->hostEdit->text().toStdString(),
         static_cast<ushort>(static_cast<ushort>(ui->portBox->value()))) == vvSocket::VV_OK)
       {
-        ::sock->setParameter(vvSocket::VV_NO_NAGLE, true);
+        impl->sock->setParameter(vvSocket::VV_NO_NAGLE, true);
+        vvSocketIO io(impl->sock);
 
         ui->connectButton->setText(tr("Disconnect"));
 
         if (!ui->ibrBox->isChecked())
         {
-          ::remoterend = "image";
+          impl->remoterend = "image";
         }
         else
         {
-          ::remoterend = "ibr";
+          impl->remoterend = "ibr";
+          if (io.putEvent(virvo::RemoteServerType) == vvSocket::VV_OK)
+          {
+            io.putRendererType(vvRenderer::REMOTE_IBR);
+          }
         }
 
         // store to registry because connection was successful
@@ -666,25 +681,24 @@ void vvPrefDialog::onConnectClicked()
       }
       else
       {
-        ::remoterend = "";
+        impl->remoterend = "";
         QMessageBox::warning(this, tr("Failed to connect"), tr("Could not connect to host \"") + ui->hostEdit->text()
           + tr("\" on port \"") + QString::number(ui->portBox->value()) + tr("\""), QMessageBox::Ok);
-        delete ::sock;
-        ::sock = NULL;
+        delete impl->sock;
+        impl->sock = NULL;
       }
     }
   }
   else
   {
-    ::remoterend = "";
+    impl->remoterend = "";
 
-    if (::sock != NULL)
+    if (impl->sock != NULL)
     {
-      vvSocketMap::remove(vvSocketMap::getIndex(sock));
-      delete ::sock;
-      ::sock = NULL;
+      vvSocketMap::remove(vvSocketMap::getIndex(impl->sock));
+      delete impl->sock;
+      impl->sock = NULL;
     }
-
     ui->connectButton->setText(tr("Connect"));
 
     emitRenderer();
@@ -696,19 +710,19 @@ void vvPrefDialog::onIbrToggled(const bool checked)
   QSettings settings;
   settings.setValue("remote/ibr", checked);
 
-  if (::sock != NULL && ::remoterend != "")
+  if (impl->sock != NULL && impl->remoterend != "")
   {
-    vvSocketIO io(::sock);
+    vvSocketIO io(impl->sock);
     if (io.putEvent(virvo::RemoteServerType) == vvSocket::VV_OK)
     {
       if (checked)
       {
-        ::remoterend = "ibr";
+       impl->remoterend = "ibr";
         io.putRendererType(vvRenderer::REMOTE_IBR);
       }
       else
       {
-        ::remoterend = "image";
+        impl->remoterend = "image";
         io.putRendererType(vvRenderer::REMOTE_IMAGE);
       }
 
@@ -734,7 +748,7 @@ void vvPrefDialog::onMipToggled(bool checked)
 
 void vvPrefDialog::onStereoModeChanged(int index)
 {
-  emit parameterChanged(vvParameters::VV_STEREO_MODE, static_cast<int>(stereoModeMap[index]));
+  emit parameterChanged(vvParameters::VV_STEREO_MODE, static_cast<int>(impl->stereoModeMap[index]));
 }
 
 void vvPrefDialog::onStereoDistEdited(const QString& text)
@@ -767,7 +781,7 @@ void vvPrefDialog::onMovingSpinBoxChanged(double value)
 
   disconnect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
   const int upper = ui->movingDial->maximum() + 1;
-  double d = value - movingSpinBoxOldValue;
+  double d = value - impl->movingSpinBoxOldValue;
   int di = vvToolshed::round(d * upper);
   int dialval = ui->movingDial->value();
   dialval += di;
@@ -776,9 +790,9 @@ void vvPrefDialog::onMovingSpinBoxChanged(double value)
   {
     dialval += upper;
   }
-  movingDialOldValue = dialval;
+  impl->movingDialOldValue = dialval;
   ui->movingDial->setValue(dialval);
-  movingSpinBoxOldValue = value;
+  impl->movingSpinBoxOldValue = value;
   emit parameterChanged(vvParameters::VV_MOVING_QUALITY, static_cast<float>(ui->movingSpinBox->value()));
   connect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
 }
@@ -789,7 +803,7 @@ void vvPrefDialog::onStillSpinBoxChanged(double value)
 
   disconnect(ui->stillDial, SIGNAL(valueChanged(int)), this, SLOT(onStillDialChanged(int)));
   const int upper = ui->stillDial->maximum() + 1;
-  double d = value - stillSpinBoxOldValue;
+  double d = value - impl->stillSpinBoxOldValue;
   int di = vvToolshed::round(d * upper);
   int dialval = ui->stillDial->value();
   dialval += di;
@@ -798,9 +812,9 @@ void vvPrefDialog::onStillSpinBoxChanged(double value)
   {
     dialval += upper;
   }
-  stillDialOldValue = dialval;
+  impl->stillDialOldValue = dialval;
   ui->stillDial->setValue(dialval);
-  stillSpinBoxOldValue = value;
+  impl->stillSpinBoxOldValue = value;
   emit parameterChanged(vvRenderer::VV_QUALITY, static_cast<float>(ui->stillSpinBox->value()));
   connect(ui->stillDial, SIGNAL(valueChanged(int)), this, SLOT(onStillDialChanged(int)));
 }
@@ -809,12 +823,12 @@ void vvPrefDialog::onMovingDialChanged(int value)
 {
   vvDebugMsg::msg(3, "vvPrefDialog::onMovingDialChanged()");
 
-  const int d = getDialDelta(movingDialOldValue, value, ui->movingDial->minimum(), ui->movingDial->maximum());
+  const int d = getDialDelta(impl->movingDialOldValue, value, ui->movingDial->minimum(), ui->movingDial->maximum());
   const double dd = static_cast<double>(d) / static_cast<double>(ui->movingDial->maximum() + 1);
   disconnect(ui->movingSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onMovingSpinBoxChanged(double)));
   ui->movingSpinBox->setValue(ui->movingSpinBox->value() + dd);
-  movingSpinBoxOldValue = ui->movingSpinBox->value();
-  movingDialOldValue = value;
+  impl->movingSpinBoxOldValue = ui->movingSpinBox->value();
+  impl->movingDialOldValue = value;
   emit parameterChanged(vvParameters::VV_MOVING_QUALITY, static_cast<float>(ui->movingSpinBox->value()));
   connect(ui->movingSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onMovingSpinBoxChanged(double)));
 }
@@ -823,12 +837,12 @@ void vvPrefDialog::onStillDialChanged(int value)
 {
   vvDebugMsg::msg(3, "vvPrefDialog::onStillDialChanged()");
 
-  const int d = getDialDelta(stillDialOldValue, value, ui->stillDial->minimum(), ui->stillDial->maximum());
+  const int d = getDialDelta(impl->stillDialOldValue, value, ui->stillDial->minimum(), ui->stillDial->maximum());
   const double dd = static_cast<double>(d) / static_cast<double>(ui->stillDial->maximum() + 1);
   disconnect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
   ui->stillSpinBox->setValue(ui->stillSpinBox->value() + dd);
-  stillSpinBoxOldValue = ui->stillSpinBox->value();
-  stillDialOldValue = value;
+  impl->stillSpinBoxOldValue = ui->stillSpinBox->value();
+  impl->stillDialOldValue = value;
   emit parameterChanged(vvRenderer::VV_QUALITY, static_cast<float>(ui->stillSpinBox->value()));
   connect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
 }
