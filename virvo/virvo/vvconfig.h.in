@@ -20,6 +20,9 @@
 #cmakedefine01 VV_HAVE_VOLPACK
 #cmakedefine01 VV_HAVE_X11
 
+#cmakedefine01 VV_HAVE_LLONG
+#cmakedefine01 VV_HAVE_ULLONG
+
 
 // compatability...
 #if VV_HAVE_BONJOUR

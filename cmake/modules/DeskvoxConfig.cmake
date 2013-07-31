@@ -69,12 +69,12 @@ endfunction()
 #
 
 
-#function(deskvox_check_type_exists type result)
-#  check_cxx_source_compiles(
-#    "#include <stdint.h>
-#    ${type} var;
-#    int main() { return 0; }" ${result})
-#endfunction()
+function(deskvox_check_type_exists type result)
+  check_cxx_source_compiles(
+    "#include <stdint.h>
+    ${type} var;
+    int main() { return 0; }" ${result})
+endfunction()
 
-#deskvox_check_type_exists(int64_t HAVE_INT64_T)
-#deskvox_check_type_exists(uint64_t HAVE_UINT64_T)
+deskvox_check_type_exists("long long" VV_HAVE_LLONG)
+deskvox_check_type_exists("unsigned long long" VV_HAVE_ULLONG)

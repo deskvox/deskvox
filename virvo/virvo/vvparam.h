@@ -22,6 +22,10 @@
 #define VVPARAM_H_INCLUDED
 
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #include "vvinttypes.h"
 #include "vvvecmath.h"
 #include "vvcolor.h"
@@ -44,8 +48,10 @@ public:
     VV_UINT,
     VV_LONG,
     VV_ULONG,
-#ifdef _WIN32
+#if VV_HAVE_LLONG
     VV_LLONG,
+#endif
+#if VV_HAVE_ULLONG
     VV_ULLONG,
 #endif
     VV_FLOAT,
@@ -72,8 +78,10 @@ private:
     unsigned UI;
     long L;
     unsigned long UL;
-#ifdef _WIN32
+#if VV_HAVE_LLONG
     long long int LL;
+#endif
+#if VV_HAVE_ULLONG
     unsigned long long int ULL;
 #endif
     float F;
@@ -144,12 +152,14 @@ public:
     value.UL = val;
   }
 
-#ifdef _WIN32
+#if VV_HAVE_LLONG
   vvParam(const long long& val) : type(VV_LLONG)
   {
     value.LL = val;
   }
+#endif
 
+#if VV_HAVE_ULLONG
   vvParam(const unsigned long long& val) : type(VV_ULLONG)
   {
     value.ULL = val;
@@ -265,13 +275,15 @@ public:
     return value.UL;
   }
 
-#ifdef _WIN32
+#if VV_HAVE_LLONG
   long long asLlong() const
   {
     assert( type == VV_LLONG );
     return value.LL;
   }
+#endif
 
+#if VV_HAVE_ULLONG
   unsigned long long asUllong() const
   {
     assert( type == VV_ULLONG );
@@ -354,8 +366,10 @@ public:
   operator unsigned int() const { return asUint(); }
   operator long() const { return asLong(); }
   operator unsigned long() const { return asUlong(); }
-#ifdef _WIN32
+#if VV_HAVE_LLONG
   operator long long() const { return asLlong(); }
+#endif
+#if VV_HAVE_ULLONG
   operator unsigned long long() const { return asUllong(); }
 #endif
   operator float() const { return asFloat(); }
