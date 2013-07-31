@@ -11,11 +11,32 @@ ELSE(NORM_INCLUDE_DIRS AND NORM_LIBRARIES)
   FIND_PACKAGE(Protokit)
 
   FIND_PATH(NORM_INCLUDE_DIR normApi.h
+    PATHS 
+    $ENV{EXTERNLIBS}/norm/include
+    /Library/Frameworks
+    /Library/Frameworks
+    /usr/local
+    /usr
+    /sw # Fink
+    /opt/local # DarwinPorts
+    /opt/csw # Blastwave
+    /opt
     DOC "The directory where normApi.h resides"
     )
 
   FIND_LIBRARY(NORM_LIBRARY
-    NAMES NORM-1.4b3 norm
+    NAMES NORM-1.4b3 norm libnorm.a
+    PATHS
+    $ENV{EXTERNLIBS}/norm
+    ~/Library/Frameworks
+    /Library/Frameworks
+    /usr/local
+    /usr
+    /sw
+    /opt/local
+    /opt/csw
+    /opt
+    PATH_SUFFIXES lib lib64
     DOC "The norm-1.4b3 library" 
     )
 

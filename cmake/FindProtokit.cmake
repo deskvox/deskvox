@@ -8,10 +8,31 @@ IF(PROTOKIT_INCLUDE_DIR AND PROTOKIT_LIBRARIES)
 ELSE(PROTOKIT_INCLUDE_DIR AND PROTOKIT_LIBRARIES)
 
   FIND_PATH(PROTOKIT_INCLUDE_DIR protoApp.h
+    PATHS 
+    $ENV{EXTERNLIBS}/norm/include
+    /Library/Frameworks
+    /Library/Frameworks
+    /usr/local
+    /usr
+    /sw # Fink
+    /opt/local # DarwinPorts
+    /opt/csw # Blastwave
+    /opt
     DOC "The directory where protokit.h resides"
     )
 
-  FIND_LIBRARY(PROTOKIT_LIBRARY Protokit
+  FIND_LIBRARY(PROTOKIT_LIBRARY NAMES Protokit libProtokit.a
+    PATHS
+    $ENV{EXTERNLIBS}/norm
+    ~/Library/Frameworks
+    /Library/Frameworks
+    /usr/local
+    /usr
+    /sw
+    /opt/local
+    /opt/csw
+    /opt
+    PATH_SUFFIXES lib lib64
     DOC "The Protokit library"
     )
 
