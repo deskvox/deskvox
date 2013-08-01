@@ -27,9 +27,8 @@
 struct tf::PyramidBox::Impl
 {
   Impl() : ui(new Ui::PyramidBox) {}
-  ~Impl() { delete ui; }
 
-  Ui::PyramidBox* ui;
+  boost::shared_ptr<Ui::PyramidBox> ui;
   bool hascolor;
   vvColor color;
   vvVector3 top;
@@ -52,7 +51,6 @@ tf::PyramidBox::PyramidBox(QWidget* parent)
 
 tf::PyramidBox::~PyramidBox()
 {
-  delete impl;
 }
 
 void tf::PyramidBox::setHasColor(bool hascolor)

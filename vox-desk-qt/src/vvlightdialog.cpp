@@ -27,19 +27,26 @@
 
 #include <iostream>
 
+struct vvLightDialog::Impl
+{
+  Impl() : ui(new Ui::LightDialog) {}
+
+  boost::shared_ptr<Ui::LightDialog> ui;
+};
+
 vvLightDialog::vvLightDialog(QWidget* parent)
   : QDialog(parent)
-  , ui(new Ui_LightDialog)
+  , impl_(new Impl)
 {
-  ui->setupUi(this);
+  impl_->ui->setupUi(this);
 
-  connect(ui->enableBox, SIGNAL(toggled(bool)), this, SLOT(onEnableToggled(bool)));
-  connect(ui->showBox, SIGNAL(toggled(bool)), this, SIGNAL(showLightSource(bool)));
-  connect(ui->headlightBox, SIGNAL(toggled(bool)), this, SLOT(onEnableHeadlightToggled(bool)));
-  connect(ui->positionButton, SIGNAL(clicked()), this, SLOT(onEditPositionClicked()));
-  connect(ui->constSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onConstAttChanged(double)));
-  connect(ui->linearSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onLinearAttChanged(double)));
-  connect(ui->quadSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onQuadAttChanged(double)));
+  connect(impl_->ui->enableBox, SIGNAL(toggled(bool)), this, SLOT(onEnableToggled(bool)));
+  connect(impl_->ui->showBox, SIGNAL(toggled(bool)), this, SIGNAL(showLightSource(bool)));
+  connect(impl_->ui->headlightBox, SIGNAL(toggled(bool)), this, SLOT(onEnableHeadlightToggled(bool)));
+  connect(impl_->ui->positionButton, SIGNAL(clicked()), this, SLOT(onEditPositionClicked()));
+  connect(impl_->ui->constSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onConstAttChanged(double)));
+  connect(impl_->ui->linearSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onLinearAttChanged(double)));
+  connect(impl_->ui->quadSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onQuadAttChanged(double)));
 }
 
 vvLightDialog::~vvLightDialog()
@@ -53,20 +60,20 @@ void vvLightDialog::applySettings()
   if (settings.contains("canvas/lightattenuation"))
   {
     QVector3D qatt = settings.value("canvas/lightattenuation").value<QVector3D>();
-    ui->constSpinBox->setValue(qatt.x());
-    ui->linearSpinBox->setValue(qatt.y());
-    ui->quadSpinBox->setValue(qatt.z());
+    impl_->ui->constSpinBox->setValue(qatt.x());
+    impl_->ui->linearSpinBox->setValue(qatt.y());
+    impl_->ui->quadSpinBox->setValue(qatt.z());
   }
 
-  ui->enableBox->setChecked(settings.value("canvas/lighting").toBool());
+  impl_->ui->enableBox->setChecked(settings.value("canvas/lighting").toBool());
 }
 
 void vvLightDialog::onEnableToggled(bool checked)
 {
-  ui->showBox->setEnabled(checked);
-  ui->headlightBox->setEnabled(checked);
-  ui->positionButton->setEnabled(checked);
-  ui->attenuationBox->setEnabled(checked);
+  impl_->ui->showBox->setEnabled(checked);
+  impl_->ui->headlightBox->setEnabled(checked);
+  impl_->ui->positionButton->setEnabled(checked);
+  impl_->ui->attenuationBox->setEnabled(checked);
 
   QSettings settings;
   settings.setValue("canvas/lighting", checked);
@@ -83,30 +90,30 @@ void vvLightDialog::onEnableHeadlightToggled(bool checked)
 
 void vvLightDialog::onEditPositionClicked()
 {
-  if (ui->positionButton->text() == "Edit Position")
+  if (impl_->ui->positionButton->text() == "Edit Position")
   {
     emit editPositionToggled(true);
-    ui->positionButton->setText("Stop Editing");
+    impl_->ui->positionButton->setText("Stop Editing");
   }
   else
   {
     emit editPositionToggled(false);
-    ui->positionButton->setText("Edit Position");
+    impl_->ui->positionButton->setText("Edit Position");
   }
 }
 
 void vvLightDialog::onConstAttChanged(double value)
 {
-  emit attenuationChanged(vvVector3(value, ui->linearSpinBox->value(), ui->quadSpinBox->value()));
+  emit attenuationChanged(vvVector3(value, impl_->ui->linearSpinBox->value(), impl_->ui->quadSpinBox->value()));
 }
 
 void vvLightDialog::onLinearAttChanged(double value)
 {
-  emit attenuationChanged(vvVector3(ui->constSpinBox->value(), value, ui->quadSpinBox->value()));
+  emit attenuationChanged(vvVector3(impl_->ui->constSpinBox->value(), value, impl_->ui->quadSpinBox->value()));
 }
 
 void vvLightDialog::onQuadAttChanged(double value)
 {
-  emit attenuationChanged(vvVector3(ui->constSpinBox->value(), ui->linearSpinBox->value(), value));
+  emit attenuationChanged(vvVector3(impl_->ui->constSpinBox->value(), impl_->ui->linearSpinBox->value(), value));
 }
 

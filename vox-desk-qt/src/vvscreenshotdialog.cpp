@@ -30,22 +30,29 @@
 
 #include <QFileDialog>
 
+struct vvScreenshotDialog::Impl
+{
+  Impl() : ui(new Ui::ScreenshotDialog) {}
+
+  boost::shared_ptr<Ui::ScreenshotDialog> ui;
+};
+
 vvScreenshotDialog::vvScreenshotDialog(vvCanvas* canvas, QWidget* parent)
   : QDialog(parent)
-  , ui(new Ui_ScreenshotDialog)
+  , impl_(new Impl)
   , _canvas(canvas)
 {
   vvDebugMsg::msg(1, "vvScreenshotDialog::vvScreenshotDialog()");
 
-  ui->setupUi(this);
+  impl_->ui->setupUi(this);
 
-  ui->dirEdit->setText(QDir::currentPath());
+  impl_->ui->dirEdit->setText(QDir::currentPath());
 
   connect(_canvas, SIGNAL(resized(QSize)), this, SLOT(setCanvasSize(QSize)));
 
-  connect(ui->canvasSizeCheckBox, SIGNAL(toggled(bool)), this, SLOT(onCanvasSizeToggled(bool)));
-  connect(ui->browseButton, SIGNAL(clicked()), this, SLOT(onBrowseClicked()));
-  connect(ui->pictureButton, SIGNAL(clicked()), this, SLOT(onPictureClicked()));
+  connect(impl_->ui->canvasSizeCheckBox, SIGNAL(toggled(bool)), this, SLOT(onCanvasSizeToggled(bool)));
+  connect(impl_->ui->browseButton, SIGNAL(clicked()), this, SLOT(onBrowseClicked()));
+  connect(impl_->ui->pictureButton, SIGNAL(clicked()), this, SLOT(onPictureClicked()));
 }
 
 vvScreenshotDialog::~vvScreenshotDialog()
@@ -57,19 +64,19 @@ void vvScreenshotDialog::takePicture()
 {
   vvDebugMsg::msg(1, "vvScreenshotDialog::takePicture()");
 
-  if (ui->dirEdit->text().isEmpty())
+  if (impl_->ui->dirEdit->text().isEmpty())
   {
     vvDebugMsg::msg(0, "Directory empty");
     return;
   }
 
-  if (ui->baseNameEdit->text().isEmpty())
+  if (impl_->ui->baseNameEdit->text().isEmpty())
   {
     vvDebugMsg::msg(0, "Base file name empty");
     return;
   }
 
-  QFileInfo info(ui->dirEdit->text());
+  QFileInfo info(impl_->ui->dirEdit->text());
   if (!info.isDir())
   {
     vvDebugMsg::msg(0, "Invalid directory");
@@ -79,10 +86,10 @@ void vvScreenshotDialog::takePicture()
   int w = _canvas->width();
   int h = _canvas->height();
 
-  if (!ui->canvasSizeCheckBox->isChecked())
+  if (!impl_->ui->canvasSizeCheckBox->isChecked())
   {
-    w = ui->imgWidthEdit->text().toInt();
-    h = ui->imgHeightEdit->text().toInt();
+    w = impl_->ui->imgWidthEdit->text().toInt();
+    h = impl_->ui->imgHeightEdit->text().toInt();
   }
 
   if (w <= 0 || h <= 0)
@@ -107,7 +114,7 @@ void vvScreenshotDialog::takePicture()
   for (int i = 0; i < 100000; ++i)
   {
     QString suffix = "-" + QString("%2").arg(i, fieldWidth, base, QChar('0')) + ".tif";
-    QString filename = ui->dirEdit->text() + QDir::separator() + ui->baseNameEdit->text() + suffix;
+    QString filename = impl_->ui->dirEdit->text() + QDir::separator() + impl_->ui->baseNameEdit->text() + suffix;
     QFileInfo info(filename);
     if (!info.isFile())
     {
@@ -128,15 +135,15 @@ void vvScreenshotDialog::setCanvasSize(const QSize& size)
 {
   vvDebugMsg::msg(3, "vvScreenshotDialog::setCanvasSize()");
 
-  ui->canvasSizeLabel->setText(QString::number(size.width()) + " x " + QString::number(size.height()));
+  impl_->ui->canvasSizeLabel->setText(QString::number(size.width()) + " x " + QString::number(size.height()));
 }
 
 void vvScreenshotDialog::onCanvasSizeToggled(const bool checked)
 {
   vvDebugMsg::msg(3, "vvScreenshotDialog::onCanvasSizeToggled()");
 
-  ui->imgWidthEdit->setEnabled(!checked);
-  ui->imgHeightEdit->setEnabled(!checked);
+  impl_->ui->imgWidthEdit->setEnabled(!checked);
+  impl_->ui->imgHeightEdit->setEnabled(!checked);
 }
 
 void vvScreenshotDialog::onBrowseClicked()
@@ -145,7 +152,7 @@ void vvScreenshotDialog::onBrowseClicked()
 
   QString caption = tr("Screenshot Directory");
   QString dir;
-  ui->dirEdit->setText(QFileDialog::getExistingDirectory(this, caption, dir, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks));
+  impl_->ui->dirEdit->setText(QFileDialog::getExistingDirectory(this, caption, dir, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks));
 }
 
 void vvScreenshotDialog::onPictureClicked()

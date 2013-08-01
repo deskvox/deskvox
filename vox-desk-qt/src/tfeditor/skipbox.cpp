@@ -25,9 +25,8 @@
 struct tf::SkipBox::Impl
 {
   Impl() : ui(new Ui_SkipBox) {}
-  ~Impl() { delete ui; }
 
-  Ui_SkipBox* ui;
+  boost::shared_ptr<Ui_SkipBox> ui;
   vvVector3 size;
 };
 
@@ -42,7 +41,6 @@ tf::SkipBox::SkipBox(QWidget* parent)
 
 tf::SkipBox::~SkipBox()
 {
-  delete impl;
 }
 
 void tf::SkipBox::setSize(const vvVector3& size)

@@ -22,11 +22,12 @@
 #define VV_DIMENSIONDIALOG_H
 
 class vvCanvas;
-class Ui_DimensionDialog;
 
 #include <virvo/vvvecmath.h>
 
 #include <QDialog>
+
+#include <boost/shared_ptr.hpp>
 
 class vvDimensionDialog : public QDialog
 {
@@ -39,11 +40,10 @@ public:
    */
   void setInitialDist(const vvVector3& dist);
 private:
-  Ui_DimensionDialog* ui;
+  struct Impl;
+  boost::shared_ptr<Impl> impl_;
 
   vvCanvas* _canvas;
-
-  vvVector3 _initialDist; ///< should be assigned when a new file is loaded
 
   /*! update volume description with new dist
    */

@@ -25,7 +25,7 @@
 
 #include <QDialog>
 
-class Ui_MergeDialog;
+#include <boost/shared_ptr.hpp>
 
 class vvMergeDialog : public QDialog
 {
@@ -42,7 +42,8 @@ public:
   bool numFilesLimited() const;
   bool filesNumbered() const;
 private:
-  Ui_MergeDialog* ui;
+  struct Impl;
+  boost::shared_ptr<Impl> impl_;
 private slots:
   void onBrowseClicked();
   void onNumFilesToggled(bool checked);

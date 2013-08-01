@@ -98,7 +98,6 @@ vvRemoteClient::~vvRemoteClient()
     impl_->ownsock->disconnectFromHost();
   }
   delete impl_->ownsock;
-  delete impl_;
 }
 
 void vvRemoteClient::renderVolumeGL()

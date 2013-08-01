@@ -96,8 +96,6 @@ vvSoftImg::~vvSoftImg()
       glDeleteBuffers(1, &impl->pboName);
 #endif
    if (deleteData) delete[] data;
-
-   delete impl;
 }
 
 

@@ -25,6 +25,8 @@
 
 #include <QMainWindow>
 
+#include <boost/shared_ptr.hpp>
+
 class vvCanvas;
 class vvDimensionDialog;
 class vvLightDialog;
@@ -46,21 +48,8 @@ public:
   explicit vvMainWindow(const QString& filename, QWidget* parent = 0);
   ~vvMainWindow();
 private:
-  Ui_MainWindow* ui;
-
-  QList<vvPlugin*> _plugins;
-
-  vvCanvas* _canvas;
-  vvPrefDialog* _prefDialog;
-  vvDimensionDialog* _dimensionDialog;
-  vvMergeDialog* _mergeDialog;
-  vvScreenshotDialog* _screenshotDialog;
-  vvShortcutDialog* _shortcutDialog;
-  vvTFDialog* _tfDialog;
-  vvLightDialog* _lightDialog;
-  vvSliceViewer* _sliceViewer;
-  vvTimeStepDialog* _timeStepDialog;
-  vvVolInfoDialog* _volInfoDialog;
+  struct Impl;
+  boost::shared_ptr<Impl> impl_;
 
   void loadVolumeFile(const QString& filename);
   void mergeFiles(const QString& firstFile, int num, int increment, vvVolDesc::MergeType mergeType);

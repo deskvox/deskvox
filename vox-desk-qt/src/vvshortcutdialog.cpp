@@ -24,12 +24,19 @@
 
 #include <virvo/vvdebugmsg.h>
 
+struct vvShortcutDialog::Impl
+{
+  Impl() : ui(new Ui::ShortcutDialog) {}
+
+  boost::shared_ptr<Ui::ShortcutDialog> ui;
+};
+
 vvShortcutDialog::vvShortcutDialog(QWidget* parent)
   : QDialog(parent)
-  , ui(new Ui_ShortcutDialog)
+  , impl_(new Impl)
 {
   vvDebugMsg::msg(1, "vvShortcutDialog::vvShortcutDialog()");
 
-  ui->setupUi(this);
+  impl_->ui->setupUi(this);
 }
 

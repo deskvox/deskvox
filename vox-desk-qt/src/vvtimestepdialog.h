@@ -23,8 +23,9 @@
 
 #include <QDialog>
 
+#include <boost/shared_ptr.hpp>
+
 class vvCanvas;
-class Ui_TimeStepDialog;
 
 class vvTimeStepDialog : public QDialog
 {
@@ -33,9 +34,8 @@ public:
   vvTimeStepDialog(QWidget* parent = 0);
   ~vvTimeStepDialog();
 private:
-  Ui_TimeStepDialog* ui;
-
-  bool _playing;
+  struct Impl;
+  boost::shared_ptr<Impl> impl_;
 public slots:
   void setFrames(int frames);
   void setCurrentFrame(int frame);

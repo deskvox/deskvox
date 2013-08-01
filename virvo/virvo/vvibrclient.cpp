@@ -34,6 +34,7 @@
 
 #include "gl/util.h"
 
+#include <memory>
 #include <stdexcept>
 
 using std::cerr;
@@ -135,7 +136,6 @@ vvIbrClient::~vvIbrClient()
   glDeleteTextures(1, &_depthTex);
 
   delete _shader;
-  delete impl_;
 }
 
 vvRemoteClient::ErrorType vvIbrClient::render()

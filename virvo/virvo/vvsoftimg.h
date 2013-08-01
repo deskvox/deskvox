@@ -25,6 +25,8 @@
 #include "vvopengl.h"
 #include "vvinttypes.h"
 
+#include <boost/shared_ptr.hpp>
+
 class vvMatrix;
 
 /** Description of pixel image.
@@ -43,7 +45,7 @@ class VIRVOEXPORT vvSoftImg
 {
    private:
       struct Impl;
-      Impl* impl;
+      boost::shared_ptr<Impl> impl;
 
       enum AlignType                              /// alignment of images
       {

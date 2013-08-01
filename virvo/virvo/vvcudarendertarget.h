@@ -25,7 +25,7 @@
 
 #include "vvrendertarget.h"
 
-#include <memory>
+#include <boost/shared_ptr.hpp>
 
 
 namespace virvo
@@ -82,7 +82,7 @@ namespace virvo
 
     private:
         struct Impl;
-        std::auto_ptr<Impl> impl;
+        boost::shared_ptr<Impl> impl;
     };
 
 
@@ -136,7 +136,7 @@ namespace virvo
 
     private:
         struct Impl;
-        std::auto_ptr<Impl> impl;
+        boost::shared_ptr<Impl> impl;
     };
 
 

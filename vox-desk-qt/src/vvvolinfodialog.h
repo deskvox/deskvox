@@ -23,8 +23,9 @@
 
 #include <QDialog>
 
+#include <boost/shared_ptr.hpp>
+
 class vvVolDesc;
-class Ui_VolInfoDialog;
 
 class vvVolInfoDialog : public QDialog
 {
@@ -33,7 +34,8 @@ public:
   vvVolInfoDialog(QWidget* parent = 0);
   ~vvVolInfoDialog();
 private:
-  Ui_VolInfoDialog* ui;
+  struct Impl;
+  boost::shared_ptr<Impl> impl_;
 public slots:
   void onNewVolDesc(vvVolDesc* vd);
 private slots:

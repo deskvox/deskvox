@@ -25,10 +25,11 @@
 
 #include <QDialog>
 
+#include <boost/shared_ptr.hpp>
+
 class vvCanvas;
 class vvTFWidget;
 class vvVolDesc;
-class Ui_TFDialog;
 
 class vvTFDialog : public QDialog
 {
@@ -37,15 +38,10 @@ public:
   vvTFDialog(vvCanvas* canvas, QWidget* parent = 0);
   ~vvTFDialog();
 private:
-  Ui_TFDialog* ui;
-
-  /** pimpl idiom data for Qt graphics view */
-  struct QData;
-  QData* _qdata;
+  struct Impl;
+  boost::shared_ptr<Impl> impl_;
 
   vvCanvas* _canvas;
-
-  vvVector2f _zoomRange; ///< min/max for zoom area on data range
 
   void drawTF();
   void drawColorTexture();

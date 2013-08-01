@@ -30,7 +30,7 @@
 #include "vvcudarendertarget.h"
 #include "vvrenderer.h"
 
-#include <memory>
+#include <boost/shared_ptr.hpp>
 
 
 class vvVolDesc;
@@ -65,11 +65,7 @@ private:
   void initVolumeTexture();
 
   struct Impl;
-  std::auto_ptr<Impl> impl;
-
-private:
-  vvRayRend(vvRayRend const&); // = delete;
-  vvRayRend& operator =(vvRayRend const&); // = delete;
+  boost::shared_ptr<Impl> impl;
 };
 
 #include "vvrayrendfactory.h"

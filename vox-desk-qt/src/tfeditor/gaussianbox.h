@@ -25,6 +25,8 @@
 
 #include <QGroupBox>
 
+#include <boost/shared_ptr.hpp>
+
 namespace tf
 {
 class GaussianBox : public QGroupBox
@@ -40,7 +42,7 @@ public:
   void setOpacity(float opacity);
 private:
   struct Impl;
-  Impl* impl;
+  boost::shared_ptr<Impl> impl;
 private slots:
   void getColor();
   void emitSize(int sliderval);

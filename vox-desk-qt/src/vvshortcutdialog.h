@@ -23,7 +23,7 @@
 
 #include <QDialog>
 
-class Ui_ShortcutDialog;
+#include <boost/shared_ptr.hpp>
 
 class vvShortcutDialog : public QDialog
 {
@@ -31,7 +31,8 @@ class vvShortcutDialog : public QDialog
 public:
   vvShortcutDialog(QWidget* parent = 0);
 private:
-  Ui_ShortcutDialog* ui;
+  struct Impl;
+  boost::shared_ptr<Impl> impl_;
 };
 
 #endif

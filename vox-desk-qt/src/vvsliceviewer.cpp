@@ -33,6 +33,20 @@
 
 #define VV_UNUSED(x) ((void)(x))
 
+struct vvSliceViewer::Impl
+{
+  Impl()
+    : ui(new Ui::SliceViewer)
+    , slice(0)
+    , axis(vvVecmath::Z_AXIS)
+  {
+  }
+ 
+  boost::shared_ptr<Ui::SliceViewer> ui;
+  size_t slice;
+  vvVecmath::AxisType axis;
+};
+
 namespace
 {
 void clamp(size_t* slice, size_t slices)
@@ -59,23 +73,21 @@ QImage getSlice(vvVolDesc* vd, std::vector<uchar>* texture, size_t slice, vvVecm
 
 vvSliceViewer::vvSliceViewer(vvVolDesc* vd, QWidget* parent)
   : QDialog(parent)
-  , ui(new Ui_SliceViewer)
+  , impl_(new Impl)
   , _vd(vd)
-  , _slice(0)
-  , _axis(vvVecmath::Z_AXIS)
 {
-  ui->setupUi(this);
+  impl_->ui->setupUi(this);
 
-  connect(ui->sliceSlider, SIGNAL(sliderMoved(int)), this, SLOT(setSlice(int)));
-  connect(ui->xaxisButton, SIGNAL(clicked(bool)), this, SLOT(updateAxis(bool)));
-  connect(ui->yaxisButton, SIGNAL(clicked(bool)), this, SLOT(updateAxis(bool)));
-  connect(ui->zaxisButton, SIGNAL(clicked(bool)), this, SLOT(updateAxis(bool)));
-  connect(ui->horizontalBox, SIGNAL(clicked(bool)), this, SLOT(updateOrientation(bool)));
-  connect(ui->verticalBox, SIGNAL(clicked(bool)), this, SLOT(updateOrientation(bool)));
-  connect(ui->fwdButton, SIGNAL(clicked()), this, SLOT(onFwdClicked()));
-  connect(ui->fwdFwdButton, SIGNAL(clicked()), this, SLOT(onFwdFwdClicked()));
-  connect(ui->backButton, SIGNAL(clicked()), this, SLOT(onBackClicked()));
-  connect(ui->backBackButton, SIGNAL(clicked()), this, SLOT(onBackBackClicked()));
+  connect(impl_->ui->sliceSlider, SIGNAL(sliderMoved(int)), this, SLOT(setSlice(int)));
+  connect(impl_->ui->xaxisButton, SIGNAL(clicked(bool)), this, SLOT(updateAxis(bool)));
+  connect(impl_->ui->yaxisButton, SIGNAL(clicked(bool)), this, SLOT(updateAxis(bool)));
+  connect(impl_->ui->zaxisButton, SIGNAL(clicked(bool)), this, SLOT(updateAxis(bool)));
+  connect(impl_->ui->horizontalBox, SIGNAL(clicked(bool)), this, SLOT(updateOrientation(bool)));
+  connect(impl_->ui->verticalBox, SIGNAL(clicked(bool)), this, SLOT(updateOrientation(bool)));
+  connect(impl_->ui->fwdButton, SIGNAL(clicked()), this, SLOT(onFwdClicked()));
+  connect(impl_->ui->fwdFwdButton, SIGNAL(clicked()), this, SLOT(onFwdFwdClicked()));
+  connect(impl_->ui->backButton, SIGNAL(clicked()), this, SLOT(onBackClicked()));
+  connect(impl_->ui->backBackButton, SIGNAL(clicked()), this, SLOT(onBackBackClicked()));
 
   paint();
   updateUi();
@@ -84,19 +96,19 @@ vvSliceViewer::vvSliceViewer(vvVolDesc* vd, QWidget* parent)
 void vvSliceViewer::paint()
 {
   std::vector<uchar> texture;
-  QImage img = QImage(getSlice(_vd, &texture, _slice, _axis));
+  QImage img = QImage(getSlice(_vd, &texture, impl_->slice, impl_->axis));
   if (!img.isNull())
   {
-    img = img.scaled(ui->frame->width(), ui->frame->height());
-    if (ui->horizontalBox->isChecked() || ui->verticalBox->isChecked())
+    img = img.scaled(impl_->ui->frame->width(), impl_->ui->frame->height());
+    if (impl_->ui->horizontalBox->isChecked() || impl_->ui->verticalBox->isChecked())
     {
-      img = img.mirrored(ui->horizontalBox->isChecked(), ui->verticalBox->isChecked());
+      img = img.mirrored(impl_->ui->horizontalBox->isChecked(), impl_->ui->verticalBox->isChecked());
     }
     QPixmap pm = QPixmap::fromImage(img);
     QBrush br(pm);
     QPalette pal;
     pal.setBrush(QPalette::Window, br);
-    ui->frame->setPalette(pal);
+    impl_->ui->frame->setPalette(pal);
   }
 }
 
@@ -105,44 +117,44 @@ void vvSliceViewer::updateUi()
   size_t width;
   size_t height;
   size_t slices;
-  _vd->getVolumeSize(_axis, width, height, slices);
-  clamp(&_slice, slices);
+  _vd->getVolumeSize(impl_->axis, width, height, slices);
+  clamp(&impl_->slice, slices);
 
-  ui->resolutionLabel->setText(QString::number(width) + " x " + QString::number(height));
+  impl_->ui->resolutionLabel->setText(QString::number(width) + " x " + QString::number(height));
 
-  switch (_axis)
+  switch (impl_->axis)
   {
   case vvVecmath::X_AXIS:
-    ui->xaxisButton->setChecked(true);
-    ui->yaxisButton->setChecked(false);
-    ui->zaxisButton->setChecked(false);
+    impl_->ui->xaxisButton->setChecked(true);
+    impl_->ui->yaxisButton->setChecked(false);
+    impl_->ui->zaxisButton->setChecked(false);
     break;
   case vvVecmath::Y_AXIS:
-    ui->xaxisButton->setChecked(false);
-    ui->yaxisButton->setChecked(true);
-    ui->zaxisButton->setChecked(false);
+    impl_->ui->xaxisButton->setChecked(false);
+    impl_->ui->yaxisButton->setChecked(true);
+    impl_->ui->zaxisButton->setChecked(false);
     break;
   case vvVecmath::Z_AXIS:
-    ui->xaxisButton->setChecked(false);
-    ui->yaxisButton->setChecked(false);
-    ui->zaxisButton->setChecked(true);
+    impl_->ui->xaxisButton->setChecked(false);
+    impl_->ui->yaxisButton->setChecked(false);
+    impl_->ui->zaxisButton->setChecked(true);
     break;
   default:
     break;
   }
 
-  ui->sliceLabel->setText(QString::number(_slice + 1) + "/" + QString::number(slices));
-  ui->sliceSlider->setMinimum(0);
-  ui->sliceSlider->setMaximum(slices - 1);
-  ui->sliceSlider->setTickInterval(1);
-  ui->sliceSlider->setValue(_slice);
+  impl_->ui->sliceLabel->setText(QString::number(impl_->slice + 1) + "/" + QString::number(slices));
+  impl_->ui->sliceSlider->setMinimum(0);
+  impl_->ui->sliceSlider->setMaximum(slices - 1);
+  impl_->ui->sliceSlider->setTickInterval(1);
+  impl_->ui->sliceSlider->setValue(impl_->slice);
 }
 
 void vvSliceViewer::onNewVolDesc(vvVolDesc* vd)
 {
   _vd = vd;
-  _slice = 0;
-  _axis = vvVecmath::Z_AXIS;
+  impl_->slice = 0;
+  impl_->axis = vvVecmath::Z_AXIS;
   paint();
   updateUi();
 }
@@ -159,9 +171,9 @@ void vvSliceViewer::setSlice(int slice)
   size_t width;
   size_t height;
   size_t slices;
-  _vd->getVolumeSize(_axis, width, height, slices);
-  _slice = slice;
-  clamp(&_slice, slices);
+  _vd->getVolumeSize(impl_->axis, width, height, slices);
+  impl_->slice = slice;
+  clamp(&impl_->slice, slices);
   paint();
   updateUi();
 }
@@ -173,17 +185,17 @@ void vvSliceViewer::updateAxis(bool checked)
     return;
   }
 
-  if (QObject::sender() == ui->xaxisButton)
+  if (QObject::sender() == impl_->ui->xaxisButton)
   {
-    _axis = vvVecmath::X_AXIS;
+    impl_->axis = vvVecmath::X_AXIS;
   }
-  else if (QObject::sender() == ui->yaxisButton)
+  else if (QObject::sender() == impl_->ui->yaxisButton)
   {
-    _axis = vvVecmath::Y_AXIS;
+    impl_->axis = vvVecmath::Y_AXIS;
   }
-  else if (QObject::sender() == ui->zaxisButton)
+  else if (QObject::sender() == impl_->ui->zaxisButton)
   {
-    _axis = vvVecmath::Z_AXIS;
+    impl_->axis = vvVecmath::Z_AXIS;
   }
   paint();
   updateUi();
@@ -198,7 +210,7 @@ void vvSliceViewer::updateOrientation(bool checked)
 
 void vvSliceViewer::onFwdClicked()
 {
-  setSlice(_slice + 1);
+  setSlice(impl_->slice + 1);
 }
 
 void vvSliceViewer::onFwdFwdClicked()
@@ -209,7 +221,7 @@ void vvSliceViewer::onFwdFwdClicked()
 
 void vvSliceViewer::onBackClicked()
 {
-  setSlice(_slice - 1);
+  setSlice(impl_->slice - 1);
 }
 
 void vvSliceViewer::onBackBackClicked()

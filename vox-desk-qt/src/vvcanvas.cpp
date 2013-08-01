@@ -121,7 +121,6 @@ vvCanvas::~vvCanvas()
 {
   vvDebugMsg::msg(1, "vvCanvas::~vvCanvas()");
 
-  delete impl;
   delete _renderer;
   delete _vd;
 }

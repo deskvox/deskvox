@@ -25,8 +25,9 @@
 
 #include <QDialog>
 
+#include <boost/shared_ptr.hpp>
+
 class vvVolDesc;
-class Ui_SliceViewer;
 
 class vvSliceViewer : public QDialog
 {
@@ -34,11 +35,10 @@ class vvSliceViewer : public QDialog
 public:
   vvSliceViewer(vvVolDesc* vd, QWidget* parent = 0);
 private:
-  Ui_SliceViewer* ui;
+  struct Impl;
+  boost::shared_ptr<Impl> impl_;
 
   vvVolDesc* _vd;
-  size_t _slice;
-  vvVecmath::AxisType _axis;
 
   void paint();
   void updateUi();

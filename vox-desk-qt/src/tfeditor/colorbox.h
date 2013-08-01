@@ -24,6 +24,8 @@
 
 #include <QGroupBox>
 
+#include <boost/shared_ptr.hpp>
+
 namespace tf
 {
 class ColorBox : public QGroupBox
@@ -36,7 +38,7 @@ public:
   void setColor(const vvColor& color);
 private:
   struct Impl;
-  Impl* impl;
+  boost::shared_ptr<Impl> impl;
 private slots:
   void getColor();
 signals:

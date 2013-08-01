@@ -82,27 +82,31 @@ float datad2normd(const vvVector2f& zoomrange, float data)
 
 typedef QGraphicsRectItem Pin;
 
-struct vvTFDialog::QData
+struct vvTFDialog::Impl
 {
-  QData()
-    : colorscene(new MouseGraphicsScene)
+  Impl()
+    : ui(new Ui::TFDialog)
+    , colorscene(new MouseGraphicsScene)
     , colortex(new QGraphicsPixmapItem)
     , alphascene(new MouseGraphicsScene)
     , alphatex(new QGraphicsPixmapItem)
     , selected(NULL)
     , moving(NULL)
+    , zoomRange(virvo::Vec2f(0.0f, 1.0f))
   {
     colorscene->addItem(colortex);
     alphascene->addItem(alphatex);
   }
 
-  ~QData()
+  ~Impl()
   {
     delete colortex;
     delete alphatex;
     delete colorscene;
     delete alphascene;
   }
+
+  boost::shared_ptr<Ui::TFDialog> ui;
 
   MouseGraphicsScene* colorscene;
   QGraphicsPixmapItem* colortex;
@@ -117,56 +121,54 @@ struct vvTFDialog::QData
 
   std::map<Pin*, vvTFWidget*> pin2widgetmap;
   std::map<vvTFWidget*, Pin*> widget2pinmap;
+
+  vvVector2f zoomRange; ///< min/max for zoom area on data range
 };
 
 vvTFDialog::vvTFDialog(vvCanvas* canvas, QWidget* parent)
   : QDialog(parent)
-  , ui(new Ui_TFDialog)
-  , _qdata(new QData)
+  , impl_(new Impl)
   , _canvas(canvas)
-  , _zoomRange(vvVector2f(0.0f, 1.0f))
 {
   vvDebugMsg::msg(1, "vvTFDialog::vvTFDialog()");
 
-  ui->setupUi(this);
+  impl_->ui->setupUi(this);
 
-  ui->color1DView->setScene(_qdata->colorscene);
-  ui->alpha1DView->setScene(_qdata->alphascene);
+  impl_->ui->color1DView->setScene(impl_->colorscene);
+  impl_->ui->alpha1DView->setScene(impl_->alphascene);
 
-  connect(ui->colorButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
-  connect(ui->pyramidButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
-  connect(ui->gaussianButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
-  connect(ui->customButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
-  connect(ui->skipRangeButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
-  connect(ui->deleteButton, SIGNAL(clicked()), this, SLOT(onDeleteClicked()));
-  connect(ui->undoButton, SIGNAL(clicked()), this, SLOT(onUndoClicked()));
-  connect(ui->presetColorsBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onPresetColorsChanged(int)));
-  connect(ui->presetAlphaBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onPresetAlphaChanged(int)));
-  connect(ui->applyButton, SIGNAL(clicked()), this, SLOT(onApplyClicked()));
+  connect(impl_->ui->colorButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
+  connect(impl_->ui->pyramidButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
+  connect(impl_->ui->gaussianButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
+  connect(impl_->ui->customButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
+  connect(impl_->ui->skipRangeButton, SIGNAL(clicked()), this, SLOT(onNewWidget()));
+  connect(impl_->ui->deleteButton, SIGNAL(clicked()), this, SLOT(onDeleteClicked()));
+  connect(impl_->ui->undoButton, SIGNAL(clicked()), this, SLOT(onUndoClicked()));
+  connect(impl_->ui->presetColorsBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onPresetColorsChanged(int)));
+  connect(impl_->ui->presetAlphaBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onPresetAlphaChanged(int)));
+  connect(impl_->ui->applyButton, SIGNAL(clicked()), this, SLOT(onApplyClicked()));
   connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), this, SLOT(onNewVolDesc(vvVolDesc*)));
-  connect(ui->saveButton, SIGNAL(clicked()), this, SLOT(saveTF()));
-  connect(ui->loadButton, SIGNAL(clicked()), this, SLOT(loadTF()));
-  connect(_qdata->colorscene, SIGNAL(mouseMoved(QPointF, Qt::MouseButton)), this, SLOT(onTFMouseMove(QPointF, Qt::MouseButton)));
-  connect(_qdata->colorscene, SIGNAL(mousePressed(QPointF, Qt::MouseButton)), this, SLOT(onTFMousePress(QPointF, Qt::MouseButton)));
-  connect(_qdata->colorscene, SIGNAL(mouseReleased(QPointF, Qt::MouseButton)), this, SLOT(onTFMouseRelease(QPointF, Qt::MouseButton)));
-  connect(_qdata->alphascene, SIGNAL(mouseMoved(QPointF, Qt::MouseButton)), this, SLOT(onTFMouseMove(QPointF, Qt::MouseButton)));
-  connect(_qdata->alphascene, SIGNAL(mousePressed(QPointF, Qt::MouseButton)), this, SLOT(onTFMousePress(QPointF, Qt::MouseButton)));
-  connect(_qdata->alphascene, SIGNAL(mouseReleased(QPointF, Qt::MouseButton)), this, SLOT(onTFMouseRelease(QPointF, Qt::MouseButton)));
+  connect(impl_->ui->saveButton, SIGNAL(clicked()), this, SLOT(saveTF()));
+  connect(impl_->ui->loadButton, SIGNAL(clicked()), this, SLOT(loadTF()));
+  connect(impl_->colorscene, SIGNAL(mouseMoved(QPointF, Qt::MouseButton)), this, SLOT(onTFMouseMove(QPointF, Qt::MouseButton)));
+  connect(impl_->colorscene, SIGNAL(mousePressed(QPointF, Qt::MouseButton)), this, SLOT(onTFMousePress(QPointF, Qt::MouseButton)));
+  connect(impl_->colorscene, SIGNAL(mouseReleased(QPointF, Qt::MouseButton)), this, SLOT(onTFMouseRelease(QPointF, Qt::MouseButton)));
+  connect(impl_->alphascene, SIGNAL(mouseMoved(QPointF, Qt::MouseButton)), this, SLOT(onTFMouseMove(QPointF, Qt::MouseButton)));
+  connect(impl_->alphascene, SIGNAL(mousePressed(QPointF, Qt::MouseButton)), this, SLOT(onTFMousePress(QPointF, Qt::MouseButton)));
+  connect(impl_->alphascene, SIGNAL(mouseReleased(QPointF, Qt::MouseButton)), this, SLOT(onTFMouseRelease(QPointF, Qt::MouseButton)));
 }
 
 vvTFDialog::~vvTFDialog()
 {
   vvDebugMsg::msg(1, "vvTFDialog::~vvTFDialog()");
-
-  delete _qdata;
 }
 
 void vvTFDialog::drawTF()
 {
   drawColorTexture();
   drawAlphaTexture();
-  _qdata->colorscene->invalidate();
-  _qdata->alphascene->invalidate();
+  impl_->colorscene->invalidate();
+  impl_->alphascene->invalidate();
 }
 
 void vvTFDialog::drawColorTexture()
@@ -183,14 +185,14 @@ void vvTFDialog::drawColorTexture()
   if (!img.isNull())
   {
     QPixmap colorpm = QPixmap::fromImage(img);
-    _qdata->colortex->setPixmap(colorpm);
+    impl_->colortex->setPixmap(colorpm);
   }
 }
 
 void vvTFDialog::drawAlphaTexture()
 {
-  int w = ui->alpha1DView->width();
-  int h = ui->alpha1DView->height();
+  int w = impl_->ui->alpha1DView->width();
+  int h = impl_->ui->alpha1DView->height();
   assert(w >= 0 && h >= 0);
 
   std::vector<uchar> alphaTex;
@@ -200,32 +202,32 @@ void vvTFDialog::drawAlphaTexture()
   if (!img.isNull())
   {
     QPixmap alphapm = QPixmap::fromImage(img);
-    _qdata->alphatex->setPixmap(alphapm);
+    impl_->alphatex->setPixmap(alphapm);
   }
 }
 
 void vvTFDialog::clearPins()
 {
-  for (std::vector<Pin*>::const_iterator it = _qdata->colorpins.begin();
-       it != _qdata->colorpins.end(); ++it)
+  for (std::vector<Pin*>::const_iterator it = impl_->colorpins.begin();
+       it != impl_->colorpins.end(); ++it)
   {
-    _qdata->colorscene->removeItem(*it);
+    impl_->colorscene->removeItem(*it);
     delete *it;
   }
-  _qdata->colorpins.clear();
+  impl_->colorpins.clear();
 
-  for (std::vector<Pin*>::const_iterator it = _qdata->alphapins.begin();
-       it != _qdata->alphapins.end(); ++it)
+  for (std::vector<Pin*>::const_iterator it = impl_->alphapins.begin();
+       it != impl_->alphapins.end(); ++it)
   {
-    _qdata->alphascene->removeItem(*it);
+    impl_->alphascene->removeItem(*it);
     delete *it;
   }
-  _qdata->alphapins.clear();
+  impl_->alphapins.clear();
 
-  _qdata->pin2widgetmap.clear();
-  _qdata->widget2pinmap.clear();
-  _qdata->selected = NULL;
-  _qdata->moving = NULL;
+  impl_->pin2widgetmap.clear();
+  impl_->widget2pinmap.clear();
+  impl_->selected = NULL;
+  impl_->moving = NULL;
 }
 
 void vvTFDialog::createPins()
@@ -242,28 +244,28 @@ void vvTFDialog::createPin(vvTFWidget* w)
   bool selected = false; // TODO
 //  bool mouseover = false;
   float rectw = selected ? SELECTED_WIDTH : PIN_WIDTH;
-  float xpos = data2norm(_zoomRange, w->_pos[0]) * static_cast<float>(TF_WIDTH);
+  float xpos = data2norm(impl_->zoomRange, w->_pos[0]) * static_cast<float>(TF_WIDTH);
 
   Pin* pin = NULL;
   if (dynamic_cast<vvTFColor*>(w) != NULL) // draw color pin
   {
-    pin = _qdata->colorscene->addRect(-rectw * 0.5f, 0, rectw, COLORBAR_HEIGHT - 1, QPen(), QBrush(Qt::SolidPattern));
+    pin = impl_->colorscene->addRect(-rectw * 0.5f, 0, rectw, COLORBAR_HEIGHT - 1, QPen(), QBrush(Qt::SolidPattern));
     pin->setPos(xpos, 0);
-    _qdata->colorpins.push_back(pin);
+    impl_->colorpins.push_back(pin);
   }
   else if ((dynamic_cast<vvTFPyramid*>(w) != NULL) ||
            (dynamic_cast<vvTFBell*>(w) != NULL) ||
            (dynamic_cast<vvTFSkip*>(w) != NULL) ||
            (dynamic_cast<vvTFCustom*>(w) != NULL)) // draw alpha pin
   {
-    pin = _qdata->alphascene->addRect(-rectw * 0.5f, 0, rectw, TF_HEIGHT - COLORBAR_HEIGHT, QPen(), QBrush(Qt::SolidPattern));
+    pin = impl_->alphascene->addRect(-rectw * 0.5f, 0, rectw, TF_HEIGHT - COLORBAR_HEIGHT, QPen(), QBrush(Qt::SolidPattern));
     pin->setPos(xpos, 0);
-    _qdata->alphapins.push_back(pin);
+    impl_->alphapins.push_back(pin);
 
   }
-  _qdata->pin2widgetmap[pin] = w;
-  _qdata->widget2pinmap[w] = pin;
-  assert(_qdata->pin2widgetmap.size() == _qdata->widget2pinmap.size());
+  impl_->pin2widgetmap[pin] = w;
+  impl_->widget2pinmap[w] = pin;
+  assert(impl_->pin2widgetmap.size() == impl_->widget2pinmap.size());
 }
 
 void vvTFDialog::makeColorBar(std::vector<uchar>* colorBar, int width) const
@@ -275,7 +277,7 @@ void vvTFDialog::makeColorBar(std::vector<uchar>* colorBar, int width) const
   else // standard iso-range TF mode
   {
     // BGRA to fit QImage's little endian ARGB32 format
-    _canvas->getVolDesc()->tf.makeColorBar(width, &(*colorBar)[0], _zoomRange[0], _zoomRange[1], false, vvToolshed::VV_BGRA);
+    _canvas->getVolDesc()->tf.makeColorBar(width, &(*colorBar)[0], impl_->zoomRange[0], impl_->zoomRange[1], false, vvToolshed::VV_BGRA);
   }
 }
 
@@ -288,7 +290,7 @@ void vvTFDialog::makeAlphaTexture(std::vector<uchar>* alphaTex, int width, int h
   else // standard iso-range TF mode
   {
     // BGRA to fit QImage's little endian ARGB32 format
-    _canvas->getVolDesc()->tf.makeAlphaTexture(width, height, &(*alphaTex)[0], _zoomRange[0], _zoomRange[1], vvToolshed::VV_BGRA);
+    _canvas->getVolDesc()->tf.makeAlphaTexture(width, height, &(*alphaTex)[0], impl_->zoomRange[0], impl_->zoomRange[1], vvToolshed::VV_BGRA);
   }
 }
 
@@ -305,45 +307,45 @@ void vvTFDialog::onNewWidget()
 {
   vvTFWidget* widget = NULL;
 
-  if (QObject::sender() == ui->colorButton)
+  if (QObject::sender() == impl_->ui->colorButton)
   {
-    widget = new vvTFColor(vvColor(), norm2data(_zoomRange, 0.5f));
+    widget = new vvTFColor(vvColor(), norm2data(impl_->zoomRange, 0.5f));
   }
-  else if (QObject::sender() == ui->pyramidButton)
+  else if (QObject::sender() == impl_->ui->pyramidButton)
   {
-    widget = new vvTFPyramid(vvColor(), false, 1.0f, norm2data(_zoomRange, 0.5f), normd2datad(_zoomRange, 0.4f), normd2datad(_zoomRange, 0.2f));
+    widget = new vvTFPyramid(vvColor(), false, 1.0f, norm2data(impl_->zoomRange, 0.5f), normd2datad(impl_->zoomRange, 0.4f), normd2datad(impl_->zoomRange, 0.2f));
   }
-  else if (QObject::sender() == ui->gaussianButton)
+  else if (QObject::sender() == impl_->ui->gaussianButton)
   {
-    widget = new vvTFBell(vvColor(), false, 1.0f, norm2data(_zoomRange, 0.5f), normd2datad(_zoomRange, 0.2f));
+    widget = new vvTFBell(vvColor(), false, 1.0f, norm2data(impl_->zoomRange, 0.5f), normd2datad(impl_->zoomRange, 0.2f));
   }
-  else if (QObject::sender() == ui->customButton)
+  else if (QObject::sender() == impl_->ui->customButton)
   {
-    widget = new vvTFCustom(norm2data(_zoomRange, 0.5f), norm2data(_zoomRange, 0.5f));
+    widget = new vvTFCustom(norm2data(impl_->zoomRange, 0.5f), norm2data(impl_->zoomRange, 0.5f));
   }
-  else if (QObject::sender() == ui->skipRangeButton)
+  else if (QObject::sender() == impl_->ui->skipRangeButton)
   {
-    widget = new vvTFSkip(norm2data(_zoomRange, 0.5f), normd2datad(_zoomRange, 0.2f));
+    widget = new vvTFSkip(norm2data(impl_->zoomRange, 0.5f), normd2datad(impl_->zoomRange, 0.2f));
   }
 
   emit newWidget(widget);
   createPin(widget);
-  _qdata->selected = _qdata->widget2pinmap[widget];
+  impl_->selected = impl_->widget2pinmap[widget];
   updateSettingsBox();
   drawTF();
 }
 
 void vvTFDialog::onDeleteClicked()
 {
-  if(_canvas->getVolDesc()->tf._widgets.size() == 0 || _qdata->selected == NULL)
+  if(_canvas->getVolDesc()->tf._widgets.size() == 0 || impl_->selected == NULL)
   {
     return;
   }
   _canvas->getVolDesc()->tf.putUndoBuffer();
   _canvas->getVolDesc()->tf._widgets.erase(
     std::find(_canvas->getVolDesc()->tf._widgets.begin(), _canvas->getVolDesc()->tf._widgets.end(),
-      _qdata->pin2widgetmap[_qdata->selected]));
-  _qdata->selected = NULL;
+      impl_->pin2widgetmap[impl_->selected]));
+  impl_->selected = NULL;
   emitTransFunc();
   clearPins();
   createPins();
@@ -355,7 +357,7 @@ void vvTFDialog::onPresetColorsChanged(int index)
 {
   vvDebugMsg::msg(3, "vvTFDialog::onPresetColorsChanged()");
 
-  _canvas->getVolDesc()->tf.setDefaultColors(index, _zoomRange[0], _zoomRange[1]);
+  _canvas->getVolDesc()->tf.setDefaultColors(index, impl_->zoomRange[0], impl_->zoomRange[1]);
   emitTransFunc();
   clearPins();
   createPins();
@@ -366,7 +368,7 @@ void vvTFDialog::onPresetAlphaChanged(int index)
 {
   vvDebugMsg::msg(3, "vvTFDialog::onPresetAlphaChanged()");
 
-  _canvas->getVolDesc()->tf.setDefaultAlpha(index, _zoomRange[0], _zoomRange[1]);
+  _canvas->getVolDesc()->tf.setDefaultAlpha(index, impl_->zoomRange[0], impl_->zoomRange[1]);
   emitTransFunc();
   clearPins();
   createPins();
@@ -419,8 +421,8 @@ void vvTFDialog::loadTF()
 
 void vvTFDialog::onColor(const QColor& color)
 {
-  assert(_qdata->selected != NULL);
-  vvTFWidget* wid = _qdata->pin2widgetmap[_qdata->selected];
+  assert(impl_->selected != NULL);
+  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
   if (vvTFColor* c = dynamic_cast<vvTFColor*>(wid))
   {
     c->setColor(vvColor(color.redF(), color.greenF(), color.blueF()));
@@ -443,8 +445,8 @@ void vvTFDialog::onColor(const QColor& color)
 
 void vvTFDialog::onHasOwnColor(bool hascolor)
 {
-  assert(_qdata->selected != NULL);
-  vvTFWidget* wid = _qdata->pin2widgetmap[_qdata->selected];
+  assert(impl_->selected != NULL);
+  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
   if (vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(wid))
   {
     p->setOwnColor(hascolor);
@@ -463,8 +465,8 @@ void vvTFDialog::onHasOwnColor(bool hascolor)
 
 void vvTFDialog::onOpacity(float opacity)
 {
-  assert(_qdata->selected != NULL);
-  vvTFWidget* wid = _qdata->pin2widgetmap[_qdata->selected];
+  assert(impl_->selected != NULL);
+  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
   if (vvTFBell* b = dynamic_cast<vvTFBell*>(wid))
   {
     b->setOpacity(opacity);
@@ -483,8 +485,8 @@ void vvTFDialog::onOpacity(float opacity)
 
 void vvTFDialog::onSize(const vvVector3& size)
 {
-  assert(_qdata->selected != NULL);
-  vvTFWidget* wid = _qdata->pin2widgetmap[_qdata->selected];
+  assert(impl_->selected != NULL);
+  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
   if (vvTFBell* b = dynamic_cast<vvTFBell*>(wid))
   {
     b->setSize(size);
@@ -503,8 +505,8 @@ void vvTFDialog::onSize(const vvVector3& size)
 
 void vvTFDialog::onTop(const vvVector3& top)
 {
-  assert(_qdata->selected != NULL);
-  vvTFWidget* wid = _qdata->pin2widgetmap[_qdata->selected];
+  assert(impl_->selected != NULL);
+  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
   vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(wid);
   assert(p != NULL);
   p->setTop(top);
@@ -514,8 +516,8 @@ void vvTFDialog::onTop(const vvVector3& top)
 
 void vvTFDialog::onBottom(const vvVector3& bottom)
 {
-  assert(_qdata->selected != NULL);
-  vvTFWidget* wid = _qdata->pin2widgetmap[_qdata->selected];
+  assert(impl_->selected != NULL);
+  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
   vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(wid);
   assert(p != NULL);
   p->setBottom(bottom);
@@ -525,11 +527,11 @@ void vvTFDialog::onBottom(const vvVector3& bottom)
 
 void vvTFDialog::onTFMouseMove(QPointF pos, Qt::MouseButton /* button */)
 {
-  std::vector<Pin*>& pins = QObject::sender() == _qdata->colorscene ? _qdata->colorpins : _qdata->alphapins;
+  std::vector<Pin*>& pins = QObject::sender() == impl_->colorscene ? impl_->colorpins : impl_->alphapins;
 
-  if (_qdata->moving != NULL)
+  if (impl_->moving != NULL)
   {
-    std::vector<Pin*>::iterator it = std::find(pins.begin(), pins.end(), _qdata->moving);
+    std::vector<Pin*>::iterator it = std::find(pins.begin(), pins.end(), impl_->moving);
     if (it == pins.end())
     {
       return;
@@ -539,11 +541,11 @@ void vvTFDialog::onTFMouseMove(QPointF pos, Qt::MouseButton /* button */)
     x = ts_clamp(x, 0.0f, static_cast<float>(TF_WIDTH));
     QPointF pinpos = (*it)->pos();
     (*it)->setPos(x, pinpos.y());
-    vvTFWidget* w = _qdata->pin2widgetmap[*it];
+    vvTFWidget* w = impl_->pin2widgetmap[*it];
     if (w != NULL)
     {
       x /= static_cast<float>(TF_WIDTH);
-      x = norm2data(_zoomRange, x);
+      x = norm2data(impl_->zoomRange, x);
       vvVector3 oldpos = w->pos();
       w->setPos(x, oldpos[1], oldpos[2]);
     }
@@ -571,11 +573,11 @@ void vvTFDialog::onTFMouseMove(QPointF pos, Qt::MouseButton /* button */)
 
 void vvTFDialog::onTFMousePress(QPointF pos, Qt::MouseButton button)
 {
-  const std::vector<Pin*>& pins = QObject::sender() == _qdata->colorscene ? _qdata->colorpins : _qdata->alphapins;
+  const std::vector<Pin*>& pins = QObject::sender() == impl_->colorscene ? impl_->colorpins : impl_->alphapins;
 
   if (button == Qt::LeftButton)
   {
-    _qdata->selected = NULL;
+    impl_->selected = NULL;
     for (std::vector<Pin*>::const_iterator it = pins.begin();
          it != pins.end(); ++it)
     {
@@ -583,10 +585,10 @@ void vvTFDialog::onTFMousePress(QPointF pos, Qt::MouseButton button)
       float maxx = (*it)->pos().x() + PIN_WIDTH * 0.5f + 1;
       if (pos.x() >= minx && pos.x() <= maxx)
       {
-        _qdata->moving = *it;
-        if (_qdata->selected != *it)
+        impl_->moving = *it;
+        if (impl_->selected != *it)
         {
-          _qdata->selected = *it;
+          impl_->selected = *it;
         }
         break;
       }
@@ -597,7 +599,7 @@ void vvTFDialog::onTFMousePress(QPointF pos, Qt::MouseButton button)
 
 void vvTFDialog::onTFMouseRelease(QPointF /* pos */, Qt::MouseButton /* button */)
 {
-  _qdata->moving = NULL;
+  impl_->moving = NULL;
 }
 
 void vvTFDialog::emitTransFunc()
@@ -608,31 +610,31 @@ void vvTFDialog::emitTransFunc()
 void vvTFDialog::updateSettingsBox()
 {
   // clear settings layout
-  if (QLayoutItem* item = ui->settingsLayout->takeAt(0))
+  if (QLayoutItem* item = impl_->ui->settingsLayout->takeAt(0))
   {
     QWidget* widget = item->widget();
     delete widget;
   }
 
-  Pin* selected = _qdata->selected;
+  Pin* selected = impl_->selected;
   if (selected == NULL)
   {
     return;
   }
 
   // new settings box
-  vvTFWidget* w = _qdata->pin2widgetmap[selected];
+  vvTFWidget* w = impl_->pin2widgetmap[selected];
   if (vvTFColor* c = dynamic_cast<vvTFColor*>(w))
   {
     tf::ColorBox* cb = new tf::ColorBox(this);
-    ui->settingsLayout->addWidget(cb);
+    impl_->ui->settingsLayout->addWidget(cb);
     cb->setColor(c->color());
     connect(cb, SIGNAL(color(const QColor&)), this, SLOT(onColor(const QColor&)));
   }
   else if (vvTFBell* b = dynamic_cast<vvTFBell*>(w))
   {
     tf::GaussianBox* gb = new tf::GaussianBox(this);
-    ui->settingsLayout->addWidget(gb);
+    impl_->ui->settingsLayout->addWidget(gb);
     gb->setHasColor(b->hasOwnColor());
     gb->setColor(b->color());
     gb->setSize(b->size());
@@ -645,7 +647,7 @@ void vvTFDialog::updateSettingsBox()
   else if (vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(w))
   {
     tf::PyramidBox* pb = new tf::PyramidBox(this);
-    ui->settingsLayout->addWidget(pb);
+    impl_->ui->settingsLayout->addWidget(pb);
     pb->setHasColor(p->hasOwnColor());
     pb->setColor(p->color());
     pb->setTop(p->top());
@@ -660,7 +662,7 @@ void vvTFDialog::updateSettingsBox()
   else if (vvTFSkip* s = dynamic_cast<vvTFSkip*>(w))
   {
     tf::SkipBox* sb = new tf::SkipBox(this);
-    ui->settingsLayout->addWidget(sb);
+    impl_->ui->settingsLayout->addWidget(sb);
     sb->setSize(s->size());
     connect(sb, SIGNAL(size(const vvVector3&)), this, SLOT(onSize(const vvVector3&)));
   }

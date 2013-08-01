@@ -23,6 +23,8 @@
 
 #include "vvrenderer.h"
 
+#include <boost/shared_ptr.hpp>
+
 #include <vector>
 
 class vvSoftRayRend : public vvRenderer
@@ -46,7 +48,7 @@ private:
   }; 
 
   struct Impl;
-  Impl* impl;
+  boost::shared_ptr<Impl> impl;
 
   Thread* _firstThread;
   std::vector<Thread*> _threads;

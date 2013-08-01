@@ -27,9 +27,8 @@
 struct tf::ColorBox::Impl
 {
   Impl() : ui(new Ui::ColorBox) {}
-  ~Impl() { delete ui; }
 
-  Ui::ColorBox* ui;
+  boost::shared_ptr<Ui::ColorBox> ui;
   vvColor color;
 };
 
@@ -44,7 +43,6 @@ tf::ColorBox::ColorBox(QWidget* parent)
 
 tf::ColorBox::~ColorBox()
 {
-  delete impl;
 }
 
 void tf::ColorBox::setColor(const vvColor& color)

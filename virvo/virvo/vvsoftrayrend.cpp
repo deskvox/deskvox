@@ -40,17 +40,8 @@
 #include <cstring>
 #include <queue>
 
-#ifdef _MSC_VER
-int round(double x)
-{
-	return (int)(x+0.5);
-}
-// boost does not work for me on windows
-/*
 #include <boost/math/special_functions/round.hpp>
 using namespace boost::math;
-*/
-#endif
 
 typedef std::vector<float, virvo::mem::aligned_allocator<float, CACHE_LINE> > vecf;
 
@@ -341,8 +332,6 @@ vvSoftRayRend::~vvSoftRayRend()
 
     delete *it;
   }
-
-  delete impl;
 }
 
 void vvSoftRayRend::renderVolumeGL()

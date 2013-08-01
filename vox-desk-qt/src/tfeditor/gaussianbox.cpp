@@ -27,9 +27,8 @@
 struct tf::GaussianBox::Impl
 {
   Impl() : ui(new Ui::GaussianBox) {}
-  ~Impl() { delete ui; }
 
-  Ui::GaussianBox* ui;
+  boost::shared_ptr<Ui::GaussianBox> ui;
   bool hascolor;
   vvColor color;
   vvVector3 size;
@@ -50,7 +49,6 @@ tf::GaussianBox::GaussianBox(QWidget* parent)
 
 tf::GaussianBox::~GaussianBox()
 {
-  delete impl->ui;
 }
 
 void tf::GaussianBox::setHasColor(bool hascolor)

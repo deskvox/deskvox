@@ -34,6 +34,8 @@
 #include <QList>
 #include <QMouseEvent>
 
+#include <boost/shared_ptr.hpp>
+
 class vvInteractor;
 class vvPlugin;
 class QTimer;
@@ -65,7 +67,7 @@ protected:
   void mouseReleaseEvent(QMouseEvent* event);
 private:
   struct Impl;
-  Impl* impl;
+  boost::shared_ptr<Impl> impl;
 
   vvVolDesc* _vd;
   vvRenderer* _renderer;

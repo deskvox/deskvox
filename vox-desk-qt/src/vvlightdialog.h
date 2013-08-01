@@ -26,7 +26,7 @@
 
 #include <QDialog>
 
-class Ui_LightDialog;
+#include <boost/shared_ptr.hpp>
 
 class vvLightDialog : public QDialog
 {
@@ -37,7 +37,8 @@ public:
 
   void applySettings();
 private:
-  Ui_LightDialog* ui;
+  struct Impl;
+  boost::shared_ptr<Impl> impl_;
 private slots:
   void onEnableToggled(bool checked);
   void onEnableHeadlightToggled(bool checked);

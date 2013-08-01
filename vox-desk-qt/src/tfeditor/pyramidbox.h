@@ -25,6 +25,8 @@
 
 #include <QGroupBox>
 
+#include <boost/shared_ptr.hpp>
+
 namespace tf
 {
 class PyramidBox : public QGroupBox
@@ -41,7 +43,7 @@ public:
   void setOpacity(float opacity);
 private:
   struct Impl;
-  Impl* impl;
+  boost::shared_ptr<Impl> impl;
 private slots:
   void getColor();
   void emitTop(int sliderval);

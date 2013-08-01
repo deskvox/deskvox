@@ -29,17 +29,24 @@
 #include <QFileInfo>
 #include <QMessageBox>
 
+struct vvMergeDialog::Impl
+{
+  Impl() : ui(new Ui::MergeDialog) {}
+
+  boost::shared_ptr<Ui::MergeDialog> ui;
+};
+
 vvMergeDialog::vvMergeDialog(QWidget* parent)
   : QDialog(parent)
-  , ui(new Ui_MergeDialog)
+  , impl_(new Impl)
 {
   vvDebugMsg::msg(1, "vvMergeDialog::vvMergeDialog()");
 
-  ui->setupUi(this);
+  impl_->ui->setupUi(this);
 
-  connect(ui->browseButton, SIGNAL(clicked()), this, SLOT(onBrowseClicked()));
-  connect(ui->numFilesCheckBox, SIGNAL(toggled(bool)), this, SLOT(onNumFilesToggled(bool)));
-  connect(ui->helpButton, SIGNAL(clicked()), this, SLOT(onHelpClicked()));
+  connect(impl_->ui->browseButton, SIGNAL(clicked()), this, SLOT(onBrowseClicked()));
+  connect(impl_->ui->numFilesCheckBox, SIGNAL(toggled(bool)), this, SLOT(onNumFilesToggled(bool)));
+  connect(impl_->ui->helpButton, SIGNAL(clicked()), this, SLOT(onHelpClicked()));
 }
 
 vvMergeDialog::~vvMergeDialog()
@@ -51,14 +58,14 @@ QString vvMergeDialog::getFilename() const
 {
   vvDebugMsg::msg(3, "vvMergeDialog::getFilename()");
 
-  return ui->filenameEdit->text();
+  return impl_->ui->filenameEdit->text();
 }
 
 int vvMergeDialog::getNumFiles() const
 {
   vvDebugMsg::msg(3, "vvMergeDialog::getNumFiles()");
 
-  const QString numFiles = ui->numFilesEdit->text();
+  const QString numFiles = impl_->ui->numFilesEdit->text();
   return numFiles.toInt();
 }
 
@@ -66,7 +73,7 @@ int vvMergeDialog::getFileIncrement() const
 {
   vvDebugMsg::msg(3, "vvMergeDialog::getFileIncrement()");
 
-  const QString fileInc = ui->fileIncEdit->text();
+  const QString fileInc = impl_->ui->fileIncEdit->text();
   return fileInc.toInt();
 }
 
@@ -74,11 +81,11 @@ vvVolDesc::MergeType vvMergeDialog::getMergeType() const
 {
   vvDebugMsg::msg(3, "vvMergeDialog::getMergeType()");
 
-  if (ui->slicesRadioButton->isChecked())
+  if (impl_->ui->slicesRadioButton->isChecked())
   {
     return vvVolDesc::VV_MERGE_SLABS2VOL;
   }
-  else if (ui->animationRadioButton->isChecked())
+  else if (impl_->ui->animationRadioButton->isChecked())
   {
     return vvVolDesc::VV_MERGE_VOL2ANIM;
   }
@@ -92,14 +99,14 @@ bool vvMergeDialog::numFilesLimited() const
 {
   vvDebugMsg::msg(3, "vvMergeDialog::numFilesLimited()");
 
-  return ui->numFilesCheckBox->isChecked();
+  return impl_->ui->numFilesCheckBox->isChecked();
 }
 
 bool vvMergeDialog::filesNumbered() const
 {
   vvDebugMsg::msg(3, "vvMergeDialog::filesNumbered()");
 
-  return ui->incFilesCheckBox->isChecked();
+  return impl_->ui->incFilesCheckBox->isChecked();
 }
 
 void vvMergeDialog::onBrowseClicked()
@@ -108,10 +115,10 @@ void vvMergeDialog::onBrowseClicked()
 
   QString caption = tr("Merge Files");
   QString dir;
-  QFileInfo info(ui->filenameEdit->text());
+  QFileInfo info(impl_->ui->filenameEdit->text());
   if (info.isDir())
   {
-    dir = ui->filenameEdit->text();
+    dir = impl_->ui->filenameEdit->text();
   }
   else if (info.isFile())
   {
@@ -124,7 +131,7 @@ void vvMergeDialog::onBrowseClicked()
   QString filename = QFileDialog::getOpenFileName(this, caption, dir, filter);
   if (!filename.isEmpty())
   {
-    ui->filenameEdit->setText(filename);
+    impl_->ui->filenameEdit->setText(filename);
   }
 }
 
@@ -132,7 +139,7 @@ void vvMergeDialog::onNumFilesToggled(const bool checked)
 {
   vvDebugMsg::msg(3, "vvMergeDialog::onNumFilesToggled");
 
-  ui->numFilesEdit->setEnabled(checked);
+  impl_->ui->numFilesEdit->setEnabled(checked);
 }
 
 void vvMergeDialog::onHelpClicked()

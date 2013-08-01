@@ -26,13 +26,20 @@
 
 #include <iostream>
 
+struct vvVolInfoDialog::Impl
+{
+  Impl() : ui(new Ui::VolInfoDialog) {}
+
+  boost::shared_ptr<Ui::VolInfoDialog> ui;
+};
+
 vvVolInfoDialog::vvVolInfoDialog(QWidget* parent)
   : QDialog(parent)
-  , ui(new Ui_VolInfoDialog)
+  , impl_(new Impl)
 {
-  ui->setupUi(this);
+  impl_->ui->setupUi(this);
 
-  connect(ui->iconButton, SIGNAL(clicked()), this, SLOT(onUpdateIconClicked()));
+  connect(impl_->ui->iconButton, SIGNAL(clicked()), this, SLOT(onUpdateIconClicked()));
 }
 
 vvVolInfoDialog::~vvVolInfoDialog()
@@ -41,25 +48,25 @@ vvVolInfoDialog::~vvVolInfoDialog()
 
 void vvVolInfoDialog::onNewVolDesc(vvVolDesc* vd)
 {
-  ui->filenameEdit->setText(vd->getFilename());
-  ui->slicesWidthLabel->setText(QString::number(vd->vox[0]));
-  ui->slicesHeightLabel->setText(QString::number(vd->vox[1]));
-  ui->slicesDepthLabel->setText(QString::number(vd->vox[2]));
-  ui->timeStepsLabel->setText(QString::number(vd->frames));
-  ui->bpsLabel->setText(QString::number(vd->bpc));
-  ui->channelsLabel->setText(QString::number(vd->chan));
-  ui->voxelsLabel->setText(QString::number(vd->getFrameVoxels()));
-  ui->bytesLabel->setText(QString::number(vd->getFrameBytes()));
-  ui->distXLabel->setText(QString::number(vd->dist[0]));
-  ui->distYLabel->setText(QString::number(vd->dist[1]));
-  ui->distZLabel->setText(QString::number(vd->dist[2]));
-  ui->pminLabel->setText(QString::number(vd->real[0]));
-  ui->pmaxLabel->setText(QString::number(vd->real[1]));
+  impl_->ui->filenameEdit->setText(vd->getFilename());
+  impl_->ui->slicesWidthLabel->setText(QString::number(vd->vox[0]));
+  impl_->ui->slicesHeightLabel->setText(QString::number(vd->vox[1]));
+  impl_->ui->slicesDepthLabel->setText(QString::number(vd->vox[2]));
+  impl_->ui->timeStepsLabel->setText(QString::number(vd->frames));
+  impl_->ui->bpsLabel->setText(QString::number(vd->bpc));
+  impl_->ui->channelsLabel->setText(QString::number(vd->chan));
+  impl_->ui->voxelsLabel->setText(QString::number(vd->getFrameVoxels()));
+  impl_->ui->bytesLabel->setText(QString::number(vd->getFrameBytes()));
+  impl_->ui->distXLabel->setText(QString::number(vd->dist[0]));
+  impl_->ui->distYLabel->setText(QString::number(vd->dist[1]));
+  impl_->ui->distZLabel->setText(QString::number(vd->dist[2]));
+  impl_->ui->pminLabel->setText(QString::number(vd->real[0]));
+  impl_->ui->pmaxLabel->setText(QString::number(vd->real[1]));
   float fmin;
   float fmax;
   vd->findMinMax(0, fmin, fmax);
-  ui->minLabel->setText(QString::number(fmin));
-  ui->maxLabel->setText(QString::number(fmax));
+  impl_->ui->minLabel->setText(QString::number(fmin));
+  impl_->ui->maxLabel->setText(QString::number(fmax));
 }
 
 void vvVolInfoDialog::onUpdateIconClicked()

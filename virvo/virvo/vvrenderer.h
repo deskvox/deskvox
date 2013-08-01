@@ -26,7 +26,7 @@
 #include "vvinttypes.h"
 #include "vvrendertarget.h"
 
-#include <memory>
+#include <boost/shared_ptr.hpp>
 
 class vvVolDesc;
 
@@ -347,7 +347,7 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
 
 private:
     // The current render target
-    std::auto_ptr<virvo::RenderTarget> renderTarget_;
+    boost::shared_ptr<virvo::RenderTarget> renderTarget_;
 };
 #endif
 

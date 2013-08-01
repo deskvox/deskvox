@@ -23,8 +23,9 @@
 
 #include <QDialog>
 
+#include <boost/shared_ptr.hpp>
+
 class vvCanvas;
-class Ui_ScreenshotDialog;
 
 class vvScreenshotDialog : public QDialog
 {
@@ -33,7 +34,8 @@ public:
   vvScreenshotDialog(vvCanvas* canvas, QWidget* parent = 0);
   ~vvScreenshotDialog();
 private:
-  Ui_ScreenshotDialog* ui;
+  struct Impl;
+  boost::shared_ptr<Impl> impl_;
 
   vvCanvas* _canvas;
 

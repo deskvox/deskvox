@@ -25,6 +25,8 @@
 #include "vvrenderer.h"
 #include "vvvecmath.h"
 
+#include <boost/shared_ptr.hpp>
+
 class vvSocketIO;
 class vvTcpSocket;
 class vvImage;
@@ -83,7 +85,7 @@ private:
   vvRemoteClient& operator=(vvRemoteClient const& rhs);
 
   struct Impl;
-  Impl* impl_;
+  boost::shared_ptr<Impl> impl_;
 
   ErrorType sendVolume(vvVolDesc*& vd);
 };

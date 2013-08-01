@@ -26,27 +26,38 @@
 
 #include <QSettings>
 
+struct vvTimeStepDialog::Impl
+{
+  Impl()
+    : ui(new Ui::TimeStepDialog)
+    , playing(false)
+  {
+  }
+
+  boost::shared_ptr<Ui::TimeStepDialog> ui;
+  bool playing;
+};
+
 vvTimeStepDialog::vvTimeStepDialog(QWidget* parent)
   : QDialog(parent)
-  , ui(new Ui_TimeStepDialog)
-  , _playing(false)
+  , impl_(new Impl)
 {
   vvDebugMsg::msg(1, "vvTimeStepDialog::vvTimeStepDialog()");
 
-  ui->setupUi(this);
+  impl_->ui->setupUi(this);
 
-  ui->playButton->setFocus(Qt::OtherFocusReason);
+  impl_->ui->playButton->setFocus(Qt::OtherFocusReason);
 
   QSettings settings;
-  ui->frameRateBox->setValue(settings.value("timestepdialog/fps").value<double>());
+  impl_->ui->frameRateBox->setValue(settings.value("timestepdialog/fps").value<double>());
 
-  connect(ui->frameRateBox, SIGNAL(valueChanged(double)), this, SLOT(onFrameRateChanged()));
-  connect(ui->playButton, SIGNAL(clicked()), this, SLOT(onPlayClicked()));
-  connect(ui->backButton, SIGNAL(clicked()), this, SIGNAL(back()));
-  connect(ui->fwdButton, SIGNAL(clicked()), this, SIGNAL(fwd()));
-  connect(ui->backBackButton, SIGNAL(clicked()), this, SIGNAL(first()));
-  connect(ui->fwdFwdButton, SIGNAL(clicked()), this, SIGNAL(last()));
-  connect(ui->timeStepSlider, SIGNAL(sliderMoved(int)), this, SIGNAL(valueChanged(int)));
+  connect(impl_->ui->frameRateBox, SIGNAL(valueChanged(double)), this, SLOT(onFrameRateChanged()));
+  connect(impl_->ui->playButton, SIGNAL(clicked()), this, SLOT(onPlayClicked()));
+  connect(impl_->ui->backButton, SIGNAL(clicked()), this, SIGNAL(back()));
+  connect(impl_->ui->fwdButton, SIGNAL(clicked()), this, SIGNAL(fwd()));
+  connect(impl_->ui->backBackButton, SIGNAL(clicked()), this, SIGNAL(first()));
+  connect(impl_->ui->fwdFwdButton, SIGNAL(clicked()), this, SIGNAL(last()));
+  connect(impl_->ui->timeStepSlider, SIGNAL(sliderMoved(int)), this, SIGNAL(valueChanged(int)));
 }
 
 vvTimeStepDialog::~vvTimeStepDialog()
@@ -58,17 +69,17 @@ void vvTimeStepDialog::setFrames(const int frames)
 {
   vvDebugMsg::msg(3, "vvTimeStepDialog::setFrames()");
 
-  ui->timeStepLabel->setText(QString::number(ui->timeStepSlider->value() + 1) + "/" + QString::number(frames));
-  ui->timeStepSlider->setMaximum(frames - 1);
-  ui->timeStepSlider->setTickInterval(1);
+  impl_->ui->timeStepLabel->setText(QString::number(impl_->ui->timeStepSlider->value() + 1) + "/" + QString::number(frames));
+  impl_->ui->timeStepSlider->setMaximum(frames - 1);
+  impl_->ui->timeStepSlider->setTickInterval(1);
 }
 
 void vvTimeStepDialog::setCurrentFrame(const int frame)
 {
   vvDebugMsg::msg(3, "vvTimeStepDialog::setCurrentFrame()");
 
-  ui->timeStepLabel->setText(QString::number(frame + 1) + "/" + QString::number(ui->timeStepSlider->maximum() + 1));
-  ui->timeStepSlider->setValue(frame);
+  impl_->ui->timeStepLabel->setText(QString::number(frame + 1) + "/" + QString::number(impl_->ui->timeStepSlider->maximum() + 1));
+  impl_->ui->timeStepSlider->setValue(frame);
 }
 
 void vvTimeStepDialog::togglePlayback()
@@ -96,17 +107,17 @@ void vvTimeStepDialog::onPlayClicked()
 {
   vvDebugMsg::msg(3, "vvTimeStepDialog::onPlayClicked()");
 
-  if (!_playing)
+  if (!impl_->playing)
   {
-    ui->playButton->setText("||");
-    emit play(ui->frameRateBox->value());    
+    impl_->ui->playButton->setText("||");
+    emit play(impl_->ui->frameRateBox->value());    
   }
   else
   {
-    ui->playButton->setText(">");
+    impl_->ui->playButton->setText(">");
     emit pause();
   }
-  _playing = !_playing;
+  impl_->playing = !impl_->playing;
 }
 
 void vvTimeStepDialog::onFrameRateChanged()
@@ -114,12 +125,12 @@ void vvTimeStepDialog::onFrameRateChanged()
   vvDebugMsg::msg(3, "vvTimeStepDialog::onFrameRateChanged()");
 
   QSettings settings;
-  settings.setValue("timestepdialog/fps", ui->frameRateBox->value());
+  settings.setValue("timestepdialog/fps", impl_->ui->frameRateBox->value());
 
-  if (_playing)
+  if (impl_->playing)
   {
     // re-emit play signal
-    emit play(ui->frameRateBox->value());
+    emit play(impl_->ui->frameRateBox->value());
   }
 }
 
