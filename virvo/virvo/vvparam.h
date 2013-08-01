@@ -50,12 +50,8 @@ public:
     VV_UINT,
     VV_LONG,
     VV_ULONG,
-#if VV_HAVE_LLONG
     VV_LLONG,
-#endif
-#if VV_HAVE_ULLONG
     VV_ULLONG,
-#endif
     VV_FLOAT,
     VV_VEC2,
     VV_VEC2I,
