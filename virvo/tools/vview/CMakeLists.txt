@@ -1,3 +1,4 @@
+find_package(Boost REQUIRED)
 #find_package(GLUT_REQUIRED)
 
 find_package(GLUT)
@@ -6,7 +7,7 @@ if(NOT GLUT_FOUND)
   return()
 endif()
 
-
+deskvox_use_package(Boost)
 deskvox_use_package(GLUT)
 
 deskvox_add_tool(vview

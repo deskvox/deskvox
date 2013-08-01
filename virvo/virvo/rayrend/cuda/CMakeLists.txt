@@ -1,9 +1,11 @@
 if(DESKVOX_USE_CUDA)
 
+find_package(Boost REQUIRED)
 find_package(CUDA)
 find_package(GLEW REQUIRED)
 find_package(Pthreads REQUIRED)
 
+deskvox_use_package(Boost)
 deskvox_use_package(GLEW)
 deskvox_use_package(Pthreads)
 deskvox_use_package(CUDA INCDIRS ${CUDA_TOOLKIT_INCLUDE})

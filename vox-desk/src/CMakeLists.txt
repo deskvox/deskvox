@@ -1,9 +1,11 @@
+find_package(Boost REQUIRED)
 find_package(FOX)
 if (NOT FOX_FOUND)
   return()
 endif()
 find_package(OpenGL REQUIRED)
 
+deskvox_use_package(Boost)
 deskvox_use_package(FOX)
 deskvox_use_package(OpenGL)
 

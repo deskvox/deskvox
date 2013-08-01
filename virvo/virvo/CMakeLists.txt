@@ -1,5 +1,5 @@
 find_package(Bonjour)
-find_package(Boost)
+find_package(Boost REQUIRED)
 find_package(Cg)
 find_package(CUDA)
 find_package(FFMPEG)

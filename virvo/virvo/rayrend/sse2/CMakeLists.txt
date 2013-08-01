@@ -1,4 +1,4 @@
-find_package(Boost)
+find_package(Boost REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Pthreads REQUIRED)
 

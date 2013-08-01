@@ -33,6 +33,8 @@
 
 #include <cassert>
 
+#include <boost/any.hpp>
+
 
 class vvParam
 {
@@ -68,293 +70,264 @@ public:
   };
 
 private:
-  union Value {
-    bool B;
-    char C;
-    unsigned char UC;
-    short S;
-    unsigned short US;
-    int I;
-    unsigned UI;
-    long L;
-    unsigned long UL;
-#if VV_HAVE_LLONG
-    long long int LL;
-#endif
-#if VV_HAVE_ULLONG
-    unsigned long long int ULL;
-#endif
-    float F;
-    const vvVector2* Vec2;
-    const vvVector2i* Vec2I;
-    const vvVector3* Vec3;
-    const vvVector3i* Vec3I;
-    const vvVector4* Vec4;
-    const vvsize3* Size3;
-    const vvColor* Color;
-    const vvAABB* AABB;
-    const vvAABBi* AABBI;
-    const vvAABBs* AABBS;
-  };
-
   // The type of this parameter
   Type type;
   // The value of this parameter
-  Value value;
+  boost::any value;
 
 public:
   vvParam() : type(VV_EMPTY)
   {
   }
 
-  vvParam(const bool& val) : type(VV_BOOL)
+  vvParam(const bool& val)
+    : type(VV_BOOL)
+    , value(val)
   {
-    value.B = val;
   }
 
-  vvParam(const char& val) : type(VV_CHAR)
+  vvParam(const char& val)
+    : type(VV_CHAR)
+    , value(val)
   {
-    value.C = val;
   }
 
-  vvParam(const unsigned char& val) : type(VV_UCHAR)
+  vvParam(const unsigned char& val)
+    : type(VV_UCHAR)
+    , value(val)
   {
-    value.UC = val;
   }
 
-  vvParam(const short& val) : type(VV_SHORT)
+  vvParam(const short& val)
+    : type(VV_SHORT)
+    , value(val)
   {
-    value.S = val;
   }
 
-  vvParam(const unsigned short& val) : type(VV_USHORT)
+  vvParam(const unsigned short& val)
+    : type(VV_USHORT)
+    , value(val)
   {
-    value.US = val;
   }
 
-  vvParam(const int& val) : type(VV_INT)
+  vvParam(const int& val)
+    : type(VV_INT)
+    , value(val)
   {
-    value.I = val;
   }
 
-  vvParam(const unsigned& val) : type(VV_UINT)
+  vvParam(const unsigned& val)
+    : type(VV_UINT)
+    , value(val)
   {
-    value.UI = val;
   }
 
-  vvParam(const long& val) : type(VV_LONG)
+  vvParam(const long& val)
+    : type(VV_LONG)
+    , value(val)
   {
-    value.L = val;
   }
 
-  vvParam(const unsigned long& val) : type(VV_ULONG)
+  vvParam(const unsigned long& val)
+    : type(VV_ULONG)
+    , value(val)
   {
-    value.UL = val;
   }
 
 #if VV_HAVE_LLONG
-  vvParam(const long long& val) : type(VV_LLONG)
+  vvParam(const long long& val)
+    : type(VV_LLONG)
+    , value(val)
   {
-    value.LL = val;
   }
 #endif
 
 #if VV_HAVE_ULLONG
-  vvParam(const unsigned long long& val) : type(VV_ULLONG)
+  vvParam(const unsigned long long& val)
+    : type(VV_ULLONG)
+    , value(val)
   {
-    value.ULL = val;
   }
 #endif
 
-  vvParam(const float& val) : type(VV_FLOAT)
+  vvParam(const float& val)
+    : type(VV_FLOAT)
+    , value(val)
   {
-    value.F = val;
   }
 
-  vvParam(const vvVector2& val) : type(VV_VEC2)
+  vvParam(const vvVector2& val)
+    : type(VV_VEC2)
+    , value(val)
   {
-    value.Vec2 = &val;
   }
 
-  vvParam(const vvVector2i& val) : type(VV_VEC2I)
+  vvParam(const vvVector2i& val)
+    : type(VV_VEC2I)
+    , value(val)
   {
-    value.Vec2I = &val;
   }
 
-  vvParam(const vvVector3& val) : type(VV_VEC3)
+  vvParam(const vvVector3& val)
+    : type(VV_VEC3)
+    , value(val)
   {
-    value.Vec3 = &val;
   }
 
-  vvParam(const vvVector3i& val) : type(VV_VEC3I)
+  vvParam(const vvVector3i& val)
+    : type(VV_VEC3I)
+    , value(val)
   {
-    value.Vec3I = &val;
   }
 
-  vvParam(const vvVector4& val) : type(VV_VEC4)
+  vvParam(const vvVector4& val)
+    : type(VV_VEC4)
+    , value(val)
   {
-    value.Vec4 = &val;
   }
 
-  vvParam(const vvsize3& val) : type(VV_SIZE3)
+  vvParam(const vvsize3& val)
+    : type(VV_SIZE3)
+    , value(val)
   {
-    value.Size3 = &val;
   }
 
-  vvParam(const vvColor& val) : type(VV_COLOR)
+  vvParam(const vvColor& val)
+    : type(VV_COLOR)
+    , value(val)
   {
-    value.Color = &val;
   }
   
-  vvParam(const vvAABB& val) : type(VV_AABB)
+  vvParam(const vvAABB& val)
+    : type(VV_AABB)
+    , value(val)
   {
-    value.AABB = &val;
   }
 
-  vvParam(const vvAABBi& val) : type(VV_AABBI)
+  vvParam(const vvAABBi& val)
+    : type(VV_AABBI)
+    , value(val)
   {
-    value.AABBI = &val;
   }
 
-  vvParam(const vvAABBs& val) : type(VV_AABBS)
+  vvParam(const vvAABBs& val)
+    : type(VV_AABBS)
+    , value(val)
   {
-    value.AABBS = &val;
   }
 
   bool asBool() const
   {
-    assert( type == VV_BOOL );
-    return value.B;
+    return boost::any_cast<bool>(value);
   }
 
   char asChar() const
   {
-    assert( type == VV_CHAR );
-    return value.C;
+    return boost::any_cast<char>(value);
   }
 
   unsigned char asUchar() const
   {
-    assert( type == VV_UCHAR );
-    return value.UC;
+    return boost::any_cast<unsigned char>(value);
   }
 
   short asShort() const
   {
-    assert( type == VV_SHORT );
-    return value.S;
+    return boost::any_cast<short>(value);
   }
 
   unsigned short asUshort() const
   {
-    assert( type == VV_USHORT );
-    return value.US;
+    return boost::any_cast<unsigned short>(value);
   }
 
   int asInt() const
   {
-    assert( type == VV_INT );
-    return value.I;
+    return boost::any_cast<int>(value);
   }
 
   unsigned int asUint() const
   {
-    assert( type == VV_UINT );
-    return value.UI;
+    return boost::any_cast<unsigned int>(value);
   }
 
   long asLong() const
   {
-    assert( type == VV_LONG );
-    return value.L;
+    return boost::any_cast<long>(value);
   }
 
   unsigned long asUlong() const
   {
-    assert( type == VV_ULONG );
-    return value.UL;
+    return boost::any_cast<unsigned long>(value);
   }
 
 #if VV_HAVE_LLONG
   long long asLlong() const
   {
-    assert( type == VV_LLONG );
-    return value.LL;
+    return boost::any_cast<long long>(value);
   }
 #endif
 
 #if VV_HAVE_ULLONG
   unsigned long long asUllong() const
   {
-    assert( type == VV_ULLONG );
-    return value.ULL;
+    return boost::any_cast<unsigned long long>(value);
   }
 #endif
 
   float asFloat() const
   {
-    assert( type == VV_FLOAT );
-    return value.F;
+    return boost::any_cast<float>(value);
   }
 
-  const vvVector2& asVec2() const
+  vvVector2 asVec2() const
   {
-    assert( type == VV_VEC2 );
-    return *value.Vec2;
+    return boost::any_cast<vvVector2>(value);
   }
 
-  const vvVector2i& asVec2i() const
+  vvVector2i asVec2i() const
   {
-    assert( type == VV_VEC2I);
-    return *value.Vec2I;
+    return boost::any_cast<vvVector2i>(value);
   }
 
-  const vvVector3& asVec3() const
+  vvVector3 asVec3() const
   {
-    assert( type == VV_VEC3 );
-    return *value.Vec3;
+    return boost::any_cast<vvVector3>(value);
   }
 
-  const vvVector3i& asVec3i() const
+  vvVector3i asVec3i() const
   {
-    assert( type == VV_VEC3I );
-    return *value.Vec3I;
+    return boost::any_cast<vvVector3i>(value);
   }
 
-  const vvVector4& asVec4() const
+  vvVector4 asVec4() const
   {
-    assert( type == VV_VEC4 );
-    return *value.Vec4;
+    return boost::any_cast<vvVector4>(value);
   }
 
-  const vvsize3& asSize3() const
+  vvsize3 asSize3() const
   {
-    assert( type == VV_SIZE3 );
-    return *value.Size3;
+    return boost::any_cast<vvsize3>(value);
   }
 
-  const vvColor& asColor() const
+  vvColor asColor() const
   {
-    assert( type == VV_COLOR );
-    return *value.Color;
+    return boost::any_cast<vvColor>(value);
   }
   
-  const vvAABB& asAABB() const
+  vvAABB asAABB() const
   {
-    assert( type == VV_AABB );
-    return *value.AABB;
+    return boost::any_cast<vvAABB>(value);
   }
 
-  const vvAABBi& asAABBi() const
+  vvAABBi asAABBi() const
   {
-    assert( type == VV_AABBI );
-    return *value.AABBI;
+    return boost::any_cast<vvAABBi>(value);
   }
 
-  const vvAABBs& asAABBs() const
+  vvAABBs asAABBs() const
   {
-    assert( type == VV_AABBS );
-    return *value.AABBS;
+    return boost::any_cast<vvAABBs>(value);
   }
 
   operator bool() const { return asBool(); }
@@ -373,16 +346,16 @@ public:
   operator unsigned long long() const { return asUllong(); }
 #endif
   operator float() const { return asFloat(); }
-  operator const vvVector2&() const { return asVec2(); }
-  operator const vvVector2i&() const { return asVec2i(); }
-  operator const vvVector3&() const { return asVec3(); }
-  operator const vvVector3i&() const { return asVec3i(); }
-  operator const vvVector4&() const { return asVec4(); }
-  operator const vvsize3&() const { return asSize3(); }
-  operator const vvColor&() const { return asColor(); }
-  operator const vvAABB&() const { return asAABB(); }
-  operator const vvAABBi&() const { return asAABBi(); }
-  operator const vvAABBs&() const { return asAABBs(); }
+  operator vvVector2() const { return asVec2(); }
+  operator vvVector2i() const { return asVec2i(); }
+  operator vvVector3() const { return asVec3(); }
+  operator vvVector3i() const { return asVec3i(); }
+  operator vvVector4() const { return asVec4(); }
+  operator vvsize3() const { return asSize3(); }
+  operator vvColor() const { return asColor(); }
+  operator vvAABB() const { return asAABB(); }
+  operator vvAABBi() const { return asAABBi(); }
+  operator vvAABBs() const { return asAABBs(); }
 
   // Returns the type of this parameter
   Type getType() const { return type; }

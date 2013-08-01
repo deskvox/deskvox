@@ -1,7 +1,9 @@
 find_qt()
 
+find_package(Boost REQUIRED)
 find_package(GLEW REQUIRED)
 
+deskvox_use_package(Boost)
 deskvox_use_package(GLEW)
 
 deskvox_link_libraries(virvo)
