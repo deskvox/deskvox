@@ -27,6 +27,8 @@
 
 #include "private/vvgltools.h"
 
+#include <limits>
+
 using std::cerr;
 using std::endl;
 
@@ -209,8 +211,10 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
       if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getUint64(value[0]) == vvSocket::VV_OK
        && _socketio->getUint64(value[1]) == vvSocket::VV_OK && _socketio->getUint64(value[2]) == vvSocket::VV_OK)
       {
-        // little endian...
-        assert((value[0] & 0x0000FFFF) == value[0] && (value[1] & 0x0000FFFF) == value[1] && (value[2] & 0x0000FFFF) == value[2]);
+        assert(value[0] <= std::numeric_limits<size_t>::max());
+        assert(value[1] <= std::numeric_limits<size_t>::max());
+        assert(value[2] <= std::numeric_limits<size_t>::max());
+
         vvsize3 svalue(static_cast<size_t>(value[0]), static_cast<size_t>(value[1]), static_cast<size_t>(value[2]));
         renderer->setParameter((vvRenderState::ParameterType)param, svalue);
       }
