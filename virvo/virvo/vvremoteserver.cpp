@@ -205,43 +205,10 @@ bool vvRemoteServer::processEvent(virvo::RemoteEvent event, vvRenderer* renderer
   case virvo::ParameterSize3:
     {
       int32_t param;
-      if (_socketio->getInt32(param) == vvSocket::VV_OK)
+      vvBaseVector3<uint64_t> value;
+      if (_socketio->getInt32(param) == vvSocket::VV_OK && _socketio->getUint64(value[0]) == vvSocket::VV_OK
+       && _socketio->getUint64(value[1]) == vvSocket::VV_OK && _socketio->getUint64(value[2]) == vvSocket::VV_OK)
       {
-        vvsize3 value;
-        uint32_t sizeofsize_t = 0;
-        if (_socketio->getUint32(sizeofsize_t) == vvSocket::VV_OK)
-        {
-          if (sizeofsize_t == 8)
-          {
-            vvBaseVector3<uint64_t> tmp;
-            if (_socketio->getUint64(tmp[0]) == vvSocket::VV_OK
-             && _socketio->getUint64(tmp[1]) == vvSocket::VV_OK
-             && _socketio->getUint64(tmp[2]) == vvSocket::VV_OK)
-            {
-              for (size_t i = 0; i < 3; ++i)
-              {
-                value[i] = tmp[i];
-              }
-            }
-          }
-          else if(sizeofsize_t == 4)
-          {
-            vvBaseVector3<uint32_t> tmp;
-            if (_socketio->getUint32(tmp[0]) == vvSocket::VV_OK
-             && _socketio->getUint32(tmp[1]) == vvSocket::VV_OK
-             && _socketio->getUint32(tmp[2]) == vvSocket::VV_OK)
-            {
-              for (size_t i = 0; i < 3; ++i)
-              {
-                value[i] = tmp[i];
-              }
-            }
-          }
-          else
-          {
-            assert(0);
-          }
-        }
         renderer->setParameter((vvRenderState::ParameterType)param, value);
       }
     }

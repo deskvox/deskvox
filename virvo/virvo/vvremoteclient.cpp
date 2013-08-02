@@ -283,16 +283,12 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
 
   if (value.isa(vvParam::VV_ULONG))
   {
-#ifdef __LP64__
     if (_socketIO->putEvent(virvo::ParameterUint64) == vvSocket::VV_OK)
     {
       _socketIO->putInt32(static_cast<int32_t>(param));
       _socketIO->putUint64(value);
     }
     return;
-#else
-    assert(0);
-#endif
   }
 
   if (value.isa(vvParam::VV_FLOAT))
@@ -337,19 +333,14 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
 
   if (value.isa(vvParam::VV_SIZE3))
   {
-#ifdef __LP64__
     if (_socketIO->putEvent(virvo::ParameterSize3) == vvSocket::VV_OK)
     {
       _socketIO->putInt32(static_cast<int32_t>(param));
-      _socketIO->putUint32(static_cast<uint32_t>(sizeof(size_t)));
       _socketIO->putUint64(value.asSize3()[0]);
       _socketIO->putUint64(value.asSize3()[1]);
       _socketIO->putUint64(value.asSize3()[2]);
     }
     return;
-#else
-    assert(0);
-#endif
   }
 
   if (value.isa(vvParam::VV_AABBI))
