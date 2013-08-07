@@ -43,6 +43,7 @@
 #include <QApplication>
 #include <QByteArray>
 #include <QColorDialog>
+#include <QCoreApplication>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QList>
@@ -748,6 +749,9 @@ int main(int argc, char** argv)
   vvDebugMsg::setDebugLevel(0);
 
   QApplication a(argc, argv);
+
+  QCoreApplication::setOrganizationName("DeskVOX");
+  QCoreApplication::setApplicationName("DeskVOX");
 
   // parse command line
   QString filename;
