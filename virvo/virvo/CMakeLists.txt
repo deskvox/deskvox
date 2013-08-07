@@ -179,7 +179,8 @@ set(VIRVO_HEADERS
 )
 
 set(VIRVO_SOURCES
-  private/vvcompress.cpp
+  private/vvcompress_jpeg.cpp
+  private/vvcompress_snappy.cpp
   private/vvgltools.cpp
   private/vvibrimage.cpp
   private/vvimage.cpp

@@ -36,6 +36,23 @@ namespace virvo
 class CompressedVector;
 
 
+//--------------------------------------------------------------------------------------------------
+// Snappy
+//--------------------------------------------------------------------------------------------------
+
+VVAPI bool encodeSnappy(std::vector<unsigned char>& data);
+
+VVAPI bool decodeSnappy(std::vector<unsigned char>& data);
+
+VVAPI bool encodeSnappy(CompressedVector& data);
+
+VVAPI bool decodeSnappy(CompressedVector& data);
+
+
+//--------------------------------------------------------------------------------------------------
+// JPEG
+//--------------------------------------------------------------------------------------------------
+
 struct JPEGOptions
 {
     // encode: [in] The pixel format of the input image
@@ -54,15 +71,6 @@ struct JPEGOptions
     // decode: [ignored]
     int quality;
 };
-
-
-VVAPI bool encodeSnappy(std::vector<unsigned char>& data);
-
-VVAPI bool decodeSnappy(std::vector<unsigned char>& data);
-
-VVAPI bool encodeSnappy(CompressedVector& data);
-
-VVAPI bool decodeSnappy(CompressedVector& data);
 
 VVAPI bool encodeJPEG(std::vector<unsigned char>& data, JPEGOptions const& options);
 

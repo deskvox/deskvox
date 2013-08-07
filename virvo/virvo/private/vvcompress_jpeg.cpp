@@ -26,19 +26,6 @@
 #include "vvconfig.h"
 #endif
 
-#include "vvimage.h"
-#include "../vvpixelformat.h"
-
-#include <assert.h>
-#include <setjmp.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdexcept>
-
-#ifdef HAVE_SNAPPY
-#include <snappy.h>
-#endif
-
 #ifdef HAVE_JPEGTURBO
 #include <jpeglib.h>
 #if !defined(LIBJPEG_TURBO_VERSION)
@@ -50,109 +37,16 @@
 #endif
 
 
-//--------------------------------------------------------------------------------------------------
-// Snappy
-//--------------------------------------------------------------------------------------------------
-
-
-#ifdef HAVE_SNAPPY
-
-
-bool virvo::encodeSnappy(std::vector<unsigned char>& data)
-{
-    if (data.empty())
-        return true;
-
-    std::vector<unsigned char> compressed(snappy::MaxCompressedLength(data.size()));
-
-    size_t len = 0;
-
-    snappy::RawCompress((char const*)&data[0], data.size(), (char*)&compressed[0], &len);
-
-    compressed.resize(len);
-
-    data.swap(compressed);
-
-    return true;
-}
-
-
-bool virvo::decodeSnappy(std::vector<unsigned char>& data)
-{
-    if (data.empty())
-        return true;
-
-    size_t len = 0;
-
-    if (!snappy::GetUncompressedLength((char const*)&data[0], data.size(), &len))
-        return false;
-
-    std::vector<unsigned char> uncompressed(len);
-
-    if (!snappy::RawUncompress((char const*)&data[0], data.size(), (char*)&uncompressed[0]))
-        return false;
-
-    data.swap(uncompressed);
-
-    return true;
-}
-
-
-#else
-
-
-bool virvo::encodeSnappy(std::vector<unsigned char>& /*data*/)
-{
-    return false;
-}
-
-
-bool virvo::decodeSnappy(std::vector<unsigned char>& /*data*/)
-{
-    return false;
-}
-
-
-#endif
-
-
-bool virvo::encodeSnappy(CompressedVector& data)
-{
-    if (data.getCompressionType() != Compress_None)
-        return false;
-
-    if (encodeSnappy(data.vector()))
-    {
-        data.setCompressionType(Compress_Snappy);
-        return true;
-    }
-
-    return false;
-}
-
-
-bool virvo::decodeSnappy(CompressedVector& data)
-{
-    if (data.getCompressionType() != Compress_Snappy)
-        return false;
-
-    if (decodeSnappy(data.vector()))
-    {
-        data.setCompressionType(Compress_None);
-        return true;
-    }
-
-    return false;
-}
-
-
-
-//--------------------------------------------------------------------------------------------------
-// JPEG
-//--------------------------------------------------------------------------------------------------
-
-
 #ifdef HAVE_JPEGTURBO
+
+
+#include "vvimage.h"
+
+#include <assert.h>
+#include <setjmp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdexcept>
 
 
 #ifdef _MSC_VER
@@ -501,7 +395,7 @@ bool virvo::decodeJPEG(std::vector<unsigned char>& data, JPEGOptions& options)
 #endif
 
 
-#else
+#else // HAVE_JPEGTURBO
 
 
 bool virvo::encodeJPEG(std::vector<unsigned char>& /*data*/, JPEGOptions const& /*options*/)
@@ -516,7 +410,7 @@ bool virvo::decodeJPEG(std::vector<unsigned char>& /*data*/, JPEGOptions& /*opti
 }
 
 
-#endif
+#endif // !HAVE_JPEGTURBO
 
 
 bool virvo::encodeJPEG(CompressedVector& data, JPEGOptions const& options)
