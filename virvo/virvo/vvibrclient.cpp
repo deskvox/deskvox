@@ -184,7 +184,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   bool matrixChanged = (!currentImgMatrix.equal(_imgMatrix));
 
   glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
   vvMatrix reprojectionMatrix;
   if (!matrixChanged)
