@@ -27,6 +27,7 @@
 #endif
 
 #ifdef HAVE_JPEGTURBO
+#include <stdio.h>
 #include <jpeglib.h>
 #if !defined(LIBJPEG_TURBO_VERSION)
 #undef HAVE_JPEGTURBO
@@ -42,7 +43,6 @@
 
 #include <assert.h>
 #include <setjmp.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
 
