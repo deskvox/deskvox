@@ -26,6 +26,7 @@ find_path(PNG_INCLUDE_DIR
 
 find_library(PNG_LIBRARY
   NAMES
+    png
     libpng
     libpng16
     libpng_static
@@ -37,10 +38,12 @@ find_library(PNG_LIBRARY
   PATH_SUFFIXES
     lib64
     lib
+    lib/x86_64-linux-gnu
 )
 
 find_library(PNG_LIBRARY_DEBUG
   NAMES
+    pngd
     libpngd
     libpng16d
     libpng_staticd
@@ -52,6 +55,7 @@ find_library(PNG_LIBRARY_DEBUG
   PATH_SUFFIXES
     lib64
     lib
+    lib/x86_64-linux-gnu
 )
 
 if(PNG_LIBRARY_DEBUG)
