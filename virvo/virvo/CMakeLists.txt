@@ -7,6 +7,7 @@ find_package(GLEW REQUIRED)
 find_package(JPEGTURBO)
 find_package(NORM)
 find_package(OpenGL REQUIRED)
+find_package(PNG)
 find_package(Protokit)
 find_package(Pthreads REQUIRED)
 find_package(SNAPPY)
@@ -24,6 +25,7 @@ deskvox_use_package(GLEW)
 deskvox_use_package(JPEGTURBO)
 deskvox_use_package(NORM)
 deskvox_use_package(OpenGL)
+deskvox_use_package(PNG)
 deskvox_use_package(Protokit)
 deskvox_use_package(Pthreads)
 deskvox_use_package(SNAPPY)
@@ -180,6 +182,7 @@ set(VIRVO_HEADERS
 
 set(VIRVO_SOURCES
   private/vvcompress_jpeg.cpp
+  private/vvcompress_png.cpp
   private/vvcompress_snappy.cpp
   private/vvgltools.cpp
   private/vvibrimage.cpp

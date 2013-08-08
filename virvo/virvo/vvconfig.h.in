@@ -14,6 +14,7 @@
 #cmakedefine01 VV_HAVE_JPEGTURBO
 #cmakedefine01 VV_HAVE_NORM
 #cmakedefine01 VV_HAVE_OPENGL
+#cmakedefine01 VV_HAVE_PNG
 #cmakedefine01 VV_HAVE_PROTOKIT
 #cmakedefine01 VV_HAVE_PTHREADS
 #cmakedefine01 VV_HAVE_SNAPPY
@@ -51,6 +52,9 @@
 #endif
 #if VV_HAVE_OPENGL
 #define HAVE_OPENGL
+#endif
+#if VV_HAVE_PNG
+#define HAVE_PNG
 #endif
 #if VV_HAVE_PROTOKIT
 #define HAVE_PROTOKIT

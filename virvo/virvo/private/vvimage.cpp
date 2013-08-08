@@ -69,20 +69,38 @@ bool Image::compress(virvo::CompressionType ct)
   case Compress_None:
     return true;
 
-  case Compress_JPEG: {
-    virvo::JPEGOptions options;
+  case Compress_JPEG:
+    {
+      virvo::JPEGOptions options;
 
-    options.format  = this->format();
-    options.w       = this->width();
-    options.h       = this->height();
-    options.pitch   = this->stride();
-    options.quality = 75; // TODO: Make this an option?!?!
+      options.format  = this->format();
+      options.w       = this->width();
+      options.h       = this->height();
+      options.pitch   = this->stride();
+      options.quality = 75; // TODO: Make this an option?!?!
 
-    if (virvo::encodeJPEG(data_, options))
-      return true;
+      if (virvo::encodeJPEG(data_, options))
+        return true;
 
-    // JPEG compression failed. Try Snappy.
-    /* FALL THROUGH */
+      // JPEG compression failed. Try Snappy.
+      return compress(Compress_Snappy);
+    }
+
+  case Compress_PNG:
+    {
+      virvo::PNGOptions options;
+
+      options.format  = this->format();
+      options.w       = this->width();
+      options.h       = this->height();
+      options.pitch   = this->stride();
+      options.compression_level = 5;
+
+      if (virvo::encodePNG(data_, options))
+        return true;
+
+      // PNG compression failed. Try Snappy.
+      return compress(Compress_Snappy);
     }
 
   case Compress_Snappy:
@@ -100,15 +118,28 @@ bool Image::decompress()
   case Compress_None:
     return true;
 
-  case Compress_JPEG: {
-    virvo::JPEGOptions options;
+  case Compress_JPEG:
+    {
+      virvo::JPEGOptions options;
 
-    options.format  = this->format();
-    options.w       = this->width();
-    options.h       = this->height();
-    options.pitch   = this->stride();
+      options.format  = this->format();
+      options.w       = this->width();
+      options.h       = this->height();
+      options.pitch   = this->stride();
 
-    return virvo::decodeJPEG(data_, options);
+      return virvo::decodeJPEG(data_, options);
+    }
+
+  case Compress_PNG:
+    {
+      virvo::PNGOptions options;
+
+      options.format  = this->format();
+      options.w       = this->width();
+      options.h       = this->height();
+      options.pitch   = this->stride();
+
+      return virvo::decodePNG(data_, options);
     }
 
   case Compress_Snappy:

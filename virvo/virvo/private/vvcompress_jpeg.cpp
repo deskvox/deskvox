@@ -40,8 +40,6 @@
 #ifdef HAVE_JPEGTURBO
 
 
-#include "vvimage.h"
-
 #include <assert.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -387,12 +385,6 @@ bool virvo::decodeJPEG(std::vector<unsigned char>& data, JPEGOptions& options)
 
     return true;
 }
-
-
-#ifdef _MSC_VER
-#pragma warning(default: 4324)
-#pragma warning(default: 4611)
-#endif
 
 
 #else // HAVE_JPEGTURBO

@@ -81,6 +81,36 @@ VVAPI bool encodeJPEG(CompressedVector& data, JPEGOptions const& options);
 VVAPI bool decodeJPEG(CompressedVector& data, JPEGOptions& options);
 
 
+//--------------------------------------------------------------------------------------------------
+// PNG
+//--------------------------------------------------------------------------------------------------
+
+struct PNGOptions
+{
+    // The pixel format of the input or output image
+    PixelFormat format;
+    // Width of the image in pixels
+    int w;
+    // Height of the image in pixels
+    int h;
+    // Width in bytes of a single scanline in the image
+    int pitch;
+    // Set the library compression level.
+    // Currently, valid values range from 0-9 (0 - no compression, 9 - "maximal" compression).
+    // Note that tests have shown that compression levels 3-6 usually perform as well as
+    // level 9 for PNG images, and do considerably fewer caclulations.
+    int compression_level;
+};
+
+VVAPI bool encodePNG(std::vector<unsigned char>& data, PNGOptions const& options);
+
+VVAPI bool decodePNG(std::vector<unsigned char>& data, PNGOptions& options);
+
+VVAPI bool encodePNG(CompressedVector& data, PNGOptions const& options);
+
+VVAPI bool decodePNG(CompressedVector& data, PNGOptions& options);
+
+
 } // namespace virvo
 
 
