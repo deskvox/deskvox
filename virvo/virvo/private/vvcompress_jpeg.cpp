@@ -37,7 +37,7 @@
 #endif
 #endif
 
-#if JPEG_LIB_VERSION < 80
+#if defined(HAVE_JPEGTURBO) && JPEG_LIB_VERSION < 80
 /* Read JPEG image from a memory segment
  * - see http://stackoverflow.com/questions/5280756/libjpeg-ver-6b-jpeg-stdio-src-vs-jpeg-mem-src */
 
