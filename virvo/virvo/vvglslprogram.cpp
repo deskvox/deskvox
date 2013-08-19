@@ -383,7 +383,7 @@ void vvGLSLProgram::setParameter3f(const string& parameterName, const float* arr
 {
   const GLint uniform = getUniform(_data, parameterName, "setParameter3f");
   if(uniform != -1)
-    glUniform3fv(uniform, 3, array);
+    glUniform3fv(uniform, 1, array);
 }
 
 void vvGLSLProgram::setParameter3f(const string& parameterName,
@@ -398,7 +398,7 @@ void vvGLSLProgram::setParameter4f(const string& parameterName, const float* arr
 {
   const GLint uniform = getUniform(_data, parameterName, "setParameter4f");
   if(uniform != -1)
-    glUniform4fv(uniform, 4, array);
+    glUniform4fv(uniform, 1, array);
 }
 
 void vvGLSLProgram::setParameter4f(const string& parameterName,
@@ -420,7 +420,7 @@ void vvGLSLProgram::setParameterArray3f(const string& parameterName, const float
 {
   const GLint uniform = getUniform(_data, parameterName, "setParameterArray3f");
   if(uniform != -1)
-    glUniform3fv(uniform, 3*count, array);
+    glUniform3fv(uniform, count, array);
 }
 
 void vvGLSLProgram::setParameterMatrix4f(const string& parameterName, const float* mat)
