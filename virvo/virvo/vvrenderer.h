@@ -26,8 +26,6 @@
 #include "vvinttypes.h"
 #include "vvrendertarget.h"
 
-#include <boost/shared_ptr.hpp>
-
 #include <memory>
 
 
@@ -349,8 +347,13 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     void renderFrame(int w, int h);
 
 private:
+    // NOT copyable!
+    vvRenderer(vvRenderer const& rhs);
+    vvRenderer& operator=(vvRenderer const& rhs);
+
+
     // The current render target
-    boost::shared_ptr<virvo::RenderTarget> renderTarget_;
+    std::auto_ptr<virvo::RenderTarget> renderTarget_;
 
     // For fps display
     std::auto_ptr<vvStopwatch> stopwatch_;
