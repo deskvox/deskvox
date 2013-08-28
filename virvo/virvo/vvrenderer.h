@@ -251,10 +251,6 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
   public:                                         // public methods will be inherited as public
     vvRenderer(vvVolDesc*, vvRenderState);
     virtual ~vvRenderer();
-    float		_lastRenderTime;                   ///< time it took to render the previous frame (seconds)
-    float		_lastComputeTime;
-    float		_lastPlaneSortingTime;
-    float		_lastGLdrawTime;
 
     // Static methods:
     static float adaptQuality(float, float, float, float);
@@ -357,6 +353,13 @@ private:
 
     // For fps display
     std::auto_ptr<vvStopwatch> stopwatch_;
+
+
+    float		_lastRenderTime;                   ///< time it took to render the previous frame (seconds)
+    float		_lastComputeTime;
+    float		_lastPlaneSortingTime;
+    float		_lastGLdrawTime;
+
 };
 #endif
 
