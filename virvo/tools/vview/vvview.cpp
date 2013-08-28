@@ -319,7 +319,7 @@ void vvView::displayCallback(void)
 
   ds->renderer->setParameter(vvRenderState::VV_QUALITY, ((ds->hqMode) ? ds->highQuality : ds->draftQuality));
 
-  ds->renderer->setParameter(vvRenderer::VV_MEASURETIME, ds->fpsMode);
+  ds->renderer->setParameter(vvRenderer::VV_FPS_DISPLAY, ds->fpsMode);
 
   // Draw volume:
   glMatrixMode(GL_MODELVIEW);

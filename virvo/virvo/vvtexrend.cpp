@@ -51,7 +51,6 @@
 #include "vvtoolshed.h"
 #include "vvsphere.h"
 #include "vvtexrend.h"
-#include "vvclock.h"
 #include "vvoffscreenbuffer.h"
 #include "vvprintgl.h"
 #include "vvshaderfactory.h"
@@ -197,7 +196,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   preintTable = new uint8_t[getPreintTableSize()*getPreintTableSize()*4];
   usePreIntegration = false;
   textures = 0;
-  _measureRenderTime = false;
 
   _currentShader = vd->chan - 1;
   _previousShader = _currentShader;
@@ -3327,7 +3325,6 @@ void vvTexRend::renderTex2DCubic(vvVecmath::AxisType principal, float zx, float 
 */
 void vvTexRend::renderVolumeGL()
 {
-  static vvStopwatch sw;                          // stop watch for performance measurements
   vvMatrix mv;                                    // current modelview matrix
   float zx, zy, zz;                               // base vector z coordinates
 
@@ -3343,11 +3340,6 @@ void vvTexRend::renderVolumeGL()
 
   if (vox[0] * vox[1] * vox[2] == 0)
     return;
-
-  if (_measureRenderTime)
-  {
-    sw.start();
-  }
 
   const vvVector3 size(vd->getSize());            // volume size [world coordinates]
 
@@ -3426,12 +3418,11 @@ void vvTexRend::renderVolumeGL()
   unsetGLenvironment();
   disableShader(_shader);
 
-  if (_measureRenderTime)
+  if (_fpsDisplay)
   {
     // Make sure rendering is done to measure correct time.
     // Since this operation is costly, only do it if necessary.
     glFinish();
-    _lastRenderTime = sw.getTime();
   }
 
   vvDebugMsg::msg(3, "vvTexRend::renderVolumeGL() done");
@@ -3812,9 +3803,6 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
         delete _shader;
         _shader = initShader();
       }
-      break;
-    case vvRenderer::VV_MEASURETIME:
-      _measureRenderTime = newValue;
       break;
     case vvRenderer::VV_PIX_SHADER:
       setCurrentShader(newValue);

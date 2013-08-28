@@ -28,6 +28,10 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <memory>
+
+
+class vvStopwatch;
 class vvVolDesc;
 
 //============================================================================
@@ -117,7 +121,6 @@ public:
     VV_IMG_SCALE,                               ///< downsample img by reducing img resolution [0..1]
     VV_IMG_PRECISION,                           ///< render to high-res target to minimize slicing rounding error
     VV_LIGHTING,
-    VV_MEASURETIME,
     VV_PIX_SHADER
   };
 
@@ -155,7 +158,7 @@ protected:
   bool  _showBricks;                            ///< true = show brick boundarys
   bool  _computeBrickSize;                      ///< true = calculate brick size
   size_t   _texMemorySize;                      ///< size of texture memory
-  bool  _fpsDisplay;                            ///< true = show frame rate
+  bool  _fpsDisplay;                            ///< true = show frame rate, might be costly if e. g. glFinish is called
   bool  _gammaCorrection;                       ///< true = gamma correction on
   vvVector4 _gamma;                             ///< gamma correction value: 0=red, 1=green, 2=blue, 3=4th channel
   bool  _opacityWeights;                        ///< true = for multi-channel data sets only: allow weighted opacities in channels
@@ -348,6 +351,9 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
 private:
     // The current render target
     boost::shared_ptr<virvo::RenderTarget> renderTarget_;
+
+    // For fps display
+    std::auto_ptr<vvStopwatch> stopwatch_;
 };
 #endif
 

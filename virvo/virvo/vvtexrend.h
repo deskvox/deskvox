@@ -150,7 +150,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     ptrdiff_t minSlice, maxSlice;                 ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
     bool _areEmptyBricksCreated;                  ///< true when brick outlines are created or assigned through constructor
     bool _areBricksCreated;                       ///< true after the first creation of the bricks
-    bool _measureRenderTime;                      ///< if time needs not to be measured, a costly call to glFinish can be spared
     std::vector<BrickList> _brickList;            ///< contains all created bricks for all frames
     std::vector<BrickList> _nonemptyList;         ///< contains all non-transparent bricks for all frames
     BrickList _insideList;                        ///< contains all non-empty bricks inside the probe

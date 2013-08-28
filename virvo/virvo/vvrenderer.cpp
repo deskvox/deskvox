@@ -21,6 +21,7 @@
 #include <GL/glew.h>
 
 #include <stdlib.h>
+#include "vvclock.h"
 #include "vvplatform.h"
 #include "vvopengl.h"
 #include "vvvoldesc.h"
@@ -370,6 +371,7 @@ vvParam vvRenderState::getParameter(ParameterType param) const
 vvRenderer::vvRenderer(vvVolDesc* voldesc, vvRenderState renderState)
   : vvRenderState(renderState)
   , renderTarget_(virvo::NullRT::create())
+  , stopwatch_(new vvStopwatch)
 {
   vvDebugMsg::msg(1, "vvRenderer::vvRenderer()");
   assert(voldesc!=NULL);
@@ -1486,6 +1488,11 @@ bool vvRenderer::beginFrame(unsigned clearMask)
   if (renderTarget_->beginFrame(clearMask))
   {
     renderOpaqueGeometry();
+    if (_fpsDisplay)
+    {
+      stopwatch_->start();
+    }
+
     return true;
   }
 
@@ -1494,6 +1501,11 @@ bool vvRenderer::beginFrame(unsigned clearMask)
 
 bool vvRenderer::endFrame()
 {
+  if (_fpsDisplay)
+  {
+    _lastRenderTime = stopwatch_->getTime();
+  }
+
   return renderTarget_->endFrame();
 }
 
