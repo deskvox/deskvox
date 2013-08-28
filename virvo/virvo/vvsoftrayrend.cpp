@@ -116,7 +116,7 @@ inline Vec4 mul(Vec4 const& v, Vec const& s, Vec const& mask)
 #endif
 
 template <class T, class U>
-inline T vec_cast(U u)
+VV_FORCE_INLINE T vec_cast(U u)
 {
 #if VV_USE_SSE
   return virvo::sse::sse_cast<T>(u);
