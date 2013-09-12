@@ -37,13 +37,14 @@
 #endif
 #endif
 
-#if defined(HAVE_JPEGTURBO) && JPEG_LIB_VERSION < 80
+
+#if defined(HAVE_JPEGTURBO) && !(JPEG_LIB_VERSION >= 80 || defined(MEM_SRCDST_SUPPORTED))
 /* Read JPEG image from a memory segment
  * - see http://stackoverflow.com/questions/5280756/libjpeg-ver-6b-jpeg-stdio-src-vs-jpeg-mem-src */
 
 #include <jerror.h>
 
-static void init_source (j_decompress_ptr cinfo)
+static void init_source (j_decompress_ptr /*cinfo*/)
 {
 }
 
@@ -63,11 +64,11 @@ static void skip_input_data (j_decompress_ptr cinfo, long num_bytes)
     }
 }
 
-static void term_source (j_decompress_ptr cinfo)
+static void term_source (j_decompress_ptr /*cinfo*/)
 {
 }
 
-static void jpeg_mem_src (j_decompress_ptr cinfo, void* buffer, long nbytes)
+static void jpeg_mem_src (j_decompress_ptr cinfo, unsigned char* buffer, unsigned long nbytes)
 {
     struct jpeg_source_mgr* src;
 
@@ -83,10 +84,12 @@ static void jpeg_mem_src (j_decompress_ptr cinfo, void* buffer, long nbytes)
     src->skip_input_data = skip_input_data;
     src->resync_to_restart = jpeg_resync_to_restart; /* use default method */
     src->term_source = term_source;
-    src->bytes_in_buffer = nbytes;
+    src->bytes_in_buffer = (size_t)nbytes;
     src->next_input_byte = (JOCTET*)buffer;
 }
+
 #endif
+
 
 #ifdef HAVE_JPEGTURBO
 
