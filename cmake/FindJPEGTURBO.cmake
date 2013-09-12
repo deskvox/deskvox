@@ -15,7 +15,7 @@ set(paths
 
 find_path(JPEGTURBO_INCLUDE_DIR
   NAMES
-    jconfig.h jerror.h jmorecfg.h jpeglib.h turbojpeg.h
+    jpeglib.h
   HINTS
     ${hints}
   PATHS
