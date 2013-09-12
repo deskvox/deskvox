@@ -31,6 +31,7 @@
 
 
 #include <assert.h>
+#include <memory.h>
 #include <png.h>
 
 
