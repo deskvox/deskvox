@@ -23,15 +23,8 @@
 
 #include "vvrenderer.h"
 
-#include <boost/shared_ptr.hpp>
-
+#include <memory>
 #include <vector>
-
-
-namespace virvo
-{
-  struct Tile;
-}
 
 
 class vvSoftRayRend : public vvRenderer
@@ -45,18 +38,17 @@ public:
   VVAPI virtual void setParameter(ParameterType param, const vvParam& newValue) VV_OVERRIDE;
   VVAPI virtual vvParam getParameter(ParameterType param) const VV_OVERRIDE;
 private:
-  struct Thread;
-
   struct Impl;
-  boost::shared_ptr<Impl> impl;
-
-  Thread* _firstThread;
-  std::vector<Thread*> _threads;
-
-  void renderTile(const virvo::Tile& tile, const Thread* thread);
+  std::auto_ptr<Impl> impl_;
 
   static void* renderFunc(void* args);
-  static void render(Thread* thread);
+
+private:
+
+  // NOT copyable!
+  vvSoftRayRend(vvSoftRayRend const& rhs);
+  vvSoftRayRend& operator=(vvSoftRayRend const& rhs);
+
 };
 
 #include "vvrayrendfactory.h"

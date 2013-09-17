@@ -278,7 +278,7 @@ std::vector<virvo::Tile> makeTiles(vvRecti const& rect, virvo::Viewport const& v
 }
 
 
-struct vvSoftRayRend::Thread
+struct Thread
 {
   size_t id;
   pthread_t threadHandle;
@@ -290,6 +290,7 @@ struct vvSoftRayRend::Thread
   pthread_barrier_t* barrier;
   pthread_mutex_t* mutex;
   std::vector<virvo::Tile>* tiles;
+  vecf* rgbaTF;
 
   enum Event
   {
@@ -302,13 +303,16 @@ struct vvSoftRayRend::Thread
 
 struct vvSoftRayRend::Impl
 {
+  Impl() : firstThread(NULL) {}
+
+  std::vector< Thread* > threads;
+  Thread* firstThread;
   vecf rgbaTF;
 };
 
 vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvRenderer(vd, renderState)
-  , impl(new Impl)
-  , _firstThread(NULL)
+  , impl_(new Impl)
 {
   vvDebugMsg::msg(1, "vvSoftRayRend::vvSoftRayRend()");
 
@@ -344,12 +348,14 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
     thread->barrier = barrier;
     thread->mutex = mutex;
 
+    thread->rgbaTF = &impl_->rgbaTF;
+
     pthread_create(&thread->threadHandle, NULL, renderFunc, thread);
-    _threads.push_back(thread);
+    impl_->threads.push_back(thread);
 
     if (i == 0)
     {
-      _firstThread = thread;
+      impl_->firstThread = thread;
     }
   }
 }
@@ -358,8 +364,8 @@ vvSoftRayRend::~vvSoftRayRend()
 {
   vvDebugMsg::msg(1, "vvSoftRayRend::~vvSoftRayRend()");
 
-  for (std::vector<Thread*>::const_iterator it = _threads.begin();
-       it != _threads.end(); ++it)
+  for (std::vector<Thread*>::const_iterator it = impl_->threads.begin();
+       it != impl_->threads.end(); ++it)
   {
     pthread_mutex_lock((*it)->mutex);
     (*it)->events.push(Thread::VV_EXIT);
@@ -371,10 +377,10 @@ vvSoftRayRend::~vvSoftRayRend()
     }
   }
 
-  for (std::vector<Thread*>::const_iterator it = _threads.begin();
-       it != _threads.end(); ++it)
+  for (std::vector<Thread*>::const_iterator it = impl_->threads.begin();
+       it != impl_->threads.end(); ++it)
   {
-    if (it == _threads.begin())
+    if (it == impl_->threads.begin())
     {
       pthread_barrier_destroy((*it)->barrier);
       pthread_mutex_destroy((*it)->mutex);
@@ -414,38 +420,38 @@ void vvSoftRayRend::renderVolumeGL()
 
   float* colorBuffer = reinterpret_cast<float*>(rt->deviceColor());
 
-  for (std::vector<Thread*>::const_iterator it = _threads.begin();
-       it != _threads.end(); ++it)
+  for (std::vector<Thread*>::const_iterator it = impl_->threads.begin();
+       it != impl_->threads.end(); ++it)
   {
     (*it)->invViewMatrix = invViewMatrix;
     (*it)->colors = colorBuffer;
     (*it)->tiles = &tiles;
     (*it)->events.push(Thread::VV_RENDER);
   }
-  pthread_barrier_wait(_firstThread->barrier);
+  pthread_barrier_wait(impl_->firstThread->barrier);
 
   // threads render
 
-  pthread_barrier_wait(_firstThread->barrier);
+  pthread_barrier_wait(impl_->firstThread->barrier);
 }
 
 void vvSoftRayRend::updateTransferFunction()
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::updateTransferFunction()");
 
-  if (_firstThread != NULL && _firstThread->mutex != NULL)
+  if (impl_->firstThread != NULL && impl_->firstThread->mutex != NULL)
   {
-    pthread_mutex_lock(_firstThread->mutex);
+    pthread_mutex_lock(impl_->firstThread->mutex);
   }
 
   size_t lutEntries = getLUTSize(vd);
-  impl->rgbaTF.resize(4 * lutEntries);
+  impl_->rgbaTF.resize(4 * lutEntries);
 
-  vd->computeTFTexture(lutEntries, 1, 1, &impl->rgbaTF[0]);
+  vd->computeTFTexture(lutEntries, 1, 1, &impl_->rgbaTF[0]);
 
-  if (_firstThread != NULL && _firstThread->mutex != NULL)
+  if (impl_->firstThread != NULL && impl_->firstThread->mutex != NULL)
   {
-    pthread_mutex_unlock(_firstThread->mutex);
+    pthread_mutex_unlock(impl_->firstThread->mutex);
   }
 }
 
@@ -461,14 +467,21 @@ vvParam vvSoftRayRend::getParameter(ParameterType param) const
   return vvRenderer::getParameter(param);
 }
 
-void vvSoftRayRend::renderTile(const virvo::Tile& tile, const Thread* thread)
+void renderTile(const virvo::Tile& tile, const Thread* thread)
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::renderTile()");
 
   static const Vec opacityThreshold = 0.95f;
 
-  virvo::size3 minVox = _visibleRegion.getMin();
-  virvo::size3 maxVox = _visibleRegion.getMax();
+  vvVolDesc* vd            = thread->renderer->getVolDesc();
+  vvAABBs const& vr        = thread->renderer->getParameter(vvRenderer::VV_VISIBLE_REGION);
+  float quality            = thread->renderer->getParameter(vvRenderer::VV_QUALITY);
+  bool interpolation       = thread->renderer->getParameter(vvRenderer::VV_SLICEINT);
+  bool opacityCorrection   = thread->renderer->getParameter(vvRenderer::VV_OPCORR);
+  bool earlyRayTermination = thread->renderer->getParameter(vvRenderer::VV_TERMINATEEARLY);
+
+  virvo::size3 minVox = vr.getMin();
+  virvo::size3 maxVox = vr.getMax();
   for (size_t i = 0; i < 3; ++i)
   {
     minVox[i] = std::max(minVox[i], size_t(0));
@@ -484,11 +497,11 @@ void vvSoftRayRend::renderTile(const virvo::Tile& tile, const Thread* thread)
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
-  size_t numSlices = std::max(size_t(1), static_cast<size_t>(_quality * diagonalVoxels));
+  size_t numSlices = std::max(size_t(1), static_cast<size_t>(quality * diagonalVoxels));
 
   uint8_t* raw = vd->getRaw(vd->getCurrentFrame());
 
-  virvo::RenderTarget const* rt = getRenderTarget();
+  virvo::RenderTarget const* rt = thread->renderer->getRenderTarget();
 
   for (int y = tile.bottom; y < tile.top; y += PACK_SIZE_Y)
   {
@@ -532,7 +545,7 @@ void vvSoftRayRend::renderTile(const virvo::Tile& tile, const Thread* thread)
           texcoord[2] = clamp(texcoord[2], Vec(0.0f), Vec(1.0f));
 
           Vec sample = 0.0f;
-          if (_interpolation)
+          if (interpolation)
           {
             Vec3 texcoordf(texcoord[0] * static_cast<float>(vd->vox[0] - 1),
                            texcoord[1] * static_cast<float>(vd->vox[1] - 1),
@@ -631,9 +644,9 @@ void vvSoftRayRend::renderTile(const virvo::Tile& tile, const Thread* thread)
           }
 
           sample /= 255.0f;
-          Vec4 src = rgba(&impl->rgbaTF, vec_cast<Vecs>(sample * static_cast<float>(getLUTSize(vd))) * 4);
+          Vec4 src = rgba(&(*thread->rgbaTF), vec_cast<Vecs>(sample * static_cast<float>(getLUTSize(vd))) * 4);
 
-          if (_opacityCorrection)
+          if (opacityCorrection)
           {
             src[3] = 1 - powf(1 - src[3], dist);
           }
@@ -645,7 +658,7 @@ void vvSoftRayRend::renderTile(const virvo::Tile& tile, const Thread* thread)
 
           dst = dst + mul(src, sub(1.0f, dst[3], active), active);
 
-          if (_earlyRayTermination)
+          if (earlyRayTermination)
           {
             active = active && dst[3] <= opacityThreshold;
           }
@@ -677,6 +690,25 @@ void vvSoftRayRend::renderTile(const virvo::Tile& tile, const Thread* thread)
       }
     }
   }
+}
+
+void render(Thread* thread)
+{
+  pthread_barrier_wait(thread->barrier);
+  while (true)
+  {
+    pthread_mutex_lock(thread->mutex);
+    if (thread->tiles->empty())
+    {
+      pthread_mutex_unlock(thread->mutex);
+      break;
+    }
+    virvo::Tile tile = thread->tiles->back();
+    thread->tiles->pop_back();
+    pthread_mutex_unlock(thread->mutex);
+    renderTile(tile, thread);
+  }
+  pthread_barrier_wait(thread->barrier);
 }
 
 void* vvSoftRayRend::renderFunc(void* args)
@@ -726,27 +758,6 @@ void* vvSoftRayRend::renderFunc(void* args)
 cleanup:
   pthread_exit(NULL);
   return NULL;
-}
-
-void vvSoftRayRend::render(vvSoftRayRend::Thread* thread)
-{
-  vvDebugMsg::msg(3, "vvSoftRayRend::render()");
-
-  pthread_barrier_wait(thread->barrier);
-  while (true)
-  {
-    pthread_mutex_lock(thread->mutex);
-    if (thread->tiles->empty())
-    {
-      pthread_mutex_unlock(thread->mutex);
-      break;
-    }
-    virvo::Tile tile = thread->tiles->back();
-    thread->tiles->pop_back();
-    pthread_mutex_unlock(thread->mutex);
-    thread->renderer->renderTile(tile, thread);
-  }
-  pthread_barrier_wait(thread->barrier);
 }
 
 vvRenderer* createRayRend(vvVolDesc* vd, vvRenderState const& rs)
