@@ -318,6 +318,10 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return _useIbr;
   case VV_IBR_MODE:
     return (int)_ibrMode;
+  case VV_VISIBLE_REGION:
+    return _visibleRegion;
+  case VV_PADDING_REGION:
+    return _paddingRegion;
   case VV_CLIP_PLANE_POINT:
     return _clipPlanePoint;
   case VV_CLIP_PLANE_NORMAL:
