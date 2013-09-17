@@ -16,6 +16,7 @@
 #include "vvdebugmsg.h"
 #include "vvforceinline.h"
 #include "vvpthread.h"
+#include "vvrect.h"
 #include "vvsoftrayrend.h"
 #include "vvtoolshed.h"
 #include "vvvoldesc.h"
@@ -226,6 +227,57 @@ Vec intersectBox(const Ray& ray, const AABB& aabb,
   return ((tmax >= tmin) && (tmax >= 0.0f));
 }
 
+
+namespace virvo
+{
+
+struct Tile
+{
+  int left;
+  int bottom;
+  int right;
+  int top;
+};
+
+}
+
+
+std::vector<virvo::Tile> makeTiles(vvRecti const& rect, virvo::Viewport const& vp)
+{
+  const int tilew = 16;
+  const int tileh = 16;
+
+  int w = rect[2];
+  int h = rect[3];
+
+  int numtilesx = virvo::toolshed::iDivUp(w, tilew);
+  int numtilesy = virvo::toolshed::iDivUp(h, tileh);
+
+  std::vector<virvo::Tile> result;
+  for (int y = 0; y < numtilesy; ++y)
+  {
+    for (int x = 0; x < numtilesx; ++x)
+    {
+      virvo::Tile t;
+      t.left = rect[0] + tilew * x;
+      t.bottom = rect[1] + tileh * y;
+      t.right = t.left + tilew;
+      if (t.right > vp[2])
+      {
+        t.right = w;
+      }
+      t.top = t.bottom + tileh;
+      if (t.top > vp[3])
+      {
+        t.top = h;
+      }
+      result.push_back(t);
+    }
+  }
+  return result;
+}
+
+
 struct vvSoftRayRend::Thread
 {
   size_t id;
@@ -237,7 +289,7 @@ struct vvSoftRayRend::Thread
 
   pthread_barrier_t* barrier;
   pthread_mutex_t* mutex;
-  std::vector<Tile>* tiles;
+  std::vector<virvo::Tile>* tiles;
 
   enum Event
   {
@@ -340,9 +392,11 @@ void vvSoftRayRend::renderVolumeGL()
 
   Matrix mv;
   Matrix pr;
+  virvo::Viewport vp;
 
   mv = virvo::gltools::getModelViewMatrix();
   pr = virvo::gltools::getProjectionMatrix();
+  vp = vvGLTools::getViewport();
 
   virvo::RenderTarget* rt = getRenderTarget();
 
@@ -353,7 +407,10 @@ void vvSoftRayRend::renderVolumeGL()
   invViewMatrix = pr * invViewMatrix;
   invViewMatrix.invert();
 
-  std::vector<Tile> tiles = makeTiles(w, h);
+  vvAABB aabb = vvAABB(virvo::Vec3(), virvo::Vec3());
+  vd->getBoundingBox(aabb);
+  vvRecti r = vvGLTools::getBoundingRect(aabb);
+  std::vector<virvo::Tile> tiles = makeTiles(r, vp);
 
   float* colorBuffer = reinterpret_cast<float*>(rt->deviceColor());
 
@@ -404,41 +461,7 @@ vvParam vvSoftRayRend::getParameter(ParameterType param) const
   return vvRenderer::getParameter(param);
 }
 
-std::vector<vvSoftRayRend::Tile> vvSoftRayRend::makeTiles(int w, int h)
-{
-  vvDebugMsg::msg(3, "vvSoftRayRend::makeTiles()");
-
-  const int tilew = 16;
-  const int tileh = 16;
-
-  int numtilesx = virvo::toolshed::iDivUp(w, tilew);
-  int numtilesy = virvo::toolshed::iDivUp(h, tileh);
-
-  std::vector<Tile> result;
-  for (int y = 0; y < numtilesy; ++y)
-  {
-    for (int x = 0; x < numtilesx; ++x)
-    {
-      Tile t;
-      t.left = tilew * x;
-      t.bottom = tileh * y;
-      t.right = t.left + tilew;
-      if (t.right > w)
-      {
-        t.right = w;
-      }
-      t.top = t.bottom + tileh;
-      if (t.top > h)
-      {
-        t.top = h;
-      }
-      result.push_back(t);
-    }
-  }
-  return result;
-}
-
-void vvSoftRayRend::renderTile(const vvSoftRayRend::Tile& tile, const Thread* thread)
+void vvSoftRayRend::renderTile(const virvo::Tile& tile, const Thread* thread)
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::renderTile()");
 
@@ -718,7 +741,7 @@ void vvSoftRayRend::render(vvSoftRayRend::Thread* thread)
       pthread_mutex_unlock(thread->mutex);
       break;
     }
-    Tile tile = thread->tiles->back();
+    virvo::Tile tile = thread->tiles->back();
     thread->tiles->pop_back();
     pthread_mutex_unlock(thread->mutex);
     thread->renderer->renderTile(tile, thread);

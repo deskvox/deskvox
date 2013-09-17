@@ -27,6 +27,13 @@
 
 #include <vector>
 
+
+namespace virvo
+{
+  struct Tile;
+}
+
+
 class vvSoftRayRend : public vvRenderer
 {
 public:
@@ -39,13 +46,6 @@ public:
   VVAPI virtual vvParam getParameter(ParameterType param) const VV_OVERRIDE;
 private:
   struct Thread;
-  struct Tile 
-  { 
-    int left; 
-    int bottom; 
-    int right; 
-    int top; 
-  }; 
 
   struct Impl;
   boost::shared_ptr<Impl> impl;
@@ -53,8 +53,7 @@ private:
   Thread* _firstThread;
   std::vector<Thread*> _threads;
 
-  std::vector<Tile> makeTiles(int w, int h);
-  void renderTile(const Tile& tile, const Thread* thread);
+  void renderTile(const virvo::Tile& tile, const Thread* thread);
 
   static void* renderFunc(void* args);
   static void render(Thread* thread);
