@@ -1316,11 +1316,11 @@ void vvVolDesc::convertBPC(size_t newBPC, bool verbose)
     newRaw = new uchar[newSliceSize * vox[2]];
     src = rd;
     dst = newRaw;
-    for (size_t z=0; z<vox[2]; ++z)
+    for (ssize_t z=0; z<vox[2]; ++z)
     {
-      for (size_t y=0; y<vox[1]; ++y)
+      for (ssize_t y=0; y<vox[1]; ++y)
       {
-        for (size_t x=0; x<vox[0]; ++x)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           for (size_t c=0; c<chan; ++c)
           {
@@ -1413,11 +1413,11 @@ void vvVolDesc::convertChannels(size_t newChan, int frame, bool verbose)
     newRaw = new uint8_t[newSliceSize * vox[2]];
     src = rd;
     dst = newRaw;
-    for (size_t z=0; z<vox[2]; ++z)
+    for (ssize_t z=0; z<vox[2]; ++z)
     {
-      for (size_t y=0; y<vox[1]; ++y)
+      for (ssize_t y=0; y<vox[1]; ++y)
       {
-        for (size_t x=0; x<vox[0]; ++x)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           // Perform actual conversion:
           for (size_t i=0; i<newChan; ++i)
@@ -1478,11 +1478,11 @@ void vvVolDesc::deleteChannel(size_t channel, bool verbose)
     newRaw = new uint8_t[newSliceSize * vox[2]];
     src = rd;
     dst = newRaw;
-    for (size_t z=0; z<vox[2]; ++z)
+    for (ssize_t z=0; z<vox[2]; ++z)
     {
-      for (size_t y=0; y<vox[1]; ++y)
+      for (ssize_t y=0; y<vox[1]; ++y)
       {
-        for (size_t x=0; x<vox[0]; ++x)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           // Perform actual conversion:
           for (size_t c=0; c<channel; ++c)
@@ -1542,10 +1542,10 @@ void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
   {
     rd = raw.getData();
     raw.next();
-    for (size_t z=0; z<vox[2]; ++z)
+    for (ssize_t z=0; z<vox[2]; ++z)
     {
-      for (size_t y=0; y<vox[1]; ++y)
-        for (size_t x=0; x<vox[0]; ++x)
+      for (ssize_t y=0; y<vox[1]; ++y)
+        for (ssize_t x=0; x<vox[0]; ++x)
       {
         offset = x * getBPV() + y * vox[0] * getBPV() + z * sliceSize;
         pixel = 0;
@@ -1586,9 +1586,9 @@ void vvVolDesc::invert()
     rd = raw.getData();
     raw.next();
     ptr = &rd[0];
-    for (size_t z=0; z<vox[2]; ++z)
-      for (size_t y=0; y<vox[1]; ++y)
-        for (size_t x=0; x<vox[0]; ++x)
+    for (ssize_t z=0; z<vox[2]; ++z)
+      for (ssize_t y=0; y<vox[1]; ++y)
+        for (ssize_t x=0; x<vox[0]; ++x)
           for (size_t b=0; b<bpc*chan; ++b)
           {
             *ptr = (uint8_t)(~(*ptr));
@@ -1622,9 +1622,9 @@ void vvVolDesc::convertRGB24toRGB8()
   {
     rd = raw.getData();
     newRaw = new uint8_t[vox[0] * vox[1] * vox[2]];
-    for (size_t z=0; z<vox[2]; ++z)
-      for (size_t y=0; y<vox[1]; ++y)
-        for (size_t x=0; x<vox[0]; ++x)
+    for (ssize_t z=0; z<vox[2]; ++z)
+      for (ssize_t y=0; y<vox[1]; ++y)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           pixel = 0;
           for (int i=0; i<3; ++i)
@@ -1685,12 +1685,12 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
     {
       case vvVecmath::X_AXIS:
         dst = rd;
-        for (size_t z=0; z<vox[2]; ++z)
-          for (size_t y=0; y<vox[1]; ++y)
+        for (ssize_t z=0; z<vox[2]; ++z)
+          for (ssize_t y=0; y<vox[1]; ++y)
         {
           memcpy((void*)voxelData, (void*)dst, lineSize);
           src = voxelData + (vox[0]-1) * getBPV();
-          for (size_t x=0; x<vox[0]; ++x)
+          for (ssize_t x=0; x<vox[0]; ++x)
           {
             memcpy(dst, src, getBPV());
             dst += getBPV();
@@ -1699,8 +1699,8 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
         }
         break;
       case vvVecmath::Y_AXIS:
-        for (size_t z=0; z<vox[2]; ++z)
-          for (size_t y=0; y<vox[1]/2; ++y)
+        for (ssize_t z=0; z<vox[2]; ++z)
+          for (ssize_t y=0; y<vox[1]/2; ++y)
         {
           src = rd + y * lineSize + z * sliceSize;
           dst = rd + (vox[1] - y - 1) * lineSize + z * sliceSize;
@@ -1710,7 +1710,7 @@ void vvVolDesc::flip(vvVecmath::AxisType axis)
         }
         break;
       case vvVecmath::Z_AXIS:
-        for (size_t z=0; z<vox[2]/2; ++z)
+        for (ssize_t z=0; z<vox[2]/2; ++z)
         {
           dst = rd + z * sliceSize;
           src = rd + (vox[2]-z-1) * sliceSize;
@@ -1910,13 +1910,13 @@ void vvVolDesc::toggleEndianness(int frame)
   for (size_t f=startFrame; f<endFrame; ++f)
   {
     rd = getRaw(f);
-    for (size_t z=0; z<vox[2]; ++z)
+    for (ssize_t z=0; z<vox[2]; ++z)
     {
       sliceOffset = z * sliceSize;
-      for (size_t y=0; y<vox[1]; ++y)
+      for (ssize_t y=0; y<vox[1]; ++y)
       {
         rowOffset = sliceOffset + y * vox[0] * getBPV();
-        for (size_t x=0; x<vox[0]; ++x)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           voxelOffset = x * getBPV() + rowOffset;
 
@@ -2018,13 +2018,13 @@ bool vvVolDesc::isChannelUsed(size_t m)
   @param x,y,z  coordinates of top-left-front corner of sub-volume
   @param w,h,s  width, height, and number of slices of sub-volume
 */
-void vvVolDesc::crop(size_t x, size_t y, size_t z, size_t w, size_t h, size_t s)
+void vvVolDesc::crop(ssize_t x, ssize_t y, ssize_t z, ssize_t w, ssize_t h, ssize_t s)
 {
-  size_t j, i;
+  ssize_t j, i;
   uint8_t* newRaw;
   uint8_t* rd;
-  size_t xmin, xmax, ymin, ymax, zmin, zmax;
-  size_t newWidth, newHeight, newSlices;
+  ssize_t xmin, xmax, ymin, ymax, zmin, zmax;
+  ssize_t newWidth, newHeight, newSlices;
   size_t newSliceSize;
   size_t oldSliceSize;
   uint8_t *src, *dst;
@@ -2032,9 +2032,9 @@ void vvVolDesc::crop(size_t x, size_t y, size_t z, size_t w, size_t h, size_t s)
   vvDebugMsg::msg(2, "vvVolDesc::crop()");
 
   // Find minimum and maximum values for crop:
-  xmin = ts_max(size_t(0), ts_min(x, vox[0]-1, x + w - 1));
-  ymin = ts_max(size_t(0), ts_min(y, vox[1]-1, y + h - 1));
-  zmin = ts_max(size_t(0), ts_min(z, vox[2]-1, z + s - 1));
+  xmin = ts_max(ssize_t(0), ts_min(x, vox[0]-1, x + w - 1));
+  ymin = ts_max(ssize_t(0), ts_min(y, vox[1]-1, y + h - 1));
+  zmin = ts_max(ssize_t(0), ts_min(z, vox[2]-1, z + s - 1));
   xmax = ts_min(vox[0]-1, ts_max(x, x + w - 1));
   ymax = ts_min(vox[1]-1, ts_max(y, y + h - 1));
   zmax = ts_min(vox[2]-1, ts_max(z, z + s - 1));
@@ -2100,14 +2100,14 @@ void vvVolDesc::cropTimesteps(size_t start, size_t steps)
   @param ipt     interpolation type to use for resampling
   @param verbose true = verbose mode
 */
-void vvVolDesc::resize(size_t w, size_t h, size_t s, InterpolationType ipt, bool verbose)
+void vvVolDesc::resize(ssize_t w, ssize_t h, ssize_t s, InterpolationType ipt, bool verbose)
 {
   uint8_t* newRaw;                                  // pointer to new volume data
   uint8_t* rd;
   size_t newSliceSize, newFrameSize;
   size_t oldSliceVoxels;
   uint8_t *src, *dst;
-  size_t ix, iy, iz;                              // integer source voxel coordinates
+  ssize_t ix, iy, iz;                             // integer source voxel coordinates
   float fx, fy, fz;                               // floating point source voxel coordinates
   uint8_t interpolated[4];                        // interpolated voxel values
 
@@ -2130,10 +2130,10 @@ void vvVolDesc::resize(size_t w, size_t h, size_t s, InterpolationType ipt, bool
     dst = newRaw;
 
     // Traverse destination data:
-    for (size_t z=0; z<s; ++z)
+    for (ssize_t z=0; z<s; ++z)
     {
-      for (size_t y=0; y<h; ++y)
-        for (size_t x=0; x<w; ++x)
+      for (ssize_t y=0; y<h; ++y)
+        for (ssize_t x=0; x<w; ++x)
       {
         // Compute source coordinates of current destination voxel:
         if (ipt==TRILINEAR)                       // trilinear interpolation
@@ -2156,9 +2156,9 @@ void vvVolDesc::resize(size_t w, size_t h, size_t s, InterpolationType ipt, bool
           else     iy = 0;
           if (s>1) iz = z * (vox[2]-1) / (s-1);
           else     iz = 0;
-          ix = ts_clamp(ix, size_t(0), vox[0]-1);
-          iy = ts_clamp(iy, size_t(0), vox[1]-1);
-          iz = ts_clamp(iz, size_t(0), vox[2]-1);
+          ix = ts_clamp(ix, ssize_t(0), vox[0]-1);
+          iy = ts_clamp(iy, ssize_t(0), vox[1]-1);
+          iz = ts_clamp(iz, ssize_t(0), vox[2]-1);
 
           // Copy source voxel data to destination voxel:
           src = rd + getBPV() * (ix + iy * vox[0] + iz * oldSliceVoxels);
@@ -2233,9 +2233,9 @@ void vvVolDesc::shift(int sx, int sy, int sz)
         {
           case 0:                                 // x shift
             src = rd;
-            for (size_t z=0; z<vox[2]; ++z)
-              for (size_t y=0; y<vox[1]; ++y)
-                for (size_t x=0; x<vox[0]; ++x)
+            for (ssize_t z=0; z<vox[2]; ++z)
+              for (ssize_t y=0; y<vox[1]; ++y)
+                for (ssize_t x=0; x<vox[0]; ++x)
                 {
                   dst = newRaw + z * sliceSize + y * lineSize + ((x + sval[0]) % vox[0]) * getBPV();
                   memcpy(dst, src, getBPV());
@@ -2244,8 +2244,8 @@ void vvVolDesc::shift(int sx, int sy, int sz)
           break;
           case 1:                                 // y shift
             src = rd;
-            for (size_t z=0; z<vox[2]; ++z)
-              for (size_t y=0; y<vox[1]; ++y)
+            for (ssize_t z=0; z<vox[2]; ++z)
+              for (ssize_t y=0; y<vox[1]; ++y)
             {
               dst = newRaw + z * sliceSize + ((y + sval[1]) % vox[1]) * lineSize;
               memcpy(dst, src, lineSize);
@@ -2255,7 +2255,7 @@ void vvVolDesc::shift(int sx, int sy, int sz)
           default:
           case 2:                                 // z shift
             src = rd;
-            for (size_t z=0; z<vox[2]; ++z)
+            for (ssize_t z=0; z<vox[2]; ++z)
             {
               dst = newRaw + ((z + sval[2]) % vox[2]) * sliceSize;
               memcpy(dst, src, sliceSize);
@@ -2289,9 +2289,9 @@ void vvVolDesc::convertVoxelOrder()
   for (size_t f=0; f<frames; ++f)
   {
     raw = src = getRaw(f);
-    for (size_t x=0; x<vox[0]; ++x)
-      for (size_t y=0; y<vox[1]; ++y)
-        for (size_t z=0; z<vox[2]; ++z)
+    for (ssize_t x=0; x<vox[0]; ++x)
+      for (ssize_t y=0; y<vox[1]; ++y)
+        for (ssize_t z=0; z<vox[2]; ++z)
         {
           dst = tmpData + getBPV() * (x + (vox[1] - y - 1) * vox[0] + z * vox[0] * vox[1]);
           memcpy(dst, src, getBPV());
@@ -2322,9 +2322,9 @@ void vvVolDesc::convertCoviseToVirvo()
   {
     raw = getRaw(f);
     ptr = tmpData;
-    for (size_t z=0; z<vox[2]; ++z)
-      for (size_t y=0; y<vox[1]; ++y)
-        for (size_t x=0; x<vox[0]; ++x)
+    for (ssize_t z=0; z<vox[2]; ++z)
+      for (ssize_t y=0; y<vox[1]; ++y)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           srcIndex = getBPV() * ((vox[2]-z-1)+ (vox[1]-y-1) * vox[2] + x * vox[1] * vox[2]);
           memcpy(ptr, raw + srcIndex, getBPV());
@@ -2359,9 +2359,9 @@ void vvVolDesc::convertVirvoToCovise()
   {
     raw = getRaw(f);
     ptr = raw;
-    for (size_t z=0; z<vox[2]; ++z)
-      for (size_t y=0; y<vox[1]; ++y)
-        for (size_t x=0; x<vox[0]; ++x)
+    for (ssize_t z=0; z<vox[2]; ++z)
+      for (ssize_t y=0; y<vox[1]; ++y)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           dstIndex = getBPV() * (x * vox[1] * vox[2] + (vox[1]-y-1) * vox[2] + (vox[2]-z-1));
           memcpy(tmpData + dstIndex, ptr, getBPV());
@@ -2392,9 +2392,9 @@ void vvVolDesc::convertVirvoToOpenGL()
   {
     raw = getRaw(f);
     ptr = raw;
-    for (size_t z=0; z<vox[2]; ++z)
-      for (size_t y=0; y<vox[1]; ++y)
-        for (size_t x=0; x<vox[0]; ++x)
+    for (ssize_t z=0; z<vox[2]; ++z)
+      for (ssize_t y=0; y<vox[1]; ++y)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           dstIndex = getBPV() * (x + (vox[1] - y - 1) * vox[0] + (vox[2] - z - 1) * vox[0] * vox[1]);
           memcpy(tmpData + dstIndex, ptr, getBPV());
@@ -2425,9 +2425,9 @@ void vvVolDesc::convertOpenGLToVirvo()
   {
     raw = getRaw(f);
     ptr = raw;
-    for (size_t z=0; z<vox[2]; ++z)
-      for (size_t y=0; y<vox[1]; ++y)
-        for (size_t x=0; x<vox[0]; ++x)
+    for (ssize_t z=0; z<vox[2]; ++z)
+      for (ssize_t y=0; y<vox[1]; ++y)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           dstIndex = getBPV() * (x + (vox[1] - y - 1) * vox[0] + (vox[2] - z - 1)  * vox[0] * vox[1]);
           memcpy(tmpData + dstIndex, ptr, getBPV());
@@ -2780,10 +2780,10 @@ void vvVolDesc::printHistogram(int frame, size_t channel)
   @param width number of voxels to display per row (starting left, 0 for all voxels)
   @param height number of voxels to display per column (starting at top, 0 for all voxels))
 */
-void vvVolDesc::printVoxelData(int frame, size_t slice, size_t width, size_t height)
+void vvVolDesc::printVoxelData(int frame, ssize_t slice, ssize_t width, ssize_t height)
 {
   uint8_t* raw;                                   // pointer to raw volume data
-  size_t nx,ny;                                   // number of voxels to display per row/column
+  ssize_t nx,ny;                                  // number of voxels to display per row/column
   int val;
 
   raw = getRaw(frame);
@@ -2793,10 +2793,10 @@ void vvVolDesc::printVoxelData(int frame, size_t slice, size_t width, size_t hei
   if (height<=0) ny = vox[1];
   else ny = ts_min(height, vox[1]);
   cerr << "Voxel data of frame " << frame << ":" << endl;
-  for (size_t y=0; y<ny; ++y)
+  for (ssize_t y=0; y<ny; ++y)
   {
     cerr << "Row " << y << ": ";
-    for (size_t x=0; x<nx; ++x)
+    for (ssize_t x=0; x<nx; ++x)
     {
       cerr << "(";
       for (size_t m=0; m<chan; ++m)
@@ -2950,28 +2950,28 @@ void vvVolDesc::trilinearInterpolation(size_t f, float x, float y, float z, uint
   @param chan          channel to draw in
   @param val           value of channel voxel, array size must equal bpc
 */
-void vvVolDesc::drawBox(size_t p1x, size_t p1y, size_t p1z, size_t p2x, size_t p2y, size_t p2z, size_t chan, uint8_t* val)
+void vvVolDesc::drawBox(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t p2x, ssize_t p2y, ssize_t p2z, size_t chan, uint8_t* val)
 {
   uint8_t* raw;
   size_t lineSize, sliceSize;
 
   vvDebugMsg::msg(3, "vvVolDesc::drawBox()");
 
-  p1x = ts_clamp(p1x, size_t(0), vox[0]-1);
-  p1y = ts_clamp(p1y, size_t(0), vox[1]-1);
-  p1z = ts_clamp(p1z, size_t(0), vox[2]-1);
-  p2x = ts_clamp(p2x, size_t(0), vox[0]-1);
-  p2y = ts_clamp(p2y, size_t(0), vox[1]-1);
-  p2z = ts_clamp(p2z, size_t(0), vox[2]-1);
+  p1x = ts_clamp(p1x, ssize_t(0), vox[0]-1);
+  p1y = ts_clamp(p1y, ssize_t(0), vox[1]-1);
+  p1z = ts_clamp(p1z, ssize_t(0), vox[2]-1);
+  p2x = ts_clamp(p2x, ssize_t(0), vox[0]-1);
+  p2y = ts_clamp(p2y, ssize_t(0), vox[1]-1);
+  p2z = ts_clamp(p2z, ssize_t(0), vox[2]-1);
 
   sliceSize = getSliceBytes();
   lineSize  = vox[0] * getBPV();
   raw = getRaw(currentFrame);
-  for (size_t z=0; z<vox[2]; ++z)
+  for (ssize_t z=0; z<vox[2]; ++z)
   {
-    for (size_t y=0; y<vox[1]; ++y)
+    for (ssize_t y=0; y<vox[1]; ++y)
     {
-      for (size_t x=0; x<vox[0]; ++x)
+      for (ssize_t x=0; x<vox[0]; ++x)
       {
         if (x>=p1x && y>=p1y && z>=p1z &&
           x<=p2x && y<=p2y && z<=p2z)
@@ -3002,7 +3002,7 @@ void vvVolDesc::drawBox(size_t p1x, size_t p1y, size_t p1z, size_t p2x, size_t p
   @param chan          channel to draw in
   @param val           value of channel voxel, array size must equal bpc
 */
-void vvVolDesc::drawSphere(size_t p1x, size_t p1y, size_t p1z, size_t radius, size_t chan, uint8_t* val)
+void vvVolDesc::drawSphere(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t radius, size_t chan, uint8_t* val)
 {
   /*
   if (_radius != radius)
@@ -3029,12 +3029,12 @@ void vvVolDesc::drawSphere(size_t p1x, size_t p1y, size_t p1z, size_t radius, si
   }
   }
   */
-  size_t xstart = ts_max(size_t(0), p1x - radius);
-  size_t xend = ts_min(vox[0], p1x + radius);
-  size_t ystart = ts_max(size_t(0), p1y - radius);
-  size_t yend = ts_min(vox[1], p1y + radius);
-  size_t zstart = ts_max(size_t(0), p1z - radius);
-  size_t zend = ts_min(vox[2], p1z + radius);
+  ssize_t xstart = ts_max(ssize_t(0), p1x - radius);
+  ssize_t xend = ts_min(vox[0], p1x + radius);
+  ssize_t ystart = ts_max(ssize_t(0), p1y - radius);
+  ssize_t yend = ts_min(vox[1], p1y + radius);
+  ssize_t zstart = ts_max(ssize_t(0), p1z - radius);
+  ssize_t zend = ts_min(vox[2], p1z + radius);
 
   cerr << xstart << " " << xend << " " << ystart << " " << yend << " " << zstart << " " << zend << endl;
 
@@ -3045,13 +3045,13 @@ void vvVolDesc::drawSphere(size_t p1x, size_t p1y, size_t p1z, size_t radius, si
   sliceSize = getSliceBytes();
   lineSize  = vox[0] * getBPV();
   raw = getRaw(currentFrame);
-  for (size_t z = zstart; z < zend; ++z)
+  for (ssize_t z = zstart; z < zend; ++z)
   {
-    for (size_t y = ystart; y < yend; ++y)
+    for (ssize_t y = ystart; y < yend; ++y)
     {
-      for (size_t x = xstart; x < xend; ++x)
+      for (ssize_t x = xstart; x < xend; ++x)
       {
-        size_t dist = (size_t)sqrt(float((x - p1x) * (x - p1x) + (y - p1y) * (y - p1y) + (z - p1z) * (z - p1z)));
+        ssize_t dist = (ssize_t)sqrt(float((x - p1x) * (x - p1x) + (y - p1y) * (y - p1y) + (z - p1z) * (z - p1z)));
 
         if (radius > dist)
           for (size_t c=0; c<bpc*chan; ++c)
@@ -3069,7 +3069,7 @@ void vvVolDesc::drawSphere(size_t p1x, size_t p1y, size_t p1z, size_t radius, si
   @param p2x,p2y,p2z   line end point
   @param val           value of line voxels, array size must equal bpc * chan
 */
-void vvVolDesc::drawLine(size_t p1x, size_t p1y, size_t p1z, size_t p2x, size_t p2y, size_t p2z, uint8_t* val)
+void vvVolDesc::drawLine(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t p2x, ssize_t p2y, ssize_t p2z, uint8_t* val)
 {
   uint8_t* raw;
 
@@ -3430,15 +3430,15 @@ void vvVolDesc::extractSliceData(int frame, vvVecmath::AxisType axis, size_t sli
   switch (axis)
   {
     case 0:                                       // x axis
-      for (size_t j=0; j<vox[1]; ++j)
-        for (size_t i=0; i<vox[2]; ++i)
+      for (ssize_t j=0; j<vox[1]; ++j)
+        for (ssize_t i=0; i<vox[2]; ++i)
       {
         memcpy(dst, raw + i * sliceSize + j * lineSize + (vox[0] - slice - 1) * getBPV(), getBPV());
         dst += getBPV();
       }
       break;
     case 1:                                       // y axis
-      for (size_t i=0; i<vox[2]; ++i)
+      for (ssize_t i=0; i<vox[2]; ++i)
         memcpy(dst + i * lineSize, raw + (vox[2] - i - 1) * sliceSize + slice * lineSize, lineSize);
       break;
     case 2:                                       // z axis
@@ -3541,7 +3541,7 @@ void vvVolDesc::deinterlace()
   {
     rd = raw.getData();
     memcpy(volBuf, rd, frameSize);                // make backup copy of volume
-    for (size_t z=0; z<vox[2]; ++z)
+    for (ssize_t z=0; z<vox[2]; ++z)
     {
       dst = rd + z * sliceSize;
       if ((z % 2) == 0)                           // even slice number?
@@ -4105,13 +4105,13 @@ void vvVolDesc::swapChannels(size_t ch0, size_t ch1, bool verbose)
   {
     rd = raw.getData();
     raw.next();
-    for (size_t z=0; z<vox[2]; ++z)
+    for (ssize_t z=0; z<vox[2]; ++z)
     {
       sliceOffset = z * sliceSize;
-      for (size_t y=0; y<vox[1]; ++y)
+      for (ssize_t y=0; y<vox[1]; ++y)
       {
         rowOffset = sliceOffset + y * vox[0] * getBPV();
-        for (size_t x=0; x<vox[0]; ++x)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           voxelOffset = x * getBPV() + rowOffset;
 
@@ -4165,11 +4165,11 @@ void vvVolDesc::extractChannel(float weights[3], bool verbose)
     newRaw = new uint8_t[newSliceSize * vox[2]];
     src = rd;
     dst = newRaw;
-    for (size_t z=0; z<vox[2]; ++z)
+    for (ssize_t z=0; z<vox[2]; ++z)
     {
-      for (size_t y=0; y<vox[1]; ++y)
+      for (ssize_t y=0; y<vox[1]; ++y)
       {
-        for (size_t x=0; x<vox[0]; ++x)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           // Determine whether voxel belongs to 4th channel:
           val = -1.0f;                            // init
@@ -4220,7 +4220,7 @@ void vvVolDesc::extractChannel(float weights[3], bool verbose)
 */
 void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
 {
-  size_t x, y, z, f;                              // counters
+  size_t f;                                       // counters
   uint8_t* rd;                                    // raw volume data
 
   vvDebugMsg::msg(1, "vvFileIO::computeDefaultVolume()");
@@ -4244,9 +4244,9 @@ void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
       for (f=0; f<8; ++f)
       {
         rd = new uint8_t[getFrameBytes()];
-        for (z=0; z<vox[2]; ++z)
-          for (y=0; y<vox[1]; ++y)
-            for (x=0; x<vox[0]; ++x)
+        for (ssize_t z=0; z<vox[2]; ++z)
+          for (ssize_t y=0; y<vox[1]; ++y)
+            for (ssize_t x=0; x<vox[0]; ++x)
             {
               rd[x + y * vox[0] + z * getSliceBytes()] = (uint8_t)((x*(y+1)*(z+1)*(f+1)) % 256);
             }
@@ -4256,9 +4256,9 @@ void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
     break;
     case 1:                                       // top=max, bottom=min
       rd = new uint8_t[getFrameBytes()];
-      for (z=0; z<vox[2]; ++z)
-        for (y=0; y<vox[1]; ++y)
-          for (x=0; x<vox[0]; ++x)
+      for (ssize_t z=0; z<vox[2]; ++z)
+        for (ssize_t y=0; y<vox[1]; ++y)
+          for (ssize_t x=0; x<vox[0]; ++x)
           {
             int color;
                                                   // empty boundary
@@ -4273,9 +4273,9 @@ void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
     case 2:                                       // 4-channel test data set
       chan = 4;
       rd = new uint8_t[getFrameBytes()];
-      for (z=0; z<vox[2]; ++z)
-        for (y=0; y<vox[1]; ++y)
-          for (x=0; x<vox[0]; ++x)
+      for (ssize_t z=0; z<vox[2]; ++z)
+        for (ssize_t y=0; y<vox[1]; ++y)
+          for (ssize_t x=0; x<vox[0]; ++x)
           {
             rd[chan * (x + y * vox[0] + z * vox[0] * vox[1])]     = (y < vox[1]/4) ? 255 : 0;
             rd[chan * (x + y * vox[0] + z * vox[0] * vox[1]) + 1] = (y < vox[1]/2 && y >= vox[1]/4) ? 255 : 0;
@@ -4292,9 +4292,9 @@ void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
       int d[3];
       for (size_t i=0; i<3; ++i) d[i] = vox[i] / ((2 * numCubes) + 1);
       rd = new uint8_t[getFrameBytes()];
-      for (z=0; z<vox[2]; ++z)
-        for (y=0; y<vox[1]; ++y)
-          for (x=0; x<vox[0]; ++x)
+      for (ssize_t z=0; z<vox[2]; ++z)
+        for (ssize_t y=0; y<vox[1]; ++y)
+          for (ssize_t x=0; x<vox[0]; ++x)
           {
             if ((x / d[0]) % 2 == 1 &&
               (y / d[1]) % 2 == 1 &&
@@ -4309,9 +4309,9 @@ void vvVolDesc::computeVolume(int algorithm, size_t vx, size_t vy, size_t vz)
     case 4:                                       // float test data set
       bpc = 4;
       rd = new uint8_t[getFrameBytes()];
-      for (z=0; z<vox[2]; ++z)
-        for (y=0; y<vox[1]; ++y)
-          for (x=0; x<vox[0]; ++x)
+      for (ssize_t z=0; z<vox[2]; ++z)
+        for (ssize_t y=0; y<vox[1]; ++y)
+          for (ssize_t x=0; x<vox[0]; ++x)
           {
             *((float*)(rd + bpc * (x + y * vox[0] + z * vox[0] * vox[1]))) = float(x + y + z);
           }
@@ -4616,7 +4616,7 @@ bool vvVolDesc::makeHeightField(size_t slices, int mode, bool verbose)
   uint8_t* newRaw;                                // raw data of current destination frame
   uint8_t *src, *dst;                             // source and destination volume data
   size_t newFrameSize;                            // new volume's frame size [voxels]
-  size_t zPos;
+  ssize_t zPos;
 
   vvDebugMsg::msg(2, "vvVolDesc::makeHeightField()");
 
@@ -4641,12 +4641,12 @@ bool vvVolDesc::makeHeightField(size_t slices, int mode, bool verbose)
     dst = newRaw;
 
     // Traverse destination data:
-    for (size_t z=0; z<slices; ++z)
+    for (ssize_t z=0; z<static_cast<ssize_t>(slices); ++z)
     {
       src = rd;
-      for (size_t y=0; y<vox[1]; ++y)
+      for (ssize_t y=0; y<vox[1]; ++y)
       {
-        for (size_t x=0; x<vox[0]; ++x)
+        for (ssize_t x=0; x<vox[0]; ++x)
         {
           // Calculate normalized height [0..1]:
           switch(bpc)
@@ -4738,11 +4738,11 @@ void vvVolDesc::addGradient(size_t srcChan, GradientType gradType)
   {
     // Calculate gradient magnitudes for non-edge voxels:
     src = getRaw(f) + bpv * (1 + vox[0] + sliceVoxels) + bpc * srcChan;
-    for(size_t z=1; z<vox[2]-1; ++z)
+    for(ssize_t z=1; z<vox[2]-1; ++z)
     {
-      for(size_t y=1; y<vox[1]-1; ++y)
+      for(ssize_t y=1; y<vox[1]-1; ++y)
       {
-        for(size_t x=1; x<vox[0]-1; ++x)
+        for(ssize_t x=1; x<vox[0]-1; ++x)
         {
           // Calculate gradient from surrounding voxels:
           surrPtr[0] = src - bpv;
@@ -4816,7 +4816,7 @@ void vvVolDesc::addGradient(size_t srcChan, GradientType gradType)
 //----------------------------------------------------------------------------
 /** Calculate mean and variance for the 3x3x3 neighborhood of a voxel.
 */
-void vvVolDesc::voxelStatistics(size_t frame, size_t c, size_t x, size_t y, size_t z, float& mean, float& variance)
+void vvVolDesc::voxelStatistics(size_t frame, size_t c, ssize_t x, ssize_t y, ssize_t z, float& mean, float& variance)
 {
   uint8_t* raw;
   double sumSquares = 0.0;
@@ -4906,11 +4906,11 @@ void vvVolDesc::addVariance(size_t srcChan)
   {
     // Calculate variance for all voxels, including edge voxels:
     src = getRaw(f) + bpc * srcChan;
-    for(size_t z=0; z<vox[2]; ++z)
+    for(ssize_t z=0; z<vox[2]; ++z)
     {
-      for(size_t y=0; y<vox[1]; ++y)
+      for(ssize_t y=0; y<vox[1]; ++y)
       {
-        for(size_t x=0; x<vox[0]; ++x)
+        for(ssize_t x=0; x<vox[0]; ++x)
         {
           voxelStatistics(f, srcChan, x, y, z, mean, variance);
           dst = src + voxelOffset;
@@ -5257,30 +5257,30 @@ static size_t index(size_t i, size_t j, size_t k, size_t d0, size_t d1, size_t d
   @param channel no. of channel to extract data from
   @param frame no. of channel to extract data from
 */
-void vvVolDesc::computeMinMaxArrays(uchar *minArray, uint8_t *maxArray, size_t downsample, size_t channel, int frame) const
+void vvVolDesc::computeMinMaxArrays(uchar *minArray, uint8_t *maxArray, ssize_t downsample, size_t channel, int frame) const
 {
   vvDebugMsg::msg(2, "vvVolDesc::computeMinMaxArrays()");
 
   if(bpc != 1)
     return;
 
-  size_t v0 = (vox[0]+downsample-1)/downsample;
-  size_t v1 = (vox[1]+downsample-1)/downsample;
-  size_t v2 = (vox[2]+downsample-1)/downsample;
+  ssize_t v0 = (vox[0]+downsample-1)/downsample;
+  ssize_t v1 = (vox[1]+downsample-1)/downsample;
+  ssize_t v2 = (vox[2]+downsample-1)/downsample;
 
   uint8_t *raw = const_cast<vvVolDesc *>(this)->getRaw(frame);
-  for(size_t k=0; k<vox[2]; k += downsample)
+  for(ssize_t k=0; k<vox[2]; k += downsample)
   {
-    for(size_t j=0; j<vox[1]; j += downsample)
+    for(ssize_t j=0; j<vox[1]; j += downsample)
     {
-      for(size_t i=0; i<vox[0]; i += downsample)
+      for(ssize_t i=0; i<vox[0]; i += downsample)
       {
         uint8_t cMin = 255, cMax = 0;
         {
-          for(size_t kk=k; kk<vox[2] && kk<k+downsample; ++kk)
-            for(size_t jj=j; jj<vox[1] && jj<j+downsample; ++jj)
+          for(ssize_t kk=k; kk<vox[2] && kk<k+downsample; ++kk)
+            for(ssize_t jj=j; jj<vox[1] && jj<j+downsample; ++jj)
             {
-              for(size_t ii=i; ii<vox[0] && ii<i+downsample; ++ii)
+              for(ssize_t ii=i; ii<vox[0] && ii<i+downsample; ++ii)
               {
                 uint8_t v = raw[chan*index(ii, jj, kk, vox[0], vox[1], vox[2])+channel];
                 if(cMin > v)
@@ -5298,7 +5298,7 @@ void vvVolDesc::computeMinMaxArrays(uchar *minArray, uint8_t *maxArray, size_t d
   }
 }
 
-vvsize3 vvVolDesc::voxelCoords(const vvVector3& objCoords) const
+vvssize3 vvVolDesc::voxelCoords(const vvVector3& objCoords) const
 {
   vvVector3 fltVox2 = vvVector3(static_cast<float>(vox[0]) * 0.5f,
                                 static_cast<float>(vox[1]) * 0.5f,
@@ -5310,12 +5310,12 @@ vvsize3 vvVolDesc::voxelCoords(const vvVector3& objCoords) const
     obj[i] /= _scale;
   }
 
-  return vvsize3(static_cast<size_t>(obj[0] + fltVox2[0]),
-                 static_cast<size_t>(obj[1] + fltVox2[1]),
-                 static_cast<size_t>(obj[2] + fltVox2[2]));
+  return vvssize3(static_cast<ssize_t>(obj[0] + fltVox2[0]),
+                  static_cast<ssize_t>(obj[1] + fltVox2[1]),
+                  static_cast<ssize_t>(obj[2] + fltVox2[2]));
 }
 
-vvVector3 vvVolDesc::objectCoords(const vvsize3& voxCoords) const
+vvVector3 vvVolDesc::objectCoords(const vvssize3& voxCoords) const
 {
   vvVector3 fltVox2 = vvVector3(static_cast<float>(vox[0]) * 0.5f,
                                 static_cast<float>(vox[1]) * 0.5f,

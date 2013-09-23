@@ -95,7 +95,7 @@ inline virvo::Vec3 normalize(virvo::Vec3 const& v)
   return virvo::vecmath::normalize(v);
 }
 }
-typedef vvsize3 Vec3s;
+typedef vvssize3 Vec3s;
 using virvo::AABB;
 typedef float Vec;
 using virvo::Vec3;
@@ -474,17 +474,17 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   static const Vec opacityThreshold = 0.95f;
 
   vvVolDesc* vd            = thread->renderer->getVolDesc();
-  vvAABBs const& vr        = thread->renderer->getParameter(vvRenderer::VV_VISIBLE_REGION);
+  virvo::AABBss const& vr  = thread->renderer->getParameter(vvRenderer::VV_VISIBLE_REGION);
   float quality            = thread->renderer->getParameter(vvRenderer::VV_QUALITY);
   bool interpolation       = thread->renderer->getParameter(vvRenderer::VV_SLICEINT);
   bool opacityCorrection   = thread->renderer->getParameter(vvRenderer::VV_OPCORR);
   bool earlyRayTermination = thread->renderer->getParameter(vvRenderer::VV_TERMINATEEARLY);
 
-  virvo::size3 minVox = vr.getMin();
-  virvo::size3 maxVox = vr.getMax();
+  virvo::ssize3 minVox = vr.getMin();
+  virvo::ssize3 maxVox = vr.getMax();
   for (size_t i = 0; i < 3; ++i)
   {
-    minVox[i] = std::max(minVox[i], size_t(0));
+    minVox[i] = std::max(minVox[i], ssize_t(0));
     maxVox[i] = std::min(maxVox[i], vd->vox[i]);
   }
   const virvo::Vec3 minCorner = vd->objectCoords(minVox);

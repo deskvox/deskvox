@@ -122,7 +122,7 @@ class VIRVOEXPORT vvVolDesc
     
     static const size_t DEFAULT_ICON_SIZE;        ///< system default for icon size if not otherwise specified (only stored in XVF files)
     static const size_t NUM_HDR_BINS;             ///< constant value for HDR transfer functions
-    vvsize3 vox;                                  ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
+    vvssize3 vox;                                 ///< width, height and number of slices of volume [voxels] (0 if no volume loaded)
     size_t frames;                                ///< number of animation frames in movie (0 if no volume data stored)
     size_t bpc;                                   ///< bytes per channel (default = 1); each channel is scalar:<UL>
                                                   ///< <LI>1 = 1 unsigned char</LI>
@@ -194,9 +194,9 @@ class VIRVOEXPORT vvVolDesc
     void   rotate(vvVecmath::AxisType, int);
     void   convertRGBPlanarToRGBInterleaved(int frame=-1);
     void   toggleEndianness(int frame=-1);
-    void   crop(size_t, size_t, size_t, size_t, size_t, size_t);
+    void   crop(ssize_t x, ssize_t y, ssize_t z, ssize_t w, ssize_t h, ssize_t s);
     void   cropTimesteps(size_t start, size_t steps);
-    void   resize(size_t, size_t, size_t, InterpolationType, bool=false);
+    void   resize(ssize_t w, ssize_t h, ssize_t s, InterpolationType, bool=false);
     void   shift(int, int, int);
     void   convertVoxelOrder();
     void   convertCoviseToVirvo();
@@ -230,12 +230,12 @@ class VIRVOEXPORT vvVolDesc
     void   makeShortInfoString(char*);
     void   printVolumeInfo();
     void   printStatistics();
-    void   printVoxelData(int, size_t, size_t=0, size_t=0);
+    void   printVoxelData(int frame, ssize_t slice, ssize_t width=0, ssize_t height=0);
     void   printHistogram(int frame, size_t channel);
     void   trilinearInterpolation(size_t f, float, float, float, uint8_t*);
-    void   drawBox(size_t, size_t, size_t, size_t, size_t, size_t, size_t, uint8_t*);
-    void   drawSphere(size_t, size_t, size_t, size_t, size_t, uint8_t*);
-    void   drawLine(size_t, size_t, size_t, size_t, size_t, size_t, uint8_t*);
+    void   drawBox(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t p2x, ssize_t p2y, ssize_t p2z, size_t chan, uint8_t* val);
+    void   drawSphere(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t radius, size_t chan, uint8_t* val);
+    void   drawLine(ssize_t p1x, ssize_t p1y, ssize_t p1z, ssize_t p2x, ssize_t p2y, ssize_t p2z, uint8_t*);
     void   drawBoundaries(uchar*, int=-1);
     size_t serializeAttributes(uint8_t* = NULL) const;
     void   deserializeAttributes(uint8_t*, size_t bufSize=SERIAL_ATTRIB_SIZE);
@@ -249,7 +249,7 @@ class VIRVOEXPORT vvVolDesc
     int    findNumUsed(size_t channel);
     int    findNumTransparent(int);
     void   calculateDistribution(int frame, size_t chan, float&, float&, float&);
-    void   voxelStatistics(size_t, size_t, size_t, size_t, size_t, float&, float&);
+    void   voxelStatistics(size_t frame, size_t c, ssize_t x, ssize_t y, ssize_t z, float&, float&);
     float  calculateMean(int);
     float  findClampValue(int, size_t channel, float);
     void   computeVolume(int, size_t, size_t, size_t);
@@ -270,9 +270,9 @@ class VIRVOEXPORT vvVolDesc
     void computeTFTexture(int, int, int, float*);
     void makeLineTexture(DiagType, uchar, int, int, bool, vvArray<float*>, uint8_t*);
     void makeLineHistogram(size_t channel, int buckets, vvArray<float*>, int*);
-    void computeMinMaxArrays(uint8_t *minArray, uchar *maxArray, size_t downsample, size_t channel=0, int frame=-1) const;
-    vvsize3 voxelCoords(const vvVector3& objCoords) const;
-    vvVector3 objectCoords(const vvsize3& voxCoords) const;
+    void computeMinMaxArrays(uint8_t *minArray, uchar *maxArray, ssize_t downsample, size_t channel=0, int frame=-1) const;
+    vvssize3 voxelCoords(const vvVector3& objCoords) const;
+    vvVector3 objectCoords(const vvssize3& voxCoords) const;
 
   private:
     char*  filename;                              ///< name of volume data file, including extension, excluding path ("" if undefined)

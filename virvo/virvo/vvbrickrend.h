@@ -66,7 +66,7 @@ protected:
 
   /*! update visibible region of renderer with border padding for interpolation
    */
-  static void setVisibleRegion(vvRenderer* renderer, const vvAABBs& aabb, size_t padding = 1);
+  static void setVisibleRegion(vvRenderer* renderer, virvo::AABBss const& aabb, size_t padding = 1);
 };
 
 #endif // _VVBRICKREND_H_

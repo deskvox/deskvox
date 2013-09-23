@@ -110,7 +110,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
   }
 
   // start out with empty rendering regions
-  vvAABBs emptyBox = vvAABBs(vvsize3(), vvsize3());
+  virvo::AABBss emptyBox = virvo::AABBss(virvo::ssize3(), virvo::ssize3());
   setParameter(vvRenderer::VV_VISIBLE_REGION, emptyBox);
   setParameter(vvRenderer::VV_PADDING_REGION, emptyBox);
 
@@ -293,7 +293,7 @@ void vvParBrickRend::renderVolumeGL()
     getEyePosition(&eye);
 
     // bsp tree maintains boxes in voxel coordinates
-    vvsize3 veye = vd->voxelCoords(eye);
+    vvssize3 veye = vd->voxelCoords(eye);
 
     // TODO: if we want to use this context for rendering,
     // store the framebuffer before rendering and restore

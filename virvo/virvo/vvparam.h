@@ -59,10 +59,12 @@ public:
     VV_VEC3I,
     VV_VEC4,
     VV_SIZE3,
+    VV_SSIZE3,
     VV_COLOR,
     VV_AABB,
     VV_AABBI,
-    VV_AABBS
+    VV_AABBS,
+    VV_AABBSS
   };
 
 private:
@@ -188,6 +190,12 @@ public:
   {
   }
 
+  vvParam(const vvssize3& val)
+    : type(VV_SSIZE3)
+    , value(val)
+  {
+  }
+
   vvParam(const vvColor& val)
     : type(VV_COLOR)
     , value(val)
@@ -208,6 +216,12 @@ public:
 
   vvParam(const vvAABBs& val)
     : type(VV_AABBS)
+    , value(val)
+  {
+  }
+
+  vvParam(const vvAABBss& val)
+    : type(VV_AABBSS)
     , value(val)
   {
   }
@@ -306,6 +320,11 @@ public:
     return boost::any_cast<vvsize3>(value);
   }
 
+  vvssize3 asSsize3() const
+  {
+    return boost::any_cast<vvssize3>(value);
+  }
+
   vvColor asColor() const
   {
     return boost::any_cast<vvColor>(value);
@@ -324,6 +343,11 @@ public:
   vvAABBs asAABBs() const
   {
     return boost::any_cast<vvAABBs>(value);
+  }
+
+  vvAABBss asAABBss() const
+  {
+    return boost::any_cast<vvAABBss>(value);
   }
 
   operator bool() const { return asBool(); }
@@ -348,10 +372,12 @@ public:
   operator vvVector3i() const { return asVec3i(); }
   operator vvVector4() const { return asVec4(); }
   operator vvsize3() const { return asSize3(); }
+  operator vvssize3() const { return asSsize3(); }
   operator vvColor() const { return asColor(); }
   operator vvAABB() const { return asAABB(); }
   operator vvAABBi() const { return asAABBi(); }
   operator vvAABBs() const { return asAABBs(); }
+  operator vvAABBss() const { return asAABBss(); }
 
   // Returns the type of this parameter
   Type getType() const { return type; }

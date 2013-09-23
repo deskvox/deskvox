@@ -34,7 +34,7 @@
 // vvBspNode Method Definitions
 //============================================================================
 
-vvBspNode::vvBspNode(const vvAABBs& aabb)
+vvBspNode::vvBspNode(virvo::AABBss const& aabb)
   : _aabb(aabb)
 {
   _childLeft = NULL;
@@ -74,7 +74,7 @@ void vvBspNode::setId(size_t id)
   _id = id;
 }
 
-void vvBspNode::setAabb(const vvAABBs& aabb)
+void vvBspNode::setAabb(virvo::AABBss const& aabb)
 {
   _aabb = aabb;
 }
@@ -94,7 +94,7 @@ vvBspNode* vvBspNode::getChildRight() const
   return _childRight;
 }
 
-const vvAABBs& vvBspNode::getAabb() const
+virvo::AABBss const& vvBspNode::getAabb() const
 {
   return _aabb;
 }
@@ -102,15 +102,15 @@ const vvAABBs& vvBspNode::getAabb() const
 void vvBspNode::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
                           vvVector3&, vvVector3&) const
 {
-  vvsize3 probeMinI(static_cast<size_t>(probeMin[0]),
-                    static_cast<size_t>(probeMin[1]),
-                    static_cast<size_t>(probeMin[2]));
+  vvssize3 probeMinI(static_cast<ssize_t>(probeMin[0]),
+                     static_cast<ssize_t>(probeMin[1]),
+                     static_cast<ssize_t>(probeMin[2]));
 
-  vvsize3 probeMaxI(static_cast<size_t>(probeMax[0]),
-                    static_cast<size_t>(probeMax[1]),
-                    static_cast<size_t>(probeMax[2]));
+  vvssize3 probeMaxI(static_cast<ssize_t>(probeMax[0]),
+                     static_cast<ssize_t>(probeMax[1]),
+                     static_cast<ssize_t>(probeMax[2]));
 
-  vvAABBs probe(probeMinI, probeMaxI);
+  vvAABBss probe(probeMinI, probeMaxI);
   probe.intersect(_aabb);
 
   for (size_t i = 0; i < 3; ++i)
@@ -156,8 +156,8 @@ vvBspTree::vvBspTree(vvVolDesc* vd, const vvBspData& data)
     return;
   }
 
-  vvsize3 voxMin(0, 0, 0);
-  vvsize3 voxMax = vd->vox;
+  vvssize3 voxMin(0, 0, 0);
+  vvssize3 voxMax = vd->vox;
   _leafs.resize(_data.loadBalance.size());
 
   if (_leafs.size() < 1)
@@ -168,12 +168,12 @@ vvBspTree::vvBspTree(vvVolDesc* vd, const vvBspData& data)
 
   if (_leafs.size() > 1)
   {
-    _root = new vvBspNode(vvAABBs(voxMin, voxMax));
+    _root = new vvBspNode(virvo::AABBss(voxMin, voxMax));
     buildHierarchy(_root, 0);
   }
   else
   {
-    _root = new vvBspNode(vvAABBs(voxMin, voxMax));
+    _root = new vvBspNode(virvo::AABBss(voxMin, voxMax));
     _root->setId(0);
     _leafs[0] = _root;
   }
@@ -186,7 +186,7 @@ vvBspTree::~vvBspTree()
   delete _root;
 }
 
-void vvBspTree::traverse(const vvsize3& pos) const
+void vvBspTree::traverse(const vvssize3& pos) const
 {
   traverse(pos, _root);
 }
@@ -204,11 +204,11 @@ void vvBspTree::setVisitor(vvVisitor* visitor)
 void vvBspTree::buildHierarchy(vvBspNode* node, size_t leafIdx)
 {
   const float fraction = calcRelativeFraction(leafIdx);
-  const vvAABBs aabb = node->getAabb();
+  virvo::AABBss const aabb = node->getAabb();
   vvVecmath::AxisType axis;
   const size_t length = aabb.getLongestSide(axis);
   const float split = static_cast<float>(length) * fraction;
-  std::pair<vvAABBs, vvAABBs> splitted = aabb.split(axis, static_cast<size_t>(split));
+  std::pair<virvo::AABBss, virvo::AABBss> splitted = aabb.split(axis, static_cast<size_t>(split));
 
   if (leafIdx == _leafs.size() - 2)
   {
@@ -251,7 +251,7 @@ float vvBspTree::calcRelativeFraction(size_t leafIdx)
   return _data.loadBalance[leafIdx] / total;
 }
 
-void vvBspTree::traverse(const vvsize3& pos, vvBspNode* node) const
+void vvBspTree::traverse(const vvssize3& pos, vvBspNode* node) const
 {
   if (node->isLeaf())
   {
@@ -262,8 +262,8 @@ void vvBspTree::traverse(const vvsize3& pos, vvBspNode* node) const
   }
   else
   {
-    vvsize3 minval = node->getChildLeft()->getAabb().getMin();
-    vvsize3 maxval = node->getChildLeft()->getAabb().getMax();
+    vvssize3 minval = node->getChildLeft()->getAabb().getMin();
+    vvssize3 maxval = node->getChildLeft()->getAabb().getMax();
 
     for (size_t i = 0; i < 3; ++i)
     {
@@ -277,7 +277,7 @@ void vvBspTree::traverse(const vvsize3& pos, vvBspNode* node) const
         maxval[i] = std::numeric_limits<size_t>::max();
       }
     }
-    const vvAABBs aabb(minval, maxval);
+    virvo::AABBss const aabb(minval, maxval);
 
     // back-to-front traversal
     if (aabb.contains(pos))

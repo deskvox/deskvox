@@ -66,7 +66,7 @@ void vvSerBrickRend::renderVolumeGL()
     getEyePosition(&eye);
 
     // bsp tree maintains boxes in voxel coordinates
-    vvsize3 veye = vd->voxelCoords(eye);
+    vvssize3 veye = vd->voxelCoords(eye);
     _bspTree->traverse(veye);
   }
   else
@@ -119,7 +119,7 @@ vvSerBrickRend::ErrorType vvSerBrickRend::createRenderers()
   vvDebugMsg::msg(3, "vvSerBrickRend::createRenderers()");
 
   // start out with empty rendering regions
-  vvAABBi emptyBox = vvAABBi(vvVector3i(), vvVector3i());
+  virvo::AABBss emptyBox = virvo::AABBss(virvo::ssize3(), virvo::ssize3());
   setParameter(vvRenderer::VV_VISIBLE_REGION, emptyBox);
   setParameter(vvRenderer::VV_PADDING_REGION, emptyBox);
 
@@ -137,7 +137,7 @@ vvSerBrickRend::ErrorType vvSerBrickRend::createRenderers()
 
   for (size_t i = 0; i < _renderers.size(); ++i)
   {
-    const vvAABBs aabb = _bspTree->getLeafs().at(i)->getAabb();
+    virvo::AABBss const aabb = _bspTree->getLeafs().at(i)->getAabb();
 
     setVisibleRegion(_renderers.at(i), aabb);
   }

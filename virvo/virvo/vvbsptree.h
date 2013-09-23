@@ -35,7 +35,7 @@ class vvVolDesc;
 class vvBspNode : public vvVisitable
 {
 public:
-  vvBspNode(const vvAABBs& aabb);
+  vvBspNode(virvo::AABBss const& aabb);
   virtual ~vvBspNode();
 
   virtual void accept(vvVisitor* visitor);
@@ -43,12 +43,12 @@ public:
   void addChild(vvBspNode* child);
   bool isLeaf() const;
   void setId(size_t id);
-  void setAabb(const vvAABBs& aabb);
+  void setAabb(virvo::AABBss const& aabb);
 
   size_t getId() const;
   vvBspNode* getChildLeft() const;
   vvBspNode* getChildRight() const;
-  const vvAABBs& getAabb() const;
+  virvo::AABBss const& getAabb() const;
 
   void clipProbe(vvVector3& probeMin, vvVector3& probeMax,
                  vvVector3& probePosObj, vvVector3& probeSizeObj) const;
@@ -57,7 +57,7 @@ private:
   vvBspNode* _childLeft;
   vvBspNode* _childRight;
 
-  vvAABBs _aabb;
+  virvo::AABBss _aabb;
 };
 
 /*! \brief Data passed to bsp-tree ctor
@@ -80,7 +80,7 @@ public:
   vvBspTree(vvVolDesc* vd, const vvBspData& data);
   virtual ~vvBspTree();
 
-  void traverse(const vvsize3& pos) const;
+  void traverse(const vvssize3& pos) const;
 
   const std::vector<vvBspNode*>& getLeafs() const;
 
@@ -102,7 +102,7 @@ private:
    [2] := 100% of remaining fraction (0.1) == 1.0
   */
   float calcRelativeFraction(size_t leafIdx);
-  void traverse(const vvsize3& pos, vvBspNode* node) const;
+  void traverse(const vvssize3& pos, vvBspNode* node) const;
 };
 
 #endif // VVBSPTREE_H

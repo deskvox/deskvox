@@ -196,9 +196,9 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     ErrorType makeTextures3D();
     void removeTextures();
-    ErrorType updateTextures3D(size_t, size_t, size_t, size_t, size_t, size_t, bool);
-    ErrorType updateTextures2D(size_t, size_t, size_t, size_t, size_t, size_t, size_t);
-    ErrorType updateTextureBricks(size_t, size_t, size_t, size_t, size_t, size_t);
+    ErrorType updateTextures3D(ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, bool);
+    ErrorType updateTextures2D(size_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t);
+    ErrorType updateTextureBricks(ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t);
     void setGLenvironment() const;
     void unsetGLenvironment() const;
     void renderTex3DSpherical(const vvMatrix& view);

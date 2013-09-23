@@ -86,8 +86,8 @@ vvRenderState::vvRenderState()
   , _opaqueGeometryPresent(false)
   , _useIbr(false)
   , _ibrMode(VV_REL_THRESHOLD)
-  , _visibleRegion(vvAABBs(vvsize3(0), vvsize3(std::numeric_limits<size_t>::max())))
-  , _paddingRegion(vvAABBs(vvsize3(0), vvsize3(std::numeric_limits<size_t>::max())))
+  , _visibleRegion(vvAABBss(vvssize3(0), vvssize3(std::numeric_limits<ssize_t>::max())))
+  , _paddingRegion(vvAABBss(vvssize3(0), vvssize3(std::numeric_limits<ssize_t>::max())))
   , _opacityCorrection(true)
   , _interpolation(true)
   , _earlyRayTermination(true)
@@ -1288,7 +1288,7 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
   vvVector3 point(x,y,z);                         // point to get alpha value at
   vvVector3 pos;
   float index;                                    // floating point index value into alpha TF [0..1]
-  size_t vp[3];                                   // position of nearest voxel to x/y/z [voxel space]
+  ssize_t vp[3];                                  // position of nearest voxel to x/y/z [voxel space]
   uchar* ptr;
 
   vvDebugMsg::msg(3, "vvRenderer::getAlphaValue()");
@@ -1303,8 +1303,8 @@ float vvRenderer::getAlphaValue(float x, float y, float z)
     if (point[i] < (pos[i] - size2[i])) return -1.0f;
     if (point[i] > (pos[i] + size2[i])) return -1.0f;
 
-    vp[i] = size_t(float(vd->vox[i]) * (point[i] - pos[i] + size2[i]) / size[i]);
-    vp[i] = ts_clamp(vp[i], size_t(0), vd->vox[i]-1);
+    vp[i] = ssize_t(float(vd->vox[i]) * (point[i] - pos[i] + size2[i]) / size[i]);
+    vp[i] = ts_clamp(vp[i], ssize_t(0), vd->vox[i]-1);
   }
 
   vp[1] = vd->vox[1] - vp[1] - 1;

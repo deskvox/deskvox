@@ -58,7 +58,7 @@ void vvBrickRend::renderVolumeGL()
   {
     _bspTree->setVisitor(_showBricksVisitor);
     // no depth ordering necessary, don't calculate eye pos
-    vvsize3 eye(0, 0, 0);
+    vvssize3 eye(0, 0, 0);
     _bspTree->traverse(eye);
   }
   else
@@ -100,14 +100,14 @@ bool vvBrickRend::buildBspTree(size_t numBricks)
    return (_bspTree != NULL);
 }
 
-void vvBrickRend::setVisibleRegion(vvRenderer* renderer, const vvAABBs& aabb, size_t padding)
+void vvBrickRend::setVisibleRegion(vvRenderer* renderer, virvo::AABBss const& aabb, size_t padding)
 {
   vvDebugMsg::msg(3, "vvBrickRend::setVisibleRegion()");
 
   renderer->setParameter(vvRenderer::VV_VISIBLE_REGION, aabb);
 
-  vvsize3 minval = aabb.getMin();
-  vvsize3 maxval = aabb.getMax();
+  vvssize3 minval = aabb.getMin();
+  vvssize3 maxval = aabb.getMax();
   for (size_t j = 0; j < 3; ++j)
   {
     if (minval[j] > 0)
@@ -120,7 +120,7 @@ void vvBrickRend::setVisibleRegion(vvRenderer* renderer, const vvAABBs& aabb, si
       maxval[j] += padding;
     }
   }
-  renderer->setParameter(vvRenderer::VV_PADDING_REGION, vvAABBs(minval, maxval));
+  renderer->setParameter(vvRenderer::VV_PADDING_REGION, virvo::AABBss(minval, maxval));
 
 }
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

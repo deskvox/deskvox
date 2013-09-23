@@ -1326,13 +1326,13 @@ vvFileIO::ErrorType vvFileIO::saveAVFFile(vvVolDesc* vd)
   for (size_t f=0; f<vd->frames; ++f)
   {
     raw = vd->getRaw(f);
-    for (size_t z=0; z<vd->vox[2]; ++z)
+    for (ssize_t z=0; z<vd->vox[2]; ++z)
     {
       if (vd->frames > 1) fprintf(fp, "# Frame %d, slice %d\n", static_cast<int32_t>(f), static_cast<int32_t>(z));
       else fprintf(fp, "# Slice %d\n", static_cast<int32_t>(z));
-      for (size_t y=0; y<vd->vox[1]; ++y)
+      for (ssize_t y=0; y<vd->vox[1]; ++y)
       {
-        for (size_t x=0; x<vd->vox[0]; ++x)
+        for (ssize_t x=0; x<vd->vox[0]; ++x)
         {
           for (size_t c=0; c<vd->chan; ++c)
           {
@@ -1608,11 +1608,11 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
     {
       raw = new uint8_t[frameSize];                 // create new data space for volume data
       size_t i = 0;
-      for (size_t z=0; z<vd->vox[2]; ++z)
+      for (ssize_t z=0; z<vd->vox[2]; ++z)
       {
-        for (size_t y=0; y<vd->vox[1]; ++y)
+        for (ssize_t y=0; y<vd->vox[1]; ++y)
         {
-          for (size_t x=0; x<vd->vox[0]; ++x)
+          for (ssize_t x=0; x<vd->vox[0]; ++x)
           {
             for (size_t c=0; c<vd->chan; ++c)
             {
@@ -1724,7 +1724,7 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
   size_t numTimesteps;                            // number of time steps in file
   size_t frameSize;                               // number of bytes per frame
   int iVal;                                       // integer density
-  size_t iPos[3];                                 // position of particle in volume
+  ssize_t iPos[3];                                // position of particle in volume
   size_t index;
   bool error = false;
 
@@ -1880,8 +1880,8 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
   maxBoxSize = ts_max(boxSize[0], boxSize[1], boxSize[2]);
   for(size_t i=0; i<3; ++i)
   {
-    vd->vox[i] = size_t(float(maxEdgeLength) * boxSize[i] / maxBoxSize);
-    vd->vox[i] = ts_clamp(vd->vox[i], size_t(1), size_t(maxEdgeLength));
+    vd->vox[i] = ssize_t(float(maxEdgeLength) * boxSize[i] / maxBoxSize);
+    vd->vox[i] = ts_clamp(vd->vox[i], ssize_t(1), ssize_t(maxEdgeLength));
   }
   for (size_t i=0; i<3; ++i)
   {
@@ -1902,7 +1902,7 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
       for (size_t j=0; j<3; ++j)
       {
         iPos[j] = int(float(vd->vox[j] - 1) * (timesteps.getData()->pos[j][i] - boxMin[j]) / (boxMax[j] - boxMin[j]));
-        iPos[j] = ts_clamp(iPos[j], size_t(0), vd->vox[j] - 1);
+        iPos[j] = ts_clamp(iPos[j], ssize_t(0), vd->vox[j] - 1);
       }
       // Allow values from 1 to MAX_16BIT:
       if (useGlobalMinMax)
@@ -1980,7 +1980,7 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   size_t numTimesteps;                            // number of time steps in file
   size_t frameSize;                               // number of bytes per frame
   int iVal;                                       // integer density
-  size_t iPos[3];                                 // position of particle in volume
+  ssize_t iPos[3];                                // position of particle in volume
   size_t index;
   float speed[3];
 
@@ -2108,8 +2108,8 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   maxBoxSize = ts_max(boxSize[0], boxSize[1], boxSize[2]);
   for(size_t i=0; i<3; ++i)
   {
-    vd->vox[i] = size_t(float(maxEdgeLength) * boxSize[i] / maxBoxSize);
-    vd->vox[i] = ts_clamp(vd->vox[i], size_t(1), size_t(maxEdgeLength));
+    vd->vox[i] = ssize_t(float(maxEdgeLength) * boxSize[i] / maxBoxSize);
+    vd->vox[i] = ts_clamp(vd->vox[i], ssize_t(1), ssize_t(maxEdgeLength));
   }
   for (size_t i=0; i<3; ++i)
   {
@@ -2130,7 +2130,7 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
       for (size_t j=0; j<3; ++j)
       {
         iPos[j] = int(float(vd->vox[j] - 1) * (timesteps.getData()->pos[j][i] - boxMin[j]) / (boxMax[j] - boxMin[j]));
-        iPos[j] = ts_clamp(iPos[j], size_t(0), vd->vox[j] - 1);
+        iPos[j] = ts_clamp(iPos[j], ssize_t(0), vd->vox[j] - 1);
       }
       // Allow values from 1 to MAX_16BIT:
       if (useGlobalMinMax)
@@ -2473,7 +2473,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
   digits = 1 + int32_t(log((double)vd->vox[2]) / log(10.0));
   filenames = new char*[vd->vox[2]];
   len = strlen(vd->getFilename());
-  for (size_t i=0; i<vd->vox[2]; ++i)
+  for (ssize_t i=0; i<vd->vox[2]; ++i)
   {
     filenames[i] = new char[len + static_cast<size_t>(digits) + 2];    // add 2 for '-' and '\0'
     vvToolshed::extractDirname(buffer, vd->getFilename());
@@ -2494,7 +2494,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
   if (tmpVD->bpc != 1) tmpVD->convertBPC(1);
 
   // Write files:
-  for (size_t i=0; i<tmpVD->vox[2] && err==OK; ++i)
+  for (ssize_t i=0; i<tmpVD->vox[2] && err==OK; ++i)
   {
     if (!overwrite)
     {
@@ -2654,7 +2654,7 @@ vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
   }
 
   // Free memory:
-  for (size_t i=0; i<tmpVD->vox[2]; ++i) delete[] filenames[i];
+  for (ssize_t i=0; i<tmpVD->vox[2]; ++i) delete[] filenames[i];
   delete[] filenames;
   delete tmpVD;
 
@@ -3616,7 +3616,7 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
     for (size_t f=0; f<vd->frames; ++f)                  // store pointers to frame data in array for speed
       frameRaw[f] = vd->getRaw(f);
 
-    for (size_t i=0; i<vd->vox[2]; ++i)
+    for (ssize_t i=0; i<vd->vox[2]; ++i)
     {
       if (fread(buf, 1, vtcSliceSize, fp) != vtcSliceSize)
       {
@@ -3628,8 +3628,8 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
       bufPtr = buf;
 
       // Copy data from buffer to actual volume storage:
-      for (size_t y=0; y<vd->vox[1]; ++y)
-        for (size_t x=0; x<vd->vox[0]; ++x)
+      for (ssize_t y=0; y<vd->vox[1]; ++y)
+        for (ssize_t x=0; x<vd->vox[0]; ++x)
           for (size_t f=0; f<vd->frames; ++f)
           {
         // Swap the bytes because they are stored as little endian:
@@ -4527,11 +4527,11 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
   // Read volume data:
   for (size_t i=0; i<NUM_CHANNELS; ++i)
   {
-    for (size_t z=0; z<vd->vox[2]; ++z)
+    for (ssize_t z=0; z<vd->vox[2]; ++z)
     {
-      for (size_t y=0; y<vd->vox[1]; ++y)
+      for (ssize_t y=0; y<vd->vox[1]; ++y)
       {
-        for (size_t x=0; x<vd->vox[0]; ++x)
+        for (ssize_t x=0; x<vd->vox[0]; ++x)
         {
           if (tok->nextToken() == vvTokenizer::VV_NUMBER)          
           {
@@ -4581,7 +4581,7 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(vvVolDesc* vd, bool overwrite)
   digits = 1 + uint32_t(log((double)vd->vox[2]) / log(10.0));
   filenames = new char*[vd->vox[2]];
   len = strlen(vd->getFilename());
-  for (size_t i=0; i<vd->vox[2]; ++i)
+  for (ssize_t i=0; i<vd->vox[2]; ++i)
   {
     filenames[i] = new char[len + digits + 2];    // add 2 for '-' and '\0'
     vvToolshed::extractDirname(buffer, vd->getFilename());
@@ -4601,7 +4601,7 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(vvVolDesc* vd, bool overwrite)
   // Check files for existence:
   if (!overwrite)
   {
-    for (size_t i=0; i<vd->vox[2]; ++i)
+    for (ssize_t i=0; i<vd->vox[2]; ++i)
     {
       if (vvToolshed::isFile(filenames[i]))       // check if file exists
       {
@@ -4618,10 +4618,10 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(vvVolDesc* vd, bool overwrite)
     size_t bytes;
     if (vd->bpc==2) bytes = 1;
     else bytes = 3;
-    tmpSliceSize = vd->vox[0] * vd->vox[1] * bytes;
+    tmpSliceSize = static_cast<size_t>(vd->vox[0] * vd->vox[1]) * bytes;
     tmpSlice = new uint8_t[tmpSliceSize];
   }
-  for (size_t i=0; i<vd->vox[2] && err==OK; ++i)
+  for (ssize_t i=0; i<vd->vox[2] && err==OK; ++i)
   {
     // Open file to write:
     if ( (fp = fopen(filenames[i], "wb")) == NULL)
@@ -4661,7 +4661,7 @@ vvFileIO::ErrorType vvFileIO::savePXMSlices(vvVolDesc* vd, bool overwrite)
 
   // Free memory:
   if (vd->bpc==2 || vd->chan==4) delete[] tmpSlice;
-  for (size_t i=0; i<vd->vox[2]; ++i) delete[] filenames[i];
+  for (ssize_t i=0; i<vd->vox[2]; ++i) delete[] filenames[i];
   delete[] filenames;
 
   return err;

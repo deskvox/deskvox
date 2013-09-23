@@ -171,8 +171,8 @@ protected:
   bool _opaqueGeometryPresent;                  ///< true = opaque geometry was rendered before the volume
   bool _useIbr;                                 ///< use ibr in rayrenderer
   IbrMode _ibrMode;
-  vvAABBs _visibleRegion;                       ///< part of the vd that is visible and thus rendered
-  vvAABBs _paddingRegion;                       ///< padding region for interpolation
+  virvo::AABBss _visibleRegion;                 ///< part of the vd that is visible and thus rendered
+  virvo::AABBss _paddingRegion;                 ///< padding region for interpolation
   bool _opacityCorrection;                      ///< true = opacity correction on
   bool _interpolation;                          ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
   bool _earlyRayTermination;                    ///< terminate ray marching when enough alpha was gathered

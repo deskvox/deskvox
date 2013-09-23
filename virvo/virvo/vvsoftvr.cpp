@@ -361,7 +361,7 @@ void vvSoftVR::findAxisRepresentations()
    raw[0] = new uint8_t[frameSize];
    size_t i=0;
    for (ptrdiff_t x=vd->vox[0]-1; x>=0; --x)                // counts slices in x axis view
-      for (size_t z=0; z<vd->vox[2]; ++z)                // counts height in x axis view
+      for (ssize_t z=0; z<vd->vox[2]; ++z)                  // counts height in x axis view
    {
       offset = z * sliceVoxels + x;
       for (ptrdiff_t y=vd->vox[1]-1; y>=0; --y)
@@ -379,7 +379,7 @@ void vvSoftVR::findAxisRepresentations()
    if (raw[1]!=NULL) delete[] raw[1];
    raw[1] = new uint8_t[frameSize];
    i=0;
-   for (size_t y=0; y<vd->vox[1]; ++y)
+   for (ssize_t y=0; y<vd->vox[1]; ++y)
    {
       for (ptrdiff_t x=vd->vox[0]-1; x>=0; --x)
    {

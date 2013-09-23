@@ -474,7 +474,7 @@ vvTexRend::ErrorType vvTexRend::makeTextures()
 
   vvDebugMsg::msg(2, "vvTexRend::makeTextures()");
 
-  vvsize3 vox = _paddingRegion.getMax() - _paddingRegion.getMin();
+  vvssize3 vox = _paddingRegion.getMax() - _paddingRegion.getMin();
   for (size_t i = 0; i < 3; ++i)
   {
     vox[i] = std::min(vox[i], vd->vox[i]);
@@ -959,18 +959,18 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickL
       memset(texData, 0, texSize);
 
       // Essentially: for s :=  startOffset[2] to (startOffset[2] + texels[2]) do
-      for (size_t s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
+      for (ssize_t s = startOffset[2]; (s < (startOffset[2] + tmpTexels[2])) && (s < vd->vox[2]); s++)
       {
         size_t rawSliceOffset = (vd->vox[2] - s - 1) * rawSliceSize;
         // Essentially: for y :=  startOffset[1] to (startOffset[1] + texels[1]) do
-        for (size_t y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
+        for (ssize_t y = startOffset[1]; (y < (startOffset[1] + tmpTexels[1])) && (y < vd->vox[1]); y++)
         {
           size_t heightOffset = (vd->vox[1] - y - 1) * vd->vox[0] * vd->bpc * vd->chan;
           size_t texLineOffset = (y - startOffset[1]) * tmpTexels[0] + (s - startOffset[2]) * tmpTexels[0] * tmpTexels[1];
           if (oneChannel)
           {
             // Essentially: for x :=  startOffset[0] to (startOffset[0] + texels[0]) do
-            for (size_t x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
+            for (ssize_t x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
             {
               size_t srcIndex = vd->bpc * x + rawSliceOffset + heightOffset;
               if (vd->bpc == 1) rawVal[0] = (int) raw[srcIndex];
@@ -1028,7 +1028,7 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickL
           {
             if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
             {
-              for (size_t x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
+              for (ssize_t x = startOffset[0]; (x < (startOffset[0] + tmpTexels[0])) && (x < vd->vox[0]); x++)
               {
                 size_t texOffset = (x - startOffset[0]) + texLineOffset;
 
@@ -1380,8 +1380,8 @@ void vvTexRend::fillNonemptyList(std::vector<BrickList>& nonemptyList, std::vect
    @param newTex: true: create a new texture
                   false: update an existing texture
 */
-vvTexRend::ErrorType vvTexRend::updateTextures3D(size_t offsetX, size_t offsetY, size_t offsetZ,
-                                                 size_t sizeX, size_t sizeY, size_t sizeZ, bool newTex)
+vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offsetY, ssize_t offsetZ,
+                                                 ssize_t sizeX, ssize_t sizeY, ssize_t sizeZ, bool newTex)
 {
   ErrorType err = OK;
   size_t srcIndex;
@@ -1420,17 +1420,17 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(size_t offsetX, size_t offsetY,
 
   VV_LOG(2) << "Transferring textures to TRAM. Total size [KB]: " << vd->frames * texSize / 1024 << std::endl;
 
-  vvsize3 offsets(offsetX, offsetY, offsetZ);
+  vvssize3 offsets(offsetX, offsetY, offsetZ);
   offsets += _paddingRegion.getMin();
 
   // Generate sub texture contents:
   for (size_t f = 0; f < vd->frames; f++)
   {
     raw = vd->getRaw(f);
-    for (size_t s = offsets[2]; s < (offsets[2] + sizeZ); s++)
+    for (ssize_t s = offsets[2]; s < (offsets[2] + sizeZ); s++)
     {
       size_t rawSliceOffset = (vd->vox[2] - ts_min(s,vd->vox[2]-1) - 1) * sliceSize;
-      for (size_t y = offsets[1]; y < (offsets[1] + sizeY); y++)
+      for (ssize_t y = offsets[1]; y < (offsets[1] + sizeY); y++)
       {
         size_t heightOffset = (vd->vox[1] - min(y,vd->vox[1]-1) - 1) * vd->vox[0] * vd->bpc * vd->chan;
         size_t texLineOffset = (y - offsets[1] - offsetY) * sizeX + (s - offsets[2] - offsetZ) * sizeX * sizeY;
@@ -1439,8 +1439,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(size_t offsetX, size_t offsetY,
           if (vd->bpc == 1 && voxelType != VV_SGI_LUT && voxelType != VV_TEX_SHD && voxelType != VV_RGBA)
           {
             // one byte, one color channel ==> can use memcpy for consecutive memory chunks
-            size_t x1 = offsets[0];
-            size_t x2 = offsets[0] + sizeX;
+            ssize_t x1 = offsets[0];
+            ssize_t x2 = offsets[0] + sizeX;
             size_t srcMin = vd->bpc * min(x1, vd->vox[0] - 1) + rawSliceOffset + heightOffset;
             size_t srcMax = vd->bpc * min(x2, vd->vox[0] - 1) + rawSliceOffset + heightOffset;
             texOffset = texLineOffset - offsetX;
@@ -1448,7 +1448,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(size_t offsetX, size_t offsetY,
           }
           else
           {
-            for (size_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
+            for (ssize_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
             {
               srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
               if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
@@ -1496,7 +1496,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(size_t offsetX, size_t offsetY,
         {
           if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
           {
-            for (size_t x = offsetX; x < (offsetX + sizeX); x++)
+            for (ssize_t x = offsetX; x < (offsetX + sizeX); x++)
             {
               texOffset = (x - offsetX) + texLineOffset;
               for (size_t c = 0; c < ts_min(vd->chan, size_t(4)); c++)
@@ -1548,11 +1548,11 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(size_t offsetX, size_t offsetY,
     {
       // Set edge values and values beyond edges to 0 for spheric textures,
       // because textures may exceed texel volume:
-      for (size_t s = offsetZ; s < (offsetZ + sizeZ); ++s)
+      for (ssize_t s = offsetZ; s < (offsetZ + sizeZ); ++s)
       {
-        for (size_t y = offsetY; y < (offsetY + sizeY); ++y)
+        for (ssize_t y = offsetY; y < (offsetY + sizeY); ++y)
         {
-          for (size_t x = offsetX; x < (offsetX + sizeX); ++x)
+          for (ssize_t x = offsetX; x < (offsetX + sizeX); ++x)
           {
             if ((s == 0) || (s>=vd->vox[2]-1) ||
                 (y == 0) || (y>=vd->vox[1]-1) ||
@@ -1607,8 +1607,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(size_t offsetX, size_t offsetY,
   return err;
 }
 
-vvTexRend::ErrorType vvTexRend::updateTextures2D(size_t axes, size_t offsetX, size_t offsetY, size_t offsetZ,
-  size_t sizeX, size_t sizeY, size_t sizeZ)
+vvTexRend::ErrorType vvTexRend::updateTextures2D(size_t axes, ssize_t offsetX, ssize_t offsetY, ssize_t offsetZ,
+  ssize_t sizeX, ssize_t sizeY, ssize_t sizeZ)
 {
   vvVector4i rawVal;
   size_t rawSliceSize;
@@ -1651,17 +1651,17 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(size_t axes, size_t offsetX, si
   texW[2] = offsetX;
   texH[2] = offsetY;
 
-  rs[0] = ts_clamp(vd->vox[0] - offsetX, size_t(0), vd->vox[0]);
-  rw[0] = ts_clamp(offsetY + sizeY, size_t(0), vd->vox[1]);
-  rh[0] = ts_clamp(offsetZ + sizeZ, size_t(0), vd->vox[2]);
+  rs[0] = ts_clamp(vd->vox[0] - offsetX, ssize_t(0), vd->vox[0]);
+  rw[0] = ts_clamp(offsetY + sizeY, ssize_t(0), vd->vox[1]);
+  rh[0] = ts_clamp(offsetZ + sizeZ, ssize_t(0), vd->vox[2]);
 
-  rs[1] = ts_clamp(vd->vox[1] - offsetY, size_t(0), vd->vox[1]);
-  rh[1] = ts_clamp(offsetZ + sizeZ, size_t(0), vd->vox[2]);
-  rw[1] = ts_clamp(offsetX + sizeX, size_t(0), vd->vox[0]);
+  rs[1] = ts_clamp(vd->vox[1] - offsetY, ssize_t(0), vd->vox[1]);
+  rh[1] = ts_clamp(offsetZ + sizeZ, ssize_t(0), vd->vox[2]);
+  rw[1] = ts_clamp(offsetX + sizeX, ssize_t(0), vd->vox[0]);
 
-  rs[2] = ts_clamp(vd->vox[2] - offsetZ, size_t(0), vd->vox[2]);
-  rw[2] = ts_clamp(offsetX + sizeX, size_t(0), vd->vox[0]);
-  rh[2] = ts_clamp(offsetY + sizeY, size_t(0), vd->vox[1]);
+  rs[2] = ts_clamp(vd->vox[2] - offsetZ, ssize_t(0), vd->vox[2]);
+  rw[2] = ts_clamp(offsetX + sizeX, ssize_t(0), vd->vox[0]);
+  rh[2] = ts_clamp(offsetY + sizeY, ssize_t(0), vd->vox[1]);
 
   rawLineSize  = vd->vox[0] * vd->getBPV();
   rawSliceSize = vd->getSliceBytes();
@@ -1795,8 +1795,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures2D(size_t axes, size_t offsetX, si
   return OK;
 }
 
-vvTexRend::ErrorType vvTexRend::updateTextureBricks(size_t offsetX, size_t offsetY, size_t offsetZ,
-                                                    size_t sizeX, size_t sizeY, size_t sizeZ)
+vvTexRend::ErrorType vvTexRend::updateTextureBricks(ssize_t offsetX, ssize_t offsetY, ssize_t offsetZ,
+                                                    ssize_t sizeX, ssize_t sizeY, ssize_t sizeZ)
 {
   size_t frames;
   size_t texSize;
@@ -1808,7 +1808,7 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(size_t offsetX, size_t offse
   size_t sliceSize;
   vvVector4i rawVal;
   size_t alpha;
-  vvsize3 startOffset, endOffset;
+  vvssize3 startOffset, endOffset;
   vvsize3 start, end, size;
   float fval;
   uint8_t* raw;
@@ -1835,9 +1835,9 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(size_t offsetX, size_t offse
       endOffset[1] = startOffset[1] + _brickSize[1];
       endOffset[2] = startOffset[2] + _brickSize[2];
 
-      endOffset[0] = ts_clamp(endOffset[0], size_t(0), vd->vox[0] - 1);
-      endOffset[1] = ts_clamp(endOffset[1], size_t(0), vd->vox[1] - 1);
-      endOffset[2] = ts_clamp(endOffset[2], size_t(0), vd->vox[2] - 1);
+      endOffset[0] = ts_clamp(endOffset[0], ssize_t(0), vd->vox[0] - 1);
+      endOffset[1] = ts_clamp(endOffset[1], ssize_t(0), vd->vox[1] - 1);
+      endOffset[2] = ts_clamp(endOffset[2], ssize_t(0), vd->vox[2] - 1);
 
       if ((offsetX > endOffset[0]) || ((offsetX + sizeX - 1) < startOffset[0]))
       {
@@ -2209,11 +2209,11 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   glTranslatef(vd->pos[0], vd->pos[1], vd->pos[2]);
 
   // determine visible size and half object size as shortcut
-  vvsize3 minVox = _visibleRegion.getMin();
-  vvsize3 maxVox = _visibleRegion.getMax();
+  vvssize3 minVox = _visibleRegion.getMin();
+  vvssize3 maxVox = _visibleRegion.getMax();
   for (size_t i = 0; i < 3; ++i)
   {
-    minVox[i] = std::max(minVox[i], size_t(0));
+    minVox[i] = std::max(minVox[i], ssize_t(0));
     maxVox[i] = std::min(maxVox[i], vd->vox[i]);
   }
   const vvVector3 minCorner = vd->objectCoords(minVox);
@@ -3332,7 +3332,7 @@ void vvTexRend::renderVolumeGL()
 
   vvGLTools::printGLError("enter vvTexRend::renderVolumeGL()");
 
-  vvsize3 vox = _paddingRegion.getMax() - _paddingRegion.getMin();
+  vvssize3 vox = _paddingRegion.getMax() - _paddingRegion.getMin();
   for (size_t i = 0; i < 3; ++i)
   {
     vox[i] = std::min(vox[i], vd->vox[i]);
