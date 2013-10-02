@@ -21,7 +21,9 @@
 
 #include "vvclient.h"
 
+#if BOOST_VERSION >= 104700
 #include <boost/asio/connect.hpp>
+#endif
 #include <boost/asio/placeholders.hpp>
 #include <boost/bind.hpp>
 
@@ -47,6 +49,7 @@ inline std::string to_string(T const& x)
 Client::Client(boost::asio::io_service& io_service, std::string const& host, unsigned short port)
     : connection_(io_service)
 {
+#if BOOST_VERSION >= 104700
     // Resolve the host name into an IP address.
     tcp::resolver resolver(io_service);
     tcp::resolver::query query(host, to_string(port));
@@ -58,6 +61,14 @@ Client::Client(boost::asio::io_service& io_service, std::string const& host, uns
             endpoint_iterator,
             boost::bind(&Client::handle_connect, this, boost::asio::placeholders::error)
             );
+#else
+    tcp::endpoint endpoint(boost::asio::ip::address::from_string(host), port);
+
+    connection_.socket().async_connect(
+            endpoint,
+            boost::bind(&Client::handle_connect, this, boost::asio::placeholders::error)
+            );
+#endif
 }
 
 
