@@ -2453,7 +2453,9 @@ std::vector<std::string> virvo::toolshed::entryList(std::string const& dir)
     if (!endsWith(path, "\\*"))
         path += "\\*";
 
-    WIN32_FIND_DATAA findData = {0};
+    WIN32_FIND_DATAA findData;
+
+    memset(&findData, 0, sizeof(findData));
 
     HANDLE hFindFile = FindFirstFileA(path.c_str(), &findData);
 
