@@ -1,5 +1,5 @@
 find_package(Bonjour)
-find_package(Boost REQUIRED)
+find_package(Boost COMPONENTS date_time serialization system REQUIRED)
 find_package(Cg)
 find_package(CUDA)
 find_package(FFMPEG)
@@ -62,12 +62,16 @@ endif()
 
 
 set(VIRVO_HEADERS
+  private/vvclient.h
   private/vvcompress.h
   private/vvcompressedvector.h
+  private/vvconnection.h
   private/vvgltools.h
   private/vvibrimage.h
   private/vvimage.h
   private/vvlog.h
+  private/vvmessage.h
+  private/vvserver.h
 
   cuda/array.h
   cuda/debug.h
@@ -183,13 +187,17 @@ set(VIRVO_HEADERS
 )
 
 set(VIRVO_SOURCES
+  private/vvclient.cpp
   private/vvcompress_jpeg.cpp
   private/vvcompress_png.cpp
   private/vvcompress_snappy.cpp
+  private/vvconnection.cpp
   private/vvgltools.cpp
   private/vvibrimage.cpp
   private/vvimage.cpp
   private/vvlog.cpp
+  private/vvmessage.cpp
+  private/vvserver.cpp
 
   cuda/debug.cpp
   cuda/graphics_resource.cpp
@@ -335,6 +343,9 @@ endif(APPLE)
 
 if(WIN32)
   deskvox_link_libraries(ws2_32)
+  if(MINGW)
+    deskvox_link_libraries(mswsock)
+  endif()
 else()
   if(BUILD_SHARED_LIBS)
     deskvox_link_libraries(dl)
