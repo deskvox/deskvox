@@ -58,6 +58,12 @@ namespace virvo
     RemoteServerType,
     Disconnect
   };
+
+  template<class A>
+  void serialize(A& a, RemoteEvent& t, unsigned /*version*/)
+  {
+    a & static_cast<unsigned>(t);
+  }
 }
 
 #endif // _VVREMOTEEVENTS_H_

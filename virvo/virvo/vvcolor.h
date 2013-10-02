@@ -39,6 +39,15 @@ class VIRVOEXPORT vvColor
     void getHSB(float&, float&, float&);
   private:
     float e[3];
+
+  public:
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & e[0];
+      a & e[1];
+      a & e[2];
+    }
 };
 
 #endif

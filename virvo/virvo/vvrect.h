@@ -30,6 +30,15 @@ public:
 
   T values[4];
 
+  template<class A>
+  void serialize(A& a, unsigned /*version*/)
+  {
+    a & values[0];
+    a & values[1];
+    a & values[2];
+    a & values[3];
+  }
+
   bool contains(const vvBaseRect<T>& rhs);
 
   bool overlaps(const vvBaseRect<T>& rhs);

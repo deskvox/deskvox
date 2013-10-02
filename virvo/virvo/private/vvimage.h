@@ -106,6 +106,17 @@ private:
   PixelFormat format_;
   // Size in bytes of a single scanline
   int stride_;
+
+public:
+  template<class A>
+  void serialize(A& a, unsigned /*version*/)
+  {
+    a & data_;
+    a & width_;
+    a & height_;
+    a & format_;
+    a & stride_;
+  }
 };
 
 

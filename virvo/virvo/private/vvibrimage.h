@@ -125,6 +125,19 @@ private:
   vvMatrix projMatrix_;
   // The viewport
   virvo::Viewport viewport_;
+
+public:
+  template<class A>
+  void serialize(A& a, unsigned /*version*/)
+  {
+    a & color_;
+    a & depth_;
+    a & depthMin_;
+    a & depthMax_;
+    a & viewMatrix_;
+    a & projMatrix_;
+    a & viewport_;
+  }
 };
 
 

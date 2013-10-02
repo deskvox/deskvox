@@ -141,6 +141,16 @@ class VIRVOEXPORT vvMatrix
     void LUBackSubstitution(int index[4], float b[4]);
 
     float e[4][4];                                ///< matrix elements: [row][column]
+
+  public:
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      for (int i = 0; i < 4; ++i)
+        for (int j = 0; j < 4; ++j)
+          a & e[i][j];
+    }
+
   public:
     vvMatrix();
     // Constructs a diagonal matrix
@@ -233,6 +243,17 @@ template <typename T>
 class vvBaseVector4
 {
     T e[4];                                   ///< vector elements (x|y|z|w)
+
+  public:
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & e[0];
+      a & e[1];
+      a & e[2];
+      a & e[3];
+    }
+
   public:
     vvBaseVector4();
     explicit vvBaseVector4(T val);
@@ -256,6 +277,16 @@ template <typename T>
 class vvBaseVector3
 {
     T e[3];                                   ///< vector elements (x|y|z)
+
+  public:
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & e[0];
+      a & e[1];
+      a & e[2];
+    }
+
   public:
     vvBaseVector3();
     explicit vvBaseVector3(T);
@@ -319,6 +350,13 @@ class vvBaseVector2
     T const& operator[](size_t index) const;
   private:
     T e[2];
+  public:
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & e[0];
+      a & e[1];
+    }
 };
 
 /** 3D plane primitive.
@@ -329,6 +367,14 @@ class vvPlane
   public:
     vvVector3 _point;
     vvVector3 _normal;
+
+  public:
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & _point;
+      a & _normal;
+    }
 
     vvPlane();
     vvPlane(const vvVector3& p, const vvVector3& n);

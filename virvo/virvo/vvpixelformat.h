@@ -70,6 +70,13 @@ namespace virvo
     };
 
 
+    template<class A>
+    void serialize(A& a, PixelFormat& pf, unsigned /*version*/)
+    {
+        a & static_cast<unsigned>(pf);
+    }
+
+
     struct PixelFormatInfo
     {
         unsigned internalFormat;

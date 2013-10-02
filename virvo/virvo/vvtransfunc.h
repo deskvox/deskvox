@@ -47,6 +47,12 @@ class VIRVOEXPORT vvTransFunc
   public:
     std::vector<vvTFWidget*> _widgets;             ///< TF widget list
 
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & _widgets;
+    }
+
     vvTransFunc();
     vvTransFunc(vvTransFunc*);
     virtual ~vvTransFunc();

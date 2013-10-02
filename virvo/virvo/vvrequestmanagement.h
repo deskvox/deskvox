@@ -43,6 +43,13 @@ public:
   {
     size_t freeMem;
     size_t totalMem;
+
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & freeMem;
+      a & totalMem;
+    }
   };
 
   /**
@@ -111,8 +118,18 @@ struct vvRequest
   int         niceness;           ///< niceness priority ranging from -20 to 20
   typedef int numgpus;
   std::vector<numgpus> nodes;     ///< requested amount of nodes with corresponding number of gpus
-
   std::vector<vvResource*> resources;
+
+  template<class A>
+  void serialize(A& a, unsigned /*version*/)
+  {
+    a & type;
+    a & niceness;
+    a & nodes;
+#if 0 // not serialized!!!
+    a & resources;
+#endif
+  }
 
   struct Compare
   {

@@ -134,6 +134,16 @@ private:
    *                with maximum extend.
    */
   void calcVertices();
+
+public:
+  template<class A>
+  void serialize(A& a, unsigned /*version*/)
+  {
+    a & _min;
+    a & _max;
+    a & _vertices;
+    a & _center;
+  }
 };
 
 template <typename T>

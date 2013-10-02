@@ -361,6 +361,13 @@ private:
     float		_lastGLdrawTime;
 
 };
+
+template<class A>
+void serialize(A& a, vvRenderer::RendererType& rt, unsigned /*version*/)
+{
+    a & static_cast<unsigned>(rt);
+}
+
 #endif
 
 //============================================================================

@@ -43,6 +43,12 @@ enum CompressionType
     Compress_PNG
 };
 
+template<class A>
+void serialize(A& a, CompressionType& t, unsigned /*version*/)
+{
+    a & static_cast<unsigned>(t);
+}
+
 
 // A (not neccessarily) compressed vector.
 class CompressedVector
@@ -224,6 +230,14 @@ private:
     VectorType data;
     // The compression type
     CompressionType type;
+
+public:
+    template<class A>
+    void serialize(A& a, unsigned/*version*/)
+    {
+        a & data;
+        a & type;
+    }
 };
 
 
