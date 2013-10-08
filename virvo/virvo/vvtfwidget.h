@@ -40,7 +40,7 @@ class VIRVOEXPORT vvTFPoint
   public:
     vvVector3 _pos;
     float _opacity;   ///< opacity at this point in the TF [0..1]
-    
+
     vvTFPoint();
     vvTFPoint(float, float, float=-1.0f, float=-1.0f);
 
@@ -57,8 +57,8 @@ class VIRVOEXPORT vvTFPoint
 class VIRVOEXPORT vvTFWidget
 {
   protected:
-    static const char* NO_NAME;
-    char* _name;                                  ///< widget name (bone, soft tissue, etc)
+    static std::string const NO_NAME;
+    std::string _name;                            ///< widget name (bone, soft tissue, etc)
 
   public:
     enum WidgetType

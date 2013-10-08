@@ -73,13 +73,12 @@ float vvTFPoint::opacity() const
 
 //============================================================================
 
-const char* vvTFWidget::NO_NAME = "UNNAMED";
+std::string const vvTFWidget::NO_NAME = "UNNAMED";
 
 /** Default constructor.
 */
 vvTFWidget::vvTFWidget()
 {
-  _name = NULL;
   for (size_t i=0; i<3; ++i)
   {
     _pos[i] = 0.5f;                               // default is center of TF space
@@ -89,9 +88,8 @@ vvTFWidget::vvTFWidget()
 /** Copy constructor.
 */
 vvTFWidget::vvTFWidget(vvTFWidget* src)
+  : _name(src->_name)
 {
-  _name = NULL;
-  setName(src->_name);
   for (size_t i=0; i<3; ++i)
   {
     _pos[i] = src->_pos[i];
@@ -102,7 +100,6 @@ vvTFWidget::vvTFWidget(vvTFWidget* src)
 */
 vvTFWidget::vvTFWidget(float x, float y, float z)
 {
-  _name = NULL;
   _pos[0] = x;
   _pos[1] = y;
   _pos[2] = z;
@@ -110,7 +107,6 @@ vvTFWidget::vvTFWidget(float x, float y, float z)
 
 vvTFWidget::~vvTFWidget()
 {
-  delete[] _name;
 }
 
 void vvTFWidget::setOpacity(float opacity)
@@ -125,18 +121,15 @@ float vvTFWidget::opacity() const
 
 void vvTFWidget::setName(const char* newName)
 {
-  delete[] _name;
   if (newName)
-  {
-    _name = new char[strlen(newName) + 1];
-    strcpy(_name, newName);
-  }
-  else _name = NULL;
+    _name = newName;
+  else
+    _name = NO_NAME;
 }
 
 const char* vvTFWidget::getName()
 {
-  return _name;
+  return _name.c_str();
 }
 
 void vvTFWidget::setPos(const vvVector3& pos)
@@ -311,7 +304,7 @@ const char* vvTFBell::toString()
 {
   char* result = new char[MAX_STR_LEN];
 
-  sprintf(result, "TF_BELL %s %g %g %g %g %g %g %g %g %g %d %g\n", (_name) ? _name : NO_NAME,
+  sprintf(result, "TF_BELL %s %g %g %g %g %g %g %g %g %g %d %g\n", getName(),
     _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2],
     _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
 
@@ -324,8 +317,7 @@ void vvTFBell::fromString(const std::string& str)
   assert(tokens.size() == 13);
   assert(tokens[0].compare("TF_BELL") == 0);
 
-  _name = new char[tokens[1].length()];
-  strcpy(_name, tokens[1].c_str());
+  _name = tokens[1];
 
 #define atof(x) static_cast<float>(atof(x))
   _pos[0] = atof(tokens[2].c_str());
@@ -527,7 +519,7 @@ const char* vvTFPyramid::toString()
 {
   char* result = new char[MAX_STR_LEN];
 
-  sprintf(result, "TF_PYRAMID %s %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n", (_name) ? _name : NO_NAME,
+  sprintf(result, "TF_PYRAMID %s %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n", getName(),
       _pos[0], _pos[1], _pos[2], _bottom[0], _bottom[1], _bottom[2],
       _top[0], _top[1], _top[2], _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
 
@@ -540,8 +532,7 @@ void vvTFPyramid::fromString(const std::string& str)
   assert(tokens.size() == 16);
   assert(tokens[0].compare("TF_PYRAMID") == 0);
 
-  _name = new char[tokens[1].length()+1];
-  strcpy(_name, tokens[1].c_str());
+  _name = tokens[1];
 
 #define atof(x) static_cast<float>(atof(x))
   _pos[0] = atof(tokens[2].c_str());
@@ -782,7 +773,7 @@ const char* vvTFColor::toString()
 {
   char* result = new char[MAX_STR_LEN];
 
-  sprintf(result, "TF_COLOR %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
+  sprintf(result, "TF_COLOR %s %g %g %g %g %g %g\n", getName(),
     _pos[0], _pos[1], _pos[2], _col[0], _col[1], _col[2]);
 
   return result;
@@ -794,8 +785,7 @@ void vvTFColor::fromString(const std::string& str)
   assert(tokens.size() == 8);
   assert(tokens[0].compare("TF_COLOR") == 0);
 
-  _name = new char[tokens[1].length()+1];
-  strcpy(_name, tokens[1].c_str());
+  _name = tokens[1];
 
 #define atof(x) static_cast<float>(atof(x))
   _pos[0] = atof(tokens[2].c_str());
@@ -863,7 +853,7 @@ const char* vvTFSkip::toString()
 {
   char* result = new char[MAX_STR_LEN];
 
-  sprintf(result, "TF_SKIP %s %g %g %g %g %g %g\n", (_name) ? _name : NO_NAME,
+  sprintf(result, "TF_SKIP %s %g %g %g %g %g %g\n", getName(),
     _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2]);
 
   return result;
@@ -875,8 +865,7 @@ void vvTFSkip::fromString(const std::string& str)
   assert(tokens.size() == 8);
   assert(tokens[0].compare("TF_SKIP") == 0);
 
-  _name = new char[tokens[1].length()+1];
-  strcpy(_name, tokens[1].c_str());
+  _name = tokens[1];
 
 #define atof(x) static_cast<float>(atof(x))
   _pos[0] = atof(tokens[2].c_str());
@@ -1009,7 +998,7 @@ const char* vvTFCustom::toString()
 
   list<vvTFPoint*>::iterator iter;
 
-  sprintf(result, "TF_CUSTOM %s %g %g %g %d\n", (_name) ? _name : NO_NAME,
+  sprintf(result, "TF_CUSTOM %s %g %g %g %d\n", getName(),
     _size[0], _size[1], _size[2], (int)_points.size());
 
   for(iter=_points.begin(); iter!=_points.end(); iter++)
@@ -1026,8 +1015,7 @@ void vvTFCustom::fromString(const std::string& str)
   assert(tokens.size() >= 6);
   assert(tokens[0].compare("TF_CUSTOM") == 0);
 
-  _name = new char[tokens[1].length()+1];
-  strcpy(_name, tokens[1].c_str());
+  _name = tokens[1];
 }
 
 /** @return opacity of a value in the TF, as defined by this widget
