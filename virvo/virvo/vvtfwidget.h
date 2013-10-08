@@ -21,6 +21,11 @@
 #ifndef _VVTFWIDGET_H_
 #define _VVTFWIDGET_H_
 
+// Boost:
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/vector.hpp>
+
 // C++:
 #include <stdio.h>
 #include <list>
@@ -40,6 +45,13 @@ class VIRVOEXPORT vvTFPoint
   public:
     vvVector3 _pos;
     float _opacity;   ///< opacity at this point in the TF [0..1]
+
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & _pos;
+      a & _opacity;
+    }
 
     vvTFPoint();
     vvTFPoint(float, float, float=-1.0f, float=-1.0f);
@@ -79,6 +91,14 @@ class VIRVOEXPORT vvTFWidget
     vvVector3 _pos;                               ///< position of widget's center [volume data space]
     float _opacity;                               ///< maximum opacity [0..1]
 
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & _name;
+      a & _pos;
+      a & _opacity;
+    }
+
     vvTFWidget();
     vvTFWidget(float, float, float);
     vvTFWidget(vvTFWidget*);
@@ -114,6 +134,15 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
     vvColor _col;                                 ///< RGB color
     vvVector3 _size;                              ///< width, height, depth of bell's bounding box [volume data space]
 
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & boost::serialization::base_object<vvTFWidget>(*this);
+      a & _ownColor;
+      a & _col;
+      a & _size;
+    }
+
     vvTFBell();
     vvTFBell(vvTFBell*);
     vvTFBell(vvColor, bool, float, float, float, float=0.5f, float=1.0f, float=0.5f, float=1.0f);
@@ -145,6 +174,16 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     vvVector3 _top;                               ///< width at top [volume data space]
     vvVector3 _bottom;                            ///< width at bottom of pyramid [volume data space]
 
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & boost::serialization::base_object<vvTFWidget>(*this);
+      a & _ownColor;
+      a & _col;
+      a & _top;
+      a & _bottom;
+    }
+
     vvTFPyramid();
     vvTFPyramid(vvTFPyramid*);
     vvTFPyramid(vvColor, bool, float, float, float, float, float=0.5f, float=1.0f, float=0.0f, float=0.5f, float=1.0f, float=0.0f);
@@ -175,6 +214,13 @@ class VIRVOEXPORT vvTFColor : public vvTFWidget
 
     vvColor _col;                                 ///< RGB color
 
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & boost::serialization::base_object<vvTFWidget>(*this);
+      a & _col;
+    }
+
     vvTFColor();
     vvTFColor(vvTFColor*);
     vvTFColor(vvColor, float, float=0.0f, float=0.0f);
@@ -192,6 +238,13 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
     vvVector3 size() const;
 
     vvVector3 _size;         ///< width, height, depth of skipped area [volume data space]
+
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & boost::serialization::base_object<vvTFWidget>(*this);
+      a & _size;
+    }
 
     vvTFSkip();
     vvTFSkip(vvTFSkip*);
@@ -212,6 +265,15 @@ class VIRVOEXPORT vvTFCustom : public vvTFWidget
     vvVector3 _size;               ///< width, height, depth of TF area [volume data space]
     std::list<vvTFPoint*> _points; ///< list of control points; coordinates are relative to widget center
     vvTFPoint* _currentPoint;      ///< currently selected point
+
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+      a & boost::serialization::base_object<vvTFWidget>(*this);
+      a & _size;
+      a & _points;
+      a & _currentPoint;
+    }
 
     vvTFCustom();
     vvTFCustom(vvTFCustom*);
@@ -251,6 +313,23 @@ public:
     float _opacity;
     bool _extrude;
     vvTFPoint* _centralPoint;      ///< central point
+
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+#if 0
+      a & boost::serialization::base_object<vvTFWidget>(*this);
+      a & _points;
+      a & _mapDirty;
+      a & _col;
+      a & _opacity;
+      a & _extrude;
+      a & _centralPoint;
+//      a & _size;
+//      a & _map;
+//      a & _dim;
+#endif
+    }
 
     vvTFCustom2D(bool extrude, float opacity, float xCenter, float yCenter);
     vvTFCustom2D(vvTFCustom2D*);
@@ -294,6 +373,19 @@ class VIRVOEXPORT vvTFCustomMap : public vvTFWidget
     vvVector3 _size;               // width, height, depth of TF area [volume data space]
     float* _map;
     vvVector3i _dim;                 // dimensions of the map [widget data space]
+
+    template<class A>
+    void serialize(A& a, unsigned /*version*/)
+    {
+#if 0
+      a & boost::serialization::base_object<vvTFWidget>(*this);
+      a & _ownColor;
+      a & _col;
+      a & _size;
+//      a & _map;
+//      a & _dim;
+#endif
+    }
 
     vvTFCustomMap();
     vvTFCustomMap(float x, float w, float y=0.5f, float h=0.0f, float z=0.5f, float d=0.0f);
