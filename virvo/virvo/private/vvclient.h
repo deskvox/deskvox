@@ -85,7 +85,7 @@ namespace virvo
         void handle_write(boost::system::error_code const& e, MessagePointer message);
 
     private:
-        typedef std::map<unsigned/*ID*/, Handler> Handlers;
+        typedef std::map<boost::uuids::uuid, Handler> Handlers;
 
         // The IO service
         boost::asio::io_service& io_service_;

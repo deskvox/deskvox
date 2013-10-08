@@ -20,3 +20,22 @@
 
 
 #include "vvmessage.h"
+
+#include <boost/uuid/uuid_generators.hpp>
+
+
+using virvo::Message;
+
+
+boost::uuids::uuid Message::GenerateID()
+{
+    static boost::uuids::random_generator gen;
+    return gen();
+}
+
+
+Message::Message(unsigned type)
+    : data_()
+    , header_(boost::uuids::nil_uuid(), type, 0)
+{
+}

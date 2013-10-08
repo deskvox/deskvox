@@ -23,6 +23,8 @@
 #define VV_PRIVATE_MESSAGE_H
 
 
+#include "vvexport.h"
+
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 
@@ -32,6 +34,8 @@
 
 #include <boost/smart_ptr/enable_shared_from_this.hpp>
 #include <boost/smart_ptr/make_shared.hpp>
+
+#include <boost/uuid/uuid.hpp>
 
 #include <boost/function.hpp>
 
@@ -55,11 +59,7 @@ namespace virvo
         friend class Client;
         friend class Server;
 
-        static unsigned GenerateID()
-        {
-            static unsigned counter = 0;
-            return ++counter;
-        }
+        VVAPI static boost::uuids::uuid GenerateID();
 
         typedef std::vector<char> data_type;
         typedef data_type::value_type element_type;
@@ -67,13 +67,13 @@ namespace virvo
         struct Header
         {
             // The unique ID of this message
-            unsigned id_;
+            boost::uuids::uuid id_; // POD, 16 bytes
             // The type of this message
             unsigned type_;
             // The length of this message
             unsigned size_;
 
-            Header(unsigned id, unsigned type, unsigned size)
+            Header(boost::uuids::uuid const& id, unsigned type, unsigned size)
                 : id_(id)
                 , type_(type)
                 , size_(size)
@@ -87,81 +87,28 @@ namespace virvo
         Header header_;
 
     public:
-        explicit Message(unsigned type = 0)
-            : data_()
-            , header_(GenerateID(), type, 0)
-        {
-        }
+        VVAPI explicit Message(unsigned type = 0);
 
+        // Creates a message from the given buffer. NOT SERIALIZED!
         template<class InputIterator>
-        explicit Message(unsigned type, InputIterator first, InputIterator last)
-            : data_(first, last)
-            , header_(GenerateID(), type, static_cast<unsigned>(data_.size()))
-        {
-        }
+        explicit Message(unsigned type, InputIterator first, InputIterator last);
 
         // Creates a serialized message
         template<class T>
-        explicit Message(unsigned type, T const& object)
-            : data_()
-            , header_(GenerateID(), type, 0)
-        {
-            typedef boost::iostreams::back_insert_device<data_type> sink_type;
-            typedef boost::iostreams::stream<sink_type> stream_type;
+        explicit Message(unsigned type, T const& object);
 
-            sink_type sink(data_);
-            stream_type stream(sink);
-
-            {
-                // Create a serializer
-                boost::archive::binary_oarchive archive(stream);
-
-                // Serialize the message
-                archive << object;
-
-                // Don't forget to flush the stream!!!
-                stream.flush();
-            }
-            //~archive
-
-            // Set the size of the serialized message
-            header_.size_ = static_cast<unsigned>(data_.size());
-        }
-
-        // Deserialize the message
+        // Deserialize the message.
+        // Returns true on success, false otherwise.
         template<class T>
-        bool deserialize(T& object) const
-        {
-            assert( header_.size_ == data_.size() );
+        bool deserialize(T& object) const;
 
-            typedef boost::iostreams::basic_array_source<element_type> source_type;
-            typedef boost::iostreams::stream<source_type> stream_type;
-
-            source_type source(&data_[0], data_.size());
-            stream_type stream(source);
-
-            // Create a deserialzer
-            boost::archive::binary_iarchive archive(stream);
-
-            // Deserialize the message
-            archive >> object;
-
-            return static_cast<bool>(stream);
-        }
-
+        // Deserialize the message.
+        // Throws std::runtime_error on failure.
         template<class T>
-        T deserialize() const
-        {
-            T object;
-
-            if (!deserialize(object))
-                throw std::runtime_error("deserialization error");
-
-            return object;
-        }
+        T deserialize() const;
 
         // Returns the unique ID of this message
-        unsigned id() const {
+        boost::uuids::uuid const& id() const {
             return header_.id_;
         }
 
@@ -199,6 +146,75 @@ namespace virvo
     };
 
 
+    template<class InputIterator>
+    Message::Message(unsigned type, InputIterator first, InputIterator last)
+        : data_(first, last)
+        , header_(GenerateID(), type, static_cast<unsigned>(data_.size()))
+    {
+    }
+
+
+    template<class T>
+    Message::Message(unsigned type, T const& object)
+        : data_()
+        , header_(GenerateID(), type, 0)
+    {
+        typedef boost::iostreams::back_insert_device<data_type> sink_type;
+        typedef boost::iostreams::stream<sink_type> stream_type;
+
+        sink_type sink(data_);
+        stream_type stream(sink);
+
+        {
+            // Create a serializer
+            boost::archive::binary_oarchive archive(stream);
+
+            // Serialize the message
+            archive << object;
+
+            // Don't forget to flush the stream!!!
+            stream.flush();
+        }
+        //~archive
+
+        // Set the size of the serialized message
+        header_.size_ = static_cast<unsigned>(data_.size());
+    }
+
+
+    template<class T>
+    bool Message::deserialize(T& object) const
+    {
+        assert( header_.size_ == data_.size() );
+
+        typedef boost::iostreams::basic_array_source<element_type> source_type;
+        typedef boost::iostreams::stream<source_type> stream_type;
+
+        source_type source(&data_[0], data_.size());
+        stream_type stream(source);
+
+        // Create a deserialzer
+        boost::archive::binary_iarchive archive(stream);
+
+        // Deserialize the message
+        archive >> object;
+
+        return static_cast<bool>(stream);
+    }
+
+
+    template<class T>
+    T Message::deserialize() const
+    {
+        T object;
+
+        if (!deserialize(object))
+            throw std::runtime_error("deserialization error");
+
+        return object;
+    }
+
+
     //----------------------------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------------------------
@@ -211,12 +227,14 @@ namespace virvo
         return boost::make_shared<Message>(type);
     }
 
+    // Creates a message from the given buffer. NOT SERIALIZED!
     template<class InputIterator>
     MessagePointer makeMessage(unsigned type, InputIterator first, InputIterator last)
     {
         return boost::make_shared<Message>(type, first, last);
     }
 
+    // Creates a serialized message
     template<class T>
     MessagePointer makeMessage(unsigned type, T const& object)
     {
