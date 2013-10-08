@@ -65,7 +65,6 @@ set(VIRVO_HEADERS
   private/vvclient.h
   private/vvcompress.h
   private/vvcompressedvector.h
-  private/vvconnection.h
   private/vvgltools.h
   private/vvibrimage.h
   private/vvimage.h
@@ -191,7 +190,6 @@ set(VIRVO_SOURCES
   private/vvcompress_jpeg.cpp
   private/vvcompress_png.cpp
   private/vvcompress_snappy.cpp
-  private/vvconnection.cpp
   private/vvgltools.cpp
   private/vvibrimage.cpp
   private/vvimage.cpp

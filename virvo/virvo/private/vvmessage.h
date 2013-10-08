@@ -23,41 +23,21 @@
 #define VV_PRIVATE_MESSAGE_H
 
 
-// Use text_Xarchive instead of binary_Xarchive?
-#ifndef VV_S11N_TEXT_ARCHIVE
-#define VV_S11N_TEXT_ARCHIVE 0
-#endif
-
-// Use std::stringstream instead of using Boost.IOStreams?
-#ifndef VV_S11N_STRINGSTREAM
-#define VV_S11N_STRINGSTREAM 0
-#endif
-
-
-#if !VV_S11N_TEXT_ARCHIVE
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
-#else
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#endif
-#if !VV_S11N_STRINGSTREAM
+
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
 #include <boost/iostreams/stream.hpp>
-#endif
+
 #include <boost/smart_ptr/enable_shared_from_this.hpp>
 #include <boost/smart_ptr/make_shared.hpp>
+
 #include <boost/function.hpp>
 
 #include <cassert>
 #include <stdexcept>
-#if !VV_S11N_STRINGSTREAM
 #include <vector>
-#else
-#include <sstream>
-#include <string>
-#endif
 
 
 namespace virvo
@@ -72,7 +52,8 @@ namespace virvo
     class Message
         : public boost::enable_shared_from_this<Message>
     {
-        friend class Connection;
+        friend class Client;
+        friend class Server;
 
         static unsigned GenerateID()
         {
@@ -80,11 +61,7 @@ namespace virvo
             return ++counter;
         }
 
-#if !VV_S11N_STRINGSTREAM
         typedef std::vector<char> data_type;
-#else
-        typedef std::string data_type;
-#endif
         typedef data_type::value_type element_type;
 
         struct Header
@@ -129,38 +106,25 @@ namespace virvo
             : data_()
             , header_(GenerateID(), type, 0)
         {
-#if !VV_S11N_STRINGSTREAM
             typedef boost::iostreams::back_insert_device<data_type> sink_type;
             typedef boost::iostreams::stream<sink_type> stream_type;
 
             sink_type sink(data_);
             stream_type stream(sink);
-#else
-            std::ostringstream stream;
-#endif
 
             {
                 // Create a serializer
-#if !VV_S11N_TEXT_ARCHIVE
                 boost::archive::binary_oarchive archive(stream);
-#else
-                boost::archive::text_oarchive archive(stream);
-#endif
 
                 // Serialize the message
                 archive << object;
 
                 // Don't forget to flush the stream!!!
                 stream.flush();
+            }
+            //~archive
 
-#if VV_S11N_STRINGSTREAM
-                data_ = stream.str();
-#endif
-            }//~archive
-
-            // Fix the header!!!
-//          header_.id_ = xxx
-//          header_.type_ = xxx
+            // Set the size of the serialized message
             header_.size_ = static_cast<unsigned>(data_.size());
         }
 
@@ -170,22 +134,14 @@ namespace virvo
         {
             assert( header_.size_ == data_.size() );
 
-#if !VV_S11N_STRINGSTREAM
             typedef boost::iostreams::basic_array_source<element_type> source_type;
             typedef boost::iostreams::stream<source_type> stream_type;
 
             source_type source(&data_[0], data_.size());
             stream_type stream(source);
-#else
-            std::istringstream stream(data_);
-#endif
 
             // Create a deserialzer
-#if !VV_S11N_TEXT_ARCHIVE
             boost::archive::binary_iarchive archive(stream);
-#else
-            boost::archive::text_iarchive archive(stream);
-#endif
 
             // Deserialize the message
             archive >> object;
@@ -266,14 +222,6 @@ namespace virvo
     {
         return boost::make_shared<Message>(type, object);
     }
-
-
-    //----------------------------------------------------------------------------------------------
-    //
-    //----------------------------------------------------------------------------------------------
-
-
-    typedef boost::function<void(MessagePointer)> MessageHandler;
 
 
 } // namespace virvo

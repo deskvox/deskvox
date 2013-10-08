@@ -23,7 +23,21 @@
 #define VV_PRIVATE_SERVER_H
 
 
-#include "vvconnection.h"
+// Boost.ASIO needs _WIN32_WINNT
+#ifdef _WIN32
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501 // Require Windows XP or later
+#endif
+#endif
+
+
+#include "vvexport.h"
+#include "vvmessage.h"
+
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/ip/tcp.hpp>
+
+#include <set>
 
 
 namespace virvo
@@ -38,30 +52,64 @@ namespace virvo
     class Server
         : public boost::enable_shared_from_this<Server>
     {
+        struct Connection
+        {
+            explicit Connection(boost::asio::io_service& io_service);
+
+            // The underlying socket
+            boost::asio::ip::tcp::socket socket_;
+        };
+
     public:
-        VVAPI explicit Server(boost::asio::io_service& io_service, unsigned short port, MessageHandler handler);
+        typedef boost::shared_ptr<Connection> ConnectionPointer;
 
-        // Sends a message to the client
-        VVAPI void write(MessagePointer message);
+        typedef boost::function<void(MessagePointer message, ConnectionPointer conn)> Handler;
+
+    public:
+        VVAPI Server(boost::asio::io_service& io_service, unsigned short port, Handler handler);
+
+        // Sends a message to the given client
+        VVAPI void write(MessagePointer message, ConnectionPointer conn);
+
+        // Sends a message to all currently connected clients
+        VVAPI void broadcast(MessagePointer message);
 
     private:
+        // Start an accept operation
+        void do_accept();
+
         // Handle completion of a accept operation.
-        void handle_accept(boost::system::error_code const& e);
+        void handle_accept(boost::system::error_code const& e, ConnectionPointer conn);
 
-        // Handle completion of a read operation.
-        void handle_read(MessagePointer message);
+        // Read the next message from the given client.
+        void do_read(ConnectionPointer conn);
 
-        // Read the next message
-        void read_next();
+        // Called when a message header is read.
+        void handle_read_header(boost::system::error_code const& e, MessagePointer message, ConnectionPointer conn);
+
+        // Called when a complete message is read.
+        void handle_read_data(boost::system::error_code const& e, MessagePointer message, ConnectionPointer conn);
+
+        // Starts a new write operation.
+        void do_write(MessagePointer message, ConnectionPointer conn);
+
+        // Starts a new write operation an all currently active connections.
+        void do_broadcast(MessagePointer message);
+
+        // Called when a complete message is written.
+        void handle_write(boost::system::error_code const& e, MessagePointer message, ConnectionPointer conn);
 
     private:
-        // The connection to the client.
-        // TODO: Handle multiple clients...
-        ConnectionPointer connection_ptr_;
+        typedef std::set<ConnectionPointer> Connections;
+
+        // The IO service
+        boost::asio::io_service& io_service_;
         // The acceptor object used to accept incoming socket connections.
         boost::asio::ip::tcp::acceptor acceptor_;
+        // The connection to the client.
+        Connections connections_;
         // The message handler
-        MessageHandler handler_;
+        Handler handler_;
     };
 
 
