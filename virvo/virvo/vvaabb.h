@@ -27,21 +27,31 @@
 template <typename T>
 class vvBaseAABB;
 
-typedef vvBaseAABB<int> vvAABBi;
-typedef vvBaseAABB<float> vvAABBf;
-typedef vvBaseAABB<double> vvAABBd;
-typedef vvBaseAABB<size_t> vvAABBs;
-typedef vvBaseAABB<ssize_t> vvAABBss;
+typedef vvBaseAABB<int>                 vvAABBi;
+typedef vvBaseAABB<unsigned int>        vvAABBui;
+typedef vvBaseAABB<long>                vvAABBl;
+typedef vvBaseAABB<unsigned long>       vvAABBul;
+typedef vvBaseAABB<long long>           vvAABBll;
+typedef vvBaseAABB<unsigned long long>  vvAABBull;
+typedef vvBaseAABB<float>               vvAABBf;
+typedef vvBaseAABB<double>              vvAABBd;
+typedef vvBaseAABB<size_t>              vvAABBs;
+typedef vvBaseAABB<ssize_t>             vvAABBss;
 typedef vvAABBf vvAABB;
 
 namespace virvo
 {
-typedef vvAABBi AABBi;
-typedef vvAABBf AABBf;
-typedef vvAABBd AABBd;
-typedef vvAABBs AABBs;
-typedef vvAABBss AABBss;
-typedef vvAABB AABB;
+typedef vvAABBi                         AABBi;
+typedef vvAABBui                        AABBui;
+typedef vvAABBl                         AABBl;
+typedef vvAABBul                        AABBul;
+typedef vvAABBll                        AABBll;
+typedef vvAABBull                       AABBull;
+typedef vvAABBf                         AABBf;
+typedef vvAABBd                         AABBd;
+typedef vvAABBs                         AABBs;
+typedef vvAABBss                        AABBss;
+typedef vvAABB                          AABB;
 }
 
 /*!

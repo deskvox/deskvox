@@ -301,7 +301,7 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
     return;
   }
 
-  if (value.isa(vvParam::VV_VEC3))
+  if (value.isa(vvParam::VV_VEC3F))
   {
     if (_socketIO->putEvent(virvo::ParameterVec3) == vvSocket::VV_OK)
     {
@@ -311,7 +311,7 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
     return;
   }
 
-  if (value.isa(vvParam::VV_VEC4))
+  if (value.isa(vvParam::VV_VEC4F))
   {
     if (_socketIO->putEvent(virvo::ParameterVec4) == vvSocket::VV_OK)
     {
@@ -331,14 +331,26 @@ void vvRemoteClient::setParameter(ParameterType param, const vvParam& value)
     return;
   }
 
-  if (value.isa(vvParam::VV_SIZE3))
+  if (value.isa(vvParam::VV_VEC3UI))
   {
     if (_socketIO->putEvent(virvo::ParameterSize3) == vvSocket::VV_OK)
     {
       _socketIO->putInt32(static_cast<int32_t>(param));
-      _socketIO->putUint64(value.asSize3()[0]);
-      _socketIO->putUint64(value.asSize3()[1]);
-      _socketIO->putUint64(value.asSize3()[2]);
+      _socketIO->putUint32(value.asVec3ui()[0]);
+      _socketIO->putUint32(value.asVec3ui()[1]);
+      _socketIO->putUint32(value.asVec3ui()[2]);
+    }
+    return;
+  }
+
+  if (value.isa(vvParam::VV_VEC3UL))
+  {
+    if (_socketIO->putEvent(virvo::ParameterSize3) == vvSocket::VV_OK)
+    {
+      _socketIO->putInt32(static_cast<int32_t>(param));
+      _socketIO->putUint64(value.asVec3ul()[0]);
+      _socketIO->putUint64(value.asVec3ul()[1]);
+      _socketIO->putUint64(value.asVec3ul()[2]);
     }
     return;
   }

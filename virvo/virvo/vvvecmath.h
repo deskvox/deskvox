@@ -47,75 +47,87 @@ class vvBaseVector3;
 template <typename T>
 class vvBaseVector4;
 
-typedef vvBaseVector3<size_t> vvsize3;
-typedef vvBaseVector3<ssize_t> vvssize3;
+typedef vvBaseVector3<size_t>               vvsize3;
+typedef vvBaseVector3<ssize_t>              vvssize3;
 
-typedef vvBaseVector2<int> vvVector2i;
-typedef vvBaseVector2<unsigned int> vvVector2ui;
-typedef vvBaseVector2<short> vvVector2s;
-typedef vvBaseVector2<unsigned short> vvVector2us;
-typedef vvBaseVector2<long> vvVector2l;
-typedef vvBaseVector2<unsigned long> vvVector2ul;
-typedef vvBaseVector2<float> vvVector2f;
-typedef vvBaseVector2<double> vvVector2d;
-typedef vvVector2f vvVector2;
+typedef vvBaseVector2<int>                  vvVector2i;
+typedef vvBaseVector2<unsigned int>         vvVector2ui;
+typedef vvBaseVector2<short>                vvVector2s;
+typedef vvBaseVector2<unsigned short>       vvVector2us;
+typedef vvBaseVector2<long>                 vvVector2l;
+typedef vvBaseVector2<unsigned long>        vvVector2ul;
+typedef vvBaseVector2<long long>            vvVector2ll;
+typedef vvBaseVector2<unsigned long long>   vvVector2ull;
+typedef vvBaseVector2<float>                vvVector2f;
+typedef vvBaseVector2<double>               vvVector2d;
+typedef vvVector2f                          vvVector2;
 
-typedef vvBaseVector3<int> vvVector3i;
-typedef vvBaseVector3<unsigned int> vvVector3ui;
-typedef vvBaseVector3<short> vvVector3s;
-typedef vvBaseVector3<unsigned short> vvVector3us;
-typedef vvBaseVector3<long> vvVector3l;
-typedef vvBaseVector3<unsigned long> vvVector3ul;
-typedef vvBaseVector3<float> vvVector3f;
-typedef vvBaseVector3<double> vvVector3d;
-typedef vvVector3f vvVector3;
+typedef vvBaseVector3<int>                  vvVector3i;
+typedef vvBaseVector3<unsigned int>         vvVector3ui;
+typedef vvBaseVector3<short>                vvVector3s;
+typedef vvBaseVector3<unsigned short>       vvVector3us;
+typedef vvBaseVector3<long>                 vvVector3l;
+typedef vvBaseVector3<unsigned long>        vvVector3ul;
+typedef vvBaseVector3<long long>            vvVector3ll;
+typedef vvBaseVector3<unsigned long long>   vvVector3ull;
+typedef vvBaseVector3<float>                vvVector3f;
+typedef vvBaseVector3<double>               vvVector3d;
+typedef vvVector3f                          vvVector3;
 
-typedef vvBaseVector4<int> vvVector4i;
-typedef vvBaseVector4<unsigned int> vvVector4ui;
-typedef vvBaseVector4<short> vvVector4s;
-typedef vvBaseVector4<unsigned short> vvVector4us;
-typedef vvBaseVector4<long> vvVector4l;
-typedef vvBaseVector4<unsigned long> vvVector4ul;
-typedef vvBaseVector4<float> vvVector4f;
-typedef vvBaseVector4<double> vvVector4d;
-typedef vvVector4f vvVector4;
+typedef vvBaseVector4<int>                  vvVector4i;
+typedef vvBaseVector4<unsigned int>         vvVector4ui;
+typedef vvBaseVector4<short>                vvVector4s;
+typedef vvBaseVector4<unsigned short>       vvVector4us;
+typedef vvBaseVector4<long>                 vvVector4l;
+typedef vvBaseVector4<unsigned long>        vvVector4ul;
+typedef vvBaseVector4<long long>            vvVector4ll;
+typedef vvBaseVector4<unsigned long long>   vvVector4ull;
+typedef vvBaseVector4<float>                vvVector4f;
+typedef vvBaseVector4<double>               vvVector4d;
+typedef vvVector4f                          vvVector4;
 
 namespace virvo
 {
-typedef vvMatrix Matrix;
+typedef vvMatrix                            Matrix;
 
-typedef vvsize3 size3;
-typedef vvssize3 ssize3;
+typedef vvsize3                             size3;
+typedef vvssize3                            ssize3;
 
-typedef vvVector2i Vec2i;
-typedef vvVector2ui Vec2ui;
-typedef vvVector2s Vec2s;
-typedef vvVector2us Vec2us;
-typedef vvVector2l Vec2l;
-typedef vvVector2ul Vec2ul;
-typedef vvVector2f Vec2f;
-typedef vvVector2d Vec2d;
-typedef vvVector2 Vec2;
+typedef vvVector2i                          Vec2i;
+typedef vvVector2ui                         Vec2ui;
+typedef vvVector2s                          Vec2s;
+typedef vvVector2us                         Vec2us;
+typedef vvVector2l                          Vec2l;
+typedef vvVector2ul                         Vec2ul;
+typedef vvVector2ll                         Vec2ll;
+typedef vvVector2ull                        Vec2ull;
+typedef vvVector2f                          Vec2f;
+typedef vvVector2d                          Vec2d;
+typedef vvVector2                           Vec2;
 
-typedef vvVector3i Vec3i;
-typedef vvVector3ui Vec3ui;
-typedef vvVector3s Vec3s;
-typedef vvVector3us Vec3us;
-typedef vvVector3l Vec3l;
-typedef vvVector3ul Vec3ul;
-typedef vvVector3f Vec3f;
-typedef vvVector3d Vec3d;
-typedef vvVector3 Vec3;
+typedef vvVector3i                          Vec3i;
+typedef vvVector3ui                         Vec3ui;
+typedef vvVector3s                          Vec3s;
+typedef vvVector3us                         Vec3us;
+typedef vvVector3l                          Vec3l;
+typedef vvVector3ul                         Vec3ul;
+typedef vvVector3ll                         Vec3ll;
+typedef vvVector3ull                        Vec3ull;
+typedef vvVector3f                          Vec3f;
+typedef vvVector3d                          Vec3d;
+typedef vvVector3                           Vec3;
 
-typedef vvVector4i Vec4i;
-typedef vvVector4ui Vec4ui;
-typedef vvVector4s Vec4s;
-typedef vvVector4us Vec4us;
-typedef vvVector4l Vec4l;
-typedef vvVector4ul Vec4ul;
-typedef vvVector4f Vec4f;
-typedef vvVector4d Vec4d;
-typedef vvVector4 Vec4;
+typedef vvVector4i                          Vec4i;
+typedef vvVector4ui                         Vec4ui;
+typedef vvVector4s                          Vec4s;
+typedef vvVector4us                         Vec4us;
+typedef vvVector4l                          Vec4l;
+typedef vvVector4ul                         Vec4ul;
+typedef vvVector4ll                         Vec4ll;
+typedef vvVector4ull                        Vec4ull;
+typedef vvVector4f                          Vec4f;
+typedef vvVector4d                          Vec4d;
+typedef vvVector4                           Vec4;
 }
 
 //============================================================================

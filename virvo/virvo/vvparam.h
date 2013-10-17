@@ -54,18 +54,28 @@ public:
     VV_LLONG,
     VV_ULLONG,
     VV_FLOAT,
-    VV_VEC2,
+    VV_VEC2F,
     VV_VEC2I,
-    VV_VEC3,
+    VV_VEC3F,
+    VV_VEC3D,
+    VV_VEC3S,
+    VV_VEC3US,
     VV_VEC3I,
-    VV_VEC4,
-    VV_SIZE3,
-    VV_SSIZE3,
+    VV_VEC3UI,
+    VV_VEC3L,
+    VV_VEC3UL,
+    VV_VEC3LL,
+    VV_VEC3ULL,
+    VV_VEC4F,
     VV_COLOR,
-    VV_AABB,
+    VV_AABBF,
+    VV_AABBD,
     VV_AABBI,
-    VV_AABBS,
-    VV_AABBSS
+    VV_AABBUI,
+    VV_AABBL,
+    VV_AABBUL,
+    VV_AABBLL,
+    VV_AABBULL
   };
 
 private:
@@ -102,18 +112,28 @@ public:
     case VV_ULLONG:   break;
 #endif
     case VV_FLOAT:    a & boost::any_cast< float              >(value); return;
-    case VV_VEC2:     a & boost::any_cast< vvVector2          >(value); return;
-    case VV_VEC2I:    a & boost::any_cast< vvVector2i         >(value); return;
-    case VV_VEC3:     a & boost::any_cast< vvVector3          >(value); return;
-    case VV_VEC3I:    a & boost::any_cast< vvVector3i         >(value); return;
-    case VV_VEC4:     a & boost::any_cast< vvVector4          >(value); return;
-    case VV_SIZE3:    a & boost::any_cast< vvsize3            >(value); return;
-    case VV_SSIZE3:   a & boost::any_cast< vvssize3           >(value); return;
+    case VV_VEC2F:    a & boost::any_cast< virvo::Vec2f       >(value); return;
+    case VV_VEC2I:    a & boost::any_cast< virvo::Vec2i       >(value); return;
+    case VV_VEC3F:    a & boost::any_cast< virvo::Vec3f       >(value); return;
+    case VV_VEC3D:    a & boost::any_cast< virvo::Vec3d       >(value); return;
+    case VV_VEC3S:    a & boost::any_cast< virvo::Vec3s       >(value); return;
+    case VV_VEC3US:   a & boost::any_cast< virvo::Vec3us      >(value); return;
+    case VV_VEC3I:    a & boost::any_cast< virvo::Vec3i       >(value); return;
+    case VV_VEC3UI:   a & boost::any_cast< virvo::Vec3ui      >(value); return;
+    case VV_VEC3L:    a & boost::any_cast< virvo::Vec3l       >(value); return;
+    case VV_VEC3UL:   a & boost::any_cast< virvo::Vec3ul      >(value); return;
+    case VV_VEC3LL:   a & boost::any_cast< virvo::Vec3ll      >(value); return;
+    case VV_VEC3ULL:  a & boost::any_cast< virvo::Vec3ull     >(value); return;
+    case VV_VEC4F:    a & boost::any_cast< virvo::Vec4f       >(value); return;
     case VV_COLOR:    a & boost::any_cast< vvColor            >(value); return;
-    case VV_AABB:     a & boost::any_cast< vvAABB             >(value); return;
-    case VV_AABBI:    a & boost::any_cast< vvAABBi            >(value); return;
-    case VV_AABBS:    a & boost::any_cast< vvAABBs            >(value); return;
-    case VV_AABBSS:   a & boost::any_cast< vvAABBss           >(value); return;
+    case VV_AABBF:    a & boost::any_cast< virvo::AABBf       >(value); return;
+    case VV_AABBD:    a & boost::any_cast< virvo::AABBd       >(value); return;
+    case VV_AABBI:    a & boost::any_cast< virvo::AABBi       >(value); return;
+    case VV_AABBUI:   a & boost::any_cast< virvo::AABBui      >(value); return;
+    case VV_AABBL:    a & boost::any_cast< virvo::AABBl       >(value); return;
+    case VV_AABBUL:   a & boost::any_cast< virvo::AABBul      >(value); return;
+    case VV_AABBLL:   a & boost::any_cast< virvo::AABBll      >(value); return;
+    case VV_AABBULL:  a & boost::any_cast< virvo::AABBull     >(value); return;
     //
     // NOTE:
     //
@@ -158,18 +178,28 @@ public:
     case VV_ULLONG:   break;
 #endif
     case VV_FLOAT:    value = load_value< float              >(a); return;
-    case VV_VEC2:     value = load_value< vvVector2          >(a); return;
-    case VV_VEC2I:    value = load_value< vvVector2i         >(a); return;
-    case VV_VEC3:     value = load_value< vvVector3          >(a); return;
-    case VV_VEC3I:    value = load_value< vvVector3i         >(a); return;
-    case VV_VEC4:     value = load_value< vvVector4          >(a); return;
-    case VV_SIZE3:    value = load_value< vvsize3            >(a); return;
-    case VV_SSIZE3:   value = load_value< vvssize3           >(a); return;
+    case VV_VEC2F:    value = load_value< virvo::Vec2f       >(a); return;
+    case VV_VEC2I:    value = load_value< virvo::Vec2i       >(a); return;
+    case VV_VEC3F:    value = load_value< virvo::Vec3f       >(a); return;
+    case VV_VEC3D:    value = load_value< virvo::Vec3d       >(a); return;
+    case VV_VEC3S:    value = load_value< virvo::Vec3s       >(a); return;
+    case VV_VEC3US:   value = load_value< virvo::Vec3us      >(a); return;
+    case VV_VEC3I:    value = load_value< virvo::Vec3i       >(a); return;
+    case VV_VEC3UI:   value = load_value< virvo::Vec3ui      >(a); return;
+    case VV_VEC3L:    value = load_value< virvo::Vec3l       >(a); return;
+    case VV_VEC3UL:   value = load_value< virvo::Vec3ul      >(a); return;
+    case VV_VEC3LL:   value = load_value< virvo::Vec3ll      >(a); return;
+    case VV_VEC3ULL:  value = load_value< virvo::Vec3ull     >(a); return;
+    case VV_VEC4F:    value = load_value< virvo::Vec4f       >(a); return;
     case VV_COLOR:    value = load_value< vvColor            >(a); return;
-    case VV_AABB:     value = load_value< vvAABB             >(a); return;
-    case VV_AABBI:    value = load_value< vvAABBi            >(a); return;
-    case VV_AABBS:    value = load_value< vvAABBs            >(a); return;
-    case VV_AABBSS:   value = load_value< vvAABBss           >(a); return;
+    case VV_AABBF:    value = load_value< virvo::AABBf       >(a); return;
+    case VV_AABBD:    value = load_value< virvo::AABBd       >(a); return;
+    case VV_AABBI:    value = load_value< virvo::AABBi       >(a); return;
+    case VV_AABBUI:   value = load_value< virvo::AABBui      >(a); return;
+    case VV_AABBL:    value = load_value< virvo::AABBl       >(a); return;
+    case VV_AABBUL:   value = load_value< virvo::AABBul      >(a); return;
+    case VV_AABBLL:   value = load_value< virvo::AABBll      >(a); return;
+    case VV_AABBULL:  value = load_value< virvo::AABBull     >(a); return;
     //
     // NOTE:
     //
@@ -262,44 +292,80 @@ public:
   {
   }
 
-  vvParam(const vvVector2& val)
-    : type(VV_VEC2)
+  vvParam(const virvo::Vec2f& val)
+    : type(VV_VEC2F)
     , value(val)
   {
   }
 
-  vvParam(const vvVector2i& val)
+  vvParam(const virvo::Vec2i& val)
     : type(VV_VEC2I)
     , value(val)
   {
   }
 
-  vvParam(const vvVector3& val)
-    : type(VV_VEC3)
+  vvParam(const virvo::Vec3f& val)
+    : type(VV_VEC3F)
     , value(val)
   {
   }
 
-  vvParam(const vvVector3i& val)
+  vvParam(const virvo::Vec3d& val)
+    : type(VV_VEC3D)
+    , value(val)
+  {
+  }
+
+  vvParam(const virvo::Vec3s& val)
+    : type(VV_VEC3S)
+    , value(val)
+  {
+  }
+
+  vvParam(const virvo::Vec3us& val)
+    : type(VV_VEC3US)
+    , value(val)
+  {
+  }
+
+  vvParam(const virvo::Vec3i& val)
     : type(VV_VEC3I)
     , value(val)
   {
   }
 
-  vvParam(const vvVector4& val)
-    : type(VV_VEC4)
+  vvParam(const virvo::Vec3ui& val)
+    : type(VV_VEC3UI)
     , value(val)
   {
   }
 
-  vvParam(const vvsize3& val)
-    : type(VV_SIZE3)
+  vvParam(const virvo::Vec3l& val)
+    : type(VV_VEC3L)
     , value(val)
   {
   }
 
-  vvParam(const vvssize3& val)
-    : type(VV_SSIZE3)
+  vvParam(const virvo::Vec3ul& val)
+    : type(VV_VEC3UL)
+    , value(val)
+  {
+  }
+
+  vvParam(const virvo::Vec3ll& val)
+    : type(VV_VEC3LL)
+    , value(val)
+  {
+  }
+
+  vvParam(const virvo::Vec3ull& val)
+    : type(VV_VEC3ULL)
+    , value(val)
+  {
+  }
+
+  vvParam(const virvo::Vec4f& val)
+    : type(VV_VEC4F)
     , value(val)
   {
   }
@@ -310,26 +376,50 @@ public:
   {
   }
 
-  vvParam(const vvAABB& val)
-    : type(VV_AABB)
+  vvParam(const virvo::AABBf& val)
+    : type(VV_AABBF)
     , value(val)
   {
   }
 
-  vvParam(const vvAABBi& val)
+  vvParam(const virvo::AABBd& val)
+    : type(VV_AABBD)
+    , value(val)
+  {
+  }
+
+  vvParam(const virvo::AABBi& val)
     : type(VV_AABBI)
     , value(val)
   {
   }
 
-  vvParam(const vvAABBs& val)
-    : type(VV_AABBS)
+  vvParam(const virvo::AABBui& val)
+    : type(VV_AABBUI)
     , value(val)
   {
   }
 
-  vvParam(const vvAABBss& val)
-    : type(VV_AABBSS)
+  vvParam(const virvo::AABBl& val)
+    : type(VV_AABBL)
+    , value(val)
+  {
+  }
+
+  vvParam(const virvo::AABBul& val)
+    : type(VV_AABBUL)
+    , value(val)
+  {
+  }
+
+  vvParam(const virvo::AABBll& val)
+    : type(VV_AABBLL)
+    , value(val)
+  {
+  }
+
+  vvParam(const virvo::AABBull& val)
+    : type(VV_AABBULL)
     , value(val)
   {
   }
@@ -386,52 +476,92 @@ public:
     return boost::any_cast<float>(value);
   }
 
-  vvVector2 asVec2() const {
-    return boost::any_cast<vvVector2>(value);
+  virvo::Vec2f asVec2f() const {
+    return boost::any_cast<virvo::Vec2f>(value);
   }
 
-  vvVector2i asVec2i() const {
-    return boost::any_cast<vvVector2i>(value);
+  virvo::Vec2i asVec2i() const {
+    return boost::any_cast<virvo::Vec2i>(value);
   }
 
-  vvVector3 asVec3() const {
-    return boost::any_cast<vvVector3>(value);
+  virvo::Vec3f asVec3f() const {
+    return boost::any_cast<virvo::Vec3f>(value);
   }
 
-  vvVector3i asVec3i() const {
-    return boost::any_cast<vvVector3i>(value);
+  virvo::Vec3d asVec3d() const {
+    return boost::any_cast<virvo::Vec3d>(value);
   }
 
-  vvVector4 asVec4() const {
-    return boost::any_cast<vvVector4>(value);
+  virvo::Vec3s asVec3s() const {
+    return boost::any_cast<virvo::Vec3s>(value);
   }
 
-  vvsize3 asSize3() const {
-    return boost::any_cast<vvsize3>(value);
+  virvo::Vec3us asVec3us() const {
+    return boost::any_cast<virvo::Vec3us>(value);
   }
 
-  vvssize3 asSsize3() const {
-    return boost::any_cast<vvssize3>(value);
+  virvo::Vec3i asVec3i() const {
+    return boost::any_cast<virvo::Vec3i>(value);
+  }
+
+  virvo::Vec3ui asVec3ui() const {
+    return boost::any_cast<virvo::Vec3ui>(value);
+  }
+
+  virvo::Vec3l asVec3l() const {
+    return boost::any_cast<virvo::Vec3l>(value);
+  }
+
+  virvo::Vec3ul asVec3ul() const {
+    return boost::any_cast<virvo::Vec3ul>(value);
+  }
+
+  virvo::Vec3ll asVec3ll() const {
+    return boost::any_cast<virvo::Vec3ll>(value);
+  }
+
+  virvo::Vec3ull asVec3ull() const {
+    return boost::any_cast<virvo::Vec3ull>(value);
+  }
+
+  virvo::Vec4f asVec4f() const {
+    return boost::any_cast<virvo::Vec4f>(value);
   }
 
   vvColor asColor() const {
     return boost::any_cast<vvColor>(value);
   }
 
-  vvAABB asAABB() const {
-    return boost::any_cast<vvAABB>(value);
+  virvo::AABBf asAABBf() const {
+    return boost::any_cast<virvo::AABBf>(value);
   }
 
-  vvAABBi asAABBi() const {
-    return boost::any_cast<vvAABBi>(value);
+  virvo::AABBd asAABBd() const {
+    return boost::any_cast<virvo::AABBd>(value);
   }
 
-  vvAABBs asAABBs() const {
-    return boost::any_cast<vvAABBs>(value);
+  virvo::AABBi asAABBi() const {
+    return boost::any_cast<virvo::AABBi>(value);
   }
 
-  vvAABBss asAABBss() const {
-    return boost::any_cast<vvAABBss>(value);
+  virvo::AABBui asAABBui() const {
+    return boost::any_cast<virvo::AABBui>(value);
+  }
+
+  virvo::AABBl asAABBl() const {
+    return boost::any_cast<virvo::AABBl>(value);
+  }
+
+  virvo::AABBul asAABBul() const {
+    return boost::any_cast<virvo::AABBul>(value);
+  }
+
+  virvo::AABBll asAABBll() const {
+    return boost::any_cast<virvo::AABBll>(value);
+  }
+
+  virvo::AABBull asAABBull() const {
+    return boost::any_cast<virvo::AABBull>(value);
   }
 
   operator bool() const {
@@ -486,52 +616,92 @@ public:
     return asFloat();
   }
 
-  operator vvVector2() const {
-    return asVec2();
+  operator virvo::Vec2f() const {
+    return asVec2f();
   }
 
-  operator vvVector2i() const {
+  operator virvo::Vec2i() const {
     return asVec2i();
   }
 
-  operator vvVector3() const {
-    return asVec3();
+  operator virvo::Vec3f() const {
+    return asVec3f();
   }
 
-  operator vvVector3i() const {
+  operator virvo::Vec3d() const {
+    return asVec3d();
+  }
+
+  operator virvo::Vec3s() const {
+    return asVec3s();
+  }
+
+  operator virvo::Vec3us() const {
+    return asVec3us();
+  }
+
+  operator virvo::Vec3i() const {
     return asVec3i();
   }
 
-  operator vvVector4() const {
-    return asVec4();
+  operator virvo::Vec3ui() const {
+    return asVec3ui();
   }
 
-  operator vvsize3() const {
-    return asSize3();
+  operator virvo::Vec3l() const {
+    return asVec3l();
   }
 
-  operator vvssize3() const {
-    return asSsize3();
+  operator virvo::Vec3ul() const {
+    return asVec3ul();
+  }
+
+  operator virvo::Vec3ll() const {
+    return asVec3ll();
+  }
+
+  operator virvo::Vec3ull() const {
+    return asVec3ull();
+  }
+
+  operator virvo::Vec4f() const {
+    return asVec4f();
   }
 
   operator vvColor() const {
     return asColor();
   }
 
-  operator vvAABB() const {
-    return asAABB();
+  operator virvo::AABBf() const {
+    return asAABBf();
   }
 
-  operator vvAABBi() const {
+  operator virvo::AABBd() const {
+    return asAABBd();
+  }
+
+  operator virvo::AABBi() const {
     return asAABBi();
   }
 
-  operator vvAABBs() const {
-    return asAABBs();
+  operator virvo::AABBui() const {
+    return asAABBui();
   }
 
-  operator vvAABBss() const {
-    return asAABBss();
+  operator virvo::AABBl() const {
+    return asAABBl();
+  }
+
+  operator virvo::AABBul() const {
+    return asAABBul();
+  }
+
+  operator virvo::AABBll() const {
+    return asAABBll();
+  }
+
+  operator virvo::AABBull() const {
+    return asAABBull();
   }
 
   // Returns the type of this parameter
