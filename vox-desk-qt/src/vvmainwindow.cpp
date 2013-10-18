@@ -148,7 +148,27 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
     format.setSamples(superSamples);
   }
 
-  QString fn = filename;
+  QString fn = "";
+  if (filename != "")
+  {
+    QFileInfo finfo(filename);
+    if (finfo.exists())
+    {
+      if (finfo.isFile()) // TODO: we really need file type validation in virvo::FileIO w/o having to load the actual data
+      {
+        fn = filename;
+      }
+      else
+      {
+        QMessageBox::warning(this, tr("Error loading file"), tr("No file or link to a file: ") + filename, QMessageBox::Ok);
+      }
+    }
+    else
+    {
+      QMessageBox::warning(this, tr("Error loading file"), tr("File not found: ") + filename, QMessageBox::Ok);
+    }
+  }
+
   impl_->canvas = new vvCanvas(format, fn, this);
   impl_->canvas->setPlugins(impl_->plugins);
   setCentralWidget(impl_->canvas);
