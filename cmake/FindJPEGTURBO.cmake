@@ -9,6 +9,11 @@ set(hints
 )
 
 set(paths
+  $ENV{EXTERNLIBS}/libjpeg-turbo
+  $ENV{EXTERNLIBS}/libjpeg
+  $ENV{LIB_BASE_PATH}/
+  $ENV{LIB_BASE_PATH}/libjpeg-turbo
+  $ENV{LIB_BASE_PATH}/libjpeg
   /usr
   /usr/local
 )
