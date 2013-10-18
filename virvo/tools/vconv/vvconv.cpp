@@ -2441,7 +2441,7 @@ int vvConv::run(int argc, char** argv)
         imgVD->bpc = 1;
         imgVD->chan = 3;
         uint8_t* imgData = new uint8_t[imgVD->vox[0] * imgVD->vox[1] * 3];
-        size_t size[2] = {imgVD->vox[0], imgVD->vox[1]};
+        size_t size[2] = { static_cast<size_t>(imgVD->vox[0]), static_cast<size_t>(imgVD->vox[1]) };
         vvColor col(1.0f, 1.0f, 1.0f);
         tmpVD->makeHistogramTexture(-1, m, 1, size, imgData, vvVolDesc::VV_LOGARITHMIC, &col, tmpVD->real[0], tmpVD->real[1]);
         imgVD->addFrame(imgData, vvVolDesc::ARRAY_DELETE);
