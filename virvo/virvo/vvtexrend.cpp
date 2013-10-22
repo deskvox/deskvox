@@ -486,15 +486,15 @@ vvTexRend::ErrorType vvTexRend::makeTextures()
   // Compute texture dimensions (must be power of 2):
   if (geomType != VV_BRICKS)
   {
-    texels[0] = vvToolshed::getTextureSize(vox[0]);
-    texels[1] = vvToolshed::getTextureSize(vox[1]);
-    texels[2] = vvToolshed::getTextureSize(vox[2]);
+    texels[0] = getTextureSize(vox[0]);
+    texels[1] = getTextureSize(vox[1]);
+    texels[2] = getTextureSize(vox[2]);
   }
   else
   {
-    texels[0] = vvToolshed::getTextureSize(_brickSize[0]);
-    texels[1] = vvToolshed::getTextureSize(_brickSize[1]);
-    texels[2] = vvToolshed::getTextureSize(_brickSize[2]);
+    texels[0] = getTextureSize(_brickSize[0]);
+    texels[1] = getTextureSize(_brickSize[1]);
+    texels[2] = getTextureSize(_brickSize[2]);
   }
 
   if (geomType == VV_BRICKS)
@@ -833,15 +833,15 @@ vvTexRend::ErrorType vvTexRend::makeEmptyBricks()
 
           // Guarantee that startOffset[i] + brickSize[i] won't exceed actual size of the volume.
           if ((startOffset[0] + _brickSize[0]) >= vd->vox[0])
-            tmpTexels[0] = vvToolshed::getTextureSize(vd->vox[0] - startOffset[0]);
+            tmpTexels[0] = getTextureSize(vd->vox[0] - startOffset[0]);
           else
             tmpTexels[0] = texels[0];
           if ((startOffset[1] + _brickSize[1]) >= vd->vox[1])
-            tmpTexels[1] = vvToolshed::getTextureSize(vd->vox[1] - startOffset[1]);
+            tmpTexels[1] = getTextureSize(vd->vox[1] - startOffset[1]);
           else
             tmpTexels[1] = texels[1];
           if ((startOffset[2] + _brickSize[2]) >= vd->vox[2])
-            tmpTexels[2] = vvToolshed::getTextureSize(vd->vox[2] - startOffset[2]);
+            tmpTexels[2] = getTextureSize(vd->vox[2] - startOffset[2]);
           else
             tmpTexels[2] = texels[2];
 
@@ -1217,7 +1217,7 @@ void vvTexRend::computeBrickSize()
   _useOnlyOneBrick = true;
   for(size_t i=0; i<3; ++i)
   {
-    newBrickSize[i] = vvToolshed::getTextureSize(vd->vox[i]);
+    newBrickSize[i] = getTextureSize(vd->vox[i]);
     if(newBrickSize[i] > _maxBrickSize[i])
     {
       newBrickSize[i] = _maxBrickSize[i];
@@ -4590,6 +4590,14 @@ void vvTexRend::evaluateLocalIllumination(vvShaderProgram* shader, const vvVecto
     shader->setParameter3f("L", L[0], L[1], L[2]);
     shader->setParameter3f("H", H[0], H[1], H[2]);
   }
+}
+
+size_t vvTexRend::getTextureSize(size_t sz) const
+{
+  if (extNonPower2)
+    return sz;
+
+  return vvToolshed::getTextureSize(sz);
 }
 
 //============================================================================

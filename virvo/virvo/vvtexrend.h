@@ -231,6 +231,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
 
     int  getCurrentShader() const;
     void setCurrentShader(int);
+    size_t getTextureSize(size_t sz) const;
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST);
     virtual ~vvTexRend();
