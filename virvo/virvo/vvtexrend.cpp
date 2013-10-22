@@ -1387,8 +1387,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   size_t srcIndex;
   size_t texOffset=0;
   vvVector4i rawVal;
-  uint8_t* raw;
-  uint8_t* texData;
+  uint8_t* texData = NULL;
   bool accommodated = true;
   GLint glWidth;
 
@@ -1401,9 +1400,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   VV_LOG(1) << "3D Texture height    = " << sizeY << std::endl;
   VV_LOG(1) << "3D Texture depth     = " << sizeZ << std::endl;
   VV_LOG(1) << "3D Texture size (KB) = " << texSize / 1024 << std::endl;
-
-  texData = new uint8_t[texSize];
-  memset(texData, 0, texSize);
 
   size_t sliceSize = vd->getSliceBytes();
 
@@ -1423,48 +1419,71 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   vvssize3 offsets(offsetX, offsetY, offsetZ);
   offsets += _paddingRegion.getMin();
 
+  bool useRaw = geomType!=VV_SPHERICAL && vd->chan==1 && vd->bpc==1 && texelsize==1;
+  if (sizeX != vd->vox[0])
+    useRaw = false;
+  if (sizeY != vd->vox[1])
+    useRaw = false;
+  if (sizeZ != vd->vox[2])
+    useRaw = false;
+  for (int i=0; i<3; ++i) {
+    if (offsets[i] != 0)
+      useRaw = false;
+  }
+  if (!useRaw)
+  {
+    texData = new uint8_t[texSize];
+    memset(texData, 0, texSize);
+  }
+
   // Generate sub texture contents:
   for (size_t f = 0; f < vd->frames; f++)
   {
-    raw = vd->getRaw(f);
-    for (ssize_t s = offsets[2]; s < (offsets[2] + sizeZ); s++)
+    uint8_t *raw = vd->getRaw(f);
+    if (useRaw) {
+      texData = raw;
+    }
+    else
     {
-      size_t rawSliceOffset = (vd->vox[2] - ts_min(s,vd->vox[2]-1) - 1) * sliceSize;
-      for (ssize_t y = offsets[1]; y < (offsets[1] + sizeY); y++)
+      for (ssize_t s = offsets[2]; s < (offsets[2] + sizeZ); s++)
       {
-        size_t heightOffset = (vd->vox[1] - min(y,vd->vox[1]-1) - 1) * vd->vox[0] * vd->bpc * vd->chan;
-        size_t texLineOffset = (y - offsets[1] - offsetY) * sizeX + (s - offsets[2] - offsetZ) * sizeX * sizeY;
-        if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
+        size_t rawSliceOffset = (ts_min(ts_max(s,ssize_t(0)),vd->vox[2]-1)) * sliceSize;
+        for (ssize_t y = offsets[1]; y < (offsets[1] + sizeY); y++)
         {
-          if (vd->bpc == 1 && voxelType != VV_SGI_LUT && voxelType != VV_TEX_SHD && voxelType != VV_RGBA)
+          size_t heightOffset = (ts_min(ts_max(y,ssize_t(0)),vd->vox[1]-1)) * vd->vox[0] * vd->bpc * vd->chan;
+          size_t texLineOffset = (y - offsets[1] - offsetY) * sizeX + (s - offsets[2] - offsetZ) * sizeX * sizeY;
+          
+          if (vd->chan == 1 && (vd->bpc == 1 || vd->bpc == 2 || vd->bpc == 4))
           {
-            // one byte, one color channel ==> can use memcpy for consecutive memory chunks
-            ssize_t x1 = offsets[0];
-            ssize_t x2 = offsets[0] + sizeX;
-            size_t srcMin = vd->bpc * min(x1, vd->vox[0] - 1) + rawSliceOffset + heightOffset;
-            size_t srcMax = vd->bpc * min(x2, vd->vox[0] - 1) + rawSliceOffset + heightOffset;
-            texOffset = texLineOffset - offsetX;
-            memcpy(&texData[texelsize * texOffset], &raw[srcMin], srcMax - srcMin);
-          }
-          else
-          {
-            for (ssize_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
+            if (vd->bpc == 1 && texelsize == 1)
             {
-              srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
-              if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
-              else if (vd->bpc == 2)
+              // one byte, one color channel ==> can use memcpy for consecutive memory chunks
+              ssize_t x1 = offsets[0];
+              ssize_t x2 = offsets[0] + sizeX;
+              size_t srcMin = vd->bpc * min(x1, vd->vox[0] - 1) + rawSliceOffset + heightOffset;
+              size_t srcMax = vd->bpc * min(x2, vd->vox[0] - 1) + rawSliceOffset + heightOffset;
+              texOffset = texLineOffset - offsetX;
+              memcpy(&texData[texelsize * texOffset], &raw[srcMin], srcMax - srcMin);
+            }
+            else
+            {
+              for (ssize_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
               {
-                rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                rawVal[0] >>= 4;
-              }
-              else // vd->bpc==4: convert floating point to 8bit value
-              {
-                const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                rawVal[0] = vd->mapFloat2Int(fval);
-              }
-              texOffset = (x - offsets[0] - offsetX) + texLineOffset;
-              switch(voxelType)
-              {
+                srcIndex = vd->bpc * min(x,vd->vox[0]-1) + rawSliceOffset + heightOffset;
+                if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
+                else if (vd->bpc == 2)
+                {
+                  rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
+                  rawVal[0] >>= 4;
+                }
+                else // vd->bpc==4: convert floating point to 8bit value
+                {
+                  const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+                  rawVal[0] = vd->mapFloat2Int(fval);
+                }
+                texOffset = (x - offsets[0] - offsetX) + texLineOffset;
+                switch(voxelType)
+                {
                 case VV_SGI_LUT:
                   texData[2 * texOffset] = texData[2 * texOffset + 1] = (uint8_t) rawVal[0];
                   break;
@@ -1472,6 +1491,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                 case VV_FRG_PRG:
                 case VV_PIX_SHD:
                   texData[texelsize * texOffset] = (uint8_t) rawVal[0];
+                  //texData[texelsize * texOffset] = (x+y+s)/3;
                   break;
                 case VV_TEX_SHD:
                   for (size_t c = 0; c < 4; c++)
@@ -1483,84 +1503,86 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                   for (size_t c = 0; c < 4; c++)
                   {
                     texData[4 * texOffset + c] = rgbaLUT[size_t(rawVal[0]) * 4 + c];
+                    //texData[4 * texOffset + c] = (x+y+s)/3;
                   }
                   break;
                 default:
                   assert(0);
                   break;
+                }
               }
             }
           }
-        }
-        else if (vd->bpc==1 || vd->bpc==2 || vd->bpc==4)
-        {
-          if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
+          else if (vd->bpc==1 || vd->bpc==2 || vd->bpc==4)
           {
-            for (ssize_t x = offsetX; x < (offsetX + sizeX); x++)
+            if (voxelType == VV_RGBA || voxelType == VV_PIX_SHD)
             {
-              texOffset = (x - offsetX) + texLineOffset;
-              for (size_t c = 0; c < ts_min(vd->chan, size_t(4)); c++)
+              for (ssize_t x = offsets[0]; x < (offsets[0] + sizeX); x++)
               {
-                srcIndex = rawSliceOffset + heightOffset + vd->bpc * (x * vd->chan + c);
-                if (vd->bpc == 1)
-                  rawVal[c] = (int) raw[srcIndex];
-                else if (vd->bpc == 2)
+                texOffset = (x - offsets[0] - offsetX) + texLineOffset;
+                for (size_t c = 0; c < ts_min(vd->chan, size_t(4)); c++)
                 {
-                  rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                  rawVal[c] >>= 4;
+                  srcIndex = vd->bpc * (min(x,vd->vox[0]-1)*vd->chan+c) + rawSliceOffset + heightOffset;
+                  if (vd->bpc == 1)
+                    rawVal[c] = (int) raw[srcIndex];
+                  else if (vd->bpc == 2)
+                  {
+                    rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
+                    rawVal[c] >>= 4;
+                  }
+                  else  // vd->bpc == 4
+                  {
+                    const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
+                    rawVal[c] = vd->mapFloat2Int(fval);
+                  }
                 }
-                else  // vd->bpc == 4
+
+                // Copy color components:
+                for (size_t c = 0; c < ts_min(vd->chan, size_t(3)); c++)
                 {
-                  const float fval = *((float*)(raw + srcIndex));      // fetch floating point data value
-                  rawVal[c] = vd->mapFloat2Int(fval);
+                  texData[4 * texOffset + c] = (uint8_t) rawVal[c];
                 }
               }
 
-              // Copy color components:
-              for (size_t c = 0; c < ts_min(vd->chan, size_t(3)); c++)
+              // Alpha channel:
+              if (vd->chan >= 4)
               {
-                texData[4 * texOffset + c] = (uint8_t) rawVal[c];
+                texData[4 * texOffset + 3] = (uint8_t)rawVal[3];
               }
-            }
-
-            // Alpha channel:
-            if (vd->chan >= 4)
-            {
-              texData[4 * texOffset + 3] = (uint8_t)rawVal[3];
-            }
-            else
-            {
-              size_t alpha = 0;
-              for (size_t c = 0; c < vd->chan; c++)
+              else
               {
-                // Alpha: mean of sum of RGB conversion table results:
-                alpha += (size_t) rgbaLUT[size_t(rawVal[c]) * 4 + c];
+                size_t alpha = 0;
+                for (size_t c = 0; c < vd->chan; c++)
+                {
+                  // Alpha: mean of sum of RGB conversion table results:
+                  alpha += (size_t) rgbaLUT[size_t(rawVal[c]) * 4 + c];
+                }
+                texData[4 * texOffset + 3] = (uint8_t) (alpha / vd->chan);
               }
-              texData[4 * texOffset + 3] = (uint8_t) (alpha / vd->chan);
             }
           }
+          else cerr << "Cannot create texture: unsupported voxel format (3)." << endl;
         }
-        else cerr << "Cannot create texture: unsupported voxel format (3)." << endl;
       }
-    }
 
-    if (geomType == VV_SPHERICAL)
-    {
-      // Set edge values and values beyond edges to 0 for spheric textures,
-      // because textures may exceed texel volume:
-      for (ssize_t s = offsetZ; s < (offsetZ + sizeZ); ++s)
+      if (geomType == VV_SPHERICAL)
       {
-        for (ssize_t y = offsetY; y < (offsetY + sizeY); ++y)
+        // Set edge values and values beyond edges to 0 for spheric textures,
+        // because textures may exceed texel volume:
+        for (ssize_t s = offsetZ; s < (offsetZ + sizeZ); ++s)
         {
-          for (ssize_t x = offsetX; x < (offsetX + sizeX); ++x)
+          for (ssize_t y = offsetY; y < (offsetY + sizeY); ++y)
           {
-            if ((s == 0) || (s>=vd->vox[2]-1) ||
-                (y == 0) || (y>=vd->vox[1]-1) ||
-                (x == 0) || (x>=vd->vox[0]-1))
+            for (ssize_t x = offsetX; x < (offsetX + sizeX); ++x)
             {
-              texOffset = x + y * texels[0] + s * texels[0] * texels[1];
-              for(size_t i=0; i<texelsize; i++)
-                texData[texelsize*texOffset+i] = 0;
+              if ((s == 0) || (s>=vd->vox[2]-1) ||
+                  (y == 0) || (y>=vd->vox[1]-1) ||
+                  (x == 0) || (x>=vd->vox[0]-1))
+              {
+                texOffset = x + y * texels[0] + s * texels[0] * texels[1];
+                for(size_t i=0; i<texelsize; i++)
+                  texData[texelsize*texOffset+i] = 0;
+              }
             }
           }
         }
@@ -1603,7 +1625,10 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
     err = TRAM_ERROR;
   }
 
-  delete[] texData;
+  if (!useRaw)
+  {
+    delete[] texData;
+  }
   return err;
 }
 
@@ -2319,7 +2344,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
   if (numSlices < 1)                              // make sure that at least one slice is drawn
     numSlices = 1;
 
-  VV_LOG(3) << "Number of textures rendered: " << numSlices << std::endl;
+  VV_LOG(3) << "Number of textures to render: " << numSlices << std::endl;
 
   // Use alpha correction in indexed mode: adapt alpha values to number of textures:
   if (instantClassification())
@@ -3384,6 +3409,12 @@ void vvTexRend::renderVolumeGL()
     {
       texMax[i] -= vsize * (float)paddingRight;
     }
+  }
+
+  if (geomType==VV_SPHERICAL || geomType==VV_VIEWPORT) {
+    // allow for using raw volume data from vvVolDesc for textures without re-shuffeling
+    std::swap(texMin[2], texMax[2]);
+    std::swap(texMin[1], texMax[1]);
   }
 
   // Get OpenGL modelview matrix:

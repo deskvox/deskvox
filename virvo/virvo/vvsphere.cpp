@@ -160,7 +160,7 @@ void vvSphere::calculateTexCoords()
 
   texMatrix.identity();
   texMatrix.translate(0.5,0.5,0.5);
-  texMatrix.scaleLocal(1.0f/mDimCube[0], 1.0f/mDimCube[1], 1.0f/mDimCube[2]);
+  texMatrix.scaleLocal(1.0f/mDimCube[0], -1.0f/mDimCube[1], -1.0f/mDimCube[2]);
   texMatrix.translate(texOffset[0], texOffset[1], texOffset[2]);
   texMatrix.multiplyRight(mModelView);
 
