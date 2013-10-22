@@ -194,7 +194,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     vvShaderProgram* initShader();
     void setupIntersectionParameters(vvShaderProgram* isectShader);
 
-    ErrorType makeTextures3D();
     void removeTextures();
     ErrorType updateTextures3D(ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, bool);
     ErrorType updateTextures2D(size_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t, ssize_t);
