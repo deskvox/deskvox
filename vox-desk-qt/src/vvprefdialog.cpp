@@ -328,6 +328,8 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->stillSpinBox, SIGNAL(valueChanged(double)), this, SLOT(onStillSpinBoxChanged(double)));
   connect(ui->movingDial, SIGNAL(valueChanged(int)), this, SLOT(onMovingDialChanged(int)));
   connect(ui->stillDial, SIGNAL(valueChanged(int)), this, SLOT(onStillDialChanged(int)));
+
+  canvas->doneCurrent();
 }
 
 vvPrefDialog::~vvPrefDialog()

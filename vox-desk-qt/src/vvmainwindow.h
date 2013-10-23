@@ -46,6 +46,7 @@ class vvMainWindow : public QMainWindow
   Q_OBJECT
 public:
   explicit vvMainWindow(const QString& filename, QWidget* parent = 0);
+  void lateInitialization();
   ~vvMainWindow();
 private:
   struct Impl;

@@ -188,7 +188,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
     addRecentFile(fn);
   }
 
-  impl_->prefDialog = new vvPrefDialog(impl_->canvas, this);
+  impl_->prefDialog = NULL;
 
   impl_->tfDialog = new vvTFDialog(impl_->canvas, this);
   impl_->lightDialog = new vvLightDialog(this);
@@ -236,13 +236,6 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   // misc.
   connect(impl_->canvas, SIGNAL(newVolDesc(vvVolDesc*)), this, SLOT(onNewVolDesc(vvVolDesc*)));
   connect(impl_->canvas, SIGNAL(statusMessage(const std::string&)), this, SLOT(onStatusMessage(const std::string&)));
-
-  connect(impl_->prefDialog, SIGNAL(rendererChanged(const std::string&, const vvRendererFactory::Options&)),
-    impl_->canvas, SLOT(setRenderer(const std::string&, const vvRendererFactory::Options&)));
-  connect(impl_->prefDialog, SIGNAL(parameterChanged(vvParameters::ParameterType, const vvParam&)),
-    impl_->canvas, SLOT(setParameter(vvParameters::ParameterType, const vvParam&)));
-  connect(impl_->prefDialog, SIGNAL(parameterChanged(vvRenderer::ParameterType, const vvParam&)),
-    impl_->canvas, SLOT(setParameter(vvRenderer::ParameterType, const vvParam&)));
 
   connect(impl_->tfDialog, SIGNAL(newWidget(vvTFWidget*)), impl_->canvas, SLOT(addTFWidget(vvTFWidget*)));
   connect(impl_->tfDialog, SIGNAL(newTransferFunction()), impl_->canvas, SLOT(updateTransferFunction()));
@@ -333,7 +326,6 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
 
   // cannot be done in dialog ctors because signals/slots need to be connected first
   impl_->lightDialog->applySettings();
-  impl_->prefDialog->applySettings();
 
   statusBar()->showMessage(tr("Welcome to DeskVOX!"));
 }
@@ -341,6 +333,20 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
 vvMainWindow::~vvMainWindow()
 {
   vvDebugMsg::msg(1, "vvMainWindow::~vvMainWindow()");
+}
+
+void vvMainWindow::lateInitialization()
+{
+  impl_->prefDialog = new vvPrefDialog(impl_->canvas, this);
+
+  connect(impl_->prefDialog, SIGNAL(rendererChanged(const std::string&, const vvRendererFactory::Options&)),
+    impl_->canvas, SLOT(setRenderer(const std::string&, const vvRendererFactory::Options&)));
+  connect(impl_->prefDialog, SIGNAL(parameterChanged(vvParameters::ParameterType, const vvParam&)),
+    impl_->canvas, SLOT(setParameter(vvParameters::ParameterType, const vvParam&)));
+  connect(impl_->prefDialog, SIGNAL(parameterChanged(vvRenderer::ParameterType, const vvParam&)),
+    impl_->canvas, SLOT(setParameter(vvRenderer::ParameterType, const vvParam&)));
+
+  impl_->prefDialog->applySettings();
 }
 
 void vvMainWindow::loadVolumeFile(const QString& filename)
@@ -830,6 +836,7 @@ int main(int argc, char** argv)
   vvMainWindow win(filename);
   win.resize(size);
   win.show();
+  win.lateInitialization();
   return a.exec();
 }
 
