@@ -170,7 +170,7 @@ class VIRVOEXPORT vvVolDesc
     void getBoundingBox(vvAABB& aabb) const;
     /** Legacy function, returns current frame
      @param  default to -1 in the past meant current frame */
-    uint8_t* getRaw(int frame = -1) const;
+    uint8_t* getRaw() const;
     uint8_t* getRaw(size_t) const;
     const char* getFilename() const;
     void   setFilename(const char*);

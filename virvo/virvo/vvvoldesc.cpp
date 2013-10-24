@@ -654,7 +654,7 @@ vvVolDesc::ErrorType vvVolDesc::mergeFrames()
 /** Legacy function, getRaw(-1) returns data for current frame
   @param frame  has default value -1
 */
-uint8_t* vvVolDesc::getRaw(int) const
+uint8_t* vvVolDesc::getRaw() const
 {
   return getRaw(currentFrame);
 }
