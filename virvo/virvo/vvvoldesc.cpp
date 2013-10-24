@@ -1516,7 +1516,6 @@ void vvVolDesc::deleteChannel(size_t channel, bool verbose)
 */
 void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
 {
-  long pixel;
   long byte;
   int  shift;
   uint8_t* rd;
@@ -1524,7 +1523,7 @@ void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
   size_t offset;
 
   vvDebugMsg::msg(2, "vvVolDesc::bitShiftData()");
-  assert(bpc*chan<=sizeof(long));                 // shift only works up to sizeof(long) byte per pixel
+  assert(bpc<=sizeof(unsigned long));                 // shift only works up to sizeof(long) byte per pixel
   if (bits==0) return;                            // done!
 
   sliceSize = getSliceBytes();
@@ -1548,21 +1547,37 @@ void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
         for (ssize_t x=0; x<vox[0]; ++x)
       {
         offset = x * getBPV() + y * vox[0] * getBPV() + z * sliceSize;
-        pixel = 0;
-        for (size_t b=0; b<bpc*chan; ++b)
+        unsigned long val = 0;
+        for (size_t b=0; b<bpc*chan; b+=bpc)
         {
-          byte = (int)rd[offset + b];
-          byte = byte << (((bpc*chan)-b-1) * 8);
-          pixel += byte;
-        }
-        if (bits>0)
-          pixel = pixel >> shift;
-        else
-          pixel = pixel << shift;
-        for (size_t b=0; b<bpc*chan; ++b)
-        {
-          byte = pixel >> (((bpc*chan)-b-1) * 8);
-          rd[offset + b] = (uint8_t)(byte & 0xFF);
+          switch(bpc) {
+          case 1:
+            val = *(uint8_t *)(rd+offset+b);
+            break;
+          case 2:
+            val = *(uint16_t *)(rd+offset+b);
+            break;
+          case 4:
+            val = *(uint32_t *)(rd+offset+b);
+            break;
+          }
+
+          if (bits>0)
+            val = val >> shift;
+          else
+            val = val << shift;
+
+          switch(bpc) {
+          case 1:
+            *(uint8_t *)(rd+offset+b) = uint8_t(val);
+            break;
+          case 2:
+            *(uint16_t *)(rd+offset+b) = uint16_t(val);
+            break;
+          case 4:
+            *(uint32_t *)(rd+offset+b) = uint32_t(val);
+            break;
+          }
         }
       }
       if (verbose) vvToolshed::printProgress(z + vox[2] * (f-startFrame));
