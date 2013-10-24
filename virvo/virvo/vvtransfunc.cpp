@@ -690,7 +690,7 @@ void vvTransFunc::make8bitLUT(int width, uchar* lut, float min, float max)
   @param dst destination list
   @param src source list
 */
-void vvTransFunc::copy(std::vector<vvTFWidget*>* dst, std::vector<vvTFWidget*>* src)
+void vvTransFunc::copy(std::vector<vvTFWidget*>* dst, const std::vector<vvTFWidget*>* src)
 {
   for (std::vector<vvTFWidget*>::const_iterator it = dst->begin();
        it != dst->end(); ++it)

@@ -245,7 +245,7 @@ vvVolDesc::vvVolDesc(const char* fn, size_t w, size_t h, uint8_t* d)
  @param v  source volume description
  @param f  frame index to copy (0 for first frame, -1 for all frames, -2 for no copying of raw data)
 */
-vvVolDesc::vvVolDesc(vvVolDesc* v, int f)
+vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
 {
   vvDebugMsg::msg(2, "vvVolDesc::vvVolDesc(7)");
   initialize();
@@ -426,7 +426,7 @@ void vvVolDesc::setChannelName(size_t channel, const char* name)
 /** @return a channel name.
   @param channel channel index to get name of (0=first channel)
 */
-const char* vvVolDesc::getChannelName(size_t channel)
+const char* vvVolDesc::getChannelName(size_t channel) const
 {
   vvDebugMsg::msg(2, "vvVolDesc::getChannelName()");
   assert(channel < channelNames.count());

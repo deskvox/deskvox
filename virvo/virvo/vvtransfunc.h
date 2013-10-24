@@ -82,7 +82,7 @@ class VIRVOEXPORT vvTransFunc
     void makePreintLUTOptimized(int width, uchar *preintLUT, float thickness=1.0, float min=0.0, float max=1.0);
     void makePreintLUTCorrect(int width, uchar *preintLUT, float thickness=1.0, float min=0.0, float max=1.0);
     void makeMinMaxTable(int width, uchar *minmax, float min=0.0, float max=1.0);
-    static void copy(std::vector<vvTFWidget*>*, std::vector<vvTFWidget*>*);
+    static void copy(std::vector<vvTFWidget*>*, const std::vector<vvTFWidget *> *);
     void putUndoBuffer();
     void getUndoBuffer();
     void clearUndoBuffer();

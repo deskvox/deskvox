@@ -81,7 +81,7 @@ class VIRVOEXPORT vvFileIO
     };
 
     vvFileIO();
-    ErrorType saveVolumeData(vvVolDesc*, bool, LoadType sec = ALL_DATA);
+    ErrorType saveVolumeData(vvVolDesc *, bool, LoadType sec = ALL_DATA);
     ErrorType loadVolumeData(vvVolDesc*, LoadType sec = ALL_DATA, bool addFrame=false);
     ErrorType loadDicomFile(vvVolDesc*, int* = NULL, int* = NULL, float* = NULL);
     ErrorType loadRawFile(vvVolDesc*, size_t, size_t, size_t, size_t, size_t, size_t);
@@ -104,17 +104,17 @@ class VIRVOEXPORT vvFileIO
     void makeLeicaFilename(const char*, int32_t, int32_t, char*);
     ErrorType loadWLFile(vvVolDesc*);
     ErrorType loadASCFile(vvVolDesc*);
-    ErrorType saveRVFFile(vvVolDesc*);
+    ErrorType saveRVFFile(const vvVolDesc*);
     ErrorType loadRVFFile(vvVolDesc*);
     ErrorType saveXVFFile(vvVolDesc*);
     ErrorType loadXVFFileOld(vvVolDesc*);
     ErrorType loadXVFFile(vvVolDesc*);
-    ErrorType saveAVFFile(vvVolDesc*);
+    ErrorType saveAVFFile(const vvVolDesc*);
     ErrorType loadAVFFile(vvVolDesc*);
     ErrorType loadTIFFile(vvVolDesc*, bool addFrame=false);
-    ErrorType saveTIFSlices(vvVolDesc*, bool);
+    ErrorType saveTIFSlices(const vvVolDesc*, bool);
     ErrorType loadRawFile(vvVolDesc*);
-    ErrorType saveRawFile(vvVolDesc*);
+    ErrorType saveRawFile(const vvVolDesc*);
     ErrorType loadRGBFile(vvVolDesc*);
     ErrorType loadTGAFile(vvVolDesc*);
     ErrorType loadPXMRawImage(vvVolDesc*);
@@ -124,7 +124,7 @@ class VIRVOEXPORT vvFileIO
     ErrorType loadVMRFile(vvVolDesc*);
     ErrorType loadVTCFile(vvVolDesc*);
     ErrorType loadNrrdFile(vvVolDesc*);
-    ErrorType saveNrrdFile(vvVolDesc*);
+    ErrorType saveNrrdFile(const vvVolDesc*);
     ErrorType loadXIMGFile(vvVolDesc*);
     ErrorType loadVis04File(vvVolDesc*);
     ErrorType loadHDRFile(vvVolDesc*);
@@ -132,7 +132,7 @@ class VIRVOEXPORT vvFileIO
     ErrorType loadDDSFile(vvVolDesc*);
     ErrorType loadGKentFile(vvVolDesc*);
     ErrorType loadSynthFile(vvVolDesc*);
-    ErrorType savePXMSlices(vvVolDesc*, bool);
+    ErrorType savePXMSlices(const vvVolDesc*, bool);
 };
 #endif
 

@@ -55,8 +55,16 @@
 #include "vvarray.h"
 #include "private/vvlog.h"
 
+#include <boost/detail/endian.hpp>
+
 #ifdef __sun
 #define powf pow
+#endif
+
+#ifdef BOOST_LITTLE_ENDIAN
+static bool machineBigEndian = false;
+#else
+static bool machineBigEndian = true;
 #endif
 
 using namespace std;
@@ -296,7 +304,7 @@ vvFileIO::ErrorType vvFileIO::loadASCFile(vvVolDesc* vd)
 /** Save current frame to a .RVF (raw volume data) file.
  Only volume dimensions and 8 bit raw data is saved in this format.
 */
-vvFileIO::ErrorType vvFileIO::saveRVFFile(vvVolDesc* vd)
+vvFileIO::ErrorType vvFileIO::saveRVFFile(const vvVolDesc* vd)
 {
   FILE* fp;                                       // volume file pointer
   uint8_t* raw;                                   // raw volume data
@@ -716,6 +724,8 @@ vvFileIO::ErrorType vvFileIO::loadXVFFileOld(vvVolDesc* vd)
     }
   }
 
+  if (!machineBigEndian) vd->toggleEndianness();
+
   // Clean up:
   fclose(fp);
   return OK;
@@ -919,6 +929,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
   uint8_t* encoded = NULL;                        // encoded volume data
   bool done;
   size_t encodedSize;                             // size of encoded data array
+  bool bigEnd = true;
 
   vvDebugMsg::msg(1, "vvFileIO::loadXVFFile()");
 
@@ -1014,6 +1025,9 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       {
         ttype = tok->nextToken();
         assert(ttype == vvTokenizer::VV_WORD);
+        if (strcmp(tok->sval, "LITTLE")==0) {
+          bigEnd = false;
+        }
       }
       else if (strcmp(tok->sval, "DTIME")==0)
       {
@@ -1194,6 +1208,8 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
     delete[] encoded;
   }
 
+  if (machineBigEndian != bigEnd) vd->toggleEndianness();
+
   // Clean up:
   fclose(fp);
   return OK;
@@ -1204,7 +1220,7 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
   See http://www.cs.utah.edu/~gk/teem/nrrd/ for more information.
   This file format cannot save transfer functions in the Virvo format.
 */
-vvFileIO::ErrorType vvFileIO::saveNrrdFile(vvVolDesc* vd)
+vvFileIO::ErrorType vvFileIO::saveNrrdFile(const vvVolDesc* vd)
 {
   char buf[256];                                  // text buffer
   FILE* fp;                                       // volume file pointer
@@ -1290,7 +1306,7 @@ vvFileIO::ErrorType vvFileIO::saveNrrdFile(vvVolDesc* vd)
 /** Writer for voxel file in avf (ASCII volume file) format.
   For file format specification see loadAVFFile.
 */
-vvFileIO::ErrorType vvFileIO::saveAVFFile(vvVolDesc* vd)
+vvFileIO::ErrorType vvFileIO::saveAVFFile(const vvVolDesc* vd)
 {
   FILE* fp;                                       // volume file pointer
   uint8_t* raw;                                   // raw volume data
@@ -1339,13 +1355,11 @@ vvFileIO::ErrorType vvFileIO::saveAVFFile(vvVolDesc* vd)
             switch(vd->bpc)
             {
               case 1:
-                fprintf(fp, "%d", int32_t(*(raw++)));
+                fprintf(fp, "%d", int(*(raw++)));
                 break;
               case 2:
               {
-                int32_t d = *raw++;
-                d <<= 8;
-                d += *raw++;
+                int d = *((uint16_t*)raw++);
                 fprintf(fp, "%d", d);
                 break;
               }
@@ -1649,8 +1663,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
                   raw[i++] = uint8_t(ival);
                   break;
                 case 2:
-                  raw[i++] = uint8_t(ival >> 8);
-                  raw[i++] = uint8_t(ival & 0xFF);
+                  *((uint16_t*)(raw+i)) = uint16_t(ival);
                   break;
                 case 4:
                   *((float*)(raw+i)) = tokenizer->nval;
@@ -1919,8 +1932,7 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
       else iVal = 65535;
       iVal = ts_clamp(iVal, 1, 65535);
       index = 2 * (iPos[0] + iPos[1] * vd->vox[0] + iPos[2] * vd->vox[0] * vd->vox[1]);
-      raw[index] = uint8_t(iVal >> 8);
-      raw[index + 1] = uint8_t(iVal & 0xff);
+      *(uint16_t *)(raw+index) = uint16_t(iVal);
     }
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
     timesteps.next();
@@ -1929,6 +1941,7 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
   vd->frames = vd->getStoredFrames();
   assert(vd->frames == timesteps.count());
   timesteps.removeAll();
+  if (!machineBigEndian) vd->toggleEndianness();
   return OK;
 }
 
@@ -2147,8 +2160,7 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
       else iVal = 65535;
       iVal = ts_clamp(iVal, 1, 65535);
       index = 2 * (iPos[0] + iPos[1] * vd->vox[0] + iPos[2] * vd->vox[0] * vd->vox[1]);
-      raw[index] = uint8_t(iVal >> 8);
-      raw[index + 1] = uint8_t(iVal & 0xff);
+      *(uint16_t *)(raw+index) = uint16_t(iVal);
     }
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
     timesteps.next();
@@ -2381,6 +2393,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       else rawOffset += bytesToRead;
     }
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
+    if (!machineBigEndian) vd->toggleEndianness(vd->frames);
     vd->frames++;
     if (planarConfiguration==2) vd->convertRGBPlanarToRGBInterleaved();
     if (vd->chan==4 && !vd->isChannelUsed(3))     // is alpha not used in a RGBA volume?
@@ -2428,6 +2441,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     }
     delete[] tilePos;
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
+    if (!machineBigEndian) vd->toggleEndianness(vd->frames);
     vd->frames++;
   }
   fclose(fp);
@@ -2443,7 +2457,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   @param vd volume descriptor to save
   @param overwrite true = overwrite existing files
 */
-vvFileIO::ErrorType vvFileIO::saveTIFSlices(vvVolDesc* vd, bool overwrite)
+vvFileIO::ErrorType vvFileIO::saveTIFSlices(const vvVolDesc* vd, bool overwrite)
 {
   const ushort LITTLE_ENDIAN_ID = 0x4949;         // TIF endianness for little-endian (Intel) style
   const ushort BIG_ENDIAN_ID  = 0x4d4d;           // TIF endianness for big-endian (Unix) style
@@ -2908,6 +2922,7 @@ vvFileIO::ErrorType vvFileIO::loadTGAFile(vvVolDesc* vd)
   }
 
   vd->addFrame(rawData, vvVolDesc::ARRAY_DELETE);
+  if (!machineBigEndian) vd->toggleEndianness();
   vd->flip(vvVecmath::Y_AXIS);
 
   fclose(fp);
@@ -3044,7 +3059,7 @@ vvFileIO::ErrorType vvFileIO::loadRawFile(vvVolDesc* vd)
  The number of bytes per voxel is similar to memory format.
  Only one frame of a time dependent dataset is written.
 */
-vvFileIO::ErrorType vvFileIO::saveRawFile(vvVolDesc* vd)
+vvFileIO::ErrorType vvFileIO::saveRawFile(const vvVolDesc* vd)
 {
   FILE* fp;                                       // volume file pointer
   size_t frameSize;                               // size of a frame in bytes
@@ -3398,8 +3413,8 @@ vvFileIO::ErrorType vvFileIO::loadDicomFile(vvVolDesc* vd, int* dcmSeq, int* dcm
   vd->addFrame(prop.raw, vvVolDesc::ARRAY_DELETE,prop.image);
   ++vd->frames;
 
-  // Make big endian data:
-  if (prop.littleEndian) vd->toggleEndianness(vd->frames-1);
+  // convert to host byte order
+  if ((prop.littleEndian&&!machineBigEndian) ||(!prop.littleEndian&&machineBigEndian)) vd->toggleEndianness(vd->frames-1);
 
   // Shift bits so that most significant used bit is leftmost:
   vd->bitShiftData(prop.highBit - (prop.bpp * 8 - 1), vd->frames-1);
@@ -3435,6 +3450,7 @@ vvFileIO::ErrorType vvFileIO::loadVHDMRIFile(vvVolDesc* vd)
 
   err = loadRawFile(vd, 256, 256, 1, 2, 1, 7900);
   if (err != OK) return err;
+  if (!machineBigEndian) vd->toggleEndianness();
   vd->bitShiftData(-4);                           // image is (about) 12 bit, shift it to be in correct 16 bit representation
   return OK;
 }
@@ -3448,6 +3464,7 @@ vvFileIO::ErrorType vvFileIO::loadVHDCTFile(vvVolDesc* vd)
 
   err = loadRawFile(vd, 512, 512, 1, 2, 1, 3416);
   if (err != OK) return err;
+  if (!machineBigEndian) vd->toggleEndianness();
   vd->bitShiftData(-4);                           // image is 12 bit, shift to appear as 16 bit
   return OK;
 }
@@ -3645,6 +3662,7 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
     delete[] frameRaw;
     delete[] buf;
   }
+  if (!machineBigEndian) vd->toggleEndianness();
   fclose(fp);
   return OK;
 }
@@ -3837,7 +3855,7 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
     }
   }
 
-  if (!bigEnd) vd->toggleEndianness();
+  if (bigEnd != machineBigEndian) vd->toggleEndianness();
 
   // Clean up:
   fclose(fp);
@@ -3925,6 +3943,7 @@ vvFileIO::ErrorType vvFileIO::loadXIMGFile(vvVolDesc* vd)
   fclose(fp);
   vd->addFrame(rawData, vvVolDesc::ARRAY_DELETE);
   ++vd->frames;
+  if (!machineBigEndian) vd->toggleEndianness();
   return OK;
 }
 
@@ -3939,7 +3958,7 @@ vvFileIO::ErrorType vvFileIO::loadVis04File(vvVolDesc* vd)
 
   err = loadRawFile(vd, 500, 500, 100, 4, 1, 0);
   if (err != OK) return err;
-  vd->toggleEndianness();                         // file is big endian
+  if (!machineBigEndian) vd->toggleEndianness();                         // file is big endian
 
   // Set real min and max:
   vd->real[0] = 0.0f;
@@ -4146,7 +4165,7 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
   delete[] filenameBak;
   if (err != OK) return err;
   if (!rightHanded) vd->convertVoxelOrder();
-  if (bigEnd) vd->toggleEndianness();
+  if (bigEnd != machineBigEndian) vd->toggleEndianness();
 
   return OK;
 }
@@ -4425,7 +4444,8 @@ vvFileIO::ErrorType vvFileIO::loadGKentFile(vvVolDesc* vd)
   fclose(fp);
   vd->addFrame(rawData, vvVolDesc::ARRAY_DELETE);
   ++vd->frames;
-  vd->toggleEndianness();
+  //TODO check whether file is little endian
+  if (machineBigEndian) vd->toggleEndianness();
   return OK;
 }
 
@@ -4551,6 +4571,7 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
   fclose(fp);
   vd->addFrame(rawData, vvVolDesc::ARRAY_DELETE);
   ++vd->frames;
+  if (machineBigEndian) vd->toggleEndianness();
   return OK;
 }
 
@@ -4559,7 +4580,7 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
  A numbered suffix of four digits will be added to the file names.
  @param overwrite   true to overwrite existing files
 */
-vvFileIO::ErrorType vvFileIO::savePXMSlices(vvVolDesc* vd, bool overwrite)
+vvFileIO::ErrorType vvFileIO::savePXMSlices(const vvVolDesc* vd, bool overwrite)
 {
   FILE* fp;
   ErrorType err = OK;

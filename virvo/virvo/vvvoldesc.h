@@ -44,6 +44,9 @@ typedef vvAABBf vvAABB;
   The volume description contains basically all the elements which describe
   the volume data. Most of this information can be saved to a file using
   the appropriate file format.
+
+  Raw data is stored in host byte order.
+
   @author Juergen Schulze-Doebold (schulze@hlrs.de)
 */
 
@@ -152,7 +155,7 @@ class VIRVOEXPORT vvVolDesc
     vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, float**);
     vvVolDesc(const char* fn, size_t w, size_t h, size_t s, size_t f, float**, float**, float**);
     vvVolDesc(const char* fn, size_t w, size_t h, uint8_t* d);
-    vvVolDesc(vvVolDesc*, int=-1);
+    vvVolDesc(const vvVolDesc*, int=-1);
     virtual ~vvVolDesc();
 
     uint8_t* operator()(size_t x, size_t y, size_t slice);
@@ -261,7 +264,7 @@ class VIRVOEXPORT vvVolDesc
     void   addVariance(size_t srcChan);
     void   deleteChannelNames();
     void   setChannelName(size_t, const char*);
-    const char* getChannelName(size_t);
+    const char* getChannelName(size_t) const;
     void updateFrame(int, uint8_t*, DeleteType);
     void updateHDRBins(size_t numValues, bool, bool, bool, BinningType, bool);
     int  findHDRBin(float);
