@@ -2114,7 +2114,6 @@ void vvView::createMenus()
   voxelMenu = glutCreateMenu(voxelMenuCallback);
   glutAddMenuEntry("Auto select", 0);
   glutAddMenuEntry("RGBA", 1);
-  if (vvTexRend::isSupported(vvTexRend::VV_SGI_LUT)) glutAddMenuEntry("SGI look-up table", 2);
   if (vvTexRend::isSupported(vvTexRend::VV_PAL_TEX)) glutAddMenuEntry("Paletted textures", 3);
   if (vvTexRend::isSupported(vvTexRend::VV_TEX_SHD)) glutAddMenuEntry("Texture shader", 4);
   if (vvTexRend::isSupported(vvTexRend::VV_PIX_SHD)) glutAddMenuEntry("Fragment shader", 5);
@@ -2465,7 +2464,6 @@ void vvView::displayHelpInfo()
   cerr << " Select the default voxel type:" << endl;
   cerr << " 0 = Autoselect" << endl;
   cerr << " 1 = RGBA" << endl;
-  cerr << " 2 = SGI color look-up table" << endl;
   cerr << " 3 = OpenGL paletted textures" << endl;
   cerr << " 4 = Nvidia texture shader" << endl;
   cerr << " 5 = Nvidia pixel shader" << endl;

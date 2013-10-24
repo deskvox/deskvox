@@ -83,7 +83,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     {
       VV_BEST = 0,                                ///< choose best
       VV_RGBA,                                    ///< transfer function look-up done in software
-      VV_SGI_LUT,                                 ///< SGI color look-up table
       VV_PAL_TEX,                                 ///< OpenGL paletted textures
       VV_TEX_SHD,                                 ///< Nvidia texture shader
       VV_PIX_SHD,                                 ///< Fragment program (Cg or GLSL)
@@ -137,7 +136,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     VoxelType voxelType;                          ///< voxel type actually used
     bool extTex3d;                                ///< true = 3D texturing supported
     bool extNonPower2;                            ///< true = NonPowerOf2 textures supported
-    bool extColLUT;                               ///< true = SGI texture color lookup table supported
     bool extPalTex;                               ///< true = OpenGL 1.2 paletted textures supported
     bool extMinMax;                               ///< true = maximum/minimum intensity projections supported
     bool extTexShd;                               ///< true = Nvidia texture shader & texture shader 2 support

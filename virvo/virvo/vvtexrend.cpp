@@ -215,7 +215,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
 
   extMinMax = vvGLTools::isGLextensionSupported("GL_EXT_blend_minmax") || vvGLTools::isGLVersionSupported(1,4,0);
   extBlendEquation = vvGLTools::isGLextensionSupported("GL_EXT_blend_equation") || vvGLTools::isGLVersionSupported(1,1,0);
-  extColLUT  = isSupported(VV_SGI_LUT);
   extPalTex  = isSupported(VV_PAL_TEX);
   extTexShd  = isSupported(VV_TEX_SHD);
   extPixShd  = isSupported(VV_PIX_SHD);
@@ -264,7 +263,6 @@ vvTexRend::vvTexRend(vvVolDesc* vd, vvRenderState renderState, GeometryType geom
   switch(voxelType)
   {
     case VV_RGBA:    cerr << "VV_RGBA";    break;
-    case VV_SGI_LUT: cerr << "VV_SGI_LUT"; break;
     case VV_PAL_TEX: cerr << "VV_PAL_TEX"; break;
     case VV_TEX_SHD: cerr << "VV_TEX_SHD"; break;
     case VV_PIX_SHD: cerr << "VV_PIX_SHD"; break;
@@ -372,11 +370,6 @@ void vvTexRend::setVoxelType(vvTexRend::VoxelType vt)
       internalTexFormat = GL_RGBA;
       texFormat = GL_RGBA;
       break;
-    case VV_SGI_LUT:
-      texelsize=2;
-      internalTexFormat = GL_LUMINANCE_ALPHA;
-      texFormat = GL_LUMINANCE_ALPHA;
-      break;
     case VV_RGBA:
       internalTexFormat = GL_RGBA;
       texFormat = GL_RGBA;
@@ -429,7 +422,6 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox
       else if (extPixShd) return VV_PIX_SHD;
       else if (extTexShd) return VV_TEX_SHD;
       else if (extPalTex) return VV_PAL_TEX;
-      else if (extColLUT) return VV_SGI_LUT;
     }
     else
     {
@@ -445,7 +437,6 @@ vvTexRend::VoxelType vvTexRend::findBestVoxelType(const vvTexRend::VoxelType vox
       case VV_FRG_PRG: if (arbFrgPrg && vd->chan==1) return VV_FRG_PRG;
       case VV_TEX_SHD: if (extTexShd && vd->chan==1) return VV_TEX_SHD;
       case VV_PAL_TEX: if (extPalTex && vd->chan==1) return VV_PAL_TEX;
-      case VV_SGI_LUT: if (extColLUT && vd->chan==1) return VV_SGI_LUT;
       default: return VV_RGBA;
     }
   }
@@ -684,9 +675,6 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(size_t axes)
               }
               switch(voxelType)
               {
-                case VV_SGI_LUT:
-                  rgbaSlice[i][texSliceIndex] = rgbaSlice[i][texSliceIndex+1] = (uint8_t)rawVal[0];
-                  break;
                 case VV_PAL_TEX:
                 case VV_FRG_PRG:
                   rgbaSlice[i][texSliceIndex] = (uint8_t)rawVal[0];
@@ -998,9 +986,6 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickL
               size_t texOffset = (x - startOffset[0]) + texLineOffset;
               switch (voxelType)
               {
-                case VV_SGI_LUT:
-                  texData[2*texOffset] = texData[2*texOffset + 1] = (uint8_t) rawVal[0];
-                  break;
                 case VV_PAL_TEX:
                 case VV_FRG_PRG:
                 case VV_PIX_SHD:
@@ -1484,9 +1469,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                 texOffset = (x - offsets[0] - offsetX) + texLineOffset;
                 switch(voxelType)
                 {
-                case VV_SGI_LUT:
-                  texData[2 * texOffset] = texData[2 * texOffset + 1] = (uint8_t) rawVal[0];
-                  break;
                 case VV_PAL_TEX:
                 case VV_FRG_PRG:
                 case VV_PIX_SHD:
@@ -1993,9 +1975,6 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(ssize_t offsetX, ssize_t off
 
               switch (voxelType)
               {
-                case VV_SGI_LUT:
-                  texData[2*texOffset] = texData[2*texOffset + 1] = (uint8_t) rawVal[0];
-                  break;
                 case VV_PAL_TEX:
                 case VV_FRG_PRG:
                   texData[texelsize * texOffset] = (uint8_t) rawVal[0];
@@ -2117,9 +2096,6 @@ void vvTexRend::setGLenvironment() const
 
   switch (voxelType)
   {
-    case VV_SGI_LUT:
-      glDisable(GL_TEXTURE_COLOR_TABLE_SGI);
-      break;
     case VV_PAL_TEX:
       glDisable(GL_SHARED_TEXTURE_PALETTE_EXT);
       break;
@@ -2158,9 +2134,6 @@ void vvTexRend::enableLUTMode(GLuint& lutName, GLuint progName[VV_FRAG_PROG_MAX]
     case VV_TEX_SHD:
       enableNVShaders();
       break;
-    case VV_SGI_LUT:
-      glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
-      break;
     case VV_PAL_TEX:
       glEnable(GL_SHARED_TEXTURE_PALETTE_EXT);
       break;
@@ -2180,10 +2153,6 @@ void vvTexRend::disableLUTMode()
       break;
     case VV_TEX_SHD:
       disableNVShaders();
-      break;
-    case VV_SGI_LUT:
-      if (glsTexColTable==(uint8_t)true) glEnable(GL_TEXTURE_COLOR_TABLE_SGI);
-      else glDisable(GL_TEXTURE_COLOR_TABLE_SGI);
       break;
     case VV_PAL_TEX:
       if (glsSharedTexPal==(uint8_t)true) glEnable(GL_SHARED_TEXTURE_PALETTE_EXT);
@@ -3554,12 +3523,7 @@ size_t vvTexRend::getLUTSize(vvsize3& size) const
   size_t x, y, z;
 
   vvDebugMsg::msg(3, "vvTexRend::getLUTSize()");
-  if (vd->bpc==2 && voxelType==VV_SGI_LUT)
-  {
-    x = 4096;
-    y = z = 1;
-  }
-  else if (_currentShader==8 && voxelType==VV_PIX_SHD)
+  if (_currentShader==8 && voxelType==VV_PIX_SHD)
   {
     x = y = getPreintTableSize();
     z = 1;
@@ -3650,10 +3614,6 @@ void vvTexRend::updateLUT(const float dist)
   {
     case VV_RGBA:
       makeTextures();// this mode doesn't use a hardware LUT, so every voxel has to be updated
-      break;
-    case VV_SGI_LUT:
-      glColorTableSGI(GL_TEXTURE_COLOR_TABLE_SGI, GL_RGBA,
-          lutSize[0], GL_RGBA, GL_UNSIGNED_BYTE, rgbaLUT);
       break;
     case VV_PAL_TEX:
       // Load color LUT for pre-classification:
@@ -3913,8 +3873,6 @@ bool vvTexRend::isSupported(const VoxelType voxel)
     case VV_BEST:
     case VV_RGBA:
       return true;
-    case VV_SGI_LUT:
-      return vvGLTools::isGLextensionSupported("GL_SGI_texture_color_table");
     case VV_PAL_TEX:
       return vvGLTools::isGLextensionSupported("GL_EXT_paletted_texture");
     case VV_TEX_SHD:
@@ -4438,9 +4396,6 @@ uint8_t* vvTexRend::getHeightFieldData(float points[4][3], size_t& width, size_t
       index = y * width + x;
       switch (voxelType)
       {
-        case VV_SGI_LUT:
-          result[index] = data[2*index];
-          break;
         case VV_PAL_TEX:
         case VV_FRG_PRG:
         case VV_TEX_SHD:

@@ -133,7 +133,6 @@ void init()
   voxelTypeMap["rgba"] = vvTexRend::VV_RGBA;
   voxelTypeMap["arb"] = vvTexRend::VV_FRG_PRG;
   voxelTypeMap["paltex"] = vvTexRend::VV_PAL_TEX;
-  voxelTypeMap["sgilut"] = vvTexRend::VV_SGI_LUT;
   voxelTypeMap["shader"] = vvTexRend::VV_PIX_SHD;
   voxelTypeMap["regcomb"] = vvTexRend::VV_TEX_SHD;
 
