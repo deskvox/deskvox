@@ -48,25 +48,47 @@ vvVolInfoDialog::~vvVolInfoDialog()
 
 void vvVolInfoDialog::onNewVolDesc(vvVolDesc* vd)
 {
-  impl_->ui->filenameEdit->setText(vd->getFilename());
-  impl_->ui->slicesWidthLabel->setText(QString::number(vd->vox[0]));
-  impl_->ui->slicesHeightLabel->setText(QString::number(vd->vox[1]));
-  impl_->ui->slicesDepthLabel->setText(QString::number(vd->vox[2]));
-  impl_->ui->timeStepsLabel->setText(QString::number(vd->frames));
-  impl_->ui->bpsLabel->setText(QString::number(vd->bpc));
-  impl_->ui->channelsLabel->setText(QString::number(vd->chan));
-  impl_->ui->voxelsLabel->setText(QString::number(vd->getFrameVoxels()));
-  impl_->ui->bytesLabel->setText(QString::number(vd->getFrameBytes()));
-  impl_->ui->distXLabel->setText(QString::number(vd->dist[0]));
-  impl_->ui->distYLabel->setText(QString::number(vd->dist[1]));
-  impl_->ui->distZLabel->setText(QString::number(vd->dist[2]));
-  impl_->ui->pminLabel->setText(QString::number(vd->real[0]));
-  impl_->ui->pmaxLabel->setText(QString::number(vd->real[1]));
-  float fmin;
-  float fmax;
-  vd->findMinMax(0, fmin, fmax);
-  impl_->ui->minLabel->setText(QString::number(fmin));
-  impl_->ui->maxLabel->setText(QString::number(fmax));
+  if (vd)
+  {
+    impl_->ui->filenameEdit->setText(vd->getFilename());
+    impl_->ui->slicesWidthLabel->setText(QString::number(vd->vox[0]));
+    impl_->ui->slicesHeightLabel->setText(QString::number(vd->vox[1]));
+    impl_->ui->slicesDepthLabel->setText(QString::number(vd->vox[2]));
+    impl_->ui->timeStepsLabel->setText(QString::number(vd->frames));
+    impl_->ui->bpsLabel->setText(QString::number(vd->bpc));
+    impl_->ui->channelsLabel->setText(QString::number(vd->chan));
+    impl_->ui->voxelsLabel->setText(QString::number(vd->getFrameVoxels()));
+    impl_->ui->bytesLabel->setText(QString::number(vd->getFrameBytes()));
+    impl_->ui->distXLabel->setText(QString::number(vd->dist[0]));
+    impl_->ui->distYLabel->setText(QString::number(vd->dist[1]));
+    impl_->ui->distZLabel->setText(QString::number(vd->dist[2]));
+    impl_->ui->pminLabel->setText(QString::number(vd->real[0]));
+    impl_->ui->pmaxLabel->setText(QString::number(vd->real[1]));
+    float fmin;
+    float fmax;
+    vd->findMinMax(0, fmin, fmax);
+    impl_->ui->minLabel->setText(QString::number(fmin));
+    impl_->ui->maxLabel->setText(QString::number(fmax));
+  }
+  else
+  {
+    impl_->ui->filenameEdit->setText("");
+    impl_->ui->slicesWidthLabel->setText(QString::number(0));
+    impl_->ui->slicesHeightLabel->setText(QString::number(0));
+    impl_->ui->slicesDepthLabel->setText(QString::number(0));
+    impl_->ui->timeStepsLabel->setText(QString::number(0));
+    impl_->ui->bpsLabel->setText(QString::number(0));
+    impl_->ui->channelsLabel->setText(QString::number(0));
+    impl_->ui->voxelsLabel->setText(QString::number(0));
+    impl_->ui->bytesLabel->setText(QString::number(0));
+    impl_->ui->distXLabel->setText(QString::number(0));
+    impl_->ui->distYLabel->setText(QString::number(0));
+    impl_->ui->distZLabel->setText(QString::number(0));
+    impl_->ui->pminLabel->setText(QString::number(0));
+    impl_->ui->pmaxLabel->setText(QString::number(0));
+    impl_->ui->minLabel->setText(QString::number(0));
+    impl_->ui->maxLabel->setText(QString::number(0));
+  }
 }
 
 void vvVolInfoDialog::onUpdateIconClicked()

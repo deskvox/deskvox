@@ -351,6 +351,7 @@ void vvMainWindow::lateInitialization()
 
 void vvMainWindow::loadVolumeFile(const QString& filename)
 {
+  impl_->canvas->setVolDesc(NULL);
   QByteArray ba = filename.toLatin1();
   vvVolDesc* vd = new vvVolDesc(ba.data());
   vvFileIO* fio = new vvFileIO;
@@ -760,7 +761,7 @@ void vvMainWindow::onNewVolDesc(vvVolDesc* vd)
 {
   vvDebugMsg::msg(3, "vvMainWindow::onNewVolDesc()");
 
-  impl_->timeStepDialog->setFrames(vd->frames);
+  impl_->timeStepDialog->setFrames(vd ? vd->frames : 0);
 }
 
 void vvMainWindow::onStatusMessage(const std::string& str)

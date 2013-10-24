@@ -95,6 +95,9 @@ vvSliceViewer::vvSliceViewer(vvVolDesc* vd, QWidget* parent)
 
 void vvSliceViewer::paint()
 {
+  if (!_vd)
+    return;
+
   std::vector<uchar> texture;
   QImage img = QImage(getSlice(_vd, &texture, impl_->slice, impl_->axis));
   if (!img.isNull())
@@ -117,7 +120,15 @@ void vvSliceViewer::updateUi()
   size_t width;
   size_t height;
   size_t slices;
-  _vd->getVolumeSize(impl_->axis, width, height, slices);
+  if (_vd)
+  {
+    _vd->getVolumeSize(impl_->axis, width, height, slices);
+  }
+  else
+  {
+    width = height = slices = 0;
+  }
+
   clamp(&impl_->slice, slices);
 
   impl_->ui->resolutionLabel->setText(QString::number(width) + " x " + QString::number(height));
@@ -161,7 +172,8 @@ void vvSliceViewer::onNewVolDesc(vvVolDesc* vd)
 
 void vvSliceViewer::onNewFrame(int frame)
 {
-  _vd->setCurrentFrame(frame);
+  if (_vd)
+    _vd->setCurrentFrame(frame);
   paint();
   updateUi();
 }

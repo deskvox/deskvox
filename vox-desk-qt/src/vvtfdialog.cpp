@@ -232,6 +232,9 @@ void vvTFDialog::clearPins()
 
 void vvTFDialog::createPins()
 {
+  if (!_canvas->getVolDesc())
+    return;
+
   for (std::vector<vvTFWidget*>::const_iterator it = _canvas->getVolDesc()->tf._widgets.begin();
        it != _canvas->getVolDesc()->tf._widgets.end(); ++it)
   {
@@ -270,6 +273,12 @@ void vvTFDialog::createPin(vvTFWidget* w)
 
 void vvTFDialog::makeColorBar(std::vector<uchar>* colorBar, int width) const
 {
+  if (!_canvas->getVolDesc())
+  {
+    memset(&(*colorBar)[0], 0, colorBar->size());
+    return;
+  }
+
   if (/* HDR */ false)
   {
 
@@ -283,6 +292,12 @@ void vvTFDialog::makeColorBar(std::vector<uchar>* colorBar, int width) const
 
 void vvTFDialog::makeAlphaTexture(std::vector<uchar>* alphaTex, int width, int height) const
 {
+  if (!_canvas->getVolDesc())
+  {
+    memset(&(*alphaTex)[0], 0, alphaTex->size());
+    return;
+  }
+
   if (/* HDR */ false)
   {
 
@@ -380,7 +395,7 @@ void vvTFDialog::onApplyClicked()
   drawTF();
 }
 
-void vvTFDialog::onNewVolDesc(vvVolDesc*)
+void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
 {
   clearPins();
   createPins();

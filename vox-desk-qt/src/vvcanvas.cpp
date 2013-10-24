@@ -143,7 +143,10 @@ void vvCanvas::setVolDesc(vvVolDesc* vd)
   }
 
   std::string str;
-  _vd->makeInfoString(&str);
+  if (_vd)
+      _vd->makeInfoString(&str);
+  else
+      str = "No data";
   emit statusMessage(str);
   emit newVolDesc(_vd);
 }
