@@ -85,5 +85,6 @@ qt_wrap_ui(VOXDESK_QT_UI_INC ${VOXDESK_QT_UI})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 deskvox_add_tool(vox-desk-qt ${VOXDESK_QT_INC} ${VOXDESK_QT_SRC} ${VOXDESK_QT_MOC_INC} ${VOXDESK_QT_UI_INC})
+set_target_properties(vox-desk-qt PROPERTIES MACOSX_BUNDLE TRUE)
 
 qt_use_modules(vox-desk-qt Core OpenGL Widgets Gui)
