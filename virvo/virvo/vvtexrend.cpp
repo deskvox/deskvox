@@ -674,8 +674,8 @@ vvTexRend::ErrorType vvTexRend::makeTextures2D(size_t axes)
               }
               else if (vd->bpc == 2)              // 16 bit voxels
               {
-                rawVal[0] = (int(*rawVoxel) << 8) | int(*(rawVoxel+1));
-                rawVal[0] >>= 4;                  // make 12 bit LUT index
+                rawVal[0] = *((uint16_t*)(rawVoxel));
+                rawVal[0] >>= 8;
               }
               else                                // float voxels
               {
@@ -976,8 +976,8 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickL
               if (vd->bpc == 1) rawVal[0] = (int) raw[srcIndex];
               else if (vd->bpc == 2)
               {
-                rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                rawVal[0] >>= 4;
+                rawVal[0] = *((uint16_t *)(raw + srcIndex));
+                rawVal[0] >>= 8;
               }
               else  // vd->bpc == 4
               {
@@ -1040,8 +1040,8 @@ vvTexRend::ErrorType vvTexRend::makeTextureBricks(std::vector<BrickList>& brickL
                     rawVal[c] = (int) raw[srcIndex];
                   else if (vd->bpc == 2)
                   {
-                    rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                    rawVal[c] >>= 4;
+                    rawVal[c] = *((uint16_t*) (raw + srcIndex));
+                    rawVal[c] >>= 8;
                   }
                  else  // vd->bpc==4
                   {
@@ -1473,8 +1473,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                 if (vd->bpc == 1) rawVal[0] = int(raw[srcIndex]);
                 else if (vd->bpc == 2)
                 {
-                  rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                  rawVal[0] >>= 4;
+                  rawVal[0] = *(uint16_t*)(raw+srcIndex);
+                  rawVal[0] >>= 8;
                 }
                 else // vd->bpc==4: convert floating point to 8bit value
                 {
@@ -1491,7 +1491,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                 case VV_FRG_PRG:
                 case VV_PIX_SHD:
                   texData[texelsize * texOffset] = (uint8_t) rawVal[0];
-                  //texData[texelsize * texOffset] = (x+y+s)/3;
                   break;
                 case VV_TEX_SHD:
                   for (size_t c = 0; c < 4; c++)
@@ -1503,7 +1502,6 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                   for (size_t c = 0; c < 4; c++)
                   {
                     texData[4 * texOffset + c] = rgbaLUT[size_t(rawVal[0]) * 4 + c];
-                    //texData[4 * texOffset + c] = (x+y+s)/3;
                   }
                   break;
                 default:
@@ -1527,8 +1525,8 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
                     rawVal[c] = (int) raw[srcIndex];
                   else if (vd->bpc == 2)
                   {
-                    rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                    rawVal[c] >>= 4;
+                    rawVal[c] = *((uint16_t *)(raw + srcIndex));
+                    rawVal[c] >>= 8;
                   }
                   else  // vd->bpc == 4
                   {
@@ -1982,8 +1980,8 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(ssize_t offsetX, ssize_t off
                 rawVal[0] = (int) raw[srcIndex];
               else if (vd->bpc == 2)
               {
-                rawVal[0] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                rawVal[0] >>= 4;
+                rawVal[0] = *((uint16_t *)(raw + srcIndex));
+                rawVal[0] >>= 8;
               }
               else
               {
@@ -2032,8 +2030,8 @@ vvTexRend::ErrorType vvTexRend::updateTextureBricks(ssize_t offsetX, ssize_t off
                     rawVal[c] = (int) raw[srcIndex];
                   else if (vd->bpc == 2)
                   {
-                    rawVal[c] = ((int) raw[srcIndex] << 8) | (int) raw[srcIndex + 1];
-                    rawVal[c] >>= 4;
+                    rawVal[c] = *((uint16_t *)(raw + srcIndex));
+                    rawVal[c] >>= 8;
                   }
                   else
                   {
