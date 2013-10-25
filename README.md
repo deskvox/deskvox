@@ -13,7 +13,7 @@ Welcome to DeskVOX Volume Explorer (DeskVOX)
 1. How to obtain DeskVOX
 ========================
 
-Download a zip archive from [Sourceforge] (http://sourceforge.net/projects/deskvox)
+Download a zip archive from [Sourceforge](http://sourceforge.net/projects/deskvox)
 or check out DeskVOX via Subversion:
 
     $ svn co https://deskvox.svn.sourceforge.net/svnroot/deskvox/trunk deskvox
@@ -25,20 +25,24 @@ or check out DeskVOX via Subversion:
 The Virvo library won't build without the following libraries installed
 
 - Pthreads: POSIX Threads Library
-- GLEW: The [OpenGL Extension Wrangler Library]
-  (http://glew.sourceforge.net)
+- GLEW: The [OpenGL Extension Wrangler Library](http://glew.sourceforge.net)
+- Boost: [Boost C++ Libraries](http://www.boost.org)
 
-The DeskVOX applicaton won't build without the following libraries installed
+The new DeskVOX GUI depends on Qt, either version 4 or 5:
 
-- [FOX TOOLKIT 1.6] (http://www.fox-toolkit.org): GUI
+- [Qt Toolkit](http://qt-project.org): GUI
+
+The old DeskVOX application won't build without the following libraries installed
+
+- [FOX TOOLKIT 1.6](http://www.fox-toolkit.org): GUI
 
 Having the following libraries installed is recommended but not necessary:
 
-- [Cg Toolkit] (http://developer.nvidia.com/cg-toolkit) (NVIDIA COORP)
-- [CUDA Toolkit] (http://developer.nvidia.com/category/zone/cuda-zone) (NVIDIA COORP)
-- [FFmpeg] (http://ffmpeg.org/): video codecs
-- [snappy] (http://code.google.com/p/snappy/): fast compression
-- [NORM] (http://cs.itd.nrl.navy.mil/work/norm/): reliable multicast
+- [Cg Toolkit](http://developer.nvidia.com/cg-toolkit) (NVIDIA COORP)
+- [CUDA Toolkit](http://developer.nvidia.com/category/zone/cuda-zone) (NVIDIA COORP)
+- [FFmpeg](http://ffmpeg.org/): video codecs
+- [snappy](http://code.google.com/p/snappy/): fast compression
+- [NORM](http://cs.itd.nrl.navy.mil/work/norm/): reliable multicast
 
 Not all features will be available without these libraries.
 
@@ -46,9 +50,9 @@ Not all features will be available without these libraries.
 3. How to build DeskVOX and vconv from source
 =============================================
 
-DeskVOX uses the [CMake] (http://www.cmake.org/) build system to generate a
+DeskVOX uses the [CMake](http://www.cmake.org/) build system to generate a
 project specific to your platform to be built from. Obtain CMake from
-[http://www.cmake.org] (http://www.cmake.org/) or by means
+[http://www.cmake.org](http://www.cmake.org/) or by means
 provided by your operating system.
 
 Switch to the topmost folder of the DeskVOX package you downloaded or the
@@ -74,8 +78,8 @@ Invoke CMake:
 This will generate a project files suitable for your platform, e.g. Visual
 Studio Solutions on Windows or a Makefile project on Unix.
 Edit CMakeCache.txt to specify custom paths to additional libraries, perform
-a Debug build, etc. Alternatively, use 'ccmake' or a CMake GUI instead
-of 'cmake'.
+a Debug build, etc. Alternatively, use `ccmake` or a CMake GUI instead
+of `cmake`.
 
 After CMake has generated the build files for your build system, proceed
 as required.
@@ -84,18 +88,17 @@ On Unix platforms, type:
 
     $ make
 
-After this step, the DeskVOX application will be located in
-build/vox-desk/src,
-the static Virvo library in build/virvo/virvo,
-the vview test application in build/virvo/tools/vview
-and the vconv conversion tool in build/virvo/tools/vconv.
+After this step, the DeskVOX application will be located in `build/vox-desk/src`,
+the static Virvo library in `build/virvo/virvo`,
+the vview test application in `build/virvo/tools/vview`
+and the vconv conversion tool in `build/virvo/tools/vconv`.
 
 In order to install DeskVOX and its associated files type:
 
     $ make install
 
 DeskVOX will be installed to a default location, which can be modified
-before installing by editing CMakeCache.txt in build.
+before installing by editing `CMakeCache.txt` in your build directory.
 
 On Windows, use the generated solution files for Microsoft Visual Studio
 and build the corresponding targets in the IDE.
@@ -118,11 +121,11 @@ Invoke CMake:
 
     $ cmake ..
 
-Optionally edit CMakeCache.txt (for a more detailled description, see 3.).
+Optionally edit `CMakeCache.txt` (for a more detailled description, see 3.).
 
 On Unix platforms, type:
 
     $ make
 
-The Virvo library will be located in build/virvo.
+The Virvo library will be located in `build/virvo`.
 
