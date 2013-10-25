@@ -46,6 +46,14 @@ using namespace boost::math;
 
 typedef std::vector<float, virvo::mem::aligned_allocator<float, CACHE_LINE> > vecf;
 
+#include <boost/detail/endian.hpp>
+
+#ifdef BOOST_LITTLE_ENDIAN
+static const size_t high_byte_offset = 1;
+#else
+static const size_t high_byte_offset = 0;
+#endif
+
 #if VV_USE_SSE
 
 #include "sse/sse.h"
@@ -126,14 +134,15 @@ VV_FORCE_INLINE T vec_cast(U u)
 #endif
 }
 
-VV_FORCE_INLINE Vec volume(uint8_t* raw, index_t idx)
+VV_FORCE_INLINE Vec volume(const uint8_t* raw, index_t idx, int bpc)
 {
 #if VV_USE_SSE
 #if 0//__LP64__
 
 #else
   CACHE_ALIGN int indices[4];
-  virvo::sse::store(idx, &indices[0]);
+  index_t ridx = idx*bpc+high_byte_offset;
+  virvo::sse::store(ridx, &indices[0]);
   CACHE_ALIGN float vals[4];
   for (size_t i = 0; i < 4; ++i)
   {
@@ -142,7 +151,7 @@ VV_FORCE_INLINE Vec volume(uint8_t* raw, index_t idx)
   return Vec(&vals[0]);
 #endif
 #else
-  return raw[idx];
+  return raw[idx*bpc+high_byte_offset];
 #endif
 }
 
@@ -499,7 +508,8 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
                                            vd->vox[2] * vd->vox[2]));
   size_t numSlices = std::max(size_t(1), static_cast<size_t>(quality * diagonalVoxels));
 
-  uint8_t* raw = vd->getRaw(vd->getCurrentFrame());
+  const uint8_t* raw = vd->getRaw(vd->getCurrentFrame());
+  const size_t bpc = vd->bpc;
 
   virvo::RenderTarget const* rt = thread->renderer->getRenderTarget();
 
@@ -561,56 +571,56 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
             tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
             tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
             index_t idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[0] = volume(raw, idx);
+            samples[0] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(1, 0, 0);
             tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
             tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
             tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[1] = volume(raw, idx);
+            samples[1] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(1, 1, 0);
             tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
             tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
             tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[2] = volume(raw, idx);
+            samples[2] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(0, 1, 0);
             tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
             tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
             tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[3] = volume(raw, idx);
+            samples[3] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(1, 0, 1);
             tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
             tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
             tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[4] = volume(raw, idx);
+            samples[4] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(0, 0, 1);
             tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
             tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
             tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[5] = volume(raw, idx);
+            samples[5] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(0, 1, 1);
             tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
             tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
             tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[6] = volume(raw, idx);
+            samples[6] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(1, 1, 1);
             tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
             tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
             tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[7] = volume(raw, idx);
+            samples[7] = volume(raw, idx, bpc);
 
 
             Vec3 tmp(vec_cast<Vec>(tci[0]), vec_cast<Vec>(tci[1]), vec_cast<Vec>(tci[2]));
@@ -640,7 +650,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
             texcoordi[2] = clamp<dim_t>(texcoordi[2], 0, vox[2] - 1);
 
             index_t idx = texcoordi[2] * vox[0] * vox[1] + texcoordi[1] * vox[0] + texcoordi[0];
-            sample = volume(raw, idx);
+            sample = volume(raw, idx, bpc);
           }
 
           sample /= 255.0f;
