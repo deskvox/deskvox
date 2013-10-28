@@ -29,10 +29,6 @@
 #include "vvconfig.h"
 #endif
 
-#ifdef HAVE_GLEW
-#include <GL/glew.h>
-#endif
-
 #ifdef HAVE_OPENGL
 #include "private/vvgltools.h"
 #endif
@@ -325,10 +321,6 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
 {
   vvDebugMsg::msg(1, "vvSoftRayRend::vvSoftRayRend()");
 
-#ifdef HAVE_GLEW
-  glewInit();
-#endif
-
   setRenderTarget(virvo::HostBufferRT::create(virvo::PF_RGBA32F, virvo::PF_LUMINANCE8));
 
   updateTransferFunction();
@@ -409,9 +401,11 @@ void vvSoftRayRend::renderVolumeGL()
   Matrix pr;
   virvo::Viewport vp;
 
+#ifdef HAVE_OPENGL
   mv = virvo::gltools::getModelViewMatrix();
   pr = virvo::gltools::getProjectionMatrix();
   vp = vvGLTools::getViewport();
+#endif
 
   virvo::RenderTarget* rt = getRenderTarget();
 
