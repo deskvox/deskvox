@@ -1823,7 +1823,10 @@ bool vvConv::parseCommandLine(int argc, char** argv)
         cerr << "Skip value missing." << endl;
         return false;
       }
-      rawSkip = atoll(argv[arg]);
+	  std::string numStr = argv[arg];
+	  std::istringstream iss(numStr);
+	  iss>>rawSkip;
+	  // altoll not available on windows rawSkip = atoll(argv[arg]);
     }
 
     else if (vvToolshed::strCompare(argv[arg], "-loadcpt")==0)
