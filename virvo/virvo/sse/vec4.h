@@ -63,46 +63,12 @@ public:
 
   VV_FORCE_INLINE T& operator[](size_t i)
   {
-    if (i == 0)
-    {
-      return x;
-    }
-    else if (i == 1)
-    {
-      return y;
-    }
-    else if (i == 2)
-    {
-      return z;
-    }
-    else if (i == 3)
-    {
-      return w;
-    }
-    assert("index out of range" == 0);
-    return x;
+    return reinterpret_cast<T*>(this)[i];
   }
 
   VV_FORCE_INLINE const T& operator[](size_t i) const
   {
-    if (i == 0)
-    {
-      return x;
-    }
-    else if (i == 1)
-    {
-      return y;
-    }
-    else if (i == 2)
-    {
-      return z;
-    }
-    else if (i == 3)
-    {
-      return w;
-    }
-    assert("index out of range" == 0);
-    return x;
+    return reinterpret_cast<T const*>(this)[i];
   }
 };
 
