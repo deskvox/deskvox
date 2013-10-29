@@ -21,6 +21,8 @@
 #ifndef _VVVOLDESC_H_
 #define _VVVOLDESC_H_
 
+#include <boost/serialization/binary_object.hpp>
+
 #include <stdlib.h>
 #include <vector>
 
@@ -147,6 +149,60 @@ class VIRVOEXPORT vvVolDesc
     float* _hdrBinLimits;                         ///< array of bin limits for HDR transfer functions
     BinningType _binning;                         ///< Floating point TF: linear, iso-data, or opacity weighted binning
     bool _transOp;                                ///< true=transfer opacities to bin space
+
+    //--- serialization ----------------------------------------------------------------------------
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
+
+    template<class A>
+    void save(A& a, unsigned /*version*/) const
+    {
+      // Header (from vvVolDesc::serializeAttributes)
+      a & vox;
+      a & frames;
+      a & bpc;
+      a & dist;
+      a & dt;
+      a & real;
+      a & pos;
+      a & chan;
+
+      // Data (from vvSocketIO::putVolume)
+      size_t size = getFrameBytes();
+
+      for (size_t k = 0; k < frames; k++)
+      {
+        a & boost::serialization::make_binary_object(getRaw(k), size);
+      }
+    }
+
+    template<class A>
+    void load(A& a, unsigned /*version*/)
+    {
+      // Header (from vvVolDesc::deserializeAttributes)
+      a & vox;
+      a & frames;
+      a & bpc;
+      a & dist;
+      a & dt;
+      a & real;
+      a & pos;
+      a & chan;
+
+      // Data (from vvSocketIO::getVolume)
+      size_t size = getFrameBytes();
+
+      for (size_t k = 0; k < frames; ++k)
+      {
+        uint8_t* buffer = new uint8_t[size];
+
+        a & boost::serialization::make_binary_object(buffer, size);
+
+        addFrame(buffer, vvVolDesc::ARRAY_DELETE);
+      }
+    }
+
+    //----------------------------------------------------------------------------------------------
 
     // Constructors and destructors:
     vvVolDesc();
