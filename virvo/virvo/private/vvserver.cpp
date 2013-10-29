@@ -29,96 +29,166 @@
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
 
+#ifndef NDEBUG
 #include <iostream>
+#endif
 
 
-using virvo::Server;
 using virvo::MessagePointer;
+using virvo::Server;
+using virvo::ServerManager;
 
 using boost::asio::ip::tcp;
 
 
 //--------------------------------------------------------------------------------------------------
-// Server::Connection
+// ServerManager::Connection
 //--------------------------------------------------------------------------------------------------
 
 
-Server::Connection::Connection(boost::asio::io_service& io_service)
+ServerManager::Connection::Connection(boost::asio::io_service& io_service, ServerManager* server)
     : socket_(io_service)
+    , manager_(server)
+    , server_()
 {
 }
 
 
-//--------------------------------------------------------------------------------------------------
-// Server
-//--------------------------------------------------------------------------------------------------
-
-
-Server::Server(boost::asio::io_service& io_service, unsigned short port, Handler handler)
-    : io_service_(io_service)
-    , acceptor_(io_service, tcp::endpoint(tcp::v4(), port))
-    , connections_()
-    , handler_(handler)
+ServerManager::Connection::~Connection()
 {
-    assert( static_cast<bool>(handler_) && "invalid message handler" );
+    boost::system::error_code e;
 
+    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, e);
+    socket_.close(e);
+}
+
+
+bool ServerManager::Connection::accept(boost::shared_ptr<Server> server)
+{
+    server_ = server;
+    return true;
+}
+
+
+void ServerManager::Connection::write(MessagePointer message)
+{
+    manager_->write(message, shared_from_this());
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// ServerManager
+//--------------------------------------------------------------------------------------------------
+
+
+ServerManager::ServerManager(unsigned short port)
+    : io_service_()
+    , acceptor_(io_service_, tcp::endpoint(tcp::v6(), port))
+    , connections_()
+{
     // Start an accept operation for a new connection.
     do_accept();
 }
 
 
-void Server::write(MessagePointer message, ConnectionPointer conn)
+ServerManager::~ServerManager()
 {
-    // Start the write operation
-    io_service_.post(boost::bind(&Server::do_write, this, message, conn));
 }
 
 
-void Server::broadcast(MessagePointer message)
+void ServerManager::run()
 {
-    // Start the write operation
-    io_service_.post(boost::bind(&Server::do_broadcast, this, message));
+#ifndef NDEBUG
+    try
+    {
+        io_service_.run();
+    }
+    catch (std::exception& e)
+    {
+        std::cout << "ServerManager::run: EXCEPTION caught: " << e.what() << std::endl;
+        throw;
+    }
+#else
+    io_service_.run();
+#endif
 }
 
 
-void Server::do_accept()
+void ServerManager::stop()
 {
-    ConnectionPointer conn = boost::make_shared<Connection>(boost::ref(io_service_));
+    io_service_.stop();
+}
+
+
+void ServerManager::write(MessagePointer message, ConnectionPointer conn)
+{
+    // Start the write operation
+    io_service_.post(boost::bind(&ServerManager::do_write, this, message, conn));
+}
+
+
+void ServerManager::broadcast(MessagePointer message)
+{
+    // Start the write operation
+    io_service_.post(boost::bind(&ServerManager::do_broadcast, this, message));
+}
+
+
+bool ServerManager::on_accept(ConnectionPointer /*conn*/, boost::system::error_code const& /*e*/)
+{
+    return false;
+}
+
+
+void ServerManager::do_accept()
+{
+#ifndef NDEBUG
+    std::cout << "ServerManager::do_accept..." << std::endl;
+#endif
+
+#if 1
+    ConnectionPointer conn(new Connection(boost::ref(io_service_), this));
+#else
+    ConnectionPointer conn = boost::make_shared<Connection>(boost::ref(io_service_), this);
+#endif
 
     // Start an accept operation for a new connection.
     acceptor_.async_accept(
             conn->socket_,
-            boost::bind(&Server::handle_accept, this, boost::asio::placeholders::error, conn)
+            boost::bind(&ServerManager::handle_accept, this, boost::asio::placeholders::error, conn)
             );
 }
 
 
-void Server::handle_accept(boost::system::error_code const& e, ConnectionPointer conn)
+void ServerManager::handle_accept(boost::system::error_code const& e, ConnectionPointer conn)
 {
+    bool ok = on_accept(conn, e);
+
     if (!e)
     {
-        std::cerr << "Server::handle_accept: connection established" << std::endl;
-
-        // Connection established
-        connections_.insert(conn);
-
-        // Start reading from the socket
-        do_read(conn);
+        if (ok)
+        {
+            // Connection established
+            connections_.insert(conn);
+            // Start reading from the socket
+            do_read(conn);
+        }
 
         // Start a new accept operation
         do_accept();
     }
     else
     {
-        // An error occurred.
-        std::cerr << "Server::handle_accept: " << e.message() << std::endl;
+#ifndef NDEBUG
+        std::cerr << "ServerManager::handle_accept: " << e.message() << std::endl;
+#endif
 
         // No need to remove the connection...
     }
 }
 
 
-void Server::do_read(ConnectionPointer conn)
+void ServerManager::do_read(ConnectionPointer conn)
 {
     MessagePointer message = makeMessage();
 
@@ -126,12 +196,12 @@ void Server::do_read(ConnectionPointer conn)
     boost::asio::async_read(
             conn->socket_,
             boost::asio::buffer(static_cast<void*>(&message->header_), sizeof(message->header_)),
-            boost::bind(&Server::handle_read_header, this, boost::asio::placeholders::error, message, conn)
+            boost::bind(&ServerManager::handle_read_header, this, boost::asio::placeholders::error, message, conn)
             );
 }
 
 
-void Server::handle_read_header(boost::system::error_code const& e, MessagePointer message, ConnectionPointer conn)
+void ServerManager::handle_read_header(boost::system::error_code const& e, MessagePointer message, ConnectionPointer conn)
 {
     if (!e)
     {
@@ -147,13 +217,14 @@ void Server::handle_read_header(boost::system::error_code const& e, MessagePoint
         boost::asio::async_read(
                 conn->socket_,
                 boost::asio::buffer(&message->data_[0], message->data_.size()),
-                boost::bind(&Server::handle_read_data, this, boost::asio::placeholders::error, message, conn)
+                boost::bind(&ServerManager::handle_read_data, this, boost::asio::placeholders::error, message, conn)
                 );
     }
     else
     {
-        // An error occurred.
-        std::cerr << "Server::handle_read_header: " << e.message() << std::endl;
+        // Call the handler
+        if (conn->server_)
+            conn->server_->on_error(conn, e);
 
         // Remove the connection from the list of active connections
         connections_.erase(conn);
@@ -161,20 +232,22 @@ void Server::handle_read_header(boost::system::error_code const& e, MessagePoint
 }
 
 
-void Server::handle_read_data(boost::system::error_code const& e, MessagePointer message, ConnectionPointer conn)
+void ServerManager::handle_read_data(boost::system::error_code const& e, MessagePointer message, ConnectionPointer conn)
 {
     if (!e)
     {
-        // Invoke the message handler
-        handler_(message, conn);
+        // Call the handler
+        if (conn->server_)
+            conn->server_->on_read(conn, message);
 
         // Read the next message
         do_read(conn);
     }
     else
     {
-        // An error occurred.
-        std::cerr << "Server::handle_read_data: " << e.message() << std::endl;
+        // Call the handler
+        if (conn->server_)
+            conn->server_->on_error(conn, e);
 
         // Remove the connection from the list of active connections
         connections_.erase(conn);
@@ -182,7 +255,7 @@ void Server::handle_read_data(boost::system::error_code const& e, MessagePointer
 }
 
 
-void Server::do_write(MessagePointer message, ConnectionPointer conn)
+void ServerManager::do_write(MessagePointer message, ConnectionPointer conn)
 {
     //
     // TODO:
@@ -201,12 +274,12 @@ void Server::do_write(MessagePointer message, ConnectionPointer conn)
     boost::asio::async_write(
             conn->socket_,
             buffers,
-            boost::bind(&Server::handle_write, this, boost::asio::placeholders::error, message, conn)
+            boost::bind(&ServerManager::handle_write, this, boost::asio::placeholders::error, message, conn)
             );
 }
 
 
-void Server::do_broadcast(MessagePointer message)
+void ServerManager::do_broadcast(MessagePointer message)
 {
     Connections::iterator I = connections_.begin();
     Connections::iterator E = connections_.end();
@@ -218,18 +291,37 @@ void Server::do_broadcast(MessagePointer message)
 }
 
 
-void Server::handle_write(boost::system::error_code const& e, MessagePointer /*message*/, ConnectionPointer conn)
+void ServerManager::handle_write(boost::system::error_code const& e, MessagePointer message, ConnectionPointer conn)
 {
     if (!e)
     {
         // Message successfully sent to server.
+        // Call the handler
+        if (conn->server_)
+            conn->server_->on_write(conn, message);
     }
     else
     {
-        // An error occurred.
-        std::cerr << "Server::handle_write: " << e.message() << std::endl;
+        // Call the handler
+        if (conn->server_)
+            conn->server_->on_error(conn, e);
 
         // Remove the connection from the list of active connections
         connections_.erase(conn);
     }
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// Server
+//--------------------------------------------------------------------------------------------------
+
+
+void Server::on_error(ServerManager::ConnectionPointer /*conn*/, boost::system::error_code const& e)
+{
+#ifndef NDEBUG
+    std::cout << "Server::on_error: " << e.message() << std::endl;
+#else
+    static_cast<void>(e);
+#endif
 }

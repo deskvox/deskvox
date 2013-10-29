@@ -31,7 +31,9 @@
 
 #include <boost/bind.hpp>
 
+#ifndef NDEBUG
 #include <iostream>
+#endif
 
 
 using virvo::Client;
@@ -49,21 +51,73 @@ inline std::string to_string(T const& x)
 }
 
 
-Client::Client(boost::asio::io_service& io_service, std::string const& host, unsigned short port, Handler unexpected_handler)
-    : io_service_(io_service)
-    , socket_(io_service)
-    , handlers_()
-    , unexpected_handler_(unexpected_handler)
+Client::Client()
+    : io_service_()
+    , socket_(io_service_)
 {
-    // Start a new connect operation
+}
+
+
+Client::~Client()
+{
+    boost::system::error_code e;
+
+    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, e);
+    socket_.close(e);
+}
+
+
+void Client::run()
+{
+#ifndef NDEBUG
+    try
+    {
+        io_service_.run();
+    }
+    catch (std::exception& e)
+    {
+        std::cout << "Client::run: EXCEPTION caught: " << e.what() << std::endl;
+        throw;
+    }
+#else
+    io_service_.run();
+#endif
+}
+
+
+void Client::stop()
+{
+    io_service_.stop();
+}
+
+
+void Client::connect(std::string const& host, unsigned short port)
+{
+    // Start the connect operation
     do_connect(host, port);
 }
 
 
-void Client::write(MessagePointer message, Handler handler)
+void Client::write(MessagePointer message)
 {
     // Start the write operation
-    io_service_.post(boost::bind(&Client::do_write, this, message, handler));
+    io_service_.post(boost::bind(&Client::do_write, this, message));
+}
+
+
+bool Client::on_connect(boost::system::error_code const& /*e*/)
+{
+    return true;
+}
+
+
+void Client::on_error(boost::system::error_code const& e)
+{
+#ifndef NDEBUG
+    std::cout << "Client::on_error: " << e.message() << std::endl;
+#else
+    static_cast<void>(e);
+#endif
 }
 
 
@@ -99,16 +153,22 @@ void Client::do_connect(std::string const& host, unsigned short port)
 
 void Client::handle_connect(boost::system::error_code const& e)
 {
+    bool ok = on_connect(e);
+
     if (!e)
     {
-        // Successfully established connection.
-        // Start reading the messages.
-        do_read();
+        if (ok)
+        {
+            // Successfully established connection.
+            // Start reading the messages.
+            do_read();
+        }
     }
     else
     {
-        // An error occurred.
+#ifndef NDEBUG
         std::cerr << "Client::handle_connect: " << e.message() << std::endl;
+#endif
     }
 }
 
@@ -147,8 +207,8 @@ void Client::handle_read_header(boost::system::error_code const& e, MessagePoint
     }
     else
     {
-        // An error occurred.
-        std::cerr << "Client::handle_read_header: " << e.message() << std::endl;
+        // Call the handler
+        on_error(e);
     }
 }
 
@@ -157,39 +217,22 @@ void Client::handle_read_data(boost::system::error_code const& e, MessagePointer
 {
     if (!e)
     {
-        // Find the completion handler
-        Handlers::iterator I = handlers_.find(message->id());
-
-        if (I != handlers_.end())
-        {
-            // Invoke the completion handler
-            I->second(message);
-            // Remove the handler from the list
-            handlers_.erase(I);
-        }
-        else
-        {
-            if (unexpected_handler_)
-                unexpected_handler_(message);
-        }
+        // Call the handler
+        on_read(message);
 
         // Read the next message
         do_read();
     }
     else
     {
-        // An error occurred.
-        std::cerr << "Client::handle_read_data: " << e.message() << std::endl;
+        // Call the handler
+        on_error(e);
     }
 }
 
 
-void Client::do_write(MessagePointer message, Handler handler)
+void Client::do_write(MessagePointer message)
 {
-    // Add the handler to the list
-    if (handler)
-        handlers_.insert(Handlers::value_type(message->id(), handler));
-
     //
     // TODO:
     // Need to serialize the message-header!
@@ -212,15 +255,17 @@ void Client::do_write(MessagePointer message, Handler handler)
 }
 
 
-void Client::handle_write(boost::system::error_code const& e, MessagePointer /*message*/)
+void Client::handle_write(boost::system::error_code const& e, MessagePointer message)
 {
     if (!e)
     {
         // Message successfully sent to server.
+        // Call the handler
+        on_write(message);
     }
     else
     {
-        // An error occurred.
-        std::cerr << "Client::handle_write: " << e.message() << std::endl;
+        // Call the handler
+        on_error(e);
     }
 }

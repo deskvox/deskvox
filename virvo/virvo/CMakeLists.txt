@@ -70,6 +70,7 @@ set(VIRVO_HEADERS
   private/vvimage.h
   private/vvlog.h
   private/vvmessage.h
+  private/vvserialize.h
   private/vvserver.h
 
   cuda/array.h

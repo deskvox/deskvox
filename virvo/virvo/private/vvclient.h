@@ -31,7 +31,6 @@
 #endif
 
 
-#include "vvexport.h"
 #include "vvmessage.h"
 
 #include <boost/asio/io_service.hpp>
@@ -50,17 +49,39 @@ namespace virvo
 
 
     class Client
-        : public boost::enable_shared_from_this<Client>
     {
     public:
-        typedef boost::function<void(MessagePointer)> Handler;
+        // Constructor.
+        VVAPI Client();
 
-        // Constructor starts the asynchronous connect operation.
-        VVAPI Client(boost::asio::io_service& io_service, std::string const& host, unsigned short port, Handler unexpected_handler);
+        // Destructor.
+        VVAPI virtual ~Client();
+
+        // Runs the message loop
+        VVAPI void run();
+
+        // Stops the message loop
+        VVAPI void stop();
+
+        // Starts a new connect operation.
+        VVAPI void connect(std::string const& host, unsigned short port);
 
         // Sends a message to the server.
         // If the server replies, the given handler is executed (may be null).
-        VVAPI void write(MessagePointer message, Handler handler = Handler());
+        VVAPI void write(MessagePointer message);
+
+        // Called when a new connection has been established.
+        // Return true to accept the connection, false to discard the connection.
+        VVAPI virtual bool on_connect(boost::system::error_code const& e);
+
+        // Called when an error occurred during a read or a write operation.
+        VVAPI virtual void on_error(boost::system::error_code const& e);
+
+        // Called when a new message has successfully been read from the server.
+        virtual void on_read(MessagePointer message) = 0;
+
+        // Called when a message has successfully been written to the server.
+        virtual void on_write(MessagePointer message) = 0;
 
     private:
         // Starts a new connect operation.
@@ -79,22 +100,16 @@ namespace virvo
         void handle_read_data(boost::system::error_code const& e, MessagePointer message);
 
         // Starts a new write operation.
-        void do_write(MessagePointer message, Handler handler);
+        void do_write(MessagePointer message);
 
         // Called when a complete message is written.
         void handle_write(boost::system::error_code const& e, MessagePointer message);
 
     private:
-        typedef std::map<boost::uuids::uuid, Handler> Handlers;
-
         // The IO service
-        boost::asio::io_service& io_service_;
+        boost::asio::io_service io_service_;
         // The underlying socket.
         boost::asio::ip::tcp::socket socket_;
-        // List of callbacks
-        Handlers handlers_;
-        // The handler to process "unexpected" messages
-        Handler unexpected_handler_;
     };
 
 

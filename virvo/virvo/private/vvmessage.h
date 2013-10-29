@@ -24,13 +24,7 @@
 
 
 #include "vvexport.h"
-
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-
-#include <boost/iostreams/device/array.hpp>
-#include <boost/iostreams/device/back_inserter.hpp>
-#include <boost/iostreams/stream.hpp>
+#include "vvserialize.h"
 
 #include <boost/smart_ptr/enable_shared_from_this.hpp>
 #include <boost/smart_ptr/make_shared.hpp>
@@ -41,7 +35,6 @@
 
 #include <cassert>
 #include <stdexcept>
-#include <vector>
 
 
 namespace virvo
@@ -57,12 +50,9 @@ namespace virvo
         : public boost::enable_shared_from_this<Message>
     {
         friend class Client;
-        friend class Server;
+        friend class ServerManager;
 
-        VVAPI static boost::uuids::uuid GenerateID();
-
-        typedef std::vector<char> data_type;
-        typedef data_type::value_type element_type;
+        typedef std::vector<char> DataType;
 
         struct Header
         {
@@ -82,9 +72,34 @@ namespace virvo
         };
 
         // The message data
-        data_type data_;
+        DataType data_;
         // The message header
         Header header_;
+
+    private:
+        // Creates a new unique ID for this message
+        VVAPI static boost::uuids::uuid GenerateID();
+
+    public:
+        enum Type {
+            CameraMatrix,
+            CurrentFrame,
+            Disconnect,
+            GpuInfo,
+            ObjectDirection,
+            Parameter,
+            Position,
+            RemoteServerType,
+            ServerInfo,
+            Statistics,
+            TransFunc,
+            ViewingDirection,
+            Volume,
+            VolumeFile,
+            WindowResize,
+
+            LastType // <-- MUST be the last item!
+        };
 
     public:
         VVAPI explicit Message(unsigned type = 0);
@@ -96,6 +111,11 @@ namespace virvo
         // Creates a serialized message
         template<class T>
         explicit Message(unsigned type, T const& object);
+
+        // Serialize the given object.
+        // Returns true on success, false otherwise.
+        template<class T>
+        bool serialize(T const& object);
 
         // Deserialize the message.
         // Returns true on success, false otherwise.
@@ -125,22 +145,22 @@ namespace virvo
         }
 
         // Returns an iterator to the first element of the data
-        data_type::iterator begin() {
+        DataType::iterator begin() {
             return data_.begin();
         }
 
         // Returns an iterator to the element following the last element of the data
-        data_type::iterator end() {
+        DataType::iterator end() {
             return data_.end();
         }
 
         // Returns an iterator to the first element of the data
-        data_type::const_iterator begin() const {
+        DataType::const_iterator begin() const {
             return data_.begin();
         }
 
         // Returns an iterator to the element following the last element of the data
-        data_type::const_iterator end() const {
+        DataType::const_iterator end() const {
             return data_.end();
         }
     };
@@ -159,26 +179,24 @@ namespace virvo
         : data_()
         , header_(GenerateID(), type, 0)
     {
-        typedef boost::iostreams::back_insert_device<data_type> sink_type;
-        typedef boost::iostreams::stream<sink_type> stream_type;
-
-        sink_type sink(data_);
-        stream_type stream(sink);
-
+        if (!serialize(object))
         {
-            // Create a serializer
-            boost::archive::binary_oarchive archive(stream);
-
-            // Serialize the message
-            archive << object;
-
-            // Don't forget to flush the stream!!!
-            stream.flush();
+            throw std::runtime_error("serialization error");
         }
-        //~archive
+    }
 
-        // Set the size of the serialized message
-        header_.size_ = static_cast<unsigned>(data_.size());
+
+    template<class T>
+    bool Message::serialize(T const& object)
+    {
+        if (::virvo::serialize(data_, object))
+        {
+            // Set the size of the serialized message
+            header_.size_ = static_cast<unsigned>(data_.size());
+            return true;
+        }
+
+        return false;
     }
 
 
@@ -187,19 +205,7 @@ namespace virvo
     {
         assert( header_.size_ == data_.size() );
 
-        typedef boost::iostreams::basic_array_source<element_type> source_type;
-        typedef boost::iostreams::stream<source_type> stream_type;
-
-        source_type source(&data_[0], data_.size());
-        stream_type stream(source);
-
-        // Create a deserialzer
-        boost::archive::binary_iarchive archive(stream);
-
-        // Deserialize the message
-        archive >> object;
-
-        return static_cast<bool>(stream);
+        return ::virvo::deserialize(object, data_);
     }
 
 
@@ -222,10 +228,12 @@ namespace virvo
 
     typedef boost::shared_ptr<Message> MessagePointer;
 
+
     inline MessagePointer makeMessage(unsigned type = 0)
     {
         return boost::make_shared<Message>(type);
     }
+
 
     // Creates a message from the given buffer. NOT SERIALIZED!
     template<class InputIterator>
@@ -233,6 +241,7 @@ namespace virvo
     {
         return boost::make_shared<Message>(type, first, last);
     }
+
 
     // Creates a serialized message
     template<class T>

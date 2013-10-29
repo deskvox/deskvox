@@ -31,7 +31,6 @@
 #endif
 
 
-#include "vvexport.h"
 #include "vvmessage.h"
 
 #include <boost/asio/io_service.hpp>
@@ -49,30 +48,66 @@ namespace virvo
     //----------------------------------------------------------------------------------------------
 
 
-    class Server
-        : public boost::enable_shared_from_this<Server>
+    class Server;
+    class ServerManager;
+
+
+    //----------------------------------------------------------------------------------------------
+    //
+    //----------------------------------------------------------------------------------------------
+
+
+    class ServerManager
     {
-        struct Connection
+    public:
+        class Connection : public boost::enable_shared_from_this<Connection>
         {
-            explicit Connection(boost::asio::io_service& io_service);
+            friend class ServerManager;
+
+            explicit Connection(boost::asio::io_service& io_service, ServerManager* manager);
 
             // The underlying socket
             boost::asio::ip::tcp::socket socket_;
+            // The server managing this connection
+            ServerManager* manager_;
+            // The message handler
+            boost::shared_ptr<Server> server_;
+
+        public:
+            VVAPI ~Connection();
+
+            // Called on ServerManager::on_accept to accept the connection.
+            VVAPI bool accept(boost::shared_ptr<Server> server);
+
+            // Sends a message to the client
+            VVAPI void write(MessagePointer message);
         };
 
-    public:
         typedef boost::shared_ptr<Connection> ConnectionPointer;
 
-        typedef boost::function<void(MessagePointer message, ConnectionPointer conn)> Handler;
-
     public:
-        VVAPI Server(boost::asio::io_service& io_service, unsigned short port, Handler handler);
+        // Constructor starts a new accept operation.
+        VVAPI ServerManager(unsigned short port);
+
+        // Destructor.
+        VVAPI virtual ~ServerManager();
+
+        // Runs the message loop
+        VVAPI void run();
+
+        // Stops the message loop
+        VVAPI void stop();
 
         // Sends a message to the given client
         VVAPI void write(MessagePointer message, ConnectionPointer conn);
 
         // Sends a message to all currently connected clients
         VVAPI void broadcast(MessagePointer message);
+
+        // Called when a new connection is accepted.
+        // Return false to discard the new connection, return conn->accept(...)
+        // to finally accept the new connection.
+        VVAPI virtual bool on_accept(ConnectionPointer conn, boost::system::error_code const& e) = 0;
 
     private:
         // Start an accept operation
@@ -103,13 +138,34 @@ namespace virvo
         typedef std::set<ConnectionPointer> Connections;
 
         // The IO service
-        boost::asio::io_service& io_service_;
+        boost::asio::io_service io_service_;
         // The acceptor object used to accept incoming socket connections.
         boost::asio::ip::tcp::acceptor acceptor_;
         // The connection to the client.
         Connections connections_;
-        // The message handler
-        Handler handler_;
+    };
+
+
+    //----------------------------------------------------------------------------------------------
+    //
+    //----------------------------------------------------------------------------------------------
+
+
+    class Server
+    {
+    public:
+        virtual ~Server()
+        {
+        }
+
+        // Called when an error occurred during a read or a write operation.
+        VVAPI virtual void on_error(ServerManager::ConnectionPointer conn, boost::system::error_code const& e);
+
+        // Called when a new message has successfully been read from the server.
+        virtual void on_read(ServerManager::ConnectionPointer conn, MessagePointer message) = 0;
+
+        // Called when a message has successfully been written to the server.
+        virtual void on_write(ServerManager::ConnectionPointer conn, MessagePointer message) = 0;
     };
 
 
