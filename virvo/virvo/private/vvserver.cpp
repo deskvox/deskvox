@@ -63,6 +63,20 @@ ServerManager::Connection::~Connection()
 }
 
 
+namespace
+{
+    struct NoDelete {
+        void operator ()(Server*) {}
+    };
+}
+
+bool ServerManager::Connection::accept(Server* server)
+{
+    server_ = boost::shared_ptr<Server>(server, NoDelete());
+    return true;
+}
+
+
 bool ServerManager::Connection::accept(boost::shared_ptr<Server> server)
 {
     server_ = server;

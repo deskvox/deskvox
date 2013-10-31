@@ -76,7 +76,10 @@ namespace virvo
         public:
             VVAPI ~Connection();
 
-            // Called on ServerManager::on_accept to accept the connection.
+            // Called in ServerManager::on_accept to accept the connection.
+            VVAPI bool accept(Server* server);
+
+            // Called in ServerManager::on_accept to accept the connection.
             VVAPI bool accept(boost::shared_ptr<Server> server);
 
             // Sends a message to the client
