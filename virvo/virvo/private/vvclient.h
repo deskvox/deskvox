@@ -51,6 +51,9 @@ namespace virvo
     class Client
     {
     public:
+        typedef boost::function<void(MessagePointer)> Callback;
+
+    public:
         // Constructor.
         VVAPI Client();
 
@@ -67,8 +70,11 @@ namespace virvo
         VVAPI void connect(std::string const& host, unsigned short port);
 
         // Sends a message to the server.
-        // If the server replies, the given handler is executed (may be null).
         VVAPI void write(MessagePointer message);
+
+        // Sends a message to the server.
+        // If the server replies the handler is executed instead of on_read().
+        VVAPI void write(MessagePointer message, Callback handler);
 
         // Called when a new connection has been established.
         // Return true to accept the connection, false to discard the connection.
@@ -82,6 +88,9 @@ namespace virvo
 
         // Called when a message has successfully been written to the server.
         virtual void on_write(MessagePointer message) = 0;
+
+    private:
+        typedef std::map<boost::uuids::uuid, Callback> Callbacks;
 
     private:
         // Starts a new connect operation.
@@ -105,11 +114,19 @@ namespace virvo
         // Called when a complete message is written.
         void handle_write(boost::system::error_code const& e, MessagePointer message);
 
+        // Removes the associated handler -- if any
+        void remove_callback(MessagePointer message);
+
+        // Removes the associated handler
+        void remove_callback(Callbacks::iterator I);
+
     private:
         // The IO service
         boost::asio::io_service io_service_;
         // The underlying socket.
         boost::asio::ip::tcp::socket socket_;
+        // The list of messages which need special handling.
+        Callbacks callbacks_;
     };
 
 

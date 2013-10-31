@@ -105,6 +105,16 @@ void Client::write(MessagePointer message)
 }
 
 
+void Client::write(MessagePointer message, Callback handler)
+{
+    // Register the callback
+    callbacks_.insert(Callbacks::value_type(message->id(), handler));
+
+    // Start the write operation
+    write(message);
+}
+
+
 bool Client::on_connect(boost::system::error_code const& /*e*/)
 {
     return true;
@@ -209,16 +219,28 @@ void Client::handle_read_header(boost::system::error_code const& e, MessagePoint
     {
         // Call the handler
         on_error(e);
+
+        // Remove the callback -- if any
+        remove_callback(message);
     }
 }
 
 
 void Client::handle_read_data(boost::system::error_code const& e, MessagePointer message)
 {
+    Callbacks::iterator I = callbacks_.find(message->id());
+
     if (!e)
     {
         // Call the handler
-        on_read(message);
+        if (I == callbacks_.end())
+        {
+            on_read(message);
+        }
+        else
+        {
+            I->second(message);
+        }
 
         // Read the next message
         do_read();
@@ -228,6 +250,9 @@ void Client::handle_read_data(boost::system::error_code const& e, MessagePointer
         // Call the handler
         on_error(e);
     }
+
+    // Remove the callback -- if any
+    remove_callback(I);
 }
 
 
@@ -267,5 +292,23 @@ void Client::handle_write(boost::system::error_code const& e, MessagePointer mes
     {
         // Call the handler
         on_error(e);
+
+        // Remove the callback from the list -- if any
+        remove_callback(message);
+    }
+}
+
+
+void Client::remove_callback(MessagePointer message)
+{
+    remove_callback(callbacks_.find(message->id()));
+}
+
+
+void Client::remove_callback(Callbacks::iterator I)
+{
+    if (I != callbacks_.end())
+    {
+        callbacks_.erase(I);
     }
 }
