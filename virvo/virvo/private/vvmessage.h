@@ -189,6 +189,8 @@ namespace virvo
     template<class T>
     bool Message::serialize(T const& object)
     {
+        data_.clear();
+
         if (::virvo::serialize(data_, object))
         {
             // Set the size of the serialized message
