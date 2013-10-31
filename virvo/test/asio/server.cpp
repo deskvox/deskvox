@@ -38,12 +38,18 @@ public:
 
     virtual void on_read(ServerManager::ConnectionPointer conn, MessagePointer message)
     {
-        std::cout << "SERVER Message read: " << message->id() << " : \"" << message->deserialize<std::string>() << "\"" << std::endl;
-#if 0
-        static_cast<void>(conn);
-#else
-        conn->write(message);
-#endif
+        std::string text;
+
+        message->deserialize(text);
+
+        std::cout << "SERVER Message read: " << message->id() << " : \"" << text << "\"" << std::endl;
+
+        if (text == "What's your name?")
+        {
+            message->serialize(std::string("Servi"));
+
+            conn->write(message);
+        }
     }
 
     virtual void on_write(ServerManager::ConnectionPointer /*conn*/, MessagePointer message)

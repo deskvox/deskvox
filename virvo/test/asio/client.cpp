@@ -46,6 +46,11 @@ public:
     {
         std::cout << "CLIENT Message sent: " << message->id() << std::endl;
     }
+
+    void jippie(MessagePointer message)
+    {
+        std::cout << "My name is " << message->deserialize<std::string>() << std::endl;
+    }
 };
 
 
@@ -63,9 +68,14 @@ int main()
 
         while (std::getline(std::cin, text))
         {
-            // 1. Serialize
-            // 2. Send.
-            client.write(makeMessage(0/*type*/, text));
+            if (text == "What's your name?")
+            {
+                client.write(makeMessage(0, text), boost::bind(&MyClient::jippie, &client, _1));
+            }
+            else
+            {
+                client.write(makeMessage(0/*type*/, text));
+            }
         }
 
         // Stop processing messages
