@@ -1192,7 +1192,7 @@ vvBaseVector2<T>::vvBaseVector2()
 {
   for (size_t i = 0; i < 2; ++i)
   {
-    e[i] = 0.0;
+    e[i] = 0;
   }
 }
 
