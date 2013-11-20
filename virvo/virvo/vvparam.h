@@ -21,7 +21,6 @@
 #ifndef VVPARAM_H_INCLUDED
 #define VVPARAM_H_INCLUDED
 
-
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
 #endif
@@ -35,7 +34,7 @@
 #include <stdexcept>
 
 #include <boost/any.hpp>
-
+#include <boost/serialization/split_member.hpp>
 
 class vvParam
 {
@@ -84,56 +83,87 @@ private:
   // The value of this parameter
   boost::any value;
 
-public:
-  template<class A>
-  void save(A& a, unsigned /*version*/)
+private:
+  template<class T, class A>
+  static void save_value(A& a, T const& x)
   {
-    a & static_cast<unsigned>(type);
+    a & x;
+  }
+
+  template<class T, class A>
+  void save_as(A& a) const
+  {
+    T x = boost::any_cast<T>(value);
+    a & x;
+  }
+
+  template<class T, class A>
+  static T load_value(A& a)
+  {
+    T x; a & x; return x;
+  }
+
+  template<class T, class A>
+  void load_as(A& a)
+  {
+    T x; a & x; value = x;
+  }
+
+public:
+  //--- serialization ------------------------------------------------------------------------------
+
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
+
+  template<class A>
+  void save(A& a, unsigned /*version*/) const
+  {
+    save_value(a, static_cast<unsigned>(type));
+
     switch (type)
     {
-    case VV_EMPTY:    /* DO NOTHING */                                  return;
-    case VV_BOOL:     a & boost::any_cast< bool               >(value); return;
-    case VV_CHAR:     a & boost::any_cast< char               >(value); return;
-    case VV_UCHAR:    a & boost::any_cast< unsigned char      >(value); return;
-    case VV_SHORT:    a & boost::any_cast< short              >(value); return;
-    case VV_USHORT:   a & boost::any_cast< unsigned short     >(value); return;
-    case VV_INT:      a & boost::any_cast< int                >(value); return;
-    case VV_UINT:     a & boost::any_cast< unsigned           >(value); return;
-    case VV_LONG:     a & boost::any_cast< long               >(value); return;
-    case VV_ULONG:    a & boost::any_cast< unsigned long      >(value); return;
+    case VV_EMPTY:    /* DO NOTHING */                    return;
+    case VV_BOOL:     save_as< bool                 >(a); return;
+    case VV_CHAR:     save_as< char                 >(a); return;
+    case VV_UCHAR:    save_as< unsigned char        >(a); return;
+    case VV_SHORT:    save_as< short                >(a); return;
+    case VV_USHORT:   save_as< unsigned short       >(a); return;
+    case VV_INT:      save_as< int                  >(a); return;
+    case VV_UINT:     save_as< unsigned             >(a); return;
+    case VV_LONG:     save_as< long                 >(a); return;
+    case VV_ULONG:    save_as< unsigned long        >(a); return;
 #if VV_HAVE_LLONG
-    case VV_LLONG:    a & boost::any_cast< long long          >(value); return;
+    case VV_LLONG:    save_as< long long            >(a); return;
 #else
     case VV_LLONG:    break;
 #endif
 #if VV_HAVE_ULLONG
-    case VV_ULLONG:   a & boost::any_cast< unsigned long long >(value); return;
+    case VV_ULLONG:   save_as< unsigned long long   >(a); return;
 #else
     case VV_ULLONG:   break;
 #endif
-    case VV_FLOAT:    a & boost::any_cast< float              >(value); return;
-    case VV_VEC2F:    a & boost::any_cast< virvo::Vec2f       >(value); return;
-    case VV_VEC2I:    a & boost::any_cast< virvo::Vec2i       >(value); return;
-    case VV_VEC3F:    a & boost::any_cast< virvo::Vec3f       >(value); return;
-    case VV_VEC3D:    a & boost::any_cast< virvo::Vec3d       >(value); return;
-    case VV_VEC3S:    a & boost::any_cast< virvo::Vec3s       >(value); return;
-    case VV_VEC3US:   a & boost::any_cast< virvo::Vec3us      >(value); return;
-    case VV_VEC3I:    a & boost::any_cast< virvo::Vec3i       >(value); return;
-    case VV_VEC3UI:   a & boost::any_cast< virvo::Vec3ui      >(value); return;
-    case VV_VEC3L:    a & boost::any_cast< virvo::Vec3l       >(value); return;
-    case VV_VEC3UL:   a & boost::any_cast< virvo::Vec3ul      >(value); return;
-    case VV_VEC3LL:   a & boost::any_cast< virvo::Vec3ll      >(value); return;
-    case VV_VEC3ULL:  a & boost::any_cast< virvo::Vec3ull     >(value); return;
-    case VV_VEC4F:    a & boost::any_cast< virvo::Vec4f       >(value); return;
-    case VV_COLOR:    a & boost::any_cast< vvColor            >(value); return;
-    case VV_AABBF:    a & boost::any_cast< virvo::AABBf       >(value); return;
-    case VV_AABBD:    a & boost::any_cast< virvo::AABBd       >(value); return;
-    case VV_AABBI:    a & boost::any_cast< virvo::AABBi       >(value); return;
-    case VV_AABBUI:   a & boost::any_cast< virvo::AABBui      >(value); return;
-    case VV_AABBL:    a & boost::any_cast< virvo::AABBl       >(value); return;
-    case VV_AABBUL:   a & boost::any_cast< virvo::AABBul      >(value); return;
-    case VV_AABBLL:   a & boost::any_cast< virvo::AABBll      >(value); return;
-    case VV_AABBULL:  a & boost::any_cast< virvo::AABBull     >(value); return;
+    case VV_FLOAT:    save_as< float                >(a); return;
+    case VV_VEC2F:    save_as< virvo::Vec2f         >(a); return;
+    case VV_VEC2I:    save_as< virvo::Vec2i         >(a); return;
+    case VV_VEC3F:    save_as< virvo::Vec3f         >(a); return;
+    case VV_VEC3D:    save_as< virvo::Vec3d         >(a); return;
+    case VV_VEC3S:    save_as< virvo::Vec3s         >(a); return;
+    case VV_VEC3US:   save_as< virvo::Vec3us        >(a); return;
+    case VV_VEC3I:    save_as< virvo::Vec3i         >(a); return;
+    case VV_VEC3UI:   save_as< virvo::Vec3ui        >(a); return;
+    case VV_VEC3L:    save_as< virvo::Vec3l         >(a); return;
+    case VV_VEC3UL:   save_as< virvo::Vec3ul        >(a); return;
+    case VV_VEC3LL:   save_as< virvo::Vec3ll        >(a); return;
+    case VV_VEC3ULL:  save_as< virvo::Vec3ull       >(a); return;
+    case VV_VEC4F:    save_as< virvo::Vec4f         >(a); return;
+    case VV_COLOR:    save_as< vvColor              >(a); return;
+    case VV_AABBF:    save_as< virvo::AABBf         >(a); return;
+    case VV_AABBD:    save_as< virvo::AABBd         >(a); return;
+    case VV_AABBI:    save_as< virvo::AABBi         >(a); return;
+    case VV_AABBUI:   save_as< virvo::AABBui        >(a); return;
+    case VV_AABBL:    save_as< virvo::AABBl         >(a); return;
+    case VV_AABBUL:   save_as< virvo::AABBul        >(a); return;
+    case VV_AABBLL:   save_as< virvo::AABBll        >(a); return;
+    case VV_AABBULL:  save_as< virvo::AABBull       >(a); return;
     //
     // NOTE:
     //
@@ -145,61 +175,56 @@ public:
     throw std::runtime_error("unable to serialize parameter");
   }
 
-private:
-  template<class T, class A> static T load_value(A& a) {
-    T x; a & x; return x;
-  }
-
-public:
   template<class A>
   void load(A& a, unsigned /*version*/)
   {
-    a & static_cast<unsigned>(type);
+    type = static_cast<Type>(load_value<unsigned>(a));
+
     switch (type)
     {
-    case VV_EMPTY:    value = boost::any();                        return;
-    case VV_BOOL:     value = load_value< bool               >(a); return;
-    case VV_CHAR:     value = load_value< char               >(a); return;
-    case VV_UCHAR:    value = load_value< unsigned char      >(a); return;
-    case VV_SHORT:    value = load_value< short              >(a); return;
-    case VV_USHORT:   value = load_value< unsigned short     >(a); return;
-    case VV_INT:      value = load_value< int                >(a); return;
-    case VV_UINT:     value = load_value< unsigned           >(a); return;
-    case VV_LONG:     value = load_value< long               >(a); return;
-    case VV_ULONG:    value = load_value< unsigned long      >(a); return;
+    case VV_EMPTY:    value = boost::any();               return;
+    case VV_BOOL:     load_as< bool                 >(a); return;
+    case VV_CHAR:     load_as< char                 >(a); return;
+    case VV_UCHAR:    load_as< unsigned char        >(a); return;
+    case VV_SHORT:    load_as< short                >(a); return;
+    case VV_USHORT:   load_as< unsigned short       >(a); return;
+    case VV_INT:      load_as< int                  >(a); return;
+    case VV_UINT:     load_as< unsigned             >(a); return;
+    case VV_LONG:     load_as< long                 >(a); return;
+    case VV_ULONG:    load_as< unsigned long        >(a); return;
 #if VV_HAVE_LLONG
-    case VV_LLONG:    value = load_value< long long          >(a); return;
+    case VV_LLONG:    load_as< long long            >(a); return;
 #else
     case VV_LLONG:    break;
 #endif
 #if VV_HAVE_ULLONG
-    case VV_ULLONG:   value = load_value< unsigned long long >(a); return;
+    case VV_ULLONG:   load_as< unsigned long long   >(a); return;
 #else
     case VV_ULLONG:   break;
 #endif
-    case VV_FLOAT:    value = load_value< float              >(a); return;
-    case VV_VEC2F:    value = load_value< virvo::Vec2f       >(a); return;
-    case VV_VEC2I:    value = load_value< virvo::Vec2i       >(a); return;
-    case VV_VEC3F:    value = load_value< virvo::Vec3f       >(a); return;
-    case VV_VEC3D:    value = load_value< virvo::Vec3d       >(a); return;
-    case VV_VEC3S:    value = load_value< virvo::Vec3s       >(a); return;
-    case VV_VEC3US:   value = load_value< virvo::Vec3us      >(a); return;
-    case VV_VEC3I:    value = load_value< virvo::Vec3i       >(a); return;
-    case VV_VEC3UI:   value = load_value< virvo::Vec3ui      >(a); return;
-    case VV_VEC3L:    value = load_value< virvo::Vec3l       >(a); return;
-    case VV_VEC3UL:   value = load_value< virvo::Vec3ul      >(a); return;
-    case VV_VEC3LL:   value = load_value< virvo::Vec3ll      >(a); return;
-    case VV_VEC3ULL:  value = load_value< virvo::Vec3ull     >(a); return;
-    case VV_VEC4F:    value = load_value< virvo::Vec4f       >(a); return;
-    case VV_COLOR:    value = load_value< vvColor            >(a); return;
-    case VV_AABBF:    value = load_value< virvo::AABBf       >(a); return;
-    case VV_AABBD:    value = load_value< virvo::AABBd       >(a); return;
-    case VV_AABBI:    value = load_value< virvo::AABBi       >(a); return;
-    case VV_AABBUI:   value = load_value< virvo::AABBui      >(a); return;
-    case VV_AABBL:    value = load_value< virvo::AABBl       >(a); return;
-    case VV_AABBUL:   value = load_value< virvo::AABBul      >(a); return;
-    case VV_AABBLL:   value = load_value< virvo::AABBll      >(a); return;
-    case VV_AABBULL:  value = load_value< virvo::AABBull     >(a); return;
+    case VV_FLOAT:    load_as< float                >(a); return;
+    case VV_VEC2F:    load_as< virvo::Vec2f         >(a); return;
+    case VV_VEC2I:    load_as< virvo::Vec2i         >(a); return;
+    case VV_VEC3F:    load_as< virvo::Vec3f         >(a); return;
+    case VV_VEC3D:    load_as< virvo::Vec3d         >(a); return;
+    case VV_VEC3S:    load_as< virvo::Vec3s         >(a); return;
+    case VV_VEC3US:   load_as< virvo::Vec3us        >(a); return;
+    case VV_VEC3I:    load_as< virvo::Vec3i         >(a); return;
+    case VV_VEC3UI:   load_as< virvo::Vec3ui        >(a); return;
+    case VV_VEC3L:    load_as< virvo::Vec3l         >(a); return;
+    case VV_VEC3UL:   load_as< virvo::Vec3ul        >(a); return;
+    case VV_VEC3LL:   load_as< virvo::Vec3ll        >(a); return;
+    case VV_VEC3ULL:  load_as< virvo::Vec3ull       >(a); return;
+    case VV_VEC4F:    load_as< virvo::Vec4f         >(a); return;
+    case VV_COLOR:    load_as< vvColor              >(a); return;
+    case VV_AABBF:    load_as< virvo::AABBf         >(a); return;
+    case VV_AABBD:    load_as< virvo::AABBd         >(a); return;
+    case VV_AABBI:    load_as< virvo::AABBi         >(a); return;
+    case VV_AABBUI:   load_as< virvo::AABBui        >(a); return;
+    case VV_AABBL:    load_as< virvo::AABBl         >(a); return;
+    case VV_AABBUL:   load_as< virvo::AABBul        >(a); return;
+    case VV_AABBLL:   load_as< virvo::AABBll        >(a); return;
+    case VV_AABBULL:  load_as< virvo::AABBull       >(a); return;
     //
     // NOTE:
     //
@@ -210,6 +235,8 @@ public:
 
     throw std::runtime_error("unable to deserialize parameter");
   }
+
+  //------------------------------------------------------------------------------------------------
 
 public:
   vvParam() : type(VV_EMPTY)
@@ -714,6 +741,5 @@ public:
     return type == t;
   }
 };
-
 
 #endif
