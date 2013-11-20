@@ -67,7 +67,9 @@ class vvBaseAABB
 {
 public:
   typedef vvBaseVector3<T> vvBoxCorners[8];
- 
+
+  vvBaseAABB();
+
   vvBaseAABB(const vvBaseVector3<T>& minval, const vvBaseVector3<T>& maxval);
 
   const vvBaseVector3<T>& getMin() const;

@@ -28,6 +28,11 @@
 //============================================================================
 
 template <typename T>
+vvBaseAABB<T>::vvBaseAABB()
+{
+}
+
+template <typename T>
 vvBaseAABB<T>::vvBaseAABB(const vvBaseVector3<T>& minval, const vvBaseVector3<T>& maxval)
   : _min(minval)
   , _max(maxval)
