@@ -26,6 +26,9 @@
 #include <vector>
 #include <stddef.h>
 
+#include <boost/serialization/vector.hpp>
+
+
 namespace virvo
 {
 
