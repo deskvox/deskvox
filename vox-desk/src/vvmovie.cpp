@@ -18,8 +18,9 @@
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include <stdio.h>
 #include <string.h>
+
+#include <fstream>
 
 // Virvo:
 #include <vvdebugmsg.h>
@@ -69,7 +70,6 @@ vvMovie::ErrorType vvMovie::load(const char* filename)
 {
   vvDebugMsg::msg(1, "vvMovie::load()");
 
-  FILE* fp;
   vvTokenizer* tokenizer;
   ErrorType result=VV_OK;
 
@@ -77,10 +77,11 @@ vvMovie::ErrorType vvMovie::load(const char* filename)
   scriptName = new char[strlen(filename) + 1];
   strcpy(scriptName, filename);
 
-  if ((fp=fopen(scriptName, "rt")) == NULL) return VV_FILE_ERROR;
+  std::ifstream file(scriptName);
+  if (!file.is_open()) return VV_FILE_ERROR;
 
   // Initialize stream tokenizer:
-  tokenizer = new vvTokenizer(fp);
+  tokenizer = new vvTokenizer(file);
   tokenizer->setCommentCharacter('#');
   tokenizer->setEOLisSignificant(false);
   tokenizer->setCaseConversion(vvTokenizer::VV_LOWER);
@@ -112,7 +113,6 @@ vvMovie::ErrorType vvMovie::load(const char* filename)
   }
 
   delete tokenizer;
-  fclose(fp);
   if (result==VV_EOF) result = VV_OK;
   return result;
 }

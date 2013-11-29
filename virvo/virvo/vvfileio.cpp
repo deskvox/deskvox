@@ -18,6 +18,7 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 #ifdef HAVE_GDCM
@@ -921,8 +922,6 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
 vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
 {
   const char xvfID[4] = "XVF";
-  FILE* fp;                                       // volume file pointer
-  vvTokenizer* tok;
   vvTokenizer::TokenType ttype;                   // currently processed token type
   size_t frameSize;                               // size of a frame in bytes
   uint8_t* raw;                                   // raw volume data
@@ -935,7 +934,8 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
 
   if (vd->getFilename()==NULL) return FILE_ERROR;
 
-  if ( (fp = fopen(vd->getFilename(), "rb")) == NULL)
+  std::ifstream file(vd->getFilename(), std::ios::binary);
+  if (!file.is_open())
   {
     vvDebugMsg::msg(1, "Error: Cannot open file.");
     return FILE_ERROR;
@@ -944,158 +944,156 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
   // Read magic code:
   for (size_t i=0; i<strlen(xvfID); ++i)
   {
-    if (fgetc(fp) != xvfID[i])
+    if (file.get() != xvfID[i])
     {
-      fclose(fp);
       vvDebugMsg::msg(1, "Trying to load old style XVF format.");
       return loadXVFFileOld(vd);
     }
   }
-  fseek(fp, 0, SEEK_SET);
 
   vd->removeSequence();                           // delete previous volume sequence
 
   // Read header:
-  tok = new vvTokenizer(fp);
-  tok->setCommentCharacter('#');
-  tok->setEOLisSignificant(false);
-  tok->setCaseConversion(vvTokenizer::VV_UPPER);
-  tok->setParseNumbers(true);
-  tok->setWhitespaceCharacter(' ');
+  vvTokenizer tok(file);
+  tok.setCommentCharacter('#');
+  tok.setEOLisSignificant(false);
+  tok.setCaseConversion(vvTokenizer::VV_UPPER);
+  tok.setParseNumbers(true);
+  tok.setWhitespaceCharacter(' ');
 
   done = false;
   while (!done)
   {
     // Read a token:
-    ttype = tok->nextToken();
+    ttype = tok.nextToken();
     if (ttype != vvTokenizer::VV_WORD)
     {
-      cerr << "Error in line " << tok->getLineNumber() << " of XVF file" << endl;
-      tok->nextLine();
+      cerr << "Error in line " << tok.getLineNumber() << " of XVF file" << endl;
+      tok.nextLine();
     }
     else
     {
-      if (strcmp(tok->sval, "XVF")==0)
+      if (strcmp(tok.sval, "XVF")==0)
       {
-        tok->nextLine();
+        tok.nextLine();
       }
-      else if (strcmp(tok->sval, "VERSION")==0)
+      else if (strcmp(tok.sval, "VERSION")==0)
       {
-        ttype = tok->nextToken();
+        ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        cerr << "Reading XVF file version " << tok->nval << endl;
+        cerr << "Reading XVF file version " << tok.nval << endl;
       }
-      else if (strcmp(tok->sval, "VOXELS")==0)
+      else if (strcmp(tok.sval, "VOXELS")==0)
       {
         for (size_t i=0; i<3; ++i)
         {
-          ttype = tok->nextToken();
+          ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          vd->vox[i] = static_cast<size_t>(tok->nval);
+          vd->vox[i] = static_cast<size_t>(tok.nval);
         }
       }
-      else if (strcmp(tok->sval, "TIMESTEPS")==0)
+      else if (strcmp(tok.sval, "TIMESTEPS")==0)
       {
-        ttype = tok->nextToken();
+        ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->frames = static_cast<size_t>(tok->nval);
+        vd->frames = static_cast<size_t>(tok.nval);
       }
-      else if (strcmp(tok->sval, "BPC")==0)
+      else if (strcmp(tok.sval, "BPC")==0)
       {
-        ttype = tok->nextToken();
+        ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->bpc = static_cast<size_t>(tok->nval);
+        vd->bpc = static_cast<size_t>(tok.nval);
       }
-      else if (strcmp(tok->sval, "CHANNELS")==0)
+      else if (strcmp(tok.sval, "CHANNELS")==0)
       {
-        ttype = tok->nextToken();
+        ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->chan = static_cast<size_t>(tok->nval);
+        vd->chan = static_cast<size_t>(tok.nval);
       }
-      else if (strcmp(tok->sval, "DIST")==0)
+      else if (strcmp(tok.sval, "DIST")==0)
       {
         for (size_t i=0; i<3; ++i)
         {
-          ttype = tok->nextToken();
+          ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          vd->dist[i] = tok->nval;
+          vd->dist[i] = tok.nval;
         }
       }
-      else if (strcmp(tok->sval, "ENDIAN")==0)
+      else if (strcmp(tok.sval, "ENDIAN")==0)
       {
-        ttype = tok->nextToken();
+        ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_WORD);
-        if (strcmp(tok->sval, "LITTLE")==0) {
+        if (strcmp(tok.sval, "LITTLE")==0) {
           bigEnd = false;
         }
       }
-      else if (strcmp(tok->sval, "DTIME")==0)
+      else if (strcmp(tok.sval, "DTIME")==0)
       {
-        ttype = tok->nextToken();
+        ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->dt = tok->nval;
+        vd->dt = tok.nval;
       }
-      else if (strcmp(tok->sval, "MINMAX")==0)
+      else if (strcmp(tok.sval, "MINMAX")==0)
       {
         for (size_t i=0; i<2; ++i)
         {
-          ttype = tok->nextToken();
+          ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          vd->real[i] = tok->nval;
+          vd->real[i] = tok.nval;
         }
       }
-      else if (strcmp(tok->sval, "POS")==0)
+      else if (strcmp(tok.sval, "POS")==0)
       {
         for (size_t i=0; i<3; ++i)
         {
-          ttype = tok->nextToken();
+          ttype = tok.nextToken();
           assert(ttype == vvTokenizer::VV_NUMBER);
-          vd->pos[i] = tok->nval;
+          vd->pos[i] = tok.nval;
         }
       }
-      else if (strcmp(tok->sval, "CHANNELNAMES")==0)
+      else if (strcmp(tok.sval, "CHANNELNAMES")==0)
       {
-        if (vd->chan<1) tok->nextLine();
+        if (vd->chan<1) tok.nextLine();
         else
         {
           for (size_t i=0; i<vd->chan; ++i)
           {
-            ttype = tok->nextToken();
+            ttype = tok.nextToken();
             assert(ttype == vvTokenizer::VV_WORD);
-            vd->setChannelName(i, tok->sval);
+            vd->setChannelName(i, tok.sval);
           }
         }
       }
-      else if (strcmp(tok->sval, "TF_PYRAMID")==0)
+      else if (strcmp(tok.sval, "TF_PYRAMID")==0)
       {
-        fseek(fp, tok->getFilePos(), SEEK_SET);
-        vd->tf._widgets.push_back(new vvTFPyramid(fp));
-        tok->setFilePos(fp);
+        file.seekg(tok.getFilePos(), file.beg);
+        vd->tf._widgets.push_back(new vvTFPyramid(file));
+        tok.setFilePos(file.tellg());
       }
-      else if (strcmp(tok->sval, "TF_BELL")==0)
+      else if (strcmp(tok.sval, "TF_BELL")==0)
       {
-        fseek(fp, tok->getFilePos(), SEEK_SET);
-        vd->tf._widgets.push_back(new vvTFBell(fp));
-        tok->setFilePos(fp);
+        file.seekg(tok.getFilePos(), file.beg);
+        vd->tf._widgets.push_back(new vvTFBell(file));
+        tok.setFilePos(file.tellg());
       }
-      else if (strcmp(tok->sval, "TF_COLOR")==0)
+      else if (strcmp(tok.sval, "TF_COLOR")==0)
       {
-        fseek(fp, tok->getFilePos(), SEEK_SET);
-        vd->tf._widgets.push_back(new vvTFColor(fp));
-        tok->setFilePos(fp);
+        file.seekg(tok.getFilePos(), file.beg);
+        vd->tf._widgets.push_back(new vvTFColor(file));
+        tok.setFilePos(file.tellg());
       }
-      else if (strcmp(tok->sval, "TF_CUSTOM")==0)
+      else if (strcmp(tok.sval, "TF_CUSTOM")==0)
       {
-        fseek(fp, tok->getFilePos(), SEEK_SET);
-        vd->tf._widgets.push_back(new vvTFCustom(fp));
-        tok->setFilePos(fp);
+        file.seekg(tok.getFilePos(), file.beg);
+        vd->tf._widgets.push_back(new vvTFCustom(file));
+        tok.setFilePos(file.tellg());
       }
-      else if (strcmp(tok->sval, "ICON")==0)
+      else if (strcmp(tok.sval, "ICON")==0)
       {
-        ttype = tok->nextToken();
+        ttype = tok.nextToken();
         assert(ttype == vvTokenizer::VV_NUMBER);
-        vd->iconSize = size_t(tok->nval);
-        tok->nextLine();
+        vd->iconSize = size_t(tok.nval);
+        tok.nextLine();
 
         // Read icon:
         if (vd->iconSize>0)
@@ -1103,15 +1101,16 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
           delete[] vd->iconData;
           size_t iconBytes = vd->iconSize * vd->iconSize * vvVolDesc::ICON_BPP;
           vd->iconData = new uint8_t[iconBytes];
-          fseek(fp, tok->getFilePos(), SEEK_SET);
-          size_t encodedSize = virvo::serialization::read32(fp);
+          file.seekg(tok.getFilePos(), file.beg);
+          size_t encodedSize = virvo::serialization::read32(file);
           if (encodedSize>0)                      // compressed icon?
           {
             uint8_t* encoded = new uint8_t[encodedSize];
-            if (fread(encoded, 1, encodedSize, fp) != encodedSize)
+            file.read(reinterpret_cast< char* >(encoded), encodedSize);
+            size_t r = static_cast< size_t >(file.gcount());
+            if (r != encodedSize)
             {
               cerr << "Error: Insuffient compressed icon data in file." << endl;
-              fclose(fp);
               delete[] vd->iconData;
               vd->iconData = NULL;
               delete[] encoded;
@@ -1122,7 +1121,6 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
             if (err != vvToolshed::VV_OK)
             {
               cerr << "Error: Decoding exceeds icon size." << endl;
-              fclose(fp);
               delete[] vd->iconData;
               vd->iconData = NULL;
               delete[] encoded;
@@ -1132,30 +1130,31 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
           }
           else                                    // uncompressed icon
           {
-            if (fread(vd->iconData, 1, iconBytes, fp) != iconBytes)
+            file.read(reinterpret_cast< char* >(vd->iconData), iconBytes);
+            size_t r = static_cast< size_t >(file.gcount());
+            if (r != iconBytes)
             {
               cerr << "Error: Insuffient uncompressed icon data in file." << endl;
-              fclose(fp);
               delete[] vd->iconData;
               vd->iconData = NULL;
               return DATA_ERROR;
             }
           }
-          tok->setFilePos(fp);
+          tok.setFilePos(file.tellg());
         }
       }
-      else if (strcmp(tok->sval, "VOXELDATA")==0)
+      else if (strcmp(tok.sval, "VOXELDATA")==0)
       {
-        tok->nextLine();
+        tok.nextLine();
         done = true;
       }
       else
       {
         if (ttype == vvTokenizer::VV_WORD)
         {
-          cerr << "Ignoring unknown header entry: " << tok->sval << endl;
+          cerr << "Ignoring unknown header entry: " << tok.sval << endl;
         }
-        tok->nextLine();
+        tok.nextLine();
       }
     }
   }
@@ -1165,18 +1164,19 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
   // Load volume data:
   if ((_sections & RAW_DATA) != 0)
   {
-    fseek(fp, tok->getFilePos(), SEEK_SET);
+    file.seekg(tok.getFilePos(), file.beg);
     encoded = new uint8_t[frameSize];
     for (size_t f=0; f<vd->frames; ++f)
     {
       raw = new uint8_t[frameSize];                 // create new data space for volume data
-      encodedSize = virvo::serialization::read32(fp);
+      encodedSize = virvo::serialization::read32(file);
       if (encodedSize>0)
       {
-        if (fread(encoded, 1, encodedSize, fp) != encodedSize)
+        file.read(reinterpret_cast< char* >(encoded), encodedSize);
+        size_t r = static_cast< size_t >(file.gcount());
+        if (r != encodedSize)
         {
           vvDebugMsg::msg(1, "Error: Insuffient voxel data in file.");
-          fclose(fp);
           delete[] raw;
           delete[] encoded;
           return DATA_ERROR;
@@ -1186,7 +1186,6 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
         if (err != vvToolshed::VV_OK)
         {
           vvDebugMsg::msg(1, "Error: Decoding exceeds frame size.");
-          fclose(fp);
           delete[] raw;
           delete[] encoded;
           return DATA_ERROR;
@@ -1194,10 +1193,11 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
       }
       else                                        // no encoding
       {
-        if (fread(raw, 1, frameSize, fp) != frameSize)
+        file.read(reinterpret_cast< char* >(raw), frameSize);
+        size_t r = static_cast< size_t >(file.gcount());
+        if (r != frameSize)
         {
           vvDebugMsg::msg(1, "Error: Insuffient voxel data in file.");
-          fclose(fp);
           delete[] raw;
           delete[] encoded;
           return DATA_ERROR;
@@ -1210,8 +1210,6 @@ vvFileIO::ErrorType vvFileIO::loadXVFFile(vvVolDesc* vd)
 
   if (machineBigEndian != bigEnd) vd->toggleEndianness();
 
-  // Clean up:
-  fclose(fp);
   return OK;
 }
 
@@ -1458,9 +1456,7 @@ CHANNELS 1
 */
 vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
 {
-  vvTokenizer* tokenizer;                         // ASCII file tokenizer
   vvTokenizer::TokenType ttype;                   // currently processed token type
-  FILE* fp;                                       // volume file pointer
   uint8_t* raw;                                   // raw volume data
   int ival=0;                                     // integer data value
   size_t frameSize;                               // size of a frame in bytes
@@ -1472,7 +1468,8 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
 
   if (vd->getFilename()==NULL) return FILE_ERROR;
 
-  if ( (fp = fopen(vd->getFilename(), "rb")) == NULL)
+  std::ifstream file(vd->getFilename());
+  if (!file.is_open())
   {
     vvDebugMsg::msg(1, "Error: Cannot open file.");
     return FILE_ERROR;
@@ -1485,62 +1482,62 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
   setDefaultValues(vd);
 
   // Read header data:
-  tokenizer = new vvTokenizer(fp);
-  tokenizer->setCommentCharacter('#');
-  tokenizer->setEOLisSignificant(false);
-  tokenizer->setCaseConversion(vvTokenizer::VV_UPPER);
-  tokenizer->setParseNumbers(true);
-  tokenizer->setWhitespaceCharacter('=');
+  vvTokenizer tokenizer(file);
+  tokenizer.setCommentCharacter('#');
+  tokenizer.setEOLisSignificant(false);
+  tokenizer.setCaseConversion(vvTokenizer::VV_UPPER);
+  tokenizer.setParseNumbers(true);
+  tokenizer.setWhitespaceCharacter('=');
   done = error = false;
   while (!done)
   {
     int identifier = -1; // ID of string identifier in file header
     // Read identifier:
-    ttype = tokenizer->nextToken();
+    ttype = tokenizer.nextToken();
     if (ttype != vvTokenizer::VV_WORD)
     {
       done = true;
-      tokenizer->pushBack();
+      tokenizer.pushBack();
       continue;
     }
-    else if (strcmp(tokenizer->sval, "WIDTH")==0)
+    else if (strcmp(tokenizer.sval, "WIDTH")==0)
       identifier = 0;
-    else if (strcmp(tokenizer->sval, "HEIGHT")==0)
+    else if (strcmp(tokenizer.sval, "HEIGHT")==0)
       identifier = 1;
-    else if (strcmp(tokenizer->sval, "SLICES")==0)
+    else if (strcmp(tokenizer.sval, "SLICES")==0)
       identifier = 2;
-    else if (strcmp(tokenizer->sval, "FRAMES")==0)
+    else if (strcmp(tokenizer.sval, "FRAMES")==0)
       identifier = 3;
-    else if (strcmp(tokenizer->sval, "MIN")==0)
+    else if (strcmp(tokenizer.sval, "MIN")==0)
       identifier = 4;
-    else if (strcmp(tokenizer->sval, "MAX")==0)
+    else if (strcmp(tokenizer.sval, "MAX")==0)
       identifier = 5;
-    else if (strcmp(tokenizer->sval, "XDIST")==0)
+    else if (strcmp(tokenizer.sval, "XDIST")==0)
       identifier = 6;
-    else if (strcmp(tokenizer->sval, "YDIST")==0)
+    else if (strcmp(tokenizer.sval, "YDIST")==0)
       identifier = 7;
-    else if (strcmp(tokenizer->sval, "ZDIST")==0)
+    else if (strcmp(tokenizer.sval, "ZDIST")==0)
       identifier = 8;
-    else if (strcmp(tokenizer->sval, "TIME")==0)
+    else if (strcmp(tokenizer.sval, "TIME")==0)
       identifier = 9;
-    else if (strcmp(tokenizer->sval, "BPC")==0)
+    else if (strcmp(tokenizer.sval, "BPC")==0)
       identifier = 10;
-    else if (strcmp(tokenizer->sval, "CHANNELS")==0)
+    else if (strcmp(tokenizer.sval, "CHANNELS")==0)
       identifier = 11;
-    else if (strcmp(tokenizer->sval, "XPOS")==0)
+    else if (strcmp(tokenizer.sval, "XPOS")==0)
       identifier = 12;
-    else if (strcmp(tokenizer->sval, "YPOS")==0)
+    else if (strcmp(tokenizer.sval, "YPOS")==0)
       identifier = 13;
-    else if (strcmp(tokenizer->sval, "ZPOS")==0)
+    else if (strcmp(tokenizer.sval, "ZPOS")==0)
       identifier = 14;
-    else if (strcmp(tokenizer->sval, "FORMAT")==0)
+    else if (strcmp(tokenizer.sval, "FORMAT")==0)
     {
       // old format: followed by format specifier
-      ttype = tokenizer->nextToken();
+      ttype = tokenizer.nextToken();
       if (ttype == vvTokenizer::VV_WORD)
       {
-        if (strcmp(tokenizer->sval, "SCALAR8")==0
-            || strcmp(tokenizer->sval, "SCALAR8")==0)
+        if (strcmp(tokenizer.sval, "SCALAR8")==0
+            || strcmp(tokenizer.sval, "SCALAR8")==0)
         {
           vd->bpc = 1;
           vd->chan = 1;
@@ -1553,7 +1550,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
         }
       }
     }
-    else if (strcmp(tokenizer->sval, "DATA")==0)
+    else if (strcmp(tokenizer.sval, "DATA")==0)
     {
       // old format: starts raw data section
       done = true;
@@ -1566,26 +1563,26 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
     }
 
     // Read assigned value:
-    ttype = tokenizer->nextToken();
+    ttype = tokenizer.nextToken();
     if (ttype == vvTokenizer::VV_NUMBER)
     {
       switch (identifier)
       {
-        case  0: vd->vox[0]  = int(tokenizer->nval); break;
-        case  1: vd->vox[1]  = int(tokenizer->nval); break;
-        case  2: vd->vox[2]  = int(tokenizer->nval); break;
-        case  3: vd->frames  = int(tokenizer->nval); break;
-        case  4: vd->real[0] = tokenizer->nval; break;
-        case  5: vd->real[1] = tokenizer->nval; break;
-        case  6: vd->dist[0] = tokenizer->nval; break;
-        case  7: vd->dist[1] = tokenizer->nval; break;
-        case  8: vd->dist[2] = tokenizer->nval; break;
-        case  9: vd->dt      = tokenizer->nval; break;
-        case 10: vd->bpc     = int(tokenizer->nval); break;
-        case 11: vd->chan    = int(tokenizer->nval); break;
-        case 12: vd->pos[0]  = tokenizer->nval; break;
-        case 13: vd->pos[1]  = tokenizer->nval; break;
-        case 14: vd->pos[2]  = tokenizer->nval; break;
+        case  0: vd->vox[0]  = int(tokenizer.nval); break;
+        case  1: vd->vox[1]  = int(tokenizer.nval); break;
+        case  2: vd->vox[2]  = int(tokenizer.nval); break;
+        case  3: vd->frames  = int(tokenizer.nval); break;
+        case  4: vd->real[0] = tokenizer.nval; break;
+        case  5: vd->real[1] = tokenizer.nval; break;
+        case  6: vd->dist[0] = tokenizer.nval; break;
+        case  7: vd->dist[1] = tokenizer.nval; break;
+        case  8: vd->dist[2] = tokenizer.nval; break;
+        case  9: vd->dt      = tokenizer.nval; break;
+        case 10: vd->bpc     = int(tokenizer.nval); break;
+        case 11: vd->chan    = int(tokenizer.nval); break;
+        case 12: vd->pos[0]  = tokenizer.nval; break;
+        case 13: vd->pos[1]  = tokenizer.nval; break;
+        case 14: vd->pos[2]  = tokenizer.nval; break;
         case -1:
         default:
           cerr << "No identifier for number" << endl;
@@ -1597,10 +1594,8 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
   }
   if (error)
   {
-    cerr << "Read error in line " << tokenizer->getLineNumber() << " of file " <<
+    cerr << "Read error in line " << tokenizer.getLineNumber() << " of file " <<
       vd->getFilename() << endl;
-    delete tokenizer;
-    fclose(fp);
     return DATA_ERROR;
   }
 
@@ -1609,8 +1604,6 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
     vd->frames<=0 || vd->real[0]>=vd->real[1])
   {
     vvDebugMsg::msg(1, "Error: Invalid file information in header");
-    delete tokenizer;
-    fclose(fp);
     return DATA_ERROR;
   }
 
@@ -1630,30 +1623,26 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
           {
             for (size_t c=0; c<vd->chan; ++c)
             {
-              ttype = tokenizer->nextToken();
+              ttype = tokenizer.nextToken();
               if (ttype != vvTokenizer::VV_NUMBER)
               {
                 cerr << "Error parsing frame " << f << ", slice " << z << ", line " << y << ", voxel " << x << ", channel " << c << ":" << endl;
-                cerr << "Number expected in line " << tokenizer->getLineNumber() << endl;
+                cerr << "Number expected in line " << tokenizer.getLineNumber() << endl;
                 delete[] raw;
-                delete tokenizer;
-                fclose(fp);
                 return DATA_ERROR;
               }
               if (oldformat)
               {
-                raw[i++] = uint8_t(ts_clamp(tokenizer->nval, 0.f, 1.f) * 255.99f);
+                raw[i++] = uint8_t(ts_clamp(tokenizer.nval, 0.f, 1.f) * 255.99f);
                 continue;
               }
               if (vd->bpc==1 || vd->bpc==2)
               {
-                ival = int(tokenizer->nval);
+                ival = int(tokenizer.nval);
                 if (ival < 0 || (vd->bpc==1 && ival>255) || (vd->bpc==2 && ival>65535))
                 {
-                  cerr << "Integer out of range in line " << tokenizer->getLineNumber() << endl;
+                  cerr << "Integer out of range in line " << tokenizer.getLineNumber() << endl;
                   delete[] raw;
-                  delete tokenizer;
-                  fclose(fp);
                   return DATA_ERROR;
                 }
               }
@@ -1666,7 +1655,7 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
                   *((uint16_t*)(raw+i)) = uint16_t(ival);
                   break;
                 case 4:
-                  *((float*)(raw+i)) = tokenizer->nval;
+                  *((float*)(raw+i)) = tokenizer.nval;
                   i += 3;
                   break;
               }
@@ -1678,9 +1667,6 @@ vvFileIO::ErrorType vvFileIO::loadAVFFile(vvVolDesc* vd)
     }
   }
 
-  // Clean up:
-  delete tokenizer;
-  fclose(fp);
   return OK;
 }
 
@@ -1720,10 +1706,8 @@ first time step.
 */
 vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int densityParam, bool useGlobalMinMax)
 {
-  vvTokenizer* tokenizer;                         // ASCII file tokenizer
   vvTokenizer::TokenType ttype;                   // currently processed token type
   vvSLList<ParticleTimestep*> timesteps;          // particle storage for all time steps
-  FILE* fp;                                       // volume file pointer
   uint8_t* raw;                                   // raw volume data
   float boxMin[3];                                // simulation box min values
   float boxMax[3];                                // simulation box max values
@@ -1746,7 +1730,8 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
   if (vvToolshed::isFile(vd->getFilename())==false)
     return FILE_NOT_FOUND;
 
-  if ((fp = fopen(vd->getFilename(), "rb")) == NULL)
+  std::ifstream file(vd->getFilename());
+  if (!file.is_open())
   {
     vvDebugMsg::msg(1, "Error: Cannot open file.");
     return FILE_ERROR;
@@ -1764,10 +1749,10 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
   vd->dt = 0.1f;
 
   // Initialize tokenizer:
-  tokenizer = new vvTokenizer(fp);
-  tokenizer->setEOLisSignificant(true);
-  tokenizer->setCaseConversion(vvTokenizer::VV_LOWER);
-  tokenizer->setParseNumbers(true);
+  vvTokenizer tokenizer(file);
+  tokenizer.setEOLisSignificant(true);
+  tokenizer.setCaseConversion(vvTokenizer::VV_LOWER);
+  tokenizer.setParseNumbers(true);
 
   // Read all time step data but don't create volume yet:
   for (size_t i=0; i<3; ++i)
@@ -1783,7 +1768,7 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
     for(int i=0; i<8; ++i)
     {
       // Read identifier:
-      ttype = tokenizer->nextToken();
+      ttype = tokenizer.nextToken();
       if (ttype != vvTokenizer::VV_NUMBER)
       {
         error = true;
@@ -1791,25 +1776,23 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
       }
       switch (i)
       {
-        case 0: numParticles = size_t(tokenizer->nval); break;
+        case 0: numParticles = size_t(tokenizer.nval); break;
         case 1: break;                            // ignore time value
-        case 2: if (tokenizer->nval < boxMin[0]) boxMin[0] = tokenizer->nval; break;
-        case 3: if (tokenizer->nval < boxMin[1]) boxMin[1] = tokenizer->nval; break;
-        case 4: if (tokenizer->nval < boxMin[2]) boxMin[2] = tokenizer->nval; break;
-        case 5: if (tokenizer->nval > boxMax[0]) boxMax[0] = tokenizer->nval; break;
-        case 6: if (tokenizer->nval > boxMax[1]) boxMax[1] = tokenizer->nval; break;
-        case 7: if (tokenizer->nval > boxMax[2]) boxMax[2] = tokenizer->nval; break;
+        case 2: if (tokenizer.nval < boxMin[0]) boxMin[0] = tokenizer.nval; break;
+        case 3: if (tokenizer.nval < boxMin[1]) boxMin[1] = tokenizer.nval; break;
+        case 4: if (tokenizer.nval < boxMin[2]) boxMin[2] = tokenizer.nval; break;
+        case 5: if (tokenizer.nval > boxMax[0]) boxMax[0] = tokenizer.nval; break;
+        case 6: if (tokenizer.nval > boxMax[1]) boxMax[1] = tokenizer.nval; break;
+        case 7: if (tokenizer.nval > boxMax[2]) boxMax[2] = tokenizer.nval; break;
         default: break;
       }
     }
-    ttype = tokenizer->nextToken();
+    ttype = tokenizer.nextToken();
     if (ttype!=vvTokenizer::VV_EOL) error = true;
     if (error)
     {
-      cerr << "Parse error in line " << tokenizer->getLineNumber() << endl;
-      delete tokenizer;
+      cerr << "Parse error in line " << tokenizer.getLineNumber() << endl;
       timesteps.removeAll();
-      fclose(fp);
       return DATA_ERROR;
     }
 
@@ -1827,16 +1810,14 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
       for (int j=0; j<9; ++j)
       {
         if (i==numParticles-1 && j==8) continue;  // ignore last EOL
-        ttype = tokenizer->nextToken();
+        ttype = tokenizer.nextToken();
         if ((j<8 && ttype != vvTokenizer::VV_NUMBER) || (j==8 && ttype!=vvTokenizer::VV_EOL))
         {
-          cerr << "Parse error in line " << tokenizer->getLineNumber() << endl;
-          delete tokenizer;
+          cerr << "Parse error in line " << tokenizer.getLineNumber() << endl;
           timesteps.removeAll();
-          fclose(fp);
           return DATA_ERROR;
         }
-        param[j] = tokenizer->nval;
+        param[j] = tokenizer.nval;
       }
       for (int j=0; j<3; ++j)                         // memorize particle position
       {
@@ -1861,13 +1842,11 @@ vvFileIO::ErrorType vvFileIO::loadXB7File(vvVolDesc* vd, int maxEdgeLength, int 
     // Look for another time step:
     do
     {
-      ttype = tokenizer->nextToken();
+      ttype = tokenizer.nextToken();
     } while (ttype != vvTokenizer::VV_EOF && ttype != vvTokenizer::VV_NUMBER);
     if (ttype==vvTokenizer::VV_EOF) break;
-    else tokenizer->pushBack();
+    else tokenizer.pushBack();
   }
-  delete tokenizer;
-  fclose(fp);
   numTimesteps = timesteps.count();
   cerr << numTimesteps << " time steps read" << endl;
   cerr << "Global min,max: " << globalMin << "," << globalMax << endl;
@@ -1972,14 +1951,12 @@ e.g., timestep001.cpt, timestep002.cpt, etc.
 */
 vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int densityParam, bool useGlobalMinMax)
 {
-  vvTokenizer* tokenizer;                         // ASCII file tokenizer
   vvTokenizer::TokenType ttype;                   // currently processed token type
   vvSLList<ParticleTimestep*> timesteps;          // particle storage for all time steps
   vvArray<float> particles;                       // densities of current time step
   vvArray<float> xpos;                            // x positions of current time step
   vvArray<float> ypos;                            // y positions of current time step
   vvArray<float> zpos;                            // z positions of current time step
-  FILE* fp;                                       // volume file pointer
   uint8_t* raw;                                   // raw volume data
   char* filename;                                 // current particles file name
   float boxMin[3];                                // simulation box min values
@@ -2028,18 +2005,19 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
   // Loop thru time steps:
   for(;;)
   {
-    if ((fp = fopen(filename, "rb")) == NULL)
+    std::ifstream file(filename);
+    if (file.is_open())
     {
       vvDebugMsg::msg(1, "Error: Cannot open file: ", filename);
       return FILE_ERROR;
     }
 
     // Initialize tokenizer:
-    tokenizer = new vvTokenizer(fp);
-    tokenizer->setEOLisSignificant(true);
-    tokenizer->setCaseConversion(vvTokenizer::VV_LOWER);
-    tokenizer->setParseNumbers(true);
-    tokenizer->setCommentCharacter('#');
+    vvTokenizer tokenizer(file);
+    tokenizer.setEOLisSignificant(true);
+    tokenizer.setCaseConversion(vvTokenizer::VV_LOWER);
+    tokenizer.setParseNumbers(true);
+    tokenizer.setCommentCharacter('#');
 
     particles.clear();
     xpos.clear();
@@ -2053,25 +2031,25 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
     for (;;)                                      // loop thru particles in one time step
     {
       // Read an entire line of numbers:
-      for(size_t i=0; tokenizer->nextToken() == vvTokenizer::VV_NUMBER; ++i)
+      for(size_t i=0; tokenizer.nextToken() == vvTokenizer::VV_NUMBER; ++i)
       {
         // Memorize position and adjust simulation box:
         if (i<=2)
         {
-          if (i==0) xpos.append(tokenizer->nval);
-          else if (i==1) ypos.append(tokenizer->nval);
-          else if (i==2) zpos.append(tokenizer->nval);
-          if (tokenizer->nval < boxMin[i]) boxMin[i] = tokenizer->nval;
-          if (tokenizer->nval > boxMax[i]) boxMax[i] = tokenizer->nval;
+          if (i==0) xpos.append(tokenizer.nval);
+          else if (i==1) ypos.append(tokenizer.nval);
+          else if (i==2) zpos.append(tokenizer.nval);
+          if (tokenizer.nval < boxMin[i]) boxMin[i] = tokenizer.nval;
+          if (tokenizer.nval > boxMax[i]) boxMax[i] = tokenizer.nval;
         }
 
         // Memorize density value:
         if (densityParam==-1)
         {
-          if (i>=3 && i<=5) speed[i-3] = tokenizer->nval;
+          if (i>=3 && i<=5) speed[i-3] = tokenizer.nval;
           if (i==5) val = sqrtf(speed[0] * speed[0] + speed[1] * speed[1] + speed[2] * speed[2]);
         }
-        else if (i==densityParam) val = tokenizer->nval;
+        else if (i==densityParam) val = tokenizer.nval;
       }
       particles.append(val);
       if (val < minVal) minVal = val;
@@ -2080,13 +2058,11 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
       // Look for another particle:
       do
       {
-        ttype = tokenizer->nextToken();
+        ttype = tokenizer.nextToken();
       } while (ttype != vvTokenizer::VV_EOF && ttype != vvTokenizer::VV_NUMBER);
       if (ttype==vvTokenizer::VV_EOF) break;
-      else tokenizer->pushBack();
+      else tokenizer.pushBack();
     }
-    delete tokenizer;
-    fclose(fp);
     cerr << "Timestep: scalar min,max: " << minVal << "," << maxVal << endl;
     if (minVal < globalMin) globalMin = minVal;
     if (maxVal > globalMax) globalMax = maxVal;
@@ -3672,8 +3648,6 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
  */
 vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
 {
-  FILE* fp;                                       // volume file pointer
-  vvTokenizer* tokenizer;                         // stream tokenizer
                                                   // token type
   vvTokenizer::TokenType ttype = vvTokenizer::VV_NOTHING;
                                                   // previous token type
@@ -3687,7 +3661,8 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
 
   if (vd->getFilename()==NULL) return FILE_ERROR;
 
-  if ( (fp = fopen(vd->getFilename(), "rb")) == NULL)
+  std::ifstream file(vd->getFilename());
+  if (!file.is_open())
   {
     vvDebugMsg::msg(1, "Error: Cannot open file.");
     return FILE_ERROR;
@@ -3696,21 +3671,20 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
 
   for (size_t i=0; i<strlen(_nrrdID); ++i)
   {
-    if (fgetc(fp) != _nrrdID[i])
+    if (file.get() != _nrrdID[i])
     {
       cerr << "Error: Invalid file ID string." << endl;
-      fclose(fp);
       return DATA_ERROR;
     }
   }
 
   // Create tokenizer:
-  tokenizer = new vvTokenizer(fp);
-  tokenizer->setCommentCharacter('#');
-  tokenizer->setEOLisSignificant(true);
-  tokenizer->setCaseConversion(vvTokenizer::VV_LOWER);
-  tokenizer->setParseNumbers(true);
-  tokenizer->setWhitespaceCharacter(':');
+  vvTokenizer tokenizer(file);
+  tokenizer.setCommentCharacter('#');
+  tokenizer.setEOLisSignificant(true);
+  tokenizer.setCaseConversion(vvTokenizer::VV_LOWER);
+  tokenizer.setParseNumbers(true);
+  tokenizer.setWhitespaceCharacter(':');
 
   // Parse header:
   vd->vox[2] = 1;
@@ -3718,51 +3692,49 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
   do
   {
     prevTT = ttype;
-    ttype = tokenizer->nextToken();
+    ttype = tokenizer.nextToken();
     if (ttype == vvTokenizer::VV_EOF || ttype == vvTokenizer::VV_NUMBER)
     {
       cerr << "Invalid nrrd file format." << endl;
-      delete tokenizer;
-      fclose(fp);
       return FORMAT_ERROR;
     }
     else if (ttype == vvTokenizer::VV_EOL)
     {                                             // do nothing
     }
-    else if (strcmp(tokenizer->sval, "content")==0)
+    else if (strcmp(tokenizer.sval, "content")==0)
     {
       // ignore content information
-      tokenizer->nextLine();
+      tokenizer.nextLine();
     }
-    else if (strcmp(tokenizer->sval, "type")==0)
+    else if (strcmp(tokenizer.sval, "type")==0)
     {
-      ttype = tokenizer->nextToken();
-      if (ttype != vvTokenizer::VV_WORD || strcmp(tokenizer->sval, "unsigned")!=0)
+      ttype = tokenizer.nextToken();
+      if (ttype != vvTokenizer::VV_WORD || strcmp(tokenizer.sval, "unsigned")!=0)
         cerr << "unknown type" << endl;
       else
       {
-        ttype = tokenizer->nextToken();
-        if (strcmp(tokenizer->sval, "char")==0) { vd->bpc = vd->chan = 1; }
-        else if (strcmp(tokenizer->sval, "short")==0) { vd->bpc = 2; vd->chan = 1; }
+        ttype = tokenizer.nextToken();
+        if (strcmp(tokenizer.sval, "char")==0) { vd->bpc = vd->chan = 1; }
+        else if (strcmp(tokenizer.sval, "short")==0) { vd->bpc = 2; vd->chan = 1; }
         else cerr << "unknown type" << endl;
       }
     }
-    else if (strcmp(tokenizer->sval, "dimension")==0)
+    else if (strcmp(tokenizer.sval, "dimension")==0)
     {
-      ttype = tokenizer->nextToken();
+      ttype = tokenizer.nextToken();
       if (ttype == vvTokenizer::VV_NUMBER)
       {
-        dimension = static_cast<size_t>(tokenizer->nval);
+        dimension = static_cast<size_t>(tokenizer.nval);
         if (dimension < 1 || dimension > 4) cerr << "dimension must be 1 to 4" << endl;
       }
       else cerr << "invalid dimension" << endl;
     }
-    else if (strcmp(tokenizer->sval, "sizes")==0)
+    else if (strcmp(tokenizer.sval, "sizes")==0)
     {
       for (size_t i=0; i<dimension; ++i)
       {
-        ttype = tokenizer->nextToken();
-        if (tokenizer->nval <= -std::numeric_limits<float>::epsilon())
+        ttype = tokenizer.nextToken();
+        if (tokenizer.nval <= -std::numeric_limits<float>::epsilon())
         {
           VV_LOG(0) << "Conversion error: " << __FILE__ << " " << __LINE__ << std::endl;
         }
@@ -3771,30 +3743,30 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
         {
           // Guess if first entry is number of channels or width.
           // Assume number of channels if first size is 2, 3, or 4.
-          switch (size_t(tokenizer->nval))
+          switch (size_t(tokenizer.nval))
           {
             case 2:
             case 3:
             case 4: vd->bpc = 1;
-            vd->chan = size_t(tokenizer->nval);
+            vd->chan = size_t(tokenizer.nval);
             break;
-            default: vd->vox[0] = size_t(tokenizer->nval); break;
+            default: vd->vox[0] = size_t(tokenizer.nval); break;
           }
         }
         else
         {
-          if (vd->chan>=2 && vd->chan<=4) vd->vox[i-1] = size_t(tokenizer->nval);
-          else if (i==3) vd->frames = size_t(tokenizer->nval);
-          else vd->vox[i] = size_t(tokenizer->nval);
+          if (vd->chan>=2 && vd->chan<=4) vd->vox[i-1] = size_t(tokenizer.nval);
+          else if (i==3) vd->frames = size_t(tokenizer.nval);
+          else vd->vox[i] = size_t(tokenizer.nval);
         }
       }
     }
-    else if (strcmp(tokenizer->sval, "spacings")==0)
+    else if (strcmp(tokenizer.sval, "spacings")==0)
     {
       bool multiModal = false;
       for (size_t i=0; i<dimension; ++i)
       {
-        ttype = tokenizer->nextToken();
+        ttype = tokenizer.nextToken();
         if (i==0 && ttype==vvTokenizer::VV_WORD)  // if first value is NaN, expect multi-modal data
         {
           vd->dt = 0.0f;
@@ -3802,39 +3774,36 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
         }
         else if (i>0 && multiModal)               // still multi-modal data
         {
-          vd->dist[i-1] = tokenizer->nval;
+          vd->dist[i-1] = tokenizer.nval;
         }
         else                                      // only one channel
         {
-          if (i==3) vd->dt = tokenizer->nval;
-          else vd->dist[i] = tokenizer->nval;
+          if (i==3) vd->dt = tokenizer.nval;
+          else vd->dist[i] = tokenizer.nval;
         }
       }
     }
-    else if (strcmp(tokenizer->sval, "endian")==0)
+    else if (strcmp(tokenizer.sval, "endian")==0)
     {
-      ttype = tokenizer->nextToken();
-      if (strcmp(tokenizer->sval, "little") == 0) bigEnd = false;
+      ttype = tokenizer.nextToken();
+      if (strcmp(tokenizer.sval, "little") == 0) bigEnd = false;
       else bigEnd = true;
     }
-    else if (strcmp(tokenizer->sval, "encoding")==0)
+    else if (strcmp(tokenizer.sval, "encoding")==0)
     {
-      ttype = tokenizer->nextToken();
-      if (strcmp(tokenizer->sval, "raw") != 0)
+      ttype = tokenizer.nextToken();
+      if (strcmp(tokenizer.sval, "raw") != 0)
       {
         cerr << "Can only process raw data." << endl;
-        delete tokenizer;
-        fclose(fp);
         return FORMAT_ERROR;
       }
     }
     else
     {
-      tokenizer->nextLine();
+      tokenizer.nextLine();
     }
                                                   // stop when two EOL in a row
   } while (ttype != vvTokenizer::VV_EOL || prevTT != vvTokenizer::VV_EOL);
-  delete tokenizer;
 
   frameSize = vd->getFrameBytes();
 
@@ -3844,10 +3813,11 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
     for (size_t f=0; f<vd->frames; ++f)
     {
       raw = new uint8_t[frameSize];                 // create new data space for volume data
-      if (fread(raw, 1, frameSize, fp) != frameSize)
+      file.read(reinterpret_cast< char* >(raw), frameSize);
+      size_t r = static_cast< size_t >(file.gcount());
+      if (r != frameSize)
       {
         vvDebugMsg::msg(1, "Error: Insuffient voxel data in file.");
-        fclose(fp);
         delete[] raw;
         return DATA_ERROR;
       }
@@ -3857,8 +3827,6 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
 
   if (bigEnd != machineBigEndian) vd->toggleEndianness();
 
-  // Clean up:
-  fclose(fp);
   return OK;
 }
 
@@ -4006,8 +3974,6 @@ vvFileIO::ErrorType vvFileIO::loadVis04File(vvVolDesc* vd)
 */
 vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
 {
-  vvTokenizer* tokenizer;
-  FILE* fp;
   ErrorType err;
   vvTokenizer::TokenType ttype;                   // currently processed token type
   size_t skipBytes = 0;
@@ -4022,7 +3988,8 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
 
   if (vd->getFilename()==NULL) return FILE_ERROR;
 
-  if ( (fp = fopen(vd->getFilename(), "rb")) == NULL)
+  std::ifstream file(vd->getFilename());
+  if (!file.is_open())
   {
     vvDebugMsg::msg(1, "Error: Cannot open file.");
     return FILE_ERROR;
@@ -4038,54 +4005,54 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
   setDefaultValues(vd);
 
   // Read header data:
-  tokenizer = new vvTokenizer(fp);
-  tokenizer->setCommentCharacter('#');
-  tokenizer->setEOLisSignificant(true);
-  tokenizer->setCaseConversion(vvTokenizer::VV_NONE);
-  tokenizer->setParseNumbers(true);
-  tokenizer->setWhitespaceCharacter('=');
+  vvTokenizer tokenizer(file);
+  tokenizer.setCommentCharacter('#');
+  tokenizer.setEOLisSignificant(true);
+  tokenizer.setCaseConversion(vvTokenizer::VV_NONE);
+  tokenizer.setParseNumbers(true);
+  tokenizer.setWhitespaceCharacter('=');
   done = error = false;
   while (!done)
   {
     // Read identifier:
-    ttype = tokenizer->nextToken();
+    ttype = tokenizer.nextToken();
     if (ttype == vvTokenizer::VV_EOL) continue;
     else if (ttype != vvTokenizer::VV_WORD)
     {
       done = true;
-      tokenizer->pushBack();
+      tokenizer.pushBack();
       continue;
     }
-    else if (vvToolshed::strCompare(tokenizer->sval, "DATAFILE:")==0)
+    else if (vvToolshed::strCompare(tokenizer.sval, "DATAFILE:")==0)
     {
-      ttype = tokenizer->nextToken();
-      if (ttype == vvTokenizer::VV_WORD) vd->setFilename(tokenizer->sval);
+      ttype = tokenizer.nextToken();
+      if (ttype == vvTokenizer::VV_WORD) vd->setFilename(tokenizer.sval);
       cerr << "hdr file: Datafile=" << vd->getFilename() << endl;
     }
-    else if (vvToolshed::strCompare(tokenizer->sval, "RESOLUTION:")==0)
+    else if (vvToolshed::strCompare(tokenizer.sval, "RESOLUTION:")==0)
     {
       for (i=0; i<3; ++i)
       {
-        ttype = tokenizer->nextToken();
-        if (ttype == vvTokenizer::VV_NUMBER) vd->vox[i] = size_t(tokenizer->nval);
+        ttype = tokenizer.nextToken();
+        if (ttype == vvTokenizer::VV_NUMBER) vd->vox[i] = size_t(tokenizer.nval);
       }
       cerr << "hdr file: Resolution=" << vd->vox[0] << " x " << vd->vox[1] << " x " << vd->vox[2] << endl;
     }
-    else if (vvToolshed::strCompare(tokenizer->sval, "SPACING:")==0)
+    else if (vvToolshed::strCompare(tokenizer.sval, "SPACING:")==0)
     {
       for (i=0; i<3; ++i)
       {
-        ttype = tokenizer->nextToken();
-        if (ttype == vvTokenizer::VV_NUMBER) vd->dist[i] = tokenizer->nval;
+        ttype = tokenizer.nextToken();
+        if (ttype == vvTokenizer::VV_NUMBER) vd->dist[i] = tokenizer.nval;
       }
       cerr << "hdr file: Spacing=" << vd->dist[0] << " x " << vd->dist[1] << " x " << vd->dist[2] << endl;
     }
-    else if (vvToolshed::strCompare(tokenizer->sval, "VOXELTYPE:")==0)
+    else if (vvToolshed::strCompare(tokenizer.sval, "VOXELTYPE:")==0)
     {
-      ttype = tokenizer->nextToken();
+      ttype = tokenizer.nextToken();
       if (ttype == vvTokenizer::VV_WORD)
       {
-        if (vvToolshed::strCompare(tokenizer->sval, "SCALAR")==0)
+        if (vvToolshed::strCompare(tokenizer.sval, "SCALAR")==0)
         {
           vd->chan = 1;
           cerr << "hdr file: Voxeltype=" << vd->chan << endl;
@@ -4093,12 +4060,12 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
         else cerr << "hdr file: unknown Voxeltype" << endl;
       }
     }
-    else if (vvToolshed::strCompare(tokenizer->sval, "FIELDTYPE:")==0)
+    else if (vvToolshed::strCompare(tokenizer.sval, "FIELDTYPE:")==0)
     {
-      ttype = tokenizer->nextToken();
+      ttype = tokenizer.nextToken();
       if (ttype == vvTokenizer::VV_WORD)
       {
-        if (vvToolshed::strCompare(tokenizer->sval, "FLOAT")==0)
+        if (vvToolshed::strCompare(tokenizer.sval, "FLOAT")==0)
         {
           vd->bpc = 4;
           cerr << "hdr file: Fieldtype=" << vd->bpc << endl;
@@ -4106,40 +4073,40 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
         else cerr << "hdr file: unknown Fieldtype" << endl;
       }
     }
-    else if (vvToolshed::strCompare(tokenizer->sval, "MINVAL:")==0)
+    else if (vvToolshed::strCompare(tokenizer.sval, "MINVAL:")==0)
     {
-      ttype = tokenizer->nextToken();
-      if (ttype == vvTokenizer::VV_NUMBER) vd->real[0] = tokenizer->nval;
+      ttype = tokenizer.nextToken();
+      if (ttype == vvTokenizer::VV_NUMBER) vd->real[0] = tokenizer.nval;
       cerr << "hdr file: MinVal=" << vd->real[0] << endl;
     }
-    else if (vvToolshed::strCompare(tokenizer->sval, "MAXVAL:")==0)
+    else if (vvToolshed::strCompare(tokenizer.sval, "MAXVAL:")==0)
     {
-      ttype = tokenizer->nextToken();
-      if (ttype == vvTokenizer::VV_NUMBER) vd->real[1] = tokenizer->nval;
+      ttype = tokenizer.nextToken();
+      if (ttype == vvTokenizer::VV_NUMBER) vd->real[1] = tokenizer.nval;
       cerr << "hdr file: MaxVal=" << vd->real[1] << endl;
     }
-    else if (vvToolshed::strCompare(tokenizer->sval, "BYTEORDER:")==0)
+    else if (vvToolshed::strCompare(tokenizer.sval, "BYTEORDER:")==0)
     {
-      ttype = tokenizer->nextToken();
+      ttype = tokenizer.nextToken();
       if (ttype == vvTokenizer::VV_WORD)
       {
-        if (vvToolshed::strCompare(tokenizer->sval, "LSB")==0) bigEnd = false;
+        if (vvToolshed::strCompare(tokenizer.sval, "LSB")==0) bigEnd = false;
         cerr << "hdr file: ByteOrder=" << ((bigEnd) ? "big endian" : "little endian") << endl;
       }
       else cerr << "hdr file: Invalid ByteOrder" << endl;
     }
-    else if (vvToolshed::strCompare(tokenizer->sval, "SKIPBYTES:")==0)
+    else if (vvToolshed::strCompare(tokenizer.sval, "SKIPBYTES:")==0)
     {
-      ttype = tokenizer->nextToken();
-      if (ttype == vvTokenizer::VV_NUMBER) skipBytes = size_t(tokenizer->nval);
+      ttype = tokenizer.nextToken();
+      if (ttype == vvTokenizer::VV_NUMBER) skipBytes = size_t(tokenizer.nval);
       cerr << "hdr file: SkipBytes=" << skipBytes << endl;
     }
-    else if (vvToolshed::strCompare(tokenizer->sval, "COORDSYSTEM:")==0)
+    else if (vvToolshed::strCompare(tokenizer.sval, "COORDSYSTEM:")==0)
     {
-      ttype = tokenizer->nextToken();
+      ttype = tokenizer.nextToken();
       if (ttype == vvTokenizer::VV_WORD)
       {
-        if (vvToolshed::strCompare(tokenizer->sval, "LEFT_HANDED")==0) rightHanded = false;
+        if (vvToolshed::strCompare(tokenizer.sval, "LEFT_HANDED")==0) rightHanded = false;
         cerr << "hdr file: CoordSystem=" << ((rightHanded) ? "right handed" : "left handed") << endl;
       }
       else cerr << "hdr file: Invalid value for CoordSystem" << endl;
@@ -4152,11 +4119,9 @@ vvFileIO::ErrorType vvFileIO::loadHDRFile(vvVolDesc* vd)
   }
   if (error)
   {
-    cerr << "Read error in line " << tokenizer->getLineNumber() << " of MeshViewer file." << endl;
-    delete tokenizer;
+    cerr << "Read error in line " << tokenizer.getLineNumber() << " of MeshViewer file." << endl;
     vd->setFilename(filenameBak);
     delete[] filenameBak;
-    fclose(fp);
     return DATA_ERROR;
   }
 
@@ -4504,22 +4469,21 @@ vvFileIO::ErrorType vvFileIO::loadGKentFile(vvVolDesc* vd)
 vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
 {
   const size_t NUM_CHANNELS = 4;
-  FILE* fp;
-  vvTokenizer* tok;
   uint8_t* rawData;
 
   vvDebugMsg::msg(1, "vvFileIO::loadSynthFile()");
-  if ( (fp=fopen(vd->getFilename(), "rb")) == NULL)
+  std::ifstream file(vd->getFilename());
+  if (!file.is_open())
   {
     vvDebugMsg::msg(1, "Error: Cannot open .synth file.");
     return FILE_ERROR;
   }
 
   // Initialize tokenizer:
-  tok = new vvTokenizer(fp);
-  tok->setEOLisSignificant(false);
-  tok->setParseNumbers(true);
-  tok->setWhitespaceCharacter(' ');
+  vvTokenizer tok(file);
+  tok.setEOLisSignificant(false);
+  tok.setParseNumbers(true);
+  tok.setWhitespaceCharacter(' ');
 
   vd->chan = NUM_CHANNELS;   // channels are u, v, w, r
   vd->bpc = 4;
@@ -4527,19 +4491,19 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
   // Read header:
   for (size_t i=0; i<3; ++i)   // read number of gridpoints
   {  
-    if (tok->nextToken() != vvTokenizer::VV_NUMBER) assert(0);
-    vd->vox[i] = size_t(tok->nval);
+    if (tok.nextToken() != vvTokenizer::VV_NUMBER) assert(0);
+    vd->vox[i] = size_t(tok.nval);
   }
   for (size_t i=0; i<3; ++i)   // read distance between gridpoints
   {  
-    if (tok->nextToken() != vvTokenizer::VV_NUMBER) assert(0);
-    vd->dist[i] = tok->nval;
+    if (tok.nextToken() != vvTokenizer::VV_NUMBER) assert(0);
+    vd->dist[i] = tok.nval;
   }
   for (int i=0; i<3; ++i)   // read lower grid corner 
   {  
-    if (tok->nextToken() != vvTokenizer::VV_NUMBER) assert(0);
+    if (tok.nextToken() != vvTokenizer::VV_NUMBER) assert(0);
   }
-  if (tok->nextToken() != vvTokenizer::VV_NUMBER) assert(0);
+  if (tok.nextToken() != vvTokenizer::VV_NUMBER) assert(0);
 
   // Allocate volume memory:
   rawData = new uint8_t[vd->getFrameBytes()];
@@ -4553,14 +4517,14 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
       {
         for (ssize_t x=0; x<vd->vox[0]; ++x)
         {
-          if (tok->nextToken() == vvTokenizer::VV_NUMBER)          
+          if (tok.nextToken() == vvTokenizer::VV_NUMBER)          
           {
             size_t index = NUM_CHANNELS * (x + y * vd->vox[0] + z * vd->vox[0] * vd->vox[1]) + i;
-            *(((float*)rawData)+index) = tok->nval;
+            *(((float*)rawData)+index) = tok.nval;
           }
           else
           {
-            cerr << "Error in line " << tok->getLineNumber() << " of .synth file" << endl;
+            cerr << "Error in line " << tok.getLineNumber() << " of .synth file" << endl;
             assert(0);
           }
         }
@@ -4568,7 +4532,6 @@ vvFileIO::ErrorType vvFileIO::loadSynthFile(vvVolDesc* vd)
     }
   }
 
-  fclose(fp);
   vd->addFrame(rawData, vvVolDesc::ARRAY_DELETE);
   ++vd->frames;
   if (machineBigEndian) vd->toggleEndianness();

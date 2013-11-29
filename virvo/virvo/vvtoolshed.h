@@ -290,6 +290,7 @@ size_t  read(FILE* src, uint16_t* val, EndianType end = VV_BIG_END);
 size_t  read(FILE* src, uint32_t* val, EndianType end = VV_BIG_END);
 size_t  read(FILE* src, uint64_t* val, EndianType end = VV_BIG_END);
 size_t  read(FILE* src, float* val, EndianType end = VV_BIG_END);
+size_t  read(std::ifstream& src, uint32_t* val, EndianType end = VV_BIG_END);
 
 size_t  write(uint8_t* dst, uint8_t val);
 size_t  write(uint8_t* dst, uint16_t val, EndianType end = VV_BIG_END);
@@ -313,6 +314,7 @@ inline uint16_t read16(FILE* src, EndianType end = VV_BIG_END);
 inline uint32_t read32(FILE* src, EndianType end = VV_BIG_END);
 inline uint64_t read64(FILE* src, EndianType end = VV_BIG_END);
 inline float    readFloat(FILE* src, EndianType end = VV_BIG_END);
+inline uint32_t read32(std::ifstream& src, EndianType end = VV_BIG_END);
 
 inline size_t   write8(uint8_t* dst, uint8_t val);
 inline size_t   write16(uint8_t* dst, uint16_t val, EndianType end = VV_BIG_END);

@@ -144,7 +144,6 @@ bool vvObjView::saveCamera(const char* filename)
 */
 bool vvObjView::loadCamera(const char* filename)
 {
-  FILE* fp;
   bool done = false;
   vvMatrix camera;
   float extent[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -152,12 +151,12 @@ bool vvObjView::loadCamera(const char* filename)
 
   vvDebugMsg::msg(1, "vvObjView::loadCamera()");
 
-  fp = fopen(filename, "rb");
-  if (fp==NULL) return false;
+  std::ifstream file(filename);
+  if (!file.is_open()) return false;
 
   // Initialize tokenizer:
   vvTokenizer::TokenType ttype;
-  vvTokenizer* tokenizer = new vvTokenizer(fp);
+  vvTokenizer* tokenizer = new vvTokenizer(file);
   tokenizer->setCommentCharacter('#');
   tokenizer->setEOLisSignificant(false);
   tokenizer->setCaseConversion(vvTokenizer::VV_UPPER);
@@ -224,7 +223,6 @@ bool vvObjView::loadCamera(const char* filename)
   if (_zNear > 0.0f) _minFOV = 2.0f * float(atan(ts_min(_viewportWidth / _zNear, (extent[3] - extent[2]) / _zNear)));
 
   delete tokenizer;
-  fclose(fp);
   setProjectionMatrix();
   return true;
 }

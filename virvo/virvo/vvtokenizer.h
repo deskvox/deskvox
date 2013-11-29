@@ -21,9 +21,9 @@
 #ifndef _VVTOKENIZER_H_
 #define _VVTOKENIZER_H_
 
-#include <stdio.h>
-
 #include "vvexport.h"
+
+#include <fstream>
 
 /**
  * This class takes an input file and parses it into "tokens",
@@ -54,17 +54,15 @@
  * the word "FOUND" in the file "testfile.txt" ignoring comments starting with '#':
  * <PRE>
  * vvTokenizer::TokenType ttype;
- * FILE* fp = fopen("testfile.txt", "rb");
- * vvTokenizer* tokenizer = new vvTokenizer(fp);
- * tokenizer->setCommentCharacter('#');
- * tokenizer->setEOLisSignificant(false);
- * tokenizer->setCaseConversion(vvTokenizer::VV_UPPER);
- * tokenizer->setParseNumbers(true);
+ * std::ifstream file("testfile.txt");
+ * vvTokenizer tokenizer(file);
+ * tokenizer.setCommentCharacter('#');
+ * tokenizer.setEOLisSignificant(false);
+ * tokenizer.setCaseConversion(vvTokenizer::VV_UPPER);
+ * tokenizer.setParseNumbers(true);
  * while ((ttype = tokenizer->nextToken()) != vvTokenizer::VV_EOF)
- *   if (strcmp(tokenizer->sval, "FOUND")==0)
+ *   if (strcmp(tokenizer.sval, "FOUND")==0)
  *     break;
- * delete tokenizer;
- * fclose(fp);
  * </PRE>
  * @author Juergen Schulze
  */
@@ -97,7 +95,7 @@ class VIRVOEXPORT vvTokenizer
       VV_ALPHA      = 2,                          ///< character words start with
       VV_COMMENT    = 3                           ///< character comments start with
     };
-    FILE* fp;                                     ///< input file
+    std::ifstream& file;                          ///< input file
     int   blockUsed;                              ///< number of data block bytes used
     char* data;                                   ///< raw data read from input file
     int   cur;                                    ///< index of current data byte
@@ -138,14 +136,14 @@ class VIRVOEXPORT vvTokenizer
     ///< of that number. The current token is a number when the value of
     ///< the <CODE>ttype</CODE> field is <CODE>VV_NUMBER</CODE>.
 
-    vvTokenizer(FILE*);
-    virtual ~vvTokenizer();
+    vvTokenizer(std::ifstream& file);
+    ~vvTokenizer();
     int  determineCurrentLine();
     void setDefault();
     void setLineNumber(int);
     int  getLineNumber();
     long getFilePos();
-    void setFilePos(FILE*);
+    void setFilePos(std::streampos pos);
     void setAlphaCharacter(char);
     void setCommentCharacter(char);
     void setWhitespaceCharacter(char);

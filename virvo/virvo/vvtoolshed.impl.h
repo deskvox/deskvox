@@ -93,6 +93,13 @@ inline float virvo::serialization::readFloat(FILE* src, virvo::serialization::En
   return val;
 }
 
+inline uint32_t virvo::serialization::read32(std::ifstream& src, virvo::serialization::EndianType end)
+{
+  uint32_t val = 0;
+  read(src, &val, end);
+  return val;
+}
+
 inline size_t virvo::serialization::write8(uint8_t* dst, uint8_t val)
 {
   return write(dst, val);

@@ -2729,6 +2729,34 @@ size_t virvo::serialization::read(FILE* src, float* val, virvo::serialization::E
   return 4;
 }
 
+size_t virvo::serialization::read(std::ifstream& src, uint32_t* val, virvo::serialization::EndianType end)
+{
+  uint8_t buf[4];
+
+  src.read(reinterpret_cast< char* >(buf), 4);
+  if (!src)
+  {
+    VV_LOG(0) << "virvo::serialization::read(std::ifstream&, uint32_t*) failed";
+    return 0;
+  }
+
+  if (end == VV_LITTLE_END)
+  {
+    *val = (uint32_t)buf[3] * 0x1000000
+         + (uint32_t)buf[2] * 0x10000
+         + (uint32_t)buf[1] * 0x100
+         + (uint32_t)buf[0] * 0x1;
+  }
+  else
+  {
+    *val = (uint32_t)buf[0] * 0x1000000
+         + (uint32_t)buf[1] * 0x10000
+         + (uint32_t)buf[2] * 0x100
+         + (uint32_t)buf[3] * 0x1;
+  }
+  return 4;
+}
+
 size_t virvo::serialization::write(uint8_t* dst, uint8_t val)
 {
   *dst = val;

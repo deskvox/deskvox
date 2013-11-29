@@ -18,6 +18,7 @@
 // License along with this library (see license.txt); if not, write to the 
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <stdlib.h>
@@ -203,13 +204,14 @@ bool vvConv::readVolumeData()
     cerr << "Done merging Leica files" << endl;
 
 
-    
-    if (FILE *fp = fopen(seriesname, "rb"))
+   
+    std::ifstream file(seriesname); 
+    if (file.is_open())
     {
       // File found.  Now to determine values
       cerr << "Opened: " << seriesname << endl;
 
-      vvTokenizer* tok = new vvTokenizer(fp);
+      vvTokenizer* tok = new vvTokenizer(file);
       tok->setParseNumbers(true);
       
       laser = new int[vd->chan];
@@ -503,7 +505,6 @@ bool vvConv::readVolumeData()
           done = true;
       }
       delete tok;
-      fclose(fp);
     }
     else
        cerr << "Error: Cannot open " << seriesname << " file.";

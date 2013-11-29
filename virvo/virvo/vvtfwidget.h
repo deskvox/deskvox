@@ -28,6 +28,7 @@
 
 // C++:
 #include <stdio.h>
+#include <fstream>
 #include <list>
 #include <string>
 
@@ -112,7 +113,7 @@ class VIRVOEXPORT vvTFWidget
     void setPos(const vvVector3& pos);
     void setPos(float x, float y, float z);
     vvVector3 pos() const;
-    virtual void readName(FILE*);
+    virtual void readName(std::ifstream& file);
     void write(FILE*);
     virtual const char* toString() = 0;
     virtual void fromString(const std::string& str) = 0;
@@ -146,7 +147,7 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
     vvTFBell();
     vvTFBell(vvTFBell*);
     vvTFBell(vvColor, bool, float, float, float, float=0.5f, float=1.0f, float=0.5f, float=1.0f);
-    vvTFBell(FILE*);
+    vvTFBell(std::ifstream& file);
 
     void setColor(const vvColor& col);
     void setSize(const vvVector3& size);
@@ -187,7 +188,7 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     vvTFPyramid();
     vvTFPyramid(vvTFPyramid*);
     vvTFPyramid(vvColor, bool, float, float, float, float, float=0.5f, float=1.0f, float=0.0f, float=0.5f, float=1.0f, float=0.0f);
-    vvTFPyramid(FILE*);
+    vvTFPyramid(std::ifstream& file);
 
     void setColor(const vvColor& col);
     void setTop(const vvVector3& top);
@@ -224,7 +225,7 @@ class VIRVOEXPORT vvTFColor : public vvTFWidget
     vvTFColor();
     vvTFColor(vvTFColor*);
     vvTFColor(vvColor, float, float=0.0f, float=0.0f);
-    vvTFColor(FILE*);
+    vvTFColor(std::ifstream& file);
     virtual const char* toString();
     virtual void fromString(const std::string& str);
 };
@@ -249,7 +250,7 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
     vvTFSkip();
     vvTFSkip(vvTFSkip*);
     vvTFSkip(float, float, float=0.5f, float=0.0f, float=0.5f, float=0.0f);
-    vvTFSkip(FILE*);
+    vvTFSkip(std::ifstream& file);
     virtual const char* toString();
     virtual void fromString(const std::string& str);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
@@ -278,7 +279,7 @@ class VIRVOEXPORT vvTFCustom : public vvTFWidget
     vvTFCustom();
     vvTFCustom(vvTFCustom*);
     vvTFCustom(float, float, float=0.5f, float=0.0f, float=0.5f, float=0.0f);
-    vvTFCustom(FILE*);
+    vvTFCustom(std::ifstream& file);
     virtual ~vvTFCustom();
     virtual const char* toString();
     virtual void fromString(const std::string& str);
@@ -333,7 +334,7 @@ public:
 
     vvTFCustom2D(bool extrude, float opacity, float xCenter, float yCenter);
     vvTFCustom2D(vvTFCustom2D*);
-    vvTFCustom2D(FILE*);
+    vvTFCustom2D(std::ifstream& file);
     virtual ~vvTFCustom2D();
     virtual const char* toString();
     virtual void fromString(const std::string& str);
@@ -391,7 +392,7 @@ class VIRVOEXPORT vvTFCustomMap : public vvTFWidget
     vvTFCustomMap(float x, float w, float y=0.5f, float h=0.0f, float z=0.5f, float d=0.0f);
     vvTFCustomMap(vvColor, bool, float x, float w, float y=0.5f, float h=0.0f, float z=0.5f, float d=0.0f);
     vvTFCustomMap(vvTFCustomMap*);
-    vvTFCustomMap(FILE*);
+    vvTFCustomMap(std::ifstream& file);
     virtual ~vvTFCustomMap();
     virtual const char* toString();
     virtual void fromString(const std::string& str);

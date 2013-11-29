@@ -116,22 +116,20 @@ bool vvObjView::saveMV(FILE* fp)
 */
 bool vvObjView::loadMV(const char* filename)
 {
-  FILE* fp;
   bool retval = false;
 
   vvDebugMsg::msg(1, "vvObjView::loadMV()");
 
-  fp = fopen(filename, "rb");
-  if (fp==NULL) return false;
+  std::ifstream file(filename);
+  if (!file.is_open()) return false;
 
-  retval = loadMV(fp);
+  retval = loadMV(file);
 
-  fclose(fp);
   return retval;
 }
 
 
-bool vvObjView::loadMV(FILE* fp)
+bool vvObjView::loadMV(std::ifstream& file)
 {
   bool retval = false;
 
@@ -139,7 +137,7 @@ bool vvObjView::loadMV(FILE* fp)
 
   // Initialize tokenizer:
   vvTokenizer::TokenType ttype;
-  vvTokenizer* tokenizer = new vvTokenizer(fp);
+  vvTokenizer* tokenizer = new vvTokenizer(file);
   tokenizer->setCommentCharacter('#');
   tokenizer->setEOLisSignificant(false);
   tokenizer->setCaseConversion(vvTokenizer::VV_UPPER);

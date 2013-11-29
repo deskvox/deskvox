@@ -10,6 +10,8 @@
 
 #include <virvo/vvvecmath.h>
 
+#include <fstream>
+
 //============================================================================
 // Class Definition
 //============================================================================
@@ -49,7 +51,7 @@ class vvObjView
     bool  saveMV(const char*);
     bool  saveMV(FILE* fp);
     bool  loadMV(const char*);
-    bool  loadMV(FILE* fp);
+    bool  loadMV(std::ifstream& file);
     void  setProjection(ProjectionType, float, float, float);
     void  setAspectRatio(float);
     void  setDepthRange(float, float);

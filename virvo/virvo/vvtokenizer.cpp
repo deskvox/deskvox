@@ -43,7 +43,8 @@ const int vvTokenizer::MAX_TOKEN_LEN = 1024;
   <LI>Numbers are not parsed</LI></UL>
   @param file pointer to source file which must have been opened for reading
 */
-vvTokenizer::vvTokenizer(FILE* file)
+vvTokenizer::vvTokenizer(std::ifstream& file)
+  : file(file)
 {
   // Memory allocation:
   sval = new char[MAX_TOKEN_LEN + 1];
@@ -54,7 +55,6 @@ vvTokenizer::vvTokenizer(FILE* file)
   nval             = 0.0f;
   sval[0]          = '\0';
   pushedBack       = false;
-  fp               = file;
   line             = determineCurrentLine();
   caseConversion   = VV_NONE;
   eolIsSignificant = false;
@@ -77,7 +77,7 @@ vvTokenizer::~vvTokenizer()
 
   offset = cur-blockUsed;
   if (!firstPass) --offset;
-  fseek(fp, offset, SEEK_CUR);
+  file.seekg(offset, file.cur);
   delete[] sval;
   delete[] data;
 }
@@ -95,15 +95,15 @@ int vvTokenizer::determineCurrentLine()
   long i;
   int  c;
 
-  current = ftell(fp);                            // memorize file pointer
+  current = file.tellg();                         // memorize file pointer
   if (current<0) return -1;
-  fseek(fp, 0, SEEK_SET);
+  file.seekg(0, std::ios::beg);
 
   // Count number of line breaks by counting the number
   // of '\r' characters in the file:
   for (i=0; i<current; ++i)
   {
-    c = fgetc(fp);
+    c = file.get();
     if (c=='\r')
       ++lineNr;
   }
@@ -119,11 +119,12 @@ int vvTokenizer::readChar()
 {
   if (cur >= blockUsed)                           // end of buffer reached?
   {
-    if (feof(fp)) return -1;
+    if (file.eof()) return -1;
     else
     {
       // Read next block:
-      blockUsed = fread(data, 1, BLOCK_SIZE, fp);
+      file.read(data, BLOCK_SIZE);
+      blockUsed = file.gcount();
       cur = 0;
     }
   }
@@ -180,7 +181,7 @@ int vvTokenizer::getLineNumber()
 */
 long vvTokenizer::getFilePos()
 {
-  long pos = ftell(fp) - blockUsed + cur;
+  long pos = static_cast< long >(file.tellg()) - blockUsed + cur;
   if (!firstPass) --pos;
   return pos;
 }
@@ -191,9 +192,9 @@ long vvTokenizer::getFilePos()
   routine and after it the tokenizer should regain control.
   @param newFP file pointer the tokenizer should continue at
 */
-void vvTokenizer::setFilePos(FILE* newFP)
+void vvTokenizer::setFilePos(std::streampos pos)
 {
-  fp = newFP;
+  file.seekg(pos);
   ttype = VV_NOTHING;
   nval = 0.0f;
   sval[0] = '\0';

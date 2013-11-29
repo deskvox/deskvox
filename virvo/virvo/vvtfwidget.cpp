@@ -22,6 +22,7 @@
 #include <math.h>
 #include "vvtfwidget.h"
 #include "vvtoolshed.h"
+#include "private/vvlog.h"
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -147,10 +148,14 @@ vvVector3 vvTFWidget::pos() const
   return _pos;
 }
 
-void vvTFWidget::readName(FILE* fp)
+void vvTFWidget::readName(std::ifstream& file)
 {
   char tmpName[128];
-  if(fscanf(fp, " %s", tmpName) != 1)
+  if (file >> tmpName)
+  {
+    setName(tmpName);
+  }
+//  if(fscanf(fp, " %s", tmpName) != 1)
   setName(tmpName);
 }
 
@@ -269,14 +274,24 @@ float x, float w, float y, float h, float z, float d) : vvTFWidget(x, y, z)
   _size[2] = d;
 }
 
-vvTFBell::vvTFBell(FILE* fp) : vvTFWidget()
+vvTFBell::vvTFBell(std::ifstream& file) : vvTFWidget()
 {
-  readName(fp);
+  readName(file);
   int ownColorInt;
-  if(fscanf(fp, " %g %g %g %g %g %g %g %g %g %d %g\n",
-    &_pos[0], &_pos[1], &_pos[2], &_size[0], &_size[1], &_size[2],
-    &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity) != 11)
-     std::cerr << "vvTFBell: fscanf failed" << std::endl;
+  if (!(file >> _pos[0])        ||
+      !(file >> _pos[1])        ||
+      !(file >> _pos[2])        ||
+      !(file >> _size[0])       ||
+      !(file >> _size[1])       ||
+      !(file >> _size[2])       ||
+      !(file >> _col[0])        ||
+      !(file >> _col[1])        ||
+      !(file >> _col[2])        ||
+      !(file >> ownColorInt)    ||
+      !(file >> _opacity))
+  {
+    VV_LOG(0) << "vvTFBell(ifstream& file) error";
+  }
   _ownColor = (ownColorInt != 0);
 }
 
@@ -474,14 +489,27 @@ float y, float hb, float ht, float z, float db, float dt) : vvTFWidget(x, y, z)
   _bottom[2] = db;
 }
 
-vvTFPyramid::vvTFPyramid(FILE* fp) : vvTFWidget()
+vvTFPyramid::vvTFPyramid(std::ifstream& file) : vvTFWidget()
 {
   int ownColorInt;
-  readName(fp);
-  if(fscanf(fp, " %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n",
-    &_pos[0], &_pos[1], &_pos[2], &_bottom[0], &_bottom[1], &_bottom[2],
-    &_top[0], &_top[1], &_top[2], &_col[0], &_col[1], &_col[2], &ownColorInt, &_opacity) != 14)
-     std::cerr << "vvTFPyramid: fscanf failed" << std::endl;
+  readName(file);
+  if (!(file >> _pos[0])        ||
+      !(file >> _pos[1])        ||
+      !(file >> _pos[2])        ||
+      !(file >> _bottom[0])     ||
+      !(file >> _bottom[1])     ||
+      !(file >> _bottom[2])     ||
+      !(file >> _top[0])        ||
+      !(file >> _top[1])        ||
+      !(file >> _top[2])        ||
+      !(file >> _col[0])        ||
+      !(file >> _col[1])        ||
+      !(file >> _col[2])        ||
+      !(file >> ownColorInt)    ||
+      !(file >> _opacity))
+  {
+    VV_LOG(0) << "vvTFPyramid(ifstream& file) error";
+  }
   _ownColor = (ownColorInt != 0);
 }
 
@@ -762,11 +790,18 @@ vvColor vvTFColor::color() const
   return _col;
 }
 
-vvTFColor::vvTFColor(FILE* fp) : vvTFWidget()
+vvTFColor::vvTFColor(std::ifstream& file) : vvTFWidget()
 {
-  readName(fp);
-  if(fscanf(fp, " %g %g %g %g %g %g\n", &_pos[0], &_pos[1], &_pos[2], &_col[0], &_col[1], &_col[2]) != 6)
-     std::cerr << "vvTFColor: fscanf failed" << std::endl;
+  readName(file);
+  if (!(file >> _pos[0])        ||
+      !(file >> _pos[1])        ||
+      !(file >> _pos[2])        ||
+      !(file >> _col[0])        ||
+      !(file >> _col[1])        ||
+      !(file >> _col[2]))
+  {
+    VV_LOG(0) << "vvTFColor(ifstream& file) error";
+  }
 }
 
 const char* vvTFColor::toString()
@@ -832,11 +867,18 @@ vvTFSkip::vvTFSkip(float xpos, float xsize, float ypos, float ysize, float zpos,
   _size[2] = zsize;
 }
 
-vvTFSkip::vvTFSkip(FILE* fp) : vvTFWidget()
+vvTFSkip::vvTFSkip(std::ifstream& file) : vvTFWidget()
 {
-  readName(fp);
-  if(fscanf(fp, " %g %g %g %g %g %g\n", &_pos[0], &_pos[1], &_pos[2], &_size[0], &_size[1], &_size[2]) != 6)
-     std::cerr << "vvTFSkip: fscanf failed" << std::endl;
+  readName(file);
+  if (!(file >> _pos[0])        ||
+      !(file >> _pos[1])        ||
+      !(file >> _pos[2])        ||
+      !(file >> _size[0])     ||
+      !(file >> _size[1])     ||
+      !(file >> _size[2]))
+  {
+    VV_LOG(0) << "vvTFSkip(ifstream& file) error";
+  }
 }
 
 void vvTFSkip::setSize(const vvVector3& size)
@@ -958,21 +1000,31 @@ vvTFCustom::vvTFCustom(float xpos, float xsize, float ypos, float ysize, float z
 
 /** Constructor reading parameters from file.
 */
-vvTFCustom::vvTFCustom(FILE* fp) : vvTFWidget()
+vvTFCustom::vvTFCustom(std::ifstream& file) : vvTFWidget()
 {
   vvTFPoint* point;
   float op, x, y, z;
   int numPoints;
   int i;
   
-  readName(fp);
-  if(fscanf(fp, " %d %g %g %g\n", &numPoints, &_size[0], &_size[1], &_size[2]) != 4)
-     std::cerr << "vvTFCustom: fscanf 1 failed" << std::endl;
+  readName(file);
+  if (!(file >> numPoints)      ||
+      !(file >> _size[0])       ||
+      !(file >> _size[1])       ||
+      !(file >> _size[2]))
+  {
+    VV_LOG(0) << "vvTFCustom(ifstream& file) error";
+  }
 
   for(i=0; i<numPoints; ++i) 
   {
-    if(fscanf(fp, "%g %g %g %g\n", &op, &x, &y, &z) != 4)
-       std::cerr << "vvTFCustom: fscanf 2 failed" << std::endl;
+    if (!(file >> op)           ||
+        !(file >> x)            ||
+        !(file >> y)            ||
+        !(file >> z))
+    {
+      VV_LOG(0) << "vvTFCustom(ifstream& file) 2 error";
+    }
     point = new vvTFPoint(op, x, y, z);
     _points.push_back(point);
   }  

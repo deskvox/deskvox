@@ -2357,14 +2357,14 @@ void vvView::setProjectionMode(bool newmode)
 
 void vvView::renderMotion() const
 {
-  FILE* fp = fopen("motion.txt", "rb");
-  if(!fp)
+  std::ifstream file("motion.txt");
+  if(!file.is_open())
   {
     std::cerr << "Could not open \"motion.txt\" for reading" << std::endl;
-	return;
+	  return;
   }
 
-  while (ds->ov->loadMV(fp))
+  while (ds->ov->loadMV(file))
   {
     glDrawBuffer(GL_BACK);
     glClearColor(ds->bgColor[0], ds->bgColor[1], ds->bgColor[2], 1.0f);
@@ -2375,8 +2375,6 @@ void vvView::renderMotion() const
     ds->renderer->renderVolumeGL();
     glutSwapBuffers();
   }
-
-  fclose(fp);
 }
 
 
