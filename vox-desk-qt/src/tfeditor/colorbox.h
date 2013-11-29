@@ -24,21 +24,26 @@
 
 #include <QGroupBox>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace tf
 {
 class ColorBox : public QGroupBox
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(ColorBox)
+
 public:
   ColorBox(QWidget* parent = 0);
   ~ColorBox();
 
   void setColor(const vvColor& color);
 private:
+
   struct Impl;
-  boost::shared_ptr<Impl> impl;
+  std::auto_ptr<Impl> impl;
+
 private slots:
   void getColor();
 signals:

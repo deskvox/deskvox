@@ -23,23 +23,27 @@
 
 #include <QDialog>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class vvCanvas;
 
 class vvScreenshotDialog : public QDialog
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(vvScreenshotDialog)
+
 public:
   vvScreenshotDialog(vvCanvas* canvas, QWidget* parent = 0);
   ~vvScreenshotDialog();
 private:
   struct Impl;
-  boost::shared_ptr<Impl> impl_;
+  std::auto_ptr<Impl> impl_;
 
   vvCanvas* _canvas;
 
   void takePicture();
+
 private slots:
   void setCanvasSize(const QSize& size);
   void onCanvasSizeToggled(bool checked);

@@ -650,7 +650,6 @@ void vvRenderer::renderHUD() const
 */
 void vvRenderer::renderVolumeRGB(int w, int h, uchar* data)
 {
-  uchar* screenshot;
   GLint viewPort[4];                              // x, y, width, height of viewport
   int x, y;
   int srcIndex, dstIndex, srcX, srcY;
@@ -664,12 +663,12 @@ void vvRenderer::renderVolumeRGB(int w, int h, uchar* data)
 
   // Prepare reading:
   glGetIntegerv(GL_VIEWPORT, viewPort);
-  screenshot = new uchar[viewPort[2] * viewPort[3] * 3];
   glDrawBuffer(GL_FRONT);                         // set draw buffer to front in order to read image data
   glPixelStorei(GL_PACK_ALIGNMENT, 1);            // Important command: default value is 4, so allocated memory wouldn't suffice
 
   // Read image data:
-  glReadPixels(0, 0, viewPort[2], viewPort[3], GL_RGB, GL_UNSIGNED_BYTE, screenshot);
+  std::vector< uchar > screenshot(viewPort[2] * viewPort[3] * 3);
+  glReadPixels(0, 0, viewPort[2], viewPort[3], GL_RGB, GL_UNSIGNED_BYTE, &screenshot[0]);
 
   // Restore GL state:
   glPopAttrib();
@@ -706,10 +705,9 @@ void vvRenderer::renderVolumeRGB(int w, int h, uchar* data)
       srcX = offX + srcWidth  * x / w;
       srcY = offY + srcHeight * y / h;
       srcIndex = 3 * (srcX + srcY * viewPort[2]);
-      memcpy(data + dstIndex, screenshot + srcIndex, 3);
+      memcpy(data + dstIndex, &screenshot[0] + srcIndex, 3);
     }
   }
-  delete[] screenshot;
 }
 
 //----------------------------------------------------------------------------

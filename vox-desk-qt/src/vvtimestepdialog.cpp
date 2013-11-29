@@ -23,6 +23,7 @@
 #include "ui_vvtimestepdialog.h"
 
 #include <virvo/vvdebugmsg.h>
+#include <virvo/vvmacros.h>
 
 #include <QSettings>
 
@@ -34,8 +35,13 @@ struct vvTimeStepDialog::Impl
   {
   }
 
-  boost::shared_ptr<Ui::TimeStepDialog> ui;
+  std::auto_ptr<Ui::TimeStepDialog> ui;
   bool playing;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 vvTimeStepDialog::vvTimeStepDialog(QWidget* parent)

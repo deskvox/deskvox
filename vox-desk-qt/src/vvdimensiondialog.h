@@ -27,11 +27,14 @@ class vvCanvas;
 
 #include <QDialog>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class vvDimensionDialog : public QDialog
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(vvDimensionDialog)
+
 public:
   vvDimensionDialog(vvCanvas* canvas, QWidget* parent = 0);
   ~vvDimensionDialog();
@@ -41,7 +44,7 @@ public:
   void setInitialDist(const vvVector3& dist);
 private:
   struct Impl;
-  boost::shared_ptr<Impl> impl_;
+  std::auto_ptr<Impl> impl_;
 
   vvCanvas* _canvas;
 
@@ -51,6 +54,7 @@ private:
   /*! refresh spin box values
    */
   void updateGui(const vvVector3& dist);
+
 private slots:
   void onApplyClicked();
   void onResetClicked();

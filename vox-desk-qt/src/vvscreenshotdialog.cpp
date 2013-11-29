@@ -25,6 +25,7 @@
 
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvfileio.h>
+#include <virvo/vvmacros.h>
 #include <virvo/vvrenderer.h>
 #include <virvo/vvvoldesc.h>
 
@@ -34,7 +35,12 @@ struct vvScreenshotDialog::Impl
 {
   Impl() : ui(new Ui::ScreenshotDialog) {}
 
-  boost::shared_ptr<Ui::ScreenshotDialog> ui;
+  std::auto_ptr<Ui::ScreenshotDialog> ui;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 vvScreenshotDialog::vvScreenshotDialog(vvCanvas* canvas, QWidget* parent)

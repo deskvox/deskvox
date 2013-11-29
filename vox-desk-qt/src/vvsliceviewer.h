@@ -25,23 +25,27 @@
 
 #include <QDialog>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class vvVolDesc;
 
 class vvSliceViewer : public QDialog
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(vvSliceViewer)
+
 public:
   vvSliceViewer(vvVolDesc* vd, QWidget* parent = 0);
 private:
   struct Impl;
-  boost::shared_ptr<Impl> impl_;
+  std::auto_ptr<Impl> impl_;
 
   vvVolDesc* _vd;
 
   void paint();
   void updateUi();
+
 public slots:
   void onNewVolDesc(vvVolDesc* vd);
   void onNewFrame(int frame);

@@ -25,13 +25,16 @@
 
 #include <QGroupBox>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace tf
 {
 class PyramidBox : public QGroupBox
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(PyramidBox)
+
 public:
   PyramidBox(QWidget* parent = 0);
   ~PyramidBox();
@@ -42,8 +45,10 @@ public:
   void setBottom(const vvVector3& bottom);
   void setOpacity(float opacity);
 private:
+
   struct Impl;
-  boost::shared_ptr<Impl> impl;
+  std::auto_ptr<Impl> impl;
+
 private slots:
   void getColor();
   void emitTop(int sliderval);

@@ -22,6 +22,8 @@
 
 #include "ui_vvlightdialog.h"
 
+#include <virvo/vvmacros.h>
+
 #include <QSettings>
 #include <QVector3D>
 
@@ -31,7 +33,12 @@ struct vvLightDialog::Impl
 {
   Impl() : ui(new Ui::LightDialog) {}
 
-  boost::shared_ptr<Ui::LightDialog> ui;
+  std::auto_ptr<Ui::LightDialog> ui;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 vvLightDialog::vvLightDialog(QWidget* parent)

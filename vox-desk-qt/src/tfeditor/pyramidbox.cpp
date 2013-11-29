@@ -22,18 +22,25 @@
 
 #include "ui_pyramidbox.h"
 
+#include <virvo/vvmacros.h>
+
 #include <QColorDialog>
 
 struct tf::PyramidBox::Impl
 {
   Impl() : ui(new Ui::PyramidBox) {}
 
-  boost::shared_ptr<Ui::PyramidBox> ui;
+  std::auto_ptr<Ui::PyramidBox> ui;
   bool hascolor;
   vvColor color;
   vvVector3 top;
   vvVector3 bottom;
   float opacity;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 tf::PyramidBox::PyramidBox(QWidget* parent)

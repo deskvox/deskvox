@@ -25,13 +25,16 @@
 
 #include <QGroupBox>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace tf
 {
 class GaussianBox : public QGroupBox
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(GaussianBox)
+
 public:
   GaussianBox(QWidget* parent = 0);
   ~GaussianBox();
@@ -41,8 +44,10 @@ public:
   void setSize(const vvVector3& size);
   void setOpacity(float opacity);
 private:
+
   struct Impl;
-  boost::shared_ptr<Impl> impl;
+  std::auto_ptr<Impl> impl;
+
 private slots:
   void getColor();
   void emitSize(int sliderval);

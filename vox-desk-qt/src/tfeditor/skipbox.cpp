@@ -20,14 +20,21 @@
 
 #include "skipbox.h"
 
+#include <virvo/vvmacros.h>
+
 #include "ui_skipbox.h"
 
 struct tf::SkipBox::Impl
 {
   Impl() : ui(new Ui_SkipBox) {}
 
-  boost::shared_ptr<Ui_SkipBox> ui;
+  std::auto_ptr<Ui_SkipBox> ui;
   vvVector3 size;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 tf::SkipBox::SkipBox(QWidget* parent)

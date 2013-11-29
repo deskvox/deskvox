@@ -25,11 +25,14 @@
 
 #include <QDialog>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class vvMergeDialog : public QDialog
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(vvMergeDialog)
+
 public:
   vvMergeDialog(QWidget* parent = 0);
   ~vvMergeDialog();
@@ -42,8 +45,10 @@ public:
   bool numFilesLimited() const;
   bool filesNumbered() const;
 private:
+
   struct Impl;
-  boost::shared_ptr<Impl> impl_;
+  std::auto_ptr<Impl> impl_;
+
 private slots:
   void onBrowseClicked();
   void onNumFilesToggled(bool checked);

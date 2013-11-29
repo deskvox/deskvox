@@ -23,19 +23,24 @@
 
 #include <QDialog>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class vvVolDesc;
 
 class vvVolInfoDialog : public QDialog
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(vvVolInfoDialog)
+
 public:
   vvVolInfoDialog(QWidget* parent = 0);
   ~vvVolInfoDialog();
 private:
+
   struct Impl;
-  boost::shared_ptr<Impl> impl_;
+  std::auto_ptr<Impl> impl_;
+
 public slots:
   void onNewVolDesc(vvVolDesc* vd);
 private slots:

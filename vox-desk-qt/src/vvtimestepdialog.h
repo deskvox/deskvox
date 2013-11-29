@@ -23,19 +23,24 @@
 
 #include <QDialog>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class vvCanvas;
 
 class vvTimeStepDialog : public QDialog
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(vvTimeStepDialog)
+
 public:
   vvTimeStepDialog(QWidget* parent = 0);
   ~vvTimeStepDialog();
 private:
+
   struct Impl;
-  boost::shared_ptr<Impl> impl_;
+  std::auto_ptr<Impl> impl_;
+
 public slots:
   void setFrames(int frames);
   void setCurrentFrame(int frame);

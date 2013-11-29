@@ -24,21 +24,26 @@
 
 #include <QGroupBox>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace tf
 {
 class SkipBox: public QGroupBox
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(SkipBox)
+
 public:
   SkipBox(QWidget* parent = 0);
   ~SkipBox();
 
   void setSize(const vvVector3& size);
 private:
+
   struct Impl;
-  boost::shared_ptr<Impl> impl;
+  std::auto_ptr<Impl> impl;
+
 private slots:
   void emitSize(int sliderval);
 signals:

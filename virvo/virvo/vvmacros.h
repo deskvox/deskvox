@@ -18,39 +18,19 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_SOFTRAYREND_H_
-#define _VV_SOFTRAYREND_H_
-
-#include "vvmacros.h"
-#include "vvrenderer.h"
-
-#include <memory>
-#include <vector>
+#pragma once
 
 
-class vvSoftRayRend : public vvRenderer
-{
-public:
-  VVAPI vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState);
-  VVAPI ~vvSoftRayRend();
+/*! Place in private section of class to disallow copying and assignment
+ */
+#define VV_NOT_COPYABLE(T)                                          \
+  T(T const& rhs);                                                  \
+  T& operator=(T const& rhs);
 
-  VVAPI virtual void renderVolumeGL() VV_OVERRIDE;
-  VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
-  VVAPI virtual void setParameter(ParameterType param, const vvParam& newValue) VV_OVERRIDE;
-  VVAPI virtual vvParam getParameter(ParameterType param) const VV_OVERRIDE;
-private:
-  struct Impl;
-  std::auto_ptr<Impl> impl_;
 
-  static void* renderFunc(void* args);
 
-private:
+/*! Verbose way to say that a parameter is not used intentionally
+ */
+#define VV_UNUSED(x) ((void)(x))
 
-  VV_NOT_COPYABLE(vvSoftRayRend)
-
-};
-
-#include "vvrayrendfactory.h"
-
-#endif
 

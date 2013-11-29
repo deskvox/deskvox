@@ -25,7 +25,7 @@
 
 #include <QMainWindow>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class vvCanvas;
 class vvDimensionDialog;
@@ -43,17 +43,21 @@ class Ui_MainWindow;
 
 class vvMainWindow : public QMainWindow
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(vvMainWindow)
+
 public:
   explicit vvMainWindow(const QString& filename, QWidget* parent = 0);
   void lateInitialization();
   ~vvMainWindow();
 private:
   struct Impl;
-  boost::shared_ptr<Impl> impl_;
+  std::auto_ptr<Impl> impl_;
 
   void loadVolumeFile(const QString& filename);
   void mergeFiles(const QString& firstFile, int num, int increment, vvVolDesc::MergeType mergeType);
+
 public slots:
   void toggleOrientation();
   void toggleBoundaries();

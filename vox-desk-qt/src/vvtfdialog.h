@@ -25,7 +25,7 @@
 
 #include <QDialog>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class vvCanvas;
 class vvTFWidget;
@@ -33,13 +33,16 @@ class vvVolDesc;
 
 class vvTFDialog : public QDialog
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(vvTFDialog)
+
 public:
   vvTFDialog(vvCanvas* canvas, QWidget* parent = 0);
   ~vvTFDialog();
 private:
   struct Impl;
-  boost::shared_ptr<Impl> impl_;
+  std::auto_ptr<Impl> impl_;
 
   vvCanvas* _canvas;
 
@@ -53,6 +56,7 @@ private:
   void makeAlphaTexture(std::vector<uchar>* alphaTex, int width, int height) const;
   void emitTransFunc();
   void updateSettingsBox();
+
 private slots:
   void onNewWidget();
   void onDeleteClicked();

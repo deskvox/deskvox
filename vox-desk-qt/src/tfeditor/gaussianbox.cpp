@@ -22,17 +22,24 @@
 
 #include "ui_gaussianbox.h"
 
+#include <virvo/vvmacros.h>
+
 #include <QColorDialog>
 
 struct tf::GaussianBox::Impl
 {
   Impl() : ui(new Ui::GaussianBox) {}
 
-  boost::shared_ptr<Ui::GaussianBox> ui;
+  std::auto_ptr<Ui::GaussianBox> ui;
   bool hascolor;
   vvColor color;
   vvVector3 size;
   float opacity;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 tf::GaussianBox::GaussianBox(QWidget* parent)

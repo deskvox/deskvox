@@ -24,6 +24,7 @@
 #include "ui_vvdimensiondialog.h"
 
 #include <virvo/vvdebugmsg.h>
+#include <virvo/vvmacros.h>
 #include <virvo/vvtexrend.h>
 #include <virvo/vvvoldesc.h>
 
@@ -35,8 +36,13 @@ struct vvDimensionDialog::Impl
   {
   }
 
-  boost::shared_ptr<Ui::DimensionDialog> ui;
+  std::auto_ptr<Ui::DimensionDialog> ui;
   vvVector3 initialDist; ///< should be assigned when a new file is loaded
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 vvDimensionDialog::vvDimensionDialog(vvCanvas* canvas, QWidget* parent)

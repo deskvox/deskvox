@@ -22,14 +22,21 @@
 
 #include "ui_colorbox.h"
 
+#include <virvo/vvmacros.h>
+
 #include <QColorDialog>
 
 struct tf::ColorBox::Impl
 {
   Impl() : ui(new Ui::ColorBox) {}
 
-  boost::shared_ptr<Ui::ColorBox> ui;
+  std::auto_ptr<Ui::ColorBox> ui;
   vvColor color;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 tf::ColorBox::ColorBox(QWidget* parent)

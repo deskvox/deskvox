@@ -21,6 +21,7 @@
 #ifndef _VVRENDERER_H_
 #define _VVRENDERER_H_
 
+#include "vvmacros.h"
 #include "vvoffscreenbuffer.h"
 #include "vvparam.h"
 #include "vvinttypes.h"
@@ -192,6 +193,9 @@ public:
 */
 class VIRVOEXPORT vvRenderer : public vvRenderState
 {
+
+  VV_NOT_COPYABLE(vvRenderer)
+
   public:
     enum RendererType                             /// Current renderer
     {
@@ -343,10 +347,6 @@ class VIRVOEXPORT vvRenderer : public vvRenderState
     void renderFrame(int w, int h);
 
 private:
-    // NOT copyable!
-    vvRenderer(vvRenderer const& rhs);
-    vvRenderer& operator=(vvRenderer const& rhs);
-
 
     // The current render target
     std::auto_ptr<virvo::RenderTarget> renderTarget_;

@@ -563,8 +563,8 @@ void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float 
   const int ALPHA_LEVEL = 230;
   int x, y, index1D, index2D, barHeight;
 
-  float* rgba = new float[width * RGBA];
-  computeTFTexture(width, 1, 1, rgba, min, max);
+  std::vector< float > rgba(width * RGBA);
+  computeTFTexture(width, 1, 1, &rgba[0], min, max);
   memset(texture, 0, width * height * RGBA); // make black and transparent
 
   vvVector4i mask;
@@ -596,7 +596,6 @@ void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float 
       texture[index2D + mask[3]] = ALPHA_LEVEL;
     }
   }
-  delete[] rgba;
 }
 
 //----------------------------------------------------------------------------
@@ -610,8 +609,8 @@ void vvTransFunc::make2DTFTexture(int width, int height, uchar* texture, float m
 {
   int x, y, index;
 
-  float* rgba = new float[width * height * 4];
-  computeTFTexture(width, height, 1, rgba, minX, maxX, minY, maxY);
+  std::vector< float > rgba(width * height * 4);
+  computeTFTexture(width, height, 1, &rgba[0], minX, maxX, minY, maxY);
 
   for (y=0; y<height; ++y)
   {
@@ -624,7 +623,6 @@ void vvTransFunc::make2DTFTexture(int width, int height, uchar* texture, float m
       texture[index + 3] = uchar(rgba[index + 3] * 255.0f);
     }
   }
-  delete[] rgba;
 }
 
 //----------------------------------------------------------------------------

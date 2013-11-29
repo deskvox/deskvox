@@ -24,6 +24,7 @@
 
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvfileio.h>
+#include <virvo/vvmacros.h>
 
 #include <QFileDialog>
 #include <QFileInfo>
@@ -33,7 +34,12 @@ struct vvMergeDialog::Impl
 {
   Impl() : ui(new Ui::MergeDialog) {}
 
-  boost::shared_ptr<Ui::MergeDialog> ui;
+  std::auto_ptr<Ui::MergeDialog> ui;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 vvMergeDialog::vvMergeDialog(QWidget* parent)

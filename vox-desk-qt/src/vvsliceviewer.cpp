@@ -22,6 +22,7 @@
 
 #include "ui_vvsliceviewer.h"
 
+#include <virvo/vvmacros.h>
 #include <virvo/vvvoldesc.h>
 
 #include <QImage>
@@ -30,8 +31,6 @@
 #include <cassert>
 #include <iostream>
 #include <limits>
-
-#define VV_UNUSED(x) ((void)(x))
 
 struct vvSliceViewer::Impl
 {
@@ -42,9 +41,14 @@ struct vvSliceViewer::Impl
   {
   }
  
-  boost::shared_ptr<Ui::SliceViewer> ui;
+  std::auto_ptr<Ui::SliceViewer> ui;
   size_t slice;
   vvVecmath::AxisType axis;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 namespace

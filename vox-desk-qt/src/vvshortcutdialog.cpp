@@ -28,7 +28,13 @@ struct vvShortcutDialog::Impl
 {
   Impl() : ui(new Ui::ShortcutDialog) {}
 
-  boost::shared_ptr<Ui::ShortcutDialog> ui;
+  std::auto_ptr<Ui::ShortcutDialog> ui;
+
+private:
+
+  Impl(Impl const& rhs);
+  Impl& operator=(Impl const& rhs);
+
 };
 
 vvShortcutDialog::vvShortcutDialog(QWidget* parent)

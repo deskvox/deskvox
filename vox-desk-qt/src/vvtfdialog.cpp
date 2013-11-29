@@ -106,7 +106,7 @@ struct vvTFDialog::Impl
     delete alphascene;
   }
 
-  boost::shared_ptr<Ui::TFDialog> ui;
+  std::auto_ptr<Ui::TFDialog> ui;
 
   MouseGraphicsScene* colorscene;
   QGraphicsPixmapItem* colortex;
@@ -123,6 +123,12 @@ struct vvTFDialog::Impl
   std::map<vvTFWidget*, Pin*> widget2pinmap;
 
   vvVector2f zoomRange; ///< min/max for zoom area on data range
+
+private:
+
+  Impl(Impl const& rhs);
+  Impl& operator=(Impl const& rhs);
+
 };
 
 vvTFDialog::vvTFDialog(vvCanvas* canvas, QWidget* parent)

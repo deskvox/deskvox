@@ -751,18 +751,18 @@ void vvMatrix::random(float from, float to)
 void vvMatrix::LUDecomposition(int index[4], float &d)
 {
   const float TINY = 1.0e-20f;
-  const int n = 4;                                // Special case for n=4, could be any positive number
+  const int N = 4;                                // Special case for n=4, could be any positive number
   int i, imax, j, k;
   float big, dum, sum, temp;
-  float* vv = new float[n];                       // Stores the implicit scaling of each row
+  float vv[N];                                    // Stores the implicit scaling of each row
 
   d = 1.0f;
 
   // Loop over rows to get the implicit scaling information
-  for(i = 0; i < n; i++)
+  for(i = 0; i < N; i++)
   {
     big = 0.0f;
-    for (j = 0; j < n; j++)
+    for (j = 0; j < N; j++)
     {
       if ((temp = (float) fabs(e[i][j])) > big)
         big = temp;
@@ -774,7 +774,7 @@ void vvMatrix::LUDecomposition(int index[4], float &d)
   }
 
   // Loop over columns for Crout's method
-  for (j = 0; j < n; j++)
+  for (j = 0; j < N; j++)
   {
     for (i = 0; i < j; i++)
     {
@@ -787,7 +787,7 @@ void vvMatrix::LUDecomposition(int index[4], float &d)
     // Finds the pivot point
     big = 0.0f;
     imax = 0;
-    for (i = j; i < n; i++)
+    for (i = j; i < N; i++)
     {
       sum = e[i][j];
       for (k = 0; k < j; k++)
@@ -803,7 +803,7 @@ void vvMatrix::LUDecomposition(int index[4], float &d)
     // Do we need to interchange rows?
     if (j != imax)
     {
-      for (k = 0; k < n; k++)
+      for (k = 0; k < N; k++)
       {
         dum = e[imax][k];
         e[imax][k] = e[j][k];
@@ -815,15 +815,13 @@ void vvMatrix::LUDecomposition(int index[4], float &d)
     index[j] = imax;
     if (e[j][j] == 0.0)
       e[j][j] = TINY;
-    if (j != n)
+    if (j != N)
     {
       dum = 1/(e[j][j]);
-      for (i = j+1; i < n; i++)
+      for (i = j+1; i < N; i++)
         e[i][j] *= dum;
     }
   }
-
-  delete[] vv;
 }
 
 //----------------------------------------------------------------------------

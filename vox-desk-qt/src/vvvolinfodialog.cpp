@@ -22,6 +22,7 @@
 
 #include "ui_vvvolinfodialog.h"
 
+#include <virvo/vvmacros.h>
 #include <virvo/vvvoldesc.h>
 
 #include <iostream>
@@ -30,7 +31,12 @@ struct vvVolInfoDialog::Impl
 {
   Impl() : ui(new Ui::VolInfoDialog) {}
 
-  boost::shared_ptr<Ui::VolInfoDialog> ui;
+  std::auto_ptr<Ui::VolInfoDialog> ui;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 vvVolInfoDialog::vvVolInfoDialog(QWidget* parent)

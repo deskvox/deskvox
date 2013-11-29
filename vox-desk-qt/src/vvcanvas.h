@@ -34,7 +34,8 @@
 #include <QList>
 #include <QMouseEvent>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
+
 
 class vvInteractor;
 class vvPlugin;
@@ -42,7 +43,10 @@ class QTimer;
 
 class vvCanvas : public QGLWidget
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(vvCanvas)
+
 public:
   vvCanvas(const QGLFormat& format, const QString& filename = "", QWidget* parent = 0);
   ~vvCanvas();
@@ -67,7 +71,7 @@ protected:
   void mouseReleaseEvent(QMouseEvent* event);
 private:
   struct Impl;
-  boost::shared_ptr<Impl> impl;
+  std::auto_ptr<Impl> impl;
 
   vvVolDesc* _vd;
   vvRenderer* _renderer;

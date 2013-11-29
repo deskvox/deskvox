@@ -4982,7 +4982,6 @@ bool vvFileIO::changeLeicaFilename(string& fileName, int32_t slice, int32_t chan
 */
 vvFileIO::ErrorType vvFileIO::mergeFiles(vvVolDesc* vd, int numFiles, int increment, vvVolDesc::MergeType mergeType)
 {
-  vvFileIO*  fio;
   vvVolDesc* newVD = NULL;                     // newly loaded file, might be just one channel
   vvVolDesc* currentVD = NULL;                 // currently being composited file, might be multiple channels
   string filename;                             // currently processed file name
@@ -5028,14 +5027,14 @@ vvFileIO::ErrorType vvFileIO::mergeFiles(vvVolDesc* vd, int numFiles, int increm
     vvToolshed::makeFileList(currentDir, fileNames, dirNames);
   }
 
-  fio = new vvFileIO();
+  vvFileIO fio;
   while (!done)
   {
     // Load current file:
     cerr << "Loading file " << (file+1) << ": " << filename << endl;
     newVD = new vvVolDesc(filename.c_str());
 
-    if (fio->loadVolumeData(newVD) != vvFileIO::OK)
+    if (fio.loadVolumeData(newVD) != vvFileIO::OK)
     {
       cerr << "Cannot load file: " << filename << endl;
       ret = FILE_ERROR;
@@ -5128,7 +5127,6 @@ vvFileIO::ErrorType vvFileIO::mergeFiles(vvVolDesc* vd, int numFiles, int increm
       else done = true;
     }
   }
-  delete fio;
   delete newVD;
   delete currentVD;
 
@@ -5157,8 +5155,8 @@ vvFileIO::ErrorType vvFileIO::importTF(vvVolDesc* vd, const char* filename)
   ErrorType ret = OK;                             // this function's return value
   
   vvVolDesc* vd2 = new vvVolDesc(filename);
-  vvFileIO* fio = new vvFileIO();
-  switch (fio->loadVolumeData(vd2, vvFileIO::TRANSFER))
+  vvFileIO fio;
+  switch (fio.loadVolumeData(vd2, vvFileIO::TRANSFER))
   {
     case vvFileIO::OK: 
       vd->tf.copy(&vd->tf._widgets, &vd2->tf._widgets);
@@ -5167,7 +5165,6 @@ vvFileIO::ErrorType vvFileIO::importTF(vvVolDesc* vd, const char* filename)
       ret = FILE_ERROR;
       break;
   }
-  delete fio;
   delete vd2;
   
   return ret;

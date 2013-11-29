@@ -38,6 +38,7 @@
 
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvfileio.h>
+#include <virvo/vvmacros.h>
 #include <virvo/vvvoldesc.h>
 
 #include <QApplication>
@@ -58,7 +59,7 @@ struct vvMainWindow::Impl
 {
   Impl() : ui(new Ui::MainWindow) {}
 
-  boost::shared_ptr<Ui::MainWindow> ui;
+  std::auto_ptr<Ui::MainWindow> ui;
 
   QList<vvPlugin*> plugins;
 
@@ -74,6 +75,11 @@ struct vvMainWindow::Impl
   vvSliceViewer* sliceViewer;
   vvTimeStepDialog* timeStepDialog;
   vvVolInfoDialog* volInfoDialog;
+
+private:
+
+  VV_NOT_COPYABLE(Impl)
+
 };
 
 namespace

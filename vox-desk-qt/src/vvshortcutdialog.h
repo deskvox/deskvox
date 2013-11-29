@@ -23,7 +23,7 @@
 
 #include <QDialog>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class vvShortcutDialog : public QDialog
 {
@@ -32,7 +32,13 @@ public:
   vvShortcutDialog(QWidget* parent = 0);
 private:
   struct Impl;
-  boost::shared_ptr<Impl> impl_;
+  std::auto_ptr<Impl> impl_;
+
+private:
+
+  vvShortcutDialog(vvShortcutDialog const& rhs);
+  vvShortcutDialog& operator=(vvShortcutDialog const& rhs);
+
 };
 
 #endif

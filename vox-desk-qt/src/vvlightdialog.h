@@ -26,19 +26,24 @@
 
 #include <QDialog>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class vvLightDialog : public QDialog
 {
+
   Q_OBJECT
+  Q_DISABLE_COPY(vvLightDialog)
+
 public:
   vvLightDialog(QWidget* parent = 0);
   ~vvLightDialog();
 
   void applySettings();
 private:
+
   struct Impl;
-  boost::shared_ptr<Impl> impl_;
+  std::auto_ptr<Impl> impl_;
+
 private slots:
   void onEnableToggled(bool checked);
   void onEnableHeadlightToggled(bool checked);
