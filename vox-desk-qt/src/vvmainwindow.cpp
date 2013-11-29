@@ -354,8 +354,8 @@ void vvMainWindow::loadVolumeFile(const QString& filename)
   impl_->canvas->setVolDesc(NULL);
   QByteArray ba = filename.toLatin1();
   vvVolDesc* vd = new vvVolDesc(ba.data());
-  vvFileIO* fio = new vvFileIO;
-  switch (fio->loadVolumeData(vd, vvFileIO::ALL_DATA))
+  vvFileIO fio;
+  switch (fio.loadVolumeData(vd, vvFileIO::ALL_DATA))
   {
   case vvFileIO::OK:
   {
@@ -404,8 +404,8 @@ void vvMainWindow::mergeFiles(const QString& firstFile, const int num, const int
 
   QByteArray ba = firstFile.toLatin1();
   vvVolDesc* vd = new vvVolDesc(ba.data());
-  vvFileIO* fio = new vvFileIO;
-  switch (fio->mergeFiles(vd, num, increment, mergeType))
+  vvFileIO fio;
+  switch (fio.mergeFiles(vd, num, increment, mergeType))
   {
   case vvFileIO::OK:
     vvDebugMsg::msg(2, "Loaded slice sequence: ", vd->getFilename());
@@ -559,10 +559,10 @@ void vvMainWindow::onSaveVolumeAsTriggered()
   QString filename = QFileDialog::getSaveFileName(this, caption, dir, filter);
   if (!filename.isEmpty())
   {
-    vvFileIO* fio = new vvFileIO;
+    vvFileIO fio;
     QByteArray ba = filename.toLatin1();
     impl_->canvas->getVolDesc()->setFilename(ba.data());
-    switch (fio->saveVolumeData(impl_->canvas->getVolDesc(), true))
+    switch (fio.saveVolumeData(impl_->canvas->getVolDesc(), true))
     {
     case vvFileIO::OK:
       vvDebugMsg::msg(2, "Volume saved as ", impl_->canvas->getVolDesc()->getFilename());

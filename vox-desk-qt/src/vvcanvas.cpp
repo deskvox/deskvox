@@ -399,9 +399,8 @@ void vvCanvas::init()
 {
   vvDebugMsg::msg(3, "vvCanvas::init()");
 
-  vvFileIO* fio = new vvFileIO;
-  fio->loadVolumeData(_vd, vvFileIO::ALL_DATA);
-  delete fio;
+  vvFileIO fio;
+  fio.loadVolumeData(_vd, vvFileIO::ALL_DATA);
 
   // default transfer function
   if (_vd->tf.isEmpty())
