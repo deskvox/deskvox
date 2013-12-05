@@ -18,10 +18,11 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VVVOLDESC_H_
-#define _VVVOLDESC_H_
+#ifndef VV_VOLDESC_H
+#define VV_VOLDESC_H
 
 #include <boost/serialization/binary_object.hpp>
+#include <boost/serialization/split_member.hpp>
 
 #include <stdlib.h>
 #include <string>
