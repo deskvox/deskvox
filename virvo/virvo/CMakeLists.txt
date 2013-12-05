@@ -1,5 +1,5 @@
 find_package(Bonjour)
-find_package(Boost COMPONENTS date_time serialization system REQUIRED)
+find_package(Boost COMPONENTS chrono date_time serialization system REQUIRED)
 find_package(Cg)
 find_package(CUDA)
 find_package(FFMPEG)
@@ -76,6 +76,7 @@ set(VIRVO_HEADERS
   private/project.impl.h
   private/vvserialize.h
   private/vvserver.h
+  private/vvtimer.h
 
   cuda/array.h
   cuda/debug.h
