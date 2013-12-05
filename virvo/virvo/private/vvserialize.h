@@ -18,10 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-
 #ifndef VV_PRIVATE_SERIALIZE_H
 #define VV_PRIVATE_SERIALIZE_H
-
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -35,10 +33,8 @@
 #endif
 #include <vector>
 
-
 namespace virvo
 {
-
 
     template<class T>
     bool serialize(std::vector<char>& buffer, T const& object)
@@ -69,11 +65,12 @@ namespace virvo
         {
 #ifndef NDEBUG
             std::cout << "virvo::serialize: " << e.what() << std::endl;
+#else
+            static_cast<void>(e);
 #endif
             return false;
         }
     }
-
 
     template<class T>
     bool deserialize(T& object, std::vector<char> const& buffer)
@@ -98,13 +95,13 @@ namespace virvo
         {
 #ifndef NDEBUG
             std::cout << "virvo::deserialize: " << e.what() << std::endl;
+#else
+            static_cast<void>(e);
 #endif
             return false;
         }
     }
 
-
 } // namespace virvo
-
 
 #endif // !VV_PRIVATE_SERIALIZE_H
