@@ -37,7 +37,9 @@
 #define HAVE_CG
 #endif
 #if VV_HAVE_CUDA
+#ifndef HAVE_CUDA
 #define HAVE_CUDA
+#endif
 #endif
 #if VV_HAVE_FFMPEG
 #define HAVE_FFMPEG
