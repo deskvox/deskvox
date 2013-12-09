@@ -545,7 +545,7 @@ VVClippingDialog::~VVClippingDialog()
 
 long VVClippingDialog::onEnableChange(FXObject*,FXSelector,void* ptr)
 {
-  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_MODE, (ptr != NULL));
+  _canvas->_renderer->setParameter(vvRenderState::VV_CLIP_MODE, static_cast< unsigned >(ptr != NULL));
   if(_shell->_glcanvas->makeCurrent())
   {
     _canvas->_renderer->updateTransferFunction();
@@ -606,7 +606,7 @@ void VVClippingDialog::updateValues()
   vvVector3 normal = _canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
   normal.normalize();
 
-  _enableCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_MODE).asBool());
+  _enableCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_MODE).asUint());
   _singleCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_SINGLE_SLICE).asBool());
   _opaqueCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_OPAQUE).asBool());
   _perimeterCheck->setCheck(_canvas->_renderer->getParameter(vvRenderState::VV_CLIP_PERIMETER).asBool());
