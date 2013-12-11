@@ -482,6 +482,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   bool interpolation       = thread->renderer->getParameter(vvRenderer::VV_SLICEINT);
   bool opacityCorrection   = thread->renderer->getParameter(vvRenderer::VV_OPCORR);
   bool earlyRayTermination = thread->renderer->getParameter(vvRenderer::VV_TERMINATEEARLY);
+  int mipMode              = thread->renderer->getParameter(vvRenderer::VV_MIP_MODE);
 
   virvo::ssize3 minVox = vr.getMin();
   virvo::ssize3 maxVox = vr.getMax();
@@ -650,17 +651,41 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
           sample /= 255.0f;
           Vec4 src = rgba(&(*thread->rgbaTF), vec_cast<Vecs>(sample * static_cast<float>(getLUTSize(vd))) * 4);
 
+          using std::max;
+          using std::min;
+
+          if (mipMode == 1)
+          {
+            dst[0] = max(src[0], dst[0]);
+            dst[1] = max(src[1], dst[1]);
+            dst[2] = max(src[2], dst[2]);
+            dst[3] = max(src[3], dst[3]);
+          }
+          else if (mipMode == 2)
+          {
+            dst[0] = min(src[0], dst[0]);
+            dst[1] = min(src[1], dst[1]);
+            dst[2] = min(src[2], dst[2]);
+            dst[3] = min(src[3], dst[3]);
+          }
+
           if (opacityCorrection)
           {
             src[3] = 1 - powf(1 - src[3], dist);
           }
 
-          // pre-multiply alpha
-          src[0] *= src[3];
-          src[1] *= src[3];
-          src[2] *= src[3];
+          if (mipMode == 0)
+          {
+            // pre-multiply alpha
+            src[0] *= src[3];
+            src[1] *= src[3];
+            src[2] *= src[3];
+          }
 
-          dst = dst + mul(src, sub(1.0f, dst[3], active), active);
+          if (mipMode == 0)
+          {
+            dst = dst + mul(src, sub(1.0f, dst[3], active), active);
+          }
 
           if (earlyRayTermination)
           {
