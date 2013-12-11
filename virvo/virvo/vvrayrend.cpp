@@ -58,7 +58,6 @@ extern cu::Symbol<matrix4x4> cMvPrMatrix;
 // in vvrayrend.cu
 extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   uchar4* d_output, const uint width, const uint height,
-                                  const float4 backgroundColor,
                                   const uint texwidth, const float dist,
                                   const float3 volPos, const float3 volSizeHalf,
                                   const float3 probePos, const float3 probeSizeHalf,
@@ -346,7 +345,6 @@ void vvRayRend::renderVolumeGL()
 
   GLfloat bgcolor[4];
   glGetFloatv(GL_COLOR_CLEAR_VALUE, bgcolor);
-  float4 backgroundColor = make_float4(bgcolor[0], bgcolor[1], bgcolor[2], bgcolor[3]);
 
   if (vd->bpc == 1)
   {
@@ -382,7 +380,6 @@ void vvRayRend::renderVolumeGL()
                     reinterpret_cast<uchar4*>(deviceColor),
                     rt->width(),
                     rt->height(),
-                    backgroundColor,
                     rt->width(),
                     diagonalVoxels / (float)numSlices,
                     volPos,

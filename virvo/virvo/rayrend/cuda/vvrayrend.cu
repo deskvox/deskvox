@@ -341,7 +341,6 @@ template<
          bool t_useIbr
         >
 __global__ void render(uchar4* d_output, const uint width, const uint height,
-                       const float4 backgroundColor,
                        const uint texwidth, const float dist,
                        const float3 volPos, const float3 volSizeHalf,
                        const float3 probePos, const float3 probeSizeHalf,
@@ -462,15 +461,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
   float4 dst = make_float4(0.0f);
 
-  if (mipMode > 0)
-  {
-    dst = backgroundColor;
-  }
-  else
-  {
-    dst = make_float4(0.0f);
-  }
-
   float t = tbnear;
   float3 pos = ray.o + ray.d * tbnear;
   const float3 step = ray.d * dist;
@@ -533,14 +523,14 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       dst.x = fmaxf(src.x, dst.x);
       dst.y = fmaxf(src.y, dst.y);
       dst.z = fmaxf(src.z, dst.z);
-      dst.w = 1;
+      dst.w = fmaxf(src.w, dst.w);
     }
     else if (mipMode == 2)
     {
       dst.x = fminf(src.x, dst.x);
       dst.y = fminf(src.y, dst.y);
       dst.z = fminf(src.z, dst.z);
-      dst.w = 1;
+      dst.w = fminf(src.w, dst.w);
     }
 
     // Local illumination.
@@ -753,7 +743,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 }
 
 typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint height,
-                            const float4 backgroundColor,
                             const uint texwidth, const float dist,
                             const float3 volPos, const float3 volSizeHalf,
                             const float3 probePos, const float3 probeSizeHalf,
@@ -1013,7 +1002,6 @@ renderKernel getKernel(const RayRendKernelParams& params)
 
 extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   uchar4* d_output, const uint width, const uint height,
-                                  const float4 backgroundColor,
                                   const uint texwidth, const float dist,
                                   const float3 volPos, const float3 volSizeHalf,
                                   const float3 probePos, const float3 probeSizeHalf,
@@ -1051,7 +1039,6 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
   if (twoPassIbr)
   {
     (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
-                                      backgroundColor,
                                       texwidth, dist,
                                       volPos, volSizeHalf,
                                       probePos, probeSizeHalf,
@@ -1071,7 +1058,6 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
   }
 
   (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
-                                    backgroundColor,
                                     texwidth, dist,
                                     volPos, volSizeHalf,
                                     probePos, probeSizeHalf,
