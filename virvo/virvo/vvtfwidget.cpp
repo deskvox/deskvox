@@ -277,7 +277,7 @@ float x, float w, float y, float h, float z, float d) : vvTFWidget(x, y, z)
 vvTFBell::vvTFBell(std::ifstream& file) : vvTFWidget()
 {
   readName(file);
-  int ownColorInt;
+  int ownColorInt = 0;
   if (!(file >> _pos[0])        ||
       !(file >> _pos[1])        ||
       !(file >> _pos[2])        ||
@@ -491,7 +491,7 @@ float y, float hb, float ht, float z, float db, float dt) : vvTFWidget(x, y, z)
 
 vvTFPyramid::vvTFPyramid(std::ifstream& file) : vvTFWidget()
 {
-  int ownColorInt;
+  int ownColorInt = 0;
   readName(file);
   if (!(file >> _pos[0])        ||
       !(file >> _pos[1])        ||
