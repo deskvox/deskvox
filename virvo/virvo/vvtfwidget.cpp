@@ -130,7 +130,7 @@ void vvTFWidget::setName(const char* newName)
 
 const char* vvTFWidget::getName()
 {
-  return _name.c_str();
+  return _name == "" ? NO_NAME.c_str() : _name.c_str();
 }
 
 void vvTFWidget::setPos(const vvVector3& pos)
