@@ -63,6 +63,7 @@ private slots:
   void onUndoClicked();
   void onPresetColorsChanged(int index);
   void onPresetAlphaChanged(int index);
+  void onDiscrChanged(int num);
   void onApplyClicked();
   void onNewVolDesc(vvVolDesc* vd);
   void saveTF();

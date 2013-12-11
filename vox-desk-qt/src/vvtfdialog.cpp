@@ -152,6 +152,7 @@ vvTFDialog::vvTFDialog(vvCanvas* canvas, QWidget* parent)
   connect(impl_->ui->undoButton, SIGNAL(clicked()), this, SLOT(onUndoClicked()));
   connect(impl_->ui->presetColorsBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onPresetColorsChanged(int)));
   connect(impl_->ui->presetAlphaBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onPresetAlphaChanged(int)));
+  connect(impl_->ui->discrSlider, SIGNAL(valueChanged(int)), this, SLOT(onDiscrChanged(int)));
   connect(impl_->ui->applyButton, SIGNAL(clicked()), this, SLOT(onApplyClicked()));
   connect(_canvas, SIGNAL(newVolDesc(vvVolDesc*)), this, SLOT(onNewVolDesc(vvVolDesc*)));
   connect(impl_->ui->saveButton, SIGNAL(clicked()), this, SLOT(saveTF()));
@@ -396,6 +397,14 @@ void vvTFDialog::onPresetAlphaChanged(int index)
   drawTF();
 }
 
+void vvTFDialog::onDiscrChanged(int num)
+{
+  impl_->ui->discrLabel->setText(QString::number(num));
+  _canvas->getVolDesc()->tf.setDiscreteColors(num);
+  emitTransFunc();
+  drawTF();
+}
+
 void vvTFDialog::onApplyClicked()
 {
   drawTF();
@@ -405,6 +414,10 @@ void vvTFDialog::onNewVolDesc(vvVolDesc *vd)
 {
   clearPins();
   createPins();
+  if (vd != NULL)
+  {
+    impl_->ui->discrSlider->setValue(vd->tf.getDiscreteColors());
+  }
   drawTF();
 }
 
@@ -437,6 +450,7 @@ void vvTFDialog::loadTF()
   emitTransFunc();
   clearPins();
   createPins();
+  impl_->ui->discrSlider->setValue(_canvas->getVolDesc()->tf.getDiscreteColors());
   drawTF();
 }
 
