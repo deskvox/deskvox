@@ -319,6 +319,7 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->ibrBox, SIGNAL(toggled(bool)), this, SLOT(onIbrToggled(bool)));
   connect(ui->interpolationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onInterpolationToggled(bool)));
   connect(ui->mipCheckBox, SIGNAL(toggled(bool)), this, SLOT(onMipToggled(bool)));
+  connect(ui->preIntegrationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onPreIntegrationToggled(bool)));
   connect(ui->stereoModeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onStereoModeChanged(int)));
   connect(ui->stereoDistEdit, SIGNAL(textEdited(const QString&)), this, SLOT(onStereoDistEdited(const QString&)));
   connect(ui->stereoDistSlider, SIGNAL(sliderMoved(int)), this, SLOT(onStereoDistSliderMoved(int)));
@@ -359,6 +360,11 @@ void vvPrefDialog::applySettings()
   if (!settings.value("appearance/interpolation").isNull())
   {
     ui->interpolationCheckBox->setChecked(settings.value("appearance/interpolation").toBool());
+  }
+
+  if (!settings.value("appearance/preintegration").isNull())
+  {
+    ui->preIntegrationCheckBox->setChecked(settings.value("appearance/preintegration").toBool());
   }
 
   if (!settings.value("stereo/distance").isNull())
@@ -746,6 +752,13 @@ void vvPrefDialog::onMipToggled(bool checked)
 
   const int mipMode = checked ? 1 : 0; // don't support mip == 2 (min. intensity) for now
   emit parameterChanged(vvRenderer::VV_MIP_MODE, mipMode);
+}
+
+void vvPrefDialog::onPreIntegrationToggled(bool checked)
+{
+  QSettings settings;
+  settings.setValue("appearance/preintegration", checked);
+  emit parameterChanged(vvRenderer::VV_PREINT, checked);
 }
 
 void vvPrefDialog::onStereoModeChanged(int index)

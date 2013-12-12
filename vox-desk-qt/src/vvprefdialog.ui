@@ -55,8 +55,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>566</width>
-            <height>208</height>
+            <width>560</width>
+            <height>321</height>
            </rect>
           </property>
           <attribute name="label">
@@ -206,8 +206,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>566</width>
-            <height>346</height>
+            <width>339</width>
+            <height>73</height>
            </rect>
           </property>
           <attribute name="label">
@@ -273,8 +273,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>566</width>
-            <height>346</height>
+            <width>265</width>
+            <height>153</height>
            </rect>
           </property>
           <attribute name="label">
@@ -394,8 +394,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>566</width>
-            <height>346</height>
+            <width>560</width>
+            <height>321</height>
            </rect>
           </property>
           <attribute name="label">
@@ -419,6 +419,13 @@ p, li { white-space: pre-wrap; }
             <widget class="QCheckBox" name="mipCheckBox">
              <property name="text">
               <string>Maximum intensity projection (MIP)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="preIntegrationCheckBox">
+             <property name="text">
+              <string>Pre-integration</string>
              </property>
             </widget>
            </item>

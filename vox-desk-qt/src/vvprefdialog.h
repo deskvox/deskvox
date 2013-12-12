@@ -65,6 +65,7 @@ private slots:
   void onIbrToggled(bool checked);
   void onInterpolationToggled(bool checked);
   void onMipToggled(bool checked);
+  void onPreIntegrationToggled(bool checked);
   void onStereoModeChanged(int index);
   void onStereoDistEdited(const QString& text);
   void onStereoDistSliderMoved(int value);
