@@ -49,6 +49,7 @@ private:
 public slots:
   void onNewVolDesc(vvVolDesc* vd);
   void onNewFrame(int frame);
+  void update();
 private slots:
   void setSlice(int slice);
   void updateAxis(bool checked);

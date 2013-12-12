@@ -182,6 +182,11 @@ void vvSliceViewer::onNewFrame(int frame)
   updateUi();
 }
 
+void vvSliceViewer::update()
+{
+  paint();
+}
+
 void vvSliceViewer::setSlice(int slice)
 {
   size_t width;

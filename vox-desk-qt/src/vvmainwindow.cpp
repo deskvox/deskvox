@@ -246,6 +246,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(impl_->tfDialog, SIGNAL(newWidget(vvTFWidget*)), impl_->canvas, SLOT(addTFWidget(vvTFWidget*)));
   connect(impl_->tfDialog, SIGNAL(newTransferFunction()), impl_->canvas, SLOT(updateTransferFunction()));
   connect(impl_->tfDialog, SIGNAL(undo()), impl_->canvas, SLOT(undoTransferFunction()));
+  connect(impl_->tfDialog, SIGNAL(newTransferFunction()), impl_->sliceViewer, SLOT(update()));
 
   connect(impl_->lightDialog, SIGNAL(enabled(bool)), impl_->canvas, SLOT(enableLighting(bool)));
   connect(impl_->lightDialog, SIGNAL(showLightSource(bool)), impl_->canvas, SLOT(showLightSource(bool)));
