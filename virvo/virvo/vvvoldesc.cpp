@@ -27,6 +27,8 @@
 #include <assert.h>
 #include <sstream>
 
+#include <boost/detail/endian.hpp>
+
 #ifdef VV_DEBUG_MEMORY
 #include <crtdbg.h>
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
@@ -3512,7 +3514,11 @@ void vvVolDesc::makeSliceImage(int frame, vvVecmath::AxisType axis, size_t slice
       switch(bpc)
       {
         case 1: voxelVal = float(sliceData[srcOffset]) / 255.0f; break;
+#ifdef BOOST_LITTLE_ENDIAN
+        case 2: voxelVal = float(int(sliceData[srcOffset + 1]) * 256 + int(sliceData[srcOffset])) / 65535.0f; break;
+#else
         case 2: voxelVal = float(int(sliceData[srcOffset]) * 256 + int(sliceData[srcOffset + 1])) / 65535.0f; break;
+#endif
         case 4: voxelVal = ((*((float*)(sliceData+srcOffset))) - real[0]) / (real[1] - real[0]); break;
         default: assert(0); break;
       }
