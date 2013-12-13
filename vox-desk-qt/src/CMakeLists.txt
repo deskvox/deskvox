@@ -16,6 +16,7 @@ set(VOXDESK_QT_INC
   tfeditor/skipbox.h
 
   vvcanvas.h
+  vvclipdialog.h
   vvdimensiondialog.h
   vvinteractor.h
   vvlightdialog.h
@@ -42,6 +43,7 @@ SET(VOXDESK_QT_SRC
   tfeditor/skipbox.cpp
 
   vvcanvas.cpp
+  vvclipdialog.cpp
   vvdimensiondialog.cpp
   vvinteractor.cpp
   vvlightdialog.cpp
@@ -65,6 +67,7 @@ SET(VOXDESK_QT_UI
   tfeditor/pyramidbox.ui
   tfeditor/skipbox.ui
 
+  vvclipdialog.ui
   vvdimensiondialog.ui
   vvlightdialog.ui
   vvmainwindow.ui

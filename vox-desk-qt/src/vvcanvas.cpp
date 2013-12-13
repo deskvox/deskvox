@@ -829,6 +829,36 @@ void vvCanvas::lastTimeStep()
   setCurrentFrame(_vd->frames - 1);
 }
 
+void vvCanvas::enableClipping(bool enabled)
+{
+  setParameter(vvRenderState::VV_CLIP_MODE, static_cast< unsigned >(enabled));
+}
+
+void vvCanvas::setClipNormal(virvo::Vec3 const& n)
+{
+  setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, n);
+}
+
+void vvCanvas::setClipOrigin(virvo::Vec3 const& o)
+{
+  setParameter(vvRenderState::VV_CLIP_PLANE_POINT, o);
+}
+
+void vvCanvas::setClipSingleSlice(bool active)
+{
+  setParameter(vvRenderState::VV_CLIP_SINGLE_SLICE, active);
+}
+
+void vvCanvas::setClipOpaque(bool active)
+{
+  setParameter(vvRenderState::VV_CLIP_OPAQUE, active);
+}
+
+void vvCanvas::setClipPerimeter(bool active)
+{
+  setParameter(vvRenderState::VV_CLIP_PERIMETER, active);
+}
+
 void vvCanvas::enableLighting(bool enabled)
 {
   setParameter(vvRenderState::VV_LIGHTING, enabled);

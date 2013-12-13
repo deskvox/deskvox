@@ -141,6 +141,13 @@ public slots:
   void firstTimeStep();
   void lastTimeStep();
 
+  void enableClipping(bool enabled);
+  void setClipNormal(virvo::Vec3 const& n);
+  void setClipOrigin(virvo::Vec3 const& o);
+  void setClipSingleSlice(bool active);
+  void setClipOpaque(bool active);
+  void setClipPerimeter(bool active);
+
   void enableLighting(bool enabled);
   void showLightSource(bool show);
   void enableHeadlight(bool enable);

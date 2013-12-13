@@ -81,6 +81,7 @@ private slots:
   void onPreferencesTriggered();
 
   void onTransferFunctionTriggered();
+  void onClippingPlaneTriggered();
   void onLightSourceTriggered();
   void onBackgroundColorTriggered();
 

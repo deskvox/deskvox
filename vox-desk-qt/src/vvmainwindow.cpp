@@ -19,6 +19,7 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "vvcanvas.h"
+#include "vvclipdialog.h"
 #include "vvdimensiondialog.h"
 #include "vvlightdialog.h"
 #include "vvmainwindow.h"
@@ -65,6 +66,7 @@ struct vvMainWindow::Impl
 
   // pointers managed by main-window object
   vvCanvas* canvas;
+  vvClipDialog* clipDialog;
   vvPrefDialog* prefDialog;
   vvDimensionDialog* dimensionDialog;
   vvMergeDialog* mergeDialog;
@@ -197,6 +199,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   impl_->prefDialog = NULL;
 
   impl_->tfDialog = new vvTFDialog(impl_->canvas, this);
+  impl_->clipDialog = new vvClipDialog(this);
   impl_->lightDialog = new vvLightDialog(this);
 
   impl_->dimensionDialog = new vvDimensionDialog(impl_->canvas, this);
@@ -219,6 +222,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
 
   // settings menu
   connect(impl_->ui->actionTransferFunction, SIGNAL(triggered()), this, SLOT(onTransferFunctionTriggered()));
+  connect(impl_->ui->actionClippingPlane, SIGNAL(triggered()), this, SLOT(onClippingPlaneTriggered()));
   connect(impl_->ui->actionLightSource, SIGNAL(triggered()), this, SLOT(onLightSourceTriggered()));
   connect(impl_->ui->actionBackgroundColor, SIGNAL(triggered()), this, SLOT(onBackgroundColorTriggered()));
 
@@ -247,6 +251,13 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(impl_->tfDialog, SIGNAL(newTransferFunction()), impl_->canvas, SLOT(updateTransferFunction()));
   connect(impl_->tfDialog, SIGNAL(undo()), impl_->canvas, SLOT(undoTransferFunction()));
   connect(impl_->tfDialog, SIGNAL(newTransferFunction()), impl_->sliceViewer, SLOT(update()));
+
+  connect(impl_->clipDialog, SIGNAL(clipping(bool)), impl_->canvas, SLOT(enableClipping(bool)));
+  connect(impl_->clipDialog, SIGNAL(normal(virvo::Vec3 const&)), impl_->canvas, SLOT(setClipNormal(virvo::Vec3 const&)));
+  connect(impl_->clipDialog, SIGNAL(origin(virvo::Vec3 const&)), impl_->canvas, SLOT(setClipOrigin(virvo::Vec3 const&)));
+  connect(impl_->clipDialog, SIGNAL(singleSlice(bool)), impl_->canvas, SLOT(setClipSingleSlice(bool)));
+  connect(impl_->clipDialog, SIGNAL(opaque(bool)), impl_->canvas, SLOT(setClipOpaque(bool)));
+  connect(impl_->clipDialog, SIGNAL(perimeter(bool)), impl_->canvas, SLOT(setClipPerimeter(bool)));
 
   connect(impl_->lightDialog, SIGNAL(enabled(bool)), impl_->canvas, SLOT(enableLighting(bool)));
   connect(impl_->lightDialog, SIGNAL(showLightSource(bool)), impl_->canvas, SLOT(showLightSource(bool)));
@@ -659,6 +670,12 @@ void vvMainWindow::onTransferFunctionTriggered()
 
   impl_->tfDialog->raise();
   impl_->tfDialog->show();
+}
+
+void vvMainWindow::onClippingPlaneTriggered()
+{
+  impl_->clipDialog->raise();
+  impl_->clipDialog->show();
 }
 
 void vvMainWindow::onLightSourceTriggered()
