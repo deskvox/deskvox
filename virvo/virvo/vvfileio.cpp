@@ -18,6 +18,10 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#ifdef HAVE_CONFIG_H
+#include "vvconfig.h"
+#endif
+
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -55,6 +59,10 @@
 #include "vvdicom.h"
 #include "vvarray.h"
 #include "private/vvlog.h"
+
+#if VV_HAVE_TEEM
+#include "fileio/nrrd.h"
+#endif
 
 #include <boost/detail/endian.hpp>
 
@@ -3648,6 +3656,18 @@ vvFileIO::ErrorType vvFileIO::loadVTCFile(vvVolDesc* vd)
  */
 vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
 {
+#if VV_HAVE_TEEM
+  try
+  {
+    virvo::nrrd::load(vd);
+    return OK;
+  }
+  catch (std::exception& e)
+  {
+    VV_LOG(0) << e.what();
+    return FILE_ERROR;
+  }
+#else
                                                   // token type
   vvTokenizer::TokenType ttype = vvTokenizer::VV_NOTHING;
                                                   // previous token type
@@ -3828,6 +3848,7 @@ vvFileIO::ErrorType vvFileIO::loadNrrdFile(vvVolDesc* vd)
   if (bigEnd != machineBigEndian) vd->toggleEndianness();
 
   return OK;
+#endif
 }
 
 //----------------------------------------------------------------------------

@@ -18,6 +18,7 @@
 #cmakedefine01 VV_HAVE_PROTOKIT
 #cmakedefine01 VV_HAVE_PTHREADS
 #cmakedefine01 VV_HAVE_SNAPPY
+#cmakedefine01 VV_HAVE_TEEM
 #cmakedefine01 VV_HAVE_VOLPACK
 #cmakedefine01 VV_HAVE_X11
 
@@ -64,6 +65,9 @@
 #endif
 #if VV_HAVE_SNAPPY
 #define HAVE_SNAPPY
+#endif
+#if VV_HAVE_TEEM
+#define HAVE_TEEM
 #endif
 #if VV_HAVE_VOLPACK
 #define HAVE_VOLPACK

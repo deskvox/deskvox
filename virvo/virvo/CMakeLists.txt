@@ -12,6 +12,7 @@ find_package(ZLIB)
 find_package(Protokit)
 find_package(Pthreads REQUIRED)
 find_package(SNAPPY)
+find_package(Teem)
 find_package(VolPack)
 find_package(X11)
 
@@ -31,6 +32,7 @@ deskvox_use_package(ZLIB)
 deskvox_use_package(Protokit)
 deskvox_use_package(Pthreads)
 deskvox_use_package(SNAPPY)
+deskvox_use_package(Teem)
 deskvox_use_package(VolPack)
 deskvox_use_package(X11)
 
@@ -81,6 +83,9 @@ set(VIRVO_HEADERS
   cuda/symbol.h
   cuda/texture.h
   cuda/utils.h
+
+  fileio/exceptions.h
+  fileio/nrrd.h
 
   gl/handle.h
   gl/types.h
@@ -202,6 +207,8 @@ set(VIRVO_SOURCES
   cuda/graphics_resource.cpp
   cuda/host_device_array.cpp
   cuda/utils.cpp
+
+  fileio/nrrd.cpp
 
   gl/handle.cpp
   gl/util.cpp
