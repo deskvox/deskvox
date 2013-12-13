@@ -4,7 +4,9 @@
 #include <virvo/vvvoldesc.h>
 #include <virvo/private/vvlog.h>
 
+#if VV_HAVE_TEEM
 #include <teem/nrrd.h>
+#endif
 
 #include <string>
 #include <string.h> // memcpy
