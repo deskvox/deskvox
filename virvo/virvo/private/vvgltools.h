@@ -184,15 +184,6 @@ VVAPI Matrix getProjectionMatrix();
 }
 }
 
-inline bool operator==(const virvo::Viewport& vp1, const virvo::Viewport& vp2)
-{
-  return (vp1[0] == vp2[0] && vp1[1] == vp2[1] && vp1[2] == vp2[2] && vp1[3] == vp2[3]);
-}
-
-inline bool operator!=(const virvo::Viewport& vp1, const virvo::Viewport& vp2)
-{
-  return (vp1[0] != vp2[0] || vp1[1] != vp2[1] || vp1[2] != vp2[2] || vp1[3] != vp2[3]);
-}
 
 #define VV_GLERROR virvo::gltools::lastError(__FILE__, __LINE__)
 

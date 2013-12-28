@@ -106,3 +106,18 @@ void vvBaseRect<T>::intersect(const vvBaseRect<T>& rhs)
   }
 }
 
+
+template < typename T >
+bool operator==(vvBaseRect< T > const& lhs, vvBaseRect< T > const& rhs)
+{
+  return lhs[0] == rhs[0] && lhs[1] == rhs[1] && lhs[2] == rhs[2] && lhs[3] == rhs[3];
+}
+
+
+template < typename T >
+bool operator!=(vvBaseRect< T > const& lhs, vvBaseRect< T > const& rhs)
+{
+  return lhs[0] != rhs[0] || lhs[1] != rhs[1] || lhs[2] != rhs[2] || lhs[3] != rhs[3];
+}
+
+

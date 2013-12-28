@@ -70,6 +70,12 @@ typedef vvRecti Viewport;
 }
 
 
+template < typename T >
+inline bool operator==(vvBaseRect< T > const& lhs, vvBaseRect< T > const& rhs);
+
+template < typename T >
+inline bool operator!=(vvBaseRect< T > const& lhs, vvBaseRect< T > const& rhs);
+
 template <typename T>
 inline std::ostream& operator<<(std::ostream& out, const vvBaseRect<T>& r)
 {
