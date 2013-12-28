@@ -72,6 +72,8 @@ set(VIRVO_HEADERS
   private/vvimage.h
   private/vvlog.h
   private/vvmessage.h
+  private/project.h
+  private/project.impl.h
   private/vvserialize.h
   private/vvserver.h
 

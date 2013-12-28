@@ -23,6 +23,7 @@
 
 #include "mem/allocator.h"
 #include "private/vvlog.h"
+#include "private/project.h"
 
 
 #ifdef HAVE_CONFIG_H
@@ -418,7 +419,7 @@ void vvSoftRayRend::renderVolumeGL()
 
   vvAABB aabb = vvAABB(virvo::Vec3(), virvo::Vec3());
   vd->getBoundingBox(aabb);
-  vvRecti r = vvGLTools::getBoundingRect(aabb);
+  vvRecti r = virvo::bounds(aabb, mv, pr, vp);
   std::vector<virvo::Tile> tiles = makeTiles(r, vp);
 
   float* colorBuffer = reinterpret_cast<float*>(rt->deviceColor());

@@ -22,9 +22,8 @@
 #define _VVGLTOOLS_H_
 
 #include "vvexport.h"
+#include "vvrect.h"
 #include "vvvecmath.h"
-#include "vvaabb.h"
-#include "vvopengl.h"
 
 
 //============================================================================
@@ -65,113 +64,6 @@ class VIRVOEXPORT vvGLTools
     static void setModelviewMatrix(const vvMatrix& mv);
     static void setProjectionMatrix(const vvMatrix& pr);
     static void getClippingPlanes(vvPlane& znear, vvPlane& zfar);
-    static vvVector3 project(const vvVector3& obj);
-    static vvVector3 unProject(const vvVector3& win);
-
-    /*! calc bounding rect of box in screen space coordinates
-     */ 
-    template<typename T>
-    static vvRecti getBoundingRect(const vvBaseAABB<T>& aabb)
-    {
-      GLdouble modelview[16];
-      glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-
-      GLdouble projection[16];
-      glGetDoublev(GL_PROJECTION_MATRIX, projection);
-
-      const virvo::Viewport viewport = getViewport();
-
-      T minX = std::numeric_limits<T>::max();
-      T minY = std::numeric_limits<T>::max();
-      T maxX = -std::numeric_limits<T>::max();
-      T maxY = -std::numeric_limits<T>::max();
-      
-      const typename vvBaseAABB<T>::vvBoxCorners& vertices = aabb.getVertices();
-
-      for (int i = 0; i < 8; ++i)
-      {
-        GLdouble vertex[3];
-        gluProject(vertices[i][0], vertices[i][1], vertices[i][2],
-                   modelview, projection, viewport.values,
-                   &vertex[0], &vertex[1], &vertex[2]);
-
-        if (vertex[0] < minX)
-        {
-          minX = static_cast<T>(vertex[0]);
-        }
-        if (vertex[0] > maxX)
-        {
-          maxX = static_cast<T>(vertex[0]);
-        }
-
-        if (vertex[1] < minY)
-        {
-          minY = static_cast<T>(vertex[1]);
-        }
-        if (vertex[1] > maxY)
-        {
-          maxY = static_cast<T>(vertex[1]);
-        }
-      }
-
-      vvRecti result;
-      result[0] = std::max(0, static_cast<int>(floorf(minX)));
-      result[1] = std::max(0, static_cast<int>(floorf(minY)));
-      result[2] = std::min(static_cast<int>(ceilf(fabsf(maxX - minX))), viewport[2] - result[0]);
-      result[3] = std::min(static_cast<int>(ceilf(fabsf(maxY - minY))), viewport[3] - result[1]);
-
-      return result;
-    }
-    
-    template<typename T>
-    static void render(const vvBaseAABB<T>& aabb)
-    {
-      const typename vvBaseAABB<T>::vvBoxCorners& vertices = aabb.getVertices();
-
-      glBegin(GL_LINES);
-        glColor3f(1.0f, 1.0f, 1.0f);
-
-        // front
-        glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
-        glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
-
-        glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
-        glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
-
-        glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
-        glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
-
-        glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
-        glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
-
-        // back
-        glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
-        glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
-
-        glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
-        glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
-
-        glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
-        glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
-
-        glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
-        glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
-
-        // left
-        glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
-        glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
-
-        glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
-        glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
-
-        // right
-        glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
-        glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
-
-        glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
-        glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
-      glEnd();
-    }
 };
 
 namespace virvo

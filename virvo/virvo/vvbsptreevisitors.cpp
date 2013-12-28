@@ -112,7 +112,52 @@ void vvShowBricksVisitor::visit(vvVisitable* obj) const
     // convert voxel to obj coordinates
     vvAABB objAabb = vvAABB(_vd->objectCoords(node->getAabb().getMin()),
                             _vd->objectCoords(node->getAabb().getMax()));
-    vvGLTools::render(objAabb);
+
+    const typename vvAABB::vvBoxCorners& vertices = objAabb.getVertices();
+
+    glBegin(GL_LINES);
+      glColor3f(1.0f, 1.0f, 1.0f);
+
+      // front
+      glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
+      glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
+
+      glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
+      glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
+
+      glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
+      glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
+
+      glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
+      glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
+
+      // back
+      glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
+      glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
+
+      glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
+      glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
+
+      glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
+      glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
+
+      glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
+      glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
+
+      // left
+      glVertex3f(vertices[5][0], vertices[5][1], vertices[5][2]);
+      glVertex3f(vertices[0][0], vertices[0][1], vertices[0][2]);
+
+      glVertex3f(vertices[3][0], vertices[3][1], vertices[3][2]);
+      glVertex3f(vertices[6][0], vertices[6][1], vertices[6][2]);
+
+      // right
+      glVertex3f(vertices[1][0], vertices[1][1], vertices[1][2]);
+      glVertex3f(vertices[4][0], vertices[4][1], vertices[4][2]);
+
+      glVertex3f(vertices[7][0], vertices[7][1], vertices[7][2]);
+      glVertex3f(vertices[2][0], vertices[2][1], vertices[2][2]);
+    glEnd();
   }
 }
 

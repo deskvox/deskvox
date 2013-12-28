@@ -31,6 +31,7 @@
 #include "vvvoldesc.h"
 
 #include "private/vvgltools.h"
+#include "private/project.h"
 
 #include <queue>
 #include <sstream>
@@ -464,6 +465,8 @@ void vvParBrickRend::render(Thread* thread)
 {
   pthread_barrier_wait(thread->barrier);
 
+  // TODO: check if these are necessary anymore
+  // (bounds no longer checks the gl matrix state)
   vvGLTools::setModelviewMatrix(thread->mv);
   vvGLTools::setProjectionMatrix(thread->pr);
 
@@ -473,7 +476,7 @@ void vvParBrickRend::render(Thread* thread)
   thread->renderer->renderVolumeGL();
   const virvo::Viewport vp = vvGLTools::getViewport();
 
-  vvRecti bounds = vvGLTools::getBoundingRect(thread->aabb);
+  vvRecti bounds = virvo::bounds(thread->aabb, thread->mv, thread->pr, vp);
   bounds.intersect(vp);
 
   (*thread->texture.rect)[0] = bounds[0];

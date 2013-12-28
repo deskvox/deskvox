@@ -419,51 +419,6 @@ void vvGLTools::getClippingPlanes(vvPlane& znear, vvPlane& zfar)
   zfar._normal.normalize();
 }
 
-//----------------------------------------------------------------------------
-/** Return a projected vertex (gluProject).
-  @param obj coordinate
-*/
-vvVector3 vvGLTools::project(const vvVector3& obj)
-{
-  double modelview[16];
-  double projection[16];
-  glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-  glGetDoublev(GL_PROJECTION_MATRIX, projection);
-  virvo::Viewport viewport = vvGLTools::getViewport();
-  double winX;
-  double winY;
-  double winZ;
-
-  gluProject(obj[0], obj[1], obj[2],
-             modelview, projection, viewport.values,
-             &winX, &winY, &winZ);
-  return vvVector3(static_cast<float>(winX),
-                   static_cast<float>(winY),
-                   static_cast<float>(winZ));
-}
-
-//----------------------------------------------------------------------------
-/** Return an un-projected vertex (gluUnProject).
-  @param win coordinate
-*/
-vvVector3 vvGLTools::unProject(const vvVector3& win)
-{
-  double modelview[16];
-  double projection[16];
-  glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-  glGetDoublev(GL_PROJECTION_MATRIX, projection);
-  virvo::Viewport viewport = vvGLTools::getViewport();
-  double objX;
-  double objY;
-  double objZ;
-
-  gluUnProject(win[0], win[1], win[2],
-               modelview, projection, viewport.values,
-               &objX, &objY, &objZ);
-  return vvVector3(static_cast<float>(objX),
-                   static_cast<float>(objY),
-                   static_cast<float>(objZ));
-}
 
 std::string virvo::gltools::lastError(const std::string& file, int line)
 {
