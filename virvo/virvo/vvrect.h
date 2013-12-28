@@ -59,14 +59,31 @@ public:
   }
 };
 
-typedef vvBaseRect<int> vvRecti;
-typedef vvBaseRect<float> vvRectf;
-typedef vvBaseRect<double> vvRectd;
-typedef vvRecti vvRect;
+typedef vvBaseRect<int>                     vvRecti;
+typedef vvBaseRect<float>                   vvRectf;
+typedef vvBaseRect<double>                  vvRectd;
+typedef vvRecti                             vvRect;
 
 namespace virvo
 {
-typedef vvRecti Viewport;
+
+typedef vvBaseRect< int >                   Recti;
+typedef vvBaseRect< long >                  Rectl;
+typedef vvBaseRect< long long >             Rectll;
+
+typedef vvBaseRect< unsigned short >        Rectus;
+typedef vvBaseRect< unsigned int >          Rectui;
+typedef vvBaseRect< unsigned long >         Rectul;
+typedef vvBaseRect< unsigned long long >    Rectull;
+
+
+typedef vvBaseRect< float >                 Rectf;
+typedef vvBaseRect< double >                Rectd;
+
+
+typedef vvBaseRect< int >                   Viewport;
+typedef vvBaseRect< int >                   Rect;
+
 }
 
 
