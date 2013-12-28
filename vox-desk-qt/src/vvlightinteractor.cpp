@@ -38,6 +38,18 @@ vvLightInteractor::vvLightInteractor()
 
 void vvLightInteractor::render() const
 {
+
+
+// Qt 4 unfortunately overrides MAC_OS_X_VERSION_MIN_REQUIRED:
+// http://comments.gmane.org/gmane.comp.lib.qt.user/10220
+#if  defined(__APPLE__) //&& MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
+
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wdeprecated"
+
+#endif
+
+
   // store GL state
   GLboolean lighting;
   GLboolean depthtest;
@@ -115,6 +127,16 @@ void vvLightInteractor::render() const
   {
     glEnable(GL_DEPTH_TEST);
   }
+
+
+// Qt 4 unfortunately overrides MAC_OS_X_VERSION_MIN_REQUIRED:
+// http://comments.gmane.org/gmane.comp.lib.qt.user/10220
+#if defined(__APPLE__) //&& MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
+
+  #pragma GCC diagnostic pop
+
+#endif
+
 }
 
 void vvLightInteractor::mouseMoveEvent(QMouseEvent* event)

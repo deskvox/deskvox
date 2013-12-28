@@ -22,6 +22,19 @@
 #include <virvo/private/vvgltools.h>
 #include "vvobjview.h"
 
+#ifdef __APPLE__
+
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
+
+  #pragma GCC diagnostic ignored "-Wdeprecated"
+
+#endif
+
+#endif // __APPLE__
+
+
 using std::cerr;
 using std::cout;
 using std::endl;

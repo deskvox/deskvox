@@ -113,7 +113,7 @@ void vvShowBricksVisitor::visit(vvVisitable* obj) const
     vvAABB objAabb = vvAABB(_vd->objectCoords(node->getAabb().getMin()),
                             _vd->objectCoords(node->getAabb().getMax()));
 
-    const typename vvAABB::vvBoxCorners& vertices = objAabb.getVertices();
+    const vvAABB::vvBoxCorners& vertices = objAabb.getVertices();
 
     glBegin(GL_LINES);
       glColor3f(1.0f, 1.0f, 1.0f);

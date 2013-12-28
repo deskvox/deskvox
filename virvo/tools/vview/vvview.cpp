@@ -27,8 +27,19 @@ using std::ios;
 #include <stdlib.h>
 #include <stdio.h>
 #ifdef __APPLE__
+
+
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
+
+  #pragma GCC diagnostic ignored "-Wdeprecated"
+
+#endif
+
 #include <GLUT/glut.h>
-#else
+
+#else // __APPLE__
 #include <GL/glut.h>
 #ifdef FREEGLUT
 #include <GL/freeglut_ext.h>

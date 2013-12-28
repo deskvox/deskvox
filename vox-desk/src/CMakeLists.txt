@@ -28,6 +28,13 @@ if(CUDA_FOUND)
   include_directories(SYSTEM ${CUDA_TOOLKIT_INCLUDE})
 endif()
 
+##
+## silence glu(t) deprecation warnings on OS X Mavericks
+##
+if(APPLE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
+endif()
+
 deskvox_link_libraries(virvo)
 
 deskvox_add_tool(vox-desk
