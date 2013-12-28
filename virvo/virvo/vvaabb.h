@@ -156,12 +156,6 @@ public:
   }
 };
 
-template <typename T>
-inline std::ostream& operator<<(std::ostream& out, const vvBaseRect<T>& r)
-{
-  out << "x: " << r.x << ", y: " << r.y << ", width: " << r.width << ", height: " << r.height;
-  return out;
-}
 
 template <typename T>
 inline std::ostream& operator<<(std::ostream& out, const vvBaseAABB<T>& aabb)

@@ -21,6 +21,10 @@
 #ifndef VV_RECT_H
 #define VV_RECT_H
 
+
+#include <ostream>
+
+
 template <typename T>
 class vvBaseRect
 {
@@ -64,6 +68,15 @@ namespace virvo
 {
 typedef vvRecti Viewport;
 }
+
+
+template <typename T>
+inline std::ostream& operator<<(std::ostream& out, const vvBaseRect<T>& r)
+{
+  out << "x: " << r.x << ", y: " << r.y << ", width: " << r.width << ", height: " << r.height;
+  return out;
+}
+
 
 #include "vvrect.impl.h"
 
