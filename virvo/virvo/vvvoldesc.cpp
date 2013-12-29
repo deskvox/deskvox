@@ -1518,7 +1518,6 @@ void vvVolDesc::deleteChannel(size_t channel, bool verbose)
 */
 void vvVolDesc::bitShiftData(int bits, int frame, bool verbose)
 {
-  long byte;
   int  shift;
   uint8_t* rd;
   size_t sliceSize;
@@ -2864,7 +2863,7 @@ void vvVolDesc::trilinearInterpolation(size_t f, float x, float y, float z, uint
   uint8_t* rd;
   uint8_t* neighbor[8];                           // pointers to neighboring voxels
   float val[8];                                   // neighboring voxel values
-  vvsize3 tfl;                                    // coordinates of neighbor 0 (top-front-left)
+  vvssize3 tfl;                                   // coordinates of neighbor 0 (top-front-left)
   float dist[3];                                  // distance to neighbor 0
   size_t lineSize, sliceSize;
   int interpolated;                               // interpolated value

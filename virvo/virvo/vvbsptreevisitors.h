@@ -26,6 +26,7 @@
 
 class vvImage;
 class vvRenderer;
+class vvVolDesc;
 
 #include <vector>
 

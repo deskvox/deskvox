@@ -28,9 +28,7 @@
 
 #include <vector>
 
-class vvBrick;
 class vvVisitor;
-class vvVolDesc;
 
 class vvBspNode : public vvVisitable
 {
@@ -77,7 +75,7 @@ struct vvBspData
 class vvBspTree
 {
 public:
-  vvBspTree(vvVolDesc* vd, const vvBspData& data);
+  vvBspTree(virvo::ssize3 const& volsize, const vvBspData& data);
   virtual ~vvBspTree();
 
   void traverse(const vvssize3& pos) const;
@@ -87,7 +85,6 @@ public:
   void setVisitor(vvVisitor* visitor);
 private:
   std::vector<vvBspNode*> _leafs;
-  vvVolDesc* _vd;
   vvBspNode* _root;
   vvVisitor* _visitor;
   vvBspData _data;

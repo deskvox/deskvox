@@ -151,7 +151,6 @@ class vvView
     std::vector<std::string> servers;
     std::vector<int> ports;
     std::vector<vvSocket*> sockets;
-    bool redistributeVolData;                   ///< don't load server volume data from file, but let master send it through socket
     bool benchmark;                             ///< don't run interactively, just perform timed rendering and exit
     std::vector<std::string> serverFileNames;   ///< a list with file names where remote servers can find the appropriate volume data
     const char* testSuiteFileName;

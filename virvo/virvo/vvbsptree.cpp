@@ -26,9 +26,7 @@
 #include "vvdebugmsg.h"
 #include "vvopengl.h"
 #include "vvtoolshed.h"
-#include "vvvoldesc.h"
 
-#include "private/vvgltools.h"
 
 //============================================================================
 // vvBspNode Method Definitions
@@ -124,9 +122,8 @@ void vvBspNode::clipProbe(vvVector3& probeMin, vvVector3& probeMax,
 // vvBspTree Method Definitions
 //============================================================================
 
-vvBspTree::vvBspTree(vvVolDesc* vd, const vvBspData& data)
-  : _vd(vd)
-  , _root(NULL)
+vvBspTree::vvBspTree(virvo::ssize3 const& volsize, const vvBspData& data)
+  : _root(NULL)
   , _visitor(NULL)
   , _data(data)
 {
@@ -157,7 +154,7 @@ vvBspTree::vvBspTree(vvVolDesc* vd, const vvBspData& data)
   }
 
   vvssize3 voxMin(0, 0, 0);
-  vvssize3 voxMax = vd->vox;
+  vvssize3 voxMax = volsize;
   _leafs.resize(_data.loadBalance.size());
 
   if (_leafs.size() < 1)

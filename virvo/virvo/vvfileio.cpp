@@ -290,8 +290,8 @@ vvFileIO::ErrorType vvFileIO::loadASCFile(vvVolDesc* vd)
       delete[] raw;
       return FILE_ERROR;
     }
-    if (tmpx < 0 || size_t(tmpx)>vd->vox[0]-1 || tmpy < 0 || size_t(tmpy)>vd->vox[1]-1
-     || tmpy < 0 || size_t(tmpz)>vd->vox[2]-1 || op < 0 || op>255)
+    if (tmpx < 0 || ssize_t(tmpx)>vd->vox[0]-1 || tmpy < 0 || ssize_t(tmpy)>vd->vox[1]-1
+     || tmpy < 0 || ssize_t(tmpz)>vd->vox[2]-1 || op < 0 || op>255)
     {
       vvDebugMsg::msg(1, "Error: Invalid value in ASC file.");
       fclose(fp);

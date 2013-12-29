@@ -410,9 +410,6 @@ void vvSoftRayRend::renderVolumeGL()
 
   virvo::RenderTarget* rt = getRenderTarget();
 
-  int w = rt->width();
-  int h = rt->height();
-
   Matrix invViewMatrix = mv;
   invViewMatrix = pr * invViewMatrix;
   invViewMatrix.invert();

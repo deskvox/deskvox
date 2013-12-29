@@ -95,7 +95,7 @@ bool vvBrickRend::buildBspTree(size_t numBricks)
   vvBspData data;
   data.numLeafs = numBricks;
 
-  _bspTree = new vvBspTree(vd, data);
+  _bspTree = new vvBspTree(vd->vox, data);
 
    return (_bspTree != NULL);
 }

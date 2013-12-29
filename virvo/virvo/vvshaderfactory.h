@@ -65,7 +65,6 @@ private:
   const std::string getShaderDir();
   bool loadFileStrings();
 
-  bool _cgSupport;
   vvShaderProgram::GeoShaderArgs _geoShaderArgs;
 
   std::string _shaderName[3];

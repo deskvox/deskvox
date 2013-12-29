@@ -187,12 +187,6 @@ inline Matrix operator*(Matrix const& m, Matrix const& n)
   return result;
 }
 
-inline Vec3 operator*(Matrix const& m, Vec3 const& v)
-{
-  Vec3 result = v;
-  return result;
-}
-
 inline Vec4 operator*(Matrix const& m, Vec4 const& v)
 {
   Matrix tmp;
@@ -203,6 +197,15 @@ inline Vec4 operator*(Matrix const& m, Vec4 const& v)
   Matrix res = m * tmp;
   return Vec4(res.row(0), res.row(1), res.row(2), res.row(3));
 }
+
+
+inline Vec3 operator*(Matrix const& m, Vec3 const& v)
+{
+  Vec4 tmp(v[0], v[1], v[2], 1);
+  Vec4 res = m * tmp;
+  return Vec3(res[0] / res[3], res[1] / res[3], res[2] / res[3]);
+}
+
 
 inline std::ostream& operator<<(std::ostream& out, Matrix const& m)
 {
