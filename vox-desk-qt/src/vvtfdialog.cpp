@@ -36,7 +36,8 @@
 #include <QGraphicsPixmapItem>
 #include <QGraphicsRectItem>
 
-#include <map>
+#include <boost/bimap.hpp>
+
 
 namespace
 {
@@ -119,8 +120,8 @@ struct vvTFDialog::Impl
   Pin* selected;
   Pin* moving;
 
-  std::map<Pin*, vvTFWidget*> pin2widgetmap;
-  std::map<vvTFWidget*, Pin*> widget2pinmap;
+  typedef boost::bimap< Pin*, vvTFWidget*> bm_type;
+  bm_type pin2widget;
 
   vvVector2f zoomRange; ///< min/max for zoom area on data range
 
@@ -231,8 +232,7 @@ void vvTFDialog::clearPins()
   }
   impl_->alphapins.clear();
 
-  impl_->pin2widgetmap.clear();
-  impl_->widget2pinmap.clear();
+  impl_->pin2widget.clear();
   impl_->selected = NULL;
   impl_->moving = NULL;
 }
@@ -273,9 +273,7 @@ void vvTFDialog::createPin(vvTFWidget* w)
     impl_->alphapins.push_back(pin);
 
   }
-  impl_->pin2widgetmap[pin] = w;
-  impl_->widget2pinmap[w] = pin;
-  assert(impl_->pin2widgetmap.size() == impl_->widget2pinmap.size());
+  impl_->pin2widget.insert(Impl::bm_type::value_type(pin, w));
 }
 
 void vvTFDialog::makeColorBar(std::vector<uchar>* colorBar, int width) const
@@ -352,7 +350,8 @@ void vvTFDialog::onNewWidget()
 
   emit newWidget(widget);
   createPin(widget);
-  impl_->selected = impl_->widget2pinmap[widget];
+  Impl::bm_type::right_const_iterator rit = impl_->pin2widget.right.find(widget);
+  impl_->selected = rit->second;
   updateSettingsBox();
   drawTF();
 }
@@ -364,10 +363,14 @@ void vvTFDialog::onDeleteClicked()
     return;
   }
   _canvas->getVolDesc()->tf.putUndoBuffer();
-  _canvas->getVolDesc()->tf._widgets.erase(
-    std::find(_canvas->getVolDesc()->tf._widgets.begin(), _canvas->getVolDesc()->tf._widgets.end(),
-      impl_->pin2widgetmap[impl_->selected]));
+
+  Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
+  _canvas->getVolDesc()->tf._widgets.erase
+  (
+    std::find(_canvas->getVolDesc()->tf._widgets.begin(), _canvas->getVolDesc()->tf._widgets.end(), lit->second)
+  );
   impl_->selected = NULL;
+
   emitTransFunc();
   clearPins();
   createPins();
@@ -457,7 +460,8 @@ void vvTFDialog::loadTF()
 void vvTFDialog::onColor(const QColor& color)
 {
   assert(impl_->selected != NULL);
-  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
+  Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
+  vvTFWidget* wid = lit->second;
   if (vvTFColor* c = dynamic_cast<vvTFColor*>(wid))
   {
     c->setColor(vvColor(color.redF(), color.greenF(), color.blueF()));
@@ -481,7 +485,8 @@ void vvTFDialog::onColor(const QColor& color)
 void vvTFDialog::onHasOwnColor(bool hascolor)
 {
   assert(impl_->selected != NULL);
-  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
+  Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
+  vvTFWidget* wid = lit->second;
   if (vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(wid))
   {
     p->setOwnColor(hascolor);
@@ -501,7 +506,8 @@ void vvTFDialog::onHasOwnColor(bool hascolor)
 void vvTFDialog::onOpacity(float opacity)
 {
   assert(impl_->selected != NULL);
-  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
+  Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
+  vvTFWidget* wid = lit->second;
   if (vvTFBell* b = dynamic_cast<vvTFBell*>(wid))
   {
     b->setOpacity(opacity);
@@ -521,7 +527,8 @@ void vvTFDialog::onOpacity(float opacity)
 void vvTFDialog::onSize(const vvVector3& size)
 {
   assert(impl_->selected != NULL);
-  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
+  Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
+  vvTFWidget* wid = lit->second;
   if (vvTFBell* b = dynamic_cast<vvTFBell*>(wid))
   {
     b->setSize(size);
@@ -541,7 +548,8 @@ void vvTFDialog::onSize(const vvVector3& size)
 void vvTFDialog::onTop(const vvVector3& top)
 {
   assert(impl_->selected != NULL);
-  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
+  Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
+  vvTFWidget* wid = lit->second;
   vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(wid);
   assert(p != NULL);
   p->setTop(top);
@@ -552,7 +560,8 @@ void vvTFDialog::onTop(const vvVector3& top)
 void vvTFDialog::onBottom(const vvVector3& bottom)
 {
   assert(impl_->selected != NULL);
-  vvTFWidget* wid = impl_->pin2widgetmap[impl_->selected];
+  Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
+  vvTFWidget* wid = lit->second;
   vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(wid);
   assert(p != NULL);
   p->setBottom(bottom);
@@ -576,7 +585,8 @@ void vvTFDialog::onTFMouseMove(QPointF pos, Qt::MouseButton /* button */)
     x = ts_clamp(x, 0.0f, static_cast<float>(TF_WIDTH));
     QPointF pinpos = (*it)->pos();
     (*it)->setPos(x, pinpos.y());
-    vvTFWidget* w = impl_->pin2widgetmap[*it];
+    Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(*it);
+    vvTFWidget* w = lit->second;
     if (w != NULL)
     {
       x /= static_cast<float>(TF_WIDTH);
@@ -658,7 +668,8 @@ void vvTFDialog::updateSettingsBox()
   }
 
   // new settings box
-  vvTFWidget* w = impl_->pin2widgetmap[selected];
+  Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(selected);
+  vvTFWidget* w = lit->second;
   if (vvTFColor* c = dynamic_cast<vvTFColor*>(w))
   {
     tf::ColorBox* cb = new tf::ColorBox(this);
