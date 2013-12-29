@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../vvforceinline.h"
+#include "../vvmacros.h"
 
 #include "../mem/align.h"
 
@@ -11,6 +12,7 @@
 #endif
 
 #include <ostream>
+#include <stdexcept>
 
 namespace virvo
 {
@@ -95,7 +97,9 @@ VV_FORCE_INLINE Veci operator*(Veci const& u, Veci const& v)
   return _mm_unpacklo_epi32(_mm_shuffle_epi32(tmp_2_0, _MM_SHUFFLE(0, 0, 2, 0)),
     _mm_shuffle_epi32(tmp_3_1, _MM_SHUFFLE(0, 0, 2, 0)));
 #else
-  throw "not implemented yet";
+  VV_UNUSED(u);
+  VV_UNUSED(v);
+  throw std::runtime_error("not implemented yet");
 #endif
 }
 

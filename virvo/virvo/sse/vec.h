@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../vvforceinline.h"
+#include "../vvmacros.h"
 
 #include "../mem/align.h"
 
@@ -11,6 +12,7 @@
 #endif
 
 #include <ostream>
+#include <stdexcept>
 
 namespace virvo
 {
@@ -258,7 +260,8 @@ VV_FORCE_INLINE Vec floor(Vec const& v)
 #ifdef __SSE4_1__
   return _mm_floor_ps(v);
 #else
-  throw "not implemented yet";
+  VV_UNUSED(v);
+  throw std::runtime_error("not implemented yet");
 #endif
 }
  
@@ -353,7 +356,9 @@ VV_FORCE_INLINE Vec dot(Vec const& u, Vec const& v)
 #ifdef __SSE4_1__
   return _mm_dp_ps(u, v, 0xFF);
 #else
-  throw "not implemented yet";
+  VV_UNUSED(u);
+  VV_UNUSED(v);
+  throw std::runtime_error("not implemented yet");
 #endif
 }
 
