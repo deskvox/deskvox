@@ -28,9 +28,6 @@
 #include <iostream>
 #include <string.h>
 
-// Virvo:
-#include <vvarray.h>
-
 // Local:
 #include "vvshell.h"
 #include "vvcanvas.h"
@@ -548,8 +545,8 @@ class VVHistWindow : public FXDialogBox
       ID_CANVAS,
       ID_LAST
     };
-    vvArray<FXColor> _colorArray;
-    vvArray<float*> _valArray;
+    std::vector< FXColor > _colorArray;
+    std::vector< std::vector< float > > _valArray;
     FXCanvas* _histCanvas;
     size_t _channels;
 

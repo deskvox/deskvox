@@ -180,14 +180,12 @@ long VVVolumeDialog::onMakeIcon(FXObject*, FXSelector, void*)
 
 long VVVolumeDialog::onChannels(FXObject*, FXSelector, void*)
 {
-  const char* name;
-
   FXString info;
   for (size_t c=0; c<_canvas->_vd->chan; ++c)
   {
     info += "Channel " + FXStringFormat("%" VV_PRIdSIZE, c) + ": ";
-    name = _canvas->_vd->getChannelName(c);
-    if (name) info += name;
+    std::string name = _canvas->_vd->getChannelName(c);
+    if (!name.empty()) info += name.c_str();
     else info += "UNNAMED";
     info += "\n";
   }
@@ -1990,10 +1988,10 @@ long VVHistWindow::onPaint(FXObject*,FXSelector,void*)
 
 void VVHistWindow::createColorLookup()
 {
-  _colorArray.append(FXRGB(255,0,0));
-  _colorArray.append(FXRGB(0,255,0));
-  _colorArray.append(FXRGB(0,0,255));
-  _colorArray.append(FXRGB(255,255,0));
+  _colorArray.push_back(FXRGB(255,0,0));
+  _colorArray.push_back(FXRGB(0,255,0));
+  _colorArray.push_back(FXRGB(0,0,255));
+  _colorArray.push_back(FXRGB(255,255,0));
 }
 
 void VVHistWindow::drawHist()
@@ -2002,7 +2000,7 @@ void VVHistWindow::drawHist()
   dc.setForeground(FXRGB(255,255,255));
   dc.fillRectangle(0,0,400,400);
 
-  if (_channels == 0 || _valArray.count() == 0) return;
+  if (_channels == 0 || _valArray.size() == 0) return;
 
   int hOffset = 20;
   int wOffset = 20;
@@ -2015,16 +2013,16 @@ void VVHistWindow::drawHist()
   int totalWidth = canvWidth-2*wOffset;
   int totalHeight = canvHeight-2*hOffset;
   int zeroHeight = canvHeight-hOffset;
-  int indWidth = totalWidth / (_valArray.count()-1);
+  int indWidth = totalWidth / (_valArray.size()-1);
   double scale = ((double)totalHeight)/255.0;
   int currWidth = wOffset;
-  for(size_t i = 0; i < _valArray.count() - 1; ++i)
+  for(size_t i = 0; i < _valArray.size() - 1; ++i)
   {
     for(size_t j = 0; j < _channels; ++j)
     {
       temp = _valArray[i][j];
       temp1 = _valArray[i+1][j];
-      dc.setForeground(_colorArray[j % _colorArray.count()]);
+      dc.setForeground(_colorArray[j % _colorArray.size()]);
       dc.drawLine(currWidth, int(zeroHeight-temp*scale), currWidth + indWidth, int(zeroHeight-temp1*scale));
     }
     currWidth += indWidth;

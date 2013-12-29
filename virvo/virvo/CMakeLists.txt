@@ -114,7 +114,6 @@ set(VIRVO_HEADERS
 
   vvaabb.h
   vvaabb.impl.h
-  vvarray.h
   vvbrick.h
   vvbrickrend.h
   vvbsptree.h

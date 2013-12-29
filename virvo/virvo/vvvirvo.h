@@ -34,10 +34,7 @@
                                      create new rendering classes by deriving them from vvRenderer.
                                      Transfer functions for volume rendering are managed by vvTransFunc.
                                      The class vvSocket allows system independent socket communication,
-not limited to the transfer of volume data. The classes
-vvArray and vvSLList/vvSLNode allow using STL-style vectors and lists
-without actually linking with STL (which is problematic if the code
-is supposed to be system independent). vvDicom is a pretty good DICOM
+not limited to the transfer of volume data. vvDicom is a pretty good DICOM
 image file reader which can be extended to any unknown formats. vvVector3/4
 and vvMatrix are components of vvVecmath, a useful library for linear algebra.
 <DT><B>Copyright</B>             <DD>(c) 1999-2005 J&uuml;rgen P. Schulze. All rights reserved.

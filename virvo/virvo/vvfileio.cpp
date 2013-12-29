@@ -57,7 +57,6 @@
 #include "vvdebugmsg.h"
 #include "vvtokenizer.h"
 #include "vvdicom.h"
-#include "vvarray.h"
 #include "private/vvlog.h"
 
 #if VV_HAVE_TEEM
@@ -821,8 +820,8 @@ vvFileIO::ErrorType vvFileIO::saveXVFFile(vvVolDesc* vd)
   fprintf(fp, "CHANNELNAMES");
   for (size_t i=0; i<vd->chan; ++i)
   {
-    if (vd->getChannelName(i)==NULL) fprintf(fp, " UNNAMED");
-    else fprintf(fp, " %s", vd->getChannelName(i));
+    if (vd->getChannelName(i).empty()) fprintf(fp, " UNNAMED");
+    else fprintf(fp, " %s", vd->getChannelName(i).c_str());
   }
   fprintf(fp, "\n");
 
@@ -1961,10 +1960,10 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
 {
   vvTokenizer::TokenType ttype;                   // currently processed token type
   vvSLList<ParticleTimestep*> timesteps;          // particle storage for all time steps
-  vvArray<float> particles;                       // densities of current time step
-  vvArray<float> xpos;                            // x positions of current time step
-  vvArray<float> ypos;                            // y positions of current time step
-  vvArray<float> zpos;                            // z positions of current time step
+  std::vector<float> particles;                   // densities of current time step
+  std::vector<float> xpos;                        // x positions of current time step
+  std::vector<float> ypos;                        // y positions of current time step
+  std::vector<float> zpos;                        // z positions of current time step
   uint8_t* raw;                                   // raw volume data
   char* filename;                                 // current particles file name
   float boxMin[3];                                // simulation box min values
@@ -2044,9 +2043,9 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
         // Memorize position and adjust simulation box:
         if (i<=2)
         {
-          if (i==0) xpos.append(tokenizer.nval);
-          else if (i==1) ypos.append(tokenizer.nval);
-          else if (i==2) zpos.append(tokenizer.nval);
+          if (i==0) xpos.push_back(tokenizer.nval);
+          else if (i==1) ypos.push_back(tokenizer.nval);
+          else if (i==2) zpos.push_back(tokenizer.nval);
           if (tokenizer.nval < boxMin[i]) boxMin[i] = tokenizer.nval;
           if (tokenizer.nval > boxMax[i]) boxMax[i] = tokenizer.nval;
         }
@@ -2059,7 +2058,7 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
         }
         else if (i==densityParam) val = tokenizer.nval;
       }
-      particles.append(val);
+      particles.push_back(val);
       if (val < minVal) minVal = val;
       if (val > maxVal) maxVal = val;
 
@@ -2076,13 +2075,13 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
     if (maxVal > globalMax) globalMax = maxVal;
 
     // Create new time step and copy data to it:
-    timesteps.append(new ParticleTimestep(particles.count()), vvSLNode<ParticleTimestep*>::NORMAL_DELETE);
+    timesteps.append(new ParticleTimestep(particles.size()), vvSLNode<ParticleTimestep*>::NORMAL_DELETE);
     timesteps.getData()->max = maxVal;
     timesteps.getData()->min = minVal;
-    memcpy(timesteps.getData()->val, particles.getArrayPtr(), particles.count());
-    memcpy(timesteps.getData()->pos[0], xpos.getArrayPtr(), xpos.count());
-    memcpy(timesteps.getData()->pos[1], ypos.getArrayPtr(), ypos.count());
-    memcpy(timesteps.getData()->pos[2], zpos.getArrayPtr(), zpos.count());
+    memcpy(timesteps.getData()->val, &particles[0], particles.size());
+    memcpy(timesteps.getData()->pos[0], &xpos[0], xpos.size());
+    memcpy(timesteps.getData()->pos[1], &ypos[0], ypos.size());
+    memcpy(timesteps.getData()->pos[2], &zpos[0], zpos.size());
 
     // Look for another time step:
     if (!vvToolshed::increaseFilename(filename)) break;

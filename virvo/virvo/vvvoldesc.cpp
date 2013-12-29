@@ -391,11 +391,6 @@ void vvVolDesc::removeSequence()
  */
 void vvVolDesc::deleteChannelNames()
 {
-  vvDebugMsg::msg(2, "vvVolDesc::deleteChannelNames()");
-  for (size_t i=0; i<channelNames.count(); ++i)
-  {
-    delete[] channelNames[i];
-  }
   channelNames.clear();
 }
 
@@ -405,33 +400,26 @@ void vvVolDesc::deleteChannelNames()
   @param name new channel name; name will be copied: caller has to delete name.
          NULL may be passed as a name.
 */
-void vvVolDesc::setChannelName(size_t channel, const char* name)
+void vvVolDesc::setChannelName(size_t channel, std::string const& name)
 {
   vvDebugMsg::msg(2, "vvVolDesc::setChannelName()");
 
-  // Create channel names as required:
-  if (channel >= channelNames.count())
+  if (channel >= channelNames.size())
   {
-    for (size_t i=0; i<channel-channelNames.count()+1; ++i) channelNames.append(NULL);
+    channelNames.resize(channel + 1);
   }
 
-  // Set new name:
-  delete[] channelNames[channel];
-  if (name)
-  {
-    channelNames[channel] = new char[strlen(name) + 1];
-    strcpy(channelNames[channel], name);
-  }
+  channelNames[channel] = name;
 }
 
 //----------------------------------------------------------------------------
 /** @return a channel name.
   @param channel channel index to get name of (0=first channel)
 */
-const char* vvVolDesc::getChannelName(size_t channel) const
+std::string vvVolDesc::getChannelName(size_t channel) const
 {
   vvDebugMsg::msg(2, "vvVolDesc::getChannelName()");
-  assert(channel < channelNames.count());
+  assert(channel < channelNames.size());
   return channelNames[channel];
 }
 
@@ -706,9 +694,9 @@ void vvVolDesc::addFrame(uint8_t* ptr, DeleteType deleteData,int fn)
   rawFrameNumber.push_back(fn);
 
   // Make sure channel names exist:
-  if (channelNames.count() == 0)
+  if (channelNames.size() == 0)
   {
-    for (size_t i=0; i<chan; ++i) channelNames.append(NULL);
+    channelNames.resize(chan);
   }
 }
 
@@ -734,9 +722,9 @@ void vvVolDesc::copyFrame(uint8_t* ptr)
   raw.append(newData, vvSLNode<uint8_t*>::ARRAY_DELETE);
 
   // Make sure channel names exist:
-  if (channelNames.count() == 0)
+  if (channelNames.size() == 0)
   {
-    for (size_t i=0; i<chan; ++i) channelNames.append(NULL);
+    channelNames.resize(chan);
   }
 }
 
@@ -1019,7 +1007,7 @@ void vvVolDesc::computeTFTexture(int w, int h, int d, float* dest)
   @param texData: the created texture data
 */
 void vvVolDesc::makeLineTexture(DiagType type, unsigned char selChannel, int twidth, int theight, bool alpha,
-  vvArray<float*> voxData, uint8_t* texData)
+  std::vector< std::vector< float > > const& voxData, uint8_t* texData)
 {
   int x, y, c;
   int bpt;
@@ -1118,7 +1106,7 @@ bool vvVolDesc::isChannelOn(size_t num, unsigned char selected)
   }
 }
 
-void vvVolDesc::makeLineHistogram(size_t channel, int buckets, vvArray<float*> data, int* count)
+void vvVolDesc::makeLineHistogram(size_t channel, int buckets, std::vector< std::vector< float > > const& data, int* count)
 {
   size_t numVoxels;
   int bucket;
@@ -1127,7 +1115,7 @@ void vvVolDesc::makeLineHistogram(size_t channel, int buckets, vvArray<float*> d
 
   memset(count, 0, buckets * sizeof(int));
 
-  numVoxels = data.count();
+  numVoxels = data.size();
   valPerBucket = getValueRange() / float(buckets);
 
   for (size_t i = 0; i < numVoxels; ++i)
@@ -1139,11 +1127,11 @@ void vvVolDesc::makeLineHistogram(size_t channel, int buckets, vvArray<float*> d
   }
 }
 
-void vvVolDesc::makeLineIntensDiag(size_t channel, vvArray<float*> data, size_t numValues, int* values)
+void vvVolDesc::makeLineIntensDiag(size_t channel, std::vector< std::vector< float > > const& data, size_t numValues, int* values)
 {
   float step;
 
-  step = (float) data.count() / (float) numValues;
+  step = (float) data.size() / (float) numValues;
 
   memset(values, 0, numValues * sizeof(int));
 
@@ -1439,17 +1427,9 @@ void vvVolDesc::convertChannels(size_t newChan, int frame, bool verbose)
     raw.next();
   }
   // Adjust channel names:
-  if (newChan > chan)
+  if (newChan != chan)
   {
-    for (size_t i=0; i<newChan-chan; ++i) channelNames.append(NULL);
-  }
-  else if (newChan < chan)
-  {
-    for (size_t i=0; i<chan-newChan; ++i)
-    {
-      delete[] channelNames[newChan];
-      channelNames.remove(newChan);
-    }
+    channelNames.resize(newChan);
   }
   chan = newChan;
 }
@@ -1506,8 +1486,7 @@ void vvVolDesc::deleteChannel(size_t channel, bool verbose)
     else raw.insertAfter(newRaw, vvSLNode<uint8_t*>::ARRAY_DELETE);
     raw.next();
   }
-  delete[] channelNames[channel];
-  channelNames.remove(channel);
+  channelNames.erase(channelNames.begin() + channel);
   --chan;
 }
 
@@ -4148,9 +4127,7 @@ void vvVolDesc::swapChannels(size_t ch0, size_t ch1, bool verbose)
   if (verbose) cerr << endl;
 
   // Adjust channel names:
-  char* tmp = channelNames[ch0];
-  channelNames[ch0] = channelNames[ch1];
-  channelNames[ch1] = tmp;
+  std::swap(channelNames[ch0], channelNames[ch1]);
 }
 
 //----------------------------------------------------------------------------
@@ -4230,7 +4207,7 @@ void vvVolDesc::extractChannel(float weights[3], bool verbose)
   chan = 4;
 
   // Adjust channel names:
-  channelNames.append(NULL);
+  channelNames.push_back("");
 }
 
 //----------------------------------------------------------------------------
@@ -4420,7 +4397,7 @@ float vvVolDesc::getChannelValue(int frame, size_t x, size_t y, size_t z, size_t
 @param resArray  array to store results
 */
 void vvVolDesc::getLineHistData(int x0, int y0, int z0, int x1, int y1, int z1,
-vvArray<float*>& resArray)
+std::vector< std::vector< float > >& resArray)
 {
   int xd, yd, zd;
   int x, y, z;
@@ -4465,7 +4442,7 @@ vvArray<float*>& resArray)
     {
       index = (z * vox[0] * vox[1] + y * vox[0] + x) * bpv;
 
-      float* tmp = new float[chan];
+      std::vector< float > tmp(chan);
 
       for (size_t i = 0; i < chan; i++)
       {
@@ -4486,7 +4463,7 @@ vvArray<float*>& resArray)
         }
       }
 
-      resArray.append(tmp);
+      resArray.push_back(tmp);
 
       // compute next voxel
       if (x == x1) return;
@@ -4513,7 +4490,7 @@ vvArray<float*>& resArray)
     {
       index = (z * vox[0] * vox[1] + y * vox[0] + x) * bpv;
 
-      float* tmp = new float[chan];
+      std::vector< float > tmp(chan);
 
       for (size_t i = 0; i < chan; i++)
       {
@@ -4534,7 +4511,7 @@ vvArray<float*>& resArray)
         }
       }
 
-      resArray.append(tmp);
+      resArray.push_back(tmp);
 
       // compute next voxel;
       if (y == y1) return;
@@ -4562,7 +4539,7 @@ vvArray<float*>& resArray)
     {
       index = (z * vox[0] * vox[1] + y * vox[0] + x) * bpv;
 
-      float* tmp = new float[chan];
+      std::vector< float > tmp(chan);
 
       for (size_t i = 0; i < chan; i++)
       {
@@ -4583,7 +4560,7 @@ vvArray<float*>& resArray)
         }
       }
 
-      resArray.append(tmp);
+      resArray.push_back(tmp);
 
       // compute next voxel
       if (z == z1) return;

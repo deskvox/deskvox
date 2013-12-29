@@ -24,6 +24,7 @@
 #include <boost/serialization/binary_object.hpp>
 
 #include <stdlib.h>
+#include <string>
 #include <vector>
 
 #include "vvexport.h"
@@ -31,7 +32,6 @@
 #include "vvvecmath.h"
 #include "vvtransfunc.h"
 #include "vvsllist.h"
-#include "vvarray.h"
 
 template <typename T>
 class vvBaseAABB;
@@ -314,21 +314,21 @@ class VIRVOEXPORT vvVolDesc
     void   computeVolume(int, size_t, size_t, size_t);
     void   resizeEdgeMax(float);
     float  getChannelValue(int frame, size_t x, size_t y, size_t z, size_t chan);
-    void   getLineHistData(int, int, int, int, int, int, vvArray<float*>&);
+    void   getLineHistData(int, int, int, int, int, int, std::vector< std::vector< float > >& resArray);
     void   setDefaultRealMinMax();
     void   addGradient(size_t srcChan, GradientType);
     void   addVariance(size_t srcChan);
     void   deleteChannelNames();
-    void   setChannelName(size_t, const char*);
-    const char* getChannelName(size_t) const;
+    void   setChannelName(size_t, std::string const& name);
+    std::string getChannelName(size_t) const;
     void updateFrame(int, uint8_t*, DeleteType);
     void updateHDRBins(size_t numValues, bool, bool, bool, BinningType, bool);
     int  findHDRBin(float);
     int  mapFloat2Int(float);
     void makeBinTexture(uint8_t* texture, size_t width);
     void computeTFTexture(int, int, int, float*);
-    void makeLineTexture(DiagType, uchar, int, int, bool, vvArray<float*>, uint8_t*);
-    void makeLineHistogram(size_t channel, int buckets, vvArray<float*>, int*);
+    void makeLineTexture(DiagType, uchar, int, int, bool, std::vector< std::vector< float > > const& voxData, uint8_t*);
+    void makeLineHistogram(size_t channel, int buckets, std::vector< std::vector< float > > const& data, int*);
     void computeMinMaxArrays(uint8_t *minArray, uchar *maxArray, ssize_t downsample, size_t channel=0, int frame=-1) const;
     vvssize3 voxelCoords(const vvVector3& objCoords) const;
     vvVector3 objectCoords(const vvssize3& voxCoords) const;
@@ -338,11 +338,11 @@ class VIRVOEXPORT vvVolDesc
     size_t currentFrame;                          ///< current animation frame
     mutable vvSLList<uint8_t*> raw;               ///< pointer list to raw volume data - mutable because of Java style iterators
     std::vector<size_t> rawFrameNumber;           ///< frame numbers (if frames do not come in sequence)
-    vvArray<char*> channelNames;                  ///< names of data channels
+    std::vector< std::string > channelNames;      ///< names of data channels
 
     void initialize();
     void setDefaults();
-    void makeLineIntensDiag(size_t channel, vvArray<float*>, size_t numValues, int*);
+    void makeLineIntensDiag(size_t channel, std::vector< std::vector< float > > const& data, size_t numValues, int*);
     bool isChannelOn(size_t num, unsigned char);
 };
 #endif
