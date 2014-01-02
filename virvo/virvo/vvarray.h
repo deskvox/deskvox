@@ -25,6 +25,7 @@
 #include <iostream>
 #include <string.h>
 #include "vvexport.h"
+#include "vvmacros.h"
 #ifdef max
 #undef max
 #undef min
@@ -44,37 +45,37 @@
 @author Jurgen P. Schulze
 */
 
-template<class T> class vvArray
+template<class T> class VV_DECL_DEPRECATED vvArray
 {
   public:
-    vvArray();
-    vvArray(size_t, size_t);
-    vvArray(const vvArray<T>&);
-    ~vvArray();
+    VV_DECL_DEPRECATED vvArray();
+    VV_DECL_DEPRECATED vvArray(size_t, size_t);
+    VV_DECL_DEPRECATED vvArray(const vvArray<T>&);
+    VV_DECL_DEPRECATED ~vvArray();
 
-    void clear();
-    void set(size_t, const T&);
-    T*   get(size_t);
-    void append(const T&);
-    void insert(size_t, const T&);
-    void replace(size_t, const T&);
-    void remove(size_t);
-    void removeLast();
-    bool removeElement(const T&);
-    void resize(size_t);
-    void setIncrement(size_t);
-    void fill(const T&);
-    T*   first();
-    T*   last();
-    size_t find(const T&);
-    size_t count() const;
-    void print(char*);
-    T*   getArrayPtr();
-    void deleteElementsNormal();
-    void deleteElementsArray();
+    VV_DECL_DEPRECATED void clear();
+    VV_DECL_DEPRECATED void set(size_t, const T&);
+    VV_DECL_DEPRECATED T*   get(size_t);
+    VV_DECL_DEPRECATED void append(const T&);
+    VV_DECL_DEPRECATED void insert(size_t, const T&);
+    VV_DECL_DEPRECATED void replace(size_t, const T&);
+    VV_DECL_DEPRECATED void remove(size_t);
+    VV_DECL_DEPRECATED void removeLast();
+    VV_DECL_DEPRECATED bool removeElement(const T&);
+    VV_DECL_DEPRECATED void resize(size_t);
+    VV_DECL_DEPRECATED void setIncrement(size_t);
+    VV_DECL_DEPRECATED void fill(const T&);
+    VV_DECL_DEPRECATED T*   first();
+    VV_DECL_DEPRECATED T*   last();
+    VV_DECL_DEPRECATED size_t find(const T&);
+    VV_DECL_DEPRECATED size_t count() const;
+    VV_DECL_DEPRECATED void print(char*);
+    VV_DECL_DEPRECATED T*   getArrayPtr();
+    VV_DECL_DEPRECATED void deleteElementsNormal();
+    VV_DECL_DEPRECATED void deleteElementsArray();
 
     /// Direct array access:
-    T & operator[] (size_t index)
+    VV_DECL_DEPRECATED T & operator[] (size_t index)
     {
       if (index>(usedSize-1))
       {
@@ -84,7 +85,7 @@ template<class T> class vvArray
     }
 
     /// Direct array access:
-    const T & operator[] (size_t index) const
+    VV_DECL_DEPRECATED const T & operator[] (size_t index) const
     {
       if (index>(usedSize-1))
       {
@@ -94,7 +95,7 @@ template<class T> class vvArray
     }
 
     /// Assign from another vvArray:
-    vvArray<T> &operator =(const vvArray<T>& v);
+    VV_DECL_DEPRECATED vvArray<T> &operator =(const vvArray<T>& v);
 
   private:
     T*   data;                                    ///< actual data array

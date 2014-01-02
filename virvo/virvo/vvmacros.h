@@ -21,6 +21,20 @@
 #pragma once
 
 
+#include "vvcompiler.h"
+
+
+/*! Declare classes or functions deprecated
+ */
+#if VV_CXX_GCC && !VV_CXX_INTEL
+# define VV_DECL_DEPRECATED __attribute__((__deprecated__))
+#elif VV_CXX_MSVC && (VV_CXX_MSVC >= 1300)
+# define VV_DECL_DEPRECATED __declspec(deprecated)
+#else
+# define VV_DECL_DEPRECATED
+#endif
+
+
 /*! Place in private section of class to disallow copying and assignment
  */
 #define VV_NOT_COPYABLE(T)                                          \
