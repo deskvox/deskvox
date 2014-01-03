@@ -153,6 +153,9 @@ public slots:
   void enableHeadlight(bool enable);
   void editLightPosition(bool edit);
   void setLightAttenuation(const vvVector3& att);
+
+  void resetCamera();
+
 private slots:
   void repeatLastRotation();
   void setLightPos(const vvVector3& pos);

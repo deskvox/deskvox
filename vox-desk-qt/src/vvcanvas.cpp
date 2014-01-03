@@ -955,6 +955,14 @@ void vvCanvas::setLightAttenuation(const vvVector3& att)
   updateGL();
 }
 
+void vvCanvas::resetCamera()
+{
+  _ov.resetObject();
+  _ov.resetCamera();
+
+  updateGL();
+}
+
 void vvCanvas::repeatLastRotation()
 {
   vvDebugMsg::msg(3, "vvCanvas::repeatLastRotation()");

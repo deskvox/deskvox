@@ -324,6 +324,10 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   sc->setContext(Qt::ApplicationShortcut);
   connect(sc, SIGNAL(activated()), this, SLOT(toggleProjectionType()));
 
+  sc = new QShortcut(tr("r"), this);
+  sc->setContext(Qt::ApplicationShortcut);
+  connect(sc, SIGNAL(activated()), impl_->canvas, SLOT(resetCamera()));
+
   // animation
   sc = new QShortcut(tr("a"), this);
   sc->setContext(Qt::ApplicationShortcut);

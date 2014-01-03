@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>318</width>
-    <height>410</height>
+    <width>320</width>
+    <height>440</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QTableWidget" name="tableWidget">
      <property name="rowCount">
-      <number>11</number>
+      <number>12</number>
      </property>
      <property name="columnCount">
       <number>2</number>
@@ -65,6 +65,11 @@
      </row>
      <row>
       <property name="text">
+       <string>orientation</string>
+      </property>
+     </row>
+     <row>
+      <property name="text">
        <string>projectionType</string>
       </property>
      </row>
@@ -75,7 +80,7 @@
      </row>
      <row>
       <property name="text">
-       <string>orientation</string>
+       <string>resetCam</string>
       </property>
      </row>
      <row>
@@ -165,40 +170,50 @@
      </item>
      <item row="7" column="0">
       <property name="text">
-       <string>Toggle projection type [perspective|orthographic]</string>
+       <string>Toggle orientation display [on|off]</string>
       </property>
      </item>
      <item row="7" column="1">
       <property name="text">
-       <string>p</string>
+       <string>o</string>
       </property>
      </item>
      <item row="8" column="0">
       <property name="text">
-       <string>Quit</string>
+       <string>Toggle projection type [perspective|orthographic]</string>
       </property>
      </item>
      <item row="8" column="1">
       <property name="text">
-       <string>q</string>
+       <string>p</string>
       </property>
      </item>
      <item row="9" column="0">
       <property name="text">
-       <string>Toggle orientation display [on|off]</string>
+       <string>Quit</string>
       </property>
      </item>
      <item row="9" column="1">
       <property name="text">
-       <string>o</string>
+       <string>q</string>
       </property>
      </item>
      <item row="10" column="0">
       <property name="text">
-       <string>Toggle #texture display [on|off]</string>
+       <string>Reset viewing parameters</string>
       </property>
      </item>
      <item row="10" column="1">
+      <property name="text">
+       <string>r</string>
+      </property>
+     </item>
+     <item row="11" column="0">
+      <property name="text">
+       <string>Toggle #texture display [on|off]</string>
+      </property>
+     </item>
+     <item row="11" column="1">
       <property name="text">
        <string>t</string>
       </property>
