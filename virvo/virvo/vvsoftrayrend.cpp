@@ -138,7 +138,7 @@ VV_FORCE_INLINE Vec volume(const uint8_t* raw, index_t idx, int bpc)
 
 #else
   CACHE_ALIGN int indices[4];
-  index_t ridx = idx*bpc+high_byte_offset;
+  index_t ridx = idx*bpc+high_byte_offset*(bpc-1);
   virvo::sse::store(ridx, &indices[0]);
   CACHE_ALIGN float vals[4];
   for (size_t i = 0; i < 4; ++i)
@@ -148,7 +148,7 @@ VV_FORCE_INLINE Vec volume(const uint8_t* raw, index_t idx, int bpc)
   return Vec(&vals[0]);
 #endif
 #else
-  return raw[idx*bpc+high_byte_offset];
+  return raw[idx*bpc+high_byte_offset*(bpc-1)];
 #endif
 }
 
