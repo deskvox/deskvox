@@ -550,9 +550,13 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
           Vec sample = 0.0f;
           if (interpolation)
           {
-            Vec3 texcoordf(texcoord[0] * static_cast<float>(vd->vox[0] - 1),
-                           texcoord[1] * static_cast<float>(vd->vox[1] - 1),
-                           texcoord[2] * static_cast<float>(vd->vox[2] - 1));
+            Vec3 texcoordf(texcoord[0] * static_cast<float>(vd->vox[0]) - 0.5f,
+                           texcoord[1] * static_cast<float>(vd->vox[1]) - 0.5f,
+                           texcoord[2] * static_cast<float>(vd->vox[2]) - 0.5f);
+
+            texcoordf[0] = clamp(texcoordf[0], Vec(0.0f), Vec(vd->vox[0] - 1));
+            texcoordf[1] = clamp(texcoordf[1], Vec(0.0f), Vec(vd->vox[1] - 1));
+            texcoordf[2] = clamp(texcoordf[2], Vec(0.0f), Vec(vd->vox[2] - 1));
 
             // store truncated texcoord to avoid lots of _mm_cvtps_epi32 calls below
             Vec3s tci(vec_cast<Vecs>(texcoordf[0]), vec_cast<Vecs>(texcoordf[1]), vec_cast<Vecs>(texcoordf[2]));
@@ -633,11 +637,10 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
           else
           {
             // calc voxel coordinates using Manhattan distance
-            Vec3s texcoordi(vec_cast<Vecs>(round(texcoord[0] * static_cast<float>(vd->vox[0] - 1))),
-                            vec_cast<Vecs>(round(texcoord[1] * static_cast<float>(vd->vox[1] - 1))),
-                            vec_cast<Vecs>(round(texcoord[2] * static_cast<float>(vd->vox[2] - 1))));
+            Vec3s texcoordi(vec_cast<Vecs>(texcoord[0] * static_cast<float>(vd->vox[0])),
+                            vec_cast<Vecs>(texcoord[1] * static_cast<float>(vd->vox[1])),
+                            vec_cast<Vecs>(texcoord[2] * static_cast<float>(vd->vox[2])));
   
-            // clamp to edge
             texcoordi[0] = clamp<dim_t>(texcoordi[0], 0, vox[0] - 1);
             texcoordi[1] = clamp<dim_t>(texcoordi[1], 0, vox[1] - 1);
             texcoordi[2] = clamp<dim_t>(texcoordi[2], 0, vox[2] - 1);
