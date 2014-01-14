@@ -2241,7 +2241,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
     ushort tag       = virvo::serialization::read16(fp, endian);
     ushort dataType  = virvo::serialization::read16(fp, endian);
     size_t numValues = virvo::serialization::read32(fp, endian);
-    int value        = virvo::serialization::read32(fp, endian);
+    long value       = virvo::serialization::read32(fp, endian);
 
                                                   // 16 bit values are left aligned
 	if (endian==virvo::serialization::VV_BIG_END && dataType==3 && tag!=0x102) value = value >> 16;
@@ -2259,7 +2259,11 @@ vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::ser
       case 0x100: vd->vox[0] = value; break;      // ImageWidth
       case 0x101: vd->vox[1] = value; break;      // ImageLength
                                                   // BitsPerSample (=bits per channel)
-      case 0x102: if (numValues==1) vd->bpc = value / 8;
+      case 0x102: if (numValues==1)
+      {
+        if (endian==virvo::serialization::VV_BIG_END && dataType==3) value = value >> 16;
+        vd->bpc = value / 8;
+      }
       else
       {
         long where = ftell(fp);
