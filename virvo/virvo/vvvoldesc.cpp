@@ -42,6 +42,7 @@
 #include "vvvecmath.h"
 #include "vvclock.h"
 #include "vvvoldesc.h"
+#include "mem/swap.h"
 
 #ifdef __sun
 #define logf log
@@ -1902,18 +1903,34 @@ void vvVolDesc::toggleEndianness(int frame)
     startFrame = frame;
     endFrame = frame+1;
   }
+  const int bpv = getBPV();
+  const size_t n = vox[0] * vox[1] * vox[2] * bpv / bpc;
   for (size_t f=startFrame; f<endFrame; ++f)
   {
     rd = getRaw(f);
+
+    if (bpc == 2) {
+      uint16_t *r = reinterpret_cast<uint16_t *>(rd);
+      for (size_t i=0; i<n; ++i) {
+        r[i] = byte_swap<little_endian, big_endian, uint16_t>(r[i]);
+      }
+    } else if (bpc == 4) {
+      uint32_t *r = reinterpret_cast<uint32_t *>(rd);
+      for (size_t i=0; i<n; ++i) {
+        r[i] = byte_swap<little_endian, big_endian, uint32_t>(r[i]);
+      }
+    }
+
+#if 0
     for (ssize_t z=0; z<vox[2]; ++z)
     {
       sliceOffset = z * sliceSize;
       for (ssize_t y=0; y<vox[1]; ++y)
       {
-        rowOffset = sliceOffset + y * vox[0] * getBPV();
+        rowOffset = sliceOffset + y * vox[0] * bpv;
         for (ssize_t x=0; x<vox[0]; ++x)
         {
-          voxelOffset = x * getBPV() + rowOffset;
+          voxelOffset = x * bpv + rowOffset;
 
           for (size_t c=0; c<chan; ++c)
           {
@@ -1935,6 +1952,7 @@ void vvVolDesc::toggleEndianness(int frame)
         }
       }
     }
+#endif
   }
 }
 
