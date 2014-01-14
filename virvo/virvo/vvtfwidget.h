@@ -329,6 +329,8 @@ public:
 //      a & _size;
 //      a & _map;
 //      a & _dim;
+#else
+      (void)a;
 #endif
     }
 
@@ -385,6 +387,8 @@ class VIRVOEXPORT vvTFCustomMap : public vvTFWidget
       a & _size;
 //      a & _map;
 //      a & _dim;
+#else
+      (void)a;
 #endif
     }
 
