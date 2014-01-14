@@ -289,7 +289,7 @@ vvVolDesc::vvVolDesc(const vvVolDesc* v, int f)
   }
   else if (f!=-2)
   {
-    copyFrame(v->getRaw(f));
+    copyFrame(v->getRaw(size_t(f)));
     ++frames;
   }
 }
