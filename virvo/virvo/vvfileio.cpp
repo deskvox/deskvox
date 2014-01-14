@@ -2038,7 +2038,7 @@ vvFileIO::ErrorType vvFileIO::loadCPTFile(vvVolDesc* vd, int maxEdgeLength, int 
     for (;;)                                      // loop thru particles in one time step
     {
       // Read an entire line of numbers:
-      for(size_t i=0; tokenizer.nextToken() == vvTokenizer::VV_NUMBER; ++i)
+      for(ssize_t i=0; tokenizer.nextToken() == vvTokenizer::VV_NUMBER; ++i)
       {
         // Memorize position and adjust simulation box:
         if (i<=2)
@@ -2164,49 +2164,20 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   const ushort LITTLE_ENDIAN_ID = 0x4949;         // TIF endianness for little-endian (Intel) style
   const ushort MAGICNUMBER = 42;                  // TIF magic number
   virvo::serialization::EndianType endian;        // file endianness
-  FILE* fp;                                       // volume file pointer
-  ushort endianID, magicID;                       // file format test values
-  ulong ifdpos;                                   // position of first IFD
-  int numEntries;                                 // number of entries in IFD
-  ushort tag;                                     // IFD-tag
-  ushort dataType;                                // IFD data type: 1=8bit uint, 2=8bit ASCII, 3=16bit uint, 4=32bit uint, 5=64bit fixed point
-  size_t    numValues;                            // IFD: number of data values
-  int    value;                                   // IFD data value or offset
-  int    nextIFD;                                 // pointer to next IFD
-  ushort tileWidth=0;                             // tile width in voxels
-  ushort tileHeight=0;                            // tile height in voxels
-  ulong  tileOffset=0;                            // tile offset in file
-  ulong* tilePos;                                 // array of tile positions
-  size_t    numTiles=0;                           // total number of tiles in file
-  size_t    numTilesX;                            // number of tiles horizontally
-  size_t    numTilesY;                            // number of tiles vertically
-  size_t    tpx, tpy, tpz;                        // tile starting position in volume data space
-  size_t    y;                                    // counter for voxel lines
-  size_t    offset;                               // volume data offset to first byte of tile
   ErrorType err = OK;                             // error
-  uint8_t* raw;                                   // raw volume data
-  size_t    rawOffset;                               // offset into raw data
-  size_t*   stripOffsets=NULL;                       // array of strip offsets
-  size_t*   stripByteCounts=NULL;                 // bytes per strip
-  int    rowsPerStrip=0;                          // rows per strip
-  int planarConfiguration = 1;                    // 1=RGBRGB, 2=RRGGBB
-  long where;                                     // current position in file
-  size_t strips=1;                                // number of strips
-  size_t readBytes;                               // number of bytes read
-  size_t bytesToRead;                             // bytes left to read from file
-  int ifd;                                        // current IFD ID
 
   vvDebugMsg::msg(1, "vvFileIO::loadTIFFile()");
 
   if (vd->getFilename()==NULL) return FILE_ERROR;
-  if ( (fp = fopen(vd->getFilename(), "rb")) == NULL)
+  FILE *fp = fopen(vd->getFilename(), "rb");
+  if (fp == NULL)
   {
     vvDebugMsg::msg(1, "Error: Cannot open file.");
     return FILE_ERROR;
   }
 
   // Check file format:
-  endianID = virvo::serialization::read16(fp);
+  ushort endianID = virvo::serialization::read16(fp); // file format test values
   if      (endianID == BIG_ENDIAN_ID)    endian = virvo::serialization::VV_BIG_END;
   else if (endianID == LITTLE_ENDIAN_ID) endian = virvo::serialization::VV_LITTLE_END;
   else
@@ -2215,7 +2186,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     cerr << "TIFF: wrong header ID" << endl;
     return FORMAT_ERROR;
   }
-  magicID = virvo::serialization::read16(fp, endian);
+  ushort magicID = virvo::serialization::read16(fp, endian); // file format test values
   if (magicID != MAGICNUMBER)
   {
     fclose(fp);
@@ -2234,17 +2205,43 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   }
 
   // Find and process first IFD:
-  ifdpos = virvo::serialization::read32(fp, endian);
-  fseek(fp, static_cast<long>(ifdpos), SEEK_SET);
-  numEntries = virvo::serialization::read16(fp, endian);
+  long ifdpos = virvo::serialization::read32(fp, endian); // position of first IFD
+  while (ifdpos != 0) {
+    fseek(fp, ifdpos, SEEK_SET);
+    ErrorType err2 = loadTIFSubFile(vd, fp, endian, ifdpos);
+    if (err2 != OK) {
+      err = err2;
+      break;
+    }
+  }
+  fclose(fp);
+  return err;
+}
+
+//----------------------------------------------------------------------------
+/// Loader for voxel file in tif (Tagged Image File) format.
+vvFileIO::ErrorType vvFileIO::loadTIFSubFile(vvVolDesc* vd, FILE *fp, virvo::serialization::EndianType endian, long &nextIfdPos)
+{
+  ushort tileWidth=0;                             // tile width in voxels
+  ushort tileHeight=0;                            // tile height in voxels
+  ulong  tileOffset=0;                            // tile offset in file
+  size_t    numTiles=0;                           // total number of tiles in file
+  size_t*   stripOffsets=NULL;                       // array of strip offsets
+  size_t*   stripByteCounts=NULL;                 // bytes per strip
+  int    rowsPerStrip=0;                          // rows per strip
+  int planarConfiguration = 1;                    // 1=RGBRGB, 2=RRGGBB
+  ErrorType err = OK;                             // error
+
+  // process IFD
+  int numEntries = virvo::serialization::read16(fp, endian);
 
   vvDebugMsg::msg(2, "TIFF IFD Tags: ", numEntries);
-  for (ifd=0; ifd<numEntries; ++ifd)              // process all IFD entries
+  for (int ifd=0; ifd<numEntries; ++ifd)              // process all IFD entries
   {
-    tag       = virvo::serialization::read16(fp, endian);
-    dataType  = virvo::serialization::read16(fp, endian);
-    numValues = virvo::serialization::read32(fp, endian);
-    value     = virvo::serialization::read32(fp, endian);
+    ushort tag       = virvo::serialization::read16(fp, endian);
+    ushort dataType  = virvo::serialization::read16(fp, endian);
+    size_t numValues = virvo::serialization::read32(fp, endian);
+    int value        = virvo::serialization::read32(fp, endian);
 
                                                   // 16 bit values are left aligned
 	if (endian==virvo::serialization::VV_BIG_END && dataType==3 && tag!=0x102) value = value >> 16;
@@ -2265,7 +2262,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       case 0x102: if (numValues==1) vd->bpc = value / 8;
       else
       {
-        where = ftell(fp);
+        long where = ftell(fp);
         fseek(fp, value, SEEK_SET);
         size_t bitsPerSample = 0;
         for (size_t i=0; i<numValues; ++i)
@@ -2277,7 +2274,6 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
           else if (vd->bpc != bitsPerSample / 8)
           {
             cerr << "Error: TIFF reader needs same number of bits for each sample." << endl;
-            fclose(fp);
             delete[] stripOffsets;
             delete[] stripByteCounts;
             return DATA_ERROR;
@@ -2298,7 +2294,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       if (numValues==1) stripOffsets[0] = value;
       else
       {
-        where = ftell(fp);
+        long where = ftell(fp);
         fseek(fp, value, SEEK_SET);
         for (size_t i=0; i<numValues; ++i)
         {
@@ -2317,7 +2313,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       if (numValues==1) stripByteCounts[0] = value;
       else
       {
-        where = ftell(fp);
+        long where = ftell(fp);
         fseek(fp, value, SEEK_SET);
         for (size_t i=0; i<numValues; ++i)
         {
@@ -2338,36 +2334,34 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     }
   }
 
-  strips = int(ceilf(float(vd->vox[1]) / float(rowsPerStrip)));
+  size_t strips = size_t(ceilf(float(vd->vox[1]) / float(rowsPerStrip)));
 
-  nextIFD = virvo::serialization::read32(fp, endian);       // check for further IFDs
-  if (nextIFD==0) vvDebugMsg::msg(3, "No more IFDs in file.");
+  nextIfdPos = virvo::serialization::read32(fp, endian);       // check for further IFDs
+  if (nextIfdPos==0) vvDebugMsg::msg(3, "No more IFDs in file.");
   else vvDebugMsg::msg(1, "There are more IFDs in the file.");
 
   if (vd->getFrameBytes()==0 || err!=OK)          // check for plausibility
   {
     cerr << "Error: Invalid volume dimensions or file error." << endl;
-    fclose(fp);
     delete[] stripOffsets;
     delete[] stripByteCounts;
     return DATA_ERROR;
   }
 
   // Allocate memory for volume data:
-  raw = new uint8_t[vd->getFrameBytes()];
+  uint8_t *raw = new uint8_t[vd->getFrameBytes()];
 
   if (stripOffsets[0]>0)                          // load 2D TIFF?
   {
-    rawOffset = 0;
+    size_t rawOffset = 0;
     for (size_t i=0; i<strips; ++i)
     {
       fseek(fp, stripOffsets[i], SEEK_SET);
-      bytesToRead = ((planarConfiguration == 2) ? 3 : 1) * stripByteCounts[i];
-      readBytes = int(fread(raw+rawOffset, 1, bytesToRead, fp));
+      size_t bytesToRead = ((planarConfiguration == 2) ? 3 : 1) * stripByteCounts[i];
+      size_t readBytes = fread(raw+rawOffset, 1, bytesToRead, fp);
       if (readBytes != bytesToRead)
       {
         cerr << "Error: reached end of TIFF file while reading." << endl;
-        fclose(fp);
         delete[] raw;
         delete[] stripOffsets;
         delete[] stripByteCounts;
@@ -2376,8 +2370,8 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
       else rawOffset += bytesToRead;
     }
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
-    if (!machineBigEndian) vd->toggleEndianness(vd->frames);
-    vd->frames++;
+    ++vd->frames;
+    if (!machineBigEndian) vd->toggleEndianness(vd->frames-1);
     if (planarConfiguration==2) vd->convertRGBPlanarToRGBInterleaved();
     if (vd->chan==4 && !vd->isChannelUsed(3))     // is alpha not used in a RGBA volume?
     {
@@ -2389,7 +2383,7 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
   else                                            // load 3D TIFF
   {
     // Load tile offsets:
-    tilePos = new ulong[numTiles];
+    ulong *tilePos = new ulong[numTiles];
     fseek(fp, tileOffset, SEEK_SET);
     for (size_t i=0; i<numTiles; ++i)
     {
@@ -2397,23 +2391,22 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     }
 
     // Compute tiles distribution (in z direction there are as many tiles as slices):
-    numTilesX = size_t((double)vd->vox[0] / (double)tileWidth) + 1;
-    numTilesY = size_t((double)vd->vox[1] / (double)tileHeight) + 1;
+    size_t numTilesX = size_t((double)vd->vox[0] / (double)tileWidth) + 1;
+    size_t numTilesY = size_t((double)vd->vox[1] / (double)tileHeight) + 1;
 
     // Load volume data:
     for (size_t i=0; i<numTiles; ++i)
     {
       fseek(fp, static_cast<long>(tilePos[i]), SEEK_SET);
-      tpx = i % numTilesX;
-      tpy = (i / numTilesX) % numTilesY;
-      tpz = i / (numTilesX * numTilesY);
-      offset = tpx * tileWidth + tpy * tileHeight * vd->vox[0] + tpz * vd->getSliceBytes();
-      for (y=0; y<tileHeight; ++y)
+      size_t tpx = i % numTilesX;
+      size_t tpy = (i / numTilesX) % numTilesY;
+      size_t tpz = i / (numTilesX * numTilesY);
+      size_t offset = tpx * tileWidth + tpy * tileHeight * vd->vox[0] + tpz * vd->getSliceBytes();
+      for (ushort y=0; y<tileHeight; ++y)
       {
         if (fread(raw + offset + y * vd->vox[0], 1, tileWidth, fp) != tileWidth)
         {
           cerr << "Error: TIFF file too short for volume size." << endl;
-          fclose(fp);
           delete[] tilePos;
           delete[] raw;
           delete[] stripOffsets;
@@ -2424,10 +2417,9 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     }
     delete[] tilePos;
     vd->addFrame(raw, vvVolDesc::ARRAY_DELETE);
-    if (!machineBigEndian) vd->toggleEndianness(vd->frames);
-    vd->frames++;
+    ++vd->frames;
+    if (!machineBigEndian) vd->toggleEndianness(vd->frames-1);
   }
-  fclose(fp);
   delete[] stripOffsets;
   delete[] stripByteCounts;
   return OK;

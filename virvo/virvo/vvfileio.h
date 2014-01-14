@@ -112,6 +112,7 @@ class VIRVOEXPORT vvFileIO
     ErrorType saveAVFFile(const vvVolDesc*);
     ErrorType loadAVFFile(vvVolDesc*);
     ErrorType loadTIFFile(vvVolDesc*, bool addFrame=false);
+    ErrorType loadTIFSubFile(vvVolDesc*, FILE *fp, virvo::serialization::EndianType endian, long &nextIfdPos);
     ErrorType saveTIFSlices(const vvVolDesc*, bool);
     ErrorType loadRawFile(vvVolDesc*);
     ErrorType saveRawFile(const vvVolDesc*);
