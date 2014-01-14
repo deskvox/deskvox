@@ -2215,6 +2215,9 @@ vvFileIO::ErrorType vvFileIO::loadTIFFile(vvVolDesc* vd, bool addFrames)
     }
   }
   fclose(fp);
+  if (vd->vox[2] == 1 && vd->frames > 1) {
+    vd->mergeFrames();
+  }
   return err;
 }
 
