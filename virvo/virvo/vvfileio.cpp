@@ -253,6 +253,7 @@ vvFileIO::ErrorType vvFileIO::loadASCFile(vvVolDesc* vd)
   retval=fscanf(fp, "%d %d %d", &tmpx, &tmpy, &tmpz);
   if (tmpx < 0 || tmpy < 0 || tmpz < 0)
   {
+    fclose(fp);
     VV_LOG(0) << "Error: Invalid header in ASC file." << std::endl;
     return FILE_ERROR;
   }
