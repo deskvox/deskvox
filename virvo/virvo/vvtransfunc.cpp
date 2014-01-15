@@ -55,8 +55,8 @@ vvTransFunc::vvTransFunc()
 // Copy Constructor
 vvTransFunc::vvTransFunc(vvTransFunc* tf)
 {
-  for (std::vector<vvTFWidget*>::const_iterator it = _widgets.begin();
-       it != _widgets.end(); ++it)
+  for (std::vector<vvTFWidget*>::const_iterator it = tf->_widgets.begin();
+       it != tf->_widgets.end(); ++it)
   {
     vvTFWidget* oldW = *it;
 
