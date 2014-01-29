@@ -844,7 +844,7 @@ void vvVolDesc::makeHistogram(int frame, size_t chan1, size_t numChan, int* buck
       dstIndex = 0;
       for (size_t c=0; c<numChan; ++c)
       {
-        srcChan = ts_min(c, chan);
+        srcChan = ts_min(c, chan-1);
         switch (bpc)
         {
           case 1:
