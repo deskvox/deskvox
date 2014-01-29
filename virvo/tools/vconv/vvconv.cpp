@@ -2344,7 +2344,7 @@ int vvConv::run(int argc, char** argv)
     cerr << "-hist <type>                       create histogram" << endl;
     cerr << "-increment <num>                   increment for -files" << endl;
     cerr << "-info                              display information about volume" << endl;
-    cerr << "-interpolation <n|t>               set interpolation type" << endl;
+    cerr << "-interpolation <n|t>               set interpolation type (n: nearest neighbour, t: trilinear)" << endl;
     cerr << "-invertorder                       invert voxel order" << endl;
     cerr << "-loadraw <w> <h> <s> <bc> <c> <sk> load raw volume data from file" << endl;
     cerr << "-loadcpt <size> <param> <minmax>   load checkpoint particles file" << endl;
@@ -2358,9 +2358,9 @@ int vvConv::run(int argc, char** argv)
     cerr << "-pos <x> <y> <z>                   set position" << endl;
     cerr << "-realrange <min> <max>             set physical scalar value range" << endl;
     cerr << "-removetf                          remove all transfer functions" << endl;
-    cerr << "-resize <w> <h> <s>                resize volume (see -interpolation)" << endl;
+    cerr << "-resize <w> <h> <s>                resize volume (change no. of voxels, see -interpolation)" << endl;
     cerr << "-rotate <[+|-][x|y|z]>             rotate volume 90 degrees" << endl;
-    cerr << "-scale <factor>                    scale volume (see -interpolation)" << endl;
+    cerr << "-scale <factor>                    scale volume (change no. of voxels, see -interpolation)" << endl;
     cerr << "-seticon <filename>                set the icon image" << endl;
     cerr << "-shift <x> <y> <z>                 shift parallel to a coordinate axis" << endl;
     cerr << "-stat                              display volume data statistics" << endl;
