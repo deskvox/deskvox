@@ -16,7 +16,7 @@ void main()
   vec4 OUT;
 
   OUT.x = texture2D(pixLUT, vec2(origColor.x, 0.0)).x;
-  OUT.y = texture2D(pixLUT, vec2(origColor.y, 0.0)).y;
+  OUT.y = texture2D(pixLUT, vec2(origColor.a, 0.0)).a;
   OUT.z = 0.0;
   OUT.w = max(OUT.x, OUT.y);
 

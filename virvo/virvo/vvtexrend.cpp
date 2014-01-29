@@ -358,6 +358,18 @@ void vvTexRend::setVoxelType(vvTexRend::VoxelType vt)
         internalTexFormat = GL_LUMINANCE;
         texFormat = GL_LUMINANCE;
       }
+      else if (vd->chan == 2)
+      {
+        texelsize=2;
+        internalTexFormat = GL_LUMINANCE_ALPHA;
+        texFormat = GL_LUMINANCE_ALPHA;
+      }
+      else if (vd->chan == 3)
+      {
+        texelsize=3;
+        internalTexFormat = GL_RGB;
+        texFormat = GL_RGB;
+      }
       else
       {
         texelsize=4;
@@ -1404,7 +1416,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
   vvssize3 offsets(offsetX, offsetY, offsetZ);
   offsets += _paddingRegion.getMin();
 
-  bool useRaw = geomType!=VV_SPHERICAL && vd->chan==1 && vd->bpc==1 && texelsize==1;
+  bool useRaw = geomType!=VV_SPHERICAL && vd->bpc==1 && vd->chan<=4 && vd->chan==texelsize;
   if (sizeX != vd->vox[0])
     useRaw = false;
   if (sizeY != vd->vox[1])

@@ -18,7 +18,7 @@ float4 main(
   float4 OUT;
 
   OUT.r = tex2D(pixLUT, float2(origColor.r, 0)).r;
-  OUT.g = tex2D(pixLUT, float2(origColor.g, 0)).g;
+  OUT.g = tex2D(pixLUT, float2(origColor.a, 0)).a;
   OUT.b = 0;
   OUT.a = max(OUT.r, OUT.g);
 
