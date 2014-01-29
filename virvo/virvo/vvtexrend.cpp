@@ -3523,7 +3523,7 @@ size_t vvTexRend::getLUTSize(vvsize3& size) const
   size_t x, y, z;
 
   vvDebugMsg::msg(3, "vvTexRend::getLUTSize()");
-  if (_currentShader==8 && voxelType==VV_PIX_SHD)
+  if (_currentShader==11 && voxelType==VV_PIX_SHD)
   {
     x = y = getPreintTableSize();
     z = 1;
