@@ -648,9 +648,9 @@ vvVolDesc::ErrorType vvVolDesc::mergeFrames()
 uint8_t* vvVolDesc::getRaw(int frame) const
 {
   if (frame == -1)
-    return getRaw(currentFrame);
+    return getRaw(static_cast< size_t >(currentFrame));
   else
-    return getRaw(frame);
+    return getRaw(static_cast< size_t >(frame));
 }
 
 //----------------------------------------------------------------------------
