@@ -18,36 +18,27 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-
 #ifndef VV_PRIVATE_MESSAGE_H
 #define VV_PRIVATE_MESSAGE_H
-
 
 #include "vvexport.h"
 #include "vvserialize.h"
 
-#include <boost/smart_ptr/enable_shared_from_this.hpp>
-#include <boost/smart_ptr/make_shared.hpp>
-
-#include <boost/uuid/uuid.hpp>
-
 #include <boost/function.hpp>
+#include <boost/smart_ptr/make_shared.hpp>
+#include <boost/uuid/uuid.hpp>
 
 #include <cassert>
 #include <stdexcept>
 
-
 namespace virvo
 {
-
 
     //----------------------------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------------------------
 
-
     class Message
-        : public boost::enable_shared_from_this<Message>
     {
         friend class Client;
         friend class ServerManager;
@@ -82,21 +73,25 @@ namespace virvo
 
     public:
         enum Type {
-            CameraMatrix,
+    //--- Client -> Server
+            CameraMatrix,       // type = virvo::messages::CameraMatrix
             CurrentFrame,
             Disconnect,
             GpuInfo,
-            ObjectDirection,
-            Parameter,
-            Position,
-            RemoteServerType,
+            ObjectDirection,    // type = vvVector3
+            Parameter,          // type = virvo::messages::Param
+            Position,           // type = vvVector3
+            RemoteServerType,   // type = vvRenderer::RendererType
             ServerInfo,
             Statistics,
-            TransFunc,
-            ViewingDirection,
-            Volume,
-            VolumeFile,
-            WindowResize,
+            TransFunc,          // type = vvTransFunc
+            ViewingDirection,   // type = vvVector3
+            Volume,             // type = vvVolDesc
+            VolumeFile,         // type = std::string
+            WindowResize,       // type = virvo::messages::WindowResize
+    //--- Server -> Client
+            Image,              // type = virvo::Image
+            IbrImage,           // type = virvo::IbrImage
 
             LastType // <-- MUST be the last item!
         };
@@ -165,14 +160,12 @@ namespace virvo
         }
     };
 
-
     template<class InputIterator>
     Message::Message(unsigned type, InputIterator first, InputIterator last)
         : data_(first, last)
         , header_(GenerateID(), type, static_cast<unsigned>(data_.size()))
     {
     }
-
 
     template<class T>
     Message::Message(unsigned type, T const& object)
@@ -184,7 +177,6 @@ namespace virvo
             throw std::runtime_error("serialization error");
         }
     }
-
 
     template<class T>
     bool Message::serialize(T const& object)
@@ -201,7 +193,6 @@ namespace virvo
         return false;
     }
 
-
     template<class T>
     bool Message::deserialize(T& object) const
     {
@@ -209,7 +200,6 @@ namespace virvo
 
         return ::virvo::deserialize(object, data_);
     }
-
 
     template<class T>
     T Message::deserialize() const
@@ -222,20 +212,16 @@ namespace virvo
         return object;
     }
 
-
     //----------------------------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------------------------
 
-
     typedef boost::shared_ptr<Message> MessagePointer;
-
 
     inline MessagePointer makeMessage(unsigned type = 0)
     {
         return boost::make_shared<Message>(type);
     }
-
 
     // Creates a message from the given buffer. NOT SERIALIZED!
     template<class InputIterator>
@@ -244,7 +230,6 @@ namespace virvo
         return boost::make_shared<Message>(type, first, last);
     }
 
-
     // Creates a serialized message
     template<class T>
     MessagePointer makeMessage(unsigned type, T const& object)
@@ -252,8 +237,6 @@ namespace virvo
         return boost::make_shared<Message>(type, object);
     }
 
-
 } // namespace virvo
-
 
 #endif // !VV_PRIVATE_MESSAGE_H
