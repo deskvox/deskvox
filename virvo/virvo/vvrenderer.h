@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VVRENDERER_H_
-#define _VVRENDERER_H_
+#ifndef VV_RENDERER_H
+#define VV_RENDERER_H
 
 #include "vvmacros.h"
 #include "vvoffscreenbuffer.h"
@@ -28,7 +28,6 @@
 #include "vvrendertarget.h"
 
 #include <memory>
-
 
 class vvStopwatch;
 class vvVolDesc;
@@ -361,6 +360,12 @@ private:
     float		_lastGLdrawTime;
 
 };
+
+template<class A>
+void serialize(A& a, vvRenderState::ParameterType& pt, unsigned /*version*/)
+{
+    a & static_cast<unsigned>(pt);
+}
 
 template<class A>
 void serialize(A& a, vvRenderer::RendererType& rt, unsigned /*version*/)

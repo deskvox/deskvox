@@ -80,12 +80,8 @@ struct Param
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-        int t = 0;
-
-        a & t; /*name*/
+        a & name;
         a & value;
-
-        name = static_cast<vvRenderState::ParameterType>(t);
     }
 };
 
