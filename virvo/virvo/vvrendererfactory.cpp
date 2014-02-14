@@ -53,6 +53,22 @@
 #include <vector>
 #include <sstream>
 
+#include <boost/lexical_cast.hpp>
+
+namespace
+{
+  template <class Map, class Key>
+  typename Map::mapped_type const* Lookup(Map const& map, Key const& key)
+  {
+    typename Map::const_iterator it = map.find(key);
+
+    if (it == map.end())
+      return 0;
+
+    return &it->second;
+  }
+}
+
 #define EAX 0x0
 #define EBX 0x1
 #define ECX 0x2
@@ -503,9 +519,37 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   case vvRenderer::GENERIC:
     return new vvRenderer(vd, rs);
   case vvRenderer::REMOTE_IMAGE:
+    {
+#ifdef DESKVOX_USE_ASIO
+    std::string host = "127.0.0.1";
+    if (std::string const* s = Lookup(options.options, "host"))
+        host = *s;
+
+    int port = 31050;
+    if (std::string const* s = Lookup(options.options, "port"))
+        port = boost::lexical_cast<int>(*s);
+
+    return new vvImageClient(vd, rs, host, port, filename.c_str());
+#else
     return new vvImageClient(vd, rs, sock, filename.c_str());
+#endif
+    }
   case vvRenderer::REMOTE_IBR:
+    {
+#ifdef DESKVOX_USE_ASIO
+    std::string host = "127.0.0.1";
+    if (std::string const* s = Lookup(options.options, "host"))
+        host = *s;
+
+    int port = 31050;
+    if (std::string const* s = Lookup(options.options, "port"))
+        port = boost::lexical_cast<int>(*s);
+
+    return new vvIbrClient(vd, rs, host, port, filename.c_str());
+#else
     return new vvIbrClient(vd, rs, sock, filename.c_str());
+#endif
+    }
   case vvRenderer::SOFTSW:
     return new vvSoftShearWarp(vd, rs);
 #ifdef HAVE_VOLPACK

@@ -1,5 +1,5 @@
 find_package(Bonjour)
-find_package(Boost COMPONENTS chrono date_time serialization system REQUIRED)
+find_package(Boost COMPONENTS chrono date_time serialization system thread REQUIRED)
 find_package(Cg)
 find_package(CUDA)
 find_package(FFMPEG)

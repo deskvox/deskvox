@@ -31,8 +31,10 @@
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvremoteevents.h>
 #include <virvo/vvshaderfactory.h>
+#ifndef DESKVOX_USE_ASIO
 #include <virvo/vvsocketio.h>
 #include <virvo/vvsocketmap.h>
+#endif
 #include <virvo/vvtoolshed.h>
 #include <virvo/vvvirvo.h>
 
@@ -53,8 +55,12 @@
 struct vvPrefDialog::Impl
 {
   Impl()
+#ifdef DESKVOX_USE_ASIO
+    : movingSpinBoxOldValue(1.0)
+#else
     : sock(NULL)
     , movingSpinBoxOldValue(1.0)
+#endif
     , stillSpinBoxOldValue(1.0)
     , movingDialOldValue(0.0)
     , stillDialOldValue(0.0)
@@ -72,7 +78,9 @@ struct vvPrefDialog::Impl
 
   // e.g. ibr or image
   std::string remoterend;
+#ifndef DESKVOX_USE_ASIO
   vvTcpSocket* sock;
+#endif
 
   double movingSpinBoxOldValue;
   double stillSpinBoxOldValue;
@@ -335,11 +343,13 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
 
 vvPrefDialog::~vvPrefDialog()
 {
+#ifndef DESKVOX_USE_ASIO
   if (impl->sock!= NULL)
   {
     vvSocketMap::remove(vvSocketMap::getIndex(impl->sock));
   }
   delete impl->sock;
+#endif
   delete impl;
 }
 
@@ -421,6 +431,12 @@ void vvPrefDialog::emitRenderer()
 
   if (impl->remoterend == "ibr" || impl->remoterend == "image")
   {
+#ifdef DESKVOX_USE_ASIO
+    options["host"] = ui->hostEdit->text().toStdString();
+    options["port"] = ui->portBox->text().toStdString();
+
+    name = impl->remoterend;
+#else
     int s = vvSocketMap::add(impl->sock);
     std::stringstream sockstr;
     sockstr << s;
@@ -429,6 +445,7 @@ void vvPrefDialog::emitRenderer()
       name = impl->remoterend;
       options["sockets"] = sockstr.str();
     }
+#endif
   }
   else
   {
@@ -598,6 +615,9 @@ void vvPrefDialog::onPortChanged(const int i)
 
 void vvPrefDialog::onGetInfoClicked()
 {
+#ifdef DESKVOX_USE_ASIO
+  QMessageBox::warning(this, tr("Not implemented"), tr("Not implemented"), QMessageBox::Ok);
+#else
   if (validateRemoteHost(ui->hostEdit->text(), static_cast<ushort>(ui->portBox->value())))
   {
     vvTcpSocket* sock = new vvTcpSocket;
@@ -635,6 +655,7 @@ void vvPrefDialog::onGetInfoClicked()
     }
     delete sock;
   }
+#endif
 }
 
 void vvPrefDialog::onBrowseClicked()
@@ -653,6 +674,34 @@ void vvPrefDialog::onBrowseClicked()
 
 void vvPrefDialog::onConnectClicked()
 {
+#ifdef DESKVOX_USE_ASIO
+  if (impl->remoterend == "")
+  {
+    ui->connectButton->setText(tr("Disconnect"));
+
+    bool checked = ui->ibrBox->isChecked();
+    if (checked)
+      impl->remoterend = "ibr";
+    else
+      impl->remoterend = "image";
+
+    QSettings settings;
+
+    settings.setValue("remote/host", ui->hostEdit->text());
+    settings.setValue("remote/port", ui->portBox->value());
+    settings.setValue("remote/ibr", checked);
+
+    emitRenderer();
+  }
+  else
+  {
+    ui->connectButton->setText(tr("Connect"));
+
+    impl->remoterend = "";
+
+    emitRenderer();
+  }
+#else
   if (impl->remoterend == "")
   {
     if (validateRemoteHost(ui->hostEdit->text(), static_cast<ushort>(ui->portBox->value())))
@@ -711,10 +760,15 @@ void vvPrefDialog::onConnectClicked()
 
     emitRenderer();
   }
+#endif
 }
 
 void vvPrefDialog::onIbrToggled(const bool checked)
 {
+#ifdef DESKVOX_USE_ASIO
+  // not implemented
+  static_cast<void>(checked);
+#else
   QSettings settings;
   settings.setValue("remote/ibr", checked);
 
@@ -737,6 +791,7 @@ void vvPrefDialog::onIbrToggled(const bool checked)
       emitRenderer();
     }
   }
+#endif
 }
 
 void vvPrefDialog::onInterpolationToggled(bool checked)
