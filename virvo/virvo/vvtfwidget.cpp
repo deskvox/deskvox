@@ -18,12 +18,14 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include <cstdlib>
-#include <math.h>
+#include "private/vvlog.h"
 #include "vvtfwidget.h"
 #include "vvtoolshed.h"
-#include "private/vvlog.h"
+#include "vvserialization.h"
+
+#include <math.h>
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 
@@ -637,7 +639,7 @@ float vvTFPyramid::getOpacity(float x, float y, float z)
       if (p[0] < inMin[0]) return vvToolshed::interpolateLinear(outMin[0], 0.0f, inMin[0], _opacity, p[0]);
       if (p[0] > inMax[0]) return vvToolshed::interpolateLinear(inMax[0], _opacity, outMax[0], 0.0f, p[0]);
       break;
-    case 2:   
+    case 2:
        {
           // new: uses bilinear interpolation
           float x1, y1, x2, y2;
@@ -651,10 +653,10 @@ float vvTFPyramid::getOpacity(float x, float y, float z)
           // decide for x
           if (p[0] > _pos[0])
           {
-             if (p[0] > inMax[0]) 
+             if (p[0] > inMax[0])
              {
                 x1 = inMax[0];
-                x2 = outMax[0]; 
+                x2 = outMax[0];
                 r2 = (x2 - p[0]) / (x2 - x1);
              }
              else
@@ -664,10 +666,10 @@ float vvTFPyramid::getOpacity(float x, float y, float z)
           }
           else
           {
-             if (p[0] < inMin[0]) 
+             if (p[0] < inMin[0])
              {
                 x1 = inMin[0];
-                x2 = outMin[0];  
+                x2 = outMin[0];
                 r2 = (x2 - p[0]) / (x2 - x1);
              }
              else
@@ -705,7 +707,7 @@ float vvTFPyramid::getOpacity(float x, float y, float z)
                 val = r2;
              }
           }
-          return val;          
+          return val;
        }
       break;
     case 3:
@@ -926,13 +928,13 @@ float vvTFSkip::getOpacity(float x, float y, float z)
 {
   float _min[3];
   float _max[3];
-  
+
   for (size_t i=0; i<3; ++i)
   {
     _min[i] = _pos[i] - _size[i] / 2.0f;
     _max[i] = _pos[i] + _size[i] / 2.0f;
   }
-  
+
   // Determine dimensionality of transfer function:
   size_t dim = 1;
   if (z>-1.0f) dim = 3;
@@ -948,7 +950,7 @@ float vvTFSkip::getOpacity(float x, float y, float z)
 //============================================================================
 
 /** Default constructor.
-  The custom widget defines an area where users can define a TF with 
+  The custom widget defines an area where users can define a TF with
   a series of control points.
 */
 vvTFCustom::vvTFCustom() : vvTFWidget()
@@ -973,9 +975,9 @@ vvTFCustom::vvTFCustom(vvTFCustom* src) : vvTFWidget(src)
    _currentPoint = NULL;
 
    list<vvTFPoint*>::iterator iter;
-   for(iter = src->_points.begin(); iter != src->_points.end(); iter++) 
+   for(iter = src->_points.begin(); iter != src->_points.end(); iter++)
    {
-      vvTFPoint* newPoint = new vvTFPoint((*iter)->_opacity, 
+      vvTFPoint* newPoint = new vvTFPoint((*iter)->_opacity,
          (*iter)->_pos[0], (*iter)->_pos[1], (*iter)->_pos[2]);
 
       // check for the current point
@@ -1006,7 +1008,7 @@ vvTFCustom::vvTFCustom(std::ifstream& file) : vvTFWidget()
   float op, x, y, z;
   int numPoints;
   int i;
-  
+
   readName(file);
   if (!(file >> numPoints)      ||
       !(file >> _size[0])       ||
@@ -1016,7 +1018,7 @@ vvTFCustom::vvTFCustom(std::ifstream& file) : vvTFWidget()
     VV_LOG(0) << "vvTFCustom(ifstream& file) error";
   }
 
-  for(i=0; i<numPoints; ++i) 
+  for(i=0; i<numPoints; ++i)
   {
     if (!(file >> op)           ||
         !(file >> x)            ||
@@ -1027,7 +1029,7 @@ vvTFCustom::vvTFCustom(std::ifstream& file) : vvTFWidget()
     }
     point = new vvTFPoint(op, x, y, z);
     _points.push_back(point);
-  }  
+  }
   _currentPoint = NULL;
 }
 
@@ -1037,7 +1039,7 @@ vvTFCustom::~vvTFCustom()
   list<vvTFPoint*>::iterator iter;
 
   // Remove point instances from list:
-  for(iter=_points.begin(); iter!=_points.end(); iter++) 
+  for(iter=_points.begin(); iter!=_points.end(); iter++)
   {
     delete *iter;
   }
@@ -1080,13 +1082,13 @@ float vvTFCustom::getOpacity(float x, float y, float z)
   float _min[3];
   float _max[3];
   float xTF;    // x position in widget space
-  
+
   for (size_t i=0; i<3; ++i)
   {
     _min[i] = _pos[i] - _size[i] / 2.0f;
     _max[i] = _pos[i] + _size[i] / 2.0f;
   }
-  
+
   // Determine dimensionality of transfer function:
   size_t dim = 1;
   if (z>-1.0f) dim = 3;
@@ -1100,7 +1102,7 @@ float vvTFCustom::getOpacity(float x, float y, float z)
     xTF = x - _pos[0]; // transform x to widget space
     prev = NULL;
     if (_points.size()==0) return 0.0f; // no control points specified
-    for(iter=_points.begin(); iter!=_points.end(); iter++) 
+    for(iter=_points.begin(); iter!=_points.end(); iter++)
     {
       if (xTF < (*iter)->_pos[0])
       {
@@ -1129,11 +1131,11 @@ vvTFPoint* vvTFCustom::addPoint(float x, float y, float z)
 {
   list<vvTFPoint*>::iterator iter;
   vvTFPoint* newPoint;
-  
+
   newPoint = new vvTFPoint(getOpacity(x, y, z), x - _pos[0], y - _pos[1], z - _pos[2]);
   _points.push_back(newPoint);
   sortPoints();
-  return newPoint;  
+  return newPoint;
 }
 
 /** Remove current control point from list.
@@ -1163,15 +1165,15 @@ vvTFPoint* vvTFCustom::selectPoint(float o, float ot, float x, float xt, float y
 
   float global[3];  // global x/y/z coordinates of control point
   list<vvTFPoint*>::iterator iter;
-  
-  for(iter=_points.begin(); iter!=_points.end(); iter++) 
+
+  for(iter=_points.begin(); iter!=_points.end(); iter++)
   {
     for (size_t i=0; i<3; ++i)
     {
       global[i] = _pos[i] + (*iter)->_pos[i];
     }
-    if (fabs(global[0] - x) <= xt && 
-        fabs((*iter)->_opacity - o) <= ot) 
+    if (fabs(global[0] - x) <= xt &&
+        fabs((*iter)->_opacity - o) <= ot)
     {
       _currentPoint = *iter;
       return *iter;
@@ -1209,7 +1211,7 @@ void vvTFCustom::moveCurrentPoint(float dop, float dx, float dy, float dz)
     _currentPoint->_pos[1]  += dy;
     _currentPoint->_pos[2]  += dz;
     _currentPoint->_opacity += dop;
-    
+
     // Constrain point position to limits:
     _currentPoint->_opacity = ts_clamp(_currentPoint->_opacity, 0.0f, 1.0f);
     for (size_t i=0; i<3; ++i)
@@ -1231,19 +1233,19 @@ void vvTFCustom::sortPoints()
   vvTFPoint* prev;
   vvTFPoint* point;
   bool done=false;
-  
-  if (_points.size()<=1) return; // no sorting necessary  
+
+  if (_points.size()<=1) return; // no sorting necessary
   while (!done)
   {
     prev = NULL;
-    for(iter=_points.begin(); iter!=_points.end(); iter++) 
+    for(iter=_points.begin(); iter!=_points.end(); iter++)
     {
-      if (prev==NULL) 
+      if (prev==NULL)
       {
         prev = *iter;
         continue;
       }
-      if ((*iter)->_pos[0] < prev->_pos[0]) 
+      if ((*iter)->_pos[0] < prev->_pos[0])
       {
         point = prev;
         _points.remove(prev);
@@ -1265,8 +1267,8 @@ void vvTFCustom::setSize(float x, float y, float z)
   if (x!=-1.0f) _size[0] = x;
   if (y!=-1.0f) _size[1] = y;
   if (z!=-1.0f) _size[2] = z;
-  
-  for(iter=_points.begin(); iter!=_points.end(); iter++) 
+
+  for(iter=_points.begin(); iter!=_points.end(); iter++)
   {
     for (size_t i=0; i<3; ++i)
     {
@@ -1279,7 +1281,7 @@ void vvTFCustom::setSize(float x, float y, float z)
 }
 
 
-// 
+//
 // free draw support
 //
 template<class T>
@@ -1327,10 +1329,10 @@ vvTFCustom2D::vvTFCustom2D(vvTFCustom2D* other) : vvTFWidget(other)
 
    this->_opacity = other->_opacity;
    this->_extrude = other->_extrude;
-   
+
    this->_centralPoint = new vvTFPoint(this->_centralPoint->_pos[0], this->_centralPoint->_pos[1]);
    this->_centralPoint->_opacity = this->_opacity;
-   
+
    this->_mapDirty = true;
    this->_map = NULL;
    this->_size[0] = 0.0f;
@@ -1374,7 +1376,7 @@ void vvTFCustom2D::fromString(const std::string&)
 
 float vvTFCustom2D::getOpacity(float x, float y, float)
 {
-   if (_mapDirty) 
+   if (_mapDirty)
    {
       //points were added, or position changed.
 
@@ -1416,7 +1418,7 @@ vvTFPoint* vvTFCustom2D::addPoint(float opacity, float x, float y)
 
    _mapDirty = true;
 
-   return newPoint;  
+   return newPoint;
 }
 
 void vvTFCustom2D::addPoint(vvTFPoint* newPoint)
@@ -1429,14 +1431,14 @@ void vvTFCustom2D::addMapPoint(int x, int y, float value)
 {
    int xDim = int(this->_size[0] * 255);
    int idx = y * xDim + x;
-   _map[idx] = value; 
+   _map[idx] = value;
 }
 
 void vvTFCustom2D::midPointLine(float* /*map*/, int x0, int y0, int x1, int y1, float alpha0, float alpha1)
-{  
+{
    int dx=x1-x0;
    int dy=y1-y0;
-   
+
    int xIncr, yIncr, adx, ady;
 
    if (dy < 0)
@@ -1480,7 +1482,7 @@ void vvTFCustom2D::midPointLine(float* /*map*/, int x0, int y0, int x1, int y1, 
          {
             ++y;
             value = value + da;
-            addMapPoint(x, y, value);            
+            addMapPoint(x, y, value);
          }
       }
       else
@@ -1514,9 +1516,9 @@ void vvTFCustom2D::midPointLine(float* /*map*/, int x0, int y0, int x1, int y1, 
                d += incrNE;
                ++x;
                y += yIncr;
-            }         
+            }
             value += da;
-            addMapPoint(x, y, value);            
+            addMapPoint(x, y, value);
          }
       }
       else
@@ -1533,9 +1535,9 @@ void vvTFCustom2D::midPointLine(float* /*map*/, int x0, int y0, int x1, int y1, 
                d -= incrNE;
                --x;
                y += yIncr;
-            }         
+            }
             value += da;
-            addMapPoint(x, y, value);            
+            addMapPoint(x, y, value);
          }
       }
    }
@@ -1560,7 +1562,7 @@ void vvTFCustom2D::midPointLine(float* /*map*/, int x0, int y0, int x1, int y1, 
                d += incrNE;
                ++y;
                x += xIncr;
-            }         
+            }
             value += da;
             addMapPoint(x, y, value);
          }
@@ -1579,7 +1581,7 @@ void vvTFCustom2D::midPointLine(float* /*map*/, int x0, int y0, int x1, int y1, 
                d -= incrNE;
                --y;
                x += xIncr;
-            }         
+            }
             value += da;
             addMapPoint(x, y, value);
          }
@@ -1624,8 +1626,8 @@ void vvTFCustom2D::internalFloodFill(float* map, int x, int y, int xDim, int yDi
 void vvTFCustom2D::uniformFillFreeArea()
 {
    int x = int(_centralPoint->_pos[0] * 255);
-   int y = int(_centralPoint->_pos[1] * 255); 
-   int xDim = int(_size[0] * 255);  
+   int y = int(_centralPoint->_pos[1] * 255);
+   int xDim = int(_size[0] * 255);
    int yDim = int(_size[1] * 255);
    internalFloodFill(_map, x, y, xDim, yDim, _map[y * xDim + x], _opacity);
 }
@@ -1652,7 +1654,7 @@ void vvTFCustom2D::drawFreeContour()
 
          prev_it = next_it;
          ++next_it;
-      }         
+      }
    }
 }
 
@@ -1694,7 +1696,7 @@ vvTFCustomMap::vvTFCustomMap(float x, float w, float y, float h, float z, float 
    _size[2] = d;
 
    this->_ownColor = false;
-   
+
    int dim;
    _dim[0] = int(256 * w);
    dim = _dim[0];
@@ -1722,7 +1724,7 @@ vvTFCustomMap::vvTFCustomMap(float x, float w, float y, float h, float z, float 
    _map = new float[dim];
 }
 
-vvTFCustomMap::vvTFCustomMap(vvColor col, bool ownColor, float x, float w, float y, float h, float z, float d) 
+vvTFCustomMap::vvTFCustomMap(vvColor col, bool ownColor, float x, float w, float y, float h, float z, float d)
 : vvTFWidget(x, y, z)
 {
   _col = col;
@@ -1732,7 +1734,7 @@ vvTFCustomMap::vvTFCustomMap(vvColor col, bool ownColor, float x, float w, float
   _size[2] = d;
 
    this->_ownColor = false;
-   
+
    int dim;
    _dim[0] = int(256 * w);
    dim = _dim[0];
@@ -1760,7 +1762,7 @@ vvTFCustomMap::vvTFCustomMap(vvColor col, bool ownColor, float x, float w, float
    _map = new float[dim];
 }
 
-vvTFCustomMap::vvTFCustomMap(vvTFCustomMap* other) 
+vvTFCustomMap::vvTFCustomMap(vvTFCustomMap* other)
 : vvTFWidget(other)
 {
    this->_size[0] = other->_size[0];
@@ -1800,7 +1802,7 @@ void vvTFCustomMap::fromString(const std::string&)
   //TODO!!
 }
 
-// Given x, y, z in volume space, find the index in the map 
+// Given x, y, z in volume space, find the index in the map
 // based on _pos and _size
 int vvTFCustomMap::computeIdx(float x, float y, float z)
 {
@@ -1823,7 +1825,7 @@ int vvTFCustomMap::computeIdx(float x, float y, float z)
 
    if (x < lb[0] || x > ub[0])
       return -1;
-   
+
    if (dim > 1)
    {
       if (y < lb[1] || y > ub[1])
@@ -1856,7 +1858,7 @@ int vvTFCustomMap::computeIdx(float x, float y, float z)
          xPos = int((x - lb[0]) * 256);
          if (yPos >= _dim[0])
             yPos = _dim[0] - 1;
-         
+
          idx = yPos * _dim[0] + xPos;
       }
       break;
@@ -1877,7 +1879,7 @@ int vvTFCustomMap::computeIdx(float x, float y, float z)
          xPos = int((x - lb[0]) * 256);
          if (yPos >= _dim[0])
             yPos = _dim[0] - 1;
-         
+
          idx = zPos * _dim[0] * _dim[1] + yPos * _dim[0] + xPos;
       }
       break;
@@ -1888,8 +1890,8 @@ int vvTFCustomMap::computeIdx(float x, float y, float z)
 float vvTFCustomMap::getOpacity(float x, float y, float z)
 {
    int idx = computeIdx(x, y, z);
-   if (idx >= 0)   
-      return _map[idx];   
+   if (idx >= 0)
+      return _map[idx];
    else
       return 0.0f;
 }
@@ -1922,9 +1924,6 @@ void vvTFCustomMap::setOwnColor(bool flag)
 {
    _ownColor = flag;
 }
-
-
-
 
 //============================================================================
 // End of File

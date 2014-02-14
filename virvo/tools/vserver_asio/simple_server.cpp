@@ -22,7 +22,6 @@
 
 #include <virvo/gl/util.h>
 #include <virvo/private/vvgltools.h>
-#include <virvo/private/vvmessage.h>
 #include <virvo/private/vvmessages.h>
 #include <virvo/private/vvtimer.h>
 #include <virvo/vvfileio.h>
@@ -32,8 +31,7 @@
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvrendercontext.h>
 #include <virvo/vvrendererfactory.h>
-#include <virvo/vvtfwidget.h>
-#include <virvo/vvtransfunc.h>
+#include <virvo/vvserialization.h>
 #include <virvo/vvvoldesc.h>
 
 #include <cassert>

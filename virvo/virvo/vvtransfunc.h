@@ -50,6 +50,12 @@ class VIRVOEXPORT vvTransFunc
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
+      a.register_type<vvTFWidget>();
+      a.register_type<vvTFBell>();
+      a.register_type<vvTFColor>();
+      a.register_type<vvTFCustom>();
+      a.register_type<vvTFPyramid>();
+      a.register_type<vvTFSkip>();
       a & _widgets;
     }
 
@@ -93,12 +99,6 @@ class VIRVOEXPORT vvTransFunc
     int  saveMeshviewer(const char*);
     int  saveBinMeshviewer(const char*);
     int  loadMeshviewer(const char*);
-
-    /*!
-     * \brief     Copy all widgets from another transfer function.
-     * \param     rhs The other transfer function.
-     */
-    vvTransFunc& operator=(vvTransFunc& rhs);
 };
 #endif
 

@@ -22,7 +22,13 @@
 #define _VVTFWIDGET_H_
 
 // Boost:
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+#include <boost/serialization/list.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 
@@ -30,6 +36,7 @@
 #include <stdio.h>
 #include <fstream>
 #include <list>
+#include <stdexcept>
 #include <string>
 
 // Virvo:
@@ -38,7 +45,7 @@
 #include "vvinttypes.h"
 #include "vvvecmath.h"
 
-/** Specifies a 3D point with an opacity. 
+/** Specifies a 3D point with an opacity.
   @see vvTFCustom
 */
 class VIRVOEXPORT vvTFPoint
@@ -50,8 +57,8 @@ class VIRVOEXPORT vvTFPoint
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a & _pos;
-      a & _opacity;
+      a & BOOST_SERIALIZATION_NVP(_pos);
+      a & BOOST_SERIALIZATION_NVP(_opacity);
     }
 
     vvTFPoint();
@@ -95,9 +102,9 @@ class VIRVOEXPORT vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a & _name;
-      a & _pos;
-      a & _opacity;
+      a & BOOST_SERIALIZATION_NVP(_name);
+      a & BOOST_SERIALIZATION_NVP(_pos);
+      a & BOOST_SERIALIZATION_NVP(_opacity);
     }
 
     vvTFWidget();
@@ -115,8 +122,8 @@ class VIRVOEXPORT vvTFWidget
     vvVector3 pos() const;
     virtual void readName(std::ifstream& file);
     void write(FILE*);
-    virtual const char* toString() = 0;
-    virtual void fromString(const std::string& str) = 0;
+    virtual const char* toString() { throw std::runtime_error("not implemented"); }
+    virtual void fromString(const std::string& /*str*/) { throw std::runtime_error("not implemented"); }
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
 
@@ -138,10 +145,11 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a & boost::serialization::base_object<vvTFWidget>(*this);
-      a & _ownColor;
-      a & _col;
-      a & _size;
+      a.register_type<vvTFWidget>();
+      a & BOOST_SERIALIZATION_BASE_OBJECT_NVP(vvTFWidget);
+      a & BOOST_SERIALIZATION_NVP(_ownColor);
+      a & BOOST_SERIALIZATION_NVP(_col);
+      a & BOOST_SERIALIZATION_NVP(_size);
     }
 
     vvTFBell();
@@ -178,11 +186,12 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a & boost::serialization::base_object<vvTFWidget>(*this);
-      a & _ownColor;
-      a & _col;
-      a & _top;
-      a & _bottom;
+      a.register_type<vvTFWidget>();
+      a & BOOST_SERIALIZATION_BASE_OBJECT_NVP(vvTFWidget);
+      a & BOOST_SERIALIZATION_NVP(_ownColor);
+      a & BOOST_SERIALIZATION_NVP(_col);
+      a & BOOST_SERIALIZATION_NVP(_top);
+      a & BOOST_SERIALIZATION_NVP(_bottom);
     }
 
     vvTFPyramid();
@@ -218,8 +227,9 @@ class VIRVOEXPORT vvTFColor : public vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a & boost::serialization::base_object<vvTFWidget>(*this);
-      a & _col;
+      a.register_type<vvTFWidget>();
+      a & BOOST_SERIALIZATION_BASE_OBJECT_NVP(vvTFWidget);
+      a & BOOST_SERIALIZATION_NVP(_col);
     }
 
     vvTFColor();
@@ -243,8 +253,9 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a & boost::serialization::base_object<vvTFWidget>(*this);
-      a & _size;
+      a.register_type<vvTFWidget>();
+      a & BOOST_SERIALIZATION_BASE_OBJECT_NVP(vvTFWidget);
+      a & BOOST_SERIALIZATION_NVP(_size);
     }
 
     vvTFSkip();
@@ -256,8 +267,8 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
 };
 
-/** Transfer function widget to specify a custom transfer function widget with control points. 
-  The widget defines a rectangular area in which the user can specify control points between 
+/** Transfer function widget to specify a custom transfer function widget with control points.
+  The widget defines a rectangular area in which the user can specify control points between
   which the opacity function will be computed linearly.
  */
 class VIRVOEXPORT vvTFCustom : public vvTFWidget
@@ -270,10 +281,11 @@ class VIRVOEXPORT vvTFCustom : public vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a & boost::serialization::base_object<vvTFWidget>(*this);
-      a & _size;
-      a & _points;
-      a & _currentPoint;
+      a.register_type<vvTFWidget>();
+      a & BOOST_SERIALIZATION_BASE_OBJECT_NVP(vvTFWidget);
+      a & BOOST_SERIALIZATION_NVP(_size);
+      a & BOOST_SERIALIZATION_NVP(_points);
+      a & BOOST_SERIALIZATION_NVP(_currentPoint);
     }
 
     vvTFCustom();
@@ -295,14 +307,14 @@ class VIRVOEXPORT vvTFCustom : public vvTFWidget
 
 
 /** 06/2008 L. Dematte'
-  Transfer function widget to specify a custom 2D transfer function widget with control points. 
+  Transfer function widget to specify a custom 2D transfer function widget with control points.
   Points will be used to create a custom "tent" or an "extruded" shape (basically a polyline
   with alpha value as height).
  */
 class VIRVOEXPORT vvTFCustom2D : public vvTFWidget
 {
 protected:
-    bool _ownColor;    
+    bool _ownColor;
 
 public:
     //float _size[3];                ///< width, height, depth of TF area [volume data space]
@@ -314,25 +326,6 @@ public:
     float _opacity;
     bool _extrude;
     vvTFPoint* _centralPoint;      ///< central point
-
-    template<class A>
-    void serialize(A& a, unsigned /*version*/)
-    {
-#if 0
-      a & boost::serialization::base_object<vvTFWidget>(*this);
-      a & _points;
-      a & _mapDirty;
-      a & _col;
-      a & _opacity;
-      a & _extrude;
-      a & _centralPoint;
-//      a & _size;
-//      a & _map;
-//      a & _dim;
-#else
-      (void)a;
-#endif
-    }
 
     vvTFCustom2D(bool extrude, float opacity, float xCenter, float yCenter);
     vvTFCustom2D(vvTFCustom2D*);
@@ -377,21 +370,6 @@ class VIRVOEXPORT vvTFCustomMap : public vvTFWidget
     float* _map;
     vvVector3i _dim;                 // dimensions of the map [widget data space]
 
-    template<class A>
-    void serialize(A& a, unsigned /*version*/)
-    {
-#if 0
-      a & boost::serialization::base_object<vvTFWidget>(*this);
-      a & _ownColor;
-      a & _col;
-      a & _size;
-//      a & _map;
-//      a & _dim;
-#else
-      (void)a;
-#endif
-    }
-
     vvTFCustomMap();
     vvTFCustomMap(float x, float w, float y=0.5f, float h=0.0f, float z=0.5f, float d=0.0f);
     vvTFCustomMap(vvColor, bool, float x, float w, float y=0.5f, float h=0.0f, float z=0.5f, float d=0.0f);
@@ -410,6 +388,16 @@ class VIRVOEXPORT vvTFCustomMap : public vvTFWidget
 private:
     int computeIdx(float x, float y, float z);
 };
+
+BOOST_CLASS_EXPORT_KEY(vvTFBell)
+BOOST_CLASS_EXPORT_KEY(vvTFColor)
+BOOST_CLASS_EXPORT_KEY(vvTFCustom)
+#if 0
+BOOST_CLASS_EXPORT_KEY(vvTFCustom2D)
+BOOST_CLASS_EXPORT_KEY(vvTFCustomMap)
+#endif
+BOOST_CLASS_EXPORT_KEY(vvTFPyramid)
+BOOST_CLASS_EXPORT_KEY(vvTFSkip)
 
 #endif
 
