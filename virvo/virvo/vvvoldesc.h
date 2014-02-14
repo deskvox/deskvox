@@ -167,6 +167,7 @@ class VIRVOEXPORT vvVolDesc
       a & real;
       a & pos;
       a & chan;
+      a & _scale;
 
       // Data (from vvSocketIO::putVolume)
       size_t size = getFrameBytes();
@@ -189,6 +190,7 @@ class VIRVOEXPORT vvVolDesc
       a & real;
       a & pos;
       a & chan;
+      a & _scale;
 
       // Data (from vvSocketIO::getVolume)
       size_t size = getFrameBytes();
