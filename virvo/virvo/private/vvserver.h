@@ -18,10 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-
 #ifndef VV_PRIVATE_SERVER_H
 #define VV_PRIVATE_SERVER_H
-
 
 // Boost.ASIO needs _WIN32_WINNT
 #ifdef _WIN32
@@ -30,34 +28,32 @@
 #endif
 #endif
 
-
 #include "vvmessage.h"
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/strand.hpp>
 
+#include <boost/smart_ptr/enable_shared_from_this.hpp>
+
+#include <list>
 #include <set>
-
 
 namespace virvo
 {
 
-
     //----------------------------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------------------------
-
 
     class Server;
     class ServerManager;
 
-
     //----------------------------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------------------------
 
-
-    class ServerManager
+    class ServerManager : public boost::enable_shared_from_this<ServerManager>
     {
     public:
         class Connection : public boost::enable_shared_from_this<Connection>
@@ -89,11 +85,20 @@ namespace virvo
         typedef boost::shared_ptr<Connection> ConnectionPointer;
 
     public:
+        // Constructor
+        VVAPI ServerManager();
+
         // Constructor starts a new accept operation.
         VVAPI ServerManager(unsigned short port);
 
         // Destructor.
         VVAPI virtual ~ServerManager();
+
+        // Bind the acceptor to the given port
+        VVAPI void bind(unsigned short port);
+
+        // Starts a new accept operation.
+        VVAPI void accept();
 
         // Runs the message loop
         VVAPI void run();
@@ -102,10 +107,7 @@ namespace virvo
         VVAPI void stop();
 
         // Sends a message to the given client
-        VVAPI void write(MessagePointer message, ConnectionPointer conn);
-
-        // Sends a message to all currently connected clients
-        VVAPI void broadcast(MessagePointer message);
+        VVAPI void write(std::pair<MessagePointer, ConnectionPointer> msg);
 
         // Called when a new connection is accepted.
         // Return false to discard the new connection, return conn->accept(...)
@@ -129,10 +131,10 @@ namespace virvo
         void handle_read_data(boost::system::error_code const& e, MessagePointer message, ConnectionPointer conn);
 
         // Starts a new write operation.
-        void do_write(MessagePointer message, ConnectionPointer conn);
+        void do_write(std::pair<MessagePointer, ConnectionPointer> msg);
 
-        // Starts a new write operation an all currently active connections.
-        void do_broadcast(MessagePointer message);
+        // Write the next message
+        void do_write();
 
         // Called when a complete message is written.
         void handle_write(boost::system::error_code const& e, MessagePointer message, ConnectionPointer conn);
@@ -146,13 +148,15 @@ namespace virvo
         boost::asio::ip::tcp::acceptor acceptor_;
         // The connection to the client.
         Connections connections_;
+        // To protect the list of messages...
+        boost::asio::strand strand_;
+        // List of messages to be written
+        std::list<std::pair<MessagePointer, ConnectionPointer> > write_queue_;
     };
-
 
     //----------------------------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------------------------
-
 
     class Server
     {
@@ -164,6 +168,9 @@ namespace virvo
         // Called when an error occurred during a read or a write operation.
         VVAPI virtual void on_error(ServerManager::ConnectionPointer conn, boost::system::error_code const& e);
 
+        // Called when the server is connected to the client
+        virtual void on_accept(ServerManager::ConnectionPointer conn) = 0;
+
         // Called when a new message has successfully been read from the server.
         virtual void on_read(ServerManager::ConnectionPointer conn, MessagePointer message) = 0;
 
@@ -171,8 +178,6 @@ namespace virvo
         virtual void on_write(ServerManager::ConnectionPointer conn, MessagePointer message) = 0;
     };
 
-
 } // namespace virvo
-
 
 #endif // !VV_PRIVATE_SERVER_H
