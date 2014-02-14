@@ -21,8 +21,15 @@
 #ifndef VV_PRIVATE_SERIALIZE_H
 #define VV_PRIVATE_SERIALIZE_H
 
+#define DESKVOX_USE_ASIO_BINARY_ARCHIVE 0
+
+#if DESKVOX_USE_ASIO_BINARY_ARCHIVE
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+#else
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#endif
 
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
@@ -49,7 +56,11 @@ namespace virvo
 
             {
                 // Create a serializer
+#if DESKVOX_USE_ASIO_BINARY_ARCHIVE
                 boost::archive::binary_oarchive archive(stream);
+#else
+		boost::archive::text_oarchive archive(stream);
+#endif
 
                 // Serialize the message
                 archive << object;
@@ -59,7 +70,7 @@ namespace virvo
             }
             // ~archive
 
-            return static_cast<bool>(stream);
+	    return stream.good();
         }
         catch (std::exception& e)
         {
@@ -84,12 +95,16 @@ namespace virvo
             stream_type stream(source);
 
             // Create a deserialzer
+#if DESKVOX_USE_ASIO_BINARY_ARCHIVE
             boost::archive::binary_iarchive archive(stream);
+#else
+            boost::archive::text_iarchive archive(stream);
+#endif
 
             // Deserialize the message
             archive >> object;
 
-            return static_cast<bool>(stream);
+            return stream.good();
         }
         catch (std::exception& e)
         {
