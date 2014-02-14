@@ -145,7 +145,7 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a.register_type<vvTFWidget>();
+      a.template register_type<vvTFWidget>();
       a & BOOST_SERIALIZATION_BASE_OBJECT_NVP(vvTFWidget);
       a & BOOST_SERIALIZATION_NVP(_ownColor);
       a & BOOST_SERIALIZATION_NVP(_col);
@@ -186,7 +186,7 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a.register_type<vvTFWidget>();
+      a.template register_type<vvTFWidget>();
       a & BOOST_SERIALIZATION_BASE_OBJECT_NVP(vvTFWidget);
       a & BOOST_SERIALIZATION_NVP(_ownColor);
       a & BOOST_SERIALIZATION_NVP(_col);
@@ -227,7 +227,7 @@ class VIRVOEXPORT vvTFColor : public vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a.register_type<vvTFWidget>();
+      a.template register_type<vvTFWidget>();
       a & BOOST_SERIALIZATION_BASE_OBJECT_NVP(vvTFWidget);
       a & BOOST_SERIALIZATION_NVP(_col);
     }
@@ -253,7 +253,7 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a.register_type<vvTFWidget>();
+      a.template register_type<vvTFWidget>();
       a & BOOST_SERIALIZATION_BASE_OBJECT_NVP(vvTFWidget);
       a & BOOST_SERIALIZATION_NVP(_size);
     }
@@ -281,7 +281,7 @@ class VIRVOEXPORT vvTFCustom : public vvTFWidget
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a.register_type<vvTFWidget>();
+      a.template register_type<vvTFWidget>();
       a & BOOST_SERIALIZATION_BASE_OBJECT_NVP(vvTFWidget);
       a & BOOST_SERIALIZATION_NVP(_size);
       a & BOOST_SERIALIZATION_NVP(_points);

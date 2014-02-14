@@ -50,12 +50,12 @@ class VIRVOEXPORT vvTransFunc
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {
-      a.register_type<vvTFWidget>();
-      a.register_type<vvTFBell>();
-      a.register_type<vvTFColor>();
-      a.register_type<vvTFCustom>();
-      a.register_type<vvTFPyramid>();
-      a.register_type<vvTFSkip>();
+      a.template register_type<vvTFWidget>();
+      a.template register_type<vvTFBell>();
+      a.template register_type<vvTFColor>();
+      a.template register_type<vvTFCustom>();
+      a.template register_type<vvTFPyramid>();
+      a.template register_type<vvTFSkip>();
       a & _widgets;
     }
 
