@@ -41,6 +41,7 @@ namespace virvo
     class Message
     {
         friend class Client;
+        friend class Connection;
         friend class ServerManager;
 
         typedef std::vector<char> DataType;
@@ -85,6 +86,7 @@ namespace virvo
             ServerInfo,
             Statistics,
             TransFunc,          // type = vvTransFunc
+            TransFuncChanged,   // type = bool
             ViewingDirection,   // type = vvVector3
             Volume,             // type = vvVolDesc
             VolumeFile,         // type = std::string
