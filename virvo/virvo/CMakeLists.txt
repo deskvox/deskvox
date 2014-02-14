@@ -64,6 +64,7 @@ endif()
 
 
 set(VIRVO_HEADERS
+  private/connection.h
   private/vvclient.h
   private/vvcompress.h
   private/vvcompressedvector.h
@@ -194,6 +195,7 @@ set(VIRVO_HEADERS
 )
 
 set(VIRVO_SOURCES
+  private/connection.cpp
   private/vvclient.cpp
   private/vvcompress_jpeg.cpp
   private/vvcompress_png.cpp
