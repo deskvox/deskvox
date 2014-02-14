@@ -39,14 +39,6 @@
 #include <cassert>
 #include <iostream>
 
-#if 1
-BOOST_CLASS_EXPORT_IMPLEMENT(vvTFBell)
-BOOST_CLASS_EXPORT_IMPLEMENT(vvTFColor)
-BOOST_CLASS_EXPORT_IMPLEMENT(vvTFCustom)
-BOOST_CLASS_EXPORT_IMPLEMENT(vvTFPyramid)
-BOOST_CLASS_EXPORT_IMPLEMENT(vvTFSkip)
-#endif
-
 static const int DEFAULT_WINDOW_SIZE = 512;
 
 vvSimpleServer::vvSimpleServer()

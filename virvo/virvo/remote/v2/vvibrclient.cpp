@@ -33,6 +33,8 @@
 #include "vvshaderprogram.h"
 #include "vvvoldesc.h"
 
+#include <boost/thread/mutex.hpp>
+
 namespace gl = virvo::gl;
 
 using virvo::makeMessage;
