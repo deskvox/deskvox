@@ -37,6 +37,10 @@
 #include <cstdlib>
 #include <cstring>
 
+#if VV_CXX_MSVC
+#include <intrin.h>
+#endif
+
 #include <boost/math/special_functions/round.hpp>
 using namespace boost::math;
 
@@ -65,6 +69,9 @@ static const int tile_height = 16;
 #if VV_CXX_CLANG || VV_CXX_GCC || VV_CXX_INTEL
 #define atom_fetch_and_add(a, b)     __sync_fetch_and_add(a, b)
 #define atom_lock_test_and_set(a, b) __sync_lock_test_and_set(a, b)
+#elif VV_CXX_MSVC
+#define atom_fetch_and_add(a, b)     _InterlockedExchangeAdd(a, b)
+#define atom_lock_test_and_set(a, b) _InterlockedExchange(a, b)
 #else
 #define atom_fetch_and_add(a, b)
 #define atom_lock_test_and_set(a, b)
