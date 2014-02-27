@@ -92,6 +92,8 @@ typedef size_t index_t;
 #define any(x) (x)
 #define all(x) (x)
 using virvo::toolshed::clamp;
+using std::min;
+using std::max;
 typedef size_t Vecs;
 namespace fast
 {
@@ -564,58 +566,58 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
             Vec samples[8];
 
             Vec3s tc = tci + Vec3s(0, 0, 0);
-            tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
-            tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
-            tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
+            tc[0] = min(tc[0], vox[0] - 1);
+            tc[1] = min(tc[1], vox[1] - 1);
+            tc[2] = min(tc[2], vox[2] - 1);
             index_t idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
             samples[0] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(1, 0, 0);
-            tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
-            tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
-            tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
+            tc[0] = min(tc[0], vox[0] - 1);
+            tc[1] = min(tc[1], vox[1] - 1);
+            tc[2] = min(tc[2], vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
             samples[1] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(1, 1, 0);
-            tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
-            tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
-            tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
+            tc[0] = min(tc[0], vox[0] - 1);
+            tc[1] = min(tc[1], vox[1] - 1);
+            tc[2] = min(tc[2], vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
             samples[2] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(0, 1, 0);
-            tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
-            tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
-            tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
+            tc[0] = min(tc[0], vox[0] - 1);
+            tc[1] = min(tc[1], vox[1] - 1);
+            tc[2] = min(tc[2], vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
             samples[3] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(1, 0, 1);
-            tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
-            tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
-            tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
+            tc[0] = min(tc[0], vox[0] - 1);
+            tc[1] = min(tc[1], vox[1] - 1);
+            tc[2] = min(tc[2], vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
             samples[4] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(0, 0, 1);
-            tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
-            tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
-            tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
+            tc[0] = min(tc[0], vox[0] - 1);
+            tc[1] = min(tc[1], vox[1] - 1);
+            tc[2] = min(tc[2], vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
             samples[5] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(0, 1, 1);
-            tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
-            tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
-            tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
+            tc[0] = min(tc[0], vox[0] - 1);
+            tc[1] = min(tc[1], vox[1] - 1);
+            tc[2] = min(tc[2], vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
             samples[6] = volume(raw, idx, bpc);
 
             tc = tci + Vec3s(1, 1, 1);
-            tc[0] = clamp<dim_t>(tc[0], 0, vox[0] - 1);
-            tc[1] = clamp<dim_t>(tc[1], 0, vox[1] - 1);
-            tc[2] = clamp<dim_t>(tc[2], 0, vox[2] - 1);
+            tc[0] = min(tc[0], vox[0] - 1);
+            tc[1] = min(tc[1], vox[1] - 1);
+            tc[2] = min(tc[2], vox[2] - 1);
             idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
             samples[7] = volume(raw, idx, bpc);
 

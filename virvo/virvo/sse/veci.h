@@ -161,6 +161,28 @@ VV_FORCE_INLINE std::ostream& operator<<(std::ostream& out, Veci const& v)
 
 /* function analogs for virvo::toolshed */
 
+VV_FORCE_INLINE Veci min(Veci const& u, Veci const& v)
+{
+#ifdef __SSE4_1__
+  return _mm_min_epi32(u, v);
+#else
+  VV_UNUSED(u);
+  VV_UNUSED(v);
+  throw std::runtime_error("not implemented yet");
+#endif
+}
+
+VV_FORCE_INLINE Veci max(Veci const& u, Veci const& v)
+{
+#ifdef __SSE4_1__
+  return _mm_max_epi32(u, v);
+#else
+  VV_UNUSED(u);
+  VV_UNUSED(v);
+  throw std::runtime_error("not implemented yet");
+#endif
+}
+
 template <typename T>
 VV_FORCE_INLINE T clamp(T const& v, T const& a, T const& b);
 
