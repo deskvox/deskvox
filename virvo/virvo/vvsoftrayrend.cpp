@@ -36,7 +36,6 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <queue>
 
 #include <boost/math/special_functions/round.hpp>
 using namespace boost::math;
@@ -50,6 +49,27 @@ static const size_t high_byte_offset = 1;
 #else
 static const size_t high_byte_offset = 0;
 #endif
+
+namespace virvo
+{
+
+static const int tile_width  = 16;
+static const int tile_height = 16;
+
+}
+
+#define DIV_UP(a, b) ((a + b - 1) / b)
+
+
+/* TODO: cross-platform atomics */
+#if VV_CXX_GCC || VV_CXX_INTEL
+#define atom_fetch_and_add(a, b)     __sync_fetch_and_add(a, b)
+#define atom_lock_test_and_set(a, b) __sync_lock_test_and_set(a, b)
+#else
+#define atom_fetch_and_add(a, b)
+#define atom_lock_test_and_set(a, b)
+#endif
+
 
 #if VV_USE_SSE
 
@@ -250,42 +270,6 @@ struct Tile
 }
 
 
-std::vector<virvo::Tile> makeTiles(vvRecti const& rect, virvo::Viewport const& vp)
-{
-  const int tilew = 16;
-  const int tileh = 16;
-
-  int w = rect[2];
-  int h = rect[3];
-
-  int numtilesx = virvo::toolshed::iDivUp(w, tilew);
-  int numtilesy = virvo::toolshed::iDivUp(h, tileh);
-
-  std::vector<virvo::Tile> result;
-  for (int y = 0; y < numtilesy; ++y)
-  {
-    for (int x = 0; x < numtilesx; ++x)
-    {
-      virvo::Tile t;
-      t.left = rect[0] + tilew * x;
-      t.bottom = rect[1] + tileh * y;
-      t.right = t.left + tilew;
-      if (t.right > vp[2])
-      {
-        t.right = w;
-      }
-      t.top = t.bottom + tileh;
-      if (t.top > vp[3])
-      {
-        t.top = h;
-      }
-      result.push_back(t);
-    }
-  }
-  return result;
-}
-
-
 struct Thread
 {
   size_t id;
@@ -295,19 +279,36 @@ struct Thread
   Matrix invViewMatrix;
   float* colors;
 
-  pthread_barrier_t* barrier;
   pthread_mutex_t* mutex;
   std::vector<virvo::Tile>* tiles;
   vecf* rgbaTF;
 
-  enum Event
+
+  struct RenderParams
   {
-    VV_RENDER = 0,
-    VV_EXIT
+    virvo::Tile rect;
   };
 
-  std::queue<Event> events;
+  struct SyncParams
+  {
+    SyncParams() : exit_render_loop(false) {}
+
+    long tile_idx_counter;
+    long tile_fin_counter;
+    long tile_idx_max;
+    virvo::SyncedCondition start_render;
+    virvo::SyncedCondition image_ready;
+    bool exit_render_loop;
+  };
+
+  RenderParams* render_params;
+  SyncParams*   sync_params;
 };
+
+
+void wake_render_threads(Thread::RenderParams rparams, Thread::SyncParams* sparams);
+void render(Thread* thread);
+
 
 struct vvSoftRayRend::Impl
 {
@@ -316,6 +317,9 @@ struct vvSoftRayRend::Impl
   std::vector< Thread* > threads;
   Thread* firstThread;
   vecf rgbaTF;
+
+  Thread::RenderParams render_params;
+  Thread::SyncParams   sync_params;
 };
 
 vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
@@ -336,23 +340,22 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
     VV_LOG(0) << "VV_NUM_THREADS: " << envNumThreads;
   }
 
-  pthread_barrier_t* barrier = numThreads > 0 ? new pthread_barrier_t : NULL;
   pthread_mutex_t* mutex = numThreads > 0 ? new pthread_mutex_t : NULL;
-
-  pthread_barrier_init(barrier, NULL, numThreads + 1);
-  pthread_mutex_init(mutex, NULL);
 
   for (size_t i = 0; i < numThreads; ++i)
   {
-    Thread* thread = new Thread;
-    thread->id = i;
+    Thread* thread        = new Thread;
+    thread->id            = i;
 
-    thread->renderer = this;
+    thread->renderer      = this;
 
-    thread->barrier = barrier;
-    thread->mutex = mutex;
+    thread->mutex         = mutex;
 
-    thread->rgbaTF = &impl_->rgbaTF;
+    thread->rgbaTF        = &impl_->rgbaTF;
+
+    thread->render_params = &impl_->render_params;
+    thread->sync_params   = &impl_->sync_params;
+
 
     pthread_create(&thread->threadHandle, NULL, renderFunc, thread);
     impl_->threads.push_back(thread);
@@ -368,13 +371,12 @@ vvSoftRayRend::~vvSoftRayRend()
 {
   vvDebugMsg::msg(1, "vvSoftRayRend::~vvSoftRayRend()");
 
+  impl_->sync_params.exit_render_loop = true;
+  impl_->sync_params.start_render.broadcast();
+
   for (std::vector<Thread*>::const_iterator it = impl_->threads.begin();
        it != impl_->threads.end(); ++it)
   {
-    pthread_mutex_lock((*it)->mutex);
-    (*it)->events.push(Thread::VV_EXIT);
-    pthread_mutex_unlock((*it)->mutex);
-
     if (pthread_join((*it)->threadHandle, NULL) != 0)
     {
       vvDebugMsg::msg(0, "vvSoftRayRend::~vvSoftRayRend(): Error joining thread");
@@ -386,9 +388,7 @@ vvSoftRayRend::~vvSoftRayRend()
   {
     if (it == impl_->threads.begin())
     {
-      pthread_barrier_destroy((*it)->barrier);
       pthread_mutex_destroy((*it)->mutex);
-      delete (*it)->barrier;
       delete (*it)->mutex;
     }
 
@@ -419,23 +419,26 @@ void vvSoftRayRend::renderVolumeGL()
   vvAABB aabb = vvAABB(virvo::Vec3(), virvo::Vec3());
   vd->getBoundingBox(aabb);
   vvRecti r = virvo::bounds(aabb, mv, pr, vp);
-  std::vector<virvo::Tile> tiles = makeTiles(r, vp);
 
   float* colorBuffer = reinterpret_cast<float*>(rt->deviceColor());
+
+  virvo::Tile rect;
+  rect.left   = r[0];
+  rect.right  = r[0] + r[2];
+  rect.bottom = r[1];
+  rect.top    = r[1] + r[3];
+
+  impl_->render_params.rect = rect;
 
   for (std::vector<Thread*>::const_iterator it = impl_->threads.begin();
        it != impl_->threads.end(); ++it)
   {
     (*it)->invViewMatrix = invViewMatrix;
     (*it)->colors = colorBuffer;
-    (*it)->tiles = &tiles;
-    (*it)->events.push(Thread::VV_RENDER);
   }
-  pthread_barrier_wait(impl_->firstThread->barrier);
 
-  // threads render
 
-  pthread_barrier_wait(impl_->firstThread->barrier);
+  wake_render_threads(impl_->render_params, &impl_->sync_params);
 }
 
 void vvSoftRayRend::updateTransferFunction()
@@ -729,28 +732,64 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   }
 }
 
+
+void wake_render_threads(Thread::RenderParams rparams, Thread::SyncParams* sparams)
+{
+  int w = rparams.rect.right - rparams.rect.left;
+  int h = rparams.rect.top   - rparams.rect.bottom;
+
+  int tilew = virvo::tile_width;
+  int tileh = virvo::tile_height;
+
+  int numtilesx = DIV_UP(w, tilew);
+  int numtilesy = DIV_UP(h, tileh);
+
+  atom_lock_test_and_set(&sparams->tile_idx_counter, 0);
+  atom_lock_test_and_set(&sparams->tile_fin_counter, 0);
+  atom_lock_test_and_set(&sparams->tile_idx_max, numtilesx * numtilesy);
+
+  sparams->start_render.broadcast();
+
+  sparams->image_ready.wait();
+}
+
+
 void render(Thread* thread)
 {
-  pthread_barrier_wait(thread->barrier);
   while (true)
   {
-    pthread_mutex_lock(thread->mutex);
-    if (thread->tiles->empty())
+    long tile_idx = atom_fetch_and_add(&thread->sync_params->tile_idx_counter, 1);
+
+    if (tile_idx >= thread->sync_params->tile_idx_max)
     {
-      pthread_mutex_unlock(thread->mutex);
       break;
     }
-    virvo::Tile tile = thread->tiles->back();
-    thread->tiles->pop_back();
-    pthread_mutex_unlock(thread->mutex);
-    renderTile(tile, thread);
+
+    int w = thread->render_params->rect.right - thread->render_params->rect.left;
+
+    int tilew = virvo::tile_width;
+    int tileh = virvo::tile_height;
+
+    int numtilesx = DIV_UP(w, tilew);
+
+    virvo::Tile t;
+    t.left   = thread->render_params->rect.left   + (tile_idx % numtilesx) * tilew;
+    t.bottom = thread->render_params->rect.bottom + (tile_idx / numtilesx) * tileh;
+    t.right  = std::min(t.left   + tilew, thread->render_params->rect.right);
+    t.top    = std::min(t.bottom + tileh, thread->render_params->rect.top);
+
+    renderTile(t, thread);
+
+    long num_tiles_fin = atom_fetch_and_add(&thread->sync_params->tile_fin_counter, 1);
+    if (num_tiles_fin == thread->sync_params->tile_idx_max - 1)
+    {
+      thread->sync_params->image_ready.signal();
+    }
   }
-  pthread_barrier_wait(thread->barrier);
 }
 
 void* vvSoftRayRend::renderFunc(void* args)
 {
-  vvDebugMsg::msg(3, "vvSoftRayRend::renderFunc()");
 
   Thread* thread = static_cast<Thread*>(args);
 
@@ -767,32 +806,17 @@ void* vvSoftRayRend::renderFunc(void* args)
 
   while (true)
   {
-    pthread_mutex_lock(thread->mutex);
-    bool haveEvent = !thread->events.empty();
-    pthread_mutex_unlock(thread->mutex);
 
-    if (haveEvent)
+    thread->sync_params->start_render.wait();
+    if (thread->sync_params->exit_render_loop)
     {
-      pthread_mutex_lock(thread->mutex);
-      Thread::Event e = thread->events.front();
-      pthread_mutex_unlock(thread->mutex);
-
-      switch (e)
-      {
-      case Thread::VV_EXIT:
-        goto cleanup;
-      case Thread::VV_RENDER:
-        render(thread);
-        break;
-      }
-
-      pthread_mutex_lock(thread->mutex);
-      thread->events.pop();
-      pthread_mutex_unlock(thread->mutex);
+      break;
     }
+
+    render(thread);
+
   }
 
-cleanup:
   pthread_exit(NULL);
   return NULL;
 }
