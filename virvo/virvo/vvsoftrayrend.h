@@ -42,8 +42,6 @@ private:
   struct Impl;
   std::auto_ptr<Impl> impl_;
 
-  static void* renderFunc(void* args);
-
 private:
 
   VV_NOT_COPYABLE(vvSoftRayRend)

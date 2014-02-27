@@ -315,6 +315,7 @@ struct Thread
 
 void wake_render_threads(Thread::RenderParams rparams, Thread::SyncParams* sparams);
 void render(Thread* thread);
+void* renderFunc(void* args);
 
 
 struct vvSoftRayRend::Impl
@@ -795,7 +796,7 @@ void render(Thread* thread)
   }
 }
 
-void* vvSoftRayRend::renderFunc(void* args)
+void* renderFunc(void* args)
 {
 
   Thread* thread = static_cast<Thread*>(args);
