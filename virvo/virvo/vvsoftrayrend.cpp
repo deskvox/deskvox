@@ -154,7 +154,7 @@ VV_FORCE_INLINE Vec volume(const uint8_t* raw, index_t idx, int bpc)
 #endif
 }
 
-VV_FORCE_INLINE Vec4 rgba(vecf* tf, Vecs idx)
+VV_FORCE_INLINE Vec4 rgba(float const* tf, Vecs idx)
 {
 #if VV_USE_SSE
   CACHE_ALIGN int indices[4];
@@ -162,12 +162,12 @@ VV_FORCE_INLINE Vec4 rgba(vecf* tf, Vecs idx)
   Vec4 colors;
   for (size_t i = 0; i < 4; ++i)
   {
-    colors[i] = &(*tf)[0] + indices[i];
+    colors[i] = &tf[0] + indices[i];
   }
   colors = transpose(colors);
   return colors;
 #else
-  return Vec4(&(*tf)[0] + idx);
+  return Vec4(&tf[0] + idx);
 #endif
 }
 
@@ -472,48 +472,59 @@ vvParam vvSoftRayRend::getParameter(ParameterType param) const
 
 void renderTile(const virvo::Tile& tile, const Thread* thread)
 {
-  vvDebugMsg::msg(3, "vvSoftRayRend::renderTile()");
-
   static const Vec opacityThreshold = 0.95f;
 
-  vvVolDesc* vd            = thread->renderer->getVolDesc();
-  virvo::AABBss const& vr  = thread->renderer->getParameter(vvRenderer::VV_VISIBLE_REGION);
-  float quality            = thread->renderer->getParameter(vvRenderer::VV_QUALITY);
-  bool interpolation       = thread->renderer->getParameter(vvRenderer::VV_SLICEINT);
-  bool opacityCorrection   = thread->renderer->getParameter(vvRenderer::VV_OPCORR);
-  bool earlyRayTermination = thread->renderer->getParameter(vvRenderer::VV_TERMINATEEARLY);
-  int mipMode              = thread->renderer->getParameter(vvRenderer::VV_MIP_MODE);
+  vvVolDesc* vd                 = thread->renderer->getVolDesc();
+  virvo::RenderTarget const* rt = thread->renderer->getRenderTarget();
+  int w                         = rt->width();
+  int h                         = rt->height();
 
-  virvo::ssize3 minVox = vr.getMin();
-  virvo::ssize3 maxVox = vr.getMax();
+  Vec3s vox                     = vd->vox;
+  Vec3 fvox                     = Vec3(vd->vox[0], vd->vox[1], vd->vox[2]);
+
+  Vec3 size                     = vd->getSize();
+  Vec3 invsize                  = 1.0f / size;
+  Vec3 size2                    = vd->getSize() * 0.5f;
+  Vec3 volpos                   = vd->pos;
+
+  size_t const bpc              = vd->bpc;
+
+  size_t const lutsize          = getLUTSize(vd);
+
+  uint8_t const* raw            = vd->getRaw(vd->getCurrentFrame());
+
+  virvo::AABBss const& vr       = thread->renderer->getParameter(vvRenderer::VV_VISIBLE_REGION);
+  float quality                 = thread->renderer->getParameter(vvRenderer::VV_QUALITY);
+  bool interpolation            = thread->renderer->getParameter(vvRenderer::VV_SLICEINT);
+  bool opacityCorrection        = thread->renderer->getParameter(vvRenderer::VV_OPCORR);
+  bool earlyRayTermination      = thread->renderer->getParameter(vvRenderer::VV_TERMINATEEARLY);
+  int mipMode                   = thread->renderer->getParameter(vvRenderer::VV_MIP_MODE);
+
+  virvo::ssize3 minvox = vr.getMin();
+  virvo::ssize3 maxvox = vr.getMax();
   for (size_t i = 0; i < 3; ++i)
   {
-    minVox[i] = std::max(minVox[i], ssize_t(0));
-    maxVox[i] = std::min(maxVox[i], vd->vox[i]);
+    minvox[i] = std::max(minvox[i], ssize_t(0));
+    maxvox[i] = std::min(maxvox[i], vd->vox[i]);
   }
-  const virvo::Vec3 minCorner = vd->objectCoords(minVox);
-  const virvo::Vec3 maxCorner = vd->objectCoords(maxVox);
-  const AABB aabb(minCorner, maxCorner);
+  const virvo::Vec3 mincorner = vd->objectCoords(minvox);
+  const virvo::Vec3 maxcorner = vd->objectCoords(maxvox);
+  const AABB aabb(mincorner, maxcorner);
 
-  Vec3 size = vd->getSize();
-  Vec3 invsize = 1.0f / size;
-  Vec3 size2 = vd->getSize() * 0.5f;
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
+
+  float const* rgbaTF = &(*thread->rgbaTF)[0];
+
   size_t numSlices = std::max(size_t(1), static_cast<size_t>(quality * diagonalVoxels));
-
-  const uint8_t* raw = vd->getRaw(vd->getCurrentFrame());
-  const size_t bpc = vd->bpc;
-
-  virvo::RenderTarget const* rt = thread->renderer->getRenderTarget();
-
+ 
   for (int y = tile.bottom; y < tile.top; y += PACK_SIZE_Y)
   {
     for (int x = tile.left; x < tile.right; x += PACK_SIZE_X)
     {
-      const Vec u = (pixelx(x) / static_cast<float>(rt->width() - 1)) * 2.0f - 1.0f;
-      const Vec v = (pixely(y) / static_cast<float>(rt->height() - 1)) * 2.0f - 1.0f;
+      const Vec u = (pixelx(x) / static_cast<float>(w - 1)) * 2.0f - 1.0f;
+      const Vec v = (pixely(y) / static_cast<float>(h - 1)) * 2.0f - 1.0f;
 
       Vec4 o(u, v, -1.0f, 1.0f);
       o = thread->invViewMatrix * o;
@@ -537,14 +548,11 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
         const Vec3 step = ray.d * dist;
         Vec4 dst(0.0f);
 
-        // construct simd vectors only once
-        Vec3s vox = vd->vox;
-
         while (any(active))
         {
-          Vec3 texcoord((pos[0] - vd->pos[0] + size2[0]) * invsize[0],
-                        (-pos[1] - vd->pos[1] + size2[1]) * invsize[1],
-                        (-pos[2] - vd->pos[2] + size2[2]) * invsize[2]);
+          Vec3 texcoord((pos[0] - volpos[0] + size2[0]) * invsize[0],
+                        (-pos[1] - volpos[1] + size2[1]) * invsize[1],
+                        (-pos[2] - volpos[2] + size2[2]) * invsize[2]);
           texcoord[0] = clamp(texcoord[0], Vec(0.0f), Vec(1.0f));
           texcoord[1] = clamp(texcoord[1], Vec(0.0f), Vec(1.0f));
           texcoord[2] = clamp(texcoord[2], Vec(0.0f), Vec(1.0f));
@@ -552,13 +560,13 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
           Vec sample = 0.0f;
           if (interpolation)
           {
-            Vec3 texcoordf(texcoord[0] * static_cast<float>(vd->vox[0]) - 0.5f,
-                           texcoord[1] * static_cast<float>(vd->vox[1]) - 0.5f,
-                           texcoord[2] * static_cast<float>(vd->vox[2]) - 0.5f);
+            Vec3 texcoordf(texcoord[0] * fvox[0] - 0.5f,
+                           texcoord[1] * fvox[1] - 0.5f,
+                           texcoord[2] * fvox[2] - 0.5f);
 
-            texcoordf[0] = clamp(texcoordf[0], Vec(0.0f), Vec(vd->vox[0] - 1));
-            texcoordf[1] = clamp(texcoordf[1], Vec(0.0f), Vec(vd->vox[1] - 1));
-            texcoordf[2] = clamp(texcoordf[2], Vec(0.0f), Vec(vd->vox[2] - 1));
+            texcoordf[0] = clamp(texcoordf[0], Vec(0.0f), fvox[0] - 1);
+            texcoordf[1] = clamp(texcoordf[1], Vec(0.0f), fvox[1] - 1);
+            texcoordf[2] = clamp(texcoordf[2], Vec(0.0f), fvox[2] - 1);
 
             // store truncated texcoord to avoid lots of _mm_cvtps_epi32 calls below
             Vec3s tci(vec_cast<Vecs>(texcoordf[0]), vec_cast<Vecs>(texcoordf[1]), vec_cast<Vecs>(texcoordf[2]));
@@ -639,9 +647,9 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
           else
           {
             // calc voxel coordinates using Manhattan distance
-            Vec3s texcoordi(vec_cast<Vecs>(texcoord[0] * static_cast<float>(vd->vox[0])),
-                            vec_cast<Vecs>(texcoord[1] * static_cast<float>(vd->vox[1])),
-                            vec_cast<Vecs>(texcoord[2] * static_cast<float>(vd->vox[2])));
+            Vec3s texcoordi(vec_cast<Vecs>(texcoord[0] * fvox[0]),
+                            vec_cast<Vecs>(texcoord[1] * fvox[1]),
+                            vec_cast<Vecs>(texcoord[2] * fvox[2]));
   
             texcoordi[0] = clamp<dim_t>(texcoordi[0], 0, vox[0] - 1);
             texcoordi[1] = clamp<dim_t>(texcoordi[1], 0, vox[1] - 1);
@@ -652,10 +660,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
           }
 
           sample /= 255.0f;
-          Vec4 src = rgba(&(*thread->rgbaTF), vec_cast<Vecs>(sample * static_cast<float>(getLUTSize(vd))) * 4);
-
-          using std::max;
-          using std::min;
+          Vec4 src = rgba(rgbaTF, vec_cast<Vecs>(sample * static_cast<float>(lutsize)) * 4);
 
           if (mipMode == 1)
           {
@@ -703,21 +708,21 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 #if VV_USE_SSE
         // transform to AoS for framebuffer write
         dst = transpose(dst);
-        store(dst.x, &(thread->colors)[y * rt->width() * 4 + x * 4]);
+        store(dst.x, &(thread->colors)[y * w * 4 + x * 4]);
         if (x + 1 < tile.right)
         {
-          store(dst.y, &(thread->colors)[y * rt->width() * 4 + (x + 1) * 4]);
+          store(dst.y, &(thread->colors)[y * w * 4 + (x + 1) * 4]);
         }
         if (y + 1 < tile.top)
         {
-          store(dst.z, &(thread->colors)[(y + 1) * rt->width() * 4 + x * 4]);
+          store(dst.z, &(thread->colors)[(y + 1) * w * 4 + x * 4]);
         }
         if (x + 1 < tile.right && y + 1 < tile.top)
         {
-          store(dst.w, &(thread->colors)[(y + 1) * rt->width() * 4 + (x + 1) * 4]);
+          store(dst.w, &(thread->colors)[(y + 1) * w * 4 + (x + 1) * 4]);
         }
 #else
-        memcpy(&(thread->colors)[y * rt->width() * 4 + x * 4], &dst[0], 4 * sizeof(float));
+        memcpy(&(thread->colors)[y * w * 4 + x * 4], &dst[0], 4 * sizeof(float));
 #endif
       }
     }
