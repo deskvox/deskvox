@@ -167,10 +167,14 @@ VV_FORCE_INLINE T clamp(T const& v, T const& a, T const& b);
 template <>
 VV_FORCE_INLINE Veci clamp(Veci const& v, Veci const& a, Veci const& b)
 {
+#ifdef __SSE4_1__
+  return _mm_max_epi32(a, _mm_min_epi32(v, b));
+#else
   Veci maska = v < a;
   Veci tmp(a, v, maska);
   Veci maskb = tmp > b;
   return Veci(b, tmp, maskb);
+#endif
 }
 
 } // sse

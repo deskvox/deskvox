@@ -340,10 +340,7 @@ VV_FORCE_INLINE T clamp(T const& v, T const& a, T const& b);
 template <>
 VV_FORCE_INLINE Vec clamp(Vec const& v, Vec const& a, Vec const& b)
 {
-  Vec maska = v < a;
-  Vec tmp(a, v, maska);
-  Vec maskb = tmp > b;
-  return Vec(b, tmp, maskb);
+  return _mm_max_ps(a, _mm_min_ps(v, b));
 }
 
 /* vector math functions */
