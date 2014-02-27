@@ -62,7 +62,7 @@ static const int tile_height = 16;
 
 
 /* TODO: cross-platform atomics */
-#if VV_CXX_GCC || VV_CXX_INTEL
+#if VV_CXX_CLANG || VV_CXX_GCC || VV_CXX_INTEL
 #define atom_fetch_and_add(a, b)     __sync_fetch_and_add(a, b)
 #define atom_lock_test_and_set(a, b) __sync_lock_test_and_set(a, b)
 #else
