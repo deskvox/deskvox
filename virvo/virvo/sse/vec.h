@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../vvcompiler.h"
 #include "../vvforceinline.h"
 #include "../vvmacros.h"
 
@@ -277,8 +278,12 @@ VV_FORCE_INLINE Vec max(Vec const& u, Vec const& v)
 
 VV_FORCE_INLINE Vec powf(Vec const& v, Vec const& exp)
 {
+#if VV_CXX_INTEL
+  return _mm_pow_ps(v, exp);
+#else
   // TODO: not implemented yet
   return v;
+#endif
 }
 
 VV_FORCE_INLINE Vec round(Vec const& v)
