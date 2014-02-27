@@ -159,7 +159,8 @@ VV_FORCE_INLINE std::ostream& operator<<(std::ostream& out, Veci const& v)
   return out;
 }
 
-/* function analogs for virvo::toolshed */
+
+/* function analogs for cstdlib */
 
 VV_FORCE_INLINE Veci min(Veci const& u, Veci const& v)
 {
@@ -182,6 +183,9 @@ VV_FORCE_INLINE Veci max(Veci const& u, Veci const& v)
   throw std::runtime_error("not implemented yet");
 #endif
 }
+
+
+/* function analogs for virvo::toolshed */
 
 template <typename T>
 VV_FORCE_INLINE T clamp(T const& v, T const& a, T const& b);
