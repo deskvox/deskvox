@@ -233,12 +233,8 @@ struct Ray
   Vec3 d;
 };
 
-Vec intersectBox(const Ray& ray, const AABB& aabb,
-                 Vec* tnear, Vec* tfar)
+VV_FORCE_INLINE Vec intersectBox(const Ray& ray, const AABB& aabb, Vec* tnear, Vec* tfar)
 {
-  using std::min;
-  using std::max;
-
   // compute intersection of ray with all six bbox planes
   Vec3 invR(1.0f / ray.d[0], 1.0f / ray.d[1], 1.0f / ray.d[2]);
   Vec t1 = (aabb.getMin()[0] - ray.o[0]) * invR[0];
@@ -283,11 +279,9 @@ struct Thread
   pthread_t threadHandle;
 
   vvSoftRayRend* renderer;
-  Matrix invViewMatrix;
-  float* colors;
+  Matrix* invViewMatrix;
+  float** colors;
 
-  pthread_mutex_t* mutex;
-  std::vector<virvo::Tile>* tiles;
   vecf* rgbaTF;
 
 
@@ -313,18 +307,18 @@ struct Thread
 };
 
 
-void wake_render_threads(Thread::RenderParams rparams, Thread::SyncParams* sparams);
-void render(Thread* thread);
+void  wake_render_threads(Thread::RenderParams rparams, Thread::SyncParams* sparams);
+void  render(Thread* thread);
 void* renderFunc(void* args);
 
 
 struct vvSoftRayRend::Impl
 {
-  Impl() : firstThread(NULL) {}
-
   std::vector< Thread* > threads;
-  Thread* firstThread;
+  float* colors;
   vecf rgbaTF;
+
+  Matrix inv_view_matrix;
 
   Thread::RenderParams render_params;
   Thread::SyncParams   sync_params;
@@ -348,7 +342,6 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
     VV_LOG(0) << "VV_NUM_THREADS: " << envNumThreads;
   }
 
-  pthread_mutex_t* mutex = numThreads > 0 ? new pthread_mutex_t : NULL;
 
   for (size_t i = 0; i < numThreads; ++i)
   {
@@ -357,9 +350,9 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
 
     thread->renderer      = this;
 
-    thread->mutex         = mutex;
-
+    thread->colors        = &impl_->colors;
     thread->rgbaTF        = &impl_->rgbaTF;
+    thread->invViewMatrix = &impl_->inv_view_matrix;
 
     thread->render_params = &impl_->render_params;
     thread->sync_params   = &impl_->sync_params;
@@ -367,11 +360,6 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
 
     pthread_create(&thread->threadHandle, NULL, renderFunc, thread);
     impl_->threads.push_back(thread);
-
-    if (i == 0)
-    {
-      impl_->firstThread = thread;
-    }
   }
 }
 
@@ -394,12 +382,6 @@ vvSoftRayRend::~vvSoftRayRend()
   for (std::vector<Thread*>::const_iterator it = impl_->threads.begin();
        it != impl_->threads.end(); ++it)
   {
-    if (it == impl_->threads.begin())
-    {
-      pthread_mutex_destroy((*it)->mutex);
-      delete (*it)->mutex;
-    }
-
     delete *it;
   }
 }
@@ -420,15 +402,15 @@ void vvSoftRayRend::renderVolumeGL()
 
   virvo::RenderTarget* rt = getRenderTarget();
 
-  Matrix invViewMatrix = mv;
-  invViewMatrix = pr * invViewMatrix;
-  invViewMatrix.invert();
+  impl_->inv_view_matrix = mv;
+  impl_->inv_view_matrix = pr * impl_->inv_view_matrix;
+  impl_->inv_view_matrix.invert();
 
   vvAABB aabb = vvAABB(virvo::Vec3(), virvo::Vec3());
   vd->getBoundingBox(aabb);
   vvRecti r = virvo::bounds(aabb, mv, pr, vp);
 
-  float* colorBuffer = reinterpret_cast<float*>(rt->deviceColor());
+  impl_->colors = reinterpret_cast<float*>(rt->deviceColor());
 
   virvo::Tile rect;
   rect.left   = r[0];
@@ -438,35 +420,17 @@ void vvSoftRayRend::renderVolumeGL()
 
   impl_->render_params.rect = rect;
 
-  for (std::vector<Thread*>::const_iterator it = impl_->threads.begin();
-       it != impl_->threads.end(); ++it)
-  {
-    (*it)->invViewMatrix = invViewMatrix;
-    (*it)->colors = colorBuffer;
-  }
-
-
   wake_render_threads(impl_->render_params, &impl_->sync_params);
 }
 
 void vvSoftRayRend::updateTransferFunction()
 {
-  vvDebugMsg::msg(3, "vvSoftRayRend::updateTransferFunction()");
-
-  if (impl_->firstThread != NULL && impl_->firstThread->mutex != NULL)
-  {
-    pthread_mutex_lock(impl_->firstThread->mutex);
-  }
 
   size_t lutEntries = getLUTSize(vd);
   impl_->rgbaTF.resize(4 * lutEntries);
 
   vd->computeTFTexture(lutEntries, 1, 1, &impl_->rgbaTF[0]);
 
-  if (impl_->firstThread != NULL && impl_->firstThread->mutex != NULL)
-  {
-    pthread_mutex_unlock(impl_->firstThread->mutex);
-  }
 }
 
 void vvSoftRayRend::setParameter(ParameterType param, const vvParam& newValue)
@@ -538,9 +502,9 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
       const Vec v = (pixely(y) / static_cast<float>(h - 1)) * 2.0f - 1.0f;
 
       Vec4 o(u, v, -1.0f, 1.0f);
-      o = thread->invViewMatrix * o;
+      o = *thread->invViewMatrix * o;
       Vec4 d(u, v, 1.0f, 1.0f);
-      d = thread->invViewMatrix * d;
+      d = *thread->invViewMatrix * d;
 
       Ray ray(Vec3(o[0] / o[3], o[1] / o[3], o[2] / o[3]),
               Vec3(d[0] / d[3], d[1] / d[3], d[2] / d[3]));
@@ -719,18 +683,18 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 #if VV_USE_SSE
         // transform to AoS for framebuffer write
         dst = transpose(dst);
-        store(dst.x, &(thread->colors)[y * w * 4 + x * 4]);
+        store(dst.x, &(*thread->colors)[y * w * 4 + x * 4]);
         if (x + 1 < tile.right)
         {
-          store(dst.y, &(thread->colors)[y * w * 4 + (x + 1) * 4]);
+          store(dst.y, &(*thread->colors)[y * w * 4 + (x + 1) * 4]);
         }
         if (y + 1 < tile.top)
         {
-          store(dst.z, &(thread->colors)[(y + 1) * w * 4 + x * 4]);
+          store(dst.z, &(*thread->colors)[(y + 1) * w * 4 + x * 4]);
         }
         if (x + 1 < tile.right && y + 1 < tile.top)
         {
-          store(dst.w, &(thread->colors)[(y + 1) * w * 4 + (x + 1) * 4]);
+          store(dst.w, &(*thread->colors)[(y + 1) * w * 4 + (x + 1) * 4]);
         }
 #else
         memcpy(&(thread->colors)[y * w * 4 + x * 4], &dst[0], 4 * sizeof(float));
