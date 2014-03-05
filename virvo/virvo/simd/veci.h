@@ -16,7 +16,7 @@
 
 namespace virvo
 {
-namespace sse
+namespace simd
 {
 class CACHE_ALIGN Veci
 {
@@ -190,6 +190,6 @@ VV_FORCE_INLINE Veci clamp(Veci const& v, Veci const& a, Veci const& b)
 #endif
 }
 
-} // sse
+} // simd
 } // virvo
 

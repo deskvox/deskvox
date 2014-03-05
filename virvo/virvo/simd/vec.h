@@ -17,7 +17,7 @@
 
 namespace virvo
 {
-namespace sse
+namespace simd
 {
 class CACHE_ALIGN Vec
 {
@@ -302,6 +302,6 @@ VV_FORCE_INLINE Vec rsqrt(Vec const& v)
 
 } // fast
 
-} // sse
+} // simd
 } // virvo
 

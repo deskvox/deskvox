@@ -97,15 +97,15 @@ set(VIRVO_HEADERS
   mem/align.h
   mem/allocator.h
 
-  sse/aabb.h
-  sse/cast.h
-  sse/mask.h
-  sse/matrix.h
-  sse/sse.h
-  sse/vec.h
-  sse/vec3.h
-  sse/vec4.h
-  sse/veci.h
+  simd/aabb.h
+  simd/cast.h
+  simd/mask.h
+  simd/matrix.h
+  simd/simd.h
+  simd/vec.h
+  simd/vec3.h
+  simd/vec4.h
+  simd/veci.h
 
   vvbonjour/vvbonjour.h
   vvbonjour/vvbonjourbrowser.h

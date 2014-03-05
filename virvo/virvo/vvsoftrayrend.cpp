@@ -80,9 +80,9 @@ static const int tile_height = 16;
 
 #if VV_USE_SSE
 
-#include "sse/sse.h"
+#include "simd/simd.h"
 
-typedef virvo::sse::Veci dim_t;
+typedef virvo::simd::Veci dim_t;
 #if 0//__LP64__
 struct index_t
 {
@@ -90,24 +90,24 @@ struct index_t
   virvo::sse::Veci hi;
 };
 #else
-typedef virvo::sse::Veci index_t;
+typedef virvo::simd::Veci index_t;
 #endif
 
 #define PACK_SIZE_X 2
 #define PACK_SIZE_Y 2
 
-using virvo::sse::clamp;
-using virvo::sse::min;
-using virvo::sse::max;
-namespace fast = virvo::sse::fast;
-typedef virvo::sse::Veci Vecs;
-typedef virvo::sse::Vec3i Vec3s;
-typedef virvo::sse::Vec4i Vec4s;
-using virvo::sse::AABB;
-using virvo::sse::Vec;
-using virvo::sse::Vec3;
-using virvo::sse::Vec4;
-using virvo::sse::Matrix;
+using virvo::simd::clamp;
+using virvo::simd::min;
+using virvo::simd::max;
+namespace fast = virvo::simd::fast;
+typedef virvo::simd::Veci Vecs;
+typedef virvo::simd::Vec3i Vec3s;
+typedef virvo::simd::Vec4i Vec4s;
+using virvo::simd::AABB;
+using virvo::simd::Vec;
+using virvo::simd::Vec3;
+using virvo::simd::Vec4;
+using virvo::simd::Matrix;
 
 #else
 
@@ -154,7 +154,7 @@ template <class T, class U>
 VV_FORCE_INLINE T vec_cast(U u)
 {
 #if VV_USE_SSE
-  return virvo::sse::sse_cast<T>(u);
+  return virvo::simd::simd_cast<T>(u);
 #else
   return static_cast<T>(u);
 #endif
@@ -168,7 +168,7 @@ VV_FORCE_INLINE Vec volume(const uint8_t* raw, index_t idx, int bpc)
 #else
   CACHE_ALIGN int indices[4];
   index_t ridx = idx*bpc+high_byte_offset*(bpc-1);
-  virvo::sse::store(ridx, &indices[0]);
+  virvo::simd::store(ridx, &indices[0]);
   CACHE_ALIGN float vals[4];
   for (size_t i = 0; i < 4; ++i)
   {

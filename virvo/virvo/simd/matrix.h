@@ -10,7 +10,7 @@
 
 namespace virvo
 {
-namespace sse
+namespace simd
 {
 class CACHE_ALIGN Matrix
 {
@@ -216,6 +216,6 @@ inline std::ostream& operator<<(std::ostream& out, Matrix const& m)
   return out;
 }
 
-} // sse
+} // simd
 } // virvo
 

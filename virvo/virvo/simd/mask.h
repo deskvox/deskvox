@@ -11,7 +11,7 @@
 namespace virvo
 {
 
-namespace sse
+namespace simd
 {
 
 class CACHE_ALIGN Mask
@@ -321,7 +321,7 @@ VV_FORCE_INLINE base_vec4<T> div(T const& s, base_vec4<T> const& v, M const& mas
 }
 
 
-} // sse
+} // simd
 
 } // virvo
 
