@@ -13,4 +13,5 @@ zellmans = Stefan Zellmann <zellmans@uni-koeln.de>
 alexbolz = Alexander Bolz <abolz1@uni-koeln.de>
 charmaman = Stavros Delisavas <stavros.delisavas@uni-koeln.de>
 tbs- = Andreas Kopecki <kopecki@hlrs.de>
+ypercan = Yvonne Percan <ypercan@smail.uni-koeln.de>
 (no author) = Jurgen Schulze <jschulze@ucsd.edu>
