@@ -6,5 +6,6 @@
 #include "vec3.h"
 #include "vec4.h"
 #include "veci.h"
+#include "mask.h"
 #include "matrix.h"
 

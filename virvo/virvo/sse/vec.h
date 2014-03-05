@@ -63,7 +63,6 @@ public:
   }
 };
 
-typedef Vec Mask;
 
 /* operators */
 
@@ -121,40 +120,6 @@ VV_FORCE_INLINE Vec& operator/=(Vec& u, Vec const& v)
   return u;
 }
 
-VV_FORCE_INLINE Vec operator<(Vec const& u, Vec const& v)
-{
-  return _mm_cmplt_ps(u, v);
-}
-
-VV_FORCE_INLINE Vec operator>(Vec const& u, Vec const& v)
-{
-  return _mm_cmpgt_ps(u, v);
-}
-
-VV_FORCE_INLINE Vec operator<=(Vec const& u, Vec const& v)
-{
-  return _mm_cmple_ps(u, v);
-}
-
-VV_FORCE_INLINE Vec operator>=(Vec const& u, Vec const& v)
-{
-  return _mm_cmpge_ps(u, v);
-}
-
-VV_FORCE_INLINE Vec operator==(Vec const& u, Vec const& v)
-{
-  return _mm_cmpeq_ps(u, v);
-}
-
-VV_FORCE_INLINE Vec operator!=(Vec const& u, Vec const& v)
-{
-  return _mm_cmpneq_ps(u, v);
-}
-
-VV_FORCE_INLINE Vec operator&&(Vec const& u, Vec const& v)
-{
-  return _mm_and_ps(u, v);
-}
 
 VV_FORCE_INLINE std::ostream& operator<<(std::ostream& out, Vec const& v)
 {
@@ -176,83 +141,6 @@ VV_FORCE_INLINE Vec shuffle(Vec const& v)
   return _mm_shuffle_ps(v, v, _MM_SHUFFLE(W, Z, Y, X));
 }
 
-VV_FORCE_INLINE bool any(Vec const& v)
-{
-  return _mm_movemask_ps(v) != 0;
-}
-
-VV_FORCE_INLINE bool all(Vec const& v)
-{
-  return _mm_movemask_ps(v) == 0xF;
-}
-
-VV_FORCE_INLINE Vec if_else(Vec const& ifexpr, Vec const& elseexpr, Mask const& mask)
-{
-  return _mm_or_ps(_mm_and_ps(mask, ifexpr), _mm_andnot_ps(mask, elseexpr));
-}
-
-/* masked operators */
-
-VV_FORCE_INLINE Vec neg(Vec const& v, Mask const& mask)
-{
-  return if_else(-v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE Vec add(Vec const& u, Vec const& v, Mask const& mask)
-{
-  return if_else(u + v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE Vec sub(Vec const& u, Vec const& v, Mask const& mask)
-{
-  return if_else(u - v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE Vec mul(Vec const& u, Vec const& v, Mask const& mask)
-{
-  return if_else(u * v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE Vec div(Vec const& u, Vec const& v, Mask const& mask)
-{
-  return if_else(u / v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE Vec lt(Vec const& u, Vec const& v, Mask const& mask)
-{
-  return if_else(u < v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE Vec gt(Vec const& u, Vec const& v, Mask const& mask)
-{
-  return if_else(u > v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE Vec le(Vec const& u, Vec const& v, Mask const& mask)
-{
-  return if_else(u <= v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE Vec ge(Vec const& u, Vec const& v, Mask const& mask)
-{
-  return if_else(u >= v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE Vec eq(Vec const& u, Vec const& v, Mask const& mask)
-{
-  return if_else(u == v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE Vec neq(Vec const& u, Vec const& v, Mask const& mask)
-{
-  return if_else(u != v, 0.0f, mask);
-}
-
-VV_FORCE_INLINE void store(Vec const& v, float dst[4], Mask const& mask)
-{
-  Vec tmp = if_else(v, 0.0f, mask);
-  store(tmp, dst);
-}
 
 /* function analogs for cstdlib */
 

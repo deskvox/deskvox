@@ -99,6 +99,7 @@ set(VIRVO_HEADERS
 
   sse/aabb.h
   sse/cast.h
+  sse/mask.h
   sse/matrix.h
   sse/sse.h
   sse/vec.h
