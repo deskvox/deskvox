@@ -66,36 +66,23 @@ VV_FORCE_INLINE void store(Veci const& v, int dst[4])
 
 VV_FORCE_INLINE Veci operator-(Veci const& v)
 {
-  Veci const& zero = _mm_setzero_si128();
-  Veci tmp_2_0 = _mm_sub_epi32(zero, v);
-  Veci tmp_3_1 = _mm_sub_epi32(_mm_srli_si128(zero, 4), _mm_srli_si128(v, 4));
-  return _mm_unpacklo_epi32(_mm_shuffle_epi32(tmp_2_0, _MM_SHUFFLE(0, 0, 2, 0)),
-    _mm_shuffle_epi32(tmp_3_1, _MM_SHUFFLE(0, 0, 2, 0)));
+  return _mm_sub_epi32(_mm_setzero_si128(), v);
 }
 
 VV_FORCE_INLINE Veci operator+(Veci const& u, Veci const& v)
 {
-  Veci tmp_2_0 = _mm_add_epi32(u, v);
-  Veci tmp_3_1 = _mm_add_epi32(_mm_srli_si128(u, 4), _mm_srli_si128(v, 4));
-  return _mm_unpacklo_epi32(_mm_shuffle_epi32(tmp_2_0, _MM_SHUFFLE(0, 0, 2, 0)),
-    _mm_shuffle_epi32(tmp_3_1, _MM_SHUFFLE(0, 0, 2, 0)));
+  return _mm_add_epi32(u, v);
 }
 
 VV_FORCE_INLINE Veci operator-(Veci const& u, Veci const& v)
 {
-  Veci tmp_2_0 = _mm_sub_epi32(u, v);
-  Veci tmp_3_1 = _mm_sub_epi32(_mm_srli_si128(u, 4), _mm_srli_si128(v, 4));
-  return _mm_unpacklo_epi32(_mm_shuffle_epi32(tmp_2_0, _MM_SHUFFLE(0, 0, 2, 0)),
-    _mm_shuffle_epi32(tmp_3_1, _MM_SHUFFLE(0, 0, 2, 0)));
+  return _mm_sub_epi32(u, v);
 }
 
 VV_FORCE_INLINE Veci operator*(Veci const& u, Veci const& v)
 {
 #ifdef __SSE4_1__
-  Veci tmp_2_0 = _mm_mul_epi32(u, v);
-  Veci tmp_3_1 = _mm_mul_epi32(_mm_srli_si128(u, 4), _mm_srli_si128(v, 4));
-  return _mm_unpacklo_epi32(_mm_shuffle_epi32(tmp_2_0, _MM_SHUFFLE(0, 0, 2, 0)),
-    _mm_shuffle_epi32(tmp_3_1, _MM_SHUFFLE(0, 0, 2, 0)));
+  return _mm_mullo_epi32(u, v);
 #else
   VV_UNUSED(u);
   VV_UNUSED(v);
