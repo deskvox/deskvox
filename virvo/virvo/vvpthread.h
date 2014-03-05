@@ -148,10 +148,18 @@ public:
   }
 
   // Wake up any thread waiting on the condition
-  void signal() { cond.signal(); }
+  void signal()
+  {
+    ScopedLock lock(&mutex);
+    cond.signal();
+  }
 
   // Wake up all threads waiting on the condition
-  void broadcast() { cond.broadcast(); }
+  void broadcast()
+  {
+    ScopedLock lock(&mutex);
+    cond.broadcast();
+  }
 };
 
 } // namespace virvo
