@@ -14,14 +14,14 @@ template <class T, class U>
 VV_FORCE_INLINE T simd_cast(U u);
 
 template <>
-VV_FORCE_INLINE Veci simd_cast(Vec v)
+VV_FORCE_INLINE sse_veci simd_cast(sse_vec v)
 {
   _MM_SET_ROUNDING_MODE(_MM_ROUND_DOWN);
   return _mm_cvtps_epi32(v);
 }
 
 template <>
-VV_FORCE_INLINE Vec simd_cast(Veci v)
+VV_FORCE_INLINE sse_vec simd_cast(sse_veci v)
 {
   return _mm_cvtepi32_ps(v);
 }

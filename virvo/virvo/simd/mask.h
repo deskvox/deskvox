@@ -14,18 +14,23 @@ namespace virvo
 namespace simd
 {
 
-class CACHE_ALIGN Mask
+template < typename T >
+class CACHE_ALIGN base_mask;
+
+
+template < >
+class CACHE_ALIGN base_mask< __m128 >
 {
 public:
   typedef __m128 value_type;
   value_type value;
 
-  VV_FORCE_INLINE Mask(value_type const& m)
+  VV_FORCE_INLINE base_mask(value_type const& m)
     : value(m)
   {
   }
 
-  VV_FORCE_INLINE Mask(Vec const& m)
+  VV_FORCE_INLINE base_mask(Vec const& m)
     : value(m)
   {
   }
@@ -35,126 +40,130 @@ public:
     return value;
   }
 
-  VV_FORCE_INLINE operator Vec() const
+  VV_FORCE_INLINE operator sse_vec() const
   {
     return value;
   }
 };
 
 
+typedef base_mask< __m128 > sse_mask;
+typedef sse_mask Mask;
+
+
 /* Vec */
 
-VV_FORCE_INLINE Mask operator<(Vec const& u, Vec const& v)
+VV_FORCE_INLINE sse_mask operator<(sse_vec const& u, sse_vec const& v)
 {
   return _mm_cmplt_ps(u, v);
 }
 
-VV_FORCE_INLINE Mask operator>(Vec const& u, Vec const& v)
+VV_FORCE_INLINE sse_mask operator>(sse_vec const& u, sse_vec const& v)
 {
   return _mm_cmpgt_ps(u, v);
 }
 
-VV_FORCE_INLINE Mask operator<=(Vec const& u, Vec const& v)
+VV_FORCE_INLINE sse_mask operator<=(sse_vec const& u, sse_vec const& v)
 {
   return _mm_cmple_ps(u, v);
 }
 
-VV_FORCE_INLINE Mask operator>=(Vec const& u, Vec const& v)
+VV_FORCE_INLINE sse_mask operator>=(sse_vec const& u, sse_vec const& v)
 {
   return _mm_cmpge_ps(u, v);
 }
 
-VV_FORCE_INLINE Mask operator==(Vec const& u, Vec const& v)
+VV_FORCE_INLINE sse_mask operator==(sse_vec const& u, sse_vec const& v)
 {
   return _mm_cmpeq_ps(u, v);
 }
 
-VV_FORCE_INLINE Mask operator!=(Vec const& u, Vec const& v)
+VV_FORCE_INLINE sse_mask operator!=(sse_vec const& u, sse_vec const& v)
 {
   return _mm_cmpneq_ps(u, v);
 }
 
-VV_FORCE_INLINE Mask operator&&(Vec const& u, Vec const& v)
+VV_FORCE_INLINE sse_mask operator&&(sse_vec const& u, sse_vec const& v)
 {
   return _mm_and_ps(u, v);
 }
 
 
-VV_FORCE_INLINE bool any(Mask const& m)
+VV_FORCE_INLINE bool any(sse_mask const& m)
 {
   return _mm_movemask_ps(m) != 0;
 }
 
-VV_FORCE_INLINE bool all(Mask const& m)
+VV_FORCE_INLINE bool all(sse_mask const& m)
 {
   return _mm_movemask_ps(m) == 0xF;
 }
 
 #if 1
-VV_FORCE_INLINE Vec if_else(Vec const& ifexpr, Vec const& elseexpr, Mask const& mask)
+VV_FORCE_INLINE sse_vec if_else(sse_vec const& ifexpr, sse_vec const& elseexpr, sse_mask const& mask)
 {
   return _mm_or_ps(_mm_and_ps(mask, ifexpr), _mm_andnot_ps(mask, elseexpr));
 }
 #endif
 
-VV_FORCE_INLINE Vec neg(Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec neg(sse_vec const& v, sse_mask const& mask)
 {
   return if_else(-v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE Vec add(Vec const& u, Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec add(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u + v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE Vec sub(Vec const& u, Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec sub(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u - v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE Vec mul(Vec const& u, Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec mul(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u * v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE Vec div(Vec const& u, Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec div(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u / v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE Vec lt(Vec const& u, Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec lt(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u < v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE Vec gt(Vec const& u, Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec gt(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u > v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE Vec le(Vec const& u, Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec le(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u <= v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE Vec ge(Vec const& u, Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec ge(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u >= v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE Vec eq(Vec const& u, Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec eq(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u == v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE Vec neq(Vec const& u, Vec const& v, Mask const& mask)
+VV_FORCE_INLINE sse_vec neq(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u != v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE void store(Vec const& v, float dst[4], Mask const& mask)
+VV_FORCE_INLINE void store(sse_vec const& v, float dst[4], sse_mask const& mask)
 {
-  Vec tmp = if_else(v, 0.0f, mask);
+  sse_vec tmp = if_else(v, 0.0f, mask);
   store(tmp, dst);
 }
 
