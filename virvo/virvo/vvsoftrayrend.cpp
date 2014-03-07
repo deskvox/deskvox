@@ -41,9 +41,6 @@
 #include <intrin.h>
 #endif
 
-#include <boost/math/special_functions/round.hpp>
-using namespace boost::math;
-
 typedef std::vector<float, virvo::mem::aligned_allocator<float, CACHE_LINE> > vecf;
 
 #include <boost/detail/endian.hpp>
