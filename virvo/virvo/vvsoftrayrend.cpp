@@ -278,16 +278,41 @@ struct Thread
   size_t id;
   pthread_t threadHandle;
 
-  vvSoftRayRend* renderer;
-  Matrix* invViewMatrix;
+  uint8_t** raw;
   float** colors;
-
   vecf* rgbaTF;
 
+  Matrix* invViewMatrix;
 
   struct RenderParams
   {
+
+    // render target
+    int         width;
+    int         height;
+
     virvo::Tile rect;
+
+    // visible volume region
+    float       mincorner[3];
+    float       maxcorner[3];
+
+    // vd attributes
+    ssize_t     vox[3];
+    float       volsize[3];
+    float       volpos[3];
+    size_t      bpc;
+
+    // tf
+    size_t      lutsize;
+
+    // renderer params
+    float       quality;
+    bool        interpolation;
+    bool        opacity_correction;
+    bool        early_ray_termination;
+    int         mip_mode;
+
   };
 
   struct SyncParams
@@ -315,6 +340,7 @@ void* renderFunc(void* args);
 struct vvSoftRayRend::Impl
 {
   std::vector< Thread* > threads;
+  uint8_t* raw;
   float* colors;
   vecf rgbaTF;
 
@@ -348,8 +374,7 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
     Thread* thread        = new Thread;
     thread->id            = i;
 
-    thread->renderer      = this;
-
+    thread->raw           = &impl_->raw;
     thread->colors        = &impl_->colors;
     thread->rgbaTF        = &impl_->rgbaTF;
     thread->invViewMatrix = &impl_->inv_view_matrix;
@@ -410,6 +435,7 @@ void vvSoftRayRend::renderVolumeGL()
   vd->getBoundingBox(aabb);
   vvRecti r = virvo::bounds(aabb, mv, pr, vp);
 
+  impl_->raw    = vd->getRaw(vd->getCurrentFrame());
   impl_->colors = reinterpret_cast<float*>(rt->deviceColor());
 
   virvo::Tile rect;
@@ -418,7 +444,43 @@ void vvSoftRayRend::renderVolumeGL()
   rect.bottom = r[1];
   rect.top    = r[1] + r[3];
 
-  impl_->render_params.rect = rect;
+  virvo::AABBss const& vr         = getParameter(vvRenderer::VV_VISIBLE_REGION);
+  virvo::ssize3 minvox            = vr.getMin();
+  virvo::ssize3 maxvox            = vr.getMax();
+  for (size_t i = 0; i < 3; ++i)
+  {
+    minvox[i] = std::max(minvox[i], ssize_t(0));
+    maxvox[i] = std::min(maxvox[i], vd->vox[i]);
+  }
+
+  virvo::Vec3 const mincorner     = vd->objectCoords(minvox);
+  virvo::Vec3 const maxcorner     = vd->objectCoords(maxvox);
+
+  impl_->render_params.width                 = rt->width();
+  impl_->render_params.height                = rt->height();
+  impl_->render_params.rect                  = rect;
+  impl_->render_params.mincorner[0]          = mincorner[0];
+  impl_->render_params.mincorner[1]          = mincorner[1];
+  impl_->render_params.mincorner[2]          = mincorner[2];
+  impl_->render_params.maxcorner[0]          = maxcorner[0];
+  impl_->render_params.maxcorner[1]          = maxcorner[1];
+  impl_->render_params.maxcorner[2]          = maxcorner[2];
+  impl_->render_params.vox[0]                = vd->vox[0];
+  impl_->render_params.vox[1]                = vd->vox[1];
+  impl_->render_params.vox[2]                = vd->vox[2];
+  impl_->render_params.volsize[0]            = vd->getSize()[0];
+  impl_->render_params.volsize[1]            = vd->getSize()[1];
+  impl_->render_params.volsize[2]            = vd->getSize()[2];
+  impl_->render_params.volpos[0]             = vd->pos[0];
+  impl_->render_params.volpos[1]             = vd->pos[1];
+  impl_->render_params.volpos[2]             = vd->pos[2];
+  impl_->render_params.bpc                   = vd->bpc;
+  impl_->render_params.lutsize               = getLUTSize(vd);
+  impl_->render_params.quality               = getParameter(vvRenderer::VV_QUALITY);
+  impl_->render_params.interpolation         = getParameter(vvRenderer::VV_SLICEINT);
+  impl_->render_params.opacity_correction    = getParameter(vvRenderer::VV_OPCORR);
+  impl_->render_params.early_ray_termination = getParameter(vvRenderer::VV_TERMINATEEARLY);
+  impl_->render_params.mip_mode              = getParameter(vvRenderer::VV_MIP_MODE);
 
   wake_render_threads(impl_->render_params, &impl_->sync_params);
 }
@@ -449,46 +511,38 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 {
   static const Vec opacityThreshold = 0.95f;
 
-  vvVolDesc* vd                 = thread->renderer->getVolDesc();
-  virvo::RenderTarget const* rt = thread->renderer->getRenderTarget();
-  int w                         = rt->width();
-  int h                         = rt->height();
+  int w                         = thread->render_params->width;
+  int h                         = thread->render_params->height;
+  
+  Vec3s vox(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
+  Vec3 fvox(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
 
-  Vec3s vox                     = vd->vox;
-  Vec3 fvox                     = Vec3(vd->vox[0], vd->vox[1], vd->vox[2]);
-
-  Vec3 size                     = vd->getSize();
+  Vec3 size(thread->render_params->volsize[0], thread->render_params->volsize[1], thread->render_params->volsize[2]);
   Vec3 invsize                  = 1.0f / size;
-  Vec3 size2                    = vd->getSize() * 0.5f;
-  Vec3 volpos                   = vd->pos;
+  Vec3 size2                    = size * Vec(0.5f);
+  Vec3 volpos(thread->render_params->volpos[0], thread->render_params->volpos[1], thread->render_params->volpos[2]);
 
-  size_t const bpc              = vd->bpc;
+  size_t const bpc              = thread->render_params->bpc;
 
-  size_t const lutsize          = getLUTSize(vd);
+  size_t const lutsize          = thread->render_params->lutsize;
 
-  uint8_t const* raw            = vd->getRaw(vd->getCurrentFrame());
+  uint8_t const* raw            = *thread->raw;
 
-  virvo::AABBss const& vr       = thread->renderer->getParameter(vvRenderer::VV_VISIBLE_REGION);
-  float quality                 = thread->renderer->getParameter(vvRenderer::VV_QUALITY);
-  bool interpolation            = thread->renderer->getParameter(vvRenderer::VV_SLICEINT);
-  bool opacityCorrection        = thread->renderer->getParameter(vvRenderer::VV_OPCORR);
-  bool earlyRayTermination      = thread->renderer->getParameter(vvRenderer::VV_TERMINATEEARLY);
-  int mipMode                   = thread->renderer->getParameter(vvRenderer::VV_MIP_MODE);
+  float quality                 = thread->render_params->quality;
+  bool interpolation            = thread->render_params->interpolation;
+  bool opacityCorrection        = thread->render_params->opacity_correction;
+  bool earlyRayTermination      = thread->render_params->early_ray_termination;
+  int mipMode                   = thread->render_params->mip_mode;
 
-  virvo::ssize3 minvox = vr.getMin();
-  virvo::ssize3 maxvox = vr.getMax();
-  for (size_t i = 0; i < 3; ++i)
-  {
-    minvox[i] = std::max(minvox[i], ssize_t(0));
-    maxvox[i] = std::min(maxvox[i], vd->vox[i]);
-  }
-  const virvo::Vec3 mincorner = vd->objectCoords(minvox);
-  const virvo::Vec3 maxcorner = vd->objectCoords(maxvox);
-  const AABB aabb(mincorner, maxcorner);
+  AABB const aabb
+  (
+    Vec3(thread->render_params->mincorner[0], thread->render_params->mincorner[1], thread->render_params->mincorner[2]),
+    Vec3(thread->render_params->maxcorner[0], thread->render_params->maxcorner[1], thread->render_params->maxcorner[2])
+  );
 
-  const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
-                                           vd->vox[1] * vd->vox[1] +
-                                           vd->vox[2] * vd->vox[2]));
+  const float diagonalVoxels = sqrtf(float(thread->render_params->vox[0] * thread->render_params->vox[0] +
+                                           thread->render_params->vox[1] * thread->render_params->vox[1] +
+                                           thread->render_params->vox[2] * thread->render_params->vox[2]));
 
   float const* rgbaTF = &(*thread->rgbaTF)[0];
 
