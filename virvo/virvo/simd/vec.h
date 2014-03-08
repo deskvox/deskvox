@@ -73,12 +73,34 @@ typedef base_vec< __m128 > sse_vec;
 typedef sse_vec Vec;
 
 
-/* operators */
-
 VV_FORCE_INLINE void store(sse_vec const& v, float dst[4])
 {
   _mm_store_ps(dst, v);
 }
+
+VV_FORCE_INLINE sse_vec select(sse_vec const& mask, sse_vec const& a, sse_vec const& b)
+{
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
+  return _mm_blendv_ps(b, a, mask);
+#else
+  return _mm_or_ps(_mm_and_ps(mask, a), _mm_andnot_ps(mask, b));
+#endif
+}
+
+template <int U0, int U1, int V2, int V3>
+VV_FORCE_INLINE sse_vec shuffle(sse_vec const& u, sse_vec const& v)
+{
+  return _mm_shuffle_ps(u, v, _MM_SHUFFLE(V3, V2, U1, U0));
+}
+
+template <int V0, int V1, int V2, int V3>
+VV_FORCE_INLINE sse_vec shuffle(sse_vec const& v)
+{
+  return _mm_shuffle_ps(v, v, _MM_SHUFFLE(V3, V2, V1, V0));
+}
+
+
+/* operators */
 
 VV_FORCE_INLINE sse_vec operator-(sse_vec const& v)
 {
@@ -138,30 +160,8 @@ VV_FORCE_INLINE std::ostream& operator<<(std::ostream& out, sse_vec const& v)
   return out;
 }
 
-template <unsigned const X, unsigned const Y, unsigned const Z, unsigned const W>
-VV_FORCE_INLINE sse_vec shuffle(sse_vec const& u, sse_vec const& v)
-{
-  return _mm_shuffle_ps(u, v, _MM_SHUFFLE(W, Z, Y, X));
-}
-
-template <unsigned const X, unsigned const Y, unsigned const Z, unsigned const W>
-VV_FORCE_INLINE sse_vec shuffle(sse_vec const& v)
-{
-  return _mm_shuffle_ps(v, v, _MM_SHUFFLE(W, Z, Y, X));
-}
-
 
 /* function analogs for cstdlib */
-
-VV_FORCE_INLINE sse_vec floor(sse_vec const& v)
-{
-#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
-  return _mm_floor_ps(v);
-#else
-  VV_UNUSED(v);
-  throw std::runtime_error("not implemented yet");
-#endif
-}
 
 VV_FORCE_INLINE sse_vec min(sse_vec const& u, sse_vec const& v)
 {
@@ -188,7 +188,30 @@ VV_FORCE_INLINE sse_vec round(sse_vec const& v)
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_round_ps(v, _MM_FROUND_TO_NEAREST_INT);
 #else
-  return _mm_cvtepi32_ps(_mm_cvttps_epi32(v));
+  // Mask out the signbits of v
+  __m128 s = _mm_and_ps(v, _mm_castsi128_ps(_mm_set1_epi32(0x80000000)));
+  // Magic number: 2^23 with the signbits of v
+  __m128 m = _mm_or_ps(s, _mm_castsi128_ps(_mm_set1_epi32(0x4B000000)));
+  __m128 x = _mm_add_ps(v, m);
+  __m128 y = _mm_sub_ps(x, m);
+
+  return y;
+#endif
+}
+
+VV_FORCE_INLINE sse_vec floor(sse_vec const& v)
+{
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
+  return _mm_floor_ps(v);
+#else
+  // i = trunc(v)
+  __m128 i = _mm_cvtepi32_ps(_mm_cvttps_epi32(v));
+  // r = i > v ? i - 1 : i
+  __m128 t = _mm_cmpgt_ps(i, v);
+  __m128 d = _mm_cvtepi32_ps(_mm_castps_si128(t)); // mask to float: 0 -> 0.0f, 0xFFFFFFFF -> -1.0f
+  __m128 r = _mm_add_ps(i, d);
+
+  return r;
 #endif
 }
 
@@ -224,9 +247,13 @@ VV_FORCE_INLINE sse_vec dot(sse_vec const& u, sse_vec const& v)
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_dp_ps(u, v, 0xFF);
 #else
-  VV_UNUSED(u);
-  VV_UNUSED(v);
-  throw std::runtime_error("not implemented yet");
+  __m128 t1 = _mm_mul_ps(u, v);
+  __m128 t2 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(2,3,0,1));
+  __m128 t3 = _mm_add_ps(t1, t2);
+  __m128 t4 = _mm_shuffle_ps(t3, t3, _MM_SHUFFLE(0,1,2,3));
+  __m128 t5 = _mm_add_ps(t3, t4);
+
+  return t5;
 #endif
 }
 

@@ -70,6 +70,25 @@ VV_FORCE_INLINE void store(sse_veci const& v, int dst[4])
   _mm_store_si128(reinterpret_cast<__m128i*>(dst), v);
 }
 
+VV_FORCE_INLINE sse_veci select(sse_veci const& mask, sse_veci const& a, sse_veci const& b)
+{
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
+  __m128 k = _mm_castsi128_ps(mask);
+  __m128 x = _mm_castsi128_ps(a);
+  __m128 y = _mm_castsi128_ps(b);
+
+  return _mm_castps_si128(_mm_blendv_ps(y, x, k));
+#else
+  return _mm_or_si128(_mm_and_si128(mask, a), _mm_andnot_si128(mask, b));
+#endif
+}
+
+template <int A0, int A1, int A2, int A3>
+VV_FORCE_INLINE sse_veci shuffle(sse_veci const& a)
+{
+  return _mm_shuffle_epi32(a, _MM_SHUFFLE(A3, A2, A1, A0));
+}
+
 /* operators */
 
 VV_FORCE_INLINE sse_veci operator-(sse_veci const& v)
@@ -92,9 +111,15 @@ VV_FORCE_INLINE sse_veci operator*(sse_veci const& u, sse_veci const& v)
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_mullo_epi32(u, v);
 #else
-  VV_UNUSED(u);
-  VV_UNUSED(v);
-  throw std::runtime_error("not implemented yet");
+  __m128i t0 = shuffle<1,0,3,0>(u);             // a1  ... a3  ...
+  __m128i t1 = shuffle<1,0,3,0>(v);             // b1  ... b3  ...
+  __m128i t2 = _mm_mul_epu32(u, v);             // ab0 ... ab2 ...
+  __m128i t3 = _mm_mul_epu32(t0, t1);           // ab1 ... ab3 ...
+  __m128i t4 = _mm_unpacklo_epi32(t2, t3);      // ab0 ab1 ... ...
+  __m128i t5 = _mm_unpackhi_epi32(t2, t3);      // ab2 ab3 ... ...
+  __m128i t6 = _mm_unpacklo_epi64(t4, t5);      // ab0 ab1 ab2 ab3
+
+  return t6;
 #endif
 }
 
@@ -162,9 +187,7 @@ VV_FORCE_INLINE sse_veci min(sse_veci const& u, sse_veci const& v)
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_min_epi32(u, v);
 #else
-  VV_UNUSED(u);
-  VV_UNUSED(v);
-  throw std::runtime_error("not implemented yet");
+  return select(u < v, u, v);
 #endif
 }
 
@@ -173,9 +196,7 @@ VV_FORCE_INLINE sse_veci max(sse_veci const& u, sse_veci const& v)
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_max_epi32(u, v);
 #else
-  VV_UNUSED(u);
-  VV_UNUSED(v);
-  throw std::runtime_error("not implemented yet");
+  return select(u > v, u, v);
 #endif
 }
 
@@ -188,14 +209,7 @@ VV_FORCE_INLINE T clamp(T const& v, T const& a, T const& b);
 template <>
 VV_FORCE_INLINE sse_veci clamp(sse_veci const& v, sse_veci const& a, sse_veci const& b)
 {
-#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
-  return _mm_max_epi32(a, _mm_min_epi32(v, b));
-#else
-  sse_veci maska = v < a;
-  sse_veci tmp(a, v, maska);
-  sse_veci maskb = tmp > b;
-  return sse_veci(b, tmp, maskb);
-#endif
+  return max(a, min(v, b));
 }
 
 } // simd
