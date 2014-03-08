@@ -272,11 +272,12 @@ template <unsigned N>
 VV_FORCE_INLINE sse_vec rsqrt_step(sse_vec const& v)
 {
   sse_vec threehalf(1.5f);
+  sse_vec vhalf = v * sse_vec(0.5f);
   sse_vec t = v;
 
   for (unsigned i = 0; i < N; ++i)
   {
-    t = t * (threehalf - v * t * t);
+    t = t * (threehalf - vhalf * t * t);
   }
 
   return t;
