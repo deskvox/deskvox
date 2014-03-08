@@ -1,15 +1,11 @@
 #pragma once
 
+#include "intrinsics.h"
+
 #include "../vvforceinline.h"
 #include "../vvmacros.h"
 
 #include "../mem/align.h"
-
-#include <xmmintrin.h>
-#include <emmintrin.h>
-#ifdef __SSE4_1__
-#include <smmintrin.h>
-#endif
 
 #include <ostream>
 #include <stdexcept>
@@ -93,7 +89,7 @@ VV_FORCE_INLINE sse_veci operator-(sse_veci const& u, sse_veci const& v)
 
 VV_FORCE_INLINE sse_veci operator*(sse_veci const& u, sse_veci const& v)
 {
-#ifdef __SSE4_1__
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_mullo_epi32(u, v);
 #else
   VV_UNUSED(u);
@@ -163,7 +159,7 @@ VV_FORCE_INLINE std::ostream& operator<<(std::ostream& out, sse_veci const& v)
 
 VV_FORCE_INLINE sse_veci min(sse_veci const& u, sse_veci const& v)
 {
-#ifdef __SSE4_1__
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_min_epi32(u, v);
 #else
   VV_UNUSED(u);
@@ -174,7 +170,7 @@ VV_FORCE_INLINE sse_veci min(sse_veci const& u, sse_veci const& v)
 
 VV_FORCE_INLINE sse_veci max(sse_veci const& u, sse_veci const& v)
 {
-#ifdef __SSE4_1__
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_max_epi32(u, v);
 #else
   VV_UNUSED(u);
@@ -192,7 +188,7 @@ VV_FORCE_INLINE T clamp(T const& v, T const& a, T const& b);
 template <>
 VV_FORCE_INLINE sse_veci clamp(sse_veci const& v, sse_veci const& a, sse_veci const& b)
 {
-#ifdef __SSE4_1__
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_max_epi32(a, _mm_min_epi32(v, b));
 #else
   sse_veci maska = v < a;

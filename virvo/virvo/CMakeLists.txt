@@ -99,6 +99,7 @@ set(VIRVO_HEADERS
 
   simd/aabb.h
   simd/cast.h
+  simd/intrinsics.h
   simd/mask.h
   simd/matrix.h
   simd/simd.h

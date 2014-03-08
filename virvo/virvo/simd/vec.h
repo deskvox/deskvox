@@ -1,16 +1,12 @@
 #pragma once
 
+#include "intrinsics.h"
+
 #include "../vvcompiler.h"
 #include "../vvforceinline.h"
 #include "../vvmacros.h"
 
 #include "../mem/align.h"
-
-#include <xmmintrin.h>
-#include <emmintrin.h>
-#ifdef __SSE4_1__
-#include <smmintrin.h>
-#endif
 
 #include <ostream>
 #include <stdexcept>
@@ -159,7 +155,7 @@ VV_FORCE_INLINE sse_vec shuffle(sse_vec const& v)
 
 VV_FORCE_INLINE sse_vec floor(sse_vec const& v)
 {
-#ifdef __SSE4_1__
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_floor_ps(v);
 #else
   VV_UNUSED(v);
@@ -179,7 +175,7 @@ VV_FORCE_INLINE sse_vec max(sse_vec const& u, sse_vec const& v)
 
 VV_FORCE_INLINE sse_vec powf(sse_vec const& v, sse_vec const& exp)
 {
-#if VV_CXX_INTEL
+#if VV_SIMD_HAS_SVML
   return _mm_pow_ps(v, exp);
 #else
   // TODO: not implemented yet
@@ -189,7 +185,7 @@ VV_FORCE_INLINE sse_vec powf(sse_vec const& v, sse_vec const& exp)
 
 VV_FORCE_INLINE sse_vec round(sse_vec const& v)
 {
-#ifdef __SSE4_1__
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_round_ps(v, _MM_FROUND_TO_NEAREST_INT);
 #else
   return _mm_cvtepi32_ps(_mm_cvttps_epi32(v));
@@ -225,7 +221,7 @@ VV_FORCE_INLINE sse_vec clamp(sse_vec const& v, sse_vec const& a, sse_vec const&
  */
 VV_FORCE_INLINE sse_vec dot(sse_vec const& u, sse_vec const& v)
 {
-#ifdef __SSE4_1__
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_dp_ps(u, v, 0xFF);
 #else
   VV_UNUSED(u);
