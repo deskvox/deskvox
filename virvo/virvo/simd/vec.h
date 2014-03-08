@@ -166,7 +166,7 @@ VV_FORCE_INLINE sse_vec floor(sse_vec const& v)
   throw std::runtime_error("not implemented yet");
 #endif
 }
- 
+
 VV_FORCE_INLINE sse_vec min(sse_vec const& u, sse_vec const& v)
 {
   return _mm_min_ps(u, v);
@@ -240,45 +240,60 @@ namespace fast
 /*! \brief  Newton Raphson refinement
  */
 
-template <unsigned refinements>
-VV_FORCE_INLINE sse_vec refine(sse_vec const& v)
+template <unsigned N>
+VV_FORCE_INLINE sse_vec rcp_step(sse_vec const& v)
 {
-  sse_vec x0 = v;
-  for (unsigned i = 0; i < refinements; ++i)
+  sse_vec t = v;
+
+  for (unsigned i = 0; i < N; ++i)
   {
-    sse_vec tmp = (x0 + x0) - (v * x0 * x0);
-    x0 = tmp;
+    t = (t + t) - (v * t * t);
   }
-  return x0;
+
+  return t;
 }
 
-template <unsigned refinements>
+template <unsigned N>
 VV_FORCE_INLINE sse_vec rcp(sse_vec const& v)
 {
   sse_vec x0 = _mm_rcp_ps(v);
-  refine<refinements>(x0);
+  rcp_step<N>(x0);
   return x0;
 }
 
 VV_FORCE_INLINE sse_vec rcp(sse_vec const& v)
 {
   sse_vec x0 = _mm_rcp_ps(v);
-  refine<1>(x0);
+  rcp_step<1>(x0);
   return x0;
 }
 
-template <unsigned refinements>
+template <unsigned N>
+VV_FORCE_INLINE sse_vec rsqrt_step(sse_vec const& v)
+{
+  sse_vec threehalf(1.5f);
+  sse_vec t = v;
+
+  for (unsigned i = 0; i < N; ++i)
+  {
+    t = t * (threehalf - v * t * t);
+  }
+
+  return t;
+}
+
+template <unsigned N>
 VV_FORCE_INLINE sse_vec rsqrt(sse_vec const& v)
 {
   sse_vec x0 = _mm_rsqrt_ps(v);
-  refine<refinements>(x0);
+  rsqrt_step<N>(x0);
   return x0;
 }
 
 VV_FORCE_INLINE sse_vec rsqrt(sse_vec const& v)
 {
   sse_vec x0 = _mm_rsqrt_ps(v);
-  refine<1>(x0);
+  rsqrt_step<1>(x0);
   return x0;
 }
 
