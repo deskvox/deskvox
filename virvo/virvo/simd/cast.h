@@ -16,7 +16,8 @@ VV_FORCE_INLINE T simd_cast(U u);
 template <>
 VV_FORCE_INLINE sse_veci simd_cast(sse_vec v)
 {
-  return floor(v);
+  _MM_SET_ROUNDING_MODE(_MM_ROUND_DOWN);
+  return _mm_cvtps_epi32(v);
 }
 
 template <>
