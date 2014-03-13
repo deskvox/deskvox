@@ -64,6 +64,7 @@ struct vvPrefDialog::Impl
     , stillSpinBoxOldValue(1.0)
     , movingDialOldValue(0.0)
     , stillDialOldValue(0.0)
+    , num_interpol_algs(0)
   {
   }
 
@@ -86,6 +87,8 @@ struct vvPrefDialog::Impl
   double stillSpinBoxOldValue;
   int movingDialOldValue;
   int stillDialOldValue ;
+
+  int num_interpol_algs;
 };
 
 /* make qt dials behave as if they had an unlimited range
@@ -325,7 +328,7 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
   connect(ui->browseButton, SIGNAL(clicked()), this, SLOT(onBrowseClicked()));
   connect(ui->connectButton, SIGNAL(clicked()), this, SLOT(onConnectClicked()));
   connect(ui->ibrBox, SIGNAL(toggled(bool)), this, SLOT(onIbrToggled(bool)));
-  connect(ui->interpolationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onInterpolationToggled(bool)));
+  connect(ui->interpolationBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onInterpolationChanged(int)));
   connect(ui->mipCheckBox, SIGNAL(toggled(bool)), this, SLOT(onMipToggled(bool)));
   connect(ui->preIntegrationCheckBox, SIGNAL(toggled(bool)), this, SLOT(onPreIntegrationToggled(bool)));
   connect(ui->stereoModeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onStereoModeChanged(int)));
@@ -369,7 +372,7 @@ void vvPrefDialog::applySettings()
 
   if (!settings.value("appearance/interpolation").isNull())
   {
-    ui->interpolationCheckBox->setChecked(settings.value("appearance/interpolation").toBool());
+    ui->interpolationBox->setCurrentIndex(settings.value("appearance/interpolation").toInt());
   }
 
   if (!settings.value("appearance/preintegration").isNull())
@@ -392,11 +395,11 @@ void vvPrefDialog::applySettings()
 
 void vvPrefDialog::toggleInterpolation()
 {
-  vvDebugMsg::msg(3, "vvPrefDialog::toggletInterpolation()");
-
-  const bool interpolation = ui->interpolationCheckBox->isChecked();
-  ui->interpolationCheckBox->setChecked(!interpolation);
-  emit parameterChanged(vvRenderer::VV_SLICEINT, !interpolation);
+  int interpolation = ui->interpolationBox->currentIndex();
+  ++interpolation;
+  interpolation %= impl->num_interpol_algs;
+  ui->interpolationBox->setCurrentIndex(interpolation);
+  emit parameterChanged(vvRenderer::VV_SLICEINT, static_cast< vvRenderState::InterpolType >(interpolation));
 }
 
 void vvPrefDialog::scaleStillQuality(const float s)
@@ -515,6 +518,49 @@ bool vvPrefDialog::validateRemoteHost(const QString& host, const ushort port)
   url.setPort(p);
   return url.isValid();
 }
+
+
+void vvPrefDialog::handleNewRenderer(vvRenderer* renderer)
+{
+  disconnect(ui->interpolationBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onInterpolationChanged(int)));
+
+
+  // determine interpolation modes
+
+  ui->interpolationBox->clear();
+  impl->num_interpol_algs = 0;
+
+  int ipol = renderer->getParameter(vvRenderState::VV_SLICEINT).asInt();
+
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::Nearest))
+  {
+    ui->interpolationBox->addItem("Nearest Neighbor");
+    ++impl->num_interpol_algs;
+  }
+
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::Linear))
+  {
+    ui->interpolationBox->addItem("Linear");
+    ++impl->num_interpol_algs;
+  }
+
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::BSpline))
+  {
+    ui->interpolationBox->addItem("Cubic B-Spline");
+    ++impl->num_interpol_algs;
+  }
+
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::CatmullRomSpline))
+  {
+    ui->interpolationBox->addItem("Catmull Rom Spline");
+    ++impl->num_interpol_algs;
+  }
+
+  ui->interpolationBox->setCurrentIndex(std::min( ipol, impl->num_interpol_algs ));
+
+  connect(ui->interpolationBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onInterpolationChanged(int)));
+}
+
 
 void vvPrefDialog::onRendererChanged(int index)
 {
@@ -794,11 +840,11 @@ void vvPrefDialog::onIbrToggled(const bool checked)
 #endif
 }
 
-void vvPrefDialog::onInterpolationToggled(bool checked)
+void vvPrefDialog::onInterpolationChanged(int index)
 {
   QSettings settings;
-  settings.setValue("appearance/interpolation", checked);
-  emit parameterChanged(vvRenderer::VV_SLICEINT, checked);
+  settings.setValue("appearance/interpolation", index);
+  emit parameterChanged(vvRenderer::VV_SLICEINT, static_cast< vvRenderState::InterpolType >(index));
 }
 
 void vvPrefDialog::onMipToggled(bool checked)

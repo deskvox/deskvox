@@ -454,6 +454,8 @@ void vvCanvas::createRenderer()
   }
   _renderer->setParameter(vvRenderState::VV_BOUND_COLOR, invColor);
   _renderer->setParameter(vvRenderState::VV_CLIP_COLOR, invColor);
+
+  emit rendererChanged(_renderer);
 }
 
 void vvCanvas::updateProjection()

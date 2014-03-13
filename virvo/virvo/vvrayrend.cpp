@@ -61,6 +61,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   const uint texwidth, const float dist,
                                   const float3 volPos, const float3 volSizeHalf,
                                   const float3 probePos, const float3 probeSizeHalf,
+                                  int ipol_type,
                                   const float3 Lpos, const float3 V,
                                   float constAtt, float linearAtt, float quadAtt,
                                   const bool clipPlane,
@@ -386,6 +387,7 @@ void vvRayRend::renderVolumeGL()
                     volSize * 0.5f,
                     probePos,
                     probeSize * 0.5f,
+                    static_cast< int >(_interpolation),
                     Lpos,
                     V,
                     constAtt,
@@ -406,6 +408,33 @@ void vvRayRend::renderVolumeGL()
                     );
 }
 
+
+bool vvRayRend::checkParameter(ParameterType param, vvParam const& value) const
+{
+  switch (param)
+  {
+  case VV_SLICEINT:
+
+    {
+      vvRenderState::InterpolType type = static_cast< vvRenderState::InterpolType >(value.asInt());
+
+      if (type == vvRenderState::Nearest || type == vvRenderState::Linear
+       || type == vvRenderState::BSpline)
+      {
+        return true;
+      }
+    }
+
+    return false;;
+
+  default:
+
+    return vvRenderer::checkParameter(param, value);
+
+  }
+}
+
+
 //----------------------------------------------------------------------------
 // see parent
 void vvRayRend::setParameter(ParameterType param, const vvParam& newValue)
@@ -416,9 +445,9 @@ void vvRayRend::setParameter(ParameterType param, const vvParam& newValue)
   {
   case vvRenderer::VV_SLICEINT:
     {
-      if (_interpolation != newValue.asBool())
+      if (_interpolation != static_cast< vvRenderState::InterpolType >(newValue.asInt()))
       {
-        _interpolation = newValue;
+        _interpolation = static_cast< vvRenderState::InterpolType >(newValue.asInt());
         initVolumeTexture();
         updateTransferFunction();
       }
@@ -521,10 +550,38 @@ void vvRayRend::initVolumeTexture()
 
   if (_volumeCopyToGpuOk)
   {
+
+    cudaTextureFilterMode filter_mode  = cudaFilterModePoint;
+
+    switch (_interpolation)
+    {
+    case Nearest:
+
+      filter_mode = cudaFilterModePoint;
+      break;
+
+    case Linear:
+
+      filter_mode = cudaFilterModeLinear;
+      break;
+
+    case BSpline:
+
+      filter_mode = cudaFilterModeLinear;
+      break;
+
+    case CatmullRomSpline:
+
+      filter_mode = cudaFilterModeLinear;
+      break;
+
+    }
+
+
     if (vd->bpc == 1)
     {
         cVolTexture8.setNormalized(true);
-        cVolTexture8.setFilterMode(_interpolation ? cudaFilterModeLinear : cudaFilterModePoint);
+        cVolTexture8.setFilterMode(filter_mode);
         cVolTexture8.setAddressMode(cudaAddressModeClamp);
 
         ok = cVolTexture8.bind(impl->getVolumeArray(0), impl->channelDesc);
@@ -532,7 +589,7 @@ void vvRayRend::initVolumeTexture()
     else if (vd->bpc == 2)
     {
         cVolTexture16.setNormalized(true);
-        cVolTexture16.setFilterMode(_interpolation ? cudaFilterModeLinear : cudaFilterModePoint);
+        cVolTexture16.setFilterMode(filter_mode);
         cVolTexture16.setAddressMode(cudaAddressModeClamp);
 
         ok = cVolTexture16.bind(impl->getVolumeArray(0), impl->channelDesc);

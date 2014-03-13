@@ -55,6 +55,16 @@ public:
     VV_NONE
   };
 
+
+  enum InterpolType
+  {
+    Nearest = 0,
+    Linear,
+    BSpline,
+    CatmullRomSpline
+  };
+
+
   enum ParameterType                            ///<  Names for rendering parameters
   {
     VV_QUALITY = 0,
@@ -122,6 +132,7 @@ public:
     VV_PIX_SHADER
   };
 
+  virtual bool checkParameter(ParameterType param, vvParam const& value) const;
   virtual void setParameter(ParameterType param, const vvParam& value);
   virtual vvParam getParameter(ParameterType param) const;
 
@@ -174,7 +185,7 @@ protected:
   virvo::AABBss _visibleRegion;                 ///< part of the vd that is visible and thus rendered
   virvo::AABBss _paddingRegion;                 ///< padding region for interpolation
   bool _opacityCorrection;                      ///< true = opacity correction on
-  bool _interpolation;                          ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
+  InterpolType _interpolation;                  ///< interpolation mode: true=linear interpolation (default), false=nearest neighbor
   bool _earlyRayTermination;                    ///< terminate ray marching when enough alpha was gathered
   bool _preIntegration;                         ///< true = try to use pre-integrated rendering (planar 3d textures)
   int _depthPrecision;                          ///< number of bits in depth buffer for image based rendering

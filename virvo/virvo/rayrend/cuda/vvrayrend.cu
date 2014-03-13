@@ -148,42 +148,45 @@ __device__ float tricubic(texture< uchar, 3, cudaReadModeNormalizedFloat > tex_s
 }
 
 
-#define USE_TRICUBIC 0
-
-
 template<int t_bpc>
 __device__ float volume(const float x, const float y, const float z,
-  float3 const& volsize);
+  float3 const& volsize, int ipol_type);
 template<>
 __device__ float volume<1>(const float x, const float y, const float z,
-  float3 const& volsize)
+  float3 const& volsize, int ipol_type)
 {
-#if USE_TRICUBIC
-  return tricubic(volTexture8, x, y, z, volsize);
-#else
-  return tex3D(volTexture8, x, y, z);
-#endif
+  if (ipol_type > 1)
+  {
+    return tricubic(volTexture8, x, y, z, volsize);
+  }
+  else
+  {
+    return tex3D(volTexture8, x, y, z);
+  }
 }
 template<>
 __device__ float volume<2>(const float x, const float y, const float z,
-  float3 const& volsize)
+  float3 const& volsize, int ipol_type)
 {
   return tex3D(volTexture16, x, y, z);
 }
 
 template<int t_bpc>
-__device__ float volume(const float3& pos, float3 const& volsize);
+__device__ float volume(const float3& pos, float3 const& volsize, int ipol_type);
 template<>
-__device__ float volume<1>(const float3& pos, float3 const& volsize)
+__device__ float volume<1>(const float3& pos, float3 const& volsize, int ipol_type)
 {
-#if USE_TRICUBIC
-  return tricubic(volTexture8, pos.x, pos.y, pos.z, volsize);
-#else
-  return tex3D(volTexture8, pos.x, pos.y, pos.z);
-#endif
+  if (ipol_type > 1)
+  {
+    return tricubic(volTexture8, pos.x, pos.y, pos.z, volsize);
+  }
+  else
+  {
+    return tex3D(volTexture8, pos.x, pos.y, pos.z);
+  }
 }
 template<>
-__device__ float volume<2>(const float3& pos, float3 const& volsize)
+__device__ float volume<2>(const float3& pos, float3 const& volsize, int ipol_type)
 {
   return tex3D(volTexture16, pos.x, pos.y, pos.z);
 }
@@ -365,19 +368,19 @@ __device__ uchar4 rgbaFloatToInt(float4 rgba)
 }
 
 template<int t_bpc>
-__device__ float3 gradient(const float3& texcoord, float3 const& volsize)
+__device__ float3 gradient(const float3& texcoord, float3 const& volsize, int ipol_type)
 {
   const float DELTA = 0.01f;
 
   float3 sample1;
   float3 sample2;
 
-  sample1.x = volume<t_bpc>(texcoord - make_float3(DELTA, 0.0f, 0.0f), volsize);
-  sample2.x = volume<t_bpc>(texcoord + make_float3(DELTA, 0.0f, 0.0f), volsize);
-  sample1.y = volume<t_bpc>(texcoord - make_float3(0.0f, DELTA, 0.0f), volsize);
-  sample2.y = volume<t_bpc>(texcoord + make_float3(0.0f, DELTA, 0.0f), volsize);
-  sample1.z = volume<t_bpc>(texcoord - make_float3(0.0f, 0.0f, DELTA), volsize);
-  sample2.z = volume<t_bpc>(texcoord + make_float3(0.0f, 0.0f, DELTA), volsize);
+  sample1.x = volume<t_bpc>(texcoord - make_float3(DELTA, 0.0f, 0.0f), volsize, ipol_type);
+  sample2.x = volume<t_bpc>(texcoord + make_float3(DELTA, 0.0f, 0.0f), volsize, ipol_type);
+  sample1.y = volume<t_bpc>(texcoord - make_float3(0.0f, DELTA, 0.0f), volsize, ipol_type);
+  sample2.y = volume<t_bpc>(texcoord + make_float3(0.0f, DELTA, 0.0f), volsize, ipol_type);
+  sample1.z = volume<t_bpc>(texcoord - make_float3(0.0f, 0.0f, DELTA), volsize, ipol_type);
+  sample2.z = volume<t_bpc>(texcoord + make_float3(0.0f, 0.0f, DELTA), volsize, ipol_type);
 
   return sample2 - sample1;
 }
@@ -387,12 +390,12 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos, co
                              const float3& Lpos, const float3& V,
                              const float3& Ka, const float3& Kd, const float3& Ks,
                              const float shininess,
-                             float3 const& volsize,
+                             float3 const& volsize, int ipol_type,
                              const float constAtt = 1.f, const float linearAtt = 0.f, const float quadAtt = 0.f,
                              const float3* normal = NULL)
 {
   // Normal transformed from texture to volume coordinates
-  float3 N = normalize(gradient<t_bpc>(texcoord, volsize));
+  float3 N = normalize(gradient<t_bpc>(texcoord, volsize, ipol_type));
   N = tex2vol(N);
 
   // Light direction
@@ -445,6 +448,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const uint texwidth, const float dist,
                        const float3 volPos, const float3 volSizeHalf,
                        const float3 probePos, const float3 probeSizeHalf,
+                       int ipol_type,
                        const float3 Lpos, const float3 V,
                        float constAtt, float linearAtt, float quadAtt,
                        const bool clipPlane,
@@ -621,7 +625,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     const float3 texCoord = calcTexCoord(pos, volPos, volSizeHalf);
 
-    const float sample = volume<t_bpc>(texCoord, volsize);
+    const float sample = volume<t_bpc>(texCoord, volsize, ipol_type);
 
     // Post-classification transfer-function lookup.
     float4 src = tex1D(tfTexture, sample);
@@ -650,25 +654,25 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       const float shininess = 1000.0f;
       if (justClippedPlane)
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize, ipol_type,
           constAtt, linearAtt, quadAtt, &planeNormal);
         justClippedPlane = false;
       }
       else if (justClippedSphere)
       {
         float3 sphereNormal = normalize(sphereCenter - pos);
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize, ipol_type,
           constAtt, linearAtt, quadAtt, &sphereNormal);
         justClippedSphere = false;
       }
       else if(justClippedBox)
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize, ipol_type,
           constAtt, linearAtt, quadAtt, &boxNormal);
       }
       else
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize, ipol_type,
           constAtt, linearAtt, quadAtt);
       }
     }
@@ -858,6 +862,7 @@ typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint heigh
                             const uint texwidth, const float dist,
                             const float3 volPos, const float3 volSizeHalf,
                             const float3 probePos, const float3 probeSizeHalf,
+                            int ipol_type,
                             const float3 Lpos, const float3 V,
                             float constAtt, float linearAtt, float quadAtt,
                             const bool clipPlane,
@@ -1117,6 +1122,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   const uint texwidth, const float dist,
                                   const float3 volPos, const float3 volSizeHalf,
                                   const float3 probePos, const float3 probeSizeHalf,
+                                  int ipol_type,
                                   const float3 Lpos, const float3 V,
                                   float constAtt, float linearAtt, float quadAtt,
                                   const bool clipPlane,
@@ -1153,7 +1159,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
     (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
                                       texwidth, dist,
                                       volPos, volSizeHalf,
-                                      probePos, probeSizeHalf,
+                                      probePos, probeSizeHalf, ipol_type,
                                       Lpos, V,
                                       constAtt, linearAtt, quadAtt,
                                       clipPlane,
@@ -1172,7 +1178,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
   (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
                                     texwidth, dist,
                                     volPos, volSizeHalf,
-                                    probePos, probeSizeHalf,
+                                    probePos, probeSizeHalf, ipol_type,
                                     Lpos, V,
                                     constAtt, linearAtt, quadAtt,
                                     clipPlane,

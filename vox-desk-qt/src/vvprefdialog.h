@@ -51,6 +51,11 @@ private:
   
   void emitRenderer();
   bool validateRemoteHost(const QString& host, ushort port);
+
+public slots:
+
+  void handleNewRenderer(vvRenderer* renderer);
+
 private slots:
   void onRendererChanged(int index);
   void onTexRendOptionChanged(int index);
@@ -63,7 +68,7 @@ private slots:
   void onBrowseClicked();
   void onConnectClicked();
   void onIbrToggled(bool checked);
-  void onInterpolationToggled(bool checked);
+  void onInterpolationChanged(int index);
   void onMipToggled(bool checked);
   void onPreIntegrationToggled(bool checked);
   void onStereoModeChanged(int index);

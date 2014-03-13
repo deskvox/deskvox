@@ -89,7 +89,7 @@ vvRenderState::vvRenderState()
   , _visibleRegion(vvAABBss(vvssize3(0), vvssize3(std::numeric_limits<ssize_t>::max())))
   , _paddingRegion(vvAABBss(vvssize3(0), vvssize3(std::numeric_limits<ssize_t>::max())))
   , _opacityCorrection(true)
-  , _interpolation(true)
+  , _interpolation(Linear)
   , _earlyRayTermination(true)
   , _preIntegration(false)
   , _depthPrecision(8)
@@ -97,6 +97,16 @@ vvRenderState::vvRenderState()
 {
   
 }
+
+
+bool vvRenderState::checkParameter(ParameterType param, vvParam const& value) const
+{
+  VV_UNUSED(param);
+  VV_UNUSED(value);
+
+  return false;
+}
+
 
 void vvRenderState::setParameter(ParameterType param, const vvParam& value)
 {
@@ -241,7 +251,7 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     _opacityCorrection = value;
     break;
   case VV_SLICEINT:
-    _interpolation = value;
+    _interpolation = static_cast< InterpolType >(value.asInt());
     break;
   case VV_PREINT:
     _preIntegration = value;

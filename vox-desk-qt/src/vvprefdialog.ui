@@ -55,8 +55,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>560</width>
-            <height>321</height>
+            <width>566</width>
+            <height>346</height>
            </rect>
           </property>
           <attribute name="label">
@@ -206,8 +206,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>339</width>
-            <height>73</height>
+            <width>325</width>
+            <height>63</height>
            </rect>
           </property>
           <attribute name="label">
@@ -273,8 +273,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>265</width>
-            <height>153</height>
+            <width>235</width>
+            <height>129</height>
            </rect>
           </property>
           <attribute name="label">
@@ -394,8 +394,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>560</width>
-            <height>321</height>
+            <width>566</width>
+            <height>346</height>
            </rect>
           </property>
           <attribute name="label">
@@ -406,14 +406,25 @@ p, li { white-space: pre-wrap; }
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
-            <widget class="QCheckBox" name="interpolationCheckBox">
-             <property name="text">
-              <string>Linear interpolation</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="interpolationLayout">
+             <item>
+              <widget class="QLabel" name="interpolationLabel">
+               <property name="text">
+                <string>Interpolation:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="interpolationBox">
+               <property name="minimumSize">
+                <size>
+                 <width>240</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
             <widget class="QCheckBox" name="mipCheckBox">
@@ -443,6 +454,9 @@ p, li { white-space: pre-wrap; }
             </spacer>
            </item>
           </layout>
+          <zorder>mipCheckBox</zorder>
+          <zorder>preIntegrationCheckBox</zorder>
+          <zorder>interpolationBox</zorder>
          </widget>
         </widget>
        </item>

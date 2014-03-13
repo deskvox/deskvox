@@ -474,7 +474,7 @@ void vvSoftRayRend::renderVolumeGL()
   impl_->render_params.bpc                   = vd->bpc;
   impl_->render_params.lutsize               = getLUTSize(vd);
   impl_->render_params.quality               = getParameter(vvRenderer::VV_QUALITY);
-  impl_->render_params.interpolation         = getParameter(vvRenderer::VV_SLICEINT);
+  impl_->render_params.interpolation         = static_cast< bool >(getParameter(vvRenderer::VV_SLICEINT).asInt());
   impl_->render_params.opacity_correction    = getParameter(vvRenderer::VV_OPCORR);
   impl_->render_params.early_ray_termination = getParameter(vvRenderer::VV_TERMINATEEARLY);
   impl_->render_params.mip_mode              = getParameter(vvRenderer::VV_MIP_MODE);
@@ -491,6 +491,32 @@ void vvSoftRayRend::updateTransferFunction()
   vd->computeTFTexture(lutEntries, 1, 1, &impl_->rgbaTF[0]);
 
 }
+
+
+bool vvSoftRayRend::checkParameter(ParameterType param, vvParam const& value) const
+{
+  switch (param)
+  {
+  case VV_SLICEINT:
+
+    {
+      vvRenderState::InterpolType type = static_cast< vvRenderState::InterpolType >(value.asInt());
+
+      if (type == vvRenderState::Nearest || type == vvRenderState::Linear)
+      {
+        return true;
+      }
+    }
+
+    return false;;
+
+  default:
+
+    return vvRenderer::checkParameter(param, value);
+
+  }
+}
+
 
 void vvSoftRayRend::setParameter(ParameterType param, const vvParam& newValue)
 {

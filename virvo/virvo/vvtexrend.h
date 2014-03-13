@@ -244,6 +244,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool  instantClassification() const;
     void  setViewingDirection(const vvVector3& vd);
     void  setObjectDirection(const vvVector3& od);
+    bool checkParameter(ParameterType param, vvParam const& value) const;
     virtual void setParameter(ParameterType param, const vvParam& value);
     virtual vvParam getParameter(ParameterType param) const;
     static bool isSupported(GeometryType);

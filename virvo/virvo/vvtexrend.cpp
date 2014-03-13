@@ -3681,6 +3681,32 @@ void vvTexRend::setObjectDirection(const vvVector3& od)
   objDir = od;
 }
 
+
+bool vvTexRend::checkParameter(ParameterType param, vvParam const& value) const
+{
+  switch (param)
+  {
+  case VV_SLICEINT:
+
+    {
+      vvRenderState::InterpolType type = static_cast< vvRenderState::InterpolType >(value.asInt());
+
+      if (type == vvRenderState::Nearest || type == vvRenderState::Linear)
+      {
+        return true;
+      }
+    }
+
+    return false;;
+
+  default:
+
+    return vvRenderer::checkParameter(param, value);
+
+  }
+}
+
+
 //----------------------------------------------------------------------------
 // see parent
 void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
@@ -3695,9 +3721,9 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       updateTransferFunction();
       break;
     case vvRenderer::VV_SLICEINT:
-      if (_interpolation != newValue.asBool())
+      if (_interpolation != static_cast< vvRenderState::InterpolType >(newValue.asInt()))
       {
-        _interpolation = newValue;
+        _interpolation = static_cast< vvRenderState::InterpolType >(newValue.asInt());
         makeTextures();
         updateTransferFunction();
       }

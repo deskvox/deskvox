@@ -367,6 +367,11 @@ void vvMainWindow::lateInitialization()
     impl_->canvas, SLOT(setParameter(vvParameters::ParameterType, const vvParam&)));
   connect(impl_->prefDialog, SIGNAL(parameterChanged(vvRenderer::ParameterType, const vvParam&)),
     impl_->canvas, SLOT(setParameter(vvRenderer::ParameterType, const vvParam&)));
+  connect(impl_->canvas, SIGNAL(rendererChanged(vvRenderer*)),
+    impl_->prefDialog, SLOT(handleNewRenderer(vvRenderer*)));
+
+  // late-initialization is a noisance..
+  impl_->prefDialog->handleNewRenderer(impl_->canvas->getRenderer());
 
   impl_->prefDialog->applySettings();
 }

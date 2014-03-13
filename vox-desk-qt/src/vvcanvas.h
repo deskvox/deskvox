@@ -160,6 +160,7 @@ private slots:
   void repeatLastRotation();
   void setLightPos(const vvVector3& pos);
 signals:
+  void rendererChanged(vvRenderer* renderer);
   void newVolDesc(vvVolDesc* vd);
   void statusMessage(const std::string& str);
   void currentFrame(int frame);
