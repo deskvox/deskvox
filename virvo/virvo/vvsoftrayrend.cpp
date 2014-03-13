@@ -279,7 +279,7 @@ struct Thread
   float** colors;
   vecf* rgbaTF;
 
-  Matrix* invViewMatrix;
+  float** invViewMatrix;
 
   struct RenderParams
   {
@@ -341,7 +341,7 @@ struct vvSoftRayRend::Impl
   float* colors;
   vecf rgbaTF;
 
-  Matrix inv_view_matrix;
+  float* inv_view_matrix;
 
   Thread::RenderParams render_params;
   Thread::SyncParams   sync_params;
@@ -412,8 +412,8 @@ void vvSoftRayRend::renderVolumeGL()
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::renderVolumeGL()");
 
-  Matrix mv;
-  Matrix pr;
+  virvo::Matrix mv;
+  virvo::Matrix pr;
   virvo::Viewport vp;
 
 #ifdef HAVE_OPENGL
@@ -424,9 +424,9 @@ void vvSoftRayRend::renderVolumeGL()
 
   virvo::RenderTarget* rt = getRenderTarget();
 
-  impl_->inv_view_matrix = mv;
-  impl_->inv_view_matrix = pr * impl_->inv_view_matrix;
-  impl_->inv_view_matrix.invert();
+  virvo::Matrix inv_view_matrix = pr * mv;
+  inv_view_matrix.invert();
+  impl_->inv_view_matrix = inv_view_matrix.data();
 
   vvAABB aabb = vvAABB(virvo::Vec3(), virvo::Vec3());
   vd->getBoundingBox(aabb);
@@ -508,6 +508,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 {
   static const Vec opacityThreshold = 0.95f;
 
+  Matrix inv_view_matrix(*thread->invViewMatrix);
   int w                         = thread->render_params->width;
   int h                         = thread->render_params->height;
   
@@ -553,9 +554,9 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
       const Vec v = (pixely(y) / static_cast<float>(h - 1)) * 2.0f - 1.0f;
 
       Vec4 o(u, v, -1.0f, 1.0f);
-      o = *thread->invViewMatrix * o;
+      o = inv_view_matrix * o;
       Vec4 d(u, v, 1.0f, 1.0f);
-      d = *thread->invViewMatrix * d;
+      d = inv_view_matrix * d;
 
       Ray ray(Vec3(o[0] / o[3], o[1] / o[3], o[2] / o[3]),
               Vec3(d[0] / d[3], d[1] / d[3], d[2] / d[3]));
