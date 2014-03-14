@@ -156,7 +156,8 @@ vvRayRend::vvRayRend(vvVolDesc* vd, vvRenderState renderState)
   : BaseType(vd, renderState)
   , impl(new Impl)
 {
-  vvDebugMsg::msg(1, "vvRayRend::vvRayRend()");
+
+  rendererType = RAYREND;
 
   glewInit();
 

@@ -412,7 +412,7 @@ void vvCanvas::init()
   // init renderer
   if (_vd != NULL)
   {
-    _currentRenderer = "planar";
+    _currentRenderer = "default";
     _currentOptions["voxeltype"] = "arb";
     createRenderer();
   }

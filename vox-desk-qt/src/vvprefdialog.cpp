@@ -455,12 +455,10 @@ void vvPrefDialog::emitRenderer()
     switch (impl->rendererMap[ui->rendererBox->currentIndex()])
     {
     case vvRenderer::RAYREND:
-      ui->optionsToolBox->setCurrentIndex(rayidx);
       name = "rayrend";
       options["arch"] = impl->rayRendArchMap[ui->rayRendArchBox->currentIndex()];
       break;
     case vvRenderer::TEXREND:
-      ui->optionsToolBox->setCurrentIndex(texidx);
       name = impl->texRendTypeMap[ui->geometryBox->currentIndex()];
       options["voxeltype"] = impl->voxTypeMap[ui->voxTypeBox->currentIndex()];
       break;
@@ -469,24 +467,8 @@ void vvPrefDialog::emitRenderer()
       break;
     }
 
-    if (options["voxeltype"] == "rgba")
-    {
-      ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type RGBA</b><br />"
-        "Pre-interpolative transfer function,"
-        " is applied by assigning each voxel an RGBA color before rendering.</html>");
-    }
-    else if (options["voxeltype"] == "arb")
-    {
-      ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type ARB fragment program</b><br />"
-        "Post-interpolative transfer function,"
-        " is applied after sampling the volume texture.</html>");
-    }
-    else if (options["voxeltype"] == "shader")
-    {
-      ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type GLSL fragment program</b><br />"
-        "Post-interpolative transfer function,"
-        " is applied after sampling the volume texture.</html>");
-    }
+    updateUi();
+
   }
 
   if (name != "")
@@ -520,11 +502,88 @@ bool vvPrefDialog::validateRemoteHost(const QString& host, const ushort port)
 }
 
 
-void vvPrefDialog::handleNewRenderer(vvRenderer* renderer)
+void vvPrefDialog::updateUi()
 {
+
+  //
+  // deactivate ui
+  // ----------------------------
+  //
+
+  disconnect(ui->rendererBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onRendererChanged(int)));
   disconnect(ui->interpolationBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onInterpolationChanged(int)));
 
 
+
+  vvRenderer* renderer = _canvas->getRenderer();
+
+  // indices to activate appropriate options tool box pages
+  static const int TexIdx = 0;
+  static const int RayIdx = 1;
+
+
+  //
+  // renderer tab
+  // ----------------------------
+  //
+
+  std::string voxeltype = "";
+
+  vvRenderer::RendererType rt = vvRendererFactory::guess_type( renderer );
+
+
+  switch (rt)
+  {
+  case vvRenderer::RAYREND:
+
+    ui->rendererBox->setCurrentIndex(RayIdx);
+    ui->optionsToolBox->setCurrentIndex(RayIdx);
+    break;
+
+  case vvRenderer::TEXREND:
+
+    ui->rendererBox->setCurrentIndex(TexIdx);
+    ui->optionsToolBox->setCurrentIndex(TexIdx);
+    voxeltype = impl->voxTypeMap[ui->voxTypeBox->currentIndex()];
+    break;
+
+  default:
+
+    break;
+
+  }
+
+
+  //
+  // texrend tab
+  // ----------------------------
+  //
+
+  if (voxeltype == "rgba")
+  {
+    ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type RGBA</b><br />"
+      "Pre-interpolative transfer function,"
+      " is applied by assigning each voxel an RGBA color before rendering.</html>");
+  }
+  else if (voxeltype == "arb")
+  {
+    ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type ARB fragment program</b><br />"
+      "Post-interpolative transfer function,"
+      " is applied after sampling the volume texture.</html>");
+  }
+  else if (voxeltype == "shader")
+  {
+    ui->texInfoLabel->setText(ui->texInfoLabel->text() + "<html><b>Voxel type GLSL fragment program</b><br />"
+      "Post-interpolative transfer function,"
+      " is applied after sampling the volume texture.</html>");
+  }
+
+
+  //
+  // appearance tab
+  // ----------------------------
+  //
+  
   // determine interpolation modes
 
   ui->interpolationBox->clear();
@@ -558,7 +617,23 @@ void vvPrefDialog::handleNewRenderer(vvRenderer* renderer)
 
   ui->interpolationBox->setCurrentIndex(std::min( ipol, impl->num_interpol_algs ));
 
+
+  //
+  // reactivate ui
+  // ----------------------------
+  //
+
   connect(ui->interpolationBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onInterpolationChanged(int)));
+  connect(ui->rendererBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onRendererChanged(int)));
+
+}
+
+
+void vvPrefDialog::handleNewRenderer(vvRenderer*)
+{
+
+  updateUi();
+
 }
 
 

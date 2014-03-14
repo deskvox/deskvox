@@ -34,9 +34,11 @@
 #ifdef HAVE_VOLPACK
 #include "vvrendervp.h"
 #endif
+#include "vvrayrend.h"
 #include "vvparbrickrend.h"
 #include "vvserbrickrend.h"
 #include "vvsocketmap.h"
+#include "vvsoftrayrend.h"
 #include "vvtcpsocket.h"
 #include "vvcompiler.h"
 
@@ -740,6 +742,35 @@ bool vvRendererFactory::hasRenderer(vvRenderer::RendererType type)
     return true;
   }
 }
+
+
+vvRenderer::RendererType vvRendererFactory::guess_type(vvRenderer* renderer)
+{
+
+  if (renderer->getRendererType() != vvRenderer::UNKNOWN)
+  {
+    return renderer->getRendererType();
+  }
+
+#if VV_HAVE_CUDA
+
+  if (dynamic_cast< vvRayRend* >(renderer) != 0)
+  {
+    return vvRenderer::RAYREND;
+  }
+
+#endif
+
+  if (dynamic_cast< vvTexRend* >(renderer) != 0)
+  {
+    return vvRenderer::TEXREND;
+  }
+
+
+  return vvRenderer::UNKNOWN;
+
+}
+
 
 //============================================================================
 // End of File

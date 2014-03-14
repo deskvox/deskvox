@@ -351,7 +351,8 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
   : vvRenderer(vd, renderState)
   , impl_(new Impl)
 {
-  vvDebugMsg::msg(1, "vvSoftRayRend::vvSoftRayRend()");
+
+  rendererType = RAYREND;
 
   setRenderTarget(virvo::HostBufferRT::create(virvo::PF_RGBA32F, virvo::PF_LUMINANCE8));
 

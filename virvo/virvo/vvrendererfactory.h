@@ -63,6 +63,11 @@ class VIRVOEXPORT vvRendererFactory
     static bool hasRenderer(const std::string& name, std::string const& arch = "");
     static bool hasRenderer(vvRenderer::RendererType type);
 
+    /**
+     * @param renderer instance to guess the type of
+     */
+    static vvRenderer::RendererType guess_type(vvRenderer* renderer);
+
 };
 #endif
 

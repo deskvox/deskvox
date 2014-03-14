@@ -51,6 +51,7 @@ private:
   
   void emitRenderer();
   bool validateRemoteHost(const QString& host, ushort port);
+  void updateUi();
 
 public slots:
 
