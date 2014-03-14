@@ -34,11 +34,9 @@
 #ifdef HAVE_VOLPACK
 #include "vvrendervp.h"
 #endif
-#include "vvrayrend.h"
 #include "vvparbrickrend.h"
 #include "vvserbrickrend.h"
 #include "vvsocketmap.h"
-#include "vvsoftrayrend.h"
 #include "vvtcpsocket.h"
 #include "vvcompiler.h"
 
