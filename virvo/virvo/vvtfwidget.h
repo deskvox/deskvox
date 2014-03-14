@@ -115,14 +115,14 @@ class VIRVOEXPORT vvTFWidget
     void setOpacity(float opacity);
     float opacity() const;
 
-    virtual void setName(const char*);
-    virtual const char* getName();
+    virtual void setName(std::string const& name);
+    virtual std::string getName() const;
     void setPos(const vvVector3& pos);
     void setPos(float x, float y, float z);
     vvVector3 pos() const;
     virtual void readName(std::ifstream& file);
     void write(FILE*);
-    virtual const char* toString() { throw std::runtime_error("not implemented"); }
+    virtual std::string toString() const { throw std::runtime_error("not implemented"); }
     virtual void fromString(const std::string& /*str*/) { throw std::runtime_error("not implemented"); }
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
@@ -162,7 +162,7 @@ class VIRVOEXPORT vvTFBell : public vvTFWidget
     vvColor color() const;
     vvVector3 size() const;
 
-    virtual const char* toString();
+    virtual std::string toString() const;
     virtual void fromString(const std::string& str);
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
@@ -206,7 +206,7 @@ class VIRVOEXPORT vvTFPyramid : public vvTFWidget
     vvVector3 top() const;
     vvVector3 bottom() const;
 
-    virtual const char* toString();
+    virtual std::string toString() const;
     virtual void fromString(const std::string& str);
     virtual bool getColor(vvColor&, float, float=-1.0f, float=-1.0f);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
@@ -236,7 +236,7 @@ class VIRVOEXPORT vvTFColor : public vvTFWidget
     vvTFColor(vvTFColor*);
     vvTFColor(vvColor, float, float=0.0f, float=0.0f);
     vvTFColor(std::ifstream& file);
-    virtual const char* toString();
+    virtual std::string toString() const;
     virtual void fromString(const std::string& str);
 };
 
@@ -262,7 +262,7 @@ class VIRVOEXPORT vvTFSkip : public vvTFWidget
     vvTFSkip(vvTFSkip*);
     vvTFSkip(float, float, float=0.5f, float=0.0f, float=0.5f, float=0.0f);
     vvTFSkip(std::ifstream& file);
-    virtual const char* toString();
+    virtual std::string toString() const;
     virtual void fromString(const std::string& str);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
 };
@@ -293,7 +293,7 @@ class VIRVOEXPORT vvTFCustom : public vvTFWidget
     vvTFCustom(float, float, float=0.5f, float=0.0f, float=0.5f, float=0.0f);
     vvTFCustom(std::ifstream& file);
     virtual ~vvTFCustom();
-    virtual const char* toString();
+    virtual std::string toString() const;
     virtual void fromString(const std::string& str);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     vvTFPoint* addPoint(float, float=-1.0f, float=-1.0f);
@@ -331,7 +331,7 @@ public:
     vvTFCustom2D(vvTFCustom2D*);
     vvTFCustom2D(std::ifstream& file);
     virtual ~vvTFCustom2D();
-    virtual const char* toString();
+    virtual std::string toString() const;
     virtual void fromString(const std::string& str);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     vvTFPoint* addPoint(float opacity, float x, float y);
@@ -376,7 +376,7 @@ class VIRVOEXPORT vvTFCustomMap : public vvTFWidget
     vvTFCustomMap(vvTFCustomMap*);
     vvTFCustomMap(std::ifstream& file);
     virtual ~vvTFCustomMap();
-    virtual const char* toString();
+    virtual std::string toString() const;
     virtual void fromString(const std::string& str);
     virtual float getOpacity(float, float=-1.0f, float=-1.0f);
     void setOpacity(float val, float x, float y=-1.0f, float z=-1.0f);

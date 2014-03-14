@@ -3995,12 +3995,11 @@ void vvTexRend::setCurrentShader(const int shader)
 void vvTexRend::renderQualityDisplay() const
 {
   const int numSlices = int(_quality * 100.0f);
-  vvPrintGL* printGL = new vvPrintGL();
+  vvPrintGL printGL;
   vvVector4 clearColor = vvGLTools::queryClearColor();
   vvVector4 fontColor = vvVector4(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f);
-  printGL->setFontColor(fontColor);
-  printGL->print(-0.9f, 0.9f, "Textures: %d", numSlices);
-  delete printGL;
+  printGL.setFontColor(fontColor);
+  printGL.print(-0.9f, 0.9f, "Textures: %d", numSlices);
 }
 
 //----------------------------------------------------------------------------

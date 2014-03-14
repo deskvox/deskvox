@@ -28,6 +28,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 using std::cerr;
 using std::endl;
@@ -122,17 +124,17 @@ float vvTFWidget::opacity() const
   return _opacity;
 }
 
-void vvTFWidget::setName(const char* newName)
+void vvTFWidget::setName(std::string const& name)
 {
-  if (newName)
-    _name = newName;
+  if (!name.empty())
+    _name = name;
   else
     _name = NO_NAME;
 }
 
-const char* vvTFWidget::getName()
+std::string vvTFWidget::getName() const
 {
-  return _name == "" ? NO_NAME.c_str() : _name.c_str();
+  return _name == "" ? NO_NAME : _name;
 }
 
 void vvTFWidget::setPos(const vvVector3& pos)
@@ -163,7 +165,7 @@ void vvTFWidget::readName(std::ifstream& file)
 
 void vvTFWidget::write(FILE* fp)
 {
-  fprintf(fp, "%s", toString());
+  fprintf(fp, "%s", toString().c_str());
 }
 
 float vvTFWidget::getOpacity(float, float, float)
@@ -317,15 +319,13 @@ vvVector3 vvTFBell::size() const
   return _size;
 }
 
-const char* vvTFBell::toString()
+std::string vvTFBell::toString() const
 {
-  char* result = new char[MAX_STR_LEN];
-
-  sprintf(result, "TF_BELL %s %g %g %g %g %g %g %g %g %g %d %g\n", getName(),
-    _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2],
-    _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
-
-  return result;
+  std::stringstream str;
+  str << "TF_BELL " << getName() << " " << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
+      << _size[0] << " " << _size[1] << " " << _size[2] << " " << _col[0] << " " << _col[1] << " " << _col[2] << " "
+      << (_ownColor ? 1 : 0) << " " << _opacity << "\n";
+  return str.str();
 }
 
 void vvTFBell::fromString(const std::string& str)
@@ -545,15 +545,13 @@ vvVector3 vvTFPyramid::bottom() const
   return _bottom;
 }
 
-const char* vvTFPyramid::toString()
+std::string vvTFPyramid::toString() const
 {
-  char* result = new char[MAX_STR_LEN];
-
-  sprintf(result, "TF_PYRAMID %s %g %g %g %g %g %g %g %g %g %g %g %g %d %g\n", getName(),
-      _pos[0], _pos[1], _pos[2], _bottom[0], _bottom[1], _bottom[2],
-      _top[0], _top[1], _top[2], _col[0], _col[1], _col[2], (_ownColor) ? 1 : 0, _opacity);
-
-  return result;
+  std::stringstream str;
+  str << "TF_PYRAMID " << getName() << " " << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
+      << _bottom[0] << " " << _bottom[1] << " " << _bottom[2] << " " << _top[0] << " " << _top[1] << " " << _top[2] << " "
+      << _col[0] << " " << _col[1] << " " << _col[2] << " " << (_ownColor ? 1 : 0) << " " << _opacity << "\n";
+  return str.str();
 }
 
 void vvTFPyramid::fromString(const std::string& str)
@@ -806,14 +804,12 @@ vvTFColor::vvTFColor(std::ifstream& file) : vvTFWidget()
   }
 }
 
-const char* vvTFColor::toString()
+std::string vvTFColor::toString() const
 {
-  char* result = new char[MAX_STR_LEN];
-
-  sprintf(result, "TF_COLOR %s %g %g %g %g %g %g\n", getName(),
-    _pos[0], _pos[1], _pos[2], _col[0], _col[1], _col[2]);
-
-  return result;
+  std::stringstream str;
+  str << "TF_COLOR " << getName() << " " << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
+      << _col[0] << " " << _col[1] << " " << _col[2] << "\n";
+  return str.str();
 }
 
 void vvTFColor::fromString(const std::string& str)
@@ -893,14 +889,12 @@ vvVector3 vvTFSkip::size() const
   return _size;
 }
 
-const char* vvTFSkip::toString()
+std::string vvTFSkip::toString() const
 {
-  char* result = new char[MAX_STR_LEN];
-
-  sprintf(result, "TF_SKIP %s %g %g %g %g %g %g\n", getName(),
-    _pos[0], _pos[1], _pos[2], _size[0], _size[1], _size[2]);
-
-  return result;
+  std::stringstream str;
+  str << "TF_SKIP " << getName() << " " << _pos[0] << " " << _pos[1] << " " << _pos[2] << " "
+      << _size[0] << " " << _size[1] << " " << _size[2] << "\n";
+  return str.str();
 }
 
 void vvTFSkip::fromString(const std::string& str)
@@ -1046,21 +1040,21 @@ vvTFCustom::~vvTFCustom()
   _points.clear();
 }
 
-const char* vvTFCustom::toString()
+std::string vvTFCustom::toString() const
 {
-  char* result = new char[MAX_STR_LEN];
+  std::stringstream str;
 
-  list<vvTFPoint*>::iterator iter;
+  list<vvTFPoint*>::const_iterator iter;
 
-  sprintf(result, "TF_CUSTOM %s %g %g %g %d\n", getName(),
-    _size[0], _size[1], _size[2], (int)_points.size());
+  str << "TF_CUSTOM " << getName() << " " << _size[0] << " " << _size[1] << " " << _size[2] << " "
+      << static_cast< int >(_points.size()) << "\n";
 
   for(iter=_points.begin(); iter!=_points.end(); iter++)
   {
-    sprintf(result, "%g %g %g %g\n", (*iter)->_opacity, (*iter)->_pos[0], (*iter)->_pos[1], (*iter)->_pos[2]);
+    str << (*iter)->_opacity << " " << (*iter)->_pos[0] << " " << (*iter)->_pos[1] << " " << (*iter)->_pos[2] << "\n";
   }
 
-  return result;
+  return str.str();
 }
 
 void vvTFCustom::fromString(const std::string& str)
@@ -1363,10 +1357,10 @@ vvTFCustom2D::~vvTFCustom2D()
       delete[] _map;
 }
 
-const char* vvTFCustom2D::toString()
+std::string vvTFCustom2D::toString() const
 {
    //TODO!!
-   return NULL;
+   return "";
 }
 
 void vvTFCustom2D::fromString(const std::string&)
@@ -1791,10 +1785,10 @@ vvTFCustomMap::~vvTFCustomMap()
    delete[] _map;
 }
 
-const char* vvTFCustomMap::toString()
+std::string vvTFCustomMap::toString() const
 {
    //TODO!!
-   return NULL;
+   return "";
 }
 
 void vvTFCustomMap::fromString(const std::string&)

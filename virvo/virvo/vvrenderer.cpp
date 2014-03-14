@@ -873,8 +873,6 @@ void vvRenderer::renderPalette() const
   const int WIDTH = 10;                           // palette width [pixels]
   GLfloat viewport[4];                            // OpenGL viewport information (position and size)
   GLfloat glsRasterPos[4];                        // current raster position (glRasterPos)
-  float* colors;                                  // palette colors
-  uchar* image;                                   // palette image
   int w, h;                                       // width and height of palette
   int x, y, c;
 
@@ -904,26 +902,22 @@ void vvRenderer::renderPalette() const
   // Compute palette image:
   w = WIDTH;
   h = (int)viewport[3];
-  colors = new float[h * 4];
-  vd->tf.computeTFTexture(h, 1, 1, colors, vd->real[0], vd->real[1]);
-  image = new uchar[w * h * 3];
+  std::vector< float > colors(h * 4);
+  vd->tf.computeTFTexture(h, 1, 1, &colors[0], vd->real[0], vd->real[1]);
+  std::vector< uint8_t > image(w * h * 3);
   for (x=0; x<w; ++x)
     for (y=0; y<h; ++y)
       for (c=0; c<3; ++c)
-        image[c + 3 * (x + w * y)] = (uchar)(colors[4 * y + c] * 255.99f);
+        image[c + 3 * (x + w * y)] = (uint8_t)(colors[4 * y + c] * 255.99f);
 
   // Draw palette:
   glRasterPos2f(-1.0f,-1.0f);                     // pixmap origin is bottom left corner of output window
-  glDrawPixels(w, h, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid*)image);
-  delete[] image;
-  delete[] colors;
+  glDrawPixels(w, h, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid*)&image[0]);
 
   // Display min and max values:
-  vvPrintGL* printGL;
-  printGL = new vvPrintGL();
-  printGL->print(-0.90f,  0.9f,  "%-9.2f", vd->real[1]);
-  printGL->print(-0.90f, -0.95f, "%-9.2f", vd->real[0]);
-  delete printGL;
+  vvPrintGL printGL;
+  printGL.print(-0.90f,  0.9f,  "%-9.2f", vd->real[1]);
+  printGL.print(-0.90f, -0.95f, "%-9.2f", vd->real[0]);
 
   // Restore state:
   glPopAttrib();
@@ -933,12 +927,11 @@ void vvRenderer::renderPalette() const
 /// Display rendering quality.
 void vvRenderer::renderQualityDisplay() const
 {
-  vvPrintGL* printGL = new vvPrintGL();
+  vvPrintGL printGL;
   vvVector4 clearColor = vvGLTools::queryClearColor();
   vvVector4 fontColor = vvVector4(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f);
-  printGL->setFontColor(fontColor);
-  printGL->print(-0.9f, 0.9f, "Quality: %-9.2f", _quality);
-  delete printGL;
+  printGL.setFontColor(fontColor);
+  printGL.print(-0.9f, 0.9f, "Quality: %-9.2f", _quality);
 }
 
 //----------------------------------------------------------------------------
@@ -948,12 +941,11 @@ void vvRenderer::renderFPSDisplay() const
   float fps = getLastRenderTime();
   if (fps > 0.0f) fps = 1.0f / fps;
   else fps = -1.0f;
-  vvPrintGL* printGL = new vvPrintGL();
+  vvPrintGL printGL;
   vvVector4 clearColor = vvGLTools::queryClearColor();
   vvVector4 fontColor = vvVector4(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f);
-  printGL->setFontColor(fontColor);
-  printGL->print(0.3f, 0.9f, "fps: %-9.1f", fps);
-  delete printGL;
+  printGL.setFontColor(fontColor);
+  printGL.print(0.3f, 0.9f, "fps: %-9.1f", fps);
 }
 
 //----------------------------------------------------------------------------
