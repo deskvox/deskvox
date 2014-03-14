@@ -529,7 +529,7 @@ void vvPrefDialog::updateUi()
 
   std::string voxeltype = "";
 
-  vvRenderer::RendererType rt = vvRendererFactory::guess_type( renderer );
+  vvRenderer::RendererType rt = renderer->getRendererType();
 
 
   switch (rt)
