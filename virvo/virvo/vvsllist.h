@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VVSLLIST_H_
-#define _VVSLLIST_H_
+#ifndef VV_SLLIST_H
+#define VV_SLLIST_H
 
 #include <iostream>
 #include <assert.h>

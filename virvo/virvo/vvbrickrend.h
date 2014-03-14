@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VVBRICKREND_H_
-#define _VVBRICKREND_H_
+#ifndef VV_BRICKREND_H
+#define VV_BRICKREND_H
 
 #include "vvrenderer.h"
 #include "vvrendererfactory.h"
@@ -69,5 +69,5 @@ protected:
   static void setVisibleRegion(vvRenderer* renderer, virvo::AABBss const& aabb, size_t padding = 1);
 };
 
-#endif // _VVBRICKREND_H_
+#endif // VV_BRICKREND_H
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -13,8 +13,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#ifndef _VV_PTHREAD_H_
-#define _VV_PTHREAD_H_
+#ifndef VV_PTHREAD_H
+#define VV_PTHREAD_H
 
 #include <pthread.h>
 

@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VVVISITOR_H
-#define VVVISITOR_H
+#ifndef VV_VISITOR_H
+#define VV_VISITOR_H
 
 class vvVisitor;
 
@@ -68,5 +68,5 @@ public:
 private:
 };
 
-#endif // VVVISITOR_H
+#endif // VV_VISITOR_H
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_SERVER_H_
-#define _VV_SERVER_H_
+#ifndef VV_SERVER_H
+#define VV_SERVER_H
 
 #include <virvo/vvremoteevents.h>
 #include <virvo/vvrendererfactory.h>
@@ -111,7 +111,7 @@ protected:
   static void handleSignal(int sig);               ///< Handle signals sent to a daemon
 };
 
-#endif // _VV_SERVER_H_
+#endif // VV_SERVER_H
 
 //===================================================================
 // End of File

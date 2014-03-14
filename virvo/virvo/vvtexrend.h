@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VVTEXREND_H_
-#define _VVTEXREND_H_
+#ifndef VV_TEXREND_H
+#define VV_TEXREND_H
 
 #include <vector>
 

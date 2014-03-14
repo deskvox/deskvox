@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VVPARAM_H_INCLUDED
-#define VVPARAM_H_INCLUDED
+#ifndef VV_PARAM_H
+#define VV_PARAM_H
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"

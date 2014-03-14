@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VVDICOM_H_
-#define _VVDICOM_H_
+#ifndef VV_DICOM_H
+#define VV_DICOM_H
 
 #include "vvexport.h"
 #include "vvinttypes.h"

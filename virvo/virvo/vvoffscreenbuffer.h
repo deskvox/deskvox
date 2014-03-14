@@ -13,8 +13,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#ifndef _VV_OFFSCREENBUFFER_H_
-#define _VV_OFFSCREENBUFFER_H_
+#ifndef VV_OFFSCREENBUFFER_H
+#define VV_OFFSCREENBUFFER_H
 
 #include "vvexport.h"
 

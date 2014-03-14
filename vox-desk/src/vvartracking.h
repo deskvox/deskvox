@@ -20,8 +20,8 @@
 
 #ifdef VV_USE_ARTOOLKIT
 
-#ifndef _VV_ARTRACKING_H_
-#define _VV_ARTRACKING_H_
+#ifndef VV_ARTRACKING_H
+#define VV_ARTRACKING_H
 
 // ARToolkit:
 #include <AR/gsub.h>

@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_CGPROGRAM_H_
-#define _VV_CGPROGRAM_H_
+#ifndef VV_CGPROGRAM_H
+#define VV_CGPROGRAM_H
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"
@@ -103,7 +103,7 @@ private:
 
 #endif // HAVE_CG
 
-#endif // _VV_CGPGROGRAM_H_
+#endif // VV_CGPGROGRAM_H
 
 //============================================================================
 // End of File

@@ -5,8 +5,8 @@
 // Institution:         University of Stuttgart, Supercomputing Center (HLRS)
 //****************************************************************************
 
-#ifndef _VVRENDERVP_H_
-#define _VVRENDERVP_H_
+#ifndef VV_RENDERVP_H
+#define VV_RENDERVP_H
 
 #ifdef HAVE_CONFIG_H
 #include <vvconfig.h>

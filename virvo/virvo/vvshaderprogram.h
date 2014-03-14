@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_SHADERPROGRAM_H_
-#define _VV_SHADERPROGRAM_H_
+#ifndef VV_SHADERPROGRAM_H
+#define VV_SHADERPROGRAM_H
 
 #include "vvexport.h"
 
@@ -119,7 +119,7 @@ protected:
   GeoShaderArgs _geoShaderArgs;
 };
 
-#endif // _VV_SHADERPROGRAM_H_
+#endif // VV_SHADERPROGRAM_H
 
 //============================================================================
 // End of File

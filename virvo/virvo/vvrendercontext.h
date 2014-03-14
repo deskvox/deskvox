@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_RENDERCONTEXT_H_
-#define _VV_RENDERCONTEXT_H_
+#ifndef VV_RENDERCONTEXT_H
+#define VV_RENDERCONTEXT_H
 
 #include "vvexport.h"
 #include "vvinttypes.h"
@@ -106,5 +106,5 @@ private:
   bool initPbuffer();
 };
 
-#endif // _VV_RENDERCONTEXT_H_
+#endif // VV_RENDERCONTEXT_H
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

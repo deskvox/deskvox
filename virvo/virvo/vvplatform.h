@@ -13,8 +13,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#ifndef VVPLATFORM_H
-#define VVPLATFORM_H
+#ifndef VV_PLATFORM_H
+#define VV_PLATFORM_H
 
 #ifdef _WIN32
 

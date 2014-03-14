@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VVBRICK_H_
-#define _VVBRICK_H_
+#ifndef VV_BRICK_H
+#define VV_BRICK_H
 
 #include "vvaabb.h"
 #include "vvexport.h"
@@ -110,5 +110,5 @@ public:
 
 typedef std::vector<vvBrick*> BrickList;
 
-#endif // _VVBRICK_H_
+#endif // VV_BRICK_H
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

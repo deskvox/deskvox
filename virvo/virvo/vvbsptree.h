@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef VVBSPTREE_H
-#define VVBSPTREE_H
+#ifndef VV_BSPTREE_H
+#define VV_BSPTREE_H
 
 #include "vvaabb.h"
 #include "vvvecmath.h"
@@ -102,5 +102,5 @@ private:
   void traverse(const vvssize3& pos, vvBspNode* node) const;
 };
 
-#endif // VVBSPTREE_H
+#endif // VV_BSPTREE_H
 // vim: sw=2:expandtab:softtabstop=2:ts=2:cino=\:0g0t0

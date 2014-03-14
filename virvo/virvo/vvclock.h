@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_CLOCK_H_
-#define _VV_CLOCK_H_
+#ifndef VV_CLOCK_H
+#define VV_CLOCK_H
 
 #include "vvplatform.h"
 

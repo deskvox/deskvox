@@ -5,8 +5,8 @@
 // Affiliation:     Brown University, Department of Computer Science
 //****************************************************************************
 
-#ifndef _VVOBJVIEW_H_
-#define _VVOBJVIEW_H_
+#ifndef VV_OBJVIEW_H
+#define VV_OBJVIEW_H
 
 #include <virvo/vvvecmath.h>
 

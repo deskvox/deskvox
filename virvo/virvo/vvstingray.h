@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VVSTINGRAY_H_
-#define _VVSTINGRAY_H_
+#ifndef VV_STINGRAY_H
+#define VV_STINGRAY_H
 
 #ifdef HAVE_CONFIG_H
 #include "vvconfig.h"

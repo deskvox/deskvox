@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VV_GLSLPROGRAM_H_
-#define _VV_GLSLPROGRAM_H_
+#ifndef VV_GLSLPROGRAM_H
+#define VV_GLSLPROGRAM_H
 
 #include "vvshaderprogram.h"
 #include "vvvecmath.h"
@@ -98,7 +98,7 @@ private:
   bool loadShaders();     ///< Initializes, compiles, and links a shader program
   void deleteProgram();   ///< deletes program with all shaders and frees memory
 };
-#endif // _VV_GLSLPROGRAM_H_
+#endif // VV_GLSLPROGRAM_H
 
 //============================================================================
 // End of File

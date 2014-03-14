@@ -5,8 +5,8 @@
 // Affiliation:     Brown University, Department of Computer Science
 //****************************************************************************
 
-#ifndef _VVVIEW_
-#define _VVVIEW_
+#ifndef VVVIEW_H
+#define VVVIEW_H
 
 /**
  * Virvo File Viewer main class.

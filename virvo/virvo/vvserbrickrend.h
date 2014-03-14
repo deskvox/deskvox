@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#ifndef _VVSERBRICKREND_H_
-#define _VVSERBRICKREND_H_
+#ifndef VV_SERBRICKREND_H
+#define VV_SERBRICKREND_H
 
 #include "vvbrickrend.h"
 
