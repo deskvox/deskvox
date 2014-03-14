@@ -426,10 +426,6 @@ void vvPrefDialog::emitRenderer()
   ui->texInfoLabel->setText("");
   std::string name = "";
 
-  // indices to activate appropriate options tool box pages
-  const int texidx = 0;
-  const int rayidx = 1;
-
   vvRendererFactory::Options options;
 
   if (impl->remoterend == "ibr" || impl->remoterend == "image")
