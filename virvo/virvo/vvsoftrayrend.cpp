@@ -776,7 +776,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
           store(dst.w, &(*thread->colors)[(y + 1) * w * 4 + (x + 1) * 4]);
         }
 #else
-        memcpy(&(thread->colors)[y * w * 4 + x * 4], &dst[0], 4 * sizeof(float));
+        memcpy(&(*thread->colors)[y * w * 4 + x * 4], &dst[0], 4 * sizeof(float));
 #endif
       }
     }
