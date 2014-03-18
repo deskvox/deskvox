@@ -40,6 +40,14 @@ extern "C" {
 }
 #endif
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 39, 101)
+typedef CodecID AVCodecID;
+static int avcodec_open2(AVCodecContext *avctx, AVCodec *codec, void * /*AVDictionary **options*/)
+{
+  return avcodec_open(avctx, codec);
+}
+#endif
+
 bool vvVideo::global_init_done = false;
 
 //----------------------------------------------------------------------------
@@ -219,7 +227,7 @@ int vvVideo::createEncoder(int w, int h)
   destroyEncoder();
 
 #if defined(VV_FFMPEG)
-  AVCodec *encoder = avcodec_find_encoder((enum CodecID)codec_id);
+  AVCodec *encoder = avcodec_find_encoder((AVCodecID)codec_id);
   if(!encoder)
   {
     vvDebugMsg::msg(1, "Error: failed to find encoder for codec id ", codec_id);
@@ -240,7 +248,7 @@ int vvVideo::createEncoder(int w, int h)
     ++pix;
   }
 
-  enc_ctx = avcodec_alloc_context();
+  enc_ctx = avcodec_alloc_context3(NULL);
   if(!enc_ctx)
   {
     vvDebugMsg::msg(1, "Error: failed to allocate encoding context");
@@ -276,7 +284,7 @@ int vvVideo::createEncoder(int w, int h)
     break;
   }
 
-  if(avcodec_open(enc_ctx, encoder) < 0)
+  if(avcodec_open2(enc_ctx, encoder, NULL) < 0)
   {
     vvDebugMsg::msg(0, "Error: failed to open encoder");
     return -1;
@@ -354,14 +362,14 @@ int vvVideo::createDecoder(int w, int h)
   destroyDecoder();
 
 #if defined(VV_FFMPEG)
-  AVCodec *decoder = avcodec_find_decoder((enum CodecID)codec_id);
+  AVCodec *decoder = avcodec_find_decoder((AVCodecID)codec_id);
   if(!decoder)
   {
     vvDebugMsg::msg(1, "error: failed to find decoder");
     return -1;
   }
 
-  dec_ctx = avcodec_alloc_context();
+  dec_ctx = avcodec_alloc_context3(NULL);
   if(!dec_ctx)
   {
     vvDebugMsg::msg(1, "error: failed to allocate decoding context");
@@ -371,7 +379,7 @@ int vvVideo::createDecoder(int w, int h)
   dec_ctx->height = h;
   dec_ctx->pix_fmt = (PixelFormat)pixel_fmt;
 
-  if(avcodec_open(dec_ctx, decoder) < 0)
+  if(avcodec_open2(dec_ctx, decoder, NULL) < 0)
   {
     vvDebugMsg::msg(0, "error: failed to open decoder");
     return -1;
