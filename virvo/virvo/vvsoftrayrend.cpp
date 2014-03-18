@@ -424,10 +424,14 @@ void vvSoftRayRend::renderVolumeGL()
 #ifdef HAVE_OPENGL
   mv = virvo::gltools::getModelViewMatrix();
   pr = virvo::gltools::getProjectionMatrix();
-  vp = vvGLTools::getViewport();
 #endif
 
   virvo::RenderTarget* rt = getRenderTarget();
+
+  vp[0] = 0;
+  vp[1] = 0;
+  vp[2] = rt->width();
+  vp[3] = rt->height();
 
   virvo::Matrix inv_view_matrix = pr * mv;
   inv_view_matrix.invert();
