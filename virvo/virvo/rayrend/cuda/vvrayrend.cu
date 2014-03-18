@@ -481,8 +481,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     return;
   }
 
-  const float u = (x / static_cast<float>(width - 1)) * 2.0f - 1.0f;
-  const float v = (y / static_cast<float>(height - 1)) * 2.0f - 1.0f;
+  const float u = 2.0f * (x + 0.5f) / static_cast<float>(width) - 1.0f;
+  const float v = 2.0f * (y + 0.5f) / static_cast<float>(height) - 1.0f;
 
   /*
    * Rays like if the view were orthographic with origins over each pixel.

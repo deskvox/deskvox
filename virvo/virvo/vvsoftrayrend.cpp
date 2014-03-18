@@ -200,19 +200,19 @@ VV_FORCE_INLINE size_t getLUTSize(vvVolDesc* vd)
   return (vd->getBPV()==2) ? 4096 : 256;
 }
 
-VV_FORCE_INLINE Vec pixelx(int x)
+VV_FORCE_INLINE Vec pixelx(float x)
 {
 #if VV_USE_SSE
-  return Vec(x, x + 1, x, x + 1);
+  return Vec(x, x + 1.0f, x, x + 1.0f);
 #else
   return x;
 #endif
 }
 
-VV_FORCE_INLINE Vec pixely(int y)
+VV_FORCE_INLINE Vec pixely(float y)
 {
 #if VV_USE_SSE
-  return Vec(y, y, y + 1, y + 1);
+  return Vec(y, y, y + 1.0f, y + 1.0f);
 #else
   return y;
 #endif
@@ -581,8 +581,17 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   {
     for (int x = tile.left; x < tile.right; x += PACK_SIZE_X)
     {
-      const Vec u = (pixelx(x) / static_cast<float>(w - 1)) * 2.0f - 1.0f;
-      const Vec v = (pixely(y) / static_cast<float>(h - 1)) * 2.0f - 1.0f;
+      //
+      // 0           t           1      continuous
+      // |---+---|---+---|---+---|
+      // 0       1=x     2       3=w    discrete
+      //
+      // t = 1/w (x + 1/2)   where   0 <= t <= 1
+      // u = 2 t - 1         where  -1 <= u <= 1
+      //
+
+      const Vec u = 2.0f * (pixelx(x) + 0.5f) / static_cast<float>(w) - 1.0f;
+      const Vec v = 2.0f * (pixely(y) + 0.5f) / static_cast<float>(h) - 1.0f;
 
       Vec4 o(u, v, -1.0f, 1.0f);
       o = inv_view_matrix * o;
