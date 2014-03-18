@@ -179,6 +179,7 @@ VV_FORCE_INLINE sse_vec powf(sse_vec const& v, sse_vec const& exp)
   return _mm_pow_ps(v, exp);
 #else
   // TODO: not implemented yet
+  VV_UNUSED(exp);
   return v;
 #endif
 }

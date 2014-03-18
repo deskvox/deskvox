@@ -73,12 +73,14 @@ float normd2datad(const vvVector2f& zoomrange, float canvas)
   return canvas * (zoomrange[1] - zoomrange[0]);
 }
 
+#if 0 // not used
 /** Convert differences in data to the canvas.
 */
 float datad2normd(const vvVector2f& zoomrange, float data)
 {
   return data / (zoomrange[1] - zoomrange[0]);
 }
+#endif
 }
 
 typedef QGraphicsRectItem Pin;

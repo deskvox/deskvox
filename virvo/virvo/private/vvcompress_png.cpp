@@ -40,7 +40,7 @@
 #pragma warning(disable: 4611) // interaction between '_setjmp' and C++ object destruction is non-portable
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wclobbered"
 #endif
 

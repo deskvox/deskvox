@@ -121,7 +121,6 @@ class vvConv
     bool  makeIcon;     ///< true = make icon from slices
     int   makeIconSize; ///< new icon size [pixels]
     bool  getIcon;      ///< true = extract icon to file
-    char* getIconFile;  ///< file to write icon to
     bool  swapChannels; ///< true = swap channels
     int   swapChan[2];  ///< channel IDs to swap (0=first channel)
     bool  extractChannel; ///< true = extract 4th channel from RGB

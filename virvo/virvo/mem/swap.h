@@ -10,6 +10,8 @@
 #include <boost/detail/endian.hpp>
 #include <stdexcept>
 
+#include "../vvmacros.h"
+
 // Little-endian operating systems:
 //---------------------------------
 // Linux on x86, x64, Alpha and Itanium
@@ -49,6 +51,7 @@ struct swap_bytes
 {
     inline T operator()(T val)
     {
+        VV_UNUSED(val);
         throw std::out_of_range("data size");
     }
 };

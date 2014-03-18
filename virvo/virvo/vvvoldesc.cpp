@@ -1890,13 +1890,10 @@ void vvVolDesc::convertRGBPlanarToRGBInterleaved(int frame)
 void vvVolDesc::toggleEndianness(int frame)
 {
   uint8_t* rd;
-  size_t    rowOffset, sliceOffset, voxelOffset, channelOffset;
-  uint8_t  buffer;
 
   vvDebugMsg::msg(2, "vvVolDesc::toggleEndianness()");
   if (bpc==1) return;                             // done
 
-  size_t sliceSize = getSliceBytes();
   raw.first();
   size_t startFrame=0;
   size_t endFrame=frames;
@@ -1925,6 +1922,9 @@ void vvVolDesc::toggleEndianness(int frame)
     }
 
 #if 0
+    uint8_t  buffer;
+    size_t sliceSize = getSliceBytes();
+    size_t    rowOffset, sliceOffset, voxelOffset, channelOffset;
     for (ssize_t z=0; z<vox[2]; ++z)
     {
       sliceOffset = z * sliceSize;
