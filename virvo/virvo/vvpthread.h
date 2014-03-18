@@ -17,6 +17,7 @@
 #define VV_PTHREAD_H
 
 #include <pthread.h>
+#include <semaphore.h>
 
 /* Pthread barriers aren't available on Mac OS X 10.3.
  * Albeit we know that there are other Unixes that don't implement
@@ -147,6 +148,13 @@ public:
     cond.wait(&mutex);
   }
 
+  //
+  // NOTE:
+  //
+  // The pthread_cond_broadcast() and pthread_cond_signal() functions shall
+  // have no effect if there are no threads currently blocked on cond.
+  //
+
   // Wake up any thread waiting on the condition
   void signal()
   {
@@ -159,6 +167,45 @@ public:
   {
     ScopedLock lock(&mutex);
     cond.broadcast();
+  }
+};
+
+//------------------------------------------------------------------------------
+// Semaphore
+//
+class Semaphore
+{
+  // The actual semaphore
+  sem_t sem;
+
+public:
+  Semaphore(int value = 0)
+  {
+    sem_init(&sem, 0, value);
+  }
+
+  ~Semaphore()
+  {
+    // sem_close() closes the named semaphore referred to by sem, allowing any
+    // resources that the system has allocated to the calling process for this
+    // semaphore to be freed.
+    sem_close(&sem);
+
+    // sem_destroy() destroys the unnamed semaphore at the address pointed to
+    // by sem.
+    // Destroying a semaphore that other processes or threads are currently
+    // blocked on (in sem_wait(3)) produces undefined behavior.
+    sem_destroy(&sem);
+  }
+
+  void wait()
+  {
+    sem_wait(&sem);
+  }
+
+  void signal()
+  {
+    sem_post(&sem);
   }
 };
 

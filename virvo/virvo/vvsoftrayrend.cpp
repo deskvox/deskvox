@@ -314,13 +314,17 @@ struct Thread
 
   struct SyncParams
   {
-    SyncParams() : exit_render_loop(false) {}
+    SyncParams()
+      : image_ready(0)
+      , exit_render_loop(false)
+    {
+    }
 
     long tile_idx_counter;
     long tile_fin_counter;
     long tile_idx_max;
     virvo::SyncedCondition start_render;
-    virvo::SyncedCondition image_ready;
+    virvo::Semaphore image_ready;
     bool exit_render_loop;
   };
 
@@ -538,7 +542,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   Matrix inv_view_matrix(*thread->invViewMatrix);
   int w                         = thread->render_params->width;
   int h                         = thread->render_params->height;
-  
+
   Vec3s vox(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
   Vec3 fvox(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
 
@@ -572,7 +576,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   float const* rgbaTF = &(*thread->rgbaTF)[0];
 
   size_t numSlices = std::max(size_t(1), static_cast<size_t>(quality * diagonalVoxels));
- 
+
   for (int y = tile.bottom; y < tile.top; y += PACK_SIZE_Y)
   {
     for (int x = tile.left; x < tile.right; x += PACK_SIZE_X)
@@ -704,7 +708,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
             Vec3s texcoordi(vec_cast<Vecs>(texcoord[0] * fvox[0]),
                             vec_cast<Vecs>(texcoord[1] * fvox[1]),
                             vec_cast<Vecs>(texcoord[2] * fvox[2]));
-  
+
             texcoordi[0] = clamp<dim_t>(texcoordi[0], 0, vox[0] - 1);
             texcoordi[1] = clamp<dim_t>(texcoordi[1], 0, vox[1] - 1);
             texcoordi[2] = clamp<dim_t>(texcoordi[2], 0, vox[2] - 1);
@@ -832,9 +836,15 @@ void render(Thread* thread)
     renderTile(t, thread);
 
     long num_tiles_fin = atom_fetch_and_add(&thread->sync_params->tile_fin_counter, 1);
-    if (num_tiles_fin == thread->sync_params->tile_idx_max - 1)
+
+    if (num_tiles_fin >= thread->sync_params->tile_idx_max - 1)
     {
+      assert(num_tiles_fin == thread->sync_params->tile_idx_max - 1);
+
+      // the last tile has just been rendered.
+      // wake up the main thread waiting for the image.
       thread->sync_params->image_ready.signal();
+      break;
     }
   }
 }
