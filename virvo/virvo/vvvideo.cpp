@@ -38,7 +38,6 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 }
-#endif
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 39, 101)
 typedef CodecID AVCodecID;
@@ -46,6 +45,7 @@ static int avcodec_open2(AVCodecContext *avctx, AVCodec *codec, void * /*AVDicti
 {
   return avcodec_open(avctx, codec);
 }
+#endif
 #endif
 
 bool vvVideo::global_init_done = false;
