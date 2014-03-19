@@ -50,7 +50,15 @@ Display* dsp = NULL;
 #endif
 
 #ifdef __APPLE__
+#pragma clang diagnostic push
+#pragma GCC diagnostic ignored "-Wvariadic-macros"
+#pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#pragma GCC diagnostic ignored "-Wfour-char-constants"
+#pragma GCC diagnostic ignored "-Wzero-length-array"
+#pragma GCC diagnostic ignored "-Wc++11-extensions"
+#pragma GCC diagnostic ignored "-Wc99-extensions"
 #include <CoreGraphics/CoreGraphics.h>
+#pragma clang diagnostic pop
 #endif
 
 namespace
