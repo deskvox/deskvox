@@ -65,7 +65,7 @@ static inline int divup(int x, int n)
 
 __device__ float lerp(float a, float b, float x)
 {
-    return x * a + (1.0f - x) * b;
+  return a + x * (b - a);
 }
 
 static texture<float4, 1, cudaReadModeElementType> tex_hg;
@@ -90,21 +90,21 @@ __device__ float h0(float a)
 
 __device__ float h1(float a)
 {
-  a = a - floor(a);
+  a  = a - floor(a);
   float w2 = (1.f / 6.f) * (-3.f * a * a * a + 3.f * a * a + 3.f * a + 1.f);
   float w3 = (1.f / 6.f) * (a * a * a);
   return 1.f + (w3 / (w2 + w3)) - a;
 }
 
 __device__ float tricubic(texture< uchar, 3, cudaReadModeNormalizedFloat > tex_source,
-	const float x, const float y, const float z, float3 volsize)
+  const float x, const float y, const float z, float3 volsize)
 {
   float3 coord_source = make_float3(x, y, z);
+  float3 coord_hg     = coord_source * volsize - 0.5f;
 
-  float3 hg_x = make_float3(h1(x) / volsize.x, -h0(x) / volsize.x, g0(x));
-  float3 hg_y = make_float3(h1(y) / volsize.y, -h0(y) / volsize.y, g0(y));
-  float3 hg_z = make_float3(h1(z) / volsize.z, -h0(z) / volsize.z, g0(z));
-
+  float3 hg_x = make_float3(h0( coord_hg.x ) / volsize.x, -h1( coord_hg.x ) / volsize.x, g0( coord_hg.x ));
+  float3 hg_y = make_float3(h0( coord_hg.y ) / volsize.y, -h1( coord_hg.y ) / volsize.y, g0( coord_hg.y ));
+  float3 hg_z = make_float3(h0( coord_hg.z ) / volsize.z, -h1( coord_hg.z ) / volsize.z, g0( coord_hg.z ));
 
   float3 coord_source100 = coord_source + make_float3(hg_x.x, hg_y.y, hg_z.y);
   float3 coord_source000 = coord_source + make_float3(hg_x.y, hg_y.y, hg_z.y);
@@ -131,21 +131,22 @@ __device__ float tricubic(texture< uchar, 3, cudaReadModeNormalizedFloat > tex_s
   float tex_source111 = TEX3D(tex_source, coord_source111);
 #undef TEX3D
 
-    // z direction
-    tex_source000 = lerp (tex_source000, tex_source001, hg_z.z);
-    tex_source010 = lerp (tex_source010, tex_source011, hg_z.z);
 
-    tex_source100 = lerp (tex_source100, tex_source101, hg_z.z);
-    tex_source110 = lerp (tex_source110, tex_source111, hg_z.z);
+  // z direction
+  tex_source000 = lerp(tex_source000, tex_source001, hg_z.z);
+  tex_source010 = lerp(tex_source010, tex_source011, hg_z.z);
 
-    // y direction
-    tex_source000 = lerp (tex_source000, tex_source010, hg_y.z);
-    tex_source100 = lerp (tex_source100, tex_source110, hg_y.z);
+  tex_source100 = lerp(tex_source100, tex_source101, hg_z.z);
+  tex_source110 = lerp(tex_source110, tex_source111, hg_z.z);
 
-    // x direction
-    tex_source000 = lerp (tex_source000, tex_source100, hg_x.z);
+  // y direction
+  tex_source000 = lerp(tex_source000, tex_source010, hg_y.z);
+  tex_source100 = lerp(tex_source100, tex_source110, hg_y.z);
 
-    return tex_source000;
+  // x direction
+  tex_source000 = lerp(tex_source000, tex_source100, hg_x.z);
+
+  return tex_source000;
 }
 
 
