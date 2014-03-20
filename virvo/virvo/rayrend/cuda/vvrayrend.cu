@@ -62,9 +62,10 @@ static inline int divup(int x, int n)
 {
   return (x + (n - 1)) / n;
 }
+
 __device__ float lerp(float a, float b, float x)
 {
-    return (1.f - x) * a + x * b;
+    return x * a + (1.0f - x) * b;
 }
 
 static texture<float4, 1, cudaReadModeElementType> tex_hg;
