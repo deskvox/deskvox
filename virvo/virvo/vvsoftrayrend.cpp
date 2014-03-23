@@ -148,7 +148,7 @@ inline Vec4 mul(Vec4 const& v, Vec const& s, Vec const& mask)
 #endif
 
 template <class T, class U>
-VV_FORCE_INLINE T vec_cast(U u)
+VV_FORCE_INLINE T vec_cast(U const& u)
 {
 #if VV_USE_SSE
   return virvo::simd::simd_cast<T>(u);
@@ -157,7 +157,7 @@ VV_FORCE_INLINE T vec_cast(U u)
 #endif
 }
 
-VV_FORCE_INLINE Vec volume(const uint8_t* raw, index_t idx, int bpc)
+VV_FORCE_INLINE Vec volume(const uint8_t* raw, index_t const& idx, int bpc)
 {
 #if VV_USE_SSE
 #if 0//__LP64__
@@ -178,7 +178,7 @@ VV_FORCE_INLINE Vec volume(const uint8_t* raw, index_t idx, int bpc)
 #endif
 }
 
-VV_FORCE_INLINE Vec4 rgba(float const* tf, Vecs idx)
+VV_FORCE_INLINE Vec4 rgba(float const* tf, Vecs const& idx)
 {
 #if VV_USE_SSE
   CACHE_ALIGN int indices[4];
