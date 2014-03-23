@@ -41,6 +41,9 @@ extern "C" {
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 39, 101)
 typedef CodecID AVCodecID;
+#endif
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 35, 0)
 static int avcodec_open2(AVCodecContext *avctx, AVCodec *codec, void * /*AVDictionary **options*/)
 {
   return avcodec_open(avctx, codec);
