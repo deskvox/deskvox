@@ -11,7 +11,7 @@ namespace virvo
 namespace simd
 {
 template <class T, class U>
-VV_FORCE_INLINE T simd_cast(U u);
+VV_FORCE_INLINE T simd_cast(U const& u);
 
 template <>
 VV_FORCE_INLINE sse_veci simd_cast(sse_vec const& v)
