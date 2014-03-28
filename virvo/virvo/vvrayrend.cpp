@@ -204,6 +204,14 @@ bool vvRayRend::instantClassification() const
   return true;
 }
 
+
+void vvRayRend::setVolDesc(vvVolDesc* vd)
+{
+  vvRenderer::setVolDesc(vd);
+  initVolumeTexture();
+}
+
+
 void vvRayRend::updateTransferFunction()
 {
   vvDebugMsg::msg(3, "vvRayRend::updateTransferFunction()");

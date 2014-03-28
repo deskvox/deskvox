@@ -332,6 +332,14 @@ vvTexRend::~vvTexRend()
   }
 }
 
+
+void vvTexRend::setVolDesc(vvVolDesc* vd)
+{
+  vvRenderer::setVolDesc(vd);
+  makeTextures();
+}
+
+
 //------------------------------------------------
 /** Initialize texture parameters for a voxel type
   @param vt voxeltype

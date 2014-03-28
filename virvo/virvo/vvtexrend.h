@@ -233,6 +233,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
   public:
     vvTexRend(vvVolDesc*, vvRenderState, GeometryType=VV_AUTO, VoxelType=VV_BEST);
     virtual ~vvTexRend();
+    void  setVolDesc(vvVolDesc* vd);
     void  renderVolumeGL();
     void  updateTransferFunction();
     void  updateVolumeData();

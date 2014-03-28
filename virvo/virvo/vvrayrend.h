@@ -51,6 +51,7 @@ public:
 
   VVAPI size_t getLUTSize() const;
   VVAPI bool instantClassification() const;
+  VVAPI void setVolDesc(vvVolDesc* vd) VV_OVERRIDE;
   VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
   VVAPI virtual void renderVolumeGL() VV_OVERRIDE;
   VVAPI bool checkParameter(ParameterType param, vvParam const& value) const VV_OVERRIDE;

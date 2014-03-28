@@ -132,7 +132,16 @@ void vvCanvas::setVolDesc(vvVolDesc* vd)
   delete _vd;
   _vd = vd;
 
-  createRenderer();
+  if (_renderer == 0)
+  {
+    createRenderer();
+  }
+  else
+  {
+    const float DEFAULT_OBJ_SIZE = 0.6f;
+    _vd->resizeEdgeMax(_ov.getViewportWidth() * DEFAULT_OBJ_SIZE);
+    _renderer->setVolDesc(vd);
+  }
 
   foreach (vvPlugin* plugin, _plugins)
   {
