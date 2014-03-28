@@ -132,10 +132,7 @@ void vvCanvas::setVolDesc(vvVolDesc* vd)
   delete _vd;
   _vd = vd;
 
-  if (_vd != NULL)
-  {
-    createRenderer();
-  }
+  createRenderer();
 
   foreach (vvPlugin* plugin, _plugins)
   {

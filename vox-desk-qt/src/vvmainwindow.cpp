@@ -378,7 +378,6 @@ void vvMainWindow::lateInitialization()
 
 void vvMainWindow::loadVolumeFile(const QString& filename)
 {
-  impl_->canvas->setVolDesc(NULL);
   QByteArray ba = filename.toLatin1();
   vvVolDesc* vd = new vvVolDesc(ba.data());
   vvFileIO fio;
