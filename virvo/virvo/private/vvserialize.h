@@ -89,6 +89,9 @@ namespace virvo
         typedef boost::iostreams::basic_array_source<char> source_type;
         typedef boost::iostreams::stream<source_type> stream_type;
 
+        if (buffer.empty())
+            return false;
+
         try
         {
             source_type source(&buffer[0], buffer.size());
