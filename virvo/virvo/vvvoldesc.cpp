@@ -2656,8 +2656,13 @@ void vvVolDesc::printInfoLine(const char* desc)
  */
 void vvVolDesc::makeInfoString(std::string* infoString)
 {
-  char* basename = new char[strlen(getFilename()) + 1];
-  vvToolshed::extractFilename(basename, getFilename());
+  char const* fname = getFilename();
+  if (fname == 0)
+      fname = "{unknown file}";
+
+  char* basename = new char[strlen(fname) + 1];
+
+  vvToolshed::extractFilename(basename, fname);
 
   std::stringstream buf;
   buf << basename << ": " << frames << " ";
