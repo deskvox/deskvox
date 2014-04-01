@@ -65,7 +65,6 @@ using std::ios;
 #include <virvo/vvvirvo.h>
 #include <virvo/vvrequestmanagement.h>
 #include <virvo/vvtoolshed.h>
-#include <virvo/vvoffscreenbuffer.h>
 #include <virvo/vvclock.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvsocketmap.h>

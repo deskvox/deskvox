@@ -25,7 +25,6 @@
 
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvfileio.h>
-#include <virvo/vvoffscreenbuffer.h>
 
 #include <virvo/private/vvgltools.h>
 

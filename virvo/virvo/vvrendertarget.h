@@ -41,6 +41,14 @@ namespace virvo
 {
 
 
+    enum BufferPrecision
+    {
+        Byte = 0,
+        Short,
+        Float
+    };
+
+
     enum ClearMask
     {
         CLEAR_NONE      = 0,

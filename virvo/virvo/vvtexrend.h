@@ -59,7 +59,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     std::vector<GLsizei> _elemCounts;
     std::vector<GLuint> _vertIndicesAll;
     std::vector<GLuint *> _vertIndices;
-    vvOffscreenBuffer** _offscreenBuffers;
 
     vvsize3 _numBricks;                           ///< number of bricks for each dimension
     enum ErrorType                                /// Error Codes
@@ -143,7 +142,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     bool extBlendEquation;                        ///< true = support for blend equation extension
     bool arbFrgPrg;                               ///< true = ARB fragment program support
     bool arbMltTex;                               ///< true = ARB multitexture support
-    bool preIntegration;                          ///< true = try to use pre-integrated rendering (planar 3d textures)
     bool usePreIntegration;                       ///< true = pre-integrated rendering is actually used
     ptrdiff_t minSlice, maxSlice;                 ///< min/maximum slice to render [0..numSlices-1], -1 for no slice constraints
     bool _areEmptyBricksCreated;                  ///< true when brick outlines are created or assigned through constructor

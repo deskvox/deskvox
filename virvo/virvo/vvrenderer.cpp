@@ -83,7 +83,6 @@ vvRenderState::vvRenderState()
   , _imagePrecision(virvo::Byte)
   , _lighting(false)
   , _showTexture(true)
-  , _opaqueGeometryPresent(false)
   , _useIbr(false)
   , _ibrMode(VV_REL_THRESHOLD)
   , _visibleRegion(vvAABBss(vvssize3(0), vvssize3(std::numeric_limits<ssize_t>::max())))
@@ -190,9 +189,6 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     break;
   case VV_SHOW_TEXTURE:
     _showTexture = value;
-    break;
-  case VV_OPAQUE_GEOMETRY_PRESENT:
-    _opaqueGeometryPresent = value;
     break;
   case VV_USE_IBR:
     _useIbr = value;
@@ -322,8 +318,6 @@ vvParam vvRenderState::getParameter(ParameterType param) const
     return (int)_imagePrecision;
   case VV_SHOW_TEXTURE:
     return _showTexture;
-  case VV_OPAQUE_GEOMETRY_PRESENT:
-    return _opaqueGeometryPresent;
   case VV_USE_IBR:
     return _useIbr;
   case VV_IBR_MODE:

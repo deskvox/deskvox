@@ -22,7 +22,6 @@
 #define VV_RENDERER_H
 
 #include "vvmacros.h"
-#include "vvoffscreenbuffer.h"
 #include "vvparam.h"
 #include "vvinttypes.h"
 #include "vvrendertarget.h"
@@ -106,7 +105,6 @@ public:
     VV_IMAGE_SCALE,
     VV_IMAGE_PRECISION,
     VV_SHOW_TEXTURE,
-    VV_OPAQUE_GEOMETRY_PRESENT,
     VV_USE_IBR,
     VV_IBR_DEPTH_RANGE,
     VV_IBR_MODE,
@@ -179,7 +177,6 @@ protected:
                                                      caused by adding up contribution of to many slices */
   bool _lighting;                               ///< use local illumination
   bool _showTexture;                            ///< true = show texture mapping, if applicable, added by Han, Feb 2008
-  bool _opaqueGeometryPresent;                  ///< true = opaque geometry was rendered before the volume
   bool _useIbr;                                 ///< use ibr in rayrenderer
   IbrMode _ibrMode;
   virvo::AABBss _visibleRegion;                 ///< part of the vd that is visible and thus rendered

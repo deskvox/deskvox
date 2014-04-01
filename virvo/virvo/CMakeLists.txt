@@ -142,7 +142,6 @@ set(VIRVO_HEADERS
   vvimageserver.h
   vvinttypes.h
   vvmulticast.h
-  vvoffscreenbuffer.h
   vvopengl.h
   vvparam.h
   vvparbrickrend.h
@@ -248,7 +247,6 @@ set(VIRVO_SOURCES
   vvimageclient.cpp
   vvimageserver.cpp
   vvmulticast.cpp
-  vvoffscreenbuffer.cpp
   vvparbrickrend.cpp
   vvpixelformat.cpp
   vvprintgl.cpp
