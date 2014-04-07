@@ -121,7 +121,7 @@ vvView::vvView()
   fpsMode               = false;
   stereoMode            = 0;
   fullscreenMode        = false;
-  interpolMode          = true;
+  interpolMode          = vvRenderer::Linear;
   warpInterpolMode      = true;
   preintMode            = false;
   paletteMode           = false;
@@ -1246,7 +1246,8 @@ void vvView::optionsMenuCallback(int item)
   switch(item)
   {
   case 0:                                     // slice interpolation mode
-    ds->interpolMode = !ds->interpolMode;
+    ds->interpolMode = ds->interpolMode == vvRenderer::Nearest
+      ? vvRenderer::Linear : vvRenderer::Nearest;
     ds->renderer->setParameter(vvRenderer::VV_SLICEINT, ds->interpolMode);
     cerr << "Interpolation mode set to " << int(ds->interpolMode) << endl;
     break;
