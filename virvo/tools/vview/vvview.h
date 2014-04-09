@@ -109,7 +109,7 @@ class vvView
     int   stereoMode;                           ///< 0=mono, 1=active stereo, 2=passive stereo (views side by side)
     bool  activeStereoCapable;                  ///< true = hardware is active stereo capable
     bool  tryQuadBuffer;                        ///< true = try to request a quad buffered visual
-    bool  interpolMode;                         ///< true = linear interpolation in slices
+    vvRenderer::InterpolType  interpolMode;     ///< true = linear interpolation in slices
     bool  warpInterpolMode;                     ///< true = linear interpolation during warp (shear-warp)
     bool  preintMode;                           ///< true = use pre-integration
     bool  opCorrMode;                           ///< true = do opacity correction
