@@ -203,9 +203,9 @@ void vvBspTree::buildHierarchy(vvBspNode* node, size_t leafIdx)
   const float fraction = calcRelativeFraction(leafIdx);
   virvo::AABBss const aabb = node->getAabb();
   vvVecmath::AxisType axis;
-  const size_t length = aabb.getLongestSide(axis);
+  const ssize_t length = aabb.getLongestSide(axis);
   const float split = static_cast<float>(length) * fraction;
-  std::pair<virvo::AABBss, virvo::AABBss> splitted = aabb.split(axis, static_cast<size_t>(split));
+  std::pair<virvo::AABBss, virvo::AABBss> splitted = aabb.split(axis, static_cast<ssize_t>(split));
 
   if (leafIdx == _leafs.size() - 2)
   {
@@ -266,12 +266,12 @@ void vvBspTree::traverse(const vvssize3& pos, vvBspNode* node) const
     {
       if (minval[i] == node->getAabb().getMin()[i])
       {
-        minval[i] = 0;
+        minval[i] = std::numeric_limits<ssize_t>::min();
       }
 
       if (maxval[i] == node->getAabb().getMax()[i])
       {
-        maxval[i] = std::numeric_limits<size_t>::max();
+        maxval[i] = std::numeric_limits<ssize_t>::max();
       }
     }
     virvo::AABBss const aabb(minval, maxval);

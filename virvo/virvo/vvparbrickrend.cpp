@@ -485,7 +485,7 @@ void vvParBrickRend::render(Thread* thread)
   (*thread->texture.rect)[3] = bounds[3];
 
   glReadPixels((*thread->texture.rect)[0], (*thread->texture.rect)[1],
-               (*thread->texture.rect)[2], (*thread->texture.rect)[2],
+               (*thread->texture.rect)[2], (*thread->texture.rect)[3],
                GL_RGBA, GL_FLOAT, &(*thread->texture.pixels)[0]);
   pthread_barrier_wait(thread->barrier);
 }
