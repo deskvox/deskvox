@@ -40,7 +40,12 @@ typedef unsigned int        GLuint;
 typedef int                 GLsizei;
 typedef float               GLfloat;
 typedef float               GLclampf;
+#ifdef OSG_AND_QT_ARE_FIXED
+/* Qt 5's qopengl.h checks whether GLdouble is a preprocessor definition and defines it to GLfloat otherwise.
+ * This borkage triggered OpenSceneGraph to  #define GLdouble to double in * osg/GL.
+ * Don't typedef GLdouble as a work-around, as it is not needed anyway. */
 typedef double              GLdouble;
+#endif
 typedef double              GLclampd;
 
 // OpenGL 1.5
