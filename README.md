@@ -13,10 +13,10 @@ Welcome to DeskVOX Volume Explorer (DeskVOX)
 1. How to obtain DeskVOX
 ========================
 
-Download a zip archive from [Sourceforge](http://sourceforge.net/projects/deskvox)
-or check out DeskVOX via Subversion:
+Download a zip archive from [Github](https://github.com/deskvox/deskvox)
+or check out DeskVOX via Git:
 
-    $ svn co https://deskvox.svn.sourceforge.net/svnroot/deskvox/trunk deskvox
+    $ git clone git@github.com:deskvox/deskvox.git
 
 
 2. Additional dependencies
@@ -42,7 +42,6 @@ Having the following libraries installed is recommended but not necessary:
 - [CUDA Toolkit](http://developer.nvidia.com/category/zone/cuda-zone) (NVIDIA COORP)
 - [FFmpeg](http://ffmpeg.org/): video codecs
 - [snappy](http://code.google.com/p/snappy/): fast compression
-- [NORM](http://cs.itd.nrl.navy.mil/work/norm/): reliable multicast
 
 Not all features will be available without these libraries.
 
@@ -128,4 +127,3 @@ On Unix platforms, type:
     $ make
 
 The Virvo library will be located in `build/virvo`.
-
