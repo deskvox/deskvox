@@ -4753,105 +4753,97 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
 
   _sections = sec;
 
-  char* suffix = new char[strlen(vd->getFilename())+1];
-  vvToolshed::extractExtension(suffix, vd->getFilename());
+  std::string suffix = vvToolshed::extractExtension(vd->getFilename());
 
   // Load files according to extension:
-  if (vvToolshed::strCompare(suffix, "wl") == 0)
+  if (suffix == "wl")
     err = loadWLFile(vd);
 
-  else if (vvToolshed::strCompare(suffix, "rvf") == 0)
+  else if (suffix == "rvf")
     err = loadRVFFile(vd);
 
-  else if (vvToolshed::strCompare(suffix, "xvf") == 0)
+  else if (suffix == "xvf")
     err = loadXVFFile(vd);
 
-  else if (vvToolshed::strCompare(suffix, "avf") == 0)
+  else if (suffix == "avf")
     err = loadAVFFile(vd);
 
-  else if (vvToolshed::strCompare(suffix, "xb7") == 0)
+  else if (suffix == "xb7")
     err = loadXB7File(vd);
 
-  else if (vvToolshed::strCompare(suffix, "asc") == 0)
+  else if (suffix == "asc")
     err = loadASCFile(vd);
 
-  else if (vvToolshed::strCompare(suffix, "tga") == 0)
+  else if (suffix == "tga")
     err = loadTGAFile(vd);
 
-  else if (vvToolshed::strCompare(suffix, "tif") == 0 ||
-    vvToolshed::strCompare(suffix, "tiff") == 0)
+  else if (suffix == "tif" || suffix == "tiff")
     err = loadTIFFile(vd, addFrame);
 
                                                   // VHD CT data
-  else if (vvToolshed::strCompare(suffix, "fro") == 0 ||
-    vvToolshed::strCompare(suffix, "fre") == 0)
+  else if (suffix == "fro" || suffix == "fre")
     err = loadVHDCTFile(vd);
 
                                                   // VHD MRI data
-  else if (vvToolshed::strCompare(suffix, "pd") == 0 ||
-    vvToolshed::strCompare(suffix, "t1") == 0 ||
-    vvToolshed::strCompare(suffix, "t2") == 0 ||
-    vvToolshed::strCompare(suffix, "loc") == 0)
+  else if (suffix == "pd" || suffix == "t1"
+        || suffix == "t2" || suffix == "loc")
     err = loadVHDMRIFile(vd);
 
                                                   // SGI RGB file
-  else if (vvToolshed::strCompare(suffix, "rgb") == 0)
+  else if (suffix == "rgb")
     err = loadRGBFile(vd);
 
                                                   // PGM file
-  else if (vvToolshed::strCompare(suffix, "pgm") == 0 ||
-    vvToolshed::strCompare(suffix, "ppm") == 0)   // PPM file
+  else if (suffix == "pgm" || suffix == "ppm")    // PPM file
     err = loadPXMRawImage(vd);
 
                                                   // VHD anatomic
-  else if (vvToolshed::strCompare(suffix, "raw") == 0)
+  else if (suffix == "raw")
     err = loadVHDAnatomicFile(vd);
 
                                                   // DAT file = raw volume data w/o header information
-  else if (vvToolshed::strCompare(suffix, "dat") == 0)
+  else if (suffix == "dat")
     err = loadRawFile(vd);
 
                                                   // DICOM file
-  else if (vvToolshed::strCompare(suffix, "dcm") == 0 ||
-    vvToolshed::strCompare(suffix, "dcom") == 0)
+  else if (suffix == "dcm" || suffix == "dcom")
     err = loadDicomFile(vd);
 
                                                   // VMR file = BrainVoyager anatomical 3D data
-  else if (vvToolshed::strCompare(suffix, "vmr") == 0)
+  else if (suffix == "vmr")
     err = loadVMRFile(vd);
 
                                                   // VTC file = BrainVoyager functional data (time series)
-  else if (vvToolshed::strCompare(suffix, "vtc") == 0)
+  else if (suffix == "vtc")
     err = loadVTCFile(vd);
 
                                                   // NRRD file = Teem nrrd volume file
-  else if (vvToolshed::strCompare(suffix, "nrd") == 0 ||
-    vvToolshed::strCompare(suffix, "nrrd") == 0)
+  else if (suffix == "nrd" || suffix == "nrrd")
     err = loadNrrdFile(vd);
 
                                                   // XIMG = General Electric MRI file
-  else if (vvToolshed::strCompare(suffix, "ximg") == 0)
+  else if (suffix == "ximg")
     err = loadXIMGFile(vd);
 
                                                   // IEEE Visualization Contest format
-  else if (vvToolshed::strCompare(suffix, "vis04") == 0)
+  else if (suffix == "vis04")
     err = loadVis04File(vd);
 
                                                   // Meshviewer header file
-  else if (vvToolshed::strCompare(suffix, "hdr") == 0)
+  else if (suffix == "hdr")
     err = loadHDRFile(vd);
 
-  else if (vvToolshed::strCompare(suffix, "volb") == 0)
+  else if (suffix == "volb")
     err = loadVOLBFile(vd);
                                                   // Microsoft DirectDraw Surface file
-  else if (vvToolshed::strCompare(suffix, "dds") == 0)
+  else if (suffix == "dds")
     err = loadDDSFile(vd);
 
                                                   // Graham Kent's seismic data (Scripps Institution)
-  else if (vvToolshed::strCompare(suffix, "gkent") == 0)
+  else if (suffix == "gkent")
     err = loadGKentFile(vd);
 
-  else if (vvToolshed::strCompare(suffix, "synth") == 0)
+  else if (suffix == "synth")
     err = loadSynthFile(vd);
 
   // Unknown extension error:
@@ -4861,7 +4853,6 @@ vvFileIO::ErrorType vvFileIO::loadVolumeData(vvVolDesc* vd, LoadType sec, bool a
     err = PARAM_ERROR;
   }
 
-  delete[] suffix;
   return err;
 }
 

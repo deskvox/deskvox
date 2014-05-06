@@ -519,7 +519,20 @@ void vvToolshed::extractExtension(char* extension, const char* pathname)
 */
 string vvToolshed::extractExtension(const string pathname)
 {
-  return strcpyTail(pathname, '.');
+  std::string result;
+
+  size_t pos = pathname.rfind('.');
+
+  if (pos == string::npos)
+  {
+    result = "";
+  }
+  else
+  {
+    result.insert(0, pathname, pos + 1, pathname.size());
+  }
+
+  return result;
 }
 
 //----------------------------------------------------------------------------
