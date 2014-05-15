@@ -8,7 +8,7 @@ namespace virvo
 {
 
 
-void project(Vec3* win, Vec3 const& obj, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
+inline void project(Vec3* win, Vec3 const& obj, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
 {
 
   Vec4 u(obj, 1.0);
@@ -27,7 +27,7 @@ void project(Vec3* win, Vec3 const& obj, Matrix const& modelview, Matrix const& 
 }
 
 
-void unproject(Vec3* obj, Vec3 const& win, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
+inline void unproject(Vec3* obj, Vec3 const& win, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
 {
 
   Vec4 u
