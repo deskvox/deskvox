@@ -40,9 +40,8 @@ namespace virvo
 
     class Message
     {
-        friend class Client;
         friend class Connection;
-        friend class ServerManager;
+        friend class ConnectionManager;
 
         typedef std::vector<char> DataType;
 
@@ -123,6 +122,9 @@ namespace virvo
         // Throws std::runtime_error on failure.
         template<class T>
         T deserialize() const;
+
+        template<class T>
+        bool reset(unsigned type, T const& object);
 
         // Returns the unique ID of this message
         boost::uuids::uuid const& id() const {
@@ -212,6 +214,18 @@ namespace virvo
             throw std::runtime_error("deserialization error");
 
         return object;
+    }
+
+    template<class T>
+    bool Message::reset(unsigned type, T const& object)
+    {
+        if (serialize(object))
+        {
+            header_.type_ = type;
+            return true;
+        }
+
+        return false;
     }
 
     //----------------------------------------------------------------------------------------------

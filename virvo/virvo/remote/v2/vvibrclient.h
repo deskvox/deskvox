@@ -33,10 +33,7 @@ public:
 
 public:
     VVAPI vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
-        std::string const& host, int port, std::string const& filename = "");
-
-    VVAPI vvIbrClient(vvVolDesc *vd, vvRenderState renderState,
-        boost::shared_ptr<virvo::Connection> conn, std::string const& filename = "");
+        virvo::ConnectionPointer conn, std::string const& filename = "");
 
     VVAPI virtual ~vvIbrClient();
 
@@ -44,12 +41,14 @@ public:
 
     VVAPI virtual bool render() VV_OVERRIDE;
 
-    VVAPI virtual bool on_connect(virvo::Connection* conn) VV_OVERRIDE;
-
-    VVAPI virtual bool on_read(virvo::Connection* conn, virvo::MessagePointer message) VV_OVERRIDE;
-
 private:
-    void init();
+    // TODO:
+    // Move into Impl??
+    void handler(virvo::Connection::Reason reason, virvo::MessagePointer message, boost::system::error_code const& e);
+
+    void on_read(virvo::MessagePointer message);
+
+    void on_write(virvo::MessagePointer message);
 
     void processIbrImage(virvo::MessagePointer message);
 

@@ -27,21 +27,17 @@
 using virvo::makeMessage;
 using virvo::Message;
 
-vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, const std::string& /*filename*/)
+vvRemoteClient::vvRemoteClient(vvRenderer::RendererType type, vvVolDesc *vd, vvRenderState renderState,
+        virvo::ConnectionPointer conn, const std::string& /*filename*/)
     : vvRenderer(vd, renderState)
-    , conn_(virvo::makeConnection())
 {
-}
-
-vvRemoteClient::vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, const std::string& /*filename*/,
-        boost::shared_ptr<virvo::Connection> conn)
-    : vvRenderer(vd, renderState)
-    , conn_(conn)
-{
+    rendererType = type;
 }
 
 vvRemoteClient::~vvRemoteClient()
 {
+    if (conn_)
+        conn_->remove_handler();
 }
 
 bool vvRemoteClient::beginFrame(unsigned /*clearMask*/)
@@ -69,7 +65,8 @@ bool vvRemoteClient::resize(int w, int h)
     if (rt->width() == w && rt->height() == h)
         return true;
 
-    conn_->write(makeMessage(Message::WindowResize, virvo::messages::WindowResize(w, h)));
+    if (conn_)
+        conn_->write(makeMessage(Message::WindowResize, virvo::messages::WindowResize(w, h)));
 
     return vvRenderer::resize(w, h);
 }
@@ -81,38 +78,44 @@ bool vvRemoteClient::present() const
 
 void vvRemoteClient::setCurrentFrame(size_t index)
 {
-    conn_->write(makeMessage(Message::CurrentFrame, index));
+    if (conn_)
+        conn_->write(makeMessage(Message::CurrentFrame, index));
 
     vvRenderer::setCurrentFrame(index);
 }
 
 void vvRemoteClient::setObjectDirection(const vvVector3& od)
 {
-    conn_->write(makeMessage(Message::ObjectDirection, od));
+    if (conn_)
+        conn_->write(makeMessage(Message::ObjectDirection, od));
 
     vvRenderer::setObjectDirection(od);
 }
 
 void vvRemoteClient::setViewingDirection(const vvVector3& vd)
 {
-    conn_->write(makeMessage(Message::ViewingDirection, vd));
+    if (conn_)
+        conn_->write(makeMessage(Message::ViewingDirection, vd));
 
     vvRenderer::setViewingDirection(vd);
 }
 
 void vvRemoteClient::setPosition(const vvVector3& p)
 {
-    conn_->write(makeMessage(Message::Position, p));
+    if (conn_)
+        conn_->write(makeMessage(Message::Position, p));
 
     vvRenderer::setPosition(p);
 }
 
 void vvRemoteClient::updateTransferFunction()
 {
-#if 1
-    conn_->write(makeMessage(Message::TransFuncChanged, true));
+#if 0
+    if (conn_)
+        conn_->write(makeMessage(Message::TransFuncChanged, true));
 #else
-    conn_->write(makeMessage(Message::TransFunc, vd->tf));
+    if (conn_)
+        conn_->write(makeMessage(Message::TransFunc, vd->tf));
 #endif
 
     vvRenderer::updateTransferFunction();
@@ -122,50 +125,30 @@ void vvRemoteClient::setParameter(ParameterType name, const vvParam& value)
 {
     vvRenderer::setParameter(name, value);
 
-    conn_->write(makeMessage(Message::Parameter, virvo::messages::Param(name, value)));
+    if (conn_)
+        conn_->write(makeMessage(Message::Parameter, virvo::messages::Param(name, value)));
 }
 
-bool vvRemoteClient::on_connect(virvo::Connection* /*conn*/)
+void vvRemoteClient::setVolDesc(vvVolDesc* voldesc)
 {
-    return true;
+    vvRenderer::setVolDesc(voldesc);
+
+    if (conn_)
+        conn_->write(makeMessage(Message::Volume, *voldesc));
 }
 
-bool vvRemoteClient::on_read(virvo::Connection* conn, virvo::MessagePointer message)
+void vvRemoteClient::init()
 {
-    switch (message->type())
-    {
-    case virvo::Message::TransFuncChanged:
-        conn->write(makeMessage(Message::TransFunc, vd->tf));
-        break;
-    }
-
-    return true;
 }
 
-bool vvRemoteClient::on_write(virvo::Connection* /*conn*/, virvo::MessagePointer /*message*/)
+void vvRemoteClient::init_connection(virvo::ConnectionPointer conn)
 {
-    return true;
-}
+    conn_ = conn;
+    conn_->write(makeMessage(Message::Volume, *vd));
+    conn_->write(makeMessage(Message::RemoteServerType, rendererType));
 
-bool vvRemoteClient::on_error(virvo::Connection* /*conn*/, boost::system::error_code const& /*e*/)
-{
-    return true;
-}
+    virvo::messages::Param p(vvRenderState::VV_USE_IBR, rendererType == REMOTE_IBR);
 
-void vvRemoteClient::run(virvo::Connection::Handler* handler, std::string const& host, int port)
-{
-    try
-    {
-        // Set the new handler
-        conn_->set_handler(handler);
-
-        // Connect to server
-        conn_->connect(host, port);
-
-        // Start processing messages
-        conn_->run_in_thread();
-    }
-    catch (std::exception& /*e*/)
-    {
-    }
+    // Enable/Disable IBR
+    conn_->write(makeMessage(Message::Parameter, p));
 }

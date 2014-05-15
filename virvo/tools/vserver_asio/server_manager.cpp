@@ -23,7 +23,7 @@
 #include "simple_server.h"
 
 vvServerManager::vvServerManager(unsigned short port, bool useBonjour)
-    : BaseType(port)
+    : manager_(virvo::makeConnectionManager(port))
     , serverMode_(SERVER)
     , useBonjour_(useBonjour)
 {
@@ -33,18 +33,42 @@ vvServerManager::~vvServerManager()
 {
 }
 
-bool vvServerManager::on_accept(virvo::ServerManager::ConnectionPointer conn, boost::system::error_code const& /*e*/)
+void vvServerManager::accept()
 {
-    std::cout << "vvServerManager: new connection accepted" << std::endl;
+    manager_->accept(boost::bind(&vvServerManager::handle_new_connection, this, _1, _2));
+}
 
+void vvServerManager::run()
+{
+    manager_->run();
+}
+
+void vvServerManager::stop()
+{
+    manager_->stop();
+}
+
+bool vvServerManager::handle_new_connection(virvo::ConnectionPointer conn, boost::system::error_code const& e)
+{
+    if (e)
+    {
+        std::cout << "vserver: error: " << e.message() << std::endl;
+        return false;
+    }
+
+    // Create a new server...
     boost::shared_ptr<vvServer> server;
 
-    // Wrap a new vvSimpleServer or vvResourceManager in conn
     if (serverMode_ == SERVER)
-        server = boost::make_shared<vvSimpleServer>();
+        server = boost::make_shared<vvSimpleServer>(conn);
     else
-        server = boost::make_shared<vvResourceManager>();
+        server = boost::make_shared<vvResourceManager>(conn);
 
-    // Tell the connection about the server
-    return conn->accept(server);
+    // Add it to the list of active servers...
+    serverList_.push_back(server);
+
+    // Start a new accept operation...
+    accept();
+
+    return true;
 }

@@ -22,8 +22,11 @@
 
 #include <virvo/gl/util.h>
 #include <virvo/private/vvgltools.h>
+#include <virvo/private/vvibrimage.h>
+#include <virvo/private/vvimage.h>
 #include <virvo/private/vvmessages.h>
 #include <virvo/private/vvtimer.h>
+#include <virvo/private/work_queue.h>
 #include <virvo/vvfileio.h>
 #include <virvo/vvibrserver.h>
 #include <virvo/vvimageserver.h>
@@ -31,40 +34,52 @@
 #include <virvo/vvremoteserver.h>
 #include <virvo/vvrendercontext.h>
 #include <virvo/vvrendererfactory.h>
+#include <virvo/vvrendertarget.h>
 #include <virvo/vvserialization.h>
 #include <virvo/vvvoldesc.h>
 
 #include <cassert>
-#include <iostream>
+#include <cstdio>
+
+#define LOG 1
+#define LOG_MSG 0
+#define TIME_FPS 0
+#define TIME_READS 0
+#define TIME_WRITES 0
+
+#if LOG
+#define DEBUG(FORMAT, ...) printf(FORMAT ## "\n", __VA_ARGS__)
+#else
+#define DEBUG(FORMAT, ...)
+#endif
 
 static const int DEFAULT_WINDOW_SIZE = 512;
 
-vvSimpleServer::vvSimpleServer()
-    : cancel_(true)
+vvSimpleServer::vvSimpleServer(ConnectionPointer conn)
+    : BaseType(conn)
+    , cancel_(true)
     , rendererType_(vvRenderer::INVALID)
 {
-    std::cout << "vvSimpleServer::running..." << std::endl;
     start();
 }
 
 vvSimpleServer::~vvSimpleServer()
 {
     stop();
-    std::cout << "vvSimpleServer::stopped." << std::endl;
 }
 
 void vvSimpleServer::start()
 {
     assert(cancel_ == true && "server already running");
 
-    // Clear the message queue
-    queue_.clear();
-
     // Reset state
     cancel_ = false;
 
     // Create a new thread
     worker_ = boost::thread(&vvSimpleServer::processMessages, this);
+
+    // Start the work queue
+    workQueue_.run_in_thread();
 }
 
 void vvSimpleServer::stop()
@@ -72,27 +87,24 @@ void vvSimpleServer::stop()
     if (cancel_)
         return;
 
-#ifndef NDEBUG
-    std::cout << "SimpleServer::stop: waiting for thread to finish...\n";
-#endif
-
     // Tell the thread to cancel
     cancel_ = true;
     // Wake up the thread in case it's sleeping
-    queue_.push_back_always(virvo::makeMessage());
+    queue_.push_back(virvo::makeMessage());
 
     // Wait for the thread to finish
     worker_.join();
 
-#ifndef NDEBUG
-    std::cout << "SimpleServer::stop: complete.\n";
-#endif
+    // Stop the work queue
+    workQueue_.stop();
 }
 
-void vvSimpleServer::on_read(ConnectionPointer conn, MessagePointer message)
+void vvSimpleServer::on_read(MessagePointer message)
 {
-#ifndef NDEBUG
-    std::cout << "vvSimpleServer::on_read: " << (int)message->type() << std::endl;
+#if TIME_READS
+    static virvo::FrameCounter counter;
+
+    printf("IBR: reads/sec: %.2f\n", counter.registerFrame());
 #endif
 
     switch (message->type())
@@ -101,25 +113,26 @@ void vvSimpleServer::on_read(ConnectionPointer conn, MessagePointer message)
     case virvo::Message::TransFunc:
     case virvo::Message::TransFuncChanged:
     case virvo::Message::WindowResize:
-        queue_.push_back(message);
+        queue_.push_back_merge(message);
         break;
     default:
-        queue_.push_back_always(message);
+        queue_.push_back(message);
         break;
     }
 }
 
-void vvSimpleServer::on_write(ConnectionPointer /*conn*/, MessagePointer /*message*/)
+void vvSimpleServer::on_write(MessagePointer /*message*/)
 {
+#if TIME_WRITES
+    static virvo::FrameCounter counter;
+
+    printf("IBR: writes/sec: %.2f\n", counter.registerFrame());
+#endif
 }
 
 bool vvSimpleServer::createRenderContext(int w, int h)
 {
     assert(renderContext_.get() == 0);
-
-#ifndef NDEBUG
-    std::cout << "vvSimpleServer::createRenderContext(" << w << ", " << h << ")" << std::endl;
-#endif
 
     // Destroy the old context first - if any.
     renderContext_.reset();
@@ -127,15 +140,13 @@ bool vvSimpleServer::createRenderContext(int w, int h)
     if (w <= 0) w = DEFAULT_WINDOW_SIZE;
     if (h <= 0) h = DEFAULT_WINDOW_SIZE;
 
-#ifndef NDEBUG
-    std::cout << "vvSimpleServer::createRenderContext(" << w << ", " << h << ")" << std::endl;
-#endif
+    DEBUG("vserver: createRenderContext(%d, %d)", w, h);
 
     vvContextOptions options;
 
-    options.type        = vvContextOptions::VV_PBUFFER;
-    options.width       = w;
-    options.height      = h;
+    options.type = vvContextOptions::VV_PBUFFER;
+    options.width = w;
+    options.height = h;
     options.displayName = "";
 
     // Create the new context
@@ -146,9 +157,7 @@ bool vvSimpleServer::createRenderContext(int w, int h)
 
 bool vvSimpleServer::createRemoteServer(vvRenderer::RendererType type)
 {
-#ifndef NDEBUG
-    std::cout << "vvSimpleServer::createRemoteServer(" << (int)type << ")" << std::endl;
-#endif
+    DEBUG("vserver: createRemoteServer(%d)", static_cast<int>(type));
 
     assert(volume_.get());
 
@@ -160,13 +169,15 @@ bool vvSimpleServer::createRemoteServer(vvRenderer::RendererType type)
     switch (type)
     {
     case vvRenderer::REMOTE_IBR:
-        std::cout << "vvSimpleServer::createRemoteServer: Creating vvIbrServer" << std::endl;
+        DEBUG("vserver: Create REMOTE_IBR");
         server_.reset(new vvIbrServer);
         break;
+
     case vvRenderer::REMOTE_IMAGE:
-        std::cout << "vvSimpleServer::createRemoteServer: Creating vvImageServer" << std::endl;
+        DEBUG("vserver: Create REMOTE_IMAGE");
         server_.reset(new vvImageServer);
         break;
+
     default:
         assert(0 && "unhandled renderer type");
         return false;
@@ -177,6 +188,7 @@ bool vvSimpleServer::createRemoteServer(vvRenderer::RendererType type)
 
     vvRenderState state;
 
+#if 0
     if (volume_->tf.isEmpty()) // Set default color scheme!
     {
         float min = volume_->real[0];
@@ -185,97 +197,116 @@ bool vvSimpleServer::createRemoteServer(vvRenderer::RendererType type)
         volume_->tf.setDefaultAlpha(0, min, max);
         volume_->tf.setDefaultColors(volume_->chan == 1 ? 0 : 2, min, max);
     }
+#endif
+
+#if 1
+    //
+    // TODO:
+    // FIXME!
+    //
 
     // Create a new renderer
-    renderer_.reset(vvRendererFactory::create(volume_.get(),
-                                              state,
-                                              type == vvRenderer::REMOTE_IMAGE ? "default" : "rayrendcuda",
-                                              vvRendererFactory::Options()));
+    renderer_.reset( vvRendererFactory::create( volume_.get(),
+                                                state,
+                                                type == vvRenderer::REMOTE_IMAGE ? "default" : "rayrendcuda",
+                                                vvRendererFactory::Options() ));
+
+    if (type == vvRenderer::REMOTE_IMAGE)
+    {
+        renderer_->setRenderTarget(virvo::FramebufferObjectRT::create(virvo::PF_RGBA8, virvo::PF_DEPTH24_STENCIL8));
+    }
+#else
+    if (type == vvRenderer::REMOTE_IMAGE)
+    {
+        state.setParameter(vvRenderer::VV_USE_OFFSCREEN_BUFFER, true);
+        state.setParameter(vvRenderer::VV_IMAGE_PRECISION, 8);
+    }
+
+    // Create a new renderer
+    renderer_.reset( vvRendererFactory::create( volume_.get(),
+                                                state,
+                                                type == vvRenderer::REMOTE_IMAGE ? "default" : "rayrendcuda",
+                                                vvRendererFactory::Options() ));
+#endif
 
     if (renderer_.get() == 0)
     {
-#ifndef NDEBUG
-        std::cout << "vvSimpleServer::createRemoteServer: could not create renderer." << std::endl;
-#endif
         return false;
     }
 
+    // Create/Resize the render target
+    renderer_->resize(DEFAULT_WINDOW_SIZE, DEFAULT_WINDOW_SIZE);
+
     // Enable IBR
     renderer_->setParameter(vvRenderer::VV_USE_IBR, type == vvRenderer::REMOTE_IBR);
+#if 0
     renderer_->updateTransferFunction();
+#endif
 
     return true;
 }
 
-void vvSimpleServer::processSingleMessage(MessagePointer message)
+void vvSimpleServer::processSingleMessage(MessagePointer const& message)
 {
-#ifndef NDEBUG
-#define XXX(X)                                                                      \
-    case virvo::Message::X: {                                                       \
-        std::cout << "vvSimpleServer::processSingleMessage: " << #X << std::endl;   \
-        process##X(message);                                                        \
-        break;                                                                      \
-    }
+#if LOG_MSG
+#define X(M) \
+    case virvo::Message::M: DEBUG("Processing message %d...", static_cast<int>(message->type())); process##M(message); break;
 #else
-#define XXX(X)                                                                      \
-    case virvo::Message::X: {                                                       \
-        process##X(message);                                                        \
-        break;                                                                      \
-    }
+#define X(M) \
+    case virvo::Message::M: process##M(message); break;
 #endif
 
     switch (message->type())
     {
-    XXX( CameraMatrix )
-    XXX( CurrentFrame )
-    XXX( Disconnect )
-    XXX( GpuInfo )
-    XXX( ObjectDirection )
-    XXX( Parameter )
-    XXX( Position )
-    XXX( RemoteServerType )
-    XXX( ServerInfo )
-    XXX( Statistics )
-    XXX( TransFunc )
-    XXX( TransFuncChanged )
-    XXX( ViewingDirection )
-    XXX( Volume )
-    XXX( VolumeFile )
-    XXX( WindowResize )
+    X(CameraMatrix)
+    X(CurrentFrame)
+    X(Disconnect)
+    X(GpuInfo)
+    X(ObjectDirection)
+    X(Parameter)
+    X(Position)
+    X(RemoteServerType)
+    X(ServerInfo)
+    X(Statistics)
+    X(TransFunc)
+    X(TransFuncChanged)
+    X(ViewingDirection)
+    X(Volume)
+    X(VolumeFile)
+    X(WindowResize)
     default:
         break;
     }
 
-#undef XXX
+#undef X
 }
 
 void vvSimpleServer::processMessages()
 {
-    std::cout << "vvSimpleServer::processMessages..." << std::endl;
-
-    while (!cancel_)
+    try
     {
-        // Fetch the next from the message queue.
-        // If there is no such message, wait for one.
-        MessagePointer message;
-
-        queue_.pop_front_blocking(message);
-
-        // Process the message
-        processSingleMessage(message);
+        while (!cancel_)
+        {
+            processSingleMessage(queue_.pop_front());
+        }
+    }
+    catch (std::exception& e)
+    {
+        DEBUG("vserver: Exception caught: %s", e.what());
+        throw;
     }
 }
 
-void vvSimpleServer::processNull(MessagePointer /*message*/)
+void vvSimpleServer::processNull(MessagePointer const& /*message*/)
 {
 }
 
-void vvSimpleServer::processCameraMatrix(MessagePointer message)
+void vvSimpleServer::processCameraMatrix(MessagePointer const& message)
 {
-#ifndef NDEBUG
-    std::cout << "Rendering frame..." << std::endl;
+#if TIME_FPS
+    static virvo::FrameCounter counter;
 
-    virvo::Timer timer;
+    printf("IBR: FPS: %.2f\n", counter.registerFrame());
 #endif
 
     assert(renderer_.get());
@@ -284,14 +315,10 @@ void vvSimpleServer::processCameraMatrix(MessagePointer message)
     virvo::messages::CameraMatrix p = message->deserialize<virvo::messages::CameraMatrix>();
 
     // Render a new image
-    server_->renderImage(conn(), message, p.proj, p.view, renderer_.get());
-
-#ifndef NDEBUG
-    std::cout << "Frame complete: " << timer.elapsedSeconds() << " sec" << std::endl;
-#endif
+    server_->renderImage(conn(), message, p.proj, p.view, renderer_.get(), workQueue_);
 }
 
-void vvSimpleServer::processCurrentFrame(MessagePointer message)
+void vvSimpleServer::processCurrentFrame(MessagePointer const& message)
 {
     assert(renderer_.get());
 
@@ -302,15 +329,15 @@ void vvSimpleServer::processCurrentFrame(MessagePointer message)
     renderer_->setCurrentFrame(frame);
 }
 
-void vvSimpleServer::processDisconnect(MessagePointer /*message*/)
+void vvSimpleServer::processDisconnect(MessagePointer const& /*message*/)
 {
 }
 
-void vvSimpleServer::processGpuInfo(MessagePointer /*message*/)
+void vvSimpleServer::processGpuInfo(MessagePointer const& /*message*/)
 {
 }
 
-void vvSimpleServer::processObjectDirection(MessagePointer message)
+void vvSimpleServer::processObjectDirection(MessagePointer const& message)
 {
     assert(renderer_.get());
 
@@ -319,7 +346,7 @@ void vvSimpleServer::processObjectDirection(MessagePointer message)
     renderer_->setObjectDirection(message->deserialize<vvVector3>());
 }
 
-void vvSimpleServer::processParameter(MessagePointer message)
+void vvSimpleServer::processParameter(MessagePointer const& message)
 {
     assert(renderer_.get());
 
@@ -330,7 +357,7 @@ void vvSimpleServer::processParameter(MessagePointer message)
     renderer_->setParameter(p.name, p.value);
 }
 
-void vvSimpleServer::processPosition(MessagePointer message)
+void vvSimpleServer::processPosition(MessagePointer const& message)
 {
     assert(renderer_.get());
 
@@ -339,7 +366,7 @@ void vvSimpleServer::processPosition(MessagePointer message)
     renderer_->setPosition(message->deserialize<vvVector3>());
 }
 
-void vvSimpleServer::processRemoteServerType(MessagePointer message)
+void vvSimpleServer::processRemoteServerType(MessagePointer const& message)
 {
     assert(volume_.get());
 
@@ -350,15 +377,15 @@ void vvSimpleServer::processRemoteServerType(MessagePointer message)
     createRemoteServer(type);
 }
 
-void vvSimpleServer::processServerInfo(MessagePointer /*message*/)
+void vvSimpleServer::processServerInfo(MessagePointer const& /*message*/)
 {
 }
 
-void vvSimpleServer::processStatistics(MessagePointer /*message*/)
+void vvSimpleServer::processStatistics(MessagePointer const& /*message*/)
 {
 }
 
-void vvSimpleServer::processTransFunc(MessagePointer message)
+void vvSimpleServer::processTransFunc(MessagePointer const& message)
 {
     assert(renderer_.get());
 
@@ -368,12 +395,12 @@ void vvSimpleServer::processTransFunc(MessagePointer message)
     renderer_->updateTransferFunction();
 }
 
-void vvSimpleServer::processTransFuncChanged(MessagePointer message)
+void vvSimpleServer::processTransFuncChanged(MessagePointer const& message)
 {
     conn()->write(message);
 }
 
-void vvSimpleServer::processViewingDirection(MessagePointer message)
+void vvSimpleServer::processViewingDirection(MessagePointer const& message)
 {
     assert(renderer_.get());
 
@@ -382,10 +409,10 @@ void vvSimpleServer::processViewingDirection(MessagePointer message)
     renderer_->setViewingDirection(message->deserialize<vvVector3>());
 }
 
-void vvSimpleServer::processVolume(MessagePointer message)
+void vvSimpleServer::processVolume(MessagePointer const& message)
 {
     // Create a new volume
-    volume_.reset(new vvVolDesc("hello"));
+    volume_.reset(new vvVolDesc("{no-volume-name}"));
 
     // Extract the volume from the message
     message->deserialize(*volume_);
@@ -396,7 +423,7 @@ void vvSimpleServer::processVolume(MessagePointer message)
     handleNewVolume();
 }
 
-void vvSimpleServer::processVolumeFile(MessagePointer message)
+void vvSimpleServer::processVolumeFile(MessagePointer const& message)
 {
     // Extract the filename from the message
     std::string filename = message->deserialize<std::string>();
@@ -420,7 +447,7 @@ void vvSimpleServer::processVolumeFile(MessagePointer message)
     handleNewVolume();
 }
 
-void vvSimpleServer::processWindowResize(MessagePointer message)
+void vvSimpleServer::processWindowResize(MessagePointer const& message)
 {
     assert(renderer_.get());
 
@@ -435,10 +462,28 @@ void vvSimpleServer::processWindowResize(MessagePointer message)
 
 void vvSimpleServer::handleNewVolume()
 {
+    if (volume_.get() == 0)
+        return;
+
+    float min = volume_->real[0];
+    float max = volume_->real[1];
+
+    if (volume_->tf.isEmpty())
+    {
+        volume_->tf.setDefaultAlpha(0, min, max);
+        volume_->tf.setDefaultColors(volume_->chan == 1 ? 0 : 2, min, max);
+    }
+
+    if (volume_->bpc == 4 && min == 0.0f && max == 1.0f)
+    {
+        volume_->setDefaultRealMinMax();
+    }
+
     if (renderer_.get())
     {
-        // If a renderer already exists, just update the volume
+#if 0
+        volume_->resizeEdgeMax(renderer_->getRenderTarget()->width() * 0.6f);
+#endif
         renderer_->setVolDesc(volume_.get());
-        renderer_->updateTransferFunction();
     }
 }

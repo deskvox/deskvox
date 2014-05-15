@@ -21,12 +21,14 @@
 #ifndef VSERVER_SERVER_MANAGER_H
 #define VSERVER_SERVER_MANAGER_H
 
-#include <virvo/private/vvserver.h>
+#include <virvo/private/connection_manager.h>
 
-class vvServerManager : public virvo::ServerManager
+#include <vector>
+
+class vvServer;
+
+class vvServerManager
 {
-    typedef virvo::ServerManager BaseType;
-
 public:
     enum Mode {
         SERVER,
@@ -40,13 +42,26 @@ public:
     // Destructor.
     virtual ~vvServerManager();
 
+    // Starts a new accept operation
+    void accept();
+
+    // Runs the server
+    void run();
+
+    // Stops the server
+    void stop();
+
 private:
     // Called when a new connection is accepted.
     // Return false to discard the new connection, return conn->accept(...)
     // to finally accept the new connection.
-    virtual bool on_accept(virvo::ServerManager::ConnectionPointer conn, boost::system::error_code const& /*e*/);
+    bool handle_new_connection(virvo::ConnectionPointer conn, boost::system::error_code const& e);
 
 private:
+    // The server manager
+    boost::shared_ptr<virvo::ConnectionManager> manager_;
+    // List of servers
+    std::vector<boost::shared_ptr<vvServer> > serverList_;
     // indicating current server mode (default: single server)
     Mode serverMode_;
     // indicating the use of bonjour

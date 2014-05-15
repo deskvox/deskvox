@@ -20,37 +20,40 @@
 
 #include "server.h"
 
-#ifndef NDEBUG
-#include <iostream>
-#endif
+using virvo::Connection;
+using virvo::ConnectionPointer;
+using virvo::MessagePointer;
 
-vvServer::vvServer()
+vvServer::vvServer(ConnectionPointer conn)
+    : conn_(conn)
 {
+    conn->set_handler(boost::bind(&vvServer::handler, this, _1, _2, _3));
 }
 
 vvServer::~vvServer()
 {
 }
 
-void vvServer::on_accept(ConnectionPointer conn)
+void vvServer::handler(Connection::Reason reason, MessagePointer message, boost::system::error_code const& e)
 {
-    conn_ = conn;
+    if (e)
+        return;
+
+    switch (reason)
+    {
+    case Connection::Read:
+        on_read(message);
+        break;
+    case Connection::Write:
+        on_write(message);
+        break;
+    }
 }
 
-void vvServer::on_read(ConnectionPointer /*conn*/, MessagePointer /*message*/)
+void vvServer::on_read(MessagePointer /*message*/)
 {
 }
 
-void vvServer::on_write(ConnectionPointer /*conn*/, MessagePointer /*message*/)
+void vvServer::on_write(MessagePointer /*message*/)
 {
-}
-
-void vvServer::on_error(ConnectionPointer /*conn*/, boost::system::error_code const& e)
-{
-#ifndef NDEBUG
-    std::cout << "vvServer::on_error: " << e.message() << std::endl;
-#endif
-
-    // Delete the connection
-    conn_.reset();
 }

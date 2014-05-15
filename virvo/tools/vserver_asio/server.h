@@ -23,46 +23,32 @@
 
 #include "server_manager.h"
 
-class vvServer : public virvo::Server
+class vvServer
 {
-    typedef virvo::Server BaseType;
-
-public:
-    typedef virvo::MessagePointer MessagePointer;
-    typedef virvo::ServerManager::ConnectionPointer ConnectionPointer;
-
 public:
     // Constructor.
-    vvServer();
+    vvServer(virvo::ConnectionPointer conn);
 
     // Destructor.
     virtual ~vvServer();
 
-    // Called when the server is connected to the client
-    virtual void on_accept(ConnectionPointer conn);
+    // Caller when something interesting happens
+    void handler(virvo::Connection::Reason reason, virvo::MessagePointer message, boost::system::error_code const& e);
 
     // Called when a new message has successfully been read from the server.
-    virtual void on_read(ConnectionPointer conn, MessagePointer message);
+    virtual void on_read(virvo::MessagePointer message);
 
     // Called when a message has successfully been written to the server.
-    virtual void on_write(ConnectionPointer conn, MessagePointer message);
+    virtual void on_write(virvo::MessagePointer message);
 
-    // Called when an error occurred during a read or a write operation.
-    virtual void on_error(ConnectionPointer conn, boost::system::error_code const& e);
-
-    // Returns the connection to client
-    ConnectionPointer& conn() {
-        return conn_;
-    }
-
-    // Returns the connection to client
-    ConnectionPointer const& conn() const {
+    // Returns the connection
+    virvo::ConnectionPointer conn() const {
         return conn_;
     }
 
 private:
     // The connection to the client
-    ConnectionPointer conn_;
+    virvo::ConnectionPointer conn_;
 };
 
 #endif

@@ -18,21 +18,14 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#include "resource_manager.h"
+#ifndef VV_PRIVATE_ARCHIVES_H
+#define VV_PRIVATE_ARCHIVES_H
 
-#include <stdexcept>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 
-vvResourceManager::vvResourceManager(ConnectionPointer conn)
-    : BaseType(conn)
-{
-}
+#include <boost/serialization/export.hpp>
 
-void vvResourceManager::on_read(MessagePointer /*message*/)
-{
-    throw std::runtime_error("not implemented");
-}
-
-void vvResourceManager::on_write(MessagePointer /*message*/)
-{
-    throw std::runtime_error("not implemented");
-}
+#endif

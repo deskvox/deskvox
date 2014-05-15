@@ -22,34 +22,31 @@
 #define VV_REMOTE_CLIENT_H
 
 #include "private/connection.h"
+#include "private/connection_manager.h"
 #include "vvcompiler.h"
 #include "vvrenderer.h"
 
 class vvRemoteClient
     : public vvRenderer
-    , public virvo::Connection::Handler
 {
 public:
     typedef virvo::MessagePointer MessagePtr;
 
 public:
     // Constructor
-    VVAPI vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, const std::string &filename);
-
-    // Constructor
-    VVAPI vvRemoteClient(vvVolDesc *vd, vvRenderState renderState, const std::string &filename,
-        boost::shared_ptr<virvo::Connection> conn);
+    VVAPI vvRemoteClient(vvRenderer::RendererType type, vvVolDesc *vd, vvRenderState renderState,
+        virvo::ConnectionPointer conn, const std::string &filename);
 
     // Destructor
     VVAPI virtual ~vvRemoteClient();
 
     // Returns the connection
-    boost::shared_ptr<virvo::Connection>& conn() {
+    virvo::ConnectionPointer& conn() {
         return conn_;
     }
 
     // Returns the connection
-    boost::shared_ptr<virvo::Connection> const& conn() const {
+    virvo::ConnectionPointer const& conn() const {
         return conn_;
     }
 
@@ -72,30 +69,16 @@ public:
     VVAPI virtual void setParameter(ParameterType param, const vvParam& value) VV_OVERRIDE;
     VVAPI virtual void setPosition(const vvVector3& p) VV_OVERRIDE;
     VVAPI virtual void setViewingDirection(const vvVector3& vd) VV_OVERRIDE;
+    VVAPI virtual void setVolDesc(vvVolDesc* voldesc) VV_OVERRIDE;
     VVAPI virtual void updateTransferFunction() VV_OVERRIDE;
 
-    // virvo::Connection::Handler API ------------------------------------------
-
-    // Called when a new connection has been established.
-    // Return true to accept the connection, false to discard the connection.
-    VVAPI virtual bool on_connect(virvo::Connection* conn) VV_OVERRIDE;
-
-    // Called when a new message has successfully been read from the server.
-    VVAPI virtual bool on_read(virvo::Connection* conn, virvo::MessagePointer message) VV_OVERRIDE;
-
-    // Called when a message has successfully been written to the server.
-    VVAPI virtual bool on_write(virvo::Connection* conn, virvo::MessagePointer message) VV_OVERRIDE;
-
-    // Called when an error occurred during a read or a write operation.
-    VVAPI virtual bool on_error(virvo::Connection* conn, boost::system::error_code const& e) VV_OVERRIDE;
-
 protected:
-    // Sets the handler, connects to the server and starts processing messages
-    VVAPI void run(virvo::Connection::Handler* handler, std::string const& host, int port);
+    void init();
+    void init_connection(virvo::ConnectionPointer conn);
 
 protected:
     // The connection to the server
-    boost::shared_ptr<virvo::Connection> conn_;
+    virvo::ConnectionPointer conn_;
     // Current projection matrix
     vvMatrix proj_;
     // Current modelview matrix

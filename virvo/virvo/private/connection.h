@@ -33,116 +33,71 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/strand.hpp>
+
+#include <boost/function.hpp>
+
+#include <boost/signals2/connection.hpp>
+#include <boost/signals2/signal.hpp>
+
 #include <boost/smart_ptr/enable_shared_from_this.hpp>
+#include <boost/smart_ptr/weak_ptr.hpp>
 
 #include <list>
 
 namespace virvo
 {
 
-class Connection : public boost::enable_shared_from_this<Connection>
+class ConnectionManager;
+
+class Connection
+    : public boost::enable_shared_from_this<Connection>
 {
+    friend class ConnectionManager;
+
 public:
-    class Handler
-    {
-    public:
-        VVAPI virtual ~Handler();
+    enum Reason { Read, Write };
 
-        // Called when a new connection has been established.
-        // Return true to accept the connection, false to discard the connection.
-        VVAPI virtual bool on_connect(Connection* conn);
-
-        // Called when a new message has successfully been read from the server.
-        VVAPI virtual bool on_read(Connection* conn, MessagePointer message);
-
-        // Called when a message has successfully been written to the server.
-        VVAPI virtual bool on_write(Connection* conn, MessagePointer message);
-
-        // Called when an error occurred during a read or a write operation.
-        VVAPI virtual bool on_error(Connection* conn, boost::system::error_code const& e);
-    };
+    typedef boost::signals2::signal<void (Reason reason, MessagePointer message, boost::system::error_code const& e)> SignalType;
 
 public:
     // Constructor.
-    VVAPI Connection(Handler* handler = 0);
+    VVAPI Connection(ConnectionManager& manager);
 
     // Destructor.
     VVAPI ~Connection();
 
-    // Returns the underlying socket
-    boost::asio::ip::tcp::socket& socket() {
-        return socket_;
-    }
+    // Start reading from the socket
+    VVAPI void start();
 
-    // Returns the underlying socket
-    boost::asio::ip::tcp::socket const& socket() const {
-        return socket_;
-    }
-
-    // Sets a new message handler.
-    // The connection must not be 'running'
-    VVAPI void set_handler(Handler* handler);
-
-    // Starts the message loop
-    VVAPI void run();
-
-    // Starts a new thread which in turn starts the message loop
-    VVAPI void run_in_thread();
-
-    // Stops the message loop
+    // Stop/Close the connection
     VVAPI void stop();
 
-    // Starts a new connect operation.
-    VVAPI void connect(std::string const& host, int port);
+    // Sets the handler for this connection
+    // Thread-safe.
+    VVAPI void set_handler(SignalType::slot_function_type handler);
 
-    // Disconnect from server
-    VVAPI void disconnect();
+    // Removes the handler for this connection.
+    // Thread-safe.
+    VVAPI void remove_handler();
 
-    // Sends a message to the other connection.
+    // Close the connection
+    VVAPI void close();
+
+    // Sends a message to the other side.
     VVAPI void write(MessagePointer message);
 
 private:
-    // Starts a new connect operation.
-    void do_connect(std::string const& host, int port);
-
-    // Handle completion of a connect operation.
-    void handle_connect(boost::system::error_code const& e);
-
-    // Starts a new read operation.
-    void do_read();
-
-    // Called when a message header is read.
-    void handle_read_header(boost::system::error_code const& e, MessagePointer message);
-
-    // Called when a complete message is read.
-    void handle_read_data(boost::system::error_code const& e, MessagePointer message);
-
-    // Starts a new write operation.
-    void do_write(MessagePointer message);
-
-    // Writes the next message
-    void do_write();
-
-    // Called when a complete message is written.
-    void handle_write(boost::system::error_code const& e, MessagePointer message);
-
-private:
-    // Handles messages
-    Handler* handler_;
-    // The IO service
-    boost::asio::io_service io_service_;
+    // The manager for this connection
+    ConnectionManager& manager_;
     // The underlying socket.
     boost::asio::ip::tcp::socket socket_;
-    // To protect the list of messages...
-    boost::asio::strand strand_;
-    // List of messages to be written
-    std::list<MessagePointer> write_queue_;
+    // Signal (called from ConnectionManager if anything happens)
+    SignalType signal_;
+    // Slot
+    boost::signals2::connection slot_;
 };
 
-inline boost::shared_ptr<Connection> makeConnection(Connection::Handler* handler = 0)
-{
-    return boost::make_shared<Connection>(handler);
-}
+typedef boost::shared_ptr<Connection> ConnectionPointer;
 
 } // namespace virvo
 

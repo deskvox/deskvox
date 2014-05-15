@@ -22,8 +22,9 @@
 #define VSERVER_SIMPLE_SERVER_H
 
 #include "server.h"
-#include "message_queue.h"
 
+#include <virvo/private/message_queue.h>
+#include <virvo/private/work_queue.h>
 #include <virvo/vvrenderer.h>
 
 #include <boost/thread/thread.hpp>
@@ -39,12 +40,11 @@ class vvSimpleServer : public vvServer
     typedef vvServer BaseType;
 
 public:
-    using BaseType::MessagePointer;
-    using BaseType::ConnectionPointer;
+    typedef virvo::ConnectionPointer ConnectionPointer;
+    typedef virvo::MessagePointer MessagePointer;
 
-public:
     // Constructor.
-    vvSimpleServer();
+    vvSimpleServer(ConnectionPointer conn);
 
     // Destructor.
     virtual ~vvSimpleServer();
@@ -56,43 +56,43 @@ public:
     void stop();
 
     // Called when a new message has successfully been read from the server.
-    virtual void on_read(ConnectionPointer conn, MessagePointer message);
+    virtual void on_read(MessagePointer message) VV_OVERRIDE;
 
     // Called when a message has successfully been written to the server.
-    virtual void on_write(ConnectionPointer conn, MessagePointer message);
+    virtual void on_write(MessagePointer message) VV_OVERRIDE;
 
 private:
     bool createRenderContext(int w = -1/*use default*/, int h = -1/*use default*/);
 
     bool createRemoteServer(vvRenderer::RendererType type);
 
-    void processSingleMessage(MessagePointer message);
+    void processSingleMessage(MessagePointer const& message);
     void processMessages();
 
-    void processNull(MessagePointer message);
-    void processCameraMatrix(MessagePointer message);
-    void processCurrentFrame(MessagePointer message);
-    void processDisconnect(MessagePointer message);
-    void processGpuInfo(MessagePointer message);
-    void processObjectDirection(MessagePointer message);
-    void processParameter(MessagePointer message);
-    void processPosition(MessagePointer message);
-    void processRemoteServerType(MessagePointer message);
-    void processServerInfo(MessagePointer message);
-    void processStatistics(MessagePointer message);
-    void processTransFunc(MessagePointer message);
-    void processTransFuncChanged(MessagePointer message);
-    void processViewingDirection(MessagePointer message);
-    void processVolume(MessagePointer message);
-    void processVolumeFile(MessagePointer message);
-    void processWindowResize(MessagePointer message);
+    void processNull(MessagePointer const& message);
+    void processCameraMatrix(MessagePointer const& message);
+    void processCurrentFrame(MessagePointer const& message);
+    void processDisconnect(MessagePointer const& message);
+    void processGpuInfo(MessagePointer const& message);
+    void processObjectDirection(MessagePointer const& message);
+    void processParameter(MessagePointer const& message);
+    void processPosition(MessagePointer const& message);
+    void processRemoteServerType(MessagePointer const& message);
+    void processServerInfo(MessagePointer const& message);
+    void processStatistics(MessagePointer const& message);
+    void processTransFunc(MessagePointer const& message);
+    void processTransFuncChanged(MessagePointer const& message);
+    void processViewingDirection(MessagePointer const& message);
+    void processVolume(MessagePointer const& message);
+    void processVolumeFile(MessagePointer const& message);
+    void processWindowResize(MessagePointer const& message);
 
     void handleNewVolume();
 
 private:
     // The message queue
-    vvMessageQueue queue_;
-    // The thread to process to the message queue
+    virvo::MessageQueue queue_;
+    // The thread to process incoming messages
     boost::thread worker_;
     // Whether to stop processing messages
     bool cancel_;
@@ -106,6 +106,8 @@ private:
     std::auto_ptr<vvRenderer> renderer_;
     // The current renderer type
     vvRenderer::RendererType rendererType_;
+    // Work queue (to compress images)
+    virvo::WorkQueue workQueue_;
 };
 
 #endif

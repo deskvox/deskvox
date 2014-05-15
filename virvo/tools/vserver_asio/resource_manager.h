@@ -28,18 +28,17 @@ class vvResourceManager : public vvServer
     typedef vvServer BaseType;
 
 public:
-    using BaseType::MessagePointer;
-    using BaseType::ConnectionPointer;
+    typedef virvo::ConnectionPointer ConnectionPointer;
+    typedef virvo::MessagePointer MessagePointer;
 
-public:
     // Constructor.
-    vvResourceManager();
+    vvResourceManager(ConnectionPointer conn);
 
     // Called when a new message has successfully been read from the server.
-    virtual void on_read(ConnectionPointer conn, MessagePointer message);
+    virtual void on_read(MessagePointer message);
 
     // Called when a message has successfully been written to the server.
-    virtual void on_write(ConnectionPointer conn, MessagePointer message);
+    virtual void on_write(MessagePointer message);
 };
 
 #endif

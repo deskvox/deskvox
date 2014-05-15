@@ -34,6 +34,11 @@
 using virvo::makeMessage;
 using virvo::Message;
 
+#define TIME_FPS 0
+#define TIME_READS 0
+#define TIME_WRITES 0
+#define TIME_NEW_IMAGES 1
+
 struct vvImageClient::Impl
 {
     // The mutex to protect the members below
@@ -42,8 +47,6 @@ struct vvImageClient::Impl
     std::auto_ptr<virvo::Image> curr;
     // The next image
     std::auto_ptr<virvo::Image> next;
-    // Counts new images
-    virvo::FrameCounter frameCounter;
 
     void setNextImage(virvo::Image* image)
     {
@@ -65,21 +68,14 @@ struct vvImageClient::Impl
 };
 
 vvImageClient::vvImageClient(vvVolDesc *vd, vvRenderState renderState,
-        std::string const& host, int port, std::string const& filename)
-    : vvRemoteClient(vd, renderState, filename)
+        virvo::ConnectionPointer conn, std::string const& filename)
+    : vvRemoteClient(REMOTE_IMAGE, vd, renderState, conn, filename)
     , impl_(new Impl)
 {
-    run(this, host, port);
+    conn->set_handler(boost::bind(&vvImageClient::handler, this, _1, _2, _3));
 
     init();
-}
-
-vvImageClient::vvImageClient(vvVolDesc *vd, vvRenderState renderState,
-        boost::shared_ptr<virvo::Connection> conn, std::string const& filename)
-    : vvRemoteClient(vd, renderState, filename, conn)
-    , impl_(new Impl)
-{
-    init();
+    init_connection(conn);
 }
 
 vvImageClient::~vvImageClient()
@@ -88,8 +84,15 @@ vvImageClient::~vvImageClient()
 
 bool vvImageClient::render()
 {
+#if TIME_FPS
+    static virvo::FrameCounter counter;
+
+    printf("IMAGE-client: FPS: %.2f\n", counter.registerFrame());
+#endif
+
     // Send a new request
-    conn_->write(makeMessage(Message::CameraMatrix, virvo::messages::CameraMatrix(view(), proj())));
+    if (conn_)
+        conn_->write(makeMessage(Message::CameraMatrix, virvo::messages::CameraMatrix(view(), proj())));
 
     if (impl_->fetchNextImage())
     {
@@ -112,38 +115,59 @@ bool vvImageClient::render()
     return true;
 }
 
-bool vvImageClient::on_connect(virvo::Connection* /*conn*/)
+void vvImageClient::handler(virvo::Connection::Reason reason, virvo::MessagePointer message, boost::system::error_code const& e)
 {
-    return true;
+    if (e)
+    {
+        conn_->close();
+        conn_.reset();
+        return;
+    }
+
+    switch (reason)
+    {
+    case virvo::Connection::Read:
+        on_read(message);
+        break;
+    case virvo::Connection::Write:
+        on_write(message);
+        break;
+    }
 }
 
-bool vvImageClient::on_read(virvo::Connection* conn, virvo::MessagePointer message)
+void vvImageClient::on_read(virvo::MessagePointer message)
 {
+#if TIME_READS
+    static virvo::FrameCounter counter;
+
+    printf("IMAGE-client: reads/sec: %.2f\n", counter.registerFrame());
+#endif
+
     switch (message->type())
     {
     case virvo::Message::Image:
         processImage(message);
         break;
-    default:
-        vvRemoteClient::on_read(conn, message);
-        break;
     }
-
-    return true;
 }
 
-void vvImageClient::init()
+void vvImageClient::on_write(virvo::MessagePointer message)
 {
-    assert(vd != 0);
+#if TIME_WRITES
+    static virvo::FrameCounter counter;
 
-    rendererType = REMOTE_IMAGE;
-
-    conn_->write(makeMessage(Message::Volume, *vd));
-    conn_->write(makeMessage(Message::RemoteServerType, REMOTE_IMAGE));
+    printf("IBR-client: writes/sec: %.2f\n", counter.registerFrame());
+#endif
 }
 
 void vvImageClient::processImage(virvo::MessagePointer message)
 {
+#if TIME_NEW_IMAGES
+    static virvo::FrameCounter counter;
+
+    printf("IMAGE-client: images/sec %.2f\n", counter.registerFrame());
+#endif
+
     // Create a new image
     std::auto_ptr<virvo::Image> image(new virvo::Image);
 
@@ -159,9 +183,4 @@ void vvImageClient::processImage(virvo::MessagePointer message)
 
     // Update the next image
     impl_->setNextImage(image.release());
-
-    // Register frame...
-    double fps = impl_->frameCounter.registerFrame();
-
-    std::cout << "New image: " << fps << " FPS" << std::endl;
 }

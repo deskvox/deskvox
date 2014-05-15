@@ -294,12 +294,18 @@ int main(int argc, char* argv[])
         // Create a new server manager
         vvServerManager server(port, useBonjour);
 
-        // Process the message queue
-        server.run();
+        // Start a new accept operation
+        server.accept();
+
+        // Run the server
+        boost::thread runner(&vvServerManager::run, &server);
+
+        // Wait for the server to quit
+        runner.join();
     }
     catch (std::exception& e)
     {
-        std::cout << "SERVER exception: " << e.what() << std::endl;
+        std::cout << "vvserver_asio: exception: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 

@@ -56,15 +56,13 @@ configure_file(${VIRVO_INCLUDE_DIR}/virvo/vvconfig.h.in ${VIRVO_CONFIG_DIR}/vvco
 
 add_definitions(-DHAVE_CONFIG_H)
 
-if(NOT BUILD_SHARED_LIBS)
-  add_definitions(-DVIRVO_STATIC)
-else()
-  add_definitions(-DVIRVO_EXPORTS)
-endif()
-
 
 set(VIRVO_HEADERS
+  private/archives.h
+  private/blocking_queue.h
   private/connection.h
+  private/connection_manager.h
+  private/message_queue.h
   private/vvcompress.h
   private/vvcompressedvector.h
   private/vvgltools.h
@@ -75,8 +73,8 @@ set(VIRVO_HEADERS
   private/project.h
   private/project.impl.h
   private/vvserialize.h
-  private/vvserver.h
   private/vvtimer.h
+  private/work_queue.h
 
   cuda/array.h
   cuda/debug.h
@@ -160,6 +158,7 @@ set(VIRVO_HEADERS
   vvrendervp.h
   vvrequestmanagement.h
   vvserbrickrend.h
+  vvserialization.h
   vvshaderfactory.h
   vvshaderprogram.h
   vvsllist.h
@@ -196,6 +195,7 @@ set(VIRVO_HEADERS
 
 set(VIRVO_SOURCES
   private/connection.cpp
+  private/connection_manager.cpp
   private/vvcompress_jpeg.cpp
   private/vvcompress_png.cpp
   private/vvcompress_snappy.cpp
@@ -204,7 +204,6 @@ set(VIRVO_SOURCES
   private/vvimage.cpp
   private/vvlog.cpp
   private/vvmessage.cpp
-  private/vvserver.cpp
 
   cuda/debug.cpp
   cuda/graphics_resource.cpp

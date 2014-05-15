@@ -28,8 +28,8 @@ class vvImageServer : public vvRemoteServer
     typedef vvRemoteServer BaseType;
 
 public:
-    typedef BaseType::ConnectionPtr ConnectionPtr;
-    typedef BaseType::MessagePtr MessagePtr;
+    typedef virvo::ConnectionPointer ConnectionPointer;
+    typedef virvo::MessagePointer MessagePointer;
 
 public:
     // Constructor.
@@ -39,8 +39,8 @@ public:
     VVAPI virtual ~vvImageServer();
 
     // Sends the image to the client
-    VVAPI virtual void renderImage(ConnectionPtr conn, MessagePtr message,
-        vvMatrix const& pr, vvMatrix const& mv, vvRenderer* renderer) VV_OVERRIDE;
+    VVAPI virtual void renderImage(ConnectionPointer conn, MessagePointer message,
+        vvMatrix const& pr, vvMatrix const& mv, vvRenderer* renderer, virvo::WorkQueue& queue) VV_OVERRIDE;
 };
 
 #endif

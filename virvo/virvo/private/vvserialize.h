@@ -21,21 +21,25 @@
 #ifndef VV_PRIVATE_SERIALIZE_H
 #define VV_PRIVATE_SERIALIZE_H
 
-#define DESKVOX_USE_ASIO_BINARY_ARCHIVE 0
+#define DESKVOX_USE_ASIO_BINARY_ARCHIVE 1
 
-#if DESKVOX_USE_ASIO_BINARY_ARCHIVE
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
+// TODO:
+// Find the right place for this...
+#ifndef VV_ASIO_DEBUG
+#ifndef NDEBUG
+#define VV_ASIO_DEBUG 0
 #else
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
+#define VV_ASIO_DEBUG 1
 #endif
+#endif
+
+#include "archives.h"
 
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
 #include <boost/iostreams/stream.hpp>
 
-#ifndef NDEBUG
+#if VV_DEBUG_ASIO
 #include <iostream>
 #endif
 #include <vector>
@@ -59,7 +63,7 @@ namespace virvo
 #if DESKVOX_USE_ASIO_BINARY_ARCHIVE
                 boost::archive::binary_oarchive archive(stream);
 #else
-		boost::archive::text_oarchive archive(stream);
+                boost::archive::text_oarchive archive(stream);
 #endif
 
                 // Serialize the message
@@ -70,11 +74,11 @@ namespace virvo
             }
             // ~archive
 
-	    return stream.good();
+            return stream.good();
         }
         catch (std::exception& e)
         {
-#ifndef NDEBUG
+#if VV_ASIO_DEBUG
             std::cout << "virvo::serialize: " << e.what() << std::endl;
 #else
             static_cast<void>(e);
@@ -111,7 +115,7 @@ namespace virvo
         }
         catch (std::exception& e)
         {
-#ifndef NDEBUG
+#if VV_ASIO_DEBUG
             std::cout << "virvo::deserialize: " << e.what() << std::endl;
 #else
             static_cast<void>(e);

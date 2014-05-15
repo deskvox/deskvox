@@ -21,17 +21,22 @@
 #ifndef VV_REMOTE_SERVER_H
 #define VV_REMOTE_SERVER_H
 
-#include "private/vvserver.h"
+#include "private/connection.h"
 #include "vvcompiler.h"
 #include "vvvecmath.h"
+
+namespace virvo
+{
+    class WorkQueue;
+}
 
 class vvRenderer;
 
 class vvRemoteServer
 {
 public:
-    typedef virvo::MessagePointer MessagePtr;
-    typedef virvo::ServerManager::ConnectionPointer ConnectionPtr;
+    typedef virvo::ConnectionPointer ConnectionPointer;
+    typedef virvo::MessagePointer MessagePointer;
 
 public:
     // Constructor.
@@ -44,8 +49,8 @@ public:
     VVAPI virtual void resize(int w, int h);
 
     // Sends the image to the client
-    virtual void renderImage(ConnectionPtr conn, MessagePtr message,
-        vvMatrix const& pr, vvMatrix const& mv, vvRenderer* renderer) = 0;
+    virtual void renderImage(ConnectionPointer conn, MessagePointer message,
+        vvMatrix const& pr, vvMatrix const& mv, vvRenderer* renderer, virvo::WorkQueue& queue) = 0;
 };
 
 #endif
