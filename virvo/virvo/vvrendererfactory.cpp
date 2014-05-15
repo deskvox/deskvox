@@ -55,6 +55,8 @@
 
 #include <boost/lexical_cast.hpp>
 
+//--------------------------------------------------------------------------------------------------
+
 namespace
 {
   template <class Map, class Key>
@@ -68,6 +70,67 @@ namespace
     return &it->second;
   }
 }
+
+//--------------------------------------------------------------------------------------------------
+
+#ifdef DESKVOX_USE_ASIO
+
+//
+// TODO:
+// Move into socket map... ?!?!
+//
+
+#include "private/connection.h"
+#include "private/connection_manager.h"
+
+struct MyConnectionManager
+{
+    virvo::ConnectionManagerPointer manager;
+
+    MyConnectionManager()
+        : manager(virvo::makeConnectionManager())
+    {
+        manager->run_in_thread();
+    }
+};
+
+static virvo::ConnectionPointer GetConnection(std::string const& host, unsigned short port)
+{
+    static MyConnectionManager M;
+
+    // Look for an existing connection
+    virvo::ConnectionPointer conn = M.manager->find(host, port);
+
+    if (conn.get() == 0)
+    {
+        // No connection found.
+        // Create a new connection.
+        conn = M.manager->connect(host, port);
+    }
+
+    return conn;
+}
+
+static virvo::ConnectionPointer GetConnection(vvRendererFactory::Options const& options)
+{
+    // Default host
+    std::string host = "127.0.0.1";
+    // Default port
+    unsigned short port = 31050;
+
+    if (std::string const* s = Lookup(options, "host"))
+        host = *s;
+
+    if (std::string const* s = Lookup(options, "port"))
+        port = boost::lexical_cast<unsigned short>(*s);
+
+    // Get the connection to the host
+    return GetConnection(host, port);
+}
+
+#endif
+
+//--------------------------------------------------------------------------------------------------
 
 #define EAX 0x0
 #define EBX 0x1
@@ -521,15 +584,7 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   case vvRenderer::REMOTE_IMAGE:
     {
 #ifdef DESKVOX_USE_ASIO
-    std::string host = "127.0.0.1";
-    if (std::string const* s = Lookup(options.options, "host"))
-        host = *s;
-
-    int port = 31050;
-    if (std::string const* s = Lookup(options.options, "port"))
-        port = boost::lexical_cast<int>(*s);
-
-    return new vvImageClient(vd, rs, host, port, filename.c_str());
+    return new vvImageClient(vd, rs, GetConnection(options.options), filename);
 #else
     return new vvImageClient(vd, rs, sock, filename.c_str());
 #endif
@@ -537,15 +592,7 @@ vvRenderer *create(vvVolDesc *vd, const vvRenderState &rs, const char *t, const 
   case vvRenderer::REMOTE_IBR:
     {
 #ifdef DESKVOX_USE_ASIO
-    std::string host = "127.0.0.1";
-    if (std::string const* s = Lookup(options.options, "host"))
-        host = *s;
-
-    int port = 31050;
-    if (std::string const* s = Lookup(options.options, "port"))
-        port = boost::lexical_cast<int>(*s);
-
-    return new vvIbrClient(vd, rs, host, port, filename.c_str());
+    return new vvIbrClient(vd, rs, GetConnection(options.options), filename);
 #else
     return new vvIbrClient(vd, rs, sock, filename.c_str());
 #endif
