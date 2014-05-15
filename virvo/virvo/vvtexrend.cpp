@@ -3783,15 +3783,12 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       {
         bool fbo = static_cast<bool>(newValue);
 
-        if (fbo != _useOffscreenBuffer)
-        {
-          this->_useOffscreenBuffer = fbo;
+        this->_useOffscreenBuffer = fbo;
 
-          if (fbo)
-            setRenderTarget( virvo::FramebufferObjectRT::create() );
-          else
-            setRenderTarget( virvo::NullRT::create() );
-        }
+        if (fbo)
+          setRenderTarget( virvo::FramebufferObjectRT::create() );
+        else
+          setRenderTarget( virvo::NullRT::create() );
       }
       break;
     case vvRenderer::VV_IMG_SCALE:
@@ -3800,20 +3797,7 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
     case vvRenderer::VV_IMG_PRECISION:
     case vvRenderer::VV_IMAGE_PRECISION:
       {
-        if (static_cast<int>(newValue) == 0)
-        {
-            if (this->_useOffscreenBuffer)
-            {
-                this->_useOffscreenBuffer = false;
-                setRenderTarget( virvo::NullRT::create() );
-            }
-            break;
-        }
-
         virvo::BufferPrecision bp = mapBitsToBufferPrecision(static_cast<int>(newValue));
-
-        if (bp == this->_imagePrecision)
-          break;
 
         this->_imagePrecision = bp;
 
