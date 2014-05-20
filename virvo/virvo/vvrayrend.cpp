@@ -61,6 +61,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   const uint texwidth, const float dist,
                                   const float3 volPos, const float3 volSizeHalf,
                                   const float3 probePos, const float3 probeSizeHalf,
+                                  float3 texsize,
                                   int ipol_type,
                                   const float3 Lpos, const float3 V,
                                   float constAtt, float linearAtt, float quadAtt,
@@ -310,6 +311,8 @@ void vvRayRend::renderVolumeGL()
     probeSize = make_float3((float)vd->vox[0], (float)vd->vox[1], (float)vd->vox[2]);
   }
 
+  float3 texsize = make_float3(vd->vox[0], vd->vox[1], vd->vox[2]);
+
   const bool isOrtho = pr.isProjOrtho();
 
   vvVector3 eye;
@@ -396,6 +399,7 @@ void vvRayRend::renderVolumeGL()
                     volSize * 0.5f,
                     probePos,
                     probeSize * 0.5f,
+                    texsize,
                     static_cast< int >(_interpolation),
                     Lpos,
                     V,

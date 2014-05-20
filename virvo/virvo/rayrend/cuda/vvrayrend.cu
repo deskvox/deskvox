@@ -68,98 +68,92 @@ __device__ float lerp(float a, float b, float x)
   return a + x * (b - a);
 }
 
-static texture<float4, 1, cudaReadModeElementType> tex_hg;
+
+// weight functions for Mitchell - Netravalli B-Spline
+__device__ float w0( float a ) { return (1.0f / 6.0f) * (-(a * a * a) + 3.0f * a * a - 3.0f * a + 1.0f); }
+__device__ float w1( float a ) { return (1.0f / 6.0f) * (3.0f * a * a * a - 6.0f * a * a + 4.0f); }
+__device__ float w2( float a ) { return (1.0f / 6.0f) * (-3.0f * a * a * a + 3.0f * a * a + 3.0f * a + 1.0f); }
+__device__ float w3( float a ) { return (1.0f / 6.0f) * (a * a * a); }
 
 
-__device__ float g0(float a)
-{
-  a = a - floor(a);
-  float w0 = (1.f / 6.f) * (-(a * a * a) + 3.f * a * a - 3.f * a + 1.f);
-  float w1 = (1.f / 6.f) * (3.f * a * a * a - 6.f * a * a + 4.f);
-  return w0 + w1;
-}
+// helper functions for cubic interpolation
+__device__ float g0( float x ) { return w0(x) + w1(x); }
+__device__ float g1( float x ) { return w2(x) + w3(x); }
+__device__ float h0( float x ) { return ((floor( x ) - 1.0f + w1(x)) / (w0(x) + w1(x))) + x; }
+__device__ float h1( float x ) { return ((floor( x ) + 1.0f + w3(x)) / (w2(x) + w3(x))) - x; }
 
 
-__device__ float h0(float a)
-{
-  a = a - floor(a);
-  float w0 = (1.f / 6.f) * (-(a * a * a) + 3.f * a * a - 3.f * a + 1.f);
-  float w1 = (1.f / 6.f) * (3.f * a * a * a - 6.f * a * a + 4.f);
-  return 1.f - (w1 / (w0 + w1)) + a;
-}
-
-__device__ float h1(float a)
-{
-  a  = a - floor(a);
-  float w2 = (1.f / 6.f) * (-3.f * a * a * a + 3.f * a * a + 3.f * a + 1.f);
-  float w3 = (1.f / 6.f) * (a * a * a);
-  return 1.f + (w3 / (w2 + w3)) - a;
-}
-
+// cubic interpolation using 8 trilinear texture lookups
+// cf. http://http.developer.nvidia.com/GPUGems2/gpugems2_chapter20.html
 __device__ float tricubic(texture< uchar, 3, cudaReadModeNormalizedFloat > tex_source,
-  const float x, const float y, const float z, float3 volsize)
+  const float coord_x, const float coord_y, const float coord_z, float3 texsize)
 {
-  float3 coord_source = make_float3(x, y, z);
-  float3 coord_hg     = coord_source * volsize - 0.5f;
 
-  float3 hg_x = make_float3(h0( coord_hg.x ) / volsize.x, -h1( coord_hg.x ) / volsize.x, g0( coord_hg.x ));
-  float3 hg_y = make_float3(h0( coord_hg.y ) / volsize.y, -h1( coord_hg.y ) / volsize.y, g0( coord_hg.y ));
-  float3 hg_z = make_float3(h0( coord_hg.z ) / volsize.z, -h1( coord_hg.z ) / volsize.z, g0( coord_hg.z ));
+  float x = (coord_x * texsize.x) - 0.5f;
+  float floorx = floor( x );
+  float fracx  = x - floor( x );
 
-  float3 coord_source100 = coord_source + make_float3(hg_x.x, hg_y.y, hg_z.y);
-  float3 coord_source000 = coord_source + make_float3(hg_x.y, hg_y.y, hg_z.y);
+  float y = (coord_y * texsize.y) - 0.5f;
+  float floory = floor( y );
+  float fracy  = y - floor( y );
 
-  float3 coord_source110 = coord_source + make_float3(hg_x.x, hg_y.x, hg_z.y);
-  float3 coord_source010 = coord_source + make_float3(hg_x.y, hg_y.x, hg_z.y);
-
-
-  float3 coord_source101 = coord_source + make_float3(hg_x.x, hg_y.y, hg_z.x);
-  float3 coord_source001 = coord_source + make_float3(hg_x.y, hg_y.y, hg_z.x);
-
-  float3 coord_source111 = coord_source + make_float3(hg_x.x, hg_y.x, hg_z.x);
-  float3 coord_source011 = coord_source + make_float3(hg_x.y, hg_y.x, hg_z.x);
+  float z = (coord_z * texsize.z) - 0.5f;
+  float floorz = floor( z );
+  float fracz  = z - floor( z );
 
 
-#define TEX3D(tex, coord) (tex3D(tex, coord.x, coord.y, coord.z))
-  float tex_source000 = TEX3D(tex_source, coord_source000);
-  float tex_source100 = TEX3D(tex_source, coord_source100);
-  float tex_source010 = TEX3D(tex_source, coord_source010);
-  float tex_source110 = TEX3D(tex_source, coord_source110);
-  float tex_source001 = TEX3D(tex_source, coord_source001);
-  float tex_source101 = TEX3D(tex_source, coord_source101);
-  float tex_source011 = TEX3D(tex_source, coord_source011);
-  float tex_source111 = TEX3D(tex_source, coord_source111);
-#undef TEX3D
+  float tmp000 = ( w1(fracx) ) / ( w0(fracx) + w1(fracx) ) ;
+  float h_000 = ( floorx - 0.5f + tmp000 ) / (float)( texsize.x);
+
+  float tmp100 = ( w3(fracx) ) / ( w2(fracx) + w3(fracx) ) ;
+  float h_100 = ( floorx + 1.5f + tmp100 ) / (float)( texsize.x);
+
+  float tmp010 = ( w1(fracy) ) / ( w0(fracy) + w1(fracy) ) ;
+  float h_010 = ( floory - 0.5f + tmp010 ) / (float)( texsize.y);
+
+  float tmp110 = ( w3(fracy) ) / ( w2(fracy) + w3(fracy) ) ;
+  float h_110 = ( floory + 1.5f + tmp110 ) / (float)( texsize.y);
+
+  float tmp001 = ( w1(fracz) ) / ( w0(fracz) + w1(fracz) ) ;
+  float h_001 = ( floorz - 0.5f + tmp001 ) / (float)( texsize.z);
+
+  float tmp101 = ( w3(fracz) ) / ( w2(fracz) + w3(fracz) ) ;
+  float h_101 = ( floorz + 1.5f + tmp101 ) / (float)( texsize.z );
 
 
-  // z direction
-  tex_source000 = lerp(tex_source000, tex_source001, hg_z.z);
-  tex_source010 = lerp(tex_source010, tex_source011, hg_z.z);
+  float f_000 = tex3D( tex_source, h_000, h_010, h_001 );
+  float f_100 = tex3D( tex_source, h_100, h_010, h_001 );
+  float f_010 = tex3D( tex_source, h_000, h_110, h_001 );
+  float f_110 = tex3D( tex_source, h_100, h_110, h_001 );
 
-  tex_source100 = lerp(tex_source100, tex_source101, hg_z.z);
-  tex_source110 = lerp(tex_source110, tex_source111, hg_z.z);
+  float f_001 = tex3D( tex_source, h_000, h_010, h_101 );
+  float f_101 = tex3D( tex_source, h_100, h_010, h_101 );
+  float f_011 = tex3D( tex_source, h_000, h_110 ,h_101 );
+  float f_111 = tex3D( tex_source, h_100, h_110, h_101 );
 
-  // y direction
-  tex_source000 = lerp(tex_source000, tex_source010, hg_y.z);
-  tex_source100 = lerp(tex_source100, tex_source110, hg_y.z);
+  float f_00 = g0(fracx) * f_000 + g1(fracx) * f_100;
+  float f_10 = g0(fracx) * f_010 + g1(fracx) * f_110;
+  float f_01 = g0(fracx) * f_001 + g1(fracx) * f_101;
+  float f_11 = g0(fracx) * f_011 + g1(fracx) * f_111;
 
-  // x direction
-  tex_source000 = lerp(tex_source000, tex_source100, hg_x.z);
+  float f_0 = g0( fracy ) * f_00 + g1( fracy ) * f_10;
+  float f_1 = g0(fracy) * f_01 + g1(fracy) * f_11;
 
-  return tex_source000;
+  return g0(fracz) * f_0 + g1(fracz) * f_1;
+
 }
 
 
 template<int t_bpc>
 __device__ float volume(const float x, const float y, const float z,
-  float3 const& volsize, int ipol_type);
+  float3 const& texsize, int ipol_type);
 template<>
 __device__ float volume<1>(const float x, const float y, const float z,
-  float3 const& volsize, int ipol_type)
+  float3 const& texsize, int ipol_type)
 {
   if (ipol_type > 1)
   {
-    return tricubic(volTexture8, x, y, z, volsize);
+    return tricubic(volTexture8, x, y, z, texsize);
   }
   else
   {
@@ -168,19 +162,19 @@ __device__ float volume<1>(const float x, const float y, const float z,
 }
 template<>
 __device__ float volume<2>(const float x, const float y, const float z,
-  float3 const& volsize, int ipol_type)
+  float3 const& texsize, int ipol_type)
 {
   return tex3D(volTexture16, x, y, z);
 }
 
 template<int t_bpc>
-__device__ float volume(const float3& pos, float3 const& volsize, int ipol_type);
+__device__ float volume(const float3& pos, float3 const& texsize, int ipol_type);
 template<>
-__device__ float volume<1>(const float3& pos, float3 const& volsize, int ipol_type)
+__device__ float volume<1>(const float3& pos, float3 const& texsize, int ipol_type)
 {
   if (ipol_type > 1)
   {
-    return tricubic(volTexture8, pos.x, pos.y, pos.z, volsize);
+    return tricubic(volTexture8, pos.x, pos.y, pos.z, texsize);
   }
   else
   {
@@ -188,7 +182,7 @@ __device__ float volume<1>(const float3& pos, float3 const& volsize, int ipol_ty
   }
 }
 template<>
-__device__ float volume<2>(const float3& pos, float3 const& volsize, int ipol_type)
+__device__ float volume<2>(const float3& pos, float3 const& texsize, int ipol_type)
 {
   return tex3D(volTexture16, pos.x, pos.y, pos.z);
 }
@@ -370,19 +364,19 @@ __device__ uchar4 rgbaFloatToInt(float4 rgba)
 }
 
 template<int t_bpc>
-__device__ float3 gradient(const float3& texcoord, float3 const& volsize, int ipol_type)
+__device__ float3 gradient(const float3& texcoord, float3 const& texsize, int ipol_type)
 {
   const float DELTA = 0.01f;
 
   float3 sample1;
   float3 sample2;
 
-  sample1.x = volume<t_bpc>(texcoord - make_float3(DELTA, 0.0f, 0.0f), volsize, ipol_type);
-  sample2.x = volume<t_bpc>(texcoord + make_float3(DELTA, 0.0f, 0.0f), volsize, ipol_type);
-  sample1.y = volume<t_bpc>(texcoord - make_float3(0.0f, DELTA, 0.0f), volsize, ipol_type);
-  sample2.y = volume<t_bpc>(texcoord + make_float3(0.0f, DELTA, 0.0f), volsize, ipol_type);
-  sample1.z = volume<t_bpc>(texcoord - make_float3(0.0f, 0.0f, DELTA), volsize, ipol_type);
-  sample2.z = volume<t_bpc>(texcoord + make_float3(0.0f, 0.0f, DELTA), volsize, ipol_type);
+  sample1.x = volume<t_bpc>(texcoord - make_float3(DELTA, 0.0f, 0.0f), texsize, ipol_type);
+  sample2.x = volume<t_bpc>(texcoord + make_float3(DELTA, 0.0f, 0.0f), texsize, ipol_type);
+  sample1.y = volume<t_bpc>(texcoord - make_float3(0.0f, DELTA, 0.0f), texsize, ipol_type);
+  sample2.y = volume<t_bpc>(texcoord + make_float3(0.0f, DELTA, 0.0f), texsize, ipol_type);
+  sample1.z = volume<t_bpc>(texcoord - make_float3(0.0f, 0.0f, DELTA), texsize, ipol_type);
+  sample2.z = volume<t_bpc>(texcoord + make_float3(0.0f, 0.0f, DELTA), texsize, ipol_type);
 
   return sample2 - sample1;
 }
@@ -392,12 +386,12 @@ __device__ float4 blinnPhong(const float4& classification, const float3& pos, co
                              const float3& Lpos, const float3& V,
                              const float3& Ka, const float3& Kd, const float3& Ks,
                              const float shininess,
-                             float3 const& volsize, int ipol_type,
+                             float3 const& texsize, int ipol_type,
                              const float constAtt = 1.f, const float linearAtt = 0.f, const float quadAtt = 0.f,
                              const float3* normal = NULL)
 {
   // Normal transformed from texture to volume coordinates
-  float3 N = normalize(gradient<t_bpc>(texcoord, volsize, ipol_type));
+  float3 N = normalize(gradient<t_bpc>(texcoord, texsize, ipol_type));
   N = tex2vol(N);
 
   // Light direction
@@ -450,6 +444,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
                        const uint texwidth, const float dist,
                        const float3 volPos, const float3 volSizeHalf,
                        const float3 probePos, const float3 probeSizeHalf,
+                       float3 texsize,
                        int ipol_type,
                        const float3 Lpos, const float3 V,
                        float constAtt, float linearAtt, float quadAtt,
@@ -598,7 +593,6 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
   // Ensure that dist is big enough
   const bool infinite = (tbnear+dist != tbnear && tbfar+dist != tbfar);
-  float3 volsize = volSizeHalf * 2.0f;
 
   while(infinite)
   {
@@ -627,7 +621,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
 
     const float3 texCoord = calcTexCoord(pos, volPos, volSizeHalf);
 
-    const float sample = volume<t_bpc>(texCoord, volsize, ipol_type);
+    const float sample = volume<t_bpc>(texCoord, texsize, ipol_type);
 
     // Post-classification transfer-function lookup.
     float4 src = tex1D(tfTexture, sample);
@@ -656,25 +650,25 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
       const float shininess = 1000.0f;
       if (justClippedPlane)
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize, ipol_type,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, ipol_type,
           constAtt, linearAtt, quadAtt, &planeNormal);
         justClippedPlane = false;
       }
       else if (justClippedSphere)
       {
         float3 sphereNormal = normalize(sphereCenter - pos);
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize, ipol_type,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, ipol_type,
           constAtt, linearAtt, quadAtt, &sphereNormal);
         justClippedSphere = false;
       }
       else if(justClippedBox)
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize, ipol_type,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, ipol_type,
           constAtt, linearAtt, quadAtt, &boxNormal);
       }
       else
       {
-        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, volsize, ipol_type,
+        src = blinnPhong<t_bpc>(src, pos, texCoord, Lpos, V, Ka, Kd, Ks, shininess, texsize, ipol_type,
           constAtt, linearAtt, quadAtt);
       }
     }
@@ -864,6 +858,7 @@ typedef void(*renderKernel)(uchar4* d_output, const uint width, const uint heigh
                             const uint texwidth, const float dist,
                             const float3 volPos, const float3 volSizeHalf,
                             const float3 probePos, const float3 probeSizeHalf,
+                            float3 texsize,
                             int ipol_type,
                             const float3 Lpos, const float3 V,
                             float constAtt, float linearAtt, float quadAtt,
@@ -1124,6 +1119,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
                                   const uint texwidth, const float dist,
                                   const float3 volPos, const float3 volSizeHalf,
                                   const float3 probePos, const float3 probeSizeHalf,
+                                  float3 texsize,
                                   int ipol_type,
                                   const float3 Lpos, const float3 V,
                                   float constAtt, float linearAtt, float quadAtt,
@@ -1161,7 +1157,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
     (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
                                       texwidth, dist,
                                       volPos, volSizeHalf,
-                                      probePos, probeSizeHalf, ipol_type,
+                                      probePos, probeSizeHalf, texsize, ipol_type,
                                       Lpos, V,
                                       constAtt, linearAtt, quadAtt,
                                       clipPlane,
@@ -1180,7 +1176,7 @@ extern "C" void CallRayRendKernel(const RayRendKernelParams& params,
   (kernel)<<<gridSize, blockSize>>>(d_output, width, height,
                                     texwidth, dist,
                                     volPos, volSizeHalf,
-                                    probePos, probeSizeHalf, ipol_type,
+                                    probePos, probeSizeHalf, texsize, ipol_type,
                                     Lpos, V,
                                     constAtt, linearAtt, quadAtt,
                                     clipPlane,
