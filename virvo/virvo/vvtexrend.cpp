@@ -1613,7 +1613,7 @@ vvTexRend::ErrorType vvTexRend::updateTextures3D(ssize_t offsetX, ssize_t offset
     else
     {
       glBindTexture(GL_TEXTURE_3D_EXT, texNames[f]);
-      glTexSubImage3DEXT(GL_TEXTURE_3D_EXT, 0, offsetX, offsetY, offsetZ,
+      glTexSubImage3D(GL_TEXTURE_3D_EXT, 0, offsetX, offsetY, offsetZ,
         sizeX, sizeY, sizeZ, texFormat, GL_UNSIGNED_BYTE, texData);
     }
   }
@@ -3731,7 +3731,12 @@ void vvTexRend::setParameter(ParameterType param, const vvParam& newValue)
       if (_interpolation != static_cast< vvRenderState::InterpolType >(newValue.asInt()))
       {
         _interpolation = static_cast< vvRenderState::InterpolType >(newValue.asInt());
-        makeTextures();
+        for (size_t f = 0; f < vd->frames; ++f)
+        {
+          glBindTexture(GL_TEXTURE_3D_EXT, texNames[f]);
+          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MAG_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
+          glTexParameteri(GL_TEXTURE_3D_EXT, GL_TEXTURE_MIN_FILTER, (_interpolation) ? GL_LINEAR : GL_NEAREST);
+        }
         updateTransferFunction();
       }
       break;
