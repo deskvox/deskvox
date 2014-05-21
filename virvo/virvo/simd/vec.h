@@ -200,6 +200,15 @@ VV_FORCE_INLINE sse_vec round(sse_vec const& v)
 #endif
 }
 
+VV_FORCE_INLINE sse_vec ceil(sse_vec const& v)
+{
+#if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
+  return _mm_ceil_ps(v);
+#else
+  throw std::runtime_error("not implemented yet");
+#endif
+}
+
 VV_FORCE_INLINE sse_vec floor(sse_vec const& v)
 {
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1

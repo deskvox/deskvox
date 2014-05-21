@@ -24,6 +24,7 @@
 #include "mem/allocator.h"
 #include "private/vvlog.h"
 #include "private/project.h"
+#include "texture/texture.h"
 
 
 #ifdef HAVE_CONFIG_H
@@ -42,14 +43,6 @@
 #endif
 
 typedef std::vector<float, virvo::mem::aligned_allocator<float, CACHE_LINE> > vecf;
-
-#include <boost/detail/endian.hpp>
-
-#ifdef BOOST_LITTLE_ENDIAN
-static const size_t high_byte_offset = 1;
-#else
-static const size_t high_byte_offset = 0;
-#endif
 
 namespace virvo
 {
@@ -93,9 +86,12 @@ typedef virvo::simd::Veci index_t;
 #define PACK_SIZE_X 2
 #define PACK_SIZE_Y 2
 
+using virvo::simd::ceil;
 using virvo::simd::clamp;
+using virvo::simd::floor;
 using virvo::simd::min;
 using virvo::simd::max;
+using virvo::simd::tex3D;
 namespace fast = virvo::simd::fast;
 typedef virvo::simd::Veci Vecs;
 typedef virvo::simd::Vec3i Vec3s;
@@ -118,6 +114,7 @@ typedef size_t index_t;
 using virvo::toolshed::clamp;
 using std::min;
 using std::max;
+using virvo::tex3D;
 typedef size_t Vecs;
 namespace fast
 {
@@ -154,27 +151,6 @@ VV_FORCE_INLINE T vec_cast(U const& u)
   return virvo::simd::simd_cast<T>(u);
 #else
   return static_cast<T>(u);
-#endif
-}
-
-VV_FORCE_INLINE Vec volume(const uint8_t* raw, index_t const& idx, int bpc)
-{
-#if VV_USE_SSE
-#if 0//__LP64__
-
-#else
-  CACHE_ALIGN int indices[4];
-  index_t ridx = idx*bpc+high_byte_offset*(bpc-1);
-  virvo::simd::store(ridx, &indices[0]);
-  CACHE_ALIGN float vals[4];
-  for (size_t i = 0; i < 4; ++i)
-  {
-    vals[i] = raw[indices[i]];
-  }
-  return Vec(&vals[0]);
-#endif
-#else
-  return raw[idx*bpc+high_byte_offset*(bpc-1)];
 #endif
 }
 
@@ -562,7 +538,11 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   uint8_t const* raw            = *thread->raw;
 
   float quality                 = thread->render_params->quality;
-  bool interpolation            = thread->render_params->interpolation;
+
+  virvo::texture< uint8_t, 3 >::tex_filter_mode filter_mode = thread->render_params->interpolation
+    ? virvo::texture< uint8_t, 3 >::Linear
+    : virvo::texture< uint8_t, 3 >::Nearest;
+
   bool opacityCorrection        = thread->render_params->opacity_correction;
   bool earlyRayTermination      = thread->render_params->early_ray_termination;
   int mipMode                   = thread->render_params->mip_mode;
@@ -624,113 +604,11 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
           Vec3 texcoord((pos[0] - volpos[0] + size2[0]) * invsize[0],
                         (-pos[1] - volpos[1] + size2[1]) * invsize[1],
                         (-pos[2] - volpos[2] + size2[2]) * invsize[2]);
-          texcoord[0] = clamp(texcoord[0], Vec(0.0f), Vec(1.0f));
-          texcoord[1] = clamp(texcoord[1], Vec(0.0f), Vec(1.0f));
-          texcoord[2] = clamp(texcoord[2], Vec(0.0f), Vec(1.0f));
 
-          Vec sample = 0.0f;
-          if (interpolation)
-          {
-            Vec3 texcoordf(texcoord[0] * fvox[0] - 0.5f,
-                           texcoord[1] * fvox[1] - 0.5f,
-                           texcoord[2] * fvox[2] - 0.5f);
-
-            texcoordf[0] = clamp(texcoordf[0], Vec(0.0f), fvox[0] - 1);
-            texcoordf[1] = clamp(texcoordf[1], Vec(0.0f), fvox[1] - 1);
-            texcoordf[2] = clamp(texcoordf[2], Vec(0.0f), fvox[2] - 1);
-
-            // store truncated texcoord to avoid lots of _mm_cvtps_epi32 calls below
-            Vec3s tci(vec_cast<Vecs>(texcoordf[0]), vec_cast<Vecs>(texcoordf[1]), vec_cast<Vecs>(texcoordf[2]));
-
-            Vec samples[8];
-
-            Vec3s tc = tci + Vec3s(0, 0, 0);
-            tc[0] = min(tc[0], vox[0] - 1);
-            tc[1] = min(tc[1], vox[1] - 1);
-            tc[2] = min(tc[2], vox[2] - 1);
-            index_t idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[0] = volume(raw, idx, bpc);
-
-            tc = tci + Vec3s(1, 0, 0);
-            tc[0] = min(tc[0], vox[0] - 1);
-            tc[1] = min(tc[1], vox[1] - 1);
-            tc[2] = min(tc[2], vox[2] - 1);
-            idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[1] = volume(raw, idx, bpc);
-
-            tc = tci + Vec3s(1, 1, 0);
-            tc[0] = min(tc[0], vox[0] - 1);
-            tc[1] = min(tc[1], vox[1] - 1);
-            tc[2] = min(tc[2], vox[2] - 1);
-            idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[2] = volume(raw, idx, bpc);
-
-            tc = tci + Vec3s(0, 1, 0);
-            tc[0] = min(tc[0], vox[0] - 1);
-            tc[1] = min(tc[1], vox[1] - 1);
-            tc[2] = min(tc[2], vox[2] - 1);
-            idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[3] = volume(raw, idx, bpc);
-
-            tc = tci + Vec3s(1, 0, 1);
-            tc[0] = min(tc[0], vox[0] - 1);
-            tc[1] = min(tc[1], vox[1] - 1);
-            tc[2] = min(tc[2], vox[2] - 1);
-            idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[4] = volume(raw, idx, bpc);
-
-            tc = tci + Vec3s(0, 0, 1);
-            tc[0] = min(tc[0], vox[0] - 1);
-            tc[1] = min(tc[1], vox[1] - 1);
-            tc[2] = min(tc[2], vox[2] - 1);
-            idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[5] = volume(raw, idx, bpc);
-
-            tc = tci + Vec3s(0, 1, 1);
-            tc[0] = min(tc[0], vox[0] - 1);
-            tc[1] = min(tc[1], vox[1] - 1);
-            tc[2] = min(tc[2], vox[2] - 1);
-            idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[6] = volume(raw, idx, bpc);
-
-            tc = tci + Vec3s(1, 1, 1);
-            tc[0] = min(tc[0], vox[0] - 1);
-            tc[1] = min(tc[1], vox[1] - 1);
-            tc[2] = min(tc[2], vox[2] - 1);
-            idx = tc[2] * vox[0] * vox[1] + tc[1] * vox[0] + tc[0];
-            samples[7] = volume(raw, idx, bpc);
-
-
-            Vec3 tmp(vec_cast<Vec>(tci[0]), vec_cast<Vec>(tci[1]), vec_cast<Vec>(tci[2]));
-            Vec3 uvw = texcoordf - tmp;
-
-            // lerp
-            Vec p1 = (1 - uvw[0]) * samples[0] + uvw[0] * samples[1];
-            Vec p2 = (1 - uvw[0]) * samples[3] + uvw[0] * samples[2];
-            Vec p12 = (1 - uvw[1]) * p1 + uvw[1] * p2;
-
-            Vec p3 = (1 - uvw[0]) * samples[5] + uvw[0] * samples[4];
-            Vec p4 = (1 - uvw[0]) * samples[6] + uvw[0] * samples[7];
-            Vec p34 = (1 - uvw[1]) * p3 + uvw[1] * p4;
-
-            sample = (1 - uvw[2]) * p12 + uvw[2] * p34;
-          }
-          else
-          {
-            // calc voxel coordinates using Manhattan distance
-            Vec3s texcoordi(vec_cast<Vecs>(texcoord[0] * fvox[0]),
-                            vec_cast<Vecs>(texcoord[1] * fvox[1]),
-                            vec_cast<Vecs>(texcoord[2] * fvox[2]));
-
-            texcoordi[0] = clamp<dim_t>(texcoordi[0], 0, vox[0] - 1);
-            texcoordi[1] = clamp<dim_t>(texcoordi[1], 0, vox[1] - 1);
-            texcoordi[2] = clamp<dim_t>(texcoordi[2], 0, vox[2] - 1);
-
-            index_t idx = texcoordi[2] * vox[0] * vox[1] + texcoordi[1] * vox[0] + texcoordi[0];
-            sample = volume(raw, idx, bpc);
-          }
-
+          // TODO: templatize this decision?
+          Vec sample = bpc == 2 ? tex3D< uint8_t, 2 >(raw, texcoord, vox, filter_mode) : tex3D< uint8_t, 1 >(raw, texcoord, vox, filter_mode);
           sample /= 255.0f;
+
           Vec4 src = rgba(rgbaTF, vec_cast<Vecs>(sample * static_cast<float>(lutsize)) * 4);
 
           if (mipMode == 1)
