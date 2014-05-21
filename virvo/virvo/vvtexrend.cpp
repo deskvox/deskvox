@@ -2317,9 +2317,7 @@ void vvTexRend::renderTex3DPlanar(const vvMatrix& mv)
     minDistanceInd=2;
   float voxelDistance = probeSizeObj[minDistanceInd]/probeTexels[minDistanceInd];
 
-  const float quality = calcQualityAndScaleImage();
-
-  float sliceDistance = voxelDistance / quality;
+  float sliceDistance = voxelDistance / _quality;
   if(_isROIUsed && _quality < 2.0)
   {
     // draw at least twice as many slices as there are samples in the probe depth.
@@ -2560,11 +2558,9 @@ void vvTexRend::renderTexBricks(const vvMatrix& mv)
                                            vd->vox[1] * vd->vox[1] +
                                            vd->vox[2] * vd->vox[2]));
 
-  const float quality = calcQualityAndScaleImage();
-
   // make sure that at least one slice is drawn.
   // <> deceives msvc so that it won't use the windows.h max macro.
-  size_t numSlices = ::max<>(size_t(1), static_cast<size_t>(quality * diagonalVoxels));
+  size_t numSlices = ::max<>(size_t(1), static_cast<size_t>(_quality * diagonalVoxels));
 
   VV_LOG(3) << "Number of texture slices rendered: " << numSlices << std::endl;
 
@@ -4492,17 +4488,6 @@ float vvTexRend::getManhattenDist(float p1[3], float p2[3]) const
   std::cerr << "Manhattan Distance: " << dist << endl;
 
   return dist;
-}
-
-//----------------------------------------------------------------------------
-/** Get the quality to adjust numSlices. If the render target is an offscreen
-    buffer, that one gets scaled and the quality return value is adjusted since
-    part of the quality reduction is accomodated through image scaling.
-    @return The quality.
-*/
-float vvTexRend::calcQualityAndScaleImage()
-{
-  return _quality;
 }
 
 void vvTexRend::initVertArray(size_t numSlices)

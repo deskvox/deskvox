@@ -261,7 +261,6 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     size_t getTexMemorySize() const;
     uint8_t* getHeightFieldData(float[4][3], size_t&, size_t&);
     float getManhattenDist(float[3], float[3]) const;
-    float calcQualityAndScaleImage();
 };
 #endif
 
