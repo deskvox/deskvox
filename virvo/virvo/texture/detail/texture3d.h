@@ -12,11 +12,12 @@ namespace virvo
 
 
 template < typename T >
-class texture< T, 3 >
+class texture< T, 3 > : public texture_base< T >
 {
 public:
 
-    typedef T value_type;
+    typedef typename texture_base< T >::value_type value_type;
+
 
     value_type* data;
 
@@ -41,16 +42,11 @@ public:
     }
 
 
-    void set_filter_mode(tex_filter_mode mode) { filter_mode_ = mode; }
-
-    tex_filter_mode get_filter_mode() const { return filter_mode_; }
     size_t width() const { return width_; }
     size_t height() const { return height_; }
     size_t depth() const { return depth_; }
 
 private:
-
-    tex_filter_mode filter_mode_;
 
     size_t width_;
     size_t height_;

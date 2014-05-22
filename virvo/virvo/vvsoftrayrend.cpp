@@ -579,7 +579,9 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 
   virvo::texture< uint8_t, 3 > volume(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
   volume.data = *thread->raw;
+  volume.set_address_mode(virvo::Clamp);
   volume.set_filter_mode( thread->render_params->filter_mode );
+  volume.set_normalized_coords(true);
 
 
   float const* rgbaTF = &(*thread->rgbaTF)[0];
