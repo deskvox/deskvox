@@ -606,7 +606,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
                         (-pos[2] - volpos[2] + size2[2]) * invsize[2]);
 
           // TODO: templatize this decision?
-          Vec sample = bpc == 2 ? tex3D< uint8_t, 2 >(volume, texcoord) : tex3D< uint8_t, 1 >(volume, texcoord);
+          Vec sample = bpc == 2 ? tex3D< 2 >(volume, texcoord) : tex3D< 1 >(volume, texcoord);
           sample /= Vec(UCHAR_MAX);
 
           Vec4 src = rgba(rgbaTF, vec_cast<Vecs>(sample * static_cast<float>(lutsize)) * 4);

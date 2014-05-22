@@ -35,10 +35,10 @@ VV_FORCE_INLINE IntT index(IntT x, IntT y, IntT z, Int3T texsize)
 
 template
 <
-    typename VoxelT,
     typename FloatT,
     typename IntT,
-    int bpc
+    int bpc,
+    typename VoxelT
 >
 VV_FORCE_INLINE FloatT point(VoxelT const* tex, IntT idx)
 {
@@ -64,14 +64,14 @@ VV_FORCE_INLINE FloatT point(VoxelT const* tex, IntT idx)
 
 template
 <
-    typename VoxelT,
+    int bpc,
     typename FloatT,
-    typename Float3T,
     typename IntT,
+    typename Float3T,
     typename Int3T,
     typename Float2IntFunc,
     typename Int2FloatFunc,
-    int bpc
+    typename VoxelT
 >
 VV_FORCE_INLINE FloatT nearest(VoxelT const* tex, Float3T coord, Int3T texsize,
     Float2IntFunc ftoi, Int2FloatFunc itof)
@@ -89,7 +89,7 @@ VV_FORCE_INLINE FloatT nearest(VoxelT const* tex, Float3T coord, Int3T texsize,
     texcoordi[2] = clamp(texcoordi[2], IntT(0), texsize[2] - 1);
 
     IntT idx = index(texcoordi[0], texcoordi[1], texcoordi[2], texsize);
-    return point< VoxelT, FloatT, IntT, bpc >(tex, idx);
+    return point< FloatT, IntT, bpc >(tex, idx);
 
 #else
 
@@ -98,7 +98,8 @@ VV_FORCE_INLINE FloatT nearest(VoxelT const* tex, Float3T coord, Int3T texsize,
     Float3T texsizef(itof(texsize[0]), itof(texsize[1]), itof(texsize[2]));
 
     Float3T texcoordf(coord[0] * texsizef[0] - FloatT(0.5),
-                      coord[1] * texsizef[1] - FloatT(0.5),
+                      coorm[1] * texsizef[1] - FloatT(0.5),
+eglichen
                       coord[2] * texsizef[2] - FloatT(0.5));
 
     texcoordf[0] = clamp( texcoordf[0], FloatT(0.0), texsizef[0] - 1 );
@@ -117,7 +118,7 @@ VV_FORCE_INLINE FloatT nearest(VoxelT const* tex, Float3T coord, Int3T texsize,
                       uvw[2] < FloatT(0.5) ? lo[2] : hi[2],
                       texsize);
 
-    return point< VoxelT, FloatT, IntT, bpc >(tex, idx);
+    return point< FloatT, IntT, bpc >(tex, idx);
 
 #endif
 
@@ -126,14 +127,14 @@ VV_FORCE_INLINE FloatT nearest(VoxelT const* tex, Float3T coord, Int3T texsize,
 
 template
 <
-    typename VoxelT,
+    int bpc,
     typename FloatT,
-    typename Float3T,
     typename IntT,
+    typename Float3T,
     typename Int3T,
     typename Float2IntFunc,
     typename Int2FloatFunc,
-    int bpc
+    typename VoxelT
 >
 VV_FORCE_INLINE FloatT linear(VoxelT const* tex, Float3T coord, Int3T texsize,
     Float2IntFunc ftoi, Int2FloatFunc itof)
@@ -157,14 +158,14 @@ VV_FORCE_INLINE FloatT linear(VoxelT const* tex, Float3T coord, Int3T texsize,
 
     FloatT samples[8] =
     {
-        point< VoxelT, FloatT, IntT, bpc >(tex, index( lo[0], lo[1], lo[2], texsize )),
-        point< VoxelT, FloatT, IntT, bpc >(tex, index( hi[0], lo[1], lo[2], texsize )),
-        point< VoxelT, FloatT, IntT, bpc >(tex, index( lo[0], hi[1], lo[2], texsize )),
-        point< VoxelT, FloatT, IntT, bpc >(tex, index( hi[0], hi[1], lo[2], texsize )),
-        point< VoxelT, FloatT, IntT, bpc >(tex, index( lo[0], lo[1], hi[2], texsize )),
-        point< VoxelT, FloatT, IntT, bpc >(tex, index( hi[0], lo[1], hi[2], texsize )),
-        point< VoxelT, FloatT, IntT, bpc >(tex, index( lo[0], hi[1], hi[2], texsize )),
-        point< VoxelT, FloatT, IntT, bpc >(tex, index( hi[0], hi[1], hi[2], texsize ))
+        point< FloatT, IntT, bpc >(tex, index( lo[0], lo[1], lo[2], texsize )),
+        point< FloatT, IntT, bpc >(tex, index( hi[0], lo[1], lo[2], texsize )),
+        point< FloatT, IntT, bpc >(tex, index( lo[0], hi[1], lo[2], texsize )),
+        point< FloatT, IntT, bpc >(tex, index( hi[0], hi[1], lo[2], texsize )),
+        point< FloatT, IntT, bpc >(tex, index( lo[0], lo[1], hi[2], texsize )),
+        point< FloatT, IntT, bpc >(tex, index( hi[0], lo[1], hi[2], texsize )),
+        point< FloatT, IntT, bpc >(tex, index( lo[0], hi[1], hi[2], texsize )),
+        point< FloatT, IntT, bpc >(tex, index( hi[0], hi[1], hi[2], texsize ))
     };
 
 
@@ -188,7 +189,7 @@ VV_FORCE_INLINE FloatT linear(VoxelT const* tex, Float3T coord, Int3T texsize,
 
 /* nearest neighbor reconstruction (default)
  */
-template < typename VoxelT, int bpc >
+template < int bpc, typename VoxelT >
 VV_FORCE_INLINE float nearest(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize3 texsize)
 {
 
@@ -200,14 +201,9 @@ VV_FORCE_INLINE float nearest(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize
 
     return virvo::detail::nearest
     <
-        VoxelT,
+        bpc,
         float,
-        virvo::Vec3,
-        ssize_t,
-        virvo::ssize3,
-        StaticCaster< float, ssize_t >,
-        StaticCaster< ssize_t, float >,
-        bpc
+        ssize_t
     >
     ( tex, coord, texsize, ftoi, itof );
 }
@@ -215,7 +211,7 @@ VV_FORCE_INLINE float nearest(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize
 
 /* linear filtering (default)
  */
-template < typename VoxelT, int bpc >
+template < int bpc, typename VoxelT >
 VV_FORCE_INLINE float linear(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize3 texsize)
 {
 
@@ -227,14 +223,9 @@ VV_FORCE_INLINE float linear(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize3
 
     return virvo::detail::linear
     <
-        VoxelT,
+        bpc,
         float,
-        virvo::Vec3,
-        ssize_t,
-        virvo::ssize3,
-        StaticCaster< float, ssize_t >,
-        StaticCaster< ssize_t, float >,
-        bpc
+        ssize_t
     >
     ( tex, coord, texsize, ftoi, itof );
 
@@ -247,7 +238,7 @@ namespace simd
 
 /* nearest neighbor reconstruction (default)
  */
-template < typename VoxelT, int bpc >
+template < int bpc, typename VoxelT >
 VV_FORCE_INLINE virvo::simd::Vec nearest(VoxelT const* tex, virvo::simd::Vec3 coord, virvo::simd::Vec3i texsize)
 {
 
@@ -261,14 +252,9 @@ VV_FORCE_INLINE virvo::simd::Vec nearest(VoxelT const* tex, virvo::simd::Vec3 co
 
     return virvo::detail::nearest
     <
-        VoxelT,
+        bpc,
         virvo::simd::Vec,
-        virvo::simd::Vec3,
-        virvo::simd::Veci,
-        virvo::simd::Vec3i,
-        SimdCaster< Vec, Veci >,
-        SimdCaster< Veci, Vec >,
-        bpc
+        virvo::simd::Veci
     >
     ( tex, coord, texsize, ftoi, itof );
 
@@ -277,7 +263,7 @@ VV_FORCE_INLINE virvo::simd::Vec nearest(VoxelT const* tex, virvo::simd::Vec3 co
 
 /* linear filtering (simd)
  */
-template < typename VoxelT, int bpc >
+template < int bpc, typename VoxelT >
 VV_FORCE_INLINE virvo::simd::Vec linear(VoxelT const* tex, virvo::simd::Vec3 coord, virvo::simd::Vec3i texsize)
 {
 
@@ -291,14 +277,9 @@ VV_FORCE_INLINE virvo::simd::Vec linear(VoxelT const* tex, virvo::simd::Vec3 coo
 
     return virvo::detail::linear
     <
-        VoxelT,
+        bpc,
         virvo::simd::Vec,
-        virvo::simd::Vec3,
-        virvo::simd::Veci,
-        virvo::simd::Vec3i,
-        SimdCaster< Vec, Veci >,
-        SimdCaster< Veci, Vec >,
-        bpc
+        virvo::simd::Veci
     >
     ( tex, coord, texsize, ftoi, itof );
 
