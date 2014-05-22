@@ -39,6 +39,16 @@ VV_FORCE_INLINE float tex3D(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize3 
 }
 
 
+template < typename VoxelT, int bpc >
+VV_FORCE_INLINE float tex3D(texture< VoxelT, 3 > const& tex, virvo::Vec3 coord)
+{
+
+    virvo::ssize3 size( tex.width(), tex.height(), tex.depth() );
+    return tex3D< VoxelT, bpc >( tex.data, coord, size, tex.get_filter_mode() );
+
+}
+
+
 namespace simd
 {
 
@@ -69,6 +79,17 @@ VV_FORCE_INLINE virvo::simd::Vec tex3D(VoxelT const* tex, virvo::simd::Vec3 coor
     }
 
 }
+
+
+template < typename VoxelT, int bpc >
+VV_FORCE_INLINE virvo::simd::Vec tex3D(texture< VoxelT, 3 > const& tex, virvo::simd::Vec3 coord)
+{
+
+    virvo::simd::Vec3i size( tex.width(), tex.height(), tex.depth() );
+    return tex3D< VoxelT, bpc >( tex.data, coord, size, tex.get_filter_mode() );
+
+}
+
 
 
 

@@ -535,11 +535,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 
   size_t const lutsize          = thread->render_params->lutsize;
 
-  uint8_t const* raw            = *thread->raw;
-
   float quality                 = thread->render_params->quality;
-
-  virvo::tex_filter_mode filter_mode = thread->render_params->interpolation ? virvo::Linear : virvo::Nearest;
 
   bool opacityCorrection        = thread->render_params->opacity_correction;
   bool earlyRayTermination      = thread->render_params->early_ray_termination;
@@ -554,6 +550,12 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   const float diagonalVoxels = sqrtf(float(thread->render_params->vox[0] * thread->render_params->vox[0] +
                                            thread->render_params->vox[1] * thread->render_params->vox[1] +
                                            thread->render_params->vox[2] * thread->render_params->vox[2]));
+
+
+  virvo::texture< uint8_t, 3 > volume(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
+  volume.data = *thread->raw;
+  volume.set_filter_mode( thread->render_params->interpolation ? virvo::Linear : virvo::Nearest );
+
 
   float const* rgbaTF = &(*thread->rgbaTF)[0];
 
@@ -604,7 +606,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
                         (-pos[2] - volpos[2] + size2[2]) * invsize[2]);
 
           // TODO: templatize this decision?
-          Vec sample = bpc == 2 ? tex3D< uint8_t, 2 >(raw, texcoord, vox, filter_mode) : tex3D< uint8_t, 1 >(raw, texcoord, vox, filter_mode);
+          Vec sample = bpc == 2 ? tex3D< uint8_t, 2 >(volume, texcoord) : tex3D< uint8_t, 1 >(volume, texcoord);
           sample /= Vec(UCHAR_MAX);
 
           Vec4 src = rgba(rgbaTF, vec_cast<Vecs>(sample * static_cast<float>(lutsize)) * 4);
