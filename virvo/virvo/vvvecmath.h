@@ -291,6 +291,9 @@ class vvBaseVector3
     T e[3];                                   ///< vector elements (x|y|z)
 
   public:
+
+    typedef T value_type;
+
     template<class A>
     void serialize(A& a, unsigned /*version*/)
     {

@@ -115,7 +115,6 @@ using virvo::simd::ceil;
 using virvo::simd::floor;
 using virvo::simd::min;
 using virvo::simd::max;
-using virvo::simd::tex3D;
 namespace fast = virvo::simd::fast;
 typedef virvo::simd::Veci Vecs;
 typedef virvo::simd::Vec3i Vec3s;
@@ -137,7 +136,6 @@ typedef size_t index_t;
 #define all(x) (x)
 using std::min;
 using std::max;
-using virvo::tex3D;
 typedef size_t Vecs;
 namespace fast
 {
@@ -658,7 +656,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
                         (-pos[2] - volpos[2] + size2[2]) * invsize[2]);
 
           // TODO: templatize this decision?
-          Vec sample = bpc == 2 ? tex3D< 2 >(volume, texcoord) : tex3D< 1 >(volume, texcoord);
+          Vec sample = bpc == 2 ? virvo::tex3D< 2, Vec3s >(volume, texcoord) : virvo::tex3D< 1, Vec3s >(volume, texcoord);
           sample /= Vec(UCHAR_MAX);
 
           Vec4 src = rgba(rgbaTF, vec_cast<Vecs>(sample * static_cast<float>(lutsize)) * 4);

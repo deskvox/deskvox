@@ -23,17 +23,25 @@ namespace detail
 
 
 template < typename U, typename T >
-struct StaticCaster
+struct Caster
 {
     VV_FORCE_INLINE T operator()(U const& u) { return static_cast< T >(u); }
 };
 
 
-template < typename U, typename T >
-struct SimdCaster
+template < >
+struct Caster< simd::Vec, simd::Veci >
 {
-    VV_FORCE_INLINE T operator()(U const& u) { return virvo::simd::simd_cast< T >(u); }
+    VV_FORCE_INLINE simd::Veci operator()(simd::Vec const& u) { return virvo::simd::simd_cast< simd::Veci >(u); }
 };
+
+
+template < >
+struct Caster< simd::Veci, simd::Vec >
+{
+    VV_FORCE_INLINE simd::Vec operator()(simd::Veci const& u) { return virvo::simd::simd_cast< simd::Vec >(u); }
+};
+
 
 
 // weight functions for Mitchell - Netravalli B-Spline

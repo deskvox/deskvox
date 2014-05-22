@@ -15,6 +15,9 @@ template <typename T>
 class CACHE_ALIGN base_vec3
 {
 public:
+
+  typedef T value_type;
+
   T x;
   T y;
   T z;
