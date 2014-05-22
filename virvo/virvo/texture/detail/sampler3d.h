@@ -3,6 +3,7 @@
 
 
 #include "sampler_common.h"
+#include "texture_common.h"
 
 #include "vvtoolshed.h"
 
@@ -184,13 +185,9 @@ VV_FORCE_INLINE FloatT linear(VoxelT const* tex, Float3T coord, Int3T texsize,
 }
 
 
-} // detail
-
-
-/* nearest neighbor reconstruction (default)
- */
 template < int bpc, typename VoxelT >
-VV_FORCE_INLINE float nearest(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize3 texsize)
+VV_FORCE_INLINE float tex3D(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize3 texsize,
+    virvo::tex_filter_mode filter_mode = virvo::Nearest)
 {
 
     using namespace virvo::detail;
@@ -199,35 +196,26 @@ VV_FORCE_INLINE float nearest(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize
     StaticCaster< float, ssize_t > ftoi;
     StaticCaster< ssize_t, float > itof;
 
-    return virvo::detail::nearest
-    <
-        bpc,
-        float,
-        ssize_t
-    >
-    ( tex, coord, texsize, ftoi, itof );
-}
+    switch (filter_mode)
+    {
 
+    default:
+        // fall-through
+    case virvo::Nearest:
+        return virvo::detail::nearest
+        <
+            bpc, float, ssize_t
+        >
+        ( tex, coord, texsize, ftoi, itof );
 
-/* linear filtering (default)
- */
-template < int bpc, typename VoxelT >
-VV_FORCE_INLINE float linear(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize3 texsize)
-{
+    case virvo::Linear:
+        return virvo::detail::linear
+        <
+            bpc, float, ssize_t
+        >
+        ( tex, coord, texsize, ftoi, itof );
 
-    using namespace virvo::detail;
-
-
-    StaticCaster< float, ssize_t > ftoi;
-    StaticCaster< ssize_t, float > itof;
-
-    return virvo::detail::linear
-    <
-        bpc,
-        float,
-        ssize_t
-    >
-    ( tex, coord, texsize, ftoi, itof );
+    }
 
 }
 
@@ -236,10 +224,9 @@ namespace simd
 {
 
 
-/* nearest neighbor reconstruction (default)
- */
 template < int bpc, typename VoxelT >
-VV_FORCE_INLINE virvo::simd::Vec nearest(VoxelT const* tex, virvo::simd::Vec3 coord, virvo::simd::Vec3i texsize)
+VV_FORCE_INLINE virvo::simd::Vec tex3D(VoxelT const* tex, virvo::simd::Vec3 coord, virvo::simd::Vec3i texsize,
+    virvo::tex_filter_mode filter_mode = virvo::Nearest)
 {
 
     using namespace virvo::detail;
@@ -250,43 +237,35 @@ VV_FORCE_INLINE virvo::simd::Vec nearest(VoxelT const* tex, virvo::simd::Vec3 co
     SimdCaster< Vec, Veci > ftoi;
     SimdCaster< Veci, Vec > itof;
 
-    return virvo::detail::nearest
-    <
-        bpc,
-        virvo::simd::Vec,
-        virvo::simd::Veci
-    >
-    ( tex, coord, texsize, ftoi, itof );
 
-}
+    switch (filter_mode)
+    {
 
+    default:
+        // fall-through
+    case virvo::Nearest:
+        return virvo::detail::nearest
+        <
+            bpc, virvo::simd::Vec, virvo::simd::Veci
+        >
+        ( tex, coord, texsize, ftoi, itof );
 
-/* linear filtering (simd)
- */
-template < int bpc, typename VoxelT >
-VV_FORCE_INLINE virvo::simd::Vec linear(VoxelT const* tex, virvo::simd::Vec3 coord, virvo::simd::Vec3i texsize)
-{
+    case virvo::Linear:
+        return virvo::detail::nearest
+        <
+            bpc, virvo::simd::Vec, virvo::simd::Veci
+        >
+        ( tex, coord, texsize, ftoi, itof );
 
-    using namespace virvo::detail;
-    using virvo::simd::Vec;
-    using virvo::simd::Veci;
-
-
-    SimdCaster< Vec, Veci > ftoi;
-    SimdCaster< Veci, Vec > itof;
-
-    return virvo::detail::linear
-    <
-        bpc,
-        virvo::simd::Vec,
-        virvo::simd::Veci
-    >
-    ( tex, coord, texsize, ftoi, itof );
+    }
 
 }
 
 
 } // simd
+
+
+} // detail
 
 
 } // virvo
