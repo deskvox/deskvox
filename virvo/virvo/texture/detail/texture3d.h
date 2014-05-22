@@ -11,27 +11,24 @@ namespace virvo
 {
 
 
-template
-<
-    typename VoxelT
->
-class texture< VoxelT, 3 >
+template < typename T >
+class texture< T, 3 >
 {
 public:
 
-    VV_COMMON_TEX_IFACE
+    typedef T value_type;
 
-    texture()
-    {
-    }
+    value_type* data;
+
+    texture() {}
 
     texture(size_t w, size_t h, size_t d)
         : width_(w)
         , height_(h)
         , depth_(d)
     {
-        data.resize(w * h * d);
     }
+
 
     value_type& operator()(size_t x, size_t y, size_t z)
     {
@@ -52,6 +49,7 @@ private:
     size_t width_;
     size_t height_;
     size_t depth_;
+
 };
 
 

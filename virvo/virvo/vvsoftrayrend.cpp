@@ -539,9 +539,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 
   float quality                 = thread->render_params->quality;
 
-  virvo::texture< uint8_t, 3 >::tex_filter_mode filter_mode = thread->render_params->interpolation
-    ? virvo::texture< uint8_t, 3 >::Linear
-    : virvo::texture< uint8_t, 3 >::Nearest;
+  virvo::tex_filter_mode filter_mode = thread->render_params->interpolation ? virvo::Linear : virvo::Nearest;
 
   bool opacityCorrection        = thread->render_params->opacity_correction;
   bool earlyRayTermination      = thread->render_params->early_ray_termination;
@@ -607,7 +605,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 
           // TODO: templatize this decision?
           Vec sample = bpc == 2 ? tex3D< uint8_t, 2 >(raw, texcoord, vox, filter_mode) : tex3D< uint8_t, 1 >(raw, texcoord, vox, filter_mode);
-          sample /= 255.0f;
+          sample /= Vec(UCHAR_MAX);
 
           Vec4 src = rgba(rgbaTF, vec_cast<Vecs>(sample * static_cast<float>(lutsize)) * 4);
 

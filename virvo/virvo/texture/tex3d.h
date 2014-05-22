@@ -13,23 +13,22 @@ namespace virvo
 
 template < typename VoxelT, int bpc >
 VV_FORCE_INLINE float tex3D(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize3 texsize,
-    typename texture< VoxelT, 3 >::tex_filter_mode filter_mode = texture< VoxelT, 3 >::Nearest)
+    virvo::tex_filter_mode filter_mode = virvo::Nearest)
 {
 
-    typedef texture< VoxelT, 3 > texture_3D;
     switch (filter_mode)
     {
 
-    case texture_3D::Nearest:
+    case virvo::Nearest:
         return virvo::nearest< VoxelT, bpc >(tex, coord, texsize);
 
-    case texture_3D::Linear:
+    case virvo::Linear:
         return virvo::linear< VoxelT, bpc >(tex, coord, texsize);
 
-    case texture_3D::Cubic:
+    case virvo::BSpline:
         return 0.0;
 
-    case texture_3D::CubicInterpol:
+    case virvo::BSplineInterpol:
         return 0.0;
 
     default:
@@ -46,23 +45,22 @@ namespace simd
 
 template < typename VoxelT, int bpc >
 VV_FORCE_INLINE virvo::simd::Vec tex3D(VoxelT const* tex, virvo::simd::Vec3 coord, virvo::simd::Vec3i texsize,
-    typename texture< VoxelT, 3 >::tex_filter_mode filter_mode = texture< VoxelT, 3 >::Nearest)
+    virvo::tex_filter_mode filter_mode = virvo::Nearest)
 {
 
-    typedef texture< VoxelT, 3 > texture_3D;
     switch (filter_mode)
     {
 
-    case texture_3D::Nearest:
+    case virvo::Nearest:
         return virvo::simd::nearest< VoxelT, bpc >(tex, coord, texsize);
 
-    case texture_3D::Linear:
+    case virvo::Linear:
         return virvo::simd::linear< VoxelT, bpc >(tex, coord, texsize);
 
-    case texture_3D::Cubic:
+    case virvo::BSpline:
         return 0.0;
 
-    case texture_3D::CubicInterpol:
+    case virvo::BSplineInterpol:
         return 0.0;
 
     default:
