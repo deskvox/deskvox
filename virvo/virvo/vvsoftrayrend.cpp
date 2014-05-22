@@ -35,6 +35,7 @@
 #include "private/vvgltools.h"
 #endif
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 
@@ -338,6 +339,18 @@ void* renderFunc(void* args);
 
 struct vvSoftRayRend::Impl
 {
+  Impl()
+    : raw(0)
+    , colors(0)
+    , inv_view_matrix(0)
+  {
+  }
+
+  ~Impl()
+  {
+    delete[] inv_view_matrix;
+  }
+
   std::vector< Thread* > threads;
   uint8_t* raw;
   float* colors;
@@ -433,7 +446,13 @@ void vvSoftRayRend::renderVolumeGL()
 
   virvo::Matrix inv_view_matrix = pr * mv;
   inv_view_matrix.invert();
-  impl_->inv_view_matrix = inv_view_matrix.data();
+
+  if (impl_->inv_view_matrix == 0)
+  {
+    impl_->inv_view_matrix = new float[16];
+  }
+  float* tmp = inv_view_matrix.data();
+  std::copy( tmp, tmp + 16, impl_->inv_view_matrix );
 
   vvAABB aabb = vvAABB(virvo::Vec3(), virvo::Vec3());
   vd->getBoundingBox(aabb);
