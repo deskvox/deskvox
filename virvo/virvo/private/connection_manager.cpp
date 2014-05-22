@@ -35,15 +35,7 @@
 
 #include <boost/ref.hpp>
 
-#if VV_ASIO_DEBUG
 #include <cstdio>
-#endif
-
-#if VV_ASIO_DEBUG
-#define DEBUG(FORMAT, ...) printf(FORMAT "\n", __VA_ARGS__)
-#else
-#define DEBUG(FORMAT, ...)
-#endif
 
 using virvo::MessagePointer;
 using virvo::ConnectionPointer;
@@ -98,7 +90,6 @@ ConnectionManager::~ConnectionManager()
     }
     catch (std::exception& e)
     {
-        DEBUG("ConnectionManager::DTOR: EXCEPTION caught: %s", e.what());
         static_cast<void>(e);
     }
 }
@@ -113,16 +104,14 @@ void ConnectionManager::bind_port(unsigned short port)
 
 void ConnectionManager::run()
 {
-#if 1 // VV_DEBUG_ASIO
-    DEBUG("ConnectionManager::run()");
-
+#ifndef NDEBUG
     try
     {
         io_service_.run();
     }
     catch (std::exception& e)
     {
-        DEBUG("ConnectionManager::run: EXCEPTION caught: %s", e.what());
+        printf("ConnectionManager::run: EXCEPTION caught: %s", e.what());
         throw;
     }
 #else
@@ -132,22 +121,16 @@ void ConnectionManager::run()
 
 void ConnectionManager::run_in_thread()
 {
-    DEBUG("ConnectionManager::run_in_thread");
-
     runner_ = boost::thread(&ConnectionManager::run, this);
 }
 
 void ConnectionManager::wait()
 {
-    DEBUG("ConnectionManager::wait");
-
     runner_.join();
 }
 
 void ConnectionManager::stop()
 {
-    DEBUG("ConnectionManager::stop");
-
     work_.reset();
 
     io_service_.stop();
@@ -156,16 +139,12 @@ void ConnectionManager::stop()
 
 void ConnectionManager::accept(Handler handler)
 {
-    DEBUG("ConnectionManager::accept");
-
     // Start an accept operation for a new connection.
     strand_.post(boost::bind(&ConnectionManager::do_accept, this, handler));
 }
 
 void ConnectionManager::connect(std::string const& host, unsigned short port, Handler handler)
 {
-    DEBUG("ConnectionManager::connect");
-
     // Start a new connection operation
     strand_.post(boost::bind(&ConnectionManager::do_connect, this, host, port, handler));
 }
@@ -189,7 +168,6 @@ ConnectionPointer ConnectionManager::connect(std::string const& host, unsigned s
 
     if (error_code)
     {
-        DEBUG("ConnectionManager::connect(sync): %s", error_code.message().c_str());
         return ConnectionPointer();
     }
 
@@ -220,7 +198,6 @@ void ConnectionManager::close(ConnectionPointer conn)
 
     if (I == connections_.end())
     {
-        DEBUG("ConnectionManager::close: unknown connection");
         return;
     }
 
@@ -266,8 +243,6 @@ ConnectionPointer ConnectionManager::find(std::string const& host, unsigned shor
 
 void ConnectionManager::do_accept(Handler handler)
 {
-    DEBUG("ConnectionManager::do_accept...");
-
     ConnectionPointer conn(new Connection(*this));
 
     // Start an accept operation for a new connection.
@@ -291,14 +266,14 @@ void ConnectionManager::handle_accept(boost::system::error_code const& e, Connec
     }
     else
     {
-        DEBUG("ConnectionManager::handle_accept: %s", e.message().c_str());
+#ifndef NDEBUG
+        printf("ConnectionManager::handle_accept: %s", e.message().c_str());
+#endif
     }
 }
 
 void ConnectionManager::do_connect(std::string const& host, unsigned short port, Handler handler)
 {
-    DEBUG("ConnectionManager::do_connect... \"%s\":%u", host, static_cast<unsigned>(port));
-
     ConnectionPointer conn(new Connection(*this));
 
     // Resolve the host name into an IP address.
@@ -328,7 +303,9 @@ void ConnectionManager::handle_connect(boost::system::error_code const& e, Conne
     }
     else
     {
-        DEBUG("ConnectionManager::handle_connect: %s", e.message().c_str());
+#ifndef NDEBUG
+        printf("ConnectionManager::handle_connect: %s", e.message().c_str());
+#endif
     }
 }
 
@@ -368,7 +345,9 @@ void ConnectionManager::handle_read_header(boost::system::error_code const& e, M
     }
     else
     {
-        DEBUG("ConnectionManager::handle_read_header: %s", e.message().c_str());
+#ifndef NDEBUG
+        printf("ConnectionManager::handle_read_header: %s", e.message().c_str());
+#endif
 
 #if 1
         // Call the connection's slot
@@ -397,7 +376,9 @@ void ConnectionManager::handle_read_data(boost::system::error_code const& e, Mes
     }
     else
     {
-        DEBUG("ConnectionManager::handle_read_data: %s", e.message().c_str());
+#ifndef NDEBUG
+        printf("ConnectionManager::handle_read_data: %s", e.message().c_str());
+#endif
 
         remove_connection(conn);
     }
@@ -470,6 +451,10 @@ void ConnectionManager::handle_write(boost::system::error_code const& e, Message
     }
     else
     {
+#ifndef NDEBUG
+        printf("ConnectionManager::handle_write: %s", e.message().c_str());
+#endif
+
         remove_connection(conn);
     }
 }

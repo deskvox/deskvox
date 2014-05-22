@@ -23,25 +23,13 @@
 
 #define DESKVOX_USE_ASIO_BINARY_ARCHIVE 1
 
-// TODO:
-// Find the right place for this...
-#ifndef VV_ASIO_DEBUG
-#ifndef NDEBUG
-#define VV_ASIO_DEBUG 0
-#else
-#define VV_ASIO_DEBUG 1
-#endif
-#endif
-
 #include "archives.h"
 
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
 #include <boost/iostreams/stream.hpp>
 
-#if VV_DEBUG_ASIO
-#include <iostream>
-#endif
+#include <cstdio>
 #include <vector>
 
 namespace virvo
@@ -78,8 +66,8 @@ namespace virvo
         }
         catch (std::exception& e)
         {
-#if VV_ASIO_DEBUG
-            std::cout << "virvo::serialize: " << e.what() << std::endl;
+#ifndef NDEBUG
+            printf("virvo::serialize: %s\n", e.what());
 #else
             static_cast<void>(e);
 #endif
@@ -115,8 +103,8 @@ namespace virvo
         }
         catch (std::exception& e)
         {
-#if VV_ASIO_DEBUG
-            std::cout << "virvo::deserialize: " << e.what() << std::endl;
+#ifndef NDEBUG
+            printf("virvo::serialize: %s\n", e.what());
 #else
             static_cast<void>(e);
 #endif

@@ -27,11 +27,6 @@
 #include <boost/asio/read.hpp>
 #include <boost/asio/write.hpp>
 
-#if VV_ASIO_DEBUG
-#include <iostream>
-#endif
-#include <sstream>
-
 using virvo::Connection;
 using virvo::ConnectionManager;
 using virvo::MessagePointer;

@@ -22,6 +22,8 @@
 #include "resource_manager.h"
 #include "simple_server.h"
 
+#include <cstdio>
+
 vvServerManager::vvServerManager(unsigned short port, bool useBonjour)
     : manager_(virvo::makeConnectionManager(port))
     , serverMode_(SERVER)
@@ -52,7 +54,9 @@ bool vvServerManager::handle_new_connection(virvo::ConnectionPointer conn, boost
 {
     if (e)
     {
-        std::cout << "vserver: error: " << e.message() << std::endl;
+#ifndef NDEBUG
+        printf("vserver: error: %s\n", e.message().c_str());
+#endif
         return false;
     }
 

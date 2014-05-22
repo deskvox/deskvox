@@ -41,17 +41,9 @@
 #include <cassert>
 #include <cstdio>
 
-#define LOG 1
-#define LOG_MSG 0
 #define TIME_FPS 0
 #define TIME_READS 0
 #define TIME_WRITES 0
-
-#if LOG
-#define DEBUG(FORMAT, ...) printf(FORMAT ## "\n", __VA_ARGS__)
-#else
-#define DEBUG(FORMAT, ...)
-#endif
 
 static const int DEFAULT_WINDOW_SIZE = 512;
 
@@ -140,8 +132,6 @@ bool vvSimpleServer::createRenderContext(int w, int h)
     if (w <= 0) w = DEFAULT_WINDOW_SIZE;
     if (h <= 0) h = DEFAULT_WINDOW_SIZE;
 
-    DEBUG("vserver: createRenderContext(%d, %d)", w, h);
-
     vvContextOptions options;
 
     options.type = vvContextOptions::VV_PBUFFER;
@@ -157,8 +147,6 @@ bool vvSimpleServer::createRenderContext(int w, int h)
 
 bool vvSimpleServer::createRemoteServer(vvRenderer::RendererType type)
 {
-    DEBUG("vserver: createRemoteServer(%d)", static_cast<int>(type));
-
     assert(volume_.get());
 
     // Create a render context if not already done.
@@ -169,12 +157,10 @@ bool vvSimpleServer::createRemoteServer(vvRenderer::RendererType type)
     switch (type)
     {
     case vvRenderer::REMOTE_IBR:
-        DEBUG("vserver: Create REMOTE_IBR");
         server_.reset(new vvIbrServer);
         break;
 
     case vvRenderer::REMOTE_IMAGE:
-        DEBUG("vserver: Create REMOTE_IMAGE");
         server_.reset(new vvImageServer);
         break;
 
@@ -248,13 +234,8 @@ bool vvSimpleServer::createRemoteServer(vvRenderer::RendererType type)
 
 void vvSimpleServer::processSingleMessage(MessagePointer const& message)
 {
-#if LOG_MSG
-#define X(M) \
-    case virvo::Message::M: DEBUG("Processing message %d...", static_cast<int>(message->type())); process##M(message); break;
-#else
 #define X(M) \
     case virvo::Message::M: process##M(message); break;
-#endif
 
     switch (message->type())
     {
@@ -292,7 +273,11 @@ void vvSimpleServer::processMessages()
     }
     catch (std::exception& e)
     {
-        DEBUG("vserver: Exception caught: %s", e.what());
+#ifndef NDEBUG
+        printf("vserver: Exception caught: %s", e.what());
+#else
+        static_cast<void>(e);
+#endif
         throw;
     }
 }
