@@ -111,7 +111,6 @@ typedef virvo::simd::Veci index_t;
 #define PACK_SIZE_Y 2
 
 using virvo::simd::ceil;
-using virvo::simd::clamp;
 using virvo::simd::floor;
 using virvo::simd::min;
 using virvo::simd::max;
@@ -135,7 +134,6 @@ typedef size_t index_t;
 
 #define any(x) (x)
 #define all(x) (x)
-using virvo::toolshed::clamp;
 using std::min;
 using std::max;
 using virvo::tex3D;

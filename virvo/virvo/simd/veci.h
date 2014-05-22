@@ -201,17 +201,21 @@ VV_FORCE_INLINE sse_veci max(sse_veci const& u, sse_veci const& v)
 }
 
 
-/* function analogs for virvo::toolshed */
+} // simd
 
-template <typename T>
-VV_FORCE_INLINE T clamp(T const& v, T const& a, T const& b);
 
+namespace toolshed
+{
+
+/* template specializations */
 template <>
-VV_FORCE_INLINE sse_veci clamp(sse_veci const& v, sse_veci const& a, sse_veci const& b)
+VV_FORCE_INLINE simd::sse_veci clamp(simd::sse_veci const& v, simd::sse_veci const& a, simd::sse_veci const& b)
 {
   return max(a, min(v, b));
 }
 
-} // simd
+} // toolshed
+
+
 } // virvo
 

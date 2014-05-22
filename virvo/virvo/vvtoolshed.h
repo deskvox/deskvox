@@ -258,7 +258,7 @@ inline T iDivUp(T a, T b)
 }
 
 template <typename T>
-inline T clamp(const T a, const T left, const T right)
+inline T clamp(T const& a, T const& left, T const& right)
 {
   if (a < left)  return left;
   if (a > right) return right;

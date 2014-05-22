@@ -80,6 +80,8 @@ VV_FORCE_INLINE FloatT nearest(VoxelT const* tex, Float3T coord, Int3T texsize,
 
 #if 1
 
+    using toolshed::clamp;
+
     Float3T texsizef(itof(texsize[0]), itof(texsize[1]), itof(texsize[2]));
 
     Int3T texcoordi(ftoi(coord[0] * texsizef[0]), ftoi(coord[1] * texsizef[1]),
@@ -140,6 +142,8 @@ template
 VV_FORCE_INLINE FloatT linear(VoxelT const* tex, Float3T coord, Int3T texsize,
     Float2IntFunc ftoi, Int2FloatFunc itof)
 {
+
+    using toolshed::clamp;
 
     Float3T texsizef(itof(texsize[0]), itof(texsize[1]), itof(texsize[2]));
 

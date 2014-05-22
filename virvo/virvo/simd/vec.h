@@ -236,17 +236,6 @@ VV_FORCE_INLINE sse_vec rsqrt(sse_vec const& v)
 }
 
 
-/* function analogs for virvo::toolshed */
-
-template <typename T>
-VV_FORCE_INLINE T clamp(T const& v, T const& a, T const& b);
-
-template <>
-VV_FORCE_INLINE sse_vec clamp(sse_vec const& v, sse_vec const& a, sse_vec const& b)
-{
-  return _mm_max_ps(a, _mm_min_ps(v, b));
-}
-
 /* vector math functions */
 
 /*! \brief  returns a vector with each element {x|y|z|w} containing
@@ -334,5 +323,19 @@ VV_FORCE_INLINE sse_vec rsqrt(sse_vec const& v)
 } // fast
 
 } // simd
+
+/* template specializations */
+namespace toolshed
+{
+
+template <>
+VV_FORCE_INLINE simd::sse_vec clamp(simd::sse_vec const& v, simd::sse_vec const& a, simd::sse_vec const& b)
+{
+  return _mm_max_ps(a, _mm_min_ps(v, b));
+}
+
+} // toolshed
+
+
 } // virvo
 
