@@ -68,6 +68,30 @@ static const int tile_height = 16;
 #endif
 
 
+
+virvo::tex_filter_mode map_to_tex_filter_mode(vvRenderState::InterpolType ipol_type)
+{
+
+    switch (ipol_type)
+    {
+
+    case vvRenderState::Nearest:
+        return virvo::Nearest;
+
+    case vvRenderState::Linear:
+        return virvo::Linear;
+
+    case vvRenderState::BSpline:
+        return virvo::BSpline;
+
+    default:
+        return virvo::Nearest;
+
+    }
+
+}
+
+
 #if VV_USE_SSE
 
 #include "simd/simd.h"
@@ -261,30 +285,30 @@ struct Thread
   {
 
     // render target
-    int         width;
-    int         height;
+    int                     width;
+    int                     height;
 
-    virvo::Tile rect;
+    virvo::Tile             rect;
 
     // visible volume region
-    float       mincorner[3];
-    float       maxcorner[3];
+    float                   mincorner[3];
+    float                   maxcorner[3];
 
     // vd attributes
-    ssize_t     vox[3];
-    float       volsize[3];
-    float       volpos[3];
-    size_t      bpc;
+    ssize_t                 vox[3];
+    float                   volsize[3];
+    float                   volpos[3];
+    size_t                  bpc;
 
     // tf
-    size_t      lutsize;
+    size_t                  lutsize;
 
     // renderer params
-    float       quality;
-    bool        interpolation;
-    bool        opacity_correction;
-    bool        early_ray_termination;
-    int         mip_mode;
+    float                   quality;
+    virvo::tex_filter_mode  filter_mode;
+    bool                    opacity_correction;
+    bool                    early_ray_termination;
+    int                     mip_mode;
 
   };
 
@@ -459,7 +483,7 @@ void vvSoftRayRend::renderVolumeGL()
   impl_->render_params.bpc                   = vd->bpc;
   impl_->render_params.lutsize               = getLUTSize(vd);
   impl_->render_params.quality               = getParameter(vvRenderer::VV_QUALITY);
-  impl_->render_params.interpolation         = static_cast< bool >(getParameter(vvRenderer::VV_SLICEINT).asInt());
+  impl_->render_params.filter_mode           = map_to_tex_filter_mode( static_cast< vvRenderState::InterpolType >(getParameter(vvRenderer::VV_SLICEINT).asInt()) );
   impl_->render_params.opacity_correction    = getParameter(vvRenderer::VV_OPCORR);
   impl_->render_params.early_ray_termination = getParameter(vvRenderer::VV_TERMINATEEARLY);
   impl_->render_params.mip_mode              = getParameter(vvRenderer::VV_MIP_MODE);
@@ -487,7 +511,8 @@ bool vvSoftRayRend::checkParameter(ParameterType param, vvParam const& value) co
     {
       vvRenderState::InterpolType type = static_cast< vvRenderState::InterpolType >(value.asInt());
 
-      if (type == vvRenderState::Nearest || type == vvRenderState::Linear)
+      if (type == vvRenderState::Nearest || type == vvRenderState::Linear
+       || type == vvRenderState::BSpline)
       {
         return true;
       }
@@ -554,7 +579,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 
   virvo::texture< uint8_t, 3 > volume(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
   volume.data = *thread->raw;
-  volume.set_filter_mode( thread->render_params->interpolation ? virvo::Linear : virvo::Nearest );
+  volume.set_filter_mode( thread->render_params->filter_mode );
 
 
   float const* rgbaTF = &(*thread->rgbaTF)[0];

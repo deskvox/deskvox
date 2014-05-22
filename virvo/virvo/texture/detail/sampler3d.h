@@ -185,6 +185,78 @@ VV_FORCE_INLINE FloatT linear(VoxelT const* tex, Float3T coord, Int3T texsize,
 }
 
 
+template
+<
+    int bpc,
+    typename FloatT,
+    typename IntT,
+    typename Float3T,
+    typename Int3T,
+    typename Float2IntFunc,
+    typename Int2FloatFunc,
+    typename VoxelT
+>
+VV_FORCE_INLINE FloatT cubic(VoxelT const* tex, Float3T coord, Int3T texsize,
+    Float2IntFunc ftoi, Int2FloatFunc itof)
+{
+
+    Float3T texsizef(itof(texsize[0]), itof(texsize[1]), itof(texsize[2]));
+
+    FloatT x = (coord[0] * texsizef[0]) - FloatT(0.5);
+    FloatT floorx = floor( x );
+    FloatT fracx  = x - floor( x );
+
+    FloatT y = (coord[1] * texsizef[1]) - FloatT(0.5);
+    FloatT floory = floor( y );
+    FloatT fracy  = y - floor( y );
+  
+    FloatT z = (coord[2] * texsizef[2]) - FloatT(0.5);
+    FloatT floorz = floor( z );
+    FloatT fracz  = z - floor( z );
+
+
+    FloatT tmp000 = ( w1(fracx) ) / ( w0(fracx) + w1(fracx) ) ;
+    FloatT h_000 = ( floorx - FloatT(0.5) + tmp000 ) / texsizef[0];
+
+    FloatT tmp100 = ( w3(fracx) ) / ( w2(fracx) + w3(fracx) ) ;
+    FloatT h_100 = ( floorx + FloatT(1.5) + tmp100 ) / texsizef[0];
+
+    FloatT tmp010 = ( w1(fracy) ) / ( w0(fracy) + w1(fracy) ) ;
+    FloatT h_010 = ( floory - FloatT(0.5) + tmp010 ) / texsizef[1] ;
+
+    FloatT tmp110 = ( w3(fracy) ) / ( w2(fracy) + w3(fracy) ) ;
+    FloatT h_110 = ( floory + FloatT(1.5) + tmp110 ) / texsizef[1];
+
+    FloatT tmp001 = ( w1(fracz) ) / ( w0(fracz) + w1(fracz) ) ;
+    FloatT h_001 = ( floorz - FloatT(0.5) + tmp001 ) / texsizef[2];
+
+    FloatT tmp101 = ( w3(fracz) ) / ( w2(fracz) + w3(fracz) ) ;
+    FloatT h_101 = ( floorz + FloatT(1.5) + tmp101 ) / texsizef[2];
+
+
+    FloatT f_000 = linear< bpc, FloatT, IntT >( tex, Float3T(h_000, h_010, h_001), texsize, ftoi, itof );
+    FloatT f_100 = linear< bpc, FloatT, IntT >( tex, Float3T(h_100, h_010, h_001), texsize, ftoi, itof );
+    FloatT f_010 = linear< bpc, FloatT, IntT >( tex, Float3T(h_000, h_110, h_001), texsize, ftoi, itof );
+    FloatT f_110 = linear< bpc, FloatT, IntT >( tex, Float3T(h_100, h_110, h_001), texsize, ftoi, itof );
+
+    FloatT f_001 = linear< bpc, FloatT, IntT >( tex, Float3T(h_000, h_010, h_101), texsize, ftoi, itof );
+    FloatT f_101 = linear< bpc, FloatT, IntT >( tex, Float3T(h_100, h_010, h_101), texsize, ftoi, itof );
+    FloatT f_011 = linear< bpc, FloatT, IntT >( tex, Float3T(h_000, h_110 ,h_101), texsize, ftoi, itof );
+    FloatT f_111 = linear< bpc, FloatT, IntT >( tex, Float3T(h_100, h_110, h_101), texsize, ftoi, itof );
+
+    FloatT f_00  = g0(fracx) * f_000 + g1(fracx) * f_100;
+    FloatT f_10  = g0(fracx) * f_010 + g1(fracx) * f_110;
+    FloatT f_01  = g0(fracx) * f_001 + g1(fracx) * f_101;
+    FloatT f_11  = g0(fracx) * f_011 + g1(fracx) * f_111;
+
+    FloatT f_0   = g0( fracy ) * f_00 + g1( fracy ) * f_10;
+    FloatT f_1   = g0(fracy) * f_01 + g1(fracy) * f_11;
+
+    return g0(fracz) * f_0 + g1(fracz) * f_1;
+
+}
+
+
 template < int bpc, typename VoxelT >
 VV_FORCE_INLINE float tex3D(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize3 texsize,
     virvo::tex_filter_mode filter_mode = virvo::Nearest)
@@ -210,6 +282,15 @@ VV_FORCE_INLINE float tex3D(VoxelT const* tex, virvo::Vec3 coord, virvo::ssize3 
 
     case virvo::Linear:
         return virvo::detail::linear
+        <
+            bpc, float, ssize_t
+        >
+        ( tex, coord, texsize, ftoi, itof );
+
+    case virvo::BSpline:
+        // fall-through
+    case virvo::BSplineInterpol:
+        return virvo::detail::cubic
         <
             bpc, float, ssize_t
         >
@@ -251,7 +332,16 @@ VV_FORCE_INLINE virvo::simd::Vec tex3D(VoxelT const* tex, virvo::simd::Vec3 coor
         ( tex, coord, texsize, ftoi, itof );
 
     case virvo::Linear:
-        return virvo::detail::nearest
+        return virvo::detail::linear
+        <
+            bpc, virvo::simd::Vec, virvo::simd::Veci
+        >
+        ( tex, coord, texsize, ftoi, itof );
+
+    case virvo::BSpline:
+        // fall-through
+    case virvo::BSplineInterpol:
+        return virvo::detail::cubic
         <
             bpc, virvo::simd::Vec, virvo::simd::Veci
         >
