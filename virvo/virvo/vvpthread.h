@@ -17,6 +17,8 @@
 #define VV_PTHREAD_H
 
 #include <pthread.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <semaphore.h>
 
 /* Pthread barriers aren't available on Mac OS X 10.3.
@@ -206,6 +208,40 @@ public:
   void signal()
   {
     sem_post(&sem);
+  }
+};
+
+//------------------------------------------------------------------------------
+// Named Semaphore
+//
+class NamedSemaphore
+{
+
+  sem_t* sem;
+  char const* name_;
+
+public:
+  NamedSemaphore(char const* name, int value = 0)
+    : name_(name)
+  {
+    sem_unlink(name_);
+    sem = sem_open(name_, O_CREAT, S_IRUSR | S_IWUSR, value);
+  }
+
+  ~NamedSemaphore()
+  {
+    sem_close(sem);
+    sem_unlink(name_);
+  }
+
+  void wait()
+  {
+    sem_wait(sem);
+  }
+
+  void signal()
+  {
+    sem_post(sem);
   }
 };
 
