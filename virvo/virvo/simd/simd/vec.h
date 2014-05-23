@@ -2,11 +2,11 @@
 
 #include "intrinsics.h"
 
-#include "../vvcompiler.h"
-#include "../vvforceinline.h"
-#include "../vvmacros.h"
+#include <virvo/vvcompiler.h>
+#include <virvo/vvforceinline.h>
+#include <virvo/vvmacros.h>
 
-#include "../mem/align.h"
+#include <virvo/mem/align.h>
 
 #include <ostream>
 #include <stdexcept>

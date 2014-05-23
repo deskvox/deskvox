@@ -1,7 +1,7 @@
 #pragma once
 
-#include "vec.h"
-#include "veci.h"
+#include "simd/vec.h"
+#include "simd/veci.h"
 
 #include "../vvvecmath.h"
 
@@ -90,9 +90,10 @@ VV_FORCE_INLINE base_vec3<T> operator*(base_vec3<T> const& u, base_vec3<T> const
   return base_vec3<T>(u.x * v.x, u.y * v.y, u.z * v.z);
 }
 
-VV_FORCE_INLINE Vec3 operator/(Vec3 const& u, Vec3 const& v)
+template <typename T>
+VV_FORCE_INLINE base_vec3<T> operator/(base_vec3<T> const& u, base_vec3<T> const& v)
 {
-  return Vec3(u.x / v.x, u.y / v.y, u.z / v.z);
+  return base_vec3<T>(u.x / v.x, u.y / v.y, u.z / v.z);
 }
 
 template <typename T>
@@ -122,9 +123,10 @@ VV_FORCE_INLINE base_vec3<T> operator*(base_vec3<T> const& v, T const& s)
   return base_vec3<T>(v.x * s, v.y * s, v.z * s);
 }
 
-VV_FORCE_INLINE Vec3 operator/(Vec3 const& v, Vec const& s)
+template <typename T>
+VV_FORCE_INLINE base_vec3<T> operator/(base_vec3<T> const& v, T const& s)
 {
-  return Vec3(v.x / s, v.y / s, v.z / s);
+  return base_vec3<T>(v.x / s, v.y / s, v.z / s);
 }
 
 template <typename T>
@@ -145,9 +147,10 @@ VV_FORCE_INLINE base_vec3<T> operator*(T const& s, base_vec3<T> const& v)
   return base_vec3<T>(s * v.x, s * v.y, s * v.z);
 }
 
-VV_FORCE_INLINE Vec3 operator/(Vec const& s, Vec3 const& v)
+template <typename T>
+VV_FORCE_INLINE base_vec3<T> operator/(T const& s, base_vec3<T> const& v)
 {
-  return Vec3(s / v.x, s / v.y, s / v.z);
+  return base_vec3<T>(s / v.x, s / v.y, s / v.z);
 }
 
 template <typename T>
@@ -207,7 +210,7 @@ VV_FORCE_INLINE Vec3 rcp(Vec3 const& v)
 }
 
 template <unsigned refinements>
-VV_FORCE_INLINE Vec3 normalize(Vec3 const& v)
+VV_FORCE_INLINE base_vec3< sse_vec > normalize(base_vec3< sse_vec > const& v)
 {
   return v * rsqrt<refinements>(dot(v, v));
 }
@@ -215,6 +218,11 @@ VV_FORCE_INLINE Vec3 normalize(Vec3 const& v)
 VV_FORCE_INLINE Vec3 normalize(Vec3 const& v)
 {
   return v * rsqrt<1>(dot(v, v));
+}
+
+VV_FORCE_INLINE base_vec3< float > normalize(base_vec3< float > const& v)
+{
+  return v * (1.0f / std::sqrt(dot(v, v)));
 }
 
 }

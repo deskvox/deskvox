@@ -7,27 +7,28 @@ namespace virvo
 namespace simd
 {
 
-class CACHE_ALIGN AABB
+template < typename T >
+class CACHE_ALIGN base_aabb
 {
 public:
-  inline AABB(Vec3 const& min, Vec3 const& max)
+  inline base_aabb(base_vec3< T > const& min, base_vec3< T > const& max)
     : m_min(min)
     , m_max(max)
   {
   }
 
-  inline Vec3 getMin() const
+  inline base_vec3< T > getMin() const
   {
     return m_min;
   }
 
-  inline Vec3 getMax() const
+  inline base_vec3< T > getMax() const
   {
     return m_max;
   }
 private:
-  Vec3 m_min;
-  Vec3 m_max;
+  base_vec3< T > m_min;
+  base_vec3< T > m_max;
 };
 
 } // simd

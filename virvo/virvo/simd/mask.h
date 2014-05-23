@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vec.h"
+#include "simd/vec.h"
 #include "vec4.h"
 
 #include "../vvforceinline.h"
@@ -114,6 +114,11 @@ VV_FORCE_INLINE sse_vec neg(sse_vec const& v, sse_mask const& mask)
 VV_FORCE_INLINE sse_vec add(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
 {
   return if_else(u + v, 0.0f, mask);
+}
+
+VV_FORCE_INLINE float sub(float u, float v, float /* mask */)
+{
+  return u - v;
 }
 
 VV_FORCE_INLINE sse_vec sub(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
@@ -297,6 +302,11 @@ template <typename T, typename M>
 VV_FORCE_INLINE base_vec4<T> mul(base_vec4<T> const& v, T const& s, M const& mask)
 {
   return base_vec4<T>(mul(v.x, s, mask), mul(v.y, s, mask), mul(v.z, s, mask), mul(v.w, s, mask));
+}
+
+VV_FORCE_INLINE base_vec4< float > mul(base_vec4< float > const& v, float s, float /* mask */)
+{
+  return v * s;
 }
 
 template <typename T, typename M>

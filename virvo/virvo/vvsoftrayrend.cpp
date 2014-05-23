@@ -93,42 +93,21 @@ virvo::tex_filter_mode map_to_tex_filter_mode(vvRenderState::InterpolType ipol_t
 }
 
 
-#if VV_USE_SSE
-
 #include "simd/simd.h"
 
-typedef virvo::simd::Veci dim_t;
-#if 0//__LP64__
-struct index_t
-{
-  virvo::sse::Veci lo;
-  virvo::sse::Veci hi;
-};
-#else
-typedef virvo::simd::Veci index_t;
-#endif
+#if VV_USE_SSE
 
 #define PACK_SIZE_X 2
 #define PACK_SIZE_Y 2
 
-using virvo::simd::ceil;
-using virvo::simd::floor;
 using virvo::simd::min;
 using virvo::simd::max;
-namespace fast = virvo::simd::fast;
-typedef virvo::simd::Veci Vecs;
-typedef virvo::simd::Vec3i Vec3s;
-typedef virvo::simd::Vec4i Vec4s;
-using virvo::simd::AABB;
-using virvo::simd::Vec;
-using virvo::simd::Vec3;
-using virvo::simd::Vec4;
-using virvo::simd::Matrix;
+typedef virvo::simd::sse_veci int_type;
+typedef virvo::simd::sse_vec float_type;
+typedef virvo::simd::sse_vec matrix_row_type;
 
 #else
 
-typedef size_t dim_t;
-typedef size_t index_t;
 #define PACK_SIZE_X 1
 #define PACK_SIZE_Y 1
 
@@ -136,34 +115,20 @@ typedef size_t index_t;
 #define all(x) (x)
 using std::min;
 using std::max;
-typedef size_t Vecs;
-namespace fast
-{
-inline virvo::Vec3 normalize(virvo::Vec3 const& v)
-{
-  return virvo::vecmath::normalize(v);
-}
-}
-typedef vvssize3 Vec3s;
-using virvo::AABB;
-typedef float Vec;
-using virvo::Vec3;
-using virvo::Vec4;
-using virvo::Matrix;
-
-inline Vec sub(Vec const& u, Vec const& v, Vec const& mask)
-{
-  (void)mask;
-  return u - v;
-}
-
-inline Vec4 mul(Vec4 const& v, Vec const& s, Vec const& mask)
-{
-  (void)mask;
-  return v * s;
-}
+typedef size_t int_type;
+typedef float float_type;
+typedef virvo::simd::base_vec4< float_type > matrix_row_type;
+using virvo::simd::sub;
 
 #endif
+
+namespace fast = virvo::simd::fast;
+typedef virvo::simd::base_aabb< float_type > AABB;
+typedef virvo::simd::base_vec3< int_type > Vec3s;
+typedef virvo::simd::base_vec4< int_type > Vec4s;
+typedef virvo::simd::base_vec3< float_type > Vec3;
+typedef virvo::simd::base_vec4< float_type > Vec4;
+typedef virvo::simd::Matrix< matrix_row_type > Mat4;
 
 template <class T, class U>
 VV_FORCE_INLINE T vec_cast(U const& u)
@@ -175,7 +140,7 @@ VV_FORCE_INLINE T vec_cast(U const& u)
 #endif
 }
 
-VV_FORCE_INLINE Vec4 rgba(float const* tf, Vecs const& idx)
+VV_FORCE_INLINE Vec4 rgba(float const* tf, int_type const& idx)
 {
 #if VV_USE_SSE
   CACHE_ALIGN int indices[4];
@@ -197,19 +162,19 @@ VV_FORCE_INLINE size_t getLUTSize(vvVolDesc* vd)
   return (vd->getBPV()==2) ? 4096 : 256;
 }
 
-VV_FORCE_INLINE Vec pixelx(float x)
+VV_FORCE_INLINE float_type pixelx(float x)
 {
 #if VV_USE_SSE
-  return Vec(x, x + 1.0f, x, x + 1.0f);
+  return float_type(x, x + 1.0f, x, x + 1.0f);
 #else
   return x;
 #endif
 }
 
-VV_FORCE_INLINE Vec pixely(float y)
+VV_FORCE_INLINE float_type pixely(float y)
 {
 #if VV_USE_SSE
-  return Vec(y, y, y + 1.0f, y + 1.0f);
+  return float_type(y, y, y + 1.0f, y + 1.0f);
 #else
   return y;
 #endif
@@ -227,14 +192,14 @@ struct Ray
   Vec3 d;
 };
 
-VV_FORCE_INLINE Vec intersectBox(const Ray& ray, const AABB& aabb, Vec* tnear, Vec* tfar)
+VV_FORCE_INLINE float_type intersectBox(const Ray& ray, const AABB& aabb, float_type* tnear, float_type* tfar)
 {
   // compute intersection of ray with all six bbox planes
   Vec3 invR(1.0f / ray.d[0], 1.0f / ray.d[1], 1.0f / ray.d[2]);
-  Vec t1 = (aabb.getMin()[0] - ray.o[0]) * invR[0];
-  Vec t2 = (aabb.getMax()[0] - ray.o[0]) * invR[0];
-  Vec tmin = min(t1, t2);
-  Vec tmax = max(t1, t2);
+  float_type t1 = (aabb.getMin()[0] - ray.o[0]) * invR[0];
+  float_type t2 = (aabb.getMax()[0] - ray.o[0]) * invR[0];
+  float_type tmin = min(t1, t2);
+  float_type tmax = max(t1, t2);
 
   t1 = (aabb.getMin()[1] - ray.o[1]) * invR[1];
   t2 = (aabb.getMax()[1] - ray.o[1]) * invR[1];
@@ -565,9 +530,9 @@ vvParam vvSoftRayRend::getParameter(ParameterType param) const
 
 void renderTile(const virvo::Tile& tile, const Thread* thread)
 {
-  static const Vec opacityThreshold = 0.95f;
+  static const float_type opacityThreshold = 0.95f;
 
-  Matrix inv_view_matrix(*thread->invViewMatrix);
+  Mat4 inv_view_matrix(*thread->invViewMatrix);
   int w                         = thread->render_params->width;
   int h                         = thread->render_params->height;
 
@@ -575,8 +540,8 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   Vec3 fvox(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
 
   Vec3 size(thread->render_params->volsize[0], thread->render_params->volsize[1], thread->render_params->volsize[2]);
-  Vec3 invsize                  = 1.0f / size;
-  Vec3 size2                    = size * Vec(0.5f);
+  Vec3 invsize                  = float_type(1.0f) / size;
+  Vec3 size2                    = size * float_type(0.5f);
   Vec3 volpos(thread->render_params->volpos[0], thread->render_params->volpos[1], thread->render_params->volpos[2]);
 
   size_t const bpc              = thread->render_params->bpc;
@@ -624,8 +589,8 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
       // u = 2 t - 1         where  -1 <= u <= 1
       //
 
-      const Vec u = 2.0f * (pixelx(x) + 0.5f) / static_cast<float>(w) - 1.0f;
-      const Vec v = 2.0f * (pixely(y) + 0.5f) / static_cast<float>(h) - 1.0f;
+      const float_type u = 2.0f * (pixelx(x) + 0.5f) / static_cast<float>(w) - 1.0f;
+      const float_type v = 2.0f * (pixely(y) + 0.5f) / static_cast<float>(h) - 1.0f;
 
       Vec4 o(u, v, -1.0f, 1.0f);
       o = inv_view_matrix * o;
@@ -637,14 +602,14 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
       ray.d = ray.d - ray.o;
       ray.d = fast::normalize(ray.d);
 
-      Vec tbnear = 0.0f;
-      Vec tbfar = 0.0f;
+      float_type tbnear = 0.0f;
+      float_type tbfar = 0.0f;
 
-      Vec active = intersectBox(ray, aabb, &tbnear, &tbfar);
+      float_type active = intersectBox(ray, aabb, &tbnear, &tbfar);
       if (any(active))
       {
-        Vec dist = diagonalVoxels / Vec(numSlices);
-        Vec t = tbnear;
+        float_type dist = diagonalVoxels / float_type(numSlices);
+        float_type t = tbnear;
         Vec3 pos = ray.o + ray.d * tbnear;
         const Vec3 step = ray.d * dist;
         Vec4 dst(0.0f);
@@ -656,10 +621,10 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
                         (-pos[2] - volpos[2] + size2[2]) * invsize[2]);
 
           // TODO: templatize this decision?
-          Vec sample = bpc == 2 ? virvo::tex3D< 2 >(volume, texcoord) : virvo::tex3D< 1 >(volume, texcoord);
-          sample /= Vec(UCHAR_MAX);
+          float_type sample = bpc == 2 ? virvo::tex3D< 2 >(volume, texcoord) : virvo::tex3D< 1 >(volume, texcoord);
+          sample /= float_type(UCHAR_MAX);
 
-          Vec4 src = rgba(rgbaTF, vec_cast<Vecs>(sample * static_cast<float>(lutsize)) * 4);
+          Vec4 src = rgba(rgbaTF, vec_cast<int_type>(sample * static_cast<float>(lutsize)) * 4);
 
           if (mipMode == 1)
           {

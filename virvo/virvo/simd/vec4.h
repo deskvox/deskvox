@@ -1,7 +1,7 @@
 #pragma once
 
-#include "vec.h"
-#include "veci.h"
+#include "simd/vec.h"
+#include "simd/veci.h"
 
 #include "../vvvecmath.h"
 
@@ -119,9 +119,10 @@ VV_FORCE_INLINE base_vec4<T> operator*(base_vec4<T> const& u, base_vec4<T> const
   return base_vec4<T>(u.x * v.x, u.y * v.y, u.z * v.z, u.w * v.w);
 }
 
-VV_FORCE_INLINE Vec4 operator/(Vec4 const& u, Vec4 const& v)
+template <typename T>
+VV_FORCE_INLINE base_vec4<T> operator/(base_vec4<T> const& u, base_vec4<T> const& v)
 {
-  return Vec4(u.x / v.x, u.y / v.y, u.z / v.z, u.w / v.w);
+  return base_vec4<T>(u.x / v.x, u.y / v.y, u.z / v.z, u.w / v.w);
 }
 
 template <typename T>
@@ -142,9 +143,10 @@ VV_FORCE_INLINE base_vec4<T> operator*(base_vec4<T> const& v, T const& s)
   return base_vec4<T>(v.x * s, v.y * s, v.z * s, v.w * s);
 }
 
-VV_FORCE_INLINE Vec4 operator/(Vec4 const& v, Vec const& s)
+template <typename T>
+VV_FORCE_INLINE base_vec4<T> operator/(base_vec4<T> const& v, T const& s)
 {
-  return Vec4(v.x / s, v.y / s, v.z / s, v.w / s);
+  return base_vec4<T>(v.x / s, v.y / s, v.z / s, v.w / s);
 }
 
 template <typename T>
@@ -165,9 +167,10 @@ VV_FORCE_INLINE base_vec4<T> operator*(T const& s, base_vec4<T> const& v)
   return base_vec4<T>(s * v.x, s * v.y, s * v.z, s * v.w);
 }
 
-VV_FORCE_INLINE Vec4 operator/(Vec const& s, Vec4 const& v)
+template <typename T>
+VV_FORCE_INLINE base_vec4<T> operator/(T const& s, base_vec4<T> const& v)
 {
-  return Vec4(s / v.x, s / v.y, s / v.z, s / v.w);
+  return base_vec4<T>(s / v.x, s / v.y, s / v.z, s / v.w);
 }
 
 template <typename T>

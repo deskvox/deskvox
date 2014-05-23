@@ -1,10 +1,9 @@
 #pragma once
 
 #include "vec.h"
-#include "vec3.h"
 #include "veci.h"
 
-#include "../vvforceinline.h"
+#include <virvo/vvforceinline.h>
 
 namespace virvo
 {

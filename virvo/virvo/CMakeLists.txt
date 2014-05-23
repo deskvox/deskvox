@@ -95,16 +95,18 @@ set(VIRVO_HEADERS
   mem/align.h
   mem/allocator.h
 
+  simd/simd/cast.h
+  simd/simd/vec.h
+  simd/simd/veci.h
+  simd/simd/intrinsics.h
+  simd/simd/matrix_sse.inl
   simd/aabb.h
-  simd/cast.h
-  simd/intrinsics.h
   simd/mask.h
   simd/matrix.h
+  simd/matrix.inl
   simd/simd.h
-  simd/vec.h
   simd/vec3.h
   simd/vec4.h
-  simd/veci.h
 
   texture/detail/sampler3d.h
   texture/detail/sampler_common.h

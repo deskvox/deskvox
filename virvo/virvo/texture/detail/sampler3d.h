@@ -44,18 +44,18 @@ VV_FORCE_INLINE float point(VoxelT const* tex, ssize_t idx)
 
 
 template < int bpc, typename VoxelT >
-VV_FORCE_INLINE simd::Vec point(VoxelT const* tex, simd::Veci idx)
+VV_FORCE_INLINE simd::sse_vec point(VoxelT const* tex, simd::sse_veci idx)
 {
 
     CACHE_ALIGN int indices[4];
-    simd::Veci ridx = idx * bpc + high_byte_offset * (bpc - 1);
+    simd::sse_veci ridx = idx * bpc + high_byte_offset * (bpc - 1);
     virvo::simd::store(ridx, &indices[0]);
     CACHE_ALIGN float vals[4];
     for (size_t i = 0; i < 4; ++i)
     {
         vals[i] = tex[indices[i]];
     }
-    return simd::Vec(&vals[0]);
+    return simd::sse_vec(&vals[0]);
 
 }
 
