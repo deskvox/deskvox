@@ -214,6 +214,7 @@ public:
 //------------------------------------------------------------------------------
 // Named Semaphore
 //
+#ifndef _WIN32
 class NamedSemaphore
 {
 
