@@ -69,7 +69,10 @@ template
     typename Int2FloatFunc,
     typename VoxelT
 >
-VV_FORCE_INLINE typename Float3T::value_type nearest(VoxelT const* tex, Float3T coord, Int3T texsize,
+#ifndef _MSC_VER
+VV_FORCE_INLINE
+#endif
+typename Float3T::value_type nearest(VoxelT const* tex, Float3T coord, Int3T texsize,
     Float2IntFunc ftoi, Int2FloatFunc itof)
 {
 
@@ -133,7 +136,10 @@ template
     typename Int2FloatFunc,
     typename VoxelT
 >
-VV_FORCE_INLINE typename Float3T::value_type linear(VoxelT const* tex, Float3T coord, Int3T texsize,
+#ifndef _MSC_VER
+VV_FORCE_INLINE
+#endif
+typename Float3T::value_type linear(VoxelT const* tex, Float3T coord, Int3T texsize,
     Float2IntFunc ftoi, Int2FloatFunc itof)
 {
 
@@ -195,7 +201,10 @@ template
     typename Int2FloatFunc,
     typename VoxelT
 >
-VV_FORCE_INLINE typename Float3T::value_type cubic(VoxelT const* tex, Float3T coord, Int3T texsize,
+#ifndef _MSC_VER
+VV_FORCE_INLINE
+#endif
+typename Float3T::value_type cubic(VoxelT const* tex, Float3T coord, Int3T texsize,
     Float2IntFunc ftoi, Int2FloatFunc itof)
 {
 
@@ -211,7 +220,7 @@ VV_FORCE_INLINE typename Float3T::value_type cubic(VoxelT const* tex, Float3T co
     float_type y = (coord[1] * texsizef[1]) - float_type(0.5);
     float_type floory = floor( y );
     float_type fracy  = y - floor( y );
-  
+
     float_type z = (coord[2] * texsizef[2]) - float_type(0.5);
     float_type floorz = floor( z );
     float_type fracz  = z - floor( z );
