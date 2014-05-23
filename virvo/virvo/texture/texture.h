@@ -11,11 +11,21 @@ namespace virvo
 {
 
 
-template < int bpc, typename Int3T, typename Float3T, typename VoxelT >
-VV_FORCE_INLINE typename Float3T::value_type tex3D(texture< VoxelT, 3 > const& tex, Float3T coord)
+template < int bpc, typename VoxelT >
+VV_FORCE_INLINE float tex3D(texture< VoxelT, 3 > const& tex, virvo::Vec3 coord)
 {
 
-    Int3T size( tex.width(), tex.height(), tex.depth() );
+    virvo::ssize3 size( tex.width(), tex.height(), tex.depth() );
+    return detail::tex3D< bpc >( tex.data, coord, size, tex.get_filter_mode() );
+
+}
+
+
+template < int bpc, typename VoxelT >
+VV_FORCE_INLINE virvo::simd::Vec tex3D(texture< VoxelT, 3 > const& tex, virvo::simd::Vec3 coord)
+{
+
+    virvo::simd::Vec3i size( tex.width(), tex.height(), tex.depth() );
     return detail::tex3D< bpc >( tex.data, coord, size, tex.get_filter_mode() );
 
 }
