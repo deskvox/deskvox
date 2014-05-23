@@ -245,6 +245,7 @@ public:
     sem_post(sem);
   }
 };
+#endif
 
 } // namespace virvo
 
