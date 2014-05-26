@@ -3,8 +3,6 @@
 #include "simd/vec.h"
 #include "simd/veci.h"
 
-#include "../vvvecmath.h"
-
 #include <ostream>
 
 namespace virvo
@@ -43,17 +41,6 @@ public:
   /*! \brief  construct from aligned float[4]
    */
   VV_FORCE_INLINE base_vec4(T const v[4])
-    : x(v[0])
-    , y(v[1])
-    , z(v[2])
-    , w(v[3])
-  {
-  }
-
-  /*! \brief  construct from virvo vector
-   */
-  template <typename U>
-  VV_FORCE_INLINE base_vec4(vvBaseVector4<U> const& v)
     : x(v[0])
     , y(v[1])
     , z(v[2])

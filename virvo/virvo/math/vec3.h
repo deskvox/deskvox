@@ -3,8 +3,6 @@
 #include "simd/vec.h"
 #include "simd/veci.h"
 
-#include "../vvvecmath.h"
-
 #include <ostream>
 
 namespace virvo
@@ -37,16 +35,6 @@ public:
     : x(x)
     , y(y)
     , z(z)
-  {
-  }
-
-  /*! \brief  construct from virvo vector
-   */
-  template <typename U>
-  VV_FORCE_INLINE base_vec3(vvBaseVector3<U> const& v)
-    : x(v[0])
-    , y(v[1])
-    , z(v[2])
   {
   }
 
