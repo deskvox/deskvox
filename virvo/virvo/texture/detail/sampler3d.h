@@ -27,9 +27,8 @@ static const size_t high_byte_offset = 0;
 #endif
 
 
-template < typename IntT, typename Int3T >
-VV_FORCE_INLINE IntT index(IntT x, IntT y, IntT z, Int3T texsize)
-{
+template < typename T >
+VV_FORCE_INLINE T index(T x, T y, T z, math::base_vec3< T > texsize) {
     return z * texsize[0] * texsize[1] + y * texsize[0] + x;
 }
 
@@ -63,35 +62,34 @@ VV_FORCE_INLINE math::sse_vec point(VoxelT const* tex, math::sse_veci idx)
 template
 <
     int bpc,
-    typename Float3T,
-    typename Int3T,
-    typename Float2IntFunc,
-    typename Int2FloatFunc,
+    typename FloatT,
     typename VoxelT
 >
 #ifndef _MSC_VER
 VV_FORCE_INLINE
 #endif
-typename Float3T::value_type nearest(VoxelT const* tex, Float3T coord, Int3T texsize,
-    Float2IntFunc ftoi, Int2FloatFunc itof)
+FloatT nearest(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec3< FloatT > texsize)
 {
 
 #if 1
 
     using toolshed::clamp;
 
-    typedef typename Int3T::value_type int_type;
+    typedef FloatT float_type;
+    typedef math::base_vec3< float_type > float3_type;
 
-    Float3T texsizef(itof(texsize[0]), itof(texsize[1]), itof(texsize[2]));
+    float3_type lo
+    (
+        floor(coord.x * texsize.x),
+        floor(coord.y * texsize.y),
+        floor(coord.z * texsize.z)
+    );
 
-    Int3T texcoordi(ftoi(coord[0] * texsizef[0]), ftoi(coord[1] * texsizef[1]),
-        ftoi(coord[2] * texsizef[2]));
+    lo[0] = clamp(lo[0], float_type(0.0f), texsize[0] - 1);
+    lo[1] = clamp(lo[1], float_type(0.0f), texsize[1] - 1);
+    lo[2] = clamp(lo[2], float_type(0.0f), texsize[2] - 1);
 
-    texcoordi[0] = clamp(texcoordi[0], int_type(0), texsize[0] - 1);
-    texcoordi[1] = clamp(texcoordi[1], int_type(0), texsize[1] - 1);
-    texcoordi[2] = clamp(texcoordi[2], int_type(0), texsize[2] - 1);
-
-    int_type idx = index(texcoordi[0], texcoordi[1], texcoordi[2], texsize);
+    float_type idx = index(lo[0], lo[1], lo[2], texsize);
     return point< bpc >(tex, idx);
 
 #else
@@ -130,38 +128,28 @@ typename Float3T::value_type nearest(VoxelT const* tex, Float3T coord, Int3T tex
 template
 <
     int bpc,
-    typename Float3T,
-    typename Int3T,
-    typename Float2IntFunc,
-    typename Int2FloatFunc,
+    typename FloatT,
     typename VoxelT
 >
 #ifndef _MSC_VER
 VV_FORCE_INLINE
 #endif
-typename Float3T::value_type linear(VoxelT const* tex, Float3T coord, Int3T texsize,
-    Float2IntFunc ftoi, Int2FloatFunc itof)
+FloatT linear(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec3< FloatT > texsize)
 {
 
     using toolshed::clamp;
 
-    typedef typename Float3T::value_type float_type;
-    typedef typename Int3T::value_type int_type;
+    typedef FloatT float_type;
+    typedef math::base_vec3< float_type > float3_type;
 
-    Float3T texsizef(itof(texsize[0]), itof(texsize[1]), itof(texsize[2]));
+    float3_type texcoordf( coord * texsize - float_type(0.5) );
 
-    Float3T texcoordf(coord[0] * texsizef[0] - float_type(0.5),
-                      coord[1] * texsizef[1] - float_type(0.5),
-                      coord[2] * texsizef[2] - float_type(0.5));
+    texcoordf[0] = clamp( texcoordf[0], float_type(0.0), texsize[0] - 1 );
+    texcoordf[1] = clamp( texcoordf[1], float_type(0.0), texsize[1] - 1 );
+    texcoordf[2] = clamp( texcoordf[2], float_type(0.0), texsize[2] - 1 );
 
-    texcoordf[0] = clamp( texcoordf[0], float_type(0.0), texsizef[0] - 1 );
-    texcoordf[1] = clamp( texcoordf[1], float_type(0.0), texsizef[1] - 1 );
-    texcoordf[2] = clamp( texcoordf[2], float_type(0.0), texsizef[2] - 1 );
-
-    Float3T lof( floor(texcoordf[0]), floor(texcoordf[1]), floor(texcoordf[2]) );
-    Float3T hif( ceil(texcoordf[0]),  ceil(texcoordf[1]),  ceil(texcoordf[2]) );
-    Int3T   lo( ftoi(lof[0]), ftoi(lof[1]), ftoi(lof[2]) );
-    Int3T   hi( ftoi(hif[0]), ftoi(hif[1]), ftoi(hif[2]) );
+    float3_type lo( floor(texcoordf[0]), floor(texcoordf[1]), floor(texcoordf[2]) );
+    float3_type hi( ceil(texcoordf[0]),  ceil(texcoordf[1]),  ceil(texcoordf[2]) );
 
 
     float_type samples[8] =
@@ -177,7 +165,7 @@ typename Float3T::value_type linear(VoxelT const* tex, Float3T coord, Int3T texs
     };
 
 
-    Float3T uvw = texcoordf - lof;
+    float3_type uvw = texcoordf - lo;
 
     float_type p1  = lerp(samples[0], samples[1], uvw[0]);
     float_type p2  = lerp(samples[2], samples[3], uvw[0]);
@@ -195,23 +183,19 @@ typename Float3T::value_type linear(VoxelT const* tex, Float3T coord, Int3T texs
 template
 <
     int bpc,
-    typename Float3T,
-    typename Int3T,
-    typename Float2IntFunc,
-    typename Int2FloatFunc,
+    typename FloatT,
     typename VoxelT
 >
 #ifndef _MSC_VER
 VV_FORCE_INLINE
 #endif
-typename Float3T::value_type cubic(VoxelT const* tex, Float3T coord, Int3T texsize,
-    Float2IntFunc ftoi, Int2FloatFunc itof)
+FloatT cubic(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec3< FloatT > texsize)
 {
 
-    typedef typename Float3T::value_type float_type;
-    typedef typename Int3T::value_type int_type;
+    typedef FloatT float_type;
+    typedef math::base_vec3< float_type > float3_type;
 
-    Float3T texsizef(itof(texsize[0]), itof(texsize[1]), itof(texsize[2]));
+    float3_type texsizef( texsize );
 
     float_type x = (coord[0] * texsizef[0]) - float_type(0.5);
     float_type floorx = floor( x );
@@ -245,15 +229,15 @@ typename Float3T::value_type cubic(VoxelT const* tex, Float3T coord, Int3T texsi
     float_type h_101 = ( floorz + float_type(1.5) + tmp101 ) / texsizef[2];
 
 
-    float_type f_000 = linear< bpc >( tex, Float3T(h_000, h_010, h_001), texsize, ftoi, itof );
-    float_type f_100 = linear< bpc >( tex, Float3T(h_100, h_010, h_001), texsize, ftoi, itof );
-    float_type f_010 = linear< bpc >( tex, Float3T(h_000, h_110, h_001), texsize, ftoi, itof );
-    float_type f_110 = linear< bpc >( tex, Float3T(h_100, h_110, h_001), texsize, ftoi, itof );
+    float_type f_000 = linear< bpc >( tex, float3_type(h_000, h_010, h_001), texsize );
+    float_type f_100 = linear< bpc >( tex, float3_type(h_100, h_010, h_001), texsize );
+    float_type f_010 = linear< bpc >( tex, float3_type(h_000, h_110, h_001), texsize );
+    float_type f_110 = linear< bpc >( tex, float3_type(h_100, h_110, h_001), texsize );
 
-    float_type f_001 = linear< bpc >( tex, Float3T(h_000, h_010, h_101), texsize, ftoi, itof );
-    float_type f_101 = linear< bpc >( tex, Float3T(h_100, h_010, h_101), texsize, ftoi, itof );
-    float_type f_011 = linear< bpc >( tex, Float3T(h_000, h_110 ,h_101), texsize, ftoi, itof );
-    float_type f_111 = linear< bpc >( tex, Float3T(h_100, h_110, h_101), texsize, ftoi, itof );
+    float_type f_001 = linear< bpc >( tex, float3_type(h_000, h_010, h_101), texsize );
+    float_type f_101 = linear< bpc >( tex, float3_type(h_100, h_010, h_101), texsize );
+    float_type f_011 = linear< bpc >( tex, float3_type(h_000, h_110 ,h_101), texsize );
+    float_type f_111 = linear< bpc >( tex, float3_type(h_100, h_110, h_101), texsize );
 
     float_type f_00  = g0(fracx) * f_000 + g1(fracx) * f_100;
     float_type f_10  = g0(fracx) * f_010 + g1(fracx) * f_110;
@@ -271,19 +255,12 @@ typename Float3T::value_type cubic(VoxelT const* tex, Float3T coord, Int3T texsi
 template
 <
     int bpc,
-    typename Float3T,
-    typename Int3T,
+    typename FloatT,
     typename VoxelT
 >
-VV_FORCE_INLINE typename Float3T::value_type tex3D(VoxelT const* tex, Float3T coord, Int3T texsize,
+VV_FORCE_INLINE FloatT tex3D(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec3< FloatT > texsize,
     virvo::tex_filter_mode filter_mode = virvo::Nearest)
 {
-
-    typedef typename Float3T::value_type float_type;
-    typedef typename Int3T::value_type int_type;
-
-    Caster< float_type, int_type > ftoi;
-    Caster< int_type, float_type > itof;
 
     switch (filter_mode)
     {
@@ -291,15 +268,15 @@ VV_FORCE_INLINE typename Float3T::value_type tex3D(VoxelT const* tex, Float3T co
     default:
         // fall-through
     case virvo::Nearest:
-        return nearest< bpc >( tex, coord, texsize, ftoi, itof );
+        return nearest< bpc >( tex, coord, texsize );
 
     case virvo::Linear:
-        return linear< bpc >( tex, coord, texsize, ftoi, itof );
+        return linear< bpc >( tex, coord, texsize );
 
     case virvo::BSpline:
         // fall-through
     case virvo::BSplineInterpol:
-        return cubic< bpc >( tex, coord, texsize, ftoi, itof );
+        return cubic< bpc >( tex, coord, texsize );
 
     }
 

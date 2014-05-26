@@ -22,28 +22,6 @@ namespace detail
 {
 
 
-template < typename U, typename T >
-struct Caster
-{
-    VV_FORCE_INLINE T operator()(U const& u) { return static_cast< T >(u); }
-};
-
-
-template < >
-struct Caster< math::sse_vec, math::sse_veci >
-{
-    VV_FORCE_INLINE math::sse_veci operator()(math::sse_vec const& u) { return math::simd_cast< math::sse_veci >(u); }
-};
-
-
-template < >
-struct Caster< math::sse_veci, math::sse_vec >
-{
-    VV_FORCE_INLINE math::sse_vec operator()(math::sse_veci const& u) { return math::simd_cast< math::sse_vec >(u); }
-};
-
-
-
 // weight functions for Mitchell - Netravalli B-Spline
 template < typename FloatT >
 VV_FORCE_INLINE FloatT w0( FloatT a ) { return FloatT( (1.0 / 6.0) * (-(a * a * a) + 3.0 * a * a - 3.0 * a + 1.0) ); }

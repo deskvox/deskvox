@@ -49,6 +49,12 @@ public:
   {
   }
 
+  VV_FORCE_INLINE base_veci(base_vec< __m128 > const& f)
+  {
+    _MM_SET_ROUNDING_MODE(_MM_ROUND_DOWN);
+    value = _mm_cvtps_epi32(f);
+  }
+
   VV_FORCE_INLINE base_veci(value_type const& v)
     : value(v)
   {

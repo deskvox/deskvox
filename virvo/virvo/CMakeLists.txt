@@ -92,7 +92,6 @@ set(VIRVO_HEADERS
   gl/types.h
   gl/util.h
 
-  math/simd/cast.h
   math/simd/vec.h
   math/simd/veci.h
   math/simd/intrinsics.h

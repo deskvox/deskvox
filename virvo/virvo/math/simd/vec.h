@@ -18,9 +18,7 @@ namespace math
 {
 
 template < typename T >
-class CACHE_ALIGN base_vec
-{
-};
+class CACHE_ALIGN base_vec;
 
 
 template < >
@@ -54,6 +52,11 @@ public:
 
   VV_FORCE_INLINE base_vec(float s)
     : value(_mm_set1_ps(s))
+  {
+  }
+
+  VV_FORCE_INLINE base_vec(__m128i const& i)
+    : value(_mm_cvtepi32_ps(i))
   {
   }
 

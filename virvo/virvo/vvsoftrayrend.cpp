@@ -129,15 +129,6 @@ typedef virvo::math::base_vec3< float_type > Vec3;
 typedef virvo::math::base_vec4< float_type > Vec4;
 typedef virvo::math::Matrix< matrix_row_type > Mat4;
 
-template <class T, class U>
-VV_FORCE_INLINE T vec_cast(U const& u)
-{
-#if VV_USE_SSE
-  return virvo::math::simd_cast<T>(u);
-#else
-  return static_cast<T>(u);
-#endif
-}
 
 VV_FORCE_INLINE Vec4 rgba(float const* tf, int_type const& idx)
 {
@@ -623,7 +614,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
           float_type sample = bpc == 2 ? virvo::tex3D< 2 >(volume, texcoord) : virvo::tex3D< 1 >(volume, texcoord);
           sample /= float_type(UCHAR_MAX);
 
-          Vec4 src = rgba(rgbaTF, vec_cast<int_type>(sample * static_cast<float>(lutsize)) * 4);
+          Vec4 src = rgba( rgbaTF, int_type(sample * static_cast< float_type >(lutsize)) * 4 );
 
           if (mipMode == 1)
           {

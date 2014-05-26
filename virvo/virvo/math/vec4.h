@@ -48,6 +48,28 @@ public:
   {
   }
 
+  template < typename S >
+  VV_FORCE_INLINE base_vec4(base_vec4< S > const& rhs)
+    : x(rhs.x)
+    , y(rhs.y)
+    , z(rhs.z)
+    , w(rhs.w)
+  {
+  }
+
+  template < typename S >
+  VV_FORCE_INLINE base_vec4& operator=(base_vec4< S > const& rhs)
+  {
+    if (rhs != *this)
+    {
+      x = rhs.x;
+      y = rhs.y;
+      z = rhs.z;
+      w = rhs.w;
+    }
+    return *this;
+  }
+
   VV_FORCE_INLINE T& operator[](size_t i)
   {
     return reinterpret_cast<T*>(this)[i];
