@@ -11,7 +11,7 @@
 namespace virvo
 {
 
-namespace simd
+namespace math
 {
 
 template < typename T >
@@ -340,7 +340,7 @@ VV_FORCE_INLINE base_vec4<T> div(T const& s, base_vec4<T> const& v, M const& mas
 }
 
 
-} // simd
+} // math
 
 } // virvo
 

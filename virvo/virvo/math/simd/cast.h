@@ -7,7 +7,7 @@
 
 namespace virvo
 {
-namespace simd
+namespace math
 {
 template <class T, class U>
 VV_FORCE_INLINE T simd_cast(U const& u);
@@ -25,6 +25,6 @@ VV_FORCE_INLINE sse_vec simd_cast(sse_veci const& v)
   return _mm_cvtepi32_ps(v);
 }
 
-} // simd
+} // math
 } // virvo
 

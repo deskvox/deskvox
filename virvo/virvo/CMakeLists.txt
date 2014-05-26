@@ -92,21 +92,21 @@ set(VIRVO_HEADERS
   gl/types.h
   gl/util.h
 
+  math/simd/cast.h
+  math/simd/vec.h
+  math/simd/veci.h
+  math/simd/intrinsics.h
+  math/simd/matrix_sse.inl
+  math/aabb.h
+  math/mask.h
+  math/matrix.h
+  math/matrix.inl
+  math/math.h
+  math/vec3.h
+  math/vec4.h
+
   mem/align.h
   mem/allocator.h
-
-  simd/simd/cast.h
-  simd/simd/vec.h
-  simd/simd/veci.h
-  simd/simd/intrinsics.h
-  simd/simd/matrix_sse.inl
-  simd/aabb.h
-  simd/mask.h
-  simd/matrix.h
-  simd/matrix.inl
-  simd/simd.h
-  simd/vec3.h
-  simd/vec4.h
 
   texture/detail/sampler3d.h
   texture/detail/sampler_common.h

@@ -4,7 +4,7 @@
 
 #include "vvforceinline.h"
 
-#include "simd/simd.h"
+#include "math/math.h"
 
 
 namespace virvo
@@ -30,16 +30,16 @@ struct Caster
 
 
 template < >
-struct Caster< simd::Vec, simd::Veci >
+struct Caster< math::sse_vec, math::sse_veci >
 {
-    VV_FORCE_INLINE simd::Veci operator()(simd::Vec const& u) { return virvo::simd::simd_cast< simd::Veci >(u); }
+    VV_FORCE_INLINE math::sse_veci operator()(math::sse_vec const& u) { return math::simd_cast< math::sse_veci >(u); }
 };
 
 
 template < >
-struct Caster< simd::Veci, simd::Vec >
+struct Caster< math::sse_veci, math::sse_vec >
 {
-    VV_FORCE_INLINE simd::Vec operator()(simd::Veci const& u) { return virvo::simd::simd_cast< simd::Vec >(u); }
+    VV_FORCE_INLINE math::sse_vec operator()(math::sse_veci const& u) { return math::simd_cast< math::sse_vec >(u); }
 };
 
 

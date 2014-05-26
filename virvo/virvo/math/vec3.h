@@ -9,7 +9,7 @@
 
 namespace virvo
 {
-namespace simd
+namespace math
 {
 template <typename T>
 class CACHE_ALIGN base_vec3
@@ -227,6 +227,6 @@ VV_FORCE_INLINE base_vec3< float > normalize(base_vec3< float > const& v)
 
 }
 
-} // simd
+} // math
 } // virvo
 

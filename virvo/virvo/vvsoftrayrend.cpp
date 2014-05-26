@@ -21,6 +21,7 @@
 #include "vvtoolshed.h"
 #include "vvvoldesc.h"
 
+#include "math/math.h"
 #include "mem/allocator.h"
 #include "private/vvlog.h"
 #include "private/project.h"
@@ -93,18 +94,16 @@ virvo::tex_filter_mode map_to_tex_filter_mode(vvRenderState::InterpolType ipol_t
 }
 
 
-#include "simd/simd.h"
-
 #if VV_USE_SSE
 
 #define PACK_SIZE_X 2
 #define PACK_SIZE_Y 2
 
-using virvo::simd::min;
-using virvo::simd::max;
-typedef virvo::simd::sse_veci int_type;
-typedef virvo::simd::sse_vec float_type;
-typedef virvo::simd::sse_vec matrix_row_type;
+using virvo::math::min;
+using virvo::math::max;
+typedef virvo::math::sse_veci int_type;
+typedef virvo::math::sse_vec float_type;
+typedef virvo::math::sse_vec matrix_row_type;
 
 #else
 
@@ -117,24 +116,24 @@ using std::min;
 using std::max;
 typedef size_t int_type;
 typedef float float_type;
-typedef virvo::simd::base_vec4< float_type > matrix_row_type;
-using virvo::simd::sub;
+typedef virvo::math::base_vec4< float_type > matrix_row_type;
+using virvo::math::sub;
 
 #endif
 
-namespace fast = virvo::simd::fast;
-typedef virvo::simd::base_aabb< float_type > AABB;
-typedef virvo::simd::base_vec3< int_type > Vec3s;
-typedef virvo::simd::base_vec4< int_type > Vec4s;
-typedef virvo::simd::base_vec3< float_type > Vec3;
-typedef virvo::simd::base_vec4< float_type > Vec4;
-typedef virvo::simd::Matrix< matrix_row_type > Mat4;
+namespace fast = virvo::math::fast;
+typedef virvo::math::base_aabb< float_type > AABB;
+typedef virvo::math::base_vec3< int_type > Vec3s;
+typedef virvo::math::base_vec4< int_type > Vec4s;
+typedef virvo::math::base_vec3< float_type > Vec3;
+typedef virvo::math::base_vec4< float_type > Vec4;
+typedef virvo::math::Matrix< matrix_row_type > Mat4;
 
 template <class T, class U>
 VV_FORCE_INLINE T vec_cast(U const& u)
 {
 #if VV_USE_SSE
-  return virvo::simd::simd_cast<T>(u);
+  return virvo::math::simd_cast<T>(u);
 #else
   return static_cast<T>(u);
 #endif

@@ -4,7 +4,7 @@
 
 namespace virvo
 {
-namespace simd
+namespace math
 {
 
 template < typename T >
@@ -31,6 +31,6 @@ private:
   base_vec3< T > m_max;
 };
 
-} // simd
+} // math
 } // virvo
 

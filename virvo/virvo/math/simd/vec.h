@@ -14,7 +14,7 @@
 namespace virvo
 {
 
-namespace simd
+namespace math
 {
 
 template < typename T >
@@ -322,14 +322,14 @@ VV_FORCE_INLINE sse_vec rsqrt(sse_vec const& v)
 
 } // fast
 
-} // simd
+} // math
 
 /* template specializations */
 namespace toolshed
 {
 
 template <>
-VV_FORCE_INLINE simd::sse_vec clamp(simd::sse_vec const& v, simd::sse_vec const& a, simd::sse_vec const& b)
+VV_FORCE_INLINE math::sse_vec clamp(math::sse_vec const& v, math::sse_vec const& a, math::sse_vec const& b)
 {
   return _mm_max_ps(a, _mm_min_ps(v, b));
 }

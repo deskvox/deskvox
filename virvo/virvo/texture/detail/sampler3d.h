@@ -7,7 +7,7 @@
 
 #include "vvtoolshed.h"
 
-#include "simd/simd.h"
+#include "math/math.h"
 
 #include <boost/detail/endian.hpp>
 
@@ -44,18 +44,18 @@ VV_FORCE_INLINE float point(VoxelT const* tex, ssize_t idx)
 
 
 template < int bpc, typename VoxelT >
-VV_FORCE_INLINE simd::sse_vec point(VoxelT const* tex, simd::sse_veci idx)
+VV_FORCE_INLINE math::sse_vec point(VoxelT const* tex, math::sse_veci idx)
 {
 
     CACHE_ALIGN int indices[4];
-    simd::sse_veci ridx = idx * bpc + high_byte_offset * (bpc - 1);
-    virvo::simd::store(ridx, &indices[0]);
+    math::sse_veci ridx = idx * bpc + high_byte_offset * (bpc - 1);
+    math::store(ridx, &indices[0]);
     CACHE_ALIGN float vals[4];
     for (size_t i = 0; i < 4; ++i)
     {
         vals[i] = tex[indices[i]];
     }
-    return simd::sse_vec(&vals[0]);
+    return math::sse_vec(&vals[0]);
 
 }
 

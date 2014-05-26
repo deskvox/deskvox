@@ -8,7 +8,7 @@
 
 namespace virvo
 {
-namespace simd
+namespace math
 {
 
 
@@ -220,6 +220,6 @@ inline std::ostream& operator<<(std::ostream& out, Matrix< T > const& m)
   return out;
 }
 
-} // simd
+} // math
 } // virvo
 

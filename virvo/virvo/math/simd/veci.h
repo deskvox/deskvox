@@ -13,7 +13,7 @@
 namespace virvo
 {
 
-namespace simd
+namespace math
 {
 
 template < typename T >
@@ -201,7 +201,7 @@ VV_FORCE_INLINE sse_veci max(sse_veci const& u, sse_veci const& v)
 }
 
 
-} // simd
+} // math
 
 
 namespace toolshed
@@ -209,7 +209,7 @@ namespace toolshed
 
 /* template specializations */
 template <>
-VV_FORCE_INLINE simd::sse_veci clamp(simd::sse_veci const& v, simd::sse_veci const& a, simd::sse_veci const& b)
+VV_FORCE_INLINE math::sse_veci clamp(math::sse_veci const& v, math::sse_veci const& a, math::sse_veci const& b)
 {
   return max(a, min(v, b));
 }

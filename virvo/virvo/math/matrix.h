@@ -2,7 +2,7 @@
 
 namespace virvo
 {
-namespace simd
+namespace math
 {
 
 
@@ -10,11 +10,11 @@ template < typename T >
 class Matrix;
 
 
-} // simd
+} // math
 } // virvo
 
 
-#include "simd/matrix.inl"
+#include "matrix.inl"
 #include "simd/matrix_sse.inl"
 
 

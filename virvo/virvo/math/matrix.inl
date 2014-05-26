@@ -6,7 +6,7 @@
 namespace virvo
 {
 
-namespace simd
+namespace math
 {
 
 
@@ -62,7 +62,7 @@ inline base_vec4< float > operator*(Matrix< base_vec4< float > > const& m, base_
 }
 
 
-} // simd
+} // math
 
 } // virvo
 
