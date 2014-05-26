@@ -106,6 +106,12 @@ set(VIRVO_HEADERS
   simd/vec4.h
   simd/veci.h
 
+  texture/detail/sampler3d.h
+  texture/detail/sampler_common.h
+  texture/detail/texture3d.h
+  texture/detail/texture_common.h
+  texture/texture.h
+
   vvbonjour/vvbonjour.h
   vvbonjour/vvbonjourbrowser.h
   vvbonjour/vvbonjourentry.h
