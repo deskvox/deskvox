@@ -330,6 +330,11 @@ vvSoftRayRend::vvSoftRayRend(vvVolDesc* vd, vvRenderState renderState)
 
   rendererType = RAYREND;
 
+#if VV_USE_SSE
+  // TODO: find a better place to hide this
+  _MM_SET_ROUNDING_MODE(_MM_ROUND_DOWN);
+#endif
+
   setRenderTarget(virvo::HostBufferRT::create(virvo::PF_RGBA32F, virvo::PF_LUMINANCE8));
 
   updateTransferFunction();
