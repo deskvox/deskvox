@@ -33,13 +33,6 @@ public:
   {
   }
 
-  /*! \brief  value[i] = mask[i] == 0xFF ? u[i] : v[i];
-   */
-  VV_FORCE_INLINE base_vec(base_vec const& u, base_vec const& v, base_vec const& mask)
-    : value(_mm_add_ps(_mm_and_ps(mask, u), _mm_andnot_ps(mask, v)))
-  {
-  }
-
   VV_FORCE_INLINE base_vec(float x, float y, float z, float w)
     : value(_mm_set_ps(w, z, y, x))
   {

@@ -32,13 +32,6 @@ public:
   {
   }
 
-  /*! \brief  value[i] = mask[i] == 0xFF ? u[i] : v[i];
-   */
-  VV_FORCE_INLINE base_veci(base_veci const& u, base_veci const& v, base_veci const& mask)
-    : value(_mm_add_epi32(_mm_and_si128(mask, u), _mm_andnot_si128(mask, v)))
-  {
-  }
-
   VV_FORCE_INLINE base_veci(int x, int y, int z, int w)
     : value(_mm_set_epi32(w, z, y, x))
   {
