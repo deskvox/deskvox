@@ -147,7 +147,7 @@ bool vvGLTools::isGLVersionSupported(int major, int minor, int release)
   (void)release;
   // Get version string from OpenGL:
   const GLubyte* verstring = glGetString(GL_VERSION);
-  if (verstring=='\0') return false;
+  if (!verstring) return false;
 
   int ver[3] = { 0, 0, 0 };
   int idx = 0;
@@ -196,7 +196,7 @@ bool vvGLTools::isGLextensionSupported(const char* extension)
 
   // Get extensions string from OpenGL:
   const GLubyte* extensions = glGetString(GL_EXTENSIONS);
-  if (extensions=='\0') return false;
+  if (!extensions) return false;
 
   // Parse OpenGL extensions string:
   const GLubyte* start = extensions;
