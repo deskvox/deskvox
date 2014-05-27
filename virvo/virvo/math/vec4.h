@@ -60,13 +60,10 @@ public:
   template < typename S >
   VV_FORCE_INLINE base_vec4& operator=(base_vec4< S > const& rhs)
   {
-    if (rhs != *this)
-    {
-      x = rhs.x;
-      y = rhs.y;
-      z = rhs.z;
-      w = rhs.w;
-    }
+    x = rhs.x;
+    y = rhs.y;
+    z = rhs.z;
+    w = rhs.w;
     return *this;
   }
 

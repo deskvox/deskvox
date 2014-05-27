@@ -49,12 +49,9 @@ public:
   template < typename S >
   VV_FORCE_INLINE base_vec3& operator=(base_vec3< S > const& rhs)
   {
-    if (rhs != *this)
-    {
-      x = rhs.x;
-      y = rhs.y;
-      z = rhs.z;
-    }
+    x = rhs.x;
+    y = rhs.y;
+    z = rhs.z;
     return *this;
   }
 
