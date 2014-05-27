@@ -523,6 +523,7 @@ vvParam vvSoftRayRend::getParameter(ParameterType param) const
   return vvRenderer::getParameter(param);
 }
 
+template < typename VoxelT >
 void renderTile(const virvo::Tile& tile, const Thread* thread)
 {
   static const float_type opacityThreshold = 0.95f;
@@ -538,8 +539,6 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   Vec3 invsize                  = float_type(1.0f) / size;
   Vec3 size2                    = size * float_type(0.5f);
   Vec3 volpos(thread->render_params->volpos[0], thread->render_params->volpos[1], thread->render_params->volpos[2]);
-
-  size_t const bpc              = thread->render_params->bpc;
 
   size_t const lutsize          = thread->render_params->lutsize;
 
@@ -560,8 +559,8 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
                                            thread->render_params->vox[2] * thread->render_params->vox[2]));
 
 
-  virvo::texture< uint8_t, virvo::NormalizedFloat, 3 > volume(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
-  volume.data = *thread->raw;
+  virvo::texture< VoxelT, virvo::NormalizedFloat, 3 > volume(thread->render_params->vox[0], thread->render_params->vox[1], thread->render_params->vox[2]);
+  volume.data = reinterpret_cast< VoxelT* >(*thread->raw);
   volume.set_address_mode(virvo::Clamp);
   volume.set_filter_mode( thread->render_params->filter_mode );
 
@@ -615,8 +614,8 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
                         (-pos[2] - volpos[2] + size2[2]) * invsize[2]);
 
           // TODO: templatize this decision?
-          float_type sample = bpc == 2 ? virvo::tex3D< 2 >(volume, texcoord) : virvo::tex3D< 1 >(volume, texcoord);
-          sample /= float_type(UCHAR_MAX);
+          float_type sample = virvo::tex3D(volume, texcoord);
+          sample /= float_type( std::numeric_limits< VoxelT >::max() );
 
           Vec4 src = rgba( rgbaTF, int_type(sample * static_cast< float_type >(lutsize)) * 4 );
 
@@ -733,7 +732,14 @@ void render(Thread* thread)
     t.right  = std::min(t.left   + tilew, thread->render_params->rect.right);
     t.top    = std::min(t.bottom + tileh, thread->render_params->rect.top);
 
-    renderTile(t, thread);
+    if (thread->render_params->bpc == 1)
+    {
+        renderTile< uint8_t >(t, thread);
+    }
+    else if (thread->render_params->bpc == 2)
+    {
+        renderTile< uint16_t >(t, thread);
+    }
 
     long num_tiles_fin = atom_fetch_and_add(&thread->sync_params->tile_fin_counter, 1);
 

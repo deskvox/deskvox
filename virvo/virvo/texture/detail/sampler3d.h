@@ -9,8 +9,6 @@
 
 #include "math/math.h"
 
-#include <boost/detail/endian.hpp>
-
 
 namespace virvo
 {
@@ -20,35 +18,26 @@ namespace detail
 {
 
 
-#ifdef BOOST_LITTLE_ENDIAN
-static const size_t high_byte_offset = 1;
-#else
-static const size_t high_byte_offset = 0;
-#endif
-
-
 template < typename T >
-VV_FORCE_INLINE T index(T x, T y, T z, math::base_vec3< T > texsize) {
+VV_FORCE_INLINE T index(T x, T y, T z, math::base_vec3< T > texsize)
+{
     return z * texsize[0] * texsize[1] + y * texsize[0] + x;
 }
 
 
-template < int bpc, typename VoxelT >
+template < typename VoxelT >
 VV_FORCE_INLINE float point(VoxelT const* tex, ssize_t idx)
 {
-
-    return tex[idx * bpc + high_byte_offset * (bpc - 1)];
-
+    return tex[idx];
 }
 
 
-template < int bpc, typename VoxelT >
+template < typename VoxelT >
 VV_FORCE_INLINE math::sse_vec point(VoxelT const* tex, math::sse_veci idx)
 {
 
     CACHE_ALIGN int indices[4];
-    math::sse_veci ridx = idx * bpc + high_byte_offset * (bpc - 1);
-    math::store(ridx, &indices[0]);
+    math::store(idx, &indices[0]);
     CACHE_ALIGN float vals[4];
     for (size_t i = 0; i < 4; ++i)
     {
@@ -61,7 +50,6 @@ VV_FORCE_INLINE math::sse_vec point(VoxelT const* tex, math::sse_veci idx)
 
 template
 <
-    int bpc,
     typename FloatT,
     typename VoxelT
 >
@@ -90,7 +78,7 @@ FloatT nearest(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_ve
     lo[2] = clamp(lo[2], float_type(0.0f), texsize[2] - 1);
 
     float_type idx = index(lo[0], lo[1], lo[2], texsize);
-    return point< bpc >(tex, idx);
+    return point(tex, idx);
 
 #else
 
@@ -118,7 +106,7 @@ FloatT nearest(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_ve
                       uvw[2] < FloatT(0.5) ? lo[2] : hi[2],
                       texsize);
 
-    return point< bpc >(tex, idx);
+    return point(tex, idx);
 
 #endif
 
@@ -127,7 +115,6 @@ FloatT nearest(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_ve
 
 template
 <
-    int bpc,
     typename FloatT,
     typename VoxelT
 >
@@ -154,14 +141,14 @@ FloatT linear(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec
 
     float_type samples[8] =
     {
-        point< bpc >(tex, index( lo[0], lo[1], lo[2], texsize )),
-        point< bpc >(tex, index( hi[0], lo[1], lo[2], texsize )),
-        point< bpc >(tex, index( lo[0], hi[1], lo[2], texsize )),
-        point< bpc >(tex, index( hi[0], hi[1], lo[2], texsize )),
-        point< bpc >(tex, index( lo[0], lo[1], hi[2], texsize )),
-        point< bpc >(tex, index( hi[0], lo[1], hi[2], texsize )),
-        point< bpc >(tex, index( lo[0], hi[1], hi[2], texsize )),
-        point< bpc >(tex, index( hi[0], hi[1], hi[2], texsize ))
+        point(tex, index( lo[0], lo[1], lo[2], texsize )),
+        point(tex, index( hi[0], lo[1], lo[2], texsize )),
+        point(tex, index( lo[0], hi[1], lo[2], texsize )),
+        point(tex, index( hi[0], hi[1], lo[2], texsize )),
+        point(tex, index( lo[0], lo[1], hi[2], texsize )),
+        point(tex, index( hi[0], lo[1], hi[2], texsize )),
+        point(tex, index( lo[0], hi[1], hi[2], texsize )),
+        point(tex, index( hi[0], hi[1], hi[2], texsize ))
     };
 
 
@@ -182,7 +169,6 @@ FloatT linear(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec
 
 template
 <
-    int bpc,
     typename FloatT,
     typename VoxelT
 >
@@ -229,15 +215,15 @@ FloatT cubic(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec3
     float_type h_101 = ( floorz + float_type(1.5) + tmp101 ) / texsizef[2];
 
 
-    float_type f_000 = linear< bpc >( tex, float3_type(h_000, h_010, h_001), texsize );
-    float_type f_100 = linear< bpc >( tex, float3_type(h_100, h_010, h_001), texsize );
-    float_type f_010 = linear< bpc >( tex, float3_type(h_000, h_110, h_001), texsize );
-    float_type f_110 = linear< bpc >( tex, float3_type(h_100, h_110, h_001), texsize );
+    float_type f_000 = linear( tex, float3_type(h_000, h_010, h_001), texsize );
+    float_type f_100 = linear( tex, float3_type(h_100, h_010, h_001), texsize );
+    float_type f_010 = linear( tex, float3_type(h_000, h_110, h_001), texsize );
+    float_type f_110 = linear( tex, float3_type(h_100, h_110, h_001), texsize );
 
-    float_type f_001 = linear< bpc >( tex, float3_type(h_000, h_010, h_101), texsize );
-    float_type f_101 = linear< bpc >( tex, float3_type(h_100, h_010, h_101), texsize );
-    float_type f_011 = linear< bpc >( tex, float3_type(h_000, h_110 ,h_101), texsize );
-    float_type f_111 = linear< bpc >( tex, float3_type(h_100, h_110, h_101), texsize );
+    float_type f_001 = linear( tex, float3_type(h_000, h_010, h_101), texsize );
+    float_type f_101 = linear( tex, float3_type(h_100, h_010, h_101), texsize );
+    float_type f_011 = linear( tex, float3_type(h_000, h_110 ,h_101), texsize );
+    float_type f_111 = linear( tex, float3_type(h_100, h_110, h_101), texsize );
 
     float_type f_00  = g0(fracx) * f_000 + g1(fracx) * f_100;
     float_type f_10  = g0(fracx) * f_010 + g1(fracx) * f_110;
@@ -254,7 +240,6 @@ FloatT cubic(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec3
 
 template
 <
-    int bpc,
     typename FloatT,
     typename VoxelT
 >
@@ -268,15 +253,15 @@ VV_FORCE_INLINE FloatT tex3D(VoxelT const* tex, math::base_vec3< FloatT > coord,
     default:
         // fall-through
     case virvo::Nearest:
-        return nearest< bpc >( tex, coord, texsize );
+        return nearest( tex, coord, texsize );
 
     case virvo::Linear:
-        return linear< bpc >( tex, coord, texsize );
+        return linear( tex, coord, texsize );
 
     case virvo::BSpline:
         // fall-through
     case virvo::BSplineInterpol:
-        return cubic< bpc >( tex, coord, texsize );
+        return cubic( tex, coord, texsize );
 
     }
 
