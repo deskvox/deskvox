@@ -11,12 +11,17 @@ namespace virvo
 {
 
 
-template < typename T >
-class texture< T, 3 > : public texture_base< T >
+template
+<
+    typename T,
+    tex_read_mode ReadMode
+>
+class texture< T, ReadMode, 3 > : public texture_base< T, ReadMode >
 {
 public:
 
-    typedef typename texture_base< T >::value_type value_type;
+    typedef texture_base< T, ReadMode > base_type;
+    typedef typename base_type::value_type value_type;
 
 
     value_type* data;

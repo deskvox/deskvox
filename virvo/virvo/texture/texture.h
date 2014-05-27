@@ -12,7 +12,7 @@ namespace virvo
 
 
 template < int bpc, typename VoxelT, typename FloatT >
-VV_FORCE_INLINE FloatT tex3D(texture< VoxelT, 3 > const& tex, math::base_vec3< FloatT > coord)
+VV_FORCE_INLINE FloatT tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::base_vec3< FloatT > coord)
 {
 
     math::base_vec3< FloatT >  size( tex.width(), tex.height(), tex.depth() );
