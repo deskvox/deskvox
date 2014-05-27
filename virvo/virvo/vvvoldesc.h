@@ -280,7 +280,7 @@ class VIRVOEXPORT vvVolDesc
     void   addFrame(uint8_t*, DeleteType, int fd=-1);
     void   copyFrame(uint8_t*);
     void   removeSequence();
-    void   makeHistogram(int, size_t, size_t, int*, int*, float, float);
+    void   makeHistogram(int, size_t, size_t, unsigned int*, int*, float, float);
     void   normalizeHistogram(int, int*, float*, NormalizationType);
     void   makeHistogramTexture(int frame, size_t, size_t, size_t*, uint8_t* data, NormalizationType, vvColor*, float, float);
     void   createHistogramFiles(bool = false);
