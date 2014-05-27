@@ -11,8 +11,8 @@ namespace virvo
 {
 
 
-template < typename FloatT >
-VV_FORCE_INLINE FloatT lerp(FloatT a, FloatT b, FloatT x)
+template < typename T, typename FloatT >
+VV_FORCE_INLINE T lerp(T a, T b, FloatT x)
 {
     return a + x * (b - a);
 }
@@ -20,6 +20,57 @@ VV_FORCE_INLINE FloatT lerp(FloatT a, FloatT b, FloatT x)
 
 namespace detail
 {
+
+
+template < typename T >
+VV_FORCE_INLINE T point(T const* tex, ssize_t idx)
+{
+    return tex[idx];
+}
+
+
+template < typename T >
+VV_FORCE_INLINE math::sse_vec point(T const* tex, math::sse_vec idx)
+{
+
+    math::sse_veci iidx( idx );
+    CACHE_ALIGN int indices[4];
+    store(iidx, &indices[0]);
+    CACHE_ALIGN float vals[4];
+    for (size_t i = 0; i < 4; ++i)
+    {
+        vals[i] = tex[indices[i]];
+    }
+    return math::sse_vec(&vals[0]);
+
+}
+
+
+VV_FORCE_INLINE math::base_vec4< math::sse_vec > point(math::base_vec4< float > const* tex, math::sse_vec idx)
+{
+
+    // Special case: colors are AoS. Those can be obtained
+    // without a context switch to GP registers by transposing
+    // to SoA after memory lookup.
+
+    math::sse_veci iidx( idx * 4 );
+    CACHE_ALIGN int indices[4];
+    store(iidx, &indices[0]);
+
+    float const* tmp = reinterpret_cast< float const* >(tex);
+
+    math::base_vec4< math::sse_vec > colors
+    (
+        &tmp[0] + indices[0],
+        &tmp[0] + indices[1],
+        &tmp[0] + indices[2],
+        &tmp[0] + indices[3]
+    );
+
+    colors = transpose(colors);
+    return colors;
+
+}
 
 
 // weight functions for Mitchell - Netravalli B-Spline

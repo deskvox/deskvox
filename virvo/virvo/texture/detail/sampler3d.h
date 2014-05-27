@@ -5,8 +5,6 @@
 #include "sampler_common.h"
 #include "texture_common.h"
 
-#include "vvtoolshed.h"
-
 #include "math/math.h"
 
 
@@ -22,30 +20,6 @@ template < typename T >
 VV_FORCE_INLINE T index(T x, T y, T z, math::base_vec3< T > texsize)
 {
     return z * texsize[0] * texsize[1] + y * texsize[0] + x;
-}
-
-
-template < typename ReturnT, typename VoxelT >
-VV_FORCE_INLINE ReturnT point(VoxelT const* tex, ssize_t idx)
-{
-    return tex[idx];
-}
-
-
-template < typename VoxelT >
-VV_FORCE_INLINE math::sse_vec point(VoxelT const* tex, math::sse_vec idx)
-{
-
-    math::sse_veci iidx( idx );
-    CACHE_ALIGN int indices[4];
-    math::store(iidx, &indices[0]);
-    CACHE_ALIGN float vals[4];
-    for (size_t i = 0; i < 4; ++i)
-    {
-        vals[i] = tex[indices[i]];
-    }
-    return math::sse_vec(&vals[0]);
-
 }
 
 
@@ -80,7 +54,7 @@ ReturnT nearest(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_v
     lo[2] = clamp(lo[2], float_type(0.0f), texsize[2] - 1);
 
     float_type idx = index(lo[0], lo[1], lo[2], texsize);
-    return point< VoxelT >(tex, idx);
+    return point(tex, idx);
 
 #else
 
@@ -131,7 +105,7 @@ ReturnT linear(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_ve
 
     typedef FloatT float_type;
     typedef math::base_vec3< float_type > float3_type;
-    typedef VoxelT voxel_type;
+    typedef ReturnT return_type;
 
     float3_type texcoordf( coord * texsize - float_type(0.5) );
 
@@ -143,16 +117,18 @@ ReturnT linear(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_ve
     float3_type hi( ceil(texcoordf[0]),  ceil(texcoordf[1]),  ceil(texcoordf[2]) );
 
 
+    // Implicit cast from return type to float type.
+    // TODO: what if return type is e.g. a float4?
     float_type samples[8] =
     {
-        point< voxel_type >(tex, index( lo[0], lo[1], lo[2], texsize )),
-        point< voxel_type >(tex, index( hi[0], lo[1], lo[2], texsize )),
-        point< voxel_type >(tex, index( lo[0], hi[1], lo[2], texsize )),
-        point< voxel_type >(tex, index( hi[0], hi[1], lo[2], texsize )),
-        point< voxel_type >(tex, index( lo[0], lo[1], hi[2], texsize )),
-        point< voxel_type >(tex, index( hi[0], lo[1], hi[2], texsize )),
-        point< voxel_type >(tex, index( lo[0], hi[1], hi[2], texsize )),
-        point< voxel_type >(tex, index( hi[0], hi[1], hi[2], texsize ))
+        point(tex, index( lo[0], lo[1], lo[2], texsize )),
+        point(tex, index( hi[0], lo[1], lo[2], texsize )),
+        point(tex, index( lo[0], hi[1], lo[2], texsize )),
+        point(tex, index( hi[0], hi[1], lo[2], texsize )),
+        point(tex, index( lo[0], lo[1], hi[2], texsize )),
+        point(tex, index( hi[0], lo[1], hi[2], texsize )),
+        point(tex, index( lo[0], hi[1], hi[2], texsize )),
+        point(tex, index( hi[0], hi[1], hi[2], texsize ))
     };
 
 
@@ -166,7 +142,7 @@ ReturnT linear(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_ve
     float_type p12 = lerp(p1, p2, uvw[1]);
     float_type p34 = lerp(p3, p4, uvw[1]);
 
-    return ReturnT( lerp(p12, p34, uvw[2]) );
+    return lerp(p12, p34, uvw[2]);
 
 }
 
@@ -186,40 +162,40 @@ ReturnT cubic(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec
     typedef FloatT float_type;
     typedef math::base_vec3< float_type > float3_type;
 
-    float3_type texsizef( texsize );
-
-    float_type x = (coord[0] * texsizef[0]) - float_type(0.5);
+    float_type x = coord[0] * texsize[0] - float_type(0.5);
     float_type floorx = floor( x );
     float_type fracx  = x - floor( x );
 
-    float_type y = (coord[1] * texsizef[1]) - float_type(0.5);
+    float_type y = coord[1] * texsize[1] - float_type(0.5);
     float_type floory = floor( y );
     float_type fracy  = y - floor( y );
 
-    float_type z = (coord[2] * texsizef[2]) - float_type(0.5);
+    float_type z = coord[2] * texsize[2] - float_type(0.5);
     float_type floorz = floor( z );
     float_type fracz  = z - floor( z );
 
 
-    float_type tmp000 = ( w1(fracx) ) / ( w0(fracx) + w1(fracx) ) ;
-    float_type h_000 = ( floorx - float_type(0.5) + tmp000 ) / texsizef[0];
+    float_type tmp000 = ( w1(fracx) ) / ( w0(fracx) + w1(fracx) );
+    float_type h_000  = ( floorx - float_type(0.5) + tmp000 ) / texsize[0];
 
-    float_type tmp100 = ( w3(fracx) ) / ( w2(fracx) + w3(fracx) ) ;
-    float_type h_100 = ( floorx + float_type(1.5) + tmp100 ) / texsizef[0];
+    float_type tmp100 = ( w3(fracx) ) / ( w2(fracx) + w3(fracx) );
+    float_type h_100  = ( floorx + float_type(1.5) + tmp100 ) / texsize[0];
 
-    float_type tmp010 = ( w1(fracy) ) / ( w0(fracy) + w1(fracy) ) ;
-    float_type h_010 = ( floory - float_type(0.5) + tmp010 ) / texsizef[1] ;
+    float_type tmp010 = ( w1(fracy) ) / ( w0(fracy) + w1(fracy) );
+    float_type h_010  = ( floory - float_type(0.5) + tmp010 ) / texsize[1] ;
 
-    float_type tmp110 = ( w3(fracy) ) / ( w2(fracy) + w3(fracy) ) ;
-    float_type h_110 = ( floory + float_type(1.5) + tmp110 ) / texsizef[1];
+    float_type tmp110 = ( w3(fracy) ) / ( w2(fracy) + w3(fracy) );
+    float_type h_110  = ( floory + float_type(1.5) + tmp110 ) / texsize[1];
 
-    float_type tmp001 = ( w1(fracz) ) / ( w0(fracz) + w1(fracz) ) ;
-    float_type h_001 = ( floorz - float_type(0.5) + tmp001 ) / texsizef[2];
+    float_type tmp001 = ( w1(fracz) ) / ( w0(fracz) + w1(fracz) );
+    float_type h_001  = ( floorz - float_type(0.5) + tmp001 ) / texsize[2];
 
-    float_type tmp101 = ( w3(fracz) ) / ( w2(fracz) + w3(fracz) ) ;
-    float_type h_101 = ( floorz + float_type(1.5) + tmp101 ) / texsizef[2];
+    float_type tmp101 = ( w3(fracz) ) / ( w2(fracz) + w3(fracz) );
+    float_type h_101  = ( floorz + float_type(1.5) + tmp101 ) / texsize[2];
 
 
+    // Implicit cast from return type to float type.
+    // TODO: what if return type is e.g. a float4?
     float_type f_000 = linear< float_type >( tex, float3_type(h_000, h_010, h_001), texsize );
     float_type f_100 = linear< float_type >( tex, float3_type(h_100, h_010, h_001), texsize );
     float_type f_010 = linear< float_type >( tex, float3_type(h_000, h_110, h_001), texsize );
@@ -238,7 +214,7 @@ ReturnT cubic(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec
     float_type f_0   = g0(fracy) * f_00 + g1(fracy) * f_10;
     float_type f_1   = g0(fracy) * f_01 + g1(fracy) * f_11;
 
-    return ReturnT( g0(fracz) * f_0 + g1(fracz) * f_1 );
+    return g0(fracz) * f_0 + g1(fracz) * f_1;
 
 }
 

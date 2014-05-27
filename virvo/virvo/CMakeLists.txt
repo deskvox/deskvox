@@ -107,8 +107,10 @@ set(VIRVO_HEADERS
   mem/align.h
   mem/allocator.h
 
+  texture/detail/sampler1d.h
   texture/detail/sampler3d.h
   texture/detail/sampler_common.h
+  texture/detail/texture1d.h
   texture/detail/texture3d.h
   texture/detail/texture_common.h
   texture/texture.h

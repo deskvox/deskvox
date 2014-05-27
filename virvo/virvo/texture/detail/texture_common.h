@@ -42,6 +42,8 @@ public:
     typedef VoxelT value_type;
 
 
+    value_type* data;
+
     texture_base()
         : address_mode_(Wrap)
         , filter_mode_(Nearest)

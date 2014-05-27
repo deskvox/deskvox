@@ -130,23 +130,6 @@ typedef virvo::math::base_vec4< float_type > Vec4;
 typedef virvo::math::Matrix< matrix_row_type > Mat4;
 
 
-VV_FORCE_INLINE Vec4 rgba(float const* tf, int_type const& idx)
-{
-#if VV_USE_SSE
-  CACHE_ALIGN int indices[4];
-  store(idx, &indices[0]);
-  Vec4 colors;
-  for (size_t i = 0; i < 4; ++i)
-  {
-    colors[i] = &tf[0] + indices[i];
-  }
-  colors = transpose(colors);
-  return colors;
-#else
-  return Vec4(&tf[0] + idx);
-#endif
-}
-
 VV_FORCE_INLINE size_t getLUTSize(vvVolDesc* vd)
 {
   return (vd->getBPV()==2) ? 4096 : 256;
@@ -565,7 +548,11 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   volume.set_filter_mode( thread->render_params->filter_mode );
 
 
-  float const* rgbaTF = &(*thread->rgbaTF)[0];
+  typedef virvo::math::base_vec4< float > float4;
+  virvo::texture< float4, virvo::NormalizedFloat, 1 > tf(lutsize);
+  tf.data = reinterpret_cast< float4* >( &(*thread->rgbaTF)[0] );
+  tf.set_address_mode(virvo::Clamp);
+  tf.set_filter_mode( virvo::Linear );
 
   size_t numSlices = std::max(size_t(1), static_cast<size_t>(quality * diagonalVoxels));
 
@@ -613,11 +600,10 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
                         (-pos[1] - volpos[1] + size2[1]) * invsize[1],
                         (-pos[2] - volpos[2] + size2[2]) * invsize[2]);
 
-          // TODO: templatize this decision?
           float_type sample = virvo::tex3D(volume, texcoord);
           sample /= float_type( std::numeric_limits< VoxelT >::max() );
 
-          Vec4 src = rgba( rgbaTF, int_type(sample * static_cast< float_type >(lutsize)) * 4 );
+          Vec4 src = tex1D(tf, sample);
 
           if (mipMode == 1)
           {

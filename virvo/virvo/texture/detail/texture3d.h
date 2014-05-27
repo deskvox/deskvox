@@ -24,8 +24,6 @@ public:
     typedef typename base_type::value_type value_type;
 
 
-    value_type* data;
-
     texture() {}
 
     texture(size_t w, size_t h, size_t d)
@@ -38,12 +36,12 @@ public:
 
     value_type& operator()(size_t x, size_t y, size_t z)
     {
-        return data[z * width_ * height_ + y * width_ + x];
+        return base_type::data[z * width_ * height_ + y * width_ + x];
     }
 
     value_type const& operator()(size_t x, size_t y, size_t z) const
     {
-        return data[z * width_ * height_ + y * width_ + x];
+        return base_type::data[z * width_ * height_ + y * width_ + x];
     }
 
 
@@ -60,7 +58,7 @@ private:
 };
 
 
-}
+} // virvo
 
 
 #endif // VV_TEXTURE_TEXTURE3D_H
