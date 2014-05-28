@@ -97,10 +97,12 @@ set(VIRVO_HEADERS
   math/simd/intrinsics.h
   math/simd/matrix_sse.inl
   math/aabb.h
+  math/forward.h
   math/mask.h
   math/matrix.h
   math/matrix.inl
   math/math.h
+  math/output.h
   math/vec3.h
   math/vec4.h
 

@@ -3,7 +3,6 @@
 #include "simd/vec.h"
 #include "simd/veci.h"
 
-#include <ostream>
 
 namespace virvo
 {
@@ -174,16 +173,6 @@ template <typename T>
 VV_FORCE_INLINE base_vec4<T> operator/(T const& s, base_vec4<T> const& v)
 {
   return base_vec4<T>(s / v.x, s / v.y, s / v.z, s / v.w);
-}
-
-template <typename T>
-VV_FORCE_INLINE std::ostream& operator<<(std::ostream& out, base_vec4<T> const& v)
-{
-  out << "x: " << v.x << "\n";
-  out << "y: " << v.y << "\n";
-  out << "z: " << v.z << "\n";
-  out << "w: " << v.w << "\n";
-  return out;
 }
 
 
