@@ -66,8 +66,6 @@ public:
   }
 };
 
-typedef base_vec3<Veci> Vec3i;
-typedef base_vec3<Vec>  Vec3;
 
 /* operators */
 
@@ -176,12 +174,14 @@ VV_FORCE_INLINE T dot(base_vec3<T> const& u, base_vec3<T> const& v)
   return u.x * v.x + u.y * v.y + u.z * v.z;
 }
 
-VV_FORCE_INLINE Vec length(Vec3 const& v)
+template < typename T >
+VV_FORCE_INLINE base_vec3< T > length(base_vec3< T > const& v)
 {
   return sqrt(dot(v, v));
 }
 
-VV_FORCE_INLINE Vec3 normalize(Vec3 const& v)
+template < typename T >
+VV_FORCE_INLINE base_vec3< T > normalize(base_vec3< T > const& v)
 {
   return v / length(v);
 }
@@ -194,8 +194,8 @@ VV_FORCE_INLINE T dot(base_vec3<T> const& u, base_vec3<T> const& v, M const& mas
   return add(add(mul(u.x, v.x, mask), mul(u.y, v.y, mask), mask), mul(u.z, v.z, mask), mask);
 }
 
-template <typename M>
-VV_FORCE_INLINE Vec length(Vec3 const& v, M const& mask)
+template < typename T, typename M >
+VV_FORCE_INLINE T length(base_vec3< T > const& v, M const& mask)
 {
   return sqrt(dot(v, v, mask), mask);
 }
@@ -203,15 +203,16 @@ VV_FORCE_INLINE Vec length(Vec3 const& v, M const& mask)
 namespace fast
 {
 
-template <unsigned refinements>
-VV_FORCE_INLINE Vec3 rcp(Vec3 const& v)
+template < typename T, unsigned refinements >
+VV_FORCE_INLINE base_vec3< T > rcp(base_vec3< T > const& v)
 {
-  return Vec3(rcp<refinements>(v.x), rcp<refinements>(v.y), rcp<refinements>(v.z));
+  return base_vec3< T >(rcp<refinements>(v.x), rcp<refinements>(v.y), rcp<refinements>(v.z));
 }
 
-VV_FORCE_INLINE Vec3 rcp(Vec3 const& v)
+template < typename T >
+VV_FORCE_INLINE base_vec3< T > rcp(base_vec3< T > const& v)
 {
-  return Vec3(rcp<1>(v.x), rcp<1>(v.y), rcp<1>(v.z));
+  return base_vec3< T >(rcp< T, 1 >(v.x), rcp< T, 1 >(v.y), rcp< T, 1 >(v.z));
 }
 
 template <unsigned refinements>
@@ -220,7 +221,7 @@ VV_FORCE_INLINE base_vec3< sse_vec > normalize(base_vec3< sse_vec > const& v)
   return v * rsqrt<refinements>(dot(v, v));
 }
 
-VV_FORCE_INLINE Vec3 normalize(Vec3 const& v)
+VV_FORCE_INLINE base_vec3< sse_vec > normalize(base_vec3< sse_vec > const& v)
 {
   return v * rsqrt<1>(dot(v, v));
 }

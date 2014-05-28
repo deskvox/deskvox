@@ -78,18 +78,15 @@ public:
   }
 };
 
-typedef base_vec4<Veci> Vec4i;
-typedef base_vec4<Vec>  Vec4;
 
-template <typename T>
-VV_FORCE_INLINE base_vec4<T> transpose(base_vec4<T> const& v)
+VV_FORCE_INLINE base_vec4< sse_vec > transpose(base_vec4< sse_vec > const& v)
 {
-  base_vec4<T> result = v;
+  base_vec4< sse_vec > result = v;
 
-  Vec tmp1 = _mm_unpacklo_ps(result.x, result.y);
-  Vec tmp2 = _mm_unpacklo_ps(result.z, result.w);
-  Vec tmp3 = _mm_unpackhi_ps(result.x, result.y);
-  Vec tmp4 = _mm_unpackhi_ps(result.z, result.w);
+  sse_vec tmp1 = _mm_unpacklo_ps(result.x, result.y);
+  sse_vec tmp2 = _mm_unpacklo_ps(result.z, result.w);
+  sse_vec tmp3 = _mm_unpackhi_ps(result.x, result.y);
+  sse_vec tmp4 = _mm_unpackhi_ps(result.z, result.w);
 
   result.x = _mm_movelh_ps(tmp1, tmp2);
   result.y = _mm_movehl_ps(tmp2, tmp1);

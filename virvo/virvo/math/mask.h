@@ -30,7 +30,7 @@ public:
   {
   }
 
-  VV_FORCE_INLINE base_mask(Vec const& m)
+  VV_FORCE_INLINE base_mask(sse_vec const& m)
     : value(m)
   {
   }
@@ -51,7 +51,7 @@ typedef base_mask< __m128 > sse_mask;
 typedef sse_mask Mask;
 
 
-/* Vec */
+/* sse_vec */
 
 VV_FORCE_INLINE sse_mask operator<(sse_vec const& u, sse_vec const& v)
 {

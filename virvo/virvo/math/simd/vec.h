@@ -66,7 +66,6 @@ public:
 
 
 typedef base_vec< __m128 > sse_vec;
-typedef sse_vec Vec;
 
 
 VV_FORCE_INLINE void store(sse_vec const& v, float dst[4])
