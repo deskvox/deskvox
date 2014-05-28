@@ -2,6 +2,8 @@
 
 #include "intrinsics.h"
 
+#include "../vector.h"
+
 #include <virvo/vvcompiler.h>
 #include <virvo/vvforceinline.h>
 #include <virvo/vvmacros.h>
@@ -29,7 +31,6 @@ public:
   value_type value;
 
   VV_FORCE_INLINE base_vec()
-    : value(_mm_setzero_ps())
   {
   }
 
@@ -225,7 +226,7 @@ VV_FORCE_INLINE sse_vec sqrt(sse_vec const& v)
   return _mm_sqrt_ps(v);
 }
 
-VV_FORCE_INLINE sse_vec rsqrt(sse_vec const& v)
+VV_FORCE_INLINE sse_vec approx_rsqrt(sse_vec const& v)
 {
   return _mm_rsqrt_ps(v);
 }
@@ -251,8 +252,6 @@ VV_FORCE_INLINE sse_vec dot(sse_vec const& u, sse_vec const& v)
 #endif
 }
 
-namespace fast
-{
 
 /*! \brief  Newton Raphson refinement
  */
@@ -315,21 +314,26 @@ VV_FORCE_INLINE sse_vec rsqrt(sse_vec const& v)
   return x0;
 }
 
-} // fast
-
-} // math
-
-/* template specializations */
-namespace toolshed
+// TODO: find a better place for this
+VV_FORCE_INLINE vector< 4, sse_vec > transpose(vector< 4, sse_vec > const& v)
 {
+  vector< 4, sse_vec > result = v;
 
-template <>
-VV_FORCE_INLINE math::sse_vec clamp(math::sse_vec const& v, math::sse_vec const& a, math::sse_vec const& b)
-{
-  return _mm_max_ps(a, _mm_min_ps(v, b));
+  sse_vec tmp1 = _mm_unpacklo_ps(result.x, result.y);
+  sse_vec tmp2 = _mm_unpacklo_ps(result.z, result.w);
+  sse_vec tmp3 = _mm_unpackhi_ps(result.x, result.y);
+  sse_vec tmp4 = _mm_unpackhi_ps(result.z, result.w);
+
+  result.x = _mm_movelh_ps(tmp1, tmp2);
+  result.y = _mm_movehl_ps(tmp2, tmp1);
+  result.z = _mm_movelh_ps(tmp3, tmp4);
+  result.w = _mm_movehl_ps(tmp4, tmp3);
+
+  return result;
 }
 
-} // toolshed
+
+} // math
 
 
 } // virvo

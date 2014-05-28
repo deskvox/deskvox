@@ -99,8 +99,6 @@ virvo::tex_filter_mode map_to_tex_filter_mode(vvRenderState::InterpolType ipol_t
 #define PACK_SIZE_X 2
 #define PACK_SIZE_Y 2
 
-using virvo::math::min;
-using virvo::math::max;
 typedef virvo::math::sse_veci int_type;
 typedef virvo::math::sse_vec float_type;
 typedef virvo::math::sse_vec matrix_row_type;
@@ -116,17 +114,16 @@ using std::min;
 using std::max;
 typedef size_t int_type;
 typedef float float_type;
-typedef virvo::math::base_vec4< float_type > matrix_row_type;
+typedef virvo::math::vector< 4, float_type > matrix_row_type;
 using virvo::math::sub;
 
 #endif
 
-namespace fast = virvo::math::fast;
 typedef virvo::math::base_aabb< float_type > AABB;
-typedef virvo::math::base_vec3< int_type > Vec3s;
-typedef virvo::math::base_vec4< int_type > Vec4s;
-typedef virvo::math::base_vec3< float_type > Vec3;
-typedef virvo::math::base_vec4< float_type > Vec4;
+typedef virvo::math::vector< 3, int_type > Vec3s;
+typedef virvo::math::vector< 4, int_type > Vec4s;
+typedef virvo::math::vector< 3, float_type > Vec3;
+typedef virvo::math::vector< 4, float_type > Vec4;
 typedef virvo::math::Matrix< matrix_row_type > Mat4;
 
 
@@ -548,7 +545,7 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
   volume.set_filter_mode( thread->render_params->filter_mode );
 
 
-  typedef virvo::math::base_vec4< float > float4;
+  typedef virvo::math::vector< 4, float > float4;
   virvo::texture< float4, virvo::NormalizedFloat, 1 > tf(lutsize);
   tf.data = reinterpret_cast< float4* >( &(*thread->rgbaTF)[0] );
   tf.set_address_mode(virvo::Clamp);
@@ -569,18 +566,17 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
       // u = 2 t - 1         where  -1 <= u <= 1
       //
 
-      const float_type u = 2.0f * (pixelx(x) + 0.5f) / static_cast<float>(w) - 1.0f;
-      const float_type v = 2.0f * (pixely(y) + 0.5f) / static_cast<float>(h) - 1.0f;
+      const float_type u = 2.0f * (pixelx(x) + 0.5f) / float_type(w) - 1.0f;
+      const float_type v = 2.0f * (pixely(y) + 0.5f) / float_type(h) - 1.0f;
 
       Vec4 o(u, v, -1.0f, 1.0f);
       o = inv_view_matrix * o;
       Vec4 d(u, v, 1.0f, 1.0f);
       d = inv_view_matrix * d;
 
-      Ray ray(Vec3(o[0] / o[3], o[1] / o[3], o[2] / o[3]),
-              Vec3(d[0] / d[3], d[1] / d[3], d[2] / d[3]));
+      Ray ray(o.xyz() / o.w, d.xyz() / d.w);
       ray.d = ray.d - ray.o;
-      ray.d = fast::normalize(ray.d);
+      ray.d = normalize(ray.d);
 
       float_type tbnear = 0.0f;
       float_type tbfar = 0.0f;
@@ -588,17 +584,17 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
       float_type active = intersectBox(ray, aabb, &tbnear, &tbfar);
       if (any(active))
       {
+
         float_type dist = diagonalVoxels / float_type(numSlices);
         float_type t = tbnear;
-        Vec3 pos = ray.o + ray.d * tbnear;
-        const Vec3 step = ray.d * dist;
         Vec4 dst(0.0f);
 
         while (any(active))
         {
+          Vec3 pos = ray.o + ray.d * t;
           Vec3 texcoord((pos[0] - volpos[0] + size2[0]) * invsize[0],
-                        (-pos[1] - volpos[1] + size2[1]) * invsize[1],
-                        (-pos[2] - volpos[2] + size2[2]) * invsize[2]);
+                       (-pos[1] - volpos[1] + size2[1]) * invsize[1],
+                       (-pos[2] - volpos[2] + size2[2]) * invsize[2]);
 
           float_type sample = virvo::tex3D(volume, texcoord);
           sample /= float_type( std::numeric_limits< VoxelT >::max() );
@@ -645,7 +641,6 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 
           t += dist;
           active = active && (t < tbfar);
-          pos += step;
         }
 
 #if VV_USE_SSE

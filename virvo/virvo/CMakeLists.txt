@@ -92,6 +92,10 @@ set(VIRVO_HEADERS
   gl/types.h
   gl/util.h
 
+  math/detail/math.h
+  math/detail/vector.inl
+  math/detail/vector3.inl
+  math/detail/vector4.inl
   math/simd/vec.h
   math/simd/veci.h
   math/simd/intrinsics.h
@@ -103,8 +107,6 @@ set(VIRVO_HEADERS
   math/matrix.inl
   math/math.h
   math/output.h
-  math/vec3.h
-  math/vec4.h
 
   mem/align.h
   mem/allocator.h

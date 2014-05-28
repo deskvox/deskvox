@@ -28,7 +28,6 @@ public:
   value_type value;
 
   VV_FORCE_INLINE base_veci()
-    : value(_mm_setzero_si128())
   {
   }
 
@@ -200,19 +199,6 @@ VV_FORCE_INLINE sse_veci max(sse_veci const& u, sse_veci const& v)
 
 
 } // math
-
-
-namespace toolshed
-{
-
-/* template specializations */
-template <>
-VV_FORCE_INLINE math::sse_veci clamp(math::sse_veci const& v, math::sse_veci const& a, math::sse_veci const& b)
-{
-  return max(a, min(v, b));
-}
-
-} // toolshed
 
 
 } // virvo

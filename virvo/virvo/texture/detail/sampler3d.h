@@ -17,7 +17,7 @@ namespace detail
 
 
 template < typename T >
-VV_FORCE_INLINE T index(T x, T y, T z, math::base_vec3< T > texsize)
+VV_FORCE_INLINE T index(T x, T y, T z, math::vector< 3, T > texsize)
 {
     return z * texsize[0] * texsize[1] + y * texsize[0] + x;
 }
@@ -32,17 +32,17 @@ template
 #ifndef _MSC_VER
 VV_FORCE_INLINE
 #endif
-ReturnT nearest(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec3< FloatT > texsize)
+ReturnT nearest(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector< 3, FloatT > texsize)
 {
 
 #if 1
 
-    using toolshed::clamp;
+    using math::clamp;
 
     typedef FloatT float_type;
-    typedef math::base_vec3< float_type > float3_type;
+    typedef math::vector< 3, float_type > float3;
 
-    float3_type lo
+    float3 lo
     (
         floor(coord.x * texsize.x),
         floor(coord.y * texsize.y),
@@ -98,23 +98,23 @@ template
 #ifndef _MSC_VER
 VV_FORCE_INLINE
 #endif
-ReturnT linear(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec3< FloatT > texsize)
+ReturnT linear(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector< 3, FloatT > texsize)
 {
 
-    using toolshed::clamp;
+    using math::clamp;
 
     typedef FloatT float_type;
-    typedef math::base_vec3< float_type > float3_type;
+    typedef math::vector< 3, float_type > float3;
     typedef ReturnT return_type;
 
-    float3_type texcoordf( coord * texsize - float_type(0.5) );
+    float3 texcoordf( coord * texsize - float_type(0.5) );
 
     texcoordf[0] = clamp( texcoordf[0], float_type(0.0), texsize[0] - 1 );
     texcoordf[1] = clamp( texcoordf[1], float_type(0.0), texsize[1] - 1 );
     texcoordf[2] = clamp( texcoordf[2], float_type(0.0), texsize[2] - 1 );
 
-    float3_type lo( floor(texcoordf[0]), floor(texcoordf[1]), floor(texcoordf[2]) );
-    float3_type hi( ceil(texcoordf[0]),  ceil(texcoordf[1]),  ceil(texcoordf[2]) );
+    float3 lo( floor(texcoordf[0]), floor(texcoordf[1]), floor(texcoordf[2]) );
+    float3 hi( ceil(texcoordf[0]),  ceil(texcoordf[1]),  ceil(texcoordf[2]) );
 
 
     // Implicit cast from return type to float type.
@@ -132,7 +132,7 @@ ReturnT linear(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_ve
     };
 
 
-    float3_type uvw = texcoordf - lo;
+    float3 uvw = texcoordf - lo;
 
     float_type p1  = lerp(samples[0], samples[1], uvw[0]);
     float_type p2  = lerp(samples[2], samples[3], uvw[0]);
@@ -156,11 +156,11 @@ template
 #ifndef _MSC_VER
 VV_FORCE_INLINE
 #endif
-ReturnT cubic(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec3< FloatT > texsize)
+ReturnT cubic(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector< 3, FloatT > texsize)
 {
 
     typedef FloatT float_type;
-    typedef math::base_vec3< float_type > float3_type;
+    typedef math::vector< 3, float_type > float3;
 
     float_type x = coord[0] * texsize[0] - float_type(0.5);
     float_type floorx = floor( x );
@@ -196,15 +196,15 @@ ReturnT cubic(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec
 
     // Implicit cast from return type to float type.
     // TODO: what if return type is e.g. a float4?
-    float_type f_000 = linear< float_type >( tex, float3_type(h_000, h_010, h_001), texsize );
-    float_type f_100 = linear< float_type >( tex, float3_type(h_100, h_010, h_001), texsize );
-    float_type f_010 = linear< float_type >( tex, float3_type(h_000, h_110, h_001), texsize );
-    float_type f_110 = linear< float_type >( tex, float3_type(h_100, h_110, h_001), texsize );
+    float_type f_000 = linear< float_type >( tex, float3(h_000, h_010, h_001), texsize );
+    float_type f_100 = linear< float_type >( tex, float3(h_100, h_010, h_001), texsize );
+    float_type f_010 = linear< float_type >( tex, float3(h_000, h_110, h_001), texsize );
+    float_type f_110 = linear< float_type >( tex, float3(h_100, h_110, h_001), texsize );
 
-    float_type f_001 = linear< float_type >( tex, float3_type(h_000, h_010, h_101), texsize );
-    float_type f_101 = linear< float_type >( tex, float3_type(h_100, h_010, h_101), texsize );
-    float_type f_011 = linear< float_type >( tex, float3_type(h_000, h_110 ,h_101), texsize );
-    float_type f_111 = linear< float_type >( tex, float3_type(h_100, h_110, h_101), texsize );
+    float_type f_001 = linear< float_type >( tex, float3(h_000, h_010, h_101), texsize );
+    float_type f_101 = linear< float_type >( tex, float3(h_100, h_010, h_101), texsize );
+    float_type f_011 = linear< float_type >( tex, float3(h_000, h_110 ,h_101), texsize );
+    float_type f_111 = linear< float_type >( tex, float3(h_100, h_110, h_101), texsize );
 
     float_type f_00  = g0(fracx) * f_000 + g1(fracx) * f_100;
     float_type f_10  = g0(fracx) * f_010 + g1(fracx) * f_110;
@@ -225,7 +225,7 @@ template
     typename FloatT,
     typename VoxelT
 >
-VV_FORCE_INLINE ReturnT tex3D(VoxelT const* tex, math::base_vec3< FloatT > coord, math::base_vec3< FloatT > texsize,
+VV_FORCE_INLINE ReturnT tex3D(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector< 3, FloatT > texsize,
     virvo::tex_filter_mode filter_mode = virvo::Nearest)
 {
 

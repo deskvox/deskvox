@@ -2,8 +2,12 @@
 #define VV_MATH_FORWARD_H
 
 
+#include <cstddef>
+
+
 namespace virvo
 {
+
 
 namespace math
 {
@@ -12,11 +16,9 @@ namespace math
 // Declarations
 //
 
-template < typename T >
-class base_vec3;
+template < size_t Dim, typename T >
+class vector;
 
-template < typename T >
-class base_vec4;
 
 } // math
 

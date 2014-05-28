@@ -30,11 +30,11 @@ VV_FORCE_INLINE VoxelT tex1D(texture< VoxelT, NormalizedFloat, 1 > const& tex, F
 
 
 template < typename VoxelT >
-VV_FORCE_INLINE math::base_vec4< math::sse_vec > tex1D(texture< VoxelT, NormalizedFloat, 1 > const& tex, math::sse_vec coord)
+VV_FORCE_INLINE math::vector< 4, math::sse_vec > tex1D(texture< VoxelT, NormalizedFloat, 1 > const& tex, math::sse_vec coord)
 {
 
     // special case for AoS rgba colors
-    typedef math::base_vec4< math::sse_vec > return_type;
+    typedef math::vector< 4, math::sse_vec > return_type;
 
     math::sse_vec size = tex.width();
     return detail::tex1D< return_type >( tex.data, coord, size, tex.get_filter_mode() );
@@ -47,26 +47,26 @@ VV_FORCE_INLINE math::base_vec4< math::sse_vec > tex1D(texture< VoxelT, Normaliz
 //
 
 template < typename VoxelT, typename FloatT >
-VV_FORCE_INLINE VoxelT tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::base_vec3< FloatT > coord)
+VV_FORCE_INLINE VoxelT tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::vector< 3, FloatT > coord)
 {
 
     // general case: return type equals voxel type
     typedef VoxelT return_type;
 
-    math::base_vec3< FloatT >  size( tex.width(), tex.height(), tex.depth() );
+    math::vector< 3, FloatT >  size( tex.width(), tex.height(), tex.depth() );
     return detail::tex3D< return_type >( tex.data, coord, size, tex.get_filter_mode() );
 
 }
 
 
 template < typename VoxelT >
-VV_FORCE_INLINE math::sse_vec tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::base_vec3< math::sse_vec > coord)
+VV_FORCE_INLINE math::sse_vec tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::vector< 3, math::sse_vec > coord)
 {
 
     // special case: lookup four voxels at once and return as 32-bit float vector
     typedef math::sse_vec return_type;
 
-    math::base_vec3< math::sse_vec > size( tex.width(), tex.height(), tex.depth() );
+    math::vector< 3, math::sse_vec > size( tex.width(), tex.height(), tex.depth() );
     return detail::tex3D< return_type >( tex.data, coord, size, tex.get_filter_mode() );
 
 }

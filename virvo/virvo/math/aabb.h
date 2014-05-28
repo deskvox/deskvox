@@ -1,36 +1,47 @@
 #pragma once
 
-#include "vec3.h"
+#include "vector.h"
 
 namespace virvo
 {
+
+
 namespace math
 {
 
+
 template < typename T >
-class CACHE_ALIGN base_aabb
+class base_aabb
 {
 public:
-  inline base_aabb(base_vec3< T > const& min, base_vec3< T > const& max)
+
+  inline base_aabb(vector< 3, T > const& min, vector< 3, T > const& max)
     : m_min(min)
     , m_max(max)
   {
   }
 
-  inline base_vec3< T > getMin() const
+  inline vector< 3, T > getMin() const
   {
     return m_min;
   }
 
-  inline base_vec3< T > getMax() const
+  inline vector< 3, T > getMax() const
   {
     return m_max;
   }
+
 private:
-  base_vec3< T > m_min;
-  base_vec3< T > m_max;
+
+  vector< 3, T > m_min;
+  vector< 3, T > m_max;
+
 };
 
 } // math
+
+
 } // virvo
+
+
 

@@ -35,18 +35,19 @@ VV_FORCE_INLINE math::sse_vec point(T const* tex, math::sse_vec idx)
 
     math::sse_veci iidx( idx );
     CACHE_ALIGN int indices[4];
-    store(iidx, &indices[0]);
-    CACHE_ALIGN float vals[4];
-    for (size_t i = 0; i < 4; ++i)
-    {
-        vals[i] = tex[indices[i]];
-    }
-    return math::sse_vec(&vals[0]);
+    store(idx, &indices[0]);
+    return math::sse_vec
+    (
+        tex[indices[0]],
+        tex[indices[1]],
+        tex[indices[2]],
+        tex[indices[3]]
+    );
 
 }
 
 
-VV_FORCE_INLINE math::base_vec4< math::sse_vec > point(math::base_vec4< float > const* tex, math::sse_vec idx)
+VV_FORCE_INLINE math::vector< 4, math::sse_vec > point(math::vector< 4, float > const* tex, math::sse_vec idx)
 {
 
     // Special case: colors are AoS. Those can be obtained
@@ -59,7 +60,7 @@ VV_FORCE_INLINE math::base_vec4< math::sse_vec > point(math::base_vec4< float > 
 
     float const* tmp = reinterpret_cast< float const* >(tex);
 
-    math::base_vec4< math::sse_vec > colors
+    math::vector< 4, math::sse_vec > colors
     (
         &tmp[0] + indices[0],
         &tmp[0] + indices[1],

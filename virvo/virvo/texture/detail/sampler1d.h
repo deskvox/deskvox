@@ -28,12 +28,10 @@ VV_FORCE_INLINE
 ReturnT nearest(VoxelT const* tex, FloatT coord, FloatT texsize)
 {
 
-    using toolshed::clamp;
-
     typedef FloatT float_type;
 
     float_type lo = floor(coord * texsize);
-    lo = clamp(lo, float_type(0.0f), texsize - 1);
+    lo = math::clamp(lo, float_type(0.0f), texsize - 1);
     return point(tex, lo);
 
 }
@@ -51,13 +49,11 @@ VV_FORCE_INLINE
 ReturnT linear(VoxelT const* tex, FloatT coord, FloatT texsize)
 {
 
-    using toolshed::clamp;
-
     typedef FloatT float_type;
     typedef ReturnT return_type;
 
     float_type texcoordf( coord * texsize - float_type(0.5) );
-    texcoordf = clamp( texcoordf, float_type(0.0), texsize - 1 );
+    texcoordf = math::clamp( texcoordf, float_type(0.0), texsize - 1 );
 
     float_type lo = floor(texcoordf);
     float_type hi = ceil(texcoordf);

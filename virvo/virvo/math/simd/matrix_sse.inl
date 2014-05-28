@@ -1,8 +1,7 @@
 #pragma once
 
 #include "vec.h"
-#include "../vec3.h"
-#include "../vec4.h"
+#include "../vector.h"
 
 #include <ostream>
 
@@ -165,12 +164,12 @@ public:
     sse_vec r = shuffle<0, 2, 0, 2>(shuffle<0, 0, 0, 0>(inv0, inv1), shuffle<0, 0, 0, 0>(inv2, inv3));
 
     sse_vec det = dot(rows[0], r);
-    sse_vec rcp = fast::rcp<1>(det);
+    sse_vec recipr = rcp<1>(det);
 
-    rows[0] = inv0 * rcp;
-    rows[1] = inv1 * rcp;
-    rows[2] = inv2 * rcp;
-    rows[3] = inv3 * rcp;
+    rows[0] = inv0 * recipr;
+    rows[1] = inv1 * recipr;
+    rows[2] = inv2 * recipr;
+    rows[3] = inv3 * recipr;
   }
 private:
   row_type rows[4];
@@ -190,7 +189,7 @@ inline Matrix< sse_vec > operator*(Matrix< sse_vec > const& m, Matrix< sse_vec >
   return result;
 }
 
-inline base_vec4< sse_vec > operator*(Matrix< sse_vec > const& m, base_vec4< sse_vec > const& v)
+inline vector< 4, sse_vec > operator*(Matrix< sse_vec > const& m, vector< 4, sse_vec > const& v)
 {
   Matrix< sse_vec > tmp;
   tmp.setRow(0, v.x);
@@ -198,15 +197,15 @@ inline base_vec4< sse_vec > operator*(Matrix< sse_vec > const& m, base_vec4< sse
   tmp.setRow(2, v.z);
   tmp.setRow(3, v.w);
   Matrix< sse_vec > res = m * tmp;
-  return base_vec4< sse_vec >(res.row(0), res.row(1), res.row(2), res.row(3));
+  return vector< 4, sse_vec >(res.row(0), res.row(1), res.row(2), res.row(3));
 }
 
 
-inline base_vec3< sse_vec > operator*(Matrix< sse_vec > const& m, base_vec3< sse_vec > const& v)
+inline vector< 3, sse_vec > operator*(Matrix< sse_vec > const& m, vector< 3, sse_vec > const& v)
 {
-  base_vec4< sse_vec > tmp(v[0], v[1], v[2], 1);
-  base_vec4< sse_vec > res = m * tmp;
-  return base_vec3< sse_vec >(res[0] / res[3], res[1] / res[3], res[2] / res[3]);
+  vector< 4, sse_vec > tmp(v[0], v[1], v[2], 1);
+  vector< 4, sse_vec > res = m * tmp;
+  return vector< 3, sse_vec >(res[0] / res[3], res[1] / res[3], res[2] / res[3]);
 }
 
 

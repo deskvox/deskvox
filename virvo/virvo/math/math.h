@@ -7,7 +7,6 @@
 #include "output.h"
 #include "mask.h"
 #include "matrix.h"
-#include "vec3.h"
-#include "vec4.h"
+#include "vector.h"
 
 

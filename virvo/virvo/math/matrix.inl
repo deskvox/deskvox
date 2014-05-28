@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vec4.h"
+#include "vector.h"
 
 
 namespace virvo
@@ -11,11 +11,11 @@ namespace math
 
 
 template < >
-class Matrix< base_vec4< float > >
+class Matrix< vector< 4, float > >
 {
 public:
 
-    typedef base_vec4< float > row_type;
+    typedef vector< 4, float > row_type;
 
     inline Matrix< row_type >()
     {
@@ -48,10 +48,10 @@ private:
 };
 
 
-inline base_vec4< float > operator*(Matrix< base_vec4< float > > const& m, base_vec4< float > const& v)
+inline vector< 4, float > operator*(Matrix< vector< 4, float > > const& m, vector< 4, float > const& v)
 {
 
-    return base_vec4< float >
+    return vector< 4, float >
     (
         dot(m.row(0), v),
         dot(m.row(1), v),
