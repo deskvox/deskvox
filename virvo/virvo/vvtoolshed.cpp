@@ -32,6 +32,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <boost/filesystem.hpp>
+
 #include <errno.h>
 #include "vvplatform.h"
 
@@ -2457,42 +2459,28 @@ void vvToolshed::printBacktrace()
 
 std::vector<std::string> virvo::toolshed::entryList(std::string const& dir)
 {
-  std::vector<std::string> result;
-  if (vvToolshed::isDirectory(dir.c_str()))
-  {
-#ifdef _WIN32
-    std::string path = dir;
+    std::vector<std::string> result;
 
-    if (!endsWith(path, "\\*"))
-        path += "\\*";
+    namespace filesystem = boost::filesystem;
 
-    WIN32_FIND_DATAA findData;
+    filesystem::path path(dir);
 
-    memset(&findData, 0, sizeof(findData));
-
-    HANDLE hFindFile = FindFirstFileA(path.c_str(), &findData);
-
-    if (hFindFile != INVALID_HANDLE_VALUE)
+    if (filesystem::exists(path) && filesystem::is_directory(path))
     {
-        result.push_back(findData.cFileName);
 
-        while (FindNextFileA(hFindFile, &findData)) {
-            result.push_back(findData.cFileName);
+        filesystem::directory_iterator end;
+        for (filesystem::directory_iterator it(path); it != end; ++it)
+        {
+            if ( filesystem::is_regular_file(it->status()) )
+            {
+                filesystem::path p = filesystem::canonical(*it);
+                result.push_back( p.filename().string() );
+            }
         }
 
-        FindClose(hFindFile);
     }
-#else
-    DIR* dirp = opendir(dir.c_str());
-    struct dirent* dp;
-    while ((dp = readdir(dirp)) != NULL)
-    {
-      result.push_back(dp->d_name);
-    }
-    closedir(dirp);
-#endif
-  }
-  return result;
+
+    return result;
 }
 
 bool virvo::toolshed::startsWith(std::string const& string, std::string const& prefix)
