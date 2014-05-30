@@ -33,7 +33,6 @@ template < typename T >
 VV_FORCE_INLINE math::simd::float4 point(T const* tex, math::simd::float4 idx)
 {
 
-    math::simd::float4 iidx( idx );
     VV_ALIGN(16) int indices[4];
     store(idx, &indices[0]);
     return math::simd::float4
