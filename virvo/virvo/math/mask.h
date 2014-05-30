@@ -3,8 +3,6 @@
 #include "simd/vec.h"
 #include "vector.h"
 
-#include "../mem/align.h"
-
 
 namespace virvo
 {
@@ -13,11 +11,11 @@ namespace math
 {
 
 template < typename T >
-class CACHE_ALIGN base_mask;
+class base_mask;
 
 
 template < >
-class CACHE_ALIGN base_mask< __m128 >
+class base_mask< __m128 >
 {
 public:
   typedef __m128 value_type;

@@ -12,7 +12,7 @@ namespace math
 
 
 template < >
-class CACHE_ALIGN Matrix< sse_vec >
+class Matrix< sse_vec >
 {
 public:
 

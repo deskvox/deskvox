@@ -18,11 +18,11 @@ namespace math
 {
 
 template < typename T >
-class CACHE_ALIGN base_vec;
+class base_vec;
 
 
 template < >
-class CACHE_ALIGN base_vec< __m128 >
+class base_vec< __m128 >
 {
 public:
   typedef __m128 value_type;
