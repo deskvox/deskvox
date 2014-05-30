@@ -98,6 +98,7 @@ public:
 
 #include "detail/vector.inl"
 #include "detail/vector3.inl"
+#include "detail/vector4.inl"
 
 
 #endif // VV_MATH_VECTOR_H
