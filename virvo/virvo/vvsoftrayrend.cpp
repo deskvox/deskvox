@@ -44,7 +44,7 @@
 #include <intrin.h>
 #endif
 
-typedef std::vector<float, virvo::mem::aligned_allocator<float, CACHE_LINE> > vecf;
+typedef std::vector<float, virvo::mem::aligned_allocator<float, 16> > vecf;
 
 namespace virvo
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../vvcompiler.h"
+#include "../vvmacros.h"
 
 #include <new>
 #include <stddef.h>
@@ -11,7 +11,6 @@
 #include <malloc.h>
 #endif
 
-#include "align.h"
 
 namespace virvo
 {

@@ -24,10 +24,10 @@ public:
 
   inline Matrix< simd::float4 >(virvo::Matrix const& m)
   {
-    CACHE_ALIGN float row1[4];
-    CACHE_ALIGN float row2[4];
-    CACHE_ALIGN float row3[4];
-    CACHE_ALIGN float row4[4];
+    VV_ALIGN(16) float row1[4];
+    VV_ALIGN(16) float row2[4];
+    VV_ALIGN(16) float row3[4];
+    VV_ALIGN(16) float row4[4];
 
     m.getRow(0, &row1[0], &row1[1], &row1[2], &row1[3]);
     m.getRow(1, &row2[0], &row2[1], &row2[2], &row2[3]);
@@ -42,10 +42,10 @@ public:
 
   inline operator virvo::Matrix() const
   {
-    CACHE_ALIGN float row1[4];
-    CACHE_ALIGN float row2[4];
-    CACHE_ALIGN float row3[4];
-    CACHE_ALIGN float row4[4];
+    VV_ALIGN(16) float row1[4];
+    VV_ALIGN(16) float row2[4];
+    VV_ALIGN(16) float row3[4];
+    VV_ALIGN(16) float row4[4];
 
     store(rows[0], &row1[0]);
     store(rows[1], &row2[0]);

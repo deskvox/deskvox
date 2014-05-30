@@ -6,7 +6,7 @@
 #include <malloc.h>
 #endif
 
-#include "align.h"
+#include "../vvmacros.h"
 
 void* operator new(size_t size) throw(std::bad_alloc)
 {

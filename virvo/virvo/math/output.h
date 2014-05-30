@@ -117,7 +117,7 @@ operator<<(std::basic_ostream< CharT, Traits >& out, simd::float4 const& v)
     s.imbue(out.getloc());
     s.precision(out.precision());
 
-    CACHE_ALIGN float vals[4];
+    VV_ALIGN(16) float vals[4];
     store(v, vals);
     s << '(' << vals[0] << ',' << vals[1] << ',' << vals[2] << ',' << vals[3] << ')';
 
@@ -140,7 +140,7 @@ operator<<(std::basic_ostream< CharT, Traits >& out, simd::int4 const& v)
     s.imbue(out.getloc());
     s.precision(out.precision());
 
-    CACHE_ALIGN int vals[4];
+    VV_ALIGN(16) int vals[4];
     store(v, vals);
     s << '(' << vals[0] << ',' << vals[1] << ',' << vals[2] << ',' << vals[3] << ')';
 

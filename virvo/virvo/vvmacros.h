@@ -24,6 +24,15 @@
 #include "vvcompiler.h"
 
 
+/*! Align data on X-byte boundaries
+ */
+#if defined(_MSC_VER)
+#define VV_ALIGN(X) __declspec(align(X))
+#else
+#define VV_ALIGN(X) __attribute__((aligned(X)))
+#endif
+
+
 /*! Declare classes or functions deprecated
  */
 #if VV_CXX_GCC && !VV_CXX_INTEL

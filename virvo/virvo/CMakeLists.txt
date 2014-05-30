@@ -108,8 +108,9 @@ set(VIRVO_HEADERS
   math/math.h
   math/output.h
 
-  mem/align.h
   mem/allocator.h
+  mem/new.h
+  mem/swap.h
 
   texture/detail/sampler1d.h
   texture/detail/sampler3d.h
