@@ -14,7 +14,7 @@
 
 #include "vvaabb.h"
 #include "vvdebugmsg.h"
-#include "vvforceinline.h"
+#include "vvmacros.h"
 #include "vvpthread.h"
 #include "vvrect.h"
 #include "vvsoftrayrend.h"

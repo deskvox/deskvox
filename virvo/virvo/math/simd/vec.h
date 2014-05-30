@@ -4,8 +4,6 @@
 
 #include "../vector.h"
 
-#include <virvo/vvcompiler.h>
-#include <virvo/vvforceinline.h>
 #include <virvo/vvmacros.h>
 
 #include <virvo/mem/align.h>

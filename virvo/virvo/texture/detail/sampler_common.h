@@ -2,7 +2,7 @@
 #define VV_SAMPLER_COMMON_H
 
 
-#include "vvforceinline.h"
+#include <virvo/vvmacros.h>
 
 #include "math/math.h"
 

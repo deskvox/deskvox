@@ -3,8 +3,6 @@
 #include "simd/vec.h"
 #include "vector.h"
 
-#include "../vvforceinline.h"
-
 #include "../mem/align.h"
 
 

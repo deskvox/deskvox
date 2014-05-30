@@ -2,7 +2,6 @@
 
 #include "intrinsics.h"
 
-#include <virvo/vvforceinline.h>
 #include <virvo/vvmacros.h>
 
 #include <virvo/mem/align.h>

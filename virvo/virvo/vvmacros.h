@@ -18,8 +18,8 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-#pragma once
-
+#ifndef VV_MACROS_H
+#define VV_MACROS_H
 
 #include "vvcompiler.h"
 
@@ -35,6 +35,21 @@
 #endif
 
 
+
+/*! Force function inlining
+ */
+#if VV_CXX_INTEL
+#define VV_FORCE_INLINE __forceinline
+#elif VV_CXX_GCC || VV_CXX_CLANG
+#define VV_FORCE_INLINE inline __attribute((always_inline))
+#elif VV_CXX_MSVC
+#define VV_FORCE_INLINE __forceinline
+#else
+#define VV_FORCE_INLINE inline
+#endif
+
+
+
 /*! Place in private section of class to disallow copying and assignment
  */
 #define VV_NOT_COPYABLE(T)                                          \
@@ -46,5 +61,8 @@
 /*! Verbose way to say that a parameter is not used intentionally
  */
 #define VV_UNUSED(x) ((void)(x))
+
+
+#endif // VV_MACROS_H
 
 

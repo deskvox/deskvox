@@ -152,6 +152,7 @@ set(VIRVO_HEADERS
   vvimageclient.h
   vvimageserver.h
   vvinttypes.h
+  vvmacros.h
   vvmulticast.h
   vvopengl.h
   vvparam.h

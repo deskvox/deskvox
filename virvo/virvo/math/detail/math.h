@@ -2,6 +2,8 @@
 #define VV_DETAIL_MATH_H
 
 
+#include <virvo/vvmacros.h>
+
 #include <cmath>
 
 
