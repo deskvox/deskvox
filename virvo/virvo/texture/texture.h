@@ -30,13 +30,15 @@ VV_FORCE_INLINE VoxelT tex1D(texture< VoxelT, NormalizedFloat, 1 > const& tex, F
 
 
 template < typename VoxelT >
-VV_FORCE_INLINE math::vector< 4, math::sse_vec > tex1D(texture< VoxelT, NormalizedFloat, 1 > const& tex, math::sse_vec coord)
+VV_FORCE_INLINE math::vector< 4, math::simd::float4 > tex1D(texture< VoxelT, NormalizedFloat, 1 > const& tex, math::simd::float4 coord)
 {
 
-    // special case for AoS rgba colors
-    typedef math::vector< 4, math::sse_vec > return_type;
+    using math::simd::float4;
 
-    math::sse_vec size = tex.width();
+    // special case for AoS rgba colors
+    typedef math::vector< 4, float4 > return_type;
+
+    float4 size = tex.width();
     return detail::tex1D< return_type >( tex.data, coord, size, tex.get_filter_mode() );
 
 }
@@ -60,13 +62,13 @@ VV_FORCE_INLINE VoxelT tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, m
 
 
 template < typename VoxelT >
-VV_FORCE_INLINE math::sse_vec tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::vector< 3, math::sse_vec > coord)
+VV_FORCE_INLINE math::simd::float4 tex3D(texture< VoxelT, NormalizedFloat, 3 > const& tex, math::vector< 3, math::simd::float4 > coord)
 {
 
     // special case: lookup four voxels at once and return as 32-bit float vector
-    typedef math::sse_vec return_type;
+    typedef math::simd::float4 return_type;
 
-    math::vector< 3, math::sse_vec > size( tex.width(), tex.height(), tex.depth() );
+    math::vector< 3, math::simd::float4 > size( tex.width(), tex.height(), tex.depth() );
     return detail::tex3D< return_type >( tex.data, coord, size, tex.get_filter_mode() );
 
 }

@@ -1,14 +1,20 @@
 #pragma once
 
-#include "simd/vec.h"
-#include "vector.h"
+#include "vec.h"
+#include "../vector.h"
 
 
 namespace virvo
 {
 
+
 namespace math
 {
+
+
+namespace simd
+{
+
 
 template < typename T >
 class base_mask;
@@ -26,7 +32,7 @@ public:
   {
   }
 
-  VV_FORCE_INLINE base_mask(sse_vec const& m)
+  VV_FORCE_INLINE base_mask(float4 const& m)
     : value(m)
   {
   }
@@ -36,7 +42,7 @@ public:
     return value;
   }
 
-  VV_FORCE_INLINE operator sse_vec() const
+  VV_FORCE_INLINE operator float4() const
   {
     return value;
   }
@@ -47,44 +53,44 @@ typedef base_mask< __m128 > sse_mask;
 typedef sse_mask Mask;
 
 
-/* sse_vec */
+/* float4 */
 
-VV_FORCE_INLINE sse_mask operator<(sse_vec const& u, sse_vec const& v)
+VV_FORCE_INLINE sse_mask operator<(float4 const& u, float4 const& v)
 {
   return _mm_cmplt_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator>(sse_vec const& u, sse_vec const& v)
+VV_FORCE_INLINE sse_mask operator>(float4 const& u, float4 const& v)
 {
   return _mm_cmpgt_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator<=(sse_vec const& u, sse_vec const& v)
+VV_FORCE_INLINE sse_mask operator<=(float4 const& u, float4 const& v)
 {
   return _mm_cmple_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator>=(sse_vec const& u, sse_vec const& v)
+VV_FORCE_INLINE sse_mask operator>=(float4 const& u, float4 const& v)
 {
   return _mm_cmpge_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator==(sse_vec const& u, sse_vec const& v)
+VV_FORCE_INLINE sse_mask operator==(float4 const& u, float4 const& v)
 {
   return _mm_cmpeq_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator!=(sse_vec const& u, sse_vec const& v)
+VV_FORCE_INLINE sse_mask operator!=(float4 const& u, float4 const& v)
 {
   return _mm_cmpneq_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator&&(sse_vec const& u, sse_vec const& v)
+VV_FORCE_INLINE sse_mask operator&&(float4 const& u, float4 const& v)
 {
   return _mm_and_ps(u, v);
 }
 
-VV_FORCE_INLINE sse_mask operator||(sse_vec const& u, sse_vec const& v)
+VV_FORCE_INLINE sse_mask operator||(float4 const& u, float4 const& v)
 {
   return _mm_and_ps(u, v);
 }
@@ -101,7 +107,7 @@ VV_FORCE_INLINE bool all(sse_mask const& m)
 }
 
 #if 1
-VV_FORCE_INLINE sse_vec if_else(sse_vec const& ifexpr, sse_vec const& elseexpr, sse_mask const& mask)
+VV_FORCE_INLINE float4 if_else(float4 const& ifexpr, float4 const& elseexpr, sse_mask const& mask)
 {
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_blendv_ps(elseexpr, ifexpr, mask);
@@ -111,12 +117,12 @@ VV_FORCE_INLINE sse_vec if_else(sse_vec const& ifexpr, sse_vec const& elseexpr, 
 }
 #endif
 
-VV_FORCE_INLINE sse_vec neg(sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 neg(float4 const& v, sse_mask const& mask)
 {
   return if_else(-v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE sse_vec add(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 add(float4 const& u, float4 const& v, sse_mask const& mask)
 {
   return if_else(u + v, 0.0f, mask);
 }
@@ -126,54 +132,54 @@ VV_FORCE_INLINE float sub(float u, float v, float /* mask */)
   return u - v;
 }
 
-VV_FORCE_INLINE sse_vec sub(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 sub(float4 const& u, float4 const& v, sse_mask const& mask)
 {
   return if_else(u - v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE sse_vec mul(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 mul(float4 const& u, float4 const& v, sse_mask const& mask)
 {
   return if_else(u * v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE sse_vec div(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 div(float4 const& u, float4 const& v, sse_mask const& mask)
 {
   return if_else(u / v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE sse_vec lt(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 lt(float4 const& u, float4 const& v, sse_mask const& mask)
 {
   return if_else(u < v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE sse_vec gt(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 gt(float4 const& u, float4 const& v, sse_mask const& mask)
 {
   return if_else(u > v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE sse_vec le(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 le(float4 const& u, float4 const& v, sse_mask const& mask)
 {
   return if_else(u <= v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE sse_vec ge(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 ge(float4 const& u, float4 const& v, sse_mask const& mask)
 {
   return if_else(u >= v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE sse_vec eq(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 eq(float4 const& u, float4 const& v, sse_mask const& mask)
 {
   return if_else(u == v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE sse_vec neq(sse_vec const& u, sse_vec const& v, sse_mask const& mask)
+VV_FORCE_INLINE float4 neq(float4 const& u, float4 const& v, sse_mask const& mask)
 {
   return if_else(u != v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE void store(sse_vec const& v, float dst[4], sse_mask const& mask)
+VV_FORCE_INLINE void store(float4 const& v, float dst[4], sse_mask const& mask)
 {
-  sse_vec tmp = if_else(v, 0.0f, mask);
+  float4 tmp = if_else(v, 0.0f, mask);
   store(tmp, dst);
 }
 
@@ -345,7 +351,11 @@ VV_FORCE_INLINE vector< 4, T > div(T const& s, vector< 4, T > const& v, M const&
 }
 
 
+} // simd
+
+
 } // math
+
 
 } // virvo
 

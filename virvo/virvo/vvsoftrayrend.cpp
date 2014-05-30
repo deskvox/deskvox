@@ -99,9 +99,9 @@ virvo::tex_filter_mode map_to_tex_filter_mode(vvRenderState::InterpolType ipol_t
 #define PACK_SIZE_X 2
 #define PACK_SIZE_Y 2
 
-typedef virvo::math::sse_veci int_type;
-typedef virvo::math::sse_vec float_type;
-typedef virvo::math::sse_vec matrix_row_type;
+typedef virvo::math::simd::int4 int_type;
+typedef virvo::math::simd::float4 float_type;
+typedef virvo::math::simd::float4 matrix_row_type;
 
 #else
 
@@ -115,9 +115,11 @@ using std::max;
 typedef size_t int_type;
 typedef float float_type;
 typedef virvo::math::vector< 4, float_type > matrix_row_type;
-using virvo::math::sub;
 
 #endif
+
+using virvo::math::simd::sub;
+using virvo::math::simd::mul;
 
 typedef virvo::math::base_aabb< float_type > AABB;
 typedef virvo::math::vector< 3, int_type > Vec3s;

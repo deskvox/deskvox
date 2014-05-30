@@ -4,6 +4,8 @@
 
 #include "forward.h"
 
+#include <virvo/vvmacros.h>
+
 
 #include <cstddef>
 #include <ostream>
@@ -16,6 +18,11 @@ namespace virvo
 
 namespace math
 {
+
+
+//-------------------------------------------------------------------------------------------------
+// vectors
+//
 
 template
 <
@@ -86,6 +93,56 @@ operator<<(std::basic_ostream< CharT, Traits >& out, vector< 4, T > v)
     s.precision(out.precision());
 
     s << '(' << v.x << ',' << v.y << ',' << v.z << ',' << v.w << ')';
+
+    return out << s.str();
+
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// simd types
+//
+
+template
+<
+    typename CharT,
+    typename Traits
+>
+std::basic_ostream< CharT, Traits >&
+operator<<(std::basic_ostream< CharT, Traits >& out, simd::float4 const& v)
+{
+
+    std::basic_ostringstream< CharT, Traits > s;
+    s.flags(out.flags());
+    s.imbue(out.getloc());
+    s.precision(out.precision());
+
+    CACHE_ALIGN float vals[4];
+    store(v, vals);
+    s << '(' << vals[0] << ',' << vals[1] << ',' << vals[2] << ',' << vals[3] << ')';
+
+    return out << s.str();
+
+}
+
+
+template
+<
+    typename CharT,
+    typename Traits
+>
+std::basic_ostream< CharT, Traits >&
+operator<<(std::basic_ostream< CharT, Traits >& out, simd::int4 const& v)
+{
+
+    std::basic_ostringstream< CharT, Traits > s;
+    s.flags(out.flags());
+    s.imbue(out.getloc());
+    s.precision(out.precision());
+
+    CACHE_ALIGN int vals[4];
+    store(v, vals);
+    s << '(' << vals[0] << ',' << vals[1] << ',' << vals[2] << ',' << vals[3] << ')';
 
     return out << s.str();
 

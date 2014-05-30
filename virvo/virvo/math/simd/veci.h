@@ -4,69 +4,64 @@
 
 #include <virvo/vvmacros.h>
 
-#include <virvo/mem/align.h>
-
-#include <ostream>
 #include <stdexcept>
 
 namespace virvo
 {
 
+
 namespace math
 {
 
-template < typename T >
-class base_veci;
+
+namespace simd
+{
 
 
-template < >
-class base_veci< __m128i >
+class int4
 {
 public:
-  typedef __m128i value_type;
-  value_type value;
 
-  VV_FORCE_INLINE base_veci()
-  {
-  }
+    typedef __m128i value_type;
+    __m128i value;
 
-  VV_FORCE_INLINE base_veci(int x, int y, int z, int w)
-    : value(_mm_set_epi32(w, z, y, x))
-  {
-  }
+    VV_FORCE_INLINE int4()
+    {
+    }
 
-  VV_FORCE_INLINE base_veci(int s)
-    : value(_mm_set1_epi32(s))
-  {
-  }
+    VV_FORCE_INLINE int4(int x, int y, int z, int w)
+        : value(_mm_set_epi32(w, z, y, x))
+    {
+    }
 
-  VV_FORCE_INLINE base_veci(base_vec< __m128 > const& f)
-    : value(_mm_cvtps_epi32(f))
-  {
-  }
+    VV_FORCE_INLINE int4(int s)
+        : value(_mm_set1_epi32(s))
+    {
+    }
 
-  VV_FORCE_INLINE base_veci(value_type const& v)
-    : value(v)
-  {
-  }
+    VV_FORCE_INLINE int4(float4 const& f)
+        : value(_mm_cvtps_epi32(f))
+    {
+    }
 
-  VV_FORCE_INLINE operator value_type() const
-  {
-    return value;
-  }
+    VV_FORCE_INLINE int4(__m128i const& v)
+        : value(v)
+    {
+    }
+
+    VV_FORCE_INLINE operator __m128i() const
+    {
+        return value;
+    }
 };
 
 
-typedef base_veci< __m128i > sse_veci;
-typedef sse_veci Veci;
-
-
-VV_FORCE_INLINE void store(sse_veci const& v, int dst[4])
+VV_FORCE_INLINE void store(int4 const& v, int dst[4])
 {
   _mm_store_si128(reinterpret_cast<__m128i*>(dst), v);
 }
 
-VV_FORCE_INLINE sse_veci select(sse_veci const& mask, sse_veci const& a, sse_veci const& b)
+VV_FORCE_INLINE int4 select(int4 const& mask, int4 const& a, int4 const& b)
 {
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   __m128 k = _mm_castsi128_ps(mask);
@@ -80,29 +75,29 @@ VV_FORCE_INLINE sse_veci select(sse_veci const& mask, sse_veci const& a, sse_vec
 }
 
 template <int A0, int A1, int A2, int A3>
-VV_FORCE_INLINE sse_veci shuffle(sse_veci const& a)
+VV_FORCE_INLINE int4 shuffle(int4 const& a)
 {
   return _mm_shuffle_epi32(a, _MM_SHUFFLE(A3, A2, A1, A0));
 }
 
 /* operators */
 
-VV_FORCE_INLINE sse_veci operator-(sse_veci const& v)
+VV_FORCE_INLINE int4 operator-(int4 const& v)
 {
   return _mm_sub_epi32(_mm_setzero_si128(), v);
 }
 
-VV_FORCE_INLINE sse_veci operator+(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 operator+(int4 const& u, int4 const& v)
 {
   return _mm_add_epi32(u, v);
 }
 
-VV_FORCE_INLINE sse_veci operator-(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 operator-(int4 const& u, int4 const& v)
 {
   return _mm_sub_epi32(u, v);
 }
 
-VV_FORCE_INLINE sse_veci operator*(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 operator*(int4 const& u, int4 const& v)
 {
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_mullo_epi32(u, v);
@@ -119,66 +114,58 @@ VV_FORCE_INLINE sse_veci operator*(sse_veci const& u, sse_veci const& v)
 #endif
 }
 
-VV_FORCE_INLINE sse_veci& operator+=(sse_veci& u, sse_veci const& v)
+VV_FORCE_INLINE int4& operator+=(int4& u, int4 const& v)
 {
   u = u + v;
   return u;
 }
 
-VV_FORCE_INLINE sse_veci& operator-=(sse_veci& u, sse_veci const& v)
+VV_FORCE_INLINE int4& operator-=(int4& u, int4 const& v)
 {
   u = u - v;
   return u;
 }
 
-VV_FORCE_INLINE sse_veci& operator*=(sse_veci& u, sse_veci const& v)
+VV_FORCE_INLINE int4& operator*=(int4& u, int4 const& v)
 {
   u = u * v;
   return u;
 }
 
-VV_FORCE_INLINE sse_veci operator<(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 operator<(int4 const& u, int4 const& v)
 {
   return _mm_cmplt_epi32(u, v);
 }
 
-VV_FORCE_INLINE sse_veci operator>(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 operator>(int4 const& u, int4 const& v)
 {
   return _mm_cmpgt_epi32(u, v);
 }
 
-VV_FORCE_INLINE sse_veci operator<=(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 operator<=(int4 const& u, int4 const& v)
 {
   return _mm_or_si128(_mm_cmplt_epi32(u, v), _mm_cmpeq_epi32(u, v));
 }
 
-VV_FORCE_INLINE sse_veci operator>=(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 operator>=(int4 const& u, int4 const& v)
 {
   return _mm_or_si128(_mm_cmpgt_epi32(u, v), _mm_cmpeq_epi32(u, v));
 }
 
-VV_FORCE_INLINE sse_veci operator==(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 operator==(int4 const& u, int4 const& v)
 {
   return _mm_cmpeq_epi32(u, v);
 }
 
-VV_FORCE_INLINE sse_veci operator&&(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 operator&&(int4 const& u, int4 const& v)
 {
   return _mm_and_si128(u, v);
-}
-
-VV_FORCE_INLINE std::ostream& operator<<(std::ostream& out, sse_veci const& v)
-{
-  CACHE_ALIGN int vals[4];
-  store(v, vals);
-  out << vals[0] << " " << vals[1] << " " << vals[2] << " " << vals[3];
-  return out;
 }
 
 
 /* function analogs for cstdlib */
 
-VV_FORCE_INLINE sse_veci min(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 min(int4 const& u, int4 const& v)
 {
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_min_epi32(u, v);
@@ -187,7 +174,7 @@ VV_FORCE_INLINE sse_veci min(sse_veci const& u, sse_veci const& v)
 #endif
 }
 
-VV_FORCE_INLINE sse_veci max(sse_veci const& u, sse_veci const& v)
+VV_FORCE_INLINE int4 max(int4 const& u, int4 const& v)
 {
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_max_epi32(u, v);
@@ -197,8 +184,12 @@ VV_FORCE_INLINE sse_veci max(sse_veci const& u, sse_veci const& v)
 }
 
 
+} // simd
+
+
 } // math
 
 
 } // virvo
+
 

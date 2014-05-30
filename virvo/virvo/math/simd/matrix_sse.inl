@@ -12,17 +12,17 @@ namespace math
 
 
 template < >
-class Matrix< sse_vec >
+class Matrix< simd::float4 >
 {
 public:
 
-  typedef sse_vec row_type;
+  typedef simd::float4 row_type;
 
-  inline Matrix< sse_vec >()
+  inline Matrix< simd::float4 >()
   {
   }
 
-  inline Matrix< sse_vec >(virvo::Matrix const& m)
+  inline Matrix< simd::float4 >(virvo::Matrix const& m)
   {
     CACHE_ALIGN float row1[4];
     CACHE_ALIGN float row2[4];
@@ -60,13 +60,13 @@ public:
     return m;
   }
 
-  inline sse_vec row(size_t i) const
+  inline simd::float4 row(size_t i) const
   {
     assert(i < 4);
     return rows[i];
   }
 
-  inline void setRow(size_t i, sse_vec const& v)
+  inline void setRow(size_t i, simd::float4 const& v)
   {
     assert(i < 4);
     rows[i] = v;
@@ -74,18 +74,22 @@ public:
 
   void identity()
   {
-    rows[0] = sse_vec(1.0f, 0.0f, 0.0f, 0.0f);
-    rows[1] = sse_vec(0.0f, 1.0f, 0.0f, 0.0f);
-    rows[2] = sse_vec(0.0f, 0.0f, 1.0f, 0.0f);
-    rows[3] = sse_vec(0.0f, 0.0f, 0.0f, 1.0f);
+    using simd::float4;
+
+    rows[0] = float4(1.0f, 0.0f, 0.0f, 0.0f);
+    rows[1] = float4(0.0f, 1.0f, 0.0f, 0.0f);
+    rows[2] = float4(0.0f, 0.0f, 1.0f, 0.0f);
+    rows[3] = float4(0.0f, 0.0f, 0.0f, 1.0f);
   }
 
   void transpose()
   {
-    sse_vec tmp1 = _mm_unpacklo_ps(rows[0], rows[1]);
-    sse_vec tmp2 = _mm_unpacklo_ps(rows[2], rows[3]);
-    sse_vec tmp3 = _mm_unpackhi_ps(rows[0], rows[1]);
-    sse_vec tmp4 = _mm_unpackhi_ps(rows[2], rows[3]);
+    using simd::float4;
+
+    float4 tmp1 = _mm_unpacklo_ps(rows[0], rows[1]);
+    float4 tmp2 = _mm_unpacklo_ps(rows[2], rows[3]);
+    float4 tmp3 = _mm_unpackhi_ps(rows[0], rows[1]);
+    float4 tmp4 = _mm_unpackhi_ps(rows[2], rows[3]);
 
     rows[0] = _mm_movelh_ps(tmp1, tmp2);
     rows[1] = _mm_movehl_ps(tmp2, tmp1);
@@ -95,14 +99,17 @@ public:
 
   void invert()
   {
-    sse_vec cofactors[6];
+    using simd::float4;
+    using simd::shuffle;
 
-    sse_vec tmpa = shuffle<3, 3, 3, 3>(rows[3], rows[2]);
-    sse_vec tmpb = shuffle<2, 2, 2, 2>(rows[3], rows[2]);
-    sse_vec tmp0 = shuffle<2, 2, 2, 2>(rows[2], rows[1]);
-    sse_vec tmp1 = shuffle<0, 0, 0, 2>(tmpa, tmpa);
-    sse_vec tmp2 = shuffle<0, 0, 0, 2>(tmpb, tmpb);
-    sse_vec tmp3 = shuffle<3, 3, 3, 3>(rows[2], rows[1]);
+    float4 cofactors[6];
+
+    float4 tmpa = shuffle<3, 3, 3, 3>(rows[3], rows[2]);
+    float4 tmpb = shuffle<2, 2, 2, 2>(rows[3], rows[2]);
+    float4 tmp0 = shuffle<2, 2, 2, 2>(rows[2], rows[1]);
+    float4 tmp1 = shuffle<0, 0, 0, 2>(tmpa, tmpa);
+    float4 tmp2 = shuffle<0, 0, 0, 2>(tmpb, tmpb);
+    float4 tmp3 = shuffle<3, 3, 3, 3>(rows[2], rows[1]);
     cofactors[0] = tmp0 * tmp1 - tmp2 * tmp3;
 
     tmpa = shuffle<3, 3, 3, 3>(rows[3], rows[2]);
@@ -145,26 +152,26 @@ public:
     tmp3 = shuffle<1, 1, 1, 1>(rows[2], rows[1]);
     cofactors[5] = tmp0 * tmp1 - tmp2 * tmp3;
 
-    static sse_vec const& pmpm = sse_vec(1.0f, -1.0f, 1.0f, -1.0f);
-    static sse_vec const& mpmp = sse_vec(-1.0f, 1.0f, -1.0f, 1.0f);
+    static float4 const& pmpm = float4(1.0f, -1.0f, 1.0f, -1.0f);
+    static float4 const& mpmp = float4(-1.0f, 1.0f, -1.0f, 1.0f);
 
-    sse_vec r01 = shuffle<0, 0, 0, 0>(rows[1], rows[0]);
-    sse_vec v0 = shuffle<0, 2, 2, 2>(r01, r01);
-    sse_vec r10 = shuffle<1, 1, 1, 1>(rows[1], rows[0]);
-    sse_vec v1 = shuffle<0, 2, 2, 2>(r10, r10);
+    float4 r01 = shuffle<0, 0, 0, 0>(rows[1], rows[0]);
+    float4 v0 = shuffle<0, 2, 2, 2>(r01, r01);
+    float4 r10 = shuffle<1, 1, 1, 1>(rows[1], rows[0]);
+    float4 v1 = shuffle<0, 2, 2, 2>(r10, r10);
     r01 = shuffle<2, 2, 2, 2>(rows[1], rows[0]);
-    sse_vec v2 = shuffle<0, 2, 2, 2>(r01, r01);
+    float4 v2 = shuffle<0, 2, 2, 2>(r01, r01);
     r10 = shuffle<3, 3, 3, 3>(rows[1], rows[0]);
-    sse_vec v3 = shuffle<0, 2, 2, 2>(r10, r10);
+    float4 v3 = shuffle<0, 2, 2, 2>(r10, r10);
 
-    sse_vec inv0 = mpmp * ((v1 * cofactors[0] - v2 * cofactors[1]) + v3 * cofactors[3]);
-    sse_vec inv1 = pmpm * ((v0 * cofactors[0] - v2 * cofactors[3]) + v3 * cofactors[4]);
-    sse_vec inv2 = mpmp * ((v0 * cofactors[1] - v1 * cofactors[3]) + v3 * cofactors[5]);
-    sse_vec inv3 = pmpm * ((v0 * cofactors[2] - v1 * cofactors[4]) + v2 * cofactors[5]);
-    sse_vec r = shuffle<0, 2, 0, 2>(shuffle<0, 0, 0, 0>(inv0, inv1), shuffle<0, 0, 0, 0>(inv2, inv3));
+    float4 inv0 = mpmp * ((v1 * cofactors[0] - v2 * cofactors[1]) + v3 * cofactors[3]);
+    float4 inv1 = pmpm * ((v0 * cofactors[0] - v2 * cofactors[3]) + v3 * cofactors[4]);
+    float4 inv2 = mpmp * ((v0 * cofactors[1] - v1 * cofactors[3]) + v3 * cofactors[5]);
+    float4 inv3 = pmpm * ((v0 * cofactors[2] - v1 * cofactors[4]) + v2 * cofactors[5]);
+    float4 r = shuffle<0, 2, 0, 2>(shuffle<0, 0, 0, 0>(inv0, inv1), shuffle<0, 0, 0, 0>(inv2, inv3));
 
-    sse_vec det = dot(rows[0], r);
-    sse_vec recipr = rcp<1>(det);
+    float4 det = dot(rows[0], r);
+    float4 recipr = simd::rcp<1>(det);
 
     rows[0] = inv0 * recipr;
     rows[1] = inv1 * recipr;
@@ -172,15 +179,18 @@ public:
     rows[3] = inv3 * recipr;
   }
 private:
-  row_type rows[4];
+  simd::float4 rows[4];
 };
 
-inline Matrix< sse_vec > operator*(Matrix< sse_vec > const& m, Matrix< sse_vec > const& n)
+inline Matrix< simd::float4 > operator*(Matrix< simd::float4 > const& m, Matrix< simd::float4 > const& n)
 {
-  Matrix< sse_vec > result;
+  using simd::float4;
+  using simd::shuffle;
+
+  Matrix< simd::float4 > result;
   for (size_t i = 0; i < 4; ++i)
   {
-    sse_vec row = shuffle<0, 0, 0, 0>(m.row(i)) * n.row(0);
+    float4 row = shuffle<0, 0, 0, 0>(m.row(i)) * n.row(0);
     row += shuffle<1, 1, 1, 1>(m.row(i)) * n.row(1);
     row += shuffle<2, 2, 2, 2>(m.row(i)) * n.row(2);
     row += shuffle<3, 3, 3, 3>(m.row(i)) * n.row(3);
@@ -189,23 +199,23 @@ inline Matrix< sse_vec > operator*(Matrix< sse_vec > const& m, Matrix< sse_vec >
   return result;
 }
 
-inline vector< 4, sse_vec > operator*(Matrix< sse_vec > const& m, vector< 4, sse_vec > const& v)
+inline vector< 4, simd::float4 > operator*(Matrix< simd::float4 > const& m, vector< 4, simd::float4 > const& v)
 {
-  Matrix< sse_vec > tmp;
+  Matrix< simd::float4 > tmp;
   tmp.setRow(0, v.x);
   tmp.setRow(1, v.y);
   tmp.setRow(2, v.z);
   tmp.setRow(3, v.w);
-  Matrix< sse_vec > res = m * tmp;
-  return vector< 4, sse_vec >(res.row(0), res.row(1), res.row(2), res.row(3));
+  Matrix< simd::float4 > res = m * tmp;
+  return vector< 4, simd::float4 >(res.row(0), res.row(1), res.row(2), res.row(3));
 }
 
 
-inline vector< 3, sse_vec > operator*(Matrix< sse_vec > const& m, vector< 3, sse_vec > const& v)
+inline vector< 3, simd::float4 > operator*(Matrix< simd::float4 > const& m, vector< 3, simd::float4 > const& v)
 {
-  vector< 4, sse_vec > tmp(v[0], v[1], v[2], 1);
-  vector< 4, sse_vec > res = m * tmp;
-  return vector< 3, sse_vec >(res[0] / res[3], res[1] / res[3], res[2] / res[3]);
+  vector< 4, simd::float4 > tmp(v[0], v[1], v[2], 1);
+  vector< 4, simd::float4 > res = m * tmp;
+  return vector< 3, simd::float4 >(res[0] / res[3], res[1] / res[3], res[2] / res[3]);
 }
 
 

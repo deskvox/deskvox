@@ -96,13 +96,13 @@ set(VIRVO_HEADERS
   math/detail/vector.inl
   math/detail/vector3.inl
   math/detail/vector4.inl
+  math/simd/mask.h
   math/simd/vec.h
   math/simd/veci.h
   math/simd/intrinsics.h
   math/simd/matrix_sse.inl
   math/aabb.h
   math/forward.h
-  math/mask.h
   math/matrix.h
   math/matrix.inl
   math/math.h
