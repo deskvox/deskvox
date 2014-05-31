@@ -2,6 +2,8 @@
 
 #include "vector.h"
 
+#include <cassert>
+
 
 namespace virvo
 {
@@ -17,16 +19,18 @@ public:
 
     typedef vector< 4, float > row_type;
 
-    inline Matrix< row_type >()
+    inline Matrix()
     {
     }
 
-    inline Matrix< row_type >(virvo::Matrix const& m)
+    inline Matrix(float* data)
     {
-        m.getRow(0, &rows[0][0], &rows[0][1], &rows[0][2], &rows[0][3]);
-        m.getRow(1, &rows[1][0], &rows[1][1], &rows[1][2], &rows[1][3]);
-        m.getRow(2, &rows[2][0], &rows[2][1], &rows[2][2], &rows[2][3]);
-        m.getRow(3, &rows[3][0], &rows[3][1], &rows[3][2], &rows[3][3]);
+
+        rows[0] = row_type( &data[ 0] );
+        rows[1] = row_type( &data[ 4] );
+        rows[2] = row_type( &data[ 8] );
+        rows[3] = row_type( &data[12] );
+        
     }
 
     inline row_type row(size_t i) const

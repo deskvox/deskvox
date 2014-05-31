@@ -36,6 +36,9 @@
 #include <queue>
 #include <sstream>
 
+namespace math = virvo::math;
+
+
 struct vvParBrickRend::Thread
 {
   Thread()
@@ -290,8 +293,7 @@ void vvParBrickRend::renderVolumeGL()
     invMV.invert();
 
     // find eye position:
-    vvVector3 eye;
-    getEyePosition(&eye);
+    math::vec3f eye = getEyePosition();
 
     // bsp tree maintains boxes in voxel coordinates
     vvssize3 veye = vd->voxelCoords(eye);

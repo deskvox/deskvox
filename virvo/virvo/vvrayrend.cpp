@@ -35,6 +35,8 @@
 #include "cuda/texture.h"
 #include "cuda/utils.h"
 
+#include "math/math.h"
+
 #include "vvcudaimg.h"
 #include "vvdebugmsg.h"
 #include "vvvoldesc.h"
@@ -44,6 +46,7 @@
 
 namespace cu = virvo::cuda;
 namespace gl = virvo::gl;
+namespace math = virvo::math;
 
 
 // in vvrayrend.cu
@@ -249,15 +252,15 @@ void vvRayRend::renderVolumeGL()
     return;
   }
 
-  const vvVector3 size(vd->getSize());
+  math::vec3f size = vd->getSize();
 
-  vvVector3 probePosObj;
-  vvVector3 probeSizeObj;
-  vvVector3 probeMin;
-  vvVector3 probeMax;
+  math::vec3f probePosObj;
+  math::vec3f probeSizeObj;
+  math::vec3f probeMin;
+  math::vec3f probeMax;
   calcProbeDims(probePosObj, probeSizeObj, probeMin, probeMax);
 
-  vvVector3 clippedProbeSizeObj = probeSizeObj;
+  math::vec3f clippedProbeSizeObj = probeSizeObj;
   for (int i=0; i<3; ++i)
   {
     if (clippedProbeSizeObj[i] < vd->getSize()[i])
@@ -268,7 +271,7 @@ void vvRayRend::renderVolumeGL()
 
   if (_isROIUsed && !_sphericalROI)
   {
-    drawBoundingBox(probeSizeObj, _roiPos, _probeColor);
+    drawBoundingBox(probeSizeObj, roi_pos_, _probeColor);
   }
 
   const float diagonalVoxels = sqrtf(float(vd->vox[0] * vd->vox[0] +
@@ -303,8 +306,7 @@ void vvRayRend::renderVolumeGL()
   {
     probePos = make_float3(probePosObj[0],  probePosObj[1], probePosObj[2]);
   }
-  vvVector3 sz = vd->getSize();
-  const float3 volSize = make_float3(sz[0], sz[1], sz[2]);
+  const float3 volSize = make_float3(size[0], size[1], size[2]);
   float3 probeSize = make_float3(probeSizeObj[0], probeSizeObj[1], probeSizeObj[2]);
   if (_sphericalROI)
   {
@@ -315,10 +317,7 @@ void vvRayRend::renderVolumeGL()
 
   const bool isOrtho = pr.isProjOrtho();
 
-  vvVector3 eye;
-  getEyePosition(&eye);
-
-  vvVector3 origin;
+  math::vec3f eye = getEyePosition();
 
   // use GL_LIGHT0 for local lighting
   GLfloat lv[4];
@@ -337,23 +336,24 @@ void vvRayRend::renderVolumeGL()
   LposEye.multiply(invMv);
   const float3 Lpos = make_float3(LposEye[0], LposEye[1], LposEye[2]);
 
-  vvVector3 normal;
+  math::vec3f normal;
+  math::vec3f origin;
   getShadingNormal(normal, origin, eye, invMv, isOrtho);
 
   // viewing direction equals normal direction
   const float3 V = make_float3(normal[0], normal[1], normal[2]);
 
   // Clip sphere.
-  const float3 center = make_float3(_clipSphereCenter[0], _clipSphereCenter[1], _clipSphereCenter[2]);
+  const float3 center = make_float3(clip_sphere_center_[0], clip_sphere_center_[1], clip_sphere_center_[2]);
   const float radius  = _clipSphereRadius;
 
   // Clip plane.
-  const float3 pnormal = normalize(make_float3(_clipPlaneNormal[0], _clipPlaneNormal[1], _clipPlaneNormal[2]));
-  const float pdist = (-_clipPlaneNormal).dot(_clipPlanePoint);
+  const float3 pnormal = normalize( make_float3(clip_plane_normal_[0], clip_plane_normal_[1], clip_plane_normal_[2]) );
+  const float pdist = dot( -clip_plane_normal_, clip_plane_point_ );
 
   if (_clipMode == 1 && _clipPlanePerimeter)
   {
-    drawPlanePerimeter(size, vd->pos, _clipPlanePoint, _clipPlaneNormal, _clipPlaneColor);
+    drawPlanePerimeter(size, vd->pos, clip_plane_point_, clip_plane_normal_, _clipPlaneColor);
   }
 
   GLfloat bgcolor[4];
@@ -415,7 +415,7 @@ void vvRayRend::renderVolumeGL()
                     pdist,
                     deviceDepth,
                     8 * getPixelSize(rt->depthFormat()),
-                    make_float2(_depthRange[0], _depthRange[1]),
+                    make_float2(depth_range_[0], depth_range_[1]),
                     getIbrMode(_ibrMode),
                     _twoPassIbr
                     );

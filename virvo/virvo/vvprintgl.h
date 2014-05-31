@@ -21,8 +21,8 @@
 #ifndef VV_PRINTGL_H
 #define VV_PRINTGL_H
 
+#include "math/math.h"
 #include "vvexport.h"
-#include "vvvecmath.h"
 
 //============================================================================
 // Class Definition
@@ -35,14 +35,14 @@
 class VIRVOEXPORT vvPrintGL
 {
   private:
-    vvVector4 _fontColor;
+    virvo::math::vec4f font_color_;
 
   public:
     vvPrintGL();
     virtual ~vvPrintGL();
     void print(const float, const float, const char *, ...);
 
-    void setFontColor(const vvVector4& fontColor);
+    void setFontColor(virvo::math::vec4f const& fontColor);
 };
 #endif
 

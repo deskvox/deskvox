@@ -22,7 +22,17 @@ public:
   {
   }
 
-  inline Matrix< simd::float4 >(virvo::Matrix const& m)
+    inline Matrix(float* data)
+    {
+
+        rows[0] = row_type( &data[ 0] );
+        rows[1] = row_type( &data[ 4] );
+        rows[2] = row_type( &data[ 8] );
+        rows[3] = row_type( &data[12] );
+
+    }
+
+/*  inline Matrix< simd::float4 >(virvo::Matrix const& m)
   {
     VV_ALIGN(16) float row1[4];
     VV_ALIGN(16) float row2[4];
@@ -58,7 +68,7 @@ public:
     m.setRow(2, row3[0], row3[1], row3[2], row3[3]);
     m.setRow(3, row4[0], row4[1], row4[2], row4[3]);
     return m;
-  }
+  } */
 
   inline simd::float4 row(size_t i) const
   {

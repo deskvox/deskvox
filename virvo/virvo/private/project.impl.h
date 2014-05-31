@@ -8,7 +8,7 @@ namespace virvo
 {
 
 
-inline void project(Vec3* win, Vec3 const& obj, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
+inline void project(math::vec3f* win, math::vec3f const& obj, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
 {
 
   Vec4 u(obj, 1.0);
@@ -27,7 +27,7 @@ inline void project(Vec3* win, Vec3 const& obj, Matrix const& modelview, Matrix 
 }
 
 
-inline void unproject(Vec3* obj, Vec3 const& win, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
+inline void unproject(math::vec3f* obj, math::vec3f const& win, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
 {
 
   Vec4 u
@@ -65,7 +65,7 @@ Recti bounds(vvBaseAABB< T > const& aabb, Matrix const& modelview, Matrix const&
   for (size_t i = 0; i < 8; ++i)
   {
 
-    Vec3 win;
+    math::vec3f win;
     project(&win, vertices[i], modelview, projection, viewport);
 
     minx = std::min(win[0], minx);

@@ -20,12 +20,16 @@
 
 #include "vvremoteclient.h"
 
+#include "math/math.h"
+#include "math/serialization.h"
 #include "private/vvgltools.h"
 #include "private/vvmessages.h"
 #include "vvvoldesc.h"
 
 using virvo::makeMessage;
 using virvo::Message;
+
+namespace math = virvo::math;
 
 vvRemoteClient::vvRemoteClient(vvRenderer::RendererType type, vvVolDesc *vd, vvRenderState renderState,
         virvo::ConnectionPointer conn, const std::string& /*filename*/)
@@ -84,7 +88,7 @@ void vvRemoteClient::setCurrentFrame(size_t index)
     vvRenderer::setCurrentFrame(index);
 }
 
-void vvRemoteClient::setObjectDirection(const vvVector3& od)
+void vvRemoteClient::setObjectDirection(math::vec3f const& od)
 {
     if (conn_)
         conn_->write(makeMessage(Message::ObjectDirection, od));
@@ -92,7 +96,7 @@ void vvRemoteClient::setObjectDirection(const vvVector3& od)
     vvRenderer::setObjectDirection(od);
 }
 
-void vvRemoteClient::setViewingDirection(const vvVector3& vd)
+void vvRemoteClient::setViewingDirection(math::vec3f const& vd)
 {
     if (conn_)
         conn_->write(makeMessage(Message::ViewingDirection, vd));
@@ -100,7 +104,7 @@ void vvRemoteClient::setViewingDirection(const vvVector3& vd)
     vvRenderer::setViewingDirection(vd);
 }
 
-void vvRemoteClient::setPosition(const vvVector3& p)
+void vvRemoteClient::setPosition(math::vec3f const& p)
 {
     if (conn_)
         conn_->write(makeMessage(Message::Position, p));

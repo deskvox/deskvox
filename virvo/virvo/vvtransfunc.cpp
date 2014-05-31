@@ -29,6 +29,7 @@
 #define new new(_NORMAL_BLOCK,__FILE__, __LINE__)
 #endif
 
+#include "math/math.h"
 #include "vvdebugmsg.h"
 #include "vvvecmath.h"
 #include "vvtransfunc.h"
@@ -42,6 +43,9 @@
 using std::cerr;
 using std::endl;
 using std::list;
+
+namespace math = virvo::math;
+
 
 //----------------------------------------------------------------------------
 /// Constructor
@@ -385,36 +389,36 @@ float vvTransFunc::computeOpacity(float x, float y, float z)
                Space for w*h*d*4 float values must be provided.
  @param min,max min/max values to create texture for               
 */
-void vvTransFunc::computeTFTexture(int w, int h, int d, float* array, 
+void vvTransFunc::computeTFTexture(size_t w, size_t h, size_t d, float* array, 
   float minX, float maxX, float minY, float maxY, float minZ, float maxZ,
   vvToolshed::Format format)
 {
   assert(format == vvToolshed::VV_RGBA || format == vvToolshed::VV_ARGB || format == vvToolshed::VV_BGRA);
 
-  vvVector4i mask;
+  math::vec4i mask;
 
   if (format == vvToolshed::VV_ARGB)
   {
-    mask = vvVector4i(1, 2, 3, 0);
+    mask = math::vec4i(1, 2, 3, 0);
   }
   else if (format == vvToolshed::VV_RGBA)
   {
-    mask = vvVector4i(0, 1, 2, 3);
+    mask = math::vec4i(0, 1, 2, 3);
   }
   else if (format == vvToolshed::VV_BGRA)
   {
-    mask = vvVector4i(2, 1, 0, 3);
+    mask = math::vec4i(2, 1, 0, 3);
   }
 
-  vvVector3f norm;    // normalized 3D position
+  math::vec3f norm;    // normalized 3D position
   int index = 0;
-  for (int z=0; z<d; ++z)
+  for (size_t z=0; z<d; ++z)
   {
     norm[2] = (d==1) ? -1.0f : ((float(z) / float(d-1)) * (maxZ - minZ) + minZ);
-    for (int y=0; y<h; ++y)
+    for (size_t y=0; y<h; ++y)
     {
       norm[1] = (h==1) ? -1.0f : ((float(y) / float(h-1)) * (maxY - minY) + minY);
-      for (int x=0; x<w; ++x)
+      for (size_t x=0; x<w; ++x)
       {
         norm[0] = (float(x) / float(w-1)) * (maxX - minX) + minX;
         vvColor col = computeColor(norm[0], norm[1], norm[2]);
@@ -513,19 +517,19 @@ void vvTransFunc::makeColorBar(int width, uchar* colors, float min, float max, b
   rgba.resize(width * 4);
   computeTFTexture(width, 1, 1, &rgba[0], min, max, 0.0f, 0.0f, 0.0f, 0.0f, format);
 
-  vvVector4i mask;
+  math::vec4i mask;
 
   if (format == vvToolshed::VV_ARGB)
   {
-    mask = vvVector4i(1, 0, 0, 0);
+    mask = math::vec4i(1, 0, 0, 0);
   }
   else if (format == vvToolshed::VV_RGBA)
   {
-    mask = vvVector4i(0, 0, 0, 1);
+    mask = math::vec4i(0, 0, 0, 1);
   }
   else if (format == vvToolshed::VV_BGRA)
   {
-    mask = vvVector4i(0, 0, 0, 1);
+    mask = math::vec4i(0, 0, 0, 1);
   }
 
   // Convert to uchar:
@@ -567,19 +571,19 @@ void vvTransFunc::makeAlphaTexture(int width, int height, uchar* texture, float 
   computeTFTexture(width, 1, 1, &rgba[0], min, max);
   memset(texture, 0, width * height * RGBA); // make black and transparent
 
-  vvVector4i mask;
+  math::vec4i mask;
 
   if (format == vvToolshed::VV_ARGB)
   {
-    mask = vvVector4i(1, 2, 3, 0);
+    mask = math::vec4i(1, 2, 3, 0);
   }
   else if (format == vvToolshed::VV_RGBA)
   {
-    mask = vvVector4i(0, 1, 2, 3);
+    mask = math::vec4i(0, 1, 2, 3);
   }
   else if (format == vvToolshed::VV_BGRA)
   {
-    mask = vvVector4i(2, 1, 0, 3);
+    mask = math::vec4i(2, 1, 0, 3);
   }
   
 

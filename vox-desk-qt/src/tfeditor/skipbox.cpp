@@ -20,16 +20,20 @@
 
 #include "skipbox.h"
 
+#include <virvo/math/math.h>
 #include <virvo/vvmacros.h>
 
 #include "ui_skipbox.h"
+
+namespace math = virvo::math;
+
 
 struct tf::SkipBox::Impl
 {
   Impl() : ui(new Ui_SkipBox) {}
 
   std::auto_ptr<Ui_SkipBox> ui;
-  vvVector3 size;
+  math::vec3f size;
 
 private:
 
@@ -50,7 +54,7 @@ tf::SkipBox::~SkipBox()
 {
 }
 
-void tf::SkipBox::setSize(const vvVector3& size)
+void tf::SkipBox::setSize(math::vec3f const& size)
 {
   impl->size = size;
   impl->ui->widthLabel->setText(tr("Width: ") + QString::number(size[0]));

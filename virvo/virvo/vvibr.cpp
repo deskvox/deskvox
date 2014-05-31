@@ -18,41 +18,55 @@
 // License along with this library (see license.txt); if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+#include "math/math.h"
 #include "vvibr.h"
+
+namespace math = virvo::math;
+
 
 void vvIbr::calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
                            const vvAABB& aabb, float& minval, float& maxval)
 {
-  vvVector4 center4(aabb.getCenter()[0], aabb.getCenter()[1], aabb.getCenter()[2], 1.0f);
-  vvVector4 min4(aabb.getMin()[0], aabb.getMin()[1], aabb.getMin()[2], 1.0f);
-  vvVector4 max4(aabb.getMax()[0], aabb.getMax()[1], aabb.getMax()[2], 1.0f);
+  math::vec4f center4(aabb.getCenter()[0], aabb.getCenter()[1], aabb.getCenter()[2], 1.0f);
+  math::vec4f min4(aabb.getMin()[0], aabb.getMin()[1], aabb.getMin()[2], 1.0f);
+  math::vec4f max4(aabb.getMax()[0], aabb.getMax()[1], aabb.getMax()[2], 1.0f);
 
-  center4.multiply(mv);
-  min4.multiply(mv);
-  max4.multiply(mv);
+  vvVector4 tmp( center4 );     // TODO
+  tmp.multiply(mv);
+  center4 = tmp;                // TODO
+  tmp = vvVector4( min4 );      // TODO
+  tmp.multiply(mv);
+  min4 = tmp;                   // TODO
+  tmp = vvVector4( max4 );      // TODO
+  tmp.multiply(mv);
+  max4 = tmp;                   // TODO
 
-  vvVector3 center(center4[0], center4[1], center4[2]);
-  vvVector3 min3(min4[0], min4[1], min4[2]);
-  vvVector3 max3(max4[0], max4[1], max4[2]);
+  math::vec3f center(center4[0], center4[1], center4[2]);
+  math::vec3f min3(min4[0], min4[1], min4[2]);
+  math::vec3f max3(max4[0], max4[1], max4[2]);
 
-  float radius = (max3 - min3).length() * 0.5f;
+  float radius = length(max3 - min3) * 0.5f;
 
   // Depth buffer of ibrPlanes
-  vvVector3 scal(center);
-  scal.normalize();
-  scal.scale(radius);
+  math::vec3f scal(center);
+  scal = normalize(scal) * radius;
   min3 = center - scal;
   max3 = center + scal;
 
-  min4 = vvVector4(min3, 1.f);
-  max4 = vvVector4(max3, 1.f);
-  min4.multiply(pr);
-  max4.multiply(pr);
-  min4.perspectiveDivide();
-  max4.perspectiveDivide();
+  min4 = math::vec4f(min3, 1.f);
+  max4 = math::vec4f(max3, 1.f);
 
-  minval = (min4[2]+1.f) * 0.5f;
-  maxval = (max4[2]+1.f) * 0.5f;
+  tmp = vvVector4( min4 );      // TODO
+  tmp.multiply(pr);
+  min4 = tmp;                   // TODO
+  tmp = vvVector4( max4 );      // TODO
+  tmp.multiply(pr);
+  max4 = tmp;                   // TODO
+  min3 = min4.xyz() / min4.w;
+  max3 = max4.xyz() / max4.w;
+
+  minval = (min3[2]+1.f) * 0.5f;
+  maxval = (max3[2]+1.f) * 0.5f;
 }
 
 vvMatrix vvIbr::calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,

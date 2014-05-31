@@ -22,9 +22,13 @@
 
 #include "ui_pyramidbox.h"
 
+#include <virvo/math/math.h>
 #include <virvo/vvmacros.h>
 
 #include <QColorDialog>
+
+namespace math = virvo::math;
+
 
 struct tf::PyramidBox::Impl
 {
@@ -33,8 +37,8 @@ struct tf::PyramidBox::Impl
   std::auto_ptr<Ui::PyramidBox> ui;
   bool hascolor;
   vvColor color;
-  vvVector3 top;
-  vvVector3 bottom;
+  math::vec3f top;
+  math::vec3f bottom;
   float opacity;
 
 private:
@@ -71,14 +75,14 @@ void tf::PyramidBox::setColor(const vvColor& color)
   impl->color = color;
 }
 
-void tf::PyramidBox::setTop(const vvVector3& top)
+void tf::PyramidBox::setTop(math::vec3f const& top)
 {
   impl->top = top;
   impl->ui->topSlider->setValue(top[0] * impl->ui->topSlider->maximum() * 0.5f);
   impl->ui->topLabel->setText(tr("Top width X: ") + QString::number(top[0]));
 }
 
-void tf::PyramidBox::setBottom(const vvVector3& bottom)
+void tf::PyramidBox::setBottom(math::vec3f const& bottom)
 {
   impl->bottom = bottom;
   impl->ui->bottomSlider->setValue(bottom[0] * impl->ui->bottomSlider->maximum() * 0.5f);

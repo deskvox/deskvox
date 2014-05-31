@@ -26,6 +26,9 @@
 
 #include "private/vvgltools.h"
 
+namespace math = virvo::math;
+
+
 vvSerBrickRend::vvSerBrickRend(vvVolDesc *vd, vvRenderState renderState, size_t numBricks,
                                const std::string& type, const vvRendererFactory::Options& options)
   : vvBrickRend(vd, renderState, numBricks, type, options)
@@ -62,8 +65,7 @@ void vvSerBrickRend::renderVolumeGL()
     invMV.invert();
 
     // find eye position:
-    vvVector3 eye;
-    getEyePosition(&eye);
+    math::vec3f eye = getEyePosition();
 
     // bsp tree maintains boxes in voxel coordinates
     vvssize3 veye = vd->voxelCoords(eye);

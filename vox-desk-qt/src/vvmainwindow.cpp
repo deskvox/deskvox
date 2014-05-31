@@ -253,8 +253,8 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(impl_->tfDialog, SIGNAL(newTransferFunction()), impl_->sliceViewer, SLOT(update()));
 
   connect(impl_->clipDialog, SIGNAL(clipping(bool)), impl_->canvas, SLOT(enableClipping(bool)));
-  connect(impl_->clipDialog, SIGNAL(normal(virvo::Vec3 const&)), impl_->canvas, SLOT(setClipNormal(virvo::Vec3 const&)));
-  connect(impl_->clipDialog, SIGNAL(origin(virvo::Vec3 const&)), impl_->canvas, SLOT(setClipOrigin(virvo::Vec3 const&)));
+  connect(impl_->clipDialog, SIGNAL(normal(virvo::math::vec3f const&)), impl_->canvas, SLOT(setClipNormal(virvo::math::vec3f const&)));
+  connect(impl_->clipDialog, SIGNAL(origin(virvo::math::vec3f const&)), impl_->canvas, SLOT(setClipOrigin(virvo::math::vec3f const&)));
   connect(impl_->clipDialog, SIGNAL(singleSlice(bool)), impl_->canvas, SLOT(setClipSingleSlice(bool)));
   connect(impl_->clipDialog, SIGNAL(opaque(bool)), impl_->canvas, SLOT(setClipOpaque(bool)));
   connect(impl_->clipDialog, SIGNAL(perimeter(bool)), impl_->canvas, SLOT(setClipPerimeter(bool)));
@@ -263,7 +263,7 @@ vvMainWindow::vvMainWindow(const QString& filename, QWidget* parent)
   connect(impl_->lightDialog, SIGNAL(showLightSource(bool)), impl_->canvas, SLOT(showLightSource(bool)));
   connect(impl_->lightDialog, SIGNAL(enableHeadlight(bool)), impl_->canvas, SLOT(enableHeadlight(bool)));
   connect(impl_->lightDialog, SIGNAL(editPositionToggled(bool)), impl_->canvas, SLOT(editLightPosition(bool)));
-  connect(impl_->lightDialog, SIGNAL(attenuationChanged(const vvVector3&)), impl_->canvas, SLOT(setLightAttenuation(const vvVector3&)));
+  connect(impl_->lightDialog, SIGNAL(attenuationChanged(virvo::math::vec3f const&)), impl_->canvas, SLOT(setLightAttenuation(virvo::math::vec3f const&)));
 
   connect(impl_->canvas, SIGNAL(newVolDesc(vvVolDesc*)), impl_->volInfoDialog, SLOT(onNewVolDesc(vvVolDesc*)));
   connect(impl_->canvas, SIGNAL(newVolDesc(vvVolDesc*)), impl_->sliceViewer, SLOT(onNewVolDesc(vvVolDesc*)));

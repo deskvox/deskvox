@@ -39,6 +39,9 @@
 #include <sstream>
 #include <string>
 
+namespace math = virvo::math;
+
+
 //----------------------------------------------------------------------------
 /** Constructor
  @param sock ready to use socket of type vvSocket
@@ -953,11 +956,8 @@ vvSocket::ErrorType vvSocketIO::getFloat(float& val) const
   }
 }
 
-//----------------------------------------------------------------------------
-/** Writes a vvVector3 to the socket.
- @param val  the vvVector3.
-*/
-vvSocket::ErrorType vvSocketIO::putVector3(const vvVector3& val) const
+
+vvSocket::ErrorType vvSocketIO::putVector3(math::vec3f const& val) const
 {
   if(_socket)
   {
@@ -973,11 +973,8 @@ vvSocket::ErrorType vvSocketIO::putVector3(const vvVector3& val) const
   }
 }
 
-//----------------------------------------------------------------------------
-/** Reads a vvVector3 from the socket.
- @param val  the vvVector3.
-*/
-vvSocket::ErrorType vvSocketIO::getVector3(vvVector3& val) const
+
+vvSocket::ErrorType vvSocketIO::getVector3(math::vec3f& val) const
 {
   if(_socket)
   {
@@ -1000,11 +997,8 @@ vvSocket::ErrorType vvSocketIO::getVector3(vvVector3& val) const
   }
 }
 
-//----------------------------------------------------------------------------
-/** Writes a vvVector4 to the socket.
- @param val  the vvVector4.
-*/
-vvSocket::ErrorType vvSocketIO::putVector4(const vvVector4& val) const
+
+vvSocket::ErrorType vvSocketIO::putVector4(math::vec4f const& val) const
 {
   if(_socket)
   {
@@ -1021,11 +1015,8 @@ vvSocket::ErrorType vvSocketIO::putVector4(const vvVector4& val) const
   }
 }
 
-//----------------------------------------------------------------------------
-/** Reads a vvVector4 from the socket.
- @param val  the vvVector4.
-*/
-vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val) const
+
+vvSocket::ErrorType vvSocketIO::getVector4(math::vec4f& val) const
 {
   if(_socket)
   {
@@ -1051,12 +1042,12 @@ vvSocket::ErrorType vvSocketIO::getVector4(vvVector4& val) const
 
 vvSocket::ErrorType vvSocketIO::putColor(const vvColor& val) const
 {
-  return putVector3(vvVector3(val[0], val[1], val[2]));
+  return putVector3(math::vec3f(val[0], val[1], val[2]));
 }
 
 vvSocket::ErrorType vvSocketIO::getColor(vvColor& val) const
 {
-  vvVector3 clr;
+  math::vec3f clr;
   vvSocket::ErrorType err = getVector3(clr);
 
   if (err == vvSocket::VV_OK)

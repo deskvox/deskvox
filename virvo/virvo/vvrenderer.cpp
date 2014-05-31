@@ -43,6 +43,9 @@
 #include "private/vvgltools.h"
 #include "private/vvlog.h"
 
+namespace math = virvo::math;
+
+
 //----------------------------------------------------------------------------
 vvRenderState::vvRenderState()
   : _quality(1.0f)
@@ -54,17 +57,17 @@ vvRenderState::vvRenderState()
   , _palette(false)
   , _qualityDisplay(false)
   , _clipMode(0)
-  , _clipPlanePoint(vvVector3(0.0f, 0.0f, 0.0f))
-  , _clipPlaneNormal(vvVector3(0.0f, 0.0f, 1.0f))
+  , clip_plane_point_(math::vec3f(0.0f, 0.0f, 0.0f))
+  , clip_plane_normal_(math::vec3f(0.0f, 0.0f, 1.0f))
   , _clipPlanePerimeter(true)
   , _clipPlaneColor(vvColor(1.0f, 1.0f, 1.0f))
-  , _clipSphereCenter(vvVector3(0.0f, 0.0f, 0.0f))
+  , clip_sphere_center_(math::vec3f(0.0f, 0.0f, 0.0f))
   , _clipSphereRadius(100.0f)
   , _clipSingleSlice(false)
   , _clipOpaque(false)
   , _isROIUsed(false)
-  , _roiPos(vvVector3(0.0f, 0.0f, 0.0f))
-  , _roiSize(vvVector3(0.5f, 0.5f, 0.5f))
+  , roi_pos_(math::vec3f(0.0f, 0.0f, 0.0f))
+  , roi_size_(math::vec3f(0.5f, 0.5f, 0.5f))
   , _sphericalROI(false)
   , _brickSize(vvsize3(0, 0, 0))
   , _maxBrickSize(vvsize3(64, 64, 64))
@@ -74,7 +77,7 @@ vvRenderState::vvRenderState()
   , _texMemorySize(0)
   , _fpsDisplay(false)
   , _gammaCorrection(false)
-  , _gamma(vvVector4(1.0f, 1.0f, 1.0f, 1.0f))
+  , gamma_(math::vec4f(1.0f, 1.0f, 1.0f, 1.0f))
   , _opacityWeights(false)
   , _boundColor(vvColor(1.0f, 1.0f, 1.0f))
   , _probeColor(vvColor(1.0f, 1.0f, 1.0f))
@@ -92,7 +95,7 @@ vvRenderState::vvRenderState()
   , _earlyRayTermination(true)
   , _preIntegration(false)
   , _depthPrecision(8)
-  , _depthRange(0.0f, 0.0f)
+  , depth_range_(0.0f, 0.0f)
 {
   
 }
@@ -203,26 +206,25 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     _paddingRegion = value;
     break;
   case VV_CLIP_PLANE_POINT:
-    _clipPlanePoint = value;
+    clip_plane_point_ = value;
     break;
   case VV_CLIP_PLANE_NORMAL:
-    _clipPlaneNormal = value;
-    _clipPlaneNormal.normalize();
-    if(_clipPlaneNormal.length() < 0.5)
+    clip_plane_normal_ = value;
+    clip_plane_normal_ = math::normalize( clip_plane_normal_ );
+    if ( math::length(clip_plane_normal_) < 0.5f )
     {
-        _clipPlaneNormal.set(0,0,1);
+        clip_plane_normal_ = math::vec3f(0.0f, 0.0f, 1.0f);
     }
-    
     break;
   case VV_CLIP_COLOR:
     _clipPlaneColor = value;
     break;
   case VV_ROI_POS:
-    _roiPos = value;
+    roi_pos_ = value;
     _isROIChanged = true;
     break;
   case VV_ROI_SIZE:
-    _roiSize = value;
+    roi_size_ = value;
     _isROIChanged = true;
     break;
   case VV_BRICK_SIZE:
@@ -238,7 +240,7 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     _probeColor = value;
     break;
   case VV_GAMMA:
-    _gamma = value;
+    gamma_ = value;
     break;
   case VV_LIGHTING:
     _lighting = value;
@@ -259,7 +261,7 @@ void vvRenderState::setParameter(ParameterType param, const vvParam& value)
     _depthPrecision = value;
     break;
   case VV_IBR_DEPTH_RANGE:
-    _depthRange = value;
+    depth_range_ = value;
     break;
   default:
     break;
@@ -327,15 +329,15 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_PADDING_REGION:
     return _paddingRegion;
   case VV_CLIP_PLANE_POINT:
-    return _clipPlanePoint;
+    return clip_plane_point_;
   case VV_CLIP_PLANE_NORMAL:
-    return _clipPlaneNormal;
+    return clip_plane_normal_;
   case VV_CLIP_COLOR:
     return _clipPlaneColor;
   case VV_ROI_SIZE:
-    return _roiSize;
+    return roi_size_;
   case VV_ROI_POS:
-    return _roiPos;
+    return roi_pos_;
   case VV_BRICK_SIZE:
     return _brickSize;
   case VV_MAX_BRICK_SIZE:
@@ -345,7 +347,7 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_PROBE_COLOR:
     return _probeColor;
   case VV_GAMMA:
-    return _gamma;
+    return gamma_;
   case VV_SHOW_BRICKS:
     return _showBricks;
   case VV_COMPUTE_BRICK_SIZE:
@@ -363,7 +365,7 @@ vvParam vvRenderState::getParameter(ParameterType param) const
   case VV_IBR_DEPTH_PREC:
     return _depthPrecision;
   case VV_IBR_DEPTH_RANGE:
-    return _depthRange;
+    return depth_range_;
   default:
     return vvParam();
   }
@@ -378,6 +380,8 @@ vvParam vvRenderState::getParameter(ParameterType param) const
 */
 vvRenderer::vvRenderer(vvVolDesc* voldesc, vvRenderState renderState)
   : vvRenderState(renderState)
+  , viewDir(math::vec3f(0.0f, 0.0f, 0.0f))
+  , objDir(math::vec3f(0.0f, 0.0f, 0.0f))
   , renderTarget_(virvo::NullRT::create())
   , stopwatch_(new vvStopwatch)
 {
@@ -409,11 +413,10 @@ vvVecmath::AxisType vvRenderer::getPrincipalViewingAxis(const vvMatrix& mv,
   invMV = mv;
   invMV.invert();
 
-  vvVector3 eye;
-  getEyePosition(&eye);
+  math::vec3f eye = getEyePosition();
 
-  vvVector3 normal;
-  vvVector3 origin;
+  math::vec3f normal;
+  math::vec3f origin;
   getObjNormal(normal, origin, eye, invMV);
 
   zx = normal[0];
@@ -452,9 +455,9 @@ void vvRenderer::init()
   }
 }
 
-void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
-                              const vvVector3& eye, const vvMatrix& invMV,
-                              const bool isOrtho) const
+void vvRenderer::getObjNormal(math::vec3f& normal, math::vec3f& origin,
+                              math::vec3f const& eye, const vvMatrix& invMV,
+                              bool isOrtho) const
 {
   // Compute normal vector of textures using the following strategy:
   // For orthographic projections or if viewDir is (0|0|0) use
@@ -464,78 +467,82 @@ void vvRenderer::getObjNormal(vvVector3& normal, vvVector3& origin,
   // then use viewDir as the normal.
   if (_clipMode == 1)
   {
-    normal = vvVector3(_clipPlaneNormal);
+    normal = clip_plane_normal_;
   }
-  else if (isOrtho || (viewDir[0] == 0.0f && viewDir[1] == 0.0f && viewDir[2] == 0.0f))
+  else if ( isOrtho || viewDir == math::vec3f(0.0f) )
   {
     // Draw slices parallel to projection plane:
-    normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
-    normal.multiply(invMV);
-    origin.zero();
-    origin.multiply(invMV);
-    normal.sub(origin);
+    normal = math::vec3f(0.0f, 0.0f, 1.0f);       // (0|0|1) is normal on projection plane
+    vvVector3 tmp( normal );                      // TODO
+    tmp.multiply(invMV);
+    normal = tmp;                                 // TODO
+    origin = math::vec3f(0.0f, 0.0f, 0.0f);
+    tmp = vvVector3( origin );                    // TODO
+    tmp.multiply(invMV);
+    origin = tmp;                                 // TODO
+    normal -= origin;
   }
-  else if (!_isROIUsed && isInVolume(&eye))
+  else if (!_isROIUsed && isInVolume(eye))
   {
     // Draw slices perpendicular to viewing direction:
-    normal = vvVector3(viewDir);
-    normal.negate();                              // viewDir points away from user, the normal should point towards them
+    normal = -viewDir;                            // viewDir points away from user, the normal should point towards them
   }
   else
   {
     // Draw slices perpendicular to line eye->object:
-    normal = vvVector3(objDir);
-    normal.negate();
+    normal = -objDir;
   }
 
-  normal.normalize();
+  normal = normalize(normal);
 }
 
-void vvRenderer::getShadingNormal(vvVector3& normal, vvVector3& origin,
-                                  const vvVector3& eye, const vvMatrix& invMV,
-                                  const bool isOrtho) const
+void vvRenderer::getShadingNormal(math::vec3f& normal, math::vec3f& origin,
+                                  math::vec3f const& eye, const vvMatrix& invMV,
+                                  bool isOrtho) const
 {
   // See calcutions in getObjNormal(). Only difference: if clip plane
   // is active, this is ignored. This normal isn't used to align
   // slices or such with the clipping plane, but for shading calculations.
-  if (isOrtho || (viewDir[0] == 0.0f && viewDir[1] == 0.0f && viewDir[2] == 0.0f))
+  if ( isOrtho || viewDir == math::vec3f(0.0f) )
   {
     // Draw slices parallel to projection plane:
-    normal.set(0.0f, 0.0f, 1.0f);                 // (0|0|1) is normal on projection plane
-    normal.multiply(invMV);
-    origin.zero();
-    origin.multiply(invMV);
-    normal.sub(origin);
+    normal = math::vec3f(0.0f, 0.0f, 1.0f);       // (0|0|1) is normal on projection plane
+    vvVector3 tmp( normal );                      // TODO
+    tmp.multiply(invMV);
+    normal = tmp;                                 // TODO
+    origin = math::vec3f(0.0f, 0.0f, 0.0f);
+    tmp = vvVector3( origin );                    // TODO
+    tmp.multiply(invMV);
+    origin = tmp;
+    normal -= origin;
   }
-  else if (!_isROIUsed && isInVolume(&eye))
+  else if (!_isROIUsed && isInVolume(eye))
   {
     // Draw slices perpendicular to viewing direction:
-    normal = vvVector3(viewDir);
-    normal.negate();                              // viewDir points away from user, the normal should point towards them
+    normal = -viewDir;                            // viewDir points away from user, the normal should point towards them
   }
   else
   {
     // Draw slices perpendicular to line eye->object:
-    normal = vvVector3(objDir);
-    normal.negate();
+    normal = -objDir;
   }
 
-  normal.normalize();
+  normal = normalize(normal);
 }
 
-void vvRenderer::calcProbeDims(vvVector3& probePosObj, vvVector3& probeSizeObj, vvVector3& probeMin, vvVector3& probeMax) const
+void vvRenderer::calcProbeDims(math::vec3f& probePosObj, math::vec3f& probeSizeObj, math::vec3f& probeMin, math::vec3f& probeMax) const
 {
   // Determine texture object dimensions and half object size as a shortcut:
-  const vvVector3 size(vd->getSize());
-  const vvVector3 size2 = size * 0.5f;
+  math::vec3f size(vd->getSize());
+  math::vec3f size2 = size * 0.5f;
 
   if (_isROIUsed)
   {
     // Convert probe midpoint coordinates to object space w/o position:
-    probePosObj = _roiPos;
+    probePosObj = roi_pos_;
 
     // Compute probe min/max coordinates in object space:
-    const vvVector3 maxSize = _roiSize * size2;
+    math::vec3f maxSize = roi_size_ * size2;
 
     probeMin = probePosObj - maxSize;
     probeMax = probePosObj + maxSize;
@@ -922,8 +929,8 @@ void vvRenderer::renderPalette() const
 void vvRenderer::renderQualityDisplay() const
 {
   vvPrintGL printGL;
-  vvVector4 clearColor = vvGLTools::queryClearColor();
-  vvVector4 fontColor = vvVector4(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f);
+  math::vec4f clearColor = vvGLTools::queryClearColor();
+  math::vec4f fontColor( 1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f );
   printGL.setFontColor(fontColor);
   printGL.print(-0.9f, 0.9f, "Quality: %-9.2f", _quality);
 }
@@ -936,8 +943,8 @@ void vvRenderer::renderFPSDisplay() const
   if (fps > 0.0f) fps = 1.0f / fps;
   else fps = -1.0f;
   vvPrintGL printGL;
-  vvVector4 clearColor = vvGLTools::queryClearColor();
-  vvVector4 fontColor = vvVector4(1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f);
+  math::vec4f clearColor = vvGLTools::queryClearColor();
+  math::vec4f fontColor( 1.0f - clearColor[0], 1.0f - clearColor[1], 1.0f - clearColor[2], 1.0f );
   printGL.setFontColor(fontColor);
   printGL.print(0.3f, 0.9f, "fps: %-9.1f", fps);
 }
@@ -956,9 +963,9 @@ void vvRenderer::renderFPSDisplay() const
   @param oPos   position of boundary box center [object coordinates]
 @param color  bounding box color (R,G,B) [0..1], array of 3 floats expected
 */
-void vvRenderer::drawBoundingBox(const vvVector3& oSize, const vvVector3& oPos, const vvColor& color) const
+void vvRenderer::drawBoundingBox(math::vec3f const& oSize, math::vec3f const& oPos, const vvColor& color) const
 {
-  vvVector3 vertvec[8];                           // vertex vectors in object space
+  math::vec3f vertvec[8];                         // vertex vectors in object space
   GLboolean glsLighting;                          // stores GL_LIGHTING
   GLfloat   glsColor[4];                          // stores GL_CURRENT_COLOR
   GLfloat   glsLineWidth;                         // stores GL_LINE_WIDTH
@@ -1009,8 +1016,8 @@ void vvRenderer::drawBoundingBox(const vvVector3& oSize, const vvVector3& oPos, 
   // Create vertex vectors:
   for (i=0; i<8; ++i)
   {
-    vertvec[i].set(vertices[i][0], vertices[i][1], vertices[i][2]);
-    vertvec[i].scale(oSize);
+    vertvec[i] = math::vec3f(vertices[i][0], vertices[i][1], vertices[i][2]);
+    vertvec[i] *= oSize;
   }
 
   glLineWidth(3.0f);
@@ -1047,14 +1054,14 @@ void vvRenderer::drawBoundingBox(const vvVector3& oSize, const vvVector3& oPos, 
   @param oNorm   normal of plane [object coordinates]
   @param color   box color (R,G,B) [0..1], array of 3 floats expected
 */
-void vvRenderer::drawPlanePerimeter(const vvVector3& oSize, const vvVector3& oPos,
-                                    const vvVector3& oPlane, const vvVector3& oNorm, const vvColor& color) const
+void vvRenderer::drawPlanePerimeter(math::vec3f const& oSize, math::vec3f const& oPos,
+                                    math::vec3f const& oPlane, math::vec3f const& oNorm, const vvColor& color) const
 {
   GLboolean glsLighting;                          // stores GL_LIGHTING
   GLfloat   glsColor[4];                          // stores GL_CURRENT_COLOR
   GLfloat   glsLineWidth;                         // stores GL_LINE_WIDTH
   vvVector3 isect[6];                             // intersection points, maximum of 6 when intersecting a plane and a volume [object space]
-  vvVector3 boxMin,boxMax;                        // minimum and maximum box coordinates
+  math::vec3f boxMin,boxMax;                      // minimum and maximum box coordinates
   int isectCnt;
   int j;
 
@@ -1082,8 +1089,8 @@ void vvRenderer::drawPlanePerimeter(const vvVector3& oSize, const vvVector3& oPo
 
   glLineWidth(3.0f);
 
-  boxMin.set(oPos[0] - oSize[0] * 0.5f, oPos[1] - oSize[1] * 0.5f, oPos[2] - oSize[2] * 0.5f);
-  boxMax.set(oPos[0] + oSize[0] * 0.5f, oPos[1] + oSize[1] * 0.5f, oPos[2] + oSize[2] * 0.5f);
+  boxMin = math::vec3f(oPos[0] - oSize[0] * 0.5f, oPos[1] - oSize[1] * 0.5f, oPos[2] - oSize[2] * 0.5f);
+  boxMax = math::vec3f(oPos[0] + oSize[0] * 0.5f, oPos[1] + oSize[1] * 0.5f, oPos[2] + oSize[2] * 0.5f);
 
   isectCnt = isect->isectPlaneCuboid(oNorm, oPlane, boxMin, boxMax);
 
@@ -1127,7 +1134,7 @@ bool vvRenderer::instantClassification() const
 
 //----------------------------------------------------------------------------
 /// Set volume position.
-void vvRenderer::setPosition(const vvVector3& p)
+void vvRenderer::setPosition(math::vec3f const& p)
 {
   vvDebugMsg::msg(3, "vvRenderer::setPosition()");
   vd->pos = p;
@@ -1135,13 +1142,9 @@ void vvRenderer::setPosition(const vvVector3& p)
 
 //----------------------------------------------------------------------------
 /// Get volume position.
-void vvRenderer::getPosition(vvVector3* p)
+math::vec3f vvRenderer::getPosition() const
 {
-  vvDebugMsg::msg(3, "vvRenderer::getPosition()");
-  for (size_t i = 0; i < 3; ++i)
-  {
-    (*p)[i] = vd->pos[i];
-  }
+    return vd->pos;
 }
 
 //----------------------------------------------------------------------------
@@ -1149,14 +1152,14 @@ void vvRenderer::getPosition(vvVector3* p)
   The vector originates in the user's eye and points along the
   viewing direction.
 */
-void vvRenderer::setViewingDirection(const vvVector3&)
+void vvRenderer::setViewingDirection(math::vec3f const&)
 {
   vvDebugMsg::msg(3, "vvRenderer::setViewingDirection()");
 }
 
 //----------------------------------------------------------------------------
 /// Set the direction from the user to the object.
-void vvRenderer::setObjectDirection(const vvVector3&)
+void vvRenderer::setObjectDirection(math::vec3f const&)
 {
   vvDebugMsg::msg(3, "vvRenderer::setObjectDirection()");
 }
@@ -1182,47 +1185,46 @@ bool vvRenderer::isROIEnabled() const
 /** Set the probe position.
   @param pos  position [object space]
 */
-void vvRenderer::setProbePosition(const vvVector3* pos)
+void vvRenderer::setProbePosition(math::vec3f const& pos)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProbePosition()");
-  setParameter(VV_ROI_POS, *pos);
+  setParameter(VV_ROI_POS, pos);
 }
 
 //----------------------------------------------------------------------------
 /** Get the probe position.
   @param pos  returned position [object space]
 */
-void vvRenderer::getProbePosition(vvVector3* pos) const
+math::vec3f vvRenderer::getProbePosition() const
 {
-  vvDebugMsg::msg(3, "vvRenderer::getProbePosition()");
-  *pos = getParameter(VV_ROI_POS);
+   return getParameter(VV_ROI_POS); 
 }
 
 //----------------------------------------------------------------------------
 /** Set the probe size.
   @param newSize  probe size. 0.0 turns off probe draw mode
 */
-void vvRenderer::setProbeSize(const vvVector3* newSize)
+void vvRenderer::setProbeSize(math::vec3f const& newSize)
 {
   vvDebugMsg::msg(3, "vvRenderer::setProbeSize()");
-  setParameter(VV_ROI_SIZE, *newSize);
+  setParameter(VV_ROI_SIZE, newSize);
 }
 
 //----------------------------------------------------------------------------
 /** Get the probe size.
   @return probe size (0.0 = probe mode off)
 */
-void vvRenderer::getProbeSize(vvVector3* size) const
+math::vec3f vvRenderer::getProbeSize() const
 {
   vvDebugMsg::msg(3, "vvRenderer::getProbeSize()");
-  *size = getParameter(VV_ROI_SIZE);
+  return getParameter(VV_ROI_SIZE);
 }
 
 //----------------------------------------------------------------------------
 /** Compute user's eye position.
   @param eye  vector to receive eye position [world space]
 */
-void vvRenderer::getEyePosition(vvVector3* eye) const
+math::vec3f vvRenderer::getEyePosition() const
 {
   vvMatrix invPM;                                 // inverted projection matrix
   vvMatrix invMV;                                 // inverted modelview matrix
@@ -1237,11 +1239,7 @@ void vvRenderer::getEyePosition(vvVector3* eye) const
   projEye.set(0.0f, 0.0f, -1.0f, 0.0f);
   projEye.multiply(invPM);
   projEye.multiply(invMV);
-  vvVector3 tmp = vvVector3(projEye);
-  for (size_t i = 0; i < 3; ++i)
-  {
-    (*eye)[i] = tmp[i];
-  }
+  return math::vec3f( math::vec4f(projEye) );
 }
 
 //----------------------------------------------------------------------------
@@ -1249,22 +1247,15 @@ void vvRenderer::getEyePosition(vvVector3* eye) const
   @param point  point to test [object coordinates]
   @return true if the given point is inside or on the volume boundaries.
 */
-bool vvRenderer::isInVolume(const vvVector3* point) const
+bool vvRenderer::isInVolume(math::vec3f const& point) const
 {
-  vvVector3 size;                                 // object size
-  vvVector3 size2;                                // half object size
-  vvVector3 pos;                                  // object location
-
-  vvDebugMsg::msg(3, "vvRenderer::isInVolume()");
-
-  pos = vd->pos;
-  size = vd->getSize();
-  size2 = size;
-  size2.scale(0.5f);
+  math::vec3f pos = vd->pos;
+  math::vec3f size = vd->getSize();
+  math::vec3f size2 = size * 0.5f;
   for (size_t i=0; i<3; ++i)
   {
-    if ((*point)[i] < (pos[i] - size2[i])) return false;
-    if ((*point)[i] > (pos[i] + size2[i])) return false;
+    if (point[i] < (pos[i] - size2[i])) return false;
+    if (point[i] > (pos[i] + size2[i])) return false;
   }
   return true;
 }
@@ -1278,19 +1269,16 @@ bool vvRenderer::isInVolume(const vvVector3* point) const
 */
 float vvRenderer::getAlphaValue(float x, float y, float z)
 {
-  vvVector3 size, size2;                          // full and half object sizes
-  vvVector3 point(x,y,z);                         // point to get alpha value at
-  vvVector3 pos;
+  math::vec3f point(x,y,z);                       // point to get alpha value at
   float index;                                    // floating point index value into alpha TF [0..1]
   ssize_t vp[3];                                  // position of nearest voxel to x/y/z [voxel space]
   uchar* ptr;
 
   vvDebugMsg::msg(3, "vvRenderer::getAlphaValue()");
 
-  size = vd->getSize();
-  size2 = size;
-  size2.scale(0.5f);
-  pos = vd->pos;
+  math::vec3f size = vd->getSize();
+  math::vec3f size2 = size * 0.5f;
+  math::vec3f pos = vd->pos;
 
   for (size_t i=0; i<3; ++i)
   {
@@ -1364,10 +1352,10 @@ void  vvRenderer::setGamma(BasicColorType color, float val)
   vvDebugMsg::msg(3, "vvRenderer::setGamma()");
   switch(color)
   {
-    case VV_RED:   _gamma[0] = val; break;
-    case VV_GREEN: _gamma[1] = val; break;
-    case VV_BLUE:  _gamma[2] = val; break;
-    case VV_ALPHA: _gamma[3] = val; break;
+    case VV_RED:   gamma_[0] = val; break;
+    case VV_GREEN: gamma_[1] = val; break;
+    case VV_BLUE:  gamma_[2] = val; break;
+    case VV_ALPHA: gamma_[3] = val; break;
     default: assert(0); break;
   }
 }
@@ -1382,10 +1370,10 @@ float vvRenderer::getGamma(BasicColorType color)
   vvDebugMsg::msg(3, "vvRenderer::getGamma()");
   switch(color)
   {
-    case VV_RED:   return _gamma[0];
-    case VV_GREEN: return _gamma[1];
-    case VV_BLUE:  return _gamma[2];
-    case VV_ALPHA: return _gamma[3];
+    case VV_RED:   return gamma_[0];
+    case VV_GREEN: return gamma_[1];
+    case VV_BLUE:  return gamma_[2];
+    case VV_ALPHA: return gamma_[3];
     default: assert(0); return -1.0f;
   }
 }
@@ -1548,7 +1536,7 @@ void vvRenderer::renderBoundingBox() const
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
 
-  vvAABB bb(vvVector3(0.0f), vvVector3(0.0f));
+  vvAABB bb(math::vec3f(0.0f), math::vec3f(0.0f));
 
   vd->getBoundingBox(bb);
 

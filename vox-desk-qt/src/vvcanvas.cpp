@@ -39,6 +39,8 @@
 using vox::vvObjView;
 
 namespace gl = virvo::gl;
+namespace math = virvo::math;
+
 
 struct vvCanvas::Impl
 {
@@ -94,10 +96,10 @@ vvCanvas::vvCanvas(const QGLFormat& format, const QString& filename, QWidget* pa
 
   // note: Qt 4.6 introduced QVector3D
   QVector3D qlightpos = settings.value("canvas/lightpos").value<QVector3D>();
-  _lightPos = vvVector3(qlightpos.x(), qlightpos.y(), qlightpos.z());
+  light_pos_ = math::vec3f(qlightpos.x(), qlightpos.y(), qlightpos.z());
 
   QVector3D qlightatt = settings.value("canvas/lightattenuation").value<QVector3D>();
-  _lightAtt = vvVector3(qlightatt.x(), qlightatt.y(), qlightatt.z());
+  light_att_ = math::vec3f(qlightatt.x(), qlightatt.y(), qlightatt.z());
 
   _animTimer = new QTimer(this);
   connect(_animTimer, SIGNAL(timeout()), this, SLOT(incTimeStep()));
@@ -232,24 +234,23 @@ void vvCanvas::paintGL()
 
   if (_lighting)
   {
-    vvVector4 lightpos;
+    math::vec4f lightpos;
     if (_headlight)
     {
-      vvVector3 eyePos;
-      _renderer->getEyePosition(&eyePos);
+      math::vec3f eyePos = _renderer->getEyePosition();
 
-      lightpos = vvVector4(eyePos, 1.0f);
+      lightpos = math::vec4f(eyePos, 1.0f);
     }
     else
     {
-      lightpos = vvVector4(_lightPos, 1.0f);
+      lightpos = math::vec4f(light_pos_, 1.0f);
     }
 
     glEnable(GL_LIGHTING);
     glLightfv(GL_LIGHT0, GL_POSITION, &lightpos[0]);
-    glLightfv(GL_LIGHT0, GL_CONSTANT_ATTENUATION, &_lightAtt[0]);
-    glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &_lightAtt[1]);
-    glLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &_lightAtt[2]);
+    glLightfv(GL_LIGHT0, GL_CONSTANT_ATTENUATION, &light_att_[0]);
+    glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, &light_att_[1]);
+    glLightfv(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, &light_att_[2]);
   }
 
   glClearColor(_bgColor[0], _bgColor[1], _bgColor[2], 0.0f);
@@ -333,7 +334,7 @@ void vvCanvas::mouseMoveEvent(QMouseEvent* event)
     const float pixelInWorld = _ov.getViewportWidth() / static_cast<float>(width());
     const float dx = static_cast<float>(event->pos().x() - _lastMousePos.x());
     const float dy = static_cast<float>(event->pos().y() - _lastMousePos.y());
-    vvVector2f pan(pixelInWorld * dx, pixelInWorld * dy);
+    math::vec2f pan(pixelInWorld * dx, pixelInWorld * dy);
     _ov._camera.translate(pan[0], -pan[1], 0.0f);
     break;
   }
@@ -841,12 +842,12 @@ void vvCanvas::enableClipping(bool enabled)
   setParameter(vvRenderState::VV_CLIP_MODE, static_cast< unsigned >(enabled));
 }
 
-void vvCanvas::setClipNormal(virvo::Vec3 const& n)
+void vvCanvas::setClipNormal(math::vec3f const& n)
 {
   setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, n);
 }
 
-void vvCanvas::setClipOrigin(virvo::Vec3 const& o)
+void vvCanvas::setClipOrigin(math::vec3f const& o)
 {
   setParameter(vvRenderState::VV_CLIP_PLANE_POINT, o);
 }
@@ -895,7 +896,7 @@ void vvCanvas::showLightSource(bool show)
 
   li->setEnabled(true);
   li->setLightingEnabled(getParameter(vvParameters::VV_LIGHTING));
-  li->setPos(_lightPos);
+  li->setPos(light_pos_);
 
   if (!li->hasFocus())
   {
@@ -934,8 +935,8 @@ void vvCanvas::editLightPosition(bool edit)
     li->setFocus();
     li->setVisible(true);
     li->setLightingEnabled(getParameter(vvParameters::VV_LIGHTING));
-    li->setPos(_lightPos);
-    connect(li, SIGNAL(lightPos(const vvVector3&)), this, SLOT(setLightPos(const vvVector3&)));
+    li->setPos(light_pos_);
+    connect(li, SIGNAL(lightPos(virvo::math::vec3f const&)), this, SLOT(setLightPos(virvo::math::vec3f const&)));
   }
   else
   {
@@ -951,9 +952,9 @@ void vvCanvas::editLightPosition(bool edit)
   updateGL();
 }
 
-void vvCanvas::setLightAttenuation(const vvVector3& att)
+void vvCanvas::setLightAttenuation(math::vec3f const& att)
 {
-  _lightAtt = att;
+  light_att_ = att;
 
   QVector3D qatt(att[0], att[1], att[2]);
   QSettings settings;
@@ -982,9 +983,9 @@ void vvCanvas::repeatLastRotation()
   _spinTimer->start(static_cast<int>(delay));
 }
 
-void vvCanvas::setLightPos(const vvVector3& pos)
+void vvCanvas::setLightPos(math::vec3f const& pos)
 {
-  _lightPos = pos;
+  light_pos_ = pos;
 
   QVector3D qpos(pos[0], pos[1], pos[2]);
   QSettings settings;

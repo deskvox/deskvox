@@ -22,12 +22,16 @@
 
 #include "ui_vvlightdialog.h"
 
+#include <virvo/math/math.h>
 #include <virvo/vvmacros.h>
 
 #include <QSettings>
 #include <QVector3D>
 
 #include <iostream>
+
+namespace math = virvo::math;
+
 
 struct vvLightDialog::Impl
 {
@@ -111,16 +115,16 @@ void vvLightDialog::onEditPositionClicked()
 
 void vvLightDialog::onConstAttChanged(double value)
 {
-  emit attenuationChanged(vvVector3(value, impl_->ui->linearSpinBox->value(), impl_->ui->quadSpinBox->value()));
+  emit attenuationChanged(math::vec3f(value, impl_->ui->linearSpinBox->value(), impl_->ui->quadSpinBox->value()));
 }
 
 void vvLightDialog::onLinearAttChanged(double value)
 {
-  emit attenuationChanged(vvVector3(impl_->ui->constSpinBox->value(), value, impl_->ui->quadSpinBox->value()));
+  emit attenuationChanged(math::vec3f(impl_->ui->constSpinBox->value(), value, impl_->ui->quadSpinBox->value()));
 }
 
 void vvLightDialog::onQuadAttChanged(double value)
 {
-  emit attenuationChanged(vvVector3(impl_->ui->constSpinBox->value(), impl_->ui->linearSpinBox->value(), value));
+  emit attenuationChanged(math::vec3f(impl_->ui->constSpinBox->value(), impl_->ui->linearSpinBox->value(), value));
 }
 

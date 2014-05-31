@@ -154,7 +154,7 @@ VV_FORCE_INLINE float_type pixely(float y)
 
 struct Ray
 {
-  Ray(Vec3 const& ori, Vec3 const& dir)
+  VV_FORCE_INLINE Ray(Vec3 const& ori, Vec3 const& dir)
     : o(ori)
     , d(dir)
   {

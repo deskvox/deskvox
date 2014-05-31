@@ -22,7 +22,7 @@
 #pragma once
 
 
-#include <virvo/vvvecmath.h>
+#include <virvo/math/forward.h>
 
 #include <QDialog>
 
@@ -38,8 +38,8 @@ class vvClipDialog : public QDialog
 signals:
 
   void clipping(bool active);
-  void normal(virvo::Vec3 const& n) const;
-  void origin(virvo::Vec3 const& o) const;
+  void normal(virvo::math::vec3f const& n) const;
+  void origin(virvo::math::vec3f const& o) const;
   void singleSlice(bool active) const;
   void opaque(bool active) const;
   void perimeter(bool active) const;

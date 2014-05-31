@@ -21,8 +21,6 @@
 #ifndef VV_SLICEVIEWER_H
 #define VV_SLICEVIEWER_H
 
-#include <virvo/vvvecmath.h>
-
 #include <QDialog>
 
 #include <memory>

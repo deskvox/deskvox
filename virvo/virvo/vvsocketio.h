@@ -23,6 +23,8 @@
 
 #include <vector>
 
+#include "math/math.h"
+
 #include "vvcolor.h"
 #include "vvexport.h"
 #include "vvrect.h"
@@ -164,10 +166,10 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putUint64(uint64_t val) const;
     vvSocket::ErrorType getFloat(float& val) const;
     vvSocket::ErrorType putFloat(const float val) const;
-    vvSocket::ErrorType getVector3(vvVector3& val) const;
-    vvSocket::ErrorType putVector3(const vvVector3& val) const;
-    vvSocket::ErrorType getVector4(vvVector4& val) const;
-    vvSocket::ErrorType putVector4(const vvVector4& val) const;
+    vvSocket::ErrorType getVector3(virvo::math::vec3f& val) const;
+    vvSocket::ErrorType putVector3(const virvo::math::vec3f& val) const;
+    vvSocket::ErrorType getVector4(virvo::math::vec4f& val) const;
+    vvSocket::ErrorType putVector4(const virvo::math::vec4f& val) const;
     vvSocket::ErrorType getColor(vvColor& val) const;
     vvSocket::ErrorType putColor(const vvColor& val) const;
     vvSocket::ErrorType getAABBi(vvAABBi& val) const;

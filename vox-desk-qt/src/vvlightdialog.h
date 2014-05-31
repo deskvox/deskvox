@@ -22,7 +22,7 @@
 #ifndef VV_LIGHTDIALOG_H
 #define VV_LIGHTDIALOG_H
 
-#include <virvo/vvvecmath.h>
+#include <virvo/math/forward.h>
 
 #include <QDialog>
 
@@ -56,7 +56,7 @@ signals:
   void showLightSource(bool show);
   void enableHeadlight(bool enable);
   void editPositionToggled(bool edit);
-  void attenuationChanged(const vvVector3& att);
+  void attenuationChanged(virvo::math::vec3f const& att);
 };
 
 #endif

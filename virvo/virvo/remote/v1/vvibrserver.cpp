@@ -31,6 +31,9 @@
 #include "private/vvgltools.h"
 #include "private/vvibrimage.h"
 
+namespace math = virvo::math;
+
+
 vvIbrServer::vvIbrServer(vvSocket *socket)
 : vvRemoteServer(socket)
 {
@@ -69,7 +72,7 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
 
   vvIbr::calcDepthRange(pr, mv, aabb, drMin, drMax);
 
-  renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, vvVector2(drMin, drMax));
+  renderer->setParameter(vvRenderer::VV_IBR_DEPTH_RANGE, math::vec2f(drMin, drMax));
 
   virvo::RenderTarget* rt = renderer->getRenderTarget();
 

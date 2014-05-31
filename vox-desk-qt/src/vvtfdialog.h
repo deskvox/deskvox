@@ -21,6 +21,7 @@
 #ifndef VV_TFDIALOG_H
 #define VV_TFDIALOG_H
 
+#include <virvo/math/forward.h>
 #include <virvo/vvtfwidget.h>
 
 #include <QDialog>
@@ -71,10 +72,10 @@ private slots:
 
   void onColor(const QColor& color);
   void onHasOwnColor(bool hascolor);
-  void onSize(const vvVector3& size);
+  void onSize(virvo::math::vec3f const& size);
   void onOpacity(float opacity);
-  void onTop(const vvVector3& top);
-  void onBottom(const vvVector3& bottom);
+  void onTop(virvo::math::vec3f const& top);
+  void onBottom(virvo::math::vec3f const& bottom);
 
   void onTFMouseMove(QPointF pos, Qt::MouseButton button);
   void onTFMousePress(QPointF pos, Qt::MouseButton button);

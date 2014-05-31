@@ -26,6 +26,7 @@
 #include "vvplugin.h"
 #include "vvstereomode.h"
 
+#include <virvo/math/math.h>
 #include <virvo/vvrendererfactory.h>
 #include <virvo/vvtfwidget.h>
 #include <virvo/vvvecmath.h>
@@ -84,8 +85,8 @@ private:
   vox::vvObjView _ov;
   vox::vvObjView::ProjectionType _projectionType;
   vvColor _bgColor;
-  vvVector3 _lightPos;
-  vvVector3 _lightAtt;
+  virvo::math::vec3f light_pos_;
+  virvo::math::vec3f light_att_;
   bool _doubleBuffering;
   bool _lighting;
   bool _headlight;
@@ -142,8 +143,8 @@ public slots:
   void lastTimeStep();
 
   void enableClipping(bool enabled);
-  void setClipNormal(virvo::Vec3 const& n);
-  void setClipOrigin(virvo::Vec3 const& o);
+  void setClipNormal(virvo::math::vec3f const& n);
+  void setClipOrigin(virvo::math::vec3f const& o);
   void setClipSingleSlice(bool active);
   void setClipOpaque(bool active);
   void setClipPerimeter(bool active);
@@ -152,13 +153,13 @@ public slots:
   void showLightSource(bool show);
   void enableHeadlight(bool enable);
   void editLightPosition(bool edit);
-  void setLightAttenuation(const vvVector3& att);
+  void setLightAttenuation(virvo::math::vec3f const& att);
 
   void resetCamera();
 
 private slots:
   void repeatLastRotation();
-  void setLightPos(const vvVector3& pos);
+  void setLightPos(virvo::math::vec3f const& pos);
 signals:
   void rendererChanged(vvRenderer* renderer);
   void newVolDesc(vvVolDesc* vd);

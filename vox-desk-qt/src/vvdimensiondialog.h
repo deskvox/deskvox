@@ -23,7 +23,7 @@
 
 class vvCanvas;
 
-#include <virvo/vvvecmath.h>
+#include <virvo/math/forward.h>
 
 #include <QDialog>
 
@@ -41,7 +41,7 @@ public:
 
   /*! initial dist should be set whenever a new volume is loaded
    */
-  void setInitialDist(const vvVector3& dist);
+  void setInitialDist(virvo::math::vec3f const& dist);
 private:
   struct Impl;
   std::auto_ptr<Impl> impl_;
@@ -50,10 +50,10 @@ private:
 
   /*! update volume description with new dist
    */
-  void setDist(const vvVector3& dist);
+  void setDist(virvo::math::vec3f const& dist);
   /*! refresh spin box values
    */
-  void updateGui(const vvVector3& dist);
+  void updateGui(virvo::math::vec3f const& dist);
 
 private slots:
   void onApplyClicked();

@@ -20,8 +20,8 @@
 
 #pragma once
 
+#include <virvo/math/forward.h>
 #include <virvo/vvcolor.h>
-#include <virvo/vvvecmath.h>
 
 #include <QGroupBox>
 
@@ -41,7 +41,7 @@ public:
 
   void setHasColor(bool hascolor);
   void setColor(const vvColor& color);
-  void setSize(const vvVector3& size);
+  void setSize(virvo::math::vec3f const& size);
   void setOpacity(float opacity);
 private:
 
@@ -55,7 +55,7 @@ private slots:
 signals:
   void hasColor(bool hascolor);
   void color(const QColor& color);
-  void size(const vvVector3& size);
+  void size(virvo::math::vec3f const& size);
   void opacity(float opacity);
 };
 }

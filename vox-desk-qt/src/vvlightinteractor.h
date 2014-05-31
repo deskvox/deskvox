@@ -40,7 +40,7 @@ private:
   bool _lightingEnabled;
   Qt::MouseButton _mouseButton;
 signals:
-  void lightPos(const vvVector3& pos);
+  void lightPos(virvo::math::vec3f const& pos);
 };
 
 #endif

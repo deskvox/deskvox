@@ -29,6 +29,9 @@
 
 #include <iostream>
 
+namespace math = virvo::math;
+
+
 vvLightInteractor::vvLightInteractor()
   : _lightingEnabled(true)
   , _mouseButton(Qt::NoButton)
@@ -63,7 +66,7 @@ void vvLightInteractor::render() const
 
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
-  glTranslatef(_pos[0], _pos[1], _pos[2]);
+  glTranslatef(pos_[0], pos_[1], pos_[2]);
   GLUquadricObj* quad = gluNewQuadric();
   if (_lightingEnabled)
   {
@@ -147,11 +150,11 @@ void vvLightInteractor::mouseMoveEvent(QMouseEvent* event)
     virvo::Matrix   pr = virvo::gltools::getProjectionMatrix();
     virvo::Viewport vp = vvGLTools::getViewport();
 
-    virvo::Vec3 obj;
-    virvo::project(&obj, _pos, mv, pr, vp);
-    vvVector3 win(event->x(), vp[3] - event->y(), obj[2]);
-    virvo::unproject(&_pos, win, mv, pr, vp);
-    emit lightPos(_pos);
+    math::vec3f obj;
+    virvo::project(&obj, pos_, mv, pr, vp);
+    math::vec3f win(event->x(), vp[3] - event->y(), obj[2]);
+    virvo::unproject(&pos_, win, mv, pr, vp);
+    emit lightPos(pos_);
   }
 }
 
@@ -164,7 +167,7 @@ void vvLightInteractor::mouseReleaseEvent(QMouseEvent*)
 {
   if (_mouseButton == Qt::LeftButton)
   {
-    emit lightPos(_pos);
+    emit lightPos(pos_);
   }
 
   _mouseButton = Qt::NoButton;

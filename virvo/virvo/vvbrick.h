@@ -21,6 +21,8 @@
 #ifndef VV_BRICK_H
 #define VV_BRICK_H
 
+#include "math/math.h"
+
 #include "vvaabb.h"
 #include "vvexport.h"
 #include "vvinttypes.h"
@@ -58,12 +60,12 @@ public:
     return (dist < rhs.dist);
   }
 
-  void render(vvTexRend* const renderer, const vvVector3& normal,
-              const vvVector3& farthest, const vvVector3& delta,
-              const vvVector3& probeMin, const vvVector3& probeMax,
+  void render(vvTexRend* const renderer, virvo::math::vec3f const& normal,
+              virvo::math::vec3f const& farthest, virvo::math::vec3f const& delta,
+              virvo::math::vec3f const& probeMin, virvo::math::vec3f const& probeMax,
               GLuint*& texNames, vvShaderProgram* shader) const;
 
-  void renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const;
+  void renderOutlines(virvo::math::vec3f const& probeMin, virvo::math::vec3f const& probeMax) const;
   bool upload3DTexture(const GLuint& texName, const uchar* texData,
                        GLenum texFormat, GLint internalTexFormat,
                        bool interpolation = true) const;
@@ -79,16 +81,13 @@ public:
                        float& minDot,
                        float& maxDot) const;
 
-  void print() const;
-
-  static void sortByCenter(std::vector<vvBrick*>& bricks,
-                           const vvVector3& axis);
+  static void sortByCenter(std::vector<vvBrick*>& bricks, virvo::math::vec3f const& axis);
                                                     ///< and assuming that vertices are ordered back to front
-  vvVector3 pos;                                    ///< center position of brick
-  vvVector3 min;                                    ///< minimum position of brick
-  vvVector3 max;                                    ///< maximum position of brick
-  vvVector3 texRange;
-  vvVector3 texMin;
+  virvo::math::vec3f pos;                           ///< center position of brick
+  virvo::math::vec3f min;                           ///< minimum position of brick
+  virvo::math::vec3f max;                           ///< maximum position of brick
+  virvo::math::vec3f texRange;
+  virvo::math::vec3f texMin;
   size_t minValue;                                  ///< min scalar value after lut, needed for empty space leaping
   size_t maxValue;                                  ///< max scalar value after lut, needed for empty space leaping
   bool visible;                                     ///< if brick isn't visible, it won't be rendered at all

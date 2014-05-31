@@ -52,6 +52,9 @@
 
 using namespace std;
 
+namespace math = virvo::math;
+
+
 namespace
 {
   bool debugAbortOnGLError = false;
@@ -339,11 +342,11 @@ virvo::Viewport vvGLTools::getViewport()
 //----------------------------------------------------------------------------
 /** Query the color specificied using glClearColor (rgba)
 */
-vvVector4 vvGLTools::queryClearColor()
+math::vec4f vvGLTools::queryClearColor()
 {
   GLfloat tmp[4];
   glGetFloatv(GL_COLOR_CLEAR_VALUE, tmp);
-  return vvVector4(tmp[0], tmp[1], tmp[2], tmp[3]);
+  return math::vec4f(tmp[0], tmp[1], tmp[2], tmp[3]);
 }
 
 //----------------------------------------------------------------------------

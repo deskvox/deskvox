@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include <virvo/vvvecmath.h>
+#include <virvo/math/forward.h>
 
 #include <QGroupBox>
 
@@ -38,7 +38,7 @@ public:
   SkipBox(QWidget* parent = 0);
   ~SkipBox();
 
-  void setSize(const vvVector3& size);
+  void setSize(virvo::math::vec3f const& size);
 private:
 
   struct Impl;
@@ -47,7 +47,7 @@ private:
 private slots:
   void emitSize(int sliderval);
 signals:
-  void size(const vvVector3& size);
+  void size(virvo::math::vec3f const& size);
 };
 }
 

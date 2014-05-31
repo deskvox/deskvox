@@ -23,6 +23,7 @@
 
 #include "ui_vvclipdialog.h"
 
+#include <virvo/math/math.h>
 #include <virvo/vvmacros.h>
 
 #include <iostream>
@@ -76,10 +77,10 @@ void vvClipDialog::setEnabled(bool enabled)
 
 void vvClipDialog::emitNormal() const
 {
-  virvo::Vec3 n(impl_->ui->normalxSlider->value(),
+  virvo::math::vec3f n(impl_->ui->normalxSlider->value(),
     impl_->ui->normalySlider->value(),
     impl_->ui->normalzSlider->value());
-  n.normalize();
+  n = normalize(n);
 
   emit normal(n);
 }
@@ -87,12 +88,12 @@ void vvClipDialog::emitNormal() const
 
 void vvClipDialog::emitOrigin() const
 {
-  virvo::Vec3 o(impl_->ui->normalxSlider->value(),
+  virvo::math::vec3f o(impl_->ui->normalxSlider->value(),
     impl_->ui->normalySlider->value(),
     impl_->ui->normalzSlider->value());
-  o.normalize();
+  o = normalize(o);
   float d = static_cast< float >(impl_->ui->originSlider->value());
-  o.scale(d);
+  o *= virvo::math::vec3f(d);
 
   emit origin(o);
 }

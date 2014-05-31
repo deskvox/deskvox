@@ -29,6 +29,7 @@
 
 #include "ui_vvtfdialog.h"
 
+#include <virvo/math/math.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvvoldesc.h>
 
@@ -37,6 +38,9 @@
 #include <QGraphicsRectItem>
 
 #include <boost/bimap.hpp>
+
+
+namespace math = virvo::math;
 
 
 namespace
@@ -52,7 +56,7 @@ size_t TF_HEIGHT = 256;
   @param canvas canvas x coordinate [0..1]
   @return data value
 */
-float norm2data(const vvVector2f& zoomrange, float canvas)
+float norm2data(math::vec2f const& zoomrange, float canvas)
 {
   return canvas * (zoomrange[1] - zoomrange[0]) + zoomrange[0];
 }
@@ -61,14 +65,14 @@ float norm2data(const vvVector2f& zoomrange, float canvas)
   @param data data value
   @return canvas x coordinate [0..1]
 */
-float data2norm(const vvVector2f& zoomrange, float data)
+float data2norm(math::vec2f const& zoomrange, float data)
 {
   return (data - zoomrange[0]) / (zoomrange[1] - zoomrange[0]);
 }
 
 /** Convert horizontal differences on the canvas to data differences.
 */
-float normd2datad(const vvVector2f& zoomrange, float canvas)
+float normd2datad(math::vec2f const& zoomrange, float canvas)
 {
   return canvas * (zoomrange[1] - zoomrange[0]);
 }
@@ -76,7 +80,7 @@ float normd2datad(const vvVector2f& zoomrange, float canvas)
 #if 0 // not used
 /** Convert differences in data to the canvas.
 */
-float datad2normd(const vvVector2f& zoomrange, float data)
+float datad2normd(math::vec2f const& zoomrange, float data)
 {
   return data / (zoomrange[1] - zoomrange[0]);
 }
@@ -95,7 +99,7 @@ struct vvTFDialog::Impl
     , alphatex(new QGraphicsPixmapItem)
     , selected(NULL)
     , moving(NULL)
-    , zoomRange(virvo::Vec2f(0.0f, 1.0f))
+    , zoomRange(math::vec2f(0.0f, 1.0f))
   {
     colorscene->addItem(colortex);
     alphascene->addItem(alphatex);
@@ -125,7 +129,7 @@ struct vvTFDialog::Impl
   typedef boost::bimap< Pin*, vvTFWidget*> bm_type;
   bm_type pin2widget;
 
-  vvVector2f zoomRange; ///< min/max for zoom area on data range
+  math::vec2f zoomRange; ///< min/max for zoom area on data range
 
 private:
 
@@ -526,7 +530,7 @@ void vvTFDialog::onOpacity(float opacity)
   drawTF();
 }
 
-void vvTFDialog::onSize(const vvVector3& size)
+void vvTFDialog::onSize(math::vec3f const& size)
 {
   assert(impl_->selected != NULL);
   Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
@@ -547,7 +551,7 @@ void vvTFDialog::onSize(const vvVector3& size)
   drawTF();
 }
 
-void vvTFDialog::onTop(const vvVector3& top)
+void vvTFDialog::onTop(math::vec3f const& top)
 {
   assert(impl_->selected != NULL);
   Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
@@ -559,7 +563,7 @@ void vvTFDialog::onTop(const vvVector3& top)
   drawTF();
 }
 
-void vvTFDialog::onBottom(const vvVector3& bottom)
+void vvTFDialog::onBottom(math::vec3f const& bottom)
 {
   assert(impl_->selected != NULL);
   Impl::bm_type::left_const_iterator lit = impl_->pin2widget.left.find(impl_->selected);
@@ -593,7 +597,7 @@ void vvTFDialog::onTFMouseMove(QPointF pos, Qt::MouseButton /* button */)
     {
       x /= static_cast<float>(TF_WIDTH);
       x = norm2data(impl_->zoomRange, x);
-      vvVector3 oldpos = w->pos();
+      math::vec3f oldpos = w->pos();
       w->setPos(x, oldpos[1], oldpos[2]);
     }
     emitTransFunc();
@@ -689,7 +693,7 @@ void vvTFDialog::updateSettingsBox()
     gb->setOpacity(b->opacity());
     connect(gb, SIGNAL(color(const QColor&)), this, SLOT(onColor(const QColor&)));
     connect(gb, SIGNAL(hasColor(bool)), this, SLOT(onHasOwnColor(bool)));
-    connect(gb, SIGNAL(size(const vvVector3&)), this, SLOT(onSize(const vvVector3&)));
+    connect(gb, SIGNAL(size(virvo::math::vec3f const&)), this, SLOT(onSize(virvo::math::vec3f const&)));
     connect(gb, SIGNAL(opacity(float)), this, SLOT(onOpacity(float)));
   }
   else if (vvTFPyramid* p = dynamic_cast<vvTFPyramid*>(w))
@@ -703,8 +707,8 @@ void vvTFDialog::updateSettingsBox()
     pb->setOpacity(p->opacity());
     connect(pb, SIGNAL(color(const QColor&)), this, SLOT(onColor(const QColor&)));
     connect(pb, SIGNAL(hasColor(bool)), this, SLOT(onHasOwnColor(bool)));
-    connect(pb, SIGNAL(top(const vvVector3&)), this, SLOT(onTop(const vvVector3&)));
-    connect(pb, SIGNAL(bottom(const vvVector3&)), this, SLOT(onBottom(const vvVector3&)));
+    connect(pb, SIGNAL(top(virvo::math::vec3f const&)), this, SLOT(onTop(virvo::math::vec3f const&)));
+    connect(pb, SIGNAL(bottom(virvo::math::vec3f const&)), this, SLOT(onBottom(virvo::math::vec3f const&)));
     connect(pb, SIGNAL(opacity(float)), this, SLOT(onOpacity(float)));
   }
   else if (vvTFSkip* s = dynamic_cast<vvTFSkip*>(w))
@@ -712,7 +716,7 @@ void vvTFDialog::updateSettingsBox()
     tf::SkipBox* sb = new tf::SkipBox(this);
     impl_->ui->settingsLayout->addWidget(sb);
     sb->setSize(s->size());
-    connect(sb, SIGNAL(size(const vvVector3&)), this, SLOT(onSize(const vvVector3&)));
+    connect(sb, SIGNAL(size(virvo::math::vec3f const&)), this, SLOT(onSize(virvo::math::vec3f const&)));
   }
 }
 

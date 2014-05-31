@@ -21,6 +21,7 @@
 #include "simple_server.h"
 
 #include <virvo/gl/util.h>
+#include <virvo/math/serialization.h>
 #include <virvo/private/vvgltools.h>
 #include <virvo/private/vvibrimage.h>
 #include <virvo/private/vvimage.h>

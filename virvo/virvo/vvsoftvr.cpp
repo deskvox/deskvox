@@ -832,9 +832,9 @@ void vvSoftVR::findClipPlaneEquation()
    }
 
    // Find two points determining the plane:
-   planePoint = _clipPlanePoint;
-   normalPoint = _clipPlanePoint;
-   normalPoint.add(_clipPlaneNormal);
+   planePoint = clip_plane_point_;
+   normalPoint = clip_plane_point_;
+   normalPoint.add(clip_plane_normal_);
 
    // Transfer points to voxel coordinate system:
    planePoint.multiply(oxConv);

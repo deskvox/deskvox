@@ -90,6 +90,9 @@ const float vvView::OBJ_SIZE  = 1.0f;
 const int vvView::DEFAULT_PORT = 31050;
 vvView* vvView::ds = NULL;
 
+namespace math = virvo::math;
+
+
 //----------------------------------------------------------------------------
 /// Constructor
 vvView::vvView()
@@ -844,14 +847,13 @@ void vvView::specialCallback(int key, int, int)
 {
   vvDebugMsg::msg(3, "vvView::specialCallback()");
 
-  vvVector3 probePos;
-  ds->renderer->getProbePosition(&probePos);
+  math::vec3f probePos = ds->renderer->getProbePosition();
 
   const int modifiers = glutGetModifiers();
   const float delta = 0.1f / ds->mvScale;
 
-  const vvVector3 clipPoint = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_POINT);
-  const vvVector3 clipNormal = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
+  math::vec3f clipPoint = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_POINT);
+  math::vec3f clipNormal = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
 
   switch(key)
   {
@@ -859,7 +861,7 @@ void vvView::specialCallback(int key, int, int)
     if (ds->roiEnabled)
     {
       probePos[0] -= delta;
-      ds->renderer->setProbePosition(&probePos);
+      ds->renderer->setProbePosition(probePos);
     }
     else if (ds->clipEditMode)
     {
@@ -870,7 +872,7 @@ void vvView::specialCallback(int key, int, int)
     if (ds->roiEnabled)
     {
       probePos[0] += delta;
-      ds->renderer->setProbePosition(&probePos);
+      ds->renderer->setProbePosition(probePos);
     }
     else if (ds->clipEditMode)
     {
@@ -888,7 +890,7 @@ void vvView::specialCallback(int key, int, int)
       {
         probePos[1] += delta;
       }
-      ds->renderer->setProbePosition(&probePos);
+      ds->renderer->setProbePosition(probePos);
     }
     else if (ds->clipEditMode)
     {
@@ -906,7 +908,7 @@ void vvView::specialCallback(int key, int, int)
       {
         probePos[1] -= delta;
       }
-      ds->renderer->setProbePosition(&probePos);
+      ds->renderer->setProbePosition(probePos);
     }
     else if (ds->clipEditMode)
     {
@@ -1290,7 +1292,7 @@ void vvView::optionsMenuCallback(int item)
     if(ds->useHeadLight)
     {
       vvVector3 eyePos;
-      ds->renderer->getEyePosition(&eyePos);
+      eyePos = ds->renderer->getEyePosition();
 
       glEnable(GL_LIGHTING);
       glLightfv(GL_LIGHT0, GL_POSITION, &vvVector4(eyePos, 1.0f)[0]);
@@ -1630,7 +1632,7 @@ void vvView::roiMenuCallback(const int item)
 {
   vvDebugMsg::msg(1, "vvView::roiMenuCallback()");
 
-  vvVector3 probeSize;
+  math::vec3f probeSize;
 
   switch (item)
   {
@@ -1660,14 +1662,14 @@ void vvView::roiMenuCallback(const int item)
   case 98:
     if (ds->roiEnabled)
     {
-      ds->renderer->getProbeSize(&probeSize);
-      probeSize.sub(0.1f);
+      probeSize = ds->renderer->getProbeSize();
+      probeSize -= math::vec3f(0.1f);
       const float size = probeSize[0];
       if (size <= 0.0f)
       {
         probeSize = vvVector3(0.00001f);
       }
-      ds->renderer->setProbeSize(&probeSize);
+      ds->renderer->setProbeSize(probeSize);
     }
     else
     {
@@ -1677,14 +1679,14 @@ void vvView::roiMenuCallback(const int item)
   case 99:
     if (ds->roiEnabled)
     {
-      ds->renderer->getProbeSize(&probeSize);
-      probeSize.add(0.1f);
+      probeSize = ds->renderer->getProbeSize();
+      probeSize += math::vec3f(0.1f);
       const float size = probeSize[0];
       if (size > 1.0f)
       {
         probeSize = vvVector3(1.0f);
       }
-      ds->renderer->setProbeSize(&probeSize);
+      ds->renderer->setProbeSize(probeSize);
     }
     else
     {
@@ -2391,7 +2393,8 @@ void vvView::renderMotion() const
 
 void vvView::editClipPlane(const int command, const float val)
 {
-  vvVector3 clipNormal = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
+  math::vec3f tmp = ds->renderer->getParameter(vvRenderState::VV_CLIP_PLANE_NORMAL);
+  vvVector3 clipNormal(tmp);
   switch (command)
   {
   case PLANE_X:
@@ -2425,7 +2428,7 @@ void vvView::editClipPlane(const int command, const float val)
     cerr << "Unknown command" << endl;
     break;
   }
-  ds->renderer->setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, clipNormal);
+  ds->renderer->setParameter(vvRenderState::VV_CLIP_PLANE_NORMAL, tmp);
   glutPostRedisplay();
 }
 

@@ -23,21 +23,25 @@
 
 #include "ui_vvdimensiondialog.h"
 
+#include <virvo/math/math.h>
 #include <virvo/vvdebugmsg.h>
 #include <virvo/vvmacros.h>
 #include <virvo/vvtexrend.h>
 #include <virvo/vvvoldesc.h>
 
+namespace math = virvo::math;
+
+
 struct vvDimensionDialog::Impl
 {
   Impl()
     : ui(new Ui::DimensionDialog)
-    , initialDist(vvVector3(1.0f, 1.0f, 1.0f))
+    , initialDist(math::vec3f(1.0f, 1.0f, 1.0f))
   {
   }
 
   std::auto_ptr<Ui::DimensionDialog> ui;
-  vvVector3 initialDist; ///< should be assigned when a new file is loaded
+  math::vec3f initialDist; ///< should be assigned when a new file is loaded
 
 private:
 
@@ -63,7 +67,7 @@ vvDimensionDialog::~vvDimensionDialog()
   vvDebugMsg::msg(1, "vvDimensionDialog::~vvDimensionDialog()");
 }
 
-void vvDimensionDialog::setInitialDist(const vvVector3& dist)
+void vvDimensionDialog::setInitialDist(math::vec3f const& dist)
 {
   vvDebugMsg::msg(3, "vvDimensionDialog::setInitialDist()");
 
@@ -71,7 +75,7 @@ void vvDimensionDialog::setInitialDist(const vvVector3& dist)
   updateGui(dist);
 }
 
-void vvDimensionDialog::setDist(const vvVector3& dist)
+void vvDimensionDialog::setDist(math::vec3f const& dist)
 {
   vvDebugMsg::msg(3, "vvDimensionDialog::setDist()");
 
@@ -90,7 +94,7 @@ void vvDimensionDialog::setDist(const vvVector3& dist)
   updateGui(dist);
 }
 
-void vvDimensionDialog::updateGui(const vvVector3& dist)
+void vvDimensionDialog::updateGui(math::vec3f const& dist)
 {
   vvDebugMsg::msg(3, "vvDimensionDialog::updateGui()");
 
@@ -103,9 +107,9 @@ void vvDimensionDialog::onApplyClicked()
 {
   vvDebugMsg::msg(3, "vvDimensionDialog::onApplyClicked()");
 
-  setDist(vvVector3(static_cast<float>(impl_->ui->distXBox->value()),
-                    static_cast<float>(impl_->ui->distYBox->value()),
-                    static_cast<float>(impl_->ui->distZBox->value())));
+  setDist(math::vec3f(static_cast<float>(impl_->ui->distXBox->value()),
+                      static_cast<float>(impl_->ui->distYBox->value()),
+                      static_cast<float>(impl_->ui->distZBox->value())));
 }
 
 void vvDimensionDialog::onResetClicked()

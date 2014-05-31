@@ -70,7 +70,7 @@ class VIRVOEXPORT vvTransFunc
     int  getNumDefaultAlpha();
     int  getNumWidgets(vvTFWidget::WidgetType);
     void deleteWidgets(vvTFWidget::WidgetType);
-    void computeTFTexture(int w, int h, int d, float* array,
+    void computeTFTexture(size_t w, size_t h, size_t d, float* array,
                           float minX, float maxX, float minY = 0.0f, float maxY = 0.0f,
                           float minZ = 0.0f, float maxZ = 0.0f, vvToolshed::Format format = vvToolshed::VV_RGBA);
     vvColor computeBGColor(float, float, float);

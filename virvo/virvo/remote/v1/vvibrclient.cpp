@@ -40,6 +40,9 @@
 using std::cerr;
 using std::endl;
 
+namespace math = virvo::math;
+
+
 struct vvIbrClient::Impl
 {
   // OpenGL client state flags
@@ -168,7 +171,7 @@ vvRemoteClient::ErrorType vvIbrClient::render()
   // Draw boundary lines
   if (_boundaries)
   {
-    const vvVector3 size(vd->getSize()); // volume size [world coordinates]
+    math::vec3f size(vd->getSize()); // volume size [world coordinates]
     drawBoundingBox(size, vd->pos, _boundColor);
   }
 

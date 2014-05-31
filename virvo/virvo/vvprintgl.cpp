@@ -42,8 +42,7 @@
 #include "vvprintgl.h"
 #include "vvdebugmsg.h"
 
-using std::cerr;
-using std::endl;
+namespace math = virvo::math;
 
 #if defined(HAVE_X11) && !defined(__APPLE__)
 Display* dsp = NULL;
@@ -101,7 +100,7 @@ GLuint base;
   @param hDC Windows device context
 */
 vvPrintGL::vvPrintGL()
-  : _fontColor(vvVector4(1.0f, 1.0f, 1.0f, 1.0f))
+  : font_color_(math::vec4f(1.0f, 1.0f, 1.0f, 1.0f))
 {
   vvDebugMsg::msg(3, "vvPrintGL::vvPrintGL()");
 
@@ -200,7 +199,7 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
   glRasterPos2f(x, y);
 
 #if !defined(__APPLE__)
-  glColor4f(_fontColor[0], _fontColor[1], _fontColor[2], _fontColor[3]);
+  glColor4f(font_color_[0], font_color_[1], font_color_[2], font_color_[3]);
 #ifdef _WIN32
   glListBase(::base - 32);                        // Sets The Base Character to 32
 #else
@@ -219,7 +218,7 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
   CGContextRef ctx = CGBitmapContextCreate(buf, w, h, 8, w * 4, CGColorSpaceCreateDeviceRGB(), kCGImageAlphaPremultipliedLast);
   CGContextSelectFont(ctx, font.c_str(), size, kCGEncodingMacRoman);//kCGEncodingFontSpecific);
   CGContextSetTextDrawingMode(ctx, kCGTextFill);
-  CGContextSetRGBFillColor(ctx, _fontColor[0], _fontColor[1], _fontColor[2], _fontColor[3]);
+  CGContextSetRGBFillColor(ctx, font_color_[0], font_color_[1], font_color_[2], font_color_[3]);
   CGContextSetTextMatrix(ctx, CGAffineTransformIdentity);
   CGContextTranslateCTM(ctx, 0, size);
   CGContextScaleCTM(ctx, 1, -1);
@@ -235,9 +234,9 @@ void vvPrintGL::print(const float x, const float y, const char *fmt, ...)
 
 //----------------------------------------------------------------------------
 /// Set the font color.
-void vvPrintGL::setFontColor(const vvVector4& fontColor)
+void vvPrintGL::setFontColor(math::vec4f const& fontColor)
 {
-  _fontColor = fontColor;
+  font_color_ = fontColor;
 }
 
 //============================================================================

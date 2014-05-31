@@ -22,9 +22,13 @@
 
 #include "ui_gaussianbox.h"
 
+#include <virvo/math/math.h>
 #include <virvo/vvmacros.h>
 
 #include <QColorDialog>
+
+namespace math = virvo::math;
+
 
 struct tf::GaussianBox::Impl
 {
@@ -33,7 +37,7 @@ struct tf::GaussianBox::Impl
   std::auto_ptr<Ui::GaussianBox> ui;
   bool hascolor;
   vvColor color;
-  vvVector3 size;
+  math::vec3f size;
   float opacity;
 
 private:
@@ -69,7 +73,7 @@ void tf::GaussianBox::setColor(const vvColor& color)
   impl->color = color;
 }
 
-void tf::GaussianBox::setSize(const vvVector3& size)
+void tf::GaussianBox::setSize(math::vec3f const& size)
 {
   impl->size = size * 0.5f;
   impl->ui->widthLabel->setText(tr("Width: ") + QString::number(size[0]));

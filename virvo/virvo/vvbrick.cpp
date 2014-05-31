@@ -32,16 +32,19 @@
 using std::cerr;
 using std::endl;
 
-void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
-                     const vvVector3& farthest, const vvVector3& delta,
-                     const vvVector3& probeMin, const vvVector3& probeMax,
+namespace math = virvo::math;
+
+
+void vvBrick::render(vvTexRend* const renderer, math::vec3f const& normal,
+                     math::vec3f const& farthest, math::vec3f const& delta,
+                     math::vec3f const& probeMin, math::vec3f const& probeMax,
                      GLuint*& texNames, vvShaderProgram* shader) const
 {
-  const vvVector3 dist = max - min;
+  math::vec3f dist = max - min;
 
   // Clip probe object to brick extents.
-  vvVector3 minClipped;
-  vvVector3 maxClipped;
+  math::vec3f minClipped;
+  math::vec3f maxClipped;
   for (size_t i = 0; i < 3; ++i)
   {
     if (min[i] < probeMin[i])
@@ -69,7 +72,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   float maxDot;
   size_t idx = getFrontIndex(verts, farthest, normal, minDot, maxDot);
 
-  const float deltaInv = 1.0f / delta.length();
+  const float deltaInv = 1.0f / length(delta);
 
   ptrdiff_t startSlices = static_cast<ptrdiff_t>(ceilf(minDot * deltaInv));
   ptrdiff_t endSlices = static_cast<ptrdiff_t>(floorf(maxDot * deltaInv));
@@ -102,7 +105,7 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
     }
     shader->setParameterArray3f("vertices", edges, 8);
     // Pass planeStart along with brickMin and spare one setParameter call.
-    shader->setParameter4f("brickMin", min[0], min[1], min[2], -farthest.length());
+    shader->setParameter4f("brickMin", min[0], min[1], min[2], -length(farthest));
     // Pass front index along with brickDimInv and spare one setParameter call.
     shader->setParameter3f("brickDimInv", 1.0f/dist[0], 1.0f/dist[1], 1.0f/dist[2]);
     // Mind that textures overlap a little bit for correct interpolation at the borders.
@@ -175,10 +178,10 @@ void vvBrick::render(vvTexRend* const renderer, const vvVector3& normal,
   }
 }
 
-void vvBrick::renderOutlines(const vvVector3& probeMin, const vvVector3& probeMax) const
+void vvBrick::renderOutlines(math::vec3f const& probeMin, math::vec3f const& probeMax) const
 {
-  vvVector3 minClipped;
-  vvVector3 maxClipped;
+  math::vec3f minClipped;
+  math::vec3f maxClipped;
   for (size_t i = 0; i < 3; i++)
   {
     if (min[i] < probeMin[i])
@@ -315,27 +318,10 @@ size_t vvBrick::getFrontIndex(const vvVector3* vertices,
   return frontIndex;
 }
 
-void vvBrick::print() const
+void vvBrick::sortByCenter(std::vector<vvBrick*>& bricks, math::vec3f const& axis)
 {
-  cerr << "Brick:\t" << index << endl;
-  pos.print("pos:");
-  min.print("min:");
-  max.print("max:");
-  texRange.print("texRange:");
-  texMin.print("texMin:");
-  cerr << "minValue:\t" << minValue << endl;
-  cerr << "maxValue:\t" << maxValue << endl;
-  cerr << "visible:\t" << visible << endl;
-  cerr << "insideProbe:\t" << insideProbe << endl;
-  cerr << "startOffset:\t" << startOffset[0] << " " << startOffset[1] << " " << startOffset[2] << endl;
-  cerr << "texels:\t" << texels[0] << " " << texels[1] << " " << texels[2] << endl;
-  cerr << "dist:\t" << dist << endl;
-}
-
-void vvBrick::sortByCenter(std::vector<vvBrick*>& bricks, const vvVector3& axis)
-{
-  const vvVector3 axisGetter(0, 1, 2);
-  size_t a = static_cast<size_t>(axis.dot(axisGetter));
+  static const math::vec3f axisGetter(0, 1, 2);
+  size_t a = static_cast<size_t>( dot(axis, axisGetter) );
 
   for(std::vector<vvBrick*>::iterator it = bricks.begin(); it != bricks.end(); ++it)
   {

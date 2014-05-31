@@ -21,7 +21,7 @@
 #ifndef VV_INTERACTOR_H
 #define VV_INTERACTOR_H
 
-#include <virvo/vvvecmath.h>
+#include <virvo/math/math.h>
 
 class QMouseEvent;
 
@@ -40,17 +40,17 @@ public:
   void setFocus();
   void clearFocus();
   void setVisible(bool visible);
-  void setPos(const vvVector3& pos);
+  void setPos(virvo::math::vec3f const& pos);
 
   bool enabled() const;
   bool hasFocus() const;
   bool visible() const;
-  vvVector3 pos() const;
+  virvo::math::vec3f pos() const;
 protected:
-  bool _enabled;
-  bool _hasFocus;
-  bool _visible;
-  vvVector3 _pos;
+  bool enabled_;
+  bool has_focus_;
+  bool visible_;
+  virvo::math::vec3f pos_;
 };
 
 #endif

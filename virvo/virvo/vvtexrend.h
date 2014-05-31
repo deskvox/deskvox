@@ -151,7 +151,7 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     BrickList _insideList;                        ///< contains all non-empty bricks inside the probe
     BrickList _sortedList;                        ///< contains all bricks inside the probe in a sorted order (back to front)
     bool _useOnlyOneBrick;                        ///< true if whole data fits in texture memory
-    vvVector4 _frustum[6];                        ///< current planes of view frustum
+    virvo::math::vec4f frustum_[6];               ///< current planes of view frustum
     SliceOrientation _sliceOrientation;           ///< slice orientation for planar 3d textures
     IsectType _isectType;
     bool _proxyGeometryOnGpuSupported;            ///< indicate wether proxy geometry computation on gpu would work
@@ -173,7 +173,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void makeLUTTexture() const;
     ErrorType makeTextures2D(size_t axes);
 
-    void sortBrickList(std::vector<vvBrick*>& list, const vvVector3&, const vvVector3&, const bool);
+    void sortBrickList(std::vector<vvBrick*>& list, virvo::math::vec3f const& eye,
+        virvo::math::vec3f const& normal, bool isOrtho);
 
     ErrorType makeTextures();
     ErrorType makeEmptyBricks();
@@ -214,12 +215,12 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void disableTexture(GLenum target) const;
     bool testBrickVisibility(const vvBrick* brick, const vvMatrix& mvpMat) const;
     bool testBrickVisibility(const vvBrick*) const;
-    bool intersectsFrustum(const vvVector3 &min, const vvVector3 &max) const;
-    bool insideFrustum(const vvVector3 &min, const vvVector3 &max) const;
-    void markBricksInFrustum(const vvVector3& probeMin, const vvVector3& probeMax);
+    bool intersectsFrustum(virvo::math::vec3f const& min, virvo::math::vec3f const& max) const;
+    bool insideFrustum(virvo::math::vec3f const& min, virvo::math::vec3f const& max) const;
+    void markBricksInFrustum(virvo::math::vec3f const& probeMin, virvo::math::vec3f const& probeMax);
     void updateFrustum();
     void getBricksInProbe(std::vector<BrickList>& nonemptyList, BrickList& insideList, BrickList& sortedList,
-                          vvVector3, const vvVector3, bool& roiChanged);
+                          virvo::math::vec3f const&, virvo::math::vec3f const&, bool& roiChanged);
     void computeBrickSize();
     void initVertArray(size_t numSlices);
     void validateEmptySpaceLeaping();             ///< only leap empty bricks if tf type is compatible with this
@@ -241,8 +242,8 @@ class VIRVOEXPORT vvTexRend : public vvRenderer
     void  deactivateClippingPlane();
     void  setNumLights(int);
     bool  instantClassification() const;
-    void  setViewingDirection(const vvVector3& vd);
-    void  setObjectDirection(const vvVector3& od);
+    void  setViewingDirection(virvo::math::vec3f const& vd);
+    void  setObjectDirection(virvo::math::vec3f const& od);
     bool checkParameter(ParameterType param, vvParam const& value) const;
     virtual void setParameter(ParameterType param, const vvParam& value);
     virtual vvParam getParameter(ParameterType param) const;
