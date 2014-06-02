@@ -267,6 +267,13 @@ vvPrefDialog::vvPrefDialog(vvCanvas* canvas, QWidget* parent)
     ++idx;
   }
 
+  if (vvRendererFactory::hasRenderer("rayrend", "sse2"))
+  {
+    ui->rayRendArchBox->addItem("SSE 2 - optimized CPU ray casting");
+    impl->rayRendArchMap.insert(std::pair<int, std::string>(idx, "sse2"));
+    ++idx;
+  }
+
   if (vvRendererFactory::hasRenderer("rayrend", "sse4_1"))
   {
     ui->rayRendArchBox->addItem("SSE 4.1 - optimized CPU ray casting");
