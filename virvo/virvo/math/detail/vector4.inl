@@ -237,7 +237,7 @@ VV_FORCE_INLINE T dot(vector< 4, T > const& u, vector< 4, T > const& v)
 }
 
 template < typename T >
-VV_FORCE_INLINE vector< 4, T > norm(vector< 4, T > const& v)
+VV_FORCE_INLINE T norm(vector< 4, T > const& v)
 {
     return sqrt( dot(v, v) );
 }
@@ -249,7 +249,7 @@ VV_FORCE_INLINE vector< 4, T > norm2(vector< 4, T > const& v)
 }
 
 template < typename T >
-VV_FORCE_INLINE vector< 4, T > length(vector< 4, T > const& v)
+VV_FORCE_INLINE T length(vector< 4, T > const& v)
 {
     return norm(v);
 }
