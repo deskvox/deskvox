@@ -46,6 +46,22 @@ VV_FORCE_INLINE vector< 2, T >::vector(vector< 2, U > const& rhs)
 
 template < typename T >
 template < typename U >
+VV_FORCE_INLINE vector< 2, T >::vector(vector< 3, U > const& rhs)
+    : x(rhs.x)
+    , y(rhs.y)
+{
+}
+
+template < typename T >
+template < typename U >
+VV_FORCE_INLINE vector< 2, T >::vector(vector< 4, U > const& rhs)
+    : x(rhs.x)
+    , y(rhs.y)
+{
+}
+
+template < typename T >
+template < typename U >
 VV_FORCE_INLINE vector< 2, T >& vector< 2, T >::operator=(vector< 2, U > const& rhs)
 {
 

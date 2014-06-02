@@ -32,8 +32,34 @@ VV_FORCE_INLINE vector< 3, T >::vector(T s)
 }
 
 template < typename T >
+VV_FORCE_INLINE vector< 3, T >::vector(T const data[3])
+    : x(data[0])
+    , y(data[1])
+    , z(data[2])
+{
+}
+
+template < typename T >
+template < typename U >
+VV_FORCE_INLINE vector< 3, T >::vector(vector< 2, U > const& rhs, U z)
+    : x(rhs.x)
+    , y(rhs.y)
+    , z(z)
+{
+}
+
+template < typename T >
 template < typename U >
 VV_FORCE_INLINE vector< 3, T >::vector(vector< 3, U > const& rhs)
+    : x(rhs.x)
+    , y(rhs.y)
+    , z(rhs.z)
+{
+}
+
+template < typename T >
+template < typename U >
+VV_FORCE_INLINE vector< 3, T >::vector(vector< 4, U > const& rhs)
     : x(rhs.x)
     , y(rhs.y)
     , z(rhs.z)

@@ -36,7 +36,13 @@ public:
     explicit vector(T const data[2]);
 
     template < typename U >
-    vector(vector< 2, U > const& rhs);
+    explicit vector(vector< 2, U > const& rhs);
+
+    template < typename U >
+    explicit vector(vector< 3, U > const& rhs);
+
+    template < typename U >
+    explicit vector(vector< 4, U > const& rhs);
 
     template < typename U >
     vector& operator=(vector< 2, U > const& rhs);
@@ -69,9 +75,16 @@ public:
     vector(T x, T y, T z);
 
     explicit vector(T s);
+    explicit vector(T const data[3]);
 
     template < typename U >
-    vector(vector< 3, U > const& rhs);
+    explicit vector(vector< 2, U > const& rhs, U z);
+
+    template < typename U >
+    explicit vector(vector< 3, U > const& rhs);
+
+    template < typename U >
+    explicit vector(vector< 4, U > const& rhs);
 
     template < typename U >
     vector& operator=(vector< 3, U > const& rhs);
@@ -111,7 +124,13 @@ public:
     explicit vector(T const data[4]);
 
     template < typename U >
-    vector(vector< 4, U > const& rhs);
+    explicit vector(vector< 2, U > const& rhs, U z, U w);
+
+    template < typename U >
+    explicit vector(vector< 3, U > const& rhs, U w);
+
+    template < typename U >
+    explicit vector(vector< 4, U > const& rhs);
 
     template < typename U >
     vector& operator=(vector< 4, U > const& rhs);
