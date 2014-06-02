@@ -76,6 +76,18 @@ VV_FORCE_INLINE T const& vector< 3, T >::operator[](size_t i) const
     return data()[i];
 }
 
+template < typename T >
+VV_FORCE_INLINE vector< 2, T >& vector< 3, T >::xy()
+{
+    return *reinterpret_cast< vector< 2, T >* >( data() );
+}
+
+template < typename T >
+VV_FORCE_INLINE vector< 2, T > const& vector< 3, T >::xy() const
+{
+    return *reinterpret_cast< vector< 2, T > const* >( data() );
+}
+
 
 //--------------------------------------------------------------------------------------------------
 // Basic arithmetic

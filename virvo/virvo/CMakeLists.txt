@@ -94,6 +94,7 @@ set(VIRVO_HEADERS
 
   math/detail/math.h
   math/detail/vector.inl
+  math/detail/vector2.inl
   math/detail/vector3.inl
   math/detail/vector4.inl
   math/simd/mask.h

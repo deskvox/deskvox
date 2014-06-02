@@ -16,6 +16,41 @@ namespace math
 {
 
 //--------------------------------------------------------------------------------------------------
+// vector2
+//
+
+template < typename T >
+class vector< 2, T >
+{
+public:
+
+    typedef T value_type;
+
+    T x;
+    T y;
+
+    vector();
+    vector(T x, T y);
+
+    explicit vector(T s);
+    explicit vector(T const data[2]);
+
+    template < typename U >
+    vector(vector< 2, U > const& rhs);
+
+    template < typename U >
+    vector& operator=(vector< 2, U > const& rhs);
+
+    T* data();
+    T const* data() const;
+
+    T& operator[](size_t i);
+    const T& operator[](size_t i) const;
+
+};
+
+
+//--------------------------------------------------------------------------------------------------
 // vector3
 //
 
@@ -46,6 +81,9 @@ public:
 
     T& operator[](size_t i);
     const T& operator[](size_t i) const;
+
+    vector< 2, T >& xy();
+    vector< 2, T > const& xy() const;
 
 };
 
@@ -97,6 +135,7 @@ public:
 
 
 #include "detail/vector.inl"
+#include "detail/vector2.inl"
 #include "detail/vector3.inl"
 #include "detail/vector4.inl"
 
