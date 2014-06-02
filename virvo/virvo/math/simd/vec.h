@@ -186,7 +186,14 @@ VV_FORCE_INLINE float4 ceil(float4 const& v)
 #if VV_SIMD_ISA >= VV_SIMD_ISA_SSE4_1
   return _mm_ceil_ps(v);
 #else
-  throw std::runtime_error("not implemented yet");
+  // i = trunc(v)
+  __m128 i = _mm_cvtepi32_ps(_mm_cvttps_epi32(v));
+  // r = i < v ? i i + 1 : i
+  __m128 t = _mm_cmplt_ps(i, v);
+  __m128 d = _mm_cvtepi32_ps(_mm_castps_si128(t)); // mask to float: 0 -> 0.0f, 0xFFFFFFFF -> -1.0f
+  __m128 r = _mm_sub_ps(i, d);
+
+  return r;
 #endif
 }
 
