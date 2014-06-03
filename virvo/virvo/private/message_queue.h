@@ -45,13 +45,6 @@ public:
     // Otherwise this will replace the last message with the new one.
     bool push_back_merge(MessagePointer message)
     {
-        struct TypesEqual
-        {
-            bool operator ()(MessagePointer const& lhs, MessagePointer const& rhs) const {
-                return lhs->type() == rhs->type();
-            }
-        };
-
         return queue_.replace_back_if(message, TypesEqual());
     }
 
@@ -60,6 +53,14 @@ public:
     {
         return queue_.pop_front();
     }
+
+private:
+    struct TypesEqual
+    {
+        bool operator ()(MessagePointer const& lhs, MessagePointer const& rhs) const {
+            return lhs->type() == rhs->type();
+        }
+    };
 };
 
 } // namespace virvo
