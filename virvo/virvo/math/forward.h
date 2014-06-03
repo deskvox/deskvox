@@ -19,6 +19,9 @@ namespace math
 template < size_t Dim, typename T >
 class vector;
 
+template < size_t N /* rows */, size_t M /* columns */, typename T >
+class matrix;
+
 
 //--------------------------------------------------------------------------------------------------
 // Most common typedefs

@@ -92,20 +92,21 @@ set(VIRVO_HEADERS
   gl/types.h
   gl/util.h
 
+  math/detail/simd/matrix4.inl
   math/detail/math.h
+  math/detail/matrix4.inl
   math/detail/vector.inl
   math/detail/vector2.inl
   math/detail/vector3.inl
   math/detail/vector4.inl
   math/simd/mask.h
+  math/simd/matrix.h
   math/simd/vec.h
   math/simd/veci.h
   math/simd/intrinsics.h
-  math/simd/matrix_sse.inl
   math/aabb.h
   math/forward.h
   math/matrix.h
-  math/matrix.inl
   math/math.h
   math/output.h
   math/serialization.h

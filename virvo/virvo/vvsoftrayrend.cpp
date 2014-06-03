@@ -101,7 +101,6 @@ virvo::tex_filter_mode map_to_tex_filter_mode(vvRenderState::InterpolType ipol_t
 
 typedef virvo::math::simd::int4 int_type;
 typedef virvo::math::simd::float4 float_type;
-typedef virvo::math::simd::float4 matrix_row_type;
 
 #else
 
@@ -114,7 +113,6 @@ using std::min;
 using std::max;
 typedef size_t int_type;
 typedef float float_type;
-typedef virvo::math::vector< 4, float_type > matrix_row_type;
 
 #endif
 
@@ -126,7 +124,7 @@ typedef virvo::math::vector< 3, int_type > Vec3s;
 typedef virvo::math::vector< 4, int_type > Vec4s;
 typedef virvo::math::vector< 3, float_type > Vec3;
 typedef virvo::math::vector< 4, float_type > Vec4;
-typedef virvo::math::Matrix< matrix_row_type > Mat4;
+typedef virvo::math::matrix< 4, 4, float_type > Mat4;
 
 
 VV_FORCE_INLINE size_t getLUTSize(vvVolDesc* vd)
