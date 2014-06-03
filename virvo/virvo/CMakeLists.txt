@@ -108,6 +108,7 @@ set(VIRVO_HEADERS
   math/matrix.inl
   math/math.h
   math/output.h
+  math/serialization.h
 
   mem/allocator.h
   mem/new.h
