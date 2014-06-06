@@ -29,11 +29,11 @@
 #include <GL/wglew.h>
 #endif
 
+#include "gl/util.h"
+#include "math/math.h"
 #include "vvcocoaglcontext.h"
 #include "vvdebugmsg.h"
 #include "vvrendercontext.h"
-
-#include "private/vvgltools.h"
 
 #include <cassert>
 
@@ -42,6 +42,10 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+
+namespace gl = virvo::gl;
+namespace math = virvo::math;
+
 
 #ifdef HAVE_X11
 #include <GL/glx.h>
@@ -379,7 +383,7 @@ void vvRenderContext::resize(const uint w, const uint h)
 #endif
 
 #ifdef HAVE_OPENGL
-      virvo::Viewport vp = vvGLTools::getViewport();
+      math::recti vp = gl::getViewport();
       glViewport(vp[0], vp[1], w, h);
 #endif
 

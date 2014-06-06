@@ -26,6 +26,8 @@
 #include "vvmulticast.h"
 #include "vvtoolshed.h"
 
+#include "math/math.h"
+
 #include "private/vvgltools.h"
 #include "private/vvimage.h"
 #include "private/vvibrimage.h"
@@ -1120,10 +1122,10 @@ vvSocket::ErrorType vvSocketIO::getAABBi(vvAABBi& val) const
 }
 
 //----------------------------------------------------------------------------
-/** Writes a virvo::Viewport to the socket.
- @param val  the virvo::Viewport.
+/** Writes a virvo::math::recti to the socket.
+ @param val  the virvo::math::recti.
 */
-vvSocket::ErrorType vvSocketIO::putViewport(const virvo::Viewport &val) const
+vvSocket::ErrorType vvSocketIO::putViewport(virvo::math::recti const& val) const
 {
   if(_socket)
   {
@@ -1141,10 +1143,10 @@ vvSocket::ErrorType vvSocketIO::putViewport(const virvo::Viewport &val) const
 }
 
 //----------------------------------------------------------------------------
-/** Reads a virvo::Viewport from the socket.
- @param val  the virvo::Viewport.
+/** Reads a virvo::math::recti from the socket.
+ @param val  the virvo::math::recti.
 */
-vvSocket::ErrorType vvSocketIO::getViewport(virvo::Viewport &val) const
+vvSocket::ErrorType vvSocketIO::getViewport(virvo::math::recti& val) const
 {
   if(_socket)
   {

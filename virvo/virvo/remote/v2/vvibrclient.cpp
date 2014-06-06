@@ -24,6 +24,7 @@
 
 #include "gl/handle.h"
 #include "gl/util.h"
+#include "math/serialization.h"
 #include "private/vvgltools.h"
 #include "private/vvibrimage.h"
 #include "private/vvmessages.h"
@@ -39,6 +40,7 @@
 #include <cstdlib>
 
 namespace gl = virvo::gl;
+namespace math = virvo::math;
 
 using virvo::makeMessage;
 using virvo::Message;
@@ -103,7 +105,7 @@ struct vvIbrClient::Impl
     // The IBR shader
     std::auto_ptr<vvShaderProgram> shader;
     // The current viewport
-    virvo::Viewport viewport;
+    math::recti viewport;
     // Current image matrix
     vvMatrix imgMatrix;
 
@@ -210,7 +212,7 @@ bool vvIbrClient::render()
 
     vvIbr::calcDepthRange(currentPr, currentMv, aabb, drMin, drMax);
 
-    const virvo::Viewport vp = vvGLTools::getViewport();
+    math::recti vp = gl::getViewport();
 
     vvMatrix currentImgMatrix = vvIbr::calcImgMatrix(currentPr, currentMv, vp, drMin, drMax);
 

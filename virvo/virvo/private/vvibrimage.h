@@ -23,8 +23,9 @@
 #define VV_PRIVATE_IBR_IMAGE_H
 
 
+#include "math/math.h"
+
 #include "vvimage.h"
-#include "vvrect.h" // virvo::Viewport
 #include "vvvecmath.h"
 
 
@@ -100,10 +101,10 @@ public:
   void setProjMatrix(vvMatrix const& value) { projMatrix_ = value; }
 
   // Returns the viewport
-  virvo::Viewport const& viewport() const { return viewport_; }
+  virvo::math::recti const& viewport() const { return viewport_; }
 
   // Sets the viewport
-  void setViewport(virvo::Viewport const& value) { viewport_ = value; }
+  void setViewport(virvo::math::recti const& value) { viewport_ = value; }
 
   // Compress the image
   VVAPI bool compress(CompressionType ctColor = Compress_Snappy, CompressionType ctDepth = Compress_Snappy);
@@ -124,7 +125,7 @@ private:
   // Projection matrix
   vvMatrix projMatrix_;
   // The viewport
-  virvo::Viewport viewport_;
+  virvo::math::recti viewport_;
 
 public:
   template<class A>

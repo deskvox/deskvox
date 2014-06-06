@@ -8,82 +8,86 @@ namespace virvo
 {
 
 
-inline void project(math::vec3f* win, math::vec3f const& obj, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
+template < typename T >
+inline void project(math::vector< 3, T >* win, math::vector< 3, T > const& obj, math::matrix< 4, 4, T > const& modelview,
+    math::matrix< 4, 4, T > const& projection, math::recti const& viewport)
 {
 
-  Vec4 u(obj, 1.0);
-  Vec4 v = projection * modelview * u;
+    using namespace math;
 
+    vec4 u(obj, T(1.0));
+    vec4 tmp = projection * modelview * u;
 
-  v[0] /= v[3];
-  v[1] /= v[3];
-  v[2] /= v[3];
+    vec3 v = tmp.xyz() / tmp.w;
 
-
-  (*win)[0] = viewport[0] + viewport[2] * (v[0] + 1) / 2;
-  (*win)[1] = viewport[1] + viewport[3] * (v[1] + 1) / 2;
-  (*win)[2] = (v[2] + 1) / 2;
-
-}
-
-
-inline void unproject(math::vec3f* obj, math::vec3f const& win, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
-{
-
-  Vec4 u
-  (
-    2.0 * (win[0] - viewport[0]) / viewport[2] - 1.0,
-    2.0 * (win[1] - viewport[1]) / viewport[3] - 1.0,
-    2.0 * win[2] - 1.0,
-    1.0
-  );
-
-  Matrix invpm = projection * modelview;
-  invpm.invert();
-
-  Vec4 v = invpm * u;
-
-  (*obj)[0] = v[0] / v[3];
-  (*obj)[1] = v[1] / v[3];
-  (*obj)[2] = v[2] / v[3];
+    (*win)[0] = viewport[0] + viewport[2] * (v[0] + 1) / 2;
+    (*win)[1] = viewport[1] + viewport[3] * (v[1] + 1) / 2;
+    (*win)[2] = (v[2] + 1) / 2;
 
 }
 
 
 template < typename T >
-Recti bounds(vvBaseAABB< T > const& aabb, Matrix const& modelview, Matrix const& projection, Viewport const& viewport)
+inline void unproject(math::vector< 3, T >* obj, math::vector< 3, T > const& win, math::matrix< 4, 4, T > const& modelview,
+    math::matrix< 4, 4, T > const& projection, math::recti const& viewport)
 {
 
-  T minx =  std::numeric_limits< T >::max();
-  T miny =  std::numeric_limits< T >::max();
-  T maxx = -std::numeric_limits< T >::max();
-  T maxy = -std::numeric_limits< T >::max();
+    using namespace math;
+
+    vec4 u
+    (
+        T(2.0 * (win[0] - viewport[0]) / viewport[2] - 1.0),
+        T(2.0 * (win[1] - viewport[1]) / viewport[3] - 1.0),
+        T(2.0 * win[2] - 1.0),
+        T(1.0)
+    );
+
+    matrix< 4, 4, T > invpm = inverse( projection * modelview );
+
+    vec4 v = invpm * u;
+    (*obj) = v.xyz() / v.w;
+
+}
 
 
-  const typename vvBaseAABB< T >::vvBoxCorners& vertices = aabb.getVertices();
+template < typename T >
+math::recti bounds(vvBaseAABB< T > const& aabb, math::matrix< 4, 4, T > const& modelview,
+    math::matrix< 4, 4, T > const& projection, math::recti const& viewport)
+{
 
-  for (size_t i = 0; i < 8; ++i)
-  {
+    using namespace math;
 
-    math::vec3f win;
-    project(&win, vertices[i], modelview, projection, viewport);
-
-    minx = std::min(win[0], minx);
-    miny = std::min(win[1], miny);
-    maxx = std::max(win[0], maxx);
-    maxy = std::max(win[1], maxy);
-
-  }
+    T minx =  std::numeric_limits< T >::max();
+    T miny =  std::numeric_limits< T >::max();
+    T maxx = -std::numeric_limits< T >::max();
+    T maxy = -std::numeric_limits< T >::max();
 
 
-  Recti result;
+    const typename vvBaseAABB< T >::vvBoxCorners& vertices = aabb.getVertices();
 
-  result[0] = std::max(0, static_cast<int>(floorf(minx)));
-  result[1] = std::max(0, static_cast<int>(floorf(miny)));
-  result[2] = std::min(static_cast<int>(ceilf(fabsf(maxx - minx))), viewport[2] - result[0]);
-  result[3] = std::min(static_cast<int>(ceilf(fabsf(maxy - miny))), viewport[3] - result[1]);
+    for (size_t i = 0; i < 8; ++i)
+    {
 
-  return result;
+        vec3f win;
+        project(&win, vec3( vertices[i] ), modelview, projection, viewport);
+
+        minx = std::min(win[0], minx);
+        miny = std::min(win[1], miny);
+        maxx = std::max(win[0], maxx);
+        maxy = std::max(win[1], maxy);
+
+    }
+
+
+    recti result
+    (
+        static_cast<int>(floorf(minx)),
+        static_cast<int>(floorf(miny)),
+        static_cast<int>(ceilf(fabsf(maxx - minx))),
+        static_cast<int>(ceilf(fabsf(maxy - miny)))
+    );
+
+    return intersect( result, viewport );
 
 }
 

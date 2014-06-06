@@ -4,7 +4,6 @@
 #include "math/math.h"
 
 #include "vvaabb.h"
-#include "vvrect.h"
 
 
 namespace virvo
@@ -16,7 +15,9 @@ namespace virvo
  * @param modelview   modelview matrix in OpenGL order (column-major)
  * @param projection  projection matrix in OpenGL order (column-major)
  */
-void project(math::vec3f* win, math::vec3f const& obj, Matrix const& modelview, Matrix const& projection, Viewport const& viewport);
+template < typename T >
+void project(math::vector< 3, T >* win, math::vector< 3, T > const& obj, math::matrix< 4, 4, T > const& modelview,
+    math::matrix< 4, 4, T > const& projection, math::recti const& viewport);
 
 
 /*! unproject from window coordinates to project coordinates
@@ -24,13 +25,16 @@ void project(math::vec3f* win, math::vec3f const& obj, Matrix const& modelview, 
  * @param modelview   modelview matrix in OpenGL order (column-major)
  * @param projection  projection matrix in OpenGL order (column-major)
  */
-void unproject(math::vec3f* obj, math::vec3f const& win, Matrix const& modelview, Matrix const& projection, Viewport const& viewport);
+template < typename T >
+void unproject(math::vector< 3, T >* obj, math::vector< 3, T > const& win, math::matrix< 4, 4, T > const& modelview,
+    math::matrix< 4, 4, T > const& projection, math::recti const& viewport);
 
 
 /*! calc bounding rect of box in screen space coordinates
  */
 template < typename T >
-virvo::Recti bounds(vvBaseAABB< T > const& aabb, Matrix const& modelview, Matrix const& projection, Viewport const& viewport);
+math::recti bounds(vvBaseAABB< T > const& aabb, math::matrix< 4, 4, T > const& modelview,
+    math::matrix< 4, 4, T > const& projection, math::recti const& viewport);
 
 
 } // virvo

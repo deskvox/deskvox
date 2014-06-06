@@ -8,6 +8,7 @@
 #include "aabb.h"
 #include "output.h"
 #include "matrix.h"
+#include "rectangle.h"
 #include "vector.h"
 
 

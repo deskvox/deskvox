@@ -167,6 +167,17 @@ class VIRVOEXPORT vvMatrix
 
   public:
     vvMatrix();
+    template < typename U >
+    vvMatrix(virvo::math::matrix< 4, 4, U > const& rhs)
+    {
+        for (size_t i = 0; i < 4; ++i)
+        {
+            for (size_t j = 0; j < 4; ++j)
+            {
+                e[i][j] = rhs(i, j);
+            }
+        }
+    }
     // Constructs a diagonal matrix
     vvMatrix(float d0, float d1, float d2, float d3);
     vvMatrix(float* glf);

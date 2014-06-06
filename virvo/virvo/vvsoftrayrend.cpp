@@ -16,7 +16,6 @@
 #include "vvdebugmsg.h"
 #include "vvmacros.h"
 #include "vvpthread.h"
-#include "vvrect.h"
 #include "vvsoftrayrend.h"
 #include "vvtoolshed.h"
 #include "vvvoldesc.h"
@@ -33,7 +32,7 @@
 #endif
 
 #ifdef HAVE_OPENGL
-#include "private/vvgltools.h"
+#include "gl/util.h"
 #endif
 
 #include <algorithm>
@@ -53,6 +52,9 @@ static const int tile_width  = 16;
 static const int tile_height = 16;
 
 }
+
+namespace math = virvo::math;
+
 
 #define DIV_UP(a, b) ((a + b - 1) / b)
 
@@ -99,8 +101,8 @@ virvo::tex_filter_mode map_to_tex_filter_mode(vvRenderState::InterpolType ipol_t
 #define PACK_SIZE_X 2
 #define PACK_SIZE_Y 2
 
-typedef virvo::math::simd::int4 int_type;
-typedef virvo::math::simd::float4 float_type;
+typedef math::simd::int4 int_type;
+typedef math::simd::float4 float_type;
 
 #else
 
@@ -116,15 +118,15 @@ typedef float float_type;
 
 #endif
 
-using virvo::math::simd::sub;
-using virvo::math::simd::mul;
+using math::simd::sub;
+using math::simd::mul;
 
-typedef virvo::math::base_aabb< float_type > AABB;
-typedef virvo::math::vector< 3, int_type > Vec3s;
-typedef virvo::math::vector< 4, int_type > Vec4s;
-typedef virvo::math::vector< 3, float_type > Vec3;
-typedef virvo::math::vector< 4, float_type > Vec4;
-typedef virvo::math::matrix< 4, 4, float_type > Mat4;
+typedef math::base_aabb< float_type > AABB;
+typedef math::vector< 3, int_type > Vec3s;
+typedef math::vector< 4, int_type > Vec4s;
+typedef math::vector< 3, float_type > Vec3;
+typedef math::vector< 4, float_type > Vec4;
+typedef math::matrix< 4, 4, float_type > Mat4;
 
 
 VV_FORCE_INLINE size_t getLUTSize(vvVolDesc* vd)
@@ -374,24 +376,15 @@ void vvSoftRayRend::renderVolumeGL()
 {
   vvDebugMsg::msg(3, "vvSoftRayRend::renderVolumeGL()");
 
-  virvo::Matrix mv;
-  virvo::Matrix pr;
-  virvo::Viewport vp;
+  math::mat4 mv;
+  math::mat4 pr;
 
 #ifdef HAVE_OPENGL
-  mv = virvo::gltools::getModelViewMatrix();
-  pr = virvo::gltools::getProjectionMatrix();
+  mv = virvo::gl::getModelviewMatrix();
+  pr = virvo::gl::getProjectionMatrix();
 #endif
 
-  virvo::RenderTarget* rt = getRenderTarget();
-
-  vp[0] = 0;
-  vp[1] = 0;
-  vp[2] = rt->width();
-  vp[3] = rt->height();
-
-  virvo::Matrix inv_view_matrix = pr * mv;
-  inv_view_matrix.invert();
+  math::mat4 inv_view_matrix = inverse( pr * mv );
 
   if (impl_->inv_view_matrix == 0)
   {
@@ -400,9 +393,17 @@ void vvSoftRayRend::renderVolumeGL()
   float* tmp = inv_view_matrix.data();
   std::copy( tmp, tmp + 16, impl_->inv_view_matrix );
 
+  virvo::RenderTarget* rt = getRenderTarget();
+
+  math::recti vp;
+  vp[0] = 0;
+  vp[1] = 0;
+  vp[2] = rt->width();
+  vp[3] = rt->height();
+
   vvAABB aabb = vvAABB(virvo::Vec3(), virvo::Vec3());
   vd->getBoundingBox(aabb);
-  vvRecti r = virvo::bounds(aabb, mv, pr, vp);
+  math::recti r = virvo::bounds(aabb, mv, pr, vp);
 
   impl_->raw    = vd->getRaw(vd->getCurrentFrame());
   impl_->colors = reinterpret_cast<float*>(rt->deviceColor());
@@ -646,18 +647,18 @@ void renderTile(const virvo::Tile& tile, const Thread* thread)
 #if VV_USE_SSE
         // transform to AoS for framebuffer write
         dst = transpose(dst);
-        store(dst.x, &(*thread->colors)[y * w * 4 + x * 4]);
+        store(&(*thread->colors)[y * w * 4 + x * 4], dst.x);
         if (x + 1 < tile.right)
         {
-          store(dst.y, &(*thread->colors)[y * w * 4 + (x + 1) * 4]);
+          store(&(*thread->colors)[y * w * 4 + (x + 1) * 4], dst.y);
         }
         if (y + 1 < tile.top)
         {
-          store(dst.z, &(*thread->colors)[(y + 1) * w * 4 + x * 4]);
+          store(&(*thread->colors)[(y + 1) * w * 4 + x * 4], dst.z);
         }
         if (x + 1 < tile.right && y + 1 < tile.top)
         {
-          store(dst.w, &(*thread->colors)[(y + 1) * w * 4 + (x + 1) * 4]);
+          store(&(*thread->colors)[(y + 1) * w * 4 + (x + 1) * 4], dst.w);
         }
 #else
         memcpy(&(*thread->colors)[y * w * 4 + x * 4], &dst[0], 4 * sizeof(float));

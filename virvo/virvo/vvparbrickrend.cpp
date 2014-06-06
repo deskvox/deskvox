@@ -30,12 +30,13 @@
 #include "vvtcpsocket.h"
 #include "vvvoldesc.h"
 
-#include "private/vvgltools.h"
+#include "gl/util.h"
 #include "private/project.h"
 
 #include <queue>
 #include <sstream>
 
+namespace gl = virvo::gl;
 namespace math = virvo::math;
 
 
@@ -64,8 +65,8 @@ struct vvParBrickRend::Thread
 
   vvAABB aabb;
 
-  vvMatrix mv;
-  vvMatrix pr;
+  math::mat4 mv;
+  math::mat4 pr;
 
   enum Event
   {
@@ -135,7 +136,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
     return;
   }
 
-  const virvo::Viewport vp = vvGLTools::getViewport();
+  math::recti vp = gl::getViewport();
   assert(vp[2] >= 0 && vp[3] >= 0);
   _width = size_t(vp[2]);
   _height = size_t(vp[3]);
@@ -160,7 +161,7 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
 
     thread->parbrickrend = this;
     thread->texture.pixels = new std::vector<float>(size_t(vp[2]) * size_t(vp[3]) * 4);
-    thread->texture.rect = new vvRecti;
+    thread->texture.rect = new math::recti;
 
     thread->barrier = barrier;
     thread->mutex = mutex;
@@ -168,8 +169,8 @@ vvParBrickRend::vvParBrickRend(vvVolDesc* vd, vvRenderState rs,
     thread->aabb = vvAABB(vd->objectCoords(_bspTree->getLeafs()[i]->getAabb().getMin()),
                           vd->objectCoords(_bspTree->getLeafs()[i]->getAabb().getMax()));
 
-    vvGLTools::getModelviewMatrix(&thread->mv);
-    vvGLTools::getProjectionMatrix(&thread->pr);
+    thread->mv = gl::getModelviewMatrix();
+    thread->pr = gl::getProjectionMatrix();
 
     if ((int)i == reuser)
     {
@@ -243,7 +244,7 @@ void vvParBrickRend::renderVolumeGL()
 
   if (!_showBricks)
   {
-    const virvo::Viewport vp = vvGLTools::getViewport();
+    math::recti vp = gl::getViewport();
     if (size_t(vp[2]) != _width || size_t(vp[3]) != _height)
     {
       _width = static_cast<size_t>(vp[2]);
@@ -257,11 +258,8 @@ void vvParBrickRend::renderVolumeGL()
       }
     }
 
-    vvMatrix mv;
-    vvGLTools::getModelviewMatrix(&mv);
-
-    vvMatrix pr;
-    vvGLTools::getProjectionMatrix(&pr);
+    math::mat4 mv = gl::getModelviewMatrix();
+    math::mat4 pr = gl::getProjectionMatrix();
 
     for (std::vector<Thread*>::iterator it = _threads.begin();
          it != _threads.end(); ++it)
@@ -287,10 +285,6 @@ void vvParBrickRend::renderVolumeGL()
       // no rendering
       pthread_barrier_wait((*it)->barrier);
     }
-
-    vvMatrix invMV;
-    invMV = mv;
-    invMV.invert();
 
     // find eye position:
     math::vec3f eye = getEyePosition();
@@ -469,17 +463,16 @@ void vvParBrickRend::render(Thread* thread)
 
   // TODO: check if these are necessary anymore
   // (bounds no longer checks the gl matrix state)
-  vvGLTools::setModelviewMatrix(thread->mv);
-  vvGLTools::setProjectionMatrix(thread->pr);
+  gl::setModelviewMatrix(thread->mv);
+  gl::setProjectionMatrix(thread->pr);
 
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   thread->renderer->renderVolumeGL();
-  const virvo::Viewport vp = vvGLTools::getViewport();
+  math::recti vp = gl::getViewport();
 
-  vvRecti bounds = virvo::bounds(thread->aabb, thread->mv, thread->pr, vp);
-  bounds.intersect(vp);
+  math::recti bounds = virvo::bounds(thread->aabb, thread->mv, thread->pr, vp);
 
   (*thread->texture.rect)[0] = bounds[0];
   (*thread->texture.rect)[1] = bounds[1];

@@ -56,7 +56,7 @@ public:
 };
 
 
-VV_FORCE_INLINE void store(int4 const& v, int dst[4])
+VV_FORCE_INLINE void store(int dst[4], int4 const& v)
 {
   _mm_store_si128(reinterpret_cast<__m128i*>(dst), v);
 }

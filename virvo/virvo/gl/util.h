@@ -23,6 +23,7 @@
 #define VV_GL_UTIL_H
 
 
+#include "math/math.h"
 #include "vvexport.h"
 #include "types.h"
 
@@ -66,6 +67,24 @@ namespace gl
     // Prepare the stencil buffer for interlaced stereo rendering.
     // If w == 0 || h == 0 uses the current viewport.
     VVAPI void renderInterlacedStereoStencilBuffer(bool lines = true);
+
+    // Sets the modelview matrix
+    VVAPI void setModelviewMatrix(math::mat4 const& mv);
+
+    // Returns the current modelview matrix
+    VVAPI math::mat4 getModelviewMatrix();
+
+    // Sets the projection matrix
+    VVAPI void setProjectionMatrix(math::mat4 const& pr);
+
+    // Returns the current projection matrix
+    VVAPI math::mat4 getProjectionMatrix();
+
+    // Sets the viewport
+    VVAPI void setViewport(math::recti const& vp);
+
+    // Returns the current viewport
+    VVAPI math::recti getViewport();
 
 
 } // namespace gl

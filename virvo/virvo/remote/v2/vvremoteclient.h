@@ -52,10 +52,10 @@ public:
     }
 
     // Returns the current projection matrix
-    vvMatrix const& proj() const { return proj_; }
+    virvo::math::mat4 const& proj() const { return proj_; }
 
     // Returns the current model-view matrix
-    vvMatrix const& view() const { return view_; }
+    virvo::math::mat4 const& view() const { return view_; }
 
     // vvRenderer API ----------------------------------------------------------
 
@@ -81,9 +81,9 @@ protected:
     // The connection to the server
     virvo::ConnectionPointer conn_;
     // Current projection matrix
-    vvMatrix proj_;
+    virvo::math::mat4 proj_;
     // Current modelview matrix
-    vvMatrix view_;
+    virvo::math::mat4 view_;
 };
 
 #endif

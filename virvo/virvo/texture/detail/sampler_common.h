@@ -34,7 +34,7 @@ VV_FORCE_INLINE math::simd::float4 point(T const* tex, math::simd::float4 idx)
 {
 
     VV_ALIGN(16) int indices[4];
-    store(idx, &indices[0]);
+    store(&indices[0], idx);
     return math::simd::float4
     (
         tex[indices[0]],
@@ -55,7 +55,7 @@ VV_FORCE_INLINE math::vector< 4, math::simd::float4 > point(math::vector< 4, flo
 
     math::simd::float4 iidx( idx * 4 );
     VV_ALIGN(16) int indices[4];
-    store(iidx, &indices[0]);
+    store(&indices[0], iidx);
 
     float const* tmp = reinterpret_cast< float const* >(tex);
 

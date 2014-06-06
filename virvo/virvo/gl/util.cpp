@@ -33,6 +33,7 @@
 
 
 namespace gl = virvo::gl;
+namespace math = virvo::math;
 
 
 #ifndef APIENTRY
@@ -393,3 +394,61 @@ void gl::renderInterlacedStereoStencilBuffer(bool lines)
     glPopAttrib();
     glPopClientAttrib();
 }
+
+
+void gl::setModelviewMatrix(math::mat4 const& mv)
+{
+
+    GLint old;
+    glGetIntegerv(GL_MATRIX_MODE, &old);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf(mv.data());
+
+    glMatrixMode(old);
+
+}
+
+
+math::mat4 gl::getModelviewMatrix()
+{
+    GLfloat m[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, m);
+    return math::mat4(m);
+}
+
+
+void gl::setProjectionMatrix(math::mat4 const& mv)
+{
+
+    GLint old;
+    glGetIntegerv(GL_MATRIX_MODE, &old);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(mv.data());
+
+    glMatrixMode(old);
+
+}
+
+math::mat4 gl::getProjectionMatrix()
+{
+    GLfloat m[16];
+    glGetFloatv(GL_PROJECTION_MATRIX, m);
+    return math::mat4(m);
+}
+
+void gl::setViewport(math::recti const& vp)
+{
+    glViewport(vp.x, vp.y, vp.w, vp.h);
+}
+
+
+math::recti gl::getViewport()
+{
+    GLint v[4];
+    glGetIntegerv(GL_VIEWPORT, v);
+    return math::recti(v);
+}
+
+

@@ -1,3 +1,8 @@
+#if 1
+#include "lu_decomposition.inl"
+#endif
+
+
 namespace virvo
 {
 
@@ -132,6 +137,38 @@ VV_FORCE_INLINE vector< 4, T > operator*(matrix< 4, 4, T > const& m, vector< 4, 
         m(2, 0) * v.x + m(2, 1) * v.y + m(2, 2) * v.z + m(2, 3) * v.w,
         m(3, 0) * v.x + m(3, 1) * v.y + m(3, 2) * v.z + m(3, 3) * v.w
     );
+
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// Geometric functions
+//
+template < typename T >
+VV_FORCE_INLINE matrix< 4, 4, T > inverse(matrix< 4, 4, T > const& m)
+{
+#if 1
+
+    return lu_inverse(m);
+
+#endif
+}
+
+template < typename T >
+VV_FORCE_INLINE matrix< 4, 4, T > transpose(matrix< 4, 4, T > const& m)
+{
+
+    matrix< 4, 4, T > result;
+
+    for (size_t y = 0; y < 4; ++y)
+    {
+        for (size_t x = 0; x < 4; ++x)
+        {
+            result(x, y) = m(y, x);
+        }
+    }
+
+    return result;
 
 }
 

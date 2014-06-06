@@ -86,7 +86,7 @@ void vvIbrServer::renderImage(const vvMatrix& pr, const vvMatrix& mv, vvRenderer
   image.setDepthMax(drMax);
   image.setViewMatrix(mv);
   image.setProjMatrix(pr);
-  image.setViewport(virvo::Viewport(0, 0, w, h));
+  image.setViewport(math::recti(0, 0, w, h));
 
   // Fetch rendered image
   if (!rt->downloadColorBuffer(image.colorBuffer().data().ptr(), image.colorBuffer().size()))

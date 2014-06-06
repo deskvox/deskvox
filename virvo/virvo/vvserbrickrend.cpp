@@ -24,8 +24,6 @@
 #include "vvserbrickrend.h"
 #include "vvvoldesc.h"
 
-#include "private/vvgltools.h"
-
 namespace math = virvo::math;
 
 
@@ -58,11 +56,7 @@ void vvSerBrickRend::renderVolumeGL()
 
   if (!_showBricks)
   {
-    vvMatrix mv, invMV;
-    vvGLTools::getModelviewMatrix(&mv);
     _bspTree->setVisitor(_simpleRenderVisitor);
-    invMV = mv;
-    invMV.invert();
 
     // find eye position:
     math::vec3f eye = getEyePosition();

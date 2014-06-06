@@ -24,7 +24,6 @@
 #include "math/math.h"
 
 #include "vvexport.h"
-#include "vvrect.h"
 #include "vvvecmath.h"
 
 
@@ -59,7 +58,6 @@ class VIRVOEXPORT vvGLTools
     static void displayOpenGLextensions(const DisplayStyle);
     static void checkOpenGLextensions();
     static void drawQuad(float x1 = -1.0f, float y1 = -1.0f, float x2 =  1.0f, float y2 =  1.0f);
-    static virvo::Viewport getViewport();
     static virvo::math::vec4f queryClearColor();
     static void getModelviewMatrix(vvMatrix*);
     static void getProjectionMatrix(vvMatrix*);

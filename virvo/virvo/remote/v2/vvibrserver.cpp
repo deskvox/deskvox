@@ -20,6 +20,7 @@
 
 #include "vvibrserver.h"
 
+#include "math/serialization.h"
 #include "private/vvgltools.h"
 #include "private/vvibrimage.h"
 #include "private/vvtimer.h"
@@ -110,7 +111,7 @@ void vvIbrServer::renderImage(ConnectionPointer conn, MessagePointer message,
     image->setDepthMax(drMax);
     image->setViewMatrix(mv);
     image->setProjMatrix(pr);
-    image->setViewport(virvo::Viewport(0, 0, w, h));
+    image->setViewport(math::recti(0, 0, w, h));
 
     // Fetch rendered image
     if (!rt->downloadColorBuffer(image->colorBuffer().data().ptr(), image->colorBuffer().size()))

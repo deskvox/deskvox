@@ -487,8 +487,8 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
    * First of all, the rays will be transformed to fit to the frustum.
    * Then the rays will be oriented so that they can hit the volume.
    */
-  const float4 o = mulPost(c_invViewMatrix, make_float4(u, v, -1.0f, 1.0f));
-  const float4 d = mulPost(c_invViewMatrix, make_float4(u, v, 1.0f, 1.0f));
+  const float4 o = mulPre(c_invViewMatrix, make_float4(u, v, -1.0f, 1.0f));
+  const float4 d = mulPre(c_invViewMatrix, make_float4(u, v, 1.0f, 1.0f));
 
   // Dist to far-clipping plane from opengl.
   const float tfar = norm(perspectiveDivide(d) - perspectiveDivide(o));
@@ -819,7 +819,7 @@ __global__ void render(uchar4* d_output, const uint width, const uint height,
     }
 
     // convert position to window-coordinates
-    const float4 depthWin = mulPost(c_MvPrMatrix, make_float4(ibrDepth.x, ibrDepth.y, ibrDepth.z, 1.0f));
+    const float4 depthWin = mulPre(c_MvPrMatrix, make_float4(ibrDepth.x, ibrDepth.y, ibrDepth.z, 1.0f));
     float3 depth = perspectiveDivide(depthWin);
 
     // Scale to 0.0 - 1.0

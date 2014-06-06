@@ -95,6 +95,7 @@ set(VIRVO_HEADERS
   math/detail/simd/matrix4.inl
   math/detail/math.h
   math/detail/matrix4.inl
+  math/detail/rectangle.inl
   math/detail/vector.inl
   math/detail/vector2.inl
   math/detail/vector3.inl
@@ -109,6 +110,7 @@ set(VIRVO_HEADERS
   math/matrix.h
   math/math.h
   math/output.h
+  math/rectangle.h
   math/serialization.h
 
   mem/allocator.h
@@ -165,7 +167,6 @@ set(VIRVO_HEADERS
   vvplatform.h
   vvprintgl.h
   vvpthread.h
-  vvrect.h
   vvremoteclient.h
   vvremoteevents.h
   vvremoteserver.h

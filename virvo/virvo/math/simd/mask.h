@@ -177,10 +177,10 @@ VV_FORCE_INLINE float4 neq(float4 const& u, float4 const& v, sse_mask const& mas
   return if_else(u != v, 0.0f, mask);
 }
 
-VV_FORCE_INLINE void store(float4 const& v, float dst[4], sse_mask const& mask)
+VV_FORCE_INLINE void store(float dst[4], float4 const& v, sse_mask const& mask)
 {
   float4 tmp = if_else(v, 0.0f, mask);
-  store(tmp, dst);
+  store(dst, tmp);
 }
 
 

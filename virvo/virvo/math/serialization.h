@@ -50,6 +50,16 @@ inline void serialize(A& a, virvo::math::vector< 4, T >& v, unsigned /* version 
 }
 
 
+template < typename A, typename T >
+inline void serialize(A& a, virvo::math::rectangle< virvo::math::xywh_layout, T >& r, unsigned /* version */ )
+{
+    a & r.x;
+    a & r.y;
+    a & r.w;
+    a & r.h;
+}
+
+
 } // serialization
 
 

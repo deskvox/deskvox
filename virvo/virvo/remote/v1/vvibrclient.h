@@ -21,6 +21,7 @@
 #ifndef _VV_IBRCLIENT_H_
 #define _VV_IBRCLIENT_H_
 
+#include "math/math.h"
 #include "vvremoteclient.h"
 
 #include <memory>
@@ -62,7 +63,7 @@ private:
   vvMatrix _imgMatrix;                                    ///< Reprojection matrix of _ibrImg
   vvMatrix _imgMv;                                        ///< model-view matrix of _ibrImg
   vvMatrix _imgPr;                                        ///< Projection matrix of _ibrImg
-  virvo::Viewport _imgVp;                                 ///< Viewport of _ibrImg
+  virvo::math::recti _imgVp;                              ///< Viewport of _ibrImg
   float _imgDepthRange[2];                                ///< Depth range of _ibrImg
   void initIbrFrame();                                    ///< initialize pixel-points in object space
 

@@ -70,7 +70,7 @@ void vvIbr::calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
 }
 
 vvMatrix vvIbr::calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
-                              const virvo::Viewport& vp,
+                              math::recti const& vp,
                               const float depthRangeMin, const float depthRangeMax)
 {
   vvMatrix invModelviewProjection = pr * mv;
@@ -81,7 +81,7 @@ vvMatrix vvIbr::calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
     * calcDepthScaleMatrix(depthRangeMin, depthRangeMax);
 }
 
-vvMatrix vvIbr::calcViewportMatrix(const virvo::Viewport& vp)
+vvMatrix vvIbr::calcViewportMatrix(math::recti const& vp)
 {
   vvMatrix result;
   result.identity();

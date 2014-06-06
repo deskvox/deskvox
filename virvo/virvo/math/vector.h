@@ -51,7 +51,7 @@ public:
     T const* data() const;
 
     T& operator[](size_t i);
-    const T& operator[](size_t i) const;
+    T const& operator[](size_t i) const;
 
 };
 
@@ -93,7 +93,7 @@ public:
     T const* data() const;
 
     T& operator[](size_t i);
-    const T& operator[](size_t i) const;
+    T const& operator[](size_t i) const;
 
     vector< 2, T >& xy();
     vector< 2, T > const& xy() const;
@@ -139,7 +139,7 @@ public:
     T const* data() const;
 
     T& operator[](size_t i);
-    const T& operator[](size_t i) const;
+    T const& operator[](size_t i) const;
 
     vector< 3, T >& xyz();
     vector< 3, T > const& xyz() const;

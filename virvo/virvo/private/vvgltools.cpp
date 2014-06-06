@@ -330,16 +330,6 @@ void vvGLTools::drawQuad(float x1, float y1, float x2, float y2)
 }
 
 //----------------------------------------------------------------------------
-/** Get OpenGL viewport info: 0 ==> x, 1 ==> y, 2 ==> width, 3 ==> height.
-*/
-virvo::Viewport vvGLTools::getViewport()
-{
-  virvo::Viewport result;
-  glGetIntegerv(GL_VIEWPORT, result.values);
-  return result;
-}
-
-//----------------------------------------------------------------------------
 /** Query the color specificied using glClearColor (rgba)
 */
 math::vec4f vvGLTools::queryClearColor()

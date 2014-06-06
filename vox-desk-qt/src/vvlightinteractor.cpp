@@ -23,12 +23,12 @@
 #include "vvlightinteractor.h"
 
 #include <virvo/vvopengl.h>
-#include <virvo/vvrect.h>
-#include <virvo/private/vvgltools.h>
+#include <virvo/gl/util.h>
 #include <virvo/private/project.h>
 
 #include <iostream>
 
+namespace gl = virvo::gl;
 namespace math = virvo::math;
 
 
@@ -146,13 +146,13 @@ void vvLightInteractor::mouseMoveEvent(QMouseEvent* event)
 {
   if (_mouseButton == Qt::LeftButton)
   {
-    virvo::Matrix   mv = virvo::gltools::getModelViewMatrix();
-    virvo::Matrix   pr = virvo::gltools::getProjectionMatrix();
-    virvo::Viewport vp = vvGLTools::getViewport();
+    math::mat4  mv = gl::getModelviewMatrix();
+    math::mat4  pr = gl::getProjectionMatrix();
+    math::recti vp = gl::getViewport();
 
-    math::vec3f obj;
+    math::vec3 obj;
     virvo::project(&obj, pos_, mv, pr, vp);
-    math::vec3f win(event->x(), vp[3] - event->y(), obj[2]);
+    math::vec3 win(event->x(), vp[3] - event->y(), obj[2]);
     virvo::unproject(&pos_, win, mv, pr, vp);
     emit lightPos(pos_);
   }

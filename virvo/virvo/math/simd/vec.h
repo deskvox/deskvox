@@ -63,7 +63,7 @@ public:
 };
 
 
-VV_FORCE_INLINE void store(float4 const& v, float dst[4])
+VV_FORCE_INLINE void store(float dst[4], float4 const& v)
 {
   _mm_store_ps(dst, v);
 }
@@ -309,19 +309,20 @@ VV_FORCE_INLINE float4 rsqrt(float4 const& v)
 // TODO: find a better place for this
 VV_FORCE_INLINE vector< 4, float4 > transpose(vector< 4, float4 > const& v)
 {
-  vector< 4, float4 > result = v;
 
-  float4 tmp1 = _mm_unpacklo_ps(result.x, result.y);
-  float4 tmp2 = _mm_unpacklo_ps(result.z, result.w);
-  float4 tmp3 = _mm_unpackhi_ps(result.x, result.y);
-  float4 tmp4 = _mm_unpackhi_ps(result.z, result.w);
+    float4 tmp0 = _mm_unpacklo_ps(v.x, v.y);
+    float4 tmp1 = _mm_unpacklo_ps(v.z, v.w);
+    float4 tmp2 = _mm_unpackhi_ps(v.x, v.y);
+    float4 tmp3 = _mm_unpackhi_ps(v.z, v.w);
 
-  result.x = _mm_movelh_ps(tmp1, tmp2);
-  result.y = _mm_movehl_ps(tmp2, tmp1);
-  result.z = _mm_movelh_ps(tmp3, tmp4);
-  result.w = _mm_movehl_ps(tmp4, tmp3);
+    return vector< 4, float4 >
+    (
+        _mm_movelh_ps(tmp0, tmp1),
+        _mm_movehl_ps(tmp1, tmp0),
+        _mm_movelh_ps(tmp2, tmp3),
+        _mm_movehl_ps(tmp3, tmp2)
+    );
 
-  return result;
 }
 
 

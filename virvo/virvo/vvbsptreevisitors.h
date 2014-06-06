@@ -21,6 +21,8 @@
 #ifndef VV_BSPTREEVISITORS_H
 #define VV_BSPTREEVISITORS_H
 
+#include "math/math.h"
+
 #include "vvopengl.h"
 #include "vvvisitor.h"
 
@@ -38,7 +40,7 @@ class vvSortLastVisitor : public vvVisitor
 public:
   struct Texture
   {
-    vvRecti* rect;
+    virvo::math::recti* rect;
     std::vector<float>* pixels;
   };
 

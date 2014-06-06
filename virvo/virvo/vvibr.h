@@ -21,6 +21,8 @@
 #ifndef VV_IBR_H
 #define VV_IBR_H
 
+#include "math/forward.h"
+
 #include "vvaabb.h"
 #include "vvvecmath.h"
 
@@ -31,9 +33,9 @@ namespace vvIbr
 void calcDepthRange(const vvMatrix& pr, const vvMatrix& mv,
                     const vvAABB& aabb, float& minval, float& maxval);
 vvMatrix calcImgMatrix(const vvMatrix& pr, const vvMatrix& mv,
-                       const virvo::Viewport& vp,
+                       virvo::math::recti const& vp,
                        float depthRangeMin, float depthRangeMax);
-vvMatrix calcViewportMatrix(const virvo::Viewport& vp);
+vvMatrix calcViewportMatrix(virvo::math::recti const& vp);
 vvMatrix calcDepthScaleMatrix(float depthRangeMin, float depthRangeMax);
 }
 

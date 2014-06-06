@@ -23,11 +23,10 @@
 
 #include <vector>
 
-#include "math/math.h"
+#include "math/forward.h"
 
 #include "vvcolor.h"
 #include "vvexport.h"
-#include "vvrect.h"
 #include "vvremoteevents.h"
 #include "vvrequestmanagement.h"
 #include "vvsocket.h"
@@ -174,8 +173,8 @@ class VIRVOEXPORT vvSocketIO
     vvSocket::ErrorType putColor(const vvColor& val) const;
     vvSocket::ErrorType getAABBi(vvAABBi& val) const;
     vvSocket::ErrorType putAABBi(const vvAABBi& val) const;
-    vvSocket::ErrorType getViewport(virvo::Viewport &val) const;
-    vvSocket::ErrorType putViewport(const virvo::Viewport &val) const;
+    vvSocket::ErrorType getViewport(virvo::math::recti& val) const;
+    vvSocket::ErrorType putViewport(virvo::math::recti const& val) const;
     vvSocket::ErrorType getWinDims(int& w, int& h) const;
     vvSocket::ErrorType putWinDims(int w, int h) const;
     vvSocket::ErrorType getData(void*, int, DataType) const;      // known number and type

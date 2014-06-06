@@ -21,7 +21,6 @@
 #ifndef VV_AABB_H
 #define VV_AABB_H
 
-#include "vvrect.h"
 #include "vvvecmath.h"
 
 template <typename T>

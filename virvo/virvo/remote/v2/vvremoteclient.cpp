@@ -20,15 +20,16 @@
 
 #include "vvremoteclient.h"
 
+#include "gl/util.h"
 #include "math/math.h"
 #include "math/serialization.h"
-#include "private/vvgltools.h"
 #include "private/vvmessages.h"
 #include "vvvoldesc.h"
 
 using virvo::makeMessage;
 using virvo::Message;
 
+namespace gl = virvo::gl;
 namespace math = virvo::math;
 
 vvRemoteClient::vvRemoteClient(vvRenderer::RendererType type, vvVolDesc *vd, vvRenderState renderState,
@@ -56,8 +57,8 @@ bool vvRemoteClient::endFrame()
 
 void vvRemoteClient::renderVolumeGL()
 {
-    vvGLTools::getProjectionMatrix(&proj_);
-    vvGLTools::getModelviewMatrix(&view_);
+    proj_ = gl::getProjectionMatrix();
+    view_ = gl::getModelviewMatrix();
 
     render();
 }
