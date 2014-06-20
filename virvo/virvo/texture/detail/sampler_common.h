@@ -73,32 +73,124 @@ VV_FORCE_INLINE math::vector< 4, math::simd::float4 > point(math::vector< 4, flo
 }
 
 
-// weight functions for Mitchell - Netravalli B-Spline
-template < typename FloatT >
-VV_FORCE_INLINE FloatT w0( FloatT a ) { return FloatT( (1.0 / 6.0) * (-(a * a * a) + 3.0 * a * a - 3.0 * a + 1.0) ); }
+namespace bspline
+{
+
+// weight functions for Mitchell - Netravalli B-Spline with B = 1 and C = 0
 
 template < typename FloatT >
-VV_FORCE_INLINE FloatT w1( FloatT a ) { return FloatT( (1.0 / 6.0) * (3.0 * a * a * a - 6.0 * a * a + 4.0) ); }
+struct w0_func
+{
+    VV_FORCE_INLINE FloatT operator()( FloatT a )
+    {
+        return FloatT( (1.0 / 6.0) * (-(a * a * a) + 3.0 * a * a - 3.0 * a + 1.0) );
+    }
+};
 
 template < typename FloatT >
-VV_FORCE_INLINE FloatT w2( FloatT a ) { return FloatT( (1.0 / 6.0) * (-3.0 * a * a * a + 3.0 * a * a + 3.0 * a + 1.0) ); }
+struct w1_func
+{
+    VV_FORCE_INLINE FloatT operator()( FloatT a )
+    {
+        return FloatT( (1.0 / 6.0) * (3.0 * a * a * a - 6.0 * a * a + 4.0) );
+    }
+};
 
 template < typename FloatT >
-VV_FORCE_INLINE FloatT w3( FloatT a ) { return FloatT( (1.0 / 6.0) * (a * a * a) ); }
+struct w2_func
+{
+    VV_FORCE_INLINE FloatT operator()( FloatT a )
+    {
+        return FloatT( (1.0 / 6.0) * (-3.0 * a * a * a + 3.0 * a * a + 3.0 * a + 1.0) );
+    }
+};
 
+template < typename FloatT >
+struct w3_func
+{
+    VV_FORCE_INLINE FloatT operator()( FloatT a )
+    {
+        return FloatT( (1.0 / 6.0) * (a * a * a) );
+    }
+};
+
+} // bspline
+
+namespace cspline
+{
+
+// weight functions for Catmull - Rom Cardinal Spline
+
+template < typename FloatT >
+struct w0_func
+{
+    VV_FORCE_INLINE FloatT operator()( FloatT a )
+    {
+        return FloatT( -0.5 * a * a * a + a * a - 0.5 * a );
+    }
+};
+
+template < typename FloatT >
+struct w1_func
+{
+    VV_FORCE_INLINE FloatT operator()( FloatT a )
+    {
+        return FloatT( 1.5 * a * a * a - 2.5 * a * a + 1.0 );
+    }
+};
+
+template < typename FloatT >
+struct w2_func
+{
+    VV_FORCE_INLINE FloatT operator()( FloatT a )
+    {
+        return FloatT( -1.5 * a * a * a + 2.0 * a * a + 0.5 * a );
+    }
+};
+
+template < typename FloatT >
+struct w3_func
+{
+    VV_FORCE_INLINE FloatT operator()( FloatT a )
+    {
+        return FloatT( 0.5 * a * a * a - 0.5 * a * a );
+    }
+};
+
+} // cspline
 
 // helper functions for cubic interpolation
 template < typename FloatT >
-VV_FORCE_INLINE FloatT g0( FloatT x ) { return w0(x) + w1(x); }
+VV_FORCE_INLINE FloatT g0( FloatT x )
+{
+    bspline::w0_func< FloatT > w0;
+    bspline::w1_func< FloatT > w1;
+    return w0(x) + w1(x);
+}
 
 template < typename FloatT >
-VV_FORCE_INLINE FloatT g1( FloatT x ) { return w2(x) + w3(x); }
+VV_FORCE_INLINE FloatT g1( FloatT x )
+{
+    bspline::w2_func< FloatT > w2;
+    bspline::w3_func< FloatT > w3;
+    return w2(x) + w3(x);
+}
 
 template < typename FloatT >
-VV_FORCE_INLINE FloatT h0( FloatT x ) { return ((floor( x ) - FloatT(1.0) + w1(x)) / (w0(x) + w1(x))) + x; }
+VV_FORCE_INLINE FloatT h0( FloatT x )
+{
+    bspline::w0_func< FloatT > w0;
+    bspline::w1_func< FloatT > w1;
+    return ((floor( x ) - FloatT(1.0) + w1(x)) / (w0(x) + w1(x))) + x;
+}
 
 template < typename FloatT >
-VV_FORCE_INLINE FloatT h1( FloatT x ) { return ((floor( x ) + FloatT(1.0) + w3(x)) / (w2(x) + w3(x))) - x; }
+VV_FORCE_INLINE FloatT h1( FloatT x )
+{
+    bspline::w2_func< FloatT > w2;
+    bspline::w3_func< FloatT > w3;
+    return ((floor( x ) + FloatT(1.0) + w3(x)) / (w2(x) + w3(x))) - x;
+}
 
 
 } // detail

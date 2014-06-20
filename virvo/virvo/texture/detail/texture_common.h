@@ -20,7 +20,8 @@ enum tex_filter_mode
     Nearest = 0,
     Linear,
     BSpline,
-    BSplineInterpol
+    BSplineInterpol,
+    CardinalSpline
 };
 
 enum tex_read_mode

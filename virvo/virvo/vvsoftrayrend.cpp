@@ -88,6 +88,12 @@ virvo::tex_filter_mode map_to_tex_filter_mode(vvRenderState::InterpolType ipol_t
     case vvRenderState::BSpline:
         return virvo::BSpline;
 
+    case vvRenderState::BSplineInterpol:
+        return virvo::BSplineInterpol;
+
+    case vvRenderState::CardinalSpline:
+        return virvo::CardinalSpline;
+
     default:
         return virvo::Nearest;
 
@@ -476,7 +482,8 @@ bool vvSoftRayRend::checkParameter(ParameterType param, vvParam const& value) co
       vvRenderState::InterpolType type = static_cast< vvRenderState::InterpolType >(value.asInt());
 
       if (type == vvRenderState::Nearest || type == vvRenderState::Linear
-       || type == vvRenderState::BSpline)
+       || type == vvRenderState::BSpline || type == vvRenderState::BSplineInterpol
+       || type == vvRenderState::CardinalSpline)
       {
         return true;
       }

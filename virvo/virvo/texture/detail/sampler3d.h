@@ -156,21 +156,26 @@ template
 #ifndef _MSC_VER
 VV_FORCE_INLINE
 #endif
-ReturnT cubic(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector< 3, FloatT > texsize)
+ReturnT cubic8(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector< 3, FloatT > texsize)
 {
 
     typedef FloatT float_type;
     typedef math::vector< 3, float_type > float3;
 
-    float_type x = coord[0] * texsize[0] - float_type(0.5);
+    bspline::w0_func< FloatT > w0;
+    bspline::w1_func< FloatT > w1;
+    bspline::w2_func< FloatT > w2;
+    bspline::w3_func< FloatT > w3;
+
+    float_type x = coord.x * texsize.x - float_type(0.5);
     float_type floorx = floor( x );
     float_type fracx  = x - floor( x );
 
-    float_type y = coord[1] * texsize[1] - float_type(0.5);
+    float_type y = coord.y * texsize.y - float_type(0.5);
     float_type floory = floor( y );
     float_type fracy  = y - floor( y );
 
-    float_type z = coord[2] * texsize[2] - float_type(0.5);
+    float_type z = coord.z * texsize.z - float_type(0.5);
     float_type floorz = floor( z );
     float_type fracz  = z - floor( z );
 
@@ -222,6 +227,86 @@ ReturnT cubic(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector< 
 template
 <
     typename ReturnT,
+    typename W0,
+    typename W1,
+    typename W2,
+    typename W3,
+    typename FloatT,
+    typename VoxelT
+>
+#ifndef _MSC_VER
+VV_FORCE_INLINE
+#endif
+ReturnT cubic(VoxelT const* tex, math::vector< 3, FloatT > coord, math::vector< 3, FloatT > texsize, W0 w0, W1 w1, W2 w2, W3 w3)
+{
+
+    typedef FloatT float_type;
+    typedef math::vector< 3, float_type > float3;
+
+    float_type x = coord[0] * texsize[0] - float_type(0.5);
+    float_type floorx = floor( x );
+    float_type fracx  = x - floor( x );
+
+    float_type y = coord[1] * texsize[1] - float_type(0.5);
+    float_type floory = floor( y );
+    float_type fracy  = y - floor( y );
+
+    float_type z = coord[2] * texsize[2] - float_type(0.5);
+    float_type floorz = floor( z );
+    float_type fracz  = z - floor( z );
+
+    float3 pos[4] =
+    {
+        float3( floorx - 1, floory - 1, floorz - 1 ),
+        float3( floorx,     floory,     floorz ),
+        float3( floorx + 1, floory + 1, floorz + 1 ),
+        float3( floorx + 2, floory + 2, floorz + 2 )
+    };
+
+    using math::clamp;
+
+    for (size_t i = 0; i < 4; ++i)
+    {
+        pos[i].x = clamp(pos[i].x, float_type(0.0f), texsize.x - 1);
+        pos[i].y = clamp(pos[i].y, float_type(0.0f), texsize.y - 1);
+        pos[i].z = clamp(pos[i].z, float_type(0.0f), texsize.z - 1);
+    }
+
+#define TEX(x,y,z) (point(tex, index(x,y,z,texsize)))
+    float_type f00 = w0(fracx) * TEX(pos[0].x, pos[0].y, pos[0].z) + w1(fracx) * TEX(pos[1].x, pos[0].y, pos[0].z) + w2(fracx) * TEX(pos[2].x, pos[0].y, pos[0].z) + w3(fracx) * TEX(pos[3].x, pos[0].y, pos[0].z);
+    float_type f01 = w0(fracx) * TEX(pos[0].x, pos[1].y, pos[0].z) + w1(fracx) * TEX(pos[1].x, pos[1].y, pos[0].z) + w2(fracx) * TEX(pos[2].x, pos[1].y, pos[0].z) + w3(fracx) * TEX(pos[3].x, pos[1].y, pos[0].z);
+    float_type f02 = w0(fracx) * TEX(pos[0].x, pos[2].y, pos[0].z) + w1(fracx) * TEX(pos[1].x, pos[2].y, pos[0].z) + w2(fracx) * TEX(pos[2].x, pos[2].y, pos[0].z) + w3(fracx) * TEX(pos[3].x, pos[2].y, pos[0].z);
+    float_type f03 = w0(fracx) * TEX(pos[0].x, pos[3].y, pos[0].z) + w1(fracx) * TEX(pos[1].x, pos[3].y, pos[0].z) + w2(fracx) * TEX(pos[2].x, pos[3].y, pos[0].z) + w3(fracx) * TEX(pos[3].x, pos[3].y, pos[0].z);
+
+    float_type f04 = w0(fracx) * TEX(pos[0].x, pos[0].y, pos[1].z) + w1(fracx) * TEX(pos[1].x, pos[0].y, pos[1].z) + w2(fracx) * TEX(pos[2].x, pos[0].y, pos[1].z) + w3(fracx) * TEX(pos[3].x, pos[0].y, pos[1].z);
+    float_type f05 = w0(fracx) * TEX(pos[0].x, pos[1].y, pos[1].z) + w1(fracx) * TEX(pos[1].x, pos[1].y, pos[1].z) + w2(fracx) * TEX(pos[2].x, pos[1].y, pos[1].z) + w3(fracx) * TEX(pos[3].x, pos[1].y, pos[1].z);
+    float_type f06 = w0(fracx) * TEX(pos[0].x, pos[2].y, pos[1].z) + w1(fracx) * TEX(pos[1].x, pos[2].y, pos[1].z) + w2(fracx) * TEX(pos[2].x, pos[2].y, pos[1].z) + w3(fracx) * TEX(pos[3].x, pos[2].y, pos[1].z);
+    float_type f07 = w0(fracx) * TEX(pos[0].x, pos[3].y, pos[1].z) + w1(fracx) * TEX(pos[1].x, pos[3].y, pos[1].z) + w2(fracx) * TEX(pos[2].x, pos[3].y, pos[1].z) + w3(fracx) * TEX(pos[3].x, pos[3].y, pos[1].z);
+
+    float_type f08 = w0(fracx) * TEX(pos[0].x, pos[0].y, pos[2].z) + w1(fracx) * TEX(pos[1].x, pos[0].y, pos[2].z) + w2(fracx) * TEX(pos[2].x, pos[0].y, pos[2].z) + w3(fracx) * TEX(pos[3].x, pos[0].y, pos[2].z);
+    float_type f09 = w0(fracx) * TEX(pos[0].x, pos[1].y, pos[2].z) + w1(fracx) * TEX(pos[1].x, pos[1].y, pos[2].z) + w2(fracx) * TEX(pos[2].x, pos[1].y, pos[2].z) + w3(fracx) * TEX(pos[3].x, pos[1].y, pos[2].z);
+    float_type f10 = w0(fracx) * TEX(pos[0].x, pos[2].y, pos[2].z) + w1(fracx) * TEX(pos[1].x, pos[2].y, pos[2].z) + w2(fracx) * TEX(pos[2].x, pos[2].y, pos[2].z) + w3(fracx) * TEX(pos[3].x, pos[2].y, pos[2].z);
+    float_type f11 = w0(fracx) * TEX(pos[0].x, pos[3].y, pos[2].z) + w1(fracx) * TEX(pos[1].x, pos[3].y, pos[2].z) + w2(fracx) * TEX(pos[2].x, pos[3].y, pos[2].z) + w3(fracx) * TEX(pos[3].x, pos[3].y, pos[2].z);
+
+    float_type f12 = w0(fracx) * TEX(pos[0].x, pos[0].y, pos[3].z) + w1(fracx) * TEX(pos[1].x, pos[0].y, pos[3].z) + w2(fracx) * TEX(pos[2].x, pos[0].y, pos[3].z) + w3(fracx) * TEX(pos[3].x, pos[0].y, pos[3].z);
+    float_type f13 = w0(fracx) * TEX(pos[0].x, pos[1].y, pos[3].z) + w1(fracx) * TEX(pos[1].x, pos[1].y, pos[3].z) + w2(fracx) * TEX(pos[2].x, pos[1].y, pos[3].z) + w3(fracx) * TEX(pos[3].x, pos[1].y, pos[3].z);
+    float_type f14 = w0(fracx) * TEX(pos[0].x, pos[2].y, pos[3].z) + w1(fracx) * TEX(pos[1].x, pos[2].y, pos[3].z) + w2(fracx) * TEX(pos[2].x, pos[2].y, pos[3].z) + w3(fracx) * TEX(pos[3].x, pos[2].y, pos[3].z);
+    float_type f15 = w0(fracx) * TEX(pos[0].x, pos[3].y, pos[3].z) + w1(fracx) * TEX(pos[1].x, pos[3].y, pos[3].z) + w2(fracx) * TEX(pos[2].x, pos[3].y, pos[3].z) + w3(fracx) * TEX(pos[3].x, pos[3].y, pos[3].z);
+#undef TEX
+
+    float_type f0 = w0(fracy) * f00 + w1(fracy) * f01 + w2(fracy) * f02 + w3(fracy) * f03;
+    float_type f1 = w0(fracy) * f04 + w1(fracy) * f05 + w2(fracy) * f06 + w3(fracy) * f07;
+    float_type f2 = w0(fracy) * f08 + w1(fracy) * f09 + w2(fracy) * f10 + w3(fracy) * f11;
+    float_type f3 = w0(fracy) * f12 + w1(fracy) * f13 + w2(fracy) * f14 + w3(fracy) * f15;
+
+    return w0(fracz) * f0 + w1(fracz) * f1 + w2(fracz) * f2 + w3(fracz) * f3;
+
+}
+
+
+template
+<
+    typename ReturnT,
     typename FloatT,
     typename VoxelT
 >
@@ -243,7 +328,12 @@ VV_FORCE_INLINE ReturnT tex3D(VoxelT const* tex, math::vector< 3, FloatT > coord
     case virvo::BSpline:
         // fall-through
     case virvo::BSplineInterpol:
-        return cubic< ReturnT >( tex, coord, texsize );
+        return cubic8< ReturnT >( tex, coord, texsize );
+
+    case virvo::CardinalSpline:
+        return cubic< ReturnT >( tex, coord, texsize,
+            cspline::w0_func< FloatT >(), cspline::w1_func< FloatT >(),
+            cspline::w2_func< FloatT >(), cspline::w3_func< FloatT >() );
 
     }
 

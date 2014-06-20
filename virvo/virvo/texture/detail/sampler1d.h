@@ -89,6 +89,11 @@ ReturnT cubic(VoxelT const* tex, FloatT coord, FloatT texsize)
     typedef FloatT float_type;
     typedef ReturnT return_type;
 
+    bspline::w0_func< FloatT > w0;
+    bspline::w1_func< FloatT > w1;
+    bspline::w2_func< FloatT > w2;
+    bspline::w3_func< FloatT > w3;
+
     float_type x = coord * texsize - float_type(0.5);
     float_type floorx = floor( x );
     float_type fracx  = x - floor( x );

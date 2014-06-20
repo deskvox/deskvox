@@ -62,7 +62,8 @@ public:
     Nearest = 0,
     Linear,
     BSpline,
-    CatmullRomSpline
+    BSplineInterpol,
+    CardinalSpline
   };
 
 

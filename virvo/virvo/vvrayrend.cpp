@@ -576,9 +576,14 @@ void vvRayRend::initVolumeTexture()
       filter_mode = cudaFilterModeLinear;
       break;
 
-    case CatmullRomSpline:
+    case BSplineInterpol:
 
       filter_mode = cudaFilterModeLinear;
+      break;
+
+    case CardinalSpline:
+
+      filter_mode = cudaFilterModePoint;
       break;
 
     }

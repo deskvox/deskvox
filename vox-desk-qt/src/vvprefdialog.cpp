@@ -610,9 +610,15 @@ void vvPrefDialog::updateUi()
     ++impl->num_interpol_algs;
   }
 
-  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::CatmullRomSpline))
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::BSpline))
   {
-    ui->interpolationBox->addItem("Catmull Rom Spline");
+    ui->interpolationBox->addItem("Cubic B-Spline Interpolation");
+    ++impl->num_interpol_algs;
+  }
+
+  if (renderer->checkParameter(vvRenderState::VV_SLICEINT, vvRenderState::CardinalSpline))
+  {
+    ui->interpolationBox->addItem("Cubic Cardinal Spline");
     ++impl->num_interpol_algs;
   }
 
